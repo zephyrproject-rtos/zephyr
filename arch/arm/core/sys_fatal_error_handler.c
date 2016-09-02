@@ -26,6 +26,10 @@
 #include <toolchain.h>
 #include <sections.h>
 
+#ifdef CONFIG_KERNEL_V2
+#include <nano_private.h>
+#endif
+
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
 #define PRINTK(...) printk(__VA_ARGS__)
@@ -34,11 +38,16 @@
 #endif
 
 #ifdef CONFIG_MICROKERNEL
-extern void _TaskAbort(void);
 static inline void nonEssentialTaskAbort(void)
 {
 	PRINTK("Fatal fault in task ! Aborting task.\n");
+
+#if defined(CONFIG_KERNEL_V2)
+	k_thread_abort(_current);
+#else
+	extern void _TaskAbort(void);
 	_TaskAbort();
+#endif
 }
 #define NON_ESSENTIAL_TASK_ABORT() nonEssentialTaskAbort()
 #else

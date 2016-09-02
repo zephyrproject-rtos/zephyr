@@ -34,6 +34,10 @@ _ASM_FILE_PROLOGUE
 GTEXT(_Swap)
 GTEXT(__svc)
 GTEXT(__pendsv)
+#ifdef CONFIG_KERNEL_V2
+GTEXT(_get_next_ready_thread)
+GDATA(_k_neg_eagain)
+#endif
 
 GDATA(_nanokernel)
 
@@ -97,6 +101,12 @@ SECTION_FUNC(TEXT, __pendsv)
 
     /* find out incoming thread (fiber or task) */
 
+#ifdef CONFIG_KERNEL_V2
+    push {lr}
+    blx _get_next_ready_thread
+    pop {lr}
+    movs.n r2, r0
+#else
     /* is there a fiber ready ? */
     ldr r2, [r1, #__tNANO_fiber_OFFSET]
     cmp r2, #0
@@ -109,10 +119,13 @@ SECTION_FUNC(TEXT, __pendsv)
 	ldrne.w r0, [r2, #__tTCS_link_OFFSET]   /* then */
 	strne.w r0, [r1, #__tNANO_fiber_OFFSET] /* then */
 	ldreq.w r2, [r1, #__tNANO_task_OFFSET]  /* else */
+#endif
 
     /* r2 contains the new thread */
+#if !defined(CONFIG_KERNEL_V2)
     ldr r0, [r2, #__tTCS_flags_OFFSET]
     str r0, [r1, #__tNANO_flags_OFFSET]
+#endif
     str r2, [r1, #__tNANO_current_OFFSET]
 
     /*
@@ -187,6 +200,18 @@ SECTION_FUNC(TEXT, __svc)
     b _IntExit
 
 _context_switch:
+#endif
+
+#if CONFIG_KERNEL_V2
+    /*
+     * Set _Swap()'s default return code to -EAGAIN. This eliminates the
+     * need for the timeout code to invoke fiberRtnValueSet().
+     */
+
+    mrs  r2, PSP   /* thread mode, stack frame is on PSP */
+    ldr  r3, =_k_neg_eagain
+    ldr  r3, [r3, #0]
+    str  r3, [r2, #__tESF_a1_OFFSET]
 #endif
 
     /*

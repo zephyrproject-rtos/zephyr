@@ -39,9 +39,15 @@ extern "C" {
 #include <arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
+#ifdef CONFIG_KERNEL_V2
+#include <kernel.h>
+#include <../../../kernel/unified/include/nano_internal.h>
+#else
 #include <../../../kernel/nanokernel/include/nano_internal.h>
+#endif
 #include <stdint.h>
 #include <misc/dlist.h>
+#include <atomic.h>
 #endif
 
 #ifndef _ASMLANGUAGE
@@ -93,17 +99,32 @@ typedef struct preempt tPreempt;
 
 /* Bitmask definitions for the struct tcs.flags bit field */
 
+#ifdef CONFIG_KERNEL_V2
+#define K_STATIC  0x00000800
+
+#define K_READY              0x00000000    /* Thread is ready to run */
+#define K_TIMING             0x00001000    /* Thread is waiting on a timeout */
+#define K_PENDING            0x00002000    /* Thread is waiting on an object */
+#define K_PRESTART           0x00004000    /* Thread has not yet started */
+#define K_DEAD               0x00008000    /* Thread has terminated */
+#define K_SUSPENDED          0x00010000    /* Thread is suspended */
+#define K_DUMMY              0x00020000    /* Not a real thread */
+#define K_EXECUTION_MASK    (K_TIMING | K_PENDING | K_PRESTART | \
+			     K_DEAD | K_SUSPENDED | K_DUMMY)
+#else
 #define FIBER 0x000
 #define TASK 0x001	   /* 1 = task, 0 = fiber   */
-#define INT_ACTIVE 0x002     /* 1 = executing context is interrupt handler */
-#define EXC_ACTIVE 0x004     /* 1 = executing context is exception handler */
-#define USE_FP 0x010	 /* 1 = thread uses floating point unit */
+#define INT_ACTIVE 0x002     /* 1 = executino context is interrupt handler */
+#define EXC_ACTIVE 0x004     /* 1 = executino context is exception handler */
 #define PREEMPTIBLE                                            \
 	0x020 /* 1 = preemptible thread                       \
 	       * NOTE: the value must be < 0x100 to be able to \
 	       *       use a small thumb instr with immediate  \
 	       *       when loading PREEMPTIBLE in a GPR       \
 	       */
+#endif
+
+#define USE_FP 0x010	 /* 1 = thread uses floating point unit */
 #define ESSENTIAL 0x200  /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400 /* 1 = _Swap() not to update task metrics */
 
@@ -140,11 +161,28 @@ struct preemp_float {
 };
 #endif
 
+#if CONFIG_KERNEL_V2
+/* 'struct tcs_base' must match the beginning of 'struct tcs' */
+struct tcs_base {
+	sys_dnode_t  k_q_node;
+	uint32_t     flags;
+	int          prio;
+	void        *swap_data;
+};
+#endif
+
 struct tcs {
+#if CONFIG_KERNEL_V2
+	sys_dnode_t k_q_node;	/* node object in any kernel queue */
+	uint32_t    flags;
+	int         prio;
+	void       *swap_data;
+#else
 	struct tcs *link; /* singly-linked list in _nanokernel.fibers */
 	uint32_t flags;
-	uint32_t basepri;
 	int prio;
+#endif
+	uint32_t basepri;
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	void *custom_data;     /* available for custom use */
 #endif
@@ -154,14 +192,24 @@ struct tcs {
 	struct __thread_entry *entry; /* thread entry and parameters description */
 	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
 #endif
-#ifdef CONFIG_NANO_TIMEOUTS
+#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_NANO_TIMEOUTS)
 	struct _nano_timeout nano_timeout;
 #endif
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 	void *uk_task_ptr;
+#endif
+#endif
+#ifdef CONFIG_KERNEL_V2
+#ifdef CONFIG_NANO_TIMEOUTS
+	struct _timeout timeout;
+#endif
+	atomic_t sched_locked;
+	void *init_data;
+	void (*fn_abort)(void);
 #endif
 #ifdef CONFIG_FLOAT
 	/*
@@ -173,11 +221,22 @@ struct tcs {
 #endif
 };
 
+#ifdef CONFIG_KERNEL_V2
+struct ready_q {
+	uint32_t prio_bmap[1];
+	sys_dlist_t q[K_NUM_PRIORITIES];
+};
+#endif
+
 struct s_NANO {
+#if !defined(CONFIG_KERNEL_V2)
 	struct tcs *fiber;   /* singly linked list of runnable fiber */
 	struct tcs *task;    /* pointer to runnable task */
+#endif
 	struct tcs *current; /* currently scheduled thread (fiber or task) */
+#if !defined(CONFIG_KERNEL_V2)
 	int flags;     /* struct tcs->flags of 'current' thread */
+#endif
 
 #if defined(CONFIG_THREAD_MONITOR)
 	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
@@ -195,6 +254,9 @@ struct s_NANO {
 	sys_dlist_t timeout_q;
 	int32_t task_timeout;
 #endif
+#ifdef CONFIG_KERNEL_V2
+	struct ready_q ready_q;
+#endif
 };
 
 typedef struct s_NANO tNANO;
@@ -207,7 +269,9 @@ extern void _FaultInit(void);
 extern void _CpuIdleInit(void);
 static ALWAYS_INLINE void nanoArchInit(void)
 {
+#if !defined(CONFIG_KERNEL_V2)
 	_nanokernel.flags = FIBER;
+#endif
 	_InterruptStackSetup();
 	_ExcSetup();
 	_FaultInit();
@@ -235,9 +299,25 @@ static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber,
 	pEsf->a1 = value;
 }
 
+#ifdef CONFIG_KERNEL_V2
+	#define _current _nanokernel.current
+	#define _ready_q _nanokernel.ready_q
+	#define _timeout_q _nanokernel.timeout_q
+	#define _set_thread_return_value fiberRtnValueSet
+static ALWAYS_INLINE void
+_set_thread_return_value_with_data(struct k_thread *thread, unsigned int value,
+				   void *data)
+{
+	_set_thread_return_value(thread, value);
+	thread->swap_data = data;
+}
+	#define _IDLE_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES)
+#endif /* CONFIG_KERNEL_V2 */
+
 extern void nano_cpu_atomic_idle(unsigned int);
 
 #define _IS_IN_ISR() _IsInIsr()
+#define _is_in_isr() _IsInIsr()
 
 extern void _IntLibInit(void);
 

@@ -37,6 +37,10 @@ GTEXT(_ExcExit)
 GTEXT(_IntExit)
 GDATA(_nanokernel)
 
+#ifdef CONFIG_KERNEL_V2
+GTEXT(__must_switch_threads)
+#endif
+
 #if CONFIG_GDB_INFO
   #define _EXIT_EXC_IF_FIBER_PREEMPTED beq _ExcExitWithGdbStub
 #else
@@ -92,6 +96,31 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
     ldr r1, =_nanokernel
 
+#ifdef CONFIG_KERNEL_V2
+	ldr r1, [r1, #__tNANO_current_OFFSET]
+
+	ldr r2, [r1, #__tTCS_prio_OFFSET]
+	ldr r3, [r1, #__tTCS_sched_locked_OFFSET]
+
+	/* coop thread ? do not schedule */
+	cmp r2, #0
+	it lt
+	  bxlt lr
+
+	/* scheduler locked ? do not schedule */
+	cmp r3, #0
+	it gt
+	  bxgt lr
+
+	push {lr}
+	blx __must_switch_threads
+	pop {lr}
+	cmp r0, #0
+	it eq
+	  bxeq lr
+
+#else
+
     /* is the current thread preemptible (task) ? */
     ldr r2, [r1, #__tNANO_flags_OFFSET]
     ands.w r2, #PREEMPTIBLE
@@ -101,6 +130,8 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
     ldr r2, [r1, #__tNANO_fiber_OFFSET]
     cmp r2, #0
     _EXIT_EXC_IF_FIBER_NOT_READY
+
+#endif
 
     /* context switch required, pend the PendSV exception */
     ldr r1, =_SCS_ICSR
