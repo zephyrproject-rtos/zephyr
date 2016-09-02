@@ -22,6 +22,7 @@
 
 static void file_tests(void);
 static void dir_tests(void);
+static void vol_tests(void);
 
 #define TEST_SUB_DIR "sub1"
 #define TEST_FILE "testfile.txt"
@@ -38,6 +39,7 @@ void main(void)
 
 	file_tests();
 	dir_tests();
+	vol_tests();
 }
 
 static int check_file_dir_exists(const char *path)
@@ -120,7 +122,7 @@ static int read_test(ZFILE *fp, off_t ofs, size_t sz, char *read_buff)
 	if (brw < 0) {
 		printk("Failed reading file [%ld]\n", brw);
 		fs_close(fp);
-		return res;
+		return brw;
 	}
 
 	printk("Data successfully read!\n");
@@ -167,6 +169,132 @@ static int delete_test(const char *path)
 	return 0;
 }
 
+static int truncate_test(ZFILE *fp)
+{
+	int res;
+	off_t pos;
+	char read_buff[80];
+
+	printk("\nTruncate tests:\n");
+
+	/* Test truncating to 0 size */
+	printk("Testing shrink to 0 size\n");
+	res = fs_truncate(fp, 0);
+	if (res) {
+		printk("fs_truncate failed [%d]\n", res);
+		fs_close(fp);
+		return res;
+	}
+
+	fs_seek(fp, 0, SEEK_END);
+	if (fs_tell(fp) > 0) {
+		printk("Failed truncating to size 0\n");
+		fs_close(fp);
+		return -1;
+	}
+
+	printk("Testing write after truncating\n");
+	res = write_test(fp, 0, test_str);
+	if (res) {
+		printk("Write failed after truncating\n");
+		return res;
+	}
+
+	fs_seek(fp, 0, SEEK_END);
+	pos = fs_tell(fp);
+
+	printk("Original size of file = %ld\n", pos);
+
+	/* Test shrinking */
+
+	res = fs_truncate(fp, pos - 5);
+	if (res) {
+		printk("fs_truncate failed [%d]\n", res);
+		fs_close(fp);
+		return res;
+	}
+
+	fs_seek(fp, 0, SEEK_END);
+	printk("File size after shrinking by 5 bytes = %ld\n", fs_tell(fp));
+	if (fs_tell(fp) != (pos - 5)) {
+		printk("File size after fs_truncate not as expected\n");
+		fs_close(fp);
+		return -1;
+	}
+
+	/* Check original contents */
+
+	printk("Check original contents after shrinking file\n");
+	res = read_test(fp, 0, strlen(test_str) - 5, read_buff);
+	if (res) {
+		printk("Read failed after truncating\n");
+		return res;
+	}
+
+	if (strncmp(test_str, read_buff, strlen(test_str) - 5)) {
+		printk("Data corruption after shrink\n");
+		return -1;
+	}
+
+	/* Test expanding file */
+
+	fs_seek(fp, 0, SEEK_END);
+	pos = fs_tell(fp);
+	res = fs_truncate(fp, pos + 10);
+	if (res) {
+		printk("fs_truncate failed [%d]\n", res);
+		fs_close(fp);
+		return res;
+	}
+
+	fs_seek(fp, 0, SEEK_END);
+	printk("File size after expanding by 10 bytes = %ld\n", fs_tell(fp));
+
+	if (fs_tell(fp) != (pos + 10)) {
+		printk("File size after fs_truncate not as expected\n");
+		fs_close(fp);
+		return -1;
+	}
+
+	/* Check the original contents */
+
+	printk("Check original contents after expanding file\n");
+	res = read_test(fp, 0, strlen(test_str) - 5, read_buff);
+	if (res) {
+		printk("Read failed after truncating\n");
+		return res;
+	}
+
+	if (strncmp(test_str, read_buff, strlen(test_str) - 5)) {
+		printk("Data corruption after expand\n");
+		return -1;
+	}
+
+	/* Check if expanded regions are zeroed */
+
+	fs_seek(fp, -5, SEEK_END);
+
+	printk("Testing for zeroes in expanded region\n");
+
+	ssize_t brw = fs_read(fp, read_buff, 5);
+
+	if (brw < 5) {
+		printk("Read failed after truncating\n");
+		fs_close(fp);
+		return -1;
+	}
+
+	for (int i = 0; i < 5; i++) {
+		if (read_buff[i]) {
+			printk("Expanded regions are not zeroed\n");
+			fs_close(fp);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 static void file_tests(void)
 {
 	ZFILE fp;
@@ -194,6 +322,11 @@ static void file_tests(void)
 	}
 
 	printk("Data read matches data written!\n");
+
+	res = truncate_test(&fp);
+	if (res) {
+		return;
+	}
 
 	res = close_file(&fp, TEST_FILE);
 	if (res) {
@@ -376,4 +509,22 @@ static void dir_tests(void)
 	if (res) {
 		return;
 	}
+}
+
+static void vol_tests(void)
+{
+	struct zfs_statvfs stat;
+	int res;
+
+	res = fs_statvfs(&stat);
+	if (res) {
+		printk("Error getting volume stats [%d]\n", res);
+		return;
+	}
+
+	printk("\n");
+	printk("Optimal transfer block size   = %lu\n", stat.f_bsize);
+	printk("Allocation unit size          = %lu\n", stat.f_frsize);
+	printk("Volume size in f_frsize units = %lu\n", stat.f_blocks);
+	printk("Free space in f_frsize units  = %lu\n", stat.f_bfree);
 }

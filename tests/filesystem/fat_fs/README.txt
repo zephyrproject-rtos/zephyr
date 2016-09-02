@@ -38,54 +38,54 @@ Data written:"hello world!"
 Data successfully read!
 Data read:"hello world!"
 
+Data read matches data written!
+
+Truncate tests:
+Testing shrink to 0 size
+Testing write after truncating
+Data successfully written!
+Data written:"hello world!"
+
+Original size of file = 12
+File size after shrinking by 5 bytes = 7
+Check original contents after shrinking file
+Data successfully read!
+Data read:"hello w"
+
+File size after expanding by 10 bytes = 17
+Check original contents after expanding file
+Data successfully read!
+Data read:"hello w"
+
+Testing for zeroes in expanded region
 Closed file testfile.txt
 File (testfile.txt) deleted successfully!
 Created dir sub1!
-Created dir sub2!
-Created dir sub1/sub3!
 Creating new file testfile.txt
 Opened file testfile.txt
 Creating new file sub1/testfile.txt
 Opened file sub1/testfile.txt
-Creating new file sub2/testfile.txt
-Opened file sub2/testfile.txt
-Creating new file sub1/sub3/file1.txt
-Opened file sub1/sub3/file1.txt
-Creating new file sub1/sub3/file2.txt
-Opened file sub1/sub3/file2.txt
 Data successfully written!
 Data written:"1"
 
 Data successfully written!
 Data written:"12"
 
-Data successfully written!
-Data written:"123"
-
-Data successfully written!
-Data written:"1234"
-
-Data successfully written!
-Data written:"12345"
-
 Closed file testfile.txt
 Closed file sub1/testfile.txt
-Closed file sub2/testfile.txt
-Closed file sub1/sub3/file1.txt
-Closed file sub1/sub3/file2.txt
 
 Listing dir /:
 [DIR ] SUB1
-[DIR ] SUB2
 [FILE] TESTFILE.TXT (size = 1)
 
 Listing dir sub1:
-[DIR ] SUB3
 [FILE] TESTFILE.TXT (size = 2)
 
-Listing dir sub2:
-[FILE] TESTFILE.TXT (size = 3)
+Removing files and sub directories in sub1
+Removing sub1/TESTFILE.TXT
+Removed dir sub1!
 
-Listing dir sub1/sub3:
-[FILE] FILE1.TXT (size = 4)
-[FILE] FILE2.TXT (size = 5)
+Optimal transfer block size   = 512
+Allocation unit size          = 512
+Volume size in f_frsize units = 152
+Free space in f_frsize units  = 151
