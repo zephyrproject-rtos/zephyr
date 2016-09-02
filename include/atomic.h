@@ -268,7 +268,7 @@ extern int atomic_cas(atomic_t *target, atomic_val_t oldValue,
 #endif /* CONFIG_ATOMIC_OPERATIONS_BUILTIN */
 
 
-#define ATOMIC_INIT(i) {(i)}
+#define ATOMIC_INIT(i) (i)
 
 #define ATOMIC_BITS (sizeof(atomic_val_t) * 8)
 #define ATOMIC_MASK(bit) (1 << ((bit) & (ATOMIC_BITS - 1)))
