@@ -89,7 +89,7 @@ static struct fp_register_set float_reg_set_store;
 static struct fp_register_set float_reg_set;
 
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL) || defined(CONFIG_KERNEL_V2)
 /* stack for high priority fiber (also use .bss for float_reg_set) */
 
 static char __stack fiber_stack[1024];
@@ -121,7 +121,7 @@ static void load_store_high(int, int);
  * @return N/A
  */
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL) || defined(CONFIG_KERNEL_V2)
 void main(void)
 #else
 void load_store_low(void)
@@ -137,7 +137,7 @@ void load_store_low(void)
 	PRINT_DATA("Floating point sharing tests started\n");
 	PRINT_LINE;
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL) || defined(CONFIG_KERNEL_V2)
 	/*
 	 * Start a single fiber which will regularly preempt the background
 	 * task, and perform similiar floating point register manipulations
@@ -286,7 +286,7 @@ void load_store_low(void)
  * @return N/A
  */
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL) || defined(CONFIG_KERNEL_V2)
 void load_store_high(int unused1, int unused2)
 #else
 void load_store_high(void)
@@ -296,7 +296,7 @@ void load_store_high(void)
 	unsigned char init_byte;
 	unsigned char *reg_set_ptr = (unsigned char *)&float_reg_set;
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL) || defined(CONFIG_KERNEL_V2)
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
@@ -362,7 +362,7 @@ void load_store_high(void)
 		 * once the sleep ends.
 		 */
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL) || defined(CONFIG_KERNEL_V2)
 		nano_fiber_timer_start(&fiber_timer, 1);
 		nano_fiber_timer_test(&fiber_timer, TICKS_UNLIMITED);
 #else
