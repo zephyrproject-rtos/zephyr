@@ -253,6 +253,27 @@ int fs_stat(const char *path, struct zfs_dirent *entry)
 	return translate_error(res);
 }
 
+int fs_statvfs(struct zfs_statvfs *stat)
+{
+	FATFS *fs;
+	FRESULT res;
+
+	res = f_getfree("", &stat->f_bfree, &fs);
+	if (res != FR_OK) {
+		return -EIO;
+	}
+
+	/*
+	 * _MIN_SS holds the sector size. It is one of the configuration
+	 * constants used by the FS module
+	 */
+	stat->f_bsize = _MIN_SS;
+	stat->f_frsize = fs->csize * stat->f_bsize;
+	stat->f_blocks = (fs->n_fatent - 2);
+
+	return translate_error(res);
+}
+
 static int fs_init(struct device *dev)
 {
 	FRESULT res;

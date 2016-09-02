@@ -69,6 +69,24 @@ struct zfs_dirent {
 };
 
 /**
+ * @brief Structure to receive volume statistics
+ *
+ * Used to retrieve information about total and available space
+ * in the volume.
+ *
+ * @param f_bsize Optimal transfer block size
+ * @param f_frsize Allocation unit size
+ * @param f_blocks Size of FS in f_frsize units
+ * @param f_bfree Number of free blocks
+ */
+struct zfs_statvfs {
+	size_t f_bsize;
+	size_t f_frsize;
+	size_t f_blocks;
+	size_t f_bfree;
+};
+
+/**
  * @}
  */
 
@@ -280,6 +298,18 @@ int fs_closedir(ZDIR *zdp);
  * @retval -ERRNO errno code if error
  */
 int fs_stat(const char *path, struct zfs_dirent *entry);
+
+/**
+ * @brief Retrieves statistics of the file system volume
+ *
+ * Returns the total and available space in the file system volume.
+ *
+ * @param stat Pointer to zfs_statvfs structure to receive the fs statistics
+ *
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int fs_statvfs(struct zfs_statvfs *stat);
 
 /**
  * @}
