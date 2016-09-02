@@ -27,7 +27,7 @@ config PINMUX_DEV
 
 config PINMUX_DEV_NAME
 	string "Configure pinmux for early board testing"
-	depends on PINMUX
+	depends on PINMUX_DEV
 	default "PINMUX_DEV"
 	help
 	The name of the pinmux dev driver.
