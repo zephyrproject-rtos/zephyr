@@ -62,7 +62,7 @@ extern void _nano_sys_clock_tick_announce(int32_t ticks);
 extern int _sys_clock_suspend(struct device *dev, int pm_policy);
 extern int _sys_clock_resume(struct device *dev, int pm_policy);
 
-#ifdef CONFIG_MICROKERNEL
+#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
 	extern void (*_do_sys_clock_tick_announce)(kevent_t);
 	#define _sys_clock_tick_announce() \
 		_do_sys_clock_tick_announce(TICK_EVENT)
