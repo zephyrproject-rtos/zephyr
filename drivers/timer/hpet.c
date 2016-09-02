@@ -62,6 +62,7 @@
 #include <drivers/system_timer.h>
 #include <nano_private.h>
 
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 
 #include <microkernel.h>
@@ -69,6 +70,7 @@
 extern struct nano_stack _k_command_stack;
 
 #endif /*  CONFIG_MICROKERNEL */
+#endif
 
 
 #include <board.h>
@@ -639,7 +641,11 @@ int _sys_clock_driver_init(struct device *device)
  * it will need to call _hpetMainCounterAtomic().
  */
 
+#ifdef CONFIG_KERNEL_V2
+uint32_t k_cycle_get_32(void)
+#else
 uint32_t sys_cycle_get_32(void)
+#endif
 {
 	return (uint32_t) *_HPET_MAIN_COUNTER_VALUE;
 }

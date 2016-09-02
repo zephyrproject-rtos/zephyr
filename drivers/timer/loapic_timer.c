@@ -84,9 +84,11 @@
 #include <power.h>
 #include <device.h>
 
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
 #endif /* CONFIG_MICROKERNEL */
+#endif
 
 #include <board.h>
 
@@ -157,9 +159,11 @@ static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 
 /* externs */
 
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 extern struct nano_stack _k_command_stack;
 #endif /* CONFIG_MICROKERNEL */
+#endif
 
 /**
  *
@@ -619,7 +623,11 @@ int _sys_clock_resume(struct device *dev, int pm_policy)
  *
  * @return up counter of elapsed clock cycles
  */
+#ifdef CONFIG_KERNEL_V2
+uint32_t k_cycle_get_32(void)
+#else
 uint32_t sys_cycle_get_32(void)
+#endif
 {
 	uint32_t val; /* system clock value */
 
