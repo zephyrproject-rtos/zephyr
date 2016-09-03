@@ -148,7 +148,7 @@
 #
 # ^build \
 #   make -j -C %(srcdir)s/ %(extra_args)s \
-#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s \
+#       BOARD=%(board)s ARCH=%(bsp)s O=outdir-%(tchash)s-%(board)s \
 #       initconfig
 #
 #     Once we have the configuration generated, for Sanity Check test
