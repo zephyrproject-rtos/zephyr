@@ -1176,7 +1176,6 @@ static int att_read_type(struct bt_conn *conn,
 {
 	struct net_buf *buf;
 	struct bt_att_read_type_req *req;
-	uint16_t *value;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_TYPE_REQ, sizeof(*req));
 	if (!buf) {
@@ -1187,11 +1186,10 @@ static int att_read_type(struct bt_conn *conn,
 	req->start_handle = sys_cpu_to_le16(params->start_handle);
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
-	value = net_buf_add(buf, sizeof(*value));
 	if (params->type == BT_GATT_DISCOVER_INCLUDE)
-		*value = sys_cpu_to_le16(BT_UUID_GATT_INCLUDE_VAL);
+		net_buf_add_le16(buf, BT_UUID_GATT_INCLUDE_VAL);
 	else
-		*value = sys_cpu_to_le16(BT_UUID_GATT_CHRC_VAL);
+		net_buf_add_le16(buf, BT_UUID_GATT_CHRC_VAL);
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
