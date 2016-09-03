@@ -316,8 +316,15 @@ OBJDUMP		= $(CROSS_COMPILE)objdump
 GDB		= $(CROSS_COMPILE)gdb
 READELF		= $(CROSS_COMPILE)readelf
 AWK		= awk
+ifeq ($(PREBUILT_HOST_TOOLS),)
 GENIDT		= scripts/gen_idt/gen_idt
 GENOFFSET_H	= scripts/gen_offset_header/gen_offset_header
+FIXDEP		= scripts/basic/fixdep
+else
+GENIDT		= $(PREBUILT_HOST_TOOLS)/gen_idt
+GENOFFSET_H	= $(PREBUILT_HOST_TOOLS)/gen_offset_header
+FIXDEP		= $(PREBUILT_HOST_TOOLS)/fixdep
+endif
 PERL		= perl
 PYTHON		= python
 CHECK		= sparse
@@ -406,7 +413,7 @@ exports += HOSTCXX HOSTCXXFLAGS CHECK CHECKFLAGS
 
 exports += KBUILD_CPPFLAGS NOSTDINC_FLAGS ZEPHYRINCLUDE OBJCOPYFLAGS LDFLAGS
 exports += KBUILD_CFLAGS KBUILD_CXXFLAGS CFLAGS_GCOV KBUILD_AFLAGS AFLAGS_KERNEL
-exports += KBUILD_ARFLAGS
+exports += KBUILD_ARFLAGS FIXDEP
 
 # Push the exports to sub-processes
 export $(exports)
@@ -438,10 +445,14 @@ export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn \
 
 # Basic helpers built in scripts/
 PHONY += scripts_basic
+ifeq ($(PREBUILT_HOST_TOOLS),)
 scripts_basic:
 	$(Q)$(MAKE) $(build)=scripts/basic
 	$(Q)$(MAKE) $(build)=scripts/gen_idt
 	$(Q)$(MAKE) $(build)=scripts/gen_offset_header
+else
+scripts_basic:
+endif
 
 # To avoid any implicit rule to kick in, define an empty command.
 scripts/basic/%: scripts_basic ;

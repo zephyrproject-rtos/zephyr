@@ -172,7 +172,7 @@ define rule_cc_o_c
 	$(cmd_modversions)						  \
 	$(call echo-cmd,record_mcount)					  \
 	$(cmd_record_mcount)						  \
-	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,cc_o_c)' >    \
+	$(FIXDEP) $(depfile) $@ '$(call make-cmd,cc_o_c)' >    \
 	                                              $(dot-target).tmp;  \
 	rm -f $(depfile);						  \
 	mv -f $(dot-target).tmp $(dot-target).cmd
@@ -212,7 +212,7 @@ $(call echo-cmd,cc_o_cxx) $(cmd_cc_o_cxx);				  \
 	$(cmd_modversions)						  \
 	$(call echo-cmd,record_mcount)					  \
 	$(cmd_record_mcount)						  \
-	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,cc_o_cxx)' >    \
+	$(FIXDEP) $(depfile) $@ '$(call make-cmd,cc_o_cxx)' >    \
 	                                              $(dot-target).tmp;  \
 	rm -f $(depfile);						  \
 	mv -f $(dot-target).tmp $(dot-target).cmd

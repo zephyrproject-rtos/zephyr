@@ -19,40 +19,46 @@ endif
 # We need this, in case the user has it in its environment
 unexport CONFIG_
 
-xconfig: $(obj)/qconf
+ifneq ($(PREBUILT_HOST_TOOLS),)
+KCONFIG_BIN_PATH = $(PREBUILT_HOST_TOOLS)
+else
+KCONFIG_BIN_PATH = $(obj)
+endif
+
+xconfig: $(KCONFIG_BIN_PATH)/qconf
 	$< $(Kconfig)
 
-gconfig: $(obj)/gconf
+gconfig: $(KCONFIG_BIN_PATH)/gconf
 	$< $(Kconfig)
 
-menuconfig: $(obj)/mconf
+menuconfig: $(KCONFIG_BIN_PATH)/mconf
 	$< $(Kconfig)
 
-config: $(obj)/conf
+config: $(KCONFIG_BIN_PATH)/conf
 	$< --oldaskconfig $(Kconfig)
 
-nconfig: $(obj)/nconf
+nconfig: $(KCONFIG_BIN_PATH)/nconf
 	$< $(Kconfig)
 
-oldconfig: $(obj)/conf
+oldconfig: $(KCONFIG_BIN_PATH)/conf
 	$< --$@ $(Kconfig)
 
-silentoldconfig: $(obj)/conf
+silentoldconfig: $(KCONFIG_BIN_PATH)/conf
 	$(Q)mkdir -p include/config include/generated
 	$< --$@ $(Kconfig)
 
-localyesconfig localmodconfig: $(obj)/streamline_config.pl $(obj)/conf
+localyesconfig localmodconfig: $(KCONFIG_BIN_PATH)/streamline_config.pl $(KCONFIG_BIN_PATH)/conf
 	$(Q)mkdir -p include/config include/generated
 	$(Q)perl $< --$@ $(srctree) $(Kconfig) > .tmp.config
 	$(Q)if [ -f .config ]; then 					\
 			cmp -s .tmp.config .config ||			\
 			(mv -f .config .config.old.1;			\
 			 mv -f .tmp.config .config;			\
-			 $(obj)/conf --silentoldconfig $(Kconfig);	\
+			 $(KCONFIG_BIN_PATH)/conf --silentoldconfig $(Kconfig);	\
 			 mv -f .config.old.1 .config.old)		\
 	else								\
 			mv -f .tmp.config .config;			\
-			$(obj)/conf --silentoldconfig $(Kconfig);	\
+			$(KCONFIG_BIN_PATH)/conf --silentoldconfig $(Kconfig);	\
 	fi
 	$(Q)rm -f .tmp.config
 
@@ -65,40 +71,40 @@ update-po-config: $(obj)/kxgettext $(obj)/gconf.glade.h
 	    --from-code=UTF-8                                       \
 	    --files-from=$(srctree)/scripts/kconfig/POTFILES.in     \
 	    --directory=$(srctree) --directory=$(objtree)           \
-	    --output $(obj)/config.pot
-	$(Q)sed -i s/CHARSET/UTF-8/ $(obj)/config.pot
+	    --output $(KCONFIG_BIN_PATH)/config.pot
+	$(Q)sed -i s/CHARSET/UTF-8/ $(KCONFIG_BIN_PATH)/config.pot
 	$(Q)(for i in `ls $(srctree)/arch/*/Kconfig      \
 	    $(srctree)/arch/*/um/Kconfig`;               \
 	    do                                           \
 		echo "  GEN     $$i";                    \
 		$(obj)/kxgettext $$i                     \
-		     >> $(obj)/config.pot;               \
+		     >> $(KCONFIG_BIN_PATH)/config.pot;               \
 	    done )
 	$(Q)echo "  GEN     linux.pot"
-	$(Q)msguniq --sort-by-file --to-code=UTF-8 $(obj)/config.pot \
+	$(Q)msguniq --sort-by-file --to-code=UTF-8 $(KCONFIG_BIN_PATH)/config.pot \
 	    --output $(obj)/linux.pot
-	$(Q)rm -f $(obj)/config.pot
+	$(Q)rm -f $(KCONFIG_BIN_PATH)/config.pot
 
 PHONY += allnoconfig allyesconfig allmodconfig alldefconfig randconfig
 
-allnoconfig allyesconfig allmodconfig alldefconfig randconfig: $(obj)/conf
+allnoconfig allyesconfig allmodconfig alldefconfig randconfig: $(KCONFIG_BIN_PATH)/conf
 	$< --$@ $(Kconfig)
 
 PHONY += listnewconfig olddefconfig oldnoconfig savedefconfig defconfig
 
-listnewconfig olddefconfig: $(obj)/conf
+listnewconfig olddefconfig: $(KCONFIG_BIN_PATH)/conf
 	$< --$@ $(Kconfig)
 
 # oldnoconfig is an alias of olddefconfig, because people already are dependent
 # on its behavior(sets new symbols to their default value but not 'n') with the
 # counter-intuitive name.
-oldnoconfig: $(obj)/conf
+oldnoconfig: $(KCONFIG_BIN_PATH)/conf
 	$< --olddefconfig $(Kconfig)
 
-savedefconfig: $(obj)/conf
+savedefconfig: $(KCONFIG_BIN_PATH)/conf
 	$< --$@=defconfig $(Kconfig)
 
-defconfig: $(obj)/conf
+defconfig: $(KCONFIG_BIN_PATH)/conf
 ifeq ($(KBUILD_DEFCONFIG),)
 	$< --defconfig $(Kconfig)
 else
@@ -107,13 +113,13 @@ else
 endif
 defconfigfiles=$(wildcard $(srctree)/boards/*/$@)
 
-%_defconfig: $(obj)/conf
+%_defconfig: $(KCONFIG_BIN_PATH)/conf
 	$(if $(call defconfigfiles),, $(error No configuration exists for this board))
 	$(Q)$< --defconfig=$(defconfigfiles) $(Kconfig)
 
 configfiles=$(wildcard $(PROJECT_BASE)/$@ $(srctree)/kernel/configs/$@ $(srctree)/configs/$@)
 
-%.config: $(obj)/conf
+%.config: $(KCONFIG_BIN_PATH)/conf
 	$(if $(call configfiles),, $(error No configuration exists for this target on this architecture))
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/kconfig/merge_config.sh -m .config $(configfiles)
 	+$(Q)yes "" | $(MAKE) -f $(srctree)/Makefile oldconfig
