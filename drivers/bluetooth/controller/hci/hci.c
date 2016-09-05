@@ -750,18 +750,13 @@ static struct {
 #define HCI_CC_LEN(s)((uint8_t)(offsetof(struct hci_evt_cmd_cmplt, params) + \
 			sizeof(struct s)))
 
-static int link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
+static int link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
+				   struct hci_evt *evt)
 {
 	uint32_t status;
-	struct hci_evt *evt;
 	struct hci_evt_cmd_status *cs;
-	struct hci_evt_cmd_cmplt *cc;
-	union hci_evt_cmd_cmplt_params *ccp;
 
-	evt = (struct hci_evt *)&hci_context.tx[1];
 	cs = &evt->params.cmd_status;
-	cc = &evt->params.cmd_cmplt;
-	ccp = &evt->params.cmd_cmplt.params;
 
 	switch (cmd->opcode.ocf) {
 	case HCI_OCF_DISCONNECT:
@@ -772,8 +767,6 @@ static int link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 
 		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
 		evt->len = sizeof(struct hci_evt_cmd_status);
-		cs->num_cmd_pkt = 1;
-		cs->opcode = cmd->opcode;
 
 		cs->status = (!status) ?  HCI_EVT_ERROR_CODE_SUCCESS :
 			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
@@ -786,8 +779,6 @@ static int link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 
 		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
 		evt->len = sizeof(struct hci_evt_cmd_status);
-		cs->num_cmd_pkt = 1;
-		cs->opcode = cmd->opcode;
 
 		cs->status = (!status) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -804,13 +795,12 @@ static int link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 	return 0;
 }
 
-static int ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
+static int ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
+			      struct hci_evt *evt)
 {
-	struct hci_evt *evt;
 	struct hci_evt_cmd_cmplt *cc;
 	union hci_evt_cmd_cmplt_params *ccp;
 
-	evt = (struct hci_evt *)&hci_context.tx[1];
 	cc = &evt->params.cmd_cmplt;
 	ccp = &evt->params.cmd_cmplt.params;
 
@@ -821,8 +811,6 @@ static int ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_set_event_mask);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->set_event_mask.status = HCI_EVT_ERROR_CODE_SUCCESS;
 
@@ -834,8 +822,6 @@ static int ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_reset);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->reset.status = HCI_EVT_ERROR_CODE_SUCCESS;
 
@@ -850,13 +836,12 @@ static int ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 	return 0;
 }
 
-static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
+static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
+			   struct hci_evt *evt)
 {
-	struct hci_evt *evt;
 	struct hci_evt_cmd_cmplt *cc;
 	union hci_evt_cmd_cmplt_params *ccp;
 
-	evt = (struct hci_evt *)&hci_context.tx[1];
 	cc = &evt->params.cmd_cmplt;
 	ccp = &evt->params.cmd_cmplt.params;
 
@@ -864,8 +849,6 @@ static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 	case HCI_OCF_READ_LOCAL_VERSION:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_read_local_version);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->read_local_version.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		ccp->read_local_version.hci_version = 0;
@@ -880,8 +863,6 @@ static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 	case HCI_OCF_READ_LOCAL_SUPPORTED_COMMANDS:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_read_local_sup_cmds);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->read_local_sup_cmds.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		memset(&ccp->read_local_sup_cmds.value[0], 0,
@@ -922,8 +903,6 @@ static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 	case HCI_OCF_READ_LOCAL_SUPPORTED_FEATURES:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_rd_local_sup_features);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->rd_local_sup_features.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		memset(&ccp->rd_local_sup_features.features[0], 0x00,
@@ -935,8 +914,6 @@ static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 	case HCI_OCF_READ_BD_ADDR:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_read_bd_addr);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->read_bd_addr.status = HCI_EVT_ERROR_CODE_SUCCESS;
 
@@ -953,11 +930,10 @@ static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 }
 
 static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
-		uint8_t **out)
+				 struct hci_evt *evt)
 {
 	uint32_t status;
 	uint32_t error_code;
-	struct hci_evt *evt;
 	uint8_t const c_adv_type[] = {
 		PDU_ADV_TYPE_ADV_IND, PDU_ADV_TYPE_DIRECT_IND,
 		PDU_ADV_TYPE_SCAN_IND, PDU_ADV_TYPE_NONCONN_IND };
@@ -967,7 +943,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	struct hci_cmd_le_remote_conn_param_req_reply *le_cp_req_rep;
 	struct hci_cmd_le_remote_conn_param_req_neg_reply *le_cp_req_neg_rep;
 
-	evt = (struct hci_evt *)&hci_context.tx[1];
 	cc = &evt->params.cmd_cmplt;
 	ccp = &evt->params.cmd_cmplt.params;
 	switch (cmd->opcode.ocf) {
@@ -975,8 +950,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	case HCI_OCF_LE_SET_EVENT_MASK:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_event_mask);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->set_event_mask.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		break;
@@ -984,8 +957,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	case HCI_OCF_LE_READ_BUFFER_SIZE:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_read_buffer_size);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_read_buffer_size.status = HCI_EVT_ERROR_CODE_SUCCESS;
 
@@ -998,8 +969,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	case HCI_OCF_LE_READ_LOCAL_SUPPORTED_FEATURES:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_rd_loc_sup_features);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_rd_loc_sup_features.status = HCI_EVT_ERROR_CODE_SUCCESS;
 
@@ -1013,8 +982,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_rnd_addr);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_rnd_addr.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		break;
@@ -1031,8 +998,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_adv_params);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_adv_params.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		break;
@@ -1040,8 +1005,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	case HCI_OCF_LE_READ_ADV_CHL_TX_POWER:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_rd_adv_chl_tx_pwr);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_rd_adv_chl_tx_pwr.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		ccp->le_rd_adv_chl_tx_pwr.transmit_power_level = 0;
@@ -1053,8 +1016,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_adv_data);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_adv_data.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		break;
@@ -1065,8 +1026,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_scan_resp_data);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_scan_resp_data.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		break;
@@ -1076,8 +1035,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_adv_enable);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_adv_enable.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1098,8 +1055,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_scan_params);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_scan_params.status = HCI_EVT_ERROR_CODE_SUCCESS;
 
@@ -1110,8 +1065,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_scan_enable);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_scan_enable.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1133,8 +1086,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
 		evt->len = sizeof(struct hci_evt_cmd_status);
-		evt->params.cmd_status.num_cmd_pkt = 1;
-		evt->params.cmd_status.opcode = cmd->opcode;
 
 		evt->params.cmd_status.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1146,8 +1097,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_create_conn_cancel);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_create_conn_cancel.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1157,13 +1106,9 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	case HCI_OCF_LE_READ_WHITELIST_SIZE:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_read_whitelist_size);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_read_whitelist_size.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		ccp->le_read_whitelist_size.whitelist_size = 8;
-
-		*out = &hci_context.tx[0];
 		break;
 
 	case HCI_OCF_LE_CLEAR_WHITELIST:
@@ -1172,8 +1117,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_clear_whitelist);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_clear_whitelist.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		break;
@@ -1187,8 +1130,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(
 			hci_evt_cmd_cmplt_le_add_device_to_whitelist);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_add_dev_to_wlist.status = (error_code == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1208,8 +1149,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
 		evt->len = sizeof(struct hci_evt_cmd_status);
-		evt->params.cmd_status.num_cmd_pkt = 1;
-		evt->params.cmd_status.opcode = cmd->opcode;
 
 		evt->params.cmd_status.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1222,8 +1161,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_host_chl_classn);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_host_chl_classn.status = (error_code == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1236,8 +1173,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
 		evt->len = sizeof(struct hci_evt_cmd_status);
-		evt->params.cmd_status.num_cmd_pkt = 1;
-		evt->params.cmd_status.opcode = cmd->opcode;
 
 		evt->params.cmd_status.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1247,8 +1182,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	case HCI_OCF_LE_ENCRYPT:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_encrypt);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_encrypt.status = HCI_EVT_ERROR_CODE_SUCCESS;
 		ecb_encrypt(&cmd->params.le_encrypt.key[0],
@@ -1259,8 +1192,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	case HCI_OCF_LE_RAND:
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_rand);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_rand.status = HCI_EVT_ERROR_CODE_SUCCESS;
 
@@ -1276,8 +1207,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
 		evt->len = sizeof(struct hci_evt_cmd_status);
-		evt->params.cmd_status.num_cmd_pkt = 1;
-		evt->params.cmd_status.opcode = cmd->opcode;
 
 		evt->params.cmd_status.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1293,8 +1222,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_ltk_reply);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_ltk_reply.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1310,8 +1237,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_ltk_negative_reply);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_ltk_neg_reply.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1324,8 +1249,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len =
 			HCI_CC_LEN(hci_evt_cmd_cmplt_le_read_supported_states);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_read_supported_states.status =
 			HCI_EVT_ERROR_CODE_SUCCESS;
@@ -1342,8 +1265,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len =
 		HCI_CC_LEN(hci_evt_cmd_cmplt_le_remote_conn_param_req_reply);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_remote_conn_param_req_reply.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1364,8 +1285,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(
 		hci_evt_cmd_cmplt_le_remote_conn_param_req_neg_reply);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_remote_conn_param_req_neg_reply.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1384,8 +1303,6 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_data_length);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->le_set_data_length.status = (status == 0) ?
 			HCI_EVT_ERROR_CODE_SUCCESS :
@@ -1404,13 +1321,11 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 }
 
 static int vs_cmd_handle(struct hci_cmd *cmd,
-		uint8_t *len, uint8_t **out)
+		uint8_t *len, struct hci_evt *evt)
 {
-	struct hci_evt *evt;
 	struct hci_evt_cmd_cmplt *cc;
 	union hci_evt_cmd_cmplt_params *ccp;
 
-	evt = (struct hci_evt *)&hci_context.tx[1];
 	cc = &evt->params.cmd_cmplt;
 	ccp = &evt->params.cmd_cmplt.params;
 
@@ -1418,17 +1333,10 @@ static int vs_cmd_handle(struct hci_cmd *cmd,
 	case HCI_OCF_NRF_SET_BD_ADDR:
 		ll_address_set(0, &cmd->params.nrf_set_bd_addr.addr[0]);
 
-		hci_context.tx[0] = HCI_EVT;
-
-		evt = (struct hci_evt *)&hci_context.tx[1];
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_nrf_set_bd_addr);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->nrf_set_bd_addr.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
-		*out = &hci_context.tx[0];
 		break;
 
 	case HCI_OCF_NRF_CONFIG_ACTIVE_SIGNAL:
@@ -1436,16 +1344,10 @@ static int vs_cmd_handle(struct hci_cmd *cmd,
 						(cmd->params.nrf_cfg_active_sig.
 						 distance * 1000));
 
-		hci_context.tx[0] = HCI_EVT;
-
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_nrf_cfg_active_sig);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 
 		ccp->nrf_cfg_active_sig.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
-		*out = &hci_context.tx[0];
 		break;
 
 	default:
@@ -1461,6 +1363,7 @@ static void hci_cmd_handle(struct hci_cmd *cmd, uint8_t *len, uint8_t **out)
 {
 	struct hci_evt *evt;
 	struct hci_evt_cmd_cmplt *cc;
+	struct hci_evt_cmd_status *cs;
 	union hci_evt_cmd_cmplt_params *ccp;
 	int err;
 
@@ -1468,25 +1371,25 @@ static void hci_cmd_handle(struct hci_cmd *cmd, uint8_t *len, uint8_t **out)
 	hci_context.tx[0] = HCI_EVT;
 	evt = (struct hci_evt *)&hci_context.tx[1];
 	cc = &evt->params.cmd_cmplt;
+	cs = &evt->params.cmd_status;
 	ccp = &evt->params.cmd_cmplt.params;
 
 	switch (cmd->opcode.ogf) {
 	case HCI_OGF_LINK_CONTROL:
-		err = link_control_cmd_handle(cmd, len);
+		err = link_control_cmd_handle(cmd, len, evt);
 		break;
 	case HCI_OGF_CONTROL_AND_BASEBAND:
-		err = ctrl_bb_cmd_handle(cmd, len);
+		err = ctrl_bb_cmd_handle(cmd, len, evt);
 		break;
 	case HCI_OGF_INFORMATIONAL:
-		err = info_cmd_handle(cmd, len);
+		err = info_cmd_handle(cmd, len, evt);
 		break;
 	case HCI_OGF_LE_CONTROLLER:
-		err = controller_cmd_handle(cmd, len, out);
+		err = controller_cmd_handle(cmd, len, evt);
 		break;
 	case HCI_OGF_VENDOR_SPECIFIC:
-		err = vs_cmd_handle(cmd, len, out);
+		err = vs_cmd_handle(cmd, len, evt);
 		break;
-
 	default:
 		err = -EINVAL;
 	}
@@ -1494,11 +1397,23 @@ static void hci_cmd_handle(struct hci_cmd *cmd, uint8_t *len, uint8_t **out)
 	if (err == -EINVAL) {
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_unknown_hci_command);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
 		ccp->unknown_hci_command.status =
 		    HCI_EVT_ERROR_CODE_UNKNOWN_HCI_COMMAND;
 		*len = HCI_EVT_LEN(evt);
+	}
+
+	switch (evt->code) {
+	case HCI_EVT_CODE_COMMAND_COMPLETE:
+		cc->num_cmd_pkt = 1;
+		cc->opcode = cmd->opcode;
+		break;
+
+	case HCI_EVT_CODE_COMMAND_STATUS:
+		cs->num_cmd_pkt = 1;
+		cs->opcode = cmd->opcode;
+		break;
+	default:
+		break;
 	}
 }
 
