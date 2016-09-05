@@ -11,8 +11,7 @@ else
 Kconfig := Kconfig
 endif
 
-UNAME := $(shell uname)
-ifeq (MINGW, $(findstring MINGW, $(UNAME)))
+ifeq ($(HOST_OS),MINGW)
 HOST_LOADLIBES ?= -lregex
 export HOST_LOADLIBES
 endif
