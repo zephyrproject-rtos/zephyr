@@ -20,6 +20,7 @@
 #include <string.h>
 #include <toolchain.h>
 #include <errno.h>
+#include <misc/byteorder.h>
 
 #include "defines.h"
 #include "ticker.h"
@@ -741,51 +742,56 @@ static struct {
 	uint8_t tx[HCI_PACKET_SIZE_MAX];
 } hci_context;
 
-#define HCI_EVT_LEN(evt) ((uint8_t)(1 + offsetof(struct hci_evt, params) + \
+#define HCI_EVT_LEN(evt) ((uint8_t)(1 + sizeof(struct bt_hci_evt_hdr) + \
 			evt->len))
 
 #define HCI_DATA_LEN(dat)((uint8_t)(1 + offsetof(struct hci_data, data) + \
 			       dat->len))
 
-#define HCI_CC_LEN(s)((uint8_t)(offsetof(struct hci_evt_cmd_cmplt, params) + \
+#define HCI_CC_LEN(s)((uint8_t)(sizeof(struct bt_hci_evt_cmd_complete) + \
 			sizeof(struct s)))
 
-static int link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
-				   struct hci_evt *evt)
+
+static void disconnect(uint8_t *cp, uint8_t *len, struct hci_evt *evt)
 {
+	struct bt_hci_cp_disconnect *cmd = (void *)cp;
+	struct hci_evt_cmd_status *cs = &evt->params.cmd_status;
 	uint32_t status;
-	struct hci_evt_cmd_status *cs;
 
-	cs = &evt->params.cmd_status;
+	status = radio_terminate_ind_send(cmd->handle, cmd->reason);
 
-	switch (cmd->opcode.ocf) {
-	case HCI_OCF_DISCONNECT:
+	evt->code = HCI_EVT_CODE_COMMAND_STATUS;
+	evt->len = sizeof(struct hci_evt_cmd_status);
 
-		status = radio_terminate_ind_send(
-				cmd->params.disconnect.handle,
-				cmd->params.disconnect.reason);
+	cs->status = (!status) ?  HCI_EVT_ERROR_CODE_SUCCESS :
+		HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+}
 
-		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
-		evt->len = sizeof(struct hci_evt_cmd_status);
+static void read_remote_ver_info(uint8_t *cp, uint8_t *len, struct hci_evt *evt)
+{
+	struct bt_hci_cp_read_remote_version_info *cmd = (void *)cp;
+	struct hci_evt_cmd_status *cs = &evt->params.cmd_status;
+	uint32_t status;
 
-		cs->status = (!status) ?  HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	status = radio_version_ind_send(cmd->handle);
 
+	evt->code = HCI_EVT_CODE_COMMAND_STATUS;
+	evt->len = sizeof(struct hci_evt_cmd_status);
+
+	cs->status = (!status) ? HCI_EVT_ERROR_CODE_SUCCESS :
+		HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+}
+
+static int link_control_cmd_handle(uint8_t ocf, uint8_t *cp,
+				   uint8_t *len, struct hci_evt *evt)
+{
+	switch (ocf) {
+	case BT_OCF(BT_HCI_OP_DISCONNECT):
+		disconnect(cp, len, evt);
 		break;
-
-	case HCI_OCF_READ_REMOTE_VERSION_INFO:
-
-		status = radio_version_ind_send(cmd->params.disconnect.handle);
-
-		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
-		evt->len = sizeof(struct hci_evt_cmd_status);
-
-		cs->status = (!status) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
-
+	case BT_OCF(BT_HCI_OP_READ_REMOTE_VERSION_INFO):
+		read_remote_ver_info(cp, len, evt);
 		break;
-
 	default:
 		return -EINVAL;
 	}
@@ -795,36 +801,40 @@ static int link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	return 0;
 }
 
-static int ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
+static void set_event_mask(uint8_t *cp, uint8_t *len, struct hci_evt *evt)
+{
+	union hci_evt_cmd_cmplt_params *ccp = &evt->params.cmd_cmplt.params;
+
+	/** TODO */
+
+	evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
+	evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_set_event_mask);
+
+	ccp->set_event_mask.status = HCI_EVT_ERROR_CODE_SUCCESS;
+}
+
+static void reset(uint8_t *cp, uint8_t *len, struct hci_evt *evt)
+{
+	union hci_evt_cmd_cmplt_params *ccp = &evt->params.cmd_cmplt.params;
+
+	/** TODO */
+
+	evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
+	evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_reset);
+
+	ccp->reset.status = HCI_EVT_ERROR_CODE_SUCCESS;
+}
+
+static int ctrl_bb_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
 			      struct hci_evt *evt)
 {
-	struct hci_evt_cmd_cmplt *cc;
-	union hci_evt_cmd_cmplt_params *ccp;
-
-	cc = &evt->params.cmd_cmplt;
-	ccp = &evt->params.cmd_cmplt.params;
-
-	switch (cmd->opcode.ocf) {
-	case HCI_OCF_SET_EVENT_MASK:
-
-		/** TODO */
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_set_event_mask);
-
-		ccp->set_event_mask.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
+	switch (ocf) {
+	case BT_OCF(BT_HCI_OP_SET_EVENT_MASK):
+		set_event_mask(cp, len, evt);
 		break;
 
-	case HCI_OCF_RESET:
-
-		/** TODO */
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_reset);
-
-		ccp->reset.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
+	case BT_OCF(BT_HCI_OP_RESET):
+		reset(cp, len, evt);
 		break;
 
 	default:
@@ -836,7 +846,7 @@ static int ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	return 0;
 }
 
-static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
+static int info_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
 			   struct hci_evt *evt)
 {
 	struct hci_evt_cmd_cmplt *cc;
@@ -929,7 +939,7 @@ static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	return 0;
 }
 
-static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
+static int controller_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
 				 struct hci_evt *evt)
 {
 	uint32_t status;
@@ -1320,7 +1330,7 @@ static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 	return 0;
 }
 
-static int vs_cmd_handle(struct hci_cmd *cmd,
+static int vs_cmd_handle(uint8_t ocf, struct hci_cmd *cmd,
 		uint8_t *len, struct hci_evt *evt)
 {
 	struct hci_evt_cmd_cmplt *cc;
@@ -1359,58 +1369,66 @@ static int vs_cmd_handle(struct hci_cmd *cmd,
 	return 0;
 }
 
-static void hci_cmd_handle(struct hci_cmd *cmd, uint8_t *len, uint8_t **out)
+static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
+			   uint8_t **out)
 {
-	struct hci_evt *evt;
-	struct hci_evt_cmd_cmplt *cc;
-	struct hci_evt_cmd_status *cs;
-	union hci_evt_cmd_cmplt_params *ccp;
+	struct bt_hci_evt_hdr *evt;
+	struct bt_hci_evt_cmd_complete *cc;
+	struct bt_hci_evt_cmd_status *cs;
+	struct bt_hci_evt_cc_status *ccs;
 	int err;
+	uint16_t opcode;
+	uint8_t ocf;
+	uint8_t *cp;
 
 	*out = &hci_context.tx[0];
 	hci_context.tx[0] = HCI_EVT;
-	evt = (struct hci_evt *)&hci_context.tx[1];
-	cc = &evt->params.cmd_cmplt;
-	cs = &evt->params.cmd_status;
-	ccp = &evt->params.cmd_cmplt.params;
+	evt = (void *)&hci_context.tx[1];
+	cc = (void *)((uint8_t *)evt + sizeof(struct bt_hci_evt_hdr));
+	cs = (void *)((uint8_t *)evt + sizeof(struct bt_hci_evt_hdr));
+	ccs = (void *)((uint8_t *)cc +
+			sizeof(struct bt_hci_evt_cmd_complete));
 
-	switch (cmd->opcode.ogf) {
-	case HCI_OGF_LINK_CONTROL:
-		err = link_control_cmd_handle(cmd, len, evt);
+	opcode = sys_le16_to_cpu(cmd->opcode);
+	ocf = BT_OCF(opcode);
+	cp = ((uint8_t *)cmd) + sizeof(struct bt_hci_cmd_hdr);
+
+	switch (BT_OGF(opcode)) {
+	case BT_OGF_LINK_CTRL:
+		err = link_control_cmd_handle(ocf, cp, len, (void *)evt);
 		break;
-	case HCI_OGF_CONTROL_AND_BASEBAND:
-		err = ctrl_bb_cmd_handle(cmd, len, evt);
+	case BT_OGF_BASEBAND:
+		err = ctrl_bb_cmd_handle(ocf, cp, len, (void *)evt);
 		break;
-	case HCI_OGF_INFORMATIONAL:
-		err = info_cmd_handle(cmd, len, evt);
+	case BT_OGF_INFO:
+		err = info_cmd_handle(ocf, (void *)cmd, len, (void *)evt);
 		break;
-	case HCI_OGF_LE_CONTROLLER:
-		err = controller_cmd_handle(cmd, len, evt);
+	case BT_OGF_LE:
+		err = controller_cmd_handle(ocf, (void *)cmd, len, (void *)evt);
 		break;
-	case HCI_OGF_VENDOR_SPECIFIC:
-		err = vs_cmd_handle(cmd, len, evt);
+	case BT_OGF_VS:
+		err = vs_cmd_handle(ocf, (void *)cmd, len, (void *)evt);
 		break;
 	default:
 		err = -EINVAL;
 	}
 
 	if (err == -EINVAL) {
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_unknown_hci_command);
-		ccp->unknown_hci_command.status =
-		    HCI_EVT_ERROR_CODE_UNKNOWN_HCI_COMMAND;
+		evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+		evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+		ccs->status = BT_HCI_ERR_UNKNOWN_CMD;
 		*len = HCI_EVT_LEN(evt);
 	}
 
-	switch (evt->code) {
-	case HCI_EVT_CODE_COMMAND_COMPLETE:
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
+	switch (evt->evt) {
+	case BT_HCI_EVT_CMD_COMPLETE:
+		cc->ncmd = 1;
+		cc->opcode = opcode;
 		break;
 
-	case HCI_EVT_CODE_COMMAND_STATUS:
-		cs->num_cmd_pkt = 1;
-		cs->opcode = cmd->opcode;
+	case BT_HCI_EVT_CMD_STATUS:
+		cs->ncmd = 1;
+		cs->opcode = opcode;
 		break;
 	default:
 		break;
@@ -1459,7 +1477,7 @@ static void hci_data_handle(void)
 
 void hci_handle(uint8_t x, uint8_t *len, uint8_t **out)
 {
-	struct hci_cmd *cmd;
+	struct bt_hci_cmd_hdr *cmd;
 
 	hci_context.rx[hci_context.rx_len++] = x;
 
@@ -1471,13 +1489,16 @@ void hci_handle(uint8_t x, uint8_t *len, uint8_t **out)
 
 	switch (hci_context.rx[0]) {
 	case HCI_CMD:
-		if (!(hci_context.rx_len > offsetof(struct hci_cmd, params))) {
+		/* include 1 + for H4 packet type */
+		if (hci_context.rx_len < (1 + sizeof(struct bt_hci_cmd_hdr))) {
 			break;
 		}
 
-		cmd = (struct hci_cmd *)&hci_context.rx[1];
+		cmd = (struct bt_hci_cmd_hdr *)&hci_context.rx[1];
 		if (hci_context.rx_len >=
-		    (1 + offsetof(struct hci_cmd, params) + cmd->len)) {
+		    /* include 1 + for H4 packet type */
+		    (1 + sizeof(struct bt_hci_cmd_hdr) + cmd->param_len)) {
+			/* packet fully received, process it */
 			hci_cmd_handle(cmd, len, out);
 			hci_context.rx_len = 0;
 		}
