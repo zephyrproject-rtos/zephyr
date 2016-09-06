@@ -107,7 +107,7 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 void net_buf_reserve(struct net_buf *buf, size_t reserve)
 {
 	NET_BUF_ASSERT(buf->len == 0);
-	NET_BUF_DBG("buf %p reserve %u", buf, reserve);
+	NET_BUF_DBG("buf %p reserve %u\n", buf, reserve);
 
 	buf->data = buf->__buf + reserve;
 }
