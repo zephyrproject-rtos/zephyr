@@ -171,10 +171,10 @@ static void init(void)
 static uint8_t send_packet(struct net_buf *buf,
 			   mac_callback_t sent_callback, void *ptr)
 {
+	int ret = MAC_TX_OK;
 	bool is_broadcast, ack_required;
 	uint8_t attempts;
 	uint8_t retries;
-	int ret;
 
 #ifdef SIMPLERDC_802154_ACK_REQ
 	packetbuf_set_attr(buf, PACKETBUF_ATTR_MAC_ACK, 1);
