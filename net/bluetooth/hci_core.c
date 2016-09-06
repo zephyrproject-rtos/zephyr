@@ -2247,7 +2247,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 
 static void hci_cmd_complete(struct net_buf *buf)
 {
-	struct hci_evt_cmd_complete *evt = (void *)buf->data;
+	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
 	uint8_t status;
 

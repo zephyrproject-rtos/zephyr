@@ -842,7 +842,7 @@ struct bt_hci_evt_remote_features {
 } __packed;
 
 #define BT_HCI_EVT_CMD_COMPLETE                 0x0e
-struct hci_evt_cmd_complete {
+struct bt_hci_evt_cmd_complete {
 	uint8_t  ncmd;
 	uint16_t opcode;
 } __packed;
