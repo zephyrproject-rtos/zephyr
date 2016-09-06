@@ -908,7 +908,7 @@ struct net_if_api {
 		.mtu = _mtu,						\
 	}
 
-/* Network device initialization macro */
+/* Network device initialization macros */
 
 #define NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
 			data, cfg_info, prio, api, l2,		\
@@ -917,6 +917,19 @@ struct net_if_api {
 			    cfg_info, NANOKERNEL, prio, api);	\
 	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, 0, l2, mtu)
+
+/**
+ * If your network device needs more than one instance of a network interface,
+ * Use this macro below and provide a different instance suffix each time
+ * (0, 1, 2, ... or a, b, c ... whatever works for you)
+ */
+#define NET_DEVICE_INIT_INSTANCE(dev_name, drv_name, instance, init_fn,	\
+				 data, cfg_info, prio, api, l2,		\
+				 l2_ctx_type, mtu)			\
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		\
+			    cfg_info, NANOKERNEL, prio, api);		\
+	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
+	NET_IF_INIT(dev_name, instance, l2, mtu)
 
 #ifdef __cplusplus
 }
