@@ -10,6 +10,20 @@ applications on the following Mac OS version:
 
 * Mac OS X 10.11 (El Capitan)
 
+Developing for Zephyr on OS X generally requires you to build the
+toolchain yourself. However, if there is already an OS X toolchain for your
+target architecture you can use it directly.
+
+Using a 3rd Party toolchain
+***************************
+
+If a toolchain is available for the architecture you plan to build for, then
+you can use it as explained in:
+:ref:`third_party_x_compilers`.
+
+An example of an available 3rd party toolchain is GCC ARM Embedded for the
+Cortex-M family of cores.
+
 .. _mac_requirements:
 
 Installing Requirements and Dependencies
