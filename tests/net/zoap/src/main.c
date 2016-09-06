@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 #include <misc/printk.h>
 
@@ -34,13 +35,21 @@
 #define ZOAP_BUF_SIZE 128
 #define ZOAP_LIMITED_BUF_SIZE 9
 
+#define NUM_PENDINGS 3
+
 static struct nano_fifo zoap_fifo;
 static NET_BUF_POOL(zoap_pool, 1, ZOAP_BUF_SIZE,
 		    &zoap_fifo, NULL, sizeof(struct ip_buf));
 
+static struct nano_fifo zoap_incoming_fifo;
+static NET_BUF_POOL(zoap_incoming_pool, 1, ZOAP_BUF_SIZE,
+		    &zoap_incoming_fifo, NULL, sizeof(struct ip_buf));
+
 static struct nano_fifo zoap_limited_fifo;
 static NET_BUF_POOL(zoap_limited_pool, 1, ZOAP_LIMITED_BUF_SIZE,
 		    &zoap_limited_fifo, NULL, sizeof(struct ip_buf));
+
+static struct zoap_pending pendings[NUM_PENDINGS];
 
 static int test_build_empty_pdu(void)
 {
@@ -392,6 +401,107 @@ done:
 	return result;
 }
 
+static int test_retransmit_second_round(void)
+{
+	struct zoap_packet resp;
+	struct zoap_pending *pending, *resp_pending;
+	struct zoap_packet pkt;
+	struct net_buf *buf, *resp_buf = NULL;
+	uint16_t id;
+	int result = TC_FAIL;
+	int r;
+
+	buf = net_buf_get(&zoap_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+	ip_buf_appdata(buf) = net_buf_tail(buf);
+	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	r = zoap_packet_init(&pkt, buf);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	id = zoap_next_id();
+
+	zoap_header_set_version(&pkt, 1);
+	zoap_header_set_type(&pkt, ZOAP_TYPE_CON);
+	zoap_header_set_code(&pkt, ZOAP_METHOD_GET);
+	zoap_header_set_id(&pkt, id);
+
+	pending = zoap_pending_next_unused(pendings, NUM_PENDINGS);
+	if (!pending) {
+		TC_PRINT("No free pending\n");
+		goto done;
+	}
+
+	r = zoap_pending_init(pending, &pkt);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	/* We "send" the packet the first time here */
+	if (!zoap_pending_cycle(pending)) {
+		TC_PRINT("Pending expired too early\n");
+		goto done;
+	}
+
+	/* We simulate that the first transmission got lost */
+
+	if (!zoap_pending_cycle(pending)) {
+		TC_PRINT("Pending expired too early\n");
+		goto done;
+	}
+
+	resp_buf = net_buf_get(&zoap_incoming_fifo, 0);
+	if (!resp_buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+	ip_buf_appdata(resp_buf) = net_buf_tail(resp_buf);
+	ip_buf_appdatalen(resp_buf) = net_buf_tailroom(resp_buf);
+
+	r = zoap_packet_init(&resp, resp_buf);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	zoap_header_set_version(&resp, 1);
+	zoap_header_set_type(&resp, ZOAP_TYPE_ACK);
+	zoap_header_set_id(&resp, id); /* So it matches the request */
+
+	/* Now we get the ack from the remote side */
+	resp_pending = zoap_pending_received(&resp, pendings, NUM_PENDINGS);
+	if (pending != resp_pending) {
+		TC_PRINT("Invalid pending %p should be %p\n",
+			 resp_pending, pending);
+		goto done;
+	}
+
+	resp_pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
+	if (resp_pending) {
+		TC_PRINT("There should be no active pendings\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	net_buf_unref(buf);
+	if (resp_buf) {
+		net_buf_unref(resp_buf);
+	}
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
 static const struct {
 	const char *name;
 	int (*func)(void);
@@ -401,6 +511,7 @@ static const struct {
 	{ "No size for options test", test_build_no_size_for_options, },
 	{ "Parse emtpy PDU test", test_parse_empty_pdu, },
 	{ "Parse simple PDU test", test_parse_simple_pdu, },
+	{ "Test retransmission", test_retransmit_second_round, },
 };
 
 int main(int argc, char *argv[])
@@ -411,6 +522,7 @@ int main(int argc, char *argv[])
 
 	net_buf_pool_init(zoap_pool);
 	net_buf_pool_init(zoap_limited_pool);
+	net_buf_pool_init(zoap_incoming_pool);
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		if (tests[count].func() == TC_PASS) {
