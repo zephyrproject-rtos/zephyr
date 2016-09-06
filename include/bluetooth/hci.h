@@ -21,6 +21,7 @@
 #include <toolchain.h>
 #include <stdint.h>
 #include <string.h>
+#include <misc/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,8 +65,12 @@ static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 }
 
 /* HCI Error Codes */
+#define BT_HCI_ERR_UNKNOWN_CMD                  0x01
 #define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
 #define BT_HCI_ERR_AUTHENTICATION_FAIL          0x05
+#define BT_HCI_ERR_PIN_OR_KEY_MISSING           0x06
+#define BT_HCI_ERR_MEM_CAPACITY_EXCEEDED        0x07
+#define BT_HCI_ERR_CMD_DISALLOWED               0x0c
 #define BT_HCI_ERR_INSUFFICIENT_RESOURCES       0x0d
 #define BT_HCI_ERR_UNSUPP_FEATURE_PARAMS_VAL    0x11
 #define BT_HCI_ERR_REMOTE_USER_TERM_CONN        0x13
@@ -189,9 +194,15 @@ struct bt_hci_cmd_hdr {
 #define BT_OGF_BASEBAND                         0x03
 #define BT_OGF_INFO                             0x04
 #define BT_OGF_LE                               0x08
+#define BT_OGF_VS                               0x3f
 
 /* Construct OpCode from OGF and OCF */
 #define BT_OP(ogf, ocf)                         ((ocf) | ((ogf) << 10))
+
+/* Obtain OGF from OpCode */
+#define BT_OGF(opcode)                          (((opcode) >> 10) & BIT_MASK(6))
+/* Obtain OCF from OpCode */
+#define BT_OCF(opcode)                          ((opcode) & BIT_MASK(10))
 
 #define BT_HCI_OP_INQUIRY                       BT_OP(BT_OGF_LINK_CTRL, 0x0001)
 struct bt_hci_op_inquiry {
@@ -307,6 +318,11 @@ struct bt_hci_cp_read_remote_features {
 struct bt_hci_cp_read_remote_ext_features {
 	uint16_t handle;
 	uint8_t  page;
+} __packed;
+
+#define BT_HCI_OP_READ_REMOTE_VERSION_INFO      BT_OP(BT_OGF_LINK_CTRL, 0x001d)
+struct bt_hci_cp_read_remote_version_info {
+	uint16_t handle;
 } __packed;
 
 #define BT_HCI_OP_IO_CAPABILITY_REPLY           BT_OP(BT_OGF_LINK_CTRL, 0x002b)
@@ -845,6 +861,10 @@ struct bt_hci_evt_remote_features {
 struct bt_hci_evt_cmd_complete {
 	uint8_t  ncmd;
 	uint16_t opcode;
+} __packed;
+
+struct bt_hci_evt_cc_status {
+	uint8_t  status;
 } __packed;
 
 #define BT_HCI_EVT_CMD_STATUS                   0x0f
