@@ -639,8 +639,23 @@ static void smp_br_reset(struct bt_smp *smp)
 static void smp_br_timeout(struct nano_work *work)
 {
 	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_keys *keys;
+	bt_addr_le_t addr;
 
 	BT_ERR("SMP Timeout");
+
+	/*
+	 * For dualmode devices LE address is same as BR/EDR address and is of
+	 * public type.
+	 */
+	bt_addr_copy(&addr.a, &conn->br.dst);
+	addr.type = BT_ADDR_LE_PUBLIC;
+
+	keys = bt_keys_find_addr(&addr);
+	if (keys) {
+		bt_keys_clear(keys);
+	}
 
 	smp_br_reset(smp);
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
