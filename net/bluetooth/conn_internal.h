@@ -51,7 +51,9 @@ struct bt_conn_le {
 	uint16_t		latency;
 	uint16_t		timeout;
 
-	uint8_t			features[8];
+	uint8_t			features[1][8];
+
+	struct bt_keys		*keys;
 
 	/* Delayed work for connection update handling */
 	struct nano_delayed_work update_work;
@@ -61,14 +63,6 @@ struct bt_conn_le {
 /* For now reserve space for 2 pages of LMP remote features */
 #define LMP_MAX_PAGES 2
 
-/* Helper to get remote extended features bit available at page 0 */
-#define lmp_ext_feat_capable(conn) \
-	((conn)->br.features[0][7] & BT_LMP_REMOTE_EXT_FEATURES)
-
-/* Helper to validate SSP host support within retrieved remote LMP features */
-#define lmp_ssp_host_supported(conn) \
-	((conn)->br.features[1][0] & BT_LMP_HOST_SSP)
-
 struct bt_conn_br {
 	bt_addr_t		dst;
 	uint8_t			remote_io_capa;
@@ -76,6 +70,8 @@ struct bt_conn_br {
 	uint8_t			pairing_method;
 	/* remote LMP features pages per 8 bytes each */
 	uint8_t			features[LMP_MAX_PAGES][8];
+
+	struct bt_keys_link_key	*link_key;
 };
 #endif
 
@@ -99,8 +95,6 @@ struct bt_conn {
 
 	/* Queue for outgoing ACL data */
 	struct nano_fifo	tx_queue;
-
-	struct bt_keys		*keys;
 
 	/* L2CAP channels */
 	void			*channels;

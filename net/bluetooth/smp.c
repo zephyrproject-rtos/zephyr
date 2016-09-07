@@ -62,16 +62,24 @@
 #define SIGN_DIST 0
 #endif
 
-#define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY | SIGN_DIST)
-
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
-#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | SIGN_DIST)
+#define ID_DIST BT_SMP_DIST_ID_KEY
 #else
-#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | SIGN_DIST)
+#define ID_DIST 0
 #endif
 
-#define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_LINK_KEY))
-#define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_LINK_KEY))
+#if defined(CONFIG_BLUETOOTH_BREDR)
+#define LINK_DIST BT_SMP_DIST_LINK_KEY
+#else
+#define LINK_DIST 0
+#endif
+
+#define RECV_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | SIGN_DIST |\
+		   LINK_DIST)
+#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | ID_DIST | SIGN_DIST | LINK_DIST)
+
+#define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY))
+#define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY))
 
 #define BT_SMP_AUTH_MASK	0x07
 #define BT_SMP_AUTH_MASK_SC	0x0f
@@ -99,6 +107,7 @@ enum {
 	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
 	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as slave) */
+	SMP_FLAG_DERIVE_LK,	/* if Link Key should be derived */
 
 	/* Total number of flags - must be at the end */
 	SMP_NUM_FLAGS,
@@ -535,6 +544,72 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
+{
+	uint8_t ws[16];
+	uint8_t key_id_s[4];
+	int err;
+
+	BT_DBG("w %s", bt_hex(w, 16));
+	BT_DBG("key_id %s", bt_hex(key_id, 4));
+
+	swap_buf(ws, w, 16);
+	swap_buf(key_id_s, key_id, 4);
+
+	err = bt_smp_aes_cmac(ws, key_id_s, 4, res);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("res %s", bt_hex(res, 16));
+
+	swap_in_place(res, 16);
+
+	return 0;
+}
+
+static void sc_derive_link_key(struct bt_smp *smp)
+{
+	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
+	static const uint8_t tmp1[4] = { 0x31, 0x70, 0x6d, 0x74 };
+	static const uint8_t lebr[4] = { 0x72, 0x62, 0x65, 0x6c };
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_keys_link_key *link_key;
+	uint8_t ilk[16];
+
+	BT_DBG("");
+
+	/* TODO handle errors? */
+
+	/*
+	 * At this point remote device identity is known so we can use
+	 * destination address here
+	 */
+	link_key = bt_keys_get_link_key(&conn->le.dst.a);
+	if (!link_key) {
+		return;
+	}
+
+	if (smp_h6(conn->le.keys->ltk.val, tmp1, ilk)) {
+		bt_keys_link_key_clear(link_key);
+		return;
+	}
+
+	if (smp_h6(ilk, lebr, link_key->val)) {
+		bt_keys_link_key_clear(link_key);
+	}
+
+	atomic_set_bit(link_key->flags, BT_LINK_KEY_SC);
+
+	if (atomic_test_bit(conn->le.keys->flags, BT_KEYS_AUTHENTICATED)) {
+		atomic_set_bit(link_key->flags, BT_LINK_KEY_AUTHENTICATED);
+	} else {
+		atomic_clear_bit(link_key->flags, BT_LINK_KEY_AUTHENTICATED);
+	}
+}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 static void smp_reset(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -563,6 +638,26 @@ static void smp_reset(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 }
 
+static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
+{
+	BT_DBG("status 0x%x", status);
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (!status) {
+		/*
+		 * Don't derive if Debug Keys are used.
+		 * TODO should we allow this if BR/EDR is already connected?
+		 */
+		if (atomic_test_bit(smp->flags, SMP_FLAG_DERIVE_LK) &&
+		    !atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
+			sc_derive_link_key(smp);
+		}
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
+	smp_reset(smp);
+}
+
 static void smp_timeout(struct nano_work *work)
 {
 	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
@@ -574,11 +669,11 @@ static void smp_timeout(struct nano_work *work)
 	 * pairing failed and don't store any keys from this pairing.
 	 */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
-	    smp->chan.chan.conn->keys) {
-		bt_keys_clear(smp->chan.chan.conn->keys, BT_KEYS_ALL);
+	    smp->chan.chan.conn->le.keys) {
+		bt_keys_clear(smp->chan.chan.conn->le.keys);
 	}
 
-	smp_reset(smp);
+	smp_pairing_complete(smp, BT_SMP_ERR_UNSPECIFIED);
 
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
 }
@@ -611,8 +706,8 @@ static int smp_error(struct bt_smp *smp, uint8_t reason)
 	struct bt_smp_pairing_fail *rsp;
 	struct net_buf *buf;
 
-	/* reset context */
-	smp_reset(smp);
+	/* reset context and report */
+	smp_pairing_complete(smp, reason);
 
 	buf = smp_create_pdu(smp->chan.chan.conn, BT_SMP_CMD_PAIRING_FAIL,
 			     sizeof(*rsp));
@@ -767,7 +862,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 static void legacy_distribute_keys(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	struct bt_keys *keys = conn->keys;
+	struct bt_keys *keys = conn->le.keys;
 
 	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
 		struct bt_smp_encrypt_info *info;
@@ -829,7 +924,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 static void bt_smp_distribute_keys(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	struct bt_keys *keys = conn->keys;
+	struct bt_keys *keys = conn->le.keys;
 
 	if (!keys) {
 		BT_ERR("No keys space for %s", bt_addr_le_str(&conn->le.dst));
@@ -1249,7 +1344,7 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
+		smp_pairing_complete(smp, 0);
 	}
 
 	return 0;
@@ -2054,11 +2149,11 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	 * so if there are any keys distributed, shall be cleared.
 	 */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
-	    smp->chan.chan.conn->keys) {
-		bt_keys_clear(smp->chan.chan.conn->keys, BT_KEYS_ALL);
+	    smp->chan.chan.conn->le.keys) {
+		bt_keys_clear(smp->chan.chan.conn->le.keys);
 	}
 
-	smp_reset(smp);
+	smp_pairing_complete(smp, req->reason);
 
 	/* return no error to avoid sending Pairing Failed in response */
 	return 0;
@@ -2159,7 +2254,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
+		smp_pairing_complete(smp, 0);
 	}
 
 	return 0;
@@ -2197,7 +2292,7 @@ static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
+		smp_pairing_complete(smp, 0);
 	}
 
 	return 0;
@@ -2224,20 +2319,21 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		auth = req->auth_req & BT_SMP_AUTH_MASK;
 	}
 
-	if (!conn->keys) {
-		conn->keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
-		if (!conn->keys) {
-			conn->keys = bt_keys_find(BT_KEYS_LTK, &conn->le.dst);
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
+		if (!conn->le.keys) {
+			conn->le.keys = bt_keys_find(BT_KEYS_LTK,
+						     &conn->le.dst);
 		}
 	}
 
-	if (!conn->keys) {
+	if (!conn->le.keys) {
 		goto pair;
 	}
 
 	/* if MITM required key must be authenticated */
 	if ((auth & BT_SMP_AUTH_MITM) &&
-	    !atomic_test_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED)) {
+	    !atomic_test_bit(conn->le.keys->flags, BT_KEYS_AUTHENTICATED)) {
 		if (get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT) {
 			BT_INFO("New auth requirements: 0x%x, repairing",
 				auth);
@@ -2249,16 +2345,17 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		goto pair;
 	}
 
-	/* if LE SC required and no p256 key present reapair */
-	if ((auth & BT_SMP_AUTH_SC) && !(conn->keys->keys & BT_KEYS_LTK_P256)) {
+	/* if LE SC required and no p256 key present repair */
+	if ((auth & BT_SMP_AUTH_SC) &&
+	    !(conn->le.keys->keys & BT_KEYS_LTK_P256)) {
 		BT_INFO("New auth requirements: 0x%x, repairing", auth);
 		goto pair;
 	}
 
-	if (bt_conn_le_start_encryption(conn, conn->keys->ltk.rand,
-					conn->keys->ltk.ediv,
-					conn->keys->ltk.val,
-					conn->keys->enc_size) < 0) {
+	if (bt_conn_le_start_encryption(conn, conn->le.keys->ltk.rand,
+					conn->le.keys->ltk.ediv,
+					conn->le.keys->ltk.val,
+					conn->le.keys->enc_size) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2608,7 +2705,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
-	struct bt_keys *keys = chan->conn->keys;
+	struct bt_keys *keys = chan->conn->le.keys;
 
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
@@ -2622,7 +2719,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 		 */
 		if (!keys->keys ||
 		    atomic_test_bit(keys->flags, BT_KEYS_DEBUG)) {
-			bt_keys_clear(keys, BT_KEYS_ALL);
+			bt_keys_clear(keys);
 		}
 	}
 
@@ -2657,6 +2754,24 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 		return;
 	}
 
+	/* derive BR/EDR LinkKey if supported by both sides */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+		if ((smp->local_dist & BT_SMP_DIST_LINK_KEY) &&
+		    (smp->remote_dist & BT_SMP_DIST_LINK_KEY)) {
+			/*
+			 * Link Key will be derived after key distribution to
+			 * make sure remote device identity is known
+			 */
+			atomic_set_bit(smp->flags, SMP_FLAG_DERIVE_LK);
+		}
+		/*
+		 * Those are used as pairing finished indicator so generated
+		 * but not distributed keys must be cleared here.
+		 */
+		smp->local_dist &= ~BT_SMP_DIST_LINK_KEY;
+		smp->remote_dist &= ~BT_SMP_DIST_LINK_KEY;
+	}
+
 	if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_ENCRYPT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
@@ -2678,7 +2793,7 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
+		smp_pairing_complete(smp, 0);
 	}
 }
 
@@ -3151,6 +3266,30 @@ static int smp_g2_test(void)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static int smp_h6_test(void)
+{
+	uint8_t w[16] = { 0x9b, 0x7d, 0x39, 0x0a, 0xa6, 0x10, 0x10, 0x34,
+			  0x05, 0xad, 0xc8, 0x57, 0xa3, 0x34, 0x02, 0xec };
+	uint8_t key_id[8] = { 0x72, 0x62, 0x65, 0x6c };
+	uint8_t exp_res[16] = { 0x99, 0x63, 0xb1, 0x80, 0xe2, 0xa9, 0xd3, 0xe8,
+				0x1c, 0xc9, 0x6d, 0xe7, 0x02, 0xe1, 0x9a, 0x2d};
+	uint8_t res[16];
+	int err;
+
+	err = smp_h6(w, key_id, res);
+	if (err) {
+		return err;
+	}
+
+	if (memcmp(res, exp_res, 16)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 static int smp_self_test(void)
 {
 	int err;
@@ -3190,6 +3329,14 @@ static int smp_self_test(void)
 		BT_ERR("SMP g2 self test failed");
 		return err;
 	}
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	err = smp_h6_test();
+	if (err) {
+		BT_ERR("SMP h6 self test failed");
+		return err;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	return 0;
 }
@@ -3388,12 +3535,12 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 * If link was successfully encrypted cleanup old keys as from now on
 	 * only keys distributed in this pairing or LTK from LE SC will be used.
 	 */
-	if (conn->keys) {
-		bt_keys_clear(conn->keys, BT_KEYS_ALL);
+	if (conn->le.keys) {
+		bt_keys_clear(conn->le.keys);
 	}
 
-	conn->keys = bt_keys_get_addr(&conn->le.dst);
-	if (!conn->keys) {
+	conn->le.keys = bt_keys_get_addr(&conn->le.dst);
+	if (!conn->le.keys) {
 		BT_ERR("Unable to get keys for %s",
 		       bt_addr_le_str(&conn->le.dst));
 		return;
@@ -3401,7 +3548,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 
 	/* mark keys as debug */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
-		atomic_set_bit(conn->keys->flags, BT_KEYS_DEBUG);
+		atomic_set_bit(conn->le.keys->flags, BT_KEYS_DEBUG);
 	}
 
 	/*
@@ -3413,16 +3560,16 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
 	case PASSKEY_CONFIRM:
-		atomic_set_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED);
+		atomic_set_bit(conn->le.keys->flags, BT_KEYS_AUTHENTICATED);
 		break;
 	case JUST_WORKS:
 	default:
 		/* unauthenticated key, clear it */
-		atomic_clear_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED);
+		atomic_clear_bit(conn->le.keys->flags, BT_KEYS_AUTHENTICATED);
 		break;
 	}
 
-	conn->keys->enc_size = get_encryption_key_size(smp);
+	conn->le.keys->enc_size = get_encryption_key_size(smp);
 
 	/*
 	 * Store LTK if LE SC is used, this is safe since LE SC is mutually
@@ -3431,11 +3578,11 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC) &&
 	    atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
-		bt_keys_add_type(conn->keys, BT_KEYS_LTK_P256);
-		memcpy(conn->keys->ltk.val, smp->tk,
-		       sizeof(conn->keys->ltk.val));
-		conn->keys->ltk.rand = 0;
-		conn->keys->ltk.ediv = 0;
+		bt_keys_add_type(conn->le.keys, BT_KEYS_LTK_P256);
+		memcpy(conn->le.keys->ltk.val, smp->tk,
+		       sizeof(conn->le.keys->ltk.val));
+		conn->le.keys->ltk.rand = 0;
+		conn->le.keys->ltk.ediv = 0;
 	}
 }
 

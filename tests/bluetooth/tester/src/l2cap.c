@@ -18,9 +18,16 @@
 
 #include <bluetooth/bluetooth.h>
 
+#include <bluetooth/l2cap.h>
+#include <misc/byteorder.h>
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
+#define DATA_MTU 230
+
+static struct nano_fifo data_fifo;
+static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
+		    BT_BUF_USER_DATA_MIN);
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
@@ -47,4 +54,11 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 			   BTP_STATUS_UNKNOWN_CMD);
 		return;
 	}
+}
+
+uint8_t tester_init_l2cap(void)
+{
+	net_buf_pool_init(data_pool);
+
+	return BTP_STATUS_SUCCESS;
 }

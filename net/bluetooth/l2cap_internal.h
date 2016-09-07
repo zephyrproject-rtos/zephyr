@@ -20,14 +20,17 @@
 
 #include <bluetooth/l2cap.h>
 
+enum l2cap_conn_list_action {
+	BT_L2CAP_CHAN_LOOKUP,
+	BT_L2CAP_CHAN_DETACH,
+};
+
 #define BT_L2CAP_CID_BR_SIG		0x0001
 #define BT_L2CAP_CID_ATT		0x0004
 #define BT_L2CAP_CID_LE_SIG		0x0005
 #define BT_L2CAP_CID_SMP		0x0006
 
-/* Supported BR/EDR fixed channels mask (first octet) */
-#define BT_L2CAP_MASK_BR_SIG		0x02
-#define BT_L2CAP_MASK_SMP		0x80
+#define BT_L2CAP_PSM_RFCOMM		0x0003
 
 struct bt_l2cap_hdr {
 	uint16_t len;
@@ -196,12 +199,6 @@ struct bt_l2cap_le_credits {
 
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	/* Supported channels mask (first octet). Only for BR/EDR. */
-	uint8_t			mask;
-#endif
-
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 
 	struct bt_l2cap_fixed_chan	*_next;
@@ -253,6 +250,9 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /* Initialize BR/EDR L2CAP signal layer */
 void bt_l2cap_br_init(void);
+
+/* Register fixed channel */
+void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan);
 
 /* Notify BR/EDR L2CAP channels about established new ACL connection */
 void bt_l2cap_br_connected(struct bt_conn *conn);

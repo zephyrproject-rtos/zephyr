@@ -333,16 +333,18 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
-	const uint16_t *data = buf;
+	uint16_t value;
 	size_t i;
 
-	if (offset > sizeof(*data)) {
+	if (offset > sizeof(uint16_t)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (offset + len > sizeof(*data)) {
+	if (offset + len > sizeof(uint16_t)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
+
+	value = sys_get_le16(buf);
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Check for existing configuration */
@@ -359,8 +361,11 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			}
 
 			bt_addr_le_copy(&ccc->cfg[i].peer, &conn->le.dst);
-			/* Only set valid if bonded */
-			ccc->cfg[i].valid = bt_addr_le_is_bonded(&conn->le.dst);
+
+			if (value) {
+				ccc->cfg[i].valid = true;
+			}
+
 			break;
 		}
 
@@ -368,9 +373,12 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			BT_WARN("No space to store CCC cfg");
 			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 		}
+	} else if (!value) {
+		/* free existing configuration for default value */
+		ccc->cfg[i].valid = false;
 	}
 
-	ccc->cfg[i].value = sys_le16_to_cpu(*data);
+	ccc->cfg[i].value = value;
 
 	BT_DBG("handle 0x%04x value %u", attr->handle, ccc->cfg[i].value);
 
@@ -455,12 +463,23 @@ static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
 }
 
 static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
-		     bt_att_func_t func, void *user_data,
+		     bt_att_func_t func, void *params,
 		     bt_att_destroy_t destroy)
 {
 	int err;
 
-	err = bt_att_send(conn, buf, func, user_data, destroy);
+	if (params) {
+		struct bt_att_req *req = params;
+
+		req->buf = buf;
+		req->func = func;
+		req->destroy = destroy;
+
+		err = bt_att_req_send(conn, req);
+	} else {
+		err = bt_att_send(conn, buf);
+	}
+
 	if (err) {
 		BT_ERR("Error sending ATT PDU: %d", err);
 		net_buf_unref(buf);
@@ -661,9 +680,11 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			}
 		} else {
 			/* Clear value if not paired */
-			if (!ccc->cfg[i].valid)
+			if (!bt_addr_le_is_bonded(&conn->le.dst)) {
+				ccc->cfg[i].valid = false;
 				memset(&ccc->cfg[i].value, 0,
 				       sizeof(ccc->cfg[i].value));
+			}
 		}
 	}
 
@@ -730,18 +751,19 @@ static void remove_subscriptions(struct bt_conn *conn)
 static void gatt_mtu_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 			 uint16_t length, void *user_data)
 {
-	bt_gatt_rsp_func_t func = user_data;
+	struct bt_gatt_exchange_params *params = user_data;
 
-	func(conn, err);
+	params->func(conn, err, params);
 }
 
-int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
+int bt_gatt_exchange_mtu(struct bt_conn *conn,
+			 struct bt_gatt_exchange_params *params)
 {
 	struct bt_att_exchange_mtu_req *req;
 	struct net_buf *buf;
 	uint16_t mtu;
 
-	if (!conn || !func) {
+	if (!conn || !params || !params->func) {
 		return -EINVAL;
 	}
 
@@ -757,7 +779,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 	req = net_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
 
-	return gatt_send(conn, buf, gatt_mtu_rsp, func, NULL);
+	return gatt_send(conn, buf, gatt_mtu_rsp, params, NULL);
 }
 
 static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
@@ -1164,7 +1186,6 @@ static int att_read_type(struct bt_conn *conn,
 {
 	struct net_buf *buf;
 	struct bt_att_read_type_req *req;
-	uint16_t *value;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_TYPE_REQ, sizeof(*req));
 	if (!buf) {
@@ -1175,11 +1196,10 @@ static int att_read_type(struct bt_conn *conn,
 	req->start_handle = sys_cpu_to_le16(params->start_handle);
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
-	value = net_buf_add(buf, sizeof(*value));
 	if (params->type == BT_GATT_DISCOVER_INCLUDE)
-		*value = sys_cpu_to_le16(BT_UUID_GATT_INCLUDE_VAL);
+		net_buf_add_le16(buf, BT_UUID_GATT_INCLUDE_VAL);
 	else
-		*value = sys_cpu_to_le16(BT_UUID_GATT_CHRC_VAL);
+		net_buf_add_le16(buf, BT_UUID_GATT_CHRC_VAL);
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
@@ -1760,9 +1780,9 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	return gatt_write_ccc(conn, params->ccc_handle, 0x0000, NULL, NULL);
 }
 
-void bt_gatt_cancel(struct bt_conn *conn)
+void bt_gatt_cancel(struct bt_conn *conn, void *params)
 {
-	bt_att_cancel(conn);
+	bt_att_req_cancel(conn, params);
 }
 
 static void add_subscriptions(struct bt_conn *conn)
