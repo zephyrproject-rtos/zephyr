@@ -615,10 +615,11 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 			 *    h: short
 			 *    l: long
 			 *    L: long double
+			 *    z: size_t or ssize_t
 			 * No further special processing is done for them.
 			 */
 
-			if (strchr("hlL", c) != NULL) {
+			if (strchr("hlLz", c) != NULL) {
 				i = c;
 				c = *format++;
 				switch (i) {
@@ -636,6 +637,12 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 					if (strchr("eEfgG", c) == NULL)
 						break;
 					break;
+
+				case 'z':
+					if (strchr("diouxX", c) == NULL)
+						break;
+					break;
+
 				}
 			}
 
