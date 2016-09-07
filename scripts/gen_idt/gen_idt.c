@@ -51,7 +51,7 @@
 /* This comes from the shared directory */
 #include "idtEnt.h"
 
-#if !defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__WIN32__)
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__WIN32__)
   #define O_BINARY 0
 #endif
 
