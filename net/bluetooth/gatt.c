@@ -333,6 +333,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
+	uint16_t value;
 	size_t i;
 
 	if (offset > sizeof(uint16_t)) {
@@ -342,6 +343,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	if (offset + len > sizeof(uint16_t)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
+
+	value = sys_get_le16(buf);
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Check for existing configuration */
@@ -358,7 +361,11 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			}
 
 			bt_addr_le_copy(&ccc->cfg[i].peer, &conn->le.dst);
-			ccc->cfg[i].valid = true;
+
+			if (value) {
+				ccc->cfg[i].valid = true;
+			}
+
 			break;
 		}
 
@@ -366,9 +373,12 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			BT_WARN("No space to store CCC cfg");
 			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 		}
+	} else if (!value) {
+		/* free existing configuration for default value */
+		ccc->cfg[i].valid = false;
 	}
 
-	ccc->cfg[i].value = sys_get_le16(buf);
+	ccc->cfg[i].value = value;
 
 	BT_DBG("handle 0x%04x value %u", attr->handle, ccc->cfg[i].value);
 
