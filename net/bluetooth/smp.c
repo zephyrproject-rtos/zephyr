@@ -81,6 +81,9 @@
 #define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY))
 #define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY))
 
+#define BR_RECV_KEYS_SC (RECV_KEYS & ~(LINK_DIST))
+#define BR_SEND_KEYS_SC (SEND_KEYS & ~(LINK_DIST))
+
 #define BT_SMP_AUTH_MASK	0x07
 #define BT_SMP_AUTH_MASK_SC	0x0f
 
@@ -661,6 +664,12 @@ static void smp_br_timeout(struct nano_work *work)
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
 }
 
+static void smp_br_send(struct bt_smp *smp, struct net_buf *buf)
+{
+	bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf);
+	nano_delayed_work_submit(&smp->work, SMP_TIMEOUT);
+}
+
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
@@ -684,10 +693,110 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	memset(smp, 0, sizeof(*smp));
 }
 
-static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
+static void smp_br_init(struct bt_smp *smp)
+{
+	/* Initialize SMP context without clearing L2CAP channel context */
+	memset((uint8_t *)smp + sizeof(smp->chan), 0,
+	       sizeof(*smp) - (sizeof(smp->chan) + sizeof(smp->work)));
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+}
+
+static void smp_br_derive_ltk(struct bt_smp *smp)
 {
 	/* TODO */
-	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static void smp_br_distribute_keys(struct bt_smp *smp)
+{
+	/* TODO */
+}
+
+static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
+{
+	struct bt_smp_pairing *req = (void *)buf->data;
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_smp_pairing *rsp;
+	struct net_buf *rsp_buf;
+
+	BT_DBG("");
+
+	/*
+	 * If a Pairing Request is received over the BR/EDR transport when
+	 * either cross-transport key derivation/generation is not supported or
+	 * the BR/EDR transport is not encrypted using a Link Key generated
+	 * using P256, a Pairing Failed shall be sent with the error code
+	 * "Cross-transport Key Derivation/Generation not allowed" (0x0E)."
+	 */
+	if (smp->chan.chan.conn->encrypt != 0x02) {
+		return BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED;
+	}
+
+	if ((req->max_key_size > BT_SMP_MAX_ENC_KEY_SIZE) ||
+	    (req->max_key_size < BT_SMP_MIN_ENC_KEY_SIZE)) {
+		return BT_SMP_ERR_ENC_KEY_SIZE;
+	}
+
+	rsp_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	smp_br_init(smp);
+
+	/*
+	 * If Secure Connections pairing has been initiated over BR/EDR, the IO
+	 * Capability, OOB data flag and Auth Req fields of the SM Pairing
+	 * Request/Response PDU shall be set to zero on transmission, and
+	 * ignored on reception.
+	 */
+	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
+
+	rsp->auth_req = 0x00;
+	rsp->io_capability = 0x00;
+	rsp->oob_flag = 0x00;
+	rsp->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
+	rsp->init_key_dist = (req->init_key_dist & BR_RECV_KEYS_SC);
+	rsp->resp_key_dist = (req->resp_key_dist & BR_RECV_KEYS_SC);
+
+	smp->local_dist = rsp->resp_key_dist;
+	smp->remote_dist = rsp->init_key_dist;
+
+	smp_br_send(smp, rsp_buf);
+
+	/* Store Pairing Req for later use */
+	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
+	memcpy(smp->preq + 1, req, sizeof(*req));
+
+	/* Store Pairing Rsp for later use */
+	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
+	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
+
+	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
+
+	/* derive LTK if requested and clear distribution bits */
+	if ((smp->local_dist & BT_SMP_DIST_ENC_KEY) &&
+	    (smp->remote_dist & BT_SMP_DIST_ENC_KEY)) {
+		smp_br_derive_ltk(smp);
+	}
+	smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
+	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
+
+	/* BR/EDR acceptor is like LE Slave and distributes keys first */
+	smp_br_distribute_keys(smp);
+
+	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+	}
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		/* TODO pairing complete */
+	}
+
+	return 0;
 }
 
 static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
