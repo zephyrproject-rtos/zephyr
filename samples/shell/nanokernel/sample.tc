@@ -1,5 +1,5 @@
 # @testcase dynamic
-#
+# @tags kernel:nano
 # @targets \
 #    board:(?!arduino_101_sss) \
 #    board:(?!quark_se_sss_devboard) \
