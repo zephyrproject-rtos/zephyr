@@ -86,7 +86,7 @@ struct bt_dev {
 	uint8_t			features[LMP_FEAT_PAGES_COUNT][8];
 
 	/* Supported commands */
-	uint8_t			supported_commands[36];
+	uint8_t			supported_commands[64];
 
 	ATOMIC_DEFINE(flags, BT_DEV_NUM_FLAGS);
 
