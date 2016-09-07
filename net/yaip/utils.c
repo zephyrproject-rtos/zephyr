@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_UTILS)
+#if defined(CONFIG_NET_DEBUG_UTILS)
 #define SYS_LOG_DOMAIN "net/utils"
 #define NET_DEBUG 1
 #endif

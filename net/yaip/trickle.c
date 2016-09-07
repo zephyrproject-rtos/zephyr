@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_TRICKLE)
+#if defined(CONFIG_NET_DEBUG_TRICKLE)
 #define SYS_LOG_DOMAIN "net/trickle"
 #define NET_DEBUG 1
 #endif

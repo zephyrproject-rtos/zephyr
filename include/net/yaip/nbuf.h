@@ -469,7 +469,7 @@ void net_nbuf_unref(struct net_buf *buf);
  */
 struct net_buf *net_nbuf_ref(struct net_buf *buf);
 
-#endif /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 /**
  * @brief Copy a buffer with fragments while reserving some extra space

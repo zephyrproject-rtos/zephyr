@@ -35,7 +35,7 @@
 
 #include <tc_util.h>
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_UDP)
+#if defined(CONFIG_NET_DEBUG_UDP)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)

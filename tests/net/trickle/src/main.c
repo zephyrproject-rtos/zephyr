@@ -35,7 +35,7 @@
 
 #include "net_private.h"
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_CONTEXT)
+#if defined(CONFIG_NET_DEBUG_CONTEXT)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
