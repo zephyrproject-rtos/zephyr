@@ -807,8 +807,29 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 static uint8_t smp_br_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 {
-	/* TODO */
-	return BT_SMP_ERR_CMD_NOTSUPP;
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_smp_pairing_fail *req = (void *)buf->data;
+	struct bt_keys *keys;
+	bt_addr_le_t addr;
+
+	BT_ERR("reason 0x%x", req->reason);
+
+	/*
+	 * For dualmode devices LE address is same as BR/EDR address and is of
+	 * public type.
+	 */
+	bt_addr_copy(&addr.a, &conn->br.dst);
+	addr.type = BT_ADDR_LE_PUBLIC;
+
+	keys = bt_keys_find_addr(&addr);
+	if (keys) {
+		bt_keys_clear(keys);
+	}
+
+	smp_br_reset(smp);
+
+	/* return no error to avoid sending Pairing Failed in response */
+	return 0;
 }
 
 static uint8_t smp_br_ident_info(struct bt_smp *smp, struct net_buf *buf)
