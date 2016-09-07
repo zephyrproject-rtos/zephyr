@@ -38,8 +38,33 @@ extern "C" {
 #define _SYS_INIT_LEVEL_MICROKERNEL  3
 #define _SYS_INIT_LEVEL_APPLICATION  4
 
+/**
+ * @def SYS_INIT
+ *
+ * @brief Run an initailization function at boot at specified priority
+ *
+ * @details This macro lets you run a function at system boot.
+ *
+ * @param init_fn Pointer to the boot function to run
+ *
+ * @param level The initialization level, See DEVICE_INIT for details.
+ *
+ * @param prio Priority within the selected initialization level. See
+ * DEVICE_INIT for details.
+ */
 #define SYS_INIT(init_fn, level, prio) \
 	DEVICE_INIT(sys_init_##init_fn, "", init_fn, NULL, NULL, level, prio)
+
+/**
+ * @def SYS_INIT_PM
+ *
+ * @brief Run an initailization function at boot at specified priority,
+ * and define functions to run at suspend/resume.
+ *
+ * @copydetails SYS_INIT
+ * @param device_pm_ops Pointer to power management functions.
+ * @param drv_name Name of this system device
+ */
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define SYS_INIT_PM(drv_name, init_fn, device_pm_ops, level, prio) \
