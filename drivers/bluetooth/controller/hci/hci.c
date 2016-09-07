@@ -745,52 +745,65 @@ static struct {
 #define HCI_EVT_LEN(evt) ((uint8_t)(1 + sizeof(struct bt_hci_evt_hdr) + \
 			evt->len))
 
-#define HCI_DATA_LEN(dat)((uint8_t)(1 + offsetof(struct hci_data, data) + \
+#define HCI_DATA_LEN(dat) ((uint8_t)(1 + offsetof(struct hci_data, data) + \
 			       dat->len))
 
-#define HCI_CC_LEN(s)((uint8_t)(sizeof(struct bt_hci_evt_cmd_complete) + \
-			sizeof(struct s)))
+#define _HCI_CC_LEN(st) ((uint8_t)(sizeof(struct bt_hci_evt_cmd_complete) + \
+			sizeof(st)))
 
+#define HCI_CC_LEN(stn) (_HCI_CC_LEN(struct stn))
 
-static void disconnect(uint8_t *cp, uint8_t *len, struct hci_evt *evt)
+#define HCI_EVTP(evt_hdr) (void *)((uint8_t *)evt_hdr + \
+			sizeof(struct bt_hci_evt_hdr))
+
+/* direct access to the command status event parameters */
+#define HCI_CS(evt_hdr) ((struct bt_hci_evt_cmd_status *)HCI_EVTP(evt_hdr))
+
+/* direct access to the command complete event parameters */
+#define HCI_CC(evt_hdr) ((struct bt_hci_evt_cmd_complete *)HCI_EVTP(evt_hdr))
+
+/* direct access to the command complete event return parameters */
+#define HCI_CC_RP(evt_hdr) ((void *)(((uint8_t *)HCI_EVTP(evt_hdr)) + \
+				     sizeof(struct bt_hci_evt_cmd_complete)))
+
+/* direct access to the command complete status event parameters */
+#define HCI_CC_ST(evt_hdr) ((struct bt_hci_evt_cc_status *)(HCI_CC_RP(evt_hdr)))
+
+static void disconnect(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_disconnect *cmd = (void *)cp;
-	struct hci_evt_cmd_status *cs = &evt->params.cmd_status;
 	uint32_t status;
 
 	status = radio_terminate_ind_send(cmd->handle, cmd->reason);
 
-	evt->code = HCI_EVT_CODE_COMMAND_STATUS;
-	evt->len = sizeof(struct hci_evt_cmd_status);
+	evt->evt = BT_HCI_EVT_CMD_STATUS;
+	evt->len = sizeof(struct bt_hci_evt_cmd_status);
 
-	cs->status = (!status) ?  HCI_EVT_ERROR_CODE_SUCCESS :
-		HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void read_remote_ver_info(uint8_t *cp, uint8_t *len, struct hci_evt *evt)
+static void read_remote_ver_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_read_remote_version_info *cmd = (void *)cp;
-	struct hci_evt_cmd_status *cs = &evt->params.cmd_status;
 	uint32_t status;
 
 	status = radio_version_ind_send(cmd->handle);
 
-	evt->code = HCI_EVT_CODE_COMMAND_STATUS;
-	evt->len = sizeof(struct hci_evt_cmd_status);
+	evt->evt = BT_HCI_EVT_CMD_STATUS;
+	evt->len = sizeof(struct bt_hci_evt_cmd_status);
 
-	cs->status = (!status) ? HCI_EVT_ERROR_CODE_SUCCESS :
-		HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 static int link_control_cmd_handle(uint8_t ocf, uint8_t *cp,
-				   uint8_t *len, struct hci_evt *evt)
+				   uint8_t *len, struct bt_hci_evt_hdr *evt)
 {
 	switch (ocf) {
 	case BT_OCF(BT_HCI_OP_DISCONNECT):
-		disconnect(cp, len, evt);
+		disconnect(cp, evt);
 		break;
 	case BT_OCF(BT_HCI_OP_READ_REMOTE_VERSION_INFO):
-		read_remote_ver_info(cp, len, evt);
+		read_remote_ver_info(cp, evt);
 		break;
 	default:
 		return -EINVAL;
@@ -801,40 +814,36 @@ static int link_control_cmd_handle(uint8_t ocf, uint8_t *cp,
 	return 0;
 }
 
-static void set_event_mask(uint8_t *cp, uint8_t *len, struct hci_evt *evt)
+static void set_event_mask(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
-	union hci_evt_cmd_cmplt_params *ccp = &evt->params.cmd_cmplt.params;
-
 	/** TODO */
 
-	evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-	evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_set_event_mask);
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
 
-	ccp->set_event_mask.status = HCI_EVT_ERROR_CODE_SUCCESS;
+	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void reset(uint8_t *cp, uint8_t *len, struct hci_evt *evt)
+static void reset(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
-	union hci_evt_cmd_cmplt_params *ccp = &evt->params.cmd_cmplt.params;
-
 	/** TODO */
 
-	evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-	evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_reset);
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
 
-	ccp->reset.status = HCI_EVT_ERROR_CODE_SUCCESS;
+	HCI_CC_ST(evt)->status = 0x00;
 }
 
 static int ctrl_bb_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
-			      struct hci_evt *evt)
+			      struct bt_hci_evt_hdr *evt)
 {
 	switch (ocf) {
 	case BT_OCF(BT_HCI_OP_SET_EVENT_MASK):
-		set_event_mask(cp, len, evt);
+		set_event_mask(cp, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_RESET):
-		reset(cp, len, evt);
+		reset(cp, evt);
 		break;
 
 	default:
@@ -846,88 +855,103 @@ static int ctrl_bb_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
 	return 0;
 }
 
-static int info_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
-			   struct hci_evt *evt)
+static void read_local_version_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
-	struct hci_evt_cmd_cmplt *cc;
-	union hci_evt_cmd_cmplt_params *ccp;
+	struct bt_hci_rp_read_local_version_info *rp = HCI_CC_RP(evt);
 
-	cc = &evt->params.cmd_cmplt;
-	ccp = &evt->params.cmd_cmplt.params;
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
 
-	switch (cmd->opcode.ocf) {
-	case HCI_OCF_READ_LOCAL_VERSION:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_read_local_version);
+	rp->status = 0x00;
+	rp->hci_version = 0;
+	rp->hci_revision = 0;
+	rp->lmp_version = RADIO_BLE_VERSION_NUMBER;
+	rp->manufacturer = RADIO_BLE_COMPANY_ID;
+	rp->lmp_subversion = RADIO_BLE_SUB_VERSION_NUMBER;
+}
 
-		ccp->read_local_version.status = HCI_EVT_ERROR_CODE_SUCCESS;
-		ccp->read_local_version.hci_version = 0;
-		ccp->read_local_version.hci_revision = 0;
-		ccp->read_local_version.lmp_version = RADIO_BLE_VERSION_NUMBER;
-		ccp->read_local_version.manufacturer_name =
-			RADIO_BLE_COMPANY_ID;
-		ccp->read_local_version.lmp_subversion =
-			RADIO_BLE_SUB_VERSION_NUMBER;
+static void read_supported_commands(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_read_supported_commands *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+	memset(&rp->commands[0], 0, sizeof(rp->commands));
+	/* Disconnect. */
+	rp->commands[0] = (1 << 5);
+	/* Set Event Mask, and Reset. */
+	rp->commands[5] = (1 << 6) | (1 << 7);
+	/* Read Local Version Info, Read Local Supported Features. */
+	rp->commands[14] = (1 << 3) | (1 << 5);
+	/* Read BD ADDR. */
+	rp->commands[15] = (1 << 1);
+	/* All LE commands in this octet. */
+	rp->commands[25] = 0xF7;
+	/* All LE commands in this octet. */
+	rp->commands[26] = 0xFF;
+	/* All LE commands in this octet,
+	 * except LE Remove Device From White List
+	 */
+	rp->commands[27] = 0xFD;
+	/* LE Start Encryption, LE Long Term Key Req Reply,
+	 * LE Long Term Key Req Neg Reply. and
+	 * LE Read Supported States.
+	 */
+	rp->commands[28] = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
+	/* LE Remote Conn Param Req and Neg Reply, LE Set Data Length,
+	 * and LE Read Suggested Data Length.
+	 */
+	rp->commands[33] = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7);
+	/* LE Write Suggested Data Length. */
+	rp->commands[34] = (1 << 0);
+	/* LE Read Maximum Data Length. */
+	rp->commands[35] = (1 << 3);
+}
+
+static void read_local_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_read_local_features *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+	memset(&rp->features[0], 0x00, sizeof(rp->features));
+	/* BR/EDR not supported and LE supported */
+	rp->features[4] = (1 << 5) | (1 << 6);
+}
+
+static void read_bd_addr(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_read_bd_addr *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+	ll_address_get(0, &rp->bdaddr.val[0]);
+}
+
+static int info_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
+			   struct bt_hci_evt_hdr *evt)
+{
+	switch (ocf) {
+	case BT_OCF(BT_HCI_OP_READ_LOCAL_VERSION_INFO):
+		read_local_version_info(cp, evt);
 		break;
 
-	case HCI_OCF_READ_LOCAL_SUPPORTED_COMMANDS:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_read_local_sup_cmds);
-
-		ccp->read_local_sup_cmds.status = HCI_EVT_ERROR_CODE_SUCCESS;
-		memset(&ccp->read_local_sup_cmds.value[0], 0,
-			sizeof(ccp->read_local_sup_cmds.value));
-		/* Disconnect. */
-		ccp->read_local_sup_cmds.value[0] = (1 << 5);
-		/* Set Event Mask, and Reset. */
-		ccp->read_local_sup_cmds.value[5] = (1 << 6) | (1 << 7);
-		/* Read Local Version Info, Read Local Supported Features. */
-		ccp->read_local_sup_cmds.value[14] = (1 << 3) | (1 << 5);
-		/* Read BD ADDR. */
-		ccp->read_local_sup_cmds.value[15] = (1 << 1);
-		/* All LE commands in this octet. */
-		ccp->read_local_sup_cmds.value[25] = 0xF7;
-		/* All LE commands in this octet. */
-		ccp->read_local_sup_cmds.value[26] = 0xFF;
-		/* All LE commands in this octet,
-		 * except LE Remove Device From White List
-		 */
-		ccp->read_local_sup_cmds.value[27] = 0xFD;
-		/* LE Start Encryption, LE Long Term Key Req Reply,
-		 * LE Long Term Key Req Neg Reply. and
-		 * LE Read Supported States.
-		 */
-		ccp->read_local_sup_cmds.value[28] = (1 << 0) | (1 << 1) |
-						     (1 << 2) | (1 << 3);
-		/* LE Remote Conn Param Req and Neg Reply, LE Set Data Length,
-		 * and LE Read Suggested Data Length.
-		 */
-		ccp->read_local_sup_cmds.value[33] = (1 << 4) | (1 << 5) |
-							(1 << 6) | (1 << 7);
-		/* LE Write Suggested Data Length. */
-		ccp->read_local_sup_cmds.value[34] = (1 << 0);
-		/* LE Read Maximum Data Length. */
-		ccp->read_local_sup_cmds.value[35] = (1 << 3);
+	case BT_OCF(BT_HCI_OP_READ_SUPPORTED_COMMANDS):
+		read_supported_commands(cp, evt);
 		break;
 
-	case HCI_OCF_READ_LOCAL_SUPPORTED_FEATURES:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_rd_local_sup_features);
-
-		ccp->rd_local_sup_features.status = HCI_EVT_ERROR_CODE_SUCCESS;
-		memset(&ccp->rd_local_sup_features.features[0], 0x00,
-			sizeof(ccp->rd_local_sup_features.features));
-		/* BR/EDR not supported and LE supported */
-		ccp->rd_local_sup_features.features[4] = (1 << 5) | (1 << 6);
+	case BT_OCF(BT_HCI_OP_READ_LOCAL_FEATURES):
+		read_local_features(cp, evt);
 		break;
 
-	case HCI_OCF_READ_BD_ADDR:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_read_bd_addr);
-
-		ccp->read_bd_addr.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
-		ll_address_get(0, &ccp->read_bd_addr.bd_addr[0]);
+	case BT_OCF(BT_HCI_OP_READ_BD_ADDR):
+		read_bd_addr(cp, evt);
 		break;
 
 	default:
@@ -1395,13 +1419,13 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 
 	switch (BT_OGF(opcode)) {
 	case BT_OGF_LINK_CTRL:
-		err = link_control_cmd_handle(ocf, cp, len, (void *)evt);
+		err = link_control_cmd_handle(ocf, cp, len, evt);
 		break;
 	case BT_OGF_BASEBAND:
-		err = ctrl_bb_cmd_handle(ocf, cp, len, (void *)evt);
+		err = ctrl_bb_cmd_handle(ocf, cp, len, evt);
 		break;
 	case BT_OGF_INFO:
-		err = info_cmd_handle(ocf, (void *)cmd, len, (void *)evt);
+		err = info_cmd_handle(ocf, cp, len, evt);
 		break;
 	case BT_OGF_LE:
 		err = controller_cmd_handle(ocf, (void *)cmd, len, (void *)evt);
