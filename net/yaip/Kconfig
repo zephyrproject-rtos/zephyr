@@ -51,6 +51,13 @@ config NET_UDP
 	help
 	The value depends on your network needs.
 
+config NET_DEBUG_UDP
+	bool "Debug UDP"
+	default n
+	depends on NET_UDP && NET_LOG
+	help
+	Enables UDP handler output debug messages
+
 config NET_MAX_CONN
 	int "How many network connections are supported"
 	depends on NET_UDP || NET_TCP
