@@ -807,7 +807,14 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	 * "Cross-transport Key Derivation/Generation not allowed" (0x0E)."
 	 */
 	if (smp->chan.chan.conn->encrypt != 0x02) {
+#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
+		if (!smp->chan.chan.conn->encrypt) {
+			return BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED;
+		}
+		BT_WARN("Allowing BR/EDR SMP with P-192 key");
+#else
 		return BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED;
+#endif /*CONFIG_BLUETOOTH_SMP_FORCE_BREDR*/
 	}
 
 	max_key_size = bt_conn_enc_key_size(conn);
@@ -1109,6 +1116,16 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	BT_ERR("No available SMP context for conn %p", conn);
 
 	return -ENOMEM;
+}
+
+static bool br_sc_supported(void)
+{
+#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
+	BT_WARN("Enabling BR/EDR SMP without BR/EDR SC support");
+	return true;
+#else
+	return BT_FEAT_SC(bt_dev.features);
+#endif /* CONFIG_BLUETOOTH_SMP_FORCE_BREDR */
 }
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
@@ -4164,7 +4181,7 @@ int bt_smp_init(void)
 	bt_l2cap_le_fixed_chan_register(&chan);
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	/* Register BR/EDR channel only if BR/EDR SC is supported */
-	if (BT_FEAT_SC(bt_dev.features)) {
+	if (br_sc_supported()) {
 		static struct bt_l2cap_fixed_chan br_chan = {
 			.cid		= BT_L2CAP_CID_BR_SMP,
 			.accept		= bt_smp_br_accept,

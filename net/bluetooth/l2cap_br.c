@@ -484,7 +484,11 @@ done:
 
 static bool br_sc_supported(void)
 {
+#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
+	return true;
+#else
 	return BT_FEAT_SC(bt_dev.features);
+#endif /* CONFIG_BLUETOOTH_SMP_FORCE_BREDR */
 }
 
 static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,

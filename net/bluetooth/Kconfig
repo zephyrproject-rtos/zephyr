@@ -402,6 +402,15 @@ config BLUETOOTH_SMP_SELFTEST
 	  This option enables SMP self-tests executed on startup
 	  to verify security and crypto functions.
 
+config BLUETOOTH_SMP_FORCE_BREDR
+	bool "Force Bluetooth SMP over BR/EDR"
+	depends on BLUETOOTH_DEBUG_SMP
+	default n
+	help
+	  This option enables SMP over BR/EDR even if controller is not
+	  supporting BR/EDR Secure Connections. This optino is solely for
+	  testing and should never be enabled on production devices.
+
 config BLUETOOTH_DEBUG_ATT
 	bool "Bluetooth Attribute Protocol (ATT) debug"
 	depends on BLUETOOTH_CONN
