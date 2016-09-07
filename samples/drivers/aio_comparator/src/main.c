@@ -34,16 +34,9 @@
  *    The line "*** A0, AIN[10] triggered falling." should appear.
  */
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
 #include <zephyr.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <device.h>
 #include <aio_comparator.h>
 
@@ -71,7 +64,7 @@ void cb(void *param)
 
 	aio_cmp_dev = device_get_binding("AIO_CMP_0");
 
-	PRINT("*** %s triggered %s.\n", &p->name,
+	printf("*** %s triggered %s.\n", &p->name,
 	      (p->pol == AIO_CMP_POL_RISE) ? "rising" : "falling"
 	);
 
@@ -95,7 +88,7 @@ void main(void)
 
 	aio_cmp_dev = device_get_binding("AIO_CMP_0");
 
-	PRINT("===== app started ========\n");
+	printf("===== app started ========\n");
 
 	for (i = 0; i < 4; i++) {
 		/* REF_A is to use AREF for reference */
@@ -103,12 +96,12 @@ void main(void)
 					cb_data.pol, cb_data.ref,
 					cb, &cb_data);
 		if (ret)
-			PRINT("ERROR registering callback for %s (%d)\n",
+			printf("ERROR registering callback for %s (%d)\n",
 			      &cb_data.name, ret);
 	}
 
 	while (1) {
-		PRINT("... waiting for event! (%d)\n", ++cnt);
+		printf("... waiting for event! (%d)\n", ++cnt);
 
 		/* wait a while */
 		nano_task_timer_start(&timer, SLEEPTIME);

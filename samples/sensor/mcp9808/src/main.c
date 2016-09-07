@@ -18,15 +18,7 @@
 #include <device.h>
 #include <sensor.h>
 #include <nanokernel.h>
-#include <misc/printk.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 #ifdef CONFIG_MCP9808_TRIGGER
 static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
@@ -36,7 +28,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 	sensor_sample_fetch(dev);
 	sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
 
-	PRINT("trigger fired, temp %d.%06d\n", temp.val1, temp.val2);
+	printf("trigger fired, temp %d.%06d\n", temp.val1, temp.val2);
 }
 #endif
 
@@ -45,13 +37,13 @@ void main(void)
 	struct device *dev = device_get_binding("MCP9808");
 
 	if (dev == NULL) {
-		printk("device not found.  aborting test.\n");
+		printf("device not found.  aborting test.\n");
 		return;
 	}
 
 #ifdef DEBUG
-	PRINT("dev %p\n", dev);
-	PRINT("dev %p name %s\n", dev, dev->config->name);
+	printf("dev %p\n", dev);
+	printf("dev %p name %s\n", dev, dev->config->name);
 #endif
 
 #ifdef CONFIG_MCP9808_TRIGGER
@@ -76,7 +68,7 @@ void main(void)
 		sensor_sample_fetch(dev);
 		sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
 
-		PRINT("temp: %d.%06d\n", temp.val1, temp.val2);
+		printf("temp: %d.%06d\n", temp.val1, temp.val2);
 
 		task_sleep(sys_clock_ticks_per_sec);
 	}

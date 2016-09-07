@@ -17,22 +17,13 @@
 #include <zephyr.h>
 #include <device.h>
 #include <sensor.h>
-#include <nanokernel.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
 
 void main(void)
 {
 	struct device *dev = device_get_binding("BME280");
 
-	PRINT("dev %p name %s\n", dev, dev->config->name);
+	printf("dev %p name %s\n", dev, dev->config->name);
 
 	while (1) {
 		struct sensor_value temp, press, humidity;
@@ -42,7 +33,7 @@ void main(void)
 		sensor_channel_get(dev, SENSOR_CHAN_PRESS, &press);
 		sensor_channel_get(dev, SENSOR_CHAN_HUMIDITY, &humidity);
 
-		PRINT("temp: %d.%06d; press: %d.%06d; humidity: %d.%06d\n",
+		printf("temp: %d.%06d; press: %d.%06d; humidity: %d.%06d\n",
 		      temp.val1, temp.val2, press.val1, press.val2,
 		      humidity.val1, humidity.val2);
 

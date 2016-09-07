@@ -16,18 +16,11 @@
 
 #include <zephyr.h>
 #include <power.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
 #include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 void main(void)
 {
-	PRINT("Power management template!\n");
+	printk("Power management template!\n");
 }
 
 /**

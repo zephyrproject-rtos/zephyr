@@ -17,13 +17,7 @@
 #include <zephyr.h>
 #include <flash.h>
 #include <device.h>
-#if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #define FLASH_SECTOR_SIZE        4096
@@ -36,13 +30,13 @@ void main(void)
 	struct device *flash_dev;
 	uint8_t buf[TEST_DATA_LEN];
 
-	PRINT("\nW25QXXDV SPI flash testing\n");
-	PRINT("==========================\n");
+	printf("\nW25QXXDV SPI flash testing\n");
+	printf("==========================\n");
 
 	flash_dev = device_get_binding("W25QXXDV");
 
 	if (!flash_dev) {
-		PRINT("SPI flash driver was not found!\n");
+		printf("SPI flash driver was not found!\n");
 		return;
 	}
 
@@ -51,38 +45,38 @@ void main(void)
 	 * on write protection automatically after completion of write and
 	 * erase operations.
 	 */
-	PRINT("\nTest 1: Flash erase\n");
+	printf("\nTest 1: Flash erase\n");
 	flash_write_protection_set(flash_dev, false);
 	if (flash_erase(flash_dev,
 			FLASH_TEST_REGION_OFFSET,
 			FLASH_SECTOR_SIZE) != 0) {
-		PRINT("   Flash erase failed!\n");
+		printf("   Flash erase failed!\n");
 	} else {
-		PRINT("   Flash erase succeeded!\n");
+		printf("   Flash erase succeeded!\n");
 	}
 
-	PRINT("\nTest 2: Flash write\n");
+	printf("\nTest 2: Flash write\n");
 	flash_write_protection_set(flash_dev, false);
 
 	buf[0] = TEST_DATA_BYTE_0;
 	buf[1] = TEST_DATA_BYTE_1;
-	PRINT("   Attempted to write %x %x\n", buf[0], buf[1]);
+	printf("   Attempted to write %x %x\n", buf[0], buf[1]);
 	if (flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
 	    TEST_DATA_LEN) != 0) {
-		PRINT("   Flash write failed!\n");
+		printf("   Flash write failed!\n");
 		return;
 	}
 
 	if (flash_read(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
 	    TEST_DATA_LEN) != 0) {
-		PRINT("   Flash read failed!\n");
+		printf("   Flash read failed!\n");
 		return;
 	}
-	PRINT("   Data read %x %x\n", buf[0], buf[1]);
+	printf("   Data read %x %x\n", buf[0], buf[1]);
 
 	if ((buf[0] == TEST_DATA_BYTE_0) && (buf[1] == TEST_DATA_BYTE_1)) {
-		PRINT("   Data read matches with data written. Good!!\n");
+		printf("   Data read matches with data written. Good!!\n");
 	} else {
-		PRINT("   Data read does not match with data written!!\n");
+		printf("   Data read does not match with data written!!\n");
 	}
 }
