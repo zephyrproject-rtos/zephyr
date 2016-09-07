@@ -1,5 +1,5 @@
-BOARD ?= galileo
+BOARD ?= quark_se_sss_devboard
 KERNEL_TYPE = nano
-CONF_FILE = prj_$(ARCH).conf
+CONF_FILE = prj.conf
 
 include ${ZEPHYR_BASE}/Makefile.inc
