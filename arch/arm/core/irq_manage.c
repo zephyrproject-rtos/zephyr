@@ -102,11 +102,15 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	ARG_UNUSED(flags);
 	prio += IRQ_PRIORITY_OFFSET;
 #endif
-	/* Last priority level reserved for PendSV exception */
-	__ASSERT(prio < ((1 << CONFIG_NUM_IRQ_PRIO_BITS) - 1),
+	/* The last priority level is also used by PendSV exception, but
+	 * allow other interrupts to use the same level, even if it ends up
+	 * affecting performance (can still be useful on systems with a
+	 * reduced set of priorities, like Cortex-M0/M0+).
+	 */
+	__ASSERT(prio <= ((1 << CONFIG_NUM_IRQ_PRIO_BITS) - 1),
 		 "invalid priority %d! values must be less than %d\n",
 		 prio - IRQ_PRIORITY_OFFSET,
-		 (1 << CONFIG_NUM_IRQ_PRIO_BITS) - (IRQ_PRIORITY_OFFSET + 1));
+		 (1 << CONFIG_NUM_IRQ_PRIO_BITS) - (IRQ_PRIORITY_OFFSET));
 	_NvicIrqPrioSet(irq, _EXC_PRIO(prio));
 }
 
