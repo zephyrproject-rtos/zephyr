@@ -625,6 +625,212 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		atomic_clear_bit(link_key->flags, BT_LINK_KEY_AUTHENTICATED);
 	}
 }
+
+static void smp_br_reset(struct bt_smp *smp)
+{
+	nano_delayed_work_cancel(&smp->work);
+
+	atomic_set(smp->flags, 0);
+	atomic_set(&smp->allowed_cmds, 0);
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+}
+
+static void smp_br_timeout(struct nano_work *work)
+{
+	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
+
+	BT_ERR("SMP Timeout");
+
+	smp_br_reset(smp);
+	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
+}
+
+static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
+{
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+
+	BT_DBG("chan %p cid 0x%04x", chan,
+	       CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
+
+	nano_delayed_work_init(&smp->work, smp_br_timeout);
+	smp_br_reset(smp);
+}
+
+static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
+{
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+
+	BT_DBG("chan %p cid 0x%04x", chan,
+	       CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
+
+	nano_delayed_work_cancel(&smp->work);
+
+	memset(smp, 0, sizeof(*smp));
+}
+
+static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
+{
+	/* TODO */
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
+{
+	/* TODO */
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static uint8_t smp_br_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
+{
+	/* TODO */
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static uint8_t smp_br_ident_info(struct bt_smp *smp, struct net_buf *buf)
+{
+	/* TODO */
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static uint8_t smp_br_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
+{
+	/* TODO */
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static uint8_t smp_br_signing_info(struct bt_smp *smp, struct net_buf *buf)
+{
+	/* TODO */
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static const struct {
+	uint8_t  (*func)(struct bt_smp *smp, struct net_buf *buf);
+	uint8_t  expect_len;
+} br_handlers[] = {
+	{ }, /* No op-code defined for 0x00 */
+	{ smp_br_pairing_req,      sizeof(struct bt_smp_pairing) },
+	{ smp_br_pairing_rsp,      sizeof(struct bt_smp_pairing) },
+	{ }, /* pairing confirm not used over BR/EDR */
+	{ }, /* pairing random not used over BR/EDR */
+	{ smp_br_pairing_failed,   sizeof(struct bt_smp_pairing_fail) },
+	{ }, /* encrypt info not used over BR/EDR */
+	{ }, /* master ident not used over BR/EDR */
+	{ smp_br_ident_info,       sizeof(struct bt_smp_ident_info) },
+	{ smp_br_ident_addr_info,  sizeof(struct bt_smp_ident_addr_info) },
+	{ smp_br_signing_info,     sizeof(struct bt_smp_signing_info) },
+	/* security request not used over BR/EDR */
+	/* public key not used over BR/EDR */
+	/* DHKey check not used over BR/EDR */
+};
+
+static int smp_br_error(struct bt_smp *smp, uint8_t reason)
+{
+	struct bt_smp_pairing_fail *rsp;
+	struct net_buf *buf;
+
+	/* reset context and report */
+	smp_br_reset(smp);
+
+	buf = smp_create_pdu(smp->chan.chan.conn, BT_SMP_CMD_PAIRING_FAIL,
+			     sizeof(*rsp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	rsp->reason = reason;
+
+	/*
+	 * SMP timer is not restarted for PairingFailed so don't use
+	 * smp_br_send
+	 */
+	bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf);
+
+	return 0;
+}
+
+static void bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp_hdr *hdr = (void *)buf->data;
+	uint8_t err;
+
+	if (buf->len < sizeof(*hdr)) {
+		BT_ERR("Too small SMP PDU received");
+		return;
+	}
+
+	BT_DBG("Received SMP code 0x%02x len %u", hdr->code, buf->len);
+
+	net_buf_pull(buf, sizeof(*hdr));
+
+	/*
+	 * If SMP timeout occurred "no further SMP commands shall be sent over
+	 * the L2CAP Security Manager Channel. A new SM procedure shall only be
+	 * performed when a new physical link has been established."
+	 */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
+		BT_WARN("SMP command (code 0x%02x) received after timeout",
+			hdr->code);
+		return;
+	}
+
+	if (hdr->code >= ARRAY_SIZE(br_handlers) ||
+	    !br_handlers[hdr->code].func) {
+		BT_WARN("Unhandled SMP code 0x%02x", hdr->code);
+		smp_br_error(smp, BT_SMP_ERR_CMD_NOTSUPP);
+		return;
+	}
+
+	if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
+		BT_WARN("Unexpected SMP code 0x%02x", hdr->code);
+		smp_br_error(smp, BT_SMP_ERR_UNSPECIFIED);
+		return;
+	}
+
+	if (buf->len != br_handlers[hdr->code].expect_len) {
+		BT_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
+		smp_br_error(smp, BT_SMP_ERR_INVALID_PARAMS);
+		return;
+	}
+
+	err = br_handlers[hdr->code].func(smp, buf);
+	if (err) {
+		smp_br_error(smp, err);
+	}
+}
+
+static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+{
+	static struct bt_l2cap_chan_ops ops = {
+		.connected = bt_smp_br_connected,
+		.disconnected = bt_smp_br_disconnected,
+		.recv = bt_smp_br_recv,
+	};
+	int i;
+
+	BT_DBG("conn %p handle %u", conn, conn->handle);
+
+	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
+		struct bt_smp *smp = &bt_smp_pool[i];
+
+		if (smp->chan.chan.conn) {
+			continue;
+		}
+
+		smp->chan.chan.ops = &ops;
+
+		*chan = &smp->chan.chan;
+
+		return 0;
+	}
+
+	BT_ERR("No available SMP context for conn %p", conn);
+
+	return -ENOMEM;
+}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 static void smp_reset(struct bt_smp *smp)
@@ -3677,6 +3883,17 @@ int bt_smp_init(void)
 	net_buf_pool_init(smp_pool);
 
 	bt_l2cap_le_fixed_chan_register(&chan);
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	/* Register BR/EDR channel only if BR/EDR SC is supported */
+	if (BT_FEAT_SC(bt_dev.features)) {
+		static struct bt_l2cap_fixed_chan br_chan = {
+			.cid		= BT_L2CAP_CID_BR_SMP,
+			.accept		= bt_smp_br_accept,
+		};
+
+		bt_l2cap_br_fixed_chan_register(&br_chan);
+	}
+#endif
 
 	BT_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
 
