@@ -266,44 +266,45 @@ static void rfcomm_disconnected(struct bt_l2cap_chan *chan)
 	BT_DBG("Session %p", RFCOMM_SESSION(chan));
 }
 
-static int rfcomm_dlc_accept(struct bt_rfcomm_session *session,
-			     uint8_t dlci, struct bt_rfcomm_dlc **dlc)
+static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session,
+					       uint8_t dlci)
 {
 	struct bt_rfcomm_server *server;
+	struct bt_rfcomm_dlc *dlc;
 	uint8_t channel;
-	int ret;
 
 	channel = BT_RFCOMM_GET_CHANNEL(dlci);
 	server = rfcomm_server_lookup_channel(channel);
 	if (!server) {
 		BT_ERR("Server Channel not registered");
-		return -ENOTSUP;
+		return NULL;
 	}
 
-	ret = server->accept(session->br_chan.chan.conn, dlc);
-	if (ret < 0) {
-		return ret;
+	if (server->accept(session->br_chan.chan.conn, &dlc) < 0) {
+		BT_DBG("Incoming connection rejected");
+		return NULL;
 	}
 
-	if (!BT_RFCOMM_CHECK_MTU((*dlc)->mtu)) {
+	if (!BT_RFCOMM_CHECK_MTU(dlc->mtu)) {
 		/* Destroy dlc */
-		return -EINVAL;
+		return NULL;
 	}
 
-	BT_DBG("Dlc %p initialized", *dlc);
+	BT_DBG("Dlc %p initialized", dlc);
 
-	(*dlc)->_next = session->dlcs;
-	session->dlcs = *dlc;
+	dlc->_next = session->dlcs;
+	session->dlcs = dlc;
 
-	(*dlc)->dlci = dlci;
-	(*dlc)->session = session;
-	(*dlc)->initiator = false;
-	(*dlc)->rx_credit = RFCOMM_DEFAULT_CREDIT;
-	(*dlc)->state = BT_RFCOMM_STATE_INIT;
-	(*dlc)->mtu = min((*dlc)->mtu, session->mtu);
-	nano_sem_init(&(*dlc)->tx_credits);
+	dlc->dlci = dlci;
+	dlc->session = session;
+	dlc->initiator = false;
+	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
+	dlc->state = BT_RFCOMM_STATE_INIT;
+	dlc->mtu = min(dlc->mtu, session->mtu);
+	atomic_set(&dlc->ref, 1);
+	nano_sem_init(&dlc->tx_credits);
 
-	return 0;
+	return dlc;
 }
 
 static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
@@ -425,7 +426,8 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 
 		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
 		if (!dlc) {
-			if (rfcomm_dlc_accept(session, dlci, &dlc) < 0) {
+			dlc = rfcomm_dlc_accept(session, dlci);
+			if (!dlc) {
 				return;
 			}
 		}
@@ -496,7 +498,6 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 {
 	struct bt_rfcomm_pn *pn = (void *)buf->data;
 	struct bt_rfcomm_dlc *dlc;
-	int ret;
 
 	if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
 		/* TODO: Send DM */
@@ -506,9 +507,8 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 
 	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, pn->dlci);
 	if (!dlc) {
-		ret = rfcomm_dlc_accept(session, pn->dlci, &dlc);
-		if (ret < 0) {
-			BT_DBG("Incoming connection rejected err %x", ret);
+		dlc = rfcomm_dlc_accept(session, pn->dlci);
+		if (!dlc) {
 			return;
 		}
 
