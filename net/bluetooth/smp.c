@@ -318,6 +318,23 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 	return 0;
 }
 
+static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
+				      size_t len)
+{
+	struct bt_smp_hdr *hdr;
+	struct net_buf *buf;
+
+	buf = bt_l2cap_create_pdu(&smp_buf);
+	if (!buf) {
+		return NULL;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = op;
+
+	return buf;
+}
+
 static int smp_ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 {
 	uint8_t res[16];
@@ -676,23 +693,6 @@ static void smp_timeout(struct nano_work *work)
 	smp_pairing_complete(smp, BT_SMP_ERR_UNSPECIFIED);
 
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
-}
-
-static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
-				      size_t len)
-{
-	struct bt_smp_hdr *hdr;
-	struct net_buf *buf;
-
-	buf = bt_l2cap_create_pdu(&smp_buf);
-	if (!buf) {
-		return NULL;
-	}
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->code = op;
-
-	return buf;
 }
 
 static void smp_send(struct bt_smp *smp, struct net_buf *buf)
