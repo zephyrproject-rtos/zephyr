@@ -130,6 +130,22 @@ struct net_if_router {
 	struct nano_delayed_work lifetime;
 };
 
+/*
+ * Special alignment is needed for net_if which is stored in
+ * a net_if linker section if there are more than one network
+ * interface in the system. If there is only one network interface,
+ * then this alignment is not needed, unfortunately this cannot be
+ * known beforehand.
+ *
+ * The net_if struct needs to be aligned to 32 byte boundary,
+ * otherwise the __net_if_end will point to wrong location and net_if
+ * initialization done in net_if_init() will not find proper values
+ * for the second interface.
+ *
+ * So this alignment is a workaround and should eventually be removed.
+ */
+#define __net_if_align __aligned(32)
+
 /**
  * @brief Network Interface structure
  *
@@ -227,7 +243,7 @@ struct net_if {
 	/** IPv4 time-to-live */
 	uint8_t ttl;
 #endif /* CONFIG_NET_IPV4 */
-};
+} __net_if_align;
 
 /**
  * @brief Send a buffer through a net iface
