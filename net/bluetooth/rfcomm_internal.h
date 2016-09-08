@@ -35,6 +35,7 @@ enum {
 	BT_RFCOMM_STATE_INIT,
 	BT_RFCOMM_STATE_CONNECTED,
 	BT_RFCOMM_STATE_CONFIG,
+	BT_RFCOMM_STATE_DISCONNECTED,
 };
 
 struct bt_rfcomm_hdr {
@@ -68,6 +69,8 @@ struct bt_rfcomm_msc {
 	uint8_t  dlci;
 	uint8_t  v24_signal;
 } __packed;
+
+#define BT_RFCOMM_DISC	0x43
 
 /* DV = 1 IC = 0 RTR = 1 RTC = 1 FC = 0 EXT = 0 */
 #define BT_RFCOMM_DEFAULT_V24_SIG 0x8d
