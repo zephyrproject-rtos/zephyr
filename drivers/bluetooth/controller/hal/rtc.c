@@ -46,7 +46,7 @@ uint32_t rtc_start(void)
 
 uint32_t rtc_stop(void)
 {
-	ASSERT(_rtc_refcount);
+	BT_ASSERT(_rtc_refcount);
 
 	if (--_rtc_refcount) {
 		return 1;

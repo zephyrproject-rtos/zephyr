@@ -1021,7 +1021,6 @@ static int controller_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
 		break;
 
 	case HCI_OCF_LE_SET_ADV_PARAMS:
-
 		ll_adv_params_set(cmd->params.le_set_adv_params.interval_min,
 			c_adv_type[cmd->params.le_set_adv_params.type],
 			cmd->params.le_set_adv_params.own_addr_type,
@@ -1146,7 +1145,6 @@ static int controller_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
 		break;
 
 	case HCI_OCF_LE_CLEAR_WHITELIST:
-
 		radio_filter_clear();
 
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
@@ -1156,7 +1154,6 @@ static int controller_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
 		break;
 
 	case HCI_OCF_LE_ADD_DEVICE_TO_WHITELIST:
-
 		error_code = radio_filter_add(cmd->params.le_add_dev_to_wlist.
 				     addr_type,
 				     &cmd->params.le_add_dev_to_wlist.addr[0]);
@@ -1171,9 +1168,6 @@ static int controller_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
 		break;
 
 	case HCI_OCF_LE_CONNECTION_UPDATE:
-		/** @todo if peer supports LE Conn Param Req,
-		* use Req cmd (1) instead of Initiate cmd (0).
-		*/
 		status = radio_conn_update(cmd->params.le_conn_update.handle,
 					   0, 0,
 					   cmd->params.le_conn_update.
@@ -1310,8 +1304,6 @@ static int controller_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
 	case HCI_OCF_LE_REMOTE_CONN_PARAM_REQ_NEG_REPLY:
 		le_cp_req_neg_rep =
 			&cmd->params.le_remote_conn_param_req_neg_reply;
-		/** @todo add reject_ext_ind support in ctrl.c */
-		ASSERT(0);
 
 		status = radio_conn_update(le_cp_req_neg_rep->handle, 2,
 				      le_cp_req_neg_rep->reason, 0, 0, 0);
@@ -1328,9 +1320,6 @@ static int controller_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
 		break;
 
 	case HCI_OCF_LE_SET_DATA_LENGTH:
-		/** @todo add reject_ext_ind support in ctrl.c */
-		ASSERT(0);
-
 		status = radio_length_req_send(
 				cmd->params.le_set_data_length.handle,
 				cmd->params.le_set_data_length.tx_octets);
@@ -1710,7 +1699,7 @@ static void encode_control(uint8_t *buf, uint8_t *len, uint8_t **out)
 		break;
 
 	default:
-		ASSERT(0);
+		BT_ASSERT(0);
 		break;
 	}
 }
@@ -1893,7 +1882,7 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		break;
 
 	default:
-		ASSERT(0);
+		BT_ASSERT(0);
 		break;
 	}
 
@@ -1935,13 +1924,13 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 		if (s_rx_cnt != pdu_data->payload.lldata[0]) {
 			s_rx_cnt = pdu_data->payload.lldata[0];
 
-			ASSERT(0);
+			BT_ASSERT(0);
 		} else {
 			uint8_t index;
 
 			for (index = 0; index < pdu_data->len; index++) {
-				ASSERT(pdu_data->payload.lldata[index] ==
-				       (uint8_t)(s_rx_cnt + index))
+				BT_ASSERT(pdu_data->payload.lldata[index] ==
+					  (uint8_t)(s_rx_cnt + index));
 			}
 
 			s_rx_cnt++;
@@ -1954,7 +1943,7 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 		break;
 
 	default:
-		ASSERT(0);
+		BT_ASSERT(0);
 		break;
 	}
 

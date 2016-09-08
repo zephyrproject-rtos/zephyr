@@ -225,10 +225,10 @@ static void native_recv_fiber(int unused0, int unused1)
 			int retval;
 
 			hci_encode_num_cmplt(handle, num_cmplt, &len, &buf);
-			ASSERT(len);
+			BT_ASSERT(len);
 
 			retval = native_recv(len, buf);
-			ASSERT(!retval);
+			BT_ASSERT(!retval);
 
 			fiber_yield();
 		}
@@ -245,7 +245,7 @@ static void native_recv_fiber(int unused0, int unused1)
 			 */
 			if (len) {
 				retval = native_recv(len, buf);
-				ASSERT(!retval);
+				BT_ASSERT(!retval);
 			}
 
 			radio_rx_dequeue();

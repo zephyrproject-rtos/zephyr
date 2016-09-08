@@ -33,7 +33,7 @@ static struct rand *_rand;
 
 void rand_init(uint8_t *context, uint8_t context_len)
 {
-	ASSERT(context_len > sizeof(struct rand));
+	BT_ASSERT(context_len > sizeof(struct rand));
 
 	_rand = (struct rand *)context;
 	_rand->count = context_len - sizeof(struct rand) + 1;
