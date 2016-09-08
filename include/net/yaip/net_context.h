@@ -630,7 +630,7 @@ static inline void net_context_send_cb(struct net_context *context,
 	}
 
 	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		NET_STATS(++net_stats.udp.sent);
+		NET_STATS_UDP(++net_stats.udp.sent);
 	}
 }
 

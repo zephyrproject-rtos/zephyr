@@ -722,11 +722,9 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 			goto drop;
 		}
 
-#if defined(CONFIG_NET_UDP)
 		if (proto == IPPROTO_UDP) {
-			NET_STATS(++net_stats.udp.recv);
+			NET_STATS_UDP(++net_stats.udp.recv);
 		}
-#endif /* CONFIG_NET_UDP */
 
 		return NET_OK;
 	}
@@ -738,11 +736,9 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 	send_icmp_error(buf);
 
 drop:
-#if defined(CONFIG_NET_UDP)
 	if (proto == IPPROTO_UDP) {
-		NET_STATS(++net_stats.udp.drop);
+		NET_STATS_UDP(++net_stats.udp.drop);
 	}
-#endif /* CONFIG_NET_UDP */
 
 	return NET_DROP;
 }
