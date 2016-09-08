@@ -44,9 +44,7 @@ void bt_log(int prio, const char *fmt, ...);
 #define BT_WARN(fmt, ...) bt_log(BT_LOG_WARN, "%s: " fmt, \
 				 __func__, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) bt_log(BT_LOG_INFO, fmt, ##__VA_ARGS__)
-#define BT_ASSERT(cond) if (!(cond)) { \
-				BT_ERR("assert: '" #cond "' failed"); \
-			}
+
 /* Enabling debug increases stack size requirement considerably */
 #define BT_STACK_DEBUG_EXTRA	512
 
@@ -62,9 +60,7 @@ void bt_log(int prio, const char *fmt, ...);
 #define BT_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) SYS_LOG_INF(fmt, ##__VA_ARGS__)
-#define BT_ASSERT(cond) if (!(cond)) { \
-				BT_ERR("assert: '" #cond "' failed"); \
-			}
+
 /* Enabling debug increases stack size requirement considerably */
 #define BT_STACK_DEBUG_EXTRA	512
 
@@ -74,10 +70,15 @@ void bt_log(int prio, const char *fmt, ...);
 #define BT_ERR(fmt, ...)
 #define BT_WARN(fmt, ...)
 #define BT_INFO(fmt, ...)
-#define BT_ASSERT(cond)
+
 #define BT_STACK_DEBUG_EXTRA	0
 
 #endif
+
+#define BT_ASSERT(cond) if (!(cond)) { \
+				BT_ERR("assert: '" #cond "' failed"); \
+				_SysFatalErrorHandler(0, NULL); \
+			}
 
 #define BT_STACK(name, size) \
 		char __stack name[(size) + BT_STACK_DEBUG_EXTRA]
