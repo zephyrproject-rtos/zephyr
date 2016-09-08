@@ -1,7 +1,0 @@
-This sample application illustrates how to use the I2C APIs from
-Zephyr. The slave device (STTS751) is present in Quark SE devboard
-so no wiring instructions are required in order to get this sample
-working.
-
-This is a very simple application which reads the value from the
-temperature register from STTS751 sensor.
