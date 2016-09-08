@@ -56,7 +56,6 @@ config I2C_QMSI_SS
 config I2C_QMSI
 	bool "QMSI I2C driver"
 	depends on I2C && QMSI
-	select DMA_QMSI
 	default n
 	help
 	This option enable the QMSI I2C driver.
