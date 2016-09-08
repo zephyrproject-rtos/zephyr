@@ -708,11 +708,19 @@ struct bt_hci_cp_le_conn_param_req_reply {
 	uint16_t min_ce_len;
 	uint16_t max_ce_len;
 } __packed;
+struct bt_hci_rp_le_conn_param_req_reply {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
 
 #define BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY   BT_OP(BT_OGF_LE, 0x0021)
 struct bt_hci_cp_le_conn_param_req_neg_reply {
 	uint16_t handle;
 	uint8_t  reason;
+} __packed;
+struct bt_hci_rp_le_conn_param_req_neg_reply {
+	uint8_t  status;
+	uint16_t handle;
 } __packed;
 
 #define BT_HCI_OP_LE_SET_DATA_LEN               BT_OP(BT_OGF_LE, 0x0022)
