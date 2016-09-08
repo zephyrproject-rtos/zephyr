@@ -660,9 +660,17 @@ struct bt_hci_cp_le_ltk_req_reply {
 	uint16_t handle;
 	uint8_t  ltk[16];
 } __packed;
+struct bt_hci_rp_le_ltk_req_reply {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
 
 #define BT_HCI_OP_LE_LTK_REQ_NEG_REPLY          BT_OP(BT_OGF_LE, 0x001b)
 struct bt_hci_cp_le_ltk_req_neg_reply {
+	uint16_t handle;
+} __packed;
+struct bt_hci_rp_le_ltk_req_neg_reply {
+	uint8_t  status;
 	uint16_t handle;
 } __packed;
 
