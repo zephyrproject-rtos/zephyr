@@ -77,7 +77,16 @@ struct slip_context {
 };
 
 #if defined(CONFIG_SLIP_DEBUG)
-static void hexdump(const char *str, const uint8_t *packet, size_t length)
+#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
+#define COLOR_OFF     "\x1B[0m"
+#define COLOR_YELLOW  "\x1B[0;33m"
+#else
+#define COLOR_OFF     ""
+#define COLOR_YELLOW  ""
+#endif
+
+static void hexdump(struct slip_context *slip, const char *str,
+		    const uint8_t *packet, size_t length)
 {
 	int n = 0;
 
@@ -91,8 +100,20 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 			printf("%s %08X ", str, n);
 		}
 
+#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
+		if (n < slip->ll_reserve) {
+			printf(COLOR_YELLOW);
+		} else {
+			printf(COLOR_OFF);
+		}
+#endif
 		printf("%02X ", *packet++);
 
+#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
+		if (n < slip->ll_reserve) {
+			printf(COLOR_OFF);
+		}
+#endif
 		n++;
 		if (n % 8 == 0) {
 			if (n % 16 == 0) {
@@ -108,7 +129,7 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 	}
 }
 #else
-#define hexdump(str, packet, length)
+#define hexdump(slip, str, packet, length)
 #endif
 
 static inline void slip_writeb(unsigned char c)
@@ -181,13 +202,13 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 
 #if defined(CONFIG_SLIP_DEBUG)
 		SYS_LOG_DBG("[%p] sent data %d bytes", slip,
-			    frag->len + reserve);
+			    frag->len + slip->ll_reserve);
 		if (frag->len + reserve) {
 			char msg[7 + 1];
-			snprintf(msg, sizeof(msg), "slip %d", frag_count++);
+			snprintf(msg, sizeof(msg), "<slip %d", frag_count++);
 			msg[7] = '\0';
-			hexdump(msg, frag->data - reserve,
-				frag->len + reserve);
+			hexdump(slip, msg, frag->data - slip->ll_reserve,
+				frag->len + slip->ll_reserve);
 		}
 #endif
 
@@ -351,9 +372,10 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 			while (bytes && frag) {
 				char msg[7 + 1];
-				snprintf(msg, sizeof(msg), "slip %d", count);
+				snprintf(msg, sizeof(msg), ">slip %d", count);
 				msg[7] = '\0';
-				hexdump(msg, frag->data - slip->ll_reserve,
+				hexdump(slip, msg,
+					frag->data - slip->ll_reserve,
 					frag->len + slip->ll_reserve);
 				frag = frag->frags;
 				count++;
