@@ -177,6 +177,21 @@ static inline void sys_put_le32(uint32_t val, uint8_t dst[4])
 }
 
 /**
+ *  @brief Put a 64-bit integer as little-endian to arbitrary location.
+ *
+ *  Put a 64-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in little-endian format.
+ *
+ *  @param val 64-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_le64(uint64_t val, uint8_t dst[8])
+{
+	sys_put_le32(val, dst);
+	sys_put_le32(val >> 32, &dst[4]);
+}
+
+/**
  *  @brief Get a 16-bit intger stored in big-endian format.
  *
  *  Get a 16-bit integer, stored in big-endian format in a potentially
