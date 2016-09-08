@@ -437,6 +437,7 @@ static bool net_ctx_connect_v4(void)
 static void accept_cb(struct net_context *context,
 		      struct sockaddr *addr,
 		      socklen_t addrlen,
+		      int status,
 		      void *user_data)
 {
 	sa_family_t family = POINTER_TO_INT(user_data);
