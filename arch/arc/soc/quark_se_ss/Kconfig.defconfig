@@ -141,6 +141,11 @@ config I2C_SS_SDA_HOLD
 
 endif # I2C
 
+if ADC
+config ADC_QMSI_SS
+	def_bool y
+endif
+
 
 if UART_QMSI
 config UART_QMSI_0
