@@ -111,6 +111,7 @@ enum {
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
 	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as slave) */
 	SMP_FLAG_DERIVE_LK,	/* if Link Key should be derived */
+	SMP_FLAG_BR_INITIATOR,	/* if BR/EDR pairing initiator */
 
 	/* Total number of flags - must be at the end */
 	SMP_NUM_FLAGS,
@@ -1187,6 +1188,58 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
+static int smp_br_send_pairing_req(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_smp_pairing *req;
+	struct net_buf *req_buf;
+	uint8_t max_key_size;
+
+	max_key_size = bt_conn_enc_key_size(conn);
+	if (!max_key_size) {
+		return -EIO;
+	}
+
+	smp_br_init(smp);
+
+	req_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_REQ, sizeof(*req));
+	if (!req_buf) {
+		return -ENOBUFS;
+	}
+
+	req = net_buf_add(req_buf, sizeof(*req));
+
+	/*
+	 * If Secure Connections pairing has been initiated over BR/EDR, the IO
+	 * Capability, OOB data flag and Auth Req fields of the SM Pairing
+	 * Request/Response PDU shall be set to zero on transmission, and
+	 * ignored on reception.
+	 */
+
+	req->auth_req = 0x00;
+	req->io_capability = 0x00;
+	req->oob_flag = 0x00;
+	req->max_key_size = max_key_size;
+	req->init_key_dist = BR_SEND_KEYS_SC;
+	req->resp_key_dist = BR_RECV_KEYS_SC;
+
+	smp_br_send(smp, req_buf);
+
+	/* Store Pairing Req for later use */
+	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
+	memcpy(smp->preq + 1, req, sizeof(*req));
+
+	smp->local_dist = BR_SEND_KEYS_SC;
+	smp->remote_dist = BR_RECV_KEYS_SC;
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
+
+	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
+	atomic_set_bit(smp->flags, SMP_FLAG_BR_INITIATOR);
+
+	return 0;
+}
+
 static bool br_sc_supported(void)
 {
 #if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
@@ -2199,6 +2252,12 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		return -EBUSY;
 	}
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		return smp_br_send_pairing_req(smp);
+	}
+#endif
 
 	/* early verify if required sec level if reachable */
 	if (!sec_level_reachable(conn)) {
