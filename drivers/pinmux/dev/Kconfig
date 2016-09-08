@@ -67,3 +67,11 @@ config PINMUX_DEV_STM32
 	help
 	Enables the STM32 pinmux dev driver.
 	default n
+
+config PINMUX_DEV_ARM_V2M_BEETLE
+	bool "Enable pinmux dev driver for ARM V2M Beetle boards"
+	depends on PINMUX_DEV && SOC_SERIES_BEETLE
+	help
+	Enables the pinmux dev driver for boards based on the
+	ARM Beetle SoC MCUs.
+	default n
