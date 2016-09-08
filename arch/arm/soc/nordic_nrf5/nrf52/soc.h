@@ -24,8 +24,7 @@
 #ifndef _ASMLANGUAGE
 
 #include "soc_irq.h"
-#include <nrf52.h>
-#include <nrf52_bitfields.h>
+#include <nrf.h>
 #include <device.h>
 #include <misc/util.h>
 #include <drivers/rand32.h>

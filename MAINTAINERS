@@ -91,6 +91,12 @@ F:	drivers/bluetooth/
 F:	samples/bluetooth/
 F:	tests/bluetooth/
 
+BLUETOOTH CONTROLLER
+M:	Vinayak Chettimada <vinayak.kariappa.chettimada@nordicsemi.no>
+M:	Carles Cufi <carles.cufi@nordicsemi.no>
+S:	Supported
+F:	drivers/bluetooth/controller/
+
 DOCUMENTATION
 M:	Kinder, David <david.b.kinder@intel.com>
 M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>

@@ -687,7 +687,8 @@ void on_nble_gatts_indicate_rsp(const struct nble_gatts_indicate_rsp *rsp)
 	bt_conn_unref(conn);
 }
 
-int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
+int bt_gatt_exchange_mtu(struct bt_conn *conn,
+			 struct bt_gatt_exchange_params *params)
 {
 	return -ENOSYS;
 }
@@ -1393,7 +1394,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	return gatt_write_ccc(conn, params);
 }
 
-void bt_gatt_cancel(struct bt_conn *conn)
+void bt_gatt_cancel(struct bt_conn *conn, void *params)
 {
 	BT_DBG("");
 }

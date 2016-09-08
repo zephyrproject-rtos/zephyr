@@ -1120,3 +1120,152 @@ Events:
 
 		This event indicates that IUT has received notification
 		or notification.
+
+L2CAP Service (ID 3)
+==================
+
+Commands and responses:
+
+	Opcode 0x00 - Error response
+
+	Opcode 0x01 - Read Supported Commands command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Response parameters:	<supported commands> (variable)
+
+		Each bit in response is a flag indicating if command with
+		opcode matching bit number is supported. Bit set to 1 means
+		that command is supported. Bit 0 is reserved and shall always
+		be set to 0. If specific bit is not present in response (less
+		than required bytes received) it shall be assumed that command
+		is not supported.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x02 - Connect command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					PSM (2 octets)
+		Response parameters:	Chan_ID (1 octet)
+
+		This command is used to create an L2CAP channel.
+		Chan_ID is returned in the response to this command to allow
+		cancellation of this connection request using Disconnect
+		command.
+		Connected Event (or Disconnected Event in case of an error)
+		shall be expected after issuing this command.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x03 - Disconnect command
+
+		Controller Index:	<controller id>
+		Command parameters:	Chan_ID (1 octet)
+		Response parameters:	<none>
+
+		This command is used to close an L2CAP channel.
+		Chan_ID is the internal application number that identifies
+		L2CAP channel.
+		Disconnected Event shall be expected after issuing this command.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x04 - Send Data command
+
+		Controller Index:	<controller id>
+		Command parameters:	Chan_ID (1 octet)
+					Data_Length (2 octets)
+					Data (Data_Length octets)
+		Response parameters:	<none>
+
+		This command is used to send data over L2CAP channel.
+		Chan_ID is the internal application number that identifies
+		L2CAP channel.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x05 - Listen command
+
+		Controller Index:	<controller id>
+		Command parameters:	PSM (2 octets)
+					Transport (1 octet)
+		Response parameters:	<none>
+
+		Valid Transport parameter values:
+					0x00 = BR/EDR
+					0x01 = LE
+
+		This command is used to register L2CAP PSM and listen for
+		incoming data.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x06 - Accept Connection Request
+
+		Controller Index:	<controller id>
+		Command parameters:	Chan_ID (1 octet)
+					Result (2 octets)
+		Return Parameters:	<none>
+
+		This command is used to accept/reject incoming connection
+		request. Connection can be rejected with non-zero Result value
+		(refer to the L2CAP <LE Credit Based> Connection Result values).
+		Connected Event shall be expected after issuing this command.
+
+		In case of an error, the error response will be returned.
+
+Events:
+	Opcode 0x80 - Connection Request Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Chan_ID (1 octet)
+					PSM (2 octets)
+					Address_Type (1 octet)
+					Address (6 octets)
+
+		This event indicates incoming request for L2CAP connection.
+		Connection Request needs to be accepted/rejected with result
+		code using Accept Connection Request command.
+
+	Opcode 0x81 - Connected Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Chan_ID (1 octet)
+					PSM (2 octets)
+					Address_Type (1 octet)
+					Address (6 octets)
+
+		This event indicates new L2CAP connection.
+		Chan_ID is the internal application number that identifies
+		L2CAP channel.
+
+	Opcode 0x82 - Disconnected Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Result (2 octets)
+					Chan_ID (1 octet)
+					PSM (2 octets)
+					Address_Type (1 octet)
+					Address (6 octets)
+
+		This event indicates L2CAP disconnection.
+		Result value is returned in the response, if remote rejected
+		connection request only. Otherwise it shall be set to zero.
+		Please refer to the Core Specification for possible
+		L2CAP <LE Credit Based> Connection Result values.
+		Chan_ID is the internal application number that identifies
+		L2CAP channel.
+
+	Opcode 0x83 - Data Received Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Chan_ID (1 octet)
+					Data_Length (2 octets)
+					Data (Data_Length octets)
+
+		This event forwards data received over L2CAP channel.
+		Chan_ID is the internal application number that identifies
+		L2CAP channel.

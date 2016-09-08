@@ -41,7 +41,7 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, rtx_work)
+#define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
 
 #define L2CAP_LE_MIN_MTU		23
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
@@ -68,16 +68,11 @@
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-enum l2cap_conn_list_action {
-	L2CAP_LOOKUP_CHAN,
-	L2CAP_DETACH_CHAN,
-};
-
 /* Wrapper macros making action on channel's list assigned to connection */
 #define l2cap_lookup_chan(conn, chan) \
-	__l2cap_chan(conn, chan, L2CAP_LOOKUP_CHAN)
+	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_LOOKUP)
 #define l2cap_detach_chan(conn, chan) \
-	__l2cap_chan(conn, chan, L2CAP_DETACH_CHAN)
+	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_DETACH)
 
 static struct bt_l2cap_fixed_chan *le_channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -193,7 +188,7 @@ static struct bt_l2cap_le_chan *__l2cap_chan(struct bt_conn *conn,
 		}
 
 		switch (action) {
-		case L2CAP_DETACH_CHAN:
+		case BT_L2CAP_CHAN_DETACH:
 			if (!prev) {
 				conn->channels = chan->_next;
 			} else {
@@ -201,7 +196,7 @@ static struct bt_l2cap_le_chan *__l2cap_chan(struct bt_conn *conn,
 			}
 
 			return BT_L2CAP_LE_CHAN(chan);
-		case L2CAP_LOOKUP_CHAN:
+		case BT_L2CAP_CHAN_LOOKUP:
 		default:
 			return BT_L2CAP_LE_CHAN(chan);
 		}
@@ -228,10 +223,6 @@ destroy:
 	if (chan->destroy) {
 		chan->destroy(chan);
 	}
-
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-	chan->state = BT_L2CAP_DISCONNECTED;
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 }
 
 static void l2cap_rtx_timeout(struct nano_work *work)
@@ -266,7 +257,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	nano_delayed_work_init(&ch->rtx_work, l2cap_rtx_timeout);
+	nano_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
@@ -545,7 +536,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", ch, ch->rx.cid);
 
 	/* Cancel ongoing work */
-	nano_delayed_work_cancel(&ch->rtx_work);
+	nano_delayed_work_cancel(&chan->rtx_work);
 
 	/* There could be a writer waiting for credits so return a dummy credit
 	 * to wake it up.
@@ -793,7 +784,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		l2cap_chan_rx_give_credits(chan, L2CAP_LE_MAX_CREDITS);
 
 		/* Cancel RTX work */
-		nano_delayed_work_cancel(&chan->rtx_work);
+		nano_delayed_work_cancel(&chan->chan.rtx_work);
 
 		break;
 	/* TODO: Retry on Authentication and Encryption errors */
@@ -1258,9 +1249,9 @@ static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
 	 * link is lost.
 	 */
 	if (ticks) {
-		nano_delayed_work_submit(&chan->rtx_work, ticks);
+		nano_delayed_work_submit(&chan->chan.rtx_work, ticks);
 	} else {
-		nano_delayed_work_cancel(&chan->rtx_work);
+		nano_delayed_work_cancel(&chan->chan.rtx_work);
 	}
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);

@@ -245,12 +245,12 @@ void on_nble_gattc_read_multi_rsp(const struct nble_gattc_read_rsp *rsp,
 
 struct nble_gattc_write_param;
 
-typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
-			      const struct nble_gattc_write_param *par);
+typedef void (*nble_att_func_t)(struct bt_conn *conn, uint8_t err,
+				const struct nble_gattc_write_param *par);
 
 struct nble_gattc_write_param {
 	/* Function invoked upon write response */
-	bt_att_func_t func;
+	nble_att_func_t func;
 	/* User specific data */
 	void *user_data[2];
 };

@@ -236,4 +236,19 @@ static inline uint32_t sys_get_le32(const uint8_t src[4])
 	return ((uint32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
 }
 
+/**
+ *  @brief Get a 64-bit integer stored in little-endian format.
+ *
+ *  Get a 64-bit integer, stored in little-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the little-endian 64-bit integer to get.
+ *
+ *  @return 64-bit integer in host endianness.
+ */
+static inline uint64_t sys_get_le64(const uint8_t src[8])
+{
+	return ((uint64_t)sys_get_le32(&src[4]) << 32) | sys_get_le32(&src[0]);
+}
+
 #endif /* __BYTEORDER_H__ */

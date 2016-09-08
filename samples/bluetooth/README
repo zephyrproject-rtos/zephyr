@@ -93,3 +93,8 @@ peripheral_hr:
         Similar to 'peripheral', except that this application
         specifically exposes the HR (Heart Rate) GATT Service. Once a
         device connects it will generate dummy heart-rate values.
+
+peripheral_hids:
+        Similar to 'peripheral', except that this application
+        specifically exposes the HID GATT Service. The report map used
+	is for a generic mouse.

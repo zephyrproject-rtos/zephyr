@@ -358,51 +358,33 @@ static const bt_addr_le_t *find_id_addr(const bt_addr_le_t *addr)
 	return addr;
 }
 
-static int set_advertise_enable(void)
+static int set_advertise_enable(bool enable)
 {
 	struct net_buf *buf;
 	int err;
-
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		return 0;
-	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
+	if (enable) {
+		net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
+	} else {
+		net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
+	}
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 	if (err) {
 		return err;
 	}
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING);
-	return 0;
-}
-
-static int set_advertise_disable(void)
-{
-	struct net_buf *buf;
-	int err;
-
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		return 0;
+	if (enable) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+	} else {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
-	if (err) {
-		return err;
-	}
-
-	atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
 	return 0;
 }
 
@@ -469,9 +451,9 @@ static void rpa_timeout(struct nano_work *work)
 	 */
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 		/* make sure new address is used */
-		set_advertise_disable();
+		set_advertise_enable(false);
 		le_set_rpa();
-		set_advertise_enable();
+		set_advertise_enable(true);
 	}
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
@@ -635,7 +617,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 		 */
 		if (conn->type == BT_CONN_TYPE_BR &&
 		    atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
-			bt_keys_clear(conn->keys, BT_KEYS_LINK_KEY);
+			bt_keys_link_key_clear(conn->br.link_key);
 		}
 #endif
 		bt_conn_unref(conn);
@@ -650,11 +632,12 @@ static void hci_disconn_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 
 advertise:
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 		le_set_rpa();
 #endif
-		set_advertise_enable();
+		set_advertise_enable(true);
 	}
 }
 
@@ -767,10 +750,29 @@ static void le_conn_complete(struct net_buf *buf)
 		bt_addr_le_copy(&conn->le.init_addr, &evt->peer_addr);
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
+		/* TODO Handle the probability that random address could have
+		 * been updated by rpa_timeout or numerous other places it is
+		 * called in this file before le_conn_complete is processed
+		 * here.
+		 */
 		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.random_addr);
 #else
 		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr);
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
+
+		/* if the controller supports, lets advertise for another
+		 * slave connection.
+		 * check for connectable advertising state is sufficient as
+		 * this is how this le connection complete for slave occurred.
+		 */
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
+		    BT_LE_STATES_SLAVE_CONN_ADV(bt_dev.le.states)) {
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+			le_set_rpa();
+#endif
+			set_advertise_enable(true);
+		}
+
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
@@ -785,7 +787,7 @@ static void le_conn_complete(struct net_buf *buf)
 	}
 
 	if ((evt->role == BT_HCI_ROLE_MASTER) ||
-	    (bt_dev.le.features[0] & BT_HCI_LE_SLAVE_FEATURES)) {
+	    BT_FEAT_LE_SLAVE_FEATURE_XCHG(bt_dev.le.features)) {
 		err = hci_le_read_remote_features(conn);
 		if (!err) {
 			goto done;
@@ -1105,11 +1107,16 @@ static void update_sec_level_br(struct bt_conn *conn)
 		return;
 	}
 
-	if (conn->keys && (conn->keys->keys & BT_KEYS_LINK_KEY)) {
-		conn->sec_level = BT_SECURITY_MEDIUM;
-		if (atomic_test_bit(conn->keys->flags,
-				    BT_KEYS_AUTHENTICATED)) {
-			conn->sec_level = BT_SECURITY_HIGH;
+	if (conn->br.link_key) {
+		if (atomic_test_bit(conn->br.link_key->flags,
+				    BT_LINK_KEY_AUTHENTICATED)) {
+			if (conn->encrypt == 0x02) {
+				conn->sec_level = BT_SECURITY_FIPS;
+			} else {
+				conn->sec_level = BT_SECURITY_HIGH;
+			}
+		} else {
+			conn->sec_level = BT_SECURITY_MEDIUM;
 		}
 	} else {
 		BT_WARN("No BR/EDR link key found");
@@ -1192,14 +1199,17 @@ static void link_key_notify(struct net_buf *buf)
 
 	BT_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr), evt->key_type);
 
-	if (!conn->keys) {
-		conn->keys = bt_keys_get_link_key(&evt->bdaddr);
+	if (!conn->br.link_key) {
+		conn->br.link_key = bt_keys_get_link_key(&evt->bdaddr);
 	}
-	if (!conn->keys) {
+	if (!conn->br.link_key) {
 		BT_ERR("Can't update keys for %s", bt_addr_str(&evt->bdaddr));
 		bt_conn_unref(conn);
 		return;
 	}
+
+	/* clear any old Link Key flags */
+	atomic_set(conn->br.link_key->flags, 0);
 
 	switch (evt->key_type) {
 	case BT_LK_COMBINATION:
@@ -1209,30 +1219,41 @@ static void link_key_notify(struct net_buf *buf)
 		 */
 		if (atomic_test_and_clear_bit(conn->flags,
 					      BT_CONN_BR_LEGACY_SECURE)) {
-			atomic_set_bit(conn->keys->flags,
-				       BT_KEYS_AUTHENTICATED);
+			atomic_set_bit(conn->br.link_key->flags,
+				       BT_LINK_KEY_AUTHENTICATED);
 		}
-		memcpy(conn->keys->link_key.val, evt->link_key, 16);
+		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
-	case BT_LK_UNAUTH_COMBINATION_P192:
 	case BT_LK_AUTH_COMBINATION_P192:
-		if (evt->key_type == BT_LK_AUTH_COMBINATION_P192) {
-			atomic_set_bit(conn->keys->flags,
-				       BT_KEYS_AUTHENTICATED);
-		}
-		/*
-		 * Update keys database if authentication bond is required to
-		 * be persistent. Mark no-bond link key flag for connection on
-		 * the contrary.
-		 */
-		if (bt_conn_ssp_get_auth(conn) > BT_HCI_NO_BONDING_MITM) {
-			memcpy(conn->keys->link_key.val, evt->link_key, 16);
-		} else {
+		atomic_set_bit(conn->br.link_key->flags,
+			       BT_LINK_KEY_AUTHENTICATED);
+		/* fall through */
+	case BT_LK_UNAUTH_COMBINATION_P192:
+		/* Mark no-bond so that link-key is removed on disconnection */
+		if (bt_conn_ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
 			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
 		}
+
+		memcpy(conn->br.link_key->val, evt->link_key, 16);
+		break;
+	case BT_LK_AUTH_COMBINATION_P256:
+		atomic_set_bit(conn->br.link_key->flags,
+			       BT_LINK_KEY_AUTHENTICATED);
+		/* fall through */
+	case BT_LK_UNAUTH_COMBINATION_P256:
+		atomic_set_bit(conn->br.link_key->flags, BT_LINK_KEY_SC);
+
+		/* Mark no-bond so that link-key is removed on disconnection */
+		if (bt_conn_ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
+			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
+		}
+
+		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	default:
-		BT_WARN("Link key type unsupported/unimplemented");
+		BT_WARN("Unsupported Link Key type %u", evt->key_type);
+		memset(conn->br.link_key->val, 0,
+		       sizeof(conn->br.link_key->val));
 		break;
 	}
 
@@ -1290,11 +1311,11 @@ static void link_key_req(struct net_buf *buf)
 		return;
 	}
 
-	if (!conn->keys) {
-		conn->keys = bt_keys_find_link_key(&evt->bdaddr);
+	if (!conn->br.link_key) {
+		conn->br.link_key = bt_keys_find_link_key(&evt->bdaddr);
 	}
 
-	if (!conn->keys) {
+	if (!conn->br.link_key) {
 		link_key_neg_reply(&evt->bdaddr);
 		bt_conn_unref(conn);
 		return;
@@ -1304,14 +1325,15 @@ static void link_key_req(struct net_buf *buf)
 	 * Enforce regenerate by controller stronger link key since found one
 	 * in database not covers requested security level.
 	 */
-	if (!atomic_test_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED) &&
+	if (!atomic_test_bit(conn->br.link_key->flags,
+			     BT_LINK_KEY_AUTHENTICATED) &&
 	    conn->required_sec_level > BT_SECURITY_MEDIUM) {
 		link_key_neg_reply(&evt->bdaddr);
 		bt_conn_unref(conn);
 		return;
 	}
 
-	link_key_reply(&evt->bdaddr, conn->keys->link_key.val);
+	link_key_reply(&evt->bdaddr, conn->br.link_key->val);
 	bt_conn_unref(conn);
 }
 
@@ -1841,7 +1863,7 @@ static void read_remote_features_complete(struct net_buf *buf)
 
 	memcpy(conn->br.features[0], evt->features, sizeof(evt->features));
 
-	if (!lmp_ext_feat_capable(conn)) {
+	if (!BT_FEAT_EXT_FEATURES(conn->br.features)) {
 		goto done;
 	}
 
@@ -1886,7 +1908,7 @@ static void read_remote_ext_features_complete(struct net_buf *buf)
 
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BLUETOOTH_SMP)
 static void update_sec_level(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
@@ -1894,9 +1916,9 @@ static void update_sec_level(struct bt_conn *conn)
 		return;
 	}
 
-	if (conn->keys && atomic_test_bit(conn->keys->flags,
-					  BT_KEYS_AUTHENTICATED)) {
-		if (conn->keys->keys & BT_KEYS_LTK_P256) {
+	if (conn->le.keys && atomic_test_bit(conn->le.keys->flags,
+					     BT_KEYS_AUTHENTICATED)) {
+		if (conn->le.keys->keys & BT_KEYS_LTK_P256) {
 			conn->sec_level = BT_SECURITY_FIPS;
 		} else {
 			conn->sec_level = BT_SECURITY_HIGH;
@@ -1910,7 +1932,9 @@ static void update_sec_level(struct bt_conn *conn)
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
 	}
 }
+#endif /* CONFIG_BLUETOOTH_SMP */
 
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void hci_encrypt_change(struct net_buf *buf)
 {
 	struct bt_hci_evt_encrypt_change *evt = (void *)buf->data;
@@ -1942,26 +1966,28 @@ static void hci_encrypt_change(struct net_buf *buf)
 
 	conn->encrypt = evt->encrypt;
 
-	/*
-	 * we update keys properties only on successful encryption to avoid
-	 * losing valid keys if encryption was not successful
-	 *
-	 * Update keys with last pairing info for proper sec level update.
-	 * This is done only for LE transport, for BR/EDR keys are updated on
-	 * HCI 'Link Key Notification Event'
-	 */
-	if (conn->encrypt && conn->type == BT_CONN_TYPE_LE) {
-		bt_smp_update_keys(conn);
-	}
-
+#if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
+		/*
+		 * we update keys properties only on successful encryption to
+		 * avoid losing valid keys if encryption was not successful.
+		 *
+		 * Update keys with last pairing info for proper sec level
+		 * update. This is done only for LE transport, for BR/EDR keys
+		 * are updated on HCI 'Link Key Notification Event'
+		 */
+		if (conn->encrypt) {
+			bt_smp_update_keys(conn);
+		}
 		update_sec_level(conn);
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_BREDR)
-	} else {
+	if (conn->type == BT_CONN_TYPE_BR) {
 		update_sec_level_br(conn);
 		reset_pairing(conn);
-#endif /* CONFIG_BLUETOOTH_BREDR */
 	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
@@ -1995,14 +2021,17 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	 * updated on HCI 'Link Key Notification Event', therefore update here
 	 * only security level based on available keys and encryption state.
 	 */
+#if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_update_keys(conn);
 		update_sec_level(conn);
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	} else {
-		update_sec_level_br(conn);
-#endif /* CONFIG_BLUETOOTH_BREDR */
 	}
+#endif /* CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		update_sec_level_br(conn);
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
@@ -2053,15 +2082,15 @@ static void le_ltk_request(struct net_buf *buf)
 		goto done;
 	}
 
-	if (!conn->keys) {
-		conn->keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
-		if (!conn->keys) {
-			conn->keys = bt_keys_find(BT_KEYS_SLAVE_LTK,
-						  &conn->le.dst);
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
+		if (!conn->le.keys) {
+			conn->le.keys = bt_keys_find(BT_KEYS_SLAVE_LTK,
+						     &conn->le.dst);
 		}
 	}
 
-	if (conn->keys && (conn->keys->keys & BT_KEYS_LTK_P256) &&
+	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_LTK_P256) &&
 	    evt->rand == 0 && evt->ediv == 0) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
 
@@ -2076,10 +2105,11 @@ static void le_ltk_request(struct net_buf *buf)
 		cp->handle = evt->handle;
 
 		/* use only enc_size bytes of key for encryption */
-		memcpy(cp->ltk, conn->keys->ltk.val, conn->keys->enc_size);
-		if (conn->keys->enc_size < sizeof(cp->ltk)) {
-			memset(cp->ltk + conn->keys->enc_size, 0,
-			       sizeof(cp->ltk) - conn->keys->enc_size);
+		memcpy(cp->ltk, conn->le.keys->ltk.val,
+		       conn->le.keys->enc_size);
+		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
+			memset(cp->ltk + conn->le.keys->enc_size, 0,
+			       sizeof(cp->ltk) - conn->le.keys->enc_size);
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
@@ -2087,9 +2117,9 @@ static void le_ltk_request(struct net_buf *buf)
 	}
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
-	    conn->keys->slave_ltk.rand == evt->rand &&
-	    conn->keys->slave_ltk.ediv == evt->ediv) {
+	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_SLAVE_LTK) &&
+	    conn->le.keys->slave_ltk.rand == evt->rand &&
+	    conn->le.keys->slave_ltk.ediv == evt->ediv) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
 		struct net_buf *buf;
 
@@ -2104,11 +2134,11 @@ static void le_ltk_request(struct net_buf *buf)
 		cp->handle = evt->handle;
 
 		/* use only enc_size bytes of key for encryption */
-		memcpy(cp->ltk, conn->keys->slave_ltk.val,
-		       conn->keys->enc_size);
-		if (conn->keys->enc_size < sizeof(cp->ltk)) {
-			memset(cp->ltk + conn->keys->enc_size, 0,
-			       sizeof(cp->ltk) - conn->keys->enc_size);
+		memcpy(cp->ltk, conn->le.keys->slave_ltk.val,
+		       conn->le.keys->enc_size);
+		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
+			memset(cp->ltk + conn->le.keys->enc_size, 0,
+			       sizeof(cp->ltk) - conn->le.keys->enc_size);
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
@@ -2219,7 +2249,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 
 static void hci_cmd_complete(struct net_buf *buf)
 {
-	struct hci_evt_cmd_complete *evt = (void *)buf->data;
+	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
 	uint8_t status;
 
@@ -2397,7 +2427,7 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 		}
 #else
 		/* only set NRPA if there is no advertising ongoing */
-		if (!atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 			err = le_set_nrpa();
 			if (err) {
 				net_buf_unref(buf);
@@ -2700,15 +2730,6 @@ static void hci_cmd_tx_fiber(void)
 	}
 }
 
-static void read_local_features_complete(struct net_buf *buf)
-{
-	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
-
-	BT_DBG("status %u", rp->status);
-
-	memcpy(bt_dev.features, rp->features, sizeof(bt_dev.features));
-}
-
 static void read_local_ver_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_local_version_info *rp = (void *)buf->data;
@@ -2821,6 +2842,24 @@ static void read_supported_commands_complete(struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_TINYCRYPT_ECC */
 }
 
+static void read_local_features_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
+
+	BT_DBG("status %u", rp->status);
+
+	memcpy(bt_dev.features[0], rp->features, sizeof(bt_dev.features[0]));
+}
+
+static void le_read_supp_states_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_le_read_supp_states *rp = (void *)buf->data;
+
+	BT_DBG("status %u", rp->status);
+
+	bt_dev.le.states = sys_get_le64(rp->le_states);
+}
+
 static int common_init(void)
 {
 	struct net_buf *rsp;
@@ -2896,7 +2935,7 @@ static int le_init(void)
 	int err;
 
 	/* For now we only support LE capable controllers */
-	if (!lmp_le_capable(bt_dev)) {
+	if (!BT_FEAT_LE(bt_dev.features)) {
 		BT_ERR("Non-LE capable controller detected!");
 		return -ENODEV;
 	}
@@ -2918,7 +2957,7 @@ static int le_init(void)
 	le_read_buffer_size_complete(rsp);
 	net_buf_unref(rsp);
 
-	if (lmp_bredr_capable(bt_dev)) {
+	if (BT_FEAT_BREDR(bt_dev.features)) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
 					sizeof(*cp_le));
 		if (!buf) {
@@ -2927,7 +2966,7 @@ static int le_init(void)
 
 		cp_le = net_buf_add(buf, sizeof(*cp_le));
 
-		/* Excplicitly enable LE for dual-mode controllers */
+		/* Explicitly enable LE for dual-mode controllers */
 		cp_le->le = 0x01;
 		cp_le->simul = 0x00;
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, buf,
@@ -2937,6 +2976,18 @@ static int le_init(void)
 		}
 	}
 
+	/* Read LE Supported States */
+	if (BT_CMD_LE_STATES(bt_dev.supported_commands)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_SUPP_STATES, NULL,
+					   &rsp);
+		if (err) {
+			return err;
+		}
+		le_read_supp_states_complete(rsp);
+		net_buf_unref(rsp);
+	}
+
+	/* Set LE event mask */
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EVENT_MASK, sizeof(*cp_mask));
 	if (!buf) {
 		return -ENOBUFS;
@@ -2977,12 +3028,63 @@ static int le_init(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+static int read_ext_features(void)
+{
+	int i;
+
+	/* Read Local Supported Extended Features */
+	for (i = 1; i < LMP_FEAT_PAGES_COUNT; i++) {
+		struct bt_hci_cp_read_local_ext_features *cp;
+		struct bt_hci_rp_read_local_ext_features *rp;
+		struct net_buf *buf, *rsp;
+		int err;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
+					sizeof(*cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->page = i;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
+					   buf, &rsp);
+		if (err) {
+			return err;
+		}
+
+		rp = (void *)rsp->data;
+
+		memcpy(&bt_dev.features[i], rp->ext_features,
+		       sizeof(bt_dev.features[i]));
+
+		if (rp->max_page <= i) {
+			net_buf_unref(rsp);
+			break;
+		}
+
+		net_buf_unref(rsp);
+	}
+
+	return 0;
+}
+
 static int br_init(void)
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
+	struct bt_hci_write_local_name *name_cp;
 	int err;
+
+	/* Read extended local features */
+	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
+		err = read_ext_features();
+		if (err) {
+			return err;
+		}
+	}
 
 	/* Get BR/EDR buffer size */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &buf);
@@ -3017,6 +3119,41 @@ static int br_init(void)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_MODE, buf, NULL);
 	if (err) {
 		return err;
+	}
+
+	/* Set local name */
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(*name_cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	name_cp = net_buf_add(buf, sizeof(*name_cp));
+	strncpy(name_cp->local_name, CONFIG_BLUETOOTH_BREDR_NAME,
+		sizeof(name_cp->local_name));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	/* Enable BR/EDR SC if supported */
+	if (BT_FEAT_SC(bt_dev.features)) {
+		struct bt_hci_cp_write_sc_host_supp *sc_cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SC_HOST_SUPP,
+					sizeof(*sc_cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		sc_cp = net_buf_add(buf, sizeof(*sc_cp));
+		sc_cp->sc_support = 0x01;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SC_HOST_SUPP, buf,
+					   NULL);
+		if (err) {
+			return err;
+		}
 	}
 
 	return 0;
@@ -3091,7 +3228,7 @@ static int set_event_mask(void)
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_SMP)
-	if (bt_dev.le.features[0] & BT_HCI_LE_ENCRYPTION) {
+	if (BT_FEAT_LE_ENCR(bt_dev.le.features)) {
 		ev->events[0] |= 0x80; /* Encryption Change */
 		ev->events[5] |= 0x80; /* Encryption Key Refresh Complete */
 	}
@@ -3169,13 +3306,18 @@ static int hci_init(void)
 		return err;
 	}
 
-	if (lmp_bredr_capable(bt_dev)) {
+	if (BT_FEAT_BREDR(bt_dev.features)) {
 		err = br_init();
 		if (err) {
 			return err;
 		}
 	} else {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		BT_ERR("Non-BR/EDR controller detected");
+		return -EIO;
+#else
 		BT_DBG("Non-BR/EDR controller detected! Skipping BR init.");
+#endif
 	}
 
 	err = set_event_mask();
@@ -3544,13 +3686,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 		return -EALREADY;
-	}
-
-	err = set_advertise_disable();
-	if (err) {
-		return err;
 	}
 
 	err = set_ad(BT_HCI_OP_LE_SET_ADV_DATA, ad, ad_len);
@@ -3633,7 +3770,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	err = set_advertise_enable();
+	err = set_advertise_enable(true);
 	if (err) {
 		return err;
 	}
@@ -3647,16 +3784,24 @@ int bt_le_adv_stop(void)
 {
 	int err;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+	/* Advertise disable may fail if slave connections are established,
+	 * and advertising is not kept ON as the controller does not support
+	 * simultaneous slave connections and connectable advertising state.
+	 * Hence, we test and clear BT_DEV_KEEP_ADVERTISING flag before trying
+	 * to disable advertising if BT_DEV_ADVERTISING is set.
+	 */
+	if (!atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
 		return -EALREADY;
 	}
 
-	err = set_advertise_disable();
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		return 0;
+	}
+
+	err = set_advertise_enable(false);
 	if (err) {
 		return err;
 	}
-
-	atomic_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
 
 #if !defined(CONFIG_BLUETOOTH_PRIVACY)
 	/* If active scan is ongoing set NRPA */
