@@ -451,6 +451,7 @@ static int eth_enc28j60_init(struct device *dev)
 	/* Initialize semaphores */
 	nano_sem_init(&context->tx_sem);
 	nano_sem_init(&context->int_sem);
+	nano_sem_give(&context->tx_sem);
 
 	/* Start interruption-poll fiber */
 	fiber_start(context->fiber_stack, ENC28J60_FIBER_STACK_SIZE,
