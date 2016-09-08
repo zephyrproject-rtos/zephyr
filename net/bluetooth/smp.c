@@ -709,7 +709,84 @@ static void smp_br_derive_ltk(struct bt_smp *smp)
 
 static void smp_br_distribute_keys(struct bt_smp *smp)
 {
-	/* TODO */
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_keys *keys;
+	bt_addr_le_t addr;
+
+	/*
+	 * For dualmode devices LE address is same as BR/EDR address and is of
+	 * public type.
+	 */
+	bt_addr_copy(&addr.a, &conn->br.dst);
+	addr.type = BT_ADDR_LE_PUBLIC;
+
+	keys = bt_keys_get_addr(&addr);
+	if (!keys) {
+		BT_ERR("No keys space for %s", bt_addr_le_str(&addr));
+		return;
+	}
+
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+	if (smp->local_dist & BT_SMP_DIST_ID_KEY) {
+		struct bt_smp_ident_info *id_info;
+		struct bt_smp_ident_addr_info *id_addr_info;
+		struct net_buf *buf;
+
+		smp->local_dist &= ~BT_SMP_DIST_ID_KEY;
+
+		buf = smp_create_pdu(conn, BT_SMP_CMD_IDENT_INFO,
+				     sizeof(*id_info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Ident Info buffer");
+			return;
+		}
+
+		id_info = net_buf_add(buf, sizeof(*id_info));
+		memcpy(id_info->irk, bt_dev.irk, 16);
+
+		smp_br_send(smp, buf);
+
+		buf = smp_create_pdu(conn, BT_SMP_CMD_IDENT_ADDR_INFO,
+				     sizeof(*id_addr_info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Ident Addr Info buffer");
+			return;
+		}
+
+		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
+		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr);
+
+		smp_br_send(smp, buf);
+	}
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
+
+#if defined(CONFIG_BLUETOOTH_SIGNING)
+	if (smp->local_dist & BT_SMP_DIST_SIGN) {
+		struct bt_smp_signing_info *info;
+		struct net_buf *buf;
+
+		smp->local_dist &= ~BT_SMP_DIST_SIGN;
+
+		buf = smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
+				     sizeof(*info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Signing Info buffer");
+			return;
+		}
+
+		info = net_buf_add(buf, sizeof(*info));
+
+		bt_rand(info->csrk, sizeof(info->csrk));
+
+		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
+			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
+			memcpy(keys->local_csrk.val, info->csrk, 16);
+			keys->local_csrk.cnt = 0;
+		}
+
+		smp_br_send(smp, buf);
+	}
+#endif /* CONFIG_BLUETOOTH_SIGNING */
 }
 
 static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
