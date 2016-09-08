@@ -190,7 +190,7 @@
  *  - Automatic CRC
  *  - Frame Length Checking
  */
-#define ENC28J60_MAC_CONFIG   0xF2
+#define ENC28J60_MAC_CONFIG   0x32
 #define ENC28J60_MAC_BBIPG_HD 0x12
 #define ENC28J60_MAC_BBIPG_FD 0x15
 #define ENC28J60_MAC_NBBIPGL  0x12
