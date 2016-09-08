@@ -230,6 +230,7 @@ struct eth_enc28j60_config {
 	const char *spi_port;
 	uint32_t spi_freq;
 	uint8_t spi_slave;
+	uint8_t full_duplex;
 };
 
 struct eth_enc28j60_runtime {
@@ -237,7 +238,6 @@ struct eth_enc28j60_runtime {
 	struct device *gpio;
 	struct device *spi;
 	struct gpio_callback gpio_cb;
-	char full_duplex;
 	uint8_t  tx_tsv[TSV_SIZE];
 	uint8_t  rx_rsv[RSV_SIZE];
 	struct nano_sem tx_sem;

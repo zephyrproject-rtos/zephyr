@@ -197,32 +197,6 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 	nano_fiber_sem_give(&context->spi_sem);
 }
 
-static void eth_enc28j60_read_phy(struct device *dev, uint16_t reg_addr,
-				  int16_t *data)
-{
-	uint8_t rl, rh;
-	uint8_t data_mistat;
-
-	eth_enc28j60_set_bank(dev, ENC28J60_REG_MIREGADR);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MIREGADR, reg_addr);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MICMD,
-			       ENC28J60_BIT_MICMD_MIIRD);
-	eth_enc28j60_set_bank(dev, ENC28J60_REG_MISTAT);
-
-	do {
-		/* wait 10.24 useconds */
-		sys_thread_busy_wait(D10D24S);
-		eth_enc28j60_read_reg(dev, ENC28J60_REG_MISTAT,
-				      &data_mistat);
-	} while ((data_mistat & ENC28J60_BIT_MISTAT_BUSY));
-
-	eth_enc28j60_set_bank(dev, ENC28J60_REG_MIREGADR);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MICMD, 0x00);
-	eth_enc28j60_read_reg(dev, ENC28J60_REG_MIRDL, &rl);
-	eth_enc28j60_read_reg(dev, ENC28J60_REG_MIRDH, &rh);
-	*data = rl | ((uint16_t)rh << 8);
-}
-
 static void eth_enc28j60_write_phy(struct device *dev, uint16_t reg_addr,
 				   int16_t data)
 {
@@ -301,7 +275,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 
 static void eth_enc28j60_init_mac(struct device *dev)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_config *config = dev->config->config_info;
 	uint8_t data_macon;
 	uint8_t mac_address[6];
 
@@ -315,14 +289,14 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 	data_macon = ENC28J60_MAC_CONFIG;
 
-	if (context->full_duplex) {
+	if (config->full_duplex) {
 		data_macon |= ENC28J60_BIT_MACON3_FULDPX;
 	}
 
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MACON3, data_macon);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAIPGL, ENC28J60_MAC_NBBIPGL);
 
-	if (context->full_duplex) {
+	if (config->full_duplex) {
 		eth_enc28j60_write_reg(dev, ENC28J60_REG_MAIPGH,
 				       ENC28J60_MAC_NBBIPGH);
 		eth_enc28j60_write_reg(dev, ENC28J60_REG_MABBIPG,
@@ -356,9 +330,9 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 static void eth_enc28j60_init_phy(struct device *dev)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_config *config = dev->config->config_info;
 
-	if (context->full_duplex) {
+	if (config->full_duplex) {
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON1,
 				       ENC28J60_BIT_PHCON1_PDPXMD);
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON2, 0x0);
@@ -374,7 +348,6 @@ static int eth_enc28j60_init(struct device *dev)
 	struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	struct spi_config spi_cfg;
-	uint16_t data_phy;
 
 	nano_sem_init(&context->spi_sem);
 	nano_fiber_sem_give(&context->spi_sem);
@@ -427,11 +400,6 @@ static int eth_enc28j60_init(struct device *dev)
 
 	/* Errata B7/2 */
 	sys_thread_busy_wait(D10D24S);
-
-	/* Select half-duplex/full-duplex from LED configuration */
-	eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHCON1, &data_phy);
-	data_phy &= ENC28J60_BIT_PHCON1_PDPXMD;
-	context->full_duplex = !!(data_phy);
 
 	eth_enc28j60_init_buffers(dev);
 	eth_enc28j60_init_mac(dev);
@@ -654,6 +622,7 @@ static struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.spi_port = CONFIG_ETH_ENC28J60_0_SPI_PORT_NAME,
 	.spi_freq  = CONFIG_ETH_ENC28J60_0_SPI_BUS_FREQ,
 	.spi_slave = CONFIG_ETH_ENC28J60_0_SLAVE,
+	.full_duplex = CONFIG_ETH_EN28J60_0_FULL_DUPLEX,
 };
 
 DEVICE_AND_API_INIT(eth_enc28j60_0, CONFIG_ETH_ENC28J60_0_NAME,
