@@ -24,7 +24,7 @@
 
 #include <nano_private.h>
 
-FUNC_NO_FP int *_get_errno(void)
+int *_get_errno(void)
 {
 	return &_nanokernel.current->errno_var;
 }

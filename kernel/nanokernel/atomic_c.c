@@ -52,7 +52,7 @@
  * @param new_value value to compare against
  * @return Returns 1 if <new_value> is written, 0 otherwise.
  */
-FUNC_NO_FP int atomic_cas(atomic_t *target, atomic_val_t old_value,
+int atomic_cas(atomic_t *target, atomic_val_t old_value,
 			  atomic_val_t new_value)
 {
 	unsigned int key;
@@ -83,7 +83,7 @@ FUNC_NO_FP int atomic_cas(atomic_t *target, atomic_val_t old_value,
  *
  * @return The previous value from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
+atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -111,7 +111,7 @@ FUNC_NO_FP atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
  *
  * @return The previous value from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
+atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -137,7 +137,7 @@ FUNC_NO_FP atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
  *
  * @return The value from <target> before the increment
  */
-FUNC_NO_FP atomic_val_t atomic_inc(atomic_t *target)
+atomic_val_t atomic_inc(atomic_t *target)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -163,7 +163,7 @@ FUNC_NO_FP atomic_val_t atomic_inc(atomic_t *target)
  *
  * @return The value from <target> prior to the decrement
  */
-FUNC_NO_FP atomic_val_t atomic_dec(atomic_t *target)
+atomic_val_t atomic_dec(atomic_t *target)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -190,7 +190,7 @@ FUNC_NO_FP atomic_val_t atomic_dec(atomic_t *target)
  *
  * @return The value read from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_get(const atomic_t *target)
+atomic_val_t atomic_get(const atomic_t *target)
 {
 	return *target;
 }
@@ -207,7 +207,7 @@ FUNC_NO_FP atomic_val_t atomic_get(const atomic_t *target)
  *
  * @return The previous value from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
+atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -234,7 +234,7 @@ FUNC_NO_FP atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
  *
  * @return The previous value from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_clear(atomic_t *target)
+atomic_val_t atomic_clear(atomic_t *target)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -262,7 +262,7 @@ FUNC_NO_FP atomic_val_t atomic_clear(atomic_t *target)
  *
  * @return The previous value from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
+atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -290,7 +290,7 @@ FUNC_NO_FP atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
  *
  * @return The previous value from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
+atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -318,7 +318,7 @@ FUNC_NO_FP atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
  *
  * @return The previous value from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
+atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
 {
 	unsigned int key;
 	atomic_val_t ret;
@@ -346,7 +346,7 @@ FUNC_NO_FP atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
  *
  * @return The previous value from <target>
  */
-FUNC_NO_FP atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
+atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 {
 	unsigned int key;
 	atomic_val_t ret;
