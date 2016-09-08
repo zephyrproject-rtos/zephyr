@@ -80,11 +80,16 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	case _NANO_ERR_CPU_EXCEPTION:
 		break;
 
-	case _NANO_ERR_SPURIOUS_INT:
-		printk("***** Unhandled interrupt vector %d occurred! "
-		       "*****\n", _irq_controller_isr_vector_get());
-		break;
+	case _NANO_ERR_SPURIOUS_INT: {
+		int vector = _irq_controller_isr_vector_get();
 
+		printk("***** Unhandled interrupt vector ");
+		if (vector >= 0) {
+			printk("%d ", vector);
+		}
+		printk("*****\n");
+		break;
+	}
 	case _NANO_ERR_INVALID_TASK_EXIT:
 		printk("***** Invalid Exit Software Error! *****\n");
 		break;
