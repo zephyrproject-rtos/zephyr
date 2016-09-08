@@ -85,7 +85,8 @@ static inline void _irq_controller_irq_config(unsigned int vector,
  * It is not expected for this function to reveal the identity of
  * vectors triggered by a CPU exception or 'int' instruction.
  *
- * @return the vector of the interrupt that is currently being processed.
+ * @return the vector of the interrupt that is currently being processed, or
+ * -1 if this can't be determined
  */
 static inline int _irq_controller_isr_vector_get(void)
 {

@@ -406,23 +406,25 @@ void _loapic_irq_disable(unsigned int irq)
  * | 0170H  | 224:255 |
  * --------------------
  *
- * @return The vector of the interrupt that is currently being processed.
+ * @return The vector of the interrupt that is currently being processed, or -1
+ * if no IRQ is being serviced.
  */
 int __irq_controller_isr_vector_get(void)
 {
 	int pReg, block;
 
-	for (block = 7; ; block--) {
+	/* Block 0 bits never lit up as these are all exception or reserved
+	 * vectors
+	 */
+	for (block = 7; likely(block > 0); block--) {
 		pReg = sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ISR +
 				  (block * 0x10));
 		if (pReg) {
 			return (block * 32) + (find_msb_set(pReg) - 1);
 		}
-		__ASSERT(block >= 0,
-			 "_loapic_isr_vector_get called but no ISR in service");
 
 	}
-	CODE_UNREACHABLE;
+	return -1;
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT

@@ -219,7 +219,8 @@ void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
  * | 0110H  |  32:63  |
  * --------------------
  *
- * @return The vector of the interrupt that is currently being processed.
+ * @return The vector of the interrupt that is currently being processed, or
+ * -1 if this can't be determined
  */
 int __irq_controller_isr_vector_get(void)
 {
@@ -227,5 +228,8 @@ int __irq_controller_isr_vector_get(void)
 	int isr;
 
 	isr = sys_read32(MVIC_ISR);
+	if (unlikely(!isr)) {
+		return -1;
+	}
 	return 32 + (find_msb_set(isr) - 1);
 }
