@@ -1,7 +1,7 @@
-/* task50.c - helper file for testing microkernel mutex APIs */
+/* Task12.c - helper file for testing microkernel mutex APIs */
 
 /*
- * Copyright (c) 2015 Wind River Systems, Inc.
+ * Copyright (c) 2015-2016 Wind River Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
  */
 
 /*
-DESCRIPTION
-This module defines a task that is used in recursive mutex locking tests.
-It helps ensure that a private mutex can be referenced in a file other than
-the one it was defined in.
-*/
+ * @file
+ * @brief mutex test helper
+ *
+ * This module defines a task that is used in recursive mutex locking tests.
+ * It helps ensure that a private mutex can be referenced in a file other than
+ * the one it was defined in.
+ */
 
 #include <tc_util.h>
 #include <zephyr.h>
@@ -33,16 +35,16 @@ the one it was defined in.
 
 static int tcRC = TC_PASS;         /* test case return code */
 
-extern const kmutex_t private_mutex;
+extern kmutex_t const private_mutex;
 
 /**
  *
- * Task50 - task that participates in recursive locking tests
+ * Task12 - task that participates in recursive locking tests
  *
  * @return  N/A
  */
 
-void Task50(void)
+void Task12(void)
 {
 	int  rv;
 
@@ -60,4 +62,4 @@ void Task50(void)
 	task_sleep(HALF_SECOND);
 	task_mutex_unlock(private_mutex);
 
-}   /* Task50 */
+}
