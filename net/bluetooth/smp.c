@@ -883,8 +883,60 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 {
-	/* TODO */
-	return BT_SMP_ERR_CMD_NOTSUPP;
+	struct bt_smp_pairing *rsp = (void *)buf->data;
+	struct bt_conn *conn = smp->chan.chan.conn;
+	uint8_t max_key_size;
+
+	BT_DBG("");
+
+	max_key_size = bt_conn_enc_key_size(conn);
+	if (!max_key_size) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	if (rsp->max_key_size != max_key_size) {
+		return BT_SMP_ERR_ENC_KEY_SIZE;
+	}
+
+	/* Store Pairing Rsp for later use */
+	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
+	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
+
+	smp->local_dist &= rsp->init_key_dist;
+	smp->remote_dist &= rsp->resp_key_dist;
+
+	smp->local_dist &= SEND_KEYS_SC;
+	smp->remote_dist &= RECV_KEYS_SC;
+
+	/* slave distributes its keys first */
+
+	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+	}
+
+	/* derive LTK if requested and clear distribution bits */
+	if ((smp->local_dist & BT_SMP_DIST_ENC_KEY) &&
+	    (smp->remote_dist & BT_SMP_DIST_ENC_KEY)) {
+		smp_br_derive_ltk(smp);
+	}
+	smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
+	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
+
+	/* Pairing acceptor distributes it's keys first */
+	if (smp->remote_dist) {
+		return 0;
+	}
+
+	smp_br_distribute_keys(smp);
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		/* TODO pairing complete */
+	}
+
+	return 0;
 }
 
 static uint8_t smp_br_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
