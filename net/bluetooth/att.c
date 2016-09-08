@@ -1683,8 +1683,6 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	uint8_t err = BT_ATT_ERR_NOT_SUPPORTED;
 	size_t i;
 
-	BT_ASSERT(att);
-
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small ATT PDU received");
 		return;
