@@ -21,6 +21,7 @@
 #define __BT_LOG_H
 
 #include <sections.h>
+#include <nanokernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +51,6 @@ void bt_log(int prio, const char *fmt, ...);
 
 #elif defined(CONFIG_BLUETOOTH_DEBUG_LOG)
 
-#include <nanokernel.h>
 #define SYS_LOG_DOMAIN "bt"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #include <misc/sys_log.h>
