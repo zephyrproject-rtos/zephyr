@@ -37,6 +37,10 @@ extern char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 				    char *buf, int buflen);
 extern uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto);
 
+#if defined(CONFIG_NET_IPV4)
+extern uint16_t net_calc_chksum_ipv4(struct net_buf *buf);
+#endif /* CONFIG_NET_IPV4 */
+
 static inline uint16_t net_calc_chksum_icmpv6(struct net_buf *buf)
 {
 	return net_calc_chksum(buf, IPPROTO_ICMPV6);

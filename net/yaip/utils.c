@@ -348,3 +348,16 @@ uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto)
 
 	return sum;
 }
+
+#if defined(CONFIG_NET_IPV4)
+uint16_t net_calc_chksum_ipv4(struct net_buf *buf)
+{
+	uint16_t sum;
+
+	sum = calc_chksum(0, (uint8_t *)NET_IPV4_BUF(buf), NET_IPV4H_LEN);
+
+	sum = (sum == 0) ? 0xffff : htons(sum);
+
+	return sum;
+}
+#endif /* CONFIG_NET_IPV4 */
