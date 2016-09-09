@@ -277,4 +277,14 @@ config TIMESLICE_PRIORITY
 	not subject to time slicing.
 
 endmenu
+
+config SEMAPHORE_GROUPS
+	bool "Enable semaphore groups"
+	default y
+	help
+	This option enables support for semaphore groups. Threads that use
+	semaphore groups require more stack space. Disabling this option will
+	both decrease the footprint as well as improve the performance of
+	the k_sem_give() routine.
+
 endmenu

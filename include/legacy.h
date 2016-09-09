@@ -273,15 +273,21 @@ static inline int task_sem_take(ksem_t sem, int32_t timeout)
 #define task_sem_reset k_sem_reset
 #define task_sem_count_get k_sem_count_get
 
+#ifdef CONFIG_SEMAPHORE_GROUPS
 typedef ksem_t *ksemg_t;
 
 static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
 {
-	return k_sem_group_take(group, _ticks_to_ms(timeout));
+	struct k_sem *sem;
+
+	(void)k_sem_group_take(group, &sem, _ticks_to_ms(timeout));
+
+	return sem;
 }
 
 #define task_sem_group_give k_sem_group_give
 #define task_sem_group_reset k_sem_group_reset
+#endif
 
 #define DEFINE_SEMAPHORE(name) \
 	K_SEM_DEFINE(_k_sem_obj_##name, 0, UINT_MAX); \
