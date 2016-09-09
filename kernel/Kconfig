@@ -135,6 +135,15 @@ config THREAD_MONITOR
 	  and fibers (excluding those that have not yet started or have
 	  already terminated).
 
+config KERNEL_INIT_PRIORITY_OBJECTS
+	int
+	prompt "Kernel objects initialization priority"
+	default 30
+	help
+	Kernel objects use this priority for initialization. This
+	priority needs to be higher than minimal default initialization
+	priority.
+
 config KERNEL_INIT_PRIORITY_DEFAULT
 	int
 	prompt "Default init priority"
