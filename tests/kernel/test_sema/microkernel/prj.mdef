@@ -6,11 +6,11 @@
 
 % TASK NAME       PRIO ENTRY               STACK GROUPS
 % =====================================================
-  TASK MONITORTASK   5 MonitorTaskEntry     512  [EXE]
-  TASK tHigh         4 HighPriTaskEntry     512  [TEST]
-  TASK tStartTask    5 RegressionTaskEntry  512  [TEST]
-  TASK tAlternate    6 AlternateTaskEntry   512  [TEST]
-  TASK tLow          7 LowPriTaskEntry      512  [TEST]
+  TASK MONITORTASK   5 MonitorTaskEntry     768  [EXE]
+  TASK tHigh         4 HighPriTaskEntry     768  [TEST]
+  TASK tStartTask    5 RegressionTaskEntry  768  [TEST]
+  TASK tAlternate    6 AlternateTaskEntry   768  [TEST]
+  TASK tLow          7 LowPriTaskEntry      768  [TEST]
 
 % SEMA NAME
 % ======================
