@@ -1060,7 +1060,7 @@ void hci_handle(uint8_t x, uint8_t *len, uint8_t **out)
 	hci_context.rx[hci_context.rx_len++] = x;
 
 	*len = 0;
-	*out = 0;
+	*out = NULL;
 	if (!(hci_context.rx_len > 0)) {
 		return;
 	}
@@ -1092,10 +1092,8 @@ void hci_handle(uint8_t x, uint8_t *len, uint8_t **out)
 	}
 }
 
-
-static void encode_control(uint8_t *buf, uint8_t *len, uint8_t **out)
+static void encode_control(uint8_t *buf, uint8_t *len, struct hci_evt *evt)
 {
-	struct hci_evt *evt;
 	struct pdu_adv *adv;
 	struct pdu_data *pdu_data;
 	uint8_t *report;
@@ -1114,9 +1112,7 @@ static void encode_control(uint8_t *buf, uint8_t *len, uint8_t **out)
 	case NODE_RX_TYPE_REPORT:
 		adv = (struct pdu_adv *)radio_pdu_node_rx->pdu_data;
 
-		hci_context.tx[0] = HCI_EVT;
 
-		evt = (struct hci_evt *)&hci_context.tx[1];
 		evt->code = HCI_EVT_CODE_LE_META;
 		evt->len = offsetof(struct hci_evt_le_meta,
 				    subevent.adv_report.reports);
@@ -1147,7 +1143,6 @@ static void encode_control(uint8_t *buf, uint8_t *len, uint8_t **out)
 			     reports[0]);
 
 		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case NODE_RX_TYPE_CONNECTION:
@@ -1155,9 +1150,6 @@ static void encode_control(uint8_t *buf, uint8_t *len, uint8_t **out)
 		radio_le_conn_cmplt = (struct radio_le_conn_cmplt *)
 				       (pdu_data->payload.lldata);
 
-		hci_context.tx[0] = HCI_EVT;
-
-		evt = (struct hci_evt *)&hci_context.tx[1];
 		evt->code = HCI_EVT_CODE_LE_META;
 		evt->len = (offsetof(struct hci_evt_le_meta, subevent) +
 			 sizeof(struct hci_evt_le_meta_conn_complete));
@@ -1182,14 +1174,9 @@ static void encode_control(uint8_t *buf, uint8_t *len, uint8_t **out)
 		evt->params.le_meta.subevent.conn_cmplt.mca =
 		    radio_le_conn_cmplt->mca;
 
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case NODE_RX_TYPE_TERMINATE:
-		hci_context.tx[0] = HCI_EVT;
-
-		evt = (struct hci_evt *)&hci_context.tx[1];
 		evt->code = HCI_EVT_CODE_DISCONNECTION_COMPLETE;
 		evt->len = sizeof(struct hci_evt_disconnect_cmplt);
 		evt->params.disconnect_cmplt.status =
@@ -1198,17 +1185,13 @@ static void encode_control(uint8_t *buf, uint8_t *len, uint8_t **out)
 		evt->params.disconnect_cmplt.reason =
 		    *((uint8_t *)radio_pdu_node_rx->pdu_data);
 
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case NODE_RX_TYPE_CONN_UPDATE:
 		pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
 		le_conn_update_cmplt = (struct radio_le_conn_update_cmplt *)
 			(pdu_data->payload.lldata);
-		hci_context.tx[0] = HCI_EVT;
 
-		evt = (struct hci_evt *)&hci_context.tx[1];
 		evt->code = HCI_EVT_CODE_LE_META;
 		evt->len = (offsetof(struct hci_evt_le_meta, subevent) +
 			 sizeof(struct hci_evt_le_meta_conn_update_complete));
@@ -1225,55 +1208,42 @@ static void encode_control(uint8_t *buf, uint8_t *len, uint8_t **out)
 		evt->params.le_meta.subevent.conn_update_cmplt.timeout =
 			le_conn_update_cmplt->timeout;
 
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case NODE_RX_TYPE_ENC_REFRESH:
-		hci_context.tx[0] = HCI_EVT;
-
-		evt = (struct hci_evt *)&hci_context.tx[1];
 		evt->code = HCI_EVT_CODE_ENCRYPTION_KEY_REFRESH_COMPLETE;
 		evt->len = sizeof(struct hci_evt_encryption_key_refresh_cmplt);
 		evt->params.encryption_key_refresh_cmplt.status =
 			HCI_EVT_ERROR_CODE_SUCCESS;
 		evt->params.encryption_key_refresh_cmplt.conn_handle = instance;
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case NODE_RX_TYPE_APTO:
-		hci_context.tx[0] = HCI_EVT;
-
-		evt = (struct hci_evt *)&hci_context.tx[1];
 		evt->code = HCI_EVT_CODE_APTO_EXPIRED;
 		evt->len = sizeof(struct hci_evt_apto_expired);
 		evt->params.apto_expired.conn_handle = instance;
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case NODE_RX_TYPE_RSSI:
-  /** @todo */
-		break;
+		/** @todo */
+		return;
 
 	case NODE_RX_TYPE_PROFILE:
-  /** @todo */
-		break;
+		/** @todo */
+		return;
 
 	default:
 		BT_ASSERT(0);
-		break;
+		return;
 	}
+
+	*len = HCI_EVT_LEN(evt);
 }
 
 static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
-		uint8_t *len, uint8_t **out)
+		uint8_t *len, struct hci_evt *evt)
 {
 	uint16_t instance;
-	struct hci_evt *evt;
 	struct hci_evt_le_meta_read_remote_used_features *rem_used_feats;
 	struct hci_evt_le_meta_long_term_key_request *long_term_key_req;
 	struct hci_evt_le_meta_remote_conn_param_request *rem_cp_req;
@@ -1283,11 +1253,8 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
 	instance = radio_pdu_node_rx->hdr.handle;
 
-	evt = (struct hci_evt *)&hci_context.tx[1];
-
 	switch (pdu_data->payload.llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-		hci_context.tx[0] = HCI_EVT;
 		long_term_key_req =
 			&evt->params.le_meta.subevent.long_term_key_request;
 
@@ -1304,27 +1271,18 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		    pdu_data->payload.llctrl.ctrldata.enc_req.ediv[0];
 		long_term_key_req->ediv[1] =
 		    pdu_data->payload.llctrl.ctrldata.enc_req.ediv[1];
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
-		hci_context.tx[0] = HCI_EVT;
-
 		evt->code = HCI_EVT_CODE_ENCRYPTION_CHANGE;
 		evt->len = sizeof(struct hci_evt_encryption_change);
 		evt->params.encryption_change.status =
 		    HCI_EVT_ERROR_CODE_SUCCESS;
 		evt->params.encryption_change.conn_handle = instance;
 		evt->params.encryption_change.enabled = 1;
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
-		hci_context.tx[0] = HCI_EVT;
 		rem_used_feats =
 			&evt->params.le_meta.subevent.remote_used_features;
 
@@ -1340,14 +1298,9 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		       &pdu_data->payload.llctrl.ctrldata.feature_rsp.
 		       features[0],
 		       sizeof(rem_used_feats->features));
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
-		hci_context.tx[0] = HCI_EVT;
-
 		evt->code = HCI_EVT_CODE_READ_REMOTE_VERSION_INFO_COMPLETE;
 		evt->len = sizeof(struct
 				  hci_evt_read_remote_version_info_cmplt);
@@ -1364,27 +1317,18 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		evt->params.read_remote_version_info_cmplt.sub_version_number =
 			pdu_data->payload.llctrl.ctrldata.
 			version_ind.sub_version_number;
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
-		hci_context.tx[0] = HCI_EVT;
-
 		evt->code = HCI_EVT_CODE_ENCRYPTION_CHANGE;
 		evt->len = sizeof(struct hci_evt_encryption_change);
 		evt->params.encryption_change.status =
 		    pdu_data->payload.llctrl.ctrldata.reject_ind.error_code;
 		evt->params.encryption_change.conn_handle = instance;
 		evt->params.encryption_change.enabled = 0;
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
-		hci_context.tx[0] = HCI_EVT;
 		rem_cp_req =
 			&evt->params.le_meta.subevent.remote_conn_param_request;
 
@@ -1407,14 +1351,10 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		rem_cp_req->timeout =
 			pdu_data->payload.llctrl.ctrldata.conn_param_req.
 			timeout;
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
-		hci_context.tx[0] = HCI_EVT;
 		len_change = &evt->params.le_meta.subevent.length_change;
 
 		evt->code = HCI_EVT_CODE_LE_META;
@@ -1431,10 +1371,6 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		    length_rsp.max_rx_octets;
 		len_change->max_rx_time = pdu_data->payload.llctrl.ctrldata.
 		    length_rsp.max_rx_time;
-
-		*len = HCI_EVT_LEN(evt);
-		*out = &hci_context.tx[0];
-
 #if (TEST_DATA_LENGTH && TEST_TX)
 		{
 			extern uint16_t g_data_length;
@@ -1448,9 +1384,10 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 	default:
 		BT_ASSERT(0);
-		break;
+		return;
 	}
 
+	*len = HCI_EVT_LEN(evt);
 }
 
 static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
@@ -1503,10 +1440,6 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 #endif
 		break;
 
-	case PDU_DATA_LLID_CTRL:
-		encode_data_ctrl(radio_pdu_node_rx, len, out);
-		break;
-
 	default:
 		BT_ASSERT(0);
 		break;
@@ -1517,14 +1450,29 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 void hci_encode(uint8_t *buf, uint8_t *len, uint8_t **out)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct pdu_data *pdu_data;
+	struct hci_evt *evt;
 
 	radio_pdu_node_rx = (struct radio_pdu_node_rx *)buf;
+	pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
 	*len = 0;
-	*out = 0;
+	*out = NULL;
 
-	if (radio_pdu_node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
-		encode_control(buf, len, out);
+	/* Check if we need to generate an HCI event or ACL data */
+	if (radio_pdu_node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
+	    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
+		/* generate an HCI event */
+		hci_context.tx[0] = HCI_EVT;
+		evt = (struct hci_evt *)&hci_context.tx[1];
+
+		if (radio_pdu_node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
+			encode_control(buf, len, evt);
+		} else {
+			encode_data_ctrl(radio_pdu_node_rx, len, evt);
+		}
+		*out = &hci_context.tx[0];
 	} else {
+		/* generate ACL data */
 		encode_data(buf, len, out);
 	}
 }
