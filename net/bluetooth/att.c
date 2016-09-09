@@ -1479,7 +1479,7 @@ static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	if (!att->req || att->req->buf) {
+	if (!att->req || !att->req->buf) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
