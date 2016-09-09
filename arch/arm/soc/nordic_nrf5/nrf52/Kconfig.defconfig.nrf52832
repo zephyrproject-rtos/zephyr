@@ -34,7 +34,7 @@ config FLASH_SIZE
 
 config NUM_IRQS
 	int
-	default 38
+	default 39
 
 endif # SOC_NRF52832
 
