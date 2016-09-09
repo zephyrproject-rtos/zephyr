@@ -12,11 +12,10 @@ or on virtual serial port (when enabling UART flush)
 Profiler consists in:
 1) Enabling KERNEL_EVENT_LOGGER in zephyr
   - Various config switches allows selecting events to capture
-2) Applying a set of patches on top of zephyr kernel (provided in this package)
-3) Extracting profiler events via JTAG (requires debugger) or UART (requires
+2) Extracting profiler events via JTAG (requires debugger) or UART (requires
    profiler background task)
   - for UART: profiler background task must be added to the application
-4) Post-processing tools for getting profiler binary data and get ASCII/graphic
+3) Post-processing tools for getting profiler binary data and get ASCII/graphic
    output
 
 ---
