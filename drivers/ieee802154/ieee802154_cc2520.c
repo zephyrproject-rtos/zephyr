@@ -631,7 +631,7 @@ static void cc2520_rx(int arg, int unused2)
 		}
 
 		if (ieee802154_radio_handle_ack(cc2520->iface, buf) == NET_OK) {
-			SYS_LOG_DBG("ACK packet handled");
+			SYS_LOG_DBG("ACK packet handled\n");
 			goto out;
 		}
 
