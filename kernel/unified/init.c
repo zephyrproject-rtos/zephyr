@@ -270,13 +270,6 @@ static void nano_init(struct tcs *dummy_thread)
 	/* perform any architecture-specific initialization */
 
 	nanoArchInit();
-
-	/* handle any kernel objects that require run-time initialization */
-
-	_k_mem_map_init();
-	_k_mbox_init();
-	_k_dyamic_timer_init();
-	_k_pipes_init();
 }
 
 #ifdef CONFIG_STACK_CANARIES

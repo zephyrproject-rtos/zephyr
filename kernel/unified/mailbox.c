@@ -26,6 +26,7 @@
 #include <string.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
+#include <init.h>
 
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
@@ -55,15 +56,20 @@ K_STACK_DEFINE(async_msg_free, CONFIG_NUM_MBOX_ASYNC_MSGS);
  *
  * @return N/A
  */
-void _k_mbox_init(void)
+static int init_mbox_module(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	int i;
 
 	for (i = 0; i < CONFIG_NUM_MBOX_ASYNC_MSGS; i++) {
 		async_msg[i].thread.flags = K_DUMMY;
 		k_stack_push(&async_msg_free, (uint32_t)&async_msg[i]);
 	}
+	return 0;
 }
+
+SYS_INIT(init_mbox_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 /**
  * @brief Allocate an asynchronous message descriptor.

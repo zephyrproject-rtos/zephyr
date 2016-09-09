@@ -27,6 +27,7 @@
 #include <sections.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
+#include <init.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
@@ -63,14 +64,19 @@ K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
  *
  * @return N/A
  */
-void _k_pipes_init(void)
+static int init_pipes_module(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	for (int i = 0; i < CONFIG_NUM_PIPE_ASYNC_MSGS; i++) {
 		async_msg[i].thread.flags = K_DUMMY;
 		async_msg[i].thread.swap_data = &async_msg[i].desc;
 		k_stack_push(&pipe_async_msgs, (uint32_t)&async_msg[i]);
 	}
+	return 0;
 }
+
+SYS_INIT(init_pipes_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {

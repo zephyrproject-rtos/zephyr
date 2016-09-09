@@ -373,12 +373,6 @@ extern bool k_timer_pool_is_empty(void);
 
 extern uint32_t k_cycle_get_32(void);
 
-#if (CONFIG_NUM_DYNAMIC_TIMERS > 0)
-extern void _k_dyamic_timer_init(void);
-#else
-#define _k_dyamic_timer_init()
-#endif
-
 /**
  *  data transfers (basic)
  */
@@ -899,12 +893,6 @@ struct k_mbox {
 	struct k_mbox name = \
 		K_MBOX_INITIALIZER(name) \
 
-#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
-extern void _k_mbox_init(void);
-#else
-#define _k_mbox_init()
-#endif
-
 extern void k_mbox_init(struct k_mbox *mbox);
 
 extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *msg,
@@ -953,12 +941,6 @@ struct k_pipe {
 		K_PIPE_INITIALIZER(name, pipe_buffer_size, _k_pipe_buf_##name)
 
 #define K_PIPE_SIZE(buffer_size) (sizeof(struct k_pipe) + buffer_size)
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-extern void _k_pipes_init(void);
-#else
-#define _k_pipes_init()  do { } while (0)
-#endif
 
 /**
  * @brief Runtime initialization of a pipe
@@ -1077,8 +1059,6 @@ struct k_mem_map {
 
 #define K_MEM_MAP_SIZE(map_num_blocks, map_block_size) \
 	(sizeof(struct k_mem_map) + ((map_num_blocks) * (map_block_size)))
-
-extern void _k_mem_map_init(void);
 
 extern void k_mem_map_init(struct k_mem_map *map, int num_blocks,
 			   int block_size, void *buffer);

@@ -640,4 +640,4 @@ void k_free(void *ptr)
 	k_mem_pool_free(&mem_block);
 }
 
-SYS_INIT(init_static_pools, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(init_static_pools, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);

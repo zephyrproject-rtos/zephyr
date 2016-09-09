@@ -18,6 +18,7 @@
 #include <misc/debug/object_tracing_common.h>
 #include <wait_q.h>
 #include <sched.h>
+#include <init.h>
 
 /**
  * @brief Timer expire handler
@@ -85,8 +86,10 @@ static struct k_timer _dynamic_timers[CONFIG_NUM_DYNAMIC_TIMERS];
 static sys_dlist_t _timer_pool;
 
 /* Initialize the pool of timers for dynamic timer allocation */
-void _k_dyamic_timer_init(void)
+static int init_dyamic_timers(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	int i;
 	int n_timers = ARRAY_SIZE(_dynamic_timers);
 
@@ -96,6 +99,7 @@ void _k_dyamic_timer_init(void)
 		sys_dlist_append(&_timer_pool,
 				 &_dynamic_timers[i].timeout.node);
 	}
+	return 0;
 }
 
 /**
@@ -151,6 +155,9 @@ bool k_timer_pool_is_empty(void)
 	k_sched_unlock();
 	return is_empty;
 }
+
+SYS_INIT(init_dyamic_timers, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
 #endif /* (CONFIG_NUM_DYNAMIC_TIMERS > 0) */
 
 /**

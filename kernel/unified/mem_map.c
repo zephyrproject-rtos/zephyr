@@ -22,6 +22,7 @@
 #include <wait_q.h>
 #include <misc/dlist.h>
 #include <sched.h>
+#include <init.h>
 
 extern struct k_mem_map _k_mem_map_ptr_start[];
 extern struct k_mem_map _k_mem_map_ptr_end[];
@@ -56,13 +57,16 @@ static void create_free_list(struct k_mem_map *map)
  *
  * @return N/A
  */
-void _k_mem_map_init(void)
+static int init_mem_map_module(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	struct k_mem_map *map;
 
 	for (map = _k_mem_map_ptr_start; map < _k_mem_map_ptr_end; map++) {
 		create_free_list(map);
 	}
+	return 0;
 }
 
 /**
@@ -164,3 +168,5 @@ void k_mem_map_free(struct k_mem_map *map, void **mem)
 
 	irq_unlock(key);
 }
+
+SYS_INIT(init_mem_map_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
