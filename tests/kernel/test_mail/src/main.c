@@ -123,20 +123,7 @@ void MonitorTaskEntry(void)
 	 */
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
-#ifdef CONFIG_KERNEL_V2
-		/* HACK TO AVOID NEED FOR SEMAPHORE GROUPS */
-		int rc = task_sem_take(SEM_TASKDONE, TIMEOUT);
-
-		if (rc == 0) {
-			result = SEM_TASKDONE;
-		} else if (task_sem_take(SEM_TASKFAIL, TICKS_NONE)) {
-			result = SEM_TASKFAIL;
-		} else {
-			result = ENDLIST;
-		}
-#else
 		result = task_sem_group_take(resultSems, TIMEOUT);
-#endif
 		if (result != resultSems[TC_PASS]) {
 			if (result != resultSems[TC_FAIL]) {
 				TC_ERROR("Monitor task timed out\n");
