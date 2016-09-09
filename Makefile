@@ -561,6 +561,11 @@ else
 include/config/auto.conf: ;
 endif # $(dot-config)
 
+# Unified kernel objects are built as a static library
+ifeq ($(CONFIG_KERNEL_V2),y)
+libs-y := kernel/unified/
+endif
+
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
 
@@ -775,7 +780,10 @@ OUTPUT_FORMAT ?= elf32-i386
 OUTPUT_ARCH ?= i386
 
 quiet_cmd_ar_target = AR      $@
-cmd_ar_target = rm -f $@; $(AR) rcT$(KBUILD_ARFLAGS) $@ $(KBUILD_ZEPHYR_MAIN)
+# Assume that if the directory listed in libs-y contains built-in.o,
+# it has been linked into the upper level built-in.o
+cmd_ar_target = rm -f $@; $(AR) rcT$(KBUILD_ARFLAGS) $@ \
+	$(filter-out $(libs-y), $(KBUILD_ZEPHYR_MAIN))
 libzephyr.a: $(zephyr-deps)
 	$(call cmd,ar_target)
 
@@ -793,6 +801,7 @@ quiet_cmd_create-lnk = LINK    $@
 	echo "$(app-y)";							\
 	echo "libzephyr.a";							\
 	echo "$(LINKFLAGPREFIX)--no-whole-archive";         			\
+	echo "$(filter %/lib.a, $(libs-y))";					\
 	echo "$(objtree)/arch/$(ARCH)/core/offsets/offsets.o"; 			\
 	echo "$(LINKFLAGPREFIX)--end-group"; 					\
 	echo "$(LIB_INCLUDE_DIR) $(LINK_LIBS)";					\
