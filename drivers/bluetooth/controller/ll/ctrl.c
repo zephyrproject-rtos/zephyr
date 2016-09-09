@@ -4437,7 +4437,7 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 		/* disable ticker job, in order to chain stop and start
 		 * to avoid RTC being stopped if no tickers active.
 		 */
-		work_was_enabled = work_enabled(WORK_TICKER_JOB0_IRQ);
+		work_was_enabled = work_is_enabled(WORK_TICKER_JOB0_IRQ);
 		work_disable(WORK_TICKER_JOB0_IRQ);
 
 		/* start slave/master with new timings */

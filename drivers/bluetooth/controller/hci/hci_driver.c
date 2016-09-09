@@ -262,6 +262,8 @@ static int hci_driver_open(void)
 {
 	uint32_t err;
 
+	DEBUG_INIT();
+
 	clock_k32src_start(1);
 
 	_ticker_users[RADIO_TICKER_USER_ID_WORKER][0] =
@@ -292,12 +294,12 @@ static int hci_driver_open(void)
 		return -ENOMEM;
 	}
 
-	IRQ_CONNECT(NRF52_IRQ_POWER_CLOCK_IRQn, 2, power_clock_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF52_IRQ_POWER_CLOCK_IRQn, 1, power_clock_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF52_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF52_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
-	IRQ_CONNECT(NRF52_IRQ_RNG_IRQn, 2, rng_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF52_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF52_IRQ_SWI4_EGU4_IRQn, 0, swi4_nrf5_isr, 0, 0);
-	IRQ_CONNECT(NRF52_IRQ_SWI5_EGU5_IRQn, 2, swi5_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF52_IRQ_SWI5_EGU5_IRQn, 1, swi5_nrf5_isr, 0, 0);
 	irq_enable(NRF52_IRQ_POWER_CLOCK_IRQn);
 	irq_enable(NRF52_IRQ_RADIO_IRQn);
 	irq_enable(NRF52_IRQ_RTC0_IRQn);

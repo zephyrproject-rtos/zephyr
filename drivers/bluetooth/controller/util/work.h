@@ -31,7 +31,7 @@ struct work {
 
 void work_enable(uint8_t group);
 void work_disable(uint8_t group);
-uint8_t work_enabled(uint8_t group);
+uint32_t work_is_enabled(uint8_t group);
 uint32_t work_schedule(struct work *w, uint8_t chain);
 void work_run(uint8_t group);
 

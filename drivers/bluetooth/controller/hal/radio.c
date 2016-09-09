@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <soc.h>
 #include <misc/util.h>
-
-#include "nrf.h"
 
 #include "hal_work.h"
 
@@ -56,14 +55,13 @@ void radio_isr_set(radio_isr_fp fp_radio_isr)
 				 */
 	    );
 
-	NVIC_SetPriority(RADIO_IRQn, WORK_TICKER_WORKER0_IRQ_PRIORITY);
-	NVIC_ClearPendingIRQ(RADIO_IRQn);
-	NVIC_EnableIRQ(RADIO_IRQn);
+	_NvicIrqUnpend(RADIO_IRQn);
+	irq_enable(RADIO_IRQn);
 }
 
 void radio_reset(void)
 {
-	NVIC_DisableIRQ(RADIO_IRQn);
+	irq_disable(RADIO_IRQn);
 
 	NRF_RADIO->POWER =
 	    ((RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos) &
@@ -481,7 +479,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 		__WFE();
 	}
 	NRF_CCM->INTENCLR = CCM_INTENCLR_ENDCRYPT_Msk;
-	NVIC_ClearPendingIRQ(CCM_AAR_IRQn);
+	_NvicIrqUnpend(CCM_AAR_IRQn);
 
 	BT_ASSERT(NRF_CCM->EVENTS_ERROR == 0);
 #else
@@ -501,7 +499,7 @@ uint32_t radio_ccm_is_done(void)
 		__WFE();
 	}
 	NRF_CCM->INTENCLR = CCM_INTENCLR_ENDCRYPT_Msk;
-	NVIC_ClearPendingIRQ(CCM_AAR_IRQn);
+	_NvicIrqUnpend(CCM_AAR_IRQn);
 
 	return (NRF_CCM->EVENTS_ERROR == 0);
 }
