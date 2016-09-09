@@ -82,6 +82,9 @@ struct net_buf *net_ipv4_finalize(struct net_context *context,
 	NET_IPV4_BUF(buf)->len[0] = total_len / 256;
 	NET_IPV4_BUF(buf)->len[1] = total_len - NET_IPV4_BUF(buf)->len[0] * 256;
 
+	NET_IPV4_BUF(buf)->chksum = 0;
+	NET_IPV4_BUF(buf)->chksum = ~net_calc_chksum_ipv4(buf);
+
 #if defined(CONFIG_NET_UDP)
 	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
 		NET_UDP_BUF(buf)->chksum = 0;
