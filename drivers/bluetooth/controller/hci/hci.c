@@ -1470,45 +1470,6 @@ static int controller_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
 	return 0;
 }
 
-static int vs_cmd_handle(uint8_t ocf, struct hci_cmd *cmd,
-		uint8_t *len, struct hci_evt *evt)
-{
-	struct hci_evt_cmd_cmplt *cc;
-	union hci_evt_cmd_cmplt_params *ccp;
-
-	cc = &evt->params.cmd_cmplt;
-	ccp = &evt->params.cmd_cmplt.params;
-
-	switch (cmd->opcode.ocf) {
-	case HCI_OCF_NRF_SET_BD_ADDR:
-		ll_address_set(0, &cmd->params.nrf_set_bd_addr.addr[0]);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_nrf_set_bd_addr);
-
-		ccp->nrf_set_bd_addr.status = HCI_EVT_ERROR_CODE_SUCCESS;
-		break;
-
-	case HCI_OCF_NRF_CONFIG_ACTIVE_SIGNAL:
-		radio_ticks_active_to_start_set(TICKER_US_TO_TICKS
-						(cmd->params.nrf_cfg_active_sig.
-						 distance * 1000));
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_nrf_cfg_active_sig);
-
-		ccp->nrf_cfg_active_sig.status = HCI_EVT_ERROR_CODE_SUCCESS;
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	*len = HCI_EVT_LEN(evt);
-
-	return 0;
-}
-
 static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 			   uint8_t **out)
 {
@@ -1547,10 +1508,11 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 		err = controller_cmd_handle(ocf, cp, len, evt);
 		break;
 	case BT_OGF_VS:
-		err = vs_cmd_handle(ocf, (void *)cmd, len, (void *)evt);
+		err = -EINVAL;
 		break;
 	default:
 		err = -EINVAL;
+		break;
 	}
 
 	if (err == -EINVAL) {
