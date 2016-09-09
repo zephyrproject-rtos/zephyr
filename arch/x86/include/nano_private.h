@@ -640,6 +640,9 @@ struct tcs_base {
 	uint32_t     flags;
 	int          prio;     /* thread priority used to sort linked list */
 	void        *swap_data;
+#ifdef CONFIG_NANO_TIMEOUTS
+	struct _timeout timeout;
+#endif
 };
 #endif
 
@@ -662,6 +665,9 @@ struct tcs {
 	int         flags;
 	int         prio;     /* thread priority used to sort linked list */
 	void       *swap_data;
+#ifdef CONFIG_NANO_TIMEOUTS
+	struct _timeout timeout;
+#endif
 #else
 	struct tcs *link;
 
@@ -722,9 +728,6 @@ struct tcs {
 #endif
 
 #ifdef CONFIG_KERNEL_V2
-#ifdef CONFIG_NANO_TIMEOUTS
-	struct _timeout timeout;
-#endif
 	atomic_t sched_locked;
 	void *init_data;
 	void (*fn_abort)(void);
