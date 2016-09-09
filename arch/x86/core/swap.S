@@ -100,8 +100,6 @@ SECTION_FUNC(TEXT, _Swap)
 	pushl	0(%esp)
 	movl	%eax, 4(%esp)
 #endif
-	movl	$_nanokernel, %eax
-
 	/*
 	 * Push all non-volatile registers onto the stack; do not copy
 	 * any of these registers into the tTCS.  Only the 'esp' register
@@ -110,6 +108,9 @@ SECTION_FUNC(TEXT, _Swap)
 	 */
 
 	pushl	%edi
+
+	movl	$_nanokernel, %edi
+
 	pushl	%esi
 	pushl	%ebx
 	pushl	%ebp
@@ -125,31 +126,27 @@ SECTION_FUNC(TEXT, _Swap)
 
 	/* save esp into tTCS structure */
 
-	movl	__tNANO_current_OFFSET (%eax), %ecx
+	movl	__tNANO_current_OFFSET (%edi), %ecx
 	movl	%esp, __tTCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%ecx)
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	/* save %eax since it used as the return value for _Swap */
-	pushl	%eax
 	/* Register the context switch */
 	call	_sys_k_event_logger_context_switch
-	/* restore _Swap's %eax */
-	popl	%eax
 #endif
 
 	/*
 	 * Determine what thread needs to be swapped in.
-	 * Note that the %eax still contains &_nanokernel.
+	 * Note that the %edi still contains &_nanokernel.
 	 */
 
-	movl	__tNANO_fiber_OFFSET (%eax), %ecx
+	movl	__tNANO_fiber_OFFSET (%edi), %ecx
 	testl	%ecx, %ecx
 	jz	swapTask	/* Jump if no ready fibers */
 
 	/* remove the head 'TCS *' from the runnable fiber list */
 
 	movl	__tTCS_link_OFFSET (%ecx), %ebx
-	movl	%ebx, __tNANO_fiber_OFFSET (%eax)
+	movl	%ebx, __tNANO_fiber_OFFSET (%edi)
 	jmp 	restoreContext
 
 
@@ -159,14 +156,14 @@ SECTION_FUNC(TEXT, _Swap)
 	 */
 
 swapTask:
-	movl	__tNANO_task_OFFSET (%eax), %ecx
+	movl	__tNANO_task_OFFSET (%edi), %ecx
 
 	/* fall through to 'restoreContext' */
 
 
 	/*
 	 * At this point, the %ecx register contains the 'tTCS *' of
-	 * the TASK or FIBER to be swapped in, and %eax still
+	 * the TASK or FIBER to be swapped in, and %edi still
 	 * contains &_nanokernel.
 	 */
 
@@ -206,7 +203,7 @@ restoreContext:
 	 * If so, there there is no need to restore the non-integer context.
 	 */
 
-	movl	__tNANO_current_fp_OFFSET (%eax), %ebx
+	movl	__tNANO_current_fp_OFFSET (%edi), %ebx
 	cmpl	%ebx, %ecx
 	je	restoreContext_NoFloatSwap
 
@@ -295,7 +292,7 @@ restoreContext_NoFloatRestore:
 
 	/* record that the incoming thread "owns" the non-integer registers */
 
-	movl	%ecx, __tNANO_current_fp_OFFSET (%eax)
+	movl	%ecx, __tNANO_current_fp_OFFSET (%edi)
 
 
 	/*
@@ -335,7 +332,7 @@ CROHandlingDone:
 
 	/* update _nanokernel.current to reflect incoming thread */
 
-	movl    %ecx, __tNANO_current_OFFSET (%eax)
+	movl    %ecx, __tNANO_current_OFFSET (%edi)
 
 	/* recover task/fiber stack pointer from tTCS */
 
