@@ -655,28 +655,38 @@ static void smp_br_reset(struct bt_smp *smp)
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 }
 
-static void smp_br_timeout(struct nano_work *work)
+static void smp_pairing_br_complete(struct bt_smp *smp, uint8_t status)
 {
-	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
-	struct bt_conn *conn = smp->chan.chan.conn;
-	struct bt_keys *keys;
-	bt_addr_le_t addr;
+	BT_DBG("status 0x%x", status);
 
-	BT_ERR("SMP Timeout");
+	if (status) {
+		struct bt_conn *conn = smp->chan.chan.conn;
+		struct bt_keys *keys;
+		bt_addr_le_t addr;
 
-	/*
-	 * For dualmode devices LE address is same as BR/EDR address and is of
-	 * public type.
-	 */
-	bt_addr_copy(&addr.a, &conn->br.dst);
-	addr.type = BT_ADDR_LE_PUBLIC;
+		/*
+		 * For dualmode devices LE address is same as BR/EDR address
+		 * and is of public type.
+		 */
+		bt_addr_copy(&addr.a, &conn->br.dst);
+		addr.type = BT_ADDR_LE_PUBLIC;
 
-	keys = bt_keys_find_addr(&addr);
-	if (keys) {
-		bt_keys_clear(keys);
+		keys = bt_keys_find_addr(&addr);
+		if (keys) {
+			bt_keys_clear(keys);
+		}
 	}
 
 	smp_br_reset(smp);
+}
+
+static void smp_br_timeout(struct nano_work *work)
+{
+	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
+
+	BT_ERR("SMP Timeout");
+
+	smp_pairing_br_complete(smp, BT_SMP_ERR_UNSPECIFIED);
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
 }
 
@@ -952,7 +962,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		/* TODO pairing complete */
+		smp_pairing_br_complete(smp, 0);
 	}
 
 	return 0;
@@ -1010,7 +1020,7 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		/* TODO pairing complete */
+		smp_pairing_br_complete(smp, 0);
 	}
 
 	return 0;
@@ -1018,25 +1028,11 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 static uint8_t smp_br_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 {
-	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_pairing_fail *req = (void *)buf->data;
-	struct bt_keys *keys;
-	bt_addr_le_t addr;
 
 	BT_ERR("reason 0x%x", req->reason);
 
-	/*
-	 * For dualmode devices LE address is same as BR/EDR address and is of
-	 * public type.
-	 */
-	bt_addr_copy(&addr.a, &conn->br.dst);
-	addr.type = BT_ADDR_LE_PUBLIC;
-
-	keys = bt_keys_find_addr(&addr);
-	if (keys) {
-		bt_keys_clear(keys);
-	}
-
+	smp_pairing_br_complete(smp, req->reason);
 	smp_br_reset(smp);
 
 	/* return no error to avoid sending Pairing Failed in response */
@@ -1108,7 +1104,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		/* TODO */
+		smp_pairing_br_complete(smp, 0);
 	}
 
 	return 0;
@@ -1147,7 +1143,7 @@ static uint8_t smp_br_signing_info(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		/* TODO */
+		smp_pairing_br_complete(smp, 0);
 	}
 
 	return 0;
