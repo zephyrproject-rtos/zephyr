@@ -1476,7 +1476,6 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 	struct bt_hci_evt_hdr *evt;
 	struct bt_hci_evt_cmd_complete *cc;
 	struct bt_hci_evt_cmd_status *cs;
-	struct bt_hci_evt_cc_status *ccs;
 	int err;
 	uint16_t opcode;
 	uint8_t ocf;
@@ -1485,10 +1484,8 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 	*out = &hci_context.tx[0];
 	hci_context.tx[0] = HCI_EVT;
 	evt = (void *)&hci_context.tx[1];
-	cc = (void *)((uint8_t *)evt + sizeof(struct bt_hci_evt_hdr));
-	cs = (void *)((uint8_t *)evt + sizeof(struct bt_hci_evt_hdr));
-	ccs = (void *)((uint8_t *)cc +
-			sizeof(struct bt_hci_evt_cmd_complete));
+	cc = HCI_CC(evt);
+	cs = HCI_CS(evt);
 
 	opcode = sys_le16_to_cpu(cmd->opcode);
 	ocf = BT_OCF(opcode);
@@ -1518,7 +1515,7 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 	if (err == -EINVAL) {
 		evt->evt = BT_HCI_EVT_CMD_COMPLETE;
 		evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
-		ccs->status = BT_HCI_ERR_UNKNOWN_CMD;
+		HCI_CC_ST(evt)->status = BT_HCI_ERR_UNKNOWN_CMD;
 		*len = HCI_EVT_LEN(evt);
 	}
 
