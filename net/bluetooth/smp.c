@@ -564,6 +564,21 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	return 0;
 }
 
+static uint8_t get_encryption_key_size(struct bt_smp *smp)
+{
+	struct bt_smp_pairing *req, *rsp;
+
+	req = (struct bt_smp_pairing *)&smp->preq[1];
+	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
+
+	/*
+	 * The smaller value of the initiating and responding devices maximum
+	 * encryption key length parameters shall be used as the encryption key
+	 * size.
+	 */
+	return min(req->max_key_size, rsp->max_key_size);
+}
+
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
 {
@@ -704,7 +719,61 @@ static void smp_br_init(struct bt_smp *smp)
 
 static void smp_br_derive_ltk(struct bt_smp *smp)
 {
-	/* TODO */
+	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
+	static const uint8_t tmp2[4] = { 0x32, 0x70, 0x6d, 0x74 };
+	static const uint8_t brle[4] = { 0x65, 0x6c, 0x72, 0x62 };
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_keys_link_key *link_key = conn->br.link_key;
+	struct bt_keys *keys;
+	bt_addr_le_t addr;
+	uint8_t ilk[16];
+
+	BT_DBG("");
+
+	if (!link_key) {
+		return;
+	}
+
+#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
+	if (conn->encrypt != 0x02) {
+		BT_WARN("Using P192 Link Key for P256 LTK derivation");
+	}
+#endif
+
+	/*
+	 * For dualmode devices LE address is same as BR/EDR address and is of
+	 * public type.
+	 */
+	bt_addr_copy(&addr.a, &conn->br.dst);
+	addr.type = BT_ADDR_LE_PUBLIC;
+
+	keys = bt_keys_get_type(BT_KEYS_LTK_P256, &addr);
+	if (!keys) {
+		BT_ERR("No keys space for %s", bt_addr_le_str(&addr));
+		return;
+	}
+
+	if (smp_h6(link_key->val, tmp2, ilk)) {
+		bt_keys_clear(keys);
+		return;
+	}
+
+	if (smp_h6(ilk, brle, keys->ltk.val)) {
+		bt_keys_clear(keys);
+		return;
+	}
+
+	keys->ltk.ediv = 0;
+	keys->ltk.rand = 0;
+	keys->enc_size = get_encryption_key_size(smp);
+
+	if (atomic_test_bit(link_key->flags, BT_LINK_KEY_AUTHENTICATED)) {
+		atomic_set_bit(keys->flags, BT_KEYS_AUTHENTICATED);
+	} else {
+		atomic_clear_bit(keys->flags, BT_KEYS_AUTHENTICATED);
+	}
+
+	BT_DBG("LTK derived from LinkKey");
 }
 
 static void smp_br_distribute_keys(struct bt_smp *smp)
@@ -1243,21 +1312,6 @@ static uint8_t smp_send_pairing_random(struct bt_smp *smp)
 	smp_send(smp, rsp_buf);
 
 	return 0;
-}
-
-static uint8_t get_encryption_key_size(struct bt_smp *smp)
-{
-	struct bt_smp_pairing *req, *rsp;
-
-	req = (struct bt_smp_pairing *)&smp->preq[1];
-	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
-
-	/*
-	 * The smaller value of the initiating and responding devices maximum
-	 * encryption key length parameters shall be used as the encryption key
-	 * size.
-	 */
-	return min(req->max_key_size, rsp->max_key_size);
 }
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
