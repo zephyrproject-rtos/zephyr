@@ -1,0 +1,4 @@
+
+config SOC_QUARK_D2000
+	bool "Intel Quark D2000"
+	depends on SOC_SERIES_QUARK_D2000

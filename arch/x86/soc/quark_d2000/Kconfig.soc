@@ -1,9 +1,0 @@
-
-config SOC_QUARK_D2000
-	bool "Quark D2000"
-	select CPU_MINUTEIA
-	select LOAPIC_TIMER
-	select XIP
-	select MVIC
-	select X86_IAMCU
-	select HAS_QMSI
