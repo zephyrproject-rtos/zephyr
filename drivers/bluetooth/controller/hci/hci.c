@@ -963,375 +963,502 @@ static int info_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
 	return 0;
 }
 
-static int controller_cmd_handle(uint8_t ocf, struct hci_cmd *cmd, uint8_t *len,
-				 struct hci_evt *evt)
+static void le_set_event_mask(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
-	uint32_t status;
-	uint32_t error_code;
+	/** TODO */
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = 0x00;
+}
+
+static void le_read_buffer_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_le_read_buffer_size *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+
+	rp->le_max_len = RADIO_LL_LENGTH_OCTETS_RX_MAX;
+	rp->le_max_num = RADIO_PACKET_COUNT_TX_MAX;
+}
+
+static void le_read_local_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_le_read_local_features *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+
+	memset(&rp->features[0], 0x00, sizeof(rp->features));
+	rp->features[0] = RADIO_BLE_FEATURES;
+}
+
+static void le_set_random_address(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_random_address *cmd = (void *)cp;
+
+	ll_address_set(1, &cmd->bdaddr.val[0]);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = 0x00;
+}
+
+static void le_set_adv_param(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_adv_param *cmd = (void *)cp;
 	uint8_t const c_adv_type[] = {
 		PDU_ADV_TYPE_ADV_IND, PDU_ADV_TYPE_DIRECT_IND,
 		PDU_ADV_TYPE_SCAN_IND, PDU_ADV_TYPE_NONCONN_IND };
-	struct hci_evt_cmd_cmplt *cc;
-	union hci_evt_cmd_cmplt_params *ccp;
-	struct hci_cmd_le_create_conn *le_cc;
-	struct hci_cmd_le_remote_conn_param_req_reply *le_cp_req_rep;
-	struct hci_cmd_le_remote_conn_param_req_neg_reply *le_cp_req_neg_rep;
 
-	cc = &evt->params.cmd_cmplt;
-	ccp = &evt->params.cmd_cmplt.params;
-	switch (cmd->opcode.ocf) {
+	ll_adv_params_set(cmd->min_interval, c_adv_type[cmd->type],
+			  cmd->own_addr_type, cmd->direct_addr.type,
+			  &cmd->direct_addr.a.val[0], cmd->channel_map,
+			  cmd->filter_policy);
 
-	case HCI_OCF_LE_SET_EVENT_MASK:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_event_mask);
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
 
-		ccp->set_event_mask.status = HCI_EVT_ERROR_CODE_SUCCESS;
+	HCI_CC_ST(evt)->status = 0x00;
+}
+
+static void le_read_adv_ch_tx_power(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_le_read_ch_tx_power *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+
+	rp->tx_power_level = 0;
+}
+
+static void le_set_adv_data(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_adv_data *cmd = (void *)cp;
+
+	ll_adv_data_set(cmd->len, &cmd->data[0]);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = 0x00;
+}
+
+static void le_set_scan_rsp_data(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_scan_rsp_data *cmd = (void *)cp;
+
+	ll_scan_data_set(cmd->len, &cmd->data[0]);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = 0x00;
+}
+
+static void le_set_adv_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_adv_enable *cmd = (void *)cp;
+	uint32_t status;
+
+	status = ll_adv_enable(cmd->enable);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+static void le_set_scan_params(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_scan_params *cmd = (void *)cp;
+
+	ll_scan_params_set(cmd->scan_type, cmd->interval, cmd->window,
+			   cmd->addr_type, cmd->filter_policy);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = 0x00;
+}
+
+static void le_set_scan_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_scan_enable *cmd = (void *)cp;
+	uint32_t status;
+
+	status = ll_scan_enable(cmd->enable);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+static void le_create_connection(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_create_conn *cmd = (void *)cp;
+	uint32_t status;
+
+	status = ll_create_connection(cmd->scan_interval,
+				      cmd->scan_window,
+				      cmd->filter_policy,
+				      cmd->peer_addr.type,
+				      &cmd->peer_addr.a.val[0],
+				      cmd->own_addr_type,
+				      cmd->conn_interval_max,
+				      cmd->conn_latency,
+				      cmd->supervision_timeout);
+
+	evt->evt = BT_HCI_EVT_CMD_STATUS;
+	evt->len = sizeof(struct bt_hci_evt_cmd_status);
+
+	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+static void le_create_conn_cancel(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	uint32_t status;
+
+	status = radio_connect_disable();
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+static void le_read_wl_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_le_read_wl_size *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+
+	rp->wl_size = 8;
+}
+
+static void le_clear_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	radio_filter_clear();
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = 0x00;
+}
+
+static void le_add_dev_to_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_add_dev_to_wl *cmd = (void *)cp;
+	uint32_t status;
+
+	status = radio_filter_add(cmd->addr.type, &cmd->addr.a.val[0]);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = (!status) ? 0x00 :
+					     BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+}
+
+static void le_conn_update(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct hci_cp_le_conn_update *cmd = (void *)cp;
+	uint32_t status;
+
+	/** @todo if peer supports LE Conn Param Req,
+	* use Req cmd (1) instead of Initiate cmd (0).
+	*/
+	status = radio_conn_update(cmd->handle, 0, 0, cmd->conn_interval_max,
+				   cmd->conn_latency, cmd->supervision_timeout);
+
+	evt->evt = BT_HCI_EVT_CMD_STATUS;
+	evt->len = sizeof(struct bt_hci_evt_cmd_status);
+
+	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+static void le_set_host_ch_classif(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_host_ch_classif *cmd = (void *)cp;
+	uint32_t status;
+
+	status = radio_chm_update(&cmd->ch_map[0]);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+
+	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+static void le_read_remote_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_read_remote_features *cmd = (void *)cp;
+	uint32_t status;
+
+	status = radio_feature_req_send(cmd->handle);
+
+	evt->evt = BT_HCI_EVT_CMD_STATUS;
+	evt->len = sizeof(struct bt_hci_evt_cmd_status);
+
+	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+static void le_encrypt(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_encrypt *cmd = (void *)cp;
+	struct bt_hci_rp_le_encrypt *rp = HCI_CC_RP(evt);
+
+	ecb_encrypt(&cmd->key[0], &cmd->plaintext[0], &rp->enc_data[0], 0);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+}
+
+static void le_rand(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_le_rand *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+
+	/** TODO fill rand */
+}
+
+static void le_start_encryption(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_start_encryption *cmd = (void *)cp;
+	uint32_t status;
+
+	status = radio_enc_req_send(cmd->handle,
+			       (uint8_t *)&cmd->rand,
+			       (uint8_t *)&cmd->ediv,
+			       &cmd->ltk[0]);
+
+	evt->evt = BT_HCI_EVT_CMD_STATUS;
+	evt->len = sizeof(struct bt_hci_evt_cmd_status);
+
+	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+static void le_ltk_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_ltk_req_reply *cmd = (void *)cp;
+	struct bt_hci_rp_le_ltk_req_reply *rp = HCI_CC_RP(evt);
+	uint32_t status;
+
+	status = radio_start_enc_req_send(cmd->handle, 0x00, &cmd->ltk[0]);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->handle = cmd->handle;
+}
+
+static void le_ltk_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_ltk_req_neg_reply *cmd = (void *)cp;
+	struct bt_hci_rp_le_ltk_req_neg_reply *rp = HCI_CC_RP(evt);
+	uint32_t status;
+
+	status = radio_start_enc_req_send(cmd->handle,
+					  BT_HCI_ERR_PIN_OR_KEY_MISSING, NULL);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->handle = cmd->handle;
+}
+
+static void le_read_supp_states(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_rp_le_read_supp_states *rp = HCI_CC_RP(evt);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+
+	rp->status = 0x00;
+
+	sys_put_le64(0x000003ffffffffff, rp->le_states);
+}
+
+static void le_conn_param_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_conn_param_req_reply *cmd = (void *)cp;
+	struct bt_hci_rp_le_conn_param_req_reply *rp = HCI_CC_RP(evt);
+	uint32_t status;
+
+	status = radio_conn_update(cmd->handle, 2, 0,
+				   cmd->interval_max,
+				   cmd->latency,
+				   cmd->timeout);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->handle = cmd->handle;
+}
+
+static void le_conn_param_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_conn_param_req_neg_reply *cmd = (void *)cp;
+	struct bt_hci_rp_le_conn_param_req_neg_reply *rp = HCI_CC_RP(evt);
+	uint32_t status;
+
+	status = radio_conn_update(cmd->handle, 2, cmd->reason, 0, 0, 0);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->handle = cmd->handle;
+}
+
+static void le_set_data_len(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_cp_le_set_data_len *cmd = (void *)cp;
+	struct bt_hci_rp_le_set_data_len *rp = HCI_CC_RP(evt);
+	uint32_t status;
+
+	/** @todo add reject_ext_ind support in ctrl.c */
+	status = radio_length_req_send(cmd->handle, cmd->tx_octets);
+
+	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
+	evt->len = _HCI_CC_LEN(*rp);
+	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->handle = cmd->handle;
+}
+
+static int controller_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
+				 struct bt_hci_evt_hdr *evt)
+{
+
+	switch (ocf) {
+	case BT_OCF(BT_HCI_OP_LE_SET_EVENT_MASK):
+		le_set_event_mask(cp, evt);
 		break;
 
-	case HCI_OCF_LE_READ_BUFFER_SIZE:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_read_buffer_size);
-
-		ccp->le_read_buffer_size.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
-		ccp->le_read_buffer_size.acl_data_length =
-			RADIO_LL_LENGTH_OCTETS_RX_MAX;
-		ccp->le_read_buffer_size.acl_data_num =
-			RADIO_PACKET_COUNT_TX_MAX;
+	case BT_OCF(BT_HCI_OP_LE_READ_BUFFER_SIZE):
+		le_read_buffer_size(cp, evt);
 		break;
 
-	case HCI_OCF_LE_READ_LOCAL_SUPPORTED_FEATURES:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_rd_loc_sup_features);
-
-		ccp->le_rd_loc_sup_features.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
-		memset(&ccp->le_rd_loc_sup_features.features[0], 0x00,
-			sizeof(ccp->le_rd_loc_sup_features.features));
-		ccp->le_rd_loc_sup_features.features[0] = RADIO_BLE_FEATURES;
+	case BT_OCF(BT_HCI_OP_LE_READ_LOCAL_FEATURES):
+		le_read_local_features(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_RANDOM_ADDRESS:
-		ll_address_set(1, &cmd->params.le_set_rnd_addr.addr[0]);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_rnd_addr);
-
-		ccp->le_set_rnd_addr.status = HCI_EVT_ERROR_CODE_SUCCESS;
+	case BT_OCF(BT_HCI_OP_LE_SET_RANDOM_ADDRESS):
+		le_set_random_address(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_ADV_PARAMS:
-		ll_adv_params_set(cmd->params.le_set_adv_params.interval_min,
-			c_adv_type[cmd->params.le_set_adv_params.type],
-			cmd->params.le_set_adv_params.own_addr_type,
-			cmd->params.le_set_adv_params.direct_addr_type,
-			&cmd->params.le_set_adv_params.direct_addr[0],
-			cmd->params.le_set_adv_params.channel_map,
-			cmd->params.le_set_adv_params.filter_policy);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_adv_params);
-
-		ccp->le_set_adv_params.status = HCI_EVT_ERROR_CODE_SUCCESS;
+	case BT_OCF(BT_HCI_OP_LE_SET_ADV_PARAM):
+		le_set_adv_param(cp, evt);
 		break;
 
-	case HCI_OCF_LE_READ_ADV_CHL_TX_POWER:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_rd_adv_chl_tx_pwr);
-
-		ccp->le_rd_adv_chl_tx_pwr.status = HCI_EVT_ERROR_CODE_SUCCESS;
-		ccp->le_rd_adv_chl_tx_pwr.transmit_power_level = 0;
+	case BT_OCF(BT_HCI_OP_LE_READ_ADV_CH_TX_POWER):
+		le_read_adv_ch_tx_power(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_ADV_DATA:
-		ll_adv_data_set(cmd->params.le_set_adv_data.len,
-				&cmd->params.le_set_adv_data.data[0]);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_adv_data);
-
-		ccp->le_set_adv_data.status = HCI_EVT_ERROR_CODE_SUCCESS;
+	case BT_OCF(BT_HCI_OP_LE_SET_ADV_DATA):
+		le_set_adv_data(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_SCAN_RESP_DATA:
-		ll_scan_data_set(cmd->params.le_set_scan_data.len,
-					&cmd->params.le_set_scan_data.data[0]);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_scan_resp_data);
-
-		ccp->le_set_scan_resp_data.status = HCI_EVT_ERROR_CODE_SUCCESS;
+	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_RSP_DATA):
+		le_set_scan_rsp_data(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_ADV_ENABLE:
-		status = ll_adv_enable(cmd->params.le_set_adv_enable.enable);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_adv_enable);
-
-		ccp->le_set_adv_enable.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	case BT_OCF(BT_HCI_OP_LE_SET_ADV_ENABLE):
+		le_set_adv_enable(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_SCAN_PARAMS:
-		ll_scan_params_set(cmd->params.le_set_scan_params.
-				   type,
-				   cmd->params.le_set_scan_params.
-				   interval,
-				   cmd->params.le_set_scan_params.
-				   window,
-				   cmd->params.le_set_scan_params.
-				   own_addr_type,
-				   cmd->params.le_set_scan_params.
-				   filter_policy);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_scan_params);
-
-		ccp->le_set_scan_params.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
+	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_PARAMS):
+		le_set_scan_params(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_SCAN_ENABLE:
-		status = ll_scan_enable(cmd->params.le_set_scan_enable.enable);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_scan_enable);
-
-		ccp->le_set_scan_enable.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_ENABLE):
+		le_set_scan_enable(cp, evt);
 		break;
 
-	case HCI_OCF_LE_CREATE_CONNECTION:
-		le_cc = &cmd->params.le_create_conn;
-
-		status = ll_create_connection(le_cc->scan_interval,
-					 le_cc->scan_window,
-					 le_cc->filter_policy,
-					 le_cc->peer_addr_type,
-					 &le_cc->peer_addr[0],
-					 le_cc->own_addr_type,
-					 le_cc->interval_max,
-					 le_cc->latency,
-					 le_cc->timeout);
-
-		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
-		evt->len = sizeof(struct hci_evt_cmd_status);
-
-		evt->params.cmd_status.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN):
+		le_create_connection(cp, evt);
 		break;
 
-	case HCI_OCF_LE_CREATE_CONNECTION_CANCEL:
-		status = radio_connect_disable();
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_create_conn_cancel);
-
-		ccp->le_create_conn_cancel.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN_CANCEL):
+		le_create_conn_cancel(cp, evt);
 		break;
 
-	case HCI_OCF_LE_READ_WHITELIST_SIZE:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_read_whitelist_size);
-
-		ccp->le_read_whitelist_size.status = HCI_EVT_ERROR_CODE_SUCCESS;
-		ccp->le_read_whitelist_size.whitelist_size = 8;
+	case BT_OCF(BT_HCI_OP_LE_READ_WL_SIZE):
+		le_read_wl_size(cp, evt);
 		break;
 
-	case HCI_OCF_LE_CLEAR_WHITELIST:
-		radio_filter_clear();
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_clear_whitelist);
-
-		ccp->le_clear_whitelist.status = HCI_EVT_ERROR_CODE_SUCCESS;
+	case BT_OCF(BT_HCI_OP_LE_CLEAR_WL):
+		le_clear_wl(cp, evt);
 		break;
 
-	case HCI_OCF_LE_ADD_DEVICE_TO_WHITELIST:
-		error_code = radio_filter_add(cmd->params.le_add_dev_to_wlist.
-				     addr_type,
-				     &cmd->params.le_add_dev_to_wlist.addr[0]);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(
-			hci_evt_cmd_cmplt_le_add_device_to_whitelist);
-
-		ccp->le_add_dev_to_wlist.status = (error_code == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_MEM_CAPACITY_EXCEEDED;
+	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_WL):
+		le_add_dev_to_wl(cp, evt);
 		break;
 
-	case HCI_OCF_LE_CONNECTION_UPDATE:
-		status = radio_conn_update(cmd->params.le_conn_update.handle,
-					   0, 0,
-					   cmd->params.le_conn_update.
-					   interval_max,
-					   cmd->params.le_conn_update.latency,
-					   cmd->params.le_conn_update.timeout);
-
-		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
-		evt->len = sizeof(struct hci_evt_cmd_status);
-
-		evt->params.cmd_status.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	case BT_OCF(BT_HCI_OP_LE_CONN_UPDATE):
+		le_conn_update(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_HOST_CHL_CLASSN:
-		error_code = radio_chm_update(&cmd->params.
-				le_set_host_chl_classn.channel_map[0]);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_host_chl_classn);
-
-		ccp->le_set_host_chl_classn.status = (error_code == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CH_CLASSIF):
+		le_set_host_ch_classif(cp, evt);
 		break;
 
-	case HCI_OCF_LE_READ_REMOTE_USED_FEATURES:
-		status = radio_feature_req_send(cmd->params.
-					   le_read_remote_used_feats.handle);
-
-		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
-		evt->len = sizeof(struct hci_evt_cmd_status);
-
-		evt->params.cmd_status.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
+		le_read_remote_features(cp, evt);
 		break;
 
-	case HCI_OCF_LE_ENCRYPT:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_encrypt);
-
-		ccp->le_encrypt.status = HCI_EVT_ERROR_CODE_SUCCESS;
-		ecb_encrypt(&cmd->params.le_encrypt.key[0],
-				&cmd->params.le_encrypt.plaintext[0],
-			    &ccp->le_encrypt.encrypted[0], 0);
+	case BT_OCF(BT_HCI_OP_LE_ENCRYPT):
+		le_encrypt(cp, evt);
 		break;
 
-	case HCI_OCF_LE_RAND:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_rand);
-
-		ccp->le_rand.status = HCI_EVT_ERROR_CODE_SUCCESS;
-
-		/** TODO fill rand */
+	case BT_OCF(BT_HCI_OP_LE_RAND):
+		le_rand(cp, evt);
 		break;
 
-	case HCI_OCF_LE_START_ENCRYPTION:
-		status = radio_enc_req_send(cmd->params.
-				       le_start_encryption.handle,
-				       &cmd->params.le_start_encryption.rand[0],
-				       &cmd->params.le_start_encryption.ediv[0],
-				       &cmd->params.le_start_encryption.ltk[0]);
-
-		evt->code = HCI_EVT_CODE_COMMAND_STATUS;
-		evt->len = sizeof(struct hci_evt_cmd_status);
-
-		evt->params.cmd_status.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
+	case BT_OCF(BT_HCI_OP_LE_START_ENCRYPTION):
+		le_start_encryption(cp, evt);
 		break;
 
-	case HCI_OCF_LE_LTK_REQUEST_REPLY:
-		status =
-		    radio_start_enc_req_send(cmd->params.le_ltk_reply.handle,
-					     HCI_EVT_ERROR_CODE_SUCCESS,
-					     &cmd->params.
-					     le_ltk_reply.ltk[0]);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_ltk_reply);
-
-		ccp->le_ltk_reply.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
-		ccp->le_ltk_reply.conn_handle = cmd->params.le_ltk_reply.handle;
+	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_REPLY):
+		le_ltk_req_reply(cp, evt);
 		break;
 
-	case HCI_OCF_LE_LTK_NEGATIVE_REPLY:
-		status =
-		radio_start_enc_req_send(cmd->params.le_ltk_neg_reply.handle,
-			HCI_EVT_ERROR_CODE_PIN_OR_KEY_MISSING,
-			0);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_ltk_negative_reply);
-
-		ccp->le_ltk_neg_reply.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
-		ccp->le_ltk_neg_reply.conn_handle =
-		    cmd->params.le_ltk_neg_reply.handle;
+	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY):
+		le_ltk_req_neg_reply(cp, evt);
 		break;
 
-	case HCI_OCF_LE_READ_SUPPORTED_STATES:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len =
-			HCI_CC_LEN(hci_evt_cmd_cmplt_le_read_supported_states);
-
-		ccp->le_read_supported_states.status =
-			HCI_EVT_ERROR_CODE_SUCCESS;
-		ccp->le_read_supported_states.le_states = 0x000003ffffffffff;
+	case BT_OCF(BT_HCI_OP_LE_READ_SUPP_STATES):
+		le_read_supp_states(cp, evt);
 		break;
 
-	case HCI_OCF_LE_REMOTE_CONN_PARAM_REQ_REPLY:
-		le_cp_req_rep = &cmd->params.le_remote_conn_param_req_reply;
-		status = radio_conn_update(le_cp_req_rep->handle, 2, 0,
-					   le_cp_req_rep->interval_max,
-					   le_cp_req_rep->latency,
-					   le_cp_req_rep->timeout);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len =
-		HCI_CC_LEN(hci_evt_cmd_cmplt_le_remote_conn_param_req_reply);
-
-		ccp->le_remote_conn_param_req_reply.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
-		ccp->le_remote_conn_param_req_reply.conn_handle =
-		    cmd->params.le_remote_conn_param_req_reply.handle;
+	case BT_OCF(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY):
+		le_conn_param_req_reply(cp, evt);
 		break;
 
-	case HCI_OCF_LE_REMOTE_CONN_PARAM_REQ_NEG_REPLY:
-		le_cp_req_neg_rep =
-			&cmd->params.le_remote_conn_param_req_neg_reply;
-
-		status = radio_conn_update(le_cp_req_neg_rep->handle, 2,
-				      le_cp_req_neg_rep->reason, 0, 0, 0);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(
-		hci_evt_cmd_cmplt_le_remote_conn_param_req_neg_reply);
-
-		ccp->le_remote_conn_param_req_neg_reply.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
-		ccp->le_remote_conn_param_req_neg_reply.conn_handle =
-		    cmd->params.le_remote_conn_param_req_neg_reply.handle;
+	case BT_OCF(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY):
+		le_conn_param_req_neg_reply(cp, evt);
 		break;
 
-	case HCI_OCF_LE_SET_DATA_LENGTH:
-		status = radio_length_req_send(
-				cmd->params.le_set_data_length.handle,
-				cmd->params.le_set_data_length.tx_octets);
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_le_set_data_length);
-
-		ccp->le_set_data_length.status = (status == 0) ?
-			HCI_EVT_ERROR_CODE_SUCCESS :
-			HCI_EVT_ERROR_CODE_COMMAND_DISALLOWED;
-		ccp->le_set_data_length.conn_handle =
-			cmd->params.le_set_data_length.handle;
+	case BT_OCF(BT_HCI_OP_LE_SET_DATA_LEN):
+		le_set_data_len(cp, evt);
 		break;
 
 	default:
@@ -1417,7 +1544,7 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 		err = info_cmd_handle(ocf, cp, len, evt);
 		break;
 	case BT_OGF_LE:
-		err = controller_cmd_handle(ocf, (void *)cmd, len, (void *)evt);
+		err = controller_cmd_handle(ocf, cp, len, evt);
 		break;
 	case BT_OGF_VS:
 		err = vs_cmd_handle(ocf, (void *)cmd, len, (void *)evt);
