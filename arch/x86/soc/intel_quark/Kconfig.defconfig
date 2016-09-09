@@ -1,0 +1,1 @@
+source "arch/x86/soc/intel_quark/*/Kconfig.defconfig.series"

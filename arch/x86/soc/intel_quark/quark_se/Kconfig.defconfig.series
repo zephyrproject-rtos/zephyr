@@ -1,7 +1,5 @@
-# Kconfig - Quark SE configuration options
-
 #
-# Copyright (c) 2015-2016 Intel Corporation
+# Copyright (c) 2016 Intel Corporation Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +14,9 @@
 # limitations under the License.
 #
 
-if SOC_QUARK_SE_C1000
+if SOC_SERIES_QUARK_SE
 
-config SOC
+config SOC_SERIES
 	default quark_se
 
 config PHYS_RAM_ADDR
@@ -234,4 +232,7 @@ config USB_DW_IRQ_PRI
 	default 3
 endif # USB
 
-endif # SOC_QUARK_SE_C1000
+source "arch/x86/soc/intel_quark/quark_se/Kconfig.defconfig.quark_se*"
+source "arch/x86/soc/intel_quark/quark_se/Kconfig.defconfig.curie*"
+
+endif # SOC_SERIES_QUARK_SE
