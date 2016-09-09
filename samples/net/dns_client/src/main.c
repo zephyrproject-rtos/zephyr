@@ -19,58 +19,52 @@
 #include <string.h>
 #include <errno.h>
 
-#include "dns_pack.h"
+#include "tcp_config.h"
+#include "tcp.h"
+
 #include "dns_utils.h"
-#include "netz.h"
+#include "dns_pack.h"
 
 #define STACK_SIZE	1024
 uint8_t stack[STACK_SIZE];
 
 #define BUF_SIZE	1024
-uint8_t tx_raw_buf[BUF_SIZE];
-uint8_t rx_raw_buf[BUF_SIZE];
+uint8_t tx_buf[BUF_SIZE];
+uint8_t rx_buf[BUF_SIZE];
 
-#define SLEEP_TIME	50
+size_t tx_len;
+size_t rx_len;
+
+struct net_context *ctx;
 
 #define RC_STR(rc)	(rc == 0 ? "OK" : "ERROR")
 
 char *domains[] = {"not_a_real_domain_name",
 		   "linuxfoundation.org", "www.linuxfoundation.org",
-		   "gnu.org", "www.gnu.org",
-		   "npr.org", "www.npr.org",
 		   "wikipedia.org", "www.wikipedia.org",
 		   "zephyrproject.org", "www.zephyrproject.org",
 		   NULL};
 
 /* this function creates the DNS query					*/
-int dns_query(struct app_buf_t *buf, char *str, uint16_t id,
-	      enum dns_rr_type qtype);
+int dns_query(uint8_t *buf, size_t *len, size_t size,
+	      char *str, uint16_t id, enum dns_rr_type qtype);
 
 /* this function parses the DNS server response				*/
-int dns_response(struct app_buf_t *_buf, int *response_type, int src_id);
+int dns_response(uint8_t *buf, size_t size, int *response_type, int src_id);
 
 void fiber(void)
 {
-	struct app_buf_t tx_buf = APP_BUF_INIT(tx_raw_buf,
-					       sizeof(tx_raw_buf), 0);
-
-	struct app_buf_t rx_buf = APP_BUF_INIT(rx_raw_buf,
-					       sizeof(rx_raw_buf), 0);
-
-	/* If the network is a bit slow, increase rx_timeout and
-	 * tx_retry_timeout in struct netz_ctx_t
-	 */
-	struct netz_ctx_t netz_ctx = NETZ_CTX_INIT;
-
 	int response_type;
 	int counter;
 	char *name;
 	int rc;
 
-	netz_host_ipv4(&netz_ctx, 192, 168, 1, 101);
-	netz_remote_ipv4(&netz_ctx, 192, 168, 1, 10, 5353);
-	netz_netmask_ipv4(&netz_ctx, 255, 255, 255, 0);
-	netz_udp(&netz_ctx);
+	rc = tcp_init(&ctx);
+	if (rc != 0) {
+		printk("[%s:%d] Unable to init net_context\n",
+		       __func__, __LINE__);
+		return;
+	}
 
 	counter = 0;
 	do {
@@ -84,27 +78,29 @@ void fiber(void)
 
 		printf("Domain name: %s\n", name);
 
-		rc = dns_query(&tx_buf, name, counter, DNS_RR_TYPE_A);
+		rc = dns_query(tx_buf, &tx_len, sizeof(tx_buf), name, counter,
+			       DNS_RR_TYPE_A);
 		printf("[%s:%d] DNS Query: %s, ID: %d\n",
 		       __func__, __LINE__, RC_STR(rc), counter);
 
-		rc = netz_tx(&netz_ctx, &tx_buf);
+		rc = tcp_tx(ctx, tx_buf, tx_len);
 		printf("[%s:%d] TX: %s\n", __func__, __LINE__, RC_STR(rc));
 
-		fiber_sleep(SLEEP_TIME);
+		fiber_sleep(APP_SLEEP_TICKS);
 
-		rc = netz_rx(&netz_ctx, &rx_buf);
+		rc = tcp_rx(ctx, rx_buf, &rx_len, sizeof(rx_buf));
 		printf("[%s:%d] RX: %s\n", __func__, __LINE__, RC_STR(rc));
 
 		if (rc == 0) {
-			rc = dns_response(&rx_buf, &response_type, counter);
+			rc = dns_response(rx_buf, rx_len,
+					  &response_type, counter);
 			printf("[%s:%d] DNS Response: %s %s\n",
 			       __func__, __LINE__, RC_STR(rc),
 			       (rc != 0 && counter == 0 ? "<- :)" : ""));
 		}
 
 		counter += 1;
-		fiber_sleep(SLEEP_TIME);
+		fiber_sleep(APP_SLEEP_TICKS);
 	} while (1);
 
 }
@@ -118,10 +114,10 @@ void main(void)
 }
 
 /* Next versions must handle the transaction id internally		*/
-int dns_query(struct app_buf_t *buf, char *str, uint16_t id,
-	      enum dns_rr_type qtype)
+int dns_query(uint8_t *buf, size_t *len, size_t size,
+	      char *str, uint16_t id, enum dns_rr_type qtype)
 {
-	return dns_msg_pack_query(buf, str, id, qtype);
+	return dns_msg_pack_query(buf, len, size, str, id, qtype);
 }
 
 /* See dns_unpack_answer, and also see:
@@ -129,9 +125,9 @@ int dns_query(struct app_buf_t *buf, char *str, uint16_t id,
  */
 #define DNS_QUERY_POS	0x0c
 
-int dns_response(struct app_buf_t *_buf, int *response_type, int src_id)
+int dns_response(uint8_t *buf, size_t size, int *response_type, int src_id)
 {
-	struct dns_msg_t dns_msg = DNS_MSG_INIT(_buf->buf, _buf->size);
+	struct dns_msg_t dns_msg = DNS_MSG_INIT(buf, size);
 	int ptr;
 	int rc;
 	int i;
@@ -187,8 +183,8 @@ int dns_response(struct app_buf_t *_buf, int *response_type, int src_id)
 			break;
 		}
 
-		dns_msg.answer_offset = dns_msg.answer_offset + 12
-					+ dns_msg.response_length;
+		dns_msg.answer_offset = dns_msg.answer_offset + 12 +
+					dns_msg.response_length;
 		++i;
 	}
 

@@ -19,7 +19,7 @@ ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os/lib
 ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os
 ccflags-y +=-I${ZEPHYR_BASE}/net/ip
 
-obj-y += dns_pack.o
-obj-y += netz.o
+obj-y += tcp.o
 obj-y += dns_utils.o
+obj-y += dns_pack.o
 obj-y += main.o

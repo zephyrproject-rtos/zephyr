@@ -17,13 +17,11 @@
 #ifndef _DNS_PACK_H_
 #define _DNS_PACK_H_
 
+#include <misc/byteorder.h>
+
 #include <stdint.h>
 #include <stddef.h>
 #include <errno.h>
-
-#include <misc/byteorder.h>
-
-#include "app_buf.h"
 
 /**
  * @brief dns_msg_t
@@ -320,17 +318,19 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id);
 
 /**
  * @brief dns_msg_pack_query	Packs the query message
- * @param buf			Buffer that will contain the resultant query
- * @param domain_name		Something like: www.example.com
- * @param id			Transaction Identifier
- * @param qtype			Query type: AA, AAAA. See enum dns_rr_type
+ * @param [out] buf		Buffer that will contain the resultant query
+ * @param [out] len		Number of bytes used to encode the query
+ * @param [in] size		Buffer size
+ * @param [in] domain_name	Something like: www.example.com
+ * @param [in] id		Transaction Identifier
+ * @param [in] qtype		Query type: AA, AAAA. See enum dns_rr_type
  * @return			0 on success
  * @return			On error, a negative value is returned. See:
  *				- dns_msg_pack_query_header
  *				- dns_msg_pack_qname
  */
-int dns_msg_pack_query(struct app_buf_t *buf, char *domain_name,
-			uint16_t id, enum dns_rr_type qtype);
+int dns_msg_pack_query(uint8_t *buf, size_t *len, size_t size,
+		       char *domain_name, uint16_t id, enum dns_rr_type qtype);
 
 /**
  * @brief dns_unpack_response_query

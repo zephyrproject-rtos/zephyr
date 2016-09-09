@@ -14,15 +14,33 @@
  * limitations under the License.
  */
 
-#ifndef _DNS_UTILS_H_
-#define _DNS_UTILS_H_
+#ifndef _TCP_CONFIG_H_
+#define _TCP_CONFIG_H_
 
-#include <stdint.h>
+#include <net/net_ip.h>
 
-int dns_print_msg_header(uint8_t *header, int size);
-int dns_print_msg_query(uint8_t *qname, int qname_size, int qtype, int qclass);
-int dns_print_label(uint8_t *label, int size);
-int dns_print_readable_msg_label(int offset, uint8_t *buf, int size);
-int print_buf(uint8_t *buf, size_t size);
+#define NETMASK0		255
+#define NETMASK1		255
+#define NETMASK2		255
+#define NETMASK3		0
+
+#define CLIENT_IPADDR0		192
+#define CLIENT_IPADDR1		168
+#define CLIENT_IPADDR2		1
+#define CLIENT_IPADDR3		100
+
+#define SERVER_IPADDR0		192
+#define SERVER_IPADDR1		168
+#define SERVER_IPADDR2		1
+#define SERVER_IPADDR3		10
+
+#define SERVER_PORT		5353
+#define CLIENT_PORT		0
+
+#define TCP_RX_TIMEOUT		50
+#define TCP_RETRY_TIMEOUT	50
+
+#define APP_SLEEP_TICKS		10
+#define APP_PROTOCOL		IPPROTO_UDP
 
 #endif

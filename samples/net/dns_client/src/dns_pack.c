@@ -206,38 +206,38 @@ static int dns_msg_pack_query_header(uint8_t *buf, int size, uint16_t id)
 	return 0;
 }
 
-int dns_msg_pack_query(struct app_buf_t *buf, char *domain_name,
-			uint16_t id, enum dns_rr_type qtype)
+int dns_msg_pack_query(uint8_t *buf, size_t *len, size_t size,
+		       char *domain_name, uint16_t id, enum dns_rr_type qtype)
 {
 	int qname_len;
 	int offset;
 	int rc;
 
-	rc = dns_msg_pack_query_header(buf->buf, buf->size, id);
+	rc = dns_msg_pack_query_header(buf, size, id);
 	if (rc != 0) {
 		return rc;
 	}
 
 	offset = DNS_MSG_HEADER_SIZE;
 
-	rc = dns_msg_pack_qname(&qname_len, buf->buf + offset,
-				buf->size - offset, domain_name);
+	rc = dns_msg_pack_qname(&qname_len, buf + offset,
+				size - offset, domain_name);
 	if (rc != 0) {
 		return rc;
 	}
 
 	offset += qname_len;
 
-	/* 4Bytes required: QType: (2B), QClass (2B)	*/
-	if (offset + 4 > buf->size) {
+	/* 4 bytes required: QType: (2), QClass (2)	*/
+	if (offset + 4 > size) {
 		return rc;
 	}
 	/* QType */
-	*(uint16_t *)(buf->buf + offset + 0) = sys_cpu_to_be16(qtype);
+	*(uint16_t *)(buf + offset + 0) = sys_cpu_to_be16(qtype);
 	/* QClass */
-	*(uint16_t *)(buf->buf + offset + 2) = sys_cpu_to_be16(DNS_CLASS_IN);
+	*(uint16_t *)(buf + offset + 2) = sys_cpu_to_be16(DNS_CLASS_IN);
 
-	buf->length = offset + 4;
+	*len = offset + 4;
 
 	return 0;
 }

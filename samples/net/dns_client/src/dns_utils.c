@@ -151,10 +151,3 @@ int print_buf(uint8_t *buf, size_t size)
 
 	return 0;
 }
-
-
-int print_app_buf(struct app_buf_t *buf)
-{
-	print_buf(buf->buf, buf->length);
-	return 0;
-}
