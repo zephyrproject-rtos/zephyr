@@ -42,8 +42,8 @@ source "usb/Kconfig"
 # The following are for Kconfig files for default values only.
 # These should be parsed at the end.
 #
-# Board defaults should be parsed before SoC defaults
-# because board usually overrides them.
+# Board defaults should be parsed after SoC defaults
+# because board usually overrides SoC values.
 #
-source "boards/*/Kconfig.defconfig"
 source "arch/*/soc/*/Kconfig.defconfig"
+source "boards/*/Kconfig.defconfig"
