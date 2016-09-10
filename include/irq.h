@@ -111,6 +111,14 @@ extern "C" {
  */
 #define irq_disable(irq) _arch_irq_disable(irq)
 
+/**
+ * @brief Return IRQ enable state
+ *
+ * @param irq IRQ line
+ * @return interrupt enable state, true or false
+ */
+#define irq_is_enabled(irq) _arch_irq_is_enabled(irq)
+
 #ifdef __cplusplus
 }
 #endif
