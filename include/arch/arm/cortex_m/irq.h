@@ -36,9 +36,11 @@ extern "C" {
 GTEXT(_IntExit);
 GTEXT(_arch_irq_enable)
 GTEXT(_arch_irq_disable)
+GTEXT(_arch_irq_is_enabled)
 #else
 extern void _arch_irq_enable(unsigned int irq);
 extern void _arch_irq_disable(unsigned int irq);
+extern int _arch_irq_is_enabled(unsigned int irq);
 
 extern void _IntExit(void);
 

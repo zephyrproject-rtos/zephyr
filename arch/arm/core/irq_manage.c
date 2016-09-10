@@ -64,6 +64,17 @@ void _arch_irq_disable(unsigned int irq)
 }
 
 /**
+ * @brief Return IRQ enable state
+ *
+ * @param irq IRQ line
+ * @return interrupt enable state, true or false
+ */
+int _arch_irq_is_enabled(unsigned int irq)
+{
+	return _NvicIsIrqEnabled(irq);
+}
+
+/**
  * @internal
  *
  * @brief Set an interrupt's priority
