@@ -4,6 +4,18 @@ if BOARD_ARDUINO_101
 config BOARD
 	default "arduino_101"
 
+config TEXT_SECTION_OFFSET
+	default 0x30
+
+config SS_RESET_VECTOR
+	default 0x40034000
+
+config ROM_SIZE
+	default 192
+
+config PHYS_LOAD_ADDR
+	default 0x40010000
+
 if NBLE
 
 config GPIO

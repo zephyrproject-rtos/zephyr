@@ -85,10 +85,6 @@ SECTIONS {
 		KEEP(*(.irq_vector_table))
 		KEEP(*(".irq_vector_table.*"))
 
-#ifdef CONFIG_VERSION_HEADER
-		*(.version_header)
-		KEEP(*(".version_header*"))
-#endif
 		KEEP(*(.isr_irq*))
 
 		/*

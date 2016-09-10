@@ -24,6 +24,13 @@ config KERNEL_BIN_NAME
 	help
 	This option sets the name of the generated kernel binary.
 
+config TEXT_SECTION_OFFSET
+	hex "TEXT section offset"
+	default 0
+	help
+	This sets and offset before the text section and allows booting images
+	with custom headers that are inserted at the beginning of the image.
+
 config HAVE_CUSTOM_LINKER_SCRIPT
 	prompt "Custom linker scripts provided"
 	def_bool n
@@ -45,14 +52,6 @@ config CUSTOM_LINKER_SCRIPT
 	This is useful when an application needs to add sections into the
 	linker script and avoid having to change the script provided by
 	Zephyr.
-
-config VERSION_HEADER
-	bool "Add a version header to binary"
-	default n
-	help
-	This will add a version header section to the generated binary that
-	can be filled with the software version for example using a post
-	script.
 
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
