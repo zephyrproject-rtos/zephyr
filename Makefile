@@ -721,8 +721,7 @@ ifdef MAKEFILE_TOOLCHAIN_DO_PASS2
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 endif
 
-QEMU_BIN_PATH	?= /usr/bin
-QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(ARCH))
+QEMU		= $(addsuffix /,$(QEMU_BIN_PATH))$(QEMU_$(ARCH))
 
 # The all: target is the default when no target is given on the
 # command line.
