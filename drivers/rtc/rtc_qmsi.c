@@ -28,6 +28,9 @@
 
 struct rtc_data {
 	struct nano_sem sem;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 #ifdef CONFIG_RTC_QMSI_API_REENTRANCY
@@ -38,6 +41,25 @@ static const int reentrancy_protection = 1;
 #define RTC_CONTEXT (NULL)
 static const int reentrancy_protection;
 #endif /* CONFIG_RTC_QMSI_API_REENTRANCY */
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+
+static void rtc_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct rtc_data *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t rtc_qmsi_get_power_state(struct device *dev)
+{
+	struct rtc_data *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+#else
+#define rtc_qmsi_set_power_state(...)
+#endif
 
 static void rtc_reentrancy_init(struct device *dev)
 {
@@ -141,33 +163,50 @@ static int rtc_qmsi_init(struct device *dev)
 	/* Route RTC interrupt to Lakemont */
 	QM_SCSS_INT->int_rtc_mask &= ~BIT(0);
 
+	rtc_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static uint32_t int_rtc_mask_save;
 
-static int rtc_suspend_device(struct device *dev, int pm_policy)
+static int rtc_suspend_device(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		int_rtc_mask_save = QM_SCSS_INT->int_rtc_mask;
-	}
-
+	int_rtc_mask_save = QM_SCSS_INT->int_rtc_mask;
+	rtc_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 	return 0;
 }
 
-static int rtc_resume_device(struct device *dev, int pm_policy)
+static int rtc_resume_device(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		QM_SCSS_INT->int_rtc_mask = int_rtc_mask_save;
+	QM_SCSS_INT->int_rtc_mask = int_rtc_mask_save;
+	rtc_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int rtc_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+				void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return rtc_suspend_device(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return rtc_resume_device(dev);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = rtc_qmsi_get_power_state(dev);
+		return 0;
 	}
 
 	return 0;
 }
 #endif
 
-DEFINE_DEVICE_PM_OPS(rtc, rtc_suspend_device, rtc_resume_device);
-
-DEVICE_AND_API_INIT_PM(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init,
-		       DEVICE_PM_OPS_GET(rtc), RTC_CONTEXT, NULL, SECONDARY,
-		       CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&api);
+DEVICE_DEFINE(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init, rtc_qmsi_device_ctrl,
+	      RTC_CONTEXT, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      (void *)&api);

@@ -59,8 +59,17 @@ extern uint32_t _nano_get_earliest_deadline(void);
 
 extern void _nano_sys_clock_tick_announce(int32_t ticks);
 
-extern int _sys_clock_suspend(struct device *dev, int pm_policy);
-extern int _sys_clock_resume(struct device *dev, int pm_policy);
+extern int sys_clock_device_ctrl(struct device *device,
+				 uint32_t ctrl_command, void *context);
+
+/*
+ * Currently regarding timers, only loapic timer implements
+ * device pm functionality. For other timers, use default handler in case
+ * the app enables CONFIG_DEVICE_POWER_MANAGEMENT.
+ */
+#ifndef CONFIG_LOAPIC_TIMER
+#define sys_clock_device_ctrl device_control_nop
+#endif
 
 #if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
 	extern void (*_do_sys_clock_tick_announce)(kevent_t);

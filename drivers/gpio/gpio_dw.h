@@ -54,6 +54,9 @@ struct gpio_dw_runtime {
 	struct device *clock;
 #endif
 	sys_slist_t callbacks;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 #ifdef __cplusplus

@@ -154,15 +154,16 @@ static void do_soc_sleep(int deep)
 	set_rtc_alarm();
 
 	for (i = suspend_device_count - 1; i >= 0; i--) {
-		devices_retval[i] = device_suspend(suspend_devices[i],
-						   SYS_PM_DEEP_SLEEP);
+		devices_retval[i] = device_set_power_state(suspend_devices[i],
+						DEVICE_PM_SUSPEND_STATE);
 	}
 
 	__do_soc_sleep(deep);
 
 	for (i = 0; i < suspend_device_count; i++) {
 		if (!devices_retval[i]) {
-			device_resume(suspend_devices[i], SYS_PM_DEEP_SLEEP);
+			device_set_power_state(suspend_devices[i],
+						DEVICE_PM_ACTIVE_STATE);
 		}
 	}
 }

@@ -180,6 +180,9 @@ struct pwm_ftm_config {
 /** Runtime driver data */
 struct pwm_ftm_drv_data {
 	uint32_t phase[4];
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 #endif /* __PWM_K64_FTM_H__ */

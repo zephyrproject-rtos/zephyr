@@ -61,6 +61,7 @@ struct spi_qmsi_runtime {
 	struct nano_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	struct spi_context_t ctx_save;
+	uint32_t device_power_state;
 #endif
 };
 
@@ -242,6 +243,23 @@ static struct device *gpio_cs_init(struct spi_qmsi_config *config)
 
 	return gpio;
 }
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void spi_master_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct spi_qmsi_runtime *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t spi_master_get_power_state(struct device *dev)
+{
+	struct spi_qmsi_runtime *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+#else
+#define spi_master_set_power_state(...)
+#endif
 
 static int spi_qmsi_init(struct device *dev)
 {
@@ -279,65 +297,78 @@ static int spi_qmsi_init(struct device *dev)
 	nano_sem_init(&context->sem);
 	nano_sem_give(&context->sem);
 
-	dev->driver_api = &spi_qmsi_api;
+	spi_master_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
+	dev->driver_api = &spi_qmsi_api;
 	return 0;
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int spi_master_suspend_device(struct device *dev, int pm_policy)
+static int spi_master_suspend_device(struct device *dev)
 {
 	if (device_busy_check(dev)) {
 		return -EBUSY;
 	}
 
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		struct spi_qmsi_config *config = dev->config->config_info;
-		qm_spi_reg_t *const regs = QM_SPI[config->spi];
-		struct spi_qmsi_runtime *drv_data = dev->driver_data;
-		struct spi_context_t *const ctx_save = &drv_data->ctx_save;
+	struct spi_qmsi_config *config = dev->config->config_info;
+	qm_spi_reg_t *const regs = QM_SPI[config->spi];
+	struct spi_qmsi_runtime *drv_data = dev->driver_data;
+	struct spi_context_t *const ctx_save = &drv_data->ctx_save;
 
-		if (config->spi == QM_SPI_MST_0) {
-			ctx_save->int_spi_mask =
-					QM_SCSS_INT->int_spi_mst_0_mask;
-		} else {
-			ctx_save->int_spi_mask =
-					QM_SCSS_INT->int_spi_mst_1_mask;
-		}
-
-		ctx_save->ctrlr0 = regs->ctrlr0;
-		ctx_save->ser = regs->ser;
-		ctx_save->baudr = regs->baudr;
+	if (config->spi == QM_SPI_MST_0) {
+		ctx_save->int_spi_mask = QM_SCSS_INT->int_spi_mst_0_mask;
+	} else {
+		ctx_save->int_spi_mask = QM_SCSS_INT->int_spi_mst_1_mask;
 	}
+
+	ctx_save->ctrlr0 = regs->ctrlr0;
+	ctx_save->ser = regs->ser;
+	ctx_save->baudr = regs->baudr;
+
+	spi_master_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 	return 0;
 }
 
-static int spi_master_resume_device(struct device *dev, int pm_policy)
+static int spi_master_resume_device_from_suspend(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		struct spi_qmsi_config *config = dev->config->config_info;
-		qm_spi_reg_t *const regs = QM_SPI[config->spi];
-		struct spi_qmsi_runtime *drv_data = dev->driver_data;
-		struct spi_context_t *const ctx_save = &drv_data->ctx_save;
+	struct spi_qmsi_config *config = dev->config->config_info;
+	qm_spi_reg_t *const regs = QM_SPI[config->spi];
+	struct spi_qmsi_runtime *drv_data = dev->driver_data;
+	struct spi_context_t *const ctx_save = &drv_data->ctx_save;
 
-		if (config->spi == QM_SPI_MST_0) {
-			QM_SCSS_INT->int_spi_mst_0_mask =
-					ctx_save->int_spi_mask;
-		} else {
-			QM_SCSS_INT->int_spi_mst_1_mask =
-					ctx_save->int_spi_mask;
+	if (config->spi == QM_SPI_MST_0) {
+		QM_SCSS_INT->int_spi_mst_0_mask = ctx_save->int_spi_mask;
+	} else {
+		QM_SCSS_INT->int_spi_mst_1_mask = ctx_save->int_spi_mask;
+	}
+	regs->ctrlr0 = ctx_save->ctrlr0;
+	regs->ser = ctx_save->ser;
+	regs->baudr = ctx_save->baudr;
+
+	spi_master_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int spi_master_qmsi_device_ctrl(struct device *port,
+				       uint32_t ctrl_command, void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return spi_master_suspend_device(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return spi_master_resume_device_from_suspend(port);
 		}
-
-		regs->ctrlr0 = ctx_save->ctrlr0;
-		regs->ser = ctx_save->ser;
-		regs->baudr = ctx_save->baudr;
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = spi_master_get_power_state(port);
+		return 0;
 	}
 	return 0;
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
-
-DEFINE_DEVICE_PM_OPS(spi_master, spi_master_suspend_device,
-		     spi_master_resume_device);
 
 #ifdef CONFIG_SPI_0
 static struct spi_qmsi_config spi_qmsi_mst_0_config = {
@@ -350,9 +381,10 @@ static struct spi_qmsi_config spi_qmsi_mst_0_config = {
 
 static struct spi_qmsi_runtime spi_qmsi_mst_0_runtime;
 
-DEVICE_INIT_PM(spi_master_0, CONFIG_SPI_0_NAME, spi_qmsi_init,
-	       DEVICE_PM_OPS_GET(spi_master), &spi_qmsi_mst_0_runtime,
-	       &spi_qmsi_mst_0_config, SECONDARY, CONFIG_SPI_INIT_PRIORITY);
+DEVICE_DEFINE(spi_master_0, CONFIG_SPI_0_NAME, spi_qmsi_init,
+	      spi_master_qmsi_device_ctrl, &spi_qmsi_mst_0_runtime,
+	      &spi_qmsi_mst_0_config, SECONDARY, CONFIG_SPI_INIT_PRIORITY,
+	      NULL);
 #endif /* CONFIG_SPI_0 */
 
 #ifdef CONFIG_SPI_1
@@ -366,7 +398,8 @@ static struct spi_qmsi_config spi_qmsi_mst_1_config = {
 
 static struct spi_qmsi_runtime spi_qmsi_mst_1_runtime;
 
-DEVICE_INIT_PM(spi_master_1, CONFIG_SPI_1_NAME, spi_qmsi_init,
-	       DEVICE_PM_OPS_GET(spi_master), &spi_qmsi_mst_1_runtime,
-	       &spi_qmsi_mst_1_config, SECONDARY, CONFIG_SPI_INIT_PRIORITY);
+DEVICE_DEFINE(spi_master_1, CONFIG_SPI_1_NAME, spi_qmsi_init,
+	      spi_master_qmsi_device_ctrl, &spi_qmsi_mst_1_runtime,
+	      &spi_qmsi_mst_1_config, SECONDARY, CONFIG_SPI_INIT_PRIORITY,
+	      NULL);
 #endif /* CONFIG_SPI_1 */

@@ -40,6 +40,9 @@ struct spi_k64_data {
 	uint32_t xfer_len;
 	device_sync_call_t sync_info;   /* sync call information */
 	uint8_t error;                  /* error condition */
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 /* Data transfer signal timing delays */

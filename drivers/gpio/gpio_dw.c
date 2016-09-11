@@ -336,19 +336,57 @@ static inline int gpio_dw_disable_callback(struct device *port, int access_op,
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static inline int gpio_dw_suspend_port(struct device *port, int pm_policy)
+static void gpio_dw_set_power_state(struct device *port, uint32_t power_state)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t gpio_dw_get_power_state(struct device *port)
+{
+	struct gpio_dw_runtime *context = port->driver_data;
+
+	return context->device_power_state;
+}
+
+static inline int gpio_dw_suspend_port(struct device *port)
 {
 	_gpio_dw_clock_off(port);
+	gpio_dw_set_power_state(port, DEVICE_PM_SUSPEND_STATE);
 
 	return 0;
 }
 
-static inline int gpio_dw_resume_port(struct device *port, int pm_policy)
+static inline int gpio_dw_resume_from_suspend_port(struct device *port)
 {
 	_gpio_dw_clock_on(port);
-
+	gpio_dw_set_power_state(port, DEVICE_PM_ACTIVE_STATE);
 	return 0;
 }
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int gpio_dw_device_ctrl(struct device *port, uint32_t ctrl_command,
+							void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return gpio_dw_suspend_port(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return gpio_dw_resume_from_suspend_port(port);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = gpio_dw_get_power_state(port);
+		return 0;
+	}
+	return 0;
+}
+
+#else
+#define gpio_dw_set_power_state(...)
 #endif
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
@@ -456,6 +494,8 @@ int gpio_dw_initialize(struct device *port)
 		config->config_func(port);
 	}
 
+	gpio_dw_set_power_state(port, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
 
@@ -491,13 +531,9 @@ struct gpio_dw_config gpio_config_0 = {
 struct gpio_dw_runtime gpio_0_runtime;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-struct device_pm_ops gpio_dev_pm_ops = {
-		.suspend = gpio_dw_suspend_port,
-		.resume = gpio_dw_resume_port
-};
 
-DEVICE_AND_API_INIT_PM(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
-		       &gpio_dev_pm_ops, &gpio_0_runtime, &gpio_config_0,
+DEVICE_DEFINE(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
+		       gpio_dw_device_ctrl, &gpio_0_runtime, &gpio_config_0,
 		       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		       &api_funcs);
 #else
@@ -563,8 +599,8 @@ struct gpio_dw_config gpio_dw_config_1 = {
 struct gpio_dw_runtime gpio_1_runtime;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT_PM(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
-		       &gpio_dev_pm_ops, &gpio_1_runtime, &gpio_dw_config_1,
+DEVICE_DEFINE(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
+		       gpio_dw_device_ctrl, &gpio_1_runtime, &gpio_dw_config_1,
 		       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		       &api_funcs);
 #else
@@ -629,8 +665,8 @@ struct gpio_dw_config gpio_dw_config_2 = {
 struct gpio_dw_runtime gpio_2_runtime;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT_PM(gpio_dw_2, CONFIG_GPIO_DW_2_NAME, gpio_dw_initialize,
-		       &gpio_dev_pm_ops, &gpio_2_runtime, &gpio_dw_config_2,
+DEVICE_DEFINE(gpio_dw_2, CONFIG_GPIO_DW_2_NAME, gpio_dw_initialize,
+		       gpio_dw_device_ctrl, &gpio_2_runtime, &gpio_dw_config_2,
 		       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		       &api_funcs);
 #else
@@ -695,8 +731,8 @@ struct gpio_dw_config gpio_dw_config_3 = {
 struct gpio_dw_runtime gpio_3_runtime;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT_PM(gpio_dw_3, CONFIG_GPIO_DW_3_NAME, gpio_dw_initialize,
-		       &gpio_dev_pm_ops, &gpio_3_runtime, &gpio_dw_config_3,
+DEVICE_DEFINE(gpio_dw_3, CONFIG_GPIO_DW_3_NAME, gpio_dw_initialize,
+		       gpio_dw_device_ctrl, &gpio_3_runtime, &gpio_dw_config_3,
 		       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		       &api_funcs);
 #else

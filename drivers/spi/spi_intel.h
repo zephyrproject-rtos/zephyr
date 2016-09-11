@@ -58,6 +58,9 @@ struct spi_intel_data {
 	uint32_t transmitted;
 	uint32_t received;
 	uint32_t trans_len;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 /* Registers */

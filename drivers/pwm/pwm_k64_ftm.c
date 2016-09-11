@@ -620,18 +620,48 @@ static int pwm_ftm_set_phase(struct device *dev, int access_op,
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 /**
+ * @brief API to set device power state
+ *
+ * This function simply sets the device power state in driver_data
+ *
+ * @param dev Device struct
+ * @param power_state device power state to be saved
+ * @return N/A
+ */
+static void pwm_ftm_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct pwm_ftm_drv_data *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+/**
+ * @brief API to get device power state
+ *
+ * This function simply returns the device power state
+ * from driver_data
+ *
+ * @param dev Device struct
+ * @return device power state
+ */
+static uint32_t pwm_ftm_get_power_state(struct device *dev)
+{
+	struct pwm_ftm_drv_data *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+
+/**
  * @brief API call to disable FTM
  *
  * This function simply sets the clock source to "no clock selected" thus
  * disabling the FTM
  *
  * @param dev Device struct
- * @param pm_policy The power management policy to enact on the device
- *
  * @return 0 if successful, failed otherwise
  */
 
-static int pwm_ftm_suspend(struct device *dev, int pm_policy)
+static int pwm_ftm_suspend(struct device *dev)
 {
 	uint32_t reg_val;
 
@@ -650,6 +680,7 @@ static int pwm_ftm_suspend(struct device *dev, int pm_policy)
 
 	sys_write32(reg_val, PWM_K64_FTM_SC(config->reg_base));
 
+	pwm_ftm_set_power_state(DEVICE_PM_SUSPEND_STATE);
 	SYS_LOG_DBG("done.");
 
 	return 0;
@@ -664,13 +695,9 @@ static int pwm_ftm_suspend(struct device *dev, int pm_policy)
  * to "no clock selected" due to a call to pwm_ftm_suspend.
  *
  * @param dev Device struct
- * @param pm_policy The power management policy from which the device is
- * returning
- *
  * @return 0 if successful, failed otherwise
  */
-
-static int pwm_ftm_resume(struct device *dev, int pm_policy)
+static int pwm_ftm_resume_from_suspend(struct device *dev)
 {
 	uint32_t clock_source;
 	uint32_t reg_val;
@@ -693,13 +720,37 @@ static int pwm_ftm_resume(struct device *dev, int pm_policy)
 
 	sys_write32(reg_val, PWM_K64_FTM_SC(config->reg_base));
 
+	pwm_ftm_set_power_state(DEVICE_PM_ACTIVE_STATE);
+
 	SYS_LOG_DBG("done.");
 
 	return 0;
 }
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int pwm_ftm_device_ctrl(struct device *dev, uint32_t ctrl_command,
+			       void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return pwm_ftm_suspend(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return pwm_ftm_resume_from_suspend(dev);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = pwm_ftm_get_power_state(dev);
+		return 0;
+	}
+
+	return 0;
+}
+#else
+#define pwm_ftm_set_power_state(...)
 #endif
 
-DEFINE_DEVICE_PM_OPS(pwm, pwm_ftm_suspend, pwm_ftm_resume);
 
 static struct pwm_driver_api pwm_ftm_drv_api_funcs = {
 	.config = pwm_ftm_configure,
@@ -718,7 +769,7 @@ int pwm_ftm_init(struct device *dev)
 {
 
 	SYS_LOG_DBG("...");
-
+	pwm_ftm_set_power_state(DEVICE_PM_ACTIVE_STATE);
 	return 0;
 }
 
@@ -762,11 +813,10 @@ static struct pwm_ftm_config pwm_ftm_0_cfg = {
 
 static struct pwm_ftm_drv_data pwm_ftm_0_drvdata;
 
-DEVICE_AND_API_INIT_PM(pwm_ftm_0, CONFIG_PWM_K64_FTM_0_DEV_NAME, pwm_ftm_init,
-		       DEVICE_PM_OPS_GET(pwm), &pwm_ftm_0_drvdata,
-		       &pwm_ftm_0_cfg, SECONDARY,
-		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		       &pwm_ftm_drv_api_funcs);
+DEVICE_DEFINE(pwm_ftm_0, CONFIG_PWM_K64_FTM_0_DEV_NAME, pwm_ftm_init,
+	      pwm_ftm_device_ctrl, &pwm_ftm_0_drvdata, &pwm_ftm_0_cfg,
+	      SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      &pwm_ftm_drv_api_funcs);
 
 #endif /* CONFIG_PWM_K64_FTM_0 */
 
@@ -809,11 +859,10 @@ static struct pwm_ftm_config pwm_ftm_1_cfg = {
 
 static struct pwm_ftm_drv_data pwm_ftm_1_drvdata;
 
-DEVICE_AND_API_INIT_PM(pwm_ftm_1, CONFIG_PWM_K64_FTM_1_DEV_NAME, pwm_ftm_init,
-		       DEVICE_PM_OPS_GET(pwm), &pwm_ftm_1_drvdata,
-		       &pwm_ftm_1_cfg, SECONDARY,
-		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		       &pwm_ftm_drv_api_funcs);
+DEVICE_DEFINE(pwm_ftm_1, CONFIG_PWM_K64_FTM_1_DEV_NAME, pwm_ftm_init,
+	      pwm_ftm_device_ctrl, &pwm_ftm_1_drvdata, &pwm_ftm_1_cfg,
+	      SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      &pwm_ftm_drv_api_funcs);
 
 #endif /* CONFIG_PWM_K64_FTM_1 */
 
@@ -857,11 +906,10 @@ static struct pwm_ftm_config pwm_ftm_2_cfg = {
 
 static struct pwm_ftm_drv_data pwm_ftm_2_drvdata;
 
-DEVICE_AND_API_INIT_PM(pwm_ftm_2, CONFIG_PWM_K64_FTM_2_DEV_NAME, pwm_ftm_init,
-		       DEVICE_PM_OPS_GET(pwm), &pwm_ftm_2_drvdata,
-		       &pwm_ftm_2_cfg, SECONDARY,
-		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		       &pwm_ftm_drv_api_funcs);
+DEVICE_DEFINE(pwm_ftm_2, CONFIG_PWM_K64_FTM_2_DEV_NAME, pwm_ftm_init,
+	      pwm_ftm_device_ctrl, &pwm_ftm_2_drvdata, &pwm_ftm_2_cfg,
+	      SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      &pwm_ftm_drv_api_funcs);
 
 #endif /* CONFIG_PWM_K64_FTM_2 */
 
@@ -905,10 +953,9 @@ static struct pwm_ftm_config pwm_ftm_3_cfg = {
 
 static struct pwm_ftm_drv_data pwm_ftm_3_drvdata;
 
-DEVICE_AND_API_INIT_PM(pwm_ftm_3, CONFIG_PWM_K64_FTM_3_DEV_NAME, pwm_ftm_init,
-		       DEVICE_PM_OPS_GET(pwm), &pwm_ftm_3_drvdata,
-		       &pwm_ftm_3_cfg, SECONDARY,
-		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		       &pwm_ftm_drv_api_funcs);
+DEVICE_DEFINE(pwm_ftm_3, CONFIG_PWM_K64_FTM_3_DEV_NAME, pwm_ftm_init,
+	      pwm_ftm_device_ctrl, &pwm_ftm_3_drvdata, &pwm_ftm_3_cfg,
+	      SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      &pwm_ftm_drv_api_funcs);
 
 #endif /* CONFIG_PWM_K64_FTM_3 */

@@ -50,6 +50,9 @@
 
 struct pwm_data {
 	struct nano_sem sem;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 #ifdef CONFIG_PWM_QMSI_API_REENTRANCY
@@ -344,6 +347,17 @@ static struct pwm_driver_api pwm_qmsi_drv_api_funcs = {
 	.set_phase = pwm_qmsi_set_phase
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void pwm_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct pwm_data *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+#else
+#define pwm_qmsi_set_power_state(...)
+#endif
+
 static int pwm_qmsi_init(struct device *dev)
 {
 	uint32_t *channel_period = dev->config->config_info;
@@ -356,6 +370,8 @@ static int pwm_qmsi_init(struct device *dev)
 	clk_periph_enable(CLK_PERIPH_PWM_REGISTER | CLK_PERIPH_CLK);
 
 	pwm_reentrancy_init(dev);
+
+	pwm_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
 	return 0;
 }
@@ -374,54 +390,75 @@ struct pwm_ctx {
 
 static struct pwm_ctx pwm_ctx_save;
 
-static int pwm_qmsi_suspend(struct device *dev, int pm_policy)
+static uint32_t pwm_qmsi_get_power_state(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		int i;
+	struct pwm_data *context = dev->driver_data;
 
-		pwm_ctx_save.int_pwm_timer_mask =
-			QM_SCSS_INT->int_pwm_timer_mask;
-		for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
-			qm_pwm_channel_t *channel;
-			struct pwm_channel_ctx *channel_save;
+	return context->device_power_state;
+}
 
-			channel = &QM_PWM->timer[i];
-			channel_save = &pwm_ctx_save.channels[i];
-			channel_save->loadcount1 = channel->loadcount;
-			channel_save->controlreg = channel->controlreg;
-			channel_save->loadcount2 = QM_PWM->timer_loadcount2[i];
-		}
+static int pwm_qmsi_suspend(struct device *dev)
+{
+	int i;
+
+	pwm_ctx_save.int_pwm_timer_mask =
+		QM_SCSS_INT->int_pwm_timer_mask;
+	for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
+		qm_pwm_channel_t *channel;
+		struct pwm_channel_ctx *channel_save;
+
+		channel = &QM_PWM->timer[i];
+		channel_save = &pwm_ctx_save.channels[i];
+		channel_save->loadcount1 = channel->loadcount;
+		channel_save->controlreg = channel->controlreg;
+		channel_save->loadcount2 = QM_PWM->timer_loadcount2[i];
 	}
-
+	pwm_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 	return 0;
 }
 
-static int pwm_qmsi_resume(struct device *dev, int pm_policy)
+static int pwm_qmsi_resume_from_suspend(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		int i;
+	int i;
 
-		for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
-			qm_pwm_channel_t *channel;
-			struct pwm_channel_ctx *channel_save;
+	for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
+		qm_pwm_channel_t *channel;
+		struct pwm_channel_ctx *channel_save;
 
-			channel = &QM_PWM->timer[i];
-			channel_save = &pwm_ctx_save.channels[i];
-			channel->loadcount = channel_save->loadcount1;
-			channel->controlreg = channel_save->controlreg;
-			QM_PWM->timer_loadcount2[i] = channel_save->loadcount2;
+		channel = &QM_PWM->timer[i];
+		channel_save = &pwm_ctx_save.channels[i];
+		channel->loadcount = channel_save->loadcount1;
+		channel->controlreg = channel_save->controlreg;
+		QM_PWM->timer_loadcount2[i] = channel_save->loadcount2;
+	}
+	QM_SCSS_INT->int_pwm_timer_mask = pwm_ctx_save.int_pwm_timer_mask;
+	pwm_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int pwm_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+				void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return pwm_qmsi_suspend(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return pwm_qmsi_resume_from_suspend(dev);
 		}
-		QM_SCSS_INT->int_pwm_timer_mask =
-			pwm_ctx_save.int_pwm_timer_mask;
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = pwm_qmsi_get_power_state(dev);
+		return 0;
 	}
 
 	return 0;
 }
 #endif
 
-DEFINE_DEVICE_PM_OPS(pwm, pwm_qmsi_suspend, pwm_qmsi_resume);
-
-DEVICE_AND_API_INIT_PM(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
-		       DEVICE_PM_OPS_GET(pwm), PWM_CONTEXT, pwm_channel_period,
-		       SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		       (void *)&pwm_qmsi_drv_api_funcs);
+DEVICE_DEFINE(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
+	      pwm_qmsi_device_ctrl, PWM_CONTEXT, pwm_channel_period,
+	      SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      (void *)&pwm_qmsi_drv_api_funcs);

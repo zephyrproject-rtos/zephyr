@@ -27,6 +27,9 @@
 
 struct wdt_data {
 	struct nano_sem sem;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 #ifdef CONFIG_WDT_QMSI_API_REENTRANCY
@@ -134,6 +137,81 @@ static struct wdt_driver_api api = {
 	.reload = reload,
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+struct wdt_ctx {
+	uint32_t wdt_cr;
+	uint32_t wdt_torr;
+	uint32_t int_watchdog_mask;
+};
+
+static struct wdt_ctx wdt_ctx_save;
+
+
+static void wdt_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct wdt_data *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t wdt_qmsi_get_power_state(struct device *dev)
+{
+	struct wdt_data *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+
+
+static int wdt_suspend_device(struct device *dev)
+{
+	wdt_ctx_save.wdt_torr = QM_WDT[QM_WDT_0].wdt_torr;
+	wdt_ctx_save.wdt_cr = QM_WDT[QM_WDT_0].wdt_cr;
+	wdt_ctx_save.int_watchdog_mask =
+	QM_SCSS_INT->int_watchdog_mask;
+
+	wdt_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
+	return 0;
+}
+
+static int wdt_resume_device_from_suspend(struct device *dev)
+{
+	/* TOP_INIT field has to be written before
+	 * the Watchdog Timer is enabled.
+	 */
+	QM_WDT[QM_WDT_0].wdt_torr = wdt_ctx_save.wdt_torr;
+	QM_WDT[QM_WDT_0].wdt_cr = wdt_ctx_save.wdt_cr;
+	QM_SCSS_INT->int_watchdog_mask = wdt_ctx_save.int_watchdog_mask;
+
+	wdt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int wdt_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+				void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return wdt_suspend_device(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return wdt_resume_device_from_suspend(dev);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = wdt_qmsi_get_power_state(dev);
+		return 0;
+	}
+
+	return 0;
+}
+#else
+#define wdt_qmsi_set_power_state(...)
+#endif
+
 static int init(struct device *dev)
 {
 	wdt_reentrancy_init(dev);
@@ -147,48 +225,10 @@ static int init(struct device *dev)
 	/* Route watchdog interrupt to Lakemont */
 	QM_SCSS_INT->int_watchdog_mask &= ~BIT(0);
 
-	return 0;
-}
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-struct wdt_ctx {
-	uint32_t wdt_cr;
-	uint32_t wdt_torr;
-	uint32_t int_watchdog_mask;
-};
-
-static struct wdt_ctx wdt_ctx_save;
-
-static int wdt_suspend_device(struct device *dev, int pm_policy)
-{
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		wdt_ctx_save.wdt_torr = QM_WDT[QM_WDT_0].wdt_torr;
-		wdt_ctx_save.wdt_cr = QM_WDT[QM_WDT_0].wdt_cr;
-		wdt_ctx_save.int_watchdog_mask =
-			QM_SCSS_INT->int_watchdog_mask;
-	}
+	wdt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
 	return 0;
 }
 
-static int wdt_resume_device(struct device *dev, int pm_policy)
-{
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		/* TOP_INIT field has to be written before
-		 * the Watchdog Timer is enabled.
-		 */
-		QM_WDT[QM_WDT_0].wdt_torr = wdt_ctx_save.wdt_torr;
-		QM_WDT[QM_WDT_0].wdt_cr = wdt_ctx_save.wdt_cr;
-		QM_SCSS_INT->int_watchdog_mask =
-			wdt_ctx_save.int_watchdog_mask;
-	}
-
-	return 0;
-}
-#endif
-
-DEFINE_DEVICE_PM_OPS(wdt, wdt_suspend_device, wdt_resume_device);
-
-DEVICE_AND_API_INIT_PM(wdt, CONFIG_WDT_0_NAME, init, DEVICE_PM_OPS_GET(wdt),
-		    WDT_CONTEXT, 0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&api);
+DEVICE_DEFINE(wdt, CONFIG_WDT_0_NAME, init, wdt_qmsi_device_ctrl, WDT_CONTEXT,
+	      0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&api);

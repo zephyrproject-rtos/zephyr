@@ -195,6 +195,7 @@
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power.h>
 uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
+static uint32_t loapic_device_power_state;
 #endif
 
 
@@ -272,6 +273,9 @@ static int _loapic_init(struct device *unused)
 	_lakemont_eoi();
 #else
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
+#endif
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 	return 0;
@@ -428,16 +432,12 @@ int __irq_controller_isr_vector_get(void)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int loapic_suspend(struct device *port, int pm_policy)
+static int loapic_suspend(struct device *port)
 {
 	volatile int *pLvt; /* pointer to local vector table */
 	int loapic_irq;
 
 	ARG_UNUSED(port);
-
-	if (pm_policy != SYS_PM_DEEP_SLEEP) {
-		return 0;
-	}
 
 	memset(loapic_suspend_buf, 0, (LOPIC_SUSPEND_BITS_REQD >> 3));
 
@@ -458,18 +458,15 @@ static int loapic_suspend(struct device *port, int pm_policy)
 			}
 		}
 	}
+	loapic_device_power_state = DEVICE_PM_SUSPEND_STATE;
 	return 0;
 }
 
-static int loapic_resume(struct device *port, int pm_policy)
+int loapic_resume(struct device *port)
 {
 	int loapic_irq;
 
 	ARG_UNUSED(port);
-
-	if (pm_policy != SYS_PM_DEEP_SLEEP) {
-		return 0;
-	}
 
 	/* Assuming all loapic device registers lose their state, the call to
 	 * _loapic_init(), should bring all the registers to a sane state.
@@ -489,16 +486,34 @@ static int loapic_resume(struct device *port, int pm_policy)
 			}
 		}
 	}
+	loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 
 	return 0;
 }
 
-struct device_pm_ops loapic_pm_ops = {
-		.suspend = loapic_suspend,
-		.resume = loapic_resume
-};
-SYS_INIT_PM("loapic", _loapic_init, &loapic_pm_ops, PRIMARY,
-	    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int loapic_device_ctrl(struct device *port, uint32_t ctrl_command,
+			      void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return loapic_suspend(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return loapic_resume(port);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = loapic_device_power_state;
+		return 0;
+	}
+
+	return 0;
+}
+
+SYS_DEVICE_DEFINE("loapic", _loapic_init, loapic_device_ctrl, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
 SYS_INIT(_loapic_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */

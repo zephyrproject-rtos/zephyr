@@ -32,15 +32,6 @@
 #include <init.h>
 #include <drivers/system_timer.h>
 
-/*
- * Currently only loapic timer implements device pm ops.
- * For other timers, define device_pm_ops with default handers in case
- * the app enables CONFIG_DEVICE_POWER_MANAGEMENT.
- */
-#ifdef CONFIG_LOAPIC_TIMER
-DEFINE_DEVICE_PM_OPS(_sys_clock, _sys_clock_suspend, _sys_clock_resume);
-#else
-DEFINE_DEVICE_PM_OPS(_sys_clock, device_pm_nop, device_pm_nop);
-#endif
-SYS_INIT_PM("sys_clock", _sys_clock_driver_init, DEVICE_PM_OPS_GET(_sys_clock),
-	    SECONDARY, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_DEVICE_DEFINE("sys_clock", _sys_clock_driver_init,
+		  sys_clock_device_ctrl, SECONDARY,
+		  CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

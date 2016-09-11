@@ -900,6 +900,25 @@ static struct spi_driver_api k64_spi_api = {
 	.transceive = spi_k64_transceive,
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+/**
+ * @brief API to set device power state
+ *
+ * This function simply sets the device power state in driver_data
+ *
+ * @param dev Device struct
+ * @param power_state device power state to be saved
+ * @return N/A
+ */
+static void spi_k64_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct spi_k64_data *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+#else
+#define spi_k64_set_power_state(...)
+#endif
 
 int spi_k64_init(struct device *dev)
 {
@@ -959,6 +978,8 @@ int spi_k64_init(struct device *dev)
 
 	info->config_func();
 
+	spi_k64_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	irq_enable(info->irq);
 
 	/*
@@ -978,12 +999,26 @@ int spi_k64_init(struct device *dev)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 /**
+ * @brief API to get device power state
+ *
+ * This function simply returns the device power state
+ * from driver_data
+ *
+ * @param dev Device struct
+ * @return device power state
+ */
+static uint32_t spi_k64_get_power_state(struct device *dev)
+{
+	struct spi_k64_data *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+/**
  * @brief Suspend SPI host controller operations.
  * @param dev Pointer to the device structure for the driver instance
- * @param pm_policy The power management policy to enact on the device
  * @return 0 if successful, a negative errno value otherwise.
  */
-static int spi_k64_suspend(struct device *dev, int pm_policy)
+static int spi_k64_suspend(struct device *dev)
 {
 	struct spi_k64_config *info = dev->config->config_info;
 
@@ -996,6 +1031,8 @@ static int spi_k64_suspend(struct device *dev, int pm_policy)
 
 	sys_set_bit((info->regs + SPI_K64_REG_MCR), SPI_K64_MCR_MDIS_BIT);
 
+	spi_k64_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
 	irq_disable(info->irq);
 
 	return 0;
@@ -1004,11 +1041,9 @@ static int spi_k64_suspend(struct device *dev, int pm_policy)
 /**
  * @brief Resume SPI host controller operations.
  * @param dev Pointer to the device structure for the driver instance
- * @param pm_policy The power management policy from which the device is
- * returning
  * @return 0 if successful, a negative errno value otherwise.
  */
-static int spi_k64_resume(struct device *dev, int pm_policy)
+static int spi_k64_resume_from_suspend(struct device *dev)
 {
 	struct spi_k64_config *info = dev->config->config_info;
 
@@ -1018,13 +1053,36 @@ static int spi_k64_resume(struct device *dev, int pm_policy)
 
 	sys_clear_bit((info->regs + SPI_K64_REG_MCR), SPI_K64_MCR_MDIS_BIT);
 
+	spi_k64_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	irq_enable(info->irq);
 
 	return 0;
 }
-#endif
 
-DEFINE_DEVICE_PM_OPS(spi, spi_k64_suspend, spi_k64_resume);
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int spi_k64_device_ctrl(struct device *dev, uint32_t ctrl_command,
+			       void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return spi_k64_suspend(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return spi_k64_resume_from_suspend(dev);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = spi_k64_get_power_state(dev);
+		return 0;
+	}
+
+	return 0;
+}
+#else
+#define spi_k64_set_power_state(...)
+#endif
 
 /* system bindings */
 #ifdef CONFIG_SPI_K64_0
@@ -1041,10 +1099,10 @@ struct spi_k64_config spi_k64_config_0 = {
 	.config_func = spi_config_0_irq
 };
 
-DEVICE_AND_API_INIT_PM(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
-		       DEVICE_PM_OPS_GET(spi), &spi_k64_data_port_0,
-		       &spi_k64_config_0, PRIMARY,
-		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
+DEVICE_DEFINE(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
+	      spi_k64_device_ctrl, &spi_k64_data_port_0,
+	      &spi_k64_config_0, PRIMARY,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
 
 
 void spi_config_0_irq(void)
@@ -1070,10 +1128,10 @@ struct spi_k64_config spi_k64_config_1 = {
 	.config_func = spi_config_1_irq
 };
 
-DEVICE_AND_API_INIT_PM(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
-		       DEVICE_PM_OPS_GET(spi), &spi_k64_data_port_1,
-		       &spi_k64_config_1, PRIMARY,
-		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
+DEVICE_DEFINE(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
+	      spi_k64_device_ctrl, &spi_k64_data_port_1,
+	      &spi_k64_config_1, PRIMARY,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
 
 
 void spi_config_1_irq(void)
@@ -1099,10 +1157,10 @@ struct spi_k64_config spi_k64_config_2 = {
 	.config_func = spi_config_2_irq
 };
 
-DEVICE_AND_API_INIT_PM(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
-		       DEVICE_PM_OPS_GET(spi), &spi_k64_data_port_2,
-		       &spi_k64_config_2, PRIMARY,
-		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
+DEVICE_DEFINE(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
+	      spi_k64_device_ctrl, &spi_k64_data_port_2,
+	      &spi_k64_config_2, PRIMARY,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
 
 
 void spi_config_2_irq(void)

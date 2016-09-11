@@ -31,6 +31,9 @@ static counter_callback_t user_cb;
 
 struct aon_data {
 	struct nano_sem sem;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 #ifdef CONFIG_AON_API_REENTRANCY
@@ -161,6 +164,63 @@ static struct counter_driver_api aon_timer_qmsi_api = {
 	.set_alarm = aon_timer_qmsi_set_alarm,
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static uint32_t int_aonpt_mask_save;
+
+static void aonpt_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct aon_data *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t aonpt_qmsi_get_power_state(struct device *dev)
+{
+	struct aon_data *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+
+static int aonpt_suspend_device(struct device *dev)
+{
+	int_aonpt_mask_save = QM_SCSS_INT->int_aon_timer_mask;
+
+	aonpt_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+	return 0;
+}
+
+static int aonpt_resume_device_from_suspend(struct device *dev)
+{
+	QM_SCSS_INT->int_aon_timer_mask = int_aonpt_mask_save;
+
+	aonpt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int aonpt_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+				  void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return aonpt_suspend_device(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return aonpt_resume_device_from_suspend(dev);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = aonpt_qmsi_get_power_state(dev);
+		return 0;
+	}
+
+	return 0;
+}
+#else
+#define aonpt_qmsi_set_power_state(...)
+#endif
+
 static int aon_timer_init(struct device *dev)
 {
 	dev->driver_api = &aon_timer_qmsi_api;
@@ -176,37 +236,16 @@ static int aon_timer_init(struct device *dev)
 
 	aon_reentrancy_init(dev);
 
-	return 0;
-}
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static uint32_t int_aonpt_mask_save;
-
-static int aonpt_suspend_device(struct device *dev, int pm_policy)
-{
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		int_aonpt_mask_save = QM_SCSS_INT->int_aon_timer_mask;
-	}
+	aonpt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
 	return 0;
 }
 
-static int aonpt_resume_device(struct device *dev, int pm_policy)
-{
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		QM_SCSS_INT->int_aon_timer_mask = int_aonpt_mask_save;
-	}
 
-	return 0;
-}
-#endif
-
-DEFINE_DEVICE_PM_OPS(aon_timer, aonpt_suspend_device, aonpt_resume_device);
-
-DEVICE_AND_API_INIT_PM(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME,
-		    aon_timer_init, DEVICE_PM_OPS_GET(aon_timer), AONPT_CONTEXT,
-		    NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&aon_timer_qmsi_api);
+DEVICE_DEFINE(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME, aon_timer_init,
+	      aonpt_qmsi_device_ctrl, AONPT_CONTEXT, NULL, SECONDARY,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      (void *)&aon_timer_qmsi_api);
 
 static void aonpt_int_callback(void *user_data)
 {

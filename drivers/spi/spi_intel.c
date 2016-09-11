@@ -365,6 +365,17 @@ static inline int spi_intel_setup(struct device *dev)
 #else
 #define spi_intel_setup(_unused_) (1)
 #endif /* CONFIG_PCI */
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+
+static void spi_intel_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct spi_intel_data *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+#else
+#define spi_intel_set_power_state(...)
+#endif
 
 int spi_intel_init(struct device *dev)
 {
@@ -381,6 +392,8 @@ int spi_intel_init(struct device *dev)
 
 	device_sync_call_init(&spi->sync);
 
+	spi_intel_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	irq_enable(info->irq);
 
 	SYS_LOG_DBG("SPI Intel Driver initialized on device: %p", dev);
@@ -391,7 +404,15 @@ int spi_intel_init(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int spi_intel_suspend(struct device *dev, int pm_policy)
+
+static uint32_t spi_intel_get_power_state(struct device *dev)
+{
+	struct spi_intel_data *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+
+static int spi_intel_suspend(struct device *dev)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 
@@ -400,10 +421,12 @@ static int spi_intel_suspend(struct device *dev, int pm_policy)
 	clear_bit_sscr0_sse(info->regs);
 	irq_disable(info->irq);
 
+	spi_intel_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
 	return 0;
 }
 
-static int spi_intel_resume(struct device *dev, int pm_policy)
+static int spi_intel_resume_from_suspend(struct device *dev)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 
@@ -412,11 +435,34 @@ static int spi_intel_resume(struct device *dev, int pm_policy)
 	set_bit_sscr0_sse(info->regs);
 	irq_enable(info->irq);
 
+	spi_intel_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
-#endif
 
-DEFINE_DEVICE_PM_OPS(spi, spi_intel_suspend, spi_intel_resume);
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int spi_intel_device_ctrl(struct device *dev, uint32_t ctrl_command,
+				 void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return spi_intel_suspend(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return spi_intel_resume_from_suspend(dev);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = spi_intel_get_power_state(dev);
+		return 0;
+	}
+
+	return 0;
+}
+#else
+#define spi_intel_set_power_state(...)
+#endif
 
 /* system bindings */
 #ifdef CONFIG_SPI_0
@@ -444,9 +490,9 @@ struct spi_intel_config spi_intel_config_0 = {
 };
 
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
-DEVICE_INIT_PM(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
-		DEVICE_PM_OPS_GET(spi), &spi_intel_data_port_0,
-		&spi_intel_config_0, SECONDARY, CONFIG_SPI_INIT_PRIORITY);
+DEVICE_DEFINE(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
+	      spi_intel_device_ctrl, &spi_intel_data_port_0,
+	      &spi_intel_config_0, SECONDARY, CONFIG_SPI_INIT_PRIORITY, NULL);
 
 void spi_config_0_irq(void)
 {
@@ -481,9 +527,9 @@ struct spi_intel_config spi_intel_config_1 = {
 };
 
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
-DEVICE_INIT_PM(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
-		DEVICE_PM_OPS_GET(spi), &spi_intel_data_port_1,
-		&spi_intel_config_1, SECONDARY, CONFIG_SPI_INIT_PRIORITY);
+DEVICE_DEFINE(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
+	      spi_intel_device_ctrl, &spi_intel_data_port_1,
+	      &spi_intel_config_1, SECONDARY, CONFIG_SPI_INIT_PRIORITY, NULL);
 
 void spi_config_1_irq(void)
 {

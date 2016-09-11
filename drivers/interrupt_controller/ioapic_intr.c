@@ -84,6 +84,7 @@
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power.h>
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
+static uint32_t ioapic_device_power_state;
 #endif
 
 static uint32_t __IoApicGet(int32_t offset);
@@ -139,6 +140,9 @@ int _ioapic_init(struct device *unused)
 		ioApicRedSetHi(ix, 0);
 		ioApicRedSetLo(ix, rteValue);
 	}
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
+#endif
 	return 0;
 }
 
@@ -215,36 +219,29 @@ uint32_t restore_flags(unsigned int irq)
 }
 
 
-int ioapic_suspend(struct device *port, int pm_policy)
+int ioapic_suspend(struct device *port)
 {
 	int irq;
 	uint32_t rte_lo;
 
 	ARG_UNUSED(port);
-
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-
-		memset(ioapic_suspend_buf, 0, (SUSPEND_BITS_REQD >> 3));
-
-		for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
-
-			/*
-			 * The following check is to figure out the registered
-			 * IRQ lines, so as to limit ourselves to saving the
-			 * flags for them only.
-			 */
-			if (_irq_to_interrupt_vector[irq]) {
-
-				rte_lo = ioApicRedGetLo(irq);
-				store_flags(irq, rte_lo);
-			}
+	memset(ioapic_suspend_buf, 0, (SUSPEND_BITS_REQD >> 3));
+	for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
+		/*
+		 * The following check is to figure out the registered
+		 * IRQ lines, so as to limit ourselves to saving the
+		 *  flags for them only.
+		 */
+		if (_irq_to_interrupt_vector[irq]) {
+			rte_lo = ioApicRedGetLo(irq);
+			store_flags(irq, rte_lo);
 		}
 	}
-
+	ioapic_device_power_state = DEVICE_PM_SUSPEND_STATE;
 	return 0;
 }
 
-int ioapic_resume(struct device *port, int pm_policy)
+int ioapic_resume_from_suspend(struct device *port)
 {
 	int irq;
 	uint32_t flags;
@@ -252,30 +249,45 @@ int ioapic_resume(struct device *port, int pm_policy)
 
 	ARG_UNUSED(port);
 
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+	for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
+		if (_irq_to_interrupt_vector[irq]) {
+			/* Get the saved flags */
+			flags = restore_flags(irq);
+			/* Appending the flags that are never modified */
+			flags = flags | IOAPIC_FIXED | IOAPIC_PHYSICAL;
 
-		for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
-
-			if (_irq_to_interrupt_vector[irq]) {
-				/* Get the saved flags */
-				flags = restore_flags(irq);
-				/* Appending the flags that are never modified */
-				flags = flags | IOAPIC_FIXED | IOAPIC_PHYSICAL;
-
-				rteValue = (_irq_to_interrupt_vector[irq] &
-						IOAPIC_VEC_MASK) | flags;
-			} else {
-				/* Initialize the other RTEs to sane values */
-				rteValue = IOAPIC_EDGE | IOAPIC_HIGH |
-					IOAPIC_FIXED | IOAPIC_INT_MASK |
-					IOAPIC_PHYSICAL | 0 ; /* dummy vector*/
-			}
-
-			ioApicRedSetHi(irq, 0);
-			ioApicRedSetLo(irq, rteValue);
+			rteValue = (_irq_to_interrupt_vector[irq] &
+					IOAPIC_VEC_MASK) | flags;
+		} else {
+			/* Initialize the other RTEs to sane values */
+			rteValue = IOAPIC_EDGE | IOAPIC_HIGH |
+				IOAPIC_FIXED | IOAPIC_INT_MASK |
+				IOAPIC_PHYSICAL | 0 ; /* dummy vector*/
 		}
+		ioApicRedSetHi(irq, 0);
+		ioApicRedSetLo(irq, rteValue);
 	}
+	ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
+	return 0;
+}
 
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int ioapic_device_ctrl(struct device *device, uint32_t ctrl_command,
+			      void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return ioapic_suspend(device);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return ioapic_resume_from_suspend(device);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = ioapic_device_power_state;
+		return 0;
+	}
 	return 0;
 }
 
@@ -441,12 +453,8 @@ static void _IoApicRedUpdateLo(unsigned int irq,
 
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-struct device_pm_ops ioapic_pm_ops = {
-		.suspend = ioapic_suspend,
-		.resume = ioapic_resume
-};
-SYS_INIT_PM("ioapic", _ioapic_init, &ioapic_pm_ops, PRIMARY,
-	    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_DEVICE_DEFINE("ioapic", _ioapic_init, ioapic_device_ctrl, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
 SYS_INIT(_ioapic_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif

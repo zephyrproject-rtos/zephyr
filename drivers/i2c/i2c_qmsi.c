@@ -66,94 +66,125 @@ struct i2c_qmsi_driver_data {
 	struct nano_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	struct i2c_context_t ctx_save;
+	uint32_t device_power_state;
 #endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int i2c_suspend_device(struct device *dev, int pm_policy)
+
+
+static void i2c_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct i2c_qmsi_driver_data *drv_data = dev->driver_data;
+
+	drv_data->device_power_state = power_state;
+}
+
+static uint32_t i2c_qmsi_get_power_state(struct device *dev)
+{
+	struct i2c_qmsi_driver_data *drv_data = dev->driver_data;
+
+	return drv_data->device_power_state;
+}
+
+static int i2c_suspend_device(struct device *dev)
 {
 	if (device_busy_check(dev)) {
 		return -EBUSY;
 	}
 
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
-		qm_i2c_reg_t *const regs = QM_I2C[instance];
-		struct i2c_qmsi_driver_data *drv_data = dev->driver_data;
-		struct i2c_context_t *const ctx_save = &drv_data->ctx_save;
+	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
+	qm_i2c_reg_t *const regs = QM_I2C[instance];
+	struct i2c_qmsi_driver_data *drv_data = dev->driver_data;
+	struct i2c_context_t *const ctx_save = &drv_data->ctx_save;
 
-		ctx_save->ic_con = regs->ic_con;
-		ctx_save->ic_fs_spklen = regs->ic_fs_spklen;
-		ctx_save->ic_hs_spklen = regs->ic_hs_spklen;
-		ctx_save->ic_ss_scl_lcnt = regs->ic_ss_scl_lcnt;
-		ctx_save->ic_ss_scl_hcnt = regs->ic_ss_scl_hcnt;
-		ctx_save->ic_fs_scl_lcnt = regs->ic_fs_scl_lcnt;
-		ctx_save->ic_fs_scl_hcnt = regs->ic_fs_scl_hcnt;
-		ctx_save->ic_hs_scl_lcnt = regs->ic_hs_scl_lcnt;
-		ctx_save->ic_hs_scl_hcnt = regs->ic_hs_scl_hcnt;
-		ctx_save->ic_intr_mask = regs->ic_intr_mask;
-		ctx_save->ic_sda_hold = regs->ic_sda_hold;
-		ctx_save->ic_sda_setup = regs->ic_sda_setup;
-		ctx_save->ic_ack_general_call = regs->ic_ack_general_call;
-		ctx_save->ic_sar = regs->ic_sar;
-		ctx_save->ic_dma_cr = regs->ic_dma_cr;
-		ctx_save->ic_dma_tdlr = regs->ic_dma_tdlr;
-		ctx_save->ic_dma_rdlr = regs->ic_dma_rdlr;
+	ctx_save->ic_con = regs->ic_con;
+	ctx_save->ic_fs_spklen = regs->ic_fs_spklen;
+	ctx_save->ic_hs_spklen = regs->ic_hs_spklen;
+	ctx_save->ic_ss_scl_lcnt = regs->ic_ss_scl_lcnt;
+	ctx_save->ic_ss_scl_hcnt = regs->ic_ss_scl_hcnt;
+	ctx_save->ic_fs_scl_lcnt = regs->ic_fs_scl_lcnt;
+	ctx_save->ic_fs_scl_hcnt = regs->ic_fs_scl_hcnt;
+	ctx_save->ic_hs_scl_lcnt = regs->ic_hs_scl_lcnt;
+	ctx_save->ic_hs_scl_hcnt = regs->ic_hs_scl_hcnt;
+	ctx_save->ic_intr_mask = regs->ic_intr_mask;
+	ctx_save->ic_sda_hold = regs->ic_sda_hold;
+	ctx_save->ic_sda_setup = regs->ic_sda_setup;
+	ctx_save->ic_ack_general_call = regs->ic_ack_general_call;
+	ctx_save->ic_sar = regs->ic_sar;
+	ctx_save->ic_dma_cr = regs->ic_dma_cr;
+	ctx_save->ic_dma_tdlr = regs->ic_dma_tdlr;
+	ctx_save->ic_dma_rdlr = regs->ic_dma_rdlr;
 
-		if (instance == QM_I2C_0) {
-			ctx_save->int_i2c_mst_mask =
-				QM_SCSS_INT->int_i2c_mst_0_mask;
-		} else {
-			ctx_save->int_i2c_mst_mask =
-				QM_SCSS_INT->int_i2c_mst_1_mask;
-		}
-
+	if (instance == QM_I2C_0) {
+		ctx_save->int_i2c_mst_mask = QM_SCSS_INT->int_i2c_mst_0_mask;
+	} else {
+		ctx_save->int_i2c_mst_mask = QM_SCSS_INT->int_i2c_mst_1_mask;
 	}
 
+	i2c_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 	return 0;
 }
 
-static int i2c_resume_device(struct device *dev, int pm_policy)
+static int i2c_resume_device_from_suspend(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		struct i2c_qmsi_config_info *config = dev->config->config_info;
-		qm_i2c_reg_t *const regs = QM_I2C[config->instance];
-		struct i2c_qmsi_driver_data *drv_data = dev->driver_data;
-		struct i2c_context_t *const ctx_save = &drv_data->ctx_save;
+	struct i2c_qmsi_config_info *config = dev->config->config_info;
+	qm_i2c_reg_t *const regs = QM_I2C[config->instance];
+	struct i2c_qmsi_driver_data *drv_data = dev->driver_data;
+	struct i2c_context_t *const ctx_save = &drv_data->ctx_save;
 
-		regs->ic_con = ctx_save->ic_con;
-		regs->ic_fs_spklen = ctx_save->ic_fs_spklen;
-		regs->ic_hs_spklen = ctx_save->ic_hs_spklen;
-		regs->ic_ss_scl_lcnt = ctx_save->ic_ss_scl_lcnt;
-		regs->ic_ss_scl_hcnt = ctx_save->ic_ss_scl_hcnt;
-		regs->ic_fs_scl_lcnt = ctx_save->ic_fs_scl_lcnt;
-		regs->ic_fs_scl_hcnt = ctx_save->ic_fs_scl_hcnt;
-		regs->ic_hs_scl_lcnt = ctx_save->ic_hs_scl_lcnt;
-		regs->ic_hs_scl_hcnt = ctx_save->ic_hs_scl_hcnt;
-		regs->ic_intr_mask = ctx_save->ic_intr_mask;
-		regs->ic_sda_hold = ctx_save->ic_sda_hold;
-		regs->ic_sda_setup = ctx_save->ic_sda_setup;
-		regs->ic_ack_general_call = ctx_save->ic_ack_general_call;
-		regs->ic_sar = ctx_save->ic_sar;
-		regs->ic_dma_cr = ctx_save->ic_dma_cr;
-		regs->ic_dma_tdlr = ctx_save->ic_dma_tdlr;
-		regs->ic_dma_rdlr = ctx_save->ic_dma_rdlr;
+	regs->ic_con = ctx_save->ic_con;
+	regs->ic_fs_spklen = ctx_save->ic_fs_spklen;
+	regs->ic_hs_spklen = ctx_save->ic_hs_spklen;
+	regs->ic_ss_scl_lcnt = ctx_save->ic_ss_scl_lcnt;
+	regs->ic_ss_scl_hcnt = ctx_save->ic_ss_scl_hcnt;
+	regs->ic_fs_scl_lcnt = ctx_save->ic_fs_scl_lcnt;
+	regs->ic_fs_scl_hcnt = ctx_save->ic_fs_scl_hcnt;
+	regs->ic_hs_scl_lcnt = ctx_save->ic_hs_scl_lcnt;
+	regs->ic_hs_scl_hcnt = ctx_save->ic_hs_scl_hcnt;
+	regs->ic_intr_mask = ctx_save->ic_intr_mask;
+	regs->ic_sda_hold = ctx_save->ic_sda_hold;
+	regs->ic_sda_setup = ctx_save->ic_sda_setup;
+	regs->ic_ack_general_call = ctx_save->ic_ack_general_call;
+	regs->ic_sar = ctx_save->ic_sar;
+	regs->ic_dma_cr = ctx_save->ic_dma_cr;
+	regs->ic_dma_tdlr = ctx_save->ic_dma_tdlr;
+	regs->ic_dma_rdlr = ctx_save->ic_dma_rdlr;
 
-		if (config->instance == QM_I2C_0) {
-			QM_SCSS_INT->int_i2c_mst_0_mask =
-				ctx_save->int_i2c_mst_mask;
-		} else {
-			QM_SCSS_INT->int_i2c_mst_1_mask =
-				ctx_save->int_i2c_mst_mask;
+	if (config->instance == QM_I2C_0) {
+		QM_SCSS_INT->int_i2c_mst_0_mask = ctx_save->int_i2c_mst_mask;
+	} else {
+		QM_SCSS_INT->int_i2c_mst_1_mask = ctx_save->int_i2c_mst_mask;
+	}
+
+	i2c_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int i2c_device_ctrl(struct device *dev, uint32_t ctrl_command,
+			   void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return i2c_suspend_device(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return i2c_resume_device_from_suspend(dev);
 		}
-
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = i2c_qmsi_get_power_state(dev);
+		return 0;
 	}
 
 	return 0;
 }
+#else
+#define i2c_qmsi_set_power_state(...)
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
-
-DEFINE_DEVICE_PM_OPS(i2c, i2c_suspend_device, i2c_resume_device);
 
 #ifdef CONFIG_I2C_0
 
@@ -165,9 +196,9 @@ static struct i2c_qmsi_config_info config_info_0 = {
 	.clock_gate = CLK_PERIPH_I2C_M0_REGISTER | CLK_PERIPH_CLK,
 };
 
-DEVICE_INIT_PM(i2c_0, CONFIG_I2C_0_NAME, &i2c_qmsi_init,
-	       DEVICE_PM_OPS_GET(i2c), &driver_data_0, &config_info_0,
-	       SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(i2c_0, CONFIG_I2C_0_NAME, &i2c_qmsi_init,
+	      i2c_device_ctrl, &driver_data_0, &config_info_0, SECONDARY,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #endif /* CONFIG_I2C_0 */
 
@@ -181,9 +212,9 @@ static struct i2c_qmsi_config_info config_info_1 = {
 	.clock_gate = CLK_PERIPH_I2C_M1_REGISTER | CLK_PERIPH_CLK,
 };
 
-DEVICE_INIT_PM(i2c_1, CONFIG_I2C_1_NAME, &i2c_qmsi_init,
-	       DEVICE_PM_OPS_GET(i2c), &driver_data_1, &config_info_1,
-	       SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(i2c_1, CONFIG_I2C_1_NAME, &i2c_qmsi_init,
+	      i2c_device_ctrl, &driver_data_1, &config_info_1, SECONDARY,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #endif /* CONFIG_I2C_1 */
 
@@ -346,5 +377,8 @@ static int i2c_qmsi_init(struct device *dev)
 	}
 
 	dev->driver_api = &api;
+
+	i2c_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }

@@ -296,7 +296,8 @@ static void suspend_devices(int pm_policy)
 		 * device in the policy list is busy as shown below :
 		 * if(device_busy_check(&device_list[idx])) {do something}
 		 */
-		device_retval[i] = device_suspend(&device_list[idx], pm_policy);
+		device_retval[i] = device_set_power_state(&device_list[idx],
+						DEVICE_PM_SUSPEND_STATE);
 	}
 }
 
@@ -307,8 +308,8 @@ static void resume_devices(int pm_policy)
 	for (i = 0; i < device_count; i++) {
 		if (!device_retval[i]) {
 			int idx = device_policy_list[i];
-
-			device_resume(&device_list[idx], pm_policy);
+			device_set_power_state(&device_list[idx],
+						DEVICE_PM_ACTIVE_STATE);
 		}
 	}
 }

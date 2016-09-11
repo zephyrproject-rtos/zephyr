@@ -157,6 +157,12 @@ static bool timer_known_to_have_expired;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* CONFIG_TICKLESS_IDLE */
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static uint32_t loapic_timer_device_power_state;
+static uint32_t reg_timer_save;
+static uint32_t reg_timer_cfg_save;
+#endif
+
 /* externs */
 
 #if !defined(CONFIG_KERNEL_V2)
@@ -536,7 +542,9 @@ int _sys_clock_driver_init(struct device *device)
 #endif
 	initial_count_register_set(cycles_per_tick - 1);
 	periodic_mode_set();
-
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
+#endif
 	IRQ_CONNECT(TIMER_IRQ, TIMER_IRQ_PRIORITY, _timer_int_handler, 0, 0);
 
 	/* Everything has been configured. It is now safe to enable the
@@ -549,54 +557,70 @@ int _sys_clock_driver_init(struct device *device)
 
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-
-static uint32_t reg_timer_save;
-static uint32_t reg_timer_cfg_save;
-
-int _sys_clock_suspend(struct device *dev, int pm_policy)
+static int sys_clock_suspend(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		reg_timer_save = *_REG_TIMER;
-		reg_timer_cfg_save = *_REG_TIMER_CFG;
-	}
+	reg_timer_save = *_REG_TIMER;
+	reg_timer_cfg_save = *_REG_TIMER_CFG;
+
+	loapic_timer_device_power_state = DEVICE_PM_SUSPEND_STATE;
 
 	return 0;
 }
 
-int _sys_clock_resume(struct device *dev, int pm_policy)
+static int sys_clock_resume(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		*_REG_TIMER = reg_timer_save;
-		*_REG_TIMER_CFG = reg_timer_cfg_save;
+	*_REG_TIMER = reg_timer_save;
+	*_REG_TIMER_CFG = reg_timer_cfg_save;
 
-		/*
-		 * It is difficult to accurately know the time spent in DS.
-		 * We can use TSC or RTC but that will create a dependency
-		 * on those components. Other issue is about what to do
-		 * with pending timers. Following are some options :-
-		 *
-		 * 1) Expire all timers based on time spent found using some
-		 *    source like TSC
-		 * 2) Expire all timers anyway
-		 * 3) Expire only the timer at the top
-		 * 4) Contine from where the timer left
-		 *
-		 * 1 and 2 require change to how timers are handled. 4 may not
-		 * give a good user experience. After waiting for a long period
-		 * in DS, the system would appear dead if it waits again.
-		 *
-		 * Current implementation uses option 3. The top most timer is
-		 * expired. Following code will set the counter to a low number
-		 * so it would immediately expire and generate timer interrupt
-		 * which will process the top most timer. Note that timer IC
-		 * cannot be set to 0.  Setting it to 0 will stop the timer.
-		 */
+	/*
+	 * It is difficult to accurately know the time spent in DS.
+	 * We can use TSC or RTC but that will create a dependency
+	 * on those components. Other issue is about what to do
+	 * with pending timers. Following are some options :-
+	 *
+	 * 1) Expire all timers based on time spent found using some
+	 *    source like TSC
+	 * 2) Expire all timers anyway
+	 * 3) Expire only the timer at the top
+	 * 4) Contine from where the timer left
+	 *
+	 * 1 and 2 require change to how timers are handled. 4 may not
+	 * give a good user experience. After waiting for a long period
+	 * in DS, the system would appear dead if it waits again.
+	 *
+	 * Current implementation uses option 3. The top most timer is
+	 * expired. Following code will set the counter to a low number
+	 * so it would immediately expire and generate timer interrupt
+	 * which will process the top most timer. Note that timer IC
+	 * cannot be set to 0.  Setting it to 0 will stop the timer.
+	 */
 
-		initial_count_register_set(1);
+	initial_count_register_set(1);
+	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
+
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
+			  void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return sys_clock_suspend(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return sys_clock_resume(port);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = loapic_timer_device_power_state;
+		return 0;
 	}
 
 	return 0;

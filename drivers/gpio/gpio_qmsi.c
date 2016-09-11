@@ -40,6 +40,9 @@ struct gpio_qmsi_runtime {
 #ifdef CONFIG_GPIO_QMSI_API_REENTRANCY
 	struct nano_sem sem;
 #endif /* CONFIG_GPIO_QMSI_API_REENTRANCY */
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#endif
 };
 
 #ifdef CONFIG_GPIO_QMSI_API_REENTRANCY
@@ -80,6 +83,25 @@ static void gpio_critical_region_end(struct device *dev)
 
 int gpio_qmsi_init(struct device *dev);
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void gpio_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct gpio_qmsi_runtime *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t gpio_qmsi_get_power_state(struct device *dev)
+{
+	struct gpio_qmsi_runtime *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+#else
+#define gpio_qmsi_set_power_state(...)
+#endif
+
+
 #ifdef CONFIG_GPIO_QMSI_0
 static struct gpio_qmsi_config gpio_0_config = {
 	.gpio = QM_GPIO_0,
@@ -92,48 +114,68 @@ static struct gpio_qmsi_runtime gpio_0_runtime;
 QM_RW uint32_t save_reg[10];
 static uint32_t int_gpio_mask_save;
 
-static int gpio_suspend_device(struct device *dev, int pm_policy)
+static int gpio_suspend_device(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		int_gpio_mask_save = REG_VAL(&QM_SCSS_INT->int_gpio_mask);
-		save_reg[0] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr);
-		save_reg[1] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr);
-		save_reg[2] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl);
-		save_reg[3] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inten);
-		save_reg[4] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_intmask);
-		save_reg[5] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inttype_level);
-		save_reg[6] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_polarity);
-		save_reg[7] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce);
-		save_reg[8] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync);
-		save_reg[9] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge);
-	}
+	int_gpio_mask_save = REG_VAL(&QM_SCSS_INT->int_gpio_mask);
+	save_reg[0] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr);
+	save_reg[1] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr);
+	save_reg[2] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl);
+	save_reg[3] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inten);
+	save_reg[4] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_intmask);
+	save_reg[5] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inttype_level);
+	save_reg[6] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_polarity);
+	save_reg[7] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce);
+	save_reg[8] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync);
+	save_reg[9] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge);
+
+	gpio_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
 	return 0;
 }
 
-static int gpio_resume_device(struct device *dev, int pm_policy)
+static int gpio_resume_device_from_suspend(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr) = save_reg[0];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr) = save_reg[1];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl) = save_reg[2];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inten) = save_reg[3];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_intmask) = save_reg[4];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inttype_level) = save_reg[5];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_polarity) = save_reg[6];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce) = save_reg[7];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync) = save_reg[8];
-		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge) = save_reg[9];
-		REG_VAL(&QM_SCSS_INT->int_gpio_mask) = int_gpio_mask_save;
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr) = save_reg[0];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr) = save_reg[1];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl) = save_reg[2];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inten) = save_reg[3];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_intmask) = save_reg[4];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inttype_level) = save_reg[5];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_polarity) = save_reg[6];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce) = save_reg[7];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync) = save_reg[8];
+	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge) = save_reg[9];
+	REG_VAL(&QM_SCSS_INT->int_gpio_mask) = int_gpio_mask_save;
+
+	gpio_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int gpio_qmsi_device_ctrl(struct device *port, uint32_t ctrl_command,
+				 void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return gpio_suspend_device(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return gpio_resume_device_from_suspend(port);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = gpio_qmsi_get_power_state(port);
+		return 0;
 	}
 	return 0;
 }
 #endif
 
-DEFINE_DEVICE_PM_OPS(gpio, gpio_suspend_device, gpio_resume_device);
-
-DEVICE_INIT_PM(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
-		DEVICE_PM_OPS_GET(gpio), &gpio_0_runtime, &gpio_0_config,
-		SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
+DEVICE_DEFINE(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
+	      gpio_qmsi_device_ctrl, &gpio_0_runtime, &gpio_0_config,
+	      SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
 
 #endif /* CONFIG_GPIO_QMSI_0 */
 
@@ -149,30 +191,44 @@ static struct gpio_qmsi_runtime gpio_aon_runtime;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static uint32_t int_gpio_aon_mask_save;
 
-static int gpio_aon_suspend_device(struct device *dev, int pm_policy)
+static int gpio_aon_suspend_device(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		int_gpio_aon_mask_save =
-				REG_VAL(&QM_SCSS_INT->int_aon_gpio_mask);
-	}
+	int_gpio_aon_mask_save = REG_VAL(&QM_SCSS_INT->int_aon_gpio_mask);
+	gpio_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 	return 0;
 }
 
-static int gpio_aon_resume_device(struct device *dev, int pm_policy)
+static int gpio_aon_resume_device_from_suspend(struct device *dev)
 {
-	if (pm_policy == SYS_PM_DEEP_SLEEP) {
-		REG_VAL(&QM_SCSS_INT->int_aon_gpio_mask) =
-				int_gpio_aon_mask_save;
+	REG_VAL(&QM_SCSS_INT->int_aon_gpio_mask) = int_gpio_aon_mask_save;
+	gpio_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+	return 0;
+}
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int gpio_aon_device_ctrl(struct device *port, uint32_t ctrl_command,
+				void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return gpio_aon_suspend_device(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return gpio_aon_resume_device_from_suspend(port);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = gpio_qmsi_get_power_state(port);
+		return 0;
 	}
 	return 0;
 }
 #endif
 
-DEFINE_DEVICE_PM_OPS(gpio_aon, gpio_aon_suspend_device, gpio_aon_resume_device);
-
-DEVICE_INIT_PM(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
-	       DEVICE_PM_OPS_GET(gpio_aon), &gpio_aon_runtime,
-	       &gpio_aon_config, SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
+DEVICE_DEFINE(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
+	      gpio_aon_device_ctrl, &gpio_aon_runtime, &gpio_aon_config,
+	      SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
 
 #endif /* CONFIG_GPIO_QMSI_AON */
 
@@ -421,6 +477,8 @@ int gpio_qmsi_init(struct device *port)
 	default:
 		return -EIO;
 	}
+
+	gpio_qmsi_set_power_state(port, DEVICE_PM_ACTIVE_STATE);
 
 	port->driver_api = &api_funcs;
 	return 0;
