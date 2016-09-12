@@ -883,14 +883,18 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 						addr->s4_addr32[0];
 		iface->ipv4.unicast[i].addr_type = addr_type;
 
+		/* Caller has to take care of timers and their expiry */
 		if (vlifetime) {
 			iface->ipv4.unicast[i].is_infinite = false;
-
-			/* FIXME - set the timer */
 		} else {
 			iface->ipv4.unicast[i].is_infinite = true;
-			iface->ipv4.unicast[i].addr_state = NET_ADDR_PREFERRED;
 		}
+
+		/**
+		 *  TODO: Handle properly PREFERRED/DEPRECATED state when
+		 *  address in use, expired and renewal state.
+		 */
+		iface->ipv4.unicast[i].addr_state = NET_ADDR_PREFERRED;
 
 		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
 			net_sprint_ipv4_addr(addr),
