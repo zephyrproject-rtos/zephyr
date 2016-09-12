@@ -873,6 +873,15 @@ struct bt_hci_evt_remote_features {
 	uint8_t  features[8];
 } __packed;
 
+#define BT_HCI_EVT_REMOTE_VERSION_INFO          0x0c
+struct bt_hci_evt_remote_version_info {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  version;
+	uint16_t manufacturer;
+	uint8_t  subversion;
+} __packed;
+
 #define BT_HCI_EVT_CMD_COMPLETE                 0x0e
 struct bt_hci_evt_cmd_complete {
 	uint8_t  ncmd;
