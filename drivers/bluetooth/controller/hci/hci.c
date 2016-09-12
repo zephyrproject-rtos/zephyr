@@ -248,6 +248,17 @@ static struct {
 /* direct access to the command complete status event parameters */
 #define HCI_CC_ST(evt_hdr) ((struct bt_hci_evt_cc_status *)(HCI_CC_RP(evt_hdr)))
 
+/* direct access to the LE meta event parameters */
+#define HCI_ME(evt_hdr) ((struct bt_hci_evt_le_meta_event *) \
+					HCI_EVTP(evt_hdr))
+
+/* direct access to the meta event subevent */
+#define HCI_SE(evt_hdr) ((void *)(((uint8_t *)HCI_EVTP(evt_hdr)) + \
+				     sizeof(struct bt_hci_evt_le_meta_event)))
+
+#define _HCI_ME_LEN(st) ((uint8_t)(sizeof(struct bt_hci_evt_le_meta_event) + \
+			sizeof(st)))
+
 static void disconnect(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_disconnect *cmd = (void *)cp;
@@ -1092,136 +1103,156 @@ void hci_handle(uint8_t x, uint8_t *len, uint8_t **out)
 	}
 }
 
-static void encode_control(uint8_t *buf, uint8_t *len, struct hci_evt *evt)
+static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *buf,
+				  struct bt_hci_evt_hdr *evt)
 {
-	struct pdu_adv *adv;
-	struct pdu_data *pdu_data;
-	uint8_t *report;
-	uint8_t data_len;
 	const uint8_t c_adv_type[] = { 0x00, 0x01, 0x03, 0xff, 0x04,
-				     0xff, 0x02 };
-	uint16_t instance;
-	struct radio_le_conn_update_cmplt *le_conn_update_cmplt;
-	struct radio_le_conn_cmplt *radio_le_conn_cmplt;
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
+				       0xff, 0x02 };
+	struct bt_hci_ev_le_advertising_report *sep = HCI_SE(evt);
+	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
+	struct bt_hci_ev_le_advertising_info *adv_info;
+	uint8_t data_len;
+	uint8_t *rssi;
 
-	radio_pdu_node_rx = (struct radio_pdu_node_rx *)buf;
-	instance = radio_pdu_node_rx->hdr.handle;
+	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
+
+	evt->evt = BT_HCI_EVT_LE_META_EVENT;
+	evt->len = _HCI_ME_LEN(*sep);
+
+	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_ADVERTISING_REPORT;
+
+	sep->num_reports = 1;
+
+	adv_info->evt_type = c_adv_type[adv->type];
+	adv_info->addr.type = adv->tx_addr;
+	memcpy(&adv_info->addr.a.val[0], &adv->payload.adv_ind.addr[0],
+	       sizeof(bt_addr_t));
+	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
+		data_len = (adv->len - BDADDR_SIZE);
+	} else {
+		data_len = 0;
+	}
+	adv_info->length = data_len;
+	memcpy(&adv_info->data[0], &adv->payload.adv_ind.data[0], data_len);
+	/* RSSI */
+	rssi = &adv_info->data[0] + data_len;
+	*rssi = buf[offsetof(struct radio_pdu_node_rx, pdu_data) +
+		offsetof(struct pdu_adv, payload) + adv->len];
+
+	evt->len += sizeof(struct bt_hci_ev_le_advertising_info) + data_len + 1;
+}
+
+static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
+			     struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_evt_le_conn_complete *sep = HCI_SE(evt);
+	struct radio_le_conn_cmplt *radio_cc;
+
+	radio_cc = (struct radio_le_conn_cmplt *) (pdu_data->payload.lldata);
+
+	evt->evt = BT_HCI_EVT_LE_META_EVENT;
+	evt->len = _HCI_ME_LEN(*sep);
+	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
+
+	sep->status = radio_cc->status;
+	sep->handle = handle;
+	sep->role = radio_cc->role;
+	sep->peer_addr.type = radio_cc->peer_addr_type;
+	memcpy(&sep->peer_addr.a.val[0], &radio_cc->peer_addr[0], BDADDR_SIZE);
+	sep->interval = radio_cc->interval;
+	sep->latency = radio_cc->latency;
+	sep->supv_timeout = radio_cc->timeout;
+	sep->clock_accuracy = radio_cc->mca;
+}
+
+static void disconn_complete(struct pdu_data *pdu_data, uint16_t handle,
+			     struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_evt_disconn_complete *ep = HCI_EVTP(evt);
+
+	evt->evt = BT_HCI_EVT_DISCONN_COMPLETE;
+	evt->len = sizeof(*ep);
+
+	ep->status = 0x00;
+	ep->handle = handle;
+	ep->reason = *((uint8_t *)pdu_data);
+}
+
+static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
+				    struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_evt_le_conn_update_complete *sep = HCI_SE(evt);
+	struct radio_le_conn_update_cmplt *radio_cu;
+
+	radio_cu = (struct radio_le_conn_update_cmplt *)
+			(pdu_data->payload.lldata);
+
+	evt->evt = BT_HCI_EVT_LE_META_EVENT;
+	evt->len = _HCI_ME_LEN(*sep);
+	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE;
+
+	sep->status = radio_cu->status;
+	sep->handle = handle;
+	sep->interval = radio_cu->interval;
+	sep->latency = radio_cu->latency;
+	sep->supv_timeout = radio_cu->timeout;
+}
+
+static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
+				 struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_evt_encrypt_key_refresh_complete *ep = HCI_EVTP(evt);
+
+	evt->evt = BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE;
+	evt->len = sizeof(*ep);
+
+	ep->status = 0x00;
+	ep->handle = handle;
+}
+
+static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
+				     struct bt_hci_evt_hdr *evt)
+{
+	struct bt_hci_evt_auth_payload_timeout_exp *ep = HCI_EVTP(evt);
+
+	evt->evt = BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP;
+	evt->len = sizeof(*ep);
+
+	ep->handle = handle;
+}
+
+static void encode_control(struct radio_pdu_node_rx *radio_pdu_node_rx,
+			   struct pdu_data *pdu_data, uint8_t *len,
+			   struct bt_hci_evt_hdr *evt)
+{
+	uint8_t *buf = (uint8_t *)radio_pdu_node_rx;
+	uint16_t handle;
+
+	handle = radio_pdu_node_rx->hdr.handle;
 
 	switch (radio_pdu_node_rx->hdr.type) {
 	case NODE_RX_TYPE_REPORT:
-		adv = (struct pdu_adv *)radio_pdu_node_rx->pdu_data;
-
-
-		evt->code = HCI_EVT_CODE_LE_META;
-		evt->len = offsetof(struct hci_evt_le_meta,
-				    subevent.adv_report.reports);
-
-		evt->params.le_meta.subevent_code = HCI_EVT_LE_META_ADV_REPORT;
-		evt->params.le_meta.subevent.adv_report.num_reports = 1;
-		report = &evt->params.le_meta.subevent.adv_report.reports[0];
-
-		*report++ = c_adv_type[adv->type];
-		*report++ = adv->tx_addr;
-		memcpy(&report[0], &adv->payload.adv_ind.addr[0],
-			 BDADDR_SIZE);
-		report += BDADDR_SIZE;
-		if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
-			data_len = (adv->len - BDADDR_SIZE);
-		} else {
-			data_len = 0;
-		}
-		*report++ = data_len;
-		memcpy(&report[0], &adv->payload.adv_ind.data[0], data_len);
-		report += data_len;
-		/* RSSI */
-		*report++ = buf[offsetof(struct radio_pdu_node_rx, pdu_data) +
-			offsetof(struct pdu_adv, payload) + adv->len];
-
-		evt->len += (report -
-			     &evt->params.le_meta.subevent.adv_report.
-			     reports[0]);
-
-		*len = HCI_EVT_LEN(evt);
+		le_advertising_report(pdu_data, buf, evt);
 		break;
 
 	case NODE_RX_TYPE_CONNECTION:
-		pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
-		radio_le_conn_cmplt = (struct radio_le_conn_cmplt *)
-				       (pdu_data->payload.lldata);
-
-		evt->code = HCI_EVT_CODE_LE_META;
-		evt->len = (offsetof(struct hci_evt_le_meta, subevent) +
-			 sizeof(struct hci_evt_le_meta_conn_complete));
-		evt->params.le_meta.subevent_code =
-		    HCI_EVT_LE_META_CONNECTION_COMPLETE;
-		evt->params.le_meta.subevent.conn_cmplt.status =
-		    radio_le_conn_cmplt->status;
-		evt->params.le_meta.subevent.conn_cmplt.conn_handle = instance;
-		evt->params.le_meta.subevent.conn_cmplt.role =
-		    radio_le_conn_cmplt->role;
-		evt->params.le_meta.subevent.conn_cmplt.addr_type =
-		    radio_le_conn_cmplt->peer_addr_type;
-		memcpy(&evt->params.le_meta.subevent.conn_cmplt.addr[0],
-		       &radio_le_conn_cmplt->peer_addr[0],
-		       BDADDR_SIZE);
-		evt->params.le_meta.subevent.conn_cmplt.interval =
-		    radio_le_conn_cmplt->interval;
-		evt->params.le_meta.subevent.conn_cmplt.latency =
-		    radio_le_conn_cmplt->latency;
-		evt->params.le_meta.subevent.conn_cmplt.timeout =
-		    radio_le_conn_cmplt->timeout;
-		evt->params.le_meta.subevent.conn_cmplt.mca =
-		    radio_le_conn_cmplt->mca;
-
+		le_conn_complete(pdu_data, handle, evt);
 		break;
 
 	case NODE_RX_TYPE_TERMINATE:
-		evt->code = HCI_EVT_CODE_DISCONNECTION_COMPLETE;
-		evt->len = sizeof(struct hci_evt_disconnect_cmplt);
-		evt->params.disconnect_cmplt.status =
-		    HCI_EVT_ERROR_CODE_SUCCESS;
-		evt->params.disconnect_cmplt.conn_handle = instance;
-		evt->params.disconnect_cmplt.reason =
-		    *((uint8_t *)radio_pdu_node_rx->pdu_data);
-
+		disconn_complete(pdu_data, handle, evt);
 		break;
 
 	case NODE_RX_TYPE_CONN_UPDATE:
-		pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
-		le_conn_update_cmplt = (struct radio_le_conn_update_cmplt *)
-			(pdu_data->payload.lldata);
-
-		evt->code = HCI_EVT_CODE_LE_META;
-		evt->len = (offsetof(struct hci_evt_le_meta, subevent) +
-			 sizeof(struct hci_evt_le_meta_conn_update_complete));
-		evt->params.le_meta.subevent_code =
-			HCI_EVT_LE_META_CONNECTION_UPDATE_COMPLETE;
-		evt->params.le_meta.subevent.conn_update_cmplt.status =
-			le_conn_update_cmplt->status;
-		evt->params.le_meta.subevent.conn_update_cmplt.conn_handle =
-			instance;
-		evt->params.le_meta.subevent.conn_update_cmplt.interval =
-			le_conn_update_cmplt->interval;
-		evt->params.le_meta.subevent.conn_update_cmplt.latency =
-			le_conn_update_cmplt->latency;
-		evt->params.le_meta.subevent.conn_update_cmplt.timeout =
-			le_conn_update_cmplt->timeout;
-
+		le_conn_update_complete(pdu_data, handle, evt);
 		break;
 
 	case NODE_RX_TYPE_ENC_REFRESH:
-		evt->code = HCI_EVT_CODE_ENCRYPTION_KEY_REFRESH_COMPLETE;
-		evt->len = sizeof(struct hci_evt_encryption_key_refresh_cmplt);
-		evt->params.encryption_key_refresh_cmplt.status =
-			HCI_EVT_ERROR_CODE_SUCCESS;
-		evt->params.encryption_key_refresh_cmplt.conn_handle = instance;
+		enc_refresh_complete(pdu_data, handle, evt);
 		break;
 
 	case NODE_RX_TYPE_APTO:
-		evt->code = HCI_EVT_CODE_APTO_EXPIRED;
-		evt->len = sizeof(struct hci_evt_apto_expired);
-		evt->params.apto_expired.conn_handle = instance;
+		auth_payload_timeout_exp(pdu_data, handle, evt);
 		break;
 
 	case NODE_RX_TYPE_RSSI:
@@ -1451,7 +1482,7 @@ void hci_encode(uint8_t *buf, uint8_t *len, uint8_t **out)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct pdu_data *pdu_data;
-	struct hci_evt *evt;
+	struct bt_hci_evt_hdr *evt;
 
 	radio_pdu_node_rx = (struct radio_pdu_node_rx *)buf;
 	pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
@@ -1463,12 +1494,12 @@ void hci_encode(uint8_t *buf, uint8_t *len, uint8_t **out)
 	    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
 		/* generate an HCI event */
 		hci_context.tx[0] = HCI_EVT;
-		evt = (struct hci_evt *)&hci_context.tx[1];
+		evt = (void *)&hci_context.tx[1];
 
 		if (radio_pdu_node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
-			encode_control(buf, len, evt);
+			encode_control(radio_pdu_node_rx, pdu_data, len, evt);
 		} else {
-			encode_data_ctrl(radio_pdu_node_rx, len, evt);
+			encode_data_ctrl(radio_pdu_node_rx, len, (void *) evt);
 		}
 		*out = &hci_context.tx[0];
 	} else {
