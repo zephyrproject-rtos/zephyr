@@ -66,7 +66,9 @@ do {                                                                    \
 #define __aligned(x)	__attribute__((__aligned__(x)))
 #endif
 #define __may_alias     __attribute__((__may_alias__))
+#ifndef __printf_like
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
+#endif
 #define __used		__attribute__((__used__))
 #define __deprecated	__attribute__((deprecated))
 #define ARG_UNUSED(x) (void)(x)
