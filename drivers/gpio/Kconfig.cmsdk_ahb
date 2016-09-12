@@ -1,0 +1,122 @@
+# Kconfig.cmsdk_ahb - ARM CMSDK (Cortex-M System Design Kit) AHB GPIO cfg
+#
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig GPIO_CMSDK_AHB
+	bool "ARM CMSDK (Cortex-M System Design Kit) AHB GPIO Controllers"
+	depends on GPIO && SOC_SERIES_BEETLE
+	default n
+	help
+	  Enable config options to support the ARM CMSDK GPIO controllers.
+
+	  Says n if not sure.
+
+if GPIO_CMSDK_AHB
+
+# ---------- Port 0 ----------
+
+config GPIO_CMSDK_AHB_PORT0
+	bool "Enable driver for GPIO Port 0"
+	depends on GPIO_CMSDK_AHB
+	default n
+	help
+	  Build the driver to utilize GPIO controller Port 0.
+
+config GPIO_CMSDK_AHB_PORT0_DEV_NAME
+	string "Device name for Port 0"
+	depends on GPIO_CMSDK_AHB_PORT0
+	default "GPIO_0"
+	help
+	  Device name for Port 0.
+
+config GPIO_CMSDK_AHB_PORT0_IRQ_PRI
+	int "Interrupt Priority for Port 0"
+	depends on GPIO_CMSDK_AHB_PORT0
+	default 3
+	help
+	  Interrupt priority for Port 0.
+
+# ---------- Port 1 ----------
+
+config GPIO_CMSDK_AHB_PORT1
+	bool "Enable driver for GPIO Port 1"
+	depends on GPIO_CMSDK_AHB
+	default n
+	help
+	  Build the driver to utilize GPIO controller Port 1.
+
+config GPIO_CMSDK_AHB_PORT1_DEV_NAME
+	string "Device name for Port 1"
+	depends on GPIO_CMSDK_AHB_PORT1
+	default "GPIO_1"
+	help
+	  Device name for Port 1.
+
+config GPIO_CMSDK_AHB_PORT1_IRQ_PRI
+	int "Interrupt Priority for Port 1"
+	depends on GPIO_CMSDK_AHB_PORT1
+	default 3
+	help
+	  Interrupt priority for Port 1.
+
+# ---------- Port 2 ----------
+
+config GPIO_CMSDK_AHB_PORT2
+	bool "Enable driver for GPIO Port 2"
+	depends on GPIO_CMSDK_AHB
+	default n
+	help
+	  Build the driver to utilize GPIO controller Port 2.
+
+config GPIO_CMSDK_AHB_PORT2_DEV_NAME
+	string "Device name for Port 2"
+	depends on GPIO_CMSDK_AHB_PORT2
+	default "GPIO_2"
+	help
+	  Device name for Port 2.
+
+config GPIO_CMSDK_AHB_PORT2_IRQ_PRI
+	int "Interrupt Priority for Port 2"
+	depends on GPIO_CMSDK_AHB_PORT2
+	default 3
+	help
+	  Interrupt priority for Port 2.
+
+# ---------- Port 3 ----------
+
+config GPIO_CMSDK_AHB_PORT3
+	bool "Enable driver for GPIO Port 3"
+	depends on GPIO_CMSDK_AHB
+	default n
+	help
+	  Build the driver to utilize GPIO controller Port 3.
+
+config GPIO_CMSDK_AHB_PORT3_DEV_NAME
+	string "Device name for Port 3"
+	depends on GPIO_CMSDK_AHB_PORT3
+	default "GPIO_3"
+	help
+	  Device name for Port 3.
+
+config GPIO_CMSDK_AHB_PORT3_IRQ_PRI
+	int "Interrupt Priority for Port 3"
+	depends on GPIO_CMSDK_AHB_PORT3
+	default 3
+	help
+	  Interrupt priority for Port 3.
+
+endif # GPIO_CMSDK_AHB
