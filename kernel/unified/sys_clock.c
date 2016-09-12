@@ -169,6 +169,31 @@ static inline void handle_expired_timeouts(int32_t ticks)
 	#define handle_expired_timeouts(ticks) do { } while ((0))
 #endif
 
+#ifdef CONFIG_TIMESLICING
+int32_t _time_slice_elapsed;
+int32_t _time_slice_duration = CONFIG_TIMESLICE_SIZE;
+int  _time_slice_prio_ceiling = CONFIG_TIMESLICE_PRIORITY;
+
+static void handle_time_slicing(int32_t ticks)
+{
+	if (_time_slice_duration == 0) {
+		return;
+	}
+
+	if (_is_prio_higher(_current->prio, _time_slice_prio_ceiling)) {
+		return;
+	}
+
+	_time_slice_elapsed += _ticks_to_ms(ticks);
+	if (_time_slice_elapsed >= _time_slice_duration) {
+		_time_slice_elapsed = 0;
+		_remove_thread_from_ready_q(_current);
+		_add_thread_to_ready_q(_current);
+	}
+}
+#else
+#define handle_time_slicing(ticks) do { } while (0)
+#endif
 /**
  *
  * @brief Announce a tick to the nanokernel
@@ -188,6 +213,9 @@ void _nano_sys_clock_tick_announce(int32_t ticks)
 	key = irq_lock();
 	_sys_clock_tick_count += ticks;
 	handle_expired_timeouts(ticks);
+
+	handle_time_slicing(ticks);
+
 	irq_unlock(key);
 }
 

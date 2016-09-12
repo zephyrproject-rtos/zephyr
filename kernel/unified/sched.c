@@ -285,3 +285,19 @@ void _dump_ready_q(void)
 			sys_dlist_peek_head(&_ready_q.q[prio]));
 	}
 }
+
+#ifdef CONFIG_TIMESLICING
+extern int32_t _time_slice_duration;    /* Measured in ms */
+extern int32_t _time_slice_elapsed;     /* Measured in ms */
+extern int _time_slice_prio_ceiling;
+
+void k_sched_time_slice_set(int32_t duration_in_ms, int prio)
+{
+	__ASSERT(duration_in_ms >= 0, "");
+	__ASSERT((prio >= 0) && (prio < CONFIG_NUM_PREEMPT_PRIORITIES), "");
+
+	_time_slice_duration = duration_in_ms;
+	_time_slice_elapsed = 0;
+	_time_slice_prio_ceiling = prio;
+}
+#endif /* CONFIG_TIMESLICING */

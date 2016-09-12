@@ -38,7 +38,7 @@ GTEXT(_IntExit)
 GDATA(_nanokernel)
 
 #ifdef CONFIG_KERNEL_V2
-GTEXT(__must_switch_threads)
+GTEXT(_is_next_thread_current)
 #endif
 
 #if CONFIG_GDB_INFO
@@ -113,11 +113,11 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 	  bxgt lr
 
 	push {lr}
-	blx __must_switch_threads
+	blx _is_next_thread_current
 	pop {lr}
 	cmp r0, #0
-	it eq
-	  bxeq lr
+	it ne
+	  bxne lr
 
 #else
 

@@ -46,7 +46,7 @@
 	GTEXT(_Swap)
 
 #ifdef CONFIG_KERNEL_V2
-	GTEXT(__must_switch_threads)
+	GTEXT(_is_next_thread_current)
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -357,9 +357,9 @@ _IntExitWithCli:
 
 
 	/* reschedule only if the scheduler says that we must do so */
-	call	__must_switch_threads
-	cmpl	$0, %eax
-	je	noReschedule
+	call	_is_next_thread_current
+	testl   %eax, %eax
+	jnz     noReschedule
 #else
 	/*
 	 * Determine whether the execution of the ISR requires a context
@@ -386,7 +386,10 @@ _IntExitWithCli:
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
 #ifdef CONFIG_KERNEL_V2
-	/* reload _nanokernel.current: __must_switch_threads may clobber it */
+	/*
+	 * Reload _nanokernel.current as _is_next_thread_current()
+	 * might have clobbered it.
+	 */
 	movl	_nanokernel + __tNANO_current_OFFSET, %edx
 #endif
 	orl	$INT_ACTIVE, __tTCS_flags_OFFSET(%edx)
