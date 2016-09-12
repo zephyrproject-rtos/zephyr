@@ -131,14 +131,6 @@ SECTIONS {
 		__gpio_compat_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	SECTION_PROLOGUE(net_l2, (OPTIONAL),)
-	{
-		__net_l2_start = .;
-		*(".net_l2.*")
-		KEEP(*(SORT_BY_NAME(".net_l2*")))
-		__net_l2_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
 #ifdef CONFIG_CPLUSPLUS
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,) {
 		/*
