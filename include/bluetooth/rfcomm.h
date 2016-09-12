@@ -49,6 +49,14 @@ extern "C" {
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
+/* RFCOMM channels (1-31): pre-allocated for profiles to avoid conflicts */
+enum {
+	BT_RFCOMM_CHAN_HFP_HF = 1,
+	BT_RFCOMM_CHAN_HFP_AG,
+	BT_RFCOMM_CHAN_HSP_AG,
+	BT_RFCOMM_CHAN_HSP_HS,
+};
+
 struct bt_rfcomm_dlc;
 
 /** @brief RFCOMM DLC operations structure. */
