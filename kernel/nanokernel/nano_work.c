@@ -40,9 +40,9 @@ static void workqueue_fiber_main(int arg1, int arg2)
 
 		handler = work->handler;
 
-		/* Set state to idle so it can be resubmitted by handler */
-		if (!atomic_test_and_set_bit(work->flags,
-					     NANO_WORK_STATE_IDLE)) {
+		/* Reset pending state so it can be resubmitted by handler */
+		if (atomic_test_and_clear_bit(work->flags,
+					      NANO_WORK_STATE_PENDING)) {
 			handler(work);
 		}
 
@@ -141,7 +141,7 @@ int nano_delayed_work_cancel(struct nano_delayed_work *work)
 {
 	int key = irq_lock();
 
-	if (!atomic_test_bit(work->work.flags, NANO_WORK_STATE_IDLE)) {
+	if (nano_work_pending(&work->work)) {
 		irq_unlock(key);
 		return -EINPROGRESS;
 	}

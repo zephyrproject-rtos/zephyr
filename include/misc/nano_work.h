@@ -57,7 +57,7 @@ struct nano_workqueue {
  * @brief Work flags.
  */
 enum {
-	NANO_WORK_STATE_IDLE,		/* Work item idle state */
+	NANO_WORK_STATE_PENDING,	/* Work item pending state */
 
 	NANO_WORK_NUM_FLAGS,		/* Number of flags - must be last */
 };
@@ -77,7 +77,7 @@ struct nano_work {
 static inline void nano_work_init(struct nano_work *work,
 				  work_handler_t handler)
 {
-	atomic_set_bit(work->flags, NANO_WORK_STATE_IDLE);
+	atomic_clear_bit(work->flags, NANO_WORK_STATE_PENDING);
 	work->handler = handler;
 }
 
@@ -87,11 +87,19 @@ static inline void nano_work_init(struct nano_work *work,
 static inline void nano_work_submit_to_queue(struct nano_workqueue *wq,
 					     struct nano_work *work)
 {
-	if (!atomic_test_and_clear_bit(work->flags, NANO_WORK_STATE_IDLE)) {
+	if (atomic_test_and_set_bit(work->flags, NANO_WORK_STATE_PENDING)) {
 		__ASSERT_NO_MSG(0);
 	} else {
 		nano_fifo_put(&wq->fifo, work);
 	}
+}
+
+/**
+ * @brief Check if work item is pending.
+ */
+static inline int nano_work_pending(struct nano_work *work)
+{
+	return atomic_test_bit(work->flags, NANO_WORK_STATE_PENDING);
 }
 
 /**
