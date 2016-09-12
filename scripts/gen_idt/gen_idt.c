@@ -445,9 +445,9 @@ static void validate_irq(void)
 static void validate_input_file(void)
 {
 	validate_dpl();          /* exits on error */
+	validate_irq();          /* exits on error */
 	validate_vector_id();    /* exits on error */
 	validate_priority();     /* exits on error */
-	validate_irq();          /* exits on error */
 }
 
 static void generate_idt(void)
