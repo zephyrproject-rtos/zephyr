@@ -1002,6 +1002,11 @@ struct bt_hci_evt_le_meta_event {
 	uint8_t  subevent;
 } __packed;
 
+#define BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP     0x57
+struct bt_hci_evt_auth_payload_timeout_exp {
+	uint16_t handle;
+} __packed;
+
 #define BT_HCI_ROLE_MASTER                      0x00
 #define BT_HCI_ROLE_SLAVE                       0x01
 
