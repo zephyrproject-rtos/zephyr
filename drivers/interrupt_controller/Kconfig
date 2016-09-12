@@ -106,7 +106,7 @@ config MVIC
 config MVIC_TIMER_IRQ
 	int "IRQ line to use for timer interrupt"
 	range 0 15
-	default 0
+	default 10
 	depends on MVIC
 	help
 	Specify the IRQ line to use for the timer interrupt. This should be
