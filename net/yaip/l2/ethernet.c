@@ -111,6 +111,39 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	return NET_CONTINUE;
 }
 
+static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
+						      struct net_buf *buf)
+{
+	struct net_eth_hdr *hdr = NET_ETH_BUF(buf);
+
+	if (net_ipv4_addr_cmp(&NET_IPV4_BUF(buf)->dst,
+			      net_ipv4_broadcast_address())) {
+		/* Broadcast address */
+		net_nbuf_ll_dst(buf)->addr = (uint8_t *)broadcast_eth_addr.addr;
+		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
+		net_nbuf_ll_src(buf)->addr = net_if_get_link_addr(iface)->addr;
+		net_nbuf_ll_src(buf)->len = sizeof(struct net_eth_addr);
+
+		return true;
+	} else if (NET_IPV4_BUF(buf)->dst.s4_addr[0] == 224) {
+		/* Multicast address */
+		hdr->dst.addr[0] = 0x01;
+		hdr->dst.addr[1] = 0x00;
+		hdr->dst.addr[2] = 0x5e;
+		hdr->dst.addr[3] = NET_IPV4_BUF(buf)->dst.s4_addr[1];
+		hdr->dst.addr[4] = NET_IPV4_BUF(buf)->dst.s4_addr[2];
+		hdr->dst.addr[5] = NET_IPV4_BUF(buf)->dst.s4_addr[3];
+
+		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
+		net_nbuf_ll_src(buf)->addr = net_if_get_link_addr(iface)->addr;
+		net_nbuf_ll_src(buf)->len = sizeof(struct net_eth_addr);
+
+		return true;
+	}
+
+	return false;
+}
+
 static enum net_verdict ethernet_send(struct net_if *iface,
 				      struct net_buf *buf)
 {
@@ -120,8 +153,13 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET) {
-		struct net_buf *arp_buf = net_arp_prepare(buf);
+		struct net_buf *arp_buf;
 
+		if (check_if_dst_is_broadcast_or_mcast(iface, buf)) {
+			goto setup_hdr;
+		}
+
+		arp_buf = net_arp_prepare(buf);
 		if (!arp_buf) {
 			return NET_DROP;
 		}
@@ -213,6 +251,8 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 			net_sprint_ll_addr(net_nbuf_ll_dst(buf)->addr,
 					   net_nbuf_ll_dst(buf)->len));
 	}
+
+setup_hdr:
 
 	if (net_nbuf_family(buf) == AF_INET) {
 		ptype = htons(NET_ETH_PTYPE_IP);

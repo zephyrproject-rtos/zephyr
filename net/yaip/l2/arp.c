@@ -225,27 +225,6 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 		return buf;
 	}
 
-	if (net_ipv4_addr_cmp(&NET_IPV4_BUF(buf)->dst,
-			      net_ipv4_broadcast_address())) {
-		/* Broadcast address */
-		memcpy(&hdr->dst.addr, net_eth_broadcast_addr()->addr,
-		       sizeof(struct net_eth_addr));
-
-		return buf;
-
-	} else if (NET_IPV4_BUF(buf)->dst.s4_addr[0] == 224) {
-		/* Multicast address */
-		hdr->dst.addr[0] = 0x01;
-		hdr->dst.addr[1] = 0x00;
-		hdr->dst.addr[2] = 0x5e;
-		hdr->dst.addr[3] = NET_IPV4_BUF(buf)->dst.s4_addr[1];
-		hdr->dst.addr[4] = NET_IPV4_BUF(buf)->dst.s4_addr[2];
-		hdr->dst.addr[5] = NET_IPV4_BUF(buf)->dst.s4_addr[3];
-
-		return buf;
-
-	}
-
 	entry = find_entry(net_nbuf_iface(buf),
 			   &NET_IPV4_BUF(buf)->dst,
 			   &free_entry, &non_pending);
