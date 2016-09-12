@@ -46,7 +46,6 @@
 #define SLIP_ESC_ESC 0335
 
 enum slip_state {
-	STATE_MULTI_PACKETS,
 	STATE_GARBAGE,
 	STATE_OK,
 	STATE_ESC,
@@ -226,11 +225,6 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 static struct net_buf *slip_poll_handler(struct slip_context *slip)
 {
 	if (slip->last && slip->last->len) {
-		if (slip->state == STATE_MULTI_PACKETS) {
-			/* Assume no bytes where lost */
-			slip->state = STATE_OK;
-		}
-
 		return slip->rx;
 	}
 
@@ -265,9 +259,6 @@ static inline int slip_input_byte(struct slip_context *slip,
 		}
 		return 0;
 
-	case STATE_MULTI_PACKETS:
-		return 0;
-
 	case STATE_ESC:
 		if (c == SLIP_ESC_END) {
 			c = SLIP_END;
@@ -286,12 +277,8 @@ static inline int slip_input_byte(struct slip_context *slip,
 			slip->state = STATE_ESC;
 			return 0;
 		} else if (c == SLIP_END) {
-			if (slip->last->len) {
-				slip->state = STATE_MULTI_PACKETS;
-				SLIP_STATS(slip->multi_packets++);
-				return 1;
-			}
-			return 0;
+			slip->state = STATE_OK;
+			return 1;
 		}
 		break;
 	}
