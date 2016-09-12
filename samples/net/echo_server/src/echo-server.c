@@ -32,8 +32,10 @@
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
+#if defined(CONFIG_NETWORKING_WITH_BT)
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
+#endif
 
 #if defined(CONFIG_NET_TESTING)
 #include <net_testing.h>

@@ -1,5 +1,5 @@
-ccflags-y +=-I${ZEPHYR_BASE}/net/ip
-ccflags-y +=-I${ZEPHYR_BASE}/samples/bluetooth/
+ccflags-$(CONFIG_NET_UIP) +=-I${ZEPHYR_BASE}/net/ip
+ccflags-$(CONFIG_NETWORKING_WITH_BT) +=-I${ZEPHYR_BASE}/samples/bluetooth/
 
 ifeq ($(CONFIG_NET_YAIP), y)
 obj-y = echo-server-yaip.o
