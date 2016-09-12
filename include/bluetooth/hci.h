@@ -1024,6 +1024,10 @@ struct bt_hci_ev_le_advertising_info {
 	uint8_t      length;
 	uint8_t      data[0];
 } __packed;
+struct bt_hci_ev_le_advertising_report {
+	uint8_t num_reports;
+	struct bt_hci_ev_le_advertising_info adv_info[0];
+} __packed;
 
 #define BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE      0x03
 struct bt_hci_evt_le_conn_update_complete {
@@ -1092,14 +1096,17 @@ struct bt_hci_evt_le_enh_conn_complete {
 	uint8_t      clock_accuracy;
 } __packed;
 
-#define BT_HCI_EVT_LE_DIRECTED_ADV_REPORT       0x02
-struct bt_hci_ev_le_directed_adv_info {
+#define BT_HCI_EVT_LE_DIRECT_ADV_REPORT         0x0b
+struct bt_hci_ev_le_direct_adv_info {
 	uint8_t      evt_type;
 	bt_addr_le_t dir_addr;
 	bt_addr_le_t addr;
 	int8_t       rssi;
 } __packed;
-
+struct bt_hci_ev_le_direct_adv_report {
+	uint8_t num_reports;
+	struct bt_hci_ev_le_direct_adv_info direct_adv_info[0];
+} __packed;
 
 #ifdef __cplusplus
 }
