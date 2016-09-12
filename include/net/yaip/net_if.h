@@ -31,6 +31,10 @@
 #include <net/net_ip.h>
 #include <net/net_l2.h>
 
+#if defined(CONFIG_NET_DHCPV4)
+#include <net/dhcpv4.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -243,6 +247,39 @@ struct net_if {
 	/** IPv4 time-to-live */
 	uint8_t ttl;
 #endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_DHCPV4)
+	struct {
+		uint32_t xid;
+
+		/** IP address Lease time */
+		uint32_t lease_time;
+
+		/** IP address Renewal time */
+		uint32_t renewal_time;
+
+		/** Server ID */
+		struct in_addr server_id;
+
+		/** Requested IP addr */
+		struct in_addr requested_ip;
+
+		/**
+		 *  DHCPv4 client state in the process of network
+		 *  address allocation.
+		 */
+		enum net_dhcpv4_state state;
+
+		/** Number of attempts made for REQUEST and RENEWAL messages */
+		uint8_t attempts;
+	} dhcpv4;
+
+	/** Timer for DHCPv4 Client requests (DISCOVER, REQUEST or RENEWAL) */
+	struct nano_delayed_work dhcpv4_timeout;
+
+	/** T1 (Renewal) timer */
+	struct nano_delayed_work dhcpv4_t1_timer;
+#endif
 } __net_if_align;
 
 /**

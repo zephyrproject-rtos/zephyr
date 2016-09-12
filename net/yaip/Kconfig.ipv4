@@ -39,6 +39,11 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 	int "Max number of multicast IPv4 addresses per network interface"
 	default 1
 
+config NET_DHCPV4
+	bool "Enable DHCPv4 client"
+	depends on NET_IPV4
+	default n
+
 if NET_LOG
 
 config NET_DEBUG_IPV4
@@ -52,6 +57,11 @@ config NET_DEBUG_ICMPV4
 	default n
 	help
 	Enables ICMPv4 code part to output debug messages
+
+config NET_DEBUG_DHCPV4
+	bool "Enable DHCPv4 client"
+	depends on NET_DHCPV4
+	default n
 
 endif # NET_LOG
 
