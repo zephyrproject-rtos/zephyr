@@ -1916,9 +1916,8 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
 	  net_context_set_connection_status(ip_buf_context(uip_connr->buf),
 					    EISCONN);
 
-	  /* Eventually the uip_connr->buf will be freed
-	   * by net_core.c:net_send()
-	   */
+	  ip_buf_unref(uip_connr->buf);
+	  uip_connr->buf = NULL;
 
 	  tcp_cancel_retrans_timer(uip_connr);
 
