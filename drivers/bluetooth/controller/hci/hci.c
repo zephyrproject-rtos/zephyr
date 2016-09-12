@@ -1519,28 +1519,28 @@ void hci_encode(uint8_t *buf, uint8_t *len, uint8_t **out)
 	}
 }
 
-void hci_encode_num_cmplt(uint16_t instance, uint8_t num, uint8_t *len,
+void hci_encode_num_cmplt(uint16_t handle, uint8_t num, uint8_t *len,
 			  uint8_t **out)
 {
-	struct hci_evt *evt;
-	uint8_t *handles_nums;
+	struct bt_hci_evt_num_completed_packets *ep;
+	struct bt_hci_handle_count *hc;
+	struct bt_hci_evt_hdr *evt;
 	uint8_t num_handles;
 
 	num_handles = 1;
 
 	hci_context.tx[0] = HCI_EVT;
 
-	evt = (struct hci_evt *)&hci_context.tx[1];
-	evt->code = HCI_EVT_CODE_NUM_COMPLETE;
-	evt->len = (offsetof(struct hci_evt_num_cmplt, handles_nums) +
-		    (sizeof(uint16_t) * 2 * num_handles));
+	evt = (struct bt_hci_evt_hdr *)&hci_context.tx[1];
+	ep = HCI_EVTP(evt);
+	evt->evt = BT_HCI_EVT_NUM_COMPLETED_PACKETS;
+	evt->len = (sizeof(struct bt_hci_evt_num_completed_packets) +
+		    (sizeof(struct bt_hci_handle_count) * num_handles));
 
-	evt->params.num_cmplt.num_handles = num_handles;
-	handles_nums = &evt->params.num_cmplt.handles_nums[0];
-	handles_nums[0] = instance & 0xFF;
-	handles_nums[1] = (instance >> 8) & 0xFF;
-	handles_nums[2] = num & 0xFF;
-	handles_nums[3] = (num >> 8) & 0xFF;
+	ep->num_handles = num_handles;
+	hc = &ep->h[0];
+	hc->handle = sys_cpu_to_le16(handle);
+	hc->count = sys_cpu_to_le16(num);
 
 	*len = HCI_EVT_LEN(evt);
 	*out = &hci_context.tx[0];
