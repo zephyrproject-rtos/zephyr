@@ -18,6 +18,9 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
+/* for __deprecated */
+#include <toolchain.h>
+
 /**
  * @brief Device Driver APIs
  * @defgroup io_interfaces Device Driver APIs
@@ -131,6 +134,9 @@ extern "C" {
 /**
  * @def DEVICE_INIT_PM
  *
+ * @warning This macro is deprecated and will be removed in
+ *        a future version, superseded by DEVICE_DEFINE.
+ *
  * @brief Create device object and set it up for boot time initialization,
  * with the option to device_pm_ops.
  *
@@ -141,6 +147,9 @@ extern "C" {
 /**
  * @def DEVICE_AND_API_INIT_PM
  *
+ * @warning This macro is deprecated and will be removed in
+ *        a future version, superseded by DEVICE_DEFINE.
+ *
  * @brief Create device object and set it up for boot time initialization,
  * with the options to set driver_api and device_pm_ops.
  *
@@ -150,7 +159,6 @@ extern "C" {
  * @details The driver api is also set here, eliminating the need to do that
  * during initialization.
  */
-/* deprecated */
 #define DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
 			       data, cfg_info, level, prio, api) \
 	\
@@ -278,10 +286,13 @@ struct device;
  */
 /**
  * @brief Structure holding handlers for device PM operations
+ *
+ * @warning This struct is deprecated and will be removed in
+ *        a future version.
+ *
  * @param suspend Pointer to the handler for suspend operations
  * @param resume Pointer to the handler for resume operations
  */
-/* deprecated */
 struct device_pm_ops {
 	int (*suspend)(struct device *device, int pm_policy);
 	int (*resume)(struct device *device, int pm_policy);
@@ -363,6 +374,10 @@ struct device_pm_ops {
 
 /**
  * @brief Static device information (In ROM) Per driver instance
+ *
+ * @note  This struct contains deprecated struct (device_pm_ops)
+ *  that will be removed in a future version.
+ *
  * @param name name of the device
  * @param init init function for the driver
  * @param config_info address of driver instance config information
@@ -371,7 +386,7 @@ struct device_config {
 	char	*name;
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	struct device_pm_ops *dev_pm_ops;
+	struct device_pm_ops *dev_pm_ops; /* deprecated */
 	int (*device_control)(struct device *device, uint32_t command,
 			      void *context);
 #endif
@@ -452,7 +467,13 @@ void device_busy_clear(struct device *busy_dev);
 int device_pm_nop(struct device *unused_device, int unused_policy);
 
 /**
+ * @fn static inline int device_suspend(struct device *device, int pm_policy)
+ *
  * @brief Call the suspend function of a device
+ *
+ *
+ * @warning This function is deprecated and will be removed in
+ *        a future version, use device_set_power_state instead.
  *
  * Called by the Power Manager application to let the device do
  * any policy based PM suspend operations.
@@ -463,13 +484,19 @@ int device_pm_nop(struct device *unused_device, int unused_policy);
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
-static inline int device_suspend(struct device *device, int pm_policy)
+static inline int __deprecated device_suspend(struct device *device,
+						int pm_policy)
 {
 	return device->config->dev_pm_ops->suspend(device, pm_policy);
 }
 
 /**
+ * @fn static inline int device_resume(struct device *device, int pm_policy)
+ *
  * @brief Call the resume function of a device
+ *
+ * @warning This function is deprecated and will be removed in
+ *        a future version, use device_set_power_state instead.
  *
  * Called by the Power Manager application to let the device do
  * any policy based PM resume operations.
@@ -480,7 +507,8 @@ static inline int device_suspend(struct device *device, int pm_policy)
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
-static inline int device_resume(struct device *device, int pm_policy)
+static inline int __deprecated device_resume(struct device *device,
+						int pm_policy)
 {
 	return device->config->dev_pm_ops->resume(device, pm_policy);
 }
