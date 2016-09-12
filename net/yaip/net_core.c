@@ -244,6 +244,7 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 	struct net_ipv4_hdr *hdr = NET_IPV4_BUF(buf);
 	int real_len = net_buf_frags_len(buf);
 	int pkt_len = (hdr->len[0] << 8) + hdr->len[1];
+	enum net_verdict verdict = NET_DROP;
 
 	if (real_len > pkt_len) {
 		NET_DBG("IPv4 adjust pkt len to %d (was %d)",
@@ -252,8 +253,7 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 		real_len -= pkt_len;
 	} else if (real_len < pkt_len) {
 		NET_DBG("IPv4 packet size %d buf len %d", pkt_len, real_len);
-		NET_STATS_IPV4(++net_stats.ipv4.drop);
-		return NET_DROP;
+		goto drop;
 	}
 
 #if NET_DEBUG > 0
@@ -265,23 +265,39 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 	} while (0);
 #endif /* NET_DEBUG > 0 */
 
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+
 	if (!net_is_my_ipv4_addr(&hdr->dst)) {
+#if defined(CONFIG_NET_DHCPV4)
+		if (hdr->proto == IPPROTO_UDP &&
+		    net_ipv4_addr_cmp(&hdr->dst,
+				      net_ipv4_broadcast_address())) {
+
+			verdict = net_conn_input(IPPROTO_UDP, buf);
+			if (verdict != NET_DROP) {
+				return verdict;
+			}
+		}
+#endif
 		NET_DBG("IPv4 packet in buf %p not for me", buf);
-		NET_STATS_IPV4(++net_stats.ipv4.drop);
 		goto drop;
 	}
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
-		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
-		return process_icmpv4_pkt(buf, hdr);
-
+		verdict = process_icmpv4_pkt(buf, hdr);
+		break;
 	case IPPROTO_UDP:
-		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
-		return net_conn_input(IPPROTO_UDP, buf);
+		verdict = net_conn_input(IPPROTO_UDP, buf);
+		break;
+	}
+
+	if (verdict != NET_DROP) {
+		return verdict;
 	}
 
 drop:
+	NET_STATS(++net_stats.ipv4.drop);
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV4 */
