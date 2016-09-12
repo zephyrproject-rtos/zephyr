@@ -1116,8 +1116,41 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 static uint8_t smp_br_signing_info(struct bt_smp *smp, struct net_buf *buf)
 {
-	/* TODO */
-	return BT_SMP_ERR_CMD_NOTSUPP;
+	struct bt_smp_signing_info *req = (void *)buf->data;
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_keys *keys;
+	bt_addr_le_t addr;
+
+	BT_DBG("");
+
+	/*
+	 * For dualmode devices LE address is same as BR/EDR address and is of
+	 * public type.
+	 */
+	bt_addr_copy(&addr.a, &conn->br.dst);
+	addr.type = BT_ADDR_LE_PUBLIC;
+
+	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &addr);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	memcpy(keys->remote_csrk.val, req->csrk, sizeof(keys->remote_csrk.val));
+
+	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BR_INITIATOR) &&
+	    !smp->remote_dist) {
+		smp_br_distribute_keys(smp);
+	}
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		/* TODO */
+	}
+
+	return 0;
 }
 
 static const struct {
