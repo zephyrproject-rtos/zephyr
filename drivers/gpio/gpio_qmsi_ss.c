@@ -23,7 +23,6 @@
 #include "qm_ss_isr.h"
 #include "ss_clk.h"
 #include "gpio_utils.h"
-#include "gpio_api_compat.h"
 
 struct ss_gpio_qmsi_config {
 	qm_ss_gpio_t gpio;
@@ -88,7 +87,6 @@ static struct ss_gpio_qmsi_runtime ss_gpio_0_runtime;
 DEVICE_INIT(ss_gpio_0, CONFIG_GPIO_QMSI_SS_0_NAME, &ss_gpio_qmsi_init,
 	    &ss_gpio_0_runtime, &ss_gpio_0_config,
 	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-GPIO_SETUP_COMPAT_DEV(ss_gpio_0);
 
 #endif /* CONFIG_GPIO_QMSI_SS_0 */
 
@@ -103,7 +101,6 @@ static struct ss_gpio_qmsi_runtime gpio_1_runtime;
 DEVICE_INIT(ss_gpio_1, CONFIG_GPIO_QMSI_SS_1_NAME, &ss_gpio_qmsi_init,
 	    &gpio_1_runtime, &ss_gpio_1_config,
 	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-GPIO_SETUP_COMPAT_DEV(ss_gpio_1);
 
 #endif /* CONFIG_GPIO_QMSI_SS_1 */
 
@@ -289,10 +286,8 @@ static inline int ss_gpio_qmsi_enable_callback(struct device *port,
 
 	gpio_critical_region_start(port);
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		_gpio_enable_callback(port, BIT(pin));
 		context->pin_callbacks |= BIT(pin);
 	} else {
-		_gpio_enable_callback(port, 0xffffffff);
 		context->pin_callbacks = 0xffffffff;
 	}
 	gpio_critical_region_end(port);
@@ -307,10 +302,8 @@ static inline int ss_gpio_qmsi_disable_callback(struct device *port,
 
 	gpio_critical_region_start(port);
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		_gpio_disable_callback(port, BIT(pin));
 		context->pin_callbacks &= ~BIT(pin);
 	} else {
-		_gpio_disable_callback(port, 0xffffffff);
 		context->pin_callbacks = 0;
 	}
 	gpio_critical_region_end(port);

@@ -25,7 +25,6 @@
 
 #include "qm_gpio.h"
 #include "gpio_utils.h"
-#include "gpio_api_compat.h"
 #include "qm_isr.h"
 #include "clk.h"
 #include <power.h>
@@ -136,7 +135,6 @@ DEVICE_INIT_PM(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
 		DEVICE_PM_OPS_GET(gpio), &gpio_0_runtime, &gpio_0_config,
 		SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
 
-GPIO_SETUP_COMPAT_DEV(gpio_0);
 #endif /* CONFIG_GPIO_QMSI_0 */
 
 #ifdef CONFIG_GPIO_QMSI_AON
@@ -175,7 +173,6 @@ DEFINE_DEVICE_PM_OPS(gpio_aon, gpio_aon_suspend_device, gpio_aon_resume_device);
 DEVICE_INIT_PM(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
 	       DEVICE_PM_OPS_GET(gpio_aon), &gpio_aon_runtime,
 	       &gpio_aon_config, SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
-GPIO_SETUP_COMPAT_DEV(gpio_aon);
 
 #endif /* CONFIG_GPIO_QMSI_AON */
 
@@ -360,10 +357,8 @@ static inline int gpio_qmsi_enable_callback(struct device *port,
 	gpio_critical_region_start(port);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		_gpio_enable_callback(port, BIT(pin));
 		context->pin_callbacks |= BIT(pin);
 	} else {
-		_gpio_enable_callback(port, 0xffffffff);
 		context->pin_callbacks = 0xffffffff;
 	}
 
@@ -379,10 +374,8 @@ static inline int gpio_qmsi_disable_callback(struct device *port,
 	gpio_critical_region_start(port);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		_gpio_disable_callback(port, BIT(pin));
 		context->pin_callbacks &= ~BIT(pin);
 	} else {
-		_gpio_disable_callback(port, 0xffffffff);
 		context->pin_callbacks = 0;
 	}
 

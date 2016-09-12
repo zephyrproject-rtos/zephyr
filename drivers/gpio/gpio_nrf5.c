@@ -75,8 +75,6 @@ struct gpio_nrf5_config {
 };
 
 struct gpio_nrf5_data {
-	/* port ISR callback routine address */
-	gpio_callback_t callback_func;
 	/* pin callback routine enable flags, by pin number */
 	uint32_t pin_callback_enables;
 	/* port callback routine enable flag */
@@ -229,4 +227,3 @@ static int gpio_nrf5_P0_init(struct device *dev)
 }
 
 #endif /* CONFIG_GPIO_NRF5_P0 */
-

@@ -26,7 +26,6 @@
 
 #include "gpio_sch.h"
 #include "gpio_utils.h"
-#include "gpio_api_compat.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_LEVEL
 #include <misc/sys_log.h>
@@ -274,7 +273,6 @@ static int gpio_sch_enable_callback(struct device *dev,
 		gpio->cb_enabled = BIT_MASK(info->bits);
 	}
 
-	_gpio_enable_callback(dev, gpio->cb_enabled);
 	_gpio_sch_manage_callback(dev);
 
 	return 0;
@@ -295,13 +293,11 @@ static int gpio_sch_disable_callback(struct device *dev,
 		_set_bit_gtne(info->regs, pin, 0);
 
 		gpio->cb_enabled &= ~BIT(pin);
-		_gpio_disable_callback(dev, BIT(pin));
 	} else {
 		_write_gtpe(0, info->regs);
 		_write_gtne(0, info->regs);
 
 		gpio->cb_enabled = 0;
-		_gpio_disable_callback(dev, BIT_MASK(info->bits));
 	}
 
 	_gpio_sch_manage_callback(dev);
@@ -343,7 +339,6 @@ struct gpio_sch_data gpio_data_0;
 DEVICE_INIT(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME, gpio_sch_init,
 	    &gpio_data_0, &gpio_sch_0_config,
 	    SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
-GPIO_SETUP_COMPAT_DEV(gpio_0);
 
 #endif /* CONFIG_GPIO_SCH_0 */
 #if CONFIG_GPIO_SCH_1
@@ -358,6 +353,5 @@ struct gpio_sch_data gpio_data_1;
 DEVICE_INIT(gpio_1, CONFIG_GPIO_SCH_1_DEV_NAME, gpio_sch_init,
 	    &gpio_data_1, &gpio_sch_1_config,
 	    SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
-GPIO_SETUP_COMPAT_DEV(gpio_1);
 
 #endif /* CONFIG_GPIO_SCH_1 */

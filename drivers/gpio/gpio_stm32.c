@@ -28,7 +28,6 @@
 #include <interrupt_controller/exti_stm32.h>
 
 #include "gpio_utils.h"
-#include "gpio_api_compat.h"
 
 /**
  * @brief Common GPIO driver for STM32 MCUs. Each SoC must implement a
@@ -214,8 +213,7 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 		    &gpio_stm32_cfg_## __suffix,			\
 		    SECONDARY,						\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
-		    &gpio_stm32_driver);				\
-GPIO_SETUP_COMPAT_DEV(gpio_stm32_## __suffix)
+		    &gpio_stm32_driver);
 
 #ifdef CONFIG_GPIO_STM32_PORTA
 GPIO_DEVICE_INIT("GPIOA", a, GPIOA_BASE, STM32_PORTA,

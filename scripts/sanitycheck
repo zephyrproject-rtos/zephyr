@@ -396,7 +396,7 @@ class SizeCalculator:
                    "exceptions"]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset",
-                   "rodata", "devconfig", "gpio_compat"]
+                   "rodata", "devconfig"]
 
     def __init__(self, filename):
         """Constructor

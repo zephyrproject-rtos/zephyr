@@ -125,20 +125,6 @@ extern "C" {
 /** Disable GPIO pin. */
 #define GPIO_PIN_DISABLE	(1 << 11)
 
-/**
- * @typedef gpio_callback_t
- * @brief Define the application callback function signature.
- *
- * @param "struct device *port" Device struct for the GPIO device.
- * @param "uint32_t pin" The pin that triggers the callback.
- *
- * Note: This is the former callback signature used to set a unique
- *       callback (API v1.0) through gpio_set_callback(). The new
- *       struct gpio_callback below is now the preferred way.
- */
-typedef void (*gpio_callback_t)(struct device *port, uint32_t pin);
-
-
 struct gpio_callback;
 
 /**
@@ -267,21 +253,6 @@ static inline int gpio_pin_read(struct device *port, uint32_t pin,
 }
 
 /**
- * @fn int gpio_set_callback(struct device *port, gpio_callback_t callback)
- * @brief Former way of setting the application's callback.
- * @param port Pointer to the device structure for the driver instance.
- * @param callback Application's callback (or NULL to unset).
- *
- * Note: This function sets a unique callback for the driver instance,
- *       i.e. another call to this function will overwrite it. This is
- *       the old way of doing things (API v1.0) and should be replaced
- *       by gpio_add_callback() and gpio_remove_callback().
- *       Using this function will not collide with the new ones.
- */
-int __deprecated gpio_set_callback(struct device *port,
-				   gpio_callback_t callback);
-
-/**
  * @brief Helper to initialize a struct gpio_callback properly
  * @param callback A valid Application's callback structure pointer.
  * @param handler A valid handler function pointer.
@@ -304,7 +275,6 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
  * @param callback A valid Application's callback structure pointer.
  *
  * Note: enables to add as many callback as needed on the same port.
- *       This is the preferred way and is replacing gpio_set_callback().
  */
 static inline int gpio_add_callback(struct device *port,
 				    struct gpio_callback *callback)
@@ -323,8 +293,7 @@ static inline int gpio_add_callback(struct device *port,
  * @param callback A valid application's callback structure pointer.
  *
  * Note: enables to remove as many callacks as added through
- *       gpio_add_callback(). This is the preferred way and it's
- *       replacing gpio_set_callback() with a NULL pointer as a callback.
+ *       gpio_add_callback().
  */
 static inline int gpio_remove_callback(struct device *port,
 				       struct gpio_callback *callback)

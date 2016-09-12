@@ -20,7 +20,6 @@
 #include <gpio.h>
 #include "gpio_dw.h"
 #include "gpio_utils.h"
-#include "gpio_api_compat.h"
 
 #include <board.h>
 #include <sys_io.h>
@@ -313,11 +312,9 @@ static inline int gpio_dw_enable_callback(struct device *port, int access_op,
 	if (GPIO_ACCESS_BY_PIN == access_op) {
 		dw_write(base_addr, PORTA_EOI, BIT(pin));
 		dw_set_bit(base_addr, INTMASK, pin, 0);
-		_gpio_enable_callback(port, BIT(pin));
 	} else {
 		dw_write(base_addr, PORTA_EOI, BIT_MASK(config->bits));
 		dw_write(base_addr, INTMASK, 0);
-		_gpio_enable_callback(port, BIT_MASK(config->bits));
 	}
 
 	return 0;
@@ -331,10 +328,8 @@ static inline int gpio_dw_disable_callback(struct device *port, int access_op,
 
 	if (GPIO_ACCESS_BY_PIN == access_op) {
 		dw_set_bit(base_addr, INTMASK, pin, 1);
-		_gpio_disable_callback(port, BIT(pin));
 	} else {
 		dw_write(base_addr, INTMASK, BIT_MASK(config->bits));
-		_gpio_disable_callback(port, BIT_MASK(config->bits));
 	}
 
 	return 0;
@@ -511,7 +506,6 @@ DEVICE_AND_API_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
 		    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
-GPIO_SETUP_COMPAT_DEV(gpio_dw_0);
 
 void gpio_config_0_irq(struct device *port)
 {
@@ -579,7 +573,6 @@ DEVICE_AND_API_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
 		    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
-GPIO_SETUP_COMPAT_DEV(gpio_dw_1);
 
 void gpio_config_1_irq(struct device *port)
 {
@@ -646,7 +639,6 @@ DEVICE_AND_API_INIT(gpio_dw_2, CONFIG_GPIO_DW_2_NAME, gpio_dw_initialize,
 		    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
-GPIO_SETUP_COMPAT_DEV(gpio_dw_2);
 
 void gpio_config_2_irq(struct device *port)
 {
@@ -713,7 +705,6 @@ DEVICE_AND_API_INIT(gpio_dw_3, CONFIG_GPIO_DW_3_NAME, gpio_dw_initialize,
 		    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
-GPIO_SETUP_COMPAT_DEV(gpio_dw_3);
 
 void gpio_config_3_irq(struct device *port)
 {
