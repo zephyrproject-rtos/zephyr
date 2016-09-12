@@ -56,7 +56,12 @@ This module tests the following CPU and thread related routines:
 #if defined(CONFIG_HPET_TIMER)
   #define TICK_IRQ CONFIG_HPET_TIMER_IRQ
 #elif defined(CONFIG_LOAPIC_TIMER)
-  #define TICK_IRQ CONFIG_LOAPIC_TIMER_IRQ
+  #if defined(CONFIG_LOAPIC)
+    #define TICK_IRQ CONFIG_LOAPIC_TIMER_IRQ
+  #else
+    /* MVIC case */
+    #define TICK_IRQ CONFIG_MVIC_TIMER_IRQ
+  #endif
 #elif defined(CONFIG_ALTERA_AVALON_TIMER)
   #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)
