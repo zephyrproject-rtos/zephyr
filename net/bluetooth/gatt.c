@@ -543,7 +543,12 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		conn = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
-		if (!conn || conn->state != BT_CONN_CONNECTED) {
+		if (!conn) {
+			continue;
+		}
+
+		if (conn->state != BT_CONN_CONNECTED) {
+			bt_conn_unref(conn);
 			continue;
 		}
 
