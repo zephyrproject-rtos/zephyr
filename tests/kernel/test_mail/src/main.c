@@ -57,12 +57,8 @@ extern const kmbox_t myMbox;
 extern const kmbox_t noRcvrMbox;
 #endif
 
-#ifdef CONFIG_KERNEL_V2
-/* HACK TO AVOID NEED FOR MEMORY POOLS */
-#else
 kmemory_pool_t testPool			= TESTPOOL;
 kmemory_pool_t smallBlkszPool	= SMALLBLKSZPOOL;
-#endif
 
 /**
  *

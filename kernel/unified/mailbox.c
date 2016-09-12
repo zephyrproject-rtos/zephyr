@@ -178,10 +178,7 @@ static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
 
 	/* release sender's memory pool block */
 	if (rx_msg->tx_block.pool_id != NULL) {
-#if 0
-		/* NEED TO WAIT FOR MEMORY POOL SUPPORT */
 		k_mem_pool_free(&rx_msg->tx_block);
-#endif
 		rx_msg->tx_block.pool_id = NULL;
 	}
 

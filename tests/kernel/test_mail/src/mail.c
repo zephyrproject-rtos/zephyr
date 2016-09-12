@@ -55,9 +55,11 @@
 #ifdef CONFIG_KERNEL_V2
 /* unified kernel: sender (correctly) told that receiver consumed no data */
 #define MSG_CANCEL_SIZE 0
+#define DATA_PTR(x) x.data
 #else
 /* classic microkernel: sender (wrongly) told that receiver consumed all data */
 #define MSG_CANCEL_SIZE MSGSIZE
+#define DATA_PTR(x) x.pointer_to_data
 #endif
 
 static char myData1[MSGSIZE] = "This is myData1";
@@ -79,12 +81,8 @@ DEFINE_MAILBOX(myMbox);
 DEFINE_MAILBOX(noRcvrMbox);
 #endif
 
-#ifdef CONFIG_KERNEL_V2
-/* TEMPORARY HACK TO AVOID USE OF MEMORY POOLS */
-#else
 extern kmemory_pool_t testPool;
 extern kmemory_pool_t smallBlkszPool;
-#endif
 
 /**
  *
@@ -314,9 +312,6 @@ int MsgSenderTask(void)
 	TC_PRINT("%s: task_mbox_put(TICKS_UNLIMITED) for cancelled receive test is OK\n",
 			__func__);
 
-#ifdef CONFIG_KERNEL_V2
-	/* HACK TO AVOID USE OF MEMORY POOLS */
-#else
 	/* Send message used in block-based receive test */
 
 	setMsg_Sender(&MSTmsg, myMbox, msgRcvrTask, myData1, MSGSIZE, MSG_INFO2);
@@ -342,7 +337,6 @@ int MsgSenderTask(void)
 
 	TC_PRINT("%s: task_mbox_put(TICKS_UNLIMITED) for block-exhaustion receive test is OK\n",
 		__func__);
-#endif /* CONFIG_KERNEL_V2 */
 
 	/* Sync with Receiver Task, since we're about to use a timeout */
 
@@ -384,12 +378,8 @@ int MsgRcvrTask(void)
 	struct k_msg MRTmsg = {0, };   /* Message receiver task msg */
 	char rxBuffer[MSGSIZE*2];  /* Buffer to place message data in (has extra
 				  space at end for overrun testing) */
-#ifdef CONFIG_KERNEL_V2
-	/* HACK TO AVOID USE OF MEMORY POOLS */
-#else
 	struct k_block  MRTblock;      /* Message receiver task memory block */
 	struct k_block  MRTblockAlt;   /* Message receiver task memory block (alternate) */
-#endif /* CONFIG_KERNEL_V2 */
 
 	/* Receive message (no wait) from an empty mailbox */
 
@@ -565,9 +555,6 @@ int MsgRcvrTask(void)
 	TC_PRINT("%s: task_mbox_get(timeout) of message header #4 is OK\n", __func__);
 	TC_PRINT("%s: task_mbox_data_get cancellation of message #4 is OK\n", __func__);
 
-#ifdef CONFIG_KERNEL_V2
-	/* HACK TO AVOID USE OF MEMORY POOLS */
-#else
 	/* Receive message header for block-based receive test */
 
 	setMsg_Receiver(&MRTmsg, myMbox, ANYTASK, NULL, MSGSIZE);
@@ -600,9 +587,9 @@ int MsgRcvrTask(void)
 		TC_ERROR("task_mbox_data_block_get returned %d\n", retValue);
 		return TC_FAIL;
 	}
-	if (strcmp((char *)(MRTblock.pointer_to_data), myData1) != 0) {
+	if (strcmp((char *)(DATA_PTR(MRTblock)), myData1) != 0) {
 		TC_ERROR("task_mbox_data_block_get got wrong data #1 (%s)\n",
-			(char *)MRTblock.pointer_to_data);
+			 (char *)DATA_PTR(MRTblock));
 		return TC_FAIL;
 	}
 
@@ -647,9 +634,9 @@ int MsgRcvrTask(void)
 		TC_ERROR("task_mbox_data_block_get returned %d\n", retValue);
 		return TC_FAIL;
 	}
-	if (strcmp((char *)(MRTblockAlt.pointer_to_data), myData2) != 0) {
+	if (strcmp((char *)(DATA_PTR(MRTblockAlt)), myData2) != 0) {
 		TC_ERROR("task_mbox_data_block_get got wrong data #2 (%s)\n",
-			(char *)MRTblockAlt.pointer_to_data);
+			 (char *)DATA_PTR(MRTblockAlt));
 		return TC_FAIL;
 	}
 
@@ -660,7 +647,6 @@ int MsgRcvrTask(void)
 	/* Free block used with most recent message */
 
 	task_mem_pool_free(&MRTblockAlt);
-#endif /* CONFIG_KERNEL_V2 */
 
 	/* Sync with Sender Task, since he's about to use a timeout */
 
