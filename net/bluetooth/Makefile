@@ -22,9 +22,11 @@ ifeq ($(CONFIG_BLUETOOTH_CONN),y)
 		obj-y += smp_null.o
 	endif
 
-	obj-$(CONFIG_BLUETOOTH_BREDR) += keys_br.o l2cap_br.o
+	obj-$(CONFIG_BLUETOOTH_BREDR) += keys_br.o l2cap_br.o avdtp.o
 
 	obj-$(CONFIG_BLUETOOTH_RFCOMM) += rfcomm.o
 
 	obj-$(CONFIG_BLUETOOTH_HFP_HF) += hfp_hf.o
+
+	obj-$(CONFIG_BLUETOOTH_AVDTP) += avdtp.o
 endif

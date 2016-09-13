@@ -467,6 +467,12 @@ config BLUETOOTH_HFP_HF
 	help
 	  This option enables Bluetooth HF support
 
+config BLUETOOTH_AVDTP
+	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
+	default n
+	help
+	  This option enables Bluetooth AVDTP support
+
 config BLUETOOTH_BREDR_NAME
 	string "Bluetooth BR/EDR device name"
 	default "Zephyr"

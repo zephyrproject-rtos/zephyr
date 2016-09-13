@@ -35,6 +35,7 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
+#include "avdtp_internal.h"
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 #include "rfcomm_internal.h"
 #endif
@@ -1625,4 +1626,7 @@ void bt_l2cap_br_init(void)
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 	bt_rfcomm_init();
 #endif /* CONFIG_BLUETOOTH_RFCOMM */
+#if defined(CONFIG_BLUETOOTH_AVDTP)
+	bt_avdtp_init();
+#endif /* CONFIG_BLUETOOTH_AVDTP */
 }
