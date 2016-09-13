@@ -3434,13 +3434,18 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	memset(smp, 0, sizeof(*smp));
 }
 
-static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
+static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
+				  uint8_t hci_status)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
 	struct bt_conn *conn = chan->conn;
 
-	BT_DBG("chan %p conn %p handle %u encrypt 0x%02x", chan, conn,
-	       conn->handle, conn->encrypt);
+	BT_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x",
+	       chan, conn, conn->handle, conn->encrypt, hci_status);
+
+	if (hci_status) {
+		return;
+	}
 
 	if (!smp || !conn->encrypt) {
 		return;

@@ -321,20 +321,20 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 	conn->channels = NULL;
 }
 
-void bt_l2cap_encrypt_change(struct bt_conn *conn)
+void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan;
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
-		l2cap_br_encrypt_change(conn);
+		l2cap_br_encrypt_change(conn, hci_status);
 		return;
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 	for (chan = conn->channels; chan; chan = chan->_next) {
 		if (chan->ops->encrypt_change) {
-			chan->ops->encrypt_change(chan);
+			chan->ops->encrypt_change(chan, hci_status);
 		}
 	}
 }

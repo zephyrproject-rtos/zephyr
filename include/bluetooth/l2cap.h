@@ -176,11 +176,19 @@ struct bt_l2cap_chan_ops {
 	/** Channel encrypt_change callback
 	 *
 	 *  If this callback is provided it will be called whenever the
-	 *  security level changed.
+	 *  security level changed (indirectly link encryption done) or
+	 *  authentication procedure fails. In both cases security initiator
+	 *  and responder got the final status (HCI status) passed by
+	 *  related to encryption and authentication events from local host's
+	 *  controller.
 	 *
-	 *  @param chan The channel which has encryption status changed.
+	 *  @param chan The channel which has made encryption status changed.
+	 *  @param status HCI status of performed security procedure caused
+	 *  by channel security requirements. The value is populated
+	 *  by HCI layer and set to 0 when success and to non-zero (reference to
+	 *  HCI Error Codes) when security/authentication failed.
 	 */
-	void (*encrypt_change)(struct bt_l2cap_chan *chan);
+	void (*encrypt_change)(struct bt_l2cap_chan *chan, uint8_t hci_status);
 
 	/** Channel alloc_buf callback
 	 *

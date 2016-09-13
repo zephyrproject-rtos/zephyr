@@ -1872,14 +1872,24 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP)
-static void bt_att_encrypt_change(struct bt_l2cap_chan *chan)
+static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
+				  uint8_t hci_status)
 {
 	struct bt_att *att = ATT_CHAN(chan);
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 	struct bt_conn *conn = ch->chan.conn;
 
-	BT_DBG("chan %p conn %p handle %u sec_level 0x%02x", ch, conn,
-	       conn->handle, conn->sec_level);
+	BT_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x", ch,
+	       conn, conn->handle, conn->sec_level, hci_status);
+
+	/*
+	 * If status (HCI status of security procedure) is non-zero, notify
+	 * outstanding request about security failure.
+	 */
+	if (hci_status) {
+		att_handle_rsp(att, NULL, 0, BT_ATT_ERR_AUTHENTICATION);
+		return;
+	}
 
 	if (conn->sec_level == BT_SECURITY_LOW) {
 		return;

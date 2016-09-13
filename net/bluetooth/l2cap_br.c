@@ -1489,7 +1489,7 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
-static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan)
+static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 {
 	struct net_buf *buf;
 	struct bt_l2cap_conn_rsp *rsp;
@@ -1499,6 +1499,9 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan)
 	if (chan->state != BT_L2CAP_CONNECT) {
 		return;
 	}
+
+	BT_DBG("chan %p status 0x%02x encr 0x%02x", chan, status,
+	       chan->conn->encrypt);
 
 	if (!chan->conn->encrypt) {
 		return;
@@ -1558,15 +1561,15 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan)
 	}
 }
 
-void l2cap_br_encrypt_change(struct bt_conn *conn)
+void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan;
 
 	for (chan = conn->channels; chan; chan = chan->_next) {
-		l2cap_br_conn_pend(chan);
+		l2cap_br_conn_pend(chan, hci_status);
 
 		if (chan->ops && chan->ops->encrypt_change) {
-			chan->ops->encrypt_change(chan);
+			chan->ops->encrypt_change(chan, hci_status);
 		}
 	}
 }

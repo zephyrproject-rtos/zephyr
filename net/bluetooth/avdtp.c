@@ -74,7 +74,7 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p session %p", chan, AVDTP_CHAN(chan));
 }
 
-void bt_avdtp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan)
+void bt_avdtp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan, uint8_t status)
 {
 	BT_DBG("");
 }
