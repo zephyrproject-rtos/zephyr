@@ -19,8 +19,7 @@
 #ifndef __INC_string_h__
 #define __INC_string_h__
 
-#include <bits/null.h>
-#include <bits/size_t.h>
+#include <stddef.h>
 #include <bits/restrict.h>
 
 #ifdef __cplusplus

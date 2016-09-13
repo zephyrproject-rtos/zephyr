@@ -19,9 +19,7 @@
 #ifndef __INC_stdlib_h__
 #define __INC_stdlib_h__
 
-#include <bits/null.h>
-#include <bits/size_t.h>
-
+#include <stddef.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

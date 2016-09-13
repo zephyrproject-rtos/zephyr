@@ -20,9 +20,8 @@
 #define __INC_stdio_h__
 
 #include <stdarg.h>     /* Needed to get definition of va_list */
-#include <bits/null.h>
-#include <bits/size_t.h>
 #include <bits/restrict.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
