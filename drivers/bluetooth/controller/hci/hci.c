@@ -25,6 +25,8 @@
 #include "defines.h"
 #include "ticker.h"
 #include "mem.h"
+#include "rand.h"
+#include "cpu.h"
 #include "ecb.h"
 #include "ccm.h"
 #include "radio.h"
@@ -554,13 +556,19 @@ static void le_encrypt(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 static void le_rand(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_le_rand *rp = HCI_CC_RP(evt);
+	uint8_t count = sizeof(rp->rand);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
 	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 
-	/** TODO fill rand */
+	while (count) {
+		count = rand_get(count, rp->rand);
+		if (count) {
+			cpu_sleep();
+		}
+	}
 }
 
 static void le_start_encryption(uint8_t *cp, struct bt_hci_evt_hdr *evt)
