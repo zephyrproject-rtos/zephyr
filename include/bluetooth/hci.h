@@ -193,6 +193,7 @@ struct bt_hci_cmd_hdr {
 #define BT_OGF_LINK_CTRL                        0x01
 #define BT_OGF_BASEBAND                         0x03
 #define BT_OGF_INFO                             0x04
+#define BT_OGF_STATUS                           0x05
 #define BT_OGF_LE                               0x08
 #define BT_OGF_VS                               0x3f
 
@@ -466,6 +467,16 @@ struct bt_hci_rp_read_buffer_size {
 struct bt_hci_rp_read_bd_addr {
 	uint8_t   status;
 	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE      BT_OP(BT_OGF_STATUS, 0x0008)
+struct bt_hci_cp_read_encryption_key_size {
+	uint16_t handle;
+} __packed;
+struct bt_hci_rp_read_encryption_key_size {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  key_size;
 } __packed;
 
 /* BLE */
