@@ -53,57 +53,57 @@
 
 void main(void)
 {
-        uint8_t seed[128];
-        struct tc_hmac_prng_struct h;
-        uint32_t size = (1 << 15);
-        uint8_t random[size];
-        uint32_t i;
-        uint32_t result = TC_PASS;
+	uint8_t seed[128];
+	struct tc_hmac_prng_struct h;
+	uint32_t size = (1 << 15);
+	uint8_t random[size];
+	uint32_t i;
+	uint32_t result = TC_PASS;
 
-        TC_START("Performing HMAC-PRNG tests:");
-        TC_PRINT("HMAC-PRNG test#1 (init, reseed, generate):\n");
+	TC_START("Performing HMAC-PRNG tests:");
+	TC_PRINT("HMAC-PRNG test#1 (init, reseed, generate):\n");
 
-        /* Fake seed (replace by a a truly random seed): */
-        for (i = 0; i < (uint32_t) sizeof(seed); ++i) {
-                seed[i] = i;
-        }
+	/* Fake seed (replace by a a truly random seed): */
+	for (i = 0; i < (uint32_t) sizeof(seed); ++i) {
+		seed[i] = i;
+	}
 
-        /* Fake personalization and additional_input (replace by appropriate
+	/* Fake personalization and additional_input (replace by appropriate
 	 * values): */
 	/* e.g.: hostname+timestamp */
-        uint8_t *personalization = (uint8_t *) "HOSTNAME";
-        uint8_t *additional_input = (uint8_t *) "additional input";
+	uint8_t *personalization = (uint8_t *) "HOSTNAME";
+	uint8_t *additional_input = (uint8_t *) "additional input";
 
-        TC_PRINT("HMAC-PRNG test#1 (init):\n");
-        if (tc_hmac_prng_init(&h, personalization,
+	TC_PRINT("HMAC-PRNG test#1 (init):\n");
+	if (tc_hmac_prng_init(&h, personalization,
 			      sizeof(personalization)) == 0) {
-                TC_ERROR("HMAC-PRNG initialization failed.\n");
-                result = TC_FAIL;
-                goto exitTest;
-        }
-        TC_END_RESULT(result);
+		TC_ERROR("HMAC-PRNG initialization failed.\n");
+		result = TC_FAIL;
+		goto exitTest;
+	}
+	TC_END_RESULT(result);
 
-        TC_PRINT("HMAC-PRNG test#1 (reseed):\n");
-        if (tc_hmac_prng_reseed(&h, seed, sizeof(seed), additional_input,
-                                sizeof(additional_input)) == 0) {
-                TC_ERROR("HMAC-PRNG reseed failed.\n");
-                result = TC_FAIL;
-                goto exitTest;
-        }
+	TC_PRINT("HMAC-PRNG test#1 (reseed):\n");
+	if (tc_hmac_prng_reseed(&h, seed, sizeof(seed), additional_input,
+				sizeof(additional_input)) == 0) {
+		TC_ERROR("HMAC-PRNG reseed failed.\n");
+		result = TC_FAIL;
+		goto exitTest;
+	}
 
-        TC_END_RESULT(result);
+	TC_END_RESULT(result);
 
-        TC_PRINT("HMAC-PRNG test#1 (generate):\n");
-        if (tc_hmac_prng_generate(random, size, &h) < 1) {
-                TC_ERROR("HMAC-PRNG generate failed.\n");
-                result = TC_FAIL;
-                goto exitTest;
-        }
-        TC_END_RESULT(result);
+	TC_PRINT("HMAC-PRNG test#1 (generate):\n");
+	if (tc_hmac_prng_generate(random, size, &h) < 1) {
+		TC_ERROR("HMAC-PRNG generate failed.\n");
+		result = TC_FAIL;
+		goto exitTest;
+	}
+	TC_END_RESULT(result);
 
-        TC_PRINT("All HMAC tests succeeded!\n");
+	TC_PRINT("All HMAC tests succeeded!\n");
 
- exitTest:
-        TC_END_RESULT(result);
-        TC_END_REPORT(result);
+exitTest:
+	TC_END_RESULT(result);
+	TC_END_REPORT(result);
 }
