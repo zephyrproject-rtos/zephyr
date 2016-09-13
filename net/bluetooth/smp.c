@@ -795,6 +795,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_pairing *rsp;
 	struct net_buf *rsp_buf;
+	uint8_t max_key_size;
 
 	BT_DBG("");
 
@@ -809,8 +810,12 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED;
 	}
 
-	if ((req->max_key_size > BT_SMP_MAX_ENC_KEY_SIZE) ||
-	    (req->max_key_size < BT_SMP_MIN_ENC_KEY_SIZE)) {
+	max_key_size = bt_conn_enc_key_size(conn);
+	if (!max_key_size) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	if (req->max_key_size != max_key_size) {
 		return BT_SMP_ERR_ENC_KEY_SIZE;
 	}
 
@@ -832,7 +837,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	rsp->auth_req = 0x00;
 	rsp->io_capability = 0x00;
 	rsp->oob_flag = 0x00;
-	rsp->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
+	rsp->max_key_size = max_key_size;
 	rsp->init_key_dist = (req->init_key_dist & BR_RECV_KEYS_SC);
 	rsp->resp_key_dist = (req->resp_key_dist & BR_RECV_KEYS_SC);
 
