@@ -1004,12 +1004,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 		net_buf_unref(buf);
 	}
 
-	/* Return any unacknowledged packets */
-	if (conn->pending_pkts) {
-		while (conn->pending_pkts--) {
-			nano_fiber_sem_give(bt_conn_get_pkts(conn));
-		}
-	}
+	BT_ASSERT(!conn->pending_pkts);
 
 	bt_conn_reset_rx_state(conn);
 
@@ -1113,6 +1108,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		} else if (old_state == BT_CONN_CONNECT_SCAN && conn->err) {
 			/* this indicate LE Create Connection failed */
 			notify_connected(conn);
+		}
+
+		/* Return any unacknowledged packets */
+		while (conn->pending_pkts) {
+			nano_fiber_sem_give(bt_conn_get_pkts(conn));
+			conn->pending_pkts--;
 		}
 
 		/* Cancel Connection Update if it is pending */
