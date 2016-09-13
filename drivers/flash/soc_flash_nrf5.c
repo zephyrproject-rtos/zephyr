@@ -62,24 +62,50 @@ static int flash_nrf5_write(struct device *dev, off_t addr,
 			     const void *data, size_t len)
 {
 	uint32_t addr_word;
+	uint32_t tmp_word;
 	void *data_word;
-
-	/* Write needs a full 32-bit word into a word-aligned address */
-	if ((!is_aligned_32(len)) || (!is_aligned_32(addr))) {
-		return -EINVAL;
-	}
+	uint32_t remaining = len;
+	uint32_t count = 0;
 
 	if (!is_addr_valid(addr, len)) {
 		return -EINVAL;
 	}
 
+	/* Start with a word-aligned address and handle the offset */
+	addr_word = addr & ~0x3;
+
+	/* If not aligned, read first word, update and write it back */
+	if (!is_aligned_32(addr)) {
+		tmp_word = *(uint32_t *)(addr_word);
+		count = sizeof(uint32_t) - (addr & 0x3);
+		if (count > len) {
+			count = len;
+		}
+		memcpy((uint8_t *)&tmp_word + (addr & 0x3), data, count);
+		nvmc_wait_ready();
+		*(uint32_t *)addr_word = tmp_word;
+		addr_word = addr + count;
+		remaining -= count;
+	}
+
 	/* Write all the 4-byte aligned data */
-	for (uint32_t i = 0; i < len; i += sizeof(uint32_t)) {
-		addr_word = addr + i;
-		data_word = (void *)data + i;
+	data_word = (void *) data + count;
+	while (remaining >= sizeof(uint32_t)) {
 		nvmc_wait_ready();
 		*(uint32_t *)addr_word = *(uint32_t *)data_word;
+		addr_word += sizeof(uint32_t);
+		data_word += sizeof(uint32_t);
+		remaining -= sizeof(uint32_t);
 	}
+
+	/* Write remaining data */
+	if (remaining) {
+		tmp_word = *(uint32_t *)(addr_word);
+		memcpy((uint8_t *)&tmp_word, data_word, remaining);
+		nvmc_wait_ready();
+		*(uint32_t *)addr_word = tmp_word;
+	}
+
 	nvmc_wait_ready();
 
 	return 0;
