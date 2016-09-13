@@ -51,19 +51,25 @@ static struct {
 	uint8_t tx[HCI_PACKET_SIZE_MAX];
 } hci_context;
 
+/* event packet length */
 #define HCI_EVT_LEN(evt) ((uint8_t)(1 + sizeof(struct bt_hci_evt_hdr) + \
-			evt->len))
+			  evt->len))
 
+/* data packet length */
 #define HCI_DATA_LEN(data_hdr) ((uint8_t)(1 + sizeof(struct bt_hci_acl_hdr) + \
 				data_hdr->len))
 
-#define _HCI_CC_LEN(st) ((uint8_t)(sizeof(struct bt_hci_evt_cmd_complete) + \
-			sizeof(st)))
+/* command complete event length */
+#define HCI_CC_LEN(type) ((uint8_t)(sizeof(struct bt_hci_evt_cmd_complete) + \
+			  sizeof(type)))
 
-#define HCI_CC_LEN(stn) (_HCI_CC_LEN(struct stn))
+/* le meta event length */
+#define HCI_ME_LEN(type) ((uint8_t)(sizeof(struct bt_hci_evt_le_meta_event) + \
+			  sizeof(type)))
 
-#define HCI_EVTP(evt_hdr) (void *)((uint8_t *)evt_hdr + \
-			sizeof(struct bt_hci_evt_hdr))
+/* direct access to the event parameters */
+#define HCI_EVTP(evt_hdr) ((void *)((uint8_t *)evt_hdr + \
+			   sizeof(struct bt_hci_evt_hdr)))
 
 /* direct access to the command status event parameters */
 #define HCI_CS(evt_hdr) ((struct bt_hci_evt_cmd_status *)HCI_EVTP(evt_hdr))
@@ -73,21 +79,17 @@ static struct {
 
 /* direct access to the command complete event return parameters */
 #define HCI_CC_RP(evt_hdr) ((void *)(((uint8_t *)HCI_EVTP(evt_hdr)) + \
-				     sizeof(struct bt_hci_evt_cmd_complete)))
+			    sizeof(struct bt_hci_evt_cmd_complete)))
 
 /* direct access to the command complete status event parameters */
 #define HCI_CC_ST(evt_hdr) ((struct bt_hci_evt_cc_status *)(HCI_CC_RP(evt_hdr)))
 
 /* direct access to the LE meta event parameters */
-#define HCI_ME(evt_hdr) ((struct bt_hci_evt_le_meta_event *) \
-					HCI_EVTP(evt_hdr))
+#define HCI_ME(evt_hdr) ((struct bt_hci_evt_le_meta_event *)HCI_EVTP(evt_hdr))
 
 /* direct access to the meta event subevent */
 #define HCI_SE(evt_hdr) ((void *)(((uint8_t *)HCI_EVTP(evt_hdr)) + \
-				     sizeof(struct bt_hci_evt_le_meta_event)))
-
-#define _HCI_ME_LEN(st) ((uint8_t)(sizeof(struct bt_hci_evt_le_meta_event) + \
-			sizeof(st)))
+			 sizeof(struct bt_hci_evt_le_meta_event)))
 
 static void disconnect(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
@@ -139,7 +141,7 @@ static void set_event_mask(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	/** TODO */
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -149,7 +151,7 @@ static void reset(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	/** TODO */
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -180,7 +182,7 @@ static void read_local_version_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_read_local_version_info *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 	rp->hci_version = 0;
@@ -195,7 +197,7 @@ static void read_supported_commands(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_read_supported_commands *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 	memset(&rp->commands[0], 0, sizeof(rp->commands));
@@ -235,7 +237,7 @@ static void read_local_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_read_local_features *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 	memset(&rp->features[0], 0x00, sizeof(rp->features));
@@ -248,7 +250,7 @@ static void read_bd_addr(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_read_bd_addr *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 	ll_address_get(0, &rp->bdaddr.val[0]);
@@ -288,7 +290,7 @@ static void le_set_event_mask(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	/** TODO */
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -298,7 +300,7 @@ static void le_read_buffer_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_le_read_buffer_size *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 
@@ -311,7 +313,7 @@ static void le_read_local_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_le_read_local_features *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 
@@ -326,7 +328,7 @@ static void le_set_random_address(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	ll_address_set(1, &cmd->bdaddr.val[0]);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -344,7 +346,7 @@ static void le_set_adv_param(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 			  cmd->filter_policy);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -354,7 +356,7 @@ static void le_read_adv_ch_tx_power(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_le_read_ch_tx_power *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 
@@ -368,7 +370,7 @@ static void le_set_adv_data(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	ll_adv_data_set(cmd->len, &cmd->data[0]);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -380,7 +382,7 @@ static void le_set_scan_rsp_data(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	ll_scan_data_set(cmd->len, &cmd->data[0]);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -393,7 +395,7 @@ static void le_set_adv_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	status = ll_adv_enable(cmd->enable);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
@@ -406,7 +408,7 @@ static void le_set_scan_params(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 			   cmd->addr_type, cmd->filter_policy);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -419,7 +421,7 @@ static void le_set_scan_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	status = ll_scan_enable(cmd->enable);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
@@ -452,7 +454,7 @@ static void le_create_conn_cancel(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	status = radio_connect_disable();
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
@@ -462,7 +464,7 @@ static void le_read_wl_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_le_read_wl_size *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 
@@ -474,7 +476,7 @@ static void le_clear_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	radio_filter_clear();
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = 0x00;
 }
@@ -487,7 +489,7 @@ static void le_add_dev_to_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	status = radio_filter_add(cmd->addr.type, &cmd->addr.a.val[0]);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 :
 					     BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -518,7 +520,7 @@ static void le_set_host_ch_classif(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	status = radio_chm_update(&cmd->ch_map[0]);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
@@ -544,7 +546,7 @@ static void le_encrypt(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	ecb_encrypt(&cmd->key[0], &cmd->plaintext[0], &rp->enc_data[0], 0);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 }
@@ -554,7 +556,7 @@ static void le_rand(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_le_rand *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 
@@ -586,7 +588,7 @@ static void le_ltk_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	status = radio_start_enc_req_send(cmd->handle, 0x00, &cmd->ltk[0]);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = cmd->handle;
 }
@@ -601,7 +603,7 @@ static void le_ltk_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 					  BT_HCI_ERR_PIN_OR_KEY_MISSING, NULL);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = cmd->handle;
 }
@@ -611,7 +613,7 @@ static void le_read_supp_states(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_rp_le_read_supp_states *rp = HCI_CC_RP(evt);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 
 	rp->status = 0x00;
 
@@ -630,7 +632,7 @@ static void le_conn_param_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 				   cmd->timeout);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = cmd->handle;
 }
@@ -644,7 +646,7 @@ static void le_conn_param_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	status = radio_conn_update(cmd->handle, 2, cmd->reason, 0, 0, 0);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = cmd->handle;
 }
@@ -659,7 +661,7 @@ static void le_set_data_len(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	status = radio_length_req_send(cmd->handle, cmd->tx_octets);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-	evt->len = _HCI_CC_LEN(*rp);
+	evt->len = HCI_CC_LEN(*rp);
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = cmd->handle;
 }
@@ -834,7 +836,7 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 
 	if (err == -EINVAL) {
 		evt->evt = BT_HCI_EVT_CMD_COMPLETE;
-		evt->len = HCI_CC_LEN(bt_hci_evt_cc_status);
+		evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
 		HCI_CC_ST(evt)->status = BT_HCI_ERR_UNKNOWN_CMD;
 		*len = HCI_EVT_LEN(evt);
 	}
@@ -949,7 +951,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *buf,
 	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
 
 	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = _HCI_ME_LEN(*sep);
+	evt->len = HCI_ME_LEN(*sep);
 
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_ADVERTISING_REPORT;
 
@@ -983,7 +985,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 	radio_cc = (struct radio_le_conn_cmplt *) (pdu_data->payload.lldata);
 
 	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = _HCI_ME_LEN(*sep);
+	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
 
 	sep->status = radio_cc->status;
@@ -1020,7 +1022,7 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 			(pdu_data->payload.lldata);
 
 	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = _HCI_ME_LEN(*sep);
+	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE;
 
 	sep->status = radio_cu->status;
@@ -1109,7 +1111,7 @@ static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_evt_le_ltk_request *sep = HCI_SE(evt);
 
 	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = _HCI_ME_LEN(*sep);
+	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_LTK_REQUEST;
 
 	sep->handle = handle;
@@ -1138,7 +1140,7 @@ static void le_remote_feat_complete(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_ev_le_remote_feat_complete *sep = HCI_SE(evt);
 
 	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = _HCI_ME_LEN(*sep);
+	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent = BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE;
 
 	sep->status = 0x00;
@@ -1173,7 +1175,7 @@ static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_evt_le_conn_param_req *sep = HCI_SE(evt);
 
 	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = _HCI_ME_LEN(*sep);
+	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_PARAM_REQ;
 
 	sep->handle = handle;
@@ -1194,7 +1196,7 @@ static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_evt_le_data_len_change *sep = HCI_SE(evt);
 
 	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = _HCI_ME_LEN(*sep);
+	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent =  BT_HCI_EVT_LE_DATA_LEN_CHANGE;
 
 	sep->handle = handle;
