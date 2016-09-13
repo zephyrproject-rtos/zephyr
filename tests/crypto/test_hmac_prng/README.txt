@@ -1,8 +1,8 @@
-Title: test_aes
+Title: test_hmac_prng
 
 Description:
 
-This test verifies that the TinyCrypt AES APIs operate as expected.
+This test verifies that the TinyCrypt PRNG APIs operate as expected.
 
 --------------------------------------------------------------------------------
 Building and Running Project:
@@ -28,15 +28,18 @@ or
 --------------------------------------------------------------------------------
 
 Sample Output:
-tc_start() - Performing AES128-CTR mode tests:
-Performing CTR tests:
-CTR test #1 (encryption SP 800-38a tests):
+tc_start() - Performing HMAC-PRNG tests:
+HMAC-PRNG test#1 (init, reseed, generate):
+HMAC-PRNG test#1 (init):
 ===================================================================
-PASS - test_1_and_2.
-CTR test #2 (decryption SP 800-38a tests):
+PASS - main.
+HMAC-PRNG test#1 (reseed):
 ===================================================================
-PASS - test_1_and_2.
-All CTR tests succeeded!
+PASS - main.
+HMAC-PRNG test#1 (generate):
+===================================================================
+PASS - main.
+All HMAC tests succeeded!
 ===================================================================
 PASS - main.
 ===================================================================

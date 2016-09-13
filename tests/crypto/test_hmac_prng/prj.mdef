@@ -1,4 +1,4 @@
-% Application       : test PRNG TinyCrypt APIs
+% Application       : test HMAC PRNG TinyCrypt APIs
 
 % TASK NAME          PRIO ENTRY           STACK GROUPS
 % ====================================================

@@ -1,4 +1,4 @@
-Title: test_cbc
+Title: test_cbc_mode
 
 Description:
 
