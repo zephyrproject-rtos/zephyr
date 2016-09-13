@@ -12,8 +12,18 @@
 #
 #######################################################################
 
+REQUIRED_SDK_VER=0.8.2
+
 ifndef ZEPHYR_SDK_INSTALL_DIR
+
 $(error ZEPHYR_SDK_INSTALL_DIR is not set)
+else
+SDK_VERSION = $(shell cat ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
+SDK_CHECK = $(shell vercomp $(REQUIRED_SDK_VER) $(SDK_VERSION) || echo $$?)
+
+ifeq ($(SDK_CHECK),1)
+$(error (The SDK version you are using is old, please update your SDK. You need at least SDK version $(REQUIRED_SDK_VER)))
+endif
 endif
 
 ifeq ($(HOST_OS),MINGW)
