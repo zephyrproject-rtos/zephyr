@@ -27,15 +27,18 @@
 #define TEST_DATA_WORD_1  0xaabb
 #define TEST_DATA_WORD_2  0xabcd
 #define TEST_DATA_WORD_3  0x1234
-#define TEST_DATA_LEN     4
 
 void main(void)
 {
 	struct device *flash_dev;
 	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
-				TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
+				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
 	uint32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,
-				TEST_DATA_WORD_2, TEST_DATA_WORD_0 };
+				    TEST_DATA_WORD_2, TEST_DATA_WORD_0 };
+	uint32_t buf_array_3[8] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
+				    TEST_DATA_WORD_2, TEST_DATA_WORD_3,
+				    TEST_DATA_WORD_0, TEST_DATA_WORD_1,
+				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
 	uint32_t buf_word = 0;
 	uint32_t i, offset;
 
@@ -58,18 +61,18 @@ void main(void)
 
 	printf("\nTest 2: Flash write (word array 1)\n");
 	flash_write_protection_set(flash_dev, false);
-	for (i = 0; i < TEST_DATA_LEN; i++) {
+	for (i = 0; i < ARRAY_SIZE(buf_array_1); i++) {
 		offset = FLASH_TEST_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_1[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_1[i],
-					TEST_DATA_LEN) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash write failed!\n");
 			return;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
-					TEST_DATA_LEN) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash read failed!\n");
 			return;
 		}
@@ -92,23 +95,56 @@ void main(void)
 
 	printf("\nTest 4: Flash write (word array 2)\n");
 	flash_write_protection_set(flash_dev, false);
-	for (i = 0; i < TEST_DATA_LEN; i++) {
+	for (i = 0; i < ARRAY_SIZE(buf_array_2); i++) {
 		offset = FLASH_TEST_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_2[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_2[i],
-					TEST_DATA_LEN) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash write failed!\n");
 			return;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
-					TEST_DATA_LEN) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash read failed!\n");
 			return;
 		}
 		printf("   Data read: %x\n", buf_word);
 		if (buf_array_2[i] == buf_word) {
+			printf("   Data read matches data written. Good!\n");
+		} else {
+			printf("   Data read does not match data written!\n");
+		}
+	}
+	flash_write_protection_set(flash_dev, true);
+
+	printf("\nTest 5: Flash erase page at 0x%x\n", FLASH_TEST_OFFSET);
+	if (flash_erase(flash_dev, FLASH_TEST_OFFSET, FLASH_PAGE_SIZE) != 0) {
+		printf("   Flash erase failed!\n");
+	} else {
+		printf("   Flash erase succeeded!\n");
+	}
+
+	printf("\nTest 6: Non-word aligned write (word array 3)\n");
+	flash_write_protection_set(flash_dev, false);
+	for (i = 0; i < ARRAY_SIZE(buf_array_3); i++) {
+		offset = FLASH_TEST_OFFSET + (i << 2) + 1;
+		printf("   Attempted to write %x at 0x%x\n", buf_array_3[i],
+				offset);
+		if (flash_write(flash_dev, offset, &buf_array_3[i],
+					sizeof(uint32_t)) != 0) {
+			printf("   Flash write failed!\n");
+			return;
+		}
+		printf("   Attempted to read 0x%x\n", offset);
+		if (flash_read(flash_dev, offset, &buf_word,
+					sizeof(uint32_t)) != 0) {
+			printf("   Flash read failed!\n");
+			return;
+		}
+		printf("   Data read: %x\n", buf_word);
+		if (buf_array_3[i] == buf_word) {
 			printf("   Data read matches data written. Good!\n");
 		} else {
 			printf("   Data read does not match data written!\n");
