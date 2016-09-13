@@ -45,14 +45,6 @@ enum {
 	HCI_EVT = 0x04,
 };
 
-struct __packed hci_data {
-	uint16_t handle:12;
-	uint16_t pb:2;
-	uint16_t bc:2;
-	uint16_t len;
-	uint8_t data[1];
-};
-
 static struct {
 	uint16_t rx_len;
 	uint8_t rx[HCI_PACKET_SIZE_MAX];
@@ -62,8 +54,8 @@ static struct {
 #define HCI_EVT_LEN(evt) ((uint8_t)(1 + sizeof(struct bt_hci_evt_hdr) + \
 			evt->len))
 
-#define HCI_DATA_LEN(dat) ((uint8_t)(1 + offsetof(struct hci_data, data) + \
-			       dat->len))
+#define HCI_DATA_LEN(data_hdr) ((uint8_t)(1 + sizeof(struct bt_hci_acl_hdr) + \
+				data_hdr->len))
 
 #define _HCI_CC_LEN(st) ((uint8_t)(sizeof(struct bt_hci_evt_cmd_complete) + \
 			sizeof(st)))
@@ -864,18 +856,21 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 
 static void hci_data_handle(void)
 {
-	struct hci_data *data;
+	struct bt_hci_acl_hdr *data;
+	uint16_t handle;
+	uint8_t flags;
 
-	if (!(hci_context.rx_len > offsetof(struct hci_data, data))) {
+	if (!(hci_context.rx_len > sizeof(struct bt_hci_acl_hdr))) {
 		return;
 	}
 
-	data = (struct hci_data *)&hci_context.rx[1];
+	data = (struct bt_hci_acl_hdr *)&hci_context.rx[1];
 	if (!(hci_context.rx_len >=
-	    (1 + offsetof(struct hci_data, data) +
-	     data->len))) {
+	    (1 + sizeof(struct bt_hci_acl_hdr) + data->len))) {
 		return;
 	}
+	handle = bt_acl_handle(data->handle);
+	flags = bt_acl_flags(data->handle);
 
 	struct radio_pdu_node_tx *radio_pdu_node_tx;
 
@@ -884,18 +879,17 @@ static void hci_data_handle(void)
 		struct pdu_data *pdu_data;
 
 		pdu_data = (struct pdu_data *)radio_pdu_node_tx->pdu_data;
-		if (data->pb == 0x00 || data->pb == 0x02) {
+		if (flags == BT_ACL_START_NO_FLUSH || flags == BT_ACL_START) {
 			pdu_data->ll_id = PDU_DATA_LLID_DATA_START;
 		} else {
 			pdu_data->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
 		}
 		pdu_data->len = data->len;
 		memcpy(&pdu_data->payload.lldata[0],
-			 &data->data[0],
-			 data->len);
-		if (radio_tx_mem_enqueue(data->handle, radio_pdu_node_tx)) {
-			radio_tx_mem_release
-			    (radio_pdu_node_tx);
+		       ((uint8_t *)data) + sizeof(struct bt_hci_acl_hdr),
+		       data->len);
+		if (radio_tx_mem_enqueue(handle, radio_pdu_node_tx)) {
+			radio_tx_mem_release(radio_pdu_node_tx);
 		}
 	}
 
@@ -1272,15 +1266,14 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 {
-
-	uint16_t instance;
-	struct hci_data *data;
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct bt_hci_acl_hdr *acl;
 	struct pdu_data *pdu_data;
+	uint16_t handle;
 
 	radio_pdu_node_rx = (struct radio_pdu_node_rx *)buf;
 	pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
-	instance = radio_pdu_node_rx->hdr.handle;
+	handle = radio_pdu_node_rx->hdr.handle;
 
 	switch (pdu_data->ll_id) {
 	case PDU_DATA_LLID_DATA_CONTINUE:
@@ -1288,19 +1281,17 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 #if !TEST_DROP_RX
 		hci_context.tx[0] = HCI_DATA;
 
-		data = (struct hci_data *)&hci_context.tx[1];
-		data->handle = instance;
+		acl = (struct bt_hci_acl_hdr *)&hci_context.tx[1];
 		if (pdu_data->ll_id == PDU_DATA_LLID_DATA_START) {
-			data->pb = 0x02;
+			acl->handle = bt_acl_handle_pack(handle, BT_ACL_START);
 		} else {
-			data->pb = 0x01;
+			acl->handle = bt_acl_handle_pack(handle, BT_ACL_CONT);
 		}
-		data->bc = 0;
-		data->len = pdu_data->len;
-		memcpy(&data->data[0], &pdu_data->payload.lldata[0],
-			 pdu_data->len);
+		acl->len = pdu_data->len;
+		memcpy(((uint8_t *)acl) + sizeof(struct bt_hci_acl_hdr),
+		       &pdu_data->payload.lldata[0], pdu_data->len);
 
-		*len = HCI_DATA_LEN(data);
+		*len = HCI_DATA_LEN(acl);
 		*out = &hci_context.tx[0];
 #else
 		if (s_rx_cnt != pdu_data->payload.lldata[0]) {
