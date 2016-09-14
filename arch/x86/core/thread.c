@@ -45,8 +45,8 @@ tNANO _nanokernel = {0};
 
 #if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
 	|| defined(CONFIG_X86_IAMCU)
-void _thread_entry_wrapper(_thread_entry_t, _thread_arg_t,
-			   _thread_arg_t, _thread_arg_t);
+void _thread_entry_wrapper(_thread_entry_t, void *,
+			   void *, void *);
 #endif
 
 /**
