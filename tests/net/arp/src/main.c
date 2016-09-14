@@ -342,7 +342,6 @@ static bool run_tests(void)
 	struct in_addr dst_far = { { { 10, 11, 12, 13 } } };
 	struct in_addr dst_far2 = { { { 172, 16, 14, 186 } } };
 	struct in_addr src = { { { 192, 168, 0, 1 } } };
-	struct in_addr mcast = { { { 224, 1, 2, 3 } } };
 	struct in_addr netmask = { { { 255, 255, 255, 0 } } };
 	struct in_addr gw = { { { 192, 168, 0, 42 } } };
 
@@ -353,74 +352,7 @@ static bool run_tests(void)
 	net_if_ipv4_set_gw(iface, &gw);
 	net_if_ipv4_set_netmask(iface, &netmask);
 
-	/* Broadcast and multicast tests */
-	buf = net_nbuf_get_reserve_tx(0);
-	if (!buf) {
-		printk("Out of mem TX xcast\n");
-		return false;
-	}
-
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
-	if (!frag) {
-		printk("Out of mem DATA xcast\n");
-		return false;
-	}
-
-	net_buf_frag_add(buf, frag);
-
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
-	net_nbuf_set_iface(buf, iface);
-
-	ipv4 = (struct net_ipv4_hdr *)net_buf_add(frag,
-						  sizeof(struct net_ipv4_hdr));
-	net_ipaddr_copy(&ipv4->src, &src);
-	net_ipaddr_copy(&ipv4->dst, net_ipv4_broadcast_address());
-
-	buf2 = net_arp_prepare(buf);
-
-	if (buf2 != buf) {
-		printk("ARP broadcast buffer different\n");
-		return false;
-	}
-
-	eth_hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
-
-	if (memcmp(&eth_hdr->dst.addr, net_eth_broadcast_addr(),
-		   sizeof(struct net_eth_addr))) {
-		char out[sizeof("xx:xx:xx:xx:xx:xx")];
-		snprintf(out, sizeof(out),
-			 net_sprint_ll_addr((uint8_t *)&eth_hdr->dst.addr,
-					    sizeof(struct net_eth_addr)));
-		printk("ETH addr dest invalid %s, should be %s", out,
-		       net_sprint_ll_addr((uint8_t *)net_eth_broadcast_addr(),
-					  sizeof(struct net_eth_addr)));
-		return false;
-	}
-
-	net_ipaddr_copy(&ipv4->dst, &mcast);
-
-	buf2 = net_arp_prepare(buf);
-
-	if (buf2 != buf) {
-		printk("ARP multicast buffer different\n");
-		return false;
-	}
-
-	if (memcmp(&eth_hdr->dst.addr, &multicast_eth_addr,
-		   sizeof(struct net_eth_addr))) {
-		char out[sizeof("xx:xx:xx:xx:xx:xx")];
-		snprintf(out, sizeof(out),
-			 net_sprint_ll_addr((uint8_t *)&eth_hdr->dst.addr,
-					    sizeof(struct net_eth_addr)));
-		printk("ETH maddr dest invalid %s, should be %s", out,
-		       net_sprint_ll_addr((uint8_t *)&multicast_eth_addr,
-					  sizeof(struct net_eth_addr)));
-		return false;
-	}
-
-	net_nbuf_unref(buf);
-
-	/* Then the unicast test */
+	/* Unicast test */
 	ifaddr = net_if_ipv4_addr_add(iface,
 				      &src,
 				      NET_ADDR_MANUAL,
