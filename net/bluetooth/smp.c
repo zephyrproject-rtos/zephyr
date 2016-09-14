@@ -869,6 +869,22 @@ static void smp_br_distribute_keys(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_SIGNING */
 }
 
+static bool smp_br_pairing_allowed(struct bt_smp *smp)
+{
+	if (smp->chan.chan.conn->encrypt == 0x02) {
+		return true;
+	}
+
+#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
+	if (smp->chan.chan.conn->encrypt == 0x01) {
+		BT_WARN("Allowing BR/EDR SMP with P-192 key");
+		return true;
+	}
+#endif
+
+	return false;
+}
+
 static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
@@ -886,15 +902,8 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	 * using P256, a Pairing Failed shall be sent with the error code
 	 * "Cross-transport Key Derivation/Generation not allowed" (0x0E)."
 	 */
-	if (smp->chan.chan.conn->encrypt != 0x02) {
-#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
-		if (!smp->chan.chan.conn->encrypt) {
-			return BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED;
-		}
-		BT_WARN("Allowing BR/EDR SMP with P-192 key");
-#else
+	if (!smp_br_pairing_allowed(smp)) {
 		return BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED;
-#endif /*CONFIG_BLUETOOTH_SMP_FORCE_BREDR*/
 	}
 
 	max_key_size = bt_conn_enc_key_size(conn);
