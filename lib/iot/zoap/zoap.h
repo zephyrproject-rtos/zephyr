@@ -149,8 +149,8 @@ struct zoap_resource;
  * remote entity.
  */
 typedef int (*zoap_method_t)(struct zoap_resource *resource,
-			      struct zoap_packet *request,
-			      const void *from);
+			     struct zoap_packet *request,
+			     const void *from);
 
 /**
  * @brief Description of CoAP resource.
@@ -234,7 +234,7 @@ int zoap_packet_init(struct zoap_packet *pkt, struct net_buf *buf);
  * that long.
  */
 int zoap_pending_init(struct zoap_pending *pending,
-		       const struct zoap_packet *request);
+		      const struct zoap_packet *request);
 
 /**
  * Returns the next available pending struct, that can be used to track
@@ -315,14 +315,13 @@ int zoap_packet_set_used(struct zoap_packet *pkt, uint16_t len);
  * in numeric order of their codes.
  */
 int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
-		     const void *value, uint16_t len);
+		    const void *value, uint16_t len);
 
 /**
  * Return the values associated with the option of value @a code.
  */
 int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,
-		       struct zoap_option *options, uint16_t veclen);
-
+		      struct zoap_option *options, uint16_t veclen);
 
 /**
  * Returns the version present in a CoAP packet.
@@ -338,7 +337,7 @@ uint8_t zoap_header_get_type(const struct zoap_packet *pkt);
  * Returns the token associated with a CoAP packet.
  */
 const uint8_t *zoap_header_get_token(const struct zoap_packet *pkt,
-				      uint8_t *len);
+				     uint8_t *len);
 
 /**
  * Returns the code present in the header of a CoAP packet.
@@ -364,7 +363,7 @@ void zoap_header_set_type(struct zoap_packet *pkt, uint8_t type);
  * Sets the token present in the CoAP header of a packet.
  */
 int zoap_header_set_token(struct zoap_packet *pkt, const uint8_t *token,
-			   uint8_t tokenlen);
+			  uint8_t tokenlen);
 
 /**
  * Sets the code present in the header of a CoAP packet.
