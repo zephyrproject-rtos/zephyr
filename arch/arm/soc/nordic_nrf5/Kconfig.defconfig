@@ -15,4 +15,14 @@
 # limitations under the License.
 #
 
+if BLUETOOTH_CONTROLLER
+
+config CLOCK_CONTROL
+	default y
+
+config CLOCK_CONTROL_NRF5
+	default y
+
+endif # BLUETOOTH_CONTROLLER
+
 source "arch/arm/soc/nordic_nrf5/*/Kconfig.defconfig.series"
