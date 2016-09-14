@@ -19,7 +19,6 @@ config SOC_SERIES_QUARK_D2000
 	select LOAPIC_TIMER
 	select XIP
 	select MVIC
-	select X86_IAMCU
 	select HAS_QMSI
 	select SOC_FAMILY_QUARK
 	help

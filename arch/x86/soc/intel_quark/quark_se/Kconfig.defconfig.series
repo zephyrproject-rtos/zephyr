@@ -19,6 +19,13 @@ if SOC_SERIES_QUARK_SE
 config SOC_SERIES
 	default quark_se
 
+config X86_IAMCU
+	def_bool y
+
+config TOOLCHAIN_VARIANT
+	default "iamcu" if X86_IAMCU
+	default "" if !X86_IAMCU
+
 config PHYS_RAM_ADDR
 	default 0xA8006400
 
@@ -39,9 +46,6 @@ config IOAPIC_NUM_RTES
 
 config LOAPIC_TIMER_IRQ
 	default 64 if LOAPIC_TIMER
-
-config TOOLCHAIN_VARIANT
-	default "iamcu"
 
 config QMSI
 	def_bool y
