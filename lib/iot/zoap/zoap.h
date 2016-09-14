@@ -151,7 +151,8 @@ struct zoap_resource;
  */
 typedef int (*zoap_method_t)(struct zoap_resource *resource,
 			     struct zoap_packet *request,
-			     const void *from);
+			     const uip_ipaddr_t *addr,
+			     uint16_t port);
 
 /**
  * Type of the callback being called when a resource's has observers to be
@@ -199,7 +200,9 @@ struct zoap_packet {
  * a pending request.
  */
 typedef int (*zoap_reply_t)(const struct zoap_packet *response,
-			     struct zoap_reply *reply, const void *from);
+			    struct zoap_reply *reply,
+			    const uip_ipaddr_t *addr,
+			    uint16_t port);
 
 /**
  * Represents a request awaiting for an acknowledgment (ACK).
@@ -313,7 +316,8 @@ struct zoap_pending *zoap_pending_received(
  * that response.
  */
 struct zoap_reply *zoap_response_received(
-	const struct zoap_packet *response, const void *from,
+	const struct zoap_packet *response,
+	const uip_ipaddr_t *addr, uint16_t port,
 	struct zoap_reply *replies, size_t len);
 
 /**
@@ -345,8 +349,8 @@ void zoap_reply_clear(struct zoap_reply *reply);
  * matching resources.
  */
 int zoap_handle_request(struct zoap_packet *pkt,
-			 struct zoap_resource *resources,
-			 const void *from);
+			struct zoap_resource *resources,
+			const uip_ipaddr_t *addr, uint16_t port);
 
 /**
  * Indicates that this resource was updated and that the @a notify callback

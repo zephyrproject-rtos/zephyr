@@ -19,6 +19,7 @@
 
 #include <zephyr.h>
 
+#include <misc/byteorder.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
 #include <net/ip_buf.h>
@@ -42,10 +43,10 @@ char fiberStack[STACKSIZE];
 static struct net_context *context;
 
 static int test_get(struct zoap_resource *resource,
-		       struct zoap_packet *request,
-		       const void *from)
+		    struct zoap_packet *request,
+		    const uip_ipaddr_t *addr,
+		    uint16_t port)
 {
-	struct net_context *ctx = (struct net_context *) from;
 	struct net_buf *buf;
 	struct zoap_packet response;
 	uint8_t *payload, code, type;
@@ -93,7 +94,7 @@ static int test_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_reply(ctx, buf);
+	return net_reply(context, buf);
 }
 
 static const char * const test_path[] = { "test", NULL };
@@ -111,6 +112,8 @@ static void udp_receive(void)
 	int r;
 
 	while (true) {
+		struct uip_conn *conn;
+
 		buf = net_receive(context, TICKS_UNLIMITED);
 		if (!buf) {
 			continue;
@@ -122,7 +125,10 @@ static void udp_receive(void)
 			continue;
 		}
 
-		r = zoap_handle_request(&request, resources, context);
+		conn = uip_conn(buf);
+
+		r = zoap_handle_request(&request, resources, &conn->ripaddr,
+					sys_be16_to_cpu(conn->rport));
 		if (r < 0) {
 			printf("No handler for such request (%d)\n", r);
 			continue;

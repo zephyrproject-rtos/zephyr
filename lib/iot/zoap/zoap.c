@@ -530,8 +530,8 @@ static zoap_method_t method_from_code(const struct zoap_resource *resource,
 }
 
 int zoap_handle_request(struct zoap_packet *pkt,
-			 struct zoap_resource *resources,
-			 const void *from)
+			struct zoap_resource *resources,
+			const uip_ipaddr_t *addr, uint16_t port)
 {
 	struct zoap_resource *resource;
 
@@ -551,7 +551,7 @@ int zoap_handle_request(struct zoap_packet *pkt,
 			return 0;
 		}
 
-		return method(resource, pkt, from);
+		return method(resource, pkt, addr, port);
 	}
 
 	return -ENOENT;
@@ -587,7 +587,8 @@ static int get_observe_option(const struct zoap_packet *pkt)
 }
 
 struct zoap_reply *zoap_response_received(
-	const struct zoap_packet *response, const void *from,
+	const struct zoap_packet *response,
+	const uip_ipaddr_t *addr, uint16_t port,
 	struct zoap_reply *replies, size_t len)
 {
 	struct zoap_reply *r;
@@ -621,7 +622,7 @@ struct zoap_reply *zoap_response_received(
 			r->age = age;
 		}
 
-		r->reply(response, r, from);
+		r->reply(response, r, addr, port);
 		return r;
 	}
 

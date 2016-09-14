@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include <misc/byteorder.h>
 #include <misc/nano_work.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
@@ -58,7 +59,9 @@ static void msg_dump(const char *s, uint8_t *data, unsigned len)
 }
 
 static int resource_reply_cb(const struct zoap_packet *response,
-			     struct zoap_reply *reply, const void *from)
+			     struct zoap_reply *reply,
+			     const uip_ipaddr_t *addr,
+			     uint16_t port)
 {
 	struct net_buf *buf = response->buf;
 
@@ -76,6 +79,8 @@ static void udp_receive(void)
 	int r;
 
 	while (true) {
+		struct uip_conn *conn;
+
 		buf = net_receive(receive_context, TICKS_UNLIMITED);
 		if (!buf) {
 			continue;
@@ -87,13 +92,17 @@ static void udp_receive(void)
 			continue;
 		}
 
+		conn = uip_conn(buf);
+
 		pending = zoap_pending_received(&response, pendings,
 						NUM_PENDINGS);
 		if (pending) {
 			/* If necessary cancel retransmissions */
 		}
 
-		reply = zoap_response_received(&response, buf,
+		reply = zoap_response_received(&response,
+					       &conn->ripaddr,
+					       sys_be16_to_cpu(conn->rport),
 					       replies, NUM_REPLIES);
 		if (!reply) {
 			printf("No handler for response (%d)\n", r);
