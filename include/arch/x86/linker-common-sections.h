@@ -134,7 +134,7 @@ SECTIONS
 
 #ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 	IRQ_TO_INTERRUPT_VECTOR_MEMORY
-#endif /* CONFIG_MVIC */
+#endif
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -249,7 +249,7 @@ SECTIONS
 	SECTION_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
 	{
 	/*
-	 * This section is used for non-intialized objects that
+	 * This section is used for non-initialized objects that
 	 * will not be cleared during the boot process.
 	 */
 	*(.noinit)

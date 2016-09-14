@@ -268,7 +268,7 @@ SECTIONS
     SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
         {
         /*
-         * This section is used for non-intialized objects that
+         * This section is used for non-initialized objects that
          * will not be cleared during the boot process.
          */
         *(.noinit)
