@@ -42,7 +42,9 @@ static void gpio_stm32_isr(int line, void *arg)
 	struct device *dev = arg;
 	struct gpio_stm32_data *data = dev->driver_data;
 
-	_gpio_fire_callbacks(&data->cb, dev, BIT(line));
+	if (BIT(line) & data->cb_pins) {
+		_gpio_fire_callbacks(&data->cb, dev, BIT(line));
+	}
 }
 
 /**
@@ -145,11 +147,13 @@ static int gpio_stm32_manage_callback(struct device *dev,
 static int gpio_stm32_enable_callback(struct device *dev,
 				      int access_op, uint32_t pin)
 {
+	struct gpio_stm32_data *data = dev->driver_data;
+
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	_gpio_enable_callback(dev, BIT(pin));
+	data->cb_pins |= BIT(pin);
 
 	return 0;
 }
@@ -157,11 +161,13 @@ static int gpio_stm32_enable_callback(struct device *dev,
 static int gpio_stm32_disable_callback(struct device *dev,
 				       int access_op, uint32_t pin)
 {
+	struct gpio_stm32_data *data = dev->driver_data;
+
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	_gpio_disable_callback(dev, BIT(pin));
+	data->cb_pins &= ~BIT(pin);
 
 	return 0;
 }

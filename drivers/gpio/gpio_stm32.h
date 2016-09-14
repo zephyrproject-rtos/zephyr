@@ -42,6 +42,8 @@ struct gpio_stm32_config {
  * @brief driver data
  */
 struct gpio_stm32_data {
+	/* Enabled INT pins generating a cb */
+	uint32_t cb_pins;
 	/* user ISR cb */
 	sys_slist_t cb;
 };
