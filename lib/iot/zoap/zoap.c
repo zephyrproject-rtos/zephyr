@@ -1028,3 +1028,219 @@ void zoap_header_set_id(struct zoap_packet *pkt, uint16_t id)
 
 	sys_put_be16(id, &appdata[2]);
 }
+
+int zoap_block_transfer_init(struct zoap_block_context *ctx,
+			      enum zoap_block_size block_size,
+			      size_t total_size)
+{
+	ctx->block_size = block_size;
+	ctx->total_size = total_size;
+	ctx->current = 0;
+
+	return 0;
+}
+
+#define GET_BLOCK_SIZE(v) (((v) & 0x7))
+#define GET_MORE(v) (!!((v) & 0x08))
+#define GET_NUM(v) ((v) >> 4)
+
+#define SET_BLOCK_SIZE(v, b) (v |= ((b) & 0x07))
+#define SET_MORE(v, m) ((v) |= (m) ? 0x08 : 0x00)
+#define SET_NUM(v, n) ((v) |= ((n) << 4))
+
+static bool is_request(struct zoap_packet *pkt)
+{
+	uint8_t code = zoap_header_get_code(pkt);
+
+	return !(code & ~ZOAP_REQUEST_MASK);
+}
+
+int zoap_add_block1_option(struct zoap_packet *pkt,
+			    struct zoap_block_context *ctx)
+{
+	uint16_t bytes = zoap_block_size_to_bytes(ctx->block_size);
+	unsigned int val = 0;
+	int r;
+
+	if (is_request(pkt)) {
+		SET_BLOCK_SIZE(val, ctx->block_size);
+		SET_MORE(val, ctx->current + bytes < ctx->total_size);
+		SET_NUM(val, ctx->current / bytes);
+	} else {
+		SET_BLOCK_SIZE(val, ctx->block_size);
+		SET_NUM(val, ctx->current / bytes);
+	}
+
+	r = zoap_add_option_int(pkt, ZOAP_OPTION_BLOCK1, val);
+
+	return r;
+}
+
+int zoap_add_block2_option(struct zoap_packet *pkt,
+			    struct zoap_block_context *ctx)
+{
+	int r, val = 0;
+	uint16_t bytes = zoap_block_size_to_bytes(ctx->block_size);
+
+	if (is_request(pkt)) {
+		SET_BLOCK_SIZE(val, ctx->block_size);
+		SET_NUM(val, ctx->current / bytes);
+	} else {
+		SET_BLOCK_SIZE(val, ctx->block_size);
+		SET_MORE(val, ctx->current + bytes < ctx->total_size);
+		SET_NUM(val, ctx->current / bytes);
+	}
+
+	r = zoap_add_option_int(pkt, ZOAP_OPTION_BLOCK2, val);
+
+	return r;
+}
+
+int zoap_add_size1_option(struct zoap_packet *pkt,
+			   struct zoap_block_context *ctx)
+{
+	return zoap_add_option_int(pkt, ZOAP_OPTION_SIZE1, ctx->total_size);
+}
+
+int zoap_add_size2_option(struct zoap_packet *pkt,
+			   struct zoap_block_context *ctx)
+{
+	return zoap_add_option_int(pkt, ZOAP_OPTION_SIZE2, ctx->total_size);
+}
+
+struct block_transfer {
+	int num;
+	int block_size;
+	bool more;
+};
+
+static unsigned int get_block_option(struct zoap_packet *pkt, uint16_t code)
+{
+	struct zoap_option option;
+	unsigned int val;
+	int count = 1;
+
+	count = zoap_find_options(pkt, code, &option, count);
+	if (count <= 0)
+		return 0;
+
+	val = zoap_option_value_to_int(&option);
+
+	return val;
+}
+
+static int update_descriptive_block(struct zoap_block_context *ctx,
+				    int block, int size)
+{
+	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+
+	if (block == 0) {
+		return -ENOENT;
+	}
+
+	if (size && ctx->total_size && ctx->total_size != size) {
+		return -EINVAL;
+	}
+
+	if (ctx->block_size > 0 && GET_BLOCK_SIZE(block) > ctx->block_size) {
+		return -EINVAL;
+	}
+
+	if (ctx->total_size && new_current > ctx->total_size) {
+		return -EINVAL;
+	}
+
+	if (size) {
+		ctx->total_size = size;
+	}
+	ctx->current = new_current;
+	ctx->block_size = GET_BLOCK_SIZE(block);
+
+	return 0;
+}
+
+static int update_control_block1(struct zoap_block_context *ctx,
+				     int block, int size)
+{
+	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+
+	if (block == 0) {
+		return 0;
+	}
+
+	if (new_current != ctx->current) {
+		return -EINVAL;
+	}
+
+	if (GET_BLOCK_SIZE(block) > ctx->block_size) {
+		return -EINVAL;
+	}
+
+	ctx->block_size = GET_BLOCK_SIZE(block);
+	ctx->total_size = size;
+
+	return 0;
+}
+
+static int update_control_block2(struct zoap_block_context *ctx,
+				 int block, int size)
+{
+	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+
+	if (block == 0) {
+		return 0;
+	}
+
+	if (GET_MORE(block)) {
+		return -EINVAL;
+	}
+
+	if (GET_NUM(block) > 0 && GET_BLOCK_SIZE(block) != ctx->block_size) {
+		return -EINVAL;
+	}
+
+	ctx->current = new_current;
+	ctx->block_size = GET_BLOCK_SIZE(block);
+	ctx->total_size = size;
+
+	return 0;
+}
+
+int zoap_update_from_block(struct zoap_packet *pkt,
+			   struct zoap_block_context *ctx)
+{
+	unsigned int block1, block2, size1, size2;
+	int r;
+
+	block1 = get_block_option(pkt, ZOAP_OPTION_BLOCK1);
+	block2 = get_block_option(pkt, ZOAP_OPTION_BLOCK2);
+	size1 = get_block_option(pkt, ZOAP_OPTION_SIZE1);
+	size2 = get_block_option(pkt, ZOAP_OPTION_SIZE2);
+
+	if (is_request(pkt)) {
+		r = update_control_block2(ctx, block2, size2);
+		if (r) {
+			return r;
+		}
+
+		return update_descriptive_block(ctx, block1, size1);
+	}
+
+	r = update_control_block1(ctx, block1, size1);
+	if (r) {
+		return r;
+	}
+
+	return update_descriptive_block(ctx, block2, size2);
+}
+
+size_t zoap_next_block(struct zoap_block_context *ctx)
+{
+	if (ctx->current >= ctx->total_size) {
+		return 0;
+	}
+
+	ctx->current += zoap_block_size_to_bytes(ctx->block_size);
+
+	return ctx->current;
+}

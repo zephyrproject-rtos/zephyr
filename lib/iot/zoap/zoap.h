@@ -54,8 +54,12 @@ enum zoap_option_num {
 	ZOAP_OPTION_URI_QUERY = 15,
 	ZOAP_OPTION_ACCEPT = 17,
 	ZOAP_OPTION_LOCATION_QUERY = 20,
+	ZOAP_OPTION_BLOCK2 = 23,
+	ZOAP_OPTION_BLOCK1 = 27,
+	ZOAP_OPTION_SIZE2 = 28,
 	ZOAP_OPTION_PROXY_URI = 35,
-	ZOAP_OPTION_PROXY_SCHEME = 39
+	ZOAP_OPTION_PROXY_SCHEME = 39,
+	ZOAP_OPTION_SIZE1 = 60,
 };
 
 /**
@@ -127,6 +131,7 @@ enum zoap_response_code {
 	ZOAP_RESPONSE_CODE_NOT_FOUND = zoap_make_response_code(4, 4),
 	ZOAP_RESPONSE_CODE_NOT_ALLOWED = zoap_make_response_code(4, 5),
 	ZOAP_RESPONSE_CODE_NOT_ACCEPTABLE = zoap_make_response_code(4, 6),
+	ZOAP_RESPONSE_CODE_INCOMPLETE = zoap_make_response_code(4, 8),
 	ZOAP_RESPONSE_CODE_PRECONDITION_FAILED = zoap_make_response_code(4, 12),
 	ZOAP_RESPONSE_CODE_REQUEST_TOO_LARGE = zoap_make_response_code(4, 13),
 	ZOAP_RESPONSE_CODE_INTERNAL_ERROR = zoap_make_response_code(5, 0),
@@ -401,6 +406,88 @@ int zoap_add_option_int(struct zoap_packet *pkt, uint16_t code,
  */
 int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,
 		      struct zoap_option *options, uint16_t veclen);
+
+/**
+ * Represents the size of each block that will be transferred using
+ * block-wise transfers [RFC7959]:
+ *
+ * Each entry maps directly to the value that is used in the wire.
+ *
+ * https://tools.ietf.org/html/rfc7959
+ */
+enum zoap_block_size {
+	ZOAP_BLOCK_16,
+	ZOAP_BLOCK_32,
+	ZOAP_BLOCK_64,
+	ZOAP_BLOCK_128,
+	ZOAP_BLOCK_256,
+	ZOAP_BLOCK_512,
+	ZOAP_BLOCK_1024,
+};
+
+/**
+ * Helper for converting the enumeration to the size expressed in bytes.
+ */
+static inline uint16_t zoap_block_size_to_bytes(
+	enum zoap_block_size block_size)
+{
+	return (1 << (block_size + 4));
+}
+
+/**
+ * Represents the current state of a block-wise transaction.
+ */
+struct zoap_block_context {
+	size_t total_size;
+	size_t current;
+	enum zoap_block_size block_size;
+};
+
+/**
+ * Initializes the context of a block-wise transfer.
+ */
+int zoap_block_transfer_init(struct zoap_block_context *ctx,
+			      enum zoap_block_size block_size,
+			      size_t total_size);
+
+/**
+ * Add BLOCK1 option to the packet.
+ */
+int zoap_add_block1_option(struct zoap_packet *pkt,
+			   struct zoap_block_context *ctx);
+
+/**
+ * Add BLOCK2 option to the packet.
+ */
+int zoap_add_block2_option(struct zoap_packet *pkt,
+			   struct zoap_block_context *ctx);
+
+/**
+ * Add SIZE1 option to the packet.
+ */
+int zoap_add_size1_option(struct zoap_packet *pkt,
+			 struct zoap_block_context *ctx);
+
+/**
+ * Add SIZE2 option to the packet.
+ */
+int zoap_add_size2_option(struct zoap_packet *pkt,
+			 struct zoap_block_context *ctx);
+
+/**
+ * Retrieves BLOCK{1,2} and SIZE{1,2} from @a pkt and updates
+ * @a ctx accordingly.
+ *
+ * Returns an error if the packet contains invalid options.
+ */
+int zoap_update_from_block(struct zoap_packet *pkt,
+			   struct zoap_block_context *ctx);
+/**
+ * Updates @a ctx so after this is called the current entry
+ * indicates the correct offset in the body of data being
+ * transferred.
+ */
+size_t zoap_next_block(struct zoap_block_context *ctx);
 
 /**
  * Returns the version present in a CoAP packet.
