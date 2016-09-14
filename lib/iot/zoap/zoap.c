@@ -557,6 +557,28 @@ int zoap_handle_request(struct zoap_packet *pkt,
 	return -ENOENT;
 }
 
+unsigned int zoap_option_value_to_int(const struct zoap_option *option)
+{
+	switch (option->len) {
+	case 0:
+		return 0;
+	case 1:
+		return option->value[0];
+	case 2:
+		return (option->value[0] << 0) | (option->value[1] << 8);
+	case 3:
+		return (option->value[0] << 0) | (option->value[1] << 8) |
+			(option->value[2] << 16);
+	case 4:
+		return (option->value[0] << 0) | (option->value[1] << 8) |
+			(option->value[2] << 16) | (option->value[3] << 24);
+	default:
+		return 0;
+	}
+
+	return 0;
+}
+
 static int get_observe_option(const struct zoap_packet *pkt)
 {
 	struct zoap_option option = {};
@@ -568,22 +590,7 @@ static int get_observe_option(const struct zoap_packet *pkt)
 		return -ENOENT;
 	}
 
-	/* The value is in the network order, and has at max 3 bytes. */
-	switch (option.len) {
-	case 0:
-		return 0;
-	case 1:
-		return option.value[0];
-	case 2:
-		return (option.value[0] << 0) | (option.value[1] << 8);
-	case 3:
-		return (option.value[0] << 0) | (option.value[1] << 8) |
-			(option.value[2] << 16);
-	default:
-		return -EINVAL;
-	}
-
-	return -ENOENT;
+	return zoap_option_value_to_int(&option);
 }
 
 struct zoap_reply *zoap_response_received(
@@ -805,6 +812,32 @@ int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
 	ip_buf_appdatalen(buf) += r;
 
 	return 0;
+}
+
+int zoap_add_option_int(struct zoap_packet *pkt, uint16_t code,
+			unsigned int val)
+{
+	uint8_t data[4], len;
+
+	if (val == 0) {
+		data[0] = 0;
+		len = 0;
+	} else if (val < 0xFF) {
+		data[0] = (uint8_t) val;
+		len = 1;
+	} else if (val < 0xFFFF) {
+		sys_put_be16(val, data);
+		len = 2;
+	} else if (val < 0xFFFFFF) {
+		sys_put_be16(val, data);
+		data[2] = val >> 16;
+		len = 3;
+	} else {
+		sys_put_be32(val, data);
+		len = 4;
+	}
+
+	return zoap_add_option(pkt, code, data, len);
 }
 
 int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,

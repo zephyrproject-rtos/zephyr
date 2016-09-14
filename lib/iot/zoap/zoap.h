@@ -383,6 +383,20 @@ int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
 		    const void *value, uint16_t len);
 
 /**
+ * Converts an option to its integer representation. It assumes that
+ * the number is encoded in the network byte order in the option.
+ */
+unsigned int zoap_option_value_to_int(const struct zoap_option *option);
+
+/**
+ * Adds an integer value option to the packet. The option must be
+ * added in numeric order of their codes, and the least amount of
+ * bytes will be used to encode the value.
+ */
+int zoap_add_option_int(struct zoap_packet *pkt, uint16_t code,
+			unsigned int val);
+
+/**
  * Return the values associated with the option of value @a code.
  */
 int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,
