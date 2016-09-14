@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -36,9 +37,11 @@
 #define ZOAP_LIMITED_BUF_SIZE 9
 
 #define NUM_PENDINGS 3
+#define NUM_OBSERVERS 3
+#define NUM_REPLIES 3
 
 static struct nano_fifo zoap_fifo;
-static NET_BUF_POOL(zoap_pool, 1, ZOAP_BUF_SIZE,
+static NET_BUF_POOL(zoap_pool, 2, ZOAP_BUF_SIZE,
 		    &zoap_fifo, NULL, sizeof(struct ip_buf));
 
 static struct nano_fifo zoap_incoming_fifo;
@@ -50,6 +53,27 @@ static NET_BUF_POOL(zoap_limited_pool, 1, ZOAP_LIMITED_BUF_SIZE,
 		    &zoap_limited_fifo, NULL, sizeof(struct ip_buf));
 
 static struct zoap_pending pendings[NUM_PENDINGS];
+static struct zoap_observer observers[NUM_OBSERVERS];
+static struct zoap_reply replies[NUM_REPLIES];
+
+/* Some forward declarations */
+static void server_notify_callback(struct zoap_resource *resource,
+				   struct zoap_observer *observer);
+static int server_resource_1_get(struct zoap_resource *resource,
+				struct zoap_packet *request,
+				const uip_ipaddr_t *addr,
+				uint16_t port);
+
+static const char * const server_resource_1_path[] = { "s", "1", NULL };
+static struct zoap_resource server_resources[] =  {
+	{ .path = server_resource_1_path,
+	  .get = server_resource_1_get,
+	  .notify = server_notify_callback },
+	{ },
+};
+
+#define MY_PORT 12345
+static uip_ipaddr_t dummy_addr;
 
 static int test_build_empty_pdu(void)
 {
@@ -403,9 +427,8 @@ done:
 
 static int test_retransmit_second_round(void)
 {
-	struct zoap_packet resp;
+	struct zoap_packet pkt, resp;
 	struct zoap_pending *pending, *resp_pending;
-	struct zoap_packet pkt;
 	struct net_buf *buf, *resp_buf = NULL;
 	uint16_t id;
 	int result = TC_FAIL;
@@ -457,7 +480,7 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	resp_buf = net_buf_get(&zoap_incoming_fifo, 0);
+	resp_buf = net_buf_get(&zoap_fifo, 0);
 	if (!resp_buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -502,6 +525,294 @@ done:
 	return result;
 }
 
+
+static void server_notify_callback(struct zoap_resource *resource,
+				   struct zoap_observer *observer)
+{
+	if (!uip_ipaddr_cmp(&observer->addr, &dummy_addr)) {
+		TC_ERROR("The address of the observer doesn't match.\n");
+		return;
+	}
+
+	if (observer->port != MY_PORT) {
+		TC_ERROR("The port of the observer doesn't match.\n");
+		return;
+	}
+
+	zoap_remove_observer(resource, observer);
+
+	TC_PRINT("You should see this\n");
+}
+
+static int server_resource_1_get(struct zoap_resource *resource,
+				 struct zoap_packet *request,
+				 const uip_ipaddr_t *addr,
+				 uint16_t port)
+{
+	struct zoap_packet response;
+	struct zoap_observer *observer;
+	struct net_buf *buf = resource->user_data;
+	char payload[] = "This is the payload";
+	const uint8_t *token;
+	uint8_t tkl, *p;
+	uint16_t id, len;
+	int r;
+
+	if (!zoap_request_is_observe(request)) {
+		TC_PRINT("The request should enable observing\n");
+		return -EINVAL;
+	}
+
+	observer = zoap_observer_next_unused(observers, NUM_OBSERVERS);
+	if (!observer) {
+		TC_PRINT("There should be an available observer.\n");
+		return -EINVAL;
+	}
+
+	token = zoap_header_get_token(request, &tkl);
+	id = zoap_header_get_id(request);
+
+	zoap_observer_init(observer, request, addr, port);
+
+	zoap_register_observer(resource, observer);
+
+	r = zoap_packet_init(&response, buf);
+	if (r < 0) {
+		TC_PRINT("Unable to initialize packet.\n");
+		return -EINVAL;
+	}
+
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_OK);
+	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
+
+	zoap_add_option_int(&response, ZOAP_OPTION_OBSERVE,
+			    resource->age);
+
+	p = zoap_packet_get_payload(&response, &len);
+	memcpy(p, payload, sizeof(payload));
+
+	r = zoap_packet_set_used(&response, sizeof(payload));
+	if (r < 0) {
+		TC_PRINT("Not enough room for payload.\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int test_observer_server(void)
+{
+	uint8_t valid_request_pdu[] = {
+		0x45, 0x01, 0x12, 0x34,
+		't', 'o', 'k', 'e', 'n',
+		0x60, /* enable observe option */
+		0x51, 's', 0x01, '1', /* path */
+	};
+	uint8_t not_found_request_pdu[] = {
+		0x45, 0x01, 0x12, 0x34,
+		't', 'o', 'k', 'e', 'n',
+		0x60, /* enable observe option */
+		0x51, 's', 0x01, '2', /* path */
+	};
+	struct zoap_packet req;
+	struct net_buf *buf, *rsp_buf = NULL;
+	int result = TC_FAIL;
+	int r;
+
+	buf = net_buf_get(&zoap_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+	ip_buf_appdata(buf) = net_buf_tail(buf);
+	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	memcpy(ip_buf_appdata(buf), valid_request_pdu,
+	       sizeof(valid_request_pdu));
+	ip_buf_appdatalen(buf) = sizeof(valid_request_pdu);
+
+	r = zoap_packet_parse(&req, buf);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	rsp_buf = net_buf_get(&zoap_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+	ip_buf_appdata(rsp_buf) = net_buf_tail(rsp_buf);
+	ip_buf_appdatalen(rsp_buf) = net_buf_tailroom(rsp_buf);
+
+	server_resources[0].user_data = rsp_buf;
+
+	r = zoap_handle_request(&req, server_resources, &dummy_addr, MY_PORT);
+	if (r) {
+		TC_PRINT("Could not handle packet\n");
+		goto done;
+	}
+
+	/* Suppose some time passes */
+
+	r = zoap_resource_notify(&server_resources[0]);
+	if (r) {
+		TC_PRINT("Could not notify resource\n");
+		goto done;
+	}
+
+	/* Everything worked fine, let's try something else */
+	ip_buf_appdata(buf) = net_buf_tail(buf);
+	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	memcpy(ip_buf_appdata(buf), not_found_request_pdu,
+	       sizeof(not_found_request_pdu));
+	ip_buf_appdatalen(buf) = sizeof(not_found_request_pdu);
+
+	r = zoap_packet_parse(&req, buf);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	r = zoap_handle_request(&req, server_resources, &dummy_addr, MY_PORT);
+	if (r != -ENOENT) {
+		TC_PRINT("There should be no handler for this resource\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	net_buf_unref(buf);
+	if (rsp_buf) {
+		net_buf_unref(rsp_buf);
+	}
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
+static int resource_reply_cb(const struct zoap_packet *response,
+			     struct zoap_reply *reply,
+			     const uip_ipaddr_t *addr,
+			     uint16_t port)
+{
+	return 0;
+}
+
+static int test_observer_client(void)
+{
+	struct zoap_packet req, rsp;
+	struct zoap_reply *reply;
+	struct net_buf *buf, *rsp_buf = NULL;
+	const char token[] = "rndtoken";
+	const char * const *p;
+	int observe = 0;
+	int result = TC_FAIL;
+	int r;
+
+	buf = net_buf_get(&zoap_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+	ip_buf_appdata(buf) = net_buf_tail(buf);
+	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	r = zoap_packet_init(&req, buf);
+	if (r < 0) {
+		TC_PRINT("Unable to initialize request\n");
+		goto done;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&req, 1);
+	zoap_header_set_type(&req, ZOAP_TYPE_CON);
+	zoap_header_set_code(&req, ZOAP_METHOD_GET);
+	zoap_header_set_id(&req, zoap_next_id());
+	zoap_header_set_token(&req,
+			      (const uint8_t *) token, strlen(token));
+
+	/* Enable observing the resource. */
+	r = zoap_add_option(&req, ZOAP_OPTION_OBSERVE,
+			    &observe, sizeof(observe));
+	if (r < 0) {
+		TC_PRINT("Unable add option to request.\n");
+		goto done;
+	}
+
+	for (p = server_resource_1_path; p && *p; p++) {
+		r = zoap_add_option(&req, ZOAP_OPTION_URI_PATH,
+				     *p, strlen(*p));
+		if (r < 0) {
+			TC_PRINT("Unable add option to request.\n");
+			goto done;
+		}
+	}
+
+	reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+	if (!reply) {
+		printk("No resources for waiting for replies.\n");
+		goto done;
+	}
+
+	zoap_reply_init(reply, &req);
+	reply->reply = resource_reply_cb;
+
+	/* Server side, not interesting for this test */
+	r = zoap_packet_parse(&req, buf);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	rsp_buf = net_buf_get(&zoap_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+	ip_buf_appdata(rsp_buf) = net_buf_tail(rsp_buf);
+	ip_buf_appdatalen(rsp_buf) = net_buf_tailroom(rsp_buf);
+
+	server_resources[0].user_data = rsp_buf;
+
+	r = zoap_handle_request(&req, server_resources, &dummy_addr, MY_PORT);
+	if (r) {
+		TC_PRINT("Could not handle packet\n");
+		goto done;
+	}
+	/* The uninteresting part ends here */
+
+	/* 'rsp_buf' contains the response now */
+
+	r = zoap_packet_parse(&rsp, rsp_buf);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	reply = zoap_response_received(&rsp, &dummy_addr, MY_PORT,
+				       replies, NUM_REPLIES);
+	if (!reply) {
+		TC_PRINT("Couldn't find a matching waiting reply\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	net_buf_unref(buf);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
 static const struct {
 	const char *name;
 	int (*func)(void);
@@ -512,6 +823,8 @@ static const struct {
 	{ "Parse emtpy PDU test", test_parse_empty_pdu, },
 	{ "Parse simple PDU test", test_parse_simple_pdu, },
 	{ "Test retransmission", test_retransmit_second_round, },
+	{ "Test observer server", test_observer_server, },
+	{ "Test observer server", test_observer_client, },
 };
 
 int main(int argc, char *argv[])
