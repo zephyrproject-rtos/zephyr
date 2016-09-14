@@ -199,9 +199,7 @@ static void idle(void *unused1, void *unused2, void *unused3)
 
 	for (;;) {
 		nano_cpu_idle();
-		if (_is_coop(_current)) {
-			k_yield();
-		}
+		k_yield();
 	}
 }
 
