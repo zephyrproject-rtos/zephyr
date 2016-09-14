@@ -73,7 +73,7 @@ if FS_FAT_FLASH_DISK_W25QXXDV
 
 config FS_VOLUME_SIZE
 	hex
-	default 0x100000
+	default 0x200000
 	help
 	This is the file system volume size in bytes.
 

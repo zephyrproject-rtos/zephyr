@@ -219,9 +219,7 @@ static int fs_init(struct device *dev)
 	if (res == FR_NO_FILESYSTEM) {
 		uint8_t work[_MAX_SS];
 
-		res = f_mkfs("", (FM_FAT | FM_SFD), _MAX_SS,
-			     work, sizeof(work));
-
+		res = f_mkfs("", (FM_FAT | FM_SFD), 0, work, sizeof(work));
 		if (res == FR_OK) {
 			res = f_mount(&fat_fs, "", 1);
 		}
