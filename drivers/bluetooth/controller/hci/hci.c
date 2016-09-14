@@ -96,9 +96,11 @@ static struct {
 static void disconnect(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_disconnect *cmd = (void *)cp;
+	uint16_t handle;
 	uint32_t status;
 
-	status = radio_terminate_ind_send(cmd->handle, cmd->reason);
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = radio_terminate_ind_send(handle, cmd->reason);
 
 	evt->evt = BT_HCI_EVT_CMD_STATUS;
 	evt->len = sizeof(struct bt_hci_evt_cmd_status);
@@ -109,9 +111,11 @@ static void disconnect(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 static void read_remote_ver_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_read_remote_version_info *cmd = (void *)cp;
+	uint16_t handle;
 	uint32_t status;
 
-	status = radio_version_ind_send(cmd->handle);
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = radio_version_ind_send(handle);
 
 	evt->evt = BT_HCI_EVT_CMD_STATUS;
 	evt->len = sizeof(struct bt_hci_evt_cmd_status);
@@ -188,10 +192,10 @@ static void read_local_version_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 
 	rp->status = 0x00;
 	rp->hci_version = 0;
-	rp->hci_revision = 0;
+	rp->hci_revision = sys_cpu_to_le16(0);
 	rp->lmp_version = RADIO_BLE_VERSION_NUMBER;
-	rp->manufacturer = RADIO_BLE_COMPANY_ID;
-	rp->lmp_subversion = RADIO_BLE_SUB_VERSION_NUMBER;
+	rp->manufacturer = sys_cpu_to_le16(RADIO_BLE_COMPANY_ID);
+	rp->lmp_subversion = sys_cpu_to_le16(RADIO_BLE_SUB_VERSION_NUMBER);
 }
 
 static void read_supported_commands(uint8_t *cp, struct bt_hci_evt_hdr *evt)
@@ -306,7 +310,7 @@ static void le_read_buffer_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 
 	rp->status = 0x00;
 
-	rp->le_max_len = RADIO_LL_LENGTH_OCTETS_RX_MAX;
+	rp->le_max_len = sys_cpu_to_le16(RADIO_LL_LENGTH_OCTETS_RX_MAX);
 	rp->le_max_num = RADIO_PACKET_COUNT_TX_MAX;
 }
 
@@ -341,8 +345,11 @@ static void le_set_adv_param(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	uint8_t const c_adv_type[] = {
 		PDU_ADV_TYPE_ADV_IND, PDU_ADV_TYPE_DIRECT_IND,
 		PDU_ADV_TYPE_SCAN_IND, PDU_ADV_TYPE_NONCONN_IND };
+	uint16_t min_interval;
 
-	ll_adv_params_set(cmd->min_interval, c_adv_type[cmd->type],
+	min_interval = sys_le16_to_cpu(cmd->min_interval);
+
+	ll_adv_params_set(min_interval, c_adv_type[cmd->type],
 			  cmd->own_addr_type, cmd->direct_addr.type,
 			  &cmd->direct_addr.a.val[0], cmd->channel_map,
 			  cmd->filter_policy);
@@ -405,9 +412,14 @@ static void le_set_adv_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 static void le_set_scan_params(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_le_set_scan_params *cmd = (void *)cp;
+	uint16_t interval;
+	uint16_t window;
 
-	ll_scan_params_set(cmd->scan_type, cmd->interval, cmd->window,
-			   cmd->addr_type, cmd->filter_policy);
+	interval = sys_le16_to_cpu(cmd->interval);
+	window = sys_le16_to_cpu(cmd->window);
+
+	ll_scan_params_set(cmd->scan_type, interval, window, cmd->addr_type,
+			   cmd->filter_policy);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
 	evt->len = HCI_CC_LEN(struct bt_hci_evt_cc_status);
@@ -431,17 +443,25 @@ static void le_set_scan_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 static void le_create_connection(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_le_create_conn *cmd = (void *)cp;
+	uint16_t supervision_timeout;
+	uint16_t conn_interval_max;
+	uint16_t scan_interval;
+	uint16_t conn_latency;
+	uint16_t scan_window;
 	uint32_t status;
 
-	status = ll_create_connection(cmd->scan_interval,
-				      cmd->scan_window,
+	scan_interval = sys_le16_to_cpu(cmd->scan_interval);
+	scan_window = sys_le16_to_cpu(cmd->scan_window);
+	conn_interval_max = sys_le16_to_cpu(cmd->conn_interval_max);
+	conn_latency = sys_le16_to_cpu(cmd->conn_latency);
+	supervision_timeout = sys_le16_to_cpu(cmd->supervision_timeout);
+
+	status = ll_create_connection(scan_interval, scan_window,
 				      cmd->filter_policy,
 				      cmd->peer_addr.type,
 				      &cmd->peer_addr.a.val[0],
-				      cmd->own_addr_type,
-				      cmd->conn_interval_max,
-				      cmd->conn_latency,
-				      cmd->supervision_timeout);
+				      cmd->own_addr_type, conn_interval_max,
+				      conn_latency, supervision_timeout);
 
 	evt->evt = BT_HCI_EVT_CMD_STATUS;
 	evt->len = sizeof(struct bt_hci_evt_cmd_status);
@@ -500,13 +520,22 @@ static void le_add_dev_to_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 static void le_conn_update(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct hci_cp_le_conn_update *cmd = (void *)cp;
+	uint16_t supervision_timeout;
+	uint16_t conn_interval_max;
+	uint16_t conn_latency;
 	uint32_t status;
+	uint16_t handle;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	conn_interval_max = sys_le16_to_cpu(cmd->conn_interval_max);
+	conn_latency = sys_le16_to_cpu(cmd->conn_latency);
+	supervision_timeout = sys_le16_to_cpu(cmd->supervision_timeout);
 
 	/** @todo if peer supports LE Conn Param Req,
 	* use Req cmd (1) instead of Initiate cmd (0).
 	*/
-	status = radio_conn_update(cmd->handle, 0, 0, cmd->conn_interval_max,
-				   cmd->conn_latency, cmd->supervision_timeout);
+	status = radio_conn_update(handle, 0, 0, conn_interval_max,
+				   conn_latency, supervision_timeout);
 
 	evt->evt = BT_HCI_EVT_CMD_STATUS;
 	evt->len = sizeof(struct bt_hci_evt_cmd_status);
@@ -531,8 +560,10 @@ static void le_read_remote_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_le_read_remote_features *cmd = (void *)cp;
 	uint32_t status;
+	uint16_t handle;
 
-	status = radio_feature_req_send(cmd->handle);
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = radio_feature_req_send(handle);
 
 	evt->evt = BT_HCI_EVT_CMD_STATUS;
 	evt->len = sizeof(struct bt_hci_evt_cmd_status);
@@ -575,8 +606,10 @@ static void le_start_encryption(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_le_start_encryption *cmd = (void *)cp;
 	uint32_t status;
+	uint16_t handle;
 
-	status = radio_enc_req_send(cmd->handle,
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = radio_enc_req_send(handle,
 			       (uint8_t *)&cmd->rand,
 			       (uint8_t *)&cmd->ediv,
 			       &cmd->ltk[0]);
@@ -592,8 +625,10 @@ static void le_ltk_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_cp_le_ltk_req_reply *cmd = (void *)cp;
 	struct bt_hci_rp_le_ltk_req_reply *rp = HCI_CC_RP(evt);
 	uint32_t status;
+	uint16_t handle;
 
-	status = radio_start_enc_req_send(cmd->handle, 0x00, &cmd->ltk[0]);
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = radio_start_enc_req_send(handle, 0x00, &cmd->ltk[0]);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
 	evt->len = HCI_CC_LEN(*rp);
@@ -606,9 +641,11 @@ static void le_ltk_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_cp_le_ltk_req_neg_reply *cmd = (void *)cp;
 	struct bt_hci_rp_le_ltk_req_neg_reply *rp = HCI_CC_RP(evt);
 	uint32_t status;
+	uint16_t handle;
 
-	status = radio_start_enc_req_send(cmd->handle,
-					  BT_HCI_ERR_PIN_OR_KEY_MISSING, NULL);
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = radio_start_enc_req_send(handle, BT_HCI_ERR_PIN_OR_KEY_MISSING,
+					  NULL);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
 	evt->len = HCI_CC_LEN(*rp);
@@ -632,12 +669,19 @@ static void le_conn_param_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_cp_le_conn_param_req_reply *cmd = (void *)cp;
 	struct bt_hci_rp_le_conn_param_req_reply *rp = HCI_CC_RP(evt);
+	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
 	uint32_t status;
+	uint16_t handle;
 
-	status = radio_conn_update(cmd->handle, 2, 0,
-				   cmd->interval_max,
-				   cmd->latency,
-				   cmd->timeout);
+	handle = sys_le16_to_cpu(cmd->handle);
+	interval_max = sys_le16_to_cpu(cmd->interval_max);
+	latency = sys_le16_to_cpu(cmd->latency);
+	timeout = sys_le16_to_cpu(cmd->timeout);
+
+	status = radio_conn_update(handle, 2, 0, interval_max, latency,
+				   timeout);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
 	evt->len = HCI_CC_LEN(*rp);
@@ -650,8 +694,10 @@ static void le_conn_param_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_cp_le_conn_param_req_neg_reply *cmd = (void *)cp;
 	struct bt_hci_rp_le_conn_param_req_neg_reply *rp = HCI_CC_RP(evt);
 	uint32_t status;
+	uint16_t handle;
 
-	status = radio_conn_update(cmd->handle, 2, cmd->reason, 0, 0, 0);
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = radio_conn_update(handle, 2, cmd->reason, 0, 0, 0);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
 	evt->len = HCI_CC_LEN(*rp);
@@ -664,9 +710,13 @@ static void le_set_data_len(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	struct bt_hci_cp_le_set_data_len *cmd = (void *)cp;
 	struct bt_hci_rp_le_set_data_len *rp = HCI_CC_RP(evt);
 	uint32_t status;
+	uint16_t tx_octets;
+	uint16_t handle;
 
+	handle = sys_le16_to_cpu(cmd->handle);
+	tx_octets = sys_le16_to_cpu(cmd->tx_octets);
 	/** @todo add reject_ext_ind support in ctrl.c */
-	status = radio_length_req_send(cmd->handle, cmd->tx_octets);
+	status = radio_length_req_send(handle, tx_octets);
 
 	evt->evt = BT_HCI_EVT_CMD_COMPLETE;
 	evt->len = HCI_CC_LEN(*rp);
@@ -803,13 +853,13 @@ static int controller_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
 static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 			   uint8_t **out)
 {
-	struct bt_hci_evt_hdr *evt;
 	struct bt_hci_evt_cmd_complete *cc;
 	struct bt_hci_evt_cmd_status *cs;
-	int err;
+	struct bt_hci_evt_hdr *evt;
 	uint16_t opcode;
 	uint8_t ocf;
 	uint8_t *cp;
+	int err;
 
 	*out = &hci_context.tx[0];
 	hci_context.tx[0] = HCI_EVT;
@@ -852,12 +902,12 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 	switch (evt->evt) {
 	case BT_HCI_EVT_CMD_COMPLETE:
 		cc->ncmd = 1;
-		cc->opcode = opcode;
+		cc->opcode = cmd->opcode;
 		break;
 
 	case BT_HCI_EVT_CMD_STATUS:
 		cs->ncmd = 1;
-		cs->opcode = opcode;
+		cs->opcode = cmd->opcode;
 		break;
 	default:
 		break;
@@ -866,23 +916,27 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 
 static void hci_data_handle(void)
 {
-	struct bt_hci_acl_hdr *data;
+	struct radio_pdu_node_tx *radio_pdu_node_tx;
+	struct bt_hci_acl_hdr *acl;
 	uint16_t handle;
 	uint8_t flags;
+	uint16_t len;
 
 	if (!(hci_context.rx_len > sizeof(struct bt_hci_acl_hdr))) {
 		return;
 	}
 
-	data = (struct bt_hci_acl_hdr *)&hci_context.rx[1];
+	acl = (struct bt_hci_acl_hdr *)&hci_context.rx[1];
+	len = sys_le16_to_cpu(acl->len);
 	if (!(hci_context.rx_len >=
-	    (1 + sizeof(struct bt_hci_acl_hdr) + data->len))) {
+	    (1 + sizeof(struct bt_hci_acl_hdr) + len))) {
 		return;
 	}
-	handle = bt_acl_handle(data->handle);
-	flags = bt_acl_flags(data->handle);
 
-	struct radio_pdu_node_tx *radio_pdu_node_tx;
+	handle = sys_le16_to_cpu(acl->handle);
+	/* assigning flags first because handle will be overwritten */
+	flags = bt_acl_flags(handle);
+	handle = bt_acl_handle(handle);
 
 	radio_pdu_node_tx = radio_tx_mem_acquire();
 	if (radio_pdu_node_tx) {
@@ -894,10 +948,9 @@ static void hci_data_handle(void)
 		} else {
 			pdu_data->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
 		}
-		pdu_data->len = data->len;
+		pdu_data->len = len;
 		memcpy(&pdu_data->payload.lldata[0],
-		       ((uint8_t *)data) + sizeof(struct bt_hci_acl_hdr),
-		       data->len);
+		       ((uint8_t *)acl) + sizeof(struct bt_hci_acl_hdr), len);
 		if (radio_tx_mem_enqueue(handle, radio_pdu_node_tx)) {
 			radio_tx_mem_release(radio_pdu_node_tx);
 		}
@@ -997,13 +1050,13 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
 
 	sep->status = radio_cc->status;
-	sep->handle = handle;
+	sep->handle = sys_cpu_to_le16(handle);
 	sep->role = radio_cc->role;
 	sep->peer_addr.type = radio_cc->peer_addr_type;
 	memcpy(&sep->peer_addr.a.val[0], &radio_cc->peer_addr[0], BDADDR_SIZE);
-	sep->interval = radio_cc->interval;
-	sep->latency = radio_cc->latency;
-	sep->supv_timeout = radio_cc->timeout;
+	sep->interval = sys_cpu_to_le16(radio_cc->interval);
+	sep->latency = sys_cpu_to_le16(radio_cc->latency);
+	sep->supv_timeout = sys_cpu_to_le16(radio_cc->timeout);
 	sep->clock_accuracy = radio_cc->mca;
 }
 
@@ -1016,7 +1069,7 @@ static void disconn_complete(struct pdu_data *pdu_data, uint16_t handle,
 	evt->len = sizeof(*ep);
 
 	ep->status = 0x00;
-	ep->handle = handle;
+	ep->handle = sys_cpu_to_le16(handle);
 	ep->reason = *((uint8_t *)pdu_data);
 }
 
@@ -1034,10 +1087,10 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE;
 
 	sep->status = radio_cu->status;
-	sep->handle = handle;
-	sep->interval = radio_cu->interval;
-	sep->latency = radio_cu->latency;
-	sep->supv_timeout = radio_cu->timeout;
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->interval = sys_cpu_to_le16(radio_cu->interval);
+	sep->latency = sys_cpu_to_le16(radio_cu->latency);
+	sep->supv_timeout = sys_cpu_to_le16(radio_cu->timeout);
 }
 
 static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
@@ -1049,7 +1102,7 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
 	evt->len = sizeof(*ep);
 
 	ep->status = 0x00;
-	ep->handle = handle;
+	ep->handle = sys_cpu_to_le16(handle);
 }
 
 static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
@@ -1060,7 +1113,7 @@ static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
 	evt->evt = BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP;
 	evt->len = sizeof(*ep);
 
-	ep->handle = handle;
+	ep->handle = sys_cpu_to_le16(handle);
 }
 
 static void encode_control(struct radio_pdu_node_rx *radio_pdu_node_rx,
@@ -1122,7 +1175,7 @@ static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
 	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_LTK_REQUEST;
 
-	sep->handle = handle;
+	sep->handle = sys_cpu_to_le16(handle);
 	memcpy(&sep->rand, pdu_data->payload.llctrl.ctrldata.enc_req.rand,
 	       sizeof(uint64_t));
 	memcpy(&sep->ediv, pdu_data->payload.llctrl.ctrldata.enc_req.ediv,
@@ -1138,7 +1191,7 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 	evt->len = sizeof(*ep);
 
 	ep->status = err;
-	ep->handle = handle;
+	ep->handle = sys_cpu_to_le16(handle);
 	ep->encrypt = !err ? 1 : 0;
 }
 
@@ -1152,7 +1205,7 @@ static void le_remote_feat_complete(struct pdu_data *pdu_data, uint16_t handle,
 	HCI_ME(evt)->subevent = BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE;
 
 	sep->status = 0x00;
-	sep->handle = handle;
+	sep->handle = sys_cpu_to_le16(handle);
 	memcpy(&sep->features[0],
 	       &pdu_data->payload.llctrl.ctrldata.feature_rsp.features[0],
 	       sizeof(sep->features));
@@ -1167,12 +1220,11 @@ static void remote_version_info(struct pdu_data *pdu_data, uint16_t handle,
 	evt->len = sizeof(*ep);
 
 	ep->status = 0x00;
-	ep->handle = handle;
-
+	ep->handle = sys_cpu_to_le16(handle);
 	ep->version =
 	      pdu_data->payload.llctrl.ctrldata.version_ind.version_number;
 	ep->manufacturer =
-	      pdu_data->payload.llctrl.ctrldata.version_ind.company_id;
+		pdu_data->payload.llctrl.ctrldata.version_ind.company_id;
 	ep->subversion =
 	      pdu_data->payload.llctrl.ctrldata.version_ind.sub_version_number;
 }
@@ -1186,16 +1238,13 @@ static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
 	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_PARAM_REQ;
 
-	sep->handle = handle;
-
+	sep->handle = sys_cpu_to_le16(handle);
 	sep->interval_min =
 		pdu_data->payload.llctrl.ctrldata.conn_param_req.interval_min;
 	sep->interval_max =
 		pdu_data->payload.llctrl.ctrldata.conn_param_req.interval_max;
-	sep->latency =
-		pdu_data->payload.llctrl.ctrldata.conn_param_req.latency;
-	sep->timeout =
-		pdu_data->payload.llctrl.ctrldata.conn_param_req.timeout;
+	sep->latency = pdu_data->payload.llctrl.ctrldata.conn_param_req.latency;
+	sep->timeout = pdu_data->payload.llctrl.ctrldata.conn_param_req.timeout;
 }
 
 static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
@@ -1207,8 +1256,7 @@ static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
 	evt->len = HCI_ME_LEN(*sep);
 	HCI_ME(evt)->subevent =  BT_HCI_EVT_LE_DATA_LEN_CHANGE;
 
-	sep->handle = handle;
-
+	sep->handle = sys_cpu_to_le16(handle);
 	sep->max_tx_octets =
 		pdu_data->payload.llctrl.ctrldata.length_rsp.max_tx_octets;
 	sep->max_tx_time =
@@ -1279,6 +1327,7 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct bt_hci_acl_hdr *acl;
 	struct pdu_data *pdu_data;
+	uint16_t handle_flags;
 	uint16_t handle;
 
 	radio_pdu_node_rx = (struct radio_pdu_node_rx *)buf;
@@ -1293,11 +1342,12 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 
 		acl = (struct bt_hci_acl_hdr *)&hci_context.tx[1];
 		if (pdu_data->ll_id == PDU_DATA_LLID_DATA_START) {
-			acl->handle = bt_acl_handle_pack(handle, BT_ACL_START);
+			handle_flags = bt_acl_handle_pack(handle, BT_ACL_START);
 		} else {
-			acl->handle = bt_acl_handle_pack(handle, BT_ACL_CONT);
+			handle_flags = bt_acl_handle_pack(handle, BT_ACL_CONT);
 		}
-		acl->len = pdu_data->len;
+		acl->handle = sys_cpu_to_le16(handle_flags);
+		acl->len = sys_cpu_to_le16(pdu_data->len);
 		memcpy(((uint8_t *)acl) + sizeof(struct bt_hci_acl_hdr),
 		       &pdu_data->payload.lldata[0], pdu_data->len);
 
