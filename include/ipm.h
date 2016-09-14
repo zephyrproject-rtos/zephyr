@@ -121,7 +121,11 @@ struct ipm_driver_api {
  * data read back.
  *
  * @param ipmdev Driver instance
- * @param wait Time to busy-wait for remote to consume the message.
+ * @param wait If nonzero, busy-wait for remote to consume the message. The
+ *	       message is considered consumed once the remote interrupt handler
+ *	       finishes. If there is deferred processing on the remote side,
+ *	       or you would like to queue outgoing messages and wait on an
+ *	       event/semaphore, you can implement that in a high-level driver
  * @param id Message identifier. Values are constrained by
  *        @a ipm_max_data_size_get since many boards only allow for a
  *        subset of bits in a 32-bit register to store the ID.
