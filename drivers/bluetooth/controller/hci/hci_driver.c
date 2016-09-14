@@ -17,17 +17,17 @@
 
 #include <errno.h>
 #include <stddef.h>
+#include <string.h>
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
-
-#include <board.h>
+#include <soc.h>
 #include <init.h>
-#include <uart.h>
+#include <device.h>
+#include <clock_control.h>
+
 #include <misc/util.h>
 #include <misc/stack.h>
 #include <misc/byteorder.h>
-#include <string.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
@@ -36,7 +36,6 @@
 
 #include "util/defines.h"
 #include "util/work.h"
-#include "hal/clock.h"
 #include "hal/rand.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -74,11 +73,6 @@ void radio_active_callback(uint8_t active)
 void radio_event_callback(void)
 {
 	nano_isr_sem_give(&nano_sem_recv);
-}
-
-static void power_clock_nrf5_isr(void *arg)
-{
-	power_clock_isr();
 }
 
 static void radio_nrf5_isr(void *arg)
@@ -260,11 +254,18 @@ static int hci_driver_send(struct net_buf *buf)
 
 static int hci_driver_open(void)
 {
+	struct device *clk_k32;
+	struct device *clk_m16;
 	uint32_t err;
 
 	DEBUG_INIT();
 
-	clock_k32src_start(1);
+	clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
+	if (!clk_k32) {
+		return -ENODEV;
+	}
+
+	clock_control_on(clk_k32, (void *)1);
 
 	_ticker_users[RADIO_TICKER_USER_ID_WORKER][0] =
 	    RADIO_TICKER_USER_WORKER_OPS;
@@ -281,26 +282,29 @@ static int hci_driver_open(void)
 
 	rand_init(_rand_context, sizeof(_rand_context));
 
-	err = radio_init(7,	/* 20ppm = 7 ... 250ppm = 1, 500ppm = 0 */
+	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
+	if (!clk_m16) {
+		return -ENODEV;
+	}
+
+	err = radio_init(clk_m16,
+			 7, /* 20ppm = 7 ... 250ppm = 1, 500ppm = 0 */
 			 RADIO_CONNECTION_CONTEXT_MAX,
 			 RADIO_PACKET_COUNT_RX_MAX,
 			 RADIO_PACKET_COUNT_TX_MAX,
 			 RADIO_LL_LENGTH_OCTETS_RX_MAX, &_radio[0],
-			 sizeof(_radio)
-	    );
+			 sizeof(_radio));
 	if (err) {
 		BT_ERR("Required RAM size: %d, supplied: %u.", err,
 		       sizeof(_radio));
 		return -ENOMEM;
 	}
 
-	IRQ_CONNECT(NRF52_IRQ_POWER_CLOCK_IRQn, 1, power_clock_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF52_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF52_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF52_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF52_IRQ_SWI4_EGU4_IRQn, 0, swi4_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF52_IRQ_SWI5_EGU5_IRQn, 1, swi5_nrf5_isr, 0, 0);
-	irq_enable(NRF52_IRQ_POWER_CLOCK_IRQn);
 	irq_enable(NRF52_IRQ_RADIO_IRQn);
 	irq_enable(NRF52_IRQ_RTC0_IRQn);
 	irq_enable(NRF52_IRQ_RNG_IRQn);
