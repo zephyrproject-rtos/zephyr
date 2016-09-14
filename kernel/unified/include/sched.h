@@ -80,7 +80,7 @@ static inline int _is_coop(struct tcs *thread)
 /* is thread currently preemptible ? */
 static inline int _is_preempt(struct tcs *thread)
 {
-	return !_is_coop(thread);
+	return !_is_coop(thread) && !atomic_get(&thread->sched_locked);
 }
 
 /* is current thread preemptible and we are not running in ISR context */
