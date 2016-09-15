@@ -68,7 +68,7 @@ void _k_pipes_init(void)
 	for (int i = 0; i < CONFIG_NUM_PIPE_ASYNC_MSGS; i++) {
 		async_msg[i].thread.flags = K_DUMMY;
 		async_msg[i].thread.swap_data = &async_msg[i].desc;
-		k_stack_push(pipe_async_msgs, (uint32_t)&async_msg[i]);
+		k_stack_push(&pipe_async_msgs, (uint32_t)&async_msg[i]);
 	}
 }
 
@@ -93,7 +93,7 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
  */
 static void _pipe_async_alloc(struct k_pipe_async **async)
 {
-	k_stack_pop(pipe_async_msgs, (uint32_t *)async, K_FOREVER);
+	k_stack_pop(&pipe_async_msgs, (uint32_t *)async, K_FOREVER);
 }
 
 /**
@@ -105,7 +105,7 @@ static void _pipe_async_alloc(struct k_pipe_async **async)
  */
 static void _pipe_async_free(struct k_pipe_async *async)
 {
-	k_stack_push(pipe_async_msgs, (uint32_t)async);
+	k_stack_push(&pipe_async_msgs, (uint32_t)async);
 }
 
 /**

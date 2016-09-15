@@ -61,7 +61,7 @@ void _k_mbox_init(void)
 
 	for (i = 0; i < CONFIG_NUM_MBOX_ASYNC_MSGS; i++) {
 		async_msg[i].thread.flags = K_DUMMY;
-		k_stack_push(async_msg_free, (uint32_t)&async_msg[i]);
+		k_stack_push(&async_msg_free, (uint32_t)&async_msg[i]);
 	}
 }
 
@@ -74,7 +74,7 @@ void _k_mbox_init(void)
  */
 static inline void _mbox_async_alloc(struct k_mbox_async **async)
 {
-	k_stack_pop(async_msg_free, (uint32_t *)async, K_FOREVER);
+	k_stack_pop(&async_msg_free, (uint32_t *)async, K_FOREVER);
 }
 
 /**
@@ -84,7 +84,7 @@ static inline void _mbox_async_alloc(struct k_mbox_async **async)
  */
 static inline void _mbox_async_free(struct k_mbox_async *async)
 {
-	k_stack_push(async_msg_free, (uint32_t)async);
+	k_stack_push(&async_msg_free, (uint32_t)async);
 }
 
 #endif

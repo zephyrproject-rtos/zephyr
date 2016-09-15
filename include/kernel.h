@@ -343,9 +343,7 @@ extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
 	}
 
 #define K_FIFO_DEFINE(name) \
-	struct k_fifo _k_fifo_obj_##name = \
-		K_FIFO_INITIALIZER(_k_fifo_obj_##name); \
-	struct k_fifo * const name = &_k_fifo_obj_##name
+	struct k_fifo name = K_FIFO_INITIALIZER(name)
 
 /* lifos */
 
@@ -368,9 +366,7 @@ extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
 	}
 
 #define K_LIFO_DEFINE(name) \
-	struct k_lifo _k_lifo_obj_##name = \
-		K_LIFO_INITIALIZER(_k_lifo_obj_##name); \
-	struct k_lifo * const name = &_k_lifo_obj_##name
+	struct k_lifo name = K_LIFO_INITIALIZER(name)
 
 /* stacks */
 
@@ -398,10 +394,9 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 
 #define K_STACK_DEFINE(name, stack_num_entries) \
 	uint32_t __noinit _k_stack_buf_##name[stack_num_entries]; \
-	struct k_stack _k_stack_obj_##name = \
-		K_STACK_INITIALIZER(_k_stack_obj_##name, stack_num_entries, \
+	struct k_stack name = \
+		K_STACK_INITIALIZER(name, stack_num_entries, \
 				    _k_stack_buf_##name); \
-	struct k_stack * const name = &_k_stack_obj_##name
 
 #define K_STACK_SIZE(stack_num_entries) \
 	(sizeof(struct k_stack) + (stack_num_entries * sizeof(uint32_t)))
