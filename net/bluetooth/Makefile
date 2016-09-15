@@ -29,4 +29,6 @@ ifeq ($(CONFIG_BLUETOOTH_CONN),y)
 	obj-$(CONFIG_BLUETOOTH_HFP_HF) += hfp_hf.o
 
 	obj-$(CONFIG_BLUETOOTH_AVDTP) += avdtp.o
+
+	obj-$(CONFIG_BLUETOOTH_A2DP) += a2dp.o
 endif

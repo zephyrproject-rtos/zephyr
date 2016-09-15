@@ -450,6 +450,13 @@ config BLUETOOTH_DEBUG_AVDTP
 	help
 	  This option enables debug support for the Bluetooth AVDTP.
 
+config BLUETOOTH_DEBUG_A2DP
+	bool "Bluetooth A2DP debug"
+	depends on BLUETOOTH_A2DP
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  A2DP profile.
 endif # BLUETOOTH_DEBUG
 
 config BLUETOOTH_BREDR
@@ -479,6 +486,13 @@ config BLUETOOTH_AVDTP
 	default n
 	help
 	  This option enables Bluetooth AVDTP support
+
+config BLUETOOTH_A2DP
+	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
+	default n
+	select BLUETOOTH_AVDTP
+	help
+	  This option enables the A2DP profile
 
 config BLUETOOTH_BREDR_NAME
 	string "Bluetooth BR/EDR device name"
