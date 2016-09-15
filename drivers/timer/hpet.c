@@ -295,29 +295,7 @@ void _timer_int_handler(void *unused)
 	*_HPET_TIMER0_COMPARATOR = counter_last_value + counter_load_value;
 	programmed_ticks = 1;
 
-	/*
-	 * Increment the tick because _timer_idle_exit does not account
-	 * for the tick due to the timer interrupt itself. Also, if not in
-	 * tickless mode, _sys_idle_elapsed_ticks will be 0.
-	 */
-#ifdef CONFIG_MICROKERNEL
-	_sys_idle_elapsed_ticks++;
-#else
-	_sys_idle_elapsed_ticks = 1;
-#endif /* CONFIG_MICROKERNEL */
-
-	/*
-	 * If we transistion from 0 elapsed ticks to 1 we need to announce the
-	 * tick
-	 * event to the microkernel. Other cases will have already been covered
-	 * by
-	 * _timer_idle_exit
-	 */
-
-	if (_sys_idle_elapsed_ticks == 1) {
-		_sys_clock_tick_announce();
-	}
-
+	_sys_clock_final_tick_announce();
 #endif /* !CONFIG_TICKLESS_IDLE */
 
 }

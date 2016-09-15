@@ -287,7 +287,8 @@ config TICKLESS_IDLE
 	bool
 	prompt "Tickless idle"
 	default y
-	depends on !KERNEL_V2 && (MICROKERNEL || NANOKERNEL_TICKLESS_IDLE_SUPPORTED)
+	depends on MICROKERNEL || KERNEL_V2 ||     \
+		NANOKERNEL_TICKLESS_IDLE_SUPPORTED
 	help
 	This option suppresses periodic system clock interrupts whenever the
 	kernel becomes idle. This permits the system to remain in a power

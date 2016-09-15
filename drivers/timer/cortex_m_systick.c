@@ -274,23 +274,7 @@ void _TIMER_INT_HANDLER(void *unused)
 			idle_original_ticks + 1; /* actual # of idle ticks */
 		_sys_clock_tick_announce();
 	} else {
-		/*
-		 * Increment the tick because _timer_idle_exit does not
-		 * account for the tick due to the timer interrupt itself.
-		 * Also, if not in tickless mode, _sys_idle_elapsed_ticks will be 0.
-		 */
-		_sys_idle_elapsed_ticks++;
-
-		/*
-		 * If we transition from 0 elapsed ticks to 1 we need to
-		 * announce the
-		 * tick event to the microkernel. Other cases will be covered by
-		 * _timer_idle_exit.
-		 */
-
-		if (_sys_idle_elapsed_ticks == 1) {
-			_sys_clock_tick_announce();
-		}
+		_sys_clock_final_tick_announce();
 	}
 
 	/* accumulate total counter value */

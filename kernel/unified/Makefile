@@ -15,6 +15,7 @@ lib-y += $(strip \
 	sem.o \
 	device.o \
 	thread_abort.o \
+	idle.o \
 )
 
 lib-y += $(strip \
@@ -37,7 +38,6 @@ lib-y += $(strip \
 
 lib-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
 lib-$(CONFIG_STACK_CANARIES) += compiler_stack_protect.o
-lib-$(CONFIG_SYS_POWER_MANAGEMENT) += idle.o
 lib-$(CONFIG_NANO_TIMERS) += timer.o
 lib-$(CONFIG_KERNEL_EVENT_LOGGER) += event_logger.o
 lib-$(CONFIG_KERNEL_EVENT_LOGGER) += kernel_event_logger.o

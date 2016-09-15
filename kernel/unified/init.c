@@ -110,6 +110,8 @@ char __noinit __stack _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 	#define initialize_timeouts() do { } while ((0))
 #endif
 
+extern void idle(void *unused1, void *unused2, void *unused3);
+
 /**
  *
  * @brief Clear BSS
@@ -189,18 +191,6 @@ static void _main(void *unused1, void *unused2, void *unused3)
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
-}
-
-static void idle(void *unused1, void *unused2, void *unused3)
-{
-	ARG_UNUSED(unused1);
-	ARG_UNUSED(unused2);
-	ARG_UNUSED(unused3);
-
-	for (;;) {
-		nano_cpu_idle();
-		k_yield();
-	}
 }
 
 /**
