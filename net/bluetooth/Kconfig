@@ -457,6 +457,15 @@ config BLUETOOTH_DEBUG_A2DP
 	help
 	  This option enables debug support for the Bluetooth
 	  A2DP profile.
+
+config BLUETOOTH_DEBUG_SDP
+	bool "Bluetooth Service Discovery Protocol (SDP) debug"
+	depends on BLUETOOTH_BREDR
+	default n
+	help
+		This option enables debug support for the Bluetooth
+		Service Discovery Protocol (SDP).
+
 endif # BLUETOOTH_DEBUG
 
 config BLUETOOTH_BREDR

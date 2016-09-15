@@ -40,6 +40,7 @@
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 #include "rfcomm_internal.h"
 #endif
+#include "sdp_internal.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 #undef BT_DBG
@@ -1622,6 +1623,7 @@ void bt_l2cap_br_init(void)
 #if defined(CONFIG_BLUETOOTH_AVDTP)
 	bt_avdtp_init();
 #endif /* CONFIG_BLUETOOTH_AVDTP */
+	bt_sdp_init();
 #if defined(CONFIG_BLUETOOTH_A2DP)
 	bt_a2dp_init();
 #endif /* CONFIG_BLUETOOTH_A2DP */
