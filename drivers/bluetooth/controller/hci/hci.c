@@ -21,6 +21,7 @@
 #include <toolchain.h>
 #include <errno.h>
 #include <misc/byteorder.h>
+#include <bluetooth/hci.h>
 
 #include "defines.h"
 #include "ticker.h"
@@ -33,9 +34,7 @@
 #include "pdu.h"
 #include "ctrl.h"
 #include "ll.h"
-
-#include <bluetooth/hci.h>
-#include "hci.h"
+#include "hci_internal.h"
 
 #include "debug.h"
 
@@ -959,7 +958,7 @@ static void hci_data_handle(void)
 	hci_context.rx_len = 0;
 }
 
-void hci_handle(uint8_t x, uint8_t *len, uint8_t **out)
+void hcic_handle(uint8_t x, uint8_t *len, uint8_t **out)
 {
 	struct bt_hci_cmd_hdr *cmd;
 
@@ -1378,7 +1377,7 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 
 }
 
-void hci_encode(uint8_t *buf, uint8_t *len, uint8_t **out)
+void hcic_encode(uint8_t *buf, uint8_t *len, uint8_t **out)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct pdu_data *pdu_data;
@@ -1408,8 +1407,8 @@ void hci_encode(uint8_t *buf, uint8_t *len, uint8_t **out)
 	}
 }
 
-void hci_encode_num_cmplt(uint16_t handle, uint8_t num, uint8_t *len,
-			  uint8_t **out)
+void hcic_encode_num_cmplt(uint16_t handle, uint8_t num, uint8_t *len,
+			   uint8_t **out)
 {
 	struct bt_hci_evt_num_completed_packets *ep;
 	struct bt_hci_handle_count *hc;

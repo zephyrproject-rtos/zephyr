@@ -14,5 +14,5 @@ obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/radio.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += ll/ticker.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += ll/ctrl.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += ll/ll.o
+obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hci/hci_driver.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hci/hci.o
-obj-$(CONFIG_BLUETOOTH_CONTROLLER) += main.o
