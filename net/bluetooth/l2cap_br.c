@@ -1575,6 +1575,23 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 	BT_DBG("chan %p status 0x%02x encr 0x%02x", chan, status,
 	       chan->conn->encrypt);
 
+	if (status) {
+		/*
+		 * Security procedure status is non-zero so respond with
+		 * security violation only as channel acceptor.
+		 */
+		l2cap_br_conn_req_reply(chan, BT_L2CAP_ERR_SEC_BLOCK);
+
+		/* Release channel allocated to outgoing connection request */
+		if (atomic_test_bit(BR_CHAN(chan)->flags,
+				    L2CAP_FLAG_CONN_PENDING)) {
+			l2cap_br_detach_chan(chan->conn, chan);
+			bt_l2cap_chan_del(chan);
+		}
+
+		return;
+	}
+
 	if (!chan->conn->encrypt) {
 		return;
 	}
