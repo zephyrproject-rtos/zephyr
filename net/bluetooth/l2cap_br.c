@@ -1528,10 +1528,43 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
-static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
+static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 {
 	struct net_buf *buf;
 	struct bt_l2cap_conn_rsp *rsp;
+	struct bt_l2cap_sig_hdr *hdr;
+
+	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		return -ESRCH;
+	}
+
+	/* Send response to connection request only when in acceptor role */
+	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	if (!buf) {
+		BT_ERR("No buffers for PDU");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONN_RSP;
+	hdr->ident = chan->ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	rsp->dcid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
+	rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
+	rsp->status = sys_cpu_to_le16(BT_L2CAP_SUCCESS);
+	rsp->result = sys_cpu_to_le16(result);
+
+	bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
+	chan->ident = 0;
+
+	return 0;
+}
+
+static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
+{
+	struct net_buf *buf;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conn_req *req;
 
@@ -1550,28 +1583,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 	 * For incoming connection state send confirming outstanding
 	 * response and initiate configuration request.
 	 */
-	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-		buf = bt_l2cap_create_pdu(&br_sig, 0);
-		if (!buf) {
-			BT_ERR("No buffers for PDU");
-			return;
-		}
-
-		hdr = net_buf_add(buf, sizeof(*hdr));
-		hdr->code = BT_L2CAP_CONN_RSP;
-		hdr->ident = chan->ident;
-		hdr->len = sys_cpu_to_le16(sizeof(*rsp));
-
-		rsp = net_buf_add(buf, sizeof(*rsp));
-		memset(rsp, 0, sizeof(*rsp));
-
-		rsp->dcid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
-		rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
-		rsp->result = BT_L2CAP_SUCCESS;
-
-		bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
-
-		chan->ident = 0;
+	if (l2cap_br_conn_req_reply(chan, BT_L2CAP_SUCCESS) == 0) {
 		l2cap_br_state_set(chan, BT_L2CAP_CONFIG);
 		/*
 		 * Initialize config request since remote needs to know
