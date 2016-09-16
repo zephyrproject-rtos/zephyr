@@ -48,11 +48,6 @@
 #include <../../../kernel/nanokernel/include/nano_internal.h>
 #endif
 #include <stdint.h>
-/*
- * This pulls in the code shared with the IDT generator that actually
- * constructs an IDT entry.
- */
-#include <idtEnt.h>
 #include <misc/dlist.h>
 #endif
 

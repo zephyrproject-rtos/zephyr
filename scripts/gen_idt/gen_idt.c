@@ -49,7 +49,7 @@
 #define __packed __attribute__((__packed__))
 
 /* This comes from the shared directory */
-#include "idtEnt.h"
+#include <segmentation.h>
 
 #if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__WIN32__)
   #define O_BINARY 0

@@ -23,6 +23,7 @@ Ensures interrupt and exception stubs are installed correctly.
 
 #include <zephyr.h>
 #include <tc_util.h>
+#include <arch/x86/segmentation.h>
 
 #include <nano_private.h>
 #if defined(__GNUC__)
@@ -109,40 +110,26 @@ _EXCEPTION_CONNECT_NOCODE(exc_divide_error_handler, IV_DIVIDE_ERROR);
 
 int nanoIdtStubTest(void)
 {
-	IDT_ENTRY *pIdtEntry;
-	uint16_t offset;
+	struct segment_descriptor *pIdtEntry;
+	uint32_t offset;
 
 	/* Check for the interrupt stub */
-	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (TEST_SOFT_INT << 3));
-
-	offset = (uint16_t)((uint32_t)(&nanoIntStub) & 0xFFFF);
-	if (pIdtEntry->offset_low != offset) {
-		TC_ERROR("Failed to find low offset of nanoIntStub "
-				 "(0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
-		return TC_FAIL;
-	}
-
-	offset = (uint16_t)((uint32_t)(&nanoIntStub) >> 16);
-	if (pIdtEntry->offset_high != offset) {
-		TC_ERROR("Failed to find high offset of nanoIntStub "
-				 "(0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
+	pIdtEntry = (struct segment_descriptor *)
+		(_idt_base_address + (TEST_SOFT_INT << 3));
+	offset = (uint32_t)(&nanoIntStub);
+	if (DTE_OFFSET(pIdtEntry) != offset) {
+		TC_ERROR("Failed to find offset of nanoIntStub (0x%x) at vector %d\n",
+			 offset, TEST_SOFT_INT);
 		return TC_FAIL;
 	}
 
 	/* Check for the exception stub */
-	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (IV_DIVIDE_ERROR << 3));
-
-	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) & 0xFFFF);
-	if (pIdtEntry->offset_low != offset) {
-		TC_ERROR("Failed to find low offset of exc stub "
-				 "(0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
-		return TC_FAIL;
-	}
-
-	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) >> 16);
-	if (pIdtEntry->offset_high != offset) {
-		TC_ERROR("Failed to find high offset of exc stub "
-				 "(0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
+	pIdtEntry = (struct segment_descriptor *)
+		(_idt_base_address + (IV_DIVIDE_ERROR << 3));
+	offset = (uint32_t)(&exc_divide_error_handlerStub);
+	if (DTE_OFFSET(pIdtEntry) != offset) {
+		TC_ERROR("Failed to find offset of exc stub (0x%x) at vector %d\n",
+			 offset, IV_DIVIDE_ERROR);
 		return TC_FAIL;
 	}
 

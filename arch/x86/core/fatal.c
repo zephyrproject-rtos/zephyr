@@ -28,6 +28,7 @@
 #include <nano_private.h>
 #include <misc/printk.h>
 #include <arch/x86/irq_controller.h>
+#include <arch/x86/segmentation.h>
 #include <exception.h>
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }

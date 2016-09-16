@@ -28,40 +28,22 @@
 
 #include <nano_private.h>
 #include <arch/cpu.h>
-#include <gdt.h>
-
-#define NUM_GDT_ENTRIES 3
+#include <arch/x86/segmentation.h>
 
 /*
  * The RAM based global descriptor table. It is aligned on an 8 byte boundary
  * as the Intel manuals recommend this for best performance.
+ *
+ * TODO: CPU never looks at the 8-byte zero entry at all. Save a few bytes by
+ * stuffing the 6-byte pseudo descriptor there.
  */
-
-static tGdtDesc _gdt_entries[NUM_GDT_ENTRIES] __aligned(8) = {
-		{/* Entry 0 (selector=0x0000): The "NULL descriptor" */
-		 0x0000,
-		 0x0000,
-		 0x00,
-		 0x00,
-		 0x00,
-		 0x00
-		},
-		{	/* Entry 1 (selector=0x0008): Code descriptor: DPL0 */
-		 0xffff, /* limit: xffff */
-		 0x0000, /* base : xxxx0000 */
-		 0x00,   /* base : xx00xxxx */
-		 0x9b,   /* Code e/r, Present, DPL0, Accessed=1 */
-		 0xcf,   /* limit: fxxxx, Page Gra, 32 bit */
-		 0x00    /* base : 00xxxxxx */
-		},
-		{	/* Entry 2 (selector=0x0010): Data descriptor: DPL0 */
-		 0xffff, /* limit: xffff */
-		 0x0000, /* base : xxxx0000 */
-		 0x00,   /* base : xx00xxxx */
-		 0x93,   /* Data r/w, Present, DPL0, Accessed=1 */
-		 0xcf,   /* limit: fxxxx, Page Gra, 32 bit */
-		 0x00    /* base : 00xxxxxx */
-		},
+static struct segment_descriptor _gdt_entries[] __aligned(8) = {
+	DT_ZERO_ENTRY,
+	DT_CODE_SEG_ENTRY(0, 0xFFFFF, DT_GRAN_PAGE, 0, DT_READABLE,
+			  DT_NONCONFORM),
+	DT_DATA_SEG_ENTRY(0, 0xFFFFF, DT_GRAN_PAGE, 0, DT_WRITABLE,
+			  DT_EXPAND_UP)
 };
 
-tGdtHeader _gdt = {sizeof(_gdt_entries) - 1, &_gdt_entries[0]};
+struct pseudo_descriptor _gdt = DT_INIT(_gdt_entries);
+
