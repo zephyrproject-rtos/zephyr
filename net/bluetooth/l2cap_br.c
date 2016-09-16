@@ -480,13 +480,17 @@ done:
 	return err;
 }
 
-static bool br_sc_supported(void)
+static uint8_t get_fixed_channels_mask(void)
 {
-#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
-	return true;
-#else
-	return BT_FEAT_SC(bt_dev.features);
-#endif /* CONFIG_BLUETOOTH_SMP_FORCE_BREDR */
+	struct bt_l2cap_fixed_chan *fchan;
+	uint8_t mask = 0;
+
+	/* this needs to be enhanced if AMP Test Manager support is added */
+	for (fchan = br_fixed_channels; fchan; fchan = fchan->_next) {
+		mask |= BIT(fchan->cid);
+	}
+
+	return mask;
 }
 
 static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
@@ -531,13 +535,7 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_SUCCESS);
 		/* fixed channel mask protocol data is 8 octets wide */
 		memset(net_buf_add(rsp_buf, 8), 0, 8);
-		/* signaling channel is mandatory on BR/EDR transport */
-		rsp->data[0] = BIT(BT_L2CAP_CID_BR_SIG);
-
-		/* Add SMP channel if SC are supported */
-		if (br_sc_supported()) {
-			rsp->data[0] |= BIT(BT_L2CAP_CID_BR_SMP);
-		}
+		rsp->data[0] = get_fixed_channels_mask();
 
 		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + 8);
 		break;
