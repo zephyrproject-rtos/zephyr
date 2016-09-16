@@ -142,6 +142,7 @@ struct net_nbr *net_nbr_get(struct net_nbr_table *table);
  * @brief Find a neighbor from specific table.
  * @param table Neighbor table
  * @param iface Network interface to use
+ * @param lladdr Neighbor link layer address
  * @return Pointer to neighbor, NULL if not found
  */
 struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
@@ -152,7 +153,7 @@ struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
  * @brief Link a neighbor to specific link layer address.
  * @param table Neighbor table
  * @param iface Network interface to use
- * @param lladdr Neighbor's link layer address
+ * @param lladdr Neighbor link layer address
  * @return 0 if ok, <0 if linking failed
  */
 int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
@@ -161,7 +162,7 @@ int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
 /**
  * @brief Unlink a neighbor from specific link layer address.
  * @param table Neighbor table
- * @param lladdr Neighbor's link layer address
+ * @param lladdr Neighbor link layer address
  * @return 0 if ok, <0 if unlinking failed
  */
 int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr);
