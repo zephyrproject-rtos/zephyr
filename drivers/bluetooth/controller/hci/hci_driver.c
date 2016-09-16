@@ -63,8 +63,8 @@ static uint8_t ALIGNED(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 						[TICKER_USER_OP_T_SIZE];
 static uint8_t ALIGNED(4) _radio[LL_MEM_TOTAL];
 
-static struct nano_sem nano_sem_native_recv;
-static BT_STACK_NOINIT(native_recv_fiber_stack,
+static struct nano_sem nano_sem_recv;
+static BT_STACK_NOINIT(recv_fiber_stack,
 		       CONFIG_BLUETOOTH_CONTROLLER_RX_STACK_SIZE);
 
 void radio_active_callback(uint8_t active)
@@ -73,7 +73,7 @@ void radio_active_callback(uint8_t active)
 
 void radio_event_callback(void)
 {
-	nano_isr_sem_give(&nano_sem_native_recv);
+	nano_isr_sem_give(&nano_sem_recv);
 }
 
 static void power_clock_nrf5_isr(void *arg)
@@ -126,7 +126,7 @@ static void swi5_nrf5_isr(void *arg)
 	work_run(NRF52_IRQ_SWI5_EGU5_IRQn);
 }
 
-static struct net_buf *native_evt_recv(uint8_t *remaining, uint8_t **in)
+static struct net_buf *evt_create(uint8_t *remaining, uint8_t **in)
 {
 	struct bt_hci_evt_hdr hdr;
 	struct net_buf *buf;
@@ -149,7 +149,7 @@ static struct net_buf *native_evt_recv(uint8_t *remaining, uint8_t **in)
 	return buf;
 }
 
-static struct net_buf *native_acl_recv(uint8_t *remaining, uint8_t **in)
+static struct net_buf *acl_create(uint8_t *remaining, uint8_t **in)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
@@ -172,7 +172,7 @@ static struct net_buf *native_acl_recv(uint8_t *remaining, uint8_t **in)
 	return buf;
 }
 
-static int native_recv(uint8_t remaining, uint8_t *in)
+static int evt_acl_create(uint8_t remaining, uint8_t *in)
 {
 	struct net_buf *buf;
 	uint8_t type;
@@ -181,10 +181,10 @@ static int native_recv(uint8_t remaining, uint8_t *in)
 
 	switch (type) {
 	case HCI_EVT:
-		buf = native_evt_recv(&remaining, &in);
+		buf = evt_create(&remaining, &in);
 		break;
 	case HCI_ACL:
-		buf = native_acl_recv(&remaining, &in);
+		buf = acl_create(&remaining, &in);
 		break;
 	default:
 		BT_ERR("Unknown HCI type %u", type);
@@ -211,7 +211,7 @@ static int native_recv(uint8_t remaining, uint8_t *in)
 	return 0;
 }
 
-static void native_recv_fiber(int unused0, int unused1)
+static void recv_fiber(int unused0, int unused1)
 {
 	while (1) {
 		uint16_t handle;
@@ -227,7 +227,7 @@ static void native_recv_fiber(int unused0, int unused1)
 			hcic_encode_num_cmplt(handle, num_cmplt, &len, &buf);
 			BT_ASSERT(len);
 
-			retval = native_recv(len, buf);
+			retval = evt_acl_create(len, buf);
 			BT_ASSERT(!retval);
 
 			fiber_yield();
@@ -244,7 +244,7 @@ static void native_recv_fiber(int unused0, int unused1)
 			 * hence just dequeue.
 			 */
 			if (len) {
-				retval = native_recv(len, buf);
+				retval = evt_acl_create(len, buf);
 				BT_ASSERT(!retval);
 			}
 
@@ -255,17 +255,17 @@ static void native_recv_fiber(int unused0, int unused1)
 
 			fiber_yield();
 		} else {
-			nano_fiber_sem_take(&nano_sem_native_recv,
+			nano_fiber_sem_take(&nano_sem_recv,
 					    TICKS_UNLIMITED);
 		}
 
-		stack_analyze("native recv fiber stack",
-			      native_recv_fiber_stack,
-			      sizeof(native_recv_fiber_stack));
+		stack_analyze("recv fiber stack",
+			      recv_fiber_stack,
+			      sizeof(recv_fiber_stack));
 	}
 }
 
-static int native_send(struct net_buf *buf)
+static int hci_driver_send(struct net_buf *buf)
 {
 	uint8_t type;
 	uint8_t remaining;
@@ -310,7 +310,7 @@ static int native_send(struct net_buf *buf)
 		if (remaining) {
 			int retval;
 
-			retval = native_recv(remaining, in);
+			retval = evt_acl_create(remaining, in);
 			if (retval) {
 				return retval;
 			}
@@ -324,7 +324,7 @@ static int native_send(struct net_buf *buf)
 	return 0;
 }
 
-static int native_open(void)
+static int hci_driver_open(void)
 {
 	uint32_t retval;
 
@@ -371,9 +371,9 @@ static int native_open(void)
 	irq_enable(NRF52_IRQ_SWI4_EGU4_IRQn);
 	irq_enable(NRF52_IRQ_SWI5_EGU5_IRQn);
 
-	nano_sem_init(&nano_sem_native_recv);
-	fiber_start(native_recv_fiber_stack, sizeof(native_recv_fiber_stack),
-		    (nano_fiber_entry_t)native_recv_fiber, 0, 0, 7, 0);
+	nano_sem_init(&nano_sem_recv);
+	fiber_start(recv_fiber_stack, sizeof(recv_fiber_stack),
+		    (nano_fiber_entry_t)recv_fiber, 0, 0, 7, 0);
 
 	BT_DBG("Success.");
 
@@ -383,11 +383,11 @@ static int native_open(void)
 static struct bt_driver drv = {
 	.name	= "Controller",
 	.bus	= BT_DRIVER_BUS_VIRTUAL,
-	.open	= native_open,
-	.send	= native_send,
+	.open	= hci_driver_open,
+	.send	= hci_driver_send,
 };
 
-static int _native_init(struct device *unused)
+static int _hci_driver_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -396,4 +396,4 @@ static int _native_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(_native_init, NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(_hci_driver_init, NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
