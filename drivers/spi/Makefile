@@ -4,3 +4,4 @@ obj-$(CONFIG_SPI_MCUX_DSPI) += spi_mcux_dspi.o
 obj-$(CONFIG_SPIM_NRF52) += spim_nrf52.o
 obj-$(CONFIG_SPI_QMSI) += spi_qmsi.o
 obj-$(CONFIG_SPI_QMSI_SS) += spi_qmsi_ss.o
+obj-$(CONFIG_SPI_STM32LX) += spi_stm32lx.o
