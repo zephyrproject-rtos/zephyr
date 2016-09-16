@@ -93,6 +93,9 @@ enum {
 	/* Signaling channel flags */
 	L2CAP_FLAG_SIG_INFO_PENDING,	/* retrieving remote l2cap info */
 	L2CAP_FLAG_SIG_INFO_DONE,	/* remote l2cap info is done */
+
+	/* fixed channels flags */
+	L2CAP_FLAG_FIXED_CONNECTED,		/* fixed connected */
 };
 
 static struct bt_l2cap_server *br_servers;
@@ -411,6 +414,31 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	l2cap_br_chan_send_req(&l2cap->chan, buf, L2CAP_BR_INFO_TIMEOUT);
 }
 
+static void connect_fixed_channel(struct bt_l2cap_br_chan *chan)
+{
+	if (atomic_test_and_set_bit(chan->flags, L2CAP_FLAG_FIXED_CONNECTED)) {
+		return;
+	}
+
+	if (chan->chan.ops && chan->chan.ops->connected) {
+		chan->chan.ops->connected(&chan->chan);
+	}
+}
+
+static void connect_optional_fixed_channels(struct bt_l2cap_br *l2cap)
+{
+	/* can be change to loop if more BR/EDR fixed channels are added */
+	if (l2cap->info_fixed_chan & BIT(BT_L2CAP_CID_BR_SMP)) {
+		struct bt_l2cap_chan *chan;
+
+		chan = bt_l2cap_br_lookup_rx_cid(l2cap->chan.chan.conn,
+						 BT_L2CAP_CID_BR_SMP);
+		if (chan) {
+			connect_fixed_channel(BR_CHAN(chan));
+		}
+	}
+}
+
 static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 			     struct net_buf *buf)
 {
@@ -468,6 +496,9 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		l2cap->info_fixed_chan = net_buf_pull_u8(buf);
 		BT_DBG("remote fixed channel mask 0x%02x",
 		       l2cap->info_fixed_chan);
+
+		connect_optional_fixed_channels(l2cap);
+
 		break;
 	default:
 		BT_WARN("type 0x%04x unsupported", type);
@@ -555,7 +586,6 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 {
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
-	struct bt_l2cap_br *l2cap;
 
 	for (fchan = br_fixed_channels; fchan; fchan = fchan->_next) {
 		struct bt_l2cap_br_chan *ch;
@@ -577,13 +607,19 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 			return;
 		}
 
-		if (chan->ops && chan->ops->connected) {
-			chan->ops->connected(chan);
+		/*
+		 * other fixed channels will be connected after Information
+		 * Response is received
+		 */
+		if (fchan->cid == BT_L2CAP_CID_BR_SIG) {
+			struct bt_l2cap_br *sig_ch;
+
+			connect_fixed_channel(ch);
+
+			sig_ch = CONTAINER_OF(ch, struct bt_l2cap_br, chan);
+			l2cap_br_get_info(sig_ch, BT_L2CAP_INFO_FEAT_MASK);
 		}
 	}
-
-	l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
-	l2cap_br_get_info(l2cap, BT_L2CAP_INFO_FEAT_MASK);
 }
 
 static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
