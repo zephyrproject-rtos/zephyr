@@ -252,6 +252,34 @@ void net_neighbor_table_clear(struct net_nbr_table *table)
 {
 	NET_DBG("Neighbor table %p cleared", table);
 }
+
+struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
+					      uint8_t idx)
+{
+	int i;
+
+	if (idx == NET_NBR_LLADDR_UNKNOWN) {
+		return NULL;
+	}
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+
+		if (!nbr->ref) {
+			continue;
+		}
+
+		if (iface && nbr->iface != iface) {
+			continue;
+		}
+
+		if (nbr->idx == idx) {
+			return &net_nbr_data(nbr)->addr;
+		}
+	}
+
+	return NULL;
+}
 #endif /* CONFIG_NET_IPV6_ND */
 
 struct net_buf *net_ipv6_create(struct net_context *context,

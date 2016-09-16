@@ -104,6 +104,18 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf);
 struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 				    struct in6_addr *addr);
 
+/**
+ * @brief Look for a neighbour from it's link local address index
+ *
+ * @param iface Network interface to match. If NULL, then use
+ * whatever interface there is configured for the neighbor address.
+ * @param idx Index of the link layer address in the address array
+ *
+ * @return A valid pointer on a neighbour on success, NULL otherwise
+ */
+struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
+					      uint8_t idx);
+
 #else /* CONFIG_NET_IPV6_ND */
 static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 {
@@ -112,6 +124,13 @@ static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 
 static inline struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 						  struct in6_addr *addr)
+{
+	return NULL;
+}
+
+static inline
+struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
+					      uint8_t idx)
 {
 	return NULL;
 }
