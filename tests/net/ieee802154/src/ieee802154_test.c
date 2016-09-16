@@ -71,6 +71,21 @@ struct ieee802154_pkt_test test_ack_pkt = {
 	.mhr_check.src_addr = NULL,
 };
 
+uint8_t beacon_pkt[] = {
+	0x00, 0xd0, 0x11, 0xcd, 0xab, 0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b,
+	0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+struct ieee802154_pkt_test test_beacon_pkt = {
+	.name = "Empty beacon frame",
+	.pkt = beacon_pkt,
+	.length = sizeof(beacon_pkt),
+	.mhr_check.fc_seq = (struct ieee802154_fcf_seq *)beacon_pkt,
+	.mhr_check.dst_addr = NULL,
+	.mhr_check.src_addr =
+	(struct ieee802154_address_field *) (beacon_pkt + 3),
+};
+
 struct net_buf *current_buf;
 struct nano_sem driver_lock;
 struct net_if *iface;
@@ -272,6 +287,10 @@ void main(void)
 	}
 
 	if (test_ack_reply(&test_ack_pkt) != TC_PASS) {
+		goto end;
+	}
+
+	if (test_packet_parsing(&test_beacon_pkt) != TC_PASS) {
 		goto end;
 	}
 
