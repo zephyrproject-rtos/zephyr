@@ -549,6 +549,77 @@ struct l2cap_read_supported_commands_rp {
 	uint8_t data[0];
 } __packed;
 
+#define L2CAP_CONNECT			0x02
+struct l2cap_connect_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t psm;
+} __packed;
+
+struct l2cap_connect_rp {
+	uint8_t chan_id;
+} __packed;
+
+#define L2CAP_DISCONNECT		0x03
+struct l2cap_disconnect_cmd {
+	uint8_t chan_id;
+} __packed;
+
+#define L2CAP_SEND_DATA			0x04
+struct l2cap_send_data_cmd {
+	uint8_t chan_id;
+	uint16_t data_len;
+	uint8_t data[];
+} __packed;
+
+#define L2CAP_TRANSPORT_BREDR		0x00
+#define L2CAP_TRANSPORT_LE		0x01
+
+#define L2CAP_LISTEN			0x05
+struct l2cap_listen_cmd {
+	uint16_t psm;
+	uint8_t transport;
+} __packed;
+
+#define L2CAP_ACCEPT_CONNECTION		0x06
+struct l2cap_accept_connection_cmd {
+	uint8_t chan_id;
+	uint16_t result;
+} __packed;
+
+/* events */
+#define L2CAP_EV_CONNECTION_REQ		0x80
+struct l2cap_connection_req_ev {
+	uint8_t chan_id;
+	uint16_t psm;
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
+#define L2CAP_EV_CONNECTED		0x81
+struct l2cap_connected_ev {
+	uint8_t chan_id;
+	uint16_t psm;
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
+#define L2CAP_EV_DISCONNECTED		0x82
+struct l2cap_disconnected_ev {
+	uint16_t result;
+	uint8_t chan_id;
+	uint16_t psm;
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
+#define L2CAP_EV_DATA_RECEIVED		0x83
+struct l2cap_data_received_ev {
+	uint8_t chan_id;
+	uint16_t data_length;
+	uint8_t data[0];
+} __packed;
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,

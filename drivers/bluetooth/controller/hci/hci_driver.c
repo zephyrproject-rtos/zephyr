@@ -42,7 +42,7 @@
 #include "hal/radio.h"
 #include "ll/ticker.h"
 #include "ll/ctrl_internal.h"
-#include "hci/hci.h"
+#include "hci_internal.h"
 
 #include "hal/debug.h"
 
@@ -224,11 +224,11 @@ static void native_recv_fiber(int unused0, int unused1)
 			uint8_t *buf;
 			int retval;
 
-			hci_encode_num_cmplt(handle, num_cmplt, &len, &buf);
-			ASSERT(len);
+			hcic_encode_num_cmplt(handle, num_cmplt, &len, &buf);
+			BT_ASSERT(len);
 
 			retval = native_recv(len, buf);
-			ASSERT(!retval);
+			BT_ASSERT(!retval);
 
 			fiber_yield();
 		}
@@ -238,14 +238,14 @@ static void native_recv_fiber(int unused0, int unused1)
 			uint8_t *buf;
 			int retval;
 
-			hci_encode((uint8_t *)radio_pdu_node_rx, &len, &buf);
+			hcic_encode((uint8_t *)radio_pdu_node_rx, &len, &buf);
 
 			/* Not all radio_rx_get are translated to HCI!,
 			 * hence just dequeue.
 			 */
 			if (len) {
 				retval = native_recv(len, buf);
-				ASSERT(!retval);
+				BT_ASSERT(!retval);
 			}
 
 			radio_rx_dequeue();
@@ -267,7 +267,6 @@ static void native_recv_fiber(int unused0, int unused1)
 
 static int native_send(struct net_buf *buf)
 {
-	extern void hci_handle(uint8_t x, uint8_t *len, uint8_t **out);
 	uint8_t type;
 	uint8_t remaining;
 	uint8_t *in;
@@ -279,10 +278,10 @@ static int native_send(struct net_buf *buf)
 	type = bt_buf_get_type(buf);
 	switch (type) {
 	case BT_BUF_ACL_OUT:
-		hci_handle(HCI_ACL, &remaining, &in);
+		hcic_handle(HCI_ACL, &remaining, &in);
 		break;
 	case BT_BUF_CMD:
-		hci_handle(HCI_CMD, &remaining, &in);
+		hcic_handle(HCI_CMD, &remaining, &in);
 		break;
 	default:
 		BT_ERR("Unknown HCI type %u", type);
@@ -296,7 +295,7 @@ static int native_send(struct net_buf *buf)
 
 	if (buf->len) {
 		while (buf->len - 1) {
-			hci_handle(net_buf_pull_u8(buf), &remaining, &in);
+			hcic_handle(net_buf_pull_u8(buf), &remaining, &in);
 		}
 
 		if (remaining) {
@@ -304,9 +303,9 @@ static int native_send(struct net_buf *buf)
 			return -EINVAL;
 		}
 
-		hci_handle(net_buf_pull_u8(buf), &remaining, &in);
+		hcic_handle(net_buf_pull_u8(buf), &remaining, &in);
 
-		BT_DBG("hci_handle returned %u bytes", remaining);
+		BT_DBG("hcic_handle returned %u bytes", remaining);
 
 		if (remaining) {
 			int retval;

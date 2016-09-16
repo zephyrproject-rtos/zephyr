@@ -29,6 +29,7 @@ enum l2cap_conn_list_action {
 #define BT_L2CAP_CID_ATT		0x0004
 #define BT_L2CAP_CID_LE_SIG		0x0005
 #define BT_L2CAP_CID_SMP		0x0006
+#define BT_L2CAP_CID_BR_SMP		0x0007
 
 #define BT_L2CAP_PSM_RFCOMM		0x0003
 

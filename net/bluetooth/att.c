@@ -1479,7 +1479,7 @@ static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	if (!att->req || att->req->buf) {
+	if (!att->req || !att->req->buf) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
@@ -1682,8 +1682,6 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_att_hdr *hdr = (void *)buf->data;
 	uint8_t err = BT_ATT_ERR_NOT_SUPPORTED;
 	size_t i;
-
-	BT_ASSERT(att);
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small ATT PDU received");

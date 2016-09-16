@@ -424,15 +424,17 @@ static int le_set_rpa(void)
 	bt_addr_t rpa;
 	int err;
 
-	/* work is not idle so current RPA is valid */
-	if (!atomic_test_bit(bt_dev.rpa_update.work.flags,
-			     NANO_WORK_STATE_IDLE)) {
+	/* check if RPA is valid */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID)) {
 		return 0;
 	}
 
 	err = bt_smp_create_rpa(bt_dev.irk, &rpa);
 	if (!err) {
 		err = set_random_address(&rpa);
+		if (!err) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+		}
 	}
 
 	/* restart timer even if failed to set new RPA */
@@ -444,6 +446,9 @@ static int le_set_rpa(void)
 static void rpa_timeout(struct nano_work *work)
 {
 	BT_DBG("");
+
+	/* Invalidate RPA */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 
 	/*
 	 * we need to update rpa only if advertising is ongoing, with
@@ -4240,11 +4245,8 @@ int bt_le_oob_get_local(struct bt_le_oob *oob)
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 	int err;
 
-	/* TODO better handle submitted but not run case */
-	err = nano_delayed_work_cancel(&bt_dev.rpa_update);
-	if (err && err == -EINPROGRESS) {
-		return err;
-	}
+	/* Invalidate RPA so a new one is generated */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 
 	err = le_set_rpa();
 	if (err) {

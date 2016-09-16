@@ -92,14 +92,14 @@ hf_start_return:
 	/* rollover should not happen as start and stop shall be
 	 * called in pairs.
 	 */
-	ASSERT(clock_instance.m16src_refcount);
+	BT_ASSERT(clock_instance.m16src_refcount);
 
 	return (((NRF_CLOCK->HFCLKSTAT & CLOCK_HFCLKSTAT_STATE_Msk)) ? 1 : 0);
 }
 
 void clock_m16src_stop(void)
 {
-	ASSERT(clock_instance.m16src_refcount);
+	BT_ASSERT(clock_instance.m16src_refcount);
 
 	if (--clock_instance.m16src_refcount) {
 		return;
@@ -183,7 +183,7 @@ void power_clock_isr(void)
 	done = (NRF_CLOCK->EVENTS_DONE != 0);
 	ctto = (NRF_CLOCK->EVENTS_CTTO != 0);
 
-	ASSERT(pof || hf || lf || done || ctto);
+	BT_ASSERT(pof || hf || lf || done || ctto);
 
 	if (pof) {
 		NRF_POWER->EVENTS_POFWARN = 0;
@@ -203,7 +203,7 @@ void power_clock_isr(void)
 	if (lf) {
 		NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
 
-		ASSERT(0);
+		BT_ASSERT(0);
 	}
 
 	if (done) {

@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-#ifndef _HCI_H_
-#define _HCI_H_
+#ifndef _HCI_CONTROLLER_H_
+#define _HCI_CONTROLLER_H_
 
-void hci_handle(uint8_t x, uint8_t *len, uint8_t **out);
-void hci_encode(uint8_t *buf, uint8_t *len, uint8_t **out);
-void hci_encode_num_cmplt(uint16_t instance, uint8_t num, uint8_t *len,
-			  uint8_t **out);
+void hcic_handle(uint8_t x, uint8_t *len, uint8_t **out);
+void hcic_encode(uint8_t *buf, uint8_t *len, uint8_t **out);
+void hcic_encode_num_cmplt(uint16_t instance, uint8_t num, uint8_t *len,
+			   uint8_t **out);
 
-#endif /* _HCI_H_ */
+#endif /* _HCI_CONTROLLER_H_ */

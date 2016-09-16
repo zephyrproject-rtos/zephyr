@@ -125,7 +125,7 @@ void ecb_isr(void)
 	}
 
 	else {
-		ASSERT(0);
+		BT_ASSERT(0);
 	}
 }
 

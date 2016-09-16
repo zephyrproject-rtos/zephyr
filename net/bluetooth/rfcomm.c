@@ -49,7 +49,9 @@
 #define RFCOMM_MIN_MTU		BT_RFCOMM_SIG_MIN_MTU
 #define RFCOMM_DEFAULT_MTU	127
 
-#define RFCOMM_DEFAULT_CREDIT	7
+#define RFCOMM_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
+#define RFCOMM_CREDITS_THRESHOLD	(RFCOMM_MAX_CREDITS / 2)
+#define RFCOMM_DEFAULT_CREDIT		RFCOMM_MAX_CREDITS
 
 static struct bt_rfcomm_server *servers;
 
@@ -474,6 +476,31 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
 }
 
+static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
+{
+	struct bt_rfcomm_hdr *hdr;
+	struct net_buf *buf;
+	uint8_t fcs;
+
+	BT_DBG("Dlc %p credits %d", dlc, credits);
+
+	buf = bt_l2cap_create_pdu(&rfcomm_session);
+	if (!buf) {
+		BT_ERR("No buffers");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, dlc->session->initiator);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, BT_RFCOMM_PF_CREDIT);
+	hdr->length = BT_RFCOMM_SET_LEN_8(0);
+	net_buf_add_u8(buf, credits);
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+}
+
 static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 			      struct net_buf *buf, uint8_t cr)
 {
@@ -549,6 +576,24 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 	}
 }
 
+static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
+{
+	uint8_t credits;
+
+	BT_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
+
+	/* Only give more credits if it went below the defined threshold */
+	if (dlc->rx_credit > RFCOMM_CREDITS_THRESHOLD) {
+		return;
+	}
+
+	/* Restore credits */
+	credits = RFCOMM_MAX_CREDITS - dlc->rx_credit;
+	dlc->rx_credit += credits;
+
+	rfcomm_send_credit(dlc, credits);
+}
+
 static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 			       struct net_buf *buf, uint8_t dlci, uint8_t pf)
 
@@ -585,7 +630,9 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 		if (dlc->ops && dlc->ops->recv) {
 			dlc->ops->recv(dlc, buf);
 		}
+
 		dlc->rx_credit--;
+		rfcomm_dlc_update_credits(dlc);
 	}
 }
 
