@@ -178,6 +178,11 @@ int __must_switch_threads(void)
 	return _is_prio_higher(_get_highest_ready_prio(), _current->prio);
 }
 
+int _is_next_thread_current(void)
+{
+	return _get_next_ready_thread() == _current;
+}
+
 /* application API: change a thread's priority. Not callable from ISR */
 void k_thread_priority_set(struct tcs *thread, int prio)
 {
