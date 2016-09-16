@@ -547,14 +547,13 @@ struct zoap_reply *zoap_response_received(
 	struct zoap_reply *replies, size_t len)
 {
 	struct zoap_reply *r;
+	const uint8_t *token;
+	uint8_t tkl;
 	size_t i;
 
+	token = zoap_header_get_token(response, &tkl);
+
 	for (i = 0, r = replies; i < len; i++, r++) {
-		const uint8_t *token;
-		uint8_t tkl;
-
-		token = zoap_header_get_token(response, &tkl);
-
 		if (r->tkl != tkl) {
 			continue;
 		}
