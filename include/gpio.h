@@ -292,7 +292,7 @@ static inline int gpio_add_callback(struct device *port,
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid application's callback structure pointer.
  *
- * Note: enables to remove as many callacks as added through
+ * Note: enables to remove as many callbacks as added through
  *       gpio_add_callback().
  */
 static inline int gpio_remove_callback(struct device *port,

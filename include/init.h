@@ -41,7 +41,7 @@ extern "C" {
 /**
  * @def SYS_INIT
  *
- * @brief Run an initailization function at boot at specified priority
+ * @brief Run an initialization function at boot at specified priority
  *
  * @details This macro lets you run a function at system boot.
  *
@@ -58,7 +58,7 @@ extern "C" {
 /**
  * @def SYS_INIT_PM
  *
- * @brief Run an initailization function at boot at specified priority,
+ * @brief Run an initialization function at boot at specified priority,
  * and define functions to run at suspend/resume.
  *
  * @copydetails SYS_INIT
