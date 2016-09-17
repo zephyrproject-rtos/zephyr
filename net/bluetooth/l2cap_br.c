@@ -482,6 +482,15 @@ done:
 	return err;
 }
 
+static bool br_sc_supported(void)
+{
+#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
+	return true;
+#else
+	return BT_FEAT_SC(bt_dev.features);
+#endif /* CONFIG_BLUETOOTH_SMP_FORCE_BREDR */
+}
+
 static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 			     struct net_buf *buf)
 {
@@ -526,6 +535,12 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		memset(net_buf_add(rsp_buf, 8), 0, 8);
 		/* signaling channel is mandatory on BR/EDR transport */
 		rsp->data[0] = BIT(BT_L2CAP_CID_BR_SIG);
+
+		/* Add SMP channel if SC are supported */
+		if (br_sc_supported()) {
+			rsp->data[0] |= BIT(BT_L2CAP_CID_BR_SMP);
+		}
+
 		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + 8);
 		break;
 	default:

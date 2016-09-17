@@ -619,9 +619,39 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 {
+	if (!conn->encrypt) {
+		return 0;
+	}
+
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
-		return conn->br.link_key ? 16 : 0;
+		struct bt_hci_cp_read_encryption_key_size *cp;
+		struct bt_hci_rp_read_encryption_key_size *rp;
+		struct net_buf *buf;
+		struct net_buf *rsp;
+		uint8_t key_size;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
+					sizeof(*cp));
+		if (!buf) {
+			return 0;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->handle = sys_cpu_to_le16(conn->handle);
+
+		if (bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
+					buf, &rsp)) {
+			return 0;
+		}
+
+		rp = (void *)rsp->data;
+
+		key_size = rp->status ? 0 : rp->key_size;
+
+		net_buf_unref(rsp);
+
+		return key_size;
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
@@ -1004,12 +1034,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 		net_buf_unref(buf);
 	}
 
-	/* Return any unacknowledged packets */
-	if (conn->pending_pkts) {
-		while (conn->pending_pkts--) {
-			nano_fiber_sem_give(bt_conn_get_pkts(conn));
-		}
-	}
+	BT_ASSERT(!conn->pending_pkts);
 
 	bt_conn_reset_rx_state(conn);
 
@@ -1113,6 +1138,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		} else if (old_state == BT_CONN_CONNECT_SCAN && conn->err) {
 			/* this indicate LE Create Connection failed */
 			notify_connected(conn);
+		}
+
+		/* Return any unacknowledged packets */
+		while (conn->pending_pkts) {
+			nano_fiber_sem_give(bt_conn_get_pkts(conn));
+			conn->pending_pkts--;
 		}
 
 		/* Cancel Connection Update if it is pending */

@@ -18,30 +18,13 @@
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
-#ifdef __GNUC__
-#define ASSERT(x) do { \
-			if (!(x)) { \
-				__asm__ volatile (".inst 0xde00\n"); \
-			} \
-		} while (0)
-#else
-static __asm void _udf(void)
-{
-	UND #0;
-}
+#include <bluetooth/log.h>
 
-#define ASSERT(x) do { \
-			if (!(x)) { \
-				_udf(); \
-			} \
-		} while (0)
-#endif
-
-#if (DEBUG == 1)
-/*
- * P2 is outgoing debug pins.
- * Debug pins are initialized to low.
+/* below are some interesting macros referenced by controller
+ * which can be defined to SoC's GPIO toggle to observe/debug the
+ * controller's runtime behavior.
  */
+#if (DEBUG == 1)
 #define DEBUG_INIT()            do { \
 				NRF_GPIO->DIRSET = 0x03FF0000; \
 				NRF_GPIO->OUTCLR = 0x03FF0000; } \

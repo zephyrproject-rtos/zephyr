@@ -193,6 +193,7 @@ struct bt_hci_cmd_hdr {
 #define BT_OGF_LINK_CTRL                        0x01
 #define BT_OGF_BASEBAND                         0x03
 #define BT_OGF_INFO                             0x04
+#define BT_OGF_STATUS                           0x05
 #define BT_OGF_LE                               0x08
 #define BT_OGF_VS                               0x3f
 
@@ -433,7 +434,7 @@ struct bt_hci_rp_read_local_version_info {
 #define BT_HCI_OP_READ_SUPPORTED_COMMANDS       BT_OP(BT_OGF_INFO, 0x0002)
 struct bt_hci_rp_read_supported_commands {
 	uint8_t  status;
-	uint8_t  commands[36];
+	uint8_t  commands[64];
 } __packed;
 
 #define BT_HCI_OP_READ_LOCAL_EXT_FEATURES       BT_OP(BT_OGF_INFO, 0x0004)
@@ -466,6 +467,16 @@ struct bt_hci_rp_read_buffer_size {
 struct bt_hci_rp_read_bd_addr {
 	uint8_t   status;
 	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE      BT_OP(BT_OGF_STATUS, 0x0008)
+struct bt_hci_cp_read_encryption_key_size {
+	uint16_t handle;
+} __packed;
+struct bt_hci_rp_read_encryption_key_size {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  key_size;
 } __packed;
 
 /* BLE */
@@ -660,9 +671,17 @@ struct bt_hci_cp_le_ltk_req_reply {
 	uint16_t handle;
 	uint8_t  ltk[16];
 } __packed;
+struct bt_hci_rp_le_ltk_req_reply {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
 
 #define BT_HCI_OP_LE_LTK_REQ_NEG_REPLY          BT_OP(BT_OGF_LE, 0x001b)
 struct bt_hci_cp_le_ltk_req_neg_reply {
+	uint16_t handle;
+} __packed;
+struct bt_hci_rp_le_ltk_req_neg_reply {
+	uint8_t  status;
 	uint16_t handle;
 } __packed;
 
@@ -700,11 +719,19 @@ struct bt_hci_cp_le_conn_param_req_reply {
 	uint16_t min_ce_len;
 	uint16_t max_ce_len;
 } __packed;
+struct bt_hci_rp_le_conn_param_req_reply {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
 
 #define BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY   BT_OP(BT_OGF_LE, 0x0021)
 struct bt_hci_cp_le_conn_param_req_neg_reply {
 	uint16_t handle;
 	uint8_t  reason;
+} __packed;
+struct bt_hci_rp_le_conn_param_req_neg_reply {
+	uint8_t  status;
+	uint16_t handle;
 } __packed;
 
 #define BT_HCI_OP_LE_SET_DATA_LEN               BT_OP(BT_OGF_LE, 0x0022)
@@ -857,6 +884,15 @@ struct bt_hci_evt_remote_features {
 	uint8_t  features[8];
 } __packed;
 
+#define BT_HCI_EVT_REMOTE_VERSION_INFO          0x0c
+struct bt_hci_evt_remote_version_info {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  version;
+	uint16_t manufacturer;
+	uint8_t  subversion;
+} __packed;
+
 #define BT_HCI_EVT_CMD_COMPLETE                 0x0e
 struct bt_hci_evt_cmd_complete {
 	uint8_t  ncmd;
@@ -986,6 +1022,11 @@ struct bt_hci_evt_le_meta_event {
 	uint8_t  subevent;
 } __packed;
 
+#define BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP     0x57
+struct bt_hci_evt_auth_payload_timeout_exp {
+	uint16_t handle;
+} __packed;
+
 #define BT_HCI_ROLE_MASTER                      0x00
 #define BT_HCI_ROLE_SLAVE                       0x01
 
@@ -1007,6 +1048,10 @@ struct bt_hci_ev_le_advertising_info {
 	bt_addr_le_t addr;
 	uint8_t      length;
 	uint8_t      data[0];
+} __packed;
+struct bt_hci_ev_le_advertising_report {
+	uint8_t num_reports;
+	struct bt_hci_ev_le_advertising_info adv_info[0];
 } __packed;
 
 #define BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE      0x03
@@ -1076,14 +1121,17 @@ struct bt_hci_evt_le_enh_conn_complete {
 	uint8_t      clock_accuracy;
 } __packed;
 
-#define BT_HCI_EVT_LE_DIRECTED_ADV_REPORT       0x02
-struct bt_hci_ev_le_directed_adv_info {
+#define BT_HCI_EVT_LE_DIRECT_ADV_REPORT         0x0b
+struct bt_hci_ev_le_direct_adv_info {
 	uint8_t      evt_type;
 	bt_addr_le_t dir_addr;
 	bt_addr_le_t addr;
 	int8_t       rssi;
 } __packed;
-
+struct bt_hci_ev_le_direct_adv_report {
+	uint8_t num_reports;
+	struct bt_hci_ev_le_direct_adv_info direct_adv_info[0];
+} __packed;
 
 #ifdef __cplusplus
 }
