@@ -52,8 +52,6 @@ source "drivers/gpio/Kconfig.mmio"
 
 source "drivers/gpio/Kconfig.qmsi"
 
-source "drivers/gpio/Kconfig.qmsi_ss"
-
 source "drivers/gpio/Kconfig.sch"
 
 source "drivers/gpio/Kconfig.k64"
