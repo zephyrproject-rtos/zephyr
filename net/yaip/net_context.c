@@ -874,6 +874,9 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		net_context_set_iface(context, net_nbuf_iface(buf));
 		break;
 	case NET_TCP_SYN_RCVD:
+		if (net_nbuf_iface(buf) != net_context_get_iface(context)) {
+			return NET_DROP;
+		}
 		break;
 	default:
 		NET_DBG("Context %p in wrong state %d",
