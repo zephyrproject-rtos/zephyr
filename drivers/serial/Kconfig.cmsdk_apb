@@ -1,0 +1,189 @@
+# Kconfig.beetle - ARM CMSDK APB SoC UART configuration options
+#
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig UART_CMSDK_APB
+	bool "ARM CMSDK APB UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	depends on SOC_FAMILY_ARM
+	help
+	  This option enables the UART driver for ARM CMSDK APB UART.
+
+if UART_CMSDK_APB
+
+# ---------- Port 0 ----------
+
+config UART_CMSDK_APB_PORT0
+	bool "Enable driver for UART 0"
+	default n
+	help
+	  Build the driver to utilize UART controller Port 0.
+
+config UART_CMSDK_APB_PORT0_NAME
+	string "Device Name for UART 0"
+	default "UART_0"
+	depends on UART_CMSDK_APB_PORT0
+	help
+	  This is the device name for UART, and is included in the device
+	  struct.
+
+config UART_CMSDK_APB_PORT0_IRQ_PRI
+	int "UART Interrupt Priority (Interrupt support)"
+	default 2
+	depends on UART_CMSDK_APB_PORT0
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The interrupt priority for UART port.
+
+config UART_CMSDK_APB_PORT0_BAUD_RATE
+	int "Baud Rate"
+	range 9600 115200
+	default 115200
+	depends on UART_CMSDK_APB_PORT0
+	help
+	  The baud rate for UART port to be set to at boot.
+
+# ---------- Port 1 ----------
+
+config UART_CMSDK_APB_PORT1
+	bool "Enable driver for UART 1"
+	default n
+	help
+	  Build the driver to utilize UART controller Port 1.
+
+config UART_CMSDK_APB_PORT1_NAME
+	string "Device Name for UART 1"
+	default "UART_1"
+	depends on UART_CMSDK_APB_PORT1
+	help
+	  This is the device name for UART, and is included in the device
+	  struct.
+
+config UART_CMSDK_APB_PORT1_IRQ_PRI
+	int "UART Interrupt Priority (Interrupt support)"
+	default 2
+	depends on UART_CMSDK_APB_PORT1
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The interrupt priority for UART port.
+
+config UART_CMSDK_APB_PORT1_BAUD_RATE
+	int "Baud Rate"
+	range 9600 115200
+	default 115200
+	depends on UART_CMSDK_APB_PORT1
+	help
+	  The baud rate for UART port to be set to at boot.
+
+# ---------- Port 2 ----------
+
+config UART_CMSDK_APB_PORT2
+	bool "Enable driver for UART 2"
+	default n
+	help
+	  Build the driver to utilize UART controller Port 2.
+
+config UART_CMSDK_APB_PORT2_NAME
+	string "Device Name for UART 2"
+	default "UART_2"
+	depends on UART_CMSDK_APB_PORT2
+	help
+	  This is the device name for UART, and is included in the device
+	  struct.
+
+config UART_CMSDK_APB_PORT2_IRQ_PRI
+	int "UART Interrupt Priority (Interrupt support)"
+	default 2
+	depends on UART_CMSDK_APB_PORT2
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The interrupt priority for UART port.
+
+config UART_CMSDK_APB_PORT2_BAUD_RATE
+	int "Baud Rate"
+	range 9600 115200
+	default 115200
+	depends on UART_CMSDK_APB_PORT2
+	help
+	  The baud rate for UART port to be set to at boot.
+
+# ---------- Port 3 ----------
+
+config UART_CMSDK_APB_PORT3
+	bool "Enable driver for UART 3"
+	default n
+	help
+	  Build the driver to utilize UART controller Port 3.
+
+config UART_CMSDK_APB_PORT3_NAME
+	string "Device Name for UART 3"
+	default "UART_3"
+	depends on UART_CMSDK_APB_PORT3
+	help
+	  This is the device name for UART, and is included in the device
+	  struct.
+
+config UART_CMSDK_APB_PORT3_IRQ_PRI
+	int "UART Interrupt Priority (Interrupt support)"
+	default 2
+	depends on UART_CMSDK_APB_PORT3
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The interrupt priority for UART port.
+
+config UART_CMSDK_APB_PORT3_BAUD_RATE
+	int "Baud Rate"
+	range 9600 115200
+	default 115200
+	depends on UART_CMSDK_APB_PORT3
+	help
+	  The baud rate for UART port to be set to at boot.
+
+# ---------- Port 4 ----------
+
+config UART_CMSDK_APB_PORT4
+	bool "Enable driver for UART 4"
+	default n
+	help
+	  Build the driver to utilize UART controller Port 4.
+
+config UART_CMSDK_APB_PORT4_NAME
+	string "Device Name for UART 4"
+	default "UART_4"
+	depends on UART_CMSDK_APB_PORT4
+	help
+	  This is the device name for UART, and is included in the device
+	  struct.
+
+config UART_CMSDK_APB_PORT4_IRQ_PRI
+	int "UART Interrupt Priority (Interrupt support)"
+	default 2
+	depends on UART_CMSDK_APB_PORT4
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The interrupt priority for UART port.
+
+config UART_CMSDK_APB_PORT4_BAUD_RATE
+	int "Baud Rate"
+	range 9600 115200
+	default 115200
+	depends on UART_CMSDK_APB_PORT4
+	help
+	  The baud rate for UART port to be set to at boot.
+
+endif # UART_CMSDK_APB
