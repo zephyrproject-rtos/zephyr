@@ -64,6 +64,13 @@ config NET_DEBUG_CONN
 	help
 	Enables connection debug messages
 
+config NET_DEBUG_ROUTE
+	bool "Debug route management"
+	depends on NET_ROUTE
+	default n
+	help
+	Enables routing engine debug messages
+
 config NET_STATISTICS
 	bool "Print network statistics"
 	default n

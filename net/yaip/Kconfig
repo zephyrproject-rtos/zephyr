@@ -41,6 +41,27 @@ config NET_MAX_ROUTERS
 	help
 	The value depends on your network needs.
 
+config NET_ROUTE
+	bool
+	depends on NET_IPV6
+	select NET_IPV6_ND
+	default n
+	default y if NET_IPV6
+
+config	NET_MAX_ROUTES
+	int "Max number of routing entries stored."
+	default NET_IPV6_MAX_NEIGHBORS
+	depends on NET_ROUTE
+	help
+	This determines how many entries can be stored in routing table.
+
+config	NET_MAX_NEXTHOPS
+	int "Max number of next hop entries stored."
+	default NET_MAX_ROUTES
+	depends on NET_ROUTE
+	help
+	This determines how many entries can be stored in nexthop table.
+
 config NET_TCP
 	bool
 	default n

@@ -11,6 +11,7 @@ obj-$(CONFIG_NET_IPV4) += icmpv4.o ipv4.o
 obj-$(CONFIG_NET_6LO) += 6lo.o
 obj-$(CONFIG_NET_TRICKLE) += trickle.o
 obj-$(CONFIG_NET_DHCPV4) += dhcpv4.o
+obj-$(CONFIG_NET_ROUTE) += route.o
 
 ifeq ($(CONFIG_NET_UDP),y)
 	obj-$(CONFIG_NET_UDP) += connection.o

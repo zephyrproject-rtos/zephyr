@@ -49,6 +49,7 @@
 #include "icmpv4.h"
 #endif
 
+#include "route.h"
 #include "connection.h"
 #include "udp.h"
 
@@ -457,6 +458,8 @@ static inline void l3_init(void)
 	net_conn_init();
 #endif
 	net_udp_init();
+
+	net_route_init();
 
 	NET_DBG("Network L3 init done");
 }
