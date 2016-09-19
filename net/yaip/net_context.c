@@ -946,6 +946,11 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 		net_tcp_print_recv_info("ACK", buf, NET_TCP_BUF(buf)->src_port);
 
+		if (!context->accept_cb) {
+			NET_DBG("No accept callback, connection reset.");
+			goto reset;
+		}
+
 		net_tcp_change_state(tcp, NET_TCP_ESTABLISHED);
 
 		/* We create a new context that starts to wait data.
@@ -1012,10 +1017,6 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			goto reset;
 		}
 
-		if (!context->accept_cb) {
-			NET_DBG("No accept callback, connection reset.");
-			goto reset;
-		}
 
 		/* The original context is left to serve another
 		 * incoming request.
