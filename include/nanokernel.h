@@ -505,6 +505,11 @@ extern void nano_fifo_init(struct nano_fifo *fifo);
  * it should be avoided when the context is known up-front to avoid unnecessary
  * overhead.
  *
+ * FIFO data items must be aligned on a 4-byte boundary, as the kernel reserves
+ * the first 32 bits of each item for use as a pointer to the next data item in
+ * the FIFO's link list.  Each data item added to the FIFO must include and
+ * reserve these first 32 bits.
+ *
  * @param fifo FIFO on which to interact.
  * @param data Data to send.
  *
