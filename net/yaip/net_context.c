@@ -990,6 +990,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		{
 			NET_ASSERT_INFO(false, "Invalid protocol family %d",
 					net_context_get_family(context));
+			net_context_put(new_context);
 			return NET_DROP;
 		}
 
@@ -998,6 +999,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		if (ret < 0) {
 			NET_DBG("Cannot bind accepted context, "
 				"connection reset");
+			net_context_put(new_context);
 			goto reset;
 		}
 
@@ -1014,6 +1016,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		if (ret < 0) {
 			NET_DBG("Cannot register accepted TCP handler (%d)",
 				ret);
+			net_context_put(new_context);
 			goto reset;
 		}
 
