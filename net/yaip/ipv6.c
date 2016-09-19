@@ -827,7 +827,7 @@ static void nd_reachable_timeout(struct nano_work *work)
 
 	struct net_nbr *nbr = get_nbr_from_data(data);
 
-	if (!data) {
+	if (!data || !nbr) {
 		NET_DBG("ND reachable timeout but no nbr data");
 		return;
 	}
