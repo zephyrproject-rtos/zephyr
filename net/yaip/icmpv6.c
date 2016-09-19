@@ -96,8 +96,6 @@ static enum net_verdict handle_echo_request(struct net_buf *buf)
 	return NET_OK;
 }
 
-#define NET_ICMPV6_UNUSED_LEN 4
-
 static inline void setup_ipv6_header(struct net_buf *buf, uint8_t extra_len,
 				     uint8_t hop_limit, uint8_t icmp_type,
 				     uint8_t icmp_code)

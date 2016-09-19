@@ -133,6 +133,9 @@ struct net_icmpv6_nd_opt_prefix_info {
 #define NET_ICMPV6_DST_UNREACH_SRC_ADDR  5 /* Source address failed */
 #define NET_ICMPV6_DST_UNREACH_REJ_ROUTE 6 /* Reject route to destination */
 
+/* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1 */
+#define NET_ICMPV6_UNUSED_LEN 4
+
 typedef enum net_verdict (*icmpv6_callback_handler_t)(struct net_buf *buf);
 
 struct net_icmpv6_handler {
