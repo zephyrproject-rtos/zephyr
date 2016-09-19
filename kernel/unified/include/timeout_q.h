@@ -277,15 +277,12 @@ static inline void _nano_timer_timeout_add(struct _timeout *t,
 }
 
 /* find the closest deadline in the timeout queue */
-static inline uint32_t _nano_get_earliest_timeouts_deadline(void)
+static inline int32_t _timeout_get_next_expiry(void)
 {
-	sys_dlist_t *q = &_nanokernel.timeout_q;
-	struct _timeout *t =
-		(struct _timeout *)sys_dlist_peek_head(q);
+	struct _timeout *t = (struct _timeout *)
+			     sys_dlist_peek_head(&_timeout_q);
 
-	return t ? min((uint32_t)t->delta_ticks_from_prev,
-					(uint32_t)_nanokernel.task_timeout)
-			 : (uint32_t)_nanokernel.task_timeout;
+	return t ? t->delta_ticks_from_prev : K_FOREVER;
 }
 
 #ifdef __cplusplus

@@ -111,8 +111,7 @@ static inline void _timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 #else
 	#define _timeout_tcs_init(tcs) do { } while ((0))
 	#define _timeout_abort(tcs) do { } while ((0))
-	#define _nano_get_earliest_timeouts_deadline() \
-		((uint32_t)TICKS_UNLIMITED)
+	#define _timeout_get_next_expiry() (K_FOREVER)
 
 	#define _TIMEOUT_TICK_GET()  0
 	#define _TIMEOUT_ADD(thread, pq, ticks) do { } while (0)

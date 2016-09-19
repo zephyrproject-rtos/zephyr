@@ -225,5 +225,5 @@ void _nano_sys_clock_tick_announce(int32_t ticks)
  */
 uint32_t _nano_get_earliest_deadline(void)
 {
-	return _nano_get_earliest_timeouts_deadline();
+	return (uint32_t) _timeout_get_next_expiry();
 }
