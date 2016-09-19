@@ -360,15 +360,13 @@ _Idt:
 #endif /* CONFIG_BOOTLOADER_UNKNOWN */
 
 #ifdef CONFIG_SET_GDT
-#ifndef CONFIG_GDT_DYNAMIC
-_gdt:
-#endif
-_gdt_rom:
-	.word _gdt_rom_end - _gdt_rom_entries - 1   /* Limit on GDT */
-	.long _gdt_rom_entries			/* table address: _gdt_rom_entries */
 
+	/* GDT should be aligned on 8-byte boundary for best processor
+	 * performance, see Section 3.5.1 of IA architecture SW developer
+	 * manual, Vol 3.
+	 */
 
-	.balign 16,0x90
+	.balign 8
 
 	/*
 	 * The following 3 GDT entries implement the so-called "basic
@@ -385,16 +383,17 @@ _gdt_rom:
 	 * in ROM, since such use is not planned for this platform.
 	 */
 
-_gdt_rom_entries:
+#ifndef CONFIG_GDT_DYNAMIC
+_gdt:
+#endif
+_gdt_rom:
 
-	/* Entry 0 (selector=0x0000): The "NULL descriptor" */
-
+	/* Entry 0 (selector=0x0000): The "NULL descriptor". The CPU never
+	 * actually looks at this entry, so we stuff 6-byte the pseudo
+	 * descriptor here */
+	.word _gdt_rom_end - _gdt_rom - 1	/* Limit on GDT */
+	.long _gdt_rom				/* table address: _gdt_rom */
 	.word   0x0000
-	.word   0x0000
-	.byte   0x00
-	.byte   0x00
-	.byte   0x00
-	.byte   0x00
 
 	/* Entry 1 (selector=0x0008): Code descriptor: DPL0 */
 

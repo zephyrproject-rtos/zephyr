@@ -32,7 +32,8 @@
 
 /*
  * The RAM based global descriptor table. It is aligned on an 8 byte boundary
- * as the Intel manuals recommend this for best performance.
+ * as the Intel manuals recommend this for best performance, see
+ * Section 3.5.1 of IA architecture SW developer manual, Vol 3.
  *
  * TODO: CPU never looks at the 8-byte zero entry at all. Save a few bytes by
  * stuffing the 6-byte pseudo descriptor there.
