@@ -89,8 +89,6 @@ static inline void _timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 				_timeout_add(thread, pq, ticks); \
 			} \
 		} while (0)
-	#define _TIMEOUT_SET_TASK_TIMEOUT(ticks) \
-		_nanokernel.task_timeout = (ticks)
 
 	#define _TIMEOUT_UPDATE(timeout, limit, cur_ticks) \
 		do { \
@@ -106,7 +104,6 @@ static inline void _timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 
 	#define _TIMEOUT_TICK_GET()  0
 	#define _TIMEOUT_ADD(thread, pq, ticks) do { } while (0)
-	#define _TIMEOUT_SET_TASK_TIMEOUT(ticks) do { } while ((0))
 	#define _TIMEOUT_UPDATE(timeout, limit, cur_ticks) do { } while (0)
 #else
 	#define _timeout_tcs_init(tcs) do { } while ((0))
@@ -115,13 +112,11 @@ static inline void _timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 
 	#define _TIMEOUT_TICK_GET()  0
 	#define _TIMEOUT_ADD(thread, pq, ticks) do { } while (0)
-	#define _TIMEOUT_SET_TASK_TIMEOUT(ticks) do { } while ((0))
 	#define _TIMEOUT_UPDATE(timeout, limit, cur_ticks) do { } while (0)
 #endif
 
 	#define _NANO_OBJECT_WAIT(queue, data, timeout, key)     \
 		do {                                             \
-			_TIMEOUT_SET_TASK_TIMEOUT(timeout); \
 			nano_cpu_atomic_idle(key);               \
 			key = irq_lock();                        \
 		} while (0)

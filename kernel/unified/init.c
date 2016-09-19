@@ -105,7 +105,6 @@ char __noinit __stack _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 	#include <misc/dlist.h>
 	#define initialize_timeouts() do { \
 		sys_dlist_init(&_nanokernel.timeout_q); \
-		_nanokernel.task_timeout = TICKS_UNLIMITED; \
 	} while ((0))
 #else
 	#define initialize_timeouts() do { } while ((0))

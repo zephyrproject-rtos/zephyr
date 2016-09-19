@@ -155,8 +155,6 @@ static inline void handle_expired_timeouts(int32_t ticks)
 	struct _timeout *head =
 		(struct _timeout *)sys_dlist_peek_head(&_timeout_q);
 
-	_nanokernel.task_timeout = TICKS_UNLIMITED;
-
 	K_DEBUG("head: %p, delta: %d\n",
 		head, head ? head->delta_ticks_from_prev : -2112);
 

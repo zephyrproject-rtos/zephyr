@@ -220,7 +220,9 @@ struct s_NANO {
 
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
+#ifndef CONFIG_KERNEL_V2
 	int32_t task_timeout;
+#endif
 #endif
 };
 

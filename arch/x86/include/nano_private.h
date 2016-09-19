@@ -795,7 +795,9 @@ typedef struct s_NANO {
 #endif			  /* CONFIG_FP_SHARING */
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
+#ifndef CONFIG_KERNEL_V2
 	int32_t task_timeout;
+#endif
 #endif
 #ifdef CONFIG_KERNEL_V2
 	struct ready_q ready_q;
