@@ -55,7 +55,9 @@ extern void _timer_idle_enter(int32_t ticks);
 extern void _timer_idle_exit(void);
 #endif /* CONFIG_TICKLESS_IDLE */
 
+#ifndef CONFIG_KERNEL_V2
 extern uint32_t _nano_get_earliest_deadline(void);
+#endif /* CONFIG_KERNEL_V2 */
 
 extern void _nano_sys_clock_tick_announce(int32_t ticks);
 

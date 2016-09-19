@@ -216,12 +216,3 @@ void _nano_sys_clock_tick_announce(int32_t ticks)
 
 	irq_unlock(key);
 }
-
-/*
- * Get closest nano timeouts/timers deadline expiry, (uint32_t)TICKS_UNLIMITED
- * if none.
- */
-uint32_t _nano_get_earliest_deadline(void)
-{
-	return (uint32_t) _timeout_get_next_expiry();
-}
