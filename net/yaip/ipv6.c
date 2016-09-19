@@ -282,13 +282,16 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
-struct net_buf *net_ipv6_create(struct net_context *context,
-				struct net_buf *buf,
-				const struct in6_addr *addr)
+struct net_buf *net_ipv6_create_raw(struct net_buf *buf,
+				    uint16_t reserve,
+				    const struct in6_addr *src,
+				    const struct in6_addr *dst,
+				    struct net_if *iface,
+				    uint8_t next_header)
 {
 	struct net_buf *header;
 
-	header = net_nbuf_get_data(context);
+	header = net_nbuf_get_reserve_data(reserve);
 
 	net_buf_frag_insert(buf, header);
 
@@ -297,30 +300,46 @@ struct net_buf *net_ipv6_create(struct net_context *context,
 	NET_IPV6_BUF(buf)->flow = 0;
 
 	NET_IPV6_BUF(buf)->nexthdr = 0;
-	NET_IPV6_BUF(buf)->hop_limit =
-		net_if_ipv6_get_hop_limit(net_context_get_iface(context));
+	NET_IPV6_BUF(buf)->hop_limit = net_if_ipv6_get_hop_limit(iface);
 
-	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, addr);
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, dst);
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, src);
 
-	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
-	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
-		((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
-
-#if defined(CONFIG_NET_UDP)
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		NET_IPV6_BUF(buf)->nexthdr = IPPROTO_UDP;
-	}
-#endif /* CONFIG_NET_UDP */
+	NET_IPV6_BUF(buf)->nexthdr = next_header;
 
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_nbuf_set_family(buf, AF_INET6);
 
 	net_buf_add(header, sizeof(struct net_ipv6_hdr));
 
 	return buf;
 }
 
-struct net_buf *net_ipv6_finalize(struct net_context *context,
-				  struct net_buf *buf)
+struct net_buf *net_ipv6_create(struct net_context *context,
+				struct net_buf *buf,
+				const struct in6_addr *addr)
+{
+	uint8_t nexthdr;
+
+#if defined(CONFIG_NET_UDP)
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		nexthdr = IPPROTO_UDP;
+	}
+#endif /* CONFIG_NET_UDP */
+
+	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
+
+	return net_ipv6_create_raw(buf,
+				   net_nbuf_ll_reserve(buf),
+				   ((struct sockaddr_in6_ptr *)
+				    &context->local)->sin6_addr,
+				   addr,
+				   net_context_get_iface(context),
+				   nexthdr);
+}
+
+struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
+				      uint8_t next_header)
 {
 	/* Set the length of the IPv6 header */
 	size_t total_len;
@@ -335,13 +354,25 @@ struct net_buf *net_ipv6_finalize(struct net_context *context,
 	NET_IPV6_BUF(buf)->len[1] = total_len - NET_IPV6_BUF(buf)->len[0] * 256;
 
 #if defined(CONFIG_NET_UDP)
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+	if (next_header == IPPROTO_UDP) {
 		NET_UDP_BUF(buf)->chksum = 0;
 		NET_UDP_BUF(buf)->chksum = ~net_calc_chksum_udp(buf);
-	}
+	} else
 #endif
+	if (next_header == IPPROTO_ICMPV6) {
+		NET_ICMP_BUF(buf)->chksum = 0;
+		NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum(buf,
+							     IPPROTO_ICMPV6);
+	}
 
 	return buf;
+}
+
+struct net_buf *net_ipv6_finalize(struct net_context *context,
+				  struct net_buf *buf)
+{
+	return net_ipv6_finalize_raw(buf,
+				     net_context_get_ip_proto(context));
 }
 
 #if defined(CONFIG_NET_IPV6_DAD)

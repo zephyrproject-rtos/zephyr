@@ -54,6 +54,25 @@ int net_ipv6_start_rs(struct net_if *iface);
 /**
  * @brief Create IPv6 packet in provided net_buf.
  *
+ * @param buf Network buffer
+ * @param reserve Link layer reserve
+ * @param src Source IPv6 address
+ * @param dst Destination IPv6 address
+ * @param iface Network interface
+ * @param next_header Protocol type of the next header after IPv6 header.
+ *
+ * @return Return network buffer that contains the IPv6 packet.
+ */
+struct net_buf *net_ipv6_create_raw(struct net_buf *buf,
+				    uint16_t reserve,
+				    const struct in6_addr *src,
+				    const struct in6_addr *dst,
+				    struct net_if *iface,
+				    uint8_t next_header);
+
+/**
+ * @brief Create IPv6 packet in provided net_buf.
+ *
  * @param context Network context for a connection
  * @param buf Network buffer
  * @param dst_addr Destination IPv6 address
@@ -63,6 +82,20 @@ int net_ipv6_start_rs(struct net_if *iface);
 struct net_buf *net_ipv6_create(struct net_context *context,
 				struct net_buf *buf,
 				const struct in6_addr *dst_addr);
+
+/**
+ * @brief Finalize IPv6 packet. It should be called right before
+ * sending the packet and after all the data has been added into
+ * the packet. This function will set the length of the
+ * packet and calculate the higher protocol checksum if needed.
+ *
+ * @param buf Network buffer
+ * @param next_header Protocol type of the next header after IPv6 header.
+ *
+ * @return Return network buffer that contains the IPv6 packet.
+ */
+struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
+				      uint8_t next_header);
 
 /**
  * @brief Finalize IPv6 packet. It should be called right before
