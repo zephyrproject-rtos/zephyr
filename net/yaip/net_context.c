@@ -439,6 +439,7 @@ int net_context_listen(struct net_context *context, int backlog)
 	}
 
 #if defined(CONFIG_NET_TCP)
+	net_tcp_change_state(context->tcp, NET_TCP_LISTEN);
 	net_context_set_state(context, NET_CONTEXT_LISTENING);
 #endif
 
@@ -1041,8 +1042,6 @@ reset:
 		send_reset(tcp->context, create_sockaddr(buf, &peer));
 	}
 
-	net_tcp_change_state(context->tcp, NET_TCP_CLOSED);
-
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_TCP */
@@ -1074,13 +1073,11 @@ int net_context_accept(struct net_context *context,
 	}
 
 #if defined(CONFIG_NET_TCP)
-	if (context->tcp->state != NET_TCP_CLOSED) {
+	if (context->tcp->state != NET_TCP_LISTEN) {
 		NET_DBG("Context %p in wrong state %d, should be %d",
-			context, context->tcp->state, NET_TCP_CLOSED);
+			context, context->tcp->state, NET_TCP_LISTEN);
 		return -EINVAL;
 	}
-
-	net_tcp_change_state(context->tcp, NET_TCP_LISTEN);
 
 	local_addr.family = net_context_get_family(context);
 
