@@ -951,7 +951,10 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			goto reset;
 		}
 
-		net_tcp_change_state(tcp, NET_TCP_ESTABLISHED);
+		/* The original context is left to serve another
+		 * incoming request.
+		 */
+		net_tcp_change_state(tcp, NET_TCP_LISTEN);
 
 		/* We create a new context that starts to wait data.
 		 */
@@ -1020,15 +1023,12 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			goto reset;
 		}
 
-
-		/* The original context is left to serve another
-		 * incoming request.
-		 */
 		tmp_tcp = new_context->tcp;
 		new_context->tcp = tcp;
 		context->tcp = tmp_tcp;
 
-		net_tcp_change_state(tcp, NET_TCP_LISTEN);
+		net_tcp_change_state(new_context->tcp, NET_TCP_ESTABLISHED);
+		net_context_set_state(new_context, NET_CONTEXT_CONNECTED);
 
 		new_context->user_data = context->user_data;
 		context->user_data = NULL;
