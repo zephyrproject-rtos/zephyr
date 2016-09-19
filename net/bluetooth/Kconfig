@@ -443,6 +443,13 @@ config BLUETOOTH_DEBUG_HFP_HF
 	  This option enables debug support for the Bluetooth
 	  Hands Free Profile (HFP).
 
+config BLUETOOTH_DEBUG_AVDTP
+	bool "Bluetooth AVDTP debug"
+	depends on BLUETOOTH_AVDTP
+	default n
+	help
+	  This option enables debug support for the Bluetooth AVDTP.
+
 endif # BLUETOOTH_DEBUG
 
 config BLUETOOTH_BREDR
