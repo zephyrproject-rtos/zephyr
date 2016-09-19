@@ -89,6 +89,14 @@ Install the library from the Msys console interface with the following commands:
    mingw-get update
    mingw-get install msys-libregex-dev --all-related
 
+Update the following environment variables on your system to allow the C compiler
+and linker to find the library and headers:
+
+.. code-block:: console
+
+   export LIBRARY_PATH=$LIBRARY_PATH:/c/mingw/msys/1.0/lib
+   export C_INCLUDE_PATH=$C_INCLUDE_PATH:/c/mingw/msys/1.0/include
+
 Toolchain Installation
 ======================
 
