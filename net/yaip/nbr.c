@@ -151,7 +151,9 @@ struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
 
 struct net_linkaddr_storage *net_nbr_get_lladdr(uint8_t idx)
 {
-	NET_ASSERT(idx < CONFIG_NET_IPV6_MAX_NEIGHBORS);
+	NET_ASSERT_INFO(idx < CONFIG_NET_IPV6_MAX_NEIGHBORS,
+			"idx %d >= max %d", idx,
+			CONFIG_NET_IPV6_MAX_NEIGHBORS);
 
 	return &net_neighbor_lladdr[idx].lladdr;
 }
@@ -187,8 +189,9 @@ void net_nbr_print(struct net_nbr_table *table)
 			continue;
 		}
 
-		NET_DBG("[%d] ref %d iface %p idx %d ll %s",
-			i, nbr->ref, nbr->iface, nbr->idx,
+		NET_DBG("[%d] nbr %p data %p ref %d iface %p idx %d ll %s",
+			i, nbr, nbr->data, nbr->ref, nbr->iface, nbr->idx,
+			nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "<unknown>" :
 			net_sprint_ll_addr(
 				net_neighbor_lladdr[nbr->idx].lladdr.addr,
 				net_neighbor_lladdr[nbr->idx].lladdr.len));
