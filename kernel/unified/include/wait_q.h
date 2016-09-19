@@ -30,49 +30,6 @@
 extern "C" {
 #endif
 
-#if 0
-/* reset a wait queue, call during operation */
-static inline void _nano_wait_q_reset(struct _nano_queue *wait_q)
-{
-	sys_dlist_init((sys_dlist_t *)wait_q);
-}
-
-/* initialize a wait queue: call only during object initialization */
-static inline void _nano_wait_q_init(struct _nano_queue *wait_q)
-{
-	_nano_wait_q_reset(wait_q);
-}
-
-/*
- * Remove first fiber from a wait queue and put it on the ready queue, knowing
- * that the wait queue is not empty.
- */
-static inline
-struct tcs *_nano_wait_q_remove_no_check(struct _nano_queue *wait_q)
-{
-	struct tcs *tcs = (struct tcs *)sys_dlist_get((sys_dlist_t *)wait_q);
-
-	_ready_thread(tcs);
-
-	return tcs;
-}
-
-/*
- * Remove first fiber from a wait queue and put it on the ready queue.
- * Abort and return NULL if the wait queue is empty.
- */
-static inline struct tcs *_nano_wait_q_remove(struct _nano_queue *wait_q)
-{
-	return _nano_wait_q_remove_no_check(wait_q);
-}
-
-/* put current fiber on specified wait queue */
-static inline void _nano_wait_q_put(struct _nano_queue *wait_q)
-{
-	/* unused */
-}
-#endif
-
 #if defined(CONFIG_NANO_TIMEOUTS)
 static inline void _timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 {
