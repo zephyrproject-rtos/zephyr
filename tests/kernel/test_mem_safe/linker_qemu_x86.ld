@@ -71,17 +71,10 @@ SECTIONS
 	_image_rom_start = PHYS_LOAD_ADDR;
 	_image_text_start = PHYS_LOAD_ADDR;
 
-#ifdef CONFIG_VERSION_HEADER
-	SECTION_PROLOGUE (version_header_section, (OPTIONAL),)
-	{
-		*(.version_header)
-		KEEP(*(".version_header*"))
-	} GROUP_LINK_IN(ROMABLE_REGION)
-#endif
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME, (OPTIONAL),)
 	{
-
+	. = CONFIG_TEXT_SECTION_OFFSET;
 	*(.text_start)
 	*(".text_start.*")
 	*(.text)
@@ -140,7 +133,7 @@ SECTIONS
 
 #ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 	IRQ_TO_INTERRUPT_VECTOR_MEMORY
-#endif /* CONFIG_MVIC */
+#endif
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
