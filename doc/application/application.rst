@@ -276,6 +276,8 @@ Below is an example Makefile:
 
    include ${ZEPHYR_BASE}/Makefile.inc
 
+.. _application_configuration:
+
 Application Configuration
 *************************
 
