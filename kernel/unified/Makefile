@@ -28,6 +28,7 @@ obj-y += $(strip \
 	mem_pool.o \
 	event.o \
 	pipes.o \
+	offload.o \
 )
 
 obj-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o

@@ -201,6 +201,14 @@ config SYSTEM_WORKQUEUE_PRIORITY
 	default -1
 	depends on SYSTEM_WORKQUEUE
 
+config OFFLOAD_WORKQUEUE_STACK_SIZE
+	int "Workqueue stack size for thread offload requests"
+	default 1024
+
+config OFFLOAD_WORKQUEUE_PRIORITY
+	int "Offload requests workqueue priority"
+	default -1
+
 config NUM_MBOX_ASYNC_MSGS
 	int ""
 	default 10

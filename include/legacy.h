@@ -146,10 +146,22 @@ static inline void fiber_sleep(int32_t timeout)
 #define task_entry_set(task, entry) \
 	k_thread_entry_set(task, (k_thread_entry_t)entry)
 #define task_abort_handler_set k_thread_abort_handler_set
-static inline void task_offload_to_fiber(int (*func)(), void *argp)
-{
-	/* XXX - implement via work queue */
-}
+
+/**
+ * @brief Process an "offload" request
+ *
+ * The routine places the @a function into the work queue. This allows
+ * the task to execute a routine uninterrupted by other tasks.
+ *
+ * Note: this routine can be invoked only from a task.
+ * In order the routine to work, scheduler must be unlocked.
+ *
+ * @param func function to call
+ * @param argp function arguments
+ *
+ * @return result of @a function call
+ */
+extern int task_offload_to_fiber(int (*func)(), void *argp);
 
 #define task_id_get k_current_get
 #define task_priority_get (kpriority_t)k_current_priority_get
