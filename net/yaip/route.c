@@ -40,6 +40,10 @@
 #include "nbr.h"
 #include "route.h"
 
+#if !defined(NET_ROUTE_EXTRA_DATA_SIZE)
+#define NET_ROUTE_EXTRA_DATA_SIZE 0
+#endif
+
 /* We keep track of the routes in a separate list so that we can remove
  * the oldest routes (at tail) if needed.
  */
@@ -53,8 +57,11 @@ static void net_route_nexthop_remove(struct net_nbr *nbr)
 /*
  * This pool contains information next hop neighbors.
  */
-NET_NBR_POOL_INIT(net_route_nexthop_pool, CONFIG_NET_MAX_NEXTHOPS,
-		  sizeof(struct net_route_nexthop), net_route_nexthop_remove);
+NET_NBR_POOL_INIT(net_route_nexthop_pool,
+		  CONFIG_NET_MAX_NEXTHOPS,
+		  sizeof(struct net_route_nexthop),
+		  net_route_nexthop_remove,
+		  0);
 
 static inline struct net_route_nexthop *net_nexthop_data(struct net_nbr *nbr)
 {
@@ -103,8 +110,11 @@ static void net_route_entries_table_clear(struct net_nbr_table *table)
 /*
  * This pool contains routing table entries.
  */
-NET_NBR_POOL_INIT(net_route_entries_pool, CONFIG_NET_MAX_ROUTES,
-		  sizeof(struct net_route_entry), net_route_entry_remove);
+NET_NBR_POOL_INIT(net_route_entries_pool,
+		  CONFIG_NET_MAX_ROUTES,
+		  sizeof(struct net_route_entry),
+		  net_route_entry_remove,
+		  NET_ROUTE_EXTRA_DATA_SIZE);
 
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, nbr_routes, net_route_entries_pool,
 		   net_route_entries_table_clear);

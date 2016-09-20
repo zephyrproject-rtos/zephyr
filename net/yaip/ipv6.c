@@ -67,7 +67,7 @@ struct net_nbr_data {
 };
 
 NET_NBR_POOL_INIT(net_neighbor_pool, CONFIG_NET_IPV6_MAX_NEIGHBORS,
-		  sizeof(struct net_nbr_data), net_neighbor_data_remove);
+		  sizeof(struct net_nbr_data), net_neighbor_data_remove, 0);
 
 NET_NBR_TABLE_INIT(NET_NBR_GLOBAL, neighbor, net_neighbor_pool,
 		   net_neighbor_table_clear);
