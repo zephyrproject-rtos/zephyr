@@ -18,7 +18,9 @@
 #ifndef _HCI_CONTROLLER_H_
 #define _HCI_CONTROLLER_H_
 
-void hcic_handle(uint8_t x, uint8_t *len, uint8_t **out);
+#include <net/buf.h>
+
+int hci_handle(struct net_buf *buf, uint8_t *len, uint8_t **out);
 void hcic_encode(uint8_t *buf, uint8_t *len, uint8_t **out);
 void hcic_encode_num_cmplt(uint16_t instance, uint8_t num, uint8_t *len,
 			   uint8_t **out);

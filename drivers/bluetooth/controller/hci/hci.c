@@ -22,6 +22,8 @@
 #include <errno.h>
 #include <misc/byteorder.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/buf.h>
+#include <bluetooth/bluetooth.h>
 
 #include "defines.h"
 #include "ticker.h"
@@ -47,8 +49,6 @@ enum {
 };
 
 static struct {
-	uint16_t rx_len;
-	uint8_t rx[HCI_PACKET_SIZE_MAX];
 	uint8_t tx[HCI_PACKET_SIZE_MAX];
 } hci_context;
 
@@ -92,9 +92,9 @@ static struct {
 #define HCI_SE(evt_hdr) ((void *)(((uint8_t *)HCI_EVTP(evt_hdr)) + \
 			 sizeof(struct bt_hci_evt_le_meta_event)))
 
-static void disconnect(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void disconnect(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_disconnect *cmd = (void *)cp;
+	struct bt_hci_cp_disconnect *cmd = (void *)buf->data;
 	uint16_t handle;
 	uint32_t status;
 
@@ -107,9 +107,10 @@ static void disconnect(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void read_remote_ver_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void read_remote_ver_info(struct net_buf *buf,
+				 struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_read_remote_version_info *cmd = (void *)cp;
+	struct bt_hci_cp_read_remote_version_info *cmd = (void *)buf->data;
 	uint16_t handle;
 	uint32_t status;
 
@@ -122,15 +123,15 @@ static void read_remote_ver_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static int link_control_cmd_handle(uint8_t ocf, uint8_t *cp,
+static int link_control_cmd_handle(uint8_t ocf, struct net_buf *buf,
 				   uint8_t *len, struct bt_hci_evt_hdr *evt)
 {
 	switch (ocf) {
 	case BT_OCF(BT_HCI_OP_DISCONNECT):
-		disconnect(cp, evt);
+		disconnect(buf, evt);
 		break;
 	case BT_OCF(BT_HCI_OP_READ_REMOTE_VERSION_INFO):
-		read_remote_ver_info(cp, evt);
+		read_remote_ver_info(buf, evt);
 		break;
 	default:
 		return -EINVAL;
@@ -141,7 +142,7 @@ static int link_control_cmd_handle(uint8_t ocf, uint8_t *cp,
 	return 0;
 }
 
-static void set_event_mask(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void set_event_mask(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	/** TODO */
 
@@ -151,7 +152,7 @@ static void set_event_mask(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void reset(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void reset(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	/** TODO */
 
@@ -161,16 +162,16 @@ static void reset(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static int ctrl_bb_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
+static int ctrl_bb_cmd_handle(uint8_t ocf, struct net_buf *buf, uint8_t *len,
 			      struct bt_hci_evt_hdr *evt)
 {
 	switch (ocf) {
 	case BT_OCF(BT_HCI_OP_SET_EVENT_MASK):
-		set_event_mask(cp, evt);
+		set_event_mask(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_RESET):
-		reset(cp, evt);
+		reset(buf, evt);
 		break;
 
 	default:
@@ -182,7 +183,8 @@ static int ctrl_bb_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
 	return 0;
 }
 
-static void read_local_version_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void read_local_version_info(struct net_buf *buf,
+				    struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_read_local_version_info *rp = HCI_CC_RP(evt);
 
@@ -197,7 +199,8 @@ static void read_local_version_info(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->lmp_subversion = sys_cpu_to_le16(RADIO_BLE_SUB_VERSION_NUMBER);
 }
 
-static void read_supported_commands(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void read_supported_commands(struct net_buf *buf,
+				    struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_read_supported_commands *rp = HCI_CC_RP(evt);
 
@@ -237,7 +240,7 @@ static void read_supported_commands(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->commands[35] = (1 << 3);
 }
 
-static void read_local_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void read_local_features(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_read_local_features *rp = HCI_CC_RP(evt);
 
@@ -250,7 +253,7 @@ static void read_local_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->features[4] = (1 << 5) | (1 << 6);
 }
 
-static void read_bd_addr(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void read_bd_addr(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_read_bd_addr *rp = HCI_CC_RP(evt);
 
@@ -261,24 +264,24 @@ static void read_bd_addr(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	ll_address_get(0, &rp->bdaddr.val[0]);
 }
 
-static int info_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
+static int info_cmd_handle(uint8_t ocf, struct net_buf *buf, uint8_t *len,
 			   struct bt_hci_evt_hdr *evt)
 {
 	switch (ocf) {
 	case BT_OCF(BT_HCI_OP_READ_LOCAL_VERSION_INFO):
-		read_local_version_info(cp, evt);
+		read_local_version_info(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_READ_SUPPORTED_COMMANDS):
-		read_supported_commands(cp, evt);
+		read_supported_commands(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_READ_LOCAL_FEATURES):
-		read_local_features(cp, evt);
+		read_local_features(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_READ_BD_ADDR):
-		read_bd_addr(cp, evt);
+		read_bd_addr(buf, evt);
 		break;
 
 	default:
@@ -290,7 +293,7 @@ static int info_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
 	return 0;
 }
 
-static void le_set_event_mask(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_event_mask(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	/** TODO */
 
@@ -300,7 +303,7 @@ static void le_set_event_mask(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void le_read_buffer_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_read_buffer_size(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_le_read_buffer_size *rp = HCI_CC_RP(evt);
 
@@ -313,7 +316,8 @@ static void le_read_buffer_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->le_max_num = RADIO_PACKET_COUNT_TX_MAX;
 }
 
-static void le_read_local_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_read_local_features(struct net_buf *buf,
+				   struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_le_read_local_features *rp = HCI_CC_RP(evt);
 
@@ -326,9 +330,10 @@ static void le_read_local_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->features[0] = RADIO_BLE_FEATURES;
 }
 
-static void le_set_random_address(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_random_address(struct net_buf *buf,
+				  struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_random_address *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_random_address *cmd = (void *)buf->data;
 
 	ll_address_set(1, &cmd->bdaddr.val[0]);
 
@@ -338,9 +343,9 @@ static void le_set_random_address(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void le_set_adv_param(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_adv_param(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_adv_param *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_adv_param *cmd = (void *)buf->data;
 	uint8_t const c_adv_type[] = {
 		PDU_ADV_TYPE_ADV_IND, PDU_ADV_TYPE_DIRECT_IND,
 		PDU_ADV_TYPE_SCAN_IND, PDU_ADV_TYPE_NONCONN_IND };
@@ -359,7 +364,8 @@ static void le_set_adv_param(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void le_read_adv_ch_tx_power(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_read_adv_ch_tx_power(struct net_buf *buf,
+				    struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_le_read_ch_tx_power *rp = HCI_CC_RP(evt);
 
@@ -371,9 +377,9 @@ static void le_read_adv_ch_tx_power(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->tx_power_level = 0;
 }
 
-static void le_set_adv_data(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_adv_data(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_adv_data *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_adv_data *cmd = (void *)buf->data;
 
 	ll_adv_data_set(cmd->len, &cmd->data[0]);
 
@@ -383,9 +389,10 @@ static void le_set_adv_data(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void le_set_scan_rsp_data(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_scan_rsp_data(struct net_buf *buf,
+				 struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_scan_rsp_data *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_scan_rsp_data *cmd = (void *)buf->data;
 
 	ll_scan_data_set(cmd->len, &cmd->data[0]);
 
@@ -395,9 +402,9 @@ static void le_set_scan_rsp_data(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void le_set_adv_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_adv_enable(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_adv_enable *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_adv_enable *cmd = (void *)buf->data;
 	uint32_t status;
 
 	status = ll_adv_enable(cmd->enable);
@@ -408,9 +415,9 @@ static void le_set_adv_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_set_scan_params(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_scan_params(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_scan_params *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_scan_params *cmd = (void *)buf->data;
 	uint16_t interval;
 	uint16_t window;
 
@@ -426,9 +433,9 @@ static void le_set_scan_params(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void le_set_scan_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_scan_enable(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_scan_enable *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_scan_enable *cmd = (void *)buf->data;
 	uint32_t status;
 
 	status = ll_scan_enable(cmd->enable);
@@ -439,9 +446,10 @@ static void le_set_scan_enable(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_create_connection(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_create_connection(struct net_buf *buf,
+				 struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_create_conn *cmd = (void *)cp;
+	struct bt_hci_cp_le_create_conn *cmd = (void *)buf->data;
 	uint16_t supervision_timeout;
 	uint16_t conn_interval_max;
 	uint16_t scan_interval;
@@ -468,7 +476,8 @@ static void le_create_connection(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_create_conn_cancel(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_create_conn_cancel(struct net_buf *buf,
+				  struct bt_hci_evt_hdr *evt)
 {
 	uint32_t status;
 
@@ -480,7 +489,7 @@ static void le_create_conn_cancel(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_read_wl_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_read_wl_size(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_le_read_wl_size *rp = HCI_CC_RP(evt);
 
@@ -492,7 +501,7 @@ static void le_read_wl_size(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->wl_size = 8;
 }
 
-static void le_clear_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_clear_wl(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	radio_filter_clear();
 
@@ -502,9 +511,9 @@ static void le_clear_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = 0x00;
 }
 
-static void le_add_dev_to_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_add_dev_to_wl(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_add_dev_to_wl *cmd = (void *)cp;
+	struct bt_hci_cp_le_add_dev_to_wl *cmd = (void *)buf->data;
 	uint32_t status;
 
 	status = radio_filter_add(cmd->addr.type, &cmd->addr.a.val[0]);
@@ -516,9 +525,9 @@ static void le_add_dev_to_wl(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 					     BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 }
 
-static void le_conn_update(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_conn_update(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct hci_cp_le_conn_update *cmd = (void *)cp;
+	struct hci_cp_le_conn_update *cmd = (void *)buf->data;
 	uint16_t supervision_timeout;
 	uint16_t conn_interval_max;
 	uint16_t conn_latency;
@@ -542,9 +551,10 @@ static void le_conn_update(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_set_host_ch_classif(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_host_ch_classif(struct net_buf *buf,
+				   struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_host_ch_classif *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_host_ch_classif *cmd = (void *)buf->data;
 	uint32_t status;
 
 	status = radio_chm_update(&cmd->ch_map[0]);
@@ -555,9 +565,10 @@ static void le_set_host_ch_classif(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CC_ST(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_read_remote_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_read_remote_features(struct net_buf *buf,
+				    struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_read_remote_features *cmd = (void *)cp;
+	struct bt_hci_cp_le_read_remote_features *cmd = (void *)buf->data;
 	uint32_t status;
 	uint16_t handle;
 
@@ -570,9 +581,9 @@ static void le_read_remote_features(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_encrypt(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_encrypt(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_encrypt *cmd = (void *)cp;
+	struct bt_hci_cp_le_encrypt *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_encrypt *rp = HCI_CC_RP(evt);
 
 	ecb_encrypt(&cmd->key[0], &cmd->plaintext[0], &rp->enc_data[0], 0);
@@ -583,7 +594,7 @@ static void le_encrypt(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->status = 0x00;
 }
 
-static void le_rand(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_rand(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_le_rand *rp = HCI_CC_RP(evt);
 	uint8_t count = sizeof(rp->rand);
@@ -601,9 +612,9 @@ static void le_rand(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	}
 }
 
-static void le_start_encryption(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_start_encryption(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_start_encryption *cmd = (void *)cp;
+	struct bt_hci_cp_le_start_encryption *cmd = (void *)buf->data;
 	uint32_t status;
 	uint16_t handle;
 
@@ -619,9 +630,9 @@ static void le_start_encryption(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	HCI_CS(evt)->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_ltk_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_ltk_req_reply(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_ltk_req_reply *cmd = (void *)cp;
+	struct bt_hci_cp_le_ltk_req_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_ltk_req_reply *rp = HCI_CC_RP(evt);
 	uint32_t status;
 	uint16_t handle;
@@ -635,9 +646,10 @@ static void le_ltk_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->handle = cmd->handle;
 }
 
-static void le_ltk_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_ltk_req_neg_reply(struct net_buf *buf,
+				 struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_ltk_req_neg_reply *cmd = (void *)cp;
+	struct bt_hci_cp_le_ltk_req_neg_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_ltk_req_neg_reply *rp = HCI_CC_RP(evt);
 	uint32_t status;
 	uint16_t handle;
@@ -652,7 +664,7 @@ static void le_ltk_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->handle = cmd->handle;
 }
 
-static void le_read_supp_states(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_read_supp_states(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
 	struct bt_hci_rp_le_read_supp_states *rp = HCI_CC_RP(evt);
 
@@ -664,9 +676,10 @@ static void le_read_supp_states(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	sys_put_le64(0x000003ffffffffff, rp->le_states);
 }
 
-static void le_conn_param_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_conn_param_req_reply(struct net_buf *buf,
+				    struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_conn_param_req_reply *cmd = (void *)cp;
+	struct bt_hci_cp_le_conn_param_req_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_conn_param_req_reply *rp = HCI_CC_RP(evt);
 	uint16_t interval_max;
 	uint16_t latency;
@@ -688,9 +701,10 @@ static void le_conn_param_req_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->handle = cmd->handle;
 }
 
-static void le_conn_param_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_conn_param_req_neg_reply(struct net_buf *buf,
+					struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_conn_param_req_neg_reply *cmd = (void *)cp;
+	struct bt_hci_cp_le_conn_param_req_neg_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_conn_param_req_neg_reply *rp = HCI_CC_RP(evt);
 	uint32_t status;
 	uint16_t handle;
@@ -704,9 +718,9 @@ static void le_conn_param_req_neg_reply(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->handle = cmd->handle;
 }
 
-static void le_set_data_len(uint8_t *cp, struct bt_hci_evt_hdr *evt)
+static void le_set_data_len(struct net_buf *buf, struct bt_hci_evt_hdr *evt)
 {
-	struct bt_hci_cp_le_set_data_len *cmd = (void *)cp;
+	struct bt_hci_cp_le_set_data_len *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_set_data_len *rp = HCI_CC_RP(evt);
 	uint32_t status;
 	uint16_t tx_octets;
@@ -723,121 +737,121 @@ static void le_set_data_len(uint8_t *cp, struct bt_hci_evt_hdr *evt)
 	rp->handle = cmd->handle;
 }
 
-static int controller_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
+static int controller_cmd_handle(uint8_t ocf, struct net_buf *buf, uint8_t *len,
 				 struct bt_hci_evt_hdr *evt)
 {
 
 	switch (ocf) {
 	case BT_OCF(BT_HCI_OP_LE_SET_EVENT_MASK):
-		le_set_event_mask(cp, evt);
+		le_set_event_mask(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_BUFFER_SIZE):
-		le_read_buffer_size(cp, evt);
+		le_read_buffer_size(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_LOCAL_FEATURES):
-		le_read_local_features(cp, evt);
+		le_read_local_features(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_RANDOM_ADDRESS):
-		le_set_random_address(cp, evt);
+		le_set_random_address(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_ADV_PARAM):
-		le_set_adv_param(cp, evt);
+		le_set_adv_param(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_ADV_CH_TX_POWER):
-		le_read_adv_ch_tx_power(cp, evt);
+		le_read_adv_ch_tx_power(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_ADV_DATA):
-		le_set_adv_data(cp, evt);
+		le_set_adv_data(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_RSP_DATA):
-		le_set_scan_rsp_data(cp, evt);
+		le_set_scan_rsp_data(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_ADV_ENABLE):
-		le_set_adv_enable(cp, evt);
+		le_set_adv_enable(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_PARAMS):
-		le_set_scan_params(cp, evt);
+		le_set_scan_params(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_ENABLE):
-		le_set_scan_enable(cp, evt);
+		le_set_scan_enable(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN):
-		le_create_connection(cp, evt);
+		le_create_connection(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN_CANCEL):
-		le_create_conn_cancel(cp, evt);
+		le_create_conn_cancel(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_WL_SIZE):
-		le_read_wl_size(cp, evt);
+		le_read_wl_size(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CLEAR_WL):
-		le_clear_wl(cp, evt);
+		le_clear_wl(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_WL):
-		le_add_dev_to_wl(cp, evt);
+		le_add_dev_to_wl(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CONN_UPDATE):
-		le_conn_update(cp, evt);
+		le_conn_update(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CH_CLASSIF):
-		le_set_host_ch_classif(cp, evt);
+		le_set_host_ch_classif(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
-		le_read_remote_features(cp, evt);
+		le_read_remote_features(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_ENCRYPT):
-		le_encrypt(cp, evt);
+		le_encrypt(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_RAND):
-		le_rand(cp, evt);
+		le_rand(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_START_ENCRYPTION):
-		le_start_encryption(cp, evt);
+		le_start_encryption(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_REPLY):
-		le_ltk_req_reply(cp, evt);
+		le_ltk_req_reply(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY):
-		le_ltk_req_neg_reply(cp, evt);
+		le_ltk_req_neg_reply(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_SUPP_STATES):
-		le_read_supp_states(cp, evt);
+		le_read_supp_states(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY):
-		le_conn_param_req_reply(cp, evt);
+		le_conn_param_req_reply(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY):
-		le_conn_param_req_neg_reply(cp, evt);
+		le_conn_param_req_neg_reply(buf, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_DATA_LEN):
-		le_set_data_len(cp, evt);
+		le_set_data_len(buf, evt);
 		break;
 
 	default:
@@ -849,16 +863,30 @@ static int controller_cmd_handle(uint8_t ocf, uint8_t *cp, uint8_t *len,
 	return 0;
 }
 
-static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
+static int hci_cmd_handle(struct net_buf *buf, uint8_t *len,
 			   uint8_t **out)
 {
 	struct bt_hci_evt_cmd_complete *cc;
 	struct bt_hci_evt_cmd_status *cs;
+	struct bt_hci_cmd_hdr *cmd;
 	struct bt_hci_evt_hdr *evt;
 	uint16_t opcode;
 	uint8_t ocf;
-	uint8_t *cp;
 	int err;
+
+	if (buf->len < sizeof(*cmd)) {
+		BT_ERR("No HCI Command header");
+		return -EINVAL;
+	}
+
+	cmd = (void *)buf->data;
+	opcode = sys_le16_to_cpu(cmd->opcode);
+	net_buf_pull(buf, sizeof(*cmd));
+
+	if (buf->len < cmd->param_len) {
+		BT_ERR("Invalid HCI CMD packet length");
+		return -EINVAL;
+	}
 
 	*out = &hci_context.tx[0];
 	hci_context.tx[0] = HCI_EVT;
@@ -866,22 +894,20 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 	cc = HCI_CC(evt);
 	cs = HCI_CS(evt);
 
-	opcode = sys_le16_to_cpu(cmd->opcode);
 	ocf = BT_OCF(opcode);
-	cp = ((uint8_t *)cmd) + sizeof(struct bt_hci_cmd_hdr);
 
 	switch (BT_OGF(opcode)) {
 	case BT_OGF_LINK_CTRL:
-		err = link_control_cmd_handle(ocf, cp, len, evt);
+		err = link_control_cmd_handle(ocf, buf, len, evt);
 		break;
 	case BT_OGF_BASEBAND:
-		err = ctrl_bb_cmd_handle(ocf, cp, len, evt);
+		err = ctrl_bb_cmd_handle(ocf, buf, len, evt);
 		break;
 	case BT_OGF_INFO:
-		err = info_cmd_handle(ocf, cp, len, evt);
+		err = info_cmd_handle(ocf, buf, len, evt);
 		break;
 	case BT_OGF_LE:
-		err = controller_cmd_handle(ocf, cp, len, evt);
+		err = controller_cmd_handle(ocf, buf, len, evt);
 		break;
 	case BT_OGF_VS:
 		err = -EINVAL;
@@ -901,19 +927,21 @@ static void hci_cmd_handle(struct bt_hci_cmd_hdr *cmd, uint8_t *len,
 	switch (evt->evt) {
 	case BT_HCI_EVT_CMD_COMPLETE:
 		cc->ncmd = 1;
-		cc->opcode = cmd->opcode;
+		cc->opcode = sys_cpu_to_le16(opcode);
 		break;
 
 	case BT_HCI_EVT_CMD_STATUS:
 		cs->ncmd = 1;
-		cs->opcode = cmd->opcode;
+		cs->opcode = sys_cpu_to_le16(opcode);
 		break;
 	default:
 		break;
 	}
+
+	return 0;
 }
 
-static void hci_data_handle(void)
+static int hci_data_handle(struct net_buf *buf)
 {
 	struct radio_pdu_node_tx *radio_pdu_node_tx;
 	struct bt_hci_acl_hdr *acl;
@@ -921,18 +949,21 @@ static void hci_data_handle(void)
 	uint8_t flags;
 	uint16_t len;
 
-	if (!(hci_context.rx_len > sizeof(struct bt_hci_acl_hdr))) {
-		return;
+	if (buf->len < sizeof(*acl)) {
+		BT_ERR("No HCI ACL header");
+		return -EINVAL;
 	}
 
-	acl = (struct bt_hci_acl_hdr *)&hci_context.rx[1];
+	acl = (void *)buf->data;
 	len = sys_le16_to_cpu(acl->len);
-	if (!(hci_context.rx_len >=
-	    (1 + sizeof(struct bt_hci_acl_hdr) + len))) {
-		return;
+	handle = sys_le16_to_cpu(acl->handle);
+	net_buf_pull(buf, sizeof(*acl));
+
+	if (buf->len < len) {
+		BT_ERR("Invalid HCI ACL packet length");
+		return -EINVAL;
 	}
 
-	handle = sys_le16_to_cpu(acl->handle);
 	/* assigning flags first because handle will be overwritten */
 	flags = bt_acl_flags(handle);
 	handle = bt_acl_handle(handle);
@@ -948,52 +979,36 @@ static void hci_data_handle(void)
 			pdu_data->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
 		}
 		pdu_data->len = len;
-		memcpy(&pdu_data->payload.lldata[0],
-		       ((uint8_t *)acl) + sizeof(struct bt_hci_acl_hdr), len);
+		memcpy(&pdu_data->payload.lldata[0], buf->data, len);
 		if (radio_tx_mem_enqueue(handle, radio_pdu_node_tx)) {
 			radio_tx_mem_release(radio_pdu_node_tx);
 		}
 	}
 
-	hci_context.rx_len = 0;
+	return 0;
 }
 
-void hcic_handle(uint8_t x, uint8_t *len, uint8_t **out)
+int hci_handle(struct net_buf *buf, uint8_t *len, uint8_t **out)
 {
-	struct bt_hci_cmd_hdr *cmd;
-
-	hci_context.rx[hci_context.rx_len++] = x;
+	uint8_t type;
 
 	*len = 0;
 	*out = NULL;
-	if (!(hci_context.rx_len > 0)) {
-		return;
+
+	if (!buf->len) {
+		BT_ERR("Empty HCI packet");
+		return -EINVAL;
 	}
 
-	switch (hci_context.rx[0]) {
-	case HCI_CMD:
-		/* include 1 + for H4 packet type */
-		if (hci_context.rx_len < (1 + sizeof(struct bt_hci_cmd_hdr))) {
-			break;
-		}
-
-		cmd = (struct bt_hci_cmd_hdr *)&hci_context.rx[1];
-		if (hci_context.rx_len >=
-		    /* include 1 + for H4 packet type */
-		    (1 + sizeof(struct bt_hci_cmd_hdr) + cmd->param_len)) {
-			/* packet fully received, process it */
-			hci_cmd_handle(cmd, len, out);
-			hci_context.rx_len = 0;
-		}
-		break;
-
-	case HCI_DATA:
-		hci_data_handle();
-		break;
-
+	type = bt_buf_get_type(buf);
+	switch (type) {
+	case BT_BUF_ACL_OUT:
+		return hci_data_handle(buf);
+	case BT_BUF_CMD:
+		return hci_cmd_handle(buf, len, out);
 	default:
-		hci_context.rx_len = 0;
-		break;
+		BT_ERR("Unknown HCI type %u", type);
+		return -EINVAL;
 	}
 }
 

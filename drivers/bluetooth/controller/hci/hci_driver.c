@@ -267,53 +267,24 @@ static void recv_fiber(int unused0, int unused1)
 
 static int hci_driver_send(struct net_buf *buf)
 {
-	uint8_t type;
-	uint8_t remaining;
+	uint8_t evt_len;
 	uint8_t *in;
+	int err;
 
 	BT_DBG("enter");
 
-	remaining = 0;
+	evt_len = 0;
+	err = hci_handle(buf, &evt_len, &in);
 
-	type = bt_buf_get_type(buf);
-	switch (type) {
-	case BT_BUF_ACL_OUT:
-		hcic_handle(HCI_ACL, &remaining, &in);
-		break;
-	case BT_BUF_CMD:
-		hcic_handle(HCI_CMD, &remaining, &in);
-		break;
-	default:
-		BT_ERR("Unknown HCI type %u", type);
-		return -EINVAL;
+	if (err) {
+		return err;
 	}
 
-	if (remaining || !buf->len) {
-		BT_ERR("Empty or Len greater than expected");
-		return -EINVAL;
-	}
-
-	if (buf->len) {
-		while (buf->len - 1) {
-			hcic_handle(net_buf_pull_u8(buf), &remaining, &in);
-		}
-
-		if (remaining) {
-			BT_ERR("Len greater than expected");
-			return -EINVAL;
-		}
-
-		hcic_handle(net_buf_pull_u8(buf), &remaining, &in);
-
-		BT_DBG("hcic_handle returned %u bytes", remaining);
-
-		if (remaining) {
-			int retval;
-
-			retval = evt_acl_create(remaining, in);
-			if (retval) {
-				return retval;
-			}
+	BT_DBG("hci_handle returned %u bytes", evt_len);
+	if (evt_len) {
+		err = evt_acl_create(evt_len, in);
+		if (err) {
+			return err;
 		}
 	}
 
