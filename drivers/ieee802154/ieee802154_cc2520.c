@@ -733,11 +733,6 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 	uint8_t ext_addr[8];
-	int idx;
-
-	for (idx = 0; idx < 8; idx++) {
-		ext_addr[idx] = ieee_addr[7 - idx];
-	}
 
 	if (!write_mem_ext_addr(&cc2520->spi, ext_addr)) {
 		SYS_LOG_ERR(" FAILED\n");
@@ -745,8 +740,8 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	}
 
 	SYS_LOG_DBG(" IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
-		    ieee_addr[0], ieee_addr[1], ieee_addr[2], ieee_addr[3],
-		    ieee_addr[4], ieee_addr[5], ieee_addr[6], ieee_addr[7]);
+		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
+		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
 	return 0;
 }
