@@ -1,0 +1,8 @@
+sample:
+    name: Bluetooth HCI SPI
+    description: Allows Zephyr to provide Bluetooth connectivity via SPI.
+tests:
+-   test:
+        tags: samples bluetooth spi
+        build_only: true
+        platform_whitelist: 96b_carbon_nrf51 nrf51_pca10028
