@@ -465,6 +465,9 @@ static void usb_dw_handle_reset(void)
 		usb_dw_ctrl.status_cb(USB_DC_RESET);
 	}
 
+	/* Clear device address during reset. */
+	USB_DW->dcfg &= ~USB_DW_DCFG_DEV_ADDR_MASK;
+
 	/* enable global EP interrupts */
 	USB_DW->doepmsk = 0;
 	USB_DW->gintmsk |= USB_DW_GINTSTS_RX_FLVL;
