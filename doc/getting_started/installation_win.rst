@@ -76,6 +76,18 @@ and the installation path for MinGW.
    export PATH=$PATH:${PYTHON_PATH}
    export MINGW_DIR=/c/MinGW
 
+Pthread library
+===============
+
+The Zephyr OS build process has a dependency on the Pthread library.
+The required packages for Msys installation would normally provide it.
+However, if a minimal installation fails to provide the Pthread library,
+it can be installed with the following command:
+
+.. code-block:: console
+
+   mingw-get install libpthread
+
 GNU Regex C library
 ===================
 
