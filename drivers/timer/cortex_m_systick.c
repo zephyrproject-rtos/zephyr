@@ -87,10 +87,6 @@ static uint32_t clock_accumulated_count;
 #define IDLE_TICKLESS 1     /* tickless idle  mode */
 #endif			    /* CONFIG_TICKLESS_IDLE */
 
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-extern uint32_t _hw_irq_to_c_handler_latency;
-#endif
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern int32_t _NanoIdleValGet(void);
 extern void _NanoIdleValClear(void);
@@ -238,17 +234,6 @@ void _TIMER_INT_HANDLER(void *unused)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 	extern void _sys_k_event_logger_interrupt(void);
 	_sys_k_event_logger_interrupt();
-#endif
-
-
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	uint32_t value = __scs.systick.val;
-	uint32_t delta = __scs.systick.reload - value;
-
-	if (_hw_irq_to_c_handler_latency > delta) {
-		/* keep the lowest value observed */
-		_hw_irq_to_c_handler_latency = delta;
-	}
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
