@@ -132,6 +132,15 @@ int net_route_del_by_nexthop(struct net_if *iface,
  */
 struct in6_addr *net_route_get_nexthop(struct net_route_entry *entry);
 
+/**
+ * @brief Get generic neighbor entry from route entry.
+ *
+ * @param route Pointer to routing entry.
+ *
+ * @return Generic neighbor entry.
+ */
+struct net_nbr *net_route_get_nbr(struct net_route_entry *route);
+
 void net_route_init(void);
 #else
 #define net_route_init(...)

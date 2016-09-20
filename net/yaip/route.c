@@ -129,9 +129,11 @@ static inline struct net_route_entry *net_route_data(struct net_nbr *nbr)
 	return (struct net_route_entry *)nbr->data;
 }
 
-static inline struct net_nbr *get_nbr_from_data(struct net_route_entry *data)
+struct net_nbr *net_route_get_nbr(struct net_route_entry *route)
 {
 	int i;
+
+	NET_ASSERT(route);
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
 		struct net_nbr *nbr = get_nbr(i);
@@ -140,7 +142,7 @@ static inline struct net_nbr *get_nbr_from_data(struct net_route_entry *data)
 			continue;
 		}
 
-		if (nbr->data == (uint8_t *)data) {
+		if (nbr->data == (uint8_t *)route) {
 			if (!nbr->ref) {
 				return NULL;
 			}
@@ -437,7 +439,7 @@ int net_route_del(struct net_route_entry *route)
 
 	sys_slist_find_and_remove(&routes, &route->node);
 
-	nbr = get_nbr_from_data(route);
+	nbr = net_route_get_nbr(route);
 	if (!nbr) {
 		return -ENOENT;
 	}
