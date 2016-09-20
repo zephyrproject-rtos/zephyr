@@ -331,17 +331,6 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	_sys_clock_tick_announce();
 #endif /*CONFIG_TICKLESS_IDLE*/
 
-
-#ifdef LOAPIC_TIMER_PERIODIC_WORKAROUND
-	/*
-	 * On platforms where the LOAPIC timer periodic mode is broken,
-	 * re-program the ICR register with the initial count value. This
-	 * is only a temporary workaround.
-	 */
-
-	initial_count_register_set(cycles_per_tick - 1);
-	periodic_mode_set();
-#endif /* LOAPIC_TIMER_PERIODIC_WORKAROUND */
 }
 
 #if defined(CONFIG_TICKLESS_IDLE)
