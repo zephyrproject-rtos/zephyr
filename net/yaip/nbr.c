@@ -31,10 +31,18 @@
 
 NET_NBR_LLADDR_INIT(net_neighbor_lladdr, CONFIG_NET_IPV6_MAX_NEIGHBORS);
 
+#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
+void net_nbr_unref_debug(struct net_nbr *nbr, const char *caller, int line)
+#define net_nbr_unref(nbr) net_nbr_unref_debug(nbr, __func__, __LINE__)
+#else
 void net_nbr_unref(struct net_nbr *nbr)
+#endif
 {
+#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
+	NET_DBG("nbr %p ref %u (%s():%d)", nbr, nbr->ref - 1, caller, line);
+#else
 	NET_DBG("nbr %p ref %u", nbr, nbr->ref - 1);
-
+#endif
 	if (--nbr->ref) {
 		return;
 	}
@@ -44,10 +52,18 @@ void net_nbr_unref(struct net_nbr *nbr)
 	}
 }
 
+#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
+struct net_nbr *net_nbr_ref_debug(struct net_nbr *nbr, const char *caller,
+				  int line)
+#else
 struct net_nbr *net_nbr_ref(struct net_nbr *nbr)
+#endif
 {
+#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
+	NET_DBG("nbr %p ref %u (%s():%d)", nbr, nbr->ref + 1, caller, line);
+#else
 	NET_DBG("nbr %p ref %u", nbr, nbr->ref + 1);
-
+#endif
 	nbr->ref++;
 
 	return nbr;
