@@ -115,7 +115,7 @@ static inline void stm32_exti_clear_pending(int line)
 {
 	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
 
-	exti->pr |= 1 << line;
+	exti->pr = 1 << line;
 }
 
 void stm32_exti_trigger(int line, int trigger)
