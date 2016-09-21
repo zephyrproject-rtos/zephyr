@@ -39,6 +39,7 @@
 #endif
 
 extern struct net_tuple *net_context_get_tuple(struct net_context *context);
+extern void *net_context_get_internal_connection(struct net_context *context);
 
 /* Available (free) buffers queue */
 #ifndef IP_BUF_RX_SIZE
@@ -303,7 +304,7 @@ static struct net_buf *ip_buf_get(enum ip_buf_type type,
 	}
 
 	ip_buf_context(buf) = context;
-	uip_set_conn(buf) = NULL;
+	uip_set_conn(buf) = net_context_get_internal_connection(context);
 
 	return buf;
 }
