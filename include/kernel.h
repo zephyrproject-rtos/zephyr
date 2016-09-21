@@ -318,8 +318,57 @@ extern void k_timer_restart(struct k_timer *timer, int32_t duration,
 extern void k_timer_stop(struct k_timer *timer);
 extern int k_timer_test(struct k_timer *timer, void **data, int wait);
 extern int32_t k_timer_remaining_get(struct k_timer *timer);
+
+
+/**
+ * @brief Get the time elapsed since the system booted (uptime)
+ *
+ * @return The current uptime of the system in ms
+ */
+
 extern int64_t k_uptime_get(void);
+
+/**
+ * @brief Get the lower 32-bit of time elapsed since the system booted (uptime)
+ *
+ * This function is potentially less onerous in both the time it takes to
+ * execute, the interrupt latency it introduces and the amount of 64-bit math
+ * it requires than k_uptime_get(), but it only provides an uptime value of
+ * 32-bits. The user must handle possible rollovers/spillovers.
+ *
+ * At a rate of increment of 1000 per second, it rolls over approximately every
+ * 50 days.
+ *
+ * @return The current uptime of the system in ms
+ */
+
+extern uint32_t k_uptime_get_32(void);
+
+/**
+ * @brief Get the difference between a reference time and the current uptime
+ *
+ * @param reftime A pointer to a reference time. It is updated with the current
+ * uptime upon return.
+ *
+ * @return The delta between the reference time and the current uptime.
+ */
+
 extern int64_t k_uptime_delta(int64_t *reftime);
+
+/**
+ * @brief Get the difference between a reference time and the current uptime
+ *
+ * The 32-bit version of k_uptime_delta(). It has the same perks and issues as
+ * k_uptime_get_32().
+ *
+ * @param reftime A pointer to a reference time. It is updated with the current
+ * uptime upon return.
+ *
+ * @return The delta between the reference time and the current uptime.
+ */
+
+extern uint32_t k_uptime_delta_32(int64_t *reftime);
+
 extern bool k_timer_pool_is_empty(void);
 
 extern uint32_t k_cycle_get_32(void);

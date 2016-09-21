@@ -56,6 +56,11 @@ uint32_t sys_tick_get_32(void)
 	return (uint32_t)_sys_clock_tick_count;
 }
 
+uint32_t k_uptime_get_32(void)
+{
+	return __ticks_to_ms(sys_tick_get_32());
+}
+
 /**
  *
  * @brief Return the current system tick count
@@ -77,6 +82,11 @@ int64_t sys_tick_get(void)
 	tmp_sys_clock_tick_count = _sys_clock_tick_count;
 	irq_unlock(imask);
 	return tmp_sys_clock_tick_count;
+}
+
+int64_t k_uptime_get(void)
+{
+	return __ticks_to_ms(sys_tick_get());
 }
 
 /**
@@ -143,6 +153,22 @@ int64_t sys_tick_delta(int64_t *reftime)
 uint32_t sys_tick_delta_32(int64_t *reftime)
 {
 	return (uint32_t)_nano_tick_delta(reftime);
+}
+
+int64_t k_uptime_delta(int64_t *reftime)
+{
+	int64_t uptime, delta;
+
+	uptime = k_uptime_get();
+	delta = uptime - *reftime;
+	*reftime = uptime;
+
+	return delta;
+}
+
+uint32_t k_uptime_delta_32(int64_t *reftime)
+{
+	return (uint32_t)k_uptime_delta(reftime);
 }
 
 /* handle the expired timeouts in the nano timeout queue */
