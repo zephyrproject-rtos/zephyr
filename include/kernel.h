@@ -237,6 +237,16 @@ extern void *k_thread_custom_data_get(void);
  *  kernel timing
  */
 
+#include <sys_clock.h>
+
+/* private internal time manipulation (users should never play with ticks) */
+
+static int64_t __ticks_to_ms(int64_t ticks)
+{
+	return (MSEC_PER_SEC * (uint64_t)ticks) / sys_clock_ticks_per_sec;
+}
+
+
 /* timeouts */
 
 struct _timeout;

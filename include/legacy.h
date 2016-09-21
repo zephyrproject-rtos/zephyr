@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <errno.h>
 #include <limits.h>
-#include <sys_clock.h>
 
 /* nanokernel/microkernel execution context types */
 #define NANO_CTX_ISR (K_ISR)
@@ -60,8 +59,7 @@ typedef enum {
 
 static inline int32_t _ticks_to_ms(int32_t ticks)
 {
-	return (ticks == TICKS_UNLIMITED) ? K_FOREVER :
-		(MSEC_PER_SEC * (uint64_t)ticks) / sys_clock_ticks_per_sec;
+	return (ticks == TICKS_UNLIMITED) ? K_FOREVER : __ticks_to_ms(ticks);
 }
 
 static inline int _error_to_rc(int err)
