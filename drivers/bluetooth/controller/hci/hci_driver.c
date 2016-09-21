@@ -265,34 +265,65 @@ static void recv_fiber(int unused0, int unused1)
 	}
 }
 
+static int cmd_handle(struct net_buf *buf)
+{
+	struct net_buf *evt;
+	int err;
+
+	/* Preallocate the response event so that there is no need for
+	 * memory checking in hci_cmd_handle().
+	 * this might actually be CMD_COMPLETE or CMD_STATUS, but the
+	 * actual point is to retrieve the event from the priority
+	 * queue
+	 */
+	evt = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE);
+	if (!evt) {
+		BT_ERR("No available event buffers");
+		return -ENOMEM;
+	}
+	err = hci_cmd_handle(buf, evt);
+	if (!err && evt->len) {
+		BT_DBG("Replying with event of %u bytes", evt->len);
+		bt_recv(evt);
+	} else {
+		net_buf_unref(evt);
+	}
+
+	return err;
+}
+
 static int hci_driver_send(struct net_buf *buf)
 {
-	uint8_t evt_len;
-	uint8_t *in;
+	uint8_t type;
 	int err;
 
 	BT_DBG("enter");
 
-	evt_len = 0;
-	err = hci_handle(buf, &evt_len, &in);
-
-	if (err) {
-		return err;
+	if (!buf->len) {
+		BT_ERR("Empty HCI packet");
+		return -EINVAL;
 	}
 
-	BT_DBG("hci_handle returned %u bytes", evt_len);
-	if (evt_len) {
-		err = evt_acl_create(evt_len, in);
-		if (err) {
-			return err;
-		}
+	type = bt_buf_get_type(buf);
+	switch (type) {
+	case BT_BUF_ACL_OUT:
+		err = hci_acl_handle(buf);
+		break;
+	case BT_BUF_CMD:
+		err = cmd_handle(buf);
+		break;
+	default:
+		BT_ERR("Unknown HCI type %u", type);
+		return -EINVAL;
 	}
 
-	net_buf_unref(buf);
+	if (!err) {
+		net_buf_unref(buf);
+	}
 
-	BT_DBG("exit");
+	BT_DBG("exit: %d", err);
 
-	return 0;
+	return err;
 }
 
 static int hci_driver_open(void)
