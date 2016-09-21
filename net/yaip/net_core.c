@@ -35,6 +35,7 @@
 #include <errno.h>
 
 #include <net/net_if.h>
+#include <net/net_mgmt.h>
 #include <net/arp.h>
 #include <net/nbuf.h>
 #include <net/net_core.h>
@@ -481,6 +482,8 @@ static int net_init(struct device *unused)
 
 	l2_init();
 	l3_init();
+
+	net_mgmt_init();
 
 	init_rx_queue();
 

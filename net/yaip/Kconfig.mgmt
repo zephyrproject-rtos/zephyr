@@ -1,0 +1,65 @@
+#
+# Copyright (c) 2016 Intel Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig NET_MGMT
+	bool "Network Management API"
+	default n
+	help
+	Add support for NM API that enables managing different aspects
+	of the network stack as well as receiving notification on network
+	events (ip address change, iface up and running ...). Beware this
+	requires the new unified kernel (KERNEL_V2) and cannot be used in
+	former nanokernel.
+
+if NET_MGMT
+
+config NET_MGMT_EVENT
+	bool "Add support for runtime network event notifications"
+	default n
+	help
+	This adds support for the stack to notify events towards any
+	relevant listener. This can be necessary when application
+	(or else) needs to be notified on a specific network event
+	(ip address change for instance) to trigger some related work.
+
+config NET_MGMT_EVENT_STACK_SIZE
+	int "Stack size for the inner fiber handling event callbacks"
+	default 512
+	depends on NET_MGMT_EVENT
+	help
+	Set the internal stack size for NM to run registered callbacks
+	on events.
+
+config NET_MGMT_EVENT_FIBER_PRIO
+	int "Inner fiber priority (use with care)"
+	default 7
+	depends on NET_MGMT_EVENT
+	help
+	Set the network management event core's inner fiber priority.
+	Do not change this unless you know what you are doing.
+
+config NET_MGMT_EVENT_QUEUE_SIZE
+	int "Size of event queue"
+	default 2
+	range 1 8
+	depends on NET_MGMT_EVENT
+	help
+	Numbers of events which can be queued at same time. Note that if a
+	3rd event comes in, the first will be removed without generating any
+	notification. Thus the size of this queue has to be tweaked depending
+	on the load of the system, planned for the usage.
+
+endif

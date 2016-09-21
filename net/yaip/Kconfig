@@ -194,4 +194,6 @@ config NET_DEBUG_TRICKLE
 
 source "net/yaip/l2/Kconfig"
 
+source "net/yaip/Kconfig.mgmt"
+
 endmenu
