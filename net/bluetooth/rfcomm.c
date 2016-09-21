@@ -276,6 +276,32 @@ static void rfcomm_dlc_disconnected(struct bt_rfcomm_dlc *dlc)
 	rfcomm_dlc_unref(dlc);
 }
 
+static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
+{
+	struct bt_rfcomm_dlc *dlc;
+
+	BT_DBG("Session %p", session);
+
+	if (session->state == BT_RFCOMM_STATE_DISCONNECTED) {
+		return;
+	}
+
+	for (dlc = session->dlcs; dlc;) {
+		struct bt_rfcomm_dlc *next;
+
+		/* prefetch since disconnected callback may cleanup */
+		next = dlc->_next;
+		dlc->_next = NULL;
+
+		rfcomm_dlc_disconnected(dlc);
+
+		dlc = next;
+	}
+
+	session->state = BT_RFCOMM_STATE_DISCONNECTED;
+	session->dlcs = NULL;
+}
+
 struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo)
 {
 	/* Length in RFCOMM header can be 2 bytes depending on length of user
@@ -328,7 +354,12 @@ static void rfcomm_connected(struct bt_l2cap_chan *chan)
 
 static void rfcomm_disconnected(struct bt_l2cap_chan *chan)
 {
-	BT_DBG("Session %p", RFCOMM_SESSION(chan));
+	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
+
+	BT_DBG("Session %p", session);
+
+	rfcomm_session_disconnected(session);
+	session->state = BT_RFCOMM_STATE_IDLE;
 }
 
 static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session,
@@ -626,6 +657,9 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 		rfcomm_send_ua(session, dlci);
 		rfcomm_dlc_disconnected(dlc);
+	} else {
+		rfcomm_send_ua(session, 0);
+		rfcomm_session_disconnected(session);
 	}
 }
 
