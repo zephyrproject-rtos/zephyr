@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+#if defined(CONFIG_NET_DEBUG_MGMT_EVENT)
+#define SYS_LOG_DOMAIN "net/mgmt"
+#define NET_DEBUG 1
+#endif
+
 #include <nanokernel.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -111,13 +116,23 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 {
 	sys_snode_t *sn, *sns;
 
+	NET_DBG("Event 0x%08X", mgmt_event->event);
+
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_callbacks, sn, sns) {
 		struct net_mgmt_event_cb *cb =
 			CONTAINER_OF(sn, struct net_mgmt_event_cb, node);
 
+		NET_DBG("Running callback %p : %p", cb, cb->handler);
+
 		if ((mgmt_event->event & cb->event_mask) == mgmt_event->event) {
 			cb->handler(cb, mgmt_event->event, mgmt_event->iface);
 		}
+
+#ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
+			net_analyze_stack("Net MGMT event stack",
+					  mgmt_fiber_stack,
+					  CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+#endif
 	}
 }
 
@@ -128,12 +143,17 @@ static void mgmt_fiber(void)
 	while (1) {
 		nano_fiber_sem_take(&network_event, TICKS_UNLIMITED);
 
+		NET_DBG("Handling events, forwarding it relevantly");
+
 		mgmt_event = mgmt_pop_event();
 		if (!mgmt_event) {
 			/* System is over-loaded?
 			 * At this point we have most probably notified
 			 * more events than we could handle
 			 */
+			NET_DBG("Some event got probably lost (%u)",
+				k_sem_count_get(&network_event.sem));
+
 			nano_sem_init(&network_event);
 
 			continue;
@@ -149,6 +169,8 @@ static void mgmt_fiber(void)
 
 void net_mgmt_add_event_callback(struct net_mgmt_event_cb *cb)
 {
+	NET_DBG("Adding event callback %p", cb);
+
 	sys_slist_prepend(&mgmt_callbacks, &cb->node);
 
 	mgmt_add_event_mask(cb->event_mask);
@@ -156,6 +178,8 @@ void net_mgmt_add_event_callback(struct net_mgmt_event_cb *cb)
 
 void net_mgmt_del_event_callback(struct net_mgmt_event_cb *cb)
 {
+	NET_DBG("Deleting event callback %p", cb);
+
 	sys_slist_find_and_remove(&mgmt_callbacks, &cb->node);
 
 	mgmt_rebuild_global_event_mask();
@@ -164,6 +188,8 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_cb *cb)
 void net_mgmt_notify(uint32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
+		NET_DBG("Notifying event 0x%08X", mgmt_event);
+
 		mgmt_push_event(mgmt_event, iface);
 		nano_sem_give(&network_event);
 	}
@@ -186,4 +212,8 @@ void net_mgmt_init(void)
 	fiber_start(mgmt_fiber_stack, sizeof(mgmt_fiber_stack),
 		    (nano_fiber_entry_t)mgmt_fiber, 0, 0,
 		    CONFIG_NET_MGMT_EVENT_FIBER_PRIO, 0);
+
+	NET_DBG("Net MGMT initialized: queue of %u entries, stack size of %u",
+		CONFIG_NET_MGMT_EVENT_QUEUE_SIZE,
+		CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 }

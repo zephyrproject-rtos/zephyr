@@ -62,4 +62,19 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 	notification. Thus the size of this queue has to be tweaked depending
 	on the load of the system, planned for the usage.
 
+config NET_DEBUG_MGMT_EVENT
+	bool "Enable debug output on Net MGMT event core"
+	default n
+	depends on NET_MGMT_EVENT
+	help
+	Add debug messages output on how Net MGMT events are handled.
+
+config NET_DEBUG_MGMT_EVENT_STACK
+	bool "Enable stack analysis output on Net MGMT event core"
+	default n
+	select INIT_STACKS
+	depends on NET_MGMT_EVENT
+	help
+	Add debug messages output on how much Net MGMT event stack is used.
+
 endif
