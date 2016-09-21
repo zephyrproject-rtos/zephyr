@@ -639,7 +639,7 @@ static inline int k_sem_reset(struct k_sem *sem)
 	return 0;
 }
 
-static inline int k_sem_count_get(struct k_sem *sem)
+static inline unsigned int k_sem_count_get(struct k_sem *sem)
 {
 	return sem->count;
 }
