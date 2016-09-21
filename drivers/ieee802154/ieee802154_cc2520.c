@@ -54,14 +54,7 @@
  */
 
 
-#if defined(CONFIG_TI_CC2520_AUTO_CRC) && defined(CONFIG_TI_CC2520_AUTO_ACK)
 #define CC2520_AUTOMATISM		(FRMCTRL0_AUTOCRC | FRMCTRL0_AUTOACK)
-#elif defined(CONFIG_TI_CC2520_AUTO_CRC)
-#define CC2520_AUTOMATISM		(FRMCTRL0_AUTOCRC)
-#else
-#define CC2520_AUTOMATISM		(0)
-#endif
-
 #define CC2520_TX_THRESHOLD		(0x7F)
 #define CC2520_FCS_LENGTH		(2)
 
@@ -632,12 +625,10 @@ static void cc2520_rx(int arg, int unused2)
 			goto out;
 		}
 
-#ifdef CONFIG_TI_CC2520_AUTO_CRC
 		if (!(pkt_buf->data[pkt_len - 1] & CC2520_FCS_CRC_OK)) {
 			SYS_LOG_DBG("Bad packet CRC\n");
 			goto out;
 		}
-#endif /* CONFIG_TI_CC2520_AUTO_CRC */
 
 		if (ieee802154_radio_handle_ack(cc2520->iface, buf) == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled");

@@ -114,6 +114,7 @@ config TI_CC2520_CHANNEL
 config TI_CC2520_AUTO_CRC
 	bool "Let the chip handling CRC on reception"
 	default y
+	depends on TI_CC2520_LEGACY
 	help
 	When receiving a packet, the hardware can verify the CRC by itself
 	and will provide a flag letting know the success - or not - on
@@ -131,6 +132,7 @@ config TI_CC2520_LINK_DETAILS
 config TI_CC2520_AUTO_ACK
 	bool "Let the chip handle TX/RX IEEE 802.15.4 ACK requests"
 	default n
+	depends on TI_CC2520_LEGACY
 	select TI_CC2520_AUTO_CRC
 	help
 	The chip is able to reply by itself to ACK requests as well as
