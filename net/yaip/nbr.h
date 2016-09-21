@@ -109,8 +109,7 @@ struct net_nbr_table {
 #define NET_NBR_TABLE_INIT(_type, _name, _pool, _clear)			\
 	_type struct net_nbr_table_##_name {				\
 		struct net_nbr_table table;				\
-	} net_##_name __used						\
-	__attribute__((__section__(".net_nbr.data"))) = {		\
+	} net_##_name __used = {					\
 		.table = {						\
 			.clear = _clear,				\
 			.nbr = (struct net_nbr *)_pool,			\
