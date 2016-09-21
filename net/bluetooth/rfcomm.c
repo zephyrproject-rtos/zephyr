@@ -225,13 +225,26 @@ static void rfcomm_dlc_tx_give_credits(struct bt_rfcomm_dlc *dlc,
 	BT_DBG("dlc %p updated credits %u", dlc, dlc->tx_credits.nsig);
 }
 
+static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
+{
+	BT_DBG("dlc %p", dlc);
+
+	dlc->state = BT_RFCOMM_STATE_IDLE;
+	dlc->session = NULL;
+	if (dlc->ops && dlc->ops->disconnected) {
+		dlc->ops->disconnected(dlc);
+	}
+}
+
 static void rfcomm_dlc_unref(struct bt_rfcomm_dlc *dlc)
 {
 	atomic_dec(&dlc->ref);
 
 	BT_DBG("dlc %p ref %u", dlc, atomic_get(&dlc->ref));
 
-	/* TODO: Destroy dlc if ref is 0 */
+	if (!atomic_get(&dlc->ref)) {
+		rfcomm_dlc_destroy(dlc);
+	}
 }
 
 static struct bt_rfcomm_dlc *rfcomm_dlc_ref(struct bt_rfcomm_dlc *dlc)
@@ -265,9 +278,6 @@ static void rfcomm_dlc_disconnected(struct bt_rfcomm_dlc *dlc)
 			rfcomm_dlc_tx_give_credits(dlc, 1);
 		}
 
-		if (dlc->ops && dlc->ops->disconnected) {
-			dlc->ops->disconnected(dlc);
-		}
 		break;
 	default:
 		break;
@@ -382,7 +392,7 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 	}
 
 	if (!BT_RFCOMM_CHECK_MTU(dlc->mtu)) {
-		/* Destroy dlc */
+		rfcomm_dlc_destroy(dlc);
 		return NULL;
 	}
 

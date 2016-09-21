@@ -74,7 +74,7 @@ struct bt_rfcomm_dlc_ops {
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  dlc is disconnected, including when a connection gets
-	 *  rejected.
+	 *  rejected or cancelled (both incoming and outgoing)
 	 *
 	 *  @param dlc The dlc that has been Disconnected
 	 */
