@@ -82,12 +82,16 @@
 #define l2cap_br_detach_chan(conn, chan) \
 	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_DETACH)
 
-/* Auxiliary L2CAP CoC flags making channel context */
 enum {
-	L2CAP_FLAG_LCONF_DONE,	/* local config accepted by remote */
-	L2CAP_FLAG_RCONF_DONE,	/* remote config accepted by local */
-	L2CAP_FLAG_ACCEPTOR,	/* getting incoming connection req on PSM */
-	L2CAP_FLAG_CONN_PENDING,/* remote sent pending result in response */
+	/* Connection oriented channels flags */
+	L2CAP_FLAG_CONN_LCONF_DONE,	/* local config accepted by remote */
+	L2CAP_FLAG_CONN_RCONF_DONE,	/* remote config accepted by local */
+	L2CAP_FLAG_CONN_ACCEPTOR,	/* getting incoming connection req */
+	L2CAP_FLAG_CONN_PENDING,	/* remote sent pending result in rsp */
+
+	/* Signaling channel flags */
+	L2CAP_FLAG_SIG_INFO_PENDING,	/* retrieving remote l2cap info */
+	L2CAP_FLAG_SIG_INFO_DONE,	/* remote l2cap info is done */
 };
 
 static struct bt_l2cap_server *br_servers;
@@ -99,17 +103,10 @@ static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
-/* Set of flags applicable on "flags" member of bt_l2cap_br context */
-enum {
-	BT_L2CAP_FLAG_INFO_PENDING,	/* retrieving remote l2cap info */
-	BT_L2CAP_FLAG_INFO_DONE,	/* remote l2cap info is done */
-};
-
 /* BR/EDR L2CAP signalling channel specific context */
 struct bt_l2cap_br {
 	/* The channel this context is associated with */
 	struct bt_l2cap_br_chan	chan;
-	atomic_t		flags[1];
 	uint8_t			info_ident;
 	uint8_t			info_fixed_chan;
 	uint32_t		info_feat_mask;
@@ -296,14 +293,12 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 static void l2cap_br_rtx_timeout(struct nano_work *work)
 {
 	struct bt_l2cap_br_chan *chan = BR_CHAN_RTX(work);
-	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br,
-						 chan.chan);
 
 	BT_WARN("chan %p timeout", chan);
 
 	if (chan->rx.cid == BT_L2CAP_CID_BR_SIG) {
 		BT_DBG("Skip BR/EDR signalling channel ");
-		atomic_clear_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING);
+		atomic_clear_bit(chan->flags, L2CAP_FLAG_SIG_INFO_PENDING);
 		return;
 	}
 
@@ -382,7 +377,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 
 	BT_DBG("info type %u", info_type);
 
-	if (atomic_test_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING)) {
+	if (atomic_test_bit(l2cap->chan.flags, L2CAP_FLAG_SIG_INFO_PENDING)) {
 		return;
 	}
 
@@ -401,7 +396,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 		return;
 	}
 
-	atomic_set_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING);
+	atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_SIG_INFO_PENDING);
 	l2cap->info_ident = l2cap_br_get_ident();
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
@@ -422,12 +417,12 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	uint16_t type, result;
 	int err = 0;
 
-	if (atomic_test_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_DONE)) {
+	if (atomic_test_bit(l2cap->chan.flags, L2CAP_FLAG_SIG_INFO_DONE)) {
 		return 0;
 	}
 
-	if (atomic_test_and_clear_bit(l2cap->flags,
-				      BT_L2CAP_FLAG_INFO_PENDING)) {
+	if (atomic_test_and_clear_bit(l2cap->chan.flags,
+				      L2CAP_FLAG_SIG_INFO_PENDING)) {
 		/*
 		 * Release RTX timer since got the response & there's pending
 		 * command request.
@@ -479,7 +474,7 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		break;
 	}
 done:
-	atomic_set_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_DONE);
+	atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_SIG_INFO_DONE);
 	l2cap->info_ident = 0;
 	return err;
 }
@@ -812,7 +807,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	BR_CHAN(chan)->tx.cid = scid;
 	dcid = BR_CHAN(chan)->rx.cid;
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
-	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_ACCEPTOR);
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR);
 
 	/* Disable fragmentation of l2cap rx pdu */
 	BR_CHAN(chan)->rx.mtu = min(BR_CHAN(chan)->rx.mtu, L2CAP_BR_MAX_MTU);
@@ -891,11 +886,11 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	 */
 	switch (result) {
 	case BT_L2CAP_CONF_SUCCESS:
-		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_LCONF_DONE);
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_LCONF_DONE);
 
 		if (chan->state == BT_L2CAP_CONFIG &&
 		    atomic_test_bit(BR_CHAN(chan)->flags,
-				    L2CAP_FLAG_RCONF_DONE)) {
+				    L2CAP_FLAG_CONN_RCONF_DONE)) {
 			BT_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u",
 			       BR_CHAN(chan)->rx.cid, BR_CHAN(chan)->rx.mtu,
 			       BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
@@ -1111,9 +1106,9 @@ send_rsp:
 		return;
 	}
 
-	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_RCONF_DONE);
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RCONF_DONE);
 
-	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_LCONF_DONE) &&
+	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_LCONF_DONE) &&
 	    chan->state == BT_L2CAP_CONFIG) {
 		BT_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u",
 		       BR_CHAN(chan)->rx.cid, BR_CHAN(chan)->rx.mtu,
@@ -1209,13 +1204,10 @@ static void l2cap_br_connected(struct bt_l2cap_chan *chan)
 
 static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_l2cap_br *l2cap = CONTAINER_OF(BR_CHAN(chan),
-						 struct bt_l2cap_br, chan.chan);
-
 	BT_DBG("ch %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
 
-	if (atomic_test_and_clear_bit(l2cap->flags,
-				      BT_L2CAP_FLAG_INFO_PENDING)) {
+	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
+				      L2CAP_FLAG_SIG_INFO_PENDING)) {
 		/* Cancel RTX work on signal channel */
 		nano_delayed_work_cancel(&chan->rtx_work);
 	}
@@ -1515,7 +1507,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan)
 	 * For incoming connection state send confirming outstanding
 	 * response and initiate configuration request.
 	 */
-	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_ACCEPTOR)) {
+	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
 		buf = bt_l2cap_create_pdu(&br_sig);
 		if (!buf) {
 			BT_ERR("No buffers for PDU");
@@ -1598,7 +1590,7 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 		l2cap->chan.chan.ops = &ops;
 		*chan = &l2cap->chan.chan;
-		atomic_set(l2cap->flags, 0);
+		atomic_set(l2cap->chan.flags, 0);
 		return 0;
 	}
 

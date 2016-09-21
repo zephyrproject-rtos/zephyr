@@ -146,6 +146,7 @@ struct bt_l2cap_br_chan {
 	struct bt_l2cap_br_endpoint	rx;
 	/** Channel Transmission Endpoint */
 	struct bt_l2cap_br_endpoint	tx;
+	/* For internal use only */
 	atomic_t			flags[1];
 	/** Remote PSM to be connected */
 	uint16_t			psm;
