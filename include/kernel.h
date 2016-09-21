@@ -627,11 +627,9 @@ extern void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 extern int k_sem_take(struct k_sem *sem, int32_t timeout);
 extern void k_sem_give(struct k_sem *sem);
 
-static inline int k_sem_reset(struct k_sem *sem)
+static inline void k_sem_reset(struct k_sem *sem)
 {
 	sem->count = 0;
-
-	return 0;
 }
 
 static inline unsigned int k_sem_count_get(struct k_sem *sem)
