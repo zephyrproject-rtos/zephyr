@@ -403,6 +403,31 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 	return dlc;
 }
 
+static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
+{
+	struct bt_rfcomm_hdr *hdr;
+	struct net_buf *buf;
+	uint8_t fcs, cr;
+
+	BT_DBG("dlci %d", dlci);
+
+	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
+	if (!buf) {
+		BT_ERR("No buffers");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	cr = session->initiator ? 0 : 1;
+	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DM, 1);
+	hdr->length = BT_RFCOMM_SET_LEN_8(0);
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+}
+
 static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
 {
 	struct bt_rfcomm_dlc *dlc = (struct bt_rfcomm_dlc *)arg1;
@@ -524,6 +549,7 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 		if (!dlc) {
 			dlc = rfcomm_dlc_accept(session, dlci);
 			if (!dlc) {
+				rfcomm_send_dm(session, dlci);
 				return;
 			}
 		}
@@ -621,8 +647,8 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 	struct bt_rfcomm_dlc *dlc;
 
 	if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
-		/* TODO: Send DM */
 		BT_ERR("Invalid mtu %d", pn->mtu);
+		rfcomm_send_dm(session, pn->dlci);
 		return;
 	}
 
@@ -630,6 +656,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 	if (!dlc) {
 		dlc = rfcomm_dlc_accept(session, pn->dlci);
 		if (!dlc) {
+			rfcomm_send_dm(session, pn->dlci);
 			return;
 		}
 
@@ -652,6 +679,7 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 	if (dlci) {
 		dlc = rfcomm_dlcs_remove_dlci(session->dlcs, dlci);
 		if (!dlc) {
+			rfcomm_send_dm(session, dlci);
 			return;
 		}
 
@@ -719,6 +747,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
 	if (!dlc) {
 		BT_ERR("Data recvd in non existing DLC");
+		rfcomm_send_dm(session, dlci);
 		return;
 	}
 

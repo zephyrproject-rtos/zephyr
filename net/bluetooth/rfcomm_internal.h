@@ -71,6 +71,7 @@ struct bt_rfcomm_msc {
 } __packed;
 
 #define BT_RFCOMM_DISC	0x43
+#define BT_RFCOMM_DM	0x0f
 
 /* DV = 1 IC = 0 RTR = 1 RTC = 1 FC = 0 EXT = 0 */
 #define BT_RFCOMM_DEFAULT_V24_SIG 0x8d
