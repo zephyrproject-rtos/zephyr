@@ -5,7 +5,6 @@
 #    board:(?!arduino_101_sss) \
 #    board:(?!arduino_due) \
 #    board:(?!basic_minuteia) \
-#    board:(?!basic_cortex_m3) \
 #    board:(?!frdm_k64f) \
 #    board:(?!galileo) \
 #    board:(?!minnowboard) \
