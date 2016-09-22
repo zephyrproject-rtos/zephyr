@@ -139,11 +139,7 @@ SECTIONS
 	/* RAM */
 	GROUP_START(RAM)
 
-#if defined(CONFIG_XIP)
-	SECTION_AT_PROLOGUE(_DATA_SECTION_NAME, (OPTIONAL), , __data_rom_start)
-#else
-	SECTION_PROLOGUE(_DATA_SECTION_NAME, (OPTIONAL),)
-#endif
+	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME, (OPTIONAL),)
 	{
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	_image_ram_start = .;
@@ -151,15 +147,15 @@ SECTIONS
 	*(.data)
 	*(".data.*")
 	. = ALIGN(4);
-	} GROUP_LINK_IN(RAM)
+	} GROUP_DATA_LINK_IN(RAM, ROM)
 
-	SECTION_PROLOGUE(initlevel, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(initlevel, (OPTIONAL),)
 	{
 		DEVICE_INIT_SECTIONS()
 		KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
-	} GROUP_LINK_IN(RAM)
+	} GROUP_DATA_LINK_IN(RAM, ROM)
 
-	SECTION_PROLOGUE(_k_task_list, ALIGN(4), ALIGN(4))
+	SECTION_DATA_PROLOGUE(_k_task_list, (OPTIONAL),)
 	{
 		_k_task_list_start = .;
 			*(._k_task_list.public.*)
@@ -168,9 +164,9 @@ SECTIONS
 			*(._k_task_list.idle.*)
 		KEEP(*(SORT_BY_NAME("._k_task_list*")))
 		_k_task_list_end = .;
-	} GROUP_LINK_IN(RAM)
+	} GROUP_DATA_LINK_IN(RAM, ROM)
 
-	SECTION_PROLOGUE(_k_task_ptr, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(_k_task_ptr, (OPTIONAL),)
 	{
 		_k_task_ptr_start = .;
 			*(._k_task_ptr.public.*)
@@ -178,35 +174,35 @@ SECTIONS
 			*(._k_task_ptr.idle.*)
 		KEEP(*(SORT_BY_NAME("._k_task_ptr*")))
 		_k_task_ptr_end = .;
-	} GROUP_LINK_IN(RAM)
+	} GROUP_DATA_LINK_IN(RAM, ROM)
 
-	SECTION_PROLOGUE(_k_pipe_ptr, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(_k_pipe_ptr, (OPTIONAL),)
 	{
 		_k_pipe_ptr_start = .;
 			*(._k_pipe_ptr.public.*)
 			*(._k_pipe_ptr.private.*)
 		KEEP(*(SORT_BY_NAME("._k_pipe_ptr*")))
 		_k_pipe_ptr_end = .;
-	} GROUP_LINK_IN(RAM)
+	} GROUP_DATA_LINK_IN(RAM, ROM)
 
-	SECTION_PROLOGUE(_k_mem_map_ptr, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(_k_mem_map_ptr, (OPTIONAL),)
 	{
 		_k_mem_map_ptr_start = .;
 			*(._k_mem_map_ptr.public.*)
 			*(._k_mem_map_ptr.private.*)
 		KEEP(*(SORT_BY_NAME("._k_mem_map_ptr*")))
 		_k_mem_map_ptr_end = .;
-	} GROUP_LINK_IN(RAM)
+	} GROUP_DATA_LINK_IN(RAM, ROM)
 
-	SECTION_PROLOGUE(_k_event_list, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(_k_event_list, (OPTIONAL),)
 	{
 		_k_event_list_start = .;
 			*(._k_event_list.event.*)
 		KEEP(*(SORT_BY_NAME("._k_event_list*")))
 		_k_event_list_end = .;
-	} GROUP_LINK_IN(RAM)
+	} GROUP_DATA_LINK_IN(RAM, ROM)
 
-	SECTION_PROLOGUE(_k_memory_pool, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(_k_memory_pool, (OPTIONAL),)
 	{
 		*(._k_memory_pool.struct*)
 		KEEP(*(SORT_BY_NAME("._k_memory_pool.struct*")))
@@ -215,7 +211,7 @@ SECTIONS
 		*(._k_memory_pool.*)
 		KEEP(*(SORT_BY_NAME("._k_memory_pool*")))
 		_k_mem_pool_end = .;
-	} GROUP_LINK_IN(RAM)
+	} GROUP_DATA_LINK_IN(RAM, ROM)
 
 	__data_ram_end = .;
 

@@ -181,11 +181,7 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
-#if defined(CONFIG_XIP)
-    SECTION_AT_PROLOGUE(_DATA_SECTION_NAME,,,_DATA_IN_ROM)
-#else
-    SECTION_PROLOGUE(_DATA_SECTION_NAME,,)
-#endif
+    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 	_image_ram_start = .;
 	__data_ram_start = .;
@@ -193,14 +189,14 @@ SECTIONS
 	*(.top_of_image_ram.*)
 	*(.data)
 	*(".data.*")
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_PROLOGUE (initlevel, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE (initlevel, (OPTIONAL),)
 	{
 		DEVICE_INIT_SECTIONS()
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_PROLOGUE (_k_task_list, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE (_k_task_list, (OPTIONAL),)
 	{
 		_k_task_list_start = .;
 			*(._k_task_list.public.*)
@@ -209,9 +205,9 @@ SECTIONS
 			*(._k_task_list.idle.*)
 		KEEP(*(SORT_BY_NAME("._k_task_list*")))
 		_k_task_list_end = .;
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_PROLOGUE (_k_task_ptr, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE (_k_task_ptr, (OPTIONAL),)
 	{
 		_k_task_ptr_start = .;
 			*(._k_task_ptr.public.*)
@@ -219,33 +215,33 @@ SECTIONS
 			*(._k_task_ptr.idle.*)
 		KEEP(*(SORT_BY_NAME("._k_task_ptr*")))
 		_k_task_ptr_end = .;
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_PROLOGUE (_k_pipe_ptr, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE (_k_pipe_ptr, (OPTIONAL),)
 	{
 		_k_pipe_ptr_start = .;
 			*(._k_pipe_ptr.public.*)
 			*(._k_pipe_ptr.private.*)
 		KEEP(*(SORT_BY_NAME("._k_pipe_ptr*")))
 		_k_pipe_ptr_end = .;
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_PROLOGUE (_k_mem_map_ptr, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE (_k_mem_map_ptr, (OPTIONAL),)
 	{
 		_k_mem_map_ptr_start = .;
 			*(._k_mem_map_ptr.public.*)
 			*(._k_mem_map_ptr.private.*)
 		KEEP(*(SORT_BY_NAME("._k_mem_map_ptr*")))
 		_k_mem_map_ptr_end = .;
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_PROLOGUE(_k_event_list, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(_k_event_list, (OPTIONAL),)
 	{
 		_k_event_list_start = .;
 			*(._k_event_list.event.*)
 		KEEP(*(SORT_BY_NAME("._k_event_list*")))
 		_k_event_list_end = .;
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_k_memory_pool, (OPTIONAL),)
 	{
@@ -261,7 +257,7 @@ SECTIONS
 
     __data_ram_end = .;
 
-    SECTION_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
         /*
          * For performance, BSS section is assumed to be 4 byte aligned and
@@ -277,7 +273,7 @@ SECTIONS
          * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
 		 */
 	__bss_end = ALIGN(4);
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
     SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
         {

@@ -59,6 +59,23 @@
 #define GROUP_LINK_IN(where) > where
 
 /*
+ * As GROUP_LINK_IN(), but takes a second argument indicating the
+ * memory region (e.g. "ROM") for the load address.  Used for
+ * initialized data sections that on XIP platforms must be copied at
+ * startup.
+ *
+ * And, because output directives in GNU ld are "sticky", this must
+ * also be used on the first section *after* such an initialized data
+ * section, specifying the same memory region (e.g. "RAM") for both
+ * vregion and lregion.
+ */
+#ifdef CONFIG_XIP
+#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT> lregion
+#else
+#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
+#endif
+
+/*
  * The GROUP_FOLLOWS_AT() macro is located at the end of the section
  * and indicates that the section does not specify an address at which
  * it is to be loaded, but that it follows a section which did specify
@@ -77,13 +94,18 @@
 #define SECTION_PROLOGUE(name, options, align) name options : align
 
 /*
- * The SECTION_AT_PROLOGUE() macro is similar to SECTION_PROLOGUE() except
- * that, in addition, the address at which the section is to be loaded is
- * specified.
+ * As for SECTION_PROLOGUE(), except that this one must (!) be used
+ * for data sections which on XIP platforms will have differeing
+ * virtual and load addresses (i.e. they'll be copied into RAM at
+ * program startup).  Such a section must (!) also use
+ * GROUP_LINK_IN_LMA to specify the correct output load address.
  */
-
-#define SECTION_AT_PROLOGUE(name, options, align, addr) \
-	name options : align AT(addr)
+#ifdef CONFIG_XIP
+#define SECTION_DATA_PROLOGUE(name, options, align) \
+	name options : ALIGN_WITH_INPUT align
+#else
+#define SECTION_DATA_PROLOGUE(name, options, align) name options : align
+#endif
 
 #define SORT_BY_NAME(x) SORT(x)
 #define OPTIONAL
