@@ -72,6 +72,8 @@ extern "C" {
 #define DT_CONFORM	1
 #define DT_NONCONFORM	0
 
+#define DT_TYPE_SYSTEM		0
+#define DT_TYPE_CODEDATA	1
 
 #ifndef _ASMLANGUAGE
 
@@ -396,6 +398,45 @@ struct __packed far_ptr {
  */
 extern struct pseudo_descriptor _gdt;
 #endif
+
+/**
+ * Properly set the segment descriptor segment and offset
+ *
+ * Used for call/interrupt/trap gates
+ *
+ * @param sd Segment descriptor
+ * @param offset Offset within segment
+ * @param segment_selector Segment selector
+ */
+static inline void _sd_set_seg_offset(struct segment_descriptor *sd,
+				      uint16_t segment_selector,
+				      uint32_t offset)
+{
+	sd->offset_low = offset & 0xFFFF;
+	sd->offset_hi = offset >> 16;
+	sd->segment_selector = segment_selector;
+	sd->always_0_0 = 0;
+}
+
+
+/**
+ * Initialize an segment descriptor to be a 32-bit IRQ gate
+ *
+ * @param sd Segment descriptor memory
+ * @param seg_selector Segment selector of handler
+ * @param offset offset of handler
+ * @param dpl descriptor privilege level
+ */
+static inline void _init_irq_gate(struct segment_descriptor *sd,
+				  uint16_t seg_selector, uint32_t offset,
+				  uint32_t dpl)
+{
+	_sd_set_seg_offset(sd, seg_selector, offset);
+	sd->dpl = dpl;
+	sd->descriptor_type = DT_TYPE_SYSTEM;
+	sd->present = 1;
+	sd->type = SEG_TYPE_IRQ_GATE;
+}
 
 /**
  * Perform an IA far jump to code within another code segment

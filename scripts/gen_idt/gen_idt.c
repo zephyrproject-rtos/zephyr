@@ -77,8 +77,6 @@ static void generate_idt(void);
 static void generate_interrupt_vector_bitmap(void);
 static void clean_exit(int exit_code);
 static void debug(const char *format, ...);
-static void idt_entry_create(uint64_t *pIdtEntry, uint32_t routine,
-			     unsigned int dpl);
 
 struct genidt_header_s {
 	uint32_t spurious_addr;
@@ -126,35 +124,6 @@ static void debug(const char *format, ...)
 	va_start(vargs, format);
 	vfprintf(stderr, format, vargs);
 	va_end(vargs);
-}
-
-static void idt_entry_create(uint64_t *pIdtEntry, uint32_t routine,
-			     unsigned int dpl)
-{
-	uint32_t *pIdtEntry32 = (uint32_t *)pIdtEntry;
-
-	pIdtEntry32[0] = (KERNEL_CODE_SEG_SELECTOR << 16) |
-			((uint16_t)routine);
-
-	/*
-	 * The constant 0x8e00 results from the following:
-	 *
-	 * Segment Present = 1
-	 *
-	 * Descriptor Privilege Level (DPL) = 0  (dpl arg will be or'ed in)
-	 *
-	 * Interrupt Gate Indicator = 0xE
-	 *    The _IntEnt() and _ExcEnt() stubs assume that an interrupt-gate
-	 *    descriptor is used, and thus they do not issue a 'cli' instruction
-	 *    given that the processor automatically clears the IF flag when
-	 *    accessing the interrupt/exception handler via an interrupt-gate.
-	 *
-	 * Size of Gate (D) = 1
-	 *
-	 * Reserved = 0
-	 */
-
-	pIdtEntry32[1] = (routine & 0xffff0000) | (0x8e00 | (dpl << 13));
 }
 
 int main(int argc, char *argv[])
@@ -489,11 +458,11 @@ static void generate_idt(void)
      */
 
 	for (i = 0; i < num_vectors; i++) {
-		uint64_t idt_entry;
+		struct segment_descriptor idt_entry;
 		ssize_t bytes_written;
 
-		idt_entry_create(&idt_entry, generated_entry[i].isr,
-				 generated_entry[i].dpl);
+		_init_irq_gate(&idt_entry, KERNEL_CODE_SEG_SELECTOR,
+			       generated_entry[i].isr, generated_entry[i].dpl);
 
 		bytes_written = write(fds[OFILE], &idt_entry, sizeof(idt_entry));
 		if (bytes_written != sizeof(idt_entry)) {
