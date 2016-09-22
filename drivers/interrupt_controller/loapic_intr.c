@@ -285,10 +285,7 @@ static int _loapic_init(struct device *unused)
  *
  * @brief Set the vector field in the specified RTE
  *
- * This routine is utilized by the interrupt controller's
- * _interrupt_vector_allocate() routine (which exists to support the
- * irq_connect_dynamic() API).  Once a vector has been allocated, this routine
- * is invoked to update the LVT entry associated with <irq> with the vector.
+ * This associates an IRQ with the desired vector in the IDT.
  *
  * @return N/A
  */

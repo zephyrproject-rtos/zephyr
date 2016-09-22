@@ -57,7 +57,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
 			      uint32_t flags);
 
 
-/* Flags for use with IRQ_CONNECT() or irq_connect_dynamic() */
+/* Flags for use with IRQ_CONNECT() */
 #if CONFIG_ZERO_LATENCY_IRQS
 /**
  * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
@@ -71,8 +71,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
 /**
  * Configure a static interrupt.
  *
- * All arguments must be computable by the compiler at build time; if this
- * can't be done use irq_connect_dynamic() instead.
+ * All arguments must be computable by the compiler at build time.
  *
  * Internally this function does a few things:
  *

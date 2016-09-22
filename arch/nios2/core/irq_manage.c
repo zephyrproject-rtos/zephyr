@@ -69,22 +69,6 @@ void _arch_irq_disable(unsigned int irq)
 };
 
 
-int _arch_irq_connect_dynamic(unsigned int irq,
-					 unsigned int priority,
-					 void (*routine)(void *parameter),
-					 void *parameter,
-					 uint32_t flags)
-{
-	ARG_UNUSED(irq);
-	ARG_UNUSED(priority);
-	ARG_UNUSED(routine);
-	ARG_UNUSED(parameter);
-	ARG_UNUSED(flags);
-
-	/* STUB. May never implement this, part of a deprecated API */
-	return -1;
-};
-
 /**
  * @brief Interrupt demux function
  *

@@ -149,9 +149,7 @@ Each architecture also has to implement primitives for interrupt control:
 
 .. note::
 
-  Zephyr currently supports for connecting interrupts dynamically, i.e. at
-  runtime using :c:func:`irq_connect_dynamic`: this is getting deprecated.
-  :c:macro:`irq_connect` is a macro that uses assembler and/or linker script
+  :c:macro:`IRQ_CONNECT` is a macro that uses assembler and/or linker script
   tricks to connect interrupts at build time, saving boot time and text size.
 
 The vector table should contain a handler for each interrupt and exception that

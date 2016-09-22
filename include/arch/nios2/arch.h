@@ -57,8 +57,7 @@ typedef unsigned int vaddr_t;
 /**
  * Configure a static interrupt.
  *
- * All arguments must be computable by the compiler at build time; if this
- * can't be done use irq_connect_dynamic() instead.
+ * All arguments must be computable by the compiler at build time.
  *
  * Internally this function does a few things:
  *
@@ -133,9 +132,6 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 #endif
 }
 
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter), void *parameter,
-			      uint32_t flags);
 void _arch_irq_enable(unsigned int irq);
 void _arch_irq_disable(unsigned int irq);
 

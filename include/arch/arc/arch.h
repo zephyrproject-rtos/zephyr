@@ -64,8 +64,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
 /**
  * Configure a static interrupt.
  *
- * All arguments must be computable by the compiler at build time; if this
- * can't be done use irq_connect_dynamic() instead.
+ * All arguments must be computable by the compiler at build time.
  *
  * Internally this function does a few things:
  *

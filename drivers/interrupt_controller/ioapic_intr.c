@@ -124,15 +124,6 @@ int _ioapic_init(struct device *unused)
 	 *
 	 * ((__IoApicGet(IOAPIC_VERS) & IOAPIC_MRE_MASK) >> 16) + 1
 	 */
-
-	/*
-	 * Initialize the redirection table entries with default settings;
-	 * actual interrupt vectors are specified during irq_connect_dynamic().
-	 *
-	 * A future enhancement should make this initialization "table driven":
-	 * use data provided by the platform to specify the initial state
-	 */
-
 	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
 		   IOAPIC_PHYSICAL | 0 /* dummy vector */;
 
