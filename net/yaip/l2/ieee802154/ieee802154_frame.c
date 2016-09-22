@@ -335,7 +335,7 @@ generate_addressing_fields(struct net_if *iface, struct net_buf *buf,
 		fs->fc.pan_id_comp = 1;
 
 		l_addr = net_nbr_get_lladdr(nbr->idx);
-		memcpy(af->comp.addr.ext_addr, l_addr->addr, l_addr->len);
+		memcpy(af->plain.addr.ext_addr, l_addr->addr, l_addr->len);
 
 		*p_buf += IEEE802154_PAN_ID_LENGTH +
 			IEEE802154_EXT_ADDR_LENGTH;
