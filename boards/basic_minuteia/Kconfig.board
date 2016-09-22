@@ -1,4 +1,0 @@
-
-config BOARD_BASIC_MINUTEIA
-	bool "Basic Minute-IA Board"
-	depends on SOC_IA32

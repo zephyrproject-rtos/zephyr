@@ -4,7 +4,6 @@
 #    board:(?!arduino_101) \
 #    board:(?!arduino_101_sss) \
 #    board:(?!arduino_due) \
-#    board:(?!basic_minuteia) \
 #    board:(?!frdm_k64f) \
 #    board:(?!galileo) \
 #    board:(?!minnowboard) \

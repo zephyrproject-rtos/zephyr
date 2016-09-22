@@ -1,7 +1,7 @@
 # default configuration
 
 KERNEL_TYPE = nano
-BOARD ?= basic_minuteia
+BOARD ?= qemu_x86
 CONF_FILE ?= prj1.conf
 
 KBUILD_KCONFIG = $(PWD)/Kconfig
