@@ -923,6 +923,100 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
 	return first;
 }
 
+/* This helper routine will put single byte, if there is no place for
+ * the byte in current fragment then create new fragment and add it to
+ * the buffer. Every next byte retrieve last fragment and start placing it.
+ */
+static inline bool net_nbuf_write_byte(struct net_buf *buf, uint8_t value)
+{
+	struct net_buf *frag;
+
+	frag = net_buf_frag_last(buf->frags);
+	if (!frag) {
+		return false;
+	}
+
+	if (net_buf_tailroom(frag)) {
+		frag->data[frag->len] = value;
+		net_buf_add(frag, 1);
+
+		return true;
+	}
+
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	if (!frag) {
+		return false;
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	frag->data[0] = value;
+
+	net_buf_add(frag, 1);
+
+	return true;
+}
+
+bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
+{
+	uint16_t offset = 0;
+
+	NET_ASSERT(buf && data);
+
+	while (len-- > 0) {
+		if (!net_nbuf_write_byte(buf, *(data + offset++))) {
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* Helper routine to retrieve single byte from fragment and move
+ * offset. If required byte is last byte in framgent then return
+ * next fragment and set offset = 0.
+ */
+static inline struct net_buf *net_nbuf_read_byte(struct net_buf *buf,
+						 uint16_t offset,
+						 uint16_t *pos,
+						 uint8_t *data)
+{
+	if (data) {
+		*data = buf->data[offset];
+	}
+
+	*pos = offset + 1;
+
+	if (*pos >= buf->len) {
+		*pos = 0;
+
+		return buf->frags;
+	}
+
+	return buf;
+}
+
+struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
+			      uint16_t *pos, uint16_t len, uint8_t *data)
+{
+	uint16_t copy = 0;
+
+	NET_ASSERT(buf);
+
+	*pos = offset;
+
+	while (len-- > 0 && buf) {
+		if (data) {
+			buf = net_nbuf_read_byte(buf, *pos, pos, data + copy++);
+		} else {
+			buf = net_nbuf_read_byte(buf, *pos, pos, NULL);
+		}
+	}
+
+	return buf;
+}
+
 #if NET_DEBUG
 void net_nbuf_print(void)
 {

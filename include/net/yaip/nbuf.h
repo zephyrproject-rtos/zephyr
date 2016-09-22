@@ -565,6 +565,69 @@ struct net_buf *net_nbuf_push(struct net_buf *parent, struct net_buf *buf,
  */
 struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
 
+/**
+ * @brief Add data to last fragment in fragment list
+ *
+ * @details Add data to last fragment. If there is no enough space in last
+ * fragment then new data fragment will be created and will be added to
+ * fragment list. Caller has to take care of endianness if needed.
+ *
+ * @param buf Network buffer fragment list.
+ * @param len Total length of input data
+ * @param data Data to be added
+ *
+ * @return True if all the data is placed at end of fragment list,
+ * False otherwie (In-case of false buf might contain input data in the
+ * process of placing into fragments).
+ */
+bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data);
+
+/**
+ * @brief Get data from buffer
+ *
+ * @details Get N number of bytes starting from fragment's offset. If the total
+ * length of data is placed in multiple framgents, this function will read from
+ * all fragments until it reaches N number of bytes. Caller has to take care of
+ * endianness if needed.
+ *
+ * @param buf Network buffer fragment.
+ * @param offset Offset of input buffer.
+ * @param pos Pointer to position of offset after reading n number of bytes,
+ *            this is with respect to return buffer(fragment).
+ * @param len Total length of data to be read.
+ * @param data Data will be copied here.
+ *
+ * @return Pointer to fragment after successful read,
+ *         NULL otherwise (if pos is 0, NULL is not a failure case).
+ */
+struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
+			      uint16_t *pos, uint16_t len, uint8_t *data);
+
+/**
+ * @brief Skip N number of bytes while reading buffer
+ *
+ * @details Skip N number of bytes starting from fragment's offset. If the total
+ * length of data is placed in multiple framgents, this function will skip from
+ * all fragments until it reaches N number of bytes. This function is useful
+ * when unwanted data (e.g. reserved or not supported data in message) is part
+ * of fragment and want to skip it.
+ *
+ * @param buf Network buffer fragment.
+ * @param offset Offset of input buffer.
+ * @param pos Pointer to position of offset after reading n number of bytes,
+ *            this is with respect to return buffer(fragment).
+ * @param len Total length of data to be read.
+ *
+ * @return Pointer to fragment after successful skip,
+ *         NULL otherwise (if pos is 0, NULL is not a failure case).
+ */
+static inline struct net_buf *net_nbuf_skip(struct net_buf *buf,
+					    uint16_t offset,
+					    uint16_t *pos, uint16_t len)
+{
+	return net_nbuf_read(buf, offset, pos, len, NULL);
+}
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 /**
  * @brief Debug helper to print out the buffer allocations
