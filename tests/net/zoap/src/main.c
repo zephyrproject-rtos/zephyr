@@ -25,32 +25,31 @@
 #include <nanokernel.h>
 
 #include <net/buf.h>
-#include <net/ip_buf.h>
+#include <net/nbuf.h>
 #include <net/net_ip.h>
-#include <net/net_core.h>
 
 #include <tc_util.h>
 
 #include <zoap.h>
 
 #define ZOAP_BUF_SIZE 128
-#define ZOAP_LIMITED_BUF_SIZE 9
+#define ZOAP_LIMITED_BUF_SIZE 13
 
 #define NUM_PENDINGS 3
 #define NUM_OBSERVERS 3
 #define NUM_REPLIES 3
 
-static struct nano_fifo zoap_fifo;
-static NET_BUF_POOL(zoap_pool, 2, ZOAP_BUF_SIZE,
-		    &zoap_fifo, NULL, sizeof(struct ip_buf));
+static struct nano_fifo zoap_nbuf_fifo;
+static NET_BUF_POOL(zoap_nbuf_pool, 4, 0,
+		    &zoap_nbuf_fifo, NULL, sizeof(struct net_nbuf));
 
-static struct nano_fifo zoap_incoming_fifo;
-static NET_BUF_POOL(zoap_incoming_pool, 1, ZOAP_BUF_SIZE,
-		    &zoap_incoming_fifo, NULL, sizeof(struct ip_buf));
+static struct nano_fifo zoap_data_fifo;
+static NET_BUF_POOL(zoap_data_pool, 4, ZOAP_BUF_SIZE,
+		    &zoap_data_fifo, NULL, 0);
 
-static struct nano_fifo zoap_limited_fifo;
-static NET_BUF_POOL(zoap_limited_pool, 1, ZOAP_LIMITED_BUF_SIZE,
-		    &zoap_limited_fifo, NULL, sizeof(struct ip_buf));
+static struct nano_fifo zoap_limited_data_fifo;
+static NET_BUF_POOL(zoap_limited_data_pool, 4, ZOAP_LIMITED_BUF_SIZE,
+		    &zoap_limited_data_fifo, NULL, 0);
 
 static struct zoap_pending pendings[NUM_PENDINGS];
 static struct zoap_observer observers[NUM_OBSERVERS];
@@ -59,10 +58,10 @@ static struct zoap_reply replies[NUM_REPLIES];
 /* Some forward declarations */
 static void server_notify_callback(struct zoap_resource *resource,
 				   struct zoap_observer *observer);
+
 static int server_resource_1_get(struct zoap_resource *resource,
-				struct zoap_packet *request,
-				const uip_ipaddr_t *addr,
-				uint16_t port);
+				 struct zoap_packet *request,
+				 const struct sockaddr *from);
 
 static const char * const server_resource_1_path[] = { "s", "1", NULL };
 static struct zoap_resource server_resources[] =  {
@@ -73,23 +72,32 @@ static struct zoap_resource server_resources[] =  {
 };
 
 #define MY_PORT 12345
-static uip_ipaddr_t dummy_addr;
+static struct sockaddr_in6 dummy_addr = {
+	.sin6_family = AF_INET6,
+	.sin6_addr = IN6ADDR_LOOPBACK_INIT };
 
 static int test_build_empty_pdu(void)
 {
 	uint8_t result_pdu[] = { 0x40, 0x01, 0x0, 0x0 };
 	struct zoap_packet pkt;
-	struct net_buf *buf;
+	struct net_buf *buf, *frag;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
 
 	r = zoap_packet_init(&pkt, buf);
 	if (r) {
@@ -102,12 +110,12 @@ static int test_build_empty_pdu(void)
 	zoap_header_set_code(&pkt, ZOAP_METHOD_GET);
 	zoap_header_set_id(&pkt, 0);
 
-	if (ip_buf_appdatalen(buf) != sizeof(result_pdu)) {
-		TC_PRINT("Failed to build packet\n");
+	if (frag->len != sizeof(result_pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
 		goto done;
 	}
 
-	if (memcmp(result_pdu, ip_buf_appdata(buf), ip_buf_appdatalen(buf))) {
+	if (memcmp(result_pdu, frag->data, frag->len)) {
 		TC_PRINT("Built packet doesn't match reference packet\n");
 		goto done;
 	}
@@ -128,7 +136,7 @@ static int test_build_simple_pdu(void)
 				 'n', 0xC1, 0x00, 0xFF, 'p', 'a', 'y', 'l',
 				 'o', 'a', 'd', 0x00 };
 	struct zoap_packet pkt;
-	struct net_buf *buf;
+	struct net_buf *buf, *frag;
 	const char token[] = "token";
 	uint8_t *appdata, payload[] = "payload";
 	uint16_t buflen;
@@ -136,13 +144,20 @@ static int test_build_simple_pdu(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
 
 	r = zoap_packet_init(&pkt, buf);
 	if (r) {
@@ -183,12 +198,12 @@ static int test_build_simple_pdu(void)
 		goto done;
 	}
 
-	if (ip_buf_appdatalen(buf) != sizeof(result_pdu)) {
+	if (frag->len != sizeof(result_pdu)) {
 		TC_PRINT("Different size from the reference packet\n");
 		goto done;
 	}
 
-	if (memcmp(result_pdu, ip_buf_appdata(buf), ip_buf_appdatalen(buf))) {
+	if (memcmp(result_pdu, frag->data, frag->len)) {
 		TC_PRINT("Built packet doesn't match reference packet\n");
 		goto done;
 	}
@@ -206,19 +221,25 @@ done:
 static int test_build_no_size_for_options(void)
 {
 	struct zoap_packet pkt;
-	struct net_buf *buf;
+	struct net_buf *buf, *frag;
 	const char token[] = "token";
 	uint8_t format = 0;
 	int result = TC_FAIL;
 	int r;
-
-	buf = net_buf_get(&zoap_limited_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	frag = net_buf_get(&zoap_limited_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
 
 	r = zoap_packet_init(&pkt, buf);
 	if (r) {
@@ -259,23 +280,30 @@ done:
 static int test_parse_empty_pdu(void)
 {
 	uint8_t pdu[] = { 0x40, 0x01, 0, 0 };
-	struct net_buf *buf;
+	struct net_buf *buf, *frag;
 	struct zoap_packet pkt;
 	uint8_t ver, type, code;
 	uint16_t id;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
 
-	memcpy(ip_buf_appdata(buf), pdu, sizeof(pdu));
-	ip_buf_appdatalen(buf) = sizeof(pdu);
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
+
+	memcpy(frag->data, pdu, sizeof(pdu));
+	frag->len = sizeof(pdu);
 
 	r = zoap_packet_parse(&pkt, buf);
 	if (r) {
@@ -324,7 +352,7 @@ static int test_parse_simple_pdu(void)
 			  'n',  0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y',
 			  'l', 'o', 'a', 'd', 0x00 };
 	struct zoap_packet pkt;
-	struct net_buf *buf;
+	struct net_buf *buf, *frag;
 	struct zoap_option options[16];
 	uint8_t ver, type, code, tkl;
 	const uint8_t *token;
@@ -332,16 +360,23 @@ static int test_parse_simple_pdu(void)
 	int result = TC_FAIL;
 	int r, count = 16;
 
-	buf = net_buf_get(&zoap_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
 
-	memcpy(ip_buf_appdata(buf), pdu, sizeof(pdu));
-	ip_buf_appdatalen(buf) = sizeof(pdu);
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
+
+	memcpy(frag->data, pdu, sizeof(pdu));
+	frag->len = sizeof(pdu);
 
 	r = zoap_packet_parse(&pkt, buf);
 	if (r) {
@@ -429,18 +464,25 @@ static int test_retransmit_second_round(void)
 {
 	struct zoap_packet pkt, resp;
 	struct zoap_pending *pending, *resp_pending;
-	struct net_buf *buf, *resp_buf = NULL;
-	uint16_t id;
+	struct net_buf *buf, *frag, *resp_buf = NULL;
 	int result = TC_FAIL;
 	int r;
+	uint16_t id;
 
-	buf = net_buf_get(&zoap_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
 
 	r = zoap_packet_init(&pkt, buf);
 	if (r) {
@@ -480,13 +522,19 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	resp_buf = net_buf_get(&zoap_fifo, 0);
+	resp_buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!resp_buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(resp_buf) = net_buf_tail(resp_buf);
-	ip_buf_appdatalen(resp_buf) = net_buf_tailroom(resp_buf);
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(resp_buf, frag);
 
 	r = zoap_packet_init(&resp, resp_buf);
 	if (r) {
@@ -525,17 +573,29 @@ done:
 	return result;
 }
 
+static bool ipaddr_cmp(const struct sockaddr *a, const struct sockaddr *b)
+{
+	if (a->family != b->family) {
+		return false;
+	}
+
+	if (a->family == AF_INET6) {
+		return net_ipv6_addr_cmp(&net_sin6(a)->sin6_addr,
+					 &net_sin6(b)->sin6_addr);
+	} else if (a->family == AF_INET) {
+		return net_ipv4_addr_cmp(&net_sin(a)->sin_addr,
+					 &net_sin(b)->sin_addr);
+	}
+
+	return false;
+}
 
 static void server_notify_callback(struct zoap_resource *resource,
 				   struct zoap_observer *observer)
 {
-	if (!uip_ipaddr_cmp(&observer->addr, &dummy_addr)) {
+	if (!ipaddr_cmp(&observer->addr,
+			(const struct sockaddr *) &dummy_addr)) {
 		TC_ERROR("The address of the observer doesn't match.\n");
-		return;
-	}
-
-	if (observer->port != MY_PORT) {
-		TC_ERROR("The port of the observer doesn't match.\n");
 		return;
 	}
 
@@ -546,12 +606,11 @@ static void server_notify_callback(struct zoap_resource *resource,
 
 static int server_resource_1_get(struct zoap_resource *resource,
 				 struct zoap_packet *request,
-				 const uip_ipaddr_t *addr,
-				 uint16_t port)
+				 const struct sockaddr *from)
 {
 	struct zoap_packet response;
 	struct zoap_observer *observer;
-	struct net_buf *buf = resource->user_data;
+	struct net_buf *buf, *frag;
 	char payload[] = "This is the payload";
 	const uint8_t *token;
 	uint8_t tkl, *p;
@@ -572,9 +631,24 @@ static int server_resource_1_get(struct zoap_resource *resource,
 	token = zoap_header_get_token(request, &tkl);
 	id = zoap_header_get_id(request);
 
-	zoap_observer_init(observer, request, addr, port);
+	zoap_observer_init(observer, request, from);
 
 	zoap_register_observer(resource, observer);
+
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		return -ENOMEM;
+	}
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		return -ENOMEM;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
 
 	r = zoap_packet_init(&response, buf);
 	if (r < 0) {
@@ -600,6 +674,8 @@ static int server_resource_1_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
+	resource->user_data = buf;
+
 	return 0;
 }
 
@@ -618,21 +694,27 @@ static int test_observer_server(void)
 		0x51, 's', 0x01, '2', /* path */
 	};
 	struct zoap_packet req;
-	struct net_buf *buf, *rsp_buf = NULL;
+	struct net_buf *buf, *frag;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
 
-	memcpy(ip_buf_appdata(buf), valid_request_pdu,
-	       sizeof(valid_request_pdu));
-	ip_buf_appdatalen(buf) = sizeof(valid_request_pdu);
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
+
+	memcpy(frag->data, valid_request_pdu, sizeof(valid_request_pdu));
+	frag->len = sizeof(valid_request_pdu);
 
 	r = zoap_packet_parse(&req, buf);
 	if (r) {
@@ -640,17 +722,8 @@ static int test_observer_server(void)
 		goto done;
 	}
 
-	rsp_buf = net_buf_get(&zoap_fifo, 0);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-	ip_buf_appdata(rsp_buf) = net_buf_tail(rsp_buf);
-	ip_buf_appdatalen(rsp_buf) = net_buf_tailroom(rsp_buf);
-
-	server_resources[0].user_data = rsp_buf;
-
-	r = zoap_handle_request(&req, server_resources, &dummy_addr, MY_PORT);
+	r = zoap_handle_request(&req, server_resources,
+				(const struct sockaddr *) &dummy_addr);
 	if (r) {
 		TC_PRINT("Could not handle packet\n");
 		goto done;
@@ -664,13 +737,26 @@ static int test_observer_server(void)
 		goto done;
 	}
 
-	/* Everything worked fine, let's try something else */
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+	net_nbuf_unref(buf);
 
-	memcpy(ip_buf_appdata(buf), not_found_request_pdu,
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
+
+	memcpy(frag->data, not_found_request_pdu,
 	       sizeof(not_found_request_pdu));
-	ip_buf_appdatalen(buf) = sizeof(not_found_request_pdu);
+	frag->len = sizeof(not_found_request_pdu);
 
 	r = zoap_packet_parse(&req, buf);
 	if (r) {
@@ -678,7 +764,8 @@ static int test_observer_server(void)
 		goto done;
 	}
 
-	r = zoap_handle_request(&req, server_resources, &dummy_addr, MY_PORT);
+	r = zoap_handle_request(&req, server_resources,
+				(const struct sockaddr *) &dummy_addr);
 	if (r != -ENOENT) {
 		TC_PRINT("There should be no handler for this resource\n");
 		goto done;
@@ -688,9 +775,6 @@ static int test_observer_server(void)
 
 done:
 	net_buf_unref(buf);
-	if (rsp_buf) {
-		net_buf_unref(rsp_buf);
-	}
 
 	TC_END_RESULT(result);
 
@@ -699,9 +783,10 @@ done:
 
 static int resource_reply_cb(const struct zoap_packet *response,
 			     struct zoap_reply *reply,
-			     const uip_ipaddr_t *addr,
-			     uint16_t port)
+			     const struct sockaddr *from)
 {
+	TC_PRINT("You should see this\n");
+
 	return 0;
 }
 
@@ -709,20 +794,27 @@ static int test_observer_client(void)
 {
 	struct zoap_packet req, rsp;
 	struct zoap_reply *reply;
-	struct net_buf *buf, *rsp_buf = NULL;
+	struct net_buf *buf, *frag, *rsp_buf = NULL;
 	const char token[] = "rndtoken";
 	const char * const *p;
 	int observe = 0;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(frag);
 
 	r = zoap_packet_init(&req, buf);
 	if (r < 0) {
@@ -739,10 +831,10 @@ static int test_observer_client(void)
 			      (const uint8_t *) token, strlen(token));
 
 	/* Enable observing the resource. */
-	r = zoap_add_option(&req, ZOAP_OPTION_OBSERVE,
-			    &observe, sizeof(observe));
+	r = zoap_add_option_int(&req, ZOAP_OPTION_OBSERVE,
+				observe);
 	if (r < 0) {
-		TC_PRINT("Unable add option to request.\n");
+		TC_PRINT("Unable to add option to request.\n");
 		goto done;
 	}
 
@@ -750,7 +842,7 @@ static int test_observer_client(void)
 		r = zoap_add_option(&req, ZOAP_OPTION_URI_PATH,
 				     *p, strlen(*p));
 		if (r < 0) {
-			TC_PRINT("Unable add option to request.\n");
+			TC_PRINT("Unable to add option to request.\n");
 			goto done;
 		}
 	}
@@ -771,21 +863,16 @@ static int test_observer_client(void)
 		goto done;
 	}
 
-	rsp_buf = net_buf_get(&zoap_fifo, 0);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-	ip_buf_appdata(rsp_buf) = net_buf_tail(rsp_buf);
-	ip_buf_appdatalen(rsp_buf) = net_buf_tailroom(rsp_buf);
-
-	server_resources[0].user_data = rsp_buf;
-
-	r = zoap_handle_request(&req, server_resources, &dummy_addr, MY_PORT);
+	r = zoap_handle_request(&req, server_resources,
+				(const struct sockaddr *) &dummy_addr);
 	if (r) {
 		TC_PRINT("Could not handle packet\n");
 		goto done;
 	}
+
+	/* We cheat, and communicate using the resource's user_data */
+	rsp_buf = server_resources[0].user_data;
+
 	/* The uninteresting part ends here */
 
 	/* 'rsp_buf' contains the response now */
@@ -796,7 +883,8 @@ static int test_observer_client(void)
 		goto done;
 	}
 
-	reply = zoap_response_received(&rsp, &dummy_addr, MY_PORT,
+	reply = zoap_response_received(&rsp,
+				       (const struct sockaddr *) &dummy_addr,
 				       replies, NUM_REPLIES);
 	if (!reply) {
 		TC_PRINT("Couldn't find a matching waiting reply\n");
@@ -807,6 +895,9 @@ static int test_observer_client(void)
 
 done:
 	net_buf_unref(buf);
+	if (rsp_buf) {
+		net_buf_unref(buf);
+	}
 
 	TC_END_RESULT(result);
 
@@ -955,9 +1046,9 @@ int main(int argc, char *argv[])
 
 	TC_START("Test Zoap CoAP PDU parsing and building");
 
-	net_buf_pool_init(zoap_pool);
-	net_buf_pool_init(zoap_limited_pool);
-	net_buf_pool_init(zoap_incoming_pool);
+	net_buf_pool_init(zoap_nbuf_pool);
+	net_buf_pool_init(zoap_data_pool);
+	net_buf_pool_init(zoap_limited_data_pool);
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		if (tests[count].func() == TC_PASS) {

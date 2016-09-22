@@ -22,7 +22,9 @@
 #include <errno.h>
 
 #include <misc/byteorder.h>
-#include <net/ip_buf.h>
+#include <net/buf.h>
+#include <net/nbuf.h>
+#include <net/net_ip.h>
 
 #include "zoap.h"
 
@@ -51,7 +53,7 @@ static uint8_t coap_option_header_get_len(uint8_t buf)
 
 static void coap_option_header_set_delta(uint8_t *buf, uint8_t delta)
 {
-	*buf |= (delta & 0xF) << 4;
+	*buf = (delta & 0xF) << 4;
 }
 
 static void coap_option_header_set_len(uint8_t *buf, uint8_t len)
@@ -151,12 +153,12 @@ static int coap_parse_option(const struct zoap_packet *pkt,
 
 static int coap_parse_options(struct zoap_packet *pkt, unsigned int offset)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 	struct option_context context = {
 		.delta = 0,
 		.used = 0,
-		.buflen = ip_buf_appdatalen(buf) - offset,
+		.buflen = frag->len - offset,
 		.buf = &appdata[offset] };
 
 	while (true) {
@@ -175,21 +177,21 @@ static int coap_parse_options(struct zoap_packet *pkt, unsigned int offset)
 
 static uint8_t coap_header_get_tkl(const struct zoap_packet *pkt)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 
 	return appdata[0] & 0xF;
 }
 
 static int coap_get_header_len(const struct zoap_packet *pkt)
 {
-	struct net_buf *buf = pkt->buf;
+	struct net_buf *frag = pkt->buf->frags;
 	unsigned int hdrlen;
 	uint8_t tkl;
 
 	hdrlen = BASIC_HEADER_SIZE;
 
-	if (ip_buf_appdatalen(buf) < hdrlen) {
+	if (frag->len < hdrlen) {
 		return -EINVAL;
 	}
 
@@ -200,7 +202,7 @@ static int coap_get_header_len(const struct zoap_packet *pkt)
 		return -EINVAL;
 	}
 
-	if (net_buf_tailroom(buf) < hdrlen + tkl) {
+	if (frag->len < hdrlen + tkl) {
 		return -EINVAL;
 	}
 
@@ -209,6 +211,7 @@ static int coap_get_header_len(const struct zoap_packet *pkt)
 
 int zoap_packet_parse(struct zoap_packet *pkt, struct net_buf *buf)
 {
+	struct net_buf *frag = buf->frags;
 	int optlen, hdrlen;
 
 	if (!buf) {
@@ -228,16 +231,16 @@ int zoap_packet_parse(struct zoap_packet *pkt, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	if (ip_buf_appdatalen(buf) < hdrlen + optlen) {
+	if (frag->len < hdrlen + optlen) {
 		return -EINVAL;
 	}
 
-	if (ip_buf_appdatalen(buf) <= hdrlen + optlen + 1) {
+	if (frag->len <= hdrlen + optlen + 1) {
 		pkt->start = NULL;
 		return 0;
 	}
 
-	pkt->start = ip_buf_appdata(buf) + hdrlen + optlen + 1;
+	pkt->start = frag->data + hdrlen + optlen + 1;
 
 	return 0;
 }
@@ -314,19 +317,28 @@ static int coap_option_encode(struct option_context *context, uint16_t code,
 int zoap_packet_init(struct zoap_packet *pkt,
 		     struct net_buf *buf)
 {
+	struct net_buf *frag = buf->frags;
+	void *data;
+
 	if (!buf) {
 		return -EINVAL;
 	}
 
-	if (net_buf_tailroom(buf) < BASIC_HEADER_SIZE) {
+	if (net_buf_tailroom(frag) < BASIC_HEADER_SIZE) {
 		return -ENOMEM;
 	}
 
 	memset(pkt, 0, sizeof(*pkt));
-	memset(ip_buf_appdata(buf), 0, net_buf_tailroom(buf));
+
+	data = net_buf_add(frag, BASIC_HEADER_SIZE);
+
+	/*
+	 * As some header data is built by OR operations, we zero
+	 * the header to be sure.
+	 */
+	memset(data, 0, BASIC_HEADER_SIZE);
 
 	pkt->buf = buf;
-	ip_buf_appdatalen(buf) = BASIC_HEADER_SIZE;
 
 	return 0;
 }
@@ -374,6 +386,22 @@ struct zoap_reply *zoap_reply_next_unused(
 	return NULL;
 }
 
+static inline bool is_addr_unspecified(const struct sockaddr *addr)
+{
+	if (addr->family == AF_UNSPEC) {
+		return true;
+	}
+
+	if (addr->family == AF_INET6) {
+		return net_is_ipv6_addr_unspecified(
+			&(net_sin6(addr)->sin6_addr));
+	} else if (addr->family == AF_INET) {
+		return net_sin(addr)->sin_addr.s4_addr32[0] == 0;
+	}
+
+	return false;
+}
+
 struct zoap_observer *zoap_observer_next_unused(
 	struct zoap_observer *observers, size_t len)
 {
@@ -381,7 +409,7 @@ struct zoap_observer *zoap_observer_next_unused(
 	size_t i;
 
 	for (i = 0, o = observers; i < len; i++, o++) {
-		if (uip_is_addr_unspecified(&o->addr)) {
+		if (is_addr_unspecified(&o->addr)) {
 			return o;
 		}
 	}
@@ -531,7 +559,7 @@ static zoap_method_t method_from_code(const struct zoap_resource *resource,
 
 int zoap_handle_request(struct zoap_packet *pkt,
 			struct zoap_resource *resources,
-			const uip_ipaddr_t *addr, uint16_t port)
+			const struct sockaddr *from)
 {
 	struct zoap_resource *resource;
 
@@ -551,7 +579,7 @@ int zoap_handle_request(struct zoap_packet *pkt,
 			return 0;
 		}
 
-		return method(resource, pkt, addr, port);
+		return method(resource, pkt, from);
 	}
 
 	return -ENOENT;
@@ -595,7 +623,7 @@ static int get_observe_option(const struct zoap_packet *pkt)
 
 struct zoap_reply *zoap_response_received(
 	const struct zoap_packet *response,
-	const uip_ipaddr_t *addr, uint16_t port,
+	const struct sockaddr *from,
 	struct zoap_reply *replies, size_t len)
 {
 	struct zoap_reply *r;
@@ -629,7 +657,7 @@ struct zoap_reply *zoap_response_received(
 			r->age = age;
 		}
 
-		r->reply(response, r, addr, port);
+		r->reply(response, r, from);
 		return r;
 	}
 
@@ -669,6 +697,10 @@ int zoap_resource_notify(struct zoap_resource *resource)
 
 	resource->age++;
 
+	if (!resource->notify) {
+		return -ENOENT;
+	}
+
 	SYS_SLIST_FOR_EACH_NODE(&resource->observers, node) {
 		struct zoap_observer *o = (struct zoap_observer *) node;
 
@@ -685,8 +717,7 @@ bool zoap_request_is_observe(const struct zoap_packet *request)
 
 void zoap_observer_init(struct zoap_observer *observer,
 			const struct zoap_packet *request,
-			const uip_ipaddr_t *addr,
-			uint16_t port)
+			const struct sockaddr *addr)
 {
 	const uint8_t *token;
 	uint8_t tkl;
@@ -699,9 +730,7 @@ void zoap_observer_init(struct zoap_observer *observer,
 
 	observer->tkl = tkl;
 
-	/* FIXME: new network stack */
-	uip_ipaddr_copy(&observer->addr, addr);
-	observer->port = port;
+	net_ipaddr_copy(&observer->addr, addr);
 }
 
 bool zoap_register_observer(struct zoap_resource *resource,
@@ -727,26 +756,27 @@ void zoap_remove_observer(struct zoap_resource *resource,
 
 uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
+	uint16_t appdatalen = frag->len;
 
 	if (len) {
 		*len = 0;
 	}
 
 	if (!pkt->start) {
-		if (ip_buf_appdatalen(buf) + 1 > net_buf_tailroom(buf)) {
+		if (appdatalen + 1 > net_buf_tailroom(frag)) {
 			return NULL;
 		}
 
-		appdata[ip_buf_appdatalen(buf)] = COAP_MARKER;
-		ip_buf_appdatalen(buf) += 1;
+		appdata[appdatalen] = COAP_MARKER;
+		frag->len += 1;
 
-		pkt->start = appdata + ip_buf_appdatalen(buf);
+		pkt->start = appdata + frag->len;
 	}
 
 	if (len) {
-		*len = net_buf_tailroom(buf) - ip_buf_appdatalen(buf);
+		*len = net_buf_tailroom(frag) - frag->len;
 	}
 
 	return pkt->start;
@@ -754,13 +784,13 @@ uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len)
 
 int zoap_packet_set_used(struct zoap_packet *pkt, uint16_t len)
 {
-	struct net_buf *buf = pkt->buf;
+	struct net_buf *frag = pkt->buf->frags;
 
-	if (ip_buf_appdatalen(buf) + len > net_buf_tailroom(buf)) {
+	if (frag->len + len > net_buf_tailroom(frag)) {
 		return -ENOMEM;
 	}
 
-	ip_buf_appdatalen(buf) += len;
+	frag->len += len;
 
 	return 0;
 }
@@ -768,7 +798,7 @@ int zoap_packet_set_used(struct zoap_packet *pkt, uint16_t len)
 int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
 		    const void *value, uint16_t len)
 {
-	struct net_buf *buf = pkt->buf;
+	struct net_buf *frag = pkt->buf->frags;
 	struct option_context context = { .delta = 0,
 					  .used = 0 };
 	int r, offset;
@@ -783,8 +813,8 @@ int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
 	}
 
 	/* We check for options in all the 'used' space. */
-	context.buflen = ip_buf_appdatalen(buf) - offset;
-	context.buf = ip_buf_appdata(buf) + offset;
+	context.buflen = frag->len - offset;
+	context.buf = frag->data + offset;
 
 	while (context.delta <= code) {
 		r = coap_parse_option(pkt, &context, NULL, NULL);
@@ -802,14 +832,14 @@ int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
 		}
 	}
 	/* We can now add options using all the available space. */
-	context.buflen = net_buf_tailroom(buf) - (offset + context.used);
+	context.buflen = net_buf_tailroom(frag) - (offset + context.used);
 
 	r = coap_option_encode(&context, code, value, len);
 	if (r < 0) {
 		return -EINVAL;
 	}
 
-	ip_buf_appdatalen(buf) += r;
+	frag->len += r;
 
 	return 0;
 }
@@ -843,7 +873,7 @@ int zoap_add_option_int(struct zoap_packet *pkt, uint16_t code,
 int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,
 		      struct zoap_option *options, uint16_t veclen)
 {
-	struct net_buf *buf = pkt->buf;
+	struct net_buf *frag = pkt->buf->frags;
 	struct option_context context = { .delta = 0,
 					  .used = 0 };
 	int hdrlen, count = 0;
@@ -854,8 +884,8 @@ int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,
 		return -EINVAL;
 	}
 
-	context.buflen = ip_buf_appdatalen(buf) - hdrlen;
-	context.buf = (uint8_t *)ip_buf_appdata(buf) + hdrlen;
+	context.buflen = frag->len - hdrlen;
+	context.buf = (uint8_t *)frag->data + hdrlen;
 
 	while (context.delta <= code && count < veclen) {
 		int used = coap_parse_option(pkt, &context,
@@ -882,8 +912,8 @@ int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,
 
 uint8_t zoap_header_get_version(const struct zoap_packet *pkt)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 	uint8_t byte = appdata[0];
 
 	return (byte & 0xC0) >> 6;
@@ -891,8 +921,8 @@ uint8_t zoap_header_get_version(const struct zoap_packet *pkt)
 
 uint8_t zoap_header_get_type(const struct zoap_packet *pkt)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 	uint8_t byte = appdata[0];
 
 	return (byte & 0x30) >> 4;
@@ -900,8 +930,8 @@ uint8_t zoap_header_get_type(const struct zoap_packet *pkt)
 
 uint8_t coap_header_get_code(const struct zoap_packet *pkt)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 
 	return appdata[1];
 }
@@ -909,7 +939,7 @@ uint8_t coap_header_get_code(const struct zoap_packet *pkt)
 const uint8_t *zoap_header_get_token(const struct zoap_packet *pkt,
 				     uint8_t *len)
 {
-	struct net_buf *buf = pkt->buf;
+	struct net_buf *frag = pkt->buf->frags;
 	uint8_t tkl = coap_header_get_tkl(pkt);
 
 	if (len) {
@@ -924,7 +954,7 @@ const uint8_t *zoap_header_get_token(const struct zoap_packet *pkt,
 		*len = tkl;
 	}
 
-	return (uint8_t *)ip_buf_appdata(buf) + BASIC_HEADER_SIZE;
+	return (uint8_t *)frag->data + BASIC_HEADER_SIZE;
 }
 
 uint8_t zoap_header_get_code(const struct zoap_packet *pkt)
@@ -969,24 +999,24 @@ uint8_t zoap_header_get_code(const struct zoap_packet *pkt)
 
 uint16_t zoap_header_get_id(const struct zoap_packet *pkt)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 
 	return sys_get_be16(&appdata[2]);
 }
 
 void zoap_header_set_version(struct zoap_packet *pkt, uint8_t ver)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 
 	appdata[0] |= (ver & 0x3) << 6;
 }
 
 void zoap_header_set_type(struct zoap_packet *pkt, uint8_t type)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 
 	appdata[0] |= (type & 0x3) << 4;
 }
@@ -994,10 +1024,10 @@ void zoap_header_set_type(struct zoap_packet *pkt, uint8_t type)
 int zoap_header_set_token(struct zoap_packet *pkt, const uint8_t *token,
 			  uint8_t tokenlen)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 
-	if (net_buf_tailroom(buf) < BASIC_HEADER_SIZE + tokenlen) {
+	if (net_buf_tailroom(frag) < BASIC_HEADER_SIZE + tokenlen) {
 		return -EINVAL;
 	}
 
@@ -1005,26 +1035,27 @@ int zoap_header_set_token(struct zoap_packet *pkt, const uint8_t *token,
 		return -EINVAL;
 	}
 
-	ip_buf_appdatalen(buf) += tokenlen;
+	frag->len += tokenlen;
+
 	appdata[0] |= tokenlen & 0xF;
 
-	memcpy(ip_buf_appdata(buf) + BASIC_HEADER_SIZE, token, tokenlen);
+	memcpy(frag->data + BASIC_HEADER_SIZE, token, tokenlen);
 
 	return 0;
 }
 
 void zoap_header_set_code(struct zoap_packet *pkt, uint8_t code)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 
 	appdata[1] = code;
 }
 
 void zoap_header_set_id(struct zoap_packet *pkt, uint16_t id)
 {
-	struct net_buf *buf = pkt->buf;
-	uint8_t *appdata = ip_buf_appdata(buf);
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *appdata = frag->data;
 
 	sys_put_be16(id, &appdata[2]);
 }

@@ -27,8 +27,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include <contiki/ip/uip.h>
-
 #include <misc/slist.h>
 
 /**
@@ -157,8 +155,7 @@ struct zoap_resource;
  */
 typedef int (*zoap_method_t)(struct zoap_resource *resource,
 			     struct zoap_packet *request,
-			     const uip_ipaddr_t *addr,
-			     uint16_t port);
+			     const struct sockaddr *from);
 
 /**
  * Type of the callback being called when a resource's has observers to be
@@ -187,8 +184,7 @@ struct zoap_resource {
  */
 struct zoap_observer {
 	sys_snode_t list;
-	uip_ipaddr_t addr;
-	uint16_t port;
+	struct sockaddr addr;
 	uint8_t token[8];
 	uint8_t tkl;
 };
@@ -207,8 +203,7 @@ struct zoap_packet {
  */
 typedef int (*zoap_reply_t)(const struct zoap_packet *response,
 			    struct zoap_reply *reply,
-			    const uip_ipaddr_t *addr,
-			    uint16_t port);
+			    const struct sockaddr *from);
 
 /**
  * Represents a request awaiting for an acknowledgment (ACK).
@@ -236,8 +231,7 @@ struct zoap_reply {
  */
 void zoap_observer_init(struct zoap_observer *observer,
 			const struct zoap_packet *request,
-			const uip_ipaddr_t *addr,
-			uint16_t port);
+			const struct sockaddr *addr);
 
 /**
  * After the observer is initialized, associate the observer with an resource.
@@ -323,7 +317,7 @@ struct zoap_pending *zoap_pending_received(
  */
 struct zoap_reply *zoap_response_received(
 	const struct zoap_packet *response,
-	const uip_ipaddr_t *addr, uint16_t port,
+	const struct sockaddr *from,
 	struct zoap_reply *replies, size_t len);
 
 /**
@@ -356,7 +350,7 @@ void zoap_reply_clear(struct zoap_reply *reply);
  */
 int zoap_handle_request(struct zoap_packet *pkt,
 			struct zoap_resource *resources,
-			const uip_ipaddr_t *addr, uint16_t port);
+			const struct sockaddr *from);
 
 /**
  * Indicates that this resource was updated and that the @a notify callback
