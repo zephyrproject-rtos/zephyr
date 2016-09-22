@@ -42,54 +42,19 @@
 
 #define HCI_PACKET_SIZE_MAX 255
 
-enum {
-	HCI_CMD = 0x01,
-	HCI_DATA = 0x02,
-	HCI_EVT = 0x04,
-};
-
 /* opcode of the HCI command currently being processed. The opcode is stored
  * by hci_cmd_handle() and then used during the creation of cmd complete and
  * cmd status events to avoid passing it up the call chain.
  */
 static uint16_t _opcode;
 
-static struct {
-	uint8_t tx[HCI_PACKET_SIZE_MAX];
-} hci_context;
-
-/* event packet length */
-#define HCI_EVT_LEN(evt) ((uint8_t)(1 + sizeof(struct bt_hci_evt_hdr) + \
-			  evt->len))
-
-/* data packet length */
-#define HCI_DATA_LEN(data_hdr) ((uint8_t)(1 + sizeof(struct bt_hci_acl_hdr) + \
-				data_hdr->len))
-
-/* le meta event length */
-#define HCI_ME_LEN(type) ((uint8_t)(sizeof(struct bt_hci_evt_le_meta_event) + \
-			  sizeof(type)))
-
-/* direct access to the event parameters */
-#define HCI_EVTP(evt_hdr) ((void *)((uint8_t *)evt_hdr + \
-			   sizeof(struct bt_hci_evt_hdr)))
-
-/* direct access to the LE meta event parameters */
-#define HCI_ME(evt_hdr) ((struct bt_hci_evt_le_meta_event *)HCI_EVTP(evt_hdr))
-
-/* direct access to the meta event subevent */
-#define HCI_SE(evt_hdr) ((void *)(((uint8_t *)HCI_EVTP(evt_hdr)) + \
-			 sizeof(struct bt_hci_evt_le_meta_event)))
-
-static void *evt_create(struct net_buf *buf, uint8_t evt, uint8_t len)
+static void evt_create(struct net_buf *buf, uint8_t evt, uint8_t len)
 {
 	struct bt_hci_evt_hdr *hdr;
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->evt = evt;
 	hdr->len = len;
-
-	return buf;
 }
 
 static void *cmd_complete(struct net_buf *buf, uint8_t plen)
@@ -114,6 +79,17 @@ static void cmd_status(struct net_buf *buf, uint8_t status)
 	cs->status = status;
 	cs->ncmd = 1;
 	cs->opcode = sys_cpu_to_le16(_opcode);
+}
+
+static void *meta_evt(struct net_buf *buf, uint8_t subevt, uint8_t melen)
+{
+	struct bt_hci_evt_le_meta_event *me;
+
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*me) + melen);
+	me = net_buf_add(buf, sizeof(*me));
+	me->subevent = subevt;
+
+	return net_buf_add(buf, melen);
 }
 
 static void disconnect(struct net_buf *buf, struct net_buf *evt)
@@ -918,56 +894,55 @@ int hci_acl_handle(struct net_buf *buf)
 	return 0;
 }
 
-static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *buf,
-				  struct bt_hci_evt_hdr *evt)
+static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *b,
+				  struct net_buf *buf)
 {
 	const uint8_t c_adv_type[] = { 0x00, 0x01, 0x03, 0xff, 0x04,
 				       0xff, 0x02 };
-	struct bt_hci_ev_le_advertising_report *sep = HCI_SE(evt);
+	struct bt_hci_ev_le_advertising_report *sep;
 	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
 	struct bt_hci_ev_le_advertising_info *adv_info;
 	uint8_t data_len;
 	uint8_t *rssi;
+	uint8_t info_len;
 
-	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
-
-	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = HCI_ME_LEN(*sep);
-
-	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_ADVERTISING_REPORT;
-
-	sep->num_reports = 1;
-
-	adv_info->evt_type = c_adv_type[adv->type];
-	adv_info->addr.type = adv->tx_addr;
-	memcpy(&adv_info->addr.a.val[0], &adv->payload.adv_ind.addr[0],
-	       sizeof(bt_addr_t));
 	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
 		data_len = (adv->len - BDADDR_SIZE);
 	} else {
 		data_len = 0;
 	}
+
+	info_len = sizeof(struct bt_hci_ev_le_advertising_info) + data_len +
+		   sizeof(*rssi);
+	sep = meta_evt(buf, BT_HCI_EVT_LE_ADVERTISING_REPORT,
+		       sizeof(*sep) + info_len);
+
+	sep->num_reports = 1;
+	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
+
+	adv_info->evt_type = c_adv_type[adv->type];
+	adv_info->addr.type = adv->tx_addr;
+	memcpy(&adv_info->addr.a.val[0], &adv->payload.adv_ind.addr[0],
+	       sizeof(bt_addr_t));
+
 	adv_info->length = data_len;
 	memcpy(&adv_info->data[0], &adv->payload.adv_ind.data[0], data_len);
 	/* RSSI */
 	rssi = &adv_info->data[0] + data_len;
-	*rssi = buf[offsetof(struct radio_pdu_node_rx, pdu_data) +
-		offsetof(struct pdu_adv, payload) + adv->len];
+	*rssi = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+		  offsetof(struct pdu_adv, payload) + adv->len];
 
-	evt->len += sizeof(struct bt_hci_ev_le_advertising_info) + data_len + 1;
 }
 
 static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
-			     struct bt_hci_evt_hdr *evt)
+			     struct net_buf *buf)
 {
-	struct bt_hci_evt_le_conn_complete *sep = HCI_SE(evt);
+	struct bt_hci_evt_le_conn_complete *sep;
 	struct radio_le_conn_cmplt *radio_cc;
 
 	radio_cc = (struct radio_le_conn_cmplt *) (pdu_data->payload.lldata);
 
-	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = HCI_ME_LEN(*sep);
-	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_COMPLETE, sizeof(*sep));
 
 	sep->status = radio_cc->status;
 	sep->handle = sys_cpu_to_le16(handle);
@@ -981,12 +956,12 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void disconn_complete(struct pdu_data *pdu_data, uint16_t handle,
-			     struct bt_hci_evt_hdr *evt)
+			     struct net_buf *buf)
 {
-	struct bt_hci_evt_disconn_complete *ep = HCI_EVTP(evt);
+	struct bt_hci_evt_disconn_complete *ep;
 
-	evt->evt = BT_HCI_EVT_DISCONN_COMPLETE;
-	evt->len = sizeof(*ep);
+	evt_create(buf, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*ep));
+	ep = net_buf_add(buf, sizeof(*ep));
 
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
@@ -994,17 +969,15 @@ static void disconn_complete(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
-				    struct bt_hci_evt_hdr *evt)
+				    struct net_buf *buf)
 {
-	struct bt_hci_evt_le_conn_update_complete *sep = HCI_SE(evt);
+	struct bt_hci_evt_le_conn_update_complete *sep;
 	struct radio_le_conn_update_cmplt *radio_cu;
 
 	radio_cu = (struct radio_le_conn_update_cmplt *)
 			(pdu_data->payload.lldata);
 
-	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = HCI_ME_LEN(*sep);
-	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE;
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE, sizeof(*sep));
 
 	sep->status = radio_cu->status;
 	sep->handle = sys_cpu_to_le16(handle);
@@ -1014,60 +987,59 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
-				 struct bt_hci_evt_hdr *evt)
+				 struct net_buf *buf)
 {
-	struct bt_hci_evt_encrypt_key_refresh_complete *ep = HCI_EVTP(evt);
+	struct bt_hci_evt_encrypt_key_refresh_complete *ep;
 
-	evt->evt = BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE;
-	evt->len = sizeof(*ep);
+	evt_create(buf, BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE, sizeof(*ep));
+	ep = net_buf_add(buf, sizeof(*ep));
 
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
 }
 
 static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
-				     struct bt_hci_evt_hdr *evt)
+				     struct net_buf *buf)
 {
-	struct bt_hci_evt_auth_payload_timeout_exp *ep = HCI_EVTP(evt);
+	struct bt_hci_evt_auth_payload_timeout_exp *ep;
 
-	evt->evt = BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP;
-	evt->len = sizeof(*ep);
+	evt_create(buf, BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP, sizeof(*ep));
+	ep = net_buf_add(buf, sizeof(*ep));
 
 	ep->handle = sys_cpu_to_le16(handle);
 }
 
-static void encode_control(struct radio_pdu_node_rx *radio_pdu_node_rx,
-			   struct pdu_data *pdu_data, uint8_t *len,
-			   struct bt_hci_evt_hdr *evt)
+static void encode_control(struct radio_pdu_node_rx *node_rx,
+			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
-	uint8_t *buf = (uint8_t *)radio_pdu_node_rx;
+	uint8_t *b = (uint8_t *)node_rx;
 	uint16_t handle;
 
-	handle = radio_pdu_node_rx->hdr.handle;
+	handle = node_rx->hdr.handle;
 
-	switch (radio_pdu_node_rx->hdr.type) {
+	switch (node_rx->hdr.type) {
 	case NODE_RX_TYPE_REPORT:
-		le_advertising_report(pdu_data, buf, evt);
+		le_advertising_report(pdu_data, b, buf);
 		break;
 
 	case NODE_RX_TYPE_CONNECTION:
-		le_conn_complete(pdu_data, handle, evt);
+		le_conn_complete(pdu_data, handle, buf);
 		break;
 
 	case NODE_RX_TYPE_TERMINATE:
-		disconn_complete(pdu_data, handle, evt);
+		disconn_complete(pdu_data, handle, buf);
 		break;
 
 	case NODE_RX_TYPE_CONN_UPDATE:
-		le_conn_update_complete(pdu_data, handle, evt);
+		le_conn_update_complete(pdu_data, handle, buf);
 		break;
 
 	case NODE_RX_TYPE_ENC_REFRESH:
-		enc_refresh_complete(pdu_data, handle, evt);
+		enc_refresh_complete(pdu_data, handle, buf);
 		break;
 
 	case NODE_RX_TYPE_APTO:
-		auth_payload_timeout_exp(pdu_data, handle, evt);
+		auth_payload_timeout_exp(pdu_data, handle, buf);
 		break;
 
 	case NODE_RX_TYPE_RSSI:
@@ -1082,18 +1054,14 @@ static void encode_control(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		BT_ASSERT(0);
 		return;
 	}
-
-	*len = HCI_EVT_LEN(evt);
 }
 
 static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
-				    struct bt_hci_evt_hdr *evt)
+				    struct net_buf *buf)
 {
-	struct bt_hci_evt_le_ltk_request *sep = HCI_SE(evt);
+	struct bt_hci_evt_le_ltk_request *sep;
 
-	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = HCI_ME_LEN(*sep);
-	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_LTK_REQUEST;
+	sep = meta_evt(buf, BT_HCI_EVT_LE_LTK_REQUEST, sizeof(*sep));
 
 	sep->handle = sys_cpu_to_le16(handle);
 	memcpy(&sep->rand, pdu_data->payload.llctrl.ctrldata.enc_req.rand,
@@ -1103,12 +1071,12 @@ static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void encrypt_change(uint8_t err, uint16_t handle,
-			   struct bt_hci_evt_hdr *evt)
+			   struct net_buf *buf)
 {
-	struct bt_hci_evt_encrypt_change *ep = HCI_EVTP(evt);
+	struct bt_hci_evt_encrypt_change *ep;
 
-	evt->evt = BT_HCI_EVT_ENCRYPT_CHANGE;
-	evt->len = sizeof(*ep);
+	evt_create(buf, BT_HCI_EVT_ENCRYPT_CHANGE, sizeof(*ep));
+	ep = net_buf_add(buf, sizeof(*ep));
 
 	ep->status = err;
 	ep->handle = sys_cpu_to_le16(handle);
@@ -1116,13 +1084,11 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 }
 
 static void le_remote_feat_complete(struct pdu_data *pdu_data, uint16_t handle,
-				    struct bt_hci_evt_hdr *evt)
+				    struct net_buf *buf)
 {
-	struct bt_hci_ev_le_remote_feat_complete *sep = HCI_SE(evt);
+	struct bt_hci_ev_le_remote_feat_complete *sep;
 
-	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = HCI_ME_LEN(*sep);
-	HCI_ME(evt)->subevent = BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE;
+	sep = meta_evt(buf, BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE, sizeof(*sep));
 
 	sep->status = 0x00;
 	sep->handle = sys_cpu_to_le16(handle);
@@ -1132,12 +1098,12 @@ static void le_remote_feat_complete(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void remote_version_info(struct pdu_data *pdu_data, uint16_t handle,
-				struct bt_hci_evt_hdr *evt)
+				struct net_buf *buf)
 {
-	struct bt_hci_evt_remote_version_info *ep = HCI_EVTP(evt);
+	struct bt_hci_evt_remote_version_info *ep;
 
-	evt->evt = BT_HCI_EVT_REMOTE_VERSION_INFO;
-	evt->len = sizeof(*ep);
+	evt_create(buf, BT_HCI_EVT_REMOTE_VERSION_INFO, sizeof(*ep));
+	ep = net_buf_add(buf, sizeof(*ep));
 
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
@@ -1150,13 +1116,11 @@ static void remote_version_info(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
-			      struct bt_hci_evt_hdr *evt)
+			      struct net_buf *buf)
 {
-	struct bt_hci_evt_le_conn_param_req *sep = HCI_SE(evt);
+	struct bt_hci_evt_le_conn_param_req *sep;
 
-	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = HCI_ME_LEN(*sep);
-	HCI_ME(evt)->subevent = BT_HCI_EVT_LE_CONN_PARAM_REQ;
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_PARAM_REQ, sizeof(*sep));
 
 	sep->handle = sys_cpu_to_le16(handle);
 	sep->interval_min =
@@ -1168,13 +1132,11 @@ static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
-			       struct bt_hci_evt_hdr *evt)
+			       struct net_buf *buf)
 {
-	struct bt_hci_evt_le_data_len_change *sep = HCI_SE(evt);
+	struct bt_hci_evt_le_data_len_change *sep;
 
-	evt->evt = BT_HCI_EVT_LE_META_EVENT;
-	evt->len = HCI_ME_LEN(*sep);
-	HCI_ME(evt)->subevent =  BT_HCI_EVT_LE_DATA_LEN_CHANGE;
+	sep = meta_evt(buf, BT_HCI_EVT_LE_DATA_LEN_CHANGE, sizeof(*sep));
 
 	sep->handle = sys_cpu_to_le16(handle);
 	sep->max_tx_octets =
@@ -1185,82 +1147,66 @@ static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
 		pdu_data->payload.llctrl.ctrldata.length_rsp.max_rx_octets;
 	sep->max_rx_time =
 		pdu_data->payload.llctrl.ctrldata.length_rsp.max_rx_time;
-#if (TEST_DATA_LENGTH && TEST_TX)
-	{
-		extern uint16_t g_data_length;
-
-		g_data_length = pdu_data->payload.llctrl.ctrldata.
-						       length_rsp.max_tx_octets;
-	}
-#endif
-
 }
 
-static void encode_data_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
-			     struct pdu_data *pdu_data, uint8_t *len,
-			     struct bt_hci_evt_hdr *evt)
+static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
+			     struct pdu_data *pdu_data, struct net_buf *buf)
 {
-	uint16_t handle = radio_pdu_node_rx->hdr.handle;
+	uint16_t handle = node_rx->hdr.handle;
 
 	switch (pdu_data->payload.llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-		le_ltk_request(pdu_data, handle, evt);
+		le_ltk_request(pdu_data, handle, buf);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
-		encrypt_change(0x00, handle, evt);
+		encrypt_change(0x00, handle, buf);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
-		le_remote_feat_complete(pdu_data, handle, evt);
+		le_remote_feat_complete(pdu_data, handle, buf);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
-		remote_version_info(pdu_data, handle, evt);
+		remote_version_info(pdu_data, handle, buf);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		encrypt_change(pdu_data->payload.llctrl.ctrldata.reject_ind.
 			       error_code,
-			       handle, evt);
+			       handle, buf);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
-		le_conn_param_req(pdu_data, handle, evt);
+		le_conn_param_req(pdu_data, handle, buf);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
-		le_data_len_change(pdu_data, handle, evt);
+		le_data_len_change(pdu_data, handle, buf);
 		break;
 
 	default:
 		BT_ASSERT(0);
 		return;
 	}
-
-	*len = HCI_EVT_LEN(evt);
 }
 
-static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
+void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct bt_hci_acl_hdr *acl;
 	struct pdu_data *pdu_data;
 	uint16_t handle_flags;
 	uint16_t handle;
+	uint8_t *data;
 
-	radio_pdu_node_rx = (struct radio_pdu_node_rx *)buf;
-	pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
-	handle = radio_pdu_node_rx->hdr.handle;
+	pdu_data = (struct pdu_data *)node_rx->pdu_data;
+	handle = node_rx->hdr.handle;
 
 	switch (pdu_data->ll_id) {
 	case PDU_DATA_LLID_DATA_CONTINUE:
 	case PDU_DATA_LLID_DATA_START:
-#if !TEST_DROP_RX
-		hci_context.tx[0] = HCI_DATA;
-
-		acl = (struct bt_hci_acl_hdr *)&hci_context.tx[1];
+		acl = (void *)net_buf_add(buf, sizeof(*acl));
 		if (pdu_data->ll_id == PDU_DATA_LLID_DATA_START) {
 			handle_flags = bt_acl_handle_pack(handle, BT_ACL_START);
 		} else {
@@ -1268,27 +1214,8 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 		}
 		acl->handle = sys_cpu_to_le16(handle_flags);
 		acl->len = sys_cpu_to_le16(pdu_data->len);
-		memcpy(((uint8_t *)acl) + sizeof(struct bt_hci_acl_hdr),
-		       &pdu_data->payload.lldata[0], pdu_data->len);
-
-		*len = HCI_DATA_LEN(acl);
-		*out = &hci_context.tx[0];
-#else
-		if (s_rx_cnt != pdu_data->payload.lldata[0]) {
-			s_rx_cnt = pdu_data->payload.lldata[0];
-
-			BT_ASSERT(0);
-		} else {
-			uint8_t index;
-
-			for (index = 0; index < pdu_data->len; index++) {
-				BT_ASSERT(pdu_data->payload.lldata[index] ==
-					  (uint8_t)(s_rx_cnt + index));
-			}
-
-			s_rx_cnt++;
-		}
-#endif
+		data = (void *)net_buf_add(buf, pdu_data->len);
+		memcpy(data, &pdu_data->payload.lldata[0], pdu_data->len);
 		break;
 
 	default:
@@ -1298,59 +1225,34 @@ static void encode_data(uint8_t *buf, uint8_t *len, uint8_t **out)
 
 }
 
-void hcic_encode(uint8_t *buf, uint8_t *len, uint8_t **out)
+void hci_evt_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct pdu_data *pdu_data;
-	struct bt_hci_evt_hdr *evt;
 
-	radio_pdu_node_rx = (struct radio_pdu_node_rx *)buf;
-	pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
-	*len = 0;
-	*out = NULL;
+	pdu_data = (struct pdu_data *)node_rx->pdu_data;
 
-	/* Check if we need to generate an HCI event or ACL data */
-	if (radio_pdu_node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
-	    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
-		/* generate an HCI event */
-		hci_context.tx[0] = HCI_EVT;
-		evt = (void *)&hci_context.tx[1];
-
-		if (radio_pdu_node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
-			encode_control(radio_pdu_node_rx, pdu_data, len, evt);
-		} else {
-			encode_data_ctrl(radio_pdu_node_rx, pdu_data, len, evt);
-		}
-		*out = &hci_context.tx[0];
+	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
+		encode_control(node_rx, pdu_data, buf);
 	} else {
-		/* generate ACL data */
-		encode_data(buf, len, out);
+		encode_data_ctrl(node_rx, pdu_data, buf);
 	}
 }
 
-void hcic_encode_num_cmplt(uint16_t handle, uint8_t num, uint8_t *len,
-			   uint8_t **out)
+void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num)
 {
 	struct bt_hci_evt_num_completed_packets *ep;
 	struct bt_hci_handle_count *hc;
-	struct bt_hci_evt_hdr *evt;
 	uint8_t num_handles;
+	uint8_t len;
 
 	num_handles = 1;
 
-	hci_context.tx[0] = HCI_EVT;
+	len = (sizeof(*ep) + (sizeof(*hc) * num_handles));
+	evt_create(buf, BT_HCI_EVT_NUM_COMPLETED_PACKETS, len);
 
-	evt = (struct bt_hci_evt_hdr *)&hci_context.tx[1];
-	ep = HCI_EVTP(evt);
-	evt->evt = BT_HCI_EVT_NUM_COMPLETED_PACKETS;
-	evt->len = (sizeof(struct bt_hci_evt_num_completed_packets) +
-		    (sizeof(struct bt_hci_handle_count) * num_handles));
-
+	ep = net_buf_add(buf, len);
 	ep->num_handles = num_handles;
 	hc = &ep->h[0];
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count = sys_cpu_to_le16(num);
-
-	*len = HCI_EVT_LEN(evt);
-	*out = &hci_context.tx[0];
 }

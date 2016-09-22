@@ -20,8 +20,8 @@
 
 int hci_cmd_handle(struct net_buf *cmd, struct net_buf *evt);
 int hci_acl_handle(struct net_buf *acl);
-void hcic_encode(uint8_t *buf, uint8_t *len, uint8_t **out);
-void hcic_encode_num_cmplt(uint16_t instance, uint8_t num, uint8_t *len,
-			   uint8_t **out);
+void hci_evt_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);
+void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);
+void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num);
 
 #endif /* _HCI_CONTROLLER_H_ */

@@ -126,137 +126,69 @@ static void swi5_nrf5_isr(void *arg)
 	work_run(NRF52_IRQ_SWI5_EGU5_IRQn);
 }
 
-static struct net_buf *evt_create(uint8_t *remaining, uint8_t **in)
-{
-	struct bt_hci_evt_hdr hdr;
-	struct net_buf *buf;
-
-	/* TODO: check available length */
-	memcpy(&hdr, *in, sizeof(hdr));
-	*in += sizeof(hdr);
-
-	*remaining = hdr.len;
-
-	buf = bt_buf_get_evt(0);
-	if (buf) {
-		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
-	} else {
-		BT_ERR("No available event buffers!");
-	}
-
-	BT_DBG("len %u", hdr.len);
-
-	return buf;
-}
-
-static struct net_buf *acl_create(uint8_t *remaining, uint8_t **in)
-{
-	struct bt_hci_acl_hdr hdr;
-	struct net_buf *buf;
-
-	/* TODO: check available length */
-	memcpy(&hdr, *in, sizeof(hdr));
-	*in += sizeof(hdr);
-
-	buf = bt_buf_get_acl();
-	if (buf) {
-		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
-	} else {
-		BT_ERR("No available ACL buffers!");
-	}
-
-	*remaining = sys_le16_to_cpu(hdr.len);
-
-	BT_DBG("len %u", *remaining);
-
-	return buf;
-}
-
-static int evt_acl_create(uint8_t remaining, uint8_t *in)
-{
-	struct net_buf *buf;
-	uint8_t type;
-
-	type = *in++;
-
-	switch (type) {
-	case HCI_EVT:
-		buf = evt_create(&remaining, &in);
-		break;
-	case HCI_ACL:
-		buf = acl_create(&remaining, &in);
-		break;
-	default:
-		BT_ERR("Unknown HCI type %u", type);
-		return -EINVAL;
-	}
-
-	BT_DBG("remaining %u bytes", remaining);
-
-	if (buf && remaining > net_buf_tailroom(buf)) {
-		BT_ERR("Not enough space in buffer");
-		net_buf_unref(buf);
-		buf = NULL;
-	}
-
-	if (buf) {
-		memcpy(net_buf_tail(buf), in, remaining);
-		buf->len += remaining;
-
-		BT_DBG("bt_recv");
-
-		bt_recv(buf);
-	}
-
-	return 0;
-}
-
 static void recv_fiber(int unused0, int unused1)
 {
 	while (1) {
-		uint16_t handle;
+		struct radio_pdu_node_rx *node_rx;
+		struct pdu_data *pdu_data;
+		struct net_buf *buf;
 		uint8_t num_cmplt;
-		struct radio_pdu_node_rx *radio_pdu_node_rx;
+		uint16_t handle;
 
-		while ((num_cmplt =
-			radio_rx_get(&radio_pdu_node_rx, &handle))) {
-			uint8_t len;
-			uint8_t *buf;
-			int retval;
+		while ((num_cmplt = radio_rx_get(&node_rx, &handle))) {
 
-			hcic_encode_num_cmplt(handle, num_cmplt, &len, &buf);
-			BT_ASSERT(len);
-
-			retval = evt_acl_create(len, buf);
-			BT_ASSERT(!retval);
+			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS);
+			if (buf) {
+				hci_num_cmplt_encode(buf, handle, num_cmplt);
+				BT_DBG("Num Complete: 0x%04x:%u", handle,
+								  num_cmplt);
+				bt_recv(buf);
+			} else {
+				BT_ERR("Cannot allocate Num Complete");
+			}
 
 			fiber_yield();
 		}
 
-		if (radio_pdu_node_rx) {
-			uint8_t len;
-			uint8_t *buf;
-			int retval;
+		if (node_rx) {
 
-			hcic_encode((uint8_t *)radio_pdu_node_rx, &len, &buf);
-
-			/* Not all radio_rx_get are translated to HCI!,
-			 * hence just dequeue.
+			pdu_data = (void *)node_rx->pdu_data;
+			/* Check if we need to generate an HCI event or ACL
+			 * data
 			 */
-			if (len) {
-				retval = evt_acl_create(len, buf);
-				BT_ASSERT(!retval);
+			if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
+			    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
+				/* generate a (non-priority) HCI event */
+				buf = bt_buf_get_evt(0);
+				if (buf) {
+					hci_evt_encode(node_rx, buf);
+				} else {
+					BT_ERR("Cannot allocate RX event");
+				}
+			} else {
+				/* generate ACL data */
+				buf = bt_buf_get_acl();
+				if (buf) {
+					hci_acl_encode(node_rx, buf);
+				} else {
+					BT_ERR("Cannot allocate RX ACL");
+				}
+			}
+
+			if (buf && buf->len) {
+				BT_DBG("Incoming packet: type:%u len:%u",
+						bt_buf_get_type(buf), buf->len);
+				bt_recv(buf);
 			}
 
 			radio_rx_dequeue();
-			radio_rx_fc_set(radio_pdu_node_rx->hdr.handle, 0);
-			radio_pdu_node_rx->hdr.onion.next = 0;
-			radio_rx_mem_release(&radio_pdu_node_rx);
+			radio_rx_fc_set(node_rx->hdr.handle, 0);
+			node_rx->hdr.onion.next = 0;
+			radio_rx_mem_release(&node_rx);
 
 			fiber_yield();
 		} else {
-			nano_fiber_sem_take(&nano_sem_recv,
-					    TICKS_UNLIMITED);
+			nano_fiber_sem_take(&nano_sem_recv, TICKS_UNLIMITED);
 		}
 
 		stack_analyze("recv fiber stack",
@@ -328,7 +260,7 @@ static int hci_driver_send(struct net_buf *buf)
 
 static int hci_driver_open(void)
 {
-	uint32_t retval;
+	uint32_t err;
 
 	clock_k32src_start(1);
 
@@ -347,15 +279,15 @@ static int hci_driver_open(void)
 
 	rand_init(_rand_context, sizeof(_rand_context));
 
-	retval = radio_init(7,	/* 20ppm = 7 ... 250ppm = 1, 500ppm = 0 */
-			    RADIO_CONNECTION_CONTEXT_MAX,
-			    RADIO_PACKET_COUNT_RX_MAX,
-			    RADIO_PACKET_COUNT_TX_MAX,
-			    RADIO_LL_LENGTH_OCTETS_RX_MAX, &_radio[0],
-			    sizeof(_radio)
+	err = radio_init(7,	/* 20ppm = 7 ... 250ppm = 1, 500ppm = 0 */
+			 RADIO_CONNECTION_CONTEXT_MAX,
+			 RADIO_PACKET_COUNT_RX_MAX,
+			 RADIO_PACKET_COUNT_TX_MAX,
+			 RADIO_LL_LENGTH_OCTETS_RX_MAX, &_radio[0],
+			 sizeof(_radio)
 	    );
-	if (retval) {
-		BT_ERR("Required RAM size: %d, supplied: %u.", retval,
+	if (err) {
+		BT_ERR("Required RAM size: %d, supplied: %u.", err,
 		       sizeof(_radio));
 		return -ENOMEM;
 	}
