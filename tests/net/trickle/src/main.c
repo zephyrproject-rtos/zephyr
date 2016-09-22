@@ -47,7 +47,7 @@ static struct nano_sem wait;
 static bool cb_called;
 static bool test_failed;
 
-#define WAIT_TIME (sys_clock_ticks_per_sec)
+#define WAIT_TIME (sys_clock_ticks_per_sec * 2)
 
 /* Set CHECK_LONG_TIMEOUT to 1 if you want to check longer timeout.
  * Do not do this for automated tests as those need to finish asap.
