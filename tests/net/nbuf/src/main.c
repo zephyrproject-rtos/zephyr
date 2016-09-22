@@ -584,6 +584,178 @@ static int test_fragment_pull(void)
 	return 0;
 }
 
+static char test_rw_short[] = "test-read-write-data";
+static char test_rw_long[] =
+			"test-read-write-data-test-read-write"
+			"test-read-write-data-test-read-write"
+			"test-read-write-data-test-read-write"
+			"test-read-write-data-test-read-write"
+			"test-read-write-data-test-read-write"
+			"test-read-write-data-test-read-write";
+
+static int test_nbuf_read_write(void)
+{
+	struct net_buf *buf, *frag, *tfrag;
+	struct ipv6_hdr *ipv6;
+	struct udp_hdr *udp;
+	uint8_t verify_rw_short[sizeof(test_rw_short)];
+	uint8_t verify_rw_long[sizeof(test_rw_long)];
+	int bytes, remaining = strlen(example_data), pos = 0;
+	uint16_t off, tpos;
+
+	/* Example of multi fragment read, write and skip APS's */
+	buf = net_nbuf_get_reserve_rx(0);
+	frag = net_nbuf_get_reserve_data(LL_RESERVE);
+
+	/* Place the IP + UDP header in the first fragment */
+	if (!net_buf_tailroom(frag)) {
+		ipv6 = (struct ipv6_hdr *)(frag->data);
+		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+		if (net_buf_tailroom(frag) < sizeof(ipv6)) {
+			printk("Not enough space for IPv6 header, "
+			       "needed %zd bytes, has %zd bytes\n",
+			       sizeof(ipv6), net_buf_tailroom(frag));
+			return -EINVAL;
+		}
+		net_buf_add(frag, sizeof(ipv6));
+
+		if (net_buf_tailroom(frag) < sizeof(udp)) {
+			printk("Not enough space for UDP header, "
+			       "needed %zd bytes, has %zd bytes\n",
+			       sizeof(udp), net_buf_tailroom(frag));
+			return -EINVAL;
+		}
+
+		net_nbuf_set_appdata(buf, (void *)udp + sizeof(*udp));
+		net_nbuf_set_appdatalen(buf, 0);
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	/* Put some data to rest of the fragments */
+	frag = net_nbuf_get_reserve_data(LL_RESERVE);
+	if (net_buf_tailroom(frag) -
+	      (CONFIG_NET_NBUF_DATA_SIZE - LL_RESERVE)) {
+		printk("Invalid number of bytes available in the buf, "
+		       "should be 0 but was %zd - %d\n",
+		       net_buf_tailroom(frag),
+		       CONFIG_NET_NBUF_DATA_SIZE - LL_RESERVE);
+		return -EINVAL;
+	}
+
+	if (((int)net_buf_tailroom(frag) - remaining) > 0) {
+		printk("We should have been out of space now, "
+		       "tailroom %zd user data len %zd\n",
+		       net_buf_tailroom(frag),
+		       strlen(example_data));
+		return -EINVAL;
+	}
+
+	while (remaining > 0) {
+		int copy;
+
+		bytes = net_buf_tailroom(frag);
+		copy = remaining > bytes ? bytes : remaining;
+		memcpy(net_buf_add(frag, copy), &example_data[pos], copy);
+
+		printk("Remaining %d left %d copy %d\n", remaining, bytes,
+		       copy);
+
+		pos += bytes;
+		remaining -= bytes;
+		if (net_buf_tailroom(frag) - (bytes - copy)) {
+			printk("There should have not been any tailroom left, "
+			       "tailroom %zd\n",
+			       net_buf_tailroom(frag) - (bytes - copy));
+			return -EINVAL;
+		}
+
+		net_buf_frag_add(buf, frag);
+		if (remaining > 0) {
+			frag = net_nbuf_get_reserve_data(LL_RESERVE);
+		}
+	}
+
+	bytes = net_buf_frags_len(buf->frags);
+	if (bytes != strlen(example_data)) {
+		printk("Invalid number of bytes in message, %zd vs %d\n",
+		       strlen(example_data), bytes);
+		return -EINVAL;
+	}
+
+	/* Short data test case */
+	/* Test case scenario:
+	 * 1) Cache the current fragment and offset
+	 * 2) Write short data
+	 * 3) Write short data again
+	 * 4) Skip first short data from cached frag or offset
+	 * 5) Read short data and compare
+	 */
+	tfrag = net_buf_frag_last(buf->frags);
+	off = tfrag->len;
+
+	if (!net_nbuf_write(buf, sizeof(test_rw_short), test_rw_short)) {
+		printk("net_nbuf_write failed\n");
+		return -EINVAL;
+	}
+
+	if (!net_nbuf_write(buf, sizeof(test_rw_short), test_rw_short)) {
+		printk("net_nbuf_write failed\n");
+		return -EINVAL;
+	}
+
+	tfrag = net_nbuf_skip(tfrag, off, &tpos, sizeof(test_rw_short));
+	if (!tfrag) {
+		printk("net_nbuf_skip failed\n");
+		return -EINVAL;
+	}
+
+	tfrag = net_nbuf_read(tfrag, tpos, &tpos, sizeof(test_rw_short),
+			      verify_rw_short);
+	if (memcmp(test_rw_short, verify_rw_short, sizeof(test_rw_short))) {
+		printk("net_nbuf_read failed with mismatch data");
+		return -EINVAL;
+	}
+
+	/* Long data test case */
+	/* Test case scenario:
+	 * 1) Cache the current fragment and offset
+	 * 2) Write long data
+	 * 3) Write long data again
+	 * 4) Skip first long data from cached frag or offset
+	 * 5) Read long data and compare
+	 */
+	tfrag = net_buf_frag_last(buf->frags);
+	off = tfrag->len;
+
+	if (!net_nbuf_write(buf, sizeof(test_rw_long), test_rw_long)) {
+		printk("net_nbuf_write failed\n");
+		return -EINVAL;
+	}
+
+	if (!net_nbuf_write(buf, sizeof(test_rw_long), test_rw_long)) {
+		printk("net_nbuf_write failed\n");
+		return -EINVAL;
+	}
+
+	tfrag = net_nbuf_skip(tfrag, off, &tpos, sizeof(test_rw_long));
+	if (!tfrag) {
+		printk("net_nbuf_skip failed\n");
+		return -EINVAL;
+	}
+
+	tfrag = net_nbuf_read(tfrag, tpos, &tpos, sizeof(test_rw_long),
+			      verify_rw_long);
+	if (memcmp(test_rw_long, verify_rw_long, sizeof(test_rw_long))) {
+		printk("net_nbuf_read failed with mismatch data");
+		return -EINVAL;
+	}
+
+	net_nbuf_unref(buf);
+
+	return 0;
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -603,6 +775,10 @@ void main(void)
 	}
 
 	if (test_fragment_pull() < 0) {
+		goto fail;
+	}
+
+	if (test_nbuf_read_write() < 0) {
 		goto fail;
 	}
 
