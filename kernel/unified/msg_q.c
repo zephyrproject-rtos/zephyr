@@ -186,31 +186,17 @@ int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 void k_msgq_purge(struct k_msgq *q)
 {
 	unsigned int key = irq_lock();
+	struct tcs *pending_thread;
 
-	if (q->used_msgs) {
-		/* wake up any threads that are waiting to write */
-		while (1) {
-			struct tcs *pending_thread =
-				_unpend_first_thread(&q->wait_q);
-
-			if (pending_thread == NULL) {
-				break;
-			}
-			_set_thread_return_value(pending_thread, -ENOMSG);
-			_timeout_abort(pending_thread);
-			_ready_thread(pending_thread);
-		}
-
-		q->used_msgs = 0;
-		q->read_ptr = q->write_ptr;
-
-		if (_must_switch_threads()) {
-			_Swap(key);
-			return;
-		}
-	} else {
-		/* queue is empty, so no need to do anything ... */
+	/* wake up any threads that are waiting to write */
+	while ((pending_thread = _unpend_first_thread(&q->wait_q)) != NULL) {
+		_set_thread_return_value(pending_thread, -ENOMSG);
+		_timeout_abort(pending_thread);
+		_ready_thread(pending_thread);
 	}
 
-	irq_unlock(key);
+	q->used_msgs = 0;
+	q->read_ptr = q->write_ptr;
+
+	_reschedule_threads(key);
 }
