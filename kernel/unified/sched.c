@@ -70,12 +70,6 @@ void _reschedule_threads(int key)
 {
 	K_DEBUG("rescheduling threads\n");
 
-	if (unlikely(_nanokernel.current->sched_locked > 0)) {
-		K_DEBUG("aborted: scheduler was locked\n");
-		irq_unlock(key);
-		return;
-	}
-
 	if (_must_switch_threads()) {
 		K_DEBUG("context-switching out %p\n", _current);
 		_Swap(key);
