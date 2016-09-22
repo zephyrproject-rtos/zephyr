@@ -34,7 +34,7 @@
  * tell the SCSS how to route the IRQ depends on which CPU we need to
  * receive it.
  */
-#ifdef CONFIG_SOC_QUARK_SE_SS
+#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
 # define UART0_IRQ		QM_IRQ_UART_0_VECTOR
 # define UART1_IRQ		QM_IRQ_UART_1_VECTOR
 # define SCSS_IRQ_ROUTING_MASK	BIT(8)
