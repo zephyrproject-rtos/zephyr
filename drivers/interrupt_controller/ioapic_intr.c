@@ -84,7 +84,7 @@
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power.h>
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
-static uint32_t ioapic_device_power_state;
+static uint32_t ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 static uint32_t __IoApicGet(int32_t offset);
@@ -131,9 +131,6 @@ int _ioapic_init(struct device *unused)
 		ioApicRedSetHi(ix, 0);
 		ioApicRedSetLo(ix, rteValue);
 	}
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
-#endif
 	return 0;
 }
 

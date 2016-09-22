@@ -195,7 +195,7 @@
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power.h>
 uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
-static uint32_t loapic_device_power_state;
+static uint32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 
@@ -273,9 +273,6 @@ static int _loapic_init(struct device *unused)
 	_lakemont_eoi();
 #else
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
-#endif
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 	return 0;
