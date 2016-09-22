@@ -38,6 +38,11 @@ extern "C" {
 #define _SYS_INIT_LEVEL_MICROKERNEL  3
 #define _SYS_INIT_LEVEL_APPLICATION  4
 
+/* Counter use to avoid issues if two or more system devices are declared
+ * in the same C file with the same init function
+ */
+#define _SYS_NAME(init_fn) _CONCAT(_CONCAT(sys_init_, init_fn), __COUNTER__)
+
 /**
  * @def SYS_INIT
  *
@@ -53,7 +58,7 @@ extern "C" {
  * DEVICE_INIT for details.
  */
 #define SYS_INIT(init_fn, level, prio) \
-	DEVICE_INIT(sys_init_##init_fn, "", init_fn, NULL, NULL, level, prio)
+	DEVICE_INIT(_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level, prio)
 
 /**
  * @def SYS_INIT_PM
@@ -68,15 +73,15 @@ extern "C" {
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define SYS_INIT_PM(drv_name, init_fn, device_pm_ops, level, prio) \
-	DEVICE_INIT_PM(sys_init_##init_fn, drv_name, init_fn, device_pm_ops, \
+	DEVICE_INIT_PM(_SYS_NAME(init_fn), drv_name, init_fn, device_pm_ops, \
 		NULL, NULL, level, prio)
 #else
 #define SYS_INIT_PM(drv_name, init_fn, device_pm_ops, level, prio) \
-	DEVICE_INIT(sys_init_##init_fn, "", init_fn, NULL, NULL, level, prio)
+	DEVICE_INIT(_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level, prio)
 #endif
 
 #define SYS_DEVICE_DEFINE(drv_name, init_fn, control_fn, level, prio) \
-	DEVICE_DEFINE(sys_init_##init_fn, drv_name, init_fn, control_fn, \
+	DEVICE_DEFINE(_SYS_NAME(init_fn), drv_name, init_fn, control_fn, \
 		      NULL, NULL, level, prio, NULL)
 
 #ifdef __cplusplus

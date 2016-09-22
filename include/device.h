@@ -108,15 +108,15 @@ extern "C" {
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api) \
 	\
-	static struct device_config __config_##dev_name __used \
+	static struct device_config _CONCAT(__config_, dev_name) __used \
 	__attribute__((__section__(".devconfig.init"))) = { \
 		.name = drv_name, .init = (init_fn), \
 		.config_info = (cfg_info) \
 	}; \
 	\
-	static struct device (__device_##dev_name) __used \
+	static struct device _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		 .config = &(__config_##dev_name), \
+		 .config = &_CONCAT(__config_, dev_name), \
 		 .driver_api = api, \
 		 .driver_data = data \
 	}
@@ -162,16 +162,16 @@ extern "C" {
 #define DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
 			       data, cfg_info, level, prio, api) \
 	\
-	static struct device_config __config_##dev_name __used \
+	static struct device_config _CONCAT(__config_, dev_name) __used \
 	__attribute__((__section__(".devconfig.init"))) = { \
 		.name = drv_name, .init = (init_fn), \
 		.dev_pm_ops = (device_pm_ops), \
 		.config_info = (cfg_info) \
 	}; \
 	\
-	static struct device (__device_##dev_name) __used \
+	static struct device _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		 .config = &(__config_##dev_name), \
+		 .config = &_CONCAT(__config_, dev_name), \
 		 .driver_api = api, \
 		 .driver_data = data \
 	}
@@ -191,7 +191,7 @@ extern struct device_pm_ops device_pm_ops_nop;
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, control_fn, \
 		      data, cfg_info, level, prio, api) \
 	\
-	static struct device_config __config_##dev_name __used \
+	static struct device_config _CONCAT(__config_, dev_name) __used \
 	__attribute__((__section__(".devconfig.init"))) = { \
 		.name = drv_name, .init = (init_fn), \
 		.device_control = (control_fn), \
@@ -199,9 +199,9 @@ extern struct device_pm_ops device_pm_ops_nop;
 		.config_info = (cfg_info) \
 	}; \
 	\
-	static struct device (__device_##dev_name) __used \
+	static struct device _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		 .config = &(__config_##dev_name), \
+		 .config = &_CONCAT(__config_, dev_name), \
 		 .driver_api = api, \
 		 .driver_data = data \
 	}
@@ -306,7 +306,7 @@ struct device_pm_ops {
  * @param _resume name of the resume function
  */
 #define DEFINE_DEVICE_PM_OPS(_name, _suspend, _resume)	\
-	static struct device_pm_ops _name##_dev_pm_ops = { \
+	static struct device_pm_ops _CONCAT(_name, _dev_pm_ops) = { \
 		.suspend = _suspend,			\
 		.resume = _resume,			\
 	}
@@ -320,8 +320,7 @@ struct device_pm_ops {
  *
  * @param _name name of the device
  */
-#define DEVICE_PM_OPS_GET(_name) \
-	(&_name##_dev_pm_ops)
+#define DEVICE_PM_OPS_GET(_name) &_CONCAT(_name, _dev_pm_ops)
 
 /**
  * @}
