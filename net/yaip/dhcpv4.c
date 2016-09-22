@@ -143,61 +143,10 @@ static inline void unset_dhcpv4_on_iface(struct net_if *iface)
 	nano_delayed_work_cancel(&iface->dhcpv4_t1_timer);
 }
 
-/*
- * This routine will put single byte, if there is no place for the byte
- * in current fragment then create new fragment and add it to the buffer.
- * So retrieve last fragment and start placing the byte. Caller has to
- * take care of endianness if needed.
- * FIXME: Improve 'buf/nbuf' api's to solve the purpose of this routines.
- */
-static bool put_byte(struct net_buf *buf, uint8_t byte)
-{
-	struct net_buf *frag;
-
-	frag = net_buf_frag_last(buf->frags);
-	if (!frag) {
-		return false;
-	}
-
-	if (net_buf_tailroom(frag)) {
-		frag->data[frag->len] = byte;
-		net_buf_add(frag, 1);
-
-		return true;
-	}
-
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
-	if (!frag) {
-		return false;
-	}
-
-	net_buf_frag_add(buf, frag);
-
-	frag->data[0] = byte;
-
-	net_buf_add(frag, 1);
-
-	return true;
-}
-
-static bool put_nbytes(struct net_buf *buf, uint8_t len, uint8_t *nbytes)
-{
-	uint8_t offset = 0;
-
-	while (len-- > 0) {
-		if (!put_byte(buf, *(nbytes + offset++))) {
-
-			return false;
-		}
-	}
-
-	return true;
-}
-
 /* Add magic cookie to DCHPv4 messages */
 static inline bool add_cookie(struct net_buf *buf)
 {
-	return put_nbytes(buf, sizeof(magic_cookie), magic_cookie);
+	return net_nbuf_write(buf, sizeof(magic_cookie), magic_cookie);
 }
 
 /* Add DHCPv4 message type */
@@ -205,7 +154,7 @@ static inline bool add_msg_type(struct net_buf *buf, uint8_t type)
 {
 	uint8_t data[3] = { DHCPV4_OPTIONS_MSG_TYPE, 1, type };
 
-	return put_nbytes(buf, sizeof(data), data);
+	return net_nbuf_write(buf, sizeof(data), data);
 }
 
 /*
@@ -220,17 +169,25 @@ static inline bool add_req_options(struct net_buf *buf)
 			    DHCPV4_OPTIONS_ROUTER,
 			    DHCPV4_OPTIONS_DNS_SERVER };
 
-	return put_nbytes(buf, sizeof(data), data);
+	return net_nbuf_write(buf, sizeof(data), data);
 }
 
 static inline bool add_server_id(struct net_buf *buf)
 {
 	struct net_if *iface = net_nbuf_iface(buf);
+	uint8_t data;
 
-	if (!put_byte(buf, DHCPV4_OPTIONS_SERVER_ID) ||
-	    !put_byte(buf, 4) ||
-	    !put_nbytes(buf, 4, iface->dhcpv4.server_id.s4_addr)) {
+	data = DHCPV4_OPTIONS_SERVER_ID;
+	if (!net_nbuf_write(buf, 1, &data)) {
+		return false;
+	}
 
+	data = 4;
+	if (!net_nbuf_write(buf, 1, &data)) {
+		return false;
+	}
+
+	if (!net_nbuf_write(buf, 4, iface->dhcpv4.server_id.s4_addr)) {
 		return false;
 	}
 
@@ -240,11 +197,19 @@ static inline bool add_server_id(struct net_buf *buf)
 static inline bool add_req_ipaddr(struct net_buf *buf)
 {
 	struct net_if *iface = net_nbuf_iface(buf);
+	uint8_t data;
 
-	if (!put_byte(buf, DHCPV4_OPTIONS_REQ_IPADDR) ||
-	    !put_byte(buf, 4) ||
-	    !put_nbytes(buf, 4, iface->dhcpv4.requested_ip.s4_addr)) {
+	data = DHCPV4_OPTIONS_REQ_IPADDR;
+	if (!net_nbuf_write(buf, 1, &data)) {
+		return false;
+	}
 
+	data = 4;
+	if (!net_nbuf_write(buf, 1, &data)) {
+		return false;
+	}
+
+	if (!net_nbuf_write(buf, 4, iface->dhcpv4.requested_ip.s4_addr)) {
 		return false;
 	}
 
@@ -254,16 +219,19 @@ static inline bool add_req_ipaddr(struct net_buf *buf)
 /* Add DHCPv4 Options end, rest of the message can be padded wit zeros */
 static inline bool add_end(struct net_buf *buf)
 {
-	return put_byte(buf, DHCPV4_OPTIONS_END);
+	uint8_t data = DHCPV4_OPTIONS_END;
+
+	return net_nbuf_write(buf, 1, &data);
 }
 
 /* File is empty ATM */
 static inline bool add_file(struct net_buf *buf)
 {
 	uint8_t len = SIZE_OF_FILE;
+	uint8_t data = 0;
 
 	while (len-- > 0) {
-		if (!put_byte(buf, 0)) {
+		if (!net_nbuf_write(buf, 1, &data)) {
 			return false;
 		}
 	}
@@ -275,9 +243,10 @@ static inline bool add_file(struct net_buf *buf)
 static inline bool add_sname(struct net_buf *buf)
 {
 	uint8_t len = SIZE_OF_SNAME;
+	uint8_t data = 0;
 
 	while (len-- > 0) {
-		if (!put_byte(buf, 0)) {
+		if (!net_nbuf_write(buf, 1, &data)) {
 			return false;
 		}
 	}
@@ -529,163 +498,23 @@ static void dhcpv4_t1_timeout(struct nano_work *work)
 }
 
 /*
- * If there is any data which is not required (e.g. sname and file) and want
- * to skip n number of bytes, call this function.
- */
-static struct net_buf *skip_nbytes(struct net_buf *buf, uint8_t offset,
-				   uint8_t *pos, uint8_t nbytes)
-{
-	struct net_buf *frag;
-	uint8_t left;
-
-	left = buf->len - offset;
-
-	if (nbytes == left) {
-		*pos = 0;
-
-		return buf->frags;
-	} else if (nbytes < left) {
-		*pos = offset + nbytes;
-
-		return buf;
-	}
-
-	nbytes -= left;
-	frag = buf->frags;
-
-	while (frag) {
-		if (nbytes == frag->len) {
-			*pos = 0;
-
-			return frag->frags;
-		} else if (nbytes < frag->len) {
-			*pos = nbytes;
-
-			return frag;
-		}
-
-		nbytes -= frag->len;
-		frag = frag->frags;
-	}
-
-	return NULL;
-}
-
-/*
- * Helper routine to retrieve single byte from fragment and move
- * offset. If required byte is last byte in framgent then return
- * next fragment and set offset = 0.
- */
-static struct net_buf *get_byte(struct net_buf *buf, uint8_t offset,
-				uint8_t *pos, uint8_t *value)
-{
-	*value = buf->data[offset];
-	*pos = offset + 1;
-
-	if (*pos > buf->len) {
-		*pos = 0;
-
-		return buf->frags;
-	}
-
-	return buf;
-}
-
-/*
- * Helper routine to retrieve N number of bytes from fragment and move
- * offset. If required bytes is not completely located in current fragment
- * then move on to next fragment is last byte in framgent then return
- * next fragment and set offset = 0.
- * Caller has to take care of endianness if needed.
- * FIXME: Improve 'buf/nbuf' api's to solve the purpose of this routines.
- */
-static struct net_buf *get_nbytes(struct net_buf *buf, uint8_t offset,
-				  uint8_t *pos, uint8_t length, uint8_t *value)
-{
-	struct net_buf *frag;
-	uint8_t copy;
-	uint8_t remaining;
-
-	remaining = buf->len - offset;
-
-	/* If the required value is with in the same fragment. */
-	if (length <= remaining) {
-		memcpy(value, buf->data + offset, length);
-
-		/*
-		 * Value is at end of the buffer, next offset is
-		 * beginning of next fragment (if exists).
-		 */
-		if (length == remaining) {
-			*pos = 0;
-
-			return buf->frags;
-		}
-
-		*pos = offset + length;
-
-		return buf;
-	}
-
-	/*
-	 * e.g. data
-	 *  1) Required value stays in single fragment.
-	 *  2) Required value stays in multiple fragments.
-	 */
-	memcpy(value, buf->data + offset, remaining);
-
-	length -= remaining;
-	copy = remaining;
-
-	offset = 0;
-	frag = buf->frags;
-
-	while (length) {
-		if (length > frag->len) {
-
-			memcpy(value + copy, frag->data + offset, frag->len);
-
-			copy += frag->len;
-			length -= frag->len;
-			frag = frag->frags;
-
-		} else {
-			if (length == frag->len) {
-				*pos = 0;
-				memcpy(value + copy, frag->data + offset,
-				       frag->len);
-
-				return frag->frags;
-			}
-
-			memcpy(value + copy, frag->data + offset, length);
-			*pos = length;
-
-			return frag;
-		}
-	}
-
-	return NULL;
-}
-
-/*
  * Parse DHCPv4 options and retrieve relavant information
  * as per RFC 2132.
  */
 static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
-				      uint8_t offset, uint8_t *msg_type)
+				      uint16_t offset, uint8_t *msg_type)
 {
 	struct net_buf *frag;
 	uint8_t cookie[4];
 	uint8_t time[4];
 	uint8_t length;
 	uint8_t type;
-	uint8_t pos;
+	uint16_t pos;
 	uint8_t *ptr = &time[0];
 	bool end = false;
 
-	frag = get_nbytes(buf, offset, &pos, sizeof(magic_cookie),
-			  (uint8_t *)cookie);
+	frag = net_nbuf_read(buf, offset, &pos, sizeof(magic_cookie),
+			     (uint8_t *)cookie);
 	if (!frag || memcmp(magic_cookie, cookie, sizeof(magic_cookie))) {
 
 		NET_DBG("Incorrect magic cookie");
@@ -693,7 +522,7 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 	}
 
 	while (frag) {
-		frag = get_byte(frag, pos, &pos, &type);
+		frag = net_nbuf_read(frag, pos, &pos, 1, &type);
 
 		if (type == DHCPV4_OPTIONS_END) {
 			end = true;
@@ -704,7 +533,7 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 			return NET_DROP;
 		}
 
-		frag = get_byte(frag, pos, &pos, &length);
+		frag = net_nbuf_read(frag, pos, &pos, 1, &length);
 		if (!frag) {
 			return NET_DROP;
 		}
@@ -715,18 +544,18 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = get_nbytes(frag, pos, &pos, length,
-					  iface->ipv4.netmask.s4_addr);
+			frag = net_nbuf_read(frag, pos, &pos, length,
+					     iface->ipv4.netmask.s4_addr);
 			break;
 		case DHCPV4_OPTIONS_LEASE_TIME:
 			if (length != 4) {
 				return NET_DROP;
 			}
 
-			frag = get_nbytes(frag, pos, &pos, length, &time[0]);
+			frag = net_nbuf_read(frag, pos, &pos, length, &time[0]);
+
 			iface->dhcpv4.lease_time =
 				ntohl(UNALIGNED_GET((uint32_t *)ptr));
-
 			if (!iface->dhcpv4.lease_time) {
 				return NET_DROP;
 			}
@@ -737,10 +566,10 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = get_nbytes(frag, pos, &pos, length, &time[0]);
+			frag = net_nbuf_read(frag, pos, &pos, length, &time[0]);
+
 			iface->dhcpv4.renewal_time =
 				ntohl(UNALIGNED_GET((uint32_t *)ptr));
-
 			if (!iface->dhcpv4.renewal_time) {
 				return NET_DROP;
 			}
@@ -751,22 +580,22 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = get_nbytes(frag, pos, &pos, length,
-					  iface->dhcpv4.server_id.s4_addr);
+			frag = net_nbuf_read(frag, pos, &pos, length,
+					     iface->dhcpv4.server_id.s4_addr);
 			break;
 		case DHCPV4_OPTIONS_MSG_TYPE:
 			if (length != 1) {
 				return NET_DROP;
 			}
 
-			frag = get_byte(frag, pos, &pos, msg_type);
+			frag = net_nbuf_read(frag, pos, &pos, 1, msg_type);
 			break;
 		default:
-			frag = skip_nbytes(frag, pos, &pos, length);
+			frag = net_nbuf_skip(frag, pos, &pos, length);
 			break;
 		}
 
-		if (!frag) {
+		if (!frag && pos) {
 			return NET_DROP;
 		}
 	}
@@ -848,7 +677,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	struct net_if *iface;
 	uint8_t	msg_type;
 	uint8_t min;
-	uint8_t pos;
+	uint16_t pos;
 
 	if (!conn) {
 		NET_DBG("Invalid connection");
@@ -893,8 +722,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	       sizeof(msg->yiaddr));
 
 	/* sname, file are not used at the moment, skip it */
-	frag = skip_nbytes(frag, min, &pos, SIZE_OF_SNAME + SIZE_OF_FILE);
-	if (!frag) {
+	frag = net_nbuf_skip(frag, min, &pos, SIZE_OF_SNAME + SIZE_OF_FILE);
+	if (!frag && pos) {
 		goto drop;
 	}
 
