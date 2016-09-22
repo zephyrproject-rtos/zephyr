@@ -112,6 +112,7 @@ static void _IoApicRedUpdateLo(unsigned int irq, uint32_t value,
 int _ioapic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
+#ifdef CONFIG_IOAPIC_MASK_RTE
 	int32_t ix;	/* redirection table index */
 	uint32_t rteValue; /* value to copy into redirection table entry */
 
@@ -131,6 +132,7 @@ int _ioapic_init(struct device *unused)
 		ioApicRedSetHi(ix, 0);
 		ioApicRedSetLo(ix, rteValue);
 	}
+#endif
 	return 0;
 }
 
