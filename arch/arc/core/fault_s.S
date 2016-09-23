@@ -205,9 +205,9 @@ _trap_reschedule:
 	lr r3, [_ARC_V2_STATUS32]
 	and r3,r3,(~_ARC_V2_STATUS32_AE)
 	kflag r3
- 	/* pretend priority 1 int happened to use common handler */
+ 	/* pretend lowest priority interrupt happened to use common handler */
 	lr r3, [_ARC_V2_AUX_IRQ_ACT]
-	or r3,r3,2
+	or r3,r3,(1<<(CONFIG_NUM_IRQ_PRIO_LEVELS-1)) /* use lowest */
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 
 	/* Assumption: r2 has current thread */
