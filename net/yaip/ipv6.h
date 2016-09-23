@@ -39,6 +39,15 @@
 
 #define NET_MAX_RS_COUNT 3
 
+/* State of the neighbor */
+enum net_nbr_state {
+	NET_NBR_INCOMPLETE,
+	NET_NBR_REACHABLE,
+	NET_NBR_STALE,
+	NET_NBR_DELAY,
+	NET_NBR_PROBE,
+};
+
 #if defined(CONFIG_NET_IPV6_DAD)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr);
 #endif
@@ -148,6 +157,24 @@ struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 					      uint8_t idx);
 
+/**
+ * @brief Add a neighbour to neighbor cache
+ *
+ * @param iface A valid pointer on a network interface
+ * @param addr Neighbor IPv6 address
+ * @param lladdr Neighbor link layer address
+ * @param is_router Set to true if the neighbor is a router, false
+ * otherwise
+ * @param state Initial state of the neighbor entry in the cache
+ *
+ * @return A valid pointer on a neighbour on success, NULL otherwise
+ */
+struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
+				 struct in6_addr *addr,
+				 struct net_linkaddr *lladdr,
+				 bool is_router,
+				 enum net_nbr_state state);
+
 #else /* CONFIG_NET_IPV6_ND */
 static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 {
@@ -163,6 +190,15 @@ static inline struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 static inline
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 					      uint8_t idx)
+{
+	return NULL;
+}
+
+static inline struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
+					       struct in6_addr *addr,
+					       struct net_linkaddr *lladdr,
+					       bool is_router,
+					       enum net_nbr_state state)
 {
 	return NULL;
 }

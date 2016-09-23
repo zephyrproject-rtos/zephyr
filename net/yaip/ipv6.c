@@ -47,14 +47,6 @@
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
 
-enum net_nbr_state {
-	NET_NBR_INCOMPLETE,
-	NET_NBR_REACHABLE,
-	NET_NBR_STALE,
-	NET_NBR_DELAY,
-	NET_NBR_PROBE,
-};
-
 struct net_nbr_data {
 	struct in6_addr addr;
 	struct nano_delayed_work reachable;
@@ -190,11 +182,11 @@ static inline void nbr_free(struct net_nbr *nbr)
 	net_nbr_unref(nbr);
 }
 
-static struct net_nbr *nbr_add(struct net_buf *buf,
-			       struct in6_addr *addr,
-			       struct net_linkaddr *lladdr,
-			       bool is_router,
-			       enum net_nbr_state state)
+struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
+				 struct in6_addr *addr,
+				 struct net_linkaddr *lladdr,
+				 bool is_router,
+				 enum net_nbr_state state)
 {
 	struct net_nbr *nbr = net_nbr_get(&net_neighbor.table);
 
@@ -202,7 +194,7 @@ static struct net_nbr *nbr_add(struct net_buf *buf,
 		return NULL;
 	}
 
-	if (net_nbr_link(nbr, net_nbuf_iface(buf), lladdr)) {
+	if (net_nbr_link(nbr, iface, lladdr)) {
 		nbr_free(nbr);
 		return NULL;
 	}
@@ -217,6 +209,16 @@ static struct net_nbr *nbr_add(struct net_buf *buf,
 		net_sprint_ll_addr(lladdr->addr, lladdr->len));
 
 	return nbr;
+}
+
+static inline struct net_nbr *nbr_add(struct net_buf *buf,
+				      struct in6_addr *addr,
+				      struct net_linkaddr *lladdr,
+				      bool is_router,
+				      enum net_nbr_state state)
+{
+	return net_ipv6_nbr_add(net_nbuf_iface(buf), addr, lladdr,
+				is_router, state);
 }
 
 static struct net_nbr *nbr_new(struct net_if *iface,
