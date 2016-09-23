@@ -1666,10 +1666,10 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	if (NET_ICMPV6_RA_BUF(buf)->reachable_time &&
 	    (net_if_ipv6_get_reachable_time(net_nbuf_iface(buf)) !=
 	     ntohl(NET_ICMPV6_RA_BUF(buf)->reachable_time))) {
-		net_ipv6_set_base_reachable_time(net_nbuf_iface(buf),
+		net_if_ipv6_set_base_reachable_time(net_nbuf_iface(buf),
 			    ntohl(NET_ICMPV6_RA_BUF(buf)->reachable_time));
 
-		net_ipv6_set_reachable_time(net_nbuf_iface(buf));
+		net_if_ipv6_set_reachable_time(net_nbuf_iface(buf));
 	}
 
 	if (NET_ICMPV6_RA_BUF(buf)->retrans_timer) {

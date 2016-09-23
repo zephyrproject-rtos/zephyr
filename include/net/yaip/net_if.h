@@ -705,7 +705,7 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
  * @param iface Network interface
  * @param reachable_time New reachable time
  */
-static inline void net_ipv6_set_base_reachable_time(struct net_if *iface,
+static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 						    uint32_t reachable_time)
 {
 	iface->base_reachable_time = reachable_time;
@@ -738,7 +738,7 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface);
  *
  * @param iface Network interface
  */
-static inline void net_ipv6_set_reachable_time(struct net_if *iface)
+static inline void net_if_ipv6_set_reachable_time(struct net_if *iface)
 {
 	iface->reachable_time = net_if_ipv6_calc_reachable_time(iface);
 }

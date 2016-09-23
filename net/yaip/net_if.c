@@ -967,7 +967,7 @@ void net_if_init(void)
 		iface->hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
 		iface->base_reachable_time = REACHABLE_TIME;
 
-		net_ipv6_set_reachable_time(iface);
+		net_if_ipv6_set_reachable_time(iface);
 #endif
 	}
 }
