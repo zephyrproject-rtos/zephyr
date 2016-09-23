@@ -939,8 +939,7 @@ static void nd_reachable_timeout(struct nano_work *work)
 	}
 }
 
-static inline void set_reachable_timeout(struct net_if *iface,
-					 struct net_nbr *nbr)
+void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 {
 	uint32_t time;
 
@@ -1032,7 +1031,8 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 			net_nbr_data(nbr)->state = NET_NBR_REACHABLE;
 			net_nbr_data(nbr)->ns_count = 0;
 
-			set_reachable_timeout(net_nbuf_iface(buf), nbr);
+			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
+							 nbr);
 		} else {
 			net_nbr_data(nbr)->state = NET_NBR_STALE;
 		}
@@ -1070,7 +1070,8 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		if (net_is_solicited(buf)) {
 			net_nbr_data(nbr)->state = NET_NBR_REACHABLE;
 
-			set_reachable_timeout(net_nbuf_iface(buf), nbr);
+			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
+							 nbr);
 		} else {
 			if (lladdr_changed) {
 				net_nbr_data(nbr)->state = NET_NBR_STALE;

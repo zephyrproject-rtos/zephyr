@@ -175,6 +175,15 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 bool is_router,
 				 enum net_nbr_state state);
 
+/**
+ * @brief Set the neighbor reachable timer.
+ *
+ * @param iface A valid pointer on a network interface
+ * @param nbr Neighbor struct pointer
+ */
+void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
+				      struct net_nbr *nbr);
+
 #else /* CONFIG_NET_IPV6_ND */
 static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 {
@@ -201,6 +210,11 @@ static inline struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 					       enum net_nbr_state state)
 {
 	return NULL;
+}
+
+static inline void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
+						    struct net_nbr *nbr)
+{
 }
 #endif
 
