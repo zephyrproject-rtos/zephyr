@@ -591,12 +591,12 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 		if (nbr) {
 			NET_DBG("Added %s to nbr cache",
 				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
+		} else {
+			NET_ERR("Could not add neighbor %s",
+				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
+
+			return;
 		}
-
-		NET_ASSERT_INFO(nbr, "Could not add neighbor %s",
-			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
-
-		return;
 	}
 
 	if (net_nbr_link(nbr, net_nbuf_iface(buf), &lladdr) == -EALREADY) {
