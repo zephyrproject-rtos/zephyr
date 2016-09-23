@@ -504,7 +504,7 @@ static inline uint16_t _get_tss(void)
  */
 static inline void _get_gdt(struct pseudo_descriptor *gdt)
 {
-	__asm__ __volatile__ ("sgdt %0" : "=m" (gdt));
+	__asm__ __volatile__ ("sgdt %0" : "=m" (*gdt));
 }
 
 
@@ -515,7 +515,7 @@ static inline void _get_gdt(struct pseudo_descriptor *gdt)
  */
 static inline void _get_idt(struct pseudo_descriptor *idt)
 {
-	__asm__ __volatile__ ("sidt %0" : "=m" (idt));
+	__asm__ __volatile__ ("sidt %0" : "=m" (*idt));
 }
 
 
