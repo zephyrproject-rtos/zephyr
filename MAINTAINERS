@@ -95,6 +95,12 @@ M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	boards/arc/quark_se_c1000_ss_devboard/
 
+BOARDS/ARM - 96Boards CARBON
+M:	Amit Kucheria <amit.kucheria@linaro.org>
+M:	Ricardo Salveti <ricardo.salveti@linaro.org>
+S:	Supported
+F:	boards/arm/96b_carbon/
+
 BOARDS/ARM - 96Boards NITROGEN
 M:	Amit Kucheria <amit.kucheria@linaro.org>
 S:	Supported

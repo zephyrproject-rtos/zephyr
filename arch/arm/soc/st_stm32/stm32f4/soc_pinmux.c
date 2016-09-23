@@ -22,6 +22,16 @@
 #include <pinmux/stm32/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
+static const stm32_pin_func_t pin_pa9_funcs[] = {
+	[STM32F4_PINMUX_FUNC_PA9_USART1_TX - 1] =
+			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
+};
+
+static const stm32_pin_func_t pin_pa10_funcs[] = {
+	[STM32F4_PINMUX_FUNC_PA10_USART1_RX - 1] =
+			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
+};
+
 static const stm32_pin_func_t pin_pb6_funcs[] = {
 	[STM32F4_PINMUX_FUNC_PB6_USART1_TX - 1] =
 			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
@@ -46,6 +56,8 @@ static const stm32_pin_func_t pin_pa3_funcs[] = {
  * @brief pin configuration
  */
 static const struct stm32_pinmux_conf pins[] = {
+	STM32_PIN_CONF(STM32_PIN_PA9, pin_pa9_funcs),
+	STM32_PIN_CONF(STM32_PIN_PA10, pin_pa10_funcs),
 	STM32_PIN_CONF(STM32_PIN_PB6, pin_pb6_funcs),
 	STM32_PIN_CONF(STM32_PIN_PB7, pin_pb7_funcs),
 	STM32_PIN_CONF(STM32_PIN_PA2, pin_pa2_funcs),
