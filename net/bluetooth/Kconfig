@@ -486,6 +486,7 @@ config BLUETOOTH_RFCOMM_L2CAP_MTU
 config BLUETOOTH_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
 	default n
+	select BLUETOOTH_RFCOMM
 	help
 	  This option enables Bluetooth HF support
 
