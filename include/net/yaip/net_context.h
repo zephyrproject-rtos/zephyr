@@ -432,32 +432,31 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
 					 void *user_data);
 
 /**
- * @brief Create a network connection.
+ * @brief            Create a network connection.
  *
- * @details Initiate a connection to be created. This function
- * will return immediately if the timeout is set to 0. If the timeout
- * is set to TICKS_UNLIMITED, the function will wait until the
- * connection is established. Timeout value > 0, will wait as
- * many system ticks. After the connection is established
- * a caller supplied callback is called. The callback is called even
- * if timeout was set to TICKS_UNLIMITED, the callback is called
- * before this function will return in this case. The callback is not
- * called if the timeout expires.
- * For context with type SOCK_DGRAM, this function marks the default
- * address of the destination but it does not try to actually connect.
- * The callback is called also for both SOCK_DGRAM and SOCK_STREAM
- * type connections.
- * This is similar as BSD connect() function.
+ * @details          The net_context_connect function creates a network
+ *                   connection to the host specified by addr. After the
+ *                   connection is established, the user supplied callback (cb)
+ *                   is executed. cb is called even if the timeout was set to
+ *                   TICKS_UNLIMITED. cb is not called if the timeout expires.
+ *                   For datagram sockets (SOCK_DGRAM), this function only sets
+ *                   the peer address.
+ *                   This function is similar to the BSD connect() function.
  *
- * @param context The context to use.
- * @param addr The peer address to connect to.
- * @param addrlen Length of the address.
- * @param cb Caller supplied callback function.
- * @param timeout Timeout for the connection. Possible values
- * are TICKS_UNLIMITED, 0, >0.
- * @param user_data Caller supplied user data.
+ * @param context    The network context.
+ * @param addr       The peer address to connect to.
+ * @param addrlen    Peer address length.
+ * @param cb         Callback function. Set to NULL if not required.
+ * @param timeout    The timeout value for the connection. Possible values:
+ *                   * 0: this function will return immediately,
+ *                   * TICKS_UNLIMITED: this function will block until the
+ *                                      connection is established,
+ *                   * >0: this function will wait the specified system ticks.
+ * @param user_data  Data passed to the callback function.
  *
- * @return 0 if ok, < 0 if error
+ * @return           0 on success.
+ * @return           -EINVAL if an invalid parameter is passed as an argument.
+ * @return           -ENOTSUP if the operation is not supported or implemented.
  */
 int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
