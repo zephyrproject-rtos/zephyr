@@ -475,6 +475,14 @@ config BLUETOOTH_RFCOMM
 	help
 	  This option enables Bluetooth RFCOMM support
 
+config BLUETOOTH_RFCOMM_L2CAP_MTU
+	int "L2CAP MTU for RFCOMM frames"
+	default BLUETOOTH_L2CAP_IN_MTU
+	depends on BLUETOOTH_RFCOMM
+	range BLUETOOTH_L2CAP_IN_MTU 32767
+	help
+	  Maximum size of L2CAP PDU for RFCOMM frames.
+
 config BLUETOOTH_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
 	default n
@@ -501,13 +509,4 @@ config BLUETOOTH_BREDR_NAME
 	  Bluetooth BR/EDR name. Name can be up to 248 bytes long (excluding
 	  NULL termination). Can be empty string.
 endif # BLUETOOTH_BREDR
-
-if BLUETOOTH_RFCOMM
-config BLUETOOTH_RFCOMM_L2CAP_MTU
-	int "L2CAP MTU for RFCOMM frames"
-	default BLUETOOTH_L2CAP_IN_MTU
-	range BLUETOOTH_L2CAP_IN_MTU 32767
-	help
-	  Maximum size of L2CAP PDU for RFCOMM frames.
-endif # BLUETOOTH_RFCOMM
 endif # BLUETOOTH
