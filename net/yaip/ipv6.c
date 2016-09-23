@@ -1505,20 +1505,20 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 					&prefix_info->prefix,
 					prefix_info->len,
 					ntohl(prefix_info->valid_lifetime));
-		NET_ASSERT_INFO(prefix,
-				"Prefix %s/%d could not be added to iface %p",
-				net_sprint_ipv6_addr(&prefix_info->prefix),
-				prefix_info->len,
-				net_nbuf_iface(buf));
-
 		if (prefix) {
 			NET_DBG("Interface %p add prefix %s/%d lifetime %lu",
 				net_nbuf_iface(buf),
 				net_sprint_ipv6_addr(&prefix_info->prefix),
 				prefix_info->prefix_len,
 				ntohl(prefix_info->valid_lifetime));
+		} else {
+			NET_ERR("Prefix %s/%d could not be added to iface %p",
+				net_sprint_ipv6_addr(&prefix_info->prefix),
+				prefix_info->len,
+				net_nbuf_iface(buf));
+
+			return;
 		}
-		return;
 	}
 
 	switch (prefix_info->valid_lifetime) {
