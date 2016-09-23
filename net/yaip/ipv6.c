@@ -1452,11 +1452,12 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_buf *buf,
 
 		nbr = nbr_add(buf, &NET_IPV6_BUF(buf)->src, &lladdr,
 			      true, NET_NBR_STALE);
-
-		NET_ASSERT_INFO(nbr, "Could not add router neighbor %s [%s]",
+		if (!nbr) {
+			NET_ERR("Could not add router neighbor %s [%s]",
 				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src),
 				net_sprint_ll_addr(lladdr.addr, lladdr.len));
-		return NULL;
+			return NULL;
+		}
 	}
 
 	if (net_nbr_link(nbr, net_nbuf_iface(buf), &lladdr) == -EALREADY) {
