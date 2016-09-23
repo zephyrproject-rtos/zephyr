@@ -33,28 +33,17 @@ testing.
 #include <arch/x86/asm.h>
 #include <asm_inline.h>
 
-	/* exports (internal APIs) */
+/* imports (internal APIs) */
 
-	GTEXT(_ExcEnt)
-	GTEXT(_ExcExit)
-	GTEXT(_IntEnt)
-	GTEXT(_IntExit)
+	GTEXT(_interrupt_enter)
 
 /* Static interrupt handler stubs */
 
 	GTEXT(nanoIntStub)
 SECTION_FUNC(TEXT, nanoIntStub)
-        call    _IntEnt
-#ifdef CONFIG_X86_IAMCU
-	movl	$0, %eax
-#else
         pushl   $0
-#endif
-        call    isr_handler
-#ifndef CONFIG_X86_IAMCU
-        addl    $4, %esp
-#endif
-        jmp     _IntExit
+        pushl   $isr_handler
+        jmp     _interrupt_enter
 #else
 
 #error Arch not supported

@@ -377,8 +377,6 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  *
  * @return N/A
  *
- * \INTERNAL IMPLEMENTATION DETAILS
- * Called by _IntEnt() while interrupts are locked.
  */
 
 void _timer_idle_exit(void)

@@ -470,14 +470,10 @@ typedef struct s_preempReg {
 
 	/*
 	 * The volatile registers 'eax', 'ecx' and 'edx' area not included in
-	 *the
-	 * definition of 'tPreempReg' since the interrupt stubs
-	 *(_IntEnt/_IntExit)
-	 * and exception stubs (_ExcEnt/_ExcEnter) use the stack to save and
-	 * restore the values of these registers in order to support interrupt
-	 * nesting.  The stubs do _not_ copy the saved values from the stack
-	 *into
-	 * the TCS.
+	 * the definition of 'tPreempReg' since the interrupt and exception
+	 * handling routunes use the stack to save and restore the values of
+	 * these registers in order to support interrupt nesting.  The stubs
+	 * do _not_ copy the saved values from the stack into the TCS.
 	 *
 	 * unsigned long eax;
 	 * unsigned long ecx;

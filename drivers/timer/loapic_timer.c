@@ -427,8 +427,6 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  * ticker has done its work and consumed all the ticks. This has to be true
  * otherwise idle mode wouldn't have been entered in the first place.
  *
- * Called in _IntEnt()
- *
  * @return N/A
  */
 void _timer_idle_exit(void)

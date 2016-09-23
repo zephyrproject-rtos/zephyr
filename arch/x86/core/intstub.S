@@ -34,9 +34,7 @@
 
 	/* exports (internal APIs) */
 
-	GTEXT(_IntEnt)
-	GTEXT(_IntExitWithEoi)
-	GTEXT(_IntExit)
+	GTEXT(_interrupt_enter)
 	GTEXT(_SpuriousIntNoErrCodeHandler)
 	GTEXT(_SpuriousIntHandler)
 	GTEXT(_irq_sw_handler)
@@ -93,16 +91,15 @@
  *
  * C function prototype:
  *
- * void _IntEnt (void);
+ * void _interrupt_enter(void *isr, void *isr_param);
  */
-SECTION_FUNC(TEXT, _IntEnt)
+SECTION_FUNC(TEXT, _interrupt_enter)
 
 	/*
 	 * The gen_idt tool creates an interrupt-gate descriptor for
 	 * all connections.  The processor will automatically clear the IF
-	 * bit in the EFLAGS register upon execution of the handler, thus
-	 * _IntEnt() (and _ExcEnt) need not issue an 'cli' as the first
-	 * instruction.
+	 * bit in the EFLAGS register upon execution of the handler, hence
+	 * this need not issue an 'cli' as the first instruction.
 	 *
 	 * Clear the direction flag.  It is automatically restored when the
 	 * interrupt exits via the IRET instruction.
@@ -110,29 +107,45 @@ SECTION_FUNC(TEXT, _IntEnt)
 
 	cld
 
-
-
 	/*
 	 * Note that the processor has pushed both the EFLAGS register
 	 * and the logical return address (cs:eip) onto the stack prior
-	 * to invoking the handler specified in the IDT
+	 * to invoking the handler specified in the IDT. The stack looks
+	 * like this:
+	 *
+	 *  EFLAGS
+	 *  CS
+	 *  EIP
+	 *  isr_param
+	 *  isr   <-- stack pointer
 	 */
 
 
 	/*
-	 * swap eax and return address on the current stack;
-	 * this saves eax on the stack without losing knowledge
-	 * of how to get back to the interrupt stub
+	 * Swap EAX with isr_param and EDX with isr.
+	 * Push ECX onto the stack
 	 */
-	xchgl	%eax, (%esp)
-
-	/*
-	 * The remaining volatile registers are pushed onto the current
-	 * stack.
-	 */
-
+	xchgl	%eax, 4(%esp)
+	xchgl	%edx, (%esp)
 	pushl	%ecx
-	pushl	%edx
+
+	/* Now the stack looks like:
+	 *
+	 * EFLAGS
+	 * CS
+	 * EIP
+	 * saved EAX
+	 * saved EDX
+	 * saved ECX
+	 *
+	 * EAX = isr_param, EDX = isr
+	 */
+
+	/* Push EDI as we will use it for scratch space.
+	 * Rest of the callee-saved regs get saved by invocation of C
+	 * functions (isr handler, _Swap(), etc)
+	 */
+	pushl	%edi
 
 #ifdef CONFIG_DEBUG_INFO
 	/*
@@ -140,14 +153,21 @@ SECTION_FUNC(TEXT, _IntEnt)
 	 * required by debug tools.
 	 */
 
-	pushl	%edi
 	pushl	%esi
 	pushl	%ebx
 	pushl	%ebp
 
-	leal	44(%esp), %ecx   /* Calculate ESP before interrupt occurred */
+	leal	40(%esp), %ecx   /* Calculate ESP before interrupt occurred */
 	pushl	%ecx             /* Save calculated ESP */
 #endif
+
+#if defined(CONFIG_INT_LATENCY_BENCHMARK) || \
+		defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT) || \
+		defined(CONFIG_KERNEL_EVENT_LOGGER_SLEEP)
+
+	/* Save these as we are using to keep track of isr and isr_param */
+	pushl	%eax
+	pushl	%edx
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	/*
@@ -155,30 +175,20 @@ SECTION_FUNC(TEXT, _IntEnt)
 	 * how long interrupt are disabled.
 	 * The interrupt gate created by IRQ_CONNECT disables the
 	 * interrupt.
-	 *
-	 * Preserve EAX as it contains the stub return address.
 	 */
 
-	pushl	%eax
 	call	_int_latency_start
-	popl	%eax
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
-	/*
-	 * Preserve EAX as it contains the stub return address.
-	 */
-	pushl	%eax
 	call	_sys_k_event_logger_interrupt
-	popl	%eax
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
-	/*
-	 * Preserve EAX as it contains the stub return address.
-	 */
-	pushl	%eax
 	call	_sys_k_event_logger_exit_sleep
+#endif
+
+	popl	%edx
 	popl	%eax
 #endif
 
@@ -198,13 +208,13 @@ SECTION_FUNC(TEXT, _IntEnt)
 
 	/* switch to base of the interrupt stack */
 
-	movl	%esp, %edx		/* save current thread's stack pointer */
+	movl	%esp, %edi		/* save current thread stack pointer */
 	movl	__tNANO_common_isp_OFFSET(%ecx), %esp	/* load new sp value */
 
 
 	/* save thread's stack pointer onto base of interrupt stack */
 
-	pushl	%edx			/* Save stack pointer */
+	pushl	%edi			/* Save stack pointer */
 
 #ifdef CONFIG_DEBUG_INFO
 	/*
@@ -212,8 +222,8 @@ SECTION_FUNC(TEXT, _IntEnt)
 	 * interrupt stack frame.  To simplify the exit case, push a dummy ISF
 	 * for the "old" ISF and save it to the _nanokernel.isf.
 	 */
-	pushl	%edx
-	movl	%edx, __tNANO_isf_OFFSET(%ecx)
+	pushl	%edi
+	movl	%edi, __tNANO_isf_OFFSET(%ecx)
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -221,38 +231,50 @@ SECTION_FUNC(TEXT, _IntEnt)
 	jne	_HandleIdle
 	/* fast path is !idle, in the pipeline */
 #endif
-
 #ifdef CONFIG_DEBUG_INFO
 	jmp alreadyOnIntStack
 
 nested_save_isf:
-	movl	__tNANO_isf_OFFSET(%ecx), %edx	/* Get old ISF */
+	movl	__tNANO_isf_OFFSET(%ecx), %edi	/* Get old ISF */
 	movl	%esp, __tNANO_isf_OFFSET(%ecx)	/* Save new ISF */
-	pushl	%edx                            /* Save old ISF */
+	pushl	%edi                            /* Save old ISF */
 #endif
 
 	/* fall through to nested case */
 
 alreadyOnIntStack:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	/* preserve eax which contain stub return address */
 	pushl	%eax
+	pushl	%edx
 	call	_int_latency_stop
+	popl	%edx
 	popl	%eax
+#endif
+
+#ifndef CONFIG_X86_IAMCU
+	/* EAX has the interrupt handler argument, needs to go on
+	 * stack for sys V calling convention
+	 */
+	push	%eax
 #endif
 #ifdef CONFIG_NESTED_INTERRUPTS
 	sti			/* re-enable interrupts */
 #endif
-	jmp	*%eax		/* "return" back to stub */
+	/* Now call the interrupt handler */
+	call	*%edx
+#ifndef CONFIG_X86_IAMCU
+	/* Discard ISR argument */
+	addl	$0x4, %esp
+#endif
+	jmp interrupt_done
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 _HandleIdle:
-	/* Preserve eax which contains stub return address */
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 	pushl	%eax
+	pushl	%edx
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 	call _power_save_idle_exit
 #else
-	pushl	%eax
 	push	__tNANO_idle_OFFSET(%ecx)
 	movl	$0, __tNANO_idle_OFFSET(%ecx)
 
@@ -269,69 +291,36 @@ _HandleIdle:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif
-#ifdef CONFIG_NESTED_INTERRUPTS
+	popl	%edx
+#ifdef CONFIG_X86_IAMCU
+	/* For Sys V case, we want EAX's value on the stack anyway as the arg
+	 * to the ISR, so don't pop it
+	 */
+	popl	%eax
+#endif
+#if CONFIG_NESTED_INTERRUPTS
 	sti			/* re-enable interrupts */
 #endif
-	popl	%eax
-	jmp	*%eax		/* "return" back to stub */
+	call	*%edx
+#ifndef CONFIG_X86_IAMCU
+	/* Discard ISR argument */
+	addl	$0x4, %esp
+#endif
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
-/**
- * @brief Perform EOI and do interrupt exit
- *
- * This is used by the interrupt stubs, which all leave the stack in
- * a particular state and need to poke the interrupt controller.
- */
-SECTION_FUNC(TEXT, _IntExitWithEoi)
-
-	cli			/* disable interrupts */
-
-#ifndef CONFIG_X86_IAMCU
-	/* For SYS V, the stub pushes an argument onto the stack to be
-	 * consumed by the handler, remove it since the handler is now
-	 * finished
-	 */
-	popl %eax
+interrupt_done:
+#ifdef CONFIG_NESTED_INTERRUPTS
+	cli			/* disable interrupts again */
 #endif
 
 	/* irq_controller.h interface */
 	_irq_controller_eoi
 
-	jmp _IntExitWithCli
-
-/**
- *
- * @brief Inform the kernel of an interrupt exit
- *
- * This function is called from the interrupt stub created by IRQ_CONNECT()
- * to inform the kernel that the processing of an interrupt has
- * completed.  This routine decrements _nanokernel.nested (to support interrupt
- * nesting), restores the volatile integer registers, and then switches
- * back to the interrupted execution context's stack, if this isn't a nested
- * interrupt.
- *
- * Finally, control is returned back to the interrupted fiber or ISR.
- * A context switch _may_ occur if the interrupted context was a task context,
- * in which case one or more other fibers and tasks will execute before
- * this routine resumes and control gets returned to the interrupted task.
- *
- * @return N/A
- *
- * C function prototype:
- *
- * void _IntExit (void);
- */
-_IntExit:
-
-	cli			/* disable interrupts */
-
-_IntExitWithCli:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_start
 #endif
 
 	/* determine whether exiting from a nested interrupt */
-
 	movl	$_nanokernel, %ecx
 #ifdef CONFIG_DEBUG_INFO
 	popl	__tNANO_isf_OFFSET(%ecx)    /* Restore old ISF */
@@ -412,7 +401,6 @@ _IntExitWithCli:
 	popl	%ebp
 	popl	%ebx
 	popl	%esi
-	popl	%edi
 #endif
 
 	pushfl			/* push KERNEL_LOCK_KEY argument */
@@ -450,9 +438,9 @@ _IntExitWithCli:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif
-
-	popl	%edx
+	popl	%edi
 	popl	%ecx
+	popl	%edx
 	popl	%eax
 
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
@@ -488,11 +476,10 @@ nestedInterrupt:
 	popl	%ebp
 	popl	%ebx
 	popl	%esi
-	popl	%edi
 #endif
-
-	popl	%edx		/* pop volatile registers in reverse order */
-	popl	%ecx
+	popl	%edi
+	popl	%ecx		/* pop volatile registers in reverse order */
+	popl	%edx
 	popl	%eax
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	iret
@@ -552,21 +539,13 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 	leal	44(%esp), %ecx   /* Calculate ESP before exception occurred */
 	pushl	%ecx             /* Save calculated ESP */
 
-	/*
-	 * The task's regular stack is being used, but push the value of ESP
-	 * anyway so that _ExcExit can "recover the stack pointer"
-	 * without determining whether the exception occurred while CPL=3
-	 */
 #ifndef CONFIG_X86_IAMCU
 	pushl	%esp			/* push cur stack pointer: pEsf arg */
 #else
 	mov	%esp, %edx
 #endif
 
-finishSpuriousInt:
-
 	/* re-enable interrupts */
-
 	sti
 
 	/* push the 'unsigned int reason' parameter */
@@ -575,18 +554,15 @@ finishSpuriousInt:
 #else
 	movl	$_NANO_ERR_SPURIOUS_INT, %eax
 #endif
-
-callFatalHandler:
 	/* call the fatal error handler */
-
 	call	_NanoFatalErrorHandler
 
 	/* handler doesn't  return */
 
 #if CONFIG_IRQ_OFFLOAD
 SECTION_FUNC(TEXT, _irq_sw_handler)
-	call _IntEnt
-	call _irq_do_offload
-	jmp _IntExit
+	push $0
+	push $_irq_do_offload
+	jmp _interrupt_enter
 
 #endif

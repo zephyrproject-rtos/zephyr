@@ -128,17 +128,15 @@ parameter.
 * Using some architecture defined mechanism, the parameter value is forced in
   the stub. This is commonly found in X86-based architectures.
 
-* The parameters to the ISR are inserted and tracked via a separate
-  table requiring the architecture to discover at runtime which
-  interrupt is executing. A common interrupt handler demuxer is
-  installed for all entries of the real interrupt vector table, which
-  then fetches the device's ISR and parameter from the separate
-  table. This approach is commonly used in the ARC and ARM
-  architectures via the :option:`CONFIG_SW_ISR_TABLE`
-  implementation. You can find examples of the stubs by looking at
-  _IntEnt in x86, _IntExit in x86 and ARM, :code:`_isr_wrapper()` in
-  ARM, or the full implementation description for ARC in
-  :file:`arch/arc/core/isr_wrapper.S`.
+* The parameters to the ISR are inserted and tracked via a separate table
+  requiring the architecture to discover at runtime which interrupt is
+  executing. A common interrupt handler demuxer is installed for all entries of
+  the real interrupt vector table, which then fetches the device's ISR and
+  parameter from the separate table. This approach is commonly used in the ARC
+  and ARM architectures via the :option:`CONFIG_SW_ISR_TABLE` implementation.
+  You can find examples of the stubs by looking at :code:`_interrupt_enter()` in
+  x86, :code:`_IntExit()` in ARM, :code:`_isr_wrapper()` in ARM, or the full
+  implementation description for ARC in :file:`arch/arc/core/isr_wrapper.S`.
 
 Each architecture also has to implement primitives for interrupt control:
 
@@ -259,7 +257,8 @@ already on the stack. There is no need to save them in the TCS.
 A context switch can also be performed preemptively. This happens upon exiting
 an ISR, in the kernel interrupt exit stub:
 
-* :code:`_IntExit` on x86/ARM.
+* :code:`_interrupt_enter` on x86 after the handler is called.
+* :code:`_IntExit` on ARM.
 * :code:`_firq_exit` and :code:`_rirq_exit` on ARCv2.
 
 In this case, the context switch must only be invoked when the interrupted
@@ -378,9 +377,8 @@ The microkernel has built-in support for going into tickless idle. However, in
 nanokernel-only systems, part of the support has to be built in the
 architecture (:c:func:`nano_cpu_idle` and :c:func:`nano_cpu_atomic_idle`).
 
-
-The interrupt entry stub (:code:`_IntEnter`, :code:`_isr_wrapper`) needs to
-be adapted to handle exiting tickless idle. See examples in the code for
+The interrupt entry stub (:code:`_interrupt_enter`, :code:`_isr_wrapper`) needs
+to be adapted to handle exiting tickless idle. See examples in the code for
 existing architectures.
 
 Console Over Serial Line

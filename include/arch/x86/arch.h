@@ -123,21 +123,6 @@ typedef struct s_isrList {
 
 
 /**
- * Assembly code to populate ISR's argument
- *
- * IAMCU it goes in EAX. Sys V on the stack, _IntExitWithEoi pops it.
- *
- * This is only intended to be used by the IRQ_CONNECT() macro.
- */
-#ifdef CONFIG_X86_IAMCU
-#define _ISR_ARG_ASM \
-	"movl %[isr_param], %%eax\n\t"
-#else
-#define _ISR_ARG_ASM \
-	"pushl %[isr_param]\n\t"
-#endif /* CONFIG_X86_IAMCU */
-
-/**
  * Code snippets for populating the vector ID and priority into the intList
  *
  * The 'magic' of static interrupts is accomplished by building up an array
@@ -177,10 +162,8 @@ typedef struct s_isrList {
  * section .text.irqstubs section (which eventually gets linked into 'text')
  * and the stub shall be named (isr_name)_irq(irq_line)_stub
  *
- * The stub calls _IntEnt to save interrupted context and switch to the IRQ
- * stack. There is a calling convention specific macro to populate the
- * argument to the ISR, and then the ISR is called. _IntExitWithEoi
- * restores calling context and 'iret's.
+ * 3. The IRQ stub pushes the ISR routine and its argument onto the stack
+ * and then jumps to the common interrupt handling code in _interrupt_enter().
  *
  * 4. _irq_controller_irq_config() is called at runtime to set the mapping
  * between the vector and the IRQ line as well as triggering flags
@@ -206,10 +189,9 @@ typedef struct s_isrList {
 		".pushsection .text.irqstubs\n\t" \
 		".global %P[isr]_irq%P[irq]_stub\n\t" \
 		"%P[isr]_irq%P[irq]_stub:\n\t" \
-		"call _IntEnt\n\t" \
-		_ISR_ARG_ASM \
-		"call %P[isr]\n\t" \
-		"jmp _IntExitWithEoi\n\t" \
+		"pushl %[isr_param]\n\t" \
+		"pushl %[isr]\n\t" \
+		"jmp _interrupt_enter\n\t" \
 		".popsection\n\t" \
 		: \
 		: [isr] "i" (isr_p), \
@@ -270,16 +252,16 @@ typedef struct nanoEsf {
 /**
  * @brief Nanokernel "interrupt stack frame" (ISF)
  *
- * An "interrupt stack frame" (ISF) as constructed by the processor
- * and the interrupt wrapper function _IntEnt().  As the system always operates
- * at ring 0, only the EIP, CS and EFLAGS registers are pushed onto the stack
- * when an interrupt occurs.
+ * An "interrupt stack frame" (ISF) as constructed by the processor and the
+ * interrupt wrapper function _interrupt_enter().  As the system always
+ * operates at ring 0, only the EIP, CS and EFLAGS registers are pushed onto
+ * the stack when an interrupt occurs.
  *
  * The interrupt stack frame includes the volatile registers EAX, ECX, and EDX
- * pushed on the stack by _IntEnt().
+ * plus nonvolatile EDI pushed on the stack by _interrupt_enter().
  *
- * Only target-based debug tools such as GDB require the 5 non-volatile
- * registers (EDI, ESI, EBX, EBP and ESP) to be preserved during an interrupt.
+ * Only target-based debug tools such as GDB require the other non-volatile
+ * registers (ESI, EBX, EBP and ESP) to be preserved during an interrupt.
  */
 
 typedef struct nanoIsf {
@@ -288,10 +270,10 @@ typedef struct nanoIsf {
 	unsigned int ebp;
 	unsigned int ebx;
 	unsigned int esi;
-	unsigned int edi;
 #endif /* CONFIG_DEBUG_INFO */
-	unsigned int edx;
+	unsigned int edi;
 	unsigned int ecx;
+	unsigned int edx;
 	unsigned int eax;
 	unsigned int eip;
 	unsigned int cs;
