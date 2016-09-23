@@ -269,7 +269,9 @@ _HandleIdle:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif
+#ifdef CONFIG_NESTED_INTERRUPTS
 	sti			/* re-enable interrupts */
+#endif
 	popl	%eax
 	jmp	*%eax		/* "return" back to stub */
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
