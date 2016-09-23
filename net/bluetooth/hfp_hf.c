@@ -68,7 +68,7 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 		.recv = hfp_hf_recv,
 	};
 
-	BT_DBG("conn %p handle %u", conn, conn->handle);
+	BT_DBG("conn %p", conn);
 
 	for (i = 0; i < ARRAY_SIZE(bt_hfp_hf_pool); i++) {
 		struct bt_hfp_hf *hf = &bt_hfp_hf_pool[i];
