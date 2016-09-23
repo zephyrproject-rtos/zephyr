@@ -224,6 +224,8 @@
 #define MICROCHIP_OUI_B1 0x04
 #define MICROCHIP_OUI_B2 0xA3
 
+#define MAX_BUFFER_LENGTH 100
+
 struct eth_enc28j60_config {
 	const char *gpio_port;
 	uint8_t gpio_pin;
@@ -234,16 +236,22 @@ struct eth_enc28j60_config {
 };
 
 struct eth_enc28j60_runtime {
+#ifdef CONFIG_NET_YAIP
+	struct net_if *iface;
+#endif
 	char __stack fiber_stack[ENC28J60_FIBER_STACK_SIZE];
 	struct device *gpio;
 	struct device *spi;
 	struct gpio_callback gpio_cb;
+	uint8_t mem_buf[MAX_BUFFER_LENGTH + 1];
 	uint8_t  tx_tsv[TSV_SIZE];
 	uint8_t  rx_rsv[RSV_SIZE];
 	struct nano_sem tx_sem;
 	struct nano_sem int_sem;
 	struct nano_sem spi_sem;
+#ifndef CONFIG_NET_YAIP
 	void (*receive_callback)(uint8_t *buffer, uint16_t len);
+#endif
 };
 
 #endif /*_ENC28J60_*/

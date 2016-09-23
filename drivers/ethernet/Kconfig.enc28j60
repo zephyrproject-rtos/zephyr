@@ -18,7 +18,7 @@
 
 menuconfig ETH_ENC28J60
 	bool "ENC28J60C Ethernet Controller"
-	depends on ETHERNET
+	depends on ETHERNET || NET_L2_ETHERNET
 	depends on SPI
 	default n
 	help

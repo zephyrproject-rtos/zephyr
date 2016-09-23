@@ -16,7 +16,11 @@ obj-$(CONFIG_GPIO) += gpio/
 obj-$(CONFIG_I2C) += i2c/
 obj-$(CONFIG_PWM) += pwm/
 obj-$(CONFIG_ADC) += adc/
+ifeq ($(CONFIG_NET_YAIP), y)
+obj-$(CONFIG_NET_L2_ETHERNET) += ethernet/
+else
 obj-$(CONFIG_ETHERNET) += ethernet/
+endif
 obj-$(CONFIG_SLIP) += slip/
 obj-$(CONFIG_IEEE802154) += ieee802154/
 obj-$(CONFIG_WATCHDOG) += watchdog/

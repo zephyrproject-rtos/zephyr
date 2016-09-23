@@ -15,19 +15,20 @@
  * limitations under the License.
  */
 
+#include <net/ip/net_driver_ethernet.h>
 #include <zephyr.h>
-#include <device.h>
 #include <string.h>
 #include <errno.h>
 #include <gpio.h>
 #include <spi.h>
-#include <net/nbuf.h>
-#include <net/net_if.h>
+#include <eth.h>
 
 #include "eth_enc28j60_priv.h"
 
 #define D10D24S 11
+#define MAX_BUFFER_LENGTH 100
 
+static int eth_net_tx(struct net_buf *buf);
 static void enc28j60_fiber_main(int arg1, int unused);
 
 static int eth_enc28j60_soft_reset(struct device *dev)
@@ -131,69 +132,67 @@ static void eth_enc28j60_clear_eth_reg(struct device *dev, uint16_t reg_addr,
 }
 
 static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
-				   uint16_t buf_len)
+				   uint8_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
+	uint8_t tx_buf[MAX_BUFFER_LENGTH + 1];
 	uint8_t *index_buf;
 	uint16_t num_segments;
-	uint16_t num_remaining;
+	uint16_t num_remanents;
 
 	index_buf = data_buffer;
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
-	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
+	num_remanents = buf_len - MAX_BUFFER_LENGTH * num_segments;
 
 	nano_fiber_sem_take(&context->spi_sem, TICKS_UNLIMITED);
 
-	context->mem_buf[0] = ENC28J60_SPI_WBM;
+	tx_buf[0] = ENC28J60_SPI_WBM;
 
 	for (int i = 0; i < num_segments;
-	     ++i, index_buf += MAX_BUFFER_LENGTH) {
+	     ++i, index_buf += i * MAX_BUFFER_LENGTH) {
 
-		memcpy(context->mem_buf + 1, index_buf, MAX_BUFFER_LENGTH);
+		memcpy(tx_buf + 1, index_buf, MAX_BUFFER_LENGTH);
 
-		spi_write(context->spi,
-			  context->mem_buf, MAX_BUFFER_LENGTH + 1);
+		spi_write(context->spi, tx_buf, MAX_BUFFER_LENGTH + 1);
 
 	}
+	memcpy(tx_buf + 1, index_buf, num_remanents);
 
-	memcpy(context->mem_buf + 1, index_buf, num_remaining);
-
-	spi_write(context->spi, context->mem_buf, num_remaining + 1);
+	spi_write(context->spi, tx_buf, num_remanents + 1);
 
 	nano_fiber_sem_give(&context->spi_sem);
 }
 
 static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
-				  uint16_t buf_len)
+				  uint8_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	uint8_t *index_buf;
+	uint8_t tx_buf[MAX_BUFFER_LENGTH + 1];
 	uint16_t num_segments;
-	uint16_t num_remaining;
+	uint16_t num_remanents;
 
 	index_buf = data_buffer;
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
-	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
+	num_remanents = buf_len - MAX_BUFFER_LENGTH * num_segments;
 
 	nano_fiber_sem_take(&context->spi_sem, TICKS_UNLIMITED);
 
-	context->mem_buf[0] = ENC28J60_SPI_RBM;
+	tx_buf[0] = ENC28J60_SPI_RBM;
 
 	for (int i = 0; i < num_segments;
-	     ++i, index_buf += MAX_BUFFER_LENGTH) {
+	     ++i, index_buf += i * MAX_BUFFER_LENGTH) {
 
-		spi_transceive(context->spi,
-			       context->mem_buf, MAX_BUFFER_LENGTH + 1,
-			       context->mem_buf, MAX_BUFFER_LENGTH + 1);
+		spi_transceive(context->spi, tx_buf, MAX_BUFFER_LENGTH + 1,
+			       tx_buf, MAX_BUFFER_LENGTH + 1);
 
-		memcpy(index_buf, context->mem_buf + 1, MAX_BUFFER_LENGTH);
+		memcpy(index_buf, tx_buf + 1, MAX_BUFFER_LENGTH);
 	}
 
-	spi_transceive(context->spi,
-		       context->mem_buf, num_remaining + 1,
-		       context->mem_buf, num_remaining + 1);
+	spi_transceive(context->spi, tx_buf, num_remanents + 1,
+		       tx_buf, num_remanents + 1);
 
-	memcpy(index_buf, context->mem_buf + 1, num_remaining);
+	memcpy(index_buf, tx_buf + 1, num_remanents);
 
 	nano_fiber_sem_give(&context->spi_sem);
 }
@@ -276,8 +275,9 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 
 static void eth_enc28j60_init_mac(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	struct eth_enc28j60_config *config = dev->config->config_info;
 	uint8_t data_macon;
+	uint8_t mac_address[6];
 
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_MACON1);
 
@@ -308,6 +308,14 @@ static void eth_enc28j60_init_mac(struct device *dev)
 	}
 
 	/* Configure MAC address */
+	mac_address[0] = MICROCHIP_OUI_B0;
+	mac_address[1] = MICROCHIP_OUI_B1;
+	mac_address[2] = MICROCHIP_OUI_B2;
+	mac_address[3] = CONFIG_ETH_ENC28J60_0_MAC3;
+	mac_address[4] = CONFIG_ETH_ENC28J60_0_MAC4;
+	mac_address[5] = CONFIG_ETH_ENC28J60_0_MAC5;
+	net_set_mac(mac_address, sizeof(mac_address));
+
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_MAADR0);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR0,
 			       CONFIG_ETH_ENC28J60_0_MAC5);
@@ -322,7 +330,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 static void eth_enc28j60_init_phy(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	struct eth_enc28j60_config *config = dev->config->config_info;
 
 	if (config->full_duplex) {
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON1,
@@ -337,7 +345,7 @@ static void eth_enc28j60_init_phy(struct device *dev)
 
 static int eth_enc28j60_init(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	struct spi_config spi_cfg;
 
@@ -404,6 +412,9 @@ static int eth_enc28j60_init(struct device *dev)
 	/* Enable Reception */
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1,
 				 ENC28J60_BIT_ECON1_RXEN);
+
+	/* Register tx callback into IP stack */
+	net_driver_ethernet_register_tx(eth_net_tx);
 
 	/* Initialize semaphores */
 	nano_sem_init(&context->tx_sem);
@@ -495,10 +506,10 @@ static int eth_enc28j60_rx(struct device *dev)
 	eth_enc28j60_read_reg(dev, ENC28J60_REG_ECON1, &econ1_bkup);
 
 	do {
-		struct net_buf *pkt_buf = NULL;
+		uint8_t *reception_buf = NULL;
 		uint16_t frm_len = 0;
-		struct net_buf *buf;
 		uint16_t next_packet;
+		struct net_buf *buf;
 		uint8_t np[2];
 
 		/* Read address for next packet */
@@ -520,50 +531,24 @@ static int eth_enc28j60_rx(struct device *dev)
 		/* Get the frame length from the rx status vector */
 		frm_len = (context->rx_rsv[1] << 8) | context->rx_rsv[0];
 
+		if (frm_len > (UIP_BUFSIZE)) {
+			goto done;
+		}
 		/* Get the frame from the buffer */
-		buf = net_nbuf_get_reserve_rx(0);
-		if (!buf) {
+		buf = ip_buf_get_reserve_rx(0);
+
+		reception_buf = net_buf_add(buf, frm_len);
+
+		if (reception_buf == NULL) {
+			frm_len = 0;
 			goto done;
 		}
 
-		do {
-			size_t frag_len;
-			int remaining_len;
-			size_t spi_frame_len;
-
-			/* Reserve a data frag to receive the frame */
-			pkt_buf = net_nbuf_get_reserve_data(0);
-			if (!pkt_buf) {
-				net_buf_unref(buf);
-				goto done;
-			}
-
-			net_buf_frag_insert(buf, pkt_buf);
-
-			/* Review the space available for the new frag */
-			frag_len = net_buf_tailroom(pkt_buf);
-
-			/* Calculate bytes that need to be written to a frag */
-			/* The remaining length is expected as a signed int */
-			remaining_len = (int)frm_len - (int)frag_len;
-			if (remaining_len > 0) {
-				spi_frame_len = frag_len;
-			} else {
-				spi_frame_len = frm_len;
-			}
-
-			eth_enc28j60_read_mem(dev, pkt_buf->data,
-					      spi_frame_len);
-
-			net_buf_add(pkt_buf, spi_frame_len);
-
-			/* One fragment has been written via SPI */
-			frm_len -= spi_frame_len;
-
-		} while (frm_len > 0);
+		eth_enc28j60_read_mem(dev, reception_buf, frm_len);
+		uip_len(buf) = frm_len;
 
 		/* Register the buffer frame with the IP stack */
-		net_recv_data(context->iface, buf);
+		net_driver_ethernet_recv(buf);
 done:
 		/* Free buffer memory and decrement rx counter */
 		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXRDPTL);
@@ -574,6 +559,11 @@ done:
 		eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON2,
 					 ENC28J60_BIT_ECON2_PKTDEC);
 
+		/* Call receive callback */
+		if (context->receive_callback) {
+			context->receive_callback(reception_buf, frm_len);
+		}
+
 		/* Check if there are frames to clean from the buffer */
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EPKTCNT, &counter);
 	} while (counter);
@@ -582,6 +572,14 @@ done:
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ECON1, econ1_bkup);
 
 	return 0;
+}
+
+void eth_enc28j60_reg_cb(struct device *dev,
+			 void (*cb)(uint8_t *buffer, uint16_t len))
+{
+	struct eth_enc28j60_runtime *context = dev->driver_data;
+
+	context->receive_callback = cb;
 }
 
 static void enc28j60_fiber_main(int arg1, int unused)
@@ -608,45 +606,17 @@ static void enc28j60_fiber_main(int arg1, int unused)
 	}
 }
 
-static int eth_net_tx(struct net_if *iface, struct net_buf *buf)
-{
-	uint16_t ll_len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
-	int ret;
-
-	ret = eth_enc28j60_tx(iface->dev, net_nbuf_ll(buf), ll_len);
-	if (ret == 0) {
-		net_nbuf_unref(buf);
-	}
-
-	return ret;
-}
-
-#ifdef CONFIG_ETH_ENC28J60_0
-
-static uint8_t mac_address_0[6] = { MICROCHIP_OUI_B0,
-				    MICROCHIP_OUI_B1,
-				    MICROCHIP_OUI_B2,
-				    CONFIG_ETH_ENC28J60_0_MAC3,
-				    CONFIG_ETH_ENC28J60_0_MAC4,
-				    CONFIG_ETH_ENC28J60_0_MAC5 };
-
-static void eth_enc28j60_iface_init_0(struct net_if *iface)
-{
-	struct device *dev = net_if_get_device(iface);
-	struct eth_enc28j60_runtime *context = dev->driver_data;
-
-	net_if_set_link_addr(iface, mac_address_0, sizeof(mac_address_0));
-	context->iface = iface;
-}
-
-static struct net_if_api api_funcs_0 = {
-	.init	= eth_enc28j60_iface_init_0,
-	.send	= eth_net_tx,
+static struct eth_driver_api api_funcs = {
+	.send = eth_enc28j60_tx,
+	.register_callback = eth_enc28j60_reg_cb,
 };
 
-static struct eth_enc28j60_runtime eth_enc28j60_0_runtime;
+#ifdef CONFIG_ETH_ENC28J60_0
+static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
+	.receive_callback = NULL,
+};
 
-static const struct eth_enc28j60_config eth_enc28j60_0_config = {
+static struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.gpio_port = CONFIG_ETH_ENC28J60_0_GPIO_PORT_NAME,
 	.gpio_pin = CONFIG_ETH_ENC28J60_0_GPIO_PIN,
 	.spi_port = CONFIG_ETH_ENC28J60_0_SPI_PORT_NAME,
@@ -655,15 +625,15 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.full_duplex = CONFIG_ETH_EN28J60_0_FULL_DUPLEX,
 };
 
-#ifdef CONFIG_NET_L2_ETHERNET
-#define _ETH_L2_LAYER ETHERNET_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-#endif
+DEVICE_AND_API_INIT(eth_enc28j60_0, CONFIG_ETH_ENC28J60_0_NAME,
+		    &eth_enc28j60_init, &eth_enc28j60_0_runtime,
+		    &eth_enc28j60_0_config, POST_KERNEL,
+		    CONFIG_ETH_ENC28J60_0_INIT_PRIORITY, &api_funcs);
 
-NET_DEVICE_INIT(enc28j60_0, CONFIG_ETH_ENC28J60_0_NAME,
-		eth_enc28j60_init, &eth_enc28j60_0_runtime,
-		&eth_enc28j60_0_config,
-		CONFIG_ETH_ENC28J60_0_INIT_PRIORITY,
-		&api_funcs_0, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 1500);
+static int eth_net_tx(struct net_buf *buf)
+{
+	return eth_enc28j60_tx(DEVICE_GET(eth_enc28j60_0),
+			       uip_buf(buf), uip_len(buf));
+}
 
 #endif /* CONFIG_ETH_ENC28J60_0 */
