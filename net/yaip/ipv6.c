@@ -567,6 +567,15 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 		.addr = (uint8_t *)hdr + 2,
 	};
 
+	/**
+	 * IEEE802154 lladdress is 8 bytes long, so it requires
+	 * 2 * 8 bytes - 2 - padding.
+	 * The formula above needs to be adjusted.
+	 */
+	if (net_nbuf_ll_src(buf)->len < lladdr.len) {
+		lladdr.len = net_nbuf_ll_src(buf)->len;
+	}
+
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_IPV6_BUF(buf)->src);
 
@@ -1421,6 +1430,15 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_buf *buf,
 		.len = 8 * hdr->len - 2,
 		.addr = (uint8_t *)hdr + 2,
 	};
+
+	/**
+	 * IEEE802154 lladdress is 8 bytes long, so it requires
+	 * 2 * 8 bytes - 2 - padding.
+	 * The formula above needs to be adjusted.
+	 */
+	if (net_nbuf_ll_src(buf)->len < lladdr.len) {
+		lladdr.len = net_nbuf_ll_src(buf)->len;
+	}
 
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_IPV6_BUF(buf)->src);
