@@ -340,12 +340,80 @@ static int pwm_qmsi_set_phase(struct device *dev, int access_op,
 	return -ENOTSUP;
 }
 
+/*
+ * Set the period and pulse width for a PWM pin.
+ *
+ * For example, with a nominal system clock of 32MHz, each count represents
+ * 31.25ns (e.g. period = 100 means the pulse is to repeat every 3125ns). The
+ * duration of one count depends on system clock. Refer to the hardware manual
+ * for more information.
+ *
+ * Parameters
+ * dev: Pointer to PWM device structure
+ * pwm: PWM port number to set
+ * period_cycles: Period (in timer count)
+ * pulse_cycles: Pulse width (in timer count).
+ *
+ * return 0, or negative errno code
+ */
+static int pwm_qmsi_pin_set(struct device *dev, uint32_t pwm,
+			    uint32_t period_cycles, uint32_t pulse_cycles)
+{
+	uint32_t high, low;
+
+	if (pwm >= CONFIG_PWM_QMSI_NUM_PORTS) {
+		return -EINVAL;
+	}
+
+	if (period_cycles == 0 || pulse_cycles > period_cycles) {
+		return -EINVAL;
+	}
+
+	high = pulse_cycles;
+	low = period_cycles - pulse_cycles;
+
+	/*
+	 * low must be more than zero. Otherwise, the PWM pin will be
+	 * turned off. Let's make sure low is always more than zero.
+	 */
+	if (low == 0) {
+		high--;
+		low = 1;
+	}
+
+	return __set_one_port(dev, QM_PWM_0, pwm, high, low);
+}
+
+/*
+ * Get the clock rate (cycles per second) for a PWM pin.
+ *
+ * Parameters
+ * dev: Pointer to PWM device structure
+ * pwm: PWM port number
+ * cycles: Pointer to the memory to store clock rate (cycles per second)
+ *
+ * return 0, or negative errno code
+ */
+static int pwm_qmsi_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+				       uint64_t *cycles)
+{
+	if (cycles == NULL) {
+		return -EINVAL;
+	}
+
+	*cycles = clk_sys_get_ticks_per_us() * USEC_PER_SEC;
+
+	return 0;
+}
+
 static const struct pwm_driver_api pwm_qmsi_drv_api_funcs = {
 	.config = pwm_qmsi_configure,
 	.set_values = pwm_qmsi_set_values,
 	.set_period = pwm_qmsi_set_period,
 	.set_duty_cycle = pwm_qmsi_set_duty_cycle,
-	.set_phase = pwm_qmsi_set_phase
+	.set_phase = pwm_qmsi_set_phase,
+	.pin_set = pwm_qmsi_pin_set,
+	.get_cycles_per_sec = pwm_qmsi_get_cycles_per_sec,
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
