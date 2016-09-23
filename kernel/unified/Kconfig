@@ -152,7 +152,7 @@ config  NANO_TIMERS
 config NUM_DYNAMIC_TIMERS
 	int
 	prompt "Number of timers available for dynamic allocation"
-	default 10
+	default 0
 	depends on NANO_TIMERS
 	help
 	Number of timers available for dynamic allocation via the
