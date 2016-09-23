@@ -177,6 +177,7 @@ struct bt_smp {
 	struct nano_delayed_work work;
 };
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
 static const uint8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
 	{ JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS, PASSKEY_INPUT },
@@ -187,6 +188,7 @@ static const uint8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
 	{ PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS,
 	  PASSKEY_ROLE },
 };
+#endif /* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
 static const uint8_t gen_method_sc[5 /* remote */][5 /* local */] = {
