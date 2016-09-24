@@ -44,8 +44,6 @@ config PINMUX_INIT_PRIORITY
 	  The device needs to be initialized after all the devices it
 	  uses.
 
-source "drivers/pinmux/galileo/Kconfig"
-
 source "drivers/pinmux/Kconfig.k64"
 
 source "drivers/pinmux/Kconfig.stm32"
