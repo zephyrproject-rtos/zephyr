@@ -17,17 +17,12 @@
  */
 
 #include <zephyr.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT printf
-#else
-#include <misc/printk.h>
-#define PRINT printk
-#endif
-
 #include <string.h>
 #include <spi.h>
+#include <misc/printk.h>
+
+
+
 #define SPI_DRV_NAME "SPI_0"
 
 #ifdef CONFIG_SPI_INTEL
@@ -50,10 +45,10 @@ unsigned char rbuf[16] = {};
 static void print_buf_hex(unsigned char *b, uint32_t len)
 {
 	for (; len > 0; len--) {
-		PRINT("0x%x ", *(b++));
+		printk("0x%x ", *(b++));
 	}
 
-	PRINT("\n");
+	printk("\n");
 }
 
 struct spi_config spi_conf = {
@@ -63,36 +58,36 @@ struct spi_config spi_conf = {
 
 static void _spi_show(struct spi_config *spi_conf)
 {
-	PRINT("SPI Configuration:\n");
-	PRINT("\tbits per word: %u\n", SPI_WORD_SIZE_GET(spi_conf->config));
-	PRINT("\tMode: %u\n", SPI_MODE(spi_conf->config));
-	PRINT("\tMax speed Hz: 0x%X\n", spi_conf->max_sys_freq);
+	printk("SPI Configuration:\n");
+	printk("\tbits per word: %u\n", SPI_WORD_SIZE_GET(spi_conf->config));
+	printk("\tMode: %u\n", SPI_MODE(spi_conf->config));
+	printk("\tMax speed Hz: 0x%X\n", spi_conf->max_sys_freq);
 }
 
 void main(void)
 {
 	struct device *spi;
 
-	PRINT("==== SPI Test Application ====\n");
+	printk("==== SPI Test Application ====\n");
 
 	spi = device_get_binding(SPI_DRV_NAME);
 
-	PRINT("Running...\n");
+	printk("Running...\n");
 
 	spi_configure(spi, &spi_conf);
 	spi_slave_select(spi, SPI_SLAVE);
 
 	_spi_show(&spi_conf);
 
-	PRINT("Writing...\n");
+	printk("Writing...\n");
 	spi_write(spi, (uint8_t *) wbuf, 6);
 
-	PRINT("SPI sent: %s\n", wbuf);
+	printk("SPI sent: %s\n", wbuf);
 	print_buf_hex(rbuf, 6);
 
 	strcpy(wbuf, "So what then?");
 	spi_transceive(spi, wbuf, 14, rbuf, 16);
 
-	PRINT("SPI transceived: %s\n", rbuf);
+	printk("SPI transceived: %s\n", rbuf);
 	print_buf_hex(rbuf, 6);
 }
