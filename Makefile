@@ -1096,6 +1096,8 @@ help:
 	@echo  '  qemugdb         - Same as 'qemu' but start a GDB server on port 1234'
 	@echo  '  flash		  - Build and flash an application'
 	@echo  '  debug		  - Build and debug an application using GDB'
+	@echo  '  ram_report	  - Build and create RAM usage report'
+	@echo  '  rom_report	  - Build and create ROM usage report'
 	@echo  ''
 	@echo  'Supported Boards:'
 	@echo  ''
