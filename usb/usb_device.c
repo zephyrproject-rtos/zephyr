@@ -352,8 +352,6 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 	int32_t cur_index = 0;
 	bool found = false;
 
-	__ASSERT_NO_MSG(usb_descriptors != NULL);
-
 	/*Avoid compiler warning until this is used for something*/
 	lang_id = lang_id;
 
@@ -414,8 +412,6 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 	uint8_t *p = NULL;
 	uint8_t cur_config = 0;
 	uint8_t cur_alt_setting = 0;
-
-	__ASSERT_NO_MSG(usb_descriptors != NULL);
 
 	if (config_index == 0) {
 		/* unconfigure device */
