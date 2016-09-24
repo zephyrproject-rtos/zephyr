@@ -48,7 +48,7 @@
 #include <misc/util.h>
 #include <init.h>
 #include <arch/x86/irq_controller.h>
-
+#include <inttypes.h>
 
 static inline uint32_t compute_ioregsel(unsigned int irq)
 {
@@ -78,7 +78,7 @@ static void _mvic_rte_set(unsigned int irq, uint32_t value)
 	uint32_t regsel;
 
 	__ASSERT(!(value & ~MVIC_IOWIN_SUPPORTED_BITS_MASK),
-		 "invalid IRQ flags %x for irq %d", value, irq);
+		 "invalid IRQ flags %" PRIx32 " for irq %d", value, irq);
 
 	regsel = compute_ioregsel(irq);
 
@@ -108,7 +108,7 @@ static void _mvic_rte_update(unsigned int irq, uint32_t value, uint32_t mask)
 	uint32_t regsel, old_value, updated_value;
 
 	__ASSERT(!(value & ~MVIC_IOWIN_SUPPORTED_BITS_MASK),
-		 "invalid IRQ flags %x for irq %d", value, irq);
+		 "invalid IRQ flags %" PRIx32 " for irq %d", value, irq);
 
 	regsel = compute_ioregsel(irq);
 
