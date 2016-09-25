@@ -172,9 +172,9 @@ static int gpio_nrf5_write(struct device *dev,
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (value) { /* 1 */
-			gpio->OUTSET |= BIT(pin);
+			gpio->OUTSET = BIT(pin);
 		} else { /* 0 */
-			gpio->OUTCLR |= BIT(pin);
+			gpio->OUTCLR = BIT(pin);
 		}
 	} else { /* GPIO_ACCESS_BY_PORT */
 		return -ENOTSUP;
