@@ -20,7 +20,9 @@
 #include <device.h>
 #include <init.h>
 
-#if defined(CONFIG_TI_CC2520_LEGACY) || defined(CONFIG_TI_CC2520)
+#if defined(CONFIG_TI_CC2520_LEGACY) || \
+	defined(CONFIG_TI_CC2520) || \
+	defined(CONFIG_TI_CC2520_RAW)
 
 #include <gpio.h>
 
@@ -56,4 +58,4 @@ struct device **cc2520_configure_gpios(void)
 	return cc2520_gpio_config;
 }
 
-#endif /* CONFIG_TI_CC2520_LEGACY || CONFIG_TI_CC2520 */
+#endif /* CONFIG_TI_CC2520_LEGACY || CONFIG_TI_CC2520 || CONFIG_TI_CC2520_RAW */

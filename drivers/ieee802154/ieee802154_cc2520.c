@@ -612,7 +612,14 @@ static void cc2520_rx(int arg, int unused2)
 			goto flush;
 		}
 
+#if defined(CONFIG_TI_CC2520_RAW)
+		/**
+		 * Reserve 1 byte for length
+		 */
+		pkt_buf = net_nbuf_get_reserve_data(1);
+#else
 		pkt_buf = net_nbuf_get_reserve_data(0);
+#endif
 		if (!pkt_buf) {
 			SYS_LOG_DBG("No pkt_buf available\n");
 			goto out;
@@ -634,6 +641,20 @@ static void cc2520_rx(int arg, int unused2)
 			SYS_LOG_DBG("ACK packet handled\n");
 			goto out;
 		}
+
+#if defined(CONFIG_TI_CC2520_RAW)
+		/**
+		 * add LQI needed for Linux
+		 */
+		{
+			uint8_t lqi = pkt_buf->data[pkt_len - 1] &
+							CC2520_FCS_CORRELATION;
+
+			net_buf_add_u8(pkt_buf, lqi);
+
+			SYS_LOG_DBG("lqi %u\n", lqi);
+		}
+#endif
 
 		SYS_LOG_DBG("Caught a packet (%u)\n", pkt_len - CC2520_FCS_LENGTH);
 
@@ -1038,8 +1059,15 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.tx		= cc2520_tx,
 };
 
+#if defined(CONFIG_TI_CC2520_RAW)
+DEVICE_AND_API_INIT(cc2520, CONFIG_TI_CC2520_DRV_NAME,
+		    cc2520_init, &cc2520_context_data, NULL,
+		    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &cc2520_radio_api);
+#else
 NET_DEVICE_INIT(cc2520, CONFIG_TI_CC2520_DRV_NAME,
 		cc2520_init, &cc2520_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&cc2520_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 127);
+#endif

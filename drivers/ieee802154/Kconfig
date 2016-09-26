@@ -46,7 +46,16 @@ config  TI_CC2520
 	select NET_L2_IEEE802154
 	default n
 
-if TI_CC2520_LEGACY || TI_CC2520
+config	TI_CC2520_RAW
+	bool "TI CC2520 Driver RAW channel"
+	default n
+	help
+	Enable TI_CC2520 driver with RAW channel
+
+	The CC2520 driver with RAW channel allows to export radio interface
+	over USB making an USB 802.15.4 dongle.
+
+if TI_CC2520_LEGACY || TI_CC2520 || TI_CC2520_RAW
 
 config SYS_LOG_TI_CC2520_LEVEL
 	int
