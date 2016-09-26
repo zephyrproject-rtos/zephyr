@@ -1017,6 +1017,32 @@ struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
 	return buf;
 }
 
+struct net_buf *net_nbuf_read_be16(struct net_buf *buf, uint16_t offset,
+				   uint16_t *pos, uint16_t *value)
+{
+	struct net_buf *retbuf;
+	uint8_t v16[2];
+
+	retbuf = net_nbuf_read(buf, offset, pos, sizeof(uint16_t), v16);
+
+	*value = v16[0] << 8 | v16[1];
+
+	return retbuf;
+}
+
+struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
+				   uint16_t *pos, uint32_t *value)
+{
+	struct net_buf *retbuf;
+	uint8_t v32[4];
+
+	retbuf = net_nbuf_read(buf, offset, pos, sizeof(uint32_t), v32);
+
+	*value = v32[0] << 24 | v32[1] << 16 | v32[2] << 8 | v32[3];
+
+	return retbuf;
+}
+
 #if NET_DEBUG
 void net_nbuf_print(void)
 {

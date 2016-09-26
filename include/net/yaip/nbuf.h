@@ -628,6 +628,36 @@ static inline struct net_buf *net_nbuf_skip(struct net_buf *buf,
 	return net_nbuf_read(buf, offset, pos, len, NULL);
 }
 
+/**
+ * @brief Get 16 bit big endian value from fragmented buffer
+ *
+ * @param buf Network buffer fragment.
+ * @param offset Offset of input buffer.
+ * @param pos Pointer to position of offset after reading 2 bytes,
+ *            this is with respect to return buffer(fragment).
+ * @param value Value is returned
+ *
+ * @return Pointer to fragment after successful read,
+ *         NULL otherwise (if pos is 0, NULL is not a failure case).
+ */
+struct net_buf *net_nbuf_read_be16(struct net_buf *buf, uint16_t offset,
+				   uint16_t *pos, uint16_t *value);
+
+/**
+ * @brief Get 32 bit big endian value from fragmented buffer
+ *
+ * @param buf Network buffer fragment.
+ * @param offset Offset of input buffer.
+ * @param pos Pointer to position of offset after reading 4 bytes,
+ *            this is with respect to return buffer(fragment).
+ * @param value Value is returned
+ *
+ * @return Pointer to fragment after successful read,
+ *         NULL otherwise (if pos is 0, NULL is not a failure case).
+ */
+struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
+				   uint16_t *pos, uint32_t *value);
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 /**
  * @brief Debug helper to print out the buffer allocations
