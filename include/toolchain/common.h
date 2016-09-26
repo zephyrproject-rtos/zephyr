@@ -112,3 +112,7 @@
 /* concatenate the values of the arguments into one */
 #define _DO_CONCAT(x, y) x ## y
 #define _CONCAT(x, y) _DO_CONCAT(x, y)
+
+/* compile-time assertion that makes the build fail */
+#define BUILD_ASSERT(EXPR) typedef char __build_assert_failure[(EXPR) ? 1 : -1]
+
