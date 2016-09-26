@@ -450,7 +450,14 @@ handle_idle:
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 	call	_power_save_idle_exit
 #else
+	/* Populate 'ticks' argument to _sys_power_save_idle_exit */
+#ifdef CONFIG_X86_IAMCU
+	movl	__tNANO_idle_OFFSET(%ecx), %eax
+#else
+	/* SYS V calling convention */
 	push	__tNANO_idle_OFFSET(%ecx)
+#endif
+	/* Zero out _nanokernel.idle */
 	movl	$0, __tNANO_idle_OFFSET(%ecx)
 
 	/*
@@ -461,7 +468,10 @@ handle_idle:
 	 */
 
 	call	_sys_power_save_idle_exit
+#ifndef CONFIG_X86_IAMCU
+	/* SYS V: discard 'ticks' argument passed on the stack */
 	add	$0x4, %esp
+#endif
 #endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE */
 	popl	%edx
 	popl	%eax
