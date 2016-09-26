@@ -134,6 +134,7 @@ enum zoap_response_code {
 	ZOAP_RESPONSE_CODE_INCOMPLETE = zoap_make_response_code(4, 8),
 	ZOAP_RESPONSE_CODE_PRECONDITION_FAILED = zoap_make_response_code(4, 12),
 	ZOAP_RESPONSE_CODE_REQUEST_TOO_LARGE = zoap_make_response_code(4, 13),
+	ZOAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT = zoap_make_response_code(4, 15),
 	ZOAP_RESPONSE_CODE_INTERNAL_ERROR = zoap_make_response_code(5, 0),
 	ZOAP_RESPONSE_CODE_NOT_IMPLEMENTED = zoap_make_response_code(5, 1),
 	ZOAP_RESPONSE_CODE_BAD_GATEWAY = zoap_make_response_code(5, 2),
