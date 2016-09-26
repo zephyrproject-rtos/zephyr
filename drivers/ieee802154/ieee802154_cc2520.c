@@ -723,9 +723,8 @@ static int cc2520_set_short_addr(struct device *dev, uint16_t short_addr)
 static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
-	uint8_t ext_addr[8];
 
-	if (!write_mem_ext_addr(&cc2520->spi, ext_addr)) {
+	if (!write_mem_ext_addr(&cc2520->spi, (void *)ieee_addr)) {
 		SYS_LOG_ERR(" FAILED\n");
 		return -EIO;
 	}
