@@ -1422,37 +1422,50 @@ int net_ipv6_start_rs(struct net_if *iface)
 	return net_ipv6_send_rs(iface);
 }
 
-static inline struct net_nbr *handle_ra_neighbor(struct net_buf *buf,
-					struct net_icmpv6_nd_opt_hdr *hdr)
-{
-	struct net_nbr *nbr;
-	struct net_linkaddr lladdr = {
-		.len = 8 * hdr->len - 2,
-		.addr = (uint8_t *)hdr + 2,
-	};
+static inline struct net_buf *handle_ra_neighbor(struct net_buf *buf,
+						 struct net_buf *frag,
+						 uint8_t len,
+						 uint16_t offset, uint16_t *pos,
+						 struct net_nbr **nbr)
 
-	/**
-	 * IEEE802154 lladdress is 8 bytes long, so it requires
-	 * 2 * 8 bytes - 2 - padding.
-	 * The formula above needs to be adjusted.
-	 */
+{
+	struct net_linkaddr lladdr;
+	uint8_t padding;
+
+	if (!nbr) {
+		return NULL;
+	}
+
 	if (net_nbuf_ll_src(buf)->len < lladdr.len) {
 		lladdr.len = net_nbuf_ll_src(buf)->len;
 	}
 
-	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
-			 &NET_IPV6_BUF(buf)->src);
+	frag = net_nbuf_read(frag, offset, pos, lladdr.len, lladdr.addr);
+	if (!frag && offset) {
+		return NULL;
+	}
 
-	NET_DBG("Neighbor lookup %p iface %p addr %s", nbr,
+	padding = len * 8 - 2 - lladdr.len;
+	if (padding) {
+		frag = net_nbuf_read(frag, *pos, pos, padding, NULL);
+		if (!frag && *pos) {
+			return NULL;
+		}
+	}
+
+	*nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
+			  &NET_IPV6_BUF(buf)->src);
+
+	NET_DBG("Neighbor lookup %p iface %p addr %s", *nbr,
 		net_nbuf_iface(buf),
 		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
 
-	if (!nbr) {
+	if (!*nbr) {
 		nbr_print();
 
-		nbr = nbr_add(buf, &NET_IPV6_BUF(buf)->src, &lladdr,
-			      true, NET_NBR_STALE);
-		if (!nbr) {
+		*nbr = nbr_add(buf, &NET_IPV6_BUF(buf)->src, &lladdr,
+			       true, NET_NBR_STALE);
+		if (!*nbr) {
 			NET_ERR("Could not add router neighbor %s [%s]",
 				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src),
 				net_sprint_ll_addr(lladdr.addr, lladdr.len));
@@ -1460,11 +1473,11 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_buf *buf,
 		}
 	}
 
-	if (net_nbr_link(nbr, net_nbuf_iface(buf), &lladdr) == -EALREADY) {
+	if (net_nbr_link(*nbr, net_nbuf_iface(buf), &lladdr) == -EALREADY) {
 		/* Update the lladdr if the node was already known */
 		struct net_linkaddr_storage *cached_lladdr;
 
-		cached_lladdr = net_nbr_get_lladdr(nbr->idx);
+		cached_lladdr = net_nbr_get_lladdr((*nbr)->idx);
 
 		if (memcmp(cached_lladdr->addr, lladdr.addr, lladdr.len)) {
 
@@ -1475,17 +1488,17 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_buf *buf,
 			cached_lladdr->len = lladdr.len;
 			memcpy(cached_lladdr->addr, lladdr.addr, lladdr.len);
 
-			net_nbr_data(nbr)->state = NET_NBR_STALE;
+			net_nbr_data(*nbr)->state = NET_NBR_STALE;
 		} else {
-			if (net_nbr_data(nbr)->state == NET_NBR_INCOMPLETE) {
-				net_nbr_data(nbr)->state = NET_NBR_STALE;
+			if (net_nbr_data(*nbr)->state == NET_NBR_INCOMPLETE) {
+				net_nbr_data(*nbr)->state = NET_NBR_STALE;
 			}
 		}
 	}
 
-	net_nbr_data(nbr)->is_router = true;
+	net_nbr_data(*nbr)->is_router = true;
 
-	return nbr;
+	return frag;
 }
 
 static inline void handle_prefix_onlink(struct net_buf *buf,
@@ -1626,38 +1639,55 @@ static inline void handle_prefix_autonomous(struct net_buf *buf,
 	}
 }
 
-static inline void handle_ra_prefix(struct net_buf *buf,
-				    struct net_icmpv6_nd_opt_hdr *hdr)
+static inline struct net_buf *handle_ra_prefix(struct net_buf *buf,
+					       struct net_buf *frag,
+					       uint8_t len,
+					       uint16_t offset, uint16_t *pos)
 {
-	struct net_icmpv6_nd_opt_prefix_info *prefix_info;
+	struct net_icmpv6_nd_opt_prefix_info prefix_info;
 
-	prefix_info = (struct net_icmpv6_nd_opt_prefix_info *)
-						((uint8_t *)hdr + 2);
+	prefix_info.type = NET_ICMPV6_ND_OPT_PREFIX_INFO;
+	prefix_info.len = len * 8;
 
-	if ((ntohl(prefix_info->valid_lifetime) >=
-	     ntohl(prefix_info->preferred_lifetime)) &&
-	    !net_is_ipv6_ll_addr(&prefix_info->prefix)) {
+	frag = net_nbuf_read(frag, offset, pos, 1, &prefix_info.prefix_len);
+	frag = net_nbuf_read(frag, *pos, pos, 1, &prefix_info.flags);
+	frag = net_nbuf_read_be32(frag, *pos, pos, &prefix_info.valid_lifetime);
+	frag = net_nbuf_read_be32(frag, *pos, pos,
+				  &prefix_info.preferred_lifetime);
+	/* Skip reserved bytes */
+	frag = net_nbuf_skip(frag, *pos, pos, 4);
+	frag = net_nbuf_read(frag, *pos, pos, 16, prefix_info.prefix.s6_addr);
+	if (!frag && *pos) {
+		return NULL;
+	}
 
-		if (prefix_info->flags & NET_ICMPV6_RA_FLAG_ONLINK) {
-			handle_prefix_onlink(buf, prefix_info);
+	if (prefix_info.valid_lifetime >= prefix_info.preferred_lifetime &&
+	    !net_is_ipv6_ll_addr(&prefix_info.prefix)) {
+
+		if (prefix_info.flags & NET_ICMPV6_RA_FLAG_ONLINK) {
+			handle_prefix_onlink(buf, &prefix_info);
 		}
 
-		if ((prefix_info->flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) &&
-		    prefix_info->valid_lifetime &&
-		    (prefix_info->prefix_len == NET_IPV6_DEFAULT_PREFIX_LEN)) {
-			handle_prefix_autonomous(buf, prefix_info);
+		if ((prefix_info.flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) &&
+		    prefix_info.valid_lifetime &&
+		    (prefix_info.prefix_len == NET_IPV6_DEFAULT_PREFIX_LEN)) {
+			handle_prefix_autonomous(buf, &prefix_info);
 		}
 	}
+
+	return frag;
 }
 
 static enum net_verdict handle_ra_input(struct net_buf *buf)
 {
 	uint16_t total_len = net_buf_frags_len(buf);
-	struct net_icmpv6_nd_opt_hdr *hdr;
-	struct net_if_router *router;
 	struct net_nbr *nbr = NULL;
-	uint8_t prev_opt_len = 0;
-	size_t left_len;
+	struct net_if_router *router;
+	struct net_buf *frag;
+	uint16_t offset;
+	uint8_t length;
+	uint8_t type;
+	uint32_t mtu;
 
 	dbg_addr_recv("Router Advertisement",
 		      &NET_IPV6_BUF(buf)->src,
@@ -1696,73 +1726,70 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			      ntohl(NET_ICMPV6_RA_BUF(buf)->retrans_timer));
 	}
 
-	net_nbuf_set_ext_opt_len(buf, sizeof(struct net_icmpv6_ra_hdr));
-	hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
+	frag = buf->frags;
+	offset = sizeof(struct net_ipv6_hdr) +
+		 sizeof(struct net_icmp_hdr) +
+		 sizeof(struct net_icmpv6_ra_hdr);
 
-	/* The parsing gets tricky if the ND struct is split
-	 * between two fragments. FIXME later.
-	 */
-	if (buf->frags->len < ((uint8_t *)hdr - buf->frags->data)) {
-		NET_DBG("RA struct split between fragments");
-		goto drop;
-	}
-
-	left_len = buf->frags->len - (sizeof(struct net_ipv6_hdr) +
-				      sizeof(struct net_icmp_hdr));
-
-	while (net_nbuf_ext_opt_len(buf) < left_len &&
-	       left_len < buf->frags->len) {
-
-		if (!hdr->len) {
-			break;
+	while (frag) {
+		frag = net_nbuf_read(frag, offset, &offset, 1, &type);
+		frag = net_nbuf_read(frag, offset, &offset, 1, &length);
+		if (!frag) {
+			goto drop;
 		}
 
-		switch (hdr->type) {
+		switch (type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
-			nbr = handle_ra_neighbor(buf, hdr);
+			frag = handle_ra_neighbor(buf, frag, length, offset,
+						  &offset, &nbr);
+			if (!frag && offset) {
+				goto drop;
+			}
 			break;
 		case NET_ICMPV6_ND_OPT_MTU:
-			net_if_set_mtu(net_nbuf_iface(buf),
-				ntohl(((struct net_icmpv6_nd_opt_mtu *)
-				       NET_ICMPV6_ND_OPT_HDR_BUF(buf))->mtu));
+			/* MTU has reserved 2 bytes, so skip it. */
+			frag = net_nbuf_skip(frag, offset, &offset, 2);
+			frag = net_nbuf_read_be32(frag, offset, &offset, &mtu);
+			if (!frag && offset) {
+				goto drop;
+			}
 
-			NET_ASSERT_INFO(ntohl(((struct net_icmpv6_nd_opt_mtu *)
-					NET_ICMPV6_ND_OPT_HDR_BUF(buf))->mtu) >
-					0xffff, "MTU %lu, max is %d",
-					ntohl(((struct net_icmpv6_nd_opt_mtu *)
-					NET_ICMPV6_ND_OPT_HDR_BUF(buf))->mtu),
-					0xffff);
+			net_if_set_mtu(net_nbuf_iface(buf), mtu);
+
+			if (mtu > 0xffff) {
+				/* TODO: discard packet? */
+				NET_ERR("MTU %lu, max is %d", mtu, 0xffff);
+			}
 			break;
 		case NET_ICMPV6_ND_OPT_PREFIX_INFO:
-			handle_ra_prefix(buf, hdr);
+			frag = handle_ra_prefix(buf, frag, length, offset,
+						&offset);
+			if (!frag && offset) {
+				goto drop;
+			}
 			break;
 #if defined(CONFIG_NET_IPV6_RA_RDNSS)
 		case NET_ICMPV6_ND_OPT_RDNSS:
 			NET_DBG("RDNSS option skipped");
-			break;
-#endif /* CONFIG_NET_IPV6_RA_RDNSS */
+#endif
 		default:
-			NET_DBG("Unknown ND option 0x%x", hdr->type);
+			NET_DBG("Unknown ND option 0x%x", type);
+			frag = net_nbuf_skip(frag, offset, &offset,
+					     length * 8 - 2);
+			if (!frag && offset) {
+				goto drop;
+			}
 			break;
 		}
-
-		prev_opt_len = net_nbuf_ext_opt_len(buf);
-
-		net_nbuf_set_ext_opt_len(buf, net_nbuf_ext_opt_len(buf) +
-					 (hdr->len << 3));
-
-		if (prev_opt_len == net_nbuf_ext_opt_len(buf)) {
-			NET_ERR("Corrupted RA message");
-			goto drop;
-		}
-
-		hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
 	}
 
 	router = net_if_ipv6_router_lookup(net_nbuf_iface(buf),
 					   &NET_IPV6_BUF(buf)->src);
 	if (router) {
 		if (!NET_ICMPV6_RA_BUF(buf)->router_lifetime) {
+			/*TODO: Start rs_timer on iface if no routers
+			 * at all available on iface.
+			 */
 			net_if_router_rm(router);
 		} else {
 			if (nbr) {
@@ -1778,7 +1805,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 				ntohs(NET_ICMPV6_RA_BUF(buf)->router_lifetime));
 	}
 
-	if (net_nbr_data(nbr)->pending) {
+	if (nbr && net_nbr_data(nbr)->pending) {
 		NET_DBG("Sending pending buf %p to %s",
 			net_nbr_data(nbr)->pending,
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(
@@ -1790,6 +1817,9 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 
 		nbr_clear_ns_pending(net_nbr_data(nbr));
 	}
+
+	/* Cancel the RS timer on iface */
+	nano_delayed_work_cancel(&net_nbuf_iface(buf)->rs_timer);
 
 	net_nbuf_unref(buf);
 	return NET_OK;
