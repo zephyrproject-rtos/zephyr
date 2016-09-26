@@ -312,7 +312,7 @@ static int coap_option_encode(struct option_context *context, uint16_t code,
 }
 
 int zoap_packet_init(struct zoap_packet *pkt,
-		      struct net_buf *buf)
+		     struct net_buf *buf)
 {
 	if (!buf) {
 		return -EINVAL;
@@ -332,7 +332,7 @@ int zoap_packet_init(struct zoap_packet *pkt,
 }
 
 int zoap_pending_init(struct zoap_pending *pending,
-		       const struct zoap_packet *request)
+		      const struct zoap_packet *request)
 {
 	memset(pending, 0, sizeof(*pending));
 	memcpy(&pending->request, request, sizeof(*request));
@@ -513,7 +513,7 @@ static bool uri_path_eq(const struct zoap_packet *pkt,
 }
 
 static zoap_method_t method_from_code(const struct zoap_resource *resource,
-				       uint8_t code)
+				      uint8_t code)
 {
 	switch (code) {
 	case ZOAP_METHOD_GET:
@@ -637,7 +637,7 @@ struct zoap_reply *zoap_response_received(
 }
 
 void zoap_reply_init(struct zoap_reply *reply,
-		      const struct zoap_packet *request)
+		     const struct zoap_packet *request)
 {
 	const uint8_t *token;
 	uint8_t tkl;
@@ -766,7 +766,7 @@ int zoap_packet_set_used(struct zoap_packet *pkt, uint16_t len)
 }
 
 int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
-		     const void *value, uint16_t len)
+		    const void *value, uint16_t len)
 {
 	struct net_buf *buf = pkt->buf;
 	struct option_context context = { .delta = 0,
@@ -841,7 +841,7 @@ int zoap_add_option_int(struct zoap_packet *pkt, uint16_t code,
 }
 
 int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,
-		       struct zoap_option *options, uint16_t veclen)
+		      struct zoap_option *options, uint16_t veclen)
 {
 	struct net_buf *buf = pkt->buf;
 	struct option_context context = { .delta = 0,
@@ -907,7 +907,7 @@ uint8_t coap_header_get_code(const struct zoap_packet *pkt)
 }
 
 const uint8_t *zoap_header_get_token(const struct zoap_packet *pkt,
-				      uint8_t *len)
+				     uint8_t *len)
 {
 	struct net_buf *buf = pkt->buf;
 	uint8_t tkl = coap_header_get_tkl(pkt);
@@ -992,7 +992,7 @@ void zoap_header_set_type(struct zoap_packet *pkt, uint8_t type)
 }
 
 int zoap_header_set_token(struct zoap_packet *pkt, const uint8_t *token,
-			   uint8_t tokenlen)
+			  uint8_t tokenlen)
 {
 	struct net_buf *buf = pkt->buf;
 	uint8_t *appdata = ip_buf_appdata(buf);
