@@ -234,115 +234,93 @@ ensures that the kernel's scheduling performance is not disrupted.
 Device Power Management Infrastructure
 **************************************
 
-The device power management infrastructure consists of interfaces to the
-Zephyr device model. These interfaces enable the PMA to suspend and resume
-operations on devices. Refer to :ref:`power_management_api` for detailed
-description of the APIs.
+The device power management infrastructure consists of interfaces to the Zephyr
+device model. These APIs send control commands to the device driver
+to update its power state or to get its current power state.
+Refer to  :ref:`power_management_api` for detailed descriptions of the APIs.
+
+Device Power Management States
+==============================
+The Zephyr OS power management subsystem defines four device states.
+These states are classified based on the degree of context that gets lost in
+those states, kind of operations done to save power and the impact on the device
+behavior due to the state transition. Device context include device hardware
+registers, clocks, memory etc.
+
+The four device power states:
+
+:code:`DEVICE_PM_ACTIVE_STATE`
+
+   Normal operation of the device. All device context is retained.
+
+:code:`DEVICE_PM_LOW_POWER_STATE`
+
+   Device context is preserved by the HW and need not be restored by the driver.
+
+:code:`DEVICE_PM_SUSPEND_STATE`
+
+   Most device context is lost by the hardware. Device drivers must save and
+   restore or reinitialize any context lost by the hardware.
+
+:code:`DEVICE_PM_OFF_STATE`
+
+   Power has been fully removed from the device. The device context is lost
+   when this state is entered. Need to reinitialize the device when powering
+   it back on.
 
 Device Power Management Operations
 ==================================
 
-Drivers can implement handlers to suspend and resume power management
-operations. The PMA performs the necessary power management operations on the
-devices by calling each of the suspend and resume handler functions of the
-drivers.
+Zephyr OS provides a generic API function to send control commands to the driver.
+Currently the supported control commands are:
 
-Operations Structure
---------------------
+* DEVICE_PM_SET_POWER_STATE
+* DEVICE_PM_GET_POWER_STATE
 
-.. code-block:: c
+In the future Zephyr OS may support additional control commands.
+Drivers can implement the control command handler to support the device driver's
+power management functionality.
+Each device driver defines:
 
-    struct device_pm_ops {
-            int (*suspend)(struct device *device, int pm_policy);
-            int (*resume)(struct device *device, int pm_policy);
-    };
+* The device's supported power states.
+* The device's supported transitions between power states.
+* The device's necessary operations to handle the transition between power states.
 
-This structure contains pointers to the :c:func:`suspend()` and
-:c:func:`resume()` handler functions. The device driver initializes those
-pointers with the corresponding handler functions implemented in the
-driver.
+The following are some examples of operations that the device driver may perform
+in transition between power states:
+
+* Save/Restore device states.
+* Gate/Un-gate clocks.
+* Gate/Un-gate power.
+* Mask/Un-mask interrupts.
+
+Device Model with Power Management Support
+==========================================
+
+Drivers initialize the devices using macros. See :ref:`device_drivers` for
+details on how these macros are used. Use the DEVICE_DEFINE macro to initialize
+drivers providing power management support via the control function.
+One of the macro parameters is the pointer to the device_control handler function.
 
 Default Initializer Function
 ----------------------------
 
 .. code-block:: c
 
-   int device_pm_nop(struct device *unused_device, int unused_policy);
+   int device_control_nop(struct device *unused_device, uint32_t unused_ctrl_command, void *unused_context);
 
-When the driver does not implement any operations, the driver can initialize
-the corresponding pointer with this function. This default initializer
-function does nothing and should be used instead of implementing a dummy
-function in the driver to avoid wasting code memory.
 
-.. _dev_suspend_handler:
+If the driver doesn't implement any power control operations, the driver can
+initialize the corresponding pointer with this default nop function. This
+default initializer function does nothing and should be used instead of
+implementing a dummy function to avoid wasting code memory in the driver.
 
-Device Suspend Operation Handler Function
------------------------------------------
 
-.. code-block:: c
+Device Power Management API
+===========================
 
-   int suspend(struct device *device, int pm_policy);
-
-The device driver implements this function to perform the suspend operations
-on the handled devices. The PMA calls the function and passes the power
-policy to execute. The device driver performs the operations necessary to
-handle the transitions associated with the policy the PMA specified. Here are
-some example operations that the device driver performs:
-
-* Save device states.
-
-* Gate clocks.
-
-* Turn off peripherals.
-
-This function returns 0 if successful. Otherwise, the function returns an
-appropriate negative `errno` value.
-
-.. _dev_resume_handler:
-
-Device Resume Operation Handler Function
-----------------------------------------
-
-.. code-block:: c
-
-   int resume(struct device *device, int pm_policy);
-
-The PMA calls this function to resume operations on the devices on which it
-had previously performed suspend operations. The device driver performs the
-necessary resume operations on its device, following the power management
-policy specified in the function's argument.
-
-The function returns 0 if successful. In all other cases it returns an
-appropriate negative :code:`errno` value.
-
-Device Model with Power Management Support
-==========================================
-
-Drivers initialize the devices using macros. See :ref:`device_drivers` for
-details on how these macros are used. Extended versions of the macros are
-provided for drivers with power management support. The macros take
-additional parameters that are necessary to initialize pointers to the power
-management related handler functions.
-
-These macros should be used:
-
-:code:`DEVICE_AND_API_INIT_PM`
-
-   Use this macro in place of the :code:`DEVICE_AND_API_INIT` macro.
-
-:code:`DEVICE_INIT_PM`
-
-   Use this macro in place of the :code:`DEVICE_INIT` macro.
-
-:code:`SYS_INIT_PM`
-
-   Use this macro in place of the :code:`SYS_INIT` macro.
-
-Device Power Management API for the PMA
-=======================================
-
-The PMA uses these APIs to perform suspend and resume operations on the
-devices.
+The SOC interface and application use these APIs to perform power management
+operations on the devices.
 
 Get Device List
 ---------------
@@ -364,25 +342,25 @@ on each device group.
    Ensure that the PMA does not alter the original list. Since the kernel
    uses the original list, it should remain unchanged.
 
-PMA Device Suspend API
+Device Set Power State
 ----------------------
 
 .. code-block:: c
 
-   int device_suspend(struct device *device, int pm_policy);
+   int device_set_power_state(struct device *device, uint32_t device_power_state);
 
-Calls the :c:func:`suspend()` handler function implemented by the device
-driver. See :ref:`dev_suspend_handler` for more information.
+Calls the :c:func:`device_control()` handler function implemented by the
+device driver with DEVICE_PM_SET_POWER_STATE command.
 
-PMA Device Resume API
----------------------
+Device Get Power State
+----------------------
 
 .. code-block:: c
 
-   int device_resume(struct device *device, int pm_policy);
+   int device_get_power_state(struct device *device, uint32_t * device_power_state);
 
-Calls the :c:func:`resume()` handler function implemented by the device
-driver. See :ref:`dev_resume_handler` for more information.
+Calls the :c:func:`device_control()` handler function implemented by the
+device driver with DEVICE_PM_GET_POWER_STATE command.
 
 Busy Status Indication
 ======================
@@ -528,7 +506,8 @@ Scenario 2
 The time allotted allows the suspension of some devices.
 
 The PMA scans through the devices that meet the criteria and calls the
-:c:func:`device_suspend()` function for each device.
+:c:func:`device_set_power_state()` function with DEVICE_PM_SUSPEND_STATE state
+for each device.
 
 After all devices are suspended properly, the PMA executes the following
 operations:
@@ -558,7 +537,8 @@ Scenario 3
 
 The time allotted is enough for all devices to be suspended.
 
-The PMA calls the :c:func:`device_suspend()` function for each device.
+The PMA calls the :c:func:`device_set_power_stated()` function with
+DEVICE_PM_SUSPEND_STATE state for each device.
 
 After all devices are suspended properly and the time allotted is enough for
 the :code:`SYS_PM_DEEP_SLEEP` policy, the PMA executes the following
