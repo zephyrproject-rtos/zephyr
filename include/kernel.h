@@ -479,7 +479,7 @@ struct k_work_q {
  * @brief Work flags.
  */
 enum {
-	K_WORK_STATE_IDLE,		/* Work item idle state */
+	NANO_WORK_STATE_PENDING,	/* Work item pending state */
 };
 
 /**
@@ -498,7 +498,7 @@ struct k_work {
 	{ \
 	._reserved = NULL, \
 	.handler = work_handler, \
-	.flags = { 1 } \
+	.flags = { 0 } \
 	}
 
 /**
@@ -506,7 +506,7 @@ struct k_work {
  */
 static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 {
-	atomic_set_bit(work->flags, K_WORK_STATE_IDLE);
+	atomic_clear_bit(work->flags, K_WORK_STATE_PENDING);
 	work->handler = handler;
 }
 
@@ -516,11 +516,19 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_work *work)
 {
-	if (!atomic_test_and_clear_bit(work->flags, K_WORK_STATE_IDLE)) {
+	if (atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
 		__ASSERT_NO_MSG(0);
 	} else {
 		k_fifo_put(&work_q->fifo, work);
 	}
+}
+
+/**
+ * @brief Check if work item is pending.
+ */
+static inline int k_work_pending(struct k_work *work)
+{
+	return atomic_test_bit(work->flags, NANO_WORK_STATE_PENDING);
 }
 
 /**

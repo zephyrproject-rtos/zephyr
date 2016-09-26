@@ -39,8 +39,9 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 
 		handler = work->handler;
 
-		/* Set state to idle so it can be resubmitted by handler */
-		if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_IDLE)) {
+		/* Reset pending state so it can be resubmitted by handler */
+		if (atomic_test_and_reset_bit(work->flags,
+					       K_WORK_STATE_PENDING)) {
 			handler(work);
 		}
 
@@ -122,7 +123,7 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 {
 	int key = irq_lock();
 
-	if (!atomic_test_bit(work->work.flags, K_WORK_STATE_IDLE)) {
+	if (k_work_pending(&work->work)) {
 		irq_unlock(key);
 		return -EINPROGRESS;
 	}
