@@ -228,9 +228,10 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	cmpl	$0, __tNANO_idle_OFFSET(%ecx)
-	jne	_HandleIdle
+	jne	handle_idle
 	/* fast path is !idle, in the pipeline */
-#endif
+#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+
 #ifdef CONFIG_DEBUG_INFO
 	jmp alreadyOnIntStack
 
@@ -266,49 +267,6 @@ alreadyOnIntStack:
 	/* Discard ISR argument */
 	addl	$0x4, %esp
 #endif
-	jmp interrupt_done
-
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-_HandleIdle:
-	pushl	%eax
-	pushl	%edx
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-	call _power_save_idle_exit
-#else
-	push	__tNANO_idle_OFFSET(%ecx)
-	movl	$0, __tNANO_idle_OFFSET(%ecx)
-
-	/*
-	 * Beware that a timer driver's _sys_power_save_idle_exit() implementation might
-	 * expect that interrupts are disabled when invoked.  This ensures that
-	 * the calculation and programming of the device for the next timer
-	 * deadline is not interrupted.
-	 */
-
-	call	_sys_power_save_idle_exit
-	add	$0x4, %esp
-#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE */
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_stop
-#endif
-	popl	%edx
-#ifdef CONFIG_X86_IAMCU
-	/* For Sys V case, we want EAX's value on the stack anyway as the arg
-	 * to the ISR, so don't pop it
-	 */
-	popl	%eax
-#endif
-#if CONFIG_NESTED_INTERRUPTS
-	sti			/* re-enable interrupts */
-#endif
-	call	*%edx
-#ifndef CONFIG_X86_IAMCU
-	/* Discard ISR argument */
-	addl	$0x4, %esp
-#endif
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
-
-interrupt_done:
 #ifdef CONFIG_NESTED_INTERRUPTS
 	cli			/* disable interrupts again */
 #endif
@@ -484,6 +442,31 @@ nestedInterrupt:
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	iret
 
+
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+handle_idle:
+	pushl	%eax
+	pushl	%edx
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
+	call	_power_save_idle_exit
+#else
+	push	__tNANO_idle_OFFSET(%ecx)
+	movl	$0, __tNANO_idle_OFFSET(%ecx)
+
+	/*
+	 * Beware that a timer driver's _sys_power_save_idle_exit() implementation might
+	 * expect that interrupts are disabled when invoked.  This ensures that
+	 * the calculation and programming of the device for the next timer
+	 * deadline is not interrupted.
+	 */
+
+	call	_sys_power_save_idle_exit
+	add	$0x4, %esp
+#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE */
+	popl	%edx
+	popl	%eax
+	jmp	alreadyOnIntStack
+#endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 /**
  *
