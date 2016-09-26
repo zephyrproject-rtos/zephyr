@@ -2739,11 +2739,13 @@ static void work_xtal_stop_calc(void *params)
 		work_xtal_retain(1);
 
 		if (ticker_id >= RADIO_TICKER_ID_ADV) {
+#if SCHED_ADVANCED
 			uint8_t ticker_id_current = ((uint32_t)params & 0xff);
 			struct connection *conn_curr = NULL;
+#endif
+			uint32_t ticks_prepare_to_start;
 			struct connection *conn = NULL;
 			struct shdr *hdr = NULL;
-			uint32_t ticks_prepare_to_start;
 
 			/* Select the role's scheduling header */
 			if (ticker_id >= RADIO_TICKER_ID_FIRST_CONNECTION) {
@@ -4059,6 +4061,10 @@ static inline void event_conn_update_st_init(struct connection *conn,
 		retval = work_schedule(work_sched_offset, 1);
 		BT_ASSERT(!retval);
 	}
+#else
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(work_sched_offset);
+	ARG_UNUSED(fp_work_select_or_use);
 #endif
 }
 
@@ -4124,6 +4130,9 @@ static inline void event_conn_update_st_req(struct connection *conn,
 		retval = work_schedule(work_sched_offset, 1);
 		BT_ASSERT(!retval);
 	}
+#else
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(work_sched_offset);
 #endif
 }
 
@@ -4209,7 +4218,9 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 
 			pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 
+#if SCHED_ADVANCED
 			fp_work_select_or_use = work_sched_win_offset_use;
+#endif
 			state = conn->llcp.connection_update.state;
 			if ((state == LLCP_CONN_STATE_RSP) &&
 			    (conn->role.master.role == 0)) {
@@ -4223,22 +4234,39 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 			switch (state) {
 			case LLCP_CONN_STATE_INITIATE:
 				if (conn->role.master.role == 0) {
+#if SCHED_ADVANCED
 					event_conn_update_st_init(conn,
 								  event_counter,
 								  pdu_ctrl_tx,
 								  ticks_at_expire,
 								  &gs_work_sched_offset,
 								  fp_work_select_or_use);
+#else
+					event_conn_update_st_init(conn,
+								  event_counter,
+								  pdu_ctrl_tx,
+								  ticks_at_expire,
+								  NULL,
+								  NULL);
+#endif
 					break;
 				}
 				/* fall thru if slave */
 
 			case LLCP_CONN_STATE_REQ:
+#if SCHED_ADVANCED
 				event_conn_update_st_req(conn,
 							 event_counter,
 							 pdu_ctrl_tx,
 							 ticks_at_expire,
 							 &gs_work_sched_offset);
+#else
+				event_conn_update_st_req(conn,
+							 event_counter,
+							 pdu_ctrl_tx,
+							 ticks_at_expire,
+							 NULL);
+#endif
 				break;
 
 			case LLCP_CONN_STATE_RSP:
