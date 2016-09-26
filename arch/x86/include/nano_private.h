@@ -833,7 +833,7 @@ static inline void nanoArchInit(void)
 	extern void *_dummy_spurious_interrupt;
 	extern void *_dummy_exception_vector_stub;
 	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
-	extern void _ExcEnt(void);
+	extern void _exception_enter(void);
 
 	_nanokernel.nested = 0;
 
@@ -852,7 +852,7 @@ static inline void nanoArchInit(void)
 	 * linker.
 	 */
 
-	_dummy_exception_vector_stub = &_ExcEnt;
+	_dummy_exception_vector_stub = &_exception_enter;
 
 
 }

@@ -43,8 +43,6 @@ Ensures interrupt and exception stubs are installed correctly.
 extern unsigned char _idt_base_address[];
 
 extern void *nanoIntStub;
-extern void *exc_divide_error_handlerStub;
-
 NANO_CPU_INT_REGISTER(nanoIntStub, -1, -1, TEST_SOFT_INT, 0);
 
 static volatile int    excHandlerExecuted;
@@ -97,6 +95,7 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
 	excHandlerExecuted = 1;    /* provide evidence that the handler executed */
 }
 _EXCEPTION_CONNECT_NOCODE(exc_divide_error_handler, IV_DIVIDE_ERROR);
+extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
 
 /**
  *
@@ -126,7 +125,7 @@ int nanoIdtStubTest(void)
 	/* Check for the exception stub */
 	pIdtEntry = (struct segment_descriptor *)
 		(_idt_base_address + (IV_DIVIDE_ERROR << 3));
-	offset = (uint32_t)(&exc_divide_error_handlerStub);
+	offset = (uint32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
 	if (DTE_OFFSET(pIdtEntry) != offset) {
 		TC_ERROR("Failed to find offset of exc stub (0x%x) at vector %d\n",
 			 offset, IV_DIVIDE_ERROR);

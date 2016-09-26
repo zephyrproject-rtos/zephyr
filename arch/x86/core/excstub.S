@@ -35,35 +35,9 @@
 
 	/* exports (internal APIs) */
 
-	GTEXT(_ExcEnt)
-	GTEXT(_ExcEntNoErr)
-	GTEXT(_ExcExit)
+	GTEXT(_exception_enter)
 
 	/* externs (internal APIs) */
-
-/**
- *
- * @brief Inform the kernel of an exception with no error code
- *
- * This is very similar to _ExcEnt() but the stack is first massaged
- * so that a dummy error code is inserted.
- */
-SECTION_FUNC(TEXT, _ExcEntNoErr)
-	/* Clear direction flag, auto-restored when the exception exits */
-	cld
-
-	/* Stash current value of ECX to free up the register */
-	pushl	%ecx
-
-	/* Save the return address of the stub into ECX */
-	movl	4(%esp), %ecx
-
-	/*
-	 * The spot for the error code contains useless data, but
-	 * we don't particularly care since it will be unused.
-	 */
-	jmp	_ExcEntSetupDone
-
 /**
  *
  * @brief Inform the kernel of an exception
@@ -72,7 +46,7 @@ SECTION_FUNC(TEXT, _ExcEntNoErr)
  * to inform the kernel of an exception.  This routine currently does
  * _not_ increment a thread/interrupt specific exception count.  Also,
  * execution of the exception handler occurs on the current stack, i.e.
- * _ExcEnt() does not switch to another stack.  The volatile integer
+ * this does not switch to another stack.  The volatile integer
  * registers are saved on the stack, and control is returned back to the
  * exception stub.
  *
@@ -86,22 +60,18 @@ SECTION_FUNC(TEXT, _ExcEntNoErr)
  *
  * C function prototype:
  *
- * void _ExcEnt (void);
+ * void _exception_enter(uint32_t error_code, void *handler)
  *
  */
 
-SECTION_FUNC(TEXT, _ExcEnt)
+SECTION_FUNC(TEXT, _exception_enter)
 
 	/*
 	 * The gen_idt tool creates an interrupt-gate descriptor for
 	 * all connections.  The processor will automatically clear the IF
 	 * bit in the EFLAGS register upon execution of the handler, thus
-	 * _ExcEnt() (and _IntEnt) need not issue an 'cli' as the first
-	 * instruction.
-	 */
-
-
-	/*
+	 * this does need not issue an 'cli' as the first instruction.
+	 *
 	 * Note that the processor has pushed both the EFLAGS register
 	 * and the linear return address (cs:eip) onto the stack prior
 	 * to invoking the handler specified in the IDT.
@@ -114,13 +84,9 @@ SECTION_FUNC(TEXT, _ExcEnt)
 
 
 	/*
-	 * Swap ecx and return address on the current stack;
-	 * this saves ecx on the stack without losing knowledge
-	 * of how to get back to the exception stub.
+	 * Swap ecx and handler function on the current stack;
 	 */
 	xchgl	%ecx, (%esp)
-
-_ExcEntSetupDone:
 
 	/* By the time we get here, the stack should look like this:
 	 * ESP -> ECX (excepting task)
@@ -130,7 +96,7 @@ _ExcEntSetupDone:
 	 *	  EFLAGS (excepting task)
 	 *	  ...
 	 *
-	 * ECX now contains the EIP of the calling exception stub */
+	 * ECX now contains the address of the handler function */
 
 	/*
 	 * Push the remaining volatile registers on the existing stack.
@@ -189,10 +155,8 @@ alreadyInException:
 
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
-
-
 	/*
-	 * restore interrupt enable state, then "return" back to exception stub
+	 * restore interrupt enable state, then call the handler
 	 *
 	 * interrupts are enabled only if they were allowed at the time
 	 * the exception was triggered -- this protects kernel level code
@@ -213,31 +177,10 @@ allDone:
 #else
 	pushl	%esp			/* push NANO_ESF * parameter */
 #endif
-	jmp	*%ecx			/* "return" back to stub */
-
-
-/**
- *
- * @brief Inform the kernel of an exception exit
- *
- * This function is called from the exception stub created by nanoCpuExcConnect()
- * to inform the kernel that the processing of an exception has
- * completed.  This routine restores the volatile integer registers and
- * then control is returned back to the interrupted thread or ISR.
- *
- * @return N/A
- *
- * C function prototype:
- *
- * void _ExcExit (void);
- *
- */
-
-SECTION_FUNC(TEXT, _ExcExit)
-	/* On entry, interrupts may or may not be enabled. */
+	call	*%ecx			/* call exception handler */
 
 #ifndef CONFIG_X86_IAMCU
-	popl %ecx      /* discard the NANO_ESF * parameter */
+	addl	$0x4, %esp
 #endif
 
 #if defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO)

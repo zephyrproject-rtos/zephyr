@@ -19,6 +19,26 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <toolchain/common.h>
+
+#define _EXCEPTION_INTLIST(vector) \
+	".pushsection .gnu.linkonce.intList.exc_" #vector "\n\t" \
+	".long 1f\n\t"				/* ISR_LIST.fnc */ \
+	".long -1\n\t"				/* ISR_LIST.irq */ \
+	".long -1\n\t"				/* ISR_LIST.priority */ \
+	".long " STRINGIFY(vector) "\n\t"	/* ISR_LIST.vec */ \
+	".long 0\n\t"				/* ISR_LIST.dpl */ \
+	".popsection\n\t" \
+
+/* Extra preprocessor indirection to ensure arguments get expanded before
+ * concatenation takes place
+ */
+#define __EXCEPTION_STUB_NAME(handler, vec) \
+	_ ## handler ## _vector_ ## vec ## _stub
+
+#define _EXCEPTION_STUB_NAME(handler, vec) \
+	__EXCEPTION_STUB_NAME(handler, vec) \
+
 /* Unfortunately, GCC extended asm doesn't work at toplevel so we need
  * to stringify stuff.
  *
@@ -30,25 +50,20 @@
  * handlers without having to #ifdef out previous instances such as in
  * arch/x86/core/fatal.c
  */
-
-#define _EXCEPTION_MACRO(handler, vector, enter_func) \
+#define __EXCEPTION_CONNECT(handler, vector, codepush) \
 	__asm__ ( \
-	".pushsection .gnu.linkonce.intList.exc_" #vector "\n\t" \
-	".long 1f\n\t"			/* ISR_LIST.fnc */ \
-	".long -1\n\t"			/* ISR_LIST.irq */ \
-	".long -1\n\t"			/* ISR_LIST.priority */ \
-	".long " #vector "\n\t"		/* ISR_LIST.vec */ \
-	".long 0\n\t"			/* ISR_LIST.dpl */ \
-	".popsection\n\t" \
-	".pushsection .gnu.linkonce.t.exc_" #vector "_stub, \"ax\"\n\t" \
-	".global " #handler "Stub\n\t" \
-	#handler "Stub:\n\t" \
+	_EXCEPTION_INTLIST(vector) \
+	".pushsection .gnu.linkonce.t.exc_" STRINGIFY(vector) \
+		  "_stub, \"ax\"\n\t" \
+	".global " STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) "\n\t" \
+	STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) ":\n\t" \
 	"1:\n\t" \
-	"call " #enter_func "\n\t" \
-	"call " #handler "\n\t" \
-	"jmp _ExcExit\n\t" \
+	codepush \
+	"push $" STRINGIFY(handler) "\n\t" \
+	"jmp _exception_enter\n\t" \
 	".popsection\n\t" \
 	)
+
 
 /**
  * @brief Connect an exception handler that doesn't expect error code
@@ -60,8 +75,7 @@
  * @param vector Vector index in the IDT
  */
 #define _EXCEPTION_CONNECT_NOCODE(handler, vector) \
-	_EXCEPTION_MACRO(handler, vector, _ExcEntNoErr)
-
+	__EXCEPTION_CONNECT(handler, vector, "push $0\n\t")
 
 /**
  * @brief Connect an exception handler that does expect error code
@@ -74,7 +88,7 @@
  * @param vector Vector index in the IDT
  */
 #define _EXCEPTION_CONNECT_CODE(handler, vector) \
-	_EXCEPTION_MACRO(handler, vector, _ExcEnt)
+	__EXCEPTION_CONNECT(handler, vector, "")
 
 #endif /* _ASMLANGUAGE */
 
