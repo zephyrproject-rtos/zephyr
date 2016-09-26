@@ -21,26 +21,20 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <misc/printk.h>
 #include <sections.h>
 
 #include <tc_util.h>
 
-#include <net/ethernet.h>
-#include <net/buf.h>
+#include <net/nbuf.h>
 #include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/net_context.h>
+#include <net/net_core.h>
+#include <net/ethernet.h>
 
-#include "net_private.h"
 #include "icmpv6.h"
 #include "ipv6.h"
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_IPV6)
-#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#else
-#define DBG(fmt, ...)
-#endif
+#define NET_DEBUG 1
+#include "net_private.h"
 
 static struct in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0, 0, 0, 0, 0x1 } } };
@@ -87,6 +81,28 @@ static const unsigned char icmpv6_ns_no_sllao[] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
 };
 
+/* */
+static const unsigned char icmpv6_ra[] = {
+/* IPv6 header starts here */
+0x60, 0x00, 0x00, 0x00, 0x00, 0x40, 0x3a, 0xff,
+0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x02, 0x60, 0x97, 0xff, 0xfe, 0x07, 0x69, 0xea,
+0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 RA header starts here */
+0x86, 0x00, 0x46, 0x25, 0x40, 0x00, 0x07, 0x08,
+0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+/* SLLAO */
+0x01, 0x01, 0x00, 0x60, 0x97, 0x07, 0x69, 0xea,
+/* MTU */
+0x05, 0x01, 0x00, 0x00, 0x00, 0x00, 0x05, 0xdc,
+/* Prefix info*/
+0x03, 0x04, 0x40, 0xc0, 0xFF, 0xFF, 0xFF, 0xFF,
+0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00,
+0x3f, 0xfe, 0x05, 0x07, 0x00, 0x00, 0x00, 0x01,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
 static bool test_failed;
 static struct nano_sem wait_data;
 
@@ -130,14 +146,51 @@ static void net_test_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr));
 }
 
+static struct net_buf *prepare_ra_message(void)
+{
+	struct net_buf *buf, *frag;
+	struct net_if *iface;
+	uint16_t reserve;
+
+	buf = net_nbuf_get_reserve_rx(0);
+
+	NET_ASSERT_INFO(buf, "Out of RX buffers");
+
+	iface = net_if_get_default();
+
+	reserve = net_if_get_ll_reserve(iface, NULL);
+
+	frag = net_nbuf_get_reserve_data(reserve);
+
+	net_buf_frag_add(buf, frag);
+
+	net_nbuf_set_ll_reserve(buf, reserve);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+
+	net_nbuf_ll_clear(buf);
+
+	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
+	       icmpv6_ra, sizeof(icmpv6_ra));
+
+	return buf;
+}
+
 static int tester_send(struct net_if *iface, struct net_buf *buf)
 {
+	struct net_icmp_hdr *icmp = NET_ICMP_BUF(buf);
+
 	if (!buf->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
 
-	/* TC_PRINT("Data to be sent, len %d\n", net_buf_frags_len(buf)); */
+	/* Reply with RA messge */
+	if (icmp->type == NET_ICMPV6_RS) {
+		net_nbuf_unref(buf);
+		buf = prepare_ra_message();
+	}
 
 	/* Feed this data back to us */
 	if (net_recv_data(iface, buf) < 0) {
@@ -399,6 +452,28 @@ static bool net_test_prefix_timeout_overflow(void)
 	return true;
 }
 
+static bool net_test_ra_message(void)
+{
+	struct in6_addr addr = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x2, 0x60,
+				     0x97, 0xff, 0xfe, 0x07, 0x69, 0xea } } };
+	struct in6_addr prefix = { { {0x3f, 0xfe, 0x05, 0x07, 0, 0, 0, 1,
+				     0, 0, 0, 0, 0, 0, 0, 0 } } };
+
+	if (!net_if_ipv6_prefix_lookup(net_if_get_default(), &prefix, 32)) {
+		TC_ERROR("Prefix %s should be here\n",
+			 net_sprint_ipv6_addr(&addr));
+		return false;
+	}
+
+	if (!net_if_ipv6_router_lookup(net_if_get_default(), &addr)) {
+		TC_ERROR("Router %s should be here\n",
+			 net_sprint_ipv6_addr(&addr));
+		return false;
+	}
+
+	return true;
+}
+
 static const struct {
 	const char *name;
 	bool (*func)(void);
@@ -412,6 +487,7 @@ static const struct {
 	{ "IPv6 send NS no options", net_test_send_ns_no_options },
 	{ "IPv6 prefix timeout", net_test_prefix_timeout },
 	{ "IPv6 prefix timeout overflow", net_test_prefix_timeout_overflow },
+	{ "IPv6 handle RA message", net_test_ra_message },
 };
 
 void main(void)
