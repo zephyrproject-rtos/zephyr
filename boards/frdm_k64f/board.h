@@ -19,4 +19,12 @@
 
 #include <soc.h>
 
+/* Push button switch 2 */
+#define SW2_GPIO_NAME	CONFIG_GPIO_K64_C_DEV_NAME
+#define SW2_GPIO_PIN	6
+
+/* Push button switch 3 */
+#define SW3_GPIO_NAME	CONFIG_GPIO_K64_A_DEV_NAME
+#define SW3_GPIO_PIN	4
+
 #endif /* __INC_BOARD_H */
