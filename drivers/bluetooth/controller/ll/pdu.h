@@ -20,30 +20,30 @@
 
 #include <toolchain.h>
 
-struct __packed pdu_adv_payload_adv_ind {
+struct pdu_adv_payload_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
 	uint8_t data[31];
-};
+} __packed;
 
-struct __packed pdu_adv_payload_direct_ind {
+struct pdu_adv_payload_direct_ind {
 	uint8_t adv_addr[BDADDR_SIZE];
 	uint8_t init_addr[BDADDR_SIZE];
-};
+} __packed;
 
-struct __packed pdu_adv_payload_scan_resp {
+struct pdu_adv_payload_scan_resp {
 	uint8_t addr[BDADDR_SIZE];
 	uint8_t data[31];
-};
+} __packed;
 
-struct __packed pdu_adv_payload_scan_req {
+struct pdu_adv_payload_scan_req {
 	uint8_t scan_addr[BDADDR_SIZE];
 	uint8_t adv_addr[BDADDR_SIZE];
-};
+} __packed;
 
-struct __packed pdu_adv_payload_connect_req {
+struct pdu_adv_payload_connect_req {
 	uint8_t init_addr[BDADDR_SIZE];
 	uint8_t adv_addr[BDADDR_SIZE];
-	struct __packed {
+	struct {
 		uint8_t access_addr[4];
 		uint8_t crc_init[3];
 		uint8_t win_size;
@@ -54,8 +54,8 @@ struct __packed pdu_adv_payload_connect_req {
 		uint8_t channel_map[5];
 		uint8_t hop:5;
 		uint8_t sca:3;
-	} lldata;
-};
+	} __packed lldata;
+} __packed;
 
 enum pdu_adv_type {
 	PDU_ADV_TYPE_ADV_IND = 0x00,
@@ -65,9 +65,9 @@ enum pdu_adv_type {
 	PDU_ADV_TYPE_SCAN_RESP = 0x04,
 	PDU_ADV_TYPE_CONNECT_REQ = 0x05,
 	PDU_ADV_TYPE_SCAN_IND = 0x06,
-};
+} __packed;
 
-struct __packed pdu_adv {
+struct pdu_adv {
 	uint8_t type:4;
 	uint8_t rfu0:2;
 	uint8_t tx_addr:1;
@@ -75,14 +75,14 @@ struct __packed pdu_adv {
 	uint8_t len:6;
 	uint8_t rfu1:2;
 	uint8_t nrf_radio_s1;
-	union __packed {
+	union {
 		struct pdu_adv_payload_adv_ind adv_ind;
 		struct pdu_adv_payload_direct_ind direct_ind;
 		struct pdu_adv_payload_scan_req scan_req;
 		struct pdu_adv_payload_scan_resp scan_resp;
 		struct pdu_adv_payload_connect_req connect_req;
-	} payload;
-};
+	} __packed payload;
+} __packed;
 
 enum pdu_data_llid {
 	PDU_DATA_LLID_RESV = 0x00,
@@ -116,59 +116,59 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_LENGTH_RSP = 0x15,
 };
 
-struct __packed pdu_data_llctrl_conn_update_req {
+struct pdu_data_llctrl_conn_update_req {
 	uint8_t win_size;
 	uint16_t win_offset;
 	uint16_t interval;
 	uint16_t latency;
 	uint16_t timeout;
 	uint16_t instant;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_channel_map_req {
+struct pdu_data_llctrl_channel_map_req {
 	uint8_t chm[5];
 	uint16_t instant;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_terminate_ind {
+struct pdu_data_llctrl_terminate_ind {
 	uint8_t error_code;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_enc_req {
+struct pdu_data_llctrl_enc_req {
 	uint8_t rand[8];
 	uint8_t ediv[2];
 	uint8_t skdm[8];
 	uint8_t ivm[4];
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_enc_rsp {
+struct pdu_data_llctrl_enc_rsp {
 	uint8_t skds[8];
 	uint8_t ivs[4];
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_unknown_rsp {
+struct pdu_data_llctrl_unknown_rsp {
 	uint8_t type;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_feature_req {
+struct pdu_data_llctrl_feature_req {
 	uint8_t features[8];
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_feature_rsp {
+struct pdu_data_llctrl_feature_rsp {
 	uint8_t features[8];
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_version_ind {
+struct pdu_data_llctrl_version_ind {
 	uint8_t version_number;
 	uint16_t company_id;
 	uint16_t sub_version_number;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_reject_ind {
+struct pdu_data_llctrl_reject_ind {
 	uint8_t error_code;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_conn_param_req {
+struct pdu_data_llctrl_conn_param_req {
 	uint16_t interval_min;
 	uint16_t interval_max;
 	uint16_t latency;
@@ -181,9 +181,9 @@ struct __packed pdu_data_llctrl_conn_param_req {
 	uint16_t offset3;
 	uint16_t offset4;
 	uint16_t offset5;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_conn_param_rsp {
+struct pdu_data_llctrl_conn_param_rsp {
 	uint16_t interval_min;
 	uint16_t interval_max;
 	uint16_t latency;
@@ -196,23 +196,23 @@ struct __packed pdu_data_llctrl_conn_param_rsp {
 	uint16_t offset3;
 	uint16_t offset4;
 	uint16_t offset5;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_reject_ind_ext {
+struct pdu_data_llctrl_reject_ind_ext {
 	uint8_t reject_opcode;
 	uint8_t error_code;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl_length_req_rsp {
+struct pdu_data_llctrl_length_req_rsp {
 	uint16_t max_rx_octets;
 	uint16_t max_rx_time;
 	uint16_t max_tx_octets;
 	uint16_t max_tx_time;
-};
+} __packed;
 
-struct __packed pdu_data_llctrl {
+struct pdu_data_llctrl {
 	uint8_t opcode;
-	union __packed {
+	union {
 		struct pdu_data_llctrl_conn_update_req conn_update_req;
 		struct pdu_data_llctrl_channel_map_req channel_map_req;
 		struct pdu_data_llctrl_terminate_ind terminate_ind;
@@ -229,16 +229,16 @@ struct __packed pdu_data_llctrl {
 		struct pdu_data_llctrl_reject_ind_ext reject_ind_ext;
 		struct pdu_data_llctrl_length_req_rsp length_req;
 		struct pdu_data_llctrl_length_req_rsp length_rsp;
-	} ctrldata;
-};
+	} __packed ctrldata;
+} __packed;
 
-struct __packed profile {
+struct profile {
 	uint32_t min;
 	uint32_t avg;
 	uint32_t max;
-};
+} __packed;
 
-struct __packed pdu_data {
+struct pdu_data {
 	uint8_t ll_id:2;
 	uint8_t nesn:1;
 	uint8_t sn:1;
@@ -249,12 +249,12 @@ struct __packed pdu_data {
 
 	uint8_t resv:8;
 
-	union __packed {
+	union {
 		uint8_t lldata[1];
 		struct pdu_data_llctrl llctrl;
 		uint8_t rssi;
 		struct profile profile;
-	} payload;
-};
+	} __packed payload;
+} __packed;
 
 #endif /* _PDU_H_ */

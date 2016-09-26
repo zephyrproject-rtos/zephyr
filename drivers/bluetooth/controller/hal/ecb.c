@@ -30,11 +30,11 @@ void ecb_encrypt(uint8_t const *const key_le,
 		 uint8_t * const cipher_text_le,
 		 uint8_t * const cipher_text_be)
 {
-	struct __packed {
+	struct {
 		uint8_t key[16];
 		uint8_t clear_text[16];
 		uint8_t cipher_text[16];
-	} ecb;
+	} __packed ecb;
 
 	mem_rcopy(&ecb.key[0], key_le, sizeof(ecb.key));
 	mem_rcopy(&ecb.clear_text[0], clear_text_le, sizeof(ecb.clear_text));
