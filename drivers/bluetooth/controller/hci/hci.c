@@ -40,8 +40,6 @@
 
 #include "debug.h"
 
-#define HCI_PACKET_SIZE_MAX 255
-
 /* opcode of the HCI command currently being processed. The opcode is stored
  * by hci_cmd_handle() and then used during the creation of cmd complete and
  * cmd status events to avoid passing it up the call chain.
