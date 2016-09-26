@@ -512,13 +512,23 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 
 /**
  * @brief Submit a work item to a workqueue.
+ *
+ * This procedure schedules a work item to be processed.
+ * In the case where the work item has already been submitted and is pending
+ * execution, calling this function will result in a no-op. In this case, the
+ * work item must not be modified externally (e.g. by the caller of this
+ * function), since that could cause the work item to be processed in a
+ * corrupted state.
+ *
+ * @param work_q to schedule the work item
+ * @param work work item
+ *
+ * @return N/A
  */
 static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_work *work)
 {
-	if (atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
-		__ASSERT_NO_MSG(0);
-	} else {
+	if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
 		k_fifo_put(&work_q->fifo, work);
 	}
 }
