@@ -23,11 +23,14 @@ extern "C" {
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 
-/* Constants identifying power policies */
-#define SYS_PM_NOT_HANDLED		0 /* No PM operations */
-#define SYS_PM_DEVICE_SUSPEND_ONLY	1 /* Only Devices are suspended */
-#define SYS_PM_LOW_POWER_STATE		2 /* Low Power State */
-#define SYS_PM_DEEP_SLEEP		4 /* Deep Sleep */
+/* Constants identifying power state categories */
+#define SYS_PM_ACTIVE_STATE		0 /* SOC and CPU are in active state */
+#define SYS_PM_LOW_POWER_STATE		1 /* CPU low power state */
+#define SYS_PM_DEEP_SLEEP		2 /* SOC low power state */
+
+#define SYS_PM_NOT_HANDLED		SYS_PM_ACTIVE_STATE
+
+extern unsigned char _sys_soc_notify_wake_event;
 
 /**
  * @brief Power Management Hook Interface
@@ -38,100 +41,74 @@ extern "C" {
  */
 
 /**
- * @brief Hook function to notify exit of a power policy
+ * @brief Function to disable wake event notification
+ *
+ * _sys_soc_resume() would be called from the ISR that caused exit from
+ * low power state. This function can be called at _sys_soc_suspend to disable
+ * this notification.
+ */
+static inline void _sys_soc_disable_wake_event_notification(void)
+{
+	_sys_soc_notify_wake_event = 0;
+}
+
+/**
+ * @brief Hook function to notify exit from low power state
  *
  * The purpose of this function is to notify exit from
- * deep sleep, low power state or device suspend only policy.
- * States altered at _sys_soc_suspend() should be restored in this
- * function. Exit from each policy requires different handling as
- * follows.
+ * low power states. The implementation of this function can vary
+ * depending on the soc specific boot flow.
  *
- * Deep sleep policy exit:
- * App should save information in SoC at _sys_soc_suspend() that
- * will persist across deep sleep. This function should check
- * that information to identify deep sleep recovery. In this case
- * this function will restore states and resume execution at the
- * point were system entered deep sleep. In this mode, this
- * function is called with the interrupt stack. It is important
- * that this function, before interrupts are enabled, restores
- * the stack that was in use when system went to deep sleep. This
- * is to avoid interfering interrupt handlers use of this stack.
+ * In the case of recovery from soc low power states like deep sleep,
+ * this function would switch cpu context to the execution point at the time
+ * system entered the soc low power state.
  *
- * Cold boot and deep sleep recovery happen at the same location.
- * Since kernel does not store deep sleep state, kernel will call
- * this function in both cases. It is the responsibility of the
- * power manager application to identify whether it is cold boot
- * or deep sleep exit using state information that it stores.
- * If the function detects cold boot, then it returns immediately.
+ * In boot flows where this function gets called even at cold boot, the
+ * function should return immediately.
  *
- * Low power state policy exit:
- * Low power state policy does a CPU idle wait using a low power
- * CPU idle state supported by the processor. This state is exited
- * by an interrupt.  In this case this function would be called
- * from the interrupt's ISR context.  Any state altered at
- * _sys_soc_suspend should be restored and the function should
- * return quickly.
+ * Wake event notification:
+ * This function would also be called from the ISR context of the event
+ * that caused exit from the low power state. This will be called immediately
+ * after interrupts are enabled. This is called to give a chance to do
+ * any operations before the kernel would switch tasks or processes nested
+ * interrupts. This is required for cpu low power states that would require
+ * interrupts to be enabled while entering low power states. e.g. C1 in x86. In
+ * those cases, the ISR would be invoked immediately after the event wakes up
+ * the CPU, before code following the CPU wait, gets a chance to execute. This
+ * can be ignored if no operation needs to be done at the wake event
+ * notification. Alternatively _sys_soc_disable_wake_event_notification() can
+ * be called in _sys_soc_suspend to disable this notification.
  *
- * Device suspend only policy exit:
- * This function will be called at the exit of kernel's CPU idle
- * wait if device suspend only policy was used. Resume operations
- * should be done for devices that were suspended in _sys_soc_suspend().
- * This function is called in ISR context and it should return quickly.
- *
- * @return will not return to caller in deep sleep recovery
+ * @note A dedicated function may be created in future to notify wake
+ * events, instead of overloading this one.
  */
 extern void _sys_soc_resume(void);
 
 /**
- * @brief Hook function to allow power policy entry
+ * @brief Hook function to allow entry to low power state
  *
  * This function is called by the kernel when it is about to idle.
  * It is passed the number of clock ticks that the kernel calculated
- * as available time to idle. This function should compare this time
- * with the wake latency of various power saving schemes that the
- * power manager application implements and use the one that fits best.
- * The power saving schemes can be mapped to following policies.
+ * as available time to idle.
  *
- * Deep sleep policy:
- * This turns off the core voltage rail and system clock, while RAM is
- * retained.  This would save most power but would also have a high wake
- * latency. CPU loses state so this function should save CPU states in RAM
- * and the location in this function where system should resume execution at
- * resume. It should re-enable interrupts and return SYS_PM_DEEP_SLEEP.
+ * The implementation of this function is dependent on the soc specific
+ * components and the various schemes they support. Some implementations
+ * may choose to do device PM operations in this function, while others
+ * would not need to, because they would have done it at other places.
  *
- * Low power state policy:
- * Peripherals can be turned off and clocks can be gated depending on
- * time available. Then switches to CPU low power state.  In this state
- * the CPU is still active but in a low power state and does not lose
- * any state. This state is exited by an interrupt from where the
- * _sys_soc_resume() will be called. To allow interrupts to occur,
- * this function should ensure that interrupts are atomically enabled
- * before going to the low power CPU idle state. The atomicity of enabling
- * interrupts before entering cpu idle wait is essential to avoid a task
- * switch away from the kernel idle task before the cpu idle wait is reached.
- * This function should return SYS_PM_LOW_POWER_STATE.
+ * Typically a wake event is set and the soc or cpu is put to any of the
+ * supported low power states. The wake event should be set to wake up
+ * the soc or cpu before the available idle time expires to avoid disrupting
+ * the kernel's scheduling.
  *
- * Device suspend only policy:
- * This function can take advantage of the kernel's idling logic
- * by turning off peripherals and clocks depending on available time.
- * It can return SYS_PM_DEVICE_SUSPEND_ONLY to indicate the kernel should
- * do its own CPU idle wait. After the Kernel's idle wait is completed or if
- * any interrupt occurs, the _sys_soc_resume() function will be called to
- * allow restoring of altered states. Interrupts should not be turned on in
- * this case.
- *
- * If this function decides to not do any operation then it should
- * return SYS_PM_NOT_HANDLED to let kernel do its normal idle processing.
- *
- * This function is entered with interrupts disabled.  It should
- * re-enable interrupts if it does CPU low power wait or deep sleep.
+ * This function is entered with interrupts disabled. It should
+ * re-enable interrupts if it had entered a low power state.
  *
  * @param ticks the upcoming kernel idle time
  *
- * @retval SYS_PM_NOT_HANDLED If No PM operations done.
- * @retval SYS_PM_DEVICE_SUSPEND_ONLY If only devices were suspended.
- * @retval SYS_PM_LOW_POWER_STATE If LPS policy entered.
- * @retval SYS_PM_DEEP_SLEEP If Deep Sleep policy entered.
+ * @retval SYS_PM_NOT_HANDLED If low power state was not entered.
+ * @retval SYS_PM_LOW_POWER_STATE If CPU low power state was entered.
+ * @retval SYS_PM_DEEP_SLEEP If SOC low power state was entered.
  */
 extern int _sys_soc_suspend(int32_t ticks);
 

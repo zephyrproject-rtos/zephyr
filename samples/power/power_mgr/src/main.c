@@ -22,8 +22,9 @@
 #include <string.h>
 #include <rtc.h>
 
-#define ALARM (RTC_ALARM_MINUTE / 12)
-#define SLEEPTICKS	SECONDS(5)
+#define SECONDS_TO_SLEEP	5
+#define ALARM		(RTC_ALARM_SECOND * (SECONDS_TO_SLEEP - 1))
+#define SLEEPTICKS	SECONDS(SECONDS_TO_SLEEP)
 #define GPIO_IN_PIN	16
 
 static void create_device_list(void);
@@ -103,13 +104,12 @@ static int check_pm_policy(int32_t ticks)
 	 *
 	 * 0 = no power saving operation
 	 * 1 = low power state
-	 * 2 = device suspend only
-	 * 3 = deep sleep
+	 * 2 = deep sleep
 	 *
 	 */
 
-	/* Set the max val to 2 if deep sleep is not supported */
-	policy = (policy > 3 ? 0 : policy);
+	/* Set the max val to 1 if deep sleep is not supported */
+	policy = (policy > 2 ? 0 : policy);
 
 	return policy++;
 }
@@ -120,16 +120,6 @@ static void low_power_state_exit(void)
 
 	end_time = rtc_read(rtc_dev);
 	printk("\nLow power state policy exit!\n");
-	printk("Total Elapsed From Suspend To Resume = %d RTC Cycles\n",
-			end_time - start_time);
-}
-
-static void device_suspend_only_exit(void)
-{
-	resume_devices(SYS_PM_DEVICE_SUSPEND_ONLY);
-
-	end_time = rtc_read(rtc_dev);
-	printk("\nDevice suspend only policy exit!\n");
 	printk("Total Elapsed From Suspend To Resume = %d RTC Cycles\n",
 			end_time - start_time);
 }
@@ -160,21 +150,12 @@ static int low_power_state_entry(int32_t ticks)
 	return SYS_PM_LOW_POWER_STATE;
 }
 
-static int device_suspend_only_entry(int32_t ticks)
-{
-	printk("Device suspend only policy entry!\n");
-
-	/* Turn off peripherals/clocks here */
-	suspend_devices(SYS_PM_DEVICE_SUSPEND_ONLY);
-
-	_sys_soc_set_power_policy(SYS_PM_DEVICE_SUSPEND_ONLY);
-
-	return SYS_PM_DEVICE_SUSPEND_ONLY;
-}
-
 static int deep_sleep_entry(int32_t ticks)
 {
 	printk("\n\nDeep sleep policy entry!\n");
+
+	/* Don't need wake event notification */
+	_sys_soc_disable_wake_event_notification();
 
 	/* Turn off peripherals/clocks here */
 	suspend_devices(SYS_PM_DEEP_SLEEP);
@@ -198,7 +179,7 @@ static int deep_sleep_entry(int32_t ticks)
 	deep_sleep_exit();
 
 	/* Clear current power policy */
-	_sys_soc_set_power_policy(SYS_PM_NOT_HANDLED);
+	_sys_soc_set_power_policy(SYS_PM_ACTIVE_STATE);
 
 	return SYS_PM_DEEP_SLEEP;
 }
@@ -211,15 +192,12 @@ int _sys_soc_suspend(int32_t ticks)
 	pm_state = check_pm_policy(ticks);
 
 	switch (pm_state) {
-	case 1: /* LPS */
+	case 1: /* CPU LPS */
 		start_time = rtc_read(rtc_dev);
+		enable_wake_event();
 		ret = low_power_state_entry(ticks);
 		break;
-	case 2: /* Device Suspend Only */
-		start_time = rtc_read(rtc_dev);
-		ret = device_suspend_only_entry(ticks);
-		break;
-	case 3: /* Deep Sleep */
+	case 2: /* Deep Sleep */
 		/*
 		 * if the policy manager chooses to go to deep sleep, we need to
 		 * check if any device is in the middle of a transaction
@@ -258,7 +236,7 @@ void _sys_soc_resume(void)
 	pm_policy = _sys_soc_get_power_policy();
 
 	/* Clear current power policy */
-	_sys_soc_set_power_policy(SYS_PM_NOT_HANDLED);
+	_sys_soc_set_power_policy(SYS_PM_ACTIVE_STATE);
 
 	switch (pm_policy) {
 	case SYS_PM_DEEP_SLEEP:
@@ -275,9 +253,6 @@ void _sys_soc_resume(void)
 		break;
 	case SYS_PM_LOW_POWER_STATE:
 		low_power_state_exit();
-		break;
-	case SYS_PM_DEVICE_SUSPEND_ONLY:
-		device_suspend_only_exit();
 		break;
 	default:
 		/* cold boot */
@@ -397,7 +372,7 @@ static int wait_gpio_low(void)
 
 void rtc_interrupt_fn(struct device *rtc_dev)
 {
-	printk("Deep Sleep wake up event handler\n");
+	printk("Wake up event handler\n");
 }
 
 static void setup_rtc(void)

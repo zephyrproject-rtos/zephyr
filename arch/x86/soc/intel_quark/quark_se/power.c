@@ -22,7 +22,6 @@
 
 #define _DEEP_SLEEP_MODE		0xDEEBDEEB
 #define _LOW_POWER_MODE			0xD02ED02E
-#define _DEVICE_SUSPEND_ONLY_MODE	0x1D1E1D1E
 
 /* GPS1 is reserved for PM use */
 #define _GPS1	0xb0800104
@@ -44,10 +43,7 @@ void _sys_soc_set_power_policy(uint32_t pm_policy)
 	case SYS_PM_LOW_POWER_STATE:
 		sys_write32(_LOW_POWER_MODE, _GPS1);
 		break;
-	case SYS_PM_DEVICE_SUSPEND_ONLY:
-		sys_write32(_DEVICE_SUSPEND_ONLY_MODE, _GPS1);
-		break;
-	case SYS_PM_NOT_HANDLED:
+	case SYS_PM_ACTIVE_STATE:
 		sys_write32(0, _GPS1);
 		break;
 	default:
@@ -67,10 +63,8 @@ int _sys_soc_get_power_policy(void)
 		return SYS_PM_DEEP_SLEEP;
 	case _LOW_POWER_MODE:
 		return SYS_PM_LOW_POWER_STATE;
-	case _DEVICE_SUSPEND_ONLY_MODE:
-		return SYS_PM_DEVICE_SUSPEND_ONLY;
 	}
 
-	return SYS_PM_NOT_HANDLED;
+	return SYS_PM_ACTIVE_STATE;
 }
 #endif

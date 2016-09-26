@@ -185,6 +185,9 @@ int _sys_soc_suspend(int32_t ticks)
 		 */
 		break;
 	case POWER_STATE_CPU_C2:
+		/* Don't need wake event notification */
+		_sys_soc_disable_wake_event_notification();
+
 		pm_operation = SYS_PM_LOW_POWER_STATE;
 		/* Any interrupt works for taking the core out of plain C2,
 		 * but if the ARC core is set to SS2, by going to C2 here
@@ -195,6 +198,9 @@ int _sys_soc_suspend(int32_t ticks)
 		power_cpu_c2();
 		break;
 	case POWER_STATE_CPU_C2LP:
+		/* Don't need wake event notification */
+		_sys_soc_disable_wake_event_notification();
+
 		pm_operation = SYS_PM_LOW_POWER_STATE;
 		/* Local APIC interrupts are not delivered in C2LP state so
 		 * we set up the RTC interrupt as 'wake event'.
@@ -203,10 +209,16 @@ int _sys_soc_suspend(int32_t ticks)
 		power_cpu_c2lp();
 		break;
 	case POWER_STATE_SOC_SLEEP:
+		/* Don't need wake event notification */
+		_sys_soc_disable_wake_event_notification();
+
 		pm_operation = SYS_PM_DEEP_SLEEP;
 		do_soc_sleep(0);
 		break;
 	case POWER_STATE_SOC_DEEP_SLEEP:
+		/* Don't need wake event notification */
+		_sys_soc_disable_wake_event_notification();
+
 		pm_operation = SYS_PM_DEEP_SLEEP;
 		do_soc_sleep(1);
 		break;
