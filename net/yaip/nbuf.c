@@ -1002,7 +1002,9 @@ struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
 {
 	uint16_t copy = 0;
 
-	NET_ASSERT(buf);
+	if (!buf) {
+		return NULL;
+	}
 
 	*pos = offset;
 
