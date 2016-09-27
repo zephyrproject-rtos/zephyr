@@ -559,9 +559,7 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_br *l2cap;
 
-	fchan = br_fixed_channels;
-
-	for (; fchan; fchan = fchan->_next) {
+	for (fchan = br_fixed_channels; fchan; fchan = fchan->_next) {
 		struct bt_l2cap_br_chan *ch;
 
 		if (!fchan->accept) {
