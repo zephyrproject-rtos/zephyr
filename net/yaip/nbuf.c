@@ -927,19 +927,13 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
  * the byte in current fragment then create new fragment and add it to
  * the buffer. Every next byte retrieve last fragment and start placing it.
  */
-static inline bool net_nbuf_write_byte(struct net_buf *buf, uint8_t value)
+static inline bool net_nbuf_write_byte(struct net_buf *buf, uint8_t value,
+				       struct net_buf **last)
 {
-	struct net_buf *frag;
-
-	frag = net_buf_frag_last(buf->frags);
-	if (!frag) {
-		return false;
-	}
+	struct net_buf *frag = *last;
 
 	if (net_buf_tailroom(frag)) {
-		frag->data[frag->len] = value;
-		net_buf_add(frag, 1);
-
+		net_buf_add_u8(frag, value);
 		return true;
 	}
 
@@ -949,10 +943,9 @@ static inline bool net_nbuf_write_byte(struct net_buf *buf, uint8_t value)
 	}
 
 	net_buf_frag_add(buf, frag);
+	net_buf_add_u8(frag, value);
 
-	frag->data[0] = value;
-
-	net_buf_add(frag, 1);
+	*last = frag;
 
 	return true;
 }
@@ -960,6 +953,7 @@ static inline bool net_nbuf_write_byte(struct net_buf *buf, uint8_t value)
 bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 {
 	uint16_t offset = 0;
+	struct net_buf *last;
 
 	NET_ASSERT(buf && data);
 
@@ -977,9 +971,10 @@ bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 			net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
 	}
 
-	while (len-- > 0) {
-		if (!net_nbuf_write_byte(buf, *(data + offset++))) {
+	last = net_buf_frag_last(buf);
 
+	while (len-- > 0) {
+		if (!net_nbuf_write_byte(buf, *(data + offset++), &last)) {
 			return false;
 		}
 	}
