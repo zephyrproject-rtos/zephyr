@@ -379,6 +379,13 @@ M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	arch/x86/soc/intel_quark/quark_x1000/
 
+RELEASE NOTES
+M:      Anas Nashif <anas.nashif@intel.com>
+M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
+M:	Kinder, David <david.b.kinder@intel.com>
+S:	Supported
+F:	release-notes.rst
+
 SANITYCHECK
 M:	Andrew Boie <andrew.p.boie@intel.com>
 S:	Supported
