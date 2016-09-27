@@ -96,7 +96,7 @@ enum {
 };
 
 static struct bt_l2cap_server *br_servers;
-static struct bt_l2cap_fixed_chan *br_channels;
+static struct bt_l2cap_fixed_chan *br_fixed_channels;
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 static struct nano_fifo br_sig;
@@ -559,7 +559,7 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_br *l2cap;
 
-	fchan = br_channels;
+	fchan = br_fixed_channels;
 
 	for (; fchan; fchan = fchan->_next) {
 		struct bt_l2cap_br_chan *ch;
@@ -1607,8 +1607,8 @@ void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 {
 	BT_DBG("CID 0x%04x", chan->cid);
 
-	chan->_next = br_channels;
-	br_channels = chan;
+	chan->_next = br_fixed_channels;
+	br_fixed_channels = chan;
 }
 
 void bt_l2cap_br_init(void)
