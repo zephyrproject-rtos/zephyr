@@ -31,6 +31,7 @@
 #include <net/net_context.h>
 
 #include "icmpv6.h"
+#include "nbr.h"
 
 #define NET_IPV6_ND_HOP_LIMIT 255
 #define NET_IPV6_ND_INFINITE_LIFETIME 0xFFFFFFFF
@@ -47,6 +48,40 @@ enum net_nbr_state {
 	NET_NBR_DELAY,
 	NET_NBR_PROBE,
 };
+
+/**
+ * @brief IPv6 neighbor information.
+ */
+struct net_ipv6_nbr_data {
+	/** Any pending buffer waiting ND to finish. */
+	struct net_buf *pending;
+
+	/** IPv6 address. */
+	struct in6_addr addr;
+
+	/** Reachable timer. */
+	struct nano_delayed_work reachable;
+
+	/** Neighbor Solicitation timer for DAD */
+	struct nano_delayed_work send_ns;
+
+	/** State of the neighbor discovery */
+	enum net_nbr_state state;
+
+	/** Link metric for the neighbor */
+	uint16_t link_metric;
+
+	/** How many times we have sent NS */
+	uint8_t ns_count;
+
+	/** Is the neighbor a router */
+	bool is_router;
+};
+
+static inline struct net_ipv6_nbr_data *net_ipv6_nbr_data(struct net_nbr *nbr)
+{
+	return (struct net_ipv6_nbr_data *)nbr->data;
+}
 
 #if defined(CONFIG_NET_IPV6_DAD)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr);

@@ -47,21 +47,15 @@
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
 
-struct net_nbr_data {
-	struct in6_addr addr;
-	struct nano_delayed_work reachable;
-	struct nano_delayed_work send_ns;
-	uint8_t ns_count;
-	bool is_router;
-	enum net_nbr_state state;
-	uint16_t link_metric;
-	struct net_buf *pending;
-};
+NET_NBR_POOL_INIT(net_neighbor_pool,
+		  CONFIG_NET_IPV6_MAX_NEIGHBORS,
+		  sizeof(struct net_ipv6_nbr_data),
+		  net_neighbor_data_remove,
+		  0);
 
-NET_NBR_POOL_INIT(net_neighbor_pool, CONFIG_NET_IPV6_MAX_NEIGHBORS,
-		  sizeof(struct net_nbr_data), net_neighbor_data_remove, 0);
-
-NET_NBR_TABLE_INIT(NET_NBR_GLOBAL, neighbor, net_neighbor_pool,
+NET_NBR_TABLE_INIT(NET_NBR_GLOBAL,
+		   neighbor,
+		   net_neighbor_pool,
 		   net_neighbor_table_clear);
 
 static inline bool net_is_solicited(struct net_buf *buf)
@@ -84,12 +78,7 @@ static inline struct net_nbr *get_nbr(int idx)
 	return &net_neighbor_pool[idx].nbr;
 }
 
-static inline struct net_nbr_data *net_nbr_data(struct net_nbr *nbr)
-{
-	return (struct net_nbr_data *)nbr->data;
-}
-
-static inline struct net_nbr *get_nbr_from_data(struct net_nbr_data *data)
+static inline struct net_nbr *get_nbr_from_data(struct net_ipv6_nbr_data *data)
 {
 	int i;
 
@@ -118,17 +107,17 @@ void nbr_print(void)
 
 		NET_DBG("[%d] %p %d/%d/%d/%d/%d pending %p iface %p idx %d "
 			"ll %s addr %s",
-			i, nbr, nbr->ref, net_nbr_data(nbr)->ns_count,
-			net_nbr_data(nbr)->is_router,
-			net_nbr_data(nbr)->state,
-			net_nbr_data(nbr)->link_metric,
-			net_nbr_data(nbr)->pending,
+			i, nbr, nbr->ref, net_ipv6_nbr_data(nbr)->ns_count,
+			net_ipv6_nbr_data(nbr)->is_router,
+			net_ipv6_nbr_data(nbr)->state,
+			net_ipv6_nbr_data(nbr)->link_metric,
+			net_ipv6_nbr_data(nbr)->pending,
 			nbr->iface, nbr->idx,
 			nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
 			net_sprint_ll_addr(
 				net_nbr_get_lladdr(nbr->idx)->addr,
 				net_nbr_get_lladdr(nbr->idx)->len),
-			net_sprint_ipv6_addr(&net_nbr_data(nbr)->addr));
+			net_sprint_ipv6_addr(&net_ipv6_nbr_data(nbr)->addr));
 	}
 }
 #else
@@ -149,7 +138,7 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 		}
 
 		if (nbr->iface == iface &&
-		    net_ipv6_addr_cmp(&net_nbr_data(nbr)->addr, addr)) {
+		    net_ipv6_addr_cmp(&net_ipv6_nbr_data(nbr)->addr, addr)) {
 			return nbr;
 		}
 	}
@@ -157,7 +146,7 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 	return NULL;
 }
 
-static inline void nbr_clear_ns_pending(struct net_nbr_data *data)
+static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 {
 	int ret;
 
@@ -175,9 +164,9 @@ static inline void nbr_free(struct net_nbr *nbr)
 {
 	NET_DBG("nbr %p", nbr);
 
-	nbr_clear_ns_pending(net_nbr_data(nbr));
+	nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 
-	nano_delayed_work_cancel(&net_nbr_data(nbr)->reachable);
+	nano_delayed_work_cancel(&net_ipv6_nbr_data(nbr)->reachable);
 
 	net_nbr_unref(nbr);
 }
@@ -199,9 +188,9 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 		return NULL;
 	}
 
-	net_ipaddr_copy(&net_nbr_data(nbr)->addr, addr);
-	net_nbr_data(nbr)->state = state;
-	net_nbr_data(nbr)->is_router = is_router;
+	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
+	net_ipv6_nbr_data(nbr)->state = state;
+	net_ipv6_nbr_data(nbr)->is_router = is_router;
 
 	NET_DBG("nbr %p state %d router %d IPv6 %s ll %s",
 		nbr, state, is_router,
@@ -234,9 +223,9 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 	nbr->idx = NET_NBR_LLADDR_UNKNOWN;
 	nbr->iface = iface;
 
-	net_ipaddr_copy(&net_nbr_data(nbr)->addr, addr);
-	net_nbr_data(nbr)->state = state;
-	net_nbr_data(nbr)->pending = NULL;
+	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
+	net_ipv6_nbr_data(nbr)->state = state;
+	net_ipv6_nbr_data(nbr)->pending = NULL;
 
 	NET_DBG("nbr %p iface %p state %d IPv6 %s",
 		nbr, iface, state, net_sprint_ipv6_addr(addr));
@@ -277,7 +266,7 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 		}
 
 		if (nbr->idx == idx) {
-			return &net_nbr_data(nbr)->addr;
+			return &net_ipv6_nbr_data(nbr)->addr;
 		}
 	}
 
@@ -436,9 +425,9 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 static void ns_reply_timeout(struct nano_work *work)
 {
 	/* We did not receive reply to a sent NS */
-	struct net_nbr_data *data = CONTAINER_OF(work,
-						 struct net_nbr_data,
-						 send_ns);
+	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
+						      struct net_ipv6_nbr_data,
+						      send_ns);
 
 	struct net_nbr *nbr = get_nbr_from_data(data);
 
@@ -617,10 +606,11 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 			cached_lladdr->len = lladdr.len;
 			memcpy(cached_lladdr->addr, lladdr.addr, lladdr.len);
 
-			net_nbr_data(nbr)->state = NET_NBR_STALE;
+			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
 		} else {
-			if (net_nbr_data(nbr)->state == NET_NBR_INCOMPLETE) {
-				net_nbr_data(nbr)->state = NET_NBR_STALE;
+			if (net_ipv6_nbr_data(nbr)->state ==
+							NET_NBR_INCOMPLETE) {
+				net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
 			}
 		}
 	}
@@ -864,9 +854,9 @@ drop:
 
 static void nd_reachable_timeout(struct nano_work *work)
 {
-	struct net_nbr_data *data = CONTAINER_OF(work,
-						 struct net_nbr_data,
-						 send_ns);
+	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
+						      struct net_ipv6_nbr_data,
+						      send_ns);
 
 	struct net_nbr *nbr = get_nbr_from_data(data);
 
@@ -947,10 +937,10 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 
 	NET_ASSERT_INFO(time, "Zero reachable timeout!");
 
-	nano_delayed_work_init(&net_nbr_data(nbr)->reachable,
+	nano_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
 			       nd_reachable_timeout);
 
-	nano_delayed_work_submit(&net_nbr_data(nbr)->reachable, time);
+	nano_delayed_work_submit(&net_ipv6_nbr_data(nbr)->reachable, time);
 }
 
 static inline bool handle_na_neighbor(struct net_buf *buf,
@@ -993,7 +983,7 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		}
 
 		NET_DBG("nbr %p state %d IPv6 %s ll %s",
-			nbr, net_nbr_data(nbr)->state,
+			nbr, net_ipv6_nbr_data(nbr)->state,
 			net_sprint_ipv6_addr(&NET_ICMPV6_NS_BUF(buf)->tgt),
 			net_sprint_ll_addr(lladdr.addr, lladdr.len));
 	}
@@ -1011,7 +1001,7 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 	}
 
 	/* Update the cached address if we do not yet known it */
-	if (net_nbr_data(nbr)->state == NET_NBR_INCOMPLETE) {
+	if (net_ipv6_nbr_data(nbr)->state == NET_NBR_INCOMPLETE) {
 		if (!tllao) {
 			return false;
 		}
@@ -1028,16 +1018,16 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		}
 
 		if (net_is_solicited(buf)) {
-			net_nbr_data(nbr)->state = NET_NBR_REACHABLE;
-			net_nbr_data(nbr)->ns_count = 0;
+			net_ipv6_nbr_data(nbr)->state = NET_NBR_REACHABLE;
+			net_ipv6_nbr_data(nbr)->ns_count = 0;
 
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
 							 nbr);
 		} else {
-			net_nbr_data(nbr)->state = NET_NBR_STALE;
+			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
 		}
 
-		net_nbr_data(nbr)->is_router = net_is_router(buf);
+		net_ipv6_nbr_data(nbr)->is_router = net_is_router(buf);
 
 		goto send_pending;
 	}
@@ -1046,8 +1036,8 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 	 * and we have a valid address in the cache.
 	 */
 	if (!net_is_override(buf) && lladdr_changed) {
-		if (net_nbr_data(nbr)->state == NET_NBR_REACHABLE) {
-			net_nbr_data(nbr)->state = NET_NBR_STALE;
+		if (net_ipv6_nbr_data(nbr)->state == NET_NBR_REACHABLE) {
+			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
 		}
 
 		return false;
@@ -1068,29 +1058,29 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		}
 
 		if (net_is_solicited(buf)) {
-			net_nbr_data(nbr)->state = NET_NBR_REACHABLE;
+			net_ipv6_nbr_data(nbr)->state = NET_NBR_REACHABLE;
 
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
 							 nbr);
 		} else {
 			if (lladdr_changed) {
-				net_nbr_data(nbr)->state = NET_NBR_STALE;
+				net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
 			}
 		}
 	}
 
-	if (net_nbr_data(nbr)->is_router && !net_is_router(buf)) {
+	if (net_ipv6_nbr_data(nbr)->is_router && !net_is_router(buf)) {
 		/* Update the routing if the peer is no longer
 		 * a router.
 		 */
 		/* FIXME */
 	}
 
-	net_nbr_data(nbr)->is_router = net_is_router(buf);
+	net_ipv6_nbr_data(nbr)->is_router = net_is_router(buf);
 
 send_pending:
 	/* Next send any pending messages to the peer. */
-	pending = net_nbr_data(nbr)->pending;
+	pending = net_ipv6_nbr_data(nbr)->pending;
 
 	if (pending) {
 		NET_DBG("Sending pending %p to %s lladdr %s", pending,
@@ -1100,9 +1090,9 @@ send_pending:
 
 		if (net_send_data(pending) < 0) {
 			net_nbuf_unref(pending);
-			nbr_clear_ns_pending(net_nbr_data(nbr));
+			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 		} else {
-			net_nbr_data(nbr)->pending = NULL;
+			net_ipv6_nbr_data(nbr)->pending = NULL;
 		}
 	}
 
@@ -1312,21 +1302,21 @@ int net_ipv6_send_ns(struct net_if *iface,
 	}
 
 	if (pending) {
-		if (!net_nbr_data(nbr)->pending) {
-			net_nbr_data(nbr)->pending = net_nbuf_ref(pending);
+		if (!net_ipv6_nbr_data(nbr)->pending) {
+			net_ipv6_nbr_data(nbr)->pending = net_nbuf_ref(pending);
 		} else {
 			NET_DBG("Buffer %p already pending for "
 				"operation. Discarding pending %p and buf %p",
-				net_nbr_data(nbr)->pending, pending, buf);
+				net_ipv6_nbr_data(nbr)->pending, pending, buf);
 			net_nbuf_unref(pending);
 			goto drop;
 		}
 
 		NET_DBG("Setting timeout %d for NS", NS_REPLY_TIMEOUT);
 
-		nano_delayed_work_init(&net_nbr_data(nbr)->send_ns,
+		nano_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
 				       ns_reply_timeout);
-		nano_delayed_work_submit(&net_nbr_data(nbr)->send_ns,
+		nano_delayed_work_submit(&net_ipv6_nbr_data(nbr)->send_ns,
 					 NS_REPLY_TIMEOUT);
 	}
 
@@ -1492,15 +1482,16 @@ static inline struct net_buf *handle_ra_neighbor(struct net_buf *buf,
 			cached_lladdr->len = lladdr.len;
 			memcpy(cached_lladdr->addr, lladdr.addr, lladdr.len);
 
-			net_nbr_data(*nbr)->state = NET_NBR_STALE;
+			net_ipv6_nbr_data(*nbr)->state = NET_NBR_STALE;
 		} else {
-			if (net_nbr_data(*nbr)->state == NET_NBR_INCOMPLETE) {
-				net_nbr_data(*nbr)->state = NET_NBR_STALE;
+			if (net_ipv6_nbr_data(*nbr)->state ==
+							NET_NBR_INCOMPLETE) {
+				net_ipv6_nbr_data(*nbr)->state = NET_NBR_STALE;
 			}
 		}
 	}
 
-	net_nbr_data(*nbr)->is_router = true;
+	net_ipv6_nbr_data(*nbr)->is_router = true;
 
 	return frag;
 }
@@ -1861,7 +1852,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			net_if_router_rm(router);
 		} else {
 			if (nbr) {
-				net_nbr_data(nbr)->is_router = true;
+				net_ipv6_nbr_data(nbr)->is_router = true;
 			}
 
 			submit_work(&router->lifetime, (uint32_t)
@@ -1873,17 +1864,17 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 				ntohs(NET_ICMPV6_RA_BUF(buf)->router_lifetime));
 	}
 
-	if (nbr && net_nbr_data(nbr)->pending) {
+	if (nbr && net_ipv6_nbr_data(nbr)->pending) {
 		NET_DBG("Sending pending buf %p to %s",
-			net_nbr_data(nbr)->pending,
+			net_ipv6_nbr_data(nbr)->pending,
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(
-					net_nbr_data(nbr)->pending)->dst));
+					net_ipv6_nbr_data(nbr)->pending)->dst));
 
-		if (net_send_data(net_nbr_data(nbr)->pending) < 0) {
-			net_nbuf_unref(net_nbr_data(nbr)->pending);
+		if (net_send_data(net_ipv6_nbr_data(nbr)->pending) < 0) {
+			net_nbuf_unref(net_ipv6_nbr_data(nbr)->pending);
 		}
 
-		nbr_clear_ns_pending(net_nbr_data(nbr));
+		nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 	}
 
 	/* Cancel the RS timer on iface */
