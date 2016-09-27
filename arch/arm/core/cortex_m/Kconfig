@@ -91,6 +91,14 @@ config CPU_CORTEX_M4
 	help
 	This option signifies the use of a Cortex-M4 CPU
 
+config CPU_CORTEX_M7
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	select ISA_THUMB2
+	help
+	This option signifies the use of a Cortex-M7 CPU
+
 menu "ARM Cortex-M options"
 	depends on CPU_CORTEX_M
 
@@ -181,8 +189,8 @@ config FLASH_BASE_ADDRESS
 	avoid modifying it via the menu configuration.
 endmenu
 
-menu "ARM Cortex-M0/M0+/M3/M4 options"
-	depends on CPU_CORTEX_M0_M0PLUS || CPU_CORTEX_M3_M4
+menu "ARM Cortex-M0/M0+/M3/M4/M7 options"
+	depends on CPU_CORTEX_M0_M0PLUS || CPU_CORTEX_M3_M4 || CPU_CORTEX_M7
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"

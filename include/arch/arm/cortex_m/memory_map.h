@@ -57,32 +57,53 @@
 
 /* 0xe0000000 -> 0xffffffff: varies by processor (see below) */
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS) || defined(CONFIG_CPU_CORTEX_M3_M4)
 /* 0xe0000000 -> 0xe00fffff: private peripheral bus */
-
 /* 0xe0000000 -> 0xe003ffff: internal [256KB] */
 #define _PPB_INT_BASE_ADDR        0xE0000000
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#define _PPB_INT_RSVD_0           0xE0000000
+#define _PPB_INT_DWT              0xE0001000
+#define _PPB_INT_BPU              0xE0002000
+#define _PPB_INT_RSVD_1           0xE0003000
+#define _PPB_INT_SCS              0xE000E000
+#define _PPB_INT_RSVD_2           0xE000F000
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 #define _PPB_INT_ITM              0xE0000000
 #define _PPB_INT_DWT              0xE0001000
 #define _PPB_INT_FPB              0xE0002000
 #define _PPB_INT_RSVD_1           0xE0003000
 #define _PPB_INT_SCS              0xE000E000
 #define _PPB_INT_RSVD_2           0xE000F000
+#else
+#error Unknown CPU
+#endif
 #define _PPB_INT_END_ADDR         0xE003FFFF
 
+/* 0xe0000000 -> 0xe00fffff: private peripheral bus */
 /* 0xe0040000 -> 0xe00fffff: external [768K] */
 #define _PPB_EXT_BASE_ADDR        0xE0040000
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4)
 #define _PPB_EXT_TPIU             0xE0040000
 #define _PPB_EXT_ETM              0xE0041000
 #define _PPB_EXT_PPB              0xE0042000
 #define _PPB_EXT_ROM_TABLE        0xE00FF000
 #define _PPB_EXT_END_ADDR         0xE00FFFFF
+#elif defined(CONFIG_CPU_CORTEX_M7)
+#define _PPB_EXT_BASE_ADDR        0xE0040000
+#define _PPB_EXT_RSVD_TPIU        0xE0040000
+#define _PPB_EXT_ETM              0xE0041000
+#define _PPB_EXT_CTI              0xE0042000
+#define _PPB_EXT_PPB              0xE0043000
+#define _PPB_EXT_PROC_ROM_TABLE   0xE00FE000
+#define _PPB_EXT_PPB_ROM_TABLE    0xE00FF000
+#else
+#error Unknown CPU
+#endif
+#define _PPB_EXT_END_ADDR         0xE00FFFFF
 
 /* 0xe0100000 -> 0xffffffff: vendor-specific [0.5GB-1MB or 511MB]  */
 #define _VENDOR_BASE_ADDR         0xE0100000
 #define _VENDOR_END_ADDR          0xFFFFFFFF
-#else
-#error Unknown CPU
-#endif
 
 #endif /* _CORTEXM_MEMORY_MAP__H_ */
