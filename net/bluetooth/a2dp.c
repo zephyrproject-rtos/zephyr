@@ -31,9 +31,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
-#include "hci_core.h"
-#include "conn_internal.h"
-#include "l2cap_internal.h"
+
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
 
