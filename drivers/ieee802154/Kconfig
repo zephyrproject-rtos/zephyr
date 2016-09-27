@@ -48,6 +48,7 @@ config  TI_CC2520
 
 config	TI_CC2520_RAW
 	bool "TI CC2520 Driver RAW channel"
+	select NET_L2_RAW_CHANNEL
 	default n
 	help
 	Enable TI_CC2520 driver with RAW channel

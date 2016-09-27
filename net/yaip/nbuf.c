@@ -56,7 +56,7 @@
 #endif /* UDP */
 #endif /* TCP */
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_L2_RAW_CHANNEL)
 #define IP_PROTO_LEN NET_IPV6H_LEN
 #else
 #if defined(CONFIG_NET_IPV4)

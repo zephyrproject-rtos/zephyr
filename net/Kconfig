@@ -80,7 +80,6 @@ source "net/ip/Kconfig"
 
 source "net/yaip/Kconfig"
 
-
 endif
 
 endmenu
