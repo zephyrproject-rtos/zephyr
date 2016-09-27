@@ -1,0 +1,8 @@
+# Kconfig - Atmel SAM MCU family configuration options
+#
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Select SoC Part No. and configuration options
+source "arch/arm/soc/atmel_sam/*/Kconfig.soc"

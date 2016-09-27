@@ -1,0 +1,17 @@
+# Kconfig - Atmel SAM MCU family default configuration options
+#
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_SAM
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+config SOC_FAMILY
+	string
+	default atmel_sam
+	depends on SOC_FAMILY_SAM
+
+source "arch/arm/soc/atmel_sam/*/Kconfig.defconfig.series"

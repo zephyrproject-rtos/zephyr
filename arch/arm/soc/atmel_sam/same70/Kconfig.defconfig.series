@@ -1,0 +1,67 @@
+# Kconfig - Atmel SAM E70 MCU series configuration options
+#
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_SAME70
+
+config SOC_SERIES
+	string
+	default same70
+
+config SOC_PART_NUMBER
+	string
+	default same70q21 if SOC_PART_NUMBER_SAME70Q21
+	default same70q20 if SOC_PART_NUMBER_SAME70Q20
+	default same70q19 if SOC_PART_NUMBER_SAME70Q19
+	default same70n21 if SOC_PART_NUMBER_SAME70N21
+	default same70n20 if SOC_PART_NUMBER_SAME70N20
+	default same70n19 if SOC_PART_NUMBER_SAME70N19
+	default same70j21 if SOC_PART_NUMBER_SAME70J21
+	default same70j20 if SOC_PART_NUMBER_SAME70J20
+	default same70j19 if SOC_PART_NUMBER_SAME70J19
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 3
+
+#
+# SAM E70 family has in total 71 peripherals capable of generating interrupts
+# (not all Peripheral Identifiers are used).
+#
+config NUM_IRQS
+	int
+	default 71
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 300000000
+
+#
+# SRAM size and base address
+#
+config SRAM_BASE_ADDRESS
+	hex
+	default 0x20400000
+
+config SRAM_SIZE
+	int
+	default 256 if SOC_PART_NUMBER_SAME70Q19 || SOC_PART_NUMBER_SAME70N19 || SOC_PART_NUMBER_SAME70J19
+	default 384 if SOC_PART_NUMBER_SAME70Q20 || SOC_PART_NUMBER_SAME70N20 || SOC_PART_NUMBER_SAME70J20
+	default 384 if SOC_PART_NUMBER_SAME70Q21 || SOC_PART_NUMBER_SAME70N21 || SOC_PART_NUMBER_SAME70J21
+
+#
+# Flash size and base address
+#
+config FLASH_BASE_ADDRESS
+	hex
+	default 0x00400000
+
+config FLASH_SIZE
+	int
+	default  512 if SOC_PART_NUMBER_SAME70Q19 || SOC_PART_NUMBER_SAME70N19 || SOC_PART_NUMBER_SAME70J19
+	default 1024 if SOC_PART_NUMBER_SAME70Q20 || SOC_PART_NUMBER_SAME70N20 || SOC_PART_NUMBER_SAME70J20
+	default 2048 if SOC_PART_NUMBER_SAME70Q21 || SOC_PART_NUMBER_SAME70N21 || SOC_PART_NUMBER_SAME70J21
+
+endif # SOC_SERIES_SAME70
