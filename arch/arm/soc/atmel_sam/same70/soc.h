@@ -39,6 +39,9 @@
   #error Library does not support the specified device.
 #endif
 
+#include "../common/soc_pmc.h"
+#include "../common/soc_gpio.h"
+
 /******  Cortex-M7 Processor Exceptions Numbers ******************************/
 
 /**  2 Non Maskable Interrupt                */

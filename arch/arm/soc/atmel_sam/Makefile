@@ -5,3 +5,4 @@
 #
 
 obj-y += $(SOC_SERIES)/
+obj-y += common/
