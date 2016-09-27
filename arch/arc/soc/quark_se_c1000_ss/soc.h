@@ -114,7 +114,6 @@
 /*
  * I2C
  */
-#define I2C_QUARK_SE_SS_0_BASE_ADDR			0x80012000
 #define I2C_SS_0_ERR_VECTOR				22
 #define I2C_SS_0_ERR_MASK				0x410
 #define I2C_SS_0_RX_VECTOR				23
@@ -124,7 +123,6 @@
 #define I2C_SS_0_STOP_VECTOR				25
 #define I2C_SS_0_STOP_MASK				0x41C
 
-#define I2C_QUARK_SE_SS_1_BASE_ADDR			0x80012100
 #define I2C_SS_1_ERR_VECTOR				26
 #define I2C_SS_1_ERR_MASK				0x420
 #define I2C_SS_1_RX_VECTOR				27
