@@ -963,6 +963,11 @@ bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 
 	NET_ASSERT(buf && data);
 
+	if (!buf->frags) {
+		buf->frags =
+			net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	}
+
 	while (len-- > 0) {
 		if (!net_nbuf_write_byte(buf, *(data + offset++))) {
 
