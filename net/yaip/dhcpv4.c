@@ -506,11 +506,9 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 {
 	struct net_buf *frag;
 	uint8_t cookie[4];
-	uint8_t time[4];
 	uint8_t length;
 	uint8_t type;
 	uint16_t pos;
-	uint8_t *ptr = &time[0];
 	bool end = false;
 
 	frag = net_nbuf_read(buf, offset, &pos, sizeof(magic_cookie),
@@ -527,10 +525,6 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 		if (type == DHCPV4_OPTIONS_END) {
 			end = true;
 			return NET_OK;
-		}
-
-		if (!frag) {
-			return NET_DROP;
 		}
 
 		frag = net_nbuf_read(frag, pos, &pos, 1, &length);
@@ -552,10 +546,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read(frag, pos, &pos, length, &time[0]);
-
-			iface->dhcpv4.lease_time =
-				ntohl(UNALIGNED_GET((uint32_t *)ptr));
+			frag = net_nbuf_read_be32(frag, pos, &pos,
+						  &iface->dhcpv4.lease_time);
 			if (!iface->dhcpv4.lease_time) {
 				return NET_DROP;
 			}
@@ -566,10 +558,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read(frag, pos, &pos, length, &time[0]);
-
-			iface->dhcpv4.renewal_time =
-				ntohl(UNALIGNED_GET((uint32_t *)ptr));
+			frag = net_nbuf_read_be32(frag, pos, &pos,
+						  &iface->dhcpv4.renewal_time);
 			if (!iface->dhcpv4.renewal_time) {
 				return NET_DROP;
 			}
