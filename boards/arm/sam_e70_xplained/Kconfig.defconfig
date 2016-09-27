@@ -1,0 +1,13 @@
+# Kconfig - Atmel SMART SAM E70 Xplained Board configuration
+#
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_SAM_E70_XPLAINED
+
+config BOARD
+	string
+	default sam_e70_xplained
+
+endif # BOARD_SAM_E70_XPLAINED
