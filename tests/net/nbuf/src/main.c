@@ -738,6 +738,14 @@ static int test_nbuf_read_write(void)
 		return -EINVAL;
 	}
 
+	/* Try to pass fragment to net_nbuf_write(), this should fail
+	 * as we always need to pass the first buf into it.
+	 */
+	if (net_nbuf_write(buf->frags, sizeof(test_rw_short), test_rw_short)) {
+		printk("net_nbuf_write succeed but should have failed\n");
+		return -EINVAL;
+	}
+
 	tfrag = net_nbuf_skip(tfrag, off, &tpos, sizeof(test_rw_long));
 	if (!tfrag) {
 		printk("net_nbuf_skip failed\n");

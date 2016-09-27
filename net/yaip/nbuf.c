@@ -963,6 +963,15 @@ bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 
 	NET_ASSERT(buf && data);
 
+	if (!buf->user_data_size) {
+		/* The buf needs to be a net_buf that has user data
+		 * part. Otherwise we cannot use the net_nbuf_ll_reserve()
+		 * function to figure out the reserve amount.
+		 */
+		NET_DBG("Buffer %p is a data fragment", buf);
+		return false;
+	}
+
 	if (!buf->frags) {
 		buf->frags =
 			net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
