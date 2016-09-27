@@ -324,7 +324,7 @@ static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&smp_buf);
+	buf = bt_l2cap_create_pdu(&smp_buf, 0);
 	if (!buf) {
 		return NULL;
 	}

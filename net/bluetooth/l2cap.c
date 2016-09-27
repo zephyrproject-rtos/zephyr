@@ -339,9 +339,9 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn)
 	}
 }
 
-struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo)
+struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo, size_t reserve)
 {
-	return bt_conn_create_pdu(fifo, sizeof(struct bt_l2cap_hdr));
+	return bt_conn_create_pdu(fifo, sizeof(struct bt_l2cap_hdr) + reserve);
 }
 
 void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
@@ -362,7 +362,7 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 	struct bt_l2cap_sig_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
 	if (!buf) {
 		return;
 	}
@@ -426,7 +426,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	BT_DBG("min 0x%4.4x max 0x%4.4x latency: 0x%4.4x timeout: 0x%4.4x",
 	       min, max, latency, timeout);
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
 	if (!buf) {
 		return;
 	}
@@ -583,7 +583,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
 	if (!buf) {
 		return;
 	}
@@ -715,7 +715,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
 	if (!buf) {
 		return;
 	}
@@ -958,7 +958,7 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	credits = L2CAP_LE_MAX_CREDITS - chan->rx.credits.nsig;
 	l2cap_chan_rx_give_credits(chan, credits);
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
 	if (!buf) {
 		BT_ERR("Unable to send credits");
 		return;
@@ -1123,7 +1123,7 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn,
 	struct bt_l2cap_conn_param_req *req;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1275,7 +1275,7 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 		return -ENOMEM;
 	}
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
 	if (!buf) {
 		BT_ERR("Unable to send L2CAP connection request");
 		return -ENOMEM;
@@ -1345,7 +1345,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, ch->rx.cid,
 	       ch->tx.cid);
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
 	if (!buf) {
 		BT_ERR("Unable to send L2CP disconnect request");
 		return -ENOMEM;
@@ -1393,7 +1393,7 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	}
 
 segment:
-	seg = bt_l2cap_create_pdu(&le_data);
+	seg = bt_l2cap_create_pdu(&le_data, 0);
 	if (!seg) {
 		return NULL;
 	}

@@ -321,7 +321,7 @@ static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
 	struct net_buf *buf;
 	uint8_t hdr_cr;
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session);
+	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
 	if (!buf) {
 		BT_ERR("No buffers");
 		return NULL;
@@ -452,7 +452,7 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	struct net_buf *buf;
 	uint8_t cr, fcs;
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session);
+	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
 	if (!buf) {
 		BT_ERR("No buffers");
 		return -ENOMEM;
@@ -578,7 +578,7 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 
 	BT_DBG("Dlc %p credits %d", dlc, credits);
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session);
+	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
 	if (!buf) {
 		BT_ERR("No buffers");
 		return -ENOMEM;

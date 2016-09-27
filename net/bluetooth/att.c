@@ -1765,10 +1765,10 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 		/* Use a different buffer pool for indication/confirmations
 		 * since they can be sent in parallel.
 		 */
-		buf = bt_l2cap_create_pdu(&ind_data);
+		buf = bt_l2cap_create_pdu(&ind_data, 0);
 		break;
 	default:
-		buf = bt_l2cap_create_pdu(&req_data);
+		buf = bt_l2cap_create_pdu(&req_data, 0);
 	}
 
 	if (!buf) {

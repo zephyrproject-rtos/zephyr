@@ -225,7 +225,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
 void bt_l2cap_encrypt_change(struct bt_conn *conn);
 
 /* Prepare an L2CAP PDU to be sent over a connection */
-struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo);
+struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo, size_t reserve);
 
 /* Send L2CAP PDU over a connection */
 void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf);
