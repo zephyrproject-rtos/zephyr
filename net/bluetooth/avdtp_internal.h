@@ -54,14 +54,15 @@
 #define BT_AVDTP_DELAYREPORT          0x0d
 
 /* @brief AVDTP STATE */
-#define BT_AVDTP_STATE_IDLE          0x01
-#define BT_AVDTP_STATE_CONFIGURED    0x02
-#define BT_AVDTP_STATE_OPEN          0x03
-#define BT_AVDTP_STATE_STREAMING     0x04
-#define BT_AVDTP_STATE_CLOSING       0x05
-#define BT_AVDTP_STATE_ABORT         0x06
-#define BT_AVDTP_STATE_SIG_CONNECTED 0x07
-#define BT_AVDTP_STATE_INVALID       0x00
+#define BT_AVDTP_STATE_IDLE             0x01
+#define BT_AVDTP_STATE_CONFIGURED       0x02
+#define BT_AVDTP_STATE_OPEN             0x03
+#define BT_AVDTP_STATE_STREAMING        0x04
+#define BT_AVDTP_STATE_CLOSING          0x05
+#define BT_AVDTP_STATE_ABORT            0x06
+#define BT_AVDTP_STATE_SIG_CONNECTED    0x07
+#define BT_AVDTP_STATE_SIG_DISCONNECTED 0x08
+#define BT_AVDTP_STATE_INVALID          0x00
 
 /* @brief AVDTP Media TYPE */
 #define BT_AVDTP_SERVICE_CAT_MEDIA_TRANSPORT    0x01
@@ -149,3 +150,9 @@ int bt_avdtp_init(void);
 
 /* Application register with AVDTP layer */
 int bt_avdtp_register(struct bt_avdtp_event_cb *cb);
+
+/* AVDTP connect */
+int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session);
+
+/* AVDTP disconnect */
+int bt_avdtp_disconnect(struct bt_avdtp *session);

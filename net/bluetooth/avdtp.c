@@ -56,10 +56,25 @@ static struct bt_avdtp_event_cb *event_cb;
 /* L2CAP Interface callbacks */
 void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 {
-	BT_DBG("");
+	if (!chan) {
+		BT_ERR("Invalid AVDTP chan");
+		return;
+	}
+
+	BT_DBG("chan %p session %p", chan, AVDTP_CHAN(chan));
 }
 
 void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
+{
+	if (!chan) {
+		BT_ERR("Invalid AVDTP chan");
+		return;
+	}
+
+	BT_DBG("chan %p session %p", chan, AVDTP_CHAN(chan));
+}
+
+void bt_avdtp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("");
 }
@@ -67,6 +82,37 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 void bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	BT_DBG("");
+}
+
+/*A2DP Layer interface */
+int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
+{
+	static struct bt_l2cap_chan_ops ops = {
+		.connected = bt_avdtp_l2cap_connected,
+		.disconnected = bt_avdtp_l2cap_disconnected,
+		.encrypt_change = bt_avdtp_l2cap_encrypt_changed,
+		.recv = bt_avdtp_l2cap_recv
+	};
+
+	if (!session) {
+		return -EINVAL;
+	}
+
+	session->br_chan.chan.ops = &ops;
+
+	return bt_l2cap_chan_connect(conn, &session->br_chan.chan,
+				     BT_L2CAP_PSM_AVDTP);
+}
+
+int bt_avdtp_disconnect(struct bt_avdtp *session)
+{
+	if (!session) {
+		return -EINVAL;
+	}
+
+	BT_DBG("session %p", session);
+
+	return bt_l2cap_chan_disconnect(&session->br_chan.chan);
 }
 
 int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
