@@ -24,6 +24,7 @@
 
 #include <device.h>
 #include <misc/nano_work.h>
+#include <misc/slist.h>
 
 #include <net/net_core.h>
 #include <net/buf.h>
@@ -924,6 +925,62 @@ static inline void net_if_ipv4_set_gw(struct net_if *iface,
 }
 
 #endif /* CONFIG_NET_IPV4 */
+
+/**
+ * @typedef net_if_link_callback_t
+ * @brief Define callback that is called after a network packet
+ *        has been sent.
+ * @param "struct net_if *iface" A pointer on a struct net_if to which the
+ *        the net_buf was sent to.
+ * @param "struct net_linkaddr *dst" Link layer address of the destination
+ *        where the network packet was sent.
+ * @param "int status" Send status, 0 is ok, < 0 error.
+ */
+typedef void (*net_if_link_callback_t)(struct net_if *iface,
+				       struct net_linkaddr *dst,
+				       int status);
+
+/**
+ * @brief Link callback handler struct.
+ *
+ * Stores the link callback information. Caller must make sure that
+ * the variable pointed by this is valid during the lifetime of
+ * registration. Typically this means that the variable cannot be
+ * allocated from stack.
+ */
+struct net_if_link_cb {
+	/** Node information for the slist. */
+	sys_snode_t node;
+
+	/** Link callback */
+	net_if_link_callback_t cb;
+};
+
+/**
+ * @brief Register a link callback.
+ *
+ * @param link Caller specified handler for the callback.
+ * @param cb Callback to register.
+ */
+void net_if_register_link_cb(struct net_if_link_cb *link,
+			     net_if_link_callback_t cb);
+
+/**
+ * @brief Unregister a link callback.
+ *
+ * @param link Caller specified handler for the callback.
+ */
+void net_if_unregister_link_cb(struct net_if_link_cb *link);
+
+/**
+ * @brief Call a link callback function.
+ *
+ * @param iface Network interface.
+ * @param lladdr Destination link layer address
+ * @param status 0 is ok, < 0 error
+ */
+void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
+			 int status);
 
 /**
  * @brief Get interface according to index

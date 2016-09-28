@@ -42,6 +42,10 @@ extern struct net_if __net_if_end[];
 
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
 
+/* We keep track of the link callbacks in this list.
+ */
+static sys_slist_t link_callbacks;
+
 #if NET_DEBUG
 #define debug_check_packet(buf)						   \
 	{								   \
@@ -68,16 +72,23 @@ static void net_if_tx_fiber(struct net_if *iface)
 	api->init(iface);
 
 	while (1) {
+		struct net_linkaddr *dst;
 		struct net_buf *buf;
+		int status;
 
 		/* Get next packet from application - wait if necessary */
 		buf = net_buf_get_timeout(&iface->tx_queue, 0, TICKS_UNLIMITED);
 
 		debug_check_packet(buf);
 
-		if (api->send(iface, buf) < 0) {
+		dst = net_nbuf_ll_dst(buf);
+
+		status = api->send(iface, buf);
+		if (status < 0) {
 			net_nbuf_unref(buf);
 		}
+
+		net_if_call_link_cb(iface, dst, status);
 
 		net_analyze_stack("TX fiber", iface->tx_fiber_stack,
 				  sizeof(iface->tx_fiber_stack));
@@ -100,6 +111,7 @@ static inline void init_tx_queue(struct net_if *iface)
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 {
 	struct net_context *context = net_nbuf_context(buf);
+	struct net_linkaddr *dst = net_nbuf_ll_dst(buf);
 	void *token = net_nbuf_token(buf);
 	enum net_verdict verdict;
 
@@ -120,6 +132,10 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 
 		net_context_send_cb(context, token,
 				    verdict == NET_OK ? 0 : -EIO);
+	}
+
+	if (verdict == NET_DROP) {
+		net_if_call_link_cb(iface, dst, -EIO);
 	}
 
 	return verdict;
@@ -951,6 +967,33 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, struct in_addr *addr)
 	return false;
 }
 #endif /* CONFIG_NET_IPV4 */
+
+void net_if_register_link_cb(struct net_if_link_cb *link,
+			     net_if_link_callback_t cb)
+{
+	sys_slist_find_and_remove(&link_callbacks, &link->node);
+	sys_slist_prepend(&link_callbacks, &link->node);
+
+	link->cb = cb;
+}
+
+void net_if_unregister_link_cb(struct net_if_link_cb *link)
+{
+	sys_slist_find_and_remove(&link_callbacks, &link->node);
+}
+
+void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
+			 int status)
+{
+	sys_snode_t *sn, *sns;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&link_callbacks, sn, sns) {
+		struct net_if_link_cb *link =
+			CONTAINER_OF(sn, struct net_if_link_cb, node);
+
+		link->cb(iface, lladdr, status);
+	}
+}
 
 struct net_if *net_if_get_by_index(uint8_t index)
 {
