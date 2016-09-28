@@ -1,4 +1,4 @@
-# Kconfig - nRF52 NITROGEN board configuration
+# Kconfig - 96Boards NITROGEN board configuration
 #
 # Copyright (c) 2016 Linaro Limited.
 #
@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-config BOARD_NRF52_NITROGEN
-	bool "nRF52 NITROGEN"
-	depends on SOC_NRF52832
+if BOARD_96B_NITROGEN
+
+config GPIO_AS_PINRESET
+	bool "GPIO as pin reset (reset button)"
+	default y
+
+endif # BOARD_96B_NITROGEN

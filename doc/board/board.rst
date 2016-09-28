@@ -33,7 +33,7 @@ ARM (v7-M and v7E-M) Instruction Set
        frdm_k64f
        olimexino_stm32
        nrf52_pca10040
-       nrf52_nitrogen
+       96b_nitrogen
 
 ARC EM4 Instruction Set
 ====================================

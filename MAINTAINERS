@@ -104,10 +104,10 @@ M:	Carles Cufi <carles.cufi@nordicsemi.no>
 S:	Supported
 F:	boards/nrf52_pca10040/
 
-BOARDS - NORDIC NRF52 NITROGEN
+BOARDS - 96Boards NITROGEN
 M:	Amit Kucheria <amit.kucheria@linaro.org>
 S:	Supported
-F:	boards/nrf52_nitrogen/
+F:	boards/96b_nitrogen/
 
 BOARDS - QUARK SE C1000 Devboard
 M:      Anas Nashif <anas.nashif@intel.com>

@@ -1,6 +1,6 @@
-# Kconfig - nRF52 NITROGEN board configuration
+# Kconfig - 96Boards NITROGEN board configuration
 #
-# Copyright (c) 2016 Linaro Limited.
+# Copyright (c) 2016 Nordic Semiconductor ASA
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if BOARD_NRF52_NITROGEN
+if BOARD_96B_NITROGEN
 
-config GPIO_AS_PINRESET
-	bool "GPIO as pin reset (reset button)"
+config BOARD
+	default 96b_nitrogen
+
+if UART_NRF5
+
+config GPIO
 	default y
 
-endif # BOARD_NRF52_NITROGEN
+config GPIO_NRF5
+	default y
+
+config GPIO_NRF5_P0
+	default y
+
+endif # UART_NRF5
+
+endif # BOARD_96B_NITROGEN

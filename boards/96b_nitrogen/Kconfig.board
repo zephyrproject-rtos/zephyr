@@ -1,6 +1,6 @@
-# Kconfig - nRF52 NITROGEN board configuration
+# Kconfig - 96Boards NITROGEN board configuration
 #
-# Copyright (c) 2016 Nordic Semiconductor ASA
+# Copyright (c) 2016 Linaro Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,22 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if BOARD_NRF52_NITROGEN
-
-config BOARD
-	default nrf52_nitrogen
-
-if UART_NRF5
-
-config GPIO
-	default y
-
-config GPIO_NRF5
-	default y
-
-config GPIO_NRF5_P0
-	default y
-
-endif # UART_NRF5
-
-endif # BOARD_NRF52_NITROGEN
+config BOARD_96B_NITROGEN
+	bool "96Boards Nitrogen"
+	depends on SOC_NRF52832
