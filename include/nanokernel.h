@@ -32,6 +32,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <toolchain.h>
+#include <sections.h>
 
 /* generic kernel public APIs */
 
