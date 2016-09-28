@@ -73,6 +73,8 @@ static void net_if_tx_fiber(struct net_if *iface)
 
 	while (1) {
 		struct net_linkaddr *dst;
+		struct net_context *context;
+		void *context_token;
 		struct net_buf *buf;
 		int status;
 
@@ -82,10 +84,19 @@ static void net_if_tx_fiber(struct net_if *iface)
 		debug_check_packet(buf);
 
 		dst = net_nbuf_ll_dst(buf);
+		context = net_nbuf_context(buf);
+		context_token = net_nbuf_token(buf);
 
 		status = api->send(iface, buf);
 		if (status < 0) {
 			net_nbuf_unref(buf);
+		}
+
+		if (context) {
+			NET_DBG("Calling context send cb %p token %p status %d",
+				context, context_token, status);
+
+			net_context_send_cb(context, context_token, status);
 		}
 
 		net_if_call_link_cb(iface, dst, status);
@@ -126,12 +137,11 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 	 *   This can happen for example if we need to do IPv6 ND to figure
 	 *   out link layer address.
 	 */
-	if (context && (verdict == NET_OK || verdict == NET_DROP)) {
+	if (context && verdict == NET_DROP) {
 		NET_DBG("Calling context send cb %p token %p verdict %d",
 			context, token, verdict);
 
-		net_context_send_cb(context, token,
-				    verdict == NET_OK ? 0 : -EIO);
+		net_context_send_cb(context, token, -EIO);
 	}
 
 	if (verdict == NET_DROP) {
