@@ -77,6 +77,7 @@ do {                                                                    \
 #define unlikely(x) __builtin_expect((long)!!(x), 0L)
 
 #define __weak __attribute__((__weak__))
+#define __unused __attribute__((__unused__))
 
 /* These macros allow having ARM asm functions callable from thumb */
 
