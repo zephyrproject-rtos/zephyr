@@ -36,7 +36,7 @@ static struct nano_sem network_event;
 static char __noinit __stack mgmt_fiber_stack[CONFIG_NET_MGMT_EVENT_STACK_SIZE];
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
 static uint32_t global_event_mask;
-static sys_slist_t mgmt_callbacks;
+static sys_slist_t event_callbacks;
 static uint16_t in_event;
 static uint16_t out_event;
 
@@ -99,9 +99,9 @@ static inline void mgmt_rebuild_global_event_mask(void)
 
 	global_event_mask = 0;
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_callbacks, sn, sns) {
-		struct net_mgmt_event_cb *cb =
-			CONTAINER_OF(sn, struct net_mgmt_event_cb, node);
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&event_callbacks, sn, sns) {
+		struct net_mgmt_event_callback *cb =
+			CONTAINER_OF(sn, struct net_mgmt_event_callback, node);
 
 		mgmt_add_event_mask(cb->event_mask);
 	}
@@ -118,9 +118,9 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 
 	NET_DBG("Event 0x%08X", mgmt_event->event);
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_callbacks, sn, sns) {
-		struct net_mgmt_event_cb *cb =
-			CONTAINER_OF(sn, struct net_mgmt_event_cb, node);
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&event_callbacks, sn, sns) {
+		struct net_mgmt_event_callback *cb =
+			CONTAINER_OF(sn, struct net_mgmt_event_callback, node);
 
 		NET_DBG("Running callback %p : %p", cb, cb->handler);
 
@@ -167,25 +167,25 @@ static void mgmt_fiber(void)
 	}
 }
 
-void net_mgmt_add_event_callback(struct net_mgmt_event_cb *cb)
+void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb)
 {
 	NET_DBG("Adding event callback %p", cb);
 
-	sys_slist_prepend(&mgmt_callbacks, &cb->node);
+	sys_slist_prepend(&event_callbacks, &cb->node);
 
 	mgmt_add_event_mask(cb->event_mask);
 }
 
-void net_mgmt_del_event_callback(struct net_mgmt_event_cb *cb)
+void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 {
 	NET_DBG("Deleting event callback %p", cb);
 
-	sys_slist_find_and_remove(&mgmt_callbacks, &cb->node);
+	sys_slist_find_and_remove(&event_callbacks, &cb->node);
 
 	mgmt_rebuild_global_event_mask();
 }
 
-void net_mgmt_notify(uint32_t mgmt_event, struct net_if *iface)
+void net_mgmt_event_notify(uint32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
 		NET_DBG("Notifying event 0x%08X", mgmt_event);
@@ -195,9 +195,9 @@ void net_mgmt_notify(uint32_t mgmt_event, struct net_if *iface)
 	}
 }
 
-void net_mgmt_init(void)
+void net_mgmt_event_init(void)
 {
-	sys_slist_init(&mgmt_callbacks);
+	sys_slist_init(&event_callbacks);
 	global_event_mask = 0;
 
 	in_event = 0;

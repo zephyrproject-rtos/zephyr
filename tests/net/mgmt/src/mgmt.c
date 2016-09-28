@@ -35,10 +35,10 @@ static struct nano_sem thrower_lock;
 /* Receiver infra */
 static uint32_t rx_event;
 static uint32_t rx_calls;
-static struct net_mgmt_event_cb rx_cb;
+static struct net_mgmt_event_callback rx_cb;
 
 int test_mgmt_request(uint32_t mgmt_request,
-		    struct net_if *iface, void *data, uint32_t len)
+		      struct net_if *iface, void *data, uint32_t len)
 {
 	uint32_t *test_data = data;
 
@@ -77,14 +77,13 @@ static void thrower_fiber(void)
 			 event2throw, throw_times);
 
 		for (; throw_times; throw_times--) {
-			net_mgmt_notify(event2throw, NULL);
+			net_mgmt_event_notify(event2throw, NULL);
 		}
 	}
 }
 
-static void receiver_cb(struct net_mgmt_event_cb *cb,
-			uint32_t nm_event,
-			struct net_if *iface)
+static void receiver_cb(struct net_mgmt_event_callback *cb,
+			uint32_t nm_event, struct net_if *iface)
 {
 	TC_PRINT("\t\tReceived event 0x%08X\n", nm_event);
 
@@ -139,7 +138,7 @@ static void initialize_event_tests(void)
 
 	nano_sem_init(&thrower_lock);
 
-	net_mgmt_init_event_cb(&rx_cb, receiver_cb, TEST_MGMT_EVENT);
+	net_mgmt_init_event_callback(&rx_cb, receiver_cb, TEST_MGMT_EVENT);
 
 	fiber_start(thrower_stack, sizeof(thrower_stack),
 		    (nano_fiber_entry_t)thrower_fiber, 0, 0, 7, 0);

@@ -48,26 +48,40 @@
 #define NET_MGMT_GET_COMMAND(mgmt_request)	\
 	(mgmt_request & NET_MGMT_COMMAND_MASK)
 
+/**
+ * @brief Signature which all Net MGMT request handler need to follow
+ * @param mgmt_request The exact request value the handler is being called
+ *        through
+ * @param iface A valid pointer on struct net_if if the request is meant
+ *        to be tight to a network interface. NULL otherwise.
+ * @param data A valid pointer on a data understood by the handler.
+ *        NULL otherwise.
+ * @param len Length in byte of the memory pointed by data.
+ */
+typedef int (*net_mgmt_request_handler_t)(uint32_t mgmt_request,
+					  struct net_if *iface,
+					  void *data, size_t len);
+
 #define net_mgmt(_mgmt_request, _iface, _data, _len)			\
 	net_mgmt_##_mgmt_request(_mgmt_request, _iface, _data, _len)
 
 #define NET_MGMT_REGISTER_REQUEST_HANDLER(_mgmt_request, _func)	\
 	FUNC_ALIAS(_func, net_mgmt_##_mgmt_request, int)
 
-struct net_mgmt_event_cb;
+struct net_mgmt_event_callback;
 
 /**
- * @typedef net_mgmt_callback_t
+ * @typedef net_mgmt_event_handler_t
  * @brief Define the user's callback handler function signature
- * @param "struct net_mgmt_event_cb *cb" Original struct net_mgmt_event_cb
- *        owning this handler.
+ * @param "struct net_mgmt_event_callback *cb"
+ *        Original struct net_mgmt_event_callback owning this handler.
  * @param "uint32_t mgmt_event" The network event being notified.
  * @param "struct net_if *iface" A pointer on a struct net_if to which the
  *        the event belongs to, if it's an event on an iface. NULL otherwise.
  */
-typedef void (*net_mgmt_callback_t)(struct net_mgmt_event_cb *cb,
-				    uint32_t mgmt_event,
-				    struct net_if *iface);
+typedef void (*net_mgmt_event_handler_t)(struct net_mgmt_event_callback *cb,
+					 uint32_t mgmt_event,
+					 struct net_if *iface);
 
 /**
  * @brief Network Management event callback structure
@@ -75,7 +89,7 @@ typedef void (*net_mgmt_callback_t)(struct net_mgmt_event_cb *cb,
  * to let the owner of this struct to get network event notification based on
  * given event mask.
  */
-struct net_mgmt_event_cb {
+struct net_mgmt_event_callback {
 	/** Meant to be used internally, to insert the callback into a list.
 	 * So nobody should mess with it.
 	 */
@@ -83,7 +97,7 @@ struct net_mgmt_event_cb {
 
 	/** Actual callback function being used to notify the owner
 	 */
-	net_mgmt_callback_t handler;
+	net_mgmt_event_handler_t handler;
 
 	/** A mask of network events on which the above handler should be
 	 * called in case those events come. Such mask can be modified
@@ -94,33 +108,34 @@ struct net_mgmt_event_cb {
 };
 
 /**
- * @brief Helper to initialize a struct net_mgmt_event_cb properly
- * @param callback A valid application's callback structure pointer.
+ * @brief Helper to initialize a struct net_mgmt_event_callback properly
+ * @param cb A valid application's callback structure pointer.
  * @param handler A valid handler function pointer.
  * @param mgmt_event_mask A mask of relevant events for the handler
  */
-static inline void net_mgmt_init_event_cb(struct net_mgmt_event_cb *callback,
-					  net_mgmt_callback_t handler,
-					  uint32_t mgmt_event_mask)
+static inline
+void net_mgmt_init_event_callback(struct net_mgmt_event_callback *cb,
+				  net_mgmt_event_handler_t handler,
+				  uint32_t mgmt_event_mask)
 {
-	__ASSERT(callback, "Callback pointer should not be NULL");
+	__ASSERT(cb, "Callback pointer should not be NULL");
 	__ASSERT(handler, "Handler pointer should not be NULL");
 
-	callback->handler = handler;
-	callback->event_mask = mgmt_event_mask;
+	cb->handler = handler;
+	cb->event_mask = mgmt_event_mask;
 };
 
 /**
  * @brief Add a user callback
  * @param cb A valid pointer on user's callback to add.
  */
-void net_mgmt_add_event_callback(struct net_mgmt_event_cb *cb);
+void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb);
 
 /**
  * @brief Delete a user callback
  * @param cb A valid pointer on user's callback to delete.
  */
-void net_mgmt_del_event_callback(struct net_mgmt_event_cb *cb);
+void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
 
 #ifdef CONFIG_NET_MGMT_EVENT
 /**
@@ -129,16 +144,16 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_cb *cb);
  * @param iface a valid pointer on a struct net_if if only the event is
  *        based on an iface. NULL otherwise.
  */
-void net_mgmt_notify(uint32_t mgmt_event, struct net_if *iface);
+void net_mgmt_event_notify(uint32_t mgmt_event, struct net_if *iface);
 
 /**
  * @brief Used by the core of the network stack to initialize the network
  *        event processing.
  */
-void net_mgmt_init(void);
+void net_mgmt_event_init(void);
 #else
-#define net_mgmt_notify(...)
-#define net_mgmt_init(...)
-#endif
+#define net_mgmt_event_notify(...)
+#define net_mgmt_event_init(...)
+#endif /* CONFIG_NET_MGMT_EVENT */
 
 #endif /* __NET_MGMT_H__ */

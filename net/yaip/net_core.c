@@ -483,7 +483,7 @@ static int net_init(struct device *unused)
 	l2_init();
 	l3_init();
 
-	net_mgmt_init();
+	net_mgmt_event_init();
 
 	init_rx_queue();
 
