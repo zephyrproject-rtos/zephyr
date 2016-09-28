@@ -1570,6 +1570,32 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 	}
 }
 
+void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
+{
+	struct bt_l2cap_hdr *hdr = (void *)buf->data;
+	struct bt_l2cap_chan *chan;
+	uint16_t cid;
+
+	if (buf->len < sizeof(*hdr)) {
+		BT_ERR("Too small L2CAP PDU received");
+		net_buf_unref(buf);
+		return;
+	}
+
+	cid = sys_le16_to_cpu(hdr->cid);
+	net_buf_pull(buf, sizeof(*hdr));
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, cid);
+	if (!chan) {
+		BT_WARN("Ignoring data for unknown CID 0x%04x", cid);
+		net_buf_unref(buf);
+		return;
+	}
+
+	chan->ops->recv(chan, buf);
+	net_buf_unref(buf);
+}
+
 static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	int i;

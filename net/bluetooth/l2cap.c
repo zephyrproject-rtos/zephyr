@@ -1052,18 +1052,9 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-	struct bt_l2cap_le_chan *ch;
+	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
-	switch (chan->conn->type) {
-	case BT_CONN_TYPE_LE:
-		ch = BT_L2CAP_LE_CHAN(chan);
-		break;
-	default:
-		ch = NULL;
-		break;
-	}
-
-	if (ch && ch->rx.cid >= L2CAP_LE_DYN_CID_START &&
+	if (ch->rx.cid >= L2CAP_LE_DYN_CID_START &&
 	    ch->rx.cid <= L2CAP_LE_DYN_CID_END) {
 		l2cap_chan_le_recv(ch, buf);
 		return;
@@ -1081,6 +1072,13 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 	struct bt_l2cap_chan *chan;
 	uint16_t cid;
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		bt_l2cap_br_recv(conn, buf);
+		return;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small L2CAP PDU received");
 		net_buf_unref(buf);
@@ -1092,20 +1090,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 
 	BT_DBG("Packet for CID %u len %u", cid, buf->len);
 
-	switch (conn->type) {
-	case BT_CONN_TYPE_LE:
-		chan = bt_l2cap_le_lookup_rx_cid(conn, cid);
-		break;
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	case BT_CONN_TYPE_BR:
-		chan = bt_l2cap_br_lookup_rx_cid(conn, cid);
-		break;
-#endif /* CONFIG_BLUETOOTH_BREDR */
-	default:
-		chan = NULL;
-		break;
-	}
-
+	chan = bt_l2cap_le_lookup_rx_cid(conn, cid);
 	if (!chan) {
 		BT_WARN("Ignoring data for unknown CID 0x%04x", cid);
 		net_buf_unref(buf);

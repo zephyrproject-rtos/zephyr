@@ -280,4 +280,7 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
  * security procedure.
  */
 void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status);
+
+/* Handle received data */
+void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf);
 #endif /* CONFIG_BLUETOOTH_BREDR */
