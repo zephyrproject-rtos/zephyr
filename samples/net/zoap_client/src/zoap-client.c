@@ -28,7 +28,7 @@
 
 #include <zoap.h>
 
-#define MY_COAP_PORT 9998
+#define MY_COAP_PORT 5683
 
 #define STACKSIZE 2000
 
@@ -46,7 +46,7 @@ struct zoap_pending pendings[NUM_PENDINGS];
 struct zoap_reply replies[NUM_REPLIES];
 struct nano_delayed_work retransmit_work;
 
-static const char * const a_light_path[] = { "a", "light", NULL };
+static const char * const test_path[] = { "test", NULL };
 
 static void msg_dump(const char *s, uint8_t *data, unsigned len)
 {
@@ -197,7 +197,7 @@ void main(void)
 		return;
 	}
 
-	for (p = a_light_path; p && *p; p++) {
+	for (p = test_path; p && *p; p++) {
 		r = zoap_add_option(&request, ZOAP_OPTION_URI_PATH,
 				     *p, strlen(*p));
 		if (r < 0) {
