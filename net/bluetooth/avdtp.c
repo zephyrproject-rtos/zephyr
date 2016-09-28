@@ -78,7 +78,7 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.recv = bt_avdtp_l2cap_recv,
 	};
 
-	BT_DBG("conn %p, handle %u", conn, conn->handle);
+	BT_DBG("conn %p", conn);
 
 	for (i = 0; i < ARRAY_SIZE(bt_avdtp_pool); i++) {
 		struct bt_avdtp *avdtp = &bt_avdtp_pool[i];
