@@ -14,6 +14,7 @@ obj-$(CONFIG_NET_DHCPV4) += dhcpv4.o
 obj-$(CONFIG_NET_ROUTE) += route.o
 obj-$(CONFIG_NET_RPL) += rpl.o
 obj-$(CONFIG_NET_RPL_MRHOF) += rpl-mrhof.o
+obj-$(CONFIG_NET_RPL_OF0) += rpl-of0.o
 obj-$(CONFIG_NET_MGMT_EVENT) += net_mgmt.o
 obj-$(CONFIG_NET_TCP) += tcp.o
 
