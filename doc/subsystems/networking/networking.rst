@@ -65,4 +65,5 @@ The IP stack source code tree is organized as follows:
 
    ip-stack-architecture.rst
    networking-api-usage.rst
+   network-management-api.rst
    buffers.rst
