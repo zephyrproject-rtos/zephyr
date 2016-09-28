@@ -66,7 +66,7 @@ void _sys_device_do_config_level(int level)
 	}
 }
 
-struct device *device_get_binding(char *name)
+struct device *device_get_binding(const char *name)
 {
 	struct device *info;
 

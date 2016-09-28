@@ -419,7 +419,7 @@ void _sys_device_do_config_level(int level);
  *
  * @return pointer to device structure; NULL if not found or cannot be used.
  */
-struct device* device_get_binding(char *name);
+struct device *device_get_binding(const char *name);
 
 /**
  * @brief Device Power Management APIs
