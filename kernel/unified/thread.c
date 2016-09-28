@@ -34,6 +34,14 @@
 #include <sched.h>
 #include <wait_q.h>
 
+extern struct k_thread_static_init _k_task_list_start[];
+extern struct k_thread_static_init _k_task_list_end[];
+
+#define _FOREACH_STATIC_THREAD(thread_init)                                  \
+	for (struct k_thread_static_init *thread_init = _k_task_list_start; \
+	     thread_init < _k_task_list_end; thread_init++)
+
+
 /* Legacy API */
 
 int sys_execution_context_type_get(void)
@@ -304,6 +312,12 @@ int k_thread_cancel(k_tid_t tid)
 	irq_unlock(key);
 
 	return 0;
+}
+
+static inline int is_in_any_group(struct k_thread_static_init *thread_init,
+				  uint32_t groups)
+{
+	return !!(thread_init->init_groups & groups);
 }
 
 void _k_thread_group_op(uint32_t groups, void (*func)(struct tcs *))

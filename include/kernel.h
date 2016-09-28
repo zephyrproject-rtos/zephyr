@@ -1287,19 +1287,7 @@ extern void k_free(void *p);
  * private APIs that are utilized by one or more public APIs
  */
 
-extern struct k_thread_static_init _k_task_list_start[];
-extern struct k_thread_static_init _k_task_list_end[];
-
-#define _FOREACH_STATIC_THREAD(thread_init) \
-	for (struct k_thread_static_init *thread_init = _k_task_list_start; \
-	     thread_init < _k_task_list_end; thread_init++)
-
 extern int _is_thread_essential(void);
-static inline int is_in_any_group(struct k_thread_static_init *thread_init,
-				  uint32_t groups)
-{
-	return !!(thread_init->init_groups & groups);
-}
 extern void _init_static_threads(void);
 
 #ifdef __cplusplus
