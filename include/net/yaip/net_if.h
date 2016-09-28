@@ -315,7 +315,7 @@ static inline enum net_verdict net_if_recv_data(struct net_if *iface,
  * @return Return the link layer header size
  */
 static inline uint16_t net_if_get_ll_reserve(struct net_if *iface,
-					     struct in6_addr *dst_ip6)
+					     const struct in6_addr *dst_ip6)
 {
 	return iface->l2->reserve(iface, (void *)dst_ip6);
 }
