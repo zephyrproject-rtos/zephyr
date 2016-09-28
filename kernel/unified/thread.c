@@ -34,12 +34,12 @@
 #include <sched.h>
 #include <wait_q.h>
 
-extern struct k_thread_static_init _k_task_list_start[];
-extern struct k_thread_static_init _k_task_list_end[];
+extern struct _static_thread_data _k_task_list_start[];
+extern struct _static_thread_data _k_task_list_end[];
 
-#define _FOREACH_STATIC_THREAD(thread_init)                                  \
-	for (struct k_thread_static_init *thread_init = _k_task_list_start; \
-	     thread_init < _k_task_list_end; thread_init++)
+#define _FOREACH_STATIC_THREAD(thread_data)                                \
+	for (struct _static_thread_data *thread_data = _k_task_list_start; \
+	     thread_data < _k_task_list_end; thread_data++)
 
 
 /* Legacy API */
@@ -314,10 +314,10 @@ int k_thread_cancel(k_tid_t tid)
 	return 0;
 }
 
-static inline int is_in_any_group(struct k_thread_static_init *thread_init,
+static inline int is_in_any_group(struct _static_thread_data *thread_data,
 				  uint32_t groups)
 {
-	return !!(thread_init->init_groups & groups);
+	return !!(thread_data->init_groups & groups);
 }
 
 void _k_thread_group_op(uint32_t groups, void (*func)(struct tcs *))
@@ -330,10 +330,10 @@ void _k_thread_group_op(uint32_t groups, void (*func)(struct tcs *))
 
 	/* Invoke func() on each static thread in the specified group set. */
 
-	_FOREACH_STATIC_THREAD(thread_init) {
-		if (is_in_any_group(thread_init, groups)) {
+	_FOREACH_STATIC_THREAD(thread_data) {
+		if (is_in_any_group(thread_data, groups)) {
 			key = irq_lock();
-			func(thread_init->thread);
+			func(thread_data->thread);
 			irq_unlock(key);
 		}
 	}
@@ -424,42 +424,42 @@ void _k_thread_single_abort(struct tcs *thread)
 
 void _init_static_threads(void)
 {
-	_FOREACH_STATIC_THREAD(thread_init) {
+	_FOREACH_STATIC_THREAD(thread_data) {
 		_new_thread(
-			thread_init->init_stack,
-			thread_init->init_stack_size,
+			thread_data->init_stack,
+			thread_data->init_stack_size,
 			NULL,
-			thread_init->init_entry,
-			thread_init->init_p1,
-			thread_init->init_p2,
-			thread_init->init_p3,
-			thread_init->init_prio,
+			thread_data->init_entry,
+			thread_data->init_p1,
+			thread_data->init_p2,
+			thread_data->init_p3,
+			thread_data->init_prio,
 			0);
 
-		thread_init->thread->init_data = thread_init;
+		thread_data->thread->init_data = thread_data;
 	}
 	_k_thread_group_op(K_THREAD_GROUP_EXE, _k_thread_single_start);
 }
 
 uint32_t _k_thread_group_mask_get(struct tcs *thread)
 {
-	struct k_thread_static_init *thread_init = thread->init_data;
+	struct _static_thread_data *thread_data = thread->init_data;
 
-	return thread_init->init_groups;
+	return thread_data->init_groups;
 }
 
 void _k_thread_group_join(uint32_t groups, struct tcs *thread)
 {
-	struct k_thread_static_init *thread_init = thread->init_data;
+	struct _static_thread_data *thread_data = thread->init_data;
 
-	thread_init->init_groups |= groups;
+	thread_data->init_groups |= groups;
 }
 
 void _k_thread_group_leave(uint32_t groups, struct tcs *thread)
 {
-	struct k_thread_static_init *thread_init = thread->init_data;
+	struct _static_thread_data *thread_data = thread->init_data;
 
-	thread_init->init_groups &= groups;
+	thread_data->init_groups &= groups;
 }
 
 /* legacy API */

@@ -156,7 +156,7 @@ extern void k_thread_abort(k_tid_t thread);
 #define _THREAD_ERRNO_INIT(obj)
 #endif
 
-struct k_thread_static_init {
+struct _static_thread_data {
 	uint32_t init_groups;
 	int init_prio;
 	void (*init_entry)(void *, void *, void *);
@@ -192,14 +192,14 @@ struct k_thread_static_init {
  * in array and thus should not have gaps between them.
  * On x86 by default compiler aligns them by 32 byte boundary. To prevent
  * this 32-bit alignment in specified here.
- * k_thread_static_init structure sise needs to be kept 32-bit aligned as well
+ * _static_thread_data structure sise needs to be kept 32-bit aligned as well
  */
 #define K_THREAD_OBJ_DEFINE(name, stack_size, \
 			    entry, p1, p2, p3, \
 			    abort, prio, groups) \
 	extern void entry(void *, void *, void *); \
 	char __noinit __stack _k_thread_obj_##name[stack_size]; \
-	struct k_thread_static_init _k_thread_init_##name __aligned(4) \
+	struct _static_thread_data _k_thread_data_##name __aligned(4) \
 		__in_section(_k_task_list, private, task) = \
 		K_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
 				     entry, p1, p2, p3, abort, prio, groups)
