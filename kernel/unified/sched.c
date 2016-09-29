@@ -149,10 +149,13 @@ struct tcs *_get_next_ready_thread(void)
 	int prio = _get_highest_ready_prio();
 	int q_index = _get_ready_q_q_index(prio);
 	sys_dlist_t *list = &_nanokernel.ready_q.q[q_index];
-	struct k_thread *thread = (struct k_thread *)sys_dlist_peek_head(list);
 
-	__ASSERT(thread, "no thread to run (prio: %d, queue index: %u)!\n",
+	__ASSERT(!sys_dlist_is_empty(list),
+		 "no thread to run (prio: %d, queue index: %u)!\n",
 		 prio, q_index);
+
+	struct k_thread *thread =
+		(struct k_thread *)sys_dlist_peek_head_not_empty(list);
 
 	return thread;
 }
