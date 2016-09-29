@@ -95,7 +95,6 @@ struct k_mem_pool;
 struct k_timer;
 
 typedef struct tcs *k_tid_t;
-typedef struct k_mem_pool *k_mem_pool_t;
 
 /* threads/scheduler/execution contexts */
 
@@ -841,7 +840,7 @@ static inline int k_msgq_num_used_get(struct k_msgq *q)
 }
 
 struct k_mem_block {
-	k_mem_pool_t pool_id;
+	struct k_mem_pool *pool_id;
 	void *addr_in_pool;
 	void *data;
 	uint32_t req_size;
@@ -902,7 +901,8 @@ extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *msg,
 extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *msg,
 		      void *buffer, int32_t timeout);
 extern void k_mbox_data_get(struct k_mbox_msg *msg, void *buffer);
-extern int k_mbox_data_block_get(struct k_mbox_msg *msg, k_mem_pool_t pool,
+extern int k_mbox_data_block_get(struct k_mbox_msg *msg,
+				 struct k_mem_pool *pool,
 				 struct k_mem_block *block, int32_t timeout);
 
 /* pipes */

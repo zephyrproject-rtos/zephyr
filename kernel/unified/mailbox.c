@@ -429,7 +429,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
  *
  * @return 0 if successful, -ENOMEM if failed immediately, -EAGAIN if timed out
  */
-int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, k_mem_pool_t pool,
+int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
 			  struct k_mem_block *block, int32_t timeout)
 {
 	int result;

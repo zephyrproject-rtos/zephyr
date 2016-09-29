@@ -470,7 +470,7 @@ static void block_waiters_check(struct k_mem_pool *pool)
  *
  * @return N/A
  */
-void k_mem_pool_defrag(k_mem_pool_t pool)
+void k_mem_pool_defrag(struct k_mem_pool *pool)
 {
 	k_sched_lock();
 
@@ -489,7 +489,7 @@ void k_mem_pool_defrag(k_mem_pool_t pool)
  *
  * @return N/A
  */
-int k_mem_pool_alloc(k_mem_pool_t pool, struct k_mem_block *block,
+int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 			  int size, int32_t timeout)
 {
 	char *found_block;
