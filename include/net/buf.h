@@ -852,14 +852,15 @@ struct net_buf *net_buf_frag_last(struct net_buf *frags);
  */
 void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
 
-/** @def net_buf_frag_add
- *  @brief Add a new fragment to the end of a chain of bufs.
+/** @brief Add a new fragment to the end of a chain of bufs.
  *
- *  @param parent Parent buffer/fragment.
+ *  @param head Head of the fragment chain.
  *  @param frag Fragment to add.
+ *
+ *  @return New head of the fragment chain. Either head (if head
+ *          was non-NULL) or frag (if head was NULL).
  */
-#define net_buf_frag_add(parent, frag) \
-	net_buf_frag_insert(net_buf_frag_last(parent), frag)
+struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag);
 
 /** @brief Delete existing fragment from a chain of bufs.
  *

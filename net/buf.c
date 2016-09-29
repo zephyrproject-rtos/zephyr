@@ -183,6 +183,17 @@ void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag)
 	parent->frags = net_buf_ref(frag);
 }
 
+struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)
+{
+	if (!head) {
+		return net_buf_ref(frag);
+	}
+
+	net_buf_frag_insert(net_buf_frag_last(head), frag);
+
+	return head;
+}
+
 struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 {
 	struct net_buf *next_frag;
