@@ -54,6 +54,10 @@
 #define NET_MGMT_GET_COMMAND(mgmt_request)	\
 	(mgmt_request & NET_MGMT_COMMAND_MASK)
 
+
+#include <net/net_event.h>
+
+
 /**
  * @brief Signature which all Net MGMT request handler need to follow
  * @param mgmt_request The exact request value the handler is being called
