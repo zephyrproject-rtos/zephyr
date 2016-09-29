@@ -33,6 +33,12 @@
 #define NET_MGMT_LAYER_CODE_MASK	0x0FFF0000
 #define NET_MGMT_COMMAND_MASK		0x0000FFFF
 
+#define NET_MGMT_EVENT_BIT		BIT(31)
+#define NET_MGMT_IFACE_BIT		BIT(30)
+
+#define NET_MGMT_LAYER(_layer)		(_layer << 28)
+#define NET_MGMT_LAYER_CODE(_code)	(_code << 16)
+
 #define NET_MGMT_EVENT(mgmt_request)		\
 	(mgmt_request & NET_MGMT_EVENT_MASK)
 
