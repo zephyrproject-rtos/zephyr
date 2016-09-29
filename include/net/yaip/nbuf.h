@@ -583,6 +583,67 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
 bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data);
 
 /**
+ * @brief Add uint8_t data to last fragment in fragment list
+ *
+ * @details Add data to last fragment. If there is no enough space in last
+ * fragment then new data fragment will be created and will be added to
+ * fragment list. Caller has to take care of endianness if needed.
+ *
+ * @param buf Network buffer fragment list.
+ * @param data Data to be added
+ *
+ * @return True if all the data is placed at end of fragment list,
+ * False otherwie (In-case of false buf might contain input data in the
+ * process of placing into fragments).
+ */
+static inline bool net_nbuf_write_u8(struct net_buf *buf, uint8_t data)
+{
+	return net_nbuf_write(buf, 1, &data);
+}
+
+/**
+ * @brief Add uint16_t data to last fragment in fragment list
+ *
+ * @details Add data to last fragment. If there is no enough space in last
+ * fragment then new data fragment will be created and will be added to
+ * fragment list. Caller has to take care of endianness if needed.
+ *
+ * @param buf Network buffer fragment list.
+ * @param data Data to be added
+ *
+ * @return True if all the data is placed at end of fragment list,
+ * False otherwie (In-case of false buf might contain input data in the
+ * process of placing into fragments).
+ */
+static inline bool net_nbuf_write_be16(struct net_buf *buf, uint16_t data)
+{
+	uint16_t value = sys_cpu_to_be16(data);
+
+	return net_nbuf_write(buf, sizeof(uint16_t), (uint8_t *)&value);
+}
+
+/**
+ * @brief Add uint32_t data to last fragment in fragment list
+ *
+ * @details Add data to last fragment. If there is no enough space in last
+ * fragment then new data fragment will be created and will be added to
+ * fragment list. Caller has to take care of endianness if needed.
+ *
+ * @param buf Network buffer fragment list.
+ * @param data Data to be added
+ *
+ * @return True if all the data is placed at end of fragment list,
+ * False otherwie (In-case of false buf might contain input data in the
+ * process of placing into fragments).
+ */
+static inline bool net_nbuf_write_be32(struct net_buf *buf, uint32_t data)
+{
+	uint32_t value = sys_cpu_to_be32(data);
+
+	return net_nbuf_write(buf, sizeof(uint32_t), (uint8_t *)&value);
+}
+
+/**
  * @brief Get data from buffer
  *
  * @details Get N number of bytes starting from fragment's offset. If the total
@@ -626,6 +687,26 @@ static inline struct net_buf *net_nbuf_skip(struct net_buf *buf,
 					    uint16_t *pos, uint16_t len)
 {
 	return net_nbuf_read(buf, offset, pos, len, NULL);
+}
+
+/**
+ * @brief Get a byte value from fragmented buffer
+ *
+ * @param buf Network buffer fragment.
+ * @param offset Offset of input buffer.
+ * @param pos Pointer to position of offset after reading 2 bytes,
+ *            this is with respect to return buffer(fragment).
+ * @param value Value is returned
+ *
+ * @return Pointer to fragment after successful read,
+ *         NULL otherwise (if pos is 0, NULL is not a failure case).
+ */
+static inline struct net_buf *net_nbuf_read_u8(struct net_buf *buf,
+					       uint16_t offset,
+					       uint16_t *pos,
+					       uint8_t *value)
+{
+	return net_nbuf_read(buf, offset, pos, 1, value);
 }
 
 /**
