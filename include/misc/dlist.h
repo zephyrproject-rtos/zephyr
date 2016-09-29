@@ -147,12 +147,27 @@ static inline int sys_dlist_is_empty(sys_dlist_t *list)
  *
  * @param list the doubly-linked list to operate on
  *
- * @return a pointer to the head element from a node, NULL if list is empty
+ * @return a pointer to the head element, NULL if list is empty
  */
 
 static inline sys_dnode_t *sys_dlist_peek_head(sys_dlist_t *list)
 {
 	return sys_dlist_is_empty(list) ? NULL : list->head;
+}
+
+/**
+ * @brief get a reference to the head item in the list
+ *
+ * The list must be known to be non-empty.
+ *
+ * @param list the doubly-linked list to operate on
+ *
+ * @return a pointer to the head element
+ */
+
+static inline sys_dnode_t *sys_dlist_peek_head_not_empty(sys_dlist_t *list)
+{
+	return list->head;
 }
 
 /**
