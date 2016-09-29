@@ -3,8 +3,11 @@
 Memory Maps
 ###########
 
-A :dfn:`memory map` is a kernel object that allows fixed-size memory blocks
+A :dfn:`memory map` is a kernel object that allows memory blocks
 to be dynamically allocated from a designated memory region.
+All memory blocks in a memory map have a single fixed size,
+allowing them to be allocated and released efficiently
+and avoiding memory fragmentation concerns.
 
 .. contents::
     :local:
@@ -18,15 +21,14 @@ by its memory address.
 
 A memory map has the following key properties:
 
-* A **buffer** that provides the memory for the memory map's blocks.
-
 * The **block size** of each block, measured in bytes.
+  It must be at least 4 bytes long.
 
 * The **number of blocks** available for allocation.
+  It must be greater than zero.
 
-The number of blocks and block size values must be greater than zero.
-The block size must be at least 4 bytes, to allow the kernel
-to maintain a linked list of unallocated blocks.
+* A **buffer** that provides the memory for the memory map's blocks.
+  It must be at least "block size" times "number of blocks" bytes long.
 
 A thread that needs to use a memory block simply allocates it from a memory
 map. When the thread finishes with a memory block,
@@ -38,13 +40,18 @@ Any number of thread may wait on an empty memory map simultaneously;
 when a memory block becomes available, it is given to the highest-priority
 thread that has waited the longest.
 
-The kernel manages memory blocks in an efficient and deterministic
-manner that eliminates the risk of memory fragmentation problems which can
-arise when using variable-size blocks.
-
 Unlike a heap, more than one memory map can be defined, if needed. This
 allows for a memory map with smaller blocks and others with larger-sized
 blocks. Alternatively, a memory pool object may be used.
+
+Internal Operation
+==================
+
+A memory map's buffer is an array of fixed-size blocks,
+with no wasted space between the blocks.
+
+The memory map keeps track of unallocated blocks using a linked list;
+the first 4 bytes of each unused block provide the necessary linkage.
 
 Implementation
 **************
@@ -81,15 +88,16 @@ Allocating a Memory Block
 A memory block is allocated by calling :cpp:func:`k_mem_map_alloc()`.
 
 The following code builds on the example above, and waits up to 100 milliseconds
-for a memory block to become available,
-and gives a warning if it is not obtained in that time.
+for a memory block to become available, then fills it with zeroes.
+A warning is printed if a suitable block is not obtained.
 
 .. code-block:: c
 
     char *block_ptr;
 
     if (k_mem_map_alloc(&my_map, &block_ptr, 100) == 0)) {
-        /* utilize memory block */
+        memset(block_ptr, 0, 400);
+	...
     } else {
         printf("Memory allocation time-out");
     }
@@ -116,7 +124,7 @@ Suggested Uses
 Use a memory map to allocate and free memory in fixed-size blocks.
 
 Use memory map blocks when sending large amounts of data from one thread
-to another.
+to another, to avoid unnecessary copying of the data.
 
 Configuration Options
 *********************
