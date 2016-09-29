@@ -863,10 +863,13 @@ void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
 
 /** @brief Delete existing fragment from a chain of bufs.
  *
- *  @param parent Parent buffer/fragment.
+ *  @param parent Parent buffer/fragment, or NULL if there is no parent.
  *  @param frag Fragment to delete.
+ *
+ *  @return Pointer to the buffer following the fragment, or NULL if it
+ *          had no further fragments.
  */
-void net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
+struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
 
 /** @brief Calculate amount of bytes stored in fragments.
  *
