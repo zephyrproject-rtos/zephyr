@@ -78,6 +78,11 @@ NET_L2_DECLARE_PUBLIC(ETHERNET_L2);
 NET_L2_DECLARE_PUBLIC(IEEE802154_L2);
 #endif /* CONFIG_NET_L2_IEEE802154 */
 
+#ifdef CONFIG_NET_L2_BLUETOOTH
+#define BLUETOOTH_L2		BLUETOOTH
+#define BLUETOOTH_L2_CTX_TYPE	void*
+#endif /* CONFIG_NET_L2_BLUETOOTH */
+
 extern struct net_l2 __net_l2_end[];
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn)		\

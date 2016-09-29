@@ -39,6 +39,25 @@ config NET_DEBUG_L2_ETHERNET
 	help
 	Enables Ethernet L2 output debug messages
 
+config NET_L2_BLUETOOTH
+	bool "Enable Bluetooth support"
+	select BLUETOOTH
+	select BLUETOOTH_PERIPHERAL
+	select BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
+	select NET_6LO
+	default n
+	help
+	  Enable Bluetooth driver that send and receives IPv6 packets,
+	  does header compression on it and writes it to the
+	  Bluetooth stack via L2CAP channel.
+
+config NET_DEBUG_L2_BLUETOOTH
+	bool "Debug Bluetooth L2 layer"
+	default n
+	depends on NET_LOG
+	help
+	Enables Bluetooth L2 output debug messages
+
 source "net/yaip/l2/ieee802154/Kconfig"
 
 config NET_ARP
