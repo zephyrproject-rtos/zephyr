@@ -27,6 +27,7 @@
 #include <net/nbuf.h>
 #include <net/net_if.h>
 #include <net/arp.h>
+#include <net/net_mgmt.h>
 
 #include "net_private.h"
 #include "ipv6.h"
@@ -293,6 +294,8 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			net_sprint_ipv6_addr(addr),
 			net_addr_type2str(addr_type));
 
+		net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_ADD, iface);
+
 		return &iface->ipv6.unicast[i];
 	}
 
@@ -327,6 +330,8 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr)
 			i, iface, net_sprint_ipv6_addr(addr),
 			net_addr_type2str(iface->ipv6.unicast[i].addr_type));
 
+		net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_DEL, iface);
+
 		return true;
 	}
 
@@ -356,6 +361,8 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		NET_DBG("[%d] interface %p address %s added", i, iface,
 			net_sprint_ipv6_addr(addr));
 
+		net_mgmt_event_notify(NET_EVENT_IPV6_MADDR_ADD, iface);
+
 		return &iface->ipv6.mcast[i];
 	}
 
@@ -381,6 +388,8 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, struct in6_addr *addr)
 
 		NET_DBG("[%d] interface %p address %s removed",
 			i, iface, net_sprint_ipv6_addr(addr));
+
+		net_mgmt_event_notify(NET_EVENT_IPV6_MADDR_DEL, iface);
 
 		return true;
 	}
@@ -445,6 +454,8 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 		NET_DBG("[%d] interface %p prefix %s/%d added", i, iface,
 			net_sprint_ipv6_addr(prefix), len);
 
+		net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_ADD, iface);
+
 		return &iface->ipv6.prefix[i];
 	}
 
@@ -469,6 +480,8 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 		net_if_ipv6_prefix_unset_timer(&iface->ipv6.prefix[i]);
 
 		iface->ipv6.prefix[i].is_used = false;
+
+		net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, iface);
 
 		return true;
 	}
