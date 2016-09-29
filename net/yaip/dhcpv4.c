@@ -520,14 +520,14 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 	}
 
 	while (frag) {
-		frag = net_nbuf_read(frag, pos, &pos, 1, &type);
+		frag = net_nbuf_read_u8(frag, pos, &pos, &type);
 
 		if (type == DHCPV4_OPTIONS_END) {
 			end = true;
 			return NET_OK;
 		}
 
-		frag = net_nbuf_read(frag, pos, &pos, 1, &length);
+		frag = net_nbuf_read_u8(frag, pos, &pos, &length);
 		if (!frag) {
 			return NET_DROP;
 		}
@@ -578,7 +578,7 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read(frag, pos, &pos, 1, msg_type);
+			frag = net_nbuf_read_u8(frag, pos, &pos, msg_type);
 			break;
 		default:
 			frag = net_nbuf_skip(frag, pos, &pos, length);
