@@ -60,6 +60,17 @@ static void pkt_hexdump(uint8_t *pkt, uint8_t length)
 #define pkt_hexdump(...)
 #endif
 
+static inline uint8_t get_lqi(struct net_buf *buf)
+{
+	uint8_t *lqi;
+
+	buf->len -= 1;
+
+	lqi = net_buf_tail(buf);
+
+	return *lqi;
+}
+
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 static inline void ieee802154_acknowledge(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu)
@@ -128,6 +139,9 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	uint32_t src;
 	uint32_t dst;
 #endif /* CONFIG_NET_6LO */
+
+	/* Let's remove LQI for now as it is not used */
+	get_lqi(buf);
 
 	if (!ieee802154_validate_frame(net_nbuf_ll(buf),
 				       net_buf_frags_len(buf), &mpdu)) {
