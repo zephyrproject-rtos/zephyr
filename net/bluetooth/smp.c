@@ -1281,12 +1281,40 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-static int smp_br_send_pairing_req(struct bt_smp *smp)
+static struct bt_smp *smp_br_chan_get(struct bt_conn *conn)
 {
-	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SMP);
+	if (!chan) {
+		BT_ERR("Unable to find SMP channel");
+		return NULL;
+	}
+
+	return CONTAINER_OF(chan, struct bt_smp, chan);
+}
+
+static int smp_br_send_pairing_req(struct bt_conn *conn)
+{
 	struct bt_smp_pairing *req;
 	struct net_buf *req_buf;
 	uint8_t max_key_size;
+	struct bt_smp *smp;
+
+	smp = smp_br_chan_get(conn);
+	if (!smp) {
+		return -ENOTCONN;
+	}
+
+	/* SMP Timeout */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
+		return -EIO;
+	}
+
+	/* pairing is in progress */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
+		return -EBUSY;
+	}
 
 	max_key_size = bt_conn_enc_key_size(conn);
 	if (!max_key_size) {
@@ -2331,6 +2359,12 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	BT_DBG("");
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		return smp_br_send_pairing_req(conn);
+	}
+#endif
+
 	smp = smp_chan_get(conn);
 	if (!smp) {
 		return -ENOTCONN;
@@ -2345,12 +2379,6 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		return -EBUSY;
 	}
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
-		return smp_br_send_pairing_req(smp);
-	}
-#endif
 
 	/* early verify if required sec level if reachable */
 	if (!sec_level_reachable(conn)) {
