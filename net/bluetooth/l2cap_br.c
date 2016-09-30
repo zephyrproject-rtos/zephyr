@@ -1606,6 +1606,15 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 	}
 }
 
+static void check_fixed_channel(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+
+	if (br_chan->rx.cid < L2CAP_BR_DYN_CID_START) {
+		connect_fixed_channel(br_chan);
+	}
+}
+
 void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_l2cap_hdr *hdr = (void *)buf->data;
@@ -1627,6 +1636,12 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 		net_buf_unref(buf);
 		return;
 	}
+
+	/*
+	 * if data was received for fixed channel before Information
+	 * Response we connect channel here.
+	 */
+	check_fixed_channel(chan);
 
 	chan->ops->recv(chan, buf);
 	net_buf_unref(buf);
