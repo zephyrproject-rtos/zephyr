@@ -948,7 +948,7 @@ struct net_if_api {
 	int (*send)(struct net_if *iface, struct net_buf *buf);
 };
 
-#define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name_##sfx)
+#define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name##_##sfx)
 #define NET_IF_GET(dev_name, sfx)					\
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
 
