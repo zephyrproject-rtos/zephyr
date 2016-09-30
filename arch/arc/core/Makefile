@@ -1,6 +1,10 @@
+ifeq ($(CONFIG_KERNEL_V2),y)
+ccflags-y += -I$(srctree)/kernel/unified/include
+else
 ccflags-y += -I$(srctree)/kernel/nanokernel/include
-ccflags-y +=-I$(srctree)/arch/$(ARCH)/include
 ccflags-y += -I$(srctree)/kernel/microkernel/include
+endif
+ccflags-y +=-I$(srctree)/arch/$(ARCH)/include
 
 obj-y += thread.o thread_entry_wrapper.o \
 	cpu_idle.o  fast_irq.o  fatal.o  fault.o  \

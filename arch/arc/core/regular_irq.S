@@ -35,6 +35,9 @@
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
 GTEXT(_rirq_common_interrupt_swap)
+#ifdef CONFIG_KERNEL_V2
+GTEXT(_is_next_thread_current)
+#endif
 
 #if CONFIG_NUM_IRQ_PRIO_LEVELS > 2
 #error "NUM_IRQ_PRIO_LEVELS>2 is not supported."
@@ -118,6 +121,41 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 * b) needs to load it to restore the interrupted context.
 	 */
 
+#ifdef CONFIG_KERNEL_V2
+	/* coop thread ? do not schedule */
+	ld_s r0, [r2, __tTCS_prio_OFFSET]
+	cmp_s r0, 0
+	blt.d _rirq_no_reschedule
+	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+
+	/* scheduler locked ? do not schedule */
+	ld_s r0, [r2, __tTCS_sched_locked_OFFSET]
+	brgt.d r0, 0,  _rirq_no_reschedule
+	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+
+	push_s r2
+	push_s r1
+	/* check if the current thread needs to be rescheduled */
+	push_s blink
+	jl _is_next_thread_current
+	pop_s blink
+	pop_s r1
+	pop_s r2
+	breq.d r0, 0, _rirq_no_reschedule
+	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+
+	/*
+	 * Get the next scheduled thread. On _get_next_ready_thread
+	 * return it is stored in r0.
+	 */
+	push_s r2
+	push_s r1
+	push_s blink
+	jl _get_next_ready_thread
+	pop_s blink
+	pop_s r1
+	pop_s r2
+#else
 	ld_s r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
 	bz.d _rirq_no_reschedule
@@ -127,6 +165,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	cmp r0, 0
 	bz.d _rirq_no_reschedule
 	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+#endif /* CONFIG_KERNEL_V2 */
 
 .balign 4
 _rirq_reschedule:
@@ -139,8 +178,10 @@ _rirq_reschedule:
 	/* incoming fiber is in r0: it becomes the new 'current' */
 	mov r2, r0
 	st_s r2, [r1, __tNANO_current_OFFSET]
+#if !defined(CONFIG_KERNEL_V2)
 	ld_s r3, [r2, __tTCS_link_OFFSET]
 	st_s r3, [r1, __tNANO_fiber_OFFSET]
+#endif
 
 _rirq_common_interrupt_swap:
 	/* r2 contains pointer to new thread */

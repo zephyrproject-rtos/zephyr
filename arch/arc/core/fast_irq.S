@@ -37,6 +37,9 @@ GTEXT(_firq_stack_setup)
 
 #if CONFIG_RGF_NUM_BANKS != 1
 GDATA(_firq_stack)
+#ifdef CONFIG_KERNEL_V2
+GTEXT(_is_next_thread_current)
+#endif
 
 SECTION_VAR(NOINIT, _firq_stack)
 	.space CONFIG_FIRQ_STACK_SIZE
@@ -138,14 +141,37 @@ SECTION_FUNC(TEXT, _firq_exit)
 	 * means that another bit is set so an interrupt was interrupted.
 	 */
 
-	breq r3, 1, _check_if_current_is_the_task
+	breq r3, 1, _firq_check_for_swap
 
 	_firq_return
 #endif
 
 .balign 4
-_check_if_current_is_the_task:
+#ifdef CONFIG_KERNEL_V2
+_firq_check_for_swap:
+	/* coop thread ? do not schedule */
+	ld_s r0, [r2, __tTCS_prio_OFFSET]
+	brge r0, 0, _firq_reschedule
+	_firq_return
 
+	/* scheduler locked ? do not schedule */
+	ld_s r0, [r2, __tTCS_sched_locked_OFFSET]
+	brle r0, 0,  _firq_reschedule
+	_firq_return
+
+	/* check if the current thread needs to be rescheduled */
+	push_s r2
+	push_s r1
+	push_s blink
+	jl _is_next_thread_current
+	pop_s blink
+	pop_s r1
+	pop_s r2
+	brne r0, 0, _firq_reschedule
+	_firq_return
+#else
+_firq_check_for_swap:
+	/* Check if the current is a task */
 	ld_s r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
 	bnz _check_if_a_fiber_is_ready
@@ -156,6 +182,7 @@ _check_if_a_fiber_is_ready:
 	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
 	brne r0, 0, _firq_reschedule
 	_firq_return
+#endif /* CONFIG_KERNEL_V2 */
 
 .balign 4
 _firq_reschedule:
@@ -193,11 +220,27 @@ _firq_reschedule:
 
 	st _CAUSE_FIRQ, [r2, __tTCS_relinquish_cause_OFFSET]
 
+#ifdef CONFIG_KERNEL_V2
+	/*
+	 * Save needed registers to callee saved ones. It is faster than
+	 * pushing them to stack. It is possible to do since program has
+	 * just saved them and the calling routine will save them in turn
+	 * if it uses them.
+	 */
+	mov_s r13, blink
+	mov_s r14, r1
+	jl _get_next_ready_thread
+	mov_s blink, r13
+	mov_s r1, r14
+	mov_s r2, r0
+	st_s r2, [r1, __tNANO_current_OFFSET]
+#else
 	ld_s r2, [r1, __tNANO_fiber_OFFSET]
 
 	st_s r2, [r1, __tNANO_current_OFFSET]
 	ld_s r3, [r2, __tTCS_link_OFFSET]
 	st_s r3, [r1, __tNANO_fiber_OFFSET]
+#endif
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Use stack top and down registers from restored context */

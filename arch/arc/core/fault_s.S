@@ -189,7 +189,30 @@ _trap_return:
 #endif
 
 .balign 4
+#ifdef CONFIG_KERNEL_V2
 _trap_check_for_swap:
+	/* coop thread ? do not schedule */
+	ld_s r0, [r2, __tTCS_prio_OFFSET]
+	brlt r0, 0, _trap_return
+
+	/* scheduler locked ? do not schedule */
+	ld_s r0, [r2, __tTCS_sched_locked_OFFSET]
+	brgt r0, 0, _trap_return
+
+	/* check if the current thread needs to be rescheduled */
+	push_s r2
+	push_s r1
+	push_s blink
+	jl _is_next_thread_current
+	pop_s blink
+	pop_s r1
+	pop_s r2
+	brne r0, 0, _trap_return
+	/* go on to _trap_reschedule by default */
+
+#else
+_trap_check_for_swap:
+	/* Check if the current is a task */
 	ld_s r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
 	bnz _e_check_if_a_fiber_is_ready
@@ -200,6 +223,7 @@ _e_check_if_a_fiber_is_ready:
 	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
 	brne r0, 0, _trap_reschedule
 	b _trap_return
+#endif /* CONFIG_KERNEL_V2 */
 
 .balign 4
 _trap_reschedule:
@@ -209,11 +233,29 @@ _trap_reschedule:
 	st _CAUSE_RIRQ, [r2, __tTCS_relinquish_cause_OFFSET]
 	/* note: Ok to use _CAUSE_RIRQ since everything is saved */
 
+#ifdef CONFIG_KERNEL_V2
+	/*
+	 * Save needed registers to callee saved ones. It is faster than
+	 * pushing registers to stack. It is possible to do since program has
+	 * just saved them and the calling routine will save them in turn
+	 * if it uses them.
+	 */
+	mov_s r13, blink
+	mov_s r14, r0
+	mov_s r15, r1
+	jl _get_next_ready_thread
+	mov_s r2, r0
+	mov_s r1, r15
+	mov_s r0, r14
+	mov_s blink, r13
+	st_s r2, [r1, __tNANO_current_OFFSET]
+#else
 	ld_s r2, [r1, __tNANO_fiber_OFFSET]
 
 	st_s r2, [r1, __tNANO_current_OFFSET]
 	ld_s r3, [r2, __tTCS_link_OFFSET]
 	st_s r3, [r1, __tNANO_fiber_OFFSET]
+#endif /* CONFIG_KERNEL_V2 */
 
 	/* clear AE bit to forget this was an exception */
 	lr r3, [_ARC_V2_STATUS32]

@@ -96,8 +96,8 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
  * @param parameter1 first param to entry point
  * @param parameter2 second param to entry point
  * @param parameter3 third param to entry point
- * @param fiber priority, -1 for task
- * @param options is unused (saved for future expansion)
+ * @param priority thread priority
+ * @param options thread options: ESSENTIAL
  *
  * @return N/A
  */
@@ -138,8 +138,19 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 #else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif
+
+#ifdef CONFIG_KERNEL_V2
+	/* k_q_node initialized upon first insertion in a list */
+	tcs->flags = options | K_PRESTART;
+	tcs->sched_locked = 0;
+
+	/* static threads overwrite them afterwards with real values */
+	tcs->init_data = NULL;
+	tcs->fn_abort = NULL;
+#else
 	tcs->link = NULL;
 	tcs->flags = priority == -1 ? TASK | PREEMPTIBLE : FIBER;
+#endif
 	tcs->prio = priority;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
@@ -156,7 +167,7 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	tcs->entry = (struct __thread_entry *)(pInitCtx);
 #endif
 
-#ifdef CONFIG_MICROKERNEL
+#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
 	tcs->uk_task_ptr = uk_task_ptr;
 #else
 	ARG_UNUSED(uk_task_ptr);
