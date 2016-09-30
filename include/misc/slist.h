@@ -92,6 +92,8 @@ static inline void sys_slist_init(sys_slist_t *list)
 	list->tail = NULL;
 }
 
+#define SYS_SLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
+
 /**
  * @brief Test if the given list is empty
  *
