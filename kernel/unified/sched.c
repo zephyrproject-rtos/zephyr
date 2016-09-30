@@ -41,7 +41,13 @@ static void _clear_ready_q_prio_bit(int prio)
 /*
  * Add thread to the ready queue, in the slot for its priority; the thread
  * must not be on a wait queue.
+ *
+ * This function, along with _move_thread_to_end_of_prio_q(), are the _only_
+ * places where a thread is put on the ready queue.
+ *
+ * Interrupts must be locked when calling this function.
  */
+
 void _add_thread_to_ready_q(struct tcs *thread)
 {
 	int q_index = _get_ready_q_q_index(thread->prio);
@@ -49,9 +55,20 @@ void _add_thread_to_ready_q(struct tcs *thread)
 
 	_set_ready_q_prio_bit(thread->prio);
 	sys_dlist_append(q, &thread->k_q_node);
+
+	struct k_thread **cache = &_nanokernel.ready_q.cache;
+
+	*cache = *cache && _is_prio_higher(thread->prio, (*cache)->prio) ?
+		 thread : *cache;
 }
 
-/* remove thread from the ready queue */
+/*
+ * This function, along with _move_thread_to_end_of_prio_q(), are the _only_
+ * places where a thread is taken off the ready queue.
+ *
+ * Interrupts must be locked when calling this function.
+ */
+
 void _remove_thread_from_ready_q(struct tcs *thread)
 {
 	int q_index = _get_ready_q_q_index(thread->prio);
@@ -61,6 +78,10 @@ void _remove_thread_from_ready_q(struct tcs *thread)
 	if (sys_dlist_is_empty(q)) {
 		_clear_ready_q_prio_bit(thread->prio);
 	}
+
+	struct k_thread **cache = &_nanokernel.ready_q.cache;
+
+	*cache = *cache == thread ? NULL : *cache;
 }
 
 /* reschedule threads if the scheduler is not locked */
@@ -142,9 +163,11 @@ void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout)
 	_pend_thread(_current, wait_q, timeout);
 }
 
-/* find which one is the next thread to run */
-/* must be called with interrupts locked */
-struct tcs *_get_next_ready_thread(void)
+/*
+ * Find the next thread to run when there is no thread in the cache and update
+ * the cache.
+ */
+static struct k_thread *__get_next_ready_thread(void)
 {
 	int prio = _get_highest_ready_prio();
 	int q_index = _get_ready_q_q_index(prio);
@@ -157,7 +180,18 @@ struct tcs *_get_next_ready_thread(void)
 	struct k_thread *thread =
 		(struct k_thread *)sys_dlist_peek_head_not_empty(list);
 
+	_nanokernel.ready_q.cache = thread;
+
 	return thread;
+}
+
+/* find which one is the next thread to run */
+/* must be called with interrupts locked */
+struct k_thread *_get_next_ready_thread(void)
+{
+	struct k_thread *cache = _nanokernel.ready_q.cache;
+
+	return cache ? cache : __get_next_ready_thread();
 }
 
 /*
@@ -198,6 +232,30 @@ int k_current_priority_get(void)
 }
 
 /*
+ * Interrupts must be locked when calling this function.
+ *
+ * This function, along with _add_thread_to_ready_q() and
+ * _remove_thread_from_ready_q(), are the _only_ places where a thread is
+ * taken off or put on the ready queue.
+ */
+void _move_thread_to_end_of_prio_q(struct k_thread *thread)
+{
+	int q_index = _get_ready_q_q_index(thread->prio);
+	sys_dlist_t *q = &_nanokernel.ready_q.q[q_index];
+
+	if (sys_dlist_is_tail(q, &thread->k_q_node)) {
+		return;
+	}
+
+	sys_dlist_remove(&thread->k_q_node);
+	sys_dlist_append(q, &thread->k_q_node);
+
+	struct k_thread **cache = &_nanokernel.ready_q.cache;
+
+	*cache = *cache == thread ? NULL : *cache;
+}
+
+/*
  * application API: the current thread yields control to threads of higher or
  * equal priorities. This is done by remove the thread from the ready queue,
  * putting it back at the end of its priority's list and invoking the
@@ -209,8 +267,7 @@ void k_yield(void)
 
 	int key = irq_lock();
 
-	_remove_thread_from_ready_q(_current);
-	_add_thread_to_ready_q(_current);
+	_move_thread_to_end_of_prio_q(_current);
 
 	if (_current == _get_next_ready_thread()) {
 		irq_unlock(key);

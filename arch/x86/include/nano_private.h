@@ -745,6 +745,7 @@ struct tcs {
 
 #ifdef CONFIG_KERNEL_V2
 struct ready_q {
+	struct k_thread *cache;
 	uint32_t prio_bmap[1];
 	sys_dlist_t q[K_NUM_PRIORITIES];
 };

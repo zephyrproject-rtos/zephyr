@@ -211,8 +211,7 @@ static void handle_time_slicing(int32_t ticks)
 	_time_slice_elapsed += _ticks_to_ms(ticks);
 	if (_time_slice_elapsed >= _time_slice_duration) {
 		_time_slice_elapsed = 0;
-		_remove_thread_from_ready_q(_current);
-		_add_thread_to_ready_q(_current);
+		_move_thread_to_end_of_prio_q(_current);
 	}
 }
 #else

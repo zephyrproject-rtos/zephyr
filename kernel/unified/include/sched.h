@@ -32,6 +32,7 @@ extern void k_sched_unlock(void);
 extern void _pend_thread(struct tcs *thread,
 			 _wait_q_t *wait_q, int32_t timeout);
 extern void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout);
+extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 extern struct tcs *_get_next_ready_thread(void);
 extern int __must_switch_threads(void);
 extern void k_thread_priority_set(struct tcs *thread, int32_t priority);
