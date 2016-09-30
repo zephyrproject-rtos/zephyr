@@ -122,7 +122,6 @@ extern void k_busy_wait(uint32_t usec_to_wait);
 extern void k_yield(void);
 extern void k_wakeup(k_tid_t thread);
 extern k_tid_t k_current_get(void);
-extern k_tid_t k_current_get(void);
 extern int k_current_priority_get(void);
 extern int k_thread_cancel(k_tid_t thread);
 
@@ -547,8 +546,8 @@ struct k_delayed_work {
 /**
  * @brief Initialize delayed work
  */
-void k_delayed_work_init(struct k_delayed_work *work,
-			    k_work_handler_t handler);
+extern void k_delayed_work_init(struct k_delayed_work *work,
+				k_work_handler_t handler);
 
 /**
  * @brief Submit a delayed work item to a workqueue.
@@ -569,9 +568,9 @@ void k_delayed_work_init(struct k_delayed_work *work,
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
-				      struct k_delayed_work *work,
-				      int32_t ticks);
+extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
+					  struct k_delayed_work *work,
+					  int32_t ticks);
 
 /**
  * @brief Cancel a delayed work item
@@ -585,7 +584,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int k_delayed_work_cancel(struct k_delayed_work *work);
+extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
 #endif /* CONFIG_NANO_TIMEOUTS */
 
@@ -830,8 +829,8 @@ struct k_msgq {
 #define K_MSGQ_SIZE(q_depth, q_width) \
 	((sizeof(struct k_msgq)) + ((q_width) * (q_depth)))
 
-void k_msgq_init(struct k_msgq *q, uint32_t msg_size, uint32_t max_msgs,
-		 char *buffer);
+extern void k_msgq_init(struct k_msgq *q, uint32_t msg_size,
+			uint32_t max_msgs, char *buffer);
 extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
 extern int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout);
 extern void k_msgq_purge(struct k_msgq *q);
