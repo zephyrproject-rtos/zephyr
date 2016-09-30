@@ -20,4 +20,3 @@
 
 void ipss_init(void);
 int ipss_advertise(void);
-int ipss_listen(void);
