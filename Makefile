@@ -788,10 +788,10 @@ libs-y		:= $(libs-y1) $(libs-y2)
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(libs-y) $(core-y)
 export LDFLAGS_zephyr
 
-zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_MAIN) $(app-y)
-
 ALL_LIBS += $(TOOLCHAIN_LIBS)
 export ALL_LIBS
+
+zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_MAIN) $(app-y) $(ALL_LIBS)
 
 LINK_LIBS := $(foreach l,$(ALL_LIBS), -l$(l))
 
