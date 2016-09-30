@@ -183,7 +183,7 @@ static inline bool _cc2520_command_strobe_snop(struct cc2520_spi *spi,
 		return _cc2520_command_strobe(spi, __ins);		\
 	}
 
-#define DEFINE_STROBE_SNOP_INSTRUCTION(__ins_name, __ins)			\
+#define DEFINE_STROBE_SNOP_INSTRUCTION(__ins_name, __ins)		\
 	static inline bool instruct_##__ins_name(struct cc2520_spi *spi) \
 	{								\
 		return _cc2520_command_strobe_snop(spi, __ins);		\

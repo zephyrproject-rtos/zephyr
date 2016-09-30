@@ -656,7 +656,7 @@ static void cc2520_rx(int arg, int unused2)
 		}
 #endif
 
-		SYS_LOG_DBG("Caught a packet (%u)\n", pkt_len - CC2520_FCS_LENGTH);
+		SYS_LOG_DBG("Caught a packet (%u)\n", pkt_len);
 
 		if (net_recv_data(cc2520->iface, buf) < 0) {
 			SYS_LOG_DBG("Packet dropped by NET stack\n");
