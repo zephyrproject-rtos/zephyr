@@ -1,14 +1,13 @@
 .. _timing_v2:
 
-Timing [TBD]
-############
+Timing
+######
 
-This section describes the timing-related services available
-in the kernel.
+This section describes the kernel's time-based services, such as
+specifying time delays or for measuring the passage of time.
 
 .. toctree::
    :maxdepth: 2
 
    clocks.rst
-   nanokernel_timers.rst
-   microkernel_timers.rst
+   timers.rst
