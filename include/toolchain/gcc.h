@@ -25,7 +25,7 @@
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() __attribute__((alias(#real_func)))
 
-#define _ALIAS_OF(of) __attribute__((alias(#of)))
+#define ALIAS_OF(of) __attribute__((alias(#of)))
 
 #define CODE_UNREACHABLE __builtin_unreachable()
 #define FUNC_NORETURN    __attribute__((__noreturn__))
