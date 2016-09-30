@@ -19,7 +19,9 @@ its memory address.
 An event has the following key properties:
 
 * An **event handler**, which specifies the action to be taken
-  when the event is signalled.
+  when the event is signalled. The action may instruct the system workqueue
+  to execute a function to process the event, mark the event as pending
+  so it can be later processed by a thread, or ignore the event.
 
 * An **event pending flag**, which is set if the event is signalled
   and an event handler function does not consume the signal.
@@ -63,9 +65,6 @@ that has waited longest.
     A thread that accepts an event cannot directly determine how many times
     the event pending flag was set since the event was last accepted.
 
-    SHOULD WE ALLOW THE EVENT INITIALIZATION ROUTINE TO ACCEPT THE MAXIMUM
-    NUMBER OF TIMES THE EVENT CAN PEND? IT'S A TRIVIAL CHANGE ...
-
 Comparison to Unix-style Signals
 ================================
 
@@ -94,9 +93,9 @@ The following code defines and initializes an event.
 
 .. code-block:: c
 
-    struct k_event my_event;
+    extern int my_event_handler(struct k_event *event);
 
-    extern int my_event_handler(struct k_event *event)
+    struct k_event my_event;
 
     k_event_init(&my_event, my_event_handler);
 
@@ -107,6 +106,8 @@ The following code has the same effect as the code segment above.
 
 .. code-block:: c
 
+    extern int my_event_handler(struct k_event *event);
+
     K_EVENT_DEFINE(my_event, my_event_handler);
 
 Signaling an Event
@@ -114,10 +115,14 @@ Signaling an Event
 
 An event is signalled by calling :cpp:func:`k_event_send()`.
 
-The following code builds on the example above, and uses the event
-in an ISR to signal that a key press has occurred.
+The following code illustrates how an ISR can signal an event
+to indicate that a key press has occurred.
 
 .. code-block:: c
+
+    extern int my_event_handler(struct k_event *event);
+
+    K_EVENT_DEFINE(my_event, my_event_handler);
 
     void keypress_interrupt_handler(void *arg)
     {
@@ -141,8 +146,8 @@ or immediately pended. It has the following form:
         ...
     }
 
-The following code builds on the example above, and uses an event handler
-function to do processing that is too complex to be performed by the ISR.
+The following code illustrates an event handler function that processes
+key presses detected by an ISR (as shown in the previous section).
 
 .. code-block:: c
 
@@ -163,12 +168,12 @@ Accepting an Event
 
 A pending event is accepted by a thread by calling :cpp:func:`k_event_recv()`.
 
-The following code is an alternative to the example above,
-and uses a dedicated thread to do very complex processing
+The following code is an alternative to the code in the previous section.
+It uses a dedicated thread to do very complex processing
 of key presses that would otherwise monopolize the system workqueue.
-The event handler function is used to filter out unwanted key press
-notifications, allowing the dedicated thread to wake up and process
-key presses only when needed.
+The event handler function is now used only to filter out unwanted key press
+events, allowing the dedicated thread to wake up and process key press events
+only when a numeric key is pressed.
 
 .. code-block:: c
 
@@ -189,9 +194,9 @@ key presses only when needed.
         }
     }
 
-    void keypress_thread(int unused1, int unused2, int unused3)
+    void keypress_thread(void *unused1, void *unused2, void *unused3)
     {
-        /* consume key presses */
+        /* consume numeric key presses */
         while (1) {
 
             /* wait for a key press event to pend */
@@ -204,6 +209,9 @@ key presses only when needed.
 
 Suggested Uses
 **************
+
+Use an event to minimize ISR processing by deferring interrupt-related
+work to a thread to reduce the amount of time interrupts are locked.
 
 Use an event to allow the kernel's system workqueue to handle an event,
 rather than defining an application thread to handle it.
@@ -221,13 +229,8 @@ Related configuration options:
 APIs
 ****
 
-The following APIs for an event are provided by :file:`kernel.h`:
+The following event APIs are provided by :file:`kernel.h`:
 
-:cpp:func:`k_event_handler_set()`
-    Register an event handler function for an event.
-
-:cpp:func:`k_event_send()`
-    Signal an event.
-
-:cpp:func:`k_event_recv()`
-    Catch an event signal.
+* :cpp:func:`k_event_handler_set()`
+* :cpp:func:`k_event_send()`
+* :cpp:func:`k_event_recv()`
