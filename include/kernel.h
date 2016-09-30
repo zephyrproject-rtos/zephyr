@@ -395,7 +395,7 @@ extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
 #define K_FIFO_INITIALIZER(obj) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.data_q = SYS_DLIST_STATIC_INIT(&obj.data_q), \
+	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
