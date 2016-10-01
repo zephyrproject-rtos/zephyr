@@ -30,27 +30,18 @@
  */
 
 /*
- * Number of default pin settings, used for Arduino Rev 3 pinout.
+ * Alter this table to change the default Arduino pin settings on the Freescale
+ * FRDM-K64F boards.  Specifically, change the PINMUX_* values to represent
+ * the functionality desired.
  *
- * NOTE: The FRDM-K64F board routes the PTA0/1/2 pins for JTAG/SWD signals that
+ * The FRDM-K64F board routes the PTA0/1/2 pins for JTAG/SWD signals that
  * are used for the OpenSDAv2 debug interface.  These pins are also routed to
  * the Arduino header pins as D8, D3 and D5, respectively.
  * Since the K64 MCU configures these pins for JTAG/SWD signaling at reset,
  * they should only be re-configured if the debug interface is not used.
+ *
  */
-
-#ifndef CONFIG_PRESERVE_JTAG_IO_PINS
-#define NUM_DFLT_PINS_SET   22
-#else
-#define NUM_DFLT_PINS_SET   (22 - 3)
-#endif
-
-/*
- * Alter this table to change the default Arduino pin settings on the Freescale
- * FRDM-K64F boards.  Specifically, change the PINMUX_* values to represent
- * the functionality desired.
- */
-struct pin_config mux_config[NUM_DFLT_PINS_SET] = {
+struct pin_config mux_config[] = {
 	/* pin,		selected mode */
 	{ K64_PIN_PTC16, K64_PINMUX_FUNC_GPIO },
 	{ K64_PIN_PTC17, K64_PINMUX_FUNC_GPIO },
@@ -89,7 +80,7 @@ int fsl_frdm_k64f_pin_init(struct device *arg)
 	ARG_UNUSED(arg);
 
 	/* configure the pins from the default mapping above */
-	for (int i = 0; i < NUM_DFLT_PINS_SET; i++) {
+	for (int i = 0; i < ARRAY_SIZE(mux_config); i++) {
 		_fsl_k64_set_pin(mux_config[i].pin_num, mux_config[i].mode);
 	}
 
