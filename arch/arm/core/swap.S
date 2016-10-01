@@ -92,8 +92,8 @@ SECTION_FUNC(TEXT, __pendsv)
      * to pend PendSV have been taken with the current kernel
      * state and this is what we're handling currently.
      */
-    ldr ip, =_SCS_ICSR
-    ldr r3, =_SCS_ICSR_UNPENDSV
+    ldr v4, =_SCS_ICSR
+    ldr v3, =_SCS_ICSR_UNPENDSV
 
     /* protect the kernel state while we play with the thread lists */
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
@@ -102,9 +102,11 @@ SECTION_FUNC(TEXT, __pendsv)
     /* find out incoming thread (fiber or task) */
 
 #ifdef CONFIG_KERNEL_V2
-    push {lr}
+    mov.n v2, lr
+    movs.n v1, r1
     blx _get_next_ready_thread
-    pop {lr}
+    movs.n r1, v1
+    mov.n lr, v2
     movs.n r2, r0
 #else
     /* is there a fiber ready ? */
@@ -137,8 +139,8 @@ SECTION_FUNC(TEXT, __pendsv)
      * has been handled.
      */
 
-    /* _SCS_ICSR is still in ip and _SCS_ICSR_UNPENDSV in r3 */
-    str r3, [ip, #0]
+    /* _SCS_ICSR is still in v4 and _SCS_ICSR_UNPENDSV in v3 */
+    str v3, [v4, #0]
 
     /* restore BASEPRI for the incoming thread */
     ldr r0, [r2, #__tTCS_basepri_OFFSET]
