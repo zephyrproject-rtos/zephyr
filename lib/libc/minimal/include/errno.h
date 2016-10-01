@@ -117,7 +117,7 @@ extern int *_get_errno(void);
 /* non-blocking and interrupt i/o */
 #define EINPROGRESS 68 /* Operation now in progress */
 #define EALREADY 69    /* Operation already in progress */
-#define EWOULDBLOCK 70 /* Operation would block */
+#define EWOULDBLOCK EAGAIN /* Operation would block */
 
 #define ENOSYS 71 /* Function not implemented */
 
