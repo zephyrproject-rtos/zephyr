@@ -5,11 +5,11 @@ Description:
 A simple button demo showcasing the use of GPIO input with interrupts.
 
 The demo assumes that a push button is connected to one of GPIO
-lines. The sample code is configured to work on Nucleo-64 F103RB
-board with button B1 providing the input.
+lines. The sample code is configured to work on boards with user defined
+buttons and that  have defined the SW0_* variable in board.h
 
-After startup, the program looks up a predefined GPIO device (GPIOC),
-and configures pin 13 in input mode, enabling interrupt generation on
+After startup, the program looks up a predefined GPIO device,
+and configures the pin in input mode, enabling interrupt generation on
 falling edge. During each iteration of the main loop, the state of
 GPIO line is monitored and printed to the serial console. When the
 input button gets pressed, the interrupt handler will print an

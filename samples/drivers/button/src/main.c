@@ -15,25 +15,37 @@
  */
 
 #include <zephyr.h>
+#include <board.h>
 #include <device.h>
 #include <gpio.h>
 #include <misc/util.h>
-#include <stdio.h>
+#include <misc/printk.h>
 
 /* change this to use another GPIO port */
-#define PORT	"GPIOC"
+#ifdef SW0_GPIO_NAME
+#define PORT	SW0_GPIO_NAME
+#else
+#error SW0_GPIO_NAME needs to be set in board.h
+#endif
+
 /* change this to use another GPIO pin */
-#define PIN	13
+#ifdef SW0_GPIO_PIN
+#define PIN     SW0_GPIO_PIN
+#else
+#error SW0_GPIO_PIN needs to be set in board.h
+#endif
+
 /* change this to enable pull-up/pull-down */
 #define PULL_UP 0
+
 /* change this to use a different interrupt trigger */
 #define EDGE    (GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW)
 
 
-void button_pressed(struct device *gpiob,
-		    struct gpio_callback *cb, uint32_t pins)
+void button_pressed(struct device *gpiob, struct gpio_callback *cb,
+		    uint32_t pins)
 {
-	printf("Button pressed at %d\n", sys_tick_get_32());
+	printk("Button pressed at %d\n", sys_tick_get_32());
 }
 
 static struct gpio_callback gpio_cb;
@@ -42,12 +54,14 @@ void main(void)
 {
 	struct device *gpiob;
 
+	printk("Press the user defined button on the board\n");
 	gpiob = device_get_binding(PORT);
+	if (!gpiob) {
+		printk("error\n");
+	}
 
 	gpio_pin_configure(gpiob, PIN,
-			GPIO_DIR_IN | GPIO_INT
-			| EDGE
-			| PULL_UP);
+			   GPIO_DIR_IN | GPIO_INT |  PULL_UP | EDGE);
 
 	gpio_init_callback(&gpio_cb, button_pressed, BIT(PIN));
 
@@ -58,7 +72,6 @@ void main(void)
 		int val = 0;
 
 		gpio_pin_read(gpiob, PIN, &val);
-		printf("GPIO val: %d\n", val);
 		task_sleep(MSEC(500));
 	}
 }
