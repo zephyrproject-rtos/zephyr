@@ -684,8 +684,8 @@ def kernel_main_c_fifos():
             name = fifo[0]
             depth = fifo[1]
             width = fifo[2]
-	    kernel_main_c_out("K_MSGQ_DEFINE(_k_fifo_obj_%s, %s, %s);\n" %
-	                      (name, depth, width))
+            kernel_main_c_out("K_MSGQ_DEFINE(_k_fifo_obj_%s, %s, %s);\n" %
+                              (name, depth, width))
 
 
 def kernel_main_c_pipes():
@@ -722,8 +722,8 @@ def kernel_main_c_pipes():
         # pipe objects
 
         for pipe in pipe_list:
-	    name = pipe[0]
-	    size = pipe[1]
+            name = pipe[0]
+            size = pipe[1]
             kernel_main_c_out("K_PIPE_DEFINE(_k_pipe_obj_%s, %d);\n" %
 	                      (name, size))
 
@@ -750,7 +750,7 @@ def kernel_main_c_mailboxes():
         # mailbox objects
 
         for mbx in mbx_list:
-	    name = mbx[0]
+            name = mbx[0]
             kernel_main_c_out("K_MBOX_DEFINE(_k_mbox_obj_%s);\n" % (name))
 
 
@@ -767,27 +767,27 @@ def kernel_main_c_maps():
     if kernel_type == 'micro':
 	# memory map buffers and descriptors
 
-	for map in map_list:
-	    name = map[0]
-	    blocks = map[1]
-	    block_size = map[2]
-	    kernel_main_c_out("char __noinit __MAP_%s_buffer[%d];\n" %
+        for map in map_list:
+            name = map[0]
+            blocks = map[1]
+            block_size = map[2]
+            kernel_main_c_out("char __noinit __MAP_%s_buffer[%d];\n" %
 		    (map[0], blocks * block_size))
-	    kernel_main_c_out(
+            kernel_main_c_out(
 	        "struct _k_mem_map_struct _k_mem_map_obj_%s = " % (name) +
 	        "__K_MEM_MAP_INITIALIZER(%d, %d, __MAP_%s_buffer);\n" %
 		(blocks, block_size, map[0]))
-	    kernel_main_c_out(
+            kernel_main_c_out(
 	        "kmemory_map_t _k_mem_map_ptr_%s " % (name) +
 	        "    __in_section(_k_mem_map_ptr, public, mem_map) =\n" +
 	        "    (kmemory_map_t)&_k_mem_map_obj_%s;\n" % (name))
     else:
 	# memory map objects
 
-	for map in map_list:
-	    name = map[0]
-	    blocks = map[1]
-	    block_size = map[2]
+        for map in map_list:
+            name = map[0]
+            blocks = map[1]
+            block_size = map[2]
             kernel_main_c_out("K_MEM_MAP_DEFINE(_k_mem_map_obj_%s, %s, %s);\n" %
                               (name, blocks, block_size))
 
@@ -1104,31 +1104,31 @@ def generate_sysgen_h_obj_ids():
         mutex_type = 'kmutex_t'
         sem_struct = '_k_sem_struct'
         sem_type = 'ksem_t'
-	pipe_struct = '_k_pipe_struct'
-	pipe_type = 'kpipe_t'
-	map_struct = '_k_mem_map_struct'
-	map_type = 'kmemory_map_t'
-	fifo_struct = '_k_fifo_struct'
-	fifo_type = 'kfifo_t'
-	mbox_struct = '_k_mbox_struct'
-	mbox_type = 'kmbox_t'
-	event_type = 'kevent_t'
+        pipe_struct = '_k_pipe_struct'
+        pipe_type = 'kpipe_t'
+        map_struct = '_k_mem_map_struct'
+        map_type = 'kmemory_map_t'
+        fifo_struct = '_k_fifo_struct'
+        fifo_type = 'kfifo_t'
+        mbox_struct = '_k_mbox_struct'
+        mbox_type = 'kmbox_t'
+        event_type = 'kevent_t'
         # add missing object types
     else:
         mutex_struct = 'k_mutex'
         mutex_type = 'struct k_mutex *'
         sem_struct = 'k_sem'
         sem_type = 'struct k_sem *'
-	pipe_struct = 'k_pipe'
-	pipe_type = 'struct k_pipe *'
-	map_struct = 'k_mem_map'
-	map_type = 'struct k_mem_map *'
-	fifo_struct = 'k_msgq'
-	fifo_type = 'struct k_msgq *'
-	mbox_struct = 'k_mbox'
-	mbox_type = 'struct k_mbox *'
-	event_type = 'struct k_event *'
-	mem_pool_type = 'struct k_mem_pool'
+        pipe_struct = 'k_pipe'
+        pipe_type = 'struct k_pipe *'
+        map_struct = 'k_mem_map'
+        map_type = 'struct k_mem_map *'
+        fifo_struct = 'k_msgq'
+        fifo_type = 'struct k_msgq *'
+        mbox_struct = 'k_mbox'
+        mbox_type = 'struct k_mbox *'
+        event_type = 'struct k_event *'
+        mem_pool_type = 'struct k_mem_pool'
         # add missing object types
 
     # mutex object ids
