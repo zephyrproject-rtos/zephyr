@@ -21,7 +21,7 @@
 
 /* Push button switch 0 */
 #define SW0_GPIO_PIN	4
-#define SW0_GPIO_NAME	CONFIG_GPIO_QMSI_AON_NAME
+#define SW0_GPIO_NAME	CONFIG_GPIO_QMSI_1_NAME
 
 /* Push button switch 1 */
 #define SW1_GPIO_PIN	5

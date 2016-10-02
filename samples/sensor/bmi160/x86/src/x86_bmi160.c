@@ -26,30 +26,30 @@
 
 QUARK_SE_IPM_DEFINE(bmi160_ipm, 0, QUARK_SE_IPM_OUTBOUND);
 
-#define SLEEPTIME			MSEC(1000)
+#define SLEEPTIME                       MSEC(1000)
 
-#define BMI160_INTERRUPT_PIN		4
+#define BMI160_INTERRUPT_PIN            4
 
 struct device *ipm;
 struct gpio_callback cb;
 
-static void aon_gpio_callback(struct device *port,
-			      struct gpio_callback *cb, uint32_t pins)
+static void gpio_callback(struct device *port,
+			  struct gpio_callback *cb, uint32_t pins)
 {
 	ipm_send(ipm, 0, 0, NULL, 0);
 }
 
 void main(void)
 {
-	uint32_t timer_data[2] = {0, 0};
-	struct device *aon_gpio;
+	uint32_t timer_data[2] = { 0, 0 };
+	struct device *gpio;
 	struct nano_timer timer;
 
 	nano_timer_init(&timer, timer_data);
 
-	aon_gpio = device_get_binding("GPIO_AON_0");
-	if (!aon_gpio) {
-		printf("aon_gpio device not found.\n");
+	gpio = device_get_binding("GPIO_1");
+	if (!gpio) {
+		printf("gpio device not found.\n");
 		return;
 	}
 
@@ -59,14 +59,14 @@ void main(void)
 		return;
 	}
 
-	gpio_init_callback(&cb, aon_gpio_callback, BIT(BMI160_INTERRUPT_PIN));
-	gpio_add_callback(aon_gpio, &cb);
+	gpio_init_callback(&cb, gpio_callback, BIT(BMI160_INTERRUPT_PIN));
+	gpio_add_callback(gpio, &cb);
 
-	gpio_pin_configure(aon_gpio, BMI160_INTERRUPT_PIN,
+	gpio_pin_configure(gpio, BMI160_INTERRUPT_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
-	gpio_pin_enable_callback(aon_gpio, BMI160_INTERRUPT_PIN);
+	gpio_pin_enable_callback(gpio, BMI160_INTERRUPT_PIN);
 
 	while (1) {
 		nano_task_timer_start(&timer, SLEEPTIME);

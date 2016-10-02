@@ -179,7 +179,7 @@ DEVICE_DEFINE(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
 
 #endif /* CONFIG_GPIO_QMSI_0 */
 
-#ifdef CONFIG_GPIO_QMSI_AON
+#ifdef CONFIG_GPIO_QMSI_1
 static struct gpio_qmsi_config gpio_aon_config = {
 	.gpio = QM_AON_GPIO_0,
 	.num_pins = QM_NUM_AON_GPIO_PINS,
@@ -226,11 +226,11 @@ static int gpio_aon_device_ctrl(struct device *port, uint32_t ctrl_command,
 }
 #endif
 
-DEVICE_DEFINE(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
+DEVICE_DEFINE(gpio_aon, CONFIG_GPIO_QMSI_1_NAME, &gpio_qmsi_init,
 	      gpio_aon_device_ctrl, &gpio_aon_runtime, &gpio_aon_config,
 	      SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
 
-#endif /* CONFIG_GPIO_QMSI_AON */
+#endif /* CONFIG_GPIO_QMSI_1 */
 
 /*
  * TODO: Zephyr's API is not clear about the behavior of the this
@@ -259,14 +259,14 @@ static void gpio_qmsi_0_int_callback(void *data, uint32_t status)
 #endif
 }
 
-#ifdef CONFIG_GPIO_QMSI_AON
+#ifdef CONFIG_GPIO_QMSI_1
 static void gpio_qmsi_aon_int_callback(void *data, uint32_t status)
 {
 	struct device *port = DEVICE_GET(gpio_aon);
 
 	gpio_qmsi_callback(port, status);
 }
-#endif /* CONFIG_GPIO_QMSI_AON */
+#endif /* CONFIG_GPIO_QMSI_1 */
 
 static void qmsi_write_bit(uint32_t *target, uint8_t bit, uint8_t value)
 {
@@ -313,11 +313,11 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 		cfg.callback = gpio_qmsi_0_int_callback;
 		break;
 
-#ifdef CONFIG_GPIO_QMSI_AON
+#ifdef CONFIG_GPIO_QMSI_1
 	case QM_AON_GPIO_0:
 		cfg.callback = gpio_qmsi_aon_int_callback;
 		break;
-#endif /* CONFIG_GPIO_QMSI_AON */
+#endif /* CONFIG_GPIO_QMSI_1 */
 
 	default:
 		return;
@@ -465,15 +465,15 @@ int gpio_qmsi_init(struct device *port)
 		irq_enable(QM_IRQ_GPIO_0);
 		QM_SCSS_INT->int_gpio_mask &= ~BIT(0);
 		break;
-#ifdef CONFIG_GPIO_QMSI_AON
+#ifdef CONFIG_GPIO_QMSI_1
 	case QM_AON_GPIO_0:
 		IRQ_CONNECT(QM_IRQ_AONGPIO_0,
-			    CONFIG_GPIO_QMSI_AON_IRQ_PRI, qm_aon_gpio_isr_0,
+			    CONFIG_GPIO_QMSI_1_IRQ_PRI, qm_aon_gpio_isr_0,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
 		irq_enable(QM_IRQ_AONGPIO_0);
 		QM_SCSS_INT->int_aon_gpio_mask &= ~BIT(0);
 		break;
-#endif /* CONFIG_GPIO_QMSI_AON */
+#endif /* CONFIG_GPIO_QMSI_1 */
 	default:
 		return -EIO;
 	}
