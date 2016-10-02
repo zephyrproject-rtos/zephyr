@@ -32,13 +32,25 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
 
+#include "hci_core.h"
+#include "conn_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
+#include <bluetooth/a2dp.h>
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_A2DP)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif
+
+#define A2DP_NO_SPACE (-1)
+
+struct bt_a2dp {
+	struct bt_avdtp session;
+};
+
+/* Connections */
+static struct bt_a2dp connection[CONFIG_BLUETOOTH_MAX_CONN];
 
 /* Callback for action confirmation */
 static struct bt_avdtp_cfm_cb cb_cfm = {
@@ -69,4 +81,46 @@ int bt_a2dp_init(void)
 
 	BT_DBG("A2DP Initialized successfully.");
 	return 0;
+}
+
+struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
+{
+	int i, err;
+	int8_t free;
+
+	free = A2DP_NO_SPACE;
+
+	if (!conn) {
+		BT_ERR("Invalid Input (err: %d)", -EINVAL);
+		return NULL;
+	}
+
+	/* Find a space */
+	for (i = 0; i < CONFIG_BLUETOOTH_MAX_CONN; i++) {
+		if (connection[i].session.br_chan.chan.conn == conn) {
+			BT_DBG("Conn already exists");
+			return NULL;
+		}
+
+		if (!connection[i].session.br_chan.chan.conn &&
+		    free == A2DP_NO_SPACE) {
+			free = i;
+		}
+	}
+
+	if (free == A2DP_NO_SPACE) {
+		BT_DBG("More connection cannot be supported");
+		return NULL;
+	}
+
+	err = bt_avdtp_connect(conn, &connection[free].session);
+	if (err < 0) {
+		/* If error occurs, undo the saving and return the error */
+		memset(&connection[free], 0, sizeof(struct bt_a2dp));
+		BT_DBG("AVDTP Connect failed");
+		return NULL;
+	}
+
+	BT_DBG("Connect request sent");
+	return &connection[free];
 }
