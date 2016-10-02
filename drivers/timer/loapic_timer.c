@@ -160,7 +160,9 @@ static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static uint32_t loapic_timer_device_power_state;
 static uint32_t reg_timer_save;
+#ifndef CONFIG_MVIC
 static uint32_t reg_timer_cfg_save;
+#endif
 #endif
 
 /* externs */
@@ -560,7 +562,9 @@ static int sys_clock_suspend(struct device *dev)
 	ARG_UNUSED(dev);
 
 	reg_timer_save = *_REG_TIMER;
+#ifndef CONFIG_MVIC
 	reg_timer_cfg_save = *_REG_TIMER_CFG;
+#endif
 
 	loapic_timer_device_power_state = DEVICE_PM_SUSPEND_STATE;
 
@@ -572,7 +576,9 @@ static int sys_clock_resume(struct device *dev)
 	ARG_UNUSED(dev);
 
 	*_REG_TIMER = reg_timer_save;
+#ifndef CONFIG_MVIC
 	*_REG_TIMER_CFG = reg_timer_cfg_save;
+#endif
 
 	/*
 	 * It is difficult to accurately know the time spent in DS.
