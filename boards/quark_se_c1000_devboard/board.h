@@ -19,6 +19,14 @@
 
 #include <soc.h>
 
+/* Push button switch 0 */
+#define SW0_GPIO_PIN	4
+#define SW0_GPIO_NAME	CONFIG_GPIO_QMSI_AON_NAME
+
+/* Push button switch 1 */
+#define SW1_GPIO_PIN	5
+#define SW1_GPIO_NAME	CONFIG_GPIO_QMSI_0_NAME
+
 #if defined(CONFIG_NETWORKING_WITH_15_4_TI_CC2520)
 
 /* GPIO numbers where the TI cc2520 chip is connected to */

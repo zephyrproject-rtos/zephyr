@@ -19,4 +19,9 @@
 
 #include <soc.h>
 
+
+/* Push button switch 0 */
+#define SW0_GPIO_PIN	2
+#define SW0_GPIO_NAME	CONFIG_GPIO_QMSI_0_NAME
+
 #endif /* __INC_BOARD_H */
