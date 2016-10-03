@@ -25,9 +25,6 @@ A thread has the following key properties:
 * An **entry point function**, which is invoked when the thread is started.
   Up to 3 **argument values** can be passed to this function.
 
-* An **abort function**, which is invoked when the thread is completely
-  finished executing. (See "Thread Aborting".)
-
 * A **scheduling priority**, which instructs the kernel's scheduler how to
   allocate CPU time to the thread. (See "Thread Scheduling".)
 
@@ -84,19 +81,6 @@ owned by an aborted thread.
 .. note::
     The kernel does not currently make any claims regarding an application's
     ability to respawn a thread that aborts.
-
-Abort Handler
-=============
-
-A thread's **abort handler** is automatically invoked when the thread
-terminates or aborts. The abort handler is a function that takes no arguments
-and returns ``void``.
-
-If the thread's abort handler is ``NULL``, no action is taken;
-otherwise, the abort handler is executed using the kernel's system workqueue.
-
-The abort handler can be used to record information about the thread
-or to assist in reclaiming resources owned by the thread.
 
 Thread Suspension
 =================
@@ -207,23 +191,8 @@ APIs
 
 The following thread APIs are are provided by :file:`kernel.h`:
 
-:cpp:func:`k_thread_spawn()`, :cpp:func:`k_thread_spawn_config()`
-    Spawn a new thread.
-
-:cpp:func:`k_thread_spawn_cancel()`
-    [NON-EXISTENT] Cancel spawning of a new thread, if not already started.
-
-:cpp:func:`thread_entry_set()`
-    [NON-EXISTENT] Sets a thread's entry point.
-
-:cpp:func:`thread_suspend()`
-    [NON-EXISTENT] Suspend execution of a thread.
-
-:cpp:func:`thread_resume()`
-    [NON-EXISTENT] Resume execution of a thread.
-
-:cpp:func:`k_thread_abort()`
-    Abort execution of a thread.
-
-:cpp:func:`thread_abort_handler_set()`
-    Install a thread's abort handler.
+* :cpp:func:`k_thread_spawn()`
+* :cpp:func:`k_thread_cancel()`
+* :cpp:func:`k_thread_abort()`
+* :cpp:func:`k_thread_suspend()`
+* :cpp:func:`k_thread_resume()`

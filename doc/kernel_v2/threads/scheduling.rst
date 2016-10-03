@@ -175,6 +175,26 @@ becomes the current thread, its non-preemptible status is maintained.
     Locking out the scheduler is a more efficient way for a preemptible thread
     to inhibit preemption than changing its priority level to a negative value.
 
+.. _thread_sleeping:
+
+Thread Sleeping
+===============
+
+A thread can call :cpp:func:`k_sleep()` to delay its processing
+for a specified time period. During the time the thread is sleeping
+the CPU is relinquished to allow other ready threads to execute.
+Once the specified delay has elapsed the thread becomes ready
+and is eligible to be scheduled once again.
+
+A sleeping thread can be woken up prematurely by another thread using
+:cpp:func:`k_wakeup()`. This technique can sometimes be used
+to permit the secondary thread to signal the sleeping thread
+that something has occurred *without* requiring the threads
+to define a kernel synchronization object, such as a semaphore.
+Waking up a thread that is not sleeping is allowed, but has no effect.
+
+.. _busy_waiting:
+
 Busy Waiting
 ============
 
@@ -182,9 +202,9 @@ A thread can call :cpp:func:`k_busy_wait()` to perform a ``busy wait``
 that delays its processing for a specified time period
 *without* relinquishing the CPU to another ready thread.
 
-A busy wait is typically used when the required delay is too short
-to warrant having the scheduler context switch to another thread
-and then back again.
+A busy wait is typically used instead of thread sleeping
+when the required delay is too short to warrant having the scheduler
+context switch from the current thread to another thread and then back again.
 
 Suggested Uses
 **************
@@ -213,12 +233,8 @@ APIs
 The following thread scheduling-related APIs are provided by :file:`kernel.h`:
 
 * :cpp:func:`k_current_get()`
-* :cpp:func:`thread_priority_get()` [NON-EXISTENT]
-* :cpp:func:`thread_priority_set()` [NON-EXISTENT]
 * :cpp:func:`k_yield()`
 * :cpp:func:`k_sleep()`
 * :cpp:func:`k_wakeup()`
 * :cpp:func:`k_busy_wait()`
 * :cpp:func:`k_sched_time_slice_set()`
-* :cpp:func:`k_workload_get()`  [NON-EXISTENT]
-* :cpp:func:`k_workload_time_slice_set()`  [NON-EXISTENT]
