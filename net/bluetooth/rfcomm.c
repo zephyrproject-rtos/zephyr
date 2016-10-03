@@ -236,31 +236,15 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 	}
 }
 
-static void rfcomm_dlc_unref(struct bt_rfcomm_dlc *dlc)
-{
-	atomic_dec(&dlc->ref);
-
-	BT_DBG("dlc %p ref %u", dlc, atomic_get(&dlc->ref));
-
-	if (!atomic_get(&dlc->ref)) {
-		rfcomm_dlc_destroy(dlc);
-	}
-}
-
-static struct bt_rfcomm_dlc *rfcomm_dlc_ref(struct bt_rfcomm_dlc *dlc)
-{
-	atomic_inc(&dlc->ref);
-
-	BT_DBG("dlc %p ref %u", dlc, atomic_get(&dlc->ref));
-
-	return dlc;
-}
-
-static void rfcomm_dlc_disconnected(struct bt_rfcomm_dlc *dlc)
+static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 {
 	uint8_t old_state = dlc->state;
 
 	BT_DBG("dlc %p", dlc);
+
+	if (dlc->state == BT_RFCOMM_STATE_DISCONNECTED) {
+		return;
+	}
 
 	dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
 
@@ -280,10 +264,9 @@ static void rfcomm_dlc_disconnected(struct bt_rfcomm_dlc *dlc)
 
 		break;
 	default:
+		rfcomm_dlc_destroy(dlc);
 		break;
 	}
-
-	rfcomm_dlc_unref(dlc);
 }
 
 static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
@@ -303,7 +286,7 @@ static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
 		next = dlc->_next;
 		dlc->_next = NULL;
 
-		rfcomm_dlc_disconnected(dlc);
+		rfcomm_dlc_disconnect(dlc);
 
 		dlc = next;
 	}
@@ -407,7 +390,6 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->mtu = min(dlc->mtu, session->mtu);
-	atomic_set(&dlc->ref, 1);
 	nano_sem_init(&dlc->tx_credits);
 
 	return dlc;
@@ -476,7 +458,7 @@ static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
 		net_buf_unref(buf);
 	}
 
-	rfcomm_dlc_unref(dlc);
+	rfcomm_dlc_destroy(dlc);
 
 	BT_DBG("dlc %p exiting", dlc);
 }
@@ -535,7 +517,7 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	nano_fifo_init(&dlc->tx_queue);
 	fiber_start(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_fiber,
-		    (int)rfcomm_dlc_ref(dlc), 0, 7, 0);
+		    (int)dlc, 0, 7, 0);
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
@@ -694,7 +676,7 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 		}
 
 		rfcomm_send_ua(session, dlci);
-		rfcomm_dlc_disconnected(dlc);
+		rfcomm_dlc_disconnect(dlc);
 	} else {
 		rfcomm_send_ua(session, 0);
 		rfcomm_session_disconnected(session);
