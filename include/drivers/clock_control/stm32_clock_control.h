@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (c) 2016 BayLibre, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +26,10 @@
 #include "stm32f1_clock_control.h"
 #elif CONFIG_SOC_SERIES_STM32F4X
 #include "stm32f4_clock_control.h"
+#endif
+
+#ifdef CONFIG_SOC_SERIES_STM32L4X
+#include "stm32l4x_clock_control.h"
 #endif
 
 #endif /* _STM32_CLOCK_CONTROL_H_ */
