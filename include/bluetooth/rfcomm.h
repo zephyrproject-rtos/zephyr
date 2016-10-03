@@ -91,24 +91,28 @@ struct bt_rfcomm_dlc_ops {
 /** @brief RFCOMM DLC structure. */
 struct bt_rfcomm_dlc {
 	/* Queue for outgoing data */
-	struct nano_fifo		tx_queue;
+	struct nano_fifo           tx_queue;
+
 	/** TX credits */
-	struct nano_sem			tx_credits;
-	struct bt_rfcomm_session	*session;
-	struct bt_rfcomm_dlc_ops	*ops;
-	struct bt_rfcomm_dlc		*_next;
-	uint16_t	mtu;
-	uint8_t		dlci;
-	uint8_t		state;
-	uint8_t		rx_credit;
-	bool		initiator;
+	struct nano_sem            tx_credits;
+
+	struct bt_rfcomm_session  *session;
+	struct bt_rfcomm_dlc_ops  *ops;
+	struct bt_rfcomm_dlc      *_next;
+
+	uint16_t                   mtu;
+	uint8_t                    dlci;
+	uint8_t                    state;
+	uint8_t                    rx_credit;
+	bool                       initiator;
+
 	/* Stack for TX fiber */
 	BT_STACK(stack, 128);
 };
 
 struct bt_rfcomm_server {
 	/** Server Channel */
-	uint8_t		channel;
+	uint8_t channel;
 
 	/** Server accept callback
 	 *
