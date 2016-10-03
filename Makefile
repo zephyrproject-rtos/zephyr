@@ -534,8 +534,6 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 
 # arch/ must be last here so that .gnu.linkonce magic for interrupts/exceptions
 # works as expected
-core-y := lib/ kernel/ misc/ net/ boards/ ext/ usb/ fs/ tests/ arch/
-drivers-y := drivers/
 
 ifneq ($(strip $(MAKEFILE_APP_DIR)),)
 MAKEFILE_APP := $(realpath $(MAKEFILE_APP_DIR)/Makefile.app)
@@ -580,7 +578,11 @@ endif # $(dot-config)
 # Unified kernel objects are built as a static library
 ifeq ($(CONFIG_KERNEL_V2),y)
 libs-y := kernel/unified/
+core-y := lib/ misc/ net/ boards/ ext/ usb/ fs/ tests/ arch/
+else
+core-y := lib/ kernel/ misc/ net/ boards/ ext/ usb/ fs/ tests/ arch/
 endif
+drivers-y := drivers/
 
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
@@ -796,10 +798,10 @@ OUTPUT_FORMAT ?= elf32-i386
 OUTPUT_ARCH ?= i386
 
 quiet_cmd_ar_target = AR      $@
-# Assume that if the directory listed in libs-y contains built-in.o,
-# it has been linked into the upper level built-in.o
+# Do not put lib.a into libzephyr.a. lib.a files are to be linked separately to
+# the final image
 cmd_ar_target = rm -f $@; $(AR) rcT$(KBUILD_ARFLAGS) $@ \
-	$(filter-out $(libs-y), $(KBUILD_ZEPHYR_MAIN))
+	$(filter-out %/lib.a, $(KBUILD_ZEPHYR_MAIN))
 libzephyr.a: $(zephyr-deps)
 	$(call cmd,ar_target)
 
@@ -817,7 +819,7 @@ quiet_cmd_create-lnk = LINK    $@
 	echo "$(app-y)";							\
 	echo "libzephyr.a";							\
 	echo "$(LINKFLAGPREFIX)--no-whole-archive";         			\
-	echo "$(filter %/lib.a, $(libs-y))";					\
+	echo "$(filter %/lib.a, $(KBUILD_ZEPHYR_MAIN))";			\
 	echo "$(objtree)/arch/$(ARCH)/core/offsets/offsets.o"; 			\
 	echo "$(LINKFLAGPREFIX)--end-group"; 					\
 	echo "$(LIB_INCLUDE_DIR) $(LINK_LIBS)";					\
