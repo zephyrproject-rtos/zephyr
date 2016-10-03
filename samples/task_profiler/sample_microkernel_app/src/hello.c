@@ -17,14 +17,7 @@
  */
 
 #include <zephyr.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 #ifdef CONFIG_MICROKERNEL
 
@@ -48,7 +41,7 @@ void myfiber(int param1, int param2)
 {
 	volatile int i;
 
-	PRINT("Hello fiber %d\n", param1);
+	printf("Hello fiber %d\n", param1);
 	for (i = 0; i < 300; i++) {
 	}
 }
@@ -74,7 +67,7 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 		}
 
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", taskname);
+		printf("%s: Hello World!\n", taskname);
 
 		/* wait a while, then let other task have a turn */
 		task_sleep(SLEEPTICKS);

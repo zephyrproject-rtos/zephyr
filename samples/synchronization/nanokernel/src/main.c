@@ -17,14 +17,7 @@
  */
 
 #include <zephyr.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
 #include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 
 /*
@@ -59,7 +52,7 @@ void fiberEntry(void)
 		nano_fiber_sem_take(&nanoSemFiber, TICKS_UNLIMITED);
 
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", __func__);
+		printk("%s: Hello World!\n", __func__);
 
 		/* wait a while, then let task have a turn */
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
@@ -81,7 +74,7 @@ void main(void)
 
 	while (1) {
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", __func__);
+		printk("%s: Hello World!\n", __func__);
 
 		/* wait a while, then let fiber have a turn */
 		nano_task_timer_start(&timer, SLEEPTICKS);

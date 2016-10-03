@@ -17,15 +17,7 @@
  */
 
 #include <zephyr.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
 #include "profiler.h"
 
 #ifdef CONFIG_NANOKERNEL
@@ -56,7 +48,7 @@ void fiberEntry(void)
 		nano_fiber_sem_take(&nanoSemFiber, TICKS_UNLIMITED);
 
 		/* say "hello" */
-		PRINT("%s: Hello World ! %d\n", __func__, sys_cycle_get_32());
+		printf("%s: Hello World ! %d\n", __func__, sys_cycle_get_32());
 		fiber_sleep(SLEEPTICKS);
 		nano_fiber_sem_give(&nanoSemTask);
 	}
@@ -72,7 +64,7 @@ void main(void)
 
 	while (1) {
 		/* say "hello" */
-		PRINT("%s: Hello World ! %d\n", __func__, sys_cycle_get_32());
+		printf("%s: Hello World ! %d\n", __func__, sys_cycle_get_32());
 
 		/* wait a while, then let fiber have a turn */
 		task_sleep(SLEEPTICKS);
