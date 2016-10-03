@@ -201,6 +201,7 @@ void main(void)
 	zoap_header_set_type(&request, ZOAP_TYPE_CON);
 	zoap_header_set_code(&request, ZOAP_METHOD_GET);
 	zoap_header_set_id(&request, zoap_next_id());
+	zoap_header_set_token(&request, zoap_next_token(), 8);
 
 	/* Enable observing the resource. */
 	r = zoap_add_option(&request, ZOAP_OPTION_OBSERVE,
