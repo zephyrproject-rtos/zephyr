@@ -83,7 +83,7 @@ static int test_get(struct zoap_resource *resource,
 	}
 
 	/* The response that coap-client expects */
-	r = snprintf(payload, len, "Type: %u\nCode: %u\nMID: %u\n",
+	r = snprintf((char *) payload, len, "Type: %u\nCode: %u\nMID: %u\n",
 		     type, code, id);
 	if (r < 0 || r > len) {
 		return -EINVAL;
