@@ -1275,3 +1275,13 @@ size_t zoap_next_block(struct zoap_block_context *ctx)
 
 	return ctx->current;
 }
+
+uint8_t *zoap_next_token(void)
+{
+	static uint32_t rand[2];
+
+	rand[0] = sys_rand32_get();
+	rand[1] = sys_rand32_get();
+
+	return (uint8_t *) rand;
+}

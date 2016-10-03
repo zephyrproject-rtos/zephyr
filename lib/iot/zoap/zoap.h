@@ -543,4 +543,10 @@ static inline uint16_t zoap_next_id(void)
 	return ++message_id;
 }
 
+/**
+ * Returns a randomly generated array of 8 bytes, that can be used as a
+ * message's token.
+ */
+uint8_t *zoap_next_token(void);
+
 #endif /* __ZOAP_H__ */
