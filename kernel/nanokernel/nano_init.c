@@ -129,8 +129,6 @@ static void _main(void)
 }
 #else
 
-typedef int32_t ktask_t;   /* Must match definition in base_api.h */
-
 extern ktask_t _k_task_ptr_idle _GENERIC_SECTION(_k_task_list);
 
 #define MICROKERNEL_IDLE_TASK_PTR  ((void *) _k_task_ptr_idle)
