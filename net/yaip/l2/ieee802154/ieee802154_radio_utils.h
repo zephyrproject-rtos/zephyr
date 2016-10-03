@@ -39,7 +39,7 @@ static inline int wait_for_ack(struct ieee802154_context *ctx,
 
 	if (nano_sem_take(&ctx->ack_lock, MSEC(10)) == 0) {
 		/*
-		 * We reinit the semaphore in case aloha_radio_handle_ack
+		 * We reinit the semaphore in case handle_ack
 		 * got called multiple times.
 		 */
 		nano_sem_init(&ctx->ack_lock);
