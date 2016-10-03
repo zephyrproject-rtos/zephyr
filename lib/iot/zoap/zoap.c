@@ -504,7 +504,7 @@ static bool uri_path_eq(const struct zoap_packet *pkt,
 			return false;
 		}
 
-		if (strncmp(options[i].value, path[i], len)) {
+		if (memcmp(options[i].value, path[i], len)) {
 			return false;
 		}
 	}
