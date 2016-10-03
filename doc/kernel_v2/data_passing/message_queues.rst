@@ -39,7 +39,7 @@ If a thread attempts to send a data item when the ring buffer is full,
 the sending thread may choose to wait for space to become available.
 Any number of sending threads may wait simultaneously when the ring buffer
 is full; when space becomes available
-it is given to the highest priority sending task that has waited the longest.
+it is given to the highest priority sending thread that has waited the longest.
 
 A data item can be **received** from a message queue by a thread.
 The data item is copied to the area specified by the receiving thread;
@@ -48,8 +48,8 @@ the size of the receiving area *must* equal the message queue's data item size.
 If a thread attempts to receive a data item when the ring buffer is empty,
 the receiving thread may choose to wait for a data item to be sent.
 Any number of receiving threads may wait simultaneously when the ring buffer
-is empty; when a data item becomes available
-it is given to the highest priority receiving task that has waited the longest.
+is empty; when a data item becomes available it is given to
+the highest priority receiving thread that has waited the longest.
 
 .. note::
     The kernel does allow an ISR to receive an item from a message queue,
@@ -149,9 +149,11 @@ in an asynchronous manner.
 
 .. note::
     A message queue can be used to transfer large data items, if desired.
-    However, it is often preferable to send pointers to large data items
-    to avoid copying the data. The kernel's memory map and memory pool object
-    types can be helpful for data transfers of this sort.
+    However, this can increase interrupt latency as interrupts are locked
+    while a data item is written or read. It is usally preferable to transfer
+    large data items by exchanging a pointer to the data item, rather than the
+    data item itself. The kernel's memory map and memory pool object types
+    can be helpful for data transfers of this sort.
 
     A synchronous transfer can be achieved by using the kernel's mailbox
     object type.
