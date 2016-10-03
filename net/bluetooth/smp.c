@@ -211,6 +211,34 @@ static const uint8_t sc_debug_public_key[64] = {
 	0x49, 0x9c, 0x80, 0xdc
 };
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/* SMP over BR/EDR channel specific context */
+struct bt_smp_br {
+	/* The channel this context is associated with */
+	struct bt_l2cap_br_chan	chan;
+
+	/* Commands that remote is allowed to send */
+	atomic_t		allowed_cmds;
+
+	/* Flags for SMP state machine */
+	ATOMIC_DEFINE(flags, SMP_NUM_FLAGS);
+
+	/* Local key distribution */
+	uint8_t			local_dist;
+
+	/* Remote key distribution */
+	uint8_t			remote_dist;
+
+	/* Encryption Key Size used for connection */
+	uint8_t enc_key_size;
+
+	/* Delayed work for timeout handling */
+	struct nano_delayed_work work;
+};
+
+static struct bt_smp_br bt_smp_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 /* Pool for outgoing LE signaling packets, MTU is 65 */
 static struct nano_fifo smp_buf;
 static NET_BUF_POOL(smp_pool, CONFIG_BLUETOOTH_MAX_CONN,
@@ -641,7 +669,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	}
 }
 
-static void smp_br_reset(struct bt_smp *smp)
+static void smp_br_reset(struct bt_smp_br *smp)
 {
 	nano_delayed_work_cancel(&smp->work);
 
@@ -651,7 +679,7 @@ static void smp_br_reset(struct bt_smp *smp)
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 }
 
-static void smp_pairing_br_complete(struct bt_smp *smp, uint8_t status)
+static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 {
 	BT_DBG("status 0x%x", status);
 
@@ -678,7 +706,7 @@ static void smp_pairing_br_complete(struct bt_smp *smp, uint8_t status)
 
 static void smp_br_timeout(struct nano_work *work)
 {
-	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
+	struct bt_smp_br *smp = CONTAINER_OF(work, struct bt_smp_br, work);
 
 	BT_ERR("SMP Timeout");
 
@@ -686,7 +714,7 @@ static void smp_br_timeout(struct nano_work *work)
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
 }
 
-static void smp_br_send(struct bt_smp *smp, struct net_buf *buf)
+static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf);
 	nano_delayed_work_submit(&smp->work, SMP_TIMEOUT);
@@ -694,7 +722,7 @@ static void smp_br_send(struct bt_smp *smp, struct net_buf *buf)
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
 
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
@@ -705,7 +733,7 @@ static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 
 static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
 
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
@@ -715,7 +743,7 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	memset(smp, 0, sizeof(*smp));
 }
 
-static void smp_br_init(struct bt_smp *smp)
+static void smp_br_init(struct bt_smp_br *smp)
 {
 	/* Initialize SMP context without clearing L2CAP channel context */
 	memset((uint8_t *)smp + sizeof(smp->chan), 0,
@@ -724,7 +752,7 @@ static void smp_br_init(struct bt_smp *smp)
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 }
 
-static void smp_br_derive_ltk(struct bt_smp *smp)
+static void smp_br_derive_ltk(struct bt_smp_br *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
 	static const uint8_t tmp2[4] = { 0x32, 0x70, 0x6d, 0x74 };
@@ -772,7 +800,7 @@ static void smp_br_derive_ltk(struct bt_smp *smp)
 
 	keys->ltk.ediv = 0;
 	keys->ltk.rand = 0;
-	keys->enc_size = get_encryption_key_size(smp);
+	keys->enc_size = smp->enc_key_size;
 
 	if (atomic_test_bit(link_key->flags, BT_LINK_KEY_AUTHENTICATED)) {
 		atomic_set_bit(keys->flags, BT_KEYS_AUTHENTICATED);
@@ -783,7 +811,7 @@ static void smp_br_derive_ltk(struct bt_smp *smp)
 	BT_DBG("LTK derived from LinkKey");
 }
 
-static void smp_br_distribute_keys(struct bt_smp *smp)
+static void smp_br_distribute_keys(struct bt_smp_br *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_keys *keys;
@@ -865,7 +893,7 @@ static void smp_br_distribute_keys(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_SIGNING */
 }
 
-static bool smp_br_pairing_allowed(struct bt_smp *smp)
+static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 {
 	if (smp->chan.chan.conn->encrypt == 0x02) {
 		return true;
@@ -881,7 +909,7 @@ static bool smp_br_pairing_allowed(struct bt_smp *smp)
 	return false;
 }
 
-static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
+static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -917,6 +945,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	smp_br_init(smp);
+	smp->enc_key_size = max_key_size;
 
 	/*
 	 * If Secure Connections pairing has been initiated over BR/EDR, the IO
@@ -937,14 +966,6 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	smp->remote_dist = rsp->init_key_dist;
 
 	smp_br_send(smp, rsp_buf);
-
-	/* Store Pairing Req for later use */
-	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
-	memcpy(smp->preq + 1, req, sizeof(*req));
-
-	/* Store Pairing Rsp for later use */
-	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
-	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
@@ -973,7 +994,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
+static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -989,10 +1010,6 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	if (rsp->max_key_size != max_key_size) {
 		return BT_SMP_ERR_ENC_KEY_SIZE;
 	}
-
-	/* Store Pairing Rsp for later use */
-	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
-	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
 	smp->local_dist &= rsp->init_key_dist;
 	smp->remote_dist &= rsp->resp_key_dist;
@@ -1031,7 +1048,7 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_br_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
+static uint8_t smp_br_pairing_failed(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing_fail *req = (void *)buf->data;
 
@@ -1044,7 +1061,7 @@ static uint8_t smp_br_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_br_ident_info(struct bt_smp *smp, struct net_buf *buf)
+static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	struct bt_smp_ident_info *req = (void *)buf->data;
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -1075,7 +1092,8 @@ static uint8_t smp_br_ident_info(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_br_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
+static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
+				      struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
@@ -1115,7 +1133,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_br_signing_info(struct bt_smp *smp, struct net_buf *buf)
+static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	struct bt_smp_signing_info *req = (void *)buf->data;
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -1155,7 +1173,7 @@ static uint8_t smp_br_signing_info(struct bt_smp *smp, struct net_buf *buf)
 }
 
 static const struct {
-	uint8_t  (*func)(struct bt_smp *smp, struct net_buf *buf);
+	uint8_t  (*func)(struct bt_smp_br *smp, struct net_buf *buf);
 	uint8_t  expect_len;
 } br_handlers[] = {
 	{ }, /* No op-code defined for 0x00 */
@@ -1174,7 +1192,7 @@ static const struct {
 	/* DHKey check not used over BR/EDR */
 };
 
-static int smp_br_error(struct bt_smp *smp, uint8_t reason)
+static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 {
 	struct bt_smp_pairing_fail *rsp;
 	struct net_buf *buf;
@@ -1202,7 +1220,7 @@ static int smp_br_error(struct bt_smp *smp, uint8_t reason)
 
 static void bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
 	struct bt_smp_hdr *hdr = (void *)buf->data;
 	uint8_t err;
 
@@ -1263,7 +1281,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	BT_DBG("conn %p handle %u", conn, conn->handle);
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
-		struct bt_smp *smp = &bt_smp_pool[i];
+		struct bt_smp_br *smp = &bt_smp_br_pool[i];
 
 		if (smp->chan.chan.conn) {
 			continue;
@@ -1281,7 +1299,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-static struct bt_smp *smp_br_chan_get(struct bt_conn *conn)
+static struct bt_smp_br *smp_br_chan_get(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
 
@@ -1291,7 +1309,7 @@ static struct bt_smp *smp_br_chan_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	return CONTAINER_OF(chan, struct bt_smp, chan);
+	return CONTAINER_OF(chan, struct bt_smp_br, chan);
 }
 
 static int smp_br_send_pairing_req(struct bt_conn *conn)
@@ -1299,7 +1317,7 @@ static int smp_br_send_pairing_req(struct bt_conn *conn)
 	struct bt_smp_pairing *req;
 	struct net_buf *req_buf;
 	uint8_t max_key_size;
-	struct bt_smp *smp;
+	struct bt_smp_br *smp;
 
 	smp = smp_br_chan_get(conn);
 	if (!smp) {
@@ -1322,6 +1340,7 @@ static int smp_br_send_pairing_req(struct bt_conn *conn)
 	}
 
 	smp_br_init(smp);
+	smp->enc_key_size = max_key_size;
 
 	req_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_REQ, sizeof(*req));
 	if (!req_buf) {
@@ -1345,10 +1364,6 @@ static int smp_br_send_pairing_req(struct bt_conn *conn)
 	req->resp_key_dist = BR_RECV_KEYS_SC;
 
 	smp_br_send(smp, req_buf);
-
-	/* Store Pairing Req for later use */
-	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
-	memcpy(smp->preq + 1, req, sizeof(*req));
 
 	smp->local_dist = BR_SEND_KEYS_SC;
 	smp->remote_dist = BR_RECV_KEYS_SC;
