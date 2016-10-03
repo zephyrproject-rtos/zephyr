@@ -1998,6 +1998,15 @@ static void hci_encrypt_change(struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		update_sec_level_br(conn);
+
+#if defined(CONFIG_BLUETOOTH_SMP)
+		/* Start SMP over BR/EDR if we are pairing initiator */
+		if (atomic_test_bit(conn->flags,
+				    BT_CONN_BR_PAIRING_INITIATOR)) {
+			bt_smp_send_pairing_req(conn);
+		}
+#endif /* CONFIG_BLUETOOTH_SMP */
+
 		reset_pairing(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */

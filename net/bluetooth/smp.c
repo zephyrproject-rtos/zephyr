@@ -111,6 +111,7 @@ enum {
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
 	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as slave) */
 	SMP_FLAG_DERIVE_LK,	/* if Link Key should be derived */
+	SMP_FLAG_BR_CONNECTED,	/* if BR/EDR channel is connected */
 	SMP_FLAG_BR_INITIATOR,	/* if BR/EDR pairing initiator */
 
 	/* Total number of flags - must be at the end */
@@ -727,8 +728,15 @@ static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
-	nano_delayed_work_init(&smp->work, smp_br_timeout);
-	smp_br_reset(smp);
+	atomic_set_bit(smp->flags, SMP_FLAG_BR_CONNECTED);
+
+	/*
+	 * if this flag is set it means pairing was requested before channel
+	 * was connected
+	 */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BR_INITIATOR)) {
+		bt_smp_send_pairing_req(chan->conn);
+	}
 }
 
 static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
@@ -1291,6 +1299,9 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 		*chan = &smp->chan.chan;
 
+		nano_delayed_work_init(&smp->work, smp_br_timeout);
+		smp_br_reset(smp);
+
 		return 0;
 	}
 
@@ -1332,6 +1343,17 @@ static int smp_br_send_pairing_req(struct bt_conn *conn)
 	/* pairing is in progress */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		return -EBUSY;
+	}
+
+	/* check if we are allowed to start SMP over BR/EDR */
+	if (!smp_br_pairing_allowed(smp)) {
+		return 0;
+	}
+
+	/* Channel not yet connected, will start pairing once connected */
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_BR_CONNECTED)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_BR_INITIATOR);
+		return 0;
 	}
 
 	max_key_size = bt_conn_enc_key_size(conn);
