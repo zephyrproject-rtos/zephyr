@@ -883,7 +883,7 @@ WARN_ABOUT_ASSERT := $(if $(CONFIG_ASSERT),echo -e -n $(ASSERT_WARNING_STR),true
 ifeq ($(ARCH),x86)
 $(KERNEL_ELF_NAME): staticIdt.o final-linker.cmd
 	$(call cmd,lnk_elf)
-	@$(srctree)/scripts/check_link_map.pl $(KERNEL_NAME).map
+	@$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
 	@$(WARN_ABOUT_ASSERT)
 else
 $(KERNEL_ELF_NAME): $(TMP_ELF)
