@@ -18,7 +18,7 @@
 
 config SYS_LOG_ETHERNET_LEVEL
 	int
-	prompt "Grove Log level"
+	prompt "Ethernet driver log level"
 	depends on SYS_LOG && ETHERNET
 	default 0
 	range 0 4
