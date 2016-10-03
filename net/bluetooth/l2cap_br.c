@@ -1323,6 +1323,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	BR_CHAN(chan)->psm = psm;
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
@@ -1405,7 +1406,6 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_PENDING:
-		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		nano_delayed_work_submit(&chan->rtx_work,
 					 L2CAP_BR_CONN_TIMEOUT);
 		break;
@@ -1536,8 +1536,8 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan)
 		 * local MTU segmentation.
 		 */
 		l2cap_br_conf(chan);
-	} else if (!atomic_test_bit(BR_CHAN(chan)->flags,
-				    L2CAP_FLAG_CONN_PENDING)) {
+	} else if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
+					     L2CAP_FLAG_CONN_PENDING)) {
 		buf = bt_l2cap_create_pdu(&br_sig, 0);
 		if (!buf) {
 			BT_ERR("Unable to send L2CAP connection request");
