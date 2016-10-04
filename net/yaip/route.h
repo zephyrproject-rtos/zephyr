@@ -158,7 +158,78 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *entry);
 struct net_nbr *net_route_get_nbr(struct net_route_entry *route);
 
 void net_route_init(void);
-#else
+
+#if defined(CONFIG_NET_ROUTE_MCAST)
+/**
+ * @brief Multicast route entry.
+ */
+struct net_route_entry_mcast {
+	/** Network interface for the route. */
+	struct net_if *iface;
+
+	/** Extra routing engine specific data */
+	void *data;
+
+	/** IPv6 multicast group of the route. */
+	struct in6_addr group;
+
+	/** Routing entry lifetime in seconds. */
+	uint32_t lifetime;
+
+	/** Is this entry in user or not */
+	bool is_used;
+};
+
+typedef void (*net_route_mcast_cb_t)(struct net_route_entry_mcast *entry,
+				     void *user_data);
+
+/**
+ * @brief Go through all the multicast routing entries and call callback
+ * for each entry that is in use.
+ *
+ * @param cb User supplied callback function to call.
+ * @param skip Do not call callback for this address.
+ * @param user_data User specified data.
+ *
+ * @return Total number of multicast routing entries that are in use.
+ */
+int net_route_mcast_foreach(net_route_mcast_cb_t cb,
+			    struct in6_addr *skip,
+			    void *user_data);
+
+/**
+ * @brief Add a multicast routing entry.
+ *
+ * @param iface Network interface to use.
+ * @param group IPv6 multicast address.
+ *
+ * @return Multicast routing entry.
+ */
+struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
+						  struct in6_addr *group);
+
+/**
+ * @brief Delete a multicast routing entry.
+ *
+ * @param route Multicast routing entry.
+ *
+ * @return True if entry was deleted, false otherwise.
+ */
+bool net_route_mcast_del(struct net_route_entry_mcast *route);
+
+/**
+ * @brief Lookup a multicast routing entry.
+ *
+ * @param group IPv6 multicast group address
+ *
+ * @return Routing entry corresponding this multicast group.
+ */
+struct net_route_entry_mcast *
+net_route_mcast_lookup(struct in6_addr *group);
+
+#endif /* CONFIG_NET_ROUTE_MCAST */
+
+#else /* CONFIG_NET_ROUTE */
 #define net_route_init(...)
 #endif /* CONFIG_NET_ROUTE */
 

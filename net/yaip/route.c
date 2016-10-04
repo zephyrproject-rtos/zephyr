@@ -602,6 +602,92 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 	return NULL;
 }
 
+#if defined(CONFIG_NET_ROUTE_MCAST)
+/*
+ * This array contains multicast routing entries.
+ */
+static
+struct net_route_entry_mcast route_mcast_entries[CONFIG_NET_MAX_MCAST_ROUTES];
+
+int net_route_mcast_foreach(net_route_mcast_cb_t cb,
+			    struct in6_addr *skip,
+			    void *user_data)
+{
+	int i, ret = 0;
+
+	for (i = 0; i < CONFIG_NET_MAX_MCAST_ROUTES; i++) {
+		struct net_route_entry_mcast *route = &route_mcast_entries[i];
+
+		if (route->is_used) {
+			if (skip && net_ipv6_addr_cmp(skip, &route->group)) {
+				continue;
+			}
+
+			cb(route, user_data);
+
+			ret++;
+		}
+	}
+
+	return ret;
+}
+
+struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
+						  struct in6_addr *group)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_MCAST_ROUTES; i++) {
+		struct net_route_entry_mcast *route = &route_mcast_entries[i];
+
+		if (!route->is_used) {
+			net_ipaddr_copy(&route->group, group);
+
+			route->iface = iface;
+			route->is_used = true;
+
+			return route;
+		}
+	}
+
+	return NULL;
+}
+
+bool net_route_mcast_del(struct net_route_entry_mcast *route)
+{
+	if (route > &route_mcast_entries[CONFIG_NET_MAX_MCAST_ROUTES - 1] ||
+	    route < &route_mcast_entries[0]) {
+		return false;
+	}
+
+	NET_ASSERT_INFO(route->is_used,
+			"Multicast route %d to %s was already removed", i,
+			net_sprint_ipv6_addr(&route->group));
+
+	route->is_used = false;
+
+	return true;
+}
+
+struct net_route_entry_mcast *
+net_route_mcast_lookup(struct in6_addr *group)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_MCAST_ROUTES; i++) {
+		struct net_route_entry_mcast *route = &route_mcast_entries[i];
+
+		if (!route->is_used) {
+			if (net_ipv6_addr_cmp(group, &route->group)) {
+				return route;
+			}
+		}
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_NET_ROUTE_MCAST */
+
 void net_route_init(void)
 {
 	NET_DBG("Allocated %d routing entries (%d bytes)",

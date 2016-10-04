@@ -69,6 +69,19 @@ config	NET_MAX_NEXTHOPS
 	help
 	This determines how many entries can be stored in nexthop table.
 
+config NET_ROUTE_MCAST
+	bool
+	depends on NET_ROUTE
+	default n
+
+config	NET_MAX_MCAST_ROUTES
+	int "Max number of multicast routing entries stored."
+	default 1
+	depends on NET_ROUTE_MCAST
+	help
+	This determines how many entries can be stored in multicast
+	routing table.
+
 config NET_TCP
 	bool "Enable TCP"
 	default n
