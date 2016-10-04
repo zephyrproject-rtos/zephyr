@@ -57,6 +57,10 @@ static inline uint8_t get_6co_cid(struct net_icmpv6_nd_opt_6co *opt)
 static struct net_6lo_context ctx_6co[CONFIG_NET_MAX_6LO_CONTEXTS];
 #endif
 
+/* TODO: Unicast-Prefix based IPv6 Multicast(dst) address compression
+ *       Mesh header compression
+ */
+
 static inline bool net_6lo_ll_prefix_padded_with_zeros(struct in6_addr *addr)
 {
 	return ((addr->s6_addr[2] == 0x00) &&
@@ -157,68 +161,26 @@ void net_6lo_set_context(struct net_if *iface,
 }
 #endif
 
-/**
-  * RFC 6282 LOWPAN IPHC Encoding format (3.1)
-  *  Base Format
-  *   0                                       1
-  *   0   1   2   3   4   5   6   7   8   9   0   1   2   3   4   5
-  * +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-  * | 0 | 1 | 1 |  TF   |NH | HLIM  |CID|SAC|  SAM  | M |DAC|  DAM  |
-  * +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-  *
-  */
+/* Helper routine to compress Traffic class and Flow label */
+/* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |Version| Traffic Class |           Flow Label                  |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * version: 4 bits, Traffic Class: 8 bits, Flow label: 20 bits
+ * The Traffic Class field in the IPv6 header comprises 6 bits of
+ * Diffserv extension [RFC2474] and 2 bits of Explicit Congestion
+ * Notification (ECN) [RFC3168]
+ */
 
-/** TODO: context based (src) address compression
-  * Unicast-Prefix based IPv6 Multicast(dst) address compression
-  * context based (dst) address compression
-  * Mesh header compression
-  */
-static inline bool compress_IPHC_header(struct net_buf *buf,
-					fragment_handler_t fragment)
+/* IPHC (compressed) format of traffic class is ECN, DSCP but original
+ * IPv6 traffic class format is DSCP, ECN.
+ * DSCP(6), ECN(2).
+ */
+static inline uint8_t compress_tfl(struct net_ipv6_hdr *ipv6,
+				   struct net_buf *frag,
+				   uint8_t offset)
 {
-	struct net_ipv6_hdr *ipv6 = NET_IPV6_BUF(buf);
-	uint8_t offset = 0;
-	struct net_udp_hdr *udp;
-	struct net_buf *frag;
-	struct net_buf *temp;
-	uint8_t compressed;
 	uint8_t tcl;
-	uint8_t tmp;
 
-	if (buf->frags->len < NET_IPV6H_LEN) {
-		NET_DBG("Invalid length %d, min %d",
-			 buf->frags->len, NET_IPV6H_LEN);
-		return false;
-	}
-
-	if (ipv6->nexthdr == IPPROTO_UDP &&
-	    buf->frags->len < NET_IPV6UDPH_LEN) {
-		NET_DBG("Invalid length %d, min %d",
-			 buf->frags->len, NET_IPV6UDPH_LEN);
-		return false;
-	}
-
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
-	if (!frag) {
-		return false;
-	}
-
-	IPHC[offset++] = NET_6LO_DISPATCH_IPHC;
-	IPHC[offset++] = 0;
-
-	/** +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	  * |Version| Traffic Class |           Flow Label                  |
-	  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	  * version: 4 bits, Traffic Class: 8 bits, Flow label: 20 bits
-	  * The Traffic Class field in the IPv6 header comprises 6 bits of
-	  * Diffserv extension [RFC2474] and 2 bits of Explicit Congestion
-	  * Notification (ECN) [RFC3168]
-	  */
-
-	/* IPHC (compressed) format of traffic class is ECN, DSCP but original
-	 * IPv6 traffic class format is DSCP, ECN.
-	 * DSCP(6), ECN(2).
-	 */
 	tcl = ((ipv6->vtc & 0x0F) << 4) | ((ipv6->tcflow & 0xF0) >> 4);
 	tcl = (tcl << 6) | (tcl >> 2);   /* ECN(2), DSCP(6) */
 
@@ -260,13 +222,14 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		}
 	}
 
-	/* Next header */
-	if (ipv6->nexthdr == IPPROTO_UDP) {
-		IPHC[0] |= NET_6LO_IPHC_NH_1;
-	} else {
-		IPHC[offset++] = ipv6->nexthdr;
-	}
+	return offset;
+}
 
+/* Helper to compress Hop limit */
+static inline uint8_t compress_hoplimit(struct net_ipv6_hdr *ipv6,
+					struct net_buf *frag,
+					uint8_t offset)
+{
 	/* Hop Limit */
 	switch (ipv6->hop_limit) {
 	case 1:
@@ -283,7 +246,29 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		break;
 	}
 
-	/* Source Address Compression */
+	return offset;
+}
+
+/* Helper to compress Next header */
+static inline uint8_t compress_nh(struct net_ipv6_hdr *ipv6,
+				  struct net_buf *frag, uint8_t offset)
+{
+	/* Next header */
+	if (ipv6->nexthdr == IPPROTO_UDP) {
+		IPHC[0] |= NET_6LO_IPHC_NH_1;
+	} else {
+		IPHC[offset++] = ipv6->nexthdr;
+	}
+
+	return offset;
+}
+
+/* Helper to compress Source Address */
+static inline uint8_t compress_sa(struct net_ipv6_hdr *ipv6,
+				  struct net_buf *buf,
+				  struct net_buf *frag,
+				  uint8_t offset)
+{
 	/* If address is link-local prefix and padded with zeros */
 	if (net_is_ipv6_ll_addr(&ipv6->src) &&
 	    net_6lo_ll_prefix_padded_with_zeros(&ipv6->src)) {
@@ -333,6 +318,15 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		offset += 16;
 	}
 
+	return offset;
+}
+
+/* Helper to compress Destination Address */
+static inline uint8_t compress_da(struct net_ipv6_hdr *ipv6,
+				  struct net_buf *buf,
+				  struct net_buf *frag,
+				  uint8_t offset)
+{
 	/* if destination address is multicast */
 	if (net_is_ipv6_addr_mcast(&ipv6->dst)) {
 
@@ -416,32 +410,31 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		offset += 16;
 	}
 
-	compressed = NET_IPV6H_LEN;
+	return offset;
+}
 
-	if (ipv6->nexthdr != IPPROTO_UDP) {
-		NET_DBG("next header is not UDP (%u)", ipv6->nexthdr);
-		goto end;
-	}
+/* Helper to compress Next header UDP */
+static inline uint8_t compress_nh_udp(struct net_udp_hdr *udp,
+				      struct net_buf *frag, uint8_t offset)
+{
+	uint8_t tmp;
 
-	/** 4.3.3 UDP LOWPAN_NHC Format
-	  *   0   1   2   3   4   5   6   7
-	  * +---+---+---+---+---+---+---+---+
-	  * | 1 | 1 | 1 | 1 | 0 | C |   P   |
-	  * +---+---+---+---+---+---+---+---+
-	  */
+	/* 4.3.3 UDP LOWPAN_NHC Format
+	 *   0   1   2   3   4   5   6   7
+	 * +---+---+---+---+---+---+---+---+
+	 * | 1 | 1 | 1 | 1 | 0 | C |   P   |
+	 * +---+---+---+---+---+---+---+---+
+	 */
 
-	/** Port compression
-	  * 00:  All 16 bits for src and dst are inlined.
-	  * 01:  All 16 bits for src port inlined. First 8 bits of dst port is
-	  *      0xf0 and elided.  The remaining 8 bits of dst port inlined.
-	  * 10:  First 8 bits of src port 0xf0 and elided. The remaining 8 bits
-	  *      of src port inlined. All 16 bits of dst port inlined.
-	  * 11:  First 12 bits of both src and dst are 0xf0b and elided. The
-	  *      remaining 4 bits for each are inlined.
-	  */
-
-	udp = NET_UDP_BUF(buf);
-	IPHC[offset] = NET_6LO_NHC_UDP_BARE;
+	/* Port compression
+	 * 00:  All 16 bits for src and dst are inlined.
+	 * 01:  All 16 bits for src port inlined. First 8 bits of dst port is
+	 *      0xf0 and elided.  The remaining 8 bits of dst port inlined.
+	 * 10:  First 8 bits of src port 0xf0 and elided. The remaining 8 bits
+	 *      of src port inlined. All 16 bits of dst port inlined.
+	 * 11:  First 12 bits of both src and dst are 0xf0b and elided. The
+	 *      remaining 4 bits for each are inlined.
+	 */
 
 	if ((((htons(udp->src_port) >> 4) & 0xFFF) ==
 	    NET_6LO_NHC_UDP_4_BIT_PORT) &&
@@ -500,10 +493,81 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	/* All 16 bits of udp chksum are inlined, length is elided */
 	memcpy(&IPHC[offset], &udp->chksum, 2);
 	offset += 2;
+
+	return offset;
+}
+
+/* RFC 6282 LOWPAN IPHC Encoding format (3.1)
+ *  Base Format
+ *   0                                       1
+ *   0   1   2   3   4   5   6   7   8   9   0   1   2   3   4   5
+ * +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+ * | 0 | 1 | 1 |  TF   |NH | HLIM  |CID|SAC|  SAM  | M |DAC|  DAM  |
+ * +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+ */
+static inline bool compress_IPHC_header(struct net_buf *buf,
+					fragment_handler_t fragment)
+{
+	struct net_ipv6_hdr *ipv6 = NET_IPV6_BUF(buf);
+	uint8_t offset = 0;
+	struct net_udp_hdr *udp;
+	struct net_buf *frag;
+	struct net_buf *temp;
+	uint8_t compressed;
+
+	if (buf->frags->len < NET_IPV6H_LEN) {
+		NET_DBG("Invalid length %d, min %d",
+			buf->frags->len, NET_IPV6H_LEN);
+		return false;
+	}
+
+	if (ipv6->nexthdr == IPPROTO_UDP &&
+	    buf->frags->len < NET_IPV6UDPH_LEN) {
+		NET_DBG("Invalid length %d, min %d",
+			buf->frags->len, NET_IPV6UDPH_LEN);
+		return false;
+	}
+
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	if (!frag) {
+		return false;
+	}
+
+	IPHC[offset++] = NET_6LO_DISPATCH_IPHC;
+	IPHC[offset++] = 0;
+
+	/* Compress Traffic class and Flow lablel */
+	offset = compress_tfl(ipv6, frag, offset);
+
+	/* Hop limit */
+	offset = compress_hoplimit(ipv6, frag, offset);
+
+	/* Next Header */
+	offset = compress_nh(ipv6, frag, offset);
+
+	/* Source Address Compression */
+	offset = compress_sa(ipv6, buf, frag, offset);
+
+	/* Destination Address Compression */
+	offset = compress_da(ipv6, buf, frag, offset);
+
+	compressed = NET_IPV6H_LEN;
+
+	if (ipv6->nexthdr != IPPROTO_UDP) {
+		NET_DBG("next header is not UDP (%u)", ipv6->nexthdr);
+		goto end;
+	}
+
+	/* UDP header compression */
+	udp = NET_UDP_BUF(buf);
+	IPHC[offset] = NET_6LO_NHC_UDP_BARE;
+	offset = compress_nh_udp(udp, frag, offset);
+
 	compressed += NET_UDPH_LEN;
 
 end:
 	net_buf_add(frag, offset);
+
 	/* copy the rest of the data to compressed fragment */
 	memcpy(&IPHC[offset], buf->frags->data + compressed,
 	       buf->frags->len - compressed);
@@ -523,7 +587,7 @@ end:
 	/* Insert compressed header fragment */
 	net_buf_frag_insert(buf, frag);
 
-	/* compact the fragments, so that gaps will be filled */
+	/* Compact the fragments, so that gaps will be filled */
 	net_nbuf_compact(buf->frags);
 
 	if (fragment) {
@@ -533,34 +597,14 @@ end:
 	return true;
 }
 
-/* TODO: context based uncompression not supported */
-static inline bool uncompress_IPHC_header(struct net_buf *buf)
+/* Helper to uncompress Traffic class and Flow label */
+static inline uint8_t uncompress_tfl(struct net_buf *buf,
+				     struct net_ipv6_hdr *ipv6,
+				     uint8_t offset)
 {
-	struct net_udp_hdr *udp = NULL;
-	uint8_t offset = 2;
-	struct net_ipv6_hdr *ipv6;
-	struct net_buf *frag;
-	uint8_t chksum;
-	uint16_t len;
 	uint8_t tcl;
 
-	if (CIPHC[1] & NET_6LO_IPHC_CID_1) {
-		/* if it is supported increase offset to +1 */
-		return false;
-	}
-
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
-	if (!frag) {
-		return false;
-	}
-
-	ipv6 = (struct net_ipv6_hdr *)(frag->data);
-
-	/* Version is always 6 */
-	ipv6->vtc = 0x60;
-	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
-
-	/* uncompress tcl and flow label */
+	/* Uncompress tcl and flow label */
 	switch (CIPHC[0] & NET_6LO_IPHC_TF_11) {
 	case NET_6LO_IPHC_TF_00:
 		NET_DBG("ECN + DSCP + 4-bit Pad + Flow Label");
@@ -602,11 +646,14 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		break;
 	}
 
-	if (!(CIPHC[0] & NET_6LO_IPHC_NH_1)) {
-		ipv6->nexthdr = CIPHC[offset];
-		offset++;
-	}
+	return offset;
+}
 
+/* Helper to uncompress Hoplimit */
+static inline uint8_t uncompress_hoplimit(struct net_buf *buf,
+					  struct net_ipv6_hdr *ipv6,
+					  uint8_t offset)
+{
 	switch (CIPHC[0] & NET_6LO_IPHC_HLIM255) {
 	case NET_6LO_IPHC_HLIM:
 		ipv6->hop_limit = 0;
@@ -625,17 +672,20 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		break;
 	}
 
-	/* First set to zero and copy relevant bits */
-	memset(&ipv6->src.s6_addr[0], 0, 16);
-	memset(&ipv6->dst.s6_addr[0], 0, 16);
+	return offset;
+}
 
+/* Helper to uncompress Source Address */
+static inline uint8_t uncompress_sa(struct net_buf *buf,
+				    struct net_ipv6_hdr *ipv6,
+				    uint8_t offset)
+{
 	if (CIPHC[1] & NET_6LO_IPHC_SAC_1) {
 		NET_DBG("SAC is set");
 		if (!(CIPHC[1] & NET_6LO_IPHC_SAM_00)) {
 			NET_DBG("SAM_00 unspecified address");
 		} else {
 			/* TODO: context based uncompression */
-			goto fail;
 		}
 	} else {
 		switch (CIPHC[1] & NET_6LO_IPHC_SAM_11) {
@@ -674,11 +724,14 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		}
 	}
 
-	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
-		/* TODO: context based uncompression */
-		goto fail;
-	}
+	return offset;
+}
 
+/* Helper to uncompress Destination Address */
+static inline uint8_t uncompress_da(struct net_buf *buf,
+				    struct net_ipv6_hdr *ipv6,
+				    uint8_t offset)
+{
 	if (CIPHC[1] & NET_6LO_IPHC_M_1) {
 	/** If M=1 and DAC=0:
 	  * 00: 128 bits, The full address is carried in-line.
@@ -757,29 +810,20 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		}
 	}
 
-	net_buf_add(frag, NET_IPV6H_LEN);
+	return offset;
+}
 
-	if (!(CIPHC[0] & NET_6LO_IPHC_NH_1)) {
-		NET_DBG("No following compressed header");
-		goto end;
-	}
-
-	if ((CIPHC[offset] & 0xF0) != NET_6LO_NHC_UDP_BARE) {
-		/*doesn't support other NH uncompression */
-		NET_DBG("Unsupported following compressed header");
-		goto fail;
-	}
-
-	/** Port uncompression
-	  * 00:  All 16 bits for src and dst are inlined
-	  * 01: src, 16 bits are lined, dst(0xf0) 8 bits are inlined
-	  * 10: dst, 16 bits are lined, src(0xf0) 8 bits are inlined
-	  * 11: src, dst (0xf0b) 4 bits are inlined
-	  */
-	ipv6->nexthdr = IPPROTO_UDP;
-	udp = (struct net_udp_hdr *)(frag->data + NET_IPV6H_LEN);
-
-	chksum = CIPHC[offset] & NET_6LO_NHC_UDP_CHKSUM_1;
+/* Helper to uncompress NH UDP */
+static inline uint8_t uncompress_nh_udp(struct net_buf *buf,
+					struct net_udp_hdr *udp,
+					uint8_t offset)
+{
+	/* Port uncompression
+	 * 00:  All 16 bits for src and dst are inlined
+	 * 01: src, 16 bits are lined, dst(0xf0) 8 bits are inlined
+	 * 10: dst, 16 bits are lined, src(0xf0) 8 bits are inlined
+	 * 11: src, dst (0xf0b) 4 bits are inlined
+	 */
 
 	/* UDP header uncompression */
 	switch (CIPHC[offset++] & NET_6LO_NHC_UDP_PORT_11) {
@@ -824,8 +868,82 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		break;
 	}
 
+	return offset;
+}
+
+static inline bool uncompress_IPHC_header(struct net_buf *buf)
+{
+	struct net_udp_hdr *udp = NULL;
+	uint8_t offset = 2;
+	struct net_ipv6_hdr *ipv6;
+	struct net_buf *frag;
+	uint8_t chksum;
+	uint16_t len;
+
+	if (CIPHC[1] & NET_6LO_IPHC_CID_1) {
+		/* If it is supported increase offset to +1 */
+		return false;
+	}
+
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	if (!frag) {
+		return false;
+	}
+
+	ipv6 = (struct net_ipv6_hdr *)(frag->data);
+
+	/* Version is always 6 */
+	ipv6->vtc = 0x60;
+	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
+
+	/* Uncompress Traffic class and Flow label */
+	offset = uncompress_tfl(buf, ipv6, offset);
+
+	if (!(CIPHC[0] & NET_6LO_IPHC_NH_1)) {
+		ipv6->nexthdr = CIPHC[offset];
+		offset++;
+	}
+
+	/* Uncompress Hoplimit */
+	offset = uncompress_hoplimit(buf, ipv6, offset);
+
+	/* First set to zero and copy relevant bits */
+	memset(&ipv6->src.s6_addr[0], 0, 16);
+	memset(&ipv6->dst.s6_addr[0], 0, 16);
+
+	/* Uncompress Source Address */
+	offset = uncompress_sa(buf, ipv6, offset);
+
+	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
+		/* TODO: context based uncompression */
+		goto fail;
+	}
+
+	/* Uncompress Destination Address */
+	offset = uncompress_da(buf, ipv6, offset);
+
+	net_buf_add(frag, NET_IPV6H_LEN);
+
+	if (!(CIPHC[0] & NET_6LO_IPHC_NH_1)) {
+		NET_DBG("No following compressed header");
+		goto end;
+	}
+
+	if ((CIPHC[offset] & 0xF0) != NET_6LO_NHC_UDP_BARE) {
+		/* Unsupported NH uncompression */
+		NET_DBG("Unsupported following compressed header");
+		goto fail;
+	}
+
+	/* Uncompress UDP header */
+	ipv6->nexthdr = IPPROTO_UDP;
+
+	udp = (struct net_udp_hdr *)(frag->data + NET_IPV6H_LEN);
+	chksum = CIPHC[offset] & NET_6LO_NHC_UDP_CHKSUM_1;
+	offset = uncompress_nh_udp(buf, udp, offset);
+
 	if (chksum) {
-		/* TODO: calculate checksum */
+		/* TODO: Calculate checksum */
 		goto fail;
 	}
 
@@ -846,11 +964,11 @@ end:
 		       net_nbuf_ll(buf), net_nbuf_ll_reserve(buf));
 	}
 
-	/* insert the fragment (this one holds uncompressed headers) */
+	/* Insert the fragment (this one holds uncompressed headers) */
 	net_buf_frag_insert(buf, frag);
 	net_nbuf_compact(buf->frags);
 
-	/* set IPv6 header and UDP (if next header is) length */
+	/* Set IPv6 header and UDP (if next header is) length */
 	len = net_buf_frags_len(buf) - NET_IPV6H_LEN;
 	ipv6->len[0] = len >> 8;
 	ipv6->len[1] = (uint8_t)len;
