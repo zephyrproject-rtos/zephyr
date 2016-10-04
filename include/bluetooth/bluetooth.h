@@ -90,7 +90,7 @@ struct bt_data {
 	{ \
 		.type = (_type), \
 		.data_len = (_data_len), \
-		.data = (_data), \
+		.data = (const uint8_t *)(_data), \
 	}
 
 /** @brief Helper to declare elements of bt_data arrays

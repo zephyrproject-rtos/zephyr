@@ -1756,7 +1756,7 @@ static void remote_name_request_complete(struct net_buf *buf)
 			eir_len -= 2;
 
 			/* name is null terminated */
-			name_len = strlen(evt->name);
+			name_len = strlen((const char *)evt->name);
 
 			if (name_len > eir_len) {
 				eir[0] = eir_len + 1;
@@ -3133,7 +3133,7 @@ static int br_init(void)
 	}
 
 	name_cp = net_buf_add(buf, sizeof(*name_cp));
-	strncpy(name_cp->local_name, CONFIG_BLUETOOTH_BREDR_NAME,
+	strncpy((char *)name_cp->local_name, CONFIG_BLUETOOTH_BREDR_NAME,
 		sizeof(name_cp->local_name));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
