@@ -316,6 +316,7 @@ static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
 #define nano_task_workqueue_start nano_fiber_workqueue_start
 #define nano_fiber_workqueue_start nano_fiber_workqueue_start
 
+#if CONFIG_SYS_CLOCK_EXISTS
 #define nano_delayed_work_init k_delayed_work_init
 
 static inline int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
@@ -326,6 +327,8 @@ static inline int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
 }
 
 #define nano_delayed_work_cancel k_delayed_work_cancel
+#endif
+
 #define nano_work_submit k_work_submit
 
 #define nano_delayed_work_submit(work, ticks) \

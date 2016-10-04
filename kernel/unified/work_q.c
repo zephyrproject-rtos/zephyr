@@ -62,6 +62,7 @@ void k_work_q_start(struct k_work_q *work_q,
 		       config->prio, 0, 0);
 }
 
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 static void work_timeout(struct _timeout *t)
 {
 	struct k_delayed_work *w = CONTAINER_OF(t, struct k_delayed_work,
@@ -143,6 +144,7 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 
 	return 0;
 }
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 #ifdef CONFIG_SYSTEM_WORKQUEUE
 
