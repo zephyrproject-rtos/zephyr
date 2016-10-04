@@ -100,6 +100,16 @@ static NET_BUF_POOL(req_pool,
 		    &req_data, NULL, BT_BUF_USER_DATA_MIN);
 
 /*
+ * Pool for ATT indications packets. This is required since indication can be
+ * sent in parallel to requests.
+ */
+static struct nano_fifo ind_data;
+static NET_BUF_POOL(ind_pool,
+		    CONFIG_BLUETOOTH_ATT_REQ_COUNT * CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
+		    &ind_data, NULL, BT_BUF_USER_DATA_MIN);
+
+/*
  * Pool for outstanding ATT request, this is required for resending in case
  * there is a recoverable error since the original buffer is changed while
  * sending.
@@ -1749,7 +1759,18 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 		return NULL;
 	}
 
-	buf = bt_l2cap_create_pdu(&req_data);
+	switch (op) {
+	case BT_ATT_OP_INDICATE:
+	case BT_ATT_OP_CONFIRM:
+		/* Use a different buffer pool for indication/confirmations
+		 * since they can be sent in parallel.
+		 */
+		buf = bt_l2cap_create_pdu(&ind_data, 0);
+		break;
+	default:
+		buf = bt_l2cap_create_pdu(&req_data, 0);
+	}
+
 	if (!buf) {
 		return NULL;
 	}
@@ -1851,14 +1872,24 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP)
-static void bt_att_encrypt_change(struct bt_l2cap_chan *chan)
+static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
+				  uint8_t hci_status)
 {
 	struct bt_att *att = ATT_CHAN(chan);
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 	struct bt_conn *conn = ch->chan.conn;
 
-	BT_DBG("chan %p conn %p handle %u sec_level 0x%02x", ch, conn,
-	       conn->handle, conn->sec_level);
+	BT_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x", ch,
+	       conn, conn->handle, conn->sec_level, hci_status);
+
+	/*
+	 * If status (HCI status of security procedure) is non-zero, notify
+	 * outstanding request about security failure.
+	 */
+	if (hci_status) {
+		att_handle_rsp(att, NULL, 0, BT_ATT_ERR_AUTHENTICATION);
+		return;
+	}
 
 	if (conn->sec_level == BT_SECURITY_LOW) {
 		return;
@@ -1916,6 +1947,7 @@ void bt_att_init(void)
 		.accept		= bt_att_accept,
 	};
 
+	net_buf_pool_init(ind_pool);
 	net_buf_pool_init(req_pool);
 	net_buf_pool_init(clone_pool);
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0

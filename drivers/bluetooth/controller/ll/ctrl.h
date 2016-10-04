@@ -147,7 +147,7 @@ struct radio_adv_data {
 	uint8_t last;
 };
 
-struct __packed radio_le_conn_cmplt {
+struct radio_le_conn_cmplt {
 	uint8_t status;
 	uint8_t role;
 	uint8_t peer_addr_type;
@@ -159,14 +159,14 @@ struct __packed radio_le_conn_cmplt {
 	uint16_t latency;
 	uint16_t timeout;
 	uint8_t mca;
-};
+} __packed;
 
-struct __packed radio_le_conn_update_cmplt {
+struct radio_le_conn_update_cmplt {
 	uint8_t status;
 	uint16_t interval;
 	uint16_t latency;
 	uint16_t timeout;
-};
+} __packed;
 
 struct radio_pdu_node_tx {
 	void *next;

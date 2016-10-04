@@ -264,7 +264,7 @@ config BLUETOOTH_GATT_CLIENT
 config BLUETOOTH_MAX_CONN
 	int "Maximum number of simultaneous connections"
 	default 1
-	range 1 16
+	range 1 64
 	help
 	  Maximum number of simultaneous Bluetooth connections
 	  supported. The minimum (and default) number is 1.
@@ -272,7 +272,7 @@ config BLUETOOTH_MAX_CONN
 config BLUETOOTH_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 1
-	range 1 32
+	range 1 128
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
@@ -443,6 +443,29 @@ config BLUETOOTH_DEBUG_HFP_HF
 	  This option enables debug support for the Bluetooth
 	  Hands Free Profile (HFP).
 
+config BLUETOOTH_DEBUG_AVDTP
+	bool "Bluetooth AVDTP debug"
+	depends on BLUETOOTH_AVDTP
+	default n
+	help
+	  This option enables debug support for the Bluetooth AVDTP.
+
+config BLUETOOTH_DEBUG_A2DP
+	bool "Bluetooth A2DP debug"
+	depends on BLUETOOTH_A2DP
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  A2DP profile.
+
+config BLUETOOTH_DEBUG_SDP
+	bool "Bluetooth Service Discovery Protocol (SDP) debug"
+	depends on BLUETOOTH_BREDR
+	default n
+	help
+		This option enables debug support for the Bluetooth
+		Service Discovery Protocol (SDP).
+
 endif # BLUETOOTH_DEBUG
 
 config BLUETOOTH_BREDR
@@ -461,11 +484,33 @@ config BLUETOOTH_RFCOMM
 	help
 	  This option enables Bluetooth RFCOMM support
 
+config BLUETOOTH_RFCOMM_L2CAP_MTU
+	int "L2CAP MTU for RFCOMM frames"
+	default BLUETOOTH_L2CAP_IN_MTU
+	depends on BLUETOOTH_RFCOMM
+	range BLUETOOTH_L2CAP_IN_MTU 32767
+	help
+	  Maximum size of L2CAP PDU for RFCOMM frames.
+
 config BLUETOOTH_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
 	default n
+	select BLUETOOTH_RFCOMM
 	help
 	  This option enables Bluetooth HF support
+
+config BLUETOOTH_AVDTP
+	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
+	default n
+	help
+	  This option enables Bluetooth AVDTP support
+
+config BLUETOOTH_A2DP
+	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
+	default n
+	select BLUETOOTH_AVDTP
+	help
+	  This option enables the A2DP profile
 
 config BLUETOOTH_BREDR_NAME
 	string "Bluetooth BR/EDR device name"
@@ -474,13 +519,4 @@ config BLUETOOTH_BREDR_NAME
 	  Bluetooth BR/EDR name. Name can be up to 248 bytes long (excluding
 	  NULL termination). Can be empty string.
 endif # BLUETOOTH_BREDR
-
-if BLUETOOTH_RFCOMM
-config BLUETOOTH_RFCOMM_L2CAP_MTU
-	int "L2CAP MTU for RFCOMM frames"
-	default BLUETOOTH_L2CAP_IN_MTU
-	range BLUETOOTH_L2CAP_IN_MTU 32767
-	help
-	  Maximum size of L2CAP PDU for RFCOMM frames.
-endif # BLUETOOTH_RFCOMM
 endif # BLUETOOTH

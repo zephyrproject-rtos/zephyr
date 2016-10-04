@@ -177,6 +177,7 @@ struct bt_smp {
 	struct nano_delayed_work work;
 };
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
 static const uint8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
 	{ JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS, PASSKEY_INPUT },
@@ -187,6 +188,7 @@ static const uint8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
 	{ PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS,
 	  PASSKEY_ROLE },
 };
+#endif /* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
 static const uint8_t gen_method_sc[5 /* remote */][5 /* local */] = {
@@ -198,12 +200,6 @@ static const uint8_t gen_method_sc[5 /* remote */][5 /* local */] = {
 	{ JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS },
 	{ PASSKEY_DISPLAY, PASSKEY_CONFIRM, PASSKEY_INPUT, JUST_WORKS,
 	  PASSKEY_CONFIRM },
-};
-
-/* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
-static const uint32_t sc_debug_private_key[8] = {
-	0xcd3c1abd, 0x5899b8a6, 0xeb40b799, 0x4aff607b, 0xd2103f50, 0x74c9b3e3,
-	0xa3c55f38, 0x3f49f6d4
 };
 
 static const uint8_t sc_debug_public_key[64] = {
@@ -328,7 +324,7 @@ static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&smp_buf);
+	buf = bt_l2cap_create_pdu(&smp_buf, 0);
 	if (!buf) {
 		return NULL;
 	}
@@ -3438,13 +3434,18 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	memset(smp, 0, sizeof(*smp));
 }
 
-static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
+static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
+				  uint8_t hci_status)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
 	struct bt_conn *conn = chan->conn;
 
-	BT_DBG("chan %p conn %p handle %u encrypt 0x%02x", chan, conn,
-	       conn->handle, conn->encrypt);
+	BT_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x",
+	       chan, conn, conn->handle, conn->encrypt, hci_status);
+
+	if (hci_status) {
+		return;
+	}
 
 	if (!smp || !conn->encrypt) {
 		return;

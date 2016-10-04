@@ -288,7 +288,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 
 	ev->eir_data_len = ad->len;
 	if (ad->len) {
-		memcpy(ev->eir_data, ad, ad->len);
+		memcpy(ev->eir_data, ad->data, ad->len);
 	}
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND, CONTROLLER_INDEX,

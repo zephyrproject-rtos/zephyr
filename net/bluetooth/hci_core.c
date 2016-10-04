@@ -1756,7 +1756,7 @@ static void remote_name_request_complete(struct net_buf *buf)
 			eir_len -= 2;
 
 			/* name is null terminated */
-			name_len = strlen(evt->name);
+			name_len = strlen((const char *)evt->name);
 
 			if (name_len > eir_len) {
 				eir[0] = eir_len + 1;
@@ -1839,6 +1839,13 @@ static void auth_complete(struct net_buf *buf)
 	}
 
 	if (evt->status) {
+		if (conn->state == BT_CONN_CONNECTED) {
+			/*
+			 * Inform layers above HCI about non-zero authentication
+			 * status to make them able cleanup pending jobs.
+			 */
+			bt_l2cap_encrypt_change(conn, evt->status);
+		}
 		reset_pairing(conn);
 	} else {
 		link_encr(handle);
@@ -1962,6 +1969,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 			conn->required_sec_level = conn->sec_level;
 #if defined(CONFIG_BLUETOOTH_BREDR)
 		} else {
+			bt_l2cap_encrypt_change(conn, evt->status);
 			reset_pairing(conn);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 		}
@@ -1994,7 +2002,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-	bt_l2cap_encrypt_change(conn);
+	bt_l2cap_encrypt_change(conn, evt->status);
 	bt_conn_security_changed(conn);
 
 	bt_conn_unref(conn);
@@ -2010,13 +2018,14 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 
 	BT_DBG("status %u handle %u", evt->status, handle);
 
-	if (evt->status) {
-		return;
-	}
-
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
 		BT_ERR("Unable to look up conn with handle %u", handle);
+		return;
+	}
+
+	if (evt->status) {
+		bt_l2cap_encrypt_change(conn, evt->status);
 		return;
 	}
 
@@ -2038,7 +2047,7 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-	bt_l2cap_encrypt_change(conn);
+	bt_l2cap_encrypt_change(conn, evt->status);
 	bt_conn_security_changed(conn);
 	bt_conn_unref(conn);
 }
@@ -3133,7 +3142,7 @@ static int br_init(void)
 	}
 
 	name_cp = net_buf_add(buf, sizeof(*name_cp));
-	strncpy(name_cp->local_name, CONFIG_BLUETOOTH_BREDR_NAME,
+	strncpy((char *)name_cp->local_name, CONFIG_BLUETOOTH_BREDR_NAME,
 		sizeof(name_cp->local_name));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);

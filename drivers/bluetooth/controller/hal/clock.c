@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "nrf.h"
+#include <soc.h>
 
 #include "clock.h"
 
@@ -54,7 +54,7 @@ uint32_t clock_m16src_start(uint32_t async)
 	if (!async) {
 		uint32_t intenset;
 
-		NVIC_DisableIRQ(POWER_CLOCK_IRQn);
+		irq_disable(POWER_CLOCK_IRQn);
 
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 
@@ -76,8 +76,8 @@ uint32_t clock_m16src_start(uint32_t async)
 			NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_HFCLKSTARTED_Msk;
 		}
 
-		NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
-		NVIC_EnableIRQ(POWER_CLOCK_IRQn);
+		_NvicIrqUnpend(POWER_CLOCK_IRQn);
+		irq_enable(POWER_CLOCK_IRQn);
 	} else {
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 		NRF_CLOCK->TASKS_HFCLKSTART = 1;
@@ -120,7 +120,7 @@ uint32_t clock_k32src_start(uint32_t src)
 
 	NRF_CLOCK->TASKS_LFCLKSTOP = 1;
 
-	NVIC_DisableIRQ(POWER_CLOCK_IRQn);
+	irq_disable(POWER_CLOCK_IRQn);
 
 	NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
 
@@ -139,8 +139,8 @@ uint32_t clock_k32src_start(uint32_t src)
 		NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_LFCLKSTARTED_Msk;
 	}
 
-	NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
-	NVIC_EnableIRQ(POWER_CLOCK_IRQn);
+	_NvicIrqUnpend(POWER_CLOCK_IRQn);
+	irq_enable(POWER_CLOCK_IRQn);
 
 	/* Calibrate RC, and start timer for consecutive calibrations */
 	NRF_CLOCK->TASKS_CTSTOP = 1;
@@ -160,7 +160,7 @@ uint32_t clock_k32src_start(uint32_t src)
 		 */
 		NRF_CLOCK->INTENSET = CLOCK_INTENSET_HFCLKSTARTED_Msk;
 		if (clock_m16src_start(1)) {
-			NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
+			_NvicIrqUnpend(POWER_CLOCK_IRQn);
 		}
 	}
 
@@ -224,7 +224,7 @@ void power_clock_isr(void)
 		 */
 		NRF_CLOCK->INTENSET = CLOCK_INTENSET_HFCLKSTARTED_Msk;
 		if (clock_m16src_start(1)) {
-			NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
+			_NvicIrqUnpend(POWER_CLOCK_IRQn);
 		}
 	}
 }

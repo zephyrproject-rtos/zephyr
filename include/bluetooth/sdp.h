@@ -1,6 +1,9 @@
+/** @file
+ *  @brief Service Discovery Protocol handling.
+ */
+
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
- * Copyright (c) 2016 Vinayak Kariappa Chettimada
+ * Copyright (c) 2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +17,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef __BT_SDP_H
+#define __BT_SDP_H
 
-#ifndef _WORK_H_
-#define _WORK_H_
+/**
+ * @brief Service Discovery Protocol (SDP)
+ * @defgroup bt_sdp Service Discovery Protocol (SDP)
+ * @ingroup bluetooth
+ * @{
+ */
 
-typedef void (*work_fp) (void *params);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-struct work {
-	void *next;
-	uint8_t req;
-	uint8_t ack;
-	uint8_t group;
-	work_fp fp;
-	void *params;
-};
+#ifdef __cplusplus
+}
+#endif
 
-void work_enable(uint8_t group);
-void work_disable(uint8_t group);
-uint32_t work_is_enabled(uint8_t group);
-uint32_t work_schedule(struct work *w, uint8_t chain);
-void work_run(uint8_t group);
+/**
+ * @}
+ */
 
-#endif /* _WORK_H_ */
+#endif /* __BT_SDP_H */

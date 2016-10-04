@@ -1,6 +1,9 @@
+/** @file
+ * @brief Advance Audio Distribution Profile Internal header.
+ */
+
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
- * Copyright (c) 2016 Vinayak Kariappa Chettimada
+ * Copyright (c) 2015-2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +18,19 @@
  * limitations under the License.
  */
 
-#ifndef _IRQ_H_
-#define _IRQ_H_
+#include <errno.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <bluetooth/hci.h>
+#include <stddef.h>
+#include <sys/types.h>
+#include <bluetooth/uuid.h>
 
-void irq_enable(uint8_t irq);
-void irq_disable(uint8_t irq);
-void irq_pending_set(uint8_t irq);
-uint8_t irq_enabled(uint8_t irq);
-uint8_t irq_priority_equal(uint8_t irq);
+enum bt_a2dp_stream_state {
+	A2DP_STREAM_IDLE,
+	A2DP_STREAM_STREAMING,
+	A2DP_STREAM_SUSPENDED
+};
 
-#endif /* _IRQ_H_ */
+/* To be called when first SEP is being registered */
+int bt_a2dp_init(void);

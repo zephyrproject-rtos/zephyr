@@ -16,27 +16,34 @@
  */
 
 #include <stdint.h>
-#include "hal_irq.h"
+#include <irq.h>
 
 #include "work.h"
 
 static struct work *_work_head;
 
-#ifdef __GNUC__
-static inline uint32_t __disable_irq(void)
+static int _irq_is_priority_equal(unsigned int irq)
 {
-	uint32_t result;
+	unsigned int curr_ctx;
+	int curr_prio;
 
-	__asm__ volatile ("MRS %0, PRIMASK\n\t CPSID i":"=r" (result));
+	curr_ctx = _ScbActiveVectorGet();
+	if (curr_ctx > 16) {
+		/* Interrupts */
+		curr_prio = _NvicIrqPrioGet(curr_ctx - 16);
+	} else if (curr_ctx > 3) {
+		/* Execeptions */
+		curr_prio = _ScbExcPrioGet(curr_ctx);
+	} else if (curr_ctx > 0) {
+		/* Fixed Priority Exceptions: -3, -2, -1 priority */
+		curr_prio = curr_ctx - 4;
+	} else {
+		/* Thread mode */
+		curr_prio = 256;
+	}
 
-	return (result & 0x01);
+	return (_NvicIrqPrioGet(irq) == curr_prio);
 }
-
-static inline void __enable_irq(void)
-{
-	__asm__ volatile ("CPSIE i");
-}
-#endif
 
 void work_enable(uint8_t group)
 {
@@ -48,14 +55,14 @@ void work_disable(uint8_t group)
 	irq_disable(group);
 }
 
-uint8_t work_enabled(uint8_t group)
+uint32_t work_is_enabled(uint8_t group)
 {
-	return irq_enabled(group);
+	return irq_is_enabled(group);
 }
 
 uint32_t work_schedule(struct work *w, uint8_t chain)
 {
-	int was_masked = __disable_irq();
+	uint32_t imask = irq_lock();
 	struct work *prev;
 	struct work *curr;
 
@@ -81,8 +88,8 @@ uint32_t work_schedule(struct work *w, uint8_t chain)
 	}
 
 	/* chain, if explicitly requested, or if work not at current level */
-	chain = chain || (!irq_priority_equal(w->group))
-	    || (!irq_enabled(w->group));
+	chain = chain || (!_irq_is_priority_equal(w->group))
+	    || (!irq_is_enabled(w->group));
 
 	/* Already in List */
 	curr = _work_head;
@@ -92,9 +99,7 @@ uint32_t work_schedule(struct work *w, uint8_t chain)
 				break;
 			}
 
-			if (!was_masked) {
-				__enable_irq();
-			}
+			irq_unlock(imask);
 
 			return 1;
 		}
@@ -106,9 +111,7 @@ uint32_t work_schedule(struct work *w, uint8_t chain)
 	if (!chain) {
 		w->req = w->ack;
 
-		if (!was_masked) {
-			__enable_irq();
-		}
+		irq_unlock(imask);
 
 		if (w->fp) {
 			w->fp(w->params);
@@ -126,18 +129,16 @@ uint32_t work_schedule(struct work *w, uint8_t chain)
 		prev->next = w;
 	}
 
-	irq_pending_set(w->group);
+	_NvicIrqPend(w->group);
 
-	if (!was_masked) {
-		__enable_irq();
-	}
+	irq_unlock(imask);
 
 	return 0;
 }
 
 void work_run(uint8_t group)
 {
-	int was_masked = __disable_irq();
+	uint32_t imask = irq_lock();
 	struct work *curr = _work_head;
 
 	while (curr) {
@@ -146,12 +147,10 @@ void work_run(uint8_t group)
 
 			if (curr->fp) {
 				if (curr->next) {
-					irq_pending_set(group);
+					_NvicIrqPend(group);
 				}
 
-				if (!was_masked) {
-					__enable_irq();
-				}
+				irq_unlock(imask);
 
 				curr->fp(curr->params);
 
@@ -162,7 +161,5 @@ void work_run(uint8_t group)
 		curr = curr->next;
 	}
 
-	if (!was_masked) {
-		__enable_irq();
-	}
+	irq_unlock(imask);
 }

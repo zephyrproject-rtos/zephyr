@@ -65,7 +65,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	 * Core Specification Vol. 3, Part H, 3.3
 	 */
 
-	buf = bt_l2cap_create_pdu(&smp_buf);
+	buf = bt_l2cap_create_pdu(&smp_buf, 0);
 	if (!buf) {
 		return;
 	}

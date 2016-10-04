@@ -15,12 +15,10 @@
  * limitations under the License.
  */
 
-#include <toolchain.h>
 #include <string.h>
+#include <soc.h>
 
-#include "nrf.h"
 #include "mem.h"
-
 #include "ecb.h"
 
 #include "debug.h"
@@ -30,11 +28,11 @@ void ecb_encrypt(uint8_t const *const key_le,
 		 uint8_t * const cipher_text_le,
 		 uint8_t * const cipher_text_be)
 {
-	struct __packed {
+	struct {
 		uint8_t key[16];
 		uint8_t clear_text[16];
 		uint8_t cipher_text[16];
-	} ecb;
+	} __packed ecb;
 
 	mem_rcopy(&ecb.key[0], key_le, sizeof(ecb.key));
 	mem_rcopy(&ecb.clear_text[0], clear_text_le, sizeof(ecb.clear_text));
@@ -85,10 +83,9 @@ uint32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 	NRF_ECB->EVENTS_ERRORECB = 0;
 	NRF_ECB->INTENSET = ECB_INTENSET_ERRORECB_Msk | ECB_INTENSET_ENDECB_Msk;
 
-	/* setup interrupt */
-	NVIC_SetPriority(ECB_IRQn, 2);
-	NVIC_ClearPendingIRQ(ECB_IRQn);
-	NVIC_EnableIRQ(ECB_IRQn);
+	/* enable interrupt */
+	_NvicIrqUnpend(ECB_IRQn);
+	irq_enable(ECB_IRQn);
 
 	/* start the encryption h/w */
 	NRF_ECB->TASKS_STARTECB = 1;
@@ -102,7 +99,7 @@ static void ecb_cleanup(void)
 	NRF_ECB->TASKS_STOPECB = 1;
 
 	/* cleanup interrupt */
-	NVIC_DisableIRQ(ECB_IRQn);
+	irq_disable(ECB_IRQn);
 }
 
 void ecb_isr(void)
