@@ -31,6 +31,8 @@
 
 #define HDC1008_REG_TEMP	0x0
 #define HDC1008_REG_HUMIDITY	0x1
+#define HDC1000_MANUFID         0xFE
+#define HDC1000_DEVICEID        0xFF
 
 struct hdc1008_data {
 	struct device *i2c;

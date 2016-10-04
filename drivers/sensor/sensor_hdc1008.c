@@ -101,14 +101,32 @@ static struct sensor_driver_api hdc1008_driver_api = {
 	.channel_get = hdc1008_channel_get,
 };
 
+uint16_t read16(struct device *dev, uint8_t a, uint8_t d)
+{
+	uint8_t buf[2];
+	if (i2c_burst_read(dev, a, d, (uint8_t *)buf, 2) < 0) {
+		SYS_LOG_ERR("Error reading register.");
+	}
+	return (buf[0] << 8 | buf[1]);
+}
+
 int hdc1008_init(struct device *dev)
 {
 	struct hdc1008_data *drv_data = dev->driver_data;
 
 	drv_data->i2c = device_get_binding(CONFIG_HDC1008_I2C_MASTER_DEV_NAME);
+
 	if (drv_data->i2c == NULL) {
 		SYS_LOG_DBG("Failed to get pointer to %s device!",
 			    CONFIG_HDC1008_I2C_MASTER_DEV_NAME);
+		return -EINVAL;
+	}
+	if (read16(drv_data->i2c, HDC1008_I2C_ADDRESS, HDC1000_MANUFID) != 0x5449) {
+		SYS_LOG_ERR("Failed to get correct manufacturer ID");
+		return -EINVAL;
+	}
+	if (read16(drv_data->i2c, HDC1008_I2C_ADDRESS, HDC1000_DEVICEID) != 0x1000) {
+		SYS_LOG_ERR("Failed to get correct device ID");
 		return -EINVAL;
 	}
 
