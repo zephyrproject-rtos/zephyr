@@ -74,14 +74,20 @@ static int dma_qmsi_channel_config(struct device *dev, uint32_t channel,
 
 	info->channel[channel] = channel;
 
-	qmsi_cfg.handshake_interface = config->handshake_interface;
-	qmsi_cfg.handshake_polarity = config->handshake_polarity;
-	qmsi_cfg.source_transfer_width = config->source_transfer_width;
-	qmsi_cfg.channel_direction = config->channel_direction;
-	qmsi_cfg.destination_burst_length = config->destination_burst_length;
-	qmsi_cfg.destination_transfer_width =
-		 config->destination_transfer_width;
-	qmsi_cfg.source_burst_length = config->source_burst_length;
+	qmsi_cfg.handshake_interface = (qm_dma_handshake_interface_t)
+					config->handshake_interface;
+	qmsi_cfg.handshake_polarity = (qm_dma_handshake_polarity_t)
+				       config->handshake_polarity;
+	qmsi_cfg.source_transfer_width = (qm_dma_transfer_width_t)
+					  config->source_transfer_width;
+	qmsi_cfg.channel_direction = (qm_dma_channel_direction_t)
+				      config->channel_direction;
+	qmsi_cfg.destination_burst_length = (qm_dma_burst_length_t)
+					     config->destination_burst_length;
+	qmsi_cfg.destination_transfer_width = (qm_dma_transfer_width_t)
+					    config->destination_transfer_width;
+	qmsi_cfg.source_burst_length = (qm_dma_burst_length_t)
+					config->source_burst_length;
 
 	data->callback_data[channel] = config->callback_data;
 	data->transfer[channel] = config->dma_transfer;
