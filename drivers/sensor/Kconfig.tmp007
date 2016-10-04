@@ -51,14 +51,6 @@ config TMP007_NAME
 	help
 	  Device name with which the TMP007 sensor is identified.
 
-config TMP007_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on TMP007
-	default 70
-	help
-	  Device driver initialization priority.
-
 choice
 	prompt "I2C address"
 	depends on TMP007

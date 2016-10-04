@@ -51,14 +51,6 @@ config SHT3XD_NAME
 	help
 	  Device name with which the SHT3xD sensor is identified.
 
-config SHT3XD_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on SHT3XD
-	default 70
-	help
-	  Device driver initialization priority.
-
 choice
 	prompt "I2C address"
 	depends on SHT3XD

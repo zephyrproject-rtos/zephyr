@@ -49,14 +49,6 @@ config LSM6DS0_DEV_NAME
 	depends on LSM6DS0
 	default "lsm6ds0"
 
-config LSM6DS0_INIT_PRIORITY
-	int
-	depends on LSM6DS0
-	default 70
-	prompt "Init priority"
-	help
-	  Device driver initialization priority.
-
 config LSM6DS0_I2C_ADDR
 	hex
 	prompt "I2C address"

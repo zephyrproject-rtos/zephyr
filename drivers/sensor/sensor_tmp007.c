@@ -147,4 +147,4 @@ int tmp007_init(struct device *dev)
 struct tmp007_data tmp007_driver;
 
 DEVICE_INIT(tmp007, CONFIG_TMP007_NAME, tmp007_init, &tmp007_driver,
-	    NULL, SECONDARY, CONFIG_TMP007_INIT_PRIORITY);
+	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

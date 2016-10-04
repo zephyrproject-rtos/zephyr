@@ -47,14 +47,6 @@ config SX9500_DEV_NAME
 	depends on SX9500
 	default "SX9500"
 
-config SX9500_INIT_PRIORITY
-	int
-	depends on SX9500
-	default 70
-	prompt "Init priority"
-	help
-	  Device driver initialization priority.
-
 config SX9500_I2C_ADDR
 	hex "SX9500 I2C slave address"
 	depends on SX9500

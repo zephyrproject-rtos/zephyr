@@ -47,13 +47,6 @@ config MCP9808_DEV_NAME
 	depends on MCP9808
 	default "MCP9808"
 
-config MCP9808_INIT_PRIORITY
-	int
-	depends on MCP9808
-	default 70
-	prompt "Init priority"
-	help
-	 Device driver initialization priority.
 
 config MCP9808_I2C_ADDR
 	hex "MCP9808 I2C slave address"

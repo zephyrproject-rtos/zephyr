@@ -51,14 +51,6 @@ config LIS3DH_NAME
 	help
 	  Device name with which the LIS3DH sensor is identified.
 
-config LIS3DH_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on LIS3DH
-	default 70
-	help
-	  Device driver initialization priority.
-
 choice
 	prompt "I2C address"
 	depends on LIS3DH

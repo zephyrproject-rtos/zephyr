@@ -49,14 +49,6 @@ config HTS221_NAME
 	help
 	  Device name with which the HTS221 sensor is identified.
 
-config HTS221_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on HTS221
-	default 70
-	help
-	  Device driver initialization priority.
-
 config HTS221_I2C_MASTER_DEV_NAME
 	string
 	prompt "I2C master where HTS221 is connected"

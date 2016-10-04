@@ -245,4 +245,4 @@ static int dht_init(struct device *dev)
 struct dht_data dht_data;
 
 DEVICE_INIT(dht_dev, CONFIG_DHT_NAME, &dht_init, &dht_data,
-	    NULL, SECONDARY, CONFIG_DHT_INIT_PRIORITY);
+	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

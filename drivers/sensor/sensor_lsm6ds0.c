@@ -506,4 +506,4 @@ struct lsm6ds0_data lsm6ds0_data;
 
 DEVICE_INIT(lsm6ds0, CONFIG_LSM6DS0_DEV_NAME, lsm6ds0_init,
 	    &lsm6ds0_data, &lsm6ds0_config, NANOKERNEL,
-	    CONFIG_LSM6DS0_INIT_PRIORITY);
+	    CONFIG_SENSOR_INIT_PRIORITY);

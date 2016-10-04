@@ -131,4 +131,4 @@ int lis3dh_init(struct device *dev)
 struct lis3dh_data lis3dh_driver;
 
 DEVICE_INIT(lis3dh, CONFIG_LIS3DH_NAME, lis3dh_init, &lis3dh_driver,
-	    NULL, SECONDARY, CONFIG_LIS3DH_INIT_PRIORITY);
+	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

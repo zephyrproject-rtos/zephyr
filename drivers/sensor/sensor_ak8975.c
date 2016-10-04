@@ -170,4 +170,4 @@ int ak8975_init(struct device *dev)
 struct ak8975_data ak8975_data;
 
 DEVICE_INIT(ak8975, CONFIG_AK8975_NAME, ak8975_init, &ak8975_data,
-	    NULL, SECONDARY, CONFIG_AK8975_INIT_PRIORITY);
+	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

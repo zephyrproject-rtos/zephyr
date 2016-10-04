@@ -51,14 +51,6 @@ config AK8975_NAME
 	help
 	  Device name with which the AK8975 sensor is identified.
 
-config AK8975_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on AK8975
-	default 70
-	help
-	  Device driver initialization priority.
-
 config AK8975_I2C_ADDR
 	hex
 	prompt "I2C address"

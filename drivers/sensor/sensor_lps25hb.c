@@ -191,4 +191,4 @@ struct lps25hb_data lps25hb_data;
 
 DEVICE_INIT(lps25hb, CONFIG_LPS25HB_DEV_NAME, lps25hb_init,
 	    &lps25hb_data, &lps25hb_config, NANOKERNEL,
-	    CONFIG_LPS25HB_INIT_PRIORITY);
+	    CONFIG_SENSOR_INIT_PRIORITY);

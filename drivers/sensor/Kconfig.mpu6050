@@ -51,14 +51,6 @@ config MPU6050_NAME
 	help
 	  Device name with which the MPU6050 sensor is identified.
 
-config MPU6050_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on MPU6050
-	default 70
-	help
-	  Device driver initialization priority.
-
 config MPU6050_I2C_ADDR
 	hex
 	prompt "I2C address"

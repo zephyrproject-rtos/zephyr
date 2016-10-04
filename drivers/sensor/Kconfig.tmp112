@@ -51,14 +51,6 @@ config TMP112_NAME
 	help
 	Device name with which the TMP112 sensor is identified.
 
-config TMP112_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on TMP112
-	default 70
-	help
-	Device driver initialization priority.
-
 choice
 	prompt "I2C address"
 	depends on TMP112

@@ -370,4 +370,4 @@ struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 
 DEVICE_INIT(lsm9ds0_gyro, CONFIG_LSM9DS0_GYRO_DEV_NAME, lsm9ds0_gyro_init,
 	    &lsm9ds0_gyro_data, &lsm9ds0_gyro_config, SECONDARY,
-	    CONFIG_LSM9DS0_GYRO_INIT_PRIORITY);
+	    CONFIG_LSM9DS0_SENSOR_INIT_PRIORITY);

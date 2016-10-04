@@ -51,15 +51,6 @@ config ISL29035_NAME
 	help
 	  Device name with which the ISL29035 sensor is identified.
 
-config ISL29035_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	default 70
-	depends on ISL29035
-	help
-	  Device driver initialization priority for ISL29035.
-	  The device should be initialized after I2C.
-
 config ISL29035_I2C_MASTER_DEV_NAME
 	string
 	prompt "I2C Master"

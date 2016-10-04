@@ -172,4 +172,4 @@ int bma280_init(struct device *dev)
 struct bma280_data bma280_driver;
 
 DEVICE_INIT(bma280, CONFIG_BMA280_NAME, bma280_init, &bma280_driver,
-	    NULL, SECONDARY, CONFIG_BMA280_INIT_PRIORITY);
+	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

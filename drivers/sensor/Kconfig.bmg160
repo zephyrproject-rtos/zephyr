@@ -25,16 +25,6 @@ config BMG160_SYS_LOG_LEVEL
 
 	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
 
-config BMG160_INIT_PRIORITY
-	int
-	prompt "BMG160 Init priority"
-	default 70
-	depends on BMG160
-	help
-	  Device driver initialization priority.
-	  As the device is connected to SPI bus, its driver has
-	  to be initialized after the SPI one.
-
 config BMG160_DRV_NAME
 	string "Driver's name"
 	depends on BMG160

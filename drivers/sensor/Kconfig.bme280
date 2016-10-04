@@ -46,14 +46,6 @@ config BME280_DEV_NAME
 	depends on BME280
 	default "BME280"
 
-config BME280_INIT_PRIORITY
-	int
-	depends on BME280
-	default 70
-	prompt "Init priority"
-	help
-	 Device driver initialization priority.
-
 choice
 	prompt "BME280 I2C slave address"
 	default BME280_I2C_ADDR_76

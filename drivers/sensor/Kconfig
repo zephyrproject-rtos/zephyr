@@ -23,6 +23,14 @@ menuconfig SENSOR
 	help
 	  Include sensor drivers in system config
 
+config SENSOR_INIT_PRIORITY
+	int
+	prompt "Sensor init priority"
+	depends on SENSOR
+	default 90
+	help
+	 Sensor initialization priority.
+
 source "drivers/sensor/Kconfig.ak8975"
 
 source "drivers/sensor/Kconfig.bma280"

@@ -48,14 +48,6 @@ config LSM9DS0_MFD_DEV_NAME
 	depends on LSM9DS0_MFD
 	default "lsm9ds0_mfd"
 
-config LSM9DS0_MFD_INIT_PRIORITY
-	int
-	depends on LSM9DS0_MFD
-	default 70
-	prompt "Init priority"
-	help
-	  Device driver initialization priority.
-
 choice
 	prompt "LSM9DS0_MFD I2C slave address"
 	default LSM9DS0_MFD_I2C_ADDR_1E

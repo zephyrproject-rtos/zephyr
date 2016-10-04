@@ -252,4 +252,4 @@ int tmp112_init(struct device *dev)
 static struct tmp112_data tmp112_driver;
 
 DEVICE_INIT(tmp112, CONFIG_TMP112_NAME, tmp112_init, &tmp112_driver,
-	    NULL, SECONDARY, CONFIG_TMP112_INIT_PRIORITY);
+	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

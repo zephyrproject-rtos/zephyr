@@ -360,4 +360,4 @@ struct bmg160_device_config bmg160_config = {
 };
 
 DEVICE_INIT(bmg160, CONFIG_BMG160_DRV_NAME, bmg160_init, &bmg160_data,
-	    &bmg160_config, SECONDARY, CONFIG_BMG160_INIT_PRIORITY);
+	    &bmg160_config, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

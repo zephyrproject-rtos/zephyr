@@ -112,4 +112,4 @@ int mcp9808_init(struct device *dev)
 struct mcp9808_data mcp9808_data;
 
 DEVICE_INIT(mcp9808, CONFIG_MCP9808_DEV_NAME, mcp9808_init, &mcp9808_data,
-	    NULL, SECONDARY, CONFIG_MCP9808_INIT_PRIORITY);
+	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

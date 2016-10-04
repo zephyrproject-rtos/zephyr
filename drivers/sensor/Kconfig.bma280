@@ -74,14 +74,6 @@ config BMA280_NAME
 	help
 	  Device name with which the sensor is identified.
 
-config BMA280_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on BMA280
-	default 70
-	help
-	  Device driver initialization priority.
-
 choice
 	prompt "I2C address"
 	depends on BMA280

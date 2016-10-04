@@ -49,14 +49,6 @@ config LIS3MDL_NAME
 	help
 	  Device name with which the LIS3MDL sensor is identified.
 
-config LIS3MDL_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on LIS3MDL
-	default 70
-	help
-	  Device driver initialization priority.
-
 config LIS3MDL_I2C_ADDR
 	hex
 	prompt "I2C address"

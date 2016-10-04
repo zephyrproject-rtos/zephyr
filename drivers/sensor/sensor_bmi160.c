@@ -949,4 +949,4 @@ struct bmi160_device_config bmi160_config = {
 };
 
 DEVICE_INIT(bmi160, CONFIG_BMI160_NAME, bmi160_init, &bmi160_data,
-	    &bmi160_config, NANOKERNEL, CONFIG_BMI160_INIT_PRIORITY);
+	    &bmi160_config, NANOKERNEL, CONFIG_SENSOR_INIT_PRIORITY);

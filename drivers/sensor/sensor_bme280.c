@@ -266,4 +266,4 @@ int bme280_init(struct device *dev)
 static struct bme280_data bme280_data;
 
 DEVICE_INIT(bme280, CONFIG_BME280_DEV_NAME, bme280_init, &bme280_data,
-	    NULL, SECONDARY, CONFIG_BME280_INIT_PRIORITY);
+	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

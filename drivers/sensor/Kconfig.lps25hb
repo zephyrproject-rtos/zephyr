@@ -51,14 +51,6 @@ config LPS25HB_DEV_NAME
 	help
 	Device name with which the LPS25HB sensor is identified.
 
-config LPS25HB_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on LPS25HB
-	default 70
-	help
-	Device driver initialization priority.
-
 config LPS25HB_I2C_ADDR
 	hex
 	prompt "I2C address"

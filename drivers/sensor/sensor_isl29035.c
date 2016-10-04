@@ -155,4 +155,4 @@ static int isl29035_init(struct device *dev)
 struct isl29035_driver_data isl29035_data;
 
 DEVICE_INIT(isl29035_dev, CONFIG_ISL29035_NAME, &isl29035_init,
-	    &isl29035_data, NULL, SECONDARY, CONFIG_ISL29035_INIT_PRIORITY);
+	    &isl29035_data, NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);

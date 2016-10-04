@@ -625,4 +625,4 @@ struct bmc150_magn_data bmc150_magn_data;
 
 DEVICE_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init,
 	    &bmc150_magn_data, &bmc150_magn_config, NANOKERNEL,
-	    CONFIG_BMC150_MAGN_INIT_PRIORITY);
+	    CONFIG_SENSOR_INIT_PRIORITY);

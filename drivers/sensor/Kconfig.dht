@@ -73,14 +73,6 @@ config DHT_NAME
 	help
 	  Device name with which the sensor is identified.
 
-config DHT_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on DHT
-	default 70
-	help
-	  Device driver initialization priority.
-
 config DHT_GPIO_DEV_NAME
 	string
 	prompt "GPIO device"
