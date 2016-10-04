@@ -264,7 +264,7 @@ config BLUETOOTH_GATT_CLIENT
 config BLUETOOTH_MAX_CONN
 	int "Maximum number of simultaneous connections"
 	default 1
-	range 1 16
+	range 1 64
 	help
 	  Maximum number of simultaneous Bluetooth connections
 	  supported. The minimum (and default) number is 1.
@@ -272,7 +272,7 @@ config BLUETOOTH_MAX_CONN
 config BLUETOOTH_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 1
-	range 1 32
+	range 1 128
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
