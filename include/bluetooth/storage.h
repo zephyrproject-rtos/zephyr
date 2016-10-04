@@ -47,6 +47,16 @@ enum {
 	  * Type: uint8_t key[16]
 	  */
 	BT_STORAGE_LOCAL_IRK,
+
+	/** List of addresses of remote devices.
+	  * Type: bt_addr_le_t addrs[n] (length is variable).
+	  *
+	  * This is only used for reading. Modification of the list happens
+	  * implicitly by writing entries for each remote device. This value
+	  * is only used with the local storage, i.e. NULL as the target
+	  * bt_addr_le_t passed to the read callback.
+	  */
+	BT_STORAGE_ADDRESSES,
 };
 
 struct bt_storage {
