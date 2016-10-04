@@ -487,7 +487,6 @@ class SizeCalculator:
         self.sections = []
         self.rom_size = 0
         self.ram_size = 0
-        self.mismatches = []
 
         self._calculate_sizes()
 
@@ -514,17 +513,6 @@ class SizeCalculator:
         for v in self.sections:
             if not v["recognized"]:
                 slist.append(v["name"])
-        return slist
-
-    def mismatched_sections(self):
-        """Get a list of sections in the binary whose LMA and VMA offsets
-        from the previous section aren't proportional. This leads to issues
-        on XIP systems as they aren't correctly copied in to RAM
-        """
-        slist = []
-        for v in self.sections:
-            if v["lma_off"] != v["vma_off"]:
-                slist.append((v["name"], v["lma_off"], v["vma_off"]))
         return slist
 
     def _calculate_sizes(self):
@@ -576,23 +564,9 @@ class SizeCalculator:
                 stype = "unknown"
                 recognized = False
 
-            lma_off = 0
-            vma_off = 0
-
-            # Look for different section padding for LMA and VMA, if present
-            # this really messes up XIP systems as __csSet() copies all of
-            # them off flash into RAM as a single large block of memory
-            if self.is_xip and len(self.sections) > 0:
-                p = self.sections[-1]
-
-                if stype == "rw" and p["type"] == "rw":
-                    lma_off = load_addr - p["load_addr"]
-                    vma_off = virt_addr - p["virt_addr"]
-
             self.sections.append({"name" : name, "load_addr" : load_addr,
                                   "size" : size, "virt_addr" : virt_addr,
-                                  "type" : stype, "recognized" : recognized,
-                                  "lma_off" : lma_off, "vma_off" : vma_off})
+                                  "type" : stype, "recognized" : recognized})
 
 
 class MakeGoal:
@@ -1523,7 +1497,6 @@ class TestSuite:
                 goal.metrics["ram_size"] = sc.get_ram_size()
                 goal.metrics["rom_size"] = sc.get_rom_size()
                 goal.metrics["unrecognized"] = sc.unrecognized_sections()
-                goal.metrics["mismatched"] = sc.mismatched_sections()
 
         mg = MakeGenerator(self.outdir, asserts=enable_asserts)
         for i in self.instances.values():
@@ -1807,10 +1780,6 @@ def size_report(sc):
         info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
              (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
               v["type"]))
-        if v["lma_off"] != v["vma_off"]:
-            info("    WARNING: LMA and VMA offsets between %s and %s differ: %d vs %d" %
-                 (sc.sections[i-1]["name"], v["name"], v["lma_off"],
-                  v["vma_off"]))
 
     info("Totals: %d bytes (ROM), %d bytes (RAM)" %
              (sc.rom_size, sc.ram_size))
@@ -1928,11 +1897,6 @@ def main():
             info("%sFAILED%s: %s has unrecognized binary sections: %s" %
                  (COLOR_RED, COLOR_NORMAL, goal.name,
                   str(goal.metrics["unrecognized"])))
-            failed += 1
-        elif goal.metrics.get("mismatched"):
-            info("%sFAILED%s: %s has mismatched section offsets for: %s" %
-                 (COLOR_RED, COLOR_NORMAL, goal.name,
-                  str(goal.metrics["mismatched"])))
             failed += 1
 
     if args.coverage:
