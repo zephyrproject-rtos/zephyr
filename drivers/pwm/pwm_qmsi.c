@@ -49,53 +49,58 @@
 #define DEFAULT_PERIOD 2000
 
 struct pwm_data {
+#ifdef CONFIG_PWM_QMSI_API_REENTRANCY
 	struct nano_sem sem;
+#endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
 #endif
 };
 
-#ifdef CONFIG_PWM_QMSI_API_REENTRANCY
+#define PWM_HAS_CONTEXT_DATA \
+	(CONFIG_PWM_QMSI_API_REENTRANCY || CONFIG_DEVICE_POWER_MANAGEMENT)
+
+#if PWM_HAS_CONTEXT_DATA
 static struct pwm_data pwm_context;
 #define PWM_CONTEXT (&pwm_context)
-static const int reentrancy_protection = 1;
 #else
 #define PWM_CONTEXT (NULL)
+#endif /* PWM_HAS_CONTEXT_DATA */
+
+#ifdef CONFIG_PWM_QMSI_API_REENTRANCY
+static const int reentrancy_protection = 1;
+#define RP_GET(dev) (&((struct pwm_data *)(dev->driver_data))->sem)
+#else
 static const int reentrancy_protection;
-#endif /* CONFIG_PWM_QMSI_API_REENTRANCY */
+#define RP_GET(dev) (NULL)
+#endif
 
 static void pwm_reentrancy_init(struct device *dev)
 {
-	struct pwm_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_init(&context->sem);
-	nano_sem_give(&context->sem);
+	nano_sem_init(RP_GET(dev));
+	nano_sem_give(RP_GET(dev));
 }
 
 static void pwm_critical_region_start(struct device *dev)
 {
-	struct pwm_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+	nano_sem_take(RP_GET(dev), TICKS_UNLIMITED);
 }
 
 static void pwm_critical_region_end(struct device *dev)
 {
-	struct pwm_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_give(&context->sem);
+	nano_sem_give(RP_GET(dev));
 }
 
 static uint32_t  pwm_channel_period[CONFIG_PWM_QMSI_NUM_PORTS];

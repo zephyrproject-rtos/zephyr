@@ -30,53 +30,58 @@ static void aonpt_int_callback(void *user_data);
 static counter_callback_t user_cb;
 
 struct aon_data {
+#ifdef CONFIG_AON_API_REENTRANCY
 	struct nano_sem sem;
+#endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
 #endif
 };
 
-#ifdef CONFIG_AON_API_REENTRANCY
+#define AONPT_HAS_CONTEXT_DATA \
+	(CONFIG_AON_API_REENTRANCY || CONFIG_DEVICE_POWER_MANAGEMENT)
+
+#if AONPT_HAS_CONTEXT_DATA
 static struct aon_data aonpt_context;
 #define AONPT_CONTEXT (&aonpt_context)
-static const int reentrancy_protection = 1;
 #else
 #define AONPT_CONTEXT (NULL)
+#endif
+
+#ifdef CONFIG_AON_API_REENTRANCY
+static const int reentrancy_protection = 1;
+#define RP_GET(dev) (&((struct aon_data *)(dev->driver_data))->sem)
+#else
 static const int reentrancy_protection;
+#define RP_GET(dev) (NULL)
 #endif
 
 static void aon_reentrancy_init(struct device *dev)
 {
-	struct aon_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_init(&context->sem);
-	nano_sem_give(&context->sem);
+	nano_sem_init(RP_GET(dev));
+	nano_sem_give(RP_GET(dev));
 }
 
 static void aon_critical_region_start(struct device *dev)
 {
-	struct aon_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+	nano_sem_take(RP_GET(dev), TICKS_UNLIMITED);
 }
 
 static void aon_critical_region_end(struct device *dev)
 {
-	struct aon_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_give(&context->sem);
+	nano_sem_give(RP_GET(dev));
 }
 
 static int aon_timer_qmsi_start(struct device *dev)

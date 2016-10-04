@@ -26,53 +26,58 @@
 #include "qm_wdt.h"
 
 struct wdt_data {
+#ifdef CONFIG_WDT_QMSI_API_REENTRANCY
 	struct nano_sem sem;
+#endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
 #endif
 };
 
-#ifdef CONFIG_WDT_QMSI_API_REENTRANCY
+#define WDT_HAS_CONTEXT_DATA \
+	(CONFIG_WDT_QMSI_API_REENTRANCY || CONFIG_DEVICE_POWER_MANAGEMENT)
+
+#if WDT_HAS_CONTEXT_DATA
 static struct wdt_data wdt_context;
 #define WDT_CONTEXT (&wdt_context)
-static const int reentrancy_protection = 1;
 #else
 #define WDT_CONTEXT (NULL)
+#endif /* WDT_HAS_CONTEXT_DATA */
+
+#ifdef CONFIG_WDT_QMSI_API_REENTRANCY
+static const int reentrancy_protection = 1;
+#define RP_GET(dev) (&((struct wdt_data *)(dev->driver_data))->sem)
+#else
 static const int reentrancy_protection;
-#endif /* CONFIG_WDT_QMSI_API_REENTRANCY */
+#define RP_GET(dev) (NULL)
+#endif
 
 static void wdt_reentrancy_init(struct device *dev)
 {
-	struct wdt_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_init(&context->sem);
-	nano_sem_give(&context->sem);
+	nano_sem_init(RP_GET(dev));
+	nano_sem_give(RP_GET(dev));
 }
 
 static void wdt_critical_region_start(struct device *dev)
 {
-	struct wdt_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+	nano_sem_take(RP_GET(dev), TICKS_UNLIMITED);
 }
 
 static void wdt_critical_region_end(struct device *dev)
 {
-	struct wdt_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_give(&context->sem);
+	nano_sem_give(RP_GET(dev));
 }
 
 static void (*user_cb)(struct device *dev);

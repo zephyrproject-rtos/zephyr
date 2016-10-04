@@ -27,20 +27,31 @@
 #include "qm_rtc.h"
 
 struct rtc_data {
+#ifdef CONFIG_RTC_QMSI_API_REENTRANCY
 	struct nano_sem sem;
+#endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
 #endif
 };
 
-#ifdef CONFIG_RTC_QMSI_API_REENTRANCY
+#define RTC_HAS_CONTEXT_DATA \
+	(CONFIG_RTC_QMSI_API_REENTRANCY || CONFIG_DEVICE_POWER_MANAGEMENT)
+
+#if RTC_HAS_CONTEXT_DATA
 static struct rtc_data rtc_context;
 #define RTC_CONTEXT (&rtc_context)
-static const int reentrancy_protection = 1;
 #else
 #define RTC_CONTEXT (NULL)
+#endif /* RTC_HAS_CONTEXT_DATA */
+
+#ifdef CONFIG_RTC_QMSI_API_REENTRANCY
+static const int reentrancy_protection = 1;
+#define RP_GET(dev) (&((struct rtc_data *)(dev->driver_data))->sem)
+#else
 static const int reentrancy_protection;
-#endif /* CONFIG_RTC_QMSI_API_REENTRANCY */
+#define RP_GET(dev) (NULL)
+#endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
@@ -63,36 +74,30 @@ static uint32_t rtc_qmsi_get_power_state(struct device *dev)
 
 static void rtc_reentrancy_init(struct device *dev)
 {
-	struct rtc_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_init(&context->sem);
-	nano_sem_give(&context->sem);
+	nano_sem_init(RP_GET(dev));
+	nano_sem_give(RP_GET(dev));
 }
 
 static void rtc_critical_region_start(struct device *dev)
 {
-	struct rtc_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+	nano_sem_take(RP_GET(dev), TICKS_UNLIMITED);
 }
 
 static void rtc_critical_region_end(struct device *dev)
 {
-	struct rtc_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_give(&context->sem);
+	nano_sem_give(RP_GET(dev));
 }
 
 static void rtc_qmsi_enable(struct device *dev)
