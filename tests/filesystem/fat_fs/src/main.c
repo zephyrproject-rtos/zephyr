@@ -431,7 +431,7 @@ static int list_dir(const char *path)
 		if (entry.type == DIR_ENTRY_DIR) {
 			printk("[DIR ] %s\n", entry.name);
 		} else {
-			printk("[FILE] %s (size = %lu)\n",
+			printk("[FILE] %s (size = %zu)\n",
 				entry.name, entry.size);
 		}
 	}
