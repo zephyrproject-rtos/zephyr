@@ -372,7 +372,7 @@ static int setup_gpio(void)
 static int wait_gpio_low(void)
 {
 	int ret;
-	int v;
+	uint32_t v;
 
 	/* Start with high */
 	do {

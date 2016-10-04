@@ -30,7 +30,7 @@ SECTION_FUNC(TEXT, _sys_soc_resume)
 		 */
 
 		movl $0xb0800104, %eax
-		cmp $0x00, (%eax)
+		cmpl $0x00, (%eax)
 		je regular_boot
 		jmp restore_trap
 
