@@ -54,7 +54,6 @@
 #define MBEDTLS_DEBUG_C
 #else
 #define MBEDTLS_ENTROPY_C
-#define MBEDTLS_TEST_NULL_ENTROPY
 #endif
 
 /* mbed TLS feature support */
