@@ -55,6 +55,11 @@
 	(mgmt_request & NET_MGMT_COMMAND_MASK)
 
 
+/* Useful generic definitions */
+#define NET_MGMT_LAYER_L1		1
+#define NET_MGMT_LAYER_L2		2
+#define NET_MGMT_LAYER_L3		3
+
 #include <net/net_event.h>
 
 
