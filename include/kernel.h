@@ -240,7 +240,12 @@ extern void *k_thread_custom_data_get(void);
 
 static int64_t __ticks_to_ms(int64_t ticks)
 {
+#if CONFIG_SYS_CLOCK_EXISTS
 	return (MSEC_PER_SEC * (uint64_t)ticks) / sys_clock_ticks_per_sec;
+#else
+	__ASSERT(ticks == 0, "");
+	return 0;
+#endif
 }
 
 
