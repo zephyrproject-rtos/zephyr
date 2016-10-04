@@ -73,5 +73,17 @@ basically verified).
 Please refer to the section above about how to run these applications
 together.
 
+wpanusb
+-------
+
+The wpanusb application exports IEEE 802.15.4 radio over USB to be used in
+other Operating Systems like Linux. In this scenario Linux SoftMAC driver
+must be used implementing IEEE 802.15.4 stack inside Linux.
+
+wpan_serial
+-----------
+
+The wpan_serial application implements IEEE 802.15.4 "serial-radio" protocol.
+This is the protocol used in Contiki-based native border routers.
 
 [1] https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=summary
