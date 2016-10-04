@@ -80,10 +80,10 @@ struct zfs_dirent {
  * @param f_bfree Number of free blocks
  */
 struct zfs_statvfs {
-	size_t f_bsize;
-	size_t f_frsize;
-	size_t f_blocks;
-	size_t f_bfree;
+	unsigned long f_bsize;
+	unsigned long f_frsize;
+	unsigned long f_blocks;
+	unsigned long f_bfree;
 };
 
 /**
