@@ -512,6 +512,66 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 	return 0;
 }
 
+int net_route_del_by_nexthop_data(struct net_if *iface,
+				  struct in6_addr *nexthop,
+				  void *data)
+{
+	int count = 0, status = 0;
+	struct net_nbr *nbr_nexthop;
+	sys_snode_t *test;
+	int i, ret;
+
+	NET_ASSERT(iface);
+	NET_ASSERT(nexthop);
+
+	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+		struct net_route_entry *route = net_route_data(nbr);
+
+		SYS_SLIST_FOR_EACH_NODE(&route->nexthop, test) {
+			struct net_route_nexthop *nexthop_route;
+			void *extra_data;
+
+			nexthop_route = CONTAINER_OF(test,
+						     struct net_route_nexthop,
+						     node);
+
+			if (nexthop_route->nbr != nbr_nexthop) {
+				continue;
+			}
+
+			if (nbr->extra_data_size == 0) {
+				continue;
+			}
+
+			/* Routing engine specific extra data needs
+			 * to match too.
+			 */
+			extra_data = net_nbr_extra_data(nbr_nexthop);
+			if (extra_data != data) {
+				continue;
+			}
+
+			ret = net_route_del(route);
+			if (!ret) {
+				count++;
+			} else {
+				status = ret;
+			}
+
+			break;
+		}
+	}
+
+	if (count) {
+		return count;
+	}
+
+	return status;
+}
+
 struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 {
 	sys_snode_t *test;
