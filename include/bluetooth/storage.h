@@ -38,9 +38,14 @@ extern "C" {
 
 /** Well known storage keys */
 enum {
-	/** Identity Address */
+	/** Identity Address.
+	  * Type: bt_addr_le_t (7 bytes)
+	  */
 	BT_STORAGE_ID_ADDR,
-	/** Local Identity Resolving Key */
+
+	/** Local Identity Resolving Key.
+	  * Type: uint8_t key[16]
+	  */
 	BT_STORAGE_LOCAL_IRK,
 };
 
@@ -82,6 +87,10 @@ struct bt_storage {
 
 };
 
+/** Register callbacks for storage handling.
+  *
+  * @param storage Callback struct.
+  */
 void bt_storage_register(const struct bt_storage *storage);
 
 /** Clear all storage keys for a specific address
