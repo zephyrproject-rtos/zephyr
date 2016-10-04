@@ -361,18 +361,14 @@ static int tx(struct net_buf *pkt)
 	uint8_t seq = net_buf_pull_u8(buf);
 	int ret;
 
-	SYS_LOG_DBG("send data len %d seq %u", buf->len, seq);
-
-	/**
-	 * TODO: get buffer and send packet
-	 */
+	SYS_LOG_DBG("len %d seq %u", buf->len, seq);
 
 	/**
 	 * Pass to ieee802154 driver nbuf packet
 	 */
 	ret = radio_api->tx(ieee802154_dev, pkt);
 	if (!ret) {
-		SYS_LOG_DBG("Send ACK for seq %u", seq);
+		SYS_LOG_DBG("send ACK for seq %u", seq);
 
 		try_write(ATUSB_ENDP_BULK_IN, &seq, sizeof(seq));
 	}
