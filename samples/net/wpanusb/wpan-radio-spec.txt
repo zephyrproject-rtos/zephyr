@@ -1,0 +1,46 @@
+ieee802154 wpan radio protocol over USB
+
+Overview
+========
+
+The document describes protocol between 802.15.4 physical radio and Linux
+kernel driver over USB. Protocol is based on atusb Linux driver protocol
+found inside Linux kernel: drivers/net/ieee802154/atusb.h
+
+Packet structure
+================
+
+Command opcodes are inside bRequest field. bRequest and wIndex are one octet
+long.
+
+Commands from Host to Device
+============================
+
+	Opcode 0x00 - Reset		bRequest
+
+		Reset the Radio
+
+	Opcode 0x01 - Transmit		bRequest
+
+		Sequence number:	wIndex
+
+		Transmit data from Host to Device
+
+	Opcode 0x02 - ED		bRequest
+
+		TBD
+
+	Opcode 0x03 - Set Channel	bRequest
+
+		Set ieee802154 channel
+
+		Page		1 octet
+		Channel		1 octet
+
+	Opcode 0x04 - Start		bRequest
+
+		Start ieee802154 device
+
+	Opcode 0x05 - Stop		bRequest
+
+		Stop ieee802154 device
