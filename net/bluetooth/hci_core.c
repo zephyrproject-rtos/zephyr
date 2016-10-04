@@ -4145,7 +4145,7 @@ void bt_storage_register(const struct bt_storage *storage)
 	bt_storage = storage;
 }
 
-int bt_storage_clear(bt_addr_le_t *addr)
+int bt_storage_clear(const bt_addr_le_t *addr)
 {
 	return -ENOSYS;
 }

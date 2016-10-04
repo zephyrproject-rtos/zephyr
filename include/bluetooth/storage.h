@@ -91,7 +91,7 @@ void bt_storage_register(const struct bt_storage *storage);
   *
   * @return 0 on success or negative error value on failure.
   */
-int bt_storage_clear(bt_addr_le_t *addr);
+int bt_storage_clear(const bt_addr_le_t *addr);
 
 #ifdef __cplusplus
 }
