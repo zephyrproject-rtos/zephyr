@@ -479,7 +479,7 @@ struct k_work_q {
  * @brief Work flags.
  */
 enum {
-	NANO_WORK_STATE_PENDING,	/* Work item pending state */
+	K_WORK_STATE_PENDING,	/* Work item pending state */
 };
 
 /**
@@ -538,7 +538,7 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
  */
 static inline int k_work_pending(struct k_work *work)
 {
-	return atomic_test_bit(work->flags, NANO_WORK_STATE_PENDING);
+	return atomic_test_bit(work->flags, K_WORK_STATE_PENDING);
 }
 
 /**
