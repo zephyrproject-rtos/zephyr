@@ -323,8 +323,16 @@ Commands and responses:
 					1 = BR/EDR scan
 					2 = Use limited discovery procedure
 					3 = Use active scan type
+					4 = Use observation procedure
 
 		This command is used to start discovery.
+
+		Observation Procedure allows to receive advertisements
+		(and scan responses) from broadcasters (that are not visible
+		during General or Limited discovery, because those are not
+		discoverable). This procedure can use either passive or active
+		scan type. If "Use observation procedure" (bit 4) is set,
+		"Use limited discovery procedure" (bit 2) is excluded.
 
 		In case of an error, the error response will be returned.
 

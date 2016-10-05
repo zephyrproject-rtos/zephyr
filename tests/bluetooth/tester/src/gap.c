@@ -25,11 +25,15 @@
 #include <bluetooth/conn.h>
 
 #include <misc/byteorder.h>
+#include <net/buf.h>
 
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
 #define CONTROLLER_NAME "btp_tester"
+
+#define BT_LE_AD_DISCOV_MASK (BT_LE_AD_LIMITED | BT_LE_AD_GENERAL)
+#define ADV_BUF_LEN (sizeof(struct gap_device_found_ev) + 2 * 31)
 
 static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
@@ -266,33 +270,129 @@ static void stop_advertising(const uint8_t *data, uint16_t len)
 		    (uint8_t *) &rp, sizeof(rp));
 }
 
-static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
-			 struct net_buf_simple *ad)
+static uint8_t get_ad_flags(struct net_buf_simple *ad)
+{
+	uint8_t len, i;
+
+	/* Parse advertisement to get flags */
+	for (i = 0; i < ad->len; i += len - 1) {
+		len = ad->data[i++];
+		if (!len) {
+			break;
+		}
+
+		/* Check if field length is correct */
+		if (len > (ad->len - i) || (ad->len - i) < 1) {
+			break;
+		}
+
+		switch (ad->data[i++]) {
+		case BT_DATA_FLAGS:
+			return ad->data[i];
+		default:
+			break;
+		}
+	}
+
+	return 0;
+}
+
+static uint8_t discovery_flags;
+static struct net_buf_simple *adv_buf = NET_BUF_SIMPLE(ADV_BUF_LEN);
+
+static void store_adv(const bt_addr_le_t *addr, int8_t rssi,
+		      struct net_buf_simple *ad)
 {
 	struct gap_device_found_ev *ev;
-	uint8_t buf[sizeof(*ev) + ad->len];
 
-	ev = (void*) buf;
+	/* cleanup */
+	net_buf_simple_init(adv_buf, 0);
+
+	ev = net_buf_simple_add(adv_buf, sizeof(*ev));
 
 	memcpy(ev->address, addr->a.val, sizeof(ev->address));
 	ev->address_type = addr->type;
-
-	ev->flags = GAP_DEVICE_FOUND_FLAG_RSSI;
 	ev->rssi = rssi;
-
-	if (evtype == BT_LE_ADV_SCAN_RSP) {
-		ev->flags |= GAP_DEVICE_FOUND_FLAG_SD;
-	} else {
-		ev->flags |= GAP_DEVICE_FOUND_FLAG_AD;
-	}
-
+	ev->flags = GAP_DEVICE_FOUND_FLAG_AD | GAP_DEVICE_FOUND_FLAG_RSSI;
 	ev->eir_data_len = ad->len;
-	if (ad->len) {
-		memcpy(ev->eir_data, ad->data, ad->len);
+	memcpy(net_buf_simple_add(adv_buf, ad->len), ad->data, ad->len);
+}
+
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
+			 struct net_buf_simple *ad)
+{
+	/* if General/Limited Discovery - parse Advertising data to get flags */
+	if (!(discovery_flags & GAP_DISCOVERY_FLAG_LE_OBSERVE) &&
+	    (evtype != BT_LE_ADV_SCAN_RSP)) {
+		uint8_t flags = get_ad_flags(ad);
+
+		/* ignore non-discoverable devices */
+		if (!(flags & BT_LE_AD_DISCOV_MASK)) {
+			SYS_LOG_DBG("Non discoverable, skipping");
+			return;
+		}
+
+		/* if Limited Discovery - ignore general discoverable devices */
+		if ((discovery_flags & GAP_DISCOVERY_FLAG_LIMITED) &&
+		    !(flags & BT_LE_AD_LIMITED)) {
+			SYS_LOG_DBG("General discoverable, skipping");
+			return;
+		}
 	}
 
-	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND, CONTROLLER_INDEX,
-		    buf, sizeof(buf));
+	/* attach Scan Response data */
+	if (evtype == BT_LE_ADV_SCAN_RSP) {
+		struct gap_device_found_ev *ev;
+		bt_addr_le_t a;
+
+		/* skip if there is no pending advertisement */
+		if (!adv_buf->len) {
+			SYS_LOG_INF("No pending advertisement, skipping");
+			return;
+		}
+
+		ev = (void *) adv_buf->data;
+		a.type = ev->address_type;
+		memcpy(a.a.val, ev->address, sizeof(a.a.val));
+
+		/*
+		 * in general, the Scan Response comes right after the
+		 * Advertisement, but if not if send stored event and ignore
+		 * this one
+		 */
+		if (bt_addr_le_cmp(addr, &a)) {
+			SYS_LOG_INF("Address does not match, skipping");
+			goto done;
+		}
+
+		ev->eir_data_len += ad->len;
+		ev->flags |= GAP_DEVICE_FOUND_FLAG_SD;
+
+		memcpy(net_buf_simple_add(adv_buf, ad->len), ad->data, ad->len);
+
+		goto done;
+	}
+
+	/*
+	 * if there is another pending advertisement, send it and store the
+	 * current one
+	 */
+	if (adv_buf->len) {
+		tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND,
+			    CONTROLLER_INDEX, adv_buf->data, adv_buf->len);
+	}
+
+	store_adv(addr, rssi, ad);
+
+	/* if Active Scan and scannable event - wait for Scan Response */
+	if ((discovery_flags & GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN) &&
+	    (evtype == BT_LE_ADV_IND || evtype == BT_LE_ADV_SCAN_IND)) {
+		SYS_LOG_DBG("Waiting for scan response");
+		return;
+	}
+done:
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND,
+		    CONTROLLER_INDEX, adv_buf->data, adv_buf->len);
 }
 
 static void start_discovery(const uint8_t *data, uint16_t len)
@@ -312,6 +412,9 @@ static void start_discovery(const uint8_t *data, uint16_t len)
 		status = BTP_STATUS_FAILED;
 		goto reply;
 	}
+
+	net_buf_simple_init(adv_buf, 0);
+	discovery_flags = cmd->flags;
 
 	status = BTP_STATUS_SUCCESS;
 reply:
