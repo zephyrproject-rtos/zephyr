@@ -138,7 +138,7 @@ config BLUETOOTH_RX_STACK_SIZE
 	  default value is sufficient for basic operation, but if the
 	  application needs to do advanced things in its callbacks that
 	  require extra stack space, this value can be increased to
-	  accomodate for that.
+	  accommodate for that.
 
 config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
