@@ -44,6 +44,16 @@ static const stm32_pin_func_t pin_pa3_funcs[] = {
 		STM32L4X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE,
 };
 
+static const stm32_pin_func_t pin_pb6_funcs[] = {
+	[STM32L4X_PINMUX_FUNC_PB6_I2C1_SCL - 1] =
+		STM32L4X_PIN_CONFIG_OPEN_DRAIN_PULL_UP,
+};
+
+static const stm32_pin_func_t pin_pb7_funcs[] = {
+	[STM32L4X_PINMUX_FUNC_PB7_I2C1_SDA - 1] =
+		STM32L4X_PIN_CONFIG_OPEN_DRAIN_PULL_UP,
+};
+
 static const stm32_pin_func_t pin_pb10_funcs[] = {
 	[STM32L4X_PINMUX_FUNC_PB10_USART3_TX - 1] =
 		STM32L4X_PIN_CONFIG_PUSH_PULL,
