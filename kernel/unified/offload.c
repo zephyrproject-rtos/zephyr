@@ -30,7 +30,7 @@ struct offload_work {
 	struct k_work work_item;
 	int (*offload_func)();
 	void *offload_args;
-	struct tcs *thread;
+	struct k_thread *thread;
 };
 
 static struct k_work_q offload_work_q;

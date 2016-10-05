@@ -491,7 +491,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		 */
 		key = irq_lock();
 		_sched_unlock_no_reschedule();
-		_pend_thread((struct tcs *) &async_desc->thread,
+		_pend_thread((struct k_thread *) &async_desc->thread,
 			     &pipe->wait_q.writers, K_FOREVER);
 		_reschedule_threads(key);
 		return 0;

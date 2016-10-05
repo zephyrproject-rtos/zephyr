@@ -25,17 +25,17 @@
 extern k_tid_t const _main_thread;
 extern k_tid_t const _idle_thread;
 
-extern void _add_thread_to_ready_q(struct tcs *t);
-extern void _remove_thread_from_ready_q(struct tcs *t);
+extern void _add_thread_to_ready_q(struct k_thread *thread);
+extern void _remove_thread_from_ready_q(struct k_thread *thread);
 extern void _reschedule_threads(int key);
 extern void k_sched_unlock(void);
-extern void _pend_thread(struct tcs *thread,
+extern void _pend_thread(struct k_thread *thread,
 			 _wait_q_t *wait_q, int32_t timeout);
 extern void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout);
 extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
-extern struct tcs *_get_next_ready_thread(void);
+extern struct k_thread *_get_next_ready_thread(void);
 extern int __must_switch_threads(void);
-extern void k_thread_priority_set(struct tcs *thread, int32_t priority);
+extern void k_thread_priority_set(struct k_thread *thread, int32_t priority);
 extern int k_current_priority_get(void);
 extern int32_t _ms_to_ticks(int32_t ms);
 
@@ -62,24 +62,25 @@ static inline int _is_prio_higher(int prio, int test_prio)
 	return _is_prio1_higher_than_prio2(prio, test_prio);
 }
 
-static inline int _is_t1_higher_prio_than_t2(struct tcs *t1, struct tcs *t2)
+static inline int _is_t1_higher_prio_than_t2(struct k_thread *t1,
+					     struct k_thread *t2)
 {
 	return _is_prio1_higher_than_prio2(t1->prio, t2->prio);
 }
 
-static inline int _is_higher_prio_than_current(struct tcs *thread)
+static inline int _is_higher_prio_than_current(struct k_thread *thread)
 {
 	return _is_t1_higher_prio_than_t2(thread, _nanokernel.current);
 }
 
 /* is thread currenlty cooperative ? */
-static inline int _is_coop(struct tcs *thread)
+static inline int _is_coop(struct k_thread *thread)
 {
 	return thread->prio < 0;
 }
 
 /* is thread currently preemptible ? */
-static inline int _is_preempt(struct tcs *thread)
+static inline int _is_preempt(struct k_thread *thread)
 {
 	return !_is_coop(thread) && !atomic_get(&thread->sched_locked);
 }
@@ -188,60 +189,60 @@ static inline void _reset_thread_states(struct k_thread *thread,
 }
 
 /* mark a thread as being suspended */
-static inline void _mark_thread_as_suspended(struct tcs *thread)
+static inline void _mark_thread_as_suspended(struct k_thread *thread)
 {
 	thread->flags |= K_SUSPENDED;
 }
 
 /* mark a thread as not being suspended */
-static inline void _mark_thread_as_not_suspended(struct tcs *thread)
+static inline void _mark_thread_as_not_suspended(struct k_thread *thread)
 {
 	thread->flags &= ~K_SUSPENDED;
 }
 
 /* mark a thread as being in the timer queue */
-static inline void _mark_thread_as_timing(struct tcs *thread)
+static inline void _mark_thread_as_timing(struct k_thread *thread)
 {
 	thread->flags |= K_TIMING;
 }
 
 /* mark a thread as not being in the timer queue */
-static inline void _mark_thread_as_not_timing(struct tcs *thread)
+static inline void _mark_thread_as_not_timing(struct k_thread *thread)
 {
 	thread->flags &= ~K_TIMING;
 }
 
 /* check if a thread is on the timer queue */
-static inline int _is_thread_timing(struct tcs *thread)
+static inline int _is_thread_timing(struct k_thread *thread)
 {
 	return !!(thread->flags & K_TIMING);
 }
 
-static inline int _has_thread_started(struct tcs *thread)
+static inline int _has_thread_started(struct k_thread *thread)
 {
 	return !(thread->flags & K_PRESTART);
 }
 
 /* check if a thread is ready */
-static inline int _is_thread_ready(struct tcs *thread)
+static inline int _is_thread_ready(struct k_thread *thread)
 {
 	return (thread->flags & K_EXECUTION_MASK) == K_READY;
 }
 
 /* mark a thread as pending in its TCS */
-static inline void _mark_thread_as_pending(struct tcs *thread)
+static inline void _mark_thread_as_pending(struct k_thread *thread)
 {
 	thread->flags |= K_PENDING;
 }
 
 /* mark a thread as not pending in its TCS */
-static inline void _mark_thread_as_not_pending(struct tcs *thread)
+static inline void _mark_thread_as_not_pending(struct k_thread *thread)
 {
 	thread->flags &= ~K_PENDING;
 }
 
 /* check if a thread is pending */
-static inline int _is_thread_pending(struct tcs *thread)
+static inline int _is_thread_pending(struct k_thread *thread)
 {
 	return !!(thread->flags & K_PENDING);
 }
@@ -251,7 +252,7 @@ static inline int _is_thread_pending(struct tcs *thread)
  * then add it to the ready queue according to its priority.
  */
 /* must be called with interrupts locked */
-static inline void _ready_thread(struct tcs *thread)
+static inline void _ready_thread(struct k_thread *thread)
 {
 	__ASSERT(_is_prio_higher(thread->prio, K_LOWEST_THREAD_PRIO) ||
 		 ((thread->prio == K_LOWEST_THREAD_PRIO) &&
@@ -278,7 +279,7 @@ static inline void _ready_thread(struct tcs *thread)
  *
  * This routine must be called with interrupts locked.
  */
-static inline void _mark_thread_as_started(struct tcs *thread)
+static inline void _mark_thread_as_started(struct k_thread *thread)
 {
 	thread->flags &= ~K_PRESTART;
 }
@@ -288,7 +289,7 @@ static inline void _mark_thread_as_started(struct tcs *thread)
  *
  * This routine must be called with interrupts locked.
  */
-static inline void _mark_thread_as_dead(struct tcs *thread)
+static inline void _mark_thread_as_dead(struct k_thread *thread)
 {
 	thread->flags |= K_DEAD;
 }
@@ -299,7 +300,7 @@ static inline void _mark_thread_as_dead(struct tcs *thread)
  * Get a thread's priority. Note that it might have changed by the time this
  * function returns.
  */
-static inline int32_t k_thread_priority_get(struct tcs *thread)
+static inline int32_t k_thread_priority_get(struct k_thread *thread)
 {
 	return thread->prio;
 }
@@ -309,7 +310,7 @@ static inline int32_t k_thread_priority_get(struct tcs *thread)
  * queue.
  */
 /* must be called with interrupts locked */
-static inline void _thread_priority_set(struct tcs *thread, int prio)
+static inline void _thread_priority_set(struct k_thread *thread, int prio)
 {
 	if (_is_thread_ready(thread)) {
 		_remove_thread_from_ready_q(thread);
@@ -327,7 +328,7 @@ static inline struct k_thread *_peek_first_pending_thread(_wait_q_t *wait_q)
 }
 
 /* unpend the first thread from a wait queue */
-static inline struct tcs *_unpend_first_thread(_wait_q_t *wait_q)
+static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = (struct k_thread *)sys_dlist_get(wait_q);
 

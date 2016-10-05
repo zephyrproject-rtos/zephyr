@@ -150,7 +150,7 @@ int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout)
 void k_mem_map_free(struct k_mem_map *map, void **mem)
 {
 	int key = irq_lock();
-	struct tcs *pending_thread = _unpend_first_thread(&map->wait_q);
+	struct k_thread *pending_thread = _unpend_first_thread(&map->wait_q);
 
 	if (pending_thread) {
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);

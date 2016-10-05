@@ -31,7 +31,8 @@ void timer_expiration_handler(struct _timeout *t)
 {
 	int key = irq_lock();
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
-	struct tcs *first_pending_thread = _unpend_first_thread(&timer->wait_q);
+	struct k_thread *first_pending_thread =
+		_unpend_first_thread(&timer->wait_q);
 
 	/* if the time is periodic, start it again */
 	if (timer->period > 0) {
@@ -239,7 +240,7 @@ void k_timer_stop(struct k_timer *timer)
 
 	key = irq_lock();
 
-	struct tcs *pending_thread = _unpend_first_thread(&timer->wait_q);
+	struct k_thread *pending_thread = _unpend_first_thread(&timer->wait_q);
 
 	if (pending_thread) {
 		_set_thread_return_value(pending_thread, -ECANCELED);

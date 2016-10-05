@@ -172,7 +172,8 @@ int k_mutex_lock(struct k_mutex *mutex, int32_t timeout)
 
 	K_DEBUG("%p timeout on mutex %p\n", _current, mutex);
 
-	struct tcs *waiter = (struct tcs *)sys_dlist_peek_head(&mutex->wait_q);
+	struct k_thread *waiter =
+		(struct k_thread *)sys_dlist_peek_head(&mutex->wait_q);
 
 	new_prio = mutex->owner_orig_prio;
 	new_prio = waiter ? new_prio_for_inheritance(waiter->prio, new_prio) :
@@ -212,7 +213,7 @@ void k_mutex_unlock(struct k_mutex *mutex)
 
 	adjust_owner_prio(mutex, mutex->owner_orig_prio);
 
-	struct tcs *new_owner = _unpend_first_thread(&mutex->wait_q);
+	struct k_thread *new_owner = _unpend_first_thread(&mutex->wait_q);
 
 	K_DEBUG("new owner of mutex %p: %p (prio: %d)\n",
 		mutex, new_owner, new_owner ? new_owner->prio : -1000);

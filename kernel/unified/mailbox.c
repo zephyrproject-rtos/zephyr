@@ -173,7 +173,7 @@ static int _mbox_message_match(struct k_mbox_msg *tx_msg,
  */
 static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
 {
-	struct tcs *sending_thread;
+	struct k_thread *sending_thread;
 	struct k_mbox_msg *tx_msg;
 	unsigned int key;
 
@@ -237,8 +237,8 @@ static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
 static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     int32_t timeout)
 {
-	struct tcs *sending_thread;
-	struct tcs *receiving_thread;
+	struct k_thread *sending_thread;
+	struct k_thread *receiving_thread;
 	struct k_mbox_msg *rx_msg;
 	sys_dnode_t *wait_q_item;
 	unsigned int key;
@@ -254,7 +254,7 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	key = irq_lock();
 
 	SYS_DLIST_FOR_EACH_NODE(&mbox->rx_msg_queue, wait_q_item) {
-		receiving_thread = (struct tcs *)wait_q_item;
+		receiving_thread = (struct k_thread *)wait_q_item;
 		rx_msg = (struct k_mbox_msg *)receiving_thread->swap_data;
 
 		if (_mbox_message_match(tx_msg, rx_msg) == 0) {
@@ -364,7 +364,7 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	async->thread.prio = _current->prio;
 
 	async->tx_msg = *tx_msg;
-	async->tx_msg._syncing_thread = (struct tcs *)&async->thread;
+	async->tx_msg._syncing_thread = (struct k_thread *)&async->thread;
 	async->tx_msg._async_sem = sem;
 
 	_mbox_message_put(mbox, &async->tx_msg, K_FOREVER);
@@ -513,7 +513,7 @@ static int _mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	       int32_t timeout)
 {
-	struct tcs *sending_thread;
+	struct k_thread *sending_thread;
 	struct k_mbox_msg *tx_msg;
 	sys_dnode_t *wait_q_item;
 	unsigned int key;
@@ -526,7 +526,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	key = irq_lock();
 
 	SYS_DLIST_FOR_EACH_NODE(&mbox->tx_msg_queue, wait_q_item) {
-		sending_thread = (struct tcs *)wait_q_item;
+		sending_thread = (struct k_thread *)wait_q_item;
 		tx_msg = (struct k_mbox_msg *)sending_thread->swap_data;
 
 		if (_mbox_message_match(tx_msg, rx_msg) == 0) {

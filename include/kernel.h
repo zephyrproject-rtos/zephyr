@@ -94,7 +94,7 @@ struct k_mem_map;
 struct k_mem_pool;
 struct k_timer;
 
-typedef struct tcs *k_tid_t;
+typedef struct k_thread *k_tid_t;
 
 /* threads/scheduler/execution contexts */
 
@@ -654,7 +654,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
 
 struct k_mutex {
 	_wait_q_t wait_q;
-	struct tcs *owner;
+	struct k_thread *owner;
 	uint32_t lock_count;
 	int owner_orig_prio;
 #ifdef CONFIG_OBJECT_MONITOR

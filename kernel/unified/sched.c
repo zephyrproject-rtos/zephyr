@@ -48,7 +48,7 @@ static void _clear_ready_q_prio_bit(int prio)
  * Interrupts must be locked when calling this function.
  */
 
-void _add_thread_to_ready_q(struct tcs *thread)
+void _add_thread_to_ready_q(struct k_thread *thread)
 {
 	int q_index = _get_ready_q_q_index(thread->prio);
 	sys_dlist_t *q = &_nanokernel.ready_q.q[q_index];
@@ -69,7 +69,7 @@ void _add_thread_to_ready_q(struct tcs *thread)
  * Interrupts must be locked when calling this function.
  */
 
-void _remove_thread_from_ready_q(struct tcs *thread)
+void _remove_thread_from_ready_q(struct k_thread *thread)
 {
 	int q_index = _get_ready_q_q_index(thread->prio);
 	sys_dlist_t *q = &_nanokernel.ready_q.q[q_index];
@@ -121,7 +121,8 @@ void k_sched_unlock(void)
  */
 static int _is_wait_q_insert_point(sys_dnode_t *dnode_info, void *insert_prio)
 {
-	struct tcs *waitq_node = CONTAINER_OF(dnode_info, struct tcs, k_q_node);
+	struct k_thread *waitq_node =
+		CONTAINER_OF(dnode_info, struct k_thread, k_q_node);
 
 	return _is_prio_higher((int)insert_prio, waitq_node->prio);
 }
@@ -140,7 +141,7 @@ int32_t _ms_to_ticks(int32_t ms)
 
 /* pend the specified thread: it must *not* be in the ready queue */
 /* must be called with interrupts locked */
-void _pend_thread(struct tcs *thread, _wait_q_t *wait_q, int32_t timeout)
+void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
 {
 	sys_dlist_t *dlist = (sys_dlist_t *)wait_q;
 
@@ -215,7 +216,7 @@ int _is_next_thread_current(void)
 }
 
 /* application API: change a thread's priority. Not callable from ISR */
-void k_thread_priority_set(struct tcs *thread, int prio)
+void k_thread_priority_set(struct k_thread *thread, int prio)
 {
 	__ASSERT(!_is_in_isr(), "");
 

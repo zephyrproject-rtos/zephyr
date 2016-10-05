@@ -68,7 +68,7 @@ void k_msgq_init(struct k_msgq *q, uint32_t msg_size, uint32_t max_msgs,
 int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 {
 	unsigned int key = irq_lock();
-	struct tcs *pending_thread;
+	struct k_thread *pending_thread;
 	int result;
 
 	if (q->used_msgs < q->max_msgs) {
@@ -124,7 +124,7 @@ int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 {
 	unsigned int key = irq_lock();
-	struct tcs *pending_thread;
+	struct k_thread *pending_thread;
 	int result;
 
 	if (q->used_msgs > 0) {
@@ -186,7 +186,7 @@ int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 void k_msgq_purge(struct k_msgq *q)
 {
 	unsigned int key = irq_lock();
-	struct tcs *pending_thread;
+	struct k_thread *pending_thread;
 
 	/* wake up any threads that are waiting to write */
 	while ((pending_thread = _unpend_first_thread(&q->wait_q)) != NULL) {

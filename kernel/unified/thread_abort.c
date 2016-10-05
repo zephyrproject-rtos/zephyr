@@ -29,7 +29,7 @@
 #include <wait_q.h>
 #include <sched.h>
 
-extern void _k_thread_single_abort(struct tcs *thread);
+extern void _k_thread_single_abort(struct k_thread *thread);
 
 #if !defined(CONFIG_ARCH_HAS_NANO_FIBER_ABORT)
 void k_thread_abort(k_tid_t thread)

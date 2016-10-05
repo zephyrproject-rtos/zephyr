@@ -179,7 +179,7 @@ void *k_thread_custom_data_get(void)
  *
  * @return N/A
  */
-void _thread_exit(struct tcs *thread)
+void _thread_exit(struct k_thread *thread)
 {
 	/*
 	 * Remove thread from the list of threads.  This singly linked list of
@@ -190,7 +190,7 @@ void _thread_exit(struct tcs *thread)
 	if (thread == _nanokernel.threads) {
 		_nanokernel.threads = _nanokernel.threads->next_thread;
 	} else {
-		struct tcs *prev_thread;
+		struct k_thread *prev_thread;
 
 		prev_thread = _nanokernel.threads;
 		while (thread != prev_thread->next_thread) {
@@ -247,7 +247,7 @@ FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 	CODE_UNREACHABLE;
 }
 
-static void start_thread(struct tcs *thread)
+static void start_thread(struct k_thread *thread)
 {
 	int key = irq_lock(); /* protect kernel queues */
 
@@ -286,7 +286,7 @@ k_tid_t k_thread_spawn(char *stack, unsigned stack_size,
 {
 	__ASSERT(!_is_in_isr(), "");
 
-	struct tcs *new_thread = (struct tcs *)stack;
+	struct k_thread *new_thread = (struct k_thread *)stack;
 
 	_new_thread(stack, stack_size, NULL, entry, p1, p2, p3, prio, options);
 
@@ -297,7 +297,7 @@ k_tid_t k_thread_spawn(char *stack, unsigned stack_size,
 
 int k_thread_cancel(k_tid_t tid)
 {
-	struct tcs *thread = tid;
+	struct k_thread *thread = tid;
 
 	int key = irq_lock();
 
@@ -320,7 +320,7 @@ static inline int is_in_any_group(struct _static_thread_data *thread_data,
 	return !!(thread_data->init_groups & groups);
 }
 
-void _k_thread_group_op(uint32_t groups, void (*func)(struct tcs *))
+void _k_thread_group_op(uint32_t groups, void (*func)(struct k_thread *))
 {
 	unsigned int  key;
 
@@ -353,7 +353,7 @@ void _k_thread_group_op(uint32_t groups, void (*func)(struct tcs *))
 	_Swap(key);
 }
 
-void _k_thread_single_start(struct tcs *thread)
+void _k_thread_single_start(struct k_thread *thread)
 {
 	_mark_thread_as_started(thread);
 
@@ -362,7 +362,7 @@ void _k_thread_single_start(struct tcs *thread)
 	}
 }
 
-void _k_thread_single_suspend(struct tcs *thread)
+void _k_thread_single_suspend(struct k_thread *thread)
 {
 	if (_is_thread_ready(thread)) {
 		_remove_thread_from_ready_q(thread);
@@ -371,7 +371,7 @@ void _k_thread_single_suspend(struct tcs *thread)
 	_mark_thread_as_suspended(thread);
 }
 
-void k_thread_suspend(struct tcs *thread)
+void k_thread_suspend(struct k_thread *thread)
 {
 	unsigned int  key = irq_lock();
 
@@ -384,7 +384,7 @@ void k_thread_suspend(struct tcs *thread)
 	}
 }
 
-void _k_thread_single_resume(struct tcs *thread)
+void _k_thread_single_resume(struct k_thread *thread)
 {
 	_mark_thread_as_not_suspended(thread);
 
@@ -393,7 +393,7 @@ void _k_thread_single_resume(struct tcs *thread)
 	}
 }
 
-void k_thread_resume(struct tcs *thread)
+void k_thread_resume(struct k_thread *thread)
 {
 	unsigned int  key = irq_lock();
 
@@ -402,7 +402,7 @@ void k_thread_resume(struct tcs *thread)
 	_reschedule_threads(key);
 }
 
-void _k_thread_single_abort(struct tcs *thread)
+void _k_thread_single_abort(struct k_thread *thread)
 {
 	if (thread->fn_abort != NULL) {
 		thread->fn_abort();
@@ -441,21 +441,21 @@ void _init_static_threads(void)
 	_k_thread_group_op(K_THREAD_GROUP_EXE, _k_thread_single_start);
 }
 
-uint32_t _k_thread_group_mask_get(struct tcs *thread)
+uint32_t _k_thread_group_mask_get(struct k_thread *thread)
 {
 	struct _static_thread_data *thread_data = thread->init_data;
 
 	return thread_data->init_groups;
 }
 
-void _k_thread_group_join(uint32_t groups, struct tcs *thread)
+void _k_thread_group_join(uint32_t groups, struct k_thread *thread)
 {
 	struct _static_thread_data *thread_data = thread->init_data;
 
 	thread_data->init_groups |= groups;
 }
 
-void _k_thread_group_leave(uint32_t groups, struct tcs *thread)
+void _k_thread_group_leave(uint32_t groups, struct k_thread *thread)
 {
 	struct _static_thread_data *thread_data = thread->init_data;
 
