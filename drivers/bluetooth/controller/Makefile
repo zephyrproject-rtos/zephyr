@@ -5,7 +5,6 @@ obj-$(CONFIG_BLUETOOTH_CONTROLLER) += util/mem.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += util/memq.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += util/work.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += util/util.o
-obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/irq.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/clock.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/rtc.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/rand.o

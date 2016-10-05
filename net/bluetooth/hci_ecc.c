@@ -45,6 +45,17 @@ static const uint32_t debug_private_key[8] = {
 	0xa3c55f38, 0x3f49f6d4
 };
 
+#if defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
+static const uint8_t debug_public_key[64] = {
+	0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc, 0xdb, 0xfd, 0xf4, 0xac,
+	0x11, 0x91, 0xf4, 0xef, 0xb9, 0xa5, 0xf9, 0xe9, 0xa7, 0x83, 0x2c, 0x5e,
+	0x2c, 0xbe, 0x97, 0xf2, 0xd2, 0x03, 0xb0, 0x20, 0x8b, 0xd2, 0x89, 0x15,
+	0xd0, 0x8e, 0x1c, 0x74, 0x24, 0x30, 0xed, 0x8f, 0xc2, 0x45, 0x63, 0x76,
+	0x5c, 0x15, 0x52, 0x5a, 0xbf, 0x9a, 0x32, 0x63, 0x6d, 0xeb, 0x2a, 0x65,
+	0x49, 0x9c, 0x80, 0xdc
+};
+#endif
+
 static struct nano_fifo ecc_queue;
 static bool ecc_queue_ready;
 static int (*drv_send)(struct net_buf *buf);
@@ -76,13 +87,43 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 	bt_recv(buf);
 }
 
+static uint8_t generate_keys(uint8_t public_key[64], uint32_t private_key[32])
+{
+#if !defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
+	EccPoint pkey;
+
+	do {
+		uint32_t random[8];
+		int rc;
+
+		if (bt_rand((uint8_t *)random, sizeof(random))) {
+			BT_ERR("Failed to get random bytes for ECC keys");
+			return 0x1f; /* unspecified error */
+		}
+
+		rc = ecc_make_key(&pkey, private_key, random);
+		if (rc == TC_CRYPTO_FAIL) {
+			BT_ERR("Failed to create ECC public/private pair");
+			return 0x1f; /* unspecified error */
+		}
+
+	/* make sure generated key isn't debug key */
+	} while (memcmp(private_key, debug_private_key, 32) == 0);
+
+	memcpy(public_key, pkey.x, 32);
+	memcpy(&public_key[32], pkey.y, 32);
+#else
+	memcpy(public_key, debug_public_key, 64);
+	memcpy(private_key, debug_private_key, 32);
+#endif
+	return 0;
+}
+
 static void emulate_le_p256_public_key_cmd(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_p256_public_key_complete *evt;
 	struct bt_hci_evt_le_meta_event *meta;
 	struct bt_hci_evt_hdr *hdr;
-	EccPoint pkey;
-	int rc;
 
 	BT_DBG();
 
@@ -104,31 +145,9 @@ static void emulate_le_p256_public_key_cmd(struct net_buf *buf)
 	meta->subevent = BT_HCI_EVT_LE_P256_PUBLIC_KEY_COMPLETE;
 
 	evt = net_buf_add(buf, sizeof(*evt));
-	evt->status = 0;
 
-	do {
-		uint32_t random[8];
-
-		if (bt_rand((uint8_t *)random, sizeof(random))) {
-			BT_ERR("Failed to get random bytes for ECC keys");
-			evt->status = 0x1f; /* unspecified error */
-			break;
-		}
-
-		rc = ecc_make_key(&pkey, private_key, random);
-		if (rc == TC_CRYPTO_FAIL) {
-			BT_ERR("Failed to create ECC public/private pair");
-			evt->status = 0x1f; /* unspecified error */
-			break;
-		}
-
-	/* make sure generated key isn't debug key */
-	} while (memcmp(private_key, debug_private_key, 32) == 0);
-
-	if (!evt->status) {
-		memcpy(evt->key, pkey.x, 32);
-		memcpy(&evt->key[32], pkey.y, 32);
-	} else {
+	evt->status = generate_keys(evt->key, private_key);
+	if (evt->status) {
 		memset(evt->key, 0, sizeof(evt->key));
 	}
 

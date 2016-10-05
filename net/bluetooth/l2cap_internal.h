@@ -221,11 +221,14 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 /* Delete channel */
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
 
-/* Notify L2CAP channels of a change in encryption state */
-void bt_l2cap_encrypt_change(struct bt_conn *conn);
+/*
+ * Notify L2CAP channels of a change in encryption state passing additionally
+ * HCI status of performed security procedure.
+ */
+void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status);
 
 /* Prepare an L2CAP PDU to be sent over a connection */
-struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo);
+struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo, size_t reserve);
 
 /* Send L2CAP PDU over a connection */
 void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf);
@@ -272,6 +275,9 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 /* Send packet data to connected peer */
 int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
-/* Handle security level changed on link */
-void l2cap_br_encrypt_change(struct bt_conn *conn);
+/*
+ * Handle security level changed on link passing HCI status of performed
+ * security procedure.
+ */
+void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status);
 #endif /* CONFIG_BLUETOOTH_BREDR */

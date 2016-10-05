@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-#include "nrf.h"
+#include <soc.h>
 
 #include "rand.h"
+
 #include "debug.h"
 
 #define RAND_RESERVED (4)
@@ -42,10 +43,6 @@ void rand_init(uint8_t *context, uint8_t context_len)
 	NRF_RNG->CONFIG = RNG_CONFIG_DERCEN_Msk;
 	NRF_RNG->EVENTS_VALRDY = 0;
 	NRF_RNG->INTENSET = RNG_INTENSET_VALRDY_Msk;
-
-	NVIC_SetPriority(RNG_IRQn, 2);
-	NVIC_EnableIRQ(RNG_IRQn);
-
 	NRF_RNG->TASKS_START = 1;
 }
 
