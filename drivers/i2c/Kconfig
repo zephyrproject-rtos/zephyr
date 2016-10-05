@@ -88,7 +88,7 @@ config I2C_CLOCK_SPEED
 config SYS_LOG_I2C_LEVEL
 	int
 	prompt "I2C log level"
-	depends on I2C
+	depends on I2C && SYS_LOG
 	default 0
 	help
 	Sets log level for I2C connections

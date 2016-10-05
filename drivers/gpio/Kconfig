@@ -29,6 +29,7 @@ config SYS_LOG_GPIO_LEVEL
 	int
 	prompt "GPIO drivers log level"
 	default 0
+	depends on SYS_LOG
 	help
 	Sets log level for GPIO drivers
 
