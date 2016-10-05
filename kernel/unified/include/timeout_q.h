@@ -29,7 +29,6 @@
 extern "C" {
 #endif
 
-static inline int _do_timeout_abort(struct _timeout *t);
 static inline void _do_timeout_add(struct tcs *tcs,
 					struct _timeout *t,
 					_wait_q_t *wait_q,
@@ -104,12 +103,6 @@ static inline void _timeout_object_dequeue(struct tcs *tcs, struct _timeout *t)
 	}
 }
 
-/* abort a timeout for a specified fiber */
-static inline int _timeout_abort(struct tcs *tcs)
-{
-	return _do_timeout_abort(&tcs->timeout);
-}
-
 /* put a fiber on the timeout queue and record its wait queue */
 static inline void _timeout_add(struct tcs *tcs, _wait_q_t *wait_q,
 				int32_t timeout)
@@ -175,7 +168,7 @@ static inline void _timeout_handle_timeouts(void)
  *
  * @return 0 in success and -1 if the timer has expired
  */
-static inline int _do_timeout_abort(struct _timeout *t)
+static inline int _abort_timeout(struct _timeout *t)
 {
 	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
 
@@ -195,9 +188,9 @@ static inline int _do_timeout_abort(struct _timeout *t)
 	return 0;
 }
 
-static inline int _nano_timer_timeout_abort(struct _timeout *t)
+static inline int _abort_thread_timeout(struct k_thread *thread)
 {
-	return _do_timeout_abort(t);
+	return _abort_timeout(&thread->timeout);
 }
 
 /*

@@ -318,7 +318,7 @@ static bool _pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 		 * Add it to the transfer list.
 		 */
 		_unpend_thread(thread);
-		_timeout_abort(thread);
+		_abort_thread_timeout(thread);
 		sys_dlist_append(xfer_list, &thread->k_q_node);
 	}
 

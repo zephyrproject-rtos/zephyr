@@ -306,7 +306,7 @@ int k_thread_cancel(k_tid_t tid)
 		return -EINVAL;
 	}
 
-	_timeout_abort(thread);
+	_abort_thread_timeout(thread);
 	_thread_exit(thread);
 
 	irq_unlock(key);
@@ -415,7 +415,7 @@ void _k_thread_single_abort(struct tcs *thread)
 			_unpend_thread(thread);
 		}
 		if (_is_thread_timing(thread)) {
-			_timeout_abort(thread);
+			_abort_thread_timeout(thread);
 			_mark_thread_as_not_timing(thread);
 		}
 	}

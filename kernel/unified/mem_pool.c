@@ -455,7 +455,7 @@ static void block_waiters_check(struct k_mem_pool *pool)
 			 * outside the function by k_sched_unlock()
 			 */
 			_unpend_thread(waiter);
-			_timeout_abort(waiter);
+			_abort_thread_timeout(waiter);
 			_ready_thread(waiter);
 		}
 		waiter = next_waiter;

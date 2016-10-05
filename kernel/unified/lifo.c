@@ -45,7 +45,7 @@ void k_lifo_put(struct k_lifo *lifo, void *data)
 	first_pending_thread = _unpend_first_thread(&lifo->wait_q);
 
 	if (first_pending_thread) {
-		_timeout_abort(first_pending_thread);
+		_abort_thread_timeout(first_pending_thread);
 		_ready_thread(first_pending_thread);
 
 		_set_thread_return_value_with_data(first_pending_thread,

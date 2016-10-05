@@ -171,9 +171,11 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 		if (desc->sem != sem) {
 			sem_thread = CONTAINER_OF(desc, struct _sem_thread,
 						  desc);
+			struct k_thread *dummy_thread =
+				(struct k_thread *)&sem_thread->dummy;
 
-			_timeout_abort((struct k_thread *)&sem_thread->dummy);
-			_unpend_thread((struct k_thread *)&sem_thread->dummy);
+			_abort_thread_timeout(dummy_thread);
+			_unpend_thread(dummy_thread);
 
 			sys_dlist_remove(node);
 		}
@@ -196,7 +198,7 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 
 	if (!_is_thread_ready(desc->thread)) {
 		_reset_thread_states(desc->thread, K_PENDING | K_TIMING);
-		_timeout_abort(desc->thread);
+		_abort_thread_timeout(desc->thread);
 		if (_is_thread_ready(desc->thread)) {
 			_add_thread_to_ready_q(desc->thread);
 		}
@@ -230,7 +232,7 @@ static bool sem_give_common(struct k_sem *sem)
 		return false;
 	}
 
-	_timeout_abort(thread);
+	_abort_thread_timeout(thread);
 
 	if (!handle_sem_group(sem, thread)) {
 		/* Handle the non-group case */

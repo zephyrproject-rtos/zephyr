@@ -181,7 +181,7 @@ void k_timer_start(struct k_timer *timer, int32_t duration, int32_t period,
 	unsigned int key = irq_lock();
 
 	if (timer->timeout.delta_ticks_from_prev != -1) {
-		_do_timeout_abort(&timer->timeout);
+		_abort_timeout(&timer->timeout);
 	}
 
 	timer->period = _ms_to_ticks(period);
@@ -229,7 +229,7 @@ void k_timer_stop(struct k_timer *timer)
 
 	int key = irq_lock();
 
-	_do_timeout_abort(&timer->timeout);
+	_abort_timeout(&timer->timeout);
 
 	irq_unlock(key);
 

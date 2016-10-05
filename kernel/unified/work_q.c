@@ -135,7 +135,7 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 	}
 
 	/* Abort timeout, if it has expired this will do nothing */
-	_do_timeout_abort(&work->timeout);
+	_abort_timeout(&work->timeout);
 
 	/* Detach from workqueue */
 	work->work_q = NULL;

@@ -154,7 +154,7 @@ void k_mem_map_free(struct k_mem_map *map, void **mem)
 
 	if (pending_thread) {
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);
-		_timeout_abort(pending_thread);
+		_abort_thread_timeout(pending_thread);
 		_ready_thread(pending_thread);
 		if (_must_switch_threads()) {
 			_Swap(key);
