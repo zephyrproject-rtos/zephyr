@@ -31,11 +31,6 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_NANO_TIMEOUTS)
-static inline void _timeout_remove_tcs_from_wait_q(struct tcs *tcs)
-{
-	_unpend_thread(tcs);
-	tcs->timeout.wait_q = NULL;
-}
 #include <timeout_q.h>
 
 #elif defined(CONFIG_NANO_TIMERS)

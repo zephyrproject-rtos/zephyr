@@ -91,15 +91,17 @@ static inline void _nano_timeout_tcs_init(struct tcs *tcs)
  *
  * @return N/A
  */
-static inline void _timeout_object_dequeue(struct tcs *tcs, struct _timeout *t)
+static inline void _unpend_thread_timing_out(struct k_thread *thread,
+					     struct _timeout *timeout_obj)
 {
-	if (t->wait_q) {
-		_timeout_remove_tcs_from_wait_q(tcs);
+	if (timeout_obj->wait_q) {
+		_unpend_thread(thread);
+		thread->timeout.wait_q = NULL;
 	}
 }
 
 #else
-#define _timeout_object_dequeue(tcs, t) do { } while (0)
+#define _unpend_thread_timing_out(tcs, timeout_obj) do { } while (0)
 #endif /* CONFIG_NANO_TIMEOUTS */
 
 /*
@@ -118,7 +120,7 @@ static inline struct _timeout *_timeout_handle_one_timeout(
 
 	K_DEBUG("timeout %p\n", t);
 	if (tcs != NULL) {
-		_timeout_object_dequeue(tcs, t);
+		_unpend_thread_timing_out(tcs, t);
 		_ready_thread(tcs);
 	} else if (t->func) {
 		t->func(t);
