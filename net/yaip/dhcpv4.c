@@ -717,7 +717,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	      !memcmp(msg->chaddr, iface->link_addr.addr,
 		      iface->link_addr.len))) {
 
-		NET_DBG("Invalid op or xid or chaddr");
+		NET_DBG("Unexpected op, xid or chaddr");
 		goto drop;
 	}
 
