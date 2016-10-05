@@ -177,7 +177,7 @@ struct _static_thread_data {
 	{ \
 	.init_groups = (groups), \
 	.init_prio = (prio), \
-	.init_entry = entry, \
+	.init_entry = (void (*)(void *, void *, void *))entry, \
 	.init_p1 = (void *)p1, \
 	.init_p2 = (void *)p2, \
 	.init_p3 = (void *)p3, \
@@ -194,21 +194,14 @@ struct _static_thread_data {
  * this 32-bit alignment in specified here.
  * _static_thread_data structure sise needs to be kept 32-bit aligned as well
  */
-#define K_THREAD_OBJ_DEFINE(name, stack_size, \
+#define K_THREAD_DEFINE(name, stack_size, \
 			    entry, p1, p2, p3, \
 			    abort, prio, groups) \
-	extern void entry(void *, void *, void *); \
 	char __noinit __stack _k_thread_obj_##name[stack_size]; \
 	struct _static_thread_data _k_thread_data_##name __aligned(4) \
 		__in_section(_k_task_list, private, task) = \
 		K_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
 				     entry, p1, p2, p3, abort, prio, groups)
-
-#define K_THREAD_DEFINE(name, stack_size, entry, p1, p2, p3, \
-			abort, prio, groups) \
-	K_THREAD_OBJ_DEFINE(name, stack_size, entry, p1, p2, p3, \
-			    abort, prio, groups); \
-	k_tid_t const name = (k_tid_t)_k_thread_obj_##name
 
 /* extern int k_thread_prio_get(k_tid_t thread); in sched.h */
 extern void k_thread_priority_set(k_tid_t thread, int prio);

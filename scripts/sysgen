@@ -448,7 +448,7 @@ def kernel_main_c_tasks_unified():
             kernel_main_c_out("EXTERN_C void %s(void);\n" % abort)
 
         kernel_main_c_out(
-                "K_THREAD_OBJ_DEFINE(%s, %u, %s, %s, %s, %s, %s, %d, 0x%x);\n" %
+                "K_THREAD_DEFINE(%s, %u, %s, %s, %s, %s, %s, %d, 0x%x);\n" %
                 (name, int(stack_size), entry,
                 params[0], params[1], params[2],
                 abort, int(prio), int(groups)))

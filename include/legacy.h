@@ -79,6 +79,16 @@ static inline int _error_to_rc_no_timeout(int err)
 typedef void (*nano_fiber_entry_t)(int i1, int i2);
 typedef int nano_context_type_t;
 
+#define DEFINE_TASK(name, prio, entry, stack_size, groups) \
+	extern void entry(void); \
+	char __noinit __stack _k_thread_obj_##name[stack_size]; \
+	struct _static_thread_data _k_thread_data_##name __aligned(4) \
+		__in_section(_k_task_list, private, task) = \
+		K_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
+				     entry, NULL, NULL, NULL, \
+				     NULL, prio, (uint32_t)(groups)); \
+	k_tid_t const name = (k_tid_t)_k_thread_obj_##name
+
 #define sys_thread_self_get k_current_get
 #define sys_thread_busy_wait k_busy_wait
 
