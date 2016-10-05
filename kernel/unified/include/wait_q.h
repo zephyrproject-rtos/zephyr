@@ -35,14 +35,14 @@ extern "C" {
 
 #elif defined(CONFIG_NANO_TIMERS)
 #include <timeout_q.h>
-	#define _timeout_tcs_init(tcs) do { } while ((0))
+	#define _init_thread_timeout(tcs) do { } while ((0))
 	#define _abort_thread_timeout(tcs) do { } while ((0))
 
 	#define _add_thread_timeout(thread, pq, ticks) do { } while (0)
 #else
-	#define _timeout_tcs_init(tcs) do { } while ((0))
+	#define _init_thread_timeout(tcs) do { } while ((0))
 	#define _abort_thread_timeout(tcs) do { } while ((0))
-	#define _timeout_get_next_expiry() (K_FOREVER)
+	#define _get_next_timeout_expiry() (K_FOREVER)
 
 	#define _add_thread_timeout(thread, pq, ticks) do { } while (0)
 #endif

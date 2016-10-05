@@ -30,9 +30,9 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_NANO_TIMEOUTS)
-/* initialize the nano timeouts part of TCS when enabled in the kernel */
+/* initialize the nano timeouts part of k_thread when enabled in the kernel */
 
-static inline void _timeout_init(struct _timeout *t, _timeout_func_t func)
+static inline void _init_timeout(struct _timeout *t, _timeout_func_t func)
 {
 	/*
 	 * Must be initialized here and when dequeueing a timeout so that code
@@ -48,10 +48,10 @@ static inline void _timeout_init(struct _timeout *t, _timeout_func_t func)
 	t->wait_q = NULL;
 
 	/*
-	 * Must be initialized here, so the _timeout_handle_one_timeout()
+	 * Must be initialized here, so the _handle_one_timeout()
 	 * routine can check if there is a fiber waiting on this timeout
 	 */
-	t->tcs = NULL;
+	t->thread = NULL;
 
 	/*
 	 * Function must be initialized before being potentially called.
@@ -61,36 +61,27 @@ static inline void _timeout_init(struct _timeout *t, _timeout_func_t func)
 	/*
 	 * These are initialized when enqueing on the timeout queue:
 	 *
-	 *   tcs->timeout.node.next
-	 *   tcs->timeout.node.prev
+	 *   thread->timeout.node.next
+	 *   thread->timeout.node.prev
 	 */
 }
 
-static inline void _timeout_tcs_init(struct tcs *tcs)
+static inline void _init_thread_timeout(struct k_thread *thread)
 {
-	_timeout_init(&tcs->timeout, NULL);
+	_init_timeout(&thread->timeout, NULL);
 }
 
 /*
  * XXX - backwards compatibility until the arch part is updated to call
- * _timeout_tcs_init()
+ * _init_thread_timeout()
  */
 static inline void _nano_timeout_tcs_init(struct tcs *tcs)
 {
-	_timeout_tcs_init(tcs);
+	_init_thread_timeout(tcs);
 }
 
-/**
- * @brief Remove the thread from nanokernel object wait queue
- *
- * If a thread waits on a nanokernel object with timeout,
- * remove the thread from the wait queue
- *
- * @param tcs Waiting thread
- * @param t nano timer
- *
- * @return N/A
- */
+/* remove a thread timing out from kernel object's wait queue */
+
 static inline void _unpend_thread_timing_out(struct k_thread *thread,
 					     struct _timeout *timeout_obj)
 {
@@ -101,27 +92,29 @@ static inline void _unpend_thread_timing_out(struct k_thread *thread,
 }
 
 #else
-#define _unpend_thread_timing_out(tcs, timeout_obj) do { } while (0)
+#define _unpend_thread_timing_out(thread, timeout_obj) do { } while (0)
 #endif /* CONFIG_NANO_TIMEOUTS */
 
 /*
  * Handle one expired timeout.
- * This removes the fiber from the timeout queue head, and also removes it
- * from the wait queue it is on if waiting for an object. In that case, it
- * also sets the return value to 0/NULL.
+ *
+ * This removes the thread from the timeout queue head, and also removes it
+ * from the wait queue it is on if waiting for an object. In that case,
+ * the return value is kept as -EAGAIN, set previously in _Swap().
+ *
+ * Must be called with interrupts locked.
  */
 
-/* must be called with interrupts locked */
-static inline struct _timeout *_timeout_handle_one_timeout(
+static inline struct _timeout *_handle_one_timeout(
 	sys_dlist_t *timeout_q)
 {
 	struct _timeout *t = (void *)sys_dlist_get(timeout_q);
-	struct tcs *tcs = t->tcs;
+	struct k_thread *thread = t->thread;
 
 	K_DEBUG("timeout %p\n", t);
-	if (tcs != NULL) {
-		_unpend_thread_timing_out(tcs, t);
-		_ready_thread(tcs);
+	if (thread != NULL) {
+		_unpend_thread_timing_out(thread, t);
+		_ready_thread(thread);
 	} else if (t->func) {
 		t->func(t);
 	}
@@ -137,27 +130,24 @@ static inline struct _timeout *_timeout_handle_one_timeout(
 	return (struct _timeout *)sys_dlist_peek_head(timeout_q);
 }
 
-/* loop over all expired timeouts and handle them one by one */
-/* must be called with interrupts locked */
-static inline void _timeout_handle_timeouts(void)
+/*
+ * Loop over all expired timeouts and handle them one by one.
+ * Must be called with interrupts locked.
+ */
+
+static inline void _handle_timeouts(void)
 {
 	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
 	struct _timeout *next;
 
 	next = (struct _timeout *)sys_dlist_peek_head(timeout_q);
 	while (next && next->delta_ticks_from_prev == 0) {
-		next = _timeout_handle_one_timeout(timeout_q);
+		next = _handle_one_timeout(timeout_q);
 	}
 }
 
-/**
- *
- * @brief abort a timeout
- *
- * @param t Timeout to abort
- *
- * @return 0 in success and -1 if the timer has expired
- */
+/* returns 0 in success and -1 if the timer has expired */
+
 static inline int _abort_timeout(struct _timeout *t)
 {
 	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
@@ -195,7 +185,8 @@ static inline int _abort_thread_timeout(struct k_thread *thread)
  * the timeout of the insert point to update its delta queue value, since the
  * current timeout will be inserted before it.
  */
-static int _timeout_insert_point_test(sys_dnode_t *test, void *timeout)
+
+static int _is_timeout_insert_point(sys_dnode_t *test, void *timeout)
 {
 	struct _timeout *t = (void *)test;
 	int32_t *timeout_to_insert = timeout;
@@ -214,6 +205,7 @@ static int _timeout_insert_point_test(sys_dnode_t *test, void *timeout)
  *
  * Cannot handle timeout == 0 and timeout == K_FOREVER.
  */
+
 static inline void _add_timeout(struct k_thread *thread,
 				struct _timeout *timeout_obj,
 				_wait_q_t *wait_q, int32_t timeout)
@@ -233,11 +225,11 @@ static inline void _add_timeout(struct k_thread *thread,
 	K_DEBUG("timeout   %p before: next: %p, prev: %p\n",
 		timeout_obj, timeout_obj->node.next, timeout_obj->node.prev);
 
-	timeout_obj->tcs = thread;
+	timeout_obj->thread = thread;
 	timeout_obj->delta_ticks_from_prev = timeout;
 	timeout_obj->wait_q = (sys_dlist_t *)wait_q;
 	sys_dlist_insert_at(timeout_q, (void *)timeout_obj,
-			    _timeout_insert_point_test,
+			    _is_timeout_insert_point,
 			    &timeout_obj->delta_ticks_from_prev);
 
 	K_DEBUG("timeout_q %p after:  head: %p, tail: %p\n",
@@ -254,6 +246,7 @@ static inline void _add_timeout(struct k_thread *thread,
  *
  * Cannot handle timeout == 0 and timeout == K_FOREVER.
  */
+
 static inline void _add_thread_timeout(struct k_thread *thread,
 				       _wait_q_t *wait_q, int32_t timeout)
 {
@@ -261,7 +254,8 @@ static inline void _add_thread_timeout(struct k_thread *thread,
 }
 
 /* find the closest deadline in the timeout queue */
-static inline int32_t _timeout_get_next_expiry(void)
+
+static inline int32_t _get_next_timeout_expiry(void)
 {
 	struct _timeout *t = (struct _timeout *)
 			     sys_dlist_peek_head(&_timeout_q);

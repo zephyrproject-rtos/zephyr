@@ -142,7 +142,7 @@ extern void k_thread_abort(k_tid_t thread);
 #define _THREAD_TIMEOUT_INIT(obj) \
 	(obj).nano_timeout = { \
 	.node = { {0}, {0} }, \
-	.tcs = NULL, \
+	.thread = NULL, \
 	.wait_q = NULL, \
 	.delta_ticks_from_prev = -1, \
 	},
@@ -256,7 +256,7 @@ typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
 	sys_dlist_t node;
-	struct tcs *tcs;
+	struct k_thread *thread;
 	sys_dlist_t *wait_q;
 	int32_t delta_ticks_from_prev;
 	_timeout_func_t func;

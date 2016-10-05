@@ -132,7 +132,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused3);
 
 	for (;;) {
-		_sys_power_save_idle(_timeout_get_next_expiry());
+		_sys_power_save_idle(_get_next_timeout_expiry());
 
 		k_yield();
 	}

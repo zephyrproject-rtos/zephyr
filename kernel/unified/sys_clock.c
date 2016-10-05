@@ -186,7 +186,7 @@ static inline void handle_expired_timeouts(int32_t ticks)
 
 	if (head) {
 		head->delta_ticks_from_prev -= ticks;
-		_timeout_handle_timeouts();
+		_handle_timeouts();
 	}
 }
 #else

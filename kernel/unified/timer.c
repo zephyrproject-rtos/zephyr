@@ -75,7 +75,7 @@ void k_timer_init(struct k_timer *timer, void *data)
 	timer->user_data_internal = data;
 	timer->period = 0;
 	sys_dlist_init(&timer->wait_q);
-	_timeout_init(&timer->timeout, timer_expiration_handler);
+	_init_timeout(&timer->timeout, timer_expiration_handler);
 	SYS_TRACING_OBJ_INIT(micro_timer, timer);
 }
 

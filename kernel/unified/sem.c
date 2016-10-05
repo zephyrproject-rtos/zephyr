@@ -99,7 +99,7 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 		wait_objects[i].dummy.flags = K_DUMMY;
 		wait_objects[i].dummy.prio = priority;
 
-		_timeout_tcs_init((struct k_thread *) &wait_objects[i].dummy);
+		_init_thread_timeout((struct k_thread *)&wait_objects[i].dummy);
 
 		sys_dlist_append(&list, &wait_objects[i].desc.semg_node);
 		wait_objects[i].desc.thread = _current;
