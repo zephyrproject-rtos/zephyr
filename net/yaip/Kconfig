@@ -157,8 +157,8 @@ config NET_TRICKLE
 	bool "Enable Trickle library"
 	default n
 	help
-	  Normally this is enabled automatically if needed,
-	  so say 'n' if unsure.
+	Normally this is enabled automatically if needed,
+	so say 'n' if unsure.
 
 config NET_DEBUG_TRICKLE
 	bool "Debug Trickle algorithm"

@@ -20,7 +20,7 @@
 # UIP options
 #
 menu   "uIP stack"
-        depends on NET_UIP
+	depends on NET_UIP
 
 config IP_BUF_RX_SIZE
 	int "Number of IP net buffers to use when receiving data"
@@ -40,40 +40,40 @@ config IP_RX_STACK_SIZE
 	int "RX fiber stack size"
 	default 1024
 	help
-	  Set the RX fiber stack size in bytes. The RX fiber is waiting
-	  network packets from lower level bearers. It will then run the
-	  packet through IP stack which validates the packet and passes
-	  it eventually to application.
+	Set the RX fiber stack size in bytes. The RX fiber is waiting
+	network packets from lower level bearers. It will then run the
+	packet through IP stack which validates the packet and passes
+	it eventually to application.
 
 config IP_TX_STACK_SIZE
 	int "TX fiber stack size"
 	default 1024
 	help
-	  Set the TX fiber stack size in bytes. The TX fiber is waiting
-	  data from application. It will then validate the data and push
-	  it to network driver to be sent out.
+	Set the TX fiber stack size in bytes. The TX fiber is waiting
+	data from application. It will then validate the data and push
+	it to network driver to be sent out.
 
 config IP_TIMER_STACK_SIZE
 	int "Timer fiber stack size"
 	default 1536
 	help
-	  Set the timer fiber stack size in bytes. The timer fiber is
-	  responsible for handling re-transmissions and periodic network
-	  packet sending like IPv6 router solicitations.
+	Set the timer fiber stack size in bytes. The timer fiber is
+	responsible for handling re-transmissions and periodic network
+	packet sending like IPv6 router solicitations.
 
 config NET_MAX_CONTEXTS
 	int "How many network context to use"
 	default 2
 	help
-	  The network context is similar concept as network socket.
-	  It defines a network endpoint and number of context depends
-	  on application usage.
+	The network context is similar concept as network socket.
+	It defines a network endpoint and number of context depends
+	on application usage.
 
 config UDP_MAX_CONNECTIONS
 	int "How many UDP connections can be used"
 	default 2
 	help
-	  Amount of concurrent UDP connections.
+	Amount of concurrent UDP connections.
 
 choice
 prompt "Internet Protocol version"
@@ -87,11 +87,11 @@ default NETWORKING_WITH_IPV6
 config NETWORKING_WITH_IPV6
 	bool "IPv6"
 	help
-	  Choose this if unsure.
+	Choose this if unsure.
 config NETWORKING_WITH_IPV4
 	bool "IPv4"
 	help
-	  Legacy IP.
+	Legacy IP.
 endchoice
 
 config	NETWORKING_STATISTICS
@@ -100,9 +100,9 @@ config	NETWORKING_STATISTICS
 	depends on NETWORKING
 	default n
 	help
-	  This is only for debugging the network. Do not activate
-	  this in live system! The option uses memory and slows
-	  down IP packet processing.
+	This is only for debugging the network. Do not activate
+	this in live system! The option uses memory and slows
+	down IP packet processing.
 
 config	NETWORKING_IPV6_NO_ND
 	bool
@@ -111,9 +111,9 @@ config	NETWORKING_IPV6_NO_ND
 	depends on NETWORKING_WITH_IPV6
 	default n
 	help
-	  Normally ND should be enabled but in order to simplify
-	  the network setup it can be turned off if using
-	  slip and tun device.
+	Normally ND should be enabled but in order to simplify
+	the network setup it can be turned off if using
+	slip and tun device.
 
 config	NETWORKING_MAX_NEIGHBORS
 	int "Max number of neighbors"
@@ -121,8 +121,8 @@ config	NETWORKING_MAX_NEIGHBORS
 	depends on NETWORKING_WITH_IPV6
 	default 4
 	help
-	  Specifies the maximum number of neighbors that each node will
-	  be able to handle.
+	Specifies the maximum number of neighbors that each node will
+	be able to handle.
 
 config	NETWORKING_WITH_TCP
 	bool
@@ -130,16 +130,16 @@ config	NETWORKING_WITH_TCP
 	depends on NETWORKING
 	default n
 	help
-	  Enable Transmission and Control Protocol (TCP) support.
+	Enable Transmission and Control Protocol (TCP) support.
 
 config	TCP_MAX_CONNECTIONS
 	int "Maximum number of connections"
 	depends on NETWORKING_WITH_TCP
 	default 2
 	help
-	  Tweak the TCP maximum segment size. Normally one should
-	  not change this but let the IP stack to calculate a best
-	  size for it.
+	Tweak the TCP maximum segment size. Normally one should
+	not change this but let the IP stack to calculate a best
+	size for it.
 
 config	TCP_DISABLE_ACTIVE_OPEN
 	bool
@@ -147,10 +147,10 @@ config	TCP_DISABLE_ACTIVE_OPEN
 	depends on NETWORKING_WITH_TCP
 	default n
 	help
-	  By default application is allowed to initiate a TCP
-	  connection attempt. If the application is only acting
-	  as a server, then some memory can be saved by disabling
-	  the client role.
+	By default application is allowed to initiate a TCP
+	connection attempt. If the application is only acting
+	as a server, then some memory can be saved by disabling
+	the client role.
 
 config	TCP_MSS
 	int
@@ -158,9 +158,9 @@ config	TCP_MSS
 	depends on NETWORKING_WITH_TCP
 	default 0
 	help
-	  Tweak the TCP maximum segment size. Normally one should
-	  not change this but let the IP stack to calculate a best
-	  size for it.
+	Tweak the TCP maximum segment size. Normally one should
+	not change this but let the IP stack to calculate a best
+	size for it.
 
 config	TCP_RECEIVE_WINDOW
 	int
@@ -168,9 +168,9 @@ config	TCP_RECEIVE_WINDOW
 	depends on NETWORKING_WITH_TCP
 	default 0
 	help
-	  Tweak the TCP receive window size. Normally one should
-	  not change this but let the IP stack to calculate a best
-	  size for it.
+	Tweak the TCP receive window size. Normally one should
+	not change this but let the IP stack to calculate a best
+	size for it.
 
 config	NETWORKING_WITH_RPL
 	bool
@@ -178,8 +178,8 @@ config	NETWORKING_WITH_RPL
 	depends on NETWORKING && NETWORKING_WITH_IPV6
 	default n
 	help
-	  Enable RPL (RFC 6550) IPv6 Routing Protocol for
-	  Low-Power and Lossy Networks.
+	Enable RPL (RFC 6550) IPv6 Routing Protocol for
+	Low-Power and Lossy Networks.
 
 config	RPL_STATS
 	bool
@@ -188,7 +188,7 @@ config	RPL_STATS
 	select NETWORKING_STATISTICS
 	default n
 	help
-	  Enable RPL statistics support.
+	Enable RPL statistics support.
 
 config	RPL_PROBING
 	bool
@@ -196,8 +196,8 @@ config	RPL_PROBING
 	depends on NETWORKING_WITH_RPL
 	default n
 	help
-	  Enable RPL probing support. When enabled, probes will be sent
-	  periodically to keep parent link estimates up to date.
+	Enable RPL probing support. When enabled, probes will be sent
+	periodically to keep parent link estimates up to date.
 
 choice
 prompt "Objective function"
@@ -211,11 +211,11 @@ default RPL_WITH_MRHOF
 config RPL_WITH_MRHOF
 	bool "Minimum Rank with Hysteresis, RFC 6719"
 	help
-	  Choose this (MRHOF) if unsure.
+	Choose this (MRHOF) if unsure.
 config RPL_WITH_OF0
 	bool "OF Zero, RFC 6552"
 	help
-	  Objective function zero (OF0).
+	Objective function zero (OF0).
 endchoice
 
 config	NETWORKING_WITH_TRICKLE
@@ -223,9 +223,9 @@ config	NETWORKING_WITH_TRICKLE
 	depends on NETWORKING
 	default n
 	help
-	  Enable Trickle algorithm (RFC 6206) support. This only
-	  includes Trickle library but IP stack does not call its
-	  functions.
+	Enable Trickle algorithm (RFC 6206) support. This only
+	includes Trickle library but IP stack does not call its
+	functions.
 
 config	NETWORKING_WITH_LOOPBACK
 	bool
@@ -233,17 +233,17 @@ config	NETWORKING_WITH_LOOPBACK
 	depends on NETWORKING
 	default n
 	help
-	  Enable a simple loopback driver that installs
-	  IPv6 loopback addresses into routing table and
-	  neighbor cache. All packets transmitted are
-	  looped back to the receiving fifo/fiber.
+	Enable a simple loopback driver that installs
+	IPv6 loopback addresses into routing table and
+	neighbor cache. All packets transmitted are
+	looped back to the receiving fifo/fiber.
 
 config	NETWORK_LOOPBACK_TEST_COUNT
 	int "How many packets the loopback test passes"
 	depends on NETWORKING_WITH_LOOPBACK
 	default 0
 	help
-	  If set to 0, then the loopback test runs forever.
+	If set to 0, then the loopback test runs forever.
 
 choice
 prompt "Wired networking support"
@@ -252,21 +252,21 @@ default NETWORKING_NO_WIRED
 config NETWORKING_NO_WIRED
 	bool "No wired network driver"
 	help
-	  Do not enable any wired network driver. It is still
-	  possible to select other types of network drivers if
-	  this option is selected.
+	Do not enable any wired network driver. It is still
+	possible to select other types of network drivers if
+	this option is selected.
 config	NETWORKING_UART
 	bool "Network UART/slip driver"
 	select UART_PIPE
 	help
-	  Enable UART driver for passing IPv6 packets using slip.
+	Enable UART driver for passing IPv6 packets using slip.
 config ETHERNET
 	bool "Ethernet drivers"
 	help
-	  Include Ethernet drivers in system config. This
-	  option enables Ethernet support in the core network
-	  subsystem, but it is necessary to also select a
-	  specific Ethernet device driver.
+	Include Ethernet drivers in system config. This
+	option enables Ethernet support in the core network
+	subsystem, but it is necessary to also select a
+	specific Ethernet device driver.
 endchoice
 
 config	NETWORKING_DEBUG_UART
@@ -275,8 +275,8 @@ config	NETWORKING_DEBUG_UART
 	depends on NETWORKING_UART && NETWORKING_WITH_LOGGING
 	default n
 	help
-	  This option enables debug support for network UART
-	  driver.
+	This option enables debug support for network UART
+	driver.
 
 config	ETHERNET_DEBUG
 	bool
@@ -284,7 +284,7 @@ config	ETHERNET_DEBUG
 	depends on NETWORKING_WITH_LOGGING && ETHERNET
 	default n
 	help
-	  This option enables debug support for Ethernet drivers.
+	This option enables debug support for Ethernet drivers.
 
 config	L2_BUFFERS
 	bool
@@ -297,12 +297,12 @@ config	NETWORKING_WITH_15_4
 	select L2_BUFFERS
 	default n
 	help
-	  Enable 802.15.4 driver that receives the IPv6 packet,
-	  does header compression on it and writes it to the
-	  802.15.4 stack Tx FIFO. The 802.15.4 Tx fiber will pick up
-	  the header compressed IPv6 6lowpan packet and fragment
-	  it into suitable chunks ready to be sent to the 802.15.4
-	  hw driver
+	Enable 802.15.4 driver that receives the IPv6 packet,
+	does header compression on it and writes it to the
+	802.15.4 stack Tx FIFO. The 802.15.4 Tx fiber will pick up
+	the header compressed IPv6 6lowpan packet and fragment
+	it into suitable chunks ready to be sent to the 802.15.4
+	hw driver
 
 config NETWORKING_WITH_15_4_ALWAYS_ACK
 	bool
@@ -310,9 +310,9 @@ config NETWORKING_WITH_15_4_ALWAYS_ACK
 	depends on NETWORKING_WITH_15_4
 	default n
 	help
-	  This is meant to be used for testing only. Requesting an
-	  acknowledgment on all data packet will draw power resource.
-	  Use case for this option it for testing only.
+	This is meant to be used for testing only. Requesting an
+	acknowledgment on all data packet will draw power resource.
+	Use case for this option it for testing only.
 
 # Using nullmac 802.15.4 driver only.
 config	NETWORKING_WITH_15_4_MAC_NULL
@@ -323,18 +323,18 @@ choice
 	prompt "802.15.4 RDC Driver"
 	depends on NETWORKING && NETWORKING_WITH_15_4
 	help
-	 The 802.15.4 RDC (Radio Duty Cycle) layer can use either
-	 sicslowmac or simplerdc.
+	The 802.15.4 RDC (Radio Duty Cycle) layer can use either
+	sicslowmac or simplerdc.
 config	NETWORKING_WITH_15_4_RDC_SIMPLE
 	bool
 	prompt "simplerdc driver"
 	help
-	  Enable simplerdc driver.
+	Enable simplerdc driver.
 config	NETWORKING_WITH_15_4_RDC_SICSLOWMAC
 	bool
 	prompt "sicslowmac driver"
 	help
-	  Enable sicslowmac driver.
+	Enable sicslowmac driver.
 endchoice
 
 config	15_4_RX_STACK_SIZE
@@ -342,23 +342,23 @@ config	15_4_RX_STACK_SIZE
 	depends on NETWORKING_WITH_15_4
 	default 1024
 	help
-	  Set the 802.15.4 RX fiber stack size in bytes. The RX fiber
-	  is waiting network packets from 802.15.4 device driver.
-	  It will then run the packet through 6LoWPAN stack which
-	  uncompresses and de-fragments the packet and passes those to
-	  upper layers.
+	Set the 802.15.4 RX fiber stack size in bytes. The RX fiber
+	is waiting network packets from 802.15.4 device driver.
+	It will then run the packet through 6LoWPAN stack which
+	uncompresses and de-fragments the packet and passes those to
+	upper layers.
 
 config	15_4_TX_STACK_SIZE
 	int "Stack size of 802.15.4 TX fiber"
 	depends on NETWORKING_WITH_15_4
 	default 4096
 	help
-	  Set the 802.15.4 TX fiber stack size in bytes. The TX fiber
-	  is waiting network packets from IP stack. It then feeds those
-	  to 6LoWPAN stack which compresses and fragments packets before
-	  passing the fragments to 802.15.4 device driver. Note that
-	  this stack needs to be bigger that TX stack because stack is
-	  used to store the fragmented 802.15.4 packets.
+	Set the 802.15.4 TX fiber stack size in bytes. The TX fiber
+	is waiting network packets from IP stack. It then feeds those
+	to 6LoWPAN stack which compresses and fragments packets before
+	passing the fragments to 802.15.4 device driver. Note that
+	this stack needs to be bigger that TX stack because stack is
+	used to store the fragmented 802.15.4 packets.
 
 config	15_4_BEACON_SUPPORT
 	bool
@@ -366,7 +366,7 @@ config	15_4_BEACON_SUPPORT
 	depends on NETWORKING_WITH_15_4
 	default n
 	help
-	  Enable 802.15.4 beacon support
+	Enable 802.15.4 beacon support
 
 config	15_4_BEACON_STATS
 	bool
@@ -376,7 +376,7 @@ config	15_4_BEACON_STATS
 	select NETWORKING_STATISTICS
 	default n
 	help
-	  Enable 802.15.4 beacon statistics support.
+	Enable 802.15.4 beacon statistics support.
 
 config NETWORKING_WITH_15_4_PAN_ID
 	hex
@@ -384,9 +384,9 @@ config NETWORKING_WITH_15_4_PAN_ID
 	depends on NETWORKING_WITH_15_4
 	default 0xabcd
 	help
-	 All the 802.15.4 devices that want to connect to each
-	 other need to have same PAN id (address).
-	 Default PAN id is 0xABCD
+	All the 802.15.4 devices that want to connect to each
+	other need to have same PAN id (address).
+	Default PAN id is 0xABCD
 
 choice
 prompt "802.15.4 Radio Driver"
@@ -402,24 +402,24 @@ config	NETWORKING_WITH_15_4_TI_CC2520
 	select TEST_RANDOM_GENERATOR
 	select TI_CC2520_LEGACY
 	help
-	  Enable Texas Instruments CC2520 802.15.4 radio driver.
+	Enable Texas Instruments CC2520 802.15.4 radio driver.
 
 config	NETWORKING_WITH_15_4_LOOPBACK
 	bool
 	prompt "Loopback"
 	help
-	  Enable 802.15.4 loopback radio driver that receives
-	  the 802.15.4 frame and put it back 802.15.4 Rx Fifo.
+	Enable 802.15.4 loopback radio driver that receives
+	the 802.15.4 frame and put it back 802.15.4 Rx Fifo.
 
 config NETWORKING_WITH_15_4_LOOPBACK_UART
 	bool
 	prompt "Loopback with UART"
 	select UART_PIPE
 	help
-	 Enable 802.15.4 loopback radio driver that sends
-	 802.15.4 frames out of qemu through uart and receive
-	 frames through uart. This way one can test 802.15.4 frames
-	 between two qemus
+	Enable 802.15.4 loopback radio driver that sends
+	802.15.4 frames out of qemu through uart and receive
+	frames through uart. This way one can test 802.15.4 frames
+	between two qemus
 endchoice
 
 config	NETWORKING_WITH_BT
@@ -436,9 +436,9 @@ config	NETWORKING_WITH_BT
 	select BLUETOOTH_SMP
 	default n
 	help
-	  Enable Bluetooth driver that send and receives IPv6 packets,
-	  does header compression on it and writes it to the
-	  Bluetooth stack via L2CAP channel.
+	Enable Bluetooth driver that send and receives IPv6 packets,
+	does header compression on it and writes it to the
+	Bluetooth stack via L2CAP channel.
 
 config	NETWORKING_WITH_6LOWPAN
 	bool
@@ -447,8 +447,8 @@ config	NETWORKING_WITH_6LOWPAN
 	depends on NETWORKING_WITH_15_4 || NETWORKING_WITH_BT
 	default n
 	help
-	  Enable 6LoWPAN in uIP stack. Currently this requires 802.15.4
-	  stack to be enabled.
+	Enable 6LoWPAN in uIP stack. Currently this requires 802.15.4
+	stack to be enabled.
 
 choice
 prompt "6LoWPAN compression method"
@@ -459,11 +459,11 @@ default 6LOWPAN_COMPRESSION_IPV6
 config 6LOWPAN_COMPRESSION_IPV6
 	bool "No compression"
 	help
-	  Choose this if unsure.
+	Choose this if unsure.
 config 6LOWPAN_COMPRESSION_IPHC
 	bool "IP header compression"
 	help
-	  IP header compression
+	IP header compression
 endchoice
 
 config	TINYDTLS
@@ -472,8 +472,8 @@ config	TINYDTLS
 	depends on NETWORKING
 	default n
 	help
-	  Enable tinyDTLS support so that applications can use it.
-	  This is needed at least in CoAP.
+	Enable tinyDTLS support so that applications can use it.
+	This is needed at least in CoAP.
 
 config	TINYDTLS_DEBUG
 	bool
@@ -481,7 +481,7 @@ config	TINYDTLS_DEBUG
 	depends on TINYDTLS
 	default n
 	help
-	  Enable tinyDTLS debugging support.
+	Enable tinyDTLS debugging support.
 
 config	ER_COAP
 	bool
@@ -489,7 +489,7 @@ config	ER_COAP
 	depends on NETWORKING
 	default n
 	help
-	  Enable Erbium CoAP engine support so that applications can use it.
+	Enable Erbium CoAP engine support so that applications can use it.
 
 config	ER_COAP_WITH_DTLS
 	bool
@@ -498,16 +498,16 @@ config	ER_COAP_WITH_DTLS
 	select TINYDTLS
 	default n
 	help
-	  Make CoAP engine use DTLS. Note that if you activate DTLS, you
-	  are not able to send or receive non-DTLS CoAP messages, and
-	  vice versa.
+	Make CoAP engine use DTLS. Note that if you activate DTLS, you
+	are not able to send or receive non-DTLS CoAP messages, and
+	vice versa.
 
 config  ER_COAP_LINK_FORMAT_FILTERING
 	bool "Enable link format filtering"
 	select MINIMAL_LIBC_EXTENDED
 	default n
 	help
-	  Make CoAP engine support link format filters.
+	Make CoAP engine support link format filters.
 
 config	COAP_STATS
 	bool
@@ -516,7 +516,7 @@ config	COAP_STATS
 	select NETWORKING_STATISTICS
 	default n
 	help
-	  Enable CoAP statistics support.
+	Enable CoAP statistics support.
 
 config	ER_COAP_CLIENT
 	bool
@@ -524,7 +524,7 @@ config	ER_COAP_CLIENT
 	depends on ER_COAP
 	default n
 	help
-	  Compile in client CoAP support.
+	Compile in client CoAP support.
 
 config	DHCP
 	bool
@@ -532,7 +532,7 @@ config	DHCP
 	depends on NETWORKING && NETWORKING_WITH_IPV4
 	default n
 	help
-	  Enable DHCP support so that applications can use it.
+	Enable DHCP support so that applications can use it.
 choice
 prompt "DHCP message type"
 depends on DHCP
@@ -542,11 +542,11 @@ default DHCP_BROADCAST
 config DHCP_BROADCAST
 	bool "Broadcast message"
 	help
-	  Choose this if unsure.
+	Choose this if unsure.
 config DHCP_UNICAST
 	bool "Unicast message"
 	help
-	  DHCP message type
+	DHCP message type
 endchoice
 
 config NET_SANITY_TEST
@@ -555,9 +555,9 @@ config NET_SANITY_TEST
 	depends on NETWORKING
 	default n
 	help
-	 Enable networking sanity tests. Network sanity test
-	 verification and test report submission will fall under
-	 this config.
+	Enable networking sanity tests. Network sanity test
+	verification and test report submission will fall under
+	this config.
 
 config NET_15_4_LOOPBACK_NUM
 	int
@@ -565,7 +565,7 @@ config NET_15_4_LOOPBACK_NUM
 	depends on (NETWORKING_WITH_15_4_LOOPBACK || NETWORKING_WITH_15_4_LOOPBACK_UART) && NET_SANITY_TEST
 	default 0
 	help
-	 Number of times loopback test runs, 0 means infinite.
+	Number of times loopback test runs, 0 means infinite.
 
 config	NET_TESTING
 	bool
@@ -573,9 +573,9 @@ config	NET_TESTING
 	depends on NETWORKING
 	default n
 	help
-	  Setup the network stack such a way that it is suitable for
-	  testing with Qemu-to-Qemu and slip. Note that this setting should
-	  not be used for Qemu-to-Host communication.
+	Setup the network stack such a way that it is suitable for
+	testing with Qemu-to-Qemu and slip. Note that this setting should
+	not be used for Qemu-to-Host communication.
 
 source "net/ip/Kconfig.debug"
 

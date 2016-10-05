@@ -22,8 +22,8 @@ config NET_BUF
 	bool "Network buffer support"
 	default n
 	help
-	  This option enables support for generic network protocol
-	  buffers.
+	This option enables support for generic network protocol
+	buffers.
 
 config NET_BUF_DEBUG
 	bool "Network buffer debugging"
@@ -32,7 +32,7 @@ config NET_BUF_DEBUG
 	select SYS_LOG
 	default n
 	help
-	  Enable debug logs and checks for the generic network buffers.
+	Enable debug logs and checks for the generic network buffers.
 
 config NET_BUF_SIMPLE_DEBUG
 	bool "Network buffer memory debugging"
@@ -54,7 +54,7 @@ config  NETWORKING
 	select NANO_WORKQUEUE
 	default n
 	help
-	  This option enabled generic link layer and IP networking support.
+	This option enabled generic link layer and IP networking support.
 
 if NETWORKING
 
@@ -62,18 +62,18 @@ choice
 	prompt "IP stack"
 	default NET_UIP
 	help
-	  Select what IP stack to use. The legacy stack is
-	  Contiki based uIP stack.
+	Select what IP stack to use. The legacy stack is
+	Contiki based uIP stack.
 
 config NET_UIP
 	bool "uIP"
 	help
-	  Choose this if unsure.
+	Choose this if unsure.
 
 config NET_YAIP
 	bool "New IP stack [EXPERIMENTAL]"
 	help
-	  New IP stack.
+	New IP stack.
 endchoice
 
 source "net/ip/Kconfig"
