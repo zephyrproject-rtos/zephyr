@@ -627,6 +627,9 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 
 		switch (iface->dhcpv4.state) {
 		case NET_DHCPV4_REQUEST:
+			NET_INFO("Received: %s",
+				 net_sprint_ipv4_addr(
+					 &iface->dhcpv4.requested_ip));
 			if (!net_if_ipv4_addr_add(iface,
 						  &iface->dhcpv4.requested_ip,
 						  NET_ADDR_DHCP,
