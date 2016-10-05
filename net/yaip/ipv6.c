@@ -201,8 +201,8 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 	net_ipv6_nbr_data(nbr)->state = state;
 	net_ipv6_nbr_data(nbr)->is_router = is_router;
 
-	NET_DBG("nbr %p state %d router %d IPv6 %s ll %s",
-		nbr, state, is_router,
+	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s",
+		nbr->idx, nbr, state, is_router,
 		net_sprint_ipv6_addr(addr),
 		net_sprint_ll_addr(lladdr->addr, lladdr->len));
 
@@ -991,8 +991,8 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 			return false;
 		}
 
-		NET_DBG("nbr %p state %d IPv6 %s ll %s",
-			nbr, net_ipv6_nbr_data(nbr)->state,
+		NET_DBG("[%d] nbr %p state %d IPv6 %s ll %s",
+			nbr->idx, nbr, net_ipv6_nbr_data(nbr)->state,
 			net_sprint_ipv6_addr(&NET_ICMPV6_NS_BUF(buf)->tgt),
 			net_sprint_ll_addr(lladdr.addr, lladdr.len));
 	}
