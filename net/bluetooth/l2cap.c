@@ -1379,7 +1379,7 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	if (net_buf_headroom(buf) >= headroom) {
 		if (sdu_hdr_len) {
 			/* Push SDU length if set */
-			net_buf_push_le16(buf, buf->len);
+			net_buf_push_le16(buf, net_buf_frags_len(buf));
 		}
 		return net_buf_ref(buf);
 	}
@@ -1391,7 +1391,7 @@ segment:
 	}
 
 	if (sdu_hdr_len) {
-		net_buf_add_le16(seg, buf->len);
+		net_buf_add_le16(seg, net_buf_frags_len(buf));
 	}
 
 	len = min(min(buf->len, L2CAP_LE_MIN_MTU - sdu_hdr_len), ch->tx.mps);
@@ -1436,22 +1436,33 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 				  struct net_buf *buf)
 {
 	int ret, sent, total_len;
+	struct net_buf *frag;
 
-	if (buf->len > ch->tx.mtu) {
+	total_len = net_buf_frags_len(buf);
+
+	if (total_len > ch->tx.mtu) {
 		return -EMSGSIZE;
 	}
 
-	total_len = buf->len;
+	frag = buf;
+	if (!frag->len && frag->frags) {
+		frag = frag->frags;
+	}
 
 	/* Add SDU length for the first segment */
-	ret = l2cap_chan_le_send(ch, buf, BT_L2CAP_SDU_HDR_LEN);
+	ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_LEN);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Send remaining segments */
 	for (sent = ret; sent < total_len; sent += ret) {
-		ret = l2cap_chan_le_send(ch, buf, 0);
+		/* Proceed to next fragment */
+		if (!frag->len) {
+			frag = frag->frags;
+		}
+
+		ret = l2cap_chan_le_send(ch, frag, 0);
 		if (ret < 0) {
 			return ret;
 		}
