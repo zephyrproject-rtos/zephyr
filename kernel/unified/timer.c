@@ -35,7 +35,7 @@ void timer_expiration_handler(struct _timeout *t)
 
 	/* if the time is periodic, start it again */
 	if (timer->period > 0) {
-		_do_timeout_add(NULL, &timer->timeout, &timer->wait_q,
+		_add_timeout(NULL, &timer->timeout, &timer->wait_q,
 				timer->period);
 	}
 
@@ -191,7 +191,7 @@ void k_timer_start(struct k_timer *timer, int32_t duration, int32_t period,
 	timer->stop_handler = stop_handler;
 	timer->stop_handler_arg = stop_handler_arg;
 
-	_do_timeout_add(NULL, &timer->timeout, &timer->wait_q,
+	_add_timeout(NULL, &timer->timeout, &timer->wait_q,
 			_ms_to_ticks(duration));
 	irq_unlock(key);
 }

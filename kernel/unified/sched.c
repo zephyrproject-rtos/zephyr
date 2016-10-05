@@ -151,7 +151,7 @@ void _pend_thread(struct tcs *thread, _wait_q_t *wait_q, int32_t timeout)
 
 	if (timeout != K_FOREVER) {
 		_mark_thread_as_timing(thread);
-		_TIMEOUT_ADD(thread, wait_q, _ms_to_ticks(timeout));
+		_add_thread_timeout(thread, wait_q, _ms_to_ticks(timeout));
 	}
 }
 
@@ -280,6 +280,7 @@ void k_yield(void)
 void k_sleep(int32_t duration)
 {
 	__ASSERT(!_is_in_isr(), "");
+	__ASSERT(duration != K_FOREVER, "");
 
 	K_DEBUG("thread %p for %d ns\n", _current, duration);
 
@@ -293,7 +294,7 @@ void k_sleep(int32_t duration)
 
 	_mark_thread_as_timing(_current);
 	_remove_thread_from_ready_q(_current);
-	_timeout_add(_current, NULL, _ms_to_ticks(duration));
+	_add_thread_timeout(_current, NULL, _ms_to_ticks(duration));
 
 	_Swap(key);
 }

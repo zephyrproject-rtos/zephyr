@@ -29,11 +29,6 @@
 extern "C" {
 #endif
 
-static inline void _do_timeout_add(struct tcs *tcs,
-					struct _timeout *t,
-					_wait_q_t *wait_q,
-					int32_t timeout);
-
 #if defined(CONFIG_NANO_TIMEOUTS)
 /* initialize the nano timeouts part of TCS when enabled in the kernel */
 
@@ -101,13 +96,6 @@ static inline void _timeout_object_dequeue(struct tcs *tcs, struct _timeout *t)
 	if (t->wait_q) {
 		_timeout_remove_tcs_from_wait_q(tcs);
 	}
-}
-
-/* put a fiber on the timeout queue and record its wait queue */
-static inline void _timeout_add(struct tcs *tcs, _wait_q_t *wait_q,
-				int32_t timeout)
-{
-	_do_timeout_add(tcs,  &tcs->timeout, wait_q, timeout);
 }
 
 #else
@@ -219,22 +207,19 @@ static int _timeout_insert_point_test(sys_dnode_t *test, void *timeout)
 	return 1;
 }
 
-/**
+/*
+ * Add timeout to timeout queue. Record waiting thread and wait queue if any.
  *
- * @brief Put timeout on the timeout queue, record waiting fiber and wait queue
- *
- * @param tcs Fiber waiting on a timeout
- * @param t Timeout structure to be added to the nanokernel queue
- * @wait_q nanokernel object wait queue
- * @timeout Timeout in ticks
- *
- * @return N/A
+ * Cannot handle timeout == 0 and timeout == K_FOREVER.
  */
-static inline void _do_timeout_add(struct tcs *tcs, struct _timeout *t,
-				     _wait_q_t *wait_q, int32_t timeout)
+static inline void _add_timeout(struct k_thread *thread,
+				struct _timeout *timeout_obj,
+				_wait_q_t *wait_q, int32_t timeout)
 {
+	__ASSERT(timeout > 0, "");
+
 	K_DEBUG("thread %p on wait_q %p, for timeout: %d\n",
-		tcs, wait_q, timeout);
+		thread, wait_q, timeout);
 
 	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
 
@@ -244,14 +229,14 @@ static inline void _do_timeout_add(struct tcs *tcs, struct _timeout *t,
 		_nanokernel.timeout_q.tail);
 
 	K_DEBUG("timeout   %p before: next: %p, prev: %p\n",
-		t, t->node.next, t->node.prev);
+		timeout_obj, timeout_obj->node.next, timeout_obj->node.prev);
 
-	t->tcs = tcs;
-	t->delta_ticks_from_prev = timeout;
-	t->wait_q = (sys_dlist_t *)wait_q;
-	sys_dlist_insert_at(timeout_q, (void *)t,
-						_timeout_insert_point_test,
-						&t->delta_ticks_from_prev);
+	timeout_obj->tcs = thread;
+	timeout_obj->delta_ticks_from_prev = timeout;
+	timeout_obj->wait_q = (sys_dlist_t *)wait_q;
+	sys_dlist_insert_at(timeout_q, (void *)timeout_obj,
+			    _timeout_insert_point_test,
+			    &timeout_obj->delta_ticks_from_prev);
 
 	K_DEBUG("timeout_q %p after:  head: %p, tail: %p\n",
 		&_nanokernel.timeout_q,
@@ -259,14 +244,18 @@ static inline void _do_timeout_add(struct tcs *tcs, struct _timeout *t,
 		_nanokernel.timeout_q.tail);
 
 	K_DEBUG("timeout   %p after:  next: %p, prev: %p\n",
-		t, t->node.next, t->node.prev);
+		timeout_obj, timeout_obj->node.next, timeout_obj->node.prev);
 }
 
-static inline void _nano_timer_timeout_add(struct _timeout *t,
-					   _wait_q_t *wait_q,
-					   int32_t timeout)
+/*
+ * Put thread on timeout queue. Record wait queue if any.
+ *
+ * Cannot handle timeout == 0 and timeout == K_FOREVER.
+ */
+static inline void _add_thread_timeout(struct k_thread *thread,
+				       _wait_q_t *wait_q, int32_t timeout)
 {
-	_do_timeout_add(NULL, t, wait_q, timeout);
+	_add_timeout(thread, &thread->timeout, wait_q, timeout);
 }
 
 /* find the closest deadline in the timeout queue */

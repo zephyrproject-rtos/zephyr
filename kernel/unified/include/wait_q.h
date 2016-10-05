@@ -38,25 +38,18 @@ static inline void _timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 }
 #include <timeout_q.h>
 
-	#define _TIMEOUT_ADD(thread, pq, ticks) \
-		do { \
-			if ((ticks) != TICKS_UNLIMITED) { \
-				_timeout_add(thread, pq, ticks); \
-			} \
-		} while (0)
-
 #elif defined(CONFIG_NANO_TIMERS)
 #include <timeout_q.h>
 	#define _timeout_tcs_init(tcs) do { } while ((0))
 	#define _abort_thread_timeout(tcs) do { } while ((0))
 
-	#define _TIMEOUT_ADD(thread, pq, ticks) do { } while (0)
+	#define _add_thread_timeout(thread, pq, ticks) do { } while (0)
 #else
 	#define _timeout_tcs_init(tcs) do { } while ((0))
 	#define _abort_thread_timeout(tcs) do { } while ((0))
 	#define _timeout_get_next_expiry() (K_FOREVER)
 
-	#define _TIMEOUT_ADD(thread, pq, ticks) do { } while (0)
+	#define _add_thread_timeout(thread, pq, ticks) do { } while (0)
 #endif
 
 #ifdef __cplusplus
