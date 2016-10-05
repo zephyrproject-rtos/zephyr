@@ -23,7 +23,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include "soc_irq.h"
+#include <nrf5_common.h>
 #include <nrf.h>
 #include <device.h>
 #include <misc/util.h>

@@ -308,7 +308,7 @@ static int _clock_control_init(struct device *dev)
 	 * power peripheral driver and/or new SoC series.
 	 * NOTE: Currently the operations here are idempotent.
 	 */
-	IRQ_CONNECT(NRF52_IRQ_POWER_CLOCK_IRQn,
+	IRQ_CONNECT(NRF5_IRQ_POWER_CLOCK_IRQn,
 		    CONFIG_CLOCK_CONTROL_NRF5_IRQ_PRIORITY,
 		    _power_clock_isr, 0, 0);
 

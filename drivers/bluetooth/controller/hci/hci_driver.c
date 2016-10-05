@@ -112,12 +112,12 @@ static void rng_nrf5_isr(void *arg)
 
 static void swi4_nrf5_isr(void *arg)
 {
-	work_run(NRF52_IRQ_SWI4_EGU4_IRQn);
+	work_run(NRF5_IRQ_SWI4_IRQn);
 }
 
 static void swi5_nrf5_isr(void *arg)
 {
-	work_run(NRF52_IRQ_SWI5_EGU5_IRQn);
+	work_run(NRF5_IRQ_SWI5_IRQn);
 }
 
 static void recv_fiber(int unused0, int unused1)
@@ -300,16 +300,16 @@ static int hci_driver_open(void)
 		return -ENOMEM;
 	}
 
-	IRQ_CONNECT(NRF52_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0, 0);
-	IRQ_CONNECT(NRF52_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
-	IRQ_CONNECT(NRF52_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
-	IRQ_CONNECT(NRF52_IRQ_SWI4_EGU4_IRQn, 0, swi4_nrf5_isr, 0, 0);
-	IRQ_CONNECT(NRF52_IRQ_SWI5_EGU5_IRQn, 1, swi5_nrf5_isr, 0, 0);
-	irq_enable(NRF52_IRQ_RADIO_IRQn);
-	irq_enable(NRF52_IRQ_RTC0_IRQn);
-	irq_enable(NRF52_IRQ_RNG_IRQn);
-	irq_enable(NRF52_IRQ_SWI4_EGU4_IRQn);
-	irq_enable(NRF52_IRQ_SWI5_EGU5_IRQn);
+	IRQ_CONNECT(NRF5_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, 0, swi4_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF5_IRQ_SWI5_IRQn, 1, swi5_nrf5_isr, 0, 0);
+	irq_enable(NRF5_IRQ_RADIO_IRQn);
+	irq_enable(NRF5_IRQ_RTC0_IRQn);
+	irq_enable(NRF5_IRQ_RNG_IRQn);
+	irq_enable(NRF5_IRQ_SWI4_IRQn);
+	irq_enable(NRF5_IRQ_SWI5_IRQn);
 
 	nano_sem_init(&nano_sem_recv);
 	fiber_start(recv_fiber_stack, sizeof(recv_fiber_stack),

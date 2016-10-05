@@ -459,10 +459,10 @@ DEVICE_INIT(uart_nrf5_0, CONFIG_UART_NRF5_NAME, &uart_nrf5_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_nrf5_irq_config(struct device *port)
 {
-	IRQ_CONNECT(NRF52_IRQ_UARTE0_UART0_IRQn,
+	IRQ_CONNECT(NRF5_IRQ_UART0_IRQn,
 		    CONFIG_UART_NRF5_IRQ_PRI,
 		    uart_nrf5_isr, DEVICE_GET(uart_nrf5_0),
 		    0);
-	irq_enable(NRF52_IRQ_UARTE0_UART0_IRQn);
+	irq_enable(NRF5_IRQ_UART0_IRQn);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
