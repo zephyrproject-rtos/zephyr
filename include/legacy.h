@@ -227,10 +227,8 @@ static inline void task_group_abort(uint32_t groups)
 	return _k_thread_group_op(groups, _k_thread_single_abort);
 }
 
-#if 0
 #define isr_task_id_get() task_id_get()
 #define isr_task_priority_get() task_priority_get()
-#endif
 
 /* mutexes */
 
