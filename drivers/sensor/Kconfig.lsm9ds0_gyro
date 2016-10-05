@@ -47,22 +47,16 @@ config LSM9DS0_GYRO_DEV_NAME
 	depends on LSM9DS0_GYRO
 	default "lsm9ds0_gyro"
 
-choice
+config LSM9DS0_GYRO_I2C_ADDR
+	hex
 	prompt "LSM9DS0_GYRO I2C slave address"
-	default LSM9DS0_GYRO_I2C_ADDR_6A
+	default 0x6A
 	depends on LSM9DS0_GYRO
 	help
 	  Specify the I2C slave address for the LSM9DS0_GYRO.
 
-config LSM9DS0_GYRO_I2C_ADDR_6A
-	bool
-	prompt "0x6A (GND)"
-
-config LSM9DS0_GYRO_I2C_ADDR_6B
-	bool
-	prompt "0x6B (VCC)"
-
-endchoice
+	  0x6A: GND
+	  0x6B: VCC
 
 config LSM9DS0_GYRO_I2C_MASTER_DEV_NAME
 	string "I2C master where LSM9DS0 gyroscope is connected"

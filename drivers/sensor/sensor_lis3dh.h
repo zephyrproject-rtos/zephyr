@@ -23,11 +23,7 @@
 #include <gpio.h>
 #include <misc/nano_work.h>
 
-#if CONFIG_LIS3DH_I2C_ADDR_0x18
-	#define LIS3DH_I2C_ADDRESS	0x18
-#elif CONFIG_LIS3DH_I2C_ADDR_0x19
-	#define LIS3DH_I2C_ADDRESS	0x19
-#endif
+#define LIS3DH_I2C_ADDRESS		CONFIG_LIS3DH_I2C_ADDR
 
 #define LIS3DH_AUTOINCREMENT_ADDR	BIT(7)
 

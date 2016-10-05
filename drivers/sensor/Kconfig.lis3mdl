@@ -53,7 +53,7 @@ config LIS3MDL_I2C_ADDR
 	hex
 	prompt "I2C address"
 	depends on LIS3MDL
-	default "0x1C"
+	default 0x1C
 	help
 	  I2C address of the LIS3MDL sensor.
 	  Use 0x1C if the SA1 pin is pulled to GND or 0x1E if the SA1 pin

@@ -109,11 +109,7 @@
 					 BME280_FILTER |	\
 					 BME280_SPI_3W_DISABLE)
 
-#if defined CONFIG_BME280_I2C_ADDR_76
-#define BME280_I2C_ADDR			0x76
-#elif defined CONFIG_BME280_I2C_ADDR_77
-#define BME280_I2C_ADDR			0x77
-#endif
+#define BME280_I2C_ADDR			CONFIG_BME280_I2C_ADDR
 
 struct bme280_data {
 	struct device *i2c_master;

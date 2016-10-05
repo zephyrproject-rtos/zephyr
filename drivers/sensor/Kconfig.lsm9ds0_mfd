@@ -48,22 +48,15 @@ config LSM9DS0_MFD_DEV_NAME
 	depends on LSM9DS0_MFD
 	default "lsm9ds0_mfd"
 
-choice
-	prompt "LSM9DS0_MFD I2C slave address"
-	default LSM9DS0_MFD_I2C_ADDR_1E
+config LSM9DS0_MFD_I2C_ADDR
+	string "LSM9DS0_MFD I2C slave address"
+	default "0x1E"
 	depends on LSM9DS0_MFD
 	help
 	  Specify the I2C slave address for the LSM9DS0_MFD.
 
-config LSM9DS0_MFD_I2C_ADDR_1E
-	bool
-	prompt "0x1E (GND)"
-
-config LSM9DS0_MFD_I2C_ADDR_1F
-	bool
-	prompt "0x1F (VCC)"
-
-endchoice
+	  0x1E: GND
+	  0x1F: VCC
 
 config LSM9DS0_MFD_I2C_MASTER_DEV_NAME
 	string "I2C master where LSM9DS0 gyroscope is connected"

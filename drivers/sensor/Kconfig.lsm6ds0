@@ -51,9 +51,9 @@ config LSM6DS0_DEV_NAME
 
 config LSM6DS0_I2C_ADDR
 	hex
-	prompt "I2C address"
+	prompt "LSM6DS0 I2C address"
 	depends on LSM6DS0
-	default "0x6B"
+	default 0x6B
 	help
 	  I2C address of the LSM6DS0 sensor.
 	  Use 0x6A if the SA0 pin is pulled to GND or 0x6B if the SA0 pin

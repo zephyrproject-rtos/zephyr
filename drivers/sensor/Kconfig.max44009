@@ -51,26 +51,17 @@ config MAX44009_DRV_NAME
 	help
 	Device name with which the MAX44009 light is identified.
 
-choice
-	prompt "I2C address"
+
+config MAX44009_I2C_ADDR
+	hex
+	prompt "MAX44009 I2C address"
 	depends on MAX44009
-	default MAX44009_I2C_ADDR_0
+	default "0x4a"
 	help
-	I2C address of the MAX44009 sensor.
+	I2C address of the MAX44009 sensor. Possible configurations:
 
-config MAX44009_I2C_ADDR_0
-	bool
-	prompt "0x4a"
-	help
-	A0 connected to GND.
-
-config MAX44009_I2C_ADDR_1
-	bool
-	prompt "0x4b"
-	help
-	A0 connected to VCC.
-
-endchoice
+	0x4a: A0 connected to GND.
+	0x4b: A0 connected to VCC.
 
 config MAX44009_I2C_DEV_NAME
 	string

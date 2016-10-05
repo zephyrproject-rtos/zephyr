@@ -46,22 +46,15 @@ config BME280_DEV_NAME
 	depends on BME280
 	default "BME280"
 
-choice
-	prompt "BME280 I2C slave address"
-	default BME280_I2C_ADDR_76
+config BME280_I2C_ADDR
+	hex "BME280 I2C slave address"
+	default 0x76
 	depends on BME280
 	help
 	  Specify the I2C slave address for the BME280.
 
-config BME280_I2C_ADDR_76
-	bool
-	prompt "0x76 (GND)"
-
-config BME280_I2C_ADDR_77
-	bool
-	prompt "0x77 (VCC)"
-
-endchoice
+	  0x76: Ground
+	  0x77: VCC
 
 config BME280_I2C_MASTER_DEV_NAME
 	string "I2C master where BME280 is connected"

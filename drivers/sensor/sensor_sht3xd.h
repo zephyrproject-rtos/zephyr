@@ -22,11 +22,7 @@
 #include <gpio.h>
 #include <misc/nano_work.h>
 
-#if CONFIG_SHT3XD_I2C_ADDR_A
-	#define SHT3XD_I2C_ADDRESS	0x44
-#elif CONFIG_SHT3XD_I2C_ADDR_B
-	#define SHT3XD_I2C_ADDRESS	0x45
-#endif
+#define SHT3XD_I2C_ADDRESS		CONFIG_SHT3XD_I2C_ADDR
 
 #define SHT3XD_CMD_FETCH		0xE000
 #define SHT3XD_CMD_ART			0x2B32

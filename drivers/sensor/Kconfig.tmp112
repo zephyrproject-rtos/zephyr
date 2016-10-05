@@ -51,38 +51,18 @@ config TMP112_NAME
 	help
 	Device name with which the TMP112 sensor is identified.
 
-choice
-	prompt "I2C address"
+config TMP112_I2C_ADDR
+	hex "I2C address for TMP112"
 	depends on TMP112
-	default TMP112_I2C_ADDR_0
+	default 0x48
 	help
 	I2C address of the TMP112 sensor.
 
-config TMP112_I2C_ADDR_0
-	bool
-	prompt "0x48"
-	help
-	A0 connected GND and A1 connected to GND.
+	0x48: A0 connected GND and A1 connected to GND.
+	0x49: A0 connected VDD and A1 connected to GND.
+	0x4A: A0 connected SDA and A1 connected to GND.
+	0x4B: A0 connected SCL and A1 connected to GND.
 
-config TMP112_I2C_ADDR_1
-	bool
-	prompt "0x49"
-	help
-	A0 connected VDD and A1 connected to GND.
-
-config TMP112_I2C_ADDR_2
-	bool
-	prompt "0x4A"
-	help
-	A0 connected SDA and A1 connected to GND.
-
-config TMP112_I2C_ADDR_3
-	bool
-	prompt "0x4B"
-	help
-	A0 connected SCL and A1 connected to GND.
-
-endchoice
 
 config TMP112_I2C_MASTER_DEV_NAME
 	string
