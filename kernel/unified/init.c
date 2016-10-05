@@ -205,7 +205,7 @@ void __weak main(void)
  *
  * @return N/A
  */
-static void nano_init(struct tcs *dummy_thread)
+static void prepare_multithreading(struct k_thread *dummy_thread)
 {
 	/*
 	 * Initialize the current execution thread to permit a level of
@@ -262,6 +262,17 @@ static void nano_init(struct tcs *dummy_thread)
 	nanoArchInit();
 }
 
+static void switch_to_main_thread(void)
+{
+	/*
+	 * Context switch to main task (entry function is _main()): the
+	 * current fake thread is not on a wait queue or ready queue, so it
+	 * will never be rescheduled in.
+	 */
+
+	_Swap(irq_lock());
+}
+
 #ifdef CONFIG_STACK_CANARIES
 /**
  *
@@ -314,7 +325,7 @@ FUNC_NORETURN void _Cstart(void)
 {
 	/* floating point operations are NOT performed during nanokernel init */
 
-	char dummyTCS[__tTCS_NOFLOAT_SIZEOF];
+	char __stack dummy_thread[__tTCS_NOFLOAT_SIZEOF];
 
 	/*
 	 * Initialize nanokernel data structures. This step includes
@@ -322,7 +333,7 @@ FUNC_NORETURN void _Cstart(void)
 	 * before the hardware initialization phase.
 	 */
 
-	nano_init((struct tcs *)&dummyTCS);
+	prepare_multithreading((struct k_thread *)&dummy_thread);
 
 	/* perform basic hardware initialization */
 
@@ -345,13 +356,7 @@ FUNC_NORETURN void _Cstart(void)
 
 	PRINT_BOOT_BANNER();
 
-	/*
-	 * Context switch to main task (entry function is _main()): the
-	 * current fake thread is not on a wait queue or ready queue, so it
-	 * will never be rescheduled in.
-	 */
-
-	_Swap(irq_lock());
+	switch_to_main_thread();
 
 	/*
 	 * Compiler can't tell that the above routines won't return and issues
