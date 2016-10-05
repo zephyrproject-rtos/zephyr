@@ -27,6 +27,14 @@ endif
 cflags-cortex-m7 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m7) \
 			$(call cc-option,-mthumb -march=armv7e-m)
 
+aflags-$(CONFIG_CPU_CORTEX_M0) += $(cflags-cortex-m0)
+cflags-$(CONFIG_CPU_CORTEX_M0) += $(cflags-cortex-m0)
+cxxflags-$(CONFIG_CPU_CORTEX_M0) += $(cflags-cortex-m0)
+
+aflags-$(CONFIG_CPU_CORTEX_M0PLUS) += $(cflags-cortex-m0+)
+cflags-$(CONFIG_CPU_CORTEX_M0PLUS) += $(cflags-cortex-m0+)
+cxxflags-$(CONFIG_CPU_CORTEX_M0PLUS) += $(cflags-cortex-m0+)
+
 aflags-$(CONFIG_CPU_CORTEX_M3) += $(cflags-cortex-m3)
 cflags-$(CONFIG_CPU_CORTEX_M3) += $(cflags-cortex-m3)
 cxxflags-$(CONFIG_CPU_CORTEX_M3) += $(cflags-cortex-m3)

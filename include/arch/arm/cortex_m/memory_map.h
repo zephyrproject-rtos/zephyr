@@ -57,7 +57,7 @@
 
 /* 0xe0000000 -> 0xffffffff: varies by processor (see below) */
 
-#if defined(CONFIG_CPU_CORTEX_M3_M4)
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS) || defined(CONFIG_CPU_CORTEX_M3_M4)
 /* 0xe0000000 -> 0xe00fffff: private peripheral bus */
 
 /* 0xe0000000 -> 0xe003ffff: internal [256KB] */

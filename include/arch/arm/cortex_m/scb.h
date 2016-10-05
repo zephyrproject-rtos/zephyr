@@ -597,6 +597,8 @@ static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
 	__scs.scb.shpr[exc - 4] = pri;
 }
 
+#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+
 /**
  *
  * @brief Enable usage fault exceptions
@@ -1204,6 +1206,9 @@ static inline void _ScbUsageFaultAllFaultsReset(void)
 {
 	__scs.scb.cfsr.byte.ufsr.val = 0xffff;
 }
+
+#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

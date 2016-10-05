@@ -65,11 +65,14 @@ SECTION_FUNC(TEXT, _GdbStubExcEntry)
     ldr r2, [r1, #__tNANO_flags_OFFSET]
 
     /* already in an exception, do not update the registers */
-    ands r3, r2, #EXC_ACTIVE
-    it ne
-	bxne lr
+    ldr r3, =EXC_ACTIVE
+    ands r3, r2
+    beq _GdbStubEditReg
+    bx lr
 
-    orrs r2, #EXC_ACTIVE
+_GdbStubEditReg:
+    ldr r3, =EXC_ACTIVE
+    orrs r2, r3
     str r2, [r1, #__tNANO_flags_OFFSET]
     ldr r1, [r1, #__tNANO_current_OFFSET]
     str r2, [r1, #__tTCS_flags_OFFSET]
@@ -77,7 +80,20 @@ SECTION_FUNC(TEXT, _GdbStubExcEntry)
     /* save callee-saved + psp in TCS */
     adds r1, #__tTCS_preempReg_OFFSET
     mrs ip, PSP
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    /* Store current r4-r7 */
+    stmea r1!, {r4-r7}
+    /* copy r8-r12 into r3-r7 */
+    mov r3, r8
+    mov r4, r9
+    mov r5, r10
+    mov r6, r11
+    mov r7, ip
+    /* store r8-12 */
+    stmea r1!, {r3-r7}
+#else /* CONFIG_CPU_CORTEX_M0_M0PLUS */
     stmia r1, {v1-v8, ip}
+#endif
 
     bx lr
 
@@ -98,17 +114,20 @@ SECTION_FUNC(TEXT, _GdbStubExcEntry)
 
 SECTION_FUNC(TEXT, _GdbStubExcExit)
 
+#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
     /* if we're nested (ie. !RETTOBASE), do not reset EXC_ACTIVE */
     ldr r1, =_SCS_ICSR
     ldr r1, [r1]
     ands r1, #_SCS_ICSR_RETTOBASE
     it eq
 	bxeq lr
+#endif
 
     ldr r1, =_nanokernel
     ldr r2, [r1, #__tNANO_flags_OFFSET]
 
-    bic r2, #EXC_ACTIVE
+    ldr r3, =EXC_ACTIVE
+    bics r2, r3
     str r2, [r1, #__tNANO_flags_OFFSET]
     ldr r1, [r1, #__tNANO_current_OFFSET]
     str r2, [r1, #__tTCS_flags_OFFSET]
@@ -138,11 +157,12 @@ SECTION_FUNC(TEXT, _irq_vector_table_entry_with_gdb_stub)
     _GDB_STUB_EXC_ENTRY
 
     mrs r0, IPSR	/* get exception number */
-    sub r0, r0, #16	/* get IRQ number */
+    subs r0, #16	/* get IRQ number */
     ldr r1, =_irq_vector_table
 
     /* grab real ISR at address: r1 + (r0 << 2) (table is 4-byte wide) */
-    ldr r1, [r1, r0, LSL #2]
+    lsls r3, r0, #2
+    ldr r1, [r1, r3]
 
     /* jump to ISR, no return: ISR is responsible for calling _IntExit */
     bx r1

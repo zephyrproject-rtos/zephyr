@@ -45,6 +45,15 @@ config ISA_THUMB2
 	technology is featured in the  processor, and in all ARMv7
 	architecture-based processors.
 
+config CPU_CORTEX_M0_M0PLUS
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	select ATOMIC_OPERATIONS_C
+	select ISA_THUMB2
+	help
+	This option signifies the use of either a Cortex-M0 or Cortex-M0+ CPU.
+
 config CPU_CORTEX_M3_M4
 	bool
 	# Omit prompt to signify "hidden" option
@@ -53,6 +62,20 @@ config CPU_CORTEX_M3_M4
 	select ISA_THUMB2
 	help
 	This option signifies the use of either a Cortex-M3 or Cortex-M4 CPU.
+
+config CPU_CORTEX_M0
+	bool
+	# Omit prompt to signify "hidden" option
+	select CPU_CORTEX_M0_M0PLUS
+	help
+	This option signifies the use of a Cortex-M0 CPU
+
+config CPU_CORTEX_M0PLUS
+	bool
+	# Omit prompt to signify "hidden" option
+	select CPU_CORTEX_M0_M0PLUS
+	help
+	This option signifies the use of a Cortex-M0+ CPU
 
 config CPU_CORTEX_M3
 	bool
@@ -158,8 +181,8 @@ config FLASH_BASE_ADDRESS
 	avoid modifying it via the menu configuration.
 endmenu
 
-menu "ARM Cortex-M3/M4 options"
-	depends on CPU_CORTEX_M3_M4
+menu "ARM Cortex-M0/M0+/M3/M4 options"
+	depends on CPU_CORTEX_M0_M0PLUS || CPU_CORTEX_M3_M4
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"

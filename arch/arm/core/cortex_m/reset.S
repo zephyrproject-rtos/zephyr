@@ -70,8 +70,12 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 #endif
 
     /* lock interrupts: will get unlocked when switch to main task */
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    cpsid i
+#else /* CONFIG_CPU_CORTEX_M3_M4 */
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
+#endif
 
     /*
      * Set PSP and use it to boot without using MSP, so that it

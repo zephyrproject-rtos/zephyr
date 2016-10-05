@@ -204,6 +204,7 @@ static inline uint32_t _NvicIrqPrioGet(unsigned int irq)
 	return __scs.nvic.ipr[irq];
 }
 
+#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 /**
  *
  * @brief Trigger an interrupt via software
@@ -224,6 +225,7 @@ static inline void _NvicSwInterruptTrigger(unsigned int irq)
 	__scs.stir = irq;
 #endif
 }
+#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 #endif /* !_ASMLANGUAGE */
 

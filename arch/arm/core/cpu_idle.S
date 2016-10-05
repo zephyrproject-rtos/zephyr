@@ -123,12 +123,17 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	push {lr}
 	bl    _sys_k_event_logger_enter_sleep
-	pop {lr}
+	pop {r0}
+	mov lr, r0
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    cpsie i
+#else /* CONFIG_CPU_CORTEX_M3_M4 */
     /* clear BASEPRI so wfi is awakened by incoming interrupts */
     eors.n r0, r0
     msr BASEPRI, r0
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
     wfi
 
@@ -164,15 +169,9 @@ SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	push {lr}
 	bl    _sys_k_event_logger_enter_sleep
-	pop {lr}
+	pop {r1}
+	mov lr, r1
 #endif
-
-    /*
-     * r0: interrupt mask from caller
-     * r1: zero, for setting BASEPRI (needs a register)
-     */
-
-    eors.n r1, r1
 
     /*
      * Lock PRIMASK while sleeping: wfe will still get interrupted by incoming
@@ -185,6 +184,21 @@ SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
      * touched again.
      */
 
+     /* r0: interrupt mask from caller */
+
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    /* No BASEPRI, call wfe directly (SEVONPEND set in _CpuIdleInit()) */
+    wfe
+
+    cmp r0, #0
+    bne _irq_disabled
+    cpsie i
+_irq_disabled:
+
+#else /* CONFIG_CPU_CORTEX_M3_M4 */
+    /* r1: zero, for setting BASEPRI (needs a register) */
+    eors.n r1, r1
+
     /* unlock BASEPRI so wfe gets interrupted by incoming interrupts */
     msr BASEPRI, r1
 
@@ -192,4 +206,5 @@ SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 
     msr BASEPRI, r0
     cpsie i
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS  */
     bx lr

@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief ARM CORTEX-M3 exception/interrupt exit API
+ * @brief ARM CORTEX-M exception/interrupt exit API
  *
  *
  * Provides functions for performing kernel handling when exiting exceptions or
@@ -44,10 +44,7 @@ GTEXT(_is_next_thread_current)
 #if CONFIG_GDB_INFO
   #define _EXIT_EXC_IF_FIBER_PREEMPTED beq _ExcExitWithGdbStub
 #else
-  _EXIT_EXC_IF_FIBER_PREEMPTED:      .macro
-                                     it eq
-                                     bxeq lr
-                                     .endm
+  #define _EXIT_EXC_IF_FIBER_PREEMPTED beq _EXIT_EXC
 #endif
 #define _EXIT_EXC_IF_FIBER_NOT_READY _EXIT_EXC_IF_FIBER_PREEMPTED
 
@@ -104,26 +101,28 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
 	/* coop thread ? do not schedule */
 	cmp r2, #0
-	it lt
-	  bxlt lr
+	blt _EXIT_EXC
 
 	/* scheduler locked ? do not schedule */
 	cmp r3, #0
-	it gt
-	  bxgt lr
+	bgt _EXIT_EXC
 
 	push {lr}
 	blx _is_next_thread_current
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+	pop {r1}
+	mov lr, r1
+#else
 	pop {lr}
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS  */
 	cmp r0, #0
-	it ne
-	  bxne lr
-
+	bne _EXIT_EXC
 #else
 
     /* is the current thread preemptible (task) ? */
     ldr r2, [r1, #__tNANO_flags_OFFSET]
-    ands.w r2, #PREEMPTIBLE
+    ldr r3, =PREEMPTIBLE
+    ands r2, r3
     _EXIT_EXC_IF_FIBER_PREEMPTED
 
     /* is there a fiber ready ? */
@@ -141,5 +140,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 _ExcExitWithGdbStub:
 
     _GDB_STUB_EXC_EXIT
+
+_EXIT_EXC:
 
     bx lr

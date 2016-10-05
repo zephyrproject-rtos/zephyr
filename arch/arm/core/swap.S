@@ -32,7 +32,9 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(_Swap)
+#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 GTEXT(__svc)
+#endif
 GTEXT(__pendsv)
 #ifdef CONFIG_KERNEL_V2
 GTEXT(_get_next_ready_thread)
@@ -66,7 +68,8 @@ SECTION_FUNC(TEXT, __pendsv)
 	/* Register the context switch */
 	push {lr}
 	bl _sys_k_event_logger_context_switch
-	pop {lr}
+	pop {r0}
+	mov lr, r0
 #endif
 
     /* load _Nanokernel into r1 and current tTCS into r2 */
@@ -74,16 +77,30 @@ SECTION_FUNC(TEXT, __pendsv)
     ldr r2, [r1, #__tNANO_current_OFFSET]
 
     /* addr of callee-saved regs in TCS in r0 */
-    add r0, r2, #__tTCS_preempReg_OFFSET
+    ldr r0, =__tTCS_preempReg_OFFSET
+    add r0, r2
 
     /* save callee-saved + psp in TCS */
     mrs ip, PSP
-    stmia r0, {v1-v8, ip}
 
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    /* Store current r4-r7 */
+    stmea r0!, {r4-r7}
+    /* copy r8-r12 into r3-r7 */
+    mov r3, r8
+    mov r4, r9
+    mov r5, r10
+    mov r6, r11
+    mov r7, ip
+    /* store r8-12 */
+    stmea r0!, {r3-r7}
+#else
+    stmia r0, {v1-v8, ip}
 #ifdef CONFIG_FP_SHARING
     add r0, r2, #__tTCS_preemp_float_regs_OFFSET
     vstmia r0, {s16-s31}
-#endif
+#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
     /*
      * Prepare to clear PendSV with interrupts unlocked, but
@@ -96,8 +113,12 @@ SECTION_FUNC(TEXT, __pendsv)
     ldr v3, =_SCS_ICSR_UNPENDSV
 
     /* protect the kernel state while we play with the thread lists */
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    cpsid i
+#else /* CONFIG_CPU_CORTEX_M3_M4 */
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
+#endif
 
     /* find out incoming thread (fiber or task) */
 
@@ -117,11 +138,23 @@ SECTION_FUNC(TEXT, __pendsv)
      * if so, remove fiber from list
      * else, the task is the thread we're switching in
      */
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    /* branch over remove if eq otherwise we branch over switch */
+    beq _switch_in_task
+    ldr r0, [r2, #__tTCS_link_OFFSET]   /* then */
+    str r0, [r1, #__tNANO_fiber_OFFSET] /* then */
+    bne _switch_in_task_endif
+_switch_in_task:
+    ldr r2, [r1, #__tNANO_task_OFFSET]  /* else */
+_switch_in_task_endif:
+
+#else /* CONFIG_CPU_CORTEX_M3_M4 */
     itte ne
 	ldrne.w r0, [r2, #__tTCS_link_OFFSET]   /* then */
 	strne.w r0, [r1, #__tNANO_fiber_OFFSET] /* then */
 	ldreq.w r2, [r1, #__tNANO_task_OFFSET]  /* else */
-#endif
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_KERNEL_V2 */
 
     /* r2 contains the new thread */
 #if !defined(CONFIG_KERNEL_V2)
@@ -142,10 +175,41 @@ SECTION_FUNC(TEXT, __pendsv)
     /* _SCS_ICSR is still in v4 and _SCS_ICSR_UNPENDSV in v3 */
     str v3, [v4, #0]
 
-    /* restore BASEPRI for the incoming thread */
+    /* Restore previous interrupt disable state (irq_lock key) */
     ldr r0, [r2, #__tTCS_basepri_OFFSET]
-    mov ip, #0
-    str ip, [r2, #__tTCS_basepri_OFFSET]
+    movs.n r3, #0
+    str r3, [r2, #__tTCS_basepri_OFFSET]
+
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    /* BASEPRI not available, previous interrupt disable state
+     * maps to PRIMASK.
+     *
+     * Only enable interrupts if value is 0, meaning interrupts
+     * were enabled before irq_lock was called.
+     */
+    cmp r0, #0
+    bne _thread_irq_disabled
+    cpsie i
+_thread_irq_disabled:
+
+    ldr r4, =__tTCS_preempReg_OFFSET
+    adds r0, r2, r4
+
+    /* restore r4-r12 for new thread */
+    /* first restore r8-r12 located after r4-r7 (4*4bytes) */
+    adds r0, #16
+    ldmia r0!, {r3-r7}
+    /* move to correct registers */
+    mov r8, r3
+    mov r9, r4
+    mov r10, r5
+    mov r11, r6
+    mov ip, r7
+    /* restore r4-r7, go back 9*4 bytes to the start of the stored block */
+    subs r0, #36
+    ldmia r0!, {r4-r7}
+#else /* CONFIG_CPU_CORTEX_M3_M4 */
+    /* restore BASEPRI for the incoming thread */
     msr BASEPRI, r0
 
 #ifdef CONFIG_FP_SHARING
@@ -156,6 +220,8 @@ SECTION_FUNC(TEXT, __pendsv)
     /* load callee-saved + psp from TCS */
     add r0, r2, #__tTCS_preempReg_OFFSET
     ldmia r0, {v1-v8, ip}
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+
     msr PSP, ip
 
     _GDB_STUB_EXC_EXIT
@@ -163,6 +229,7 @@ SECTION_FUNC(TEXT, __pendsv)
     /* exc return */
     bx lr
 
+#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 /**
  *
  * @brief Service call handler
@@ -233,6 +300,7 @@ _context_switch:
 
     /* handler mode exit, to PendSV */
     bx lr
+#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 /**
  *
@@ -259,6 +327,9 @@ _context_switch:
  * outgoing thread. This is all performed by the hardware, which stores it in
  * its exception stack frame, created when handling the svc exception.
  *
+ * On Cortex-M0/M0+ the intlock key is represented by the PRIMASK register,
+ * as BASEPRI is not available.
+ *
  * @return may contain a return value setup by a call to fiberRtnValueSet()
  *
  * C function prototype:
@@ -273,7 +344,26 @@ SECTION_FUNC(TEXT, _Swap)
     ldr r2, [r1, #__tNANO_current_OFFSET]
     str r0, [r2, #__tTCS_basepri_OFFSET]
 
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+    /* No priority-based interrupt masking on M0/M0+,
+     * pending PendSV is used instead of svc
+     */
+    ldr r1, =_SCS_ICSR
+    ldr r2, =_SCS_ICSR_PENDSV
+    str r2, [r1, #0]
+
+    /* Unlock interrupts to allow PendSV, since it's running at prio 0xff
+     *
+     * PendSV handler will be called if there are no other interrupts
+     * of a higher priority pending.
+     */
+    cpsie i
+
+    /* PC stored in stack frame by the hw */
+    bx lr
+#else /* CONFIG_CPU_CORTEX_M3_M4 */
     svc #0
 
     /* r0 contains the return value if needed */
     bx lr
+#endif

@@ -52,11 +52,13 @@ GTEXT(_vector_table)
 GTEXT(__reset)
 GTEXT(__nmi)
 GTEXT(__hard_fault)
+#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)
 GTEXT(__usage_fault)
 GTEXT(__svc)
 GTEXT(__debug_monitor)
+#endif
 GTEXT(__pendsv)
 GTEXT(__reserved)
 

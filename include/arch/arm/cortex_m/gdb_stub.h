@@ -40,7 +40,8 @@ _GDB_STUB_EXC_ENTRY :    .macro
 	bl irq_lock
 	bl _GdbStubExcEntry
 	bl irq_unlock
-	pop {lr}
+	pop {r1}
+	move lr, r1
 .endm
 
 GTEXT(_GdbStubExcExit)
@@ -49,7 +50,8 @@ _GDB_STUB_EXC_EXIT :     .macro
 	bl irq_lock
 	bl _GdbStubExcExit
 	bl irq_unlock
-	pop {lr}
+	pop {r1}
+	move lr, r1
 .endm
 
 GTEXT(_irq_vector_table_entry_with_gdb_stub)
