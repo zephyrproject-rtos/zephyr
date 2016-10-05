@@ -516,7 +516,7 @@ int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 	 * no suitable block is currently available,
 	 * so either wait for one to appear or indicate failure
 	 */
-	if (likely(timeout != TICKS_NONE)) {
+	if (likely(timeout != K_NO_WAIT)) {
 		int result;
 		unsigned int key = irq_lock();
 		_sched_unlock_no_reschedule();
@@ -566,7 +566,7 @@ void *k_malloc(uint32_t size)
 	new_size =  size + (sizeof(uint32_t) << 1) + MALLOC_ALIGN - 1;
 
 	if (k_mem_pool_alloc(heap_mem_pool, &mem_block, new_size,
-			     TICKS_NONE) != 0) {
+			     K_NO_WAIT) != 0) {
 		return NULL;
 	}
 
