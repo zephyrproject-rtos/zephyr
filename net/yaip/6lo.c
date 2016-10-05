@@ -33,6 +33,30 @@
 #include "6lo.h"
 #include "6lo_private.h"
 
+#if defined(CONFIG_NET_6LO_CONTEXT)
+struct net_6lo_context {
+	struct in6_addr prefix;
+	struct net_if *iface;
+	uint16_t lifetime;
+	uint8_t is_used		: 1;
+	uint8_t compress	: 1;
+	uint8_t cid		: 4;
+	uint8_t unused		: 2;
+} __packed;
+
+static inline uint8_t get_6co_compress(struct net_icmpv6_nd_opt_6co *opt)
+{
+	return opt->flag & 0x10;
+}
+
+static inline uint8_t get_6co_cid(struct net_icmpv6_nd_opt_6co *opt)
+{
+	return opt->flag & 0x0F;
+}
+
+static struct net_6lo_context ctx_6co[CONFIG_NET_MAX_6LO_CONTEXTS];
+#endif
+
 static inline bool net_6lo_ll_prefix_padded_with_zeros(struct in6_addr *addr)
 {
 	return ((addr->s6_addr[2] == 0x00) &&
@@ -76,6 +100,62 @@ static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
 		 (addr->s6_addr16[4] == 0x00) &&
 		 (addr->s6_addr[10] == 0x00));
 }
+
+#if defined(CONFIG_NET_6LO_CONTEXT)
+/* RFC 6775, 4.2, 5.4.2, 5.4.3 and 7.2*/
+static inline void set_6lo_context(struct net_if *iface, uint8_t index,
+				   struct net_icmpv6_nd_opt_6co *context)
+
+{
+	ctx_6co[index].is_used = true;
+	ctx_6co[index].iface = iface;
+
+	/*TODO: Start timer */
+	ctx_6co[index].lifetime = context->lifetime;
+	ctx_6co[index].compress = get_6co_compress(context);
+	ctx_6co[index].cid = get_6co_cid(context);
+
+	net_ipaddr_copy(&ctx_6co[index].prefix, &context->prefix);
+}
+
+void net_6lo_set_context(struct net_if *iface,
+			 struct net_icmpv6_nd_opt_6co *context)
+{
+	int unused = -1;
+	uint8_t i;
+
+	/* If the context information already exists, update or remove
+	 * as per data.
+	 */
+	for (i = 0; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
+		if (!ctx_6co[i].is_used) {
+			unused = i;
+			continue;
+		}
+
+		if (ctx_6co[i].iface == iface &&
+		    ctx_6co[i].cid == get_6co_cid(context)) {
+			/* Remove if lifetime is zero */
+			if (!context->lifetime) {
+				ctx_6co[i].is_used = false;
+				return;
+			}
+
+			/* Update the context */
+			set_6lo_context(iface, i, context);
+			return;
+		}
+	}
+
+	/* Cache the context information. */
+	if (unused != -1) {
+		set_6lo_context(iface, unused, context);
+		return;
+	}
+
+	NET_DBG("Either no free slots in the table or exceeds limit");
+}
+#endif
 
 /**
   * RFC 6282 LOWPAN IPHC Encoding format (3.1)

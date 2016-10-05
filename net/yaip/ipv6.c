@@ -37,6 +37,7 @@
 #include "icmpv6.h"
 #include "ipv6.h"
 #include "nbr.h"
+#include "6lo.h"
 
 #if defined(CONFIG_NET_IPV6_ND)
 
@@ -1678,6 +1679,50 @@ static inline struct net_buf *handle_ra_prefix(struct net_buf *buf,
 	return frag;
 }
 
+#if defined(CONFIG_NET_6LO_CONTEXT)
+/* 6lowpan Context Option RFC 6775, 4.2 */
+static inline struct net_buf *handle_ra_6co(struct net_buf *buf,
+					    struct net_buf *frag,
+					    uint8_t len,
+					    uint16_t offset, uint16_t *pos)
+{
+	struct net_icmpv6_nd_opt_6co context;
+
+	context.type = NET_ICMPV6_ND_OPT_6CO;
+	context.len = len * 8 - 2;
+
+	frag = net_nbuf_read_u8(frag, offset, pos, &context.context_len);
+	frag = net_nbuf_read_u8(frag, *pos, pos, &context.flag);
+
+	/* Skip reserved bytes */
+	frag = net_nbuf_skip(frag, *pos, pos, 2);
+	frag = net_nbuf_read_be16(frag, *pos, pos, &context.lifetime);
+
+	/* RFC 6775, 4.2 (Length field). Length can be 2 or 3 depending
+	 * on the length of context prefix field.
+	 */
+	if (len == 3) {
+		frag = net_nbuf_read(frag, *pos, pos, sizeof(struct in6_addr),
+				     context.prefix.s6_addr);
+	} else if (len == 2) {
+		/* If length is 2 means only 64 bits of context prefix
+		 * is available, rest set to zeros.
+		 */
+		frag = net_nbuf_read(frag, *pos, pos, 8,
+				     context.prefix.s6_addr);
+		memset(context.prefix.s6_addr + 8, 0, 8);
+	}
+
+	if (!frag && *pos) {
+		return NULL;
+	}
+
+	net_6lo_set_context(net_nbuf_iface(buf), &context);
+
+	return frag;
+}
+#endif
+
 static enum net_verdict handle_ra_input(struct net_buf *buf)
 {
 	uint16_t total_len = net_buf_frags_len(buf);
@@ -1745,6 +1790,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			if (!frag && offset) {
 				goto drop;
 			}
+
 			break;
 		case NET_ICMPV6_ND_OPT_MTU:
 			/* MTU has reserved 2 bytes, so skip it. */
@@ -1760,6 +1806,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 				/* TODO: discard packet? */
 				NET_ERR("MTU %lu, max is %d", mtu, 0xffff);
 			}
+
 			break;
 		case NET_ICMPV6_ND_OPT_PREFIX_INFO:
 			frag = handle_ra_prefix(buf, frag, length, offset,
@@ -1767,7 +1814,24 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			if (!frag && offset) {
 				goto drop;
 			}
+
 			break;
+#if defined(CONFIG_NET_6LO_CONTEXT)
+		case NET_ICMPV6_ND_OPT_6CO:
+			/* RFC 6775, 4.2 (Length)*/
+			if (!(length == 2 || length == 3)) {
+				NET_ERR("Invalid 6CO length %d", length);
+				goto drop;
+			}
+
+			frag = handle_ra_6co(buf, frag, length, offset,
+					     &offset);
+			if (!frag && offset) {
+				goto drop;
+			}
+
+			break;
+#endif
 #if defined(CONFIG_NET_IPV6_RA_RDNSS)
 		case NET_ICMPV6_ND_OPT_RDNSS:
 			NET_DBG("RDNSS option skipped");
@@ -1779,6 +1843,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			if (!frag && offset) {
 				goto drop;
 			}
+
 			break;
 		}
 	}
@@ -1822,10 +1887,12 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	nano_delayed_work_cancel(&net_nbuf_iface(buf)->rs_timer);
 
 	net_nbuf_unref(buf);
+
 	return NET_OK;
 
 drop:
 	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
+
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV6_ND */

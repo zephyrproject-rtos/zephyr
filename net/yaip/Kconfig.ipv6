@@ -78,6 +78,22 @@ config NET_6LO
 	help
 	6lowpan compression and fragmentation.
 
+config NET_6LO_CONTEXT
+	bool "Enable 6lowpan context based compression"
+	default n
+	depends on NET_6LO
+	help
+	Enables 6lowpan context based compression based on information
+	received in RA(Router Advertisement) message.
+
+config NET_MAX_6LO_CONTEXTS
+	int "Number of supported 6CO (6lowpan contexts options)"
+	default 1 if NET_6LO_CONTEXT
+	range 1 16
+	help
+	6lowpan context options table size. The value depends on your
+	network and memory connsuption. More size occupies more memory.
+
 config NET_6LO_DEBUG
 	bool "Enable 6lowpan debug"
 	depends on NET_6LO && NET_LOG

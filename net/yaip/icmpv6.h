@@ -75,6 +75,16 @@ struct net_icmpv6_nd_opt_prefix_info {
 	struct in6_addr prefix;
 } __packed;
 
+struct net_icmpv6_nd_opt_6co {
+	uint8_t type;
+	uint8_t len;
+	uint8_t context_len;
+	uint8_t flag; /*res:3,c:1,cid:4 */
+	uint16_t reserved;
+	uint16_t lifetime;
+	struct in6_addr prefix;
+} __packed;
+
 #define NET_ICMPV6_NS_BUF(buf)						\
 	((struct net_icmpv6_ns_hdr *)(net_nbuf_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
@@ -105,6 +115,7 @@ struct net_icmpv6_nd_opt_prefix_info {
 #define NET_ICMPV6_ND_OPT_MTU         5
 #define NET_ICMPV6_ND_OPT_RDNSS       25
 #define NET_ICMPV6_ND_OPT_DNSSL       31
+#define NET_ICMPV6_ND_OPT_6CO         34
 
 #define NET_ICMPV6_OPT_TYPE_OFFSET   0
 #define NET_ICMPV6_OPT_LEN_OFFSET    1

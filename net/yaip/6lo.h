@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 #include <net/nbuf.h>
+#include "icmpv6.h"
 
 typedef bool (*fragment_handler_t)(struct net_buf *, int);
 
@@ -57,7 +58,18 @@ bool net_6lo_compress(struct net_buf *buf, bool iphc,
  *
  *  @return True on success, false otherwise
  */
-
 bool net_6lo_uncompress(struct net_buf *buf);
 
+/**
+ *  @brief Set 6lowpan context information
+ *
+ *  @details Set 6lowpan context information. This context information
+ *  will be used in IPv6 header compression and uncompression.
+ *
+ *  @return True on success, false otherwise
+ */
+#if defined(CONFIG_NET_6LO_CONTEXT)
+void net_6lo_set_context(struct net_if *iface,
+			 struct net_icmpv6_nd_opt_6co *context);
+#endif
 #endif /* __NET_6LO_H */
