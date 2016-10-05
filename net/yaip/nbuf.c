@@ -32,6 +32,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <misc/util.h>
+
 #include <net/net_ip.h>
 #include <net/buf.h>
 #include <net/nbuf.h>
@@ -932,38 +934,41 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
 	return first;
 }
 
-/* This helper routine will put single byte, if there is no place for
- * the byte in current fragment then create new fragment and add it to
- * the buffer. Every next byte retrieve last fragment and start placing it.
+/* This helper routine will write multiple bytes, if there is no place for
+ * the data in current fragment then create new fragment and add it to
+ * the buffer. It assumes that the buffer has at least one fragment.
  */
-static inline bool net_nbuf_write_byte(struct net_buf *buf, uint8_t value,
-				       struct net_buf **last)
+static inline bool net_nbuf_write_bytes(struct net_buf *buf, uint8_t *value,
+					uint16_t len)
 {
-	struct net_buf *frag = *last;
+	struct net_buf *frag = net_buf_frag_last(buf);
+	uint16_t ll_reserve = net_nbuf_ll_reserve(buf);
 
-	if (net_buf_tailroom(frag)) {
-		net_buf_add_u8(frag, value);
-		return true;
-	}
+	do {
+		uint16_t count = min(len, net_buf_tailroom(frag));
+		void *data = net_buf_add(frag, count);
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
-	if (!frag) {
-		return false;
-	}
+		memcpy(data, value, count);
+		len -= count;
+		value += count;
 
-	net_buf_frag_add(buf, frag);
-	net_buf_add_u8(frag, value);
+		if (len == 0) {
+			return true;
+		}
 
-	*last = frag;
+		frag = net_nbuf_get_reserve_data(ll_reserve);
+		if (!frag) {
+			return false;
+		}
 
-	return true;
+		net_buf_frag_add(buf, frag);
+	} while (1);
+
+	return false;
 }
 
 bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 {
-	uint16_t offset = 0;
-	struct net_buf *last;
-
 	if (!buf || !data) {
 		return false;
 	}
@@ -982,15 +987,7 @@ bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 			net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
 	}
 
-	last = net_buf_frag_last(buf);
-
-	while (len-- > 0) {
-		if (!net_nbuf_write_byte(buf, *(data + offset++), &last)) {
-			return false;
-		}
-	}
-
-	return true;
+	return net_nbuf_write_bytes(buf, data, len);
 }
 
 /* Helper routine to retrieve single byte from fragment and move
