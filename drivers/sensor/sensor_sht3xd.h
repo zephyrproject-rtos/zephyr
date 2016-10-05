@@ -115,6 +115,6 @@ int sht3xd_init_interrupt(struct device *dev);
 #endif
 
 #define SYS_LOG_DOMAIN "SHT3XD"
-#define SYS_LOG_LEVEL CONFIG_SHT3XD_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* _SENSOR_SHT3XD_ */

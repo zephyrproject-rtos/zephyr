@@ -23,7 +23,7 @@
 #include <misc/__assert.h>
 
 #define SYS_LOG_DOMAIN "TMP112"
-#define SYS_LOG_LEVEL CONFIG_TMP112_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 
 #define TMP112_I2C_ADDRESS		CONFIG_TMP112_I2C_ADDR

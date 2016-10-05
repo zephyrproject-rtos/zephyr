@@ -20,7 +20,7 @@
 #include <device.h>
 
 #define SYS_LOG_DOMAIN "DHT"
-#define SYS_LOG_LEVEL CONFIG_DHT_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 
 #define DHT_START_SIGNAL_DURATION		18000

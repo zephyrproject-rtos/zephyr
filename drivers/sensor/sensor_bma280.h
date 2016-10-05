@@ -166,6 +166,6 @@ int bma280_init_interrupt(struct device *dev);
 #endif
 
 #define SYS_LOG_DOMAIN "BMA280"
-#define SYS_LOG_LEVEL CONFIG_BMA280_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* __SENSOR_BMA280_H__ */

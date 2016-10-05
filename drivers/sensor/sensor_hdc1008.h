@@ -36,6 +36,6 @@ struct hdc1008_data {
 };
 
 #define SYS_LOG_DOMAIN "HDC1008"
-#define SYS_LOG_LEVEL CONFIG_HDC1008_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif

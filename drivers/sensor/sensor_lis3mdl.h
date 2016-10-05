@@ -24,7 +24,7 @@
 #include <misc/nano_work.h>
 
 #define SYS_LOG_DOMAIN "LIS3MDL"
-#define SYS_LOG_LEVEL CONFIG_LIS3MDL_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 
 #define LIS3MDL_I2C_ADDR_BASE		0x1C

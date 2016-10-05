@@ -24,7 +24,7 @@
 #include <misc/nano_work.h>
 
 #define SYS_LOG_DOMAIN "HTS221"
-#define SYS_LOG_LEVEL CONFIG_HTS221_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 
 #define HTS221_I2C_ADDR			0x5F

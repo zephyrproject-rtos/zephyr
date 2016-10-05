@@ -239,6 +239,6 @@ int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
 			const struct sensor_value *val);
 
 #define SYS_LOG_DOMAIN "BMG160"
-#define SYS_LOG_LEVEL CONFIG_BMG160_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* _BMG160_H_ */

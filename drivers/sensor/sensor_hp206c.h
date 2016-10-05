@@ -94,6 +94,6 @@ struct hp206c_device_data {
 };
 
 #define SYS_LOG_DOMAIN "HP206C"
-#define SYS_LOG_LEVEL CONFIG_HP206C_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* _SENSOR_HP206C_H_ */

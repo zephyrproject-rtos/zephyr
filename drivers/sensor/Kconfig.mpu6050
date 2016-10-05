@@ -24,25 +24,6 @@ menuconfig MPU6050
 	help
 	  Enable driver for MPU6050 I2C-based six-axis motion tracking device.
 
-config MPU6050_SYS_LOG_LEVEL
-	int "MPU6050 Log level"
-	depends on SYS_LOG && MPU6050
-	default 0
-	range 0 4
-	help
-	Sets log level for MPU6050 driver.
-	Levels are:
-
-	- 0 OFF: do not write
-
-	- 1 ERROR: only write SYS_LOG_ERR
-
-	- 2 WARNING: write SYS_LOG_WRN in addition to previous level
-
-	- 3 INFO: write SYS_LOG_INF in addition to previous levels
-
-	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
-
 config MPU6050_NAME
 	string
 	prompt "Driver name"

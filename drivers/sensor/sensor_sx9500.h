@@ -73,6 +73,6 @@ static inline int sx9500_setup_interrupt(struct device *dev)
 #endif
 
 #define SYS_LOG_DOMAIN "SX9500"
-#define SYS_LOG_LEVEL CONFIG_SX9500_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* __SENSOR_SX9500_H__ */

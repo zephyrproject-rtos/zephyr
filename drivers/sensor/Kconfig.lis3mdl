@@ -22,25 +22,6 @@ menuconfig LIS3MDL
 	help
 	  Enable driver for LIS3MDL I2C-based magnetometer.
 
-config LIS3MDL_SYS_LOG_LEVEL
-	int "LIS3MDL Log level"
-	depends on SYS_LOG && LIS3MDL
-	default 0
-	range 0 4
-	help
-	Sets log level for LIS3MDL driver.
-	Levels are:
-
-	- 0 OFF: do not write
-
-	- 1 ERROR: only write SYS_LOG_ERR
-
-	- 2 WARNING: write SYS_LOG_WRN in addition to previous level
-
-	- 3 INFO: write SYS_LOG_INF in addition to previous levels
-
-	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
-
 config LIS3MDL_NAME
 	string
 	prompt "Driver name"

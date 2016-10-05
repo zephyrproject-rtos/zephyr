@@ -125,6 +125,6 @@ int lis3dh_init_interrupt(struct device *dev);
 #endif
 
 #define SYS_LOG_DOMAIN "LIS3DH"
-#define SYS_LOG_LEVEL CONFIG_LIS3DH_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* __SENSOR_LIS3DH__ */

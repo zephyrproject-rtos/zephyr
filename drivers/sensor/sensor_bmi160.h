@@ -496,6 +496,6 @@ int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
 int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
 
 #define SYS_LOG_DOMAIN "BMI160"
-#define SYS_LOG_LEVEL CONFIG_BMI160_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* _BMI160_H_ */

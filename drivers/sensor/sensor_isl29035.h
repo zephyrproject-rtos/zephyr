@@ -157,6 +157,6 @@ int isl29035_init_interrupt(struct device *dev);
 #endif
 
 #define SYS_LOG_DOMAIN "ISL29035"
-#define SYS_LOG_LEVEL CONFIG_ISL29035_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* _SENSOR_ISL29035_H_ */

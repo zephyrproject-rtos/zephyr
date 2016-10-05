@@ -98,6 +98,6 @@ static void mcp9808_setup_interrupt(struct device *dev)
 #endif /* CONFIG_MCP9808_TRIGGER */
 
 #define SYS_LOG_DOMAIN "MCP9808"
-#define SYS_LOG_LEVEL CONFIG_MCP9808_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* __SENSOR_MCP9808_H__ */
