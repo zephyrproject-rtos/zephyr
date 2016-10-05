@@ -602,6 +602,22 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 	return NULL;
 }
 
+int net_route_foreach(net_route_cb_t cb, void *user_data)
+{
+	int i, ret = 0;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+		struct net_route_entry *route = net_route_data(nbr);
+
+		cb(route, user_data);
+
+		ret++;
+	}
+
+	return ret;
+}
+
 #if defined(CONFIG_NET_ROUTE_MCAST)
 /*
  * This array contains multicast routing entries.

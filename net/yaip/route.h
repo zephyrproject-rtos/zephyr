@@ -157,6 +157,20 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *entry);
  */
 struct net_nbr *net_route_get_nbr(struct net_route_entry *route);
 
+typedef void (*net_route_cb_t)(struct net_route_entry *entry,
+			       void *user_data);
+
+/**
+ * @brief Go through all the routing entries and call callback
+ * for each entry that is in use.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ *
+ * @return Total number of routing entries found.
+ */
+int net_route_foreach(net_route_cb_t cb, void *user_data);
+
 void net_route_init(void);
 
 #if defined(CONFIG_NET_ROUTE_MCAST)
