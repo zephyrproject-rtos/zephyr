@@ -71,6 +71,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	case NET_ETH_PTYPE_IPV6:
 		net_nbuf_set_family(buf, AF_INET6);
 		break;
+	default:
+		return NET_DROP;
 	}
 
 	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
