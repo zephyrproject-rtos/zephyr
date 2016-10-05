@@ -156,6 +156,11 @@ static const struct in_addr zero_addr = { { { 0, 0, 0, 0 } } };
 #define DISCOVER	1
 #define REQUEST		3
 
+struct dhcp_msg {
+	uint32_t xid;
+	uint8_t type;
+};
+
 static void test_result(bool pass)
 {
 	if (pass) {
@@ -265,10 +270,11 @@ static void set_udp_header(struct net_buf *buf)
 	udp->chksum = 0;
 }
 
-struct net_buf *prepare_dhcp_offer(struct net_if *iface)
+struct net_buf *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 {
 	struct net_buf *buf, *frag;
-	int bytes, remaining = sizeof(offer), pos = 0, offset;
+	int bytes, remaining = sizeof(offer), pos = 0;
+	uint16_t offset;
 
 	buf = net_nbuf_get_reserve_rx(0);
 	if (!buf) {
@@ -321,6 +327,11 @@ struct net_buf *prepare_dhcp_offer(struct net_if *iface)
 		}
 	}
 
+	/* Now fixup the expect XID */
+	frag = net_nbuf_write_be32(buf, buf->frags,
+				   (sizeof(struct net_ipv4_hdr) +
+				    sizeof(struct net_udp_hdr)) + 4,
+				   &offset, xid);
 	return buf;
 
 fail:
@@ -328,10 +339,11 @@ fail:
 	return NULL;
 }
 
-struct net_buf *prepare_dhcp_ack(struct net_if *iface)
+struct net_buf *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 {
 	struct net_buf *buf, *frag;
-	int bytes, remaining = sizeof(ack), pos = 0, offset;
+	int bytes, remaining = sizeof(ack), pos = 0;
+	uint16_t offset;
 
 	buf = net_nbuf_get_reserve_rx(0);
 	if (!buf) {
@@ -384,6 +396,11 @@ struct net_buf *prepare_dhcp_ack(struct net_if *iface)
 		}
 	}
 
+	/* Now fixup the expect XID */
+	frag = net_nbuf_write_be32(buf, buf->frags,
+				   (sizeof(struct net_ipv4_hdr) +
+				    sizeof(struct net_udp_hdr)) + 4,
+				   &offset, xid);
 	return buf;
 
 fail:
@@ -391,71 +408,28 @@ fail:
 	return NULL;
 }
 
-static struct net_buf *skip_nbytes(struct net_buf *buf, uint8_t offset,
-						uint8_t *pos, uint16_t nbytes)
-{
-	struct net_buf *frag;
-	uint8_t left;
-
-	left = buf->len - offset;
-	if (nbytes == left) {
-		*pos = 0;
-
-		return buf->frags;
-	} else if (nbytes < left) {
-		*pos = offset + nbytes;
-
-		return buf;
-	}
-
-	nbytes -= left;
-	frag = buf->frags;
-
-	while (frag) {
-		if (nbytes == frag->len) {
-			*pos = 0;
-
-			return frag->frags;
-		} else if (nbytes < frag->len) {
-			*pos = nbytes;
-
-			return frag;
-		}
-
-		nbytes -= frag->len;
-		frag = frag->frags;
-	}
-
-	return NULL;
-}
-
-static struct net_buf *get_byte(struct net_buf *buf, uint8_t offset,
-						uint8_t *pos, uint8_t *value)
-{
-	*value = buf->data[offset];
-	*pos = offset + 1;
-
-	if (*pos > buf->len) {
-		*pos = 0;
-
-		return buf->frags;
-	}
-
-	return buf;
-}
-
-static uint8_t get_dhcp_message_type(struct net_buf *buf)
+static int parse_dhcp_message(struct net_buf *buf, struct dhcp_msg *msg)
 {
 	struct net_buf *frag = buf->frags;
-	uint8_t msg_type;
-	uint8_t offset;
 	uint8_t type;
+	uint16_t offset;
 
-	/* size of op, htype ... cookie */
-	frag = skip_nbytes(frag, 0, &offset,
+	frag = net_nbuf_skip(frag, 0, &offset,
+			   /* size of op, htype, hlen, hops */
 			   (sizeof(struct net_ipv4_hdr) +
-			    sizeof(struct net_udp_hdr) +
-			    (44 + 64 + 128 + 4)));
+			    sizeof(struct net_udp_hdr)) + 4);
+	if (!frag) {
+		return 0;
+	}
+
+	frag = net_nbuf_read_be32(frag, offset, &offset, &msg->xid);
+	if (!frag) {
+		return 0;
+	}
+
+	frag = net_nbuf_skip(frag, offset, &offset,
+			   /* size of op, htype ... cookie */
+			   (36 + 64 + 128 + 4));
 	if (!frag) {
 		return 0;
 	}
@@ -463,28 +437,29 @@ static uint8_t get_dhcp_message_type(struct net_buf *buf)
 	while (frag) {
 		uint8_t length;
 
-		frag = get_byte(frag, offset, &offset, &type);
+		frag = net_nbuf_read_u8(frag, offset, &offset, &type);
 		if (!frag) {
 			return 0;
 		}
 
 		if (type == MSG_TYPE) {
-			frag = skip_nbytes(frag, offset, &offset, 1);
+			frag = net_nbuf_skip(frag, offset, &offset, 1);
 			if (!frag) {
 				return 0;
 			}
 
-			frag = get_byte(frag, offset, &offset, &msg_type);
+			frag = net_nbuf_read_u8(frag, offset, &offset,
+						&msg->type);
 			if (!frag) {
 				return 0;
 			}
 
-			return msg_type;
+			return 1;
 		}
 
-		frag = get_byte(frag, offset, &offset, &length);
+		frag = net_nbuf_read_u8(frag, offset, &offset, &length);
 		if (frag) {
-			frag = skip_nbytes(frag, offset, &offset, length);
+			frag = net_nbuf_skip(frag, offset, &offset, length);
 			if (!frag) {
 				return 0;
 			}
@@ -497,7 +472,9 @@ static uint8_t get_dhcp_message_type(struct net_buf *buf)
 static int tester_send(struct net_if *iface, struct net_buf *buf)
 {
 	struct net_buf *rbuf;
-	uint8_t type;
+	struct dhcp_msg msg;
+
+	memset(&msg, 0, sizeof(msg));
 
 	if (!buf->frags) {
 		TC_PRINT("No data to send!\n");
@@ -505,18 +482,18 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		return -ENODATA;
 	}
 
-	type = get_dhcp_message_type(buf);
+	parse_dhcp_message(buf, &msg);
 	net_nbuf_unref(buf);
 
-	if (type == DISCOVER) {
+	if (msg.type == DISCOVER) {
 		/* Reply with DHCPv4 offer message */
-		rbuf = prepare_dhcp_offer(iface);
+		rbuf = prepare_dhcp_offer(iface, msg.xid);
 		if (!rbuf) {
 			return -EINVAL;
 		}
-	} else if (type == REQUEST) {
+	} else if (msg.type == REQUEST) {
 		/* Reply with DHCPv4 ACK message */
-		rbuf = prepare_dhcp_ack(iface);
+		rbuf = prepare_dhcp_ack(iface, msg.xid);
 		if (!rbuf) {
 			return -EINVAL;
 		}

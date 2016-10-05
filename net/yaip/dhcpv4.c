@@ -39,7 +39,7 @@ struct dhcp_msg {
 	uint8_t hops;		/* used by relay agents when booting via relay
 				 * agent, client sets zero
 				 */
-	uint8_t xid[4];		/* Transaction ID, random number */
+	uint32_t xid;		/* Transaction ID, random number */
 	uint16_t secs;		/* Seconds elapsed since client began address
 				 * acqusition or renewal process
 				 */
@@ -325,7 +325,7 @@ static struct net_buf *prepare_message(struct net_if *iface, uint8_t type)
 	msg->htype = HARDWARE_ETHERNET_TYPE;
 	msg->hlen = HARDWARE_ETHERNET_LEN;
 
-	msg->xid[0] = htonl(iface->dhcpv4.xid);
+	msg->xid = htonl(iface->dhcpv4.xid);
 	msg->flags = htons(DHCPV4_MSG_BROADCAST);
 
 	if (iface->dhcpv4.state == NET_DHCPV4_INIT) {
@@ -400,7 +400,7 @@ static void send_discover(struct net_if *iface)
 {
 	struct net_buf *buf;
 
-	/*iface->dhcpv4.xid++; FIXME handle properly */
+	iface->dhcpv4.xid++;
 
 	buf = prepare_message(iface, DHCPV4_MSG_TYPE_DISCOVER);
 	if (!buf) {
@@ -700,7 +700,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	msg = (struct dhcp_msg *)(frag->data + NET_IPV4UDPH_LEN);
 
 	if (!(msg->op == DHCPV4_MSG_BOOT_REPLY &&
-	      iface->dhcpv4.xid == ntohl(msg->xid[0]) &&
+	      iface->dhcpv4.xid == ntohl(msg->xid) &&
 	      !memcmp(msg->chaddr, iface->link_addr.addr,
 		      iface->link_addr.len))) {
 
@@ -740,6 +740,12 @@ void net_dhcpv4_start(struct net_if *iface)
 	iface->dhcpv4.attempts = 0;
 	iface->dhcpv4.lease_time = 0;
 	iface->dhcpv4.renewal_time = 0;
+	/* A DHCP client MUST choose xid's in such a way as to
+	 * minimize the change of using and xid identical to one used
+	 * by another client.  Choose a random xid st startup and
+	 * increment it on each new request.
+	 */
+	iface->dhcpv4.xid = sys_rand32_get();
 
 	/*
 	 * Register UDP input callback on
