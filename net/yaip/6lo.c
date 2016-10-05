@@ -100,6 +100,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	uint8_t offset = 0;
 	struct net_udp_hdr *udp;
 	struct net_buf *frag;
+	struct net_buf *temp;
 	uint8_t compressed;
 	uint8_t tcl;
 	uint8_t tmp;
@@ -434,8 +435,12 @@ end:
 		       net_nbuf_ll(buf), net_nbuf_ll_reserve(buf));
 	}
 
-	/* delete the uncompressed(original) fragment */
-	net_buf_frag_del(buf, buf->frags);
+	/* Delete uncompressed(original) header fragment */
+	temp = buf->frags;
+	net_buf_frag_del(buf, temp);
+	net_nbuf_unref(temp);
+
+	/* Insert compressed header fragment */
 	net_buf_frag_insert(buf, frag);
 
 	/* compact the fragments, so that gaps will be filled */
