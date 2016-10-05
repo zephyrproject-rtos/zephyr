@@ -247,6 +247,7 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 		if (!next->frags) {
 			if (next->len == NET_6LO_FRAGN_HDR_LEN) {
 				net_buf_frag_del(frag, next);
+				net_nbuf_unref(next);
 			} else {
 				set_up_frag_hdr(next, size, offset >> 3);
 			}
