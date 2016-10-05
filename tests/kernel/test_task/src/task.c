@@ -31,8 +31,8 @@ This module tests the following task APIs:
 
 #include <util_test_common.h>
 
-#define  RT_PRIO         10     /* RegressionTask prio - must match prj.mdef */
-#define  HT_PRIO         20     /* HelperTask prio - must match prj.mdef */
+#define  RT_PRIO         5      /* RegressionTask prio - must match prj.mdef */
+#define  HT_PRIO         10     /* HelperTask prio - must match prj.mdef */
 
 #define  SLEEP_TIME SECONDS(1)
 
@@ -52,13 +52,8 @@ static int helperData;
 static volatile int is_main_task_ready = 0;
 
 #ifdef TEST_PRIV_TASKS
-/* Note this is in reverse order of what is defined under
- * test_task/prj.mdef. This is due to compiler filling linker
- * section like a stack. This is to preserve the same order
- * in memory as test_task.
- */
-DEFINE_TASK(RT_TASKID, 10, RegressionTask, 2048, EXE);
-DEFINE_TASK(HT_TASKID, 20, HelperTask, 2048, EXE);
+DEFINE_TASK(HT_TASKID, HT_PRIO, HelperTask, 2048, NULL);
+DEFINE_TASK(RT_TASKID, RT_PRIO, RegressionTask, 2048, EXE);
 #endif
 
 /**
@@ -75,7 +70,7 @@ void isr_task_command_handler(void *data)
 
 	switch (pInfo->cmd) {
 	case CMD_TASKID:
-		value = isr_task_id_get();
+		value = (int)isr_task_id_get();
 		break;
 
 	case CMD_PRIORITY:
@@ -93,13 +88,13 @@ void isr_task_command_handler(void *data)
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int isrAPIsTest(int taskId, int taskPrio)
+int isrAPIsTest(ktask_t taskId, kpriority_t taskPrio)
 {
 	isrInfo.cmd = CMD_TASKID;
 	irq_offload(isr_task_command_handler, &isrInfo);
-	if (isrInfo.data != taskId) {
+	if (isrInfo.data != (int)taskId) {
 		TC_ERROR("isr_task_id_get() returned %d, not %d\n",
-				 isrInfo.data, taskId);
+				 isrInfo.data, (int)taskId);
 		return TC_FAIL;
 	}
 
@@ -121,21 +116,22 @@ int isrAPIsTest(int taskId, int taskPrio)
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int taskMacrosTest(int taskId, int taskPrio)
+int taskMacrosTest(ktask_t taskId, int taskPrio)
 {
-	int  value;
+	ktask_t taskIdValue;
+	kpriority_t taskPrioValue;
 
-	value = task_id_get();
-	if (value != taskId) {
+	taskIdValue = task_id_get();
+	if (taskIdValue != taskId) {
 		TC_ERROR("task_id_get() returned 0x%x, not 0x%x\n",
-				 value, taskId);
+				 (uint32_t)taskIdValue, (uint32_t)taskId);
 		return TC_FAIL;
 	}
 
-	value = task_priority_get();
-	if (value != taskPrio) {
+	taskPrioValue = task_priority_get();
+	if (taskPrioValue != taskPrio) {
 		TC_ERROR("task_priority_get() returned %d, not %d\n",
-				 value, taskPrio);
+				 taskPrioValue, taskPrio);
 		return TC_FAIL;
 	}
 
@@ -176,20 +172,20 @@ int taskSetPrioTest(void)
 	int  rv;
 
 	/* Lower the priority of the current task (RegressionTask) */
-	task_priority_set(RT_TASKID, RT_PRIO + 5);
+	task_priority_set(RT_TASKID, RT_PRIO + 2);
 	rv = task_priority_get();
-	if (rv != RT_PRIO + 5) {
+	if (rv != RT_PRIO + 2) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-				 RT_PRIO + 5, rv);
+				 RT_PRIO + 2, rv);
 		return TC_FAIL;
 	}
 
 	/* Raise the priority of the current task (RegressionTask) */
-	task_priority_set(RT_TASKID, RT_PRIO - 5);
+	task_priority_set(RT_TASKID, RT_PRIO - 2);
 	rv = task_priority_get();
-	if (rv != RT_PRIO - 5) {
+	if (rv != RT_PRIO - 2) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-				 RT_PRIO - 5, rv);
+				 RT_PRIO - 2, rv);
 		return TC_FAIL;
 	}
 
@@ -205,22 +201,22 @@ int taskSetPrioTest(void)
 
 
 	/* Lower the priority of the helper task (HelperTask) */
-	task_priority_set(HT_TASKID, HT_PRIO + 5);
+	task_priority_set(HT_TASKID, HT_PRIO + 2);
 	task_sem_give(HT_SEM);
 	task_sem_take(RT_SEM, TICKS_UNLIMITED);
-	if (helperData != HT_PRIO + 5) {
+	if (helperData != HT_PRIO + 2) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-				 HT_PRIO + 5, helperData);
+				 HT_PRIO + 2, helperData);
 		return TC_FAIL;
 	}
 
 	/* Raise the priority of the helper task (HelperTask) */
-	task_priority_set(HT_TASKID, HT_PRIO - 5);
+	task_priority_set(HT_TASKID, HT_PRIO - 2);
 	task_sem_give(HT_SEM);
 	task_sem_take(RT_SEM, TICKS_UNLIMITED);
-	if (helperData != HT_PRIO - 5) {
+	if (helperData != HT_PRIO - 2) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-				 HT_PRIO - 5, helperData);
+				 HT_PRIO - 2, helperData);
 		return TC_FAIL;
 	}
 
