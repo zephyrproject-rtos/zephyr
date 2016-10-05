@@ -32,6 +32,11 @@
 #include <misc/__assert.h>
 #include "exti_stm32.h"
 
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+#define EXTI_LINES 19
+#elif CONFIG_SOC_SERIES_STM32F4X
+#define EXTI_LINES 23
+#endif
 
 /* 10.3.7 EXTI register map */
 struct stm32_exti {
@@ -55,26 +60,33 @@ struct __exti_cb {
 	void *data;
 };
 
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-#define EXTI_LINES 19
-#elif CONFIG_SOC_SERIES_STM32F4X
-#define EXTI_LINES 23
-#endif
-
 /* driver data */
 struct stm32_exti_data {
 	/* per-line callbacks */
 	struct __exti_cb cb[EXTI_LINES];
 };
 
-static inline struct stm32_exti *get_exti_base_addr(int line)
+/*
+ * return the proper base addr based on the line number, also we adjust
+ * the line number to be relative to the base, we do this here to save
+ * a bit of code size
+ */
+static inline struct stm32_exti *get_exti_addr_adjust_line(int *line)
 {
-	return (struct stm32_exti *)EXTI_BASE;
+	struct stm32_exti *base = (struct stm32_exti *)EXTI_BASE;
+
+#if EXTI_LINES > 32
+	if (*line > 31) {
+		*line -= 32;
+		return base + 1;
+	}
+#endif
+	return base;
 }
 
 void stm32_exti_enable(int line)
 {
-	volatile struct stm32_exti *exti = get_exti_base_addr(line);
+	volatile struct stm32_exti *exti = get_exti_addr_adjust_line(&line);
 	int irqnum = 0;
 
 	exti->imr |= 1 << line;
@@ -124,7 +136,7 @@ void stm32_exti_enable(int line)
 
 void stm32_exti_disable(int line)
 {
-	volatile struct stm32_exti *exti = get_exti_base_addr(line);
+	volatile struct stm32_exti *exti = get_exti_addr_adjust_line(&line);
 
 	exti->imr &= ~(1 << line);
 }
@@ -136,7 +148,7 @@ void stm32_exti_disable(int line)
  */
 static inline int stm32_exti_is_pending(int line)
 {
-	volatile struct stm32_exti *exti = get_exti_base_addr(line);
+	volatile struct stm32_exti *exti = get_exti_addr_adjust_line(&line);
 
 	return (exti->pr & (1 << line)) ? 1 : 0;
 }
@@ -148,14 +160,14 @@ static inline int stm32_exti_is_pending(int line)
  */
 static inline void stm32_exti_clear_pending(int line)
 {
-	volatile struct stm32_exti *exti = get_exti_base_addr(line);
+	volatile struct stm32_exti *exti = get_exti_addr_adjust_line(&line);
 
 	exti->pr = 1 << line;
 }
 
 void stm32_exti_trigger(int line, int trigger)
 {
-	volatile struct stm32_exti *exti = get_exti_base_addr(line);
+	volatile struct stm32_exti *exti = get_exti_addr_adjust_line(&line);
 
 	if (trigger & STM32_EXTI_TRIG_RISING) {
 		exti->rtsr |= 1 << line;
