@@ -66,6 +66,9 @@
 #define src_sam10 \
 		{ { { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 		      0x00, 0x00, 0x00, 0xff, 0xfe, 0x00, 0x00, 0xbb } } }
+#define src_sam11 \
+		{ { { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb } } }
 
 #define dst_m1_dam00 \
 		{ { { 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
@@ -94,7 +97,66 @@
 #define dst_dam10 \
 		{ { { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 		      0x00, 0x00, 0x00, 0xff, 0xfe, 0x00, 0x00, 0xbb } } }
+#define dst_dam11 \
+		{ { { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa } } }
 
+uint8_t src_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb };
+uint8_t dst_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa };
+
+/* Source and Destination addresses are contect related addresses. */
+#if defined(CONFIG_NET_6LO_CONTEXT)
+/* CONFIG_NET_MAX_6LO_CONTEXTS=2, defined in prj_x86.conf, If you want
+ * to increase this value, then add extra contexts here.
+ */
+#define ctx1_prefix \
+		{ { { 0xaa, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } } }
+
+/* 6CO contexts */
+static struct net_icmpv6_nd_opt_6co ctx1 = {
+	.type = 0x22,
+	.len = 0x03,
+	.context_len = 0x80,
+	.flag = 0x11,
+	.reserved = 0,
+	.lifetime = 0x1234,
+	.prefix = ctx1_prefix
+};
+
+#define ctx2_prefix \
+		{ { { 0xcc, 0xdd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } } }
+
+static struct net_icmpv6_nd_opt_6co ctx2 = {
+	.type = 0x22,
+	.len = 0x03,
+	.context_len = 0x80,
+	.flag = 0x12,
+	.reserved = 0,
+	.lifetime = 0x1234,
+	.prefix = ctx2_prefix
+};
+
+#define src_sac1_sam01 \
+		{ { { 0xaa, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa } } }
+#define dst_dac1_dam01 \
+		{ { { 0xaa, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa } } }
+#define src_sac1_sam10 \
+		{ { { 0xcc, 0xdd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0xff, 0xfe, 0x00, 0x00, 0xbb } } }
+#define dst_dac1_dam10 \
+		{ { { 0xcc, 0xdd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0xff, 0xfe, 0x00, 0x00, 0xbb } } }
+#define src_sac1_sam11 \
+		{ { { 0xaa, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb } } }
+#define dst_dac1_dam11 \
+		{ { { 0xcc, 0xdd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa } } }
+#endif
 
 /* UDP Ports */
 /* 4 bit compressible udp ports */
@@ -143,9 +205,7 @@ int net_6lo_dev_init(struct device *dev)
 
 static void net_6lo_iface_init(struct net_if *iface)
 {
-	uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb};
-
-	net_if_set_link_addr(iface, mac, 8);
+	net_if_set_link_addr(iface, src_mac, 8);
 }
 
 static int tester_send(struct net_if *iface, struct net_buf *buf)
@@ -265,6 +325,12 @@ static struct net_buf *create_buf(struct net_6lo_data *data)
 
 	net_nbuf_set_iface(buf, net_if_get_default());
 	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
+
+	net_nbuf_ll_src(buf)->addr = src_mac;
+	net_nbuf_ll_src(buf)->len = 8;
+
+	net_nbuf_ll_dst(buf)->addr = dst_mac;
+	net_nbuf_ll_dst(buf)->len = 8;
 
 	frag = net_nbuf_get_reserve_data(0);
 	if (!frag) {
@@ -553,6 +619,193 @@ static struct net_6lo_data test_data_12 = {
 	.iphc = false
 };
 
+static struct net_6lo_data test_data_13 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x21,
+	.ipv6.flow = 0x3412,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sam11,
+	.ipv6.dst = dst_dam11,
+	.nh.udp.src_port = htons(udp_src_port_8bit),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit_y),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+
+#if defined(CONFIG_NET_6LO_CONTEXT)
+static struct net_6lo_data test_data_14 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x20,
+	.ipv6.flow = 0x3412,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam01,
+	.ipv6.dst = dst_dac1_dam01,
+	.nh.udp.src_port = htons(udp_src_port_8bit_y),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = false,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_15 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x21,
+	.ipv6.flow = 0x3412,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam10,
+	.ipv6.dst = dst_dac1_dam10,
+	.nh.udp.src_port = htons(udp_src_port_8bit),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit_y),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_16 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x21,
+	.ipv6.flow = 0x3412,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam11,
+	.ipv6.dst = dst_dac1_dam11,
+	.nh.udp.src_port = htons(udp_src_port_8bit),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit_y),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_17 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x20,
+	.ipv6.flow = 0x3412,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sam01,
+	.ipv6.dst = dst_dac1_dam01,
+	.nh.udp.src_port = htons(udp_src_port_8bit_y),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = false,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_18 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x20,
+	.ipv6.flow = 0x3412,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam01,
+	.ipv6.dst = dst_dam01,
+	.nh.udp.src_port = htons(udp_src_port_8bit_y),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = false,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_19 = {
+	.ipv6.vtc = 0x61,
+	.ipv6.tcflow = 0x23,
+	.ipv6.flow = 0x4567,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam01,
+	.ipv6.dst = dst_m1_dam00,
+	.nh.udp.src_port = htons(udp_src_port_16bit),
+	.nh.udp.dst_port = htons(udp_dst_port_16bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+static struct net_6lo_data test_data_20 = {
+	.ipv6.vtc = 0x61,
+	.ipv6.tcflow = 0x23,
+	.ipv6.flow = 0x4567,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam01,
+	.ipv6.dst = dst_m1_dam01,
+	.nh.udp.src_port = htons(udp_src_port_16bit),
+	.nh.udp.dst_port = htons(udp_dst_port_16bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_21 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x0,
+	.ipv6.flow = 0x0,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam10,
+	.ipv6.dst = dst_m1_dam10,
+	.nh.udp.src_port = htons(udp_src_port_8bit),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_22 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x0,
+	.ipv6.flow = 0x0,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = 0,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam11,
+	.ipv6.dst = dst_m1_dam10,
+	.nh_udp = false,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+#endif
+
 static int test_6lo(struct net_6lo_data *data)
 {
 	struct net_buf *buf;
@@ -621,11 +874,28 @@ static const struct {
 	{ "test_6lo_ipv6_dispatch_big", &test_data_10},
 	{ "test_6lo_ipv6_dispatch_big_no_udp", &test_data_11},
 	{ "test_6lo_ipv6_dispatch_big_iphc", &test_data_12},
+	{ "test_6lo_sam11_dam11", &test_data_13},
+#if defined(CONFIG_NET_6LO_CONTEXT)
+	{ "test_6lo_sac1_sam01_dac1_dam01", &test_data_14},
+	{ "test_6lo_sac1_sam10_dac1_dam10", &test_data_15},
+	{ "test_6lo_sac1_sam11_dac1_dam11", &test_data_16},
+	{ "test_6lo_sac0_sam01_dac1_dam01", &test_data_17},
+	{ "test_6lo_sac1_sam01_dac0_dam01", &test_data_18},
+	{ "test_6lo_sac1_sam01_m1_dam00", &test_data_19},
+	{ "test_6lo_sac1_sam01_m1_dam01", &test_data_20},
+	{ "test_6lo_sac1_sam10_m1_dam10", &test_data_21},
+	{ "test_6lo_sac1_sam11_m1_dam10", &test_data_22},
+#endif
 };
 
 static void main_fiber(void)
 {
 	int count, pass;
+
+#if defined(CONFIG_NET_6LO_CONTEXT)
+	net_6lo_set_context(net_if_get_default(), &ctx1);
+	net_6lo_set_context(net_if_get_default(), &ctx2);
+#endif
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		TC_START(tests[count].name);
@@ -637,6 +907,8 @@ static void main_fiber(void)
 			pass++;
 		}
 	}
+
+	net_nbuf_print();
 
 	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
 }
