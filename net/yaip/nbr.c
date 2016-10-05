@@ -97,30 +97,50 @@ struct net_nbr *net_nbr_get(struct net_nbr_table *table)
 int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
 		 struct net_linkaddr *lladdr)
 {
-	int i;
+	int i, avail = -1;
 
 	if (nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		return -EALREADY;
 	}
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		if (net_neighbor_lladdr[i].ref) {
-			continue;
+		if (avail < 0 && !net_neighbor_lladdr[i].ref) {
+			avail = i;
 		}
 
-		net_neighbor_lladdr[i].ref++;
-		nbr->idx = i;
+		if (net_neighbor_lladdr[i].ref &&
+		    !memcmp(lladdr->addr,
+			    net_neighbor_lladdr[i].lladdr.addr,
+			    lladdr->len)) {
+			/* We found same lladdr in nbr cache so just
+			 * increase the ref count.
+			 */
+			net_neighbor_lladdr[i].ref++;
 
-		memcpy(net_neighbor_lladdr[i].lladdr.addr,
-		       lladdr->addr, lladdr->len);
-		net_neighbor_lladdr[i].lladdr.len = lladdr->len;
+			nbr->idx = i;
+			nbr->iface = iface;
 
-		nbr->iface = iface;
-
-		return 0;
+			return 0;
+		}
 	}
 
-	return -ENOENT;
+	if (avail < 0) {
+		return -ENOENT;
+	}
+
+	/* There was no existing entry in the lladdr cache,
+	 * so allocate one for this lladdr.
+	 */
+	net_neighbor_lladdr[avail].ref++;
+	nbr->idx = avail;
+
+	memcpy(net_neighbor_lladdr[avail].lladdr.addr,
+	       lladdr->addr, lladdr->len);
+	net_neighbor_lladdr[avail].lladdr.len = lladdr->len;
+
+	nbr->iface = iface;
+
+	return 0;
 }
 
 int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr)
