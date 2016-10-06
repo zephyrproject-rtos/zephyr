@@ -22,7 +22,7 @@
 #include <misc/util.h>
 
 #define DEV_CFG(dev) \
-	((struct i2c_ksdk_config * const)(dev)->config->config_info)
+	((const struct i2c_ksdk_config * const)(dev)->config->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_ksdk_data * const)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -44,7 +44,7 @@ struct i2c_ksdk_data {
 static int i2c_ksdk_configure(struct device *dev, uint32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_ksdk_config *config = DEV_CFG(dev);
+	const struct i2c_ksdk_config *config = DEV_CFG(dev);
 	union dev_config dev_config = (union dev_config)dev_config_raw;
 	uint32_t clock_freq;
 	uint32_t baudrate;
@@ -164,7 +164,7 @@ static void i2c_ksdk_isr(void *arg)
 static int i2c_ksdk_init(struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_ksdk_config *config = DEV_CFG(dev);
+	const struct i2c_ksdk_config *config = DEV_CFG(dev);
 	struct i2c_ksdk_data *data = DEV_DATA(dev);
 	uint32_t clock_freq;
 	i2c_master_config_t master_config;
