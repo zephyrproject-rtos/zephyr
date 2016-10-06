@@ -1399,13 +1399,30 @@ __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
 	extern uint32_t _mem_pool_block_set_count_##name;		\
 	extern struct k_mem_pool_block_set _mem_pool_block_sets_##name[]
 
-#define _MEMORY_POOL_BUFFER_DEFINE(name, max_size, n_max)	\
-	char __noinit _mem_pool_buffer_##name[(max_size) * (n_max)]
+#define _MEMORY_POOL_BUFFER_DEFINE(name, max_size, n_max, align)	\
+	char __noinit __aligned(align)                                  \
+		_mem_pool_buffer_##name[(max_size) * (n_max)]
 
-#define K_MEMORY_POOL_DEFINE(name, min_size, max_size, n_max)		\
+/**
+ * @brief Define a memory pool
+ *
+ * This declares and initializes a memory pool whose buffer is aligned to
+ * a @a align -byte boundary. The new memory pool can be passed to the
+ * kernel's memory pool functions.
+ *
+ * Note that for each of the minimum sized blocks to be aligned to @a align
+ * bytes, then @a min_size must be a multiple of @a align.
+ *
+ * @param name Name of the memory pool
+ * @param min_size Minimum block size in the pool
+ * @param max_size Maximum block size in the pool
+ * @param n_max Number of maximum sized blocks in the pool
+ * @param align Alignment of the memory pool's buffer
+ */
+#define K_MEM_POOL_DEFINE(name, min_size, max_size, n_max, align)     \
 	_MEMORY_POOL_QUAD_BLOCK_DEFINE(name, min_size, max_size, n_max); \
 	_MEMORY_POOL_BLOCK_SETS_DEFINE(name, min_size, max_size, n_max); \
-	_MEMORY_POOL_BUFFER_DEFINE(name, max_size, n_max);		\
+	_MEMORY_POOL_BUFFER_DEFINE(name, max_size, n_max, align);        \
 	__asm__("_build_mem_pool " STRINGIFY(name) " " STRINGIFY(min_size) " " \
 	       STRINGIFY(max_size) " " STRINGIFY(n_max) "\n\t");	\
 	extern struct k_mem_pool name

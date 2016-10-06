@@ -121,7 +121,8 @@ A memory pool can only be defined and initialized at compile time
 by calling :c:macro:`K_MEM_POOL_DEFINE()`.
 
 The following code defines and initializes a memory pool that has 3 blocks
-of 4096 bytes each, which can be partitioned into blocks as small as 64 bytes.
+of 4096 bytes each, which can be partitioned into blocks as small as 64 bytes
+and is aligned to a 4-byte boundary.
 (That is, the memory pool supports block sizes of 4096, 1024, 256,
 and 64 bytes.)
 Observe that the macro defines all of the memory pool data structures,
@@ -129,7 +130,7 @@ as well as its buffer.
 
 .. code-block:: c
 
-    K_MEM_POOL_DEFINE(my_map, 64, 4096, 3);
+    K_MEM_POOL_DEFINE(my_map, 64, 4096, 3, 4);
 
 Allocating a Memory Block
 =========================

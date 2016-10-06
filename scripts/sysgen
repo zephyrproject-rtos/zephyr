@@ -895,7 +895,7 @@ def kernel_main_c_pools():
             min_block_size = pool[1]
             max_block_size = pool[2]
             num_maximal_blocks = pool[3]
-            pool_descriptors += "K_MEMORY_POOL_DEFINE(_k_mem_pool_obj_%s, %d, %d, %d);\n" % \
+            pool_descriptors += "K_MEM_POOL_DEFINE(_k_mem_pool_obj_%s, %d, %d, %d, 4);\n" % \
                           (pool[0], min_block_size, max_block_size,
                            num_maximal_blocks)
     kernel_main_c_out(pool_descriptors)
