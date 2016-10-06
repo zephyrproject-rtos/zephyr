@@ -52,25 +52,6 @@ enum net_nbuf_type {
 /** @endcond */
 
 struct net_nbuf {
-	/** @cond ignore */
-	enum net_nbuf_type type;
-	uint16_t reserve; /* length of the protocol headers */
-	uint8_t ll_reserve; /* link layer header length */
-	uint8_t family; /* IPv4 vs IPv6 */
-	uint8_t ip_hdr_len; /* pre-filled in order to avoid func call */
-	uint8_t ext_len; /* length of extension headers */
-	uint8_t ext_bitmap;
-	uint8_t *next_hdr;
-
-	/* Filled by layer 2 when network packet is received. */
-	struct net_linkaddr lladdr_src;
-	struct net_linkaddr lladdr_dst;
-
-#if defined(CONFIG_NET_IPV6)
-	uint8_t ext_opt_len; /* IPv6 ND option length */
-#endif
-	/* @endcond */
-
 	/** Network connection context */
 	struct net_context *context;
 
@@ -83,8 +64,26 @@ struct net_nbuf {
 	struct net_if *iface;
 
 	/** @cond ignore */
-	uint8_t *appdata;  /* application data */
+	uint8_t *appdata;	/* application data starts here */
+	uint8_t *next_hdr;	/* where is the next header */
+
+	/* Filled by layer 2 when network packet is received. */
+	struct net_linkaddr lladdr_src;
+	struct net_linkaddr lladdr_dst;
+
+	enum net_nbuf_type type;
+
 	uint16_t appdatalen;
+	uint16_t reserve;	/* length of the protocol headers */
+	uint8_t ll_reserve;	/* link layer header length */
+	uint8_t family;		/* IPv4 vs IPv6 */
+	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
+	uint8_t ext_len;	/* length of extension headers */
+	uint8_t ext_bitmap;
+
+#if defined(CONFIG_NET_IPV6)
+	uint8_t ext_opt_len; /* IPv6 ND option length */
+#endif
 	/* @endcond */
 };
 
