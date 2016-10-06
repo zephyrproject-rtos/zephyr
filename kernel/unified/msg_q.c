@@ -33,14 +33,14 @@
  * @brief Initialize a message queue.
  *
  * @param q Pointer to the message queue object.
+ * @param buffer Pointer to memory area that holds queued messages.
  * @param msg_size Message size, in bytes.
  * @param max_msgs Maximum number of messages that can be queued.
- * @param buffer Pointer to memory area that holds queued messages.
  *
  * @return N/A
  */
-void k_msgq_init(struct k_msgq *q, uint32_t msg_size, uint32_t max_msgs,
-		 char *buffer)
+void k_msgq_init(struct k_msgq *q, char *buffer,
+		 uint32_t msg_size, uint32_t max_msgs)
 {
 	q->msg_size = msg_size;
 	q->max_msgs = max_msgs;

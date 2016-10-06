@@ -73,10 +73,10 @@ that is capable of holding 10 items.
         ...
     };
 
-    char my_msgq_buffer[10 * sizeof(data_item_type)];
+    char __aligned(4) my_msgq_buffer[10 * sizeof(data_item_type)];
     struct k_msgq my_msgq;
 
-    k_msgq_init(&my_msgq, 10, sizeof(data_item_type), my_msgq_buffer);
+    k_msgq_init(&my_msgq, my_msgq_buffer, sizeof(data_item_type), 10);
 
 Alternatively, a message queue can be defined and initialized at compile time
 by calling :c:macro:`K_MSGQ_DEFINE()`.
@@ -86,7 +86,7 @@ that the macro defines both the message queue and its buffer.
 
 .. code-block:: c
 
-    K_MSGQ_DEFINE(my_msgq, 10, sizeof(data_item_type));
+    K_MSGQ_DEFINE(my_msgq, sizeof(data_item_type), 10, 4);
 
 Writing to a Message Queue
 ==========================

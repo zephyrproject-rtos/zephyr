@@ -684,8 +684,8 @@ def kernel_main_c_fifos():
             name = fifo[0]
             depth = fifo[1]
             width = fifo[2]
-            kernel_main_c_out("K_MSGQ_DEFINE(_k_fifo_obj_%s, %s, %s);\n" %
-                              (name, depth, width))
+            kernel_main_c_out("K_MSGQ_DEFINE(_k_fifo_obj_%s, %s, %s, 4);\n" %
+                              (name, width, depth))
 
 
 def kernel_main_c_pipes():

@@ -856,26 +856,43 @@ struct k_msgq {
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_msgq);
 };
 
-#define K_MSGQ_INITIALIZER(obj, q_depth, q_width, q_buffer) \
+#define K_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.max_msgs = q_depth, \
-	.msg_size = q_width, \
+	.max_msgs = q_max_msgs, \
+	.msg_size = q_msg_size, \
 	.buffer_start = q_buffer, \
-	.buffer_end = q_buffer + (q_depth * q_width), \
+	.buffer_end = q_buffer + (q_max_msgs * q_msg_size), \
 	.read_ptr = q_buffer, \
 	.write_ptr = q_buffer, \
 	.used_msgs = 0, \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
-#define K_MSGQ_DEFINE(name, q_depth, q_width) \
-	static char __noinit _k_fifo_buf_##name[(q_depth) * (q_width)]; \
-	struct k_msgq name = \
-	       K_MSGQ_INITIALIZER(name, q_depth, q_width, _k_fifo_buf_##name)
+/**
+ * @brief Define a message queue
+ *
+ * This declares and initializes a message queue whose buffer is aligned to
+ * a @a q_align -byte boundary. The new message queue can be passed to the
+ * kernel's message queue functions.
+ *
+ * Note that for each of the mesages in the message queue to be aligned to
+ * @a q_align bytes, then @a q_msg_size must be a multiple of @a q_align.
+ *
+ * @param q_name Name of the message queue
+ * @param q_msg_size The size in bytes of each message
+ * @param q_max_msgs Maximum number of messages the queue can hold
+ * @param q_align Alignment of the message queue's buffer (power of 2)
+ */
+#define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)      \
+	static char __noinit __aligned(q_align)                     \
+		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];  \
+	struct k_msgq q_name =                                      \
+	       K_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,     \
+				  q_msg_size, q_max_msgs)
 
-extern void k_msgq_init(struct k_msgq *q, uint32_t msg_size,
-			uint32_t max_msgs, char *buffer);
+extern void k_msgq_init(struct k_msgq *q, char *buffer,
+			uint32_t msg_size, uint32_t max_msgs);
 extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
 extern int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout);
 extern void k_msgq_purge(struct k_msgq *q);

@@ -445,7 +445,7 @@ static inline int task_fifo_size_get(kfifo_t queue)
 }
 
 #define DEFINE_FIFO(name, q_depth, q_width) \
-	K_MSGQ_DEFINE(_k_fifo_obj_##name, q_depth, q_width); \
+	K_MSGQ_DEFINE(_k_fifo_obj_##name, q_width, q_depth, 4); \
 	struct k_msgq * const name = &_k_fifo_obj_##name
 
 /* mailboxes */
