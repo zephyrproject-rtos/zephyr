@@ -209,7 +209,7 @@ struct spi_dw_data {
 
 static inline void _spi_config_cs(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	struct device *gpio;
 
@@ -228,7 +228,7 @@ static inline void _spi_config_cs(struct device *dev)
 
 static inline void _spi_control_cs(struct device *dev, int on)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
 	if (spi->cs_gpio_port) {

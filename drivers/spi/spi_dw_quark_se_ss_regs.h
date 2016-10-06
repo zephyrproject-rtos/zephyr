@@ -130,14 +130,14 @@ DEFINE_CLEAR_BIT_OP(clk_ena, DW_SPI_REG_CTRLR0, DW_SPI_CTRLR0_CLK_ENA_BIT)
 
 static inline void _clock_on(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 
 	set_bit_clk_ena(info->regs);
 }
 
 static inline void _clock_off(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 
 	clear_bit_clk_ena(info->regs);
 }

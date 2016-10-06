@@ -65,7 +65,7 @@
 
 static void completed(struct device *dev, int error)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
 	if (error) {
@@ -111,7 +111,7 @@ out:
 
 static void push_data(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t data = 0;
 	uint32_t f_tx;
@@ -176,7 +176,7 @@ static void push_data(struct device *dev)
 
 static void pull_data(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t data = 0;
 	DBG_COUNTER_INIT();
@@ -218,7 +218,7 @@ static void pull_data(struct device *dev)
 
 static inline bool _spi_dw_is_controller_ready(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 
 	if (test_bit_ssienr(info->regs) || test_bit_sr_busy(info->regs)) {
 		return false;
@@ -230,7 +230,7 @@ static inline bool _spi_dw_is_controller_ready(struct device *dev)
 static int spi_dw_configure(struct device *dev,
 				struct spi_config *config)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t flags = config->config;
 	uint32_t ctrlr0 = 0;
@@ -305,7 +305,7 @@ static int spi_dw_transceive(struct device *dev,
 			     const void *tx_buf, uint32_t tx_buf_len,
 			     void *rx_buf, uint32_t rx_buf_len)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
 	uint32_t imask;
@@ -374,7 +374,7 @@ static int spi_dw_transceive(struct device *dev,
 void spi_dw_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	uint32_t error = 0;
 	uint32_t int_status;
 
@@ -409,7 +409,7 @@ static struct spi_driver_api dw_spi_api = {
 
 int spi_dw_init(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
 	_clock_config(dev);

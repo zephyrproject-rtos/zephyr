@@ -79,7 +79,7 @@ static inline void _clock_config(struct device *dev)
 
 static inline void _clock_on(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
 	clock_control_on(spi->clock, info->clock_data);
@@ -87,7 +87,7 @@ static inline void _clock_on(struct device *dev)
 
 static inline void _clock_off(struct device *dev)
 {
-	struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
 	clock_control_off(spi->clock, info->clock_data);
