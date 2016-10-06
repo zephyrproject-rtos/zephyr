@@ -75,8 +75,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
-
 	/* Set the pointers to ll src and dst addresses */
 	lladdr = net_nbuf_ll_src(buf);
 	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->src.addr;
@@ -100,6 +98,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 		return NET_DROP;
 	}
+
+	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET &&
