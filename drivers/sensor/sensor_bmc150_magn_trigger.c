@@ -84,7 +84,7 @@ static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
 {
 	struct device *dev = (struct device *) arg1;
 	struct bmc150_magn_data *data = dev->driver_data;
-	struct bmc150_magn_config *config = dev->config->config_info;
+	const struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t reg_val;
 
 	while (1) {
@@ -108,7 +108,7 @@ static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
 static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
-	struct bmc150_magn_config *config = dev->config->config_info;
+	const struct bmc150_magn_config *config = dev->config->config_info;
 
 	if (state) {
 		state = 1;
