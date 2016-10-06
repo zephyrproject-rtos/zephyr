@@ -657,8 +657,9 @@ static inline bool net_nbuf_write_be32(struct net_buf *buf, uint32_t data)
  * @param len Total length of data to be read.
  * @param data Data will be copied here.
  *
- * @return Pointer to fragment after successful read,
- *         NULL otherwise (if pos is 0, NULL is not a failure case).
+ * @return Pointer to the fragment or
+ *         NULL and pos is 0 after successful read,
+ *         NULL and pos is 0xffff otherwise.
  */
 struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
 			      uint16_t *pos, uint16_t len, uint8_t *data);
@@ -678,8 +679,9 @@ struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
  *            this is with respect to return buffer(fragment).
  * @param len Total length of data to be read.
  *
- * @return Pointer to fragment after successful skip,
- *         NULL otherwise (if pos is 0, NULL is not a failure case).
+ * @return Pointer to the fragment or
+ *         NULL and pos is 0 after successful skip,
+ *         NULL and pos is 0xffff otherwise.
  */
 static inline struct net_buf *net_nbuf_skip(struct net_buf *buf,
 					    uint16_t offset,

@@ -1017,16 +1017,46 @@ static inline struct net_buf *net_nbuf_read_byte(struct net_buf *buf,
 	return buf;
 }
 
+/* Helper function to adjust offset in net_nbuf_read() call
+ * if given offset is more than current fragment length.
+ */
+static inline struct net_buf *adjust_offset(struct net_buf *buf,
+					    uint16_t offset, uint16_t *pos)
+{
+	if (!buf || !is_from_data_pool(buf)) {
+		NET_ERR("Invalid buffer or buffer is not a fragment");
+		return NULL;
+	}
+
+	while (buf) {
+		if (offset == buf->len) {
+			*pos = 0;
+
+			return buf->frags;
+		} else if (offset < buf->len) {
+			*pos = offset;
+
+			return buf;
+		}
+
+		offset -= buf->len;
+		buf = buf->frags;
+	}
+
+	NET_ERR("Invalid offset, failed to adjust");
+
+	return NULL;
+}
+
 struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
 			      uint16_t *pos, uint16_t len, uint8_t *data)
 {
 	uint16_t copy = 0;
 
+	buf = adjust_offset(buf, offset, pos);
 	if (!buf) {
-		return NULL;
+		goto error;
 	}
-
-	*pos = offset;
 
 	while (len-- > 0 && buf) {
 		if (data) {
@@ -1034,9 +1064,20 @@ struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
 		} else {
 			buf = net_nbuf_read_byte(buf, *pos, pos, NULL);
 		}
+
+		/* Error: Still reamining length to be read, but no data. */
+		if (!buf && len) {
+			NET_ERR("Not enough data to read");
+			goto error;
+		}
 	}
 
 	return buf;
+
+error:
+	*pos = 0xffff;
+
+	return NULL;
 }
 
 struct net_buf *net_nbuf_read_be16(struct net_buf *buf, uint16_t offset,

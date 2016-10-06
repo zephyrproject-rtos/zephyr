@@ -584,24 +584,49 @@ static int test_fragment_pull(void)
 	return 0;
 }
 
-static char test_rw_short[] = "test-read-write-data";
+static const char sample_data[] =
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz";
+
+static char test_rw_short[] =
+	"abcdefghijklmnopqrstuvwxyz";
+
 static char test_rw_long[] =
-			"test-read-write-data-test-read-write"
-			"test-read-write-data-test-read-write"
-			"test-read-write-data-test-read-write"
-			"test-read-write-data-test-read-write"
-			"test-read-write-data-test-read-write"
-			"test-read-write-data-test-read-write";
+	"abcdefghijklmnopqrstuvwxyz"
+	"abcdefghijklmnopqrstuvwxyz"
+	"abcdefghijklmnopqrstuvwxyz"
+	"abcdefghijklmnopqrstuvwxyz"
+	"abcdefghijklmnopqrstuvwxyz"
+	"abcdefghijklmnopqrstuvwxyz"
+	"abcdefghijklmnopqrstuvwxyz";
 
 static int test_nbuf_read_write(void)
 {
-	struct net_buf *buf, *frag, *tfrag;
-	struct ipv6_hdr *ipv6;
-	struct udp_hdr *udp;
+	int remaining = strlen(sample_data);
 	uint8_t verify_rw_short[sizeof(test_rw_short)];
 	uint8_t verify_rw_long[sizeof(test_rw_long)];
-	int bytes, remaining = strlen(example_data), pos = 0;
-	uint16_t off, tpos;
+	struct net_buf *buf;
+	struct net_buf *frag;
+	struct net_buf *tfrag;
+	struct ipv6_hdr *ipv6;
+	struct udp_hdr *udp;
+	uint8_t data[10];
+	int pos = 0;
+	int bytes;
+	uint16_t off;
+	uint16_t tpos;
+	uint16_t fail_pos;
 
 	/* Example of multi fragment read, write and skip APS's */
 	buf = net_nbuf_get_reserve_rx(0);
@@ -647,7 +672,7 @@ static int test_nbuf_read_write(void)
 		printk("We should have been out of space now, "
 		       "tailroom %zd user data len %zd\n",
 		       net_buf_tailroom(frag),
-		       strlen(example_data));
+		       strlen(sample_data));
 		return -EINVAL;
 	}
 
@@ -656,7 +681,7 @@ static int test_nbuf_read_write(void)
 
 		bytes = net_buf_tailroom(frag);
 		copy = remaining > bytes ? bytes : remaining;
-		memcpy(net_buf_add(frag, copy), &example_data[pos], copy);
+		memcpy(net_buf_add(frag, copy), &sample_data[pos], copy);
 
 		printk("Remaining %d left %d copy %d\n", remaining, bytes,
 		       copy);
@@ -677,9 +702,63 @@ static int test_nbuf_read_write(void)
 	}
 
 	bytes = net_buf_frags_len(buf->frags);
-	if (bytes != strlen(example_data)) {
+	if (bytes != strlen(sample_data)) {
 		printk("Invalid number of bytes in message, %zd vs %d\n",
-		       strlen(example_data), bytes);
+		       strlen(sample_data), bytes);
+		return -EINVAL;
+	}
+
+	/* Failure cases */
+	/* Invalid buffer */
+	tfrag = net_nbuf_skip(NULL, 10, &fail_pos, 10);
+	if (!(!tfrag && fail_pos == 0xffff)) {
+		printk("Invalid case NULL buffer\n");
+		return -EINVAL;
+	}
+
+	/* Invalid: Skip more than a buffer length.*/
+	tfrag = net_buf_frag_last(buf->frags);
+	tfrag = net_nbuf_skip(tfrag, tfrag->len - 1, &fail_pos, tfrag->len + 2);
+	if (!(!tfrag && fail_pos == 0xffff)) {
+		printk("Invalid case offset %d length to skip %d,"
+		       "frag length %d\n",
+		       tfrag->len - 1, tfrag->len + 2, tfrag->len);
+		return -EINVAL;
+	}
+
+	/* Invalid offset */
+	tfrag = net_buf_frag_last(buf->frags);
+	tfrag = net_nbuf_skip(tfrag, tfrag->len + 10, &fail_pos, 10);
+	if (!(!tfrag && fail_pos == 0xffff)) {
+		printk("Invalid case offset %d length to skip %d,"
+		       "frag length %d\n",
+		       tfrag->len + 10, 10, tfrag->len);
+		return -EINVAL;
+	}
+
+	/* Valid cases */
+
+	/* Offset is more than single fragment length */
+	/* Get the first data fragment */
+	tfrag = buf->frags;
+	tfrag = tfrag->frags;
+	off = tfrag->len;
+	tfrag = net_nbuf_read(tfrag, off + 10, &tpos, 10, data);
+	if (!tfrag ||
+	    memcmp(sample_data + off + 10, data, 10)) {
+		printk("Failed to read from offset %d, frag length %d"
+		       "read length %d\n",
+		       tfrag->len + 10, tfrag->len, 10);
+		return -EINVAL;
+	}
+
+	/* Skip till end of all fragments */
+	/* Get the first data fragment */
+	tfrag = buf->frags;
+	tfrag = tfrag->frags;
+	tfrag = net_nbuf_skip(tfrag, 0, &tpos, strlen(sample_data));
+	if (!(!tfrag && tpos == 0)) {
+		printk("Invalid skip till end of all fragments");
 		return -EINVAL;
 	}
 
@@ -770,6 +849,7 @@ void mainloop(void)
 void main(void)
 #endif
 {
+
 	if (test_ipv6_multi_frags() < 0) {
 		goto fail;
 	}
