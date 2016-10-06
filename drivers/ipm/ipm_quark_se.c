@@ -60,7 +60,7 @@ void quark_se_ipm_isr(void *param)
 	int channel;
 	int sts, bit;
 	struct device *d;
-	struct quark_se_ipm_config_info *config;
+	const struct quark_se_ipm_config_info *config;
 	struct quark_se_ipm_driver_data *driver_data;
 	volatile struct quark_se_ipm *ipm;
 	unsigned int key;
@@ -100,7 +100,7 @@ void quark_se_ipm_isr(void *param)
 static int quark_se_ipm_send(struct device *d, int wait, uint32_t id,
 			const void *data, int size)
 {
-	struct quark_se_ipm_config_info *config = d->config->config_info;
+	const struct quark_se_ipm_config_info *config = d->config->config_info;
 	volatile struct quark_se_ipm *ipm = config->ipm;
 	const uint8_t *data8;
 	int i;
@@ -177,7 +177,8 @@ static void quark_se_ipm_register_callback(struct device *d, ipm_callback_t cb,
 
 static int quark_se_ipm_set_enabled(struct device *d, int enable)
 {
-	struct quark_se_ipm_config_info *config_info = d->config->config_info;
+	const struct quark_se_ipm_config_info *config_info =
+		d->config->config_info;
 
 	if (config_info->direction != QUARK_SE_IPM_INBOUND) {
 		return -EINVAL;
@@ -196,7 +197,8 @@ struct ipm_driver_api ipm_quark_se_api_funcs = {
 
 int quark_se_ipm_controller_initialize(struct device *d)
 {
-	struct quark_se_ipm_controller_config_info *config = d->config->config_info;
+	const struct quark_se_ipm_controller_config_info *config =
+		d->config->config_info;
 #if CONFIG_IPM_QUARK_SE_MASTER
 	int i;
 
@@ -221,7 +223,7 @@ int quark_se_ipm_controller_initialize(struct device *d)
 
 int quark_se_ipm_initialize(struct device *d)
 {
-	struct quark_se_ipm_config_info *config = d->config->config_info;
+	const struct quark_se_ipm_config_info *config = d->config->config_info;
 
 	device_by_channel[config->channel] = d;
 	if (config->direction == QUARK_SE_IPM_INBOUND) {
@@ -230,5 +232,3 @@ int quark_se_ipm_initialize(struct device *d)
 
 	return 0;
 }
-
-
