@@ -1091,7 +1091,7 @@ void spi_config_0_irq(void);
 
 struct spi_k64_data spi_k64_data_port_0;
 
-struct spi_k64_config spi_k64_config_0 = {
+static struct spi_k64_config spi_k64_config_0 = {
 	.regs = SPI_K64_0_BASE_ADDR,
 	.clk_gate_reg = SPI_K64_0_CLK_GATE_REG_ADDR,
 	.clk_gate_bit = SPI_K64_0_CLK_GATE_REG_BIT,
@@ -1120,7 +1120,7 @@ void spi_config_1_irq(void);
 
 struct spi_k64_data spi_k64_data_port_1;
 
-struct spi_k64_config spi_k64_config_1 = {
+static struct spi_k64_config spi_k64_config_1 = {
 	.regs = SPI_K64_1_BASE_ADDR,
 	.clk_gate_reg = SPI_K64_1_CLK_GATE_REG_ADDR,
 	.clk_gate_bit = SPI_K64_1_CLK_GATE_REG_BIT,
@@ -1149,7 +1149,7 @@ void spi_config_2_irq(void);
 
 struct spi_k64_data spi_k64_data_port_2;
 
-struct spi_k64_config spi_k64_config_2 = {
+static struct spi_k64_config spi_k64_config_2 = {
 	.regs = SPI_K64_2_BASE_ADDR,
 	.clk_gate_reg = SPI_K64_2_CLK_GATE_REG_ADDR,
 	.clk_gate_bit = SPI_K64_2_CLK_GATE_REG_BIT,
