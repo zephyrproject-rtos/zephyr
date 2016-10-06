@@ -44,7 +44,7 @@
 #define UART_ALTERA_JTAG_CONTROL_WSPACE_OFST       (16)
 
 #define DEV_CFG(dev) \
-	((struct uart_device_config * const)(dev)->config->config_info)
+	((const struct uart_device_config * const)(dev)->config->config_info)
 
 static uint32_t control_reg_read(void *base)
 {
@@ -67,7 +67,7 @@ static void data_reg_write(void *base, uint32_t data)
 static unsigned char uart_altera_jtag_poll_out(struct device *dev,
 					       unsigned char c)
 {
-	struct uart_device_config *config;
+	const struct uart_device_config *config;
 
 	config = DEV_CFG(dev);
 
@@ -82,7 +82,7 @@ static unsigned char uart_altera_jtag_poll_out(struct device *dev,
 
 static int uart_altera_jtag_init(struct device *dev)
 {
-	struct uart_device_config *config;
+	const struct uart_device_config *config;
 
 	config = DEV_CFG(dev);
 	/* Clear interrupt enable bits */
@@ -112,5 +112,3 @@ DEVICE_AND_API_INIT(uart_altera_jtag_0, "jtag_uart0",
 		    &uart_altera_jtag_dev_cfg_0,
 		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_altera_jtag_driver_api);
-
-
