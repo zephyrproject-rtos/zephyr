@@ -45,7 +45,7 @@ extern void __stdout_hook_install(int (*fn)(int));
 
 int ipm_console_sender_init(struct device *d)
 {
-	struct ipm_console_sender_config_info *config_info;
+	const struct ipm_console_sender_config_info *config_info;
 
 	config_info = d->config->config_info;
 	ipm_console_device = device_get_binding(config_info->bind_to);
