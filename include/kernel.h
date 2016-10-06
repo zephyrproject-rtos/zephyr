@@ -1665,6 +1665,7 @@ __asm__(".macro __do_recurse macro_name, name, n_max\n\t"
  * __memory_pool_quad_block_size - sizeof(struct k_mem_pool_quad_block)
  */
 __asm__(".macro _build_quad_blocks n_max, name\n\t"
+	".balign 4\n\t"
 	"_mem_pool_quad_blocks_\\name\\()_\\n_max:\n\t"
 	".skip __memory_pool_quad_block_size * \\n_max >> 2\n\t"
 	".if \\n_max % 4\n\t\t"
@@ -1735,6 +1736,7 @@ __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
 	__asm__("__memory_pool_max_block_size = " STRINGIFY(max_size) "\n\t"); \
 	__asm__(".pushsection ._k_memory_pool.struct,\"aw\","		\
 		_SECTION_TYPE_SIGN "progbits\n\t");			\
+	__asm__(".balign 4\n\t");			\
 	__asm__("_mem_pool_block_sets_" STRINGIFY(name) ":\n\t");	\
 	__asm__("_build_block_set " STRINGIFY(n_max) " "		\
 		STRINGIFY(name) "\n\t");				\
