@@ -168,7 +168,6 @@ static int uart_nrf5_init(struct device *dev)
 #endif /* CONFIG_UART_NRF5_FLOW_CONTROL */
 
 	DEV_DATA(dev)->baud_rate = CONFIG_UART_NRF5_BAUD_RATE;
-	DEV_CFG(dev)->sys_clk_freq = CONFIG_UART_NRF5_CLK_FREQ;
 
 	/* Set baud rate */
 	baudrate_set(dev, DEV_DATA(dev)->baud_rate,
