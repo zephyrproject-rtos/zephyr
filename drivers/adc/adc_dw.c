@@ -472,7 +472,7 @@ struct adc_info adc_info_dev = {
 #endif
 	};
 
-struct adc_config adc_config_dev = {
+static struct adc_config adc_config_dev = {
 		.reg_base = PERIPH_ADDR_BASE_ADC,
 		.reg_irq_mask = SCSS_REGISTER_BASE + INT_SS_ADC_IRQ_MASK,
 		.reg_err_mask = SCSS_REGISTER_BASE + INT_SS_ADC_ERR_MASK,
