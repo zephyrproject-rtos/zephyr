@@ -279,7 +279,7 @@ static void qmsi_write_bit(uint32_t *target, uint8_t bit, uint8_t value)
 
 static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 {
-	struct gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	qm_gpio_t gpio = gpio_config->gpio;
 
 	/* Save int mask and mask this pin while we configure the port.
@@ -330,7 +330,7 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 
 static inline void qmsi_port_config(struct device *port, int flags)
 {
-	struct gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	uint8_t num_pins = gpio_config->num_pins;
 	int i;
 
@@ -358,7 +358,7 @@ static inline int gpio_qmsi_config(struct device *port,
 static inline int gpio_qmsi_write(struct device *port,
 				  int access_op, uint32_t pin, uint32_t value)
 {
-	struct gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	qm_gpio_t gpio = gpio_config->gpio;
 
 	gpio_critical_region_start(port);
@@ -380,7 +380,7 @@ static inline int gpio_qmsi_write(struct device *port,
 static inline int gpio_qmsi_read(struct device *port,
 				 int access_op, uint32_t pin, uint32_t *value)
 {
-	struct gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	qm_gpio_t gpio = gpio_config->gpio;
 	qm_gpio_state_t state;
 
@@ -450,7 +450,7 @@ static struct gpio_driver_api api_funcs = {
 
 int gpio_qmsi_init(struct device *port)
 {
-	struct gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 
 	gpio_reentrancy_init(port);
 
