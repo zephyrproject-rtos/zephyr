@@ -71,7 +71,7 @@ config BOOT_BANNER
 	prompt "Boot banner"
 	default n
 	select PRINTK
-	depends on EARLY_CONSOLE
+	select EARLY_CONSOLE
 	help
 	This option outputs a banner to the console device during boot up. It
 	also embeds a date & time stamp in the kernel and in each USAP image.
