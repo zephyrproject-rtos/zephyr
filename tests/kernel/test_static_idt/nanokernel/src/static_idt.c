@@ -47,8 +47,10 @@ NANO_CPU_INT_REGISTER(nanoIntStub, -1, -1, TEST_SOFT_INT, 0);
 
 static volatile int    excHandlerExecuted;
 static volatile int    intHandlerExecuted;
-/* Assume the spurious interrupt handler will execute and abort the task */
+/* Assume the spurious interrupt handler will execute and abort the fiber */
 static volatile int    spurHandlerAbortedThread = 1;
+
+static char __stack fiberStack[512];
 
 
 /**
@@ -137,13 +139,16 @@ int nanoIdtStubTest(void)
 
 /**
  *
- * @brief Task to test spurious handlers
+ * @brief Fiber to test spurious handlers
  *
  * @return 0
  */
 
-void idtSpurTask(void)
+static void idtSpurFiber(int a1, int a2)
 {
+	ARG_UNUSED(a1);
+	ARG_UNUSED(a2);
+
 	TC_PRINT("- Expect to see unhandled interrupt/exception message\n");
 
 	_trigger_spurHandler();
@@ -162,7 +167,7 @@ void idtSpurTask(void)
  * @return N/A
  */
 
-void idtTestTask(void)
+void main(void)
 {
 	int           rv;       /* return value from tests */
 	volatile int  error;    /* used to create a divide by zero error */
@@ -209,10 +214,10 @@ void idtTestTask(void)
 	}
 
 	/*
-	 * Start task to trigger the spurious interrupt handler
+	 * Start fiber to trigger the spurious interrupt handler
 	 */
 	TC_PRINT("Testing to see spurious handler executes properly\n");
-	task_start(tSpurTask);
+	task_fiber_start(fiberStack, sizeof(fiberStack), idtSpurFiber, 0, 0, 5, 0);
 	/*
 	 * The fiber/task should not run past where the spurious interrupt is
 	 * generated. Therefore spurHandlerAbortedThread should remain at 1.
