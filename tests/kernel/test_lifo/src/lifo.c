@@ -188,6 +188,7 @@ int fiberLifoWaitTest(void)
 
 	/* The task is waiting on an empty LIFO.  Wake it up. */
 	nano_fiber_lifo_put(&test_lifo, &lifoItem[3]);
+	nano_fiber_lifo_put(&test_lifo, &lifoItem[2]);
 	nano_fiber_lifo_put(&test_lifo, &lifoItem[1]);
 
 	/*
@@ -321,6 +322,31 @@ static void fiberEntry(int arg1, int arg2)
 int taskLifoWaitTest(void)
 {
 	void *data;    /* ptr to data retrieved from LIFO */
+	int i;
+
+#ifdef CONFIG_KERNEL_V2
+	/*
+	 * the first item sent by the fiber is given directly to the waiting
+	 * task, which then ceases waiting (but doesn't get to execute yet);
+	 * the two remaining items then get queued internally by the LIFO,
+	 * and are later retrieved by the task in LIFO order
+	 */
+
+	int expected_item[3] = { 3, 1, 2 };
+#else
+	/*
+	 * all 3 items sent by the fiber are queued internally by the LIFO,
+	 * while the task is busy waiting; when the task finally gets to run
+	 * it retrieves all of the items in LIFO order
+	 *
+	 * note that the items would be received in a different order
+	 * if a fiber was waiting on the FIFO!; in this case, the first
+	 * item would be given directly to the fiber, and only the two
+	 * remaining items would be queued internally by the LIFO
+	 */
+
+	int expected_item[3] = { 1, 2, 3 };
+#endif
 
 	/* Wait on <taskWaitSem> in case fiber's print message blocked */
 	nano_fiber_sem_take(&taskWaitSem, TICKS_UNLIMITED);
@@ -345,21 +371,16 @@ int taskLifoWaitTest(void)
 		return TC_FAIL;
 	}
 
-	/* The LIFO is empty.  This time the task will wait for the item. */
+	/* The LIFO is empty.  This time the task will wait for the 3 items. */
 
 	TC_PRINT("Task waiting on an empty LIFO\n");
-	data = nano_task_lifo_get(&test_lifo, TICKS_UNLIMITED);
-	if (data != (void *) &lifoItem[1]) {
-		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
-		return TC_FAIL;
+	for (i = 0; i < 3; i++) {
+		data = nano_task_lifo_get(&test_lifo, TICKS_UNLIMITED);
+		if (data != (void *) &lifoItem[expected_item[i]]) {
+			TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
+			return TC_FAIL;
+		}
 	}
-
-	data = nano_task_lifo_get(&test_lifo, TICKS_UNLIMITED);
-	if (data != (void *) &lifoItem[3]) {
-		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
-		return TC_FAIL;
-	}
-
 
 	/* Waiting on an empty LIFO passed for both fiber and task. */
 
