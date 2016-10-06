@@ -111,7 +111,7 @@ static const uint32_t delay_scaler[] = {
  */
 static inline void spi_k64_halt(struct device *dev)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 
 	/* Ensure module operation is stopped */
 
@@ -131,7 +131,7 @@ static inline void spi_k64_halt(struct device *dev)
  */
 static inline void spi_k64_start(struct device *dev)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 
 	/* Allow module operation */
 
@@ -420,7 +420,7 @@ static uint32_t spi_k64_set_delay(enum spi_k64_delay_id delay_id,
  */
 static int spi_k64_configure(struct device *dev, struct spi_config *config)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *spi_data = dev->driver_data;
 	uint32_t flags = config->config;
 	uint32_t mcr;		/* mode configuration attributes, for MCR */
@@ -572,7 +572,7 @@ static int spi_k64_transceive(struct device *dev,
 				const void *tx_buf, uint32_t tx_buf_len,
 				void *rx_buf, uint32_t rx_buf_len)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *spi_data = dev->driver_data;
 	uint32_t int_config;	/* interrupt configuration */
 
@@ -648,7 +648,7 @@ static int spi_k64_transceive(struct device *dev,
  */
 static void spi_k64_push_data(struct device *dev)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *spi_data = dev->driver_data;
 	uint32_t data;
 #ifdef CONFIG_SPI_DEBUG
@@ -725,7 +725,7 @@ static void spi_k64_push_data(struct device *dev)
  */
 static void spi_k64_pull_data(struct device *dev)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *spi_data = dev->driver_data;
 	uint16_t data;
 #ifdef CONFIG_SPI_DEBUG
@@ -788,7 +788,7 @@ static void spi_k64_pull_data(struct device *dev)
 static void spi_k64_complete(struct device *dev, uint32_t error)
 {
 	struct spi_k64_data *spi_data = dev->driver_data;
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 	uint32_t int_config;	/* interrupt configuration */
 
 	if (error) {
@@ -863,7 +863,7 @@ complete:
 void spi_k64_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 	uint32_t error = 0;
 	uint32_t status;
 
@@ -922,7 +922,7 @@ static void spi_k64_set_power_state(struct device *dev, uint32_t power_state)
 
 int spi_k64_init(struct device *dev)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *data = dev->driver_data;
 	uint32_t mcr;
 
@@ -1020,7 +1020,7 @@ static uint32_t spi_k64_get_power_state(struct device *dev)
  */
 static int spi_k64_suspend(struct device *dev)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 
 	SYS_LOG_DBG("spi_k64_suspend: %p\n", dev);
 
@@ -1045,7 +1045,7 @@ static int spi_k64_suspend(struct device *dev)
  */
 static int spi_k64_resume_from_suspend(struct device *dev)
 {
-	struct spi_k64_config *info = dev->config->config_info;
+	const struct spi_k64_config *info = dev->config->config_info;
 
 	SYS_LOG_DBG("spi_k64_resume: %p\n", dev);
 
