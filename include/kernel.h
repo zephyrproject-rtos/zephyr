@@ -874,9 +874,6 @@ struct k_msgq {
 	struct k_msgq name = \
 	       K_MSGQ_INITIALIZER(name, q_depth, q_width, _k_fifo_buf_##name)
 
-#define K_MSGQ_SIZE(q_depth, q_width) \
-	((sizeof(struct k_msgq)) + ((q_width) * (q_depth)))
-
 extern void k_msgq_init(struct k_msgq *q, uint32_t msg_size,
 			uint32_t max_msgs, char *buffer);
 extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
