@@ -2,8 +2,8 @@
 
 % TASK NAME         PRIO ENTRY           STACK GROUPS
 % ===================================================
-  TASK ALTTASK       40 AlternateTask     1024 [EXE]
-  TASK REGRESSTASK   40 RegressionTask    1024 [EXE]
+  TASK ALTTASK       12 AlternateTask     1024 [EXE]
+  TASK REGRESSTASK   12 RegressionTask    1024 [EXE]
 
 % SEMA NAME
 % ================
