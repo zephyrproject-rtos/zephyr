@@ -261,6 +261,15 @@ static NET_BUF_POOL(data_buffers, NBUF_DATA_COUNT,	\
 		    NBUF_DATA_LEN, &free_data_bufs,	\
 		    free_data_bufs_func, 0);
 
+static inline bool is_from_data_pool(struct net_buf *buf)
+{
+	if (buf->free == &free_data_bufs) {
+		return true;
+	}
+
+	return false;
+}
+
 #if NET_DEBUG
 static inline const char *type2str(enum net_nbuf_type type)
 {
@@ -558,7 +567,7 @@ void net_nbuf_unref(struct net_buf *buf)
 		return;
 	}
 
-	if (buf->user_data_size) {
+	if (!is_from_data_pool(buf)) {
 		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
 			type2str(net_nbuf_type(buf)),
 			get_frees(net_nbuf_type(buf)),
@@ -606,7 +615,7 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf)
 		return NULL;
 	}
 
-	if (buf->user_data_size) {
+	if (!is_from_data_pool(buf)) {
 		NET_DBG("%s [%d] buf %p ref %d (%s():%d)",
 			type2str(net_nbuf_type(buf)),
 			get_frees(net_nbuf_type(buf)),
@@ -626,7 +635,7 @@ struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
 	uint16_t ll_reserve = net_buf_headroom(orig);
 	struct net_buf *frag, *first;
 
-	if (orig->user_data_size) {
+	if (!is_from_data_pool(orig)) {
 		NET_ERR("Buffer %p is not a data fragment", orig);
 		return NULL;
 	}
@@ -714,7 +723,7 @@ bool net_nbuf_is_compact(struct net_buf *buf)
 
 	last = NULL;
 
-	if (buf->user_data_size) {
+	if (!is_from_data_pool(buf)) {
 		/* Skip the first element that does not contain any data.
 		 */
 		buf = buf->frags;
@@ -752,7 +761,7 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 
 	first = buf;
 
-	if (buf->user_data_size) {
+	if (!is_from_data_pool(buf)) {
 		NET_DBG("Buffer %p is not a data fragment", buf);
 		buf = buf->frags;
 	}
@@ -872,7 +881,7 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
 
 	first = buf;
 
-	if (buf->user_data_size) {
+	if (!is_from_data_pool(buf)) {
 		NET_DBG("Buffer %p is not a data fragment", buf);
 		buf = buf->frags;
 	}
@@ -957,7 +966,7 @@ bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 
 	NET_ASSERT(buf && data);
 
-	if (!buf->user_data_size) {
+	if (is_from_data_pool(buf)) {
 		/* The buf needs to be a net_buf that has user data
 		 * part. Otherwise we cannot use the net_nbuf_ll_reserve()
 		 * function to figure out the reserve amount.
