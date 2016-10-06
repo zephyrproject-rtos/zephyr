@@ -28,7 +28,7 @@
 static inline int lps25hb_power_ctrl(struct device *dev, uint8_t value)
 {
 	struct lps25hb_data *data = dev->driver_data;
-	struct lps25hb_config *config = dev->config->config_info;
+	const struct lps25hb_config *config = dev->config->config_info;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LPS25HB_REG_CTRL_REG1,
@@ -39,7 +39,7 @@ static inline int lps25hb_power_ctrl(struct device *dev, uint8_t value)
 static inline int lps25hb_set_odr_raw(struct device *dev, uint8_t odr)
 {
 	struct lps25hb_data *data = dev->driver_data;
-	struct lps25hb_config *config = dev->config->config_info;
+	const struct lps25hb_config *config = dev->config->config_info;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LPS25HB_REG_CTRL_REG1,
@@ -51,7 +51,7 @@ static int lps25hb_sample_fetch(struct device *dev,
 				enum sensor_channel chan)
 {
 	struct lps25hb_data *data = dev->driver_data;
-	struct lps25hb_config *config = dev->config->config_info;
+	const struct lps25hb_config *config = dev->config->config_info;
 	uint8_t out[5];
 	int offset;
 
@@ -114,7 +114,7 @@ static struct sensor_driver_api lps25hb_api_funcs = {
 static int lps25hb_init_chip(struct device *dev)
 {
 	struct lps25hb_data *data = dev->driver_data;
-	struct lps25hb_config *config = dev->config->config_info;
+	const struct lps25hb_config *config = dev->config->config_info;
 	uint8_t chip_id;
 
 	lps25hb_power_ctrl(dev, 0);
