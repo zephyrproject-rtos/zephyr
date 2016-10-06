@@ -39,7 +39,7 @@
 
 /* convenience defines */
 #define DEV_CFG(dev)							\
-	((struct uart_stm32_config * const)(dev)->config->config_info)
+	((const struct uart_stm32_config * const)(dev)->config->config_info)
 #define DEV_DATA(dev)							\
 	((struct uart_stm32_data * const)(dev)->driver_data)
 #define UART_STRUCT(dev)					\
@@ -53,7 +53,7 @@ static void set_baud_rate(struct device *dev, uint32_t rate)
 {
 	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
-	struct uart_stm32_config *cfg = DEV_CFG(dev);
+	const struct uart_stm32_config *cfg = DEV_CFG(dev);
 	uint32_t div, mantissa, fraction;
 	uint32_t clock;
 
@@ -281,7 +281,7 @@ static int uart_stm32_init(struct device *dev)
 {
 	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
-	struct uart_stm32_config *cfg = DEV_CFG(dev);
+	const struct uart_stm32_config *cfg = DEV_CFG(dev);
 
 	__uart_stm32_get_clock(dev);
 
