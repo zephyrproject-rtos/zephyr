@@ -516,6 +516,31 @@ struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 	return nbr_lookup(&net_neighbor.table, iface, addr);
 }
 
+struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx)
+{
+	int i;
+
+	if (idx == NET_NBR_LLADDR_UNKNOWN) {
+		return NULL;
+	}
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+
+		if (nbr->ref) {
+			if (iface && nbr->iface != iface) {
+				continue;
+			}
+
+			if (nbr->idx == idx) {
+				return nbr;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 static inline uint8_t get_llao_len(struct net_if *iface)
 {
 	if (iface->link_addr.len == 6) {

@@ -190,6 +190,17 @@ struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 				    struct in6_addr *addr);
 
 /**
+ * @brief Get neighbor from its index.
+ *
+ * @param iface Network interface to match. If NULL, then use
+ * whatever interface there is configured for the neighbor address.
+ * @param idx Index of the link layer address in the address array
+ *
+ * @return A valid pointer on a neighbour on success, NULL otherwise
+ */
+struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx);
+
+/**
  * @brief Look for a neighbour from it's link local address index
  *
  * @param iface Network interface to match. If NULL, then use
