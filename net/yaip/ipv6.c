@@ -1647,7 +1647,7 @@ static inline struct net_buf *handle_ra_prefix(struct net_buf *buf,
 	struct net_icmpv6_nd_opt_prefix_info prefix_info;
 
 	prefix_info.type = NET_ICMPV6_ND_OPT_PREFIX_INFO;
-	prefix_info.len = len * 8;
+	prefix_info.len = len * 8 - 2;
 
 	frag = net_nbuf_read(frag, offset, pos, 1, &prefix_info.prefix_len);
 	frag = net_nbuf_read(frag, *pos, pos, 1, &prefix_info.flags);
