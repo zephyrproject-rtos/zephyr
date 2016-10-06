@@ -205,7 +205,7 @@ static void bmg160_work_cb(struct nano_work *work)
 
 int bmg160_trigger_init(struct device *dev)
 {
-	struct bmg160_device_config *cfg = dev->config->config_info;
+	const struct bmg160_device_config *cfg = dev->config->config_info;
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 
 	/* set INT1 pin to: push-pull, active low */
