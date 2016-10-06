@@ -53,7 +53,7 @@ static void gpio_stm32_isr(int line, void *arg)
 static int gpio_stm32_config(struct device *dev, int access_op,
 			     uint32_t pin, int flags)
 {
-	struct gpio_stm32_config *cfg = dev->config->config_info;
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	int pincfg;
 	int map_res;
 
@@ -107,7 +107,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 static int gpio_stm32_write(struct device *dev, int access_op,
 			    uint32_t pin, uint32_t value)
 {
-	struct gpio_stm32_config *cfg = dev->config->config_info;
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
@@ -122,7 +122,7 @@ static int gpio_stm32_write(struct device *dev, int access_op,
 static int gpio_stm32_read(struct device *dev, int access_op,
 			   uint32_t pin, uint32_t *value)
 {
-	struct gpio_stm32_config *cfg = dev->config->config_info;
+	const struct gpio_stm32_config *cfg = dev->config->config_info;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
@@ -194,7 +194,7 @@ static struct gpio_driver_api gpio_stm32_driver = {
  */
 static int gpio_stm32_init(struct device *device)
 {
-	struct gpio_stm32_config *cfg = device->config->config_info;
+	const struct gpio_stm32_config *cfg = device->config->config_info;
 
 	/* enable clock for subsystem */
 	struct device *clk =
