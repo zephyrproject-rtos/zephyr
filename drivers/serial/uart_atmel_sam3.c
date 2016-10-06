@@ -71,7 +71,7 @@ struct uart_sam3_dev_data_t {
 
 /* convenience defines */
 #define DEV_CFG(dev) \
-	((struct uart_device_config * const)(dev)->config->config_info)
+	((const struct uart_device_config * const)(dev)->config->config_info)
 #define DEV_DATA(dev) \
 	((struct uart_sam3_dev_data_t * const)(dev)->driver_data)
 #define UART_STRUCT(dev) \
@@ -141,7 +141,7 @@ static void baudrate_set(struct device *dev,
 			 uint32_t baudrate, uint32_t sys_clk_freq_hz)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
-	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
+	const struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 	struct uart_sam3_dev_data_t * const dev_data = DEV_DATA(dev);
 	uint32_t divisor; /* baud rate divisor */
 
