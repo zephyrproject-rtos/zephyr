@@ -16,13 +16,8 @@ lib-y += $(strip \
 	device.o \
 	thread_abort.o \
 	idle.o \
-)
-
-lib-y += $(strip \
 	sched.o \
 	mutex.o \
-)
-lib-y += $(strip \
 	lifo.o \
 	fifo.o \
 	stack.o \
@@ -34,6 +29,7 @@ lib-y += $(strip \
 	event.o \
 	pipes.o \
 	offload.o \
+	errno.o \
 )
 
 lib-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
@@ -43,7 +39,6 @@ lib-$(CONFIG_KERNEL_EVENT_LOGGER) += event_logger.o
 lib-$(CONFIG_KERNEL_EVENT_LOGGER) += kernel_event_logger.o
 lib-$(CONFIG_RING_BUFFER) += ring_buffer.o
 lib-$(CONFIG_ATOMIC_OPERATIONS_C) += atomic_c.o
-lib-$(CONFIG_ERRNO) += errno.o
 lib-$(CONFIG_NANO_WORKQUEUE) += work_q.o
 
 obj-y += legacy/

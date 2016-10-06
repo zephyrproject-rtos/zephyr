@@ -32,7 +32,9 @@
 const int _k_neg_eagain = -EAGAIN;
 #endif
 
+#ifdef CONFIG_ERRNO
 int *_get_errno(void)
 {
 	return &_nanokernel.current->errno_var;
 }
+#endif
