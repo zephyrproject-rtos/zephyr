@@ -194,7 +194,7 @@ static void adc_dw_enable(struct device *dev)
 {
 	uint32_t reg_value;
 	struct adc_info *info = dev->driver_data;
-	struct adc_config *config = dev->config->config_info;
+	const struct adc_config *config = dev->config->config_info;
 	uint32_t adc_base = config->reg_base;
 
 	/*Go to Normal Mode*/
@@ -214,7 +214,7 @@ static void adc_dw_disable(struct device *dev)
 {
 	uint32_t saved;
 	struct adc_info *info = dev->driver_data;
-	struct adc_config *config = dev->config->config_info;
+	const struct adc_config *config = dev->config->config_info;
 	uint32_t adc_base = config->reg_base;
 
 	sys_out32(ADC_INT_DSB|ENABLE_ADC, adc_base + ADC_CTRL);
@@ -238,7 +238,7 @@ static int adc_dw_read_request(struct device *dev, struct adc_seq_table *seq_tbl
 	uint32_t saved;
 	struct adc_seq_entry *entry;
 	struct adc_info *info = dev->driver_data;
-	struct adc_config *config = dev->config->config_info;
+	const struct adc_config *config = dev->config->config_info;
 	uint32_t adc_base = config->reg_base;
 
 	if (info->state != ADC_STATE_IDLE) {
@@ -324,7 +324,7 @@ int adc_dw_init(struct device *dev)
 {
 	uint32_t tmp_val;
 	uint32_t val;
-	struct adc_config *config = dev->config->config_info;
+	const struct adc_config *config = dev->config->config_info;
 	uint32_t adc_base = config->reg_base;
 	struct adc_info *info = dev->driver_data;
 
@@ -361,7 +361,7 @@ void adc_dw_rx_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct device_config *dev_config = dev->config;
-	struct adc_config *config = dev_config->config_info;
+	const struct adc_config *config = dev_config->config_info;
 	struct adc_info *info = dev->driver_data;
 	uint32_t adc_base = config->reg_base;
 	struct adc_seq_entry *entries = info->entries;
@@ -394,7 +394,7 @@ void adc_dw_rx_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct device_config *dev_config = dev->config;
-	struct adc_config *config = dev_config->config_info;
+	const struct adc_config *config = dev_config->config_info;
 	struct adc_info *info = dev->driver_data;
 	uint32_t adc_base = config->reg_base;
 	struct adc_seq_entry *entries = info->entries;
@@ -445,7 +445,7 @@ void adc_dw_rx_isr(void *arg)
 void adc_dw_err_isr(void *arg)
 {
 	struct device *dev = (struct device *) arg;
-	struct adc_config  *config = dev->config->config_info;
+	const struct adc_config  *config = dev->config->config_info;
 	struct adc_info    *info   = dev->driver_data;
 	uint32_t adc_base = config->reg_base;
 	uint32_t reg_val = sys_in32(adc_base + ADC_SET);
