@@ -150,7 +150,7 @@ static inline int _verify_entries(struct adc_seq_table *seq_table)
 static int ti_adc108s102_read(struct device *dev,
 					struct adc_seq_table *seq_table)
 {
-	struct ti_adc108s102_config *config = dev->config->config_info;
+	const struct ti_adc108s102_config *config = dev->config->config_info;
 	struct ti_adc108s102_data *adc = dev->driver_data;
 	struct spi_config spi_conf;
 	uint32_t data[2] = {0, 0};
@@ -209,7 +209,7 @@ struct adc_driver_api ti_adc108s102_api = {
 
 int ti_adc108s102_init(struct device *dev)
 {
-	struct ti_adc108s102_config *config = dev->config->config_info;
+	const struct ti_adc108s102_config *config = dev->config->config_info;
 	struct ti_adc108s102_data *adc = dev->driver_data;
 
 	adc->spi = device_get_binding((char *)config->spi_port);
