@@ -766,6 +766,45 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	return L2CAP_CONN_SECURITY_REJECT;
 }
 
+static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
+{
+	struct net_buf *buf;
+	struct bt_l2cap_conn_rsp *rsp;
+	struct bt_l2cap_sig_hdr *hdr;
+
+	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		return -ESRCH;
+	}
+
+	/* Send response to connection request only when in acceptor role */
+	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	if (!buf) {
+		BT_ERR("No buffers for PDU");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONN_RSP;
+	hdr->ident = chan->ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	rsp->dcid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
+	rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
+	rsp->result = sys_cpu_to_le16(result);
+
+	if (result == BT_L2CAP_BR_PENDING) {
+		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_AUTHEN_PEND);
+	} else {
+		rsp->status = sys_cpu_to_le16(BT_L2CAP_BR_SUCCESS);
+	}
+
+	bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
+	chan->ident = 0;
+
+	return 0;
+}
+
 static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 			      struct net_buf *buf)
 {
@@ -773,8 +812,6 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_server *server;
 	struct bt_l2cap_conn_req *req = (void *)buf->data;
-	struct bt_l2cap_conn_rsp *rsp;
-	struct bt_l2cap_sig_hdr *hdr;
 	uint16_t psm, scid, dcid, result, status = BT_L2CAP_CS_NO_INFO;
 
 	if (buf->len < sizeof(*req)) {
@@ -787,19 +824,6 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	dcid = 0;
 
 	BT_DBG("psm 0x%02x scid 0x%04x", psm, scid);
-
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
-	if (!buf) {
-		return;
-	}
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->code = BT_L2CAP_CONN_RSP;
-	hdr->ident = ident;
-	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
-
-	rsp = net_buf_add(buf, sizeof(*rsp));
-	memset(rsp, 0, sizeof(*rsp));
 
 	/* Check if there is a server registered */
 	server = l2cap_br_server_lookup_psm(psm);
@@ -841,6 +865,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
 	BR_CHAN(chan)->tx.cid = scid;
 	dcid = BR_CHAN(chan)->rx.cid;
+	chan->ident = ident;
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR);
 
@@ -851,8 +876,6 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	case L2CAP_CONN_SECURITY_PENDING:
 		result = BT_L2CAP_BR_PENDING;
 		status = BT_L2CAP_CS_AUTHEN_PEND;
-		/* store ident for connection response after GAP done */
-		chan->ident = ident;
 		/* TODO: auth timeout */
 		break;
 	case L2CAP_CONN_SECURITY_PASSED:
@@ -864,12 +887,8 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		break;
 	}
 done:
-	rsp->dcid = sys_cpu_to_le16(dcid);
-	rsp->scid = req->scid;
-	rsp->result = sys_cpu_to_le16(result);
-	rsp->status = sys_cpu_to_le16(status);
-
-	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+	/* Reply on connection request as acceptor */
+	l2cap_br_conn_req_reply(chan, result);
 
 	/* Disconnect link when security rules were violated */
 	if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
@@ -1526,40 +1545,6 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 				     BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 		break;
 	}
-}
-
-static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
-{
-	struct net_buf *buf;
-	struct bt_l2cap_conn_rsp *rsp;
-	struct bt_l2cap_sig_hdr *hdr;
-
-	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-		return -ESRCH;
-	}
-
-	/* Send response to connection request only when in acceptor role */
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
-	if (!buf) {
-		BT_ERR("No buffers for PDU");
-		return -ENOMEM;
-	}
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->code = BT_L2CAP_CONN_RSP;
-	hdr->ident = chan->ident;
-	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
-
-	rsp = net_buf_add(buf, sizeof(*rsp));
-	rsp->dcid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
-	rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
-	rsp->status = sys_cpu_to_le16(BT_L2CAP_SUCCESS);
-	rsp->result = sys_cpu_to_le16(result);
-
-	bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
-	chan->ident = 0;
-
-	return 0;
 }
 
 static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
