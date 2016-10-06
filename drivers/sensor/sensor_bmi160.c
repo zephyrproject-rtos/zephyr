@@ -33,7 +33,7 @@ static int bmi160_transceive(struct device *dev, uint8_t *tx_buf,
 			     uint8_t tx_buf_len, uint8_t *rx_buf,
 			     uint8_t rx_buf_len)
 {
-	struct bmi160_device_config *dev_cfg = dev->config->config_info;
+	const struct bmi160_device_config *dev_cfg = dev->config->config_info;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 	struct spi_config spi_cfg;
 
@@ -833,7 +833,7 @@ struct sensor_driver_api bmi160_api = {
 
 int bmi160_init(struct device *dev)
 {
-	struct bmi160_device_config *cfg = dev->config->config_info;
+	const struct bmi160_device_config *cfg = dev->config->config_info;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 	uint8_t val = 0;
 	int32_t acc_range, gyr_range;

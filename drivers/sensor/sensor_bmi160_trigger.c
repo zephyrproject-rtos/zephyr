@@ -305,7 +305,7 @@ int bmi160_trigger_mode_init(struct device *dev)
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
 #ifdef CONFIG_BMI160_TRIGGER_SOURCE_GPIO
-	struct bmi160_device_config *cfg = dev->config->config_info;
+	const struct bmi160_device_config *cfg = dev->config->config_info;
 
 	bmi160->gpio = device_get_binding((char *)cfg->gpio_port);
 	if (!bmi160->gpio) {
