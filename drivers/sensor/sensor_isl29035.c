@@ -16,13 +16,10 @@
  * limitations under the License.
  */
 
-#include <arch/cpu.h>
-#include <device.h>
-#include <i2c.h>
-#include <init.h>
 #include <nanokernel.h>
+#include <init.h>
+#include <i2c.h>
 #include <sensor.h>
-#include <zephyr.h>
 #include <misc/__assert.h>
 
 #include "sensor_isl29035.h"
