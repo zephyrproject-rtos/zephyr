@@ -132,22 +132,19 @@ config  THREAD_CUSTOM_DATA
 
 config  NANO_TIMEOUTS
 	bool
-	prompt "Enable timeouts on nanokernel objects"
 	default y
 	depends on SYS_CLOCK_EXISTS
 	help
-	Allow fibers and tasks to wait on nanokernel objects with a timeout, by
-	enabling the nano_xxx_wait_timeout APIs, and allow fibers to sleep for a
-	period of time, by enabling the fiber_sleep API.
+	Only here for common (ie. non-unified kernel) code that rely on this.
+	Unified kernel uses SYS_CLOCK_EXISTS everywhere instead.
 
 config  NANO_TIMERS
 	bool
-	prompt "Enable nanokernel timers"
 	default y
 	depends on SYS_CLOCK_EXISTS
 	help
-	Allow fibers and tasks to wait on nanokernel timers, which can be
-	accessed using the nano_timer_xxx() APIs.
+	Only here for common (ie. non-unified kernel) code that rely on this.
+	Unified kernel uses SYS_CLOCK_EXISTS everywhere instead.
 
 config NUM_DYNAMIC_TIMERS
 	int

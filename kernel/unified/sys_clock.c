@@ -173,7 +173,7 @@ uint32_t k_uptime_delta_32(int64_t *reftime)
 
 /* handle the expired timeouts in the nano timeout queue */
 
-#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #include <wait_q.h>
 
 static inline void handle_expired_timeouts(int32_t ticks)

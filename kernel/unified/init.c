@@ -101,7 +101,7 @@ k_tid_t const _idle_thread = (k_tid_t)idle_stack;
 #endif
 char __noinit __stack _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
-#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	#include <misc/dlist.h>
 	#define initialize_timeouts() do { \
 		sys_dlist_init(&_nanokernel.timeout_q); \

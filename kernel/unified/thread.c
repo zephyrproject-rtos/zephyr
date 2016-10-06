@@ -266,7 +266,7 @@ static void start_thread(struct k_thread *thread)
 
 static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 {
-#ifdef CONFIG_NANO_TIMEOUTS
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (delay == 0) {
 		start_thread(thread);
 	} else {

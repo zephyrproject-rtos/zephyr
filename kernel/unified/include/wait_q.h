@@ -30,20 +30,12 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NANO_TIMEOUTS)
 #include <timeout_q.h>
 
-#elif defined(CONFIG_NANO_TIMERS)
-#include <timeout_q.h>
-	#define _init_thread_timeout(thread) do { } while ((0))
-	#define _abort_thread_timeout(thread) do { } while ((0))
-
-	#define _add_thread_timeout(thread, pq, ticks) do { } while (0)
-#else
+#if !defined(CONFIG_SYS_CLOCK_EXISTS)
 	#define _init_thread_timeout(thread) do { } while ((0))
 	#define _abort_thread_timeout(thread) do { } while ((0))
 	#define _get_next_timeout_expiry() (K_FOREVER)
-
 	#define _add_thread_timeout(thread, pq, ticks) do { } while (0)
 #endif
 

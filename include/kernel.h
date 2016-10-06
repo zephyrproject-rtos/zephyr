@@ -138,7 +138,7 @@ extern void k_thread_abort(k_tid_t thread);
 #endif
 #endif
 
-#ifdef CONFIG_NANO_TIMEOUTS
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define _THREAD_TIMEOUT_INIT(obj) \
 	(obj).nano_timeout = { \
 	.node = { {0}, {0} }, \
@@ -552,7 +552,7 @@ static inline int k_work_pending(struct k_work *work)
 extern void k_work_q_start(struct k_work_q *work_q,
 				 const struct k_thread_config *config);
 
-#if defined(CONFIG_NANO_TIMEOUTS)
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
 
  /*
  * @brief An item which can be scheduled on a @ref k_work_q with a
@@ -607,7 +607,7 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
-#endif /* CONFIG_NANO_TIMEOUTS */
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 #if defined(CONFIG_SYSTEM_WORKQUEUE)
 
@@ -627,7 +627,7 @@ static inline void k_work_submit(struct k_work *work)
 	k_work_submit_to_queue(&k_sys_work_q, work);
 }
 
-#if defined(CONFIG_NANO_TIMEOUTS)
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
 /*
  * @brief Submit a delayed work item to the system workqueue.
  *
@@ -643,7 +643,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
 	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, ticks);
 }
 
-#endif /* CONFIG_NANO_TIMEOUTS */
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 #endif /* CONFIG_SYSTEM_WORKQUEUE */
 
 /**

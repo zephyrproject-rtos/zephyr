@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NANO_TIMEOUTS)
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
 /* initialize the nano timeouts part of k_thread when enabled in the kernel */
 
 static inline void _init_timeout(struct _timeout *t, _timeout_func_t func)
@@ -93,7 +93,7 @@ static inline void _unpend_thread_timing_out(struct k_thread *thread,
 
 #else
 #define _unpend_thread_timing_out(thread, timeout_obj) do { } while (0)
-#endif /* CONFIG_NANO_TIMEOUTS */
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 /*
  * Handle one expired timeout.

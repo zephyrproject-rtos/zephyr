@@ -6,4 +6,4 @@ obj-y =
 obj-y += $(strip \
 )
 
-obj-$(CONFIG_NANO_TIMERS) += timer_legacy.o
+obj-$(CONFIG_SYS_CLOCK_EXISTS) += timer_legacy.o
