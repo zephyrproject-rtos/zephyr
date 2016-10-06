@@ -235,7 +235,7 @@ static void gpio_k64_port_isr(void *dev)
 {
 	struct device *port = (struct device *)dev;
 	struct gpio_k64_data *data = port->driver_data;
-	struct gpio_k64_config *config = port->config->config_info;
+	const struct gpio_k64_config *config = port->config->config_info;
 	mem_addr_t int_status_reg_addr;
 	uint32_t enabled_int, int_status;
 
