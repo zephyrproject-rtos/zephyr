@@ -979,20 +979,68 @@ done:
 	BT_DBG("chan %p credits %u", chan, chan->rx.credits.nsig);
 }
 
+static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan,
+					uint16_t len)
+{
+	struct net_buf *frag = NULL;
+
+	while (len) {
+		frag = chan->chan.ops->alloc_buf(&chan->chan);
+		if (!frag) {
+			return NULL;
+		}
+
+		BT_DBG("frag %p tailroom %u", frag, net_buf_tailroom(frag));
+
+		net_buf_frag_add(chan->_sdu, frag);
+
+		if (net_buf_tailroom(frag) > len) {
+			return frag;
+		}
+
+		len -= net_buf_tailroom(frag);
+	}
+
+	return frag;
+}
+
 static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 				   struct net_buf *buf)
 {
+	struct net_buf *frag;
+	uint16_t len;
+
 	BT_DBG("chan %p len %u sdu len %u", chan, buf->len, chan->_sdu->len);
 
-	if (chan->_sdu->len + buf->len > chan->_sdu_len) {
+	if (net_buf_frags_len(chan->_sdu) + buf->len > chan->_sdu_len) {
 		BT_ERR("SDU length mismatch");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
 	}
 
-	memcpy(net_buf_add(chan->_sdu, buf->len), buf->data, buf->len);
+	/* Jump to last fragment */
+	frag = net_buf_frag_last(chan->_sdu);
 
-	if (chan->_sdu->len == chan->_sdu_len) {
+	while (buf->len) {
+		/* Check if there is any space left in the current fragment */
+		if (!net_buf_tailroom(frag)) {
+			frag = l2cap_alloc_frag(chan, buf->len);
+			if (!frag) {
+				BT_ERR("Unable to store SDU");
+				bt_l2cap_chan_disconnect(&chan->chan);
+				return;
+			}
+		}
+
+		BT_DBG("frag %p tailroom %u len %u", frag,
+		       net_buf_tailroom(frag), buf->len);
+
+		len = min(net_buf_tailroom(frag), buf->len);
+		memcpy(net_buf_add(frag, len), buf->data, len);
+		net_buf_pull(buf, len);
+	}
+
+	if (net_buf_frags_len(chan->_sdu) == chan->_sdu_len) {
 		/* Receiving complete SDU, notify channel and reset SDU buf */
 		chan->chan.ops->recv(&chan->chan, chan->_sdu);
 		net_buf_unref(chan->_sdu);
