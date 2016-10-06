@@ -82,7 +82,7 @@ static inline qm_spi_bmode_t config_to_bmode(uint8_t mode)
 static void spi_control_cs(struct device *dev, bool active)
 {
 	struct spi_qmsi_runtime *context = dev->driver_data;
-	struct spi_qmsi_config *config = dev->config->config_info;
+	const struct spi_qmsi_config *config = dev->config->config_info;
 	struct device *gpio = context->gpio_cs;
 
 	if (!gpio)
@@ -112,7 +112,7 @@ static int spi_qmsi_configure(struct device *dev,
 static void transfer_complete(void *data, int error, qm_spi_status_t status,
 			      uint16_t len)
 {
-	struct spi_qmsi_config *spi_config =
+	const struct spi_qmsi_config *spi_config =
 			       ((struct device *)data)->config->config_info;
 	qm_spi_t spi = spi_config->spi;
 	struct pending_transfer *pending = &pending_transfers[spi];
@@ -133,7 +133,7 @@ static void transfer_complete(void *data, int error, qm_spi_status_t status,
 
 static int spi_qmsi_slave_select(struct device *dev, uint32_t slave)
 {
-	struct spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_spi_t spi = spi_config->spi;
 
 	return qm_spi_slave_select(spi, 1 << (slave - 1)) ? -EIO : 0;
@@ -156,7 +156,7 @@ static int spi_qmsi_transceive(struct device *dev,
 			       const void *tx_buf, uint32_t tx_buf_len,
 			       void *rx_buf, uint32_t rx_buf_len)
 {
-	struct spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_spi_t spi = spi_config->spi;
 	struct spi_qmsi_runtime *context = dev->driver_data;
 	qm_spi_config_t *cfg = &context->cfg;
@@ -227,7 +227,7 @@ static struct spi_driver_api spi_qmsi_api = {
 	.transceive = spi_qmsi_transceive,
 };
 
-static struct device *gpio_cs_init(struct spi_qmsi_config *config)
+static struct device *gpio_cs_init(const struct spi_qmsi_config *config)
 {
 	struct device *gpio;
 
@@ -263,7 +263,7 @@ static uint32_t spi_master_get_power_state(struct device *dev)
 
 static int spi_qmsi_init(struct device *dev)
 {
-	struct spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct spi_qmsi_config *spi_config = dev->config->config_info;
 	struct spi_qmsi_runtime *context = dev->driver_data;
 
 	switch (spi_config->spi) {
@@ -310,7 +310,7 @@ static int spi_master_suspend_device(struct device *dev)
 		return -EBUSY;
 	}
 
-	struct spi_qmsi_config *config = dev->config->config_info;
+	const struct spi_qmsi_config *config = dev->config->config_info;
 	qm_spi_reg_t *const regs = QM_SPI[config->spi];
 	struct spi_qmsi_runtime *drv_data = dev->driver_data;
 	struct spi_context_t *const ctx_save = &drv_data->ctx_save;
@@ -331,7 +331,7 @@ static int spi_master_suspend_device(struct device *dev)
 
 static int spi_master_resume_device_from_suspend(struct device *dev)
 {
-	struct spi_qmsi_config *config = dev->config->config_info;
+	const struct spi_qmsi_config *config = dev->config->config_info;
 	qm_spi_reg_t *const regs = QM_SPI[config->spi];
 	struct spi_qmsi_runtime *drv_data = dev->driver_data;
 	struct spi_context_t *const ctx_save = &drv_data->ctx_save;
