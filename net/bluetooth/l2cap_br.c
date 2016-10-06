@@ -283,6 +283,12 @@ static struct bt_l2cap_br_chan *__l2cap_chan(struct bt_conn *conn,
 	return NULL;
 }
 
+static void l2cap_br_chan_cleanup(struct bt_l2cap_chan *chan)
+{
+	l2cap_br_detach_chan(chan->conn, chan);
+	bt_l2cap_chan_del(chan);
+}
+
 static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("chan %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
@@ -317,8 +323,7 @@ static void l2cap_br_rtx_timeout(struct nano_work *work)
 		break;
 	case BT_L2CAP_DISCONNECT:
 	case BT_L2CAP_CONNECT:
-		l2cap_br_detach_chan(chan->chan.conn, &chan->chan);
-		bt_l2cap_chan_del(&chan->chan);
+		l2cap_br_chan_cleanup(&chan->chan);
 		break;
 	default:
 		break;
@@ -1392,8 +1397,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		break;
 	case L2CAP_CONN_SECURITY_REJECT:
 	default:
-		l2cap_br_detach_chan(chan->conn, chan);
-		bt_l2cap_chan_del(chan);
+		l2cap_br_chan_cleanup(chan);
 		return -EIO;
 	}
 
@@ -1466,8 +1470,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 					 L2CAP_BR_CONN_TIMEOUT);
 		break;
 	default:
-		l2cap_br_detach_chan(chan->conn, chan);
-		bt_l2cap_chan_del(chan);
+		l2cap_br_chan_cleanup(chan);
 		break;
 	}
 }
@@ -1568,8 +1571,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 		/* Release channel allocated to outgoing connection request */
 		if (atomic_test_bit(BR_CHAN(chan)->flags,
 				    L2CAP_FLAG_CONN_PENDING)) {
-			l2cap_br_detach_chan(chan->conn, chan);
-			bt_l2cap_chan_del(chan);
+			l2cap_br_chan_cleanup(chan);
 		}
 
 		return;
