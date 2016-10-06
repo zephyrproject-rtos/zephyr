@@ -69,7 +69,7 @@ static inline qm_ss_spi_bmode_t config_to_bmode(uint8_t mode)
 static void spi_control_cs(struct device *dev, bool active)
 {
 	struct ss_spi_qmsi_runtime *context = dev->driver_data;
-	struct ss_spi_qmsi_config *config = dev->config->config_info;
+	const struct ss_spi_qmsi_config *config = dev->config->config_info;
 	struct device *gpio = context->gpio_cs;
 
 	if (!gpio)
@@ -100,7 +100,7 @@ static int ss_spi_qmsi_configure(struct device *dev,
 static void spi_qmsi_callback(void *data, int error, qm_ss_spi_status_t status,
 			      uint16_t len)
 {
-	struct ss_spi_qmsi_config *spi_config =
+	const struct ss_spi_qmsi_config *spi_config =
 			       ((struct device *)data)->config->config_info;
 	qm_ss_spi_t spi_id = spi_config->spi;
 	struct ss_pending_transfer *pending = &pending_transfers[spi_id];
@@ -123,7 +123,7 @@ static void spi_qmsi_callback(void *data, int error, qm_ss_spi_status_t status,
 
 static int ss_spi_qmsi_slave_select(struct device *dev, uint32_t slave)
 {
-	struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_ss_spi_t spi_id = spi_config->spi;
 
 	return qm_ss_spi_slave_select(spi_id, 1 << (slave - 1)) ? -EIO : 0;
@@ -147,7 +147,7 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 				  const void *tx_buf, uint32_t tx_buf_len,
 				  void *rx_buf, uint32_t rx_buf_len)
 {
-	struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_ss_spi_t spi_id = spi_config->spi;
 	struct ss_spi_qmsi_runtime *context = dev->driver_data;
 	qm_ss_spi_config_t *cfg = &context->cfg;
@@ -227,7 +227,7 @@ static struct spi_driver_api ss_spi_qmsi_api = {
 };
 
 #ifdef CONFIG_SPI_CS_GPIO
-static struct device *gpio_cs_init(struct ss_spi_qmsi_config *config)
+static struct device *gpio_cs_init(const struct ss_spi_qmsi_config *config)
 {
 	struct device *gpio;
 
@@ -285,7 +285,7 @@ DEVICE_INIT(ss_spi_master_1, CONFIG_SPI_1_NAME,
 static void ss_spi_err_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 
 	if (spi_config->spi == QM_SS_SPI_0) {
 		qm_ss_spi_0_err_isr(NULL);
@@ -297,7 +297,7 @@ static void ss_spi_err_isr(void *arg)
 static void ss_spi_rx_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 
 	if (spi_config->spi == QM_SS_SPI_0) {
 		qm_ss_spi_0_rx_isr(NULL);
@@ -309,7 +309,7 @@ static void ss_spi_rx_isr(void *arg)
 static void ss_spi_tx_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 
 	if (spi_config->spi == QM_SS_SPI_0) {
 		qm_ss_spi_0_tx_isr(NULL);
@@ -320,7 +320,7 @@ static void ss_spi_tx_isr(void *arg)
 
 static int ss_spi_qmsi_init(struct device *dev)
 {
-	struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
+	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 	struct ss_spi_qmsi_runtime *context = dev->driver_data;
 	uint32_t *scss_intmask = NULL;
 
