@@ -53,7 +53,8 @@
 
 /* Convenient macro to get the controller instance. */
 #define GET_CONTROLLER_INSTANCE(dev) \
-	(((struct uart_qmsi_config_info *)dev->config->config_info)->instance)
+	(((const struct uart_qmsi_config_info *) \
+	  dev->config->config_info)->instance)
 
 struct uart_qmsi_config_info {
 	qm_uart_t instance;
@@ -116,7 +117,7 @@ static int uart_suspend_device(struct device *dev)
 		return -EBUSY;
 	}
 
-	struct uart_qmsi_config_info *config = dev->config->config_info;
+	const struct uart_qmsi_config_info *config = dev->config->config_info;
 	qm_uart_reg_t *const regs = QM_UART[config->instance];
 	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
 	struct uart_context_t *const ctx_save = &drv_data->ctx_save;
@@ -147,7 +148,7 @@ static int uart_suspend_device(struct device *dev)
 
 static int uart_resume_device_from_suspend(struct device *dev)
 {
-	struct uart_qmsi_config_info *config = dev->config->config_info;
+	const struct uart_qmsi_config_info *config = dev->config->config_info;
 	qm_uart_reg_t *const regs = QM_UART[config->instance];
 	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
 	struct uart_context_t *const ctx_save = &drv_data->ctx_save;
