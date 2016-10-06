@@ -31,12 +31,14 @@ global variables for completeness sake.
 
 /**
  *
- * @brief Regression test's entry point
+ * @brief Main task entry point
+ *
+ * Entry point for nanokernel only builds.
  *
  * @return N/A
  */
 
-void RegressionTaskEntry(void)
+void main(void)
 {
 	int  tcRC = TC_PASS;
 	int  i;
