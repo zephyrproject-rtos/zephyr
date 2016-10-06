@@ -275,7 +275,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 
 static void eth_enc28j60_init_mac(struct device *dev)
 {
-	struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config->config_info;
 	uint8_t data_macon;
 	uint8_t mac_address[6];
 
@@ -330,7 +330,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 static void eth_enc28j60_init_phy(struct device *dev)
 {
-	struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config->config_info;
 
 	if (config->full_duplex) {
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON1,
@@ -345,7 +345,7 @@ static void eth_enc28j60_init_phy(struct device *dev)
 
 static int eth_enc28j60_init(struct device *dev)
 {
-	struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	struct spi_config spi_cfg;
 
