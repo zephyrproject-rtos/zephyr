@@ -228,7 +228,7 @@ int ti_adc108s102_init(struct device *dev)
 
 struct ti_adc108s102_data adc108s102_data;
 
-struct ti_adc108s102_config adc108s102_config = {
+static struct ti_adc108s102_config adc108s102_config = {
 	.spi_port = CONFIG_ADC_TI_ADC108S102_SPI_PORT_NAME,
 	.spi_config_flags = CONFIG_ADC_TI_ADC108S102_SPI_CONFIGURATION,
 	.spi_freq = CONFIG_ADC_TI_ADC108S102_SPI_MAX_FREQ,
