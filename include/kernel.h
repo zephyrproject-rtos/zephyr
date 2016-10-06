@@ -222,8 +222,6 @@ extern int k_thread_entry_set(k_tid_t thread,
 #endif
 
 extern void k_sched_time_slice_set(int32_t slice, int prio);
-extern int k_workload_get(void);
-extern void k_workload_time_slice_set(int32_t slice);
 
 extern int k_am_in_isr(void);
 
