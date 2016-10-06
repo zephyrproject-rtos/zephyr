@@ -82,19 +82,6 @@ extern void _thread_exit(struct tcs *tcs);
 	} while (0)
 #endif /* CONFIG_THREAD_MONITOR */
 
-/* special nanokernel object APIs */
-
-struct nano_lifo;
-
-extern void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo);
-
-#define _TASK_PENDQ_INIT(queue)		do { } while (0)
-#define _NANO_UNPEND_TASKS(queue)	do { } while (0)
-#define _TASK_NANO_UNPEND_TASKS(queue)	do { } while (0)
-#define _NANO_TASK_READY(tcs)		do { } while (0)
-#define _NANO_TIMER_TASK_READY(tcs)	do { } while (0)
-#define _IS_MICROKERNEL_TASK(tcs)	(0)
-
 #ifdef __cplusplus
 }
 #endif
