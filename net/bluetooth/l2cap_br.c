@@ -892,8 +892,6 @@ done:
 
 	/* Disconnect link when security rules were violated */
 	if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
-		l2cap_br_state_set(chan, BT_L2CAP_DISCONNECTED);
-		atomic_clear(BR_CHAN(chan)->flags);
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
 		return;
 	}
