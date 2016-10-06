@@ -1,0 +1,140 @@
+DNS Client Application
+======================
+
+The DNS resolver or DNS client application demonstrates how to use the
+DNS resolver API.
+
+The DNS API allows to recover IPv4 and IPv6 addresses.
+
+
+API Return Codes
+================
+
+API return codes are documented in the API (see include/iot/dns_client.h).
+
+Macro	|   Value   |	Description
+------------------------------------------------------------------------
+O			is always success
+-EINVAL	    -22		if an invalid parameter was detected
+-EIO	    -5		network error
+-ENOMEM	    -12		memory error, perhaps related to network buffers
+
+
+Requirements
+============
+
+'net_tools':
+
+    https://wiki.zephyrproject.org/view/Networking-with-Qemu
+
+'dnsmasq' application. The dnsmasq version used in this sample is:
+
+    dnsmasq -v
+    Dnsmasq version 2.76  Copyright (c) 2000-2016 Simon Kelley
+
+
+Building Instructions
+=====================
+
+Read src/config.h, change the IP addresses according to the LAN
+environment.
+
+In a terminal window, type make pristine && make to build this sample.
+
+
+Usage
+=====
+
+Run 'loop_socat.sh' and 'loop-slip-tap.sh' as indicated at:
+
+    https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=blob;f=README
+
+Set the IPv4 ip address:
+
+    ip addr add 192.0.2.2/24 dev tap0
+
+Open a terminal window and type:
+
+    dnsmasq -i tap0 -p 5353 -d
+
+NOTE: some systems may require root privileges to run dnsmaq, use sudo or su.
+
+If dnsmasq fails to start with an error like this:
+
+    dnsmasq: failed to create listening socket for port 5353: Address already in use
+
+open a terminal window and type:
+
+    killall -s KILL dnsmasq
+
+For QEMU, type:
+
+    make qemu
+
+
+Sample Output (CONFIG_NET_IPV6=n, CONFIG_NET_IPV4=y)
+====================================================
+
+To exit from QEMU enter: 'CTRL+a, x'
+[QEMU] CPU: qemu32
+
+-------------------------------------------
+[run_dns:127] name: not_a_real_domain_name
+rc: -22
+
+-------------------------------------------
+[run_dns:127] name: zephyrproject.org
+[run_dns:151] 140.211.169.8
+
+-------------------------------------------
+[run_dns:127] name: www.zephyrproject.org
+[run_dns:151] 140.211.169.8
+
+-------------------------------------------
+[run_dns:127] name: gerrit.zephyrproject.org
+[run_dns:151] 199.19.213.246
+
+-------------------------------------------
+[run_dns:127] name: jira.zephyrproject.org
+[run_dns:151] 199.19.213.246
+
+-------------------------------------------
+[run_dns:127] name: jenkins.zephyrproject.org
+[run_dns:151] 199.19.213.246
+
+-------------------------------------------
+[run_dns:127] name: linuxfoundation.org
+rc: -5
+
+-------------------------------------------
+[run_dns:127] name: www.linuxfoundation.org
+[run_dns:151] 140.211.169.4
+
+-------------------------------------------
+[run_dns:127] name: collabprojects.linuxfoundation.org
+[run_dns:151] 140.211.169.4
+
+-------------------------------------------
+[run_dns:127] name: events.linuxfoundation.org
+[run_dns:151] 140.211.169.4
+
+-------------------------------------------
+[run_dns:127] name: training.linuxfoundation.org
+[run_dns:151] 140.211.169.4
+
+Bye!
+
+Known Issues
+============
+
+The above sample contains a rc: -22 (-EINVAL). This is the expected behavior
+for that domain name.
+
+However, we are facing some issues [1] and this fact is reflected in the some
+queries with a rc: -5.
+
+Furthermore, the app may freeze, it seems datagrams are not being handled
+correctly by the L2 layer, or perhaps something is wrong with this app :)
+
+[1] https://jira.zephyrproject.org/browse/ZEP-1036
+
