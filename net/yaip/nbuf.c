@@ -964,7 +964,9 @@ bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 	uint16_t offset = 0;
 	struct net_buf *last;
 
-	NET_ASSERT(buf && data);
+	if (!buf || !data) {
+		return false;
+	}
 
 	if (is_from_data_pool(buf)) {
 		/* The buf needs to be a net_buf that has user data
