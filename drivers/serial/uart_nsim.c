@@ -31,7 +31,7 @@
 #define NSIM_UART_STATUS 1
 
 #define DEV_CFG(dev) \
-	((struct uart_device_config * const)(dev)->config->config_info)
+	((const struct uart_device_config * const)(dev)->config->config_info)
 
 #define DATA_REG(dev) (DEV_CFG(dev)->regs + NSIM_UART_DATA)
 #define STATUS_REG(dev) (DEV_CFG(dev)->regs + NSIM_UART_STATUS)
