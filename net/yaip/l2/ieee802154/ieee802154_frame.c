@@ -248,7 +248,8 @@ uint16_t ieee802154_compute_header_size(struct net_if *iface,
 	return hdr_len;
 }
 
-static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf)
+static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf,
+							      uint8_t ack)
 {
 	struct ieee802154_fcf_seq *fs;
 
@@ -256,7 +257,7 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf)
 
 	fs->fc.security_enabled = 0;
 	fs->fc.frame_pending = 0;
-	fs->fc.ar = 0;
+	fs->fc.ar = ack;
 	fs->fc.pan_id_comp = 0;
 	fs->fc.reserved = 0;
 	/** We support version 2006 only for now */
@@ -391,7 +392,7 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
 
-	fs = generate_fcf_grounds(&p_buf);
+	fs = generate_fcf_grounds(&p_buf, ctx->ack_requested);
 
 	fs->fc.frame_type = IEEE802154_FRAME_TYPE_DATA;
 	fs->sequence = ctx->sequence++;
@@ -427,7 +428,7 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 		return false;
 	}
 
-	fs = generate_fcf_grounds(&p_buf);
+	fs = generate_fcf_grounds(&p_buf, 0);
 
 	fs->fc.frame_type = IEEE802154_FRAME_TYPE_ACK;
 	fs->sequence = seq;
