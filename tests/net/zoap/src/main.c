@@ -813,6 +813,127 @@ done:
 	return result;
 }
 
+static int test_block_size(void)
+{
+	struct zoap_block_context req_ctx, rsp_ctx;
+	struct zoap_packet req;
+	struct net_buf *buf = NULL;
+	const char token[] = "rndtoken";
+	uint8_t *payload;
+	uint16_t len;
+	int result = TC_FAIL;
+	int r;
+
+	buf = net_buf_get(&zoap_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+	ip_buf_appdata(buf) = net_buf_tail(buf);
+	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	r = zoap_packet_init(&req, buf);
+	if (r < 0) {
+		TC_PRINT("Unable to initialize request\n");
+		goto done;
+	}
+
+	zoap_block_transfer_init(&req_ctx, ZOAP_BLOCK_32, 127);
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&req, 1);
+	zoap_header_set_type(&req, ZOAP_TYPE_CON);
+	zoap_header_set_code(&req, ZOAP_METHOD_POST);
+	zoap_header_set_id(&req, zoap_next_id());
+	zoap_header_set_token(&req,
+			      (const uint8_t *) token, strlen(token));
+
+	zoap_add_block1_option(&req, &req_ctx);
+	zoap_add_size1_option(&req, &req_ctx);
+
+	payload = zoap_packet_get_payload(&req, &len);
+	if (!payload) {
+		TC_PRINT("There's no space for payload in the packet\n");
+		goto done;
+	}
+
+	memset(payload, 0xFE, zoap_block_size_to_bytes(ZOAP_BLOCK_32));
+
+	zoap_packet_set_used(&req, zoap_block_size_to_bytes(ZOAP_BLOCK_32));
+
+	zoap_block_transfer_init(&rsp_ctx, ZOAP_BLOCK_1024, 0);
+
+	r = zoap_update_from_block(&req, &rsp_ctx);
+	if (r < 0) {
+		TC_PRINT("Couldn't parse Block options\n");
+		goto done;
+	}
+
+	if (rsp_ctx.block_size != ZOAP_BLOCK_32) {
+		TC_PRINT("Couldn't get block size from request\n");
+		goto done;
+	}
+
+	if (rsp_ctx.current != 0) {
+		TC_PRINT("Couldn't get the current block size position\n");
+		goto done;
+	}
+
+	if (rsp_ctx.total_size != 127) {
+		TC_PRINT("Couldn't packet total size from request\n");
+		goto done;
+	}
+
+	/* Let's try the second packet */
+	zoap_next_block(&req_ctx);
+
+	r = zoap_packet_init(&req, buf);
+	if (r < 0) {
+		TC_PRINT("Unable to initialize request\n");
+		goto done;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&req, 1);
+	zoap_header_set_type(&req, ZOAP_TYPE_CON);
+	zoap_header_set_code(&req, ZOAP_METHOD_POST);
+	zoap_header_set_id(&req, zoap_next_id());
+	zoap_header_set_token(&req,
+			      (const uint8_t *) token, strlen(token));
+
+	zoap_add_block1_option(&req, &req_ctx);
+
+	memset(payload, 0xFE, ZOAP_BLOCK_32);
+
+	zoap_packet_set_used(&req, ZOAP_BLOCK_32);
+
+	zoap_update_from_block(&req, &rsp_ctx);
+
+	if (rsp_ctx.block_size != ZOAP_BLOCK_32) {
+		TC_PRINT("Couldn't get block size from request\n");
+		goto done;
+	}
+
+	if (rsp_ctx.current != zoap_block_size_to_bytes(ZOAP_BLOCK_32)) {
+		TC_PRINT("Couldn't get the current block size position\n");
+		goto done;
+	}
+
+	if (rsp_ctx.total_size != 127) {
+		TC_PRINT("[2] Couldn't packet total size from request\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	net_buf_unref(buf);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
 static const struct {
 	const char *name;
 	int (*func)(void);
@@ -824,7 +945,8 @@ static const struct {
 	{ "Parse simple PDU test", test_parse_simple_pdu, },
 	{ "Test retransmission", test_retransmit_second_round, },
 	{ "Test observer server", test_observer_server, },
-	{ "Test observer server", test_observer_client, },
+	{ "Test observer client", test_observer_client, },
+	{ "Test block sized transfer", test_block_size, },
 };
 
 int main(int argc, char *argv[])
