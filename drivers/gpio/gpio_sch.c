@@ -96,7 +96,7 @@ static inline void _set_data_reg(uint32_t *reg, uint8_t pin, uint8_t set)
 
 static void _gpio_pin_config(struct device *dev, uint32_t pin, int flags)
 {
-	struct gpio_sch_config *info = dev->config->config_info;
+	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
 	uint8_t active_high = 0;
 	uint8_t active_low = 0;
@@ -124,7 +124,7 @@ static void _gpio_pin_config(struct device *dev, uint32_t pin, int flags)
 
 static inline void _gpio_port_config(struct device *dev, int flags)
 {
-	struct gpio_sch_config *info = dev->config->config_info;
+	const struct gpio_sch_config *info = dev->config->config_info;
 	int pin;
 
 	for (pin = 0; pin < info->bits; pin++) {
@@ -135,7 +135,7 @@ static inline void _gpio_port_config(struct device *dev, int flags)
 static int gpio_sch_config(struct device *dev,
 			   int access_op, uint32_t pin, int flags)
 {
-	struct gpio_sch_config *info = dev->config->config_info;
+	const struct gpio_sch_config *info = dev->config->config_info;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (pin >= info->bits) {
@@ -153,7 +153,7 @@ static int gpio_sch_config(struct device *dev,
 static int gpio_sch_write(struct device *dev,
 			  int access_op, uint32_t pin, uint32_t value)
 {
-	struct gpio_sch_config *info = dev->config->config_info;
+	const struct gpio_sch_config *info = dev->config->config_info;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (pin >= info->bits) {
@@ -171,7 +171,7 @@ static int gpio_sch_write(struct device *dev,
 static int gpio_sch_read(struct device *dev,
 			  int access_op, uint32_t pin, uint32_t *value)
 {
-	struct gpio_sch_config *info = dev->config->config_info;
+	const struct gpio_sch_config *info = dev->config->config_info;
 
 	*value = _read_glvl(info->regs);
 
@@ -189,7 +189,7 @@ static int gpio_sch_read(struct device *dev,
 static void _gpio_sch_poll_status(int data, int unused)
 {
 	struct device *dev = INT_TO_POINTER(data);
-	struct gpio_sch_config *info = dev->config->config_info;
+	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -252,7 +252,7 @@ static int gpio_sch_manage_callback(struct device *dev,
 static int gpio_sch_enable_callback(struct device *dev,
 				    int access_op, uint32_t pin)
 {
-	struct gpio_sch_config *info = dev->config->config_info;
+	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
@@ -281,7 +281,7 @@ static int gpio_sch_enable_callback(struct device *dev,
 static int gpio_sch_disable_callback(struct device *dev,
 				     int access_op, uint32_t pin)
 {
-	struct gpio_sch_config *info = dev->config->config_info;
+	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
