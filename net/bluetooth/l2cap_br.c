@@ -804,7 +804,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	/* Check if there is a server registered */
 	server = l2cap_br_server_lookup_psm(psm);
 	if (!server) {
-		result = BT_L2CAP_ERR_PSM_NOT_SUPP;
+		result = BT_L2CAP_BR_ERR_PSM_NOT_SUPP;
 		goto done;
 	}
 
@@ -814,18 +814,18 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	 */
 	if (psm != L2CAP_BR_PSM_SDP && BT_FEAT_HOST_SSP(conn->br.features) &&
 	    !conn->encrypt) {
-		result = BT_L2CAP_ERR_SEC_BLOCK;
+		result = BT_L2CAP_BR_ERR_SEC_BLOCK;
 		goto done;
 	}
 
 	if (!L2CAP_BR_CID_IS_DYN(scid)) {
-		result = BT_L2CAP_ERR_INVALID_SCID;
+		result = BT_L2CAP_BR_ERR_INVALID_SCID;
 		goto done;
 	}
 
 	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
 	if (chan) {
-		result = BT_L2CAP_ERR_SCID_IN_USE;
+		result = BT_L2CAP_BR_ERR_SCID_IN_USE;
 		goto done;
 	}
 
@@ -834,7 +834,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	 * channel.
 	 */
 	if (server->accept(conn, &chan) < 0) {
-		result = BT_L2CAP_ERR_NO_RESOURCES;
+		result = BT_L2CAP_BR_ERR_NO_RESOURCES;
 		goto done;
 	}
 
@@ -849,18 +849,18 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
-		result = BT_L2CAP_PENDING;
+		result = BT_L2CAP_BR_PENDING;
 		status = BT_L2CAP_CS_AUTHEN_PEND;
 		/* store ident for connection response after GAP done */
 		chan->ident = ident;
 		/* TODO: auth timeout */
 		break;
 	case L2CAP_CONN_SECURITY_PASSED:
-		result = BT_L2CAP_SUCCESS;
+		result = BT_L2CAP_BR_SUCCESS;
 		break;
 	case L2CAP_CONN_SECURITY_REJECT:
 	default:
-		result = BT_L2CAP_ERR_SEC_BLOCK;
+		result = BT_L2CAP_BR_ERR_SEC_BLOCK;
 		break;
 	}
 done:
@@ -872,7 +872,7 @@ done:
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 
 	/* Disconnect link when security rules were violated */
-	if (result == BT_L2CAP_ERR_SEC_BLOCK) {
+	if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
 		l2cap_br_state_set(chan, BT_L2CAP_DISCONNECTED);
 		atomic_clear(BR_CHAN(chan)->flags);
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
@@ -1437,14 +1437,14 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	switch (result) {
-	case BT_L2CAP_SUCCESS:
+	case BT_L2CAP_BR_SUCCESS:
 		chan->ident = 0;
 		BR_CHAN(chan)->tx.cid = dcid;
 		l2cap_br_conf(chan);
 		l2cap_br_state_set(chan, BT_L2CAP_CONFIG);
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
-	case BT_L2CAP_PENDING:
+	case BT_L2CAP_BR_PENDING:
 		nano_delayed_work_submit(&chan->rtx_work,
 					 L2CAP_BR_CONN_TIMEOUT);
 		break;
@@ -1580,7 +1580,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 		 * Security procedure status is non-zero so respond with
 		 * security violation only as channel acceptor.
 		 */
-		l2cap_br_conn_req_reply(chan, BT_L2CAP_ERR_SEC_BLOCK);
+		l2cap_br_conn_req_reply(chan, BT_L2CAP_BR_ERR_SEC_BLOCK);
 
 		/* Release channel allocated to outgoing connection request */
 		if (atomic_test_bit(BR_CHAN(chan)->flags,
