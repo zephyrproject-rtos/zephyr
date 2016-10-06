@@ -144,7 +144,8 @@ static void ss_qmsi_write_bit(uint32_t *target, uint8_t bit, uint8_t value)
 static inline void ss_qmsi_pin_config(struct device *port, uint32_t pin,
 				      int flags)
 {
-	struct ss_gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct ss_gpio_qmsi_config *gpio_config =
+		port->config->config_info;
 	qm_ss_gpio_t gpio = gpio_config->gpio;
 	uint32_t controller;
 
@@ -205,7 +206,8 @@ static inline void ss_qmsi_pin_config(struct device *port, uint32_t pin,
 
 static inline void ss_qmsi_port_config(struct device *port, int flags)
 {
-	struct ss_gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct ss_gpio_qmsi_config *gpio_config =
+		port->config->config_info;
 	uint8_t num_pins = gpio_config->num_pins;
 	int i;
 
@@ -233,7 +235,8 @@ static inline int ss_gpio_qmsi_config(struct device *port, int access_op,
 static inline int ss_gpio_qmsi_write(struct device *port, int access_op,
 				     uint32_t pin, uint32_t value)
 {
-	struct ss_gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct ss_gpio_qmsi_config *gpio_config =
+		port->config->config_info;
 	qm_ss_gpio_t gpio = gpio_config->gpio;
 
 	gpio_critical_region_start(port);
@@ -254,7 +257,8 @@ static inline int ss_gpio_qmsi_write(struct device *port, int access_op,
 static inline int ss_gpio_qmsi_read(struct device *port, int access_op,
 				    uint32_t pin, uint32_t *value)
 {
-	struct ss_gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct ss_gpio_qmsi_config *gpio_config =
+		port->config->config_info;
 	qm_ss_gpio_t gpio = gpio_config->gpio;
 	qm_ss_gpio_state_t state;
 
@@ -323,7 +327,8 @@ static struct gpio_driver_api api_funcs = {
 void ss_gpio_isr(void *arg)
 {
 	struct device *port = arg;
-	struct ss_gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct ss_gpio_qmsi_config *gpio_config =
+		port->config->config_info;
 
 	if (gpio_config->gpio == QM_SS_GPIO_0) {
 		qm_ss_gpio_isr_0(NULL);
@@ -334,7 +339,8 @@ void ss_gpio_isr(void *arg)
 
 static int ss_gpio_qmsi_init(struct device *port)
 {
-	struct ss_gpio_qmsi_config *gpio_config = port->config->config_info;
+	const struct ss_gpio_qmsi_config *gpio_config =
+		port->config->config_info;
 	uint32_t *scss_intmask = NULL;
 
 	gpio_reentrancy_init(port);
