@@ -120,7 +120,7 @@ static inline void _sleep(uint32_t sleep_in_ms)
  *******************************************/
 void glcd_print(struct device *port, unsigned char *data, uint32_t size)
 {
-	struct glcd_driver * const rom = (struct glcd_driver *)
+	const struct glcd_driver * const rom = (struct glcd_driver *)
 						port->config->config_info;
 	struct glcd_data *dev = port->driver_data;
 	uint8_t buf[] = { GLCD_CMD_SET_CGRAM_ADDR, 0 };
@@ -135,7 +135,7 @@ void glcd_print(struct device *port, unsigned char *data, uint32_t size)
 
 void glcd_cursor_pos_set(struct device *port, uint8_t col, uint8_t row)
 {
-	struct glcd_driver * const rom = (struct glcd_driver *)
+	const struct glcd_driver * const rom = (struct glcd_driver *)
 						port->config->config_info;
 	struct glcd_data *dev = port->driver_data;
 
@@ -156,7 +156,7 @@ void glcd_cursor_pos_set(struct device *port, uint8_t col, uint8_t row)
 
 void glcd_clear(struct device *port)
 {
-	struct glcd_driver * const rom = (struct glcd_driver *)
+	const struct glcd_driver * const rom = (struct glcd_driver *)
 						port->config->config_info;
 	struct glcd_data *dev = port->driver_data;
 	uint8_t clear[] = { 0, GLCD_CMD_SCREEN_CLEAR };
@@ -169,7 +169,7 @@ void glcd_clear(struct device *port)
 
 void glcd_display_state_set(struct device *port, uint8_t opt)
 {
-	struct glcd_driver * const rom = (struct glcd_driver *)
+	const struct glcd_driver * const rom = (struct glcd_driver *)
 						port->config->config_info;
 	struct glcd_data *dev = port->driver_data;
 	uint8_t data[] = { 0, 0 };
@@ -194,7 +194,7 @@ uint8_t glcd_display_state_get(struct device *port)
 
 void glcd_input_state_set(struct device *port, uint8_t opt)
 {
-	struct glcd_driver * const rom = port->config->config_info;
+	const struct glcd_driver * const rom = port->config->config_info;
 	struct glcd_data *dev = port->driver_data;
 	uint8_t data[] = { 0, 0 };
 
@@ -239,7 +239,7 @@ void glcd_color_set(struct device *port, uint8_t r, uint8_t g, uint8_t b)
 
 void glcd_function_set(struct device *port, uint8_t opt)
 {
-	struct glcd_driver * const rom = port->config->config_info;
+	const struct glcd_driver * const rom = port->config->config_info;
 	struct glcd_data *dev = port->driver_data;
 	uint8_t data[] = { 0, 0 };
 
