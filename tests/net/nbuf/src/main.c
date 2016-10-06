@@ -266,7 +266,7 @@ static int test_fragment_copy(void)
 	}
 
 	pos = memcmp(buf_orig, buf_copy + sizeof(struct ipv6_hdr) +
-		     sizeof(struct icmp_hdr), sizeof(buf_orig));
+		     sizeof(struct icmp_hdr), orig_len);
 	if (pos) {
 		printk("Buffer copy failed at pos %d\n", pos);
 		return -EINVAL;
