@@ -30,13 +30,14 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #include <timeout_q.h>
-
-#if !defined(CONFIG_SYS_CLOCK_EXISTS)
-	#define _init_thread_timeout(thread) do { } while ((0))
-	#define _abort_thread_timeout(thread) do { } while ((0))
-	#define _get_next_timeout_expiry() (K_FOREVER)
-	#define _add_thread_timeout(thread, pq, ticks) do { } while (0)
+#else
+#define _init_thread_timeout(thread) do { } while ((0))
+#define _nano_timeout_tcs_init(thread) _init_thread_timeout(thread)
+#define _add_thread_timeout(thread, wait_q, timeout) do { } while (0)
+static inline int _abort_thread_timeout(struct k_thread *thread) { return 0; }
+#define _get_next_timeout_expiry() (K_FOREVER)
 #endif
 
 #ifdef __cplusplus
