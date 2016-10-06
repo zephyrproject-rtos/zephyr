@@ -37,7 +37,7 @@
 /* convenience defines */
 
 #define DEV_CFG(dev) \
-	((struct uart_device_config * const)(dev)->config->config_info)
+	((const struct uart_device_config * const)(dev)->config->config_info)
 #define DEV_DATA(dev) \
 	((struct uart_k20_dev_data_t * const)(dev)->driver_data)
 #define UART_STRUCT(dev) \
@@ -71,7 +71,7 @@ static int uart_k20_init(struct device *dev)
 	union C2 c2;				   /* UART C2 register value */
 
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
-	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
+	const struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 	struct uart_k20_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	/* disable interrupts */
