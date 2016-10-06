@@ -140,6 +140,12 @@ static void _pinmux_defaults(uint32_t base)
 	PIN_CONFIG(mux_config, 17,  PINMUX_FUNC_C);
 	PIN_CONFIG(mux_config, 40,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 41,  PINMUX_FUNC_B);
+#ifdef CONFIG_SPI_1
+	PIN_CONFIG(mux_config, 42,  PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 43,  PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 44,  PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 45,  PINMUX_FUNC_B);
+#endif
 	PIN_CONFIG(mux_config, 55,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 56,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 57,  PINMUX_FUNC_B);
