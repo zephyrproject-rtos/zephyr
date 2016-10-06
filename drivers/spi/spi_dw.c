@@ -493,7 +493,7 @@ void spi_config_1_irq(void);
 
 struct spi_dw_data spi_dw_data_port_1;
 
-struct spi_dw_config spi_dw_config_1 = {
+static struct spi_dw_config spi_dw_config_1 = {
 	.regs = SPI_DW_PORT_1_REGS,
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_1_CLOCK_GATE_SUBSYS),
