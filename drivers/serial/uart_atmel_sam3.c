@@ -209,7 +209,7 @@ static int uart_sam3_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	if (uart->sr & UART_INT_RXRDY)
+	if (!(uart->sr & UART_INT_RXRDY))
 		return (-1);
 
 	/* got a character */
