@@ -322,7 +322,7 @@ extern void task_group_leave(uint32_t groups);
 		__in_section(_k_task_list, private, task) = \
 		__K_TASK_INITIALIZER( \
 			(ktask_t)&_k_task_obj_##name, \
-			priority, 0x00000001, groups, \
+			priority, 0x00000001, (uint32_t)(groups), \
 			entry, &__stack_##name[0], stack_size, NULL); \
 	const ktask_t name \
 		__in_section(_k_task_ptr, private, task) = \
