@@ -39,6 +39,7 @@ Sections
    contribute/code.rst
    porting/porting.rst
    reference/kbuild/kbuild.rst
+   LICENSING.rst
 
 You can find further information on the `Zephyr Project Wiki`_.
 
