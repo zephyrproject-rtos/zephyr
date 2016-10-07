@@ -31,6 +31,7 @@ extern "C" {
 
 #define _ARC_V2_AUX_IRQ_CTRL_BLINK (1 << 9)
 #define _ARC_V2_AUX_IRQ_CTRL_LOOP_REGS (1 << 10)
+#define _ARC_V2_AUX_IRQ_CTRL_LP (1 << 13)
 #define _ARC_V2_AUX_IRQ_CTRL_14_REGS 7
 #define _ARC_V2_AUX_IRQ_CTRL_16_REGS 8
 #define _ARC_V2_AUX_IRQ_CTRL_32_REGS 16

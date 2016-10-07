@@ -61,9 +61,6 @@ IRQ stack frame layout:
 
            status32
               pc
-          [jli_base]
-          [ldi_base]
-          [ei_base]
            lp_count
            lp_start
             lp_end
@@ -74,7 +71,12 @@ IRQ stack frame layout:
 
   low address
 
-  [registers not taken into account in the current implementation]
+Registers not taken into account in the current implementation.
+          jli_base
+          ldi_base
+          ei_base
+          accl
+          acch
 
 The context switch code adopts this standard so that it is easier to follow:
 
