@@ -290,11 +290,6 @@ struct k_timer {
 
 extern void k_timer_init(struct k_timer *timer, void *data);
 
-#if (CONFIG_NUM_DYNAMIC_TIMERS > 0)
-extern struct k_timer *k_timer_alloc(void);
-extern void k_timer_free(struct k_timer *timer);
-#endif
-
 extern void k_timer_start(struct k_timer *timer,
 			  int32_t duration, int32_t period,
 			  void (*handler)(void *), void *handler_arg,
@@ -354,8 +349,6 @@ extern int64_t k_uptime_delta(int64_t *reftime);
  */
 
 extern uint32_t k_uptime_delta_32(int64_t *reftime);
-
-extern bool k_timer_pool_is_empty(void);
 
 extern uint32_t k_cycle_get_32(void);
 

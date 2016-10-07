@@ -83,6 +83,8 @@ void k_timer_init(struct k_timer *timer, void *data)
 
 #if (CONFIG_NUM_DYNAMIC_TIMERS > 0)
 
+/* Implements legacy API support for dynamic timers */
+
 static struct k_timer _dynamic_timers[CONFIG_NUM_DYNAMIC_TIMERS];
 static sys_dlist_t _timer_pool;
 
@@ -110,7 +112,7 @@ static int init_dyamic_timers(struct device *dev)
  *
  * @return pointer to the new timer structure
  */
-struct k_timer *k_timer_alloc(void)
+struct k_timer *_k_timer_alloc(void)
 {
 	k_sched_lock();
 
@@ -133,7 +135,7 @@ struct k_timer *k_timer_alloc(void)
  *
  * @return N/A
  */
-void k_timer_free(struct k_timer *timer)
+void _k_timer_free(struct k_timer *timer)
 {
 	k_timer_stop(timer);
 	k_sched_lock();
@@ -147,7 +149,7 @@ void k_timer_free(struct k_timer *timer)
  *
  * @return true if the timer pool is empty, false otherwise
  */
-bool k_timer_pool_is_empty(void)
+bool _k_timer_pool_is_empty(void)
 {
 	k_sched_lock();
 

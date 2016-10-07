@@ -655,8 +655,14 @@ static inline int nano_stack_pop(struct nano_stack *stack, uint32_t *data,
 
 #define ktimer_t struct k_timer *
 
-#define task_timer_alloc k_timer_alloc
-#define task_timer_free k_timer_free
+#if (CONFIG_NUM_DYNAMIC_TIMERS > 0)
+extern struct k_timer *_k_timer_alloc(void);
+#define task_timer_alloc _k_timer_alloc
+
+extern void _k_timer_free(struct k_timer *timer);
+#define task_timer_free _k_timer_free
+#endif
+
 
 extern void task_timer_start(ktimer_t timer, int32_t duration,
 			     int32_t period, ksem_t sema);

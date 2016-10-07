@@ -31,9 +31,12 @@ This module tests the following microkernel timer routines:
 
 #include "fifo_timeout.c"
 
-#ifndef CONFIG_KERNEL_V2
+#ifdef CONFIG_KERNEL_V2
+extern bool _k_timer_pool_is_empty(void);    /* For white box testing only */
+#define timer_pool_is_empty _k_timer_pool_is_empty
+#else
 extern struct nano_lifo _k_timer_free;    /* For white box testing only */
-static inline bool k_timer_pool_is_empty(void)
+static inline bool timer_pool_is_empty(void)
 {
 	return (bool)(_k_timer_free.list == NULL);
 }
@@ -267,7 +270,7 @@ int testLowTimerGet(void)
 
 		/* Whitebox test to ensure that all timers were allocated. */
 
-		if (!k_timer_pool_is_empty()) {
+		if (!timer_pool_is_empty()) {
 			TC_ERROR("** Not all timers were allocated!\n");
 		}
 
