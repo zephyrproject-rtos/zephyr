@@ -272,6 +272,8 @@ setup_hdr:
 	NET_ASSERT_INFO(frag, "No data!");
 
 	while (frag) {
+		NET_ASSERT(net_buf_headroom(frag) > sizeof(struct net_eth_addr));
+
 		hdr = (struct net_eth_hdr *)(frag->data -
 					     net_nbuf_ll_reserve(buf));
 		memcpy(&hdr->dst, net_nbuf_ll_dst(buf)->addr,
