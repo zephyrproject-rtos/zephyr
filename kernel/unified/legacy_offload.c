@@ -73,17 +73,14 @@ int task_offload_to_fiber(int (*func)(), void *argp)
 
 static char __stack offload_work_q_stack[CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE];
 
-static const struct k_thread_config offload_work_q_config = {
-	.stack = offload_work_q_stack,
-	.stack_size = sizeof(offload_work_q_stack),
-	.prio = CONFIG_OFFLOAD_WORKQUEUE_PRIORITY,
-};
-
 static int k_offload_work_q_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	k_work_q_start(&offload_work_q, &offload_work_q_config);
+	k_work_q_start(&offload_work_q,
+		       offload_work_q_stack,
+		       sizeof(offload_work_q_stack),
+		       CONFIG_OFFLOAD_WORKQUEUE_PRIORITY);
 
 	return 0;
 }

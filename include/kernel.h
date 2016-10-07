@@ -102,12 +102,6 @@ enum execution_context_types {
 	K_PREEMPT_THREAD,
 };
 
-struct k_thread_config {
-	char *stack;
-	unsigned stack_size;
-	unsigned prio;
-};
-
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 extern k_tid_t k_thread_spawn(char *stack, unsigned stack_size,
 			      void (*entry)(void *, void *, void*),
@@ -661,8 +655,8 @@ static inline int k_work_pending(struct k_work *work)
  * @brief Start a new workqueue.  This routine can be called from either
  * fiber or task context.
  */
-extern void k_work_q_start(struct k_work_q *work_q,
-				 const struct k_thread_config *config);
+extern void k_work_q_start(struct k_work_q *work_q, char *stack,
+			   unsigned stack_size, unsigned prio);
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS)
 

@@ -52,14 +52,14 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 	}
 }
 
-void k_work_q_start(struct k_work_q *work_q,
-		    const struct k_thread_config *config)
+void k_work_q_start(struct k_work_q *work_q, char *stack,
+		    unsigned stack_size, unsigned prio)
 {
 	k_fifo_init(&work_q->fifo);
 
-	k_thread_spawn(config->stack, config->stack_size,
+	k_thread_spawn(stack, stack_size,
 		       work_q_main, work_q, 0, 0,
-		       config->prio, 0, 0);
+		       prio, 0, 0);
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -152,19 +152,16 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 
 static char __stack sys_work_q_stack[CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE];
 
-static const struct k_thread_config sys_work_q_config = {
-	.stack = sys_work_q_stack,
-	.stack_size = sizeof(sys_work_q_stack),
-	.prio = CONFIG_SYSTEM_WORKQUEUE_PRIORITY,
-};
-
 struct k_work_q k_sys_work_q;
 
 static int k_sys_work_q_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	k_work_q_start(&k_sys_work_q, &sys_work_q_config);
+	k_work_q_start(&k_sys_work_q,
+		       sys_work_q_stack,
+		       sizeof(sys_work_q_stack),
+		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
 
 	return 0;
 }

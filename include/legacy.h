@@ -107,7 +107,11 @@ static inline nano_thread_id_t fiber_start(char *stack, unsigned stack_size,
 #define fiber_fiber_start fiber_start
 #define task_fiber_start fiber_start
 
-#define fiber_config k_thread_config
+struct fiber_config {
+	char *stack;
+	unsigned stack_size;
+	unsigned prio;
+};
 
 #define fiber_start_config(config, entry, arg1, arg2, options) \
 	fiber_start(config->stack, config->stack_size, \
