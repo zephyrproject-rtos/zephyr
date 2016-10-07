@@ -47,7 +47,7 @@ DEVICE_INIT(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
 /* Sending side of the console IPM driver, will forward anything sent
  * to printf() since we selected IPM_CONSOLE_STDOUT
  */
-struct ipm_console_sender_config_info sender_config = {
+static struct ipm_console_sender_config_info sender_config = {
 	.bind_to = "ipm_dummy0",
 	.flags = SOURCE
 };
@@ -66,7 +66,7 @@ static char __stack fiber_stack[IPM_CONSOLE_STACK_SIZE];
 static char line_buf[LINE_BUF_SIZE];
 
 /* Dump incoming messages to printk() */
-struct ipm_console_receiver_config_info receiver_config = {
+static struct ipm_console_receiver_config_info receiver_config = {
 	.bind_to = "ipm_dummy0",
 	.fiber_stack = fiber_stack,
 	.ring_buf_data = ring_buf_data,
