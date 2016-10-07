@@ -37,6 +37,7 @@
 #include <net/ieee802154_radio.h>
 
 #include "ieee802154_frame.h"
+#include "ieee802154_mgmt.h"
 
 #if 0
 
@@ -238,9 +239,16 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 		return NET_DROP;
 	}
 
+	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
+		return ieee802154_handle_beacon(iface, &mpdu);
+	}
+
+	if (ieee802154_is_scanning(iface)) {
+		return NET_DROP;
+	}
+
 	/**
-	 * We do not support other frames than MAC Data Service ones
-	 * ToDo: Support MAC Management Service frames
+	 * We do not support other frames than Beacon ar  Data for now
 	 */
 	if (mpdu.mhr.fs->fc.frame_type != IEEE802154_FRAME_TYPE_DATA) {
 		NET_DBG("Unsupported frame type found");
@@ -329,6 +337,8 @@ void ieee802154_init(struct net_if *iface)
 		iface->dev->driver_api;
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
+
+	ieee802154_mgmt_init(iface);
 
 #ifdef CONFIG_NET_L2_IEEE802154_ORFD
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
