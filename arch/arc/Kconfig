@@ -112,6 +112,20 @@ config	NUM_IRQS
 	  The BSP must provide a valid default. This drives the size of the
 	  vector table.
 
+config	RGF_NUM_BANKS
+	int
+	prompt "Number of General Purpose Register Banks"
+	depends on CPU_ARCV2
+	range 1 2
+	default 2
+	help
+	The ARC CPU can be configured to have more than one register
+	bank. If fast interrupts are supported (FIRQ), the 2nd
+	register bank, in the set, will be used by FIRQ interrupts.
+	If fast interrupts are supported but there is only 1
+	register bank, the fast interrupt handler must save
+	and restore general purpose regsiters.
+
 config	FIRQ_STACK_SIZE
 	int
 	prompt "Size of stack for FIRQs (in bytes)"

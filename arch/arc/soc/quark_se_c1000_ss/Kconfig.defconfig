@@ -33,6 +33,9 @@ config NUM_IRQS
 	# must be > the highest interrupt number used
 	default 68
 
+config RGF_NUM_BANKS
+	default 2
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 
