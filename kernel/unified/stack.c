@@ -27,19 +27,13 @@
 #include <wait_q.h>
 #include <misc/__assert.h>
 
-void k_stack_init_with_buffer(struct k_stack *stack, int num_entries,
-			      uint32_t *buffer)
+void k_stack_init(struct k_stack *stack, uint32_t *buffer, int num_entries)
 {
 	sys_dlist_init(&stack->wait_q);
 	stack->next = stack->base = buffer;
 	stack->top = stack->base + num_entries;
 
 	SYS_TRACING_OBJ_INIT(k_stack, stack);
-}
-
-void k_stack_init(struct k_stack *stack, int num_entries)
-{
-	k_stack_init_with_buffer(stack, num_entries, (uint32_t *)(stack + 1));
 }
 
 void k_stack_push(struct k_stack *stack, uint32_t data)

@@ -630,7 +630,7 @@ static inline void *nano_lifo_get(struct nano_lifo *lifo,
 
 static inline void nano_stack_init(struct nano_stack *stack, uint32_t *data)
 {
-	k_stack_init_with_buffer(stack, UINT_MAX, data);
+	k_stack_init(stack, data, UINT_MAX);
 }
 
 #define nano_stack_push k_stack_push
