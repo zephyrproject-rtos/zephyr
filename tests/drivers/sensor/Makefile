@@ -1,5 +1,5 @@
 KERNEL_TYPE = nano
-BOARD ?= arduino_101
-CONF_FILE = prj_$(BOARD).conf
+BOARD ?= quark_d2000_crb
+CONF_FILE = prj.conf
 
 include ${ZEPHYR_BASE}/Makefile.inc
