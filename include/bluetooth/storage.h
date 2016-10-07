@@ -57,6 +57,36 @@ enum {
 	  * bt_addr_le_t passed to the read callback.
 	  */
 	BT_STORAGE_ADDRESSES,
+
+	/** Slave Long Term Key for legacy pairing.
+	  * Type: struct bt_storage_ltk
+	  */
+	BT_STORAGE_SLAVE_LTK,
+
+	/** Long Term Key for legacy pairing.
+	  * Type: struct bt_storage_ltk
+	  */
+	BT_STORAGE_LTK,
+
+	/** Identity Resolving Key
+	  * Type: uint8_t key[16]
+	  */
+	BT_STORAGE_IRK,
+};
+
+/** LTK key flags */
+enum {
+	/* Key has been generated with MITM protection */
+	BT_STORAGE_LTK_AUTHENTICATED   = BIT(0),
+};
+
+struct bt_storage_ltk {
+	uint8_t                 flags;
+	/* Encryption key size used to generate key */
+	uint8_t                 size;
+	uint16_t                ediv;
+	uint8_t                 rand[8];
+	uint8_t                 val[16];
 };
 
 struct bt_storage {
