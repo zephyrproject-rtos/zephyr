@@ -60,7 +60,7 @@ config GROVE_LCD_RGB_I2C_MASTER_DEV_NAME
 config GROVE_LIGHT_SENSOR
 	bool
 	prompt "Enable the Seeed Grove Light Sensor"
-	depends on GROVE && ADC && NEWLIB_LIBC
+	depends on SENSOR && GROVE && ADC && NEWLIB_LIBC
 	default n
 	help
 	  Setting this value will enable dirver support for the Grove Light
@@ -95,7 +95,7 @@ config GROVE_LIGHT_SENSOR_ADC_CHANNEL
 config GROVE_TEMPERATURE_SENSOR
 	bool
 	prompt "Enable the Seeed Grove Temperature Sensor"
-	depends on GROVE && ADC && NEWLIB_LIBC
+	depends on SENSOR && GROVE && ADC && NEWLIB_LIBC
 	default n
 	help
 	  Setting this value will enable dirver support for the Grove
