@@ -538,7 +538,7 @@ static struct uart_driver_api api = {
 
 static int uart_qmsi_init(struct device *dev)
 {
-	struct uart_qmsi_config_info *config = dev->config->config_info;
+	const struct uart_qmsi_config_info *config = dev->config->config_info;
 	qm_uart_config_t cfg;
 
 	cfg.line_control = QM_UART_LC_8N1;
