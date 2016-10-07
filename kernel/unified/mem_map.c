@@ -75,14 +75,14 @@ static int init_mem_map_module(struct device *dev)
  * Initializes the memory map and creates its list of free blocks.
  *
  * @param map Address of memory map.
- * @param num_blocks Number of blocks.
- * @param block_size Size of each block, in bytes.
  * @param buffer Pointer to buffer used for the blocks.
+ * @param block_size Size of each block, in bytes.
+ * @param num_blocks Number of blocks.
  *
  * @return N/A
  */
-void k_mem_map_init(struct k_mem_map *map, int num_blocks, int block_size,
-		    void *buffer)
+void k_mem_map_init(struct k_mem_map *map, void *buffer,
+		    int block_size, int num_blocks)
 {
 	map->num_blocks = num_blocks;
 	map->block_size = block_size;
@@ -100,9 +100,9 @@ void k_mem_map_init(struct k_mem_map *map, int num_blocks, int block_size,
  *
  * @param map Pointer to memory map object.
  * @param mem Pointer to area to receive block address.
- * @param timeout Maximum time (nanoseconds) to wait for allocation to complete.
- *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long as
- *        necessary.
+ * @param timeout Maximum time (milliseconds) to wait for allocation to
+ *        complete.  Use K_NO_WAIT to return immediately, or K_FOREVER to wait
+ *        as long as necessary.
  *
  * @return 0 if successful, -ENOMEM if failed immediately, -EAGAIN if timed out
  */

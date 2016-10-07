@@ -788,8 +788,8 @@ def kernel_main_c_maps():
             name = map[0]
             blocks = map[1]
             block_size = map[2]
-            kernel_main_c_out("K_MEM_MAP_DEFINE(_k_mem_map_obj_%s, %s, %s);\n" %
-                              (name, blocks, block_size))
+            kernel_main_c_out("K_MEM_MAP_DEFINE(_k_mem_map_obj_%s, %s, %s, 4);\n" %
+                              (name, block_size, blocks))
 
 
 def kernel_main_c_pools():

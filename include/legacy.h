@@ -395,8 +395,8 @@ static inline int task_mem_map_alloc(kmemory_map_t map, void **mptr,
 #define task_mem_map_used_get k_mem_map_num_used_get
 
 #define DEFINE_MEM_MAP(name, map_num_blocks, map_block_size) \
-	K_MEM_MAP_DEFINE(_k_mem_map_obj_##name, \
-			 map_num_blocks, map_block_size); \
+	K_MEM_MAP_DEFINE(_k_mem_map_obj_##name, map_block_size, \
+			 map_num_blocks, 4); \
 	struct k_mem_map *const name = &_k_mem_map_obj_##name
 
 

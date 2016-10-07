@@ -1196,8 +1196,7 @@ struct k_mem_map {
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mem_map);
 };
 
-#define K_MEM_MAP_INITIALIZER(obj, map_num_blocks, map_block_size, \
-			      map_buffer) \
+#define K_MEM_MAP_INITIALIZER(obj, map_buffer, map_block_size, map_num_blocks) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.num_blocks = map_num_blocks, \
@@ -1208,15 +1207,32 @@ struct k_mem_map {
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
-#define K_MEM_MAP_DEFINE(name, map_num_blocks, map_block_size) \
-	char _k_mem_map_buf_##name[(map_num_blocks) * (map_block_size)]; \
-	struct k_mem_map name \
-		__in_section(_k_mem_map_ptr, private, mem_map) = \
-		K_MEM_MAP_INITIALIZER(name, map_num_blocks, \
-				      map_block_size, _k_mem_map_buf_##name)
+/**
+ * @brief Define a memory map
+ *
+ * This declares and initializes a memory map whose buffer is aligned to
+ * a @a map_align -byte boundary. The new memory map can be passed to the
+ * kernel's memory map functions.
+ *
+ * Note that for each of the blocks in the memory map to be aligned to
+ * @a map_align bytes, then @a map_block_size must be a multiple of
+ * @a map_align.
+ *
+ * @param name Name of the memory map
+ * @param map_block_size Size of each block in the buffer (in bytes)
+ * @param map_num_blocks Number blocks in the buffer
+ * @param map_align Alignment of the memory map's buffer (power of 2)
+ */
+#define K_MEM_MAP_DEFINE(name, map_block_size, map_num_blocks, map_align)   \
+	char __aligned(map_align)                                           \
+		_k_mem_map_buf_##name[(map_num_blocks) * (map_block_size)]; \
+	struct k_mem_map name                                               \
+		__in_section(_k_mem_map_ptr, private, mem_map) =            \
+		K_MEM_MAP_INITIALIZER(name, _k_mem_map_buf_##name,          \
+				      map_block_size, map_num_blocks)
 
-extern void k_mem_map_init(struct k_mem_map *map, int num_blocks,
-			   int block_size, void *buffer);
+extern void k_mem_map_init(struct k_mem_map *map, void *buffer,
+			   int block_size, int num_blocks);
 extern int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout);
 extern void k_mem_map_free(struct k_mem_map *map, void **mem);
 

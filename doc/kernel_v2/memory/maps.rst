@@ -63,14 +63,14 @@ A memory map is defined using a variable of type :c:type:`struct k_mem_map`.
 It must then be initialized by calling :cpp:func:`k_mem_map_init()`.
 
 The following code defines and initializes a memory map that has 6 blocks
-of 400 bytes each.
+of 400 bytes each and is aligned to a 4-byte boundary..
 
 .. code-block:: c
 
     struct k_mem_map my_map;
-    char my_map_buffer[6 * 400];
+    char __aligned(4) my_map_buffer[6 * 400];
 
-    k_mem_map_init(&my_map, 6, 400, my_map_buffer);
+    k_mem_map_init(&my_map, my_map_buffer, 400, 6);
 
 Alternatively, a memory map can be defined and initialized at compile time
 by calling :c:macro:`K_MEM_MAP_DEFINE()`.
@@ -80,7 +80,7 @@ that the macro defines both the memory map and its buffer.
 
 .. code-block:: c
 
-    K_MEM_MAP_DEFINE(my_map, 6, 400);
+    K_MEM_MAP_DEFINE(my_map, 400, 6, 4);
 
 Allocating a Memory Block
 =========================
