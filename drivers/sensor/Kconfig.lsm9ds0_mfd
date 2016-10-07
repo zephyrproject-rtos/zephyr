@@ -49,8 +49,8 @@ config LSM9DS0_MFD_DEV_NAME
 	default "lsm9ds0_mfd"
 
 config LSM9DS0_MFD_I2C_ADDR
-	string "LSM9DS0_MFD I2C slave address"
-	default "0x1E"
+	hex "LSM9DS0_MFD I2C slave address"
+	default 0x1E
 	depends on LSM9DS0_MFD
 	help
 	  Specify the I2C slave address for the LSM9DS0_MFD.
