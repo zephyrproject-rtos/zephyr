@@ -880,6 +880,18 @@ extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
 extern int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout);
 extern void k_msgq_purge(struct k_msgq *q);
 
+/**
+ * @brief Get the number of unused messages
+ *
+ * @param q Message queue to query
+ *
+ * @return Number of unused messages
+ */
+static inline int k_msgq_num_free_get(struct k_msgq *q)
+{
+	return q->max_msgs - q->used_msgs;
+}
+
 static inline int k_msgq_num_used_get(struct k_msgq *q)
 {
 	return q->used_msgs;

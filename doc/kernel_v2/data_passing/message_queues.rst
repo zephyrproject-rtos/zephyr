@@ -175,3 +175,4 @@ The following message queue APIs are provided by :file:`kernel.h`:
 * :cpp:func:`k_msgq_get()`
 * :cpp:func:`k_msgq_purge()`
 * :cpp:func:`k_msgq_num_used_get()`
+* :cpp:func:`k_msgq_num_free_get()`
