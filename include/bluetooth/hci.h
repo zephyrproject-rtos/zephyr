@@ -912,6 +912,13 @@ struct bt_hci_evt_cmd_status {
 	uint16_t opcode;
 } __packed;
 
+#define BT_HCI_EVT_ROLE_CHANGE                  0x12
+struct bt_hci_evt_role_change {
+	uint8_t   status;
+	bt_addr_t bdaddr;
+	uint8_t   role;
+} __packed;
+
 #define BT_HCI_EVT_NUM_COMPLETED_PACKETS        0x13
 struct bt_hci_evt_num_completed_packets {
 	uint8_t  num_handles;
