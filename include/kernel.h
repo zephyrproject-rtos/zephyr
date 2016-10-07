@@ -52,8 +52,6 @@ extern "C" {
 #define K_ANY NULL
 #define K_END NULL
 
-#define K_OBJ(name, size) char name[size] __aligned(4)
-
 #if CONFIG_NUM_COOP_PRIORITIES > 0
 #define K_HIGHEST_THREAD_PRIO (-CONFIG_NUM_COOP_PRIORITIES)
 #else
@@ -209,10 +207,6 @@ extern void k_thread_priority_set(k_tid_t thread, int prio);
 extern void k_thread_suspend(k_tid_t thread);
 extern void k_thread_resume(k_tid_t thread);
 extern void k_thread_abort_handler_set(void (*handler)(void));
-#if 0
-extern int k_thread_entry_set(k_tid_t thread,
-				void (*entry)(void*, void*, void*);
-#endif
 
 extern void k_sched_time_slice_set(int32_t slice, int prio);
 
