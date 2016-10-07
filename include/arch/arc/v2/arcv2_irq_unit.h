@@ -107,6 +107,23 @@ static inline void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
 	_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio);
 }
 
+/*
+ * @brief Set interrupt sensitivity
+ *
+ * Set the sensitivity of the specified interrupt to either
+ * _ARC_V2_INT_LEVEL or _ARC_V2_INT_PULSE. Level interrupts will remain
+ * asserted until the interrupt handler clears the interrupt at the peripheral.
+ * Pulse interrupts self-clear as the interrupt handler is entered.
+ *
+ * @return N/A
+ */
+
+static inline void _arc_v2_irq_unit_sensitivity_set(int irq, int s)
+{
+	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, s);
+}
+
 void _arc_v2_irq_unit_int_eoi(int irq);
 void _arc_v2_irq_unit_init(void);
 
