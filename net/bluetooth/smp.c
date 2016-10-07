@@ -1141,6 +1141,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_SIGNING)
 static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	struct bt_smp_signing_info *req = (void *)buf->data;
@@ -1179,6 +1180,12 @@ static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 
 	return 0;
 }
+#else
+static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* CONFIG_BLUETOOTH_SIGNING */
 
 static const struct {
 	uint8_t  (*func)(struct bt_smp_br *smp, struct net_buf *buf);
