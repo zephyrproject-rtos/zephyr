@@ -196,7 +196,7 @@ static uint32_t clk_div_calc(struct device *dev)
 
 static int i2c_sam3_runtime_configure(struct device *dev, uint32_t config)
 {
-	struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 	uint32_t reg;
 	uint32_t clk;
@@ -227,7 +227,7 @@ static int i2c_sam3_runtime_configure(struct device *dev, uint32_t config)
 static void i2c_sam3_isr(void *arg)
 {
 	struct device * const dev = (struct device *)arg;
-	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 
 	/* Disable all interrupts so they can be processed
@@ -244,7 +244,7 @@ static void i2c_sam3_isr(void *arg)
  */
 static inline void sr_bits_set_wait(struct device *dev, uint32_t bits)
 {
-	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 
 	while (!(cfg->port->sr & bits)) {
 		/* loop till <bits> are set */
@@ -254,7 +254,7 @@ static inline void sr_bits_set_wait(struct device *dev, uint32_t bits)
 /* Clear the status registers from previous transfers */
 static inline void status_reg_clear(struct device *dev)
 {
-	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	uint32_t stat_reg;
 
 	do {
@@ -280,7 +280,7 @@ static inline void status_reg_clear(struct device *dev)
 
 static inline void transfer_setup(struct device *dev, uint16_t slave_address)
 {
-	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 	uint32_t mmr;
 	uint32_t iadr;
@@ -310,7 +310,7 @@ static inline void transfer_setup(struct device *dev, uint16_t slave_address)
 
 static inline int msg_write(struct device *dev)
 {
-	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 
 	/* To write to slave */
@@ -361,7 +361,7 @@ static inline int msg_write(struct device *dev)
 
 static inline int msg_read(struct device *dev)
 {
-	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 	uint32_t stat_reg;
 	uint32_t ctrl_reg;
@@ -462,7 +462,7 @@ static int i2c_sam3_transfer(struct device *dev,
 			     struct i2c_msg *msgs, uint8_t num_msgs,
 			     uint16_t slave_address)
 {
-	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 	struct i2c_msg *cur_msg = msgs;
 	uint8_t msg_left = num_msgs;
@@ -588,7 +588,7 @@ static struct i2c_driver_api api_funcs = {
 
 static int i2c_sam3_init(struct device *dev)
 {
-	struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
+	const struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 
 	device_sync_call_init(&dev_data->sync);
