@@ -2003,7 +2003,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 		/* Start SMP over BR/EDR if we are pairing initiator */
 		if (atomic_test_bit(conn->flags,
 				    BT_CONN_BR_PAIRING_INITIATOR)) {
-			bt_smp_send_pairing_req(conn);
+			bt_smp_br_send_pairing_req(conn);
 		}
 #endif /* CONFIG_BLUETOOTH_SMP */
 

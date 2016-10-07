@@ -137,6 +137,8 @@ int bt_smp_send_security_req(struct bt_conn *conn);
 void bt_smp_update_keys(struct bt_conn *conn);
 bool bt_smp_get_tk(struct bt_conn *conn, uint8_t *tk);
 
+int bt_smp_br_send_pairing_req(struct bt_conn *conn);
+
 int bt_smp_init(void);
 
 int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);

@@ -735,7 +735,7 @@ static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 	 * was connected
 	 */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_BR_INITIATOR)) {
-		bt_smp_send_pairing_req(chan->conn);
+		bt_smp_br_send_pairing_req(chan->conn);
 	}
 }
 
@@ -1323,7 +1323,7 @@ static struct bt_smp_br *smp_br_chan_get(struct bt_conn *conn)
 	return CONTAINER_OF(chan, struct bt_smp_br, chan);
 }
 
-static int smp_br_send_pairing_req(struct bt_conn *conn)
+int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 {
 	struct bt_smp_pairing *req;
 	struct net_buf *req_buf;
@@ -2395,12 +2395,6 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	struct net_buf *req_buf;
 
 	BT_DBG("");
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
-		return smp_br_send_pairing_req(conn);
-	}
-#endif
 
 	smp = smp_chan_get(conn);
 	if (!smp) {
