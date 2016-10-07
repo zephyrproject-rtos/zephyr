@@ -21,7 +21,7 @@
 #include <zephyr.h>
 
 #define SYS_LOG_DOMAIN "GROVE_LIGHT_SENSOR"
-#define SYS_LOG_LEVEL CONFIG_GROVE_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GROVE_LEVEL
 #include <misc/sys_log.h>
 
 struct gls_data {

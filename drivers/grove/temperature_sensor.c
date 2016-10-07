@@ -21,7 +21,7 @@
 #include <zephyr.h>
 
 #define SYS_LOG_DOMAIN "GROVE_TEMPERATURE_SENSOR"
-#define SYS_LOG_LEVEL CONFIG_GROVE_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GROVE_LEVEL
 #include <misc/sys_log.h>
 
 /* thermistor Nominal B-Constant */
