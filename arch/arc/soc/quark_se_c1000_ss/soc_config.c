@@ -42,7 +42,7 @@ DEVICE_AND_API_INIT(quark_se_ipm, "", quark_se_ipm_controller_initialize,
 #include <console/ipm_console.h>
 QUARK_SE_IPM_DEFINE(quark_se_ipm4, 4, QUARK_SE_IPM_OUTBOUND);
 
-struct ipm_console_sender_config_info quark_se_ipm_sender_config = {
+static struct ipm_console_sender_config_info quark_se_ipm_sender_config = {
 	.bind_to = "quark_se_ipm4",
 	.flags = IPM_CONSOLE_PRINTK | IPM_CONSOLE_STDOUT,
 };
