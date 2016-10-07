@@ -172,7 +172,8 @@ static inline void fiber_sleep(int32_t timeout)
 extern int task_offload_to_fiber(int (*func)(), void *argp);
 
 #define task_id_get k_current_get
-#define task_priority_get (kpriority_t)k_current_priority_get
+#define task_priority_get() \
+	(kpriority_t)(k_thread_priority_get(k_current_get()))
 #define task_abort k_thread_abort
 #define task_suspend k_thread_suspend
 #define task_resume k_thread_resume

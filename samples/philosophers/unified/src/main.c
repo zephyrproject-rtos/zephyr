@@ -114,8 +114,6 @@
 
 #define fork(x) (forks[x])
 
-extern int k_current_priority_get(void);
-
 static void set_phil_state_pos(int id)
 {
 #if !DEBUG_PRINTF
@@ -126,7 +124,7 @@ static void set_phil_state_pos(int id)
 #include <stdarg.h>
 static void print_phil_state(int id, const char *fmt, int32_t delay)
 {
-	int prio = k_current_priority_get();
+	int prio = k_thread_priority_get(k_current_get());
 
 	set_phil_state_pos(id);
 

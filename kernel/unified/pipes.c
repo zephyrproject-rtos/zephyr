@@ -690,7 +690,7 @@ void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 	async_desc->desc.block = &async_desc->desc.copy_block;
 	async_desc->desc.copy_block = *block;
 	async_desc->desc.sem = sem;
-	async_desc->thread.prio = k_current_priority_get();
+	async_desc->thread.prio = k_thread_priority_get(_current);
 
 	(void) _k_pipe_put_internal(pipe, async_desc, block->data,
 				    block->req_size, &dummy_bytes_written,

@@ -35,8 +35,6 @@ extern void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout);
 extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 extern struct k_thread *_get_next_ready_thread(void);
 extern int __must_switch_threads(void);
-extern void k_thread_priority_set(struct k_thread *thread, int32_t priority);
-extern int k_current_priority_get(void);
 extern int32_t _ms_to_ticks(int32_t ms);
 
 /*
@@ -292,17 +290,6 @@ static inline void _mark_thread_as_started(struct k_thread *thread)
 static inline void _mark_thread_as_dead(struct k_thread *thread)
 {
 	thread->flags |= K_DEAD;
-}
-
-/*
- * Application API.
- *
- * Get a thread's priority. Note that it might have changed by the time this
- * function returns.
- */
-static inline int32_t k_thread_priority_get(struct k_thread *thread)
-{
-	return thread->prio;
 }
 
 /*

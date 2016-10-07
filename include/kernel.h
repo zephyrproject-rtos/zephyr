@@ -119,7 +119,6 @@ extern void k_busy_wait(uint32_t usec_to_wait);
 extern void k_yield(void);
 extern void k_wakeup(k_tid_t thread);
 extern k_tid_t k_current_get(void);
-extern int k_current_priority_get(void);
 extern int k_thread_cancel(k_tid_t thread);
 
 extern void k_thread_abort(k_tid_t thread);
@@ -201,7 +200,7 @@ struct _static_thread_data {
 		K_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
 				     entry, p1, p2, p3, abort, prio, groups)
 
-/* extern int k_thread_prio_get(k_tid_t thread); in sched.h */
+extern int  k_thread_priority_get(k_tid_t thread);
 extern void k_thread_priority_set(k_tid_t thread, int prio);
 
 extern void k_thread_suspend(k_tid_t thread);

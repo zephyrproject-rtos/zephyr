@@ -215,6 +215,12 @@ int _is_next_thread_current(void)
 	return _get_next_ready_thread() == _current;
 }
 
+/* application API: get a thread's priority */
+int  k_thread_priority_get(k_tid_t thread)
+{
+	return thread->prio;
+}
+
 /* application API: change a thread's priority. Not callable from ISR */
 void k_thread_priority_set(struct k_thread *thread, int prio)
 {
@@ -224,12 +230,6 @@ void k_thread_priority_set(struct k_thread *thread, int prio)
 
 	_thread_priority_set(thread, prio);
 	_reschedule_threads(key);
-}
-
-/* application API: find out the priority of the current thread */
-int k_current_priority_get(void)
-{
-	return k_thread_priority_get(_current);
 }
 
 /*
