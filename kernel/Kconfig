@@ -161,6 +161,14 @@ config KERNEL_INIT_PRIORITY_DEVICE
 	interrupt controller, but does not depend on other devices,
 	uses this init priority.
 
+config APPLICATION_INIT_PRIORITY
+	int
+	prompt "Default init priority for application level drivers"
+	default 90
+	help
+	This priority level is for end-user drivers such as sensors and display
+	which have no inward dependencies.
+
 menu "Kernel event logging points"
 depends on KERNEL_EVENT_LOGGER
 

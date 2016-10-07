@@ -362,4 +362,4 @@ struct glcd_data grove_lcd_driver = {
 
 DEVICE_INIT(grove_lcd, GROVE_LCD_NAME, glcd_initialize,
 			&grove_lcd_driver, &grove_lcd_config,
-			NANOKERNEL, CONFIG_GROVE_LCD_RGB_INIT_PRIORITY);
+			NANOKERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
