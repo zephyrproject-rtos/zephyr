@@ -112,7 +112,7 @@ enum {
 	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as slave) */
 	SMP_FLAG_DERIVE_LK,	/* if Link Key should be derived */
 	SMP_FLAG_BR_CONNECTED,	/* if BR/EDR channel is connected */
-	SMP_FLAG_BR_INITIATOR,	/* if BR/EDR pairing initiator */
+	SMP_FLAG_BR_PAIR,	/* if should start BR/EDR pairing */
 
 	/* Total number of flags - must be at the end */
 	SMP_NUM_FLAGS,
@@ -734,7 +734,7 @@ static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 	 * if this flag is set it means pairing was requested before channel
 	 * was connected
 	 */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_BR_INITIATOR)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BR_PAIR)) {
 		bt_smp_br_send_pairing_req(chan->conn);
 	}
 }
@@ -1128,8 +1128,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
-	if (atomic_test_bit(smp->flags, SMP_FLAG_BR_INITIATOR) &&
-	    !smp->remote_dist) {
+	if (conn->role == BT_CONN_ROLE_MASTER && !smp->remote_dist) {
 		smp_br_distribute_keys(smp);
 	}
 
@@ -1168,8 +1167,7 @@ static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 
 	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
 
-	if (atomic_test_bit(smp->flags, SMP_FLAG_BR_INITIATOR) &&
-	    !smp->remote_dist) {
+	if (conn->role == BT_CONN_ROLE_MASTER && !smp->remote_dist) {
 		smp_br_distribute_keys(smp);
 	}
 
@@ -1359,7 +1357,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 
 	/* Channel not yet connected, will start pairing once connected */
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_BR_CONNECTED)) {
-		atomic_set_bit(smp->flags, SMP_FLAG_BR_INITIATOR);
+		atomic_set_bit(smp->flags, SMP_FLAG_BR_PAIR);
 		return 0;
 	}
 
@@ -1400,7 +1398,6 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
 
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
-	atomic_set_bit(smp->flags, SMP_FLAG_BR_INITIATOR);
 
 	return 0;
 }

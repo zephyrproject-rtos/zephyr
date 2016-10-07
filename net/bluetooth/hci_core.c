@@ -2026,9 +2026,12 @@ static void hci_encrypt_change(struct net_buf *buf)
 		update_sec_level_br(conn);
 
 #if defined(CONFIG_BLUETOOTH_SMP)
-		/* Start SMP over BR/EDR if we are pairing initiator */
-		if (atomic_test_bit(conn->flags,
-				    BT_CONN_BR_PAIRING_INITIATOR)) {
+		/*
+		 * Start SMP over BR/EDR if we are pairing and are master on
+		 * the link
+		 */
+		if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING) &&
+		    conn->role == BT_CONN_ROLE_MASTER) {
 			bt_smp_br_send_pairing_req(conn);
 		}
 #endif /* CONFIG_BLUETOOTH_SMP */
