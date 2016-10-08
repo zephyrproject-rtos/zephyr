@@ -68,7 +68,7 @@ static int dma_qmsi_channel_config(struct device *dev, uint32_t channel,
 				   struct dma_channel_config *config)
 {
 	qm_dma_channel_config_t qmsi_cfg;
-	struct dma_qmsi_config_info *info = dev->config->config_info;
+	const struct dma_qmsi_config_info *info = dev->config->config_info;
 	struct dma_qmsi_driver_data *data = dev->driver_data;
 
 	qmsi_cfg.handshake_interface = (qm_dma_handshake_interface_t)
@@ -102,7 +102,7 @@ static int dma_qmsi_channel_config(struct device *dev, uint32_t channel,
 static int dma_qmsi_transfer_config(struct device *dev, uint32_t channel,
 				    struct dma_transfer_config *config)
 {
-	struct dma_qmsi_config_info *info = dev->config->config_info;
+	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
 	return qm_dma_transfer_set_config(info->instance, channel,
 					 (qm_dma_transfer_t *)config);
@@ -110,14 +110,14 @@ static int dma_qmsi_transfer_config(struct device *dev, uint32_t channel,
 
 static int dma_qmsi_transfer_start(struct device *dev, uint32_t channel)
 {
-	struct dma_qmsi_config_info *info = dev->config->config_info;
+	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
 	return qm_dma_transfer_start(info->instance, channel);
 }
 
 static int dma_qmsi_transfer_stop(struct device *dev, uint32_t channel)
 {
-	struct dma_qmsi_config_info *info = dev->config->config_info;
+	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
 	return qm_dma_transfer_terminate(info->instance, channel);
 }
@@ -131,7 +131,7 @@ static struct dma_driver_api dma_funcs = {
 
 int dma_qmsi_init(struct device *dev)
 {
-	struct dma_qmsi_config_info *info = dev->config->config_info;
+	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
 	dma_qmsi_config(dev);
 	qm_dma_init(info->instance);
@@ -204,6 +204,3 @@ static void dma_qmsi_config(struct device *dev)
 	QM_SCSS_INT->int_dma_error_mask &= ~BIT(0);
 
 }
-
-
-
