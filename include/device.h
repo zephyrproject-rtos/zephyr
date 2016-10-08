@@ -126,7 +126,7 @@ extern "C" {
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)
 
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, control_fn, \
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, \
 		      data, cfg_info, level, prio, api) \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)
@@ -180,21 +180,20 @@ extern "C" {
 * @def DEVICE_DEFINE
 *
 * @brief Create device object and set it up for boot time initialization,
-* with the option to device_control.
+* with the option to device_pm_control.
 *
 * @copydetails DEVICE_AND_API_INIT
-* @param control_fn Provides an initial pointer to the API function
-* used by App to send control command to the driver.
-* Can be empty function (device_control_nop) for not implementing.
+* @param pm_control_fn Pointer to device_pm_control function.
+* Can be empty function (device_pm_control_nop) if not implemented.
 */
 extern struct device_pm_ops device_pm_ops_nop;
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, control_fn, \
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, \
 		      data, cfg_info, level, prio, api) \
 	\
 	static struct device_config _CONCAT(__config_, dev_name) __used \
 	__attribute__((__section__(".devconfig.init"))) = { \
 		.name = drv_name, .init = (init_fn), \
-		.device_control = (control_fn), \
+		.device_pm_control = (pm_control_fn), \
 		.dev_pm_ops = (&device_pm_ops_nop), \
 		.config_info = (cfg_info) \
 	}; \
@@ -206,14 +205,14 @@ extern struct device_pm_ops device_pm_ops_nop;
 		 .driver_data = data \
 	}
 /*
- * Use the default device_control for devices that do not call the
+ * Use the default device_pm_control for devices that do not call the
  * DEVICE_DEFINE macro so that caller of hook functions
- * need not check device_control != NULL.
+ * need not check device_pm_control != NULL.
  */
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api) \
 	DEVICE_DEFINE(dev_name, drv_name, init_fn, \
-		      device_control_nop, data, cfg_info, level, \
+		      device_pm_control_nop, data, cfg_info, level, \
 		      prio, api)
 #endif
 
@@ -386,7 +385,7 @@ struct device_config {
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	struct device_pm_ops *dev_pm_ops; /* deprecated */
-	int (*device_control)(struct device *device, uint32_t command,
+	int (*device_pm_control)(struct device *device, uint32_t command,
 			      void *context);
 #endif
 	const void *config_info;
@@ -516,7 +515,7 @@ static inline int __deprecated device_resume(struct device *device,
  * @brief No-op function to initialize unimplemented hook
  *
  * This function should be used to initialize device hook
- * for which a device has no operation.
+ * for which a device has no PM operations.
  *
  * @param unused_device Unused
  * @param unused_ctrl_command Unused
@@ -524,7 +523,7 @@ static inline int __deprecated device_resume(struct device *device,
  *
  * @retval 0 Always returns 0
  */
-int device_control_nop(struct device *unused_device,
+int device_pm_control_nop(struct device *unused_device,
 		       uint32_t unused_ctrl_command, void *unused_context);
 /**
  * @brief Call the set power state function of a device
@@ -541,7 +540,7 @@ int device_control_nop(struct device *unused_device,
 static inline int device_set_power_state(struct device *device,
 					 uint32_t device_power_state)
 {
-	return device->config->device_control(device,
+	return device->config->device_pm_control(device,
 			DEVICE_PM_SET_POWER_STATE, &device_power_state);
 }
 
@@ -561,7 +560,7 @@ static inline int device_set_power_state(struct device *device,
 static inline int device_get_power_state(struct device *device,
 					 uint32_t *device_power_state)
 {
-	return device->config->device_control(device,
+	return device->config->device_pm_control(device,
 				DEVICE_PM_GET_POWER_STATE, device_power_state);
 }
 

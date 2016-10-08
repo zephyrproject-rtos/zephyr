@@ -70,7 +70,7 @@ extern int sys_clock_device_ctrl(struct device *device,
  * the app enables CONFIG_DEVICE_POWER_MANAGEMENT.
  */
 #ifndef CONFIG_LOAPIC_TIMER
-#define sys_clock_device_ctrl device_control_nop
+#define sys_clock_device_ctrl device_pm_control_nop
 #endif
 
 extern int32_t _sys_idle_elapsed_ticks;

@@ -63,6 +63,9 @@ extern "C" {
 /**
  * @def SYS_INIT_PM
  *
+ * @warning This macro is deprecated and will be removed in
+ *        a future version, superseded by SYS_DEVICE_DEFINE.
+ *
  * @brief Run an initialization function at boot at specified priority,
  * and define functions to run at suspend/resume.
  *
@@ -80,8 +83,19 @@ extern "C" {
 	DEVICE_INIT(_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level, prio)
 #endif
 
-#define SYS_DEVICE_DEFINE(drv_name, init_fn, control_fn, level, prio) \
-	DEVICE_DEFINE(_SYS_NAME(init_fn), drv_name, init_fn, control_fn, \
+/**
+ * @def SYS_DEVICE_DEFINE
+ *
+ * @brief Run an initialization function at boot at specified priority,
+ * and define device PM control function.
+ *
+ * @copydetails SYS_INIT
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param drv_name Name of this system device
+ */
+#define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_control_fn, level, prio) \
+	DEVICE_DEFINE(_SYS_NAME(init_fn), drv_name, init_fn, pm_control_fn, \
 		      NULL, NULL, level, prio, NULL)
 
 #ifdef __cplusplus
