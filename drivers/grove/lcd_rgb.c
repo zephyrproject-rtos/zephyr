@@ -15,18 +15,12 @@
  */
 
 #include <errno.h>
-
 #include <nanokernel.h>
-#include <arch/cpu.h>
-
-#include <device.h>
-#include <sys_clock.h>
+#include <init.h>
 #include <stdbool.h>
 
-#include <init.h>
 #include <i2c.h>
 #include <display/grove_lcd.h>
-
 #include <misc/util.h>
 
 #define SYS_LOG_DOMAIN "Grove LCD"
