@@ -25,7 +25,8 @@
 
 /* Convenient macros to get the controller instance and the driver data. */
 #define GET_CONTROLLER_INSTANCE(dev) \
-	(((struct i2c_qmsi_ss_config_info *)dev->config->config_info)->instance)
+	(((const struct i2c_qmsi_ss_config_info *) \
+	  dev->config->config_info)->instance)
 #define GET_DRIVER_DATA(dev) \
 	((struct i2c_qmsi_ss_driver_data *)dev->driver_data)
 
@@ -281,7 +282,7 @@ static struct i2c_driver_api api = {
 static int i2c_qmsi_ss_init(struct device *dev)
 {
 	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);
-	struct i2c_qmsi_ss_config_info *config = dev->config->config_info;
+	const struct i2c_qmsi_ss_config_info *config = dev->config->config_info;
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	int err;
 
