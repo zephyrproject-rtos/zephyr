@@ -37,6 +37,7 @@ obj-$(CONFIG_SHT3XD) += sensor_sht3xd.o
 obj-$(CONFIG_SHT3XD_TRIGGER) += sensor_sht3xd_trigger.o
 obj-$(CONFIG_SX9500) += sensor_sx9500.o
 obj-$(CONFIG_SX9500_TRIGGER) += sensor_sx9500_trigger.o
+obj-$(CONFIG_TH02) += th02/
 obj-$(CONFIG_TMP007) += sensor_tmp007.o
 obj-$(CONFIG_TMP007_TRIGGER) += sensor_tmp007_trigger.o
 obj-$(CONFIG_TMP112) += sensor_tmp112.o
