@@ -389,7 +389,7 @@ struct device_config {
 	int (*device_control)(struct device *device, uint32_t command,
 			      void *context);
 #endif
-	void *config_info;
+	const void *config_info;
 };
 
 /**
