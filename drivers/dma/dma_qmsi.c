@@ -29,7 +29,6 @@
 
 struct dma_qmsi_config_info {
 	qm_dma_t instance; /* Controller instance. */
-	qm_dma_channel_id_t channel[QM_DMA_CHANNEL_NUM];
 };
 
 struct dma_qmsi_context {
@@ -71,8 +70,6 @@ static int dma_qmsi_channel_config(struct device *dev, uint32_t channel,
 	qm_dma_channel_config_t qmsi_cfg;
 	struct dma_qmsi_config_info *info = dev->config->config_info;
 	struct dma_qmsi_driver_data *data = dev->driver_data;
-
-	info->channel[channel] = channel;
 
 	qmsi_cfg.handshake_interface = (qm_dma_handshake_interface_t)
 					config->handshake_interface;
