@@ -91,7 +91,7 @@ DEFINE_CLEAR_BIT_OP(sssr_ror, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_ROR_BIT)
 
 static inline void _spi_config_cs(struct device *dev)
 {
-	struct spi_intel_config *info = dev->config->config_info;
+	const struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 	struct device *gpio;
 
@@ -110,7 +110,7 @@ static inline void _spi_config_cs(struct device *dev)
 
 static inline void _spi_control_cs(struct device *dev, int on)
 {
-	struct spi_intel_config *info = dev->config->config_info;
+	const struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
 	if (!spi->cs_gpio_port) {
@@ -126,7 +126,6 @@ static inline void _spi_control_cs(struct device *dev, int on)
 
 static void completed(struct device *dev, uint32_t error)
 {
-	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
 	/* if received == trans_len, then transmitted == trans_len */
@@ -138,21 +137,20 @@ static void completed(struct device *dev, uint32_t error)
 
 	_spi_control_cs(dev, 0);
 
-	write_sscr1(spi->sscr1, info->regs);
-	clear_bit_sscr0_sse(info->regs);
+	write_sscr1(spi->sscr1, spi->regs);
+	clear_bit_sscr0_sse(spi->regs);
 
 	device_sync_call_complete(&spi->sync);
 }
 
 static void pull_data(struct device *dev)
 {
-	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 	uint32_t cnt = 0;
 	uint8_t data = 0;
 
-	while (read_sssr(info->regs) & INTEL_SPI_SSSR_RNE) {
-		data = (uint8_t) read_ssdr(info->regs);
+	while (read_sssr(spi->regs) & INTEL_SPI_SSSR_RNE) {
+		data = (uint8_t) read_ssdr(spi->regs);
 		cnt++;
 		spi->received++;
 
@@ -167,13 +165,12 @@ static void pull_data(struct device *dev)
 
 static void push_data(struct device *dev)
 {
-	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 	uint32_t cnt = 0;
 	uint8_t data;
 	uint32_t status;
 
-	while ((status = read_sssr(info->regs)) & INTEL_SPI_SSSR_TNF) {
+	while ((status = read_sssr(spi->regs)) & INTEL_SPI_SSSR_TNF) {
 		if (status & INTEL_SPI_SSSR_RFS) {
 			break;
 		}
@@ -189,37 +186,37 @@ static void push_data(struct device *dev)
 
 		cnt++;
 		SYS_LOG_DBG("Pushing 1 byte (total: %d)", cnt);
-		write_ssdr(data, info->regs);
+		write_ssdr(data, spi->regs);
 		spi->transmitted++;
 	}
 
 	SYS_LOG_DBG("Pushed: %d (total: %d)", cnt, spi->transmitted);
 
 	if (spi->transmitted == spi->trans_len) {
-		clear_bit_sscr1_tie(info->regs);
+		clear_bit_sscr1_tie(spi->regs);
 	}
 }
 
 static int spi_intel_configure(struct device *dev,
 				struct spi_config *config)
 {
-	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 	uint32_t flags = config->config;
 	uint32_t mode;
 
-	SYS_LOG_DBG("spi_intel_configure: %p (0x%x), %p", dev, info->regs, config);
+	SYS_LOG_DBG("spi_intel_configure: %p (0x%x), %p", dev, spi->regs,
+		    config);
 
 	/* Check status */
-	if (test_bit_sscr0_sse(info->regs) && test_bit_sssr_bsy(info->regs)) {
+	if (test_bit_sscr0_sse(spi->regs) && test_bit_sssr_bsy(spi->regs)) {
 		SYS_LOG_DBG("spi_intel_configure: Controller is busy");
 		return -EBUSY;
 	}
 
 	/* Pre-configuring the registers to a clean state*/
 	spi->sscr0 = spi->sscr1 = 0;
-	write_sscr0(spi->sscr0, info->regs);
-	write_sscr1(spi->sscr1, info->regs);
+	write_sscr0(spi->sscr0, spi->regs);
+	write_sscr1(spi->sscr1, spi->regs);
 
 	SYS_LOG_DBG("spi_intel_configure: WS: %d, DDS_RATE: 0x%x SCR: %d",
 			SPI_WORD_SIZE_GET(flags),
@@ -253,7 +250,7 @@ static int spi_intel_configure(struct device *dev,
 	}
 
 	/* Configuring the rate */
-	write_dds_rate(INTEL_SPI_DSS_RATE(config->max_sys_freq), info->regs);
+	write_dds_rate(INTEL_SPI_DSS_RATE(config->max_sys_freq), spi->regs);
 
 	return 0;
 }
@@ -262,14 +259,13 @@ static int spi_intel_transceive(struct device *dev,
 				const void *tx_buf, uint32_t tx_buf_len,
 				void *rx_buf, uint32_t rx_buf_len)
 {
-	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
 	SYS_LOG_DBG("spi_dw_transceive: %p, %p, %u, %p, %u",
 			dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 
 	/* Check status */
-	if (test_bit_sscr0_sse(info->regs) && test_bit_sssr_bsy(info->regs)) {
+	if (test_bit_sscr0_sse(spi->regs) && test_bit_sssr_bsy(spi->regs)) {
 		SYS_LOG_DBG("spi_intel_transceive: Controller is busy");
 		return -EBUSY;
 	}
@@ -286,11 +282,11 @@ static int spi_intel_transceive(struct device *dev,
 	_spi_control_cs(dev, 1);
 
 	/* Enabling the controller */
-	write_sscr0(spi->sscr0 | INTEL_SPI_SSCR0_SSE, info->regs);
+	write_sscr0(spi->sscr0 | INTEL_SPI_SSCR0_SSE, spi->regs);
 
 	/* Installing the registers */
 	write_sscr1(spi->sscr1 | INTEL_SPI_SSCR1_RIE |
-				INTEL_SPI_SSCR1_TIE, info->regs);
+				INTEL_SPI_SSCR1_TIE, spi->regs);
 
 	device_sync_call_wait(&spi->sync);
 
@@ -305,17 +301,17 @@ static int spi_intel_transceive(struct device *dev,
 void spi_intel_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct spi_intel_config *info = dev->config->config_info;
+	struct spi_intel_data *spi = dev->driver_data;
 	uint32_t error = 0;
 	uint32_t status;
 
 	SYS_LOG_DBG("spi_intel_isr: %p", dev);
 
-	status = read_sssr(info->regs);
+	status = read_sssr(spi->regs);
 
 	if (status & INTEL_SPI_SSSR_ROR) {
 		/* Unrecoverable error, ack it */
-		clear_bit_sssr_ror(info->regs);
+		clear_bit_sssr_ror(spi->regs);
 		error = 1;
 		goto out;
 	}
@@ -324,7 +320,7 @@ void spi_intel_isr(void *arg)
 		pull_data(dev);
 	}
 
-	if (test_bit_sscr1_tie(info->regs)) {
+	if (test_bit_sscr1_tie(spi->regs)) {
 		if (status & INTEL_SPI_SSSR_TFS) {
 			push_data(dev);
 		}
@@ -342,23 +338,22 @@ static struct spi_driver_api intel_spi_api = {
 #ifdef CONFIG_PCI
 static inline int spi_intel_setup(struct device *dev)
 {
-	struct spi_intel_config *info = dev->config->config_info;
+	struct spi_intel_data *spi = dev->driver_data;
 
 	pci_bus_scan_init();
 
-	if (!pci_bus_scan(&info->pci_dev)) {
+	if (!pci_bus_scan(&spi->pci_dev)) {
 		SYS_LOG_DBG("Could not find device");
 		return 0;
 	}
 
 #ifdef CONFIG_PCI_ENUMERATION
-	info->regs = info->pci_dev.addr;
-	info->irq = info->pci_dev.irq;
+	spi->regs = spi->pci_dev.addr;
 #endif
 
-	pci_enable_regs(&info->pci_dev);
+	pci_enable_regs(&spi->pci_dev);
 
-	pci_show(&info->pci_dev);
+	pci_show(&spi->pci_dev);
 
 	return 1;
 }
@@ -379,7 +374,7 @@ static void spi_intel_set_power_state(struct device *dev, uint32_t power_state)
 
 int spi_intel_init(struct device *dev)
 {
-	struct spi_intel_config *info = dev->config->config_info;
+	const struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
 	if (!spi_intel_setup(dev)) {
@@ -414,11 +409,12 @@ static uint32_t spi_intel_get_power_state(struct device *dev)
 
 static int spi_intel_suspend(struct device *dev)
 {
-	struct spi_intel_config *info = dev->config->config_info;
+	const struct spi_intel_config *info = dev->config->config_info;
+	struct spi_intel_data *spi = dev->driver_data;
 
 	SYS_LOG_DBG("spi_intel_suspend: %p", dev);
 
-	clear_bit_sscr0_sse(info->regs);
+	clear_bit_sscr0_sse(spi->regs);
 	irq_disable(info->irq);
 
 	spi_intel_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
@@ -428,11 +424,11 @@ static int spi_intel_suspend(struct device *dev)
 
 static int spi_intel_resume_from_suspend(struct device *dev)
 {
-	struct spi_intel_config *info = dev->config->config_info;
+	const struct spi_intel_config *info = dev->config->config_info;
 
 	SYS_LOG_DBG("spi_intel_resume: %p", dev);
 
-	set_bit_sscr0_sse(info->regs);
+	set_bit_sscr0_sse(spi->regs);
 	irq_enable(info->irq);
 
 	spi_intel_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
@@ -469,11 +465,8 @@ static int spi_intel_device_ctrl(struct device *dev, uint32_t ctrl_command,
 
 void spi_config_0_irq(void);
 
-struct spi_intel_data spi_intel_data_port_0;
-
-struct spi_intel_config spi_intel_config_0 = {
+struct spi_intel_data spi_intel_data_port_0 = {
 	.regs = SPI_INTEL_PORT_0_REGS,
-	.irq = SPI_INTEL_PORT_0_IRQ,
 #if CONFIG_PCI
 	.pci_dev.class_type = SPI_INTEL_CLASS,
 	.pci_dev.bus = SPI_INTEL_PORT_0_BUS,
@@ -482,6 +475,10 @@ struct spi_intel_config spi_intel_config_0 = {
 	.pci_dev.device_id = SPI_INTEL_DEVICE_ID,
 	.pci_dev.function = SPI_INTEL_PORT_0_FUNCTION,
 #endif
+};
+
+struct spi_intel_config spi_intel_config_0 = {
+	.irq = SPI_INTEL_PORT_0_IRQ,
 #ifdef CONFIG_SPI_CS_GPIO
 	.cs_gpio_name = CONFIG_SPI_0_CS_GPIO_PORT,
 	.cs_gpio_pin = CONFIG_SPI_0_CS_GPIO_PIN,
@@ -506,11 +503,8 @@ void spi_config_0_irq(void)
 
 void spi_config_1_irq(void);
 
-struct spi_intel_data spi_intel_data_port_1;
-
-struct spi_intel_config spi_intel_config_1 = {
+struct spi_intel_data spi_intel_data_port_1 = {
 	.regs = SPI_INTEL_PORT_1_REGS,
-	.irq = SPI_INTEL_PORT_1_IRQ,
 #if CONFIG_PCI
 	.pci_dev.class_type = SPI_INTEL_CLASS,
 	.pci_dev.bus = SPI_INTEL_PORT_1_BUS,
@@ -519,6 +513,10 @@ struct spi_intel_config spi_intel_config_1 = {
 	.pci_dev.vendor_id = SPI_INTEL_VENDOR_ID,
 	.pci_dev.device_id = SPI_INTEL_DEVICE_ID,
 #endif
+};
+
+struct spi_intel_config spi_intel_config_1 = {
+	.irq = SPI_INTEL_PORT_1_IRQ,
 #ifdef CONFIG_SPI_CS_GPIO
 	.cs_gpio_name = CONFIG_SPI_1_CS_GPIO_PORT,
 	.cs_gpio_pin = CONFIG_SPI_1_CS_GPIO_PIN,
