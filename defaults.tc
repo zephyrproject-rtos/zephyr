@@ -88,7 +88,7 @@
 #
 # @build [ type == "arduino101" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
 #   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-arduino_101/.config; \
-#   make -j -C $ZEPHYR_BASE/samples/stub \
+#   make -j -C $ZEPHYR_BASE/tests/booting/stub \
 #       BOARD=arduino_101 ARCH=x86 \
 #       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-arduino_101
 #
@@ -99,7 +99,7 @@
 #
 # @build [ type == "ah" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
 #   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard/.config; \
-#   make -j -C $ZEPHYR_BASE/samples/stub \
+#   make -j -C $ZEPHYR_BASE/tests/booting/stub \
 #       BOARD=quark_se_c1000_devboard \
 #       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard
 #
@@ -110,7 +110,7 @@
 #
 # @build [ type == "ma" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
 #   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard/.config; \
-#   make -j -C $ZEPHYR_BASE/samples/stub \
+#   make -j -C $ZEPHYR_BASE/tests/booting/stub \
 #       BOARD=quark_se_c1000_devboard \
 #       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard
 #
