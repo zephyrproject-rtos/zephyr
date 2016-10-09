@@ -32,7 +32,7 @@ static void ipm_console_fiber(int arg1, int arg2)
 	uint16_t type;
 	int ret, key;
 	struct device *d;
-	struct ipm_console_receiver_config_info *config_info;
+	const struct ipm_console_receiver_config_info *config_info;
 	struct ipm_console_receiver_runtime_data *driver_data;
 	int pos;
 
@@ -127,7 +127,7 @@ static void ipm_console_receive_callback(void *context, uint32_t id,
 
 int ipm_console_receiver_init(struct device *d)
 {
-	struct ipm_console_receiver_config_info *config_info =
+	const struct ipm_console_receiver_config_info *config_info =
 		d->config->config_info;
 	struct ipm_console_receiver_runtime_data *driver_data = d->driver_data;
 	struct device *ipm;
@@ -161,4 +161,3 @@ int ipm_console_receiver_init(struct device *d)
 
 	return 0;
 }
-

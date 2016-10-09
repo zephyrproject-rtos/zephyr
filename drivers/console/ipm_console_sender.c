@@ -65,4 +65,3 @@ int ipm_console_sender_init(struct device *d)
 
 	return 0;
 }
-
