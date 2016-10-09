@@ -231,6 +231,11 @@ config SOC_FLASH_QMSI_SYS_SIZE
 	default 0x60000
 endif # SOC_FLASH_QMSI
 
+if DMA
+config DMA_QMSI
+	def_bool y
+endif
+
 if USB
 config USB_DW_IRQ_PRI
 	default 3

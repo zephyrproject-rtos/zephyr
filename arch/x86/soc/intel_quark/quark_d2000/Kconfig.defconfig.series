@@ -167,6 +167,11 @@ config ADC_QMSI
 	def_bool y
 endif
 
+if DMA
+config DMA_QMSI
+	def_bool y
+endif
+
 if SPI
 config SPI_QMSI
 	def_bool y
