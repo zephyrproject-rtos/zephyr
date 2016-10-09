@@ -169,11 +169,6 @@ config SPI_1_IRQ_PRI
 
 endif # SPI
 
-if ADC
-config ADC_QMSI
-	def_bool y
-endif
-
 
 if AIO_COMPARATOR
 config AIO_COMPARATOR_QMSI
