@@ -96,10 +96,20 @@ M:	Chuck Jordan <Chuck.Jordan@synopsys.com>
 S:	Supported
 F:	boards/em_starterkit/
 
+BOARDS - NXP FRDM-K64F
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	boards/frdm_k64f/
+
 BOARDS - Galileo
 M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	boards/galileo/
+
+BOARDS - NXP Hexiwear
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	boards/hexiwear_k64/
 
 BOARDS - NORDIC NRF52 PCA10040
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
