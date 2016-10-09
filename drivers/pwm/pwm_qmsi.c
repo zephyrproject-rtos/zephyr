@@ -55,17 +55,10 @@ struct pwm_data {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
 #endif
+	uint32_t channel_period[CONFIG_PWM_QMSI_NUM_PORTS];
 };
 
-#define PWM_HAS_CONTEXT_DATA \
-	(CONFIG_PWM_QMSI_API_REENTRANCY || CONFIG_DEVICE_POWER_MANAGEMENT)
-
-#if PWM_HAS_CONTEXT_DATA
 static struct pwm_data pwm_context;
-#define PWM_CONTEXT (&pwm_context)
-#else
-#define PWM_CONTEXT (NULL)
-#endif /* PWM_HAS_CONTEXT_DATA */
 
 #ifdef CONFIG_PWM_QMSI_API_REENTRANCY
 static const int reentrancy_protection = 1;
@@ -102,8 +95,6 @@ static void pwm_critical_region_end(struct device *dev)
 
 	nano_sem_give(RP_GET(dev));
 }
-
-static uint32_t  pwm_channel_period[CONFIG_PWM_QMSI_NUM_PORTS];
 
 static int pwm_qmsi_configure(struct device *dev, int access_op,
 				 uint32_t pwm, int flags)
@@ -190,7 +181,8 @@ pwm_set_port_return:
 static int pwm_qmsi_set_values(struct device *dev, int access_op,
 			       uint32_t pwm, uint32_t on, uint32_t off)
 {
-	uint32_t *channel_period = dev->config->config_info;
+	struct pwm_data *context = dev->driver_data;
+	uint32_t *channel_period = context->channel_period;
 	int i, high, low;
 
 	if (on) {
@@ -248,7 +240,8 @@ static int pwm_qmsi_set_values(struct device *dev, int access_op,
 static int pwm_qmsi_set_period(struct device *dev, int access_op,
 			       uint32_t pwm, uint32_t period)
 {
-	uint32_t *channel_period = dev->config->config_info;
+	struct pwm_data *context = dev->driver_data;
+	uint32_t *channel_period = context->channel_period;
 	int ret_val = 0;
 
 	if (channel_period == NULL) {
@@ -289,7 +282,8 @@ pwm_set_period_return:
 static int pwm_qmsi_set_duty_cycle(struct device *dev, int access_op,
 				   uint32_t pwm, uint8_t duty)
 {
-	uint32_t *channel_period = dev->config->config_info;
+	struct pwm_data *context = dev->driver_data;
+	uint32_t *channel_period = context->channel_period;
 	uint32_t on, off;
 
 	if (channel_period == NULL) {
@@ -365,7 +359,8 @@ static void pwm_qmsi_set_power_state(struct device *dev, uint32_t power_state)
 
 static int pwm_qmsi_init(struct device *dev)
 {
-	uint32_t *channel_period = dev->config->config_info;
+	struct pwm_data *context = dev->driver_data;
+	uint32_t *channel_period = context->channel_period;
 
 	for (int i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
 		channel_period[i] = DEFAULT_PERIOD *
@@ -464,6 +459,6 @@ static int pwm_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 #endif
 
 DEVICE_DEFINE(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
-	      pwm_qmsi_device_ctrl, PWM_CONTEXT, pwm_channel_period,
+	      pwm_qmsi_device_ctrl, &pwm_context, NULL,
 	      SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	      (void *)&pwm_qmsi_drv_api_funcs);
