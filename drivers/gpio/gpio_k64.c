@@ -26,8 +26,7 @@
 #include <gpio.h>
 #include <soc.h>
 #include <sys_io.h>
-
-#include <pinmux/frdm_k64f/pinmux_k64.h>
+#include <pinmux/k64/pinmux.h>
 
 #include "gpio_k64.h"
 #include "gpio_utils.h"

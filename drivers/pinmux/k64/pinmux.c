@@ -1,4 +1,4 @@
-/* pinmux_k64.c - pin out mapping for the Freescale FRDM-K64F board */
+/* pinmux.c - pin out mapping for the Freescale K64 SoC */
 
 /*
  * Copyright (c) 2016, Wind River Systems, Inc.
@@ -25,8 +25,7 @@
 #include <sys_io.h>
 #include <pinmux.h>
 #include <pinmux/pinmux.h>
-
-#include "pinmux_k64.h"
+#include <pinmux/k64/pinmux.h>
 
 /* port pin number conversion from pin ID */
 #define PIN_FROM_ID(pin_id)	(pin_id % K64_PINMUX_NUM_PINS)

@@ -1,4 +1,4 @@
-/* pinmux_k64.h - Freescale K64 pinmux header */
+/* pinmux.h - Freescale K64 pinmux header */
 
 /*
  * Copyright (c) 2016, Wind River Systems, Inc.

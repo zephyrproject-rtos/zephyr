@@ -1,4 +1,4 @@
-/* pinmux_dev_frdm_k64f.c - Pinmux dev driver for Freescale FRDM-K64F */
+/* pinmux_dev_k64.c - Pinmux dev driver for Freescale K64 */
 
 /*
  * Copyright (c) 2016 Intel Corporation
@@ -22,8 +22,7 @@
 #include <pinmux.h>
 #include <soc.h>
 #include <sys_io.h>
-
-#include "pinmux_k64.h"
+#include <pinmux/k64/pinmux.h>
 
 static int fsl_k64_dev_set(struct device *dev, uint32_t pin,
 				uint32_t func)

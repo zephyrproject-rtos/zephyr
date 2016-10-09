@@ -22,8 +22,7 @@
 #include <sys_io.h>
 #include <pinmux.h>
 #include <pinmux/pinmux.h>
-
-#include "pinmux_k64.h"
+#include <pinmux/k64/pinmux.h>
 
 /*
  * I/O pin configuration
