@@ -1085,7 +1085,7 @@ static int spi_k64_device_ctrl(struct device *dev, uint32_t ctrl_command,
 #endif
 
 /* system bindings */
-#ifdef CONFIG_SPI_K64_0
+#ifdef CONFIG_SPI_0
 
 void spi_config_0_irq(void);
 
@@ -1099,7 +1099,7 @@ static struct spi_k64_config spi_k64_config_0 = {
 	.config_func = spi_config_0_irq
 };
 
-DEVICE_DEFINE(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
+DEVICE_DEFINE(spi_k64_port_0, CONFIG_SPI_0_NAME, spi_k64_init,
 	      spi_k64_device_ctrl, &spi_k64_data_port_0,
 	      &spi_k64_config_0, PRIMARY,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
@@ -1107,14 +1107,14 @@ DEVICE_DEFINE(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
 
 void spi_config_0_irq(void)
 {
-	IRQ_CONNECT(SPI_K64_0_IRQ, CONFIG_SPI_K64_0_PRI,
+	IRQ_CONNECT(SPI_K64_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
 		    spi_k64_isr, DEVICE_GET(spi_k64_port_0), 0);
 }
 
-#endif /* CONFIG_SPI_K64_0 */
+#endif /* CONFIG_SPI_0 */
 
 
-#ifdef CONFIG_SPI_K64_1
+#ifdef CONFIG_SPI_1
 
 void spi_config_1_irq(void);
 
@@ -1128,7 +1128,7 @@ static struct spi_k64_config spi_k64_config_1 = {
 	.config_func = spi_config_1_irq
 };
 
-DEVICE_DEFINE(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
+DEVICE_DEFINE(spi_k64_port_1, CONFIG_SPI_1_NAME, spi_k64_init,
 	      spi_k64_device_ctrl, &spi_k64_data_port_1,
 	      &spi_k64_config_1, PRIMARY,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
@@ -1136,14 +1136,14 @@ DEVICE_DEFINE(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
 
 void spi_config_1_irq(void)
 {
-	IRQ_CONNECT(SPI_K64_1_IRQ, CONFIG_SPI_K64_1_PRI,
+	IRQ_CONNECT(SPI_K64_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
 		    spi_k64_isr, DEVICE_GET(spi_k64_port_1), 0);
 }
 
-#endif /* CONFIG_SPI_K64_1 */
+#endif /* CONFIG_SPI_1 */
 
 
-#ifdef CONFIG_SPI_K64_2
+#ifdef CONFIG_SPI_2
 
 void spi_config_2_irq(void);
 
@@ -1157,7 +1157,7 @@ static struct spi_k64_config spi_k64_config_2 = {
 	.config_func = spi_config_2_irq
 };
 
-DEVICE_DEFINE(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
+DEVICE_DEFINE(spi_k64_port_2, CONFIG_SPI_2_NAME, spi_k64_init,
 	      spi_k64_device_ctrl, &spi_k64_data_port_2,
 	      &spi_k64_config_2, PRIMARY,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
@@ -1165,8 +1165,8 @@ DEVICE_DEFINE(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
 
 void spi_config_2_irq(void)
 {
-	IRQ_CONNECT(SPI_K64_2_IRQ, CONFIG_SPI_K64_2_PRI,
+	IRQ_CONNECT(SPI_K64_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
 		    spi_k64_isr, DEVICE_GET(spi_k64_port_2), 0);
 }
 
-#endif /* CONFIG_SPI_K64_2 */
+#endif /* CONFIG_SPI_2 */
