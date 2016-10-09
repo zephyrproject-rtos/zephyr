@@ -54,7 +54,7 @@ static uint32_t ipm_console_ring_buf_data[CONFIG_QUARK_SE_IPM_CONSOLE_RING_BUF_S
 static char __stack ipm_console_fiber_stack[IPM_CONSOLE_STACK_SIZE];
 static char ipm_console_line_buf[QUARK_SE_IPM_CONSOLE_LINE_BUF_SIZE];
 
-struct ipm_console_receiver_config_info quark_se_ipm_receiver_config = {
+static struct ipm_console_receiver_config_info quark_se_ipm_receiver_config = {
 	.bind_to = "quark_se_ipm4",
 	.fiber_stack = ipm_console_fiber_stack,
 	.ring_buf_data = ipm_console_ring_buf_data,
