@@ -1262,9 +1262,9 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 {
 	struct net_udp_hdr *udp = NULL;
 	uint8_t offset = 2;
+	uint8_t chksum = 0;
 	struct net_ipv6_hdr *ipv6;
 	struct net_buf *frag;
-	uint8_t chksum;
 	uint16_t len;
 #if defined(CONFIG_NET_6LO_CONTEXT)
 	struct net_6lo_context *src = NULL;
@@ -1351,13 +1351,11 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	chksum = CIPHC[offset] & NET_6LO_NHC_UDP_CHKSUM_1;
 	offset = uncompress_nh_udp(buf, udp, offset);
 
-	if (chksum) {
-		/* TODO: Calculate checksum */
-		goto fail;
+	if (!chksum) {
+		memcpy(&udp->chksum, &CIPHC[offset], 2);
+		offset += 2;
 	}
 
-	memcpy(&udp->chksum, &CIPHC[offset], 2);
-	offset += 2;
 	net_buf_add(frag, NET_UDPH_LEN);
 
 end:
@@ -1384,6 +1382,10 @@ end:
 
 	if (ipv6->nexthdr == IPPROTO_UDP) {
 		udp->len = htons(len);
+	}
+
+	if (chksum) {
+		udp->chksum = ~net_calc_chksum_udp(buf);
 	}
 
 	return true;
