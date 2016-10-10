@@ -22,6 +22,8 @@
 #define __BYTEORDER_H__
 
 #include <stdint.h>
+#include <stddef.h>
+#include <misc/__assert.h>
 
 /* Internal helpers only used by the sys_* APIs further below */
 #define __bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
@@ -264,6 +266,54 @@ static inline uint32_t sys_get_le32(const uint8_t src[4])
 static inline uint64_t sys_get_le64(const uint8_t src[8])
 {
 	return ((uint64_t)sys_get_le32(&src[4]) << 32) | sys_get_le32(&src[0]);
+}
+
+/**
+ * @brief Swap one buffer content into another
+ *
+ * Copy the content of src buffer into dst buffer in reversed order,
+ * i.e.: src[n] will be put in dst[end-n]
+ * Where n is an index and 'end' the last index in both arrays.
+ * The 2 memory pointers must be pointing to different areas, and have
+ * a minimum size of given length.
+ *
+ * @param dst A valid pointer on a memory area where to copy the data in
+ * @param src A valid pointer on a memory area where to copy the data from
+ * @param length Size of both dst and src memory areas
+ */
+static inline void sys_memcpy_swap(void *dst, const void *src, size_t length)
+{
+	__ASSERT(((src < dst && src + length < dst) ||
+		  (src > dst && dst + length < src)),
+		 "Source and destination pointers must not overlap");
+
+	src += length - 1;
+
+	for (; length > 0; length--) {
+		*((uint8_t *)dst++) = *((uint8_t *)src--);
+	}
+}
+
+/**
+ * @brief Swap buffer content
+ *
+ * In-place memory swap, where final content will be reversed.
+ * I.e.: buf[n] will be put in buf[end-n]
+ * Where n is an index and 'end' the last index of buf.
+ *
+ * @param buf A valid pointer on a memory area to swap
+ * @param length Size of buf memory area
+ */
+static inline void sys_mem_swap(void *buf, size_t length)
+{
+	int i;
+
+	for (i = 0; i < (length/2); i++) {
+		uint8_t tmp = ((uint8_t *)buf)[i];
+
+		((uint8_t *)buf)[i] = ((uint8_t *)buf)[length - 1 - i];
+		((uint8_t *)buf)[length - 1 - i] = tmp;
+	}
 }
 
 #endif /* __BYTEORDER_H__ */
