@@ -257,6 +257,7 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	}
 
 setup_hdr:
+	__unused;
 
 	if (net_nbuf_family(buf) == AF_INET) {
 		ptype = htons(NET_ETH_PTYPE_IP);
