@@ -66,9 +66,26 @@ static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
+static void le_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
+				 const bt_addr_le_t *identity)
+{
+	struct gap_identity_resolved_ev ev;
+
+	ev.address_type = rpa->type;
+	memcpy(ev.address, rpa->a.val, sizeof(ev.address));
+
+	ev.identity_address_type = identity->type;
+	memcpy(ev.identity_address, identity->a.val,
+	       sizeof(ev.identity_address));
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_IDENTITY_RESOLVED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = le_connected,
 	.disconnected = le_disconnected,
+	.identity_resolved = le_identity_resolved,
 };
 
 static void supported_commands(uint8_t *data, uint16_t len)

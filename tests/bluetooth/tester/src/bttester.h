@@ -287,6 +287,14 @@ struct gap_passkey_confirm_req_ev {
 	uint32_t passkey;
 } __packed;
 
+#define GAP_EV_IDENTITY_RESOLVED	0x87
+struct gap_identity_resolved_ev {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t identity_address_type;
+	uint8_t identity_address[6];
+} __packed;
+
 /* GATT Service */
 /* commands */
 #define GATT_READ_SUPPORTED_COMMANDS	0x01
