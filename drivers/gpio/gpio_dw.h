@@ -31,13 +31,8 @@ extern int gpio_dw_initialize(struct device *port);
 typedef void (*gpio_config_irq_t)(struct device *port);
 
 struct gpio_dw_config {
-	uint32_t base_addr;
 	uint32_t bits;
 	uint32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
-
-#ifdef CONFIG_PCI
-	struct pci_dev_info  pci_dev;
-#endif /* CONFIG_PCI */
 	gpio_config_irq_t config_func;
 
 #ifdef CONFIG_GPIO_DW_SHARED_IRQ
@@ -50,6 +45,11 @@ struct gpio_dw_config {
 };
 
 struct gpio_dw_runtime {
+	uint32_t base_addr;
+#ifdef CONFIG_PCI
+	struct pci_dev_info  pci_dev;
+#endif /* CONFIG_PCI */
+
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	struct device *clock;
 #endif
