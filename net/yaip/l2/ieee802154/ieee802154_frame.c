@@ -201,15 +201,10 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 		return false;
 	}
 
-	if (mpdu->mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
-		mpdu->mhr.dst_addr = NULL;
-		goto src;
-	}
-
 	mpdu->mhr.dst_addr = validate_addr(p_buf, &p_buf,
 					   mpdu->mhr.fs->fc.dst_addr_mode,
 					   false);
-src:
+
 	mpdu->mhr.src_addr = validate_addr(p_buf, &p_buf,
 					   mpdu->mhr.fs->fc.src_addr_mode,
 					   (mpdu->mhr.fs->fc.pan_id_comp));
