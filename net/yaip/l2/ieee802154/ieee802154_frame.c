@@ -70,6 +70,10 @@ validate_fc_seq(uint8_t *buf, uint8_t **p_buf)
 		   fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_NONE) {
 		/** See section 5.2.2.2.1 */
 		return NULL;
+	} else if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND &&
+		   fs->fc.frame_pending) {
+		/** See section 5.3 */
+		return NULL;
 	}
 
 	*p_buf = buf + 3;
@@ -145,6 +149,128 @@ validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
 }
 
 static inline bool
+validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
+				uint8_t ar, uint8_t comp,
+				uint8_t src, bool src_pan_brdcst_chk,
+				uint8_t dst, bool dst_brdcst_chk)
+{
+	if (mhr->fs->fc.ar != ar || mhr->fs->fc.pan_id_comp != comp) {
+		return false;
+	}
+
+	if (!(mhr->fs->fc.src_addr_mode & src) ||
+	    !(mhr->fs->fc.dst_addr_mode & dst)) {
+		return false;
+	}
+
+	/* This should be set only when comp == 0 */
+	if (src_pan_brdcst_chk) {
+		if (mhr->src_addr->plain.pan_id !=
+		    IEEE802154_BROADCAST_PAN_ID) {
+			return false;
+		}
+	}
+
+	/* This should be set only when comp == 0 */
+	if (dst_brdcst_chk) {
+		if (mhr->dst_addr->plain.addr.short_addr !=
+		    IEEE802154_BROADCAST_ADDRESS) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static inline bool
+validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
+{
+	struct ieee802154_command *c = (struct ieee802154_command *)buf;
+	bool src_pan_brdcst_chk = false;
+	bool dst_brdcst_chk = false;
+	uint8_t comp = 0;
+	uint8_t ar = 0;
+	uint8_t src, dst;
+
+	switch (c->cfi) {
+	case IEEE802154_CFI_UNKNOWN:
+		return false;
+	case IEEE802154_CFI_ASSOCIATION_REQUEST:
+		src = IEEE802154_EXT_ADDR_LENGTH;
+		src_pan_brdcst_chk = true;
+		dst = IEEE802154_ADDR_MODE_SHORT |
+			IEEE802154_ADDR_MODE_EXTENDED;
+		break;
+	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
+	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
+	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
+		ar = 1;
+		comp = 1;
+		src = IEEE802154_EXT_ADDR_LENGTH;
+		dst = IEEE802154_EXT_ADDR_LENGTH;
+
+		break;
+	case IEEE802154_CFI_DATA_REQUEST:
+		ar = 1;
+		src = IEEE802154_ADDR_MODE_SHORT |
+			IEEE802154_ADDR_MODE_EXTENDED;
+
+		if (mpdu->mhr.fs->fc.dst_addr_mode ==
+		    IEEE802154_ADDR_MODE_NONE) {
+			dst = IEEE802154_ADDR_MODE_NONE;
+		} else {
+			comp = 1;
+			dst = IEEE802154_ADDR_MODE_SHORT |
+				IEEE802154_ADDR_MODE_EXTENDED;
+		}
+
+		break;
+	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
+		comp = 1;
+		src = IEEE802154_EXT_ADDR_LENGTH;
+		dst = IEEE802154_ADDR_MODE_SHORT;
+
+		break;
+	case IEEE802154_CFI_BEACON_REQUEST:
+		src = IEEE802154_ADDR_MODE_NONE;
+		dst = IEEE802154_ADDR_MODE_SHORT;
+		dst_brdcst_chk = true;
+
+		break;
+	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
+		src = IEEE802154_EXT_ADDR_LENGTH;
+
+		if (mpdu->mhr.fs->fc.dst_addr_mode ==
+		    IEEE802154_ADDR_MODE_SHORT) {
+			dst = IEEE802154_ADDR_MODE_SHORT;
+			dst_brdcst_chk = true;
+		} else {
+			dst = IEEE802154_ADDR_MODE_EXTENDED;
+		}
+
+		break;
+	case IEEE802154_CFI_GTS_REQUEST:
+		ar = 1;
+		src = IEEE802154_ADDR_MODE_SHORT;
+		dst = IEEE802154_ADDR_MODE_NONE;
+
+		break;
+	default:
+		return false;
+	}
+
+	if (!validate_mac_command_cfi_to_mhr(&mpdu->mhr, ar, comp,
+					     src, src_pan_brdcst_chk,
+					     dst, dst_brdcst_chk)) {
+		return false;
+	}
+
+	mpdu->command = c;
+
+	return true;
+}
+
+static inline bool
 validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 			 uint8_t *buf, uint8_t *p_buf, uint8_t length)
 {
@@ -167,13 +293,17 @@ validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 		}
 
 		mpdu->payload = (void *)p_buf;
-	} else {
+	} else if (type == IEEE802154_FRAME_TYPE_ACK) {
 		/** An ACK frame has no payload */
 		if (payload_length) {
 			return false;
 		}
 
 		mpdu->payload = NULL;
+	} else {
+		if (!validate_mac_command(mpdu, p_buf, payload_length)) {
+			return false;
+		}
 	}
 
 	mpdu->mfr = (struct ieee802154_mfr *)(p_buf + payload_length);
@@ -196,8 +326,8 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 		return false;
 	}
 
-	/** ToDo: Support other frames */
-	if (mpdu->mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
+	/* ToDo: Support later version's frame types */
+	if (mpdu->mhr.fs->fc.frame_type > IEEE802154_FRAME_TYPE_MAC_COMMAND) {
 		return false;
 	}
 

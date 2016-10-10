@@ -29,6 +29,7 @@
 #define IEEE802154_MIN_LENGTH			5
 /* See Section 5.2.1.4 */
 #define IEEE802154_BROADCAST_ADDRESS		0xFFFF
+#define IEEE802154_BROADCAST_PAN_ID		0xFFFF
 /* ACK packet size is the minimum size, see Section 5.2.2.3 */
 #define IEEE802154_ACK_PKT_LENGTH		IEEE802154_MIN_LENGTH
 #define IEEE802154_MFR_LENGTH			2
