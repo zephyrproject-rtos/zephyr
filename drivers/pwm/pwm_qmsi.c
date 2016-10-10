@@ -226,7 +226,9 @@ static int pwm_qmsi_set_values(struct device *dev, int access_op,
 				low = channel_period[i] - 1;
 			}
 
-			return __set_one_port(dev, QM_PWM_0, i, high, low);
+			if (__set_one_port(dev, QM_PWM_0, i, high, low) != 0) {
+				return -EIO;
+			}
 		}
 		break;
 	default:
