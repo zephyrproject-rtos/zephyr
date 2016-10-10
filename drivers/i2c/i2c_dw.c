@@ -48,7 +48,6 @@
 
 static inline void _i2c_dw_data_ask(struct device *dev)
 {
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	uint32_t data;
 	uint8_t tx_empty;
@@ -56,7 +55,7 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 	uint8_t cnt;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
+		(struct i2c_dw_registers *)dw->base_address;
 
 	/* No more bytes to request, so command queue is no longer needed */
 	if (dw->request_bytes == 0) {
@@ -107,11 +106,10 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 
 static void _i2c_dw_data_read(struct device *dev)
 {
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
+		(struct i2c_dw_registers *)dw->base_address;
 
 	while (regs->ic_status.bits.rfne && (dw->xfr_len > 0)) {
 		dw->xfr_buf[0] = regs->ic_data_cmd.raw;
@@ -135,12 +133,11 @@ static void _i2c_dw_data_read(struct device *dev)
 
 static int _i2c_dw_data_send(struct device *dev)
 {
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	uint32_t data = 0;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
+		(struct i2c_dw_registers *)dw->base_address;
 
 	/* Nothing to send anymore, mask the interrupt */
 	if (dw->xfr_len == 0) {
@@ -181,12 +178,11 @@ static int _i2c_dw_data_send(struct device *dev)
 
 static inline void _i2c_dw_transfer_complete(struct device *dev)
 {
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	uint32_t value;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
+		(struct i2c_dw_registers *)dw->base_address;
 
 	regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
 	value = regs->ic_clr_intr;
@@ -197,14 +193,13 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 void i2c_dw_isr(void *arg)
 {
 	struct device *port = (struct device *)arg;
-	struct i2c_dw_rom_config const * const rom = port->config->config_info;
 	struct i2c_dw_dev_config * const dw = port->driver_data;
 	union ic_interrupt_register intr_stat;
 	uint32_t value;
 	int ret = 0;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
+		(struct i2c_dw_registers *)dw->base_address;
 
 	/* Cache ic_intr_stat for processing, so there is no need to read
 	 * the register multiple times.
@@ -311,11 +306,10 @@ done:
 static int _i2c_dw_setup(struct device *dev, uint16_t slave_address)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	uint32_t value;
 	union ic_con_register ic_con;
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
+		(struct i2c_dw_registers *)dw->base_address;
 
 	ic_con.raw = 0;
 
@@ -421,7 +415,6 @@ static int i2c_dw_transfer(struct device *dev,
 			   struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t slave_address)
 {
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	struct i2c_msg *cur_msg = msgs;
 	uint8_t msg_left = num_msgs;
@@ -429,7 +422,7 @@ static int i2c_dw_transfer(struct device *dev,
 	int ret;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
+		(struct i2c_dw_registers *)dw->base_address;
 
 	/* Why bother processing no messages */
 	if (!msgs || !num_msgs) {
@@ -533,13 +526,12 @@ static int i2c_dw_transfer(struct device *dev,
 
 static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 {
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	uint32_t	value = 0;
 	uint32_t	rc = 0;
 
 	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
+		(struct i2c_dw_registers *)dw->base_address;
 
 	dw->app_config.raw = config;
 
@@ -646,22 +638,21 @@ static struct i2c_driver_api funcs = {
 #ifdef CONFIG_PCI
 static inline int i2c_dw_pci_setup(struct device *dev)
 {
-	struct i2c_dw_rom_config *rom = dev->config->config_info;
+	struct i2c_dw_dev_config * const dw = dev->driver_data;
 
 	pci_bus_scan_init();
 
-	if (!pci_bus_scan(&rom->pci_dev)) {
+	if (!pci_bus_scan(&dw->pci_dev)) {
 		SYS_LOG_DBG("Could not find device");
 		return 0;
 	}
 
 #ifdef CONFIG_PCI_ENUMERATION
-	rom->base_address = rom->pci_dev.addr;
-	rom->irq_num = rom->pci_dev.irq;
+	dw->base_address = dw->pci_dev.addr;
 #endif
-	pci_enable_regs(&rom->pci_dev);
+	pci_enable_regs(&dw->pci_dev);
 
-	pci_show(&rom->pci_dev);
+	pci_show(&dw->pci_dev);
 
 	return 1;
 }
@@ -671,7 +662,7 @@ static inline int i2c_dw_pci_setup(struct device *dev)
 
 int i2c_dw_initialize(struct device *port)
 {
-	struct i2c_dw_rom_config const * const rom = port->config->config_info;
+	const struct i2c_dw_rom_config * const rom = port->config->config_info;
 	struct i2c_dw_dev_config * const dev = port->driver_data;
 
 	volatile struct i2c_dw_registers *regs;
@@ -683,7 +674,7 @@ int i2c_dw_initialize(struct device *port)
 
 	device_sync_call_init(&dev->sync);
 
-	regs = (struct i2c_dw_registers *) rom->base_address;
+	regs = (struct i2c_dw_registers *) dev->base_address;
 
 	/* verify that we have a valid DesignWare register first */
 	if (regs->ic_comp_type != I2C_DW_MAGIC_KEY) {
@@ -723,8 +714,7 @@ int i2c_dw_initialize(struct device *port)
 #if CONFIG_I2C_0
 void i2c_config_0(struct device *port);
 
-struct i2c_dw_rom_config i2c_config_dw_0 = {
-	.base_address = I2C_DW_0_BASE_ADDR,
+static struct i2c_dw_rom_config i2c_config_dw_0 = {
 #ifdef CONFIG_I2C_0_IRQ_DIRECT
 	.irq_num = I2C_DW_0_IRQ,
 #endif
@@ -733,7 +723,11 @@ struct i2c_dw_rom_config i2c_config_dw_0 = {
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
 	.shared_irq_dev_name = CONFIG_I2C_0_IRQ_SHARED_NAME,
 #endif
+};
 
+struct i2c_dw_dev_config i2c_0_runtime = {
+	.base_address = I2C_DW_0_BASE_ADDR,
+	.app_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
 #if CONFIG_PCI
 	.pci_dev.class_type = I2C_DW_PCI_CLASS,
 	.pci_dev.bus = I2C_DW_0_PCI_BUS,
@@ -745,10 +739,6 @@ struct i2c_dw_rom_config i2c_config_dw_0 = {
 #endif
 };
 
-struct i2c_dw_dev_config i2c_0_runtime = {
-	.app_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
-};
-
 DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 		    &i2c_0_runtime, &i2c_config_dw_0,
 		    SECONDARY, CONFIG_I2C_INIT_PRIORITY,
@@ -756,16 +746,17 @@ DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 
 void i2c_config_0(struct device *port)
 {
-	struct i2c_dw_rom_config * const config = port->config->config_info;
-	struct device *shared_irq_dev;
-
 #if defined(CONFIG_I2C_0_IRQ_DIRECT)
-	ARG_UNUSED(shared_irq_dev);
+	struct i2c_dw_rom_config * const rom = port->driver_data;
+
 	IRQ_CONNECT(I2C_DW_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_0), I2C_DW_IRQ_FLAGS);
-	irq_enable(config->irq_num);
+	irq_enable(rom->irq_num);
 #elif defined(CONFIG_I2C_0_IRQ_SHARED)
-	ARG_UNUSED(config);
+	const struct i2c_dw_rom_config * const config =
+		port->config->config_info;
+	struct device *shared_irq_dev;
+
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
 	shared_irq_isr_register(shared_irq_dev, (isr_t)i2c_dw_isr, port);
 	shared_irq_enable(shared_irq_dev, port);
@@ -780,10 +771,14 @@ void i2c_config_0(struct device *port)
 #if CONFIG_I2C_1
 void i2c_config_1(struct device *port);
 
-struct i2c_dw_rom_config i2c_config_dw_1 = {
-	.base_address = I2C_DW_1_BASE_ADDR,
+static struct i2c_dw_rom_config i2c_config_dw_1 = {
 	.irq_num = I2C_DW_1_IRQ,
 	.config_func = i2c_config_1,
+};
+
+struct i2c_dw_dev_config i2c_1_runtime = {
+	.base_address = I2C_DW_1_BASE_ADDR,
+	.app_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
 
 #if CONFIG_PCI
 	.pci_dev.class_type = I2C_DW_PCI_CLASS,
@@ -796,10 +791,6 @@ struct i2c_dw_rom_config i2c_config_dw_1 = {
 #endif
 };
 
-struct i2c_dw_dev_config i2c_1_runtime = {
-	.app_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
-};
-
 DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_1_NAME, &i2c_dw_initialize,
 		    &i2c_1_runtime, &i2c_config_dw_1,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -807,11 +798,11 @@ DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_1_NAME, &i2c_dw_initialize,
 
 void i2c_config_1(struct device *port)
 {
-	struct i2c_dw_rom_config * const config = port->config->config_info;
+	struct i2c_dw_rom_config * const rom = port->driver_data;
 
 	IRQ_CONNECT(I2C_DW_1_IRQ, CONFIG_I2C_1_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_1), I2C_DW_IRQ_FLAGS);
-	irq_enable(config->irq_num);
+	irq_enable(rom->irq_num);
 }
 
 #endif /* CONFIG_I2C_1 */
