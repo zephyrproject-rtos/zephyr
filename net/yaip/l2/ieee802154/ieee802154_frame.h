@@ -187,12 +187,102 @@ struct ieee802154_beacon {
 	struct ieee802154_gts_spec gts;
 } __packed;
 
+/* See Section 5.3.1 */
+struct ieee802154_cmd_assoc_req {
+	struct {
+		uint8_t reserved_1	: 1;
+		uint8_t dev_type	: 1;
+		uint8_t power_src	: 1;
+		uint8_t rx_on		: 1;
+		uint8_t reserved_2	: 2;
+		uint8_t sec_capability	: 1;
+		uint8_t alloc_addr	: 1;
+	} ci;
+} __packed;
+
+/* See Section 5.3.2 */
+enum ieee802154_association_status_field {
+	IEEE802154_ASF_SUCCESSFUL		= 0x00,
+	IEEE802154_ASF_PAN_AT_CAPACITY		= 0x01,
+	IEEE802154_ASF_PAN_ACCESS_DENIED	= 0x02,
+	IEEE802154_ASF_RESERVED			= 0x03,
+	IEEE802154_ASF_RESERVED_PRIMITIVES	= 0x80,
+};
+
+struct ieee802154_cmd_assoc_res {
+	uint16_t short_addr;
+	uint8_t status;
+} __packed;
+
+/* See Section 5.3.3 */
+enum ieee802154_disassociation_reason_field {
+	IEEE802154_DRF_RESERVED_1		= 0x00,
+	IEEE802154_DRF_COORDINATOR_WISH		= 0x01,
+	IEEE802154_DRF_DEVICE_WISH		= 0x02,
+	IEEE802154_DRF_RESERVED_2		= 0x03,
+	IEEE802154_DRF_RESERVED_PRIMITIVES	= 0x80,
+};
+
+struct ieee802154_cmd_disassoc_note {
+	uint8_t reason;
+} __packed;
+
+/* See Section 5.3.8 */
+struct ieee802154_cmd_coord_realign {
+	uint16_t pan_id;
+	uint16_t coordinator_short_addr;
+	uint8_t channel;
+	uint16_t short_addr;
+	uint8_t channel_page; /* Optional */
+} __packed;
+
+/* See Section 5.3.9 */
+struct ieee802154_gts_request {
+	struct {
+		uint8_t length		: 4;
+		uint8_t direction	: 1;
+		uint8_t type		: 1;
+		uint8_t reserved	: 2;
+	} gts;
+} __packed;
+
+/* See Section 5.3 */
+enum ieee802154_cfi {
+	IEEE802154_CFI_UNKNOWN				= 0x00,
+	IEEE802154_CFI_ASSOCIATION_REQUEST		= 0x01,
+	IEEE802154_CFI_ASSOCIATION_RESPONSE		= 0x02,
+	IEEE802154_CFI_DISASSOCIATION_NOTIFICATION	= 0x03,
+	IEEE802154_CFI_DATA_REQUEST			= 0x04,
+	IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION	= 0x05,
+	IEEE802154_CFI_ORPHAN_NOTIFICATION		= 0x06,
+	IEEE802154_CFI_BEACON_REQUEST			= 0x07,
+	IEEE802154_CFI_COORDINATOR_REALIGNEMENT		= 0x08,
+	IEEE802154_CFI_GTS_REQUEST			= 0x09,
+	IEEE802154_CFI_RESERVED				= 0x0a,
+};
+
+struct ieee802154_command {
+	uint8_t cfi;
+	union {
+		struct ieee802154_cmd_assoc_req assoc_req;
+		struct ieee802154_cmd_assoc_res assoc_res;
+		struct ieee802154_cmd_disassoc_note disassoc_note;
+		struct ieee802154_cmd_coord_realign coord_realign;
+		struct ieee802154_gts_request gts_request;
+		/* Data request, PAN ID conflict, Orphan notification
+		 * or Beacon request do not provide more than the CIF.
+		 */
+	};
+} __packed;
+
+
 /** Frame */
 struct ieee802154_mpdu {
 	struct ieee802154_mhr mhr;
 	union {
 		void *payload;
 		struct ieee802154_beacon *beacon;
+		struct ieee802154_command *command;
 	};
 	struct ieee802154_mfr *mfr;
 } __packed;
