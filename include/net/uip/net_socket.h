@@ -128,6 +128,8 @@ struct net_buf *net_receive(struct net_context *context,
 struct simple_udp_connection *
 	net_context_get_udp_connection(struct net_context *context);
 
+void *net_context_get_internal_connection(struct net_context *context);
+
 #ifdef __cplusplus
 }
 #endif

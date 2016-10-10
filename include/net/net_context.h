@@ -16,4 +16,7 @@
 
 #if defined(CONFIG_NET_YAIP)
 #include <net/yaip/net_context.h>
+#else
+/* For legacy stack the context API stuff is in net_socket.h */
+#include <net/uip/net_socket.h>
 #endif
