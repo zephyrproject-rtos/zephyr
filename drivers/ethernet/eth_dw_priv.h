@@ -33,11 +33,7 @@ extern "C" {
 typedef void (*eth_config_irq_t)(struct device *port);
 
 struct eth_config {
-	uint32_t base_addr;
 	uint32_t irq_num;
-#ifdef CONFIG_PCI
-	struct pci_dev_info pci_dev;
-#endif  /* CONFIG_PCI */
 	eth_config_irq_t config_func;
 
 #ifdef CONFIG_ETH_DW_SHARED_IRQ
@@ -160,6 +156,10 @@ struct eth_rx_desc {
 
 /* Driver metadata associated with each Ethernet device */
 struct eth_runtime {
+	uint32_t base_addr;
+#ifdef CONFIG_PCI
+	struct pci_dev_info pci_dev;
+#endif  /* CONFIG_PCI */
 	/* Transmit descriptor */
 	volatile struct eth_tx_desc tx_desc;
 	/* Transmit DMA packet buffer */

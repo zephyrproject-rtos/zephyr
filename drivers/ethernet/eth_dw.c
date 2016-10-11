@@ -47,8 +47,7 @@ static inline void eth_write(uint32_t base_addr, uint32_t offset,
 static void eth_rx(struct device *port)
 {
 	struct eth_runtime *context = port->driver_data;
-	struct eth_config *config = port->config->config_info;
-	uint32_t base_addr = config->base_addr;
+	uint32_t base_addr = context->base_addr;
 	struct net_buf *buf;
 	uint32_t frm_len = 0;
 
@@ -108,8 +107,7 @@ release_desc:
 static int eth_tx(struct device *port, struct net_buf *buf)
 {
 	struct eth_runtime *context = port->driver_data;
-	struct eth_config *config = port->config->config_info;
-	uint32_t base_addr = config->base_addr;
+	uint32_t base_addr = context->base_addr;
 
 	/* Wait until the TX descriptor is no longer owned by the device. */
 	while (context->tx_desc.own == 1) {
@@ -146,8 +144,8 @@ static int eth_tx(struct device *port, struct net_buf *buf)
 
 void eth_dw_isr(struct device *port)
 {
-	struct eth_config *config = port->config->config_info;
-	uint32_t base_addr = config->base_addr;
+	struct eth_runtime *context = port->driver_data;
+	uint32_t base_addr = context->base_addr;
 	uint32_t int_status;
 
 	int_status = eth_read(base_addr, REG_ADDR_STATUS);
@@ -171,21 +169,20 @@ void eth_dw_isr(struct device *port)
 #ifdef CONFIG_PCI
 static inline int eth_setup(struct device *dev)
 {
-	struct eth_config *config = dev->config->config_info;
+	struct eth_runtime *context = dev->driver_data;
 
 	pci_bus_scan_init();
 
-	if (!pci_bus_scan(&config->pci_dev))
+	if (!pci_bus_scan(&context->pci_dev))
 		return 0;
 
 #ifdef CONFIG_PCI_ENUMERATION
-	config->base_addr = config->pci_dev.addr;
-	config->irq_num = config->pci_dev.irq;
+	context->base_addr = context->pci_dev.addr;
 #endif
-	pci_enable_regs(&config->pci_dev);
-	pci_enable_bus_master(&config->pci_dev);
+	pci_enable_regs(&context->pci_dev);
+	pci_enable_bus_master(&context->pci_dev);
 
-	pci_show(&config->pci_dev);
+	pci_show(&context->pci_dev);
 
 	return 1;
 }
@@ -198,7 +195,7 @@ static int eth_net_tx(struct net_buf *buf);
 static int eth_initialize(struct device *port)
 {
 	struct eth_runtime *context = port->driver_data;
-	struct eth_config *config = port->config->config_info;
+	const struct eth_config *config = port->config->config_info;
 	uint32_t base_addr;
 
 	union {
@@ -212,7 +209,7 @@ static int eth_initialize(struct device *port)
 	if (!eth_setup(port))
 		return -EPERM;
 
-	base_addr = config->base_addr;
+	base_addr = context->base_addr;
 
 	/* Read the MAC address from the device. */
 	mac_addr.words[1] = eth_read(base_addr, REG_ADDR_MACADDR_HI);
@@ -292,10 +289,18 @@ static int eth_initialize(struct device *port)
 static void eth_config_0_irq(struct device *port);
 
 static struct eth_config eth_config_0 = {
-	.base_addr		= ETH_DW_0_BASE_ADDR,
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
 	.irq_num		= ETH_DW_0_IRQ,
 #endif
+	.config_func		= eth_config_0_irq,
+
+#ifdef CONFIG_ETH_DW_0_IRQ_SHARED
+	.shared_irq_dev_name	= CONFIG_ETH_DW_0_IRQ_SHARED_NAME,
+#endif
+};
+
+static struct eth_runtime eth_0_runtime = {
+	.base_addr		= ETH_DW_0_BASE_ADDR,
 #if CONFIG_PCI
 	.pci_dev.class_type	= ETH_DW_PCI_CLASS,
 	.pci_dev.bus		= ETH_DW_0_PCI_BUS,
@@ -305,14 +310,7 @@ static struct eth_config eth_config_0 = {
 	.pci_dev.function	= ETH_DW_0_PCI_FUNCTION,
 	.pci_dev.bar		= ETH_DW_0_PCI_BAR,
 #endif
-	.config_func		= eth_config_0_irq,
-
-#ifdef CONFIG_ETH_DW_0_IRQ_SHARED
-	.shared_irq_dev_name	= CONFIG_ETH_DW_0_IRQ_SHARED_NAME,
-#endif
 };
-
-static struct eth_runtime eth_0_runtime;
 
 DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME, eth_initialize,
 				&eth_0_runtime, &eth_config_0,
@@ -325,7 +323,7 @@ static int eth_net_tx(struct net_buf *buf)
 
 static void eth_config_0_irq(struct device *port)
 {
-	struct eth_config *config = port->config->config_info;
+	const struct eth_config *config = port->config->config_info;
 	struct device *shared_irq_dev;
 
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
