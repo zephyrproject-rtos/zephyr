@@ -24,7 +24,7 @@
 		_R : Is a file that contains the receiver task
 			 of a benchmark function
  */
-
+#include <tc_util.h>
 #include "master.h"
 
 char Msg[MAX_MSG];
@@ -129,6 +129,7 @@ void BenchTask(void)
 					 output_file);
 		PRINT_STRING(dashline, output_file);
 		PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n",output_file);
+		TC_PRINT_RUNID;
 	} while (continuously && !kbhit());
 
 	WAIT_FOR_USER();
