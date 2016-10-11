@@ -3,18 +3,18 @@
 #
 # @build [ bsp == "x86" ] \
 #   make -j -C %(srcdir)s/ipm_demo_lmt CONFIG_KERNEL_BIN_NAME=zephyr \
-#       BOARD=%(board)s  O=outdir-%(target)s-%(bsp_model)s-%(board)s
+#       BOARD=%(board)s  O=outdir-%(tchash)s-%(bsp_model)s-%(board)s
 # @build [ bsp == "arc" ] \
 #   make -j -C %(srcdir)s/ipm_demo_arc CONFIG_KERNEL_BIN_NAME=zephyr \
-#       BOARD=%(board)s  O=outdir-%(target)s-%(bsp_model)s-%(board)s
+#       BOARD=%(board)s  O=outdir-%(tchash)s-%(bsp_model)s-%(board)s
 #
-# @clean rm -rf %(srcdir)s/ipm_demo_*/outdir-%(target)s-%(bsp_model)s-*
+# @clean rm -rf %(srcdir)s/ipm_demo_*/outdir-%(tchash)s-%(bsp_model)s-*
 #
 # @images [ bsp == "x86" ] \
-#   kernel-%(bsp)s:%(srcdir)s/ipm_demo_lmt/outdir-%(target)s-%(bsp_model)s-%(board)s/%(kernelname)s
+#   kernel-%(bsp)s:%(srcdir)s/ipm_demo_lmt/outdir-%(tchash)s-%(bsp_model)s-%(board)s/%(kernelname)s
 #
 # @images [ bsp == "arc" ] \
-#   kernel-%(bsp)s:%(srcdir)s/ipm_demo_arc/outdir-%(target)s-%(bsp_model)s-%(board)s/%(kernelname)s
+#   kernel-%(bsp)s:%(srcdir)s/ipm_demo_arc/outdir-%(tchash)s-%(bsp_model)s-%(board)s/%(kernelname)s
 #
 #
 # Maybe we should switch to: Arduino has a hard time recovering some
