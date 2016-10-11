@@ -1000,6 +1000,17 @@ struct net_if *net_if_get_by_index(uint8_t index);
  */
 uint8_t net_if_get_by_iface(struct net_if *iface);
 
+typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
+
+/**
+ * @brief Go through all the network interfaces and call callback
+ * for each interface.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ */
+void net_if_foreach(net_if_cb_t cb, void *user_data);
+
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 	int (*send)(struct net_if *iface, struct net_buf *buf);

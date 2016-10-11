@@ -1022,6 +1022,15 @@ uint8_t net_if_get_by_iface(struct net_if *iface)
 	return iface - __net_if_start;
 }
 
+void net_if_foreach(net_if_cb_t cb, void *user_data)
+{
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		cb(iface, user_data);
+	}
+}
+
 void net_if_init(void)
 {
 	struct net_if *iface;
