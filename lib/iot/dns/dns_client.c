@@ -409,7 +409,7 @@ int nbuf_copy(struct net_buf *dst, struct net_buf *src, int offset,
 		to_copy = min(len, src->len - offset);
 		memcpy(dst->data + copied, src->data + offset, to_copy);
 
-		copied = to_copy;
+		copied += to_copy;
 		len -= to_copy;
 		src = src->frags;
 		/* after the first iteration, this value will be 0 */
