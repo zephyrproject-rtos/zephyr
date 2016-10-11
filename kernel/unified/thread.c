@@ -424,6 +424,8 @@ void _k_thread_single_abort(struct k_thread *thread)
 
 void _init_static_threads(void)
 {
+	unsigned int  key;
+
 	_FOREACH_STATIC_THREAD(thread_data) {
 		_new_thread(
 			thread_data->init_stack,
@@ -438,7 +440,29 @@ void _init_static_threads(void)
 
 		thread_data->thread->init_data = thread_data;
 	}
+
+	k_sched_lock();
+	/* Start all (legacy) threads that are part of the EXE group */
 	_k_thread_group_op(K_THREAD_GROUP_EXE, _k_thread_single_start);
+
+	/*
+	 * Non-legacy static threads may be started immediately or after a
+	 * previously specified delay. Even though the scheduler is locked,
+	 * ticks can still be delivered and processed. Lock interrupts so
+	 * that the countdown until execution begins from the same tick.
+	 *
+	 * Note that static threads defined using the legacy API have a
+	 * delay of K_FOREVER.
+	 */
+	key = irq_lock();
+	_FOREACH_STATIC_THREAD(thread_data) {
+		if (thread_data->init_delay != K_FOREVER) {
+			schedule_new_thread(thread_data->thread,
+					    thread_data->init_delay);
+		}
+	}
+	irq_unlock(key);
+	k_sched_unlock();
 }
 
 uint32_t _k_thread_group_mask_get(struct k_thread *thread)

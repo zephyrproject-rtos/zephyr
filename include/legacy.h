@@ -84,7 +84,7 @@ typedef int nano_context_type_t;
 	char __noinit __stack _k_thread_obj_##name[stack_size]; \
 	struct _static_thread_data _k_thread_data_##name __aligned(4) \
 		__in_section(_k_task_list, private, task) = \
-		K_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
+		_MDEF_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
 				     entry, NULL, NULL, NULL, \
 				     NULL, prio, (uint32_t)(groups)); \
 	k_tid_t const name = (k_tid_t)_k_thread_obj_##name
