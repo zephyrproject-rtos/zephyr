@@ -23,6 +23,7 @@
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/storage.h>
 
 #include <misc/byteorder.h>
 #include <net/buf.h>
@@ -592,6 +593,38 @@ rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PAIR, CONTROLLER_INDEX, status);
 }
 
+static void unpair(const uint8_t *data, uint16_t len)
+{
+	struct gap_unpair_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+	bt_addr_le_t addr;
+	uint8_t status;
+	int err;
+
+	addr.type = cmd->address_type;
+	memcpy(addr.a.val, cmd->address, sizeof(addr.a.val));
+
+	conn = bt_conn_lookup_addr_le(&addr);
+	if (!conn) {
+		goto keys;
+	}
+
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	bt_conn_unref(conn);
+
+	if (err < 0) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+keys:
+	err = bt_storage_clear(&addr);
+
+	status = err < 0 ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_UNPAIR, CONTROLLER_INDEX, status);
+}
+
 static void passkey_entry(const uint8_t *data, uint16_t len)
 {
 	const struct gap_passkey_entry_cmd *cmd = (void *) data;
@@ -674,6 +707,9 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GAP_PAIR:
 		pair(data, len);
+		return;
+	case GAP_UNPAIR:
+		unpair(data, len);
 		return;
 	case GAP_PASSKEY_ENTRY:
 		passkey_entry(data, len);
