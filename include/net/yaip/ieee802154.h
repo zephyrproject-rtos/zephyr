@@ -22,12 +22,14 @@
 #ifndef __IEEE802154_H__
 #define __IEEE802154_H__
 
+/* This not meant to be used by any code but 802.15.4 L2 stack */
 struct ieee802154_context {
 	uint16_t pan_id;
 	uint16_t channel;
 	uint8_t sequence;
 	struct nano_sem ack_lock;
-	bool ack_received;
+	uint8_t ack_received	: 1;
+	uint8_t _unused		: 7;
 } __packed;
 
 #endif /* __IEEE802154_H__ */
