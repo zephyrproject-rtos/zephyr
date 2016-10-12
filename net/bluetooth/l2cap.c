@@ -664,6 +664,11 @@ static struct bt_l2cap_le_chan *l2cap_remove_tx_cid(struct bt_conn *conn,
 {
 	struct bt_l2cap_chan *chan, *prev;
 
+	/* Protect fixed channels against accidental removal */
+	if (!L2CAP_LE_CID_IS_DYN(cid)) {
+		return NULL;
+	}
+
 	for (chan = conn->channels, prev = NULL; chan;
 	     prev = chan, chan = chan->_next) {
 		/* get the app's l2cap object wherein this chan is contained */
