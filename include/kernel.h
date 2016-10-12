@@ -297,6 +297,7 @@ struct _timeout {
 	_timeout_func_t func;
 };
 
+
 /* timers */
 
 struct k_timer {
@@ -307,25 +308,23 @@ struct k_timer {
 	 */
 	struct _timeout timeout;
 
-	/* wait queue for the threads waiting on this timer */
+	/* wait queue for the (single) thread waiting on this timer */
 	_wait_q_t wait_q;
 
 	/* runs in ISR context */
-	void (*handler)(void *);
-	void *handler_arg;
+	void (*expiry_fn)(struct k_timer *);
 
 	/* runs in the context of the thread that calls k_timer_stop() */
-	void (*stop_handler)(void *);
-	void *stop_handler_arg;
+	void (*stop_fn)(struct k_timer *);
 
 	/* timer period */
 	int32_t period;
 
-	/* user supplied data pointer returned to the thread*/
-	void *user_data;
+	/* timer status */
+	uint32_t status;
 
-	/* user supplied data pointer */
-	void *user_data_internal;
+	/* used to support legacy timer APIs */
+	void *_legacy_data;
 
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_timer);
 };
@@ -339,18 +338,103 @@ struct k_timer {
 #define K_TIMER_DEFINE(name) \
 	struct k_timer name = K_TIMER_INITIALIZER(name)
 
-extern void k_timer_init(struct k_timer *timer, void *data);
+/**
+ * @brief Initialize a timer.
+ *
+ * This routine must be called before the timer is used.
+ *
+ * @param timer     Address of timer.
+ * @param expiry_fn Function to invoke each time timer expires.
+ * @param stop_fn   Function to invoke if timer is stopped while running.
+ *
+ * @return N/A
+ */
+extern void k_timer_init(struct k_timer *timer,
+			 void (*expiry_fn)(struct k_timer *),
+			 void (*stop_fn)(struct k_timer *));
 
+/**
+ * @brief Start a timer.
+ *
+ * This routine starts a timer, and resets its status to zero. The timer
+ * begins counting down using the specified duration and period values.
+ *
+ * Attempting to start a timer that is already running is permitted.
+ * The timer's status is reset to zero and the timer begins counting down
+ * using the new duration and period values.
+ *
+ * @param timer     Address of timer.
+ * @param duration  Initial timer duration (in milliseconds).
+ * @param period    Timer period (in milliseconds).
+ *
+ * @return N/A
+ */
 extern void k_timer_start(struct k_timer *timer,
-			  int32_t duration, int32_t period,
-			  void (*handler)(void *), void *handler_arg,
-			  void (*stop_handler)(void *), void *stop_handler_arg);
-extern void k_timer_restart(struct k_timer *timer, int32_t duration,
-			    int32_t period);
+			  int32_t duration, int32_t period);
+
+/**
+ * @brief Stop a timer.
+ *
+ * This routine stops a running timer prematurely. The timer's stop function,
+ * if one exists, is invoked by the caller.
+ *
+ * Attempting to stop a timer that is not running is permitted, but has no
+ * effect on the timer since it is already stopped.
+ *
+ * @param timer     Address of timer.
+ *
+ * @return N/A
+ */
 extern void k_timer_stop(struct k_timer *timer);
-extern int k_timer_test(struct k_timer *timer, void **data, int wait);
+
+/**
+ * @brief Read timer status.
+ *
+ * This routine reads the timer's status, which indicates the number of times
+ * it has expired since its status was last read.
+ *
+ * Calling this routine resets the timer's status to zero.
+ *
+ * @param timer     Address of timer.
+ *
+ * @return Timer status.
+ */
+extern uint32_t k_timer_status_get(struct k_timer *timer);
+
+/**
+ * @brief Synchronize thread to timer expiration.
+ *
+ * This routine blocks the calling thread until the timer's status is non-zero
+ * (indicating that it has expired at least once since it was last examined)
+ * or the timer is stopped. If the timer status is already non-zero,
+ * or the timer is already stopped, the caller continues without waiting.
+ *
+ * Calling this routine resets the timer's status to zero.
+ *
+ * This routine must not be used by interrupt handlers, since they are not
+ * allowed to block.
+ *
+ * @param timer     Address of timer.
+ *
+ * @return Timer status.
+ */
+extern uint32_t k_timer_status_sync(struct k_timer *timer);
+
+/**
+ * @brief Get timer remaining before next timer expiration.
+ *
+ * This routine computes the (approximate) time remaining before a running
+ * timer next expires. If the timer is not running, it returns zero.
+ *
+ * @param timer     Address of timer.
+ *
+ * @return Remaining time (in milliseconds).
+ */
+
 extern int32_t k_timer_remaining_get(struct k_timer *timer);
 
+
+/* kernel clocks */
 
 /**
  * @brief Get the time elapsed since the system booted (uptime)

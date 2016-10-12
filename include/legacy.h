@@ -649,20 +649,27 @@ static inline int nano_stack_pop(struct nano_stack *stack, uint32_t *data,
 #define nano_fiber_stack_pop nano_stack_pop
 #define nano_task_stack_pop nano_stack_pop
 
-/* timers */
+/* kernel clocks */
+
+extern int32_t _ms_to_ticks(int32_t ms);
+
+extern int64_t sys_tick_get(void);
+extern uint32_t sys_tick_get_32(void);
+extern int64_t sys_tick_delta(int64_t *reftime);
+extern uint32_t sys_tick_delta_32(int64_t *reftime);
+
+#define sys_cycle_get_32 k_cycle_get_32
+
+/* microkernel timers */
+
+#if (CONFIG_NUM_DYNAMIC_TIMERS > 0)
 
 #define CONFIG_NUM_TIMER_PACKETS CONFIG_NUM_DYNAMIC_TIMERS
 
 #define ktimer_t struct k_timer *
 
-#if (CONFIG_NUM_DYNAMIC_TIMERS > 0)
-extern struct k_timer *_k_timer_alloc(void);
-#define task_timer_alloc _k_timer_alloc
-
-extern void _k_timer_free(struct k_timer *timer);
-#define task_timer_free _k_timer_free
-#endif
-
+extern ktimer_t task_timer_alloc(void);
+extern void task_timer_free(ktimer_t timer);
 
 extern void task_timer_start(ktimer_t timer, int32_t duration,
 			     int32_t period, ksem_t sema);
@@ -670,34 +677,39 @@ extern void task_timer_start(ktimer_t timer, int32_t duration,
 static inline void task_timer_restart(ktimer_t timer, int32_t duration,
 				      int32_t period)
 {
-	k_timer_restart(timer, _ticks_to_ms(duration), _ticks_to_ms(period));
+	k_timer_start(timer, _ticks_to_ms(duration), _ticks_to_ms(period));
 }
+
+static inline void task_timer_stop(ktimer_t timer)
+{
+	k_timer_stop(timer);
+}
+
+extern bool k_timer_pool_is_empty(void);
+
+#endif /* CONFIG_NUM_DYNAMIC_TIMERS > 0 */
+
+/* nanokernel timers */
 
 #define nano_timer k_timer
 
-#define nano_timer_init k_timer_init
+static inline void nano_timer_init(struct k_timer *timer, void *data)
+{
+	k_timer_init(timer, NULL, NULL);
+	timer->_legacy_data = data;
+}
 
 static inline void nano_timer_start(struct nano_timer *timer, int ticks)
 {
-	k_timer_start((struct k_timer *)timer, _ticks_to_ms(ticks), 0,
-		       NULL, NULL, NULL, NULL);
+	k_timer_start(timer, _ticks_to_ms(ticks), 0);
 }
 
 #define nano_isr_timer_start nano_timer_start
 #define nano_fiber_timer_start nano_timer_start
 #define nano_task_timer_start nano_timer_start
 
-static inline void *nano_timer_test(struct nano_timer *timer,
-					int32_t timeout_in_ticks)
-{
-	void *data;
-
-	if (k_timer_test(timer, &data, _ticks_to_ms(timeout_in_ticks)) < 0) {
-		return NULL;
-	}
-
-	return data;
-}
+extern void *nano_timer_test(struct nano_timer *timer,
+			     int32_t timeout_in_ticks);
 
 #define nano_isr_timer_test nano_timer_test
 #define nano_fiber_timer_test nano_timer_test
@@ -709,19 +721,10 @@ static inline void *nano_timer_test(struct nano_timer *timer,
 #define nano_fiber_timer_stop k_timer_stop
 #define nano_task_timer_stop k_timer_stop
 
-extern int32_t _ms_to_ticks(int32_t ms);
-
 static inline int32_t nano_timer_ticks_remain(struct nano_timer *timer)
 {
 	return _ms_to_ticks(k_timer_remaining_get(timer));
 }
-
-extern int64_t sys_tick_get(void);
-extern uint32_t sys_tick_get_32(void);
-extern int64_t sys_tick_delta(int64_t *reftime);
-extern uint32_t sys_tick_delta_32(int64_t *reftime);
-
-#define sys_cycle_get_32 k_cycle_get_32
 
 /* floating point services */
 
