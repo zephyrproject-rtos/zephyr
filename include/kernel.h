@@ -937,8 +937,6 @@ struct k_pipe {
 	struct k_pipe name =                                  \
 		K_PIPE_INITIALIZER(name, pipe_buffer_size, _k_pipe_buf_##name)
 
-#define K_PIPE_SIZE(buffer_size) (sizeof(struct k_pipe) + buffer_size)
-
 /**
  * @brief Runtime initialization of a pipe
  *
