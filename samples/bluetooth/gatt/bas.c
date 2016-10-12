@@ -36,7 +36,8 @@ static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_blvl;
 static uint8_t battery = 100;
 
-static void blvl_ccc_cfg_changed(uint16_t value)
+static void blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr,
+				 uint16_t value)
 {
 	simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }

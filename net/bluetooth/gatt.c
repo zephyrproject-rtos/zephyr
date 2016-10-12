@@ -309,7 +309,8 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 				 sizeof(value));
 }
 
-static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
+static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
+			     struct _bt_gatt_ccc *ccc)
 {
 	int i;
 	uint16_t value = 0x0000;
@@ -324,7 +325,7 @@ static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
 
 	if (value != ccc->value) {
 		ccc->value = value;
-		ccc->cfg_changed(value);
+		ccc->cfg_changed(attr, value);
 	}
 }
 
@@ -384,7 +385,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
 	/* Update cfg if don't match */
 	if (ccc->cfg[i].value != ccc->value) {
-		gatt_ccc_changed(ccc);
+		gatt_ccc_changed(attr, ccc);
 	}
 
 	return len;
@@ -638,7 +639,7 @@ static uint8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		if (ccc->cfg[i].value) {
-			gatt_ccc_changed(ccc);
+			gatt_ccc_changed(attr, ccc);
 			return BT_GATT_ITER_CONTINUE;
 		}
 	}
@@ -695,8 +696,9 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	/* Reset value while disconnected */
 	memset(&ccc->value, 0, sizeof(ccc->value));
-	if (ccc->cfg_changed)
-		ccc->cfg_changed(ccc->value);
+	if (ccc->cfg_changed) {
+		ccc->cfg_changed(attr, ccc->value);
+	}
 
 	BT_DBG("ccc %p reseted", ccc);
 

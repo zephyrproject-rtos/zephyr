@@ -437,7 +437,7 @@ static bool ccc_added;
 static struct bt_gatt_ccc_cfg ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t ccc_value;
 
-static void ccc_cfg_changed(uint16_t value)
+static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	ccc_value = value;
 }
