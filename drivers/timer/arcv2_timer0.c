@@ -176,11 +176,12 @@ void _timer_int_handler(void *unused)
 		      timer_count <= (cycles_per_tick - 1),
 		      "timer_count: %d, limit %d\n", timer_count, cycles_per_tick - 1);
 
-	_sys_idle_elapsed_ticks = 1;
+	_sys_clock_final_tick_announce();
+#else
+	_sys_clock_tick_announce();
 #endif
 
 	update_accumulated_count();
-	_sys_clock_tick_announce();
 }
 
 #if defined(CONFIG_TICKLESS_IDLE)

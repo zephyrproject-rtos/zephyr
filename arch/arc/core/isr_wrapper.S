@@ -44,6 +44,8 @@ SECTION_VAR(BSS, saved_r0)
 
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 GTEXT(_power_save_idle_exit)
+#elif defined(CONFIG_KERNEL_V2) && defined(CONFIG_SYS_POWER_MANAGEMENT)
+GTEXT(_sys_power_save_idle_exit)
 #endif
 
 /*
@@ -317,6 +319,25 @@ GTEXT(_sys_k_event_logger_interrupt)
 	jl _power_save_idle_exit
 	pop_s blink
 	pop_s r0
+	seti r0
+.endm
+#elif defined(CONFIG_KERNEL_V2) && defined(CONFIG_SYS_POWER_MANAGEMENT)
+.macro exit_tickless_idle
+	clri r0 /* do not interrupt exiting tickless idle operations */
+	push_s r1
+	push_s r0
+	mov_s r1, _nanokernel
+	ld_s r0, [r1, __tNANO_idle_OFFSET] /* requested idle duration */
+	breq r0, 0, _skip_sys_power_save_idle_exit
+
+	st 0, [r1, __tNANO_idle_OFFSET] /* zero idle duration */
+	push_s blink
+	jl _sys_power_save_idle_exit
+	pop_s blink
+
+_skip_sys_power_save_idle_exit:
+	pop_s r0
+	pop_s r1
 	seti r0
 .endm
 #else
