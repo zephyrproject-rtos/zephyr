@@ -3191,6 +3191,19 @@ static int br_init(void)
 		return err;
 	}
 
+	/* Set page timeout*/
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_PAGE_TIMEOUT, sizeof(uint16_t));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_le16(buf, CONFIG_BLUETOOTH_PAGE_TIMEOUT);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_PAGE_TIMEOUT, buf, NULL);
+	if (err) {
+		return err;
+	}
+
 	/* Enable BR/EDR SC if supported */
 	if (BT_FEAT_SC(bt_dev.features)) {
 		struct bt_hci_cp_write_sc_host_supp *sc_cp;
