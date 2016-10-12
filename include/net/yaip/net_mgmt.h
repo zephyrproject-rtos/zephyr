@@ -80,6 +80,11 @@ typedef int (*net_mgmt_request_handler_t)(uint32_t mgmt_request,
 #define net_mgmt(_mgmt_request, _iface, _data, _len)			\
 	net_mgmt_##_mgmt_request(_mgmt_request, _iface, _data, _len)
 
+#define NET_MGMT_DEFINE_REQUEST_HANDLER(_mgmt_request)			\
+	extern int net_mgmt_##_mgmt_request(uint32_t mgmt_request,	\
+					    struct net_if *iface,	\
+					    void *data, size_t len)
+
 #define NET_MGMT_REGISTER_REQUEST_HANDLER(_mgmt_request, _func)	\
 	FUNC_ALIAS(_func, net_mgmt_##_mgmt_request, int)
 
