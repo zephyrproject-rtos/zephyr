@@ -69,12 +69,14 @@ F:	include/arch/arc/
 
 ARM ARCHITECTURE
 M:	Maureen Helm <maureen.helm@nxp.com>
+M:	Kumar Gala <kumar.gala@linaro.org>
 S:	Supported
 F:	arch/arm/
 F:	include/arch/arm/
 
 ARM CORTEX MICROCONTROLLER SOFTWARE INTERFACE STANDARD (CMSIS)
 M:	Maureen Helm <maureen.helm@nxp.com>
+M:	Kumar Gala <kumar.gala@linaro.org>
 S:	Supported
 F:	ext/hal/cmsis/
 
@@ -355,6 +357,7 @@ F:	tests/net/zoap/
 
 THE REST
 M:	Anas Nashif <anas.nashif@intel.com>
+M:	Kumar Gala <kumar.gala@linaro.org>
 L:	devel@lists.zephyrproject.com
 T:	git https://gerrit.zephyrproject.org/r/a/zephyr
 S:	Buried alive in reporters
