@@ -1225,6 +1225,22 @@ static inline int k_mem_map_num_used_get(struct k_mem_map *map)
 	return map->num_used;
 }
 
+/**
+ * @brief Get the number of unused memory blocks
+ *
+ * This routine gets the current number of unused memory blocks in the
+ * specified pool. It should be used for stats purposes only as that value
+ * may potentially be out-of-date by the time it is used.
+ *
+ * @param map Memory map to query
+ *
+ * @return Number of unused memory blocks
+ */
+static inline int k_mem_map_num_free_get(struct k_mem_map *map)
+{
+	return map->num_blocks - map->num_used;
+}
+
 /* memory pools */
 
 /*

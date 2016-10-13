@@ -142,3 +142,4 @@ The following memory map APIs are provided by :file:`kernel.h`:
 * :cpp:func:`k_mem_map_alloc()`
 * :cpp:func:`k_mem_map_free()`
 * :cpp:func:`k_mem_map_num_used_get()`
+* :cpp:func:`k_mem_map_num_free_get()`
