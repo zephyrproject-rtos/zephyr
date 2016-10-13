@@ -62,7 +62,6 @@ struct slip_context {
 	uint16_t ll_reserve;	/* Reserve any space for link layer headers */
 	uint8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
-	int mtu;
 
 #if defined(CONFIG_SLIP_STATISTICS)
 #define SLIP_STATS(statement)
@@ -173,7 +172,7 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 			}
 		}
 
-		if (slip->mtu > net_buf_headroom(frag)) {
+		if (net_if_get_mtu(iface) > net_buf_headroom(frag)) {
 			/* Do not add link layer header if the mtu is bigger
 			 * than fragment size. The first packet needs the
 			 * link layer header always.
@@ -383,10 +382,8 @@ static int slip_init(struct device *dev)
 
 #if defined(CONFIG_SLIP_TAP)
 	slip->ll_reserve = sizeof(struct net_eth_hdr);
-	slip->mtu = 1500; /* assume for ethernet */
 #else
 	slip->ll_reserve = 0;
-	slip->mtu = 576; /* assume for tun */
 #endif
 	SYS_LOG_DBG("%sll reserve %d",
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
@@ -440,11 +437,13 @@ static struct slip_context slip_context_data;
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
 #define _SLIP_L2_LAYER ETHERNET_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
+#define _SLIP_MTU 1500
 #else
 #define _SLIP_L2_LAYER DUMMY_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
+#define _SLIP_MTU 576
 #endif
 
 NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
 		NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
-		_SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, 127);
+		_SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
