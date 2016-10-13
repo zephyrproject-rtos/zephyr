@@ -27,7 +27,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
-#include <sched.h>
+#include <ksched.h>
 
 extern void _k_thread_single_abort(struct k_thread *thread);
 

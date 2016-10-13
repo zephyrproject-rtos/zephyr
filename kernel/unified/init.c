@@ -31,7 +31,7 @@
 #include <device.h>
 #include <init.h>
 #include <linker-defs.h>
-#include <sched.h>
+#include <ksched.h>
 
 /* kernel build timestamp items */
 

@@ -31,7 +31,7 @@
 #include <misc/printk.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
-#include <sched.h>
+#include <ksched.h>
 #include <wait_q.h>
 
 extern struct _static_thread_data _k_task_list_start[];

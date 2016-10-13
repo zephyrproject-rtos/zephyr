@@ -33,7 +33,7 @@
 #include <sections.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
-#include <sched.h>
+#include <ksched.h>
 
 #ifdef CONFIG_SEMAPHORE_GROUPS
 struct _sem_desc {

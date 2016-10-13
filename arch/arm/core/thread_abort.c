@@ -30,7 +30,7 @@
 #include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <sched.h>
+#include <ksched.h>
 #include <wait_q.h>
 
 extern void _k_thread_single_abort(struct tcs *thread);

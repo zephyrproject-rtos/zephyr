@@ -23,7 +23,7 @@
 
 #include <kernel.h>
 #include <nano_private.h>
-#include <sched.h>
+#include <ksched.h>
 #include <init.h>
 
 struct offload_work {

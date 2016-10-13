@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _sched__h_
-#define _sched__h_
+#ifndef _ksched__h_
+#define _ksched__h_
 
 #include <kernel.h>
 #include <nano_private.h>
@@ -336,4 +336,4 @@ static inline void _unpend_thread(struct k_thread *thread)
 	_mark_thread_as_not_pending(thread);
 }
 
-#endif /* _sched__h_ */
+#endif /* _ksched__h_ */

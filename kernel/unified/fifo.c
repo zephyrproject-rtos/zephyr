@@ -27,7 +27,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
-#include <sched.h>
+#include <ksched.h>
 #include <misc/slist.h>
 
 void k_fifo_init(struct k_fifo *fifo)

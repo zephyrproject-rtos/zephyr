@@ -25,7 +25,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
-#include <sched.h>
+#include <ksched.h>
 
 void k_lifo_init(struct k_lifo *lifo)
 {

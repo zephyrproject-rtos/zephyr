@@ -21,7 +21,7 @@
 #include <sections.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
-#include <sched.h>
+#include <ksched.h>
 #include <init.h>
 
 extern struct k_mem_map _k_mem_map_ptr_start[];

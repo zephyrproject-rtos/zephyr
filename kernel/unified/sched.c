@@ -17,7 +17,7 @@
 #include <kernel.h>
 #include <nano_private.h>
 #include <atomic.h>
-#include <sched.h>
+#include <ksched.h>
 #include <wait_q.h>
 
 /* set the bit corresponding to prio in ready q bitmap */

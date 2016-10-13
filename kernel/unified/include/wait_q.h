@@ -23,7 +23,7 @@
 
 #ifdef CONFIG_KERNEL_V2
 #include <misc/dlist.h>
-#include <sched.h>
+#include <ksched.h>
 #endif
 
 #ifdef __cplusplus

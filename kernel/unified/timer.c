@@ -17,7 +17,7 @@
 #include <nano_private.h>
 #include <misc/debug/object_tracing_common.h>
 #include <wait_q.h>
-#include <sched.h>
+#include <ksched.h>
 #include <init.h>
 
 /**
