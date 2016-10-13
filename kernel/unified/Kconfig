@@ -319,4 +319,14 @@ config MEM_POOL_AD_AFTER_SEARCH_FOR_BIGGERBLOCK
 
 endchoice
 
+config HEAP_MEM_POOL_SIZE
+	int
+	prompt "Heap memory pool size (in bytes)"
+	default 0
+	help
+	This option specifies the size of the heap memory pool used when
+	dynamically allocating memory using k_malloc(). Supported values
+	are: 256, 1024, 4096, and 16384. A size of zero means that no
+	heap memory pool is defined.
+
 endmenu

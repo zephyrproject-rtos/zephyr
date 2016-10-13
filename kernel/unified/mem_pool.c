@@ -24,17 +24,14 @@
 #include <ksched.h>
 #include <wait_q.h>
 #include <init.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define _QUAD_BLOCK_AVAILABLE 0x0F
 #define _QUAD_BLOCK_ALLOCATED 0x0
 
 extern struct k_mem_pool _k_mem_pool_start[];
 extern struct k_mem_pool _k_mem_pool_end[];
-#if defined _HEAP_MEM_POOL
-static struct k_mem_pool *heap_mem_pool = _HEAP_MEM_POOL;
-#else
-static struct k_mem_pool *heap_mem_pool;
-#endif
 
 static void init_one_memory_pool(struct k_mem_pool *pool);
 
@@ -60,6 +57,8 @@ static int init_static_pools(struct device *unused)
 	}
 	return 0;
 }
+
+SYS_INIT(init_static_pools, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 /**
  *
@@ -523,45 +522,6 @@ int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 	return -ENOMEM;
 }
 
-
-#define MALLOC_ALIGN (sizeof(uint32_t))
-
-void *k_malloc(size_t size)
-{
-	uint32_t new_size;
-	uint32_t *aligned_addr;
-	struct k_mem_block mem_block;
-
-	__ASSERT(heap_mem_pool != NULL,
-		"Try to allocate a block in undefined heap\n");
-
-	/* The address pool returns, may not be aligned. Also
-	*  pool_free requires both start address and size. So
-	*  we end up needing 2 slots to save the size and
-	*  start address in addition to padding space
-	*/
-	new_size =  size + (sizeof(uint32_t) << 1) + MALLOC_ALIGN - 1;
-
-	if (k_mem_pool_alloc(heap_mem_pool, &mem_block, new_size,
-			     K_NO_WAIT) != 0) {
-		return NULL;
-	}
-
-	/* Get the next aligned address following the address returned by pool*/
-	aligned_addr = (uint32_t *) ROUND_UP(mem_block.addr_in_pool,
-					     MALLOC_ALIGN);
-
-	/* Save the size requested to the pool API, to be used while freeing */
-	*aligned_addr = new_size;
-
-	/* Save the original unaligned_addr pointer too */
-	aligned_addr++;
-	*((void **) aligned_addr) = mem_block.addr_in_pool;
-
-	/* return the subsequent address */
-	return ++aligned_addr;
-}
-
 void k_mem_pool_free(struct k_mem_block *block)
 {
 	int offset;
@@ -579,22 +539,70 @@ void k_mem_pool_free(struct k_mem_block *block)
 	k_sched_unlock();
 }
 
-void k_free(void *ptr)
+
+/*
+ * Heap memory pool support
+ */
+
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+
+/*
+ * Case 1: Heap is defined using HEAP_MEM_POOL_SIZE configuration option.
+ *
+ * This module defines the heap memory pool and the _HEAP_MEM_POOL symbol
+ * that has the address of the associated memory pool struct.
+ */
+
+K_MEM_POOL_DEFINE(_heap_mem_pool, 64, CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
+#define _HEAP_MEM_POOL (&_heap_mem_pool)
+
+#else
+
+/*
+ * Case 2: Heap is defined using HEAP_SIZE item type in MDEF.
+ *
+ * Sysgen defines the heap memory pool and the _heap_mem_pool_ptr variable
+ * that has the address of the associated memory pool struct. This module
+ * defines the _HEAP_MEM_POOL symbol as an alias for _heap_mem_pool_ptr.
+ *
+ * Note: If the MDEF does not define the heap memory pool k_malloc() will
+ * compile successfully, but will trigger a link error if it is used.
+ */
+
+extern struct k_mem_pool * const _heap_mem_pool_ptr;
+#define _HEAP_MEM_POOL _heap_mem_pool_ptr
+
+#endif /* CONFIG_HEAP_MEM_POOL_SIZE */
+
+
+void *k_malloc(size_t size)
 {
-	struct k_mem_block mem_block;
+	struct k_mem_block block;
 
-	__ASSERT(heap_mem_pool != NULL,
-		"Try to free a block in undefined heap\n");
+	/*
+	 * get a block large enough to hold an initial (hidden) block
+	 * descriptor, as well as the space the caller requested
+	 */
+	size += sizeof(struct k_mem_block);
+	if (k_mem_pool_alloc(_HEAP_MEM_POOL, &block, size, K_NO_WAIT) != 0) {
+		return NULL;
+	}
 
-	mem_block.pool_id = heap_mem_pool;
+	/* save the block descriptor info at the start of the actual block */
+	memcpy(block.data, &block, sizeof(struct k_mem_block));
 
-	/* Fetch the pointer returned by the pool API */
-	mem_block.addr_in_pool = *((void **) ((uint32_t *)ptr - 1));
-	mem_block.data = *((void **) ((uint32_t *)ptr - 1));
-	/* Further fetch the size asked from pool */
-	mem_block.req_size = *((uint32_t *)ptr - 2);
-
-	k_mem_pool_free(&mem_block);
+	/* return address of the user area part of the block to the caller */
+	return (char *)block.data + sizeof(struct k_mem_block);
 }
 
-SYS_INIT(init_static_pools, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+void k_free(void *ptr)
+{
+	if (ptr != NULL) {
+		/* point to hidden block descriptor at start of block */
+		ptr = (char *)ptr - sizeof(struct k_mem_block);
+
+		/* return block to the heap memory pool */
+		k_mem_pool_free(ptr);
+	}
+}

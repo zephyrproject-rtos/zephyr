@@ -1814,10 +1814,10 @@ extern void k_mem_pool_free(struct k_mem_block *block);
 extern void k_mem_pool_defrag(struct k_mem_pool *pool);
 
 /**
- * @brief Allocate memory from heap pool
+ * @brief Allocate memory from heap
  *
- * This routine provides traditional malloc semantics; internally it uses
- * the memory pool APIs on a dedicated HEAP pool
+ * This routine provides traditional malloc() semantics. The memory is
+ * allocated from the heap memory pool.
  *
  * @param size Size of memory requested by the caller (in bytes)
  *
@@ -1826,7 +1826,10 @@ extern void k_mem_pool_defrag(struct k_mem_pool *pool);
 extern void *k_malloc(size_t size);
 
 /**
- * @brief Free memory allocated through k_malloc()
+ * @brief Free memory allocated from heap
+ *
+ * This routine provides traditional free() semantics. The memory being
+ * returned must have been allocated from the heap memory pool.
  *
  * @param ptr Pointer to previously allocated memory
  *

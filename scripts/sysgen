@@ -898,6 +898,11 @@ def kernel_main_c_pools():
             pool_descriptors += "K_MEM_POOL_DEFINE(_k_mem_pool_obj_%s, %d, %d, %d, 4);\n" % \
                           (pool[0], min_block_size, max_block_size,
                            num_maximal_blocks)
+
+        if (heap_pos_in_pool_list != -1):
+            kernel_main_c_out(
+		"\nkmemory_pool_t _heap_mem_pool_ptr = " +
+		"&_k_mem_pool_obj__HEAP_MEM_POOL;\n")
     kernel_main_c_out(pool_descriptors)
 
 
