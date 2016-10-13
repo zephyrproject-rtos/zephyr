@@ -70,7 +70,7 @@ static int init_mem_map_module(struct device *dev)
 }
 
 void k_mem_map_init(struct k_mem_map *map, void *buffer,
-		    int block_size, int num_blocks)
+		    size_t block_size, uint32_t num_blocks)
 {
 	map->num_blocks = num_blocks;
 	map->block_size = block_size;

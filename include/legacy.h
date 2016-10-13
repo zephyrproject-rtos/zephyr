@@ -393,7 +393,11 @@ static inline int task_mem_map_alloc(kmemory_map_t map, void **mptr,
 }
 
 #define task_mem_map_free k_mem_map_free
-#define task_mem_map_used_get k_mem_map_num_used_get
+
+static inline int task_mem_map_used_get(kmemory_map_t map)
+{
+	return (int)k_mem_map_num_used_get(map);
+}
 
 #define DEFINE_MEM_MAP(name, map_num_blocks, map_block_size) \
 	K_MEM_MAP_DEFINE(_k_mem_map_obj_##name, map_block_size, \

@@ -1454,11 +1454,11 @@ extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 
 struct k_mem_map {
 	_wait_q_t wait_q;
-	int num_blocks;
-	int block_size;
+	uint32_t num_blocks;
+	size_t block_size;
 	char *buffer;
 	char *free_list;
-	int num_used;
+	uint32_t num_used;
 
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mem_map);
 };
@@ -1511,7 +1511,7 @@ struct k_mem_map {
  * @return N/A
  */
 extern void k_mem_map_init(struct k_mem_map *map, void *buffer,
-			   int block_size, int num_blocks);
+			   size_t block_size, uint32_t num_blocks);
 
 /**
  * @brief Allocate a memory map block.
@@ -1552,7 +1552,7 @@ extern void k_mem_map_free(struct k_mem_map *map, void **mem);
  *
  * @return Number of used memory blocks
  */
-static inline int k_mem_map_num_used_get(struct k_mem_map *map)
+static inline uint32_t k_mem_map_num_used_get(struct k_mem_map *map)
 {
 	return map->num_used;
 }
@@ -1568,7 +1568,7 @@ static inline int k_mem_map_num_used_get(struct k_mem_map *map)
  *
  * @return Number of unused memory blocks
  */
-static inline int k_mem_map_num_free_get(struct k_mem_map *map)
+static inline uint32_t k_mem_map_num_free_get(struct k_mem_map *map)
 {
 	return map->num_blocks - map->num_used;
 }
