@@ -477,7 +477,7 @@ void k_mem_pool_defrag(struct k_mem_pool *pool)
 }
 
 int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
-			  int size, int32_t timeout)
+		     size_t size, int32_t timeout)
 {
 	char *found_block;
 	int offset;
@@ -526,7 +526,7 @@ int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 
 #define MALLOC_ALIGN (sizeof(uint32_t))
 
-void *k_malloc(uint32_t size)
+void *k_malloc(size_t size)
 {
 	uint32_t new_size;
 	uint32_t *aligned_addr;

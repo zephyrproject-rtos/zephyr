@@ -1159,7 +1159,7 @@ struct k_mem_block {
 	struct k_mem_pool *pool_id;
 	void *addr_in_pool;
 	void *data;
-	uint32_t req_size;
+	size_t req_size;
 };
 
 /* mailboxes */
@@ -1599,18 +1599,18 @@ struct k_mem_pool_quad_block {
  * k_mem_pool_quad_block structures
  */
 struct k_mem_pool_block_set {
-	int block_size; /* memory block size */
-	int nr_of_entries; /* nr of quad block structures in the array */
+	size_t block_size; /* memory block size */
+	uint32_t nr_of_entries; /* nr of quad block structures in the array */
 	struct k_mem_pool_quad_block *quad_block;
 	int count;
 };
 
 /* Memory pool descriptor */
 struct k_mem_pool {
-	int max_block_size;
-	int min_block_size;
-	int nr_of_maxblocks;
-	int nr_of_block_sets;
+	size_t max_block_size;
+	size_t min_block_size;
+	uint32_t nr_of_maxblocks;
+	uint32_t nr_of_block_sets;
 	struct k_mem_pool_block_set *block_set;
 	char *bufblock;
 	_wait_q_t wait_q;
@@ -1799,7 +1799,7 @@ static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
  * @return 0 on success, -ENOMEM on failure
  */
 extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
-			    int size, int32_t timeout);
+			    size_t size, int32_t timeout);
 
 /**
  * @brief Return previously allocated memory to its memory pool
@@ -1829,7 +1829,7 @@ extern void k_mem_pool_defrag(struct k_mem_pool *pool);
  *
  * @return Address of the allocated memory on success; otherwise NULL
  */
-extern void *k_malloc(uint32_t size);
+extern void *k_malloc(size_t size);
 
 /**
  * @brief Free memory allocated through k_malloc()
