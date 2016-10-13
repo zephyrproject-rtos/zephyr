@@ -1441,12 +1441,59 @@ static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
 	    : "n"(sizeof(struct k_mem_pool_quad_block)));
 }
 
+/**
+ * @brief Allocate memory from a memory pool
+ *
+ * @param pool Pointer to the memory pool object
+ * @param block Pointer to the allocated memory's block descriptor
+ * @param size Minimum number of bytes to allocate
+ * @param timeout Maximum time (milliseconds) to wait for operation to
+ *        complete. Use K_NO_WAIT to return immediately, or K_FOREVER
+ *        to wait as long as necessary.
+ *
+ * @return 0 on success, -ENOMEM on failure
+ */
 extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
-				int size, int32_t timeout);
+			    int size, int32_t timeout);
+
+/**
+ * @brief Return previously allocated memory to its memory pool
+ *
+ * @param block Pointer to allocated memory's block descriptor
+ *
+ * @return N/A
+ */
 extern void k_mem_pool_free(struct k_mem_block *block);
+
+/**
+ * @brief Defragment the specified memory pool
+ *
+ * @param pool Pointer to the memory pool object
+ *
+ * @return N/A
+ */
 extern void k_mem_pool_defrag(struct k_mem_pool *pool);
+
+/**
+ * @brief Allocate memory from heap pool
+ *
+ * This routine provides traditional malloc semantics; internally it uses
+ * the memory pool APIs on a dedicated HEAP pool
+ *
+ * @param size Size of memory requested by the caller (in bytes)
+ *
+ * @return Address of the allocated memory on success; otherwise NULL
+ */
 extern void *k_malloc(uint32_t size);
-extern void k_free(void *p);
+
+/**
+ * @brief Free memory allocated through k_malloc()
+ *
+ * @param ptr Pointer to previously allocated memory
+ *
+ * @return N/A
+ */
+extern void k_free(void *ptr);
 
 /*
  * legacy.h must be before arch/cpu.h to allow the ioapic/loapic drivers to

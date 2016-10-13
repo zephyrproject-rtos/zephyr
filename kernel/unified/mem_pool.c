@@ -464,13 +464,6 @@ static void block_waiters_check(struct k_mem_pool *pool)
 	irq_unlock(key);
 }
 
-
-/**
- *
- * @brief Perform defragment memory pool request
- *
- * @return N/A
- */
 void k_mem_pool_defrag(struct k_mem_pool *pool)
 {
 	k_sched_lock();
@@ -483,13 +476,6 @@ void k_mem_pool_defrag(struct k_mem_pool *pool)
 	k_sched_unlock();
 }
 
-
-/**
- *
- * @brief Perform allocate memory pool block request
- *
- * @return N/A
- */
 int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 			  int size, int32_t timeout)
 {
@@ -540,16 +526,6 @@ int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 
 #define MALLOC_ALIGN (sizeof(uint32_t))
 
-/**
- * @brief Allocate memory from heap pool
- *
- * This routine  provides traditional malloc semantics; internally it uses
- * the microkernel pool APIs on a dedicated HEAP pool
- *
- * @param size Size of memory requested by the caller.
- *
- * @retval address of the block if successful otherwise returns NULL
- */
 void *k_malloc(uint32_t size)
 {
 	uint32_t new_size;
@@ -586,43 +562,23 @@ void *k_malloc(uint32_t size)
 	return ++aligned_addr;
 }
 
-
-/**
- *
- * @brief Perform return memory pool block request
- *
- * @param blockptr address of the memory block to be freed
- *
- * Marks a block belonging to a pool as free; if there are waiters that can use
- * the the block it is passed to a waiting task.
- *
- * @return N/A
- */
-void k_mem_pool_free(struct k_mem_block *blockptr)
+void k_mem_pool_free(struct k_mem_block *block)
 {
 	int offset;
-	struct k_mem_pool *pool = blockptr->pool_id;
+	struct k_mem_pool *pool = block->pool_id;
 
 	k_sched_lock();
 	/* determine block set that block belongs to */
-	offset = compute_block_set_index(pool, blockptr->req_size);
+	offset = compute_block_set_index(pool, block->req_size);
 
 	/* mark the block as unused */
-	free_existing_block(blockptr->addr_in_pool, pool, offset);
+	free_existing_block(block->addr_in_pool, pool, offset);
 
 	/* reschedule anybody waiting for a block */
 	block_waiters_check(pool);
 	k_sched_unlock();
 }
 
-
-/**
- * @brief Free memory allocated through task_malloc
- *
- * @param ptr pointer to be freed
- *
- * @return NA
- */
 void k_free(void *ptr)
 {
 	struct k_mem_block mem_block;
