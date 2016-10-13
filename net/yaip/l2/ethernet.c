@@ -75,6 +75,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		family = AF_INET6;
 		break;
 	default:
+		NET_DBG("Unknown hdr type 0x%04x", hdr->type);
 		return NET_DROP;
 	}
 
@@ -103,6 +104,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
+	net_buf_pull(buf->frags, net_nbuf_ll_reserve(buf));
 
 #ifdef CONFIG_NET_ARP
 	if (family == AF_INET && hdr->type == htons(NET_ETH_PTYPE_ARP)) {
