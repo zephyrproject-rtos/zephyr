@@ -1498,11 +1498,60 @@ struct k_mem_map {
 		K_MEM_MAP_INITIALIZER(name, _k_mem_map_buf_##name,          \
 				      map_block_size, map_num_blocks)
 
+/**
+ * @brief Initialize a memory map.
+ *
+ * Initializes the memory map and creates its list of free blocks.
+ *
+ * @param map Pointer to the memory map object
+ * @param buffer Pointer to buffer used for the blocks.
+ * @param block_size Size of each block, in bytes.
+ * @param num_blocks Number of blocks.
+ *
+ * @return N/A
+ */
 extern void k_mem_map_init(struct k_mem_map *map, void *buffer,
 			   int block_size, int num_blocks);
+
+/**
+ * @brief Allocate a memory map block.
+ *
+ * Takes a block from the list of unused blocks.
+ *
+ * @param map Pointer to memory map object.
+ * @param mem Pointer to area to receive block address.
+ * @param timeout Maximum time (milliseconds) to wait for allocation to
+ *        complete.  Use K_NO_WAIT to return immediately, or K_FOREVER to wait
+ *        as long as necessary.
+ *
+ * @return 0 if successful, -ENOMEM if failed immediately, -EAGAIN if timed out
+ */
 extern int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout);
+
+/**
+ * @brief Free a memory map block.
+ *
+ * Gives block to a waiting thread if there is one, otherwise returns it to
+ * the list of unused blocks.
+ *
+ * @param map Pointer to memory map object.
+ * @param mem Pointer to area to containing block address.
+ *
+ * @return N/A
+ */
 extern void k_mem_map_free(struct k_mem_map *map, void **mem);
 
+/**
+ * @brief Get the number of used memory blocks
+ *
+ * This routine gets the current number of used memory blocks in the
+ * specified pool. It should be used for stats purposes only as that
+ * value may potentially be out-of-date by the time it is used.
+ *
+ * @param map Memory map to query
+ *
+ * @return Number of used memory blocks
+ */
 static inline int k_mem_map_num_used_get(struct k_mem_map *map)
 {
 	return map->num_used;

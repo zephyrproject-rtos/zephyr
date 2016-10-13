@@ -69,18 +69,6 @@ static int init_mem_map_module(struct device *dev)
 	return 0;
 }
 
-/**
- * @brief Initialize a memory map.
- *
- * Initializes the memory map and creates its list of free blocks.
- *
- * @param map Address of memory map.
- * @param buffer Pointer to buffer used for the blocks.
- * @param block_size Size of each block, in bytes.
- * @param num_blocks Number of blocks.
- *
- * @return N/A
- */
 void k_mem_map_init(struct k_mem_map *map, void *buffer,
 		    int block_size, int num_blocks)
 {
@@ -93,19 +81,6 @@ void k_mem_map_init(struct k_mem_map *map, void *buffer,
 	SYS_TRACING_OBJ_INIT(mem_map, map);
 }
 
-/**
- * @brief Allocate a memory map block.
- *
- * Takes a block from the list of unused blocks.
- *
- * @param map Pointer to memory map object.
- * @param mem Pointer to area to receive block address.
- * @param timeout Maximum time (milliseconds) to wait for allocation to
- *        complete.  Use K_NO_WAIT to return immediately, or K_FOREVER to wait
- *        as long as necessary.
- *
- * @return 0 if successful, -ENOMEM if failed immediately, -EAGAIN if timed out
- */
 int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout)
 {
 	unsigned int key = irq_lock();
@@ -136,17 +111,6 @@ int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout)
 	return result;
 }
 
-/**
- * @brief Free a memory map block.
- *
- * Gives block to a waiting thread if there is one, otherwise returns it to
- * the list of unused blocks.
- *
- * @param map Pointer to memory map object.
- * @param mem Pointer to area to containing block address.
- *
- * @return N/A
- */
 void k_mem_map_free(struct k_mem_map *map, void **mem)
 {
 	int key = irq_lock();
