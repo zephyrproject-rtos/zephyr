@@ -511,8 +511,7 @@ static inline int send_syn_ack(struct net_context *context,
 	struct net_buf *buf;
 	int ret;
 
-	ret = net_tcp_prepare_segment(context->tcp,
-				      NET_TCP_SYN | NET_TCP_ACK,
+	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_SYN | NET_TCP_ACK,
 				      NULL, 0, remote, &buf);
 	if (ret) {
 		return ret;
@@ -899,6 +898,11 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		net_tcp_change_state(tcp, NET_TCP_SYN_RCVD);
 
 		remote = create_sockaddr(buf, &peer);
+
+		/* FIXME: Is this the correct place to set tcp->send_ack? */
+		context->tcp->send_ack =
+			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
+		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 
 		send_syn_ack(context, remote);
 
