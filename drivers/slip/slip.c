@@ -35,8 +35,6 @@
 #include <net/buf.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
-#include <net/ethernet.h>
-#include <net/arp.h>
 #include <net/net_core.h>
 #include <console/uart_pipe.h>
 
@@ -59,7 +57,6 @@ struct slip_context {
 	uint8_t *ptr;		/* Where in net_buf to add data */
 	uint8_t state;
 
-	uint16_t ll_reserve;	/* Reserve any space for link layer headers */
 	uint8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 
@@ -84,7 +81,7 @@ struct slip_context {
 #endif
 
 static void hexdump(struct slip_context *slip, const char *str,
-		    const uint8_t *packet, size_t length)
+		    const uint8_t *packet, size_t length, size_t ll_reserve)
 {
 	int n = 0;
 
@@ -99,7 +96,7 @@ static void hexdump(struct slip_context *slip, const char *str,
 		}
 
 #if defined(CONFIG_SYS_LOG_SHOW_COLOR)
-		if (n < slip->ll_reserve) {
+		if (n < ll_reserve) {
 			printf(COLOR_YELLOW);
 		} else {
 			printf(COLOR_OFF);
@@ -108,7 +105,7 @@ static void hexdump(struct slip_context *slip, const char *str,
 		printf("%02X ", *packet++);
 
 #if defined(CONFIG_SYS_LOG_SHOW_COLOR)
-		if (n < slip->ll_reserve) {
+		if (n < ll_reserve) {
 			printf(COLOR_OFF);
 		}
 #endif
@@ -127,7 +124,7 @@ static void hexdump(struct slip_context *slip, const char *str,
 	}
 }
 #else
-#define hexdump(slip, str, packet, length)
+#define hexdump(slip, str, packet, length, ll_reserve)
 #endif
 
 static inline void slip_writeb(unsigned char c)
@@ -140,8 +137,7 @@ static inline void slip_writeb(unsigned char c)
 static int slip_send(struct net_if *iface, struct net_buf *buf)
 {
 #if defined(CONFIG_SLIP_TAP)
-	struct slip_context *slip = iface->dev->driver_data;
-	uint16_t reserve = slip->ll_reserve;
+	uint16_t ll_reserve = net_nbuf_ll_reserve(buf);
 	bool send_header_once = false;
 #endif
 	uint16_t i;
@@ -163,11 +159,11 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 #endif
 
 #if defined(CONFIG_SLIP_TAP)
-		ptr = frag->data - slip->ll_reserve;
+		ptr = frag->data - ll_reserve;
 
 		/* This writes ethernet header */
-		if (!send_header_once && slip->ll_reserve) {
-			for (i = 0; i < sizeof(struct net_eth_hdr); i++) {
+		if (!send_header_once && ll_reserve) {
+			for (i = 0; i < ll_reserve; i++) {
 				slip_writeb(*ptr++);
 			}
 		}
@@ -178,7 +174,7 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 			 * link layer header always.
 			 */
 			send_header_once = true;
-			reserve = 0;
+			ll_reserve = 0;
 			ptr = frag->data;
 		}
 #else
@@ -200,13 +196,14 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 
 #if defined(CONFIG_SLIP_DEBUG)
 		SYS_LOG_DBG("[%p] sent data %d bytes", slip,
-			    frag->len + slip->ll_reserve);
-		if (frag->len + reserve) {
+			    frag->len + net_nbuf_ll_reserve(buf));
+		if (frag->len + ll_reserve) {
 			char msg[7 + 1];
 			snprintf(msg, sizeof(msg), "<slip %d", frag_count++);
 			msg[7] = '\0';
-			hexdump(slip, msg, frag->data - slip->ll_reserve,
-				frag->len + slip->ll_reserve);
+			hexdump(slip, msg, net_nbuf_ll(buf),
+				frag->len + net_nbuf_ll_reserve(buf),
+				net_nbuf_ll_reserve(buf));
 		}
 #endif
 
@@ -355,7 +352,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 				char msg[7 + 1];
 				snprintf(msg, sizeof(msg), ">slip %d", count);
 				msg[7] = '\0';
-				hexdump(slip, msg, frag->data, frag->len);
+				hexdump(slip, msg, frag->data, frag->len, 0);
 				frag = frag->frags;
 				count++;
 			}
@@ -380,18 +377,9 @@ static int slip_init(struct device *dev)
 	slip->state = STATE_OK;
 	slip->rx = NULL;
 
-#if defined(CONFIG_SLIP_TAP)
-	slip->ll_reserve = sizeof(struct net_eth_hdr);
-#else
-	slip->ll_reserve = 0;
-#endif
-	SYS_LOG_DBG("%sll reserve %d",
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
-		    "ARP enabled, ",
-#else
-		    "",
+	SYS_LOG_DBG("ARP enabled");
 #endif
-		    slip->ll_reserve);
 
 	uart_pipe_register(slip->buf, sizeof(slip->buf), recv_cb);
 
