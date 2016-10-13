@@ -241,6 +241,9 @@ static void process_msg(struct slip_context *slip)
 	}
 
 	if (buf->frags) {
+		SYS_LOG_DBG("Pushing buf %p (%p) to net stack",
+			    buf, buf->frags->data);
+
 		if (net_recv_data(net_if_get_by_link_addr(&slip->ll_addr),
 				  buf) < 0) {
 			net_nbuf_unref(buf);
@@ -288,7 +291,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 		if (!slip->rx) {
 			return 0;
 		}
-		slip->last = net_nbuf_get_reserve_data(slip->ll_reserve);
+		slip->last = net_nbuf_get_reserve_data(0);
 		if (!slip->last) {
 			net_nbuf_unref(slip->rx);
 			slip->rx = NULL;
@@ -296,15 +299,14 @@ static inline int slip_input_byte(struct slip_context *slip,
 		}
 		net_buf_frag_add(slip->rx, slip->last);
 
-		net_nbuf_set_ll_reserve(slip->rx, slip->ll_reserve);
-		slip->ptr = net_nbuf_ip_data(slip->rx) - slip->ll_reserve;
+		slip->ptr = net_nbuf_ip_data(slip->rx);
 	}
 
 	if (!net_buf_tailroom(slip->last)) {
 		/* We need to allocate a new fragment */
 		struct net_buf *frag;
 
-		frag = net_nbuf_get_reserve_data(slip->ll_reserve);
+		frag = net_nbuf_get_reserve_data(0);
 		if (!frag) {
 			SYS_LOG_ERR("[%p] cannot allocate data fragment",
 				    slip);
@@ -316,14 +318,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 		net_buf_frag_insert(slip->last, frag);
 		slip->last = frag;
 
-		if (slip->mtu > net_buf_tailroom(slip->last)) {
-			/* Do not add link layer header if the mtu is bigger
-			 * than fragment size.
-			 */
-			slip->ptr = slip->last->data;
-		} else {
-			slip->ptr = slip->last->data - slip->ll_reserve;
-		}
+		slip->ptr = slip->last->data;
 	}
 
 	/* The net_buf_add_u8() cannot add data to ll header so we need
@@ -361,14 +356,11 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 				char msg[7 + 1];
 				snprintf(msg, sizeof(msg), ">slip %d", count);
 				msg[7] = '\0';
-				hexdump(slip, msg,
-					frag->data - slip->ll_reserve,
-					frag->len + slip->ll_reserve);
+				hexdump(slip, msg, frag->data, frag->len);
 				frag = frag->frags;
 				count++;
 			}
-			SYS_LOG_DBG("[%p] received data %d bytes", slip,
-				    bytes + count * slip->ll_reserve);
+			SYS_LOG_DBG("[%p] received data %d bytes", slip, bytes);
 #endif
 			process_msg(slip);
 			break;
