@@ -180,6 +180,24 @@ static void dma_stm32_write(struct dma_stm32_device *ddata,
 	sys_write32(val, ddata->base + reg);
 }
 
+static void dma_stm32_dump_reg(struct dma_stm32_device *ddata, uint32_t channel)
+{
+	uint32_t scr   = dma_stm32_read(ddata, DMA_STM32_SCR(channel));
+	uint32_t ndtr  = dma_stm32_read(ddata, DMA_STM32_SNDTR(channel));
+	uint32_t spar  = dma_stm32_read(ddata, DMA_STM32_SPAR(channel));
+	uint32_t sm0ar = dma_stm32_read(ddata, DMA_STM32_SM0AR(channel));
+	uint32_t sm1ar = dma_stm32_read(ddata, DMA_STM32_SM1AR(channel));
+	uint32_t sfcr  = dma_stm32_read(ddata, DMA_STM32_SFCR(channel));
+
+	SYS_LOG_INF("Using channel: %d\n", channel);
+	SYS_LOG_INF("SCR:   0x%x \t(config)\n", scr);
+	SYS_LOG_INF("NDTR:  0x%x \t(length)\n", ndtr);
+	SYS_LOG_INF("SPAR:  0x%x \t(source)\n", spar);
+	SYS_LOG_INF("SM0AR: 0x%x \t(destination)\n", sm0ar);
+	SYS_LOG_INF("SM1AR: 0x%x \t(destination (double buffer mode))\n", sm1ar);
+	SYS_LOG_INF("SFCR:  0x%x \t(fifo control)\n", sfcr);
+}
+
 static uint32_t dma_stm32_irq_status(struct dma_stm32_device *ddata,
 				     uint32_t channel)
 {
@@ -340,6 +358,8 @@ static int dma_stm32_start(struct device *dev, uint32_t channel)
 	if (irqstatus) {
 		dma_stm32_irq_clear(ddata, channel, irqstatus);
 	}
+
+	dma_stm32_dump_reg(ddata, channel);
 
 	/* Push the start button */
 	dma_stm32_write(ddata, DMA_STM32_SCR(channel),
