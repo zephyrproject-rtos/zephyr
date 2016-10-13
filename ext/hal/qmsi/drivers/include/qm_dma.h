@@ -85,6 +85,17 @@ typedef enum {
 	QM_DMA_PERIPHERAL_TO_MEMORY = 0x2 /**< Peripheral to memory transfer. */
 } qm_dma_channel_direction_t;
 
+/*
+ * DMA Transfer Type
+ */
+typedef enum {
+	QM_DMA_TYPE_SINGLE,	   /**< Single block mode. */
+	QM_DMA_TYPE_MULTI_CONT,       /**< Contiguous multiblock mode. */
+	QM_DMA_TYPE_MULTI_LL,	 /**< Link list multiblock mode. */
+	QM_DMA_TYPE_MULTI_LL_CIRCULAR /**< Link list multiblock mode with cyclic
+				       operation. */
+} qm_dma_transfer_type_t;
+
 /**
  * DMA channel configuration structure
  */
@@ -110,6 +121,9 @@ typedef struct {
 	/** DMA destination burst length */
 	qm_dma_burst_length_t destination_burst_length;
 
+	/** DMA transfer type */
+	qm_dma_transfer_type_t transfer_type;
+
 	/**
 	 * Client callback for DMA transfer ISR
 	 *
@@ -124,8 +138,22 @@ typedef struct {
 	void *callback_context;
 } qm_dma_channel_config_t;
 
+/*
+ * Multiblock linked list node structure. The client does not need to know the
+ * internals of this struct but only its size, so that the correct memory for
+ * the linked list can be allocated (one node per DMA transfer block).
+ */
+typedef struct {
+	uint32_t source_address;      /**< Block source address. */
+	uint32_t destination_address; /**< Block destination address. */
+	uint32_t linked_list_address; /**< Pointer to next LLI. */
+	uint32_t ctrl_low;	    /**< Bottom half Ctrl register. */
+	uint32_t ctrl_high;	   /**< Top half Ctrl register. */
+	/**< Destination/source status writebacks are disabled. */
+} qm_dma_linked_list_item_t;
+
 /**
- * DMA transfer configuration structure
+ * DMA single block transfer configuration structure
  */
 typedef struct {
 	uint32_t block_size;      /**< DMA block size, Min = 1, Max = 4095. */
@@ -133,6 +161,20 @@ typedef struct {
 	uint32_t *destination_address; /**< DMA destination transfer address. */
 
 } qm_dma_transfer_t;
+
+/**
+ * DMA multiblock transfer configuration structure
+ */
+typedef struct {
+	uint32_t *source_address;      /**< First block source address. */
+	uint32_t *destination_address; /**< First block destination address. */
+	uint16_t block_size; /**< DMA block size, Min = 1, Max = 4095. */
+	uint16_t
+	    num_blocks; /**< Number of contiguous blocks to be transfered. */
+	qm_dma_linked_list_item_t *linked_list_first; /**< First block LLI
+							 descriptor or NULL
+							 (contiguous mode) */
+} qm_dma_multi_transfer_t;
 
 /**
  * Initialise the DMA controller.
@@ -156,10 +198,10 @@ int qm_dma_init(const qm_dma_t dma);
  * Setup a DMA channel configuration.
  *
  * Configures the channel source width, burst size, channel direction,
- * handshaking interface and registers the client callback and callback
- * context. qm_dma_init() must first be called before configuring
- * a channel. This function only needs to be called once unless
- * a channel is being repurposed.
+ * handshaking interface, transfer type and registers the client callback and
+ * callback context. qm_dma_init() must first be called before configuring a
+ * channel. This function only needs to be called once unless a channel is being
+ * repurposed or its transfer type is changed.
  *
  * @param[in] dma            DMA instance.
  * @param[in] channel_id     The channel to start.
@@ -175,7 +217,7 @@ int qm_dma_channel_set_config(const qm_dma_t dma,
 			      qm_dma_channel_config_t *const channel_config);
 
 /**
- * Setup a DMA channel transfer.
+ * Setup a DMA single block transfer.
  *
  * Configure the source address,destination addresses and block size.
  * qm_dma_channel_set_config() must first be called before
@@ -196,6 +238,50 @@ int qm_dma_channel_set_config(const qm_dma_t dma,
 int qm_dma_transfer_set_config(const qm_dma_t dma,
 			       const qm_dma_channel_id_t channel_id,
 			       qm_dma_transfer_t *const transfer_config);
+
+/**
+ * Setup a DMA multiblock transfer.
+ *
+ * If the DMA channel has been configured for contiguous multiblock transfers,
+ * this function sets the source address, destination address, block size and
+ * number of block parameters needed to perform a continguous multiblock
+ * transfer. The linked_list_first parameter in the transfer struct is ignored.
+ *
+ * If the DMA channel has been configured for linked-list multiblock transfers,
+ * this function populates a linked list in the client memory area pointed at
+ * by the linked_list_first parameter in the transfer struct, using the provided
+ * parameters source address, destination address, block size and number of
+ * blocks (equal to the number of LLIs). This function may be called repeteadly
+ * in order to add different client buffers for transmission/reception that are
+ * not contiguous in memory (scatter-gather) in a buffer chain fashion. When
+ * calling qm_dma_transfer_start, the DMA core sees a single linked list built
+ * using consecutive calls to this function. Furthermore, if the transfer type
+ * is linked-list cyclic, the linked_list_address parameter of the last LLI
+ * points at the first LLI. The client needs to allocate enough memory starting
+ * at linked_list_first for the whole set of LLIs to fit, i.e. (num_blocks *
+ * sizeof(qm_dma_linked_list_item_t)).
+ *
+ * The DMA driver manages the block interrupts so that only when the last block
+ * of a buffer has been transfered, the client callback is invoked. Note that
+ * in linked-list mode, each buffer transfer results on a client callback, and
+ * all buffers need to contain the same number of blocks.
+ *
+ * qm_dma_multi_transfer_set_config() must be called before starting every
+ * transfer, even if the addresses, block size and other configuration
+ * information remain unchanged.
+ *
+ * @param[in] dma		    DMA instance.
+ * @param[in] channel_id	    The channel to start.
+ * @param[in] multi_transfer_config The transfer DMA configuration as defined by
+ *				    the dma client. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_dma_multi_transfer_set_config(
+    const qm_dma_t dma, const qm_dma_channel_id_t channel_id,
+    qm_dma_multi_transfer_t *const multi_transfer_config);
 
 /**
  * Start a DMA transfer.

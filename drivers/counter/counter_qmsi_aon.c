@@ -25,7 +25,7 @@
 
 static int aon_counter_qmsi_start(struct device *dev)
 {
-	if (qm_aonc_enable(QM_SCSS_AON_0)) {
+	if (qm_aonc_enable(QM_AONC_0)) {
 		return -EIO;
 	}
 
@@ -34,7 +34,7 @@ static int aon_counter_qmsi_start(struct device *dev)
 
 static int aon_counter_qmsi_stop(struct device *dev)
 {
-	qm_aonc_disable(QM_SCSS_AON_0);
+	qm_aonc_disable(QM_AONC_0);
 
 	return 0;
 }
@@ -43,7 +43,7 @@ static uint32_t aon_counter_qmsi_read(void)
 {
 	uint32_t value;
 
-	qm_aonc_get_value(QM_SCSS_AON_0, &value);
+	qm_aonc_get_value(QM_AONC_0, &value);
 
 	return value;
 }

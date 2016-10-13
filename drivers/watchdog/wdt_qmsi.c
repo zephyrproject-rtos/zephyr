@@ -85,8 +85,8 @@ static void (*user_cb)(struct device *dev);
 static void get_config(struct device *dev, struct wdt_config *cfg)
 {
 	cfg->timeout = QM_WDT[QM_WDT_0].wdt_torr;
-	cfg->mode = ((QM_WDT[QM_WDT_0].wdt_cr & QM_WDT_MODE) >>
-			QM_WDT_MODE_OFFSET);
+	cfg->mode = ((QM_WDT[QM_WDT_0].wdt_cr & QM_WDT_CR_RMOD) >>
+			QM_WDT_CR_RMOD_OFFSET);
 	cfg->interrupt_fn = user_cb;
 }
 

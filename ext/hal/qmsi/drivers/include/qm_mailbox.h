@@ -42,19 +42,24 @@
  */
 
 /**
- * Mailbox status. Those values are tied to HW bit setting and made up of
- * the bit 0 and bit 1 of the mailbox channel status register.
+ * Mailbox channel status return codes
  */
 typedef enum {
-	/**< No interrupt pending nor any data to consume. */
+	/** No interrupt pending nor any data to consume. */
 	QM_MBOX_CH_IDLE = 0,
-	QM_MBOX_CH_DATA = BIT(0), /**< Message has not been consumed. */
-	QM_MBOX_CH_INT = BIT(1),  /**< Channel interrupt pending. */
-	QM_MBOX_CH_STATUS_MASK = BIT(1) | BIT(0) /**< Status mask. */
+	/** Receiver has serviced the interrupt and data
+	 * has not been consumed. */
+	QM_MBOX_CH_INT_ACK_DATA_PEND,
+	/** Receiver in polling mode and data has not been consumed. */
+	QM_MBOX_CH_POLLING_DATA_PEND,
+	/** Receiver hasn't serviced the interrupt and data
+	 * has not been consumed.
+	 */
+	QM_MBOX_CH_INT_NACK_DATA_PEND,
 } qm_mbox_ch_status_t;
 
 /**
- * Mailbox channel.
+ * Mailbox channel identifiers
  */
 typedef enum {
 	QM_MBOX_CH_0 = 0, /**< Channel 0. */
@@ -69,49 +74,97 @@ typedef enum {
 } qm_mbox_ch_t;
 
 /**
- * mailbox message pay-load index values.
+ * Mailbox message payload index values.
  */
 typedef enum {
 	QM_MBOX_PAYLOAD_0 = 0, /**< Payload index value 0. */
 	QM_MBOX_PAYLOAD_1,     /**< Payload index value 1. */
 	QM_MBOX_PAYLOAD_2,     /**< Payload index value 2. */
 	QM_MBOX_PAYLOAD_3,     /**< Payload index value 3. */
-	QM_MBOX_PAYLOAD_NUM,   /**< Numbers of payloads. */
+	QM_MBOX_PAYLOAD_NUM,   /**< Number of payloads. */
 } qm_mbox_payload_t;
+
+/**
+ * Definition of the mailbox direction of operation
+ * The direction of communication for each channel is configurable by the user.
+ * The list below describes the possible communication directions for each
+ * channel.
+ */
+typedef enum {
+	QM_MBOX_TO_LMT = 0, /**< Lakemont core as destination */
+	QM_MBOX_TO_SS,      /**< Sensor Sub-System core as destination */
+	QM_MBOX_UNUSED
+} qm_mbox_destination_t;
+
+/**
+ * Definition of the mailbox mode of operation, interrupt mode or polling mode.
+ */
+typedef enum {
+	/** Mailbox channel operates in interrupt mode. */
+	QM_MBOX_INTERRUPT_MODE = 0,
+	/** Mailbox channel operates in polling mode. */
+	QM_MBOX_POLLING_MODE
+} qm_mbox_mode_t;
 
 /**
  * Definition of the mailbox message.
  */
 typedef struct {
-	uint32_t ctrl;			    /**< Mailbox control element. */
-	uint32_t data[QM_MBOX_PAYLOAD_NUM]; /**< Mailbox data buffer. */
+	/** Control word - bits 30 to 0 used as data/message id,
+	 * bit 31 triggers channel interrupt when set by the driver.
+	 */
+	uint32_t ctrl;
+	/** Mailbox data buffer. */
+	uint32_t data[QM_MBOX_PAYLOAD_NUM];
 } qm_mbox_msg_t;
 
 /**
  * Definition of the mailbox callback function prototype.
+ *
  * @param[in] data The callback user data.
  */
 typedef void (*qm_mbox_callback_t)(void *data);
 
 /**
+ * Mailbox Configuration Structure
+ */
+typedef struct {
+	/**< Mailbox Destination */
+	qm_mbox_destination_t dest;
+	/**< Mode of operation */
+	qm_mbox_mode_t mode;
+
+	/**<
+	 * Message callback.
+	 *
+	 * Called after a message is received on the channel and the channel
+	 * is configured in interrupt mode.
+	 *
+	 * @note NULL for a write Mailbox.
+	 *
+	 * @param[in] data User defined data.
+	 */
+	qm_mbox_callback_t callback;
+	/**< Callback function data to return via the callback function. */
+	void *callback_data;
+} qm_mbox_config_t;
+
+/**
  * Set the mailbox channel configuration.
  *
- * Configure a IRQ callback, enables or disables IRQ for the chosen mailbox
- * channel.
+ * The function registers the interrupt vector to the mailbox ISR handler
+ * when at least one mailbox channel is enabled, configured in interrupt mode
+ * and the ISR is not handled by the application.
  *
- * @param[in] mbox_ch Mailbox to enable.
- * @param[in] mpr_cb Callback function to call on read mailbox, NULL for a
- * write to Mailbox).
- * @param[in] cb_data Callback function data to return via the callback.
- * function. This must not be NULL.
- * @param[in] irq_en Flag to enable/disable IRQ for this channel.
+ * @param[in] mbox_ch Mailbox channel identifier.
+ * @param[in] config Mailbox configuration.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
  */
-int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch, qm_mbox_callback_t mpr_cb,
-			  void *cb_data, const bool irq_en);
+int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch,
+			  const qm_mbox_config_t *const config);
 
 /**
  * Write to a specified mailbox channel.
@@ -137,7 +190,7 @@ int qm_mbox_ch_write(const qm_mbox_ch_t mbox_ch,
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
-*/
+ */
 int qm_mbox_ch_read(const qm_mbox_ch_t mbox_ch, qm_mbox_msg_t *const msg);
 
 /**
@@ -154,17 +207,8 @@ int qm_mbox_ch_get_status(const qm_mbox_ch_t mbox_ch,
 			  qm_mbox_ch_status_t *const status);
 
 /**
- * Acknowledge the data arrival.
- * @param[in] mbox_ch: Mailbox identifier to retrieve the status from.
- *
- * @return Standard errno return type for QMSI.
- * @retval 0 on success.
- * @retval Negative @ref errno for possible error codes.
- */
-int qm_mbox_ch_data_ack(const qm_mbox_ch_t mbox_ch);
-
-/**
  * @}
  */
+
 #endif /* HAS_MAILBOX */
 #endif /* __QM_MAILBOX_H__ */

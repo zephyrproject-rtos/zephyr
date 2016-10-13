@@ -57,14 +57,40 @@
 typedef void (*qm_isr_t)(struct interrupt_frame *frame);
 
 /**
- * Enable interrupt delivery for the SoC.
+ * Unconditionally enable interrupt delivery on the CPU.
  */
 void qm_irq_enable(void);
 
 /**
- * Disable interrupt delivery for the SoC.
+ * Unconditionally disable interrupt delivery on the CPU.
  */
 void qm_irq_disable(void);
+
+/**
+ * Save interrupt state and disable all interrupts on the CPU.
+ *
+ * This routine disables interrupts. It can be called from either interrupt or
+ * non-interrupt context.  This routine returns an architecture-dependent
+ * lock-out key representing the "interrupt disable state" prior to the call;
+ * this key can be passed to qm_irq_unlock() to re-enable interrupts.
+ *
+ * This function can be called recursively: it will return a key to return the
+ * state of interrupt locking to the previous level.
+ *
+ * @return An architecture-dependent lock-out key representing the "interrupt
+ * 	   disable state" prior to the call.
+ *
+ */
+unsigned int qm_irq_lock(void);
+
+/**
+ *
+ * Restore previous interrupt state on the CPU saved via qm_irq_lock().
+ *
+ * @param[in] key architecture-dependent lock-out key returned by a previous
+ * 		  invocation of qm_irq_lock().
+ */
+void qm_irq_unlock(unsigned int key);
 
 /**
  * Unmask a given interrupt line.

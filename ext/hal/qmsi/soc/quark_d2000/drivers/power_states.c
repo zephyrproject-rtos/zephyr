@@ -33,14 +33,21 @@
 #include "qm_isr.h"
 #include "qm_adc.h"
 #include "qm_flash.h"
-
-#include "rar.h"
 #include "soc_watch.h"
 
 void power_cpu_halt(void)
 {
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_HALT, 0);
-	__asm__ __volatile__("hlt");
+	/*
+	 * STI sets the IF flag. After the IF flag is set,
+	 * the core begins responding to external,
+	 * maskable interrupts after the next instruction is executed.
+	 * When this function is called with interrupts disabled,
+	 * this guarantees that an interrupt is caught only
+	 * after the processor has transitioned into HLT.
+	 */
+	__asm__ __volatile__("sti\n\t"
+			     "hlt\n\t");
 }
 
 static void clear_all_pending_interrupts(void)
@@ -67,6 +74,7 @@ void power_soc_sleep(void)
 	uint32_t osc0_cfg_save = QM_SCSS_CCU->osc0_cfg1;
 	uint32_t adc_mode_save = QM_ADC->adc_op_mode;
 	uint32_t flash_tmg_save = QM_FLASH[QM_FLASH_0]->tmg_ctrl;
+	uint32_t lp_clk_save = QM_SCSS_CCU->ccu_lp_clk_ctl;
 
 	/* Clear any pending interrupts. */
 	clear_all_pending_interrupts();
@@ -169,6 +177,7 @@ void power_soc_sleep(void)
 			    SOCW_REG_CCU_PERIPH_CLK_GATE_CTL);
 	QM_SCSS_CMP->cmp_pwr = ac_power_save;
 	QM_ADC->adc_op_mode = adc_mode_save;
+	QM_SCSS_CCU->ccu_lp_clk_ctl = lp_clk_save;
 }
 
 void power_soc_deep_sleep(const power_wake_event_t wake_event)
@@ -274,14 +283,14 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	    (QM_AON_VR_PASS_CODE | QM_SCSS_PMU->aon_vr | QM_AON_VR_VSTRB);
 
 	/* Wait >= 1 usec, at 256 kHz this is 1 cycle. */
-	__asm__("nop");
+	__asm__ __volatile__("nop");
 
 	/* SCSS.AON_VR.VSEL_STROBE = 0; */
 	QM_SCSS_PMU->aon_vr =
 	    (QM_AON_VR_PASS_CODE | (QM_SCSS_PMU->aon_vr & ~QM_AON_VR_VSTRB));
 
 	/* Wait >= 2 usec, at 256 kHz this is 1 cycle. */
-	__asm__("nop");
+	__asm__ __volatile__("nop");
 
 	/* Set the RAR to retention mode. */
 	rar_set_mode(RAR_RETENTION);
@@ -323,14 +332,14 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	    (QM_AON_VR_PASS_CODE | QM_SCSS_PMU->aon_vr | QM_AON_VR_VSTRB);
 
 	/* Wait >= 1 usec, at 256 kHz this is 1 cycle. */
-	__asm__("nop");
+	__asm__ __volatile__("nop");
 
 	/* SCSS.AON_VR.VSEL_STROBE = 0; */
 	QM_SCSS_PMU->aon_vr =
 	    (QM_AON_VR_PASS_CODE | (QM_SCSS_PMU->aon_vr & ~QM_AON_VR_VSTRB));
 
 	/* Wait >= 2 usec, at 256 kHz this is 1 cycle. */
-	__asm__("nop");
+	__asm__ __volatile__("nop");
 
 	/* SCSS.AON_VR.ROK_BUF_VREG_MASK = 0;  */
 	QM_SCSS_PMU->aon_vr =
@@ -338,7 +347,11 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	     (QM_SCSS_PMU->aon_vr & ~QM_AON_VR_ROK_BUF_VREG_MASK));
 
 	/* Wait >= 1 usec, at 256 kHz this is 1 cycle. */
-	__asm__("nop");
+	__asm__ __volatile__("nop");
+
+	/* Wait for voltage regulator to attain 1.8V regulation. */
+	while (!(QM_SCSS_PMU->aon_vr & QM_AON_VR_ROK_BUF_VREG_STATUS)) {
+	}
 
 	/* SCSS.OSC0_CFG0.OSC0_HYB_SET_REG1.OSC0_CFG0[0]  = 0; */
 	QM_SCSS_CCU->osc0_cfg0 &= ~QM_SI_OSC_1V2_MODE;
@@ -387,4 +400,32 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 
 	QM_SCSS_CCU->wake_mask = SET_ALL_BITS;
 	QM_SCSS_GP->gps1 &= ~QM_SCSS_GP_POWER_STATE_DEEP_SLEEP;
+}
+
+int rar_set_mode(const rar_state_t mode)
+{
+	QM_CHECK(mode <= RAR_RETENTION, -EINVAL);
+	volatile uint32_t i = 32;
+	volatile uint32_t reg;
+
+	switch (mode) {
+	case RAR_RETENTION:
+		QM_SCSS_PMU->aon_vr |=
+		    (QM_AON_VR_PASS_CODE | QM_AON_VR_ROK_BUF_VREG_MASK);
+		QM_SCSS_PMU->aon_vr |=
+		    (QM_AON_VR_PASS_CODE | QM_AON_VR_VREG_SEL);
+		break;
+
+	case RAR_NORMAL:
+		reg = QM_SCSS_PMU->aon_vr & ~QM_AON_VR_VREG_SEL;
+		QM_SCSS_PMU->aon_vr = QM_AON_VR_PASS_CODE | reg;
+		/* Wait for >= 2usec, at most 64 clock cycles. */
+		while (i--) {
+			__asm__ __volatile__("nop");
+		}
+		reg = QM_SCSS_PMU->aon_vr & ~QM_AON_VR_ROK_BUF_VREG_MASK;
+		QM_SCSS_PMU->aon_vr = QM_AON_VR_PASS_CODE | reg;
+		break;
+	}
+	return 0;
 }

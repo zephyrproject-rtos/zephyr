@@ -85,7 +85,7 @@ uint32_t test_sensor_aux[QM_SS_AUX_REGS_SIZE];
 	(__builtin_arc_sr(__builtin_arc_lr(reg) | (mask), reg))
 /* Bitwise NAND operation macro for registers in the auxiliary memory space. */
 #define QM_SS_REG_AUX_NAND(reg, mask)                                          \
-	(__builtin_arc_sr(__builtin_arc_lr(reg) & (~mask), reg))
+	(__builtin_arc_sr(__builtin_arc_lr(reg) & (~(mask)), reg))
 
 /* Sensor Subsystem status32 register. */
 #define QM_SS_AUX_STATUS32 (0xA)
@@ -192,7 +192,7 @@ typedef enum {
 #define QM_SS_I2C_CON_RESTART_EN BIT(7)
 #define QM_SS_I2C_CON_TAR_SAR_OFFSET (9)
 #define QM_SS_I2C_CON_TAR_SAR_MASK (0x7FE00)
-#define QM_SS_I2C_CON_TAR_SAR_10_BIT_MASK (0xFF)
+#define QM_SS_I2C_CON_TAR_SAR_10_BIT_MASK (0x3FF)
 #define QM_SS_I2C_CON_SPKLEN_OFFSET (22)
 #define QM_SS_I2C_CON_SPKLEN_MASK (0x3FC00000)
 #define QM_SS_I2C_CON_CLK_ENA BIT(31)
@@ -335,28 +335,27 @@ typedef enum {
 	QM_SS_IO_CREG_SLV1_OBSR = 0x180 /**< Slave control register. */
 } qm_ss_creg_reg_t;
 
-#define QM_SS_ADC_CAL_MAX (0x7F)
 /* MST0_CTRL fields */
-#define QM_SS_ADC_PWR_MODE_OFFSET (1)
-#define QM_SS_ADC_PWR_MODE_MASK (0x7)
-#define QM_SS_ADC_DELAY_OFFSET (3)
-#define QM_SS_ADC_DELAY_MASK (0xFFF8)
-#define QM_SS_ADC_CAL_REQ BIT(16)
-#define QM_SS_ADC_CAL_CMD_OFFSET (17)
-#define QM_SS_ADC_CAL_CMD_MASK (0xE0000)
-#define QM_SS_ADC_CAL_VAL_SET_OFFSET (20)
-#define QM_SS_ADC_CAL_VAL_SET_MASK (0x7F00000)
-
-#define QM_SS_IO_CREG_MST0_CTRL_ADC_CLK_GATE BIT(31)
-#define QM_SS_IO_CREG_MST0_CTRL_I2C1_CLK_GATE BIT(30)
-#define QM_SS_IO_CREG_MST0_CTRL_I2C0_CLK_GATE BIT(29)
-#define QM_SS_IO_CREG_MST0_CTRL_SPI0_CLK_GATE BIT(28)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_PWR_MODE_OFFSET (1)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_PWR_MODE_MASK (0x7)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_DELAY_OFFSET (3)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_DELAY_MASK (0xFFF8)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_CAL_REQ BIT(16)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_CAL_CMD_OFFSET (17)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_CAL_CMD_MASK (0xE0000)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_CAL_VAL_OFFSET (20)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_CAL_VAL_MASK (0x7F00000)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_CAL_VAL_MAX (0x7F)
 #define QM_SS_IO_CREG_MST0_CTRL_SPI1_CLK_GATE BIT(27)
+#define QM_SS_IO_CREG_MST0_CTRL_SPI0_CLK_GATE BIT(28)
+#define QM_SS_IO_CREG_MST0_CTRL_I2C0_CLK_GATE BIT(29)
+#define QM_SS_IO_CREG_MST0_CTRL_I2C1_CLK_GATE BIT(30)
+#define QM_SS_IO_CREG_MST0_CTRL_ADC_CLK_GATE BIT(31)
 /* SLV0_OBSR fields */
-#define QM_SS_ADC_CAL_VAL_GET_OFFSET (5)
-#define QM_SS_ADC_CAL_VAL_GET_MASK (0xFE0)
-#define QM_SS_ADC_CAL_ACK BIT(4)
-#define QM_SS_ADC_PWR_MODE_STS BIT(3)
+#define QM_SS_IO_CREG_SLV0_OBSR_ADC_CAL_VAL_OFFSET (5)
+#define QM_SS_IO_CREG_SLV0_OBSR_ADC_CAL_VAL_MASK (0xFE0)
+#define QM_SS_IO_CREG_SLV0_OBSR_ADC_CAL_ACK BIT(4)
+#define QM_SS_IO_CREG_SLV0_OBSR_ADC_PWR_MODE_STS BIT(3)
 
 #define SS_CLK_PERIPH_ALL_IN_CREG                                              \
 	(SS_CLK_PERIPH_ADC | SS_CLK_PERIPH_I2C_1 | SS_CLK_PERIPH_I2C_0 |       \

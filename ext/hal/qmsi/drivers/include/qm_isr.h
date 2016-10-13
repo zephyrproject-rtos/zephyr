@@ -315,6 +315,15 @@ QM_ISR_DECLARE(qm_uart_1_isr);
 QM_ISR_DECLARE(qm_wdt_isr_0);
 
 /**
+ * ISR for USB 0 interrupt.
+ *
+ * This function needs to be registered with
+ * @code qm_irq_request(QM_IRQ_USB_0, qm_usb_0_isr_0);
+ * @endcode if IRQ based transfers are used.
+ */
+QM_ISR_DECLARE(qm_usb_0_isr_0);
+
+/**
  * @}
  */
 

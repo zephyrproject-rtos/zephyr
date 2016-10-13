@@ -44,7 +44,7 @@
  * GPIO pin states.
  */
 typedef enum {
-	QM_GPIO_LOW,      /**< GPIO low state. */
+	QM_GPIO_LOW = 0,  /**< GPIO low state. */
 	QM_GPIO_HIGH,     /**< GPIO high state. */
 	QM_GPIO_STATE_NUM /**< Number of GPIO states. */
 } qm_gpio_state_t;
@@ -122,8 +122,8 @@ int qm_gpio_set_pin(const qm_gpio_t gpio, const uint8_t pin);
  *
  * @param[in] gpio GPIO port index.
  * @param[in] pin Pin of GPIO port to clear.
- * @return int 0 on success, error code otherwise.
  *
+ * @return int 0 on success, error code otherwise.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
  */

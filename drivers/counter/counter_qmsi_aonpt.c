@@ -100,7 +100,7 @@ static int aon_timer_qmsi_start(struct device *dev)
 	qmsi_cfg.callback_data = NULL;
 
 	aon_critical_region_start(dev);
-	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg)) {
+	if (qm_aonpt_set_config(QM_AONC_0, &qmsi_cfg)) {
 		result = -EIO;
 	}
 	aon_critical_region_end(dev);
@@ -118,7 +118,7 @@ static int aon_timer_qmsi_stop(struct device *dev)
 	qmsi_cfg.callback_data = NULL;
 
 	aon_critical_region_start(dev);
-	qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg);
+	qm_aonpt_set_config(QM_AONC_0, &qmsi_cfg);
 	aon_critical_region_end(dev);
 
 	return 0;
@@ -128,7 +128,7 @@ static uint32_t aon_timer_qmsi_read(void)
 {
 	uint32_t value;
 
-	qm_aonpt_get_value(QM_SCSS_AON_0, &value);
+	qm_aonpt_get_value(QM_AONC_0, &value);
 
 	return value;
 }
@@ -141,7 +141,7 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 	int result = 0;
 
 	/* Check if timer has been started */
-	if (QM_SCSS_AON[QM_SCSS_AON_0].aonpt_cfg == 0) {
+	if (QM_AONC[QM_AONC_0].aonpt_cfg == 0) {
 		return -ENOTSUP;
 	}
 
@@ -153,7 +153,7 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 	qmsi_cfg.callback_data = user_data;
 
 	aon_critical_region_start(dev);
-	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg)) {
+	if (qm_aonpt_set_config(QM_AONC_0, &qmsi_cfg)) {
 		user_cb = NULL;
 		result = -EIO;
 	}

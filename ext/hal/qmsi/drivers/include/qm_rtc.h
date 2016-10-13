@@ -35,30 +35,44 @@
 #include "clk.h"
 
 /**
- * Real Time clock.
+ * Real Time Clock.
  *
  * @defgroup groupRTC RTC
  * @{
+ *
+ * @warning The RTC clock resides in a different clock domain
+ * to the system clock.
+ * It takes 3-4 RTC ticks for a system clock write to propagate
+ * to the RTC domain.
+ * If an entry to sleep is initiated without waiting for a
+ * transaction to complete the SOC will not wake from sleep.
  */
 
-#define QM_RTC_DIVIDER CLK_RTC_DIV_1
-
-#define QM_RTC_CCR_INTERRUPT_ENABLE BIT(0)
-#define QM_RTC_CCR_INTERRUPT_MASK BIT(1)
-#define QM_RTC_CCR_ENABLE BIT(2)
-
-#define QM_RTC_ALARM_SECOND (32768 / BIT(QM_RTC_DIVIDER))
-#define QM_RTC_ALARM_MINUTE (QM_RTC_ALARM_SECOND * 60)
-#define QM_RTC_ALARM_HOUR (QM_RTC_ALARM_MINUTE * 60)
-#define QM_RTC_ALARM_DAY (QM_RTC_ALARM_HOUR * 24)
+/**
+ * RTC clock ticks to Real-time helpers
+ *
+ * The _prescale value is given in clk_rtc_div_t.
+ */
+#define QM_RTC_ALARM_SECOND(_prescale) (32768 / BIT(_prescale))
+#define QM_RTC_ALARM_MINUTE(_prescale) (QM_RTC_ALARM_SECOND(_prescale) * 60)
+#define QM_RTC_ALARM_HOUR(_prescale) (QM_RTC_ALARM_MINUTE(_prescale) * 60)
+#define QM_RTC_ALARM_DAY(_prescale) (QM_RTC_ALARM_HOUR(_prescale) * 24)
 
 /**
- * RTC configuration type.
+ * QM RTC configuration type.
  */
 typedef struct {
 	uint32_t init_val;  /**< Initial value in RTC clocks. */
 	bool alarm_en;      /**< Alarm enable. */
 	uint32_t alarm_val; /**< Alarm value in RTC clocks. */
+
+	/**
+	 * RTC Clock prescaler.
+	 *
+	 * Used to divide the clock frequency of the RTC.
+	 *
+	 */
+	clk_rtc_div_t prescaler;
 
 	/**
 	 * User callback.
@@ -75,13 +89,6 @@ typedef struct {
  * This includes the initial value in RTC clock periods, and the alarm value if
  * an alarm is required. If the alarm is enabled, register an ISR with the user
  * defined callback function.
- *
- * The RTC clock resides in a different clock domain
- * to the system clock.
- * It takes 3-4 RTC ticks for a system clock write to propagate
- * to the RTC domain.
- * If an entry to sleep is initiated without waiting for the
- * transaction to complete the SOC will not wake from sleep.
  *
  * @param[in] rtc RTC index.
  * @param[in] cfg New RTC configuration. This must not be NULL.
@@ -113,6 +120,25 @@ int qm_rtc_set_config(const qm_rtc_t rtc, const qm_rtc_config_t *const cfg);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_rtc_set_alarm(const qm_rtc_t rtc, const uint32_t alarm_val);
+
+/**
+ * Read the RTC register value.
+ *
+ * @param[in] rtc RTC index.
+ * @param[out] value Location to store RTC value. This must not be NULL.
+ *
+ * The RTC clock resides in a different clock domain
+ * to the system clock.
+ * It takes 3-4 RTC ticks for a system clock write to propagate
+ * to the RTC domain.
+ * If an entry to sleep is initiated without waiting for the
+ * transaction to complete the SOC will not wake from sleep.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_rtc_read(const qm_rtc_t rtc, uint32_t *const value);
 
 /**
  * @}

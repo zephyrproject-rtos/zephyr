@@ -86,7 +86,16 @@ void power_soc_deep_sleep()
 void power_cpu_c1()
 {
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_HALT, 0);
-	__asm__ __volatile__("hlt");
+	/*
+	 * STI sets the IF flag. After the IF flag is set,
+	 * the core begins responding to external,
+	 * maskable interrupts after the next instruction is executed.
+	 * When this function is called with interrupts disabled,
+	 * this guarantees that an interrupt is caught only
+	 * after the processor has transitioned into HLT.
+	 */
+	__asm__ __volatile__("sti\n\t"
+			     "hlt\n\t");
 }
 
 void power_cpu_c2()

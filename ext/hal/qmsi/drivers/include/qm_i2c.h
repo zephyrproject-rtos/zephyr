@@ -67,16 +67,16 @@ typedef enum {
  * QM I2C master / slave mode type.
  */
 typedef enum {
-	QM_I2C_MASTER, /**< Master mode. */
-	QM_I2C_SLAVE   /**< Slave mode. */
+	QM_I2C_MASTER = 0, /**< Master mode. */
+	QM_I2C_SLAVE       /**< Slave mode. */
 } qm_i2c_mode_t;
 
 /**
- * QM I2C Speed Type.
+ * QM I2C speed type.
  */
 typedef enum {
 	QM_I2C_SPEED_STD = 1,      /**< Standard mode (100 Kbps). */
-	QM_I2C_SPEED_FAST = 2,     /**< Fast mode (400 Kbps).  */
+	QM_I2C_SPEED_FAST = 2,     /**< Fast mode (400 Kbps). */
 	QM_I2C_SPEED_FAST_PLUS = 3 /**< Fast plus mode (1 Mbps). */
 } qm_i2c_speed_t;
 
@@ -87,34 +87,55 @@ typedef enum {
 	QM_I2C_IDLE = 0,		       /**< Controller idle. */
 	QM_I2C_TX_ABRT_7B_ADDR_NOACK = BIT(0), /**< 7-bit address noack. */
 	QM_I2C_TX_ABRT_10ADDR1_NOACK = BIT(1), /**< 10-bit address noack. */
-	QM_I2C_TX_ABRT_10ADDR2_NOACK = BIT(2), /**< 10-bit second address
-						 byte address noack. */
-	QM_I2C_TX_ABRT_TXDATA_NOACK = BIT(3),  /**< Tx data noack. */
-	QM_I2C_TX_ABRT_GCALL_NOACK = BIT(4),   /**< General call noack. */
-	QM_I2C_TX_ABRT_GCALL_READ = BIT(5),    /**< Read after general call. */
-	QM_I2C_TX_ABRT_HS_ACKDET = BIT(6),     /**< High Speed master ID ACK. */
-	QM_I2C_TX_ABRT_SBYTE_ACKDET = BIT(7),  /**< Start ACK. */
-	QM_I2C_TX_ABRT_HS_NORSTRT = BIT(8),    /**< High Speed with restart
-						 disabled. */
-	QM_I2C_TX_ABRT_10B_RD_NORSTRT = BIT(10), /**< 10-bit address read and
-						   restart disabled. */
-	QM_I2C_TX_ABRT_MASTER_DIS = BIT(11),     /**< Master disabled. */
-	QM_I2C_TX_ARB_LOST = BIT(12), /**< Master lost arbitration. */
+
+	/** 10-bit second address byte address noack. */
+	QM_I2C_TX_ABRT_10ADDR2_NOACK = BIT(2),
+	QM_I2C_TX_ABRT_TXDATA_NOACK = BIT(3), /**< Tx data noack. */
+	QM_I2C_TX_ABRT_GCALL_NOACK = BIT(4),  /**< General call noack. */
+	QM_I2C_TX_ABRT_GCALL_READ = BIT(5),   /**< Read after general call. */
+	QM_I2C_TX_ABRT_HS_ACKDET = BIT(6),    /**< High Speed master ID ACK. */
+	QM_I2C_TX_ABRT_SBYTE_ACKDET = BIT(7), /**< Start ACK. */
+
+	/** High Speed with restart disabled. */
+	QM_I2C_TX_ABRT_HS_NORSTRT = BIT(8),
+
+	/** 10-bit address read and restart disabled. */
+	QM_I2C_TX_ABRT_10B_RD_NORSTRT = BIT(10),
+	QM_I2C_TX_ABRT_MASTER_DIS = BIT(11), /**< Master disabled. */
+	QM_I2C_TX_ARB_LOST = BIT(12),	/**< Master lost arbitration. */
 	QM_I2C_TX_ABRT_SLVFLUSH_TXFIFO = BIT(13), /**< Slave flush tx FIFO. */
 	QM_I2C_TX_ABRT_SLV_ARBLOST = BIT(14),     /**< Slave lost bus. */
 	QM_I2C_TX_ABRT_SLVRD_INTX = BIT(15),      /**< Slave read completion. */
 	QM_I2C_TX_ABRT_USER_ABRT = BIT(16),       /**< User abort. */
-	QM_I2C_BUSY = BIT(17)			  /**< Controller busy. */
+	QM_I2C_BUSY = BIT(17),			  /**< Controller busy. */
+	QM_I2C_TX_ABORT = BIT(18),		  /**< Tx abort. */
+	QM_I2C_TX_OVER = BIT(19),		  /**< Tx overflow. */
+	QM_I2C_RX_OVER = BIT(20),		  /**< Rx overflow. */
+	QM_I2C_RX_UNDER = BIT(21)		  /**< Rx underflow. */
 } qm_i2c_status_t;
+
+/**
+ * QM I2C slave stop detect behaviour
+ */
+typedef enum {
+	/** Interrupt regardless of whether this slave is addressed or not. */
+	QM_I2C_SLAVE_INTERRUPT_ALWAYS = 0x0,
+
+	/** Only interrupt if this slave is being addressed. */
+	QM_I2C_SLAVE_INTERRUPT_WHEN_ADDRESSED = 0x1
+} qm_i2c_slave_stop_t;
 
 /**
  * I2C configuration type.
  */
 typedef struct {
-	qm_i2c_speed_t speed;       /**< Standard, Fast Mode. */
-	qm_i2c_addr_t address_mode; /**< 7 or 10 bit addressing. */
+	qm_i2c_speed_t speed;       /**< Standard, fast or fast plus mode. */
+	qm_i2c_addr_t address_mode; /**< 7 bit or 10 bit addressing. */
 	qm_i2c_mode_t mode;	 /**< Master or slave mode. */
 	uint16_t slave_addr;	/**< I2C address when in slave mode. */
+
+	/** Slave stop detect behaviour */
+	qm_i2c_slave_stop_t stop_detect_behaviour;
 } qm_i2c_config_t;
 
 /**
@@ -122,7 +143,7 @@ typedef struct {
  * Master mode:
  * - If tx len is 0: perform receive-only transaction.
  * - If rx len is 0: perform transmit-only transaction.
- * - Both tx and Rx len not 0: perform a transmit-then-receive
+ * - Both tx and rx len not 0: perform a transmit-then-receive
  *   combined transaction.
  * Slave mode:
  * - If read or write exceed the buffer, then wrap around.
@@ -133,9 +154,22 @@ typedef struct {
 	uint8_t *rx;     /**< Read data. */
 	uint32_t rx_len; /**< Read buffer length. */
 	bool stop;       /**< Generate master STOP. */
+
+	/**
+	 * Transfer callback.
+	 *
+	 * Called after all data is transmitted/received or if the driver
+	 * detects an error during the I2C transfer.
+	 *
+	 * @param[in] data User defined data.
+	 * @param[in] rc 0 on success.
+	 *            Negative @ref errno for possible error codes.
+	 * @param[in] status I2C status.
+	 * @param[in] len Length of the transfer if successful, 0 otherwise.
+	 */
 	void (*callback)(void *data, int rc, qm_i2c_status_t status,
-			 uint32_t len); /**< Callback. */
-	void *callback_data;		/**< Callback identifier. */
+			 uint32_t len);
+	void *callback_data; /**< User callback data. */
 } qm_i2c_transfer_t;
 
 /**
@@ -155,6 +189,7 @@ int qm_i2c_set_config(const qm_i2c_t i2c, const qm_i2c_config_t *const cfg);
  *
  * Fine tune I2C clock speed. This will set the SCL low count
  * and the SCL hi count cycles. To achieve any required speed.
+ *
  * @param[in] i2c I2C index.
  * @param[in] speed Bus speed (Standard or Fast. Fast includes Fast+ mode).
  * @param[in] lo_cnt SCL low count.
@@ -168,10 +203,13 @@ int qm_i2c_set_speed(const qm_i2c_t i2c, const qm_i2c_speed_t speed,
 		     const uint16_t lo_cnt, const uint16_t hi_cnt);
 
 /**
- * Retrieve I2C status.
+ * Retrieve I2C bus status.
  *
  * @param[in] i2c Which I2C to read the status of.
- * @param[out] status Get i2c status. This must not be NULL.
+ * @param[out] status Current I2C status. This must not be NULL.
+ *
+ * The user may call this function before performing an I2C transfer in order to
+ * guarantee that the I2C interface is available.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -187,9 +225,9 @@ int qm_i2c_get_status(const qm_i2c_t i2c, qm_i2c_status_t *const status);
  * @param[in] i2c Which I2C to write to.
  * @param[in] slave_addr Address of slave to write to.
  * @param[in] data Pre-allocated buffer of data to write. This must not be NULL.
- * @param[in] len length of data to write.
+ * @param[in] len Length of data to write.
  * @param[in] stop Generate a STOP condition at the end of tx.
- * @param[out] status Get i2c status.
+ * @param[out] status Get I2C status.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -208,9 +246,9 @@ int qm_i2c_master_write(const qm_i2c_t i2c, const uint16_t slave_addr,
  * @param[in] slave_addr Address of slave device to read from.
  * @param[out] data Pre-allocated buffer to populate with data. This must not be
  *		NULL.
- * @param[in] len length of data to read from slave.
- * @param[in] stop Generate a STOP condition at the end of tx.
- * @param[out] status Get i2c status.
+ * @param[in] len Length of data to read from slave.
+ * @param[in] stop Generate a STOP condition at the end of rx.
+ * @param[out] status Get I2C status.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -242,13 +280,31 @@ int qm_i2c_master_irq_transfer(const qm_i2c_t i2c,
 			       const uint16_t slave_addr);
 
 /**
+ * Interrupt based slave transfer on I2C.
+ *
+ * Perform an interrupt based slave transfer on the I2C bus. The function will
+ * replenish/empty TX/RX FIFOs on I2C empty/full interrupts.
+ *
+ * @param[in] i2c Which I2C to transfer from.
+ * @param[in] xfer Transfer structure includes write / read buffers, length,
+ *                 user callback function and the callback context. This must
+ *                 not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_i2c_slave_irq_transfer(const qm_i2c_t i2c,
+			      const qm_i2c_transfer_t *const xfer);
+
+/**
  * Terminate I2C IRQ transfer.
  *
  * Terminate the current IRQ or DMA transfer on the I2C bus.
  * This will cause the user callback to be called with status
  * QM_I2C_TX_ABRT_USER_ABRT.
  *
- * @param[in] i2c I2C register block pointer.
+ * @param[in] i2c I2C controller identifier.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -289,12 +345,12 @@ int qm_i2c_dma_channel_config(const qm_i2c_t i2c,
 			      const qm_dma_channel_direction_t direction);
 
 /**
- * Perform a DMA-based transfer on the I2C bus.
+ * Perform a DMA based master transfer on the I2C bus.
  *
- * Perform a DMA-based transfer on the I2C bus. If the transfer is TX only, it
- * will enable DMA operation for the controller and start the transfer.
+ * Perform a DMA based master transfer on the I2C bus. If the transfer is TX
+ * only, it will enable DMA operation for the controller and start the transfer.
  *
- * If it's an RX only transfer, it will require 2 channels, one for writting the
+ * If it's an RX only transfer, it will require 2 channels, one for writing the
  * READ commands and another one for reading the bytes from the bus. Both DMA
  * operations will start in parallel.
  *
@@ -307,9 +363,9 @@ int qm_i2c_dma_channel_config(const qm_i2c_t i2c,
  *
  * @param[in] i2c I2C controller identifier.
  * @param[in] xfer Structure containing pre-allocated write and read data
- * buffers and callback functions. This pointer must be kept valid until the
- * transfer is complete.
- * @param[in] slave_addr Slave address.
+ *		   buffers and callback functions. This must not be NULL
+ *		   and must be kept valid until the transfer is complete.
+ * @param[in] slave_addr Address of slave to transfer data with.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -318,6 +374,24 @@ int qm_i2c_dma_channel_config(const qm_i2c_t i2c,
 int qm_i2c_master_dma_transfer(const qm_i2c_t i2c,
 			       qm_i2c_transfer_t *const xfer,
 			       const uint16_t slave_addr);
+
+/**
+ * Perform a DMA based slave transfer on the I2C bus.
+ *
+ * Note that qm_i2c_dma_channel_config() must first be called in order to
+ * configure all DMA channels needed for a transfer.
+ *
+ * @param[in] i2c I2C controller identifier.
+ * @param[in] xfer Structure containing pre-allocated write and read data
+ *                 buffers and callback functions. This pointer must be kept
+ *                 valid until the transfer is complete.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_i2c_slave_dma_transfer(const qm_i2c_t i2c,
+			      const qm_i2c_transfer_t *const xfer);
 
 /**
  * Terminate any DMA transfer going on on the controller.

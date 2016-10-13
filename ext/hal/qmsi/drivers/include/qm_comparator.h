@@ -50,6 +50,10 @@ typedef struct {
 	uint32_t reference; /**< Reference voltage, 1b: VREF; 0b: AR_PIN. */
 	uint32_t polarity;  /**< 0b: input>ref; 1b: input<ref */
 	uint32_t power;     /**< 1b: Normal mode; 0b:Power-down/Shutdown mode */
+#if HAS_COMPARATOR_VREF2
+	/**< 0b: VREF_1; 1b: VREF_2; When reference is external */
+	uint32_t ar_pad;
+#endif /* HAS_COMPARATOR_VREF2 */
 
 	/**
 	 * Transfer callback.

@@ -36,6 +36,13 @@
 /**
  * SoC Power mode control for Quark SE Microcontrollers.
  *
+ * Available SoC states are:
+ *     - Low Power Sensing Standby (LPSS)
+ *     - Sleep
+ *
+ * LPSS can only be enabled from the Sensor core,
+ * refer to @ref ss_power_soc_lpss_enable for further details.
+ *
  * @defgroup groupSoCPower Quark SE SoC Power states
  * @{
  */
@@ -97,6 +104,9 @@ void power_soc_deep_sleep(void);
  * Put the Host into C1.<BR>
  * Processor Clock is gated in this state.<BR>
  * Nothing is turned off in this state.
+ *
+ * This function can be called with interrupts disabled.
+ * Interrupts will be enabled before triggering the transition.
  *
  * A wake event causes the Host to transition to C0.<BR>
  * A wake event is a host interrupt.

@@ -39,38 +39,42 @@
  * @defgroup groupPWM PWM / Timer
  * @{
  */
-#define PWM_START (1)
-
-#define QM_PWM_CONF_MODE_MASK (10)
-#define QM_PWM_CONF_INT_EN_MASK (4)
 
 /**
- * PWM operating mode type.
+ * QM PWM mode type.
  */
 typedef enum {
-	QM_PWM_MODE_TIMER_FREE_RUNNING = 0, /**< Timer: free runnig mode. */
-	QM_PWM_MODE_TIMER_COUNT = 2,	/**< Timer: Counter mode. */
-	QM_PWM_MODE_PWM = 10		    /**< Pwm mode. */
+	/**< Timer: Free running mode. */
+	QM_PWM_MODE_TIMER_FREE_RUNNING = QM_PWM_MODE_TIMER_FREE_RUNNING_VALUE,
+	/**< Timer: Counter mode. */
+	QM_PWM_MODE_TIMER_COUNT = QM_PWM_MODE_TIMER_COUNT_VALUE,
+	/**< PWM mode. */
+	QM_PWM_MODE_PWM = QM_PWM_MODE_PWM_VALUE
 } qm_pwm_mode_t;
 
 /**
- * PWM / Timer configuration type.
+ * QM PWM / Timer configuration type.
  */
 typedef struct {
-	uint32_t
-	    lo_count; /**< Number of cycles the PWM output is driven low. In
-			   timer mode, this is the timer load count. Must be
-			   > 0. */
-	uint32_t hi_count; /**< Number of cycles the PWM output is driven high.
-			 Not applicable in timer mode. Must be > 0.*/
+	/**
+	 * Number of cycles the PWM output is driven low.
+	 * In timer mode, this is the timer load count. Must be > 0.
+	 */
+	uint32_t lo_count;
+	/**
+	 * Number of cycles the PWM output is driven high.
+	 * Not applicable in timer mode. Must be > 0.
+	 */
+	uint32_t hi_count;
 	bool mask_interrupt; /**< Mask interrupt. */
 	qm_pwm_mode_t mode;  /**< Pwm mode. */
-			     /**
-			      * User callback.
-			      *
-			      * @param[in] data The callback user data.
-			      * @param[in] int_status The timer status.
-			      */
+
+	/**
+	 * User callback.
+	 *
+	 * @param[in] data The callback user data.
+	 * @param[in] int_status The timer status.
+	 */
 	void (*callback)(void *data, uint32_t int_status);
 	void *callback_data; /**< Callback user data. */
 } qm_pwm_config_t;
@@ -93,7 +97,7 @@ typedef struct {
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
- * */
+ */
 int qm_pwm_set_config(const qm_pwm_t pwm, const qm_pwm_id_t id,
 		      const qm_pwm_config_t *const cfg);
 
@@ -114,7 +118,7 @@ int qm_pwm_set_config(const qm_pwm_t pwm, const qm_pwm_id_t id,
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
- * */
+ */
 int qm_pwm_set(const qm_pwm_t pwm, const qm_pwm_id_t id,
 	       const uint32_t lo_count, const uint32_t hi_count);
 
@@ -131,7 +135,7 @@ int qm_pwm_set(const qm_pwm_t pwm, const qm_pwm_id_t id,
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
- * */
+ */
 int qm_pwm_get(const qm_pwm_t pwm, const qm_pwm_id_t id,
 	       uint32_t *const lo_count, uint32_t *const hi_count);
 
@@ -144,7 +148,7 @@ int qm_pwm_get(const qm_pwm_t pwm, const qm_pwm_id_t id,
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
- * */
+ */
 int qm_pwm_start(const qm_pwm_t pwm, const qm_pwm_id_t id);
 
 /**
@@ -156,10 +160,11 @@ int qm_pwm_start(const qm_pwm_t pwm, const qm_pwm_id_t id);
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
- * */
+ */
 int qm_pwm_stop(const qm_pwm_t pwm, const qm_pwm_id_t id);
 
 /**
  * @}
  */
+
 #endif /* __QM_PWM_H__ */

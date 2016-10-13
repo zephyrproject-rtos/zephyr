@@ -41,100 +41,6 @@
  * @{
  */
 
-/* Divisor Latch Access Bit. */
-#define QM_UART_LCR_DLAB BIT(7)
-/* Auto Flow Control Enable Bit. */
-#define QM_UART_MCR_AFCE BIT(5)
-/* Request to Send Bit. */
-#define QM_UART_MCR_RTS BIT(1)
-
-/* FIFO Enable Bit. */
-#define QM_UART_FCR_FIFOE BIT(0)
-/* Reset Receive FIFO. */
-#define QM_UART_FCR_RFIFOR BIT(1)
-/* Reset Transmit FIFO. */
-#define QM_UART_FCR_XFIFOR BIT(2)
-/* FIFO half RX, half TX Threshold. */
-#define QM_UART_FCR_DEFAULT_TX_RX_THRESHOLD (0xB0)
-/* FIFO 1 byte RX, half TX Threshold. */
-#define QM_UART_FCR_TX_1_2_RX_0_THRESHOLD (0x30)
-/* FIFO half RX, empty TX Threshold. */
-#define QM_UART_FCR_TX_0_RX_1_2_THRESHOLD (0x80)
-
-/* Transmit Holding Register Empty. */
-#define QM_UART_IIR_THR_EMPTY (0x02)
-/* Received Data Available. */
-#define QM_UART_IIR_RECV_DATA_AVAIL (0x04)
-/* Receiver Line Status. */
-#define QM_UART_IIR_RECV_LINE_STATUS (0x06)
-/* Character Timeout. */
-#define QM_UART_IIR_CHAR_TIMEOUT (0x0C)
-/* Interrupt ID Mask. */
-#define QM_UART_IIR_IID_MASK (0x0F)
-
-/* Data Ready Bit. */
-#define QM_UART_LSR_DR BIT(0)
-/* Overflow Error Bit. */
-#define QM_UART_LSR_OE BIT(1)
-/* Parity Error Bit. */
-#define QM_UART_LSR_PE BIT(2)
-/* Framing Error Bit. */
-#define QM_UART_LSR_FE BIT(3)
-/* Break Interrupt Bit. */
-#define QM_UART_LSR_BI BIT(4)
-/* Transmit Holding Register Empty Bit. */
-#define QM_UART_LSR_THRE BIT(5)
-/* Transmitter Empty Bit. */
-#define QM_UART_LSR_TEMT BIT(6)
-/* Receiver FIFO Error Bit. */
-#define QM_UART_LSR_RFE BIT(7)
-
-/* Enable Received Data Available Interrupt. */
-#define QM_UART_IER_ERBFI BIT(0)
-/* Enable Transmit Holding Register Empty Interrupt. */
-#define QM_UART_IER_ETBEI BIT(1)
-/* Enable Receiver Line Status Interrupt. */
-#define QM_UART_IER_ELSI BIT(2)
-/* Programmable THRE Interrupt Mode. */
-#define QM_UART_IER_PTIME BIT(7)
-
-/* Line Status Errors. */
-#define QM_UART_LSR_ERROR_BITS                                                 \
-	(QM_UART_LSR_OE | QM_UART_LSR_PE | QM_UART_LSR_FE | QM_UART_LSR_BI)
-
-/* FIFO Depth. */
-#define QM_UART_FIFO_DEPTH (16)
-/* FIFO Half Depth. */
-#define QM_UART_FIFO_HALF_DEPTH (QM_UART_FIFO_DEPTH / 2)
-
-/* Divisor Latch High Offset. */
-#define QM_UART_CFG_BAUD_DLH_OFFS 16
-/* Divisor Latch Low Offset. */
-#define QM_UART_CFG_BAUD_DLL_OFFS 8
-/* Divisor Latch Fraction Offset. */
-#define QM_UART_CFG_BAUD_DLF_OFFS 0
-/* Divisor Latch High Mask. */
-#define QM_UART_CFG_BAUD_DLH_MASK (0xFF << QM_UART_CFG_BAUD_DLH_OFFS)
-/* Divisor Latch Low Mask. */
-#define QM_UART_CFG_BAUD_DLL_MASK (0xFF << QM_UART_CFG_BAUD_DLL_OFFS)
-/* Divisor Latch Fraction Mask. */
-#define QM_UART_CFG_BAUD_DLF_MASK (0xFF << QM_UART_CFG_BAUD_DLF_OFFS)
-
-/* Divisor Latch Packing Helper. */
-#define QM_UART_CFG_BAUD_DL_PACK(dlh, dll, dlf)                                \
-	(dlh << QM_UART_CFG_BAUD_DLH_OFFS | dll << QM_UART_CFG_BAUD_DLL_OFFS | \
-	 dlf << QM_UART_CFG_BAUD_DLF_OFFS)
-
-/* Divisor Latch High Unpacking Helper. */
-#define QM_UART_CFG_BAUD_DLH_UNPACK(packed)                                    \
-	((packed & QM_UART_CFG_BAUD_DLH_MASK) >> QM_UART_CFG_BAUD_DLH_OFFS)
-/* Divisor Latch Low Unpacking Helper. */
-#define QM_UART_CFG_BAUD_DLL_UNPACK(packed)                                    \
-	((packed & QM_UART_CFG_BAUD_DLL_MASK) >> QM_UART_CFG_BAUD_DLL_OFFS)
-/* Divisor Latch Fraction Unpacking Helper. */
-#define QM_UART_CFG_BAUD_DLF_UNPACK(packed)                                    \
-	((packed & QM_UART_CFG_BAUD_DLF_MASK) >> QM_UART_CFG_BAUD_DLF_OFFS)
-
 /**
  * UART Line control.
  */
@@ -165,6 +71,30 @@ typedef enum {
 	QM_UART_LC_8O2 = 0x0f    /**< 8 data bits, odd parity, 2 stop bits. */
 } qm_uart_lc_t;
 
+#if HAS_ADVANCED_UART_CONFIGURATION
+/**
+ * UART Transmit Water Mark
+ * Empty trigger level in the transmit FIFO.
+ */
+typedef enum {
+	QM_UART_TX_WM_EMPTY = 0, /* FIFO empty */
+	QM_UART_TX_WM_TWOCHAR,   /* 2 characters in the FIFO */
+	QM_UART_TX_WM_QUARTER,   /* FIFO 1/4 full */
+	QM_UART_TX_WM_HALF,      /* FIFO 1/2 full */
+} qm_uart_tx_water_mark_t;
+
+/**
+ * UART Receive Water Mark
+ * Trigger level in the receiver FIFO.
+ */
+typedef enum {
+	QM_UART_RX_WM_ONEBYTE = 0, /* 1 character in the FIFO */
+	QM_UART_RX_WM_QUARTER,     /* FIFO 1/4 full */
+	QM_UART_RX_WM_HALF,	/* FIFO 1/2 full */
+	QM_UART_RX_WM_TWOLESS,     /* FIFO 2 less than full */
+} qm_uart_rx_water_mark_t;
+#endif /* HAS_ADVANCED_UART_CONFIGURATION */
+
 /**
  * UART Status type.
  */
@@ -181,13 +111,16 @@ typedef enum {
 } qm_uart_status_t;
 
 /**
- * UART configuration type.
+ * UART configuration structure type
  */
 typedef struct {
 	qm_uart_lc_t line_control; /**< Line control (enum). */
 	uint32_t baud_divisor;     /**< Baud Divisor. */
 	bool hw_fc;		   /**< Hardware Automatic Flow Control. */
-	bool int_en;		   /**< Interrupt enable. */
+#if HAS_ADVANCED_UART_CONFIGURATION
+	qm_uart_tx_water_mark_t tx_water_mark; /* UART Tx FIFO Water Mark */
+	qm_uart_rx_water_mark_t rx_water_mark; /* UART Rx FIFO Water Mark */
+#endif /* HAS_ADVANCED_UART_CONFIGURATION */
 } qm_uart_config_t;
 
 /**
@@ -230,11 +163,14 @@ int qm_uart_set_config(const qm_uart_t uart, const qm_uart_config_t *const cfg);
  * Get UART bus status.
  *
  * Retrieve UART interface status. Return QM_UART_BUSY if transmitting
- * data; QM_UART_IDLE if available for transfer QM_UART_TX_ERROR if an
+ * data; QM_UART_IDLE if available for transfer; QM_UART_TX_ERROR if an
  * error has occurred in transmission.
  *
+ * The user may call this function before performing an UART transfer in order
+ * to guarantee that the UART interface is available.
+
  * @param[in] uart Which UART to read the status of.
- * @param[out] status UART specific status. This must not be NULL.
+ * @param[out] status Current UART status. This must not be NULL.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -248,7 +184,7 @@ int qm_uart_get_status(const qm_uart_t uart, qm_uart_status_t *const status);
  * Perform a single character write on the UART interface.
  * This is a blocking synchronous call.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifer.
  * @param[in] data Data to write to UART.
  *
  * @return Standard errno return type for QMSI.
@@ -263,7 +199,7 @@ int qm_uart_write(const qm_uart_t uart, const uint8_t data);
  * Perform a single character read from the UART interface.
  * This is a blocking synchronous call.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifer.
  * @param[out] data Data to read from UART. This must not be NULL.
  * @param[out] status UART specific status.
  *
@@ -280,7 +216,7 @@ int qm_uart_read(const qm_uart_t uart, uint8_t *const data,
  * Perform a single character write on the UART interface.
  * This is a non-blocking synchronous call.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifier.
  * @param[in] data Data to write to UART.
  *
  * @return Standard errno return type for QMSI.
@@ -295,7 +231,7 @@ int qm_uart_write_non_block(const qm_uart_t uart, const uint8_t data);
  * Perform a single character read from the UART interface.
  * This is a non-blocking synchronous call.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifer.
  * @param[out] data Character read. This must not be NULL.
  *
  * @return Standard errno return type for QMSI.
@@ -311,7 +247,7 @@ int qm_uart_read_non_block(const qm_uart_t uart, uint8_t *const data);
  * synchronous call. The function will block until all data has
  * been transferred.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART controller identifier
  * @param[in] data Data to write to UART. This must not be NULL.
  * @param[in] len Length of data to write to UART.
  *
@@ -320,7 +256,7 @@ int qm_uart_read_non_block(const qm_uart_t uart, uint8_t *const data);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_uart_write_buffer(const qm_uart_t uart, const uint8_t *const data,
-			 uint32_t len);
+			 const uint32_t len);
 
 /**
  * Interrupt based TX on UART.
@@ -328,7 +264,7 @@ int qm_uart_write_buffer(const qm_uart_t uart, const uint8_t *const data,
  * Perform an interrupt based TX transfer on the UART bus. The function
  * will replenish the TX FIFOs on UART empty interrupts.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifier.
  * @param[in] xfer Structure containing pre-allocated
  *                 write buffer and callback functions.
  *                 The structure must not be NULL and must be kept valid until
@@ -347,7 +283,7 @@ int qm_uart_irq_write(const qm_uart_t uart,
  * Perform an interrupt based RX transfer on the UART bus. The function
  * will read back the RX FIFOs on UART empty interrupts.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifier.
  * @param[in] xfer Structure containing pre-allocated read
  *                 buffer and callback functions.
  *                 The structure must not be NULL and must be kept valid until
@@ -366,7 +302,7 @@ int qm_uart_irq_read(const qm_uart_t uart,
  * Terminate the current IRQ TX transfer on the UART bus.
  * This will cause the relevant callbacks to be called.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifier.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -380,7 +316,7 @@ int qm_uart_irq_write_terminate(const qm_uart_t uart);
  * Terminate the current IRQ RX transfer on the UART bus.
  * This will cause the relevant callbacks to be called.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifier.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -402,7 +338,7 @@ int qm_uart_irq_read_terminate(const qm_uart_t uart);
  *
  * Note that qm_dma_init() must first be called before configuring a channel.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifier.
  * @param[in] dma_ctrl_id DMA controller identifier.
  * @param[in] dma_channel_id DMA channel identifier.
  * @param[in] dma_channel_direction DMA channel direction, either
@@ -430,11 +366,10 @@ int qm_uart_dma_channel_config(
  * in addition to the DMA interrupts, the ISR of the corresponding UART must be
  * registered before using this function.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifer.
  * @param[in] xfer Structure containing a pre-allocated write buffer
  *                 and callback functions.
  *                 This must not be NULL.
- *                 Callback pointer must not be NULL.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -451,11 +386,10 @@ int qm_uart_dma_write(const qm_uart_t uart,
  * QM_DMA_PERIPHERAL_TO_MEMORY to be used on this UART, calling
  * qm_uart_dma_channel_config(). The transfer length is limited to 4KB.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifer.
  * @param[in] xfer Structure containing a pre-allocated read buffer
  *                 and callback functions.
  *                 This must not be NULL.
- *                 Callback pointer must not be NULL.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -469,7 +403,7 @@ int qm_uart_dma_read(const qm_uart_t uart,
  *
  * This will cause the relevant callbacks to be called.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifer.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -482,7 +416,7 @@ int qm_uart_dma_write_terminate(const qm_uart_t uart);
  *
  * This will cause the relevant callbacks to be called.
  *
- * @param[in] uart UART index.
+ * @param[in] uart UART identifer.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.

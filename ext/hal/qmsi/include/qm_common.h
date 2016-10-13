@@ -55,9 +55,6 @@ struct interrupt_frame;
 
 #define REG_VAL(addr) (*((volatile uint32_t *)addr))
 
-/* QM_ASSERT is not currently available for Zephyr. */
-#define ASSERT_EXCLUDE (ZEPHYR_OS)
-
 /**
  * In our reference implementation, by default DEBUG enables QM_PUTS and
  * QM_ASSERT but not QM_PRINTF.
@@ -65,10 +62,8 @@ struct interrupt_frame;
  */
 
 #if (DEBUG)
-#if !ASSERT_EXCLUDE
 #ifndef ASSERT_ENABLE
 #define ASSERT_ENABLE (1)
-#endif
 #endif /* ASSERT_EXCLUDE */
 #ifndef PUTS_ENABLE
 #define PUTS_ENABLE (1)
@@ -94,6 +89,10 @@ struct interrupt_frame;
 
 #ifndef QM_CHECK_ASSERT_SAVE_ERROR
 #define QM_CHECK_ASSERT_SAVE_ERROR (0)
+#endif
+
+#ifdef ITA_NO_ASSERT
+#undef ASSERT_ENABLE
 #endif
 
 #endif /* DEBUG */
@@ -229,14 +228,14 @@ int pico_printf(const char *format, ...);
 	void handler(__attribute__(                                            \
 	    (unused)) struct interrupt_frame *__interrupt_frame__)
 #else /* !UNIT_TEST */
-#if (QM_SENSOR) && !(ISR_HANDLED)
+#if (QM_SENSOR) && !(ENABLE_EXTERNAL_ISR_HANDLING)
 /*
  * Sensor Subsystem 'interrupt' attribute.
  */
 #define QM_ISR_DECLARE(handler)                                                \
 	__attribute__((interrupt("ilink"))) void handler(__attribute__(        \
 	    (unused)) struct interrupt_frame *__interrupt_frame__)
-#elif(ISR_HANDLED)
+#elif(ENABLE_EXTERNAL_ISR_HANDLING)
 /*
  * Allow users to define their own ISR management. This includes optimisations
  * and clearing EOI registers.
