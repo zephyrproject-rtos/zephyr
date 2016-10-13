@@ -35,7 +35,6 @@
 #include <string.h>
 
 #include <net/ip_buf.h>
-#include <net/net_context.h>
 
 #ifdef CONFIG_NETWORK_IP_STACK_DEBUG_TCP_PSOCK
 #define DEBUG 1
@@ -153,24 +152,18 @@ data_is_sent_and_acked(CC_REGISTER_ARG struct psock *s)
 	 s->sendptr, s->sendlen,
 	 uip_mss(s->net_buf));
 
-  struct uip_conn *conn = net_context_get_internal_connection(ip_buf_context(s->net_buf));
-  if (!conn) {
-        s->state = STATE_BLOCKED_SEND;
-        return 0;
-  }
-
   if(s->state != STATE_DATA_SENT || uip_rexmit(s->net_buf)) {
-    if(s->sendlen > conn->mss) {
-      uip_send(s->net_buf, s->sendptr, conn->mss);
+    if(s->sendlen > uip_mss(s->net_buf)) {
+      uip_send(s->net_buf, s->sendptr, uip_mss(s->net_buf));
     } else {
       uip_send(s->net_buf, s->sendptr, s->sendlen);
     }
     s->state = STATE_DATA_SENT;
     return 0;
   } else if(s->state == STATE_DATA_SENT && uip_acked(s->net_buf)) {
-    if(s->sendlen > conn->mss) {
-      s->sendlen -= conn->mss;
-      s->sendptr += conn->mss;
+    if(s->sendlen > uip_mss(s->net_buf)) {
+      s->sendlen -= uip_mss(s->net_buf);
+      s->sendptr += uip_mss(s->net_buf);
     } else {
       s->sendptr += s->sendlen;
       s->sendlen = 0;
