@@ -1424,9 +1424,6 @@ static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
 	    : "n"(sizeof(struct k_mem_pool_quad_block)));
 }
 
-#define K_MEM_POOL_SIZE(max_block_size, num_max_blocks) \
-	(sizeof(struct k_mem_pool) + ((max_block_size) * (num_max_blocks)))
-
 extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 				int size, int32_t timeout);
 extern void k_mem_pool_free(struct k_mem_block *block);
