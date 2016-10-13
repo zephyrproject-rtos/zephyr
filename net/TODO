@@ -91,13 +91,6 @@ IPv4
    Add support for sending joining and leaving multicast group.
    See RFC 3376 and 4604 for details.
 
-- DHCPv4 client support
-
-   Priority: Low
-   Complexity: C2
-
-   Add support for acting as a DHCPv4 in client role.
-
 
 TCP
 ===
@@ -118,15 +111,6 @@ TCP
 
 6LoWPAN
 =======
-
-- Context based compression support
-
-  Priority: Medium
-  Compexicity: C4
-
-  Add support for context based IPv6 header compression and
-  uncompression. RFC 6282, Chapter 3.1.1 Base format, if SAC=1
-  and DAC=1. Also 3.1.2 Context Identifier Extension.
 
 - Offset based Reassembly of 802.15.4 packets
 
@@ -149,17 +133,6 @@ TCP
   Complexicity: C2
 
   See RFC 6282, Chapter 3.1.1, if M = 1 and DAC = 1.
-
-- Stateless Address Autoconfiguration
-
-  Priority: Medium
-  Complexicity: C2
-
-  The Interface Identifier [RFC4291] for an IEEE 802.15.4 interface may
-  be based on the EUI-64 identifier [EUI64] assigned to the IEEE
-  802.15.4 device.  In this case, the Interface Identifier is formed
-  from the EUI-64 according to the "IPv6 over Ethernet" specification
-  [RFC2464] (See RFC 4944, Chapter 6).
 
 - Multicast Address Mapping
 
