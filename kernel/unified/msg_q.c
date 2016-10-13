@@ -29,16 +29,6 @@
 #include <wait_q.h>
 #include <misc/dlist.h>
 
-/**
- * @brief Initialize a message queue.
- *
- * @param q Pointer to the message queue object.
- * @param buffer Pointer to memory area that holds queued messages.
- * @param msg_size Message size, in bytes.
- * @param max_msgs Maximum number of messages that can be queued.
- *
- * @return N/A
- */
 void k_msgq_init(struct k_msgq *q, char *buffer,
 		 uint32_t msg_size, uint32_t max_msgs)
 {
@@ -53,18 +43,6 @@ void k_msgq_init(struct k_msgq *q, char *buffer,
 	SYS_TRACING_OBJ_INIT(msgq, q);
 }
 
-/**
- * @brief Adds a message to a message queue.
- *
- * @param q Pointer to the message queue object.
- * @param data Pointer to message data area.
- * @param timeout Maximum time (nanoseconds) to wait for operation to complete.
- *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long as
- *        necessary.
- *
- * @return 0 if successful, -ENOMSG if failed immediately or after queue purge,
- *         -EAGAIN if timed out
- */
 int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 {
 	unsigned int key = irq_lock();
@@ -110,17 +88,6 @@ int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 	return result;
 }
 
-/**
- * @brief Removes a message from a message queue.
- *
- * @param q Pointer to the message queue object.
- * @param data Pointer to message data area.
- * @param timeout Maximum time (nanoseconds) to wait for operation to complete.
- *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long as
- *        necessary.
- *
- * @return 0 if successful, -ENOMSG if failed immediately, -EAGAIN if timed out
- */
 int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 {
 	unsigned int key = irq_lock();
@@ -173,16 +140,6 @@ int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 	return result;
 }
 
-/**
- * @brief Purge contents of a message queue.
- *
- * Discards all messages currently in the message queue, and cancels
- * any "add message" operations initiated by waiting threads.
- *
- * @param q Pointer to the message queue object.
- *
- * @return N/A
- */
 void k_msgq_purge(struct k_msgq *q)
 {
 	unsigned int key = irq_lock();

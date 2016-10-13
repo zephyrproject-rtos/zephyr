@@ -891,10 +891,67 @@ struct k_msgq {
 	       K_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,     \
 				  q_msg_size, q_max_msgs)
 
+/**
+ * @brief Initialize a message queue.
+ *
+ * @param q Pointer to the message queue object.
+ * @param buffer Pointer to memory area that holds queued messages.
+ * @param msg_size Message size, in bytes.
+ * @param max_msgs Maximum number of messages that can be queued.
+ *
+ * @return N/A
+ */
 extern void k_msgq_init(struct k_msgq *q, char *buffer,
 			uint32_t msg_size, uint32_t max_msgs);
+
+/**
+ * @brief Add a message to a message queue.
+ *
+ * This routine adds an item to the message queue. When the message queue is
+ * full, the routine will wait either for space to become available, or until
+ * the specified time limit is reached.
+ *
+ * @param q Pointer to the message queue object.
+ * @param data Pointer to message data area.
+ * @param timeout Number of milliseconds to wait until space becomes available
+ *                to add the message into the message queue, or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return 0 if successful, -ENOMSG if failed immediately or after queue purge,
+ *         -EAGAIN if timed out
+ *
+ * @sa K_NO_WAIT, K_FOREVER
+ */
 extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
+
+/**
+ * @brief Obtain a message from a message queue.
+ *
+ * This routine fetches the oldest item from the message queue. When the message
+ * queue is found empty, the routine will wait either until an item is added to
+ * the message queue or until the specified time limit is reached.
+ *
+ * @param q Pointer to the message queue object.
+ * @param data Pointer to message data area.
+ * @param timeout Number of milliseconds to wait to obtain message, or one of
+ *                the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return 0 if successful, -ENOMSG if failed immediately, -EAGAIN if timed out
+ *
+ * @sa K_NO_WAIT, K_FOREVER
+ */
 extern int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout);
+
+/**
+ * @brief Purge contents of a message queue.
+ *
+ * Discards all messages currently in the message queue, and cancels
+ * any "add message" operations initiated by waiting threads.
+ *
+ * @param q Pointer to the message queue object.
+ *
+ * @return N/A
+ */
 extern void k_msgq_purge(struct k_msgq *q);
 
 /**
@@ -909,6 +966,13 @@ static inline int k_msgq_num_free_get(struct k_msgq *q)
 	return q->max_msgs - q->used_msgs;
 }
 
+/**
+ * @brief Get the number of used messages
+ *
+ * @param q Message queue to query
+ *
+ * @return Number of used messages
+ */
 static inline int k_msgq_num_used_get(struct k_msgq *q)
 {
 	return q->used_msgs;
@@ -966,7 +1030,7 @@ struct k_mbox {
  * @brief Define a mailbox
  *
  * This declares and initializes a mailbox. The new mailbox can be passed to
- * the kernel's mailbxo functions.
+ * the kernel's mailbox functions.
  *
  * @param name Name of the mailbox
  */
