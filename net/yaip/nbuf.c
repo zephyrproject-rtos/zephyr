@@ -412,6 +412,11 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 		net_nbuf_set_context(buf, NULL);
 		net_nbuf_ll_dst(buf)->addr = NULL;
 		net_nbuf_ll_src(buf)->addr = NULL;
+
+		/* Let's make sure ll_reserve is not set
+		 * from a previous usage of the buffer.
+		 */
+		net_nbuf_set_ll_reserve(buf, 0);
 	}
 
 	NET_DBG("%s [%d] buf %p reserve %u ref %d (%s():%d)",
