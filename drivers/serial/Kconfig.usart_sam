@@ -1,0 +1,85 @@
+# Kconfig - Atmel SAM USART configuration options
+#
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig USART_SAM
+	bool "Atmel SAM MCU family USART driver"
+	depends on SOC_FAMILY_SAM
+	select SERIAL_HAS_DRIVER
+	default n
+	help
+	  This option enables the USARTx driver for Atmel SAM MCUs.
+
+# ---------- Port 0 ----------
+
+config USART_SAM_PORT_0
+	bool "Enable USART0"
+	depends on USART_SAM
+	default n
+	help
+	  Configure USART0 at boot depending on the additional options below.
+
+config USART_SAM_PORT_0_NAME
+	string "USART0 Device Name"
+	depends on USART_SAM_PORT_0
+	default "USART_0"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config USART_SAM_PORT_0_BAUD_RATE
+	int "USART0 Baud Rate"
+	depends on USART_SAM_PORT_0
+	default 115200
+	help
+	  USART0 baud rate to be set at boot.
+
+# ---------- Port 1 ----------
+
+config USART_SAM_PORT_1
+	bool "Enable USART1"
+	depends on USART_SAM
+	default n
+	help
+	  Configure USART1 at boot depending on the additional options below.
+
+config USART_SAM_PORT_1_NAME
+	string "USART1 Device Name"
+	depends on USART_SAM_PORT_1
+	default "USART_1"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config USART_SAM_PORT_1_BAUD_RATE
+	int "USART1 Baud Rate"
+	depends on USART_SAM_PORT_1
+	default 115200
+	help
+	  USART1 baud rate to be set at boot.
+
+# ---------- Port 2 ----------
+
+config USART_SAM_PORT_2
+	bool "Enable USART2"
+	depends on USART_SAM
+	default n
+	help
+	  Configure USART2 at boot depending on the additional options below.
+
+config USART_SAM_PORT_2_NAME
+	string "USART2 Device Name"
+	depends on USART_SAM_PORT_2
+	default "USART_2"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config USART_SAM_PORT_2_BAUD_RATE
+	int "USART2 Baud Rate"
+	depends on USART_SAM_PORT_2
+	default 115200
+	help
+	  USART2 baud rate to be set at boot.
