@@ -101,12 +101,12 @@ void main(void)
 	dma_trans.destination_address = (uint32_t *)rx_data[transfer_count];
 
 	if (dma_transfer_config(dma, chan_id, &dma_trans)) {
-		printk("ERROR: transfer\n");
+		printk("ERROR: transfer config\n");
 		return;
 	}
 
 	if (dma_transfer_start(dma, chan_id)) {
-		printk("ERROR: transfer\n");
+		printk("ERROR: transfer start\n");
 		return;
 	}
 
