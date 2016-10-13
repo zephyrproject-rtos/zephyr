@@ -222,10 +222,11 @@ int  k_thread_priority_get(k_tid_t thread)
 }
 
 /* application API: change a thread's priority. Not callable from ISR */
-void k_thread_priority_set(struct k_thread *thread, int prio)
+void k_thread_priority_set(k_tid_t tid, int prio)
 {
 	__ASSERT(!_is_in_isr(), "");
 
+	struct k_thread *thread = (struct k_thread *)tid;
 	int key = irq_lock();
 
 	_thread_priority_set(thread, prio);
