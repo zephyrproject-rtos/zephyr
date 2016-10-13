@@ -59,9 +59,11 @@ config NET_DEBUG_ICMPV4
 	Enables ICMPv4 code part to output debug messages
 
 config NET_DEBUG_DHCPV4
-	bool "Enable DHCPv4 client"
+	bool "Debug DHCPv4 client"
 	depends on NET_DHCPV4
 	default n
+	help
+	Enable debug diagnostic from DHCPV4 client.
 
 endif # NET_LOG
 
