@@ -140,8 +140,8 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 	uint16_t ll_reserve = net_nbuf_ll_reserve(buf);
 	bool send_header_once = false;
 #endif
-	uint16_t i;
 	uint8_t *ptr;
+	uint16_t i;
 	uint8_t c;
 
 	if (!buf->frags) {
@@ -153,7 +153,6 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 
 	while (buf->frags) {
 		struct net_buf *frag = buf->frags;
-
 #if defined(CONFIG_SLIP_DEBUG)
 		int frag_count = 0;
 #endif
@@ -191,6 +190,7 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 				slip_writeb(SLIP_ESC);
 				c = SLIP_ESC_ESC;
 			}
+
 			slip_writeb(c);
 		}
 
@@ -199,6 +199,7 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 			    frag->len + net_nbuf_ll_reserve(buf));
 		if (frag->len + ll_reserve) {
 			char msg[7 + 1];
+
 			snprintf(msg, sizeof(msg), "<slip %d", frag_count++);
 			msg[7] = '\0';
 			hexdump(slip, msg, net_nbuf_ll(buf),
@@ -206,13 +207,11 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 				net_nbuf_ll_reserve(buf));
 		}
 #endif
-
 		net_buf_frag_del(buf, frag);
 		net_nbuf_unref(frag);
 	}
 
 	net_nbuf_unref(buf);
-
 	slip_writeb(SLIP_END);
 
 	return 0;
@@ -232,20 +231,15 @@ static void process_msg(struct slip_context *slip)
 	struct net_buf *buf;
 
 	buf = slip_poll_handler(slip);
-	if (!buf) {
+	if (!buf || !buf->frags) {
 		return;
 	}
 
-	if (buf->frags) {
-		SYS_LOG_DBG("Pushing buf %p (%p) to net stack",
-			    buf, buf->frags->data);
-
-		if (net_recv_data(net_if_get_by_link_addr(&slip->ll_addr),
-				  buf) < 0) {
-			net_nbuf_unref(buf);
-		}
-		slip->rx = slip->last = NULL;
+	if (net_recv_data(net_if_get_by_link_addr(&slip->ll_addr), buf) < 0) {
+		net_nbuf_unref(buf);
 	}
+
+	slip->rx = slip->last = NULL;
 }
 
 static inline int slip_input_byte(struct slip_context *slip,
@@ -256,8 +250,8 @@ static inline int slip_input_byte(struct slip_context *slip,
 		if (c == SLIP_END) {
 			slip->state = STATE_OK;
 		}
-		return 0;
 
+		return 0;
 	case STATE_ESC:
 		if (c == SLIP_ESC_END) {
 			c = SLIP_END;
@@ -268,9 +262,10 @@ static inline int slip_input_byte(struct slip_context *slip,
 			SLIP_STATS(slip->garbage++);
 			return 0;
 		}
-		slip->state = STATE_OK;
-		break;
 
+		slip->state = STATE_OK;
+
+		break;
 	case STATE_OK:
 		if (c == SLIP_ESC) {
 			slip->state = STATE_ESC;
@@ -279,6 +274,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 			slip->state = STATE_OK;
 			return 1;
 		}
+
 		break;
 	}
 
@@ -287,14 +283,15 @@ static inline int slip_input_byte(struct slip_context *slip,
 		if (!slip->rx) {
 			return 0;
 		}
+
 		slip->last = net_nbuf_get_reserve_data(0);
 		if (!slip->last) {
 			net_nbuf_unref(slip->rx);
 			slip->rx = NULL;
 			return 0;
 		}
-		net_buf_frag_add(slip->rx, slip->last);
 
+		net_buf_frag_add(slip->rx, slip->last);
 		slip->ptr = net_nbuf_ip_data(slip->rx);
 	}
 
@@ -309,11 +306,12 @@ static inline int slip_input_byte(struct slip_context *slip,
 			net_nbuf_unref(slip->rx);
 			slip->rx = NULL;
 			slip->last = NULL;
+
 			return 0;
 		}
+
 		net_buf_frag_insert(slip->last, frag);
 		slip->last = frag;
-
 		slip->ptr = slip->last->data;
 	}
 
@@ -325,6 +323,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 	} else {
 		slip->ptr = net_buf_add_u8(slip->last, c);
 	}
+
 	slip->ptr++;
 
 	return 0;
@@ -345,17 +344,20 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		if (slip_input_byte(slip, buf[i])) {
 #if defined(CONFIG_SLIP_DEBUG)
 			struct net_buf *frag = slip->rx->frags;
+			int bytes = net_buf_frags_len(frag);
 			int count = 0;
-			int bytes = net_buf_frags_len(slip->rx->frags);
 
 			while (bytes && frag) {
 				char msg[7 + 1];
+
 				snprintf(msg, sizeof(msg), ">slip %d", count);
 				msg[7] = '\0';
 				hexdump(slip, msg, frag->data, frag->len, 0);
+
 				frag = frag->frags;
 				count++;
 			}
+
 			SYS_LOG_DBG("[%p] received data %d bytes", slip, bytes);
 #endif
 			process_msg(slip);
