@@ -1215,9 +1215,6 @@ struct k_mem_map {
 		K_MEM_MAP_INITIALIZER(name, map_num_blocks, \
 				      map_block_size, _k_mem_map_buf_##name)
 
-#define K_MEM_MAP_SIZE(map_num_blocks, map_block_size) \
-	(sizeof(struct k_mem_map) + ((map_num_blocks) * (map_block_size)))
-
 extern void k_mem_map_init(struct k_mem_map *map, int num_blocks,
 			   int block_size, void *buffer);
 extern int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout);
