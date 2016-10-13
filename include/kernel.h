@@ -1019,7 +1019,7 @@ extern void k_event_send(struct k_event *event);
 
 struct k_msgq {
 	_wait_q_t wait_q;
-	uint32_t msg_size;
+	size_t msg_size;
 	uint32_t max_msgs;
 	char *buffer_start;
 	char *buffer_end;
@@ -1076,7 +1076,7 @@ struct k_msgq {
  * @return N/A
  */
 extern void k_msgq_init(struct k_msgq *q, char *buffer,
-			uint32_t msg_size, uint32_t max_msgs);
+			size_t msg_size, uint32_t max_msgs);
 
 /**
  * @brief Add a message to a message queue.
@@ -1135,7 +1135,7 @@ extern void k_msgq_purge(struct k_msgq *q);
  *
  * @return Number of unused messages
  */
-static inline int k_msgq_num_free_get(struct k_msgq *q)
+static inline uint32_t k_msgq_num_free_get(struct k_msgq *q)
 {
 	return q->max_msgs - q->used_msgs;
 }
@@ -1147,7 +1147,7 @@ static inline int k_msgq_num_free_get(struct k_msgq *q)
  *
  * @return Number of used messages
  */
-static inline int k_msgq_num_used_get(struct k_msgq *q)
+static inline uint32_t k_msgq_num_used_get(struct k_msgq *q)
 {
 	return q->used_msgs;
 }

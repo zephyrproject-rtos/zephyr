@@ -30,7 +30,7 @@
 #include <misc/dlist.h>
 
 void k_msgq_init(struct k_msgq *q, char *buffer,
-		 uint32_t msg_size, uint32_t max_msgs)
+		 size_t msg_size, uint32_t max_msgs)
 {
 	q->msg_size = msg_size;
 	q->max_msgs = max_msgs;
