@@ -864,9 +864,11 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 				     void *user_data)
 {
 	struct net_context *context = (struct net_context *)user_data;
-	struct net_tcp *tcp = context->tcp;
+	struct net_tcp *tcp;
 
-	NET_ASSERT(context && tcp);
+	NET_ASSERT(context && context->tcp);
+
+	tcp = context->tcp;
 
 	switch (tcp->state) {
 	case NET_TCP_LISTEN:
