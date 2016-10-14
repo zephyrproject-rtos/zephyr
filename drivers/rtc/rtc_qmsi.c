@@ -166,7 +166,8 @@ static int rtc_qmsi_init(struct device *dev)
 {
 	rtc_reentrancy_init(dev);
 
-	IRQ_CONNECT(QM_IRQ_RTC_0, CONFIG_RTC_0_IRQ_PRI, qm_rtc_isr_0, 0,
+	IRQ_CONNECT(QM_IRQ_RTC_0, CONFIG_RTC_0_IRQ_PRI,
+		    qm_rtc_isr_0, NULL,
 		    IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask RTC interrupt */
