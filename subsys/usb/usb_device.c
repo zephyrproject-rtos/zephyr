@@ -627,6 +627,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 	case REQ_CLEAR_FEATURE:
 		if (setup->wValue == FEA_ENDPOINT_HALT) {
 			/* clear HALT by unstalling */
+			SYS_LOG_INF("... EP clear halt %x\n", setup->wIndex);
 			usb_dc_ep_clear_stall(setup->wIndex);
 			break;
 		}
@@ -636,6 +637,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 	case REQ_SET_FEATURE:
 		if (setup->wValue == FEA_ENDPOINT_HALT) {
 			/* set HALT by stalling */
+			SYS_LOG_INF("--- EP SET halt %x\n", setup->wIndex);
 			usb_dc_ep_set_stall(setup->wIndex);
 			break;
 		}
@@ -919,4 +921,25 @@ int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		uint32_t *ret_bytes)
 {
 	return usb_dc_ep_read(ep, data, max_data_len, ret_bytes);
+}
+
+int usb_ep_set_stall(uint8_t ep)
+{
+	return usb_dc_ep_set_stall(ep);
+}
+
+int usb_ep_clear_stall(uint8_t ep)
+{
+	return usb_dc_ep_clear_stall(ep);
+}
+
+int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *ret_bytes)
+{
+	return usb_dc_ep_read_wait(ep, data, max_data_len, ret_bytes);
+}
+
+int usb_ep_read_continue(uint8_t ep)
+{
+	return usb_dc_ep_read_continue(ep);
 }

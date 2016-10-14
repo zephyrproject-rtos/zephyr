@@ -944,8 +944,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	return 0;
 }
 
-int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
-		const uint32_t max_data_len, uint32_t * const read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *read_bytes)
 {
 	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 	uint32_t i, j, data_len, bytes_to_copy;
@@ -1016,9 +1016,48 @@ int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
 		*read_bytes = bytes_to_copy;
 	}
 
-	/* Prepare ep for rx if all the data where read */
+	return 0;
+
+}
+
+int usb_dc_ep_read_continue(uint8_t ep)
+{
+	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+
+	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+		SYS_LOG_ERR("No valid endpoint");
+		return -EINVAL;
+	}
+
+	/* Check if OUT ep */
+	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+		SYS_LOG_ERR("Wrong endpoint direction");
+		return -EINVAL;
+	}
+
 	if (!usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len) {
 		usb_dw_prep_rx(ep_idx, 0);
+	}
+
+	return 0;
+}
+
+int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
+		const uint32_t max_data_len, uint32_t * const read_bytes)
+{
+	if (usb_dc_ep_read_wait(ep, data, max_data_len, read_bytes) != 0) {
+		return -EINVAL;
+	}
+
+	if (!data && !max_data_len) {
+		/* When both buffer and max data to read are zero the above
+		 * call would fetch the data len and we simply return.
+		 */
+		return 0;
+	}
+
+	if (usb_dc_ep_read_continue(ep) != 0) {
+		return -EINVAL;
 	}
 
 	return 0;

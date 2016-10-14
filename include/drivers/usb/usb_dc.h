@@ -266,7 +266,9 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
  *
  * This function is called by the Endpoint handler function, after an OUT
  * interrupt has been received for that EP. The application must only call this
- * function through the supplied usb_ep_callback function.
+ * function through the supplied usb_ep_callback function. This function clears
+ * the ENDPOINT NAK, if all data in the endpoint FIFO has been read,
+ * so as to accept more data from host.
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
@@ -295,5 +297,42 @@ int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
  * @return 0 on success, negative errno code on fail.
  */
 int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb);
+
+/**
+ * @brief read data from the specified endpoint
+ *
+ * This is similar to usb_dc_ep_read, the difference being that, it doesnt
+ * clear the endpoint NAKs so that the consumer is not bogged down by further
+ * upcalls till he is done with the processing of the data. The caller should
+ * reactivate ep by invoking usb_dc_ep_read_continue() do so.
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ * @param[in]  data         pointer to data buffer to write to
+ * @param[in]  max_data_len max length of data to read
+ * @param[out] read_bytes   Number of bytes read. If data is NULL and
+ *                          max_data_len is 0 the number of bytes
+ *                          available for read should be returned.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *read_bytes);
+
+
+/**
+ * @brief Continue reading data from the endpoint
+ *
+ * Clear the endpoint NAK and enable the endpoint to accept more data
+ * from the host. Usually called after usb_dc_ep_read_wait() when the consumer
+ * is fine to accept more data. Thus these calls together acts as flow control
+ * meachanism.
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_dc_ep_read_continue(uint8_t ep);
 
 #endif /* __USB_DC_H__ */
