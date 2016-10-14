@@ -227,7 +227,7 @@ static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
  *
  * @param mbox Pointer to the mailbox object.
  * @param tx_msg Pointer to transmit message descriptor.
- * @param timeout Maximum time (nanoseconds) to wait for the message to be
+ * @param timeout Maximum time (milliseconds) to wait for the message to be
  *        received (although not necessarily completely processed).
  *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long
  *        as necessary.
@@ -319,7 +319,7 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  *
  * @param mbox Pointer to the mailbox object.
  * @param tx_msg Pointer to transmit message descriptor.
- * @param timeout Maximum time (nanoseconds) to wait for the message to be
+ * @param timeout Maximum time (milliseconds) to wait for the message to be
  *        received (although not necessarily completely processed).
  *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long
  *        as necessary.
@@ -420,10 +420,10 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
  * permits the caller to reattempt data retrieval at a later time or to dispose
  * of the received message without retrieving its data.
  *
- * @param msg Pointer to receive message descriptor.
+ * @param rx_msg Pointer to receive message descriptor.
  * @param pool Memory pool identifier. (Use NULL to discard data.)
  * @param block Pointer to area to hold memory pool block info.
- * @param timeout Maximum time (nanoseconds) to wait for a memory pool block.
+ * @param timeout Maximum time (milliseconds) to wait for a memory pool block.
  *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long as
  *        necessary.
  *
@@ -501,10 +501,10 @@ static int _mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
  * and disposes of the message.
  *
  * @param mbox Pointer to the mailbox object.
- * @param msg Pointer to receive message descriptor.
+ * @param rx_msg Pointer to receive message descriptor.
  * @param buffer Pointer to buffer to receive data.
  *        (Use NULL to defer data retrieval and message disposal until later.)
- * @param timeout Maximum time (nanoseconds) to wait for a message.
+ * @param timeout Maximum time (milliseconds) to wait for a message.
  *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long as
  *        necessary.
  *

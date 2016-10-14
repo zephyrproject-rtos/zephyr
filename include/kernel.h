@@ -891,15 +891,15 @@ struct k_mbox {
 
 extern void k_mbox_init(struct k_mbox *mbox);
 
-extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *msg,
+extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		      int32_t timeout);
-extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *msg,
+extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     struct k_sem *sem);
 
-extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *msg,
+extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
 		      void *buffer, int32_t timeout);
-extern void k_mbox_data_get(struct k_mbox_msg *msg, void *buffer);
-extern int k_mbox_data_block_get(struct k_mbox_msg *msg,
+extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
+extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
 				 struct k_mem_pool *pool,
 				 struct k_mem_block *block, int32_t timeout);
 
