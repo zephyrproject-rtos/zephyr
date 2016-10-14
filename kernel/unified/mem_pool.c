@@ -227,7 +227,8 @@ static void defrag(struct k_mem_pool *pool,
 				 */
 
 				k = i;
-				while ((k < pool->block_set[j].nr_of_entries) &&
+				while (((k+1) !=
+					pool->block_set[j].nr_of_entries) &&
 				       (quad_block[k + 1].mem_blocks != NULL)) {
 					k++;
 				}
