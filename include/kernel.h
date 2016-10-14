@@ -850,7 +850,7 @@ struct k_mbox_msg {
 	/** internal use only - needed for legacy API support */
 	uint32_t _mailbox;
 	/** size of message (in bytes) */
-	uint32_t size;
+	size_t size;
 	/** application-defined information value */
 	uint32_t info;
 	/** sender's message data buffer */
