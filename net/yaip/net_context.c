@@ -936,6 +936,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 	if ((NET_TCP_BUF(buf)->flags & NET_TCP_CTL) == NET_TCP_ACK) {
 		struct net_context *new_context;
 		struct sockaddr local_addr;
+		struct sockaddr remote_addr;
 		struct net_tcp *tmp_tcp;
 		socklen_t addrlen;
 		int ret;
@@ -973,24 +974,42 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 #if defined(CONFIG_NET_IPV6)
 		if (net_context_get_family(context) == AF_INET6) {
-			struct sockaddr_in6 *addr6 = net_sin6(&local_addr);
+			struct sockaddr_in6 *local_addr6 =
+				net_sin6(&local_addr);
+			struct sockaddr_in6 *remote_addr6 =
+				net_sin6(&remote_addr);
 
-			addr6->sin6_family = AF_INET6;
-			addr6->sin6_port = 0;
-			net_ipaddr_copy(&addr6->sin6_addr,
+			remote_addr6->sin6_family = AF_INET6;
+			local_addr6->sin6_family = AF_INET6;
+
+			/* bind will allocate free port */
+			local_addr6->sin6_port = 0;
+
+			net_ipaddr_copy(&local_addr6->sin6_addr,
 					&NET_IPV6_BUF(buf)->dst);
+			net_ipaddr_copy(&remote_addr6->sin6_addr,
+					&NET_IPV6_BUF(buf)->src);
 			addrlen = sizeof(struct sockaddr_in6);
 		} else
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 		if (net_context_get_family(context) == AF_INET) {
-			struct sockaddr_in *addr4 = net_sin(&local_addr);
+			struct sockaddr_in *local_addr4 =
+				net_sin(&local_addr);
+			struct sockaddr_in *remote_addr4 =
+				net_sin(&remote_addr);
 
-			addr4->sin_family = AF_INET;
-			addr4->sin_port = 0; /* bind will allocate free port */
-			net_ipaddr_copy(&addr4->sin_addr,
+			remote_addr4->sin_family = AF_INET;
+			local_addr4->sin_family = AF_INET;
+
+			/* bind will allocate free port */
+			local_addr4->sin_port = 0;
+
+			net_ipaddr_copy(&local_addr4->sin_addr,
 					&NET_IPV4_BUF(buf)->dst);
+			net_ipaddr_copy(&remote_addr4->sin_addr,
+					&NET_IPV4_BUF(buf)->src);
 			addrlen = sizeof(struct sockaddr_in);
 		} else
 #endif /* CONFIG_NET_IPV6 */
@@ -1010,8 +1029,8 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			goto reset;
 		}
 
-		memcpy(&new_context->remote, &context->remote,
-		       sizeof(context->remote));
+		memcpy(&new_context->remote, &remote_addr,
+		       sizeof(remote_addr));
 
 		ret = net_tcp_register(&new_context->remote,
 			       &local_addr,
