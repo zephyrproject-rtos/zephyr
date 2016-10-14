@@ -95,11 +95,6 @@ static inline void _mbox_async_free(struct k_mbox_async *async)
 
 #endif
 
-/**
- * @brief Initialize a mailbox.
- *
- * @return N/A
- */
 void k_mbox_init(struct k_mbox *mbox_ptr)
 {
 	sys_dlist_init(&mbox_ptr->tx_msg_queue);
@@ -310,22 +305,6 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	return _Swap(key);
 }
 
-/**
- * @brief Send a mailbox message in a synchronous manner.
- *
- * Sends a message to a mailbox and waits for a receiver to process it.
- * The message data may be in a buffer, in a memory pool block, or non-existent
- * (i.e. empty message).
- *
- * @param mbox Pointer to the mailbox object.
- * @param tx_msg Pointer to transmit message descriptor.
- * @param timeout Maximum time (milliseconds) to wait for the message to be
- *        received (although not necessarily completely processed).
- *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long
- *        as necessary.
- *
- * @return 0 if successful, -ENOMSG if failed immediately, -EAGAIN if timed out
- */
 int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, int32_t timeout)
 {
 	/* configure things for a synchronous send, then send the message */
@@ -335,21 +314,6 @@ int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, int32_t timeout)
 }
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
-/**
- * @brief Send a mailbox message in an asynchronous manner.
- *
- * Sends a message to a mailbox without waiting for a receiver to process it.
- * The message data may be in a buffer, in a memory pool block, or non-existent
- * (i.e. an empty message). Optionally, the specified semaphore will be given
- * by the mailbox when the message has been both received and disposed of
- * by the receiver.
- *
- * @param mbox Pointer to the mailbox object.
- * @param tx_msg Pointer to transmit message descriptor.
- * @param sem Semaphore identifier, or NULL if none specified.
- *
- * @return N/A
- */
 void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		      struct k_sem *sem)
 {
@@ -371,20 +335,6 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 }
 #endif
 
-/**
- * @brief Retrieve mailbox message data into a buffer.
- *
- * Completes the processing of a received message by retrieving its data
- * into a buffer, then disposing of the message.
- *
- * Alternatively, this routine can be used to dispose of a received message
- * without retrieving its data.
- *
- * @param rx_msg Pointer to receive message descriptor.
- * @param buffer Pointer to buffer to receive data. (Use NULL to discard data.)
- *
- * @return N/A
- */
 void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 {
 	/* handle case where data is to be discarded */
@@ -401,34 +351,6 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 	_mbox_message_dispose(rx_msg);
 }
 
-/**
- * @brief Retrieve mailbox message data into a memory pool block.
- *
- * Completes the processing of a received message by retrieving its data
- * into a memory pool block, then disposing of the message. The memory pool
- * block that results from successful retrieval must be returned to the pool
- * once the data has been processed, even in cases where zero bytes of data
- * are retrieved.
- *
- * Alternatively, this routine can be used to dispose of a received message
- * without retrieving its data. In this case there is no need to return a
- * memory pool block to the pool.
- *
- * This routine allocates a new memory pool block for the data only if the
- * data is not already in one. If a new block cannot be allocated, the routine
- * returns a failure code and the received message is left unchanged. This
- * permits the caller to reattempt data retrieval at a later time or to dispose
- * of the received message without retrieving its data.
- *
- * @param rx_msg Pointer to receive message descriptor.
- * @param pool Memory pool identifier. (Use NULL to discard data.)
- * @param block Pointer to area to hold memory pool block info.
- * @param timeout Maximum time (milliseconds) to wait for a memory pool block.
- *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long as
- *        necessary.
- *
- * @return 0 if successful, -ENOMEM if failed immediately, -EAGAIN if timed out
- */
 int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
 			  struct k_mem_block *block, int32_t timeout)
 {
@@ -494,22 +416,6 @@ static int _mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 	return 0;
 }
 
-/**
- * @brief Receive a mailbox message.
- *
- * Receives a message from a mailbox, then optionally retrieves its data
- * and disposes of the message.
- *
- * @param mbox Pointer to the mailbox object.
- * @param rx_msg Pointer to receive message descriptor.
- * @param buffer Pointer to buffer to receive data.
- *        (Use NULL to defer data retrieval and message disposal until later.)
- * @param timeout Maximum time (milliseconds) to wait for a message.
- *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long as
- *        necessary.
- *
- * @return 0 if successful, -ENOMSG if failed immediately, -EAGAIN if timed out
- */
 int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	       int32_t timeout)
 {
