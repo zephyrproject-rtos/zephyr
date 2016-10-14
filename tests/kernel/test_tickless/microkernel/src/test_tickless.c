@@ -70,6 +70,19 @@ extern void _TimestampClose(void);
 #define _TIMESTAMP_READ()	(_TimestampRead())
 #define _TIMESTAMP_CLOSE()	(_TimestampClose())
 
+#elif defined(CONFIG_ARC)
+
+typedef uint32_t _timer_res_t;
+#define _TIMER_ZERO  0
+
+extern void timestamp_open(void);
+extern uint32_t timestamp_read(void);
+extern void timestamp_close(void);
+
+#define _TIMESTAMP_OPEN()	(timestamp_open())
+#define _TIMESTAMP_READ()	(timestamp_read())
+#define _TIMESTAMP_CLOSE()	(timestamp_close())
+
 #else
 #error "Unknown target"
 #endif
@@ -123,7 +136,7 @@ void ticklessTestTask(void)
 #if defined(CONFIG_X86)
 	printk("Calibrated time stamp period = 0x%x%x\n",
 		   (uint32_t)(cal_tsc >> 32), (uint32_t)(cal_tsc & 0xFFFFFFFFLL));
-#elif defined(CONFIG_ARM)
+#elif defined(CONFIG_ARM)  || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 	printk("Calibrated time stamp period = 0x%x\n", cal_tsc);
 #endif
 
@@ -162,7 +175,7 @@ void ticklessTestTask(void)
 		   (uint32_t)(diff_tsc >> 32), (uint32_t)(diff_tsc & 0xFFFFFFFFULL));
 	printk("Cal   time stamp: 0x%x%x\n",
 		   (uint32_t)(cal_tsc >> 32), (uint32_t)(cal_tsc & 0xFFFFFFFFLL));
-#elif defined(CONFIG_ARM)
+#elif defined(CONFIG_ARM) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 	printk("diff  time stamp: 0x%x\n", diff_tsc);
 	printk("Cal   time stamp: 0x%x\n", cal_tsc);
 #endif
