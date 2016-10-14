@@ -270,6 +270,16 @@ IEEE 802.15.4
   Is this needed however, since it requires true RT capabilities?
 
 
+Bluetooth
+=========
+
+- Enable sample support
+
+  Priority: High
+  Complexity: C1
+
+  Enable samples to use CONFIG_NET_L2_BLUETOOTH.
+
 IP-based services
 =================
 
