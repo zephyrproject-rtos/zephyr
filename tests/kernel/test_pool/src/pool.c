@@ -437,6 +437,93 @@ void AlternateTask(void)
 
 /**
  *
+ * @brief Test the task_malloc() and task_free() APIs
+ *
+ * The heap memory pool is 256 bytes in size, and thus has only 4 blocks
+ * of 64 bytes or a single block of 256 bytes. (Each block has a lesser
+ * amount of usable space, due to the hidden block descriptor info the
+ * kernel adds at the start of any block allocated from this memory pool.)
+ *
+ * @return TC_PASS on success, TC_FAIL on failure
+ */
+
+int poolMallocTest(void)
+{
+	char *block[4];
+	int  j;    /* loop counter */
+
+	TC_PRINT("Testing task_malloc() and task_free() ...\n");
+
+	/* allocate a large block (which consumes the entire pool buffer) */
+	block[0] = task_malloc(150);
+	if (block[0] == NULL) {
+		TC_ERROR("150 byte allocation failed\n");
+		return TC_FAIL;
+	}
+
+	/* ensure a small block can no longer be allocated */
+	block[1] = task_malloc(16);
+	if (block[1] != NULL) {
+		TC_ERROR("16 byte allocation did not fail\n");
+		return TC_FAIL;
+	}
+
+	/* return the large block */
+	task_free(block[0]);
+
+	/* allocate a small block (triggers block splitting)*/
+	block[0] = task_malloc(16);
+	if (block[0] == NULL) {
+		TC_ERROR("16 byte allocation 0 failed\n");
+		return TC_FAIL;
+	}
+
+	/* ensure a large block can no longer be allocated */
+	block[1] = task_malloc(80);
+	if (block[1] != NULL) {
+		TC_ERROR("80 byte allocation did not fail\n");
+		return TC_FAIL;
+	}
+
+	/* ensure all remaining small blocks can be allocated */
+	for (j = 1; j < 4; j++) {
+		block[j] = task_malloc(16);
+		if (block[j] == NULL) {
+			TC_ERROR("16 byte allocation %d failed\n", j);
+			return TC_FAIL;
+		}
+	}
+
+	/* ensure a small block can no longer be allocated */
+	if (task_malloc(8) != NULL) {
+		TC_ERROR("8 byte allocation did not fail\n");
+		return TC_FAIL;
+	}
+
+	/* return the small blocks to pool in a "random" order */
+	task_free(block[2]);
+	task_free(block[0]);
+	task_free(block[3]);
+	task_free(block[1]);
+
+	/* allocate large block (triggers autodefragmentation) */
+	block[0] = task_malloc(100);
+	if (block[0] == NULL) {
+		TC_ERROR("100 byte allocation failed\n");
+		return TC_FAIL;
+	}
+
+	/* ensure a small block can no longer be allocated */
+	if (task_malloc(32) != NULL) {
+		TC_ERROR("32 byte allocation did not fail\n");
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+/**
+ *
  * @brief Main task in the test suite
  *
  * This is the entry point to the memory pool test suite.
@@ -470,6 +557,11 @@ void RegressionTask(void)
 
 	TC_PRINT("Testing task_mem_pool_defragment() ...\n");
 	tcRC = poolDefragTest();
+	if (tcRC != TC_PASS) {
+		goto doneTests;
+	}
+
+	tcRC = poolMallocTest();
 	if (tcRC != TC_PASS) {
 		goto doneTests;
 	}
