@@ -51,6 +51,7 @@ uname | grep -q MINGW && MINGW_OPT="-W"
 export ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${MINGW_OPT})
 
 scripts_path=${ZEPHYR_BASE}/scripts
+scripts_path=$(echo "/$scripts_path" | sed 's/\\/\//g' | sed 's/://')
 echo "${PATH}" | grep -q "${scripts_path}"
 [ $? != 0 ] && export PATH=${scripts_path}:${PATH}
 unset scripts_path
