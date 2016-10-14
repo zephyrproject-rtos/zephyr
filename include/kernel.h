@@ -998,6 +998,7 @@ extern int k_pipe_get(struct k_pipe *pipe, void *data,
 		      size_t bytes_to_read, size_t *bytes_read,
 		      size_t min_xfer, int32_t timeout);
 
+#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 /**
  * @brief Send a message to the specified pipe
  *
@@ -1016,6 +1017,7 @@ extern int k_pipe_get(struct k_pipe *pipe, void *data,
  */
 extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 			     size_t size, struct k_sem *sem);
+#endif
 
 /**
  *  memory management
