@@ -523,7 +523,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 				 bytes_to_write);
 }
 
-int k_pipe_get(struct k_pipe *pipe, void *buffer, size_t bytes_to_read,
+int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	       size_t *bytes_read, size_t min_xfer, int32_t timeout)
 {
 	struct k_thread    *writer;
@@ -554,7 +554,7 @@ int k_pipe_get(struct k_pipe *pipe, void *buffer, size_t bytes_to_read,
 	k_sched_lock();
 	irq_unlock(key);
 
-	num_bytes_read = _pipe_buffer_get(pipe, buffer, bytes_to_read);
+	num_bytes_read = _pipe_buffer_get(pipe, data, bytes_to_read);
 
 	/*
 	 * 1. 'xfer_list' currently contains a list of writer threads that can
@@ -574,7 +574,7 @@ int k_pipe_get(struct k_pipe *pipe, void *buffer, size_t bytes_to_read,
 				  sys_dlist_get(&xfer_list);
 	while (thread && (num_bytes_read < bytes_to_read)) {
 		desc = (struct k_pipe_desc *)thread->swap_data;
-		bytes_copied = _pipe_xfer(buffer + num_bytes_read,
+		bytes_copied = _pipe_xfer(data + num_bytes_read,
 					  bytes_to_read - num_bytes_read,
 					  desc->buffer, desc->bytes_to_xfer);
 
@@ -598,7 +598,7 @@ int k_pipe_get(struct k_pipe *pipe, void *buffer, size_t bytes_to_read,
 
 	if (writer && (num_bytes_read < bytes_to_read)) {
 		desc = (struct k_pipe_desc *)writer->swap_data;
-		bytes_copied = _pipe_xfer(buffer + num_bytes_read,
+		bytes_copied = _pipe_xfer(data + num_bytes_read,
 					  bytes_to_read - num_bytes_read,
 					  desc->buffer, desc->bytes_to_xfer);
 
@@ -647,7 +647,7 @@ int k_pipe_get(struct k_pipe *pipe, void *buffer, size_t bytes_to_read,
 
 	struct k_pipe_desc  pipe_desc;
 
-	pipe_desc.buffer        = buffer + num_bytes_read;
+	pipe_desc.buffer        = data + num_bytes_read;
 	pipe_desc.bytes_to_xfer = bytes_to_read - num_bytes_read;
 
 	if (timeout != K_NO_WAIT) {

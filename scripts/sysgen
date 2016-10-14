@@ -724,7 +724,7 @@ def kernel_main_c_pipes():
         for pipe in pipe_list:
             name = pipe[0]
             size = pipe[1]
-            kernel_main_c_out("K_PIPE_DEFINE(_k_pipe_obj_%s, %d);\n" %
+            kernel_main_c_out("K_PIPE_DEFINE(_k_pipe_obj_%s, %d, 4);\n" %
 	                      (name, size))
 
 

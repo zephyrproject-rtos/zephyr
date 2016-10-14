@@ -57,12 +57,12 @@ optional character buffer of type :c:type:`unsigned char`. It must then be
 initialized by calling :c:func:`k_pipe_init()`.
 
 The following code defines and initializes an empty pipe that has a ring
-buffer capable of holding 100 bytes.
+buffer capable of holding 100 bytes and is aligned to a 4-byte boundary.
 
 
 .. code-block:: c
 
-    unsigned char my_ring_buffer[100];
+    unsigned char __aligned(4) my_ring_buffer[100];
     struct k_pipe my_pipe;
 
     k_pipe_init(&my_pipe, my_ring_buffer, sizeof(my_ring_buffer));
@@ -75,7 +75,7 @@ that that macro defines both the pipe and its ring buffer.
 
 .. code-block:: c
 
-    K_PIPE_DEFINE(my_pipe, 100);
+    K_PIPE_DEFINE(my_pipe, 100, 4);
 
 Writing to a Pipe
 =================

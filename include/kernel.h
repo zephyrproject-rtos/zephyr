@@ -920,7 +920,7 @@ struct k_pipe {
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_pipe);
 };
 
-#define K_PIPE_INITIALIZER(obj, pipe_buffer_size, pipe_buffer)        \
+#define K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)        \
 	{                                                             \
 	.buffer = pipe_buffer,                                        \
 	.size = pipe_buffer_size,                                     \
@@ -932,10 +932,11 @@ struct k_pipe {
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT                            \
 	}
 
-#define K_PIPE_DEFINE(name, pipe_buffer_size)                           \
-	static unsigned char __noinit _k_pipe_buf_##name[pipe_buffer_size]; \
+#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)     \
+	static unsigned char __noinit __aligned(pipe_align)   \
+		_k_pipe_buf_##name[pipe_buffer_size];         \
 	struct k_pipe name =                                  \
-		K_PIPE_INITIALIZER(name, pipe_buffer_size, _k_pipe_buf_##name)
+		K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
  * @brief Runtime initialization of a pipe
@@ -954,48 +955,48 @@ extern void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer,
  *
  * This routine synchronously adds a message into the pipe specified by
  * @a pipe. It will wait up to @a timeout for the pipe to accept
- * @a num_bytes_to_write bytes of data. If by @a timeout, the pipe could not
- * accept @a min_bytes bytes of data, it fails. Fewer than @a min_bytes will
+ * @a bytes_to_write bytes of data. If by @a timeout, the pipe could not
+ * accept @a min_xfer bytes of data, it fails. Fewer than @a min_xfer will
  * only ever be written to the pipe if K_NO_WAIT < @a timeout < K_FOREVER.
  *
  * @param pipe Pointer to the pipe
- * @param buffer Data to put into the pipe
- * @param num_bytes_to_write Desired number of bytes to put into the pipe
- * @param num_bytes_written Number of bytes the pipe accepted
- * @param min_bytes Minimum number of bytes accepted for success
+ * @param data Data to put into the pipe
+ * @param bytes_to_write Desired number of bytes to put into the pipe
+ * @param bytes_written Number of bytes the pipe accepted
+ * @param min_xfer Minimum number of bytes accepted for success
  * @param timeout Maximum number of milliseconds to wait
  *
- * @retval 0 At least @a min_bytes were sent
+ * @retval 0 At least @a min_xfer were sent
  * @retval -EIO Request can not be satisfied (@a timeout is K_NO_WAIT)
- * @retval -EAGAIN Fewer than @a min_bytes were sent
+ * @retval -EAGAIN Fewer than @a min_xfer were sent
  */
-extern int k_pipe_put(struct k_pipe *pipe, void *buffer,
-		      size_t num_bytes_to_write, size_t *num_bytes_written,
-		      size_t min_bytes, int32_t timeout);
+extern int k_pipe_put(struct k_pipe *pipe, void *data,
+		      size_t bytes_to_write, size_t *bytes_written,
+		      size_t min_xfer, int32_t timeout);
 
 /**
  * @brief Get a message from the specified pipe
  *
  * This routine synchronously retrieves a message from the pipe specified by
- * @a pipe. It will wait up to @a timeout to retrieve @a num_bytes_to_read
+ * @a pipe. It will wait up to @a timeout to retrieve @a bytes_to_read
  * bytes of data from the pipe. If by @a timeout, the pipe could not retrieve
- * @a min_bytes bytes of data, it fails. Fewer than @a min_bytes will
+ * @a min_xfer bytes of data, it fails. Fewer than @a min_xfer will
  * only ever be retrieved from the pipe if K_NO_WAIT < @a timeout < K_FOREVER.
  *
  * @param pipe Pointer to the pipe
- * @param buffer Location to place retrieved data
- * @param num_bytes_to_read Desired number of bytes to retrieve from the pipe
- * @param num_bytes_read Number of bytes retrieved from the pipe
- * @param min_bytes Minimum number of bytes retrieved for success
+ * @param data Location to place retrieved data
+ * @param bytes_to_read Desired number of bytes to retrieve from the pipe
+ * @param bytes_read Number of bytes retrieved from the pipe
+ * @param min_xfer Minimum number of bytes retrieved for success
  * @param timeout Maximum number of milliseconds to wait
  *
- * @retval 0 At least @a min_bytes were transferred
+ * @retval 0 At least @a min_xfer were transferred
  * @retval -EIO Request can not be satisfied (@a timeout is K_NO_WAIT)
- * @retval -EAGAIN Fewer than @a min_bytes were retrieved
+ * @retval -EAGAIN Fewer than @a min_xfer were retrieved
  */
-extern int k_pipe_get(struct k_pipe *pipe, void *buffer,
-		      size_t num_bytes_to_read, size_t *num_bytes_read,
-		      size_t min_bytes, int32_t timeout);
+extern int k_pipe_get(struct k_pipe *pipe, void *data,
+		      size_t bytes_to_read, size_t *bytes_read,
+		      size_t min_xfer, int32_t timeout);
 
 /**
  * @brief Send a message to the specified pipe

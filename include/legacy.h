@@ -567,7 +567,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
 }
 
 #define DEFINE_PIPE(name, pipe_buffer_size) \
-	K_PIPE_DEFINE(_k_pipe_obj_##name, pipe_buffer_size); \
+	K_PIPE_DEFINE(_k_pipe_obj_##name, pipe_buffer_size, 4); \
 	struct k_pipe * const name = &_k_pipe_obj_##name
 
 #define nano_fifo k_fifo
