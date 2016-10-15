@@ -25,7 +25,7 @@
 #include <nanokernel.h>
 #include <gpio.h>
 
-#include "sensor_hp206c.h"
+#include "hp206c.h"
 
 static inline int hp206c_bus_config(struct device *dev)
 {
