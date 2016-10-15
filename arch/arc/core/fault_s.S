@@ -44,10 +44,18 @@ GTEXT(__ev_extension)
 GTEXT(__ev_div_zero)
 GTEXT(__ev_dc_error)
 GTEXT(__ev_maligned)
-GDATA(_firq_stack)
 
 SECTION_VAR(BSS, saved_stack_pointer)
 	.word 0
+
+#if CONFIG_RGF_NUM_BANKS == 1
+GDATA(_exception_stack)
+SECTION_VAR(NOINIT, _exception_stack)
+	.space 512
+/* note: QUARK_SE_C1000_SS can't afford 512B */
+#else
+GDATA(_firq_stack)
+#endif
 
 #if CONFIG_NUM_IRQ_PRIO_LEVELS == 1
 #error "NUM_IRQ_PRIO_LEVELS==1 is not supported."
@@ -80,10 +88,8 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 
 	/*
 	 * Before invoking exception handler, the kernel switches to an exception
-	 * stack, which is really the FIRQ stack, to save the faulting thread's
-	 * registers. It can use the FIRQ stack because it knows it is unused
-	 * since it is save to assume that if an exception has happened in FIRQ
-	 * handler, the problem is fatal and all the kernel can do is just print
+	 * stack, to save the faulting thread's registers.
+	 * The exception is fatal and all the kernel can do is just print
 	 * a diagnostic message and halt.
 	 */
 
@@ -97,8 +103,13 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 #endif
 
 	st sp, [saved_stack_pointer]
+#if CONFIG_RGF_NUM_BANKS == 1
+	mov_s sp, _exception_stack
+	add sp, sp, 512
+#else
 	mov_s sp, _firq_stack
 	add sp, sp, CONFIG_FIRQ_STACK_SIZE
+#endif
 
 	/* save caller saved registers */
 	_create_irq_stack_frame
@@ -123,10 +134,8 @@ GTEXT(_irq_do_offload);
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	/*
 	 * Before invoking exception handler, the kernel switches to an exception
-	 * stack, which is really the FIRQ stack, to save the faulting thread's
-	 * registers. It can use the FIRQ stack because it knows it is unused
-	 * since it is safe to assume that if an exception has happened in FIRQ
-	 * handler, the problem is fatal and all the kernel can do is just print
+	 * stack to save the faulting thread's registers.
+	 * The exception is fatal and all the kernel can do is just print
 	 * a diagnostic message and halt.
 	 */
 
@@ -141,8 +150,13 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 
 #ifndef CONFIG_MICROKERNEL
 	st sp, [saved_stack_pointer]
+#if CONFIG_RGF_NUM_BANKS == 1
+	mov_s sp, _exception_stack
+	add sp, sp, 512
+#else
 	mov_s sp, _firq_stack
 	add sp, sp, CONFIG_FIRQ_STACK_SIZE
+#endif
 #endif
 
 	/* save caller saved registers */

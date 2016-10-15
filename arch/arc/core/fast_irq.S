@@ -34,10 +34,15 @@
 GTEXT(_firq_enter)
 GTEXT(_firq_exit)
 GTEXT(_firq_stack_setup)
+
+#if CONFIG_RGF_NUM_BANKS != 1
 GDATA(_firq_stack)
 
 SECTION_VAR(NOINIT, _firq_stack)
 	.space CONFIG_FIRQ_STACK_SIZE
+#else
+GDATA(saved_r0)
+#endif
 
 /**
  *
@@ -63,10 +68,13 @@ SECTION_VAR(NOINIT, _firq_stack)
 
 SECTION_FUNC(TEXT, _firq_enter)
 
-	/*
-	 * ATTENTION:
-	 * firq uses a 2nd register bank so GPRs do not need to be saved.
-	 */
+/*
+ * ATTENTION:
+ * If CONFIG_RGF_NUM_BANKS>1, firq uses a 2nd register bank so GPRs do
+ * not need to be saved.
+ * If CONFIG_RGF_NUM_BANKS==1, firq must use the stack to save registers.
+ * This has already been done by _isr_enter.
+ */
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* disable stack checking */
@@ -75,6 +83,7 @@ SECTION_FUNC(TEXT, _firq_enter)
 	kflag r2
 #endif
 
+#if CONFIG_RGF_NUM_BANKS != 1
 #ifndef CONFIG_FIRQ_NO_LPCC
 	/*
 	 * Save LP_START/LP_COUNT/LP_END because called handler might use.
@@ -84,6 +93,7 @@ SECTION_FUNC(TEXT, _firq_enter)
 	mov r23,lp_count
 	lr r24, [_ARC_V2_LP_START]
 	lr r25, [_ARC_V2_LP_END]
+#endif
 #endif
 
 	j @_isr_demux
@@ -97,11 +107,13 @@ SECTION_FUNC(TEXT, _firq_enter)
 
 SECTION_FUNC(TEXT, _firq_exit)
 
+#if CONFIG_RGF_NUM_BANKS != 1
 #ifndef CONFIG_FIRQ_NO_LPCC
 	/* restore lp_count, lp_start, lp_end from r23-r25 */
 	mov lp_count,r23
 	sr r24, [_ARC_V2_LP_START]
 	sr r25, [_ARC_V2_LP_END]
+#endif
 #endif
 
 	mov_s r1, _nanokernel
@@ -120,6 +132,32 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 	breq r3, 1, _check_if_current_is_the_task
 
+#if CONFIG_RGF_NUM_BANKS == 1
+_firq_scratch_restore:
+	add sp,sp,4 /* don't need r0 from stack */
+	pop_s r1
+	pop_s r2
+	pop_s r3
+	pop r4
+	pop r5
+	pop r6
+	pop r7
+	pop r8
+	pop r9
+	pop r10
+	pop r11
+	pop_s r12
+	pop_s r13
+	pop_s blink
+	pop_s r0
+	sr r0, [_ARC_V2_LP_END]
+	pop_s r0
+	sr r0, [_ARC_V2_LP_START]
+	pop_s r0
+	mov lp_count,r0
+	ld r0,[saved_r0]
+	add sp,sp,8 /* don't need ilink & status32_po from stack */
+#endif
 	rtie
 
 #endif
@@ -130,17 +168,26 @@ _check_if_current_is_the_task:
 	ld_s r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
 	bnz _check_if_a_fiber_is_ready
+#if CONFIG_RGF_NUM_BANKS == 1
+	b _firq_scratch_restore
+#else
 	rtie
+#endif
 
 .balign 4
 _check_if_a_fiber_is_ready:
 	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
 	brne r0, 0, _firq_reschedule
+#if CONFIG_RGF_NUM_BANKS == 1
+	b _firq_scratch_restore
+#else
 	rtie
+#endif
 
 .balign 4
 _firq_reschedule:
 
+#if CONFIG_RGF_NUM_BANKS != 1
 	/*
 	 * We know there is no interrupted interrupt of lower priority at this
 	 * point, so when switching back to register bank 0, it will contain the
@@ -164,6 +211,7 @@ _firq_reschedule:
 	st_s r0, [sp, __tISF_status32_OFFSET]
 
 	st ilink, [sp, __tISF_pc_OFFSET] /* ilink into pc */
+#endif
 
 	mov_s r1, _nanokernel
 	ld_s r2, [r1, __tNANO_current_OFFSET]
@@ -245,13 +293,14 @@ _firq_no_reschedule:
 
 /**
  *
- * @brief Install the FIRQ stack in register bank 1
+ * @brief Install the FIRQ stack in register bank 1 if CONFIG_RGF_NUM_BANK!=1
  *
  * @return N/A
  */
 
 SECTION_FUNC(TEXT, _firq_stack_setup)
 
+#if CONFIG_RGF_NUM_BANKS != 1
 	lr r0, [_ARC_V2_STATUS32]
 	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
 	or r0, r0, _ARC_V2_STATUS32_RB(1)
@@ -267,5 +316,6 @@ SECTION_FUNC(TEXT, _firq_stack_setup)
 	lr r0, [_ARC_V2_STATUS32]
 	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
 	kflag r0
+#endif
 
 	j_s [blink]

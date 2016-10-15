@@ -35,6 +35,13 @@
 GTEXT(_isr_enter)
 GTEXT(_isr_demux)
 
+#if CONFIG_RGF_NUM_BANKS == 1
+GDATA(saved_r0)
+
+SECTION_VAR(BSS, saved_r0)
+        .word 0
+#endif
+
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 GTEXT(_power_save_idle_exit)
 #endif
@@ -94,16 +101,23 @@ official documentation calls the regular interrupts 'IRQs', but the internals
 of the kernel call them 'RIRQs' to differentiate from the 'irq' subsystem,
 which is the interrupt API/layer of abstraction.
 
-FIRQs can be used to allow ISRs to run without having to save any context,
-since they work with a second register bank. However, they can be somewhat more
-limited than RIRQs since the register bank does not copy every possible
-register that is needed to implement all available instructions: an example is
-that the 'loop' registers (lp_count, lp_end, lp_start) are not present in the
-second bank. The kernel thus takes upon itself to save these extra registers,
-if the FIRQ is made known to the kernel. It is possible for a FIRQ to operate
-outside of the kernel, but care must be taken to only use instructions that
-only use the banked registers. RIRQs must always use the kernel's interrupt
-entry and exit mechanisms.
+For FIRQ, there are two cases, depending upon the value of
+CONFIG_RGF_NUM_BANKS.
+
+CONFIG_RGF_NUM_BANKS==1 case:
+Scratch registers are pushed onto the current stack just as they are with
+RIRQ. See the above frame layout. Unlike RIRQ, the status32_p0 and ilink
+registers are where status32 and the program counter are located, so these
+need to be pushed.
+
+CONFIG_RGF_NUM_BANKS!=1 case:
+The FIRQ handler has its own register bank for general purpose registers,
+and thus it doesn't have to save them on a stack. The 'loop' registers
+(lp_count, lp_end, lp_start), however, are not present in the
+second bank. The handler saves these special registers in unused callee saved
+registers (to avoid stack accesses). It is possible to register a FIRQ
+handler that operates outside of the kernel, but care must be taken to only
+use instructions that only use the banked registers.
 
 The kernel is able to handle transitions to and from FIRQ, RIRQ and threads
 (fibers/task). The contexts are saved 'lazily': the minimum amount of work is
@@ -124,14 +138,24 @@ o FIRQ
   the FIRQ does not take a scheduling decision and leaves it the RIRQ to
   handle. This limits the amount of code that has to run at interrupt-level.
 
-  GPRs are banked, loop registers are saved in a global structure upon
-  interrupt entry. If returning to a fiber, loop registers are poppped and the
+  CONFIG_RGF_NUM_BANKS==1 case:
+  Registers are saved on the stack frame just as they are for RIRQ.
+  Context switch can happen just as it does in the RIRQ case, however,
+  if the FIRQ interrupted a RIRQ, the FIRQ will return from interrupt and
+  let the RIRQ do the context switch.  At entry, one register is needed in order
+  to have code to save other registers. r0 is saved first in a global called
+  saved_r0.
+
+  CONFIG_RGF_NUM_BANKS!=1 case:
+  During early initialization, the sp in the 2nd register bank is made to
+  refer to _firq_stack. This allows for the FIRQ handler to use its own stack.
+  GPRs are banked, loop registers are saved in unused callee saved regs upon
+  interrupt entry. If returning to a fiber, loop registers are restored and the
   CPU switches back to bank 0 for the GPRs. If a context switch is
   needed, at this point only are all the registers saved. First, a
   stack frame with the same layout as the automatic RIRQ one is created
   and then the callee-saved GPRs are saved in the TCS. status32_p0 and
   ilink are saved in this case, not status32 and pc.
-
   To create the stack frame, the FIRQ handling code must first go back to using
   bank0 of registers, since that is where the registers containing the exiting
   thread are saved. Care must be taken not to touch any register before saving
@@ -161,8 +185,10 @@ From coop:
 
 From FIRQ:
 
-  The processor is back to using bank0, not bank1 anymore, because it had to
-  save the outgoing context from bank0, and now has to load the incoming one
+  When CONFIG_RGF_NUM_BANKS==1, context switch is done as it is for RIRQ.
+  When CONFIG_RGF_NUM_BANKS!=1, the processor is put back to using bank0,
+  not bank1 anymore, because it had to save the outgoing context from bank0,
+  and now has to load the incoming one
   into bank0.
 
   o to coop
@@ -202,16 +228,55 @@ From RIRQ:
  */
 
 SECTION_FUNC(TEXT, _isr_enter)
+#if CONFIG_RGF_NUM_BANKS == 1
+	st r0,[saved_r0]
+#endif
 	lr r0, [_ARC_V2_AUX_IRQ_ACT]
 	ffs r0, r0
 	cmp r0, 0
-
+#if CONFIG_RGF_NUM_BANKS == 1
+	bnz rirq_path
+	/* 1-register bank FIRQ handling must save registers on stack */
+	lr r0,[_ARC_V2_STATUS32_P0]
+	push_s r0
+	mov r0,ilink
+	push_s r0
+	mov r0,lp_count
+	push_s r0
+	lr r0, [_ARC_V2_LP_START]
+	push_s r0
+	lr r0, [_ARC_V2_LP_END]
+	push_s r0
+	push_s blink
+	push_s r13
+	push_s r12
+	push r11
+	push r10
+	push r9
+	push r8
+	push r7
+	push r6
+	push r5
+	push r4
+	push_s r3
+	push_s r2
+	push_s r1
+	ld r0,[saved_r0]
+	push_s r0
+	mov r3, _firq_exit
+	mov r2, _firq_enter
+	j_s [r2]
+rirq_path:
+	mov r3, _rirq_exit
+	mov r2, _rirq_enter
+	j_s [r2]
+#else
 	mov.z r3, _firq_exit
 	mov.z r2, _firq_enter
 	mov.nz r3, _rirq_exit
 	mov.nz r2, _rirq_enter
-
 	j_s [r2]
+#endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 GTEXT(_sys_k_event_logger_exit_sleep)
