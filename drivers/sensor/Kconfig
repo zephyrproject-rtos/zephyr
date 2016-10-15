@@ -66,7 +66,7 @@ source "drivers/sensor/dht/Kconfig"
 
 source "drivers/sensor/hdc1008/Kconfig"
 
-source "drivers/sensor/Kconfig.hmc5883l"
+source "drivers/sensor/hmc5883l/Kconfig"
 
 source "drivers/sensor/Kconfig.hp206c"
 

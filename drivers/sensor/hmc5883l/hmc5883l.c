@@ -21,7 +21,7 @@
 #include <sensor.h>
 #include <string.h>
 
-#include "sensor_hmc5883l.h"
+#include "hmc5883l.h"
 
 static void hmc5883l_convert(struct sensor_value *val, int16_t raw_val,
 			     uint16_t divider)

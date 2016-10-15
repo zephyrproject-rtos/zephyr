@@ -21,7 +21,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_hmc5883l.h"
+#include "hmc5883l.h"
 
 int hmc5883l_trigger_set(struct device *dev,
 			 const struct sensor_trigger *trig,
