@@ -60,7 +60,7 @@ source "drivers/sensor/bme280/Kconfig"
 
 source "drivers/sensor/bmg160/Kconfig"
 
-source "drivers/sensor/Kconfig.bmi160"
+source "drivers/sensor/bmi160/Kconfig"
 
 source "drivers/sensor/Kconfig.dht"
 

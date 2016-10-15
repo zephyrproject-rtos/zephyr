@@ -25,7 +25,7 @@
 #include <ipm/ipm_quark_se.h>
 #endif
 
-#include "sensor_bmi160.h"
+#include "bmi160.h"
 
 static void bmi160_handle_anymotion(struct device *dev)
 {

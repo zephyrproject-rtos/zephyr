@@ -25,7 +25,7 @@
 #include <nanokernel.h>
 #include <misc/__assert.h>
 
-#include "sensor_bmi160.h"
+#include "bmi160.h"
 
 struct bmi160_device_data bmi160_data;
 
