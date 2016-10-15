@@ -19,7 +19,7 @@
 #include <sensor.h>
 #include <misc/__assert.h>
 
-#include "sensor_lis3dh.h"
+#include "lis3dh.h"
 
 static void lis3dh_convert(struct sensor_value *val, int64_t raw_val)
 {

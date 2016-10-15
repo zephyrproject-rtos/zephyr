@@ -20,7 +20,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_lis3dh.h"
+#include "lis3dh.h"
 
 int lis3dh_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,

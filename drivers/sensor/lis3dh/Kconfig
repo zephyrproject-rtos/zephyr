@@ -1,4 +1,4 @@
-# Kconfig.lis3dh - LIS3DH Three Axis Accelerometer configuration options
+# Kconfig - LIS3DH Three Axis Accelerometer configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation
