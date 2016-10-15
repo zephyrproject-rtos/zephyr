@@ -27,6 +27,10 @@
 #define SW1_GPIO_PIN	5
 #define SW1_GPIO_NAME	CONFIG_GPIO_QMSI_0_NAME
 
+/* Onboard LED */
+#define LED0_GPIO_PORT  CONFIG_GPIO_QMSI_0_NAME
+#define LED0_GPIO_PIN   25
+
 #if defined(CONFIG_NETWORKING_WITH_15_4_TI_CC2520)
 
 /* GPIO numbers where the TI cc2520 chip is connected to */
