@@ -19,7 +19,7 @@
 #include <misc/byteorder.h>
 #include <sensor.h>
 
-#include "sensor_mpu6050.h"
+#include "mpu6050.h"
 
 /* see "Accelerometer Measurements" section from register map description */
 static void mpu6050_convert_accel(struct sensor_value *val, int16_t raw_val,

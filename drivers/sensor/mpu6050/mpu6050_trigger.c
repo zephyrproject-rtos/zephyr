@@ -20,7 +20,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_mpu6050.h"
+#include "mpu6050.h"
 
 int mpu6050_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,

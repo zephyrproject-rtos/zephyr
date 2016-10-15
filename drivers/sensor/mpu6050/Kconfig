@@ -1,4 +1,4 @@
-# Kconfig.mpu6050 - MPU6050 Six-Axis Motion Tracking device configuration options
+# Kconfig - MPU6050 Six-Axis Motion Tracking device configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

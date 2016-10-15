@@ -90,7 +90,7 @@ source "drivers/sensor/max44009/Kconfig"
 
 source "drivers/sensor/mcp9808/Kconfig"
 
-source "drivers/sensor/Kconfig.mpu6050"
+source "drivers/sensor/mpu6050/Kconfig"
 
 source "drivers/sensor/Kconfig.sht3xd"
 
