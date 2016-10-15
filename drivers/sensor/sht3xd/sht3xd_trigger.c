@@ -19,7 +19,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_sht3xd.h"
+#include "sht3xd.h"
 
 static uint16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
 {

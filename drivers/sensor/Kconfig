@@ -92,7 +92,7 @@ source "drivers/sensor/mcp9808/Kconfig"
 
 source "drivers/sensor/mpu6050/Kconfig"
 
-source "drivers/sensor/Kconfig.sht3xd"
+source "drivers/sensor/sht3xd/Kconfig"
 
 source "drivers/sensor/Kconfig.sx9500"
 

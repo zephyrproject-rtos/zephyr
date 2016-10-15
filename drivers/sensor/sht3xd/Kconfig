@@ -1,4 +1,4 @@
-# Kconfig.sht3xd - SHT3xD temperature and humidity sensor configuration options
+# Kconfig - SHT3xD temperature and humidity sensor configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

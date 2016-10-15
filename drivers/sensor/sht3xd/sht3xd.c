@@ -20,7 +20,7 @@
 #include <sensor.h>
 #include <misc/__assert.h>
 
-#include "sensor_sht3xd.h"
+#include "sht3xd.h"
 
 /*
  * CRC algorithm parameters were taken from the
