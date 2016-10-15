@@ -24,7 +24,7 @@
 
  #include <gpio.h>
 
- #include "sensor_lsm9ds0_gyro.h"
+ #include "lsm9ds0_gyro.h"
 
 extern struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 

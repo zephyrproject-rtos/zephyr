@@ -1,4 +1,4 @@
-# Kconfig.lsm9ds0_gyro - LSM9DS0 gyroscope sensor configuration options
+# Kconfig - LSM9DS0 gyroscope sensor configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

@@ -25,7 +25,7 @@
 
 #include <gpio.h>
 
-#include "sensor_lsm9ds0_gyro.h"
+#include "lsm9ds0_gyro.h"
 
 static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 					  int x_en, int y_en, int z_en)

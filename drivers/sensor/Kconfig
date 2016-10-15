@@ -82,7 +82,7 @@ source "drivers/sensor/lps25hb/Kconfig"
 
 source "drivers/sensor/lsm6ds0/Kconfig"
 
-source "drivers/sensor/Kconfig.lsm9ds0_gyro"
+source "drivers/sensor/lsm9ds0_gyro/Kconfig"
 
 source "drivers/sensor/Kconfig.lsm9ds0_mfd"
 
