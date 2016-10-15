@@ -2,8 +2,7 @@ ccflags-y +=-I$(srctree)/drivers
 
 obj-$(CONFIG_AK8975) += ak8975/
 obj-$(CONFIG_BMA280) += bma280/
-obj-$(CONFIG_BMC150_MAGN) += sensor_bmc150_magn.o
-obj-$(CONFIG_BMC150_MAGN_TRIGGER_DRDY) += sensor_bmc150_magn_trigger.o
+obj-$(CONFIG_BMC150_MAGN) += bmc150_magn/
 obj-$(CONFIG_BME280) += sensor_bme280.o
 obj-$(CONFIG_BMG160) += sensor_bmg160.o
 obj-$(CONFIG_BMG160_TRIGGER) += sensor_bmg160_trigger.o

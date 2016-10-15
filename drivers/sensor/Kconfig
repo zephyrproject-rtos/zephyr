@@ -54,7 +54,7 @@ source "drivers/sensor/ak8975/Kconfig"
 
 source "drivers/sensor/bma280/Kconfig"
 
-source "drivers/sensor/Kconfig.bmc150_magn"
+source "drivers/sensor/bmc150_magn/Kconfig"
 
 source "drivers/sensor/Kconfig.bme280"
 

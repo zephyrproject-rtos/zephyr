@@ -28,7 +28,7 @@
 
 #include <gpio.h>
 
-#include "sensor_bmc150_magn.h"
+#include "bmc150_magn.h"
 
 static const struct {
 	int freq;

@@ -1,4 +1,4 @@
-# Kconfig.bmc150_magn - BMC150 magnetometer sensor configuration options
+# Kconfig - BMC150 magnetometer sensor configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

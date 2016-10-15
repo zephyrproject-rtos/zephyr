@@ -20,7 +20,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_bmc150_magn.h"
+#include "bmc150_magn.h"
 
 extern struct bmc150_magn_data bmc150_magn_data;
 
