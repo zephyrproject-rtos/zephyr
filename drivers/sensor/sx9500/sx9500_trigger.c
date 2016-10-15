@@ -21,7 +21,7 @@
 #include <sensor.h>
 #include <gpio.h>
 #include <misc/util.h>
-#include "sensor_sx9500.h"
+#include "sx9500.h"
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
 static char __stack sx9500_fiber_stack[CONFIG_SX9500_FIBER_STACK_SIZE];

@@ -25,7 +25,7 @@
 #include <gpio.h>
 #include <misc/__assert.h>
 
-#include "sensor_sx9500.h"
+#include "sx9500.h"
 
 static uint8_t sx9500_reg_defaults[] = {
 	/*
