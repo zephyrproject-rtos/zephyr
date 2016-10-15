@@ -1,4 +1,4 @@
-# Kconfig.mcp9808 - MCP9808 temperature sensor configuration options
+# Kconfig - MCP9808 temperature sensor configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

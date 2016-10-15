@@ -88,7 +88,7 @@ source "drivers/sensor/lsm9ds0_mfd/Kconfig"
 
 source "drivers/sensor/max44009/Kconfig"
 
-source "drivers/sensor/Kconfig.mcp9808"
+source "drivers/sensor/mcp9808/Kconfig"
 
 source "drivers/sensor/Kconfig.mpu6050"
 

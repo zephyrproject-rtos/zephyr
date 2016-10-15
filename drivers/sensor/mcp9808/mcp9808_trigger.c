@@ -22,7 +22,7 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
-#include "sensor_mcp9808.h"
+#include "mcp9808.h"
 
 static int mcp9808_reg_write(struct mcp9808_data *data, uint8_t reg, uint16_t val)
 {
