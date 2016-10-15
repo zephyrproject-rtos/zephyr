@@ -21,7 +21,7 @@
 #include <sensor.h>
 #include <string.h>
 
-#include "sensor_lis3mdl.h"
+#include "lis3mdl.h"
 
 static void lis3mdl_convert(struct sensor_value *val, int16_t raw_val,
 			    uint16_t divider)

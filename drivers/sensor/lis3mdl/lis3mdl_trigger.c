@@ -21,7 +21,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_lis3mdl.h"
+#include "lis3mdl.h"
 
 int lis3mdl_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
