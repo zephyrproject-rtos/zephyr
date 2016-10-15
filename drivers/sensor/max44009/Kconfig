@@ -1,4 +1,4 @@
-# Kconfig.max44009 - MAX44009 light sensor configuration options
+# Kconfig - MAX44009 light sensor configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

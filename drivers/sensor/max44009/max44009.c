@@ -19,7 +19,7 @@
 #include <sensor.h>
 #include <misc/__assert.h>
 
-#include "sensor_max44009.h"
+#include "max44009.h"
 
 static int max44009_reg_read(struct max44009_data *drv_data, uint8_t reg,
 			     uint8_t *val, bool send_stop)
