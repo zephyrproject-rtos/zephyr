@@ -50,7 +50,7 @@ config SENSOR_INIT_PRIORITY
 	help
 	 Sensor initialization priority.
 
-source "drivers/sensor/Kconfig.ak8975"
+source "drivers/sensor/ak8975/Kconfig"
 
 source "drivers/sensor/Kconfig.bma280"
 

@@ -22,7 +22,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
-#include "sensor_ak8975.h"
+#include "ak8975.h"
 
 static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

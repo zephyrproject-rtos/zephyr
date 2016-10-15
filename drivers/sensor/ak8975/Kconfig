@@ -1,4 +1,4 @@
-# Kconfig.ak8975 - AK8975 magnetometer configuration options
+# Kconfig - AK8975 magnetometer configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation
