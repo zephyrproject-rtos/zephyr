@@ -58,7 +58,7 @@ source "drivers/sensor/bmc150_magn/Kconfig"
 
 source "drivers/sensor/bme280/Kconfig"
 
-source "drivers/sensor/Kconfig.bmg160"
+source "drivers/sensor/bmg160/Kconfig"
 
 source "drivers/sensor/Kconfig.bmi160"
 

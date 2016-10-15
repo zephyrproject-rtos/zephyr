@@ -23,7 +23,7 @@
 #include <misc/byteorder.h>
 #include <nanokernel.h>
 
-#include "sensor_bmg160.h"
+#include "bmg160.h"
 
 struct bmg160_device_data bmg160_data;
 

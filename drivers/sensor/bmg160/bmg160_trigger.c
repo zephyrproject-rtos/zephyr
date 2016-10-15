@@ -21,7 +21,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_bmg160.h"
+#include "bmg160.h"
 
 extern struct bmg160_device_data bmg160_data;
 
