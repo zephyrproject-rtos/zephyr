@@ -1,4 +1,4 @@
-# Kconfig.hdc1008 - HDC1008 temperature and humidity sensor configuration options
+# Kconfig - HDC1008 temperature and humidity sensor configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

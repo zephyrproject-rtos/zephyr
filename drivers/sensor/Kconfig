@@ -64,7 +64,7 @@ source "drivers/sensor/bmi160/Kconfig"
 
 source "drivers/sensor/dht/Kconfig"
 
-source "drivers/sensor/Kconfig.hdc1008"
+source "drivers/sensor/hdc1008/Kconfig"
 
 source "drivers/sensor/Kconfig.hmc5883l"
 

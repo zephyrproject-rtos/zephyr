@@ -22,7 +22,7 @@
 #include <misc/util.h>
 #include <misc/__assert.h>
 
-#include "sensor_hdc1008.h"
+#include "hdc1008.h"
 
 static void hdc1008_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
