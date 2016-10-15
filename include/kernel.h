@@ -810,16 +810,88 @@ struct k_sem {
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_sem);
 };
 
+/**
+ * @brief Initialize a semaphore object.
+ *
+ * An initial count and a count limit can be specified. The count will never go
+ * over the count limit if the semaphore is given multiple times without being
+ * taken.
+ *
+ * Cannot be called from ISR.
+ *
+ * @param sem Pointer to a semaphore object.
+ * @param initial_count Initial count.
+ * @param limit Highest value the count can take during operation.
+ *
+ * @return N/A
+ */
 extern void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 			unsigned int limit);
+
+/**
+ * @brief Take a semaphore, possibly pending if not available.
+ *
+ * The current execution context tries to obtain the semaphore. If the
+ * semaphore is unavailable and a timeout other than K_NO_WAIT is specified,
+ * the context will pend.
+ *
+ * @param sem Pointer to a semaphore object.
+ * @param timeout Number of milliseconds to wait if semaphore is unavailable,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @warning If it is called from the context of an ISR, then the only legal
+ * value for @a timeout is K_NO_WAIT.
+ *
+ * @retval 0 When semaphore is obtained successfully.
+ * @retval -EAGAIN When timeout expires.
+ * @retval -EBUSY When unavailable and the timeout is K_NO_WAIT.
+ *
+ * @sa K_NO_WAIT, K_FOREVER
+ */
 extern int k_sem_take(struct k_sem *sem, int32_t timeout);
+
+/**
+ * @brief Give a semaphore.
+ *
+ * Increase the semaphore's internal count by 1, up to its limit, if no thread
+ * is waiting on the semaphore; otherwise, wake up the first thread in the
+ * semaphore's waiting queue.
+ *
+ * If the latter case, and if the current context is preemptible, the thread
+ * that is taken off the wait queue will be scheduled in and will preempt the
+ * current thread.
+ *
+ * @param sem Pointer to a semaphore object.
+ *
+ * @return N/A
+ */
 extern void k_sem_give(struct k_sem *sem);
 
+/**
+ * @brief Reset a semaphore's count to zero.
+ *
+ * The only effect is that the count is set to zero. There is no other
+ * side-effect to calling this function.
+ *
+ * @param sem Pointer to a semaphore object.
+ *
+ * @return N/A
+ */
 static inline void k_sem_reset(struct k_sem *sem)
 {
 	sem->count = 0;
 }
 
+/**
+ * @brief Get a semaphore's count.
+ *
+ * Note there is no guarantee the count has not changed by the time this
+ * function returns.
+ *
+ * @param sem Pointer to a semaphore object.
+ *
+ * @return The current semaphore count.
+ */
 static inline unsigned int k_sem_count_get(struct k_sem *sem)
 {
 	return sem->count;
@@ -838,11 +910,14 @@ static inline unsigned int k_sem_count_get(struct k_sem *sem)
  *
  * @param sem_array Array of semaphore pointers terminated by a K_END entry
  * @param sem Identifies the semaphore that was taken
- * @param timeout Maximum number of milliseconds to wait
+ * @param timeout Number of milliseconds to wait if semaphores are unavailable,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 A semaphore was successfully taken
  * @retval -EBUSY No semaphore was available (@a timeout = K_NO_WAIT)
  * @retval -EAGAIN Time out occurred while waiting for semaphore
+ *
+ * @sa K_NO_WAIT, K_FOREVER
  */
 
 extern int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
@@ -881,6 +956,21 @@ extern void k_sem_group_reset(struct k_sem *sem_array[]);
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
+/**
+ * @def K_SEM_DEFINE
+ *
+ * @brief Statically define and initialize a global semaphore.
+ *
+ * Create a global semaphore named @name. It is initialized as if k_sem_init()
+ * was called on it. If the semaphore is to be accessed outside the module
+ * where it is defined, it can be declared via
+ *
+ *    extern struct k_sem @name;
+ *
+ * @param name Name of the semaphore variable.
+ * @param initial_count Initial count.
+ * @param count_limit Highest value the count can take during operation.
+ */
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
 	struct k_sem name = \
 		K_SEM_INITIALIZER(name, initial_count, count_limit)
