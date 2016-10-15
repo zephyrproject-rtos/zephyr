@@ -1,4 +1,4 @@
-# Kconfig.bma280 - BMA280 Three Axis Accelerometer configuration options
+# Kconfig - BMA280 Three Axis Accelerometer configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

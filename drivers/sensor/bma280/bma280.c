@@ -19,7 +19,7 @@
 #include <sensor.h>
 #include <misc/__assert.h>
 
-#include "sensor_bma280.h"
+#include "bma280.h"
 
 static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

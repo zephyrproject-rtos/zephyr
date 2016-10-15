@@ -52,7 +52,7 @@ config SENSOR_INIT_PRIORITY
 
 source "drivers/sensor/ak8975/Kconfig"
 
-source "drivers/sensor/Kconfig.bma280"
+source "drivers/sensor/bma280/Kconfig"
 
 source "drivers/sensor/Kconfig.bmc150_magn"
 

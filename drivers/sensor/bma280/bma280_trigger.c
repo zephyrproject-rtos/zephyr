@@ -20,7 +20,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_bma280.h"
+#include "bma280.h"
 
 int bma280_attr_set(struct device *dev,
 		    enum sensor_channel chan,
