@@ -27,7 +27,7 @@
 
 #include <gpio.h>
 
-#include "sensor_lsm9ds0_mfd.h"
+#include "lsm9ds0_mfd.h"
 
 static inline int lsm9ds0_mfd_reboot_memory(struct device *dev)
 {

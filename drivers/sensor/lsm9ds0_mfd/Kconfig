@@ -1,4 +1,4 @@
-# Kconfig.lsm9ds0_mfd - LSM9DS0 accelerometer, magnetometer and temperature
+# Kconfig - LSM9DS0 accelerometer, magnetometer and temperature
 # configuration options
 
 #
