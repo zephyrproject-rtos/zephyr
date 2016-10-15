@@ -108,6 +108,15 @@ config BLUETOOTH_MAX_EVT_LEN
 	  return parameters = 68 bytes in total.
 endif # BLUETOOTH_LE || BLUETOOTH_STACK_HCI_RAW
 
+config BLUETOOTH_UART_TO_HOST_DEV_NAME
+	string "Device Name of UART Device to an external Bluetooth Host"
+	default "UART_0"
+	depends on BLUETOOTH_STACK_HCI_RAW
+	help
+	  This option specifies the name of UART device to be used
+	  to connect to an external Bluetooth Host when Zephyr is
+	  acting as a Bluetooth Controller.
+
 if (BLUETOOTH_LE && BLUETOOTH_CONN) || BLUETOOTH_STACK_HCI_RAW
 config BLUETOOTH_ACL_IN_COUNT
 	int "Number of incoming ACL data buffers"
