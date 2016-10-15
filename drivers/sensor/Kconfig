@@ -98,6 +98,6 @@ source "drivers/sensor/sx9500/Kconfig"
 
 source "drivers/sensor/th02/Kconfig"
 
-source "drivers/sensor/Kconfig.tmp007"
+source "drivers/sensor/tmp007/Kconfig"
 
 source "drivers/sensor/Kconfig.tmp112"

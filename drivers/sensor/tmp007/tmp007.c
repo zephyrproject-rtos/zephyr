@@ -23,7 +23,7 @@
 #include <sensor.h>
 #include <misc/__assert.h>
 
-#include "sensor_tmp007.h"
+#include "tmp007.h"
 
 int tmp007_reg_read(struct tmp007_data *drv_data, uint8_t reg, uint16_t *val)
 {

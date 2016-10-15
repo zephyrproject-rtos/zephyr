@@ -20,7 +20,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_tmp007.h"
+#include "tmp007.h"
 
 extern struct tmp007_data tmp007_driver;
 
