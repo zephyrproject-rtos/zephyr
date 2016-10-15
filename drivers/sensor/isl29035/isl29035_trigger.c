@@ -20,7 +20,7 @@
 #include <misc/util.h>
 #include <nanokernel.h>
 
-#include "sensor_isl29035.h"
+#include "isl29035.h"
 
 extern struct isl29035_driver_data isl29035_data;
 

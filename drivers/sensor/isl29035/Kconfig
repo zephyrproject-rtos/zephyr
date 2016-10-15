@@ -1,4 +1,4 @@
-# Kconfig.isl29035 - ISL29035 light sensor configuration options
+# Kconfig - ISL29035 light sensor configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

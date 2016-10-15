@@ -22,7 +22,7 @@
 #include <sensor.h>
 #include <misc/__assert.h>
 
-#include "sensor_isl29035.h"
+#include "isl29035.h"
 
 static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
