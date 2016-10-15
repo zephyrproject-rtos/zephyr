@@ -25,4 +25,4 @@ obj-$(CONFIG_SHT3XD) += sht3xd/
 obj-$(CONFIG_SX9500) += sx9500/
 obj-$(CONFIG_TH02) += th02/
 obj-$(CONFIG_TMP007) += tmp007/
-obj-$(CONFIG_TMP112) += sensor_tmp112.o
+obj-$(CONFIG_TMP112) += tmp112/
