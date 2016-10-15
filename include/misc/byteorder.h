@@ -283,9 +283,9 @@ static inline uint64_t sys_get_le64(const uint8_t src[8])
  */
 static inline void sys_memcpy_swap(void *dst, const void *src, size_t length)
 {
-	__ASSERT(((src < dst && src + length < dst) ||
-		  (src > dst && dst + length < src)),
-		 "Source and destination pointers must not overlap");
+	__ASSERT(((src < dst && (src + length) <= dst) ||
+		  (src > dst && (dst + length) <= src)),
+		 "Source and destination buffers must not overlap");
 
 	src += length - 1;
 
