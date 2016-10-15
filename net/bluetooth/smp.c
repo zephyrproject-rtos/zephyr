@@ -298,28 +298,6 @@ static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 	return gen_method_sc[remote_io][get_io_capa()];
 }
 
-/* swap octets for LE encrypt */
-static void swap_buf(uint8_t *dst, const uint8_t *src, uint16_t len)
-{
-	int i;
-
-	for (i = 0; i < len; i++) {
-		dst[len - 1 - i] = src[i];
-	}
-}
-
-static void swap_in_place(uint8_t *buf, uint16_t len)
-{
-	int i, j;
-
-	for (i = 0, j = len - 1; i < j; i++, j--) {
-		uint8_t tmp = buf[i];
-
-		buf[i] = buf[j];
-		buf[j] = tmp;
-	}
-}
-
 static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 		      uint8_t enc_data[16])
 {
@@ -328,19 +306,19 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 
 	BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
 
-	swap_buf(tmp, key, 16);
+	sys_memcpy_swap(tmp, key, 16);
 
 	if (tc_aes128_set_encrypt_key(&s, tmp) == TC_CRYPTO_FAIL) {
 		return -EINVAL;
 	}
 
-	swap_buf(tmp, plaintext, 16);
+	sys_memcpy_swap(tmp, plaintext, 16);
 
 	if (tc_aes_encrypt(enc_data, tmp, &s) == TC_CRYPTO_FAIL) {
 		return -EINVAL;
 	}
 
-	swap_in_place(enc_data, 16);
+	sys_mem_swap(enc_data, 16);
 
 	BT_DBG("enc_data %s", bt_hex(enc_data, 16));
 
@@ -439,18 +417,18 @@ static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
 	 * note:
 	 * bt_smp_aes_cmac uses BE data and smp_f4 accept LE so we swap
 	 */
-	swap_buf(m, u, 32);
-	swap_buf(m + 32, v, 32);
+	sys_memcpy_swap(m, u, 32);
+	sys_memcpy_swap(m + 32, v, 32);
 	m[64] = z;
 
-	swap_buf(xs, x, 16);
+	sys_memcpy_swap(xs, x, 16);
 
 	err = bt_smp_aes_cmac(xs, m, sizeof(m), res);
 	if (err) {
 		return err;
 	}
 
-	swap_in_place(res, 16);
+	sys_mem_swap(res, 16);
 
 	BT_DBG("res %s", bt_hex(res, 16));
 
@@ -479,7 +457,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	BT_DBG("w %s", bt_hex(w, 32));
 	BT_DBG("n1 %s n2 %s", bt_hex(n1, 16), bt_hex(n2, 16));
 
-	swap_buf(ws, w, 32);
+	sys_memcpy_swap(ws, w, 32);
 
 	err = bt_smp_aes_cmac(salt, ws, 32, t);
 	if (err) {
@@ -488,12 +466,12 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 
 	BT_DBG("t %s", bt_hex(t, 16));
 
-	swap_buf(m + 5, n1, 16);
-	swap_buf(m + 21, n2, 16);
+	sys_memcpy_swap(m + 5, n1, 16);
+	sys_memcpy_swap(m + 21, n2, 16);
 	m[37] = a1->type;
-	swap_buf(m + 38, a1->a.val, 6);
+	sys_memcpy_swap(m + 38, a1->a.val, 6);
 	m[44] = a2->type;
-	swap_buf(m + 45, a2->a.val, 6);
+	sys_memcpy_swap(m + 45, a2->a.val, 6);
 
 	err = bt_smp_aes_cmac(t, m, sizeof(m), mackey);
 	if (err) {
@@ -502,7 +480,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 
 	BT_DBG("mackey %1s", bt_hex(mackey, 16));
 
-	swap_in_place(mackey, 16);
+	sys_mem_swap(mackey, 16);
 
 	/* counter for ltk is 1 */
 	m[0] = 0x01;
@@ -514,7 +492,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 
 	BT_DBG("ltk %s", bt_hex(ltk, 16));
 
-	swap_in_place(ltk, 16);
+	sys_mem_swap(ltk, 16);
 
 	return 0;
 }
@@ -532,20 +510,20 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	BT_DBG("r %s io_cap %s", bt_hex(r, 16), bt_hex(iocap, 3));
 	BT_DBG("a1 %s a2 %s", bt_hex(a1, 7), bt_hex(a2, 7));
 
-	swap_buf(m, n1, 16);
-	swap_buf(m + 16, n2, 16);
-	swap_buf(m + 32, r, 16);
-	swap_buf(m + 48, iocap, 3);
+	sys_memcpy_swap(m, n1, 16);
+	sys_memcpy_swap(m + 16, n2, 16);
+	sys_memcpy_swap(m + 32, r, 16);
+	sys_memcpy_swap(m + 48, iocap, 3);
 
 	m[51] = a1->type;
 	memcpy(m + 52, a1->a.val, 6);
-	swap_buf(m + 52, a1->a.val, 6);
+	sys_memcpy_swap(m + 52, a1->a.val, 6);
 
 	m[58] = a2->type;
 	memcpy(m + 59, a2->a.val, 6);
-	swap_buf(m + 59, a2->a.val, 6);
+	sys_memcpy_swap(m + 59, a2->a.val, 6);
 
-	swap_buf(ws, w, 16);
+	sys_memcpy_swap(ws, w, 16);
 
 	err = bt_smp_aes_cmac(ws, m, sizeof(m), check);
 	if (err) {
@@ -554,7 +532,7 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 
 	BT_DBG("res %s", bt_hex(check, 16));
 
-	swap_in_place(check, 16);
+	sys_mem_swap(check, 16);
 
 	return 0;
 }
@@ -569,11 +547,11 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	BT_DBG("v %s", bt_hex(v, 32));
 	BT_DBG("x %s y %s", bt_hex(x, 16), bt_hex(y, 16));
 
-	swap_buf(m, u, 32);
-	swap_buf(m + 32, v, 32);
-	swap_buf(m + 64, y, 16);
+	sys_memcpy_swap(m, u, 32);
+	sys_memcpy_swap(m + 32, v, 32);
+	sys_memcpy_swap(m + 64, y, 16);
 
-	swap_buf(xs, x, 16);
+	sys_memcpy_swap(xs, x, 16);
 
 	/* reuse xs (key) as buffer for result */
 	err = bt_smp_aes_cmac(xs, m, sizeof(m), xs);
@@ -615,8 +593,8 @@ static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
 	BT_DBG("w %s", bt_hex(w, 16));
 	BT_DBG("key_id %s", bt_hex(key_id, 4));
 
-	swap_buf(ws, w, 16);
-	swap_buf(key_id_s, key_id, 4);
+	sys_memcpy_swap(ws, w, 16);
+	sys_memcpy_swap(key_id_s, key_id, 4);
 
 	err = bt_smp_aes_cmac(ws, key_id_s, 4, res);
 	if (err) {
@@ -625,7 +603,7 @@ static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
 
 	BT_DBG("res %s", bt_hex(res, 16));
 
-	swap_in_place(res, 16);
+	sys_mem_swap(res, 16);
 
 	return 0;
 }
@@ -3636,8 +3614,8 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 	BT_DBG("Signing msg %s len %u key %s", bt_hex(msg, len), len,
 	       bt_hex(key, 16));
 
-	swap_in_place(m, len + sizeof(cnt));
-	swap_buf(key_s, key, 16);
+	sys_mem_swap(m, len + sizeof(cnt));
+	sys_memcpy_swap(key_s, key, 16);
 
 	err = bt_smp_aes_cmac(key_s, m, len + sizeof(cnt), tmp);
 	if (err) {
@@ -3645,11 +3623,11 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 		return err;
 	}
 
-	swap_in_place(tmp, sizeof(tmp));
+	sys_mem_swap(tmp, sizeof(tmp));
 	memcpy(tmp + 4, &cnt, sizeof(cnt));
 
 	/* Swap original message back */
-	swap_in_place(m, len + sizeof(cnt));
+	sys_mem_swap(m, len + sizeof(cnt));
 
 	memcpy(sig, tmp + 4, 12);
 
@@ -3892,7 +3870,7 @@ static int smp_sign_test(void)
 	int err;
 
 	/* Use the same key as aes-cmac but swap bytes */
-	swap_buf(key_s, key, 16);
+	sys_memcpy_swap(key_s, key, 16);
 
 	err = sign_test("Test sign0", key_s, M, 0, sig1);
 	if (err) {
