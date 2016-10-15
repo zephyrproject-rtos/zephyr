@@ -21,7 +21,7 @@
 #include <sensor.h>
 #include <string.h>
 
-#include "sensor_hts221.h"
+#include "hts221.h"
 
 static int hts221_channel_get(struct device *dev,
 			       enum sensor_channel chan,

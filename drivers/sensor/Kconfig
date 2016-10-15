@@ -70,7 +70,7 @@ source "drivers/sensor/hmc5883l/Kconfig"
 
 source "drivers/sensor/hp206c/Kconfig"
 
-source "drivers/sensor/Kconfig.hts221"
+source "drivers/sensor/hts221/Kconfig"
 
 source "drivers/sensor/Kconfig.isl29035"
 

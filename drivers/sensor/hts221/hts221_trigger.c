@@ -21,7 +21,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 
-#include "sensor_hts221.h"
+#include "hts221.h"
 
 int hts221_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
