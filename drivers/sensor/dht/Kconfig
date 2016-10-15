@@ -1,4 +1,4 @@
-# Kconfig.dht - DHT Temperature and Himidity Sensor configuration options
+# Kconfig - DHT Temperature and Himidity Sensor configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation

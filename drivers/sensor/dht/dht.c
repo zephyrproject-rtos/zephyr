@@ -22,7 +22,7 @@
 #include <string.h>
 #include <zephyr.h>
 
-#include "sensor_dht.h"
+#include "dht.h"
 
 /**
  * @brief Measure duration of signal send by sensor
