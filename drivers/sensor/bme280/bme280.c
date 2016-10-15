@@ -24,7 +24,7 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
-#include "sensor_bme280.h"
+#include "bme280.h"
 
 /*
  * Compensation code taken from BME280 datasheet, Section 4.2.3
