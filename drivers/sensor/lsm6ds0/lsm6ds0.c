@@ -25,7 +25,7 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
-#include "sensor_lsm6ds0.h"
+#include "lsm6ds0.h"
 
 static inline int lsm6ds0_reboot(struct device *dev)
 {
