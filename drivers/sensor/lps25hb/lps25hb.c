@@ -23,7 +23,7 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
-#include "sensor_lps25hb.h"
+#include "lps25hb.h"
 
 static inline int lps25hb_power_ctrl(struct device *dev, uint8_t value)
 {

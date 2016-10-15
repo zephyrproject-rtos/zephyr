@@ -78,7 +78,7 @@ source "drivers/sensor/lis3dh/Kconfig"
 
 source "drivers/sensor/lis3mdl/Kconfig"
 
-source "drivers/sensor/Kconfig.lps25hb"
+source "drivers/sensor/lps25hb/Kconfig"
 
 source "drivers/sensor/Kconfig.lsm6ds0"
 
