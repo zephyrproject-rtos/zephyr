@@ -44,7 +44,12 @@ config PINMUX_INIT_PRIORITY
 	  The device needs to be initialized after all the devices it
 	  uses.
 
-source "drivers/pinmux/Kconfig.k64"
+config PINMUX_K64
+	bool "Freescale K64-based Pin multiplexer driver"
+	depends on SOC_MK64F12
+	default n
+	help
+	Enable driver for Freescale K64-based Pin multiplexer.
 
 source "drivers/pinmux/Kconfig.stm32"
 
