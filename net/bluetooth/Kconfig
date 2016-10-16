@@ -138,7 +138,7 @@ config BLUETOOTH_RX_STACK_SIZE
 	  default value is sufficient for basic operation, but if the
 	  application needs to do advanced things in its callbacks that
 	  require extra stack space, this value can be increased to
-	  accomodate for that.
+	  accommodate for that.
 
 config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
@@ -511,6 +511,14 @@ config BLUETOOTH_A2DP
 	select BLUETOOTH_AVDTP
 	help
 	  This option enables the A2DP profile
+
+config BLUETOOTH_PAGE_TIMEOUT
+	hex "Bluetooth Page Timeout"
+	default 0x2000
+	range 0x0001 0xffff
+	help
+	  This option sets the page timeout value. Value is selected as
+	  (N * 0.625) ms.
 
 config BLUETOOTH_BREDR_NAME
 	string "Bluetooth BR/EDR device name"

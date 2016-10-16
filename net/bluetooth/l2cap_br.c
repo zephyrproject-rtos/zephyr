@@ -93,6 +93,9 @@ enum {
 	/* Signaling channel flags */
 	L2CAP_FLAG_SIG_INFO_PENDING,	/* retrieving remote l2cap info */
 	L2CAP_FLAG_SIG_INFO_DONE,	/* remote l2cap info is done */
+
+	/* fixed channels flags */
+	L2CAP_FLAG_FIXED_CONNECTED,		/* fixed connected */
 };
 
 static struct bt_l2cap_server *br_servers;
@@ -411,6 +414,31 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	l2cap_br_chan_send_req(&l2cap->chan, buf, L2CAP_BR_INFO_TIMEOUT);
 }
 
+static void connect_fixed_channel(struct bt_l2cap_br_chan *chan)
+{
+	if (atomic_test_and_set_bit(chan->flags, L2CAP_FLAG_FIXED_CONNECTED)) {
+		return;
+	}
+
+	if (chan->chan.ops && chan->chan.ops->connected) {
+		chan->chan.ops->connected(&chan->chan);
+	}
+}
+
+static void connect_optional_fixed_channels(struct bt_l2cap_br *l2cap)
+{
+	/* can be change to loop if more BR/EDR fixed channels are added */
+	if (l2cap->info_fixed_chan & BIT(BT_L2CAP_CID_BR_SMP)) {
+		struct bt_l2cap_chan *chan;
+
+		chan = bt_l2cap_br_lookup_rx_cid(l2cap->chan.chan.conn,
+						 BT_L2CAP_CID_BR_SMP);
+		if (chan) {
+			connect_fixed_channel(BR_CHAN(chan));
+		}
+	}
+}
+
 static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 			     struct net_buf *buf)
 {
@@ -468,6 +496,9 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		l2cap->info_fixed_chan = net_buf_pull_u8(buf);
 		BT_DBG("remote fixed channel mask 0x%02x",
 		       l2cap->info_fixed_chan);
+
+		connect_optional_fixed_channels(l2cap);
+
 		break;
 	default:
 		BT_WARN("type 0x%04x unsupported", type);
@@ -480,13 +511,17 @@ done:
 	return err;
 }
 
-static bool br_sc_supported(void)
+static uint8_t get_fixed_channels_mask(void)
 {
-#if defined(CONFIG_BLUETOOTH_SMP_FORCE_BREDR)
-	return true;
-#else
-	return BT_FEAT_SC(bt_dev.features);
-#endif /* CONFIG_BLUETOOTH_SMP_FORCE_BREDR */
+	struct bt_l2cap_fixed_chan *fchan;
+	uint8_t mask = 0;
+
+	/* this needs to be enhanced if AMP Test Manager support is added */
+	for (fchan = br_fixed_channels; fchan; fchan = fchan->_next) {
+		mask |= BIT(fchan->cid);
+	}
+
+	return mask;
 }
 
 static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
@@ -531,13 +566,7 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_SUCCESS);
 		/* fixed channel mask protocol data is 8 octets wide */
 		memset(net_buf_add(rsp_buf, 8), 0, 8);
-		/* signaling channel is mandatory on BR/EDR transport */
-		rsp->data[0] = BIT(BT_L2CAP_CID_BR_SIG);
-
-		/* Add SMP channel if SC are supported */
-		if (br_sc_supported()) {
-			rsp->data[0] |= BIT(BT_L2CAP_CID_BR_SMP);
-		}
+		rsp->data[0] = get_fixed_channels_mask();
 
 		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + 8);
 		break;
@@ -557,11 +586,8 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 {
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
-	struct bt_l2cap_br *l2cap;
 
-	fchan = br_fixed_channels;
-
-	for (; fchan; fchan = fchan->_next) {
+	for (fchan = br_fixed_channels; fchan; fchan = fchan->_next) {
 		struct bt_l2cap_br_chan *ch;
 
 		if (!fchan->accept) {
@@ -581,13 +607,19 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 			return;
 		}
 
-		if (chan->ops && chan->ops->connected) {
-			chan->ops->connected(chan);
+		/*
+		 * other fixed channels will be connected after Information
+		 * Response is received
+		 */
+		if (fchan->cid == BT_L2CAP_CID_BR_SIG) {
+			struct bt_l2cap_br *sig_ch;
+
+			connect_fixed_channel(ch);
+
+			sig_ch = CONTAINER_OF(ch, struct bt_l2cap_br, chan);
+			l2cap_br_get_info(sig_ch, BT_L2CAP_INFO_FEAT_MASK);
 		}
 	}
-
-	l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
-	l2cap_br_get_info(l2cap, BT_L2CAP_INFO_FEAT_MASK);
 }
 
 static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
@@ -1572,6 +1604,47 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 			chan->ops->encrypt_change(chan, hci_status);
 		}
 	}
+}
+
+static void check_fixed_channel(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+
+	if (br_chan->rx.cid < L2CAP_BR_DYN_CID_START) {
+		connect_fixed_channel(br_chan);
+	}
+}
+
+void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
+{
+	struct bt_l2cap_hdr *hdr = (void *)buf->data;
+	struct bt_l2cap_chan *chan;
+	uint16_t cid;
+
+	if (buf->len < sizeof(*hdr)) {
+		BT_ERR("Too small L2CAP PDU received");
+		net_buf_unref(buf);
+		return;
+	}
+
+	cid = sys_le16_to_cpu(hdr->cid);
+	net_buf_pull(buf, sizeof(*hdr));
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, cid);
+	if (!chan) {
+		BT_WARN("Ignoring data for unknown CID 0x%04x", cid);
+		net_buf_unref(buf);
+		return;
+	}
+
+	/*
+	 * if data was received for fixed channel before Information
+	 * Response we connect channel here.
+	 */
+	check_fixed_channel(chan);
+
+	chan->ops->recv(chan, buf);
+	net_buf_unref(buf);
 }
 
 static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)

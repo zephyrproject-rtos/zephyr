@@ -177,6 +177,7 @@ struct gap_stop_advertising_rp {
 #define GAP_DISCOVERY_FLAG_BREDR		0x02
 #define GAP_DISCOVERY_FLAG_LIMITED		0x04
 #define GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN	0x08
+#define GAP_DISCOVERY_FLAG_LE_OBSERVE		0x10
 
 #define GAP_START_DISCOVERY		0x0c
 struct gap_start_discovery_cmd {
@@ -284,6 +285,14 @@ struct gap_passkey_confirm_req_ev {
 	uint8_t  address_type;
 	uint8_t  address[6];
 	uint32_t passkey;
+} __packed;
+
+#define GAP_EV_IDENTITY_RESOLVED	0x87
+struct gap_identity_resolved_ev {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t identity_address_type;
+	uint8_t identity_address[6];
 } __packed;
 
 /* GATT Service */

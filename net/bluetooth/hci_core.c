@@ -1918,6 +1918,32 @@ static void read_remote_ext_features_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+static void role_change(struct net_buf *buf)
+{
+	struct bt_hci_evt_role_change *evt = (void *)buf->data;
+	struct bt_conn *conn;
+
+	BT_DBG("status %u role %u addr %s", evt->status, evt->role,
+	       bt_addr_str(&evt->bdaddr));
+
+	if (evt->status) {
+		return;
+	}
+
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	if (evt->role) {
+		conn->role = BT_CONN_ROLE_SLAVE;
+	} else {
+		conn->role = BT_CONN_ROLE_MASTER;
+	}
+
+	bt_conn_unref(conn);
+}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_SMP)
@@ -1998,6 +2024,18 @@ static void hci_encrypt_change(struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		update_sec_level_br(conn);
+
+#if defined(CONFIG_BLUETOOTH_SMP)
+		/*
+		 * Start SMP over BR/EDR if we are pairing and are master on
+		 * the link
+		 */
+		if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING) &&
+		    conn->role == BT_CONN_ROLE_MASTER) {
+			bt_smp_br_send_pairing_req(conn);
+		}
+#endif /* CONFIG_BLUETOOTH_SMP */
+
 		reset_pairing(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
@@ -2677,6 +2715,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_REMOTE_EXT_FEATURES:
 		read_remote_ext_features_complete(buf);
 		break;
+	case BT_HCI_EVT_ROLE_CHANGE:
+		role_change(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -3150,6 +3191,19 @@ static int br_init(void)
 		return err;
 	}
 
+	/* Set page timeout*/
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_PAGE_TIMEOUT, sizeof(uint16_t));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_le16(buf, CONFIG_BLUETOOTH_PAGE_TIMEOUT);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_PAGE_TIMEOUT, buf, NULL);
+	if (err) {
+		return err;
+	}
+
 	/* Enable BR/EDR SC if supported */
 	if (BT_FEAT_SC(bt_dev.features)) {
 		struct bt_hci_cp_write_sc_host_supp *sc_cp;
@@ -3215,6 +3269,7 @@ static int set_event_mask(void)
 	ev->events[0] |= 0x20; /* Authentication Complete */
 	ev->events[0] |= 0x40; /* Remote Name Request Complete */
 	ev->events[1] |= 0x04; /* Read Remote Feature Complete */
+	ev->events[2] |= 0x02; /* Role Change */
 	ev->events[2] |= 0x20; /* Pin Code Request */
 	ev->events[2] |= 0x40; /* Link Key Request */
 	ev->events[2] |= 0x80; /* Link Key Notif */
@@ -4145,7 +4200,7 @@ void bt_storage_register(const struct bt_storage *storage)
 	bt_storage = storage;
 }
 
-int bt_storage_clear(bt_addr_le_t *addr)
+int bt_storage_clear(const bt_addr_le_t *addr)
 {
 	return -ENOSYS;
 }

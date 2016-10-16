@@ -373,6 +373,8 @@ struct bt_hci_write_local_name {
 	uint8_t local_name[248];
 } __packed;
 
+#define BT_HCI_OP_WRITE_PAGE_TIMEOUT            BT_OP(BT_OGF_BASEBAND, 0x0018)
+
 #define BT_HCI_OP_WRITE_SCAN_ENABLE             BT_OP(BT_OGF_BASEBAND, 0x001a)
 #define BT_BREDR_SCAN_DISABLED                  0x00
 #define BT_BREDR_SCAN_INQUIRY                   0x01
@@ -908,6 +910,13 @@ struct bt_hci_evt_cmd_status {
 	uint8_t  status;
 	uint8_t  ncmd;
 	uint16_t opcode;
+} __packed;
+
+#define BT_HCI_EVT_ROLE_CHANGE                  0x12
+struct bt_hci_evt_role_change {
+	uint8_t   status;
+	bt_addr_t bdaddr;
+	uint8_t   role;
 } __packed;
 
 #define BT_HCI_EVT_NUM_COMPLETED_PACKETS        0x13

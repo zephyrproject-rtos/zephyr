@@ -38,10 +38,55 @@ extern "C" {
 
 /** Well known storage keys */
 enum {
-	/** Identity Address */
+	/** Identity Address.
+	  * Type: bt_addr_le_t (7 bytes)
+	  */
 	BT_STORAGE_ID_ADDR,
-	/** Local Identity Resolving Key */
+
+	/** Local Identity Resolving Key.
+	  * Type: uint8_t key[16]
+	  */
 	BT_STORAGE_LOCAL_IRK,
+
+	/** List of addresses of remote devices.
+	  * Type: bt_addr_le_t addrs[n] (length is variable).
+	  *
+	  * This is only used for reading. Modification of the list happens
+	  * implicitly by writing entries for each remote device. This value
+	  * is only used with the local storage, i.e. NULL as the target
+	  * bt_addr_le_t passed to the read callback.
+	  */
+	BT_STORAGE_ADDRESSES,
+
+	/** Slave Long Term Key for legacy pairing.
+	  * Type: struct bt_storage_ltk
+	  */
+	BT_STORAGE_SLAVE_LTK,
+
+	/** Long Term Key for legacy pairing.
+	  * Type: struct bt_storage_ltk
+	  */
+	BT_STORAGE_LTK,
+
+	/** Identity Resolving Key
+	  * Type: uint8_t key[16]
+	  */
+	BT_STORAGE_IRK,
+};
+
+/** LTK key flags */
+enum {
+	/* Key has been generated with MITM protection */
+	BT_STORAGE_LTK_AUTHENTICATED   = BIT(0),
+};
+
+struct bt_storage_ltk {
+	uint8_t                 flags;
+	/* Encryption key size used to generate key */
+	uint8_t                 size;
+	uint16_t                ediv;
+	uint8_t                 rand[8];
+	uint8_t                 val[16];
 };
 
 struct bt_storage {
@@ -82,6 +127,10 @@ struct bt_storage {
 
 };
 
+/** Register callbacks for storage handling.
+  *
+  * @param storage Callback struct.
+  */
 void bt_storage_register(const struct bt_storage *storage);
 
 /** Clear all storage keys for a specific address
@@ -91,7 +140,7 @@ void bt_storage_register(const struct bt_storage *storage);
   *
   * @return 0 on success or negative error value on failure.
   */
-int bt_storage_clear(bt_addr_le_t *addr);
+int bt_storage_clear(const bt_addr_le_t *addr);
 
 #ifdef __cplusplus
 }
