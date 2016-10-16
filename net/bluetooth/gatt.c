@@ -1203,10 +1203,11 @@ static int att_read_type(struct bt_conn *conn,
 	req->start_handle = sys_cpu_to_le16(params->start_handle);
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
-	if (params->type == BT_GATT_DISCOVER_INCLUDE)
+	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
 		net_buf_add_le16(buf, BT_UUID_GATT_INCLUDE_VAL);
-	else
+	} else {
 		net_buf_add_le16(buf, BT_UUID_GATT_CHRC_VAL);
+	}
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
