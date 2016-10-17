@@ -652,6 +652,18 @@ void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix);
 
 /**
+ * @brief Check if this IPv6 address is part of the subnet of our
+ * network interface.
+ *
+ * @param iface Network interface. This is returned to the caller.
+ * The iface can be NULL in which case we check all the interfaces.
+ * @param addr IPv6 address
+ *
+ * @return True if address is part of our subnet, false otherwise
+ */
+bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr);
+
+/**
  * @brief Check if IPv6 address is one of the routers configured
  * in the system.
  *

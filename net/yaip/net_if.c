@@ -535,6 +535,35 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 	return NULL;
 }
 
+bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
+{
+	struct net_if *tmp;
+
+	for (tmp = __net_if_start; tmp != __net_if_end; tmp++) {
+		int i;
+
+		if (iface && *iface && *iface != tmp) {
+			continue;
+		}
+
+		for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+			if (tmp->ipv6.prefix[i].is_used &&
+			    net_is_ipv6_prefix(tmp->ipv6.prefix[i].prefix.
+					       s6_addr,
+					       addr->s6_addr,
+					       tmp->ipv6.prefix[i].len)) {
+				if (iface) {
+					*iface = tmp;
+				}
+
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 static inline void prefix_lf_timeout(struct nano_work *work)
 {
 	struct net_if_ipv6_prefix *prefix =
