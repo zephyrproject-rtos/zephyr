@@ -631,6 +631,28 @@ struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 	return NULL;
 }
 
+struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
+						      struct in6_addr *addr)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (!routers[i].is_used ||
+		    !routers[i].is_default ||
+		    routers[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		if (iface && iface != routers[i].iface) {
+			continue;
+		}
+
+		return &routers[i];
+	}
+
+	return NULL;
+}
+
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     struct in6_addr *addr,
 					     uint16_t lifetime)

@@ -676,6 +676,18 @@ struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 						struct in6_addr *addr);
 
 /**
+ * @brief Find default router for this IPv6 address.
+ *
+ * @param iface Network interface. This can be NULL in which case we
+ * go through all the network interfaces to find a suitable router.
+ * @param addr IPv6 address
+ *
+ * @return Pointer to router information, NULL if cannot be found
+ */
+struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
+						      struct in6_addr *addr);
+
+/**
  * @brief Add IPv6 router to the system.
  *
  * @param iface Network interface
