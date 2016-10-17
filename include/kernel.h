@@ -571,9 +571,6 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 		K_STACK_INITIALIZER(name, stack_num_entries, \
 				    _k_stack_buf_##name); \
 
-#define K_STACK_SIZE(stack_num_entries) \
-	(sizeof(struct k_stack) + (stack_num_entries * sizeof(uint32_t)))
-
 /**
  *  workqueues
  */
