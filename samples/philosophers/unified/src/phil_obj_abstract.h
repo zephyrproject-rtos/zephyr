@@ -87,10 +87,12 @@
 		#error "not implemented yet."
 	#else
 		typedef struct {
-			char stack_mem[K_STACK_SIZE(1)] __aligned(4);
+			struct k_stack stack;
+			uint32_t stack_mem[1];
 		} fork_obj_t;
 		#define fork_init(x) do { \
-			k_stack_init(x, 1); k_stack_push(x, MAGIC); \
+			k_stack_init(x, (uint32_t *)((x) + 1), 1); \
+			k_stack_push(x, MAGIC); \
 		} while ((0))
 	#endif
 	#define take(x) do { \
