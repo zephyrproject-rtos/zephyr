@@ -171,6 +171,13 @@ struct net_addr {
 
 #define NET_IPV6_MTU 1280
 
+/** IPv6 extension headers types */
+#define NET_IPV6_NEXTHDR_HBHO        0
+#define NET_IPV6_NEXTHDR_DESTO       60
+#define NET_IPV6_NEXTHDR_ROUTING     43
+#define NET_IPV6_NEXTHDR_FRAG        44
+#define NET_IPV6_NEXTHDR_NONE        59
+
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
 	/** IPv6/IPv4 remote address */
