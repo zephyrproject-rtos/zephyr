@@ -1421,8 +1421,10 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	headroom = sizeof(struct bt_hci_acl_hdr) +
 		   sizeof(struct bt_l2cap_hdr) + sdu_hdr_len;
 
-	/* Check if original buffer has enough headroom */
-	if (net_buf_headroom(buf) >= headroom) {
+	/* Check if original buffer has enough headroom and don't have any
+	 * fragments.
+	 */
+	if (net_buf_headroom(buf) >= headroom && !buf->frags) {
 		if (sdu_hdr_len) {
 			/* Push SDU length if set */
 			net_buf_push_le16(buf, net_buf_frags_len(buf));
