@@ -115,7 +115,7 @@ its address back on the stack to allow the data structure to be reused.
 
     struct my_buffer_type *new_buffer;
 
-    new_buffer = (struct my_buffer_type *)k_stack_pop(&buffer_stack, K_FOREVER);
+    k_stack_pop(&buffer_stack, (uint32_t *)&new_buffer, K_FOREVER);
     new_buffer->field1 = ...
 
 Suggested Uses
