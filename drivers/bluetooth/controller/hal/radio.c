@@ -324,7 +324,7 @@ void radio_tmr_status_reset(void)
 	NRF_PPI->CHENCLR =
 	    (PPI_CHEN_CH0_Msk | PPI_CHEN_CH1_Msk | PPI_CHEN_CH2_Msk |
 	     PPI_CHEN_CH3_Msk | PPI_CHEN_CH4_Msk | PPI_CHEN_CH5_Msk |
-	     PPI_CHEN_CH6_Msk);
+	     PPI_CHEN_CH6_Msk | PPI_CHEN_CH7_Msk);
 }
 
 void radio_tmr_tifs_set(uint32_t tifs)
@@ -407,9 +407,9 @@ uint32_t radio_tmr_aa_get(void)
 
 void radio_tmr_end_capture(void)
 {
-	NRF_PPI->CH[2].EEP = (uint32_t)&(NRF_RADIO->EVENTS_END);
-	NRF_PPI->CH[2].TEP = (uint32_t)&(NRF_TIMER0->TASKS_CAPTURE[2]);
-	NRF_PPI->CHENSET = PPI_CHEN_CH2_Msk;
+	NRF_PPI->CH[7].EEP = (uint32_t)&(NRF_RADIO->EVENTS_END);
+	NRF_PPI->CH[7].TEP = (uint32_t)&(NRF_TIMER0->TASKS_CAPTURE[2]);
+	NRF_PPI->CHENSET = PPI_CHEN_CH7_Msk;
 }
 
 uint32_t radio_tmr_end_get(void)

@@ -55,6 +55,7 @@
 
 #define RADIO_IRK_COUNT_MAX	8
 
+#define FAST_ENC_PROCEDURE	0
 #define XTAL_ADVANCED		1
 #define SCHED_ADVANCED		1
 #define SILENT_CONNECTION	0
@@ -467,6 +468,8 @@ static inline void isr_radio_state_tx(void)
 	case ROLE_SLAVE:
 		rx_packet_set(_radio.conn_curr, (struct pdu_data *)_radio.
 			      packet_rx[_radio.packet_rx_last]->pdu_data);
+
+		radio_tmr_end_capture();
 
 		/* Route the tx packet to respective connections */
 		packet_tx_enqueue(1);
@@ -1006,6 +1009,13 @@ static inline uint8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		_radio.conn_curr->pause_tx = 1;
 		break;
 
+	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
+		/* Nothing to do.
+		 * Remember that we may have received encrypted START_ENC_RSP
+		 * alongwith this tx ack at this point in time.
+		 */
+		break;
+
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		/* pause data packet tx */
 		_radio.conn_curr->pause_tx = 1;
@@ -1319,7 +1329,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		_radio.conn_curr->procedure_expire =
 			_radio.conn_curr->procedure_reload;
 
-		/* test master for overlapping control procedure */
+		/* TODO: remove this code block.
+		 * test peer master for overlapping contrl procedure.
+		 */
 #if 0
 		if (_radio.conn_curr->llcp_version.tx == 0) {
 			_radio.conn_curr->llcp_version.tx = 1;
@@ -1328,11 +1340,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 #endif
 
-		/* send enc rsp in this event itself */
-		/** @todo, spec. text: may finalize the sending of additional
-		 * Data Channel PDUs queued in the controller
+#if !!FAST_ENC_PROCEDURE
+		/* TODO BT Spec. text: may finalize the sending of additional
+		 * data channel PDUs queued in the controller.
 		 */
 		enc_rsp_send(_radio.conn_curr);
+#endif
 
 		/* enqueue the enc req */
 		*rx_enqueue = 1;
@@ -1362,15 +1375,28 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		if (_radio.role == ROLE_SLAVE) {
+#if !FAST_ENC_PROCEDURE
+			BT_ASSERT(_radio.conn_curr->llcp_req ==
+				  _radio.conn_curr->llcp_ack);
+
+			/* start enc rsp to be scheduled in slave  prepare */
+			_radio.conn_curr->llcp_type = LLCP_ENCRYPTION;
+			_radio.conn_curr->llcp_ack--;
+#else
 			/* enable transmit encryption */
 			_radio.conn_curr->enc_tx = 1;
 
 			start_enc_rsp_send(_radio.conn_curr, 0);
-		}
 
-		/* resume data packet rx and tx */
-		_radio.conn_curr->pause_rx = 0;
-		_radio.conn_curr->pause_tx = 0;
+			/* resume data packet rx and tx */
+			_radio.conn_curr->pause_rx = 0;
+			_radio.conn_curr->pause_tx = 0;
+#endif
+		} else {
+			/* resume data packet rx and tx */
+			_radio.conn_curr->pause_rx = 0;
+			_radio.conn_curr->pause_tx = 0;
+		}
 
 		/* enqueue the start enc resp (encryption change/refresh) */
 		if (_radio.conn_curr->refresh) {
@@ -4576,7 +4602,7 @@ static inline void event_enc_prep(struct connection *conn)
 			start_enc_rsp_send(conn, pdu_ctrl_tx);
 		}
 		/* slave send reject ind or start enc req at control priority */
-		else {
+		else if (!conn->pause_tx) {
 			/* ll ctrl packet */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 
@@ -4594,6 +4620,14 @@ static inline void event_enc_prep(struct connection *conn)
 			}
 			/* place the start enc req packet as next in tx queue */
 			else {
+#if !FAST_ENC_PROCEDURE
+				/* TODO BT Spec. text: may finalize the sending
+				 * of additional data channel PDUs queued in the
+				 * controller.
+				 */
+				enc_rsp_send(conn);
+#endif
+
 				/* calc the Session Key */
 				ecb_encrypt(&conn->llcp.encryption.ltk[0],
 					    &conn->llcp.encryption.skd[0], 0,
@@ -4631,6 +4665,23 @@ static inline void event_enc_prep(struct connection *conn)
 				pdu_ctrl_tx->payload.llctrl.opcode =
 					PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 			}
+		} else {
+#if !FAST_ENC_PROCEDURE
+			/* enable transmit encryption */
+			_radio.conn_curr->enc_tx = 1;
+
+			start_enc_rsp_send(_radio.conn_curr, 0);
+
+			/* resume data packet rx and tx */
+			_radio.conn_curr->pause_rx = 0;
+			_radio.conn_curr->pause_tx = 0;
+#else
+			/* Fast Enc implementation shall have enqueued the
+			 * start enc rsp in the radio ISR itself, we should
+			 * not get here.
+			 */
+			BT_ASSERT(0);
+#endif
 		}
 
 		ctrl_tx_enqueue(conn, node_tx);
@@ -4838,13 +4889,23 @@ static inline void event_len_prep(struct connection *conn)
 		struct pdu_data_llctrl_length_req_rsp *lr;
 		struct radio_pdu_node_rx *node_rx;
 		struct pdu_data *pdu_ctrl_rx;
+		uint16_t packet_rx_data_size;
+		uint16_t free_count_conn;
 		uint16_t free_count_rx;
 
+		/* Ensure the rx pool is not in use.
+		 * This is important to be able to re-size the pool
+		 * ensuring there is no chance that an operation on
+		 * the pool is pre-empted causing memory corruption.
+		 */
 		free_count_rx = packet_rx_acquired_count_get() +
 			mem_free_count_get(_radio.pkt_rx_data_free);
 		BT_ASSERT(free_count_rx <= 0xFF);
 
 		if (_radio.packet_rx_data_count != free_count_rx) {
+			/** TODO another role instance has obtained
+			 * memory from rx pool.
+			 */
 			BT_ASSERT(0);
 		}
 
@@ -4858,12 +4919,31 @@ static inline void event_len_prep(struct connection *conn)
 		/* Use the new rx octets in the connection */
 		conn->max_rx_octets = conn->llcp_length.rx_octets;
 
-		/** @todo this design is exception as memory initialization
-		 * and allocation is done in radio context, break the
-		 * rule that the rx buffers are allocated in
-		 * application context. Add a lock and DPC the resize.
+		/** TODO This design is exception as memory initialization
+		 * and allocation is done in radio context here, breaking the
+		 * rule that the rx buffers are allocated in application
+		 * context.
+		 * Design mem_* such that mem_init could interrupt mem_acquire,
+		 * when the pool is full?
 		 */
-		{
+		free_count_conn = mem_free_count_get(_radio.conn_free);
+		if (_radio.advertiser.conn) {
+			free_count_conn++;
+		}
+		if (_radio.observer.conn) {
+			free_count_conn++;
+		}
+		packet_rx_data_size = ALIGN4(offsetof(struct radio_pdu_node_rx,
+						      pdu_data) +
+					     offsetof(struct pdu_data,
+						      payload) +
+					     conn->max_rx_octets);
+		/* Resize to lower or higher size if this is the only active
+		 * connection, or resize to only higher sizes as there may be
+		 * other connections using the current size.
+		 */
+		if (((free_count_conn + 1) == _radio.connection_count) ||
+		    (packet_rx_data_size > _radio.packet_rx_data_size)) {
 			/* as rx mem is to be re-sized, release acquired
 			 * memq link.
 			 */
@@ -4901,10 +4981,7 @@ static inline void event_len_prep(struct connection *conn)
 					       (RADIO_ACPDU_SIZE_MAX + 1));
 			} else {
 				_radio.packet_rx_data_size =
-					ALIGN4(offsetof(struct radio_pdu_node_rx,
-							pdu_data) +
-					       offsetof(struct pdu_data, payload) +
-					       conn->max_rx_octets);
+					packet_rx_data_size;
 			}
 			_radio.packet_rx_data_count =
 				_radio.packet_rx_data_pool_size /
@@ -5185,6 +5262,7 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 			       (RADIO_TICKER_JITTER_US << 2) +
 			       RADIO_PREAMBLE_TO_ADDRESS_US +
 			       conn->role.slave.window_size_event_us);
+	radio_tmr_end_capture();
 
 #if (XTAL_ADVANCED && (RADIO_TICKER_PREEMPT_PART_US \
 		<= RADIO_TICKER_PREEMPT_PART_MIN_US))
@@ -5675,29 +5753,34 @@ static void ctrl_tx_enqueue(struct connection *conn,
 			conn->pkt_tx_head->next = node_tx;
 			conn->pkt_tx_ctrl = node_tx;
 		} else {
-			/* More than 2 pending ctrl not supported */
+			/* TODO support for more than 2 pending ctrl packets. */
 			BT_ASSERT(conn->pkt_tx_ctrl->next == conn->pkt_tx_data);
 
 			node_tx->next = conn->pkt_tx_ctrl->next;
 			conn->pkt_tx_ctrl->next = node_tx;
 		}
-
-		/* Update last if ctrl added at end of list */
-		if (node_tx->next == 0) {
-			conn->pkt_tx_last = node_tx;
-		}
 	} else {
-		/* add new ctrl at head as no pending ack required */
+		/* No packet needing ACK. */
 
-		/* set last to first node to be added */
-		if (conn->pkt_tx_head == 0) {
-			conn->pkt_tx_last = node_tx;
+		/* If first ctrl packet then add it as head else add it to the
+		 * tail of the ctrl packets.
+		 */
+		if (!conn->pkt_tx_ctrl) {
+			node_tx->next = conn->pkt_tx_head;
+			conn->pkt_tx_head = node_tx;
+			conn->pkt_tx_ctrl = node_tx;
+		} else {
+			/* TODO support for more than 2 pending ctrl packets. */
+			BT_ASSERT(conn->pkt_tx_ctrl->next == conn->pkt_tx_data);
+
+			node_tx->next = conn->pkt_tx_ctrl->next;
+			conn->pkt_tx_ctrl->next = node_tx;
 		}
+	}
 
-		/* add node at beginning */
-		node_tx->next = conn->pkt_tx_head;
-		conn->pkt_tx_head = node_tx;
-		conn->pkt_tx_ctrl = node_tx;
+	/* Update last pointer if ctrl added at end of tx list */
+	if (node_tx->next == 0) {
+		conn->pkt_tx_last = node_tx;
 	}
 }
 
@@ -7369,6 +7452,21 @@ uint8_t radio_rx_fc_set(uint16_t handle, uint8_t fc)
 				_radio.fc_ack = ack;
 			}
 		}
+	}
+
+	return 0;
+}
+
+uint8_t radio_rx_fc_get(uint16_t *handle)
+{
+	uint8_t req = _radio.fc_req;
+	uint8_t ack = _radio.fc_ack;
+
+	if (req != ack) {
+		if (handle) {
+			*handle = _radio.fc_handle[ack];
+		}
+		return 1;
 	}
 
 	return 0;
