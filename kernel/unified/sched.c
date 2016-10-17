@@ -152,7 +152,8 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
 
 	if (timeout != K_FOREVER) {
 		_mark_thread_as_timing(thread);
-		_add_thread_timeout(thread, wait_q, _ms_to_ticks(timeout));
+		_add_thread_timeout(thread, wait_q,
+					_TICK_ALIGN + _ms_to_ticks(timeout));
 	}
 }
 
@@ -296,7 +297,8 @@ void k_sleep(int32_t duration)
 
 	_mark_thread_as_timing(_current);
 	_remove_thread_from_ready_q(_current);
-	_add_thread_timeout(_current, NULL, _ms_to_ticks(duration));
+	_add_thread_timeout(_current, NULL,
+				_TICK_ALIGN + _ms_to_ticks(duration));
 
 	_Swap(key);
 }

@@ -271,7 +271,8 @@ static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 		start_thread(thread);
 	} else {
 		_mark_thread_as_timing(thread);
-		_add_thread_timeout(thread, NULL, _ms_to_ticks(delay));
+		_add_thread_timeout(thread, NULL,
+					_TICK_ALIGN + _ms_to_ticks(delay));
 	}
 #else
 	ARG_UNUSED(delay);

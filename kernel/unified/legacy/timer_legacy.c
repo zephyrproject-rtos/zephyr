@@ -17,7 +17,28 @@
 #include <kernel.h>
 #include <init.h>
 #include <ksched.h>
+#include <wait_q.h>
+#include <misc/__assert.h>
 #include <misc/util.h>
+
+void _legacy_sleep(int32_t ticks)
+{
+	__ASSERT(!_is_in_isr(), "");
+	__ASSERT(ticks != TICKS_UNLIMITED, "");
+
+	if (ticks <= 0) {
+		k_yield();
+		return;
+	}
+
+	int key = irq_lock();
+
+	_mark_thread_as_timing(_current);
+	_remove_thread_from_ready_q(_current);
+	_add_thread_timeout(_current, NULL, ticks);
+
+	_Swap(key);
+}
 
 #if (CONFIG_NUM_DYNAMIC_TIMERS > 0)
 

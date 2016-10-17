@@ -31,7 +31,10 @@ static void timer_expiration_handler(struct _timeout *t)
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
 	struct k_thread *pending_thread;
 
-	/* if the time is periodic, start it again */
+	/*
+	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
+	 * since we're already aligned to a tick boundary
+	 */
 	if (timer->period > 0) {
 		_add_timeout(NULL, &timer->timeout, &timer->wait_q,
 				timer->period);
@@ -87,7 +90,7 @@ void k_timer_start(struct k_timer *timer, int32_t duration, int32_t period)
 
 	timer->period = _ms_to_ticks(period);
 	_add_timeout(NULL, &timer->timeout, &timer->wait_q,
-			_ms_to_ticks(duration));
+			_TICK_ALIGN + _ms_to_ticks(duration));
 	timer->status = 0;
 	irq_unlock(key);
 }

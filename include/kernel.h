@@ -273,6 +273,9 @@ extern void *k_thread_custom_data_get(void);
 
 /* private internal time manipulation (users should never play with ticks) */
 
+/* added tick needed to account for tick in progress */
+#define _TICK_ALIGN 1
+
 static int64_t __ticks_to_ms(int64_t ticks)
 {
 #if CONFIG_SYS_CLOCK_EXISTS
@@ -694,15 +697,15 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * mutual exclusion mechanism. Such usage is not recommended and if necessary,
  * it should be explicitly done between the submitter and the handler.
  *
- * @param work_q to schedule the work item
+ * @param work_q Workqueue to schedule the work item
  * @param work Delayed work item
- * @param ticks Ticks to wait before scheduling the work item
+ * @param delay Delay before scheduling the work item (in milliseconds)
  *
  * @return 0 in case of success or negative value in case of error.
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_delayed_work *work,
-					  int32_t ticks);
+					  int32_t delay);
 
 /**
  * @brief Cancel a delayed work item
@@ -749,9 +752,9 @@ static inline void k_work_submit(struct k_work *work)
  * unexpected behavior.
  */
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
-					   int ticks)
+					   int32_t delay)
 {
-	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, ticks);
+	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, delay);
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */

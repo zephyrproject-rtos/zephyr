@@ -138,17 +138,16 @@ fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 
 #define fiber_yield k_yield
 #define fiber_abort() k_thread_abort(k_current_get())
-static inline void fiber_sleep(int32_t timeout)
-{
-	k_sleep(_ticks_to_ms(timeout));
-}
+
+extern void _legacy_sleep(int32_t ticks);
+#define fiber_sleep _legacy_sleep
+#define task_sleep _legacy_sleep
 
 #define fiber_wakeup k_wakeup
 #define isr_fiber_wakeup k_wakeup
 #define fiber_fiber_wakeup k_wakeup
 #define task_fiber_wakeup k_wakeup
 
-#define task_sleep fiber_sleep
 #define task_yield k_yield
 #define task_priority_set(task, prio) k_thread_priority_set(task, (int)prio)
 #define task_entry_set(task, entry) \
