@@ -38,6 +38,8 @@
 #include "ipv6.h"
 #include "nbr.h"
 #include "6lo.h"
+#include "route.h"
+#include "rpl.h"
 
 #if defined(CONFIG_NET_IPV6_ND)
 
@@ -468,7 +470,62 @@ static void ns_reply_timeout(struct nano_work *work)
 
 struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 {
+	struct in6_addr *nexthop = NULL;
+	struct net_if *iface = NULL;
 	struct net_nbr *nbr;
+
+	if (net_if_ipv6_addr_onlink(&iface,
+				    &NET_IPV6_BUF(buf)->dst)) {
+		nexthop = &NET_IPV6_BUF(buf)->dst;
+		net_nbuf_set_iface(buf, iface);
+	} else {
+		/* We need to figure out where the destination
+		 * host is located.
+		 */
+		struct net_route_entry *route;
+		struct net_if_router *router;
+
+		route = net_route_lookup(NULL, &NET_IPV6_BUF(buf)->dst);
+		if (route) {
+			nexthop = net_route_get_nexthop(route);
+			if (!nexthop) {
+				net_route_del(route);
+
+				net_rpl_global_repair(route);
+
+				NET_DBG("No route to host %s",
+					net_sprint_ipv6_addr(
+						&NET_IPV6_BUF(buf)->dst));
+
+				net_nbuf_unref(buf);
+				return NULL;
+			}
+		} else {
+			/* No specific route to this host, use the default
+			 * route instead.
+			 */
+			router = net_if_ipv6_router_find_default(NULL,
+						&NET_IPV6_BUF(buf)->dst);
+			if (!router) {
+				/* Packet cannot be sent because even
+				 * default router is missing.
+				 */
+				NET_DBG("No default route to %s",
+					net_sprint_ipv6_addr(
+						&NET_IPV6_BUF(buf)->dst));
+
+				net_nbuf_unref(buf);
+				return NULL;
+			}
+
+			nexthop = &router->address.in6_addr;
+		}
+	}
+
+	if (net_rpl_update_header(buf, nexthop) < 0) {
+		net_nbuf_unref(buf);
+		return NULL;
+	}
 
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_IPV6_BUF(buf)->dst);
