@@ -556,7 +556,7 @@ extern void k_stack_init(struct k_stack *stack,
 extern void k_stack_push(struct k_stack *stack, uint32_t data);
 extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 
-#define K_STACK_INITIALIZER(obj, stack_num_entries, stack_buffer) \
+#define K_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.base = stack_buffer, \
@@ -565,11 +565,12 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
-#define K_STACK_DEFINE(name, stack_num_entries) \
-	uint32_t __noinit _k_stack_buf_##name[stack_num_entries]; \
-	struct k_stack name = \
-		K_STACK_INITIALIZER(name, stack_num_entries, \
-				    _k_stack_buf_##name); \
+#define K_STACK_DEFINE(name, stack_num_entries)                \
+	uint32_t __noinit                                      \
+		_k_stack_buf_##name[stack_num_entries];        \
+	struct k_stack name =                                  \
+		K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
+				    stack_num_entries)
 
 /**
  *  workqueues
