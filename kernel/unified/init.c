@@ -170,6 +170,7 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_SECONDARY);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_NANOKERNEL);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_MICROKERNEL);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
 
 #ifdef CONFIG_CPLUSPLUS
