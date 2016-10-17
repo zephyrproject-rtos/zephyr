@@ -172,10 +172,21 @@ SECTIONS
 	*(.rodata)
 	*(".rodata.*")
 	*(.gnu.linkonce.r.*)
+	/*
+	 * For XIP images, in order to avoid the situation when __data_rom_start
+	 * is 32-bit aligned, but the actual data is placed right after rodata
+	 * section, which may not end exactly at 32-bit border, pad rodata
+	 * section, so __data_rom_start points at data and it is 32-bit aligned.
+	 *
+	 * On non-XIP images this may enlarge image size up to 3 bytes. This
+	 * generally is not an issue, since modern ROM and FLASH memory is
+	 * usually 4k aligned.
+	 */
+	. = ALIGN(4);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_rom_end = .;
-    __data_rom_start = ALIGN(4);    /* XIP imaged DATA ROM start addr */
+    __data_rom_start = .;    /* XIP imaged DATA ROM start addr */
 
     GROUP_END(ROMABLE_REGION)
 
