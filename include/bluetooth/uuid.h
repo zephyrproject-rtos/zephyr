@@ -440,6 +440,59 @@ struct bt_uuid_128 {
 #define BT_UUID_BAR_PRESSURE_TREND        BT_UUID_DECLARE_16(0x2aa3)
 #define BT_UUID_BAR_PRESSURE_TREND_VAL    0x2aa3
 
+/*
+ * Protocol UUIDs
+ */
+#define BT_UUID_SDP                       BT_UUID_DECLARE_16(0x0001)
+#define BT_UUID_SDP_VAL                   0x0001
+#define BT_UUID_UDP                       BT_UUID_DECLARE_16(0x0002)
+#define BT_UUID_UDP_VAL                   0x0001
+#define BT_UUID_RFCOMM                    BT_UUID_DECLARE_16(0x0003)
+#define BT_UUID_RFCOMM_VAL                0x0003
+#define BT_UUID_TCP                       BT_UUID_DECLARE_16(0x0004)
+#define BT_UUID_TCP_VAL                   0x0004
+#define BT_UUID_TCS_BIN                   BT_UUID_DECLARE_16(0x0005)
+#define BT_UUID_TCS_BIN_VAL               0x0005
+#define BT_UUID_TCS_AT                    BT_UUID_DECLARE_16(0x0006)
+#define BT_UUID_TCS_AT_VAL                0x0006
+#define BT_UUID_ATT                       BT_UUID_DECLARE_16(0x0007)
+#define BT_UUID_ATT_VAL                   0x0007
+#define BT_UUID_OBEX                      BT_UUID_DECLARE_16(0x0008)
+#define BT_UUID_OBEX_VAL                  0x0008
+#define BT_UUID_IP                        BT_UUID_DECLARE_16(0x0009)
+#define BT_UUID_IP_VAL                    0x0009
+#define BT_UUID_FTP                       BT_UUID_DECLARE_16(0x000a)
+#define BT_UUID_FTP_VAL                   0x000a
+#define BT_UUID_HTTP                      BT_UUID_DECLARE_16(0x000c)
+#define BT_UUID_HTTP_VAL                  0x000c
+#define BT_UUID_BNEP                      BT_UUID_DECLARE_16(0x000f)
+#define BT_UUID_BNEP_VAL                  0x000f
+#define BT_UUID_UPNP                      BT_UUID_DECLARE_16(0x0010)
+#define BT_UUID_UPNP_VAL                  0x0010
+#define BT_UUID_HIDP                      BT_UUID_DECLARE_16(0x0011)
+#define BT_UUID_HIDP_VAL                  0x0011
+#define BT_UUID_HCRP_CTRL                 BT_UUID_DECLARE_16(0x0012)
+#define BT_UUID_HCRP_CTRL_VAL             0x0012
+#define BT_UUID_HCRP_DATA                 BT_UUID_DECLARE_16(0x0014)
+#define BT_UUID_HCRP_DATA_VAL             0x0014
+#define BT_UUID_HCRP_NOTE                 BT_UUID_DECLARE_16(0x0016)
+#define BT_UUID_HCRP_NOTE_VAL             0x0016
+#define BT_UUID_AVCTP                     BT_UUID_DECLARE_16(0x0017)
+#define BT_UUID_AVCTP_VAL                 0x0017
+#define BT_UUID_AVDTP                     BT_UUID_DECLARE_16(0x0019)
+#define BT_UUID_AVDTP_VAL                 0x0019
+#define BT_UUID_CMTP                      BT_UUID_DECLARE_16(0x001b)
+#define BT_UUID_CMTP_VAL                  0x001b
+#define BT_UUID_UDI                       BT_UUID_DECLARE_16(0x001d)
+#define BT_UUID_UDI_VAL                   0x001d
+#define BT_UUID_MCAP_CTRL                 BT_UUID_DECLARE_16(0x001e)
+#define BT_UUID_MCAP_CTRL_VAL             0x001e
+#define BT_UUID_MCAP_DATA                 BT_UUID_DECLARE_16(0x001f)
+#define BT_UUID_MCAP_DATA_VAL             0x001f
+#define BT_UUID_L2CAP                     BT_UUID_DECLARE_16(0x0100)
+#define BT_UUID_L2CAP_VAL                 0x0100
+
+
 /** @brief Compare Bluetooth UUIDs.
  *
  *  Compares 2 Bluetooth UUIDs, if the types are different both UUIDs are
