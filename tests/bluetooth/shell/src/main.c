@@ -37,6 +37,7 @@
 #include <bluetooth/l2cap.h>
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/storage.h>
+#include <bluetooth/sdp.h>
 
 #include <misc/shell.h>
 
@@ -65,6 +66,74 @@ static NET_BUF_POOL(data_bredr_pool, 1, DATA_BREDR_MTU, &data_bredr_fifo, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
 #endif /* CONFIG_BLUETOOTH_BREDR */
+
+#if defined(CONFIG_BLUETOOTH_RFCOMM)
+
+static struct bt_sdp_attribute spp_attrs[] = {
+	BT_SDP_NEW_SERVICE,
+	BT_SDP_LIST(
+		BT_SDP_ATTR_SVCLASS_ID_LIST,
+		BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 3),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_SERIAL_PORT_SVCLASS_ID)
+		},
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROTO_DESC_LIST,
+		BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 12),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 3),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_UUID_L2CAP_VAL)
+			},
+			)
+		},
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 5),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_UUID_RFCOMM_VAL)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT8),
+				BT_SDP_ARRAY_8(BT_RFCOMM_CHAN_SPP)
+			},
+			)
+		},
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PFILE_DESC_LIST,
+		BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 8),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_SERIAL_PORT_SVCLASS_ID)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(0x0102)
+			},
+			)
+		},
+		)
+	),
+	BT_SDP_SERVICE_NAME("Serial Port"),
+};
+
+static struct bt_sdp_record spp_rec = BT_SDP_RECORD(spp_attrs);
+
+#endif /* CONFIG_BLUETOOTH_RFCOMM */
 
 static const char *current_prompt(void)
 {
@@ -1944,16 +2013,12 @@ static int cmd_bredr_rfcomm_register(int argc, char *argv[])
 {
 	int ret;
 
-	if (argc < 2) {
-		return -EINVAL;
-	}
-
 	if (rfcomm_server.channel) {
 		printk("Already registered\n");
 		return 0;
 	}
 
-	rfcomm_server.channel = strtoul(argv[1], NULL, 16);
+	rfcomm_server.channel = BT_RFCOMM_CHAN_SPP;
 
 	ret = bt_rfcomm_server_register(&rfcomm_server);
 	if (ret < 0) {
@@ -1961,6 +2026,7 @@ static int cmd_bredr_rfcomm_register(int argc, char *argv[])
 		rfcomm_server.channel = 0;
 	} else {
 		printk("RFCOMM channel %u registered\n", rfcomm_server.channel);
+		bt_sdp_register_service(&spp_rec);
 	}
 
 	return 0;
@@ -2137,7 +2203,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-l2cap-register", cmd_bredr_l2cap_register, "<psm>" },
 	{ "br-oob", cmd_bredr_oob },
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
-	{ "br-rfcomm-register", cmd_bredr_rfcomm_register, "<channel>" },
+	{ "br-rfcomm-register", cmd_bredr_rfcomm_register },
 	{ "br-rfcomm-send", cmd_rfcomm_send, "<number of packets>"},
 #endif /* CONFIG_BLUETOOTH_RFCOMM */
 #endif

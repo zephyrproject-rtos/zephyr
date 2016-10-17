@@ -55,6 +55,7 @@ enum {
 	BT_RFCOMM_CHAN_HFP_AG,
 	BT_RFCOMM_CHAN_HSP_AG,
 	BT_RFCOMM_CHAN_HSP_HS,
+	BT_RFCOMM_CHAN_SPP,
 };
 
 struct bt_rfcomm_dlc;
