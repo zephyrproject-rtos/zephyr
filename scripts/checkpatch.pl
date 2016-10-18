@@ -2619,7 +2619,7 @@ sub process {
 			     "Use of $flag is deprecated, please use \`$replacement->{$flag} instead.\n" . $herecurr) if ($replacement->{$flag});
 		}
 # Kconfig use tabs and no spaces in line
-		if ($realfile =~ /Kconfig/ && $rawline =~ /^\+\t*[ ]+/) {
+		if ($realfile =~ /Kconfig/ && $rawline =~ /^\+ /) {
 			my $herevet = "$here\n" . cat_vet($rawline) . "\n";
 			WARN("LEADING_SPACE",
 			     "please, no spaces at the start of a line\n" . $herevet);
