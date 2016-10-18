@@ -57,14 +57,11 @@ static bt_addr_le_t id_addr;
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
 static struct bt_conn *pairing_conn;
 
-static struct k_fifo data_fifo;
-static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(data_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static struct k_fifo data_bredr_fifo;
-static NET_BUF_POOL(data_bredr_pool, 1, DATA_BREDR_MTU, &data_bredr_fifo, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(data_bredr_pool, 1, DATA_BREDR_MTU, BT_BUF_USER_DATA_MIN,
+		    NULL);
 
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
@@ -1812,7 +1809,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	printk("Channel %p requires buffer\n", chan);
 
-	return net_buf_get(&data_fifo, 0);
+	return net_buf_alloc(&data_pool, K_FOREVER);
 }
 
 static struct bt_l2cap_chan_ops l2cap_ops = {
@@ -1924,9 +1921,8 @@ static int cmd_l2cap_send(int argc, char *argv[])
 	len = min(l2cap_chan.tx.mtu, DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE);
 
 	while (count--) {
-		buf = net_buf_get_timeout(&data_fifo,
-					  BT_L2CAP_CHAN_SEND_RESERVE,
-					  K_FOREVER);
+		buf = net_buf_alloc(&data_pool, K_FOREVER);
+		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
 
 		memcpy(net_buf_add(buf, len), buf_data, len);
 		ret = bt_l2cap_chan_send(&l2cap_chan.chan, buf);
@@ -1961,7 +1957,7 @@ static struct net_buf *l2cap_bredr_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	printk("Channel %p requires buffer\n", chan);
 
-	return net_buf_get(&data_bredr_fifo, 0);
+	return net_buf_alloc(&data_bredr_pool, K_FOREVER);
 }
 
 static struct bt_l2cap_chan_ops l2cap_bredr_ops = {
@@ -2125,7 +2121,7 @@ static int cmd_rfcomm_send(int argc, char *argv[])
 	}
 
 	while (count--) {
-		buf = bt_rfcomm_create_pdu(&data_bredr_fifo);
+		buf = bt_rfcomm_create_pdu(&data_bredr_pool);
 		/* Should reserve one byte in tail for FCS */
 		len = min(rfcomm_dlc.mtu, net_buf_tailroom(buf) - 1);
 
@@ -2310,9 +2306,9 @@ void main(void)
 {
 	bt_conn_cb_register(&conn_callbacks);
 
-	net_buf_pool_init(data_pool);
+	net_buf_pool_init(&data_pool);
 #if defined(CONFIG_BLUETOOTH_BREDR)
-	net_buf_pool_init(data_bredr_pool);
+	net_buf_pool_init(&data_bredr_pool);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 	printk("Type \"help\" for supported commands.\n");

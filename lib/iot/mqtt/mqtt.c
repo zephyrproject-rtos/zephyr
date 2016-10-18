@@ -25,14 +25,11 @@
 #define MSG_SIZE	CONFIG_MQTT_MSG_MAX_SIZE
 #define MQTT_BUF_CTR	(1 + CONFIG_MQTT_ADDITIONAL_BUFFER_CTR)
 
-static struct nano_fifo mqtt_msg_fifo;
-
 /* Memory pool internally used to handle messages that may exceed the size of
  * system defined network buffer. By using this memory pool, routines don't deal
  * with fragmentation, so algorithms are more easy to implement.
  */
-static NET_BUF_POOL(mqtt_msg_pool, MQTT_BUF_CTR, MSG_SIZE, &mqtt_msg_fifo,
-		    NULL, 0);
+NET_BUF_POOL_DEFINE(mqtt_msg_pool, MQTT_BUF_CTR, MSG_SIZE, 0, NULL);
 
 int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 {
@@ -41,7 +38,7 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 	/* So far, only clean session = 1 is supported */
 	ctx->clean_session = 1;
 
-	net_buf_pool_init(mqtt_msg_pool);
+	net_buf_pool_init(&mqtt_msg_pool);
 
 	return 0;
 }
@@ -52,7 +49,7 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 	struct net_buf *tx;
 	int rc;
 
-	data = net_buf_get_timeout(&mqtt_msg_fifo, 0, ctx->net_timeout);
+	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
 	if (data == NULL) {
 		rc = -ENOMEM;
 		goto exit_connect;
@@ -222,7 +219,7 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 	struct net_buf *tx;
 	int rc;
 
-	data = net_buf_get_timeout(&mqtt_msg_fifo, 0, ctx->net_timeout);
+	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
 	if (data == NULL) {
 		rc = -ENOMEM;
 		goto exit_publish;
@@ -295,7 +292,7 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
 	struct net_buf *tx;
 	int rc;
 
-	data = net_buf_get_timeout(&mqtt_msg_fifo, 0, ctx->net_timeout);
+	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
 	if (data == NULL) {
 		rc = -ENOMEM;
 		goto exit_subs;
@@ -336,7 +333,7 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
 	struct net_buf *tx;
 	int rc;
 
-	data = net_buf_get_timeout(&mqtt_msg_fifo, 0, ctx->net_timeout);
+	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
 	if (data == NULL) {
 		rc = -ENOMEM;
 		goto exit_unsub;

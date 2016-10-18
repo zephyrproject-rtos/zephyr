@@ -384,8 +384,8 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
 /** @brief Network buffer representation.
   *
   * This struct is used to represent network buffers. Such buffers are
-  * normally defined through the NET_BUF_POOL() API and allocated using
-  * the net_buf_get() and net_buf_get_timeout() APIS.
+  * normally defined through the NET_BUF_POOL_DEFINE() API and allocated
+  * using the net_buf_alloc() API.
   */
 struct net_buf {
 	union {
@@ -409,10 +409,7 @@ struct net_buf {
 	uint8_t flags;
 
 	/** Where the buffer should go when freed up. */
-	struct k_fifo * const free;
-
-	/** Function to be called when the buffer is freed. */
-	void (*const destroy)(struct net_buf *buf);
+	struct net_buf_pool *pool;
 
 	/* Union for convenience access to the net_buf_simple members, also
 	 * preserving the old API.
@@ -439,113 +436,116 @@ struct net_buf {
 	uint8_t __buf[0] __net_buf_align;
 };
 
-/**
- *  @brief Define a pool of buffers of a certain amount and size.
+struct net_buf_pool {
+	/** FIFO to place the buffer into when free */
+	struct k_fifo free;
+
+	/** Number of buffers in pool */
+	const uint16_t buf_count;
+
+	/** Optional destroy callback when buffer is freed. */
+	void (*const destroy)(struct net_buf *buf);
+
+	/** Helper to access the start of storage (for net_buf_pool_init) */
+	struct net_buf * const __bufs;
+};
+
+#define NET_BUF_POOL_INITIALIZER(_bufs, _count, _destroy)                    \
+	{                                                                    \
+		.__bufs = (struct net_buf *)_bufs,                           \
+		.buf_count = _count,                                         \
+		.destroy = _destroy,                                         \
+	}
+
+/** @def NET_BUF_POOL_DEFINE
+ *  @brief Define a new pool for buffers
  *
- *  Defines the necessary memory space (array of structs) for the needed
- *  amount of buffers. After this the net_buf_pool_init() API still
- *  needs to be used (at runtime), after which the buffers can be
- *  accessed using the fifo given as one of the parameters.
+ *  Defines a net_buf_pool struct and the necessary memory storage (array of
+ *  structs) for the needed amount of buffers. After this the
+ *  net_buf_pool_init(&pool_name) API still needs to be used (at runtime),
+ *  after which the buffers can be accessed from the pool. The pool is defined
+ *  as a static variable, so if it needs to be exported outside the current
+ *  module this needs to happen with the help of a separate pointer rather
+ *  than an extern declaration.
  *
  *  If provided with a custom destroy callback this callback is
  *  responsible for eventually returning the buffer back to the free
  *  buffers FIFO through k_fifo_put(buf->free, buf).
  *
- *  @param _name     Name of buffer pool.
+ *  @param _name     Name of the pool variable.
  *  @param _count    Number of buffers in the pool.
  *  @param _size     Maximum data size for each buffer.
- *  @param _fifo     FIFO for the buffers when they are unused.
- *  @param _destroy  Optional destroy callback when buffer is freed.
  *  @param _ud_size  Amount of user data space to reserve.
+ *  @param _destroy  Optional destroy callback when buffer is freed.
  */
-#define NET_BUF_POOL(_name, _count, _size, _fifo, _destroy, _ud_size)	\
-	struct {							\
-		struct net_buf buf;					\
-		uint8_t data[_size] __net_buf_align;	                \
-		uint8_t ud[ROUND_UP(_ud_size, 4)] __net_buf_align;	\
-	} _name[_count] = {						\
-		[0 ... (_count - 1)] = { .buf = {			\
-			.user_data_size = ROUND_UP(_ud_size, 4),	\
-			.free = _fifo,					\
-			.destroy = _destroy,				\
-			.size = _size } },			        \
-	}
+#define NET_BUF_POOL_DEFINE(_name, _count, _size, _ud_size, _destroy)        \
+	static struct {                                                      \
+		struct net_buf buf;                                          \
+		uint8_t data[_size] __net_buf_align;	                     \
+		uint8_t ud[ROUND_UP(_ud_size, 4)] __net_buf_align;           \
+	} _net_buf_pool_##_name[_count] = {                                  \
+		[0 ... (_count - 1)] = {                                     \
+			.buf = {                                             \
+				 .size = _size,                              \
+				 .user_data_size = _ud_size,                 \
+			},                                                   \
+		}                                                            \
+	};                                                                   \
+	static struct net_buf_pool _name =                                   \
+		NET_BUF_POOL_INITIALIZER(_net_buf_pool_##_name, _count,      \
+					 _destroy)
 
 /**
- *  @brief Initialize an available buffers FIFO based on a pool.
+ *  @brief Initialize a buffer pool.
  *
- *  Initializes a buffer pool created using NET_BUF_POOL(). After
- *  calling this API the buffers can ge accessed through the FIFO that
- *  was given to NET_BUF_POOL(), i.e. after this call there should be no
- *  need to access the buffer pool (struct array) directly anymore.
+ *  Initializes a buffer pool defined using NET_BUF_POOL_DEFINE().
  *
  *  @param pool  Buffer pool to initialize.
  */
-#define net_buf_pool_init(pool)						\
-	do {								\
-		int i;							\
-									\
-		k_fifo_init(pool[0].buf.free);				\
-									\
-		for (i = 0; i < ARRAY_SIZE(pool); i++) {		\
-			k_fifo_put(pool[i].buf.free, &pool[i]);		\
-		}							\
-	} while (0)
+void net_buf_pool_init(struct net_buf_pool *pool);
 
 /**
- *  @brief Get a new buffer from a FIFO.
+ *  @brief Allocate a new buffer from a pool.
  *
- *  Get buffer from a FIFO. The reserve_head parameter is only relevant
- *  if the FIFO in question is a free buffers pool, i.e. the buffer will
- *  end up being initialized upon return. If called for any other FIFO
- *  the reserve_head parameter will be ignored and should be set to 0.
+ *  Allocate a new buffer from a pool.
  *
- *  @param fifo Which FIFO to take the buffer from.
- *  @param reserve_head How much headroom to reserve.
+ *  @param pool Which pool to allocate the buffer from.
+ *  @param timeout Affects the action taken should the pool be empty.
+ *         If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *         wait as long as necessary. Otherwise, wait up to the specified
+ *         number of ticks before timing out.
  *
  *  @return New buffer or NULL if out of buffers.
- *
- *  @warning If there are no available buffers and the function is
- *  called from a task or fiber the call will block until a buffer
- *  becomes available in the FIFO. If you want to make sure no blocking
- *  happens use net_buf_get_timeout() instead with K_NO_WAIT.
  */
 #if defined(CONFIG_NET_BUF_DEBUG)
-struct net_buf *net_buf_get_debug(struct k_fifo *fifo, size_t reserve_head,
-				  const char *func, int line);
-#define	net_buf_get(_fifo, _reserve_head) \
-	net_buf_get_debug(_fifo, _reserve_head, __func__, __LINE__)
+struct net_buf *net_buf_alloc_debug(struct net_buf_pool *pool, int32_t timeout,
+				    const char *func, int line);
+#define	net_buf_alloc(_pool, _timeout) \
+	net_buf_get_debug(_pool, _timeout, __func__, __LINE__)
 #else
-struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head);
+struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout);
 #endif
 
 /**
- *  @brief Get a new buffer from a FIFO.
+ *  @brief Get a buffer from a FIFO.
  *
- *  Get buffer from a FIFO. The reserve_head parameter is only relevant
- *  if the FIFO in question is a free buffers pool, i.e. the buffer will
- *  end up being initialized upon return. If called for any other FIFO
- *  the reserve_head parameter will be ignored and should be set to 0.
+ *  Get buffer from a FIFO.
  *
  *  @param fifo Which FIFO to take the buffer from.
- *  @param reserve_head How much headroom to reserve.
  *  @param timeout Affects the action taken should the FIFO be empty.
  *         If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as
  *         long as necessary. Otherwise, wait up to the specified number of
  *         miliseconds before timing out.
  *
- *  @return New buffer or NULL if out of buffers.
+ *  @return New buffer or NULL if the FIFO is empty.
  */
 #if defined(CONFIG_NET_BUF_DEBUG)
-struct net_buf *net_buf_get_timeout_debug(struct k_fifo *fifo,
-					  size_t reserve_head, int32_t timeout,
-					  const char *func, int line);
-#define	net_buf_get_timeout(_fifo, _reserve_head, _timeout) \
-	net_buf_get_timeout_debug(_fifo, _reserve_head, _timeout, __func__, \
-				  __LINE__)
+struct net_buf *net_buf_get_debug(struct k_fifo *fifo, int32_t timeout,
+				  const char *func, int line);
+#define	net_buf_get(_fifo, _timeout) \
+	net_buf_get_debug(_fifo, _timeout, __func__, __LINE__)
 #else
-struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
-				    size_t reserve_head, int32_t timeout);
+struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout);
 #endif
 
 /**
@@ -602,10 +602,14 @@ struct net_buf *net_buf_ref(struct net_buf *buf);
  *  Duplicate given buffer including any data and headers currently stored.
  *
  *  @param buf A valid pointer on a buffer
+ *  @param timeout Affects the action taken should the pool be empty.
+ *         If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *         wait as long as necessary. Otherwise, wait up to the specified
+ *         number of ticks before timing out.
  *
  *  @return Duplicated buffer or NULL if out of buffers.
  */
-struct net_buf *net_buf_clone(struct net_buf *buf);
+struct net_buf *net_buf_clone(struct net_buf *buf, int32_t timeout);
 
 /**
  *  @brief Get a pointer to the user data of a buffer.

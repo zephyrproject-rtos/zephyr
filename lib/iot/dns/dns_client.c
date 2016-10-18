@@ -55,18 +55,16 @@
 #define DNS_IPV4_LEN		4
 #define DNS_IPV6_LEN		16
 
-static struct nano_fifo dns_msg_fifo;
-static NET_BUF_POOL(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
-		    DNS_RESOLVER_MAX_BUF_SIZE, &dns_msg_fifo, NULL, 0);
+NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
+		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
-static struct nano_fifo dns_qname_fifo;
-static NET_BUF_POOL(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
-		    DNS_MAX_NAME_LEN, &dns_qname_fifo, NULL, 0);
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, DNS_MAX_NAME_LEN,
+		    0, NULL);
 
 int dns_init(void)
 {
-	net_buf_pool_init(dns_msg_pool);
-	net_buf_pool_init(dns_qname_pool);
+	net_buf_pool_init(&dns_msg_pool);
+	net_buf_pool_init(&dns_qname_pool);
 
 	return 0;
 }
@@ -102,13 +100,13 @@ int dns_resolve(struct net_context *ctx, uint8_t *addresses, int *items,
 
 	dns_id = sys_rand32_get();
 
-	dns_data = net_buf_get_timeout(&dns_msg_fifo, 0, timeout);
+	dns_data = net_buf_alloc(&dns_msg_pool, timeout);
 	if (dns_data == NULL) {
 		rc = -ENOMEM;
 		goto exit_resolve;
 	}
 
-	dns_qname = net_buf_get_timeout(&dns_qname_fifo, 0, timeout);
+	dns_qname = net_buf_alloc(&dns_qname_pool, timeout);
 	if (dns_qname == NULL) {
 		rc = -ENOMEM;
 		goto exit_resolve;

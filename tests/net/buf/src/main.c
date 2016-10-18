@@ -70,43 +70,43 @@ struct udp_hdr {
 static int destroy_called;
 static int frag_destroy_called;
 
-static struct k_fifo bufs_fifo;
-static struct k_fifo no_data_buf_fifo;
-static struct k_fifo frags_fifo;
-static struct k_fifo big_frags_fifo;
+static void buf_destroy(struct net_buf *buf);
+static void frag_destroy(struct net_buf *buf);
+static void frag_destroy_big(struct net_buf *buf);
+
+NET_BUF_POOL_DEFINE(bufs_pool, 22, 74, sizeof(struct bt_data), buf_destroy);
+NET_BUF_POOL_DEFINE(no_data_pool, 1, 0, sizeof(struct bt_data), NULL);
+NET_BUF_POOL_DEFINE(frags_pool, 13, 128, 0, frag_destroy);
+NET_BUF_POOL_DEFINE(big_frags_pool, 1, 1280, 0, frag_destroy_big);
 
 static void buf_destroy(struct net_buf *buf)
 {
+	struct net_buf_pool *pool = buf->pool;
+
 	destroy_called++;
-	assert_equal(buf->free, &bufs_fifo, "Invalid free pointer in buffer");
-	k_fifo_put(buf->free, buf);
+	assert_equal(pool, &bufs_pool, "Invalid free pointer in buffer");
+	k_fifo_put(&pool->free, buf);
 }
 
 static void frag_destroy(struct net_buf *buf)
 {
+	struct net_buf_pool *pool = buf->pool;
+
 	frag_destroy_called++;
-	assert_equal(buf->free, &frags_fifo,
+	assert_equal(pool, &frags_pool,
 		     "Invalid free frag pointer in buffer");
-	k_fifo_put(buf->free, buf);
+	k_fifo_put(&pool->free, buf);
 }
 
 static void frag_destroy_big(struct net_buf *buf)
 {
+	struct net_buf_pool *pool = buf->pool;
+
 	frag_destroy_called++;
-	assert_equal(buf->free, &big_frags_fifo,
+	assert_equal(pool, &big_frags_pool,
 		     "Invalid free big frag pointer in buffer");
-	k_fifo_put(buf->free, buf);
+	k_fifo_put(&pool->free, buf);
 }
-
-static NET_BUF_POOL(bufs_pool, 22, 74, &bufs_fifo, buf_destroy,
-		    sizeof(struct bt_data));
-
-static NET_BUF_POOL(no_data_buf_pool, 1, 0, &no_data_buf_fifo, NULL,
-		    sizeof(struct bt_data));
-
-static NET_BUF_POOL(frags_pool, 13, 128, &frags_fifo, frag_destroy, 0);
-
-static NET_BUF_POOL(big_pool, 1, 1280, &big_frags_fifo, frag_destroy_big, 0);
 
 static const char example_data[] = "0123456789"
 				   "abcdefghijklmnopqrstuvxyz"
@@ -114,21 +114,21 @@ static const char example_data[] = "0123456789"
 
 static void net_buf_test_1(void)
 {
-	struct net_buf *bufs[ARRAY_SIZE(bufs_pool)];
+	struct net_buf *bufs[bufs_pool.buf_count];
 	struct net_buf *buf;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
-		buf = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
+	for (i = 0; i < bufs_pool.buf_count; i++) {
+		buf = net_buf_alloc(&bufs_pool, K_NO_WAIT);
 		assert_not_null(buf, "Failed to get buffer");
 		bufs[i] = buf;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
+	for (i = 0; i < ARRAY_SIZE(bufs); i++) {
 		net_buf_unref(bufs[i]);
 	}
 
-	assert_equal(destroy_called, ARRAY_SIZE(bufs_pool),
+	assert_equal(destroy_called, ARRAY_SIZE(bufs),
 		     "Incorrect destroy callback count");
 }
 
@@ -138,23 +138,23 @@ static void net_buf_test_2(void)
 	struct k_fifo fifo;
 	int i;
 
-	head = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
+	head = net_buf_alloc(&bufs_pool, K_NO_WAIT);
 	assert_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
-	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
-		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
+	for (i = 0; i < bufs_pool.buf_count - 1; i++) {
+		frag->frags = net_buf_alloc(&bufs_pool, K_NO_WAIT);
 		assert_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
 
 	k_fifo_init(&fifo);
 	net_buf_put(&fifo, head);
-	head = net_buf_get_timeout(&fifo, 0, K_NO_WAIT);
+	head = net_buf_get(&fifo, K_NO_WAIT);
 
 	destroy_called = 0;
 	net_buf_unref(head);
-	assert_equal(destroy_called, ARRAY_SIZE(bufs_pool),
+	assert_equal(destroy_called, bufs_pool.buf_count,
 		     "Incorrect fragment destroy callback count");
 }
 
@@ -166,12 +166,12 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 
 	k_sem_give(sema);
 
-	buf = net_buf_get_timeout(fifo, 0, TEST_TIMEOUT);
+	buf = net_buf_get(fifo, TEST_TIMEOUT);
 	assert_not_null(buf, "Unable to get buffer");
 
 	destroy_called = 0;
 	net_buf_unref(buf);
-	assert_equal(destroy_called, ARRAY_SIZE(bufs_pool),
+	assert_equal(destroy_called, bufs_pool.buf_count,
 		     "Incorrect destroy callback count");
 
 	k_sem_give(sema);
@@ -185,12 +185,12 @@ static void net_buf_test_3(void)
 	struct k_sem sema;
 	int i;
 
-	head = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
+	head = net_buf_alloc(&bufs_pool, K_NO_WAIT);
 	assert_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
-	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
-		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
+	for (i = 0; i < bufs_pool.buf_count - 1; i++) {
+		frag->frags = net_buf_alloc(&bufs_pool, K_NO_WAIT);
 		assert_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
@@ -213,29 +213,29 @@ static void net_buf_test_3(void)
 
 static void net_buf_test_4(void)
 {
-	struct net_buf *frags[ARRAY_SIZE(frags_pool)];
+	struct net_buf *frags[frags_pool.buf_count];
 	struct net_buf *buf, *frag;
 	int i, removed;
 
-	net_buf_pool_init(no_data_buf_pool);
-	net_buf_pool_init(frags_pool);
+	net_buf_pool_init(&no_data_pool);
+	net_buf_pool_init(&frags_pool);
 
 	/* Create a buf that does not have any data to store, it just
 	 * contains link to fragments.
 	 */
-	buf = net_buf_get(&no_data_buf_fifo, 0);
+	buf = net_buf_alloc(&no_data_pool, K_FOREVER);
 
 	assert_equal(buf->size, 0, "Invalid buffer size");
 
 	/* Test the fragments by appending after last fragment */
-	for (i = 0; i < ARRAY_SIZE(frags_pool) - 1; i++) {
-		frag = net_buf_get(&frags_fifo, 0);
+	for (i = 0; i < frags_pool.buf_count - 1; i++) {
+		frag = net_buf_alloc(&frags_pool, K_FOREVER);
 		net_buf_frag_add(buf, frag);
 		frags[i] = frag;
 	}
 
 	/* And one as a first fragment */
-	frag = net_buf_get(&frags_fifo, 0);
+	frag = net_buf_alloc(&frags_pool, K_FOREVER);
 	net_buf_frag_insert(buf, frag);
 	frags[i] = frag;
 
@@ -249,7 +249,7 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	assert_equal(i, ARRAY_SIZE(frags_pool), "Incorrect fragment count");
+	assert_equal(i, frags_pool.buf_count, "Incorrect fragment count");
 
 	/* Remove about half of the fragments and verify count */
 	i = removed = 0;
@@ -274,7 +274,7 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	assert_equal(i + removed, ARRAY_SIZE(frags_pool),
+	assert_equal(i + removed, frags_pool.buf_count,
 		     "Incorrect removed fragment count");
 
 	removed = 0;
@@ -288,22 +288,22 @@ static void net_buf_test_4(void)
 	}
 
 	assert_equal(removed, i, "Incorrect removed fragment count");
-	assert_equal(frag_destroy_called, ARRAY_SIZE(frags_pool),
+	assert_equal(frag_destroy_called, frags_pool.buf_count,
 		     "Incorrect frag destroy callback count");
 
 	/* Add the fragments back and verify that they are properly unref
 	 * by freeing the top buf.
 	 */
-	for (i = 0; i < ARRAY_SIZE(frags_pool) - 3; i++) {
-		net_buf_frag_add(buf, net_buf_get(&frags_fifo, 0));
+	for (i = 0; i < frags_pool.buf_count - 3; i++) {
+		net_buf_frag_add(buf, net_buf_alloc(&frags_pool, K_FOREVER));
 	}
 
 	/* Create a fragment list and add it to frags list after first
 	 * element
 	 */
-	frag = net_buf_get(&frags_fifo, 0);
-	net_buf_frag_add(frag, net_buf_get(&frags_fifo, 0));
-	net_buf_frag_insert(frag, net_buf_get(&frags_fifo, 0));
+	frag = net_buf_alloc(&frags_pool, K_FOREVER);
+	net_buf_frag_add(frag, net_buf_alloc(&frags_pool, K_FOREVER));
+	net_buf_frag_insert(frag, net_buf_alloc(&frags_pool, K_FOREVER));
 	net_buf_frag_insert(buf->frags->frags, frag);
 
 	i = 0;
@@ -313,37 +313,37 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	assert_equal(i, ARRAY_SIZE(frags_pool),
-		     "Incorrect fragment count");
+	assert_equal(i, frags_pool.buf_count, "Incorrect fragment count");
 
 	frag_destroy_called = 0;
 
 	net_buf_unref(buf);
 
-	assert_equal(frag_destroy_called, ARRAY_SIZE(frags_pool),
+	assert_equal(frag_destroy_called, frags_pool.buf_count,
 		     "Incorrect frag destroy callback count");
 }
 
 static void net_buf_test_big_buf(void)
 {
-	struct net_buf *big_frags[ARRAY_SIZE(big_pool)];
+	struct net_buf *big_frags[big_frags_pool.buf_count];
 	struct net_buf *buf, *frag;
 	struct ipv6_hdr *ipv6;
 	struct udp_hdr *udp;
 	int i, len;
 
-	net_buf_pool_init(big_pool);
+	net_buf_pool_init(&big_frags_pool);
 
 	frag_destroy_called = 0;
 
-	buf = net_buf_get(&no_data_buf_fifo, 0);
+	buf = net_buf_alloc(&no_data_pool, K_FOREVER);
 
 	/* We reserve some space in front of the buffer for protocol
 	 * headers (IPv6 + UDP). Link layer headers are ignored in
 	 * this example.
 	 */
 #define PROTO_HEADERS (sizeof(struct ipv6_hdr) + sizeof(struct udp_hdr))
-	frag = net_buf_get(&big_frags_fifo, PROTO_HEADERS);
+	frag = net_buf_alloc(&big_frags_pool, K_FOREVER);
+	net_buf_reserve(frag, PROTO_HEADERS);
 	big_frags[0] = frag;
 
 	/* First add some application data */
@@ -360,13 +360,13 @@ static void net_buf_test_big_buf(void)
 	net_buf_frag_add(buf, frag);
 	net_buf_unref(buf);
 
-	assert_equal(frag_destroy_called, ARRAY_SIZE(big_pool),
+	assert_equal(frag_destroy_called, big_frags_pool.buf_count,
 		     "Incorrect frag destroy callback count");
 }
 
 static void net_buf_test_multi_frags(void)
 {
-	struct net_buf *frags[ARRAY_SIZE(frags_pool)];
+	struct net_buf *frags[frags_pool.buf_count];
 	struct net_buf *buf;
 	struct ipv6_hdr *ipv6;
 	struct udp_hdr *udp;
@@ -375,7 +375,7 @@ static void net_buf_test_multi_frags(void)
 	frag_destroy_called = 0;
 
 	/* Example of multi fragment scenario with IPv6 */
-	buf = net_buf_get(&no_data_buf_fifo, 0);
+	buf = net_buf_alloc(&no_data_pool, K_FOREVER);
 
 	/* We reserve some space in front of the buffer for link layer headers.
 	 * In this example, we use min MTU (81 bytes) defined in rfc 4944 ch. 4
@@ -385,23 +385,23 @@ static void net_buf_test_multi_frags(void)
 	 */
 
 #define LL_HEADERS (127 - 81)
-	for (i = 0; i < ARRAY_SIZE(frags_pool) - 1; i++) {
-		frags[i] = net_buf_get(&frags_fifo, LL_HEADERS);
+	for (i = 0; i < frags_pool.buf_count - 1; i++) {
+		frags[i] = net_buf_alloc(&frags_pool, K_FOREVER);
+		net_buf_reserve(frags[i], LL_HEADERS);
 		avail += net_buf_tailroom(frags[i]);
 		net_buf_frag_add(buf, frags[i]);
 	}
 
 	/* Place the IP + UDP header in the first fragment */
-	frags[i] = net_buf_get(&frags_fifo,
-			       LL_HEADERS +
-			       (sizeof(struct ipv6_hdr) +
-				sizeof(struct udp_hdr)));
+	frags[i] = net_buf_alloc(&frags_pool, K_FOREVER);
+	net_buf_reserve(frags[i], LL_HEADERS + (sizeof(struct ipv6_hdr) +
+						sizeof(struct udp_hdr)));
 	avail += net_buf_tailroom(frags[i]);
 	net_buf_frag_insert(buf, frags[i]);
 
 	/* First add some application data */
 	len = strlen(example_data);
-	for (i = 0; i < ARRAY_SIZE(frags_pool) - 1; i++) {
+	for (i = 0; i < frags_pool.buf_count - 1; i++) {
 		assert_true(net_buf_tailroom(frags[i]) >= len,
 			    "Allocated buffer is too small");
 		memcpy(net_buf_add(frags[i], len), example_data, len);
@@ -413,13 +413,13 @@ static void net_buf_test_multi_frags(void)
 
 	net_buf_unref(buf);
 
-	assert_equal(frag_destroy_called, ARRAY_SIZE(frags_pool),
+	assert_equal(frag_destroy_called, frags_pool.buf_count,
 		     "Incorrect big frag destroy callback count");
 }
 
 void test_main(void)
 {
-	net_buf_pool_init(bufs_pool);
+	net_buf_pool_init(&bufs_pool);
 
 	ztest_test_suite(net_buf_test,
 			 ztest_unit_test(net_buf_test_1),

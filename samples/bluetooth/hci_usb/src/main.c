@@ -88,9 +88,8 @@ static struct k_fifo rx_queue;
 		      sizeof(struct bt_hci_cmd_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
 
-static struct k_fifo avail_tx;
-static NET_BUF_POOL(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
-		    &avail_tx, NULL, sizeof(uint8_t));
+NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
+		    sizeof(uint8_t), NULL);
 
 #define BT_L2CAP_MTU 64
 /** Data size needed for ACL buffers */
@@ -99,9 +98,7 @@ static NET_BUF_POOL(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 			 4 /* L2CAP header size */ + \
 			 BT_L2CAP_MTU)
 
-static struct k_fifo avail_acl_tx;
-static NET_BUF_POOL(acl_tx_pool, 2, BT_BUF_ACL_SIZE, &avail_acl_tx, NULL,
-		    sizeof(uint8_t));
+NET_BUF_POOL_DEFINE(acl_tx_pool, 2, BT_BUF_ACL_SIZE, sizeof(uint8_t), NULL);
 
 /* Device data structure */
 struct btusb_dev_data_t {
@@ -447,7 +444,7 @@ static void btusb_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		return;
 	}
 
-	buf = net_buf_get(&avail_acl_tx, 0);
+	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
 	if (!buf) {
 		SYS_LOG_ERR("Cannot get free buffer\n");
 		return;
@@ -616,7 +613,7 @@ static int btusb_class_handler(struct usb_setup_packet *setup,
 
 	hexdump(">", *data, *len);
 
-	buf = net_buf_get(&avail_tx, 0);
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (!buf) {
 		SYS_LOG_ERR("Cannot get free buffer\n");
 		return -ENOMEM;
@@ -695,8 +692,8 @@ void main(void)
 	SYS_LOG_DBG("Start");
 
 	/* Initialize the buffer pools */
-	net_buf_pool_init(tx_pool);
-	net_buf_pool_init(acl_tx_pool);
+	net_buf_pool_init(&tx_pool);
+	net_buf_pool_init(&acl_tx_pool);
 	k_fifo_init(&rx_queue);
 
 	bt_enable_raw(&rx_queue);
@@ -704,7 +701,7 @@ void main(void)
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&rx_queue, 0, K_FOREVER);
+		buf = net_buf_get(&rx_queue, K_FOREVER);
 
 		hexdump("<", buf->data, buf->len);
 

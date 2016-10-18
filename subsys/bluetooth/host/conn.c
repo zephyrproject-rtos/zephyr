@@ -44,13 +44,11 @@
 #endif
 
 /* Pool for outgoing ACL fragments */
-static struct k_fifo frag_buf;
-static NET_BUF_POOL(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), &frag_buf, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), BT_BUF_USER_DATA_MIN,
+		    NULL);
 
 /* Pool for dummy buffers to wake up the tx threads */
-static struct k_fifo dummy;
-static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
+NET_BUF_POOL_DEFINE(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, 0, NULL);
 
 /* How long until we cancel HCI_LE_Create_Connection */
 #define CONN_TIMEOUT	K_SECONDS(3)
@@ -950,7 +948,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	struct net_buf *frag;
 	uint16_t frag_len;
 
-	frag = bt_conn_create_pdu(&frag_buf, 0);
+	frag = bt_conn_create_pdu(&frag_pool, 0);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		net_buf_unref(frag);
@@ -1013,7 +1011,7 @@ static void conn_tx_thread(void *p1, void *p2, void *p3)
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Get next ACL packet for connection */
-		buf = net_buf_get_timeout(&conn->tx_queue, 0, K_FOREVER);
+		buf = net_buf_get(&conn->tx_queue, K_FOREVER);
 		if (conn->state != BT_CONN_CONNECTED) {
 			net_buf_unref(buf);
 			break;
@@ -1027,7 +1025,7 @@ static void conn_tx_thread(void *p1, void *p2, void *p3)
 	BT_DBG("handle %u disconnected - cleaning up", conn->handle);
 
 	/* Give back any allocated buffers */
-	while ((buf = net_buf_get_timeout(&conn->tx_queue, 0, K_NO_WAIT))) {
+	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -1130,7 +1128,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_l2cap_disconnected(conn);
 			notify_disconnected(conn);
 
-			net_buf_put(&conn->tx_queue, net_buf_get(&dummy, 0));
+			net_buf_put(&conn->tx_queue,
+				    net_buf_alloc(&dummy_pool, K_NO_WAIT));
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */
 			notify_connected(conn);
@@ -1574,12 +1573,17 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
 
-struct net_buf *bt_conn_create_pdu(struct k_fifo *fifo, size_t reserve)
+struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 {
 	size_t head_reserve = reserve + sizeof(struct bt_hci_acl_hdr) +
 					CONFIG_BLUETOOTH_HCI_SEND_RESERVE;
+	struct net_buf *buf;
 
-	return net_buf_get(fifo, head_reserve);
+	buf = net_buf_alloc(pool, K_FOREVER);
+	/* NULL return is not possible because of K_FOREVER */
+	net_buf_reserve(buf, head_reserve);
+
+	return buf;
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -1735,8 +1739,8 @@ int bt_conn_init(void)
 {
 	int err;
 
-	net_buf_pool_init(frag_pool);
-	net_buf_pool_init(dummy_pool);
+	net_buf_pool_init(&frag_pool);
+	net_buf_pool_init(&dummy_pool);
 
 	bt_att_init();
 

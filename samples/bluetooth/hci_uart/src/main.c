@@ -45,9 +45,8 @@ static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_SEND_STACK);
 		      sizeof(struct bt_hci_cmd_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
 
-static struct k_fifo avail_cmd_tx;
-static NET_BUF_POOL(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
-		    &avail_cmd_tx, NULL, BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 #define BT_L2CAP_MTU 64
 /** Data size needed for ACL buffers */
@@ -62,10 +61,8 @@ static NET_BUF_POOL(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 #define TX_BUF_COUNT 6
 #endif
 
-static struct k_fifo avail_acl_tx;
-
-static NET_BUF_POOL(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE,
-		    &avail_acl_tx, NULL, BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE,
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 static struct k_fifo tx_queue;
 
@@ -126,7 +123,7 @@ static struct net_buf *h4_cmd_recv(int *remaining)
 
 	*remaining = hdr.param_len;
 
-	buf = net_buf_get(&avail_cmd_tx, 0);
+	buf = net_buf_alloc(&cmd_tx_pool, K_NO_WAIT);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_CMD);
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
@@ -147,7 +144,7 @@ static struct net_buf *h4_acl_recv(int *remaining)
 	/* We can ignore the return value since we pass len == min */
 	h4_read(hci_uart_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
-	buf = net_buf_get(&avail_acl_tx, 0);
+	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
@@ -245,7 +242,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get_timeout(&tx_queue, 0, K_FOREVER);
+		buf = net_buf_get(&tx_queue, K_FOREVER);
 		/* Pass buffer to the stack */
 		bt_send(buf);
 
@@ -362,8 +359,8 @@ void main(void)
 	SYS_LOG_DBG("Start");
 
 	/* Initialize the buffer pools */
-	net_buf_pool_init(cmd_tx_pool);
-	net_buf_pool_init(acl_tx_pool);
+	net_buf_pool_init(&cmd_tx_pool);
+	net_buf_pool_init(&acl_tx_pool);
 	/* Initialize the FIFOs */
 	k_fifo_init(&tx_queue);
 	k_fifo_init(&rx_queue);
@@ -379,7 +376,7 @@ void main(void)
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&rx_queue, 0, K_FOREVER);
+		buf = net_buf_get(&rx_queue, K_FOREVER);
 		err = h4_send(buf);
 		if (err) {
 			SYS_LOG_ERR("Failed to send");

@@ -39,14 +39,12 @@ void k_fifo_put(struct k_fifo *fifo, void *data)
 #define BUF_COUNT 1
 #define BUF_SIZE 74
 
-static struct k_fifo bufs_fifo;
-static NET_BUF_POOL(bufs_pool, BUF_COUNT, BUF_SIZE, &bufs_fifo,
-		NULL, sizeof(int));
+NET_BUF_POOL_DEFINE(bufs_pool, BUF_COUNT, BUF_SIZE, sizeof(int), NULL);
 
 static void init_pool(void)
 {
-	ztest_expect_value(k_fifo_put, data, &bufs_pool);
-	net_buf_pool_init(bufs_pool);
+	ztest_expect_value(k_fifo_put, data, bufs_pool.__bufs);
+	net_buf_pool_init(&bufs_pool);
 }
 
 static void test_get_single_buffer(void)
@@ -55,10 +53,10 @@ static void test_get_single_buffer(void)
 
 	init_pool();
 
-	ztest_returns_value(k_fifo_get, bufs_pool);
-	buf = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
+	ztest_returns_value(k_fifo_get, bufs_pool.__bufs);
+	buf = net_buf_alloc(&bufs_pool, K_NO_WAIT);
 
-	assert_equal_ptr(buf, &bufs_pool[0], "Returned buffer not from pool");
+	assert_equal_ptr(buf, bufs_pool.__bufs, "Returned buffer not from pool");
 	assert_equal(buf->ref, 1, "Invalid refcount");
 	assert_equal(buf->len, 0, "Invalid length");
 	assert_equal(buf->flags, 0, "Invalid flags");

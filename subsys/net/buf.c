@@ -47,42 +47,66 @@
 #endif /* CONFIG_NET_BUF_DEBUG */
 
 #if defined(CONFIG_NET_BUF_DEBUG)
-struct net_buf *net_buf_get_timeout_debug(struct k_fifo *fifo,
-					  size_t reserve_head, int32_t timeout,
-					  const char *func, int line)
+struct net_buf *net_buf_alloc_debug(struct net_buf_pool *pool, int32_t timeout,
+				    const char *func, int line)
 #else
-struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
-				    size_t reserve_head, int32_t timeout)
+struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 #endif
 {
-	struct net_buf *buf, *frag;
+	struct net_buf *buf;
 
-	NET_BUF_ASSERT(fifo);
+	NET_BUF_ASSERT(pool);
 
-	NET_BUF_DBG("fifo %p reserve %u timeout %d", fifo, reserve_head,
-		    timeout);
+	NET_BUF_DBG("pool %p timeout %d", pool, timeout);
 
-	buf = k_fifo_get(fifo, timeout);
+#if defined(CONFIG_NET_BUF_DEBUG)
+	if (timeout == K_FOREVER) {
+		buf = net_buf_alloc(pool, K_NO_WAIT);
+		if (!buf) {
+			NET_BUF_WARN("%s():%d: Pool %p low on buffers.",
+				     func, line, pool);
+			buf = k_fifo_get(&pool->free, timeout);
+		}
+	} else {
+		buf = k_fifo_get(&pool->free, timeout);
+	}
+#else
+	buf = k_fifo_get(&pool->free, timeout);
+#endif
 	if (!buf) {
 		NET_BUF_ERR("%s():%d: Failed to get free buffer", func, line);
 		return NULL;
 	}
 
-	NET_BUF_DBG("buf %p fifo %p reserve %u", buf, fifo, reserve_head);
+	NET_BUF_DBG("allocated buf %p");
 
-	/* If this buffer is from the free buffers FIFO there wont be
-	 * any fragments and we can directly proceed with initializing
-	 * and returning it.
-	 */
-	if (buf->free == fifo) {
-		buf->ref   = 1;
-		buf->len   = 0;
-		net_buf_reserve(buf, reserve_head);
-		buf->flags = 0;
-		buf->frags = NULL;
+	buf->ref   = 1;
+	buf->len   = 0;
+	buf->data  = buf->__buf;
+	buf->flags = 0;
+	buf->frags = NULL;
 
-		return buf;
+	return buf;
+}
+
+#if defined(CONFIG_NET_BUF_DEBUG)
+struct net_buf *net_buf_get_debug(struct k_fifo *fifo, int32_t timeout,
+				  const char *func, int line)
+#else
+struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout)
+#endif
+{
+	struct net_buf *buf, *frag;
+
+	NET_BUF_DBG("fifo %p timeout %d", fifo, timeout);
+
+	buf = k_fifo_get(fifo, timeout);
+	if (!buf) {
+		NET_BUF_ERR("Failed to get free buffer");
+		return NULL;
 	}
+
+	NET_BUF_DBG("buf %p fifo %p", buf, fifo);
 
 	/* Get any fragments belonging to this buffer */
 	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
@@ -99,26 +123,26 @@ struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
 	return buf;
 }
 
-#if defined(CONFIG_NET_BUF_DEBUG)
-struct net_buf *net_buf_get_debug(struct k_fifo *fifo, size_t reserve_head,
-				  const char *func, int line)
-#else
-struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head)
-#endif
+/* Helper to iterate the storage array, since we don't have access to its type
+ * at this point anymore.
+ */
+#define NEXT_BUF(buf) ((struct net_buf *)(((uint8_t *)buf) + sizeof(*buf) + \
+					  ROUND_UP(buf->size, 4) + \
+					  ROUND_UP(buf->user_data_size, 4)))
+
+void net_buf_pool_init(struct net_buf_pool *pool)
 {
 	struct net_buf *buf;
+	uint16_t i;
 
-	NET_BUF_DBG("fifo %p reserve %u", fifo, reserve_head);
+	k_fifo_init(&pool->free);
 
-	buf = net_buf_get_timeout(fifo, reserve_head, K_NO_WAIT);
-	if (buf || k_is_in_isr()) {
-		return buf;
+	buf = pool->__bufs;
+	for (i = 0; i < pool->buf_count; i++) {
+		buf->pool = pool;
+		k_fifo_put(&pool->free, buf);
+		buf = NEXT_BUF(buf);
 	}
-
-	NET_BUF_WARN("%s():%d: Low on buffers. Waiting (fifo %p)", func, line,
-		     fifo);
-
-	return net_buf_get_timeout(fifo, reserve_head, K_FOREVER);
 }
 
 void net_buf_reserve(struct net_buf *buf, size_t reserve)
@@ -171,10 +195,10 @@ void net_buf_unref(struct net_buf *buf)
 
 		buf->frags = NULL;
 
-		if (buf->destroy) {
-			buf->destroy(buf);
+		if (buf->pool->destroy) {
+			buf->pool->destroy(buf);
 		} else {
-			k_fifo_put(buf->free, buf);
+			k_fifo_put(&buf->pool->free, buf);
 		}
 
 		buf = frags;
@@ -190,16 +214,18 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 	return buf;
 }
 
-struct net_buf *net_buf_clone(struct net_buf *buf)
+struct net_buf *net_buf_clone(struct net_buf *buf, int32_t timeout)
 {
 	struct net_buf *clone;
 
 	NET_BUF_ASSERT(buf);
 
-	clone = net_buf_get(buf->free, net_buf_headroom(buf));
+	clone = net_buf_alloc(buf->pool, timeout);
 	if (!clone) {
 		return NULL;
 	}
+
+	net_buf_reserve(clone, net_buf_headroom(buf));
 
 	/* TODO: Add reference to the original buffer instead of copying it. */
 	memcpy(net_buf_add(clone, buf->len), buf->data, buf->len);

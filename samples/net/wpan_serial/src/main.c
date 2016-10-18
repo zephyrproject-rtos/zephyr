@@ -358,7 +358,7 @@ static void rx_thread(void)
 		struct net_buf *pkt, *buf;
 		uint8_t specifier;
 
-		pkt = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
+		pkt = net_buf_get(&rx_queue, K_FOREVER);
 		buf = net_buf_frag_last(pkt);
 
 		SYS_LOG_DBG("Got pkt %p buf %p", pkt, buf);
@@ -434,7 +434,7 @@ static void tx_thread(void)
 
 		k_sem_take(&tx_sem, K_FOREVER);
 
-		pkt = net_buf_get_timeout(&tx_queue, 0, TICKS_UNLIMITED);
+		pkt = net_buf_get(&tx_queue, K_FOREVER);
 		buf = net_buf_frag_last(pkt);
 		len = net_buf_frags_len(pkt);
 

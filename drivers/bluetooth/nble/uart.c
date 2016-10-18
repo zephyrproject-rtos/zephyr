@@ -57,11 +57,8 @@ struct ipc_uart_header {
 #define NBLE_RX_BUF_COUNT	10
 #define NBLE_BUF_SIZE		384
 
-static struct k_fifo rx;
-static NET_BUF_POOL(rx_pool, NBLE_RX_BUF_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
-
-static struct k_fifo tx;
-static NET_BUF_POOL(tx_pool, NBLE_TX_BUF_COUNT, NBLE_BUF_SIZE, &tx, NULL, 0);
+NET_BUF_POOL_DEFINE(rx_pool, NBLE_RX_BUF_COUNT, NBLE_BUF_SIZE, 0, NULL);
+NET_BUF_POOL_DEFINE(tx_pool, NBLE_TX_BUF_COUNT, NBLE_BUF_SIZE, 0, NULL);
 
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
@@ -76,7 +73,7 @@ static void rx_thread(void)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&rx_queue, 0, K_FOREVER);
+		buf = net_buf_get(&rx_queue, K_FOREVER);
 		BT_DBG("Got buf %p", buf);
 
 		rpc_deserialize(buf);
@@ -96,11 +93,13 @@ struct net_buf *rpc_alloc_cb(uint16_t length)
 
 	BT_DBG("length %u", length);
 
-	buf = net_buf_get(&tx, sizeof(struct ipc_uart_header));
+	buf = net_buf_alloc(&tx_pool, K_FOREVER);
 	if (!buf) {
 		BT_ERR("Unable to get tx buffer");
 		return NULL;
 	}
+
+	net_buf_reserve(buf, sizeof(struct ipc_uart_header));
 
 	if (length > net_buf_tailroom(buf)) {
 		BT_ERR("Too big tx buffer requested");
@@ -185,7 +184,7 @@ static void bt_uart_isr(struct device *unused)
 				BT_ERR("Too much data to fit buffer");
 				buf = NULL;
 			} else {
-				buf = net_buf_get_timeout(&rx, 0, K_NO_WAIT);
+				buf = net_buf_alloc(&rx_pool, K_NO_WAIT);
 				if (!buf) {
 					BT_ERR("No available IPC buffers");
 				}
@@ -251,8 +250,8 @@ static int _bt_nble_init(struct device *unused)
 		return -EINVAL;
 	}
 
-	net_buf_pool_init(rx_pool);
-	net_buf_pool_init(tx_pool);
+	net_buf_pool_init(&rx_pool);
+	net_buf_pool_init(&tx_pool);
 
 	return 0;
 }

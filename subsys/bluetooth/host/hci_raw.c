@@ -30,16 +30,12 @@
 static struct k_fifo *raw_rx;
 
 /* ACL incoming buffers */
-static struct k_fifo avail_acl_in;
-static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
-		    BT_BUF_ACL_IN_SIZE, &avail_acl_in, NULL,
-		    sizeof(uint8_t));
+NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
+		    BT_BUF_ACL_IN_SIZE, sizeof(uint8_t), NULL);
 
 /* HCI event buffers */
-static struct k_fifo avail_hci_evt;
-static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
-		    BT_BUF_EVT_SIZE, &avail_hci_evt, NULL,
-		    sizeof(uint8_t));
+NET_BUF_POOL_DEFINE(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
+		    BT_BUF_EVT_SIZE, sizeof(uint8_t), NULL);
 
 struct bt_dev_raw bt_dev;
 
@@ -72,7 +68,7 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode)
 {
 	struct net_buf *buf;
 
-	buf = net_buf_get(&avail_hci_evt, 0);
+	buf = net_buf_alloc(&hci_evt_pool, K_NO_WAIT);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
 	}
@@ -84,7 +80,7 @@ struct net_buf *bt_buf_get_acl(void)
 {
 	struct net_buf *buf;
 
-	buf = net_buf_get(&avail_acl_in, 0);
+	buf = net_buf_alloc(&acl_in_pool, K_NO_WAIT);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 	}
@@ -120,8 +116,8 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 
 	BT_DBG("");
 
-	net_buf_pool_init(hci_evt_pool);
-	net_buf_pool_init(acl_in_pool);
+	net_buf_pool_init(&hci_evt_pool);
+	net_buf_pool_init(&acl_in_pool);
 
 	raw_rx = rx_queue;
 

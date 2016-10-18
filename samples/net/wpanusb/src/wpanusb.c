@@ -420,7 +420,7 @@ static void tx_thread(void)
 		uint8_t cmd;
 		struct net_buf *pkt, *buf;
 
-		pkt = net_buf_get_timeout(&tx_queue, 0, TICKS_UNLIMITED);
+		pkt = net_buf_get(&tx_queue, K_FOREVER);
 		buf = net_buf_frag_last(pkt);
 		cmd = net_buf_pull_u8(buf);
 

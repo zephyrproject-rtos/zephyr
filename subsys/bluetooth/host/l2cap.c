@@ -79,17 +79,15 @@ static struct bt_l2cap_server *servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 /* Pool for outgoing LE signaling packets, MTU is 23 */
-static struct k_fifo le_sig;
-static NET_BUF_POOL(le_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_sig, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(le_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU),
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Pool for outgoing LE data packets, MTU is 23 */
-static struct k_fifo le_data;
-static NET_BUF_POOL(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(BT_L2CAP_MAX_LE_MPS), &le_data, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(BT_L2CAP_MAX_LE_MPS),
+		    BT_BUF_USER_DATA_MIN, NULL);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -403,7 +401,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 	struct net_buf *buf;
 	struct bt_l2cap_sig_hdr *hdr;
 
-	buf = bt_l2cap_create_pdu(&le_sig, 0);
+	buf = bt_l2cap_create_pdu(&le_sig_pool, 0);
 	if (!buf) {
 		return NULL;
 	}
@@ -505,9 +503,9 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 	}
 }
 
-struct net_buf *bt_l2cap_create_pdu(struct k_fifo *fifo, size_t reserve)
+struct net_buf *bt_l2cap_create_pdu(struct net_buf_pool *pool, size_t reserve)
 {
-	return bt_conn_create_pdu(fifo, sizeof(struct bt_l2cap_hdr) + reserve);
+	return bt_conn_create_pdu(pool, sizeof(struct bt_l2cap_hdr) + reserve);
 }
 
 void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
@@ -1412,9 +1410,9 @@ void bt_l2cap_init(void)
 		.accept	= l2cap_accept,
 	};
 
-	net_buf_pool_init(le_sig_pool);
+	net_buf_pool_init(&le_sig_pool);
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-	net_buf_pool_init(le_data_pool);
+	net_buf_pool_init(&le_data_pool);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 	bt_l2cap_le_fixed_chan_register(&chan);
@@ -1581,7 +1579,7 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	}
 
 segment:
-	seg = bt_l2cap_create_pdu(&le_data, 0);
+	seg = bt_l2cap_create_pdu(&le_data_pool, 0);
 	if (!seg) {
 		return NULL;
 	}

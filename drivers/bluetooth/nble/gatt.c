@@ -39,10 +39,9 @@
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 /* Pool for incoming ATT packets */
-static struct k_fifo prep_data;
-static NET_BUF_POOL(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
-		    BLE_GATT_MTU_SIZE, &prep_data, NULL,
-		    sizeof(struct nble_gatts_write_evt));
+NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
+		    BLE_GATT_MTU_SIZE, sizeof(struct nble_gatts_write_evt),
+		    NULL);
 
 static struct k_fifo queue;
 #endif
@@ -1422,7 +1421,7 @@ static int32_t prep_write_evt(const struct nble_gatts_write_evt *ev,
 		return ret;
 	}
 
-	buf = net_buf_get_timeout(&prep_data, 0, K_NO_WAIT);
+	buf = net_buf_alloc(&prep_pool, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("No more buffers for prepare write");
 		return BT_GATT_ERR(BT_ATT_ERR_PREPARE_QUEUE_FULL);
@@ -1585,7 +1584,7 @@ void bt_gatt_init(void)
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	k_fifo_init(&queue);
-	net_buf_pool_init(prep_pool);
+	net_buf_pool_init(&prep_pool);
 #endif
 }
 

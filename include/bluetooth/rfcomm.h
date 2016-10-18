@@ -175,14 +175,14 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
  */
 int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
 
-/** @brief Get the buffer from fifo after reserving head room for RFCOMM, L2CAP
- *  and ACL headers.
+/** @brief Allocate the buffer from pool after reserving head room for RFCOMM,
+ *  L2CAP and ACL headers.
  *
- *  @param fifo Which FIFO to take the buffer from.
+ *  @param pool Which pool to take the buffer from.
  *
  *  @return New buffer.
  */
-struct net_buf *bt_rfcomm_create_pdu(struct k_fifo *fifo);
+struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool);
 
 #ifdef __cplusplus
 }

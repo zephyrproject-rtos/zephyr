@@ -39,11 +39,9 @@ struct header {
 
 #define TEST_MSG "foobar devnull"
 
-static struct k_fifo bufs_fifo;
-static struct k_fifo data_fifo;
+NET_BUF_POOL_DEFINE(bufs_pool, 2, 0, sizeof(struct header), NULL);
 
-static NET_BUF_POOL(bufs_pool, 2, 0, &bufs_fifo, NULL, sizeof(struct header));
-static NET_BUF_POOL(data_pool, 2, 128, &data_fifo, NULL, 0);
+NET_BUF_POOL_DEFINE(data_pool, 2, 128, 0, NULL);
 
 static enum net_verdict handle_test_msg(struct net_buf *buf)
 {
@@ -77,14 +75,14 @@ static bool run_tests(void)
 	struct net_buf *buf, *frag;
 	int ret;
 
-	net_buf_pool_init(bufs_pool);
-	net_buf_pool_init(data_pool);
+	net_buf_pool_init(&bufs_pool);
+	net_buf_pool_init(&data_pool);
 
 	net_icmpv6_register_handler(&test_handler1);
 	net_icmpv6_register_handler(&test_handler2);
 
-	buf = net_buf_get(&bufs_fifo, 0);
-	frag = net_buf_get(&data_fifo, 0);
+	buf = net_buf_alloc(&bufs_pool, K_FOREVER);
+	frag = net_buf_alloc(&data_pool, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 

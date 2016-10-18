@@ -101,10 +101,9 @@ static struct bt_l2cap_server *br_servers;
 static struct bt_l2cap_fixed_chan *br_fixed_channels;
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-static struct k_fifo br_sig;
-static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU),
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 /* BR/EDR L2CAP signalling channel specific context */
 struct bt_l2cap_br {
@@ -320,7 +319,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 		return;
 	}
 
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!buf) {
 		BT_ERR("No buffers");
 		return;
@@ -465,7 +464,7 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		return -EINVAL;
 	}
 
-	rsp_buf = bt_l2cap_create_pdu(&br_sig, 0);
+	rsp_buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!rsp_buf) {
 		BT_ERR("No buffers");
 		return -ENOMEM;
@@ -574,7 +573,7 @@ static void l2cap_br_conf(struct bt_l2cap_chan *chan)
 	struct bt_l2cap_conf_req *conf;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!buf) {
 		return;
 	}
@@ -697,7 +696,7 @@ static int l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 	struct bt_l2cap_conn_rsp *rsp;
 	struct bt_l2cap_sig_hdr *hdr;
 
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!buf) {
 		BT_ERR("No buffers for PDU");
 		return -ENOMEM;
@@ -938,7 +937,7 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident,
 	struct bt_l2cap_sig_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!buf) {
 		return;
 	}
@@ -1073,7 +1072,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 send_rsp:
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!buf) {
 		return;
 	}
@@ -1181,7 +1180,7 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		return;
 	}
 
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!buf) {
 		return;
 	}
@@ -1237,7 +1236,7 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, ch->rx.cid,
 	       ch->tx.cid);
 
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!buf) {
 		BT_ERR("Unable to send L2CAP disconnect request");
 		return -ENOMEM;
@@ -1349,7 +1348,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -EIO;
 	}
 
-	buf = bt_l2cap_create_pdu(&br_sig, 0);
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 	if (!buf) {
 		BT_ERR("Unable to send L2CAP connection request");
 		return -ENOMEM;
@@ -1541,7 +1540,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 		l2cap_br_conf(chan);
 	} else if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
 					     L2CAP_FLAG_CONN_PENDING)) {
-		buf = bt_l2cap_create_pdu(&br_sig, 0);
+		buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 		if (!buf) {
 			BT_ERR("Unable to send L2CAP connection request");
 			return;
@@ -1659,7 +1658,7 @@ void bt_l2cap_br_init(void)
 			.accept = l2cap_br_accept,
 			};
 
-	net_buf_pool_init(br_sig_pool);
+	net_buf_pool_init(&br_sig_pool);
 	bt_l2cap_br_fixed_chan_register(&chan_br);
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 	bt_rfcomm_init();

@@ -41,10 +41,9 @@
 #define CONFIG_BLUETOOTH_AVDTP_CONN CONFIG_BLUETOOTH_MAX_CONN
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-static struct k_fifo avdtp_sig;
-static NET_BUF_POOL(avdtp_sig_pool, CONFIG_BLUETOOTH_AVDTP_CONN,
+NET_BUF_POOL_DEFINE(avdtp_sig_pool, CONFIG_BLUETOOTH_AVDTP_CONN,
 		    BT_AVDTP_BUF_SIZE(BT_AVDTP_MIN_MTU),
-		    &avdtp_sig, NULL, BT_BUF_USER_DATA_MIN);
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 static struct bt_avdtp bt_avdtp_pool[CONFIG_BLUETOOTH_AVDTP_CONN];
 
@@ -197,7 +196,7 @@ int bt_avdtp_init(void)
 	BT_DBG("");
 
 	/* Memory Initialization */
-	net_buf_pool_init(avdtp_sig_pool);
+	net_buf_pool_init(&avdtp_sig_pool);
 
 	/* Register AVDTP PSM with L2CAP */
 	err = bt_l2cap_br_server_register(&avdtp_l2cap);

@@ -67,10 +67,9 @@ struct bt_attr_data {
 };
 
 /* Pool for incoming ATT packets, MTU is 23 */
-static struct k_fifo prep_data;
-static NET_BUF_POOL(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
-		    CONFIG_BLUETOOTH_ATT_MTU, &prep_data, NULL,
-		    sizeof(struct bt_attr_data));
+NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
+		    CONFIG_BLUETOOTH_ATT_MTU, sizeof(struct bt_attr_data),
+		    NULL);
 #endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
 
 /* ATT channel specific context */
@@ -90,10 +89,9 @@ static struct bt_att bt_req_pool[CONFIG_BLUETOOTH_MAX_CONN];
 /*
  * Pool for outgoing ATT requests packets.
  */
-static struct k_fifo req_data;
-static NET_BUF_POOL(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
+NET_BUF_POOL_DEFINE(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
-		    &req_data, NULL, BT_BUF_USER_DATA_MIN);
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 /*
  * Pool for ougoing ATT responses packets. This is necessary in order not to
@@ -101,10 +99,8 @@ static NET_BUF_POOL(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
  * may only be freed after a response is received which would never happen if
  * the RX thread is waiting a buffer causing a deadlock.
  */
-static struct k_fifo rsp_data;
-static NET_BUF_POOL(rsp_pool, 1,
-		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
-		    &rsp_data, NULL, BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(rsp_pool, 1, BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 static void att_req_destroy(struct bt_att_req *req)
 {
@@ -1237,7 +1233,7 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	/* Copy data into the outstanding queue */
-	data->buf = net_buf_get_timeout(&prep_data, 0, K_NO_WAIT);
+	data->buf = net_buf_alloc(&prep_pool, K_NO_WAIT);
 	if (!data->buf) {
 		data->err = BT_ATT_ERR_PREPARE_QUEUE_FULL;
 		return BT_GATT_ITER_STOP;
@@ -1792,10 +1788,10 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 		/* Use a different buffer pool for responses as this is
 		 * usually sent from RX thread it shall never block.
 		 */
-		buf = bt_l2cap_create_pdu(&rsp_data, 0);
+		buf = bt_l2cap_create_pdu(&rsp_pool, 0);
 		break;
 	default:
-		buf = bt_l2cap_create_pdu(&req_data, 0);
+		buf = bt_l2cap_create_pdu(&req_pool, 0);
 	}
 
 	if (!buf) {
@@ -1974,10 +1970,10 @@ void bt_att_init(void)
 		.accept		= bt_att_accept,
 	};
 
-	net_buf_pool_init(req_pool);
-	net_buf_pool_init(rsp_pool);
+	net_buf_pool_init(&req_pool);
+	net_buf_pool_init(&rsp_pool);
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	net_buf_pool_init(prep_pool);
+	net_buf_pool_init(&prep_pool);
 #endif
 
 	bt_l2cap_le_fixed_chan_register(&chan);

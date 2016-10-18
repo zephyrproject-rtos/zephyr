@@ -54,14 +54,12 @@
 static struct bt_rfcomm_server *servers;
 
 /* Pool for outgoing RFCOMM control packets, min MTU is 23 */
-static struct k_fifo rfcomm_session;
-static NET_BUF_POOL(rfcomm_session_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_RFCOMM_BUF_SIZE(RFCOMM_MIN_MTU), &rfcomm_session, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(rfcomm_session_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_RFCOMM_BUF_SIZE(RFCOMM_MIN_MTU),
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 /* Pool for dummy buffers to wake up the tx threads */
-static struct k_fifo dummy;
-static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
+NET_BUF_POOL_DEFINE(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, 0, NULL);
 
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
 					 struct bt_rfcomm_session, br_chan.chan)
@@ -268,7 +266,8 @@ static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		/* Queue a dummy buffer to wake up and stop the
 		 * tx thread for states where it was running.
 		 */
-		net_buf_put(&dlc->tx_queue, net_buf_get(&dummy, 0));
+		net_buf_put(&dlc->tx_queue,
+			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
 
 		/* There could be a writer waiting for credits so return a
 		 * dummy credit to wake it up.
@@ -307,12 +306,12 @@ static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
 	session->dlcs = NULL;
 }
 
-struct net_buf *bt_rfcomm_create_pdu(struct k_fifo *fifo)
+struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool)
 {
 	/* Length in RFCOMM header can be 2 bytes depending on length of user
 	 * data
 	 */
-	return bt_conn_create_pdu(fifo,
+	return bt_conn_create_pdu(pool,
 				  sizeof(struct bt_l2cap_hdr) +
 				  sizeof(struct bt_rfcomm_hdr) + 1);
 }
@@ -323,11 +322,7 @@ static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 	struct net_buf *buf;
 	uint8_t cr, fcs;
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
-	if (!buf) {
-		BT_ERR("No buffers");
-		return -ENOMEM;
-	}
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_CMD_CR(session->role);
@@ -350,11 +345,7 @@ static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
 	struct net_buf *buf;
 	uint8_t hdr_cr;
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
-	if (!buf) {
-		BT_ERR("No buffers");
-		return NULL;
-	}
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr_cr = BT_RFCOMM_UIH_CR(dlc->session->role);
@@ -451,11 +442,7 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 
 	BT_DBG("dlci %d", dlci);
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
-	if (!buf) {
-		BT_ERR("No buffers");
-		return -ENOMEM;
-	}
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
@@ -477,11 +464,7 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 	BT_DBG("dlci %d", dlci);
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
-	if (!buf) {
-		BT_ERR("No buffers");
-		return -ENOMEM;
-	}
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
@@ -506,7 +489,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 	       dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
 		/* Get next packet for dlc */
 		BT_DBG("Wait for buf %p", dlc);
-		buf = net_buf_get_timeout(&dlc->tx_queue, 0, timeout);
+		buf = net_buf_get(&dlc->tx_queue, timeout);
 		/* If its dummy buffer or non user disconnect then break */
 		if ((dlc->state != BT_RFCOMM_STATE_CONNECTED &&
 		     dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) ||
@@ -541,7 +524,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 	BT_DBG("dlc %p disconnected - cleaning up", dlc);
 
 	/* Give back any allocated buffers */
-	while ((buf = net_buf_get_timeout(&dlc->tx_queue, 0, K_NO_WAIT))) {
+	while ((buf = net_buf_get(&dlc->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -564,11 +547,7 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	struct net_buf *buf;
 	uint8_t cr, fcs;
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
-	if (!buf) {
-		BT_ERR("No buffers");
-		return -ENOMEM;
-	}
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
@@ -681,7 +660,8 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 		/* Queue a dummy buffer to wake up and stop the
 		 * tx thread.
 		 */
-		net_buf_put(&dlc->tx_queue, net_buf_get(&dummy, 0));
+		net_buf_put(&dlc->tx_queue,
+			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
 
 		/* There could be a writer waiting for credits so return a
 		 * dummy credit to wake it up.
@@ -785,11 +765,7 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 
 	BT_DBG("Dlc %p credits %d", dlc, credits);
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
-	if (!buf) {
-		BT_ERR("No buffers");
-		return -ENOMEM;
-	}
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_UIH_CR(dlc->session->role);
@@ -1307,7 +1283,8 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		 * and stop the tx thread.
 		 */
 		dlc->state = BT_RFCOMM_STATE_USER_DISCONNECT;
-		net_buf_put(&dlc->tx_queue, net_buf_get(&dummy, 0));
+		net_buf_put(&dlc->tx_queue,
+			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
 
 		return 0;
 	}
@@ -1340,7 +1317,7 @@ void bt_rfcomm_init(void)
 		.sec_level = BT_SECURITY_LOW,
 	};
 
-	net_buf_pool_init(rfcomm_session_pool);
-	net_buf_pool_init(dummy_pool);
+	net_buf_pool_init(&rfcomm_session_pool);
+	net_buf_pool_init(&dummy_pool);
 	bt_l2cap_br_server_register(&server);
 }

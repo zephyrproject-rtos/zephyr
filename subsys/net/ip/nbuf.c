@@ -221,53 +221,42 @@ static inline int get_frees(enum net_nbuf_type type)
 #define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)
 #endif /* NET_DEBUG */
 
-static struct k_fifo free_rx_bufs;
-static struct k_fifo free_tx_bufs;
-static struct k_fifo free_data_bufs;
-
 static inline void free_rx_bufs_func(struct net_buf *buf)
 {
 	inc_free_rx_bufs_func(buf);
 
-	k_fifo_put(buf->free, buf);
+	k_fifo_put(&buf->pool->free, buf);
 }
 
 static inline void free_tx_bufs_func(struct net_buf *buf)
 {
 	inc_free_tx_bufs_func(buf);
 
-	k_fifo_put(buf->free, buf);
+	k_fifo_put(&buf->pool->free, buf);
 }
 
 static inline void free_data_bufs_func(struct net_buf *buf)
 {
 	inc_free_data_bufs_func(buf);
 
-	k_fifo_put(buf->free, buf);
+	k_fifo_put(&buf->pool->free, buf);
 }
 
 /* The RX and TX pools do not store any data. Only bearer / protocol
  * related data is stored here.
  */
-static NET_BUF_POOL(rx_buffers, NBUF_RX_COUNT, 0,	\
-		    &free_rx_bufs, free_rx_bufs_func,	\
-		    sizeof(struct net_nbuf));
-static NET_BUF_POOL(tx_buffers, NBUF_TX_COUNT, 0,	\
-		    &free_tx_bufs, free_tx_bufs_func,	\
-		    sizeof(struct net_nbuf));
+NET_BUF_POOL_DEFINE(rx_buffers, NBUF_RX_COUNT, 0, sizeof(struct net_nbuf),
+		    free_rx_bufs_func);
+NET_BUF_POOL_DEFINE(tx_buffers, NBUF_TX_COUNT, 0, sizeof(struct net_nbuf),
+		    free_tx_bufs_func);
 
 /* The data fragment pool is for storing network data. */
-static NET_BUF_POOL(data_buffers, NBUF_DATA_COUNT,	\
-		    NBUF_DATA_LEN, &free_data_bufs,	\
-		    free_data_bufs_func, NBUF_USER_DATA_LEN);
+NET_BUF_POOL_DEFINE(data_buffers, NBUF_DATA_COUNT, NBUF_DATA_LEN,
+		    NBUF_USER_DATA_LEN, free_data_bufs_func);
 
 static inline bool is_from_data_pool(struct net_buf *buf)
 {
-	if (buf->free == &free_data_bufs) {
-		return true;
-	}
-
-	return false;
+	return (buf->pool == &data_buffers);
 }
 
 #if NET_DEBUG
@@ -334,10 +323,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 	 */
 	switch (type) {
 	case NET_NBUF_RX:
-		buf = net_buf_get(&free_rx_bufs, 0);
-		if (!buf) {
-			return NULL;
-		}
+		buf = net_buf_alloc(&rx_buffers, K_FOREVER);
 
 		NET_ASSERT_INFO(buf->ref, "RX buf %p ref %d", buf, buf->ref);
 
@@ -345,10 +331,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 		net_nbuf_set_type(buf, type);
 		break;
 	case NET_NBUF_TX:
-		buf = net_buf_get(&free_tx_bufs, 0);
-		if (!buf) {
-			return NULL;
-		}
+		buf = net_buf_alloc(&tx_buffers, K_FOREVER);
 
 		NET_ASSERT_INFO(buf->ref, "TX buf %p ref %d", buf, buf->ref);
 
@@ -356,51 +339,19 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 		net_nbuf_set_type(buf, type);
 		break;
 	case NET_NBUF_DATA:
-		buf = net_buf_get(&free_data_bufs, 0);
-		if (!buf) {
-			return NULL;
-		}
+		buf = net_buf_alloc(&data_buffers, K_FOREVER);
 
 		NET_ASSERT_INFO(buf->ref, "DATA buf %p ref %d", buf, buf->ref);
 
 		/* The buf->data will point to the start of the L3
-		 * header (like IPv4 or IPv6 packet header) after the
-		 * add() and pull().
+		 * header (like IPv4 or IPv6 packet header).
 		 */
-		net_buf_add(buf, reserve_head);
-		net_buf_pull(buf, reserve_head);
+		net_buf_reserve(buf, reserve_head);
 
 		dec_free_data_bufs(buf);
 		break;
 	default:
 		NET_ERR("Invalid type %d for net_buf", type);
-		return NULL;
-	}
-
-	if (!buf) {
-#if NET_DEBUG
-#define PRINT_CYCLE (30 * MSEC_PER_SEC)
-		static int64_t next_print;
-		int64_t curr = k_uptime_get();
-
-		if (!next_print || (next_print < curr &&
-				    (!((curr - next_print) > PRINT_CYCLE)))) {
-			int64_t new_print;
-
-			NET_ERR("Failed to get free %s buffer (%s():%d)",
-				type2str(type), caller, line);
-
-			new_print = curr + PRINT_CYCLE;
-			if (new_print > curr) {
-				next_print = new_print;
-			} else {
-				/* Overflow */
-				next_print = PRINT_CYCLE -
-					(LLONG_MAX - curr);
-			}
-		}
-#endif /* NET_DEBUG */
-
 		return NULL;
 	}
 
@@ -1440,7 +1391,7 @@ void net_nbuf_init(void)
 		NBUF_TX_COUNT, sizeof(tx_buffers),
 		NBUF_DATA_COUNT, sizeof(data_buffers));
 
-	net_buf_pool_init(rx_buffers);
-	net_buf_pool_init(tx_buffers);
-	net_buf_pool_init(data_buffers);
+	net_buf_pool_init(&rx_buffers);
+	net_buf_pool_init(&tx_buffers);
+	net_buf_pool_init(&data_buffers);
 }

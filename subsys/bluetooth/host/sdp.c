@@ -54,10 +54,8 @@ static uint8_t num_services;
 static struct bt_sdp bt_sdp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
-static struct k_fifo sdp_buf;
-static NET_BUF_POOL(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(SDP_MTU), &sdp_buf, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(SDP_MTU), BT_BUF_USER_DATA_MIN, NULL);
 
 /** @brief Callback for SDP connection
  *
@@ -116,11 +114,9 @@ struct net_buf *bt_sdp_create_pdu(void)
 {
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&sdp_buf, sizeof(struct bt_sdp_hdr));
-	if (!buf) {
-		BT_ERR("Failed to create PDU");
-		return NULL;
-	}
+	buf = bt_l2cap_create_pdu(&sdp_pool, K_FOREVER);
+	/* NULL is not a possible return due to K_FOREVER */
+	net_buf_reserve(buf, sizeof(struct bt_sdp_hdr));
 
 	return buf;
 }
@@ -281,7 +277,7 @@ void bt_sdp_init(void)
 	};
 	int res;
 
-	net_buf_pool_init(sdp_pool);
+	net_buf_pool_init(&sdp_pool);
 
 	res = bt_l2cap_br_server_register(&server);
 	if (res) {

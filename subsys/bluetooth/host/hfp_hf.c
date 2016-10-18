@@ -39,10 +39,9 @@
 
 struct bt_hfp_hf_cb *bt_hf;
 
-static struct k_fifo hf_fifo;
-static NET_BUF_POOL(hf_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
+NET_BUF_POOL_DEFINE(hf_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
 		    BT_RFCOMM_BUF_SIZE(BLUETOOTH_HF_CLIENT_MAX_PDU),
-		    &hf_fifo, NULL, BT_BUF_USER_DATA_MIN);
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
@@ -61,7 +60,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	/* register the callbacks */
 	at_register(&hf->at, resp, finish);
 
-	buf = bt_rfcomm_create_pdu(&hf_fifo);
+	buf = bt_rfcomm_create_pdu(&hf_pool);
 	if (!buf) {
 		BT_ERR("No Buffers!");
 		return -ENOMEM;
@@ -219,7 +218,7 @@ static void hfp_hf_init(void)
 		.accept = bt_hfp_hf_accept,
 	};
 
-	net_buf_pool_init(hf_pool);
+	net_buf_pool_init(&hf_pool);
 
 	bt_rfcomm_server_register(&chan);
 }

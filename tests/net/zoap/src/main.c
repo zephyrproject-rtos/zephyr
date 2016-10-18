@@ -39,17 +39,11 @@
 #define NUM_OBSERVERS 3
 #define NUM_REPLIES 3
 
-static struct k_fifo zoap_nbuf_fifo;
-static NET_BUF_POOL(zoap_nbuf_pool, 4, 0,
-		    &zoap_nbuf_fifo, NULL, sizeof(struct net_nbuf));
+NET_BUF_POOL_DEFINE(zoap_nbuf_pool, 4, 0, sizeof(struct net_nbuf), NULL);
 
-static struct k_fifo zoap_data_fifo;
-static NET_BUF_POOL(zoap_data_pool, 4, ZOAP_BUF_SIZE,
-		    &zoap_data_fifo, NULL, 0);
+NET_BUF_POOL_DEFINE(zoap_data_pool, 4, ZOAP_BUF_SIZE, 0, NULL);
 
-static struct k_fifo zoap_limited_data_fifo;
-static NET_BUF_POOL(zoap_limited_data_pool, 4, ZOAP_LIMITED_BUF_SIZE,
-		    &zoap_limited_data_fifo, NULL, 0);
+NET_BUF_POOL_DEFINE(zoap_limited_data_pool, 4, ZOAP_LIMITED_BUF_SIZE, 0, NULL);
 
 static struct zoap_pending pendings[NUM_PENDINGS];
 static struct zoap_observer observers[NUM_OBSERVERS];
@@ -84,13 +78,13 @@ static int test_build_empty_pdu(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -143,13 +137,13 @@ static int test_build_simple_pdu(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -224,13 +218,14 @@ static int test_build_no_size_for_options(void)
 	uint8_t format = 0;
 	int result = TC_FAIL;
 	int r;
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_limited_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_limited_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -284,13 +279,13 @@ static int test_parse_empty_pdu(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -356,13 +351,13 @@ static int test_parse_simple_pdu(void)
 	int result = TC_FAIL;
 	int r, count = 16;
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -464,13 +459,13 @@ static int test_retransmit_second_round(void)
 	int r;
 	uint16_t id;
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -516,13 +511,13 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	resp_buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	resp_buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!resp_buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -629,13 +624,13 @@ static int server_resource_1_get(struct zoap_resource *resource,
 
 	zoap_register_observer(resource, observer);
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		return -ENOMEM;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		return -ENOMEM;
@@ -691,13 +686,13 @@ static int test_observer_server(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -731,13 +726,13 @@ static int test_observer_server(void)
 
 	net_nbuf_unref(buf);
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -792,13 +787,13 @@ static int test_observer_client(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -905,13 +900,13 @@ static int test_block_size(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -977,13 +972,13 @@ static int test_block_size(void)
 	/* Let's try the second packet */
 	zoap_next_block(&req_ctx);
 
-	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	frag = net_buf_get(&zoap_data_fifo, 0);
+	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -1063,9 +1058,9 @@ int main(int argc, char *argv[])
 
 	TC_START("Test Zoap CoAP PDU parsing and building");
 
-	net_buf_pool_init(zoap_nbuf_pool);
-	net_buf_pool_init(zoap_data_pool);
-	net_buf_pool_init(zoap_limited_data_pool);
+	net_buf_pool_init(&zoap_nbuf_pool);
+	net_buf_pool_init(&zoap_data_pool);
+	net_buf_pool_init(&zoap_limited_data_pool);
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		if (tests[count].func() == TC_PASS) {

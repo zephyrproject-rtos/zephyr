@@ -107,26 +107,21 @@ struct acl_data {
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
 		      sizeof(struct bt_hci_cmd_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
-static struct k_fifo avail_hci_cmd;
-static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
-		    &avail_hci_cmd, NULL, sizeof(struct cmd_data));
+NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
+		    CMD_BUF_SIZE, sizeof(struct cmd_data), NULL);
 
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 /* HCI event buffers */
-static struct k_fifo avail_hci_evt;
-static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
-		    BT_BUF_EVT_SIZE, &avail_hci_evt, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
+		    BT_BUF_EVT_SIZE, BT_BUF_USER_DATA_MIN, NULL);
 /*
  * This priority pool is to handle HCI events that must not be dropped
  * (currently this is Command Status, Command Complete and Number of
  * Complete Packets) if running low on buffers. Buffers from this pool are not
  * allowed to be passed to RX thread and must be returned from bt_recv().
  */
-static struct k_fifo avail_prio_hci_evt;
-static NET_BUF_POOL(hci_evt_prio_pool, 1,
-		    BT_BUF_EVT_SIZE, &avail_prio_hci_evt, NULL,
-		    BT_BUF_USER_DATA_MIN);
+NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 1, BT_BUF_EVT_SIZE,
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
@@ -140,7 +135,7 @@ static void report_completed_packet(struct net_buf *buf)
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 
-	k_fifo_put(buf->free, buf);
+	k_fifo_put(&buf->pool->free, buf);
 
 	/* Do nothing if controller to host flow control is not supported */
 	if (!(bt_dev.supported_commands[10] & 0x20)) {
@@ -166,10 +161,9 @@ static void report_completed_packet(struct net_buf *buf)
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 }
 
-static struct k_fifo avail_acl_in;
-static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
-		    BT_BUF_ACL_IN_SIZE, &avail_acl_in, report_completed_packet,
-		    sizeof(struct acl_data));
+NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
+		    BT_BUF_ACL_IN_SIZE, sizeof(struct acl_data),
+		    report_completed_packet);
 #endif /* CONFIG_BLUETOOTH_CONN && CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
@@ -207,13 +201,15 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
-	buf = net_buf_get(&avail_hci_cmd, CONFIG_BLUETOOTH_HCI_SEND_RESERVE);
+	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
 	if (!buf) {
 		BT_ERR("Cannot get free buffer");
 		return NULL;
 	}
 
 	BT_DBG("buf %p", buf);
+
+	net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_SEND_RESERVE);
 
 	cmd(buf)->type = BT_BUF_CMD;
 	cmd(buf)->opcode = opcode;
@@ -2739,8 +2735,8 @@ static void hci_cmd_tx_thread(void)
 		k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
 
 		/* Get next command - wait if necessary */
-		BT_DBG("calling net_buf_get_timeout");
-		buf = net_buf_get_timeout(&bt_dev.cmd_tx_queue, 0, K_FOREVER);
+		BT_DBG("calling net_buf_get");
+		buf = net_buf_get(&bt_dev.cmd_tx_queue, K_FOREVER);
 
 		/* Clear out any existing sent command */
 		if (bt_dev.sent_cmd) {
@@ -3503,7 +3499,7 @@ int bt_recv(struct net_buf *buf)
 		 * buffers and those needs to be kept for 'critical' events
 		 * handled directly from bt_recv().
 		 */
-		if (buf->free == &avail_prio_hci_evt) {
+		if (buf->pool == &hci_evt_prio_pool) {
 			break;
 		}
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
@@ -3628,7 +3624,7 @@ static void hci_rx_thread(bt_ready_cb_t ready_cb)
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait");
-		buf = net_buf_get_timeout(&bt_dev.rx_queue, 0, K_FOREVER);
+		buf = net_buf_get(&bt_dev.rx_queue, K_FOREVER);
 
 		BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		       buf->len);
@@ -3667,12 +3663,12 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 
 	/* Initialize the buffer pools */
-	net_buf_pool_init(hci_cmd_pool);
+	net_buf_pool_init(&hci_cmd_pool);
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-	net_buf_pool_init(hci_evt_pool);
-	net_buf_pool_init(hci_evt_prio_pool);
+	net_buf_pool_init(&hci_evt_pool);
+	net_buf_pool_init(&hci_evt_prio_pool);
 #if defined(CONFIG_BLUETOOTH_CONN)
-	net_buf_pool_init(acl_in_pool);
+	net_buf_pool_init(&acl_in_pool);
 #endif /* CONFIG_BLUETOOTH_CONN */
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
@@ -4002,20 +3998,18 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode)
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		buf = net_buf_get(&avail_prio_hci_evt,
-				  CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+		buf = net_buf_alloc(&hci_evt_prio_pool, K_NO_WAIT);
 		break;
 	default:
-		buf = net_buf_get(&avail_hci_evt,
-				  CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+		buf = net_buf_alloc(&hci_evt_pool, K_NO_WAIT);
 		if (!buf && opcode == 0x00) {
-			buf = net_buf_get(&avail_prio_hci_evt,
-					  CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+			buf = net_buf_alloc(&hci_evt_prio_pool, K_NO_WAIT);
 		}
 		break;
 	}
 
 	if (buf) {
+		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
 		bt_buf_set_type(buf, BT_BUF_EVT);
 	}
 
@@ -4027,8 +4021,9 @@ struct net_buf *bt_buf_get_acl(void)
 #if defined(CONFIG_BLUETOOTH_CONN)
 	struct net_buf *buf;
 
-	buf = net_buf_get(&avail_acl_in, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+	buf = net_buf_alloc(&acl_in_pool, K_NO_WAIT);
 	if (buf) {
+		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 	}
 

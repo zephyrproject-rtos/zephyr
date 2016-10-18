@@ -134,9 +134,8 @@ static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 #define CONFIG_BLUETOOTH_SIGNAL_COUNT	2
 #define SIG_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
 		      CONFIG_BLUETOOTH_MAX_SIG_LEN)
-static struct k_fifo h5_sig;
-static NET_BUF_POOL(signal_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE,
-		    &h5_sig, NULL, 0);
+NET_BUF_POOL_DEFINE(h5_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE, 0,
+		    NULL);
 
 static struct device *h5_dev;
 
@@ -210,8 +209,7 @@ static void process_unack(void)
 	BT_DBG("Need to remove %u packet from the queue", number_removed);
 
 	while (number_removed) {
-		struct net_buf *buf = net_buf_get_timeout(&h5.unack_queue, 0,
-							  K_NO_WAIT);
+		struct net_buf *buf = net_buf_get(&h5.unack_queue, K_NO_WAIT);
 
 		if (!buf) {
 			BT_ERR("Unack queue is empty");
@@ -347,14 +345,12 @@ static void retx_timeout(struct k_work *work)
 		k_fifo_init(&tmp_queue);
 
 		/* Queue to temperary queue */
-		while ((buf = net_buf_get_timeout(&h5.tx_queue, 0,
-						  K_NO_WAIT))) {
+		while ((buf = net_buf_get(&h5.tx_queue, K_NO_WAIT))) {
 			net_buf_put(&tmp_queue, buf);
 		}
 
 		/* Queue unack packets to the beginning of the queue */
-		while ((buf = net_buf_get_timeout(&h5.unack_queue, 0,
-						  K_NO_WAIT))) {
+		while ((buf = net_buf_get(&h5.unack_queue, K_NO_WAIT))) {
 			/* include also packet type */
 			net_buf_push(buf, sizeof(uint8_t));
 			net_buf_put(&h5.tx_queue, buf);
@@ -363,7 +359,7 @@ static void retx_timeout(struct k_work *work)
 		}
 
 		/* Queue saved packets from temp queue */
-		while ((buf = net_buf_get_timeout(&tmp_queue, 0, K_NO_WAIT))) {
+		while ((buf = net_buf_get(&tmp_queue, K_NO_WAIT))) {
 			net_buf_put(&h5.tx_queue, buf);
 		}
 	}
@@ -500,8 +496,7 @@ static void bt_uart_isr(struct device *unused)
 				break;
 			case HCI_3WIRE_LINK_PKT:
 			case HCI_3WIRE_ACK_PKT:
-				h5.rx_buf = net_buf_get_timeout(&h5_sig, 0,
-								K_NO_WAIT);
+				h5.rx_buf = net_buf_alloc(&h5_pool, K_NO_WAIT);
 				if (!h5.rx_buf) {
 					BT_WARN("No available signal buffers");
 					h5_reset_rx();
@@ -612,7 +607,7 @@ static void tx_thread(void)
 			k_sleep(100);
 			break;
 		case ACTIVE:
-			buf = net_buf_get_timeout(&h5.tx_queue, 0, K_FOREVER);
+			buf = net_buf_get(&h5.tx_queue, K_FOREVER);
 			type = h5_get_type(buf);
 
 			h5_send(buf->data, type, buf->len);
@@ -642,7 +637,7 @@ static void rx_thread(void)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&h5.rx_queue, 0, K_FOREVER);
+		buf = net_buf_get(&h5.rx_queue, K_FOREVER);
 
 		hexdump("=> ", buf->data, buf->len);
 
@@ -707,7 +702,7 @@ static void h5_init(void)
 		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* RX thread */
-	net_buf_pool_init(signal_pool);
+	net_buf_pool_init(&h5_pool);
 
 	k_fifo_init(&h5.rx_queue);
 	k_thread_spawn(rx_stack, sizeof(rx_stack), (k_thread_entry_t)rx_thread,
