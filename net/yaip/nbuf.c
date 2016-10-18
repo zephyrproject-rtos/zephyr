@@ -974,6 +974,8 @@ static inline bool net_nbuf_write_bytes(struct net_buf *buf, uint8_t *value,
 
 bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 {
+	struct net_buf *frag;
+
 	if (!buf || !data) {
 		return false;
 	}
@@ -988,8 +990,12 @@ bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 	}
 
 	if (!buf->frags) {
-		buf->frags =
-			net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+		frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+		if (!frag) {
+			return false;
+		}
+
+		net_buf_frag_add(buf, frag);
 	}
 
 	return net_nbuf_write_bytes(buf, data, len);
