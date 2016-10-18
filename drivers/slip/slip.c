@@ -80,8 +80,8 @@ struct slip_context {
 #define COLOR_YELLOW  ""
 #endif
 
-static void hexdump(struct slip_context *slip, const char *str,
-		    const uint8_t *packet, size_t length, size_t ll_reserve)
+static void hexdump(const char *str, const uint8_t *packet,
+		    size_t length, size_t ll_reserve)
 {
 	int n = 0;
 
@@ -195,14 +195,14 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 		}
 
 #if defined(CONFIG_SLIP_DEBUG)
-		SYS_LOG_DBG("[%p] sent data %d bytes", slip,
+		SYS_LOG_DBG("sent data %d bytes",
 			    frag->len + net_nbuf_ll_reserve(buf));
 		if (frag->len + ll_reserve) {
 			char msg[7 + 1];
 
 			snprintf(msg, sizeof(msg), "<slip %d", frag_count++);
 			msg[7] = '\0';
-			hexdump(slip, msg, net_nbuf_ll(buf),
+			hexdump(msg, net_nbuf_ll(buf),
 				frag->len + net_nbuf_ll_reserve(buf),
 				net_nbuf_ll_reserve(buf));
 		}
@@ -352,7 +352,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 				snprintf(msg, sizeof(msg), ">slip %d", count);
 				msg[7] = '\0';
-				hexdump(slip, msg, frag->data, frag->len, 0);
+				hexdump(msg, frag->data, frag->len, 0);
 
 				frag = frag->frags;
 				count++;
