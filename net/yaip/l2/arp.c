@@ -220,11 +220,6 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 
 	hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
 
-	if (ntohs(hdr->type) == NET_ETH_PTYPE_ARP) {
-		NET_DBG("Buf %p is already an ARP msg", buf);
-		return buf;
-	}
-
 	entry = find_entry(net_nbuf_iface(buf),
 			   &NET_IPV4_BUF(buf)->dst,
 			   &free_entry, &non_pending);
@@ -450,9 +445,7 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 		/* Send reply */
 		reply = prepare_arp_reply(net_nbuf_iface(buf), buf);
 		if (reply) {
-			if (net_send_data(reply) < 0) {
-				net_nbuf_unref(reply);
-			}
+			net_if_queue_tx(net_nbuf_iface(reply), reply);
 		}
 		break;
 
