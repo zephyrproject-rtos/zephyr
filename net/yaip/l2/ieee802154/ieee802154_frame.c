@@ -547,6 +547,150 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 	return true;
 }
 
+static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
+				      struct ieee802154_fcf_seq *fs,
+				      struct ieee802154_frame_params *params)
+{
+	switch (cfi) {
+	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
+		fs->fc.ar = 1;
+		fs->fc.pan_id_comp = 1;
+
+		/* Fall through for common src/dst addr mode handling */
+	case IEEE802154_CFI_ASSOCIATION_REQUEST:
+		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
+
+		if (params->dst.len == IEEE802154_SHORT_ADDR_LENGTH) {
+			fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_SHORT;
+		} else {
+			fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
+		}
+
+		break;
+	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
+	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
+		fs->fc.ar = 1;
+		fs->fc.pan_id_comp = 1;
+		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
+		fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
+
+		break;
+	case IEEE802154_CFI_DATA_REQUEST:
+		fs->fc.ar = 1;
+		/* ToDo: src/dst addr mode: see 5.3.4 */
+
+		break;
+	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
+		fs->fc.pan_id_comp = 1;
+		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
+		fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_SHORT;
+
+		break;
+	case IEEE802154_CFI_BEACON_REQUEST:
+		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_NONE;
+		fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_SHORT;
+		break;
+	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
+		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
+		/* Todo: ar and dst addr mode: see 5.3.8 */
+
+		break;
+	case IEEE802154_CFI_GTS_REQUEST:
+		fs->fc.ar = 1;
+		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_SHORT;
+		fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_NONE;
+
+		break;
+	default:
+		return false;
+	}
+
+	return true;
+}
+
+static inline uint8_t mac_command_length(enum ieee802154_cfi cfi)
+{
+	uint8_t reserve = 1; /* cfi is at least present */
+
+	switch (cfi) {
+	case IEEE802154_CFI_ASSOCIATION_REQUEST:
+	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
+	case IEEE802154_CFI_GTS_REQUEST:
+		reserve += 1;
+		break;
+	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
+		reserve += 3;
+		break;
+	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
+		reserve += 8;
+		break;
+	default:
+		break;
+	}
+
+	return reserve;
+}
+
+struct net_buf *
+ieee802154_create_mac_cmd_frame(struct net_if *iface,
+				enum ieee802154_cfi type,
+				struct ieee802154_frame_params *params)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_fcf_seq *fs;
+	struct net_buf *buf, *frag;
+	uint8_t *p_buf;
+
+	buf = net_nbuf_get_reserve_rx(0);
+	if (!buf) {
+		return NULL;
+	}
+
+	frag = net_nbuf_get_reserve_data(0);
+	if (!frag) {
+		goto error;
+	}
+
+	net_buf_frag_add(buf, frag);
+	p_buf = net_nbuf_ll(buf);
+
+	fs = generate_fcf_grounds(&p_buf, false);
+
+	fs->fc.frame_type = IEEE802154_FRAME_TYPE_MAC_COMMAND;
+	fs->sequence = ctx->sequence;
+
+	if (!cfi_to_fs_settings(type, fs, params)) {
+		goto error;
+	}
+
+	p_buf = generate_addressing_fields(iface, fs, params, p_buf);
+
+	/* Let's insert the cfi */
+	((struct ieee802154_command *)p_buf)->cfi = type;
+
+	/* In MAC command, we consider ll header being the mhr.
+	 * Rest will be the MAC command itself. This will proove
+	 * to be easy to handle afterwards to point directly to MAC
+	 * command space, in order to fill-in its content.
+	 */
+	net_nbuf_set_ll_reserve(buf, p_buf - net_nbuf_ll(buf));
+	net_buf_pull(frag, net_nbuf_ll_reserve(buf));
+
+	/* Thus setting the right MAC command length
+	 * Now up to the caller to fill-in this space relevantly.
+	 * See ieee802154_mac_command() helper.
+	 */
+	net_nbuf_set_len(frag, mac_command_length(type));
+
+	dbg_print_fs(fs);
+
+	return buf;
+error:
+	net_nbuf_unref(buf);
+
+	return NULL;
+}
+
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 bool ieee802154_create_ack_frame(struct net_if *iface,
 				 struct net_buf *buf, uint8_t seq)

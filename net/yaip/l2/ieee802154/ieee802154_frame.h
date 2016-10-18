@@ -276,7 +276,6 @@ struct ieee802154_command {
 	};
 } __packed;
 
-
 /** Frame */
 struct ieee802154_mpdu {
 	struct ieee802154_mhr mhr;
@@ -314,6 +313,17 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 				  struct net_buf *buf,
 				  uint8_t *p_buf,
 				  uint8_t len);
+
+struct net_buf *
+ieee802154_create_mac_cmd_frame(struct net_if *iface,
+				enum ieee802154_cfi type,
+				struct ieee802154_frame_params *params);
+
+static inline
+struct ieee802154_command *ieee802154_get_mac_command(struct net_buf *buf)
+{
+	return (struct ieee802154_command *)net_nbuf_ip_data(buf);
+}
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 bool ieee802154_create_ack_frame(struct net_if *iface,
