@@ -241,9 +241,9 @@ static inline bool get_context(struct net_context **udp_recv4,
 			return false;
 		}
 
-		ret = net_context_listen(*tcp_recv6, 0);
+		ret = net_context_listen(*tcp_recv4, 0);
 		if (ret < 0) {
-			NET_ERR("Cannot listen IPv6 TCP");
+			NET_ERR("Cannot listen IPv4 TCP");
 			return false;
 		}
 	}
