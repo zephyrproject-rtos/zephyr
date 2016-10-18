@@ -116,7 +116,7 @@ static uint32_t int_gpio_mask_save;
 
 static int gpio_suspend_device(struct device *dev)
 {
-	int_gpio_mask_save = REG_VAL(&QM_SCSS_INT->int_gpio_mask);
+	int_gpio_mask_save = REG_VAL(&QM_INTERRUPT_ROUTER->gpio_0_int_mask);
 	save_reg[0] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr);
 	save_reg[1] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr);
 	save_reg[2] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl);
@@ -145,7 +145,7 @@ static int gpio_resume_device_from_suspend(struct device *dev)
 	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce) = save_reg[7];
 	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync) = save_reg[8];
 	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge) = save_reg[9];
-	REG_VAL(&QM_SCSS_INT->int_gpio_mask) = int_gpio_mask_save;
+	REG_VAL(&QM_INTERRUPT_ROUTER->gpio_0_int_mask) = int_gpio_mask_save;
 
 	gpio_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
@@ -193,14 +193,16 @@ static uint32_t int_gpio_aon_mask_save;
 
 static int gpio_aon_suspend_device(struct device *dev)
 {
-	int_gpio_aon_mask_save = REG_VAL(&QM_SCSS_INT->int_aon_gpio_mask);
+	int_gpio_aon_mask_save =
+		REG_VAL(&QM_INTERRUPT_ROUTER->aon_gpio_0_int_mask);
 	gpio_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 	return 0;
 }
 
 static int gpio_aon_resume_device_from_suspend(struct device *dev)
 {
-	REG_VAL(&QM_SCSS_INT->int_aon_gpio_mask) = int_gpio_aon_mask_save;
+	REG_VAL(&QM_INTERRUPT_ROUTER->aon_gpio_0_int_mask) =
+		int_gpio_aon_mask_save;
 	gpio_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 	return 0;
 }
@@ -460,18 +462,18 @@ static int gpio_qmsi_init(struct device *port)
 				  CLK_PERIPH_GPIO_INTERRUPT |
 				  CLK_PERIPH_GPIO_DB |
 				  CLK_PERIPH_CLK);
-		IRQ_CONNECT(QM_IRQ_GPIO_0, CONFIG_GPIO_QMSI_0_IRQ_PRI,
-			qm_gpio_isr_0, 0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(QM_IRQ_GPIO_0);
-		QM_SCSS_INT->int_gpio_mask &= ~BIT(0);
+		IRQ_CONNECT(QM_IRQ_GPIO_0_INT, CONFIG_GPIO_QMSI_0_IRQ_PRI,
+			qm_gpio_0_isr, 0, IOAPIC_LEVEL | IOAPIC_HIGH);
+		irq_enable(QM_IRQ_GPIO_0_INT);
+		QM_INTERRUPT_ROUTER->gpio_0_int_mask &= ~BIT(0);
 		break;
 #ifdef CONFIG_GPIO_QMSI_1
 	case QM_AON_GPIO_0:
-		IRQ_CONNECT(QM_IRQ_AONGPIO_0,
-			    CONFIG_GPIO_QMSI_1_IRQ_PRI, qm_aon_gpio_isr_0,
+		IRQ_CONNECT(QM_IRQ_AON_GPIO_0_INT,
+			    CONFIG_GPIO_QMSI_1_IRQ_PRI, qm_aon_gpio_0_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(QM_IRQ_AONGPIO_0);
-		QM_SCSS_INT->int_aon_gpio_mask &= ~BIT(0);
+		irq_enable(QM_IRQ_AON_GPIO_0_INT);
+		QM_INTERRUPT_ROUTER->aon_gpio_0_int_mask &= ~BIT(0);
 		break;
 #endif /* CONFIG_GPIO_QMSI_1 */
 	default:

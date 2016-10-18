@@ -79,7 +79,7 @@ typedef struct {
 /* Mailbox channels private data structures */
 static qm_mailbox_info_t mailbox_devs[QM_MBOX_CH_NUM];
 
-QM_ISR_DECLARE(qm_mbox_isr)
+QM_ISR_DECLARE(qm_mailbox_0_isr)
 {
 	qm_mailbox_t *const mbox_reg = (qm_mailbox_t *)QM_MAILBOX;
 	uint8_t i = 0;
@@ -106,7 +106,7 @@ QM_ISR_DECLARE(qm_mbox_isr)
 		}
 	}
 
-	QM_ISR_EOI(QM_IRQ_MBOX_VECTOR);
+	QM_ISR_EOI(QM_IRQ_MAILBOX_0_INT_VECTOR);
 }
 
 int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch,
@@ -118,7 +118,7 @@ int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch,
 	qm_mailbox_info_t *device = &mailbox_devs[mbox_ch];
 
 	/* Block interrupts while configuring MBOX */
-	qm_irq_mask(QM_IRQ_MBOX);
+	qm_irq_mask(QM_IRQ_MAILBOX_0_INT);
 
 	/* Store the device destination */
 	device->dest = config->dest;
@@ -171,7 +171,7 @@ int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch,
 	}
 
 	/* UnBlock MBOX interrupts. */
-	qm_irq_unmask(QM_IRQ_MBOX);
+	qm_irq_unmask(QM_IRQ_MAILBOX_0_INT);
 	return 0;
 }
 

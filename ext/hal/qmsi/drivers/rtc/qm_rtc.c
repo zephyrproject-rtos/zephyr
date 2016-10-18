@@ -33,7 +33,7 @@
 static void (*callback[QM_RTC_NUM])(void *data);
 static void *callback_data[QM_RTC_NUM];
 
-QM_ISR_DECLARE(qm_rtc_isr_0)
+QM_ISR_DECLARE(qm_rtc_0_isr)
 {
 	/*  Disable RTC interrupt */
 	QM_RTC[QM_RTC_0].rtc_ccr &= ~QM_RTC_CCR_INTERRUPT_ENABLE;
@@ -71,7 +71,7 @@ QM_ISR_DECLARE(qm_rtc_isr_0)
 
 	/*  clear interrupt */
 	QM_RTC[QM_RTC_0].rtc_eoi;
-	QM_ISR_EOI(QM_IRQ_RTC_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_RTC_0_INT_VECTOR);
 }
 
 int qm_rtc_set_config(const qm_rtc_t rtc, const qm_rtc_config_t *const cfg)

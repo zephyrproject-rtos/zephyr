@@ -424,6 +424,43 @@ int qm_uart_dma_write_terminate(const qm_uart_t uart);
  */
 int qm_uart_dma_read_terminate(const qm_uart_t uart);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save UART context.
+ *
+ * Saves the configuration of the specified UART peripheral
+ * before entering sleep.
+ *
+ * @param[in] uart UART port index.
+ * @param[out] ctx UART context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_uart_save_context(const qm_uart_t uart, qm_uart_context_t *const ctx);
+
+/**
+ * Restore UART context.
+ *
+ * Restore the configuration of the specified UART peripheral
+ * after exiting sleep.
+ *
+ * FIFO control register cannot be read back,
+ * the default configuration is applied for this register.
+ * Application will need to restore its own parameters.
+ *
+ * @param[in] uart UART port index.
+ * @param[in] ctx UART context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_uart_restore_context(const qm_uart_t uart,
+			    const qm_uart_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */

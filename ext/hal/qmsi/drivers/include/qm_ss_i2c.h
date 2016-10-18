@@ -266,6 +266,42 @@ int qm_ss_i2c_master_irq_transfer(const qm_ss_i2c_t i2c,
  */
 int qm_ss_i2c_irq_transfer_terminate(const qm_ss_i2c_t i2c);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save SS I2C context.
+ *
+ * Saves the configuration of the specified SS I2C peripheral
+ * before entering sleep. The slave operations need to be disabled before
+ * being able to save the context as otherwise we could be interrupted by
+ * an I2C transfer while saving registers.
+ *
+ * @param[in] i2c I2C port index.
+ * @param[out] ctx I2C context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_i2c_save_context(const qm_ss_i2c_t i2c,
+			   qm_ss_i2c_context_t *const ctx);
+
+/**
+ * Restore SS I2C context.
+ *
+ * Restore the configuration of the specified SS I2C peripheral
+ * after exiting sleep.
+ *
+ * @param[in] i2c I2C port index.
+ * @param[in] ctx I2C context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_i2c_restore_context(const qm_ss_i2c_t i2c,
+			      const qm_ss_i2c_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */

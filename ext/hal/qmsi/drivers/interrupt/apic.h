@@ -109,9 +109,9 @@ static __inline__ void ioapic_register_irq(unsigned int irq,
 
 	/* Set trigger mode. */
 	switch (irq) {
-	case QM_IRQ_RTC_0:
-	case QM_IRQ_AONPT_0:
-	case QM_IRQ_WDT_0:
+	case QM_IRQ_RTC_0_INT:
+	case QM_IRQ_AONPT_0_INT:
+	case QM_IRQ_WDT_0_INT:
 		/* Edge sensitive. */
 		value &= ~BIT(15);
 		break;

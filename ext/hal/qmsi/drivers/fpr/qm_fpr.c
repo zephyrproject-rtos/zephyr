@@ -33,21 +33,21 @@
 static void (*callback[QM_FLASH_NUM])(void *);
 static void *callback_data[QM_FLASH_NUM];
 
-QM_ISR_DECLARE(qm_fpr_isr_0)
+QM_ISR_DECLARE(qm_flash_mpr_0_isr)
 {
 	(*callback[QM_FLASH_0])(callback_data[QM_FLASH_0]);
 	QM_FLASH[QM_FLASH_0]->mpr_vsts = QM_FPR_MPR_VSTS_VALID;
 
-	QM_ISR_EOI(QM_IRQ_FLASH_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_FLASH_MPR_0_INT_VECTOR);
 }
 
 #if (QUARK_SE)
-QM_ISR_DECLARE(qm_fpr_isr_1)
+QM_ISR_DECLARE(qm_flash_mpr_1_isr)
 {
 	(*callback[QM_FLASH_1])(callback_data[QM_FLASH_1]);
 	QM_FLASH[QM_FLASH_1]->mpr_vsts = QM_FPR_MPR_VSTS_VALID;
 
-	QM_ISR_EOI(QM_IRQ_FLASH_1_VECTOR);
+	QM_ISR_EOI(QM_IRQ_FLASH_MPR_1_INT_VECTOR);
 }
 #endif
 
@@ -94,7 +94,7 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 	QM_CHECK(mode <= FPR_VIOL_MODE_PROBE, -EINVAL);
 	QM_CHECK(flash < QM_FLASH_NUM, -EINVAL);
 	volatile uint32_t *int_flash_controller_mask =
-	    &QM_SCSS_INT->int_flash_controller_0_mask;
+	    &QM_INTERRUPT_ROUTER->flash_mpr_0_int_mask;
 
 	/* interrupt mode */
 	if (FPR_VIOL_MODE_INTERRUPT == mode) {
@@ -102,20 +102,18 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 		callback[flash] = callback_fn;
 		callback_data[flash] = data;
 
-		int_flash_controller_mask[flash] &=
-		    ~QM_INT_FLASH_CONTROLLER_SS_MASK;
-		int_flash_controller_mask[flash] |=
-		    QM_INT_FLASH_CONTROLLER_SS_HALT_MASK;
+		QM_IR_UNMASK_INTERRUPTS(int_flash_controller_mask[flash]);
+
+		QM_IR_MASK_HALTS(int_flash_controller_mask[flash]);
 
 		QM_SCSS_SS->ss_cfg &= ~QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
 	}
 
 	/* probe or reset mode */
 	else {
-		int_flash_controller_mask[flash] |=
-		    QM_INT_FLASH_CONTROLLER_SS_MASK;
-		int_flash_controller_mask[flash] &=
-		    ~QM_INT_FLASH_CONTROLLER_SS_HALT_MASK;
+		QM_IR_MASK_INTERRUPTS(int_flash_controller_mask[flash]);
+
+		QM_IR_UNMASK_HALTS(int_flash_controller_mask[flash]);
 
 		if (FPR_VIOL_MODE_PROBE == mode) {
 
@@ -145,7 +143,7 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 	QM_CHECK(mode <= FPR_VIOL_MODE_PROBE, -EINVAL);
 	QM_CHECK(flash < QM_FLASH_NUM, -EINVAL);
 	volatile uint32_t *int_flash_controller_mask =
-	    &QM_SCSS_INT->int_flash_controller_0_mask;
+	    &QM_INTERRUPT_ROUTER->flash_mpr_0_int_mask;
 
 	/* interrupt mode */
 	if (FPR_VIOL_MODE_INTERRUPT == mode) {
@@ -155,15 +153,14 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 
 		/* unmask interrupt */
 		if (flash == QM_FLASH_0) {
-			qm_irq_unmask(QM_IRQ_FLASH_0);
+			qm_irq_unmask(QM_IRQ_FLASH_MPR_0_INT);
 #if (QUARK_SE)
 		} else {
-			qm_irq_unmask(QM_IRQ_FLASH_1);
+			qm_irq_unmask(QM_IRQ_FLASH_MPR_1_INT);
 #endif
 		}
 
-		int_flash_controller_mask[flash] |=
-		    QM_INT_FLASH_CONTROLLER_HOST_HALT_MASK;
+		QM_IR_MASK_HALTS(int_flash_controller_mask[flash]);
 
 		QM_SCSS_PMU->p_sts &= ~QM_P_STS_HALT_INTERRUPT_REDIRECTION;
 	}
@@ -172,15 +169,14 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 	else {
 		/* mask interrupt */
 		if (flash == QM_FLASH_0) {
-			qm_irq_mask(QM_IRQ_FLASH_0);
+			qm_irq_mask(QM_IRQ_FLASH_MPR_0_INT);
 #if (QUARK_SE)
 		} else {
-			qm_irq_mask(QM_IRQ_FLASH_1);
+			qm_irq_mask(QM_IRQ_FLASH_MPR_1_INT);
 #endif
 		}
 
-		int_flash_controller_mask[flash] &=
-		    ~QM_INT_FLASH_CONTROLLER_HOST_HALT_MASK;
+		QM_IR_UNMASK_HALTS(int_flash_controller_mask[flash]);
 
 		if (FPR_VIOL_MODE_PROBE == mode) {
 
@@ -201,3 +197,36 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 	return 0;
 }
 #endif /* QM_SENSOR */
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_fpr_save_context(const qm_flash_t flash, qm_fpr_context_t *const ctx)
+{
+	QM_CHECK(flash < QM_FLASH_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+	uint8_t i;
+
+	qm_flash_reg_t *const controller = QM_FLASH[flash];
+
+	for (i = 0; i < QM_FPR_NUM; i++) {
+		ctx->fpr_rd_cfg[i] = controller->fpr_rd_cfg[i];
+	}
+
+	return 0;
+}
+
+int qm_fpr_restore_context(const qm_flash_t flash,
+			   const qm_fpr_context_t *const ctx)
+{
+	QM_CHECK(flash < QM_FLASH_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+	uint8_t i;
+
+	qm_flash_reg_t *const controller = QM_FLASH[flash];
+
+	for (i = 0; i < QM_FPR_NUM; i++) {
+		controller->fpr_rd_cfg[i] = ctx->fpr_rd_cfg[i];
+	}
+
+	return 0;
+}
+#endif

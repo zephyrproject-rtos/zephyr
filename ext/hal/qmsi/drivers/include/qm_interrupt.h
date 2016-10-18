@@ -33,6 +33,10 @@
 #include "qm_common.h"
 #include "qm_soc_regs.h"
 
+#if (QM_SENSOR)
+#include "qm_sensor_regs.h"
+#endif
+
 /*
  * Linear mapping between IRQs and interrupt vectors
  */
@@ -43,6 +47,45 @@
 #define QM_IRQ_TO_VECTOR(irq) (irq + 32) /* Get the vector of and IRQ. */
 
 #endif
+
+#if (ENABLE_RESTORE_CONTEXT)
+#if (HAS_APIC) || (QM_SENSOR)
+/**
+ * Save IRQ context.
+ *
+ * On x86:
+ *     - Save IOAPIC Redirection Table for all IRQs.
+ *
+ * On sensor:
+ *     - Save interrupt enable, priority and trigger for all IRQs.
+ *
+ * @param[out] ctx IRQ context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_irq_save_context(qm_irq_context_t *const ctx);
+
+/**
+ * Restore IRQ context.
+ *
+ * On x86:
+ *     Restore IOAPIC Redirection Table for all IRQs.
+ *     Restore LAPIC to default configuration.
+ *
+ * On sensor:
+ *     - Restore interrupt enable, priority and trigger for all IRQs.
+ *
+ * @param[in] ctx IRQ context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_irq_restore_context(const qm_irq_context_t *const ctx);
+#endif /* HAS_APIC || QM_SENSOR */
+#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * Interrupt driver.

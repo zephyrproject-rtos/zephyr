@@ -188,7 +188,7 @@ static uint32_t aonpt_qmsi_get_power_state(struct device *dev)
 
 static int aonpt_suspend_device(struct device *dev)
 {
-	int_aonpt_mask_save = QM_SCSS_INT->int_aon_timer_mask;
+	int_aonpt_mask_save = QM_INTERRUPT_ROUTER->aonpt_0_int_mask;
 
 	aonpt_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 	return 0;
@@ -196,7 +196,7 @@ static int aonpt_suspend_device(struct device *dev)
 
 static int aonpt_resume_device_from_suspend(struct device *dev)
 {
-	QM_SCSS_INT->int_aon_timer_mask = int_aonpt_mask_save;
+	QM_INTERRUPT_ROUTER->aonpt_0_int_mask = int_aonpt_mask_save;
 
 	aonpt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 	return 0;
@@ -232,12 +232,12 @@ static int aon_timer_init(struct device *dev)
 
 	user_cb = NULL;
 
-	IRQ_CONNECT(QM_IRQ_AONPT_0, CONFIG_AON_TIMER_IRQ_PRI,
-		    qm_aonpt_isr_0, NULL, IOAPIC_EDGE | IOAPIC_HIGH);
+	IRQ_CONNECT(QM_IRQ_AONPT_0_INT, CONFIG_AON_TIMER_IRQ_PRI,
+		    qm_aonpt_0_isr, NULL, IOAPIC_EDGE | IOAPIC_HIGH);
 
-	irq_enable(QM_IRQ_AONPT_0);
+	irq_enable(QM_IRQ_AONPT_0_INT);
 
-	QM_SCSS_INT->int_aon_timer_mask &= ~BIT(0);
+	QM_INTERRUPT_ROUTER->aonpt_0_int_mask &= ~BIT(0);
 
 	aon_reentrancy_init(dev);
 

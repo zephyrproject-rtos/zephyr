@@ -42,17 +42,6 @@
 typedef void (*qm_fpr_callback_t)(void *data);
 
 /**
- * FPR register map.
- */
-typedef enum {
-	QM_FPR_0, /**< FPR 0. */
-	QM_FPR_1, /**< FPR 1. */
-	QM_FPR_2, /**< FPR 2. */
-	QM_FPR_3, /**< FPR 3. */
-	QM_FPR_NUM
-} qm_fpr_id_t;
-
-/**
  * FPR enable type.
  */
 typedef enum {
@@ -63,7 +52,7 @@ typedef enum {
 } qm_fpr_en_t;
 
 /**
- * FPR vilation mode type.
+ * FPR violation mode type.
  */
 typedef enum {
 	FPR_VIOL_MODE_INTERRUPT = 0, /**< Generate interrupt on violation. */
@@ -161,6 +150,53 @@ int qm_fpr_set_config(const qm_flash_t flash, const qm_fpr_id_t id,
 int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 				const qm_flash_t flash,
 				qm_fpr_callback_t fpr_cb, void *data);
+
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save FPR context.
+ *
+ * Save the configuration of the specified FPR peripheral
+ * before entering sleep.
+ * The Flash peripheral linked to the FPR saved needs
+ * to be saved as well by calling qm_flash_save_context().
+ *
+ * FPR configuration is lost after sleep and can therefore
+ * be modified even if this configuration was locked before sleep.
+ * To support persistent configuration, the configuration must be
+ * restored when resuming as part of the bootloader.
+ *
+ * @param[in] flash Flash index.
+ * @param[out] ctx FPR context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_fpr_save_context(const qm_flash_t flash, qm_fpr_context_t *const ctx);
+
+/**
+ * Restore FPR context.
+ *
+ * Restore the configuration of the specified FPR peripheral
+ * after exiting sleep.
+ * The Flash peripheral linked to the FPR restored needs
+ * to be restored as well by calling qm_flash_restore_context().
+ *
+ * FPR configuration is lost after sleep and can therefore
+ * be modified even if this configuration was locked before sleep.
+ * To support persistent configuration, the configuration must be
+ * restored when resuming as part of the bootloader.
+ *
+ * @param[in] flash Flash index.
+ * @param[in] ctx FPR context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_fpr_restore_context(const qm_flash_t flash,
+			   const qm_fpr_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

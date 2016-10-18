@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "power_states.h"
 #include "ss_power_states.h"
 #include "qm_isr.h"
 #include "qm_sensor_regs.h"
@@ -111,10 +112,10 @@ void ss_power_cpu_ss1(const ss_power_cpu_ss1_mode_t mode)
 	 * Switch to Level triggered interrupts and restore
 	 * the setting when waking up.
 	 */
-	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_IRQ_RTC_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
 	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 
-	__builtin_arc_sr(QM_IRQ_AONPT_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_IRQ_AONPT_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
 	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 
 	/* Enter SS1 */
@@ -134,10 +135,10 @@ void ss_power_cpu_ss1(const ss_power_cpu_ss1_mode_t mode)
 	}
 
 	/* Restore the RTC and AONC to edge interrupt after when waking up. */
-	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_IRQ_RTC_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
 	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 
-	__builtin_arc_sr(QM_IRQ_AONPT_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_IRQ_AONPT_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
 	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 }
 
@@ -152,10 +153,10 @@ void ss_power_cpu_ss2(void)
 	 * Switch to Level triggered interrupts and restore
 	 * the setting when waking up.
 	 */
-	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_IRQ_RTC_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
 	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 
-	__builtin_arc_sr(QM_IRQ_AONPT_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_IRQ_AONPT_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
 	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 
 	/* Enter SS2 */
@@ -164,9 +165,104 @@ void ss_power_cpu_ss2(void)
 			     : "i"(QM_SS_SLEEP_MODE_CORE_TIMERS_RTC_OFF));
 
 	/* Restore the RTC and AONC to edge interrupt after when waking up. */
-	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_IRQ_RTC_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
 	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 
-	__builtin_arc_sr(QM_IRQ_AONPT_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_IRQ_AONPT_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
 	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+extern uint32_t arc_restore_addr;
+uint32_t cpu_context[32];
+void ss_power_soc_sleep_restore(void)
+{
+	/*
+	 * Save sensor restore trap address.
+	 * The first parameter in this macro represents the label defined in
+	 * the qm_ss_restore_context() macro, which is actually the restore
+	 * trap address.
+	 */
+	qm_ss_set_resume_vector(sleep_restore_trap, arc_restore_addr);
+
+	/* Save ARC execution context. */
+	qm_ss_save_context(cpu_context);
+
+	/* Set restore flags. */
+	power_soc_set_ss_restore_flag();
+
+	/* Enter sleep. */
+	power_soc_sleep();
+
+	/*
+	 * Restore sensor execution context.
+	 * The sensor startup code will jump to this location after waking up
+	 * from sleep. The restore trap address is the label defined in the
+	 * macro and the label is exposed here through the first parameter.
+	 */
+	qm_ss_restore_context(sleep_restore_trap, cpu_context);
+}
+void ss_power_soc_deep_sleep_restore(void)
+{
+	/*
+	 * Save sensor restore trap address.
+	 * The first parameter in this macro represents the label defined in
+	 * the qm_ss_restore_context() macro, which is actually the restore
+	 * trap address.
+	 */
+	qm_ss_set_resume_vector(deep_sleep_restore_trap, arc_restore_addr);
+
+	/* Save ARC execution context. */
+	qm_ss_save_context(cpu_context);
+
+	/* Set restore flags. */
+	power_soc_set_ss_restore_flag();
+
+	/* Enter sleep. */
+	power_soc_deep_sleep();
+
+	/*
+	 * Restore sensor execution context.
+	 * The sensor startup code will jump to this location after waking up
+	 * from sleep. The restore trap address is the label defined in the
+	 * macro and the label is exposed here through the first parameter.
+	 */
+	qm_ss_restore_context(deep_sleep_restore_trap, cpu_context);
+}
+
+void ss_power_sleep_wait(void)
+{
+	/*
+	 * Save sensor restore trap address.
+	 * The first parameter in this macro represents the label defined in
+	 * the qm_ss_restore_context() macro, which is actually the restore
+	 * trap address.
+	 */
+	qm_ss_set_resume_vector(sleep_restore_trap, arc_restore_addr);
+
+	/* Save ARC execution context. */
+	qm_ss_save_context(cpu_context);
+
+	/* Set restore flags. */
+	power_soc_set_ss_restore_flag();
+
+	/* Enter SS1 and stay in it until sleep and wake-up. */
+	while (1) {
+		ss_power_cpu_ss1(SS_POWER_CPU_SS1_TIMER_ON);
+	}
+
+	/*
+	 * Restore sensor execution context.
+	 * The sensor startup code will jump to this location after waking up
+	 * from sleep. The restore trap address is the label defined in the
+	 * macro and the label is exposed here through the first parameter.
+	 */
+	qm_ss_restore_context(sleep_restore_trap, cpu_context);
+}
+
+void power_soc_set_ss_restore_flag(void)
+{
+	QM_SCSS_GP->gps0 |= BIT(QM_GPS0_BIT_SENSOR_WAKEUP);
+}
+
+#endif /* ENABLE_RESTORE_CONTEXT */

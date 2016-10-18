@@ -31,6 +31,8 @@
 #define __REGISTERS_H__
 
 #include "qm_common.h"
+#include "qm_soc_interrupts.h"
+#include "qm_interrupt_router_regs.h"
 
 /**
  * Quark SE SoC Registers.
@@ -175,6 +177,11 @@ qm_scss_gp_reg_t test_scss_gp;
 #define QM_SCSS_GP ((qm_scss_gp_reg_t *)QM_SCSS_GP_BASE)
 #endif
 
+/* The GPS0 register usage. */
+#define QM_GPS0_BIT_FM (0)	    /**< Start Firmware Manager. */
+#define QM_GPS0_BIT_X86_WAKEUP (1)    /**< Lakemont core reset type. */
+#define QM_GPS0_BIT_SENSOR_WAKEUP (2) /**< Sensor core reset type. */
+
 /** @} */
 
 /**
@@ -270,6 +277,39 @@ typedef struct {
 	QM_RW apic_reg_pad_t timer_dcr; /**< Timer divide configuration */
 } qm_lapic_reg_t;
 
+#if (HAS_APIC)
+/*
+ * The size of IOAPIC redirection table, as returned by _ioapic_get_redtbl_size
+ * function.
+ */
+#define QM_IOAPIC_NUM_RTES (32)
+
+/**
+ * IRQ context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by
+ * qm_irq_save_context and qm_irq_restore_context functions.
+ */
+typedef struct {
+	/** Redirection Table Entries. */
+	uint32_t redtbl_entries[QM_IOAPIC_NUM_RTES];
+} qm_irq_context_t;
+#endif
+
+/**
+ * PIC TIMER context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by the qm_pic_timer_save_context
+ * and qm_pic_timer_restore_context functions.
+ */
+typedef struct {
+	uint32_t timer_icr; /**< Initial Count Register. */
+	uint32_t timer_dcr; /**< Divide Configuration Register. */
+	uint32_t lvttimer;  /**< Timer Entry in Local Vector Table. */
+} qm_pic_timer_context_t;
+
 #if (UNIT_TEST)
 qm_lapic_reg_t test_lapic;
 #define QM_LAPIC ((qm_lapic_reg_t *)(&test_lapic))
@@ -316,110 +356,6 @@ qm_ioapic_reg_t test_ioapic;
 #define QM_IOAPIC_BASE (0xFEC00000)
 #define QM_IOAPIC ((qm_ioapic_reg_t *)QM_IOAPIC_BASE)
 #endif
-
-/** @} */
-
-/**
- * @name Interrupt
- * @{
- */
-
-/** SS I2C Interrupt register map. */
-typedef struct {
-	QM_RW uint32_t err_mask;
-	QM_RW uint32_t rx_avail_mask;
-	QM_RW uint32_t tx_req_mask;
-	QM_RW uint32_t stop_det_mask;
-} int_ss_i2c_reg_t;
-
-/** SS SPI Interrupt register map. */
-typedef struct {
-	QM_RW uint32_t err_int_mask;
-	QM_RW uint32_t rx_avail_mask;
-	QM_RW uint32_t tx_req_mask;
-} int_ss_spi_reg_t;
-
-/** Interrupt register map. */
-typedef struct {
-	QM_RW uint32_t int_ss_adc_err_mask;
-	QM_RW uint32_t int_ss_adc_irq_mask;
-	QM_RW uint32_t int_ss_gpio_0_intr_mask;
-	QM_RW uint32_t int_ss_gpio_1_intr_mask;
-	int_ss_i2c_reg_t int_ss_i2c_0;
-	int_ss_i2c_reg_t int_ss_i2c_1;
-	int_ss_spi_reg_t int_ss_spi_0;
-	int_ss_spi_reg_t int_ss_spi_1;
-	QM_RW uint32_t int_i2c_mst_0_mask;
-	QM_RW uint32_t int_i2c_mst_1_mask;
-	QM_RW uint32_t reserved;
-	QM_RW uint32_t int_spi_mst_0_mask;
-	QM_RW uint32_t int_spi_mst_1_mask;
-	QM_RW uint32_t int_spi_slv_mask;
-	QM_RW uint32_t int_uart_0_mask;
-	QM_RW uint32_t int_uart_1_mask;
-	QM_RW uint32_t int_i2s_mask;
-	QM_RW uint32_t int_gpio_mask;
-	QM_RW uint32_t int_pwm_timer_mask;
-	QM_RW uint32_t int_usb_mask;
-	QM_RW uint32_t int_rtc_mask;
-	QM_RW uint32_t int_watchdog_mask;
-	QM_RW uint32_t int_dma_channel_0_mask;
-	QM_RW uint32_t int_dma_channel_1_mask;
-	QM_RW uint32_t int_dma_channel_2_mask;
-	QM_RW uint32_t int_dma_channel_3_mask;
-	QM_RW uint32_t int_dma_channel_4_mask;
-	QM_RW uint32_t int_dma_channel_5_mask;
-	QM_RW uint32_t int_dma_channel_6_mask;
-	QM_RW uint32_t int_dma_channel_7_mask;
-	QM_RW uint32_t int_mailbox_mask;
-	QM_RW uint32_t int_comparators_ss_halt_mask;
-	QM_RW uint32_t int_comparators_host_halt_mask;
-	QM_RW uint32_t int_comparators_ss_mask;
-	QM_RW uint32_t int_comparators_host_mask;
-	QM_RW uint32_t int_host_bus_err_mask;
-	QM_RW uint32_t int_dma_error_mask;
-	QM_RW uint32_t
-	    int_sram_controller_mask; /**< Interrupt Routing Mask 28. */
-	QM_RW uint32_t
-	    int_flash_controller_0_mask; /**< Interrupt Routing Mask 29. */
-	QM_RW uint32_t
-	    int_flash_controller_1_mask;   /**< Interrupt Routing Mask 30. */
-	QM_RW uint32_t int_aon_timer_mask; /**< Interrupt Routing Mask 31. */
-	QM_RW uint32_t int_adc_pwr_mask;   /**< Interrupt Routing Mask 32. */
-	QM_RW uint32_t int_adc_calib_mask; /**< Interrupt Routing Mask 33. */
-	QM_RW uint32_t int_aon_gpio_mask;
-	QM_RW uint32_t lock_int_mask_reg; /**< Interrupt Mask Lock Register. */
-} qm_scss_int_reg_t;
-
-/* Number of SCSS interrupt mask registers (excluding mask lock register). */
-#define QM_SCSS_INT_MASK_NUMREG                                                \
-	((sizeof(qm_scss_int_reg_t) / sizeof(uint32_t)) - 1)
-
-/* Default POR SCSS interrupt mask (all interrupts masked). */
-#define QM_SCSS_INT_MASK_DEFAULT (0xFFFFFFFF)
-
-#if (UNIT_TEST)
-qm_scss_int_reg_t test_scss_int;
-#define QM_SCSS_INT ((qm_scss_int_reg_t *)(&test_scss_int))
-
-#else
-/* System control subsystem interrupt masking register block. */
-#define QM_SCSS_INT_BASE (0xB0800400)
-#define QM_SCSS_INT ((qm_scss_int_reg_t *)QM_SCSS_INT_BASE)
-#endif
-
-#define QM_INT_DMA_ERR_HOST_MASK (0x000000FF)
-#define QM_INT_DMA_ERR_SS_MASK (0x0000FF00)
-#define QM_INT_SRAM_CONTROLLER_HOST_HALT_MASK BIT(16)
-#define QM_INT_SRAM_CONTROLLER_HOST_MASK BIT(0)
-#define QM_INT_SRAM_CONTROLLER_SS_HALT_MASK BIT(24)
-#define QM_INT_SRAM_CONTROLLER_SS_MASK BIT(8)
-#define QM_INT_FLASH_CONTROLLER_HOST_HALT_MASK BIT(16)
-#define QM_INT_FLASH_CONTROLLER_HOST_MASK BIT(0)
-#define QM_INT_FLASH_CONTROLLER_SS_HALT_MASK BIT(24)
-#define QM_INT_FLASH_CONTROLLER_SS_MASK BIT(8)
-#define QM_INT_ADC_PWR_MASK BIT(8)
-#define QM_INT_ADC_CALIB_MASK BIT(8)
 
 /** @} */
 
@@ -706,13 +642,17 @@ qm_scss_info_reg_t test_scss_info;
  * The interrupt destination adds an offset to the bit shift.
  */
 #define QM_MBOX_ENABLE_LMT_INT_MASK(N)                                         \
-	QM_SCSS_INT->int_mailbox_mask &= ~(BIT(N + QM_MBOX_HOST_MASK_OFFSET))
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask &=                             \
+	    ~(BIT(N + QM_MBOX_HOST_MASK_OFFSET))
 #define QM_MBOX_DISABLE_LMT_INT_MASK(N)                                        \
-	QM_SCSS_INT->int_mailbox_mask |= (BIT(N + QM_MBOX_HOST_MASK_OFFSET))
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask |=                             \
+	    (BIT(N + QM_MBOX_HOST_MASK_OFFSET))
 #define QM_MBOX_ENABLE_SS_INT_MASK(N)                                          \
-	QM_SCSS_INT->int_mailbox_mask &= ~(BIT(N + QM_MBOX_SS_MASK_OFFSET))
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask &=                             \
+	    ~(BIT(N + QM_MBOX_SS_MASK_OFFSET))
 #define QM_MBOX_DISABLE_SS_INT_MASK(N)                                         \
-	QM_SCSS_INT->int_mailbox_mask |= (BIT(N + QM_MBOX_SS_MASK_OFFSET))
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask |=                             \
+	    (BIT(N + QM_MBOX_SS_MASK_OFFSET))
 
 /**
  * Mailbox Interrupt Halt Mask enable/disable definitions
@@ -723,41 +663,47 @@ qm_scss_info_reg_t test_scss_info;
  * see above for the bit position layout
  */
 #define QM_MBOX_ENABLE_LMT_INT_HALT_MASK(N)                                    \
-	QM_SCSS_INT->int_mailbox_mask &=                                       \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask &=                             \
 	    ~(BIT(N + QM_MBOX_HOST_HALT_MASK_OFFSET))
 #define QM_MBOX_DISABLE_LMT_INT_HALT_MASK(N)                                   \
-	QM_SCSS_INT->int_mailbox_mask |=                                       \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask |=                             \
 	    (BIT(N + QM_MBOX_HOST_HALT_MASK_OFFSET))
 #define QM_MBOX_ENABLE_SS_INT_HALT_MASK(N)                                     \
-	QM_SCSS_INT->int_mailbox_mask &= ~(BIT(N + QM_MBOX_SS_HALT_MASK_OFFSET))
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask &=                             \
+	    ~(BIT(N + QM_MBOX_SS_HALT_MASK_OFFSET))
 #define QM_MBOX_DISABLE_SS_INT_HALT_MASK(N)                                    \
-	QM_SCSS_INT->int_mailbox_mask |= (BIT(N + QM_MBOX_SS_HALT_MASK_OFFSET))
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask |=                             \
+	    (BIT(N + QM_MBOX_SS_HALT_MASK_OFFSET))
 
 /**
  * Mailbox interrupt mask definitions to return the current mask values
  */
 #define QM_MBOX_SS_INT_HALT_MASK                                               \
-	((QM_MBOX_SS_HALT_MASK_MASK & QM_SCSS_INT->int_mailbox_mask) >>        \
+	((QM_MBOX_SS_HALT_MASK_MASK &                                          \
+	  QM_INTERRUPT_ROUTER->mailbox_0_int_mask) >>                          \
 	 QM_MBOX_SS_HALT_MASK_OFFSET)
 #define QM_MBOX_LMT_INT_HALT_MASK                                              \
-	((QM_MBOX_HOST_HALT_MASK_MASK & QM_SCSS_INT->int_mailbox_mask) >>      \
+	((QM_MBOX_HOST_HALT_MASK_MASK &                                        \
+	  QM_INTERRUPT_ROUTER->mailbox_0_int_mask) >>                          \
 	 QM_MBOX_SS_HALT_MASK_OFFSET)
 #define QM_MBOX_SS_INT_MASK                                                    \
-	((QM_MBOX_SS_MASK_MASK & QM_SCSS_INT->int_mailbox_mask) >>             \
+	((QM_MBOX_SS_MASK_MASK & QM_INTERRUPT_ROUTER->mailbox_0_int_mask) >>   \
 	 QM_MBOX_SS_MASK_OFFSET)
 #define QM_MBOX_LMT_INT_MASK                                                   \
-	(QM_MBOX_HOST_MASK_MASK & QM_SCSS_INT->int_mailbox_mask)
+	(QM_MBOX_HOST_MASK_MASK & QM_INTERRUPT_ROUTER->mailbox_0_int_mask)
 
 /**
  * Mailbox interrupt macros to determine if the specified mailbox interrupt mask
  * has been locked.
  */
 #define QM_MBOX_SS_INT_LOCK_HALT_MASK(N)                                       \
-	(QM_SCSS_INT->lock_int_mask_reg & BIT(3))
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(3))
 #define QM_MBOX_LMT_INT_LOCK_HALT_MASK(N)                                      \
-	(QM_SCSS_INT->lock_int_mask_reg & BIT(2))
-#define QM_MBOX_SS_INT_LOCK_MASK(N) (QM_SCSS_INT->lock_int_mask_reg & BIT(1))
-#define QM_MBOX_LMT_INT_LOCK_MASK(N) (QM_SCSS_INT->lock_int_mask_reg & BIT(0))
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(2))
+#define QM_MBOX_SS_INT_LOCK_MASK(N)                                            \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(1))
+#define QM_MBOX_LMT_INT_LOCK_MASK(N)                                           \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(0))
 
 /** Mailbox register structure. */
 typedef struct {
@@ -780,139 +726,6 @@ qm_mailbox_reg_t test_mailbox;
 #define QM_MAILBOX_BASE (0xB0800A00)
 #define QM_MAILBOX ((qm_mailbox_reg_t *)QM_MAILBOX_BASE)
 #endif
-
-/** @} */
-
-/**
- * @name IRQs and Interrupts
- * @{
- */
-
-/* IRQs and interrupt vectors.
- *
- * Any IRQ > 1 actually has a SCSS mask register offset of +1.
- * The vector numbers must be defined without arithmetic expressions nor
- * parentheses because they are expanded as token concatenation.
- */
-
-#define QM_INT_VECTOR_DOUBLE_FAULT 8
-#define QM_INT_VECTOR_PIC_TIMER 32
-
-#define QM_IRQ_RTC_0 11
-#define QM_IRQ_RTC_0_MASK_OFFSET 12
-#define QM_IRQ_RTC_0_VECTOR 47
-
-#define QM_IRQ_PWM_0 9
-#define QM_IRQ_PWM_0_MASK_OFFSET 10
-#define QM_IRQ_PWM_0_VECTOR 45
-
-#define QM_IRQ_USB_0 (10)
-#define QM_IRQ_USB_0_MASK_OFFSET (11)
-#define QM_IRQ_USB_0_VECTOR 46
-
-#define QM_IRQ_SPI_MASTER_0 2
-#define QM_IRQ_SPI_MASTER_0_MASK_OFFSET 3
-#define QM_IRQ_SPI_MASTER_0_VECTOR 38
-
-#define QM_IRQ_SPI_MASTER_1 3
-#define QM_IRQ_SPI_MASTER_1_MASK_OFFSET 4
-#define QM_IRQ_SPI_MASTER_1_VECTOR 39
-
-#define QM_IRQ_WDT_0 12
-#define QM_IRQ_WDT_0_MASK_OFFSET 13
-#define QM_IRQ_WDT_0_VECTOR 48
-
-#define QM_IRQ_GPIO_0 8
-#define QM_IRQ_GPIO_0_MASK_OFFSET 9
-#define QM_IRQ_GPIO_0_VECTOR 44
-
-#define QM_IRQ_I2C_0 0
-#define QM_IRQ_I2C_0_MASK_OFFSET 0
-#define QM_IRQ_I2C_0_VECTOR 36
-
-#define QM_IRQ_I2C_1 1
-#define QM_IRQ_I2C_1_MASK_OFFSET 1
-#define QM_IRQ_I2C_1_VECTOR 37
-
-#define QM_IRQ_MBOX 21
-#define QM_IRQ_MBOX_MASK_OFFSET 22
-#define QM_IRQ_MBOX_VECTOR 57
-
-#define QM_IRQ_AC 22
-#define QM_IRQ_AC_MASK_OFFSET 26
-#define QM_IRQ_AC_VECTOR 58
-
-#define QM_IRQ_SRAM 25
-#define QM_IRQ_SRAM_MASK_OFFSET 29
-#define QM_IRQ_SRAM_VECTOR 61
-
-#define QM_IRQ_FLASH_0 26
-#define QM_IRQ_FLASH_0_MASK_OFFSET 30
-#define QM_IRQ_FLASH_0_VECTOR 62
-
-#define QM_IRQ_FLASH_1 27
-#define QM_IRQ_FLASH_1_MASK_OFFSET 31
-#define QM_IRQ_FLASH_1_VECTOR 63
-
-#define QM_IRQ_AONPT_0 28
-#define QM_IRQ_AONPT_0_MASK_OFFSET 32
-#define QM_IRQ_AONPT_0_VECTOR 64
-
-#define QM_IRQ_AONGPIO_0 31
-#define QM_IRQ_AONGPIO_0_MASK_OFFSET 35
-#define QM_IRQ_AONGPIO_0_VECTOR 67
-
-#define QM_IRQ_UART_0 5
-#define QM_IRQ_UART_0_MASK_OFFSET 6
-#define QM_IRQ_UART_0_VECTOR 41
-
-#define QM_IRQ_UART_1 6
-#define QM_IRQ_UART_1_MASK_OFFSET 7
-#define QM_IRQ_UART_1_VECTOR 42
-
-#define QM_IRQ_DMA_0 13
-#define QM_IRQ_DMA_0_MASK_OFFSET 14
-#define QM_IRQ_DMA_0_VECTOR 49
-
-#define QM_IRQ_DMA_1 14
-#define QM_IRQ_DMA_1_MASK_OFFSET 15
-#define QM_IRQ_DMA_1_VECTOR 50
-
-#define QM_IRQ_DMA_2 15
-#define QM_IRQ_DMA_2_MASK_OFFSET 16
-#define QM_IRQ_DMA_2_VECTOR 51
-
-#define QM_IRQ_DMA_3 16
-#define QM_IRQ_DMA_3_MASK_OFFSET 17
-#define QM_IRQ_DMA_3_VECTOR 52
-
-#define QM_IRQ_DMA_4 17
-#define QM_IRQ_DMA_4_MASK_OFFSET 18
-#define QM_IRQ_DMA_4_VECTOR 53
-
-#define QM_IRQ_DMA_5 18
-#define QM_IRQ_DMA_5_MASK_OFFSET 19
-#define QM_IRQ_DMA_5_VECTOR 54
-
-#define QM_IRQ_DMA_6 19
-#define QM_IRQ_DMA_6_MASK_OFFSET 20
-#define QM_IRQ_DMA_6_VECTOR 55
-
-#define QM_IRQ_DMA_7 20
-#define QM_IRQ_DMA_7_MASK_OFFSET 21
-#define QM_IRQ_DMA_7_VECTOR 56
-
-#define QM_IRQ_DMA_ERR 24
-#define QM_IRQ_DMA_ERR_MASK_OFFSET 28
-#define QM_IRQ_DMA_ERR_VECTOR 60
-
-#define QM_SS_IRQ_ADC_PWR 29
-#define QM_SS_IRQ_ADC_PWR_MASK_OFFSET 33
-#define QM_SS_IRQ_ADC_PWR_VECTOR 65
-
-#define QM_SS_IRQ_ADC_CAL 30
-#define QM_SS_IRQ_ADC_CAL_MASK_OFFSET 34
-#define QM_SS_IRQ_ADC_CAL_VECTOR 66
 
 /** @} */
 
@@ -953,6 +766,21 @@ typedef struct {
 	QM_RW uint32_t
 	    timer_loadcount2[QM_PWM_ID_NUM]; /**< Timer Load Count 2 */
 } qm_pwm_reg_t;
+
+/**
+ * PWM context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by
+ * the qm_pwm_save_context and qm_pwm_restore_context functions.
+ */
+typedef struct {
+	struct {
+		uint32_t loadcount;  /**< Load Count 1. */
+		uint32_t loadcount2; /**< Load Count 2. */
+		uint32_t controlreg; /**< Control Register. */
+	} channel[QM_PWM_ID_NUM];
+} qm_pwm_context_t;
 
 #if (UNIT_TEST)
 qm_pwm_reg_t test_pwm_t;
@@ -1025,6 +853,18 @@ typedef struct {
 	QM_RW uint32_t wdt_comp_version; /**<  Component Version Register */
 	QM_RW uint32_t wdt_comp_type;    /**< Component Type Register */
 } qm_wdt_reg_t;
+
+/*
+ * WDT context type.
+ *
+ * Application should not modify the content.
+ * This structure is only intended to be used by the qm_wdt_save_context and
+ * qm_wdt_restore_context functions.
+ */
+typedef struct {
+	uint32_t wdt_cr;   /**< Control Register. */
+	uint32_t wdt_torr; /**< Timeout Range Register. */
+} qm_wdt_context_t;
 
 #if (UNIT_TEST)
 qm_wdt_reg_t test_wdt;
@@ -1200,6 +1040,24 @@ typedef struct {
 	QM_RW uint32_t padding[0xCF]; /* (0x400 - 0xC4) / 4 */
 } qm_uart_reg_t;
 
+/**
+ * UART context to be saved between sleep/resume.
+ *
+ * Application should not modify the content.
+ * This structure is only intended to be used by the qm_uart_save_context and
+ * qm_uart_restore_context functions.
+ */
+typedef struct {
+	uint32_t ier; /**< Interrupt Enable Register. */
+	uint32_t dlh; /**< Divisor Latch High. */
+	uint32_t dll; /**< Divisor Latch Low. */
+	uint32_t lcr; /**< Line Control. */
+	uint32_t mcr; /**< Modem Control. */
+	uint32_t scr; /**< Scratchpad. */
+	uint32_t htx; /**< Halt Transmission. */
+	uint32_t dlf; /**< Divisor Latch Fraction. */
+} qm_uart_context_t;
+
 #if (UNIT_TEST)
 qm_uart_reg_t test_uart_instance;
 qm_uart_reg_t *test_uart[QM_UART_NUM];
@@ -1254,6 +1112,19 @@ typedef struct {
 	QM_RW uint32_t rx_sample_dly;    /**< RX Sample Delay Register */
 	QM_RW uint32_t padding[0xC4];    /* (0x400 - 0xF0) / 4 */
 } qm_spi_reg_t;
+
+/**
+ * SPI context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by
+ * the qm_spi_save_context and qm_spi_restore_context functions.
+ */
+typedef struct {
+	uint32_t ctrlr0; /**< Control Register 0. */
+	uint32_t ser;    /**< Slave Enable Register. */
+	uint32_t baudr;  /**< Baud Rate Select. */
+} qm_spi_context_t;
 
 #if (UNIT_TEST)
 qm_spi_reg_t test_spi;
@@ -1423,6 +1294,25 @@ typedef struct {
 	QM_RW uint32_t padding[0xC0];   /* Padding (0x400-0xFC)/4 */
 } qm_i2c_reg_t;
 
+/**
+ * I2C context to be saved between sleep/resume.
+ *
+ * Application should not modify the content.
+ * This structure is only intended to be used by the qm_i2c_save_context and
+ * qm_i2c_restore_context functions.
+ */
+typedef struct {
+	uint32_t con;	  /**< Control Register. */
+	uint32_t sar;	  /**< Slave Address. */
+	uint32_t ss_scl_hcnt;  /**< Standard Speed Clock SCL High Count. */
+	uint32_t ss_scl_lcnt;  /**< Standard Speed Clock SCL Low Count. */
+	uint32_t fs_scl_hcnt;  /**< Fast Speed Clock SCL High Count. */
+	uint32_t fs_scl_lcnt;  /**< Fast Speed I2C Clock SCL Low Count. */
+	uint32_t enable;       /**< Enable. */
+	uint32_t fs_spklen;    /**< SS and FS Spike Suppression Limit. */
+	uint32_t ic_intr_mask; /**< I2C Interrupt Mask. */
+} qm_i2c_context_t;
+
 #if (UNIT_TEST)
 qm_i2c_reg_t test_i2c_instance[QM_I2C_NUM];
 qm_i2c_reg_t *test_i2c[QM_I2C_NUM];
@@ -1453,16 +1343,20 @@ extern qm_i2c_reg_t *qm_i2c[QM_I2C_NUM];
 #define QM_I2C_IC_CON_SPEED_FS_FSP BIT(2)
 #define QM_I2C_IC_CON_SPEED_MASK (0x06)
 #define QM_I2C_IC_CON_RESTART_EN BIT(5)
+#define QM_I2C_IC_CON_STOP_DET_IFADDRESSED BIT(7)
 #define QM_I2C_IC_DATA_CMD_READ BIT(8)
 #define QM_I2C_IC_DATA_CMD_STOP_BIT_CTRL BIT(9)
 #define QM_I2C_IC_DATA_CMD_LSB_MASK (0x000000FF)
 #define QM_I2C_IC_RAW_INTR_STAT_RX_FULL BIT(2)
 #define QM_I2C_IC_RAW_INTR_STAT_TX_ABRT BIT(6)
+#define QM_I2C_IC_RAW_INTR_STAT_GEN_CALL BIT(11)
+#define QM_I2C_IC_RAW_INTR_STAT_RESTART_DETECTED BIT(12)
 #define QM_I2C_IC_TX_ABRT_SOURCE_NAK_MASK (0x1F)
 #define QM_I2C_IC_TX_ABRT_SOURCE_ARB_LOST BIT(12)
 #define QM_I2C_IC_TX_ABRT_SOURCE_ABRT_SBYTE_NORSTRT BIT(9)
 #define QM_I2C_IC_TX_ABRT_SOURCE_ALL_MASK (0x1FFFF)
 #define QM_I2C_IC_STATUS_BUSY_MASK (0x00000060)
+#define QM_I2C_IC_STATUS_RFF BIT(4)
 #define QM_I2C_IC_STATUS_RFNE BIT(3)
 #define QM_I2C_IC_STATUS_TFE BIT(2)
 #define QM_I2C_IC_STATUS_TNF BIT(1)
@@ -1472,15 +1366,25 @@ extern qm_i2c_reg_t *qm_i2c[QM_I2C_NUM];
 #define QM_I2C_IC_INTR_MASK_RX_FULL BIT(2)
 #define QM_I2C_IC_INTR_MASK_TX_OVER BIT(3)
 #define QM_I2C_IC_INTR_MASK_TX_EMPTY BIT(4)
+#define QM_I2C_IC_INTR_MASK_RD_REQ BIT(5)
 #define QM_I2C_IC_INTR_MASK_TX_ABORT BIT(6)
+#define QM_I2C_IC_INTR_MASK_RX_DONE BIT(7)
+#define QM_I2C_IC_INTR_MASK_ACTIVITY BIT(8)
 #define QM_I2C_IC_INTR_MASK_STOP_DETECTED BIT(9)
 #define QM_I2C_IC_INTR_MASK_START_DETECTED BIT(10)
+#define QM_I2C_IC_INTR_MASK_GEN_CALL_DETECTED BIT(11)
+#define QM_I2C_IC_INTR_MASK_RESTART_DETECTED BIT(12)
 #define QM_I2C_IC_INTR_STAT_RX_UNDER BIT(0)
 #define QM_I2C_IC_INTR_STAT_RX_OVER BIT(1)
 #define QM_I2C_IC_INTR_STAT_RX_FULL BIT(2)
 #define QM_I2C_IC_INTR_STAT_TX_OVER BIT(3)
 #define QM_I2C_IC_INTR_STAT_TX_EMPTY BIT(4)
+#define QM_I2C_IC_INTR_STAT_RD_REQ BIT(5)
 #define QM_I2C_IC_INTR_STAT_TX_ABRT BIT(6)
+#define QM_I2C_IC_INTR_STAT_RX_DONE BIT(7)
+#define QM_I2C_IC_INTR_STAT_STOP_DETECTED BIT(9)
+#define QM_I2C_IC_INTR_STAT_START_DETECTED BIT(10)
+#define QM_I2C_IC_INTR_STAT_GEN_CALL_DETECTED BIT(11)
 #define QM_I2C_IC_LCNT_MAX (65525)
 #define QM_I2C_IC_LCNT_MIN (8)
 #define QM_I2C_IC_HCNT_MAX (65525)
@@ -1526,6 +1430,26 @@ typedef struct {
 	QM_RW uint32_t gpio_config_reg1; /**< GPIO Configuration Register 1 */
 } qm_gpio_reg_t;
 
+/**
+ * GPIO context type.
+ *
+ * Application should not modify the content.
+ * This structure is only intended to be used by the qm_gpio_save_context and
+ * qm_gpio_restore_context functions.
+ */
+typedef struct {
+	uint32_t gpio_swporta_dr;    /**< Port A Data. */
+	uint32_t gpio_swporta_ddr;   /**< Port A Data Direction. */
+	uint32_t gpio_swporta_ctl;   /**< Port A Data Source. */
+	uint32_t gpio_inten;	 /**< Interrupt Enable. */
+	uint32_t gpio_intmask;       /**< Interrupt Mask. */
+	uint32_t gpio_inttype_level; /**< Interrupt Type. */
+	uint32_t gpio_int_polarity;  /**< Interrupt Polarity. */
+	uint32_t gpio_debounce;      /**< Debounce Enable. */
+	uint32_t gpio_ls_sync;       /**< Synchronization Level. */
+	uint32_t gpio_int_bothedge;  /**< Interrupt both edge type. */
+} qm_gpio_context_t;
+
 #define QM_NUM_GPIO_PINS (32)
 #define QM_NUM_AON_GPIO_PINS (6)
 
@@ -1569,6 +1493,20 @@ typedef struct {
 	    mpr_wr_cfg; /**< Flash Write Protection Control Register. */
 	QM_RW uint32_t mpr_vsts; /**< Protection Status Register. */
 } qm_flash_reg_t;
+
+/**
+ * Flash context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by the
+ * qm_flash_save_context and qm_flash_restore_context functions.
+ */
+typedef struct {
+	/** Flash Timing Control Register. */
+	uint32_t tmg_ctrl;
+	/** Control Register. */
+	uint32_t ctrl;
+} qm_flash_context_t;
 
 #if (UNIT_TEST)
 qm_flash_reg_t test_flash_instance;
@@ -1655,9 +1593,48 @@ extern qm_flash_reg_t *qm_flash[QM_FLASH_NUM];
 /** @} */
 
 /**
+ * @name Flash Protection Region
+ * @{
+ */
+
+/**
+ * FPR register map.
+ */
+typedef enum {
+	QM_FPR_0, /**< FPR 0. */
+	QM_FPR_1, /**< FPR 1. */
+	QM_FPR_2, /**< FPR 2. */
+	QM_FPR_3, /**< FPR 3. */
+	QM_FPR_NUM
+} qm_fpr_id_t;
+
+/**
+ * FPR context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by the
+ * qm_fpr_save_context and qm_fpr_restore_context functions.
+ */
+typedef struct {
+	/** Flash Protection Region Read Control Register. */
+	uint32_t fpr_rd_cfg[QM_FPR_NUM];
+} qm_fpr_context_t;
+
+/** @} */
+
+/**
  * @name Memory Protection Region
  * @{
  */
+
+/* MPR identifier */
+typedef enum {
+	QM_MPR_0 = 0, /**< Memory Protection Region 0. */
+	QM_MPR_1,     /**< Memory Protection Region 1. */
+	QM_MPR_2,     /**< Memory Protection Region 2. */
+	QM_MPR_3,     /**< Memory Protection Region 3. */
+	QM_MPR_NUM    /**< Number of Memory Protection Regions. */
+} qm_mpr_id_t;
 
 /** Memory Protection Region register map. */
 typedef struct {
@@ -1665,6 +1642,17 @@ typedef struct {
 	QM_RW uint32_t mpr_vdata;  /**< MPR_VDATA  */
 	QM_RW uint32_t mpr_vsts;   /**< MPR_VSTS  */
 } qm_mpr_reg_t;
+
+/**
+ * MPR context type.
+ *
+ * Application should not modify the content.
+ * This structure is only intended to be used by the qm_mpr_save_context and
+ * qm_mpr_restore_context functions.
+ */
+typedef struct {
+	uint32_t mpr_cfg[QM_MPR_NUM]; /**< MPR Configuration Register. */
+} qm_mpr_context_t;
 
 #if (UNIT_TEST)
 qm_mpr_reg_t test_mpr;
@@ -1931,6 +1919,23 @@ typedef struct {
 	QM_RW qm_dma_misc_reg_t misc_reg;    /**< Miscellaneous Register */
 } qm_dma_reg_t;
 
+/**
+ * DMA context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by
+ * the qm_dma_save_context and qm_dma_restore_context functions.
+ */
+typedef struct {
+	struct {
+		uint32_t ctrl_low; /**< Channel Control Lower. */
+		uint32_t cfg_low;  /**< Channel Configuration Lower. */
+		uint32_t cfg_high; /**< Channel Configuration Upper. */
+		uint32_t llp_low;  /**< Channel Linked List Pointer. */
+	} channel[QM_DMA_CHANNEL_NUM];
+	uint32_t misc_cfg_low; /**< DMA Configuration. */
+} qm_dma_context_t;
+
 #if (UNIT_TEST)
 qm_dma_reg_t test_dma_instance[QM_DMA_NUM];
 qm_dma_reg_t *test_dma[QM_DMA_NUM];
@@ -2068,6 +2073,16 @@ uint32_t test_usb_pll;
 
 /* USB clock enable bit */
 #define QM_CCU_USB_CLK_EN BIT(1)
+
+/** @} */
+
+/**
+ * @name Hardware Fixes
+ * @{
+ */
+
+/* Refer to "HARDWARE_ISSUES.rst" for fix description. */
+#define FIX_1 (1)
 
 /** @} */
 

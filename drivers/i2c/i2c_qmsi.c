@@ -118,9 +118,11 @@ static int i2c_suspend_device(struct device *dev)
 	ctx_save->ic_dma_rdlr = regs->ic_dma_rdlr;
 
 	if (instance == QM_I2C_0) {
-		ctx_save->int_i2c_mst_mask = QM_SCSS_INT->int_i2c_mst_0_mask;
+		ctx_save->int_i2c_mst_mask =
+			QM_INTERRUPT_ROUTER->i2c_master_0_int_mask;
 	} else {
-		ctx_save->int_i2c_mst_mask = QM_SCSS_INT->int_i2c_mst_1_mask;
+		ctx_save->int_i2c_mst_mask =
+			QM_INTERRUPT_ROUTER->i2c_master_1_int_mask;
 	}
 
 	i2c_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
@@ -153,9 +155,11 @@ static int i2c_resume_device_from_suspend(struct device *dev)
 	regs->ic_dma_rdlr = ctx_save->ic_dma_rdlr;
 
 	if (config->instance == QM_I2C_0) {
-		QM_SCSS_INT->int_i2c_mst_0_mask = ctx_save->int_i2c_mst_mask;
+		QM_INTERRUPT_ROUTER->i2c_master_0_int_mask =
+			ctx_save->int_i2c_mst_mask;
 	} else {
-		QM_SCSS_INT->int_i2c_mst_1_mask = ctx_save->int_i2c_mst_mask;
+		QM_INTERRUPT_ROUTER->i2c_master_1_int_mask =
+			ctx_save->int_i2c_mst_mask;
 	}
 
 	i2c_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
@@ -348,20 +352,20 @@ static int i2c_qmsi_init(struct device *dev)
 		/* Register interrupt handler, unmask IRQ and route it
 		 * to Lakemont core.
 		 */
-		IRQ_CONNECT(QM_IRQ_I2C_0,
+		IRQ_CONNECT(QM_IRQ_I2C_0_INT,
 			    CONFIG_I2C_0_IRQ_PRI, qm_i2c_0_isr, NULL,
 			    (IOAPIC_LEVEL | IOAPIC_HIGH));
-		irq_enable(QM_IRQ_I2C_0);
-		QM_SCSS_INT->int_i2c_mst_0_mask &= ~BIT(0);
+		irq_enable(QM_IRQ_I2C_0_INT);
+		QM_INTERRUPT_ROUTER->i2c_master_0_int_mask &= ~BIT(0);
 		break;
 
 #ifdef CONFIG_I2C_1
 	case QM_I2C_1:
-		IRQ_CONNECT(QM_IRQ_I2C_1,
+		IRQ_CONNECT(QM_IRQ_I2C_1_INT,
 			    CONFIG_I2C_1_IRQ_PRI, qm_i2c_1_isr, NULL,
 			    (IOAPIC_LEVEL | IOAPIC_HIGH));
-		irq_enable(QM_IRQ_I2C_1);
-		QM_SCSS_INT->int_i2c_mst_1_mask &= ~BIT(0);
+		irq_enable(QM_IRQ_I2C_1_INT);
+		QM_INTERRUPT_ROUTER->i2c_master_1_int_mask &= ~BIT(0);
 
 		break;
 #endif /* CONFIG_I2C_1 */

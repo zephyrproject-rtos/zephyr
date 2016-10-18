@@ -45,53 +45,53 @@
  * ISR for ADC 0 convert and calibration interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_ADC_0, qm_adc_0_isr);
+ * @code qm_irq_request(QM_IRQ_ADC_0_CAL_INT, qm_adc_0_cal_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_adc_0_isr);
+QM_ISR_DECLARE(qm_adc_0_cal_isr);
 
 /**
  * ISR for ADC 0 change mode interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_ADC_PWR_0, qm_adc_pwr_0_isr);
+ * @code qm_irq_request(QM_IRQ_ADC_0_PWR_INT, qm_adc_0_pwr_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_adc_pwr_0_isr);
+QM_ISR_DECLARE(qm_adc_0_pwr_isr);
 #endif /* QUARK_D2000 */
 
 /**
  * ISR for Always-on Periodic Timer 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_AONPT_0, qm_aonpt_isr_0);
+ * @code qm_irq_request(QM_IRQ_AONPT_0_INT, qm_aonpt_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_aonpt_isr_0);
+QM_ISR_DECLARE(qm_aonpt_0_isr);
 
 /**
  * ISR for Analog Comparator 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_AC, qm_ac_isr);
+ * @code qm_irq_request(QM_IRQ_COMPARATOR_0_INT, qm_comparator_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ac_isr);
+QM_ISR_DECLARE(qm_comparator_0_isr);
 
 /**
  * ISR for DMA error interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_ERR, qm_dma_0_isr_err);
+ * @code qm_irq_request(QM_IRQ_DMA_0_ERROR_INT, qm_dma_0_error_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_dma_0_isr_err);
+QM_ISR_DECLARE(qm_dma_0_error_isr);
 
 /**
  * ISR for DMA channel 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_0, qm_dma_0_isr_0);
+ * @code qm_irq_request(QM_IRQ_DMA_0_INT_0, qm_dma_0_isr_0);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_dma_0_isr_0);
@@ -100,7 +100,7 @@ QM_ISR_DECLARE(qm_dma_0_isr_0);
  * ISR for DMA channel 1 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_1, qm_dma_0_isr_1);
+ * @code qm_irq_request(QM_IRQ_DMA_0_INT_1, qm_dma_0_isr_1);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_dma_0_isr_1);
@@ -110,7 +110,7 @@ QM_ISR_DECLARE(qm_dma_0_isr_1);
  * ISR for DMA channel 2 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_2, qm_dma_0_isr_2);
+ * @code qm_irq_request(QM_IRQ_DMA_0_INT_2, qm_dma_0_isr_2);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_dma_0_isr_2);
@@ -119,7 +119,7 @@ QM_ISR_DECLARE(qm_dma_0_isr_2);
  * ISR for DMA channel 3 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_3, qm_dma_0_isr_3);
+ * @code qm_irq_request(QM_IRQ_DMA_0_INT_3, qm_dma_0_isr_3);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_dma_0_isr_3);
@@ -128,7 +128,7 @@ QM_ISR_DECLARE(qm_dma_0_isr_3);
  * ISR for DMA channel 4 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_4, qm_dma_0_isr_4);
+ * @code qm_irq_request(QM_IRQ_DMA_0_INT_4, qm_dma_0_isr_4);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_dma_0_isr_4);
@@ -137,7 +137,7 @@ QM_ISR_DECLARE(qm_dma_0_isr_4);
  * ISR for DMA channel 5 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_5, qm_dma_0_isr_5);
+ * @code qm_irq_request(QM_IRQ_DMA_0_INT_5, qm_dma_0_isr_5);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_dma_0_isr_5);
@@ -146,7 +146,7 @@ QM_ISR_DECLARE(qm_dma_0_isr_5);
  * ISR for DMA channel 6 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_6, qm_dma_0_isr_6);
+ * @code qm_irq_request(QM_IRQ_DMA_0_INT_6, qm_dma_0_isr_6);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_dma_0_isr_6);
@@ -155,7 +155,7 @@ QM_ISR_DECLARE(qm_dma_0_isr_6);
  * ISR for DMA 0 channel 7 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_DMA_7, qm_dma_0_isr_7);
+ * @code qm_irq_request(QM_IRQ_DMA_0_INT_7, qm_dma_0_isr_7);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_dma_0_isr_7);
@@ -165,45 +165,45 @@ QM_ISR_DECLARE(qm_dma_0_isr_7);
  * ISR for FPR 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_FLASH_0, qm_fpr_isr_0);
+ * @code qm_irq_request(QM_IRQ_FLASH_MPR_0_INT, qm_flash_mpr_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_fpr_isr_0);
+QM_ISR_DECLARE(qm_flash_mpr_0_isr);
 
 /**
  * ISR for FPR 1 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_FLASH_1, qm_fpr_isr_1);
+ * @code qm_irq_request(QM_IRQ_FLASH_MPR_1_INT, qm_flash_mpr_1_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_fpr_isr_1);
+QM_ISR_DECLARE(qm_flash_mpr_1_isr);
 
 /**
  * ISR for GPIO 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_GPIO_0, qm_gpio_isr_0);
+ * @code qm_irq_request(QM_IRQ_GPIO_0_INT, qm_gpio_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_gpio_isr_0);
+QM_ISR_DECLARE(qm_gpio_0_isr);
 
 #if (HAS_AON_GPIO)
 /**
  * ISR for AON GPIO 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_AONGPIO_0, qm_aon_gpio_isr_0);
+ * @code qm_irq_request(QM_IRQ_AON_GPIO_0_INT, qm_aon_gpio_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_aon_gpio_isr_0);
+QM_ISR_DECLARE(qm_aon_gpio_0_isr);
 #endif /* HAS_AON_GPIO */
 
 /**
  * ISR for I2C 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_I2C_0, qm_i2c_0_isr);
+ * @code qm_irq_request(QM_IRQ_I2C_0_INT, qm_i2c_0_isr);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_i2c_0_isr);
@@ -212,7 +212,7 @@ QM_ISR_DECLARE(qm_i2c_0_isr);
  * ISR for I2C 1 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_I2C_1, qm_i2c_1_isr);
+ * @code qm_irq_request(QM_IRQ_I2C_1_INT, qm_i2c_1_isr);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_i2c_1_isr);
@@ -221,57 +221,58 @@ QM_ISR_DECLARE(qm_i2c_1_isr);
  * ISR for Mailbox interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_MBOX, qm_mbox_isr);
+ * @code qm_irq_request(QM_IRQ_MAILBOX_0_INT, qm_mailbox_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_mbox_isr);
+QM_ISR_DECLARE(qm_mailbox_0_isr);
 
 /**
  * ISR for Memory Protection Region interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_SRAM, qm_mpr_isr);
+ * @code qm_irq_request(QM_IRQ_SRAM_MPR_0_INT, qm_sram_mpr_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_mpr_isr);
+QM_ISR_DECLARE(qm_sram_mpr_0_isr);
 
 /**
  * ISR for PIC Timer interrupt.
  *
  * On Quark Microcontroller D2000 Development Platform,
  * this function needs to be registered with:
- * @code qm_int_vector_request(QM_INT_VECTOR_PIC_TIMER, qm_pic_timer_isr);
+ * @code qm_int_vector_request(QM_X86_PIC_TIMER_INT_VECTOR,
+ * qm_pic_timer_0_isr);
  * @endcode if IRQ based transfers are used.
  *
  * On Quark SE, this function needs to be registered with:
- * @code qm_irq_request(QM_IRQ_PIC_TIMER, qm_pic_timer_isr);
+ * @code qm_irq_request(QM_IRQ_PIC_TIMER, qm_pic_timer_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_pic_timer_isr);
+QM_ISR_DECLARE(qm_pic_timer_0_isr);
 
 /**
  * ISR for PWM 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_PWM_0, qm_pwm_isr_0);
+ * @code qm_irq_request(QM_IRQ_PWM_0_INT, qm_pwm_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_pwm_isr_0);
+QM_ISR_DECLARE(qm_pwm_0_isr);
 
 /**
  * ISR for RTC 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_RTC_0, qm_rtc_isr_0);
+ * @code qm_irq_request(QM_IRQ_RTC_0_INT, qm_rtc_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_rtc_isr_0);
+QM_ISR_DECLARE(qm_rtc_0_isr);
 
 /**
  * ISR for SPI Master 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_SPI_MASTER_0, qm_spi_master_0_isr);
+ * @code qm_irq_request(QM_IRQ_SPI_MASTER_0_INT, qm_spi_master_0_isr);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_spi_master_0_isr);
@@ -281,7 +282,7 @@ QM_ISR_DECLARE(qm_spi_master_0_isr);
  * ISR for SPI Master 1 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_SPI_MASTER_1, qm_spi_master_1_isr);
+ * @code qm_irq_request(QM_IRQ_SPI_MASTER_1_INT, qm_spi_master_1_isr);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_spi_master_1_isr);
@@ -291,7 +292,7 @@ QM_ISR_DECLARE(qm_spi_master_1_isr);
  * ISR for UART 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_UART_0, qm_uart_0_isr);
+ * @code qm_irq_request(QM_IRQ_UART_0_INT, qm_uart_0_isr);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_uart_0_isr);
@@ -300,7 +301,7 @@ QM_ISR_DECLARE(qm_uart_0_isr);
  * ISR for UART 1 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_UART_1, qm_uart_1_isr);
+ * @code qm_irq_request(QM_IRQ_UART_1_INT, qm_uart_1_isr);
  * @endcode if IRQ based transfers are used.
  */
 QM_ISR_DECLARE(qm_uart_1_isr);
@@ -309,19 +310,19 @@ QM_ISR_DECLARE(qm_uart_1_isr);
  * ISR for WDT 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_WDT_0, qm_wdt_isr_0);
+ * @code qm_irq_request(QM_IRQ_WDT_0_INT, qm_wdt_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_wdt_isr_0);
+QM_ISR_DECLARE(qm_wdt_0_isr);
 
 /**
  * ISR for USB 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_USB_0, qm_usb_0_isr_0);
+ * @code qm_irq_request(QM_IRQ_USB_0_INT, qm_usb_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_usb_0_isr_0);
+QM_ISR_DECLARE(qm_usb_0_isr);
 
 /**
  * @}

@@ -37,19 +37,9 @@
 
 void power_soc_sleep()
 {
-#if (QM_SENSOR)
-	/* The sensor cannot be woken up with an edge triggered
-	 * interrupt from the RTC.
-	 * Switch to Level triggered interrupts.
-	 * When waking up, the ROM will configure the RTC back to
-	 * its initial settings.
-	 */
-	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
-#endif
-
 	/* Go to sleep */
 	QM_SCSS_PMU->slp_cfg &= ~QM_SCSS_SLP_CFG_LPMODE_EN;
+
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_SLP_CFG);
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_SLEEP, 0);
 	QM_SCSS_PMU->pm1c |= QM_SCSS_PM1C_SLPEN;
@@ -57,17 +47,6 @@ void power_soc_sleep()
 
 void power_soc_deep_sleep()
 {
-#if (QM_SENSOR)
-	/* The sensor cannot be woken up with an edge triggered
-	 * interrupt from the RTC.
-	 * Switch to Level triggered interrupts.
-	 * When waking up, the ROM will configure the RTC back to
-	 * its initial settings.
-	 */
-	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
-#endif
-
 	/* Switch to linear regulators.
 	 * For low power deep sleep mode, it is a requirement that the platform
 	 * voltage regulators are not in switching mode.
@@ -81,6 +60,111 @@ void power_soc_deep_sleep()
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_SLEEP, 0);
 	QM_SCSS_PMU->pm1c |= QM_SCSS_PM1C_SLPEN;
 }
+
+#if (ENABLE_RESTORE_CONTEXT) && (!QM_SENSOR)
+/*
+ * The restore trap address is stored in the variable __x86_restore_info.
+ * The variable __x86_restore_info is defined in the linker script as a new
+ * and independent memory segment.
+ */
+extern uint32_t __x86_restore_info[];
+/*
+ * The stack pointer is saved in the global variable sp_restore_storage
+ * by qm_x86_save_context() before sleep and it is restored by
+ * qm_x86_restore_context() after wake up.
+ */
+uint32_t sp_restore_storage;
+void power_soc_sleep_restore()
+{
+	/*
+	 * Save x86 restore trap address.
+	 * The first parameter in this macro represents the label defined in
+	 * the qm_x86_restore_context() macro, which is actually the restore
+	 * trap address.
+	 */
+	qm_x86_set_resume_vector(sleep_restore_trap, __x86_restore_info);
+
+	/* Save x86 execution context. */
+	qm_x86_save_context(sp_restore_storage);
+
+	/* Set restore flags. */
+	power_soc_set_x86_restore_flag();
+
+	/* Enter sleep. */
+	power_soc_sleep();
+
+	/*
+	 * Restore x86 execution context.
+	 * The bootloader code will jump to this location after waking up from
+	 * sleep. The restore trap address is the label defined in the macro.
+	 * That label is exposed here through the first parameter.
+	 */
+	qm_x86_restore_context(sleep_restore_trap, sp_restore_storage);
+}
+
+void power_soc_deep_sleep_restore()
+{
+	/*
+	 * Save x86 restore trap address.
+	 * The first parameter in this macro represents the label defined in
+	 * the qm_x86_restore_context() macro, which is actually the restore
+	 * trap address.
+	 */
+	qm_x86_set_resume_vector(deep_sleep_restore_trap, __x86_restore_info);
+
+	/* Save x86 execution context. */
+	qm_x86_save_context(sp_restore_storage);
+
+	/* Set restore flags. */
+	power_soc_set_x86_restore_flag();
+
+	/* Enter sleep. */
+	power_soc_deep_sleep();
+
+	/*
+	 * Restore x86 execution context.
+	 * The bootloader code will jump to this location after waking up from
+	 * sleep. The restore trap address is the label defined in the macro.
+	 * That label is exposed here through the first parameter.
+	 */
+	qm_x86_restore_context(deep_sleep_restore_trap, sp_restore_storage);
+}
+
+void power_sleep_wait()
+{
+	/*
+	 * Save x86 restore trap address.
+	 * The first parameter in this macro represents the label defined in
+	 * the qm_x86_restore_context() macro, which is actually the restore
+	 * trap address.
+	 */
+	qm_x86_set_resume_vector(sleep_restore_trap, __x86_restore_info);
+
+	/* Save x86 execution context. */
+	qm_x86_save_context(sp_restore_storage);
+
+	/* Set restore flags. */
+	power_soc_set_x86_restore_flag();
+
+	/* Enter C2 and stay in it until sleep and wake-up. */
+	while (1) {
+		power_cpu_c2();
+	}
+
+	/*
+	 * Restore x86 execution context.
+	 * The bootloader code will jump to this location after waking up from
+	 * sleep. The restore trap address is the label defined in the macro.
+	 * That label is exposed here through the first parameter.
+	 */
+	qm_x86_restore_context(sleep_restore_trap, sp_restore_storage);
+}
+
+void power_soc_set_x86_restore_flag(void)
+{
+	QM_SCSS_GP->gps0 |= BIT(QM_GPS0_BIT_X86_WAKEUP);
+}
+#endif /* ENABLE_RESTORE_CONTEXT */
 
 #if (!QM_SENSOR)
 void power_cpu_c1()

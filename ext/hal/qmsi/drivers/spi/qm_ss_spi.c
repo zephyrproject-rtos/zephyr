@@ -407,27 +407,59 @@ static void handle_spi_rx_interrupt(const qm_ss_spi_t spi)
 	}
 }
 
-QM_ISR_DECLARE(qm_ss_spi_0_err_isr)
+QM_ISR_DECLARE(qm_ss_spi_0_error_isr)
 {
 	handle_spi_err_interrupt(QM_SS_SPI_0);
 }
-QM_ISR_DECLARE(qm_ss_spi_1_err_isr)
+QM_ISR_DECLARE(qm_ss_spi_1_error_isr)
 {
 	handle_spi_err_interrupt(QM_SS_SPI_1);
 }
-QM_ISR_DECLARE(qm_ss_spi_0_rx_isr)
+QM_ISR_DECLARE(qm_ss_spi_0_rx_avail_isr)
 {
 	handle_spi_rx_interrupt(QM_SS_SPI_0);
 }
-QM_ISR_DECLARE(qm_ss_spi_1_rx_isr)
+QM_ISR_DECLARE(qm_ss_spi_1_rx_avail_isr)
 {
 	handle_spi_rx_interrupt(QM_SS_SPI_1);
 }
-QM_ISR_DECLARE(qm_ss_spi_0_tx_isr)
+QM_ISR_DECLARE(qm_ss_spi_0_tx_req_isr)
 {
 	handle_spi_tx_interrupt(QM_SS_SPI_0);
 }
-QM_ISR_DECLARE(qm_ss_spi_1_tx_isr)
+QM_ISR_DECLARE(qm_ss_spi_1_tx_req_isr)
 {
 	handle_spi_tx_interrupt(QM_SS_SPI_1);
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_ss_spi_save_context(const qm_ss_spi_t spi,
+			   qm_ss_spi_context_t *const ctx)
+{
+	const uint32_t controller = base[spi];
+
+	QM_CHECK(spi < QM_SS_SPI_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	ctx->spi_timing = __builtin_arc_lr(controller + QM_SS_SPI_TIMING);
+	ctx->spi_spien = __builtin_arc_lr(controller + QM_SS_SPI_SPIEN);
+	ctx->spi_ctrl = __builtin_arc_lr(controller + QM_SS_SPI_CTRL);
+
+	return 0;
+}
+
+int qm_ss_spi_restore_context(const qm_ss_spi_t spi,
+			      const qm_ss_spi_context_t *const ctx)
+{
+	const uint32_t controller = base[spi];
+
+	QM_CHECK(spi < QM_SS_SPI_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	__builtin_arc_sr(ctx->spi_timing, controller + QM_SS_SPI_TIMING);
+	__builtin_arc_sr(ctx->spi_spien, controller + QM_SS_SPI_SPIEN);
+	__builtin_arc_sr(ctx->spi_ctrl, controller + QM_SS_SPI_CTRL);
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

@@ -49,7 +49,7 @@ static void *callback_data;
 #define PIC_TIMER (QM_PIC_TIMER)
 #endif
 
-QM_ISR_DECLARE(qm_pic_timer_isr)
+QM_ISR_DECLARE(qm_pic_timer_0_isr)
 {
 	if (callback) {
 		callback(callback_data);
@@ -72,7 +72,7 @@ int qm_pic_timer_set_config(const qm_pic_timer_config_t *const cfg)
 	PIC_TIMER->timer_icr.reg = 0;
 	PIC_TIMER->lvttimer.reg = BIT(LVTTIMER_INT_MASK_OFFS) |
 #if (HAS_APIC)
-				  QM_INT_VECTOR_PIC_TIMER;
+				  QM_X86_PIC_TIMER_INT_VECTOR;
 #else
 				  QM_IRQ_PIC_TIMER;
 #endif
@@ -106,3 +106,28 @@ int qm_pic_timer_get(uint32_t *const count)
 
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_pic_timer_save_context(qm_pic_timer_context_t *const ctx)
+{
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	ctx->timer_icr = PIC_TIMER->timer_ccr.reg;
+	ctx->timer_dcr = PIC_TIMER->timer_dcr.reg;
+	ctx->lvttimer = PIC_TIMER->lvttimer.reg;
+
+	return 0;
+}
+
+int qm_pic_timer_restore_context(const qm_pic_timer_context_t *const ctx)
+{
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	/* The PIC Timer is restored to the value before sleep. */
+	PIC_TIMER->timer_icr.reg = ctx->timer_icr;
+	PIC_TIMER->timer_dcr.reg = ctx->timer_dcr;
+	PIC_TIMER->lvttimer.reg = ctx->lvttimer;
+
+	return 0;
+}
+#endif

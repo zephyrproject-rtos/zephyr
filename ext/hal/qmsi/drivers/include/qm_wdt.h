@@ -116,8 +116,6 @@ int qm_wdt_start(const qm_wdt_t wdt);
  * @param[in] wdt WDT index.
  * @param[in] cfg New configuration for WDT.
  *                This must not be NULL.
- *                If QM_WDT_MODE_INTERRUPT_RESET mode is set,
- *                the 'callback' cannot be null.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -137,6 +135,37 @@ int qm_wdt_set_config(const qm_wdt_t wdt, const qm_wdt_config_t *const cfg);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_wdt_reload(const qm_wdt_t wdt);
+
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save watchdog context.
+ *
+ * Save the configuration of the watchdog before entering sleep.
+ *
+ * @param[in] wdt WDT index.
+ * @param[out] ctx WDT context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_wdt_save_context(const qm_wdt_t wdt, qm_wdt_context_t *const ctx);
+
+/**
+ * Restore watchdog context.
+ *
+ * Restore the configuration of the watchdog after exiting sleep.
+ *
+ * @param[in] wdt WDT index.
+ * @param[in] ctx WDT context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_wdt_restore_context(const qm_wdt_t wdt,
+			   const qm_wdt_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

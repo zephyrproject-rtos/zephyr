@@ -36,12 +36,12 @@
 static void (*callback[QM_WDT_NUM])(void *data);
 static void *callback_data[QM_WDT_NUM];
 
-QM_ISR_DECLARE(qm_wdt_isr_0)
+QM_ISR_DECLARE(qm_wdt_0_isr)
 {
 	if (callback[QM_WDT_0]) {
 		callback[QM_WDT_0](callback_data[QM_WDT_0]);
 	}
-	QM_ISR_EOI(QM_IRQ_WDT_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_WDT_0_INT_VECTOR);
 }
 
 int qm_wdt_start(const qm_wdt_t wdt)
@@ -92,3 +92,36 @@ int qm_wdt_reload(const qm_wdt_t wdt)
 
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_wdt_save_context(const qm_wdt_t wdt, qm_wdt_context_t *const ctx)
+{
+	QM_CHECK(wdt < QM_WDT_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	ctx->wdt_torr = QM_WDT[wdt].wdt_torr;
+	ctx->wdt_cr = QM_WDT[wdt].wdt_cr;
+
+	return 0;
+}
+
+int qm_wdt_restore_context(const qm_wdt_t wdt,
+			   const qm_wdt_context_t *const ctx)
+{
+	QM_CHECK(wdt < QM_WDT_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	/*
+	 * TOP_INIT field has to be written before Watchdog Timer is enabled.
+	 */
+	QM_WDT[wdt].wdt_torr = ctx->wdt_torr;
+	QM_WDT[wdt].wdt_cr = ctx->wdt_cr;
+
+	/*
+	 * Reload the wdt value to avoid interrupts to fire on wake up.
+	 */
+	QM_WDT[wdt].wdt_crr = QM_WDT_RELOAD_VALUE;
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

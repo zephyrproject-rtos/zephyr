@@ -75,17 +75,17 @@ static void gpio_isr(const qm_gpio_t gpio)
 	QM_GPIO[gpio]->gpio_porta_eoi;
 }
 
-QM_ISR_DECLARE(qm_gpio_isr_0)
+QM_ISR_DECLARE(qm_gpio_0_isr)
 {
 	gpio_isr(QM_GPIO_0);
-	QM_ISR_EOI(QM_IRQ_GPIO_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_GPIO_0_INT_VECTOR);
 }
 
 #if (HAS_AON_GPIO)
-QM_ISR_DECLARE(qm_aon_gpio_isr_0)
+QM_ISR_DECLARE(qm_aon_gpio_0_isr)
 {
 	gpio_isr(QM_AON_GPIO_0);
-	QM_ISR_EOI(QM_IRQ_AONGPIO_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_AON_GPIO_0_INT_VECTOR);
 }
 #endif
 
@@ -178,3 +178,53 @@ int qm_gpio_write_port(const qm_gpio_t gpio, const uint32_t val)
 
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_gpio_save_context(const qm_gpio_t gpio, qm_gpio_context_t *const ctx)
+{
+	QM_CHECK(gpio < QM_GPIO_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_gpio_reg_t *const controller = QM_GPIO[gpio];
+
+	if (gpio == QM_GPIO_0) {
+		ctx->gpio_swporta_dr = controller->gpio_swporta_dr;
+		ctx->gpio_swporta_ddr = controller->gpio_swporta_ddr;
+		ctx->gpio_swporta_ctl = controller->gpio_swporta_ctl;
+		ctx->gpio_inten = controller->gpio_inten;
+		ctx->gpio_intmask = controller->gpio_intmask;
+		ctx->gpio_inttype_level = controller->gpio_inttype_level;
+		ctx->gpio_int_polarity = controller->gpio_int_polarity;
+		ctx->gpio_debounce = controller->gpio_debounce;
+		ctx->gpio_ls_sync = controller->gpio_ls_sync;
+		ctx->gpio_int_bothedge = controller->gpio_int_bothedge;
+	}
+
+	return 0;
+}
+
+int qm_gpio_restore_context(const qm_gpio_t gpio,
+			    const qm_gpio_context_t *const ctx)
+{
+	QM_CHECK(gpio < QM_GPIO_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_gpio_reg_t *const controller = QM_GPIO[gpio];
+
+	if (gpio == QM_GPIO_0) {
+		controller->gpio_intmask = 0xffffffff;
+		controller->gpio_swporta_dr = ctx->gpio_swporta_dr;
+		controller->gpio_swporta_ddr = ctx->gpio_swporta_ddr;
+		controller->gpio_swporta_ctl = ctx->gpio_swporta_ctl;
+		controller->gpio_inten = ctx->gpio_inten;
+		controller->gpio_inttype_level = ctx->gpio_inttype_level;
+		controller->gpio_int_polarity = ctx->gpio_int_polarity;
+		controller->gpio_debounce = ctx->gpio_debounce;
+		controller->gpio_ls_sync = ctx->gpio_ls_sync;
+		controller->gpio_int_bothedge = ctx->gpio_int_bothedge;
+		controller->gpio_intmask = ctx->gpio_intmask;
+	}
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

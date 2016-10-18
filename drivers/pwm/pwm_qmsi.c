@@ -404,7 +404,7 @@ static int pwm_qmsi_suspend(struct device *dev)
 	int i;
 
 	pwm_ctx_save.int_pwm_timer_mask =
-		QM_SCSS_INT->int_pwm_timer_mask;
+		QM_INTERRUPT_ROUTER->pwm_0_int_mask;
 	for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
 		qm_pwm_channel_t *channel;
 		struct pwm_channel_ctx *channel_save;
@@ -433,7 +433,7 @@ static int pwm_qmsi_resume_from_suspend(struct device *dev)
 		channel->controlreg = channel_save->controlreg;
 		QM_PWM->timer_loadcount2[i] = channel_save->loadcount2;
 	}
-	QM_SCSS_INT->int_pwm_timer_mask = pwm_ctx_save.int_pwm_timer_mask;
+	QM_INTERRUPT_ROUTER->pwm_0_int_mask = pwm_ctx_save.int_pwm_timer_mask;
 	pwm_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 	return 0;
 }

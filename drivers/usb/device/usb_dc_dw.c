@@ -71,7 +71,7 @@ static struct usb_dw_ctrl_prv usb_dw_ctrl;
 static inline void _usb_dw_int_unmask(void)
 {
 #if defined(CONFIG_SOC_QUARK_SE_C1000)
-	QM_SCSS_INT->int_usb_mask &= ~BIT(0);
+	QM_INTERRUPT_ROUTER->usb_0_int_mask &= ~BIT(0);
 #endif
 }
 

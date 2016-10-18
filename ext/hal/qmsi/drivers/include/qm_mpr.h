@@ -55,15 +55,6 @@
 
 typedef void (*qm_mpr_callback_t)(void *);
 
-/* MPR identifier */
-typedef enum {
-	QM_MPR_0 = 0,
-	QM_MPR_1,
-	QM_MPR_2,
-	QM_MPR_3,
-	QM_MPR_NUM
-} qm_mpr_id_t;
-
 /** SRAM Memory Protection Region configuration type. */
 typedef struct {
 	uint8_t en_lock_mask;	/**< Enable/lock bitmask */
@@ -98,6 +89,46 @@ int qm_mpr_set_config(const qm_mpr_id_t id, const qm_mpr_config_t *const cfg);
  * */
 int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 				qm_mpr_callback_t callback_fn, void *data);
+
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save MPR context.
+ *
+ * Save the configuration of the specified MPR peripheral
+ * before entering sleep.
+ *
+ * MPR configuration is lost after sleep and can therefore
+ * be modified even if this configuration was locked before sleep.
+ * To support persistent configuration, the configuration must be
+ * restored when resuming as part of the bootloader.
+ *
+ * @param[out] ctx MPR context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_mpr_save_context(qm_mpr_context_t *const ctx);
+
+/**
+ * Restore MPR context.
+ *
+ * Restore the configuration of the specified MPR peripheral
+ * after exiting sleep.
+ *
+ * MPR configuration is lost after sleep and can therefore
+ * be modified even if this configuration was locked before sleep.
+ * To support persistent configuration, the configuration must be
+ * restored when resuming as part of the bootloader.
+ *
+ * @param[in] ctx MPR context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_mpr_restore_context(const qm_mpr_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

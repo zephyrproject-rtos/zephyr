@@ -172,7 +172,7 @@ static int wdt_suspend_device(struct device *dev)
 	wdt_ctx_save.wdt_torr = QM_WDT[QM_WDT_0].wdt_torr;
 	wdt_ctx_save.wdt_cr = QM_WDT[QM_WDT_0].wdt_cr;
 	wdt_ctx_save.int_watchdog_mask =
-	QM_SCSS_INT->int_watchdog_mask;
+	QM_INTERRUPT_ROUTER->wdt_0_int_mask;
 
 	wdt_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 
@@ -186,7 +186,7 @@ static int wdt_resume_device_from_suspend(struct device *dev)
 	 */
 	QM_WDT[QM_WDT_0].wdt_torr = wdt_ctx_save.wdt_torr;
 	QM_WDT[QM_WDT_0].wdt_cr = wdt_ctx_save.wdt_cr;
-	QM_SCSS_INT->int_watchdog_mask = wdt_ctx_save.int_watchdog_mask;
+	QM_INTERRUPT_ROUTER->wdt_0_int_mask = wdt_ctx_save.int_watchdog_mask;
 
 	wdt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
@@ -221,14 +221,14 @@ static int init(struct device *dev)
 {
 	wdt_reentrancy_init(dev);
 
-	IRQ_CONNECT(QM_IRQ_WDT_0, CONFIG_WDT_0_IRQ_PRI,
-		    qm_wdt_isr_0, 0, IOAPIC_EDGE | IOAPIC_HIGH);
+	IRQ_CONNECT(QM_IRQ_WDT_0_INT, CONFIG_WDT_0_IRQ_PRI,
+		    qm_wdt_0_isr, 0, IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask watchdog interrupt */
-	irq_enable(QM_IRQ_WDT_0);
+	irq_enable(QM_IRQ_WDT_0_INT);
 
 	/* Route watchdog interrupt to Lakemont */
-	QM_SCSS_INT->int_watchdog_mask &= ~BIT(0);
+	QM_INTERRUPT_ROUTER->wdt_0_int_mask &= ~BIT(0);
 
 	wdt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 

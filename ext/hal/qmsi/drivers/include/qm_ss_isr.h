@@ -43,7 +43,7 @@
  * ISR for ADC interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_ADC_IRQ, qm_ss_adc_0_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_ADC_0_INT, qm_ss_adc_0_isr);
  * @endcode if IRQ based conversions are used.
  */
 QM_ISR_DECLARE(qm_ss_adc_0_isr);
@@ -52,16 +52,17 @@ QM_ISR_DECLARE(qm_ss_adc_0_isr);
  * ISR for ADC error interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_ADC_ERR, qm_ss_adc_0_err_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_ADC_0_ERROR_INT,
+ * qm_ss_adc_0_error_isr);
  * @endcode if IRQ based conversions are used.
  */
-QM_ISR_DECLARE(qm_ss_adc_0_err_isr);
+QM_ISR_DECLARE(qm_ss_adc_0_error_isr);
 
 /**
  * ISR for SS ADC 0 calibration interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_SS_IRQ_ADC_CAL, qm_ss_adc_0_cal_isr);
+ * @code qm_irq_request(QM_SS_IRQ_ADC_0_CAL_INT, qm_ss_adc_0_cal_isr);
  * @endcode if IRQ based calibration is used.
  */
 QM_ISR_DECLARE(qm_ss_adc_0_cal_isr);
@@ -70,7 +71,7 @@ QM_ISR_DECLARE(qm_ss_adc_0_cal_isr);
  * ISR for SS ADC 0 mode change interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_SS_IRQ_ADC_PWR, qm_ss_adc_0_pwr_isr);
+ * @code qm_irq_request(QM_SS_IRQ_ADC_0_PWR_INT, qm_ss_adc_0_pwr_isr);
  * @endcode if IRQ based mode change is used.
  */
 QM_ISR_DECLARE(qm_ss_adc_0_pwr_isr);
@@ -79,106 +80,112 @@ QM_ISR_DECLARE(qm_ss_adc_0_pwr_isr);
  * ISR for GPIO 0 error interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_GPIO_INTR_0, qm_ss_gpio_isr_0);
+ * @code qm_ss_irq_request(QM_SS_IRQ_GPIO_0_INT, qm_ss_gpio_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_gpio_isr_0);
+QM_ISR_DECLARE(qm_ss_gpio_0_isr);
 
 /**
  * ISR for GPIO 1 error interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_GPIO_INTR_1, qm_ss_gpio_isr_1);
+ * @code qm_ss_irq_request(QM_SS_IRQ_GPIO_1_INT, qm_ss_gpio_1_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_gpio_isr_1);
+QM_ISR_DECLARE(qm_ss_gpio_1_isr);
 
 /**
  * ISR for I2C 0 error interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_ERR, qm_ss_i2c_isr_0);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_RX_AVAIL, qm_ss_i2c_isr_0);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_TX_REQ, qm_ss_i2c_isr_0);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_STOP_DET, qm_ss_i2c_isr_0);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_ERROR_INT, qm_ss_i2c_0_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_RX_AVAIL_INT, qm_ss_i2c_0_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_TX_REQ_INT, qm_ss_i2c_0_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_STOP_DET_INT, qm_ss_i2c_0_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_i2c_isr_0);
+QM_ISR_DECLARE(qm_ss_i2c_0_isr);
 
 /**
  * ISR for I2C 1 error interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_ERR, qm_ss_i2c_isr_1);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_RX_AVAIL, qm_ss_i2c_isr_1);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_TX_REQ, qm_ss_i2c_isr_1);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_STOP_DET, qm_ss_i2c_isr_1);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_ERROR_INT, qm_ss_i2c_1_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_RX_AVAIL_INT, qm_ss_i2c_1_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_TX_REQ_INT, qm_ss_i2c_1_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_STOP_DET_INT, qm_ss_i2c_1_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_i2c_isr_1);
+QM_ISR_DECLARE(qm_ss_i2c_1_isr);
 
 /**
  * ISR for SPI 0 error interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_SPI_0_ERR_INT, qm_ss_spi_0_err_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_SPI_0_ERROR_INT,
+ * qm_ss_spi_0_error_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_spi_0_err_isr);
+QM_ISR_DECLARE(qm_ss_spi_0_error_isr);
 
 /**
  * ISR for SPI 1 error interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_SPI_1_ERR_INT, qm_ss_spi_1_err_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_SPI_1_ERROR_INT,
+ * qm_ss_spi_1_error_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_spi_1_err_isr);
+QM_ISR_DECLARE(qm_ss_spi_1_error_isr);
 
 /**
  * ISR for SPI 0 TX data requested interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_SPI_0_TX_REQ, qm_ss_spi_0_tx_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_SPI_0_TX_REQ_INT,
+ * qm_ss_spi_0_tx_req_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_spi_0_tx_isr);
+QM_ISR_DECLARE(qm_ss_spi_0_tx_req_isr);
 
 /**
  * ISR for SPI 1 TX data requested interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_SPI_1_TX_REQ, qm_ss_spi_1_tx_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_SPI_1_TX_REQ_INT,
+ * qm_ss_spi_1_tx_req_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_spi_1_tx_isr);
+QM_ISR_DECLARE(qm_ss_spi_1_tx_req_isr);
 
 /**
  * ISR for SPI 0 RX data available interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_SPI_0_RX_AVAIL, qm_ss_spi_0_rx_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_SPI_0_RX_AVAIL_INT,
+ * qm_ss_spi_0_rx_avail_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_spi_0_rx_isr);
+QM_ISR_DECLARE(qm_ss_spi_0_rx_avail_isr);
 
 /**
  * ISR for SPI 1 data available interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_SPI_1_RX_AVAIL, qm_ss_spi_1_rx_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_SPI_1_RX_AVAIL_INT,
+ * qm_ss_spi_1_rx_avail_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_spi_1_rx_isr);
+QM_ISR_DECLARE(qm_ss_spi_1_rx_avail_isr);
 
 /**
  * ISR for SS Timer 0 interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_int_vector_request(QM_SS_INT_TIMER_0, qm_ss_timer_isr_0);
+ * @code qm_ss_int_vector_request(QM_ARC_TIMER_0_INT, qm_ss_timer_0_isr);
  * @endcode
  */
-QM_ISR_DECLARE(qm_ss_timer_isr_0);
+QM_ISR_DECLARE(qm_ss_timer_0_isr);
 
 /**
  * @}

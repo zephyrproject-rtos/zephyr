@@ -331,9 +331,9 @@ void ss_gpio_isr(void *arg)
 		port->config->config_info;
 
 	if (gpio_config->gpio == QM_SS_GPIO_0) {
-		qm_ss_gpio_isr_0(NULL);
+		qm_ss_gpio_0_isr(NULL);
 	} else {
-		qm_ss_gpio_isr_1(NULL);
+		qm_ss_gpio_1_isr(NULL);
 	}
 }
 
@@ -356,7 +356,7 @@ static int ss_gpio_qmsi_init(struct device *port)
 		ss_clk_gpio_enable(QM_SS_GPIO_0);
 
 		scss_intmask =
-			     (uint32_t *)&QM_SCSS_INT->int_ss_gpio_0_intr_mask;
+			(uint32_t *)&QM_INTERRUPT_ROUTER->ss_gpio_0_int_mask;
 		*scss_intmask &= ~BIT(8);
 		break;
 #endif /* CONFIG_GPIO_QMSI_0 */
@@ -370,7 +370,7 @@ static int ss_gpio_qmsi_init(struct device *port)
 		ss_clk_gpio_enable(QM_SS_GPIO_1);
 
 		scss_intmask =
-			     (uint32_t *)&QM_SCSS_INT->int_ss_gpio_1_intr_mask;
+			(uint32_t *)&QM_INTERRUPT_ROUTER->ss_gpio_1_int_mask;
 		*scss_intmask &= ~BIT(8);
 		break;
 #endif /* CONFIG_GPIO_QMSI_1 */

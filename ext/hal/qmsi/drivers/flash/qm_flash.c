@@ -324,3 +324,32 @@ int qm_flash_mass_erase(const qm_flash_t flash, const uint8_t include_rom)
 		;
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_flash_save_context(const qm_flash_t flash, qm_flash_context_t *const ctx)
+{
+	QM_CHECK(flash < QM_FLASH_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_flash_reg_t *const controller = QM_FLASH[flash];
+
+	ctx->tmg_ctrl = controller->tmg_ctrl;
+	ctx->ctrl = controller->ctrl;
+
+	return 0;
+}
+
+int qm_flash_restore_context(const qm_flash_t flash,
+			     const qm_flash_context_t *const ctx)
+{
+	QM_CHECK(flash < QM_FLASH_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_flash_reg_t *const controller = QM_FLASH[flash];
+
+	controller->tmg_ctrl = ctx->tmg_ctrl;
+	controller->ctrl = ctx->ctrl;
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

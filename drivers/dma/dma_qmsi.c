@@ -157,53 +157,53 @@ static void dma_qmsi_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(QM_IRQ_DMA_0, CONFIG_DMA_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_DMA_0_INT_0, CONFIG_DMA_0_IRQ_PRI,
 			qm_dma_0_isr_0, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_0);
-	QM_SCSS_INT->int_dma_channel_0_mask &= ~BIT(0);
+	irq_enable(QM_IRQ_DMA_0_INT_0);
+	QM_INTERRUPT_ROUTER->dma_0_int_0_mask &= ~BIT(0);
 
-	IRQ_CONNECT(QM_IRQ_DMA_1, CONFIG_DMA_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_DMA_0_INT_1, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_1, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_1);
-	QM_SCSS_INT->int_dma_channel_1_mask &= ~BIT(0);
+	irq_enable(QM_IRQ_DMA_0_INT_1);
+	QM_INTERRUPT_ROUTER->dma_0_int_1_mask &= ~BIT(0);
 
 #if (CONFIG_SOC_QUARK_SE_C1000)
 
-	IRQ_CONNECT(QM_IRQ_DMA_2, CONFIG_DMA_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_DMA_0_INT_2, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_2, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_2);
-	QM_SCSS_INT->int_dma_channel_2_mask &= ~BIT(0);
+	irq_enable(QM_IRQ_DMA_0_INT_2);
+	QM_INTERRUPT_ROUTER->dma_0_int_2_mask &= ~BIT(0);
 
-	IRQ_CONNECT(QM_IRQ_DMA_3, CONFIG_DMA_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_DMA_0_INT_3, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_3, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_3);
-	QM_SCSS_INT->int_dma_channel_3_mask &= ~BIT(0);
+	irq_enable(QM_IRQ_DMA_0_INT_3);
+	QM_INTERRUPT_ROUTER->dma_0_int_3_mask &= ~BIT(0);
 
-	IRQ_CONNECT(QM_IRQ_DMA_4, CONFIG_DMA_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_DMA_0_INT_4, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_4, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_4);
-	QM_SCSS_INT->int_dma_channel_4_mask &= ~BIT(0);
+	irq_enable(QM_IRQ_DMA_0_INT_4);
+	QM_INTERRUPT_ROUTER->dma_0_int_4_mask &= ~BIT(0);
 
-	IRQ_CONNECT(QM_IRQ_DMA_5, CONFIG_DMA_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_DMA_0_INT_5, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_5, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_5);
-	QM_SCSS_INT->int_dma_channel_5_mask &= ~BIT(0);
+	irq_enable(QM_IRQ_DMA_0_INT_5);
+	QM_INTERRUPT_ROUTER->dma_0_int_5_mask &= ~BIT(0);
 
-	IRQ_CONNECT(QM_IRQ_DMA_6, CONFIG_DMA_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_DMA_0_INT_6, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_6, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_6);
-	QM_SCSS_INT->int_dma_channel_6_mask &= ~BIT(0);
+	irq_enable(QM_IRQ_DMA_0_INT_6);
+	QM_INTERRUPT_ROUTER->dma_0_int_6_mask &= ~BIT(0);
 
-	IRQ_CONNECT(QM_IRQ_DMA_7, CONFIG_DMA_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_DMA_0_INT_7, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_7, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_7);
-	QM_SCSS_INT->int_dma_channel_7_mask &= ~BIT(0);
+	irq_enable(QM_IRQ_DMA_0_INT_7);
+	QM_INTERRUPT_ROUTER->dma_0_int_7_mask &= ~BIT(0);
 
 #endif /* CONFIG_SOC_QUARK_SE_C1000 */
 
-	IRQ_CONNECT(QM_IRQ_DMA_ERR, CONFIG_DMA_0_IRQ_PRI,
-				qm_dma_0_isr_err, DEVICE_GET(dma_qmsi), 0);
-	irq_enable(QM_IRQ_DMA_ERR);
-	QM_SCSS_INT->int_dma_error_mask &= ~BIT(0);
+	IRQ_CONNECT(QM_IRQ_DMA_0_ERROR_INT, CONFIG_DMA_0_IRQ_PRI,
+				qm_dma_0_error_isr, DEVICE_GET(dma_qmsi), 0);
+	irq_enable(QM_IRQ_DMA_0_ERROR_INT);
+	QM_INTERRUPT_ROUTER->dma_0_error_int_mask &= ~BIT(0);
 
 }

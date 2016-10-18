@@ -163,6 +163,39 @@ int qm_pwm_start(const qm_pwm_t pwm, const qm_pwm_id_t id);
  */
 int qm_pwm_stop(const qm_pwm_t pwm, const qm_pwm_id_t id);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save PWM peripheral's context.
+ *
+ * Saves the configuration of the specified PWM peripheral
+ * before entering sleep.
+ *
+ * @param[in] pwm PWM device.
+ * @param[out] ctx PWM context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_pwm_save_context(const qm_pwm_t pwm, qm_pwm_context_t *const ctx);
+
+/**
+ * Restore PWM peripheral's context.
+ *
+ * Restore the configuration of the specified PWM peripheral
+ * after exiting sleep.
+ *
+ * @param[in] pwm PWM device.
+ * @param[in] ctx PWM context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_pwm_restore_context(const qm_pwm_t pwm,
+			   const qm_pwm_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */

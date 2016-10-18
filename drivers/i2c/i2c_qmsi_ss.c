@@ -50,9 +50,9 @@ static void i2c_qmsi_ss_isr(void *arg)
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 
 	if (instance == QM_SS_I2C_0) {
-		qm_ss_i2c_isr_0(NULL);
+		qm_ss_i2c_0_isr(NULL);
 	} else {
-		qm_ss_i2c_isr_1(NULL);
+		qm_ss_i2c_1_isr(NULL);
 	}
 }
 

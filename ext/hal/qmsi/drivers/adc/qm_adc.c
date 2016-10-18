@@ -190,19 +190,19 @@ static void qm_adc_pwr_0_isr_handler(const qm_adc_t adc)
 }
 
 /* ISR for ADC 0 Command/Calibration Complete. */
-QM_ISR_DECLARE(qm_adc_0_isr)
+QM_ISR_DECLARE(qm_adc_0_cal_isr)
 {
 	qm_adc_isr_handler(QM_ADC_0);
 
-	QM_ISR_EOI(QM_IRQ_ADC_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_ADC_0_CAL_INT_VECTOR);
 }
 
 /* ISR for ADC 0 Mode Change. */
-QM_ISR_DECLARE(qm_adc_pwr_0_isr)
+QM_ISR_DECLARE(qm_adc_0_pwr_isr)
 {
 	qm_adc_pwr_0_isr_handler(QM_ADC_0);
 
-	QM_ISR_EOI(QM_IRQ_ADC_PWR_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_ADC_0_PWR_0_VECTOR);
 }
 
 static void setup_seq_table(const qm_adc_t adc, qm_adc_xfer_t *xfer)

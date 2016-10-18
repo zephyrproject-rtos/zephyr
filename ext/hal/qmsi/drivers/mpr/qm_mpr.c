@@ -35,14 +35,14 @@
 static void (*callback)(void *data);
 static void *callback_data;
 
-QM_ISR_DECLARE(qm_mpr_isr)
+QM_ISR_DECLARE(qm_sram_mpr_0_isr)
 {
 	if (callback) {
 		(*callback)(callback_data);
 	}
 	QM_MPR->mpr_vsts = QM_MPR_VSTS_VALID;
 
-	QM_ISR_EOI(QM_IRQ_SRAM_VECTOR);
+	QM_ISR_EOI(QM_IRQ_SRAM_MPR_0_INT_VECTOR);
 }
 
 int qm_mpr_set_config(const qm_mpr_id_t id, const qm_mpr_config_t *const cfg)
@@ -67,21 +67,19 @@ int qm_mpr_set_config(const qm_mpr_id_t id, const qm_mpr_config_t *const cfg)
 }
 #if (QM_SENSOR)
 int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
-				qm_mpr_callback_t callback_fn,
-				void *callback_data)
+				qm_mpr_callback_t callback_fn, void *cb_data)
 {
 	QM_CHECK(mode <= MPR_VIOL_MODE_PROBE, -EINVAL);
 	/*  interrupt mode */
 	if (MPR_VIOL_MODE_INTERRUPT == mode) {
 		callback = callback_fn;
-		callback_data = callback_data;
+		callback_data = cb_data;
 
 		/* unmask interrupt */
-		QM_SCSS_INT->int_sram_controller_mask &=
-		    ~QM_INT_SRAM_CONTROLLER_SS_MASK;
+		QM_IR_UNMASK_INTERRUPTS(
+		    QM_INTERRUPT_ROUTER->sram_mpr_0_int_mask);
 
-		QM_SCSS_INT->int_sram_controller_mask |=
-		    QM_INT_SRAM_CONTROLLER_SS_HALT_MASK;
+		QM_IR_MASK_HALTS(QM_INTERRUPT_ROUTER->sram_mpr_0_int_mask);
 
 		QM_SCSS_SS->ss_cfg &= ~QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
 	}
@@ -89,21 +87,19 @@ int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 	/* probe or reset mode */
 	else {
 		/* mask interrupt */
-		QM_SCSS_INT->int_sram_controller_mask |=
-		    QM_INT_SRAM_CONTROLLER_SS_MASK;
+		QM_IR_MASK_INTERRUPTS(QM_INTERRUPT_ROUTER->sram_mpr_0_int_mask);
 
-		QM_SCSS_INT->int_sram_controller_mask &=
-		    ~QM_INT_SRAM_CONTROLLER_SS_HALT_MASK;
+		QM_IR_UNMASK_HALTS(QM_INTERRUPT_ROUTER->sram_mpr_0_int_mask);
 
 		if (MPR_VIOL_MODE_PROBE == mode) {
 
 			/* When an enabled host halt interrupt occurs, this bit
-			* determines if the interrupt event triggers a warm
-			* reset
-			* or an entry into Probe Mode.
-			* 0b : Warm Reset
-			* 1b : Probe Mode Entry
-			*/
+			 * determines if the interrupt event triggers a warm
+			 * reset
+			 * or an entry into Probe Mode.
+			 * 0b : Warm Reset
+			 * 1b : Probe Mode Entry
+			 */
 			QM_SCSS_SS->ss_cfg |=
 			    QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
 		} else {
@@ -115,29 +111,26 @@ int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 }
 #else
 int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
-				qm_mpr_callback_t callback_fn,
-				void *callback_data)
+				qm_mpr_callback_t callback_fn, void *cb_data)
 {
 	QM_CHECK(mode <= MPR_VIOL_MODE_PROBE, -EINVAL);
 	/*  interrupt mode */
 	if (MPR_VIOL_MODE_INTERRUPT == mode) {
 		callback = callback_fn;
-		callback_data = callback_data;
+		callback_data = cb_data;
 
 		/* unmask interrupt */
-		qm_irq_unmask(QM_IRQ_SRAM);
+		qm_irq_unmask(QM_IRQ_SRAM_MPR_0_INT);
 
-		QM_SCSS_INT->int_sram_controller_mask |=
-		    QM_INT_SRAM_CONTROLLER_HOST_HALT_MASK;
+		QM_IR_MASK_HALTS(QM_INTERRUPT_ROUTER->sram_mpr_0_int_mask);
 	}
 
 	/* probe or reset mode */
 	else {
 		/* mask interrupt */
-		qm_irq_mask(QM_IRQ_SRAM);
+		qm_irq_mask(QM_IRQ_SRAM_MPR_0_INT);
 
-		QM_SCSS_INT->int_sram_controller_mask &=
-		    ~QM_INT_SRAM_CONTROLLER_HOST_HALT_MASK;
+		QM_IR_UNMASK_HALTS(QM_INTERRUPT_ROUTER->sram_mpr_0_int_mask);
 
 		if (MPR_VIOL_MODE_PROBE == mode) {
 
@@ -158,3 +151,33 @@ int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 	return 0;
 }
 #endif /* QM_SENSOR */
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_mpr_save_context(qm_mpr_context_t *const ctx)
+{
+	QM_CHECK(ctx != NULL, -EINVAL);
+	int i;
+
+	qm_mpr_reg_t *const controller = QM_MPR;
+
+	for (i = 0; i < QM_MPR_NUM; i++) {
+		ctx->mpr_cfg[i] = controller->mpr_cfg[i];
+	}
+
+	return 0;
+}
+
+int qm_mpr_restore_context(const qm_mpr_context_t *const ctx)
+{
+	QM_CHECK(ctx != NULL, -EINVAL);
+	int i;
+
+	qm_mpr_reg_t *const controller = QM_MPR;
+
+	for (i = 0; i < QM_MPR_NUM; i++) {
+		controller->mpr_cfg[i] = ctx->mpr_cfg[i];
+	}
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

@@ -85,10 +85,10 @@ static __inline__ void mvic_register_irq(uint32_t irq)
 	/* Set IRQ triggering scheme and unmask the line. */
 
 	switch (irq) {
-	case QM_IRQ_RTC_0:
-	case QM_IRQ_AONPT_0:
+	case QM_IRQ_RTC_0_INT:
+	case QM_IRQ_AONPT_0_INT:
 	case QM_IRQ_PIC_TIMER:
-	case QM_IRQ_WDT_0:
+	case QM_IRQ_WDT_0_INT:
 		/* positive edge */
 		_mvic_set_irq_val(irq, 0);
 		break;

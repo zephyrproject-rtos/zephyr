@@ -282,12 +282,12 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 	}
 }
 
-QM_ISR_DECLARE(qm_ss_i2c_isr_0)
+QM_ISR_DECLARE(qm_ss_i2c_0_isr)
 {
 	qm_ss_i2c_isr_handler(QM_SS_I2C_0);
 }
 
-QM_ISR_DECLARE(qm_ss_i2c_isr_1)
+QM_ISR_DECLARE(qm_ss_i2c_1_isr)
 {
 	qm_ss_i2c_isr_handler(QM_SS_I2C_1);
 }
@@ -721,3 +721,39 @@ int qm_ss_i2c_irq_transfer_terminate(const qm_ss_i2c_t i2c)
 
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_ss_i2c_save_context(const qm_ss_i2c_t i2c,
+			   qm_ss_i2c_context_t *const ctx)
+{
+	uint32_t controller = i2c_base[i2c];
+
+	QM_CHECK(i2c < QM_SS_I2C_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	ctx->i2c_fs_scl_cnt =
+	    __builtin_arc_lr(controller + QM_SS_I2C_FS_SCL_CNT);
+	ctx->i2c_ss_scl_cnt =
+	    __builtin_arc_lr(controller + QM_SS_I2C_SS_SCL_CNT);
+	ctx->i2c_con = __builtin_arc_lr(controller + QM_SS_I2C_CON);
+
+	return 0;
+}
+
+int qm_ss_i2c_restore_context(const qm_ss_i2c_t i2c,
+			      const qm_ss_i2c_context_t *const ctx)
+{
+	uint32_t controller = i2c_base[i2c];
+
+	QM_CHECK(i2c < QM_SS_I2C_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	__builtin_arc_sr(ctx->i2c_fs_scl_cnt,
+			 controller + QM_SS_I2C_FS_SCL_CNT);
+	__builtin_arc_sr(ctx->i2c_ss_scl_cnt,
+			 controller + QM_SS_I2C_SS_SCL_CNT);
+	__builtin_arc_sr(ctx->i2c_con, controller + QM_SS_I2C_CON);
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

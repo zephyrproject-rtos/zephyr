@@ -398,6 +398,40 @@ int qm_ss_spi_transfer_terminate(const qm_ss_spi_t spi);
 int qm_ss_spi_dma_transfer_terminate(const qm_ss_spi_t spi);
 #endif /* HAS_SS_QMSI_DMA */
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save SS SPI context.
+ *
+ * Saves the configuration of the specified SS SPI peripheral
+ * before entering sleep.
+ *
+ * @param[in] spi SPI controller identifier.
+ * @param[out] ctx SPI context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_spi_save_context(const qm_ss_spi_t spi,
+			   qm_ss_spi_context_t *const ctx);
+
+/**
+ * Restore SS SPI context.
+ *
+ * Restore the configuration of the specified SS SPI peripheral
+ * after exiting sleep.
+ *
+ * @param[in] spi SPI controller identifier.
+ * @param[in] ctx SPI context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_spi_restore_context(const qm_ss_spi_t spi,
+			      const qm_ss_spi_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */

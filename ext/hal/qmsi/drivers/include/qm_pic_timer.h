@@ -105,6 +105,36 @@ int qm_pic_timer_set(const uint32_t count);
  */
 int qm_pic_timer_get(uint32_t *const count);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save PIC Timer peripheral's context.
+ *
+ * Saves the configuration of the specified PIC Timer peripheral
+ * before entering sleep.
+ *
+ * @param[out] ctx PIC Timer context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_pic_timer_save_context(qm_pic_timer_context_t *const ctx);
+
+/**
+ * Restore PIC Timer peripheral's context.
+ *
+ * Restore the configuration of the specified PIC Timer peripheral
+ * after exiting sleep.
+ * The timer is restored to the count saved before sleep.
+ *
+ * @param[in] ctx PIC Timer context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_pic_timer_restore_context(const qm_pic_timer_context_t *const ctx);
+#endif
 /**
  * @}
  */

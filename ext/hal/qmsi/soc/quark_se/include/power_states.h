@@ -85,6 +85,59 @@ void power_soc_sleep(void);
  */
 void power_soc_deep_sleep(void);
 
+#if (ENABLE_RESTORE_CONTEXT) && (!QM_SENSOR)
+/**
+ * Enter SoC sleep state and restore after wake up.
+ *
+ * Put the SoC into sleep state until next SoC wake event
+ * and continue execution after wake up where the application stopped.
+ *
+ * If the library is built with ENABLE_RESTORE_CONTEXT=1, then this function
+ * will use the common RAM __x86_restore_info[0] to save the necessary context
+ * to bring back the CPU to the point where this function was called.
+ * This means that applications should refrain from using them.
+ *
+ * This function calls qm_x86_save_context and qm_x86_restore_context
+ * in order to restore execution where it stopped.
+ * All power management transitions are done by power_soc_sleep().
+ */
+void power_soc_sleep_restore(void);
+
+/**
+ * Enter SoC deep sleep state and restore after wake up.
+ *
+ * Put the SoC into deep sleep state until next SoC wake event
+ * and continue execution after wake up where the application stopped.
+ *
+ * If the library is built with ENABLE_RESTORE_CONTEXT=1, then this function
+ * will use the common RAM __x86_restore_info[0] to save the necessary context
+ * to bring back the CPU to the point where this function was called.
+ * This means that applications should refrain from using them.
+ *
+ * This function calls qm_x86_save_context and qm_x86_restore_context
+ * in order to restore execution where it stopped.
+ * All power management transitions are done by power_soc_deep_sleep().
+ */
+void power_soc_deep_sleep_restore(void);
+
+/**
+ * Save context, enter x86 C2 power save state and restore after wake up.
+ *
+ * This routine is same as power_soc_sleep_restore(), just instead of
+ * going to sleep it will go to C2 power save state.
+ * Note: this function has a while(1) which will spin until we enter
+ * (and exit) sleep while the power state change will be managed by
+ * the other core.
+ */
+void power_sleep_wait(void);
+
+/**
+ * Enable the x86 startup restore flag, see GPS0 #define in qm_soc_regs.h
+ */
+void power_soc_set_x86_restore_flag(void);
+
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */
@@ -155,6 +208,68 @@ void power_cpu_c2(void);
  *    Host transitions back to C2LP.
  */
 void power_cpu_c2lp(void);
+#endif
+
+#if (ENABLE_RESTORE_CONTEXT) && (!QM_SENSOR) && (!UNIT_TEST)
+/**
+ * Save resume vector.
+ *
+ * Saves the resume vector in the common RAM __x86_restore_info[0] location.
+ * The bootloader will jump to the resume vector once a wake up event
+ * is triggered.
+ */
+#define qm_x86_set_resume_vector(_restore_label, shared_mem)                   \
+	__asm__ __volatile__("movl $" #_restore_label ", %[trap]\n\t"          \
+			     : /* Output operands. */                          \
+			     : /* Input operands. */                           \
+			     [trap] "m"(shared_mem)                            \
+			     : /* Clobbered registers list. */                 \
+			     )
+
+/* Save execution context.
+ *
+ * This routine saves 'idtr', EFLAGS and general purpose registers onto the
+ * stack.
+ *
+ * The bootloader will set the 'gdt' before calling into the 'restore_trap'
+ * function, so we don't need to save it here.
+ */
+#define qm_x86_save_context(stack_pointer)                                     \
+	__asm__ __volatile__("sub $8, %%esp\n\t"                               \
+			     "sidt (%%esp)\n\t"                                \
+			     "lea %[stackpointer], %%eax\n\t"                  \
+			     "pushfl\n\t"                                      \
+			     "pushal\n\t"                                      \
+			     "movl %%esp, (%%eax)\n\t"                         \
+			     : /* Output operands. */                          \
+			     : /* Input operands. */                           \
+			     [stackpointer] "m"(stack_pointer)                 \
+			     : /* Clobbered registers list. */                 \
+			     "eax")
+
+/* Restore trap. This routine recovers the stack pointer into esp and retrieves
+ * 'idtr', EFLAGS and general purpose registers from stack.
+ *
+ * This routine is called from the bootloader to restore the execution context
+ * from before entering in sleep mode.
+ */
+#define qm_x86_restore_context(_restore_label, stack_pointer)                  \
+	__asm__ __volatile__(#_restore_label ":\n\t"                           \
+					     "lea %[stackpointer], %%eax\n\t"  \
+					     "movl (%%eax), %%esp\n\t"         \
+					     "popal\n\t"                       \
+					     "popfl\n\t"                       \
+					     "lidt (%%esp)\n\t"                \
+					     "add $8, %%esp\n\t"               \
+			     : /* Output operands. */                          \
+			     : /* Input operands. */                           \
+			     [stackpointer] "m"(stack_pointer)                 \
+			     : /* Clobbered registers list. */                 \
+			     "eax")
+#else
+#define qm_x86_set_resume_vector(_restore_label, shared_mem)
+#define qm_x86_save_context(stack_pointer)
+#define qm_x86_restore_context(_restore_label, stack_pointer)
 #endif
 
 /**

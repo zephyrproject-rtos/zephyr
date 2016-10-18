@@ -46,7 +46,7 @@ static __inline__ void qm_ss_timer_isr(qm_ss_timer_t timer)
 	__builtin_arc_sr(ctrl, qm_ss_timer_base[timer] + QM_SS_TIMER_CONTROL);
 }
 
-QM_ISR_DECLARE(qm_ss_timer_isr_0)
+QM_ISR_DECLARE(qm_ss_timer_0_isr)
 {
 	qm_ss_timer_isr(QM_SS_TIMER_0);
 }
@@ -90,3 +90,39 @@ int qm_ss_timer_get(const qm_ss_timer_t timer, uint32_t *const count)
 
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_ss_timer_save_context(const qm_ss_timer_t timer,
+			     qm_ss_timer_context_t *const ctx)
+{
+	uint32_t controller;
+
+	QM_CHECK(timer < QM_SS_TIMER_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	controller = qm_ss_timer_base[timer];
+
+	ctx->timer_control = __builtin_arc_lr(controller + QM_SS_TIMER_CONTROL);
+	ctx->timer_limit = __builtin_arc_lr(controller + QM_SS_TIMER_LIMIT);
+	ctx->timer_count = __builtin_arc_lr(controller + QM_SS_TIMER_COUNT);
+
+	return 0;
+}
+
+int qm_ss_timer_restore_context(const qm_ss_timer_t timer,
+				const qm_ss_timer_context_t *const ctx)
+{
+	uint32_t controller;
+
+	QM_CHECK(timer < QM_SS_TIMER_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	controller = qm_ss_timer_base[timer];
+
+	__builtin_arc_sr(ctx->timer_control, controller + QM_SS_TIMER_CONTROL);
+	__builtin_arc_sr(ctx->timer_limit, controller + QM_SS_TIMER_LIMIT);
+	__builtin_arc_sr(ctx->timer_count, controller + QM_SS_TIMER_COUNT);
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

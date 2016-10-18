@@ -54,32 +54,38 @@ static void qm_dma_isr_handler(const qm_dma_t dma,
 	uint32_t transfer_length =
 	    get_transfer_length(dma, channel_id, prv_cfg);
 
-	QM_ASSERT(int_reg->status_int_low &
-		  (QM_DMA_INT_STATUS_TFR | QM_DMA_INT_STATUS_BLOCK));
-
-	if (0 != prv_cfg->num_blocks_per_buffer) {
-		/* Multiblock transfer. */
-		transfer_length *= prv_cfg->num_blocks_per_buffer;
-	}
+	/* The status can't be asserted here as there is a possible race
+	 * condition when terminating channels. It's possible that an interrupt
+	 * can be generated before the terminate function masks the
+	 * interrupts. */
 
 	if (int_reg->status_int_low & QM_DMA_INT_STATUS_TFR) {
+
 		QM_ASSERT(int_reg->status_tfr_low & BIT(channel_id));
+
 		/* Transfer completed, clear interrupt */
 		int_reg->clear_tfr_low = BIT(channel_id);
 
+		/* If multiblock, the final block is also completed. */
+		int_reg->clear_block_low = BIT(channel_id);
+
 		/* Mask interrupts for this channel */
+		int_reg->mask_block_low = BIT(channel_id) << 8;
 		int_reg->mask_tfr_low = BIT(channel_id) << 8;
 		int_reg->mask_err_low = BIT(channel_id) << 8;
+
+		/* Clear llp register */
+		chan_reg->llp_low = 0;
 
 		/*
 		 * Call the callback if registered and pass the transfer length.
 		 */
-		if (prv_cfg->client_callback && NULL == prv_cfg->lli_tail) {
+		if (prv_cfg->client_callback) {
 			/* Single block or contiguous multiblock. */
 			prv_cfg->client_callback(prv_cfg->callback_context,
 						 transfer_length, 0);
 		}
-	} else {
+	} else if (int_reg->status_int_low & QM_DMA_INT_STATUS_BLOCK) {
 		/* Block interrupts are only unmasked in multiblock mode. */
 		QM_ASSERT(int_reg->status_block_low & BIT(channel_id));
 
@@ -150,6 +156,7 @@ static void qm_dma_isr_err_handler(const qm_dma_t dma)
 		int_reg->clear_err_low = BIT(channel_id);
 
 		/* Mask interrupts for this channel */
+		int_reg->mask_block_low = BIT(channel_id) << 8;
 		int_reg->mask_tfr_low = BIT(channel_id) << 8;
 		int_reg->mask_err_low = BIT(channel_id) << 8;
 
@@ -166,59 +173,59 @@ static void qm_dma_isr_err_handler(const qm_dma_t dma)
 	}
 }
 
-QM_ISR_DECLARE(qm_dma_0_isr_err)
+QM_ISR_DECLARE(qm_dma_0_error_isr)
 {
 	qm_dma_isr_err_handler(QM_DMA_0);
-	QM_ISR_EOI(QM_IRQ_DMA_ERR_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_ERROR_INT_VECTOR);
 }
 
 QM_ISR_DECLARE(qm_dma_0_isr_0)
 {
 	qm_dma_isr_handler(QM_DMA_0, QM_DMA_CHANNEL_0);
-	QM_ISR_EOI(QM_IRQ_DMA_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_INT_0_VECTOR);
 }
 
 QM_ISR_DECLARE(qm_dma_0_isr_1)
 {
 	qm_dma_isr_handler(QM_DMA_0, QM_DMA_CHANNEL_1);
-	QM_ISR_EOI(QM_IRQ_DMA_1_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_INT_1_VECTOR);
 }
 
 #if (QUARK_SE)
 QM_ISR_DECLARE(qm_dma_0_isr_2)
 {
 	qm_dma_isr_handler(QM_DMA_0, QM_DMA_CHANNEL_2);
-	QM_ISR_EOI(QM_IRQ_DMA_2_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_INT_2_VECTOR);
 }
 
 QM_ISR_DECLARE(qm_dma_0_isr_3)
 {
 	qm_dma_isr_handler(QM_DMA_0, QM_DMA_CHANNEL_3);
-	QM_ISR_EOI(QM_IRQ_DMA_3_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_INT_3_VECTOR);
 }
 
 QM_ISR_DECLARE(qm_dma_0_isr_4)
 {
 	qm_dma_isr_handler(QM_DMA_0, QM_DMA_CHANNEL_4);
-	QM_ISR_EOI(QM_IRQ_DMA_4_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_INT_4_VECTOR);
 }
 
 QM_ISR_DECLARE(qm_dma_0_isr_5)
 {
 	qm_dma_isr_handler(QM_DMA_0, QM_DMA_CHANNEL_5);
-	QM_ISR_EOI(QM_IRQ_DMA_5_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_INT_5_VECTOR);
 }
 
 QM_ISR_DECLARE(qm_dma_0_isr_6)
 {
 	qm_dma_isr_handler(QM_DMA_0, QM_DMA_CHANNEL_6);
-	QM_ISR_EOI(QM_IRQ_DMA_6_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_INT_6_VECTOR);
 }
 
 QM_ISR_DECLARE(qm_dma_0_isr_7)
 {
 	qm_dma_isr_handler(QM_DMA_0, QM_DMA_CHANNEL_7);
-	QM_ISR_EOI(QM_IRQ_DMA_7_VECTOR);
+	QM_ISR_EOI(QM_IRQ_DMA_0_INT_7_VECTOR);
 }
 #endif /* QUARK_SE */
 
@@ -279,7 +286,7 @@ int qm_dma_channel_set_config(const qm_dma_t dma,
 	dma_cfg_prv_t *chan_cfg = &dma_channel_config[dma][channel_id];
 	int return_code;
 
-	/* Set the transfer type. Only one currently supported */
+	/* Set the transfer type. */
 	return_code = dma_set_transfer_type(dma, channel_id,
 					    channel_config->transfer_type,
 					    channel_config->channel_direction);
@@ -347,8 +354,14 @@ int qm_dma_channel_set_config(const qm_dma_t dma,
 	/* Multiblock linked list not configured. */
 	chan_cfg->lli_tail = NULL;
 
-	/* Multiblock number of blocks per buffer (LL and contiguous modes). */
-	chan_cfg->num_blocks_per_buffer = 0;
+	/* Number of blocks per buffer (>1 when multiblock). */
+	chan_cfg->num_blocks_per_buffer = 1;
+
+	/* Multiblock circular linked list flag. */
+	chan_cfg->transfer_type_ll_circular =
+	    (channel_config->transfer_type == QM_DMA_TYPE_MULTI_LL_CIRCULAR)
+		? true
+		: false;
 
 	return 0;
 }
@@ -449,54 +462,68 @@ int qm_dma_multi_transfer_set_config(
 	QM_CHECK(multi_transfer_config->num_blocks > 0, -EINVAL);
 
 	dma_cfg_prv_t *prv_cfg = &dma_channel_config[dma][channel_id];
+	qm_dma_transfer_type_t transfer_type =
+	    dma_get_transfer_type(dma, channel_id, prv_cfg);
+	volatile qm_dma_chan_reg_t *chan_reg =
+	    &QM_DMA[dma]->chan_reg[channel_id];
 	/*
 	 * Node to which last node points to, 0 on linear linked lists or first
 	 * node on circular linked lists.
 	 */
 	uint32_t tail_pointing_lli;
 
-	if (NULL == prv_cfg->lli_tail) {
-		/* First call to this function after DMA channel config. */
-		volatile qm_dma_chan_reg_t *chan_reg =
-		    &QM_DMA[dma]->chan_reg[channel_id];
+	/*
+	 * Initialize block counting internal variables, needed in ISR to manage
+	 * client callback invocations.
+	 */
+	if (0 == chan_reg->llp_low) {
+		prv_cfg->num_blocks_per_buffer =
+		    multi_transfer_config->num_blocks;
+		prv_cfg->num_blocks_remaining =
+		    multi_transfer_config->num_blocks;
+	}
 
-		if (0 == chan_reg->llp_low) {
-			/* Contiguous multiblock transfer. */
-			dma_set_source_address(
-			    dma, channel_id,
-			    (uint32_t)multi_transfer_config->source_address);
-			dma_set_destination_address(
-			    dma, channel_id, (uint32_t)multi_transfer_config
-						 ->destination_address);
-			dma_set_block_size(dma, channel_id,
-					   multi_transfer_config->block_size);
+	switch (transfer_type) {
+	case QM_DMA_TYPE_MULTI_CONT:
+		/* Contiguous multiblock transfer. */
+		dma_set_source_address(
+		    dma, channel_id,
+		    (uint32_t)multi_transfer_config->source_address);
+		dma_set_destination_address(
+		    dma, channel_id,
+		    (uint32_t)multi_transfer_config->destination_address);
+		dma_set_block_size(dma, channel_id,
+				   multi_transfer_config->block_size);
+		break;
 
-		} else if (multi_transfer_config->linked_list_first != NULL &&
-			   ((uint32_t)multi_transfer_config->linked_list_first &
-			    0x3) == 0) {
+	case QM_DMA_TYPE_MULTI_LL_CIRCULAR:
+	case QM_DMA_TYPE_MULTI_LL:
+		if (multi_transfer_config->linked_list_first == NULL ||
+		    ((uint32_t)multi_transfer_config->linked_list_first &
+		     0x3) != 0) {
 			/*
-			 * Linked list multiblock tranfer (uninitialized). User
-			 * allocated linked list memory needs to be 4-byte
+			 * User-allocated linked list memory needs to be 4-byte
 			 * alligned.
 			 */
-			QM_ASSERT((uint32_t)chan_reg->llp_low &
-				  LLP_LL_TO_BE_SET_MULTI_LL);
-			QM_ASSERT(0 == ((uint32_t)chan_reg->llp_low &
-					~(LLP_LL_TO_BE_SET_MULTI_LL |
-					  LLP_LL_TO_BE_SET_MULTI_LL_CIRCULAR)));
+			return -EINVAL;
+		}
+
+		if (0 == chan_reg->llp_low) {
 			/*
-			 * With circular operation, the last LLI node should
-			 * point to the first one (this node).
+			 * Either first call to this function after DMA channel
+			 * config or transfer reconfiguration after a completed
+			 * multiblock transfer.
 			 */
 			tail_pointing_lli =
-			    (chan_reg->llp_low &
-			     LLP_LL_TO_BE_SET_MULTI_LL_CIRCULAR)
+			    (transfer_type == QM_DMA_TYPE_MULTI_LL_CIRCULAR)
 				? (uint32_t)
 				      multi_transfer_config->linked_list_first
 				: 0;
 
-			/* Initialize LLIs using CTL drom DMA register (plus
-			 * INT_EN bit). */
+			/*
+			 * Initialize LLIs using CTL drom DMA register (plus
+			 * INT_EN bit).
+			 */
 			prv_cfg->lli_tail = dma_linked_list_init(
 			    multi_transfer_config,
 			    chan_reg->ctrl_low | QM_DMA_CTL_L_INT_EN_MASK,
@@ -506,50 +533,50 @@ int qm_dma_multi_transfer_set_config(
 			chan_reg->llp_low =
 			    (uint32_t)multi_transfer_config->linked_list_first;
 		} else {
-			return -EINVAL;
+			/*
+			 * Linked list multiblock transfer (additional appended
+			 * LLIs). The number of blocks needs to match the number
+			 * of blocks on previous calls to this function (we only
+			 * allow scatter/gather buffers of same size).
+			 */
+			if (prv_cfg->num_blocks_per_buffer !=
+			    multi_transfer_config->num_blocks) {
+				return -EINVAL;
+			}
+
+			/*
+			 * Reference to NULL (linear LL) or the first LLI node
+			 * (circular LL), extracted from previously configured
+			 * linked list.
+			 */
+			tail_pointing_lli =
+			    prv_cfg->lli_tail->linked_list_address;
+
+			/*
+			 * Point last previously configured linked list to this
+			 * node.
+			 */
+			prv_cfg->lli_tail->linked_list_address =
+			    (uint32_t)multi_transfer_config->linked_list_first;
+
+			/*
+			 * Initialize LLI using CTL from last previously
+			 * configured LLI, returning a pointer to the new tail
+			 * node.
+			 */
+			prv_cfg->lli_tail = dma_linked_list_init(
+			    multi_transfer_config, prv_cfg->lli_tail->ctrl_low,
+			    tail_pointing_lli);
+
+			QM_ASSERT(prv_cfg->lli_tail->linked_list_address ==
+				  tail_pointing_lli);
 		}
+		break;
 
-		/*
-		 * Initialize block counting internal variables, needed in ISR
-		 * to manage client callback invocations.
-		 */
-		prv_cfg->num_blocks_per_buffer =
-		    multi_transfer_config->num_blocks;
-		prv_cfg->num_blocks_remaining =
-		    multi_transfer_config->num_blocks;
-
-	} else {
-		/*
-		 * Linked list multiblock transfer (additional appended LLIs).
-		 * The number of blocks needs to match the number of blocks on
-		 * previous calls to this function (we only allow scatter/gather
-		 * buffers of same size).
-		 */
-		if (prv_cfg->num_blocks_per_buffer !=
-		    multi_transfer_config->num_blocks) {
-			return -EINVAL;
-		}
-
-		/*
-		 * Reference to NULL (linear LL) or the first LLI node (circular
-		 * LL), extracted from previously configured linked list.
-		 */
-		tail_pointing_lli = prv_cfg->lli_tail->linked_list_address;
-
-		/* Point last previously configured linked list to this node. */
-		prv_cfg->lli_tail->linked_list_address =
-		    (uint32_t)multi_transfer_config->linked_list_first;
-
-		/*
-		 * Initialize LLI using CTL from last previously configured LLI,
-		 * returning a pointer to the new tail node.
-		 */
-		prv_cfg->lli_tail = dma_linked_list_init(
-		    multi_transfer_config, prv_cfg->lli_tail->ctrl_low,
-		    tail_pointing_lli);
-
-		QM_ASSERT(prv_cfg->lli_tail->linked_list_address ==
-			  tail_pointing_lli);
+	default:
+		/* Single block not allowed */
+		return -EINVAL;
+		break;
 	}
 
 	return 0;
@@ -564,11 +591,17 @@ int qm_dma_transfer_start(const qm_dma_t dma,
 	volatile qm_dma_int_reg_t *int_reg = &QM_DMA[dma]->int_reg;
 	dma_cfg_prv_t *prv_cfg = &dma_channel_config[dma][channel_id];
 
+	/* Clear all interrupts as they may be asserted from a previous
+	 * transfer */
+	int_reg->clear_tfr_low = BIT(channel_id);
+	int_reg->clear_block_low = BIT(channel_id);
+	int_reg->clear_err_low = BIT(channel_id);
+
 	/* Unmask Interrupts */
 	int_reg->mask_tfr_low = ((BIT(channel_id) << 8) | BIT(channel_id));
 	int_reg->mask_err_low = ((BIT(channel_id) << 8) | BIT(channel_id));
 
-	if (prv_cfg->num_blocks_per_buffer != 0) {
+	if (prv_cfg->num_blocks_per_buffer > 1) {
 		/* Block interrupts are only unmasked in multiblock mode. */
 		int_reg->mask_block_low =
 		    ((BIT(channel_id) << 8) | BIT(channel_id));
@@ -589,6 +622,8 @@ int qm_dma_transfer_terminate(const qm_dma_t dma,
 
 	int return_code;
 	volatile qm_dma_int_reg_t *int_reg = &QM_DMA[dma]->int_reg;
+	volatile qm_dma_chan_reg_t *chan_reg =
+	    &QM_DMA[dma]->chan_reg[channel_id];
 
 	/* Disable interrupts for the channel */
 	dma_interrupt_disable(dma, channel_id);
@@ -598,6 +633,9 @@ int qm_dma_transfer_terminate(const qm_dma_t dma,
 	int_reg->mask_block_low = (BIT(channel_id) << 8);
 	int_reg->mask_err_low = (BIT(channel_id) << 8);
 
+	/* Clear llp register */
+	chan_reg->llp_low = 0;
+
 	/* The channel is disabled and the transfer complete callback is
 	 * triggered. This callback provides the client with the data length
 	 * transferred before the transfer was stopped. */
@@ -605,15 +643,9 @@ int qm_dma_transfer_terminate(const qm_dma_t dma,
 	if (!return_code) {
 		dma_cfg_prv_t *prv_cfg = &dma_channel_config[dma][channel_id];
 		if (prv_cfg->client_callback) {
-			uint32_t transfer_length =
-			    get_transfer_length(dma, channel_id, prv_cfg);
-			if (0 != prv_cfg->num_blocks_per_buffer) {
-				/* Multiblock transfer. */
-				transfer_length *=
-				    prv_cfg->num_blocks_per_buffer;
-			}
-			prv_cfg->client_callback(prv_cfg->callback_context,
-						 transfer_length, 0);
+			prv_cfg->client_callback(
+			    prv_cfg->callback_context,
+			    get_transfer_length(dma, channel_id, prv_cfg), 0);
 		}
 	}
 
@@ -643,3 +675,50 @@ int qm_dma_transfer_mem_to_mem(const qm_dma_t dma,
 
 	return return_code;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_dma_save_context(const qm_dma_t dma, qm_dma_context_t *const ctx)
+{
+	QM_CHECK(dma < QM_DMA_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+	int i;
+
+	QM_RW qm_dma_misc_reg_t *misc_reg = &QM_DMA[dma]->misc_reg;
+
+	ctx->misc_cfg_low = misc_reg->cfg_low;
+
+	for (i = 0; i < QM_DMA_CHANNEL_NUM; i++) {
+		QM_RW qm_dma_chan_reg_t *chan_reg = &QM_DMA[dma]->chan_reg[i];
+
+		/* Masking the bit QM_DMA_CTL_L_INT_EN_MASK disables a possible
+		* trigger of a new transition. */
+		ctx->channel[i].ctrl_low =
+		    chan_reg->ctrl_low & ~QM_DMA_CTL_L_INT_EN_MASK;
+		ctx->channel[i].cfg_low = chan_reg->cfg_low;
+		ctx->channel[i].cfg_high = chan_reg->cfg_high;
+		ctx->channel[i].llp_low = chan_reg->llp_low;
+	}
+	return 0;
+}
+
+int qm_dma_restore_context(const qm_dma_t dma,
+			   const qm_dma_context_t *const ctx)
+{
+	QM_CHECK(dma < QM_DMA_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+	int i;
+	QM_RW qm_dma_misc_reg_t *misc_reg = &QM_DMA[dma]->misc_reg;
+
+	misc_reg->cfg_low = ctx->misc_cfg_low;
+
+	for (i = 0; i < QM_DMA_CHANNEL_NUM; i++) {
+		QM_RW qm_dma_chan_reg_t *chan_reg = &QM_DMA[dma]->chan_reg[i];
+
+		chan_reg->ctrl_low = ctx->channel[i].ctrl_low;
+		chan_reg->cfg_low = ctx->channel[i].cfg_low;
+		chan_reg->cfg_high = ctx->channel[i].cfg_high;
+		chan_reg->llp_low = ctx->channel[i].llp_low;
+	}
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

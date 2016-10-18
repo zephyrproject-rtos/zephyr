@@ -43,18 +43,18 @@ static void ss_gpio_isr_handler(qm_ss_gpio_t gpio)
 	int_status = __builtin_arc_lr(controller + QM_SS_GPIO_INTSTATUS);
 
 	if (callback[gpio]) {
-		callback[gpio](callback_data, int_status);
+		callback[gpio](callback_data[gpio], int_status);
 	}
 
 	__builtin_arc_sr(int_status, controller + QM_SS_GPIO_PORTA_EOI);
 }
 
-QM_ISR_DECLARE(qm_ss_gpio_isr_0)
+QM_ISR_DECLARE(qm_ss_gpio_0_isr)
 {
 	ss_gpio_isr_handler(QM_SS_GPIO_0);
 }
 
-QM_ISR_DECLARE(qm_ss_gpio_isr_1)
+QM_ISR_DECLARE(qm_ss_gpio_1_isr)
 {
 	ss_gpio_isr_handler(QM_SS_GPIO_1);
 }
@@ -156,3 +156,58 @@ int qm_ss_gpio_write_port(const qm_ss_gpio_t gpio, const uint32_t val)
 
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_ss_gpio_save_context(const qm_ss_gpio_t gpio,
+			    qm_ss_gpio_context_t *const ctx)
+{
+	uint32_t controller;
+
+	QM_CHECK(gpio < QM_SS_GPIO_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	controller = gpio_base[gpio];
+
+	ctx->gpio_swporta_dr =
+	    __builtin_arc_lr(controller + QM_SS_GPIO_SWPORTA_DR);
+	ctx->gpio_swporta_ddr =
+	    __builtin_arc_lr(controller + QM_SS_GPIO_SWPORTA_DDR);
+	ctx->gpio_inten = __builtin_arc_lr(controller + QM_SS_GPIO_INTEN);
+	ctx->gpio_intmask = __builtin_arc_lr(controller + QM_SS_GPIO_INTMASK);
+	ctx->gpio_inttype_level =
+	    __builtin_arc_lr(controller + QM_SS_GPIO_INTTYPE_LEVEL);
+	ctx->gpio_int_polarity =
+	    __builtin_arc_lr(controller + QM_SS_GPIO_INT_POLARITY);
+	ctx->gpio_debounce = __builtin_arc_lr(controller + QM_SS_GPIO_DEBOUNCE);
+	ctx->gpio_ls_sync = __builtin_arc_lr(controller + QM_SS_GPIO_LS_SYNC);
+
+	return 0;
+}
+
+int qm_ss_gpio_restore_context(const qm_ss_gpio_t gpio,
+			       const qm_ss_gpio_context_t *const ctx)
+{
+	uint32_t controller;
+
+	QM_CHECK(gpio < QM_SS_GPIO_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	controller = gpio_base[gpio];
+
+	__builtin_arc_sr(0xffffffff, controller + QM_SS_GPIO_INTMASK);
+	__builtin_arc_sr(ctx->gpio_swporta_dr,
+			 controller + QM_SS_GPIO_SWPORTA_DR);
+	__builtin_arc_sr(ctx->gpio_swporta_ddr,
+			 controller + QM_SS_GPIO_SWPORTA_DDR);
+	__builtin_arc_sr(ctx->gpio_inten, controller + QM_SS_GPIO_INTEN);
+	__builtin_arc_sr(ctx->gpio_inttype_level,
+			 controller + QM_SS_GPIO_INTTYPE_LEVEL);
+	__builtin_arc_sr(ctx->gpio_int_polarity,
+			 controller + QM_SS_GPIO_INT_POLARITY);
+	__builtin_arc_sr(ctx->gpio_debounce, controller + QM_SS_GPIO_DEBOUNCE);
+	__builtin_arc_sr(ctx->gpio_ls_sync, controller + QM_SS_GPIO_LS_SYNC);
+	__builtin_arc_sr(ctx->gpio_intmask, controller + QM_SS_GPIO_INTMASK);
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

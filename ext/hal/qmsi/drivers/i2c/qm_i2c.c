@@ -53,6 +53,24 @@ static volatile const qm_i2c_transfer_t *i2c_transfer[QM_I2C_NUM];
 static volatile uint32_t i2c_write_pos[QM_I2C_NUM], i2c_read_pos[QM_I2C_NUM],
     i2c_read_cmd_send[QM_I2C_NUM];
 
+/* True if user buffers have been updated. */
+static volatile bool transfer_ongoing = false;
+
+/*
+ * Keep track of activity if addressed.
+ * There is no register which keeps track of the internal state machine status,
+ * whether it is addressed, transmitting or receiving.
+ * The only way to keep track of this is to save the information that the driver
+ * received one the following interrupts:
+ * - General call interrupt
+ * - Read request
+ * - RX FIFO full.
+ * Also, if no interrupt has been received during an RX transaction, the driver
+ * can check the controller has been addressed if data has been effectively
+ * received.
+ */
+static volatile bool is_addressed = false;
+
 /*
  * I2C DMA controller configuration descriptor.
  */
@@ -96,6 +114,82 @@ void *i2c_dma_callbacks[] = {NULL, i2c_dma_transmit_callback,
 static void controller_enable(const qm_i2c_t i2c);
 static int controller_disable(const qm_i2c_t i2c);
 
+/*
+ * Empty RX FIFO.
+ * Try to empty FIFO to user buffer. If RX buffer is full, trigger callback.
+ * If user does not update buffer when requested, empty FIFO without storing
+ * received data.
+ */
+static void empty_rx_fifo(const qm_i2c_t i2c,
+			  const volatile qm_i2c_transfer_t *const transfer,
+			  qm_i2c_reg_t *const controller)
+{
+	while (controller->ic_status & QM_I2C_IC_STATUS_RFNE) {
+		if (!transfer_ongoing) {
+			/* Dummy read. */
+			controller->ic_data_cmd;
+		} else {
+			if (transfer->rx_len > i2c_read_pos[i2c]) {
+				transfer->rx[i2c_read_pos[i2c]++] =
+				    controller->ic_data_cmd & 0xFF;
+			}
+
+			if (transfer->rx_len == i2c_read_pos[i2c]) {
+				/*
+				 * End user transfer if user does not update
+				 * buffers.
+				 */
+				transfer_ongoing = false;
+
+				if (transfer->callback) {
+					transfer->callback(
+					    transfer->callback_data, 0,
+					    QM_I2C_RX_FULL, transfer->rx_len);
+				}
+			}
+		}
+	}
+}
+
+/*
+ * Fill TX FIFO.
+ * Try to fill the FIFO with user data. If TX buffer is empty, trigger callback.
+ * If user does not update buffer when requested, fill the FIFO with dummy
+ * data.
+ */
+static void fill_tx_fifo(const qm_i2c_t i2c,
+			 const volatile qm_i2c_transfer_t *const transfer,
+			 qm_i2c_reg_t *const controller)
+{
+	while ((controller->ic_status & QM_I2C_IC_STATUS_TNF) &&
+	       (!(controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_TX_ABRT))) {
+		if (!transfer_ongoing) {
+			/* Dummy write. */
+			controller->ic_data_cmd = 0;
+
+		} else {
+			if (transfer->tx_len > i2c_write_pos[i2c]) {
+				controller->ic_data_cmd =
+				    transfer->tx[i2c_write_pos[i2c]++];
+			}
+
+			if (transfer->tx_len == i2c_write_pos[i2c]) {
+				/*
+				 * End user transfer if user does not update
+				 * buffers.
+				 */
+				transfer_ongoing = false;
+
+				if (transfer->callback) {
+					transfer->callback(
+					    transfer->callback_data, 0,
+					    QM_I2C_TX_EMPTY, transfer->tx_len);
+				}
+			}
+		}
+	}
+}
+
 static __inline__ void
 handle_tx_abrt(const qm_i2c_t i2c,
 	       const volatile qm_i2c_transfer_t *const transfer,
@@ -134,6 +228,183 @@ handle_tx_abrt(const qm_i2c_t i2c,
 			transfer->callback(transfer->callback_data, rc, status,
 					   i2c_write_pos[i2c]);
 		}
+	}
+}
+
+static __inline__ void
+i2c_isr_slave_handler(const qm_i2c_t i2c,
+		      const volatile qm_i2c_transfer_t *const transfer,
+		      qm_i2c_reg_t *const controller)
+{
+	/* Save register to speed up process in interrupt. */
+	uint32_t ic_intr_stat = controller->ic_intr_stat;
+
+	/*
+	 * Order of interrupt handling:
+	 * - RX Status interrupts
+	 * - TX Status interrupts (RD_REQ, RX_DONE, TX_EMPTY)
+	 * - General call (will only appear after few SCL clock cycles after
+	 *   start interrupt).
+	 * - Stop (can appear very shortly after RX_DONE interrupt)
+	 * - Start (can appear very shortly after a stop interrupt or RX_DONE
+	 *   interrupt)
+	 */
+
+	/*
+	 * Check RX status.
+	 * Master write (TX), slave read (RX).
+	 *
+	 * Interrupts handled for RX status:
+	 * - RX FIFO Overflow
+	 * - RX FIFO Full (interrupt remains active until FIFO emptied)
+	 *
+	 * RX FIFO overflow must always be checked though, in case of an
+	 * overflow happens during RX_FULL interrupt handling.
+	 */
+	/* RX FIFO Overflow. */
+	if (ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_OVER) {
+		controller->ic_clr_rx_over;
+		if (transfer->callback) {
+			transfer->callback(transfer->callback_data, 0,
+					   QM_I2C_RX_OVER, 0);
+		}
+	}
+
+	/* RX FIFO FULL. */
+	if (ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_FULL) {
+		/* Empty RX FIFO. */
+		empty_rx_fifo(i2c, transfer, controller);
+
+		/* Track activity of controller when addressed. */
+		is_addressed = true;
+	}
+
+	/*
+	 * Check TX status.
+	 * Master read (RX), slave write (TX).
+	 *
+	 * Interrupts handled for TX status:
+	 * - Read request
+	 * - RX done (actually a TX state: RX done by master)
+	 * - TX FIFO empty.
+	 *
+	 * TX FIFO empty interrupt must be handled after RX DONE interrupt: when
+	 * RX DONE is triggered, TX FIFO is flushed (thus emptied) creating a
+	 * TX_ABORT interrupt and a TX_EMPTY condition. TX_ABORT shall be
+	 * cleared and TX_EMPTY interrupt disabled.
+	 */
+	else if (ic_intr_stat & QM_I2C_IC_INTR_STAT_RD_REQ) {
+		/* Clear read request interrupt. */
+		controller->ic_clr_rd_req;
+
+		/* Track activity of controller when addressed. */
+		is_addressed = true;
+
+		fill_tx_fifo(i2c, transfer, controller);
+
+		/* Enable TX EMPTY interrupts. */
+		controller->ic_intr_mask |= QM_I2C_IC_INTR_MASK_TX_EMPTY;
+	} else if (ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_DONE) {
+		controller->ic_clr_rx_done;
+		/* Clear TX ABORT as it is triggered when FIFO is flushed. */
+		controller->ic_clr_tx_abrt;
+
+		/* Disable TX EMPTY interrupt. */
+		controller->ic_intr_mask &= ~QM_I2C_IC_INTR_MASK_TX_EMPTY;
+
+		/*
+		 * Read again the interrupt status in case of a stop or a start
+		 * interrupt has been triggered in the meantime.
+		 */
+		ic_intr_stat = controller->ic_intr_stat;
+
+	} else if (ic_intr_stat & QM_I2C_IC_INTR_STAT_TX_EMPTY) {
+		fill_tx_fifo(i2c, transfer, controller);
+	}
+
+	/* General call detected. */
+	else if (ic_intr_stat & QM_I2C_IC_INTR_STAT_GEN_CALL_DETECTED) {
+		if (transfer->callback) {
+			transfer->callback(transfer->callback_data, 0,
+					   QM_I2C_GEN_CALL_DETECTED, 0);
+		}
+#if (FIX_1)
+		/*
+		 * Workaround.
+		 * The interrupt may not actually be cleared when register is
+		 * read too early.
+		 */
+		while (controller->ic_intr_stat &
+		       QM_I2C_IC_INTR_STAT_GEN_CALL_DETECTED) {
+			/* Clear General call interrupt. */
+			controller->ic_clr_gen_call;
+		}
+#else
+		controller->ic_clr_gen_call;
+#endif
+
+		/* Track activity of controller when addressed. */
+		is_addressed = true;
+	}
+
+	/* Stop condition detected. */
+	if (ic_intr_stat & QM_I2C_IC_INTR_STAT_STOP_DETECTED) {
+		/* Empty RX FIFO. */
+		empty_rx_fifo(i2c, transfer, controller);
+
+		/*
+		 * Stop transfer if single transfer asked and controller has
+		 * been addressed.
+		 * Driver only knows it has been addressed if:
+		 * - It already triggered an interrupt on TX_EMPTY or RX_FULL
+		 * - Data was read from RX FIFO.
+		 */
+		if ((transfer->stop == true) &&
+		    (is_addressed || (i2c_read_pos[i2c] != 0))) {
+			controller_disable(i2c);
+		}
+
+		if (transfer->callback) {
+			transfer->callback(
+			    transfer->callback_data, 0, QM_I2C_STOP_DETECTED,
+			    (transfer_ongoing) ? i2c_read_pos[i2c] : 0);
+		}
+		i2c_write_pos[i2c] = 0;
+		i2c_read_pos[i2c] = 0;
+
+		controller->ic_intr_mask &= ~QM_I2C_IC_INTR_MASK_TX_EMPTY;
+
+		is_addressed = false;
+
+		/* Clear stop interrupt. */
+		controller->ic_clr_stop_det;
+
+		/*
+		 * Read again the interrupt status in case of a start interrupt
+		 * has been triggered in the meantime.
+		 */
+		ic_intr_stat = controller->ic_intr_stat;
+	}
+
+	/*
+	 * START or RESTART condition detected.
+	 * The RESTART_DETECTED interrupt is not used as it is redundant with
+	 * the START_DETECTED interrupt.
+	 */
+	if (ic_intr_stat & QM_I2C_IC_INTR_STAT_START_DETECTED) {
+		empty_rx_fifo(i2c, transfer, controller);
+
+		if (transfer->callback) {
+			transfer->callback(
+			    transfer->callback_data, 0, QM_I2C_START_DETECTED,
+			    (transfer_ongoing) ? i2c_read_pos[i2c] : 0);
+		}
+		transfer_ongoing = true;
+		i2c_write_pos[i2c] = 0;
+		i2c_read_pos[i2c] = 0;
+
+		/* Clear Start detected interrupt. */
+		controller->ic_clr_start_det;
 	}
 }
 
@@ -307,38 +578,41 @@ static void i2c_isr_handler(const qm_i2c_t i2c)
 	/* Check for errors. */
 	QM_ASSERT(!(controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_TX_OVER));
 	QM_ASSERT(!(controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_UNDER));
-	QM_ASSERT(!(controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_OVER));
 
 	/*
 	 * TX ABORT interrupt.
-	 * Avoid spurious interrupts by checking RX DONE interrupt.
+	 * Avoid spurious interrupts by checking RX DONE interrupt: RX_DONE
+	 * interrupt also trigger a TX_ABORT interrupt when flushing FIFO.
 	 */
-
-	if (controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_TX_ABRT) {
+	if ((controller->ic_intr_stat &
+	     (QM_I2C_IC_INTR_STAT_TX_ABRT | QM_I2C_IC_INTR_STAT_RX_DONE)) ==
+	    QM_I2C_IC_INTR_STAT_TX_ABRT) {
 		handle_tx_abrt(i2c, transfer, controller);
 	}
 
 	/* Master mode. */
 	if (controller->ic_con & QM_I2C_IC_CON_MASTER_MODE) {
+		QM_ASSERT(
+		    !(controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_OVER));
 		i2c_isr_master_handler(i2c, transfer, controller);
 	}
 	/* Slave mode. */
 	else {
-		/* Add I2C ISR slave handler here. */
+		i2c_isr_slave_handler(i2c, transfer, controller);
 	}
 }
 
 QM_ISR_DECLARE(qm_i2c_0_isr)
 {
 	i2c_isr_handler(QM_I2C_0);
-	QM_ISR_EOI(QM_IRQ_I2C_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_I2C_0_INT_VECTOR);
 }
 
 #if (QUARK_SE)
 QM_ISR_DECLARE(qm_i2c_1_isr)
 {
 	i2c_isr_handler(QM_I2C_1);
-	QM_ISR_EOI(QM_IRQ_I2C_1_VECTOR);
+	QM_ISR_EOI(QM_IRQ_I2C_1_INT_VECTOR);
 }
 #endif
 
@@ -470,6 +744,12 @@ int qm_i2c_set_config(const qm_i2c_t i2c, const qm_i2c_config_t *const cfg)
 		/* Set 7/10 bit address mode. */
 		ic_con = cfg->address_mode
 			 << QM_I2C_IC_CON_10BITADDR_SLAVE_OFFSET;
+
+		if (cfg->stop_detect_behaviour ==
+		    QM_I2C_SLAVE_INTERRUPT_WHEN_ADDRESSED) {
+			/* Set stop interrupt only when addressed. */
+			ic_con |= QM_I2C_IC_CON_STOP_DET_IFADDRESSED;
+		}
 
 		/* Set slave address. */
 		controller->ic_sar = cfg->slave_addr;
@@ -727,6 +1007,57 @@ int qm_i2c_master_irq_transfer(const qm_i2c_t i2c,
 	return 0;
 }
 
+int qm_i2c_slave_irq_transfer(const qm_i2c_t i2c,
+			      volatile const qm_i2c_transfer_t *const xfer)
+{
+	QM_CHECK(i2c < QM_I2C_NUM, -EINVAL);
+	QM_CHECK(xfer != NULL, -EINVAL);
+
+	/* Assign common properties. */
+	i2c_transfer[i2c] = xfer;
+	i2c_write_pos[i2c] = 0;
+	i2c_read_pos[i2c] = 0;
+
+	transfer_ongoing = false;
+	is_addressed = false;
+
+	QM_I2C[i2c]->ic_intr_mask = QM_I2C_IC_INTR_MASK_ALL;
+
+	controller_enable(i2c);
+
+	/*
+	 * Almost all interrupts must be active to handle everything from the
+	 * driver, for the controller not to be stuck in a specific state.
+	 * Only TX_EMPTY must be set when needed, otherwise it will be triggered
+	 * everytime, even when it is not required to fill the TX FIFO.
+	 */
+	QM_I2C[i2c]->ic_intr_mask =
+	    QM_I2C_IC_INTR_MASK_RX_UNDER | QM_I2C_IC_INTR_MASK_RX_OVER |
+	    QM_I2C_IC_INTR_MASK_RX_FULL | QM_I2C_IC_INTR_MASK_TX_ABORT |
+	    QM_I2C_IC_INTR_MASK_RX_DONE | QM_I2C_IC_INTR_MASK_STOP_DETECTED |
+	    QM_I2C_IC_INTR_MASK_START_DETECTED | QM_I2C_IC_INTR_MASK_RD_REQ |
+	    QM_I2C_IC_INTR_MASK_GEN_CALL_DETECTED;
+
+	return 0;
+}
+
+int qm_i2c_slave_irq_transfer_update(
+    const qm_i2c_t i2c, volatile const qm_i2c_transfer_t *const xfer)
+{
+	QM_CHECK(i2c < QM_I2C_NUM, -EINVAL);
+	QM_CHECK(xfer != NULL, -EINVAL);
+
+	/* Assign common properties. */
+	i2c_transfer[i2c] = xfer;
+	i2c_write_pos[i2c] = 0;
+	i2c_read_pos[i2c] = 0;
+
+	/* Tell the ISR we still have data to transfer. */
+	transfer_ongoing = true;
+
+	return 0;
+}
+
 static void controller_enable(const qm_i2c_t i2c)
 {
 	qm_i2c_reg_t *const controller = QM_I2C[i2c];
@@ -885,7 +1216,11 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 				data_command |=
 				    QM_I2C_IC_DATA_CMD_STOP_BIT_CTRL;
 			}
-			/* Write last byte and increase len count. */
+
+			/* Wait if FIFO is full */
+			while (!(QM_I2C[i2c]->ic_status & QM_I2C_IC_STATUS_TNF))
+				;
+			/* Write last byte and increase len count */
 			QM_I2C[i2c]->ic_data_cmd = data_command;
 			len++;
 
@@ -1054,10 +1389,10 @@ int qm_i2c_dma_channel_config(const qm_i2c_t i2c,
 	dma_channel_config.channel_direction = direction;
 	dma_channel_config.source_transfer_width = QM_DMA_TRANS_WIDTH_8;
 	dma_channel_config.destination_transfer_width = QM_DMA_TRANS_WIDTH_8;
-	/* NOTE: This can be optimized for performance. */
-	dma_channel_config.source_burst_length = QM_DMA_BURST_TRANS_LENGTH_1;
+	/* Burst length is set to half the FIFO for performance */
+	dma_channel_config.source_burst_length = QM_DMA_BURST_TRANS_LENGTH_8;
 	dma_channel_config.destination_burst_length =
-	    QM_DMA_BURST_TRANS_LENGTH_1;
+	    QM_DMA_BURST_TRANS_LENGTH_8;
 	dma_channel_config.client_callback = i2c_dma_callbacks[direction];
 	dma_channel_config.transfer_type = QM_DMA_TYPE_SINGLE;
 
@@ -1106,13 +1441,12 @@ int qm_i2c_master_dma_transfer(const qm_i2c_t i2c,
 	i2c_read_cmd_send[i2c] = xfer->rx_len;
 	i2c_transfer[i2c] = xfer;
 
-	/*
-	 * Set DMA TX and RX waterlevels to 0, to make sure no data is lost.
-	 *
-	 * NOTE: This can be optimized for performance.
-	 */
-	QM_I2C[i2c]->ic_dma_rdlr = 0;
-	QM_I2C[i2c]->ic_dma_tdlr = 0;
+	/* Set DMA TX and RX waterlevels to half the FIFO depth for performance
+	   reasons */
+	QM_I2C[i2c]->ic_dma_tdlr = (QM_I2C_FIFO_SIZE / 2);
+	/* RDLR value is desired watermark-1, according to I2C datasheet section
+	   3.17.7 */
+	QM_I2C[i2c]->ic_dma_rdlr = (QM_I2C_FIFO_SIZE / 2) - 1;
 
 	i2c_dma_context[i2c].i2c_error_code = 0;
 
@@ -1208,3 +1542,46 @@ int qm_i2c_master_dma_transfer(const qm_i2c_t i2c,
 
 	return rc;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_i2c_save_context(const qm_i2c_t i2c, qm_i2c_context_t *const ctx)
+{
+	QM_CHECK(i2c < QM_I2C_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_i2c_reg_t *const regs = QM_I2C[i2c];
+
+	ctx->con = regs->ic_con;
+	ctx->sar = regs->ic_sar;
+	ctx->ss_scl_hcnt = regs->ic_ss_scl_hcnt;
+	ctx->ss_scl_lcnt = regs->ic_ss_scl_lcnt;
+	ctx->fs_scl_hcnt = regs->ic_fs_scl_hcnt;
+	ctx->fs_scl_lcnt = regs->ic_fs_scl_lcnt;
+	ctx->fs_spklen = regs->ic_fs_spklen;
+	ctx->ic_intr_mask = regs->ic_intr_mask;
+	ctx->enable = regs->ic_enable;
+
+	return 0;
+}
+
+int qm_i2c_restore_context(const qm_i2c_t i2c,
+			   const qm_i2c_context_t *const ctx)
+{
+	QM_CHECK(i2c < QM_I2C_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_i2c_reg_t *const regs = QM_I2C[i2c];
+
+	regs->ic_con = ctx->con;
+	regs->ic_sar = ctx->sar;
+	regs->ic_ss_scl_hcnt = ctx->ss_scl_hcnt;
+	regs->ic_ss_scl_lcnt = ctx->ss_scl_lcnt;
+	regs->ic_fs_scl_hcnt = ctx->fs_scl_hcnt;
+	regs->ic_fs_scl_lcnt = ctx->fs_scl_lcnt;
+	regs->ic_fs_spklen = ctx->fs_spklen;
+	regs->ic_intr_mask = ctx->ic_intr_mask;
+	regs->ic_enable = ctx->enable;
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

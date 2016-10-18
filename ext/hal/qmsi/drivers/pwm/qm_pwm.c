@@ -33,7 +33,7 @@ static void (*callback[QM_PWM_NUM])(void *data, uint32_t int_status);
 
 static void *callback_data[QM_PWM_NUM];
 
-QM_ISR_DECLARE(qm_pwm_isr_0)
+QM_ISR_DECLARE(qm_pwm_0_isr)
 {
 	/*  Which timers fired. */
 	uint32_t int_status = QM_PWM[QM_PWM_0].timersintstatus;
@@ -43,7 +43,7 @@ QM_ISR_DECLARE(qm_pwm_isr_0)
 	if (callback[QM_PWM_0]) {
 		(*callback[QM_PWM_0])(callback_data[QM_PWM_0], int_status);
 	}
-	QM_ISR_EOI(QM_IRQ_PWM_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_PWM_0_INT_VECTOR);
 }
 
 int qm_pwm_start(const qm_pwm_t pwm, const qm_pwm_id_t id)
@@ -122,3 +122,40 @@ int qm_pwm_get(const qm_pwm_t pwm, const qm_pwm_id_t id,
 
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_pwm_save_context(const qm_pwm_t pwm, qm_pwm_context_t *const ctx)
+{
+	QM_CHECK(pwm < QM_PWM_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_pwm_reg_t *const controller = &QM_PWM[pwm];
+	uint8_t i;
+
+	for (i = 0; i < QM_PWM_ID_NUM; i++) {
+		ctx->channel[i].loadcount = controller->timer[i].loadcount;
+		ctx->channel[i].controlreg = controller->timer[i].controlreg;
+		ctx->channel[i].loadcount2 = controller->timer_loadcount2[i];
+	}
+
+	return 0;
+}
+
+int qm_pwm_restore_context(const qm_pwm_t pwm,
+			   const qm_pwm_context_t *const ctx)
+{
+	QM_CHECK(pwm < QM_PWM_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_pwm_reg_t *const controller = &QM_PWM[pwm];
+	uint8_t i;
+
+	for (i = 0; i < QM_PWM_ID_NUM; i++) {
+		controller->timer[i].loadcount = ctx->channel[i].loadcount;
+		controller->timer[i].controlreg = ctx->channel[i].controlreg;
+		controller->timer_loadcount2[i] = ctx->channel[i].loadcount2;
+	}
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

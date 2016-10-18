@@ -113,6 +113,40 @@ int qm_ss_timer_set(const qm_ss_timer_t timer, const uint32_t count);
  */
 int qm_ss_timer_get(const qm_ss_timer_t timer, uint32_t *const count);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/*
+ * Save SS TIMER context.
+ *
+ * Save the configuration of the specified TIMER peripheral
+ * before entering sleep.
+ *
+ * @param[in] timer SS TIMER index.
+ * @param[out] ctx SS TIMER context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_timer_save_context(const qm_ss_timer_t timer,
+			     qm_ss_timer_context_t *const ctx);
+
+/*
+ * Restore SS TIMER context.
+ *
+ * Restore the configuration of the specified TIMER peripheral
+ * after exiting sleep.
+ *
+ * @param[in] timer SS TIMER index.
+ * @param[in] ctx SS TIMER context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_timer_restore_context(const qm_ss_timer_t timer,
+				const qm_ss_timer_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */

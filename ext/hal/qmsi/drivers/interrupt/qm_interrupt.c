@@ -42,19 +42,15 @@
 #include "qm_sensor_regs.h"
 extern qm_ss_isr_t __ivt_vect_table[];
 
+static void ss_register_irq(unsigned int vector);
+
 #else
 #error "Unsupported / unspecified processor detected."
 #endif
 
-/* SCSS base addr for LMT interrupt routing, for linear IRQ mapping */
-#define SCSS_LMT_INT_MASK_BASE (&QM_SCSS_INT->int_i2c_mst_0_mask)
-
-#if (QM_SENSOR)
-#define SCSS_INT_MASK BIT(8) /* Sensor Subsystem interrupt masking */
-static void ss_register_irq(unsigned int vector);
-#else
-#define SCSS_INT_MASK BIT(0) /* Lakemont interrupt masking */
-#endif
+/* Event router base addr for LMT interrupt routing, for linear IRQ mapping */
+#define INTERRUPT_ROUTER_LMT_INT_MASK_BASE                                     \
+	(&QM_INTERRUPT_ROUTER->i2c_master_0_int_mask)
 
 /* x86 CPU FLAGS.IF register field (Interrupt enable Flag, bit 9), indicating
  * whether or not CPU interrupts are enabled.
@@ -169,9 +165,103 @@ void qm_irq_unmask(uint32_t irq)
 #endif
 }
 
+#if (ENABLE_RESTORE_CONTEXT)
+#if (HAS_APIC)
+int qm_irq_save_context(qm_irq_context_t *const ctx)
+{
+	uint32_t rte_low;
+	uint8_t irq;
+
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	for (irq = 0; irq < QM_IOAPIC_NUM_RTES; irq++) {
+		rte_low = _ioapic_get_redtbl_entry_lo(irq);
+		ctx->redtbl_entries[irq] = rte_low;
+	}
+
+	return 0;
+}
+
+int qm_irq_restore_context(const qm_irq_context_t *const ctx)
+{
+	uint32_t rte_low;
+	uint8_t irq;
+
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	apic_init();
+
+	for (irq = 0; irq < QM_IOAPIC_NUM_RTES; irq++) {
+		rte_low = ctx->redtbl_entries[irq];
+		_ioapic_set_redtbl_entry_lo(irq, rte_low);
+	}
+
+	return 0;
+}
+#elif(QM_SENSOR) /* HAS_APIC */
+int qm_irq_save_context(qm_irq_context_t *const ctx)
+{
+	uint8_t i;
+	uint32_t status32;
+
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	/* Start from i=1, skip reset vector. */
+	for (i = 1; i < QM_SS_INT_VECTOR_NUM; i++) {
+		__builtin_arc_sr(i, QM_SS_AUX_IRQ_SELECT);
+		ctx->irq_config[i - 1] =
+		    __builtin_arc_lr(QM_SS_AUX_IRQ_PRIORITY) << 2;
+		ctx->irq_config[i - 1] |=
+		    __builtin_arc_lr(QM_SS_AUX_IRQ_TRIGGER) << 1;
+		ctx->irq_config[i - 1] |=
+		    __builtin_arc_lr(QM_SS_AUX_IRQ_ENABLE);
+	}
+
+	status32 = __builtin_arc_lr(QM_SS_AUX_STATUS32);
+
+	ctx->status32_irq_threshold = status32 & QM_SS_STATUS32_E_MASK;
+	ctx->status32_irq_enable = status32 & QM_SS_STATUS32_IE_MASK;
+	ctx->irq_ctrl = __builtin_arc_lr(QM_SS_AUX_IRQ_CTRL);
+
+	return 0;
+}
+
+int qm_irq_restore_context(const qm_irq_context_t *const ctx)
+{
+	uint8_t i;
+	uint32_t reg;
+
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	/* Start from i=1, skip reset vector. */
+	for (i = 1; i < QM_SS_INT_VECTOR_NUM; i++) {
+		__builtin_arc_sr(i, QM_SS_AUX_IRQ_SELECT);
+		__builtin_arc_sr(ctx->irq_config[i - 1] >> 2,
+				 QM_SS_AUX_IRQ_PRIORITY);
+		__builtin_arc_sr((ctx->irq_config[i - 1] >> 1) & BIT(0),
+				 QM_SS_AUX_IRQ_TRIGGER);
+		__builtin_arc_sr(ctx->irq_config[i - 1] & BIT(0),
+				 QM_SS_AUX_IRQ_ENABLE);
+	}
+
+	__builtin_arc_sr(ctx->irq_ctrl, QM_SS_AUX_IRQ_CTRL);
+
+	/* Setting an interrupt priority threshold. */
+	reg = __builtin_arc_lr(QM_SS_AUX_STATUS32);
+	reg |= (ctx->status32_irq_threshold & QM_SS_STATUS32_E_MASK);
+	reg |= (ctx->status32_irq_enable & QM_SS_STATUS32_IE_MASK);
+
+	/* This one has to be a kernel operation. */
+	__builtin_arc_kflag(reg);
+
+	return 0;
+}
+#endif		 /* QM_SENSOR */
+#endif		 /* ENABLE_RESTORE_CONTEXT */
+
 void _qm_irq_setup(uint32_t irq, uint16_t register_offset)
 {
-	uint32_t *scss_intmask;
+	uint32_t *event_router_intmask;
 
 #if (HAS_APIC)
 	/*
@@ -186,29 +276,30 @@ void _qm_irq_setup(uint32_t irq, uint16_t register_offset)
 #endif
 
 	/* Route peripheral interrupt to Lakemont/Sensor Subsystem */
-	scss_intmask = (uint32_t *)SCSS_LMT_INT_MASK_BASE + register_offset;
+	event_router_intmask =
+	    (uint32_t *)INTERRUPT_ROUTER_LMT_INT_MASK_BASE + register_offset;
 
 	/* On Quark D2000 and Quark SE the register for the analog comparator
 	 * host mask has a different bit field than the other host mask
 	 * registers. */
-	if (QM_IRQ_AC_MASK_OFFSET == register_offset) {
-		*scss_intmask &= ~0x0007ffff;
+	if (QM_IRQ_COMPARATOR_0_INT_MASK_OFFSET == register_offset) {
+		*event_router_intmask &= ~0x0007ffff;
 #if !defined(QUARK_D2000)
-	} else if (QM_IRQ_MBOX_MASK_OFFSET == register_offset) {
+	} else if (QM_IRQ_MAILBOX_0_INT_MASK_OFFSET == register_offset) {
 /* Masking MAILBOX irq id done inside mbox driver */
 #endif
 		/*
 		 * DMA error mask uses 1 bit per DMA channel rather than the
 		 * generic host mask.
 		 */
-	} else if (QM_IRQ_DMA_ERR_MASK_OFFSET == register_offset) {
+	} else if (QM_IRQ_DMA_0_ERROR_INT_MASK_OFFSET == register_offset) {
 #if (QM_SENSOR)
-		*scss_intmask &= ~QM_INT_DMA_ERR_SS_MASK;
+		*event_router_intmask &= ~QM_IR_DMA_ERROR_SS_MASK;
 #else
-		*scss_intmask &= ~QM_INT_DMA_ERR_HOST_MASK;
+		*event_router_intmask &= ~QM_IR_DMA_ERROR_HOST_MASK;
 #endif
 	} else {
-		*scss_intmask &= ~SCSS_INT_MASK;
+		QM_IR_UNMASK_INTERRUPTS(*event_router_intmask);
 	}
 
 #if (HAS_APIC)
@@ -256,10 +347,10 @@ static void ss_register_irq(unsigned int vector)
 	 * triggered.
 	 */
 	switch (vector) {
-	case QM_SS_IRQ_ADC_PWR_VECTOR:
-	case QM_IRQ_RTC_0_VECTOR:
-	case QM_IRQ_AONPT_0_VECTOR:
-	case QM_IRQ_WDT_0_VECTOR:
+	case QM_SS_IRQ_ADC_0_PWR_INT_VECTOR:
+	case QM_IRQ_RTC_0_INT_VECTOR:
+	case QM_IRQ_AONPT_0_INT_VECTOR:
+	case QM_IRQ_WDT_0_INT_VECTOR:
 		/* Edge sensitive. */
 		__builtin_arc_sr(vector, QM_SS_AUX_IRQ_SELECT);
 		__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE,

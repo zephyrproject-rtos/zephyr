@@ -32,7 +32,7 @@
 static void (*callback)(void *, uint32_t) = NULL;
 static void *callback_data;
 
-QM_ISR_DECLARE(qm_ac_isr)
+QM_ISR_DECLARE(qm_comparator_0_isr)
 {
 	uint32_t int_status = QM_SCSS_CMP->cmp_stat_clr;
 
@@ -61,7 +61,7 @@ QM_ISR_DECLARE(qm_ac_isr)
 	/* Clear all pending interrupts */
 	QM_SCSS_CMP->cmp_stat_clr = int_status;
 
-	QM_ISR_EOI(QM_IRQ_AC_VECTOR);
+	QM_ISR_EOI(QM_IRQ_COMPARATOR_0_INT_VECTOR);
 }
 
 int qm_ac_set_config(const qm_ac_config_t *const config)

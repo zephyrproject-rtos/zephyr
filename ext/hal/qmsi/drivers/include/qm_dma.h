@@ -341,6 +341,39 @@ int qm_dma_transfer_mem_to_mem(const qm_dma_t dma,
 			       const qm_dma_channel_id_t channel_id,
 			       qm_dma_transfer_t *const transfer_config);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save DMA peripheral's context.
+ *
+ * Saves the configuration of the specified DMA peripheral
+ * before entering sleep.
+ *
+ * @param[in] dma DMA device.
+ * @param[out] ctx DMA context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_dma_save_context(const qm_dma_t dma, qm_dma_context_t *const ctx);
+
+/**
+ * Restore DMA peripheral's context.
+ *
+ * Restore the configuration of the specified DMA peripheral
+ * after exiting sleep.
+ *
+ * @param[in] dma DMA device.
+ * @param[in] ctx DMA context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_dma_restore_context(const qm_dma_t dma,
+			   const qm_dma_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */

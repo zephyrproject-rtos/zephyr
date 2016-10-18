@@ -35,12 +35,12 @@
  * receive it.
  */
 #ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-# define UART0_IRQ		QM_IRQ_UART_0_VECTOR
-# define UART1_IRQ		QM_IRQ_UART_1_VECTOR
+# define UART0_IRQ		QM_IRQ_UART_0_INT_VECTOR
+# define UART1_IRQ		QM_IRQ_UART_1_INT_VECTOR
 # define SCSS_IRQ_ROUTING_MASK	BIT(8)
 #else
-# define UART0_IRQ		QM_IRQ_UART_0
-# define UART1_IRQ		QM_IRQ_UART_1
+# define UART0_IRQ		QM_IRQ_UART_0_INT
+# define UART1_IRQ		QM_IRQ_UART_1_INT
 # define SCSS_IRQ_ROUTING_MASK	BIT(0)
 #endif
 
@@ -123,9 +123,9 @@ static int uart_suspend_device(struct device *dev)
 	struct uart_context_t *const ctx_save = &drv_data->ctx_save;
 
 	if (config->instance == QM_UART_0) {
-		ctx_save->int_uart_mask = QM_SCSS_INT->int_uart_0_mask;
+		ctx_save->int_uart_mask = QM_INTERRUPT_ROUTER->uart_0_int_mask;
 	} else {
-		ctx_save->int_uart_mask = QM_SCSS_INT->int_uart_1_mask;
+		ctx_save->int_uart_mask = QM_INTERRUPT_ROUTER->uart_1_int_mask;
 	}
 
 	ctx_save->ier = regs->ier_dlh;
@@ -156,9 +156,9 @@ static int uart_resume_device_from_suspend(struct device *dev)
 	clk_periph_enable(config->clock_gate);
 
 	if (config->instance == QM_UART_0) {
-		QM_SCSS_INT->int_uart_0_mask = ctx_save->int_uart_mask;
+		QM_INTERRUPT_ROUTER->uart_0_int_mask = ctx_save->int_uart_mask;
 	} else {
-		QM_SCSS_INT->int_uart_1_mask = ctx_save->int_uart_mask;
+		QM_INTERRUPT_ROUTER->uart_1_int_mask = ctx_save->int_uart_mask;
 	}
 
 	/* When DLAB is set, DLL and DLH registers can be accessed. */
@@ -459,7 +459,7 @@ static void irq_config_func_0(struct device *dev)
 		    uart_qmsi_isr, DEVICE_GET(uart_0),
 		    UART_IRQ_FLAGS);
 	irq_enable(UART0_IRQ);
-	QM_SCSS_INT->int_uart_0_mask &= ~SCSS_IRQ_ROUTING_MASK;
+	QM_INTERRUPT_ROUTER->uart_0_int_mask &= ~SCSS_IRQ_ROUTING_MASK;
 }
 #endif /* CONFIG_UART_QMSI_0 */
 
@@ -470,7 +470,7 @@ static void irq_config_func_1(struct device *dev)
 		    uart_qmsi_isr, DEVICE_GET(uart_1),
 		    UART_IRQ_FLAGS);
 	irq_enable(UART1_IRQ);
-	QM_SCSS_INT->int_uart_1_mask &= ~SCSS_IRQ_ROUTING_MASK;
+	QM_INTERRUPT_ROUTER->uart_1_int_mask &= ~SCSS_IRQ_ROUTING_MASK;
 }
 #endif /* CONFIG_UART_QMSI_1 */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

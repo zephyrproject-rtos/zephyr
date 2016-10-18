@@ -234,7 +234,7 @@ void adc_qmsi_ss_rx_isr(void *arg)
 void adc_qmsi_ss_err_isr(void *arg)
 {
 	ARG_UNUSED(arg);
-	qm_ss_adc_0_err_isr(NULL);
+	qm_ss_adc_0_error_isr(NULL);
 }
 
 static const struct adc_driver_api api_funcs = {
@@ -288,9 +288,10 @@ static void adc_config_irq(void)
 		    adc_qmsi_ss_err_isr, DEVICE_GET(adc_qmsi_ss), 0);
 	irq_enable(IRQ_ADC_ERR);
 
-	scss_intmask = (uint32_t *)&QM_SCSS_INT->int_ss_adc_err_mask;
+	scss_intmask =
+		(uint32_t *)&QM_INTERRUPT_ROUTER->ss_adc_0_error_int_mask;
 	*scss_intmask &= ~BIT(8);
 
-	scss_intmask = (uint32_t *)&QM_SCSS_INT->int_ss_adc_irq_mask;
+	scss_intmask = (uint32_t *)&QM_INTERRUPT_ROUTER->ss_adc_0_int_mask;
 	*scss_intmask &= ~BIT(8);
 }

@@ -33,8 +33,8 @@
 
 /* SCSS base addr for Sensor Subsystem interrupt routing, for linear IRQ
  * mapping */
-#define SCSS_SS_INT_MASK_BASE (&QM_SCSS_INT->int_ss_adc_err_mask)
-#define SCSS_SS_INT_MASK BIT(8) /* Sensor Subsystem interrupt masking */
+#define INTERRUPT_ROUTER_SS_INT_MASK_BASE                                      \
+	(&QM_INTERRUPT_ROUTER->ss_adc_0_error_int_mask)
 
 #if (UNIT_TEST)
 qm_ss_isr_t __ivt_vect_table[QM_SS_INT_VECTOR_NUM];
@@ -90,8 +90,8 @@ void qm_ss_irq_request(uint32_t irq, qm_ss_isr_t isr)
 	qm_ss_int_vector_request(vector, isr);
 
 	/* Route peripheral interrupt to Sensor Subsystem */
-	scss_intmask = (uint32_t *)SCSS_SS_INT_MASK_BASE + irq;
-	*scss_intmask &= ~SCSS_SS_INT_MASK;
+	scss_intmask = (uint32_t *)INTERRUPT_ROUTER_SS_INT_MASK_BASE + irq;
+	QM_IR_UNMASK_SS_INTERRUPTS(*scss_intmask);
 
 	qm_ss_irq_unmask(vector);
 }

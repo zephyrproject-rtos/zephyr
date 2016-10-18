@@ -225,7 +225,7 @@ QM_ISR_DECLARE(qm_ss_adc_0_isr)
 }
 
 /* ISR for SS ADC 0 Error. */
-QM_ISR_DECLARE(qm_ss_adc_0_err_isr)
+QM_ISR_DECLARE(qm_ss_adc_0_error_isr)
 {
 	qm_ss_adc_isr_err_handler(QM_SS_ADC_0);
 }
@@ -392,9 +392,9 @@ int qm_ss_adc_set_mode(const qm_ss_adc_t adc, const qm_ss_adc_mode_t mode)
 	QM_CHECK(mode <= QM_SS_ADC_MODE_NORM_NO_CAL, -EINVAL);
 
 	/* Save the state of the mode interrupt mask. */
-	intstat = QM_SCSS_INT->int_adc_pwr_mask & QM_INT_ADC_PWR_MASK;
+	intstat = QM_IR_GET_MASK(QM_INTERRUPT_ROUTER->adc_0_pwr_int_mask);
 	/* Mask the ADC mode change interrupt. */
-	QM_SCSS_INT->int_adc_pwr_mask |= QM_INT_ADC_PWR_MASK;
+	QM_IR_MASK_INTERRUPTS(QM_INTERRUPT_ROUTER->adc_0_pwr_int_mask);
 
 	/* Calculate the delay. */
 	delay = CALCULATE_DELAY();
@@ -415,7 +415,8 @@ int qm_ss_adc_set_mode(const qm_ss_adc_t adc, const qm_ss_adc_mode_t mode)
 	/* Restore the state of the mode change interrupt mask if necessary. */
 	if (!intstat) {
 		ignore_spurious_interrupt[adc] = true;
-		QM_SCSS_INT->int_adc_pwr_mask &= ~(QM_INT_ADC_PWR_MASK);
+		QM_IR_UNMASK_INTERRUPTS(
+		    QM_INTERRUPT_ROUTER->adc_0_pwr_int_mask);
 	}
 
 	/* Perform a dummy conversion if transitioning to Normal Mode. */
@@ -460,9 +461,9 @@ int qm_ss_adc_calibrate(const qm_ss_adc_t adc __attribute__((unused)))
 	QM_CHECK(adc < QM_SS_ADC_NUM, -EINVAL);
 
 	/* Save the state of the calibration interrupt mask. */
-	intstat = QM_SCSS_INT->int_adc_calib_mask & QM_INT_ADC_CALIB_MASK;
+	intstat = QM_IR_GET_MASK(QM_INTERRUPT_ROUTER->adc_0_cal_int_mask);
 	/* Mask the ADC calibration interrupt. */
-	QM_SCSS_INT->int_adc_calib_mask |= QM_INT_ADC_CALIB_MASK;
+	QM_IR_MASK_INTERRUPTS(QM_INTERRUPT_ROUTER->adc_0_cal_int_mask);
 
 	/* Enable the ADC. */
 	enable_adc();
@@ -493,7 +494,8 @@ int qm_ss_adc_calibrate(const qm_ss_adc_t adc __attribute__((unused)))
 
 	/* Restore the state of the calibration interrupt mask if necessary. */
 	if (!intstat) {
-		QM_SCSS_INT->int_adc_calib_mask &= ~(QM_INT_ADC_CALIB_MASK);
+		QM_IR_UNMASK_INTERRUPTS(
+		    QM_INTERRUPT_ROUTER->adc_0_cal_int_mask);
 	}
 
 	return 0;
@@ -535,9 +537,9 @@ int qm_ss_adc_set_calibration(const qm_ss_adc_t adc __attribute__((unused)),
 	QM_CHECK(cal_data <= QM_SS_IO_CREG_MST0_CTRL_ADC_CAL_VAL_MAX, -EINVAL);
 
 	/* Save the state of the calibration interrupt mask. */
-	intstat = QM_SCSS_INT->int_adc_calib_mask & QM_INT_ADC_CALIB_MASK;
+	intstat = QM_IR_GET_MASK(QM_INTERRUPT_ROUTER->adc_0_cal_int_mask);
 	/* Mask the ADC calibration interrupt. */
-	QM_SCSS_INT->int_adc_calib_mask |= QM_INT_ADC_CALIB_MASK;
+	QM_IR_MASK_INTERRUPTS(QM_INTERRUPT_ROUTER->adc_0_cal_int_mask);
 
 	/* Issue the load calibrate command. */
 	creg = __builtin_arc_lr(QM_SS_CREG_BASE + QM_SS_IO_CREG_MST0_CTRL);
@@ -564,7 +566,8 @@ int qm_ss_adc_set_calibration(const qm_ss_adc_t adc __attribute__((unused)),
 
 	/* Restore the state of the calibration interrupt mask if necessary. */
 	if (!intstat) {
-		QM_SCSS_INT->int_adc_calib_mask &= ~(QM_INT_ADC_CALIB_MASK);
+		QM_IR_UNMASK_INTERRUPTS(
+		    QM_INTERRUPT_ROUTER->adc_0_cal_int_mask);
 	}
 
 	return 0;
@@ -702,3 +705,48 @@ int qm_ss_adc_irq_convert(const qm_ss_adc_t adc, qm_ss_adc_xfer_t *xfer)
 
 	return 0;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_ss_adc_save_context(const qm_ss_adc_t adc,
+			   qm_ss_adc_context_t *const ctx)
+{
+	const uint32_t controller = adc_base[adc];
+
+	QM_CHECK(adc < QM_SS_ADC_NUM, -EINVAL);
+	QM_CHECK(NULL != ctx, -EINVAL);
+
+	ctx->adc_set = __builtin_arc_lr(controller + QM_SS_ADC_SET);
+	ctx->adc_divseqstat =
+	    __builtin_arc_lr(controller + QM_SS_ADC_DIVSEQSTAT);
+	ctx->adc_seq = __builtin_arc_lr(controller + QM_SS_ADC_SEQ);
+	/* Restore control register with ADC enable bit cleared. */
+	ctx->adc_ctrl = __builtin_arc_lr(controller + QM_SS_ADC_CTRL) &
+			~QM_SS_ADC_CTRL_ADC_ENA;
+
+	return 0;
+}
+
+int qm_ss_adc_restore_context(const qm_ss_adc_t adc,
+			      const qm_ss_adc_context_t *const ctx)
+{
+	const uint32_t controller = adc_base[adc];
+
+	QM_CHECK(adc < QM_SS_ADC_NUM, -EINVAL);
+	QM_CHECK(NULL != ctx, -EINVAL);
+
+	/*
+	 * The IRQ associated with the mode change fires an interrupt as soon
+	 * as it is enabled so it is necessary to ignore it the first time the
+	 * ISR runs.
+	 */
+	ignore_spurious_interrupt[adc] = true;
+
+	__builtin_arc_sr(ctx->adc_set, controller + QM_SS_ADC_SET);
+	__builtin_arc_sr(ctx->adc_divseqstat,
+			 controller + QM_SS_ADC_DIVSEQSTAT);
+	__builtin_arc_sr(ctx->adc_seq, controller + QM_SS_ADC_SEQ);
+	__builtin_arc_sr(ctx->adc_ctrl, controller + QM_SS_ADC_CTRL);
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

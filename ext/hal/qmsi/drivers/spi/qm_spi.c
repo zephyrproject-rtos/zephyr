@@ -475,14 +475,14 @@ int qm_spi_irq_transfer(const qm_spi_t spi,
 QM_ISR_DECLARE(qm_spi_master_0_isr)
 {
 	handle_spi_interrupt(QM_SPI_MST_0);
-	QM_ISR_EOI(QM_IRQ_SPI_MASTER_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_SPI_MASTER_0_INT_VECTOR);
 }
 
 #if (QUARK_SE)
 QM_ISR_DECLARE(qm_spi_master_1_isr)
 {
 	handle_spi_interrupt(QM_SPI_MST_1);
-	QM_ISR_EOI(QM_IRQ_SPI_MASTER_1_VECTOR);
+	QM_ISR_EOI(QM_IRQ_SPI_MASTER_1_INT_VECTOR);
 }
 #endif
 
@@ -858,3 +858,34 @@ int qm_spi_dma_transfer_terminate(qm_spi_t spi)
 
 	return ret;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_spi_save_context(const qm_spi_t spi, qm_spi_context_t *const ctx)
+{
+	QM_CHECK(spi < QM_SPI_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_spi_reg_t *const regs = QM_SPI[spi];
+
+	ctx->ctrlr0 = regs->ctrlr0;
+	ctx->ser = regs->ser;
+	ctx->baudr = regs->baudr;
+
+	return 0;
+}
+
+int qm_spi_restore_context(const qm_spi_t spi,
+			   const qm_spi_context_t *const ctx)
+{
+	QM_CHECK(spi < QM_SPI_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_spi_reg_t *const regs = QM_SPI[spi];
+
+	regs->ctrlr0 = ctx->ctrlr0;
+	regs->ser = ctx->ser;
+	regs->baudr = ctx->baudr;
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

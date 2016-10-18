@@ -288,9 +288,9 @@ static void ss_spi_err_isr(void *arg)
 	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 
 	if (spi_config->spi == QM_SS_SPI_0) {
-		qm_ss_spi_0_err_isr(NULL);
+		qm_ss_spi_0_error_isr(NULL);
 	} else {
-		qm_ss_spi_1_err_isr(NULL);
+		qm_ss_spi_1_error_isr(NULL);
 	}
 }
 
@@ -300,9 +300,9 @@ static void ss_spi_rx_isr(void *arg)
 	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 
 	if (spi_config->spi == QM_SS_SPI_0) {
-		qm_ss_spi_0_rx_isr(NULL);
+		qm_ss_spi_0_rx_avail_isr(NULL);
 	} else {
-		qm_ss_spi_1_rx_isr(NULL);
+		qm_ss_spi_1_rx_avail_isr(NULL);
 	}
 }
 
@@ -312,9 +312,9 @@ static void ss_spi_tx_isr(void *arg)
 	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 
 	if (spi_config->spi == QM_SS_SPI_0) {
-		qm_ss_spi_0_tx_isr(NULL);
+		qm_ss_spi_0_tx_req_isr(NULL);
 	} else {
-		qm_ss_spi_1_tx_isr(NULL);
+		qm_ss_spi_1_tx_req_isr(NULL);
 	}
 }
 
@@ -342,7 +342,7 @@ static int ss_spi_qmsi_init(struct device *dev)
 		ss_clk_spi_enable(0);
 
 		/* Route SPI interrupts to Sensor Subsystem */
-		scss_intmask = (uint32_t *)&QM_SCSS_INT->int_ss_spi_0;
+		scss_intmask = (uint32_t *)&QM_INTERRUPT_ROUTER->ss_spi_0_int;
 		*scss_intmask &= ~BIT(8);
 		scss_intmask++;
 		*scss_intmask &= ~BIT(8);
@@ -368,7 +368,7 @@ static int ss_spi_qmsi_init(struct device *dev)
 		ss_clk_spi_enable(1);
 
 		/* Route SPI interrupts to Sensor Subsystem */
-		scss_intmask = (uint32_t *)&QM_SCSS_INT->int_ss_spi_1;
+		scss_intmask = (uint32_t *)&QM_INTERRUPT_ROUTER->ss_spi_1_int;
 		*scss_intmask &= ~BIT(8);
 		scss_intmask++;
 		*scss_intmask &= ~BIT(8);

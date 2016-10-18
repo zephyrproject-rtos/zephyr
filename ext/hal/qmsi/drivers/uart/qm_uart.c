@@ -228,13 +228,13 @@ static void qm_uart_isr_handler(const qm_uart_t uart)
 QM_ISR_DECLARE(qm_uart_0_isr)
 {
 	qm_uart_isr_handler(QM_UART_0);
-	QM_ISR_EOI(QM_IRQ_UART_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_UART_0_INT_VECTOR);
 }
 
 QM_ISR_DECLARE(qm_uart_1_isr)
 {
 	qm_uart_isr_handler(QM_UART_1);
-	QM_ISR_EOI(QM_IRQ_UART_1_VECTOR);
+	QM_ISR_EOI(QM_IRQ_UART_1_INT_VECTOR);
 }
 
 int qm_uart_set_config(const qm_uart_t uart, const qm_uart_config_t *cfg)
@@ -699,3 +699,60 @@ int qm_uart_dma_read_terminate(const qm_uart_t uart)
 
 	return ret;
 }
+
+#if (ENABLE_RESTORE_CONTEXT)
+int qm_uart_save_context(const qm_uart_t uart, qm_uart_context_t *const ctx)
+{
+	QM_CHECK(uart < QM_UART_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_uart_reg_t *const regs = QM_UART[uart];
+
+	ctx->ier = regs->ier_dlh;
+	ctx->lcr = regs->lcr;
+	ctx->mcr = regs->mcr;
+	ctx->scr = regs->scr;
+	ctx->htx = regs->htx;
+	ctx->dlf = regs->dlf;
+
+	regs->lcr |= QM_UART_LCR_DLAB;
+	ctx->dlh = regs->ier_dlh;
+	ctx->dll = regs->rbr_thr_dll;
+	regs->lcr &= ~QM_UART_LCR_DLAB;
+
+	return 0;
+}
+
+int qm_uart_restore_context(const qm_uart_t uart,
+			    const qm_uart_context_t *const ctx)
+{
+	QM_CHECK(uart < QM_UART_NUM, -EINVAL);
+	QM_CHECK(ctx != NULL, -EINVAL);
+
+	qm_uart_reg_t *const regs = QM_UART[uart];
+
+	/* When DLAB is set, DLL and DLH registers can be accessed. */
+	regs->lcr |= QM_UART_LCR_DLAB;
+	regs->ier_dlh = ctx->dlh;
+	regs->rbr_thr_dll = ctx->dll;
+	regs->lcr &= ~QM_UART_LCR_DLAB;
+
+	regs->ier_dlh = ctx->ier;
+	regs->lcr = ctx->lcr;
+	regs->mcr = ctx->mcr;
+	regs->scr = ctx->scr;
+	regs->htx = ctx->htx;
+	regs->dlf = ctx->dlf;
+
+	/*
+	 * FIFO control register cannot be read back,
+	 * default config is applied for this register.
+	 * Application will need to restore its own parameters.
+	 */
+	regs->iir_fcr =
+	    (QM_UART_FCR_FIFOE | QM_UART_FCR_RFIFOR | QM_UART_FCR_XFIFOR |
+	     QM_UART_FCR_DEFAULT_TX_RX_THRESHOLD);
+
+	return 0;
+}
+#endif /* ENABLE_RESTORE_CONTEXT */

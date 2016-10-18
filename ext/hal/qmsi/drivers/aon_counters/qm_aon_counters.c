@@ -57,13 +57,13 @@ static void pt_reset(const qm_aonc_t aonc)
 	QM_AONC[aonc].aonpt_ctrl |= BIT(1);
 }
 
-QM_ISR_DECLARE(qm_aonpt_isr_0)
+QM_ISR_DECLARE(qm_aonpt_0_isr)
 {
 	if (callback) {
 		(*callback)(callback_data);
 	}
 	QM_AONC[0].aonpt_ctrl |= BIT(0); /* Clear pending interrupts */
-	QM_ISR_EOI(QM_IRQ_AONPT_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_AONPT_0_INT_VECTOR);
 }
 
 int qm_aonc_enable(const qm_aonc_t aonc)

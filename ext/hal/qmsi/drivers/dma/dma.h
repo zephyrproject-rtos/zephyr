@@ -38,10 +38,6 @@
 #define STANDARD_TIMEOUT_MICROSECOND (1000)
 #define ONE_MICROSECOND (1)
 
-/* Temporary LLP values while waiting for linked list initialization . */
-#define LLP_LL_TO_BE_SET_MULTI_LL BIT(2)
-#define LLP_LL_TO_BE_SET_MULTI_LL_CIRCULAR BIT(3)
-
 /* Set specific register bits */
 #define UPDATE_REG_BITS(reg, value, offset, mask)                              \
 	{                                                                      \
@@ -91,6 +87,12 @@ typedef struct dma_cfg_prv_t {
 	 * mode), decremented on each single block transfer callback.
 	 */
 	uint16_t num_blocks_remaining;
+
+	/*
+	 * In multiblock linked list mode, indicates whether transfer is linear
+	 * or circular. This information cannot be extracted from the DMA regs.
+	 */
+	bool transfer_type_ll_circular;
 } dma_cfg_prv_t;
 
 /*
@@ -126,7 +128,8 @@ get_transfer_length(const qm_dma_t dma, const qm_dma_channel_id_t channel_id,
 	/* Read the length from the block_ts field. The units of this field
 	 * are dependent on the source transfer width. */
 	transfer_length = ((ctrl_high & QM_DMA_CTL_H_BLOCK_TS_MASK) >>
-			   QM_DMA_CTL_H_BLOCK_TS_OFFSET);
+			   QM_DMA_CTL_H_BLOCK_TS_OFFSET) *
+			  prv_cfg->num_blocks_per_buffer;
 
 	/* To convert this to bytes the transfer length can be shifted using
 	 * the source transfer width value. This value correspond to the
@@ -279,34 +282,21 @@ dma_set_transfer_type(const qm_dma_t dma, const qm_dma_channel_id_t channel_id,
 		chan_reg->ctrl_low &= ~QM_DMA_CTL_L_LLP_DST_EN_MASK;
 		break;
 
-	case QM_DMA_TYPE_MULTI_LL_CIRCULAR:
-		chan_reg->llp_low |= LLP_LL_TO_BE_SET_MULTI_LL_CIRCULAR;
 	case QM_DMA_TYPE_MULTI_LL:
-		chan_reg->llp_low |= LLP_LL_TO_BE_SET_MULTI_LL;
-
+	case QM_DMA_TYPE_MULTI_LL_CIRCULAR:
 		/* Destination status update disable. */
 		chan_reg->cfg_high &= ~QM_DMA_CFG_H_DS_UPD_EN_MASK;
 
 		/* Source status update disable. */
 		chan_reg->cfg_high &= ~QM_DMA_CFG_H_SS_UPD_EN_MASK;
 
-		/* Enable linked lists for source if necessary. */
-		if (QM_DMA_PERIPHERAL_TO_MEMORY == channel_direction) {
-			chan_reg->ctrl_low &= ~QM_DMA_CTL_L_LLP_SRC_EN_MASK;
-			chan_reg->cfg_low |= QM_DMA_CFG_L_RELOAD_SRC_MASK;
-		} else {
-			chan_reg->ctrl_low |= QM_DMA_CTL_L_LLP_SRC_EN_MASK;
-			chan_reg->cfg_low &= ~QM_DMA_CFG_L_RELOAD_SRC_MASK;
-		}
+		/* Enable linked lists for source. */
+		chan_reg->ctrl_low |= QM_DMA_CTL_L_LLP_SRC_EN_MASK;
+		chan_reg->cfg_low &= ~QM_DMA_CFG_L_RELOAD_SRC_MASK;
 
-		/* Enable linked lists for destination if necessary. */
-		if (QM_DMA_MEMORY_TO_PERIPHERAL == channel_direction) {
-			chan_reg->ctrl_low &= ~QM_DMA_CTL_L_LLP_DST_EN_MASK;
-			chan_reg->cfg_low |= QM_DMA_CFG_L_RELOAD_DST_MASK;
-		} else {
-			chan_reg->ctrl_low |= QM_DMA_CTL_L_LLP_DST_EN_MASK;
-			chan_reg->cfg_low &= ~QM_DMA_CFG_L_RELOAD_DST_MASK;
-		}
+		/* Enable linked lists for destination. */
+		chan_reg->ctrl_low |= QM_DMA_CTL_L_LLP_DST_EN_MASK;
+		chan_reg->cfg_low &= ~QM_DMA_CFG_L_RELOAD_DST_MASK;
 		break;
 
 	default:
@@ -314,6 +304,35 @@ dma_set_transfer_type(const qm_dma_t dma, const qm_dma_channel_id_t channel_id,
 	}
 
 	return 0;
+}
+
+static __inline__ qm_dma_transfer_type_t
+dma_get_transfer_type(const qm_dma_t dma, const qm_dma_channel_id_t channel_id,
+		      const dma_cfg_prv_t *prv_cfg)
+{
+	qm_dma_transfer_type_t transfer_type;
+	volatile qm_dma_chan_reg_t *chan_reg =
+	    &QM_DMA[dma]->chan_reg[channel_id];
+
+	if (0 == (chan_reg->ctrl_low & (QM_DMA_CTL_L_LLP_SRC_EN_MASK |
+					QM_DMA_CTL_L_LLP_DST_EN_MASK))) {
+		/* Block chaining disabled */
+		if (0 == (chan_reg->cfg_low & (QM_DMA_CFG_L_RELOAD_SRC_MASK |
+					       QM_DMA_CFG_L_RELOAD_DST_MASK))) {
+			/* Single block transfer */
+			transfer_type = QM_DMA_TYPE_SINGLE;
+		} else {
+			/* Contiguous multiblock */
+			transfer_type = QM_DMA_TYPE_MULTI_CONT;
+		}
+	} else {
+		/* LLP enabled, linked list multiblock */
+		transfer_type = (prv_cfg->transfer_type_ll_circular)
+				    ? QM_DMA_TYPE_MULTI_LL_CIRCULAR
+				    : QM_DMA_TYPE_MULTI_LL;
+	}
+
+	return transfer_type;
 }
 
 static __inline__ void

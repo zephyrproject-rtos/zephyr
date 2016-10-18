@@ -196,6 +196,41 @@ int qm_flash_page_erase(const qm_flash_t flash, const qm_flash_region_t region,
  */
 int qm_flash_mass_erase(const qm_flash_t flash, const uint8_t include_rom);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save flash context.
+ *
+ * Save the configuration of the specified flash controller.
+ *
+ * @param[in] flash Flash controller index.
+ * @param[out] ctx Flash context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_flash_save_context(const qm_flash_t flash,
+			  qm_flash_context_t *const ctx);
+
+/**
+ * Restore flash context.
+ *
+ * Restore the configuration of the specified flash controller.
+ * If the system clock frequency is lowered, the flash timings need to be
+ * restored. Otherwise, reading from flash will not be optimal
+ * (there will be 2 wait states instead of 0 wait states.)
+ *
+ * @param[in] flash Flash controller index.
+ * @param[in] ctx Flash context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_flash_restore_context(const qm_flash_t flash,
+			     const qm_flash_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */

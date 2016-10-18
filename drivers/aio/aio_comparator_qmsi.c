@@ -52,7 +52,7 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 	}
 
 	/* Disable interrupt to host */
-	QM_SCSS_INT->int_comparators_host_mask |= (1 << index);
+	QM_INTERRUPT_ROUTER->comparator_0_host_int_mask |= (1 << index);
 
 	/* Disable comparator according to index */
 	config.int_en &= ~(1 << index);
@@ -104,7 +104,7 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 	}
 
 	/* Enable Interrupts to host for an specific comparator */
-	QM_SCSS_INT->int_comparators_host_mask &= ~(1 << index);
+	QM_INTERRUPT_ROUTER->comparator_0_host_int_mask &= ~(1 << index);
 
 	return 0;
 }
@@ -123,7 +123,7 @@ static int aio_qmsi_cmp_init(struct device *dev)
 	aio_cmp_config(dev);
 
 	/* Disable all comparator interrupts */
-	QM_SCSS_INT->int_comparators_host_mask |= INT_COMPARATORS_MASK;
+	QM_INTERRUPT_ROUTER->comparator_0_host_int_mask |= INT_COMPARATORS_MASK;
 
 	/* Clear status and dissble all comparators */
 	QM_SCSS_CMP->cmp_stat_clr |= INT_COMPARATORS_MASK;
@@ -144,7 +144,7 @@ static int aio_qmsi_cmp_init(struct device *dev)
 		dev_data->cb[i].param = NULL;
 	}
 
-	irq_enable(QM_IRQ_AC);
+	irq_enable(QM_IRQ_COMPARATOR_0_INT);
 
 	return 0;
 }
@@ -183,7 +183,7 @@ static int aio_cmp_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(QM_IRQ_AC, CONFIG_AIO_COMPARATOR_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_COMPARATOR_0_INT, CONFIG_AIO_COMPARATOR_0_IRQ_PRI,
 		    aio_qmsi_cmp_isr, DEVICE_GET(aio_qmsi_cmp), 0);
 
 	return 0;

@@ -268,22 +268,22 @@ static int spi_qmsi_init(struct device *dev)
 
 	switch (spi_config->spi) {
 	case QM_SPI_MST_0:
-		IRQ_CONNECT(QM_IRQ_SPI_MASTER_0,
+		IRQ_CONNECT(QM_IRQ_SPI_MASTER_0_INT,
 			    CONFIG_SPI_0_IRQ_PRI, qm_spi_master_0_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(QM_IRQ_SPI_MASTER_0);
+		irq_enable(QM_IRQ_SPI_MASTER_0_INT);
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M0_REGISTER);
-		QM_SCSS_INT->int_spi_mst_0_mask &= ~BIT(0);
+		QM_INTERRUPT_ROUTER->spi_master_0_int_mask &= ~BIT(0);
 		break;
 
 #ifdef CONFIG_SPI_1
 	case QM_SPI_MST_1:
-		IRQ_CONNECT(QM_IRQ_SPI_MASTER_1,
+		IRQ_CONNECT(QM_IRQ_SPI_MASTER_1_INT,
 			    CONFIG_SPI_1_IRQ_PRI, qm_spi_master_1_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(QM_IRQ_SPI_MASTER_1);
+		irq_enable(QM_IRQ_SPI_MASTER_1_INT);
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M1_REGISTER);
-		QM_SCSS_INT->int_spi_mst_1_mask &= ~BIT(0);
+		QM_INTERRUPT_ROUTER->spi_master_1_int_mask &= ~BIT(0);
 		break;
 #endif /* CONFIG_SPI_1 */
 
@@ -316,9 +316,11 @@ static int spi_master_suspend_device(struct device *dev)
 	struct spi_context_t *const ctx_save = &drv_data->ctx_save;
 
 	if (config->spi == QM_SPI_MST_0) {
-		ctx_save->int_spi_mask = QM_SCSS_INT->int_spi_mst_0_mask;
+		ctx_save->int_spi_mask =
+			QM_INTERRUPT_ROUTER->spi_master_0_int_mask;
 	} else {
-		ctx_save->int_spi_mask = QM_SCSS_INT->int_spi_mst_1_mask;
+		ctx_save->int_spi_mask =
+			QM_INTERRUPT_ROUTER->spi_master_1_int_mask;
 	}
 
 	ctx_save->ctrlr0 = regs->ctrlr0;
@@ -337,9 +339,11 @@ static int spi_master_resume_device_from_suspend(struct device *dev)
 	struct spi_context_t *const ctx_save = &drv_data->ctx_save;
 
 	if (config->spi == QM_SPI_MST_0) {
-		QM_SCSS_INT->int_spi_mst_0_mask = ctx_save->int_spi_mask;
+		QM_INTERRUPT_ROUTER->spi_master_0_int_mask =
+			ctx_save->int_spi_mask;
 	} else {
-		QM_SCSS_INT->int_spi_mst_1_mask = ctx_save->int_spi_mask;
+		QM_INTERRUPT_ROUTER->spi_master_1_int_mask =
+			ctx_save->int_spi_mask;
 	}
 	regs->ctrlr0 = ctx_save->ctrlr0;
 	regs->ser = ctx_save->ser;

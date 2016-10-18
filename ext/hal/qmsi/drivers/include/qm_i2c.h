@@ -31,8 +31,8 @@
 #define __QM_I2C_H__
 
 #include "qm_common.h"
-#include "qm_soc_regs.h"
 #include "qm_dma.h"
+#include "qm_soc_regs.h"
 
 /**
  * I2C.
@@ -111,7 +111,12 @@ typedef enum {
 	QM_I2C_TX_ABORT = BIT(18),		  /**< Tx abort. */
 	QM_I2C_TX_OVER = BIT(19),		  /**< Tx overflow. */
 	QM_I2C_RX_OVER = BIT(20),		  /**< Rx overflow. */
-	QM_I2C_RX_UNDER = BIT(21)		  /**< Rx underflow. */
+	QM_I2C_RX_UNDER = BIT(21),		  /**< Rx underflow. */
+	QM_I2C_START_DETECTED = BIT(22),   /**< Start or restart detected. */
+	QM_I2C_TX_EMPTY = BIT(23),	 /**< TX buffer empty. */
+	QM_I2C_RX_FULL = BIT(24),	  /**< RX buffer full. */
+	QM_I2C_STOP_DETECTED = BIT(25),    /** Stop detected. */
+	QM_I2C_GEN_CALL_DETECTED = BIT(26) /**< General call detected. */
 } qm_i2c_status_t;
 
 /**
@@ -121,7 +126,7 @@ typedef enum {
 	/** Interrupt regardless of whether this slave is addressed or not. */
 	QM_I2C_SLAVE_INTERRUPT_ALWAYS = 0x0,
 
-	/** Only interrupt if this slave is being addressed. */
+	/** Trigger interrupt only if this slave is being addressed. */
 	QM_I2C_SLAVE_INTERRUPT_WHEN_ADDRESSED = 0x1
 } qm_i2c_slave_stop_t;
 
@@ -136,6 +141,7 @@ typedef struct {
 
 	/** Slave stop detect behaviour */
 	qm_i2c_slave_stop_t stop_detect_behaviour;
+
 } qm_i2c_config_t;
 
 /**
@@ -145,21 +151,31 @@ typedef struct {
  * - If rx len is 0: perform transmit-only transaction.
  * - Both tx and rx len not 0: perform a transmit-then-receive
  *   combined transaction.
- * Slave mode:
- * - If read or write exceed the buffer, then wrap around.
-*/
+ */
 typedef struct {
 	uint8_t *tx;     /**< Write data. */
 	uint32_t tx_len; /**< Write data length. */
 	uint8_t *rx;     /**< Read data. */
 	uint32_t rx_len; /**< Read buffer length. */
-	bool stop;       /**< Generate master STOP. */
+
+	/**
+     * Master: Generate STOP.
+     * Slave: stop at the end of transaction.
+     */
+	bool stop;
 
 	/**
 	 * Transfer callback.
 	 *
 	 * Called after all data is transmitted/received or if the driver
 	 * detects an error during the I2C transfer.
+	 *
+	 * In slave mode, qm_i2c_slave_irq_transfer_update shall be called from
+	 * this callback to update transfer buffers when receiving a
+	 * QM_I2C_RX_FULL or QM_I2C_TX_EMPTY status. If the update function is
+	 * not called with these statuses, the driver will drop every new data
+	 * received or send dummy data (0x00) for each byte until next bus
+	 * start.
 	 *
 	 * @param[in] data User defined data.
 	 * @param[in] rc 0 on success.
@@ -295,7 +311,33 @@ int qm_i2c_master_irq_transfer(const qm_i2c_t i2c,
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_i2c_slave_irq_transfer(const qm_i2c_t i2c,
-			      const qm_i2c_transfer_t *const xfer);
+			      volatile const qm_i2c_transfer_t *const xfer);
+
+/**
+ * I2C interrupt based slave transfer buffer update.
+ *
+ * Update transfer buffers location and size. The function will
+ * replenish/empty TX/RX FIFOs on I2C empty/full interrupts.
+ * This function must be called from callback function to update transfer
+ * buffers when requested by ISR.
+ *
+ * It is strongly recommended to use this function for slave-based applications
+ * only, as slave controllers usually do not know how many frames an external
+ * master will send or request before starting the communication.
+ * Master controllers should not use this function as it will most likely
+ * corrupt the transaction.
+ *
+ * @param[in] i2c Which I2C to transfer from.
+ * @param[in] xfer Transfer structure includes write / read buffers, length,
+ *                 user callback function and the callback context. This must
+ *                 not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_i2c_slave_irq_transfer_update(
+    const qm_i2c_t i2c, volatile const qm_i2c_transfer_t *const xfer);
 
 /**
  * Terminate I2C IRQ transfer.
@@ -406,6 +448,41 @@ int qm_i2c_slave_dma_transfer(const qm_i2c_t i2c,
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_i2c_dma_transfer_terminate(const qm_i2c_t i2c);
+
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save I2C context.
+ *
+ * Saves the configuration of the specified I2C peripheral
+ * before entering sleep. The slave operations need to be disabled before
+ * being able to save the context as otherwise we could be interrupted by
+ * an I2C transfer while saving registers.
+ *
+ * @param[in] i2c I2C port index.
+ * @param[out] ctx I2C context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_i2c_save_context(const qm_i2c_t i2c, qm_i2c_context_t *const ctx);
+
+/**
+ * Restore I2C context.
+ *
+ * Restore the configuration of the specified I2C peripheral
+ * after exiting sleep.
+ *
+ * @param[in] i2c I2C port index.
+ * @param[in] ctx I2C context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_i2c_restore_context(const qm_i2c_t i2c,
+			   const qm_i2c_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

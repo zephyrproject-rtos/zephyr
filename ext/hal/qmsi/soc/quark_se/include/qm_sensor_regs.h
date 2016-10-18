@@ -31,6 +31,7 @@
 #define __SENSOR_REGISTERS_H__
 
 #include "qm_common.h"
+#include "qm_soc_interrupts.h"
 
 /**
  * Quark SE SoC Sensor Subsystem Registers.
@@ -89,12 +90,44 @@ uint32_t test_sensor_aux[QM_SS_AUX_REGS_SIZE];
 
 /* Sensor Subsystem status32 register. */
 #define QM_SS_AUX_STATUS32 (0xA)
+/** Interrupt priority threshold. */
+#define QM_SS_STATUS32_E_MASK (0x1E)
+/** Interrupt enable. */
+#define QM_SS_STATUS32_IE_MASK BIT(31)
 /* Sensor Subsystem control register. */
 #define QM_SS_AUX_IC_CTRL (0x11)
 /* Sensor Subsystem cache invalidate register. */
 #define QM_SS_AUX_IC_IVIL (0x19)
 /* Sensor Subsystem vector base register. */
 #define QM_SS_AUX_INT_VECTOR_BASE (0x25)
+
+/**
+ * @name SS Interrupt
+ * @{
+ */
+
+/**
+ * SS IRQ context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by
+ * qm_irq_save_context and qm_irq_restore_context functions.
+ */
+typedef struct {
+	uint32_t status32_irq_threshold; /**< STATUS32 Interrupt Threshold. */
+	uint32_t status32_irq_enable;    /**< STATUS32 Interrupt Enable. */
+	uint32_t irq_ctrl; /**< Interrupt Context Saving Control Register. */
+
+	/**
+	 * IRQ configuration:
+	 * - IRQ Priority:BIT(6):BIT(2)
+	 * - IRQ Trigger:BIT(1)
+	 * - IRQ Enable:BIT(0)
+	 */
+	uint8_t irq_config[QM_SS_INT_VECTOR_NUM - 1];
+} qm_irq_context_t;
+
+/** @} */
 
 /**
  * @name SS Timer
@@ -111,6 +144,19 @@ typedef enum {
  * Sensor Subsystem Timers.
  */
 typedef enum { QM_SS_TIMER_0 = 0, QM_SS_TIMER_NUM } qm_ss_timer_t;
+
+/*
+ * SS TIMER context type.
+ *
+ * Application should not modify the content.
+ * This structure is only intended to be used by the qm_ss_timer_save_context
+ * and qm_ss_timer_restore_context functions.
+ */
+typedef struct {
+	uint32_t timer_count;   /**< Timer count. */
+	uint32_t timer_control; /**< Timer control. */
+	uint32_t timer_limit;   /**< Timer limit. */
+} qm_ss_timer_context_t;
 
 #define QM_SS_TIMER_0_BASE (0x21)
 #define QM_SS_TIMER_1_BASE (0x100)
@@ -143,6 +189,24 @@ typedef enum {
 	QM_SS_GPIO_EXT_PORTA,
 	QM_SS_GPIO_LS_SYNC
 } qm_ss_gpio_reg_t;
+
+/**
+ * SS GPIO context type.
+ *
+ * Application should not modify the content.
+ * This structure is only intended to be used by the qm_ss_gpio_save_context and
+ * qm_ss_gpio_restore_context functions.
+ */
+typedef struct {
+	uint32_t gpio_swporta_dr;    /**< Port A Data. */
+	uint32_t gpio_swporta_ddr;   /**< Port A Data Direction. */
+	uint32_t gpio_inten;	 /**< Interrupt Enable. */
+	uint32_t gpio_intmask;       /**< Interrupt Mask. */
+	uint32_t gpio_inttype_level; /**< Interrupt Type. */
+	uint32_t gpio_int_polarity;  /**< Interrupt Polarity. */
+	uint32_t gpio_debounce;      /**< Debounce Enable. */
+	uint32_t gpio_ls_sync;       /**< Synchronization Level. */
+} qm_ss_gpio_context_t;
 
 #define QM_SS_GPIO_NUM_PINS (16)
 #define QM_SS_GPIO_LS_SYNC_CLK_EN BIT(31)
@@ -180,6 +244,19 @@ typedef enum {
 	QM_SS_I2C_TX_ABRT_SOURCE,
 	QM_SS_I2C_ENABLE_STATUS = 0x11
 } qm_ss_i2c_reg_t;
+
+/**
+ * SS I2C context type.
+ *
+ * Application should not modify the content.
+ * This structure is only intended to be used by the qm_ss_gpio_save_context and
+ * qm_ss_gpio_restore_context functions.
+ */
+typedef struct {
+	uint32_t i2c_con;
+	uint32_t i2c_ss_scl_cnt;
+	uint32_t i2c_fs_scl_cnt;
+} qm_ss_i2c_context_t;
 
 #define QM_SS_I2C_CON_ENABLE BIT(0)
 #define QM_SS_I2C_CON_ABORT BIT(1)
@@ -271,6 +348,21 @@ typedef enum {
 	QM_SS_ADC_0 = 0, /**< ADC first module. */
 	QM_SS_ADC_NUM
 } qm_ss_adc_t;
+
+/**
+ * SS ADC context type.
+ *
+ * The application should not modify the content of this structure.
+ *
+ * This structure is intented to be used by qm_ss_adc_save_context and
+ * qm_ss_adc_restore_context functions only.
+ */
+typedef struct {
+	uint32_t adc_set;	/**< ADC settings. */
+	uint32_t adc_divseqstat; /**< ADC clock divider and sequencer status. */
+	uint32_t adc_seq;	/**< ADC sequencer entry. */
+	uint32_t adc_ctrl;       /**< ADC control. */
+} qm_ss_adc_context_t;
 
 /* SS ADC register base. */
 #define QM_SS_ADC_BASE (0x80015000)
@@ -367,109 +459,6 @@ typedef enum {
 /** @} */
 
 /**
- * IRQs and interrupt vectors.
- *
- * @name SS Interrupt
- * @{
- */
-
-#define QM_SS_EXCEPTION_NUM (16)  /* Exceptions and traps in ARC EM core. */
-#define QM_SS_INT_TIMER_NUM (2)   /* Internal interrupts in ARC EM core. */
-#define QM_SS_IRQ_SENSOR_NUM (18) /* IRQ's from the Sensor Subsystem. */
-#define QM_SS_IRQ_COMMON_NUM (32) /* IRQ's from the common SoC fabric. */
-#define QM_SS_INT_VECTOR_NUM                                                   \
-	(QM_SS_EXCEPTION_NUM + QM_SS_INT_TIMER_NUM + QM_SS_IRQ_SENSOR_NUM +    \
-	 QM_SS_IRQ_COMMON_NUM)
-#define QM_SS_IRQ_NUM (QM_SS_IRQ_SENSOR_NUM + QM_SS_IRQ_COMMON_NUM)
-
-/*
- * The following definitions are Sensor Subsystem interrupt irq and vector
- * numbers:
- * #define QM_SS_xxx          - irq number
- * #define QM_SS_xxx_VECTOR   - vector number
- */
-#define QM_SS_INT_TIMER_0 16
-#define QM_SS_INT_TIMER_1 17
-
-#define QM_SS_IRQ_ADC_ERR 0
-#define QM_SS_IRQ_ADC_ERR_VECTOR 18
-
-#define QM_SS_IRQ_ADC_IRQ 1
-#define QM_SS_IRQ_ADC_IRQ_VECTOR 19
-
-#define QM_SS_IRQ_GPIO_INTR_0 2
-#define QM_SS_IRQ_GPIO_INTR_0_VECTOR 20
-
-#define QM_SS_IRQ_GPIO_INTR_1 3
-#define QM_SS_IRQ_GPIO_INTR_1_VECTOR 21
-
-#define QM_SS_IRQ_I2C_0_ERR 4
-#define QM_SS_IRQ_I2C_0_ERR_VECTOR 22
-
-#define QM_SS_IRQ_I2C_0_RX_AVAIL 5
-#define QM_SS_IRQ_I2C_0_RX_AVAIL_VECTOR 23
-
-#define QM_SS_IRQ_I2C_0_TX_REQ 6
-#define QM_SS_IRQ_I2C_0_TX_REQ_VECTOR 24
-
-#define QM_SS_IRQ_I2C_0_STOP_DET 7
-#define QM_SS_IRQ_I2C_0_STOP_DET_VECTOR 25
-
-#define QM_SS_IRQ_I2C_1_ERR 8
-#define QM_SS_IRQ_I2C_1_ERR_VECTOR 26
-
-#define QM_SS_IRQ_I2C_1_RX_AVAIL 9
-#define QM_SS_IRQ_I2C_1_RX_AVAIL_VECTOR 27
-
-#define QM_SS_IRQ_I2C_1_TX_REQ 10
-#define QM_SS_IRQ_I2C_1_TX_REQ_VECTOR 28
-
-#define QM_SS_IRQ_I2C_1_STOP_DET 11
-#define QM_SS_IRQ_I2C_1_STOP_DET_VECTOR 29
-
-#define QM_SS_IRQ_SPI_0_ERR_INT 12
-#define QM_SS_IRQ_SPI_0_ERR_INT_VECTOR 30
-
-#define QM_SS_IRQ_SPI_0_RX_AVAIL 13
-#define QM_SS_IRQ_SPI_0_RX_AVAIL_VECTOR 31
-
-#define QM_SS_IRQ_SPI_0_TX_REQ 14
-#define QM_SS_IRQ_SPI_0_TX_REQ_VECTOR 32
-
-#define QM_SS_IRQ_SPI_1_ERR_INT 15
-#define QM_SS_IRQ_SPI_1_ERR_INT_VECTOR 33
-
-#define QM_SS_IRQ_SPI_1_RX_AVAIL 16
-#define QM_SS_IRQ_SPI_1_RX_AVAIL_VECTOR 34
-
-#define QM_SS_IRQ_SPI_1_TX_REQ 17
-#define QM_SS_IRQ_SPI_1_TX_REQ_VECTOR 35
-
-typedef enum {
-	QM_SS_INT_PRIORITY_0 = 0,
-	QM_SS_INT_PRIORITY_1 = 1,
-	QM_SS_INT_PRIORITY_15 = 15,
-	QM_SS_INT_PRIORITY_NUM
-} qm_ss_irq_priority_t;
-
-typedef enum { QM_SS_INT_DISABLE = 0, QM_SS_INT_ENABLE = 1 } qm_ss_irq_mask_t;
-
-typedef enum {
-	QM_SS_IRQ_LEVEL_SENSITIVE = 0,
-	QM_SS_IRQ_EDGE_SENSITIVE = 1
-} qm_ss_irq_trigger_t;
-
-#define QM_SS_AUX_IRQ_CTRL (0xE)
-#define QM_SS_AUX_IRQ_HINT (0x201)
-#define QM_SS_AUX_IRQ_PRIORITY (0x206)
-#define QM_SS_AUX_IRQ_STATUS (0x406)
-#define QM_SS_AUX_IRQ_SELECT (0x40B)
-#define QM_SS_AUX_IRQ_ENABLE (0x40C)
-#define QM_SS_AUX_IRQ_TRIGGER (0x40D)
-
-/** @} */
-
-/**
  * I2C registers and definitions.
  *
  * @name SS SPI
@@ -490,6 +479,19 @@ typedef enum {
 	QM_SS_SPI_CLR_INTR,   /**< Interrupt clear register. */
 	QM_SS_SPI_DR,	 /**< RW buffer for FIFOs. */
 } qm_ss_spi_reg_t;
+
+/**
+ * Sensor Subsystem SPI context type.
+ *
+ * Applications should not modify the content.
+ * This structure is only intended to be used by
+ * the qm_ss_spi_save_context and qm_ss_spi_restore_context functions.
+ */
+typedef struct {
+	uint32_t spi_ctrl;   /**< Control Register. */
+	uint32_t spi_spien;  /**< SPI Enable Register. */
+	uint32_t spi_timing; /**< Timing Register. */
+} qm_ss_spi_context_t;
 
 /** Sensor Subsystem SPI modules. */
 typedef enum {

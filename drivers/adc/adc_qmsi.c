@@ -268,10 +268,10 @@ DEVICE_AND_API_INIT(adc_qmsi, CONFIG_ADC_0_NAME, &adc_qmsi_init,
 
 static void adc_config_irq(void)
 {
-	IRQ_CONNECT(QM_IRQ_ADC_0, CONFIG_ADC_0_IRQ_PRI, qm_adc_0_isr,
-		NULL, (IOAPIC_LEVEL | IOAPIC_HIGH));
+	IRQ_CONNECT(QM_IRQ_ADC_0_CAL_INT, CONFIG_ADC_0_IRQ_PRI,
+		qm_adc_0_cal_isr, NULL, (IOAPIC_LEVEL | IOAPIC_HIGH));
 
-	irq_enable(QM_IRQ_ADC_0);
+	irq_enable(QM_IRQ_ADC_0_CAL_INT);
 
-	QM_SCSS_INT->int_adc_calib_mask &= ~BIT(0);
+	QM_INTERRUPT_ROUTER->adc_0_cal_int_mask &= ~BIT(0);
 }

@@ -300,6 +300,46 @@ int qm_ss_adc_convert(const qm_ss_adc_t adc, qm_ss_adc_xfer_t *const xfer,
  */
 int qm_ss_adc_irq_convert(const qm_ss_adc_t adc, qm_ss_adc_xfer_t *const xfer);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save SS ADC context.
+ *
+ * Save the configuration of the specified ADC peripheral before entering sleep.
+ *
+ * Note: Calibration data is not saved with this function. The value of the
+ * ADC_ENA bit in the ADC Control register is also not saved with this function.
+ *
+ * @param[in] adc SS ADC port index.
+ * @param[out] ctx SS ADC context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_adc_save_context(const qm_ss_adc_t adc,
+			   qm_ss_adc_context_t *const ctx);
+
+/**
+ * Restore SS ADC context.
+ *
+ * Restore the configuration of the specified ADC peripheral after exiting
+ * sleep.
+ *
+ * Note: Previous calibration data is not restored with this function, the user
+ * may need to recalibrate the ADC. The user will need to set the ADC_ENA bit
+ * in the ADC Control register as it is initialized to 0.
+ *
+ * @param[in] adc SS ADC port index.
+ * @param[in] ctx SS ADC context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_adc_restore_context(const qm_ss_adc_t adc,
+			      const qm_ss_adc_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */

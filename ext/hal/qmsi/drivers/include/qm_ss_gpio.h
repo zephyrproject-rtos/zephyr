@@ -178,8 +178,41 @@ int qm_ss_gpio_read_port(const qm_ss_gpio_t gpio, uint32_t *const port);
  */
 int qm_ss_gpio_write_port(const qm_ss_gpio_t gpio, const uint32_t val);
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save SS GPIO context.
+ *
+ * Save the configuration of the specified GPIO peripheral
+ * before entering sleep.
+ *
+ * @param[in] gpio SS GPIO port index.
+ * @param[out] ctx SS GPIO context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_gpio_save_context(const qm_ss_gpio_t gpio,
+			    qm_ss_gpio_context_t *const ctx);
+
+/**
+ * Restore SS GPIO context.
+ *
+ * Restore the configuration of the specified GPIO peripheral
+ * after exiting sleep.
+ *
+ * @param[in] gpio SS GPIO port index.
+ * @param[in] ctx SS GPIO context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_ss_gpio_restore_context(const qm_ss_gpio_t gpio,
+			       const qm_ss_gpio_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */
-
 #endif /* __QM_SS_GPIO_H__ */

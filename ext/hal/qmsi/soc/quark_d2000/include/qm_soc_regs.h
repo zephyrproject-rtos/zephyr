@@ -31,6 +31,8 @@
 #define __REGISTERS_H__
 
 #include "qm_common.h"
+#include "qm_soc_interrupts.h"
+#include "qm_interrupt_router_regs.h"
 
 /**
  * Quark D2000 SoC Registers.
@@ -219,75 +221,6 @@ qm_scss_cmp_reg_t test_scss_cmp;
 /** @} */
 
 /**
- * @name Interrupt
- * @{
- */
-
-/** Interrupt register map. */
-typedef struct {
-	QM_RW uint32_t int_i2c_mst_0_mask; /**< Interrupt Routing Mask 0. */
-	QM_RW uint32_t reserved[2]; /* There is a hole in the address space. */
-	QM_RW uint32_t int_spi_mst_0_mask; /**< Interrupt Routing Mask 2. */
-	QM_RW uint32_t reserved1;
-	QM_RW uint32_t int_spi_slv_0_mask; /**< Interrupt Routing Mask 4. */
-	QM_RW uint32_t int_uart_0_mask;    /**< Interrupt Routing Mask 5. */
-	QM_RW uint32_t int_uart_1_mask;    /**< Interrupt Routing Mask 6. */
-	QM_RW uint32_t reserved2;
-	QM_RW uint32_t int_gpio_mask;  /**< Interrupt Routing Mask 8. */
-	QM_RW uint32_t int_timer_mask; /**< Interrupt Routing Mask 9. */
-	QM_RW uint32_t reserved3;
-	QM_RW uint32_t int_rtc_mask;      /**< Interrupt Routing Mask 11. */
-	QM_RW uint32_t int_watchdog_mask; /**< Interrupt Routing Mask 12. */
-	QM_RW uint32_t
-	    int_dma_channel_0_mask; /**< Interrupt Routing Mask 13. */
-	QM_RW uint32_t
-	    int_dma_channel_1_mask; /**< Interrupt Routing Mask 14. */
-	QM_RW uint32_t reserved4[8];
-	QM_RW uint32_t
-	    int_comparators_host_halt_mask; /**< Interrupt Routing Mask 23. */
-	QM_RW uint32_t reserved5;
-	QM_RW uint32_t
-	    int_comparators_host_mask;	/**< Interrupt Routing Mask 25. */
-	QM_RW uint32_t int_host_bus_err_mask; /**< Interrupt Routing Mask 26. */
-	QM_RW uint32_t int_dma_error_mask;    /**< Interrupt Routing Mask 27. */
-	QM_RW uint32_t
-	    int_sram_controller_mask; /**< Interrupt Routing Mask 28. */
-	QM_RW uint32_t
-	    int_flash_controller_0_mask; /**< Interrupt Routing Mask 29. */
-	QM_RW uint32_t reserved6;
-	QM_RW uint32_t int_aon_timer_mask; /**< Interrupt Routing Mask 31. */
-	QM_RW uint32_t int_adc_pwr_mask;   /**< Interrupt Routing Mask 32. */
-	QM_RW uint32_t int_adc_calib_mask; /**< Interrupt Routing Mask 33. */
-	QM_RW uint32_t reserved7;
-	QM_RW uint32_t lock_int_mask_reg; /**< Interrupt Mask Lock Register. */
-} qm_scss_int_reg_t;
-
-/* Number of SCSS interrupt mask registers (excluding mask lock register). */
-#define QM_SCSS_INT_MASK_NUMREG                                                \
-	((sizeof(qm_scss_int_reg_t) / sizeof(uint32_t)) - 1)
-
-/* Default POR SCSS interrupt mask (all interrupts masked). */
-#define QM_SCSS_INT_MASK_DEFAULT (0xFFFFFFFF)
-
-#if (UNIT_TEST)
-qm_scss_int_reg_t test_scss_int;
-#define QM_SCSS_INT ((qm_scss_int_reg_t *)(&test_scss_int))
-
-#else
-#define QM_SCSS_INT_BASE (0xB0800448)
-#define QM_SCSS_INT ((qm_scss_int_reg_t *)QM_SCSS_INT_BASE)
-#endif
-
-#define QM_INT_TIMER_HOST_HALT_MASK BIT(0)
-#define QM_INT_DMA_ERR_HOST_MASK (0x00000003)
-#define QM_INT_SRAM_CONTROLLER_HOST_HALT_MASK BIT(16)
-#define QM_INT_SRAM_CONTROLLER_HOST_MASK BIT(0)
-#define QM_INT_FLASH_CONTROLLER_HOST_HALT_MASK BIT(16)
-#define QM_INT_FLASH_CONTROLLER_HOST_MASK BIT(0)
-
-/** @} */
-
-/**
  * @name Power Management
  * @{
  */
@@ -442,94 +375,6 @@ qm_scss_info_reg_t test_scss_info;
 #define QM_SCSS_INFO_BASE (0xB0801000)
 #define QM_SCSS_INFO ((qm_scss_info_reg_t *)QM_SCSS_INFO_BASE)
 #endif
-
-/** @} */
-
-/**
- * @name IRQs and Interrupts
- * @{
- */
-
-/* IRQs and interrupt vectors.
- *
- * The vector numbers must be defined without arithmetic expressions nor
- * parentheses because they are expanded as token concatenation.
- */
-
-#define QM_INT_VECTOR_DOUBLE_FAULT 8
-
-#define QM_IRQ_RTC_0 2
-#define QM_IRQ_RTC_0_MASK_OFFSET 12
-#define QM_IRQ_RTC_0_VECTOR 34
-
-#define QM_IRQ_AONPT_0 3
-#define QM_IRQ_AONPT_0_MASK_OFFSET 32
-#define QM_IRQ_AONPT_0_VECTOR 35
-
-#define QM_IRQ_PWM_0 11
-#define QM_IRQ_PWM_0_MASK_OFFSET 10
-#define QM_IRQ_PWM_0_VECTOR 43
-
-#define QM_IRQ_SPI_MASTER_0 7
-#define QM_IRQ_SPI_MASTER_0_MASK_OFFSET 3
-#define QM_IRQ_SPI_MASTER_0_VECTOR 39
-
-#define QM_IRQ_ADC_0 9
-#define QM_IRQ_ADC_0_MASK_OFFSET 34
-#define QM_IRQ_ADC_0_VECTOR 41
-
-#define QM_IRQ_ADC_PWR_0 19
-#define QM_IRQ_ADC_PWR_0_MASK_OFFSET 33
-#define QM_IRQ_ADC_PWR_0_VECTOR 51
-
-#define QM_IRQ_WDT_0 16
-#define QM_IRQ_WDT_0_MASK_OFFSET 13
-#define QM_IRQ_WDT_0_VECTOR 48
-
-#define QM_IRQ_GPIO_0 15
-#define QM_IRQ_GPIO_0_MASK_OFFSET 9
-#define QM_IRQ_GPIO_0_VECTOR 47
-
-#define QM_IRQ_I2C_0 4
-#define QM_IRQ_I2C_0_MASK_OFFSET 0
-#define QM_IRQ_I2C_0_VECTOR 36
-
-#define QM_IRQ_PIC_TIMER 10
-/* No SCSS mask register for PIC timer: point to an unused register */
-#define QM_IRQ_PIC_TIMER_MASK_OFFSET 1
-#define QM_IRQ_PIC_TIMER_VECTOR 42
-
-#define QM_IRQ_AC 14
-#define QM_IRQ_AC_MASK_OFFSET 26
-#define QM_IRQ_AC_VECTOR 46
-
-#define QM_IRQ_SRAM 17
-#define QM_IRQ_SRAM_MASK_OFFSET 29
-#define QM_IRQ_SRAM_VECTOR 49
-
-#define QM_IRQ_FLASH_0 18
-#define QM_IRQ_FLASH_0_MASK_OFFSET 30
-#define QM_IRQ_FLASH_0_VECTOR 50
-
-#define QM_IRQ_UART_0 8
-#define QM_IRQ_UART_0_MASK_OFFSET 6
-#define QM_IRQ_UART_0_VECTOR 40
-
-#define QM_IRQ_UART_1 6
-#define QM_IRQ_UART_1_MASK_OFFSET 7
-#define QM_IRQ_UART_1_VECTOR 38
-
-#define QM_IRQ_DMA_0 13
-#define QM_IRQ_DMA_0_MASK_OFFSET 14
-#define QM_IRQ_DMA_0_VECTOR 45
-
-#define QM_IRQ_DMA_1 12
-#define QM_IRQ_DMA_1_MASK_OFFSET 15
-#define QM_IRQ_DMA_1_VECTOR 44
-
-#define QM_IRQ_DMA_ERR 0
-#define QM_IRQ_DMA_ERR_MASK_OFFSET 28
-#define QM_IRQ_DMA_ERR_VECTOR 32
 
 /** @} */
 
@@ -1074,16 +919,20 @@ extern qm_i2c_reg_t *qm_i2c[QM_I2C_NUM];
 #define QM_I2C_IC_CON_SPEED_FS_FSP BIT(2)
 #define QM_I2C_IC_CON_SPEED_MASK (0x06)
 #define QM_I2C_IC_CON_RESTART_EN BIT(5)
+#define QM_I2C_IC_CON_STOP_DET_IFADDRESSED BIT(7)
 #define QM_I2C_IC_DATA_CMD_READ BIT(8)
 #define QM_I2C_IC_DATA_CMD_STOP_BIT_CTRL BIT(9)
 #define QM_I2C_IC_DATA_CMD_LSB_MASK (0x000000FF)
 #define QM_I2C_IC_RAW_INTR_STAT_RX_FULL BIT(2)
 #define QM_I2C_IC_RAW_INTR_STAT_TX_ABRT BIT(6)
+#define QM_I2C_IC_RAW_INTR_STAT_GEN_CALL BIT(11)
+#define QM_I2C_IC_RAW_INTR_STAT_RESTART_DETECTED BIT(12)
 #define QM_I2C_IC_TX_ABRT_SOURCE_NAK_MASK (0x1F)
 #define QM_I2C_IC_TX_ABRT_SOURCE_ARB_LOST BIT(12)
 #define QM_I2C_IC_TX_ABRT_SOURCE_ABRT_SBYTE_NORSTRT BIT(9)
 #define QM_I2C_IC_TX_ABRT_SOURCE_ALL_MASK (0x1FFFF)
 #define QM_I2C_IC_STATUS_BUSY_MASK (0x00000060)
+#define QM_I2C_IC_STATUS_RFF BIT(4)
 #define QM_I2C_IC_STATUS_RFNE BIT(3)
 #define QM_I2C_IC_STATUS_TFE BIT(2)
 #define QM_I2C_IC_STATUS_TNF BIT(1)
@@ -1093,15 +942,25 @@ extern qm_i2c_reg_t *qm_i2c[QM_I2C_NUM];
 #define QM_I2C_IC_INTR_MASK_RX_FULL BIT(2)
 #define QM_I2C_IC_INTR_MASK_TX_OVER BIT(3)
 #define QM_I2C_IC_INTR_MASK_TX_EMPTY BIT(4)
+#define QM_I2C_IC_INTR_MASK_RD_REQ BIT(5)
 #define QM_I2C_IC_INTR_MASK_TX_ABORT BIT(6)
+#define QM_I2C_IC_INTR_MASK_RX_DONE BIT(7)
+#define QM_I2C_IC_INTR_MASK_ACTIVITY BIT(8)
 #define QM_I2C_IC_INTR_MASK_STOP_DETECTED BIT(9)
 #define QM_I2C_IC_INTR_MASK_START_DETECTED BIT(10)
+#define QM_I2C_IC_INTR_MASK_GEN_CALL_DETECTED BIT(11)
+#define QM_I2C_IC_INTR_MASK_RESTART_DETECTED BIT(12)
 #define QM_I2C_IC_INTR_STAT_RX_UNDER BIT(0)
 #define QM_I2C_IC_INTR_STAT_RX_OVER BIT(1)
 #define QM_I2C_IC_INTR_STAT_RX_FULL BIT(2)
 #define QM_I2C_IC_INTR_STAT_TX_OVER BIT(3)
 #define QM_I2C_IC_INTR_STAT_TX_EMPTY BIT(4)
+#define QM_I2C_IC_INTR_STAT_RD_REQ BIT(5)
 #define QM_I2C_IC_INTR_STAT_TX_ABRT BIT(6)
+#define QM_I2C_IC_INTR_STAT_RX_DONE BIT(7)
+#define QM_I2C_IC_INTR_STAT_STOP_DETECTED BIT(9)
+#define QM_I2C_IC_INTR_STAT_START_DETECTED BIT(10)
+#define QM_I2C_IC_INTR_STAT_GEN_CALL_DETECTED BIT(11)
 #define QM_I2C_IC_LCNT_MAX (65525)
 #define QM_I2C_IC_LCNT_MIN (8)
 #define QM_I2C_IC_HCNT_MAX (65525)
@@ -1347,9 +1206,36 @@ extern qm_flash_reg_t *qm_flash[QM_FLASH_NUM];
 /** @} */
 
 /**
+ * @name Flash Protection Region
+ * @{
+ */
+
+/**
+ * FPR register map.
+ */
+typedef enum {
+	QM_FPR_0, /**< FPR 0. */
+	QM_FPR_1, /**< FPR 1. */
+	QM_FPR_2, /**< FPR 2. */
+	QM_FPR_3, /**< FPR 3. */
+	QM_FPR_NUM
+} qm_fpr_id_t;
+
+/** @} */
+
+/**
  * @name Memory Protection Region
  * @{
  */
+
+/* MPR identifier */
+typedef enum {
+	QM_MPR_0 = 0, /**< Memory Protection Region 0. */
+	QM_MPR_1,     /**< Memory Protection Region 1. */
+	QM_MPR_2,     /**< Memory Protection Region 2. */
+	QM_MPR_3,     /**< Memory Protection Region 3. */
+	QM_MPR_NUM    /**< Number of Memory Protection Regions. */
+} qm_mpr_id_t;
 
 /** Memory Protection Region register map. */
 typedef struct {
@@ -1711,6 +1597,16 @@ qm_dma_reg_t *test_dma[QM_DMA_NUM];
 extern qm_dma_reg_t *qm_dma[QM_DMA_NUM];
 #define QM_DMA qm_dma
 #endif
+
+/** @} */
+
+/**
+ * @name Hardware Fixes
+ * @{
+ */
+
+/* Refer to "HARDWARE_ISSUES.rst" for fix description. */
+#define FIX_1 (1)
 
 /** @} */
 

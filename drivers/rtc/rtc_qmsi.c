@@ -166,15 +166,15 @@ static int rtc_qmsi_init(struct device *dev)
 {
 	rtc_reentrancy_init(dev);
 
-	IRQ_CONNECT(QM_IRQ_RTC_0, CONFIG_RTC_0_IRQ_PRI,
-		    qm_rtc_isr_0, NULL,
+	IRQ_CONNECT(QM_IRQ_RTC_0_INT, CONFIG_RTC_0_IRQ_PRI,
+		    qm_rtc_0_isr, NULL,
 		    IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask RTC interrupt */
-	irq_enable(QM_IRQ_RTC_0);
+	irq_enable(QM_IRQ_RTC_0_INT);
 
 	/* Route RTC interrupt to Lakemont */
-	QM_SCSS_INT->int_rtc_mask &= ~BIT(0);
+	QM_INTERRUPT_ROUTER->rtc_0_int_mask &= ~BIT(0);
 
 	rtc_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
@@ -186,14 +186,14 @@ static uint32_t int_rtc_mask_save;
 
 static int rtc_suspend_device(struct device *dev)
 {
-	int_rtc_mask_save = QM_SCSS_INT->int_rtc_mask;
+	int_rtc_mask_save = QM_INTERRUPT_ROUTER->rtc_0_int_mask;
 	rtc_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 	return 0;
 }
 
 static int rtc_resume_device(struct device *dev)
 {
-	QM_SCSS_INT->int_rtc_mask = int_rtc_mask_save;
+	QM_INTERRUPT_ROUTER->rtc_0_int_mask = int_rtc_mask_save;
 	rtc_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 	return 0;
 }

@@ -435,10 +435,10 @@ static void usb_dc_isr_handler(const qm_usb_t usb)
 	}
 }
 
-QM_ISR_DECLARE(qm_usb_0_isr_0)
+QM_ISR_DECLARE(qm_usb_0_isr)
 {
 	usb_dc_isr_handler(QM_USB_0);
-	QM_ISR_EOI(QM_IRQ_USB_0_VECTOR);
+	QM_ISR_EOI(QM_IRQ_USB_0_INT_VECTOR);
 }
 
 int qm_usb_attach(const qm_usb_t usb)

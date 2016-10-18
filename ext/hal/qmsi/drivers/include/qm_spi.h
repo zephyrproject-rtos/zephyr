@@ -526,6 +526,39 @@ int qm_spi_enter_xip_mode(const qm_spi_t spi,
 int qm_spi_exit_xip_mode(const qm_spi_t spi);
 #endif /* HAS_QSPI */
 
+#if (ENABLE_RESTORE_CONTEXT)
+/**
+ * Save SPI context.
+ *
+ * Saves the configuration of the specified SPI peripheral
+ * before entering sleep.
+ *
+ * @param[in] spi SPI controller identifier.
+ * @param[out] ctx SPI context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_spi_save_context(const qm_spi_t spi, qm_spi_context_t *const ctx);
+
+/**
+ * Restore SPI context.
+ *
+ * Restore the configuration of the specified SPI peripheral
+ * after exiting sleep.
+ *
+ * @param[in] spi SPI controller identifier.
+ * @param[in] ctx SPI context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_spi_restore_context(const qm_spi_t spi,
+			   const qm_spi_context_t *const ctx);
+#endif /* ENABLE_RESTORE_CONTEXT */
+
 /**
  * @}
  */
