@@ -21,6 +21,15 @@
 extern "C" {
 #endif
 
+enum power_states {
+	SYS_POWER_STATE_CPU_LPS,       /* C2LP state */
+	SYS_POWER_STATE_CPU_LPS_1,     /* C2 state */
+	SYS_POWER_STATE_CPU_LPS_2,     /* C1 state */
+	SYS_POWER_STATE_DEEP_SLEEP,    /* DEEP SLEEP state */
+	SYS_POWER_STATE_DEEP_SLEEP_1,  /* SLEEP state */
+	SYS_POWER_STATE_MAX
+};
+
 /**
  * @brief Save CPU context
  *
@@ -51,51 +60,39 @@ int _sys_soc_save_cpu_context(void);
 FUNC_NORETURN void _sys_soc_restore_cpu_context(void);
 
 /**
- * @brief Put SoC into deep sleep power state
+ * @brief Put processor into low power state
  *
  * This function implements the SoC specific details necessary
- * to put the SoC into deep sleep state.
+ * to put the processor into available power states.
  *
- * This function will not return;
+ * Wake up considerations:
+ * SYS_POWER_STATE_CPU_LPS_2: Any interrupt works as wake event.
+ *
+ * SYS_POWER_STATE_CPU_LPS_1: Any interrupt works as wake event except
+ * if the core enters LPSS where SYS_POWER_STATE_DEEP_SLEEP wake events
+ * applies.
+ *
+ * SYS_POWER_STATE_CPU_LPS: Any interrupt works as wake event except the
+ * PIC timer which is gated. If the core enters LPSS only
+ * SYS_POWER_STATE_DEEP_SLEEP wake events applies.
+ *
+ * SYS_POWER_STATE_DEEP_SLEEP: Only Always-On peripherals can wake up
+ * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
+ *
+ * SYS_POWER_STATE_DEEP_SLEEP_1: Only Always-On peripherals can wake up
+ * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
  */
-FUNC_NORETURN void _sys_soc_put_deep_sleep(void);
+void _sys_soc_set_power_state(enum power_states state);
 
 /**
- * @brief Do any SoC or architecture specific post ops after deep sleep.
+ * @brief Do any SoC or architecture specific post ops after low power states.
  *
  * This function is a place holder to do any operations that may
  * be needed to be done after deep sleep exits.  Currently it enables
  * interrupts after resuming from deep sleep. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
-void _sys_soc_deep_sleep_post_ops(void);
-
-/**
- * @brief Put processor into low power state
- *
- * This function implements the SoC specific details necessary
- * to put the processor into deep sleep state.
- */
-void _sys_soc_put_low_power_state(void);
-
-/**
- * @brief Save the current power policy
- *
- * This function implements the SoC specific details necessary
- * to save the current power policy. This should save the information
- * in a location that would be persistent across deep sleep if deep
- * sleep is one of the power policies supported.
- */
-void _sys_soc_set_power_policy(uint32_t pm_policy);
-
-/**
- * @brief Retrieve the saved current power policy
- *
- * This function implements the SoC specific details necessary
- * to retrieve the power policy information saved by
- * _sys_soc_set_power_policy().
- */
-int _sys_soc_get_power_policy(void);
+void _sys_soc_power_state_post_ops(enum power_states state);
 
 #ifdef __cplusplus
 }

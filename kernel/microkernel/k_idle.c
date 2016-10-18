@@ -239,6 +239,11 @@ unsigned char _sys_power_save_flag = 1;
 
 #include <nanokernel.h>
 #include <microkernel/base_api.h>
+
+void __attribute__((weak)) _sys_soc_resume(void)
+{
+}
+
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
 	defined(CONFIG_SYS_POWER_DEEP_SLEEP) || \
 	defined(CONFIG_DEVICE_POWER_MANAGEMENT))

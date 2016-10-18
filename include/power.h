@@ -82,7 +82,7 @@ static inline void _sys_soc_disable_wake_event_notification(void)
  * @note A dedicated function may be created in future to notify wake
  * events, instead of overloading this one.
  */
-extern void _sys_soc_resume(void);
+void _sys_soc_resume(void);
 
 /**
  * @brief Hook function to allow entry to low power state
