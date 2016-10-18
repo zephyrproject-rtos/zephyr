@@ -33,15 +33,24 @@
   #define PHYS_LOAD_ADDR   CONFIG_PHYS_RAM_ADDR
 #endif /* CONFIG_XIP */
 
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#define PHYS_RAM_SIZE CONFIG_RAM_SIZE*1K - CONFIG_BSP_SHARED_RAM_SIZE
+#else /* !CONFIG_SYS_POWER_DEEP_SLEEP */
+#define PHYS_RAM_SIZE CONFIG_RAM_SIZE*1K
+#endif
 
 MEMORY
     {
 #ifdef CONFIG_XIP
     ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = CONFIG_ROM_SIZE*1K
-    RAM (wx)        : ORIGIN = PHYS_RAM_ADDR, LENGTH =  CONFIG_RAM_SIZE*1K
+    RAM (wx)        : ORIGIN = PHYS_RAM_ADDR, LENGTH =  PHYS_RAM_SIZE
 #else  /* !CONFIG_XIP */
-    RAM (wx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = CONFIG_RAM_SIZE*1K
+    RAM (wx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = PHYS_RAM_SIZE
 #endif /* CONFIG_XIP */
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+    BSP_SHARED_RAM (rw) : ORIGIN = CONFIG_BSP_SHARED_RAM_ADDR,
+                          LENGTH = CONFIG_BSP_SHARED_RAM_SIZE
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 
     /*
      * It doesn't matter where this region goes as it is stripped from the
