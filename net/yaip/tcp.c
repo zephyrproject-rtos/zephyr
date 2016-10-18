@@ -302,29 +302,13 @@ static inline uint32_t get_recv_wnd(struct net_tcp *tcp)
 	return recv_wnd;
 }
 
-static inline bool check_interval(uint32_t start, uint32_t end, uint32_t pos)
-{
-	if (end >= start) {
-		if (pos < start || pos > end) {
-			return false;
-		}
-	} else {
-		if (pos < start && pos > end) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-static inline bool seq_equal(uint32_t seq1, uint32_t seq2)
-{
-	return check_interval(seq2, seq2 + 0x20000000, seq1);
-}
-
+/* True if the (signed!) difference "seq1 - seq2" is positive and less
+ * than 2^29.  That is, seq1 is "after" seq2.
+ */
 static inline bool seq_greater(uint32_t seq1, uint32_t seq2)
 {
-	return check_interval(seq2 + 1, seq2 + 0x20000000, seq1);
+	int d = (int)(seq1 - seq2);
+	return d > 0 && d < 0x20000000;
 }
 
 int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
