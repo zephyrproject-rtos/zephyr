@@ -38,4 +38,10 @@ ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32f4xx/drivers/include/
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32f4xx/drivers/include/Legacy/
 endif
 
+ifdef CONFIG_SOC_SERIES_STM32L4X
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32l4xx/soc/
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32l4xx/drivers/include/
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32l4xx/drivers/include/Legacy/
+endif
+
 endif

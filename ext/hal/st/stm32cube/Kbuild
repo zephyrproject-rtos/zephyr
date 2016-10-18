@@ -10,4 +10,9 @@ obj-y += stm32f4xx/drivers/src/stm32f4xx_hal.o
 obj-y += stm32f4xx/soc/system_stm32f4xx.o
 endif
 
+ifdef CONFIG_SOC_SERIES_STM32L4X
+obj-y += stm32l4xx/drivers/src/stm32l4xx_hal.o
+obj-y += stm32l4xx/soc/system_stm32l4xx.o
+endif
+
 endif
