@@ -91,7 +91,7 @@ static NET_BUF_POOL(le_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
 /* Pool for outgoing LE data packets, MTU is 23 */
 static struct nano_fifo le_data;
 static NET_BUF_POOL(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_data, NULL,
+		    BT_L2CAP_BUF_SIZE(BT_L2CAP_MAX_LE_MPS), &le_data, NULL,
 		    BT_BUF_USER_DATA_MIN);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
@@ -1444,7 +1444,7 @@ segment:
 		net_buf_add_le16(seg, net_buf_frags_len(buf));
 	}
 
-	len = min(min(buf->len, L2CAP_LE_MIN_MTU - sdu_hdr_len), ch->tx.mps);
+	len = min(min(buf->len, BT_L2CAP_MAX_LE_MPS - sdu_hdr_len), ch->tx.mps);
 	memcpy(net_buf_add(seg, len), buf->data, len);
 	net_buf_pull(buf, len);
 
