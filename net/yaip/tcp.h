@@ -88,6 +88,9 @@ enum net_tcp_state {
 #define NET_TCP_MSS_SIZE      4          /* MSS option size */
 #define NET_TCP_WINDOW_SIZE   3          /* Window scale option size */
 
+/* Max received bytes to buffer internally */
+#define NET_TCP_BUF_MAX_LEN 1280
+
 struct net_context;
 
 struct net_tcp {
@@ -96,9 +99,6 @@ struct net_tcp {
 
 	/** TCP state. */
 	enum net_tcp_state state;
-
-	/** Previous TCP state. */
-	enum net_tcp_state prev_state;
 
 	/** Retransmission timer. */
 	struct nano_delayed_work retransmit_timer;
@@ -116,9 +116,6 @@ struct net_tcp {
 	 */
 	struct net_buf *send;
 
-	/** Max buffer length */
-	uint32_t buf_max_len;
-
 	/** Highest acknowledged number of sent segments. */
 	uint32_t recv_ack;
 
@@ -134,32 +131,8 @@ struct net_tcp {
 	/** Acknowledgment number. */
 	uint32_t send_ack;
 
-	/** Send window. */
-	uint32_t send_wnd;
-
-	/** Max window of another side. */
-	uint32_t send_max_wnd;
-
-	/** Congestion window. */
-	uint32_t send_cwnd;
-
-	/** Counter of the send_cwnd parts. */
-	uint32_t send_pcount;
-
-	/** Slow start threshold. */
-	uint32_t send_ss_threshold;
-
 	/** Max RX segment size (MSS). */
 	uint16_t recv_mss;
-
-	/** Max TX segment size (MSS). */
-	uint16_t send_mss;
-
-	/** Scale of the send window. */
-	uint8_t send_scale;
-
-	/** Scale of the receive window. */
-	uint8_t recv_scale;
 
 	/** Flags for the TCP. */
 	uint8_t flags;
@@ -230,7 +203,6 @@ static inline void net_tcp_change_state(struct net_tcp *tcp,
 		net_tcp_state_str(tcp->state), tcp->state,
 		net_tcp_state_str(new_state), new_state);
 
-	tcp->prev_state = tcp->state;
 	tcp->state = new_state;
 
 	if (tcp->state != NET_TCP_CLOSED) {

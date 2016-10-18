@@ -123,13 +123,9 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 		tcp_context[i].flags |= NET_TCP_IN_USE;
 		tcp_context[i].state = NET_TCP_CLOSED;
 		tcp_context[i].context = context;
-		tcp_context[i].buf_max_len = 1280;
 
 		tcp_context[i].send_seq = init_isn();
 		tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
-
-		memset(&tcp_context[i].ack_timer, 0,
-		       sizeof(struct nano_delayed_work));
 
 		return &tcp_context[i];
 	}
@@ -279,14 +275,14 @@ static inline uint32_t get_recv_wnd(struct net_tcp *tcp)
 
 	recv_wnd = tcp->recv_wnd;
 
-	wnd = (int32_t)(tcp->buf_max_len - tcp->recv->len);
+	wnd = (int32_t)(NET_TCP_BUF_MAX_LEN - tcp->recv->len);
 	if (wnd < 0) {
 		wnd = 0;
 	}
 
 	if (recv_wnd < (uint32_t)wnd) {
 		if (((uint32_t)wnd - recv_wnd >= tcp->recv_mss) ||
-		    ((uint32_t)wnd - recv_wnd >= tcp->buf_max_len >> 1) ||
+		    ((uint32_t)wnd - recv_wnd >= NET_TCP_BUF_MAX_LEN >> 1) ||
 		    !recv_wnd) {
 			recv_wnd = (uint32_t)wnd;
 		}
@@ -359,7 +355,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			wnd = (uint16_t)tcp->recv_wnd;
 		}
 	} else {
-		wnd = (uint16_t)(tcp->recv_wnd >> tcp->recv_scale);
+		wnd = (uint16_t)tcp->recv_wnd;
 	}
 
 	segment.src_addr = &tcp->context->local;
@@ -522,7 +518,7 @@ int net_tcp_prepare_data_segment(struct net_tcp *tcp,
 	segment.seq = tcp->send_seq;
 	segment.ack = tcp->send_ack;
 	segment.flags = flags;
-	segment.wnd = (uint16_t)(tcp->recv_wnd >> tcp->recv_scale);
+	segment.wnd = (uint16_t)tcp->recv_wnd;
 	segment.options = options;
 	segment.optlen = optlen;
 	segment.data = tcp->send;
@@ -584,11 +580,6 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
 	*((uint32_t *)(options + *optionlen)) =
 		htonl((uint32_t)(tcp->recv_mss | NET_TCP_MSS_HEADER));
 	*optionlen += NET_TCP_MSS_SIZE;
-
-	*((uint32_t *)(options + *optionlen)) =
-		htonl((uint32_t)((tcp->recv_scale |
-				  NET_TCP_WINDOW_HEADER) << 8));
-	*optionlen += NET_TCP_WINDOW_SIZE;
 
 	return;
 }
