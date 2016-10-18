@@ -11,3 +11,4 @@ allocate memory.
 
    maps.rst
    pools.rst
+   heap.rst
