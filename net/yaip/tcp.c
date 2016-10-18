@@ -111,36 +111,41 @@ static inline uint32_t init_isn(void)
 
 struct net_tcp *net_tcp_alloc(struct net_context *context)
 {
-	int i;
+	int i, key;
 
+	key = irq_lock();
 	for (i = 0; i < NET_MAX_TCP_CONTEXT; i++) {
-		if (net_tcp_is_used(&tcp_context[i])) {
-			continue;
+		if (!net_tcp_is_used(&tcp_context[i])) {
+			tcp_context[i].flags |= NET_TCP_IN_USE;
+			break;
 		}
+	}
+	irq_unlock(key);
 
-		memset(&tcp_context[i], 0, sizeof(struct net_tcp));
-
-		tcp_context[i].flags |= NET_TCP_IN_USE;
-		tcp_context[i].state = NET_TCP_CLOSED;
-		tcp_context[i].context = context;
-
-		tcp_context[i].send_seq = init_isn();
-		tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
-
-		return &tcp_context[i];
+	if (i >= NET_MAX_TCP_CONTEXT) {
+		return NULL;
 	}
 
-	return NULL;
+	memset(&tcp_context[i], 0, sizeof(struct net_tcp));
+
+	tcp_context[i].state = NET_TCP_CLOSED;
+	tcp_context[i].context = context;
+
+	tcp_context[i].send_seq = init_isn();
+	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
+
+	return &tcp_context[i];
 }
 
 int net_tcp_release(struct net_tcp *tcp)
 {
+	int key;
+
 	if (tcp >= &tcp_context[0] ||
 	    tcp <= &tcp_context[NET_MAX_TCP_CONTEXT]) {
 		return -EINVAL;
 	}
 
-	tcp->flags &= ~NET_TCP_IN_USE;
 	tcp->state = NET_TCP_CLOSED;
 	tcp->context = NULL;
 
@@ -153,6 +158,10 @@ int net_tcp_release(struct net_tcp *tcp)
 		net_nbuf_unref(tcp->recv);
 		tcp->recv = NULL;
 	}
+
+	key = irq_lock();
+	tcp->flags &= ~NET_TCP_IN_USE;
+	irq_unlock(key);
 
 	return 0;
 }
