@@ -126,6 +126,13 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	qm_cfg.callback = (void *) cfg->cb_fn;
 	qm_cfg.callback_data = dev;
 
+	/* Set prescaler value. Ideally, the divider should come from struct
+	 * rtc_config instead. It's safe to use RTC_DIVIDER here for now since
+	 * values defined by clk_rtc_div and by QMSI's clk_rtc_div_t match for
+	 * both D2000 and SE.
+	 */
+	qm_cfg.prescaler = RTC_DIVIDER;
+
 	rtc_critical_region_start(dev);
 
 	if (qm_rtc_set_config(QM_RTC_0, &qm_cfg)) {
