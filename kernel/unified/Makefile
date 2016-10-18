@@ -34,11 +34,9 @@ lib-y += $(strip \
 
 lib-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
 lib-$(CONFIG_STACK_CANARIES) += compiler_stack_protect.o
-lib-$(CONFIG_SYS_CLOCK_EXISTS) += timer.o
+lib-$(CONFIG_SYS_CLOCK_EXISTS) += timer.o legacy_timer.o
 lib-$(CONFIG_KERNEL_EVENT_LOGGER) += event_logger.o
 lib-$(CONFIG_KERNEL_EVENT_LOGGER) += kernel_event_logger.o
 lib-$(CONFIG_RING_BUFFER) += ring_buffer.o
 lib-$(CONFIG_ATOMIC_OPERATIONS_C) += atomic_c.o
 lib-$(CONFIG_NANO_WORKQUEUE) += work_q.o
-
-obj-y += legacy/
