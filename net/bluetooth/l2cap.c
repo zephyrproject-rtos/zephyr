@@ -47,8 +47,10 @@
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
 #define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
 
-#define L2CAP_LE_DYN_CID_START	0x0040
-#define L2CAP_LE_DYN_CID_END	0x007f
+#define L2CAP_LE_CID_DYN_START	0x0040
+#define L2CAP_LE_CID_DYN_END	0x007f
+#define L2CAP_LE_CID_IS_DYN(_cid) \
+	(_cid >= L2CAP_LE_CID_DYN_START && _cid <= L2CAP_LE_CID_DYN_END)
 
 #define L2CAP_LE_PSM_START	0x0001
 #define L2CAP_LE_PSM_END	0x00ff
@@ -136,7 +138,7 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 		return ch;
 	}
 
-	for (cid = L2CAP_LE_DYN_CID_START; cid <= L2CAP_LE_DYN_CID_END; cid++) {
+	for (cid = L2CAP_LE_CID_DYN_START; cid <= L2CAP_LE_CID_DYN_END; cid++) {
 		if (ch && !bt_l2cap_le_lookup_rx_cid(conn, cid)) {
 			ch->rx.cid = cid;
 			return ch;
@@ -605,7 +607,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	/* TODO: Add security check */
 
-	if (scid < L2CAP_LE_DYN_CID_START || scid > L2CAP_LE_DYN_CID_END) {
+	if (!L2CAP_LE_CID_IS_DYN(scid)) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_INVALID_SCID);
 		goto rsp;
 	}
@@ -1102,8 +1104,7 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
-	if (ch->rx.cid >= L2CAP_LE_DYN_CID_START &&
-	    ch->rx.cid <= L2CAP_LE_DYN_CID_END) {
+	if (L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
 		l2cap_chan_le_recv(ch, buf);
 		return;
 	}

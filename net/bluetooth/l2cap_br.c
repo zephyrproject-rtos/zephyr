@@ -53,8 +53,10 @@
 #define L2CAP_BR_PSM_START	0x0001
 #define L2CAP_BR_PSM_END	0xffff
 
-#define L2CAP_BR_DYN_CID_START	0x0040
-#define L2CAP_BR_DYN_CID_END	0xffff
+#define L2CAP_BR_CID_DYN_START	0x0040
+#define L2CAP_BR_CID_DYN_END	0xffff
+#define L2CAP_BR_CID_IS_DYN(_cid) \
+	(_cid >= L2CAP_BR_CID_DYN_START && _cid <= L2CAP_BR_CID_DYN_END)
 
 #define L2CAP_BR_MIN_MTU	48
 #define L2CAP_BR_DEFAULT_MTU	672
@@ -240,7 +242,7 @@ l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 		return ch;
 	}
 
-	for (cid = L2CAP_BR_DYN_CID_START; cid <= L2CAP_BR_DYN_CID_END; cid++) {
+	for (cid = L2CAP_BR_CID_DYN_START; cid <= L2CAP_BR_CID_DYN_END; cid++) {
 		if (!bt_l2cap_br_lookup_rx_cid(conn, cid)) {
 			ch->rx.cid = cid;
 			return ch;
@@ -816,7 +818,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		goto done;
 	}
 
-	if (scid < L2CAP_BR_DYN_CID_START || scid > L2CAP_BR_DYN_CID_END) {
+	if (!L2CAP_BR_CID_IS_DYN(scid)) {
 		result = BT_L2CAP_ERR_INVALID_SCID;
 		goto done;
 	}
@@ -1610,7 +1612,7 @@ static void check_fixed_channel(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
 
-	if (br_chan->rx.cid < L2CAP_BR_DYN_CID_START) {
+	if (br_chan->rx.cid < L2CAP_BR_CID_DYN_START) {
 		connect_fixed_channel(br_chan);
 	}
 }
