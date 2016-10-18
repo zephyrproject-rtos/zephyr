@@ -990,7 +990,6 @@ static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
 {
 	struct net_buf *frag = NULL;
 
-
 	frag = chan->chan.ops->alloc_buf(&chan->chan);
 	if (!frag) {
 		return NULL;
@@ -999,6 +998,9 @@ static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
 	BT_DBG("frag %p tailroom %u", frag, net_buf_tailroom(frag));
 
 	net_buf_frag_add(chan->_sdu, frag);
+
+	/* Drop own reference since net_buf_frag_add adds a reference */
+	net_buf_unref(frag);
 
 	return frag;
 }
