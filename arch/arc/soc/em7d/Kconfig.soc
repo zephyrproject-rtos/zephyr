@@ -1,0 +1,3 @@
+
+config SOC_EM7D
+	bool "Synopsys ARC EM7D"
