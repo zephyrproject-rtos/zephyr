@@ -82,10 +82,10 @@ endif # RTC
 
 if GPIO
 
-config GPIO_QMSI_SS
-	def_bool y
+config GPIO_QMSI
+	def_bool n
 
-if GPIO_QMSI_SS
+if GPIO_QMSI
 
 config GPIO_QMSI_0
 	def_bool y
@@ -108,6 +108,33 @@ config GPIO_QMSI_1_IRQ_PRI
 endif # GPIO_QMSI_1
 
 endif # GPIO_QMSI
+
+config GPIO_QMSI_SS
+	def_bool y
+
+if GPIO_QMSI_SS
+
+config GPIO_QMSI_SS_0
+	def_bool y
+
+if GPIO_QMSI_SS_0
+
+config GPIO_QMSI_SS_0_IRQ_PRI
+	default 1
+
+endif # GPIO_QMSI_SS_0
+
+config GPIO_QMSI_SS_1
+	def_bool y
+
+if GPIO_QMSI_SS_1
+
+config GPIO_QMSI_SS_1_IRQ_PRI
+	default 1
+
+endif # GPIO_QMSI_SS_1
+
+endif # GPIO_QMSI_SS
 
 endif # GPIO
 

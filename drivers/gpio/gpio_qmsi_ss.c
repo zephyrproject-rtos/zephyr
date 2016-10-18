@@ -76,7 +76,7 @@ static void gpio_critical_region_end(struct device *dev)
 
 static int ss_gpio_qmsi_init(struct device *dev);
 
-#ifdef CONFIG_GPIO_QMSI_0
+#ifdef CONFIG_GPIO_QMSI_SS_0
 static const struct ss_gpio_qmsi_config ss_gpio_0_config = {
 	.gpio = QM_SS_GPIO_0,
 	.num_pins = QM_SS_GPIO_NUM_PINS,
@@ -84,13 +84,13 @@ static const struct ss_gpio_qmsi_config ss_gpio_0_config = {
 
 static struct ss_gpio_qmsi_runtime ss_gpio_0_runtime;
 
-DEVICE_INIT(ss_gpio_0, CONFIG_GPIO_QMSI_0_NAME, &ss_gpio_qmsi_init,
+DEVICE_INIT(ss_gpio_0, CONFIG_GPIO_QMSI_SS_0_NAME, &ss_gpio_qmsi_init,
 	    &ss_gpio_0_runtime, &ss_gpio_0_config,
 	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-#endif /* CONFIG_GPIO_QMSI_0 */
+#endif /* CONFIG_GPIO_QMSI_SS_0 */
 
-#ifdef CONFIG_GPIO_QMSI_1
+#ifdef CONFIG_GPIO_QMSI_SS_1
 static const struct ss_gpio_qmsi_config ss_gpio_1_config = {
 	.gpio = QM_SS_GPIO_1,
 	.num_pins = QM_SS_GPIO_NUM_PINS,
@@ -98,11 +98,11 @@ static const struct ss_gpio_qmsi_config ss_gpio_1_config = {
 
 static struct ss_gpio_qmsi_runtime gpio_1_runtime;
 
-DEVICE_INIT(ss_gpio_1, CONFIG_GPIO_QMSI_1_NAME, &ss_gpio_qmsi_init,
+DEVICE_INIT(ss_gpio_1, CONFIG_GPIO_QMSI_SS_1_NAME, &ss_gpio_qmsi_init,
 	    &gpio_1_runtime, &ss_gpio_1_config,
 	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-#endif /* CONFIG_GPIO_QMSI_1 */
+#endif /* CONFIG_GPIO_QMSI_SS_1 */
 
 static void ss_gpio_qmsi_callback(void *data, uint32_t status)
 {
@@ -135,16 +135,16 @@ static inline void ss_qmsi_pin_config(struct device *port, uint32_t pin,
 	qm_ss_gpio_port_config_t cfg = { 0 };
 
 	switch (gpio) {
-#ifdef CONFIG_GPIO_QMSI_0
+#ifdef CONFIG_GPIO_QMSI_SS_0
 	case QM_SS_GPIO_0:
 		controller = QM_SS_GPIO_0_BASE;
 		break;
-#endif /* CONFIG_GPIO_QMSI_0 */
-#ifdef CONFIG_GPIO_QMSI_1
+#endif /* CONFIG_GPIO_QMSI_SS_0 */
+#ifdef CONFIG_GPIO_QMSI_SS_1
 	case QM_SS_GPIO_1:
 		controller = QM_SS_GPIO_1_BASE;
 		break;
-#endif /* CONFIG_GPIO_QMSI_1 */
+#endif /* CONFIG_GPIO_QMSI_SS_1 */
 	default:
 		return;
 	}
@@ -316,10 +316,10 @@ static int ss_gpio_qmsi_init(struct device *port)
 	gpio_reentrancy_init(port);
 
 	switch (gpio_config->gpio) {
-#ifdef CONFIG_GPIO_QMSI_0
+#ifdef CONFIG_GPIO_QMSI_SS_0
 	case QM_SS_GPIO_0:
 		IRQ_CONNECT(IRQ_GPIO0_INTR,
-			    CONFIG_GPIO_QMSI_0_IRQ_PRI, ss_gpio_isr,
+			    CONFIG_GPIO_QMSI_SS_0_IRQ_PRI, ss_gpio_isr,
 			    DEVICE_GET(ss_gpio_0), 0);
 		irq_enable(IRQ_GPIO0_INTR);
 
@@ -329,11 +329,11 @@ static int ss_gpio_qmsi_init(struct device *port)
 			(uint32_t *)&QM_INTERRUPT_ROUTER->ss_gpio_0_int_mask;
 		*scss_intmask &= ~BIT(8);
 		break;
-#endif /* CONFIG_GPIO_QMSI_0 */
-#ifdef CONFIG_GPIO_QMSI_1
+#endif /* CONFIG_GPIO_QMSI_SS_0 */
+#ifdef CONFIG_GPIO_QMSI_SS_1
 	case QM_SS_GPIO_1:
 		IRQ_CONNECT(IRQ_GPIO1_INTR,
-			    CONFIG_GPIO_QMSI_1_IRQ_PRI, ss_gpio_isr,
+			    CONFIG_GPIO_QMSI_SS_1_IRQ_PRI, ss_gpio_isr,
 			    DEVICE_GET(ss_gpio_1), 0);
 		irq_enable(IRQ_GPIO1_INTR);
 
@@ -343,7 +343,7 @@ static int ss_gpio_qmsi_init(struct device *port)
 			(uint32_t *)&QM_INTERRUPT_ROUTER->ss_gpio_1_int_mask;
 		*scss_intmask &= ~BIT(8);
 		break;
-#endif /* CONFIG_GPIO_QMSI_1 */
+#endif /* CONFIG_GPIO_QMSI_SS_1 */
 	default:
 		return -EIO;
 	}

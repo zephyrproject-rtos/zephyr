@@ -26,11 +26,11 @@ menuconfig GPIO_QMSI
 
 menuconfig GPIO_QMSI_SS
 	bool "QMSI GPIO SS driver"
-	depends on GPIO && QMSI
+	depends on GPIO && QMSI && ARC
 	default n
 	help
 	  Enable the GPIO driver found on Intel Microcontroller
-	  boards, using the QMSI library.
+	  boards, on the sensor subsystem, using the QMSI library.
 
 if GPIO_QMSI || GPIO_QMSI_SS
 
@@ -41,6 +41,16 @@ config GPIO_QMSI_INIT_PRIORITY
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.
+
+config GPIO_QMSI_API_REENTRANCY
+	bool
+	prompt "GPIO driver API reentrancy"
+	depends on GPIO_QMSI
+	default n
+	help
+	Enable support for QMSI GPIO driver API reentrancy.
+
+if GPIO_QMSI
 
 config GPIO_QMSI_0
 	bool "QMSI GPIO block 0"
@@ -76,12 +86,44 @@ config GPIO_QMSI_1_IRQ_PRI
 	help
 	  IRQ priority
 
-config GPIO_QMSI_API_REENTRANCY
-	bool
-	prompt "GPIO driver API reentrancy"
-	depends on GPIO_QMSI
+endif # GPIO_QMSI
+
+if GPIO_QMSI_SS
+
+config GPIO_QMSI_SS_0
+	bool "QMSI GPIO SS block 0"
 	default n
 	help
-	Enable support for QMSI GPIO driver API reentrancy.
+	  Include support for the GPIO SS port 0 using QMSI.
 
-endif # GPIO_QMSI
+config GPIO_QMSI_SS_0_NAME
+	string "Driver name"
+	depends on GPIO_QMSI_SS_0
+	default "GPIO_SS_0"
+
+config GPIO_QMSI_SS_0_IRQ_PRI
+	int "Controller interrupt priority"
+	depends on GPIO_QMSI_SS_0
+	help
+	  IRQ priority
+
+config GPIO_QMSI_SS_1
+	bool "QMSI GPIO SS block 1"
+	default n
+	help
+	  Include support for the GPIO SS port 1 using QMSI.
+
+config GPIO_QMSI_SS_1_NAME
+	string "Driver name"
+	depends on GPIO_QMSI_SS_1
+	default "GPIO_SS_1"
+
+config GPIO_QMSI_SS_1_IRQ_PRI
+	int "Controller interrupt priority"
+	depends on GPIO_QMSI_SS_1
+	help
+	  IRQ priority
+
+endif # GPIO_QMSI_SS
+
+endif # GPIO_QMSI || GPIO_QMSI_SS
