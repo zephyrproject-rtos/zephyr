@@ -295,7 +295,7 @@ enum net_ip_protocol net_context_get_ip_proto(struct net_context *context)
 {
 	NET_ASSERT(context);
 
-	if (context->flags & NET_CONTEXT_TYPE) {
+	if (context->flags & NET_CONTEXT_PROTO) {
 		return IPPROTO_TCP;
 	}
 
