@@ -102,4 +102,3 @@ int sys_ring_buf_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 
 	return 0;
 }
-
