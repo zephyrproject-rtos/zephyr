@@ -296,82 +296,116 @@ get_dst_addr_mode(struct net_if *iface, struct net_buf *buf,
 	return IEEE802154_ADDR_MODE_EXTENDED;
 }
 
-static inline void
-generate_addressing_fields(struct net_if *iface, struct net_buf *buf,
-			   struct ieee802154_fcf_seq *fs, uint8_t **p_buf)
+static inline
+void data_addr_to_fs_settings(struct net_if *iface,
+			      struct net_buf *buf,
+			      struct ieee802154_fcf_seq *fs,
+			      struct ieee802154_frame_params *params)
 {
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct ieee802154_address_field *af;
 	struct net_nbr *nbr;
 	bool broadcast;
 
 	fs->fc.dst_addr_mode = get_dst_addr_mode(iface, buf, &nbr, &broadcast);
-	if (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
-		/* No known destination */
-		goto src;
-	}
-
-	af = (struct ieee802154_address_field *)*p_buf;
-	af->plain.pan_id = ctx->pan_id;
-
-	if (broadcast) { /* We are broadcasting */
-		fs->fc.pan_id_comp = 1;
-		af->plain.addr.short_addr = IEEE802154_BROADCAST_ADDRESS;
-		*p_buf += IEEE802154_PAN_ID_LENGTH +
-			IEEE802154_SHORT_ADDR_LENGTH;
-	} else {
-		struct net_linkaddr_storage *l_addr;
-
-		/**
-		 * ToDo:
-		 * - handle short address
-		 * - handle different dst PAN ID
-		 */
+	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
 		fs->fc.pan_id_comp = 1;
 
-		l_addr = net_nbr_get_lladdr(nbr->idx);
-		memcpy(af->plain.addr.ext_addr, l_addr->addr, l_addr->len);
+		if (broadcast) {
+			params->dst.short_addr = IEEE802154_BROADCAST_ADDRESS;
+			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
+		} else {
+			struct net_linkaddr_storage *addr;
 
-		*p_buf += IEEE802154_PAN_ID_LENGTH +
-			IEEE802154_EXT_ADDR_LENGTH;
+			/* ToDo: Handle short address in nbr */
+			addr = net_nbr_get_lladdr(nbr->idx);
+			params->dst.ext_addr = addr->addr;
+			params->dst.len = IEEE802154_EXT_ADDR_LENGTH;
+		}
 	}
 
-src:
 	if (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT && !broadcast) {
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_SHORT;
 	} else {
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
 	}
+}
 
-	af = (struct ieee802154_address_field *)*p_buf;
+static
+uint8_t *generate_addressing_fields(struct net_if *iface,
+				    struct ieee802154_fcf_seq *fs,
+				    struct ieee802154_frame_params *params,
+				    uint8_t *p_buf)
+{
+	struct ieee802154_address_field *af;
+	struct ieee802154_address *src_addr;
 
-	if (fs->fc.pan_id_comp) {
-		memcpy(af->comp.addr.ext_addr,
-		       iface->link_addr.addr, IEEE802154_EXT_ADDR_LENGTH);
-	} else {
-		af->plain.pan_id = ctx->pan_id;
-		memcpy(af->plain.addr.ext_addr,
-		       iface->link_addr.addr, IEEE802154_EXT_ADDR_LENGTH);
+	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
+		af = (struct ieee802154_address_field *)p_buf;
+		af->plain.pan_id = params->dst.pan_id;
+
+		if (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
+			af->plain.addr.short_addr =
+				sys_cpu_to_le16(params->dst.short_addr);
+			p_buf += IEEE802154_PAN_ID_LENGTH +
+				IEEE802154_SHORT_ADDR_LENGTH;
+		} else {
+			sys_memcpy_swap(af->plain.addr.ext_addr,
+					params->dst.ext_addr,
+					IEEE802154_EXT_ADDR_LENGTH);
+			p_buf += IEEE802154_PAN_ID_LENGTH +
+				IEEE802154_EXT_ADDR_LENGTH;
+		}
 	}
+
+	if (fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_NONE) {
+		return p_buf;
+	}
+
+	af = (struct ieee802154_address_field *)p_buf;
+
+	if (!fs->fc.pan_id_comp) {
+		af->plain.pan_id = params->pan_id;
+		src_addr = &af->plain.addr;
+		p_buf += IEEE802154_PAN_ID_LENGTH;
+	} else {
+		src_addr = &af->comp.addr;
+	}
+
+	if (fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
+		src_addr->short_addr = sys_cpu_to_le16(params->short_addr);
+		p_buf += IEEE802154_SHORT_ADDR_LENGTH;
+	} else {
+		sys_memcpy_swap(src_addr->ext_addr, iface->link_addr.addr,
+				IEEE802154_EXT_ADDR_LENGTH);
+		p_buf += IEEE802154_EXT_ADDR_LENGTH;
+	}
+
+	return p_buf;
 }
 
 bool ieee802154_create_data_frame(struct net_if *iface, struct net_buf *buf)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint8_t *p_buf = net_nbuf_ll(buf);
+	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
-
-	if (!p_buf) {
-		NET_DBG("No room for IEEE 802.15.4 header");
-		return false;
-	}
 
 	fs = generate_fcf_grounds(&p_buf);
 
 	fs->fc.frame_type = IEEE802154_FRAME_TYPE_DATA;
 	fs->sequence = ctx->sequence;
 
-	generate_addressing_fields(iface, buf, fs, &p_buf);
+	params.dst.pan_id = ctx->pan_id;
+	params.pan_id = ctx->pan_id;
+	data_addr_to_fs_settings(iface, buf, fs, &params);
+
+	p_buf = generate_addressing_fields(iface, fs, &params, p_buf);
+
+	if ((p_buf - net_nbuf_ll(buf)) != net_nbuf_ll_reserve(buf)) {
+		/* ll reserve was too small? We probably overwrote
+		 * payload bytes
+		 */
+		return false;
+	}
 
 	/* Todo: handle security aux header */
 

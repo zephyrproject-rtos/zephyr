@@ -197,6 +197,22 @@ struct ieee802154_mpdu {
 	struct ieee802154_mfr *mfr;
 } __packed;
 
+/** Frame build parameters */
+struct ieee802154_frame_params {
+	struct {
+		union {
+			uint8_t *ext_addr;
+			uint16_t short_addr;
+		};
+
+		uint16_t len;
+		uint16_t pan_id;
+	} dst;
+
+	uint16_t short_addr;
+	uint16_t pan_id;
+} __packed;
+
 bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 			       struct ieee802154_mpdu *mpdu);
 
