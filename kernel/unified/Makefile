@@ -28,7 +28,7 @@ lib-y += $(strip \
 	mem_pool.o \
 	event.o \
 	pipes.o \
-	offload.o \
+	legacy_offload.o \
 	errno.o \
 )
 
