@@ -612,7 +612,7 @@ int bmc150_magn_init(struct device *dev)
 	return 0;
 }
 
-static struct bmc150_magn_config bmc150_magn_config = {
+static const struct bmc150_magn_config bmc150_magn_config = {
 	.i2c_master_dev_name = CONFIG_BMC150_MAGN_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = BMC150_MAGN_I2C_ADDR,
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
