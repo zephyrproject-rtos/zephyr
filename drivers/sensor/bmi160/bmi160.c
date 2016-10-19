@@ -938,7 +938,7 @@ int bmi160_init(struct device *dev)
 	return 0;
 }
 
-struct bmi160_device_config bmi160_config = {
+const struct bmi160_device_config bmi160_config = {
 	.spi_port = CONFIG_BMI160_SPI_PORT_NAME,
 	.spi_freq = CONFIG_BMI160_SPI_BUS_FREQ,
 	.spi_slave = CONFIG_BMI160_SLAVE,
