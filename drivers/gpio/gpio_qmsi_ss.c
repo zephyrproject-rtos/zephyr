@@ -77,7 +77,7 @@ static void gpio_critical_region_end(struct device *dev)
 static int ss_gpio_qmsi_init(struct device *dev);
 
 #ifdef CONFIG_GPIO_QMSI_0
-static struct ss_gpio_qmsi_config ss_gpio_0_config = {
+static const struct ss_gpio_qmsi_config ss_gpio_0_config = {
 	.gpio = QM_SS_GPIO_0,
 	.num_pins = QM_SS_GPIO_NUM_PINS,
 };
@@ -91,7 +91,7 @@ DEVICE_INIT(ss_gpio_0, CONFIG_GPIO_QMSI_0_NAME, &ss_gpio_qmsi_init,
 #endif /* CONFIG_GPIO_QMSI_0 */
 
 #ifdef CONFIG_GPIO_QMSI_1
-static struct ss_gpio_qmsi_config ss_gpio_1_config = {
+static const struct ss_gpio_qmsi_config ss_gpio_1_config = {
 	.gpio = QM_SS_GPIO_1,
 	.num_pins = QM_SS_GPIO_NUM_PINS,
 };
