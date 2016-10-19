@@ -103,7 +103,7 @@ static uint32_t gpio_qmsi_get_power_state(struct device *dev)
 
 
 #ifdef CONFIG_GPIO_QMSI_0
-static struct gpio_qmsi_config gpio_0_config = {
+static const struct gpio_qmsi_config gpio_0_config = {
 	.gpio = QM_GPIO_0,
 	.num_pins = QM_NUM_GPIO_PINS,
 };
@@ -180,7 +180,7 @@ DEVICE_DEFINE(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
 #endif /* CONFIG_GPIO_QMSI_0 */
 
 #ifdef CONFIG_GPIO_QMSI_1
-static struct gpio_qmsi_config gpio_aon_config = {
+static const struct gpio_qmsi_config gpio_aon_config = {
 	.gpio = QM_AON_GPIO_0,
 	.num_pins = QM_NUM_AON_GPIO_PINS,
 };
