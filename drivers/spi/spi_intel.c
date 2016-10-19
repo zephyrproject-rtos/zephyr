@@ -425,6 +425,7 @@ static int spi_intel_suspend(struct device *dev)
 static int spi_intel_resume_from_suspend(struct device *dev)
 {
 	const struct spi_intel_config *info = dev->config->config_info;
+	struct spi_intel_data *spi = dev->driver_data;
 
 	SYS_LOG_DBG("spi_intel_resume: %p", dev);
 
