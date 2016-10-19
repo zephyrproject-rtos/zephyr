@@ -248,7 +248,7 @@ static struct device *gpio_cs_init(const struct ss_spi_qmsi_config *config)
 static int ss_spi_qmsi_init(struct device *dev);
 
 #ifdef CONFIG_SPI_0
-static struct ss_spi_qmsi_config spi_qmsi_mst_0_config = {
+static const struct ss_spi_qmsi_config spi_qmsi_mst_0_config = {
 	.spi = QM_SS_SPI_0,
 #ifdef CONFIG_SPI_CS_GPIO
 	.cs_port = CONFIG_SPI_0_CS_GPIO_PORT,
@@ -266,7 +266,7 @@ DEVICE_INIT(ss_spi_master_0, CONFIG_SPI_0_NAME,
 #endif /* CONFIG_SPI_0 */
 #ifdef CONFIG_SPI_1
 
-static struct ss_spi_qmsi_config spi_qmsi_mst_1_config = {
+static const struct ss_spi_qmsi_config spi_qmsi_mst_1_config = {
 	.spi = QM_SS_SPI_1,
 #ifdef CONFIG_SPI_CS_GPIO
 	.cs_port = CONFIG_SPI_1_CS_GPIO_PORT,
