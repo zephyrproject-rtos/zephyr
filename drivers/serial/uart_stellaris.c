@@ -641,7 +641,7 @@ static struct uart_driver_api uart_stellaris_driver_api = {
 static void irq_config_func_0(struct device *port);
 #endif
 
-static struct uart_device_config uart_stellaris_dev_cfg_0 = {
+static const struct uart_device_config uart_stellaris_dev_cfg_0 = {
 	.base = (uint8_t *)UART_STELLARIS_PORT_0_BASE_ADDR,
 	.sys_clk_freq = UART_STELLARIS_CLK_FREQ,
 
@@ -715,7 +715,7 @@ static void irq_config_func_1(struct device *dev)
 static void irq_config_func_2(struct device *port);
 #endif
 
-static struct uart_device_config uart_stellaris_dev_cfg_2 = {
+static const struct uart_device_config uart_stellaris_dev_cfg_2 = {
 	.base = (uint8_t *)UART_STELLARIS_PORT_2_BASE_ADDR,
 	.sys_clk_freq = UART_STELLARIS_CLK_FREQ,
 
