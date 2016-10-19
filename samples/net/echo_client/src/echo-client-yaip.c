@@ -257,7 +257,7 @@ static struct net_buf *prepare_send_buf(const char *name,
 
 	NET_ASSERT(send_buf);
 
-	status = net_nbuf_write(send_buf, expecting_len, lorem_ipsum);
+	status = net_nbuf_append(send_buf, expecting_len, lorem_ipsum);
 	if (!status) {
 		NET_ERR("%s: cannot create send buf", name);
 		return NULL;

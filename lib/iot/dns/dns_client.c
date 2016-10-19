@@ -195,7 +195,7 @@ int dns_write(struct net_context *ctx, struct net_buf *dns_data,
 		goto exit_write;
 	}
 
-	rc = net_nbuf_write(tx, dns_data->len, dns_data->data);
+	rc = net_nbuf_append(tx, dns_data->len, dns_data->data);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_write;

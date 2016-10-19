@@ -63,7 +63,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 		return -EIO;
 	}
 
-	rc = net_nbuf_write(send_buf, size, (uint8_t *) buf);
+	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf);
 	if (!rc) {
 		printk("cannot write buf\n");
 		return -EIO;

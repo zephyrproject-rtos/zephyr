@@ -939,12 +939,12 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
 	return first;
 }
 
-/* This helper routine will write multiple bytes, if there is no place for
+/* This helper routine will append multiple bytes, if there is no place for
  * the data in current fragment then create new fragment and add it to
  * the buffer. It assumes that the buffer has at least one fragment.
  */
-static inline bool net_nbuf_write_bytes(struct net_buf *buf, uint8_t *value,
-					uint16_t len)
+static inline bool net_nbuf_append_bytes(struct net_buf *buf, uint8_t *value,
+					 uint16_t len)
 {
 	struct net_buf *frag = net_buf_frag_last(buf);
 	uint16_t ll_reserve = net_nbuf_ll_reserve(buf);
@@ -972,7 +972,7 @@ static inline bool net_nbuf_write_bytes(struct net_buf *buf, uint8_t *value,
 	return false;
 }
 
-bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
+bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data)
 {
 	struct net_buf *frag;
 
@@ -998,7 +998,7 @@ bool net_nbuf_write(struct net_buf *buf, uint16_t len, uint8_t *data)
 		net_buf_frag_add(buf, frag);
 	}
 
-	return net_nbuf_write_bytes(buf, data, len);
+	return net_nbuf_append_bytes(buf, data, len);
 }
 
 /* Helper routine to retrieve single byte from fragment and move

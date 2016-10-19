@@ -146,7 +146,7 @@ static inline void unset_dhcpv4_on_iface(struct net_if *iface)
 /* Add magic cookie to DCHPv4 messages */
 static inline bool add_cookie(struct net_buf *buf)
 {
-	return net_nbuf_write(buf, sizeof(magic_cookie), magic_cookie);
+	return net_nbuf_append(buf, sizeof(magic_cookie), magic_cookie);
 }
 
 /* Add DHCPv4 message type */
@@ -154,7 +154,7 @@ static inline bool add_msg_type(struct net_buf *buf, uint8_t type)
 {
 	uint8_t data[3] = { DHCPV4_OPTIONS_MSG_TYPE, 1, type };
 
-	return net_nbuf_write(buf, sizeof(data), data);
+	return net_nbuf_append(buf, sizeof(data), data);
 }
 
 /*
@@ -169,7 +169,7 @@ static inline bool add_req_options(struct net_buf *buf)
 			    DHCPV4_OPTIONS_ROUTER,
 			    DHCPV4_OPTIONS_DNS_SERVER };
 
-	return net_nbuf_write(buf, sizeof(data), data);
+	return net_nbuf_append(buf, sizeof(data), data);
 }
 
 static inline bool add_server_id(struct net_buf *buf)
@@ -178,16 +178,16 @@ static inline bool add_server_id(struct net_buf *buf)
 	uint8_t data;
 
 	data = DHCPV4_OPTIONS_SERVER_ID;
-	if (!net_nbuf_write(buf, 1, &data)) {
+	if (!net_nbuf_append(buf, 1, &data)) {
 		return false;
 	}
 
 	data = 4;
-	if (!net_nbuf_write(buf, 1, &data)) {
+	if (!net_nbuf_append(buf, 1, &data)) {
 		return false;
 	}
 
-	if (!net_nbuf_write(buf, 4, iface->dhcpv4.server_id.s4_addr)) {
+	if (!net_nbuf_append(buf, 4, iface->dhcpv4.server_id.s4_addr)) {
 		return false;
 	}
 
@@ -200,16 +200,16 @@ static inline bool add_req_ipaddr(struct net_buf *buf)
 	uint8_t data;
 
 	data = DHCPV4_OPTIONS_REQ_IPADDR;
-	if (!net_nbuf_write(buf, 1, &data)) {
+	if (!net_nbuf_append(buf, 1, &data)) {
 		return false;
 	}
 
 	data = 4;
-	if (!net_nbuf_write(buf, 1, &data)) {
+	if (!net_nbuf_append(buf, 1, &data)) {
 		return false;
 	}
 
-	if (!net_nbuf_write(buf, 4, iface->dhcpv4.requested_ip.s4_addr)) {
+	if (!net_nbuf_append(buf, 4, iface->dhcpv4.requested_ip.s4_addr)) {
 		return false;
 	}
 
@@ -221,7 +221,7 @@ static inline bool add_end(struct net_buf *buf)
 {
 	uint8_t data = DHCPV4_OPTIONS_END;
 
-	return net_nbuf_write(buf, 1, &data);
+	return net_nbuf_append(buf, 1, &data);
 }
 
 /* File is empty ATM */
@@ -231,7 +231,7 @@ static inline bool add_file(struct net_buf *buf)
 	uint8_t data = 0;
 
 	while (len-- > 0) {
-		if (!net_nbuf_write(buf, 1, &data)) {
+		if (!net_nbuf_append(buf, 1, &data)) {
 			return false;
 		}
 	}
@@ -246,7 +246,7 @@ static inline bool add_sname(struct net_buf *buf)
 	uint8_t data = 0;
 
 	while (len-- > 0) {
-		if (!net_nbuf_write(buf, 1, &data)) {
+		if (!net_nbuf_append(buf, 1, &data)) {
 			return false;
 		}
 	}

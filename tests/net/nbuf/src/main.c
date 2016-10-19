@@ -773,13 +773,13 @@ static int test_nbuf_read_write(void)
 	tfrag = net_buf_frag_last(buf->frags);
 	off = tfrag->len;
 
-	if (!net_nbuf_write(buf, sizeof(test_rw_short), test_rw_short)) {
-		printk("net_nbuf_write failed\n");
+	if (!net_nbuf_append(buf, sizeof(test_rw_short), test_rw_short)) {
+		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_nbuf_write(buf, sizeof(test_rw_short), test_rw_short)) {
-		printk("net_nbuf_write failed\n");
+	if (!net_nbuf_append(buf, sizeof(test_rw_short), test_rw_short)) {
+		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
@@ -807,21 +807,21 @@ static int test_nbuf_read_write(void)
 	tfrag = net_buf_frag_last(buf->frags);
 	off = tfrag->len;
 
-	if (!net_nbuf_write(buf, sizeof(test_rw_long), test_rw_long)) {
-		printk("net_nbuf_write failed\n");
+	if (!net_nbuf_append(buf, sizeof(test_rw_long), test_rw_long)) {
+		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_nbuf_write(buf, sizeof(test_rw_long), test_rw_long)) {
-		printk("net_nbuf_write failed\n");
+	if (!net_nbuf_append(buf, sizeof(test_rw_long), test_rw_long)) {
+		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
-	/* Try to pass fragment to net_nbuf_write(), this should fail
+	/* Try to pass fragment to net_nbuf_append(), this should fail
 	 * as we always need to pass the first buf into it.
 	 */
-	if (net_nbuf_write(buf->frags, sizeof(test_rw_short), test_rw_short)) {
-		printk("net_nbuf_write succeed but should have failed\n");
+	if (net_nbuf_append(buf->frags, sizeof(test_rw_short), test_rw_short)) {
+		printk("net_nbuf_append succeed but should have failed\n");
 		return -EINVAL;
 	}
 
