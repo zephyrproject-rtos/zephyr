@@ -191,7 +191,7 @@ static int i2c_device_ctrl(struct device *dev, uint32_t ctrl_command,
 
 static struct i2c_qmsi_driver_data driver_data_0;
 
-static struct i2c_qmsi_config_info config_info_0 = {
+static const struct i2c_qmsi_config_info config_info_0 = {
 	.instance = QM_I2C_0,
 	.default_cfg.raw = CONFIG_I2C_0_DEFAULT_CFG,
 	.clock_gate = CLK_PERIPH_I2C_M0_REGISTER | CLK_PERIPH_CLK,
@@ -207,7 +207,7 @@ DEVICE_DEFINE(i2c_0, CONFIG_I2C_0_NAME, &i2c_qmsi_init,
 
 static struct i2c_qmsi_driver_data driver_data_1;
 
-static struct i2c_qmsi_config_info config_info_1 = {
+static const struct i2c_qmsi_config_info config_info_1 = {
 	.instance = QM_I2C_1,
 	.default_cfg.raw = CONFIG_I2C_1_DEFAULT_CFG,
 	.clock_gate = CLK_PERIPH_I2C_M1_REGISTER | CLK_PERIPH_CLK,
