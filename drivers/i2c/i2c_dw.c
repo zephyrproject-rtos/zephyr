@@ -714,7 +714,7 @@ int i2c_dw_initialize(struct device *port)
 #if CONFIG_I2C_0
 void i2c_config_0(struct device *port);
 
-static struct i2c_dw_rom_config i2c_config_dw_0 = {
+static const struct i2c_dw_rom_config i2c_config_dw_0 = {
 #ifdef CONFIG_I2C_0_IRQ_DIRECT
 	.irq_num = I2C_DW_0_IRQ,
 #endif
@@ -771,7 +771,7 @@ void i2c_config_0(struct device *port)
 #if CONFIG_I2C_1
 void i2c_config_1(struct device *port);
 
-static struct i2c_dw_rom_config i2c_config_dw_1 = {
+static const struct i2c_dw_rom_config i2c_config_dw_1 = {
 	.irq_num = I2C_DW_1_IRQ,
 	.config_func = i2c_config_1,
 };
