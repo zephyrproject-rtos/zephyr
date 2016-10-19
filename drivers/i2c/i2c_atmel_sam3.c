@@ -612,7 +612,7 @@ static int i2c_sam3_init(struct device *dev)
 
 static void config_func_0(struct device *port);
 
-static struct i2c_sam3_dev_config dev_config_0 = {
+static const struct i2c_sam3_dev_config dev_config_0 = {
 	.port = __TWI0,
 	.config_func = config_func_0,
 };
@@ -642,7 +642,7 @@ static void config_func_0(struct device *dev)
 
 static void config_func_1(struct device *port);
 
-static struct i2c_sam3_dev_config dev_config_1 = {
+static const struct i2c_sam3_dev_config dev_config_1 = {
 	.port = __TWI1,
 	.config_func = config_func_1,
 };
