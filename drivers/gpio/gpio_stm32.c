@@ -204,7 +204,7 @@ static int gpio_stm32_init(struct device *device)
 }
 
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __clock) \
-static struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {		\
+static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
 	.base = (uint32_t *)__base_addr,				\
 	.port = __port,							\
 	.clock_subsys = UINT_TO_POINTER(__clock),			\
