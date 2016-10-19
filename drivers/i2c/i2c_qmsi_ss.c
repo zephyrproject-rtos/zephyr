@@ -62,7 +62,7 @@ static struct i2c_qmsi_ss_driver_data driver_data_0;
 
 static void i2c_qmsi_ss_config_irq_0(void);
 
-static struct i2c_qmsi_ss_config_info config_info_0 = {
+static const struct i2c_qmsi_ss_config_info config_info_0 = {
 	.instance = QM_SS_I2C_0,
 	.default_cfg.raw = CONFIG_I2C_0_DEFAULT_CFG,
 	.irq_cfg = i2c_qmsi_ss_config_irq_0,
@@ -118,7 +118,7 @@ static struct i2c_qmsi_ss_driver_data driver_data_1;
 
 static void i2c_qmsi_ss_config_irq_1(void);
 
-static struct i2c_qmsi_ss_config_info config_info_1 = {
+static const struct i2c_qmsi_ss_config_info config_info_1 = {
 	.instance = QM_SS_I2C_1,
 	.default_cfg.raw = CONFIG_I2C_1_DEFAULT_CFG,
 	.irq_cfg = i2c_qmsi_ss_config_irq_1,
