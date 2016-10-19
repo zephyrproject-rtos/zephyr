@@ -506,7 +506,7 @@ int gpio_dw_initialize(struct device *port)
 #if CONFIG_GPIO_DW_0
 void gpio_config_0_irq(struct device *port);
 
-struct gpio_dw_config gpio_config_0 = {
+const struct gpio_dw_config gpio_config_0 = {
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	.irq_num = GPIO_DW_0_IRQ,
 #endif
@@ -574,7 +574,7 @@ void gpio_config_0_irq(struct device *port)
 #if CONFIG_GPIO_DW_1
 void gpio_config_1_irq(struct device *port);
 
-struct gpio_dw_config gpio_dw_config_1 = {
+const struct gpio_dw_config gpio_dw_config_1 = {
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	.irq_num = GPIO_DW_1_IRQ,
 #endif
@@ -641,7 +641,7 @@ void gpio_config_1_irq(struct device *port)
 #if CONFIG_GPIO_DW_2
 void gpio_config_2_irq(struct device *port);
 
-struct gpio_dw_config gpio_dw_config_2 = {
+const struct gpio_dw_config gpio_dw_config_2 = {
 #ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
 	.irq_num = GPIO_DW_2_IRQ,
 #endif
@@ -708,7 +708,7 @@ void gpio_config_2_irq(struct device *port)
 #if CONFIG_GPIO_DW_3
 void gpio_config_3_irq(struct device *port);
 
-struct gpio_dw_config gpio_dw_config_3 = {
+const struct gpio_dw_config gpio_dw_config_3 = {
 #ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
 	.irq_num = GPIO_DW_3_IRQ,
 #endif
