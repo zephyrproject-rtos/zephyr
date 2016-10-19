@@ -371,7 +371,7 @@ static int spi_master_qmsi_device_ctrl(struct device *port,
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 #ifdef CONFIG_SPI_0
-static struct spi_qmsi_config spi_qmsi_mst_0_config = {
+static const struct spi_qmsi_config spi_qmsi_mst_0_config = {
 	.spi = QM_SPI_MST_0,
 #ifdef CONFIG_SPI_CS_GPIO
 	.cs_port = CONFIG_SPI_0_CS_GPIO_PORT,
@@ -388,7 +388,7 @@ DEVICE_DEFINE(spi_master_0, CONFIG_SPI_0_NAME, spi_qmsi_init,
 #endif /* CONFIG_SPI_0 */
 
 #ifdef CONFIG_SPI_1
-static struct spi_qmsi_config spi_qmsi_mst_1_config = {
+static const struct spi_qmsi_config spi_qmsi_mst_1_config = {
 	.spi = QM_SPI_MST_1,
 #ifdef CONFIG_SPI_CS_GPIO
 	.cs_port = CONFIG_SPI_1_CS_GPIO_PORT,
