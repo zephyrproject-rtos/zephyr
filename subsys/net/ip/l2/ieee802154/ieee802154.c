@@ -247,13 +247,11 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	/**
-	 * We do not support other frames than Beacon ar  Data for now
-	 */
-	if (mpdu.mhr.fs->fc.frame_type != IEEE802154_FRAME_TYPE_DATA) {
-		NET_DBG("Unsupported frame type found");
-		return NET_DROP;
+	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
+		return ieee802154_handle_mac_command(iface, &mpdu);
 	}
+
+	/* At this point the frame has to be a DATA one */
 
 	ieee802154_acknowledge(iface, &mpdu);
 
