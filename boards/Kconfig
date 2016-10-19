@@ -1,4 +1,12 @@
 
+config BOARD_DEPRECATED
+	string
+	help
+	This hidden option is set in the board configuation and indicates
+	the Zephyr release that the board configuration will be removed.
+	When set, any build for that board will generate a clearly visible
+	deprecation warning.
+
 choice
 prompt "Board Selection"
 source "boards/*/*/Kconfig.board"

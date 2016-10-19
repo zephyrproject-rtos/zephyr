@@ -875,15 +875,25 @@ ASSERT_WARNING_STR := \
 
 WARN_ABOUT_ASSERT := $(if $(CONFIG_ASSERT),echo -e -n $(ASSERT_WARNING_STR),true)
 
+
+DEPRECATION_WARNING_STR := \
+    "\n      WARNING:  The board '$(BOARD)' is deprecated and will be" \
+    "\n      removed in version $(CONFIG_BOARD_DEPRECATED)\n\n"
+
+WARN_ABOUT_DEPRECATION := $(if $(CONFIG_BOARD_DEPRECATED),echo -e \
+				-n $(DEPRECATION_WARNING_STR),true)
+
 ifeq ($(ARCH),x86)
 $(KERNEL_ELF_NAME): staticIdt.o linker.cmd
 	$(call cmd,lnk_elf)
 	@$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
 	@$(WARN_ABOUT_ASSERT)
+	@$(WARN_ABOUT_DEPRECATION)
 else
 $(KERNEL_ELF_NAME): $(TMP_ELF)
 	@cp $(TMP_ELF) $(KERNEL_ELF_NAME)
 	@$(WARN_ABOUT_ASSERT)
+	@$(WARN_ABOUT_DEPRECATION)
 endif
 
 
