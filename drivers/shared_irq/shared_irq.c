@@ -138,7 +138,7 @@ int shared_irq_initialize(struct device *dev)
 #if CONFIG_SHARED_IRQ_0
 void shared_irq_config_0_irq(void);
 
-struct shared_irq_config shared_irq_config_0 = {
+const struct shared_irq_config shared_irq_config_0 = {
 	.irq_num = CONFIG_SHARED_IRQ_0_IRQ,
 	.client_count = CONFIG_SHARED_IRQ_NUM_CLIENTS,
 	.config = shared_irq_config_0_irq
@@ -176,7 +176,7 @@ void shared_irq_config_0_irq(void)
 #if CONFIG_SHARED_IRQ_1
 void shared_irq_config_1_irq(void);
 
-struct shared_irq_config shared_irq_config_1 = {
+const struct shared_irq_config shared_irq_config_1 = {
 	.irq_num = CONFIG_SHARED_IRQ_1_IRQ,
 	.client_count = CONFIG_SHARED_IRQ_NUM_CLIENTS,
 	.config = shared_irq_config_1_irq
