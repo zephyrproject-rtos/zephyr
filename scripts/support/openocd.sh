@@ -4,7 +4,7 @@
 # by RIOT-OS (https://github.com/RIOT-OS/RIOT)
 
 OPENOCD_CMD="${OPENOCD:-openocd} -s ${OPENOCD_DEFAULT_PATH}"
-OPENOCD_CONFIG=${ZEPHYR_BASE}/boards/${BOARD_NAME}/support/openocd.cfg
+OPENOCD_CONFIG=${ZEPHYR_BASE}/boards/${ARCH}/${BOARD_NAME}/support/openocd.cfg
 BIN_NAME=${O}/${KERNEL_BIN_NAME}
 ELF_NAME=${O}/${KERNEL_ELF_NAME}
 

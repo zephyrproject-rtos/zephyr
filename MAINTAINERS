@@ -80,57 +80,65 @@ M:	Kumar Gala <kumar.gala@linaro.org>
 S:	Supported
 F:	ext/hal/cmsis/
 
-BOARDS - ALTERA MAX10
-M:	Andrew Boie <andrew.p.boie@intel.com>
-S:	Supported
-F:	boards/altera_max10/
-
-BOARDS - ARDUINO 101
+BOARDS/ARC - ARDUINO 101 SSS
 M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
-F:	boards/arduino_101/
-F:	boards/arduino_101_sss/
+F:	boards/arc/arduino_101_sss/
 
-BOARDS - EM Starterkit
+BOARDS/ARC - EM Starterkit
 M:	Chuck Jordan <Chuck.Jordan@synopsys.com>
 S:	Supported
-F:	boards/em_starterkit/
+F:	boards/arc/em_starterkit/
 
-BOARDS - NXP FRDM-K64F
-M:	Maureen Helm <maureen.helm@nxp.com>
-S:	Supported
-F:	boards/frdm_k64f/
-
-BOARDS - Galileo
+BOARDS/ARC - QUARK SE C1000 SS Devboard
 M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
-F:	boards/galileo/
+F:	boards/arc/quark_se_c1000_ss_devboard/
 
-BOARDS - NXP Hexiwear
-M:	Maureen Helm <maureen.helm@nxp.com>
-S:	Supported
-F:	boards/hexiwear_k64/
-
-BOARDS - NORDIC NRF52 PCA10040
-M:	Carles Cufi <carles.cufi@nordicsemi.no>
-S:	Supported
-F:	boards/nrf52_pca10040/
-
-BOARDS - 96Boards NITROGEN
+BOARDS/ARM - 96Boards NITROGEN
 M:	Amit Kucheria <amit.kucheria@linaro.org>
 S:	Supported
-F:	boards/96b_nitrogen/
+F:	boards/arm/96b_nitrogen/
 
-BOARDS - QUARK SE C1000 Devboard
+BOARDS/ARM - NXP FRDM-K64F
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	boards/arm/frdm_k64f/
+
+BOARDS/ARM - NXP Hexiwear
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	boards/arm/hexiwear_k64/
+
+BOARDS/ARM - NORDIC NRF52 PCA10040
+M:	Carles Cufi <carles.cufi@nordicsemi.no>
+S:	Supported
+F:	boards/arm/nrf52_pca10040/
+
+BOARDS/NIOS2 - ALTERA MAX10
+M:	Andrew Boie <andrew.p.boie@intel.com>
+S:	Supported
+F:	boards/nios2/altera_max10/
+
+BOARDS/X86 - ARDUINO 101
 M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
-F:	boards/quark_se_c1000/
-F:	boards/quark_se_c1000_ss/
+F:	boards/x86/arduino_101/
 
-BOARDS - QUARK D2000 Devboard
+BOARDS/X86 - Galileo
 M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
-F:	boards/quark_d2000/
+F:	boards/x86/galileo/
+
+BOARDS/X86 - QUARK D2000 Devboard
+M:      Anas Nashif <anas.nashif@intel.com>
+S:	Supported
+F:	boards/x86/quark_d2000/
+
+BOARDS/X86 - QUARK SE C1000 Devboard
+M:      Anas Nashif <anas.nashif@intel.com>
+S:	Supported
+F:	boards/x86/quark_se_c1000/
 
 BLUETOOTH
 M:	Johan Hedberg <johan.hedberg@intel.com>

@@ -48,4 +48,4 @@ source "tests/Kconfig"
 # because board usually overrides SoC values.
 #
 source "arch/*/soc/*/Kconfig.defconfig"
-source "boards/*/Kconfig.defconfig"
+source "boards/*/*/Kconfig.defconfig"

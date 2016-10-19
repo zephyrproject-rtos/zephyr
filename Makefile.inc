@@ -13,7 +13,7 @@ PROJECT_BASE ?= $(CURDIR)
 endif
 
 ifdef BOARD
-KBUILD_DEFCONFIG_PATH=$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD)_defconfig)
+KBUILD_DEFCONFIG_PATH=$(wildcard $(ZEPHYR_BASE)/boards/*/*/$(BOARD)_defconfig)
 ifeq ($(KBUILD_DEFCONFIG_PATH),)
 $(error Board $(BOARD) not found!)
 endif
@@ -100,7 +100,7 @@ flash: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
 ifeq ($(MAKECMDGOALS),debugserver)
--include $(ZEPHYR_BASE)/boards/$(BOARD)/Makefile.board
+-include $(ZEPHYR_BASE)/boards/$(ARCH)/$(BOARD)/Makefile.board
 -include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 BOARD_NAME = $(BOARD)
 export BOARD_NAME

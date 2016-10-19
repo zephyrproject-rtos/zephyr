@@ -1,10 +1,10 @@
 
 choice
 prompt "Board Selection"
-source "boards/*/Kconfig.board"
+source "boards/*/*/Kconfig.board"
 endchoice
 
 
 menu "Board Options"
-source "boards/*/Kconfig"
+source "boards/*/*/Kconfig"
 endmenu

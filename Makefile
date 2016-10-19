@@ -361,7 +361,7 @@ export ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME KERNEL_HEX_NAME
 ZEPHYRINCLUDE    = \
 		-I$(srctree)/arch/$(ARCH)/include \
 		-I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH) \
-		-I$(srctree)/boards/$(BOARD_NAME) \
+		-I$(srctree)/boards/$(ARCH)/$(BOARD_NAME) \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
 		-I$(CURDIR)/include/generated \
@@ -732,7 +732,7 @@ KBUILD_LDS := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
 endif
 else
 # Try a board specific linker file
-KBUILD_LDS := $(srctree)/boards/$(BOARD_NAME)/linker.ld
+KBUILD_LDS := $(srctree)/boards/$(ARCH)/$(BOARD_NAME)/linker.ld
 
 # If not available, try an SoC specific linker file
 ifeq ($(wildcard $(KBUILD_LDS)),)
@@ -1089,7 +1089,7 @@ distclean: mrproper
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
 
-boards := $(wildcard $(srctree)/boards/*/*_defconfig)
+boards := $(wildcard $(srctree)/boards/*/*/*_defconfig)
 boards := $(sort $(notdir $(boards)))
 
 kconfig-help:
@@ -1157,7 +1157,7 @@ help-board-dirs := $(addprefix help-,$(board-dirs))
 
 help-boards: $(help-board-dirs)
 
-boards-per-dir = $(sort $(notdir $(wildcard $(srctree)/boards/$*/*_defconfig)))
+boards-per-dir = $(sort $(notdir $(wildcard $(srctree)/boards/*/$*/*_defconfig)))
 
 $(help-board-dirs): help-%:
 	@echo  'Architecture specific targets ($(ARCH) $*):'
@@ -1237,7 +1237,7 @@ qemu: zephyr
 qemugdb: QEMU_EXTRA_FLAGS += -s -S
 qemugdb: qemu
 
--include $(srctree)/boards/$(BOARD_NAME)/Makefile.board
+-include $(srctree)/boards/$(ARCH)/$(BOARD_NAME)/Makefile.board
 ifneq ($(FLASH_SCRIPT),)
 flash: zephyr
 	@echo "Flashing $(BOARD_NAME)"

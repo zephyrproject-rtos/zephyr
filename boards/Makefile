@@ -1,1 +1,1 @@
-obj-y += $(BOARD_NAME)/
+obj-y += $(ARCH)/$(BOARD_NAME)/
