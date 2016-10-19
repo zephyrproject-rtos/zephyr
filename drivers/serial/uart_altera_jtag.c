@@ -102,7 +102,7 @@ static struct uart_driver_api uart_altera_jtag_driver_api = {
 #endif
 };
 
-static struct uart_device_config uart_altera_jtag_dev_cfg_0 = {
+static const struct uart_device_config uart_altera_jtag_dev_cfg_0 = {
 	.base = (void *)JTAG_UART_0_BASE,
 	.sys_clk_freq = 0, /* Unused */
 };
