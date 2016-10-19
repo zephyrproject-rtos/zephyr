@@ -216,7 +216,7 @@ static int uart_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 static void irq_config_func_0(struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static struct uart_qmsi_config_info config_info_0 = {
+static const struct uart_qmsi_config_info config_info_0 = {
 	.instance = QM_UART_0,
 	.clock_gate = CLK_PERIPH_UARTA_REGISTER | CLK_PERIPH_CLK,
 	.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
@@ -244,7 +244,7 @@ DEVICE_DEFINE(uart_0, CONFIG_UART_QMSI_0_NAME, &uart_qmsi_init,
 static void irq_config_func_1(struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static struct uart_qmsi_config_info config_info_1 = {
+static const struct uart_qmsi_config_info config_info_1 = {
 	.instance = QM_UART_1,
 	.clock_gate = CLK_PERIPH_UARTB_REGISTER | CLK_PERIPH_CLK,
 	.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
