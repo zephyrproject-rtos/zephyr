@@ -248,7 +248,7 @@ static struct uart_driver_api uart_sam3_driver_api = {
 	.poll_out = uart_sam3_poll_out,
 };
 
-static struct uart_device_config uart_sam3_dev_cfg_0 = {
+static const struct uart_device_config uart_sam3_dev_cfg_0 = {
 	.base = (uint8_t *)UART_ADDR,
 	.sys_clk_freq = CONFIG_UART_ATMEL_SAM3_CLK_FREQ,
 };
