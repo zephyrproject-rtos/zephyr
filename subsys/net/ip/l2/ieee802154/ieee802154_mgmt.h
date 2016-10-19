@@ -41,11 +41,15 @@ static inline void ieee802154_mgmt_init(struct net_if *iface)
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu);
 
+enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
+					       struct ieee802154_mpdu *mpdu);
+
 #else /* CONFIG_NET_MGMT */
 
 #define ieee802154_is_scanning(...) false
 #define ieee802154_mgmt_init(...)
 #define ieee802154_handle_beacon(...) NET_DROP
+#define ieee802154_handle_mac_command(...) NET_DROP
 
 #endif /* CONFIG_NET_MGMT */
 

@@ -132,6 +132,98 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_PASSIVE_SCAN,
 				  ieee802154_scan);
 
+enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
+					       struct ieee802154_mpdu *mpdu)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	if (mpdu->command->cfi != IEEE802154_CFI_ASSOCIATION_RESPONSE) {
+		return NET_DROP;
+	}
+
+	if (mpdu->command->assoc_res.status != IEEE802154_ASF_SUCCESSFUL) {
+		return NET_DROP;
+	}
+
+	ctx->associated = true;
+
+	k_sem_give(&ctx->req_lock);
+
+	return NET_OK;
+}
+
+static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
+				void *data, size_t len)
+{
+	struct ieee802154_radio_api *radio =
+		(struct ieee802154_radio_api *)iface->dev->driver_api;
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_req_params *req =
+		(struct ieee802154_req_params *)data;
+	struct ieee802154_frame_params params;
+	struct ieee802154_command *cmd;
+	struct net_buf *buf;
+	int ret = 0;
+
+	k_sem_take(&ctx->req_lock, K_FOREVER);
+
+	params.dst.len = req->len;
+	if (params.dst.len == IEEE802154_SHORT_ADDR_LENGTH) {
+		params.dst.short_addr = req->short_addr;
+	} else {
+		params.dst.ext_addr = req->addr;
+	}
+
+	params.dst.pan_id = req->pan_id;
+	params.pan_id = req->pan_id;
+
+	/* Set channel first */
+	if (radio->set_channel(iface->dev, req->channel)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	buf = ieee802154_create_mac_cmd_frame(
+		iface, IEEE802154_CFI_ASSOCIATION_REQUEST, &params);
+	if (!buf) {
+		ret = -ENOBUFS;
+		goto out;
+	}
+
+	cmd = ieee802154_get_mac_command(buf);
+	cmd->assoc_req.ci.dev_type = 0; /* RFD */
+	cmd->assoc_req.ci.power_src = 0; /* ToDo: set right power source */
+	cmd->assoc_req.ci.rx_on = 1; /* ToDo: that will depends on PM */
+	cmd->assoc_req.ci.sec_capability = 0; /* ToDo: security support */
+	cmd->assoc_req.ci.alloc_addr = 0; /* ToDo: handle short addr */
+
+	ctx->associated = false;
+
+	if (net_if_send_data(iface, buf)) {
+		net_nbuf_unref(buf);
+		ret = -EIO;
+		goto out;
+	}
+
+	/* ToDo: current timeout is arbitrary */
+	k_sem_take(&ctx->req_lock, K_SECONDS(1));
+
+	if (ctx->associated) {
+		ctx->channel = req->channel;
+		ctx->pan_id = req->pan_id;
+	} else {
+		ret = -EACCES;
+	}
+
+out:
+	k_sem_give(&ctx->req_lock);
+
+	return ret;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_ASSOCIATE,
+				  ieee802154_associate);
+
 static int ieee802154_set_ack(uint32_t mgmt_request, struct net_if *iface,
 			      void *data, size_t len)
 {

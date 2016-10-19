@@ -30,15 +30,19 @@
 struct ieee802154_context {
 	uint16_t pan_id;
 	uint16_t channel;
-	uint8_t sequence;
 	struct k_sem ack_lock;
 #ifdef CONFIG_NET_L2_IEEE802154_MGMT
 	struct ieee802154_req_params *scan_ctx;
-	struct k_sem res_lock;
+	union {
+		struct k_sem res_lock;
+		struct k_sem req_lock;
+	};
 #endif
+	uint8_t sequence;
 	uint8_t ack_received	: 1;
 	uint8_t ack_requested	: 1;
-	uint8_t _unused		: 6;
+	uint8_t associated	: 1;
+	uint8_t _unused		: 5;
 } __packed;
 
 
@@ -56,6 +60,7 @@ enum net_request_ieee802154_cmd {
 	NET_REQUEST_IEEE802154_CMD_UNSET_ACK,
 	NET_REQUEST_IEEE802154_CMD_PASSIVE_SCAN,
 	NET_REQUEST_IEEE802154_CMD_CANCEL_SCAN,
+	NET_REQUEST_IEEE802154_CMD_ASSOCIATE,
 };
 
 
@@ -78,6 +83,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_PASSIVE_SCAN);
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_CANCEL_SCAN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_CANCEL_SCAN);
+
+#define NET_REQUEST_IEEE802154_ASSOCIATE				\
+	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_ASSOCIATE)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_ASSOCIATE);
 
 enum net_event_ieee802154_cmd {
 	NET_EVENT_IEEE802154_CMD_SCAN_RESULT = 1,
