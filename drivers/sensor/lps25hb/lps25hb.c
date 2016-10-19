@@ -182,7 +182,7 @@ int lps25hb_init(struct device *dev)
 	return 0;
 }
 
-static struct lps25hb_config lps25hb_config = {
+static const struct lps25hb_config lps25hb_config = {
 	.i2c_master_dev_name = CONFIG_LPS25HB_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = CONFIG_LPS25HB_I2C_ADDR,
 };
