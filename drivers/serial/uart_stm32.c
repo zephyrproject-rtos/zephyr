@@ -321,7 +321,7 @@ static int uart_stm32_init(struct device *dev)
 static void uart_stm32_irq_config_func_0(struct device *dev);
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static struct uart_stm32_config uart_stm32_dev_cfg_0 = {
+static const struct uart_stm32_config uart_stm32_dev_cfg_0 = {
 	.uconf = {
 		.base = (uint8_t *)USART1_ADDR,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -365,7 +365,7 @@ static void uart_stm32_irq_config_func_0(struct device *dev)
 static void uart_stm32_irq_config_func_1(struct device *dev);
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static struct uart_stm32_config uart_stm32_dev_cfg_1 = {
+static const struct uart_stm32_config uart_stm32_dev_cfg_1 = {
 	.uconf = {
 		.base = (uint8_t *)USART2_ADDR,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -409,7 +409,7 @@ static void uart_stm32_irq_config_func_1(struct device *dev)
 static void uart_stm32_irq_config_func_2(struct device *dev);
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static struct uart_stm32_config uart_stm32_dev_cfg_2 = {
+static const struct uart_stm32_config uart_stm32_dev_cfg_2 = {
 	.uconf = {
 		.base = (uint8_t *)USART3_ADDR,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
