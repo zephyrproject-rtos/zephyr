@@ -349,7 +349,7 @@ int bmg160_init(struct device *dev)
 	return 0;
 }
 
-struct bmg160_device_config bmg160_config = {
+const struct bmg160_device_config bmg160_config = {
 	.i2c_port = CONFIG_BMG160_I2C_PORT_NAME,
 	.i2c_addr = CONFIG_BMG160_I2C_ADDR,
 	.i2c_speed = BMG160_BUS_SPEED,
