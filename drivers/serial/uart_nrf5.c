@@ -439,7 +439,7 @@ static struct uart_driver_api uart_nrf5_driver_api = {
 static void uart_nrf5_irq_config(struct device *port);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static struct uart_device_config uart_nrf5_dev_cfg_0 = {
+static const struct uart_device_config uart_nrf5_dev_cfg_0 = {
 	.base = (uint8_t *)NRF_UART0_BASE,
 	.sys_clk_freq = CONFIG_UART_NRF5_CLK_FREQ,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
