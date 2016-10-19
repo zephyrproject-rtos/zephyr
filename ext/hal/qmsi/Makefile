@@ -12,3 +12,7 @@ ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/qmsi/drivers/sensor/include
 endif
 ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/qmsi/soc/$(patsubst %_ss,%,$(SOC_SERIES))/include/
 endif
+
+ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+KBUILD_CPPFLAGS +=-DENABLE_RESTORE_CONTEXT
+endif
