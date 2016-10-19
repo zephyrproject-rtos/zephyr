@@ -436,7 +436,7 @@ struct bt_uuid_128 {
 #define BT_UUID_SDP                       BT_UUID_DECLARE_16(0x0001)
 #define BT_UUID_SDP_VAL                   0x0001
 #define BT_UUID_UDP                       BT_UUID_DECLARE_16(0x0002)
-#define BT_UUID_UDP_VAL                   0x0001
+#define BT_UUID_UDP_VAL                   0x0002
 #define BT_UUID_RFCOMM                    BT_UUID_DECLARE_16(0x0003)
 #define BT_UUID_RFCOMM_VAL                0x0003
 #define BT_UUID_TCP                       BT_UUID_DECLARE_16(0x0004)
