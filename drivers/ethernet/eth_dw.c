@@ -288,7 +288,7 @@ static int eth_initialize(struct device *port)
 #if CONFIG_ETH_DW_0
 static void eth_config_0_irq(struct device *port);
 
-static struct eth_config eth_config_0 = {
+static const struct eth_config eth_config_0 = {
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
 	.irq_num		= ETH_DW_0_IRQ,
 #endif
