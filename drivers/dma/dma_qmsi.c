@@ -138,7 +138,7 @@ int dma_qmsi_init(struct device *dev)
 	return 0;
 }
 
-static struct dma_qmsi_config_info dma_qmsi_config_data = {
+static const struct dma_qmsi_config_info dma_qmsi_config_data = {
 	.instance = QM_DMA_0,
 };
 
