@@ -414,7 +414,7 @@ static struct uart_driver_api uart_k20_driver_api = {
 static void irq_config_func_0(struct device *port);
 #endif
 
-static struct uart_device_config uart_k20_dev_cfg_0 = {
+static const struct uart_device_config uart_k20_dev_cfg_0 = {
 	.base = (uint8_t *)UART_K20_PORT_0_BASE_ADDR,
 	.sys_clk_freq = UART_K20_CLK_FREQ,
 
@@ -451,7 +451,7 @@ static void irq_config_func_0(struct device *dev)
 static void irq_config_func_1(struct device *port);
 #endif
 
-static struct uart_device_config uart_k20_dev_cfg_1 = {
+static const struct uart_device_config uart_k20_dev_cfg_1 = {
 	.base = (uint8_t *)UART_K20_PORT_1_BASE_ADDR,
 	.sys_clk_freq = UART_K20_CLK_FREQ,
 
@@ -488,7 +488,7 @@ static void irq_config_func_1(struct device *dev)
 static void irq_config_func_2(struct device *port);
 #endif
 
-static struct uart_device_config uart_k20_dev_cfg_2 = {
+static const struct uart_device_config uart_k20_dev_cfg_2 = {
 	.base = (uint8_t *)UART_K20_PORT_2_BASE_ADDR,
 	.sys_clk_freq = UART_K20_CLK_FREQ,
 
@@ -562,7 +562,7 @@ static void irq_config_func_3(struct device *dev)
 static void irq_config_func_4(struct device *port);
 #endif
 
-static struct uart_device_config uart_k20_dev_cfg_4 = {
+static const struct uart_device_config uart_k20_dev_cfg_4 = {
 	.base = (uint8_t *)UART_K20_PORT_4_BASE_ADDR,
 	.sys_clk_freq = UART_K20_CLK_FREQ,
 
