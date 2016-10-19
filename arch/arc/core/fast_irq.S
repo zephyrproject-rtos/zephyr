@@ -44,6 +44,14 @@ SECTION_VAR(NOINIT, _firq_stack)
 GDATA(saved_r0)
 #endif
 
+.macro _firq_return
+#if CONFIG_RGF_NUM_BANKS == 1
+	b _firq_scratch_restore
+#else
+	rtie
+#endif
+.endm
+
 /**
  *
  * @brief Work to be done before handing control to a FIRQ ISR
@@ -132,34 +140,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 	breq r3, 1, _check_if_current_is_the_task
 
-#if CONFIG_RGF_NUM_BANKS == 1
-_firq_scratch_restore:
-	add sp,sp,4 /* don't need r0 from stack */
-	pop_s r1
-	pop_s r2
-	pop_s r3
-	pop r4
-	pop r5
-	pop r6
-	pop r7
-	pop r8
-	pop r9
-	pop r10
-	pop r11
-	pop_s r12
-	pop_s r13
-	pop_s blink
-	pop_s r0
-	sr r0, [_ARC_V2_LP_END]
-	pop_s r0
-	sr r0, [_ARC_V2_LP_START]
-	pop_s r0
-	mov lp_count,r0
-	ld r0,[saved_r0]
-	add sp,sp,8 /* don't need ilink & status32_po from stack */
-#endif
-	rtie
-
+	_firq_return
 #endif
 
 .balign 4
@@ -168,21 +149,13 @@ _check_if_current_is_the_task:
 	ld_s r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
 	bnz _check_if_a_fiber_is_ready
-#if CONFIG_RGF_NUM_BANKS == 1
-	b _firq_scratch_restore
-#else
-	rtie
-#endif
+	_firq_return
 
 .balign 4
 _check_if_a_fiber_is_ready:
 	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
 	brne r0, 0, _firq_reschedule
-#if CONFIG_RGF_NUM_BANKS == 1
-	b _firq_scratch_restore
-#else
-	rtie
-#endif
+	_firq_return
 
 .balign 4
 _firq_reschedule:
@@ -290,6 +263,35 @@ _firq_no_reschedule:
 
 	/* LP registers are already restored, just switch back to bank 0 */
 	rtie
+
+#if CONFIG_RGF_NUM_BANKS == 1
+.balign 4
+_firq_scratch_restore:
+	add sp,sp,4 /* don't need r0 from stack */
+	pop_s r1
+	pop_s r2
+	pop_s r3
+	pop r4
+	pop r5
+	pop r6
+	pop r7
+	pop r8
+	pop r9
+	pop r10
+	pop r11
+	pop_s r12
+	pop_s r13
+	pop_s blink
+	pop_s r0
+	sr r0, [_ARC_V2_LP_END]
+	pop_s r0
+	sr r0, [_ARC_V2_LP_START]
+	pop_s r0
+	mov lp_count,r0
+	ld r0,[saved_r0]
+	add sp,sp,8 /* don't need ilink & status32_po from stack */
+	rtie
+#endif
 
 /**
  *
