@@ -44,39 +44,95 @@ struct k_pipe_async {
 	struct k_pipe_desc  desc;     /* Pipe message descriptor */
 };
 
+extern struct k_pipe _k_pipe_list_start[];
+extern struct k_pipe _k_pipe_list_end[];
+
+struct k_pipe *_trace_list_k_pipe;
+
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
+
 /* Array of asynchronous message descriptors */
 static struct k_pipe_async __noinit async_msg[CONFIG_NUM_PIPE_ASYNC_MSGS];
 
 /* stack of unused asynchronous message descriptors */
 K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
 
-/**
- * @brief Create pool of asynchronous pipe message descriptors
- *
- * A dummy thread requires minimal initialization since it never gets to
- * execute. The K_DUMMY flag is sufficient to distinguish a dummy thread
- * from a real one. The dummy threads are *not* added to the kernel's list of
- * known threads.
- *
- * Once initialized, the address of each descriptor is added to a stack that
- * governs access to them.
- *
- * @return N/A
+/* Allocate an asynchronous message descriptor */
+static void _pipe_async_alloc(struct k_pipe_async **async)
+{
+	k_stack_pop(&pipe_async_msgs, (uint32_t *)async, K_FOREVER);
+}
+
+/* Free an asynchronous message descriptor */
+static void _pipe_async_free(struct k_pipe_async *async)
+{
+	k_stack_push(&pipe_async_msgs, (uint32_t)async);
+}
+
+/* Finish an asynchronous operation */
+static void _pipe_async_finish(struct k_pipe_async *async_desc)
+{
+	/*
+	 * An asynchronous operation is finished with the scheduler locked
+	 * to prevent the called routines from scheduling a new thread.
+	 */
+
+	k_mem_pool_free(async_desc->desc.block);
+
+	if (async_desc->desc.sem != NULL) {
+		k_sem_give(async_desc->desc.sem);
+	}
+
+	_pipe_async_free(async_desc);
+}
+#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
+
+#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0) || \
+	defined(CONFIG_DEBUG_TRACING_KERNEL_OBJECTS)
+
+/*
+ * Do run-time initialization of pipe object subsystem.
  */
 static int init_pipes_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
+	/*
+	 * Create pool of asynchronous pipe message descriptors.
+	 *
+	 * A dummy thread requires minimal initialization, since it never gets
+	 * to execute. The K_DUMMY flag is sufficient to distinguish a dummy
+	 * thread from a real one. The threads are *not* added to the kernel's
+	 * list of known threads.
+	 *
+	 * Once initialized, the address of each descriptor is added to a stack
+	 * that governs access to them.
+	 */
 
 	for (int i = 0; i < CONFIG_NUM_PIPE_ASYNC_MSGS; i++) {
 		async_msg[i].thread.flags = K_DUMMY;
 		async_msg[i].thread.swap_data = &async_msg[i].desc;
 		k_stack_push(&pipe_async_msgs, (uint32_t)&async_msg[i]);
 	}
+#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
+
+	/* Complete initialization of statically defined mailboxes. */
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct k_pipe *pipe;
+
+	for (pipe = _k_pipe_list_start; pipe < _k_pipe_list_end; pipe++) {
+		SYS_TRACING_OBJ_INIT(k_pipe, pipe);
+	}
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+
 	return 0;
 }
 
 SYS_INIT(init_pipes_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
@@ -87,53 +143,8 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	pipe->write_index = 0;
 	sys_dlist_init(&pipe->wait_q.writers);
 	sys_dlist_init(&pipe->wait_q.readers);
-	SYS_TRACING_OBJ_INIT(pipe, pipe);
+	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 }
-
-/**
- * @brief Allocate an asynchronous message descriptor
- *
- * @param async Address of area to hold the descriptor pointer
- *
- * @return N/A
- */
-static void _pipe_async_alloc(struct k_pipe_async **async)
-{
-	k_stack_pop(&pipe_async_msgs, (uint32_t *)async, K_FOREVER);
-}
-
-/**
- * @brief Free an asynchronous message descriptor
- *
- * @param async Descriptor pointer
- *
- * @return N/A
- */
-static void _pipe_async_free(struct k_pipe_async *async)
-{
-	k_stack_push(&pipe_async_msgs, (uint32_t)async);
-}
-
-/**
- * @brief Finish an asynchronous operation
- *
- * The asynchronous operation is finished with the scheduler locked to prevent
- * the called routines from scheduling a new thread.
- *
- * @return N/A
- */
-
-static void _pipe_async_finish(struct k_pipe_async *async_desc)
-{
-	k_mem_pool_free(async_desc->desc.block);
-
-	if (async_desc->desc.sem != NULL) {
-		k_sem_give(async_desc->desc.sem);
-	}
-
-	_pipe_async_free(async_desc);
-}
-#endif
 
 /**
  * @brief Copy bytes from @a src to @a dest

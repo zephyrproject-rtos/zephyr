@@ -16,7 +16,34 @@
 
 #include <kernel.h>
 #include <misc/debug/object_tracing_common.h>
+#include <init.h>
 #include <wait_q.h>
+
+extern struct k_timer _k_timer_list_start[];
+extern struct k_timer _k_timer_list_end[];
+
+struct k_timer *_trace_list_k_timer;
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+/*
+ * Complete initialization of statically defined timers.
+ */
+static int init_timer_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct k_timer *timer;
+
+	for (timer = _k_timer_list_start; timer < _k_timer_list_end; timer++) {
+		SYS_TRACING_OBJ_INIT(k_timer, timer);
+	}
+	return 0;
+}
+
+SYS_INIT(init_timer_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 /**
  * @brief Handle expiration of a kernel timer object.
@@ -71,7 +98,7 @@ void k_timer_init(struct k_timer *timer,
 
 	sys_dlist_init(&timer->wait_q);
 	_init_timeout(&timer->timeout, timer_expiration_handler);
-	SYS_TRACING_OBJ_INIT(micro_timer, timer);
+	SYS_TRACING_OBJ_INIT(k_timer, timer);
 
 	timer->_legacy_data = NULL;
 }

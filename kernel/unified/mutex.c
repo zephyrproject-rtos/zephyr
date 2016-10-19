@@ -42,7 +42,9 @@
 #include <sections.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
+#include <misc/debug/object_tracing_common.h>
 #include <errno.h>
+#include <init.h>
 
 #ifdef CONFIG_OBJECT_MONITOR
 #define RECORD_STATE_CHANGE(mutex) \
@@ -63,13 +65,31 @@
 #define INIT_OBJECT_MONITOR(mutex) do { } while ((0))
 #endif
 
+extern struct k_mutex _k_mutex_list_start[];
+extern struct k_mutex _k_mutex_list_end[];
+
+struct k_mutex *_trace_list_k_mutex;
+
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-#define INIT_KERNEL_TRACING(mutex) do { \
-		mutex->__next = NULL; \
-	} while ((0))
-#else
-#define INIT_KERNEL_TRACING(mutex) do { } while ((0))
-#endif
+
+/*
+ * Complete initialization of statically defined mutexes.
+ */
+static int init_mutex_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct k_mutex *mutex;
+
+	for (mutex = _k_mutex_list_start; mutex < _k_mutex_list_end; mutex++) {
+		SYS_TRACING_OBJ_INIT(k_mutex, mutex);
+	}
+	return 0;
+}
+
+SYS_INIT(init_mutex_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 void k_mutex_init(struct k_mutex *mutex)
 {
@@ -81,8 +101,8 @@ void k_mutex_init(struct k_mutex *mutex)
 
 	sys_dlist_init(&mutex->wait_q);
 
+	SYS_TRACING_OBJ_INIT(k_mutex, mutex);
 	INIT_OBJECT_MONITOR(mutex);
-	INIT_KERNEL_TRACING(mutex);
 }
 
 static int new_prio_for_inheritance(int target, int limit)

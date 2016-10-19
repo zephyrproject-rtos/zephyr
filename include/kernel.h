@@ -287,7 +287,7 @@ struct _static_thread_data {
 			prio, options, delay)                            \
 	char __noinit __stack _k_thread_obj_##name[stack_size];          \
 	struct _static_thread_data _k_thread_data_##name __aligned(4)    \
-		__in_section(_k_task_list, private, task) =              \
+		__in_section(_static_thread_data, static, name) =        \
 		_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size,    \
 				entry, p1, p2, p3, prio, options, delay, \
 				NULL, 0); \
@@ -501,7 +501,9 @@ struct k_timer {
  * @param name Name of the timer variable.
  */
 #define K_TIMER_DEFINE(name) \
-	struct k_timer name = K_TIMER_INITIALIZER(name)
+	struct k_timer name \
+		__in_section(_k_timer, static, name) = \
+		K_TIMER_INITIALIZER(name)
 
 /**
  * @brief Initialize a timer.
@@ -774,7 +776,9 @@ extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
  * @param name Name of the FIFO variable.
  */
 #define K_FIFO_DEFINE(name) \
-	struct k_fifo name = K_FIFO_INITIALIZER(name)
+	struct k_fifo name \
+		__in_section(_k_fifo, static, name) = \
+		K_FIFO_INITIALIZER(name)
 
 /* lifos */
 
@@ -852,7 +856,9 @@ extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
  * @param name Name of the LIFO variable.
  */
 #define K_LIFO_DEFINE(name) \
-	struct k_lifo name = K_LIFO_INITIALIZER(name)
+	struct k_lifo name \
+		__in_section(_k_lifo, static, name) = \
+		K_LIFO_INITIALIZER(name)
 
 /* stacks */
 
@@ -891,7 +897,8 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 #define K_STACK_DEFINE(name, stack_num_entries)                \
 	uint32_t __noinit                                      \
 		_k_stack_buf_##name[stack_num_entries];        \
-	struct k_stack name =                                  \
+	struct k_stack name                                    \
+		__in_section(_k_stack, static, name) =    \
 		K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
 
@@ -1146,7 +1153,9 @@ struct k_mutex {
  * @param name Name of the mutex object variable.
  */
 #define K_MUTEX_DEFINE(name) \
-	struct k_mutex name = K_MUTEX_INITIALIZER(name)
+	struct k_mutex name \
+		__in_section(_k_mutex, static, name) = \
+		K_MUTEX_INITIALIZER(name)
 
 /**
  * @brief Initialize a mutex
@@ -1370,7 +1379,8 @@ extern void k_sem_group_reset(struct k_sem *sem_array[]);
  * @param count_limit Highest value the count can take during operation.
  */
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
-	struct k_sem name = \
+	struct k_sem name \
+		__in_section(_k_sem, static, name) = \
 		K_SEM_INITIALIZER(name, initial_count, count_limit)
 
 /* alerts */
@@ -1415,7 +1425,7 @@ extern void _alert_deliver(struct k_work *work);
  */
 #define K_ALERT_DEFINE(name, alert_handler, max_num_pending_alerts) \
 	struct k_alert name \
-		__in_section(_k_event_list, alert, name) = \
+		__in_section(_k_alert, static, name) = \
 		K_ALERT_INITIALIZER(name, alert_handler, \
 				    max_num_pending_alerts)
 
@@ -1524,7 +1534,8 @@ struct k_msgq {
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)      \
 	static char __noinit __aligned(q_align)                     \
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];  \
-	struct k_msgq q_name =                                      \
+	struct k_msgq q_name                                        \
+		__in_section(_k_msgq, static, q_name) =        \
 	       K_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,     \
 				  q_msg_size, q_max_msgs)
 
@@ -1677,7 +1688,8 @@ struct k_mbox {
  * @param name Name of the mailbox
  */
 #define K_MBOX_DEFINE(name) \
-	struct k_mbox name = \
+	struct k_mbox name \
+		__in_section(_k_mbox, static, name) = \
 		K_MBOX_INITIALIZER(name) \
 
 /**
@@ -1842,7 +1854,8 @@ struct k_pipe {
 #define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)     \
 	static unsigned char __noinit __aligned(pipe_align)   \
 		_k_pipe_buf_##name[pipe_buffer_size];         \
-	struct k_pipe name =                                  \
+	struct k_pipe name                                    \
+		__in_section(_k_pipe, static, name) =    \
 		K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
@@ -1980,7 +1993,7 @@ struct k_mem_slab {
 	char __noinit __aligned(slab_align) \
 		_k_mem_slab_buf_##name[(slab_num_blocks) * (slab_block_size)]; \
 	struct k_mem_slab name \
-		__in_section(_k_mem_map_ptr, private, mem_slab) = \
+		__in_section(_k_mem_slab, static, name) = \
 		K_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
 				      slab_block_size, slab_num_blocks)
 
@@ -2194,7 +2207,7 @@ __asm__(".macro _build_block_set n_max, name\n\t"
  * _build_block_set
  */
 __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
-	".pushsection ._k_memory_pool,\"aw\","
+	".pushsection ._k_mem_pool.static.\\name,\"aw\","
 	_SECTION_TYPE_SIGN "progbits\n\t"
 	".globl \\name\n\t"
 	"\\name:\n\t"

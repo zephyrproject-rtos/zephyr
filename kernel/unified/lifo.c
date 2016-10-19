@@ -26,6 +26,33 @@
 #include <sections.h>
 #include <wait_q.h>
 #include <ksched.h>
+#include <init.h>
+
+extern struct k_lifo _k_lifo_list_start[];
+extern struct k_lifo _k_lifo_list_end[];
+
+struct k_lifo *_trace_list_k_lifo;
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+/*
+ * Complete initialization of statically defined lifos.
+ */
+static int init_lifo_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct k_lifo *lifo;
+
+	for (lifo = _k_lifo_list_start; lifo < _k_lifo_list_end; lifo++) {
+		SYS_TRACING_OBJ_INIT(k_lifo, lifo);
+	}
+	return 0;
+}
+
+SYS_INIT(init_lifo_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 void k_lifo_init(struct k_lifo *lifo)
 {

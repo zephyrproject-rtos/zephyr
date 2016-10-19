@@ -24,8 +24,10 @@
 #include <ksched.h>
 #include <init.h>
 
-extern struct k_mem_slab _k_mem_map_ptr_start[];
-extern struct k_mem_slab _k_mem_map_ptr_end[];
+extern struct k_mem_slab _k_mem_slab_list_start[];
+extern struct k_mem_slab _k_mem_slab_list_end[];
+
+struct k_mem_slab *_trace_list_k_mem_slab;
 
 /**
  * @brief Initialize kernel memory slab subsystem.
@@ -63,11 +65,16 @@ static int init_mem_slab_module(struct device *dev)
 
 	struct k_mem_slab *slab;
 
-	for (slab = _k_mem_map_ptr_start; slab < _k_mem_map_ptr_end; slab++) {
+	for (slab = _k_mem_slab_list_start;
+	     slab < _k_mem_slab_list_end;
+	     slab++) {
 		create_free_list(slab);
+		SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
 	}
 	return 0;
 }
+
+SYS_INIT(init_mem_slab_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 		    size_t block_size, uint32_t num_blocks)
@@ -78,7 +85,7 @@ void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	slab->num_used = 0;
 	create_free_list(slab);
 	sys_dlist_init(&slab->wait_q);
-	SYS_TRACING_OBJ_INIT(micro_mem_map, slab);
+	SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
 }
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, int32_t timeout)
@@ -132,5 +139,3 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 
 	irq_unlock(key);
 }
-
-SYS_INIT(init_mem_slab_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);

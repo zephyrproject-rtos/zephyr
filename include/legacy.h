@@ -84,7 +84,7 @@ typedef int nano_context_type_t;
 			    abort, prio, groups)                           \
 	char __noinit __stack _k_thread_obj_##name[stack_size];            \
 	struct _static_thread_data _k_thread_data_##name __aligned(4)      \
-		__in_section(_k_task_list, private, task) =                \
+		__in_section(_static_thread_data, static, name) =          \
 		_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size,      \
 				    entry, p1, p2, p3, prio, 0, K_FOREVER, \
 				    abort, groups)
@@ -107,7 +107,7 @@ typedef int nano_context_type_t;
 	extern void entry(void);                                      \
 	char __noinit __stack _k_thread_obj_##name[stack_size];       \
 	struct _static_thread_data _k_thread_data_##name __aligned(4) \
-		__in_section(_k_task_list, private, task) =           \
+		__in_section(_static_thread_data, static, name) =     \
 		_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
 				    entry, NULL, NULL, NULL,          \
 				    priority, 0, K_FOREVER,           \

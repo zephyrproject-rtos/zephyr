@@ -43,22 +43,47 @@ static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
 /* stack of unused asynchronous message descriptors */
 K_STACK_DEFINE(async_msg_free, CONFIG_NUM_MBOX_ASYNC_MSGS);
 
-/**
- * @brief Create pool of asynchronous message descriptors.
- *
- * A dummy thread requires minimal initialization, since it never actually
- * gets to execute. The K_DUMMY flag is sufficient to distinguish a dummy
- * thread from a real one. The threads are *not* added to the kernel's list of
- * known threads.
- *
- * Once initialized, the address of each descriptor is added to a stack
- * that governs access to them.
- *
- * @return N/A
+/* allocate an asynchronous message descriptor */
+static inline void _mbox_async_alloc(struct k_mbox_async **async)
+{
+	k_stack_pop(&async_msg_free, (uint32_t *)async, K_FOREVER);
+}
+
+/* free an asynchronous message descriptor */
+static inline void _mbox_async_free(struct k_mbox_async *async)
+{
+	k_stack_push(&async_msg_free, (uint32_t)async);
+}
+
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
+
+extern struct k_mbox _k_mbox_list_start[];
+extern struct k_mbox _k_mbox_list_end[];
+
+struct k_mbox *_trace_list_k_mbox;
+
+#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0) || \
+	defined(CONFIG_DEBUG_TRACING_KERNEL_OBJECTS)
+
+/*
+ * Do run-time initialization of mailbox object subsystem.
  */
 static int init_mbox_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
+	/*
+	 * Create pool of asynchronous message descriptors.
+	 *
+	 * A dummy thread requires minimal initialization, since it never gets
+	 * to execute. The K_DUMMY flag is sufficient to distinguish a dummy
+	 * thread from a real one. The threads are *not* added to the kernel's
+	 * list of known threads.
+	 *
+	 * Once initialized, the address of each descriptor is added to a stack
+	 * that governs access to them.
+	 */
 
 	int i;
 
@@ -66,40 +91,30 @@ static int init_mbox_module(struct device *dev)
 		async_msg[i].thread.flags = K_DUMMY;
 		k_stack_push(&async_msg_free, (uint32_t)&async_msg[i]);
 	}
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
+
+	/* Complete initialization of statically defined mailboxes. */
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct k_mbox *mbox;
+
+	for (mbox = _k_mbox_list_start; mbox < _k_mbox_list_end; mbox++) {
+		SYS_TRACING_OBJ_INIT(k_mbox, mbox);
+	}
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+
 	return 0;
 }
 
 SYS_INIT(init_mbox_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-/**
- * @brief Allocate an asynchronous message descriptor.
- *
- * @param async Address of area to hold the descriptor pointer.
- *
- * @return N/A.
- */
-static inline void _mbox_async_alloc(struct k_mbox_async **async)
-{
-	k_stack_pop(&async_msg_free, (uint32_t *)async, K_FOREVER);
-}
-
-/**
- * @brief Free an asynchronous message descriptor.
- *
- * @param Descriptor pointer.
- */
-static inline void _mbox_async_free(struct k_mbox_async *async)
-{
-	k_stack_push(&async_msg_free, (uint32_t)async);
-}
-
-#endif
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS or CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 void k_mbox_init(struct k_mbox *mbox_ptr)
 {
 	sys_dlist_init(&mbox_ptr->tx_msg_queue);
 	sys_dlist_init(&mbox_ptr->rx_msg_queue);
-	SYS_TRACING_OBJ_INIT(mbox, mbox_ptr);
+	SYS_TRACING_OBJ_INIT(k_mbox, mbox_ptr);
 }
 
 /**

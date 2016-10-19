@@ -29,6 +29,33 @@
 #include <wait_q.h>
 #include <ksched.h>
 #include <misc/slist.h>
+#include <init.h>
+
+extern struct k_fifo _k_fifo_list_start[];
+extern struct k_fifo _k_fifo_list_end[];
+
+struct k_fifo *_trace_list_k_fifo;
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+/*
+ * Complete initialization of statically defined fifos.
+ */
+static int init_fifo_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct k_fifo *fifo;
+
+	for (fifo = _k_fifo_list_start; fifo < _k_fifo_list_end; fifo++) {
+		SYS_TRACING_OBJ_INIT(k_fifo, fifo);
+	}
+	return 0;
+}
+
+SYS_INIT(init_fifo_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 void k_fifo_init(struct k_fifo *fifo)
 {

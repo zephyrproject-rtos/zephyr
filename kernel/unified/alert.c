@@ -23,8 +23,35 @@
 #include <nano_private.h>
 #include <misc/debug/object_tracing_common.h>
 #include <atomic.h>
+#include <init.h>
 #include <toolchain.h>
 #include <sections.h>
+
+extern struct k_alert _k_alert_list_start[];
+extern struct k_alert _k_alert_list_end[];
+
+struct k_alert *_trace_list_k_alert;
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+/*
+ * Complete initialization of statically defined alerts.
+ */
+static int init_alert_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct k_alert *alert;
+
+	for (alert = _k_alert_list_start; alert < _k_alert_list_end; alert++) {
+		SYS_TRACING_OBJ_INIT(k_alert, alert);
+	}
+	return 0;
+}
+
+SYS_INIT(init_alert_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 void _alert_deliver(struct k_work *work)
 {
@@ -55,7 +82,7 @@ void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
 	alert->send_count = ATOMIC_INIT(0);
 	alert->work_item = my_work_item;
 	k_sem_init(&alert->sem, 0, max_num_pending_alerts);
-	SYS_TRACING_OBJ_INIT(micro_event, alert);
+	SYS_TRACING_OBJ_INIT(k_alert, alert);
 }
 
 void k_alert_send(struct k_alert *alert)

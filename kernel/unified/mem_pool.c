@@ -30,8 +30,10 @@
 #define _QUAD_BLOCK_AVAILABLE 0x0F
 #define _QUAD_BLOCK_ALLOCATED 0x0
 
-extern struct k_mem_pool _k_mem_pool_start[];
-extern struct k_mem_pool _k_mem_pool_end[];
+extern struct k_mem_pool _k_mem_pool_list_start[];
+extern struct k_mem_pool _k_mem_pool_list_end[];
+
+struct k_mem_pool *_trace_list_k_mem_pool;
 
 static void init_one_memory_pool(struct k_mem_pool *pool);
 
@@ -50,8 +52,8 @@ static int init_static_pools(struct device *unused)
 
 	/* perform initialization for each memory pool */
 
-	for (pool = _k_mem_pool_start;
-	     pool < _k_mem_pool_end;
+	for (pool = _k_mem_pool_list_start;
+	     pool < _k_mem_pool_list_end;
 	     pool++) {
 		init_one_memory_pool(pool);
 	}
@@ -104,7 +106,7 @@ static void init_one_memory_pool(struct k_mem_pool *pool)
 	 * first quad-block has a NULL memory pointer
 	 */
 	sys_dlist_init(&pool->wait_q);
-	SYS_TRACING_OBJ_INIT(memory_pool, pool);
+	SYS_TRACING_OBJ_INIT(k_mem_pool, pool);
 }
 
 /**

@@ -33,12 +33,14 @@
 #include <ksched.h>
 #include <wait_q.h>
 
-extern struct _static_thread_data _k_task_list_start[];
-extern struct _static_thread_data _k_task_list_end[];
+extern struct _static_thread_data _static_thread_data_list_start[];
+extern struct _static_thread_data _static_thread_data_list_end[];
 
-#define _FOREACH_STATIC_THREAD(thread_data)                                \
-	for (struct _static_thread_data *thread_data = _k_task_list_start; \
-	     thread_data < _k_task_list_end; thread_data++)
+#define _FOREACH_STATIC_THREAD(thread_data)              \
+	for (struct _static_thread_data *thread_data =   \
+	     _static_thread_data_list_start;             \
+	     thread_data < _static_thread_data_list_end; \
+	     thread_data++)
 
 
 /* Legacy API */

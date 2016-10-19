@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief Kernel object tracing common structures.
+ * @brief APIs used to add or remove an object in a debug tracing list.
  */
 
 #ifndef _OBJECT_TRACING_COMMON_H_
@@ -113,9 +113,16 @@
 	}						\
 	while (0)
 
+#if !defined(CONFIG_KERNEL_V2)
+
 /*
- * Lists for object tracing.
+ * Define list variables for all object types.
+ *
+ * This is ugly, since these list variables are redefined by every .c file
+ * that drags in this include file (explicitly or implicitly). Fortunately,
+ * the linker doesn't seem to mind seeing these duplicate definitions ...
  */
+
 #include <nanokernel.h>
 struct nano_fifo  *_trace_list_nano_fifo;
 struct nano_lifo  *_trace_list_nano_lifo;
@@ -124,7 +131,6 @@ struct nano_timer *_trace_list_nano_timer;
 struct nano_stack *_trace_list_nano_stack;
 struct ring_buf *_trace_list_sys_ring_buf;
 
-#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel/base_api.h>
 struct _k_mbox_struct  *_trace_list_micro_mbox;
@@ -138,6 +144,21 @@ struct _k_event_struct *_trace_list_micro_event;
 struct k_timer         *_trace_list_micro_timer;
 struct k_task          *_trace_list_micro_task;
 #endif /*CONFIG_MICROKERNEL*/
+
+#else
+
+/*
+ * Define list variables for object types that don't do it in a .c file.
+ *
+ * This is ugly, since these list variables are redefined by every .c file
+ * that drags in this include file (explicitly or implicitly). Fortunately,
+ * the linker doesn't seem to mind seeing these duplicate definitions ...
+ */
+
+struct ring_buf;
+
+struct ring_buf   *_trace_list_sys_ring_buf;
+
 #endif /*CONFIG_KERNEL_V2*/
 
 

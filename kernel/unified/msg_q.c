@@ -28,6 +28,33 @@
 #include <string.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
+#include <init.h>
+
+extern struct k_msgq _k_msgq_list_start[];
+extern struct k_msgq _k_msgq_list_end[];
+
+struct k_msgq *_trace_list_k_msgq;
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+/*
+ * Complete initialization of statically defined message queues.
+ */
+static int init_msgq_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct k_msgq *msgq;
+
+	for (msgq = _k_msgq_list_start; msgq < _k_msgq_list_end; msgq++) {
+		SYS_TRACING_OBJ_INIT(k_msgq, msgq);
+	}
+	return 0;
+}
+
+SYS_INIT(init_msgq_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 void k_msgq_init(struct k_msgq *q, char *buffer,
 		 size_t msg_size, uint32_t max_msgs)
@@ -40,7 +67,7 @@ void k_msgq_init(struct k_msgq *q, char *buffer,
 	q->write_ptr = buffer;
 	q->used_msgs = 0;
 	sys_dlist_init(&q->wait_q);
-	SYS_TRACING_OBJ_INIT(msgq, q);
+	SYS_TRACING_OBJ_INIT(k_msgq, q);
 }
 
 int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)

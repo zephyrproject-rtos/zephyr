@@ -26,6 +26,33 @@
 #include <ksched.h>
 #include <wait_q.h>
 #include <misc/__assert.h>
+#include <init.h>
+
+extern struct k_stack _k_stack_list_start[];
+extern struct k_stack _k_stack_list_end[];
+
+struct k_stack *_trace_list_k_stack;
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+/*
+ * Complete initialization of statically defined stacks.
+ */
+static int init_stack_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct k_stack *stack;
+
+	for (stack = _k_stack_list_start; stack < _k_stack_list_end; stack++) {
+		SYS_TRACING_OBJ_INIT(k_stack, stack);
+	}
+	return 0;
+}
+
+SYS_INIT(init_stack_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 
 void k_stack_init(struct k_stack *stack, uint32_t *buffer, int num_entries)
 {

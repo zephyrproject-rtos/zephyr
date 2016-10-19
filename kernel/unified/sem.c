@@ -34,6 +34,7 @@
 #include <wait_q.h>
 #include <misc/dlist.h>
 #include <ksched.h>
+#include <init.h>
 
 #ifdef CONFIG_SEMAPHORE_GROUPS
 struct _sem_desc {
@@ -48,6 +49,32 @@ struct _sem_thread {
 };
 #endif
 
+extern struct k_sem _k_sem_list_start[];
+extern struct k_sem _k_sem_list_end[];
+
+struct k_sem *_trace_list_k_sem;
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+/*
+ * Complete initialization of statically defined semaphores.
+ */
+static int init_sem_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct k_sem *sem;
+
+	for (sem = _k_sem_list_start; sem < _k_sem_list_end; sem++) {
+		SYS_TRACING_OBJ_INIT(k_sem, sem);
+	}
+	return 0;
+}
+
+SYS_INIT(init_sem_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+
 void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		unsigned int limit)
 {
@@ -56,7 +83,7 @@ void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	sem->count = initial_count;
 	sem->limit = limit;
 	sys_dlist_init(&sem->wait_q);
-	SYS_TRACING_OBJ_INIT(nano_sem, sem);
+	SYS_TRACING_OBJ_INIT(k_sem, sem);
 }
 
 #ifdef CONFIG_SEMAPHORE_GROUPS

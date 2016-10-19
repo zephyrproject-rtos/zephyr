@@ -16,13 +16,16 @@
 
 /**
  * @file
- * @brief Kernel object tracing support.
+ * @brief APIs used when examining the objects in a debug tracing list.
  */
 
 #ifndef _OBJECT_TRACING_H_
 #define _OBJECT_TRACING_H_
 
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+#if !defined(CONFIG_KERNEL_V2)
+
 #include <nanokernel.h>
 extern struct nano_fifo  *_trace_list_nano_fifo;
 extern struct nano_lifo  *_trace_list_nano_lifo;
@@ -31,8 +34,6 @@ extern struct nano_timer *_trace_list_nano_timer;
 extern struct nano_stack *_trace_list_nano_stack;
 extern struct ring_buf *_trace_list_sys_ring_buf;
 
-
-#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel/base_api.h>
 #include <micro_private_types.h>
@@ -47,6 +48,25 @@ extern struct _k_event_struct *_trace_list_micro_event;
 extern struct k_timer         *_trace_list_micro_timer;
 extern struct k_task          *_trace_list_micro_task;
 #endif /*CONFIG_MICROKERNEL*/
+
+#else
+
+#include <kernel.h>
+extern struct k_timer    *_trace_list_k_timer;
+extern struct k_mem_slab *_trace_list_k_mem_slab;
+extern struct k_mem_pool *_trace_list_k_mem_pool;
+extern struct k_sem      *_trace_list_k_sem;
+extern struct k_mutex    *_trace_list_k_mutex;
+extern struct k_alert    *_trace_list_k_alert;
+extern struct k_fifo     *_trace_list_k_fifo;
+extern struct k_lifo     *_trace_list_k_lifo;
+extern struct k_stack    *_trace_list_k_stack;
+extern struct k_msgq     *_trace_list_k_msgq;
+extern struct k_mbox     *_trace_list_k_mbox;
+extern struct k_pipe     *_trace_list_k_pipe;
+
+extern struct ring_buf   *_trace_list_sys_ring_buf;
+
 #endif /*CONFIG_KERNEL_V2*/
 
 /**
