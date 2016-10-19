@@ -497,7 +497,7 @@ int lsm6ds0_init(struct device *dev)
 	return 0;
 }
 
-static struct lsm6ds0_config lsm6ds0_config = {
+static const struct lsm6ds0_config lsm6ds0_config = {
 	.i2c_master_dev_name = CONFIG_LSM6DS0_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = CONFIG_LSM6DS0_I2C_ADDR,
 };
