@@ -297,7 +297,7 @@ int gpio_sam3_init(struct device *dev)
 #ifdef CONFIG_GPIO_ATMEL_SAM3_PORTA
 void gpio_sam3_config_a(struct device *dev);
 
-static struct gpio_sam3_config gpio_sam3_a_cfg = {
+static const struct gpio_sam3_config gpio_sam3_a_cfg = {
 	.port = __PIOA,
 
 	.config_func = gpio_sam3_config_a,
@@ -325,7 +325,7 @@ void gpio_sam3_config_a(struct device *dev)
 #ifdef CONFIG_GPIO_ATMEL_SAM3_PORTB
 void gpio_sam3_config_b(struct device *dev);
 
-static struct gpio_sam3_config gpio_sam3_b_cfg = {
+static const struct gpio_sam3_config gpio_sam3_b_cfg = {
 	.port = __PIOB,
 
 	.config_func = gpio_sam3_config_b,
@@ -353,7 +353,7 @@ void gpio_sam3_config_b(struct device *dev)
 #ifdef CONFIG_GPIO_ATMEL_SAM3_PORTC
 void gpio_sam3_config_c(struct device *dev);
 
-static struct gpio_sam3_config gpio_sam3_c_cfg = {
+static const struct gpio_sam3_config gpio_sam3_c_cfg = {
 	.port = __PIOC,
 
 	.config_func = gpio_sam3_config_c,
@@ -381,7 +381,7 @@ void gpio_sam3_config_c(struct device *dev)
 #ifdef CONFIG_GPIO_ATMEL_SAM3_PORTD
 void gpio_sam3_config_d(struct device *dev);
 
-static struct gpio_sam3_config gpio_sam3_d_cfg = {
+static const struct gpio_sam3_config gpio_sam3_d_cfg = {
 	.port = __PIOD,
 
 	.config_func = gpio_sam3_config_d,
