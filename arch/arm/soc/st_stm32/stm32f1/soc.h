@@ -65,7 +65,7 @@
 #define IWDG_BASE            (APB1PERIPH_BASE + 0x3000)
 
 /* FLASH */
-#define FLASH_BASE           (AHBPERIPH_BASE + 0x2000)
+#define FLASH_R_BASE           (AHBPERIPH_BASE + 0x2000)
 
 #ifndef _ASMLANGUAGE
 

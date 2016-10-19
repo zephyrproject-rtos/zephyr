@@ -205,7 +205,7 @@ static const struct clock_control_driver_api stm32f10x_clock_control_api = {
 static inline void __setup_flash(void)
 {
 	volatile struct stm32f10x_flash *flash =
-		(struct stm32f10x_flash *)(FLASH_BASE);
+		(struct stm32f10x_flash *)(FLASH_R_BASE);
 
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 24000000) {
 		flash->acr.bit.latency = STM32F10X_FLASH_LATENCY_0;
