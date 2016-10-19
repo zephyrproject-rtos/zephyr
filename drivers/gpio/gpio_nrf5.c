@@ -83,7 +83,7 @@ struct gpio_nrf5_data {
 
 /* convenience defines for GPIO */
 #define DEV_GPIO_CFG(dev) \
-	((struct gpio_nrf5_config * const)(dev)->config->config_info)
+	((const struct gpio_nrf5_config * const)(dev)->config->config_info)
 #define DEV_GPIO_DATA(dev) \
 	((struct gpio_nrf5_dev_data_t * const)(dev)->driver_data)
 #define GPIO_STRUCT(dev) \
@@ -203,7 +203,7 @@ static struct gpio_driver_api gpio_nrf5_drv_api_funcs = {
 
 static int gpio_nrf5_P0_init(struct device *dev);
 
-static struct gpio_nrf5_config gpio_nrf5_P0_cfg = {
+static const struct gpio_nrf5_config gpio_nrf5_P0_cfg = {
 	.gpio_base_addr   = NRF_GPIO_BASE,
 	.port_base_addr   = NRF_GPIO_BASE,
 	.gpiote_base_addr = NRF_GPIOTE_BASE,
