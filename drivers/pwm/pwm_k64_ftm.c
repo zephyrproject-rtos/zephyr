@@ -778,7 +778,7 @@ int pwm_ftm_init(struct device *dev)
 #include <device.h>
 #include <init.h>
 
-static struct pwm_ftm_config pwm_ftm_0_cfg = {
+static const struct pwm_ftm_config pwm_ftm_0_cfg = {
 	.ftm_num       = 0,
 	.reg_base      = PWM_K64_FTM_0_REG_BASE,
 	.prescale      = CONFIG_PWM_K64_FTM_0_PRESCALE,
@@ -825,7 +825,7 @@ DEVICE_DEFINE(pwm_ftm_0, CONFIG_PWM_K64_FTM_0_DEV_NAME, pwm_ftm_init,
 #include <device.h>
 #include <init.h>
 
-static struct pwm_ftm_config pwm_ftm_1_cfg = {
+static const struct pwm_ftm_config pwm_ftm_1_cfg = {
 	.ftm_num       = 1,
 	.reg_base      = PWM_K64_FTM_1_REG_BASE,
 	.prescale      = CONFIG_PWM_K64_FTM_1_PRESCALE,
@@ -872,7 +872,7 @@ DEVICE_DEFINE(pwm_ftm_1, CONFIG_PWM_K64_FTM_1_DEV_NAME, pwm_ftm_init,
 #include <device.h>
 #include <init.h>
 
-static struct pwm_ftm_config pwm_ftm_2_cfg = {
+static const struct pwm_ftm_config pwm_ftm_2_cfg = {
 	.ftm_num       = 2,
 	.reg_base      = PWM_K64_FTM_2_REG_BASE,
 	.prescale      = CONFIG_PWM_K64_FTM_2_PRESCALE,
@@ -919,7 +919,7 @@ DEVICE_DEFINE(pwm_ftm_2, CONFIG_PWM_K64_FTM_2_DEV_NAME, pwm_ftm_init,
 #include <device.h>
 #include <init.h>
 
-static struct pwm_ftm_config pwm_ftm_3_cfg = {
+static const struct pwm_ftm_config pwm_ftm_3_cfg = {
 	.ftm_num       = 3,
 	.reg_base      = PWM_K64_FTM_3_REG_BASE,
 	.prescale      = CONFIG_PWM_K64_FTM_3_PRESCALE,
