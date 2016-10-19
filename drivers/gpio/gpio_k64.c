@@ -265,7 +265,7 @@ static struct gpio_driver_api gpio_k64_drv_api_funcs = {
 
 static int gpio_k64_A_init(struct device *dev);
 
-static struct gpio_k64_config gpio_k64_A_cfg = {
+static const struct gpio_k64_config gpio_k64_A_cfg = {
 	.gpio_base_addr = GPIO_K64_A_BASE_ADDR,
 	.port_base_addr = PORT_K64_A_BASE_ADDR,
 };
@@ -294,7 +294,7 @@ static int gpio_k64_A_init(struct device *dev)
 
 static int gpio_k64_B_init(struct device *dev);
 
-static struct gpio_k64_config gpio_k64_B_cfg = {
+static const struct gpio_k64_config gpio_k64_B_cfg = {
 	.gpio_base_addr = GPIO_K64_B_BASE_ADDR,
 	.port_base_addr = PORT_K64_B_BASE_ADDR,
 };
@@ -323,7 +323,7 @@ static int gpio_k64_B_init(struct device *dev)
 
 static int gpio_k64_C_init(struct device *dev);
 
-static struct gpio_k64_config gpio_k64_C_cfg = {
+static const struct gpio_k64_config gpio_k64_C_cfg = {
 	.gpio_base_addr = GPIO_K64_C_BASE_ADDR,
 	.port_base_addr = PORT_K64_C_BASE_ADDR,
 };
@@ -352,7 +352,7 @@ static int gpio_k64_C_init(struct device *dev)
 
 static int gpio_k64_D_init(struct device *dev);
 
-static struct gpio_k64_config gpio_k64_D_cfg = {
+static const struct gpio_k64_config gpio_k64_D_cfg = {
 	.gpio_base_addr = GPIO_K64_D_BASE_ADDR,
 	.port_base_addr = PORT_K64_D_BASE_ADDR,
 };
@@ -381,7 +381,7 @@ static int gpio_k64_D_init(struct device *dev)
 
 static int gpio_k64_E_init(struct device *dev);
 
-static struct gpio_k64_config gpio_k64_E_cfg = {
+static const struct gpio_k64_config gpio_k64_E_cfg = {
 	.gpio_base_addr = GPIO_K64_E_BASE_ADDR,
 	.port_base_addr = PORT_K64_E_BASE_ADDR,
 };
