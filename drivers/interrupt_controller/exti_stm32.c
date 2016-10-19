@@ -62,13 +62,14 @@ struct stm32_exti_data {
 	struct __exti_cb cb[EXTI_LINES];
 };
 
-
-#define AS_EXTI(__base_addr)			\
-	((struct stm32_exti *)(__base_addr))
+static inline struct stm32_exti *get_exti_base_addr(int line)
+{
+	return (struct stm32_exti *)EXTI_BASE;
+}
 
 void stm32_exti_enable(int line)
 {
-	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
+	volatile struct stm32_exti *exti = get_exti_base_addr(line);
 	int irqnum;
 
 	exti->imr |= 1 << line;
@@ -89,7 +90,7 @@ void stm32_exti_enable(int line)
 
 void stm32_exti_disable(int line)
 {
-	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
+	volatile struct stm32_exti *exti = get_exti_base_addr(line);
 
 	exti->imr &= ~(1 << line);
 }
@@ -101,7 +102,7 @@ void stm32_exti_disable(int line)
  */
 static inline int stm32_exti_is_pending(int line)
 {
-	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
+	volatile struct stm32_exti *exti = get_exti_base_addr(line);
 
 	return (exti->pr & (1 << line)) ? 1 : 0;
 }
@@ -113,14 +114,14 @@ static inline int stm32_exti_is_pending(int line)
  */
 static inline void stm32_exti_clear_pending(int line)
 {
-	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
+	volatile struct stm32_exti *exti = get_exti_base_addr(line);
 
 	exti->pr = 1 << line;
 }
 
 void stm32_exti_trigger(int line, int trigger)
 {
-	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
+	volatile struct stm32_exti *exti = get_exti_base_addr(line);
 
 	if (trigger & STM32_EXTI_TRIG_RISING) {
 		exti->rtsr |= 1 << line;
