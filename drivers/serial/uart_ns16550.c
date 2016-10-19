@@ -748,7 +748,7 @@ static struct uart_driver_api uart_ns16550_driver_api = {
 static void irq_config_func_0(struct device *port);
 #endif
 
-static struct uart_ns16550_device_config uart_ns16550_dev_cfg_0 = {
+static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_0 = {
 	.sys_clk_freq = UART_NS16550_PORT_0_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -800,7 +800,7 @@ static void irq_config_func_0(struct device *dev)
 static void irq_config_func_1(struct device *port);
 #endif
 
-static struct uart_ns16550_device_config uart_ns16550_dev_cfg_1 = {
+static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_1 = {
 	.sys_clk_freq = UART_NS16550_PORT_1_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
