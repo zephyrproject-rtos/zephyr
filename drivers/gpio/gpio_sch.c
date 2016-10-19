@@ -329,7 +329,7 @@ int gpio_sch_init(struct device *dev)
 
 #if CONFIG_GPIO_SCH_0
 
-struct gpio_sch_config gpio_sch_0_config = {
+const struct gpio_sch_config gpio_sch_0_config = {
 	.regs = GPIO_SCH_0_BASE_ADDR,
 	.bits = GPIO_SCH_0_BITS,
 };
@@ -343,7 +343,7 @@ DEVICE_INIT(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME, gpio_sch_init,
 #endif /* CONFIG_GPIO_SCH_0 */
 #if CONFIG_GPIO_SCH_1
 
-struct gpio_sch_config gpio_sch_1_config = {
+const struct gpio_sch_config gpio_sch_1_config = {
 	.regs = GPIO_SCH_1_BASE_ADDR,
 	.bits = GPIO_SCH_1_BITS,
 };
