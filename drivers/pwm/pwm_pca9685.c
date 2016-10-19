@@ -205,7 +205,7 @@ int pwm_pca9685_init(struct device *dev)
 #include <device.h>
 #include <init.h>
 
-static struct pwm_pca9685_config pwm_pca9685_0_cfg = {
+static const struct pwm_pca9685_config pwm_pca9685_0_cfg = {
 	.i2c_master_dev_name = CONFIG_PWM_PCA9685_0_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = CONFIG_PWM_PCA9685_0_I2C_ADDR,
 };
