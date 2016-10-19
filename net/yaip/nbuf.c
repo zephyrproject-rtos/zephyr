@@ -47,6 +47,7 @@
 #define NBUF_TX_COUNT	CONFIG_NET_NBUF_TX_COUNT
 #define NBUF_DATA_COUNT	CONFIG_NET_NBUF_DATA_COUNT
 #define NBUF_DATA_LEN	CONFIG_NET_NBUF_DATA_SIZE
+#define NBUF_USER_DATA_LEN CONFIG_NET_NBUF_USER_DATA_SIZE
 
 #if defined(CONFIG_NET_TCP)
 #define APP_PROTO_LEN NET_TCPH_LEN
@@ -255,13 +256,10 @@ static NET_BUF_POOL(tx_buffers, NBUF_TX_COUNT, 0,	\
 		    &free_tx_bufs, free_tx_bufs_func,	\
 		    sizeof(struct net_nbuf));
 
-/* The data fragment pool is for storing network data.
- * This pool does not need any user data because the rx/tx pool already
- * contains all the protocol/bearer specific information.
- */
+/* The data fragment pool is for storing network data. */
 static NET_BUF_POOL(data_buffers, NBUF_DATA_COUNT,	\
 		    NBUF_DATA_LEN, &free_data_bufs,	\
-		    free_data_bufs_func, 0);
+		    free_data_bufs_func, NBUF_USER_DATA_LEN);
 
 static inline bool is_from_data_pool(struct net_buf *buf)
 {
