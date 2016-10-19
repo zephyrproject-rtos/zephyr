@@ -196,7 +196,7 @@ static struct i2c_driver_api i2c_ksdk_driver_api = {
 #ifdef CONFIG_I2C_0
 static void i2c_ksdk_config_func_0(struct device *dev);
 
-static struct i2c_ksdk_config i2c_ksdk_config_0 = {
+static const struct i2c_ksdk_config i2c_ksdk_config_0 = {
 	.base = I2C0,
 	.clock_source = I2C0_CLK_SRC,
 	.irq_config_func = i2c_ksdk_config_func_0,
@@ -222,7 +222,7 @@ static void i2c_ksdk_config_func_0(struct device *dev)
 #ifdef CONFIG_I2C_1
 static void i2c_ksdk_config_func_1(struct device *dev);
 
-static struct i2c_ksdk_config i2c_ksdk_config_1 = {
+static const struct i2c_ksdk_config i2c_ksdk_config_1 = {
 	.base = I2C1,
 	.clock_source = I2C1_CLK_SRC,
 	.irq_config_func = i2c_ksdk_config_func_1,
