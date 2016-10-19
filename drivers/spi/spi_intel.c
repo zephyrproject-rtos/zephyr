@@ -478,7 +478,7 @@ struct spi_intel_data spi_intel_data_port_0 = {
 #endif
 };
 
-struct spi_intel_config spi_intel_config_0 = {
+const struct spi_intel_config spi_intel_config_0 = {
 	.irq = SPI_INTEL_PORT_0_IRQ,
 #ifdef CONFIG_SPI_CS_GPIO
 	.cs_gpio_name = CONFIG_SPI_0_CS_GPIO_PORT,
@@ -516,7 +516,7 @@ struct spi_intel_data spi_intel_data_port_1 = {
 #endif
 };
 
-struct spi_intel_config spi_intel_config_1 = {
+const struct spi_intel_config spi_intel_config_1 = {
 	.irq = SPI_INTEL_PORT_1_IRQ,
 #ifdef CONFIG_SPI_CS_GPIO
 	.cs_gpio_name = CONFIG_SPI_1_CS_GPIO_PORT,
