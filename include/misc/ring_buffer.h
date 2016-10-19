@@ -161,7 +161,7 @@ static inline int sys_ring_buf_space_get(struct ring_buf *buf)
  * @param value Integral data to include, application specific
  * @param data Pointer to a buffer containing data to enqueue
  * @param size32 Size of data buffer, in 32-bit chunks (not bytes)
- * @return 0 on success, -ENOSPC if there isn't sufficient space
+ * @return 0 on success, -EMSGSIZE if there isn't sufficient space
  */
 int sys_ring_buf_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 		     uint32_t *data, uint8_t size32);

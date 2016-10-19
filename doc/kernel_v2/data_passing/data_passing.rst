@@ -13,6 +13,5 @@ between different threads, or between an ISR and a thread.
    lifos.rst
    stacks.rst
    message_queues.rst
-   ring_buffers.rst
    mailboxes.rst
    pipes.rst
