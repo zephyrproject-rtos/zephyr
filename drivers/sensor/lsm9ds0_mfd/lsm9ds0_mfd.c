@@ -810,7 +810,7 @@ int lsm9ds0_mfd_init(struct device *dev)
 	return 0;
 }
 
-static struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
+static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
 	.i2c_master_dev_name = CONFIG_LSM9DS0_MFD_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = LSM9DS0_MFD_I2C_ADDR,
 };
