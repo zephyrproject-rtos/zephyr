@@ -567,7 +567,7 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
 /**
  * @brief Append data to last fragment in fragment list
  *
- * @details Append data to last fragment. If there is no enough space in
+ * @details Append data to last fragment. If there is not enough space in
  * last fragment then new data fragment will be created and will be added to
  * fragment list. Caller has to take care of endianness if needed.
  *
@@ -576,7 +576,7 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
  * @param data Data to be added
  *
  * @return True if all the data is placed at end of fragment list,
- *         False otherwie (In-case of false buf might contain input
+ *         False otherwise (In-case of false buf might contain input
  *         data in the process of placing into fragments).
  */
 bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data);
@@ -584,7 +584,7 @@ bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data);
 /**
  * @brief Append uint8_t data to last fragment in fragment list
  *
- * @details Append data to last fragment. If there is no enough space in last
+ * @details Append data to last fragment. If there is not enough space in last
  * fragment then new data fragment will be created and will be added to
  * fragment list. Caller has to take care of endianness if needed.
  *
@@ -592,7 +592,7 @@ bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data);
  * @param data Data to be added
  *
  * @return True if all the data is placed at end of fragment list,
- *         False otherwie (In-case of false buf might contain input
+ *         False otherwise (In-case of false buf might contain input
  *         data in the process of placing into fragments).
  */
 static inline bool net_nbuf_append_u8(struct net_buf *buf, uint8_t data)
@@ -603,7 +603,7 @@ static inline bool net_nbuf_append_u8(struct net_buf *buf, uint8_t data)
 /**
  * @brief Append uint16_t data to last fragment in fragment list
  *
- * @details Append data to last fragment. If there is no enough space in last
+ * @details Append data to last fragment. If there is not enough space in last
  * fragment then new data fragment will be created and will be added to
  * fragment list. Caller has to take care of endianness if needed.
  *
@@ -611,7 +611,7 @@ static inline bool net_nbuf_append_u8(struct net_buf *buf, uint8_t data)
  * @param data Data to be added
  *
  * @return True if all the data is placed at end of fragment list,
- *         False otherwie (In-case of false buf might contain input data
+ *         False otherwise (In-case of false buf might contain input data
  *         in the process of placing into fragments).
  */
 static inline bool net_nbuf_append_be16(struct net_buf *buf, uint16_t data)
@@ -624,7 +624,7 @@ static inline bool net_nbuf_append_be16(struct net_buf *buf, uint16_t data)
 /**
  * @brief Append uint32_t data to last fragment in fragment list
  *
- * @details Append data to last fragment. If there is no enough space in last
+ * @details Append data to last fragment. If there is not enough space in last
  * fragment then new data fragment will be created and will be added to
  * fragment list. Caller has to take care of endianness if needed.
  *
@@ -632,7 +632,7 @@ static inline bool net_nbuf_append_be16(struct net_buf *buf, uint16_t data)
  * @param data Data to be added
  *
  * @return True if all the data is placed at end of fragment list,
- *         False otherwie (In-case of false buf might contain input data
+ *         False otherwise (In-case of false buf might contain input data
  *         in the process of placing into fragments).
  */
 static inline bool net_nbuf_append_be32(struct net_buf *buf, uint32_t data)
