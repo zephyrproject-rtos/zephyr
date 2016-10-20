@@ -274,6 +274,14 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 	if (ctx->associated) {
 		ctx->channel = req->channel;
 		ctx->pan_id = req->pan_id;
+
+		ctx->coord_addr_len = req->len;
+		if (ctx->coord_addr_len == IEEE802154_SHORT_ADDR_LENGTH) {
+			ctx->coord.short_addr = req->short_addr;
+		} else {
+			memcpy(ctx->coord.ext_addr,
+			       req->addr, IEEE802154_EXT_ADDR_LENGTH);
+		}
 	} else {
 		ret = -EACCES;
 	}
@@ -286,6 +294,50 @@ out:
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_ASSOCIATE,
 				  ieee802154_associate);
+
+static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
+				   void *data, size_t len)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_frame_params params;
+	struct ieee802154_command *cmd;
+	struct net_buf *buf;
+
+	if (!ctx->associated) {
+		return -EALREADY;
+	}
+
+	params.dst.pan_id = ctx->pan_id;
+	params.dst.len = ctx->coord_addr_len;
+	if (params.dst.len == IEEE802154_SHORT_ADDR_LENGTH) {
+		params.dst.short_addr = ctx->coord.short_addr;
+	} else {
+		params.dst.ext_addr = ctx->coord.ext_addr;
+	}
+
+	params.pan_id = ctx->pan_id;
+
+	buf = ieee802154_create_mac_cmd_frame(
+		iface, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION, &params);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cmd = ieee802154_get_mac_command(buf);
+	cmd->disassoc_note.reason = IEEE802154_DRF_DEVICE_WISH;
+
+	if (net_if_send_data(iface, buf)) {
+		net_nbuf_unref(buf);
+		return -EIO;
+	}
+
+	ctx->associated = false;
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_DISASSOCIATE,
+				  ieee802154_disassociate);
 
 static int ieee802154_set_ack(uint32_t mgmt_request, struct net_if *iface,
 			      void *data, size_t len)
