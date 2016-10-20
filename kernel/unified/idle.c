@@ -20,6 +20,7 @@
 #include <sections.h>
 #include <drivers/system_timer.h>
 #include <wait_q.h>
+#include <power.h>
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /*
