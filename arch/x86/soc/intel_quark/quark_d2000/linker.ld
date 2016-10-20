@@ -51,9 +51,5 @@ MEMORY
     IDT_LIST        : ORIGIN = 512, LENGTH = 512
     }
 
-#include <arch/x86/linker-common-sections.h>
+#include <arch/x86/linker.ld>
 
-/* start adding bsp specific linker sections here */
-
-/* no sections should appear after linker-epilog.h */
-#include <arch/x86/linker-epilog.h>
