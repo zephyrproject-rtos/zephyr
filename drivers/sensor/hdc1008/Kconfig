@@ -35,6 +35,7 @@ config HDC1008_NAME
 config HDC1008_I2C_ADDR
 	hex
 	prompt "I2C Address for HDC1008"
+	depends on HDC1008
 	default "0x40"
 	help
 	  0x40: A0 connected GND and A1 connected to GND.
