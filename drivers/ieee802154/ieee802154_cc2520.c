@@ -596,7 +596,7 @@ static void cc2520_rx(int arg, int unused2)
 		nano_fiber_sem_take(&cc2520->rx_lock, TICKS_UNLIMITED);
 
 		if (cc2520->overflow) {
-			SYS_LOG_DBG("RX overflow!\n");
+			SYS_LOG_ERR("RX overflow!\n");
 			cc2520->overflow = false;
 
 			goto flush;
@@ -604,13 +604,13 @@ static void cc2520_rx(int arg, int unused2)
 
 		pkt_len = read_rxfifo_length(&cc2520->spi) & 0x7f;
 		if (!verify_rxfifo_validity(&cc2520->spi, pkt_len)) {
-			SYS_LOG_DBG("Invalid content\n");
+			SYS_LOG_ERR("Invalid content\n");
 			goto flush;
 		}
 
 		buf = net_nbuf_get_reserve_rx(0);
 		if (!buf) {
-			SYS_LOG_DBG("No buf available\n");
+			SYS_LOG_ERR("No buf available\n");
 			goto flush;
 		}
 
@@ -623,19 +623,19 @@ static void cc2520_rx(int arg, int unused2)
 		pkt_buf = net_nbuf_get_reserve_data(0);
 #endif
 		if (!pkt_buf) {
-			SYS_LOG_DBG("No pkt_buf available\n");
+			SYS_LOG_ERR("No pkt_buf available\n");
 			goto out;
 		}
 
 		net_buf_frag_insert(buf, pkt_buf);
 
 		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len)) {
-			SYS_LOG_DBG("No content read\n");
+			SYS_LOG_ERR("No content read\n");
 			goto out;
 		}
 
 		if (!(pkt_buf->data[pkt_len - 1] & CC2520_FCS_CRC_OK)) {
-			SYS_LOG_DBG("Bad packet CRC\n");
+			SYS_LOG_ERR("Bad packet CRC\n");
 			goto out;
 		}
 
