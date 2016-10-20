@@ -77,7 +77,7 @@ static struct bt_sdp_attribute spp_attrs[] = {
 		BT_SDP_DATA_ELEM_LIST(
 		{
 			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
-			BT_SDP_ARRAY_16(BT_SDP_SERIAL_PORT_SVCLASS_ID)
+			BT_SDP_ARRAY_16(BT_SDP_SERIAL_PORT_SVCLASS)
 		},
 		)
 	),
@@ -110,7 +110,7 @@ static struct bt_sdp_attribute spp_attrs[] = {
 		)
 	),
 	BT_SDP_LIST(
-		BT_SDP_ATTR_PFILE_DESC_LIST,
+		BT_SDP_ATTR_PROFILE_DESC_LIST,
 		BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 8),
 		BT_SDP_DATA_ELEM_LIST(
 		{
@@ -118,7 +118,7 @@ static struct bt_sdp_attribute spp_attrs[] = {
 			BT_SDP_DATA_ELEM_LIST(
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
-				BT_SDP_ARRAY_16(BT_SDP_SERIAL_PORT_SVCLASS_ID)
+				BT_SDP_ARRAY_16(BT_SDP_SERIAL_PORT_SVCLASS)
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
