@@ -801,7 +801,7 @@ static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 	if (result == BT_L2CAP_BR_PENDING) {
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_AUTHEN_PEND);
 	} else {
-		rsp->status = sys_cpu_to_le16(BT_L2CAP_BR_SUCCESS);
+		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
 	}
 
 	bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
