@@ -89,7 +89,7 @@ Define the memory map in a source file using the following syntax:
 
 .. code-block:: c
 
-   DEFINE_MEMORY_MAP(name, num_blocks, block_size);
+   DEFINE_MEM_MAP(name, num_blocks, block_size);
 
 
 Example: Defining a Memory Map, Referencing it from Elsewhere in the Application
@@ -99,7 +99,7 @@ This code defines a private memory map named ``PRIV_MEM_MAP``:
 
 .. code-block:: c
 
-   DEFINE_MEMORY_MAP(PRIV_MEM_MAP, 6, 200);
+   DEFINE_MEM_MAP(PRIV_MEM_MAP, 6, 200);
 
 To reference the map from a different source file, use the following syntax:
 
