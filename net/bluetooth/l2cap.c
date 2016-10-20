@@ -1505,7 +1505,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 	for (sent = ret; sent < total_len; sent += ret) {
 		/* Proceed to next fragment */
 		if (!frag->len) {
-			frag = frag->frags;
+			frag = net_buf_frag_del(buf, frag);
 		}
 
 		ret = l2cap_chan_le_send(ch, frag, 0);
