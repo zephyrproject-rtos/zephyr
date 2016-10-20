@@ -200,19 +200,35 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
-	if (mpdu->command->cfi != IEEE802154_CFI_ASSOCIATION_RESPONSE) {
-		return NET_DROP;
+	if (mpdu->command->cfi == IEEE802154_CFI_ASSOCIATION_RESPONSE) {
+		if (mpdu->command->assoc_res.status !=
+		    IEEE802154_ASF_SUCCESSFUL) {
+			return NET_DROP;
+		}
+
+		ctx->associated = true;
+		k_sem_give(&ctx->req_lock);
+
+		return NET_OK;
 	}
 
-	if (mpdu->command->assoc_res.status != IEEE802154_ASF_SUCCESSFUL) {
-		return NET_DROP;
+	if (mpdu->command->cfi == IEEE802154_CFI_DISASSOCIATION_NOTIFICATION) {
+		if (mpdu->command->disassoc_note.reason !=
+		    IEEE802154_DRF_COORDINATOR_WISH) {
+			return NET_DROP;
+		}
+
+		if (ctx->associated) {
+			/* ToDo: check src address vs coord ones and reject
+			 * if they don't match
+			 */
+			ctx->associated = false;
+
+			return NET_OK;
+		}
 	}
 
-	ctx->associated = true;
-
-	k_sem_give(&ctx->req_lock);
-
-	return NET_OK;
+	return NET_DROP;
 }
 
 static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
