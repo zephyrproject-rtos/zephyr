@@ -817,7 +817,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_server *server;
 	struct bt_l2cap_conn_req *req = (void *)buf->data;
-	uint16_t psm, scid, dcid, result, status = BT_L2CAP_CS_NO_INFO;
+	uint16_t psm, scid, dcid, result;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small L2CAP conn req packet size");
@@ -880,7 +880,6 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
 		result = BT_L2CAP_BR_PENDING;
-		status = BT_L2CAP_CS_AUTHEN_PEND;
 		/* TODO: auth timeout */
 		break;
 	case L2CAP_CONN_SECURITY_PASSED:
