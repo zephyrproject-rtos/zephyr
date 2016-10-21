@@ -833,11 +833,6 @@ linker.cmd: $(zephyr-deps)
 	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -I$(srctree)/include \
 	-I$(objtree)/include/generated $(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
 
-final-linker.cmd: $(zephyr-deps)
-	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
-	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -DFINAL_LINK -I$(srctree)/include \
-	-I$(objtree)/include/generated $(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
-
 TMP_ELF = .tmp_$(KERNEL_NAME).prebuilt
 
 $(TMP_ELF): $(zephyr-deps) libzephyr.a $(KBUILD_ZEPHYR_APP) $(app-y) linker.cmd $(KERNEL_NAME).lnk
@@ -867,7 +862,7 @@ staticIdt.o: $(TMP_ELF)
 quiet_cmd_lnk_elf = LINK    $@
       cmd_lnk_elf =									\
 (											\
-	$(CC) -T final-linker.cmd @$(KERNEL_NAME).lnk staticIdt.o int_vector_alloc.o 	\
+	$(CC) -T linker.cmd @$(KERNEL_NAME).lnk staticIdt.o int_vector_alloc.o 	\
 	irq_int_vector_map.o -o $@;							\
 	${OBJCOPY} --change-section-address intList=${CONFIG_PHYS_LOAD_ADDR} $@ elf.tmp;\
 	$(OBJCOPY) -R intList elf.tmp $@;						\
@@ -883,7 +878,7 @@ ASSERT_WARNING_STR := \
 WARN_ABOUT_ASSERT := $(if $(CONFIG_ASSERT),echo -e -n $(ASSERT_WARNING_STR),true)
 
 ifeq ($(ARCH),x86)
-$(KERNEL_ELF_NAME): staticIdt.o final-linker.cmd
+$(KERNEL_ELF_NAME): staticIdt.o linker.cmd
 	$(call cmd,lnk_elf)
 	@$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
 	@$(WARN_ABOUT_ASSERT)
@@ -1036,7 +1031,7 @@ CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
 		misc/generated/sysgen/kernel_main.h \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
-		*.bin *.strip staticIdt.o linker.cmd final-linker.cmd
+		*.bin *.strip staticIdt.o linker.cmd
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \

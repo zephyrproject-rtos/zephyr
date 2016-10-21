@@ -27,32 +27,11 @@
 
 #define INT_STUB_NOINIT KEEP(*(.intStubSect))
 
-#ifdef FINAL_LINK
-	/* Use the real IDT */
-	#define STATIC_IDT KEEP(*(staticIdt))
+#define STATIC_IDT KEEP(*(staticIdt))
 
-	/* Use the real _interrupt_vectors_allocated[] array */
-	#define INTERRUPT_VECTORS_ALLOCATED KEEP(*(int_vector_alloc))
+#define INTERRUPT_VECTORS_ALLOCATED KEEP(*(int_vector_alloc))
 
-	/* Use the real _irq_to_interrupt_vector[] array */
-	#define IRQ_TO_INTERRUPT_VECTOR KEEP(*(irq_int_vector_map))
-#else
-	/*
-	 * Save space for the real IDT to prevent symbols from shifting. Note
-	 * that an IDT entry is 8 bytes in size.
-	 */
-	#define STATIC_IDT . += (8 * CONFIG_IDT_NUM_VECTORS);
-
-	/*
-	 * Save space for the real _interrupt_vectors_allocated[] array to
-	 * prevent symbols from shifting.
-	 */
-	#define INTERRUPT_VECTORS_ALLOCATED . += ((CONFIG_IDT_NUM_VECTORS + 31) / 32);
-	/*
-	 * Both IRQs and interrupt vectors may be in the range of 0..255 inclusive.
-	 */
-	#define IRQ_TO_INTERRUPT_VECTOR . += CONFIG_MAX_IRQ_LINES;
-#endif
+#define IRQ_TO_INTERRUPT_VECTOR KEEP(*(irq_int_vector_map))
 
 /*
  * The x86 manual recommends aligning the IDT on 8 byte boundary. This also
