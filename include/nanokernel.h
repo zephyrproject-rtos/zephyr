@@ -1106,6 +1106,21 @@ extern void nano_sem_give(struct nano_sem *sem);
 
 /**
  *
+ * @brief Read a nanokernel semaphore's count.
+ *
+ * This routine reads the current count of the semaphore @a sem.
+ *
+ * @param sem Pointer to a nano_sem structure.
+ *
+ * @return Semaphore count.
+ */
+static inline int nano_sem_count_get(struct nano_sem *sem)
+{
+	return sem->nsig;
+}
+
+/**
+ *
  * @brief Take a nanokernel semaphore, poll/pend if not available.
  *
  * This routine is a convenience wrapper for the execution of context-specific

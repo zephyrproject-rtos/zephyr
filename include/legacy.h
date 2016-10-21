@@ -292,6 +292,8 @@ static inline int task_sem_take(ksem_t sem, int32_t timeout)
 #define task_sem_reset k_sem_reset
 #define task_sem_count_get k_sem_count_get
 
+#define nano_sem_count_get k_sem_count_get
+
 #ifdef CONFIG_SEMAPHORE_GROUPS
 typedef ksem_t *ksemg_t;
 
