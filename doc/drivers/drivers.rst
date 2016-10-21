@@ -282,7 +282,7 @@ Then when the particular instance is declared:
                     DEVICE_GET(my_driver_0), MY_DRIVER_0_FLAGS);
   }
 
-  static struct my_driver_config my_driver_config_0 = {
+  const static struct my_driver_config my_driver_config_0 = {
         .base_addr = MY_DRIVER_0_BASE_ADDR;
         .config_func = my_driver_config_irq_0;
   }
