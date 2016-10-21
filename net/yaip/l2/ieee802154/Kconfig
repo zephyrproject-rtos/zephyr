@@ -22,6 +22,12 @@ menuconfig NET_L2_IEEE802154
 
 if NET_L2_IEEE802154
 
+config NET_L2_IEEE802154_MGMT
+	bool
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	default n
+
 config NET_L2_IEEE802154_DEBUG
 	bool "Enable IEEE 802.15.4 stack debug messages"
 	default n
@@ -37,15 +43,31 @@ config NET_L2_IEEE802154_ACK_REPLY
 	  Enable inner stack's logic on handling ACK request. Note that
 	  if the hw driver has an AUTOACK feature, this is then unnecessary.
 
+choice
+	prompt "Device features level support"
+	default NET_L2_IEEE802154_ORFD
+	help
+	  Select which features level you want on the device. Depending on it,
+	  the device might expose more or less 802.15.4 protocol features.
+
 config NET_L2_IEEE802154_ORFD
 	bool "Support only an OVERLY Reduced Functionality Device"
-	default n
 	help
 	  This is a TEST ONLY support. Do not use that in production!
 	  This is not spec compliant. This is added for 2 reasons:
 	  to support legacy stack behavior and for testing. PAN ID is fixed
 	  as well as the channel. The device is not able to scan, associate
 	  to a PAN or anything else like that. You have been warned.
+
+config NET_L2_IEEE802154_RFD
+	bool "Support Reduced Functionality Device level"
+	select NET_L2_IEEE802154_MGMT
+	help
+	  This is the level for PAN device, not PAN coordinator. This will make
+	  possible to do active and/or passive scans, as well as associating
+	  and disassociating to/from a PAN. Current support is very fragile,
+	  thus it is not set as the default level
+endchoice
 
 config NET_L2_IEEE802154_ORFD_PAN_ID
 	hex "IEEE 802.15.4 fixed PAN ID"
