@@ -22,7 +22,10 @@
 #ifndef __NET_MGMT_H__
 #define __NET_MGMT_H__
 
-#include <net/net_if.h>
+#include <misc/__assert.h>
+#include <net/net_core.h>
+
+struct net_if;
 
 /**
  * @brief NET MGMT event mask basics, normalizing parts of bit fields
