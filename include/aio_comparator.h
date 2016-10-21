@@ -78,9 +78,9 @@ static inline int aio_cmp_disable(struct device *dev, uint8_t index)
  * @return 0 if successful, otherwise failed.
  */
 static inline int aio_cmp_configure(struct device *dev, uint8_t index,
-			     enum aio_cmp_polarity polarity,
-			     enum aio_cmp_ref refsel,
-			     aio_cmp_cb cb, void *param)
+				    enum aio_cmp_polarity polarity,
+				    enum aio_cmp_ref refsel,
+				    aio_cmp_cb cb, void *param)
 {
 	struct aio_cmp_driver_api *api;
 
