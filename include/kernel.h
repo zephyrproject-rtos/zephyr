@@ -230,7 +230,7 @@ struct _static_thread_data {
  */
 #define K_THREAD_DEFINE(name, stack_size,                               \
 			entry, p1, p2, p3,                              \
-			abort, prio, delay)                             \
+			prio, options, delay)                           \
 	char __noinit __stack _k_thread_obj_##name[stack_size];         \
 	struct _static_thread_data _k_thread_data_##name __aligned(4)   \
 		__in_section(_k_task_list, private, task) =             \

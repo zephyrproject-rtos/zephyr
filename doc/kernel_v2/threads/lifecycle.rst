@@ -131,7 +131,7 @@ The following code spawns a thread that starts immediately.
 
     my_thread_ptr = k_thread_spawn(my_thread_area, MY_THREAD_SIZE,
                                    my_entry_point, 0, 0, 0,
-                                   NULL, MY_PRIORITY, K_NO_WAIT);
+                                   MY_PRIORITY, 0, K_NO_WAIT);
 
 Alternatively, a thread can be spawned at compile time by calling
 :c:macro:`K_THREAD_DEFINE()`. Observe that the macro defines the thread
@@ -143,7 +143,7 @@ The following code has the same effect as the code segment above.
 
     K_THREAD_DEFINE(my_thread_ptr, my_thread_area, MY_THREAD_SIZE,
                                    my_entry_point, 0, 0, 0,
-                                   NULL, MY_PRIORITY, K_NO_WAIT);
+                                   MY_PRIORITY, 0, K_NO_WAIT);
 
 .. note::
    NEED TO FIGURE OUT HOW WE'RE GOING TO HANDLE THE FLOATING POINT OPTIONS!
