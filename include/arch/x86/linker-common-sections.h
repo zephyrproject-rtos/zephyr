@@ -260,7 +260,6 @@ SECTIONS
 	 */
 	*(.noinit)
 	*(".noinit.*")
-	KEEP(*(.intStubSect))
 	} GROUP_LINK_IN(RAM)
 
 	/* Define linker symbols */

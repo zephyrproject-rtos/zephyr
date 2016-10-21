@@ -268,7 +268,6 @@ SECTIONS
 	 */
 	*(.noinit)
 	*(".noinit.*")
-	KEEP(*(.intStubSect))
 
 	*(.bottom_of_image_ram)
 	*(.bottom_of_image_ram.*)
