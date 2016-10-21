@@ -187,7 +187,8 @@ void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag)
 	if (parent->frags) {
 		net_buf_frag_last(frag)->frags = parent->frags;
 	}
-	parent->frags = net_buf_ref(frag);
+	/* Take ownership of the fragment reference */
+	parent->frags = frag;
 }
 
 struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)

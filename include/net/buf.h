@@ -847,12 +847,22 @@ struct net_buf *net_buf_frag_last(struct net_buf *frags);
 
 /** @brief Insert a new fragment to a chain of bufs.
  *
+ *  Insert a new fragment into the buffer fragments list after the parent.
+ *
+ *  Note: This function takes ownership of the fragment reference so the
+ *  caller is not required to unref.
+ *
  *  @param parent Parent buffer/fragment.
  *  @param frag Fragment to insert.
  */
 void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
 
 /** @brief Add a new fragment to the end of a chain of bufs.
+ *
+ *  Append a new fragment into the buffer fragments list.
+ *
+ *  Note: This function takes ownership of the fragment reference so the
+ *  caller is not required to unref.
  *
  *  @param head Head of the fragment chain.
  *  @param frag Fragment to add.

@@ -999,9 +999,6 @@ static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
 
 	net_buf_frag_add(chan->_sdu, frag);
 
-	/* Drop own reference since net_buf_frag_add adds a reference */
-	net_buf_unref(frag);
-
 	return frag;
 }
 
