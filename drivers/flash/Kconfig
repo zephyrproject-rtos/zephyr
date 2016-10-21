@@ -132,6 +132,24 @@ config SOC_FLASH_NRF5_DEV_NAME
 	help
 	  Specify the device name for the flash driver.
 
+config SOC_FLASH_KSDK
+	bool "KSDK flash shim driver"
+	depends on FLASH && HAS_KSDK
+	default n
+	help
+	  Enables the KSDK flash shim driver.
+	  WARNING: This driver will disable the system interrupts for
+	  the duration of the flash erase/write operations. This will
+	  have an impact on the overall system performance - whether
+	  this is acceptable or not will depend on the use case.
+
+config SOC_FLASH_KSDK_DEV_NAME
+	string "KSDK flash device name"
+	depends on SOC_FLASH_KSDK
+	default "KSDK_FLASH"
+	help
+	  Specify the device name for the flash driver.
+
 config SOC_FLASH_QMSI_API_REENTRANCY
 	bool
 	prompt "flash driver API reentrancy for QMSI shim driver"

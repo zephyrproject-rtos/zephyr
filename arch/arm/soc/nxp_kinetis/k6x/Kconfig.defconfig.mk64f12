@@ -77,4 +77,11 @@ config RANDOM_KSDK
 
 endif # RANDOM_GENERATOR
 
+if FLASH
+
+config SOC_FLASH_KSDK
+	def_bool y
+
+endif # FLASH
+
 endif # SOC_MK64F12
