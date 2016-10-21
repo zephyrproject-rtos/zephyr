@@ -99,7 +99,6 @@ static struct genidt_entry_s   generated_entry[MAX_NUM_VECTORS];
 enum {
 	IFILE = 0,             /* input file */
 	OFILE,                 /* output file */
-	BFILE,                 /* allocated interrupt vector bitmap file */
 	MFILE,                 /* irq to interrupt vector mapping file */
 	NUSERFILES,            /* number of user-provided file names */
 	EXECFILE = NUSERFILES, /* for name of executable */
@@ -144,11 +143,8 @@ static void get_options(int argc, char *argv[])
 	char *endptr;
 	int ii, opt;
 
-	while ((opt = getopt(argc, argv, "hb:i:o:m:n:vl:d")) != -1) {
+	while ((opt = getopt(argc, argv, "hi:o:m:n:vl:d")) != -1) {
 		switch (opt) {
-		case 'b':
-			filenames[BFILE] = optarg;
-			break;
 		case 'i':
 			filenames[IFILE] = optarg;
 			break;
@@ -233,9 +229,6 @@ static void open_files(void)
 	fds[IFILE] = open(filenames[IFILE], O_RDONLY | O_BINARY);
 	fds[OFILE] = open(filenames[OFILE], O_WRONLY | O_BINARY |
 						O_TRUNC | O_CREAT,
-						S_IWUSR | S_IRUSR);
-	fds[BFILE] = open(filenames[BFILE], O_WRONLY | O_BINARY | O_CREAT |
-						O_TRUNC | O_BINARY,
 						S_IWUSR | S_IRUSR);
 	fds[MFILE] = open(filenames[MFILE], O_WRONLY | O_BINARY | O_CREAT |
 						O_TRUNC | O_BINARY,
@@ -560,14 +553,6 @@ static void generate_interrupt_vector_bitmap(void)
 		interrupt_vector_bitmap[index] &= ~(1 << bit);
 		map_irq_to_vector_id[supplied_entry[i].irq] = (index * 32) + bit;
 		supplied_entry[i].vector_id = (index * 32) + bit;
-	}
-
-	bytes_to_write = num_elements * sizeof(unsigned int);
-	bytes_written = write(fds[BFILE], interrupt_vector_bitmap, bytes_to_write);
-	if (bytes_written != bytes_to_write) {
-		fprintf(stderr, "Failed to write all data to '%s'.\n",
-				filenames[BFILE]);
-		clean_exit(-1);
 	}
 
 	bytes_to_write = num_irq_lines;

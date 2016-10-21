@@ -843,17 +843,14 @@ quiet_cmd_gen_idt = SIDT    $@
 (										\
 	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin &&	\
 	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 	\
-		-b int_vector_alloc.bin -m irq_int_vector_map.bin		\
+		-m irq_int_vector_map.bin					\
 		-l $(CONFIG_MAX_IRQ_LINES) $(GENIDT_EXTRA_ARGS) &&		\
 	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
 		--rename-section .data=staticIdt staticIdt.bin staticIdt.o &&	\
 	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
-		--rename-section .data=int_vector_alloc int_vector_alloc.bin	\
-		int_vector_alloc.o &&						\
-	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
 	--rename-section .data=irq_int_vector_map irq_int_vector_map.bin 	\
 		irq_int_vector_map.o &&						\
-	rm staticIdt.bin irq_int_vector_map.bin int_vector_alloc.bin isrList.bin\
+	rm staticIdt.bin irq_int_vector_map.bin isrList.bin			\
 )
 
 staticIdt.o: $(TMP_ELF)
@@ -862,8 +859,8 @@ staticIdt.o: $(TMP_ELF)
 quiet_cmd_lnk_elf = LINK    $@
       cmd_lnk_elf =									\
 (											\
-	$(CC) -T linker.cmd @$(KERNEL_NAME).lnk staticIdt.o int_vector_alloc.o 	\
-	irq_int_vector_map.o -o $@;							\
+	$(CC) -T linker.cmd @$(KERNEL_NAME).lnk staticIdt.o				\
+		irq_int_vector_map.o -o $@;						\
 	${OBJCOPY} --change-section-address intList=${CONFIG_PHYS_LOAD_ADDR} $@ elf.tmp;\
 	$(OBJCOPY) -R intList elf.tmp $@;						\
 	rm elf.tmp									\
