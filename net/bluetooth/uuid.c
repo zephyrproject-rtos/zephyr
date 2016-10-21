@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
 #include <toolchain.h>
 #include <string.h>
 #include <errno.h>

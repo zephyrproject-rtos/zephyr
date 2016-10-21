@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <errno.h>
 #include <atomic.h>
 #include <misc/byteorder.h>

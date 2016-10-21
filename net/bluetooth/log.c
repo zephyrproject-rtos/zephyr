@@ -23,7 +23,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <misc/util.h>
 
 #include <bluetooth/log.h>

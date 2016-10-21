@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -28,10 +28,6 @@
 #include <misc/byteorder.h>
 #include <misc/stack.h>
 #include <misc/nano_work.h>
-
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
-#endif
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
