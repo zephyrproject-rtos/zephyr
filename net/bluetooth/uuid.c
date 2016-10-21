@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-#include <toolchain.h>
 #include <string.h>
 #include <errno.h>
 #include <misc/byteorder.h>

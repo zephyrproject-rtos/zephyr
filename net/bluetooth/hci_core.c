@@ -17,9 +17,6 @@
  */
 
 #include <zephyr.h>
-#include <arch/cpu.h>
-#include <toolchain.h>
-#include <sections.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>

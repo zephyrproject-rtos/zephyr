@@ -17,7 +17,6 @@
  */
 
 #include <zephyr.h>
-#include <toolchain.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
