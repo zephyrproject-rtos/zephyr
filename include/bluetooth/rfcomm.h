@@ -137,6 +137,21 @@ struct bt_rfcomm_server {
  */
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
 
+/** @brief Connect RFCOMM channel
+ *
+ *  Connect RFCOMM dlc by channel, once the connection is completed dlc
+ *  connected() callback will be called. If the connection is rejected
+ *  disconnected() callback is called instead.
+ *
+ *  @param conn Connection object.
+ *  @param dlc Dlc object.
+ *  @param channel Server channel to connect to.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
+			  uint8_t channel);
+
 /** @brief Send data to RFCOMM
  *
  *  Send data from buffer to the dlc. Length should be less than or equal to
