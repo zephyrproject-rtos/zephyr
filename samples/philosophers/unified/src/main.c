@@ -40,9 +40,9 @@
  * By default, the demo uses different priorities.
  *
  * The number of threads is set via NUM_PHIL. The demo has only been tested
- * with six threads. In theory it should work with less than six threads, but
- * not with more without making changes to the forks[] array in the
- * phil_obj_abstract.h header file.
+ * with six threads. In theory it should work with any number of threads, but
+ * not without making changes to the forks[] array in the phil_obj_abstract.h
+ * header file.
  */
 
 #include <zephyr.h>
