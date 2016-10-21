@@ -457,20 +457,6 @@ static inline bool verify_tx_done(struct cc2520_context *cc2520)
 	return !!(status & EXCFLAG0_TX_FRM_DONE);
 }
 
-static inline void enable_reception(struct cc2520_context *cc2520)
-{
-	/* Note: Errata document - 1.1 */
-	enable_fifop_interrupt(cc2520, false);
-
-	instruct_srxon(&cc2520->spi);
-	instruct_sflushrx(&cc2520->spi);
-	instruct_sflushrx(&cc2520->spi);
-
-	enable_fifop_interrupt(cc2520, true);
-
-	write_reg_excflag0(&cc2520->spi, EXCFLAG0_RESET_RX_FLAGS);
-}
-
 /****************
  * RX functions *
  ***************/
@@ -859,13 +845,10 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 		goto error;
 	}
 
-	enable_reception(cc2520);
-
 	return 0;
 error:
 	atomic_set(&cc2520->tx, 0);
 	instruct_sflushtx(&cc2520->spi);
-	enable_reception(cc2520);
 
 	return -EIO;
 }
