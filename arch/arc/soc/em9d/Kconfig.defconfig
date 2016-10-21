@@ -53,11 +53,9 @@ config FLASH_SIZE
 	# em9d has no FLASH so size is 0.
 
 config SRAM_BASE_ADDRESS
-	default 0x00000000 if NSIM
 	default 0x00000000
 
 config SRAM_SIZE
-	default 0 if NSIM
 	default 0
 	# em9d has no SRAM so size is 0.
 
