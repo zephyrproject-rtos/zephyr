@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+#ifdef CONFIG_NET_L2_IEEE802154_DEBUG
+#define SYS_LOG_DOMAIN "net/ieee802154"
+#define NET_DEBUG 1
+#endif
+
+#include <net/net_core.h>
+
 #include <errno.h>
 
 #include <net/net_if.h>
@@ -29,6 +36,8 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_radio_api *radio =
 		(struct ieee802154_radio_api *)iface->dev->driver_api;
+
+	NET_DBG("Beacon received");
 
 	if (!ctx->scan_ctx) {
 		return NET_DROP;
@@ -69,6 +78,8 @@ static int ieee802154_cancel_scan(uint32_t mgmt_request, struct net_if *iface,
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
 
+	NET_DBG("Cancelling scan request");
+
 	ctx->scan_ctx = NULL;
 
 	return 0;
@@ -85,21 +96,47 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_req_params *scan =
 		(struct ieee802154_req_params *)data;
+	struct net_buf *frag = NULL;
+	struct net_buf *buf = NULL;
 	uint8_t channel;
 	int ret;
+
+	NET_DBG("%s scan requested",
+		mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN ?
+		"Active" : "Passive");
 
 	if (ctx->scan_ctx) {
 		return -EALREADY;
 	}
 
-	if (radio->start(iface->dev)) {
-		return -EIO;
+	if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
+		struct ieee802154_frame_params params;
+
+		params.dst.short_addr = IEEE802154_BROADCAST_ADDRESS;
+		params.dst.pan_id = IEEE802154_BROADCAST_PAN_ID;
+
+		buf = ieee802154_create_mac_cmd_frame(
+			iface, IEEE802154_CFI_BEACON_REQUEST, &params);
+		if (!buf) {
+			NET_DBG("Could not create Beacon Request");
+			return -ENOBUFS;
+		}
+
+		frag = buf->frags;
+		buf->frags = NULL;
 	}
 
 	ctx->scan_ctx = scan;
 	ret = 0;
 
 	radio->set_pan_id(iface->dev, IEEE802154_BROADCAST_PAN_ID);
+
+	if (radio->start(iface->dev)) {
+		NET_DBG("Could not start device");
+		ret = -EIO;
+
+		goto out;
+	}
 
 	/* ToDo: For now, we assume we are on 2.4Ghz
 	 * (device will have to export capabilities) */
@@ -111,11 +148,27 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		scan->channel = channel;
 		radio->set_channel(iface->dev, channel);
 
+		/* Active scan sends a beacon request */
+		if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
+			net_nbuf_ref(buf);
+			net_nbuf_ref(frag);
+			net_buf_frag_insert(buf, frag);
+
+			ret = ieee802154_radio_send(iface, buf);
+			if (ret) {
+				NET_DBG("Could not send Beacon Request (%d)",
+					ret);
+				break;
+			}
+		}
+
 		/* Context aware sleep */
 		k_sleep(scan->duration);
 
 		if (!ctx->scan_ctx) {
+			NET_DBG("Scan request cancelled");
 			ret = -ECANCELED;
+
 			break;
 		}
 	}
@@ -123,13 +176,23 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 	/* Let's come back to context's settings */
 	radio->set_pan_id(iface->dev, ctx->pan_id);
 	radio->set_channel(iface->dev, ctx->channel);
-
+out:
 	ctx->scan_ctx = NULL;
+
+	if (buf) {
+		if (!buf->frags) {
+			net_nbuf_unref(frag);
+		}
+
+		net_nbuf_unref(buf);
+	}
 
 	return ret;
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_PASSIVE_SCAN,
+				  ieee802154_scan);
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_ACTIVE_SCAN,
 				  ieee802154_scan);
 
 enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
