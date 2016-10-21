@@ -2086,6 +2086,33 @@ static int cmd_bredr_rfcomm_register(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_rfcomm_connect(int argc, char *argv[])
+{
+	uint8_t channel;
+	int err;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return 0;
+	}
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	channel = strtoul(argv[1], NULL, 16);
+
+	err = bt_rfcomm_dlc_connect(default_conn, &rfcomm_dlc, channel);
+	if (err < 0) {
+		printk("Unable to connect to channel %d (err %u)\n",
+		       channel, err);
+	} else {
+		printk("RFCOMM connection pending\n");
+	}
+
+	return 0;
+}
+
 static int cmd_rfcomm_send(int argc, char *argv[])
 {
 	uint8_t buf_data[DATA_BREDR_MTU] = { [0 ... (DATA_BREDR_MTU - 1)] =
@@ -2259,6 +2286,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-oob", cmd_bredr_oob },
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 	{ "br-rfcomm-register", cmd_bredr_rfcomm_register },
+	{ "br-rfcomm-connect", cmd_rfcomm_connect, "<channel>" },
 	{ "br-rfcomm-send", cmd_rfcomm_send, "<number of packets>"},
 #endif /* CONFIG_BLUETOOTH_RFCOMM */
 #endif
