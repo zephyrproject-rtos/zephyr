@@ -275,7 +275,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 
 static void eth_enc28j60_init_mac(struct device *dev)
 {
-	struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config->config_info;
 	uint8_t data_macon;
 	uint8_t mac_address[6];
 
@@ -330,7 +330,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 static void eth_enc28j60_init_phy(struct device *dev)
 {
-	struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config->config_info;
 
 	if (config->full_duplex) {
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON1,
@@ -345,7 +345,7 @@ static void eth_enc28j60_init_phy(struct device *dev)
 
 static int eth_enc28j60_init(struct device *dev)
 {
-	struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	struct spi_config spi_cfg;
 
@@ -616,7 +616,7 @@ static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
 	.receive_callback = NULL,
 };
 
-static struct eth_enc28j60_config eth_enc28j60_0_config = {
+static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.gpio_port = CONFIG_ETH_ENC28J60_0_GPIO_PORT_NAME,
 	.gpio_pin = CONFIG_ETH_ENC28J60_0_GPIO_PIN,
 	.spi_port = CONFIG_ETH_ENC28J60_0_SPI_PORT_NAME,
