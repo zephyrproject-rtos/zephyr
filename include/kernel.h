@@ -1489,7 +1489,7 @@ struct k_mem_map {
  * @param map_align Alignment of the memory map's buffer (power of 2)
  */
 #define K_MEM_MAP_DEFINE(name, map_block_size, map_num_blocks, map_align)   \
-	char __aligned(map_align)                                           \
+	char __noinit __aligned(map_align)                                           \
 		_k_mem_map_buf_##name[(map_num_blocks) * (map_block_size)]; \
 	struct k_mem_map name                                               \
 		__in_section(_k_mem_map_ptr, private, mem_map) =            \
