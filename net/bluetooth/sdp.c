@@ -40,11 +40,16 @@
 
 #define SDP_MTU (SDP_DATA_MTU + sizeof(struct bt_sdp_hdr))
 
+#define SDP_SERVICE_HANDLE_BASE 0x10000
+
 struct bt_sdp {
 	struct bt_l2cap_br_chan chan;
 	struct nano_fifo        partial_resp_queue;
 	/* TODO: Allow more than one pending request */
 };
+
+static struct bt_sdp_record *db;
+static uint8_t num_services;
 
 static struct bt_sdp bt_sdp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
@@ -268,15 +273,6 @@ static int bt_sdp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-/** @brief Callback for SDP initialization
- *
- *  Called during L2CAP initialization. Sets up the relevant data-structures and
- *  registers L2CAP PSM
- *
- *  @param None
- *
- *  @return None
- */
 void bt_sdp_init(void)
 {
 	static struct bt_l2cap_server server = {
@@ -291,4 +287,28 @@ void bt_sdp_init(void)
 	if (res) {
 		BT_ERR("L2CAP server registration failed with error %d", res);
 	}
+}
+
+int bt_sdp_register_service(struct bt_sdp_record *service)
+{
+	uint32_t handle = SDP_SERVICE_HANDLE_BASE;
+
+	if (!service) {
+		BT_ERR("No service record specified", service);
+		return 0;
+	}
+
+	if (db) {
+		handle = db->handle + 1;
+	}
+
+	service->next = db;
+	service->index = num_services++;
+	service->handle = handle;
+	*((uint32_t *)(service->attrs[0].val.data)) = handle;
+	db = service;
+
+	BT_DBG("Service registered at %u", handle);
+
+	return 0;
 }

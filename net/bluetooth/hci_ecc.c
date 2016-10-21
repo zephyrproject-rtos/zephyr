@@ -21,7 +21,6 @@
 
 #include <zephyr.h>
 #include <atomic.h>
-#include <microkernel/task.h>
 #include <misc/byteorder.h>
 #include <misc/nano_work.h>
 #include <tinycrypt/constants.h>

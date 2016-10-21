@@ -100,12 +100,14 @@ static uint8_t sensor_location; /* Current Sensor Location */
 static bool csc_simulate;
 static bool ctrl_point_configured;
 
-static void csc_meas_ccc_cfg_changed(uint16_t value)
+static void csc_meas_ccc_cfg_changed(const struct bt_gatt_attr *attr,
+				     uint16_t value)
 {
 	csc_simulate = value == BT_GATT_CCC_NOTIFY;
 }
 
-static void ctrl_point_ccc_cfg_changed(uint16_t value)
+static void ctrl_point_ccc_cfg_changed(const struct bt_gatt_attr *attr,
+				       uint16_t value)
 {
 	ctrl_point_configured = value == BT_GATT_CCC_INDICATE;
 }

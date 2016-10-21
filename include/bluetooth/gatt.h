@@ -497,7 +497,8 @@ struct _bt_gatt_ccc {
 	struct bt_gatt_ccc_cfg	*cfg;
 	size_t			cfg_len;
 	uint16_t		value;
-	void			(*cfg_changed)(uint16_t value);
+	void			(*cfg_changed)(const struct bt_gatt_attr *attr,
+					       uint16_t value);
 };
 
 /** @brief Read Client Characteristic Configuration Attribute helper.

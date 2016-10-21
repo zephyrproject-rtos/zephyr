@@ -55,6 +55,7 @@ enum {
 	BT_RFCOMM_CHAN_HFP_AG,
 	BT_RFCOMM_CHAN_HSP_AG,
 	BT_RFCOMM_CHAN_HSP_HS,
+	BT_RFCOMM_CHAN_SPP,
 };
 
 struct bt_rfcomm_dlc;
@@ -99,6 +100,8 @@ struct bt_rfcomm_dlc {
 	struct bt_rfcomm_session  *session;
 	struct bt_rfcomm_dlc_ops  *ops;
 	struct bt_rfcomm_dlc      *_next;
+
+	bt_security_t              required_sec_level;
 
 	uint16_t                   mtu;
 	uint8_t                    dlci;

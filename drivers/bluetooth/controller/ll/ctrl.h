@@ -204,10 +204,10 @@ struct radio_pdu_node_rx {
 /*****************************************************************************
  * Controller Interface Functions
  ****************************************************************************/
-uint32_t radio_init(uint8_t sca, uint8_t connection_count_max,
-		uint8_t rx_count_max, uint8_t tx_count_max,
-		uint16_t data_octets_max, uint8_t *mem_radio,
-		uint16_t mem_size);
+uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
+		    uint8_t rx_count_max, uint8_t tx_count_max,
+		    uint16_t data_octets_max, uint8_t *mem_radio,
+		    uint16_t mem_size);
 void radio_ticks_active_to_start_set(uint32_t ticks_active_to_start);
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);

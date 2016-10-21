@@ -524,6 +524,47 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	}
 }
 
+enum security_result {
+	RFCOMM_SECURITY_PASSED,
+	RFCOMM_SECURITY_REJECT,
+	RFCOMM_SECURITY_PENDING
+};
+
+static enum security_result rfcomm_dlc_security(struct bt_rfcomm_dlc *dlc)
+{
+	struct bt_conn *conn = dlc->session->br_chan.chan.conn;
+
+	BT_DBG("dlc %p", dlc);
+
+	/* If current security level is greater than or equal to required
+	 * security level  then return SUCCESS.
+	 * For SSP devices the current security will be atleast MEDIUM
+	 * since L2CAP is enforcing it
+	 */
+	if (conn->sec_level >= dlc->required_sec_level) {
+		return RFCOMM_SECURITY_PASSED;
+	}
+
+	if (!bt_conn_security(conn, dlc->required_sec_level)) {
+		/* If Security elevation is initiated or in progress */
+		return RFCOMM_SECURITY_PENDING;
+	}
+
+	/* Security request failed */
+	return RFCOMM_SECURITY_REJECT;
+}
+
+static void rfcomm_dlc_drop(struct bt_rfcomm_dlc *dlc)
+{
+	BT_DBG("dlc %p", dlc);
+
+	if (!dlc->initiator) {
+		rfcomm_send_dm(dlc->session, dlc->dlci);
+	}
+	rfcomm_dlcs_remove_dlci(dlc->session->dlcs, dlc->dlci);
+	rfcomm_dlc_destroy(dlc);
+}
+
 static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	if (!dlci) {
@@ -536,6 +577,7 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 		session->state = BT_RFCOMM_STATE_CONNECTED;
 	} else {
 		struct bt_rfcomm_dlc *dlc;
+		enum security_result result;
 
 		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
 		if (!dlc) {
@@ -544,6 +586,20 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 				rfcomm_send_dm(session, dlci);
 				return;
 			}
+		}
+
+		result = rfcomm_dlc_security(dlc);
+		switch (result) {
+		case RFCOMM_SECURITY_PENDING:
+			dlc->state = BT_RFCOMM_STATE_SECURITY_PENDING;
+			/* TODO: Start an auth timer */
+			return;
+		case RFCOMM_SECURITY_PASSED:
+			break;
+		case RFCOMM_SECURITY_REJECT:
+		default:
+			rfcomm_dlc_drop(dlc);
+			return;
 		}
 
 		if (rfcomm_send_ua(session, dlci) < 0) {
@@ -868,6 +924,34 @@ static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
+static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
+				  uint8_t hci_status)
+{
+	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
+	struct bt_conn *conn = chan->conn;
+	struct bt_rfcomm_dlc *dlc;
+
+	BT_DBG("session %p status 0x%02x encr 0x%02x", session, hci_status,
+	       conn->encrypt);
+
+	for (dlc = session->dlcs; dlc; dlc = dlc->_next) {
+		if (dlc->state != BT_RFCOMM_STATE_SECURITY_PENDING) {
+			continue;
+		}
+
+		if (hci_status || !conn->encrypt ||
+		    conn->sec_level < dlc->required_sec_level) {
+			rfcomm_dlc_drop(dlc);
+			continue;
+		}
+
+		if (!dlc->initiator) {
+			rfcomm_send_ua(session, dlc->dlci);
+			rfcomm_dlc_connected(dlc);
+		}
+	}
+}
+
 static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	int i;
@@ -875,6 +959,7 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.connected = rfcomm_connected,
 		.disconnected = rfcomm_disconnected,
 		.recv = rfcomm_recv,
+		.encrypt_change = rfcomm_encrypt_change,
 	};
 
 	BT_DBG("conn %p handle %u", conn, conn->handle);

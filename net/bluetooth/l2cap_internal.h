@@ -69,6 +69,15 @@ struct bt_l2cap_conn_req {
 #define BT_L2CAP_CS_NO_INFO		0x0000
 #define BT_L2CAP_CS_AUTHEN_PEND		0x0001
 
+/* valid results in conn response on BR/EDR */
+#define BT_L2CAP_BR_SUCCESS		0x0000
+#define BT_L2CAP_BR_PENDING		0x0001
+#define BT_L2CAP_BR_ERR_PSM_NOT_SUPP	0x0002
+#define BT_L2CAP_BR_ERR_SEC_BLOCK	0x0003
+#define BT_L2CAP_BR_ERR_NO_RESOURCES	0x0004
+#define BT_L2CAP_BR_ERR_INVALID_SCID	0x0006
+#define BT_L2CAP_BR_ERR_SCID_IN_USE	0x0007
+
 #define BT_L2CAP_CONN_RSP		0x03
 struct bt_l2cap_conn_rsp {
 	uint16_t dcid;

@@ -1466,9 +1466,47 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 		sec = BT_SECURITY_MEDIUM;
 		break;
 	case BT_ATT_ERR_AUTHENTICATION:
-		if (conn->sec_level >= BT_SECURITY_HIGH)
+		if (conn->sec_level < BT_SECURITY_MEDIUM) {
+			/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part C]
+			 * page 375:
+			 *
+			 * If an LTK is not available, the service request
+			 * shall be rejected with the error code “Insufficient
+			 * Authentication”.
+			 * Note: When the link is not encrypted, the error code
+			 * "Insufficient Authentication" does not indicate that
+			 * MITM protection is required.
+			 */
+			sec = BT_SECURITY_MEDIUM;
+		} else if (conn->sec_level < BT_SECURITY_HIGH) {
+			/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part C]
+			 * page 375:
+			 *
+			 * If an authenticated pairing is required but only an
+			 * unauthenticated pairing has occurred and the link is
+			 * currently encrypted, the service request shall be
+			 * rejected with the error code “Insufficient
+			 * Authentication.”
+			 * Note: When unauthenticated pairing has occurred and
+			 * the link is currently encrypted, the error code
+			 * “Insufficient Authentication” indicates that MITM
+			 * protection is required.
+			 */
+			sec = BT_SECURITY_HIGH;
+		} else if (conn->sec_level < BT_SECURITY_FIPS) {
+			/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part C]
+			 * page 375:
+			 *
+			 * If LE Secure Connections authenticated pairing is
+			 * required but LE legacy pairing has occurred and the
+			 * link is currently encrypted, the service request
+			 * shall be rejected with the error code “Insufficient
+			 * Authentication”.
+			 */
+			sec = BT_SECURITY_FIPS;
+		} else {
 			return -EALREADY;
-		sec = BT_SECURITY_HIGH;
+		}
 		break;
 	default:
 		return -EINVAL;
