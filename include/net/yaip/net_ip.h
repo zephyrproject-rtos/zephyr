@@ -690,6 +690,34 @@ static inline struct sockaddr_in *net_sin(const struct sockaddr *addr)
 	return (struct sockaddr_in *)addr;
 }
 
+/**
+ * @brief Get sockaddr_in6_ptr from sockaddr_ptr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to IPv6 socket address
+ */
+static inline
+struct sockaddr_in6_ptr *net_sin6_ptr(const struct sockaddr_ptr *addr)
+{
+	return (struct sockaddr_in6_ptr *)addr;
+}
+
+/**
+ * @brief Get sockaddr_in_ptr from sockaddr_ptr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to IPv4 socket address
+ */
+static inline
+struct sockaddr_in_ptr *net_sin_ptr(const struct sockaddr_ptr *addr)
+{
+	return (struct sockaddr_in_ptr *)addr;
+}
+
 #ifdef __cplusplus
 }
 #endif
