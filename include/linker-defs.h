@@ -34,7 +34,7 @@
 
 /* include platform dependent linker-defs */
 #ifdef CONFIG_X86
-#include <arch/x86/linker-defs-arch.h>
+/* Nothing yet to include */
 #elif defined(CONFIG_ARM)
 /* Nothing yet to include */
 #elif defined(CONFIG_ARC)

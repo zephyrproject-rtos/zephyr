@@ -129,11 +129,17 @@ SECTIONS
 	*(.rodata)
 	*(".rodata.*")
 	*(.gnu.linkonce.r.*)
-	IDT_MEMORY
+
+	. = ALIGN(8);
+	_idt_base_address = .;
+	KEEP(*(staticIdt))
 
 #ifndef CONFIG_X86_FIXED_IRQ_MAPPING
-	IRQ_TO_INTERRUPT_VECTOR_MEMORY
+	. = ALIGN(4);
+	_irq_to_interrupt_vector = .;
+	KEEP(*(irq_int_vector_map))
 #endif
+
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -262,8 +268,8 @@ SECTIONS
 	 */
 	*(.noinit)
 	*(".noinit.*")
+	KEEP(*(.intStubSect))
 
-	INT_STUB_NOINIT
 	*(.bottom_of_image_ram)
 	*(.bottom_of_image_ram.*)
 	} GROUP_LINK_IN(RAM)
