@@ -366,11 +366,11 @@ static int i2c_qmsi_init(struct device *dev)
 		break;
 #endif /* CONFIG_I2C_1 */
 
-	clk_periph_enable(config->clock_gate);
-
 	default:
 		return -EIO;
 	}
+
+	clk_periph_enable(config->clock_gate);
 
 	err = i2c_qmsi_configure(dev, config->default_cfg.raw);
 	if (err < 0) {
