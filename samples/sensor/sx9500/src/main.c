@@ -15,7 +15,6 @@
  */
 
 #include <zephyr.h>
-#include <nanokernel.h>
 #include <device.h>
 #include <sensor.h>
 #include <misc/printk.h>
@@ -76,7 +75,7 @@ static void do_main(struct device *dev)
 		ret = sensor_channel_get(dev, SENSOR_CHAN_PROX, &prox_value);
 		printk("prox is %d\n", prox_value.val1);
 
-		task_sleep(sys_clock_ticks_per_sec);
+		task_sleep(SECONDS(1));
 	}
 }
 

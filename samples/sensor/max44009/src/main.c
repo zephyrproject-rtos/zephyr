@@ -24,25 +24,19 @@
  * the result every 4 seconds.
  */
 
-#define SLEEPTICKS	SECONDS(4)
-
 void main(void)
 {
 	struct device *dev;
 	struct sensor_value val;
 	uint32_t lum = 0;
-	struct nano_timer timer;
-	void *timer_data = NULL;
 
-	printk("MAX44009 light sensor app.\n");
+	printk("MAX44009 light sensor application\n");
 
 	dev = device_get_binding("MAX44009");
 	if (!dev) {
 		printk("sensor: device not found.\n");
 		return;
 	}
-
-	nano_timer_init(&timer, timer_data);
 
 	while (1) {
 		if (sensor_sample_fetch_chan(dev, SENSOR_CHAN_LIGHT) != 0) {
@@ -58,7 +52,6 @@ void main(void)
 		lum = val.dval;
 		printk("sensor: lum reading: %d\n", lum);
 
-		nano_timer_start(&timer, SLEEPTICKS);
-		nano_timer_test(&timer, TICKS_UNLIMITED);
+		task_sleep(SECONDS(4));
 	}
 }
