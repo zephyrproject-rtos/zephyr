@@ -697,7 +697,6 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	uint8_t offset = 0;
 	struct net_udp_hdr *udp;
 	struct net_buf *frag;
-	struct net_buf *temp;
 	uint8_t compressed;
 
 	if (buf->frags->len < NET_IPV6H_LEN) {
@@ -779,9 +778,7 @@ end:
 	}
 
 	/* Delete uncompressed(original) header fragment */
-	temp = buf->frags;
-	net_buf_frag_del(buf, temp);
-	net_nbuf_unref(temp);
+	net_buf_frag_del(buf, buf->frags);
 
 	/* Insert compressed header fragment */
 	net_buf_frag_insert(buf, frag);

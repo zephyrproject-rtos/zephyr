@@ -555,12 +555,13 @@ struct net_buf *net_nbuf_get_data(struct net_context *context)
 
 #if NET_DEBUG
 void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line)
-#else
-void net_nbuf_unref(struct net_buf *buf)
-#endif
 {
 	struct net_buf *frag;
 
+#else
+void net_nbuf_unref(struct net_buf *buf)
+{
+#endif
 	if (!buf) {
 		NET_DBG("*** ERROR *** buf %p (%s():%d)", buf, caller, line);
 		return;
@@ -584,26 +585,31 @@ void net_nbuf_unref(struct net_buf *buf)
 			buf, buf->ref - 1, buf->frags, caller, line);
 	}
 
-	/* Remove the fragment list elements first, otherwise we
-	 * have a memory leak. But only if we are to be remove the
-	 * buffer.
+#if NET_DEBUG
+	if (buf->ref > 1) {
+		goto done;
+	}
+
+	/* Only remove fragments if debug is enabled since net_buf_unref takes
+	 * care of removing all the fragments.
 	 */
 	frag = buf->frags;
-	while (!(buf->ref - 1) && frag) {
-		struct net_buf *next = frag->frags;
-
-		net_buf_frag_del(buf, frag);
-
+	while (frag) {
 		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
 			type2str(NET_NBUF_DATA),
 			get_frees(NET_NBUF_DATA),
 			frag, frag->ref - 1, frag->frags, caller, line);
 
-		net_buf_unref(frag);
+		if (!frag->ref) {
+			NET_DBG("*** ERROR *** frag %p is freed already "
+				"(%s():%d)", frag, caller, line);
+		}
 
-		frag = next;
+		frag = net_buf_frag_del(buf, frag);
 	}
 
+done:
+#endif
 	net_buf_unref(buf);
 }
 
@@ -810,8 +816,6 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 				 * data in it any more.
 				 */
 				net_buf_frag_del(buf, buf->frags);
-
-				net_nbuf_unref(frag);
 
 				/* Then check next fragment */
 				continue;

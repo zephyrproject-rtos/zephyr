@@ -203,12 +203,10 @@ static int bt_iface_send(struct net_if *iface, struct net_buf *buf)
 	 * some extra book keeping so add a reference to prevent it to be
 	 * freed.
 	 */
-	ret = bt_l2cap_chan_send(&ctxt->ipsp_chan.chan, net_buf_ref(buf));
+	ret = bt_l2cap_chan_send(&ctxt->ipsp_chan.chan, buf);
 	if (ret < 0) {
 		return ret;
 	}
-
-	net_nbuf_unref(buf);
 
 	return ret;
 }
