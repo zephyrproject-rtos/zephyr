@@ -1,6 +1,6 @@
 ccflags-y += -I${ZEPHYR_BASE}/tests/include
 
-obj-y += main.o pi.o
+obj-y += main.o
 
 # Some boards are significantly slower than others resulting in the test
 # output being in the range of every few seconds to every few minutes. To

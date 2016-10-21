@@ -88,6 +88,12 @@ static struct fp_register_set float_reg_set_store;
 
 static struct fp_register_set float_reg_set;
 
+/* stack for high priority fiber (also use .bss for float_reg_set) */
+
+static char __stack fiber_stack[1024];
+
+static struct nano_timer fiber_timer;
+static void *dummy_timer_data;	/* allocate just enough room for a pointer */
 
 /* flag indicating that an error has occurred */
 
@@ -101,6 +107,8 @@ int fpu_sharing_error;
 static volatile unsigned int load_store_low_count = 0;
 static volatile unsigned int load_store_high_count = 0;
 
+static void load_store_high(int, int);
+
 /**
  *
  * @brief Low priority FPU load/store thread
@@ -108,7 +116,7 @@ static volatile unsigned int load_store_high_count = 0;
  * @return N/A
  */
 
-void load_store_low(void)
+void main(void)
 {
 	unsigned int i;
 	unsigned char init_byte;
@@ -121,16 +129,20 @@ void load_store_low(void)
 	PRINT_LINE;
 
 	/*
-	 * For microkernel builds, preemption tasks are specified in the .mdef
-	 * file.
-	 *
-	 * Enable round robin scheduling to allow both the low priority pi
-	 * computation and load/store tasks to execute. The high priority pi
-	 * computation and load/store tasks will preempt the low priority tasks
-	 * periodically.
+	 * Start a single fiber which will regularly preempt the background
+	 * task, and perform similiar floating point register manipulations
+	 * that the background task performs; except that a different constant
+	 * is loaded into the floating point registers.
 	 */
 
-	sys_scheduler_time_slice_set(1, 10);
+	task_fiber_start(fiber_stack,
+			 sizeof(fiber_stack),
+			 load_store_high,
+			 0,	/* arg1 */
+			 0,	/* arg2 */
+			 5,	/* priority */
+			 FP_OPTION /* options */
+			 );
 
 	/*
 	 * Initialize floating point load buffer to known values;
@@ -251,11 +263,18 @@ void load_store_low(void)
  * @return N/A
  */
 
-void load_store_high(void)
+void load_store_high(int unused1, int unused2)
 {
 	unsigned int i;
 	unsigned char init_byte;
 	unsigned char *reg_set_ptr = (unsigned char *)&float_reg_set;
+
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
+
+	/* initialize timer; data field is not used */
+
+	nano_timer_init(&fiber_timer, (void *)dummy_timer_data);
 
 	/* test until the specified time limit, or until an error is detected */
 
@@ -314,7 +333,8 @@ void load_store_high(void)
 		 * once the sleep ends.
 		 */
 
-		task_sleep(1);
+		nano_fiber_timer_start(&fiber_timer, 1);
+		nano_fiber_timer_test(&fiber_timer, TICKS_UNLIMITED);
 
 		/* periodically issue progress report */
 
