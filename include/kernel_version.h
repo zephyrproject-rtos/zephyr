@@ -32,13 +32,13 @@ extern "C" {
  *       x -- major release
  *       y -- minor release
  *       z -- patchlevel release
- * Each of these elements must therefore be in the range 0 to 256, inclusive.
+ * Each of these elements must therefore be in the range 0 to 255, inclusive.
  *
  * Part 2: The least significant byte is reserved for future use.
  */
-#define SYS_KERNEL_VER_MAJOR(ver) ((ver >> 24) & 0x0F)
-#define SYS_KERNEL_VER_MINOR(ver) ((ver >> 16) & 0x0F)
-#define SYS_KERNEL_VER_PATCHLEVEL(ver) ((ver >> 8) & 0x0F)
+#define SYS_KERNEL_VER_MAJOR(ver) ((ver >> 24) & 0xFF)
+#define SYS_KERNEL_VER_MINOR(ver) ((ver >> 16) & 0xFF)
+#define SYS_KERNEL_VER_PATCHLEVEL(ver) ((ver >> 8) & 0xFF)
 
 /* kernel version routines */
 
