@@ -103,9 +103,8 @@ struct pwm_driver_api {
 static inline int pwm_pin_configure(struct device *dev, uint8_t pwm,
 				    int flags)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->config(dev, PWM_ACCESS_BY_PIN, pwm, flags);
 }
 
@@ -125,9 +124,8 @@ static inline int pwm_pin_configure(struct device *dev, uint8_t pwm,
 static inline int pwm_pin_set_values(struct device *dev, uint32_t pwm,
 				     uint32_t on, uint32_t off)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_values(dev, PWM_ACCESS_BY_PIN, pwm, on, off);
 }
 
@@ -147,9 +145,8 @@ static inline int pwm_pin_set_values(struct device *dev, uint32_t pwm,
 static inline int pwm_pin_set_period(struct device *dev, uint32_t pwm,
 				     uint32_t period)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_period(dev, PWM_ACCESS_BY_PIN, pwm, period);
 }
 
@@ -169,9 +166,8 @@ static inline int pwm_pin_set_period(struct device *dev, uint32_t pwm,
 static inline int pwm_pin_set_duty_cycle(struct device *dev, uint32_t pwm,
 					 uint8_t duty)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_duty_cycle(dev, PWM_ACCESS_BY_PIN, pwm, duty);
 }
 
@@ -190,9 +186,7 @@ static inline int pwm_pin_set_duty_cycle(struct device *dev, uint32_t pwm,
 static inline int pwm_pin_set_phase(struct device *dev, uint32_t pwm,
 				    uint8_t phase)
 {
-	struct pwm_driver_api *api;
-
-	api = (struct pwm_driver_api *)dev->driver_api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
 	if ((api != NULL) && (api->set_phase != NULL)) {
 		return api->set_phase(dev, PWM_ACCESS_BY_PIN, pwm, phase);
@@ -212,9 +206,8 @@ static inline int pwm_pin_set_phase(struct device *dev, uint32_t pwm,
  */
 static inline int pwm_all_configure(struct device *dev, int flags)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->config(dev, PWM_ACCESS_ALL, 0, flags);
 }
 
@@ -233,9 +226,8 @@ static inline int pwm_all_configure(struct device *dev, int flags)
 static inline int pwm_all_set_values(struct device *dev,
 				     uint32_t on, uint32_t off)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_values(dev, PWM_ACCESS_ALL, 0, on, off);
 }
 
@@ -253,9 +245,8 @@ static inline int pwm_all_set_values(struct device *dev,
  */
 static inline int pwm_all_period(struct device *dev, uint32_t period)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_period(dev, PWM_ACCESS_ALL, 0, period);
 }
 
@@ -273,9 +264,8 @@ static inline int pwm_all_period(struct device *dev, uint32_t period)
  */
 static inline int pwm_all_set_duty_cycle(struct device *dev, uint8_t duty)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_duty_cycle(dev, PWM_ACCESS_ALL, 0, duty);
 }
 
@@ -292,9 +282,7 @@ static inline int pwm_all_set_duty_cycle(struct device *dev, uint8_t duty)
  */
 static inline int pwm_all_set_phase(struct device *dev, uint8_t phase)
 {
-	struct pwm_driver_api *api;
-
-	api = (struct pwm_driver_api *)dev->driver_api;
+	const struct pwm_driver_api *api = dev->driver_api;
 
 	if ((api != NULL) && (api->set_phase != NULL)) {
 		return api->set_phase(dev, PWM_ACCESS_ALL, 0, phase);
