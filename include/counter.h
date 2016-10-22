@@ -67,9 +67,7 @@ struct counter_driver_api {
  */
 static inline int counter_start(struct device *dev)
 {
-	struct counter_driver_api *api;
-
-	api = (struct counter_driver_api *)dev->driver_api;
+	const struct counter_driver_api *api = dev->driver_api;
 
 	return api->start(dev);
 }
@@ -84,9 +82,7 @@ static inline int counter_start(struct device *dev)
  */
 static inline int counter_stop(struct device *dev)
 {
-	struct counter_driver_api *api;
-
-	api = (struct counter_driver_api *)dev->driver_api;
+	const struct counter_driver_api *api = dev->driver_api;
 
 	return api->stop(dev);
 }
@@ -99,9 +95,7 @@ static inline int counter_stop(struct device *dev)
  */
 static inline uint32_t counter_read(struct device *dev)
 {
-	struct counter_driver_api *api;
-
-	api = (struct counter_driver_api *)dev->driver_api;
+	const struct counter_driver_api *api = dev->driver_api;
 
 	return api->read();
 }
@@ -124,9 +118,7 @@ static inline int counter_set_alarm(struct device *dev,
 				    counter_callback_t callback,
 				    uint32_t count, void *user_data)
 {
-	struct counter_driver_api *api;
-
-	api = (struct counter_driver_api *)dev->driver_api;
+	const struct counter_driver_api *api = dev->driver_api;
 
 	return api->set_alarm(dev, callback, count, user_data);
 }
