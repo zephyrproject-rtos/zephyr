@@ -53,9 +53,8 @@ struct eth_driver_api {
  */
 static inline int eth_send(struct device *dev, uint8_t *buffer, uint16_t len)
 {
-	struct eth_driver_api *api;
+	const struct eth_driver_api *api = dev->driver_api;
 
-	api = (struct eth_driver_api *)dev->driver_api;
 	return api->send(dev, buffer, len);
 }
 
@@ -72,9 +71,8 @@ static inline int eth_send(struct device *dev, uint8_t *buffer, uint16_t len)
 static inline void eth_register_callback(struct device *dev,
 		void (*cb)(uint8_t *buffer, uint16_t len))
 {
-	struct eth_driver_api *api;
+	const struct eth_driver_api *api = dev->driver_api;
 
-	api = (struct eth_driver_api *)dev->driver_api;
 	api->register_callback(dev, cb);
 }
 
