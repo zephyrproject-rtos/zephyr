@@ -115,7 +115,7 @@ struct spi_driver_api {
 static inline int spi_configure(struct device *dev,
 				struct spi_config *config)
 {
-	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+	const struct spi_driver_api *api = dev->driver_api;
 
 	return api->configure(dev, config);
 }
@@ -137,7 +137,7 @@ static inline int spi_configure(struct device *dev,
  */
 static inline int spi_slave_select(struct device *dev, uint32_t slave)
 {
-	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+	const struct spi_driver_api *api = dev->driver_api;
 
 	if (!api->slave_select) {
 		return 0;
@@ -157,7 +157,7 @@ static inline int spi_slave_select(struct device *dev, uint32_t slave)
  */
 static inline int spi_read(struct device *dev, void *buf, uint32_t len)
 {
-	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+	const struct spi_driver_api *api = dev->driver_api;
 
 	return api->transceive(dev, NULL, 0, buf, len);
 }
@@ -173,7 +173,7 @@ static inline int spi_read(struct device *dev, void *buf, uint32_t len)
  */
 static inline int spi_write(struct device *dev, const void *buf, uint32_t len)
 {
-	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+	const struct spi_driver_api *api = dev->driver_api;
 
 	return api->transceive(dev, buf, len, NULL, 0);
 }
@@ -197,7 +197,7 @@ static inline int spi_transceive(struct device *dev,
 			  const void *tx_buf, uint32_t tx_buf_len,
 			  void *rx_buf, uint32_t rx_buf_len)
 {
-	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+	const struct spi_driver_api *api = dev->driver_api;
 
 	return api->transceive(dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 }
