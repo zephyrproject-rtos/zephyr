@@ -35,9 +35,9 @@ This module tests the following CPU and thread related routines:
 
 /*
  * Include board.h from platform to get IRQ number.
- * NOTE: Cortex-M3/M4 does not need IRQ numbers
+ * NOTE: Cortex-M does not need IRQ numbers
  */
-#if !defined(CONFIG_CPU_CORTEX_M3_M4)
+#if !defined(CONFIG_CPU_CORTEX_M)
   #include <board.h>
 #endif
 
@@ -66,9 +66,9 @@ This module tests the following CPU and thread related routines:
   #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)
   #define TICK_IRQ IRQ_TIMER0
-#elif defined(CONFIG_CPU_CORTEX_M3_M4)
+#elif defined(CONFIG_CPU_CORTEX_M)
 /*
- * The Cortex-M3/M4 use the SYSTICK exception for the system timer, which is
+ * The Cortex-M use the SYSTICK exception for the system timer, which is
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
 #else
