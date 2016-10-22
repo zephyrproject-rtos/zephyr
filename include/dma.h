@@ -150,9 +150,8 @@ struct dma_driver_api {
 static inline int dma_channel_config(struct device *dev, uint32_t channel,
 				     struct dma_channel_config *config)
 {
-	struct dma_driver_api *api;
+	const struct dma_driver_api *api = dev->driver_api;
 
-	api = (struct dma_driver_api *)dev->driver_api;
 	return api->channel_config(dev, channel, config);
 }
 
@@ -171,9 +170,8 @@ static inline int dma_channel_config(struct device *dev, uint32_t channel,
 static inline int dma_transfer_config(struct device *dev, uint32_t channel,
 				      struct dma_transfer_config *config)
 {
-	struct dma_driver_api *api;
+	const struct dma_driver_api *api = dev->driver_api;
 
-	api = (struct dma_driver_api *)dev->driver_api;
 	return api->transfer_config(dev, channel, config);
 }
 
@@ -190,9 +188,8 @@ static inline int dma_transfer_config(struct device *dev, uint32_t channel,
  */
 static inline int dma_transfer_start(struct device *dev, uint32_t channel)
 {
-	struct dma_driver_api *api;
+	const struct dma_driver_api *api = dev->driver_api;
 
-	api = (struct dma_driver_api *)dev->driver_api;
 	return api->transfer_start(dev, channel);
 }
 
@@ -208,9 +205,8 @@ static inline int dma_transfer_start(struct device *dev, uint32_t channel)
  */
 static inline int dma_transfer_stop(struct device *dev, uint32_t channel)
 {
-	struct dma_driver_api *api;
+	const struct dma_driver_api *api = dev->driver_api;
 
-	api = (struct dma_driver_api *)dev->driver_api;
 	return api->transfer_stop(dev, channel);
 }
 
