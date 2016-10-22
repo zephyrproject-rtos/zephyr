@@ -141,9 +141,8 @@ struct ipm_driver_api {
 static inline int ipm_send(struct device *ipmdev, int wait, uint32_t id,
 			   const void *data, int size)
 {
-	struct ipm_driver_api *api;
+	const struct ipm_driver_api *api = ipmdev->driver_api;
 
-	api = (struct ipm_driver_api *) ipmdev->driver_api;
 	return api->send(ipmdev, wait, id, data, size);
 }
 
@@ -158,9 +157,8 @@ static inline int ipm_send(struct device *ipmdev, int wait, uint32_t id,
 static inline void ipm_register_callback(struct device *ipmdev,
 					 ipm_callback_t cb, void *context)
 {
-	struct ipm_driver_api *api;
+	const struct ipm_driver_api *api = ipmdev->driver_api;
 
-	api = (struct ipm_driver_api *) ipmdev->driver_api;
 	api->register_callback(ipmdev, cb, context);
 }
 
@@ -176,9 +174,8 @@ static inline void ipm_register_callback(struct device *ipmdev,
  */
 static inline int ipm_max_data_size_get(struct device *ipmdev)
 {
-	struct ipm_driver_api *api;
+	const struct ipm_driver_api *api = ipmdev->driver_api;
 
-	api = (struct ipm_driver_api *) ipmdev->driver_api;
 	return api->max_data_size_get(ipmdev);
 }
 
@@ -195,9 +192,8 @@ static inline int ipm_max_data_size_get(struct device *ipmdev)
  */
 static inline uint32_t ipm_max_id_val_get(struct device *ipmdev)
 {
-	struct ipm_driver_api *api;
+	const struct ipm_driver_api *api = ipmdev->driver_api;
 
-	api = (struct ipm_driver_api *) ipmdev->driver_api;
 	return api->max_id_val_get(ipmdev);
 }
 
@@ -212,9 +208,8 @@ static inline uint32_t ipm_max_id_val_get(struct device *ipmdev)
  */
 static inline int ipm_set_enabled(struct device *ipmdev, int enable)
 {
-	struct ipm_driver_api *api;
+	const struct ipm_driver_api *api = ipmdev->driver_api;
 
-	api = (struct ipm_driver_api *) ipmdev->driver_api;
 	return api->set_enabled(ipmdev, enable);
 }
 
