@@ -101,9 +101,8 @@ struct adc_driver_api {
  */
 static inline void adc_enable(struct device *dev)
 {
-	struct adc_driver_api *api;
+	const struct adc_driver_api *api = dev->driver_api;
 
-	api = (struct adc_driver_api *)dev->driver_api;
 	api->enable(dev);
 }
 
@@ -119,9 +118,8 @@ static inline void adc_enable(struct device *dev)
  */
 static inline void adc_disable(struct device *dev)
 {
-	struct adc_driver_api *api;
+	const struct adc_driver_api *api = dev->driver_api;
 
-	api = (struct adc_driver_api *)dev->driver_api;
 	api->disable(dev);
 }
 
@@ -142,9 +140,8 @@ static inline void adc_disable(struct device *dev)
  */
 static inline int adc_read(struct device *dev, struct adc_seq_table *seq_table)
 {
-	struct adc_driver_api *api;
+	const struct adc_driver_api *api = dev->driver_api;
 
-	api = (struct adc_driver_api *)dev->driver_api;
 	return api->read(dev, seq_table);
 }
 
