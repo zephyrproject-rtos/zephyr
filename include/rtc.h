@@ -88,44 +88,39 @@ struct rtc_driver_api {
 
 static inline uint32_t rtc_read(struct device *dev)
 {
-	struct rtc_driver_api *api;
+	const struct rtc_driver_api *api = dev->driver_api;
 
-	api = (struct rtc_driver_api *)dev->driver_api;
 	return api->read(dev);
 }
 
 static inline void rtc_enable(struct device *dev)
 {
-	struct rtc_driver_api *api;
+	const struct rtc_driver_api *api = dev->driver_api;
 
-	api = (struct rtc_driver_api *)dev->driver_api;
 	api->enable(dev);
 }
 
 
 static inline void rtc_disable(struct device *dev)
 {
-	struct rtc_driver_api *api;
+	const struct rtc_driver_api *api = dev->driver_api;
 
-	api = (struct rtc_driver_api *)dev->driver_api;
 	api->disable(dev);
 }
 
 static inline int rtc_set_config(struct device *dev,
 				 struct rtc_config *cfg)
 {
-	struct rtc_driver_api *api;
+	const struct rtc_driver_api *api = dev->driver_api;
 
-	api = (struct rtc_driver_api *)dev->driver_api;
 	return api->set_config(dev, cfg);
 }
 
 static inline int rtc_set_alarm(struct device *dev,
 				const uint32_t alarm_val)
 {
-	struct rtc_driver_api *api;
+	const struct rtc_driver_api *api = dev->driver_api;
 
-	api = (struct rtc_driver_api *)dev->driver_api;
 	return api->set_alarm(dev, alarm_val);
 }
 
