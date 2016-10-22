@@ -65,7 +65,7 @@ struct flash_driver_api {
 static inline int flash_read(struct device *dev, off_t offset, void *data,
 			     size_t len)
 {
-	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
+	const struct flash_driver_api *api = dev->driver_api;
 
 	return api->read(dev, offset, data, len);
 }
@@ -86,7 +86,7 @@ static inline int flash_read(struct device *dev, off_t offset, void *data,
 static inline int flash_write(struct device *dev, off_t offset,
 			      const void *data, size_t len)
 {
-	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
+	const struct flash_driver_api *api = dev->driver_api;
 
 	return api->write(dev, offset, data, len);
 }
@@ -109,7 +109,7 @@ static inline int flash_write(struct device *dev, off_t offset,
  */
 static inline int flash_erase(struct device *dev, off_t offset, size_t size)
 {
-	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
+	const struct flash_driver_api *api = dev->driver_api;
 
 	return api->erase(dev, offset, size);
 }
@@ -132,7 +132,7 @@ static inline int flash_erase(struct device *dev, off_t offset, size_t size)
  */
 static inline int flash_write_protection_set(struct device *dev, bool enable)
 {
-	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
+	const struct flash_driver_api *api = dev->driver_api;
 
 	return api->write_protection(dev, enable);
 }
