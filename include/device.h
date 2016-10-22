@@ -400,7 +400,7 @@ struct device_config {
  */
 struct device {
 	struct device_config *config;
-	void *driver_api;
+	const void *driver_api;
 	void *driver_data;
 };
 
