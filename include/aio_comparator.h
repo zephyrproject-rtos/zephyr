@@ -56,9 +56,8 @@ struct aio_cmp_driver_api {
  */
 static inline int aio_cmp_disable(struct device *dev, uint8_t index)
 {
-	struct aio_cmp_driver_api *api;
+	const struct aio_cmp_driver_api *api = dev->driver_api;
 
-	api = (struct aio_cmp_driver_api *)dev->driver_api;
 	return api->disable(dev, index);
 }
 
@@ -82,9 +81,8 @@ static inline int aio_cmp_configure(struct device *dev, uint8_t index,
 				    enum aio_cmp_ref refsel,
 				    aio_cmp_cb cb, void *param)
 {
-	struct aio_cmp_driver_api *api;
+	const struct aio_cmp_driver_api *api = dev->driver_api;
 
-	api = (struct aio_cmp_driver_api *)dev->driver_api;
 	return api->configure(dev, index, polarity, refsel, cb, param);
 }
 
