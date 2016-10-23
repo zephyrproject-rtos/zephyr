@@ -45,6 +45,13 @@
 static struct device *uart_console_dev;
 
 #ifdef CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS
+
+static uart_console_in_debug_hook_t debug_hook_in;
+void uart_console_in_debug_hook_install(uart_console_in_debug_hook_t hook)
+{
+	debug_hook_in = hook;
+}
+
 static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(debug_hook_out_nop)
 {
 	ARG_UNUSED(c);
@@ -325,13 +332,15 @@ void uart_console_isr(struct device *unused)
 			return;
 		}
 
-		if (uart_irq_input_hook(uart_console_dev, byte) != 0) {
+#ifdef CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS
+		if (debug_hook_in != NULL && debug_hook_in(byte) != 0) {
 			/*
 			 * The input hook indicates that no further processing
 			 * should be done by this handler.
 			 */
 			return;
 		}
+#endif
 
 		if (!cmd) {
 			cmd = nano_isr_fifo_get(avail_queue, TICKS_NONE);

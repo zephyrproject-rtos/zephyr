@@ -57,8 +57,13 @@ void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines,
 #define UART_CONSOLE_OUT_DEBUG_HOOK_SIG(x) int(x)(char c)
 typedef UART_CONSOLE_OUT_DEBUG_HOOK_SIG(uart_console_out_debug_hook_t);
 
-extern void uart_console_out_debug_hook_install(
+void uart_console_out_debug_hook_install(
 				uart_console_out_debug_hook_t *hook);
+
+typedef int (*uart_console_in_debug_hook_t) (uint8_t);
+
+void uart_console_in_debug_hook_install(uart_console_in_debug_hook_t hook);
+
 #endif
 
 #ifdef __cplusplus

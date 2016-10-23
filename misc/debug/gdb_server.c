@@ -486,7 +486,7 @@ static uint32_t write_to_console(char *buf, uint32_t len);
 #endif
 
 #ifdef CONFIG_GDB_SERVER_INTERRUPT_DRIVEN
-static int console_irq_input_hook(struct device *dev, uint8_t ch);
+static int console_irq_input_hook(uint8_t ch);
 #endif
 
 static int get_hex_char_value(unsigned char ch)
@@ -2389,7 +2389,7 @@ static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(gdb_console_out)
 }
 
 #ifdef CONFIG_GDB_SERVER_INTERRUPT_DRIVEN
-static int console_irq_input_hook(struct device *dev, uint8_t ch)
+static int console_irq_input_hook(uint8_t ch)
 {
 	if (ch == GDB_STOP_CHAR) {
 		(void)irq_lock();
@@ -2424,7 +2424,7 @@ static void init_interrupt_handling(void)
 {
 	nano_fifo_init(&cmds_queue);
 	nano_fifo_init(&avail_queue);
-	uart_irq_input_hook_set(uart_console_dev, console_irq_input_hook);
+	uart_console_in_debug_hook_install(console_irq_input_hook);
 	uart_register_input(&avail_queue, &cmds_queue, NULL);
 }
 #else
