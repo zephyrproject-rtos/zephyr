@@ -106,7 +106,7 @@ uint8_t dst_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa };
 
 /* Source and Destination addresses are contect related addresses. */
 #if defined(CONFIG_NET_6LO_CONTEXT)
-/* CONFIG_NET_MAX_6LO_CONTEXTS=2, defined in prj_x86.conf, If you want
+/* CONFIG_NET_MAX_6LO_CONTEXTS=2, defined in prj.conf, If you want
  * to increase this value, then add extra contexts here.
  */
 #define ctx1_prefix \
