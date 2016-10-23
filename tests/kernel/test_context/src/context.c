@@ -17,13 +17,13 @@
  */
 
 /*
-DESCRIPTION
-This module tests the following CPU and thread related routines:
-  fiber_fiber_start(), task_fiber_start(), fiber_yield(),
-  sys_thread_self_get(), sys_execution_context_type_get(), nano_cpu_idle(),
-  irq_lock(), irq_unlock(),
-  irq_offload(), nanoCpuExcConnect(),
-  irq_enable(), irq_disable(),
+ * DESCRIPTION
+ * This module tests the following CPU and thread related routines:
+ * fiber_fiber_start(), task_fiber_start(), fiber_yield(),
+ * sys_thread_self_get(), sys_execution_context_type_get(), nano_cpu_idle(),
+ * irq_lock(), irq_unlock(),
+ * irq_offload(), nanoCpuExcConnect(),
+ * irq_enable(), irq_disable(),
  */
 
 #include <tc_util.h>
@@ -84,63 +84,62 @@ This module tests the following CPU and thread related routines:
 #endif
 
 typedef struct {
-	int     command;    /* command to process */
-	int     error;      /* error value (if any) */
+	int command;	/* command to process   */
+	int error;	/* error value (if any) */
 	union {
-		void   *data;   /* pointer to data to use or return */
-		int     value;  /* value to be passed or returned */
+		void *data;	/* pointer to data to use or return */
+		int value;	/* value to be passed or returned   */
 	};
 } ISR_INFO;
 
-typedef int  (* disable_interrupt_func)(int);
-typedef void (* enable_interrupt_func)(int);
+typedef int  (*disable_int_func)(int);
+typedef void (*enable_int_func)(int);
 
-static struct nano_sem        wakeFiber;
-static struct nano_timer      timer;
-static struct nano_sem        reply_timeout;
-struct nano_fifo              timeout_order_fifo;
-static void *timerData[1];
+static struct nano_sem   sem_fiber;
+static struct nano_timer timer;
+static struct nano_sem   reply_timeout;
+struct nano_fifo         timeout_order_fifo;
 
-static int  fiberDetectedError = 0;
-static char __stack fiberStack1[FIBER_STACKSIZE];
-static char __stack fiberStack2[FIBER_STACKSIZE];
-static int  fiberEvidence = 0;
+static int fiber_detected_error;
+static int fiber_evidence;
 
-static ISR_INFO  isrInfo;
+static char __stack fiber_stack1[FIBER_STACKSIZE];
+static char __stack fiber_stack2[FIBER_STACKSIZE];
+
+static ISR_INFO  isr_info;
 
 /**
  *
  * @brief Handler to perform various actions from within an ISR context
  *
- * This routine is the ISR handler for _trigger_isrHandler().  It performs
- * the command requested in <isrInfo.command>.
+ * This routine is the ISR handler for isr_handler_trigger().  It performs
+ * the command requested in <isr_info.command>.
  *
  * @return N/A
  */
-
-void isr_handler(void *data)
+static void isr_handler(void *data)
 {
 	ARG_UNUSED(data);
 
-	switch (isrInfo.command) {
+	switch (isr_info.command) {
 	case THREAD_SELF_CMD:
-		isrInfo.data = (void *) sys_thread_self_get();
+		isr_info.data = (void *) sys_thread_self_get();
 		break;
 
 	case EXEC_CTX_TYPE_CMD:
-		isrInfo.value = sys_execution_context_type_get();
+		isr_info.value = sys_execution_context_type_get();
 		break;
 
 	default:
-		isrInfo.error = UNKNOWN_COMMAND;
+		isr_info.error = UNKNOWN_COMMAND;
 		break;
 	}
 }
-static void _trigger_isrHandler(void)
+
+static void isr_handler_trigger(void)
 {
 	irq_offload(isr_handler, NULL);
 }
-
 
 /**
  *
@@ -148,14 +147,13 @@ static void _trigger_isrHandler(void)
  *
  * This routine initializes the nanokernel objects used in this module's tests.
  *
- * @return TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS
  */
-
-int initNanoObjects(void)
+static int nano_init_objects(void)
 {
-	nano_sem_init(&wakeFiber);
+	nano_sem_init(&sem_fiber);
 	nano_sem_init(&reply_timeout);
-	nano_timer_init(&timer, timerData);
+	nano_timer_init(&timer, NULL);
 	nano_fifo_init(&timeout_order_fifo);
 
 	return TC_PASS;
@@ -171,10 +169,10 @@ int initNanoObjects(void)
  * expected to be the tick clock timer which should wake the CPU.  Thus after
  * each call to nano_cpu_idle(), the tick count should be one higher.
  *
- * @return TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success
+ * @return TC_FAIL on failure
  */
-
-int nano_cpu_idleTest(void)
+static int test_nano_cpu_idle(void)
 {
 	int  tick;   /* current tick count */
 	int  i;      /* loop variable */
@@ -183,8 +181,8 @@ int nano_cpu_idleTest(void)
 	tick = sys_tick_get_32();
 	while (tick == sys_tick_get_32()) {
 	}
-	tick = sys_tick_get_32();
 
+	tick = sys_tick_get_32();
 	for (i = 0; i < 5; i++) {     /* Repeat the test five times */
 		nano_cpu_idle();
 		tick++;
@@ -202,8 +200,7 @@ int nano_cpu_idleTest(void)
  *
  * @return irq_lock() return value
  */
-
-int irq_lockWrapper(int unused)
+int irq_lock_wrapper(int unused)
 {
 	ARG_UNUSED(unused);
 
@@ -216,8 +213,7 @@ int irq_lockWrapper(int unused)
  *
  * @return N/A
  */
-
-void irq_unlockWrapper(int imask)
+void irq_unlock_wrapper(int imask)
 {
 	irq_unlock(imask);
 }
@@ -228,8 +224,7 @@ void irq_unlockWrapper(int imask)
  *
  * @return <irq>
  */
-
-int irq_disableWrapper(int irq)
+int irq_disable_wrapper(int irq)
 {
 	irq_disable(irq);
 	return irq;
@@ -241,8 +236,7 @@ int irq_disableWrapper(int irq)
  *
  * @return N/A
  */
-
-void irq_enableWrapper(int irq)
+void irq_enable_wrapper(int irq)
 {
 	irq_enable(irq);
 }
@@ -251,27 +245,27 @@ void irq_enableWrapper(int irq)
  *
  * @brief Test routines for disabling and enabling ints
  *
- * This routine tests the routines for disabling and enabling interrupts.  These
- * include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
+ * This routine tests the routines for disabling and enabling interrupts.
+ * These include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
  *
- * @return TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success
+ * @return TC_FAIL on failure
  */
-
-int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
-								 enable_interrupt_func enableRtn, int irq)
+static int test_nano_interrupts(disable_int_func disable_int,
+				enable_int_func enable_int, int irq)
 {
 	unsigned long long  count = 0;
 	unsigned long long  i = 0;
-	int  tick;
-	int  tick2;
-	int  imask;
+	int tick;
+	int tick2;
+	int imask;
 
 	/* Align to a "tick boundary" */
 	tick = sys_tick_get_32();
 	while (sys_tick_get_32() == tick) {
 	}
-	tick++;
 
+	tick++;
 	while (sys_tick_get_32() == tick) {
 		count++;
 	}
@@ -285,7 +279,7 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
 	count <<= 4;
 
-	imask = disableRtn(irq);
+	imask = disable_int(irq);
 	tick = sys_tick_get_32();
 	for (i = 0; i < count; i++) {
 		sys_tick_get_32();
@@ -298,7 +292,7 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	 * cases).
 	 */
 
-	enableRtn(imask);
+	enable_int(imask);
 
 	if (tick2 != tick) {
 		return TC_FAIL;
@@ -314,38 +308,40 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
 /**
  *
- * @brief Test the various nanoCtxXXX() routines from a task
+ * @brief Test some nano context routines from a task
  *
  * This routines tests the sys_thread_self_get() and
  * sys_execution_context_type_get() routines from both a task and an ISR (that
- * interrupted a task).  Checking those routines with fibers are done
+ * interrupted a task). Checking those routines with fibers are done
  * elsewhere.
  *
- * @return TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success
+ * @return TC_FAIL on failure
  */
-
-int nanoCtxTaskTest(void)
+static int test_nano_ctx_task(void)
 {
-	nano_thread_id_t  self_thread_id;
+	nano_thread_id_t self_thread_id;
 
 	TC_PRINT("Testing sys_thread_self_get() from an ISR and task\n");
+
 	self_thread_id = sys_thread_self_get();
-	isrInfo.command = THREAD_SELF_CMD;
-	isrInfo.error = 0;
-	_trigger_isrHandler();
-	if ((isrInfo.error != 0) || (isrInfo.data != (void *) self_thread_id)) {
+	isr_info.command = THREAD_SELF_CMD;
+	isr_info.error = 0;
+	/* isr_info is modified by the isr_handler routine */
+	isr_handler_trigger();
+	if (isr_info.error || isr_info.data != (void *)self_thread_id) {
 		/*
-		 * Either the ISR detected an error, or the ISR context ID does not
-		 * match the interrupted task's thread ID.
+		 * Either the ISR detected an error, or the ISR context ID
+		 * does not match the interrupted task's thread ID.
 		 */
 		return TC_FAIL;
 	}
 
 	TC_PRINT("Testing sys_execution_context_type_get() from an ISR\n");
-	isrInfo.command = EXEC_CTX_TYPE_CMD;
-	isrInfo.error = 0;
-	_trigger_isrHandler();
-	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
+	isr_info.command = EXEC_CTX_TYPE_CMD;
+	isr_info.error = 0;
+	isr_handler_trigger();
+	if (isr_info.error || isr_info.value != NANO_CTX_ISR) {
 		return TC_FAIL;
 	}
 
@@ -361,12 +357,12 @@ int nanoCtxTaskTest(void)
  *
  * @brief Test the various context/thread routines from a fiber
  *
- * This routines tests the sys_thread_self_get() and
+ * This routines tests the sys_thread_self_get and
  * sys_execution_context_type_get() routines from both a fiber and an ISR (that
  * interrupted a fiber).  Checking those routines with tasks are done
  * elsewhere.
  *
- * This routine may set <fiberDetectedError> to the following values:
+ * This routine may set <fiber_detected_error> to the following values:
  *   1 - if fiber ID matches that of the task
  *   2 - if thread ID taken during ISR does not match that of the fiber
  *   3 - sys_execution_context_type_get() when called from an ISR is not
@@ -374,41 +370,41 @@ int nanoCtxTaskTest(void)
  *   4 - sys_execution_context_type_get() when called from a fiber is not
  *       NANO_TYPE_FIBER
  *
- * @return TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success
+ * @return TC_FAIL on failure
  */
-
-int nanoCtxFiberTest(nano_thread_id_t task_thread_id)
+static int test_nano_fiber(nano_thread_id_t task_thread_id)
 {
 	nano_thread_id_t  self_thread_id;
 
 	self_thread_id = sys_thread_self_get();
 	if (self_thread_id == task_thread_id) {
-		fiberDetectedError = 1;
+		fiber_detected_error = 1;
 		return TC_FAIL;
 	}
 
-	isrInfo.command = THREAD_SELF_CMD;
-	isrInfo.error = 0;
-	_trigger_isrHandler();
-	if ((isrInfo.error != 0) || (isrInfo.data != (void *) self_thread_id)) {
+	isr_info.command = THREAD_SELF_CMD;
+	isr_info.error = 0;
+	isr_handler_trigger();
+	if (isr_info.error || isr_info.data != (void *)self_thread_id) {
 		/*
-		 * Either the ISR detected an error, or the ISR context ID does not
-		 * match the interrupted fiber's thread ID.
+		 * Either the ISR detected an error, or the ISR context ID
+		 * does not match the interrupted fiber's thread ID.
 		 */
-		fiberDetectedError = 2;
+		fiber_detected_error = 2;
 		return TC_FAIL;
 	}
 
-	isrInfo.command = EXEC_CTX_TYPE_CMD;
-	isrInfo.error = 0;
-	_trigger_isrHandler();
-	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
-		fiberDetectedError = 3;
+	isr_info.command = EXEC_CTX_TYPE_CMD;
+	isr_info.error = 0;
+	isr_handler_trigger();
+	if (isr_info.error || (isr_info.value != NANO_CTX_ISR)) {
+		fiber_detected_error = 3;
 		return TC_FAIL;
 	}
 
 	if (sys_execution_context_type_get() != NANO_CTX_FIBER) {
-		fiberDetectedError = 4;
+		fiber_detected_error = 4;
 		return TC_FAIL;
 	}
 
@@ -427,7 +423,6 @@ int nanoCtxFiberTest(nano_thread_id_t task_thread_id)
  *
  * @return N/A
  */
-
 #ifdef CONFIG_KERNEL_V2
 #define fiber_priority_set(fiber, new_prio) task_priority_set(fiber, new_prio)
 #else
@@ -435,7 +430,7 @@ int nanoCtxFiberTest(nano_thread_id_t task_thread_id)
 	do { (thread)->prio = (new_prio); } while ((0))
 #endif
 
-static void fiberHelper(int arg1, int arg2)
+static void fiber_helper(int arg1, int arg2)
 {
 	nano_thread_id_t  self_thread_id;
 
@@ -443,22 +438,22 @@ static void fiberHelper(int arg1, int arg2)
 	ARG_UNUSED(arg2);
 
 	/*
-	 * This fiber starts off at a higher priority than fiberEntry().  Thus, it
-	 * should execute immediately.
+	 * This fiber starts off at a higher priority than fiber_entry().
+	 * Thus, it should execute immediately.
 	 */
 
-	fiberEvidence++;
+	fiber_evidence++;
 
 	/* Test that helper will yield to a fiber of equal priority */
 	self_thread_id = sys_thread_self_get();
 
-	/* Lower priority to that of fiberEntry() */
+	/* Lower priority to that of fiber_entry() */
 	fiber_priority_set(self_thread_id, self_thread_id->prio + 1);
 
 	fiber_yield();        /* Yield to fiber of equal priority */
 
-	fiberEvidence++;
-	/* <fiberEvidence> should now be 2 */
+	fiber_evidence++;
+	/* <fiber_evidence> should now be 2 */
 
 }
 
@@ -471,16 +466,16 @@ static void fiberHelper(int arg1, int arg2)
  * fiber_yield() against the cases of there being a higher priority fiber,
  * a lower priority fiber, and another fiber of equal priority.
  *
- * On error, it may set <fiberDetectedError> to one of the following values:
+ * On error, it may set <fiber_detected_error> to one of the following values:
  *   10 - helper fiber ran prematurely
  *   11 - fiber_yield() did not yield to a higher priority fiber
  *   12 - fiber_yield() did not yield to an equal prioirty fiber
  *   13 - fiber_yield() yielded to a lower priority fiber
  *
- * @return TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success
+ * @return TC_FAIL on failure
  */
-
-int fiber_yieldTest(void)
+static int test_fiber_yield(void)
 {
 	nano_thread_id_t  self_thread_id;
 
@@ -491,89 +486,87 @@ int fiber_yieldTest(void)
 	 */
 
 	self_thread_id = sys_thread_self_get();
-	fiberEvidence = 0;
-	fiber_fiber_start(fiberStack2, FIBER_STACKSIZE, fiberHelper,
+	fiber_evidence = 0;
+	fiber_fiber_start(fiber_stack2, FIBER_STACKSIZE, fiber_helper,
 		0, 0, FIBER_PRIORITY - 1, 0);
 
-	if (fiberEvidence != 0) {
+	if (fiber_evidence != 0) {
 		/* ERROR! Helper spawned at higher */
-		fiberDetectedError = 10;    /* priority ran prematurely. */
+		fiber_detected_error = 10;    /* priority ran prematurely. */
 		return TC_FAIL;
 	}
 
 	/*
 	 * Test that the fiber will yield to the higher priority helper.
-	 * <fiberEvidence> is still 0.
+	 * <fiber_evidence> is still 0.
 	 */
 
 	fiber_yield();
 
-	if (fiberEvidence == 0) {
+	if (fiber_evidence == 0) {
 		/* ERROR! Did not yield to higher */
-		fiberDetectedError = 11;    /* priority fiber. */
+		fiber_detected_error = 11;    /* priority fiber. */
 		return TC_FAIL;
 	}
 
-	if (fiberEvidence > 1) {
+	if (fiber_evidence > 1) {
 		/* ERROR! Helper did not yield to */
-		fiberDetectedError = 12;    /* equal priority fiber. */
+		fiber_detected_error = 12;    /* equal priority fiber. */
 		return TC_FAIL;
 	}
 
 	/*
-	 * Raise the priority of fiberEntry().  Calling fiber_yield() should
+	 * Raise the priority of fiber_entry().  Calling fiber_yield() should
 	 * not result in switching to the helper.
 	 */
 
 	fiber_priority_set(self_thread_id, self_thread_id->prio - 1);
 	fiber_yield();
 
-	if (fiberEvidence != 1) {
+	if (fiber_evidence != 1) {
 		/* ERROR! Context switched to a lower */
-		fiberDetectedError = 13;    /* priority fiber! */
+		fiber_detected_error = 13;    /* priority fiber! */
 		return TC_FAIL;
 	}
 
 	/*
-	 * Block on <wakeFiber>.  This will allow the helper fiber to complete.
+	 * Block on <sem_fiber>.  This will allow the helper fiber to complete.
 	 * The main task will wake this fiber.
 	 */
 
-	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
+	nano_fiber_sem_take(&sem_fiber, TICKS_UNLIMITED);
 
 	return TC_PASS;
 }
 
 /**
- *
  * @brief Entry point to fiber started by the task
  *
  * This routine is the entry point to the fiber started by the task.
  *
- * @param task_thread_id    thread ID of the spawning task
- * @param arg1         unused
+ * @param task_thread_id	thread ID of the spawning task
+ * @param arg1			unused
  *
  * @return N/A
  */
-
-static void fiberEntry(int task_thread_id, int arg1)
+static void fiber_entry(int task_thread_id, int arg1)
 {
-	int          rv;
+	int rv;
 
 	ARG_UNUSED(arg1);
 
-	fiberEvidence++;    /* Prove to the task that the fiber has run */
-	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
+	fiber_evidence++;    /* Prove to the task that the fiber has run */
+	nano_fiber_sem_take(&sem_fiber, TICKS_UNLIMITED);
 
-	rv = nanoCtxFiberTest((nano_thread_id_t) task_thread_id);
+	rv = test_nano_fiber((nano_thread_id_t)task_thread_id);
 	if (rv != TC_PASS) {
 		return;
 	}
 
 	/* Allow the task to print any messages before the next test runs */
-	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
+	nano_fiber_sem_take(&sem_fiber, TICKS_UNLIMITED);
 
-	rv = fiber_yieldTest();
+	rv = test_fiber_yield();
 	if (rv != TC_PASS) {
 		return;
 	}
@@ -587,14 +580,14 @@ static void fiberEntry(int task_thread_id, int arg1)
 
 #include <tc_nano_timeout_common.h>
 
-struct timeout_order_data {
+struct timeout_order {
 	void *link_in_fifo;
 	int32_t timeout;
 	int timeout_order;
 	int q_order;
 };
 
-struct timeout_order_data timeout_order_data[] = {
+struct timeout_order timeouts[] = {
 	{0, TIMEOUT(2), 2, 0},
 	{0, TIMEOUT(4), 4, 1},
 	{0, TIMEOUT(0), 0, 2},
@@ -604,24 +597,25 @@ struct timeout_order_data timeout_order_data[] = {
 	{0, TIMEOUT(3), 3, 6},
 };
 
-#define NUM_TIMEOUT_FIBERS ARRAY_SIZE(timeout_order_data)
+#define NUM_TIMEOUT_FIBERS ARRAY_SIZE(timeouts)
 static char __stack timeout_stacks[NUM_TIMEOUT_FIBERS][FIBER_STACKSIZE];
 
 /* a fiber busy waits, then reports through a fifo */
-static void test_fiber_busy_wait(int ticks, int unused)
+static void test_busy_wait(int ticks, int unused)
 {
+	uint32_t usecs;
+
 	ARG_UNUSED(unused);
 
-	uint32_t usecs = ticks * sys_clock_us_per_tick;
+	usecs = ticks * sys_clock_us_per_tick;
 
-	TC_PRINT(" fiber busy waiting for %d usecs (%d ticks)\n",
-			 usecs, ticks);
+	TC_PRINT("Fiber busy waiting for %d usecs (%d ticks)\n", usecs, ticks);
 	sys_thread_busy_wait(usecs);
-	TC_PRINT(" fiber busy waiting completed\n");
+	TC_PRINT("Fiber busy waiting completed\n");
 
 	/*
 	 * Ideally the test should verify that the correct number of ticks
-	 * have elapsed. However, when run under QEMU the tick interrupt
+	 * have elapsed. However, when running under QEMU, the tick interrupt
 	 * may be processed on a very irregular basis, meaning that far
 	 * fewer than the expected number of ticks may occur for a given
 	 * number of clock cycles vs. what would ordinarily be expected.
@@ -636,13 +630,16 @@ static void test_fiber_busy_wait(int ticks, int unused)
 }
 
 /* a fiber sleeps and times out, then reports through a fifo */
-static void test_fiber_sleep(int timeout, int arg2)
+static void test_fiber_sleep(int timeout, int unused)
 {
 	int64_t orig_ticks = sys_tick_get();
+
+	ARG_UNUSED(unused);
 
 	TC_PRINT(" fiber sleeping for %d ticks\n", timeout);
 	fiber_sleep(timeout);
 	TC_PRINT(" fiber back from sleep\n");
+
 	if (!is_timeout_in_range(orig_ticks, timeout)) {
 		return;
 	}
@@ -651,37 +648,35 @@ static void test_fiber_sleep(int timeout, int arg2)
 }
 
 /* a fiber is started with a delay, then it reports that it ran via a fifo */
-void delayed_fiber(int num, int unused)
+static void delayed_fiber(int num, int unused)
 {
-	struct timeout_order_data *data = &timeout_order_data[num];
+	struct timeout_order *timeout = &timeouts[num];
 
 	ARG_UNUSED(unused);
 
 	TC_PRINT(" fiber (q order: %d, t/o: %d) is running\n",
-				data->q_order, data->timeout);
+		 timeout->q_order, timeout->timeout);
 
-	nano_fiber_fifo_put(&timeout_order_fifo, data);
+	nano_fiber_fifo_put(&timeout_order_fifo, timeout);
 }
 
 static int test_timeout(void)
 {
+	struct timeout_order *data;
 	int32_t timeout;
 	int rv;
-	int ii;
-	struct timeout_order_data *data;
+	int i;
 
 	/* test sys_thread_busy_wait() */
-
 	TC_PRINT("Testing sys_thread_busy_wait()\n");
 	timeout = 2;
-	task_fiber_start(timeout_stacks[0], FIBER_STACKSIZE,
-						test_fiber_busy_wait, (int)timeout, 0,
-						FIBER_PRIORITY, 0);
+	task_fiber_start(timeout_stacks[0], FIBER_STACKSIZE, test_busy_wait,
+			 (int)timeout, 0, FIBER_PRIORITY, 0);
 
 	rv = nano_task_sem_take(&reply_timeout, timeout + 2);
 	if (!rv) {
-		rv = TC_FAIL;
-		TC_ERROR(" *** task timed out waiting for sys_thread_busy_wait()\n");
+		TC_ERROR(" *** task timed out waiting for "
+			 "sys_thread_busy_wait()\n");
 		return TC_FAIL;
 	}
 
@@ -689,56 +684,51 @@ static int test_timeout(void)
 
 	TC_PRINT("Testing fiber_sleep()\n");
 	timeout = 5;
-	task_fiber_start(timeout_stacks[0], FIBER_STACKSIZE,
-						test_fiber_sleep, (int)timeout, 0,
-						FIBER_PRIORITY, 0);
+	task_fiber_start(timeout_stacks[0], FIBER_STACKSIZE, test_fiber_sleep,
+			 (int)timeout, 0, FIBER_PRIORITY, 0);
 
 	rv = nano_task_sem_take(&reply_timeout, timeout + 5);
 	if (!rv) {
-		rv = TC_FAIL;
-		TC_ERROR(" *** task timed out waiting for fiber on fiber_sleep().\n");
+		TC_ERROR(" *** task timed out waiting for fiber on "
+			 "fiber_sleep().\n");
 		return TC_FAIL;
 	}
 
 	/* test fiber_delayed_start() without cancellation */
-
 	TC_PRINT("Testing fiber_delayed_start() without cancellation\n");
 
-	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
-		(void)task_fiber_delayed_start(timeout_stacks[ii], FIBER_STACKSIZE,
-										delayed_fiber, ii, 0, 5, 0,
-										timeout_order_data[ii].timeout);
+	for (i = 0; i < NUM_TIMEOUT_FIBERS; i++) {
+		task_fiber_delayed_start(timeout_stacks[i], FIBER_STACKSIZE,
+					 delayed_fiber, i, 0, 5, 0,
+					 timeouts[i].timeout);
 	}
-	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
-
-		data = nano_task_fifo_get(&timeout_order_fifo, TIMEOUT_TWO_INTERVALS);
-
+	for (i = 0; i < NUM_TIMEOUT_FIBERS; i++) {
+		data = nano_task_fifo_get(&timeout_order_fifo,
+					  TIMEOUT_TWO_INTERVALS);
 		if (!data) {
 			TC_ERROR(" *** timeout while waiting for delayed fiber\n");
 			return TC_FAIL;
 		}
 
-		if (data->timeout_order != ii) {
-			TC_ERROR(" *** wrong delayed fiber ran (got %d, expected %d)\n",
-						data->timeout_order, ii);
+		if (data->timeout_order != i) {
+			TC_ERROR(" *** wrong delayed fiber ran (got %d, "
+				 "expected %d)\n", data->timeout_order, i);
 			return TC_FAIL;
 		}
 
 		TC_PRINT(" got fiber (q order: %d, t/o: %d) as expected\n",
-					data->q_order, data->timeout);
+			 data->q_order, data->timeout);
 	}
 
 	/* ensure no more fibers fire */
-
 	data = nano_task_fifo_get(&timeout_order_fifo, TIMEOUT_TWO_INTERVALS);
 
 	if (data) {
-		TC_ERROR(" *** got something on the fifo, but shouldn't have...\n");
+		TC_ERROR(" *** got something unexpected in the fifo\n");
 		return TC_FAIL;
 	}
 
 	/* test fiber_delayed_start() with cancellation */
-
 	TC_PRINT("Testing fiber_delayed_start() with cancellations\n");
 
 	int cancellations[] = {0, 3, 4, 6};
@@ -747,60 +737,62 @@ static int test_timeout(void)
 
 	nano_thread_id_t delayed_fibers[NUM_TIMEOUT_FIBERS];
 
-	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
-		delayed_fibers[ii] =
-			task_fiber_delayed_start(timeout_stacks[ii], FIBER_STACKSIZE,
-										delayed_fiber, ii, 0, 5, 0,
-										timeout_order_data[ii].timeout);
+	for (i = 0; i < NUM_TIMEOUT_FIBERS; i++) {
+		nano_thread_id_t id;
+
+		id = task_fiber_delayed_start(timeout_stacks[i],
+					      FIBER_STACKSIZE, delayed_fiber, i,
+					      0, 5, 0, timeouts[i].timeout);
+		delayed_fibers[i] = id;
 	}
 
-	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
-		int jj;
+	for (i = 0; i < NUM_TIMEOUT_FIBERS; i++) {
+		int j;
 
-		if (ii == cancellations[next_cancellation]) {
-			TC_PRINT(" cancelling [q order: %d, t/o: %d, t/o order: %d]\n",
-						timeout_order_data[ii].q_order,
-						timeout_order_data[ii].timeout, ii);
-			for (jj = 0; jj < NUM_TIMEOUT_FIBERS; jj++) {
-				if (timeout_order_data[jj].timeout_order == ii) {
+		if (i == cancellations[next_cancellation]) {
+			TC_PRINT(" cancelling "
+				 "[q order: %d, t/o: %d, t/o order: %d]\n",
+				 timeouts[i].q_order, timeouts[i].timeout, i);
+
+			for (j = 0; j < NUM_TIMEOUT_FIBERS; j++) {
+				if (timeouts[j].timeout_order == i) {
 					break;
 				}
 			}
-			task_fiber_delayed_start_cancel(delayed_fibers[jj]);
+			task_fiber_delayed_start_cancel(delayed_fibers[j]);
 			++next_cancellation;
 			continue;
 		}
 
-		data = nano_task_fifo_get(&timeout_order_fifo, TIMEOUT_TEN_INTERVALS);
+		data = nano_task_fifo_get(&timeout_order_fifo,
+					  TIMEOUT_TEN_INTERVALS);
 
 		if (!data) {
 			TC_ERROR(" *** timeout while waiting for delayed fiber\n");
 			return TC_FAIL;
 		}
 
-		if (data->timeout_order != ii) {
-			TC_ERROR(" *** wrong delayed fiber ran (got %d, expected %d)\n",
-						data->timeout_order, ii);
+		if (data->timeout_order != i) {
+			TC_ERROR(" *** wrong delayed fiber ran (got %d, "
+				 "expected %d)\n", data->timeout_order, i);
 			return TC_FAIL;
 		}
 
-		TC_PRINT(" got (q order: %d, t/o: %d, t/o order %d) as expected\n",
-					data->q_order, data->timeout,
-					data->timeout_order);
+		TC_PRINT(" got (q order: %d, t/o: %d, t/o order %d) "
+			 "as expected\n", data->q_order, data->timeout,
+			 data->timeout_order);
 	}
 
 	if (num_cancellations != next_cancellation) {
-		TC_ERROR(" *** wrong number of cancellations (expected %d, got %d\n",
-					num_cancellations, next_cancellation);
+		TC_ERROR(" *** wrong number of cancellations (expected %d, "
+			 "got %d\n", num_cancellations, next_cancellation);
 		return TC_FAIL;
 	}
 
 	/* ensure no more fibers fire */
-
 	data = nano_task_fifo_get(&timeout_order_fifo, TIMEOUT_TWO_INTERVALS);
-
 	if (data) {
-		TC_ERROR(" *** got something on the fifo, but shouldn't have...\n");
+		TC_ERROR(" *** got something unexpected in the fifo\n");
 		return TC_FAIL;
 	}
 
@@ -808,101 +800,102 @@ static int test_timeout(void)
 }
 
 /**
- *
  * @brief Entry point to timer tests
  *
  * This is the entry point to the CPU and thread tests.
  *
  * @return N/A
  */
-
 void main(void)
 {
-	int           rv;       /* return value from tests */
+	int rv;       /* return value from tests */
+
+	fiber_detected_error = 0;
+	fiber_evidence = 0;
 
 	TC_START("Test Nanokernel CPU and thread routines");
 
 	TC_PRINT("Initializing nanokernel objects\n");
-	rv = initNanoObjects();
+	rv = nano_init_objects();
 	if (rv != TC_PASS) {
-		goto doneTests;
+		goto tests_done;
 	}
 
 #ifdef HAS_POWERSAVE_INSTRUCTION
 	TC_PRINT("Testing nano_cpu_idle()\n");
-	rv = nano_cpu_idleTest();
+	rv = test_nano_cpu_idle();
 	if (rv != TC_PASS) {
-		goto doneTests;
+		goto tests_done;
 	}
 #endif
 
 	TC_PRINT("Testing interrupt locking and unlocking\n");
-	rv = nanoCpuDisableInterruptsTest(irq_lockWrapper,
-									  irq_unlockWrapper, -1);
+	rv = test_nano_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
 	if (rv != TC_PASS) {
-		goto doneTests;
+		goto tests_done;
 	}
-
 
 #ifdef TICK_IRQ
 	/* Disable interrupts coming from the timer. */
 
 	TC_PRINT("Testing irq_disable() and irq_enable()\n");
-	rv = nanoCpuDisableInterruptsTest(irq_disableWrapper,
-									  irq_enableWrapper, TICK_IRQ);
+	rv = test_nano_interrupts(irq_disable_wrapper, irq_enable_wrapper,
+				  TICK_IRQ);
 	if (rv != TC_PASS) {
-		goto doneTests;
+		goto tests_done;
 	}
 #endif
 
-	rv = nanoCtxTaskTest();
+	TC_PRINT("Testing some nano context routines\n");
+	rv = test_nano_ctx_task();
 	if (rv != TC_PASS) {
-		goto doneTests;
+		goto tests_done;
 	}
 
 	TC_PRINT("Spawning a fiber from a task\n");
-	fiberEvidence = 0;
-	task_fiber_start(fiberStack1, FIBER_STACKSIZE, fiberEntry,
-					 (int) sys_thread_self_get(), 0, FIBER_PRIORITY, 0);
+	fiber_evidence = 0;
+	task_fiber_start(fiber_stack1, FIBER_STACKSIZE, fiber_entry,
+			 (int)sys_thread_self_get(), 0, FIBER_PRIORITY, 0);
 
-	if (fiberEvidence != 1) {
+	if (fiber_evidence != 1) {
 		rv = TC_FAIL;
 		TC_ERROR("  - fiber did not execute as expected!\n");
-		goto doneTests;
+		goto tests_done;
 	}
 
 	/*
 	 * The fiber ran, now wake it so it can test sys_thread_self_get and
 	 * sys_execution_context_type_get.
 	 */
-	TC_PRINT("Fiber to test sys_thread_self_get() and sys_execution_context_type_get\n");
-	nano_task_sem_give(&wakeFiber);
+	TC_PRINT("Fiber to test sys_thread_self_get() and "
+		 "sys_execution_context_type_get\n");
+	nano_task_sem_give(&sem_fiber);
 
-	if (fiberDetectedError != 0) {
+	if (fiber_detected_error != 0) {
 		rv = TC_FAIL;
-		TC_ERROR("  - failure detected in fiber; fiberDetectedError = %d\n",
-				 fiberDetectedError);
-		goto doneTests;
+		TC_ERROR("  - failure detected in fiber; "
+			 "fiber_detected_error = %d\n", fiber_detected_error);
+		goto tests_done;
 	}
 
 	TC_PRINT("Fiber to test fiber_yield()\n");
-	nano_task_sem_give(&wakeFiber);
+	nano_task_sem_give(&sem_fiber);
 
-	if (fiberDetectedError != 0) {
+	if (fiber_detected_error != 0) {
 		rv = TC_FAIL;
-		TC_ERROR("  - failure detected in fiber; fiberDetectedError = %d\n",
-				 fiberDetectedError);
-		goto doneTests;
+		TC_ERROR("  - failure detected in fiber; "
+			 "fiber_detected_error = %d\n", fiber_detected_error);
+		goto tests_done;
 	}
 
-	nano_task_sem_give(&wakeFiber);
+	nano_task_sem_give(&sem_fiber);
 
 	rv = test_timeout();
 	if (rv != TC_PASS) {
-		goto doneTests;
+		goto tests_done;
 	}
 
-doneTests:
+tests_done:
 	TC_END_RESULT(rv);
 	TC_END_REPORT(rv);
 }
