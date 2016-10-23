@@ -68,7 +68,6 @@ config UART_NRF5_FLOW_CONTROL
 config UART_NRF5_GPIO_TX_PIN
 	int "TX Pin Number"
 	range 0 31
-	default 6
 	depends on UART_NRF5
 	depends on GPIO_NRF5
 	help
@@ -77,7 +76,6 @@ config UART_NRF5_GPIO_TX_PIN
 config UART_NRF5_GPIO_RX_PIN
 	int "RX Pin Number"
 	range 0 31
-	default 8
 	depends on UART_NRF5
 	depends on GPIO_NRF5
 	help
@@ -86,7 +84,6 @@ config UART_NRF5_GPIO_RX_PIN
 config UART_NRF5_GPIO_RTS_PIN
 	int "RTS Pin Number"
 	range 0 31
-	default 5
 	depends on UART_NRF5
 	depends on GPIO_NRF5
 	depends on UART_NRF5_FLOW_CONTROL
@@ -96,7 +93,6 @@ config UART_NRF5_GPIO_RTS_PIN
 config UART_NRF5_GPIO_CTS_PIN
 	int "CTS Pin Number"
 	range 0 31
-	default 7
 	depends on UART_NRF5
 	depends on GPIO_NRF5
 	depends on UART_NRF5_FLOW_CONTROL
