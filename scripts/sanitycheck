@@ -150,6 +150,10 @@ Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/sanity_chk/sanity_last_release.csv.
 To update this, pass the --all --release options.
 
+To load arguments from a file, write '+' before the file name, e.g.,
++file_name. File content must be one or more valid arguments separated by
+line break instead of white spaces.
+
 Most everyday users will run with no arguments.
 """
 
@@ -1607,6 +1611,7 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser(description = __doc__,
                                      formatter_class = argparse.RawDescriptionHelpFormatter)
+    parser.fromfile_prefix_chars = "+"
 
     parser.add_argument("-p", "--platform", action="append",
             help="Platform filter for testing. This option may be used multiple "
