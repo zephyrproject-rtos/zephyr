@@ -788,7 +788,7 @@ def kernel_main_c_maps():
             name = map[0]
             blocks = map[1]
             block_size = map[2]
-            kernel_main_c_out("K_MEM_MAP_DEFINE(_k_mem_map_obj_%s, %s, %s, 4);\n" %
+            kernel_main_c_out("K_MEM_SLAB_DEFINE(_k_mem_map_obj_%s, %s, %s, 4);\n" %
                               (name, block_size, blocks))
 
 
@@ -1126,8 +1126,8 @@ def generate_sysgen_h_obj_ids():
         sem_type = 'struct k_sem *'
         pipe_struct = 'k_pipe'
         pipe_type = 'struct k_pipe *'
-        map_struct = 'k_mem_map'
-        map_type = 'struct k_mem_map *'
+        map_struct = 'k_mem_slab'
+        map_type = 'struct k_mem_slab *'
         fifo_struct = 'k_msgq'
         fifo_type = 'struct k_msgq *'
         mbox_struct = 'k_mbox'

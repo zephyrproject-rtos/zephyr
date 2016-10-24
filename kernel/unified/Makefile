@@ -21,7 +21,7 @@ lib-y += $(strip \
 	lifo.o \
 	fifo.o \
 	stack.o \
-	mem_map.o \
+	mem_slab.o \
 	mem_pool.o \
 	msg_q.o \
 	mailbox.o \

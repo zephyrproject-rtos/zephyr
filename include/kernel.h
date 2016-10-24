@@ -88,7 +88,7 @@ struct k_pipe;
 struct k_fifo;
 struct k_lifo;
 struct k_stack;
-struct k_mem_map;
+struct k_mem_slab;
 struct k_mem_pool;
 struct k_timer;
 
@@ -1395,9 +1395,9 @@ extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
  *  memory management
  */
 
-/* memory maps */
+/* memory slabs */
 
-struct k_mem_map {
+struct k_mem_slab {
 	_wait_q_t wait_q;
 	uint32_t num_blocks;
 	size_t block_size;
@@ -1405,65 +1405,66 @@ struct k_mem_map {
 	char *free_list;
 	uint32_t num_used;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mem_map);
+	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mem_slab);
 };
 
-#define K_MEM_MAP_INITIALIZER(obj, map_buffer, map_block_size, map_num_blocks) \
+#define K_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
+			       slab_num_blocks) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.num_blocks = map_num_blocks, \
-	.block_size = map_block_size, \
-	.buffer = map_buffer, \
+	.num_blocks = slab_num_blocks, \
+	.block_size = slab_block_size, \
+	.buffer = slab_buffer, \
 	.free_list = NULL, \
 	.num_used = 0, \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
 /**
- * @brief Define a memory map
+ * @brief Define a memory slab
  *
- * This declares and initializes a memory map whose buffer is aligned to
- * a @a map_align -byte boundary. The new memory map can be passed to the
- * kernel's memory map functions.
+ * This declares and initializes a memory slab whose buffer is aligned to
+ * a @a slab_align -byte boundary. The new memory slab can be passed to the
+ * kernel's memory slab functions.
  *
- * Note that for each of the blocks in the memory map to be aligned to
- * @a map_align bytes, then @a map_block_size must be a multiple of
- * @a map_align.
+ * Note that for each of the blocks in the memory slab to be aligned to
+ * @a slab_align bytes, then @a slab_block_size must be a multiple of
+ * @a slab_align.
  *
- * @param name Name of the memory map
- * @param map_block_size Size of each block in the buffer (in bytes)
- * @param map_num_blocks Number blocks in the buffer
- * @param map_align Alignment of the memory map's buffer (power of 2)
+ * @param name Name of the memory slab
+ * @param slab_block_size Size of each block in the buffer (in bytes)
+ * @param slab_num_blocks Number blocks in the buffer
+ * @param slab_align Alignment of the memory slab's buffer (power of 2)
  */
-#define K_MEM_MAP_DEFINE(name, map_block_size, map_num_blocks, map_align)   \
-	char __noinit __aligned(map_align)                                           \
-		_k_mem_map_buf_##name[(map_num_blocks) * (map_block_size)]; \
-	struct k_mem_map name                                               \
-		__in_section(_k_mem_map_ptr, private, mem_map) =            \
-		K_MEM_MAP_INITIALIZER(name, _k_mem_map_buf_##name,          \
-				      map_block_size, map_num_blocks)
+#define K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align) \
+	char __noinit __aligned(slab_align) \
+		_k_mem_slab_buf_##name[(slab_num_blocks) * (slab_block_size)]; \
+	struct k_mem_slab name \
+		__in_section(_k_mem_map_ptr, private, mem_slab) = \
+		K_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
+				      slab_block_size, slab_num_blocks)
 
 /**
- * @brief Initialize a memory map.
+ * @brief Initialize a memory slab.
  *
- * Initializes the memory map and creates its list of free blocks.
+ * Initializes the memory slab and creates its list of free blocks.
  *
- * @param map Pointer to the memory map object
+ * @param slab Pointer to the memory slab object
  * @param buffer Pointer to buffer used for the blocks.
  * @param block_size Size of each block, in bytes.
  * @param num_blocks Number of blocks.
  *
  * @return N/A
  */
-extern void k_mem_map_init(struct k_mem_map *map, void *buffer,
+extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 			   size_t block_size, uint32_t num_blocks);
 
 /**
- * @brief Allocate a memory map block.
+ * @brief Allocate a memory slab block.
  *
  * Takes a block from the list of unused blocks.
  *
- * @param map Pointer to memory map object.
+ * @param slab Pointer to memory slab object.
  * @param mem Pointer to area to receive block address.
  * @param timeout Maximum time (milliseconds) to wait for allocation to
  *        complete.  Use K_NO_WAIT to return immediately, or K_FOREVER to wait
@@ -1471,20 +1472,21 @@ extern void k_mem_map_init(struct k_mem_map *map, void *buffer,
  *
  * @return 0 if successful, -ENOMEM if failed immediately, -EAGAIN if timed out
  */
-extern int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout);
+extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
+			    int32_t timeout);
 
 /**
- * @brief Free a memory map block.
+ * @brief Free a memory slab block.
  *
  * Gives block to a waiting thread if there is one, otherwise returns it to
  * the list of unused blocks.
  *
- * @param map Pointer to memory map object.
+ * @param slab Pointer to memory slab object.
  * @param mem Pointer to area to containing block address.
  *
  * @return N/A
  */
-extern void k_mem_map_free(struct k_mem_map *map, void **mem);
+extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
 
 /**
  * @brief Get the number of used memory blocks
@@ -1493,13 +1495,13 @@ extern void k_mem_map_free(struct k_mem_map *map, void **mem);
  * specified pool. It should be used for stats purposes only as that
  * value may potentially be out-of-date by the time it is used.
  *
- * @param map Memory map to query
+ * @param slab Memory slab to query
  *
  * @return Number of used memory blocks
  */
-static inline uint32_t k_mem_map_num_used_get(struct k_mem_map *map)
+static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 {
-	return map->num_used;
+	return slab->num_used;
 }
 
 /**
@@ -1509,13 +1511,13 @@ static inline uint32_t k_mem_map_num_used_get(struct k_mem_map *map)
  * specified pool. It should be used for stats purposes only as that value
  * may potentially be out-of-date by the time it is used.
  *
- * @param map Memory map to query
+ * @param slab Memory slab to query
  *
  * @return Number of unused memory blocks
  */
-static inline uint32_t k_mem_map_num_free_get(struct k_mem_map *map)
+static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
-	return map->num_blocks - map->num_used;
+	return slab->num_blocks - slab->num_used;
 }
 
 /* memory pools */

@@ -9,6 +9,6 @@ allocate memory.
 .. toctree::
    :maxdepth: 2
 
-   maps.rst
+   slabs.rst
    pools.rst
    heap.rst

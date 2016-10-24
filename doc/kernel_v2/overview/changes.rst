@@ -120,6 +120,9 @@ The microkernel mailbox object type now supports the sending of asynchronous
 messages using a message buffer. (The version 1 kernel only supported
 asynchronous messages using a message block.)
 
+The microkernel memory map object has been renamed to "memory slab", to better
+reflect its management of equal-size memory blocks.
+
 Task Groups
 ***********
 

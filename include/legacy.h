@@ -398,25 +398,26 @@ static inline int task_event_recv(kevent_t legacy_event, int32_t timeout)
 
 /* memory maps */
 
-#define kmemory_map_t struct k_mem_map *
+#define kmemory_map_t struct k_mem_slab *
 
 static inline int task_mem_map_alloc(kmemory_map_t map, void **mptr,
 					int32_t timeout)
 {
-	return _error_to_rc(k_mem_map_alloc(map, mptr, _ticks_to_ms(timeout)));
+	return _error_to_rc(k_mem_slab_alloc(map, mptr,
+			    _ticks_to_ms(timeout)));
 }
 
-#define task_mem_map_free k_mem_map_free
+#define task_mem_map_free k_mem_slab_free
 
 static inline int task_mem_map_used_get(kmemory_map_t map)
 {
-	return (int)k_mem_map_num_used_get(map);
+	return (int)k_mem_slab_num_used_get(map);
 }
 
 #define DEFINE_MEM_MAP(name, map_num_blocks, map_block_size) \
-	K_MEM_MAP_DEFINE(_k_mem_map_obj_##name, map_block_size, \
-			 map_num_blocks, 4); \
-	struct k_mem_map *const name = &_k_mem_map_obj_##name
+	K_MEM_SLAB_DEFINE(_k_mem_map_obj_##name, map_block_size, \
+			  map_num_blocks, 4); \
+	struct k_mem_slab *const name = &_k_mem_map_obj_##name
 
 
 /* memory pools */

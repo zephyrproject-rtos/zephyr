@@ -24,73 +24,73 @@
 #include <ksched.h>
 #include <init.h>
 
-extern struct k_mem_map _k_mem_map_ptr_start[];
-extern struct k_mem_map _k_mem_map_ptr_end[];
+extern struct k_mem_slab _k_mem_map_ptr_start[];
+extern struct k_mem_slab _k_mem_map_ptr_end[];
 
 /**
- * @brief Initialize kernel memory map subsystem.
+ * @brief Initialize kernel memory slab subsystem.
  *
- * Perform any initialization of memory maps that wasn't done at build time.
- * Currently this just involves creating the list of free blocks for each map.
+ * Perform any initialization of memory slabs that wasn't done at build time.
+ * Currently this just involves creating the list of free blocks for each slab.
  *
  * @return N/A
  */
-static void create_free_list(struct k_mem_map *map)
+static void create_free_list(struct k_mem_slab *slab)
 {
 	char *p;
 	int j;
 
-	map->free_list = NULL;
-	p = map->buffer;
+	slab->free_list = NULL;
+	p = slab->buffer;
 
-	for (j = 0; j < map->num_blocks; j++) {
-		*(char **)p = map->free_list;
-		map->free_list = p;
-		p += map->block_size;
+	for (j = 0; j < slab->num_blocks; j++) {
+		*(char **)p = slab->free_list;
+		slab->free_list = p;
+		p += slab->block_size;
 	}
 }
 
 /**
- * @brief Complete initialization of statically defined memory maps.
+ * @brief Complete initialization of statically defined memory slabs.
  *
  * Perform any initialization that wasn't done at build time.
  *
  * @return N/A
  */
-static int init_mem_map_module(struct device *dev)
+static int init_mem_slab_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct k_mem_map *map;
+	struct k_mem_slab *slab;
 
-	for (map = _k_mem_map_ptr_start; map < _k_mem_map_ptr_end; map++) {
-		create_free_list(map);
+	for (slab = _k_mem_map_ptr_start; slab < _k_mem_map_ptr_end; slab++) {
+		create_free_list(slab);
 	}
 	return 0;
 }
 
-void k_mem_map_init(struct k_mem_map *map, void *buffer,
+void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 		    size_t block_size, uint32_t num_blocks)
 {
-	map->num_blocks = num_blocks;
-	map->block_size = block_size;
-	map->buffer = buffer;
-	map->num_used = 0;
-	create_free_list(map);
-	sys_dlist_init(&map->wait_q);
-	SYS_TRACING_OBJ_INIT(mem_map, map);
+	slab->num_blocks = num_blocks;
+	slab->block_size = block_size;
+	slab->buffer = buffer;
+	slab->num_used = 0;
+	create_free_list(slab);
+	sys_dlist_init(&slab->wait_q);
+	SYS_TRACING_OBJ_INIT(micro_mem_map, slab);
 }
 
-int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout)
+int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, int32_t timeout)
 {
 	unsigned int key = irq_lock();
 	int result;
 
-	if (map->free_list != NULL) {
+	if (slab->free_list != NULL) {
 		/* take a free block */
-		*mem = map->free_list;
-		map->free_list = *(char **)(map->free_list);
-		map->num_used++;
+		*mem = slab->free_list;
+		slab->free_list = *(char **)(slab->free_list);
+		slab->num_used++;
 		result = 0;
 	} else if (timeout == K_NO_WAIT) {
 		/* don't wait for a free block to become available */
@@ -98,7 +98,7 @@ int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout)
 		result = -ENOMEM;
 	} else {
 		/* wait for a free block or timeout */
-		_pend_current_thread(&map->wait_q, timeout);
+		_pend_current_thread(&slab->wait_q, timeout);
 		result = _Swap(key);
 		if (result == 0) {
 			*mem = _current->swap_data;
@@ -111,10 +111,10 @@ int k_mem_map_alloc(struct k_mem_map *map, void **mem, int32_t timeout)
 	return result;
 }
 
-void k_mem_map_free(struct k_mem_map *map, void **mem)
+void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 {
 	int key = irq_lock();
-	struct k_thread *pending_thread = _unpend_first_thread(&map->wait_q);
+	struct k_thread *pending_thread = _unpend_first_thread(&slab->wait_q);
 
 	if (pending_thread) {
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);
@@ -125,12 +125,12 @@ void k_mem_map_free(struct k_mem_map *map, void **mem)
 			return;
 		}
 	} else {
-		**(char ***)mem = map->free_list;
-		map->free_list = *(char **)mem;
-		map->num_used--;
+		**(char ***)mem = slab->free_list;
+		slab->free_list = *(char **)mem;
+		slab->num_used--;
 	}
 
 	irq_unlock(key);
 }
 
-SYS_INIT(init_mem_map_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+SYS_INIT(init_mem_slab_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
