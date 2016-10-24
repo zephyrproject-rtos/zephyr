@@ -38,7 +38,7 @@
 
 #define TXEMPTY 0x80 /* Transmit FIFO empty and next character can be sent */
 
-static struct uart_driver_api uart_nsim_driver_api;
+static const struct uart_driver_api uart_nsim_driver_api;
 
 /**
  * @brief Initialize fake serial port
@@ -78,7 +78,7 @@ static int uart_nsim_poll_in(struct device *dev, unsigned char *c)
 
 }
 
-static struct uart_driver_api uart_nsim_driver_api = {
+static const struct uart_driver_api uart_nsim_driver_api = {
 	.poll_out = uart_nsim_poll_out,
 	.poll_in = uart_nsim_poll_in,
 };
