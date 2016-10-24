@@ -29,12 +29,20 @@ config NET_BUF
 	  This option enables support for generic network protocol
 	  buffers.
 
-config	NET_BUF_DEBUG
+config NET_BUF_DEBUG
 	bool "Network buffer debugging"
 	depends on NET_BUF
 	select STDOUT_CONSOLE
 	default n
 	help
 	  Enable debug logs and checks for the generic network buffers.
+
+config NET_BUF_SIMPLE_DEBUG
+	bool "Network buffer memory debugging"
+	depends on NET_BUF_DEBUG
+	select STDOUT_CONSOLE
+	default n
+	help
+	  Enable extra debug logs and checks for the generic network buffers.
 
 endmenu
