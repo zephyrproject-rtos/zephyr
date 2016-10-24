@@ -351,10 +351,11 @@ BOARD_NAME = $(subst $(DQUOTE),,$(CONFIG_BOARD))
 KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 KERNEL_ELF_NAME = $(KERNEL_NAME).elf
 KERNEL_BIN_NAME = $(KERNEL_NAME).bin
+KERNEL_HEX_NAME = $(KERNEL_NAME).hex
 KERNEL_STAT_NAME = $(KERNEL_NAME).stat
 
 export SOC_FAMILY SOC_SERIES SOC_PATH SOC_NAME BOARD_NAME
-export ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME
+export ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME KERNEL_HEX_NAME
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \
@@ -897,6 +898,15 @@ quiet_cmd_gen_bin = BIN     $@
 $(KERNEL_BIN_NAME): $(KERNEL_ELF_NAME)
 	$(call cmd,gen_bin)
 
+quiet_cmd_gen_hex = HEX     $@
+      cmd_gen_hex =                                                         \
+(                                                                           \
+   $(OBJCOPY) -S -O ihex -R .note -R .comment -R COMMON -R .eh_frame $< $@; \
+)
+
+$(KERNEL_HEX_NAME): $(KERNEL_ELF_NAME)
+	$(call cmd,gen_hex)
+
 $(KERNEL_STAT_NAME): $(KERNEL_BIN_NAME) $(KERNEL_ELF_NAME)
 	@$(READELF) -e $(KERNEL_ELF_NAME) > $@
 
@@ -1028,7 +1038,7 @@ CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
 		misc/generated/sysgen/kernel_main.h \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
-		*.bin *.strip staticIdt.o linker.cmd
+		*.bin *.hex *.strip staticIdt.o linker.cmd
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
