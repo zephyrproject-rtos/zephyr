@@ -128,6 +128,9 @@ struct net_icmpv6_nd_opt_6co {
 #define NET_ICMPV6_RA_FLAG_AUTONOMOUS 0x40
 
 #define NET_ICMPV6_DST_UNREACH    1	/* Destination unreachable */
+#define NET_ICMPV6_PACKET_TOO_BIG 2	/* Packet too big */
+#define NET_ICMPV6_TIME_EXCEEDED  3	/* Time exceeded */
+#define NET_ICMPV6_PARAM_PROBLEM  4	/* IPv6 header is bad */
 #define NET_ICMPV6_ECHO_REQUEST 128
 #define NET_ICMPV6_ECHO_REPLY   129
 #define NET_ICMPV6_RS           133	/* Router Solicitation */
@@ -143,6 +146,11 @@ struct net_icmpv6_nd_opt_6co {
 #define NET_ICMPV6_DST_UNREACH_NO_PORT   4 /* Port unreachable */
 #define NET_ICMPV6_DST_UNREACH_SRC_ADDR  5 /* Source address failed */
 #define NET_ICMPV6_DST_UNREACH_REJ_ROUTE 6 /* Reject route to destination */
+
+/* Codes for ICMPv6 Parameter Problem message */
+#define NET_ICMPV6_PARAM_PROB_HEADER     0 /* Erroneous header field */
+#define NET_ICMPV6_PARAM_PROB_NEXTHEADER 1 /* Unrecognized next header */
+#define NET_ICMPV6_PARAM_PROB_OPTION     2 /* Unrecognized option */
 
 /* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1 */
 #define NET_ICMPV6_UNUSED_LEN 4
