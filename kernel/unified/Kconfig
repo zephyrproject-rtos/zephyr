@@ -114,6 +114,16 @@ config MAIN_STACK_SIZE
 
 	After initialization is complete, the thread runs main().
 
+config IDLE_STACK_SIZE
+	int
+	prompt "Size of stack for idle thread"
+	default 256
+	help
+	Depending on the work that the idle task must do, most likely due to
+	power management but possibly to other features like system event
+	logging (e.g. logging when the system goes to sleep), the idle thread
+	may need more stack space than the default value.
+
 config ISR_STACK_SIZE
 	int
 	prompt "ISR and initialization stack size (in bytes)"

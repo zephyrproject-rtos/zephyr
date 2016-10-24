@@ -72,7 +72,7 @@ uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
 
 /* init/main and idle threads */
 
-#define IDLE_STACK_SIZE 256
+#define IDLE_STACK_SIZE CONFIG_IDLE_STACK_SIZE
 
 #if CONFIG_MAIN_STACK_SIZE & (STACK_ALIGN - 1)
     #error "MAIN_STACK_SIZE must be a multiple of the stack alignment"
