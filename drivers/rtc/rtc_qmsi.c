@@ -154,7 +154,7 @@ static uint32_t rtc_qmsi_read(struct device *dev)
 	return QM_RTC[QM_RTC_0].rtc_ccvr;
 }
 
-static struct rtc_driver_api api = {
+static const struct rtc_driver_api api = {
 	.enable = rtc_qmsi_enable,
 	.disable = rtc_qmsi_disable,
 	.read = rtc_qmsi_read,
@@ -222,4 +222,4 @@ static int rtc_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 
 DEVICE_DEFINE(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init, rtc_qmsi_device_ctrl,
 	      RTC_CONTEXT, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-	      (void *)&api);
+	      &api);
