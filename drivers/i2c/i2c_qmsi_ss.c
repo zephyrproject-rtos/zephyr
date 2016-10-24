@@ -274,7 +274,7 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 	return 0;
 }
 
-static struct i2c_driver_api api = {
+static const struct i2c_driver_api api = {
 	.configure = i2c_qmsi_ss_configure,
 	.transfer = i2c_qmsi_ss_transfer,
 };
