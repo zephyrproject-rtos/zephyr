@@ -439,7 +439,7 @@ static inline int gpio_qmsi_disable_callback(struct device *port,
 	return 0;
 }
 
-static struct gpio_driver_api api_funcs = {
+static const struct gpio_driver_api api_funcs = {
 	.config = gpio_qmsi_config,
 	.write = gpio_qmsi_write,
 	.read = gpio_qmsi_read,
