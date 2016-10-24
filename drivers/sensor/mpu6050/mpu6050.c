@@ -139,7 +139,7 @@ static int mpu6050_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static struct sensor_driver_api mpu6050_driver_api = {
+static const struct sensor_driver_api mpu6050_driver_api = {
 #if CONFIG_MPU6050_TRIGGER
 	.trigger_set = mpu6050_trigger_set,
 #endif
