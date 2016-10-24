@@ -294,7 +294,7 @@ static int hp206c_channel_get(struct device *dev,
 	return 0;
 }
 
-struct sensor_driver_api hp206c_api = {
+const struct sensor_driver_api hp206c_api = {
 	.attr_set = hp206c_attr_set,
 #ifdef CONFIG_HP206C_TRIGGER
 	.trigger_set = hp206c_trigger_set,
