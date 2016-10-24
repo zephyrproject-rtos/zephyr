@@ -251,7 +251,7 @@ static void gpio_k64_port_isr(void *dev)
 }
 
 
-static struct gpio_driver_api gpio_k64_drv_api_funcs = {
+static const struct gpio_driver_api gpio_k64_drv_api_funcs = {
 	.config = gpio_k64_config,
 	.write = gpio_k64_write,
 	.read = gpio_k64_read,
