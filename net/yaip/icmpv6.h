@@ -169,9 +169,13 @@ struct net_icmpv6_handler {
  * @param buf Network buffer that this error is related to.
  * @param type Type of the error message.
  * @param code Code of the type of the error message.
+ * @param param Optional parameter value for this error. Depending on type
+ * and code this gives extra information to the recipient. Set 0 if unsure
+ * what value to use.
  * @return Return 0 if the sending succeed, <0 otherwise.
  */
-int net_icmpv6_send_error(struct net_buf *buf, uint8_t type, uint8_t code);
+int net_icmpv6_send_error(struct net_buf *buf, uint8_t type, uint8_t code,
+			  uint32_t param);
 
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,

@@ -622,7 +622,7 @@ static inline void send_icmp_error(struct net_buf *buf)
 	if (net_nbuf_family(buf) == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		net_icmpv6_send_error(buf, NET_ICMPV6_DST_UNREACH,
-				      NET_ICMPV6_DST_UNREACH_NO_PORT);
+				      NET_ICMPV6_DST_UNREACH_NO_PORT, 0);
 #endif /* CONFIG_NET_IPV6 */
 
 	} else {

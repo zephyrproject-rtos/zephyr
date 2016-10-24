@@ -25,6 +25,7 @@
 
 #include <errno.h>
 #include <misc/slist.h>
+#include <misc/byteorder.h>
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
@@ -121,7 +122,8 @@ static inline void setup_ipv6_header(struct net_buf *buf, uint8_t extra_len,
 	       NET_ICMPV6_UNUSED_LEN);
 }
 
-int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
+int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
+			  uint32_t param)
 {
 	struct net_buf *buf, *frag;
 	struct net_if *iface;
@@ -145,7 +147,9 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	src = &NET_IPV6_BUF(orig)->src;
 	dst = &NET_IPV6_BUF(orig)->dst;
 
-	/* There is unsed part in ICMPv6 error msg header */
+	/* There is unsed part in ICMPv6 error msg header what we might need
+	 * to store the param variable.
+	 */
 	reserve = sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr) +
 		NET_ICMPV6_UNUSED_LEN;
 
@@ -183,6 +187,13 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	setup_ipv6_header(buf, extra_len, net_if_ipv6_get_hop_limit(iface),
 			  type, code);
 
+	/* Depending on error option, we store the param into the ICMP message.
+	 */
+	if (type == NET_ICMPV6_PARAM_PROBLEM) {
+		sys_put_be32(param, net_nbuf_icmp_data(buf) +
+			     sizeof(struct net_icmp_hdr));
+	}
+
 	if (net_is_ipv6_addr_mcast(dst)) {
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, src);
 
@@ -209,8 +220,8 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
 		snprintf(out, sizeof(out),
 			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
-		NET_DBG("Sending ICMPv6 Error Message type %d code %d "
-			"from %s to %s", type, code,
+		NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
+			" from %s to %s", type, code, param,
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
 	} while (0);
 #endif /* NET_DEBUG > 0 */
