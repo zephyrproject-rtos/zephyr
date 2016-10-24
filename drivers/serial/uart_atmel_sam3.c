@@ -124,7 +124,7 @@ struct uart_sam3_dev_data_t {
 #define UART_PDC_PTCR_RXTDIS	(1 << 1)
 #define UART_PDC_PTCR_TXTDIS	(1 << 9)
 
-static struct uart_driver_api uart_sam3_driver_api;
+static const struct uart_driver_api uart_sam3_driver_api;
 
 /**
  * @brief Set the baud rate
@@ -243,7 +243,7 @@ static unsigned char uart_sam3_poll_out(struct device *dev,
 	return c;
 }
 
-static struct uart_driver_api uart_sam3_driver_api = {
+static const struct uart_driver_api uart_sam3_driver_api = {
 	.poll_in = uart_sam3_poll_in,
 	.poll_out = uart_sam3_poll_out,
 };
