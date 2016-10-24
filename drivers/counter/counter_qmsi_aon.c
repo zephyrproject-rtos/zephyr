@@ -55,7 +55,7 @@ static int aon_counter_qmsi_set_alarm(struct device *dev,
 	return -ENODEV;
 }
 
-struct counter_driver_api aon_counter_qmsi_api = {
+static const struct counter_driver_api aon_counter_qmsi_api = {
 	.start = aon_counter_qmsi_start,
 	.stop = aon_counter_qmsi_stop,
 	.read = aon_counter_qmsi_read,
@@ -70,4 +70,4 @@ static int aon_counter_init(struct device *dev)
 DEVICE_AND_API_INIT(aon_counter, CONFIG_AON_COUNTER_QMSI_DEV_NAME,
 		    aon_counter_init, NULL, NULL, SECONDARY,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&aon_counter_qmsi_api);
+		    &aon_counter_qmsi_api);
