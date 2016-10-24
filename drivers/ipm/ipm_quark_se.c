@@ -187,7 +187,7 @@ static int quark_se_ipm_set_enabled(struct device *d, int enable)
 	return 0;
 }
 
-struct ipm_driver_api ipm_quark_se_api_funcs = {
+const struct ipm_driver_api ipm_quark_se_api_funcs = {
 	.send = quark_se_ipm_send,
 	.register_callback = quark_se_ipm_register_callback,
 	.max_data_size_get = quark_se_ipm_max_data_size_get,
