@@ -193,11 +193,111 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
 	return net_icmpv6_input(buf, len, hdr->type, hdr->code);
 }
 
+static inline struct net_buf *check_unknown_option(struct net_buf *buf,
+						   uint8_t opt_type,
+						   uint16_t length)
+{
+	/* RFC 2460 chapter 4.2 tells how to handle the unknown
+	 * options by the two highest order bits of the option:
+	 *
+	 * 00: Skip over this option and continue processing the header.
+	 * 01: Discard the packet.
+	 * 10: Discard the packet and, regardless of whether or not the
+	 *     packet's Destination Address was a multicast address,
+	 *     send an ICMP Parameter Problem, Code 2, message to the packet's
+	 *     Source Address, pointing to the unrecognized Option Type.
+	 * 11: Discard the packet and, only if the packet's Destination
+	 *     Address was not a multicast address, send an ICMP Parameter
+	 *     Problem, Code 2, message to the packet's Source Address,
+	 *     pointing to the unrecognized Option Type.
+	 */
+	NET_DBG("Unknown option %d MSB %d", opt_type, opt_type >> 6);
+
+	switch (opt_type & 0xc0) {
+	case 0x00:
+		break;
+	case 0x40:
+		return NULL;
+	case 0xc0:
+		if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+			return NULL;
+		}
+		/* passthrough */
+	case 0x80:
+		net_icmpv6_send_error(buf, NET_ICMPV6_PARAM_PROBLEM,
+				      NET_ICMPV6_PARAM_PROB_OPTION,
+				      (uint32_t)length);
+		return NULL;
+	}
+
+	return buf;
+}
+
+static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
+						     struct net_buf *frag,
+						     int total_len,
+						     uint16_t len,
+						     uint16_t offset,
+						     uint16_t *pos,
+						     enum net_verdict *verdict)
+{
+	uint8_t opt_type, opt_len;
+	uint16_t length = 0;
+
+	if (len > total_len) {
+		NET_DBG("Corrupted packet, extension header %d too long "
+			"(max %d bytes)", len, total_len);
+		*verdict = NET_DROP;
+		return NULL;
+	}
+
+	length += 2;
+
+	/* Each extension option has type and length */
+	frag = net_nbuf_read_u8(frag, offset, pos, &opt_type);
+	frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
+
+	while (frag && (length < len)) {
+		switch (opt_type) {
+		case NET_IPV6_EXT_HDR_OPT_PAD1:
+			NET_DBG("PAD1 option");
+			length++;
+			break;
+		case NET_IPV6_EXT_HDR_OPT_PADN:
+			NET_DBG("PADN option");
+			length += opt_len + 2;
+			break;
+		default:
+			if (!check_unknown_option(frag, opt_type, length)) {
+				*verdict = NET_DROP;
+				return NULL;
+			}
+
+			length += opt_len + 2;
+			break;
+		}
+
+		frag = net_nbuf_read_u8(frag, *pos, pos, &opt_type);
+		frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
+		if (!frag && *pos == 0xffff) {
+			/* reading error */
+			return NULL;
+		}
+	}
+
+	*verdict = NET_CONTINUE;
+	return frag;
+}
+
 static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 {
 	struct net_ipv6_hdr *hdr = NET_IPV6_BUF(buf);
 	int real_len = net_buf_frags_len(buf);
 	int pkt_len = (hdr->len[0] << 8) + hdr->len[1] + sizeof(*hdr);
+	struct net_buf *frag;
+	uint8_t next, next_hdr, length;
+	uint8_t first_option;
+	uint16_t offset;
 
 	if (real_len > pkt_len) {
 		NET_DBG("IPv6 adjust pkt len to %d (was %d)",
@@ -239,32 +339,131 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	net_nbuf_set_ext_len(buf, 0);
 	net_nbuf_set_ext_bitmap(buf, 0);
 
-	while (1) {
-		switch (*(net_nbuf_next_hdr(buf))) {
+	/* Fast path for main upper layer protocols. The handling of extension
+	 * headers can be slow so do this checking here. There cannot
+	 * be any extension headers after the upper layer protocol header.
+	 */
+	switch (*(net_nbuf_next_hdr(buf))) {
+	case IPPROTO_ICMPV6:
+		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+		return process_icmpv6_pkt(buf, hdr);
 
+#if defined(CONFIG_NET_UDP)
+	case IPPROTO_UDP:
+		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+		return net_conn_input(IPPROTO_UDP, buf);
+#endif
+#if defined(CONFIG_NET_TCP)
+	case IPPROTO_TCP:
+		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+		return net_conn_input(IPPROTO_TCP, buf);
+#endif
+	}
+
+	/* Go through the extensions */
+	frag = buf->frags;
+	next = hdr->nexthdr;
+	first_option = next;
+	offset = sizeof(struct net_ipv6_hdr);
+
+	while (frag) {
+		enum net_verdict verdict;
+
+		frag = net_nbuf_read_u8(frag, offset, &offset, &next_hdr);
+		frag = net_nbuf_read_u8(frag, offset, &offset, &length);
+		if (!frag) {
+			goto drop;
+		}
+
+		length = length * 8 + 8;
+		verdict = NET_OK;
+
+#if NET_DEBUG
+		/* Print the length only for IPv6 extension */
+		if (next != IPPROTO_ICMPV6 && next != IPPROTO_UDP &&
+		    next != IPPROTO_TCP) {
+			NET_DBG("IPv6 next header %d length %d bytes",
+				next, length);
+		} else {
+			NET_DBG("IPv6 next header %d", next);
+		}
+#endif
+
+		switch (next) {
+		case NET_IPV6_NEXTHDR_HBHO:
+			/* Hop by hop option */
+			if (net_nbuf_ext_bitmap(buf) &
+			    NET_IPV6_EXT_HDR_BITMAP_HBHO) {
+				goto bad_hdr;
+			}
+			/* HBH option needs to be the first one */
+			if (first_option != NET_IPV6_NEXTHDR_HBHO) {
+				goto bad_hdr;
+			}
+
+			net_nbuf_add_ext_bitmap(buf,
+						NET_IPV6_EXT_HDR_BITMAP_HBHO);
+
+			frag = handle_ext_hdr_options(buf, frag, real_len,
+						      length, offset, &offset,
+						      &verdict);
+			if (verdict == NET_DROP) {
+				goto drop;
+			} else if (verdict == NET_CONTINUE) {
+				/* ignore the option */
+				break;
+			}
+
+			if (!frag && offset) {
+				/* Header issue, the ICMPv6 parameter problem
+				 * error is already sent so just drop the msg
+				 * here.
+				 */
+				goto drop;
+			}
+
+			break;
+
+		/* The next header after the extensions can be also
+		 * one of the main protocols.
+		 */
 		case IPPROTO_ICMPV6:
 			net_nbuf_set_ip_hdr_len(buf,
 						sizeof(struct net_ipv6_hdr));
 			return process_icmpv6_pkt(buf, hdr);
 
+#if defined(CONFIG_NET_UDP)
 		case IPPROTO_UDP:
 			net_nbuf_set_ip_hdr_len(buf,
 						sizeof(struct net_ipv6_hdr));
 			return net_conn_input(IPPROTO_UDP, buf);
-
+#endif
+#if defined(CONFIG_NET_TCP)
 		case IPPROTO_TCP:
 			net_nbuf_set_ip_hdr_len(buf,
 						sizeof(struct net_ipv6_hdr));
 			return net_conn_input(IPPROTO_TCP, buf);
-
+#endif
 		default:
-			NET_DBG("Unknown next header type %d",
-				*net_nbuf_next_hdr(buf));
-			goto drop;
+			goto bad_hdr;
 		}
+
+		next = next_hdr;
 	}
 
 drop:
+	return NET_DROP;
+
+bad_hdr:
+	/* Send error message about parameter problem (RFC 2460)
+	 */
+	net_icmpv6_send_error(buf, NET_ICMPV6_PARAM_PROBLEM,
+			      NET_ICMPV6_PARAM_PROB_NEXTHEADER,
+			      offset - 1);
+
+	NET_DBG("Unknown next header type");
+	NET_STATS(++net_stats.ip_errors.protoerr);
+
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV6 */
