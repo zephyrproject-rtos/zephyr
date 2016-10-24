@@ -40,7 +40,7 @@ static int fsl_k64_dev_get(struct device *dev, uint32_t pin,
 	return _fsl_k64_get_pin(pin, func);
 }
 
-static struct pinmux_driver_api api_funcs = {
+static const struct pinmux_driver_api api_funcs = {
 	.set = fsl_k64_dev_set,
 	.get = fsl_k64_dev_get
 };
