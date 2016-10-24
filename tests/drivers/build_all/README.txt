@@ -1,4 +1,3 @@
-
 Overview
 --------
 
@@ -13,10 +12,11 @@ Tests
 drivers:
 	build all drivers
 
-sensors:
-	build sensors
+sensors_a_m:
+	build sensors with name beginning a through m.
+
+sensors_n_z:
+	build sensors with name beginning n through z.
 
 sensors_trigger:
 	build sensors with trigger option enabled
-
-
