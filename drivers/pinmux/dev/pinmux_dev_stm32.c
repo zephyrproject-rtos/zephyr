@@ -70,7 +70,7 @@ static int pinmux_stm32_pullup(struct device *dev,
 	return -ENOTSUP;
 }
 
-static struct pinmux_driver_api pinmux_stm32_api = {
+static const struct pinmux_driver_api pinmux_stm32_api = {
 	.set = pinmux_stm32_set,
 	.get = pinmux_stm32_get,
 	.pullup = pinmux_stm32_pullup,
