@@ -36,6 +36,7 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
+#include <misc/byteorder.h>
 
 #include "connection.h"
 #include "net_private.h"
@@ -66,16 +67,6 @@ struct tcp_segment {
 };
 
 #if NET_DEBUG > 0
-static inline uint32_t a2u32(uint8_t *a)
-{
-	return  a[0] << 24 | a[1] << 16 | a[2] << 8  | a[3];
-}
-
-static inline uint32_t a2u16(uint8_t *a)
-{
-	return a[0] << 8 | a[1];
-}
-
 static void net_tcp_trace(char *str, struct net_buf *buf)
 {
 	NET_INFO("%s[TCP header]", str);
@@ -83,9 +74,9 @@ static void net_tcp_trace(char *str, struct net_buf *buf)
 		 ntohs(NET_TCP_BUF(buf)->src_port),
 		 ntohs(NET_TCP_BUF(buf)->dst_port));
 	NET_INFO("|(Sequence number)                 0x%010x |",
-		 a2u32(NET_TCP_BUF(buf)->seq));
+		 sys_get_be32(NET_TCP_BUF(buf)->seq));
 	NET_INFO("|(ACK number)                      0x%010x |",
-		 a2u32(NET_TCP_BUF(buf)->ack));
+		 sys_get_be32(NET_TCP_BUF(buf)->ack));
 	NET_INFO("|(HL) %2u |(F)  %u%u%u%u%u%u |(Window)           %5u |",
 		 (NET_TCP_BUF(buf)->offset >> 4) * 4,
 		 NET_TCP_BUF(buf)->flags >> 5 & 1,
@@ -94,10 +85,10 @@ static void net_tcp_trace(char *str, struct net_buf *buf)
 		 NET_TCP_BUF(buf)->flags >> 2 & 1,
 		 NET_TCP_BUF(buf)->flags >> 1 & 1,
 		 NET_TCP_BUF(buf)->flags & 1,
-		 a2u16(NET_TCP_BUF(buf)->wnd));
+		 sys_get_be16(NET_TCP_BUF(buf)->wnd));
 	NET_INFO("|(Checksum)    0x%04x |(Urgent)           %5u |",
 		 ntohs(NET_TCP_BUF(buf)->chksum),
-		 a2u16(NET_TCP_BUF(buf)->urg));
+		 sys_get_be16(NET_TCP_BUF(buf)->urg));
 }
 #else
 #define net_tcp_trace(...)
