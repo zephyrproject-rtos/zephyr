@@ -111,7 +111,7 @@ static int bma280_channel_get(struct device *dev,
 	return 0;
 }
 
-static struct sensor_driver_api bma280_driver_api = {
+static const struct sensor_driver_api bma280_driver_api = {
 #if CONFIG_BMA280_TRIGGER
 	.attr_set = bma280_attr_set,
 	.trigger_set = bma280_trigger_set,
