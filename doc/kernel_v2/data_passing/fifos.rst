@@ -44,6 +44,15 @@ that has waited longest.
     The kernel does allow an ISR to remove an item from a fifo, however
     the ISR must not attempt to wait if the fifo is empty.
 
+If desired, **multiple data items** can be added to a fifo in a single operation
+if they are chained together into a singly-linked list. This capability can be
+useful if multiple writers are adding sets of related data items to the fifo,
+as it ensures the data items in each set are not interleaved with other data
+items. Adding multiple data items to a fifo is also more efficient than adding
+them one at a time, and can be used to guarantee that anyone who removes
+the first data item in a set will be able to remove the remaining data items
+without waiting.
+
 Implementation
 **************
 
@@ -100,8 +109,8 @@ to send data to one or more consumer threads.
         }
     }
 
-.. note::
-    STILL NEED TO DESCRIBE APIS THAT ADD A LIST OF ITEMS TO A FIFO!
+Additionally, a singly-linked list of data items can be added to a fifo
+by calling :cpp:func:`k_fifo_put_list()` or :cpp:func:`k_fifo_put_slist()`.
 
 Reading from a Fifo
 ===================
