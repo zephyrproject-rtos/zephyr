@@ -170,7 +170,7 @@ static int gpio_stm32_disable_callback(struct device *dev,
 	return 0;
 }
 
-static struct gpio_driver_api gpio_stm32_driver = {
+static const struct gpio_driver_api gpio_stm32_driver = {
 	.config = gpio_stm32_config,
 	.write = gpio_stm32_write,
 	.read = gpio_stm32_read,
