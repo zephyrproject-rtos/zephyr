@@ -124,7 +124,7 @@ static int th02_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static struct sensor_driver_api th02_driver_api = {
+static const struct sensor_driver_api th02_driver_api = {
 	.sample_fetch = th02_sample_fetch,
 	.channel_get = th02_channel_get,
 };
