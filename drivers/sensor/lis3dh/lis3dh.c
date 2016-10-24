@@ -83,7 +83,7 @@ int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static struct sensor_driver_api lis3dh_driver_api = {
+static const struct sensor_driver_api lis3dh_driver_api = {
 #if CONFIG_LIS3DH_TRIGGER
 	.trigger_set = lis3dh_trigger_set,
 #endif
