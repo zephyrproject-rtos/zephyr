@@ -122,7 +122,7 @@ static int dma_qmsi_transfer_stop(struct device *dev, uint32_t channel)
 	return qm_dma_transfer_terminate(info->instance, channel);
 }
 
-static struct dma_driver_api dma_funcs = {
+static const struct dma_driver_api dma_funcs = {
 	.channel_config = dma_qmsi_channel_config,
 	.transfer_config = dma_qmsi_transfer_config,
 	.transfer_start = dma_qmsi_transfer_start,
