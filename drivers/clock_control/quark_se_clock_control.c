@@ -72,7 +72,7 @@ static inline int quark_se_clock_control_off(struct device *dev,
 	return sys_test_and_clear_bit(info->base_address, subsys);
 }
 
-static struct clock_control_driver_api quark_se_clock_control_api = {
+static const struct clock_control_driver_api quark_se_clock_control_api = {
 	.on = quark_se_clock_control_on,
 	.off = quark_se_clock_control_off,
 	.get_rate = NULL,
