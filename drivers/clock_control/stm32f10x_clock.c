@@ -191,7 +191,7 @@ static int stm32f10x_clock_control_get_subsys_rate(struct device *clock,
 	return 0;
 }
 
-static struct clock_control_driver_api stm32f10x_clock_control_api = {
+static const struct clock_control_driver_api stm32f10x_clock_control_api = {
 	.on = stm32f10x_clock_control_on,
 	.off = stm32f10x_clock_control_off,
 	.get_rate = stm32f10x_clock_control_get_subsys_rate,
