@@ -225,7 +225,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 }
 #endif /* CONFIG_ADC_QMSI_POLL */
 
-static struct adc_driver_api api_funcs = {
+static const struct adc_driver_api api_funcs = {
 	.enable  = adc_qmsi_enable,
 	.disable = adc_qmsi_disable,
 	.read    = adc_qmsi_read,
