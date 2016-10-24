@@ -44,3 +44,12 @@ indicated here:
 
   https://www.zephyrproject.org/doc/board/arduino_101.html
 
+
+Known Issues
+============
+
+We are facing some issues [1,2] that are reflected with a
+-EIO (-5) return code.
+
+[1] https://jira.zephyrproject.org/browse/ZEP-1097
+[2] https://jira.zephyrproject.org/browse/ZEP-1098

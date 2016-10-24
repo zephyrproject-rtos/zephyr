@@ -129,12 +129,3 @@ Known Issues
 
 The above sample contains a rc: -22 (-EINVAL). This is the expected behavior
 for that domain name.
-
-However, we are facing some issues [1] and this fact is reflected in the some
-queries with a rc: -5.
-
-Furthermore, the app may freeze, it seems datagrams are not being handled
-correctly by the L2 layer, or perhaps something is wrong with this app :)
-
-[1] https://jira.zephyrproject.org/browse/ZEP-1036
-
