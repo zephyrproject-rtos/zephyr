@@ -153,7 +153,7 @@ static int flash_nrf5_write_protection(struct device *dev, bool enable)
 	return 0;
 }
 
-static struct flash_driver_api flash_nrf5_api = {
+static const struct flash_driver_api flash_nrf5_api = {
 	.read = flash_nrf5_read,
 	.write = flash_nrf5_write,
 	.erase = flash_nrf5_erase,
