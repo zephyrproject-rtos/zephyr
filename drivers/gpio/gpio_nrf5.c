@@ -192,7 +192,7 @@ static void gpio_nrf5_port_isr(void *dev)
 {
 }
 
-static struct gpio_driver_api gpio_nrf5_drv_api_funcs = {
+static const struct gpio_driver_api gpio_nrf5_drv_api_funcs = {
 	.config = gpio_nrf5_config,
 	.read = gpio_nrf5_read,
 	.write = gpio_nrf5_write,
