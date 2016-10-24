@@ -401,7 +401,7 @@ out:
 	completed(dev, error);
 }
 
-static struct spi_driver_api dw_spi_api = {
+static const struct spi_driver_api dw_spi_api = {
 	.configure = spi_dw_configure,
 	.slave_select = spi_dw_slave_select,
 	.transceive = spi_dw_transceive,
