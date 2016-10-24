@@ -13,20 +13,25 @@ that is too lengthy or too complex to be performed by an ISR.
 Concepts
 ********
 
-Any number of threads can be definedby an application. Each thread is
-referenced by its memory address.
+Any number of threads can be defined by an application. Each thread is
+referenced by a :dfn:`thread id` that is assigned when the thread is spawned.
 
 A thread has the following key properties:
 
-* A **thread region**, which is the area of memory used by the thread
-  and for its stack. The **size** of the thread region can be tailored
-  to meet the specific needs of the thread.
+* A **stack area**, which is a region of memory used for the thread's
+  control block (of type :c:type:`struct k_thread`) and for its stack.
+  The **size** of the stack area can be tailored to conform to the actual needs
+  of the thread's processing.
 
 * An **entry point function**, which is invoked when the thread is started.
   Up to 3 **argument values** can be passed to this function.
 
 * A **scheduling priority**, which instructs the kernel's scheduler how to
-  allocate CPU time to the thread. (See "Thread Scheduling".)
+  allocate CPU time to the thread. (See :ref:`scheduling_v2`.)
+
+* A set of **thread options**, which allow the thread to receive special
+  treatment by the kernel under specific circumstances.
+  (See :ref:`thread_options_v2`.)
 
 * A **start delay**, which specifies how long the kernel should wait before
   starting the thread.
@@ -35,8 +40,9 @@ Thread Spawning
 ===============
 
 A thread must be spawned before it can be used. The kernel initializes
-both the thread data structure portion and the stack portion of
-the thread's thread region.
+the control block portion of the thread's stack area, as well as one
+end of the stack portion. The remainder of the thread's stack is typically
+left uninitialized.
 
 Specifying a start delay of :c:macro:`K_NO_WAIT` instructs the kernel
 to start thread execution immediately. Alternatively, the kernel can be
@@ -99,54 +105,85 @@ Once suspended, a thread cannot be scheduled until another thread calls
    a thread since a sleeping thread becomes executable automatically when the
    time limit is reached.
 
+.. _thread_options_v2:
+
+Thread Options
+==============
+
+The kernel supports a small set of :dfn:`thread options` that allow a thread
+to receive special treatment under specific circumstances. The set of options
+associated with a thread are specified when the thread is spawned.
+
+A thread that does not require any thread option has an option value of zero.
+A thread that requires a thread option specifies it by name, using the
+:literal:`|` character as a separator if multiple options are needed
+(i.e. combine options using the bitwise OR operator).
+
+The following thread options are supported.
+
+:c:macro:`ESSENTIAL`
+    This option tags the thread as an :dfn:`essential thread`. This instructs
+    the kernel to treat the termination or aborting of the thread as a fatal
+    system error.
+
+    By default, the thread is not considered to be an essential thread.
+
+:c:macro:`USE_FP` and :c:macro:`USE_SSE`
+    These x86-specific options indicate that the thread uses the CPU's
+    floating point registers and SSE registers, respectively. This instructs
+    the kernel to take additional steps to save and restore the contents
+    of these registers when scheduling the thread.
+    (For more information see :ref:`float_v2`.)
+
+    By default, the kernel does not attempt to save and restore the contents
+    of these registers when scheduling the thread.
+
 Implementation
 **************
 
 Spawning a Thread
 =================
 
-A thread is spawned by defining its thread region and then calling
-:cpp:func:`k_thread_spawn()`. The thread region is an array of bytes
+A thread is spawned by defining its stack area and then calling
+:cpp:func:`k_thread_spawn()`. The stack area is an array of bytes
 whose size must equal :c:func:`sizeof(struct k_thread)` plus the size
-of the thread's stack. The thread region must be defined using the
+of the thread's stack. The stack area must be defined using the
 :c:macro:`__stack` attribute to ensure it is properly aligned.
 
-The thread spawning function returns the thread's memory address,
-which can be saved for later reference. Alternatively, the address of
-the thread can be obtained by casting the address of the thread region
-to type :c:type:`struct k_thread *`.
+The thread spawning function returns its thread id, which can be used
+to reference the thread.
 
 The following code spawns a thread that starts immediately.
 
 .. code-block:: c
 
-    #define MY_THREAD_SIZE 500
+    #define MY_STACK_SIZE 500
     #define MY_PRIORITY 5
 
     extern void my_entry_point(void *, void *, void *);
 
-    char __noinit __stack my_thread_area[MY_THREAD_SIZE];
+    char __noinit __stack my_stack_area[MY_THREAD_SIZE];
 
-    struct k_thread *my_thread_ptr;
-
-    my_thread_ptr = k_thread_spawn(my_thread_area, MY_THREAD_SIZE,
-                                   my_entry_point, 0, 0, 0,
-                                   MY_PRIORITY, 0, K_NO_WAIT);
+    k_tid_t my_tid = k_thread_spawn(my_stack_area, MY_STACK_SIZE,
+                                    my_entry_point, NULL, NULL, NULL,
+                                    MY_PRIORITY, 0, K_NO_WAIT);
 
 Alternatively, a thread can be spawned at compile time by calling
-:c:macro:`K_THREAD_DEFINE()`. Observe that the macro defines the thread
-region automatically, as well as a variable containing the thread's address.
+:c:macro:`K_THREAD_DEFINE()`. Observe that the macro defines
+the stack area and thread id variables automatically.
 
 The following code has the same effect as the code segment above.
 
 .. code-block:: c
 
-    K_THREAD_DEFINE(my_thread_ptr, my_thread_area, MY_THREAD_SIZE,
-                                   my_entry_point, 0, 0, 0,
-                                   MY_PRIORITY, 0, K_NO_WAIT);
+    #define MY_STACK_SIZE 500
+    #define MY_PRIORITY 5
 
-.. note::
-   NEED TO FIGURE OUT HOW WE'RE GOING TO HANDLE THE FLOATING POINT OPTIONS!
+    extern void my_entry_point(void *, void *, void *);
+
+    K_THREAD_DEFINE(my_tid, MY_STACK_SIZE,
+                    my_entry_point, NULL, NULL, NULL,
+                    MY_PRIORITY, 0, K_NO_WAIT);
 
 Terminating a Thread
 ====================
