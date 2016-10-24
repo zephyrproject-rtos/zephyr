@@ -156,7 +156,7 @@ static int pwm_pca9685_set_duty_cycle(struct device *dev, int access_op,
 	return pwm_pca9685_set_values(dev, access_op, pwm, on, off);
 }
 
-static struct pwm_driver_api pwm_pca9685_drv_api_funcs = {
+static const struct pwm_driver_api pwm_pca9685_drv_api_funcs = {
 	.config = pwm_pca9685_configure,
 	.set_values = pwm_pca9685_set_values,
 	.set_duty_cycle = pwm_pca9685_set_duty_cycle,
