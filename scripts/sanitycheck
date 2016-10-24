@@ -30,7 +30,7 @@ Each testcase.ini block can define the following key/value pairs:
     run under certain circumstances, like daily builds. These test cases
     are still compiled.
 
-  kernel = <nano|micro>
+  kernel = <nano|micro|unified>
     Specify the kernel being tested instead of relying on parsing
     Makefile for KERNEL_TYPE
 
@@ -1040,7 +1040,7 @@ class Platform:
         if plat_dict["supported_toolchains"]:
             self.supported_toolchains = plat_dict["supported_toolchains"]
         # Gets populated in a separate step
-        self.defconfig = {"micro" : None, "nano" : None}
+        self.defconfig = {"micro" : None, "nano" : None, "unified" : None}
         pass
 
     def set_defconfig(self, ktype, defconfig):
@@ -1049,7 +1049,7 @@ class Platform:
         We do this in another step because all the defconfigs are generated
         at once from a sub-make, see TestSuite constructor
 
-        @param ktype Kernel type, either "micro" or "nano"
+        @param ktype Kernel type, either "micro" or "nano" or "unified"
         @param defconfig Dictionary containing defconfig information
         """
         self.defconfig[ktype] = defconfig
@@ -1059,7 +1059,7 @@ class Platform:
         in the kernel defconfig used for this arch/platform. Used to identify
         platform features.
 
-        @param ktype Kernel type, either "micro" or "nano"
+        @param ktype Kernel type, either "micro" or "nano" or "unified"
         @return dictionary corresponding to the defconfig contents. unset
             values will not be defined
         """
@@ -1102,7 +1102,7 @@ class Architecture:
 class TestCase:
     """Class representing a test application
     """
-    makefile_re = re.compile("\s*KERNEL_TYPE\s*[?=]+\s*(micro|nano)\s*")
+    makefile_re = re.compile("\s*KERNEL_TYPE\s*[?=]+\s*(micro|nano|unified)\s*")
 
     def __init__(self, testcase_root, workdir, name, tc_dict, inifile):
         """TestCase constructor.
