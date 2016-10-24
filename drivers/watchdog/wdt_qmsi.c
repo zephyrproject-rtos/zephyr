@@ -134,7 +134,7 @@ static void disable(struct device *dev)
 	clk_periph_disable(CLK_PERIPH_WDT_REGISTER);
 }
 
-static struct wdt_driver_api api = {
+static const struct wdt_driver_api api = {
 	.enable = enable,
 	.disable = disable,
 	.get_config = get_config,
@@ -236,4 +236,4 @@ static int init(struct device *dev)
 }
 
 DEVICE_DEFINE(wdt, CONFIG_WDT_0_NAME, init, wdt_qmsi_device_ctrl, WDT_CONTEXT,
-	      0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&api);
+	      0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
