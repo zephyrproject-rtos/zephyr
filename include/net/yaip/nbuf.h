@@ -740,6 +740,102 @@ struct net_buf *net_nbuf_read_be16(struct net_buf *buf, uint16_t offset,
 struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
 				   uint16_t *pos, uint32_t *value);
 
+/**
+ * @brief Write data to an arbitrary offset in a series of fragments.
+ *
+ * @details Write data to an arbitrary offset in a series of fragments.
+ * Offset is based on fragment 'size' and calculates from input fragment
+ * starting position.
+ *
+ * Size in this context refers the fragment full size without link layer header
+ * part. The fragment might have user written data in it, the amount of such
+ * data is stored in frag->len variable (the frag->len is always <= frag->size).
+ * If using this API, the tailroom in the fragments will be taken into use.
+ *
+ * If offset is more than already allocated length in fragment, then empty space
+ * or extra empty fragments is created to reach proper offset.
+ * If there is any data present on input fragment offset, then it will be
+ * 'overwritten'. Use net_nbuf_insert() api if you don't want to overwrite.
+ *
+ * Offset is calculated from starting point of data area in input fragment.
+ * e.g. Buf(Tx/Rx) - Frag1 - Frag2 - Frag3 - Frag4
+ *      (Assume FRAG DATA SIZE is 100 bytes after link layer header)
+ *
+ *      1) net_nbuf_write(buf, frag2, 20, &pos, 20, data)
+ *         In this case write starts from "frag2->data + 20",
+ *         returns frag2, pos = 40
+ *
+ *      2) net_nbuf_write(buf, frag1, 150, &pos, 60, data)
+ *         In this case write starts from "frag2->data + 50"
+ *         returns frag3, pos = 10
+ *
+ *      3) net_nbuf_write(buf, frag1, 350, &pos, 30, data)
+ *         In this case write starts from "frag4->data + 50"
+ *         returns frag4, pos = 80
+ *
+ *      4) net_nbuf_write(buf, frag2, 110, &pos, 90, data)
+ *         In this case write starts from "frag3->data + 10"
+ *         returns frag4, pos = 0
+ *
+ *      5) net_nbuf_write(buf, frag4, 110, &pos, 20, data)
+ *         In this case write creates new data fragment and starts from
+ *         "frag5->data + 10"
+ *         returns frag5, pos = 30
+ *
+ * If input argument frag is NULL, it will create new data fragment
+ * and append at the end of fragment list.
+ *
+ * @param buf    Network buffer fragment list.
+ * @param frag   Network buffer fragment.
+ * @param offset Offset
+ * @param len    Length of the data to be written.
+ * @param pos    Position of offset after write completed (this will be
+ *               relative to return fragment)
+ * @param data   Data to be written
+ *
+ * @return Pointer to the fragment and position (*pos) where write ended,
+ *         NULL and pos is 0xffff otherwise.
+ */
+struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
+			       uint16_t offset, uint16_t *pos, uint16_t len,
+			       uint8_t *data);
+
+/* Write uint8_t data to an arbitrary offset in fragment. */
+static inline struct net_buf *net_nbuf_write_u8(struct net_buf *buf,
+						struct net_buf *frag,
+						uint16_t offset,
+						uint16_t *pos,
+						uint8_t data)
+{
+	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint8_t), &data);
+}
+
+/* Write uint16_t big endian value to an arbitrary offset in fragment. */
+static inline struct net_buf *net_nbuf_write_be16(struct net_buf *buf,
+						  struct net_buf *frag,
+						  uint16_t offset,
+						  uint16_t *pos,
+						  uint16_t data)
+{
+	uint16_t value = htons(data);
+
+	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint16_t),
+			      (uint8_t *)&value);
+}
+
+/* Write uint32_t big endian value to an arbitrary offset in fragment. */
+static inline struct net_buf *net_nbuf_write_be32(struct net_buf *buf,
+						  struct net_buf *frag,
+						  uint16_t offset,
+						  uint16_t *pos,
+						  uint32_t data)
+{
+	uint32_t value = htonl(data);
+
+	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint32_t),
+			      (uint8_t *)&value);
+}
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 /**
  * @brief Debug helper to print out the buffer allocations

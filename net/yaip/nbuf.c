@@ -1112,6 +1112,166 @@ struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
 	return retbuf;
 }
 
+static inline struct net_buf *check_and_create_data(struct net_buf *buf,
+						    struct net_buf *data)
+{
+	struct net_buf *frag;
+
+	if (data) {
+		return data;
+	}
+
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	if (!frag) {
+		return NULL;
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	return frag;
+}
+
+static inline struct net_buf *adjust_write_offset(struct net_buf *buf,
+						  struct net_buf *frag,
+						  uint16_t offset,
+						  uint16_t *pos)
+{
+	uint16_t tailroom;
+
+	do {
+		frag = check_and_create_data(buf, frag);
+		if (!frag) {
+			return NULL;
+		}
+
+		/* Offset is less than current fragment length, so new data
+		 *  will start from this "offset".
+		 */
+		if (offset < frag->len) {
+			*pos = offset;
+
+			return frag;
+		}
+
+		/* Offset is equal to fragment length. If some tailtoom exists,
+		 * offset start from same fragment otherwise offset starts from
+		 * beginning of next fragment.
+		 */
+		if (offset == frag->len) {
+			if (net_buf_tailroom(frag)) {
+				*pos = offset;
+
+				return frag;
+			}
+
+			*pos = 0;
+
+			return check_and_create_data(buf, frag->frags);
+		}
+
+		/* If the offset is more than current fragment length, remove
+		 * current fragment length and verify with tailroom in the
+		 * current fragment. From here on create empty (space/fragments)
+		 * to reach proper offset.
+		 */
+		if (offset > frag->len) {
+
+			offset -= frag->len;
+			tailroom = net_buf_tailroom(frag);
+
+			if (offset < tailroom) {
+				/* Create empty space */
+				net_buf_add(frag, offset);
+
+				*pos = frag->len;
+
+				return frag;
+			}
+
+			if (offset == tailroom) {
+				/* Create empty space */
+				net_buf_add(frag, tailroom);
+
+				*pos = 0;
+
+				return check_and_create_data(buf, frag->frags);
+			}
+
+			if (offset > tailroom) {
+				/* Creating empty space */
+				net_buf_add(frag, tailroom);
+				offset -= tailroom;
+
+				frag = check_and_create_data(buf, frag->frags);
+			}
+		}
+
+	} while (1);
+
+	return NULL;
+}
+
+struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
+			       uint16_t offset, uint16_t *pos,
+			       uint16_t len, uint8_t *data)
+{
+	uint16_t ll_reserve;
+
+	if (!buf || is_from_data_pool(buf)) {
+		NET_ERR("Invalid buffer or it is data fragment");
+		goto error;
+	}
+
+	ll_reserve = net_nbuf_ll_reserve(buf);
+
+	frag = adjust_write_offset(buf, frag, offset, &offset);
+	if (!frag) {
+		NET_DBG("Failed to adjust offset");
+		goto error;
+	}
+
+	do {
+		uint16_t space = frag->size - net_buf_headroom(frag) - offset;
+		uint16_t count = min(len, space);
+		int size_to_add;
+
+		memcpy(frag->data + offset, data, count);
+
+		/* If we are overwriting on already available space then need
+		 * not to update the length, otherwise increase it.
+		 */
+		size_to_add = offset + count - frag->len;
+		if (size_to_add > 0) {
+			net_buf_add(frag, size_to_add);
+		}
+
+		len -= count;
+		if (len == 0) {
+			*pos = offset + count;
+
+			return frag;
+		}
+
+		data += count;
+		offset = 0;
+		frag = frag->frags;
+
+		if (!frag) {
+			frag = net_nbuf_get_reserve_data(ll_reserve);
+			if (!frag) {
+				goto error;
+			}
+
+			net_buf_frag_add(buf, frag);
+		}
+	} while (1);
+
+error:
+	*pos = 0xffff;
+
+	return NULL;
+}
+
 #if NET_DEBUG
 void net_nbuf_print(void)
 {
