@@ -504,7 +504,7 @@ static int uart_qmsi_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 }
 #endif /* CONFIG_UART_DRV_CMD */
 
-static struct uart_driver_api api = {
+static const struct uart_driver_api api = {
 	.poll_in = uart_qmsi_poll_in,
 	.poll_out = uart_qmsi_poll_out,
 	.err_check = uart_qmsi_err_check,
