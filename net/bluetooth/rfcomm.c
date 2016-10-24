@@ -220,7 +220,8 @@ static void rfcomm_dlc_tx_give_credits(struct bt_rfcomm_dlc *dlc,
 		nano_sem_give(&dlc->tx_credits);
 	}
 
-	BT_DBG("dlc %p updated credits %u", dlc, dlc->tx_credits.nsig);
+	BT_DBG("dlc %p updated credits %u", dlc,
+	       nano_sem_count_get(&dlc->tx_credits));
 }
 
 static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
@@ -256,10 +257,7 @@ static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		/* There could be a writer waiting for credits so return a
 		 * dummy credit to wake it up.
 		 */
-		if (!dlc->tx_credits.nsig) {
-			rfcomm_dlc_tx_give_credits(dlc, 1);
-		}
-
+		rfcomm_dlc_tx_give_credits(dlc, 1);
 		break;
 	default:
 		rfcomm_dlc_destroy(dlc);
@@ -834,7 +832,8 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	BT_DBG("dlc %p tx credit %d", dlc, dlc->tx_credits.nsig);
+	BT_DBG("dlc %p tx credit %d", dlc,
+	       nano_sem_count_get(&dlc->tx_credits));
 
 	if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
 		return -ENOTCONN;
