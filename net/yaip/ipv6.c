@@ -320,14 +320,6 @@ struct net_buf *net_ipv6_create(struct net_context *context,
 				struct net_buf *buf,
 				const struct in6_addr *addr)
 {
-	uint8_t nexthdr;
-
-#if defined(CONFIG_NET_UDP)
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		nexthdr = IPPROTO_UDP;
-	}
-#endif /* CONFIG_NET_UDP */
-
 	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
 
 	return net_ipv6_create_raw(buf,
@@ -336,7 +328,7 @@ struct net_buf *net_ipv6_create(struct net_context *context,
 				    &context->local)->sin6_addr,
 				   addr,
 				   net_context_get_iface(context),
-				   nexthdr);
+				   net_context_get_ip_proto(context));
 }
 
 struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
