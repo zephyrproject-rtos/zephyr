@@ -431,7 +431,7 @@ void gpio_dw_isr(void *arg)
 	_gpio_fire_callbacks(&context->callbacks, port, int_status);
 }
 
-static struct gpio_driver_api api_funcs = {
+static const struct gpio_driver_api api_funcs = {
 	.config = gpio_dw_config,
 	.write = gpio_dw_write,
 	.read = gpio_dw_read,
