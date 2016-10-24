@@ -144,13 +144,13 @@ tests/kernel/test_libs/test,x86,quark_se_c1000_devboard,True,,,False,,12608,2139
 samples/bluetooth/beacon/test_x86,x86,qemu_x86_iamcu,True,,,True,,40470,30942
 tests/kernel/test_atomic/test,x86,minnowboard,True,,,False,,14191,11035
 tests/kernel/test_early_sleep/test,x86,quark_se_c1000_devboard,True,,,False,,11136,21854
-tests/kernel/test_arm_m3_irq_vector_table/test,arm,nrf52_pca10040,True,,,False,,3328,11204
+tests/kernel/test_arm_irq_vector_table/test,arm,nrf52_pca10040,True,,,False,,3328,11204
 samples/net/loopback_test/test,arc,em_starterkit,True,,,False,,57408,39968
 tests/benchmark/footprint/nanokernel/footprint-reg,arm,arduino_due,True,,TEST=reg,False,,1704,4868
 tests/benchmark/footprint/microkernel/footprint-reg,x86,qemu_x86,True,,TEST=reg,True,,18648,15980
 tests/kernel/test_fp_sharing/microkernel/test_arm,arm,frdm_k64f,True,,PI_NUM_ITERATIONS=70000,False,,15600,19848
 tests/kernel/test_xip/microkernel/test,arm,nrf52_nitrogen,True,,,False,,7412,11084
-tests/kernel/test_arm_m3_irq_vector_table/test,arm,arduino_due,True,,,False,,3272,9960
+tests/kernel/test_arm_irq_vector_table/test,arm,arduino_due,True,,,False,,3272,9960
 tests/kernel/test_irq_offload/test,arc,quark_se_c1000_ss_devboard,True,,,False,,4328,6992
 tests/benchmark/footprint/nanokernel/footprint-reg,arc,quark_se_c1000_ss_devboard,True,,TEST=reg,False,,4724,5860
 tests/bluetooth/init/test_1,arm,nucleo_f103rb,True,,CONF_FILE=prj_1.conf,False,,14660,33484
@@ -743,7 +743,7 @@ tests/bluetooth/init/test_8,arm,nrf52_nitrogen,True,,CONF_FILE=prj_8.conf,False,
 tests/bluetooth/init/test_14,arc,em_starterkit,True,,CONF_FILE=prj_14.conf,False,,73052,58888
 tests/crypto/test_cmac_mode/test,arm,qemu_cortex_m3,True,,,True,0.022357940673828125,7388,15668
 tests/benchmark/footprint/nanokernel/footprint-reg,arm,nrf52_nitrogen,True,,TEST=reg,False,,1760,4972
-tests/kernel/test_arm_m3_irq_vector_table/test,arm,qemu_cortex_m3,True,,,True,0.010748624801635742,3320,9440
+tests/kernel/test_arm_irq_vector_table/test,arm,qemu_cortex_m3,True,,,True,0.010748624801635742,3320,9440
 tests/kernel/test_early_sleep/test,arm,olimexino_stm32,True,,,False,,9472,15896
 tests/bluetooth/init/test_1,arc,em_starterkit,True,,CONF_FILE=prj_1.conf,False,,49880,38308
 tests/kernel/test_build/test_newlib,x86,minnowboard,True,,CONF_FILE=newlib.conf,False,,55111,49895
@@ -825,7 +825,7 @@ samples/hello_world/nanokernel/test,x86,minnowboard,True,,,False,,10290,7134
 samples/sensor/sx9500/test,x86,arduino_101,True,,,False,,5784,18613
 tests/kernel/test_fifo/microkernel/test,x86,quark_se_c1000_devboard,True,,,False,,12680,30145
 tests/kernel/test_xip/nanokernel/test,x86,qemu_x86,True,,,True,0.9073879718780518,3332,7460
-tests/kernel/test_arm_m3_irq_vector_table/test,arm,olimexino_stm32,True,,,False,,3760,14692
+tests/kernel/test_arm_irq_vector_table/test,arm,olimexino_stm32,True,,,False,,3760,14692
 tests/kernel/test_critical/test,arm,nrf52_pca10040,True,,,False,,8776,12056
 tests/kernel/test_early_sleep/test,x86,qemu_x86_iamcu,True,,,True,3.123567819595337,22987,15919
 tests/kernel/test_context/test,x86,quark_d2000_crb,True,,,False,,5244,11275
@@ -910,7 +910,7 @@ samples/kernel_event_logger/microkernel/test,x86,arduino_101,True,,,False,,21116
 tests/kernel/test_early_sleep/test,arm,nucleo_f103rb,True,,,False,,9424,15852
 tests/kernel/test_pend/test,nios2,altera_max10,True,,,False,,15444,23480
 tests/kernel/test_sema/microkernel/test,arm,stm32_mini_a15,True,,,False,,9976,17724
-tests/kernel/test_arm_m3_irq_vector_table/test,arm,nrf52_nitrogen,True,,,False,,3328,11204
+tests/kernel/test_arm_irq_vector_table/test,arm,nrf52_nitrogen,True,,,False,,3328,11204
 tests/bluetooth/init/test_13,x86,qemu_x86_iamcu,True,,CONF_FILE=prj_13.conf,True,,71250,58010
 tests/benchmark/footprint/nanokernel/footprint-max,x86,quark_se_c1000_devboard,True,,TEST=max,False,,6308,14039
 tests/kernel/test_mutex/test,x86,minnowboard,True,,,False,,25898,17378
@@ -1069,7 +1069,7 @@ tests/kernel/test_pend/test,arm,frdm_k64f,True,,,False,,15376,18028
 samples/synchronization/microkernel/test,arm,nrf52_pca10040,True,,,False,,8496,13644
 tests/benchmark/footprint/microkernel/footprint-min,arm,frdm_k64f,True,,TEST=min,False,,1948,9444
 tests/bluetooth/init/test_4,arc,arduino_101_sss,True,,CONF_FILE=prj_4.conf,False,,16008,49104
-tests/kernel/test_arm_m3_irq_vector_table/test,arm,stm32_mini_a15,True,,,False,,3616,14572
+tests/kernel/test_arm_irq_vector_table/test,arm,stm32_mini_a15,True,,,False,,3616,14572
 samples/cpp_synchronization/nanokernel/test,x86,qemu_x86_iamcu,True,,,True,,13787,8615
 tests/kernel/test_stack/nanokernel/test,x86,qemu_x86_iamcu,True,,,True,1.2243635654449463,20960,11492
 tests/bluetooth/init/test_6,arm,qemu_cortex_m3,True,,CONF_FILE=prj_6.conf,True,,15140,44008
@@ -1420,7 +1420,7 @@ samples/bluetooth/central/test_x86,x86,qemu_x86_iamcu,True,,,True,,54278,43694
 samples/cpp_synchronization/microkernel/test,arc,quark_se_c1000_ss_devboard,True,,,False,,11564,21064
 tests/bluetooth/init/test_h5_dbg,x86,arduino_101,True,,CONF_FILE=prj_h5_dbg.conf,False,,17244,36375
 tests/kernel/test_task/test,arc,em_starterkit,True,,,False,,27352,17656
-tests/kernel/test_arm_m3_irq_vector_table/test,arm,frdm_k64f,True,,,False,,3800,13528
+tests/kernel/test_arm_irq_vector_table/test,arm,frdm_k64f,True,,,False,,3800,13528
 tests/kernel/test_stackprot/microkernel/test,x86,minnowboard,True,,,False,,25402,16870
 tests/kernel/test_sema/nanokernel/test,nios2,altera_max10,True,,,False,,9316,17512
 tests/bluetooth/init/test_2,arm,qemu_cortex_m3,True,,CONF_FILE=prj_2.conf,True,,14360,31840
@@ -1911,7 +1911,7 @@ tests/kernel/test_fifo_priv/test,arc,em_starterkit,True,,,False,,29208,19508
 tests/kernel/test_fifo/microkernel/test,arm,nrf52_nitrogen,True,,,False,,10620,21068
 tests/kernel/test_build/test_debug,arm,arduino_due,True,,CONF_FILE=debug.conf,False,,5244,10484
 tests/kernel/test_irq_offload/test,x86,qemu_x86_iamcu,True,,,True,0.15294241905212402,10621,7453
-tests/kernel/test_arm_m3_irq_vector_table/test,arm,nucleo_f103rb,True,,,False,,3712,14648
+tests/kernel/test_arm_irq_vector_table/test,arm,nucleo_f103rb,True,,,False,,3712,14648
 tests/kernel/test_ipm/test,x86,arduino_101,True,,,False,,6084,14579
 samples/philosophers/microkernel/test,arm,nrf52_nitrogen,True,,,False,,14020,12448
 tests/bluetooth/init/test_20,arc,quark_se_c1000_ss_devboard,True,,CONF_FILE=prj_20.conf,False,,22756,105476
