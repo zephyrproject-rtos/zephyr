@@ -201,7 +201,7 @@ static int ti_adc108s102_read(struct device *dev,
 	return ret;
 }
 
-struct adc_driver_api ti_adc108s102_api = {
+static const struct adc_driver_api ti_adc108s102_api = {
 	.enable = ti_adc108s102_enable,
 	.disable = ti_adc108s102_disable,
 	.read = ti_adc108s102_read,
