@@ -246,7 +246,7 @@ static void uart_stm32_isr(void *arg)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static struct uart_driver_api uart_stm32_driver_api = {
+static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
