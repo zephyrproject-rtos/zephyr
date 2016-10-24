@@ -40,6 +40,29 @@
 
 #define NET_MAX_RS_COUNT 3
 
+/**
+ * @brief Bitmaps for IPv6 extension header processing
+ *
+ * When processing extension headers, we record which one we have seen.
+ * This is done as the network packet cannot have twice the same header,
+ * except for destination option. This information is stored in bitfield variable.
+ * The order of the bitmap is the order recommended in RFC 2460.
+ */
+#define NET_IPV6_EXT_HDR_BITMAP_HBHO	0x01
+#define NET_IPV6_EXT_HDR_BITMAP_DESTO1	0x02
+#define NET_IPV6_EXT_HDR_BITMAP_ROUTING	0x04
+#define NET_IPV6_EXT_HDR_BITMAP_FRAG	0x08
+#define NET_IPV6_EXT_HDR_BITMAP_AH	0x10
+#define NET_IPV6_EXT_HDR_BITMAP_ESP	0x20
+#define NET_IPV6_EXT_HDR_BITMAP_DESTO2	0x40
+
+/**
+ * @brief Destination and Hop By Hop extension headers option types
+ */
+#define NET_IPV6_EXT_HDR_OPT_PAD1  0
+#define NET_IPV6_EXT_HDR_OPT_PADN  1
+#define NET_IPV6_EXT_HDR_OPT_RPL   0x63
+
 /* State of the neighbor */
 enum net_nbr_state {
 	NET_NBR_INCOMPLETE,
