@@ -188,7 +188,7 @@ static int i2c_ksdk_init(struct device *dev)
 	return 0;
 }
 
-static struct i2c_driver_api i2c_ksdk_driver_api = {
+static const struct i2c_driver_api i2c_ksdk_driver_api = {
 	.configure = i2c_ksdk_configure,
 	.transfer = i2c_ksdk_transfer,
 };
