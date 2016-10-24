@@ -317,7 +317,7 @@ static int _clock_control_init(struct device *dev)
 	return 0;
 }
 
-static struct clock_control_driver_api _m16src_clock_control_api = {
+static const struct clock_control_driver_api _m16src_clock_control_api = {
 	.on = _m16src_start,
 	.off = _m16src_stop,
 	.get_rate = NULL,
@@ -329,7 +329,7 @@ DEVICE_AND_API_INIT(clock_nrf5_m16src,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_m16src_clock_control_api);
 
-static struct clock_control_driver_api _k32src_clock_control_api = {
+static const struct clock_control_driver_api _k32src_clock_control_api = {
 	.on = _k32src_start,
 	.off = NULL,
 	.get_rate = NULL,
