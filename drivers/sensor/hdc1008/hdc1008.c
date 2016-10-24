@@ -101,7 +101,7 @@ static struct sensor_driver_api hdc1008_driver_api = {
 	.channel_get = hdc1008_channel_get,
 };
 
-uint16_t read16(struct device *dev, uint8_t a, uint8_t d)
+static uint16_t read16(struct device *dev, uint8_t a, uint8_t d)
 {
 	uint8_t buf[2];
 	if (i2c_burst_read(dev, a, d, (uint8_t *)buf, 2) < 0) {
@@ -110,7 +110,7 @@ uint16_t read16(struct device *dev, uint8_t a, uint8_t d)
 	return (buf[0] << 8 | buf[1]);
 }
 
-int hdc1008_init(struct device *dev)
+static int hdc1008_init(struct device *dev)
 {
 	struct hdc1008_data *drv_data = dev->driver_data;
 
@@ -158,7 +158,7 @@ int hdc1008_init(struct device *dev)
 	return 0;
 }
 
-struct hdc1008_data hdc1008_data;
+static struct hdc1008_data hdc1008_data;
 
 DEVICE_INIT(hdc1008, CONFIG_HDC1008_NAME, hdc1008_init, &hdc1008_data,
 	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);
