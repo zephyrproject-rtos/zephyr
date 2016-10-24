@@ -75,7 +75,7 @@ static int sx9500_channel_get(struct device *dev,
 	return 0;
 }
 
-static struct sensor_driver_api sx9500_api_funcs = {
+static const struct sensor_driver_api sx9500_api_funcs = {
 	.sample_fetch = sx9500_sample_fetch,
 	.channel_get = sx9500_channel_get,
 #ifdef CONFIG_SX9500_TRIGGER
