@@ -28,6 +28,9 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 
+#define NET_DEBUG 1
+#include "net_private.h"
+
 #define LL_RESERVE 28
 
 struct ipv6_hdr {
@@ -611,7 +614,7 @@ static char test_rw_long[] =
 	"abcdefghijklmnopqrstuvwxyz"
 	"abcdefghijklmnopqrstuvwxyz";
 
-static int test_nbuf_read_write(void)
+static int test_nbuf_read_append(void)
 {
 	int remaining = strlen(sample_data);
 	uint8_t verify_rw_short[sizeof(test_rw_short)];
@@ -628,7 +631,7 @@ static int test_nbuf_read_write(void)
 	uint16_t tpos;
 	uint16_t fail_pos;
 
-	/* Example of multi fragment read, write and skip APS's */
+	/* Example of multi fragment read, append and skip APS's */
 	buf = net_nbuf_get_reserve_rx(0);
 	frag = net_nbuf_get_reserve_data(LL_RESERVE);
 
@@ -765,8 +768,8 @@ static int test_nbuf_read_write(void)
 	/* Short data test case */
 	/* Test case scenario:
 	 * 1) Cache the current fragment and offset
-	 * 2) Write short data
-	 * 3) Write short data again
+	 * 2) Append short data
+	 * 3) Append short data again
 	 * 4) Skip first short data from cached frag or offset
 	 * 5) Read short data and compare
 	 */
@@ -799,8 +802,8 @@ static int test_nbuf_read_write(void)
 	/* Long data test case */
 	/* Test case scenario:
 	 * 1) Cache the current fragment and offset
-	 * 2) Write long data
-	 * 3) Write long data again
+	 * 2) Append long data
+	 * 3) Append long data again
 	 * 4) Skip first long data from cached frag or offset
 	 * 5) Read long data and compare
 	 */
@@ -843,13 +846,337 @@ static int test_nbuf_read_write(void)
 	return 0;
 }
 
+static int test_nbuf_read_write_insert(void)
+{
+	struct net_buf *read_frag;
+	struct net_buf *temp_frag;
+	struct net_buf *buf;
+	struct net_buf *frag;
+	uint8_t read_data[100];
+	uint16_t read_pos;
+	uint16_t len;
+	uint16_t pos;
+
+	/* Example of multi fragment read, append and skip APS's */
+	buf = net_nbuf_get_reserve_rx(0);
+	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
+
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	net_buf_frag_add(buf, frag);
+
+	/* 1) Offset is with in input fragment.
+	 * Write app data after IPv6 and UDP header. (If the offset is after
+	 * IPv6 + UDP header size, api will create empty space till offset
+	 * and write data).
+	 */
+	frag = net_nbuf_write(buf, frag, NET_IPV6UDPH_LEN, &pos, 10,
+			      (uint8_t *)sample_data);
+	if (!frag || pos != 58) {
+		printk("Usecase 1: Write failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 1: Read failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data, 10)) {
+		printk("Usecase 1: Read data mismatch\n");
+		return -EINVAL;
+	}
+
+	/* 2) Write IPv6 and UDP header at offset 0. (Empty space is created
+	 * already in Usecase 1, just need to fill the header, at this point
+	 * there shouldn't be any length change).
+	 */
+	frag = net_nbuf_write(buf, frag, 0, &pos, NET_IPV6UDPH_LEN,
+			      (uint8_t *)sample_data);
+	if (!frag || pos != 48) {
+		printk("Usecase 2: Write failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(frag, 0, &read_pos, NET_IPV6UDPH_LEN,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 2: Read failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data, NET_IPV6UDPH_LEN)) {
+		printk("Usecase 2: Read data mismatch\n");
+		return -EINVAL;
+	}
+
+	/* Unref */
+	net_nbuf_unref(buf);
+
+	buf = net_nbuf_get_reserve_rx(0);
+	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
+
+	/* 3) Offset is in next to next fragment.
+	 * Write app data after 2 fragments. (If the offset far away, api will
+	 * create empty fragments(space) till offset and write data).
+	 */
+	frag = net_nbuf_write(buf, buf->frags, 200, &pos, 10,
+			      (uint8_t *)sample_data + 10);
+	if (!frag) {
+		printk("Usecase 3: Write failed");
+	}
+
+	read_frag = net_nbuf_read(frag, pos - 10, &read_pos, 10,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 3: Read failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data + 10, 10)) {
+		printk("Usecase 3: Read data mismatch\n");
+		return -EINVAL;
+	}
+
+	/* 4) Offset is in next to next fragment (overwrite).
+	 * Write app data after 2 fragments. (Space is already available from
+	 * Usecase 3, this scenatio doesn't create any space, it just overwrites
+	 * the existing data.
+	 */
+	frag = net_nbuf_write(buf, buf->frags, 190, &pos, 10,
+			      (uint8_t *)sample_data);
+	if (!frag) {
+		printk("Usecase 4: Write failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(frag, pos - 10, &read_pos, 20,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 4: Read failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data, 20)) {
+		printk("Usecase 4: Read data mismatch\n");
+		return -EINVAL;
+	}
+
+	/* Unref */
+	net_nbuf_unref(buf);
+
+	/* 5) Write 20 bytes in fragment which has only 10 bytes space.
+	 *    API should overwrite on first 10 bytes and create extra 10 bytes
+	 *    and write there.
+	 */
+	buf = net_nbuf_get_reserve_rx(0);
+	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
+
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	net_buf_frag_add(buf, frag);
+
+	/* Create 10 bytes space. */
+	net_buf_add(frag, 10);
+
+	frag = net_nbuf_write(buf, frag, 0, &pos, 20, (uint8_t *)sample_data);
+	if (!frag && pos != 20) {
+		printk("Usecase 5: Write failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(frag, 0, &read_pos, 20, read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 5: Read failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data, 20)) {
+		printk("USecase 5: Read data mismatch\n");
+		return -EINVAL;
+	}
+
+	/* Unref */
+	net_nbuf_unref(buf);
+
+	/* 6) First fragment is full, second fragment has 10 bytes tail room,
+	 *    third fragment has 5 bytes.
+	 *    Write data (30 bytes) in second fragment where offset is 10 bytes
+	 *    before the tailroom.
+	 *    So it should overwrite 10 bytes and create space for another 10
+	 *    bytes and write data. Third fragment 5 bytes overwritten and space
+	 *    for 5 bytes created.
+	 */
+	buf = net_nbuf_get_reserve_rx(0);
+	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
+
+	/* First fragment make it fully occupied. */
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	net_buf_frag_add(buf, frag);
+
+	len = net_buf_tailroom(frag);
+	net_buf_add(frag, len);
+
+	/* 2nd fragment last 10 bytes tailroom, rest occupied */
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	net_buf_frag_add(buf, frag);
+
+	len = net_buf_tailroom(frag);
+	net_buf_add(frag, len - 10);
+
+	read_frag = temp_frag = frag;
+	read_pos = frag->len - 10;
+
+	/* 3rd fragment, only 5 bytes occupied */
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	net_buf_frag_add(buf, frag);
+	net_buf_add(frag, 5);
+
+	temp_frag = net_nbuf_write(buf, temp_frag, temp_frag->len - 10, &pos,
+				   30, (uint8_t *) sample_data);
+	if (!temp_frag) {
+		printk("Use case 6: Write failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(read_frag, read_pos, &read_pos, 30,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 6: Read failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data, 30)) {
+		printk("Usecase 6: Read data mismatch\n");
+		return -EINVAL;
+	}
+
+	/* Unref */
+	net_nbuf_unref(buf);
+
+	/* 7) Offset is with in input fragment.
+	 * Write app data after IPv6 and UDP header. (If the offset is after
+	 * IPv6 + UDP header size, api will create empty space till offset
+	 * and write data). Insert some app data after IPv6 + UDP header
+	 * before first set of app data.
+	 */
+
+	buf = net_nbuf_get_reserve_rx(0);
+	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
+
+	/* First fragment make it fully occupied. */
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	net_buf_frag_add(buf, frag);
+
+	frag = net_nbuf_write(buf, frag, NET_IPV6UDPH_LEN, &pos, 10,
+			      (uint8_t *)sample_data + 10);
+	if (!frag || pos != 58) {
+		printk("Usecase 7: Write failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 7: Read failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data + 10, 10)) {
+		printk("Usecase 7: Read data mismatch\n");
+		return -EINVAL;
+	}
+
+	if (!net_nbuf_insert(buf, frag, NET_IPV6UDPH_LEN, 10,
+			     (uint8_t *)sample_data)) {
+		printk("Usecase 7: Insert failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(frag, NET_IPV6UDPH_LEN, &read_pos, 20,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 7: Read after failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data, 20)) {
+		printk("Usecase 7: Read data mismatch after insertion\n");
+		return -EINVAL;
+	}
+
+	/* Insert data outside input fragment length, error case. */
+	if (net_nbuf_insert(buf, frag, 70, 10, (uint8_t *)sample_data)) {
+		printk("Usecase 7: False insert failed\n");
+		return -EINVAL;
+	}
+
+	/* Unref */
+	net_nbuf_unref(buf);
+
+	/* 8) Offset is with in input fragment.
+	 * Write app data after IPv6 and UDP header. (If the offset is after
+	 * IPv6 + UDP header size, api will create empty space till offset
+	 * and write data). Insert some app data after IPv6 + UDP header
+	 * before first set of app data. Insertion data is long which will
+	 * take two fragments.
+	 */
+	buf = net_nbuf_get_reserve_rx(0);
+	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
+
+	/* First fragment make it fully occupied. */
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	net_buf_frag_add(buf, frag);
+
+	frag = net_nbuf_write(buf, frag, NET_IPV6UDPH_LEN, &pos, 10,
+			      (uint8_t *)sample_data + 60);
+	if (!frag || pos != 58) {
+		printk("Usecase 8: Write failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 8: Read failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data + 60, 10)) {
+		printk("Usecase 8: Read data mismatch\n");
+		return -EINVAL;
+	}
+
+	if (!net_nbuf_insert(buf, frag, NET_IPV6UDPH_LEN, 60,
+			     (uint8_t *)sample_data)) {
+		printk("Usecase 8: Insert failed\n");
+		return -EINVAL;
+	}
+
+	read_frag = net_nbuf_read(frag, NET_IPV6UDPH_LEN, &read_pos, 70,
+				  read_data);
+	if (!read_frag && read_pos == 0xffff) {
+		printk("Usecase 8: Read after failed\n");
+		return -EINVAL;
+	}
+
+	if (memcmp(read_data, sample_data, 70)) {
+		printk("Usecase 8: Read data mismatch after insertion\n");
+		return -EINVAL;
+	}
+
+	/* Unref */
+	net_nbuf_unref(buf);
+
+	return 0;
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
 void main(void)
 #endif
 {
-
 	if (test_ipv6_multi_frags() < 0) {
 		goto fail;
 	}
@@ -866,7 +1193,11 @@ void main(void)
 		goto fail;
 	}
 
-	if (test_nbuf_read_write() < 0) {
+	if (test_nbuf_read_append() < 0) {
+		goto fail;
+	}
+
+	if (test_nbuf_read_write_insert() < 0) {
 		goto fail;
 	}
 
