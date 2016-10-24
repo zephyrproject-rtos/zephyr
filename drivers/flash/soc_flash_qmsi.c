@@ -26,51 +26,61 @@
 #include "qm_soc_regs.h"
 
 struct soc_flash_data {
+#ifdef CONFIG_SOC_FLASH_QMSI_API_REENTRANCY
 	struct nano_sem sem;
+#endif
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+	qm_flash_context_t saved_ctx[QM_FLASH_NUM];
+#endif
+#endif
 };
 
-#ifdef CONFIG_SOC_FLASH_QMSI_API_REENTRANCY
+#define FLASH_HAS_CONTEXT_DATA \
+	(CONFIG_SOC_FLASH_QMSI_API_REENTRANCY || CONFIG_DEVICE_POWER_MANAGEMENT)
+
+#if FLASH_HAS_CONTEXT_DATA
 static struct soc_flash_data soc_flash_context;
 #define FLASH_CONTEXT (&soc_flash_context)
-static const int reentrancy_protection = 1;
 #else
 #define FLASH_CONTEXT (NULL)
-static const int reentrancy_protection;
-#endif /* CONFIG_SOC_FLASH_QMSI_API_REENTRANCY */
+#endif /* FLASH_HAS_CONTEXT_DATA */
 
+#ifdef CONFIG_SOC_FLASH_QMSI_API_REENTRANCY
+static const int reentrancy_protection = 1;
+#define RP_GET(dev) (&((struct soc_flash_data *)(dev->driver_data))->sem)
+#else
+static const int reentrancy_protection;
+#define RP_GET(dev) (NULL)
+#endif
 
 static void flash_reentrancy_init(struct device *dev)
 {
-	struct soc_flash_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_init(&context->sem);
-	nano_sem_give(&context->sem);
+	nano_sem_init(RP_GET(dev));
+	nano_sem_give(RP_GET(dev));
 }
 
 static void flash_critical_region_start(struct device *dev)
 {
-	struct soc_flash_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+	nano_sem_take(RP_GET(dev), TICKS_UNLIMITED);
 }
 
 static void flash_critical_region_end(struct device *dev)
 {
-	struct soc_flash_data *context = dev->driver_data;
-
 	if (!reentrancy_protection) {
 		return;
 	}
 
-	nano_sem_give(&context->sem);
+	nano_sem_give(RP_GET(dev));
 }
 
 static inline bool is_aligned_32(uint32_t data)
@@ -268,11 +278,73 @@ static const struct flash_driver_api flash_qmsi_api = {
 	.write_protection = flash_qmsi_write_protection,
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void flash_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+{
+	struct soc_flash_data *ctx = dev->driver_data;
+
+	ctx->device_power_state = power_state;
+}
+
+static uint32_t flash_qmsi_get_power_state(struct device *dev)
+{
+	struct soc_flash_data *ctx = dev->driver_data;
+
+	return ctx->device_power_state;
+}
+
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static int flash_qmsi_suspend_device(struct device *dev)
+{
+	struct soc_flash_data *ctx = dev->driver_data;
+	qm_flash_t i;
+
+	for (i = QM_FLASH_0; i < QM_FLASH_NUM; i++) {
+		qm_flash_save_context(i, &ctx->saved_ctx[i]);
+	}
+	flash_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
+	return 0;
+}
+
+static int flash_qmsi_resume_device(struct device *dev)
+{
+	struct soc_flash_data *ctx = dev->driver_data;
+	qm_flash_t i;
+
+	for (i = QM_FLASH_0; i < QM_FLASH_NUM; i++) {
+		qm_flash_restore_context(i, &ctx->saved_ctx[i]);
+	}
+	flash_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+#endif
+
+static int flash_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+				  void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return flash_qmsi_suspend_device(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return flash_qmsi_resume_device(dev);
+		}
+#endif
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = flash_qmsi_get_power_state(dev);
+	}
+
+	return 0;
+}
+#else
+#define flash_qmsi_set_power_state(...)
+#endif
+
 static int quark_flash_init(struct device *dev)
 {
 	qm_flash_config_t qm_cfg;
-
-	dev->driver_api = &flash_qmsi_api;
 
 	qm_cfg.us_count = CONFIG_SOC_FLASH_QMSI_CLK_COUNT_US;
 	qm_cfg.wait_states = CONFIG_SOC_FLASH_QMSI_WAIT_STATES;
@@ -286,9 +358,11 @@ static int quark_flash_init(struct device *dev)
 
 	flash_reentrancy_init(dev);
 
+	flash_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
 
-DEVICE_INIT(quark_flash, CONFIG_SOC_FLASH_QMSI_DEV_NAME,
-	    quark_flash_init, FLASH_CONTEXT, NULL, SECONDARY,
-	    CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(quark_flash, CONFIG_SOC_FLASH_QMSI_DEV_NAME, quark_flash_init,
+	      flash_qmsi_device_ctrl, FLASH_CONTEXT, NULL, SECONDARY,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&flash_qmsi_api);
