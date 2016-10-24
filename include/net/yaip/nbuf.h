@@ -178,6 +178,11 @@ static inline void net_nbuf_set_ext_bitmap(struct net_buf *buf, uint8_t bm)
 	((struct net_nbuf *)net_buf_user_data(buf))->ext_bitmap = bm;
 }
 
+static inline void net_nbuf_add_ext_bitmap(struct net_buf *buf, uint8_t bm)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->ext_bitmap |= bm;
+}
+
 static inline uint8_t *net_nbuf_next_hdr(struct net_buf *buf)
 {
 	return ((struct net_nbuf *)net_buf_user_data(buf))->next_hdr;
