@@ -30,8 +30,8 @@ $ make qemu
 
 = Bluetooth sanity check =
 
-There is smoke test application in nanokernel and microkernel test
-directories which gets run in sanity check script:
+There is smoke test application in tests directory which gets run in sanity
+check script:
 
 $ scripts/sanity_chk/sanitycheck [-P <platform>]
 
