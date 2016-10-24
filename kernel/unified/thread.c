@@ -16,10 +16,9 @@
 
 /**
  * @file
- * @brief Nanokernel thread support
+ * @brief Kernel thread support
  *
- * This module provides general purpose thread support, with applies to both
- * tasks or fibers.
+ * This module provides general purpose thread support.
  */
 
 #include <kernel.h>
@@ -66,44 +65,29 @@ int k_am_in_isr(void)
 	return _IS_IN_ISR();
 }
 
-/**
- *
- * @brief Mark thread as essential to system
- *
- * This function tags the running fiber or task as essential to system
- * operation; exceptions raised by this thread will be treated as a fatal
- * system error.
- *
- * @return N/A
+/*
+ * This function tags the current thread as essential to system operation.
+ * Exceptions raised by this thread will be treated as a fatal system error.
  */
 void _thread_essential_set(void)
 {
 	_current->flags |= ESSENTIAL;
 }
 
-/**
- *
- * @brief Mark thread as not essential to system
- *
- * This function tags the running fiber or task as not essential to system
- * operation; exceptions raised by this thread may be recoverable.
+/*
+ * This function tags the current thread as not essential to system operation.
+ * Exceptions raised by this thread may be recoverable.
  * (This is the default tag for a thread.)
- *
- * @return N/A
  */
 void _thread_essential_clear(void)
 {
 	_current->flags &= ~ESSENTIAL;
 }
 
-/**
+/*
+ * This routine indicates if the current thread is an essential system thread.
  *
- * @brief Is the specified thread essential?
- *
- * This routine indicates if the running fiber or task is an essential system
- * thread.
- *
- * @return Non-zero if current thread is essential, zero if it is not
+ * Returns non-zero if current thread is essential, zero if it is not.
  */
 int _is_thread_essential(void)
 {
@@ -136,7 +120,7 @@ void k_busy_wait(uint32_t usec_to_wait)
  *
  * @brief Set thread's custom data
  *
- * This routine sets the custom data value for the current task or fiber.
+ * This routine sets the custom data value for the current thread.
  * Custom data is not used by the kernel itself, and is freely available
  * for the thread to use as it sees fit.
  *
@@ -153,7 +137,7 @@ void k_thread_custom_data_set(void *value)
  *
  * @brief Get thread's custom data
  *
- * This function returns the custom data value for the current task or fiber.
+ * This function returns the custom data value for the current thread.
  *
  * @return current handle value
  */
@@ -188,30 +172,15 @@ void _thread_monitor_exit(struct k_thread *thread)
 }
 #endif /* CONFIG_THREAD_MONITOR */
 
-/**
+/*
+ * Common thread entry point function (used by all threads)
  *
- * @brief Common thread entry point function
+ * This routine invokes the actual thread entry point function and passes
+ * it three arguments. It also handles graceful termination of the thread
+ * if the entry point function ever returns.
  *
- * This function serves as the entry point for _all_ threads, i.e. both
- * task and fibers are instantiated such that initial execution starts
- * here.
- *
- * This routine invokes the actual task or fiber entry point function and
- * passes it three arguments.  It also handles graceful termination of the
- * task or fiber if the entry point function ever returns.
- *
- * @param pEntry address of the app entry point function
- * @param parameter1 1st arg to the app entry point function
- * @param parameter2 2nd arg to the app entry point function
- * @param parameter3 3rd arg to the app entry point function
- *
- * @internal
- * The 'noreturn' attribute is applied to this function so that the compiler
- * can dispense with generating the usual preamble that is only required for
- * functions that actually return.
- *
- * @return Does not return
- *
+ * This routine does not return, and is marked as such so the compiler won't
+ * generate preamble code that is only used by functions that actually return.
  */
 FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 				 void *p1, void *p2, void *p3)
@@ -226,9 +195,8 @@ FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 	k_thread_abort(_current);
 
 	/*
-	 * Compiler can't tell that fiber_abort() won't return and issues a
-	 * warning unless we explicitly tell it that control never gets this
-	 * far.
+	 * Compiler can't tell that k_thread_abort() won't return and issues a
+	 * warning unless we tell it that control never gets this far.
 	 */
 
 	CODE_UNREACHABLE;
