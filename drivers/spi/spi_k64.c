@@ -894,7 +894,7 @@ void spi_k64_isr(void *arg)
 	spi_k64_complete(dev, error);
 }
 
-static struct spi_driver_api k64_spi_api = {
+static const struct spi_driver_api k64_spi_api = {
 	.configure = spi_k64_configure,
 	.slave_select = spi_k64_slave_select,
 	.transceive = spi_k64_transceive,
