@@ -37,7 +37,7 @@ Build
 By default, make will build the sample for the QEMU-x86 board.
 For the Arduino 101 board, type:
 
-make pristine && make BOARD=arduino_101 CONF_FILE=prj_a101.conf
+make pristine && make BOARD=arduino_101
 
 To load the binary in the development board follow the steps
 indicated here:

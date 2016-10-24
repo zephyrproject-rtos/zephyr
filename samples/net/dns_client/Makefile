@@ -16,7 +16,9 @@
 
 KERNEL_TYPE = nano
 BOARD ?= qemu_x86
-CONF_FILE ?= prj_slip.conf
+CONF_FILE ?= prj_$(BOARD).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
-include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
+ifeq  ($(BOARD), qemu_x86)
+	include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
+endif
