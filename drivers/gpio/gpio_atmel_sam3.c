@@ -269,7 +269,7 @@ static int gpio_sam3_disable_callback(struct device *dev,
 	return 0;
 }
 
-static struct gpio_driver_api gpio_sam3_drv_api_funcs = {
+static const struct gpio_driver_api gpio_sam3_drv_api_funcs = {
 	.config = gpio_sam3_config,
 	.write = gpio_sam3_write,
 	.read = gpio_sam3_read,
