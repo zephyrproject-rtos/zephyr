@@ -606,7 +606,7 @@ static void enc28j60_fiber_main(int arg1, int unused)
 	}
 }
 
-static struct eth_driver_api api_funcs = {
+static const struct eth_driver_api api_funcs = {
 	.send = eth_enc28j60_tx,
 	.register_callback = eth_enc28j60_reg_cb,
 };
