@@ -88,7 +88,7 @@ static int ak8975_channel_get(struct device *dev,
 	return 0;
 }
 
-static struct sensor_driver_api ak8975_driver_api = {
+static const struct sensor_driver_api ak8975_driver_api = {
 	.sample_fetch = ak8975_sample_fetch,
 	.channel_get = ak8975_channel_get,
 };
