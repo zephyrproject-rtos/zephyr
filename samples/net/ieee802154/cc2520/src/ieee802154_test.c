@@ -75,7 +75,7 @@ static inline void scan(struct net_if *iface)
 	scan_ctx.channel_set = IEEE802154_ALL_CHANNELS;
 	scan_ctx.duration = K_SECONDS(1);
 
-	ret = net_mgmt(NET_REQUEST_IEEE802154_PASSIVE_SCAN,
+	ret = net_mgmt(NET_REQUEST_IEEE802154_ACTIVE_SCAN,
 		       iface, &scan_ctx, len);
 	if (ret < 0) {
 		PRINT("Scan did not proceed well %u\n", ret);
