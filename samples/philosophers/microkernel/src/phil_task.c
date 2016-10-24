@@ -28,7 +28,7 @@
 	"implementation demonstrates the usage of multiple (6) %s\n"           \
 	"of differing priorities and the %s semaphores and timers."
 
-#ifdef CONFIG_NANOKERNEL
+#ifdef NANO_APIS_ONLY
 #define STSIZE 1024
 
 /* externs */
@@ -37,9 +37,9 @@ extern void philEntry(void);
 
 char __stack philStack[N_PHILOSOPHERS][STSIZE];
 struct nano_sem forks[N_PHILOSOPHERS];
-#endif  /*  CONFIG_NANOKERNEL */
+#endif
 
-#ifdef CONFIG_NANOKERNEL
+#ifdef NANO_APIS_ONLY
 /**
  *
  * @brief Nanokernel entry point

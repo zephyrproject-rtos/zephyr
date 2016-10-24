@@ -22,15 +22,15 @@
 #include <misc/kernel_event_logger.h>
 #include <string.h>
 
-#ifdef CONFIG_NANOKERNEL
+#ifdef NANO_APIS_ONLY
   #define TAKE(x) nano_fiber_sem_take(&x, TICKS_UNLIMITED)
   #define GIVE(x) nano_fiber_sem_give(&x)
   #define SLEEP(x) fiber_sleep(x)
-#else  /* ! CONFIG_NANOKERNEL */
+#else
   #define TAKE(x) task_mutex_lock(x, TICKS_UNLIMITED)
   #define GIVE(x) task_mutex_unlock(x)
   #define SLEEP(x) task_sleep(x)
-#endif /*  CONFIG_NANOKERNEL */
+#endif
 
 #define RANDDELAY(x) myDelay(((sys_tick_get_32() * ((x) + 1)) & 0x2f) + 1)
 
@@ -68,7 +68,7 @@ struct sleep_data_t sleep_event_data;
 int is_busy_task_awake;
 int forks_available = 1;
 
-#ifdef CONFIG_MICROKERNEL
+#ifdef CONFIG_TASK_MONITOR
 struct tmon_data_t {
 	uint32_t event_type;
 	uint32_t timestamp;
@@ -132,7 +132,7 @@ void print_context_data(uint32_t thread_id, uint32_t count,
 	PRINTF("\x1b[%d;12H%u    ", 16 + indice, count);
 }
 
-#ifdef CONFIG_MICROKERNEL
+#ifdef CONFIG_TASK_MONITOR
 void register_tmon_data(uint32_t event_type, uint32_t timestamp,
 	uint32_t task_id, uint32_t data)
 {
@@ -175,12 +175,12 @@ void print_tmon_status_data(int index)
 void fork_manager_entry(void)
 {
 	int i;
-#ifdef CONFIG_NANOKERNEL
+#ifdef NANO_APIS_ONLY
 	/* externs */
 	extern struct nano_sem forks[N_PHILOSOPHERS];
-#else  /* ! CONFIG_NANOKERNEL */
+#else
 	kmutex_t forks[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4, forkMutex5};
-#endif /*  CONFIG_NANOKERNEL */
+#endif
 
 	SLEEP(2000);
 	while (1) {
@@ -254,7 +254,7 @@ void summary_data_printer(void)
 			PRINTF("\x1b[2;32HForks : all taken  ");
 		}
 
-#ifndef CONFIG_NANOKERNEL
+#ifndef NANO_APIS_ONLY
 		/* Due to fiber are not pre-emptive, the busy_task_entry thread won't
 		 * run as a fiber in nanokernel-only system, because it would affect
 		 * the visualization of the sample and the collection of the data
@@ -319,7 +319,7 @@ void summary_data_printer(void)
 			}
 		}
 
-#ifdef CONFIG_MICROKERNEL
+#ifdef CONFIG_TASK_MONITOR
 		/* Print task monitor status data */
 		PRINTF("\x1b[1;64HTASK MONITOR STATUS DATA");
 		PRINTF("\x1b[2;64H-------------------------");
@@ -404,7 +404,7 @@ void profiling_data_collector(void)
 				}
 				break;
 #endif
-#ifdef CONFIG_MICROKERNEL
+#ifdef CONFIG_TASK_MONITOR
 			case KERNEL_EVENT_LOGGER_TASK_MON_TASK_STATE_CHANGE_EVENT_ID:
 			case KERNEL_EVENT_LOGGER_TASK_MON_CMD_PACKET_EVENT_ID:
 				if (data_length != 3) {
@@ -457,7 +457,7 @@ void kernel_event_logger_fiber_start(void)
 		(nano_fiber_entry_t) summary_data_printer, 0, 0, 6, 0);
 }
 
-#ifdef CONFIG_NANOKERNEL
+#ifdef NANO_APIS_ONLY
 char __stack philStack[N_PHILOSOPHERS+1][STSIZE];
 struct nano_sem forks[N_PHILOSOPHERS];
 
@@ -472,7 +472,7 @@ int main(void)
 {
 	int i;
 
-#ifdef CONFIG_MICROKERNEL
+#ifdef CONFIG_TASK_MONITOR
 	tmon_index = 0;
 #endif
 	kernel_event_logger_fiber_start();
