@@ -261,7 +261,7 @@ static int flash_qmsi_write_protection(struct device *dev, bool enable)
 	return 0;
 }
 
-static struct flash_driver_api flash_qmsi_api = {
+static const struct flash_driver_api flash_qmsi_api = {
 	.read = flash_qmsi_read,
 	.write = flash_qmsi_write,
 	.erase = flash_qmsi_erase,
