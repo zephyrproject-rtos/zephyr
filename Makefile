@@ -1038,7 +1038,7 @@ CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
 		misc/generated/sysgen/kernel_main.h \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
-		*.bin *.hex *.strip staticIdt.o linker.cmd
+		*.bin *.hex *.stat *.strip staticIdt.o linker.cmd
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
