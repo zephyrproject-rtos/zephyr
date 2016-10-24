@@ -857,7 +857,8 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	l2cap_chan_tx_give_credits(ch, credits);
 
-	BT_DBG("chan %p total credits %u", ch, ch->tx.credits.nsig);
+	BT_DBG("chan %p total credits %u", ch,
+	       nano_sem_count_get(&ch->tx.credits));
 }
 
 static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
@@ -980,7 +981,8 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
 
 done:
-	BT_DBG("chan %p credits %u", chan, chan->rx.credits.nsig);
+	BT_DBG("chan %p credits %u", chan,
+	       nano_sem_count_get(&chan->rx.credits));
 }
 
 static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
@@ -1467,7 +1469,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	}
 
 	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
-	       buf->len, ch->tx.credits.nsig);
+	       buf->len, nano_sem_count_get(&ch->tx.credits));
 
 	len = buf->len;
 
