@@ -24,17 +24,7 @@
 
 #include "th02.h"
 
-uint16_t read16(struct device *dev, uint8_t d)
-{
-	uint8_t buf[2];
-
-	if (i2c_burst_read(dev, TH02_I2C_DEV_ID, d, (uint8_t *)buf, 2) < 0) {
-		SYS_LOG_ERR("Error reading register.");
-	}
-	return (buf[0] << 8 | buf[1]);
-}
-
-uint8_t read8(struct device *dev, uint8_t d)
+static uint8_t read8(struct device *dev, uint8_t d)
 {
 	uint8_t buf;
 
@@ -44,7 +34,7 @@ uint8_t read8(struct device *dev, uint8_t d)
 	return buf;
 }
 
-int is_ready(struct device *dev)
+static int is_ready(struct device *dev)
 {
 
 	uint8_t status;
@@ -61,7 +51,7 @@ int is_ready(struct device *dev)
 	}
 }
 
-uint16_t get_humi(struct device *dev)
+static uint16_t get_humi(struct device *dev)
 {
 	uint16_t humidity = 0;
 
@@ -139,7 +129,7 @@ static struct sensor_driver_api th02_driver_api = {
 	.channel_get = th02_channel_get,
 };
 
-int th02_init(struct device *dev)
+static int th02_init(struct device *dev)
 {
 	struct th02_data *drv_data = dev->driver_data;
 
@@ -155,7 +145,7 @@ int th02_init(struct device *dev)
 	return 0;
 }
 
-struct th02_data th02_driver;
+static struct th02_data th02_driver;
 
 DEVICE_INIT(th02, CONFIG_TH02_NAME, th02_init, &th02_driver,
 	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);
