@@ -279,7 +279,7 @@ static int bmg160_channel_get(struct device *dev, enum sensor_channel chan,
 	}
 }
 
-struct sensor_driver_api bmg160_api = {
+static const struct sensor_driver_api bmg160_api = {
 	.attr_set = bmg160_attr_set,
 #ifdef CONFIG_BMG160_TRIGGER
 	.trigger_set = bmg160_trigger_set,
