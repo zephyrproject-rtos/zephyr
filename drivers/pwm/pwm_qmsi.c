@@ -340,7 +340,7 @@ static int pwm_qmsi_set_phase(struct device *dev, int access_op,
 	return -ENOTSUP;
 }
 
-static struct pwm_driver_api pwm_qmsi_drv_api_funcs = {
+static const struct pwm_driver_api pwm_qmsi_drv_api_funcs = {
 	.config = pwm_qmsi_configure,
 	.set_values = pwm_qmsi_set_values,
 	.set_period = pwm_qmsi_set_period,
@@ -463,4 +463,4 @@ static int pwm_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 DEVICE_DEFINE(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
 	      pwm_qmsi_device_ctrl, &pwm_context, NULL,
 	      SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-	      (void *)&pwm_qmsi_drv_api_funcs);
+	      &pwm_qmsi_drv_api_funcs);
