@@ -76,7 +76,7 @@ static void iwdg_stm32_reload(struct device *dev)
 	iwdg->kr.bit.key = STM32_IWDG_KR_RELOAD;
 }
 
-static struct wdt_driver_api iwdg_stm32_api = {
+static const struct wdt_driver_api iwdg_stm32_api = {
 	.enable = iwdg_stm32_enable,
 	.disable = iwdg_stm32_disable,
 	.get_config = iwdg_stm32_get_config,
