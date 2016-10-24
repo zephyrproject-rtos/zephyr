@@ -237,7 +237,7 @@ void adc_qmsi_ss_err_isr(void *arg)
 	qm_ss_adc_0_err_isr(NULL);
 }
 
-static struct adc_driver_api api_funcs = {
+static const struct adc_driver_api api_funcs = {
 	.enable  = adc_qmsi_ss_enable,
 	.disable = adc_qmsi_ss_disable,
 	.read    = adc_qmsi_ss_read,
