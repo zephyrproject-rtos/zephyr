@@ -233,7 +233,7 @@ struct uart_ns16550_dev_data_t {
 #endif
 };
 
-static struct uart_driver_api uart_ns16550_driver_api;
+static const struct uart_driver_api uart_ns16550_driver_api;
 
 #ifdef CONFIG_UART_NS16550_DLF
 static inline void set_dlf(struct device *dev, uint32_t val)
@@ -710,7 +710,7 @@ static int uart_ns16550_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 #endif /* CONFIG_UART_NS16550_DRV_CMD */
 
 
-static struct uart_driver_api uart_ns16550_driver_api = {
+static const struct uart_driver_api uart_ns16550_driver_api = {
 	.poll_in = uart_ns16550_poll_in,
 	.poll_out = uart_ns16550_poll_out,
 	.err_check = uart_ns16550_err_check,
@@ -779,7 +779,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
 DEVICE_AND_API_INIT(uart_ns16550_0, CONFIG_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_0, &uart_ns16550_dev_cfg_0,
 		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_ns16550_driver_api);
+		    &uart_ns16550_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_0(struct device *dev)
@@ -831,7 +831,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 DEVICE_AND_API_INIT(uart_ns16550_1, CONFIG_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_1, &uart_ns16550_dev_cfg_1,
 		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_ns16550_driver_api);
+		    &uart_ns16550_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_1(struct device *dev)
