@@ -267,6 +267,22 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 			NET_DBG("PADN option");
 			length += opt_len + 2;
 			break;
+		case NET_IPV6_EXT_HDR_OPT_RPL:
+			/* Handle the case when a non-RPL node joins RPL
+			 * network. Skip the unknown header instead of
+			 * discarding the whole packet.
+			 */
+#if defined(CONFIG_NET_RPL)
+			NET_DBG("Processing RPL option");
+			if (!net_rpl_verify_header(buf, *pos, pos)) {
+				NET_DBG("RPL option error, packet dropped");
+				*verdict = NET_DROP;
+
+				return NULL;
+			}
+#endif
+			*verdict = NET_CONTINUE;
+			return frag;
 		default:
 			if (!check_unknown_option(frag, opt_type, length)) {
 				*verdict = NET_DROP;
