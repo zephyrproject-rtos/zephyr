@@ -243,6 +243,33 @@ static bool sem_give_common(struct k_sem *sem)
 	return !_is_in_isr() && _must_switch_threads();
 }
 
+/*
+ * This function is meant to be called only by
+ * _sys_event_logger_put_non_preemptible(), which itself is really meant to be
+ * called only by _sys_k_event_logger_context_switch(), used within a context
+ * switch to log the event.
+ *
+ * WARNING:
+ * It must be called with interrupts already locked.
+ * It cannot be called for a sempahore part of a group.
+ */
+void _sem_give_non_preemptible(struct k_sem *sem)
+{
+	struct k_thread *thread;
+
+	thread = _unpend_first_thread(&sem->wait_q);
+	if (!thread) {
+		/* increment semaphore's count unless limit is reached */
+		sem->count += (sem->count != sem->limit);
+		return;
+	}
+
+	_abort_thread_timeout(thread);
+
+	_ready_thread(thread);
+	_set_thread_return_value(thread, 0);
+}
+
 #ifdef CONFIG_SEMAPHORE_GROUPS
 void k_sem_group_give(struct k_sem *sem_array[])
 {
