@@ -754,14 +754,19 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 	struct bt_rfcomm_pn *pn = (void *)buf->data;
 	struct bt_rfcomm_dlc *dlc;
 
-	if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
-		BT_ERR("Invalid mtu %d", pn->mtu);
-		rfcomm_send_dm(session, pn->dlci);
-		return;
-	}
-
 	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, pn->dlci);
 	if (!dlc) {
+		/*  Ignore if it is a response */
+		if (!cr) {
+			return;
+		}
+
+		if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
+			BT_ERR("Invalid mtu %d", pn->mtu);
+			rfcomm_send_dm(session, pn->dlci);
+			return;
+		}
+
 		dlc = rfcomm_dlc_accept(session, pn->dlci);
 		if (!dlc) {
 			rfcomm_send_dm(session, pn->dlci);
@@ -773,9 +778,19 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
 		rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
+		rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+	} else {
+		/* If its a command */
+		if (cr) {
+			if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
+				BT_ERR("Invalid mtu %d", pn->mtu);
+				/* TODO: Disconnect */
+				return;
+			}
+			dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
+			rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+		}
 	}
-
-	rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
 }
 
 static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
