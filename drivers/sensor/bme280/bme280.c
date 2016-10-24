@@ -167,7 +167,7 @@ static int bme280_channel_get(struct device *dev,
 	return 0;
 }
 
-static struct sensor_driver_api bme280_api_funcs = {
+static const struct sensor_driver_api bme280_api_funcs = {
 	.sample_fetch = bme280_sample_fetch,
 	.channel_get = bme280_channel_get,
 };
