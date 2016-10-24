@@ -527,7 +527,7 @@ static int gpio_pcal9535a_disable_callback(struct device *dev,
 	return -ENOTSUP;
 }
 
-static struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
+static const struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
 	.config = gpio_pcal9535a_config,
 	.write = gpio_pcal9535a_write,
 	.read = gpio_pcal9535a_read,
