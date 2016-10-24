@@ -113,6 +113,11 @@ M:	Johan Hedberg <johan.hedberg@intel.com>
 S:	Supported
 F:	boards/arm/arduino_101_ble/
 
+BOARDS/ARM - CC3200 LAUNCHXL
+M:      Gil Pitney <gil.pitney@linaro.org>
+S:      Supported
+F:      boards/arm/cc3200_launchxl/
+
 BOARDS/ARM - NXP FRDM-K64F
 M:	Maureen Helm <maureen.helm@nxp.com>
 S:	Supported
@@ -181,6 +186,16 @@ M:	Vinayak Chettimada <vinayak.kariappa.chettimada@nordicsemi.no>
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
 S:	Supported
 F:	drivers/bluetooth/controller/
+
+CC3200 SDK
+M:      Gil Pitney <gil.pitney@linaro.org>
+S:      Supported
+F:      ext/hal/cc3200sdk/
+
+CC32XX SOC - TI SIMPLELINK
+M:      Gil Pitney <gil.pitney@linaro.org>
+S:      Supported
+F:      arch/arm/soc/ti_simplelink/
 
 DOCUMENTATION
 M:	Kinder, David <david.b.kinder@intel.com>
