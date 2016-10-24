@@ -217,7 +217,7 @@ static int dht_channel_get(struct device *dev,
 	return 0;
 }
 
-static struct sensor_driver_api dht_api = {
+static const struct sensor_driver_api dht_api = {
 	.sample_fetch = &dht_sample_fetch,
 	.channel_get = &dht_channel_get,
 };
