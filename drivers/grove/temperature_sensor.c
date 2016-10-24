@@ -69,7 +69,7 @@ static int gts_channel_get(struct device *dev,
 	return 0;
 }
 
-static struct sensor_driver_api gts_api = {
+static const struct sensor_driver_api gts_api = {
 	.sample_fetch = &gts_sample_fetch,
 	.channel_get = &gts_channel_get,
 };
