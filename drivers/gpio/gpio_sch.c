@@ -305,7 +305,7 @@ static int gpio_sch_disable_callback(struct device *dev,
 	return 0;
 }
 
-static struct gpio_driver_api gpio_sch_api = {
+static const struct gpio_driver_api gpio_sch_api = {
 	.config = gpio_sch_config,
 	.write = gpio_sch_write,
 	.read = gpio_sch_read,
