@@ -91,7 +91,7 @@ static int uart_altera_jtag_init(struct device *dev)
 }
 
 
-static struct uart_driver_api uart_altera_jtag_driver_api = {
+static const struct uart_driver_api uart_altera_jtag_driver_api = {
 	.poll_in = NULL,
 	.poll_out = &uart_altera_jtag_poll_out,
 	.err_check = NULL,
@@ -111,4 +111,4 @@ DEVICE_AND_API_INIT(uart_altera_jtag_0, "jtag_uart0",
 		    uart_altera_jtag_init, NULL,
 		    &uart_altera_jtag_dev_cfg_0,
 		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_altera_jtag_driver_api);
+		    &uart_altera_jtag_driver_api);
