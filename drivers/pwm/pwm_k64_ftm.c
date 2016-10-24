@@ -752,7 +752,7 @@ static int pwm_ftm_device_ctrl(struct device *dev, uint32_t ctrl_command,
 #endif
 
 
-static struct pwm_driver_api pwm_ftm_drv_api_funcs = {
+static const struct pwm_driver_api pwm_ftm_drv_api_funcs = {
 	.config = pwm_ftm_configure,
 	.set_values = pwm_ftm_set_values,
 	.set_duty_cycle = pwm_ftm_set_duty_cycle,
