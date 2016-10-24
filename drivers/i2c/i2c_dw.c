@@ -629,7 +629,7 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 	return rc;
 }
 
-static struct i2c_driver_api funcs = {
+static const struct i2c_driver_api funcs = {
 	.configure = i2c_dw_runtime_configure,
 	.transfer = i2c_dw_transfer,
 };
