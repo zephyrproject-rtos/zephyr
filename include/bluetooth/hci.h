@@ -427,9 +427,9 @@ struct bt_hci_cp_write_sc_host_supp {
 #define BT_HCI_VERSION_1_0B                     0
 #define BT_HCI_VERSION_1_1                      1
 #define BT_HCI_VERSION_1_2                      2
-#define BT_HCI_VERSION_2_0_EDR                  3
-#define BT_HCI_VERSION_2_1_EDR                  4
-#define BT_HCI_VERSION_3_0_HS                   5
+#define BT_HCI_VERSION_2_0                      3
+#define BT_HCI_VERSION_2_1                      4
+#define BT_HCI_VERSION_3_0                      5
 #define BT_HCI_VERSION_4_0                      6
 #define BT_HCI_VERSION_4_1                      7
 #define BT_HCI_VERSION_4_2                      8
