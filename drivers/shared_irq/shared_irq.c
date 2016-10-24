@@ -118,7 +118,7 @@ void shared_irq_isr(struct device *dev)
 	}
 }
 
-static struct shared_irq_driver_api api_funcs = {
+static const struct shared_irq_driver_api api_funcs = {
 	.isr_register = isr_register,
 	.enable = enable,
 	.disable = disable,
