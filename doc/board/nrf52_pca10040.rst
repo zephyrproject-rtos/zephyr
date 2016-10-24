@@ -1,8 +1,0 @@
-.. _nrf52_pca10040:
-
-nRF52-PCA10040
-##############
-
-The board documentation for the nRF52-PCA10040 has been moved to the Zephyr project wiki:
-
-https://wiki.zephyrproject.org/view/NRF52-PCA10040
