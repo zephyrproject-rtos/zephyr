@@ -52,7 +52,7 @@ struct uart_k20_dev_data_t {
 #endif
 };
 
-static struct uart_driver_api uart_k20_driver_api;
+static const struct uart_driver_api uart_k20_driver_api;
 
 /**
  * @brief Initialize UART channel
@@ -384,7 +384,7 @@ void uart_k20_isr(void *arg)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
-static struct uart_driver_api uart_k20_driver_api = {
+static const struct uart_driver_api uart_k20_driver_api = {
 	.poll_in = uart_k20_poll_in,
 	.poll_out = uart_k20_poll_out,
 
