@@ -677,7 +677,7 @@ static int lsm9ds0_mfd_attr_set(struct device *dev,
 }
 #endif
 
-static struct sensor_driver_api lsm9ds0_mfd_api_funcs = {
+static const struct sensor_driver_api lsm9ds0_mfd_api_funcs = {
 	.sample_fetch = lsm9ds0_mfd_sample_fetch,
 	.channel_get = lsm9ds0_mfd_channel_get,
 #if defined(LSM9DS0_MFD_ATTR_SET)
