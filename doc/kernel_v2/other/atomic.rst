@@ -62,8 +62,26 @@ by a higher priority context that also calls the routine.
         ...
     }
 
-.. note::
-    SHOULD HAVE AN EXAMPLE OF MANIPULATING AN ARRAY OF ATOMIC VARIABLES.
+Manipulating an Array of Atomic Variables
+=========================================
+
+A single bit in array of atomic variables can be manipulated using
+the APIs listed at the end of this section that end with :cpp:func:`_bit`.
+
+The following code shows how a set of 200 flag bits can be implemented
+using an array of atomic variables.
+
+.. code-block:: c
+
+    #define NUM_FLAG_BITS 200
+
+    ATOMIC_DEFINE(flag_bits, NUM_FLAG_BITS);
+
+    /* set specified flag bit & return its previous value */
+    int set_flag_bit(int bit_position)
+    {
+        return (int)atomic_set_bit(flag_bits, bit_position);
+    }
 
 Suggested Uses
 **************
