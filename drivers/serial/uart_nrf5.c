@@ -92,7 +92,7 @@ struct uart_nrf5_dev_data_t {
 #define UART_IRQ_MASK_TX	(1 << 3)
 #define UART_IRQ_MASK_ERROR	(1 << 4)
 
-static struct uart_driver_api uart_nrf5_driver_api;
+static const struct uart_driver_api uart_nrf5_driver_api;
 
 /**
  * @brief Set the baud rate
@@ -462,7 +462,7 @@ void uart_nrf5_isr(void *arg)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static struct uart_driver_api uart_nrf5_driver_api = {
+static const struct uart_driver_api uart_nrf5_driver_api = {
 	.poll_in          = uart_nrf5_poll_in,          /** Console I/O function */
 	.poll_out         = uart_nrf5_poll_out,         /** Console I/O function */
 	.err_check        = uart_nrf5_err_check,        /** Console I/O function */
