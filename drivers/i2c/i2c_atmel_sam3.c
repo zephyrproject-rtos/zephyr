@@ -581,7 +581,7 @@ done:
 	return ret;
 }
 
-static struct i2c_driver_api api_funcs = {
+static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_sam3_runtime_configure,
 	.transfer = i2c_sam3_transfer,
 };
