@@ -116,7 +116,7 @@ static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
 	return 0;
 }
 
-static struct pinmux_driver_api api_funcs = {
+static const struct pinmux_driver_api api_funcs = {
 	.set = pinmux_set,
 	.get = pinmux_get,
 	.pullup = pinmux_pullup,
