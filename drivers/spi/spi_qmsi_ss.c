@@ -220,7 +220,7 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 	return context->rc ? -EIO : 0;
 }
 
-static struct spi_driver_api ss_spi_qmsi_api = {
+static const struct spi_driver_api ss_spi_qmsi_api = {
 	.configure = ss_spi_qmsi_configure,
 	.slave_select = ss_spi_qmsi_slave_select,
 	.transceive = ss_spi_qmsi_transceive,
