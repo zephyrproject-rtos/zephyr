@@ -269,10 +269,10 @@ static inline void nano_sem_init(struct nano_sem *sem)
 	k_sem_init(sem, 0, UINT_MAX);
 }
 
-#define nano_sem_give(id)       k_sem_give((struct k_sem *)id)
-#define nano_isr_sem_give(id)   k_sem_give((struct k_sem *)id)
-#define nano_fiber_sem_give(id) k_sem_give((struct k_sem *)id)
-#define nano_task_sem_give(id)  k_sem_give((struct k_sem *)id)
+#define nano_sem_give       k_sem_give
+#define nano_isr_sem_give   k_sem_give
+#define nano_fiber_sem_give k_sem_give
+#define nano_task_sem_give  k_sem_give
 
 static inline int nano_sem_take(struct nano_sem *sem, int32_t timeout)
 {
