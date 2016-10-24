@@ -96,7 +96,7 @@ static int hdc1008_channel_get(struct device *dev,
 	return 0;
 }
 
-static struct sensor_driver_api hdc1008_driver_api = {
+static const struct sensor_driver_api hdc1008_driver_api = {
 	.sample_fetch = hdc1008_sample_fetch,
 	.channel_get = hdc1008_channel_get,
 };
