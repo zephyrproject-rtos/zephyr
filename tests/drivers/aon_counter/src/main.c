@@ -81,7 +81,13 @@ static void free_running_counter_example(void)
 			    "Always-on counter failed to increase "
 			    "during 500 loop");
 	}
-	counter_stop(aon_counter_dev);
+
+	/*
+	 * arduino 101 loader assumes the counter is running.
+	 * If the counter is stopped, the next app you flash in
+	 * can not start without a hard reset or power cycle.
+	 * Let's leave the counter in running state.
+	 */
 }
 
 static void periodic_timer_example(void)
