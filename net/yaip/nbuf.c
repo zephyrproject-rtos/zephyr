@@ -1272,6 +1272,125 @@ error:
 	return NULL;
 }
 
+static inline bool insert_data(struct net_buf *buf, struct net_buf *frag,
+			       struct net_buf *temp, uint16_t offset,
+			       uint16_t len, uint8_t *data)
+{
+	struct net_buf *insert;
+
+	do {
+		uint16_t count = min(len, net_buf_tailroom(frag));
+
+		/* Copy insert data */
+		memcpy(frag->data + offset, data, count);
+		net_buf_add(frag, count);
+
+		len -= count;
+		if (len == 0) {
+			/* Once insertion is done, then add the data if
+			 * there is anything after original insertion
+			 * offset.
+			 */
+			if (temp) {
+				net_buf_frag_insert(frag, temp);
+			}
+
+			/* As we are creating temporary buffers to cache,
+			 * compact the fragments to save space.
+			 */
+			net_nbuf_compact(buf->frags);
+
+			return true;
+		}
+
+		data += count;
+		offset = 0;
+
+		insert = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+		if (!insert) {
+			return false;
+		}
+
+		net_buf_frag_insert(frag, insert);
+		frag = insert;
+
+	} while (1);
+
+	return false;
+}
+
+static inline struct net_buf *adjust_insert_offset(struct net_buf *buf,
+						   uint16_t offset,
+						   uint16_t *pos)
+{
+	if (!buf || !is_from_data_pool(buf)) {
+		NET_ERR("Invalid buffer or buffer is not a fragment");
+
+		return NULL;
+	}
+
+	while (buf) {
+		if (offset == buf->len) {
+			*pos = 0;
+
+			return buf->frags;
+		}
+
+		if (offset < buf->len) {
+			*pos = offset;
+
+			return buf;
+		}
+
+		if (offset > buf->len) {
+			if (buf->frags) {
+				offset -= buf->len;
+				buf = buf->frags;
+			} else {
+				return NULL;
+			}
+		}
+	}
+
+	NET_ERR("Invalid offset, failed to adjust");
+
+	return NULL;
+}
+
+bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
+		     uint16_t offset, uint16_t len, uint8_t *data)
+{
+	struct net_buf *temp = NULL;
+	uint16_t bytes;
+
+	if (!buf || is_from_data_pool(buf)) {
+		return false;
+	}
+
+	frag = adjust_insert_offset(frag, offset, &offset);
+	if (!frag) {
+		return false;
+	}
+
+	/* If there is any data after offset, store in temp fragment and
+	 * add it after insertion is completed.
+	 */
+	bytes = frag->len - offset;
+	if (bytes) {
+		temp = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+		if (!temp) {
+			return false;
+		}
+
+		memcpy(net_buf_add(temp, bytes), frag->data + offset, bytes);
+
+		frag->len -= bytes;
+	}
+
+	/* Insert data into current(frag) fragment from "offset". */
+	return insert_data(buf, frag, temp, offset, len, data);
+}
+
 #if NET_DEBUG
 void net_nbuf_print(void)
 {

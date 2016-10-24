@@ -836,6 +836,63 @@ static inline struct net_buf *net_nbuf_write_be32(struct net_buf *buf,
 			      (uint8_t *)&value);
 }
 
+/**
+ * @brief Insert data at an arbitrary offset in a series of fragments.
+ *
+ * @details Insert data at an arbitrary offset in a series of fragments. Offset
+ * is based on fragment length (only user written data length, any tailroom
+ * in fragments does not come to consideration unlike net_nbuf_write()) and
+ * calculates from input fragment starting position.
+ *
+ * Offset examples can be considered from net_nbuf_write() api.
+ * If the offset is more than already allocated fragments length then it is an
+ * error case.
+ *
+ * @param buf    Network buffer fragment list.
+ * @param frag   Network buffer fragment.
+ * @param offset Offset of fragment where insertion will start.
+ * @param len    Length of the data to be inserted.
+ * @param data   Data to be inserted
+ *
+ * @return True on success,
+ *         False otherwise.
+ */
+bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
+		     uint16_t offset, uint16_t len, uint8_t *data);
+
+/* Insert uint8_t data at an arbitrary offset in a series of fragments. */
+static inline bool net_nbuf_insert_u8(struct net_buf *buf, struct net_buf *frag,
+				      uint16_t offset, uint8_t data)
+{
+	return net_nbuf_insert(buf, frag, offset, sizeof(uint8_t), &data);
+}
+
+/* Insert uint16_t big endian value at an arbitrary offset in a series of
+ * fragments.
+ */
+static inline bool net_nbuf_insert_be16(struct net_buf *buf,
+					struct net_buf *frag,
+					uint16_t offset, uint16_t data)
+{
+	uint16_t value = htons(data);
+
+	return net_nbuf_insert(buf, frag, offset, sizeof(uint16_t),
+			       (uint8_t *)&value);
+}
+
+/* Insert uint32_t big endian value at an arbitrary offset in a series of
+ * fragments.
+ */
+static inline bool net_nbuf_insert_be32(struct net_buf *buf,
+					struct net_buf *frag,
+					uint16_t offset, uint32_t data)
+{
+	uint32_t value = htonl(data);
+
+	return net_nbuf_insert(buf, frag, offset, sizeof(uint32_t),
+			       (uint8_t *)&value);
+}
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 /**
  * @brief Debug helper to print out the buffer allocations
