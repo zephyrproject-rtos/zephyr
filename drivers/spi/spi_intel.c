@@ -329,7 +329,7 @@ out:
 	completed(dev, error);
 }
 
-static struct spi_driver_api intel_spi_api = {
+static const struct spi_driver_api intel_spi_api = {
 	.configure = spi_intel_configure,
 	.slave_select = NULL,
 	.transceive = spi_intel_transceive,
