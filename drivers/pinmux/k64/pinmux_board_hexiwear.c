@@ -34,7 +34,7 @@
  * boards. Specifically, change the PINMUX_* values to represent the
  * functionality desired.
  */
-struct pin_config mux_config[] = {
+static const struct pin_config mux_config[] = {
 	/* pin,		selected mode */
 
 	/* RGB */
@@ -54,7 +54,7 @@ struct pin_config mux_config[] = {
 	{ K64_PIN_PTE24, K64_PINMUX_ALT_3 },
 };
 
-int hexiwear_pin_init(struct device *arg)
+static int hexiwear_pin_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
