@@ -30,14 +30,6 @@
 extern "C" {
 #endif
 
-/**
- * @brief Initialization function for PCAL9535A
- *
- * @param dev Device struct
- * @return 0 if successful, failed otherwise
- */
-extern int gpio_pcal9535a_init(struct device *dev);
-
 /** Configuration data */
 struct gpio_pcal9535a_config {
 	/** The master I2C device's name */

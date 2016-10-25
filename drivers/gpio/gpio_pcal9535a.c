@@ -542,7 +542,7 @@ static const struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
  * @param dev Device struct
  * @return 0 if successful, failed otherwise.
  */
-int gpio_pcal9535a_init(struct device *dev)
+static int gpio_pcal9535a_init(struct device *dev)
 {
 	const struct gpio_pcal9535a_config * const config =
 		dev->config->config_info;
