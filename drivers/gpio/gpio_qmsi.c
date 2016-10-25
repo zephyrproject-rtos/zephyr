@@ -81,7 +81,7 @@ static void gpio_critical_region_end(struct device *dev)
 	nano_sem_give(RP_GET(dev));
 }
 
-int gpio_qmsi_init(struct device *dev);
+static int gpio_qmsi_init(struct device *dev);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static void gpio_qmsi_set_power_state(struct device *dev, uint32_t power_state)
@@ -448,7 +448,7 @@ static const struct gpio_driver_api api_funcs = {
 	.disable_callback = gpio_qmsi_disable_callback,
 };
 
-int gpio_qmsi_init(struct device *port)
+static int gpio_qmsi_init(struct device *port)
 {
 	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 
