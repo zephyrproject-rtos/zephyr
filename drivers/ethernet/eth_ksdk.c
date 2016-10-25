@@ -140,8 +140,8 @@ static void eth_rx(struct device *iface)
 	net_driver_ethernet_recv(buf);
 }
 
-void eth_callback(ENET_Type *base, enet_handle_t *handle, enet_event_t event,
-		  void *param)
+static void eth_callback(ENET_Type *base, enet_handle_t *handle,
+			 enet_event_t event, void *param)
 {
 	struct device *iface = param;
 	struct eth_context *context = iface->driver_data;
