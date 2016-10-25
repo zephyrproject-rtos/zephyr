@@ -42,6 +42,7 @@ void k_thread_abort(k_tid_t thread)
 	key = irq_lock();
 
 	_k_thread_single_abort(thread);
+	_thread_monitor_exit(thread);
 
 	if (_current == thread) {
 		if (_ScbIsInThreadMode()) {
