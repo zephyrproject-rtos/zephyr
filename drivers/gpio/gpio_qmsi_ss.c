@@ -104,8 +104,9 @@ DEVICE_INIT(ss_gpio_1, CONFIG_GPIO_QMSI_1_NAME, &ss_gpio_qmsi_init,
 
 #endif /* CONFIG_GPIO_QMSI_1 */
 
-static void ss_gpio_qmsi_callback(struct device *port, uint32_t status)
+static void ss_gpio_qmsi_callback(void *data, uint32_t status)
 {
+	struct device *port = data;
 	struct ss_gpio_qmsi_runtime *context = port->driver_data;
 	const uint32_t enabled_mask = context->pin_callbacks & status;
 
@@ -113,24 +114,6 @@ static void ss_gpio_qmsi_callback(struct device *port, uint32_t status)
 		_gpio_fire_callbacks(&context->callbacks, port, enabled_mask);
 	}
 }
-
-#ifdef CONFIG_GPIO_QMSI_0
-static void ss_gpio_qmsi_0_int_callback(void *data, uint32_t status)
-{
-	struct device *port = DEVICE_GET(ss_gpio_0);
-
-	ss_gpio_qmsi_callback(port, status);
-}
-#endif /* CONFIG_GPIO_QMSI_0 */
-
-#ifdef CONFIG_GPIO_QMSI_1
-static void ss_gpio_qmsi_1_int_callback(void *data, uint32_t status)
-{
-	struct device *port = DEVICE_GET(ss_gpio_1);
-
-	ss_gpio_qmsi_callback(port, status);
-}
-#endif /* CONFIG_GPIO_QMSI_1 */
 
 static void ss_qmsi_write_bit(uint32_t *target, uint8_t bit, uint8_t value)
 {
@@ -172,6 +155,8 @@ static inline void ss_qmsi_pin_config(struct device *port, uint32_t pin,
 	cfg.int_polarity =
 	    __builtin_arc_lr(controller + QM_SS_GPIO_INT_POLARITY);
 	cfg.int_debounce = __builtin_arc_lr(controller + QM_SS_GPIO_DEBOUNCE);
+	cfg.callback = ss_gpio_qmsi_callback;
+	cfg.callback_data = port;
 
 	ss_qmsi_write_bit(&cfg.direction, pin, (flags & GPIO_DIR_MASK));
 
@@ -184,21 +169,6 @@ static inline void ss_qmsi_pin_config(struct device *port, uint32_t pin,
 		ss_qmsi_write_bit(&cfg.int_en, pin, 1);
 	}
 
-	switch (gpio) {
-#ifdef CONFIG_GPIO_QMSI_0
-	case QM_SS_GPIO_0:
-		cfg.callback = ss_gpio_qmsi_0_int_callback;
-		break;
-#endif /* CONFIG_GPIO_QMSI_0 */
-#ifdef CONFIG_GPIO_QMSI_1
-	case QM_SS_GPIO_1:
-		cfg.callback = ss_gpio_qmsi_1_int_callback;
-		break;
-#endif /* CONFIG_GPIO_QMSI_1 */
-
-	default:
-		return;
-	}
 	gpio_critical_region_start(port);
 	qm_ss_gpio_set_config(gpio, &cfg);
 	gpio_critical_region_end(port);

@@ -234,8 +234,9 @@ DEVICE_DEFINE(gpio_aon, CONFIG_GPIO_QMSI_1_NAME, &gpio_qmsi_init,
 
 #endif /* CONFIG_GPIO_QMSI_1 */
 
-static void gpio_qmsi_callback(struct device *port, uint32_t status)
+static void gpio_qmsi_callback(void *data, uint32_t status)
 {
+	struct device *port = data;
 	struct gpio_qmsi_runtime *context = port->driver_data;
 	const uint32_t enabled_mask = context->pin_callbacks & status;
 
@@ -243,26 +244,6 @@ static void gpio_qmsi_callback(struct device *port, uint32_t status)
 		_gpio_fire_callbacks(&context->callbacks, port, enabled_mask);
 	}
 }
-
-static void gpio_qmsi_0_int_callback(void *data, uint32_t status)
-{
-#ifndef CONFIG_GPIO_QMSI_0
-	return;
-#else
-	struct device *port = DEVICE_GET(gpio_0);
-
-	gpio_qmsi_callback(port, status);
-#endif
-}
-
-#ifdef CONFIG_GPIO_QMSI_1
-static void gpio_qmsi_aon_int_callback(void *data, uint32_t status)
-{
-	struct device *port = DEVICE_GET(gpio_aon);
-
-	gpio_qmsi_callback(port, status);
-}
-#endif /* CONFIG_GPIO_QMSI_1 */
 
 static void qmsi_write_bit(uint32_t *target, uint8_t bit, uint8_t value)
 {
@@ -285,6 +266,8 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 	cfg.int_polarity = QM_GPIO[gpio]->gpio_int_polarity;
 	cfg.int_debounce = QM_GPIO[gpio]->gpio_debounce;
 	cfg.int_bothedge = QM_GPIO[gpio]->gpio_int_bothedge;
+	cfg.callback = gpio_qmsi_callback;
+	cfg.callback_data = port;
 
 	qmsi_write_bit(&cfg.direction, pin, (flags & GPIO_DIR_MASK));
 
@@ -297,21 +280,6 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 		qmsi_write_bit(&cfg.int_bothedge, pin,
 			       (flags & GPIO_INT_DOUBLE_EDGE));
 		qmsi_write_bit(&cfg.int_en, pin, 1);
-	}
-
-	switch (gpio) {
-	case QM_GPIO_0:
-		cfg.callback = gpio_qmsi_0_int_callback;
-		break;
-
-#ifdef CONFIG_GPIO_QMSI_1
-	case QM_AON_GPIO_0:
-		cfg.callback = gpio_qmsi_aon_int_callback;
-		break;
-#endif /* CONFIG_GPIO_QMSI_1 */
-
-	default:
-		return;
 	}
 
 	gpio_critical_region_start(port);
