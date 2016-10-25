@@ -37,3 +37,8 @@ independently, or mixed depending on the needs.
 
 For further information:
 http://www.st.com/en/ecosystems/stm32cube.html
+
+ti
+-------
+Texas Instruments CC3200 SDK provides a peripheral driver library for
+the SimpleLink WiFi family of SoCs.

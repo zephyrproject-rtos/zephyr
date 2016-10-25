@@ -1,0 +1,17 @@
+# CC3200 SDK builds driverlib with level 0 optimization (-O0).
+# Zephyr uses -Os optimization level, which causes issues
+# with the uart module: characters are garbled on output.
+# Until this is resolved with the vendor, we keep -O0 here,
+# to ensure correct operation.
+ccflags-$(CONFIG_CC3200SDK_BUILTIN) += -O0
+ccflags-$(CONFIG_CC3200SDK_BUILTIN) += -D$(COMPILER)
+obj-$(CONFIG_CC3200SDK_BUILTIN) += driverlib/gpio.o
+obj-$(CONFIG_CC3200SDK_BUILTIN) += driverlib/interrupt.o
+obj-$(CONFIG_CC3200SDK_BUILTIN) += driverlib/pin.o
+obj-$(CONFIG_CC3200SDK_BUILTIN) += driverlib/prcm.o
+obj-$(CONFIG_CC3200SDK_BUILTIN) += driverlib/uart.o
+obj-$(CONFIG_CC3200SDK_BUILTIN) += driverlib/utils.o
+obj-$(CONFIG_CC3200SDK_BUILTIN) += driverlib/udma.o
+# spi.c warns on parens
+CFLAGS_spi.o += -Wno-parentheses
+obj-$(CONFIG_CC3200SDK_BUILTIN) += driverlib/spi.o

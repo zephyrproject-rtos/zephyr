@@ -9,3 +9,9 @@ from:
 
 Files in driverlib/ and inc/ are copied from an SDK installation
 (without modification).
+
+Setting CONFIG_CC3200SDK_BUILTIN allows building those files within
+the Zephyr ext/hal/ subdirectory.
+
+Setting CONFIG_CC3200SDK_INSTALL_PATH and CONFIG_CC3200SDK_LIBRARY enables
+linking with the library provided by the CC3200 SDK, installed separately.
