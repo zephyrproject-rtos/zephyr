@@ -40,11 +40,3 @@
 		KEEP(*(SORT_BY_NAME(".net_l2.init*")))
 		__net_l2_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
-
-	SECTION_PROLOGUE(net_l2_init, (OPTIONAL),)
-	{
-		__net_l2_start = .;
-		*(".net_l2.init")
-		KEEP(*(SORT_BY_NAME(".net_l2.init*")))
-		__net_l2_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
