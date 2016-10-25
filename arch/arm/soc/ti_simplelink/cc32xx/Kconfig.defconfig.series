@@ -1,0 +1,18 @@
+# Kconfig.defconfig.series - TI SimpleLink Family
+#
+
+if SOC_SERIES_CC32XX
+
+source "arch/arm/soc/ti_simplelink/cc32xx/Kconfig.defconfig.cc32*"
+
+config SOC_SERIES
+	default cc32xx
+
+config SRAM_BASE_ADDRESS
+	default 0x20004000
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 3
+
+endif # SOC_SERIES_CC32XX
