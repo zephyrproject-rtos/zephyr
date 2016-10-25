@@ -27,15 +27,22 @@
 #include <net/buf.h>
 
 #if defined(CONFIG_NET_BUF_DEBUG)
-#define NET_BUF_DBG(fmt, ...) printf("buf: %s (%p): " fmt, __func__, \
+#define SYS_LOG_DOMAIN "net/buf"
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#include <misc/sys_log.h>
+
+#define NET_BUF_DBG(fmt, ...) SYS_LOG_DBG("%s (%p): " fmt, __func__, \
 				sys_thread_self_get(), ##__VA_ARGS__)
-#define NET_BUF_ERR(fmt, ...) printf("buf: %s: " fmt, __func__, ##__VA_ARGS__)
-#define NET_BUF_WARN(fmt, ...) printf("buf: %s: " fmt, __func__, ##__VA_ARGS__)
-#define NET_BUF_INFO(fmt, ...) printf("buf: " fmt,  ##__VA_ARGS__)
+#define NET_BUF_ERR(fmt, ...) SYS_LOG_ERR("%s: " fmt, __func__, \
+				##__VA_ARGS__)
+#define NET_BUF_WARN(fmt, ...) SYS_LOG_WRN("%s: " fmt, __func__, \
+				##__VA_ARGS__)
+#define NET_BUF_INFO(fmt, ...) SYS_LOG_INF(fmt,  ##__VA_ARGS__)
 #define NET_BUF_ASSERT(cond) do { if (!(cond)) {			  \
-			NET_BUF_ERR("buf: assert: '" #cond "' failed\n"); \
-		}} while(0)
+			NET_BUF_ERR("assert: '" #cond "' failed"); \
+		} } while (0)
 #else
+
 #define NET_BUF_DBG(fmt, ...)
 #define NET_BUF_ERR(fmt, ...)
 #define NET_BUF_WARN(fmt, ...)
@@ -48,16 +55,16 @@ struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 {
 	struct net_buf *buf, *frag;
 
-	NET_BUF_DBG("fifo %p reserve %u timeout %d\n", fifo, reserve_head,
+	NET_BUF_DBG("fifo %p reserve %u timeout %d", fifo, reserve_head,
 		    timeout);
 
 	buf = nano_fifo_get(fifo, timeout);
 	if (!buf) {
-		NET_BUF_ERR("Failed to get free buffer\n");
+		NET_BUF_ERR("Failed to get free buffer");
 		return NULL;
 	}
 
-	NET_BUF_DBG("buf %p fifo %p reserve %u\n", buf, fifo, reserve_head);
+	NET_BUF_DBG("buf %p fifo %p reserve %u", buf, fifo, reserve_head);
 
 	/* If this buffer is from the free buffers FIFO there wont be
 	 * any fragments and we can directly proceed with initializing
@@ -92,14 +99,14 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 {
 	struct net_buf *buf;
 
-	NET_BUF_DBG("fifo %p reserve %u\n", fifo, reserve_head);
+	NET_BUF_DBG("fifo %p reserve %u", fifo, reserve_head);
 
 	buf = net_buf_get_timeout(fifo, reserve_head, TICKS_NONE);
 	if (buf || sys_execution_context_type_get() == NANO_CTX_ISR) {
 		return buf;
 	}
 
-	NET_BUF_WARN("Low on buffers. Waiting (fifo %p)\n", fifo);
+	NET_BUF_WARN("Low on buffers. Waiting (fifo %p)", fifo);
 
 	return net_buf_get_timeout(fifo, reserve_head, TICKS_UNLIMITED);
 }
@@ -107,7 +114,7 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 void net_buf_reserve(struct net_buf *buf, size_t reserve)
 {
 	NET_BUF_ASSERT(buf->len == 0);
-	NET_BUF_DBG("buf %p reserve %u\n", buf, reserve);
+	NET_BUF_DBG("buf %p reserve %u", buf, reserve);
 
 	buf->data = buf->__buf + reserve;
 }
@@ -125,7 +132,7 @@ void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf)
 
 void net_buf_unref(struct net_buf *buf)
 {
-	NET_BUF_DBG("buf %p ref %u fifo %p frags %p\n", buf, buf->ref,
+	NET_BUF_DBG("buf %p ref %u fifo %p frags %p", buf, buf->ref,
 		    buf->free, buf->frags);
 	NET_BUF_ASSERT(buf->ref > 0);
 
@@ -146,7 +153,7 @@ void net_buf_unref(struct net_buf *buf)
 
 struct net_buf *net_buf_ref(struct net_buf *buf)
 {
-	NET_BUF_DBG("buf %p (old) ref %u fifo %p\n", buf, buf->ref, buf->free);
+	NET_BUF_DBG("buf %p (old) ref %u fifo %p", buf, buf->ref, buf->free);
 	buf->ref++;
 	return buf;
 }
@@ -230,7 +237,7 @@ void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 {
 	uint8_t *tail = net_buf_simple_tail(buf);
 
-	NET_BUF_SIMPLE_DBG("buf %p len %u\n", buf, len);
+	NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
 
 	NET_BUF_SIMPLE_ASSERT(net_buf_simple_tailroom(buf) >= len);
 
@@ -242,7 +249,7 @@ uint8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, uint8_t val)
 {
 	uint8_t *u8;
 
-	NET_BUF_SIMPLE_DBG("buf %p val 0x%02x\n", buf, val);
+	NET_BUF_SIMPLE_DBG("buf %p val 0x%02x", buf, val);
 
 	u8 = net_buf_simple_add(buf, 1);
 	*u8 = val;
@@ -252,7 +259,7 @@ uint8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, uint8_t val)
 
 void net_buf_simple_add_le16(struct net_buf_simple *buf, uint16_t val)
 {
-	NET_BUF_SIMPLE_DBG("buf %p val %u\n", buf, val);
+	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
 	val = sys_cpu_to_le16(val);
 	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
@@ -260,7 +267,7 @@ void net_buf_simple_add_le16(struct net_buf_simple *buf, uint16_t val)
 
 void net_buf_simple_add_be16(struct net_buf_simple *buf, uint16_t val)
 {
-	NET_BUF_SIMPLE_DBG("buf %p val %u\n", buf, val);
+	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
 	val = sys_cpu_to_be16(val);
 	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
@@ -268,7 +275,7 @@ void net_buf_simple_add_be16(struct net_buf_simple *buf, uint16_t val)
 
 void net_buf_simple_add_le32(struct net_buf_simple *buf, uint32_t val)
 {
-	NET_BUF_SIMPLE_DBG("buf %p val %u\n", buf, val);
+	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
 	val = sys_cpu_to_le32(val);
 	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
@@ -276,7 +283,7 @@ void net_buf_simple_add_le32(struct net_buf_simple *buf, uint32_t val)
 
 void net_buf_simple_add_be32(struct net_buf_simple *buf, uint32_t val)
 {
-	NET_BUF_SIMPLE_DBG("buf %p val %u\n", buf, val);
+	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
 	val = sys_cpu_to_be32(val);
 	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
@@ -284,7 +291,7 @@ void net_buf_simple_add_be32(struct net_buf_simple *buf, uint32_t val)
 
 void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 {
-	NET_BUF_SIMPLE_DBG("buf %p len %u\n", buf, len);
+	NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
 
 	NET_BUF_SIMPLE_ASSERT(net_buf_simple_headroom(buf) >= len);
 
@@ -295,7 +302,7 @@ void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 
 void net_buf_simple_push_le16(struct net_buf_simple *buf, uint16_t val)
 {
-	NET_BUF_SIMPLE_DBG("buf %p val %u\n", buf, val);
+	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
 	val = sys_cpu_to_le16(val);
 	memcpy(net_buf_simple_push(buf, sizeof(val)), &val, sizeof(val));
@@ -303,7 +310,7 @@ void net_buf_simple_push_le16(struct net_buf_simple *buf, uint16_t val)
 
 void net_buf_simple_push_be16(struct net_buf_simple *buf, uint16_t val)
 {
-	NET_BUF_SIMPLE_DBG("buf %p val %u\n", buf, val);
+	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
 
 	val = sys_cpu_to_be16(val);
 	memcpy(net_buf_simple_push(buf, sizeof(val)), &val, sizeof(val));
@@ -318,7 +325,7 @@ void net_buf_simple_push_u8(struct net_buf_simple *buf, uint8_t val)
 
 void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len)
 {
-	NET_BUF_SIMPLE_DBG("buf %p len %u\n", buf, len);
+	NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
 
 	NET_BUF_ASSERT(buf->len >= len);
 
