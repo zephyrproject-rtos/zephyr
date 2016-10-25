@@ -3,9 +3,8 @@
 System Threads
 ##############
 
-A :dfn:`system thread` is a thread that is spawned by the kernel itself
-to perform essential work. An application can sometimes utilize a system
-thread to perform work, rather than spawning an additional thread.
+A :dfn:`system thread` is a thread that the kernel spawns automatically
+during system initialization.
 
 .. contents::
     :local:
@@ -27,33 +26,63 @@ The kernel spawns the following system threads.
     threads, the main thread uses the lowest configured cooperative thread
     priority (i.e. -1).
 
+    The main thread is an essential thread while it is performing kernel
+    initialization, which means a fatal system error is raised if the thread
+    aborts. Once initialization is complete the thread is considered
+    non-essential, so the termination or aborting of a :cpp:func:`main()`
+    function supplied by the application does not cause a fatal system error.
+
 **Idle thread**
     This thread executes when there is no other work for the system to do.
     If possible, the idle thread activates the board's power management support
     to save power; otherwise, the idle thread simply performs a "do nothing"
-    loop.
+    loop. The idle thread remains in existence as long as the system is running
+    and never terminates.
 
     The idle thread always uses the lowest configured thread priority.
     If this makes it a cooperative thread, the idle thread repeatedly
     yields the CPU to allow the application's other threads to run when
     they need to.
 
-.. note::
-    Additional system threads may also be spawned, depending on the kernel
-    and board configuration options specified by the application.
+    The idle thread is an essential thread, which means a fatal system error
+    is raised if the thread aborts.
+
+Additional system threads may also be spawned, depending on the kernel
+and board configuration options specified by the application. For example,
+enabling the system workqueue spawns a system thread
+that services the work items submitted to it.
 
 Implementation
 **************
 
-Offloading Work to the System Workqueue
-=======================================
+Writing a main() function
+=========================
 
-NEED TO COME UP WITH A BETTER EXAMPLE, SUCH AS AN ISR HANDING OFF WORK
-TO THE SYSTEM WORKQUEUE THREAD BECAUSE IT TAKES TOO LONG.
+An application-supplied :cpp:func:`main()` function begins executing once
+kernel initialization is complete. The kernel does not pass any arguments
+to the function.
+
+The following code outlines a trivial :cpp:func:`main()` function.
+The function used by a real application can be as complex as needed.
 
 .. code-block:: c
 
-    /* TBD */
+    void main(void)
+    {
+        /* initialize a semaphore */
+	...
+
+	/* register an ISR that gives the semaphore */
+	...
+
+	/* monitor the semaphore forever */
+	while (1) {
+	    /* wait for the semaphore to be given by the ISR */
+	    ...
+	    /* do whatever processing is now needed */
+	    ...
+	}
+    }
 
 Suggested Uses
 **************
@@ -61,12 +90,6 @@ Suggested Uses
 Use the main thread to perform thread-based processing in an application
 that only requires a single thread, rather than defining an additional
 application-specific thread.
-
-Use the system workqueue to defer complex interrupt-related processing
-from an ISR to a cooperative thread. This allows the interrupt-related
-processing to be done promptly without compromising the system's ability
-to respond to subsequent interrupts, and does not require the application
-to define an additional thread to do the processing.
 
 Configuration Options
 *********************
@@ -79,4 +102,4 @@ Related configuration options:
 APIs
 ****
 
-[Add workqueue APIs?]
+None.
