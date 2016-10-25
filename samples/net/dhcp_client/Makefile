@@ -20,6 +20,6 @@ NET_IFACE ?= galileo
 MDEF_FILE = prj.mdef
 KERNEL_TYPE ?= nano
 BOARD ?= galileo
-CONF_FILE ?= prj_$(NET_IFACE).conf
+CONF_FILE ?= prj_$(BOARD).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
