@@ -114,7 +114,7 @@ static const struct aio_cmp_driver_api aio_cmp_funcs = {
 	.configure = aio_qmsi_cmp_configure,
 };
 
-int aio_qmsi_cmp_init(struct device *dev)
+static int aio_qmsi_cmp_init(struct device *dev)
 {
 	uint8_t i;
 	struct aio_qmsi_cmp_dev_data_t *dev_data =
@@ -149,7 +149,7 @@ int aio_qmsi_cmp_init(struct device *dev)
 	return 0;
 }
 
-void aio_qmsi_cmp_isr(struct device *dev)
+static void aio_qmsi_cmp_isr(struct device *dev)
 {
 	uint8_t i;
 	struct aio_qmsi_cmp_dev_data_t *dev_data =
