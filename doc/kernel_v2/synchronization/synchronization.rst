@@ -12,4 +12,4 @@ of different threads, or the operation of an ISR and a thread.
    semaphores.rst
    semaphore_groups.rst
    mutexes.rst
-   events.rst
+   alerts.rst

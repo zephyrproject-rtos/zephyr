@@ -583,7 +583,7 @@ def kernel_main_c_events():
     if kernel_type == 'micro':
         event_type = 'int'
     else:
-        event_type = 'struct k_event *'
+        event_type = 'struct k_alert *'
 
     # event descriptors
 
@@ -608,7 +608,7 @@ def kernel_main_c_events():
         if kernel_type == 'micro':
             kernel_main_c_out("DEFINE_EVENT(%s, %s);\n" % (event[0], event[1]))
         else:
-            kernel_main_c_out("K_EVENT_DEFINE(_k_event_obj_%s, %s);\n" %
+            kernel_main_c_out("K_ALERT_DEFINE(_k_event_obj_%s, %s);\n" %
                               (event[0], event[1]))
 
 def kernel_main_c_mutexes():
@@ -1132,7 +1132,7 @@ def generate_sysgen_h_obj_ids():
         fifo_type = 'struct k_msgq *'
         mbox_struct = 'k_mbox'
         mbox_type = 'struct k_mbox *'
-        event_type = 'struct k_event *'
+        event_type = 'struct k_alert *'
         mem_pool_type = 'struct k_mem_pool'
         # add missing object types
 
@@ -1221,7 +1221,7 @@ def generate_sysgen_h_obj_ids():
                 sysgen_h_data += "extern const %s %s;\n" % (event_type, name)
             elif (kernel_type == 'unified'):
                 sysgen_h_data += \
-                    "extern struct k_event _k_event_obj_%s;\n" % (name)
+                    "extern struct k_alert _k_event_obj_%s;\n" % (name)
                 sysgen_h_data += \
                     "#define %s (&_k_event_obj_%s)\n\n" % (name, name)
 

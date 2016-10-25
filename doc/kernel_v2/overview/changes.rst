@@ -100,11 +100,11 @@ The nanokernel semaphore and microkernel semaphore object types have been
 merged into a single type. The new type can now be used as a binary semaphore,
 as well as a counting semaphore.
 
-The microkernel event object type is now presented as a relative to Unix-style
-signalling. Due to improvements to the implementation of semaphores, events
-are now less efficient to use for basic synchronization than semaphores;
-consequently, events should now be reserved for scenarios requiring the use
-of a callback function.
+The microkernel event object type is renamed to "alert" and is now presented as
+a relative to Unix-style signalling. Due to improvements to the implementation
+of semaphores, alerts are now less efficient to use for basic synchronization
+than semaphores; consequently, alerts should now be reserved for scenarios
+requiring the use of a callback function.
 
 Data Passing
 ************

@@ -26,7 +26,7 @@ lib-y += $(strip \
 	msg_q.o \
 	mailbox.o \
 	mem_pool.o \
-	event.o \
+	alert.o \
 	pipes.o \
 	legacy_offload.o \
 	errno.o \

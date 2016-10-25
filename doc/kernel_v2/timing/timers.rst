@@ -125,23 +125,23 @@ Using a Timer Expiry Function
 
 The following code uses a timer to perform a non-trivial action on a periodic
 basis. Since the required work cannot be done at interrupt level,
-the timer's expiry function uses a :ref:`kernel event object <events_v2>`
+the timer's expiry function uses a :ref:`kernel alert object <alerts_v2>`
 to do the work in the context of the system workqueue.
 
 .. code-block:: c
 
-    int my_event_handler(struct k_event *dummy)
+    int my_alert_handler(struct k_alert *dummy)
     {
         /* do the processing that needs to be done periodically */
         ...
         return 0;
     }
 
-    K_EVENT_DEFINE(my_event, my_event_handler);
+    K_ALERT_DEFINE(my_alert, my_alert_handler);
 
     void my_timer_handler(struct k_timer *dummy)
     {
-        k_event_send(&my_event);
+        k_alert_send(&my_alert);
     }
 
     K_TIMER_DEFINE(my_timer, my_timer_handler, NULL);

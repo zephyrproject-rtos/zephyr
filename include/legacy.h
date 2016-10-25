@@ -360,7 +360,7 @@ static inline int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
 
 /* events */
 
-#define kevent_t const struct k_event *
+#define kevent_t const struct k_alert *
 typedef int (*kevent_handler_t)(int event);
 
 #define isr_event_send task_event_send
@@ -369,32 +369,32 @@ typedef int (*kevent_handler_t)(int event);
 static inline int task_event_handler_set(kevent_t legacy_event,
 					 kevent_handler_t handler)
 {
-	struct k_event *event = (struct k_event *)legacy_event;
+	struct k_alert *alert = (struct k_alert *)legacy_event;
 
-	if ((event->handler != NULL) && (handler != NULL)) {
+	if ((alert->handler != NULL) && (handler != NULL)) {
 		/* can't overwrite an existing event handler */
 		return RC_FAIL;
 	}
 
-	event->handler = (k_event_handler_t)handler;
+	alert->handler = (k_alert_handler_t)handler;
 	return RC_OK;
 }
 
 static inline int task_event_send(kevent_t legacy_event)
 {
-	k_event_send((struct k_event *)legacy_event);
+	k_alert_send((struct k_alert *)legacy_event);
 	return RC_OK;
 }
 
 static inline int task_event_recv(kevent_t legacy_event, int32_t timeout)
 {
-	return _error_to_rc(k_event_recv((struct k_event *)legacy_event,
+	return _error_to_rc(k_alert_recv((struct k_alert *)legacy_event,
 					 _ticks_to_ms(timeout)));
 }
 
 #define DEFINE_EVENT(name, event_handler) \
-	K_EVENT_DEFINE(_k_event_obj_##name, event_handler); \
-	struct k_event * const name = &(_k_event_obj_##name)
+	K_ALERT_DEFINE(_k_event_obj_##name, event_handler); \
+	struct k_alert * const name = &(_k_event_obj_##name)
 
 /* memory maps */
 

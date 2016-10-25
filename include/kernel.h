@@ -81,7 +81,7 @@ typedef sys_dlist_t _wait_q_t;
 struct tcs;
 struct k_mutex;
 struct k_sem;
-struct k_event;
+struct k_alert;
 struct k_msgq;
 struct k_mbox;
 struct k_pipe;
@@ -923,41 +923,41 @@ extern void k_sem_group_reset(struct k_sem *sem_array[]);
 	struct k_sem name = \
 		K_SEM_INITIALIZER(name, initial_count, count_limit)
 
-/* events */
+/* alerts */
 
-#define K_EVT_DEFAULT NULL
-#define K_EVT_IGNORE ((void *)(-1))
+#define K_ALERT_DEFAULT NULL
+#define K_ALERT_IGNORE ((void *)(-1))
 
-typedef int (*k_event_handler_t)(struct k_event *);
+typedef int (*k_alert_handler_t)(struct k_alert *);
 
-struct k_event {
-	k_event_handler_t handler;
+struct k_alert {
+	k_alert_handler_t handler;
 	atomic_t send_count;
 	struct k_work work_item;
 	struct k_sem sem;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_event);
+	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_alert);
 };
 
-extern void _k_event_deliver(struct k_work *work);
+extern void _alert_deliver(struct k_work *work);
 
-#define K_EVENT_INITIALIZER(obj, event_handler) \
+#define K_ALERT_INITIALIZER(obj, alert_handler) \
 	{ \
-	.handler = (k_event_handler_t)event_handler, \
+	.handler = (k_alert_handler_t)alert_handler, \
 	.send_count = ATOMIC_INIT(0), \
-	.work_item = K_WORK_INITIALIZER(_k_event_deliver), \
+	.work_item = K_WORK_INITIALIZER(_alert_deliver), \
 	.sem = K_SEM_INITIALIZER(obj.sem, 0, 1), \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
-#define K_EVENT_DEFINE(name, event_handler) \
-	struct k_event name \
-		__in_section(_k_event_list, event, name) = \
-		K_EVENT_INITIALIZER(name, event_handler)
+#define K_ALERT_DEFINE(name, alert_handler) \
+	struct k_alert name \
+		__in_section(_k_event_list, alert, name) = \
+		K_ALERT_INITIALIZER(name, alert_handler)
 
-extern void k_event_init(struct k_event *event, k_event_handler_t handler);
-extern int k_event_recv(struct k_event *event, int32_t timeout);
-extern void k_event_send(struct k_event *event);
+extern void k_alert_init(struct k_alert *alert, k_alert_handler_t handler);
+extern int k_alert_recv(struct k_alert *alert, int32_t timeout);
+extern void k_alert_send(struct k_alert *alert);
 
 /**
  *  data transfers (complex)
