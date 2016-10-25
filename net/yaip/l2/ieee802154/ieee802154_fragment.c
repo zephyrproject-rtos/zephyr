@@ -134,9 +134,7 @@ static inline void set_up_frag_hdr(struct net_buf *buf, uint16_t size,
 
 static inline uint8_t compact_frag(struct net_buf *frag, uint8_t moved)
 {
-	uint8_t remaining;
-
-	remaining = frag->len - moved;
+	uint8_t remaining = frag->len - moved;
 
 	/** Move remaining data to next to fragmentation header,
 	 *  (leaving space for header).
@@ -318,9 +316,7 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag, bool fail)
  */
 static void reass_timeout(struct nano_work *work)
 {
-	struct frag_cache *cache = CONTAINER_OF(work,
-						    struct frag_cache,
-						    timer);
+	struct frag_cache *cache = CONTAINER_OF(work, struct frag_cache, timer);
 
 	if (cache->buf) {
 		net_nbuf_unref(cache->buf);
@@ -338,8 +334,7 @@ static void reass_timeout(struct nano_work *work)
  *  discard the fragments.
  */
 static inline struct frag_cache *set_reass_cache(struct net_buf *buf,
-						     uint16_t size,
-						     uint16_t tag)
+						 uint16_t size, uint16_t tag)
 {
 	int i;
 
@@ -356,7 +351,6 @@ static inline struct frag_cache *set_reass_cache(struct net_buf *buf,
 		nano_delayed_work_init(&cache[i].timer, reass_timeout);
 		nano_delayed_work_submit(&cache[i].timer,
 					 FRAG_REASSEMBLY_TIMEOUT);
-
 		return &cache[i];
 	}
 
@@ -368,8 +362,7 @@ static inline struct frag_cache *set_reass_cache(struct net_buf *buf,
  *  otherwise return NULL.
  */
 static inline struct frag_cache *get_reass_cache(struct net_buf *buf,
-						     uint16_t size,
-						     uint16_t tag)
+						 uint16_t size, uint16_t tag)
 {
 	uint8_t i;
 
@@ -396,8 +389,8 @@ static inline struct frag_cache *get_reass_cache(struct net_buf *buf,
  *  TODO append based on offset
  */
 static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
-						   struct net_buf **buf,
-						   bool first)
+						 struct net_buf **buf,
+						 bool first)
 {
 	struct frag_cache *cache;
 	uint16_t size;
@@ -458,6 +451,7 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
 					       cache->size);
 		*buf = cache->buf;
 		clear_reass_cache(size, tag, false);
+
 		return NET_OK;
 	}
 
@@ -477,11 +471,9 @@ enum net_verdict ieee802154_reassemble(struct net_buf *frag,
 	case NET_6LO_DISPATCH_FRAG1:
 		/* First fragment with IP headers */
 		return add_frag_to_cache(frag, buf, true);
-
 	case NET_6LO_DISPATCH_FRAGN:
 		/* Further fragments */
 		return add_frag_to_cache(frag, buf, false);
-
 	default:
 		/* Received unfragmented packet, uncompress */
 		if (net_6lo_uncompress(frag)) {
