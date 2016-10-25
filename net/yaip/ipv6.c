@@ -710,7 +710,7 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 #if NET_DEBUG
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
-		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];	\
+		char out[NET_IPV6_ADDR_LEN];				\
 									\
 		snprintf(out, sizeof(out), net_sprint_ipv6_addr(dst));	\
 									\
@@ -727,8 +727,8 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 
 #define dbg_addr_with_tgt(action, pkt_str, src, dst, target)		\
 	do {								\
-		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];	\
-		char tgt[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];	\
+		char out[NET_IPV6_ADDR_LEN];				\
+		char tgt[NET_IPV6_ADDR_LEN];				\
 									\
 		snprintf(out, sizeof(out), net_sprint_ipv6_addr(dst));	\
 		snprintf(tgt, sizeof(tgt), net_sprint_ipv6_addr(target)); \

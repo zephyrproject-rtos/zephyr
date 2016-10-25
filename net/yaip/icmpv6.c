@@ -46,7 +46,7 @@ static enum net_verdict handle_echo_request(struct net_buf *buf)
 	 * the addresses etc.
 	 */
 #if NET_DEBUG > 0
-	char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
+	char out[NET_IPV6_ADDR_LEN];
 
 	snprintf(out, sizeof(out),
 		 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
@@ -217,7 +217,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 
 #if NET_DEBUG > 0
 	do {
-		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
+		char out[NET_IPV6_ADDR_LEN];
 		snprintf(out, sizeof(out),
 			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
 		NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"

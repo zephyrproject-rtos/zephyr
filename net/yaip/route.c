@@ -248,7 +248,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 #if NET_DEBUG
 #define net_route_info(str, route, dst)					\
 	do {								\
-		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];	\
+		char out[NET_IPV6_ADDR_LEN];				\
 		struct in6_addr *naddr = net_route_get_nexthop(route);	\
 									\
 		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
@@ -373,7 +373,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 				     node);
 #if NET_DEBUG
 		do {
-			char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
+			char out[NET_IPV6_ADDR_LEN];
 			struct in6_addr *tmp;
 			struct net_linkaddr_storage *llstorage;
 

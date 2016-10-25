@@ -538,8 +538,8 @@ int net_conn_register(enum net_ip_protocol proto,
 
 #if NET_DEBUG
 		do {
-			char dst[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
-			char src[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
+			char dst[NET_IPV6_ADDR_LEN];
+			char src[NET_IPV6_ADDR_LEN];
 
 			prepare_register_debug_print(dst, sizeof(dst),
 						     src, sizeof(src),

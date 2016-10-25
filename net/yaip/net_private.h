@@ -71,7 +71,7 @@ static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 
 static inline char *net_sprint_ip_addr_ptr(const uint8_t *ptr, uint8_t len)
 {
-	static char buf[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
+	static char buf[NET_IPV6_ADDR_LEN];
 
 	return net_sprint_ip_addr_buf(ptr, len, (char *)buf, sizeof(buf));
 }

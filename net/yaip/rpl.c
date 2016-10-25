@@ -218,7 +218,7 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 #if NET_DEBUG
 #define net_rpl_info(buf, req)						     \
 	do {								     \
-		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];	     \
+		char out[NET_IPV6_ADDR_LEN];				     \
 									     \
 		snprintf(out, sizeof(out),				     \
 			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));     \
@@ -239,7 +239,7 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 
 #define net_rpl_dao_ack_info(buf, src, dst, id, seq)			\
 	do {								\
-		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];	\
+		char out[NET_IPV6_ADDR_LEN];				\
 									\
 		snprintf(out, sizeof(out), net_sprint_ipv6_addr(dst));	\
 		NET_DBG("Send DAO-ACK (id %d, seq %d) from %s to %s",	\
@@ -396,7 +396,7 @@ static void net_rpl_print_neighbors(void)
 #if NET_DEBUG
 #define net_route_info(str, route, addr, len, nexthop)			\
 	do {								\
-		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];	\
+		char out[NET_IPV6_ADDR_LEN];				\
 									\
 		snprintf(out, sizeof(out),				\
 			 net_sprint_ipv6_addr(addr));			\
