@@ -314,7 +314,7 @@ static const struct gpio_driver_api gpio_sch_api = {
 	.disable_callback = gpio_sch_disable_callback,
 };
 
-int gpio_sch_init(struct device *dev)
+static int gpio_sch_init(struct device *dev)
 {
 	struct gpio_sch_data *gpio = dev->driver_data;
 
@@ -329,12 +329,12 @@ int gpio_sch_init(struct device *dev)
 
 #if CONFIG_GPIO_SCH_0
 
-const struct gpio_sch_config gpio_sch_0_config = {
+static const struct gpio_sch_config gpio_sch_0_config = {
 	.regs = GPIO_SCH_0_BASE_ADDR,
 	.bits = GPIO_SCH_0_BITS,
 };
 
-struct gpio_sch_data gpio_data_0;
+static struct gpio_sch_data gpio_data_0;
 
 DEVICE_INIT(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME, gpio_sch_init,
 	    &gpio_data_0, &gpio_sch_0_config,
@@ -343,12 +343,12 @@ DEVICE_INIT(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME, gpio_sch_init,
 #endif /* CONFIG_GPIO_SCH_0 */
 #if CONFIG_GPIO_SCH_1
 
-const struct gpio_sch_config gpio_sch_1_config = {
+static const struct gpio_sch_config gpio_sch_1_config = {
 	.regs = GPIO_SCH_1_BASE_ADDR,
 	.bits = GPIO_SCH_1_BITS,
 };
 
-struct gpio_sch_data gpio_data_1;
+static struct gpio_sch_data gpio_data_1;
 
 DEVICE_INIT(gpio_1, CONFIG_GPIO_SCH_1_DEV_NAME, gpio_sch_init,
 	    &gpio_data_1, &gpio_sch_1_config,
