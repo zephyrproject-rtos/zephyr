@@ -195,8 +195,6 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 	uint8_t pos;
 	uint8_t max;
 
-	datagram_tag++;
-
 	if (!buf || !buf->frags) {
 		return false;
 	}
@@ -205,6 +203,8 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 	if (!buf->frags->frags) {
 		return true;
 	}
+
+	datagram_tag++;
 
 	/* Datagram_size: total length before compression */
 	size = net_buf_frags_len(buf) + hdr_diff;
