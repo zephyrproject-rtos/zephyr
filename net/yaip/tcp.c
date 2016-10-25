@@ -67,8 +67,19 @@ struct tcp_segment {
 };
 
 #if NET_DEBUG > 0
+static char upper_if_set(char chr, bool set)
+{
+	if (set) {
+		return chr & ~0x20;
+	}
+
+	return chr | 0x20;
+}
+
 static void net_tcp_trace(char *str, struct net_buf *buf)
 {
+	uint8_t flags = NET_TCP_BUF(buf)->flags;
+
 	NET_INFO("%s[TCP header]", str);
 	NET_INFO("|(SrcPort)         %5u |(DestPort)      %5u |",
 		 ntohs(NET_TCP_BUF(buf)->src_port),
@@ -77,14 +88,14 @@ static void net_tcp_trace(char *str, struct net_buf *buf)
 		 sys_get_be32(NET_TCP_BUF(buf)->seq));
 	NET_INFO("|(ACK number)                      0x%010x |",
 		 sys_get_be32(NET_TCP_BUF(buf)->ack));
-	NET_INFO("|(HL) %2u |(F)  %u%u%u%u%u%u |(Window)           %5u |",
+	NET_INFO("|(HL) %2u |(F)  %c%c%c%c%c%c |(Window)           %5u |",
 		 (NET_TCP_BUF(buf)->offset >> 4) * 4,
-		 NET_TCP_BUF(buf)->flags >> 5 & 1,
-		 NET_TCP_BUF(buf)->flags >> 4 & 1,
-		 NET_TCP_BUF(buf)->flags >> 3 & 1,
-		 NET_TCP_BUF(buf)->flags >> 2 & 1,
-		 NET_TCP_BUF(buf)->flags >> 1 & 1,
-		 NET_TCP_BUF(buf)->flags & 1,
+		 upper_if_set('u', flags & NET_TCP_URG),
+		 upper_if_set('a', flags & NET_TCP_ACK),
+		 upper_if_set('p', flags & NET_TCP_PSH),
+		 upper_if_set('r', flags & NET_TCP_RST),
+		 upper_if_set('s', flags & NET_TCP_SYN),
+		 upper_if_set('f', flags & NET_TCP_FIN),
 		 sys_get_be16(NET_TCP_BUF(buf)->wnd));
 	NET_INFO("|(Checksum)    0x%04x |(Urgent)           %5u |",
 		 ntohs(NET_TCP_BUF(buf)->chksum),
