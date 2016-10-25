@@ -100,6 +100,11 @@ M:	Amit Kucheria <amit.kucheria@linaro.org>
 S:	Supported
 F:	boards/arm/96b_nitrogen/
 
+BOARDS/ARM - ARDUINO 101 BLE
+M:	Johan Hedberg <johan.hedberg@intel.com>
+S:	Supported
+F:	boards/arm/arduino_101_ble/
+
 BOARDS/ARM - NXP FRDM-K64F
 M:	Maureen Helm <maureen.helm@nxp.com>
 S:	Supported
