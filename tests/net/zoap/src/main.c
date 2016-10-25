@@ -904,6 +904,7 @@ done:
 	return result;
 }
 
+#if !defined(CONFIG_NET_YAIP)
 static int test_block_size(void)
 {
 	struct zoap_block_context req_ctx, rsp_ctx;
@@ -1024,6 +1025,7 @@ done:
 
 	return result;
 }
+#endif
 
 static const struct {
 	const char *name;
@@ -1037,7 +1039,9 @@ static const struct {
 	{ "Test retransmission", test_retransmit_second_round, },
 	{ "Test observer server", test_observer_server, },
 	{ "Test observer client", test_observer_client, },
+#if !defined(CONFIG_NET_YAIP)
 	{ "Test block sized transfer", test_block_size, },
+#endif
 };
 
 int main(int argc, char *argv[])
