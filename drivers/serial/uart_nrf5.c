@@ -106,24 +106,70 @@ static struct uart_driver_api uart_nrf5_driver_api;
  * @return N/A
  */
 
-static void baudrate_set(struct device *dev,
+static int baudrate_set(struct device *dev,
 			 uint32_t baudrate, uint32_t sys_clk_freq_hz)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uint32_t set_baudrate; /* baud rate divisor */
+	uint32_t divisor; /* baud rate divisor */
 
-	if ((baudrate != 0) && (sys_clk_freq_hz != 0)) {
-		set_baudrate = (uint32_t) (
-					  (uint64_t)baudrate *
-					  (uint64_t)UINT32_MAX /
-					  (uint64_t)sys_clk_freq_hz
-		);
-
-		/* Round the value */
-		set_baudrate = (set_baudrate + 0x800) & 0xFFFFF000;
-		uart->BAUDRATE = set_baudrate << UART_BAUDRATE_BAUDRATE_Pos;
+	/* Use the common nRF5 macros */
+	switch (baudrate) {
+	case 1200:
+		divisor = NRF5_UART_BAUDRATE_1200;
+		break;
+	case 2400:
+		divisor = NRF5_UART_BAUDRATE_2400;
+		break;
+	case 4800:
+		divisor = NRF5_UART_BAUDRATE_4800;
+		break;
+	case 9600:
+		divisor = NRF5_UART_BAUDRATE_9600;
+		break;
+	case 14400:
+		divisor = NRF5_UART_BAUDRATE_14400;
+		break;
+	case 19200:
+		divisor = NRF5_UART_BAUDRATE_19200;
+		break;
+	case 28800:
+		divisor = NRF5_UART_BAUDRATE_28800;
+		break;
+	case 38400:
+		divisor = NRF5_UART_BAUDRATE_38400;
+		break;
+	case 57600:
+		divisor = NRF5_UART_BAUDRATE_57600;
+		break;
+	case 76800:
+		divisor = NRF5_UART_BAUDRATE_76800;
+		break;
+	case 115200:
+		divisor = NRF5_UART_BAUDRATE_115200;
+		break;
+	case 230400:
+		divisor = NRF5_UART_BAUDRATE_230400;
+		break;
+	case 250000:
+		divisor = NRF5_UART_BAUDRATE_250000;
+		break;
+	case 460800:
+		divisor = NRF5_UART_BAUDRATE_460800;
+		break;
+	case 921600:
+		divisor = NRF5_UART_BAUDRATE_921600;
+		break;
+	case 1000000:
+		divisor = NRF5_UART_BAUDRATE_1000000;
+		break;
+	default:
+		return -EINVAL;
 	}
+
+	uart->BAUDRATE = divisor << UART_BAUDRATE_BAUDRATE_Pos;
+
+	return 0;
 }
 
 /**
@@ -140,6 +186,7 @@ static int uart_nrf5_init(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 	struct device *gpio_dev;
+	int err;
 
 	gpio_dev = device_get_binding(CONFIG_GPIO_NRF5_P0_DEV_NAME);
 	(void) gpio_pin_configure(gpio_dev,
@@ -170,8 +217,11 @@ static int uart_nrf5_init(struct device *dev)
 	DEV_DATA(dev)->baud_rate = CONFIG_UART_NRF5_BAUD_RATE;
 
 	/* Set baud rate */
-	baudrate_set(dev, DEV_DATA(dev)->baud_rate,
+	err = baudrate_set(dev, DEV_DATA(dev)->baud_rate,
 		     DEV_CFG(dev)->sys_clk_freq);
+	if (err) {
+		return err;
+	}
 
 	/* Enable receiver and transmitter */
 	uart->ENABLE = (UART_ENABLE_ENABLE_Enabled << UART_ENABLE_ENABLE_Pos);
