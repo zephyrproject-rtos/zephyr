@@ -37,37 +37,37 @@
 
 #include "wpanusb.h"
 
-#define ATUSB_SUBCLASS	0
-#define ATUSB_PROTOCOL	0
+#define WPANUSB_SUBCLASS	0
+#define WPANUSB_PROTOCOL	0
 
-#define ATUSB_BUFFER_SIZE 64
+#define WPANUSB_BUFFER_SIZE	64
 
 /* Max packet size for endpoints */
-#define ATUSB_BULK_EP_MPS		64
+#define WPANUSB_BULK_EP_MPS		64
 
 /* Max packet size for Interrupt endpoints */
-#define ATUSB_INTERRUPT_EP_MPS		16
+#define WPANUSB_INTERRUPT_EP_MPS	16
 
 /* Max Bluetooth command data size */
-#define ATUSB_CLASS_MAX_DATA_SIZE	100
+#define WPANUSB_CLASS_MAX_DATA_SIZE	100
 
 #define VENDOR_ID			0x8086 /* Intel Hardware */
 #define PRODUCT_ID			0xFF03 /* TODO: Find  better id */
 #define DEVICE_RELNUM			0x0100
 
-#define ATUSB_NUM_CONF			1
+#define WPANUSB_NUM_CONF		1
 
-#define ATUSB_NUM_ITF			1
+#define WPANUSB_NUM_ITF			1
 
-#define ATUSB_IF1_NUM_EP		1
+#define WPANUSB_IF1_NUM_EP		1
 /* Include all endpoints, also alternate configurations */
-#define ATUSB_NUM_EP		(ATUSB_IF1_NUM_EP)
+#define WPANUSB_NUM_EP		(WPANUSB_IF1_NUM_EP)
 
-#define ATUSB_ENDP_BULK_IN		0x81
+#define WPANUSB_ENDP_BULK_IN		0x81
 
-#define ATUSB_CONF_SIZE (USB_CONFIGURATION_DESC_SIZE + \
-			 (ATUSB_NUM_ITF * USB_INTERFACE_DESC_SIZE) + \
-			 (ATUSB_NUM_EP * USB_ENDPOINT_DESC_SIZE))
+#define WPANUSB_CONF_SIZE (USB_CONFIGURATION_DESC_SIZE + \
+			 (WPANUSB_NUM_ITF * USB_INTERFACE_DESC_SIZE) + \
+			 (WPANUSB_NUM_EP * USB_ENDPOINT_DESC_SIZE))
 
 /* Misc. macros */
 #define LOW_BYTE(x)	((x) & 0xFF)
@@ -93,7 +93,7 @@ static nano_thread_id_t tx_fiber_id;
 struct wpanusb_dev_data_t {
 	/* USB device status code */
 	enum usb_dc_status_code usb_status;
-	uint8_t interface_data[ATUSB_CLASS_MAX_DATA_SIZE];
+	uint8_t interface_data[WPANUSB_CLASS_MAX_DATA_SIZE];
 	uint8_t notification_sent;
 };
 
@@ -107,8 +107,8 @@ static const uint8_t wpanusb_desc[] = {
 	LOW_BYTE(USB_1_1),
 	HIGH_BYTE(USB_1_1),		/* USB version in BCD format */
 	CUSTOM_CLASS,			/* Class */
-	ATUSB_SUBCLASS,			/* SubClass - Interface specific */
-	ATUSB_PROTOCOL,			/* Protocol - Interface specific */
+	WPANUSB_SUBCLASS,		/* SubClass - Interface specific */
+	WPANUSB_PROTOCOL,		/* Protocol - Interface specific */
 	MAX_PACKET_SIZE0,		/* Max Packet Size */
 	LOW_BYTE(VENDOR_ID),
 	HIGH_BYTE(VENDOR_ID),		/* Vendor Id */
@@ -122,15 +122,15 @@ static const uint8_t wpanusb_desc[] = {
 	0x00,
 	/* Index of Serial Number String Descriptor */
 	0x00,
-	ATUSB_NUM_CONF,			/* Number of Possible Configuration */
+	WPANUSB_NUM_CONF,		/* Number of Possible Configuration */
 
 	/* Configuration descriptor */
 	USB_CONFIGURATION_DESC_SIZE,	/* Descriptor size */
 	USB_CONFIGURATION_DESC,		/* Descriptor type */
 	/* Total length in bytes of data returned */
-	LOW_BYTE(ATUSB_CONF_SIZE),
-	HIGH_BYTE(ATUSB_CONF_SIZE),
-	ATUSB_NUM_ITF,			/* Number of interfaces */
+	LOW_BYTE(WPANUSB_CONF_SIZE),
+	HIGH_BYTE(WPANUSB_CONF_SIZE),
+	WPANUSB_NUM_ITF,		/* Number of interfaces */
 	0x01,				/* Configuration value */
 	0x00,				/* Index of the Configuration string */
 	USB_CONFIGURATION_ATTRIBUTES,	/* Attributes */
@@ -141,20 +141,20 @@ static const uint8_t wpanusb_desc[] = {
 	USB_INTERFACE_DESC,		/* Descriptor type */
 	0x00,				/* Interface index */
 	0x00,				/* Alternate setting */
-	ATUSB_IF1_NUM_EP,		/* Number of Endpoints */
+	WPANUSB_IF1_NUM_EP,		/* Number of Endpoints */
 	CUSTOM_CLASS,			/* Class */
-	ATUSB_SUBCLASS,			/* SubClass */
-	ATUSB_PROTOCOL,			/* Protocol */
+	WPANUSB_SUBCLASS,		/* SubClass */
+	WPANUSB_PROTOCOL,		/* Protocol */
 	/* Index of the Interface String Descriptor */
 	0x00,
 
 	/* Endpoint IN */
 	USB_ENDPOINT_DESC_SIZE,		/* Descriptor size */
 	USB_ENDPOINT_DESC,		/* Descriptor type */
-	ATUSB_ENDP_BULK_IN,		/* Endpoint address */
+	WPANUSB_ENDP_BULK_IN,		/* Endpoint address */
 	USB_DC_EP_BULK,			/* Attributes */
-	LOW_BYTE(ATUSB_BULK_EP_MPS),
-	HIGH_BYTE(ATUSB_BULK_EP_MPS),	/* Max packet size */
+	LOW_BYTE(WPANUSB_BULK_EP_MPS),
+	HIGH_BYTE(WPANUSB_BULK_EP_MPS),	/* Max packet size */
 	0x00,				/* Interval */
 
 #if 0
@@ -225,7 +225,7 @@ static void wpanusb_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 static struct usb_ep_cfg_data wpanusb_ep[] = {
 	{
 		.ep_cb = wpanusb_bulk_in,
-		.ep_addr = ATUSB_ENDP_BULK_IN
+		.ep_addr = WPANUSB_ENDP_BULK_IN
 	},
 };
 
@@ -370,7 +370,7 @@ static int tx(struct net_buf *pkt)
 	if (!ret) {
 		SYS_LOG_DBG("send ACK for seq %u", seq);
 
-		try_write(ATUSB_ENDP_BULK_IN, &seq, sizeof(seq));
+		try_write(WPANUSB_ENDP_BULK_IN, &seq, sizeof(seq));
 	}
 
 	return ret;
@@ -564,7 +564,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 
 	hexdump("<", frag->data, net_buf_frags_len(buf));
 
-	try_write(ATUSB_ENDP_BULK_IN, frag->data, net_buf_frags_len(buf));
+	try_write(WPANUSB_ENDP_BULK_IN, frag->data, net_buf_frags_len(buf));
 
 	net_nbuf_unref(buf);
 
