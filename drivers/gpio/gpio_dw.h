@@ -27,7 +27,6 @@
 extern "C" {
 #endif
 
-extern int gpio_dw_initialize(struct device *port);
 typedef void (*gpio_config_irq_t)(struct device *port);
 
 struct gpio_dw_config {

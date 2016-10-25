@@ -465,7 +465,7 @@ static inline int gpio_dw_setup(struct device *dev)
 #endif /* CONFIG_PCI */
 
 
-int gpio_dw_initialize(struct device *port)
+static int gpio_dw_initialize(struct device *port)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 	const struct gpio_dw_config *config = port->config->config_info;
@@ -504,9 +504,9 @@ int gpio_dw_initialize(struct device *port)
 
 /* Bindings to the plaform */
 #if CONFIG_GPIO_DW_0
-void gpio_config_0_irq(struct device *port);
+static void gpio_config_0_irq(struct device *port);
 
-const struct gpio_dw_config gpio_config_0 = {
+static const struct gpio_dw_config gpio_config_0 = {
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	.irq_num = GPIO_DW_0_IRQ,
 #endif
@@ -520,7 +520,7 @@ const struct gpio_dw_config gpio_config_0 = {
 #endif
 };
 
-struct gpio_dw_runtime gpio_0_runtime = {
+static struct gpio_dw_runtime gpio_0_runtime = {
 	.base_addr = GPIO_DW_0_BASE_ADDR,
 #if CONFIG_PCI
 	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
@@ -546,7 +546,7 @@ DEVICE_AND_API_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
 		    &api_funcs);
 #endif
 
-void gpio_config_0_irq(struct device *port)
+static void gpio_config_0_irq(struct device *port)
 {
 #if (GPIO_DW_0_IRQ > 0)
 	const struct gpio_dw_config *config = port->config->config_info;
@@ -572,9 +572,9 @@ void gpio_config_0_irq(struct device *port)
 
 
 #if CONFIG_GPIO_DW_1
-void gpio_config_1_irq(struct device *port);
+static void gpio_config_1_irq(struct device *port);
 
-const struct gpio_dw_config gpio_dw_config_1 = {
+static const struct gpio_dw_config gpio_dw_config_1 = {
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	.irq_num = GPIO_DW_1_IRQ,
 #endif
@@ -589,7 +589,7 @@ const struct gpio_dw_config gpio_dw_config_1 = {
 #endif
 };
 
-struct gpio_dw_runtime gpio_1_runtime = {
+static struct gpio_dw_runtime gpio_1_runtime = {
 	.base_addr = GPIO_DW_1_BASE_ADDR,
 #if CONFIG_PCI
 	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
@@ -614,7 +614,7 @@ DEVICE_AND_API_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
 		    &api_funcs);
 #endif
 
-void gpio_config_1_irq(struct device *port)
+static void gpio_config_1_irq(struct device *port)
 {
 #if (GPIO_DW_1_IRQ > 0)
 	const struct gpio_dw_config *config = port->config->config_info;
@@ -639,9 +639,9 @@ void gpio_config_1_irq(struct device *port)
 #endif /* CONFIG_GPIO_DW_1 */
 
 #if CONFIG_GPIO_DW_2
-void gpio_config_2_irq(struct device *port);
+static void gpio_config_2_irq(struct device *port);
 
-const struct gpio_dw_config gpio_dw_config_2 = {
+static const struct gpio_dw_config gpio_dw_config_2 = {
 #ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
 	.irq_num = GPIO_DW_2_IRQ,
 #endif
@@ -656,7 +656,7 @@ const struct gpio_dw_config gpio_dw_config_2 = {
 #endif
 };
 
-struct gpio_dw_runtime gpio_2_runtime = {
+static struct gpio_dw_runtime gpio_2_runtime = {
 	.base_addr = GPIO_DW_2_BASE_ADDR,
 #if CONFIG_PCI
 	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
@@ -681,7 +681,7 @@ DEVICE_AND_API_INIT(gpio_dw_2, CONFIG_GPIO_DW_2_NAME, gpio_dw_initialize,
 		    &api_funcs);
 #endif
 
-void gpio_config_2_irq(struct device *port)
+static void gpio_config_2_irq(struct device *port)
 {
 #if (GPIO_DW_2_IRQ > 0)
 	const struct gpio_dw_config *config = port->config->config_info;
@@ -706,9 +706,9 @@ void gpio_config_2_irq(struct device *port)
 #endif /* CONFIG_GPIO_DW_2 */
 
 #if CONFIG_GPIO_DW_3
-void gpio_config_3_irq(struct device *port);
+static void gpio_config_3_irq(struct device *port);
 
-const struct gpio_dw_config gpio_dw_config_3 = {
+static const struct gpio_dw_config gpio_dw_config_3 = {
 #ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
 	.irq_num = GPIO_DW_3_IRQ,
 #endif
@@ -723,7 +723,7 @@ const struct gpio_dw_config gpio_dw_config_3 = {
 #endif
 };
 
-struct gpio_dw_runtime gpio_3_runtime = {
+static struct gpio_dw_runtime gpio_3_runtime = {
 	.base_addr = GPIO_DW_3_BASE_ADDR,
 #if CONFIG_PCI
 	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
@@ -748,7 +748,7 @@ DEVICE_AND_API_INIT(gpio_dw_3, CONFIG_GPIO_DW_3_NAME, gpio_dw_initialize,
 		    &api_funcs);
 #endif
 
-void gpio_config_3_irq(struct device *port)
+static void gpio_config_3_irq(struct device *port)
 {
 #if (GPIO_DW_3_IRQ > 0)
 	const struct gpio_dw_config *config = port->config->config_info;
