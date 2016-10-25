@@ -40,7 +40,7 @@
  * they should only be re-configured if the debug interface is not used.
  *
  */
-struct pin_config mux_config[] = {
+static const struct pin_config mux_config[] = {
 	/* pin,		selected mode */
 	{ K64_PIN_PTC16, K64_PINMUX_FUNC_GPIO },
 	{ K64_PIN_PTC17, K64_PINMUX_FUNC_GPIO },
@@ -102,7 +102,7 @@ struct pin_config mux_config[] = {
 #endif
 };
 
-int fsl_frdm_k64f_pin_init(struct device *arg)
+static int fsl_frdm_k64f_pin_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
