@@ -226,7 +226,7 @@ int ti_adc108s102_init(struct device *dev)
 
 #ifdef CONFIG_ADC_TI_ADC108S102
 
-struct ti_adc108s102_data adc108s102_data;
+static struct ti_adc108s102_data adc108s102_data;
 
 static const struct ti_adc108s102_config adc108s102_config = {
 	.spi_port = CONFIG_ADC_TI_ADC108S102_SPI_PORT_NAME,
