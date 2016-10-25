@@ -904,25 +904,30 @@ done:
 	return result;
 }
 
-#if !defined(CONFIG_NET_YAIP)
 static int test_block_size(void)
 {
 	struct zoap_block_context req_ctx, rsp_ctx;
 	struct zoap_packet req;
-	struct net_buf *buf = NULL;
+	struct net_buf *frag, *buf = NULL;
 	const char token[] = "rndtoken";
 	uint8_t *payload;
 	uint16_t len;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_get(&zoap_fifo, 0);
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
-	ip_buf_appdata(buf) = net_buf_tail(buf);
-	ip_buf_appdatalen(buf) = net_buf_tailroom(buf);
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
 
 	r = zoap_packet_init(&req, buf);
 	if (r < 0) {
@@ -976,8 +981,25 @@ static int test_block_size(void)
 		goto done;
 	}
 
+	/* Suppose that buf was sent */
+	net_buf_unref(buf);
+
 	/* Let's try the second packet */
 	zoap_next_block(&req_ctx);
+
+	buf = net_buf_get(&zoap_nbuf_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	frag = net_buf_get(&zoap_data_fifo, 0);
+	if (!buf) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_buf_frag_add(buf, frag);
 
 	r = zoap_packet_init(&req, buf);
 	if (r < 0) {
@@ -997,9 +1019,13 @@ static int test_block_size(void)
 
 	memset(payload, 0xFE, ZOAP_BLOCK_32);
 
-	zoap_packet_set_used(&req, ZOAP_BLOCK_32);
+	zoap_packet_set_used(&req, zoap_block_size_to_bytes(ZOAP_BLOCK_32));
 
-	zoap_update_from_block(&req, &rsp_ctx);
+	r = zoap_update_from_block(&req, &rsp_ctx);
+	if (r < 0) {
+		TC_PRINT("Couldn't parse Block options\n");
+		goto done;
+	}
 
 	if (rsp_ctx.block_size != ZOAP_BLOCK_32) {
 		TC_PRINT("Couldn't get block size from request\n");
@@ -1012,7 +1038,7 @@ static int test_block_size(void)
 	}
 
 	if (rsp_ctx.total_size != 127) {
-		TC_PRINT("[2] Couldn't packet total size from request\n");
+		TC_PRINT("Couldn't packet total size from request\n");
 		goto done;
 	}
 
@@ -1025,7 +1051,6 @@ done:
 
 	return result;
 }
-#endif
 
 static const struct {
 	const char *name;
@@ -1039,9 +1064,7 @@ static const struct {
 	{ "Test retransmission", test_retransmit_second_round, },
 	{ "Test observer server", test_observer_server, },
 	{ "Test observer client", test_observer_client, },
-#if !defined(CONFIG_NET_YAIP)
 	{ "Test block sized transfer", test_block_size, },
-#endif
 };
 
 int main(int argc, char *argv[])
