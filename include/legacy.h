@@ -156,7 +156,7 @@ extern void _legacy_sleep(int32_t ticks);
 #define task_priority_set(task, prio) k_thread_priority_set(task, (int)prio)
 #define task_entry_set(task, entry) \
 	k_thread_entry_set(task, (k_thread_entry_t)entry)
-#define task_abort_handler_set k_thread_abort_handler_set
+extern void task_abort_handler_set(void (*handler)(void));
 
 /**
  * @brief Process an "offload" request

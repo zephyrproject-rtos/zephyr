@@ -250,7 +250,6 @@ extern void k_thread_priority_set(k_tid_t thread, int prio);
 
 extern void k_thread_suspend(k_tid_t thread);
 extern void k_thread_resume(k_tid_t thread);
-extern void k_thread_abort_handler_set(void (*handler)(void));
 
 extern void k_sched_time_slice_set(int32_t slice, int prio);
 
