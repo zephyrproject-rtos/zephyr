@@ -1515,7 +1515,7 @@ static inline int task_event_recv(kevent_t legacy_event, int32_t timeout)
  * @param event_handler Function to handle the event (can be NULL)
  */
 #define DEFINE_EVENT(name, event_handler) \
-	K_ALERT_DEFINE(_k_event_obj_##name, event_handler); \
+	K_ALERT_DEFINE(_k_event_obj_##name, event_handler, 1); \
 	struct k_alert * const name = &(_k_event_obj_##name)
 
 /* memory maps */

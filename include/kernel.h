@@ -1391,12 +1391,12 @@ struct k_alert {
 
 extern void _alert_deliver(struct k_work *work);
 
-#define K_ALERT_INITIALIZER(obj, alert_handler) \
+#define K_ALERT_INITIALIZER(obj, alert_handler, max_num_pending_alerts) \
 	{ \
 	.handler = (k_alert_handler_t)alert_handler, \
 	.send_count = ATOMIC_INIT(0), \
 	.work_item = K_WORK_INITIALIZER(_alert_deliver), \
-	.sem = K_SEM_INITIALIZER(obj.sem, 0, 1), \
+	.sem = K_SEM_INITIALIZER(obj.sem, 0, max_num_pending_alerts), \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
@@ -1411,11 +1411,13 @@ extern void _alert_deliver(struct k_work *work);
  *
  * @param name Alert name
  * @param alert_handler Handler to invoke after the delivery of the alert
+ * @param max_num_pending_alerts Maximum number of concurrent pending alerts
  */
-#define K_ALERT_DEFINE(name, alert_handler) \
+#define K_ALERT_DEFINE(name, alert_handler, max_num_pending_alerts) \
 	struct k_alert name \
 		__in_section(_k_event_list, alert, name) = \
-		K_ALERT_INITIALIZER(name, alert_handler)
+		K_ALERT_INITIALIZER(name, alert_handler, \
+				    max_num_pending_alerts)
 
 /**
  * @brief Initialize an alert object.
@@ -1425,10 +1427,12 @@ extern void _alert_deliver(struct k_work *work);
  *
  * @param alert Pointer to the alert object
  * @param handler Routine to invoke after delivery of alert
+ * @param max_num_pending_alerts Maximum number of concurrent pending alerts
  *
  * @return N/A
  */
-extern void k_alert_init(struct k_alert *alert, k_alert_handler_t handler);
+extern void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
+			 unsigned int max_num_pending_alerts);
 
 /**
  * @brief Receive an alert

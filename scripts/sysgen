@@ -618,7 +618,7 @@ def kernel_main_c_events():
         if kernel_type == 'micro':
             kernel_main_c_out("DEFINE_EVENT(%s, %s);\n" % (event[0], event[1]))
         else:
-            kernel_main_c_out("K_ALERT_DEFINE(_k_event_obj_%s, %s);\n" %
+            kernel_main_c_out("K_ALERT_DEFINE(_k_event_obj_%s, %s, 1);\n" %
                               (event[0], event[1]))
 
 def kernel_main_c_mutexes():
