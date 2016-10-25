@@ -48,7 +48,7 @@ The kernel spawns the following system threads.
 Additional system threads may also be spawned, depending on the kernel
 and board configuration options specified by the application. For example,
 enabling the system workqueue spawns a system thread
-that services the work items submitted to it.
+that services the work items submitted to it. (See :ref:`workqueues_v2`.)
 
 Implementation
 **************

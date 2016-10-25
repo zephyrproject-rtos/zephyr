@@ -14,3 +14,4 @@ independently executable threads of instructions.
    scheduling.rst
    custom_data.rst
    system_threads.rst
+   workqueues.rst
