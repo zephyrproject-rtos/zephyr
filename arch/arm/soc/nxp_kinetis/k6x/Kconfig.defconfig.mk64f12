@@ -203,4 +203,11 @@ config ETH_KSDK_0
 
 endif # ETHERNET
 
+if RANDOM_GENERATOR
+
+config RANDOM_KSDK
+	def_bool y
+
+endif # RANDOM_GENERATOR
+
 endif # SOC_MK64F12
