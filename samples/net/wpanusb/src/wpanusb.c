@@ -15,6 +15,7 @@
  */
 
 #define SYS_LOG_LEVEL 4
+#define SYS_LOG_DOMAIN "wpanusb"
 #include <misc/sys_log.h>
 
 #include <sections.h>
