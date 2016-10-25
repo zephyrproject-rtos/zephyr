@@ -161,14 +161,52 @@ static inline void set_buf_ll_addr(struct net_linkaddr *addr, bool comp,
 	}
 }
 
+#ifdef CONFIG_NET_6LO
+static inline
+enum net_verdict ieee802154_manage_recv_buffer(struct net_if *iface,
+					       struct net_buf *buf)
+{
+	enum net_verdict verdict = NET_CONTINUE;
+	uint32_t src;
+	uint32_t dst;
+
+	/** Uncompress will drop the current fragment. Buf ll src/dst address
+	 * will then be wrong and must be updated according to the new fragment.
+	 */
+	src = net_nbuf_ll_src(buf)->addr ?
+		net_nbuf_ll_src(buf)->addr - net_nbuf_ll(buf) : 0;
+	dst = net_nbuf_ll_dst(buf)->addr ?
+		net_nbuf_ll_dst(buf)->addr - net_nbuf_ll(buf) : 0;
+
+#ifdef NET_L2_IEEE802154_FRAGMENT
+	verdict = ieee802154_reassemble(buf);
+	if (verdict == NET_DROP) {
+		goto out;
+	}
+#else
+	if (!net_6lo_uncompress(buf)) {
+		NET_DBG("Packet decompression failed");
+		verdict = NET_DROP;
+		goto out;
+	}
+#endif
+	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
+	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
+
+	pkt_hexdump(buf, false);
+out:
+	return verdict;
+}
+#else /* CONFIG_NET_6LO */
+
+#define ieee802154_manage_recv_buffer(...) NET_CONTINUE
+
+#endif /* CONFIG_NET_6LO */
+
 static enum net_verdict ieee802154_recv(struct net_if *iface,
 					struct net_buf *buf)
 {
 	struct ieee802154_mpdu mpdu;
-#ifdef CONFIG_NET_6LO
-	uint32_t src;
-	uint32_t dst;
-#endif /* CONFIG_NET_6LO */
 
 	/* Let's remove LQI for now as it is not used */
 	get_lqi(buf);
@@ -205,27 +243,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	pkt_hexdump(buf, true);
 
-#ifdef CONFIG_NET_6LO
-	/** Uncompress will drop the current fragment. Buf ll src/dst address
-	 * will then be wrong and must be updated according to the new fragment.
-	 */
-	src = net_nbuf_ll_src(buf)->addr ?
-		net_nbuf_ll_src(buf)->addr - net_nbuf_ll(buf) : 0;
-	dst = net_nbuf_ll_dst(buf)->addr ?
-		net_nbuf_ll_dst(buf)->addr - net_nbuf_ll(buf) : 0;
-
-	if (!net_6lo_uncompress(buf)) {
-		NET_DBG("Packet decompression failed");
-		return NET_DROP;
-	}
-
-	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
-	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
-
-	pkt_hexdump(buf, false);
-#endif /* CONFIG_NET_6LO */
-
-	return NET_CONTINUE;
+	return ieee802154_manage_recv_buffer(iface, buf);
 }
 
 static enum net_verdict ieee802154_send(struct net_if *iface,
