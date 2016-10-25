@@ -349,7 +349,7 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 	return ret;
 }
 
-static struct flash_driver_api spi_flash_api = {
+static const struct flash_driver_api spi_flash_api = {
 	.read = spi_flash_wb_read,
 	.write = spi_flash_wb_write,
 	.erase = spi_flash_wb_erase,
@@ -380,7 +380,7 @@ static int spi_flash_init(struct device *dev)
 	return ret;
 }
 
-struct spi_flash_data spi_flash_memory_data;
+static struct spi_flash_data spi_flash_memory_data;
 
 DEVICE_INIT(spi_flash_memory, CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME, spi_flash_init,
 	    &spi_flash_memory_data, NULL, SECONDARY,
