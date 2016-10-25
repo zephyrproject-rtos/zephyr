@@ -295,7 +295,7 @@ int gpio_sam3_init(struct device *dev)
 
 /* Port A */
 #ifdef CONFIG_GPIO_ATMEL_SAM3_PORTA
-void gpio_sam3_config_a(struct device *dev);
+static void gpio_sam3_config_a(struct device *dev);
 
 static const struct gpio_sam3_config gpio_sam3_a_cfg = {
 	.port = __PIOA,
@@ -310,7 +310,7 @@ DEVICE_AND_API_INIT(gpio_sam3_a, CONFIG_GPIO_ATMEL_SAM3_PORTA_DEV_NAME,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
 
-void gpio_sam3_config_a(struct device *dev)
+static void gpio_sam3_config_a(struct device *dev)
 {
 	/* Enable clock for PIO controller */
 	__PMC->pcer0 = BIT(PID_PIOA);
@@ -323,7 +323,7 @@ void gpio_sam3_config_a(struct device *dev)
 
 /* Port B */
 #ifdef CONFIG_GPIO_ATMEL_SAM3_PORTB
-void gpio_sam3_config_b(struct device *dev);
+static void gpio_sam3_config_b(struct device *dev);
 
 static const struct gpio_sam3_config gpio_sam3_b_cfg = {
 	.port = __PIOB,
@@ -338,7 +338,7 @@ DEVICE_AND_API_INIT(gpio_sam3_b, CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
 
-void gpio_sam3_config_b(struct device *dev)
+static void gpio_sam3_config_b(struct device *dev)
 {
 	/* Enable clock for PIO controller */
 	__PMC->pcer0 = BIT(PID_PIOB);
@@ -351,7 +351,7 @@ void gpio_sam3_config_b(struct device *dev)
 
 /* Port C */
 #ifdef CONFIG_GPIO_ATMEL_SAM3_PORTC
-void gpio_sam3_config_c(struct device *dev);
+static void gpio_sam3_config_c(struct device *dev);
 
 static const struct gpio_sam3_config gpio_sam3_c_cfg = {
 	.port = __PIOC,
@@ -366,7 +366,7 @@ DEVICE_AND_API_INIT(gpio_sam3_c, CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
 
-void gpio_sam3_config_c(struct device *dev)
+static void gpio_sam3_config_c(struct device *dev)
 {
 	/* Enable clock for PIO controller */
 	__PMC->pcer0 = BIT(PID_PIOC);
@@ -379,7 +379,7 @@ void gpio_sam3_config_c(struct device *dev)
 
 /* Port D */
 #ifdef CONFIG_GPIO_ATMEL_SAM3_PORTD
-void gpio_sam3_config_d(struct device *dev);
+static void gpio_sam3_config_d(struct device *dev);
 
 static const struct gpio_sam3_config gpio_sam3_d_cfg = {
 	.port = __PIOD,
@@ -394,7 +394,7 @@ DEVICE_AND_API_INIT(gpio_sam3_d, CONFIG_GPIO_ATMEL_SAM3_PORTD_DEV_NAME,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
 
-void gpio_sam3_config_d(struct device *dev)
+static void gpio_sam3_config_d(struct device *dev)
 {
 	/* Enable clock for PIO controller */
 	__PMC->pcer0 = BIT(PID_PIOD);
