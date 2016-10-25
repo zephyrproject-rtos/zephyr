@@ -4,6 +4,8 @@ qemu_cortex_m3
 qemu_x86
 --platform
 qemu_x86_iamcu
+--platform
+qemu_nios2
 --tag
 unified_capable
 -x

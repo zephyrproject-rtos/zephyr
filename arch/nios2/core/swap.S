@@ -25,6 +25,10 @@ GTEXT(_thread_entry_wrapper)
 
 /* imports */
 GTEXT(_sys_k_event_logger_context_switch)
+#ifdef CONFIG_KERNEL_V2
+GTEXT(_get_next_ready_thread)
+GTEXT(_k_neg_eagain)
+#endif
 
 /* unsigned int _Swap(unsigned int key)
  *
@@ -61,6 +65,14 @@ SECTION_FUNC(exception.other, _Swap)
 	 */
 	stw r4, __tTCS_coopReg_OFFSET + __t_coop_key_OFFSET(r11)
 
+#ifdef CONFIG_KERNEL_V2
+	/* Populate default return value */
+	movhi r5, %hi(_k_neg_eagain)
+	ori   r5, r5, %lo(_k_neg_eagain)
+	ldw   r4, (r5)
+	stw   r4, __tTCS_coopReg_OFFSET + __t_coop_retval_OFFSET(r11)
+#endif /* CONFIG_KERNEL_V2 */
+
 #if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	call _sys_k_event_logger_context_switch
 	/* Restore caller-saved r10. We could have stuck its value
@@ -68,51 +80,65 @@ SECTION_FUNC(exception.other, _Swap)
 	 */
 	movhi r10, %hi(_nanokernel)
 	ori   r10, r10, %lo(_nanokernel)
-#endif
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
 
+#ifdef CONFIG_KERNEL_V2
+	/* Assign to _nanokernel.current the return value of
+	 * _get_next_ready_thread()
+	 */
+	call  _get_next_ready_thread
+	movhi r10, %hi(_nanokernel)
+	ori   r10, r10, %lo(_nanokernel)
+	stw   r2, __tNANO_current_OFFSET(r10)
+#else
 	/* Find the next context to run. Choose _nanokernel.fiber
 	 * if non-NULL */
-	ldw r11, __tNANO_fiber_OFFSET(r10)
-	beq r11, zero, not_fiber
+	ldw r2, __tNANO_fiber_OFFSET(r10)
+	beq r2, zero, not_fiber
 
 	/* _nanokernel.fiber = _nanokernel.fiber->link */
-	ldw r14, __tTCS_link_OFFSET(r11)
+	ldw r14, __tTCS_link_OFFSET(r2)
 	stw r14, __tNANO_fiber_OFFSET(r10)
 	br next_chosen
 
 not_fiber:
 	/* Fiber was NULL, we'll choose nanokernel.task */
-	ldw r11, __tNANO_task_OFFSET(r10)
+	ldw r2, __tNANO_task_OFFSET(r10)
 
 next_chosen:
-	/* Set _nanokernel.current to value we chose for r11 */
-	stw r11, __tNANO_current_OFFSET(r10)
+	/* Set _nanokernel.current to value we chose for r2 */
+	stw r2, __tNANO_current_OFFSET(r10)
+#endif /* CONFIG_KERNEL_V2 */
+
+	/* At this point r2 points to the next thread to be swapped in */
 
 	/* Restore callee-saved registers and switch to the incoming
 	 * thread's stack
 	 */
-	ldw r16, __tTCS_coopReg_OFFSET + __t_coop_r16_OFFSET(r11)
-	ldw r17, __tTCS_coopReg_OFFSET + __t_coop_r17_OFFSET(r11)
-	ldw r18, __tTCS_coopReg_OFFSET + __t_coop_r18_OFFSET(r11)
-	ldw r19, __tTCS_coopReg_OFFSET + __t_coop_r19_OFFSET(r11)
-	ldw r20, __tTCS_coopReg_OFFSET + __t_coop_r20_OFFSET(r11)
-	ldw r21, __tTCS_coopReg_OFFSET + __t_coop_r21_OFFSET(r11)
-	ldw r22, __tTCS_coopReg_OFFSET + __t_coop_r22_OFFSET(r11)
-	ldw r23, __tTCS_coopReg_OFFSET + __t_coop_r23_OFFSET(r11)
-	ldw r28, __tTCS_coopReg_OFFSET + __t_coop_r28_OFFSET(r11)
-	ldw ra,  __tTCS_coopReg_OFFSET + __t_coop_ra_OFFSET(r11)
-	ldw sp,  __tTCS_coopReg_OFFSET + __t_coop_sp_OFFSET(r11)
+	ldw r16, __tTCS_coopReg_OFFSET + __t_coop_r16_OFFSET(r2)
+	ldw r17, __tTCS_coopReg_OFFSET + __t_coop_r17_OFFSET(r2)
+	ldw r18, __tTCS_coopReg_OFFSET + __t_coop_r18_OFFSET(r2)
+	ldw r19, __tTCS_coopReg_OFFSET + __t_coop_r19_OFFSET(r2)
+	ldw r20, __tTCS_coopReg_OFFSET + __t_coop_r20_OFFSET(r2)
+	ldw r21, __tTCS_coopReg_OFFSET + __t_coop_r21_OFFSET(r2)
+	ldw r22, __tTCS_coopReg_OFFSET + __t_coop_r22_OFFSET(r2)
+	ldw r23, __tTCS_coopReg_OFFSET + __t_coop_r23_OFFSET(r2)
+	ldw r28, __tTCS_coopReg_OFFSET + __t_coop_r28_OFFSET(r2)
+	ldw ra,  __tTCS_coopReg_OFFSET + __t_coop_ra_OFFSET(r2)
+	ldw sp,  __tTCS_coopReg_OFFSET + __t_coop_sp_OFFSET(r2)
 
-	/* Load return value into r2 (return value register). garbage
+	/* We need to irq_unlock(current->coopReg.key);
+	 * key was supplied as argument to _Swap(). Fetch it.
+	 */
+	ldw r3, __tTCS_coopReg_OFFSET + __t_coop_key_OFFSET(r2)
+
+	/* Load return value into r2 (return value register). -EAGAIN
 	 * unless someone previously called fiberRtnValueSet(). Do this
 	 * before we potentially unlock interrupts.
 	 */
-	ldw r2, __tTCS_coopReg_OFFSET + __t_coop_retval_OFFSET(r11)
+	ldw r2, __tTCS_coopReg_OFFSET + __t_coop_retval_OFFSET(r2)
 
-	/* irq_unlock(fiber->coopReg.key);
-	 * key was supplied as argument to _Swap()
-	 */
-	ldw r3, __tTCS_coopReg_OFFSET + __t_coop_key_OFFSET(r11)
+	/* Now do  irq_unlock(current->coopReg.key) */
 #if (ALT_CPU_NUM_OF_SHADOW_REG_SETS > 0) || \
 		(defined ALT_CPU_EIC_PRESENT) || \
 		(defined ALT_CPU_MMU_PRESENT) || \

@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#ifdef CONFIG_KERNEL_V2
+#include <kernel.h>		   /* public kernel API */
+#include <../../../kernel/unified/include/nano_internal.h>
+#else
+#include <nanokernel.h>            /* public nanokernel API */
+#include <../../../kernel/nanokernel/include/nano_internal.h>
+#endif
+
 #include <nano_private.h>
 #include <wait_q.h>
 #include <string.h>
@@ -44,9 +51,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
  * to _thread_entry() since this arch puts the first four arguments
  * in r4-r7 and not on the stack
  */
-void _thread_entry_wrapper(_thread_entry_t, _thread_arg_t,
-			   _thread_arg_t, _thread_arg_t);
-
+void _thread_entry_wrapper(_thread_entry_t, void *, void *, void *);
 
 struct init_stack_frame {
 	/* top of the stack / most recently pushed */
@@ -55,9 +60,9 @@ struct init_stack_frame {
 	 * into argument registers before calling _thread_entry()
 	 */
 	_thread_entry_t entry_point;
-	_thread_arg_t arg1;
-	_thread_arg_t arg2;
-	_thread_arg_t arg3;
+	void *arg1;
+	void *arg2;
+	void *arg3;
 
 	/* least recently pushed */
 };
@@ -65,8 +70,7 @@ struct init_stack_frame {
 
 void _new_thread(char *stack_memory, unsigned stack_size,
 		 void *uk_task_ptr, _thread_entry_t thread_func,
-		 _thread_arg_t arg1, _thread_arg_t arg2,
-		 _thread_arg_t arg3,
+		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned options)
 {
 	struct tcs *tcs;
@@ -87,22 +91,31 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 
 	/* Initialize various struct tcs members */
 	tcs = (struct tcs *)stack_memory;
-
-	tcs->link = (struct tcs *)NULL;
 	tcs->prio = priority;
 
+#ifdef CONFIG_KERNEL_V2
+	/* k_q_node initialized upon first insertion in a list */
+	tcs->flags = options | K_PRESTART;
+	tcs->sched_locked = 0;
+
+	/* static threads overwrite it afterwards with real value */
+	tcs->init_data = NULL;
+	tcs->fn_abort = NULL;
+#else
 	if (priority == -1) {
 		tcs->flags = PREEMPTIBLE | TASK;
 	} else {
 		tcs->flags = FIBER;
 	}
+	tcs->link = (struct tcs *)NULL; /* thread not inserted into list yet */
+#endif /* CONFIG_KERNEL_V2 */
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
 	tcs->custom_data = NULL;
 #endif
 
-#ifdef CONFIG_MICROKERNEL
+#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
 	tcs->uk_task_ptr = uk_task_ptr;
 #else
 	ARG_UNUSED(uk_task_ptr);

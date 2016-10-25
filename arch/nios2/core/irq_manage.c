@@ -80,6 +80,8 @@ void _enter_irq(uint32_t ipending)
 {
 	int index;
 
+	_nanokernel.nested++;
+
 #ifdef CONFIG_IRQ_OFFLOAD
 	_irq_do_offload();
 #endif
@@ -97,5 +99,7 @@ void _enter_irq(uint32_t ipending)
 		ite = &_sw_isr_table[index];
 		ite->isr(ite->arg);
 	}
+
+	_nanokernel.nested--;
 }
 

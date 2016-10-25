@@ -242,6 +242,17 @@ SECTIONS
                 _k_event_list_end = .;
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+    SECTION_DATA_PROLOGUE(_k_memory_pool, (OPTIONAL),)
+	{
+		*(._k_memory_pool.struct*)
+		KEEP(*(SORT_BY_NAME("._k_memory_pool.struct*")))
+
+		_k_mem_pool_start = .;
+		*(._k_memory_pool.*)
+		KEEP(*(SORT_BY_NAME("._k_memory_pool*")))
+		_k_mem_pool_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
         {
 

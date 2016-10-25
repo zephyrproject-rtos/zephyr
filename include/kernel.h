@@ -1774,7 +1774,11 @@ __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
 static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
 {
 	__asm__(".globl __memory_pool_quad_block_size\n\t"
+#ifdef CONFIG_NIOS2
+	    "__memory_pool_quad_block_size = %0\n\t"
+#else
 	    "__memory_pool_quad_block_size = %c0\n\t"
+#endif
 	    :
 	    : "n"(sizeof(struct k_mem_pool_quad_block)));
 }

@@ -234,7 +234,11 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 		if (curCtx == NANO_CTX_TASK) {
 			extern FUNC_NORETURN void _TaskAbort(void);
 			printk("Fatal task error! Aborting task.\n");
+#ifdef CONFIG_KERNEL_V2
+			k_thread_abort(_current);
+#else
 			_TaskAbort();
+#endif
 		} else
 #endif /* CONFIG_MICROKERNEL */
 		{

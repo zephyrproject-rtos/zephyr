@@ -25,6 +25,9 @@ GTEXT(_exception)
 /* import */
 GTEXT(_Fault)
 GTEXT(_Swap)
+#ifdef CONFIG_KERNEL_V2
+GTEXT(_is_next_thread_current)
+#endif
 #ifdef CONFIG_IRQ_OFFLOAD
 GTEXT(_irq_do_offload)
 GTEXT(_offload_routine)
@@ -125,6 +128,24 @@ on_irq_stack:
 	movhi r10, %hi(_nanokernel)
 	ori   r10, r10, %lo(_nanokernel)
 
+	ldw   r11, __tNANO_current_OFFSET(r10)
+#ifdef CONFIG_KERNEL_V2
+	/* Determine whether the exception of the ISR requires context
+	 * switch
+	 */
+
+	/* Do not reschedule coop threads (threads that have negative prio) */
+	ldw  r12, __tTCS_prio_OFFSET(r11)
+	blt  r12, zero, no_reschedule
+
+	/* Do not reschedule if scheduler is locked */
+	ldw  r12, __tTCS_sched_locked_OFFSET(r11)
+	bne  r12, zero, no_reschedule
+
+	/* Call into the kernel to see if a scheduling decision is necessary */
+	call _is_next_thread_current
+	bne  r2, zero, no_reschedule
+#else
 	/* Determine whether the execution of the ISR requires a context
 	 * switch.  If the interrupted thread is PREEMPTIBLE (a task) and
 	 * _nanokernel.fiber is non-NULL, a _Swap() needs to occur.
@@ -133,7 +154,6 @@ on_irq_stack:
 	/* Check (_nanokernel.current->flags & PREEMPTIBLE), if not
 	 * goto no_reschedule
 	 */
-	ldw  r11, __tNANO_current_OFFSET(r10)
 	ldw  r12, __tTCS_flags_OFFSET(r11)
 	movi r13, PREEMPTIBLE
 	and  r12, r13, r12
@@ -142,6 +162,7 @@ on_irq_stack:
 	/* Check _nanokernel.fiber != NULL, if NULL goto no_reschedule */
 	ldw  r11, __tNANO_fiber_OFFSET(r10)
 	beq  r11, zero, no_reschedule
+#endif /* CONFIG_KERNEL_V2 */
 
 	/*
 	 * A context reschedule is required: keep the volatile registers of
