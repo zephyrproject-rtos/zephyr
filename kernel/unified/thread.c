@@ -167,14 +167,11 @@ void *k_thread_custom_data_get(void)
 #if defined(CONFIG_THREAD_MONITOR)
 /*
  * Remove a thread from the kernel's list of active threads.
- *
- * On entry the current thread must be in a non-preemptible state to ensure
- * the list of threads does not change in mid-operation. (That is, it must
- * be non-preemptible or have locked the scheduler, or interrupts must be
- * locked.) This routine cannot be called from an ISR context.
  */
 void _thread_monitor_exit(struct k_thread *thread)
 {
+	unsigned int key = irq_lock();
+
 	if (thread == _nanokernel.threads) {
 		_nanokernel.threads = _nanokernel.threads->next_thread;
 	} else {
@@ -186,6 +183,8 @@ void _thread_monitor_exit(struct k_thread *thread)
 		}
 		prev_thread->next_thread = thread->next_thread;
 	}
+
+	irq_unlock(key);
 }
 #endif /* CONFIG_THREAD_MONITOR */
 
