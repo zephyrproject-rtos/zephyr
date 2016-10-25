@@ -52,7 +52,7 @@
 
 void fiber_abort(void)
 {
-	_thread_exit(_nanokernel.current);
+	_thread_monitor_exit(_nanokernel.current);
 	if (_ScbIsInThreadMode()) {
 		_nano_fiber_swap();
 	} else {

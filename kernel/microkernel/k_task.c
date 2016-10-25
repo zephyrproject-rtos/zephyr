@@ -252,7 +252,7 @@ static void abort_task(struct k_task *X)
 
 	/* Do normal thread exit cleanup */
 
-	_thread_exit((struct tcs *)X->workspace);
+	_thread_monitor_exit((struct tcs *)X->workspace);
 
 	/* Set TF_TERM and TF_STOP state flags */
 

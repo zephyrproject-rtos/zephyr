@@ -75,9 +75,9 @@ extern void _thread_essential_clear(void);
 /* clean up when a thread is aborted */
 
 #if defined(CONFIG_THREAD_MONITOR)
-extern void _thread_exit(struct tcs *tcs);
+extern void _thread_monitor_exit(struct tcs *tcs);
 #else
-#define _thread_exit(tcs) \
+#define _thread_monitor_exit(tcs) \
 	do {/* nothing */    \
 	} while (0)
 #endif /* CONFIG_THREAD_MONITOR */

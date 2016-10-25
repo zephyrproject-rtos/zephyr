@@ -165,28 +165,16 @@ void *k_thread_custom_data_get(void)
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
 
 #if defined(CONFIG_THREAD_MONITOR)
-/**
+/*
+ * Remove a thread from the kernel's list of active threads.
  *
- * @brief Thread exit routine
- *
- * This function is invoked when the specified thread is aborted, either
- * normally or abnormally. It is called for the termination of any thread,
- * (fibers and tasks).
- *
- * This routine must be invoked either from a fiber or from a task with
- * interrupts locked to guarantee that the list of threads does not change in
- * mid-operation. It cannot be called from ISR context.
- *
- * @return N/A
+ * On entry the current thread must be in a non-preemptible state to ensure
+ * the list of threads does not change in mid-operation. (That is, it must
+ * be non-preemptible or have locked the scheduler, or interrupts must be
+ * locked.) This routine cannot be called from an ISR context.
  */
-void _thread_exit(struct k_thread *thread)
+void _thread_monitor_exit(struct k_thread *thread)
 {
-	/*
-	 * Remove thread from the list of threads.  This singly linked list of
-	 * threads maintains ALL the threads in the system: both tasks and
-	 * fibers regardless of whether they are runnable.
-	 */
-
 	if (thread == _nanokernel.threads) {
 		_nanokernel.threads = _nanokernel.threads->next_thread;
 	} else {
@@ -308,7 +296,7 @@ int k_thread_cancel(k_tid_t tid)
 	}
 
 	_abort_thread_timeout(thread);
-	_thread_exit(thread);
+	_thread_monitor_exit(thread);
 
 	irq_unlock(key);
 

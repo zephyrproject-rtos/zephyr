@@ -172,7 +172,7 @@ FUNC_NORETURN void fiber_abort(void)
 {
 	/* Do normal thread exit cleanup, then give up CPU control */
 
-	_thread_exit(_nanokernel.current);
+	_thread_monitor_exit(_nanokernel.current);
 	_nano_fiber_swap();
 }
 #endif
@@ -214,7 +214,7 @@ void fiber_delayed_start_cancel(nano_thread_id_t handle)
 	int key = irq_lock();
 
 	_nano_timeout_abort(cancelled_tcs);
-	_thread_exit(cancelled_tcs);
+	_thread_monitor_exit(cancelled_tcs);
 
 	irq_unlock(key);
 }
