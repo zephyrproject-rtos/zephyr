@@ -26,16 +26,16 @@ static int shell_cmd_ping(int argc, char *argv[])
 	return 0;
 }
 
-static int shell_cmd_ticks(int argc, char *argv[])
+static int shell_cmd_uptime(int argc, char *argv[])
 {
-	printk("ticks: %u\n", sys_tick_get_32());
+	printk("uptime: %u ms\n", k_uptime_get_32());
 
 	return 0;
 }
 
-static int shell_cmd_highticks(int argc, char *argv[])
+static int shell_cmd_cycles(int argc, char *argv[])
 {
-	printk("highticks: %u\n", sys_cycle_get_32());
+	printk("cycles: %u hw cycles\n", k_cycle_get_32());
 
 	return 0;
 }
@@ -43,8 +43,8 @@ static int shell_cmd_highticks(int argc, char *argv[])
 
 const struct shell_cmd commands[] = {
 	{ "ping", shell_cmd_ping },
-	{ "ticks", shell_cmd_ticks },
-	{ "highticks", shell_cmd_highticks },
+	{ "uptime", shell_cmd_uptime },
+	{ "cycles", shell_cmd_cycles },
 	{ NULL, NULL }
 };
 
