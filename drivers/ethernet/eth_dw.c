@@ -142,7 +142,7 @@ static int eth_tx(struct device *port, struct net_buf *buf)
 	return 1;
 }
 
-void eth_dw_isr(struct device *port)
+static void eth_dw_isr(struct device *port)
 {
 	struct eth_runtime *context = port->driver_data;
 	uint32_t base_addr = context->base_addr;
