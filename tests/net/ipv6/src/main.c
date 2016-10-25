@@ -107,6 +107,28 @@ static const unsigned char icmpv6_ra[] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+/* IPv6 hop-by-hop option in the message */
+static const unsigned char ipv6_hbho[] = {
+/* IPv6 header starts here (IPv6 addresses are wrong) */
+0x60, 0x00, 0x00, 0x00, 0x00, 0x36, 0x00, 0x3f, /* `....6.? */
+0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* Hop-by-hop option starts here */
+0x11, 0x00,
+/* RPL sub-option starts here */
+0x63, 0x04, 0x80, 0x1e, 0x01, 0x00, /* ..c..... */
+/* UDP header starts here (checksum is "fixed" in this example) */
+0xaa, 0xdc, 0xbf, 0xd7, 0x00, 0x2e, 0xa2, 0x55, /* ......M. */
+/* User data starts here (38 bytes) */
+0x10, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, /* ........ */
+0x00, 0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x02, /* ........ */
+0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x00, 0x03, /* ........ */
+0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0xc9, /* ........ */
+0x00, 0x00, 0x01, 0x00, 0x00, 0x00,              /* ...... */
+};
+
 static bool test_failed;
 static struct nano_sem wait_data;
 
@@ -478,6 +500,42 @@ static bool net_test_ra_message(void)
 	return true;
 }
 
+static bool net_test_hbho_message(void)
+{
+	struct net_buf *buf, *frag;
+	struct net_if *iface;
+	uint16_t reserve;
+
+	buf = net_nbuf_get_reserve_tx(0);
+
+	NET_ASSERT_INFO(buf, "Out of TX buffers");
+
+	iface = net_if_get_default();
+
+	reserve = net_if_get_ll_reserve(iface, NULL);
+
+	frag = net_nbuf_get_reserve_data(reserve);
+
+	net_buf_frag_add(buf, frag);
+
+	net_nbuf_set_ll_reserve(buf, reserve);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+
+	net_nbuf_ll_clear(buf);
+
+	memcpy(net_buf_add(frag, sizeof(ipv6_hbho)),
+	       ipv6_hbho, sizeof(ipv6_hbho));
+
+	if (net_recv_data(iface, buf) < 0) {
+		TC_ERROR("Data receive for HBHO failed.");
+		return false;
+	}
+
+	return true;
+}
+
 static const struct {
 	const char *name;
 	bool (*func)(void);
@@ -492,6 +550,7 @@ static const struct {
 	{ "IPv6 prefix timeout", net_test_prefix_timeout },
 	{ "IPv6 prefix timeout overflow", net_test_prefix_timeout_overflow },
 	{ "IPv6 handle RA message", net_test_ra_message },
+	{ "IPv6 parse Hop-By-Hop Option", net_test_hbho_message },
 };
 
 void main(void)
