@@ -51,10 +51,10 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff);
  *  immediately after reception.
  *
  *  @param Pointer to network fragment
- *  @param Pointer to network buf (on NET_OK verdict only)
+ *  @param Pointer to network buf (on NET_CONTINUE verdict only)
  *
- *  @return NET_OK reassembly done,
- *          NET_CONTINUE waiting for other fragments,
+ *  @return NET_CONTINUE reassembly done,
+ *          NET_OK waiting for other fragments,
  *          NET_DROP invalid fragment.
  */
 

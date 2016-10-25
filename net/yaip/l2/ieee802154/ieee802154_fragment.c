@@ -434,7 +434,7 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
 			return NET_DROP;
 		}
 
-		return NET_CONTINUE;
+		return NET_OK;
 	}
 
 	/* Add data buffer to reassembly buffer */
@@ -452,10 +452,10 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
 		*buf = cache->buf;
 		clear_reass_cache(size, tag, false);
 
-		return NET_OK;
+		return NET_CONTINUE;
 	}
 
-	return NET_CONTINUE;
+	return NET_OK;
 }
 
 enum net_verdict ieee802154_reassemble(struct net_buf *frag,
@@ -478,7 +478,7 @@ enum net_verdict ieee802154_reassemble(struct net_buf *frag,
 		/* Received unfragmented packet, uncompress */
 		if (net_6lo_uncompress(frag)) {
 			*buf = frag;
-			return NET_OK;
+			return NET_CONTINUE;
 		}
 	}
 

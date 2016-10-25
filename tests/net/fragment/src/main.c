@@ -471,10 +471,10 @@ static int test_fragment(struct net_fragment_data *data)
 
 		switch (ieee802154_reassemble(rxbuf, &rbuf)) {
 		case NET_OK:
-			goto compare;
-		case NET_CONTINUE:
 			frag = frag->frags;
 			break;
+		case NET_CONTINUE:
+			goto compare;
 		case NET_DROP:
 			net_nbuf_unref(rxbuf);
 			goto end;
