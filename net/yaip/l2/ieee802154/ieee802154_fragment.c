@@ -288,7 +288,7 @@ static void update_protocol_header_lengths(struct net_buf *buf, uint16_t size)
 	}
 }
 
-static inline void clear_reass_cache(uint16_t size, uint16_t tag, bool fail)
+static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 {
 	uint8_t i;
 
@@ -297,10 +297,7 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag, bool fail)
 			continue;
 		}
 
-		/* Incase of failure unref the buffer */
-		if (fail) {
-			net_nbuf_unref(cache[i].buf);
-		}
+		net_nbuf_unref(cache[i].buf);
 
 		cache[i].buf = NULL;
 		cache[i].size = 0;
@@ -388,8 +385,7 @@ static inline struct frag_cache *get_reass_cache(struct net_buf *buf,
  *
  *  TODO append based on offset
  */
-static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
-						 struct net_buf **buf,
+static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 						 bool first)
 {
 	struct frag_cache *cache;
@@ -399,24 +395,24 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
 	uint8_t pos = 0;
 
 	/* Parse total size of packet */
-	size = get_datagram_size(frag->frags->data);
+	size = get_datagram_size(buf->frags->data);
 	pos += NET_6LO_FRAG_DATAGRAM_SIZE_LEN;
 
 	/* Parse the datagram tag */
-	tag = get_datagram_tag(frag->frags->data + pos);
+	tag = get_datagram_tag(buf->frags->data + pos);
 	pos += NET_6LO_FRAG_DATAGRAM_OFFSET_LEN;
 
 	if (!first) {
-		offset = ((uint16_t)frag->frags->data[pos]) << 3;
+		offset = ((uint16_t)buf->frags->data[pos]) << 3;
 		pos++;
 	}
 
 	/* Remove frag header and update data */
-	remove_frag_header(frag->frags, pos);
+	remove_frag_header(buf->frags, pos);
 
 	/* Uncompress the IP headers */
-	if (first && !net_6lo_uncompress(frag)) {
-		clear_reass_cache(size, tag, true);
+	if (first && !net_6lo_uncompress(buf)) {
+		clear_reass_cache(size, tag);
 		return NET_DROP;
 	}
 
@@ -427,9 +423,9 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
 	 *  to offset. Unref the Rx buf and cache the data buf,
 	 */
 
-	cache = get_reass_cache(frag, size, tag);
+	cache = get_reass_cache(buf, size, tag);
 	if (!cache) {
-		cache = set_reass_cache(frag, size, tag);
+		cache = set_reass_cache(buf, size, tag);
 		if (!cache) {
 			return NET_DROP;
 		}
@@ -438,46 +434,44 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
 	}
 
 	/* Add data buffer to reassembly buffer */
-	net_buf_frag_add(cache->buf, frag->frags);
-	frag->frags = NULL;
-
-	/* Unref Rx part of original buffer */
-	net_nbuf_unref(frag);
+	net_buf_frag_add(cache->buf, buf->frags);
+	buf->frags = NULL;
 
 	/* Check if all the fragments are received or not */
 	if (net_buf_frags_len(cache->buf->frags) == size) {
-		net_nbuf_compact(cache->buf->frags);
-		update_protocol_header_lengths(cache->buf,
-					       cache->size);
-		*buf = cache->buf;
-		clear_reass_cache(size, tag, false);
+		buf->frags = cache->buf->frags;
+		cache->buf->frags = NULL;
+
+		net_nbuf_compact(buf->frags);
+		update_protocol_header_lengths(buf, cache->size);
+
+		clear_reass_cache(size, tag);
 
 		return NET_CONTINUE;
 	}
 
+	/* Unref Rx part of original buffer */
+	net_nbuf_unref(buf);
+
 	return NET_OK;
 }
 
-enum net_verdict ieee802154_reassemble(struct net_buf *frag,
-				       struct net_buf **buf)
+enum net_verdict ieee802154_reassemble(struct net_buf *buf)
 {
-	if (!frag || !frag->frags) {
+	if (!buf || !buf->frags) {
 		return NET_DROP;
 	}
 
-	*buf = NULL;
-
-	switch (frag->frags->data[0] & 0xF0) {
+	switch (buf->frags->data[0] & 0xF0) {
 	case NET_6LO_DISPATCH_FRAG1:
 		/* First fragment with IP headers */
-		return add_frag_to_cache(frag, buf, true);
+		return add_frag_to_cache(buf, true);
 	case NET_6LO_DISPATCH_FRAGN:
 		/* Further fragments */
-		return add_frag_to_cache(frag, buf, false);
+		return add_frag_to_cache(buf, false);
 	default:
 		/* Received unfragmented packet, uncompress */
-		if (net_6lo_uncompress(frag)) {
-			*buf = frag;
+		if (net_6lo_uncompress(buf)) {
 			return NET_CONTINUE;
 		}
 	}

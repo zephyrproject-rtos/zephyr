@@ -50,15 +50,14 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff);
  *  per data tag, data offset and data size. First packet is uncompressed
  *  immediately after reception.
  *
- *  @param Pointer to network fragment
- *  @param Pointer to network buf (on NET_CONTINUE verdict only)
+ *  @param Pointer to network fragment, which gets updated to full reassembled
+ *         packet when verdict is NET_CONTINUE
  *
- *  @return NET_CONTINUE reassembly done,
+ *  @return NET_CONTINUE reassembly done, buf is complete
  *          NET_OK waiting for other fragments,
  *          NET_DROP invalid fragment.
  */
 
-enum net_verdict ieee802154_reassemble(struct net_buf *frag,
-				       struct net_buf **buf);
+enum net_verdict ieee802154_reassemble(struct net_buf *buf);
 
 #endif /* __NET_IEEE802154_FRAGMENT_H__ */

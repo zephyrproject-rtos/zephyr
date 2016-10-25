@@ -425,8 +425,9 @@ static struct net_fragment_data test_data_8 = {
 
 static int test_fragment(struct net_fragment_data *data)
 {
-	struct net_buf *buf, *frag, *dfrag, *rxbuf, *rbuf;
+	struct net_buf *rxbuf = NULL;
 	int result = TC_FAIL;
+	struct net_buf *buf, *frag, *dfrag;
 
 	buf = create_buf(data);
 	if (!buf) {
@@ -469,7 +470,7 @@ static int test_fragment(struct net_fragment_data *data)
 
 		net_buf_frag_add(rxbuf, dfrag);
 
-		switch (ieee802154_reassemble(rxbuf, &rbuf)) {
+		switch (ieee802154_reassemble(rxbuf)) {
 		case NET_OK:
 			frag = frag->frags;
 			break;
@@ -488,13 +489,14 @@ compare:
 	net_hexdump_frags("after-uncompression", rbuf);
 #endif
 
-	if (compare_data(rbuf, data)) {
+	if (compare_data(rxbuf, data)) {
 		result = TC_PASS;
 	}
 
 end:
+	net_nbuf_unref(rxbuf);
 	net_nbuf_unref(buf);
-	net_nbuf_unref(rbuf);
+
 	return result;
 }
 
