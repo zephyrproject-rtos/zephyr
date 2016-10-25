@@ -574,8 +574,8 @@ done:
 	return 0;
 }
 
-void eth_enc28j60_reg_cb(struct device *dev,
-			 void (*cb)(uint8_t *buffer, uint16_t len))
+static void eth_enc28j60_reg_cb(struct device *dev,
+				void (*cb)(uint8_t *buffer, uint16_t len))
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 
