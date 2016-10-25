@@ -1,0 +1,11 @@
+The CC3200 SDK provides a peripheral driver library and hardware
+register access header files for the Texas Instruments SimpleLink
+CC3200 SoC.
+
+The current version supported in Zephyr is CC3200 SDK V1.2.0, downloaded
+from:
+
+	http://www.ti.com/tool/cc3200sdk
+
+Files in driverlib/ and inc/ are copied from an SDK installation
+(without modification).
