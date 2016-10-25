@@ -26,6 +26,7 @@
 #include <power.h>
 #include <soc_power.h>
 #include <string.h>
+#include "soc_watch_logger.h"
 
 static enum power_states states_list[] = {
 	SYS_POWER_STATE_CPU_LPS,
@@ -385,6 +386,11 @@ void main(void)
 #endif
 
 	build_suspend_device_list();
+
+#ifdef CONFIG_SOC_WATCH
+	/* Start the event monitoring thread */
+	soc_watch_logger_thread_start();
+#endif
 
 	/* All our application does is putting the task to sleep so the kernel
 	 * triggers the suspend operation.

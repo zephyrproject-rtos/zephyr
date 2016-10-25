@@ -36,7 +36,6 @@
 #include <x86intrin.h>
 #include "qm_common.h"
 #include "qm_soc_regs.h"
-#include "qm_interrupt.h"
 #include "soc_watch.h"
 
 /*
@@ -238,6 +237,62 @@ static void eb_write_uint32(uint32_t *data)
 	soc_watch_event_buffer.eb_idx += sizeof(uint32_t);
 }
 
+/* x86 CPU FLAGS.IF register field (Interrupt enable Flag, bit 9), indicating
+ * whether or not CPU interrupts are enabled.
+ */
+#define X86_FLAGS_IF BIT(9)
+
+/**
+ * Save interrupt state and disable all interrupts on the CPU.
+ * Defined locally for modularity when used in other contexts (i.e. RTOS)
+ *
+ * @return An architecture-dependent lock-out key representing the "interrupt
+ * 	   disable state" prior to the call.
+ */
+static inline unsigned int soc_watch_irq_lock(void)
+{
+	unsigned int key = 0;
+
+	/*
+	 * Store the CPU FLAGS register into the variable `key' and disable
+	 * interrupt delivery to the core.
+	 */
+	__asm__ __volatile__("pushfl;\n\t"
+			     "cli;\n\t"
+			     "popl %0;\n\t"
+			     : "=g"(key)
+			     :
+			     : "memory");
+
+	return key;
+}
+
+/**
+ *
+ * Restore previous interrupt state on the CPU saved via soc_watch_irq_lock().
+ * Defined locally for modularity when used in other contexts (i.e. RTOS)
+ *
+ * @param[in] key architecture-dependent lock-out key returned by a previous
+ * 		  invocation of soc_watch_irq_lock().
+ */
+static inline void soc_watch_irq_unlock(unsigned int key)
+{
+	/*
+	 * `key' holds the CPU FLAGS register content at the time when
+	 * soc_watch_irq_lock() was called.
+	 */
+	if (!(key & X86_FLAGS_IF)) {
+		/*
+		 * Interrupts were disabled when soc_watch_irq_lock() was invoked:
+		 * do not re-enable interrupts.
+		 */
+		return;
+	}
+
+	/* Enable interrupts */
+	__asm__ __volatile__("sti;\n\t" : :);
+}
+
 /* Log an event with one parameter. */
 void soc_watch_log_event(soc_watch_event_t event_id, uintptr_t ev_data)
 {
@@ -255,13 +310,14 @@ void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 	static uint8_t record_rtc = 0;
 	const uint32_t *rtc_ctr = (uint32_t *)&QM_RTC->rtc_ccvr;
 	const char *cp;
+	unsigned int irq_flag = 0;
 	uint64_t tsc = __builtin_ia32_rdtsc(); /* Grab hi-res timestamp */
 	uint32_t rtc_val = *rtc_ctr;
 
 #define AVG_EVENT_SIZE 8 /* Size of a typical message in bytes. */
 
 	MLOG('[');
-	qm_irq_disable();
+	irq_flag = soc_watch_irq_lock();
 	/* TODO: We know exactly how many bytes of storage we need,
 	 * since we know the event code.  So don't do an "AVG" size thing
 	 * here--use the exact size!
@@ -289,7 +345,7 @@ void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 		if (event_id >= SOCW_EVENT_MAX) {
 			SOC_WATCH_TRACE("Unknown event id: 0x%x\n", event_id);
 			MLOG('?');
-			qm_irq_enable();
+			soc_watch_irq_unlock(irq_flag);
 			return;
 		}
 		cp = ev_strs[event_id]; /* Look up event string */
@@ -348,7 +404,7 @@ void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 	}
 	MLOG(':');
 	MLOG_BYTE(soc_watch_event_buffer.eb_idx);
-	qm_irq_enable();
+	soc_watch_irq_unlock(irq_flag);
 	MLOG(']');
 }
 

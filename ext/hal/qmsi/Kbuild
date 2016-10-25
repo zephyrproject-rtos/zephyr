@@ -25,3 +25,4 @@ obj-$(CONFIG_SPI_QMSI_SS) += drivers/spi/qm_ss_spi.o
 obj-$(CONFIG_GPIO_QMSI_SS) += drivers/gpio/qm_ss_gpio.o
 obj-$(CONFIG_I2C_QMSI_SS) += drivers/i2c/qm_ss_i2c.o
 obj-$(CONFIG_ADC_QMSI_SS) += drivers/adc/qm_ss_adc.o
+obj-$(CONFIG_SOC_WATCH) += drivers/soc_watch.o
