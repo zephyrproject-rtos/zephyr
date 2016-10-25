@@ -234,12 +234,6 @@ DEVICE_DEFINE(gpio_aon, CONFIG_GPIO_QMSI_1_NAME, &gpio_qmsi_init,
 
 #endif /* CONFIG_GPIO_QMSI_1 */
 
-/*
- * TODO: Zephyr's API is not clear about the behavior of the this
- * application callback. This topic is currently under
- * discussion, so this implementation will be fixed as soon as a
- * decision is made.
- */
 static void gpio_qmsi_callback(struct device *port, uint32_t status)
 {
 	struct gpio_qmsi_runtime *context = port->driver_data;
@@ -283,11 +277,6 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 {
 	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	qm_gpio_t gpio = gpio_config->gpio;
-
-	/* Save int mask and mask this pin while we configure the port.
-	 * We do this to avoid "spurious interrupts", which is a behavior
-	 * we have observed on QMSI and that still needs investigation.
-	 */
 	qm_gpio_port_config_t cfg = { 0 };
 
 	cfg.direction = QM_GPIO[gpio]->gpio_swporta_ddr;
