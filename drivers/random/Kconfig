@@ -62,7 +62,7 @@ config RANDOM_KSDK
 	depends on RANDOM_GENERATOR && HAS_RNGA
 	default n
 	help
-	This option enables the random number generator accelerator (RNGA) driver based on the
-	KSDK RNGA driver.
+	  This option enables the random number generator accelerator (RNGA)
+	  driver based on the KSDK RNGA driver.
 
 endmenu
