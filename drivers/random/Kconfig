@@ -56,9 +56,9 @@ config TIMER_RANDOM_GENERATOR
 	  clock. This number generator is not random and used for
 	  testing only.
 
-config KSDK_RNGA
+config RANDOM_KSDK
 	bool
-	prompt "KSDK RNGA driver"
+	prompt "KSDK Random driver"
 	depends on RANDOM_GENERATOR && HAS_RNGA
 	default n
 	help

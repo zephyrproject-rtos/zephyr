@@ -16,4 +16,4 @@
 
 obj-$(CONFIG_ETH_KSDK) += fsl_enet.o
 obj-$(CONFIG_I2C_KSDK) += fsl_i2c.o
-obj-$(CONFIG_KSDK_RNGA) += fsl_rnga.o
+obj-$(CONFIG_RANDOM_KSDK) += fsl_rnga.o
