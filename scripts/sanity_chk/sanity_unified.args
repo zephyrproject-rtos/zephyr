@@ -1,0 +1,14 @@
+--platform
+qemu_cortex_m3
+--platform
+qemu_x86
+--platform
+qemu_x86_iamcu
+--tag
+unified_capable
+-x
+KERNEL_TYPE=unified
+-O
+unified
+-o
+unified.cvs
