@@ -135,6 +135,7 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 #else
 	tcs->link = NULL;
 	tcs->flags = priority == -1 ? TASK | PREEMPTIBLE : FIBER;
+	ARG_UNUSED(options);
 #endif
 	tcs->prio = priority;
 

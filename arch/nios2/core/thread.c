@@ -107,6 +107,7 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 	} else {
 		tcs->flags = FIBER;
 	}
+	ARG_UNUSED(options);
 	tcs->link = (struct tcs *)NULL; /* thread not inserted into list yet */
 #endif /* CONFIG_KERNEL_V2 */
 

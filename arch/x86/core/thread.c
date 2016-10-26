@@ -93,10 +93,6 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	/* ptr to the new task's tcs */
 	struct tcs *tcs = (struct tcs *)pStackMem;
 
-#ifndef CONFIG_FP_SHARING
-	ARG_UNUSED(options);
-#endif /* !CONFIG_FP_SHARING */
-
 	tcs->prio = priority;
 #if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
 	tcs->excNestCount = 0;
@@ -121,6 +117,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 		tcs->flags = PREEMPTIBLE | TASK;
 	else
 		tcs->flags = FIBER;
+	ARG_UNUSED(options);
 	tcs->link = (struct tcs *)NULL; /* thread not inserted into list yet */
 #endif
 

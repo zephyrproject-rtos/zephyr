@@ -392,7 +392,7 @@ void _init_static_threads(void)
 			thread_data->init_p2,
 			thread_data->init_p3,
 			thread_data->init_prio,
-			0);
+			thread_data->init_options);
 
 		thread_data->thread->init_data = thread_data;
 	}
