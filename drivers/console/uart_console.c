@@ -149,6 +149,8 @@ static uint8_t (*completion_cb)(char *line, uint8_t len);
 #define ANSI_DOWN          'B'
 #define ANSI_FORWARD       'C'
 #define ANSI_BACKWARD      'D'
+#define ANSI_END           'F'
+#define ANSI_HOME          'H'
 
 static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
 {
@@ -303,6 +305,24 @@ ansi_cmd:
 		end -= ansi_val;
 		cur += ansi_val;
 		cursor_forward(ansi_val);
+		break;
+	case ANSI_HOME:
+		if (!cur) {
+			break;
+		}
+
+		cursor_backward(cur);
+		end += cur;
+		cur = 0;
+		break;
+	case ANSI_END:
+		if (!end) {
+			break;
+		}
+
+		cursor_forward(end);
+		cur += end;
+		end = 0;
 		break;
 	default:
 		break;
