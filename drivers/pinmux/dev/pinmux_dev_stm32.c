@@ -77,7 +77,7 @@ static const struct pinmux_driver_api pinmux_stm32_api = {
 	.input = pinmux_stm32_input,
 };
 
-int pinmux_stm32_init(struct device *port)
+static int pinmux_stm32_init(struct device *port)
 {
 	return 0;
 }
