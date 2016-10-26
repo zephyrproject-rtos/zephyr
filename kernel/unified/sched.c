@@ -99,7 +99,6 @@ void _reschedule_threads(int key)
 	}
 }
 
-/* application API: lock the scheduler */
 void k_sched_unlock(void)
 {
 	__ASSERT(_nanokernel.current->sched_locked > 0, "");
@@ -216,13 +215,11 @@ int _is_next_thread_current(void)
 	return _get_next_ready_thread() == _current;
 }
 
-/* application API: get a thread's priority */
 int  k_thread_priority_get(k_tid_t thread)
 {
 	return thread->prio;
 }
 
-/* application API: change a thread's priority. Not callable from ISR */
 void k_thread_priority_set(k_tid_t tid, int prio)
 {
 	__ASSERT(!_is_in_isr(), "");
@@ -258,12 +255,6 @@ void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 	*cache = *cache == thread ? NULL : *cache;
 }
 
-/*
- * application API: the current thread yields control to threads of higher or
- * equal priorities. This is done by remove the thread from the ready queue,
- * putting it back at the end of its priority's list and invoking the
- * scheduler.
- */
 void k_yield(void)
 {
 	__ASSERT(!_is_in_isr(), "");
@@ -279,7 +270,6 @@ void k_yield(void)
 	}
 }
 
-/* application API: put the current thread to sleep */
 void k_sleep(int32_t duration)
 {
 	__ASSERT(!_is_in_isr(), "");
@@ -303,7 +293,6 @@ void k_sleep(int32_t duration)
 	_Swap(key);
 }
 
-/* application API: wakeup a sleeping thread */
 void k_wakeup(k_tid_t thread)
 {
 	int key = irq_lock();
@@ -328,7 +317,6 @@ void k_wakeup(k_tid_t thread)
 	}
 }
 
-/* application API: get current thread ID */
 k_tid_t k_current_get(void)
 {
 	return _current;

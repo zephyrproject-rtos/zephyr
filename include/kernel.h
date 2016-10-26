@@ -103,18 +103,112 @@ enum execution_context_types {
 };
 
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
+
+/**
+ * @brief Initialize and start a thread with an optional delay
+ *
+ * This routine initializes a thread and optionally delays its execution.
+ * It is not ISR-callable.
+ *
+ * If a thread of priority higher than the current thread is spawned, and the
+ * current thread id preemptible, the current thread is preempted by the new
+ * thread.
+ *
+ * @param stack Pointer to the stack space.
+ * @param stack_size Stack size in bytes.
+ * @param entry Thread entry function.
+ * @param p1 1st entry point parameter.
+ * @param p2 2nd entry point parameter.
+ * @param p3 3rd entry point parameter.
+ * @param prio The thread's priority.
+ * @param options Not used currently.
+ * @param delay Duration of execution delay in milliseconds
+ *
+ * @return Kernel thread identifier
+ */
 extern k_tid_t k_thread_spawn(char *stack, unsigned stack_size,
 			      void (*entry)(void *, void *, void*),
 			      void *p1, void *p2, void *p3,
 			      int32_t prio, uint32_t options, int32_t delay);
 
+/**
+ * @brief Put the current thread to sleep
+ *
+ * This routine puts the currently thread to sleep for the specified
+ * number of milliseconds.
+ *
+ * @param duration Number of milliseconds the thread is to sleep
+ *
+ * @return N/A
+ */
 extern void k_sleep(int32_t duration);
+
+/**
+ * @brief Cause the current thread to busy wait
+ *
+ * This routine causes the current thread to execute a "do nothing" loop for
+ * a specified period of microseconds.
+ *
+ * @warning This routine utilizes the system clock, so it must not be invoked
+ * until the system clock is fully operational or while interrupts are
+ * locked.
+ *
+ * @return N/A
+ */
 extern void k_busy_wait(uint32_t usec_to_wait);
+
+/**
+ * @brief Yield the current thread
+ *
+ * Calling this routine results in the current thread yielding to another
+ * thread of the same or higher priority. If there are no other ready threads
+ * of the same or higher priority, the routine will return immediately.
+ *
+ * @return N/A
+ */
 extern void k_yield(void);
+
+/**
+ * @brief Wake the specified thread from sleep
+ *
+ * This routine wakes the thread specified by @a thread from its sleep.
+ *
+ * @param thread Identifies thread to wake
+ *
+ * @return N/A
+ */
 extern void k_wakeup(k_tid_t thread);
+
+/**
+ * @brief Obtain the thread ID of the currently executing thread
+ *
+ * @return Current thread ID
+ */
 extern k_tid_t k_current_get(void);
+
+/**
+ * @brief Cancel a delayed thread start
+ *
+ * @param thread Delayed thread ID
+ *
+ * @retval 0 on success
+ * @retval -EINVAL Thread has already started or not delayed
+ */
 extern int k_thread_cancel(k_tid_t thread);
 
+/**
+ * @brief Abort a thread
+ *
+ * Execution of @a thread is immediately permanently cancelled. @a thread is
+ * taken off the ready queue if ready, or out of any wait queues and/or
+ * timeout queues it might be currently queued on. However, objects it might
+ * currently owned, such as mutexes, are not released. It is up to the
+ * subsystems managing the objects to handle this.
+ *
+ * @param thread Thread to abort
+ *
+ * @return N/A
+ */
 extern void k_thread_abort(k_tid_t thread);
 
 #define K_THREAD_GROUP_EXE 0x1
@@ -199,17 +293,128 @@ struct _static_thread_data {
 				NULL, 0); \
 	const k_tid_t name = (k_tid_t)_k_thread_obj_##name
 
+/**
+ * @brief Get a thread's priority
+ *
+ * @param thread ID of thread to query
+ *
+ * @return Specified thread's priority
+ */
 extern int  k_thread_priority_get(k_tid_t thread);
+
+/**
+ * @brief Set the priority of a thread
+ *
+ * This routine immediately changes the priority of the specified thread.
+ *
+ * Rescheduling can occur immediately depending on the priority @a thread is
+ * set to:
+ *
+ * - If its priority is raised above the priority of the caller of this
+ * function, and the caller is preemptible, @a thread will be scheduled in.
+ *
+ * - If the caller operates on itself, it lowers its priority below that of
+ * other threads in the system, and the caller is preemptible, the thread of
+ * highest priority will be scheduled in.
+ *
+ * Priority can be assigned in the range of -CONFIG_NUM_COOP_PRIORITIES to
+ * CONFIG_NUM_PREEMPT_PRIORITIES-1, where -CONFIG_NUM_COOP_PRIORITIES is the
+ * highest priority.
+ *
+ * @param thread Thread whose priority is to be set.
+ * @param prio New priority.
+ *
+ * @warning Changing the priority of a thread currently involved in mutex
+ * priority inheritance may result in undefined behavior.
+ *
+ * @return N/A
+ */
 extern void k_thread_priority_set(k_tid_t thread, int prio);
 
+/**
+ * @brief Suspend a thread
+ *
+ * Remove @a thread from scheduling decisions. All other internal operations
+ * on @a thread will still be performed: any timeout it is on keeps ticking
+ * and delivered upon expiry, objects it is waiting on are still handed to it,
+ * etc.
+ *
+ * @param thread Thread to suspend
+ *
+ * @return N/A
+ */
 extern void k_thread_suspend(k_tid_t thread);
+
+/**
+ * @brief Resume a previously suspended thread
+ *
+ * Resume using @a thread in scheduling decisions.
+ *
+ * @param thread Thread to resume
+ *
+ * @return N/A
+ */
 extern void k_thread_resume(k_tid_t thread);
 
+/**
+ * @brief Set time-slicing period and scope
+ *
+ * This routine controls how thread time slicing is performed by the scheduler
+ * on preemptible threads; it specifes the maximum time slice length (in
+ * milliseconds) and the highest thread priority level for which time slicing
+ * is performed.
+ *
+ * To enable time slicing, a non-zero time slice length must be specified.
+ * The scheduler then ensures that no executing thread runs for more than the
+ * specified number of milliseconds before giving other threads of that priority
+ * a chance to execute. (However, any thread whose priority is higher than the
+ * specified thread priority level is exempted, and may execute as long as
+ * desired without being pre-empted due to time slicing.)
+ *
+ * Time slicing limits only the maximum amount of time a thread may continuously
+ * execute. Once the scheduler selects a thread for execution, there is no
+ * minimum guaranteed time the thread will execute before threads of greater or
+ * equal priority are scheduled.
+ *
+ * When the currently-executing thread is the only one of that priority eligible
+ * for execution, this routine has no effect; the thread is immediately
+ * rescheduled after the slice period expires.
+ *
+ * To disable timeslicing, call the API with both parameters set to zero.
+ *
+ * @return N/A
+ */
 extern void k_sched_time_slice_set(int32_t slice, int prio);
 
+/**
+ * @brief Determine if code is running at interrupt level
+ *
+ * @return 0 if invoked by a thread, or non-zero if invoked by an ISR
+ */
 extern int k_am_in_isr(void);
 
+/**
+ * @brief Set thread's custom data
+ *
+ * This routine sets the custom data value for the current thread. Custom
+ * data is not used by the kernel itself, and is freely available for the
+ * thread to use as it sees fit.
+ *
+ * This provides a skeleton upon which to build thread-local storage.
+ *
+ * @param value New value to set the thread's custom data to.
+ *
+ * @return N/A
+ */
 extern void k_thread_custom_data_set(void *value);
+
+/**
+ * @brief Get thread's custom data
+ *
+ * This function returns the custom data value for the current thread.
+ *
+ * @return current custom data value
+ */
 extern void *k_thread_custom_data_get(void);
 
 /**
@@ -285,6 +490,16 @@ struct k_timer {
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
+/**
+ * @brief Statically define a timer and initialize it
+ *
+ * If the timer is to be accessed outside the module where it is defined, it
+ * can be declared via
+ *
+ *    extern struct k_timer @a name;
+ *
+ * @param name Name of the timer variable.
+ */
 #define K_TIMER_DEFINE(name) \
 	struct k_timer name = K_TIMER_INITIALIZER(name)
 
@@ -380,7 +595,6 @@ extern uint32_t k_timer_status_sync(struct k_timer *timer);
  *
  * @return Remaining time (in milliseconds).
  */
-
 extern int32_t k_timer_remaining_get(struct k_timer *timer);
 
 
@@ -391,7 +605,6 @@ extern int32_t k_timer_remaining_get(struct k_timer *timer);
  *
  * @return The current uptime of the system in ms
  */
-
 extern int64_t k_uptime_get(void);
 
 /**
@@ -407,7 +620,6 @@ extern int64_t k_uptime_get(void);
  *
  * @return The current uptime of the system in ms
  */
-
 extern uint32_t k_uptime_get_32(void);
 
 /**
@@ -418,7 +630,6 @@ extern uint32_t k_uptime_get_32(void);
  *
  * @return The delta between the reference time and the current uptime.
  */
-
 extern int64_t k_uptime_delta(int64_t *reftime);
 
 /**
@@ -432,9 +643,16 @@ extern int64_t k_uptime_delta(int64_t *reftime);
  *
  * @return The delta between the reference time and the current uptime.
  */
-
 extern uint32_t k_uptime_delta_32(int64_t *reftime);
 
+/**
+ * @brief Read the platform's timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles.
+ *
+ * @return up counter of elapsed clock cycles
+ */
 extern uint32_t k_cycle_get_32(void);
 
 /**
@@ -450,10 +668,92 @@ struct k_fifo {
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_fifo);
 };
 
+/**
+ * @brief Initialize a kernel FIFO object.
+ *
+ * This routine initializes a kernel FIFO object structure. It must not be
+ * called from an ISR.
+ *
+ * @param fifo FIFO to initialize.
+ *
+ * @return N/A
+ */
 extern void k_fifo_init(struct k_fifo *fifo);
+
+/**
+ * @brief Add an element to the end of a FIFO.
+ *
+ * This routine adds an element to the end of a FIFO. FIFO data items must be
+ * aligned on a 4-byte boundary, as the kernel reserves the first 32 bits of
+ * each item for use as a pointer to the next data item in the FIFO's link
+ * list. Each data item added to the FIFO must include and reserve these first
+ * 32 bits.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param data Data to send.
+ *
+ * @return N/A
+ */
 extern void k_fifo_put(struct k_fifo *fifo, void *data);
+
+/**
+ * @brief Atomically add a list of elements to the end of a FIFO.
+ *
+ * This routine adds a list of elements in one shot to the end of a FIFO
+ * object. If threads are pending on the FIFO object, they become ready to run.
+ * If this API is called from a preemptible thread, the highest priority one
+ * will preempt the running thread once the put operation is complete.
+ *
+ * If enough threads are waiting on the FIFO, the address of each element given
+ * to threads is returned to the waiting thread. The remaining elements are
+ * linked to the end of the list.
+ *
+ * The list must be a singly-linked list, where each element only has a pointer
+ * to the next one. The list must be NULL-terminated.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param head head of singly-linked list
+ * @param tail tail of singly-linked list
+ *
+ * @return N/A
+ */
 extern void k_fifo_put_list(struct k_fifo *fifo, void *head, void *tail);
+
+/**
+ * @brief Atomically add a list of elements to the end of a FIFO.
+ *
+ * See k_fifo_put_list for the description of the behaviour.
+ *
+ * It takes a pointer to a sys_slist_t object instead of the head and tail of
+ * a custom singly-linked list. The sys_slist_t object is invalid afterwards
+ * and must be re-initialized via sys_slist_init().
+ *
+ * @param fifo FIFO on which to interact.
+ * @param list pointer to singly-linked list
+ *
+ * @return N/A
+ */
 extern void k_fifo_put_slist(struct k_fifo *fifo, sys_slist_t *list);
+
+/**
+ * @brief Get an element from the head of a FIFO.
+ *
+ * If no element is available, the function returns NULL. The first word in
+ * the element contains invalid data because its memory location was used to
+ * store a pointer to the next element in the linked list.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param timeout Number of milliseconds to wait for item if FIFO is empty,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @warning If it is to be called from the context of an ISR, then @a
+ * timeout must be set to K_NO_WAIT.
+ *
+ * @return Pointer to head element in the list when available.
+ *         NULL Otherwise.
+ *
+ * @sa K_NO_WAIT, K_FOREVER
+ */
 extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
 
 #define K_FIFO_INITIALIZER(obj) \
@@ -463,6 +763,16 @@ extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
+/**
+ * @brief Statically define a FIFO and initialize it
+ *
+ * If the FIFO is to be accessed outside the module where it is defined, it
+ * can be declared via
+ *
+ *    extern struct k_fifo @a name;
+ *
+ * @param name Name of the FIFO variable.
+ */
 #define K_FIFO_DEFINE(name) \
 	struct k_fifo name = K_FIFO_INITIALIZER(name)
 
@@ -475,8 +785,53 @@ struct k_lifo {
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_lifo);
 };
 
+/**
+ * @brief Initialize a kernel linked list LIFO object.
+ *
+ * This routine initializes a kernel LIFO object structure. It must not be
+ * called from an ISR.
+ *
+ * @param lifo LIFO to initialize.
+ *
+ * @return N/A
+ */
 extern void k_lifo_init(struct k_lifo *lifo);
+
+/**
+ * @brief Prepend an element to a LIFO
+ *
+ * This routine prepends an element to a LIFO. LIFO data items must be
+ * aligned on a 4-byte boundary, as the kernel reserves the first 32 bits of
+ * each item for use as a pointer to the next data item in the LIFO's link
+ * list. Each data item added to the LIFO must include and reserve these first
+ * 32 bits.
+ *
+ * @param lifo LIFO on which to interact.
+ * @param data Data to send.
+ *
+ * @return N/A
+ */
 extern void k_lifo_put(struct k_lifo *lifo, void *data);
+
+/**
+ * @brief Get the first element from a LIFO.
+ *
+ * If no element is available, the function returns NULL. The first word in
+ * the element contains invalid data because its memory location was used to
+ * store a pointer to the next element in the linked list.
+ *
+ * @param lifo LIFO on which to interact.
+ * @param timeout Number of milliseconds to wait for item if LIFO is empty,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @warning If it is to be called from the context of an ISR, then @a
+ * timeout must be set to K_NO_WAIT.
+ *
+ * @return Pointer to head element in the list when available.
+ *         NULL Otherwise.
+ *
+ * @sa K_NO_WAIT, K_FOREVER
+ */
 extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
 
 #define K_LIFO_INITIALIZER(obj) \
@@ -486,6 +841,16 @@ extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
+/**
+ * @brief Statically define a LIFO and initialize it
+ *
+ * If the LIFO is to be accessed outside the module where it is defined, it
+ * can be declared via
+ *
+ *    extern struct k_lifo @a name;
+ *
+ * @param name Name of the LIFO variable.
+ */
 #define K_LIFO_DEFINE(name) \
 	struct k_lifo name = K_LIFO_INITIALIZER(name)
 
@@ -512,6 +877,17 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
+/**
+ * @brief Statically define a stack object and initialize it
+ *
+ * If the stack is to be accessed outside the module where it is defined, it
+ * can be declared via
+ *
+ *    extern struct k_stack @a name;
+ *
+ * @param name Name of the stack object variable.
+ * @param stack_num_entries Number of entries in the stack object
+ */
 #define K_STACK_DEFINE(name, stack_num_entries)                \
 	uint32_t __noinit                                      \
 		_k_stack_buf_##name[stack_num_entries];        \
@@ -528,10 +904,10 @@ struct k_work;
 typedef void (*k_work_handler_t)(struct k_work *);
 
 /**
- * A workqueue is a fiber that executes @ref k_work items that are
+ * A workqueue is a thread that executes @ref k_work items that are
  * queued to it.  This is useful for drivers which need to schedule
  * execution of code which might sleep from ISR context.  The actual
- * fiber identifier is not stored in the structure in order to save
+ * thread identifier is not stored in the structure in order to save
  * space.
  */
 struct k_work_q {
@@ -598,6 +974,10 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 
 /**
  * @brief Check if work item is pending.
+ *
+ * @param work Work item to query
+ *
+ * @return K_WORK_STATE_PENDING if pending, 0 if not
  */
 static inline int k_work_pending(struct k_work *work)
 {
@@ -605,17 +985,24 @@ static inline int k_work_pending(struct k_work *work)
 }
 
 /**
- * @brief Start a new workqueue.  This routine can be called from either
- * fiber or task context.
+ * @brief Start a new workqueue.
+ *
+ * This routine must not be called from an ISR.
+ *
+ * @param work_q Pointer to Work queue
+ * @param stack Pointer to work queue thread's stack
+ * @param stack_size Size of the work queue thread's stack
+ * @param prio Priority of the work queue's thread
+ *
+ * @return N/A
  */
 extern void k_work_q_start(struct k_work_q *work_q, char *stack,
 			   unsigned stack_size, unsigned prio);
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS)
 
- /*
- * @brief An item which can be scheduled on a @ref k_work_q with a
- * delay.
+/**
+ * @brief An item which can be scheduled on a @ref k_work_q with a delay
  */
 struct k_delayed_work {
 	struct k_work work;
@@ -625,6 +1012,13 @@ struct k_delayed_work {
 
 /**
  * @brief Initialize delayed work
+ *
+ * Initialize a delayed work item.
+ *
+ * @param work Delayed work item
+ * @param handler Routine invoked when processing delayed work item
+ *
+ * @return N/A
  */
 extern void k_delayed_work_init(struct k_delayed_work *work,
 				k_work_handler_t handler);
@@ -632,7 +1026,7 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
 /**
  * @brief Submit a delayed work item to a workqueue.
  *
- * This procedure schedules a work item to be processed after a delay.
+ * This routine schedules a work item to be processed after a delay.
  * Once the delay has passed, the work item is submitted to the work queue:
  * at this point, it is no longer possible to cancel it. Once the work item's
  * handler is about to be executed, the work is considered complete and can be
@@ -655,7 +1049,7 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 /**
  * @brief Cancel a delayed work item
  *
- * This procedure cancels a scheduled work item. If the work has been completed
+ * This routine cancels a scheduled work item. If the work has been completed
  * or is idle, this will do nothing. The only case where this can fail is when
  * the work has been submitted to the work queue, but the handler has not run
  * yet.
@@ -672,13 +1066,13 @@ extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
 extern struct k_work_q k_sys_work_q;
 
-/*
+/**
  * @brief Submit a work item to the system workqueue.
  *
  * @ref k_work_submit_to_queue
  *
  * When using the system workqueue it is not recommended to block or yield
- * on the handler since its fiber is shared system wide it may cause
+ * on the handler since its thread is shared system wide it may cause
  * unexpected behavior.
  */
 static inline void k_work_submit(struct k_work *work)
@@ -687,13 +1081,13 @@ static inline void k_work_submit(struct k_work *work)
 }
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS)
-/*
+/**
  * @brief Submit a delayed work item to the system workqueue.
  *
  * @ref k_delayed_work_submit_to_queue
  *
  * When using the system workqueue it is not recommended to block or yield
- * on the handler since its fiber is shared system wide it may cause
+ * on the handler since its thread is shared system wide it may cause
  * unexpected behavior.
  */
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
@@ -741,11 +1135,67 @@ struct k_mutex {
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
+/**
+ * @brief Statically define a mutex object and initialize it
+ *
+ * If the mutex is to be accessed outside the module where it is defined, it
+ * can be declared via
+ *
+ *    extern struct k_mutex @a name;
+ *
+ * @param name Name of the mutex object variable.
+ */
 #define K_MUTEX_DEFINE(name) \
 	struct k_mutex name = K_MUTEX_INITIALIZER(name)
 
+/**
+ * @brief Initialize a mutex
+ *
+ * Upon initialization, the mutex is available and does not have an owner.
+ *
+ * @param mutex Mutex to initialize
+ *
+ * @return N/A
+ */
 extern void k_mutex_init(struct k_mutex *mutex);
+
+/**
+ * @brief Lock a mutex
+ *
+ * This routine locks mutex @a mutex. When the mutex is locked by another
+ * thread, the thread calling this function will either wait until the mutex
+ * becomes available, or until a specified timeout expires.
+ *
+ * A thread is permitted to lock a mutex it has already locked; in such a case,
+ * this routine immediately succeeds and the lock count is increased by 1.
+ *
+ * @param mutex Pointer to a mutex object.
+ * @param timeout Number of milliseconds to wait if mutex is unavailable,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 When semaphore is obtained successfully.
+ * @retval -EBUSY Failed to immediately lock mutex when @a timeout is K_NO_WAIT.
+ * @retval -EAGAIN When timeout expires.
+ *
+ * @sa K_NO_WAIT, K_FOREVER
+ */
 extern int k_mutex_lock(struct k_mutex *mutex, int32_t timeout);
+
+/**
+ * @brief Unlock a mutex
+ *
+ * This routine unlocks mutex @a mutex. The mutex must already be locked by the
+ * requesting thread.
+ *
+ * The mutex cannot be claimed by another thread until it has been unlocked by
+ * the requesting thread as many times as it was previously locked by that
+ * thread.
+ *
+ * @param mutex Mutex name.
+ *
+ * @return N/A
+ */
+
 extern void k_mutex_unlock(struct k_mutex *mutex);
 
 /* semaphores */
@@ -909,11 +1359,11 @@ extern void k_sem_group_reset(struct k_sem *sem_array[]);
  *
  * @brief Statically define and initialize a global semaphore.
  *
- * Create a global semaphore named @name. It is initialized as if k_sem_init()
+ * Create a global semaphore named @a name. It is initialized as if k_sem_init()
  * was called on it. If the semaphore is to be accessed outside the module
  * where it is defined, it can be declared via
  *
- *    extern struct k_sem @name;
+ *    extern struct k_sem @a name;
  *
  * @param name Name of the semaphore variable.
  * @param initial_count Initial count.
@@ -950,13 +1400,69 @@ extern void _alert_deliver(struct k_work *work);
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
+/**
+ * @brief Statically define and initialize a global alert
+ *
+ * Create a global alert named @a name. It is initialized as if k_alert_init()
+ * was called on it. If the alert is to be accessed outside the module
+ * where it is defined, it can be declared via
+ *
+ *    extern struct k_alert @a name;
+ *
+ * @param name Alert name
+ * @param alert_handler Handler to invoke after the delivery of the alert
+ */
 #define K_ALERT_DEFINE(name, alert_handler) \
 	struct k_alert name \
 		__in_section(_k_event_list, alert, name) = \
 		K_ALERT_INITIALIZER(name, alert_handler)
 
+/**
+ * @brief Initialize an alert object.
+ *
+ * This routine initializes a kernel alert object structure. It must not be
+ * called from an ISR.
+ *
+ * @param alert Pointer to the alert object
+ * @param handler Routine to invoke after delivery of alert
+ *
+ * @return N/A
+ */
 extern void k_alert_init(struct k_alert *alert, k_alert_handler_t handler);
+
+/**
+ * @brief Receive an alert
+ *
+ * The current execution context tries to receive the alert. If the
+ * semaphore is unavailable and a timeout other than K_NO_WAIT is specified,
+ * the context will pend.
+ *
+ * @param alert Pointer to a alert object.
+ * @param timeout Number of milliseconds to wait if alert is unavailable,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @warning If it is called from the context of an ISR, then the only legal
+ * value for @a timeout is K_NO_WAIT.
+ *
+ * @retval 0 When alert is received successfully.
+ * @retval -EAGAIN When timeout expires.
+ * @retval -EBUSY When unavailable and the timeout is K_NO_WAIT.
+ *
+ * @sa K_NO_WAIT, K_FOREVER
+ */
 extern int k_alert_recv(struct k_alert *alert, int32_t timeout);
+
+/**
+ * @brief Signal an alert
+ *
+ * This routine signals the specified alert. If an alert handler is installed
+ * for that alert, it will run. If no alert handler is installed, any thread
+ * waiting on the alert is released.
+ *
+ * @param alert Alert to signal
+ *
+ * @return N/A
+ */
 extern void k_alert_send(struct k_alert *alert);
 
 /**
@@ -1000,6 +1506,11 @@ struct k_msgq {
  *
  * Note that for each of the mesages in the message queue to be aligned to
  * @a q_align bytes, then @a q_msg_size must be a multiple of @a q_align.
+ *
+ * If the message queue is to be accessed outside the module where it is
+ * defined, it can be declared via
+ *
+ *    extern struct k_msgq @a name;
  *
  * @param q_name Name of the message queue
  * @param q_msg_size The size in bytes of each message
@@ -1154,6 +1665,11 @@ struct k_mbox {
  * This declares and initializes a mailbox. The new mailbox can be passed to
  * the kernel's mailbox functions.
  *
+ * If the mailbox is to be accessed outside the module where it is defined, it
+ * can be declared via
+ *
+ *    extern struct k_mbox @a name;
+ *
  * @param name Name of the mailbox
  */
 #define K_MBOX_DEFINE(name) \
@@ -1304,6 +1820,21 @@ struct k_pipe {
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT                            \
 	}
 
+/**
+ * @brief Define a pipe
+ *
+ * This declares and initializes a pipe. The new pipe can be passed to
+ * the kernel's pipe functions.
+ *
+ * If the pipe is to be accessed outside the module where it is defined, it
+ * can be declared via
+ *
+ *    extern struct k_pipe @a name;
+ *
+ * @param name Name of the mailbox
+ * @param pipe_buffer_size Size of the pipe's buffer (may be zero)
+ * @param pipe_align Alignment of the pipe's buffer
+ */
 #define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)     \
 	static unsigned char __noinit __aligned(pipe_align)   \
 		_k_pipe_buf_##name[pipe_buffer_size];         \
@@ -1421,15 +1952,20 @@ struct k_mem_slab {
 	}
 
 /**
- * @brief Define a memory slab
+ * @brief Define a memory slab allocator
  *
- * This declares and initializes a memory slab whose buffer is aligned to
- * a @a slab_align -byte boundary. The new memory slab can be passed to the
+ * This declares and initializes a slab allocator whose buffer is aligned to
+ * a @a slab_align -byte boundary. The new slab allocator can be passed to the
  * kernel's memory slab functions.
  *
  * Note that for each of the blocks in the memory slab to be aligned to
  * @a slab_align bytes, then @a slab_block_size must be a multiple of
  * @a slab_align.
+ *
+ * If the slab allocator is to be accessed outside the module where it is
+ * defined, it can be declared via
+ *
+ *    extern struct k_mem_slab @a name;
  *
  * @param name Name of the memory slab
  * @param slab_block_size Size of each block in the buffer (in bytes)
@@ -1706,6 +2242,11 @@ __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
  *
  * Note that for each of the minimum sized blocks to be aligned to @a align
  * bytes, then @a min_size must be a multiple of @a align.
+ *
+ * If the pool is to be accessed outside the module where it is defined, it
+ * can be declared via
+ *
+ *    extern struct k_mem_pool @a name;
  *
  * @param name Name of the memory pool
  * @param min_size Minimum block size in the pool

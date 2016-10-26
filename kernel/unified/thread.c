@@ -54,12 +54,6 @@ int sys_execution_context_type_get(void)
 	return NANO_CTX_TASK;
 }
 
-/**
- *
- * @brief Determine if code is running at interrupt level
- *
- * @return 0 if invoked by a thread, or non-zero if invoked by an ISR
- */
 int k_am_in_isr(void)
 {
 	return _is_in_isr();
@@ -116,31 +110,11 @@ void k_busy_wait(uint32_t usec_to_wait)
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 
-/**
- *
- * @brief Set thread's custom data
- *
- * This routine sets the custom data value for the current thread.
- * Custom data is not used by the kernel itself, and is freely available
- * for the thread to use as it sees fit.
- *
- * @param value New to set the thread's custom data to.
- *
- * @return N/A
- */
 void k_thread_custom_data_set(void *value)
 {
 	_current->custom_data = value;
 }
 
-/**
- *
- * @brief Get thread's custom data
- *
- * This function returns the custom data value for the current thread.
- *
- * @return current handle value
- */
 void *k_thread_custom_data_get(void)
 {
 	return _current->custom_data;
