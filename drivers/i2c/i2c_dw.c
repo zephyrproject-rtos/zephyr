@@ -190,7 +190,7 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 	device_sync_call_complete(&dw->sync);
 }
 
-void i2c_dw_isr(void *arg)
+static void i2c_dw_isr(void *arg)
 {
 	struct device *port = (struct device *)arg;
 	struct i2c_dw_dev_config * const dw = port->driver_data;
@@ -660,7 +660,7 @@ static inline int i2c_dw_pci_setup(struct device *dev)
 #define i2c_dw_pci_setup(_unused_) (1)
 #endif /* CONFIG_PCI */
 
-int i2c_dw_initialize(struct device *port)
+static int i2c_dw_initialize(struct device *port)
 {
 	const struct i2c_dw_rom_config * const rom = port->config->config_info;
 	struct i2c_dw_dev_config * const dev = port->driver_data;
@@ -712,7 +712,7 @@ int i2c_dw_initialize(struct device *port)
 
 /* system bindings */
 #if CONFIG_I2C_0
-void i2c_config_0(struct device *port);
+static void i2c_config_0(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_0 = {
 #ifdef CONFIG_I2C_0_IRQ_DIRECT
@@ -725,7 +725,7 @@ static const struct i2c_dw_rom_config i2c_config_dw_0 = {
 #endif
 };
 
-struct i2c_dw_dev_config i2c_0_runtime = {
+static struct i2c_dw_dev_config i2c_0_runtime = {
 	.base_address = I2C_DW_0_BASE_ADDR,
 	.app_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
 #if CONFIG_PCI
@@ -744,7 +744,7 @@ DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 		    SECONDARY, CONFIG_I2C_INIT_PRIORITY,
 		    &funcs);
 
-void i2c_config_0(struct device *port)
+static void i2c_config_0(struct device *port)
 {
 #if defined(CONFIG_I2C_0_IRQ_DIRECT)
 	struct i2c_dw_rom_config * const rom = port->driver_data;
@@ -769,14 +769,14 @@ void i2c_config_0(struct device *port)
  * Adding in I2C1
  */
 #if CONFIG_I2C_1
-void i2c_config_1(struct device *port);
+static void i2c_config_1(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_1 = {
 	.irq_num = I2C_DW_1_IRQ,
 	.config_func = i2c_config_1,
 };
 
-struct i2c_dw_dev_config i2c_1_runtime = {
+static struct i2c_dw_dev_config i2c_1_runtime = {
 	.base_address = I2C_DW_1_BASE_ADDR,
 	.app_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
 
@@ -796,7 +796,7 @@ DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_1_NAME, &i2c_dw_initialize,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 
-void i2c_config_1(struct device *port)
+static void i2c_config_1(struct device *port)
 {
 	struct i2c_dw_rom_config * const rom = port->driver_data;
 
