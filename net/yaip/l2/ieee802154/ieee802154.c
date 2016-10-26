@@ -197,9 +197,26 @@ enum net_verdict ieee802154_manage_recv_buffer(struct net_if *iface,
 out:
 	return verdict;
 }
+
+static inline bool ieee802154_manage_send_buffer(struct net_if *iface,
+						 struct net_buf *buf)
+{
+	bool ret;
+
+#ifdef NET_L2_IEEE802154_FRAGMENT
+	ret = net_6lo_compress(buf, true, ieee802154_fragment);
+#else
+	ret = net_6lo_compress(buf, true, NULL);
+#endif
+	pkt_hexdump(buf, true);
+
+	return ret;
+}
+
 #else /* CONFIG_NET_6LO */
 
 #define ieee802154_manage_recv_buffer(...) NET_CONTINUE
+#defite ieee802154_manage_send_buffer(...) true
 
 #endif /* CONFIG_NET_6LO */
 
@@ -269,13 +286,9 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 
 	pkt_hexdump(buf, true);
 
-#ifdef CONFIG_NET_6LO
-	if (!net_6lo_compress(buf, true, NULL)) {
+	if (!ieee802154_manage_send_buffer(iface, buf)) {
 		return NET_DROP;
 	}
-
-	pkt_hexdump(buf, true);
-#endif /* CONFIG_NET_6LO */
 
 	net_if_queue_tx(iface, buf);
 
