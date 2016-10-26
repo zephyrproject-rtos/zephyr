@@ -220,7 +220,9 @@ uint16_t ieee802154_compute_header_size(struct net_if *iface,
 					struct in6_addr *dst);
 
 bool ieee802154_create_data_frame(struct net_if *iface,
-				  struct net_buf *buf);
+				  struct net_buf *buf,
+				  uint8_t *p_buf,
+				  uint8_t len);
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 bool ieee802154_create_ack_frame(struct net_if *iface,

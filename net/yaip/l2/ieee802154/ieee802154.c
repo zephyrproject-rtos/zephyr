@@ -202,7 +202,8 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 					struct net_buf *buf)
 {
 	if (net_nbuf_family(buf) != AF_INET6 ||
-	    !ieee802154_create_data_frame(iface, buf)) {
+	    !ieee802154_create_data_frame(iface, buf, net_nbuf_ll(buf),
+					  net_nbuf_ll_reserve(buf))) {
 		return NET_DROP;
 	}
 

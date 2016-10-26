@@ -382,17 +382,19 @@ uint8_t *generate_addressing_fields(struct net_if *iface,
 	return p_buf;
 }
 
-bool ieee802154_create_data_frame(struct net_if *iface, struct net_buf *buf)
+bool ieee802154_create_data_frame(struct net_if *iface,
+				  struct net_buf *buf,
+				  uint8_t *p_buf,
+				  uint8_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	uint8_t *p_buf = net_nbuf_ll(buf);
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
 
 	fs = generate_fcf_grounds(&p_buf);
 
 	fs->fc.frame_type = IEEE802154_FRAME_TYPE_DATA;
-	fs->sequence = ctx->sequence;
+	fs->sequence = ctx->sequence++;
 
 	params.dst.pan_id = ctx->pan_id;
 	params.pan_id = ctx->pan_id;
