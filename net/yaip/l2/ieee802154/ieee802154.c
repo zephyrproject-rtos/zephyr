@@ -231,10 +231,22 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 static enum net_verdict ieee802154_send(struct net_if *iface,
 					struct net_buf *buf)
 {
-	if (net_nbuf_family(buf) != AF_INET6 ||
-	    !ieee802154_create_data_frame(iface, buf, net_nbuf_ll(buf),
-					  net_nbuf_ll_reserve(buf))) {
+	uint8_t reserved_space = net_nbuf_ll_reserve(buf);
+	struct net_buf *frag;
+
+	if (net_nbuf_family(buf) != AF_INET6) {
 		return NET_DROP;
+	}
+
+	frag = buf->frags;
+	while (frag) {
+		if (!ieee802154_create_data_frame(iface, buf,
+						  frag->data - reserved_space,
+						  reserved_space)) {
+			return NET_DROP;
+		}
+
+		frag = frag->frags;
 	}
 
 	pkt_hexdump(buf, true);
