@@ -27,6 +27,7 @@
 #include "gpio_utils.h"
 #include "qm_isr.h"
 #include "clk.h"
+#include "soc.h"
 #include <power.h>
 
 struct gpio_qmsi_config {
@@ -419,18 +420,20 @@ static int gpio_qmsi_init(struct device *port)
 				  CLK_PERIPH_GPIO_INTERRUPT |
 				  CLK_PERIPH_GPIO_DB |
 				  CLK_PERIPH_CLK);
-		IRQ_CONNECT(QM_IRQ_GPIO_0_INT, CONFIG_GPIO_QMSI_0_IRQ_PRI,
-			qm_gpio_0_isr, 0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(QM_IRQ_GPIO_0_INT);
-		QM_INTERRUPT_ROUTER->gpio_0_int_mask &= ~BIT(0);
+		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_GPIO_0_INT),
+			    CONFIG_GPIO_QMSI_0_IRQ_PRI, qm_gpio_0_isr, 0,
+			    IOAPIC_LEVEL | IOAPIC_HIGH);
+		irq_enable(IRQ_GET_NUMBER(QM_IRQ_GPIO_0_INT));
+		QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->gpio_0_int_mask);
 		break;
 #ifdef CONFIG_GPIO_QMSI_1
 	case QM_AON_GPIO_0:
-		IRQ_CONNECT(QM_IRQ_AON_GPIO_0_INT,
+		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_AON_GPIO_0_INT),
 			    CONFIG_GPIO_QMSI_1_IRQ_PRI, qm_aon_gpio_0_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(QM_IRQ_AON_GPIO_0_INT);
-		QM_INTERRUPT_ROUTER->aon_gpio_0_int_mask &= ~BIT(0);
+		irq_enable(IRQ_GET_NUMBER(QM_IRQ_AON_GPIO_0_INT));
+		QM_IR_UNMASK_INTERRUPTS(
+			QM_INTERRUPT_ROUTER->aon_gpio_0_int_mask);
 		break;
 #endif /* CONFIG_GPIO_QMSI_1 */
 	default:

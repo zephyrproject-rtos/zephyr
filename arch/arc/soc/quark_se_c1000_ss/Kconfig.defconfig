@@ -83,7 +83,7 @@ endif # RTC
 if GPIO
 
 config GPIO_QMSI
-	def_bool n
+	def_bool y
 
 if GPIO_QMSI
 
