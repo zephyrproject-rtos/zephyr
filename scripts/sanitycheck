@@ -643,14 +643,14 @@ class MakeGenerator:
 """
 
     MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
-\t$(MAKE) -C {directory} O={outdir} V={verb} EXTRA_CFLAGS="-Werror {cflags} -Wno-deprecated-declarations" EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
+\t$(MAKE) -C {directory} USE_CCACHE={use_ccache} O={outdir} V={verb} EXTRA_CFLAGS="-Werror {cflags} -Wno-deprecated-declarations" EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
 """
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
 
     re_make = re.compile("sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
 
-    def __init__(self, base_outdir, asserts=False):
+    def __init__(self, base_outdir, asserts=False, ccache=0):
         """MakeGenerator constructor
 
         @param base_outdir Intended to be the base out directory. A make.log
@@ -665,6 +665,7 @@ class MakeGenerator:
         self.logfile = os.path.join(base_outdir, "make.log")
         self.makefile = os.path.join(base_outdir, "Makefile")
         self.asserts = asserts
+        self.ccache = ccache
 
     def _get_rule_header(self, name):
         return MakeGenerator.GOAL_HEADER_TMPL.format(goal=name)
@@ -676,7 +677,7 @@ class MakeGenerator:
             cflags="-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
         else:
             cflags=""
-        return MakeGenerator.MAKE_RULE_TMPL.format(phase=phase, goal=name,
+        return MakeGenerator.MAKE_RULE_TMPL.format(phase=phase, goal=name, use_ccache=self.ccache,
                                                    outdir=outdir, cflags=cflags,
                                                    directory=workdir, verb=verb,
                                                    args=args, logfile=logfile)
@@ -809,8 +810,6 @@ class MakeGenerator:
                 tf.write(goal.text)
             tf.write("all: %s\n" % (" ".join(self.goals.keys())))
             tf.flush()
-
-            # os.environ["CC"] = "ccache gcc" FIXME doesn't work
 
             cmd = ["make", "-k", "-j", str(CPU_COUNTS * 2), "-f", tf.name, "all"]
             p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
@@ -1296,7 +1295,7 @@ class TestSuite:
 
     def apply_filters(self, platform_filter, arch_filter, tag_filter, exclude_tag,
                       config_filter, testcase_filter, last_failed, all_plats,
-                      platform_limit, toolchain, extra_args):
+                      platform_limit, toolchain, extra_args, enable_ccache):
         instances = []
         discards = {}
         verbose("platform filter: " + str(platform_filter))
@@ -1304,6 +1303,7 @@ class TestSuite:
         verbose("     tag_filter: " + str(tag_filter))
         verbose("    exclude_tag: " + str(exclude_tag))
         verbose("  config_filter: " + str(config_filter))
+        verbose("  enable_ccache: " + str(enable_ccache))
 
         if last_failed:
             failed_tests = self.get_last_failed()
@@ -1318,7 +1318,7 @@ class TestSuite:
             info("Selecting default platforms per test case")
             default_platforms = True
 
-        mg = MakeGenerator(self.outdir)
+        mg = MakeGenerator(self.outdir, ccache=enable_ccache)
         dlist = {}
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
@@ -1501,7 +1501,7 @@ class TestSuite:
             self.instances[ti.name] = ti
 
     def execute(self, cb, cb_context, build_only, enable_slow, enable_asserts,
-                extra_args):
+                extra_args, enable_ccache):
 
         def calc_one_elf_size(name, goal):
             if not goal.failed:
@@ -1511,7 +1511,7 @@ class TestSuite:
                 goal.metrics["rom_size"] = sc.get_rom_size()
                 goal.metrics["unrecognized"] = sc.unrecognized_sections()
 
-        mg = MakeGenerator(self.outdir, asserts=enable_asserts)
+        mg = MakeGenerator(self.outdir, asserts=enable_asserts, ccache=enable_ccache)
         for i in self.instances.values():
             mg.add_test_instance(i, build_only, enable_slow, self.coverage, extra_args)
         self.goals = mg.execute(cb, cb_context)
@@ -1664,6 +1664,9 @@ def parse_arguments():
                  "and why")
     parser.add_argument("--compare-report",
             help="Use this report file for size comparision")
+
+    parser.add_argument("--ccache", action="store_const", const=1, default=0,
+            help="Enable the use of ccache when building")
 
     parser.add_argument("-y", "--dry-run", action="store_true",
             help="Create the filtered list of test cases, but don't actually "
@@ -1849,7 +1852,7 @@ def main():
     ts = TestSuite(args.arch_root, args.testcase_root, args.outdir, args.coverage)
     discards = ts.apply_filters(args.platform, args.arch, args.tag, args.exclude_tag, args.config,
                                 args.test, args.only_failed, args.all,
-                                args.platform_limit, toolchain, args.extra_args)
+                                args.platform_limit, toolchain, args.extra_args, args.ccache)
 
     if args.discard_report:
         ts.discard_report(args.discard_report)
@@ -1868,11 +1871,11 @@ def main():
     if VERBOSE or not TERMINAL:
         goals = ts.execute(chatty_test_cb, ts.instances, args.build_only,
                            args.enable_slow, args.enable_asserts,
-                           args.extra_args)
+                           args.extra_args, args.ccache)
     else:
         goals = ts.execute(terse_test_cb, ts.instances, args.build_only,
                            args.enable_slow, args.enable_asserts,
-                           args.extra_args)
+                           args.extra_args, args.ccache)
         info("")
 
     # figure out which report to use for size comparison
