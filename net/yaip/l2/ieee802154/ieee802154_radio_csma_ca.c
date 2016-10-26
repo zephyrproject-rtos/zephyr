@@ -27,7 +27,8 @@
 #include "ieee802154_frame.h"
 #include "ieee802154_radio_utils.h"
 
-static int csma_ca_radio_send(struct net_if *iface, struct net_buf *buf)
+static inline int csma_ca_tx_fragment(struct net_if *iface,
+				      struct net_buf *buf)
 {
 	const uint8_t max_bo = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO;
 	const uint8_t max_be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE;
@@ -35,7 +36,7 @@ static int csma_ca_radio_send(struct net_if *iface, struct net_buf *buf)
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_radio_api *radio =
 		(struct ieee802154_radio_api *)iface->dev->driver_api;
-	bool ack_required = prepare_for_ack(ctx, buf);
+		bool ack_required = prepare_for_ack(ctx, buf);
 	uint8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
 	uint8_t nb = 0;
 	int ret = -EIO;
@@ -68,17 +69,18 @@ loop:
 			continue;
 		}
 
-		ctx->sequence++;
-
 		ret = wait_for_ack(ctx, ack_required);
 		if (!ret) {
 			break;
 		}
 	}
 
-	net_nbuf_unref(buf);
-
 	return ret;
+}
+
+static int csma_ca_radio_send(struct net_if *iface, struct net_buf *buf)
+{
+	return tx_buffer_fragments(iface, buf, csma_ca_tx_fragment);
 }
 
 static enum net_verdict csma_ca_radio_handle_ack(struct net_if *iface,

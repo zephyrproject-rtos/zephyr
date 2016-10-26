@@ -17,6 +17,9 @@
 #ifndef __IEEE802154_RADIO_UTILS_H__
 #define __IEEE802154_RADIO_UTILS_H__
 
+typedef int (ieee802154_radio_tx_frag_t)(struct net_if *iface,
+					 struct net_buf *buf);
+
 static inline bool prepare_for_ack(struct ieee802154_context *ctx,
 				   struct net_buf *buf)
 {
@@ -59,6 +62,30 @@ static inline int handle_ack(struct ieee802154_context *ctx,
 	}
 
 	return NET_CONTINUE;
+}
+
+static inline int tx_buffer_fragments(struct net_if *iface,
+				      struct net_buf *buf,
+				      ieee802154_radio_tx_frag_t *tx_func)
+{
+	int ret = 0;
+	struct net_buf *frag;
+
+	frag = buf->frags;
+	while (frag) {
+		ret = tx_func(iface, buf);
+		if (ret) {
+			break;
+		}
+
+		frag = net_buf_frag_del(buf, frag);
+	}
+
+	if (!ret) {
+		net_nbuf_unref(buf);
+	}
+
+	return ret;
 }
 
 #endif /* __IEEE802154_RADIO_UTILS_H__ */

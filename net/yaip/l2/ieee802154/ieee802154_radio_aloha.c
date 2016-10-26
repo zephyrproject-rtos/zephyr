@@ -24,14 +24,15 @@
 #include "ieee802154_frame.h"
 #include "ieee802154_radio_utils.h"
 
-static int aloha_radio_send(struct net_if *iface, struct net_buf *buf)
+static inline int aloha_tx_fragment(struct net_if *iface,
+				    struct net_buf *buf)
 {
 	uint8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	bool ack_required = prepare_for_ack(ctx, buf);
 	struct ieee802154_radio_api *radio =
 		(struct ieee802154_radio_api *)iface->dev->driver_api;
-	bool ack_required = prepare_for_ack(ctx, buf);
-	int ret;
+	int ret = -EIO;
 
 	while (retries) {
 		retries--;
@@ -41,17 +42,18 @@ static int aloha_radio_send(struct net_if *iface, struct net_buf *buf)
 			continue;
 		}
 
-		ctx->sequence++;
-
 		ret = wait_for_ack(ctx, ack_required);
 		if (!ret) {
 			break;
 		}
 	}
 
-	net_nbuf_unref(buf);
-
 	return ret;
+}
+
+static int aloha_radio_send(struct net_if *iface, struct net_buf *buf)
+{
+	return tx_buffer_fragments(iface, buf, aloha_tx_fragment);
 }
 
 static enum net_verdict aloha_radio_handle_ack(struct net_if *iface,
