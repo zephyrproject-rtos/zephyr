@@ -67,12 +67,32 @@ static int fake_set_txpower(struct device *dev, int16_t dbm)
 	return 0;
 }
 
+static inline void insert_frag_dummy_way(struct net_buf *buf)
+{
+	if (current_buf->frags) {
+		struct net_buf *frag, *prev_frag = NULL;
+
+		frag = current_buf->frags;
+		while (frag) {
+			prev_frag = frag;
+
+			frag = frag->frags;
+		}
+
+		prev_frag->frags = net_buf_ref(buf->frags);
+	} else {
+		current_buf->frags = net_buf_ref(buf->frags);
+	}
+}
+
 static int fake_tx(struct device *dev, struct net_buf *buf)
 {
 	TC_PRINT("Sending buffer %p - length %u\n",
 		 buf, net_buf_frags_len(buf));
 
-	current_buf = net_buf_ref(buf);
+	net_nbuf_set_ll_reserve(current_buf, net_nbuf_ll_reserve(buf));
+
+	insert_frag_dummy_way(buf);
 
 	nano_sem_give(&driver_lock);
 

@@ -163,7 +163,7 @@ static inline int test_ns_sending(struct ieee802154_pkt_test *t)
 
 	nano_sem_take(&driver_lock, MSEC(10));
 
-	if (!current_buf) {
+	if (!current_buf->frags) {
 		TC_ERROR("*** Could not send IPv6 NS packet\n");
 		return TC_FAIL;
 	}
@@ -178,8 +178,8 @@ static inline int test_ns_sending(struct ieee802154_pkt_test *t)
 		return TC_FAIL;
 	}
 
-	net_buf_unref(current_buf);
-	current_buf = NULL;
+	net_buf_unref(current_buf->frags);
+	current_buf->frags = NULL;
 
 	return TC_PASS;
 }
@@ -215,7 +215,7 @@ static inline int test_ack_reply(struct ieee802154_pkt_test *t)
 	nano_sem_take(&driver_lock, MSEC(20));
 
 	/* an ACK packet should be in current_buf */
-	if (!current_buf) {
+	if (!current_buf->frags) {
 		TC_ERROR("*** No ACK reply sent\n");
 		return TC_FAIL;
 	}
@@ -234,6 +234,9 @@ static inline int test_ack_reply(struct ieee802154_pkt_test *t)
 		return TC_FAIL;
 	}
 
+	net_buf_unref(current_buf->frags);
+	current_buf->frags = NULL;
+
 	return TC_PASS;
 }
 
@@ -243,7 +246,11 @@ static inline int initialize_test_environment(void)
 
 	nano_sem_init(&driver_lock);
 
-	current_buf = NULL;
+	current_buf = net_nbuf_get_reserve_rx(0);
+	if (!current_buf) {
+		TC_ERROR("*** No buffer to allocate\n");
+		return TC_FAIL;
+	}
 
 	dev = device_get_binding("fake_ieee802154");
 	if (!dev) {
