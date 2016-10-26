@@ -86,7 +86,7 @@ struct hp206c_device_data {
 	struct device *i2c;
 #ifdef CONFIG_NANO_TIMERS
 #if CONFIG_SYS_CLOCK_TICKS_PER_SEC < 2000
-#error "SYS_CLOCK_TICKS_PER_SEC > 2000 needed for better timeouts granularity."
+#error "SYS_CLOCK_TICKS_PER_SEC >= 2000 needed for better timeouts granularity."
 #endif
 	struct nano_timer tmr;
 #endif
