@@ -385,10 +385,10 @@ static inline void net_analyze_stack(const char *name,
 	size -= stack_offset;
 	pcnt = ((size - unused) * 100) / size;
 
-	printk("net (%p): %s stack real size %u "
-	       "unused %u usage %u/%u (%u %%)\n",
-	       sys_thread_self_get(), name,
-	       size + stack_offset, unused, size - unused, size, pcnt);
+	printk("net (%p): %s stack real size %zu "
+	       "unused %u usage %zu/%zu (%u %%)\n",
+	       sys_thread_self_get(), name, size + stack_offset,
+	       unused, size - unused, size, pcnt);
 }
 #else
 #define net_analyze_stack(...)
