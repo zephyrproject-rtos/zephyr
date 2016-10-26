@@ -37,11 +37,9 @@
 
 #include <stdio.h>
 
-static void pkt_hexdump(uint8_t *pkt, uint8_t length)
+static inline void hexdump(uint8_t *pkt, uint16_t length, uint8_t reserve)
 {
 	int i;
-
-	printf("IEEE 802.15.4 payload content:\n");
 
 	for (i = 0; i < length;) {
 		int j;
@@ -49,11 +47,43 @@ static void pkt_hexdump(uint8_t *pkt, uint8_t length)
 		printf("\t");
 
 		for (j = 0; j < 10 && i < length; j++, i++) {
-			printf("%02x ", *pkt);
-			pkt++;
+#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
+			if (i < reserve) {
+				printf(SYS_LOG_COLOR_YELLOW);
+			} else {
+				printf(SYS_LOG_COLOR_OFF);
+			}
+#endif
+			printf("%02x ", *pkt++);
 		}
 
+#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
+		if (i < reserve) {
+			printf(SYS_LOG_COLOR_OFF);
+		}
+#endif
 		printf("\n");
+	}
+}
+
+static void pkt_hexdump(struct net_buf *buf, bool each_frag_reserve)
+{
+	uint16_t reserve = net_nbuf_ll_reserve(buf);
+	struct net_buf *frag;
+
+	printf("IEEE 802.15.4 packet content:\n");
+
+	frag = buf->frags;
+	while (frag) {
+		hexdump(each_frag_reserve ?
+			net_nbuf_ll(buf) : net_nbuf_ip_data(buf),
+			frag->len + reserve, reserve);
+
+		if (!each_frag_reserve) {
+			reserve = 0;
+		}
+
+		frag = frag->frags;
 	}
 }
 #else
@@ -173,7 +203,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	set_buf_ll_addr(net_nbuf_ll_dst(buf), false,
 			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
-	pkt_hexdump(net_nbuf_ip_data(buf), net_buf_frags_len(buf));
+	pkt_hexdump(buf, true);
 
 #ifdef CONFIG_NET_6LO
 	/** Uncompress will drop the current fragment. Buf ll src/dst address
@@ -192,7 +222,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
 	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
 
-	pkt_hexdump(net_nbuf_ip_data(buf), net_buf_frags_len(buf));
+	pkt_hexdump(buf, false);
 #endif /* CONFIG_NET_6LO */
 
 	return NET_CONTINUE;
@@ -207,14 +237,14 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	pkt_hexdump(net_nbuf_ip_data(buf), net_buf_frags_len(buf));
+	pkt_hexdump(buf, true);
 
 #ifdef CONFIG_NET_6LO
 	if (!net_6lo_compress(buf, true, NULL)) {
 		return NET_DROP;
 	}
 
-	pkt_hexdump(net_nbuf_ip_data(buf), net_buf_frags_len(buf));
+	pkt_hexdump(buf, true);
 #endif /* CONFIG_NET_6LO */
 
 	net_if_queue_tx(iface, buf);
