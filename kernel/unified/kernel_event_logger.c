@@ -25,11 +25,12 @@
 #include <init.h>
 #include <nano_private.h>
 #include <kernel_event_logger_arch.h>
+#include <misc/__assert.h>
 
 uint32_t _sys_k_event_logger_buffer[CONFIG_KERNEL_EVENT_LOGGER_BUFFER_SIZE];
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-void *_collector_fiber;
+void *_collector_coop_thread;
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
@@ -100,7 +101,7 @@ void _sys_k_event_logger_context_switch(void)
 		return;
 	}
 
-	if (_collector_fiber == _nanokernel.current) {
+	if (_collector_coop_thread == _nanokernel.current) {
 		return;
 	}
 
@@ -129,9 +130,19 @@ void _sys_k_event_logger_context_switch(void)
 		ARRAY_SIZE(data));
 }
 
+#ifdef CONFIG_KERNEL_V2
+#define ASSERT_CURRENT_IS_COOP_THREAD() \
+	__ASSERT(_current.prio < 0, "must be a coop thread")
+#else
+#define ASSERT_CURRENT_IS_COOP_THREAD() \
+	__ASSERT(_nanokernel.current->flags & FIBER, "must be a fiber")
+#endif
+
 void sys_k_event_logger_register_as_collector(void)
 {
-	_collector_fiber = _nanokernel.current;
+	ASSERT_CURRENT_IS_COOP_THREAD();
+
+	_collector_coop_thread = _nanokernel.current;
 }
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
 
