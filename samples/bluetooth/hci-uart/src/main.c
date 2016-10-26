@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <arch/cpu.h>
 #include <misc/byteorder.h>
 #include <misc/sys_log.h>
