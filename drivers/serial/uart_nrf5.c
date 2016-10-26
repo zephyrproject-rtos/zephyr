@@ -203,7 +203,7 @@ static int uart_nrf5_init(struct device *dev)
 
 	(void) gpio_pin_configure(gpio_dev,
 				  CONFIG_UART_NRF5_GPIO_RTS_PIN,
-				  (GPIO_DIR_OUT | GPIO_PUD_PULL_UP));
+				  (GPIO_DIR_OUT));
 	(void) gpio_pin_configure(gpio_dev,
 				  CONFIG_UART_NRF5_GPIO_CTS_PIN,
 				  (GPIO_DIR_IN));
