@@ -151,6 +151,7 @@ static uint8_t (*completion_cb)(char *line, uint8_t len);
 #define ANSI_BACKWARD      'D'
 #define ANSI_END           'F'
 #define ANSI_HOME          'H'
+#define ANSI_DEL           '~'
 
 static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
 {
@@ -250,7 +251,7 @@ static atomic_t esc_state;
 static unsigned int ansi_val, ansi_val_2;
 static uint8_t cur, end;
 
-static void handle_ansi(uint8_t byte)
+static void handle_ansi(uint8_t byte, char *line)
 {
 	if (atomic_test_and_clear_bit(&esc_state, ESC_ANSI_FIRST)) {
 		if (!isdigit(byte)) {
@@ -324,6 +325,14 @@ ansi_cmd:
 		cur += end;
 		end = 0;
 		break;
+	case ANSI_DEL:
+		if (!end) {
+			break;
+		}
+
+		cursor_forward(1);
+		del_char(&line[cur], --end);
+		break;
 	default:
 		break;
 	}
@@ -370,7 +379,7 @@ void uart_console_isr(struct device *unused)
 
 		/* Handle ANSI escape mode */
 		if (atomic_test_bit(&esc_state, ESC_ANSI)) {
-			handle_ansi(byte);
+			handle_ansi(byte, cmd->line);
 			continue;
 		}
 
