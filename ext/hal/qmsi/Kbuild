@@ -1,5 +1,3 @@
-subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-DENABLE_EXTERNAL_ISR_HANDLING
-
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/flash/qm_flash.o
 ifeq ($(CONFIG_ARC),y)
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/clk/ss_clk.o
