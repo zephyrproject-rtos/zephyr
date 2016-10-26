@@ -119,7 +119,15 @@ def run_sanity_footprint(commit=None, cwd=os.environ.get('ZEPHYR_BASE'),
                          output_file=None):
     if not output_file:
         output_file = sanity_results_filename(commit)
-    cmd = '/bin/bash -c "source ./zephyr-env.sh && ./scripts/sanitycheck --inline-logs --all'
+    cmd = '/bin/bash -c "source ./zephyr-env.sh && ./scripts/sanitycheck --inline-logs '
+    # ARM
+    cmd += ' -p frdm_k64f -p nrf51_pca10028 -p nrf52_pca10040 '
+    # X86
+    cmd += ' -p quark_d2000_crb -p quark_se_c1000_devboard '
+    # ARC
+    cmd += ' -p quark_se_c1000_ss_devboard '
+    # NIOS2
+    cmd += ' -p altera_max10 '
     cmd += ' --build-only --tag footprint -o %s"' % output_file
     logger.debug('Sanity (%s)   %s' %(commit, cmd))
 
