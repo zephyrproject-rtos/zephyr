@@ -101,7 +101,7 @@ static int gts_init(struct device *dev)
 	return 0;
 }
 
-struct gts_data gts_data;
+static struct gts_data gts_data;
 
 DEVICE_INIT(gts_dev, CONFIG_GROVE_TEMPERATURE_SENSOR_NAME, &gts_init, &gts_data,
 	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);
