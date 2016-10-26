@@ -27,6 +27,8 @@
 
 #include <watchdog.h>
 #include <soc.h>
+#include <errno.h>
+
 #include "iwdg_stm32.h"
 
 #define AS_IWDG(__base_addr) \
