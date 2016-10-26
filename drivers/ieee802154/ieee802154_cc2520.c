@@ -1130,7 +1130,7 @@ static inline int configure_spi(struct device *dev)
 	return 0;
 }
 
-int cc2520_init(struct device *dev)
+static int cc2520_init(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -1178,7 +1178,7 @@ int cc2520_init(struct device *dev)
 	return 0;
 }
 
-struct cc2520_context cc2520_context_data;
+static struct cc2520_context cc2520_context_data;
 
 DEVICE_INIT(cc2520, CONFIG_TI_CC2520_DRV_NAME,
 	    cc2520_init, &cc2520_context_data, NULL,
