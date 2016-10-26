@@ -79,14 +79,24 @@ static inline int _error_to_rc_no_timeout(int err)
 typedef void (*nano_fiber_entry_t)(int i1, int i2);
 typedef int nano_context_type_t;
 
+#define _MDEF_THREAD_DEFINE(name, stack_size,                              \
+			     entry, p1, p2, p3,                             \
+			     abort, prio, groups)                           \
+	char __noinit __stack _k_thread_obj_##name[stack_size];             \
+	struct _static_thread_data _k_thread_data_##name __aligned(4)       \
+		__in_section(_k_task_list, private, task) =                 \
+		_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
+				     entry, p1, p2, p3, prio, 0, K_FOREVER, \
+				     abort, groups)
+
 #define DEFINE_TASK(name, prio, entry, stack_size, groups) \
 	extern void entry(void); \
 	char __noinit __stack _k_thread_obj_##name[stack_size]; \
 	struct _static_thread_data _k_thread_data_##name __aligned(4) \
 		__in_section(_k_task_list, private, task) = \
-		_MDEF_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
-				     entry, NULL, NULL, NULL, \
-				     NULL, prio, (uint32_t)(groups)); \
+		_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
+				     entry, NULL, NULL, NULL, prio, 0, K_FOREVER, \
+				     NULL, (uint32_t)(groups)); \
 	k_tid_t const name = (k_tid_t)_k_thread_obj_##name
 
 #define sys_thread_self_get k_current_get

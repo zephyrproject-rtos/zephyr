@@ -164,87 +164,39 @@ struct _static_thread_data {
 	uint32_t init_groups;
 };
 
-/*
- * Common macro used by both K_THREAD_INITIALIZER()
- * and _MDEF_THREAD_INITIALIZER().
- */
 #define _THREAD_INITIALIZER(stack, stack_size,                   \
 			    entry, p1, p2, p3,                   \
-			    abort, prio)                         \
-	.init_prio = (prio),                                     \
+			    prio, options, delay, abort, groups) \
+	{                                                        \
+	.init_stack = (stack),                                   \
+	.init_stack_size = (stack_size),                         \
 	.init_entry = (void (*)(void *, void *, void *))entry,   \
 	.init_p1 = (void *)p1,                                   \
 	.init_p2 = (void *)p2,                                   \
 	.init_p3 = (void *)p3,                                   \
-	.init_abort = abort,                                     \
-	.init_stack = (stack),                                   \
-	.init_stack_size = (stack_size),
-
-/**
- * @brief Thread initializer macro
- *
- * This macro is to only be used with statically defined threads that were not
- * defined in the MDEF file. As such the associated threads can not belong to
- * any thread group.
- */
-#define K_THREAD_INITIALIZER(stack, stack_size,  \
-			     entry, p1, p2, p3,  \
-			     abort, prio, delay) \
-	{                                        \
-	_THREAD_INITIALIZER(stack, stack_size,   \
-			    entry, p1, p2, p3,   \
-			    abort, prio)         \
-	.init_groups = 0,                        \
-	.init_delay = (delay),                   \
+	.init_prio = (prio),                                     \
+	.init_options = (options),                               \
+	.init_delay = (delay),                                   \
+	.init_abort = (abort),                                   \
+	.init_groups = (groups),                                 \
 	}
 
 /**
- * @brief Thread initializer macro
- *
- * This macro is to only be used with statically defined threads that were
- * defined with legacy APIs (including the MDEF file). As such the associated
- * threads may belong to one or more thread groups.
- */
-#define _MDEF_THREAD_INITIALIZER(stack, stack_size,   \
-				  entry, p1, p2, p3,   \
-				  abort, prio, groups) \
-	{                                              \
-	_THREAD_INITIALIZER(stack, stack_size,         \
-			    entry, p1, p2, p3,         \
-			    abort, prio)               \
-	.init_groups = (groups),                       \
-	.init_delay = K_FOREVER,                       \
-	}
-
-/**
- * @brief Define thread initializer and initialize it.
+ * @brief Define a static thread.
  *
  * @internal It has been observed that the x86 compiler by default aligns
  * these _static_thread_data structures to 32-byte boundaries, thereby
  * wasting space. To work around this, force a 4-byte alignment.
  */
-#define K_THREAD_DEFINE(name, stack_size,                               \
-			entry, p1, p2, p3,                              \
-			prio, options, delay)                           \
-	char __noinit __stack _k_thread_obj_##name[stack_size];         \
-	struct _static_thread_data _k_thread_data_##name __aligned(4)   \
-		__in_section(_k_task_list, private, task) =             \
-		K_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size,  \
-				     entry, p1, p2, p3, abort, prio, delay)
-
-/**
- * @brief Define thread initializer for MDEF defined thread and initialize it.
- *
- * @ref K_THREAD_DEFINE
- */
-#define _MDEF_THREAD_DEFINE(name, stack_size,                              \
-			     entry, p1, p2, p3,                             \
-			     abort, prio, groups)                           \
-	char __noinit __stack _k_thread_obj_##name[stack_size];             \
-	struct _static_thread_data _k_thread_data_##name __aligned(4)       \
-		__in_section(_k_task_list, private, task) =                 \
-		_MDEF_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size, \
-				     entry, p1, p2, p3, abort, prio, groups)
+#define K_THREAD_DEFINE(name, stack_size,                                \
+			entry, p1, p2, p3,                               \
+			prio, options, delay)                            \
+	char __noinit __stack _k_thread_obj_##name[stack_size];          \
+	struct _static_thread_data _k_thread_data_##name __aligned(4)    \
+		__in_section(_k_task_list, private, task) =              \
+		_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size,    \
+				entry, p1, p2, p3, prio, options, delay, \
+				NULL, 0)
 
 extern int  k_thread_priority_get(k_tid_t thread);
 extern void k_thread_priority_set(k_tid_t thread, int prio);
