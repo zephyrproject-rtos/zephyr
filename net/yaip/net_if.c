@@ -815,6 +815,8 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 			i, iface, net_sprint_ipv4_addr(addr), lifetime,
 			is_default);
 
+		net_mgmt_event_notify(NET_EVENT_IPV4_ROUTER_ADD, iface);
+
 		return &routers[i];
 	}
 
@@ -913,6 +915,8 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 			net_sprint_ipv4_addr(addr),
 			net_addr_type2str(addr_type));
 
+		net_mgmt_event_notify(NET_EVENT_IPV4_ADDR_ADD, iface);
+
 		return &iface->ipv4.unicast[i];
 	}
 
@@ -938,6 +942,8 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, struct in_addr *addr)
 
 		NET_DBG("[%d] interface %p address %s removed",
 			i, iface, net_sprint_ipv4_addr(addr));
+
+		net_mgmt_event_notify(NET_EVENT_IPV4_ADDR_DEL, iface);
 
 		return true;
 	}
