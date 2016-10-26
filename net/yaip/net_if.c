@@ -31,6 +31,7 @@
 
 #include "net_private.h"
 #include "ipv6.h"
+#include "rpl.h"
 
 #define REACHABLE_TIME 30000 /* in ms */
 #define MIN_RANDOM_FACTOR (1/2)
@@ -1168,4 +1169,9 @@ void net_if_init(void)
 		net_if_ipv6_set_reachable_time(iface);
 #endif
 	}
+
+	/* RPL init must be done after the network interface is up
+	 * as the RPL code wants to add multicast address to interface.
+	 */
+	net_rpl_init();
 }

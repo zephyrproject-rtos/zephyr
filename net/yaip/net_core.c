@@ -51,6 +51,8 @@
 #endif
 
 #include "route.h"
+#include "rpl.h"
+
 #include "connection.h"
 #include "udp.h"
 #include "tcp.h"
@@ -126,6 +128,40 @@ static inline void stats(void)
 		      GET_STAT(udp.drop));
 		PRINT("UDP chkerr     %d",
 		      GET_STAT(udp.chkerr));
+#endif
+
+#if defined(CONFIG_NET_RPL_STATS)
+		PRINT("RPL DIS recv   %d\tsent\t%d\tdrop\t%d",
+		      GET_STAT(rpl.dis.recv),
+		      GET_STAT(rpl.dis.sent),
+		      GET_STAT(rpl.dis.drop));
+		PRINT("RPL DIO recv   %d\tsent\t%d\tdrop\t%d",
+		      GET_STAT(rpl.dio.recv),
+		      GET_STAT(rpl.dio.sent),
+		      GET_STAT(rpl.dio.drop));
+		PRINT("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
+		      GET_STAT(rpl.dao.recv),
+		      GET_STAT(rpl.dao.sent),
+		      GET_STAT(rpl.dao.drop),
+		      GET_STAT(rpl.dao.forwarded));
+		PRINT("RPL DAOACK rcv %d\tsent\t%d\tdrop\t%d",
+		      GET_STAT(rpl.dao_ack.recv),
+		      GET_STAT(rpl.dao_ack.sent),
+		      GET_STAT(rpl.dao_ack.drop));
+		PRINT("RPL overflows  %d\tl-repairs\t%d\tg-repairs\t%d",
+		      GET_STAT(rpl.mem_overflows),
+		      GET_STAT(rpl.local_repairs),
+		      GET_STAT(rpl.global_repairs));
+		PRINT("RPL malformed  %d\tresets   \t%d\tp-switch\t%d",
+		      GET_STAT(rpl.malformed_msgs),
+		      GET_STAT(rpl.resets),
+		      GET_STAT(rpl.parent_switch));
+		PRINT("RPL f-errors   %d\tl-errors\t%d\tl-warnings\t%d",
+		      GET_STAT(rpl.forward_errors),
+		      GET_STAT(rpl.loop_errors),
+		      GET_STAT(rpl.loop_warnings));
+		PRINT("RPL r-repairs  %d",
+		      GET_STAT(rpl.root_repairs));
 #endif
 
 		PRINT("Processing err %d", GET_STAT(processing_error));
