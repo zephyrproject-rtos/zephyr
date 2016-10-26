@@ -34,8 +34,12 @@ struct gpio_stm32_config {
 	uint32_t *base;
 	/* IO port */
 	enum stm32_pin_port port;
+#ifdef CONFIG_SOC_SERIES_STM32F1X
 	/* clock subsystem */
 	clock_control_subsys_t clock_subsys;
+#elif CONFIG_SOC_SERIES_STM32F4X
+	struct stm32f4x_pclken pclken;
+#endif
 };
 
 /**
