@@ -198,10 +198,10 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 		SYS_LOG_DBG("sent data %d bytes",
 			    frag->len + net_nbuf_ll_reserve(buf));
 		if (frag->len + ll_reserve) {
-			char msg[7 + 1];
+			char msg[8 + 1];
 
-			snprintf(msg, sizeof(msg), "<slip %d", frag_count++);
-			msg[7] = '\0';
+			snprintf(msg, sizeof(msg), "<slip %2d", frag_count++);
+
 			hexdump(msg, net_nbuf_ll(buf),
 				frag->len + net_nbuf_ll_reserve(buf),
 				net_nbuf_ll_reserve(buf));
@@ -347,10 +347,10 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 			int count = 0;
 
 			while (bytes && frag) {
-				char msg[7 + 1];
+				char msg[8 + 1];
 
-				snprintf(msg, sizeof(msg), ">slip %d", count);
-				msg[7] = '\0';
+				snprintf(msg, sizeof(msg), ">slip %2d", count);
+
 				hexdump(msg, frag->data, frag->len, 0);
 
 				frag = frag->frags;
