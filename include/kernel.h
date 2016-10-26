@@ -148,19 +148,20 @@ extern void k_thread_abort(k_tid_t thread);
 #endif
 
 struct _static_thread_data {
-	uint32_t init_groups;
-	int init_prio;
-	void (*init_entry)(void *, void *, void *);
-	void *init_p1;
-	void *init_p2;
-	void *init_p3;
-	void (*init_abort)(void);
 	union {
 		char *init_stack;
 		struct k_thread *thread;
 	};
 	unsigned int init_stack_size;
+	void (*init_entry)(void *, void *, void *);
+	void *init_p1;
+	void *init_p2;
+	void *init_p3;
+	int init_prio;
+	uint32_t init_options;
 	int32_t init_delay;
+	void (*init_abort)(void);
+	uint32_t init_groups;
 };
 
 /*
