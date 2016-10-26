@@ -6,9 +6,9 @@ Kernel Event Logger [TBD]
 Definition
 **********
 
-The kernel event logger is a standardized mechanism to record events within the Kernel while
-providing a single interface for the user to collect the data. This mechanism is currently used
-to log the following events:
+The kernel event logger is a standardized mechanism to record events within the
+Kernel while providing a single interface for the user to collect the data.
+This mechanism is currently used to log the following events:
 
 * Sleep events (entering and exiting low power conditions).
 * Context switch events.
@@ -17,8 +17,8 @@ to log the following events:
 Kernel Event Logger Configuration
 *********************************
 
-Kconfig provides the ability to enable and disable the collection of events and to configure the
-size of the buffer used by the event logger.
+Kconfig provides the ability to enable and disable the collection of events and
+to configure the size of the buffer used by the event logger.
 
 These options can be found in the following path :file:`kernel/Kconfig`.
 
@@ -32,15 +32,15 @@ Profiling points configuration:
 
 * :option:`CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC`
 
-  Allows modifying at runtime the events to record. At boot no event is recorded if enabled
-  This flag adds functions allowing to enable/disable recoding of kernel event logger and
-  task monitor events.
+  Allows modifying at runtime the events to record. At boot no event is
+  recorded if enabled This flag adds functions allowing to enable/disable
+  recording of kernel event logger.
 
 * :option:`CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
 
-  Enables the possibility to set the timer function to be used to populate kernel event logger
-  timestamp. This has to be done at runtime by calling sys_k_event_logger_set_timer and providing
-  the function callback.
+  Enables the possibility to set the timer function to be used to populate
+  kernel event logger timestamp. This has to be done at runtime by calling
+  sys_k_event_logger_set_timer and providing the function callback.
 
 Adding a Kernel Event Logging Point
 ***********************************
@@ -62,9 +62,9 @@ Custom trace points can be added with the following API:
 Retrieving Kernel Event Data
 ****************************
 
-Applications are required to implement a fiber for accessing the recorded event messages
-in both the nanokernel and microkernel systems. Developers can use the provided API to
-retrieve the data, or may write their own routines using the ring buffer provided by the
+Applications are required to implement a cooperative thread for accessing the
+recorded event messages.  Developers can use the provided API to retrieve the
+data, or may write their own routines using the ring buffer provided by the
 event logger.
 
 The API functions provided are:
@@ -73,45 +73,47 @@ The API functions provided are:
 * :c:func:`sys_k_event_logger_get_wait()`
 * :c:func:`sys_k_event_logger_get_wait_timeout()`
 
-The above functions specify various ways to retrieve a event message and to copy it to
-the provided buffer. When the buffer size is smaller than the message, the function will
-return an error. All three functions retrieve messages via a FIFO method. The :literal:`wait`
-and :literal:`wait_timeout` functions allow the caller to pend until a new message is
-logged, or until the timeout expires.
+The above functions specify various ways to retrieve a event message and to
+copy it to the provided buffer. When the buffer size is smaller than the
+message, the function will return an error. All three functions retrieve
+messages via a FIFO method. The :literal:`wait` and :literal:`wait_timeout`
+functions allow the caller to pend until a new message is logged, or until the
+timeout expires.
 
 Enabling/disabling event recording
 **********************************
 
-If KERNEL_EVENT_LOGGER_DYNAMIC is enabled, following functions must be checked for
-dynamically enabling/disabling event recording at runtime:
+If KERNEL_EVENT_LOGGER_DYNAMIC is enabled, following functions must be checked
+for dynamically enabling/disabling event recording at runtime:
 
 * :cpp:func:`sys_k_event_logger_set_mask()`
 * :cpp:func:`sys_k_event_logger_get_mask()`
-* :cpp:func:`sys_k_event_logger_set_monitor_mask()`
-* :cpp:func:`sys_k_event_logger_get_monitor_mask()`
 
-Each mask bit corresponds to the corresponding event ID (mask is starting at bit 1 not bit 0).
+Each mask bit corresponds to the corresponding event ID (mask is starting at
+bit 1 not bit 0).
 
 More details are provided in function description.
 
 Timestamp
 *********
 
-The timestamp used by the kernel event logger is 32-bit LSB of platform HW timer (for example
-Lakemont APIC timer for Quark SE). This timer period is very small and leads to timestamp
-wraparound happening quite often (e.g. every 134s for Quark SE).
+The timestamp used by the kernel event logger is 32-bit LSB of platform HW
+timer (for example Lakemont APIC timer for Quark SE). This timer period is very
+small and leads to timestamp wraparound happening quite often (e.g. every 134s
+for Quark SE).
 
 see :option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC`
 
-This wraparound must be considered when analyzing kernel event logger data and care must be
-taken when tickless idle is enabled and sleep duration can exceed maximum HW timer value.
+This wraparound must be considered when analyzing kernel event logger data and
+care must be taken when tickless idle is enabled and sleep duration can exceed
+maximum HW timer value.
 
-Timestamp used by the kernel event logger can be customized by enabling following option:
-:option:`CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
+Timestamp used by the kernel event logger can be customized by enabling
+following option: :option:`CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
 
-In case this option is enabled, a callback function returning a 32-bit timestamp must
-be provided to the kernel event logger by calling the following function at runtime:
-:cpp:func:`sys_k_event_logger_set_timer()`
+In case this option is enabled, a callback function returning a 32-bit
+timestamp must be provided to the kernel event logger by calling the following
+function at runtime: :cpp:func:`sys_k_event_logger_set_timer()`
 
 Message Formats
 ***************
@@ -167,77 +169,6 @@ Example:
    data[2] = interrupt_id.
 
 
-Task Monitor
-------------
-
-The task monitor tracks the activities of the task schedule server
-in the microkernel and it is able to report three different types of
-events related with the scheduler activities:
-
-
-Task Monitor Task State Change Event
-++++++++++++++++++++++++++++++++++++
-
-The Task Monitor Task State Change Event tracks the task's status changes.
-The event data is arranged as three 32 bit blocks:
-
-* The first block contains the timestamp when the task server
-  changed the task status.
-* The second block contains the task ID of the affected task.
-* The thid block contains a 32 bit number with the new status.
-
-Example:
-
-.. code-block:: c
-
-   uint32_t data[3];
-
-   data[0] = timestamp;
-   data[1] = task_id.
-   data[2] = status_data.
-
-Task Monitor Kevent Event
-+++++++++++++++++++++++++
-
-The Task Monitor Kevent Event tracks the commands requested to the
-task server by the kernel. The event data is arranged as two blocks
-of 32 bits each:
-
-* The first block contains the timestamp when the task server
-  attended the kernel command.
-* The second block contains the code of the command.
-
-.. code-block:: c
-
-   uint32_t data[3];
-
-   data[0] = timestamp;
-   data[1] = event_code.
-
-Task Monitor Command Packet Event
-+++++++++++++++++++++++++++++++++
-
-The Task Monitor Command Packet Event track the command packets sent
-to the task server. The event data is arranged as three blocks of
-32 bits each:
-
-* The first block contains the timestamp when the task server
-  attended the kernel command.
-* The second block contains the task identifier of the task
-  affected by the packet.
-* The thid block contains the memory vector of the routine
-  executed by the task server.
-
-Example:
-
-.. code-block:: c
-
-   uint32_t data[3];
-
-   data[0] = timestamp;
-   data[1] = task_id.
-   data[2] = comm_handler.
-
 Example: Retrieving Profiling Messages
 ======================================
 
@@ -267,15 +198,6 @@ Example: Retrieving Profiling Messages
             break;
          case KERNEL_EVENT_SLEEP_EVENT_ID:
             /* ... Process the data for a sleep event ... */
-            break;
-         case KERNEL_EVENT_LOGGER_TASK_MON_TASK_STATE_CHANGE_EVENT_ID:
-            /* ... Process the data for a task monitor event ... */
-            break;
-         case KERNEL_EVENT_LOGGER_TASK_MON_KEVENT_EVENT_ID:
-            /* ... Process the data for a task monitor command event ... */
-            break;
-         case KERNEL_EVENT_LOGGER_TASK_MON_CMD_PACKET_EVENT_ID:
-            /* ... Process the data for a task monitor packet event ... */
             break;
          default:
             printf("unrecognized event id %d\n", event_id);
@@ -307,7 +229,8 @@ Example: Adding a Kernel Event Logging Point
       data[0] = custom_data_1;
       data[1] = custom_data_2;
 
-      sys_k_event_logger_put(KERNEL_EVENT_LOGGER_CUSTOM_ID, data, ARRAY_SIZE(data));
+      sys_k_event_logger_put(KERNEL_EVENT_LOGGER_CUSTOM_ID, data,
+			     ARRAY_SIZE(data));
    }
 
 Use the following function to register only the time of an event.
@@ -324,7 +247,7 @@ APIs
 The following APIs are provided by the :file:`k_event_logger.h` file:
 
 :cpp:func:`sys_k_event_logger_register_as_collector()`
-   Register the current fiber as the collector fiber.
+   Register the current cooperative thread as the collector thread.
 
 :c:func:`sys_k_event_logger_put()`
    Enqueue a kernel event logger message with custom data.
@@ -339,7 +262,8 @@ The following APIs are provided by the :file:`k_event_logger.h` file:
    De-queue a kernel event logger message. Wait if the buffer is empty.
 
 :c:func:`sys_k_event_logger_get_wait_timeout()`
-   De-queue a kernel event logger message. Wait if the buffer is empty until the timeout expires.
+   De-queue a kernel event logger message. Wait if the buffer is empty until
+   the timeout expires.
 
 :cpp:func:`sys_k_must_log_event()`
    Check if an event type has to be logged or not
@@ -351,12 +275,6 @@ In case KERNEL_EVENT_LOGGER_DYNAMIC is enabled:
 
 :cpp:func:`sys_k_event_logger_get_mask()`
    Get kernel event logger event mask
-
-:cpp:func:`sys_k_event_logger_set_monitor_mask()`
-   Set task monitor event mask
-
-:cpp:func:`sys_k_event_logger_get_monitor_mask()`
-   Get task monitor event mask
 
 In case KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP is enabled:
 
