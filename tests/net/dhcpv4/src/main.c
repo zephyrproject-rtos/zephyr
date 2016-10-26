@@ -31,6 +31,7 @@
 #include <net/net_ip.h>
 #include <net/dhcpv4.h>
 #include <net/ethernet.h>
+#include <net/net_mgmt.h>
 
 #include <tc_util.h>
 
@@ -498,10 +499,6 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 			return -EINVAL;
 		}
 
-		/* TODO: Verify address properly on Interface when callbacks
-		 * available. Now test is pass if ACK send is success.
-		 */
-		test_result(true);
 	} else {
 		/* Invalid message type received */
 		return -EINVAL;
@@ -529,9 +526,22 @@ NET_DEVICE_INIT(net_dhcpv4_test, "net_dhcpv4_test",
 		&net_dhcpv4_if_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
+static struct net_mgmt_event_callback rx_cb;
+
+static void receiver_cb(struct net_mgmt_event_callback *cb,
+			uint32_t nm_event, struct net_if *iface)
+{
+	test_result(true);
+}
+
 void main_fiber(void)
 {
 	struct net_if *iface;
+
+	net_mgmt_init_event_callback(&rx_cb, receiver_cb,
+				     NET_EVENT_IPV4_ADDR_ADD);
+
+	net_mgmt_add_event_callback(&rx_cb);
 
 	iface = net_if_get_default();
 	if (!iface) {
@@ -557,4 +567,5 @@ void main(void)
 	task_fiber_start(&fiberStack[0], STACKSIZE,
 				(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
 #endif
+	net_mgmt_del_event_callback(&rx_cb);
 }
