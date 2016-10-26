@@ -824,6 +824,30 @@ const struct in6_addr *net_if_ipv6_unspecified_addr(void);
  */
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state);
+
+/**
+ * @brief Return link local IPv6 address from the first interface that has
+ * a link local address matching give state.
+ *
+ * @param state IPv6 address state (ANY, TENTATIVE, PREFERRED, DEPRECATED)
+ * @param iface Pointer to interface is returned
+ *
+ * @return Pointer to IPv6 address, NULL if not found.
+ */
+struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
+					 struct net_if **iface);
+
+/**
+ * @brief Return global IPv6 address from the first interface that has
+ * a global IPv6 address either in TENTATIVE or PREFERRED state.
+ *
+ * @param iface Caller can give an interface to check. If iface is set to NULL,
+ * then all the interfaces are checked. Pointer to interface where the IPv6
+ * address is defined is returned to the caller.
+ *
+ * @return Pointer to IPv6 address, NULL if not found.
+ */
+struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
 #else
 #define net_if_ipv6_select_src_addr(...)
 #endif /* CONFIG_NET_IPV6 */

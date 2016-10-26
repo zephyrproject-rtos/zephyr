@@ -720,6 +720,72 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 	return NULL;
 }
 
+struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
+					 struct net_if **iface)
+{
+	struct net_if *tmp;
+
+	for (tmp = __net_if_start; tmp != __net_if_end; tmp++) {
+		struct in6_addr *addr;
+
+		addr = net_if_ipv6_get_ll(tmp, state);
+		if (addr) {
+			if (iface) {
+				*iface = tmp;
+			}
+
+			return addr;
+		}
+	}
+
+	return NULL;
+}
+
+static inline struct in6_addr *check_global_addr(struct net_if *iface)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!iface->ipv6.unicast[i].is_used ||
+		    (iface->ipv6.unicast[i].addr_state != NET_ADDR_TENTATIVE &&
+		     iface->ipv6.unicast[i].addr_state != NET_ADDR_PREFERRED) ||
+		    iface->ipv6.unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		if (!net_is_ipv6_ll_addr(
+			    &iface->ipv6.unicast[i].address.in6_addr)) {
+			return &iface->ipv6.unicast[i].address.in6_addr;
+		}
+	}
+
+	return NULL;
+}
+
+struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface)
+{
+	struct net_if *tmp;
+
+	for (tmp = __net_if_start; tmp != __net_if_end; tmp++) {
+		struct in6_addr *addr;
+
+		if (iface && *iface && tmp != *iface) {
+			continue;
+		}
+
+		addr = check_global_addr(tmp);
+		if (addr) {
+			if (iface) {
+				*iface = tmp;
+			}
+
+			return addr;
+		}
+	}
+
+	return NULL;
+}
+
 static inline uint8_t get_length(struct in6_addr *src, struct in6_addr *dst)
 {
 	uint8_t j, k, xor;
