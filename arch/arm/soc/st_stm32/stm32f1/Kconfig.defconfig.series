@@ -26,4 +26,11 @@ config NUM_IRQ_PRIO_BITS
 	int
 	default 4
 
+if WATCHDOG
+
+config IWDG_STM32
+	def_bool y
+
+endif
+
 endif # SOC_SERIES_STM32F1X
