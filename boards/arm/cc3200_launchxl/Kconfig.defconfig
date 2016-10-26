@@ -1,0 +1,9 @@
+# Kconfig - TI CC3200 LaunchXL board configuration
+#
+
+if BOARD_CC3200_LAUNCHXL
+
+config BOARD
+	default cc3200_launchxl
+
+endif # BOARD_CC3200_LAUNCHXL
