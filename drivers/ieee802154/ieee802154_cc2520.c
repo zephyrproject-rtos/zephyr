@@ -409,7 +409,7 @@ static inline bool write_txfifo_length(struct cc2520_spi *spi,
 {
 	spi->cmd_buf[0] = CC2520_INS_TXBUF;
 	spi->cmd_buf[1] = net_nbuf_ll_reserve(buf) +
-		net_buf_frags_len(buf) + CC2520_FCS_LENGTH;
+		buf->frags->len + CC2520_FCS_LENGTH;
 
 	spi_slave_select(spi->dev, spi->slave);
 
@@ -423,7 +423,7 @@ static inline bool write_txfifo_content(struct cc2520_spi *spi,
 
 	cmd[0] = CC2520_INS_TXBUF;
 	memcpy(&cmd[1], net_nbuf_ll(buf),
-	       net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf));
+	       net_nbuf_ll_reserve(buf) + buf->frags->len);
 
 	spi_slave_select(spi->dev, spi->slave);
 
@@ -435,7 +435,7 @@ static inline bool verify_txfifo_status(struct cc2520_context *cc2520,
 					struct net_buf *buf)
 {
 	if (read_reg_txfifocnt(&cc2520->spi) < (net_nbuf_ll_reserve(buf) +
-						net_buf_frags_len(buf)) ||
+						buf->frags->len) ||
 	    (read_reg_excflag0(&cc2520->spi) & EXCFLAG0_TX_UNDERFLOW)) {
 		return false;
 	}
@@ -809,7 +809,7 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 	bool status;
 
 	SYS_LOG_DBG("%s: %p (%u)\n", __func__,
-	    buf, net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf));
+		    buf, net_nbuf_ll_reserve(buf) + buf->frags->len);
 
 	if (!write_reg_excflag0(&cc2520->spi, EXCFLAG0_RESET_TX_FLAGS) ||
 	    !write_txfifo_length(&cc2520->spi, buf) ||
