@@ -288,8 +288,6 @@ static struct net_buf *udp_recv(const char *name,
 
 		net_buf_frag_del(buf, tmp);
 
-		net_nbuf_unref(tmp);
-
 		tmp = buf->frags;
 	}
 

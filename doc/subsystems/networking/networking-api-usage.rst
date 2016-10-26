@@ -44,14 +44,14 @@ Wait until the connection data is received.
 .. literalinclude:: connectivity-example-app.c
     :linenos:
     :language: c
-    :lines: 86-204
+    :lines: 86-202
 
 Close the context when finished.
 
 .. literalinclude:: connectivity-example-app.c
     :linenos:
     :language: c
-    :lines: 207-216
+    :lines: 204-215
 
 .. toctree::
    :maxdepth: 1
