@@ -44,6 +44,7 @@ config WDT_0_NAME
 
 config WDT_0_IRQ_PRI
 	int "Interrupt priority"
+	depends on WDT_QMSI
 	help
 	Watchdog interrupt priority
 
