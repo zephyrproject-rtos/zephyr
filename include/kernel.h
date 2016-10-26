@@ -196,7 +196,8 @@ struct _static_thread_data {
 		__in_section(_k_task_list, private, task) =              \
 		_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size,    \
 				entry, p1, p2, p3, prio, options, delay, \
-				NULL, 0)
+				NULL, 0); \
+	const k_tid_t name = (k_tid_t)_k_thread_obj_##name
 
 extern int  k_thread_priority_get(k_tid_t thread);
 extern void k_thread_priority_set(k_tid_t thread, int prio);
