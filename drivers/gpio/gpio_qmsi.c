@@ -112,22 +112,14 @@ static const struct gpio_qmsi_config gpio_0_config = {
 static struct gpio_qmsi_runtime gpio_0_runtime;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-QM_RW uint32_t save_reg[10];
-static uint32_t int_gpio_mask_save;
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static qm_gpio_context_t gpio_ctx;
 
 static int gpio_suspend_device(struct device *dev)
 {
-	int_gpio_mask_save = REG_VAL(&QM_INTERRUPT_ROUTER->gpio_0_int_mask);
-	save_reg[0] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr);
-	save_reg[1] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr);
-	save_reg[2] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl);
-	save_reg[3] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inten);
-	save_reg[4] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_intmask);
-	save_reg[5] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inttype_level);
-	save_reg[6] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_polarity);
-	save_reg[7] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce);
-	save_reg[8] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync);
-	save_reg[9] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge);
+	const struct gpio_qmsi_config *gpio_config = dev->config->config_info;
+
+	qm_gpio_save_context(gpio_config->gpio, &gpio_ctx);
 
 	gpio_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 
@@ -136,22 +128,15 @@ static int gpio_suspend_device(struct device *dev)
 
 static int gpio_resume_device_from_suspend(struct device *dev)
 {
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr) = save_reg[0];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr) = save_reg[1];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl) = save_reg[2];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inten) = save_reg[3];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_intmask) = save_reg[4];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inttype_level) = save_reg[5];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_polarity) = save_reg[6];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce) = save_reg[7];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync) = save_reg[8];
-	REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge) = save_reg[9];
-	REG_VAL(&QM_INTERRUPT_ROUTER->gpio_0_int_mask) = int_gpio_mask_save;
+	const struct gpio_qmsi_config *gpio_config = dev->config->config_info;
+
+	qm_gpio_restore_context(gpio_config->gpio, &gpio_ctx);
 
 	gpio_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
 	return 0;
 }
+#endif
 
 /*
 * Implements the driver control management functionality
@@ -161,11 +146,13 @@ static int gpio_qmsi_device_ctrl(struct device *port, uint32_t ctrl_command,
 				 void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return gpio_suspend_device(port);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return gpio_resume_device_from_suspend(port);
 		}
+#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = gpio_qmsi_get_power_state(port);
 		return 0;
@@ -190,24 +177,6 @@ static struct gpio_qmsi_runtime gpio_aon_runtime;
 
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static uint32_t int_gpio_aon_mask_save;
-
-static int gpio_aon_suspend_device(struct device *dev)
-{
-	int_gpio_aon_mask_save =
-		REG_VAL(&QM_INTERRUPT_ROUTER->aon_gpio_0_int_mask);
-	gpio_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
-	return 0;
-}
-
-static int gpio_aon_resume_device_from_suspend(struct device *dev)
-{
-	REG_VAL(&QM_INTERRUPT_ROUTER->aon_gpio_0_int_mask) =
-		int_gpio_aon_mask_save;
-	gpio_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
-	return 0;
-}
-
 /*
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
@@ -216,14 +185,16 @@ static int gpio_aon_device_ctrl(struct device *port, uint32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return gpio_aon_suspend_device(port);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return gpio_aon_resume_device_from_suspend(port);
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+		uint32_t device_pm_state = *(uint32_t *)context;
+
+		if (device_pm_state == DEVICE_PM_SUSPEND_STATE ||
+		    device_pm_state == DEVICE_PM_ACTIVE_STATE) {
+			gpio_qmsi_set_power_state(port, device_pm_state);
 		}
+#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = gpio_qmsi_get_power_state(port);
-		return 0;
 	}
 	return 0;
 }
