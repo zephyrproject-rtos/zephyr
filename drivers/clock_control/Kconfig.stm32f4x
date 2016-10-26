@@ -1,0 +1,151 @@
+# Kconfig - STM32F4 MCU clock control driver config
+#
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) Linaro Limited.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_SERIES_STM32F4X
+
+menuconfig CLOCK_CONTROL_STM32F4X
+	bool
+	prompt "STM32F4X Reset & Clock Control"
+	depends on CLOCK_CONTROL && SOC_SERIES_STM32F4X
+	default y if SOC_SERIES_STM32F4X
+	help
+	 Enable driver for Reset & Clock Control subsystem found
+	 in STM32F4 family of MCUs
+
+config CLOCK_CONTROL_STM32F4X_DEVICE_INIT_PRIORITY
+	int "Clock Control Device Priority"
+	default 1
+	depends on CLOCK_CONTROL_STM32F4X
+	help
+	 This option controls the priority of clock control
+	 device initialization. Higher priority ensures that the device
+	 is initialized earlier in the startup cycle. If unsure, leave
+	 at default value 1
+
+choice
+prompt "STM32F4X System Clock Source"
+depends on CLOCK_CONTROL_STM32F4X
+
+config CLOCK_STM32F4X_SYSCLK_SRC_HSI
+	bool "HSI"
+	help
+	 Use HSI as source of SYSCLK
+
+config CLOCK_STM32F4X_SYSCLK_SRC_HSE
+	bool "HSE"
+	help
+	 Use HSE as source of SYSCLK
+
+config CLOCK_STM32F4X_SYSCLK_SRC_PLL
+	bool "PLL"
+	help
+	 Use PLL as source of SYSCLK
+
+endchoice
+
+choice
+prompt "STM32F4X PLL Clock Source"
+depends on CLOCK_CONTROL_STM32F4X && CLOCK_STM32F4X_SYSCLK_SRC_PLL
+
+config CLOCK_STM32F4X_PLL_SRC_HSI
+	bool "HSI"
+	help
+	 Use HSI as source of PLL
+
+config CLOCK_STM32F4X_PLL_SRC_HSE
+	bool "HSE"
+	help
+	 Use HSE as source of PLL
+
+endchoice
+
+config CLOCK_STM32F4X_HSE_BYPASS
+	bool "HSE bypass"
+	depends on CLOCK_CONTROL_STM32F4X && (CLOCK_STM32F4X_PLL_SRC_HSE || CLOCK_STM32F4X_SYSCLK_SRC_HSE)
+	help
+	 Enable this option to bypass external high-speed clock (HSE).
+
+config CLOCK_STM32F4X_PLLM_DIV_FACTOR
+	int "Division factor for PLL VCO input clock"
+	depends on CLOCK_CONTROL_STM32F4X && CLOCK_STM32F4X_SYSCLK_SRC_PLL
+	default 8
+	range 2 63
+	help
+	 PLLM division factor needs to be set correctly to ensure that the VCO
+	 input frequency ranges from 1 to 2 MHz. It is recommended to select a
+	 frequency of 2 MHz to limit PLL jitter.
+	 Allowed values: 2-63
+
+config CLOCK_STM32F4X_PLLN_MULTIPLIER
+	int "Multiplier factor for PLL VCO output clock"
+	depends on CLOCK_CONTROL_STM32F4X && CLOCK_STM32F4X_SYSCLK_SRC_PLL
+	default 336
+	range 192 432
+	help
+	 PLLN multiplier factor needs to be set correctly to ensure that the
+	 VCO output frequency is between 192 and 432 MHz.
+	 Allowed values: 192-432
+
+config CLOCK_STM32F4X_PLLP_DIV_FACTOR
+	int "PLL division factor for main system clock"
+	depends on CLOCK_CONTROL_STM32F4X && CLOCK_STM32F4X_SYSCLK_SRC_PLL
+	default 4
+	range 2 8
+	help
+	 PLLP division factor needs to be set correctly to not exceed 84MHz.
+	 Allowed values: 2, 4, 6, 8
+
+config CLOCK_STM32F4X_PLLQ_DIV_FACTOR
+	int "Division factor for OTG FS, SDIO and RNG clocks"
+	depends on CLOCK_CONTROL_STM32F4X && CLOCK_STM32F4X_SYSCLK_SRC_PLL
+	default 7
+	range 2 15
+	help
+	 The USB OTG FS requires a 48MHz clock to work correctly. SDIO and RNG
+	 need a frequency lower than or equal to 48 MHz to work correctly.
+	 Allowed values: 2-15
+
+config CLOCK_STM32F4X_AHB_PRESCALER
+	int "AHB prescaler"
+	depends on CLOCK_CONTROL_STM32F4X
+	default 0
+	range 0 512
+	help
+	 AHB prescaler, allowed values: 0, 2, 4, 8, 16, 64, 128,
+	 256, 512.
+
+config CLOCK_STM32F4X_APB1_PRESCALER
+	int "APB1 low speed clock prescaler"
+	depends on CLOCK_CONTROL_STM32F4X
+	default 2
+	range 0 16
+	help
+	 APB1 Low speed clock (PCLK1) prescaler, allowed values:
+	 0, 2, 4, 8, 16. The APB1 clock must not exceed 42MHz.
+
+config CLOCK_STM32F4X_APB2_PRESCALER
+	int "APB2 high speed clock prescaler"
+	depends on CLOCK_CONTROL_STM32F4X
+	default 0
+	range 0 16
+	help
+	 APB2 High speed clock (PCLK2) prescaler, allowed values:
+	 0, 2, 4, 8, 16. The APB2 clock must not exceed 84MHz.
+
+endif
+
