@@ -197,6 +197,13 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 	_main_thread->flags &= ~ESSENTIAL;
 
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+	/* record timestamp for kernel's _main() function */
+	extern uint64_t __main_tsc;
+
+	__main_tsc = _NanoTscRead();
+#endif
+
 	extern void main(void);
 
 	/* If we're going to load the MDEF main() in this context, we need

@@ -9,6 +9,5 @@ CONF_arduino_101    	= quark_se/quark_se_prj.conf
 KERNEL_TYPE = nano
 BOARD ?= qemu_x86
 CONF_FILE = $(CONF_$(BOARD))
-SOURCE_DIR = $(ZEPHYR_BASE)/tests/benchmark/boot_time/microkernel/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc

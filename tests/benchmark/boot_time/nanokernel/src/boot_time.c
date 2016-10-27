@@ -24,7 +24,6 @@
  *  1. From reset to kernel's __start
  *  2. From __start to main()
  *  3. From __start to task
- *  4 From __start to idle
  */
 
 #include <zephyr.h>
@@ -33,7 +32,6 @@
 /* externs */
 extern uint64_t __start_tsc; /* timestamp when kernel begins executing */
 extern uint64_t __main_tsc;  /* timestamp when main() begins executing */
-extern uint64_t __idle_tsc;  /* timestamp when CPU went idle */
 
 void bootTimeTask(void)
 {
@@ -43,26 +41,20 @@ void bootTimeTask(void)
 	uint64_t task_us;   /* begin of task timestamp in us	 */
 	uint64_t s_main_tsc; /* __start->main timestamp		 */
 	uint64_t s_task_tsc;  /*__start->task timestamp		 */
-	uint64_t idle_us;	/* begin of idle timestamp in us	 */
-	uint64_t s_idle_tsc;  /*__start->idle timestamp		 */
 
 	task_tsc = _NanoTscRead();
-	/* Go to sleep for 1 tick in order to timestamp when IdleTask halts. */
-	task_sleep(1);
 
 	_start_us = __start_tsc / CONFIG_CPU_CLOCK_FREQ_MHZ;
 	s_main_tsc = __main_tsc-__start_tsc;
 	main_us   = s_main_tsc / CONFIG_CPU_CLOCK_FREQ_MHZ;
 	s_task_tsc = task_tsc-__start_tsc;
 	task_us   = s_task_tsc / CONFIG_CPU_CLOCK_FREQ_MHZ;
-	s_idle_tsc = __idle_tsc-__start_tsc;
-	idle_us   =  s_idle_tsc / CONFIG_CPU_CLOCK_FREQ_MHZ;
 
 	/* Indicate start for sanity test suite */
 	TC_START("Boot Time Measurement");
 
 	/* Only print lower 32bit of time result */
-	TC_PRINT("MicroKernel Boot Result: Clock Frequency: %d MHz\n",
+	TC_PRINT("NanoKernel Boot Result: Clock Frequency: %d MHz\n",
 			 CONFIG_CPU_CLOCK_FREQ_MHZ);
 	TC_PRINT("__start       : %d cycles, %d us\n",
 			 (uint32_t)(__start_tsc & 0xFFFFFFFFULL),
@@ -73,9 +65,6 @@ void bootTimeTask(void)
 	TC_PRINT("_start->task  : %d cycles, %d us\n",
 			 (uint32_t)(s_task_tsc & 0xFFFFFFFFULL),
 			 (uint32_t)  (task_us  & 0xFFFFFFFFULL));
-	TC_PRINT("_start->idle  : %d cycles, %d us\n",
-			 (uint32_t)(s_idle_tsc & 0xFFFFFFFFULL),
-			 (uint32_t)  (idle_us  & 0xFFFFFFFFULL));
 
 	TC_PRINT("Boot Time Measurement finished\n");
 
@@ -83,4 +72,23 @@ void bootTimeTask(void)
 	TC_END_RESULT(TC_PASS);
 	TC_END_REPORT(TC_PASS);
 
+}
+
+char __stack fiberStack[512];
+
+/**
+ *
+ * @brief Nanokernel entry point
+ *
+ * @return N/A
+ */
+
+void main(void)
+{
+	/* record timestamp for nanokernel's main() function */
+	__main_tsc = _NanoTscRead();
+
+	/* create bootTime fibers */
+	task_fiber_start(fiberStack, 512, (nano_fiber_entry_t) bootTimeTask,
+			 0, 0, 6, 0);
 }

@@ -129,6 +129,14 @@ void idle(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+	/* record timestamp when idling begins */
+
+	extern uint64_t __idle_tsc;
+
+	__idle_tsc = _NanoTscRead();
+#endif
+
 	for (;;) {
 		_sys_power_save_idle(_get_next_timeout_expiry());
 
