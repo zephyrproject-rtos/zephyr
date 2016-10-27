@@ -788,6 +788,34 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 	return gatt_send(conn, buf, gatt_mtu_rsp, params, NULL);
 }
 
+static void gatt_discover_next(struct bt_conn *conn, uint16_t last_handle,
+			       struct bt_gatt_discover_params *params)
+{
+	/* Skip if last_handle is not set */
+	if (!last_handle)
+		goto discover;
+
+	/* Continue from the last found handle */
+	params->start_handle = last_handle;
+	if (params->start_handle < UINT16_MAX) {
+		params->start_handle++;
+	}
+
+	/* Stop if over the range or the requests */
+	if (params->start_handle >= params->end_handle) {
+		goto done;
+	}
+
+discover:
+	/* Discover next range */
+	if (!bt_gatt_discover(conn, params)) {
+		return;
+	}
+
+done:
+	params->func(conn, NULL, params);
+}
+
 static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 			      const void *pdu, uint16_t length,
 			      void *user_data)
@@ -838,21 +866,9 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		goto done;
 	}
 
-	/* Stop if over the range or the requests */
-	if (end_handle >= params->end_handle) {
-		goto done;
-	}
+	gatt_discover_next(conn, end_handle, params);
 
-	/* Continue from the last found handle */
-	params->start_handle = end_handle;
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
-
-	if (!bt_gatt_discover(conn, params)) {
-		return;
-	}
-
+	return;
 done:
 	params->func(conn, NULL, params);
 }
@@ -913,7 +929,8 @@ static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
 
 	if (length != 16) {
 		BT_ERR("Invalid data len %u", length);
-		goto done;
+		params->func(conn, NULL, params);
+		return;
 	}
 
 	value.start_handle = params->_included.start_handle;
@@ -940,23 +957,9 @@ static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 next:
-	/* Continue from the last handle */
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
+	gatt_discover_next(conn, params->start_handle, params);
 
-	/* Stop if over the requested range */
-	if (params->start_handle >= params->end_handle) {
-		goto done;
-	}
-
-	/* Continue to the next range */
-	if (!bt_gatt_discover(conn, params)) {
-		return;
-	}
-
-done:
-	params->func(conn, NULL, params);
+	return;
 }
 
 static int read_included_uuid(struct bt_conn *conn,
@@ -1154,7 +1157,8 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 	BT_DBG("err 0x%02x", err);
 
 	if (err) {
-		goto done;
+		params->func(conn, NULL, params);
+		return;
 	}
 
 	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
@@ -1167,24 +1171,7 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
-	/* Continue from the last handle */
-	params->start_handle = handle;
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
-
-	/* Stop if over the requested range */
-	if (params->start_handle >= params->end_handle) {
-		goto done;
-	}
-
-	/* Continue to the next range */
-	if (!bt_gatt_discover(conn, params)) {
-		return;
-	}
-
-done:
-	params->func(conn, NULL, params);
+	gatt_discover_next(conn, handle, params);
 }
 
 static int att_read_type(struct bt_conn *conn,
@@ -1291,21 +1278,9 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 		goto done;
 	}
 
-	/* Next characteristic shall be after current value handle */
-	params->start_handle = handle;
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
+	gatt_discover_next(conn, handle, params);
 
-	/* Stop if over the requested range */
-	if (params->start_handle >= params->end_handle) {
-		goto done;
-	}
-
-	/* Continue to the next range */
-	if (!bt_gatt_discover(conn, params)) {
-		return;
-	}
+	return;
 
 done:
 	params->func(conn, NULL, params);
