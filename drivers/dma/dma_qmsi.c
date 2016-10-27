@@ -86,6 +86,9 @@ static int dma_qmsi_channel_config(struct device *dev, uint32_t channel,
 	qmsi_cfg.source_burst_length = (qm_dma_burst_length_t)
 					config->source_burst_length;
 
+	/* TODO: add support for using other DMA transfer types. */
+	qmsi_cfg.transfer_type = QM_DMA_TYPE_SINGLE;
+
 	data->callback_data[channel] = config->callback_data;
 	data->transfer[channel] = config->dma_transfer;
 	data->error[channel] = config->dma_error;
