@@ -27,7 +27,7 @@ struct bt_rfcomm_session {
 	struct bt_rfcomm_dlc *dlcs;
 	uint16_t mtu;
 	uint8_t state;
-	bool initiator;
+	bt_rfcomm_role_t role;
 };
 
 enum {
@@ -110,8 +110,29 @@ struct bt_rfcomm_msc {
 
 #define BT_RFCOMM_LEN_EXTENDED(len)        (!((len) & 0x01))
 
-#define BT_RFCOMM_MSG_CMD   1
-#define BT_RFCOMM_MSG_RESP  0
+/* For CR in UIH Packet header
+ * Initiating station have the C/R bit set to 1 and those sent by the
+ * responding station have the C/R bit set to 0
+ */
+#define BT_RFCOMM_UIH_CR(role)             ((role) == BT_RFCOMM_ROLE_INITIATOR)
+
+/* For CR in Non UIH Packet header
+ * Command
+ * Initiator --> Responder 1
+ * Responder --> Initiator 0
+ * Response
+ * Initiator --> Responder 0
+ * Responder --> Initiator 1
+ */
+#define BT_RFCOMM_CMD_CR(role)             ((role) == BT_RFCOMM_ROLE_INITIATOR)
+#define BT_RFCOMM_RESP_CR(role)            ((role) == BT_RFCOMM_ROLE_ACCEPTOR)
+
+/* For CR in MSG header
+ * If the C/R bit is set to 1 the message is a command,
+ * if it is set to 0 the message is a response.
+ */
+#define BT_RFCOMM_MSG_CMD_CR               1
+#define BT_RFCOMM_MSG_RESP_CR              0
 
 /* Excluding ext bit */
 #define BT_RFCOMM_MAX_LEN_8 127

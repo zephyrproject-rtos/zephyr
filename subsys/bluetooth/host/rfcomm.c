@@ -317,7 +317,7 @@ static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
 	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr_cr = dlc->session->initiator ? 1 : 0;
+	hdr_cr = BT_RFCOMM_UIH_CR(dlc->session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(0, hdr_cr);
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, 0);
 	hdr->length = BT_RFCOMM_SET_LEN_8(sizeof(*msg_hdr) + len);
@@ -382,7 +382,7 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 
 	dlc->dlci = dlci;
 	dlc->session = session;
-	dlc->initiator = false;
+	dlc->role = BT_RFCOMM_ROLE_ACCEPTOR;
 	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->mtu = min(dlc->mtu, session->mtu);
@@ -406,7 +406,7 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
-	cr = session->initiator ? 0 : 1;
+	cr = BT_RFCOMM_RESP_CR(session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DM, 1);
 	hdr->length = BT_RFCOMM_SET_LEN_8(0);
@@ -472,7 +472,7 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
-	cr = session->initiator ? 0 : 1;
+	cr = BT_RFCOMM_RESP_CR(session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UA, 1);
 	hdr->length = BT_RFCOMM_SET_LEN_8(0);
@@ -509,7 +509,7 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
 
-	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD);
+	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR);
 
 	nano_fifo_init(&dlc->tx_queue);
 	fiber_start(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_fiber,
@@ -554,7 +554,7 @@ static void rfcomm_dlc_drop(struct bt_rfcomm_dlc *dlc)
 {
 	BT_DBG("dlc %p", dlc);
 
-	if (!dlc->initiator) {
+	if (dlc->role == BT_RFCOMM_ROLE_ACCEPTOR) {
 		rfcomm_send_dm(dlc->session, dlc->dlci);
 	}
 	rfcomm_dlcs_remove_dlci(dlc->session->dlcs, dlc->dlci);
@@ -564,7 +564,7 @@ static void rfcomm_dlc_drop(struct bt_rfcomm_dlc *dlc)
 static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	if (!dlci) {
-		session->initiator = false;
+		session->role = BT_RFCOMM_ROLE_ACCEPTOR;
 
 		if (rfcomm_send_ua(session, dlci) < 0) {
 			return;
@@ -644,7 +644,7 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 {
 	struct bt_rfcomm_hdr *hdr;
 	struct net_buf *buf;
-	uint8_t fcs;
+	uint8_t fcs, cr;
 
 	BT_DBG("Dlc %p credits %d", dlc, credits);
 
@@ -655,7 +655,8 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, dlc->session->initiator);
+	cr = BT_RFCOMM_UIH_CR(dlc->session->role);
+	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, cr);
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, BT_RFCOMM_PF_CREDIT);
 	hdr->length = BT_RFCOMM_SET_LEN_8(0);
 	net_buf_add_u8(buf, credits);
@@ -679,8 +680,8 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 		return;
 	}
 
-	if (cr == BT_RFCOMM_MSG_CMD) {
-		rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP);
+	if (cr == BT_RFCOMM_MSG_CMD_CR) {
+		rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP_CR);
 	}
 }
 
@@ -711,7 +712,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
 	}
 
-	rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP);
+	rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
 }
 
 static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
@@ -826,7 +827,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_rfcomm_hdr *hdr;
-	uint8_t fcs;
+	uint8_t fcs, cr;
 
 	if (!buf) {
 		return -EINVAL;
@@ -856,7 +857,8 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		hdr->length = BT_RFCOMM_SET_LEN_8(buf->len - sizeof(*hdr));
 	}
 
-	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, dlc->session->initiator);
+	cr = BT_RFCOMM_UIH_CR(dlc->session->role);
+	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, cr);
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH,
 					  BT_RFCOMM_PF_NO_CREDIT);
 
@@ -942,7 +944,7 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 			continue;
 		}
 
-		if (!dlc->initiator) {
+		if (dlc->role == BT_RFCOMM_ROLE_ACCEPTOR) {
 			rfcomm_send_ua(session, dlc->dlci);
 			rfcomm_dlc_connected(dlc);
 		}

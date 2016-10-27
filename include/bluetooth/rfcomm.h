@@ -75,6 +75,13 @@ struct bt_rfcomm_dlc_ops {
 	void (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 };
 
+/** @brief Role of RFCOMM session and dlc. Used only by internal APIs
+ */
+typedef enum bt_rfcomm_role {
+	BT_RFCOMM_ROLE_ACCEPTOR,
+	BT_RFCOMM_ROLE_INITIATOR
+} __packed bt_rfcomm_role_t;
+
 /** @brief RFCOMM DLC structure. */
 struct bt_rfcomm_dlc {
 	/* Queue for outgoing data */
@@ -88,12 +95,12 @@ struct bt_rfcomm_dlc {
 	struct bt_rfcomm_dlc      *_next;
 
 	bt_security_t              required_sec_level;
+	bt_rfcomm_role_t           role;
 
 	uint16_t                   mtu;
 	uint8_t                    dlci;
 	uint8_t                    state;
 	uint8_t                    rx_credit;
-	bool                       initiator;
 
 	/* Stack for TX fiber */
 	BT_STACK(stack, 128);
