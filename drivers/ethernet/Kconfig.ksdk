@@ -17,7 +17,7 @@
 menuconfig ETH_KSDK
 	bool
 	prompt "KSDK Ethernet driver"
-	depends on ETHERNET && HAS_KSDK
+	depends on (ETHERNET  || NET_L2_ETHERNET) && HAS_KSDK
 	default n
 	help
 	Enable KSDK Ethernet driver.  Note, this driver performs one shot PHY

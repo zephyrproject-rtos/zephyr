@@ -1,7 +1,6 @@
 /* KSDK Ethernet Driver
  *
  *  Copyright (c) 2016 ARM Ltd
- *  Copyright (c) 2016 Linaro Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,41 +24,27 @@
  * error behaviour.
  */
 
-#define SYS_LOG_DOMAIN "dev/eth_ksdk"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <misc/sys_log.h>
-
 #include <board.h>
 #include <device.h>
 #include <misc/util.h>
 #include <nanokernel.h>
-#include <net/nbuf.h>
-#include <net/net_if.h>
+#include <net/ip/net_driver_ethernet.h>
 
 #include "fsl_enet.h"
 #include "fsl_phy.h"
 #include "fsl_port.h"
 
+#define SYS_LOG_DOMAIN "dev/eth_ksdk"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
+#include <misc/sys_log.h>
+
 struct eth_context {
-	struct net_if *iface;
 	enet_handle_t enet_handle;
 	struct nano_sem tx_buf_sem;
 	uint8_t mac_addr[6];
-	/* TODO: FIXME. This Ethernet frame sized buffer is used for
-	 * interfacing with KSDK. How it works is that hardware uses
-	 * DMA scatter buffers to receive a frame, and then public
-	 * KSDK call gathers them into this buffer (there's no other
-	 * public interface). All this happens only for this driver
-	 * to scatter this buffer again into Zephyr fragment buffers.
-	 * This is not efficient, but proper resolution of this issue
-	 * depends on introduction of zero-copy networking support
-	 * in Zephyr, and adding needed interface to KSDK (or
-	 * bypassing it and writing a more complex driver working
-	 * directly with hardware).
-	 */
-	uint8_t frame_buf[1500];
 };
 
+static int eth_net_tx(struct net_buf *);
 static void eth_0_config_func(void);
 
 static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
@@ -80,51 +65,26 @@ rx_buffer[CONFIG_ETH_KSDK_RX_BUFFERS][ETH_KSDK_BUFFER_SIZE];
 static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
 tx_buffer[CONFIG_ETH_KSDK_TX_BUFFERS][ETH_KSDK_BUFFER_SIZE];
 
-static int eth_tx(struct net_if *iface, struct net_buf *buf)
+static int eth_tx(struct device *iface, struct net_buf *buf)
 {
-	struct eth_context *context = iface->dev->driver_data;
-	const struct net_buf *frag;
-	uint8_t *dst;
+	struct eth_context *context = iface->driver_data;
 	status_t status;
-
-	uint16_t total_len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
 
 	nano_sem_take(&context->tx_buf_sem, TICKS_UNLIMITED);
 
-	/* Gather fragment buffers into flat Ethernet frame buffer
-	 * which can be fed to KSDK Ethernet functions. First
-	 * fragment is special - it contains link layer (Ethernet
-	 * in our case) headers and must be treated specially.
-	 */
-	dst = context->frame_buf;
-	memcpy(dst, net_nbuf_ll(buf),
-	       net_nbuf_ll_reserve(buf) + buf->frags->len);
-	dst += net_nbuf_ll_reserve(buf) + buf->frags->len;
-
-	/* Continue with the rest of fragments (which contain only data) */
-	frag = buf->frags->frags;
-	while (frag) {
-		memcpy(dst, frag->data, frag->len);
-		dst += frag->len;
-		frag = frag->frags;
-	}
-
-	status = ENET_SendFrame(ENET, &context->enet_handle, context->frame_buf,
-				total_len);
+	status = ENET_SendFrame(ENET, &context->enet_handle, uip_buf(buf),
+				uip_len(buf));
 	if (status) {
 		SYS_LOG_ERR("ENET_SendFrame error: %d\n", status);
-		return -1;
+		return 0;
 	}
-
-	net_nbuf_unref(buf);
-	return 0;
+	return 1;
 }
 
 static void eth_rx(struct device *iface)
 {
 	struct eth_context *context = iface->driver_data;
-	struct net_buf *buf, *prev_frag;
-	const uint8_t *src;
+	struct net_buf *buf;
 	uint32_t frame_length = 0;
 	status_t status;
 
@@ -145,8 +105,8 @@ static void eth_rx(struct device *iface)
 		return;
 	}
 
-	buf = net_nbuf_get_reserve_rx(0);
-	if (!buf) {
+	buf = ip_buf_get_reserve_rx(0);
+	if (buf == NULL) {
 		/* We failed to get a receive buffer.  We don't add
 		 * any further logging here because the allocator
 		 * issued a diagnostic when it failed to allocate.
@@ -160,8 +120,8 @@ static void eth_rx(struct device *iface)
 		return;
 	}
 
-	if (sizeof(context->frame_buf) < frame_length) {
-		SYS_LOG_ERR("frame too large (%d)\n", frame_length);
+	if (net_buf_tailroom(buf) < frame_length) {
+		SYS_LOG_ERR("frame too large\n");
 		net_buf_unref(buf);
 		status = ENET_ReadFrame(ENET, &context->enet_handle, NULL, 0);
 		assert(status == kStatus_Success);
@@ -169,45 +129,19 @@ static void eth_rx(struct device *iface)
 	}
 
 	status = ENET_ReadFrame(ENET, &context->enet_handle,
-				context->frame_buf, frame_length);
+				net_buf_add(buf, frame_length), frame_length);
 	if (status) {
 		SYS_LOG_ERR("ENET_ReadFrame failed: %d\n", status);
 		net_buf_unref(buf);
 		return;
 	}
 
-	src = context->frame_buf;
-	prev_frag = buf;
-	do {
-		struct net_buf *pkt_buf;
-		size_t frag_len;
-
-		pkt_buf = net_nbuf_get_reserve_data(0);
-		if (!pkt_buf) {
-			SYS_LOG_ERR("Failed to get fragment buf\n");
-			net_buf_unref(buf);
-			assert(status == kStatus_Success);
-			return;
-		}
-
-		net_buf_frag_insert(prev_frag, pkt_buf);
-		prev_frag = pkt_buf;
-		frag_len = net_buf_tailroom(pkt_buf);
-		if (frag_len > frame_length) {
-			frag_len = frame_length;
-		}
-
-		memcpy(pkt_buf->data, src, frag_len);
-		net_buf_add(pkt_buf, frag_len);
-		src += frag_len;
-		frame_length -= frag_len;
-	} while (frame_length > 0);
-
-	net_recv_data(context->iface, buf);
+	uip_len(buf) = frame_length;
+	net_driver_ethernet_recv(buf);
 }
 
-static void eth_callback(ENET_Type *base, enet_handle_t *handle,
-			 enet_event_t event, void *param)
+void eth_callback(ENET_Type *base, enet_handle_t *handle, enet_event_t event,
+		  void *param)
 {
 	struct device *iface = param;
 	struct eth_context *context = iface->driver_data;
@@ -266,6 +200,7 @@ static int eth_0_init(struct device *dev)
 	const uint32_t phy_addr = 0x0;
 	bool link;
 	status_t status;
+	int result;
 	enet_buffer_config_t buffer_config = {
 		.rxBdNumber = CONFIG_ETH_KSDK_RX_BUFFERS,
 		.txBdNumber = CONFIG_ETH_KSDK_TX_BUFFERS,
@@ -326,26 +261,17 @@ static int eth_0_init(struct device *dev)
 		    context->mac_addr[2], context->mac_addr[3],
 		    context->mac_addr[4], context->mac_addr[5]);
 
+	result = net_set_mac(context->mac_addr, sizeof(context->mac_addr));
+	if (result) {
+		return 1;
+	}
+
 	ENET_SetCallback(&context->enet_handle, eth_callback, dev);
+	net_driver_ethernet_register_tx(eth_net_tx);
 	eth_0_config_func();
 	ENET_ActiveRead(ENET);
 	return 0;
 }
-
-static void eth_0_iface_init(struct net_if *iface)
-{
-	struct device *dev = net_if_get_device(iface);
-	struct eth_context *context = dev->driver_data;
-
-	net_if_set_link_addr(iface, context->mac_addr,
-			     sizeof(context->mac_addr));
-	context->iface = iface;
-}
-
-static struct net_if_api api_funcs_0 = {
-	.init	= eth_0_iface_init,
-	.send	= eth_tx,
-};
 
 static void eth_ksdk_rx_isr(void *p)
 {
@@ -384,16 +310,14 @@ static struct eth_context eth_0_context = {
 #endif
 };
 
-#ifdef CONFIG_NET_L2_ETHERNET
-#define _ETH_L2_LAYER ETHERNET_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-#endif
+DEVICE_INIT(eth_ksdk_0, CONFIG_ETH_KSDK_0_NAME, eth_0_init,
+	    &eth_0_context, NULL,
+	    NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-NET_DEVICE_INIT(eth_ksdk_0, CONFIG_ETH_KSDK_0_NAME,
-		eth_0_init, &eth_0_context,
-		NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		&api_funcs_0, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 1500);
+static int eth_net_tx(struct net_buf *buf)
+{
+	return eth_tx(DEVICE_GET(eth_ksdk_0), buf);
+}
 
 static void eth_0_config_func(void)
 {
