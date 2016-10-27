@@ -114,9 +114,15 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 	return 0;
 }
 
+static uint32_t aio_cmp_qmsi_get_pending_int(struct device *dev)
+{
+	return QM_SCSS_CMP->cmp_stat_clr;
+}
+
 static const struct aio_cmp_driver_api aio_cmp_funcs = {
 	.disable = aio_qmsi_cmp_disable,
 	.configure = aio_qmsi_cmp_configure,
+	.get_pending_int = aio_cmp_qmsi_get_pending_int,
 };
 
 static int aio_qmsi_cmp_init(struct device *dev)

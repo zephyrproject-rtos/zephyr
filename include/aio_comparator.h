@@ -38,10 +38,12 @@ typedef int (*aio_cmp_api_disable)(struct device *dev, uint8_t index);
 typedef int (*aio_cmp_api_configure)(struct device *dev, uint8_t index,
     enum aio_cmp_polarity polarity, enum aio_cmp_ref refsel,
     aio_cmp_cb cb, void *param);
+typedef uint32_t (*aio_cmp_api_get_pending_int)(struct device *dev);
 
 struct aio_cmp_driver_api {
 	aio_cmp_api_disable disable;
 	aio_cmp_api_configure configure;
+	aio_cmp_api_get_pending_int get_pending_int;
 };
 
 /**
@@ -84,6 +86,27 @@ static inline int aio_cmp_configure(struct device *dev, uint8_t index,
 	const struct aio_cmp_driver_api *api = dev->driver_api;
 
 	return api->configure(dev, index, polarity, refsel, cb, param);
+}
+
+/**
+ * @brief Function to get pending interrupts
+ *
+ * The purpose of this function is to return the interrupt
+ * status register for the device.
+ * This is especially useful when waking up from
+ * low power states to check the wake up source.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval status != 0 if at least one aio_cmp interrupt is pending.
+ * @retval 0 if no aio_cmp interrupt is pending.
+ */
+static inline int aio_cmp_get_pending_int(struct device *dev)
+{
+	struct aio_cmp_driver_api *api;
+
+	api = (struct aio_cmp_driver_api *)dev->driver_api;
+	return api->get_pending_int(dev);
 }
 
 #ifdef __cplusplus
