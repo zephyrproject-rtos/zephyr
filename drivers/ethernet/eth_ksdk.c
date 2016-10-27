@@ -86,10 +86,16 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	const struct net_buf *frag;
 	uint8_t *dst;
 	status_t status;
+	unsigned int imask;
 
 	uint16_t total_len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
 
 	nano_sem_take(&context->tx_buf_sem, TICKS_UNLIMITED);
+
+	/* As context->frame_buf is shared resource used by both eth_tx
+	 * and eth_rx, we need to protect it with irq_lock.
+	 */
+	imask = irq_lock();
 
 	/* Gather fragment buffers into flat Ethernet frame buffer
 	 * which can be fed to KSDK Ethernet functions. First
@@ -111,6 +117,9 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 
 	status = ENET_SendFrame(ENET, &context->enet_handle, context->frame_buf,
 				total_len);
+
+	irq_unlock(imask);
+
 	if (status) {
 		SYS_LOG_ERR("ENET_SendFrame error: %d\n", status);
 		return -1;
@@ -127,6 +136,7 @@ static void eth_rx(struct device *iface)
 	const uint8_t *src;
 	uint32_t frame_length = 0;
 	status_t status;
+	unsigned int imask;
 
 	status = ENET_GetRxFrameSize(&context->enet_handle, &frame_length);
 	if (status) {
@@ -168,9 +178,15 @@ static void eth_rx(struct device *iface)
 		return;
 	}
 
+	/* As context->frame_buf is shared resource used by both eth_tx
+	 * and eth_rx, we need to protect it with irq_lock.
+	 */
+	imask = irq_lock();
+
 	status = ENET_ReadFrame(ENET, &context->enet_handle,
 				context->frame_buf, frame_length);
 	if (status) {
+		irq_unlock(imask);
 		SYS_LOG_ERR("ENET_ReadFrame failed: %d\n", status);
 		net_buf_unref(buf);
 		return;
@@ -184,6 +200,7 @@ static void eth_rx(struct device *iface)
 
 		pkt_buf = net_nbuf_get_reserve_data(0);
 		if (!pkt_buf) {
+			irq_unlock(imask);
 			SYS_LOG_ERR("Failed to get fragment buf\n");
 			net_buf_unref(buf);
 			assert(status == kStatus_Success);
@@ -202,6 +219,8 @@ static void eth_rx(struct device *iface)
 		src += frag_len;
 		frame_length -= frag_len;
 	} while (frame_length > 0);
+
+	irq_unlock(imask);
 
 	net_recv_data(context->iface, buf);
 }
