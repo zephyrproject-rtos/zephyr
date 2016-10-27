@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 
 #include <board.h>
 #include <init.h>

@@ -18,7 +18,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <sections.h>
 
 #include <board.h>
