@@ -41,17 +41,6 @@ struct spi_qmsi_config {
 	uint32_t cs_pin;
 };
 
-struct spi_context_t {
-	uint32_t ctrlr0;
-	uint32_t baudr;
-	uint32_t ser;
-	/* FIXME: When moving suspend/resume to QMSI,
-	 * int_*_masks will need to be removed as the
-	 * QMSI ROM will not reset it anymore.
-	 */
-	uint32_t int_spi_mask;
-};
-
 struct spi_qmsi_runtime {
 	struct device *gpio_cs;
 	device_sync_call_t sync;
@@ -60,8 +49,10 @@ struct spi_qmsi_runtime {
 	bool loopback;
 	struct nano_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	struct spi_context_t ctx_save;
 	uint32_t device_power_state;
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+	qm_spi_context_t spi_ctx;
+#endif
 #endif
 };
 
@@ -304,6 +295,7 @@ static int spi_qmsi_init(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 static int spi_master_suspend_device(struct device *dev)
 {
 	if (device_busy_check(dev)) {
@@ -311,47 +303,27 @@ static int spi_master_suspend_device(struct device *dev)
 	}
 
 	const struct spi_qmsi_config *config = dev->config->config_info;
-	qm_spi_reg_t *const regs = QM_SPI[config->spi];
 	struct spi_qmsi_runtime *drv_data = dev->driver_data;
-	struct spi_context_t *const ctx_save = &drv_data->ctx_save;
 
-	if (config->spi == QM_SPI_MST_0) {
-		ctx_save->int_spi_mask =
-			QM_INTERRUPT_ROUTER->spi_master_0_int_mask;
-	} else {
-		ctx_save->int_spi_mask =
-			QM_INTERRUPT_ROUTER->spi_master_1_int_mask;
-	}
-
-	ctx_save->ctrlr0 = regs->ctrlr0;
-	ctx_save->ser = regs->ser;
-	ctx_save->baudr = regs->baudr;
+	qm_spi_save_context(config->spi, &drv_data->spi_ctx);
 
 	spi_master_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
 	return 0;
 }
 
 static int spi_master_resume_device_from_suspend(struct device *dev)
 {
 	const struct spi_qmsi_config *config = dev->config->config_info;
-	qm_spi_reg_t *const regs = QM_SPI[config->spi];
 	struct spi_qmsi_runtime *drv_data = dev->driver_data;
-	struct spi_context_t *const ctx_save = &drv_data->ctx_save;
 
-	if (config->spi == QM_SPI_MST_0) {
-		QM_INTERRUPT_ROUTER->spi_master_0_int_mask =
-			ctx_save->int_spi_mask;
-	} else {
-		QM_INTERRUPT_ROUTER->spi_master_1_int_mask =
-			ctx_save->int_spi_mask;
-	}
-	regs->ctrlr0 = ctx_save->ctrlr0;
-	regs->ser = ctx_save->ser;
-	regs->baudr = ctx_save->baudr;
+	qm_spi_restore_context(config->spi, &drv_data->spi_ctx);
 
 	spi_master_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
+#endif
 
 /*
 * Implements the driver control management functionality
@@ -361,11 +333,13 @@ static int spi_master_qmsi_device_ctrl(struct device *port,
 				       uint32_t ctrl_command, void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return spi_master_suspend_device(port);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return spi_master_resume_device_from_suspend(port);
 		}
+#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = spi_master_get_power_state(port);
 		return 0;
