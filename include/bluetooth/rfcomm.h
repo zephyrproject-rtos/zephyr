@@ -88,7 +88,7 @@ struct bt_rfcomm_dlc {
 	struct nano_fifo           tx_queue;
 
 	/** TX credits */
-	struct nano_sem            tx_credits;
+	struct k_sem               tx_credits;
 
 	struct bt_rfcomm_session  *session;
 	struct bt_rfcomm_dlc_ops  *ops;

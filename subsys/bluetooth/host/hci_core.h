@@ -60,14 +60,14 @@ struct bt_dev_le {
 
 	/* Controller buffer information */
 	uint16_t		mtu;
-	struct nano_sem		pkts;
+	struct k_sem		pkts;
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t		mtu;
-	struct nano_sem		pkts;
+	struct k_sem		pkts;
 };
 #endif
 
@@ -104,7 +104,7 @@ struct bt_dev {
 
 	/* Number of commands controller can accept */
 	uint8_t			ncmd;
-	struct nano_sem		ncmd_sem;
+	struct k_sem		ncmd_sem;
 
 	/* Last sent HCI command */
 	struct net_buf		*sent_cmd;

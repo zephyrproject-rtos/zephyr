@@ -657,7 +657,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	}
 
 	chan->rx.mps = BT_L2CAP_MAX_LE_MPS;
-	nano_sem_init(&chan->rx.credits);
+	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
 }
 
 static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
@@ -665,7 +665,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 	BT_DBG("chan %p", chan);
 
 	memset(&chan->tx, 0, sizeof(chan->tx));
-	nano_sem_init(&chan->tx.credits);
+	k_sem_init(&chan->tx.credits, 0, UINT_MAX);
 }
 
 static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
@@ -674,7 +674,7 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 	BT_DBG("chan %p credits %u", chan, credits);
 
 	while (credits--) {
-		nano_sem_give(&chan->tx.credits);
+		k_sem_give(&chan->tx.credits);
 	}
 }
 
@@ -684,7 +684,7 @@ static void l2cap_chan_rx_give_credits(struct bt_l2cap_le_chan *chan,
 	BT_DBG("chan %p credits %u", chan, credits);
 
 	while (credits--) {
-		nano_sem_give(&chan->rx.credits);
+		k_sem_give(&chan->rx.credits);
 	}
 }
 
@@ -1060,7 +1060,7 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	ch = BT_L2CAP_LE_CHAN(chan);
 
-	if (nano_sem_count_get(&ch->tx.credits) + credits > UINT16_MAX) {
+	if (k_sem_count_get(&ch->tx.credits) + credits > UINT16_MAX) {
 		BT_ERR("Credits overflow");
 		bt_l2cap_chan_disconnect(chan);
 		return;
@@ -1069,7 +1069,7 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 	l2cap_chan_tx_give_credits(ch, credits);
 
 	BT_DBG("chan %p total credits %u", ch,
-	       nano_sem_count_get(&ch->tx.credits));
+	       k_sem_count_get(&ch->tx.credits));
 }
 
 static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1165,13 +1165,12 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	uint16_t credits;
 
 	/* Only give more credits if it went bellow the defined threshold */
-	if (nano_sem_count_get(&chan->rx.credits) >
-	    L2CAP_LE_CREDITS_THRESHOLD) {
+	if (k_sem_count_get(&chan->rx.credits) > L2CAP_LE_CREDITS_THRESHOLD) {
 		goto done;
 	}
 
 	/* Restore credits */
-	credits = L2CAP_LE_MAX_CREDITS - nano_sem_count_get(&chan->rx.credits);
+	credits = L2CAP_LE_MAX_CREDITS - k_sem_count_get(&chan->rx.credits);
 	l2cap_chan_rx_give_credits(chan, credits);
 
 	buf = bt_l2cap_create_pdu(&le_sig, 0);
@@ -1192,8 +1191,7 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
 
 done:
-	BT_DBG("chan %p credits %u", chan,
-	       nano_sem_count_get(&chan->rx.credits));
+	BT_DBG("chan %p credits %u", chan, k_sem_count_get(&chan->rx.credits));
 }
 
 static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
@@ -1264,7 +1262,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 {
 	uint16_t sdu_len;
 
-	if (!nano_fiber_sem_take(&chan->rx.credits, TICKS_NONE)) {
+	if (!k_sem_take(&chan->rx.credits, K_NO_WAIT)) {
 		BT_ERR("No credits to receive packet");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
@@ -1630,7 +1628,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	int len;
 
 	/* Wait for credits */
-	nano_sem_take(&ch->tx.credits, TICKS_UNLIMITED);
+	k_sem_take(&ch->tx.credits, K_FOREVER);
 
 	buf = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
 	if (!buf) {
@@ -1644,7 +1642,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	}
 
 	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
-	       buf->len, nano_sem_count_get(&ch->tx.credits));
+	       buf->len, k_sem_count_get(&ch->tx.credits));
 
 	len = buf->len;
 

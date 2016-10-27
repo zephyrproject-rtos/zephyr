@@ -217,11 +217,11 @@ static void rfcomm_dlc_tx_give_credits(struct bt_rfcomm_dlc *dlc,
 	BT_DBG("dlc %p credits %u", dlc, credits);
 
 	while (credits--) {
-		nano_sem_give(&dlc->tx_credits);
+		k_sem_give(&dlc->tx_credits);
 	}
 
 	BT_DBG("dlc %p updated credits %u", dlc,
-	       nano_sem_count_get(&dlc->tx_credits));
+	       k_sem_count_get(&dlc->tx_credits));
 }
 
 static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
@@ -363,7 +363,7 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->role = role;
-	nano_sem_init(&dlc->tx_credits);
+	k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
 
 	dlc->_next = session->dlcs;
 	session->dlcs = dlc;
@@ -443,7 +443,7 @@ static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
 
 		BT_DBG("Wait for credits %p", dlc);
 		/* Wait for credits */
-		nano_sem_take(&dlc->tx_credits, TICKS_UNLIMITED);
+		k_sem_take(&dlc->tx_credits, K_FOREVER);
 		if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
 			net_buf_unref(buf);
 			break;
@@ -841,8 +841,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	BT_DBG("dlc %p tx credit %d", dlc,
-	       nano_sem_count_get(&dlc->tx_credits));
+	BT_DBG("dlc %p tx credit %d", dlc, k_sem_count_get(&dlc->tx_credits));
 
 	if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
 		return -ENOTCONN;
