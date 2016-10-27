@@ -20,9 +20,6 @@
 #include <stddef.h>
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
-#include <atomic.h>
-#include <sections.h>
 
 #include <board.h>
 #include <init.h>
@@ -98,14 +95,11 @@ static bool reliable_packet(uint8_t type)
 				 ((hdr)[2] |= (len) >> 4))
 
 static struct h5 {
-	atomic_t		flags;
 	struct net_buf		*rx_buf;
 
 	struct nano_fifo	tx_queue;
 	struct nano_fifo	rx_queue;
 	struct nano_fifo	unack_queue;
-
-	struct nano_sem		active_state;
 
 	uint8_t			tx_win;
 	uint8_t			tx_ack;
@@ -134,9 +128,6 @@ static const uint8_t sync_rsp[] = { 0x02, 0x7d };
 /* Third byte may change */
 static uint8_t conf_req[3] = { 0x03, 0xfc };
 static const uint8_t conf_rsp[] = { 0x04, 0x7b };
-static const uint8_t wakeup_req[] = { 0x05, 0xfa };
-static const uint8_t woken_req[] = { 0x06, 0xf9 };
-static const uint8_t sleep_req[] = { 0x07, 0x78 };
 
 /* H5 signal buffers pool */
 #define CONFIG_BLUETOOTH_MAX_SIG_LEN	3
