@@ -356,6 +356,15 @@ F:	include/sensor.h
 F:	drivers/sensor/
 F:	samples/sensor/
 
+STM32F4X SoC FAMILY and DRIVERS
+M:	Amit Kucheria <amit.kucheria@linaro.org>
+M:	Ricardo Salveti <ricardo.salveti@linaro.org>
+S:	Supported
+F:	arch/arm/soc/st_stm32/stm32f4/
+F:	drivers/pinmux/stm32/
+F:	drivers/gpio/*stm32*
+F:	drivers/clock_control/*stm32f4*
+
 TINYCRYPT
 M:	Constanza Heath <constanza.m.heath@intel.com>
 M:	Flavio Santes <flavio.santes@intel.com>
