@@ -49,7 +49,7 @@ GDATA(saved_r0)
 
 .macro _firq_return
 #if CONFIG_RGF_NUM_BANKS == 1
-	b _firq_scratch_restore
+	b _firq_no_reschedule
 #else
 	rtie
 #endif
@@ -151,13 +151,11 @@ SECTION_FUNC(TEXT, _firq_exit)
 _firq_check_for_swap:
 	/* coop thread ? do not schedule */
 	ld_s r0, [r2, __tTCS_prio_OFFSET]
-	brge r0, 0, _firq_reschedule
-	_firq_return
+	brlt r0, 0, _firq_no_reschedule
 
 	/* scheduler locked ? do not schedule */
 	ld_s r0, [r2, __tTCS_sched_locked_OFFSET]
-	brle r0, 0,  _firq_reschedule
-	_firq_return
+	brgt r0, 0, _firq_no_reschedule
 
 	/* check if the current thread needs to be rescheduled */
 	push_s r2
@@ -167,8 +165,19 @@ _firq_check_for_swap:
 	pop_s blink
 	pop_s r1
 	pop_s r2
-	brne r0, 0, _firq_reschedule
-	_firq_return
+#if CONFIG_RGF_NUM_BANKS != 1
+#ifndef CONFIG_FIRQ_NO_LPCC
+	/*
+	 * restore lp_count, lp_start, lp_end from r23-r25 in case
+	 * _is_next_thread_current() routine used them
+	 */
+	mov lp_count,r23
+	sr r24, [_ARC_V2_LP_START]
+	sr r25, [_ARC_V2_LP_END]
+#endif
+#endif
+	breq r0, 0, _firq_reschedule
+	/* fall to no rescheduling */
 #else
 _firq_check_for_swap:
 	/* Check if the current is a task */
@@ -181,8 +190,41 @@ _firq_check_for_swap:
 _check_if_a_fiber_is_ready:
 	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
 	brne r0, 0, _firq_reschedule
-	_firq_return
+	/* fall to no rescheduling */
 #endif /* CONFIG_KERNEL_V2 */
+
+.balign 4
+_firq_no_reschedule:
+	/*
+	 * Keeping this code block close to those that use it allows using brxx
+	 * instruction instead of a pair of cmp and bxx
+	 */
+#if CONFIG_RGF_NUM_BANKS == 1
+	add sp,sp,4 /* don't need r0 from stack */
+	pop_s r1
+	pop_s r2
+	pop_s r3
+	pop r4
+	pop r5
+	pop r6
+	pop r7
+	pop r8
+	pop r9
+	pop r10
+	pop r11
+	pop_s r12
+	pop_s r13
+	pop_s blink
+	pop_s r0
+	sr r0, [_ARC_V2_LP_END]
+	pop_s r0
+	sr r0, [_ARC_V2_LP_START]
+	pop_s r0
+	mov lp_count,r0
+	ld r0,[saved_r0]
+	add sp,sp,8 /* don't need ilink & status32_po from stack */
+#endif
+	rtie
 
 .balign 4
 _firq_reschedule:
@@ -299,42 +341,9 @@ _firq_return_from_firq:
 	sr ilink, [_ARC_V2_STATUS32_P0]
 	ld ilink, [sp, -8] /* pc into ilink */
 
-	/* fall through to rtie instruction */
-
-.balign 4
-_firq_no_reschedule:
-
 	/* LP registers are already restored, just switch back to bank 0 */
 	rtie
 
-#if CONFIG_RGF_NUM_BANKS == 1
-.balign 4
-_firq_scratch_restore:
-	add sp,sp,4 /* don't need r0 from stack */
-	pop_s r1
-	pop_s r2
-	pop_s r3
-	pop r4
-	pop r5
-	pop r6
-	pop r7
-	pop r8
-	pop r9
-	pop r10
-	pop r11
-	pop_s r12
-	pop_s r13
-	pop_s blink
-	pop_s r0
-	sr r0, [_ARC_V2_LP_END]
-	pop_s r0
-	sr r0, [_ARC_V2_LP_START]
-	pop_s r0
-	mov lp_count,r0
-	ld r0,[saved_r0]
-	add sp,sp,8 /* don't need ilink & status32_po from stack */
-	rtie
-#endif
 
 /**
  *

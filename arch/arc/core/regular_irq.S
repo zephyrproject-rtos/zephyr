@@ -141,7 +141,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	pop_s blink
 	pop_s r1
 	pop_s r2
-	breq.d r0, 0, _rirq_no_reschedule
+	brne.d r0, 0, _rirq_no_reschedule
 	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 
 	/*
