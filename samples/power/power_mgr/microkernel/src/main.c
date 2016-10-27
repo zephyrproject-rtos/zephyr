@@ -283,6 +283,7 @@ static void resume_devices(int pm_policy)
 	for (i = 0; i < device_count; i++) {
 		if (!device_retval[i]) {
 			int idx = device_policy_list[i];
+
 			device_set_power_state(&device_list[idx],
 						DEVICE_PM_ACTIVE_STATE);
 		}
