@@ -203,5 +203,11 @@ config SPI_1_IRQ_PRI
 	default 1
 endif # SPI
 
+if DMA
+
+config DMA_QMSI
+	def_bool y
+
+endif # DMA
 
 endif #SOC_QUARK_SE_C1000_SS
