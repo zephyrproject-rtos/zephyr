@@ -29,7 +29,7 @@ void offload_function(void *param)
 	TC_PRINT("offload_function running\n");
 
 	/* Make sure we're in IRQ context */
-	if (!_IS_IN_ISR()) {
+	if (!_is_in_isr()) {
 		TC_PRINT("Not in IRQ context!\n");
 		return;
 	}

@@ -919,7 +919,6 @@ extern unsigned char _idt_base_address[];
 }
 #endif
 
-#define _IS_IN_ISR() (_nanokernel.nested != 0)
 #define _is_in_isr() (_nanokernel.nested != 0)
 
 #endif /* _ASMLANGUAGE */

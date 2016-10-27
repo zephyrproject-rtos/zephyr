@@ -38,7 +38,7 @@ nano_thread_id_t sys_thread_self_get(void)
 
 nano_context_type_t sys_execution_context_type_get(void)
 {
-	if (_IS_IN_ISR())
+	if (_is_in_isr())
 		return NANO_CTX_ISR;
 
 	if ((_nanokernel.current->flags & TASK) == TASK)

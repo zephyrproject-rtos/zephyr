@@ -322,7 +322,6 @@ _set_thread_return_value_with_data(struct k_thread *thread, unsigned int value,
 
 extern void nano_cpu_atomic_idle(unsigned int);
 
-#define _IS_IN_ISR() _IsInIsr()
 #define _is_in_isr() _IsInIsr()
 
 extern void _IntLibInit(void);

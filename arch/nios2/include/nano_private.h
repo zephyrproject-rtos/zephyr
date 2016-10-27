@@ -263,7 +263,6 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf);
 
 
-#define _IS_IN_ISR() (_nanokernel.nested != 0)
 #define _is_in_isr() (_nanokernel.nested != 0)
 
 #ifdef CONFIG_IRQ_OFFLOAD

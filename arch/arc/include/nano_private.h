@@ -350,8 +350,6 @@ static ALWAYS_INLINE int _is_in_isr(void)
 	return ((act & 0xffff) != 0);
 }
 
-#define _IS_IN_ISR _is_in_isr
-
 /**
  *
  * @bried Indicates the interrupt number of the highest priority

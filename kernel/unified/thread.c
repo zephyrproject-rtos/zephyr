@@ -62,7 +62,7 @@ int sys_execution_context_type_get(void)
  */
 int k_am_in_isr(void)
 {
-	return _IS_IN_ISR();
+	return _is_in_isr();
 }
 
 /*
