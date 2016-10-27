@@ -81,7 +81,7 @@ config GPIO_K64_C
 	Enable config options for Freescale K64-based GPIO port C.
 
 config GPIO_K64_C_DEV_NAME
-	string "Freescale K64-based GPIO Port B Device Name"
+	string "Freescale K64-based GPIO Port C Device Name"
 	depends on GPIO_K64_C
 	default "GPIO_2"
 	help
