@@ -1,3 +1,21 @@
+# Kconfig - Bluetooth drivers configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 if BLUETOOTH_STACK_HCI || BLUETOOTH_STACK_HCI_RAW
 
 comment "Bluetooth HCI Driver Options"
@@ -10,7 +28,7 @@ choice
 	prompt "Bluetooth HCI driver"
 	default BLUETOOTH_H4
 
-config	BLUETOOTH_H4
+config BLUETOOTH_H4
 	bool "H:4 UART"
 	select SERIAL
 	select UART_INTERRUPT_DRIVEN
@@ -36,7 +54,7 @@ config BLUETOOTH_CONTROLLER
 	bool "Controller"
 	select BLUETOOTH_HOST_BUFFERS
 	help
-		Enables support for SoC native controller implementation.
+	  Enables support for SoC native controller implementation.
 
 config BLUETOOTH_NO_DRIVER
 	bool "No default HCI driver"
@@ -58,7 +76,7 @@ config BLUETOOTH_HOST_BUFFERS
 	  make sense to have the lower layers manage these buffers, in
 	  which case this option can be left disabled.
 
-config	BLUETOOTH_DEBUG_HCI_DRIVER
+config BLUETOOTH_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"
 	depends on BLUETOOTH_DEBUG && (BLUETOOTH_UART || BLUETOOTH_CONTROLLER)
 	default n
