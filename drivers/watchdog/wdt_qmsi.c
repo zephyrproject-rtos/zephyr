@@ -143,15 +143,6 @@ static const struct wdt_driver_api api = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-struct wdt_ctx {
-	uint32_t wdt_cr;
-	uint32_t wdt_torr;
-	uint32_t int_watchdog_mask;
-};
-
-static struct wdt_ctx wdt_ctx_save;
-
-
 static void wdt_qmsi_set_power_state(struct device *dev, uint32_t power_state)
 {
 	struct wdt_data *context = dev->driver_data;
@@ -166,13 +157,12 @@ static uint32_t wdt_qmsi_get_power_state(struct device *dev)
 	return context->device_power_state;
 }
 
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static qm_wdt_context_t wdt_ctx;
 
 static int wdt_suspend_device(struct device *dev)
 {
-	wdt_ctx_save.wdt_torr = QM_WDT[QM_WDT_0].wdt_torr;
-	wdt_ctx_save.wdt_cr = QM_WDT[QM_WDT_0].wdt_cr;
-	wdt_ctx_save.int_watchdog_mask =
-	QM_INTERRUPT_ROUTER->wdt_0_int_mask;
+	qm_wdt_save_context(QM_WDT_0, &wdt_ctx);
 
 	wdt_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 
@@ -181,17 +171,13 @@ static int wdt_suspend_device(struct device *dev)
 
 static int wdt_resume_device_from_suspend(struct device *dev)
 {
-	/* TOP_INIT field has to be written before
-	 * the Watchdog Timer is enabled.
-	 */
-	QM_WDT[QM_WDT_0].wdt_torr = wdt_ctx_save.wdt_torr;
-	QM_WDT[QM_WDT_0].wdt_cr = wdt_ctx_save.wdt_cr;
-	QM_INTERRUPT_ROUTER->wdt_0_int_mask = wdt_ctx_save.int_watchdog_mask;
+	qm_wdt_restore_context(QM_WDT_0, &wdt_ctx);
 
 	wdt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
 	return 0;
 }
+#endif
 
 /*
 * Implements the driver control management functionality
@@ -201,11 +187,13 @@ static int wdt_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return wdt_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return wdt_resume_device_from_suspend(dev);
 		}
+#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = wdt_qmsi_get_power_state(dev);
 		return 0;
