@@ -499,7 +499,7 @@ static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	BT_DBG("");
 
-	nano_sem_take(&conn->gatt_notif_sem, TICKS_UNLIMITED);
+	k_sem_take(&conn->gatt_notif_sem, K_FOREVER);
 
 	notif.params.conn_handle = conn->handle;
 	notif.params.attr = attr;
@@ -532,7 +532,7 @@ void on_nble_gatts_notify_tx_evt(const struct nble_gatts_notify_tx_evt *evt)
 		return;
 	}
 
-	nano_sem_give(&conn->gatt_notif_sem);
+	k_sem_give(&conn->gatt_notif_sem);
 
 	bt_conn_unref(conn);
 }
@@ -1591,10 +1591,8 @@ void bt_gatt_init(void)
 
 void bt_gatt_connected(struct bt_conn *conn)
 {
-	nano_sem_init(&conn->gatt_notif_sem);
-
 	/* Allow to send first notification */
-	nano_sem_give(&conn->gatt_notif_sem);
+	k_sem_init(&conn->gatt_notif_sem, 1, UINT_MAX);
 }
 
 void bt_gatt_disconnected(struct bt_conn *conn)
