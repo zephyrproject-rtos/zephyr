@@ -773,6 +773,10 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_MTU_REQ, sizeof(*req));
 	if (!buf) {
 		return -ENOMEM;
@@ -1315,6 +1319,10 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	switch (params->type) {
 	case BT_GATT_DISCOVER_PRIMARY:
 	case BT_GATT_DISCOVER_SECONDARY:
@@ -1434,6 +1442,10 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	if (params->handle_count > 1) {
 		return gatt_read_multiple(conn, params);
 	}
@@ -1482,6 +1494,10 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 
 	if (!conn || !handle) {
 		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	if (sign && write_signed_allowed(conn)) {
@@ -1590,6 +1606,10 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	/* Use Prepare Write if offset is set or Long Write is required */
 	if (params->offset ||
 	    params->length > (bt_att_get_mtu(conn) - sizeof(*req) - 1)) {
@@ -1672,13 +1692,13 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false;
 
-	if (!conn || conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
-	if (!params || !params->notify ||
+	if (!conn || !params || !params->notify ||
 	    !params->value || !params->ccc_handle) {
 		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	/* Lookup existing subscriptions */
@@ -1722,12 +1742,12 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false, found = false;
 
-	if (!conn || conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
+	if (!conn || !params) {
+		return -EINVAL;
 	}
 
-	if (!params) {
-		return -EINVAL;
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	/* Check head */
