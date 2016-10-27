@@ -242,6 +242,11 @@ static void tx_fiber(int unused0, int unused1)
 		buf = net_buf_get_timeout(&tx_queue, 0, TICKS_UNLIMITED);
 		/* Pass buffer to the stack */
 		bt_send(buf);
+
+		/* Give other fibers a chance to run if tx_queue keeps getting
+		 * new data all the time.
+		 */
+		fiber_yield();
 	}
 }
 
