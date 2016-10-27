@@ -97,7 +97,6 @@ static int test_build_empty_pdu(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	r = zoap_packet_init(&pkt, buf);
 	if (r) {
@@ -157,7 +156,6 @@ static int test_build_simple_pdu(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	r = zoap_packet_init(&pkt, buf);
 	if (r) {
@@ -239,7 +237,6 @@ static int test_build_no_size_for_options(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	r = zoap_packet_init(&pkt, buf);
 	if (r) {
@@ -300,7 +297,6 @@ static int test_parse_empty_pdu(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	memcpy(frag->data, pdu, sizeof(pdu));
 	frag->len = sizeof(pdu);
@@ -373,7 +369,6 @@ static int test_parse_simple_pdu(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	memcpy(frag->data, pdu, sizeof(pdu));
 	frag->len = sizeof(pdu);
@@ -482,7 +477,6 @@ static int test_retransmit_second_round(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	r = zoap_packet_init(&pkt, buf);
 	if (r) {
@@ -648,7 +642,6 @@ static int server_resource_1_get(struct zoap_resource *resource,
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	r = zoap_packet_init(&response, buf);
 	if (r < 0) {
@@ -711,7 +704,6 @@ static int test_observer_server(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	memcpy(frag->data, valid_request_pdu, sizeof(valid_request_pdu));
 	frag->len = sizeof(valid_request_pdu);
@@ -752,7 +744,6 @@ static int test_observer_server(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	memcpy(frag->data, not_found_request_pdu,
 	       sizeof(not_found_request_pdu));
@@ -814,7 +805,6 @@ static int test_observer_client(void)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_buf_unref(frag);
 
 	r = zoap_packet_init(&req, buf);
 	if (r < 0) {
