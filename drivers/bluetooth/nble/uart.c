@@ -38,7 +38,7 @@
 #include "nrf51_pm.h"
 #endif
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
+#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif

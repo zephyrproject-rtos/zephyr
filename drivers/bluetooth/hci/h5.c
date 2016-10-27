@@ -33,11 +33,11 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 
-#include "util.h"
+#include "../util.h"
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
+#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif
@@ -241,7 +241,7 @@ static void h5_print_header(const uint8_t *hdr, const char *str)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
+#if defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 static void hexdump(const char *str, const uint8_t *packet, size_t length)
 {
 	int n = 0;
@@ -739,9 +739,9 @@ static int h5_open(void)
 	return 0;
 }
 
-static struct bt_driver drv = {
+static struct bt_hci_driver drv = {
 	.name		= "H:5",
-	.bus		= BT_DRIVER_BUS_UART,
+	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h5_open,
 	.send		= h5_queue,
 };
@@ -756,7 +756,7 @@ static int _bt_uart_init(struct device *unused)
 		return -EINVAL;
 	}
 
-	bt_driver_register(&drv);
+	bt_hci_driver_register(&drv);
 
 	return 0;
 }

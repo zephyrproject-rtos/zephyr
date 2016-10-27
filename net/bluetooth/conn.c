@@ -29,7 +29,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 #include <bluetooth/att.h>
 
 #include "hci_core.h"

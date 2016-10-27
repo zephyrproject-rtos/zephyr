@@ -33,7 +33,7 @@
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
 
