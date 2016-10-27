@@ -22,6 +22,7 @@
 #include <nanokernel.h>
 #include <rtc.h>
 #include <power.h>
+#include <soc.h>
 
 #include "qm_isr.h"
 #include "qm_rtc.h"
@@ -166,15 +167,15 @@ static int rtc_qmsi_init(struct device *dev)
 {
 	rtc_reentrancy_init(dev);
 
-	IRQ_CONNECT(QM_IRQ_RTC_0_INT, CONFIG_RTC_0_IRQ_PRI,
+	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_RTC_0_INT), CONFIG_RTC_0_IRQ_PRI,
 		    qm_rtc_0_isr, NULL,
 		    IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask RTC interrupt */
-	irq_enable(QM_IRQ_RTC_0_INT);
+	irq_enable(IRQ_GET_NUMBER(QM_IRQ_RTC_0_INT));
 
-	/* Route RTC interrupt to Lakemont */
-	QM_INTERRUPT_ROUTER->rtc_0_int_mask &= ~BIT(0);
+	/* Route watchdog interrupt to the current core */
+	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->rtc_0_int_mask);
 
 	rtc_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 

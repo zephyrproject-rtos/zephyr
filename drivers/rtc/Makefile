@@ -1,2 +1,1 @@
 obj-$(CONFIG_RTC_QMSI) += rtc_qmsi.o
-ccflags-$(CONFIG_RTC_QMSI) += -DENABLE_EXTERNAL_ISR_HANDLING
