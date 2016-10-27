@@ -447,19 +447,6 @@ static int pwm_qmsi_init(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-struct pwm_channel_ctx {
-	uint32_t loadcount1;
-	uint32_t loadcount2;
-	uint32_t controlreg;
-};
-
-struct pwm_ctx {
-	struct pwm_channel_ctx channels[CONFIG_PWM_QMSI_NUM_PORTS];
-	uint32_t int_pwm_timer_mask;
-};
-
-static struct pwm_ctx pwm_ctx_save;
-
 static uint32_t pwm_qmsi_get_power_state(struct device *dev)
 {
 	struct pwm_data *context = dev->driver_data;
@@ -467,44 +454,27 @@ static uint32_t pwm_qmsi_get_power_state(struct device *dev)
 	return context->device_power_state;
 }
 
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static qm_pwm_context_t pwm_ctx;
+
 static int pwm_qmsi_suspend(struct device *dev)
 {
-	int i;
+	qm_pwm_save_context(QM_PWM_0, &pwm_ctx);
 
-	pwm_ctx_save.int_pwm_timer_mask =
-		QM_INTERRUPT_ROUTER->pwm_0_int_mask;
-	for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
-		qm_pwm_channel_t *channel;
-		struct pwm_channel_ctx *channel_save;
-
-		channel = &QM_PWM->timer[i];
-		channel_save = &pwm_ctx_save.channels[i];
-		channel_save->loadcount1 = channel->loadcount;
-		channel_save->controlreg = channel->controlreg;
-		channel_save->loadcount2 = QM_PWM->timer_loadcount2[i];
-	}
 	pwm_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
 	return 0;
 }
 
 static int pwm_qmsi_resume_from_suspend(struct device *dev)
 {
-	int i;
+	qm_pwm_restore_context(QM_PWM_0, &pwm_ctx);
 
-	for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
-		qm_pwm_channel_t *channel;
-		struct pwm_channel_ctx *channel_save;
-
-		channel = &QM_PWM->timer[i];
-		channel_save = &pwm_ctx_save.channels[i];
-		channel->loadcount = channel_save->loadcount1;
-		channel->controlreg = channel_save->controlreg;
-		QM_PWM->timer_loadcount2[i] = channel_save->loadcount2;
-	}
-	QM_INTERRUPT_ROUTER->pwm_0_int_mask = pwm_ctx_save.int_pwm_timer_mask;
 	pwm_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
+#endif
 
 /*
 * Implements the driver control management functionality
@@ -514,11 +484,13 @@ static int pwm_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return pwm_qmsi_suspend(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return pwm_qmsi_resume_from_suspend(dev);
 		}
+#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = pwm_qmsi_get_power_state(dev);
 		return 0;
