@@ -22,7 +22,7 @@ menuconfig GPIO_K64
 	depends on GPIO && SOC_MK64F12
 	default n
 	help
-	Enable driver for Freescale K64-based GPIOs.
+	  Enable driver for Freescale K64-based GPIOs.
 
 if GPIO_K64
 
@@ -36,14 +36,14 @@ config GPIO_K64_A
 	depends on GPIO_K64
 	default n
 	help
-	Enable config options for Freescale K64-based GPIO port A.
+	  Enable config options for Freescale K64-based GPIO port A.
 
 config GPIO_K64_A_DEV_NAME
 	string "Freescale K64-based GPIO Port A Device Name"
 	depends on GPIO_K64_A
 	default "GPIO_0"
 	help
-	Specify the device name.
+	  Specify the device name.
 
 config GPIO_K64_PORTA_PRI
 	int "Freescale K64-based Port A interrupt priority"
@@ -57,14 +57,14 @@ config GPIO_K64_B
 	depends on GPIO_K64
 	default n
 	help
-	Enable config options for Freescale K64-based GPIO port B.
+	  Enable config options for Freescale K64-based GPIO port B.
 
 config GPIO_K64_B_DEV_NAME
 	string "Freescale K64-based GPIO Port B Device Name"
 	depends on GPIO_K64_B
 	default "GPIO_1"
 	help
-	Specify the device name.
+	  Specify the device name.
 
 config GPIO_K64_PORTB_PRI
 	int "Freescale K64-based Port B interrupt priority"
@@ -78,14 +78,14 @@ config GPIO_K64_C
 	depends on GPIO_K64
 	default n
 	help
-	Enable config options for Freescale K64-based GPIO port C.
+	  Enable config options for Freescale K64-based GPIO port C.
 
 config GPIO_K64_C_DEV_NAME
 	string "Freescale K64-based GPIO Port C Device Name"
 	depends on GPIO_K64_C
 	default "GPIO_2"
 	help
-	Specify the device name.
+	  Specify the device name.
 
 config GPIO_K64_PORTC_PRI
 	int "Freescale K64-based Port C interrupt priority"
@@ -99,14 +99,14 @@ config GPIO_K64_D
 	depends on GPIO_K64
 	default n
 	help
-	Enable config options for Freescale K64-based GPIO port D.
+	  Enable config options for Freescale K64-based GPIO port D.
 
 config GPIO_K64_D_DEV_NAME
 	string "Freescale K64-based GPIO Port D Device Name"
 	depends on GPIO_K64_D
 	default "GPIO_3"
 	help
-	Specify the device name.
+	  Specify the device name.
 
 config GPIO_K64_PORTD_PRI
 	int "Freescale K64-based Port D interrupt priority"
@@ -127,7 +127,7 @@ config GPIO_K64_E_DEV_NAME
 	depends on GPIO_K64_E
 	default "GPIO_4"
 	help
-	Specify the device name.
+	  Specify the device name.
 
 config GPIO_K64_PORTE_PRI
 	int "Freescale K64-based Port E interrupt priority"
