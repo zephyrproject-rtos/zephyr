@@ -169,10 +169,14 @@ static void recv_fiber(int unused0, int unused1)
 				}
 			}
 
-			if (buf && buf->len) {
-				BT_DBG("Incoming packet: type:%u len:%u",
+			if (buf) {
+				if (buf->len) {
+					BT_DBG("Packet in: type:%u len:%u",
 						bt_buf_get_type(buf), buf->len);
-				bt_recv(buf);
+					bt_recv(buf);
+				} else {
+					net_buf_unref(buf);
+				}
 			}
 
 			radio_rx_dequeue();
