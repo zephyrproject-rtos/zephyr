@@ -49,6 +49,12 @@ struct ss_spi_qmsi_runtime {
 	qm_ss_spi_config_t cfg;
 	int rc;
 	bool loopback;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+	qm_ss_spi_context_t spi_ctx;
+#endif
+#endif
 };
 
 static inline qm_ss_spi_bmode_t config_to_bmode(uint8_t mode)
@@ -247,6 +253,77 @@ static struct device *gpio_cs_init(const struct ss_spi_qmsi_config *config)
 
 static int ss_spi_qmsi_init(struct device *dev);
 
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void ss_spi_master_set_power_state(struct device *dev,
+					  uint32_t power_state)
+{
+	struct ss_spi_qmsi_runtime *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t ss_spi_master_get_power_state(struct device *dev)
+{
+	struct ss_spi_qmsi_runtime *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static int ss_spi_master_suspend_device(struct device *dev)
+{
+	if (device_busy_check(dev)) {
+		return -EBUSY;
+	}
+
+	const struct ss_spi_qmsi_config *config = dev->config->config_info;
+	struct ss_spi_qmsi_runtime *drv_data = dev->driver_data;
+
+	qm_ss_spi_save_context(config->spi, &drv_data->spi_ctx);
+
+	ss_spi_master_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
+	return 0;
+}
+
+static int ss_spi_master_resume_device_from_suspend(struct device *dev)
+{
+	const struct ss_spi_qmsi_config *config = dev->config->config_info;
+	struct ss_spi_qmsi_runtime *drv_data = dev->driver_data;
+
+	qm_ss_spi_restore_context(config->spi, &drv_data->spi_ctx);
+
+	ss_spi_master_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int ss_spi_master_qmsi_device_ctrl(struct device *port,
+				       uint32_t ctrl_command, void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return ss_spi_master_suspend_device(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return ss_spi_master_resume_device_from_suspend(port);
+		}
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = ss_spi_master_get_power_state(port);
+	}
+	return 0;
+}
+#else
+#define ss_spi_master_set_power_state(...)
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
 #ifdef CONFIG_SPI_0
 static const struct ss_spi_qmsi_config spi_qmsi_mst_0_config = {
 	.spi = QM_SS_SPI_0,
@@ -258,14 +335,13 @@ static const struct ss_spi_qmsi_config spi_qmsi_mst_0_config = {
 
 static struct ss_spi_qmsi_runtime spi_qmsi_mst_0_runtime;
 
-DEVICE_INIT(ss_spi_master_0, CONFIG_SPI_0_NAME,
-	    ss_spi_qmsi_init, &spi_qmsi_mst_0_runtime, &spi_qmsi_mst_0_config,
-	    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY);
-
-
+DEVICE_DEFINE(ss_spi_master_0, CONFIG_SPI_0_NAME, ss_spi_qmsi_init,
+	      ss_spi_master_qmsi_device_ctrl, &spi_qmsi_mst_0_runtime,
+	      &spi_qmsi_mst_0_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
+	      NULL);
 #endif /* CONFIG_SPI_0 */
-#ifdef CONFIG_SPI_1
 
+#ifdef CONFIG_SPI_1
 static const struct ss_spi_qmsi_config spi_qmsi_mst_1_config = {
 	.spi = QM_SS_SPI_1,
 #ifdef CONFIG_SPI_CS_GPIO
@@ -276,10 +352,10 @@ static const struct ss_spi_qmsi_config spi_qmsi_mst_1_config = {
 
 static struct ss_spi_qmsi_runtime spi_qmsi_mst_1_runtime;
 
-DEVICE_INIT(ss_spi_master_1, CONFIG_SPI_1_NAME,
-	    ss_spi_qmsi_init, &spi_qmsi_mst_1_runtime, &spi_qmsi_mst_1_config,
-	    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY);
-
+DEVICE_DEFINE(ss_spi_master_1, CONFIG_SPI_1_NAME, ss_spi_qmsi_init,
+	      ss_spi_master_qmsi_device_ctrl, &spi_qmsi_mst_1_runtime,
+	      &spi_qmsi_mst_0_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
+	      NULL);
 #endif /* CONFIG_SPI_1 */
 
 static void ss_spi_err_isr(void *arg)
@@ -387,6 +463,8 @@ static int ss_spi_qmsi_init(struct device *dev)
 	device_sync_call_init(&context->sync);
 	k_sem_init(&context->sem, 0, UINT_MAX);
 	k_sem_give(&context->sem);
+
+	ss_spi_master_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
 	dev->driver_api = &ss_spi_qmsi_api;
 
