@@ -19,6 +19,7 @@
 #include <watchdog.h>
 #include <ioapic.h>
 #include <power.h>
+#include <soc.h>
 
 #include "clk.h"
 #include "qm_isr.h"
@@ -220,14 +221,14 @@ static int init(struct device *dev)
 {
 	wdt_reentrancy_init(dev);
 
-	IRQ_CONNECT(QM_IRQ_WDT_0_INT, CONFIG_WDT_0_IRQ_PRI,
+	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_WDT_0_INT), CONFIG_WDT_0_IRQ_PRI,
 		    qm_wdt_0_isr, 0, IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask watchdog interrupt */
-	irq_enable(QM_IRQ_WDT_0_INT);
+	irq_enable(IRQ_GET_NUMBER(QM_IRQ_WDT_0_INT));
 
-	/* Route watchdog interrupt to Lakemont */
-	QM_INTERRUPT_ROUTER->wdt_0_int_mask &= ~BIT(0);
+	/* Route watchdog interrupt to the current core */
+	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->wdt_0_int_mask);
 
 	wdt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 

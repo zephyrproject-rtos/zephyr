@@ -210,6 +210,16 @@ config AIO_COMPARATOR_QMSI
 
 endif # AIO_COMPARATOR
 
+if WATCHDOG
+
+config WDT_QMSI
+	def_bool y
+
+config WDT_0_IRQ_PRI
+	default 2
+
+endif # WATCHDOG
+
 if DMA
 
 config DMA_QMSI
