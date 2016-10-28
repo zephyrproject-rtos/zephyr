@@ -35,6 +35,12 @@ struct ss_gpio_qmsi_runtime {
 #ifdef CONFIG_GPIO_QMSI_API_REENTRANCY
 	struct k_sem sem;
 #endif /* CONFIG_GPIO_QMSI_API_REENTRANCY */
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+	qm_ss_gpio_context_t gpio_ctx;
+#endif
+#endif
 };
 
 #ifdef CONFIG_GPIO_QMSI_API_REENTRANCY
@@ -73,6 +79,73 @@ static void gpio_critical_region_end(struct device *dev)
 	k_sem_give(RP_GET(dev));
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void ss_gpio_qmsi_set_power_state(struct device *dev,
+					 uint32_t power_state)
+{
+	struct ss_gpio_qmsi_runtime *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t ss_gpio_qmsi_get_power_state(struct device *dev)
+{
+	struct ss_gpio_qmsi_runtime *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static int ss_gpio_suspend_device(struct device *dev)
+{
+	const struct ss_gpio_qmsi_config *gpio_config =
+		dev->config->config_info;
+	struct ss_gpio_qmsi_runtime *drv_data = dev->driver_data;
+
+	qm_ss_gpio_save_context(gpio_config->gpio, &drv_data->gpio_ctx);
+
+	ss_gpio_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
+	return 0;
+}
+
+static int ss_gpio_resume_device_from_suspend(struct device *dev)
+{
+	const struct ss_gpio_qmsi_config *gpio_config =
+		dev->config->config_info;
+	struct ss_gpio_qmsi_runtime *drv_data = dev->driver_data;
+
+	qm_ss_gpio_restore_context(gpio_config->gpio, &drv_data->gpio_ctx);
+
+	ss_gpio_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int ss_gpio_qmsi_device_ctrl(struct device *port, uint32_t ctrl_command,
+				    void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return ss_gpio_suspend_device(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return ss_gpio_resume_device_from_suspend(port);
+		}
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = ss_gpio_qmsi_get_power_state(port);
+	}
+	return 0;
+}
+#else
+#define ss_gpio_qmsi_set_power_state(...)
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 static int ss_gpio_qmsi_init(struct device *dev);
 
@@ -84,9 +157,9 @@ static const struct ss_gpio_qmsi_config ss_gpio_0_config = {
 
 static struct ss_gpio_qmsi_runtime ss_gpio_0_runtime;
 
-DEVICE_INIT(ss_gpio_0, CONFIG_GPIO_QMSI_SS_0_NAME, &ss_gpio_qmsi_init,
-	    &ss_gpio_0_runtime, &ss_gpio_0_config,
-	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(ss_gpio_0, CONFIG_GPIO_QMSI_SS_0_NAME, &ss_gpio_qmsi_init,
+	    ss_gpio_qmsi_device_ctrl, &ss_gpio_0_runtime, &ss_gpio_0_config,
+	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #endif /* CONFIG_GPIO_QMSI_SS_0 */
 
@@ -98,9 +171,9 @@ static const struct ss_gpio_qmsi_config ss_gpio_1_config = {
 
 static struct ss_gpio_qmsi_runtime gpio_1_runtime;
 
-DEVICE_INIT(ss_gpio_1, CONFIG_GPIO_QMSI_SS_1_NAME, &ss_gpio_qmsi_init,
-	    &gpio_1_runtime, &ss_gpio_1_config,
-	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(ss_gpio_1, CONFIG_GPIO_QMSI_SS_1_NAME, &ss_gpio_qmsi_init,
+	    ss_gpio_qmsi_device_ctrl, &gpio_1_runtime, &ss_gpio_1_config,
+	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #endif /* CONFIG_GPIO_QMSI_SS_1 */
 
@@ -347,6 +420,8 @@ static int ss_gpio_qmsi_init(struct device *port)
 	default:
 		return -EIO;
 	}
+
+	ss_gpio_qmsi_set_power_state(port, DEVICE_PM_ACTIVE_STATE);
 
 	port->driver_api = &api_funcs;
 	return 0;
