@@ -26,7 +26,6 @@
 #include "eth_enc28j60_priv.h"
 
 #define D10D24S 11
-#define MAX_BUFFER_LENGTH 100
 
 static int eth_net_tx(struct net_buf *buf);
 static void enc28j60_fiber_main(int arg1, int unused);
