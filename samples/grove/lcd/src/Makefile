@@ -1,1 +1,1 @@
-obj-y = grove_lcd.o
+obj-y = main.o

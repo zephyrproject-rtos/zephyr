@@ -24,11 +24,11 @@
 #include <display/grove_lcd.h>
 
 /**
- * @file Display a counter through ARC I2C and Grove LCD.
+ * @file Display a counter through I2C and Grove LCD.
  */
 
+/* sleep time in msec */
 #define SLEEPTIME  100
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
 uint8_t clamp_rgb(int val)
 {
@@ -43,8 +43,6 @@ uint8_t clamp_rgb(int val)
 
 void main(void)
 {
-	struct nano_timer timer;
-	uint32_t timer_data[2] = {0, 0};
 	struct device *glcd;
 	char str[20];
 	int rgb[] = { 0x0, 0x0, 0x0 };
@@ -54,8 +52,6 @@ void main(void)
 	int i, j, m;
 	int cnt;
 
-	nano_timer_init(&timer, timer_data);
-
 	glcd = device_get_binding(GROVE_LCD_NAME);
 	if (!glcd) {
 		printk("Grove LCD: Device not found.\n");
@@ -64,8 +60,8 @@ void main(void)
 	/* Now configure the LCD the way we want it */
 
 	set_config = GLCD_FS_ROWS_2
-			| GLCD_FS_DOT_SIZE_LITTLE
-			| GLCD_FS_8BIT_MODE;
+		     | GLCD_FS_DOT_SIZE_LITTLE
+		     | GLCD_FS_8BIT_MODE;
 
 	glcd_function_set(glcd, set_config);
 
@@ -135,7 +131,6 @@ void main(void)
 		}
 
 		/* wait a while */
-		nano_task_timer_start(&timer, SLEEPTICKS);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+		k_sleep(SLEEPTIME);
 	}
 }
