@@ -84,7 +84,12 @@ union __cr1 {
 		uint32_t wake :1 __packed;
 		uint32_t m :1 __packed;
 		uint32_t ue :1 __packed;
+#ifdef CONFIG_SOC_SERIES_SOC32F1X
 		uint32_t rsvd__14_15 :2 __packed;
+#elif CONFIG_SOC_SERIES_SOC32F4X
+		uint32_t rsvd__14 :1 __packed;
+		uint32_t over8 :1 __packed;
+#endif
 		uint32_t rsvd__16_31 :16 __packed;
 	} bit;
 };
@@ -123,7 +128,12 @@ union __cr3 {
 		uint32_t rtse :1 __packed;
 		uint32_t ctse :1 __packed;
 		uint32_t ctsie :1 __packed;
+#ifdef CONFIG_SOC_SERIES_SOC32F1X
 		uint32_t rsvd__11_31 :21 __packed;
+#elif CONFIG_SOC_SERIES_SOC32F4X
+		uint32_t onebit :1 __packed;
+		uint32_t rsvd__12_31 :20 __packed;
+#endif
 	} bit;
 };
 
@@ -152,7 +162,11 @@ struct uart_stm32 {
 struct uart_stm32_config {
 	struct uart_device_config uconf;
 	/* clock subsystem driving this peripheral */
+#ifdef CONFIG_SOC_SERIES_STM32F1X
 	clock_control_subsys_t clock_subsys;
+#elif CONFIG_SOC_SERIES_STM32F4X
+	struct stm32f4x_pclken pclken;
+#endif
 };
 
 /* driver data */
