@@ -122,9 +122,6 @@ struct net_tcp {
 	/** Max acknowledgment. */
 	uint32_t recv_max_ack;
 
-	/** Receive window. */
-	uint32_t recv_wnd;
-
 	/** Current sequence number. */
 	uint32_t send_seq;
 

@@ -281,27 +281,13 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 
 static inline uint32_t get_recv_wnd(struct net_tcp *tcp)
 {
-	int32_t wnd;
-	uint32_t recv_wnd;
-
-	recv_wnd = tcp->recv_wnd;
-
-	wnd = (int32_t)(NET_TCP_BUF_MAX_LEN - tcp->recv->len);
-	if (wnd < 0) {
-		wnd = 0;
-	}
-
-	if (recv_wnd < (uint32_t)wnd) {
-		if (((uint32_t)wnd - recv_wnd >= tcp->recv_mss) ||
-		    ((uint32_t)wnd - recv_wnd >= NET_TCP_BUF_MAX_LEN >> 1) ||
-		    !recv_wnd) {
-			recv_wnd = (uint32_t)wnd;
-		}
-	} else {
-		recv_wnd = (uint32_t)wnd;
-	}
-
-	return recv_wnd;
+	/* We don't queue received data inside the stack, we hand off
+	 * packets to synchronous callbacks (who can queue if they
+	 * want, but it's not our business).  So the available window
+	 * size is always the same.  There are two configurables to
+	 * check though.
+	 */
+	return min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
 }
 
 /* True if the (signed!) difference "seq1 - seq2" is positive and less
@@ -324,7 +310,6 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	struct tcp_segment segment = { 0 };
 
 	seq = tcp->send_seq;
-	tcp->recv_wnd = get_recv_wnd(tcp);
 
 	if (flags & NET_TCP_ACK) {
 		ack = tcp->send_ack;
@@ -343,15 +328,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 
 	if (flags & NET_TCP_SYN) {
 		seq++;
-
-		if (tcp->recv_wnd > NET_TCP_MAX_WIN) {
-			wnd = NET_TCP_MAX_WIN;
-		} else {
-			wnd = (uint16_t)tcp->recv_wnd;
-		}
-	} else {
-		wnd = (uint16_t)tcp->recv_wnd;
 	}
+
+	wnd = get_recv_wnd(tcp);
 
 	segment.src_addr = &tcp->context->local;
 	segment.dst_addr = remote;
@@ -470,8 +449,6 @@ int net_tcp_prepare_data_segment(struct net_tcp *tcp,
 		}
 	}
 
-	tcp->recv_wnd = get_recv_wnd(tcp);
-
 	if (data_size) {
 		/* The data will not contain the TX user data buf as a first
 		 * element after the copy.
@@ -513,7 +490,7 @@ int net_tcp_prepare_data_segment(struct net_tcp *tcp,
 	segment.seq = tcp->send_seq;
 	segment.ack = tcp->send_ack;
 	segment.flags = flags;
-	segment.wnd = (uint16_t)tcp->recv_wnd;
+	segment.wnd = get_recv_wnd(tcp);
 	segment.options = options;
 	segment.optlen = optlen;
 	segment.data = tcp->send;
