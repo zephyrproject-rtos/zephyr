@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <arch/cpu.h>
 
 #include <init.h>
@@ -31,17 +31,17 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 
-#include "util.h"
+#include "../util.h"
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
+#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif
 
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
-#include "nrf51_pm.h"
+#include "../nrf51_pm.h"
 #endif
 
 #define H4_CMD		0x01
@@ -249,9 +249,9 @@ static int h4_open(void)
 	return 0;
 }
 
-static struct bt_driver drv = {
+static struct bt_hci_driver drv = {
 	.name		= "H:4",
-	.bus		= BT_DRIVER_BUS_UART,
+	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h4_open,
 	.send		= h4_send,
 };
@@ -265,7 +265,7 @@ static int _bt_uart_init(struct device *unused)
 		return -EINVAL;
 	}
 
-	bt_driver_register(&drv);
+	bt_hci_driver_register(&drv);
 
 	return 0;
 }

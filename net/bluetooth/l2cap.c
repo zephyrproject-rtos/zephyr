@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#include <toolchain.h>
+#include <zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <atomic.h>
@@ -30,7 +28,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -543,9 +541,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	/* There could be a writer waiting for credits so return a dummy credit
 	 * to wake it up.
 	 */
-	if (!ch->tx.credits.nsig) {
-		l2cap_chan_tx_give_credits(ch, 1);
-	}
+	l2cap_chan_tx_give_credits(ch, 1);
 
 	/* Destroy segmented SDU if it exists */
 	if (ch->_sdu) {
@@ -853,7 +849,7 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	ch = BT_L2CAP_LE_CHAN(chan);
 
-	if (ch->tx.credits.nsig + credits > UINT16_MAX) {
+	if (nano_sem_count_get(&ch->tx.credits) + credits > UINT16_MAX) {
 		BT_ERR("Credits overflow");
 		bt_l2cap_chan_disconnect(chan);
 		return;
@@ -861,7 +857,8 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	l2cap_chan_tx_give_credits(ch, credits);
 
-	BT_DBG("chan %p total credits %u", ch, ch->tx.credits.nsig);
+	BT_DBG("chan %p total credits %u", ch,
+	       nano_sem_count_get(&ch->tx.credits));
 }
 
 static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
@@ -957,12 +954,13 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	uint16_t credits;
 
 	/* Only give more credits if it went bellow the defined threshold */
-	if (chan->rx.credits.nsig > L2CAP_LE_CREDITS_THRESHOLD) {
+	if (nano_sem_count_get(&chan->tx.credits) >
+	    L2CAP_LE_CREDITS_THRESHOLD) {
 		goto done;
 	}
 
 	/* Restore credits */
-	credits = L2CAP_LE_MAX_CREDITS - chan->rx.credits.nsig;
+	credits = L2CAP_LE_MAX_CREDITS - nano_sem_count_get(&chan->tx.credits);
 	l2cap_chan_rx_give_credits(chan, credits);
 
 	buf = bt_l2cap_create_pdu(&le_sig, 0);
@@ -983,7 +981,8 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
 
 done:
-	BT_DBG("chan %p credits %u", chan, chan->rx.credits.nsig);
+	BT_DBG("chan %p credits %u", chan,
+	       nano_sem_count_get(&chan->rx.credits));
 }
 
 static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
@@ -1470,7 +1469,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	}
 
 	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
-	       buf->len, ch->tx.credits.nsig);
+	       buf->len, nano_sem_count_get(&ch->tx.credits));
 
 	len = buf->len;
 
@@ -1506,7 +1505,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 	for (sent = ret; sent < total_len; sent += ret) {
 		/* Proceed to next fragment */
 		if (!frag->len) {
-			frag = frag->frags;
+			frag = net_buf_frag_del(buf, frag);
 		}
 
 		ret = l2cap_chan_le_send(ch, frag, 0);

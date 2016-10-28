@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <atomic.h>
 
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 #include <bluetooth/log.h>
 
 #include "monitor.h"
@@ -40,10 +40,10 @@ static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
 
 static struct bt_dev {
 	/* Registered HCI driver */
-	struct bt_driver	*drv;
+	struct bt_hci_driver	*drv;
 } bt_dev;
 
-int bt_driver_register(struct bt_driver *drv)
+int bt_hci_driver_register(struct bt_hci_driver *drv)
 {
 	if (bt_dev.drv) {
 		return -EALREADY;
@@ -63,7 +63,7 @@ int bt_driver_register(struct bt_driver *drv)
 	return 0;
 }
 
-void bt_driver_unregister(struct bt_driver *drv)
+void bt_hci_driver_unregister(struct bt_hci_driver *drv)
 {
 	bt_dev.drv = NULL;
 }
@@ -115,7 +115,7 @@ int bt_send(struct net_buf *buf)
 
 int bt_enable_raw(struct nano_fifo *rx_queue)
 {
-	struct bt_driver *drv = bt_dev.drv;
+	struct bt_hci_driver *drv = bt_dev.drv;
 	int err;
 
 	BT_DBG("");

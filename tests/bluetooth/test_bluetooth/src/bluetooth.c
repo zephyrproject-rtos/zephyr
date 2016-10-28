@@ -22,7 +22,7 @@
 #include <tc_util.h>
 
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 
 #define EXPECTED_ERROR -ENOSYS
 
@@ -39,16 +39,16 @@ static int driver_send(struct net_buf *buf)
 	return 0;
 }
 
-static struct bt_driver drv = {
+static struct bt_hci_driver drv = {
 	.name         = "test",
-	.bus          = BT_DRIVER_BUS_VIRTUAL,
+	.bus          = BT_HCI_DRIVER_BUS_VIRTUAL,
 	.open         = driver_open,
 	.send         = driver_send,
 };
 
 static void driver_init(void)
 {
-	bt_driver_register(&drv);
+	bt_hci_driver_register(&drv);
 }
 
 void main(void)

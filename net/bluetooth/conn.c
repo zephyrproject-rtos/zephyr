@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#include <toolchain.h>
+#include <zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -31,7 +29,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 #include <bluetooth/att.h>
 
 #include "hci_core.h"

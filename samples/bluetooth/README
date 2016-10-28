@@ -30,8 +30,8 @@ $ make qemu
 
 = Bluetooth sanity check =
 
-There is smoke test application in nanokernel and microkernel test
-directories which gets run in sanity check script:
+There is smoke test application in tests directory which gets run in sanity
+check script:
 
 $ scripts/sanity_chk/sanitycheck [-P <platform>]
 
@@ -63,6 +63,15 @@ eddystone:
 gatt:
         Not an application, but a set of reusable modules for common
         GATT profiles & services.
+
+hci-uart:
+	Expose Zephyr Bluetooth Controller support over UART to another
+	device/CPU using the H:4 HCI transport protocol (requires HW
+	flow control from the UART).
+
+hci-usb:
+	Make a USB Bluetooth dongle out of Zephyr. Requires USB device
+	support from the board it runs on (e.g. Arduino 101 has this).
 
 ipsp:
         Application demonstrating the IPSP (Internet Protocol Support

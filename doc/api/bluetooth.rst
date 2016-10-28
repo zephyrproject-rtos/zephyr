@@ -74,7 +74,7 @@ Persistent Storage
 HCI Drivers
 ***********
 
-.. doxygengroup:: bt_driver
+.. doxygengroup:: bt_hci_driver
    :project: Zephyr
    :content-only:
 

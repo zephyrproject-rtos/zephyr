@@ -19,10 +19,7 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#include <atomic.h>
-#include <sections.h>
+#include <zephyr.h>
 
 #include <board.h>
 #include <init.h>
@@ -36,11 +33,11 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 
-#include "util.h"
+#include "../util.h"
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
+#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif
@@ -98,14 +95,11 @@ static bool reliable_packet(uint8_t type)
 				 ((hdr)[2] |= (len) >> 4))
 
 static struct h5 {
-	atomic_t		flags;
 	struct net_buf		*rx_buf;
 
 	struct nano_fifo	tx_queue;
 	struct nano_fifo	rx_queue;
 	struct nano_fifo	unack_queue;
-
-	struct nano_sem		active_state;
 
 	uint8_t			tx_win;
 	uint8_t			tx_ack;
@@ -134,9 +128,6 @@ static const uint8_t sync_rsp[] = { 0x02, 0x7d };
 /* Third byte may change */
 static uint8_t conf_req[3] = { 0x03, 0xfc };
 static const uint8_t conf_rsp[] = { 0x04, 0x7b };
-static const uint8_t wakeup_req[] = { 0x05, 0xfa };
-static const uint8_t woken_req[] = { 0x06, 0xf9 };
-static const uint8_t sleep_req[] = { 0x07, 0x78 };
 
 /* H5 signal buffers pool */
 #define CONFIG_BLUETOOTH_MAX_SIG_LEN	3
@@ -250,7 +241,7 @@ static void h5_print_header(const uint8_t *hdr, const char *str)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
+#if defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 static void hexdump(const char *str, const uint8_t *packet, size_t length)
 {
 	int n = 0;
@@ -748,9 +739,9 @@ static int h5_open(void)
 	return 0;
 }
 
-static struct bt_driver drv = {
+static struct bt_hci_driver drv = {
 	.name		= "H:5",
-	.bus		= BT_DRIVER_BUS_UART,
+	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h5_open,
 	.send		= h5_queue,
 };
@@ -765,7 +756,7 @@ static int _bt_uart_init(struct device *unused)
 		return -EINVAL;
 	}
 
-	bt_driver_register(&drv);
+	bt_hci_driver_register(&drv);
 
 	return 0;
 }

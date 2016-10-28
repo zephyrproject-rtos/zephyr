@@ -1045,10 +1045,10 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 
 	/*
 	 * Core Spec 4.2, Vol. 3, Part G, 4.8.1
-	 * If the Characteristic Value is greater than (ATT_MTU – 1) octets
+	 * If the Characteristic Value is greater than (ATT_MTU - 1) octets
 	 * in length, the Read Long Characteristic Value procedure may be used
 	 * if the rest of the Characteristic Value is required.
-	 * The data contain only (ATT_MTU – 1) octets.
+	 * The data contain only (ATT_MTU - 1) octets.
 	 */
 	if (len < (BLE_GATT_MTU_SIZE - 1)) {
 		params->func(conn, 0, params, NULL, 0);

@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <arch/cpu.h>
 #include <misc/byteorder.h>
 #include <misc/sys_log.h>
@@ -33,11 +33,14 @@
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
 
 static struct device *hci_uart_dev;
+
+#define STACK_SIZE		1024
+uint8_t tx_fiber_stack[STACK_SIZE];
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
@@ -45,7 +48,7 @@ static struct device *hci_uart_dev;
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
 
 static struct nano_fifo avail_cmd_tx;
-static NET_BUF_POOL(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
+static NET_BUF_POOL(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    &avail_cmd_tx, NULL, BT_BUF_USER_DATA_MIN);
 
 #define BT_L2CAP_MTU 64
@@ -56,8 +59,10 @@ static NET_BUF_POOL(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 			 BT_L2CAP_MTU)
 
 static struct nano_fifo avail_acl_tx;
-static NET_BUF_POOL(acl_tx_pool, 2, BT_BUF_ACL_SIZE, &avail_acl_tx, NULL,
-		    BT_BUF_USER_DATA_MIN);
+static NET_BUF_POOL(acl_tx_pool, CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS,
+		    BT_BUF_ACL_SIZE, &avail_acl_tx, NULL, BT_BUF_USER_DATA_MIN);
+
+static struct nano_fifo tx_queue;
 
 #define H4_CMD          0x01
 #define H4_ACL          0x02
@@ -221,10 +226,27 @@ static void bt_uart_isr(struct device *unused)
 		if (!remaining) {
 			SYS_LOG_DBG("full packet received");
 
-			/* Pass buffer to the stack */
-			bt_send(buf);
+			/* Put buffer into TX queue, fiber will dequeue */
+			net_buf_put(&tx_queue, buf);
 			buf = NULL;
 		}
+	}
+}
+
+static void tx_fiber(int unused0, int unused1)
+{
+	while (1) {
+		struct net_buf *buf;
+
+		/* Wait until a buffer is available */
+		buf = net_buf_get_timeout(&tx_queue, 0, TICKS_UNLIMITED);
+		/* Pass buffer to the stack */
+		bt_send(buf);
+
+		/* Give other fibers a chance to run if tx_queue keeps getting
+		 * new data all the time.
+		 */
+		fiber_yield();
 	}
 }
 
@@ -288,9 +310,14 @@ void main(void)
 	SYS_LOG_DBG("Start");
 
 	/* Initialize the buffer pools */
-	net_buf_pool_init(tx_pool);
+	net_buf_pool_init(cmd_tx_pool);
 	net_buf_pool_init(acl_tx_pool);
+	/* Initialize the FIFOs */
+	nano_fifo_init(&tx_queue);
 	nano_fifo_init(&rx_queue);
+
+	task_fiber_start(tx_fiber_stack, STACK_SIZE,
+			 (nano_fiber_entry_t)tx_fiber, 0, 0, 7, 0);
 
 	bt_enable_raw(&rx_queue);
 

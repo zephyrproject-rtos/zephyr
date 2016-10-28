@@ -89,7 +89,7 @@ config BLUETOOTH_RX_STACK_SIZE
 
 if BLUETOOTH_DEBUG
 
-config	BLUETOOTH_DEBUG_DRIVER
+config	BLUETOOTH_DEBUG_HCI_DRIVER
 	bool "Bluetooth driver debug"
 	default n
 	help
