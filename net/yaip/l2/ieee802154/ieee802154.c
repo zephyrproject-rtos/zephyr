@@ -226,7 +226,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	struct ieee802154_mpdu mpdu;
 
 	/* Let's remove LQI for now as it is not used */
-	get_lqi(buf);
+	get_lqi(buf->frags);
 
 	if (!ieee802154_validate_frame(net_nbuf_ll(buf),
 				       net_buf_frags_len(buf), &mpdu)) {
