@@ -59,8 +59,8 @@ static NET_BUF_POOL(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 			 BT_L2CAP_MTU)
 
 static struct nano_fifo avail_acl_tx;
-static NET_BUF_POOL(acl_tx_pool, 2, BT_BUF_ACL_SIZE, &avail_acl_tx, NULL,
-		    BT_BUF_USER_DATA_MIN);
+static NET_BUF_POOL(acl_tx_pool, CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS,
+		    BT_BUF_ACL_SIZE, &avail_acl_tx, NULL, BT_BUF_USER_DATA_MIN);
 
 static struct nano_fifo tx_queue;
 
