@@ -22,9 +22,17 @@ config ZTEST
 	if you're writing automated tests.
 
 config ZTEST_STACKSIZE
-	int "Test function fiber stack size"
+	int "Test function thread stack size"
 	depends on ZTEST
 	default 1000
+
+config ZTEST_FAIL_FAST
+	bool "Abort on first failing test"
+	depends on ZTEST
+	default n
+	help
+	  Stop and abort on first failing test. Do not continue with other
+	  tests that might be in the queue.
 
 config ZTEST_ASSERT_VERBOSE
 	int "Assertion verbosity level"

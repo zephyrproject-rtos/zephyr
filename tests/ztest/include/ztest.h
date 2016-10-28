@@ -37,7 +37,7 @@
 #define PRINT printf
 #endif /* !KERNEL */
 
-#include <nanokernel.h>
+#include <zephyr.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>

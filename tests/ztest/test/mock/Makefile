@@ -1,7 +1,7 @@
 BOARD ?= qemu_x86
 
 ifneq ($(BOARD), unit_testing)
-	KERNEL_TYPE ?= nano
+	KERNEL_TYPE ?= unified
 	CONF_FILE ?= prj.conf
 
 	include $(ZEPHYR_BASE)/Makefile.inc

@@ -129,26 +129,30 @@ out:
 /* Zephyr's probably going to cause all tests to fail if one test fails, so
  * skip the rest of tests if one of them fails
  */
+#ifdef CONFIG_ZTEST_FAIL_FAST
 #define FAIL_FAST 1
+#else
+#define FAIL_FAST 0
+#endif
 
-static char fiber_stack[CONFIG_ZTEST_STACKSIZE];
+static char thread_stack[CONFIG_ZTEST_STACKSIZE];
 
 static int test_result;
-static struct nano_sem mutex;
+static struct k_sem mutex;
 
 void ztest_test_fail(void)
 {
 	test_result = -1;
-	fiber_abort();
+	k_thread_abort(k_current_get());
 }
 
 static void init_testing(void)
 {
-	nano_sem_init(&mutex);
-	nano_fiber_sem_take(&mutex, TICKS_UNLIMITED);
+	k_sem_init(&mutex, 1, UINT_MAX);
+	k_sem_take(&mutex, K_FOREVER);
 }
 
-static void fiber_cb(int a, int b)
+static void test_cb(void *a, void *dummy2, void *dummy)
 {
 	struct unit_test *test = (struct unit_test *)a;
 
@@ -156,7 +160,7 @@ static void fiber_cb(int a, int b)
 	run_test_functions(test);
 	test_result = 0;
 
-	nano_fiber_sem_give(&mutex);
+	k_sem_give(&mutex);
 }
 
 static int run_test(struct unit_test *test)
@@ -164,11 +168,8 @@ static int run_test(struct unit_test *test)
 	int ret = TC_PASS;
 
 	TC_START(test->name);
-
-	task_fiber_start(&fiber_stack[0], sizeof(fiber_stack),
-			 (nano_fiber_entry_t) fiber_cb, (int)test, 0, 7, 0);
-
-	nano_fiber_sem_take(&mutex, TICKS_UNLIMITED);
+	k_thread_spawn(&thread_stack[0], sizeof(thread_stack),
+			 (k_thread_entry_t) test_cb, (struct unit_test *)test, NULL, NULL, -1, 0, 0);
 
 	if (test_result) {
 		ret = TC_FAIL;

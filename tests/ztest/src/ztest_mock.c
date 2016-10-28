@@ -56,19 +56,19 @@ void _init_mock(void)
 #else
 
 static struct parameter params[CONFIG_ZTEST_PARAMETER_COUNT];
-static struct nano_fifo *fifo;
+static struct k_fifo *fifo;
 
 static void free_parameter(struct parameter *param)
 {
 	if (param) {
-		nano_fifo_put(fifo, param);
+		k_fifo_put(fifo, param);
 	}
 }
 static struct parameter *alloc_parameter(void)
 {
 	struct parameter *param;
 
-	param = nano_fifo_get(fifo, TICKS_NONE);
+	param = k_fifo_get(fifo, K_NO_WAIT);
 	if (!param) {
 		PRINT("Failed to allocate mock parameter\n");
 		ztest_test_fail();
@@ -81,10 +81,10 @@ void _init_mock(void)
 {
 	int i;
 
-	nano_fifo_init(fifo);
+	k_fifo_init(fifo);
 	for (i = 0; i < CONFIG_ZTEST_PARAMETER_COUNT; i++) {
 
-		nano_fifo_put(fifo, &params[i]);
+		k_fifo_put(fifo, &params[i]);
 	}
 }
 
