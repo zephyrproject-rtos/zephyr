@@ -224,7 +224,7 @@
 #define MICROCHIP_OUI_B1 0x04
 #define MICROCHIP_OUI_B2 0xA3
 
-#define MAX_BUFFER_LENGTH 100
+#define MAX_BUFFER_LENGTH 128
 
 struct eth_enc28j60_config {
 	const char *gpio_port;

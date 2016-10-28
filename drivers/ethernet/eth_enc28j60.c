@@ -415,12 +415,15 @@ static int eth_enc28j60_init(struct device *dev)
 	return 0;
 }
 
-static int eth_enc28j60_tx(struct device *dev, uint8_t *buf, uint16_t len)
+static int eth_enc28j60_tx(struct device *dev, struct net_buf *buf,
+			   uint16_t len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	uint16_t tx_bufaddr = ENC28J60_TXSTART;
+	bool first_frag = true;
 	uint8_t per_packet_control;
 	uint16_t tx_bufaddr_end;
+	struct net_buf *frag;
 	uint8_t tx_end;
 
 	nano_fiber_sem_take(&context->tx_sem, TICKS_UNLIMITED);
@@ -448,7 +451,22 @@ static int eth_enc28j60_tx(struct device *dev, uint8_t *buf, uint16_t len)
 	/* Write the data into the buffer */
 	per_packet_control = ENC28J60_PPCTL_BYTE;
 	eth_enc28j60_write_mem(dev, &per_packet_control, 1);
-	eth_enc28j60_write_mem(dev, buf, len);
+
+	for (frag = buf->frags; frag; frag = frag->frags) {
+		uint8_t *data_ptr;
+		uint16_t data_len;
+
+		if (first_frag) {
+			data_ptr = net_nbuf_ll(buf);
+			data_len = net_nbuf_ll_reserve(buf) + frag->len;
+			first_frag = false;
+		} else {
+			data_ptr = frag->data;
+			data_len = frag->len;
+		}
+
+		eth_enc28j60_write_mem(dev, data_ptr, data_len);
+	}
 
 	tx_bufaddr_end = tx_bufaddr + len;
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ETXNDL,
@@ -470,8 +488,8 @@ static int eth_enc28j60_tx(struct device *dev, uint8_t *buf, uint16_t len)
 
 	nano_sem_give(&context->tx_sem);
 
-	if (tx_end & ENC28J60_BIT_ESTAT_TXABRT)	{
-		return -1;
+	if (tx_end & ENC28J60_BIT_ESTAT_TXABRT) {
+		return -EIO;
 	}
 
 	return 0;
@@ -493,6 +511,7 @@ static int eth_enc28j60_rx(struct device *dev)
 	eth_enc28j60_read_reg(dev, ENC28J60_REG_ECON1, &econ1_bkup);
 
 	do {
+		struct net_buf *last_frag;
 		struct net_buf *pkt_buf = NULL;
 		uint16_t frm_len = 0;
 		struct net_buf *buf;
@@ -525,9 +544,11 @@ static int eth_enc28j60_rx(struct device *dev)
 			goto done;
 		}
 
+		last_frag = buf;
+
 		do {
 			size_t frag_len;
-			int remaining_len;
+			uint8_t *data_ptr;
 			size_t spi_frame_len;
 
 			/* Reserve a data frag to receive the frame */
@@ -537,28 +558,26 @@ static int eth_enc28j60_rx(struct device *dev)
 				goto done;
 			}
 
-			net_buf_frag_insert(buf, pkt_buf);
+			net_buf_frag_insert(last_frag, pkt_buf);
+			data_ptr = pkt_buf->data;
+
+			last_frag = pkt_buf;
 
 			/* Review the space available for the new frag */
 			frag_len = net_buf_tailroom(pkt_buf);
 
-			/* Calculate bytes that need to be written to a frag */
-			/* The remaining length is expected as a signed int */
-			remaining_len = (int)frm_len - (int)frag_len;
-			if (remaining_len > 0) {
+			if (frm_len > frag_len) {
 				spi_frame_len = frag_len;
 			} else {
 				spi_frame_len = frm_len;
 			}
 
-			eth_enc28j60_read_mem(dev, pkt_buf->data,
-					      spi_frame_len);
+			eth_enc28j60_read_mem(dev, data_ptr, spi_frame_len);
 
 			net_buf_add(pkt_buf, spi_frame_len);
 
 			/* One fragment has been written via SPI */
 			frm_len -= spi_frame_len;
-
 		} while (frm_len > 0);
 
 		/* Pops one padding byte from spi circular buffer
@@ -570,7 +589,7 @@ static int eth_enc28j60_rx(struct device *dev)
 			eth_enc28j60_read_mem(dev, &pad, 1);
 		}
 
-		/* Register the buffer frame with the IP stack */
+		/*Feed buffer frame to IP stack */
 		net_recv_data(context->iface, buf);
 done:
 		/* Free buffer memory and decrement rx counter */
@@ -621,7 +640,7 @@ static int eth_net_tx(struct net_if *iface, struct net_buf *buf)
 	uint16_t ll_len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
 	int ret;
 
-	ret = eth_enc28j60_tx(iface->dev, net_nbuf_ll(buf), ll_len);
+	ret = eth_enc28j60_tx(iface->dev, buf, ll_len);
 	if (ret == 0) {
 		net_nbuf_unref(buf);
 	}
