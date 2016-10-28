@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_L2_IEEE802154_DEBUG
+#ifdef CONFIG_NET_DEBUG_L2_IEEE802154
 #define SYS_LOG_DOMAIN "net/ieee802154"
 #define NET_DEBUG 1
 #endif

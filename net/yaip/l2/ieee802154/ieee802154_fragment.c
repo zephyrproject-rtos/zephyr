@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NET_L2_IEEE802154_FRAGMENT_DEBUG)
+#if defined(CONFIG_NET_DEBUG_L2_IEEE802154_FRAGMENT)
 #define SYS_LOG_DOMAIN "net/ieee802154"
 #define NET_DEBUG 1
 #endif

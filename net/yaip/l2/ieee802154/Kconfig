@@ -28,7 +28,7 @@ config NET_L2_IEEE802154_MGMT
 	select NET_MGMT_EVENT
 	default n
 
-config NET_L2_IEEE802154_DEBUG
+config NET_DEBUG_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 stack debug messages"
 	default n
 	depends on NET_LOG
@@ -109,7 +109,7 @@ config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 	  from peer. Reassembly should be finished within a given time.
 	  Otherwise all accumulated fragments are dropped.
 
-config  NET_L2_IEEE802154_FRAGMENT_DEBUG
+config  NET_DEBUG_L2_IEEE802154_FRAGMENT
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
 	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
 	default n

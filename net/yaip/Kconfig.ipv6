@@ -94,7 +94,7 @@ config NET_MAX_6LO_CONTEXTS
 	6lowpan context options table size. The value depends on your
 	network and memory connsuption. More size occupies more memory.
 
-config NET_6LO_DEBUG
+config NET_DEBUG_6LO
 	bool "Enable 6lowpan debug"
 	depends on NET_6LO && NET_LOG
 

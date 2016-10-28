@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NET_6LO_DEBUG)
+#if defined(CONFIG_NET_DEBUG_6LO)
 #define SYS_LOG_DOMAIN "net/6lo"
 #define NET_DEBUG 1
 #endif
