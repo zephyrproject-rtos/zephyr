@@ -521,6 +521,7 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
+	uint8_t *frag_start = p_buf;
 
 	fs = generate_fcf_grounds(&p_buf, ctx->ack_requested);
 
@@ -533,7 +534,7 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 
 	p_buf = generate_addressing_fields(iface, fs, &params, p_buf);
 
-	if ((p_buf - net_nbuf_ll(buf)) != net_nbuf_ll_reserve(buf)) {
+	if ((p_buf - frag_start) != net_nbuf_ll_reserve(buf)) {
 		/* ll reserve was too small? We probably overwrote
 		 * payload bytes
 		 */
