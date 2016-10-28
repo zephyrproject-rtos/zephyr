@@ -144,21 +144,19 @@ static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
 
 	nano_fiber_sem_take(&context->spi_sem, TICKS_UNLIMITED);
 
-	context->mem_buf[0] = ENC28J60_SPI_WBM;
-
 	for (int i = 0; i < num_segments;
 	     ++i, index_buf += MAX_BUFFER_LENGTH) {
 
 		memcpy(context->mem_buf + 1, index_buf, MAX_BUFFER_LENGTH);
-
 		spi_write(context->spi,
 			  context->mem_buf, MAX_BUFFER_LENGTH + 1);
-
 	}
 
-	memcpy(context->mem_buf + 1, index_buf, num_remaining);
-
-	spi_write(context->spi, context->mem_buf, num_remaining + 1);
+	if (num_remaining > 0) {
+		context->mem_buf[0] = ENC28J60_SPI_WBM;
+		memcpy(context->mem_buf + 1, index_buf, num_remaining);
+		spi_write(context->spi, context->mem_buf, num_remaining + 1);
+	}
 
 	nano_fiber_sem_give(&context->spi_sem);
 }
@@ -177,23 +175,22 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 
 	nano_fiber_sem_take(&context->spi_sem, TICKS_UNLIMITED);
 
-	context->mem_buf[0] = ENC28J60_SPI_RBM;
-
 	for (int i = 0; i < num_segments;
 	     ++i, index_buf += MAX_BUFFER_LENGTH) {
 
 		spi_transceive(context->spi,
 			       context->mem_buf, MAX_BUFFER_LENGTH + 1,
 			       context->mem_buf, MAX_BUFFER_LENGTH + 1);
-
 		memcpy(index_buf, context->mem_buf + 1, MAX_BUFFER_LENGTH);
 	}
 
-	spi_transceive(context->spi,
-		       context->mem_buf, num_remaining + 1,
-		       context->mem_buf, num_remaining + 1);
-
-	memcpy(index_buf, context->mem_buf + 1, num_remaining);
+	if (num_remaining > 0) {
+		context->mem_buf[0] = ENC28J60_SPI_RBM;
+		spi_transceive(context->spi,
+			       context->mem_buf, num_remaining + 1,
+			       context->mem_buf, num_remaining + 1);
+		memcpy(index_buf, context->mem_buf + 1, num_remaining);
+	}
 
 	nano_fiber_sem_give(&context->spi_sem);
 }
