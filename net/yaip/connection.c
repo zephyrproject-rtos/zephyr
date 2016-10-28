@@ -691,6 +691,15 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 			}
 		}
 
+		/* If we have an existing best_match, and that one
+		 * specifies a remote port, then we've matched to a
+		 * LISTENING connection that should not override.
+		 */
+		if (best_match >= 0 &&
+		    net_sin(&conns[best_match].remote_addr)->sin_port) {
+			continue;
+		}
+
 		if (best_rank < conns[i].rank) {
 			best_rank = conns[i].rank;
 			best_match = i;

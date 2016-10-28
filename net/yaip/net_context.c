@@ -274,13 +274,7 @@ static int check_used_port(enum net_ip_protocol ip_proto,
 static uint16_t find_available_port(struct net_context *context,
 				    const struct sockaddr *addr)
 {
-	if (net_sin(addr)->sin_port) {
-		if (check_used_port(net_context_get_ip_proto(context),
-				    net_sin(addr)->sin_port,
-				    addr) < 0) {
-			return 0;
-		}
-	} else {
+	if (!net_sin(addr)->sin_port) {
 		uint16_t local_port;
 
 		do {
@@ -984,8 +978,8 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			remote_addr6->sin6_family = AF_INET6;
 			local_addr6->sin6_family = AF_INET6;
 
-			/* bind will allocate free port */
-			local_addr6->sin6_port = 0;
+			local_addr6->sin6_port = NET_TCP_BUF(buf)->dst_port;
+			remote_addr6->sin6_port = NET_TCP_BUF(buf)->src_port;
 
 			net_ipaddr_copy(&local_addr6->sin6_addr,
 					&NET_IPV6_BUF(buf)->dst);
@@ -1005,8 +999,8 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			remote_addr4->sin_family = AF_INET;
 			local_addr4->sin_family = AF_INET;
 
-			/* bind will allocate free port */
-			local_addr4->sin_port = 0;
+			local_addr4->sin_port = NET_TCP_BUF(buf)->dst_port;
+			remote_addr4->sin_port = NET_TCP_BUF(buf)->src_port;
 
 			net_ipaddr_copy(&local_addr4->sin_addr,
 					&NET_IPV4_BUF(buf)->dst);
@@ -1014,7 +1008,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 					&NET_IPV4_BUF(buf)->src);
 			addrlen = sizeof(struct sockaddr_in);
 		} else
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_IPV4 */
 		{
 			NET_ASSERT_INFO(false, "Invalid protocol family %d",
 					net_context_get_family(context));
