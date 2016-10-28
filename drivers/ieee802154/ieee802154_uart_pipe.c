@@ -174,7 +174,7 @@ static int upipe_set_txpower(struct device *dev, int16_t dbm)
 
 static int upipe_tx(struct device *dev, struct net_buf *buf)
 {
-	uint8_t len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
+	uint8_t len = net_nbuf_ll_reserve(buf) + buf->frags->len;
 	struct upipe_context *upipe = dev->driver_data;
 	uint8_t *pkt_buf = net_nbuf_ll(buf);
 	uint8_t i, data;
