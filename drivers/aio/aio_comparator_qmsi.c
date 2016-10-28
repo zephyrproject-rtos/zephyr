@@ -27,6 +27,11 @@
 
 #define INT_COMPARATORS_MASK 0x7FFFF
 #define AIO_QMSI_CMP_COUNT		(19)
+#if (QM_LAKEMONT)
+#define CMP_INTR_ROUTER QM_INTERRUPT_ROUTER->comparator_0_host_int_mask
+#else
+#define CMP_INTR_ROUTER QM_INTERRUPT_ROUTER->comparator_0_ss_int_mask
+#endif
 
 struct aio_qmsi_cmp_cb {
 	aio_cmp_cb cb;
@@ -51,8 +56,8 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 		return -EINVAL;
 	}
 
-	/* Disable interrupt to host */
-	QM_INTERRUPT_ROUTER->comparator_0_host_int_mask |= (1 << index);
+	/* Disable interrupt to current core */
+	CMP_INTR_ROUTER |= (1 << index);
 
 	/* Disable comparator according to index */
 	config.int_en &= ~(1 << index);
@@ -103,8 +108,8 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 		return -EINVAL;
 	}
 
-	/* Enable Interrupts to host for an specific comparator */
-	QM_INTERRUPT_ROUTER->comparator_0_host_int_mask &= ~(1 << index);
+	/* Enable Interrupts to current core for an specific comparator */
+	CMP_INTR_ROUTER &= ~(1 << index);
 
 	return 0;
 }
@@ -123,7 +128,7 @@ static int aio_qmsi_cmp_init(struct device *dev)
 	aio_cmp_config(dev);
 
 	/* Disable all comparator interrupts */
-	QM_INTERRUPT_ROUTER->comparator_0_host_int_mask |= INT_COMPARATORS_MASK;
+	CMP_INTR_ROUTER |= INT_COMPARATORS_MASK;
 
 	/* Clear status and dissble all comparators */
 	QM_SCSS_CMP->cmp_stat_clr |= INT_COMPARATORS_MASK;
@@ -144,14 +149,15 @@ static int aio_qmsi_cmp_init(struct device *dev)
 		dev_data->cb[i].param = NULL;
 	}
 
-	irq_enable(QM_IRQ_COMPARATOR_0_INT);
+	irq_enable(IRQ_GET_NUMBER(QM_IRQ_COMPARATOR_0_INT));
 
 	return 0;
 }
 
-static void aio_qmsi_cmp_isr(struct device *dev)
+static void aio_qmsi_cmp_isr(void *data)
 {
 	uint8_t i;
+	struct device *dev = data;
 	struct aio_qmsi_cmp_dev_data_t *dev_data =
 		(struct aio_qmsi_cmp_dev_data_t *)dev->driver_data;
 
@@ -183,8 +189,9 @@ static int aio_cmp_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(QM_IRQ_COMPARATOR_0_INT, CONFIG_AIO_COMPARATOR_0_IRQ_PRI,
-		    aio_qmsi_cmp_isr, DEVICE_GET(aio_qmsi_cmp), 0);
+	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_COMPARATOR_0_INT),
+		    CONFIG_AIO_COMPARATOR_0_IRQ_PRI, aio_qmsi_cmp_isr,
+		    DEVICE_GET(aio_qmsi_cmp), 0);
 
 	return 0;
 }
