@@ -40,7 +40,84 @@ struct i2c_qmsi_ss_driver_data {
 	device_sync_call_t sync;
 	int transfer_status;
 	struct k_sem sem;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+	qm_ss_i2c_context_t i2c_ctx;
+#endif
+#endif
 };
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void ss_i2c_qmsi_set_power_state(struct device *dev,
+					uint32_t power_state)
+{
+	struct i2c_qmsi_ss_driver_data *drv_data = GET_DRIVER_DATA(dev);
+
+	drv_data->device_power_state = power_state;
+}
+
+static uint32_t ss_i2c_qmsi_get_power_state(struct device *dev)
+{
+	struct i2c_qmsi_ss_driver_data *drv_data = GET_DRIVER_DATA(dev);
+
+	return drv_data->device_power_state;
+}
+
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static int ss_i2c_suspend_device(struct device *dev)
+{
+	if (device_busy_check(dev)) {
+		return -EBUSY;
+	}
+
+	struct i2c_qmsi_ss_driver_data *drv_data = GET_DRIVER_DATA(dev);
+
+	qm_ss_i2c_save_context(GET_CONTROLLER_INSTANCE(dev),
+			       &drv_data->i2c_ctx);
+
+	ss_i2c_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
+	return 0;
+}
+
+static int ss_i2c_resume_device_from_suspend(struct device *dev)
+{
+	struct i2c_qmsi_ss_driver_data *drv_data = GET_DRIVER_DATA(dev);
+
+	qm_ss_i2c_restore_context(GET_CONTROLLER_INSTANCE(dev),
+				  &drv_data->i2c_ctx);
+
+	ss_i2c_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+
+/*
+* Implements the driver control management functionality
+* the *context may include IN data or/and OUT data
+*/
+static int ss_i2c_device_ctrl(struct device *dev, uint32_t ctrl_command,
+			      void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return ss_i2c_suspend_device(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return ss_i2c_resume_device_from_suspend(dev);
+		}
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = ss_i2c_qmsi_get_power_state(dev);
+	}
+
+	return 0;
+}
+#else
+#define ss_i2c_qmsi_set_power_state(...)
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 static int i2c_qmsi_ss_init(struct device *dev);
 
@@ -68,8 +145,9 @@ static const struct i2c_qmsi_ss_config_info config_info_0 = {
 	.irq_cfg = i2c_qmsi_ss_config_irq_0,
 };
 
-DEVICE_INIT(i2c_ss_0, CONFIG_I2C_0_NAME, i2c_qmsi_ss_init, &driver_data_0,
-	    &config_info_0, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(i2c_ss_0, CONFIG_I2C_0_NAME, i2c_qmsi_ss_init,
+	      ss_i2c_device_ctrl, &driver_data_0, &config_info_0, POST_KERNEL,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 static void i2c_qmsi_ss_config_irq_0(void)
 {
@@ -124,8 +202,9 @@ static const struct i2c_qmsi_ss_config_info config_info_1 = {
 	.irq_cfg = i2c_qmsi_ss_config_irq_1,
 };
 
-DEVICE_INIT(i2c_ss_1, CONFIG_I2C_1_NAME, i2c_qmsi_ss_init, &driver_data_1,
-	    &config_info_1, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(i2c_ss_1, CONFIG_I2C_1_NAME, i2c_qmsi_ss_init,
+	      ss_i2c_device_ctrl, &driver_data_1, &config_info_1, POST_KERNEL,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 static void i2c_qmsi_ss_config_irq_1(void)
 {
@@ -300,5 +379,8 @@ static int i2c_qmsi_ss_init(struct device *dev)
 
 	device_sync_call_init(&driver_data->sync);
 	dev->driver_api = &api;
+
+	ss_i2c_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
