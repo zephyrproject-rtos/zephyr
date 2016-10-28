@@ -422,8 +422,14 @@ def kernel_main_c_tasks_unified():
 
     kernel_main_c_out("\n")
     for task in task_list:
+        entry = task[2]
+
+        if entry == "main":
+            # We will re-use existing main_thread
+            continue
+
         kernel_main_c_out("EXTERN_C void %s(void *, void *, void *);\n" %
-                          task[2])
+                          entry)
 
 
     # thread_init objects
@@ -435,6 +441,10 @@ def kernel_main_c_tasks_unified():
         prio = task[1]
         entry = task[2]
         stack_size = task[3]
+
+        if entry == "main":
+            # We will re-use existing main thread
+            continue
 
         groups = get_group_bitmask(task[4])
 
@@ -1201,14 +1211,26 @@ def generate_sysgen_h_obj_ids():
     sysgen_h_data += "\n"
     for task in task_list:
         name = task[0];
+        prio = task[1]
+        entry = task[2]
+        stack_size = task[3]
+
         if kernel_type == 'micro':
             sysgen_h_data += \
                 "extern struct k_task _k_task_obj_%s;\n" % (name) + \
                 "#define %s ((ktask_t)&_k_task_obj_%s)\n" % (name, name)
         elif (kernel_type == 'unified'):
-            sysgen_h_data += \
-                "extern char _k_thread_obj_%s[];\n" % (name) + \
-                "#define %s ((k_tid_t)_k_thread_obj_%s)\n" % (name, name)
+            if entry == "main":
+                # Special case: if the MDEF defines a main() thread,
+                # re-purpose the already existing main_thread for it.
+                sysgen_h_data += \
+                    "#define MDEF_MAIN_STACK_SIZE %d\n" % stack_size
+                sysgen_h_data += \
+                    "#define MDEF_MAIN_THREAD_PRIORITY %d\n" % prio
+            else:
+                sysgen_h_data += \
+                    "extern char _k_thread_obj_%s[];\n" % (name) + \
+                    "#define %s ((k_tid_t)_k_thread_obj_%s)\n" % (name, name)
 
     # event object ids
 

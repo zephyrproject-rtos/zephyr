@@ -21,6 +21,7 @@
  * This module contains routines that are used to initialize the nanokernel.
  */
 
+#include <zephyr.h>
 #include <offsets.h>
 #include <kernel.h>
 #include <misc/printk.h>
@@ -82,7 +83,18 @@ uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
     #error "IDLE_STACK_SIZE must be a multiple of the stack alignment"
 #endif
 
-static char __noinit __stack main_stack[CONFIG_MAIN_STACK_SIZE];
+/* Some projects may specify their main thread and parameters in the
+ * MDEF file. In this case, we need to use the stack size specified there
+ * and not in Kconfig
+ */
+#if defined(MDEF_MAIN_STACK_SIZE) && \
+		(MDEF_MAIN_STACK_SIZE > CONFIG_MAIN_STACK_SIZE)
+#define MAIN_STACK_SIZE MDEF_MAIN_STACK_SIZE
+#else
+#define MAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
+#endif
+
+static char __noinit __stack main_stack[MAIN_STACK_SIZE];
 static char __noinit __stack idle_stack[IDLE_STACK_SIZE];
 
 k_tid_t const _main_thread = (k_tid_t)main_stack;
@@ -186,6 +198,14 @@ static void _main(void *unused1, void *unused2, void *unused3)
 	_main_thread->flags &= ~ESSENTIAL;
 
 	extern void main(void);
+
+	/* If we're going to load the MDEF main() in this context, we need
+	 * to now set the priority to be what was specified in the MDEF file
+	 */
+#if defined(MDEF_MAIN_THREAD_PRIORITY) && \
+		(MDEF_MAIN_THREAD_PRIORITY != CONFIG_MAIN_THREAD_PRIORITY)
+	k_thread_priority_set(_main_thread, MDEF_MAIN_THREAD_PRIORITY);
+#endif
 	main();
 }
 
@@ -244,7 +264,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 		sys_dlist_init(&_nanokernel.ready_q.q[ii]);
 	}
 
-	_new_thread(main_stack, CONFIG_MAIN_STACK_SIZE, NULL,
+	_new_thread(main_stack, MAIN_STACK_SIZE, NULL,
 		    _main, NULL, NULL, NULL,
 		    CONFIG_MAIN_THREAD_PRIORITY, ESSENTIAL);
 	_mark_thread_as_started(_main_thread);
