@@ -39,11 +39,21 @@ GTEXT(_rirq_common_interrupt_swap)
 GTEXT(_is_next_thread_current)
 #endif
 
-#if CONFIG_NUM_IRQ_PRIO_LEVELS > 2
-#error "NUM_IRQ_PRIO_LEVELS>2 is not supported."
+#if 0 /* TODO: when FIRQ is not present, all would be regular */
+#define NUM_REGULAR_IRQ_PRIO_LEVELS CONFIG_NUM_IRQ_PRIO_LEVELS
+#else
+#define NUM_REGULAR_IRQ_PRIO_LEVELS (CONFIG_NUM_IRQ_PRIO_LEVELS-1)
+#endif
+/* note: the above define assumes that prio 0 IRQ is for FIRQ, and
+ * that all others are regular interrupts.
+ * TODO: Revist this if FIRQ becomes configurable.
+ */
+
+#if NUM_REGULAR_IRQ_PRIO_LEVELS > 1
+#error "nested regular interrupts are not supported."
 /*
  * Nesting of Regularing interrupts is not yet supported.
- * If your SOC supports more than 2, set this value to 2.
+ * Set CONFIG_NUM_IRQ_PRIO_LEVELS to 2 even if SOC supports more.
  */
 #endif
 
@@ -71,7 +81,7 @@ SECTION_FUNC(TEXT, _rirq_enter)
 	kflag r2
 #endif
 	ld_s r2, [r1, __tNANO_current_OFFSET]
-#if CONFIG_NUM_REGULAR_IRQ_PRIO_LEVELS == 1
+#if NUM_REGULAR_IRQ_PRIO_LEVELS == 1
 	st sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 	ld sp, [r1, __tNANO_rirq_sp_OFFSET]
 #else
@@ -92,7 +102,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	mov r1, _nanokernel
 	ld_s r2, [r1, __tNANO_current_OFFSET]
 
-#if CONFIG_NUM_REGULAR_IRQ_PRIO_LEVELS > 1
+#if NUM_REGULAR_IRQ_PRIO_LEVELS > 1
 	/* check if we're a nested interrupt: if so, let the interrupted interrupt
 	 * handle the reschedule */
 

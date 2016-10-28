@@ -25,10 +25,6 @@ config NUM_IRQ_PRIO_LEVELS
 	# 0 for Fast Interrupts (FIRQs) and 1 for Regular Interrupts (IRQs).
 	default 2
 
-config NUM_REGULAR_IRQ_PRIO_LEVELS
-	# This processor supports only 1 Regular Interrupt priority level (1).
-	default 1
-
 config NUM_IRQS
 	# must be > the highest interrupt number used
 	default 68

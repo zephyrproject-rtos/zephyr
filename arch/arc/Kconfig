@@ -84,22 +84,6 @@ config	NUM_IRQ_PRIO_LEVELS
 
 	  The BSP must provide a valid default for proper operation.
 
-config	NUM_REGULAR_IRQ_PRIO_LEVELS
-	int
-	prompt "Number of supported regular interrupt priority levels"
-	range 1 16
-	help
-	 This represents the number of Regular Interrupt priorities, which
-	 does NOT include the Fast (FIRQ) priority.
-	 The Regular Interrupt priorities available will be
-
-	  (NUM_IRQ_PRIO_LEVELS - NUM_REGULAR_IRQ_PRIO_LEVELS) to
-	  (NUM_REGULAR_IRQ_PRIO_LEVELS - 1).
-
-	  The maximum value is NUM_IRQ_PRIO_LEVELS.
-
-	  The BSP must provide a valid default for proper operation.
-
 config	NUM_IRQS
 	int
 	prompt "Upper limit of interrupt numbers/IDs used"
