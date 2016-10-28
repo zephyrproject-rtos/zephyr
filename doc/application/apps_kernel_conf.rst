@@ -1,75 +1,69 @@
 .. _apps_kernel_conf:
 
-Kernel Configuration
-####################
+Configure an Application's Kernel
+#################################
 
-The application's kernel is configured from a set of options that
-can be customized for application-specific purposes. Each
-configuration option is derived from the first source in which
-it is specified:
+The application's kernel is configured using a set of configuration options
+that can be customized for application-specific purposes.
+The Zephyr build system takes a configuration option's value
+from the first source in which it is specified.
+The available sources are (in order):
 
-   a. The value specified by the application’s current
-      configuration; that is, its :file:`.config` file.
+#. The application's current configuration.
+   (i.e. The :file:`.config` file.)
 
-   b. The value specified by the application’s default
-      configuration; that is, its :file:`prj.conf` file.
+#. The application's default configuration.
+   (i.e. The :file:`.conf` file.)
 
-   c. The value specified by the board configuration.
+#. The board configuration used by the application.
+   (i.e. The board's :file:`.defconfig` file.)
 
-   d. The kernel’s default value for the configuration option.
+#. The kernel's default configuration.
+   (i.e. One of the kernel's :file:`Kconfig` files.)
 
-.. note::
+For information on available kernel configuration options, including
+inter-dependencies between options, see the :ref:`configuration`.
+Be careful to note if an option is an experimental option
+that is not yet fully supported.
 
-   When the default board configuration settings are sufficient for your
-   application, a :file:`prj.conf` file is not needed. Skip ahead to
-   :ref:`override_kernel_conf`.
-
-
-Procedures
-**********
-
-* `define_default_kernel_conf`_
-
-* `Overriding the Application's Default Kernel Configuration`_
-
-The procedures that follow describe how to configure a :file:`prj.conf`
-file and how to configure kernel options for microkernel and nanokernel
-applications. For information on how to work with kernel option
-inter-dependencies and board configuration-default options, see the
-:ref:`configuration`.
-
-.. note::
-
-   There are currently a number of experimental options not yet
-   fully supported.
-
-.. _define_default_kernel_conf:
+.. contents:: Procedures
+   :local:
+   :depth: 1
 
 Defining the Application's Default Kernel Configuration
 =======================================================
 
-Create a :file:`prj.conf` file to define the application's
-default kernel configuration. This file can contain
-settings that override or augment board-configuration settings.
+An application's :file:`.conf` file defines its default kernel configuration.
+The settings in this file override or augment the board configuration settings.
 
-The contents of the supported board configuration files
-can be viewed in :file:`~/rootDir/boards/BOARD/BOARD_defconfig`.
+The board configuration settings can be viewed
+in :file:`\$ZEPHYR_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
+
+.. note::
+
+   When the default board configuration settings are sufficient for your
+   application, a :file:`.conf` file is not needed. Skip ahead to
+   :ref:`override_kernel_conf`.
 
 Before you begin
 ----------------
 
-* Confirm Zephyr environment variables are set for each console
-  terminal using :ref:`apps_common_procedures`.
+* Ensure you have created an application directory, as described
+  in :ref:`apps_structure`.
+
+* Review the kernel configuration options available and know
+  which ones you want to set for your application.
+  Be aware of any dependencies involving these options.
+  See the :ref:`configuration` for a brief description of each option.
 
 Steps
 -----
 
 1. Navigate to the :file:`appDir`, and create the :file:`prj.conf` file. Enter:
 
-  .. code-block:: bash
+   .. code-block:: bash
 
-   $ touch prj.conf
-
+       $ touch prj.conf
 
   The default name is :file:`prj.conf`. The filename must match
   the ``CONF_FILE`` entry in the application :file:`Makefile`.
@@ -85,13 +79,13 @@ Steps
 
    d) Use a # followed by a space to comment a line.
 
-   This example shows a comment line and a board
+   The example below shows a comment line and a board
    configuration override in the :file:`prj.conf`.
 
-  .. code-block:: c
+   .. code-block:: c
 
-   # Change the number of IRQs supported by the application
-     CONFIG_NUM_IRQS=43
+       # Change the number of IRQs supported by the application
+       CONFIG_NUM_IRQS=43
 
 3. Save and close the file.
 
@@ -102,7 +96,7 @@ Overriding the Application's Default Kernel Configuration
 =========================================================
 
 Override the application's default kernel configuration to
-temporarily alter the application’s configuration, perhaps
+temporarily alter the application's configuration, perhaps
 to test the effect of a change.
 
 .. note::
@@ -117,16 +111,15 @@ is a preferred method.
 Before you begin
 ----------------
 
+* Ensure you have created an application directory, as described
+  in :ref:`apps_structure`.
+
 * Review the kernel configuration options available and know
-  which ones you want to temporarily set for your application.
-  See the :ref:`configuration` for a brief description of each option.
+  which ones you want to set for your application.
+  Be aware of any dependencies involving these options.
 
-* Be aware of any dependencies among the kernel configuration options.
-
-* Confirm an application :file:`Makefile` exists for your application.
-
-* Confirm the Zephyr environment variable is set for each console
-  terminal; see :ref:`apps_common_procedures`.
+* Ensure the Zephyr environment variables are set for each console terminal;
+  see :ref:`apps_common_procedures`.
 
 Steps
 -----
@@ -141,7 +134,7 @@ Steps
 
   .. code-block:: bash
 
-   $ make menuconfig
+   $ make [BOARD=<type>] menuconfig
 
   A question-based menu opens that allows you to set individual
   configuration options.
@@ -202,7 +195,7 @@ Steps
 
     An :file:`outdir` directory is created in the application
     directory. The outdir directory contains symbolic links
-    to files under $(ZEPHYR_BASE).
+    to files under :file:`\$ZEPHYR_BASE`.
 
    .. note::
 
@@ -261,8 +254,3 @@ Steps
 
 11. Press :kbd:`Enter` to retire the menu display and
     return to the console command line.
-
-**Next Steps**: For microkernel applications, go to :ref:`Creating and
-Configuring an MDEF File for a Microkernel Application <create_mdef>`.
-
-For nanokernel applications, go to :ref:`apps_code_dev`.

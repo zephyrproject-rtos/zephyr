@@ -1,39 +1,29 @@
 .. _apps_structure:
 
-Application Development Directory Structure
-###########################################
+Create an Application Directory
+###############################
 
 Each application resides in a uniquely-named application
-directory created by the developer, typically, in the developer's
+directory created by the developer, typically in the developer's
 workspace directory. The application developer also creates a
 :file:`src` directory for the application's source code.
 
-.. note::
+.. contents:: Procedures
+   :local:
+   :depth: 1
 
-   The Zephyr Kernel either supplies or generates all other application
-   directories.
+Creating an Application and Source Code Directory
+=================================================
 
-Procedures
-**********
-
-* `create_directory_structure`_
-
-* `create_src_makefile`_
-
-.. _create_directory_structure:
-
-Creating an Application and Source Code Directory using the CLI
-===============================================================
-
-Create one directory for your application and another for the application's
-source code; this makes it easier to organize directories and files in the
-structure that the kernel expects.
+Create one directory for your application and a sub-directory for the
+application's source code; this makes it easier to organize directories
+and files in the structure that the kernel expects.
 
 Before You Begin
 ----------------
 
-* The environment variable must be set for each console terminal using
-  :ref:`set_environment_variables`.
+* Ensure the Zephyr environment variables are set for each console terminal;
+  see :ref:`apps_common_procedures`.
 
 Steps
 -----
@@ -41,8 +31,8 @@ Steps
 1. Create an application directory structure outside of the kernel's
    installation directory tree. Often this is your workspace directory.
 
- a) In a Linux console, navigate to a location where you want your
-    applications to reside.
+ a) In a console terminal, navigate to a location where you want your
+    application to reside.
 
  b) Create the application's directory, enter:
 
@@ -68,16 +58,13 @@ Steps
       -- appDir
          |-- src
 
-.. _create_src_makefile:
-
 Creating an Application Makefile
 ================================
 
-Create an application Makefile to define basic information such as the kernel
-type, microkernel or nanokernel, and the board configuration used by the
-application. The build system uses the Makefile to build an image with both
-the application and the kernel libraries called either
-:file:`microkernel.elf` or :file:`nanokernel.elf`.
+Create an application Makefile to define basic information,
+such as the board configuration used by the application.
+The build system uses the Makefile to build a :file:`zephyr.elf` image
+that contains both the application and the kernel libraries.
 
 Before You Begin
 ----------------
@@ -87,8 +74,8 @@ Before You Begin
 * Be familiar with the board configuration used for your application
   and, if it is a custom board configuration, where it is located.
 
-* Set the environment variable for each console terminal using
-  :ref:`set_environment_variables`.
+* Ensure the Zephyr environment variables are set for each console terminal;
+  see :ref:`apps_common_procedures`.
 
 Steps
 -----
@@ -106,16 +93,7 @@ Steps
 
       Ensure that there is a space after each ``=``.
 
-   a) Add the kernel type on a new line:
-
-      .. code-block:: make
-
-         KERNEL_TYPE = micro|nano
-
-      Either micro or nano, short for microkernel or
-      nanokernel respectively.
-
-   b) Add the name of the board configuration for your application on a
+   a) Add the name of the default board configuration for your application on a
       new line:
 
       .. code-block:: make
@@ -124,30 +102,18 @@ Steps
 
       The supported boards can be found in :ref:`board`.
 
-   c) Add the name of the default kernel configuration file for your
+   b) Add the name of the default kernel configuration file for your
       application on a new line:
 
       .. code-block:: make
 
-         CONF_FILE = prj.conf
+         CONF_FILE ?= kernel_configuration_name
 
-      The default name is :file:`prj.conf`. If you are not using the default
-      name, this entry must match the filename of the :file:`.conf` file you
-      are using.
+      The default kernel configuration file entry may be omitted if the file
+      is called :file:`prj.conf`. It may also be omitted if the default board
+      configuration's kernel settings are sufficient for your application.
 
-   d) For microkernel applications, add the name of the MDEF for your
-      application:
-
-      .. code-block:: make
-
-         MDEF_FILE = prj.mdef
-
-      The default name is :file:`prj.mdef`. If you are not using the default
-      name, this entry must match the filename of the :file:`.mdef` file you
-      are using.
-
-   e) Include the mandatory :file:`Makefile` fragments on a new
-      line:
+   c) Include the mandatory :file:`Makefile` fragments on a new line:
 
       .. code-block:: make
 
@@ -160,8 +126,6 @@ Example Makefile
 
 .. code-block:: make
 
-   KERNEL_TYPE = micro
    BOARD ?= qemu_x86
-   CONF_FILE = prj.conf
-   MDEF_FILE = prj.mdef
+   CONF_FILE ?= prj.conf
    include ${ZEPHYR_BASE}/Makefile.inc

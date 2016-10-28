@@ -30,7 +30,7 @@ Steps
       $ export ZEPHYR_GCC_VARIANT=zephyr
       $ export ZEPHYR_SDK_INSTALL_DIR=<yocto-installation-path>
 
-2. To set the environment variable :envvar:`$(ZEPHYR_BASE)`, navigate to the
+2. To set the environment variable :envvar:`\$ZEPHYR_BASE`, navigate to the
    kernel's installation directory and enter:
 
       .. code-block:: console

@@ -3,59 +3,56 @@
 Run an Application
 ##################
 
-The kernel's built-in simulator is QEMU. It creates an environment
-where you can run and test an application virtually, before (or
-in lieu of) loading and running it on actual target hardware.
+An appliction image can be run on real or simulated hardware.
+The kernel's built-in simulator is QEMU. It allows you to run and test
+an application virtually, before (or in lieu of)
+loading and running it on actual target hardware.
 
-Procedures
-**********
-
-.. _run_app_qemu:
+.. contents:: Procedures
+   :local:
+   :depth: 1
 
 Running an Application using QEMU
 =================================
 
-Run your application in QEMU for testing and demonstration purposes.
-
 Prerequisites
 -------------
 
-* You must have already generated a .elf image file for a
-  QEMU-supported board configuration, such as qemu_cortex_m3 or qemu_x86.
+* Ensure the application can be built successfully using a QEMU-supported
+  board configuration, such as qemu_cortex_m3 or qemu_x86, as described
+  in :ref:`apps_build`.
 
-* The environment variable must be set for each console
-  terminal using :ref:`apps_common_procedures`.
+* Ensure the Zephyr environment variables are set for each console terminal;
+  see :ref:`apps_common_procedures`.
 
 Steps
 -----
 
-1. Open a terminal console and navigate to the application directory
+#. Open a terminal console and navigate to the application directory
    :file:`~/appDir`.
 
-2. Enter the following command to build and run an application
-   in QEMU:
+#. Enter the following command to build and run the application
+   using a QEMU-supported board configuration,
+   such as qemu_cortex_m3 or qemu_x86.
 
-  .. code-block:: console
+   .. code-block:: console
 
-   $ make qemu
+       $ make [BOARD=<type> ...] qemu
 
+   The Zephyr build system generates a :file:`zephyr.elf` image file
+   and then begins running it in the terminal console.
 
-  The application begins running in the terminal console.
-
-3. Press :kbd:`Ctrl A, X` to stop the application from running
+#. Press :kbd:`Ctrl A, X` to stop the application from running
    in QEMU.
 
-  The application stops running and the terminal console prompt
-  redisplays.
-
-.. _loading_on_target:
+   The application stops running and the terminal console prompt
+   redisplays.
 
 Loading and Running an Application on Target Hardware
 =====================================================
 
-An application image is loaded on the target based on functionality
-available on the hardware device. Loading instructions are often
-unique to the particular target board. For this reason, loading
-instructions reside with the board-specific documentation.
-
-For more information see :ref:`board`.
+The procedure required to load an application image (:file:`zephyr.elf`)
+on a target depends on the functionality available on its hardware,
+and is often unique to that target board.
+For this reason, loading instructions reside with the board-specific
+documentation; see :ref:`board`.

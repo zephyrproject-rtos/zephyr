@@ -3,84 +3,115 @@
 Build an Application
 ####################
 
-The build process unifies all components of the application into
-a coherent application image that can be run on both simulated and real
-hardware targets.
+The Zephyr build system compiles and links all components of an application
+into a single application image that can be run on simulated hardware or real
+hardware.
 
-.. _building_base:
+.. contents:: Procedures
+   :local:
+   :depth: 1
 
-Building a Base Application
-===========================
+Building an Application
+=======================
 
-Build a base application image to test functionality in a simulated
-environment and to ultimately run on your hardware target. Before
-building, keep in mind the following:
+The build system allows you to easily build an application using the
+application's existing configuration. However, you can also build it
+using different configuration settings, if desired.
 
-* Each source code directory and sub-directory needs a directory-specific
-  :file:`Makefile`.
+Before you begin
+----------------
 
-* The :envvar:`$(ZEPHYR_BASE)` environment variable must be set for each
-  console terminal as outlined in :ref:`apps_common_procedures`.
+* Ensure you have added all application-specific code to the application
+  directory, as described in :ref:`apps_code_dev`. Ensure each source code
+  directory and sub-directory has its own :file:`Makefile`.
 
-To build the image, navigate to the :file:`~/appDir`. From here you can
-build an image for a single target with :command:`make`.
+* Ensure you have configured the application's kernel, as described
+  in :ref:`apps_kernel_conf`.
 
+* Ensure the Zephyr environment variables are set for each console terminal;
+  see :ref:`apps_common_procedures`.
 
-.. _developing_app:
+Steps
+-----
 
-Developing the Application
-==========================
+#. Navigate to the application directory :file:`~/appDir`.
 
-The app development process works best when changes are continually tested.
-Frequently rebuilding with :command:`make` makes debugging less painful
-as your application becomes more complex. It's usually a good idea to
-rebuild and test after any major changes to source files, Makefiles,
-.conf, or .mdef.
+#. Enter the following command to build the application's :file:`zephyr.elf`
+   image using the configuration settings for the board type specified
+   in the application's :file:`Makefile`.
+
+   .. code-block:: console
+
+       $ make
+
+   If desired, you can build the application using the configuration settings
+   specified in an alternate :file:`.conf` file using the :code:`CONF_FILE`
+   parameter. These settings will override the settings in the application's
+   :file:`.config` file or its default :file:`.conf` file. For example:
+
+   .. code-block:: console
+
+       $ make CONF_FILE=prj.alternate.conf
+
+   If desired, you can build the application for a different board type
+   than the one specified in the application's :file:`Makefile`
+   using the :code:`BOARD` parameter. For example:
+
+   .. code-block:: console
+
+       $ make BOARD=arduino_101
+
+   Both the :code:`CONF_FILE` and :code:`BOARD` parameters can be specified
+   when building the application.
+
+Rebuilding an Application
+=========================
+
+Application development is usually fastest when changes are continually tested.
+Frequently rebuilding your application makes debugging less painful
+as the application becomes more complex. It's usually a good idea to
+rebuild and test after any major changes to the application's source files,
+Makefiles, or configuration settings.
 
 .. important::
 
-   The Zephyr build system rebuilds only the parts of the application image
-   potentially affected by the changes; as such, the application may rebuild
-   significantly faster than it did when it was first built.
+    The Zephyr build system rebuilds only the parts of the application image
+    potentially affected by the changes. Consequently, rebuilding an application
+    is often significantly faster than building it the first time.
 
+Steps
+-----
 
-Recovering from Build Failure
------------------------------
+#. Follow the steps specified in `Building an Application`_ above.
+
+Recovering from a Build Failure
+===============================
 
 Sometimes the build system doesn't rebuild the application correctly
 because it fails to recompile one or more necessary files. You can force
 the build system to rebuild the entire application from scratch with the
 following procedure:
 
+Steps
+-----
+
 #. Navigate to the application directory :file:`~/appDir`.
 
-#. Run :command:`$ make clean`, or manually delete the generated files,
-   including the :file:`.config` file.
+#. Enter the following command to delete the application's generated files
+   for the specified board type, except for the :file:`.config` file that
+   contains the application's current configuration information.
 
-#. Run :command:`$ make pristine`.
+   .. code-block:: console
 
-#. You have the option to configure your project by running
-   :command:`$ make menuconfig`. If you choose not to configure your project
-   via :command:`menuconfig`, you can choose a configuration tailored for a
-   supported board later.
-   If you choose to use :command:`$ make menuconfig` be prepared to configure
-   all the parameters correctly for your specific board.
+       $ make [BOARD=<type>] clean
 
-#. Rebuild the application normally. Run :command:`$ make`. You can choose to
-   specify a default configuration for a supported board using the parameter
-   :command:`BOARD`. For example: :command:`$ make BOARD=arduino_101`.
-   You can see the boards that currently support a default configuration by
-   running the command :command:`$ make help`
+   Alternatively, enter the following command to delete *all* generated files
+   for *all* board types, including the :file:`.config` files that contain
+   the application's current configuration information for those board types.
 
-#. Optionally, you can override the :file:`.config` file configuration (obtained
-   as a result of :command:`menuconfig` or :command:`BOARD` parameters) by using
-   the application’s :file:`.conf` file. Declare the kernel configuration settings
-   that cover the specific needs of your project.
+   .. code-block:: console
 
+       $ make pristine
 
-.. note::
-   We recommend to use the :command:`BOARD` parameter, since it will load
-   a preset configuration already tested to work properly with
-   that board. You can always tune the board configuration. Override specific
-   configuration elements by providing a configuration snippet file. Let the build
-   system know about it with the :command:`CONF_FILE` environment variable.
+#. Rebuild the application normally following the steps specified
+   in `Building an Application`_ above.

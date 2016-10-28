@@ -1,122 +1,90 @@
 .. _apps_code_dev:
 
-Application Code Development
-############################
+Add Application-Specific Code
+#############################
 
-.. contents::
+Application-specific source code is typically added to an application
+by placing it in the application directory itself (:file:`~/appDir`).
+However, in some cases an application may also need to modify
+or enhance the kernel itself.
+
+.. contents:: Procedures
    :local:
    :depth: 1
 
-.. _develop_services:
+Adding Source Code to an Application Directory
+**********************************************
 
-Services
-********
+Understanding Source Code Requirements
+======================================
 
-The Zephyr kernel services architecture has services that are
-specific to the microkernel, services that are specific to the
-nanokernel, and services that are common, or shared, between the
-two.
-
-Microkernel Services
-====================
-
-For a complete list of microkernel services, including a description
-of each with code examples, see :ref:`microkernel`.
+Application-specific source code files are normally added to the application's
+:file:`src` directory. If the application adds a large number of files
+the developer can group them into sub-directories under :file:`src`,
+to whatever depth is needed. The developer must supply a :file:`Makefile`
+for the :file:`src` directory, as well as for each sub-directory under
+:file:`src`.
 
 .. note::
 
-   There are more microkernel services than those defined in
-   the MDEF.
+   These Makefiles are distinct from the top-level application Makefile
+   that appears in :file:`~/appDir`.
 
-Nanokernel Services
-===================
+Application-specific source code should not use symbol name prefixes
+that have been reserved by the kernel for its own use.
+For more information, see
+`Naming Conventions <https://wiki.zephyrproject.org/view/Coding_conventions#Naming_Conventions>`_.
 
-For a complete list of nanokernel services, including a description
-of each with code examples, see :ref:`nanokernel`.
+Understanding Makefile Requirements
+===================================
 
-Common Services
-===============
+The following requirements apply to all Makefiles in the :file:`src`
+directory, including any sub-directories it may have.
 
-For a complete list of services common to both the nanokernel and
-microkernel, including a description of each with code examples,
-see :ref:`common`.
+* During the build process, Kbuild identifies the source files to compile
+  into object files by matching the file names identified in
+  the application's Makefile(s).
 
+  .. important::
 
-Procedures and Conventions
-**************************
+    A source file that is not referenced by any Makefile is not included
+    when the application is built.
 
-Understanding Naming Conventions
-================================
+* A Makefile cannot directly reference source code. It can only
+  reference object files (:file:`.o` files) produced from source code files.
 
-The kernel limits the use of some prefixes to internal use only. For
-more information, see `naming conventions`_.
+* A Makefile can only reference files in its own directory or in the
+  sub-directories of that directory.
 
-.. _naming conventions: https://wiki.zephyrproject.org/view/Coding_conventions#Naming_Conventions
-
-.. _src_makefiles_reqs:
-
-Understanding src Directory Makefile Requirements
-=================================================
-
-The src directory needs a Makefile to specify how to build the application
-source code. Likewise, any sub-directory within src must also have its own
-Makefile. The following requirements apply to all Makefiles in the src
-directory:
-
-* A Makefile must reference only its own files and sub-directories.
-
-* Code that references a file outside the directory cannot be included in the
-  Makefile; the referenced file is included only in its own directory's
-  Makefile.
-
-* A Makefile cannot directly reference source code; it can only
-  reference object files (.o files) produced by source code.
-
- .. note::
-
-   The src directory Makefiles discussed here are distinct from
-   the top-level application Makefile.
-
-.. _src_files_directories:
-
-Adding Source Files and Makefiles to src Directories
-====================================================
-
-Source code and associated Makefiles specify the how the
-application image is built. In a Makefile, multiple files may be
-referenced from a single-line entry. However, a separate line must
-be used to reference each directory. During the build process, Kbuild
-finds the source files to generate the object files by matching the
-file names identified in the Makefile.
-
-.. note::
-
-   Source code without an associated Makefile is not included
-   when the application is built.
+* A Makefile may reference multiple files from a single-line entry.
+  However, a separate line must be used to reference each directory.
 
 Before You Begin
 -----------------
 
+* Ensure you have created an application directory, as described
+  in :ref:`apps_structure`.
+
 * The Zephyr environment variable must be set for each console
   terminal using :ref:`apps_common_procedures`.
+
+* Many useful code examples cam be found at :file:`\$ZEPHYR_BASE/samples`.
 
 Steps
 -----
 
-1. Create a directory structure for your source code in :file:`src`
+#. Create a directory structure for your source code in :file:`src`
    and add your source code files to it.
 
-  For many useful code examples, see :ref:`common`,
-  :ref:`microkernel`, and :ref:`nanokernel`.
-
-2. Create a :file:`Makefile` for each :file:`src` directory.
+#. Create a :file:`Makefile` in the :file:`src` directory. Then create
+   an additional :file:`Makefile` in each of the sub-directories under
+   the :file:`src` directory, if any.
 
    a) Use the following syntax to add file references:
 
       .. code-block:: make
 
-         obj-y += file.o file.o
-
+         obj-y += file1.o file2.o
 
    b) Use the following syntax to add directory references:
 
@@ -124,56 +92,61 @@ Steps
 
          obj-y += directory_name/**
 
-
 Example src Makefile
 --------------------
 
 This example is taken from the Philosopher's Sample. To
 examine this file in context, navigate to:
-:file:`rootDir/samples/philosophers/microkernel/src`.
+:file:`\$ZEPHYR_BASE/samples/philosophers/src`.
 
 .. code-block:: make
 
-   obj-y = phil_fiber.o phil_task.o
+   obj-y = main.o
 
 
-.. _`enhancing_kernel`:
-
-Enhancing the Zephyr Kernel
-===========================
-
-When enhancing the Zephyr kernel, follow the subsystem naming
-conventions and the :literal:`include path` usage guidelines.
+Modifying and Enhancing the Kernel
+**********************************
 
 Subsystem Naming Conventions
-----------------------------
+============================
 
-In general, any sub-system can define its own naming conventions for
-symbols. However, naming conventions should be implemented with a
-unique namespace prefix (e.g. bt\_ for BlueTooth, or net\_ for IP) to
-limit possible clashes with applications. Naming within a sub-system
+When enhancing an existing kernel subsystem be sure to follow
+any existing naming conventions.
+For more information, see
+`Naming Conventions <https://wiki.zephyrproject.org/view/Coding_conventions#Naming_Conventions>`_.
+
+When creating a new subsystem, the subsystem can define its own naming
+conventions for symbols. However, naming conventions should be implemented
+with a unique namespace prefix (e.g. bt\_ for BlueTooth, or net\_ for IP) to
+limit possible clashes with applications. Naming within a subsystem
 should continue to follow prefix conventions identified above; this
 keeps consistent interface for all users.
 
 Include Paths Usage Guidelines
-------------------------------
+==============================
 
-The current build system uses a series of defs.objs to define
-common pieces for a specific subsystem. For example, there
-are common defines for all architectures under :file:`\$ROOT/arch/x86`,
-and more specific defines for each supported board within
-the architecture, such as, :file:`\$ROOT/arch/x86/generic_pc`.
+Do not add unnecessary include paths to system or default include paths,
+as this can lead to ambiguous references when two or more directories
+contain a file with the same name.
+The only include path into :file:`\$ZEPHYR_BASE/include` should be
+:file:`\$ZEPHYR_BASE/include` itself.
 
-Do not add every possible :literal:`include paths` in the defs.obj files.
-Too many default paths will cause problems when more than one file with
-the same name exists. The only :literal:`include path` into
-:file:`\${vBASE}/include` should be :file:`\${vBASE}/include` itself.
+Source files should use :code:`#include` directives that specify the full path
+from a common include directory. For example, you should always use
+directives of the form :code:`#include <path/to/[header].h>`, and not
+use directives of the form :code:`#include <[header].h>`.
 
-Files should define includes to specific files with the complete path
-:file:`#include subdirectory/header.h`. For example, when there
-are two files, :file:`include/pci.h` and :file:`include/drvers/pci.h`,
-and both have been set to :file:`-Iinclude/drivers` and
-:file:`-Iinclude` for the compile, any code using
-:file:`#include pci.h` becomes ambiguous; using the complete path
-:file:`#include drivers/pci.h` is not. Not having :file:`-Iinclude/drivers`
-forces users to use the second form, which is more explicit.
+The following example illustrates the kind of problems that can arise when
+unnecessary default include paths are specified.
+
+* Observe that the kernel contains both :file:`include/pci.h` and
+  :file:`include/drivers/pci.h`.
+
+* If both the :file:`include` and :file:`include/drivers` directories
+  are added to the default include paths (e.g.
+  :code:`gcc -Iinclude/drivers -Iinclude [...]`), then the directive
+  :code:`#include <pci.h>` becomes ambiguous.
+
+The solution is to avoid adding :file:`include/drivers` to the default
+include paths. Source files can then reference either :code:`#include <pci.h>`
+or :code:`#include <drivers/pci.h>`, as needed.
