@@ -24,7 +24,7 @@ Distinguishing Features
 The Zephyr kernel offers a number of features that distinguish it from other
 small-footprint OSes:
 
-#. **Single address-space OS**. Combines application-specific code
+#. **Single address-space**. Combines application-specific code
    with a custom kernel to create a monolithic image that gets loaded
    and executed on a system's hardware. Both the application code and
    kernel code execute in a single shared address space.
@@ -33,8 +33,8 @@ small-footprint OSes:
    the capabilities it needs as it needs them, and to specify their
    quantity and size.
 
-#. **Resources defined at compile-time**. Requires all system resources
-   be defined at compilation time, which reduces code size and
+#. **Compile-time resource definition**. Allows system resources
+   to be defined at compile-time, which reduces code size and
    increases performance.
 
 #. **Minimal error checking**. Provides minimal run-time error checking
@@ -42,24 +42,22 @@ small-footprint OSes:
    infrastructure is provided to assist in debugging during application
    development.
 
-#. **Extensive suite of services** Offers a number of familiar services
+#. **Extensive suite of services**. Offers a number of familiar services
    for development:
 
-   * *Multi-threading Services* for both priority-based, non-preemptive
-     fibers and priority-based, preemptive tasks with optional round robin
-     time-slicing.
+   * *Multi-threading Services* for priority-based, non-preemptive and
+     preemptive threads with optional round robin time-slicing.
 
-   * *Interrupt Services* for both compile-time and run-time registration
-     of interrupt handlers.
+   * *Interrupt Services* for compile-time registration of interrupt handlers.
+
+   * *Memory Allocation Services* for dynamic allocation and freeing of
+     fixed-size or variable-size memory blocks.
 
    * *Inter-thread Synchronization Services* for binary semaphores,
      counting semaphores, and mutex semaphores.
 
    * *Inter-thread Data Passing Services* for basic message queues, enhanced
      message queues, and byte streams.
-
-   * *Memory Allocation Services* for dynamic allocation and freeing of
-     fixed-size or variable-size memory blocks.
 
    * *Power Management Services* such as tickless idle and an advanced idling
      infrastructure.
@@ -77,7 +75,7 @@ This section outlines the basic terms used by the Zephyr kernel ecosystem.
    The set of user-supplied files that the Zephyr build system uses
    to build an application image for a specified board configuration.
    It can contain application-specific code, kernel configuration settings,
-   kernel object definitions, and at least one Makefile.
+   and at least one Makefile.
 
    The application's kernel configuration settings direct the build system
    to create a custom kernel that makes efficient use of the board's resources.
