@@ -17,9 +17,12 @@
 /**
  * @brief Driver for External interrupt/event controller in STM32 MCUs
  *
- * Based on reference manual:
- *   STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx and STM32F107xx
- *   advanced ARM ® -based 32-bit MCUs
+ * Based on reference manuals:
+ *   RM0008 Reference Manual: STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx
+ *   and STM32F107xx advanced ARM-based 32-bit MCUs
+ * and
+ *   RM0368 Reference manual STM32F401xB/C and STM32F401xD/E
+ *   advanced ARM-based 32-bit MCUs
  *
  * Chapter 10.2: External interrupt/event controller (EXTI)
  *
@@ -54,6 +57,8 @@ struct __exti_cb {
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define EXTI_LINES 19
+#elif CONFIG_SOC_SERIES_STM32F4X
+#define EXTI_LINES 23
 #endif
 
 /* driver data */
@@ -70,7 +75,7 @@ static inline struct stm32_exti *get_exti_base_addr(int line)
 void stm32_exti_enable(int line)
 {
 	volatile struct stm32_exti *exti = get_exti_base_addr(line);
-	int irqnum;
+	int irqnum = 0;
 
 	exti->imr |= 1 << line;
 
@@ -83,6 +88,35 @@ void stm32_exti_enable(int line)
 		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
 		irqnum = STM32F1_IRQ_EXTI0 + line;
 	}
+#elif CONFIG_SOC_SERIES_STM32F4X
+	if (line >= 5 && line <= 9) {
+		irqnum = STM32F4_IRQ_EXTI9_5;
+	} else if (line >= 10 && line <= 15) {
+		irqnum = STM32F4_IRQ_EXTI15_10;
+	} else if (line >= 0 && line <= 4) {
+		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
+		irqnum = STM32F4_IRQ_EXTI0 + line;
+	} else {
+		switch (line) {
+		case 16:
+			irqnum = STM32F4_IRQ_EXTI16;
+			break;
+		case 17:
+			irqnum = STM32F4_IRQ_EXTI17;
+			break;
+		case 18:
+			irqnum = STM32F4_IRQ_EXTI18;
+			break;
+		case 21:
+			irqnum = STM32F4_IRQ_EXTI21;
+			break;
+		case 22:
+			irqnum = STM32F4_IRQ_EXTI22;
+			break;
+		}
+	}
+#else
+	#error "Unknown STM32 SoC"
 #endif
 
 	irq_enable(irqnum);
@@ -199,6 +233,33 @@ static inline void __stm32_exti_isr_15_10(void *arg)
 	__stm32_exti_isr(10, 16, arg);
 }
 
+#ifdef CONFIG_SOC_SERIES_STM32F4X
+static inline void __stm32_exti_isr_16(void *arg)
+{
+	__stm32_exti_isr(16, 17, arg);
+}
+
+static inline void __stm32_exti_isr_17(void *arg)
+{
+	__stm32_exti_isr(17, 18, arg);
+}
+
+static inline void __stm32_exti_isr_18(void *arg)
+{
+	__stm32_exti_isr(18, 19, arg);
+}
+
+static inline void __stm32_exti_isr_21(void *arg)
+{
+	__stm32_exti_isr(21, 22, arg);
+}
+
+static inline void __stm32_exti_isr_22(void *arg)
+{
+	__stm32_exti_isr(22, 23, arg);
+}
+#endif /* CONFIG_SOC_SERIES_STM32F4X */
+
 static void __stm32_exti_connect_irqs(struct device *dev);
 
 /**
@@ -274,7 +335,56 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
 		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
 		0);
-#endif
+#elif CONFIG_SOC_SERIES_STM32F4X
+	IRQ_CONNECT(STM32F4_IRQ_EXTI0,
+		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
+		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI1,
+		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
+		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI2,
+		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
+		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI3,
+		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
+		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI4,
+		CONFIG_EXTI_STM32_EXTI4_IRQ_PRI,
+		__stm32_exti_isr_4, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI9_5,
+		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
+		__stm32_exti_isr_9_5, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI15_10,
+		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
+		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI16,
+		CONFIG_EXTI_STM32_EXTI16_IRQ_PRI,
+		__stm32_exti_isr_16, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI17,
+		CONFIG_EXTI_STM32_EXTI17_IRQ_PRI,
+		__stm32_exti_isr_17, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI18,
+		CONFIG_EXTI_STM32_EXTI18_IRQ_PRI,
+		__stm32_exti_isr_18, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI21,
+		CONFIG_EXTI_STM32_EXTI21_IRQ_PRI,
+		__stm32_exti_isr_21, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F4_IRQ_EXTI22,
+		CONFIG_EXTI_STM32_EXTI22_IRQ_PRI,
+		__stm32_exti_isr_22, DEVICE_GET(exti_stm32),
+		0);
+#endif /* CONFIG_SOC_SERIES_STM32FXX */
 }
 
 

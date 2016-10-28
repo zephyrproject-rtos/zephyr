@@ -17,11 +17,14 @@
 /**
  * @brief Driver for External interrupt/event controller in STM32 MCUs
  *
- * Based on reference manual:
- *   STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx and STM32F107xx
- *   advanced ARM ® -based 32-bit MCUs
+ * Based on reference manuals:
+ *   RM0008 Reference Manual: STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx
+ *   and STM32F107xx advanced ARM-based 32-bit MCUs
+ * and
+ *   RM0368 Reference manual STM32F401xB/C and STM32F401xD/E
+ *   advanced ARM-based 32-bit MCUs
  *
- * Chapter 8.2: External interrupt/event controller (EXTI)
+ * Chapter 10.2: External interrupt/event controller (EXTI)
  *
  */
 
