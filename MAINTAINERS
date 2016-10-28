@@ -66,6 +66,7 @@ M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 S:	Supported
 F:	arch/arc/
 F:	include/arch/arc/
+F:	boards/arc/
 
 ARM ARCHITECTURE
 M:	Maureen Helm <maureen.helm@nxp.com>
@@ -73,6 +74,7 @@ M:	Kumar Gala <kumar.gala@linaro.org>
 S:	Supported
 F:	arch/arm/
 F:	include/arch/arm/
+F:	boards/arm/
 
 ARM CORTEX MICROCONTROLLER SOFTWARE INTERFACE STANDARD (CMSIS)
 M:	Maureen Helm <maureen.helm@nxp.com>
@@ -304,6 +306,7 @@ F:	include/arch/nios2/
 F:	drivers/serial/uart_altera_jtag.c
 F:	drivers/timer/altera_avalon_timer.c
 F:	tests/kernel/test_intmath/
+F:	boards/nios2/
 
 NORDIC MDK
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
@@ -390,6 +393,7 @@ M:	Allan Stephens <allan.stephens@windriver.com>
 S:	Supported
 F:	arch/x86/
 F:	include/arch/x86/
+F:	boards/x86/
 
 ZOAP
 M:	Vinicius Costa Gomes <vinicius.gomes@intel.com>
