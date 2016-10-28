@@ -481,6 +481,7 @@ static int eth_enc28j60_rx(struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	uint8_t econ1_bkup;
+	uint16_t lengthfr;
 	uint8_t counter;
 
 	/* Errata 6. The Receive Packet Pending Interrupt Flag (EIR.PKTIF)
@@ -516,6 +517,7 @@ static int eth_enc28j60_rx(struct device *dev)
 
 		/* Get the frame length from the rx status vector */
 		frm_len = (context->rx_rsv[1] << 8) | context->rx_rsv[0];
+		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
 		buf = net_nbuf_get_reserve_rx(0);
@@ -558,6 +560,15 @@ static int eth_enc28j60_rx(struct device *dev)
 			frm_len -= spi_frame_len;
 
 		} while (frm_len > 0);
+
+		/* Pops one padding byte from spi circular buffer
+		 * introduced by the device when the frame length is odd
+		 */
+		if (lengthfr & 0x01) {
+			uint8_t pad;
+
+			eth_enc28j60_read_mem(dev, &pad, 1);
+		}
 
 		/* Register the buffer frame with the IP stack */
 		net_recv_data(context->iface, buf);

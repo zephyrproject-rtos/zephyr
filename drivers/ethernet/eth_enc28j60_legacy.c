@@ -542,6 +542,16 @@ static int eth_enc28j60_rx(struct device *dev)
 		}
 
 		eth_enc28j60_read_mem(dev, reception_buf, frm_len);
+
+		/* Pops one padding byte from spi circular buffer
+		 * introduced by the device when the frame length is odd
+		 */
+		if (frm_len & 0x01) {
+			uint8_t pad;
+
+			eth_enc28j60_read_mem(dev, &pad, 1);
+		}
+
 		uip_len(buf) = frm_len;
 
 		/* Register the buffer frame with the IP stack */
