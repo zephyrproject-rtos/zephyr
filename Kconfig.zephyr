@@ -32,7 +32,7 @@ source "misc/Kconfig"
 
 source "lib/Kconfig"
 
-source "fs/Kconfig"
+source "subsys/Kconfig"
 
 source "ext/Kconfig"
 

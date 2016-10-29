@@ -188,7 +188,7 @@ M:	Ramesh Thomas <ramesh.thomas@intel.com>
 M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
 S:	Supported
 F:	ext/fs/
-F:	fs/
+F:	subsys/fs/
 F:	include/fs/
 F:	include/fs.h
 F:	samples/fs/
