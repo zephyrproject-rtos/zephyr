@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <string.h>
-#include <nanokernel.h>
 #include <atomic.h>
 #include <misc/util.h>
 #include <misc/nano_work.h>

@@ -1,5 +1,0 @@
-% Application       : Bluetooth peripheral Device Information Service sample
-
-% TASK NAME         PRIO ENTRY           STACK GROUPS
-% ===================================================
-  TASK MAIN            7 main            2048 [EXE]

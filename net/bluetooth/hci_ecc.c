@@ -30,7 +30,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 #include "hci_core.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)

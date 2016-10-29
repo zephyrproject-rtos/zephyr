@@ -32,7 +32,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 
 #include "util/defines.h"
 #include "util/work.h"
@@ -45,7 +45,7 @@
 
 #include "hal/debug.h"
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
+#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif
@@ -169,10 +169,14 @@ static void recv_fiber(int unused0, int unused1)
 				}
 			}
 
-			if (buf && buf->len) {
-				BT_DBG("Incoming packet: type:%u len:%u",
+			if (buf) {
+				if (buf->len) {
+					BT_DBG("Packet in: type:%u len:%u",
 						bt_buf_get_type(buf), buf->len);
-				bt_recv(buf);
+					bt_recv(buf);
+				} else {
+					net_buf_unref(buf);
+				}
 			}
 
 			radio_rx_dequeue();
@@ -320,9 +324,9 @@ static int hci_driver_open(void)
 	return 0;
 }
 
-static struct bt_driver drv = {
+static struct bt_hci_driver drv = {
 	.name	= "Controller",
-	.bus	= BT_DRIVER_BUS_VIRTUAL,
+	.bus	= BT_HCI_DRIVER_BUS_VIRTUAL,
 	.open	= hci_driver_open,
 	.send	= hci_driver_send,
 };
@@ -331,7 +335,7 @@ static int _hci_driver_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	bt_driver_register(&drv);
+	bt_hci_driver_register(&drv);
 
 	return 0;
 }

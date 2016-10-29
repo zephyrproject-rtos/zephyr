@@ -16,10 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#include <toolchain.h>
-#include <sections.h>
+#include <zephyr.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -29,15 +26,11 @@
 #include <misc/stack.h>
 #include <misc/nano_work.h>
 
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
-#endif
-
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 #include <bluetooth/storage.h>
 
 #include <tinycrypt/constants.h>
@@ -3488,7 +3481,7 @@ int bt_recv(struct net_buf *buf)
 	return 0;
 }
 
-int bt_driver_register(struct bt_driver *drv)
+int bt_hci_driver_register(struct bt_hci_driver *drv)
 {
 	if (bt_dev.drv) {
 		return -EALREADY;
@@ -3508,7 +3501,7 @@ int bt_driver_register(struct bt_driver *drv)
 	return 0;
 }
 
-void bt_driver_unregister(struct bt_driver *drv)
+void bt_hci_driver_unregister(struct bt_hci_driver *drv)
 {
 	bt_dev.drv = NULL;
 }
@@ -3549,7 +3542,7 @@ static int irk_init(void)
 
 static int bt_init(void)
 {
-	struct bt_driver *drv = bt_dev.drv;
+	struct bt_hci_driver *drv = bt_dev.drv;
 	int err;
 
 	bt_hci_ecc_init();

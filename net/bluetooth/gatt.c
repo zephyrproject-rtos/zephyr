@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
-#include <toolchain.h>
+#include <zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -31,7 +30,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -774,6 +773,10 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_MTU_REQ, sizeof(*req));
 	if (!buf) {
 		return -ENOMEM;
@@ -787,6 +790,34 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 	req->mtu = sys_cpu_to_le16(mtu);
 
 	return gatt_send(conn, buf, gatt_mtu_rsp, params, NULL);
+}
+
+static void gatt_discover_next(struct bt_conn *conn, uint16_t last_handle,
+			       struct bt_gatt_discover_params *params)
+{
+	/* Skip if last_handle is not set */
+	if (!last_handle)
+		goto discover;
+
+	/* Continue from the last found handle */
+	params->start_handle = last_handle;
+	if (params->start_handle < UINT16_MAX) {
+		params->start_handle++;
+	}
+
+	/* Stop if over the range or the requests */
+	if (params->start_handle >= params->end_handle) {
+		goto done;
+	}
+
+discover:
+	/* Discover next range */
+	if (!bt_gatt_discover(conn, params)) {
+		return;
+	}
+
+done:
+	params->func(conn, NULL, params);
 }
 
 static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
@@ -839,21 +870,9 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		goto done;
 	}
 
-	/* Stop if over the range or the requests */
-	if (end_handle >= params->end_handle) {
-		goto done;
-	}
+	gatt_discover_next(conn, end_handle, params);
 
-	/* Continue from the last found handle */
-	params->start_handle = end_handle;
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
-
-	if (!bt_gatt_discover(conn, params)) {
-		return;
-	}
-
+	return;
 done:
 	params->func(conn, NULL, params);
 }
@@ -914,7 +933,8 @@ static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
 
 	if (length != 16) {
 		BT_ERR("Invalid data len %u", length);
-		goto done;
+		params->func(conn, NULL, params);
+		return;
 	}
 
 	value.start_handle = params->_included.start_handle;
@@ -941,23 +961,9 @@ static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 next:
-	/* Continue from the last handle */
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
+	gatt_discover_next(conn, params->start_handle, params);
 
-	/* Stop if over the requested range */
-	if (params->start_handle >= params->end_handle) {
-		goto done;
-	}
-
-	/* Continue to the next range */
-	if (!bt_gatt_discover(conn, params)) {
-		return;
-	}
-
-done:
-	params->func(conn, NULL, params);
+	return;
 }
 
 static int read_included_uuid(struct bt_conn *conn,
@@ -1155,7 +1161,8 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 	BT_DBG("err 0x%02x", err);
 
 	if (err) {
-		goto done;
+		params->func(conn, NULL, params);
+		return;
 	}
 
 	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
@@ -1168,24 +1175,7 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
-	/* Continue from the last handle */
-	params->start_handle = handle;
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
-
-	/* Stop if over the requested range */
-	if (params->start_handle >= params->end_handle) {
-		goto done;
-	}
-
-	/* Continue to the next range */
-	if (!bt_gatt_discover(conn, params)) {
-		return;
-	}
-
-done:
-	params->func(conn, NULL, params);
+	gatt_discover_next(conn, handle, params);
 }
 
 static int att_read_type(struct bt_conn *conn,
@@ -1292,21 +1282,9 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 		goto done;
 	}
 
-	/* Next characteristic shall be after current value handle */
-	params->start_handle = handle;
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
+	gatt_discover_next(conn, handle, params);
 
-	/* Stop if over the requested range */
-	if (params->start_handle >= params->end_handle) {
-		goto done;
-	}
-
-	/* Continue to the next range */
-	if (!bt_gatt_discover(conn, params)) {
-		return;
-	}
+	return;
 
 done:
 	params->func(conn, NULL, params);
@@ -1339,6 +1317,10 @@ int bt_gatt_discover(struct bt_conn *conn,
 	if (!conn || !params || !params->func || !params->start_handle ||
 	    !params->end_handle || params->start_handle > params->end_handle) {
 		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	switch (params->type) {
@@ -1460,6 +1442,10 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	if (params->handle_count > 1) {
 		return gatt_read_multiple(conn, params);
 	}
@@ -1508,6 +1494,10 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 
 	if (!conn || !handle) {
 		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	if (sign && write_signed_allowed(conn)) {
@@ -1616,6 +1606,10 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	/* Use Prepare Write if offset is set or Long Write is required */
 	if (params->offset ||
 	    params->length > (bt_att_get_mtu(conn) - sizeof(*req) - 1)) {
@@ -1698,13 +1692,13 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false;
 
-	if (!conn || conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
-	if (!params || !params->notify ||
+	if (!conn || !params || !params->notify ||
 	    !params->value || !params->ccc_handle) {
 		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	/* Lookup existing subscriptions */
@@ -1748,12 +1742,12 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false, found = false;
 
-	if (!conn || conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
+	if (!conn || !params) {
+		return -EINVAL;
 	}
 
-	if (!params) {
-		return -EINVAL;
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	/* Check head */

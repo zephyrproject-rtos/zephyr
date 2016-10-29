@@ -17,7 +17,7 @@
 #include <errno.h>
 #include <atomic.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <device.h>
 
 #include <net/buf.h>

@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <device.h>
 #include <init.h>
 #include <drivers/console/uart_pipe.h>

@@ -120,7 +120,7 @@ struct bt_dev {
 	struct nano_fifo	cmd_tx_queue;
 
 	/* Registered HCI driver */
-	struct bt_driver	*drv;
+	struct bt_hci_driver	*drv;
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 	/* Local Identity Resolving Key */

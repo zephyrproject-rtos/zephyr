@@ -15,9 +15,7 @@
  *
 */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#include <toolchain.h>
+#include <zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <atomic.h>

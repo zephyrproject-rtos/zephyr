@@ -18,14 +18,6 @@
  * limitations under the License.
  */
 
-#include <errno.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <bluetooth/hci.h>
-#include <stddef.h>
-#include <sys/types.h>
-#include <bluetooth/uuid.h>
-
 enum bt_a2dp_stream_state {
 	A2DP_STREAM_IDLE,
 	A2DP_STREAM_STREAMING,

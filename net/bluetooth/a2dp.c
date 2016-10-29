@@ -18,9 +18,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#include <toolchain.h>
+#include <zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <atomic.h>
@@ -31,12 +29,12 @@
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/a2dp.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
-#include <bluetooth/a2dp.h>
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_A2DP)
 #undef BT_DBG

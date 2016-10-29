@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#include <toolchain.h>
+#include <zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <atomic.h>
@@ -30,7 +28,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/driver.h>
+#include <bluetooth/hci_driver.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -801,7 +799,7 @@ static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 	if (result == BT_L2CAP_BR_PENDING) {
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_AUTHEN_PEND);
 	} else {
-		rsp->status = sys_cpu_to_le16(BT_L2CAP_BR_SUCCESS);
+		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
 	}
 
 	bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
@@ -817,7 +815,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_server *server;
 	struct bt_l2cap_conn_req *req = (void *)buf->data;
-	uint16_t psm, scid, dcid, result, status = BT_L2CAP_CS_NO_INFO;
+	uint16_t psm, scid, dcid, result;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small L2CAP conn req packet size");
@@ -880,7 +878,6 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
 		result = BT_L2CAP_BR_PENDING;
-		status = BT_L2CAP_CS_AUTHEN_PEND;
 		/* TODO: auth timeout */
 		break;
 	case L2CAP_CONN_SECURITY_PASSED:

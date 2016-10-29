@@ -270,14 +270,6 @@ config BLUETOOTH_GATT_CLIENT
 	help
 	  This option enables support for the GATT Client role.
 
-config BLUETOOTH_MAX_CONN
-	int "Maximum number of simultaneous connections"
-	default 1
-	range 1 64
-	help
-	  Maximum number of simultaneous Bluetooth connections
-	  supported. The minimum (and default) number is 1.
-
 config BLUETOOTH_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 1
@@ -301,6 +293,15 @@ config BLUETOOTH_TINYCRYPT_ECC
 	  Connections support will be disabled.
 
 endif # BLUETOOTH_LE
+
+config BLUETOOTH_MAX_CONN
+	int "Maximum number of simultaneous connections"
+	depends on BLUETOOTH_CONN || BLUETOOTH_CONTROLLER
+	default 1
+	range 1 64
+	help
+	  Maximum number of simultaneous Bluetooth connections
+	  supported. The minimum (and default) number is 1.
 
 config BLUETOOTH_DEBUG
 	bool
