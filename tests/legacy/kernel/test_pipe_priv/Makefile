@@ -2,7 +2,7 @@ MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 BOARD ?= qemu_x86
 CONF_FILE = prj.conf
-SOURCE_DIR := $(ZEPHYR_BASE)/tests/kernel/test_pipe/src
+SOURCE_DIR := $(ZEPHYR_BASE)/tests/legacy/kernel/test_pipe/src
 
 # Enable testing for private microkernel pipe objects
 CFLAGS = -DTEST_PRIV_PIPES
