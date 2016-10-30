@@ -35,7 +35,7 @@
  * @return N/A
  */
 
-void RegressionTaskEntry(void)
+void main(void)
 {
 	int  tc_result; /* test result code */
 	uint32_t rnd_values[N_VALUES];

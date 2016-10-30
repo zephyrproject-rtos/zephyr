@@ -706,7 +706,7 @@ int sprintfStringTest(void)
  * @return N/A
  */
 
-void RegressionTask(void)
+void main(void)
 {
 	int  status = TC_PASS;
 

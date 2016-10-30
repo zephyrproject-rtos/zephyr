@@ -31,9 +31,7 @@ global variables for completeness sake.
 
 /**
  *
- * @brief Main task entry point
- *
- * Entry point for nanokernel only builds.
+ * @brief Regression test's entry point
  *
  * @return N/A
  */

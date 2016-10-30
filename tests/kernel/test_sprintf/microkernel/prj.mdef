@@ -1,5 +1,0 @@
-% Application       : test microkernel task APIs
-
-% TASK NAME       PRIO ENTRY           STACK GROUPS
-% =================================================
-  TASK RT_TASKID   10 RegressionTask    2048 [EXE]

@@ -15,8 +15,7 @@
 # limitations under the License.
 #
 
-MDEF_FILE = prj.mdef
-KERNEL_TYPE = micro
+KERNEL_TYPE = unified
 BOARD ?= qemu_x86
 CONF_FILE = prj.conf
 

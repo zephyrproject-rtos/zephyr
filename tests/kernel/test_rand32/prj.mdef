@@ -1,6 +1,0 @@
-% Application       : test random number APIs
-
-% TASK NAME       PRIO   ENTRY               STACK GROUPS
-% =======================================================
-  TASK tTestTask    5   RegressionTaskEntry  2048 [EXE]
-

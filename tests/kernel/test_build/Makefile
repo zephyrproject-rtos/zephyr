@@ -1,4 +1,4 @@
-KERNEL_TYPE = nano
+KERNEL_TYPE = unified
 BOARD ?= qemu_x86
 CONF_FILE ?= debug.conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/synchronization/nanokernel/src/
