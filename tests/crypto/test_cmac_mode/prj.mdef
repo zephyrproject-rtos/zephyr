@@ -1,5 +1,0 @@
-% Application       : test AES-CMAC mode TinyCrypt APIs
-
-% TASK NAME          PRIO ENTRY           STACK GROUPS
-% ====================================================
-  TASK tStartTask       5 main             1024 [EXE]
