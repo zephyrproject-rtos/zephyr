@@ -22,43 +22,45 @@ config FILE_SYSTEM
 	help
 	Enables support for file system.
 
+if FILE_SYSTEM
+
 config FILE_SYSTEM_FAT
 	bool "FAT file system support"
 	default y
-	depends on FILE_SYSTEM
 	help
 	Enables FAT file system support.
 
+choice
+	prompt "Storage backend selection"
+
 config FS_FAT_RAM_DISK
-	bool
-	prompt "RAM Disk"
+	bool "RAM Disk"
 	help
 	RAM buffer used to emulate storage disk.
 	This option can used to test the file
 	system.
 
 config FS_FAT_FLASH_DISK
-	bool
-	prompt "Flash"
+	bool "Flash"
 	help
 	Flash device is used for the file system.
 
-if FS_FAT_RAM_DISK
+endchoice
 
 config FS_VOLUME_SIZE
 	hex
-	default 0x18000
+	default 0x18000 if FS_FAT_RAM_DISK
+	default 0x200000 if FS_FAT_FLASH_DISK_W25QXXDV
 	help
 	This is the file system volume size in bytes.
 
 config FS_BLOCK_SIZE
 	hex
-	default 0x1000
+	default 0x1000 if FS_FAT_RAM_DISK
+	default 0x1000 if FS_FAT_FLASH_DISK_W25QXXDV
 	help
 	This is typically the minimum block size that
 	is erased at one time in flash storage.
-
-endif # FS_RAM_DISK
 
 if FS_FAT_FLASH_DISK
 
@@ -70,19 +72,6 @@ config FS_FAT_FLASH_DISK_W25QXXDV
 	for the file system.
 
 if FS_FAT_FLASH_DISK_W25QXXDV
-
-config FS_VOLUME_SIZE
-	hex
-	default 0x200000
-	help
-	This is the file system volume size in bytes.
-
-config FS_BLOCK_SIZE
-	hex
-	default 0x1000
-	help
-	This is typically the minimum flash erase size
-	that the flash component supports.
 
 config FS_FLASH_DEV_NAME
 	string
@@ -113,7 +102,7 @@ config FS_FLASH_ERASE_ALIGNMENT
 	the flash component.
 
 endif # FS_FAT_FLASH_DISK_W25QXXDV
-
 endif # FS_FAT_FLASH_DISK
+endif # FILE_SYSTEM
 
 endmenu
