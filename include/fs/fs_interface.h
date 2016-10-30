@@ -31,8 +31,8 @@ extern "C" {
  * @param _file_object File structure used by underlying file system
  */
 
-#define ZFILE_DEFINE(_file_object) \
-	struct _zfile_object { \
+#define FS_FILE_DEFINE(_file_object) \
+	struct _fs_file_object { \
 		_file_object; \
 	}
 
@@ -46,8 +46,8 @@ extern "C" {
  * @param _dir_object Directory structure used by underlying file system
  */
 
-#define ZDIR_DEFINE(_dir_object) \
-	struct _zdir_object { \
+#define FS_DIR_DEFINE(_dir_object) \
+	struct _fs_dir_object { \
 		_dir_object; \
 	}
 

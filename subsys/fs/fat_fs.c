@@ -64,7 +64,7 @@ static int translate_error(int error)
 	return -EIO;
 }
 
-int fs_open(ZFILE *zfp, const char *file_name)
+int fs_open(fs_file_t *zfp, const char *file_name)
 {
 	FRESULT res;
 	uint8_t fs_mode;
@@ -76,7 +76,7 @@ int fs_open(ZFILE *zfp, const char *file_name)
 	return translate_error(res);
 }
 
-int fs_close(ZFILE *zfp)
+int fs_close(fs_file_t *zfp)
 {
 	FRESULT res;
 
@@ -94,7 +94,7 @@ int fs_unlink(const char *path)
 	return translate_error(res);
 }
 
-ssize_t fs_read(ZFILE *zfp, void *ptr, size_t size)
+ssize_t fs_read(fs_file_t *zfp, void *ptr, size_t size)
 {
 	FRESULT res;
 	unsigned int br;
@@ -107,7 +107,7 @@ ssize_t fs_read(ZFILE *zfp, void *ptr, size_t size)
 	return br;
 }
 
-ssize_t fs_write(ZFILE *zfp, const void *ptr, size_t size)
+ssize_t fs_write(fs_file_t *zfp, const void *ptr, size_t size)
 {
 	FRESULT res;
 	unsigned int bw;
@@ -120,19 +120,19 @@ ssize_t fs_write(ZFILE *zfp, const void *ptr, size_t size)
 	return bw;
 }
 
-int fs_seek(ZFILE *zfp, off_t offset, int whence)
+int fs_seek(fs_file_t *zfp, off_t offset, int whence)
 {
 	FRESULT res = FR_OK;
 	off_t pos;
 
 	switch (whence) {
-	case SEEK_SET:
+	case FS_SEEK_SET:
 		pos = offset;
 		break;
-	case SEEK_CUR:
+	case FS_SEEK_CUR:
 		pos = f_tell(&zfp->fp) + offset;
 		break;
-	case SEEK_END:
+	case FS_SEEK_END:
 		pos = f_size(&zfp->fp) + offset;
 		break;
 	default:
@@ -148,7 +148,7 @@ int fs_seek(ZFILE *zfp, off_t offset, int whence)
 	return translate_error(res);
 }
 
-int fs_truncate(ZFILE *zfp, off_t length)
+int fs_truncate(fs_file_t *zfp, off_t length)
 {
 	FRESULT res = FR_OK;
 	off_t cur_length = f_size(&zfp->fp);
@@ -194,7 +194,7 @@ int fs_truncate(ZFILE *zfp, off_t length)
 	return translate_error(res);
 }
 
-int fs_sync(ZFILE *zfp)
+int fs_sync(fs_file_t *zfp)
 {
 	FRESULT res = FR_OK;
 
@@ -212,7 +212,7 @@ int fs_mkdir(const char *path)
 	return translate_error(res);
 }
 
-int fs_opendir(ZDIR *zdp, const char *path)
+int fs_opendir(fs_dir_t *zdp, const char *path)
 {
 	FRESULT res;
 
@@ -221,7 +221,7 @@ int fs_opendir(ZDIR *zdp, const char *path)
 	return translate_error(res);
 }
 
-int fs_readdir(ZDIR *zdp, struct zfs_dirent *entry)
+int fs_readdir(fs_dir_t *zdp, struct fs_dirent *entry)
 {
 	FRESULT res;
 	FILINFO fno;
@@ -229,7 +229,7 @@ int fs_readdir(ZDIR *zdp, struct zfs_dirent *entry)
 	res = f_readdir(&zdp->dp, &fno);
 	if (res == FR_OK) {
 		entry->type = ((fno.fattrib & AM_DIR) ?
-			       DIR_ENTRY_DIR : DIR_ENTRY_FILE);
+			       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
 		strcpy(entry->name, fno.fname);
 		entry->size = fno.fsize;
 	}
@@ -237,7 +237,7 @@ int fs_readdir(ZDIR *zdp, struct zfs_dirent *entry)
 	return translate_error(res);
 }
 
-int fs_closedir(ZDIR *zdp)
+int fs_closedir(fs_dir_t *zdp)
 {
 	FRESULT res;
 
@@ -246,7 +246,7 @@ int fs_closedir(ZDIR *zdp)
 	return translate_error(res);
 }
 
-int fs_stat(const char *path, struct zfs_dirent *entry)
+int fs_stat(const char *path, struct fs_dirent *entry)
 {
 	FRESULT res;
 	FILINFO fno;
@@ -254,7 +254,7 @@ int fs_stat(const char *path, struct zfs_dirent *entry)
 	res = f_stat(path, &fno);
 	if (res == FR_OK) {
 		entry->type = ((fno.fattrib & AM_DIR) ?
-			       DIR_ENTRY_DIR : DIR_ENTRY_FILE);
+			       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
 		strcpy(entry->name, fno.fname);
 		entry->size = fno.fsize;
 	}
@@ -262,7 +262,7 @@ int fs_stat(const char *path, struct zfs_dirent *entry)
 	return translate_error(res);
 }
 
-int fs_statvfs(struct zfs_statvfs *stat)
+int fs_statvfs(struct fs_statvfs *stat)
 {
 	FATFS *fs;
 	FRESULT res;

@@ -45,14 +45,14 @@ void main(void)
 static int check_file_dir_exists(const char *path)
 {
 	int res;
-	struct zfs_dirent entry;
+	struct fs_dirent entry;
 
 	res = fs_stat(path, &entry);
 
 	return !res;
 }
 
-static int open_file(ZFILE *fp, const char *path)
+static int open_file(fs_file_t *fp, const char *path)
 {
 	int res;
 
@@ -75,12 +75,12 @@ static int open_file(ZFILE *fp, const char *path)
 
 static const char test_str[] = "hello world!";
 
-static int write_test(ZFILE *fp, off_t ofs, const char *str)
+static int write_test(fs_file_t *fp, off_t ofs, const char *str)
 {
 	ssize_t brw;
 	int res;
 
-	res = fs_seek(fp, ofs, SEEK_SET);
+	res = fs_seek(fp, ofs, FS_SEEK_SET);
 	if (res) {
 		printk("fs_seek failed [%d]\n", res);
 		fs_close(fp);
@@ -106,12 +106,12 @@ static int write_test(ZFILE *fp, off_t ofs, const char *str)
 	return res;
 }
 
-static int read_test(ZFILE *fp, off_t ofs, size_t sz, char *read_buff)
+static int read_test(fs_file_t *fp, off_t ofs, size_t sz, char *read_buff)
 {
 	ssize_t brw;
 	int res;
 
-	res = fs_seek(fp, ofs, SEEK_SET);
+	res = fs_seek(fp, ofs, FS_SEEK_SET);
 	if (res) {
 		printk("fs_seek failed [%d]\n", res);
 		fs_close(fp);
@@ -132,7 +132,7 @@ static int read_test(ZFILE *fp, off_t ofs, size_t sz, char *read_buff)
 	return res;
 }
 
-static int close_file(ZFILE *fp, const char *path)
+static int close_file(fs_file_t *fp, const char *path)
 {
 	int res;
 
@@ -169,7 +169,7 @@ static int delete_test(const char *path)
 	return 0;
 }
 
-static int truncate_test(ZFILE *fp)
+static int truncate_test(fs_file_t *fp)
 {
 	int res;
 	off_t pos;
@@ -186,7 +186,7 @@ static int truncate_test(ZFILE *fp)
 		return res;
 	}
 
-	fs_seek(fp, 0, SEEK_END);
+	fs_seek(fp, 0, FS_SEEK_END);
 	if (fs_tell(fp) > 0) {
 		printk("Failed truncating to size 0\n");
 		fs_close(fp);
@@ -200,7 +200,7 @@ static int truncate_test(ZFILE *fp)
 		return res;
 	}
 
-	fs_seek(fp, 0, SEEK_END);
+	fs_seek(fp, 0, FS_SEEK_END);
 	pos = fs_tell(fp);
 
 	printk("Original size of file = %ld\n", pos);
@@ -214,7 +214,7 @@ static int truncate_test(ZFILE *fp)
 		return res;
 	}
 
-	fs_seek(fp, 0, SEEK_END);
+	fs_seek(fp, 0, FS_SEEK_END);
 	printk("File size after shrinking by 5 bytes = %ld\n", fs_tell(fp));
 	if (fs_tell(fp) != (pos - 5)) {
 		printk("File size after fs_truncate not as expected\n");
@@ -238,7 +238,7 @@ static int truncate_test(ZFILE *fp)
 
 	/* Test expanding file */
 
-	fs_seek(fp, 0, SEEK_END);
+	fs_seek(fp, 0, FS_SEEK_END);
 	pos = fs_tell(fp);
 	res = fs_truncate(fp, pos + 10);
 	if (res) {
@@ -247,7 +247,7 @@ static int truncate_test(ZFILE *fp)
 		return res;
 	}
 
-	fs_seek(fp, 0, SEEK_END);
+	fs_seek(fp, 0, FS_SEEK_END);
 	printk("File size after expanding by 10 bytes = %ld\n", fs_tell(fp));
 
 	if (fs_tell(fp) != (pos + 10)) {
@@ -272,7 +272,7 @@ static int truncate_test(ZFILE *fp)
 
 	/* Check if expanded regions are zeroed */
 
-	fs_seek(fp, -5, SEEK_END);
+	fs_seek(fp, -5, FS_SEEK_END);
 
 	printk("Testing for zeroes in expanded region\n");
 
@@ -297,7 +297,7 @@ static int truncate_test(ZFILE *fp)
 
 static void file_tests(void)
 {
-	ZFILE fp;
+	fs_file_t fp;
 	int res;
 	char read_buff[80];
 
@@ -358,8 +358,8 @@ static int create_dir(const char *path)
 static int remove_dir(const char *path)
 {
 	int res;
-	ZDIR dp;
-	static struct zfs_dirent entry;
+	fs_dir_t dp;
+	static struct fs_dirent entry;
 	char file_path[80];
 
 	if (!check_file_dir_exists(path)) {
@@ -411,8 +411,8 @@ static int remove_dir(const char *path)
 static int list_dir(const char *path)
 {
 	int res;
-	ZDIR dp;
-	static struct zfs_dirent entry;
+	fs_dir_t dp;
+	static struct fs_dirent entry;
 
 	res = fs_opendir(&dp, path);
 	if (res) {
@@ -428,7 +428,7 @@ static int list_dir(const char *path)
 		if (res || entry.name[0] == 0) {
 			break;
 		}
-		if (entry.type == DIR_ENTRY_DIR) {
+		if (entry.type == FS_DIR_ENTRY_DIR) {
 			printk("[DIR ] %s\n", entry.name);
 		} else {
 			printk("[FILE] %s (size = %zu)\n",
@@ -443,7 +443,7 @@ static int list_dir(const char *path)
 
 static void dir_tests(void)
 {
-	ZFILE fp[2];
+	fs_file_t fp[2];
 	int res;
 
 	/* Remove sub dir if already exists */
@@ -513,7 +513,7 @@ static void dir_tests(void)
 
 static void vol_tests(void)
 {
-	struct zfs_statvfs stat;
+	struct fs_statvfs stat;
 	int res;
 
 	res = fs_statvfs(&stat);

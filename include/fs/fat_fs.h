@@ -24,12 +24,12 @@
 extern "C" {
 #endif
 
-ZFILE_DEFINE(FIL fp);
-ZDIR_DEFINE(DIR dp);
+FS_FILE_DEFINE(FIL fp);
+FS_DIR_DEFINE(DIR dp);
 
 #define MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 
-static inline off_t fs_tell(struct _zfile_object *zfp)
+static inline off_t fs_tell(struct _fs_file_object *zfp)
 {
 	return f_tell(&zfp->fp);
 }

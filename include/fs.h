@@ -24,15 +24,15 @@
 extern "C" {
 #endif
 
-/* Create a ZFILE type similar to FILE for familiarity */
-typedef struct _zfile_object ZFILE;
+/* Create a fs_file_t type similar to FILE for familiarity */
+typedef struct _fs_file_object fs_file_t;
 
-/* Create a ZDIR type similar to DIR for familiarity */
-typedef struct _zdir_object ZDIR;
+/* Create a fs_dir_t type similar to DIR for familiarity */
+typedef struct _fs_dir_object fs_dir_t;
 
-enum dir_entry_type {
-	DIR_ENTRY_FILE,
-	DIR_ENTRY_DIR
+enum fs_dir_entry_type {
+	FS_DIR_ENTRY_FILE,
+	FS_DIR_ENTRY_DIR
 };
 
 /**
@@ -42,11 +42,11 @@ enum dir_entry_type {
  * @{
  */
 
-/** @var ZFILE
+/** @var fs_file_t
  * @brief File object representing an open file
  */
 
-/** @var ZDIR
+/** @var fs_dir_t
  * @brief Directory object representing an open directory
  */
 
@@ -57,13 +57,13 @@ enum dir_entry_type {
  * file or directory information.
  *
  * @param dir_entry_type Whether file or directory
- * - DIR_ENTRY_FILE
- * - DIR_ENTRY_DIR
+ * - FS_DIR_ENTRY_FILE
+ * - FS_DIR_ENTRY_DIR
  * @param name Name of directory or file
  * @param size Size of file. 0 if directory
  */
-struct zfs_dirent {
-	enum dir_entry_type type;
+struct fs_dirent {
+	enum fs_dir_entry_type type;
 	char name[MAX_FILE_NAME + 1];
 	size_t size;
 };
@@ -79,7 +79,7 @@ struct zfs_dirent {
  * @param f_blocks Size of FS in f_frsize units
  * @param f_bfree Number of free blocks
  */
-struct zfs_statvfs {
+struct fs_statvfs {
 	unsigned long f_bsize;
 	unsigned long f_frsize;
 	unsigned long f_blocks;
@@ -90,14 +90,14 @@ struct zfs_statvfs {
  * @}
  */
 
-#ifndef SEEK_SET
-#define SEEK_SET	0	/* Seek from beginning of file. */
+#ifndef FS_SEEK_SET
+#define FS_SEEK_SET	0	/* Seek from beginning of file. */
 #endif
-#ifndef SEEK_CUR
-#define SEEK_CUR	1	/* Seek from current position. */
+#ifndef FS_SEEK_CUR
+#define FS_SEEK_CUR	1	/* Seek from current position. */
 #endif
-#ifndef SEEK_END
-#define SEEK_END	2	/* Seek from end of file.  */
+#ifndef FS_SEEK_END
+#define FS_SEEK_END	2	/* Seek from end of file.  */
 #endif
 
 /**
@@ -119,7 +119,7 @@ struct zfs_statvfs {
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_open(ZFILE *zfp, const char *file_name);
+int fs_open(fs_file_t *zfp, const char *file_name);
 
 /**
  * @brief File close
@@ -132,7 +132,7 @@ int fs_open(ZFILE *zfp, const char *file_name);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_close(ZFILE *zfp);
+int fs_close(fs_file_t *zfp);
 
 /**
  * @brief File unlink
@@ -160,7 +160,7 @@ int fs_unlink(const char *path);
  * requested if there are not enough bytes available in file. Will return
  * -ERRNO code on error.
  */
-ssize_t fs_read(ZFILE *zfp, void *ptr, size_t size);
+ssize_t fs_read(fs_file_t *zfp, void *ptr, size_t size);
 
 /**
  * @brief File write
@@ -181,7 +181,7 @@ ssize_t fs_read(ZFILE *zfp, void *ptr, size_t size);
  * In that case, it returns less number of bytes written than requested, but
  * not a negative -ERRNO value as in regular error case.
  */
-ssize_t fs_write(ZFILE *zfp, const void *ptr, size_t size);
+ssize_t fs_write(fs_file_t *zfp, const void *ptr, size_t size);
 
 /**
  * @brief File seek
@@ -192,14 +192,14 @@ ssize_t fs_write(ZFILE *zfp, const void *ptr, size_t size);
  * @param zfp Pointer to the file object
  * @param offset Relative location to move the file pointer to
  * @param whence Relative location from where offset is to be calculated.
- * - SEEK_SET = from beginning of file
- * - SEEK_CUR = from current position,
- * - SEEK_END = from end of file.
+ * - FS_SEEK_SET = from beginning of file
+ * - FS_SEEK_CUR = from current position,
+ * - FS_SEEK_END = from end of file.
  *
  * @retval 0 Success
  * @retval -ERRNO errno code if error.
  */
-int fs_seek(ZFILE *zfp, off_t offset, int whence);
+int fs_seek(fs_file_t *zfp, off_t offset, int whence);
 
 /**
  * @brief Get current file position.
@@ -211,7 +211,7 @@ int fs_seek(ZFILE *zfp, off_t offset, int whence);
  * @retval position Current position in file
  * Current revision does not validate the file object.
  */
-off_t fs_tell(ZFILE *zfp);
+off_t fs_tell(fs_file_t *zfp);
 
 /**
  * @brief Change the size of an open file
@@ -231,7 +231,7 @@ off_t fs_tell(ZFILE *zfp);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_truncate(ZFILE *zfp, off_t length);
+int fs_truncate(fs_file_t *zfp, off_t length);
 
 /**
  * @brief Flushes any cached write of an open file
@@ -247,7 +247,7 @@ int fs_truncate(ZFILE *zfp, off_t length);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_sync(ZFILE *zfp);
+int fs_sync(fs_file_t *zfp);
 
 /**
  * @brief Directory create
@@ -272,7 +272,7 @@ int fs_mkdir(const char *path);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_opendir(ZDIR *zdp, const char *path);
+int fs_opendir(fs_dir_t *zdp, const char *path);
 
 /**
  * @brief Directory read entry
@@ -287,7 +287,7 @@ int fs_opendir(ZDIR *zdp, const char *path);
  * @return In end-of-dir condition, this will return 0 and set
  * entry->name[0] = 0
  */
-int fs_readdir(ZDIR *zdp, struct zfs_dirent *entry);
+int fs_readdir(fs_dir_t *zdp, struct fs_dirent *entry);
 
 /**
  * @brief Directory close
@@ -299,7 +299,7 @@ int fs_readdir(ZDIR *zdp, struct zfs_dirent *entry);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_closedir(ZDIR *zdp);
+int fs_closedir(fs_dir_t *zdp);
 
 /**
  * @brief File or directory status
@@ -313,7 +313,7 @@ int fs_closedir(ZDIR *zdp);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_stat(const char *path, struct zfs_dirent *entry);
+int fs_stat(const char *path, struct fs_dirent *entry);
 
 /**
  * @brief Retrieves statistics of the file system volume
@@ -325,7 +325,7 @@ int fs_stat(const char *path, struct zfs_dirent *entry);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_statvfs(struct zfs_statvfs *stat);
+int fs_statvfs(struct fs_statvfs *stat);
 
 /**
  * @}
