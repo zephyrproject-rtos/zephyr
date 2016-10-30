@@ -1,3 +1,0 @@
-This test case is to ensure that integer math is handled correctly
-on Nios II, either through native instruction support, runtime emulation
-via unimplemented instruction exceptions, or use of GCC integer math routines.

@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-#include <zephyr.h>
-#include <tc_util.h>
+#include <ztest.h>
 #include <misc/ring_buffer.h>
+#include <misc/sys_log.h>
 
 SYS_RING_BUF_DECLARE_POW2(ring_buf, 8);
 
@@ -28,26 +28,23 @@ char data[] = "ABCDEFGHIJKLMNOPQRSTUVWX";
 
 #define INITIAL_SIZE	2
 
-void main(void)
+void ring_buffer_test(void)
 {
-	int ret, put_count, i, rv;
+	int ret, put_count, i;
 	uint32_t getdata[6];
 	uint8_t getsize, getval;
 	uint16_t gettype;
 	int dsize = INITIAL_SIZE;
 
-	TC_START("Test ring buffers");
-
-	rv = TC_FAIL;
 	put_count = 0;
 	while (1) {
 		ret = sys_ring_buf_put(&ring_buf, TYPE, VALUE,
 				       (uint32_t *)data, dsize);
 		if (ret == -EMSGSIZE) {
-			printk("ring buffer is full\n");
+			SYS_LOG_DBG("ring buffer is full");
 			break;
 		}
-		printk("inserted %d chunks, %d remaining\n", dsize,
+		SYS_LOG_DBG("inserted %d chunks, %d remaining", dsize,
 		       sys_ring_buf_space_get(&ring_buf));
 		dsize = (dsize + 1) % SIZE32_OF(data);
 		put_count++;
@@ -56,52 +53,27 @@ void main(void)
 	getsize = INITIAL_SIZE - 1;
 	ret = sys_ring_buf_get(&ring_buf, &gettype, &getval, getdata, &getsize);
 	if (ret != -EMSGSIZE) {
-		printk("Allowed retreival with insufficient destination buffer space\n");
-		if (getsize != INITIAL_SIZE)
-			printk("Correct size wasn't reported back to the caller\n");
-		goto done;
+		SYS_LOG_DBG("Allowed retreival with insufficient destination buffer space");
+		assert_true((getsize == INITIAL_SIZE), "Correct size wasn't reported back to the caller");
 	}
 
 	for (i = 0; i < put_count; i++) {
 		getsize = SIZE32_OF(getdata);
 		ret = sys_ring_buf_get(&ring_buf, &gettype, &getval, getdata,
 				       &getsize);
-		if (ret < 0) {
-			printk("Couldn't retrieve a stored value (%d)\n",
-			       ret);
-			goto done;
-		}
-		printk("got %u chunks of type %u and val %u, %u remaining\n",
+		assert_true((ret == 0), "Couldn't retrieve a stored value");
+		SYS_LOG_DBG("got %u chunks of type %u and val %u, %u remaining",
 		       getsize, gettype, getval,
 		       sys_ring_buf_space_get(&ring_buf));
 
-		if (memcmp((char *)getdata, data, getsize * sizeof(uint32_t))) {
-			printk("data corrupted\n");
-			goto done;
-		}
-		if (gettype != TYPE) {
-			printk("type information corrupted\n");
-			goto done;
-		}
-		if (getval != VALUE) {
-			printk("value information corrupted\n");
-			goto done;
-		}
+		assert_true((memcmp((char *)getdata, data, getsize * sizeof(uint32_t)) == 0),
+			     "data corrupted");
+		assert_true((gettype == TYPE), "type information corrupted");
+		assert_true((getval == VALUE), "value information corrupted");
 	}
 
 	getsize = SIZE32_OF(getdata);
 	ret = sys_ring_buf_get(&ring_buf, &gettype, &getval, getdata,
 			       &getsize);
-	if (ret != -EAGAIN) {
-		printk("Got data out of an empty buffer");
-		goto done;
-	}
-	printk("empty buffer detected\n");
-
-	rv = TC_PASS;
-done:
-	printk("head: %d tail: %d\n", ring_buf.head, ring_buf.tail);
-
-	TC_END_RESULT(rv);
-	TC_END_REPORT(rv);
+	assert_true((ret == -EAGAIN), "Got data out of an empty buffer");
 }

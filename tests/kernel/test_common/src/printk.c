@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-#include <zephyr.h>
-#include <atomic.h>
-
-#include <tc_util.h>
+#include <ztest.h>
 
 #define BUF_SZ 1024
 
@@ -28,9 +25,9 @@ extern int (*_char_out)(int);
 int (*_old_char_out)(int);
 
 char *expected = "22 113 10000 32768 40000 22\n"
-	"p 112 -10000 -32768 -40000 -22\n"
-	"0xcafebabe 0x0000beef\n"
-	;
+		 "p 112 -10000 -32768 -40000 -22\n"
+		 "0xcafebabe 0x0000beef\n"
+;
 
 
 size_t stv = 22;
@@ -39,7 +36,8 @@ unsigned short int usi = 10000;
 unsigned int ui = 32768;
 unsigned long ul = 40000;
 
-/* FIXME we know printk doesn't have full support for 64-bit values.
+/* FIXME
+ * we know printk doesn't have full support for 64-bit values.
  * at least show it can print uint64_t values less than 32-bits wide
  */
 unsigned long long ull = 22;
@@ -61,12 +59,8 @@ static int ram_console_out(int character)
 	return _old_char_out(character);
 }
 
-void main(void)
+void printk_test(void)
 {
-	int rv;
-
-	TC_START("Test printk output correctness");
-
 	_old_char_out = _char_out;
 	_char_out = ram_console_out;
 
@@ -75,13 +69,5 @@ void main(void)
 	printk("0x%x %p\n", hex, ptr);
 
 	ram_console[pos] = '\0';
-	if (strcmp(ram_console, expected)) {
-		rv = TC_FAIL;
-		printk("EXPECTED:\n%s", expected);
-	} else {
-		rv = TC_PASS;
-	}
-
-	TC_END_RESULT(rv);
-	TC_END_REPORT(rv);
+	assert_true((strcmp(ram_console, expected) == 0), "printk failed");
 }
