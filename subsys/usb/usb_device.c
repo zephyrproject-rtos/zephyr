@@ -64,7 +64,7 @@
 #if defined(USB_VUSB_EN_GPIO)
 #include <gpio.h>
 #endif
-#include "usb_device.h"
+#include <usb/usb_device.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_LEVEL
 #define SYS_LOG_NO_NEWLINE

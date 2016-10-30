@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <flash.h>
-#include "usb_device.h"
+#include <usb/usb_device.h>
 #include "usb_dfu.h"
 
 

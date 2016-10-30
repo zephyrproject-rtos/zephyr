@@ -36,8 +36,8 @@
 #ifndef USB_DEVICE_H_
 #define USB_DEVICE_H_
 
-#include "usb_dc.h"
-#include "usbstruct.h"
+#include <drivers/usb/usb_dc.h>
+#include <usb/usbstruct.h>
 
 /*************************************************************************
  *  USB configuration

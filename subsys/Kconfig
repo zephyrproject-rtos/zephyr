@@ -16,3 +16,6 @@
 #
 
 source "subsys/fs/Kconfig"
+
+source "subsys/usb/Kconfig"
+

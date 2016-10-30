@@ -45,6 +45,6 @@ config SYS_LOG_USB_LEVEL
 
 	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
-source "usb/class/Kconfig"
+source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK

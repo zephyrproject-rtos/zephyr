@@ -41,7 +41,7 @@
 #define __USB_DFU_H__
 
 #include <device.h>
-#include "usb_common.h"
+#include <usb/usb_common.h>
 
 /* Intel vendor ID */
 #define DFU_VENDOR_ID   0x8086

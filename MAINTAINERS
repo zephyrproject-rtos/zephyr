@@ -392,6 +392,13 @@ S:	Supported
 F:	ext/lib/crypto/tinycrypt/
 F:	tests/crypto/
 
+USB
+M:	Jithu Joseph <jithu.joseph@intel.com>
+S:	Supported
+F:	subsys/usb
+F:	drivers/usb
+F:	samples/usb
+
 X86 ARCH
 M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 M:	Allan Stephens <allan.stephens@windriver.com>
