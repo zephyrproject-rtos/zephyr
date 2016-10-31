@@ -246,7 +246,7 @@ struct eth_enc28j60_runtime {
 	uint8_t mem_buf[MAX_BUFFER_LENGTH + 1];
 	uint8_t  tx_tsv[TSV_SIZE];
 	uint8_t  rx_rsv[RSV_SIZE];
-	struct nano_sem tx_sem;
+	struct nano_sem tx_rx_sem;
 	struct nano_sem int_sem;
 	struct nano_sem spi_sem;
 #ifndef CONFIG_NET_YAIP

@@ -414,9 +414,9 @@ static int eth_enc28j60_init(struct device *dev)
 	net_driver_ethernet_register_tx(eth_net_tx);
 
 	/* Initialize semaphores */
-	nano_sem_init(&context->tx_sem);
+	nano_sem_init(&context->tx_rx_sem);
 	nano_sem_init(&context->int_sem);
-	nano_sem_give(&context->tx_sem);
+	nano_sem_give(&context->tx_rx_sem);
 
 	/* Start interruption-poll fiber */
 	fiber_start(context->fiber_stack, ENC28J60_FIBER_STACK_SIZE,
@@ -434,7 +434,7 @@ static int eth_enc28j60_tx(struct device *dev, uint8_t *buf, uint16_t len)
 	uint16_t tx_bufaddr_end;
 	uint8_t tx_end;
 
-	nano_fiber_sem_take(&context->tx_sem, TICKS_UNLIMITED);
+	nano_fiber_sem_take(&context->tx_rx_sem, TICKS_UNLIMITED);
 
 	/* Latest errata sheet: DS80349C
 	* always reset transmit logic (Errata Issue 12)
@@ -479,7 +479,7 @@ static int eth_enc28j60_tx(struct device *dev, uint8_t *buf, uint16_t len)
 
 	eth_enc28j60_read_reg(dev, ENC28J60_REG_ESTAT, &tx_end);
 
-	nano_sem_give(&context->tx_sem);
+	nano_sem_give(&context->tx_rx_sem);
 
 	if (tx_end & ENC28J60_BIT_ESTAT_TXABRT)	{
 		return -1;
@@ -491,7 +491,6 @@ static int eth_enc28j60_tx(struct device *dev, uint8_t *buf, uint16_t len)
 static int eth_enc28j60_rx(struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t econ1_bkup;
 	uint8_t counter;
 
 	/* Errata 6. The Receive Packet Pending Interrupt Flag (EIR.PKTIF)
@@ -499,8 +498,7 @@ static int eth_enc28j60_rx(struct device *dev)
 	 * Use EPKTCNT register instead.
 	*/
 
-	/* Backup ECON1 register in case the rx interrupted a tx process */
-	eth_enc28j60_read_reg(dev, ENC28J60_REG_ECON1, &econ1_bkup);
+	nano_fiber_sem_take(&context->tx_rx_sem, TICKS_UNLIMITED);
 
 	do {
 		uint8_t *reception_buf = NULL;
@@ -575,8 +573,7 @@ done:
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EPKTCNT, &counter);
 	} while (counter);
 
-	/* Recover ECON1 register */
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_ECON1, econ1_bkup);
+	nano_sem_give(&context->tx_rx_sem);
 
 	return 0;
 }
