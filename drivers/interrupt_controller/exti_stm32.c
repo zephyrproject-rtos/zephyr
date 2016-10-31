@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (c) 2016 RnDity Sp. z o.o.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +25,10 @@
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define EXTI_LINES 19
+#elif CONFIG_SOC_STM32F334X8
+#define EXTI_LINES 36
+#elif CONFIG_SOC_STM32F373XC
+#define EXTI_LINES 29
 #elif CONFIG_SOC_SERIES_STM32F4X
 #define EXTI_LINES 23
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
@@ -91,6 +96,15 @@ void stm32_exti_enable(int line)
 	} else {
 		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
 		irqnum = STM32F1_IRQ_EXTI0 + line;
+	}
+#elif CONFIG_SOC_SERIES_STM32F3X
+	if (line >= 5 && line <= 9) {
+		irqnum = STM32F3_IRQ_EXTI9_5;
+	} else if (line >= 10 && line <= 15) {
+		irqnum = STM32F3_IRQ_EXTI15_10;
+	} else {
+		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
+		irqnum = STM32F3_IRQ_EXTI0 + line;
 	}
 #elif CONFIG_SOC_SERIES_STM32F4X
 	if (line >= 5 && line <= 9) {
@@ -358,6 +372,35 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
 		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
 		0);
+#elif CONFIG_SOC_SERIES_STM32F3X
+	IRQ_CONNECT(STM32F3_IRQ_EXTI0,
+		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
+		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F3_IRQ_EXTI1,
+		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
+		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F3_IRQ_EXTI2_TS,
+		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
+		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F3_IRQ_EXTI3,
+		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
+		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F3_IRQ_EXTI4,
+		CONFIG_EXTI_STM32_EXTI4_IRQ_PRI,
+		__stm32_exti_isr_4, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F3_IRQ_EXTI9_5,
+		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
+		__stm32_exti_isr_9_5, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32F3_IRQ_EXTI15_10,
+		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
+		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
+		0);
 #elif CONFIG_SOC_SERIES_STM32F4X
 	IRQ_CONNECT(STM32F4_IRQ_EXTI0,
 		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
@@ -438,5 +481,3 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		0);
 #endif
 }
-
-
