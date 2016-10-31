@@ -30,7 +30,7 @@
 extern char fiber_stack1[STACK_SIZE];
 extern char fiber_stack2[STACK_SIZE];
 
-extern FILE *	output_file;
+extern FILE *output_file;
 
 extern const char sz_success[];
 extern const char sz_partial[];

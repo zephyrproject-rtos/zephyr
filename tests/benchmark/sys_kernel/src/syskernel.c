@@ -23,14 +23,12 @@
 
 #include <string.h>
 
-/* #define FLOAT */
-
 char __stack fiber_stack1[STACK_SIZE];
 char __stack fiber_stack2[STACK_SIZE];
 
 char Msg[256];
 
-FILE * output_file;
+FILE *output_file;
 
 const char sz_success[] = "SUCCESSFUL";
 const char sz_partial[] = "PARTIAL";
@@ -49,11 +47,7 @@ const char sz_test_start_fmt[] = "\nStarting test. Please wait...";
 const char sz_case_result_fmt[] = "\nTEST RESULT: %s";
 const char sz_case_details_fmt[] = "\nDETAILS: %s";
 const char sz_case_end_fmt[] = "\nEND TEST CASE";
-#ifdef FLOAT
-const char sz_case_timing_fmt[] = "%6.3f nSec";
-#else
 const char sz_case_timing_fmt[] = "%ld nSec";
-#endif
 
 /* time necessary to read the time */
 uint32_t tm_off;
@@ -163,11 +157,7 @@ void output_close(void)
  *
  * @return N/A
  */
-#ifdef CONFIG_MICROKERNEL
-void SysKernelBench(void)
-#else
 void main(void)
-#endif
 {
 	int	    continuously = 0;
 	int	    test_result;
@@ -176,11 +166,14 @@ void main(void)
 	bench_test_init();
 
 	do {
-		fprintf(output_file, sz_module_title_fmt, "Nanokernel API test");
-		fprintf(output_file, sz_kernel_ver_fmt, sys_kernel_version_get());
+		fprintf(output_file, sz_module_title_fmt,
+			"Nanokernel API test");
+		fprintf(output_file, sz_kernel_ver_fmt,
+			sys_kernel_version_get());
 		fprintf(output_file,
-				"\n\nEach test below are repeated %d times and the average\n"
-				"time for one iteration is displayed.", NUMBER_OF_LOOPS);
+			"\n\nEach test below is repeated %d times;\n"
+			"average time for one iteration is displayed.",
+			NUMBER_OF_LOOPS);
 
 		test_result = 0;
 
@@ -190,11 +183,13 @@ void main(void)
 		test_result += stack_test();
 
 		if (test_result) {
-			/* sema, lifo, fifo, stack account for twelve tests in total */
+			/* sema/lifo/fifo/stack account for 12 tests in total */
 			if (test_result == 12) {
-				fprintf(output_file, sz_module_result_fmt, sz_success);
+				fprintf(output_file, sz_module_result_fmt,
+					sz_success);
 			} else {
-				fprintf(output_file, sz_module_result_fmt, sz_partial);
+				fprintf(output_file, sz_module_result_fmt,
+					sz_partial);
 			}
 		} else {
 			fprintf(output_file, sz_module_result_fmt, sz_fail);

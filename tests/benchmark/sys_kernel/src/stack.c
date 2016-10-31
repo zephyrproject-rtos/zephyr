@@ -86,7 +86,7 @@ void stack_fiber2(int par1, int par2)
 {
 	int i;
 	uint32_t data;
-	int * pcounter = (int *) par1;
+	int *pcounter = (int *)par1;
 
 	for (i = 0; i < par2; i++) {
 		data = i;
@@ -114,13 +114,14 @@ void stack_fiber3(int par1, int par2)
 {
 	int i;
 	uint32_t data;
-	int * pcounter = (int *) par1;
+	int *pcounter = (int *)par1;
 
 	for (i = 0; i < par2; i++) {
 		data = i;
 		nano_fiber_stack_push(&nano_stack_1, data);
 		data = 0xffffffff;
-		while (!nano_fiber_stack_pop(&nano_stack_2, &data, TICKS_NONE)) {
+		while (!nano_fiber_stack_pop(&nano_stack_2, &data,
+					     TICKS_NONE)) {
 			fiber_yield();
 		}
 		if (data != i) {
@@ -210,6 +211,7 @@ int stack_test(void)
 					 NUMBER_OF_LOOPS, 3, 0);
 	for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
 		uint32_t data;
+
 		data = 2 * i;
 		nano_task_stack_push(&nano_stack_1, data);
 		data = 2 * i + 1;

@@ -68,7 +68,7 @@ void sema_fiber1(int par1, int par2)
 void sema_fiber2(int par1, int par2)
 {
 	int i;
-	int * pcounter = (int *) par1;
+	int *pcounter = (int *)par1;
 
 	for (i = 0; i < par2; i++) {
 		nano_fiber_sem_give(&nanoSem1);
@@ -89,7 +89,7 @@ void sema_fiber2(int par1, int par2)
 void sema_fiber3(int par1, int par2)
 {
 	int i;
-	int * pcounter = (int *) par1;
+	int *pcounter = (int *)par1;
 
 	for (i = 0; i < par2; i++) {
 		nano_fiber_sem_give(&nanoSem1);
