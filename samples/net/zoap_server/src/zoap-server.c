@@ -382,6 +382,10 @@ static void udp_receive(struct net_context *context,
 	struct sockaddr_in6 from;
 	int r, header_len;
 
+	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_BUF(buf)->src);
+	from.sin6_port = NET_UDP_BUF(buf)->src_port;
+	from.sin6_family = AF_INET6;
+
 	/*
 	 * zoap expects that buffer->data starts at the
 	 * beginning of the CoAP header
@@ -394,10 +398,6 @@ static void udp_receive(struct net_context *context,
 		NET_ERR("Invalid data received (%d)\n", r);
 		return;
 	}
-
-	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_BUF(buf)->src);
-	from.sin6_port = NET_UDP_BUF(buf)->src_port;
-	from.sin6_family = AF_INET6;
 
 	r = zoap_handle_request(&request, resources,
 				(const struct sockaddr *) &from);
