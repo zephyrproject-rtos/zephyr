@@ -396,11 +396,15 @@ static void udp_receive(struct net_context *context,
 	r = zoap_packet_parse(&request, buf);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
+		net_buf_unref(buf);
 		return;
 	}
 
 	r = zoap_handle_request(&request, resources,
 				(const struct sockaddr *) &from);
+
+	net_buf_unref(buf);
+
 	if (r < 0) {
 		NET_ERR("No handler for such request (%d)\n", r);
 		return;
