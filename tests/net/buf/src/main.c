@@ -309,13 +309,6 @@ static void net_buf_test_4(void)
 
 	net_buf_unref(buf);
 
-	assert_equal(frag_destroy_called, 0,
-		     "Incorrect frag destroy callback count");
-
-	for (i = 0; i < ARRAY_SIZE(frags_pool); i++) {
-		net_buf_unref(frags[i]);
-	}
-
 	assert_equal(frag_destroy_called, ARRAY_SIZE(frags_pool),
 		     "Incorrect frag destroy callback count");
 }
@@ -355,13 +348,6 @@ static void net_buf_test_big_buf(void)
 
 	net_buf_frag_add(buf, frag);
 	net_buf_unref(buf);
-
-	assert_equal(frag_destroy_called, 0,
-		     "Incorrect frag destroy callback count");
-
-	for (i = 0; i < ARRAY_SIZE(big_pool); i++) {
-		net_buf_unref(big_frags[i]);
-	}
 
 	assert_equal(frag_destroy_called, ARRAY_SIZE(big_pool),
 		     "Incorrect frag destroy callback count");
@@ -415,13 +401,6 @@ static void net_buf_test_multi_frags(void)
 	udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
 
 	net_buf_unref(buf);
-
-	assert_equal(frag_destroy_called, 0,
-		     "Incorrect big frag destroy callback count");
-
-	for (i = 0; i < ARRAY_SIZE(frags_pool); i++) {
-		net_buf_unref(frags[i]);
-	}
 
 	assert_equal(frag_destroy_called, ARRAY_SIZE(frags_pool),
 		     "Incorrect big frag destroy callback count");
