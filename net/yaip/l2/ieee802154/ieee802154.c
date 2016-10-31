@@ -313,12 +313,15 @@ void ieee802154_init(struct net_if *iface)
 #ifdef CONFIG_NET_L2_IEEE802154_ORFD
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	const uint8_t *mac = iface->link_addr.addr;
+	uint8_t long_addr[8];
 	uint16_t short_addr;
+
+	sys_memcpy_swap(long_addr, mac, 8);
 
 	short_addr = (mac[0] << 8) + mac[1];
 
 	radio->set_short_addr(iface->dev, short_addr);
-	radio->set_ieee_addr(iface->dev, mac);
+	radio->set_ieee_addr(iface->dev, long_addr);
 
 	ctx->pan_id = CONFIG_NET_L2_IEEE802154_ORFD_PAN_ID;
 	ctx->channel = CONFIG_NET_L2_IEEE802154_ORFD_CHANNEL;
