@@ -17,13 +17,12 @@
  */
 
 /*
- * DESCRIPTION
  * This module tests the following random number routines:
  * uint32_t sys_rand32_get(void);
  */
 
-#include <tc_util.h>
-#include <zephyr.h>
+#include <ztest.h>
+#include <misc/sys_log.h>
 
 #define N_VALUES 10
 
@@ -35,20 +34,16 @@
  * @return N/A
  */
 
-void main(void)
+void rand32_test(void)
 {
-	int  tc_result; /* test result code */
 	uint32_t rnd_values[N_VALUES];
 	int i;
-
-	PRINT_DATA("Starting random number tests\n");
-	PRINT_LINE;
 
 	/*
 	 * Test subsequently calls sys_rand32_get(), checking
 	 * that two values are not equal.
 	 */
-	PRINT_DATA("Generating random numbers\n");
+	SYS_LOG_DBG("Generating random numbers");
 	/*
 	 * Get several subsequent numbers as fast as possible.
 	 * If random number generator is based on timer, check
@@ -61,21 +56,9 @@ void main(void)
 	for (i = 0; i < N_VALUES; i++) {
 		rnd_values[i] = sys_rand32_get();
 	}
-	for (tc_result = TC_PASS, i = 1; i <  N_VALUES; i++) {
-		if (rnd_values[i - 1] == rnd_values[i]) {
-			tc_result = TC_FAIL;
-			break;
-		}
+	for (i = 1; i <  N_VALUES; i++) {
+		assert_false((rnd_values[i - 1] == rnd_values[i]),
+			     "random number subsequent calls return same value");
 	}
 
-	if (tc_result == TC_FAIL) {
-		TC_ERROR("random number subsequent calls\n"
-			 "returned same value %d\n", rnd_values[i]);
-	} else {
-		PRINT_DATA("Generated %d values with expected randomness\n",
-			   N_VALUES);
-	}
-
-	TC_END_RESULT(tc_result);
-	TC_END_REPORT(tc_result);
 }

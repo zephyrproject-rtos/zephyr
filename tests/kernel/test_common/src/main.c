@@ -26,6 +26,7 @@ extern void intmath_test(void);
 extern void printk_test(void);
 extern void ring_buffer_test(void);
 extern void slist_test(void);
+extern void rand32_test(void);
 
 void test_main(void)
 {
@@ -36,6 +37,7 @@ void test_main(void)
 			 ztest_unit_test(printk_test),
 			 ztest_unit_test(ring_buffer_test),
 			 ztest_unit_test(slist_test),
+			 ztest_unit_test(rand32_test),
 			 ztest_unit_test(intmath_test)
 			 );
 
