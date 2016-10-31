@@ -21,7 +21,7 @@ they add to the configuration menus. For example:
   apply to the entire build system.
 
 * The Kconfig file at the :file:`kernel` directory contains the general
-  configuration related to the micro- and the nanokernel.
+  configuration related to the core kernel.
 
 * The Kconfig file at the :file:`drivers` directory organizes the inclusion of
   the various Kconfig files needed for each supported driver in the system.

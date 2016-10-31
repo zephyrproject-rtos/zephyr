@@ -30,9 +30,6 @@ A common application project is composed of the following files:
 * **Configuration file**: Allows the developer to override the board's
   default configuration.
 
-* **MDEF**: Defines the set of kernel objects that the the application
-  instantiates. Required only by the microkernel.
-
 * **The :file:`src/` directory**: By default, this directory hosts the
   application's source code. This location can be overridden and defined in a
   different directory.
@@ -78,14 +75,6 @@ The following predefined variables configure the development project:
 
 * :makevar:`BOARD`: Selects the board that the application's
   build will use for the default configuration.
-
-* :makevar:`KERNEL_TYPE`: Selects the kernel type that the application's
-  build will use for the default configuration. It indicates whether to use a
-  nanokernel or microkernel architecture.
-  The supported values are **nano** and **micro**.
-
-* :makevar:`MDEF_FILE`: Indicates the name of the MDEF file; required for
-  microkernel architectures only.
 
 * :makevar:`CONF_FILE`: Indicates the name of a configuration fragment file.
   This file includes the kconfig configuration values that override the
