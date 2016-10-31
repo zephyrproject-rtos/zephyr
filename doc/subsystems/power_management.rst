@@ -85,8 +85,8 @@ integrator can use to create a PMA. The PMA then enforces any policies
 needed. The design is based on the philosophy of not enforcing any policies
 in the kernel giving full flexibility to the PMA.
 
-The provided infrastructure has an architecture independent interface. Both
-the microkernel and nanokernel notify the PMA when the kernel is about to
+The provided infrastructure has an architecture independent interface.
+The kernel notifies the PMA when it is about to
 enter or exit a system idle state. The PMA can perform the power management
 policy operations during these notifications.
 
