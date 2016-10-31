@@ -102,6 +102,7 @@
  * through arch/um/include/uml-config.h; this fixdep "bug" makes sure that
  * those files will have correct dependencies.
  */
+
 #if !defined(_WIN32) && !defined(__WIN32__)
   #define DO_MMAP 1
 #endif
@@ -137,13 +138,15 @@
   #define INT_FIG_ 0x5f474946
 #endif
 
+int insert_extra_deps;
 char *target;
 char *depfile;
 char *cmdline;
 
 static void usage(void)
 {
-	fprintf(stderr, "Usage: fixdep <depfile> <target> <cmdline>\n");
+	fprintf(stderr, "Usage: fixdep [-e] <depfile> <target> <cmdline>\n");
+	fprintf(stderr, " -e  insert extra dependencies given on stdin\n");
 	exit(1);
 }
 
@@ -153,6 +156,42 @@ static void usage(void)
 static void print_cmdline(void)
 {
 	printf("cmd_%s := %s\n\n", target, cmdline);
+}
+
+/*
+ * Print out a dependency path from a symbol name
+ */
+static void print_config(const char *m, int slen)
+{
+	int c, i;
+
+	printf("    $(wildcard include/config/");
+	for (i = 0; i < slen; i++) {
+		c = m[i];
+		if (c == '_')
+			c = '/';
+		else
+			c = tolower(c);
+		putchar(c);
+	}
+	printf(".h) \\\n");
+}
+
+static void do_extra_deps(void)
+{
+	if (insert_extra_deps) {
+		char buf[80];
+
+		while (fgets(buf, sizeof(buf), stdin)) {
+			int len = strlen(buf);
+
+			if (len < 2 || buf[len-1] != '\n') {
+				fprintf(stderr, "fixdep: bad data on stdin\n");
+				exit(1);
+			}
+			print_config(buf, len-1);
+		}
+	}
 }
 
 struct item {
@@ -209,45 +248,17 @@ static void define_config(const char *name, int len, unsigned int hash)
 }
 
 /*
- * Clear the set of configuration strings.
- */
-static void clear_config(void)
-{
-	struct item *aux, *next;
-	unsigned int i;
-
-	for (i = 0; i < HASHSZ; i++) {
-		for (aux = hashtab[i]; aux; aux = next) {
-			next = aux->next;
-			free(aux);
-		}
-		hashtab[i] = NULL;
-	}
-}
-
-/*
  * Record the use of a CONFIG_* word.
  */
 static void use_config(const char *m, int slen)
 {
 	unsigned int hash = strhash(m, slen);
-	int c, i;
 
 	if (is_defined_config(m, slen, hash))
 	    return;
 
 	define_config(m, slen, hash);
-
-	printf("    $(wildcard include/config/");
-	for (i = 0; i < slen; i++) {
-		c = m[i];
-		if (c == '_')
-			c = '/';
-		else
-			c = tolower(c);
-		putchar(c);
-	}
-	printf(".h) \\\n");
+	print_config(m, slen);
 }
 
 static void parse_config_file(const char *map, size_t len)
@@ -268,7 +279,8 @@ static void parse_config_file(const char *map, size_t len)
 			continue;
 		if (memcmp(p, "CONFIG_", 7))
 			continue;
-		for (q = p + 7; q < map + len; q++) {
+		p += 7;
+		for (q = p; q < map + len; q++) {
 			if (!(isalnum(*q) || *q == '_'))
 				goto found;
 		}
@@ -277,14 +289,14 @@ static void parse_config_file(const char *map, size_t len)
 	found:
 		if (!memcmp(q - 7, "_MODULE", 7))
 			q -= 7;
-		if( (q-p-7) < 0 )
+		if (q - p < 0)
 			continue;
-		use_config(p+7, q-p-7);
+		use_config(p, q - p);
 	}
 }
 
-/* test is s ends in sub */
-static int strrcmp(char *s, char *sub)
+/* test if s ends in sub */
+static int strrcmp(const char *s, const char *sub)
 {
 	int slen = strlen(s);
 	int sublen = strlen(sub);
@@ -316,6 +328,7 @@ static void do_config_file(const char *filename)
 	struct stat st;
 	int fd;
 	void *map;
+
 #if !defined(_WIN32) && !defined(__WIN32__)
 	fd = open(filename, O_RDONLY);
 #else
@@ -326,11 +339,16 @@ static void do_config_file(const char *filename)
 		perror(filename);
 		exit(2);
 	}
-	fstat(fd, &st);
+	if (fstat(fd, &st) < 0) {
+		fprintf(stderr, "fixdep: error fstat'ing config file: ");
+		perror(filename);
+		exit(2);
+	}
 	if (st.st_size == 0) {
 		close(fd);
 		return;
 	}
+
 #if DO_MMAP
 	map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if ((long) map == -1) {
@@ -345,6 +363,7 @@ static void do_config_file(const char *filename)
 		return;
 	}
 #endif
+
 	parse_config_file(map, st.st_size);
 
 #if DO_MMAP
@@ -371,8 +390,6 @@ static void parse_dep_file(void *map, size_t len)
 	int saw_any_target = 0;
 	int is_first_dep = 0;
 
-	clear_config();
-
 	while (m < end) {
 		/* Skip any "white space" */
 		while (m < end && (*m == ' ' || *m == '\\' || *m == '\n' || *m == '\r'))
@@ -396,9 +413,10 @@ static void parse_dep_file(void *map, size_t len)
 			/* Ignore certain dependencies */
 			if ((m < end) &&
 				strrcmp(s, "include/generated/autoconf.h") &&
-			    strrcmp(s, "arch/um/include/uml-config.h") &&
-			    strrcmp(s, "include/linux/kconfig.h") &&
-			    strrcmp(s, ".ver")) {
+				strrcmp(s, "include/generated/autoksyms.h") &&
+				strrcmp(s, "arch/um/include/uml-config.h") &&
+				strrcmp(s, "include/linux/kconfig.h") &&
+				strrcmp(s, ".ver")) {
 				/*
 				 * Do not list the source file as dependency,
 				 * so that kbuild is not confused if a .c file
@@ -440,6 +458,8 @@ static void parse_dep_file(void *map, size_t len)
 		fprintf(stderr, "fixdep: parse error; no targets found\n");
 		exit(1);
 	}
+
+	do_extra_deps();
 
 	printf("\n%s: $(deps_%s)\n\n", target, target);
 	printf("$(deps_%s):\n", target);
@@ -485,6 +505,7 @@ static void print_deps(void)
 		return;
 	}
 #endif
+
 	parse_dep_file(map, st.st_size);
 
 #if DO_MMAP
@@ -502,11 +523,9 @@ static void traps(void)
 	int *p = (int *)test;
 
 	if (*p != INT_CONF) {
-		fprintf(stderr, "fixdep: sizeof(int) : %lu\n",
-			(unsigned long)sizeof(int));
-
-		fprintf(stderr, "fixdep: sizeof(int) != 4 or wrong endianness? %#x"
-			" vs %#x\n", *p, INT_CONF);
+		fprintf(stderr,
+			"fixdep: sizeof(int) != 4 or wrong endianness? %#x\n",
+			*p);
 		exit(2);
 	}
 }
@@ -515,7 +534,10 @@ int main(int argc, char *argv[])
 {
 	traps();
 
-	if (argc != 4)
+	if (argc == 5 && !strcmp(argv[1], "-e")) {
+		insert_extra_deps = 1;
+		argv++;
+	} else if (argc != 4)
 		usage();
 
 	depfile = argv[1];
