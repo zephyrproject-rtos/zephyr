@@ -21,7 +21,6 @@
 #include <power.h>
 
 #include "clk.h"
-#include "qm_interrupt.h"
 #include "qm_isr.h"
 #include "qm_wdt.h"
 
