@@ -277,6 +277,50 @@ static int h4_send(struct net_buf *buf)
 	return 0;
 }
 
+void bt_controller_assert_handle(char *file, uint32_t line)
+{
+	uint32_t len = 0, pos = 0;
+
+	/* Disable interrupts, this is unrecoverable */
+	(void)irq_lock();
+
+	uart_irq_rx_disable(hci_uart_dev);
+	uart_irq_tx_disable(hci_uart_dev);
+
+	if (file) {
+		while (file[len] != '\0') {
+			if (file[len] == '/') {
+				pos = len + 1;
+			}
+			len++;
+		}
+		file += pos;
+		len -= pos;
+	}
+
+	uart_poll_out(hci_uart_dev, H4_EVT);
+	/* Vendor-Specific debug event */
+	uart_poll_out(hci_uart_dev, 0xff);
+	/* 0xAA + strlen + \0 + 32-bit line number */
+	uart_poll_out(hci_uart_dev, 1 + len + 1 + 4);
+	uart_poll_out(hci_uart_dev, 0xAA);
+
+	if (len) {
+		while (*file != '\0') {
+			uart_poll_out(hci_uart_dev, *file);
+			file++;
+		}
+		uart_poll_out(hci_uart_dev, 0x00);
+	}
+
+	uart_poll_out(hci_uart_dev, line >> 0 & 0xff);
+	uart_poll_out(hci_uart_dev, line >> 8 & 0xff);
+	uart_poll_out(hci_uart_dev, line >> 16 & 0xff);
+	uart_poll_out(hci_uart_dev, line >> 24 & 0xff);
+
+	while (1) {
+	};
+}
 
 static int hci_uart_init(struct device *unused)
 {

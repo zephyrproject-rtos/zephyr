@@ -1049,7 +1049,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		return;
 
 	default:
-		BT_ASSERT(0);
+		LL_ASSERT(0);
 		return;
 	}
 }
@@ -1209,7 +1209,7 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 		break;
 
 	default:
-		BT_ASSERT(0);
+		LL_ASSERT(0);
 		return;
 	}
 }
@@ -1241,7 +1241,7 @@ void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 		break;
 
 	default:
-		BT_ASSERT(0);
+		LL_ASSERT(0);
 		break;
 	}
 
