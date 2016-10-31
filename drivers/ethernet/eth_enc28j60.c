@@ -600,6 +600,7 @@ done:
 					 ENC28J60_BIT_ECON2_PKTDEC);
 
 		/* Check if there are frames to clean from the buffer */
+		eth_enc28j60_set_bank(dev, ENC28J60_REG_EPKTCNT);
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EPKTCNT, &counter);
 	} while (counter);
 
