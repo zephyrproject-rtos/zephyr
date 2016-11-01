@@ -69,6 +69,18 @@ config NET_L2_IEEE802154_RFD
 	  thus it is not set as the default level
 endchoice
 
+config NET_L2_IEEE802154_ACK_SET
+	bool "Expose ACK request setting"
+	default n
+	depends on NET_L2_IEEE802154_ORFD
+	select NET_L2_IEEE802154_MGMT
+	help
+	  Enable a network management request to let upper layers to force
+	  requesting a ACK on any DATA frames. Such setting can be found
+	  useful if one needs to send a buffer "reliably". Note however, this
+	  becomes utterly useless if application protocol already handles
+	  reliability like TCP.
+
 config NET_L2_IEEE802154_ORFD_PAN_ID
 	hex "IEEE 802.15.4 fixed PAN ID"
 	depends on NET_L2_IEEE802154_ORFD
