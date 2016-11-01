@@ -1034,7 +1034,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			       ntohs(net_sin(&local_addr)->sin_port),
 			       tcp_established,
 			       new_context,
-			       new_context->conn_handler);
+			       &new_context->conn_handler);
 		if (ret < 0) {
 			NET_DBG("Cannot register accepted TCP handler (%d)",
 				ret);
