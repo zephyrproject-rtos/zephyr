@@ -708,7 +708,7 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	int check;
 
 	/* For SDP PSM there's no need to change existing security on link */
-	if (chan->required_sec_level == BT_SECURITY_ZERO) {
+	if (chan->required_sec_level == BT_SECURITY_NONE) {
 		return L2CAP_CONN_SECURITY_PASSED;
 	}
 
@@ -839,7 +839,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	 * Report security violation for non SDP channel without encryption when
 	 * remote supports SSP.
 	 */
-	if (server->sec_level != BT_SECURITY_ZERO &&
+	if (server->sec_level != BT_SECURITY_NONE &&
 	    BT_FEAT_HOST_SSP(conn->br.features) && !conn->encrypt) {
 		result = BT_L2CAP_BR_ERR_SEC_BLOCK;
 		goto done;
@@ -977,7 +977,7 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 
 	if (server->sec_level > BT_SECURITY_FIPS) {
 		return -EINVAL;
-	} else if (server->sec_level == BT_SECURITY_ZERO &&
+	} else if (server->sec_level == BT_SECURITY_NONE &&
 		   server->psm != L2CAP_BR_PSM_SDP) {
 		server->sec_level = BT_SECURITY_LOW;
 	}
@@ -1372,7 +1372,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	if (chan->required_sec_level > BT_SECURITY_FIPS) {
 		return -EINVAL;
-	} else if (chan->required_sec_level == BT_SECURITY_ZERO &&
+	} else if (chan->required_sec_level == BT_SECURITY_NONE &&
 		   psm != L2CAP_BR_PSM_SDP) {
 		chan->required_sec_level = BT_SECURITY_LOW;
 	}

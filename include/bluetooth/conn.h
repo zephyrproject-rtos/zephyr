@@ -242,7 +242,7 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 /** Security level. */
 typedef enum __packed {
 	/** Only for BR/EDR special cases, like SDP */
-	BT_SECURITY_ZERO,
+	BT_SECURITY_NONE,
 	/** No encryption and no authentication. */
 	BT_SECURITY_LOW,
 	/** Encryption and no authentication (no MITM). */

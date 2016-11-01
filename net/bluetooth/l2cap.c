@@ -1359,7 +1359,7 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	if (chan->required_sec_level > BT_SECURITY_FIPS) {
 		return -EINVAL;
-	} else if (chan->required_sec_level == BT_SECURITY_ZERO) {
+	} else if (chan->required_sec_level == BT_SECURITY_NONE) {
 		chan->required_sec_level = BT_SECURITY_LOW;
 	}
 
