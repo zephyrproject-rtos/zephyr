@@ -16,8 +16,7 @@
 # limitations under the License.
 #
 
-MDEF_FILE = prj.mdef
-KERNEL_TYPE ?= nano
+KERNEL_TYPE ?= unified
 BOARD ?= qemu_x86
 CONF_FILE ?= prj.conf
 
