@@ -31,15 +31,6 @@ endif
 
 if BLUETOOTH_H4
 
-config GPIO
-	def_bool y
-
-config BLUETOOTH_NRF51_PM
-	def_bool y
-
-config BLUETOOTH_WAIT_NOP
-	def_bool y
-
 config BLUETOOTH_UART_ON_DEV_NAME
 	default UART_QMSI_0_NAME
 
