@@ -38,8 +38,8 @@
 
 static struct device *hci_uart_dev;
 
-#define STACK_SIZE		1024
-uint8_t tx_fiber_stack[STACK_SIZE];
+#define STACK_SIZE 1024
+static uint8_t tx_fiber_stack[STACK_SIZE];
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
@@ -63,10 +63,10 @@ static NET_BUF_POOL(acl_tx_pool, CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS,
 
 static struct nano_fifo tx_queue;
 
-#define H4_CMD          0x01
-#define H4_ACL          0x02
-#define H4_SCO          0x03
-#define H4_EVT          0x04
+#define H4_CMD 0x01
+#define H4_ACL 0x02
+#define H4_SCO 0x03
+#define H4_EVT 0x04
 
 /* Length of a discard/flush buffer.
  * This is sized to align with a BLE HCI packet:
@@ -75,7 +75,7 @@ static struct nano_fifo tx_queue;
  * variable, smaller ones will force the caller to call into discard more
  * often.
  */
-#define H4_DISCARD_LEN  33
+#define H4_DISCARD_LEN 33
 
 static int h4_read(struct device *uart, uint8_t *buf,
 		   size_t len, size_t min)
