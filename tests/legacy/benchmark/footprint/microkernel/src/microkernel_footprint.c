@@ -44,6 +44,10 @@ typedef void* (*pfunc) (void*);
 
 volatile int i = 0;		/* counter used by foreground task */
 
+#ifndef CONFIG_KERNEL_V2
+
+/* legacy microkernel */
+
 /* pointer array ensures specified functions are linked into the image */
 static pfunc func_array[] = {
 	/* event functions */
@@ -94,6 +98,129 @@ static pfunc func_array[] = {
 	(pfunc)task_yield,
 #endif /* TEST_max */
 };
+
+#else
+
+static pfunc func_array[] = {
+	/* mutexes */
+	(pfunc)k_mutex_init,
+	(pfunc)k_mutex_lock,
+	(pfunc)k_mutex_unlock,
+
+	/* semaphores */
+	(pfunc)k_sem_init,
+	(pfunc)k_sem_take,
+	(pfunc)k_sem_give,
+	(pfunc)k_sem_reset,
+	(pfunc)k_sem_count_get,
+
+	/* FIFOs */
+	(pfunc)k_fifo_init,
+	(pfunc)k_fifo_put,
+	(pfunc)k_fifo_put_list,
+	(pfunc)k_fifo_put_slist,
+	(pfunc)k_fifo_get,
+
+	/* mem slabs */
+	(pfunc)k_mem_slab_init,
+	(pfunc)k_mem_slab_alloc,
+	(pfunc)k_mem_slab_free,
+	(pfunc)k_mem_slab_num_used_get,
+	(pfunc)k_mem_slab_num_free_get,
+
+#ifdef TEST_max
+	/* alerts */
+	(pfunc)k_alert_init,
+	(pfunc)k_alert_send,
+	(pfunc)k_alert_recv,
+
+	/* message queues */
+	(pfunc)k_msgq_init,
+	(pfunc)k_msgq_put,
+	(pfunc)k_msgq_get,
+	(pfunc)k_msgq_purge,
+	(pfunc)k_msgq_num_free_get,
+	(pfunc)k_msgq_num_used_get,
+
+	/* semaphore groups */
+	(pfunc)k_sem_group_take,
+	(pfunc)k_sem_group_give,
+	(pfunc)k_sem_group_reset,
+
+	/* LIFOs */
+	(pfunc)k_lifo_init,
+	(pfunc)k_lifo_put,
+	(pfunc)k_lifo_get,
+
+	/* stacks */
+	(pfunc)k_stack_init,
+	(pfunc)k_stack_push,
+	(pfunc)k_stack_pop,
+
+	/* workqueues */
+	(pfunc)k_work_init,
+	(pfunc)k_work_submit_to_queue,
+	(pfunc)k_work_pending,
+	(pfunc)k_work_q_start,
+	(pfunc)k_delayed_work_init,
+	(pfunc)k_delayed_work_submit_to_queue,
+	(pfunc)k_delayed_work_cancel,
+	(pfunc)k_work_submit,
+	(pfunc)k_delayed_work_submit,
+
+	/* mailboxes */
+	(pfunc)k_mbox_init,
+	(pfunc)k_mbox_put,
+	(pfunc)k_mbox_async_put,
+	(pfunc)k_mbox_get,
+	(pfunc)k_mbox_data_get,
+	(pfunc)k_mbox_data_block_get,
+
+	/* pipes */
+	(pfunc)k_pipe_init,
+	(pfunc)k_pipe_put,
+	(pfunc)k_pipe_get,
+	(pfunc)k_pipe_block_put,
+
+	/* mem pools */
+	(pfunc)k_mem_pool_alloc,
+	(pfunc)k_mem_pool_free,
+	(pfunc)k_mem_pool_defrag,
+	(pfunc)k_malloc,
+	(pfunc)k_free,
+
+	/* timers */
+	(pfunc)k_timer_init,
+	(pfunc)k_timer_stop,
+	(pfunc)k_timer_status_get,
+	(pfunc)k_timer_status_sync,
+	(pfunc)k_timer_remaining_get,
+	(pfunc)k_uptime_get,
+	(pfunc)k_uptime_get_32,
+	(pfunc)k_uptime_delta,
+	(pfunc)k_uptime_delta_32,
+	(pfunc)k_cycle_get_32,
+
+	/* thread stuff */
+	(pfunc)k_thread_spawn,
+	(pfunc)k_sleep,
+	(pfunc)k_busy_wait,
+	(pfunc)k_yield,
+	(pfunc)k_wakeup,
+	(pfunc)k_current_get,
+	(pfunc)k_thread_cancel,
+	(pfunc)k_thread_abort,
+	(pfunc)k_thread_priority_get,
+	(pfunc)k_thread_priority_set,
+	(pfunc)k_thread_suspend,
+	(pfunc)k_thread_resume,
+	(pfunc)k_sched_time_slice_set,
+	(pfunc)k_am_in_isr,
+	(pfunc)k_thread_custom_data_set,
+	(pfunc)k_thread_custom_data_get,
+#endif
+};
+#endif
 
 /**
  *
