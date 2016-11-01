@@ -385,8 +385,18 @@ static void setup_rtc(void)
 
 static void enable_wake_event(void)
 {
+	uint32_t now = rtc_read(rtc_dev);
 	uint32_t alarm;
 
 	alarm = (rtc_read(rtc_dev) + ALARM);
 	rtc_set_alarm(rtc_dev, alarm);
+
+	/* Wait a few ticks to ensure the 'Counter Match Register' was loaded
+	 * with the 'alarm' value.
+	 * This is required for the ARC core to wake up from LPS and DEEP_SLEEP
+	 * states.
+	 * Refer to the documentation in qm_rtc.h for more details.
+	 */
+	while (rtc_read(rtc_dev) < now + 5)
+		;
 }

@@ -124,7 +124,56 @@ static inline void _arc_v2_irq_unit_sensitivity_set(int irq, int s)
 	_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, s);
 }
 
+/*
+ * @brief Sets an IRQ line to level/pulse trigger
+ *
+ * Sets the IRQ line <irq> to trigger an interrupt based on the level or the
+ * edge of the signal. Valid values for <trigger> are _ARC_V2_INT_LEVEL and
+ * _ARC_V2_INT_PULSE.
+ *
+ * @return N/A
+ */
+
+void _arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger);
+
+/*
+ * @brief Returns an IRQ line trigger type
+ *
+ * Gets the IRQ line <irq> trigger type.
+ * Valid values for <trigger> are _ARC_V2_INT_LEVEL and _ARC_V2_INT_PULSE.
+ *
+ * @return N/A
+ */
+
+unsigned int _arc_v2_irq_unit_trigger_get(int irq);
+
+/*
+ * @brief Send EOI signal to interrupt unit
+ *
+ * This routine sends an EOI (End Of Interrupt) signal to the interrupt unit
+ * to clear a pulse-triggered interrupt.
+ *
+ * Interrupts must be locked or the ISR operating at P0 when invoking this
+ * function.
+ *
+ * @return N/A
+ */
+
 void _arc_v2_irq_unit_int_eoi(int irq);
+
+/*
+ * @brief Initialize the interrupt unit device driver
+ *
+ * Initializes the interrupt unit device driver and the device
+ * itself.
+ *
+ * Interrupts are still locked at this point, so there is no need to protect
+ * the window between a write to IRQ_SELECT and subsequent writes to the
+ * selected IRQ's registers.
+ *
+ * @return N/A
+ */
+
 void _arc_v2_irq_unit_init(void);
 
 #endif /* _ASMLANGUAGE */

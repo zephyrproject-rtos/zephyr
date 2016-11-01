@@ -15,6 +15,7 @@
  */
 
 #include <zephyr.h>
+#include <kernel.h>
 #include <power.h>
 #include <misc/printk.h>
 #include <rtc.h>
@@ -26,17 +27,29 @@
 #include <soc_power.h>
 #include <string.h>
 
+static enum power_states states_list[] = {
+	SYS_POWER_STATE_CPU_LPS,
+	SYS_POWER_STATE_CPU_LPS_1,
+	SYS_POWER_STATE_CPU_LPS_2,
+#if (CONFIG_SYS_POWER_DEEP_SLEEP)
+	SYS_POWER_STATE_DEEP_SLEEP,
+	SYS_POWER_STATE_DEEP_SLEEP_1,
+#endif
+};
+
 #define TIMEOUT 5 /* in seconds */
 #define MAX_SUSPEND_DEVICE_COUNT 15
+#define NB_STATES ARRAY_SIZE(states_list)
 
 static struct device *suspend_devices[MAX_SUSPEND_DEVICE_COUNT];
 static int suspend_device_count;
-static enum power_states last_state = SYS_POWER_STATE_DEEP_SLEEP_1;
+static unsigned int current_state = NB_STATES - 1;
+static int post_ops_done = 1;
 
 static enum power_states get_next_state(void)
 {
-	last_state = (last_state + 1) % SYS_POWER_STATE_MAX;
-	return last_state;
+	current_state = (current_state + 1) % NB_STATES;
+	return states_list[current_state];
 }
 
 static const char *state_to_string(int state)
@@ -79,7 +92,7 @@ static void setup_rtc(void)
 static void set_rtc_alarm(void)
 {
 	uint32_t now = rtc_read(rtc_dev);
-	uint32_t alarm = now + (RTC_ALARM_SECOND * TIMEOUT);
+	uint32_t alarm = now + (RTC_ALARM_SECOND * (TIMEOUT - 1));
 
 	rtc_set_alarm(rtc_dev, alarm);
 
@@ -116,7 +129,7 @@ static void setup_counter(void)
 
 static void set_counter_alarm(void)
 {
-	uint32_t timer_initial_value = (RTC_ALARM_SECOND * TIMEOUT);
+	uint32_t timer_initial_value = (RTC_ALARM_SECOND * (TIMEOUT - 1));
 
 	if (counter_set_alarm(counter_dev, NULL,
 			      timer_initial_value, NULL)
@@ -233,28 +246,51 @@ static void do_soc_sleep(enum power_states state)
 
 int _sys_soc_suspend(int32_t ticks)
 {
-	int state = get_next_state();
+	enum power_states state;
 	int pm_operation = SYS_PM_NOT_HANDLED;
+	post_ops_done = 0;
+
+	if (ticks < (TIMEOUT * CONFIG_SYS_CLOCK_TICKS_PER_SEC)) {
+		printk("Not enough time for PM operations (ticks: %d).\n",
+			ticks);
+		return SYS_PM_NOT_HANDLED;
+	}
+
+	state = get_next_state();
 
 	printk("Entering %s state\n", state_to_string(state));
 
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
-		setup_wake_event();
 	case SYS_POWER_STATE_CPU_LPS_1:
-		/*
-		 * If the ARC enables LPSS, the PIC timer will
-		 * not wake us up from SYS_POWER_STATE_CPU_LPS_1
-		 * which is mapped to C2.
-		 * In that case another wake source will need to be set up.
-		 * As the ARC enables LPSS, it should as well take care of
-		 * setting up the relevant wake event or communicate
-		 * to the x86 that information.
-		 */
 	case SYS_POWER_STATE_CPU_LPS_2:
-		/* Don't need wake event notification */
-		_sys_soc_disable_wake_event_notification();
-
+		/*
+		 * A wake event is needed in the following cases:
+		 *
+		 * On Quark SE C1000 x86:
+		 * - SYS_POWER_STATE_CPU_LPS:
+		 *   The PIC timer is gated and cannot wake the core from
+		 *   that state.
+		 *
+		 * - SYS_POWER_STATE_CPU_LPS_1:
+		 *   If the ARC enables LPSS, the PIC timer will
+		 *   not wake us up from SYS_POWER_STATE_CPU_LPS_1
+		 *   which is mapped to C2.
+		 *
+		 *   As the ARC enables LPSS, it should as well take care of
+		 *   setting up the relevant wake event or communicate
+		 *   to the x86 that information.
+		 *
+		 * On Quark SE C1000 ARC:
+		 * - SYS_POWER_STATE_CPU_LPS:
+		 *   The ARC timer is gated and cannot wake the core from
+		 *   that state.
+		 *
+		 * - SYS_POWER_STATE_CPU_LPS_1:
+		 *   The ARC timer is gated and cannot wake the core from
+		 *   that state.
+		 */
+		setup_wake_event();
 		pm_operation = SYS_PM_LOW_POWER_STATE;
 		_sys_soc_set_power_state(state);
 		break;
@@ -271,15 +307,41 @@ int _sys_soc_suspend(int32_t ticks)
 		break;
 	}
 
-	printk("Exiting %s state\n", state_to_string(state));
-
 	if (pm_operation != SYS_PM_NOT_HANDLED) {
-		_sys_soc_power_state_post_ops(state);
+		if (!post_ops_done) {
+			post_ops_done = 1;
+			printk("Exiting %s state\n", state_to_string(state));
+			_sys_soc_power_state_post_ops(current_state);
+		}
 	}
 
-	last_state = state;
-
 	return pm_operation;
+}
+
+void _sys_soc_resume(void)
+{
+	enum power_states state = states_list[current_state];
+
+	switch (state) {
+	case SYS_POWER_STATE_CPU_LPS:
+	case SYS_POWER_STATE_CPU_LPS_1:
+	case SYS_POWER_STATE_CPU_LPS_2:
+		if (!post_ops_done) {
+			post_ops_done = 1;
+			printk("Exiting %s state\n", state_to_string(state));
+			_sys_soc_power_state_post_ops(current_state);
+		}
+		break;
+	case SYS_POWER_STATE_DEEP_SLEEP:
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
+		/* Do not perform post_ops in _sys_soc_resume for deep sleep.
+		 * This would make the application task run without the full
+		 * context restored.
+		 */
+		break;
+	default:
+		break;
+	}
 }
 
 static void build_suspend_device_list(void)
@@ -329,5 +391,6 @@ void main(void)
 	 */
 	while (1) {
 		k_sleep(TIMEOUT * 1000);
+		printk("Back to the application\n");
 	}
 }
