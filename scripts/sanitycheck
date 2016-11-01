@@ -460,7 +460,12 @@ class SizeCalculator:
     alloc_sections = ["bss", "noinit"]
     rw_sections = ["datas", "initlevel", "_k_mem_map_ptr", "_k_pipe_ptr",
                    "_k_task_ptr", "_k_task_list", "_k_event_list",
-                   "_k_memory_pool", "exceptions", "initshell"]
+                   "_k_memory_pool", "exceptions", "initshell",
+		   "_static_thread_area", "_k_timer_area",
+		   "_k_mem_slab_area", "_k_mem_pool_area",
+		   "_k_sem_area", "_k_mutex_area", "_k_alert_area",
+		   "_k_fifo_area", "_k_lifo_area", "_k_stack_area",
+		   "_k_msgq_area", "_k_mbox_area", "_k_pipe_area"]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset",
                    "rodata", "devconfig"]
