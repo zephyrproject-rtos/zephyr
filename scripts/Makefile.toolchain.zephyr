@@ -71,7 +71,7 @@ endif
 LIBGCC_DIR = $(shell dirname `$(CROSS_COMPILE)gcc --sysroot=$(SYSROOT) $(KBUILD_CFLAGS) -print-libgcc-file-name`)
 NEWLIB_DIR = $(shell $(CROSS_COMPILE)gcc --sysroot=$(SYSROOT) $(KBUILD_CFLAGS) -print-multi-directory)
 TOOLCHAIN_CFLAGS = -I $(SYSROOT)/usr/include
-LIB_INCLUDE_DIR = -L $(LIBGCC_DIR) -L $(SYSROOT)/usr/lib/$(NEWLIB_DIR)
+LIB_INCLUDE_DIR += -L $(LIBGCC_DIR) -L $(SYSROOT)/usr/lib/$(NEWLIB_DIR)
 endif
 
 ifneq ($(CONFIG_TOOLCHAIN_VARIANT:"%"=%),)
