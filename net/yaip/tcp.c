@@ -130,6 +130,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 	memset(&tcp_context[i], 0, sizeof(struct net_tcp));
 
+	tcp_context[i].flags = NET_TCP_IN_USE;
 	tcp_context[i].state = NET_TCP_CLOSED;
 	tcp_context[i].context = context;
 
