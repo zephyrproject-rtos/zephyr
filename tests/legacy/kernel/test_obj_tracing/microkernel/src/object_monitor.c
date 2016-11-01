@@ -38,6 +38,26 @@
 #define IPM_THREAD 0
 #endif /* CONFIG_IPM_CONSOLE_RECEIVER && CONFIG_PRINTK*/
 
+#if defined(CONFIG_KERNEL_V2)
+
+/* Must account for:
+ *	N Philosopher threads
+ *	1 Object monitor thread
+ *	1 System idle thread
+ *	1 System workqueue thread
+ *	1 IPM console thread
+ */
+
+#define TOTAL_THREADS (N_PHILOSOPHERS + 3 + IPM_THREAD)
+
+#define OBJ_LIST_NAME k_mutex
+#define OBJ_LIST_TYPE struct k_mutex
+
+/* unified kernel doesn't support task-specific tracing, so it always passes */
+#define test_task_tracing() 1
+
+#else
+
 /* Must account for:
  *	N Philosopher tasks
  *	1 Object monitor task
@@ -80,10 +100,15 @@ static inline int test_task_tracing(void)
 	return 0;
 }
 
+#endif /* CONFIG_KERNEL_V2 */
+
 static inline int test_thread_monitor(void)
 {
 	int obj_counter = 0;
 	struct tcs *thread_list = NULL;
+
+	/* wait a bit to allow any initialization-only threads to terminate */
+	task_sleep(100);
 
 	thread_list   = (struct tcs *)SYS_THREAD_MONITOR_HEAD;
 	while (thread_list != NULL) {
