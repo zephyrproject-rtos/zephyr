@@ -27,7 +27,7 @@
  * interrupt handler releases the semaphore which enabled the high priority
  * fiberWaiter to run and exit. The high priority fiber acquire the sema and
  * read the time. The time delta is measured from the time
- * semaphore is released in interrup handler to the time fiberWaiter
+ * semaphore is released in interrupt handler to the time fiberWaiter
  * starts to executing.
  */
 
@@ -48,7 +48,7 @@ static char __stack intStack[STACKSIZE];
 /* semaphore taken by waiting fiber ad released by the interrupt handler */
 static struct nano_sem testSema;
 
-static uint32_t timestamp = 0;
+static uint32_t timestamp;
 
 /**
  *
@@ -105,16 +105,16 @@ static void fiberWaiter(void)
 int nanoIntToFiberSem(void)
 {
 	PRINT_FORMAT(" 3- Measure time from ISR to executing a different fiber"
-				 " (rescheduled)");
+		     " (rescheduled)");
 	nano_sem_init(&testSema);
 
 	TICK_SYNCH();
 	task_fiber_start(&waiterStack[0], STACKSIZE,
-					 (nano_fiber_entry_t) fiberWaiter, 0, 0, 5, 0);
+			 (nano_fiber_entry_t) fiberWaiter, 0, 0, 5, 0);
 	task_fiber_start(&intStack[0], STACKSIZE,
-					 (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
+			 (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
 
 	PRINT_FORMAT(" switching time is %lu tcs = %lu nsec",
-				 timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
+		     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	return 0;
 }

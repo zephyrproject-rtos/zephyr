@@ -1,4 +1,4 @@
-/* nano_int_to_fiber.c - measure switching time from ISR back to fiber */
+/* micro_int_to_task.c - measure time from ISR back to interrupted task */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
@@ -18,8 +18,8 @@
 
 /*
  * DESCRIPTION
- * This file contains test that measures the switching time from the
- * interrupt handler back to the executing fiber that got interrupted.
+ * This file contains test that measures time to switch from the interrupt
+ * handler back to the interrupted task in microkernel.
  */
 
 #include "timestamp.h"
@@ -28,14 +28,7 @@
 #include <arch/cpu.h>
 #include <irq_offload.h>
 
-#ifndef STACKSIZE
-#define STACKSIZE 512
-#endif
-
-/* stack used by the fiber that generates the interrupt */
-static char __stack fiberStack[STACKSIZE];
-
-static volatile int flagVar = 0;
+static volatile int flagVar;
 
 static uint32_t timestamp;
 
@@ -57,19 +50,19 @@ static void latencyTestIsr(void *unused)
 
 /**
  *
- * @brief Interrupt preparation fiber
+ * @brief Interrupt preparation function
  *
- * Fiber makes all the test preparations: registers the interrupt handler,
+ * Function makes all the test preparations: registers the interrupt handler,
  * gets the first timestamp and invokes the software interrupt.
  *
  * @return N/A
  */
-static void fiberInt(void)
+static void makeInt(void)
 {
 	flagVar = 0;
 	irq_offload(latencyTestIsr, NULL);
 	if (flagVar != 1) {
-		PRINT_FORMAT(" Flag variable has not changed. FAILED");
+		PRINT_FORMAT(" Flag variable has not changed. FAILED\n");
 	} else {
 		timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	}
@@ -81,16 +74,15 @@ static void fiberInt(void)
  *
  * @return 0 on success
  */
-int nanoIntToFiber(void)
+int microIntToTask(void)
 {
-	PRINT_FORMAT(" 2- Measure time to switch from ISR back to interrupted"
-				 " fiber");
+	PRINT_FORMAT(" 1- Measure time to switch from ISR back to"
+		     " interrupted task");
 	TICK_SYNCH();
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-					 (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
+	makeInt();
 	if (flagVar == 1) {
 		PRINT_FORMAT(" switching time is %lu tcs = %lu nsec",
-					 timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
+			     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	}
 	return 0;
 }

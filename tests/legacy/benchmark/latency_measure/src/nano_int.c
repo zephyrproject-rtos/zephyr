@@ -78,8 +78,8 @@ int nanoIntLatency(void)
 	PRINT_FORMAT(" 1- Measure time to switch from fiber to ISR execution");
 	TICK_SYNCH();
 	task_fiber_start(&fiberStack[0], STACKSIZE,
-					 (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
+			 (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
 	PRINT_FORMAT(" switching time is %lu tcs = %lu nsec",
-				 timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
+		     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	return 0;
 }

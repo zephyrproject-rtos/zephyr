@@ -24,7 +24,6 @@
  * interrupted.
  */
 
-#ifdef CONFIG_MICROKERNEL
 #include <zephyr.h>
 #include <irq_offload.h>
 
@@ -33,7 +32,7 @@
 
 #include <arch/cpu.h>
 
-static uint32_t timestamp = 0;
+static uint32_t timestamp;
 
 /**
  *
@@ -56,8 +55,8 @@ static void latencyTestIsr(void *unused)
  * @brief Software interrupt generating task
  *
  * Lower priority task that, when starts, waits for a semaphore. When gets
- * it, released by the main task, sets up the interrupt handler and generates the
- * software interrupt
+ * it, released by the main task, sets up the interrupt handler and generates
+ * the software interrupt
  *
  * @return 0 on success
  */
@@ -76,15 +75,13 @@ void microInt(void)
  */
 int microIntToTaskEvt(void)
 {
-	PRINT_FORMAT(" 2- Measure time from ISR to executing a different task"
-				 " (rescheduled)");
+	PRINT_FORMAT(" 2 - Measure time from ISR to executing a different task"
+		     " (rescheduled)");
 	TICK_SYNCH();
 	task_sem_give(INTSEMA);
 	task_event_recv(EVENT0, TICKS_UNLIMITED);
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	PRINT_FORMAT(" switch time is %lu tcs = %lu nsec",
-				 timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
+		     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	return 0;
 }
-
-#endif /* CONFIG_MICROKERNEL */

@@ -37,10 +37,10 @@ extern int errorCount;
 #define PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PRINTF(fmt, ...) printf(fmt, ##__VA_ARGS__)
 
-#define PRINT_FORMAT(fmt, ...)                                      \
+#define PRINT_FORMAT(fmt, ...)						\
 	do {                                                            \
-		snprintf(tmpString, TMP_STRING_SIZE, fmt, ##__VA_ARGS__);   \
-		PRINTF("|%-77s|\n", tmpString);                             \
+		snprintf(tmpString, TMP_STRING_SIZE, fmt, ##__VA_ARGS__); \
+		PRINTF("|%-77s|\n", tmpString);				\
 	} while (0)
 
 /**
@@ -51,33 +51,42 @@ extern int errorCount;
  */
 static inline void printDashLine(void)
 {
-	PRINTF("|-----------------------------------------------------------------"
-		   "------------|\n");
+	PRINTF("|-------------------------------------------------------"
+	       "----------------------|\n");
 }
 
-#define PRINT_END_BANNER()                                                    \
-	PRINTF("|                                    E N D                       "\
-		   "             |\n");                                               \
-	printDashLine();
+#define PRINT_END_BANNER()						\
+	do {								\
+	PRINTF("|                                    E N D             " \
+	       "                       |\n");				\
+	printDashLine();						\
+	} while (0)
 
-#define PRINT_NANO_BANNER()                                                   \
-	printDashLine();                                                          \
-	PRINTF("|                        Nanokernel Latency Benchmark            "\
-		   "             |\n");                                               \
-	printDashLine();
+#define PRINT_NANO_BANNER()						\
+	do {								\
+	printDashLine();						\
+	PRINTF("|                        Nanokernel Latency Benchmark  " \
+	       "                       |\n");				\
+	printDashLine();						\
+	} while (0)
 
-#define PRINT_MICRO_BANNER()                                                  \
-	printDashLine();                                                          \
-	PRINTF("|                        Microkernel Latency Benchmark           "\
-		   "             |\n");                                               \
-	printDashLine();
+#define PRINT_MICRO_BANNER()						\
+	do {								\
+	printDashLine();						\
+	PRINTF("|                        Microkernel Latency Benchmark " \
+	       "                       |\n");				\
+	printDashLine();						\
+	} while (0)
 
-#define PRINT_TIME_BANNER()                                                   \
-	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %lu nsec",             \
-				 SYS_CLOCK_HW_CYCLES_TO_NS(1));                               \
-	printDashLine();
 
-#define PRINT_OVERFLOW_ERROR()                                                \
+#define PRINT_TIME_BANNER()						\
+	do {								\
+	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %lu nsec",	\
+		     SYS_CLOCK_HW_CYCLES_TO_NS(1));			\
+	printDashLine();						\
+	} while (0)
+
+#define PRINT_OVERFLOW_ERROR()			\
 	PRINT_FORMAT(" Error: tick occurred")
 
 #else

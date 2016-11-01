@@ -28,7 +28,7 @@
 #include <arch/cpu.h>
 
 uint32_t tm_off; /* time necessary to read the time */
-int errorCount = 0; /* track number of errors */
+int errorCount; /* track number of errors */
 
 /**
  *
@@ -56,25 +56,6 @@ void nanoTest(void)
 	nanoIntLockUnlock();
 	printDashLine();
 }
-
-#ifdef CONFIG_NANOKERNEL
-/**
- *
- * @brief Nanokernel-only testing entry point
- *
- * @return N/A
- */
-void main(void)
-{
-	bench_test_init();
-
-	nanoTest();
-
-	PRINT_END_BANNER();
-	TC_END_REPORT(errorCount);
-}
-
-#else
 
 int microIntToTaskEvt(void);
 int microIntToTask(void);
@@ -125,4 +106,3 @@ void microMain(void)
 	PRINT_END_BANNER();
 	TC_END_REPORT(errorCount);
 }
-#endif /* CONFIG_NANOKERNEL */

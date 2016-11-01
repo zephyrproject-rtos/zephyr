@@ -44,13 +44,13 @@ static char __stack fiberTwoStack[STACKSIZE];
 /* semaphore used for fibers synchronization */
 static struct nano_sem syncSema;
 
-static uint32_t timestamp = 0;
+static uint32_t timestamp;
 
 /* context switches counter */
-static volatile uint32_t ctxSwitchCounter = 0;
+static volatile uint32_t ctxSwitchCounter;
 
 /* context switch balancer. Incremented by one fiber, decremented by another*/
-static volatile int ctxSwitchBalancer = 0;
+static volatile int ctxSwitchBalancer;
 
 /**
  *
@@ -107,18 +107,20 @@ int nanoCtxSwitch(void)
 
 	bench_test_start();
 	task_fiber_start(&fiberOneStack[0], STACKSIZE,
-					 (nano_fiber_entry_t) fiberOne, 0, 0, 6, 0);
+			 (nano_fiber_entry_t) fiberOne, 0, 0, 6, 0);
 	task_fiber_start(&fiberTwoStack[0], STACKSIZE,
-					 (nano_fiber_entry_t) fiberTwo, 0, 0, 6, 0);
+			 (nano_fiber_entry_t) fiberTwo, 0, 0, 6, 0);
 	if (ctxSwitchBalancer > 3 || ctxSwitchBalancer < -3) {
 		PRINT_FORMAT(" Balance is %d. FAILED", ctxSwitchBalancer);
 	} else if (bench_test_end() != 0) {
 		errorCount++;
 		PRINT_OVERFLOW_ERROR();
 	} else {
-		PRINT_FORMAT(" Average context switch time is %lu tcs = %lu nsec",
-					 timestamp / ctxSwitchCounter,
-					 SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, ctxSwitchCounter));
+		PRINT_FORMAT(" Average context switch time is %lu tcs = %lu"
+			     " nsec",
+			     timestamp / ctxSwitchCounter,
+			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp,
+							   ctxSwitchCounter));
 	}
 	return 0;
 }

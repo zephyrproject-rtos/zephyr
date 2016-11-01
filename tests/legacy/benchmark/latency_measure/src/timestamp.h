@@ -33,29 +33,9 @@
 #include <test_asm_inline_other.h>
 #endif
 
-#if defined(CONFIG_NANOKERNEL)
-/* number of ticks before timer overflows */
-#define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
-
-typedef int64_t TICK_TYPE;
-
-static inline void TICK_SYNCH(void)
-{
-	TICK_TYPE  reftime;
-
-	(void) sys_tick_delta(&reftime);
-	while (sys_tick_delta(&reftime) == 0) {
-	}
-}
-
-#elif defined(CONFIG_MICROKERNEL)
 typedef int64_t TICK_TYPE;
 
 #define TICK_SYNCH() task_sleep(1)
-
-#else
-#error either  CONFIG_NANOKERNEL or CONFIG_MICROKERNEL must be defined
-#endif /*  CONFIG_NANOKERNEL */
 
 #define TICK_GET(x) ((TICK_TYPE) sys_tick_delta(x))
 #define OS_GET_TIME() sys_cycle_get_32()
@@ -71,7 +51,8 @@ static inline uint32_t TIME_STAMP_DELTA_GET(uint32_t ts)
 	timestamp_serialize();
 
 	t = OS_GET_TIME();
-	uint32_t res = (t >= ts)? (t - ts): (ULONG_MAX - ts + t);
+	uint32_t res = (t >= ts) ? (t - ts) : (ULONG_MAX - ts + t);
+
 	if (ts > 0) {
 		res -= tm_off;
 	}
@@ -89,12 +70,8 @@ static inline void bench_test_init(void)
 	tm_off = OS_GET_TIME() - t;
 }
 
-#if defined(CONFIG_MICROKERNEL)
-
 /* number of ticks before timer overflows */
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
-
-#endif /* CONFIG_MICROKERNEL */
 
 /* tickstamp used for timer counter overflow check */
 static TICK_TYPE tCheck;
