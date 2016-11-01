@@ -206,6 +206,9 @@ struct bt_l2cap_server {
 	/** Server PSM */
 	uint16_t		psm;
 
+	/** Required minimim security level */
+	bt_security_t		sec_level;
+
 	/** Server accept callback
 	 *
 	 *  This callback is called whenever a new incoming connection requires

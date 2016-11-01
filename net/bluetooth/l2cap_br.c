@@ -708,9 +708,9 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	int check;
 
 	/* For SDP PSM there's no need to change existing security on link */
-	if (psm == L2CAP_BR_PSM_SDP) {
+	if (chan->required_sec_level == BT_SECURITY_ZERO) {
 		return L2CAP_CONN_SECURITY_PASSED;
-	};
+	}
 
 	/*
 	 * No link key needed for legacy devices (pre 2.1) and when low security
@@ -839,8 +839,8 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	 * Report security violation for non SDP channel without encryption when
 	 * remote supports SSP.
 	 */
-	if (psm != L2CAP_BR_PSM_SDP && BT_FEAT_HOST_SSP(conn->br.features) &&
-	    !conn->encrypt) {
+	if (server->sec_level != BT_SECURITY_ZERO &&
+	    BT_FEAT_HOST_SSP(conn->br.features) && !conn->encrypt) {
 		result = BT_L2CAP_BR_ERR_SEC_BLOCK;
 		goto done;
 	}
@@ -864,6 +864,8 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		result = BT_L2CAP_BR_ERR_NO_RESOURCES;
 		goto done;
 	}
+
+	chan->required_sec_level = server->sec_level;
 
 	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
 	BR_CHAN(chan)->tx.cid = scid;
@@ -971,6 +973,13 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 	/* PSM must be odd and lsb of upper byte must be 0 */
 	if ((server->psm & 0x0101) != 0x0001) {
 		return -EINVAL;
+	}
+
+	if (server->sec_level > BT_SECURITY_FIPS) {
+		return -EINVAL;
+	} else if (server->sec_level == BT_SECURITY_ZERO &&
+		   server->psm != L2CAP_BR_PSM_SDP) {
+		server->sec_level = BT_SECURITY_LOW;
 	}
 
 	/* Check if given PSM is already in use */
@@ -1359,6 +1368,13 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	/* PSM must be odd and lsb of upper byte must be 0 */
 	if ((psm & 0x0101) != 0x0001) {
 		return -EINVAL;
+	}
+
+	if (chan->required_sec_level > BT_SECURITY_FIPS) {
+		return -EINVAL;
+	} else if (chan->required_sec_level == BT_SECURITY_ZERO &&
+		   psm != L2CAP_BR_PSM_SDP) {
+		chan->required_sec_level = BT_SECURITY_LOW;
 	}
 
 	switch (chan->state) {
