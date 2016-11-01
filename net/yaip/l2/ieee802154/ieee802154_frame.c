@@ -548,6 +548,8 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 	return true;
 }
 
+#ifdef CONFIG_NET_L2_IEEE802154_RFD
+
 static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 				      struct ieee802154_fcf_seq *fs,
 				      struct ieee802154_frame_params *params)
@@ -691,6 +693,7 @@ error:
 
 	return NULL;
 }
+#endif /* CONFIG_NET_L2_IEEE802154_RFD */
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 bool ieee802154_create_ack_frame(struct net_if *iface,
