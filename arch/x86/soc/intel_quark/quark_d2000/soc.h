@@ -39,6 +39,15 @@
 
 #define INT_UNMASK_IA			(~0x00000001)
 
+/* The CPU-visible IRQ numbers change between the ARC and IA cores,
+ * and QMSI itself has no easy way to pick the correct one, though it
+ * does have the necessary information to do it ourselves (in the meantime).
+ * This macro will be used by the shim drivers to get the IRQ number to
+ * use, and it should always be called using the QM_IRQ_*_INT macro
+ * provided by QMSI.
+ */
+#define IRQ_GET_NUMBER(_irq) _irq
+
 /*
  * PINMUX configuration settings
  */
