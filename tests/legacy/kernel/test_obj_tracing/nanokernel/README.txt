@@ -2,10 +2,9 @@ Test Description
 ----------------
 
 The object tracing test is a sanity test to verify that the
-object tracing API remains healthy on both the nanokernel and
-microkernel.
+object tracing API remains healthy.
 
-It uses the philsophers as a common application that implements
+It uses the philsophers as an application that implements
 multiple fibers that are synchronized with semaphores.
 
 The application initializes their objects and starts the philosophers'

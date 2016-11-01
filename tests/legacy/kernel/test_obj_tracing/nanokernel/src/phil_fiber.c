@@ -20,13 +20,33 @@
 #include <tc_util.h>
 #include "phil.h"
 
-#define FORK(x) forks[x]
-#define TAKE(x) task_mutex_lock(x, TICKS_UNLIMITED)
-#define GIVE(x) task_mutex_unlock(x)
+#define FORK(x) (&forks[x])
+#define TAKE(x) nano_fiber_sem_take(x, TICKS_UNLIMITED)
+#define GIVE(x) nano_fiber_sem_give(x)
 
-#define RANDDELAY(x) task_sleep(((sys_tick_get_32() * ((x) + 1)) & 0x1f) + 1)
+#define RANDDELAY(x) my_delay(((sys_tick_get_32() * ((x) + 1)) & 0x1f) + 1)
 
-kmutex_t forks[] = {fork_mutex0, fork_mutex1, fork_mutex2, fork_mutex3, fork_mutex4};
+/* externs */
+
+extern struct nano_sem forks[N_PHILOSOPHERS];
+
+/**
+ *
+ * @brief Wait for a number of ticks to elapse
+ *
+ * @param ticks   Number of ticks to delay.
+ *
+ * @return N/A
+ */
+
+static void my_delay(int ticks)
+{
+	struct nano_timer timer;
+
+	nano_timer_init(&timer, (void *) 0);
+	nano_fiber_timer_start(&timer, ticks);
+	nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
+}
 
 /**
  *
@@ -41,8 +61,8 @@ kmutex_t forks[] = {fork_mutex0, fork_mutex1, fork_mutex2, fork_mutex3, fork_mut
 void phil_entry(void)
 {
 	int counter;
-	kmutex_t f1;		/* fork #1 */
-	kmutex_t f2;		/* fork #2 */
+	struct nano_sem *f1;	/* fork #1 */
+	struct nano_sem *f2;	/* fork #2 */
 	static int myId;        /* next philosopher ID */
 	int pri = irq_lock();   /* interrupt lock level */
 	int id = myId++;        /* current philosopher ID */

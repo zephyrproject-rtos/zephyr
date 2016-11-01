@@ -29,7 +29,7 @@
  *
  */
 
-#define TOTAL_TEST_NUMBER 3
+#define TOTAL_TEST_NUMBER 2
 
 /* 1 IPM console fiber if enabled */
 #if defined(CONFIG_IPM_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
@@ -39,46 +39,18 @@
 #endif /* CONFIG_IPM_CONSOLE_RECEIVER && CONFIG_PRINTK*/
 
 /* Must account for:
- *	N Philosopher tasks
- *	1 Object monitor task
- *	1 Microkernel idle task
- *	1 Microkernel server fiber
+ *	N Philosopher fibers
+ *	1 Object monitor fiber
+ *	1 main() task
  *	1 IPM console fiber
- *
- * Also have philosopher demo task, but it terminates early on during the test
- * so we don't need to account for it.
  */
 
-#define TOTAL_FIBERS (1 + IPM_THREAD)
-#define TOTAL_TASKS (N_PHILOSOPHERS + 2)
+#define TOTAL_FIBERS (N_PHILOSOPHERS + 1 + IPM_THREAD)
+#define TOTAL_TASKS 1
 #define TOTAL_THREADS (TOTAL_FIBERS + TOTAL_TASKS)
 
-#define OBJ_LIST_NAME micro_mutex
-#define OBJ_LIST_TYPE struct _k_mutex_struct
-
-static inline int test_task_tracing(void)
-{
-	int obj_counter = 0;
-	struct k_task *task_list =
-		(struct k_task *)SYS_TRACING_HEAD(struct k_task, micro_task);
-
-	while (task_list != NULL) {
-		TC_PRINT("TASK ID: 0x%x, PRIORITY: %d, GROUP %d\n",
-			task_list->id, task_list->priority, task_list->group);
-		task_list = (struct k_task *)SYS_TRACING_NEXT
-				(struct k_task, micro_task, task_list);
-		obj_counter++;
-	}
-	TC_PRINT("TASK QUANTITY: %d\n", obj_counter);
-
-	if (obj_counter == TOTAL_TASKS) {
-		TC_END_RESULT(TC_PASS);
-		return 1;
-	}
-
-	TC_END_RESULT(TC_FAIL);
-	return 0;
-}
+#define OBJ_LIST_NAME nano_sem
+#define OBJ_LIST_TYPE struct nano_sem
 
 static inline int test_thread_monitor(void)
 {
@@ -120,12 +92,12 @@ void object_monitor(void)
 	obj_counter = 0;
 	obj_list   = SYS_TRACING_HEAD(OBJ_LIST_TYPE, OBJ_LIST_NAME);
 	while (obj_list != NULL) {
-		TC_PRINT("MUTEX REF: %p\n", obj_list);
+		TC_PRINT("SEMAPHORE REF: %p\n", obj_list);
 		obj_list = SYS_TRACING_NEXT(OBJ_LIST_TYPE, OBJ_LIST_NAME,
 						obj_list);
 		obj_counter++;
 	}
-	TC_PRINT("MUTEX QUANTITY: %d\n", obj_counter);
+	TC_PRINT("SEMAPHORE QUANTITY: %d\n", obj_counter);
 
 	if (obj_counter == N_PHILOSOPHERS) {
 		TC_END_RESULT(TC_PASS);
@@ -135,8 +107,6 @@ void object_monitor(void)
 	}
 
 	test_counter += test_thread_monitor();
-
-	test_counter += test_task_tracing();
 
 	if (test_counter == TOTAL_TEST_NUMBER) {
 		TC_END_REPORT(TC_PASS);

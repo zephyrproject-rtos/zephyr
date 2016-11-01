@@ -1,4 +1,4 @@
-/* phil_task.c - dining philosophers */
+/* phil.h - dining philosophers header file*/
 
 /*
  * Copyright (c) 2011-2016 Wind River Systems, Inc.
@@ -15,18 +15,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <zephyr.h>
-#include "phil.h"
-
-/**
- *
- * @brief Routine to start dining philosopher demo
- *
- */
-
-void phil_demo(void)
-{
-	task_group_start(PHI);
-	task_group_start(MON);
-}
+#define N_PHILOSOPHERS	5
