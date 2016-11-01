@@ -438,7 +438,8 @@ static void bt_uart_isr(struct device *unused)
 			} else {
 				BT_DBG("spurious interrupt");
 			}
-			continue;
+			/* Only the UART RX path is interrupt-enabled */
+			break;
 		}
 
 		ret = uart_fifo_read(h5_dev, &byte, sizeof(byte));

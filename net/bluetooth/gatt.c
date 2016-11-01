@@ -1355,6 +1355,11 @@ static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 		return;
 	}
 
+	/* Stop if no data left */
+	if (!length) {
+		return;
+	}
+
 	/*
 	 * Core Spec 4.2, Vol. 3, Part G, 4.8.1
 	 * If the Characteristic Value is greater than (ATT_MTU - 1) octets
@@ -1409,6 +1414,10 @@ static void att_read_multiple_rsp(struct bt_conn *conn, uint8_t err,
 	}
 
 	params->func(conn, 0, params, pdu, length);
+
+	if (!length) {
+		return;
+	}
 
 	/* mark read as complete since read multiple is single response */
 	params->func(conn, 0, params, NULL, 0);
