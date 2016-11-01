@@ -25,6 +25,9 @@
 /* Change this if you have an LED connected to a custom pin */
 #define LED	LED0_GPIO_PIN
 
+/* 1000 msec = 1 sec */
+#define SLEEP_TIME 	1000
+
 void main(void)
 {
 	int cnt = 0;
@@ -38,6 +41,6 @@ void main(void)
 		/* Set pin to HIGH/LOW every 1 second */
 		gpio_pin_write(dev, LED, cnt % 2);
 		cnt++;
-		task_sleep(SECONDS(1));
+		k_sleep(SLEEP_TIME);
 	}
 }

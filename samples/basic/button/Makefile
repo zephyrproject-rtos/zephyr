@@ -1,5 +1,4 @@
-MDEF_FILE = prj.mdef
-KERNEL_TYPE = micro
+KERNEL_TYPE = unified
 BOARD ?= nucleo_f103rb
 CONF_FILE = prj.conf
 

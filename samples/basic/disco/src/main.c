@@ -30,6 +30,8 @@
 /* PB8 */
 #define LED2 8
 
+#define SLEEP_TIME	500
+
 void main(void)
 {
 	int cnt = 0;
@@ -43,7 +45,7 @@ void main(void)
 	while (1) {
 		gpio_pin_write(gpiob, LED1, cnt % 2);
 		gpio_pin_write(gpiob, LED2, (cnt + 1) % 2);
-		task_sleep(SECONDS(1));
+		k_sleep(SLEEP_TIME);
 		cnt++;
 	}
 }

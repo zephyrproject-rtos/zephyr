@@ -42,10 +42,14 @@
 #define EDGE    (GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW)
 
 
+/* Sleep time */
+#define SLEEP_TIME	500
+
+
 void button_pressed(struct device *gpiob, struct gpio_callback *cb,
 		    uint32_t pins)
 {
-	printk("Button pressed at %d\n", sys_tick_get_32());
+	printk("Button pressed at %d\n", k_cycle_get_32());
 }
 
 static struct gpio_callback gpio_cb;
@@ -72,6 +76,6 @@ void main(void)
 		int val = 0;
 
 		gpio_pin_read(gpiob, PIN, &val);
-		task_sleep(MSEC(500));
+		k_sleep(SLEEP_TIME);
 	}
 }

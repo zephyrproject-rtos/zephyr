@@ -1,5 +1,0 @@
-% Application       : Disco
-
-% TASK NAME  PRIO ENTRY STACK GROUPS
-% ==================================
-  TASK TASKA    7 main  1024 [EXE]
