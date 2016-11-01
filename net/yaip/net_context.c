@@ -571,10 +571,28 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 					  void *user_data)
 {
 	struct net_context *context = (struct net_context *)user_data;
+	struct net_tcp_hdr *hdr;
+	int hdrlen;
 
 	NET_ASSERT(context && context->tcp);
 
 	net_tcp_print_recv_info("DATA", buf, NET_TCP_BUF(buf)->src_port);
+
+	hdr = (void *)net_nbuf_tcp_data(buf);
+
+	if (sys_get_be32(hdr->seq) - context->tcp->send_ack) {
+		/* Don't try to reorder packets.  If it doesn't match
+		 * the next segment exactly, drop and wait for
+		 * retransmit
+		 */
+		return NET_DROP;
+	}
+
+	/* "Offset" is a 4-bit field in high nibble, units of dwords */
+	hdrlen = 4 * (hdr->offset >> 4);
+	context->tcp->send_ack += net_buf_frags_len(buf)
+		- net_nbuf_ip_hdr_len(buf) - hdrlen;
+	send_ack(context, &conn->remote_addr);
 
 	return NET_DROP;
 }
@@ -967,6 +985,13 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 				"connection reset");
 			goto reset;
 		}
+
+#if defined(CONFIG_NET_TCP)
+		new_context->tcp->recv_ack = context->tcp->recv_ack;
+		new_context->tcp->recv_max_ack = context->tcp->recv_max_ack;
+		new_context->tcp->send_seq = context->tcp->send_seq;
+		new_context->tcp->send_ack = context->tcp->send_ack;
+#endif
 
 #if defined(CONFIG_NET_IPV6)
 		if (net_context_get_family(context) == AF_INET6) {
