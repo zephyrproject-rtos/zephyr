@@ -31,7 +31,7 @@
 #include <toolchain.h>
 #include <arch/cpu.h>
 #include <v2/irq.h>
-#include "swap_macros.h"
+#include <swap_macros.h>
 
 GTEXT(_Swap)
 GTEXT(_get_next_ready_thread)

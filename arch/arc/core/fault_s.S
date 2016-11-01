@@ -26,7 +26,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>
-#include "swap_macros.h"
+#include <swap_macros.h>
 
 GTEXT(_Fault)
 

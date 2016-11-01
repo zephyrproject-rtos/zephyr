@@ -1,6 +1,7 @@
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/flash/qm_flash.o
-ifeq ($(CONFIG_ARC),y)
+ifeq ($(CONFIG_SOC_QUARK_SE_C1000_SS),y)
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/clk/ss_clk.o
+obj-$(CONFIG_QMSI_BUILTIN) += soc/quark_se/drivers/vreg.o
 obj-$(CONFIG_QMSI_BUILTIN) += soc/quark_se/drivers/ss_power_states.o
 endif
 obj-$(CONFIG_QMSI_BUILTIN) += soc/$(patsubst %_ss,%,$(SOC_SERIES))/drivers/power_states.o

@@ -22,7 +22,30 @@
 #include <init.h>
 #include <kernel_structs.h>
 
+#include "power_states.h"
 #include "ss_power_states.h"
+#include "vreg.h"
+
+#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
+extern void _power_soc_sleep(void);
+extern void _power_soc_deep_sleep(void);
+
+static void _deep_sleep(enum power_states state)
+{
+	power_soc_set_ss_restore_flag();
+
+	switch (state) {
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
+		_power_soc_sleep();
+		break;
+	case SYS_POWER_STATE_DEEP_SLEEP:
+		_power_soc_deep_sleep();
+		break;
+	default:
+		break;
+	}
+}
+#endif
 
 #define SLEEP_MODE_CORE_OFF (0x0)
 #define SLEEP_MODE_CORE_TIMERS_RTC_OFF (0x60)
@@ -57,10 +80,12 @@ void _sys_soc_set_power_state(enum power_states state)
 	case SYS_POWER_STATE_CPU_LPS_2:
 		enter_arc_state(ARC_SS1);
 		break;
+#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 	case SYS_POWER_STATE_DEEP_SLEEP:
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
-		/* Sleep states are not yet supported for ARC. */
+		_deep_sleep(state);
 		break;
+#endif
 	default:
 		break;
 	}
@@ -77,6 +102,10 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 		/* Expire the timer as it is disabled in SS2. */
 		limit = _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
 		_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, limit - 1);
+		break;
+	case SYS_POWER_STATE_DEEP_SLEEP:
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
+		__builtin_arc_seti(0);
 		break;
 	default:
 		break;

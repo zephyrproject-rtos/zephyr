@@ -30,7 +30,7 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
-#include "swap_macros.h"
+#include <swap_macros.h>
 
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)

@@ -351,6 +351,7 @@ static void build_suspend_device_list(void)
 		return;
 	}
 
+#if (CONFIG_X86)
 	suspend_device_count = 3;
 	for (i = 0; i < devcount; i++) {
 		if (!strcmp(devices[i].config->name, "loapic")) {
@@ -364,6 +365,18 @@ static void build_suspend_device_list(void)
 			suspend_devices[suspend_device_count++] = &devices[i];
 		}
 	}
+#elif (CONFIG_ARC)
+	suspend_device_count = 2;
+	for (i = 0; i < devcount; i++) {
+		if (!strcmp(devices[i].config->name, "arc_v2_irq_unit")) {
+			suspend_devices[0] = &devices[i];
+		} else if (!strcmp(devices[i].config->name, "sys_clock")) {
+			suspend_devices[1] = &devices[i];
+		} else {
+			suspend_devices[suspend_device_count++] = &devices[i];
+		}
+	}
+#endif
 }
 
 void main(void)

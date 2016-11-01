@@ -29,7 +29,7 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
-#include "swap_macros.h"
+#include <swap_macros.h>
 
 GTEXT(_firq_enter)
 GTEXT(_firq_exit)
