@@ -143,13 +143,13 @@ static struct k_sem mutex;
 void ztest_test_fail(void)
 {
 	test_result = -1;
+	k_sem_give(&mutex);
 	k_thread_abort(k_current_get());
 }
 
 static void init_testing(void)
 {
-	k_sem_init(&mutex, 1, UINT_MAX);
-	k_sem_take(&mutex, K_FOREVER);
+	k_sem_init(&mutex, 0, 1);
 }
 
 static void test_cb(void *a, void *dummy2, void *dummy)
@@ -171,6 +171,7 @@ static int run_test(struct unit_test *test)
 	k_thread_spawn(&thread_stack[0], sizeof(thread_stack),
 			 (k_thread_entry_t) test_cb, (struct unit_test *)test, NULL, NULL, -1, 0, 0);
 
+	k_sem_take(&mutex, K_FOREVER);
 	if (test_result) {
 		ret = TC_FAIL;
 	}
