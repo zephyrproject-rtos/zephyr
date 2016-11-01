@@ -92,30 +92,20 @@ static struct bt_att bt_req_pool[CONFIG_BLUETOOTH_MAX_CONN];
  * Pool for outgoing ATT requests packets.
  */
 static struct nano_fifo req_data;
-static NET_BUF_POOL(req_pool,
-		    CONFIG_BLUETOOTH_ATT_REQ_COUNT * CONFIG_BLUETOOTH_MAX_CONN,
+static NET_BUF_POOL(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
 		    &req_data, NULL, BT_BUF_USER_DATA_MIN);
 
 /*
- * Pool for ATT indications packets. This is required since indication can be
- * sent in parallel to requests.
+ * Pool for ougoing ATT responses packets. This is necessary in order not to
+ * block the RX fiber since otherwise req_pool would have be used but buffers
+ * may only be freed after a response is received which would never happen if
+ * the RX fiber is waiting a buffer causing a deadlock.
  */
-static struct nano_fifo ind_data;
-static NET_BUF_POOL(ind_pool,
-		    CONFIG_BLUETOOTH_ATT_REQ_COUNT * CONFIG_BLUETOOTH_MAX_CONN,
+static struct nano_fifo rsp_data;
+static NET_BUF_POOL(rsp_pool, 1,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
-		    &ind_data, NULL, BT_BUF_USER_DATA_MIN);
-
-/*
- * Pool for outstanding ATT request, this is required for resending in case
- * there is a recoverable error since the original buffer is changed while
- * sending.
- */
-static struct nano_fifo clone_data;
-static NET_BUF_POOL(clone_pool, 1 * CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
-		    &clone_data, NULL, BT_BUF_USER_DATA_MIN);
+		    &rsp_data, NULL, BT_BUF_USER_DATA_MIN);
 
 static void att_req_destroy(struct bt_att_req *req)
 {
@@ -199,32 +189,21 @@ static uint8_t att_mtu_req(struct bt_att *att, struct net_buf *buf)
 	return 0;
 }
 
-static struct net_buf *att_req_clone(struct net_buf *buf)
-{
-	struct net_buf *clone;
-
-	clone = net_buf_get(&clone_data, net_buf_headroom(buf));
-	if (!clone) {
-		return NULL;
-	}
-
-	memcpy(net_buf_add(clone, buf->len), buf->data, buf->len);
-
-	return clone;
-}
-
 static int att_send_req(struct bt_att *att, struct bt_att_req *req)
 {
 	BT_DBG("req %p", req);
 
 	att->req = req;
 
+	/* Save request state so it can be resent */
+	net_buf_simple_save(&req->buf->b, &req->state);
+
 	/* Start timeout work */
 	nano_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
 
-	/* Send a clone to keep the original buffer intact */
+	/* Keep a reference for resending in case of an error */
 	bt_l2cap_send(att->chan.chan.conn, BT_L2CAP_CID_ATT,
-		      att_req_clone(req->buf));
+		      net_buf_ref(req->buf));
 
 	return 0;
 }
@@ -1530,6 +1509,9 @@ static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 		goto done;
 	}
 
+	/* Restore state to be resent */
+	net_buf_simple_restore(&att->req->buf->b, &att->req->state);
+
 	hdr = (void *)att->req->buf->data;
 
 	err = rsp->request == hdr->code ? rsp->error : BT_ATT_ERR_UNLIKELY;
@@ -1796,12 +1778,23 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	}
 
 	switch (op) {
-	case BT_ATT_OP_INDICATE:
 	case BT_ATT_OP_CONFIRM:
-		/* Use a different buffer pool for indication/confirmations
-		 * since they can be sent in parallel.
+	case BT_ATT_OP_ERROR_RSP:
+	case BT_ATT_OP_MTU_RSP:
+	case BT_ATT_OP_FIND_INFO_RSP:
+	case BT_ATT_OP_FIND_TYPE_RSP:
+	case BT_ATT_OP_READ_TYPE_RSP:
+	case BT_ATT_OP_READ_RSP:
+	case BT_ATT_OP_READ_BLOB_RSP:
+	case BT_ATT_OP_READ_MULT_RSP:
+	case BT_ATT_OP_READ_GROUP_RSP:
+	case BT_ATT_OP_WRITE_RSP:
+	case BT_ATT_OP_PREPARE_WRITE_RSP:
+	case BT_ATT_OP_EXEC_WRITE_RSP:
+		/* Use a different buffer pool for responses as this is
+		 * usually sent from RX fiber it shall never block.
 		 */
-		buf = bt_l2cap_create_pdu(&ind_data, 0);
+		buf = bt_l2cap_create_pdu(&rsp_data, 0);
 		break;
 	default:
 		buf = bt_l2cap_create_pdu(&req_data, 0);
@@ -1983,9 +1976,8 @@ void bt_att_init(void)
 		.accept		= bt_att_accept,
 	};
 
-	net_buf_pool_init(ind_pool);
 	net_buf_pool_init(req_pool);
-	net_buf_pool_init(clone_pool);
+	net_buf_pool_init(rsp_pool);
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	net_buf_pool_init(prep_pool);
 #endif

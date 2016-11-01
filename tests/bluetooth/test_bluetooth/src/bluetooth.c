@@ -22,7 +22,7 @@
 #include <tc_util.h>
 
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 
 #define EXPECTED_ERROR -ENOSYS
 

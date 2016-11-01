@@ -57,12 +57,13 @@ typedef void (*bt_att_destroy_t)(void *user_data);
 
 /* ATT request context */
 struct bt_att_req {
-	sys_snode_t		node;
-	bt_att_func_t           func;
-	bt_att_destroy_t        destroy;
-	struct net_buf          *buf;
+	sys_snode_t node;
+	bt_att_func_t func;
+	bt_att_destroy_t destroy;
+	struct net_buf_simple_state state;
+	struct net_buf *buf;
 #if defined(CONFIG_BLUETOOTH_SMP)
-	bool                    retrying;
+	bool retrying;
 #endif /* CONFIG_BLUETOOTH_SMP */
 };
 

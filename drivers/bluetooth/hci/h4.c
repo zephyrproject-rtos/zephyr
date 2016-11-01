@@ -144,7 +144,8 @@ static void bt_uart_isr(struct device *unused)
 			} else {
 				BT_DBG("spurious interrupt");
 			}
-			continue;
+			/* Only the UART RX path is interrupt-enabled */
+			break;
 		}
 
 		/* Beginning of a new packet */

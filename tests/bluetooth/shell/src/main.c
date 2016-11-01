@@ -1809,11 +1809,16 @@ static int cmd_l2cap_register(int argc, char *argv[])
 
 	server.psm = strtoul(argv[1], NULL, 16);
 
+	if (argc > 2) {
+		server.sec_level = strtoul(argv[2], NULL, 10);
+	}
+
 	if (bt_l2cap_server_register(&server) < 0) {
 		printk("Unable to register psm\n");
 		server.psm = 0;
 	} else {
-		printk("L2CAP psm %u registered\n", server.psm);
+		printk("L2CAP psm %u sec_level %u registered\n", server.psm,
+		       server.sec_level);
 	}
 
 	return 0;
@@ -2189,7 +2194,7 @@ static const struct shell_cmd commands[] = {
 	{ "hrs-simulate", cmd_hrs_simulate,
 	  "register and simulate Heart Rate Service <value: on, off>" },
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-	{ "l2cap-register", cmd_l2cap_register, "<psm>" },
+	{ "l2cap-register", cmd_l2cap_register, "<psm> [sec_level]" },
 	{ "l2cap-connect", cmd_l2cap_connect, "<psm>" },
 	{ "l2cap-disconnect", cmd_l2cap_disconnect, HELP_NONE },
 	{ "l2cap-send", cmd_l2cap_send, "<number of packets>" },

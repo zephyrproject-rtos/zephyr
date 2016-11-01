@@ -474,6 +474,13 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 		return -EINVAL;
 	}
 
+	if (server->sec_level > BT_SECURITY_FIPS) {
+		return -EINVAL;
+	} else if (server->sec_level < BT_SECURITY_LOW) {
+		/* Level 0 is only applicable for BR/EDR */
+		server->sec_level = BT_SECURITY_LOW;
+	}
+
 	/* Check if given PSM is already in use */
 	if (l2cap_server_lookup_psm(server->psm)) {
 		BT_DBG("PSM already registered");
@@ -601,7 +608,13 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto rsp;
 	}
 
-	/* TODO: Add security check */
+#if defined(CONFIG_BLUETOOTH_SMP)
+	/* Check if connection has minimum required security level */
+	if (conn->sec_level < server->sec_level) {
+		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_AUTHENTICATION);
+		goto rsp;
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 	if (!L2CAP_LE_CID_IS_DYN(scid)) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_INVALID_SCID);
@@ -623,6 +636,8 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_NO_RESOURCES);
 		goto rsp;
 	}
+
+	chan->required_sec_level = server->sec_level;
 
 	if (l2cap_chan_add(conn, chan, l2cap_chan_destroy)) {
 		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
@@ -1347,6 +1362,12 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
+
+	if (chan->required_sec_level > BT_SECURITY_FIPS) {
+		return -EINVAL;
+	} else if (chan->required_sec_level == BT_SECURITY_NONE) {
+		chan->required_sec_level = BT_SECURITY_LOW;
+	}
 
 	return l2cap_le_connect(conn, BT_L2CAP_LE_CHAN(chan), psm);
 }
