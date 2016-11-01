@@ -192,8 +192,13 @@ static void _usleep(uint32_t usec)
 {
 	static void (*func[3])(int32_t timeout_in_ticks) = {
 		NULL,
+#ifdef CONFIG_KERNEL_V2
+		_legacy_sleep,
+		_legacy_sleep,
+#else
 		fiber_sleep,
 		task_sleep,
+#endif
 	};
 
 	if (sys_execution_context_type_get() == 0) {
