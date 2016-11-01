@@ -10,3 +10,4 @@ obj-$(CONFIG_UART_QMSI)		+= uart_qmsi.o
 obj-$(CONFIG_UART_STM32)	+= uart_stm32.o
 obj-$(CONFIG_UART_NRF5)         += uart_nrf5.o
 obj-$(CONFIG_UART_ALTERA_JTAG)  += uart_altera_jtag.o
+obj-$(CONFIG_UART_CC32XX)	+= uart_cc32xx.o

@@ -29,4 +29,9 @@ config NUM_IRQS
 	# This includes the NWP interrupt
 	default 179
 
+if UART_CC32XX
+config UART_CC32XX_IRQ_PRI
+	default 3
+endif # UART_CC32XX
+
 endif # SOC_CC3200
