@@ -642,7 +642,7 @@ ieee802154_create_mac_cmd_frame(struct net_if *iface,
 	struct net_buf *buf, *frag;
 	uint8_t *p_buf;
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_tx(0);
 	if (!buf) {
 		return NULL;
 	}
