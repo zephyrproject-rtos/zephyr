@@ -109,6 +109,6 @@ void main(void)
 
 #endif
 
-		task_sleep(SECONDS(2));
+		k_sleep(2000);
 	}
 }
