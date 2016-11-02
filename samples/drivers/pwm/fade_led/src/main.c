@@ -70,6 +70,6 @@ void main(void)
 			}
 		}
 
-		task_sleep(SECONDS(1));
+		k_sleep(MSEC_PER_SEC);
 	}
 }
