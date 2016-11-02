@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <sensor.h>
 
+#define SLEEP_TIME	1000
+
 void main(void)
 {
 	struct device *dev = device_get_binding("GROVE_LIGHT_SENSOR");
@@ -36,7 +38,7 @@ void main(void)
 
 		printf("lux: %f\n", lux.dval);
 
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(SLEEP_TIME);
 	}
 }
 
