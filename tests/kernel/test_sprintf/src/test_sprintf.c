@@ -195,21 +195,6 @@ int sprintfDoubleTest(void)
 		status = TC_FAIL;
 	}
 
-	/*******************/
-
-	/*
-	 * Size modifiers such as L are not supported.  As such, attempts to
-	 * print a long double will NOT result in intuitively expected output.
-	 * Until such time as they are supported (if ever) the output will remain
-	 * counter-intuitive.  If they ever are supported then this test will have
-	 * to be updated.
-	 */
-
-	sprintf(buffer, "%Lf", (long double) 1234567.0);
-	if (strcmp("-0.000000", buffer) != 0) {
-		TC_ERROR("sprintf(%%Lf).  Expected '-0.000000', got '%s'\n", buffer);
-		status = TC_FAIL;
-	}
 
 	return status;
 }
