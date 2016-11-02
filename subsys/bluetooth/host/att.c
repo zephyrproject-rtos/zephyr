@@ -209,13 +209,12 @@ static void att_process(struct bt_att *att)
 
 	BT_DBG("");
 
-	/* Peek next request from the list */
-	node = sys_slist_peek_head(&att->reqs);
+	/* Pull next request from the list */
+	node = sys_slist_get(&att->reqs);
 	if (!node) {
 		return;
 	}
 
-	sys_slist_remove(&att->reqs, NULL, node);
 	att_send_req(att, ATT_REQ(node));
 }
 
