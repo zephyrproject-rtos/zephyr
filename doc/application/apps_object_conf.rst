@@ -79,14 +79,14 @@ Steps
    defined in an :file:`.mdef` file.
 
 The following example shows the content of the
-:file:`samples/philosophers/microkernel/proj.mdef`
+:file:`samples/legacy/philosophers/microkernel/proj.mdef`
 for the Philosophers' sample application. The sample
 uses seven tasks and six mutexes.
 
 Example MDEF
 ------------
 
-.. literalinclude:: ../../samples/philosophers/microkernel/prj.mdef
+.. literalinclude:: ../../samples/legacy/philosophers/microkernel/prj.mdef
    :linenos:
 
 Related Topics

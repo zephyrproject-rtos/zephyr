@@ -1,1 +1,1 @@
-#include "../../../philosophers/microkernel/src/phil.h"
+#include "../../../legacy/philosophers/microkernel/src/phil.h"
