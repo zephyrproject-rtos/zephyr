@@ -54,7 +54,7 @@ void do_main(struct device *dev)
 	setup_trigger(dev);
 
 	while (1) {
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(1000);
 	}
 }
 
@@ -75,7 +75,7 @@ static void do_main(struct device *dev)
 		ret = sensor_channel_get(dev, SENSOR_CHAN_PROX, &prox_value);
 		printk("prox is %d\n", prox_value.val1);
 
-		task_sleep(SECONDS(1));
+		k_sleep(1000);
 	}
 }
 
