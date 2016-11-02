@@ -24,8 +24,8 @@
 #include <sensor.h>
 #include <i2c.h>
 
-#define MAX_TEST_TIME	MSEC(15000)
-#define SLEEPTIME	MSEC(300)
+#define MAX_TEST_TIME	15000
+#define SLEEPTIME	300
 
 static void print_gyro_data(struct device *bmg160)
 {
@@ -57,11 +57,7 @@ static void print_temp_data(struct device *bmg160)
 
 static void test_polling_mode(struct device *bmg160)
 {
-	uint32_t timer_data[2] = {0, 0};
 	int32_t remaining_test_time = MAX_TEST_TIME;
-	struct nano_timer timer;
-
-	nano_timer_init(&timer, timer_data);
 
 	do {
 		if (sensor_sample_fetch(bmg160) < 0) {
@@ -73,8 +69,7 @@ static void test_polling_mode(struct device *bmg160)
 		print_temp_data(bmg160);
 
 		/* wait a while */
-		nano_task_timer_start(&timer, SLEEPTIME);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+		k_sleep(SLEEPTIME);
 
 		remaining_test_time -= SLEEPTIME;
 	} while (remaining_test_time > 0);
@@ -97,13 +92,9 @@ static void trigger_handler(struct device *bmg160, struct sensor_trigger *trigge
 
 static void test_trigger_mode(struct device *bmg160)
 {
-	uint32_t timer_data[2] = {0, 0};
 	int32_t remaining_test_time = MAX_TEST_TIME;
-	struct nano_timer timer;
 	struct sensor_trigger trig;
 	struct sensor_value attr;
-
-	nano_timer_init(&timer, timer_data);
 
 	trig.type = SENSOR_TRIG_DELTA;
 	trig.chan = SENSOR_CHAN_GYRO_ANY;
@@ -139,9 +130,7 @@ static void test_trigger_mode(struct device *bmg160)
 
 	printf("Gyro: rotate the device and wait for events.\n");
 	do {
-		nano_task_timer_start(&timer, SLEEPTIME);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
-
+		k_sleep(SLEEPTIME);
 		remaining_test_time -= SLEEPTIME;
 	} while (remaining_test_time > 0);
 
@@ -175,9 +164,7 @@ static void test_trigger_mode(struct device *bmg160)
 	remaining_test_time = MAX_TEST_TIME;
 
 	do {
-		nano_task_timer_start(&timer, SLEEPTIME);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
-
+		k_sleep(SLEEPTIME);
 		remaining_test_time -= SLEEPTIME;
 	} while (remaining_test_time > 0);
 
