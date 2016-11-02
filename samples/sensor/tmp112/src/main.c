@@ -15,7 +15,6 @@
  */
 
 #include <zephyr.h>
-#include <nanokernel.h>
 #include <device.h>
 #include <sensor.h>
 #include <misc/printk.h>
@@ -62,7 +61,7 @@ static void do_main(struct device *dev)
 		printk("temp is %d (%d micro)\n", temp_value.val1,
 		       temp_value.val2);
 
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(1000);
 	}
 }
 
