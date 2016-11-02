@@ -32,7 +32,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 
 #include "util/defines.h"
 #include "util/work.h"

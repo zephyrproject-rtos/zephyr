@@ -16,3 +16,5 @@
 #
 
 source "subsys/bluetooth/host/Kconfig"
+
+source "subsys/bluetooth/controller/Kconfig"

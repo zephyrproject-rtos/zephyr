@@ -185,7 +185,7 @@ BLUETOOTH CONTROLLER
 M:	Vinayak Chettimada <vinayak.kariappa.chettimada@nordicsemi.no>
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
 S:	Supported
-F:	drivers/bluetooth/controller/
+F:	subsys/bluetooth/controller/
 
 CC3200 SDK
 M:      Gil Pitney <gil.pitney@linaro.org>
