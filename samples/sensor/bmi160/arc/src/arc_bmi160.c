@@ -15,14 +15,13 @@
  */
 
 #include <zephyr.h>
-#include <sys_clock.h>
 #include <stdio.h>
 #include <device.h>
 #include <sensor.h>
 #include <misc/util.h>
 
-#define MAX_TEST_TIME	MSEC(15000)
-#define SLEEPTIME	MSEC(300)
+#define MAX_TEST_TIME	15000
+#define SLEEPTIME	300
 
 /* uncomment next line for setting offsets manually */
 /* #define PERFORM_MANUAL_CALIBRATION */
@@ -223,12 +222,8 @@ static void print_temp_data(struct device *bmi160)
 
 static void test_polling_mode(struct device *bmi160)
 {
-	uint32_t timer_data[2] = {0, 0};
 	int32_t remaining_test_time = MAX_TEST_TIME;
-	struct nano_timer timer;
 	struct sensor_value attr;
-
-	nano_timer_init(&timer, timer_data);
 
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
 	/* set sampling frequency to 800Hz for accel */
@@ -272,8 +267,7 @@ static void test_polling_mode(struct device *bmi160)
 		print_temp_data(bmi160);
 
 		/* wait a while */
-		nano_task_timer_start(&timer, SLEEPTIME);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+		k_sleep(SLEEPTIME);
 
 		remaining_test_time -= SLEEPTIME;
 	} while (remaining_test_time > 0);
@@ -309,12 +303,8 @@ static void trigger_hdlr(struct device *bmi160,
 static void test_anymotion_trigger(struct device *bmi160)
 {
 	int32_t remaining_test_time = MAX_TEST_TIME;
-	uint32_t timer_data[2] = {0, 0};
-	struct nano_timer timer;
 	struct sensor_value attr;
 	struct sensor_trigger trig;
-
-	nano_timer_init(&timer, timer_data);
 
 	/* set up anymotion trigger */
 
@@ -359,10 +349,9 @@ static void test_anymotion_trigger(struct device *bmi160)
 	printf("Anymotion test: shake the device to get anymotion events.\n");
 	do {
 		/* wait a while */
-		nano_task_timer_start(&timer, SLEEPTIME);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
-
+		k_sleep(SLEEPTIME);
 		remaining_test_time -= SLEEPTIME;
+
 	} while (remaining_test_time > 0);
 
 	printf("Anymotion test: finished, removing anymotion trigger...\n");
@@ -376,11 +365,7 @@ static void test_anymotion_trigger(struct device *bmi160)
 static void test_data_ready_trigger(struct device *bmi160)
 {
 	int32_t remaining_test_time = MAX_TEST_TIME;
-	uint32_t timer_data[2] = {0, 0};
-	struct nano_timer timer;
 	struct sensor_trigger trig;
-
-	nano_timer_init(&timer, timer_data);
 
 	/* enable data ready trigger */
 	trig.type = SENSOR_TRIG_DATA_READY;
@@ -394,10 +379,9 @@ static void test_data_ready_trigger(struct device *bmi160)
 	printf("Data ready test:\n");
 	do {
 		/* wait a while */
-		nano_task_timer_start(&timer, SLEEPTIME);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
-
+		k_sleep(SLEEPTIME);
 		remaining_test_time -= SLEEPTIME;
+
 	} while (remaining_test_time > 0);
 
 	printf("Data ready test: finished, removing data ready trigger...\n");

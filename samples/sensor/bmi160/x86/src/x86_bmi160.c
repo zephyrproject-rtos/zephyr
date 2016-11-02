@@ -15,7 +15,6 @@
  */
 
 #include <zephyr.h>
-#include <sys_clock.h>
 #include <stdio.h>
 #include <device.h>
 #include <sensor.h>
@@ -26,7 +25,7 @@
 
 QUARK_SE_IPM_DEFINE(bmi160_ipm, 0, QUARK_SE_IPM_OUTBOUND);
 
-#define SLEEPTIME                       MSEC(1000)
+#define SLEEPTIME                       1000
 
 #define BMI160_INTERRUPT_PIN            4
 
@@ -41,11 +40,7 @@ static void gpio_callback(struct device *port,
 
 void main(void)
 {
-	uint32_t timer_data[2] = { 0, 0 };
 	struct device *gpio;
-	struct nano_timer timer;
-
-	nano_timer_init(&timer, timer_data);
 
 	gpio = device_get_binding("GPIO_1");
 	if (!gpio) {
@@ -69,7 +64,6 @@ void main(void)
 	gpio_pin_enable_callback(gpio, BMI160_INTERRUPT_PIN);
 
 	while (1) {
-		nano_task_timer_start(&timer, SLEEPTIME);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+		k_sleep(SLEEPTIME);
 	}
 }
