@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+#ifdef CONFIG_NET_DEBUG_L2_IEEE802154
+#define SYS_LOG_DOMAIN "net/ieee802154"
+#define NET_DEBUG 1
+#endif
+
 #include <net/net_core.h>
 #include <net/net_if.h>
 
@@ -34,6 +39,8 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 		(struct ieee802154_radio_api *)iface->dev->driver_api;
 	int ret = -EIO;
 
+	NET_DBG("buf %p", buf);
+
 	while (retries) {
 		retries--;
 
@@ -53,6 +60,8 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 
 static int aloha_radio_send(struct net_if *iface, struct net_buf *buf)
 {
+	NET_DBG("buf %p (frags %p)", buf, buf->frags);
+
 	return tx_buffer_fragments(iface, buf, aloha_tx_fragment);
 }
 
