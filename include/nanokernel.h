@@ -1783,6 +1783,32 @@ inline void *operator new[](size_t size)
 	(void)size;
 	return NULL;
 }
+
+/* Placement versions of operator new and delete */
+inline void operator delete(void *ptr1, void *ptr2)
+{
+	(void)ptr1;
+	(void)ptr2;
+}
+
+inline void operator delete[](void *ptr1, void *ptr2)
+{
+	(void)ptr1;
+	(void)ptr2;
+}
+
+inline void *operator new(size_t size, void *ptr)
+{
+	(void)size;
+	return ptr;
+}
+
+inline void *operator new[](size_t size, void *ptr)
+{
+	(void)size;
+	return ptr;
+}
+
 #endif
 
 /* architecture-specific nanokernel public APIs */
