@@ -74,6 +74,8 @@ struct bt_l2cap_chan {
 	struct nano_delayed_work	rtx_work;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
+	/** Remote PSM to be connected */
+	uint16_t			psm;
 	/** Helps match request context during CoC */
 	uint8_t				ident;
 	bt_security_t			required_sec_level;
@@ -134,8 +136,6 @@ struct bt_l2cap_br_chan {
 	struct bt_l2cap_br_endpoint	tx;
 	/* For internal use only */
 	atomic_t			flags[1];
-	/** Remote PSM to be connected */
-	uint16_t			psm;
 };
 
 /** @brief L2CAP Channel operations structure. */

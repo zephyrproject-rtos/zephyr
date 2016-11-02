@@ -293,10 +293,7 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 
 	/* Cancel ongoing work */
 	nano_delayed_work_cancel(&chan->rtx_work);
-	/* Reset _ONLY_ internal members of common channel */
-	chan->state = BT_L2CAP_DISCONNECTED;
-	/* Reset _ONLY_ BR/EDR specific members on L2CAP app channel */
-	BR_CHAN(chan)->psm = 0;
+
 	atomic_clear(BR_CHAN(chan)->flags);
 }
 
@@ -1361,7 +1358,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -EINVAL;
 	}
 
-	if (BR_CHAN(chan)->psm) {
+	if (chan->psm) {
 		return -EEXIST;
 	}
 
@@ -1395,7 +1392,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -ENOMEM;
 	}
 
-	BR_CHAN(chan)->psm = psm;
+	chan->psm = psm;
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 
@@ -1619,7 +1616,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 		hdr->len = sys_cpu_to_le16(sizeof(*req));
 
 		req = net_buf_add(buf, sizeof(*req));
-		req->psm = sys_cpu_to_le16(BR_CHAN(chan)->psm);
+		req->psm = sys_cpu_to_le16(chan->psm);
 		req->scid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
 
 		l2cap_br_chan_send_req(BR_CHAN(chan), buf,
