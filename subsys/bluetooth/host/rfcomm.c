@@ -564,8 +564,6 @@ static void rfcomm_dlc_drop(struct bt_rfcomm_dlc *dlc)
 static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	if (!dlci) {
-		session->role = BT_RFCOMM_ROLE_ACCEPTOR;
-
 		if (rfcomm_send_ua(session, dlci) < 0) {
 			return;
 		}
@@ -951,7 +949,7 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 	}
 }
 
-static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 {
 	int i;
 	static struct bt_l2cap_chan_ops ops = {
@@ -960,8 +958,6 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.recv = rfcomm_recv,
 		.encrypt_change = rfcomm_encrypt_change,
 	};
-
-	BT_DBG("conn %p handle %u", conn, conn->handle);
 
 	for (i = 0; i < ARRAY_SIZE(bt_rfcomm_pool); i++) {
 		struct bt_rfcomm_session *session = &bt_rfcomm_pool[i];
@@ -975,7 +971,22 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		session->br_chan.chan.ops = &ops;
 		session->br_chan.rx.mtu	= CONFIG_BLUETOOTH_RFCOMM_L2CAP_MTU;
 		session->state = BT_RFCOMM_STATE_INIT;
+		session->role = role;
 
+		return session;
+	}
+
+	return NULL;
+}
+
+static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+{
+	struct bt_rfcomm_session *session;
+
+	BT_DBG("conn %p", conn);
+
+	session = rfcomm_session_new(BT_RFCOMM_ROLE_ACCEPTOR);
+	if (session) {
 		*chan = &session->br_chan.chan;
 		return 0;
 	}
