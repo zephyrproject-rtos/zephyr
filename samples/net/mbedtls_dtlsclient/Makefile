@@ -16,16 +16,11 @@
 # limitations under the License.
 #
 
-NET_IFACE ?= native
 MDEF_FILE = prj.mdef
 KERNEL_TYPE ?= nano
 BOARD ?= qemu_x86
-CONF_FILE ?= prj_$(NET_IFACE).conf
+CONF_FILE ?= prj_$(BOARD).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
 
-ifeq ($(CONFIG_NETWORKING_WITH_BT), y)
-	QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
-else
-	include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
-endif
+include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack

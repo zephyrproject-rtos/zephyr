@@ -101,14 +101,14 @@ int udp_rx(void *context, unsigned char *buf, size_t size)
 
 	rc = net_context_recv(ctx->net_ctx, udp_received, TICKS_UNLIMITED, ctx);
 	if (rc != 0) {
-		printk("[%s:%d] TX: %d\n", __func__, __LINE__, rc);
-		rc = 0;
+		return 0;
 	}
 	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
 
 	ptr = net_nbuf_appdata(ctx->rx_nbuf);
 	rx_buf = ctx->rx_nbuf->frags;
 	len = rx_buf->len - (ptr - rx_buf->data);
+
 	while (rx_buf) {
 		memcpy(buf + pos, ptr, len);
 		pos += len;

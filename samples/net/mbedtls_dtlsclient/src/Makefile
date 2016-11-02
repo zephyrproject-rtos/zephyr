@@ -24,7 +24,3 @@ ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os/lib
 ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os
 obj-y += dtls_client.o udp.o
 endif
-
-
-
-
