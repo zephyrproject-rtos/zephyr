@@ -1,2 +1,3 @@
 obj-$(CONFIG_HAS_KSDK) += ksdk/
 obj-$(CONFIG_QMSI_BUILTIN) += qmsi/
+obj-$(CONFIG_HAS_STM32CUBE) += st/stm32cube/
