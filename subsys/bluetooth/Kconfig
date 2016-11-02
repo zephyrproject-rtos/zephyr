@@ -1,4 +1,4 @@
-# Kconfig - Subsystem configuration options
+# Kconfig - Bluetooth configuration options
 #
 # Copyright (c) 2016 Intel Corporation
 #
@@ -15,8 +15,4 @@
 # limitations under the License.
 #
 
-source "subsys/fs/Kconfig"
-
-source "subsys/usb/Kconfig"
-
-source "subsys/bluetooth/Kconfig"
+source "subsys/bluetooth/host/Kconfig"

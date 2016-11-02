@@ -71,4 +71,3 @@ typedef void (*bt_dh_key_cb_t)(const uint8_t key[32]);
  *  @return Zero on success or negative error code otherwise
  */
 int bt_dh_key_gen(const uint8_t remote_pk[64], bt_dh_key_cb_t cb);
-

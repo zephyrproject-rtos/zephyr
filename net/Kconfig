@@ -18,8 +18,6 @@
 
 menu "Networking"
 
-source "net/bluetooth/Kconfig"
-
 source "net/ip/Kconfig"
 
 config NET_BUF

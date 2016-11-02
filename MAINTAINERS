@@ -175,7 +175,7 @@ M:	Luiz Augusto von Dentz <luiz.dentz@gmail.com>
 M:	Szymon Janc <szymon.janc@gmail.com>
 S:	Supported
 W:	https://www.zephyrproject.org/doc/subsystems/bluetooth/bluetooth.html
-F:	net/bluetooth/
+F:	subsys/bluetooth/
 F:	include/bluetooth/
 F:	drivers/bluetooth/
 F:	samples/bluetooth/

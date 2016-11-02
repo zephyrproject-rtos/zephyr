@@ -38,7 +38,7 @@ Source tree layout
 
 The stack is split up as follows in the source tree:
 
-``net/bluetooth/``
+``subsys/bluetooth/``
   The core stack itself. This is where the HCI command & event handling
   as well as connection tracking happens. The implementation of the
   core protocols such as L2CAP, ATT & SMP is also here.
