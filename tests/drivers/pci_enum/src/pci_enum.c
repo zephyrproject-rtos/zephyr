@@ -15,12 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <zephyr.h>
-#include <stdint.h>
-#include <misc/printk.h>
+#include <ztest.h>
 #include <pci/pci.h>
 
-void pci_enumerate(void)
+static void pci_enumerate(void)
 {
 	struct pci_dev_info info = {
 		.function = PCI_FUNCTION_ANY,
@@ -39,28 +37,8 @@ void pci_enumerate(void)
 	}
 }
 
-#ifdef CONFIG_MICROKERNEL
-
-
-static int done;
-
-void task_enum_pci(void)
+void test_main(void)
 {
-	if (done) {
-		task_yield();
-	}
-
-	pci_enumerate();
-	printk("Enumeration complete on %s", CONFIG_ARCH);
-	done = 1;
+	ztest_test_suite(pci_test, ztest_unit_test(pci_enumerate));
+	ztest_run_test_suite(pci_test);
 }
-
-#else /* CONFIG_NANOKERNEL */
-
-void main(void)
-{
-	pci_enumerate();
-	printk("Enumeration complete on %s", CONFIG_ARCH);
-}
-
-#endif /* CONFIG_MICROKERNEL */
