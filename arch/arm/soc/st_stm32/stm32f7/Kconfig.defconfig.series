@@ -1,0 +1,96 @@
+# Kconfig.defconfig.eries - ST Microelectronics STM32F7 MCU linue
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_SERIES_STM32F7X
+
+source "arch/arm/soc/st_stm32/stm32f7/Kconfig.defconfig.stm32f7*"
+
+config SOC_SERIES
+	default stm32f7
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 4
+
+config SERIAL
+	def_bool y
+
+if SERIAL
+
+config CONSOLE
+	def_bool y
+
+config UART_CONSOLE
+	def_bool y
+
+config UART_CONSOLE_ON_DEV_NAME
+	default UART_1 if BOARD_DISCOVERY_STM32F7
+
+config UART_STM32
+	def_bool y
+
+config UART_STM32_PORT_0
+	def_bool y
+
+config UART_STM32_PORT_0_NAME
+	default UART_0
+
+config UART_STM32_PORT_0_BAUD_RATE
+	default 115200
+
+config UART_STM32_PORT_1
+	def_bool y
+
+config UART_STM32_PORT_1_NAME
+	default UART_1
+
+config UART_STM32_PORT_1_BAUD_RATE
+	default 115200
+
+endif #SERIAL
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_STM32F7X
+	def_bool y
+
+endif #CLOCK_CONTROL
+
+if GPIO
+
+config GPIO_STM32
+	def_bool y
+
+config GPIO_STM32_PORTA
+	def_bool y
+
+config GPIO_STM32_PORTB
+	def_bool y
+
+config GPIO_STM32_PORTC
+	def_bool y
+
+endif #GPIO
+
+if PINMUX
+
+config PINMUX_STM32
+	def_bool y
+
+endif #PINMUX
+
+endif # SOC_SERIES_STM32F7X

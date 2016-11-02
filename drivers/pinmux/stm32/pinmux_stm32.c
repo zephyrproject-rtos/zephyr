@@ -32,7 +32,7 @@
 #include <clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
 
-#ifdef CONFIG_SOC_SERIES_STM32F4X
+#if CONFIG_SOC_SERIES_STM32F4X || CONFIG_SOC_SERIES_STM32F7X
 static const uint32_t ports_enable[STM32_PORTS_MAX] = {
 	STM32F4X_CLOCK_ENABLE_GPIOA,
 	STM32F4X_CLOCK_ENABLE_GPIOB,

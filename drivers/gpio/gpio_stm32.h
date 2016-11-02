@@ -37,7 +37,7 @@ struct gpio_stm32_config {
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	/* clock subsystem */
 	clock_control_subsys_t clock_subsys;
-#elif CONFIG_SOC_SERIES_STM32F4X
+#elif CONFIG_SOC_SERIES_STM32F4X || CONFIG_SOC_SERIES_STM32F7X
 	struct stm32f4x_pclken pclken;
 #endif
 };
