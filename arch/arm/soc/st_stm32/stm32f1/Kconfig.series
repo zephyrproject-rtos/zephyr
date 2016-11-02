@@ -21,5 +21,6 @@ config SOC_SERIES_STM32F1X
 	select CPU_CORTEX_M3
 	select SOC_FAMILY_STM32
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select HAS_STM32CUBE
 	help
 	 Enable support for STM32F1 MCU series

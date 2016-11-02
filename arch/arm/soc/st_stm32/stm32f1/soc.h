@@ -28,50 +28,24 @@
 #ifndef _STM32F1_SOC_H_
 #define _STM32F1_SOC_H_
 
-/* peripherals start address */
-#define PERIPH_BASE           0x40000000
+#define GPIO_REG_SIZE         0x400
+/* base address for where GPIO registers start */
+#define GPIO_PORTS_BASE       (GPIOA_BASE)
 
-/* use naming consistent with STMF10x Peripherals Library */
-#define APB1PERIPH_BASE        PERIPH_BASE
-#define APB2PERIPH_BASE       (PERIPH_BASE + 0x10000)
-#define AHBPERIPH_BASE        (PERIPH_BASE + 0x20000)
-
+/* FIXME: keep these defines until we enable STM32CUBE on this family */
+/* Then they will bre replaced by "USARTX_BASE" defines */
 /* UART */
 #define USART1_ADDR           (APB2PERIPH_BASE + 0x3800)
 #define USART2_ADDR           (APB1PERIPH_BASE + 0x4400)
 #define USART3_ADDR           (APB1PERIPH_BASE + 0x4800)
-
-/* Reset and Clock Control */
-#define RCC_BASE              (AHBPERIPH_BASE + 0x1000)
-
-#define GPIO_REG_SIZE         0x400
-#define GPIOA_BASE            (APB2PERIPH_BASE + 0x0800)
-#define GPIOB_BASE            (APB2PERIPH_BASE + 0x0C00)
-#define GPIOC_BASE            (APB2PERIPH_BASE + 0x1000)
-#define GPIOD_BASE            (APB2PERIPH_BASE + 0x1400)
-#define GPIOE_BASE            (APB2PERIPH_BASE + 0x1800)
-#define GPIOF_BASE            (APB2PERIPH_BASE + 0x1C00)
-#define GPIOG_BASE            (APB2PERIPH_BASE + 0x2000)
-/* base address for where GPIO registers start */
-#define GPIO_PORTS_BASE       (GPIOA_BASE)
-
-/* EXTI */
-#define EXTI_BASE            (APB2PERIPH_BASE + 0x0400)
-
-/* AFIO */
-#define AFIO_BASE            (APB2PERIPH_BASE + 0x0000)
-
-/* IWDG */
-#define IWDG_BASE            (APB1PERIPH_BASE + 0x3000)
-
-/* FLASH */
-#define FLASH_R_BASE           (AHBPERIPH_BASE + 0x2000)
 
 #ifndef _ASMLANGUAGE
 
 #include <device.h>
 #include <misc/util.h>
 #include <drivers/rand32.h>
+
+#include <stm32f1xx.h>
 
 /* IO pin functions */
 enum stm32f10x_pin_config_mode {
