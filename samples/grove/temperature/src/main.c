@@ -25,6 +25,8 @@
 #include <string.h>
 #endif
 
+#define SLEEP_TIME	1000
+
 void main(void)
 {
 	struct device *dev = device_get_binding("GROVE_TEMPERATURE_SENSOR");
@@ -71,7 +73,7 @@ void main(void)
 #endif
 		printf("Temperature: %.2f C\n", temp.dval);
 
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(SLEEP_TIME);
 	}
 }
 
