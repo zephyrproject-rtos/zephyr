@@ -215,8 +215,9 @@
 #     stuff happening in the kernel.
 #
 # ^eval console-rx   %(console)s::fail USAGE FAULT
-# ^eval console-rx   %(console)s::fail fatal fault in
+# ^eval console-rx   %(console)s::fail [Ff]atal fault in
 # ^eval console-rx   %(console)s::fail Fatal essential task error
+# ^eval console-rx   %(console)s::fail Fatal task error!
 #
 # For testcases under tests/, the .tcdefaults in there adds more steps
 # to verify; test cases are picked up based on their
