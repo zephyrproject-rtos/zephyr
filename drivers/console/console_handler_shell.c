@@ -67,7 +67,9 @@ static const char *get_prompt(void)
 		if (str) {
 			return str;
 		}
-	} else if (default_module != -1) {
+	}
+
+	if (default_module != -1) {
 		return default_module_prompt;
 	}
 
