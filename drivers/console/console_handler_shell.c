@@ -422,9 +422,8 @@ static int get_command_to_complete(char *str, char *command_prefix)
 static uint8_t completion(char *line, uint8_t len)
 {
 	const char *first_match = NULL;
-	int common_chars = -1;
-
-	int i, dest, command_len, num_to_copy;
+	int common_chars = -1, space = 0;
+	int i, dest, command_len;
 	const struct shell_module *module;
 	char command_prefix[COMMAND_MAX_LEN];
 
@@ -488,26 +487,22 @@ static uint8_t completion(char *line, uint8_t len)
 		printk("%s", line);
 	} else {
 		common_chars = strlen(first_match);
-
-		/* full command name with trailing spaces, do nothing*/
-		if (command_len > common_chars) {
-			return 0;
-		}
+		space = 1;
 	}
 
-	num_to_copy = common_chars - command_len;
+	/* complete common part */
+	for (i = command_len; i < common_chars; i++) {
+		printk("%c", first_match[i]);
+		line[len++] = first_match[i];
+	}
 
-	if ((num_to_copy > 0) && ((len + num_to_copy) < COMMAND_MAX_LEN)) {
-		printk("%s", &first_match[command_len]);
-		strncpy(&line[len], &first_match[command_len], num_to_copy);
-
-		/* for convenience add space after command */
+	/* for convenience add space after command */
+	if (space) {
 		printk(" ");
-		line[len+num_to_copy] = ' ';
-		return (num_to_copy + 1);
-	} else {
-		return 0;
+		line[len] = ' ';
 	}
+
+	return common_chars - command_len + space;
 }
 
 void shell_init(const char *str)
