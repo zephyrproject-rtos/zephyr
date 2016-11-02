@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <misc/printk.h>
 #include <sensor.h>
 
@@ -52,6 +53,6 @@ void main(void)
 		lum = val.dval;
 		printk("sensor: lum reading: %d\n", lum);
 
-		task_sleep(SECONDS(4));
+		k_sleep(4000);
 	}
 }
