@@ -17,7 +17,6 @@
 #include <zephyr.h>
 #include <device.h>
 #include <sensor.h>
-#include <nanokernel.h>
 #include <stdio.h>
 
 #ifdef CONFIG_MCP9808_TRIGGER
@@ -70,6 +69,6 @@ void main(void)
 
 		printf("temp: %d.%06d\n", temp.val1, temp.val2);
 
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(2000);
 	}
 }
