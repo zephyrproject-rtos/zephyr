@@ -40,8 +40,8 @@
 #include <device.h>
 #include <aio_comparator.h>
 
-/* specify delay between greetings (in ms); compute equivalent in ticks */
-#define SLEEPTIME  SECONDS(5)
+/* specify delay between greetings (in ms) */
+#define SLEEPTIME  5000
 
 struct cb_data_t {
 	uint8_t ain_idx;
@@ -81,10 +81,6 @@ void main(void)
 	struct device *aio_cmp_dev;
 	int i, ret;
 	int cnt = 0;
-	uint32_t timer_data[2] = {0, 0};
-	struct nano_timer timer;
-
-	nano_timer_init(&timer, timer_data);
 
 	aio_cmp_dev = device_get_binding("AIO_CMP_0");
 
@@ -104,8 +100,7 @@ void main(void)
 		printf("... waiting for event! (%d)\n", ++cnt);
 
 		/* wait a while */
-		nano_task_timer_start(&timer, SLEEPTIME);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+		k_sleep(SLEEPTIME);
 	}
 }
 
