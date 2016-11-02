@@ -36,8 +36,8 @@
 
 #define CLIENT_PORT	8484
 
-#define TCP_RX_TIMEOUT		50
+#define TCP_RX_TIMEOUT		500
 
-#define TCP_RETRY_TIMEOUT	50
+#define TCP_RETRY_TIMEOUT	500
 
 #endif

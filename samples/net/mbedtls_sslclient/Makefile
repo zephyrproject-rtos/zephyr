@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+KERNEL_TYPE = unified
 BOARD = galileo
 CONF_FILE = prj_galileo.conf
 
