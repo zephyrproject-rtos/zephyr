@@ -27,6 +27,10 @@ config SRAM_SIZE
 config FLASH_SIZE
 	default 64
 
+config FLASH_PAGE_SIZE
+	hex
+	default 0x800
+
 config NUM_IRQS
 	int
 	default 82

@@ -108,6 +108,14 @@ config SOC_FLASH_QMSI_SYS_SIZE
 	help
 	  Specify system flash size on the quark SOC.
 
+config SOC_FLASH_QMSI_API_REENTRANCY
+	bool
+	prompt "flash driver API reentrancy for QMSI shim driver"
+	depends on SOC_FLASH_QMSI
+	default n
+	help
+	 Enable support for QMSI flash driver API reentrancy.
+
 config SOC_FLASH_NRF5
 	bool "Nordic Semiconductor nRF5X flash driver"
 	depends on FLASH && SOC_FAMILY_NRF5
@@ -140,10 +148,4 @@ config SOC_FLASH_MCUX_DEV_NAME
 	help
 	  Specify the device name for the flash driver.
 
-config SOC_FLASH_QMSI_API_REENTRANCY
-	bool
-	prompt "flash driver API reentrancy for QMSI shim driver"
-	depends on SOC_FLASH_QMSI
-	default n
-	help
-	Enable support for QMSI flash driver API reentrancy.
+source "drivers/flash/Kconfig.stm32f3x"
