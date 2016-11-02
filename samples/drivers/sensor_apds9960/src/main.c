@@ -183,7 +183,7 @@ void apds9960_als_valid_wait(struct device *i2c_dev)
 			break;
 		}
 
-		sys_thread_busy_wait(5 * USEC_PER_MSEC);
+		k_sleep(5);
 	}
 }
 
