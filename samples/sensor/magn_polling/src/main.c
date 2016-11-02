@@ -15,7 +15,6 @@
  */
 
 #include <zephyr.h>
-#include <nanokernel.h>
 #include <device.h>
 #include <sensor.h>
 #include <misc/printk.h>
@@ -38,7 +37,7 @@ static void do_main(struct device *dev)
 		ret = sensor_channel_get(dev, SENSOR_CHAN_MAGN_Z, &value_z);
 		printf("( x y z ) = ( %f  %f  %f )\n", value_x.dval, value_y.dval, value_z.dval);
 
-		task_sleep(sys_clock_ticks_per_sec/20);
+		k_sleep(500);
 	}
 }
 
