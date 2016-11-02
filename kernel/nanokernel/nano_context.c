@@ -59,7 +59,7 @@ nano_context_type_t sys_execution_context_type_get(void)
  */
 void _thread_essential_set(void)
 {
-	_nanokernel.current->flags |= ESSENTIAL;
+	_nanokernel.current->flags |= K_ESSENTIAL;
 }
 
 /**
@@ -74,7 +74,7 @@ void _thread_essential_set(void)
  */
 void _thread_essential_clear(void)
 {
-	_nanokernel.current->flags &= ~ESSENTIAL;
+	_nanokernel.current->flags &= ~K_ESSENTIAL;
 }
 
 /**
@@ -88,7 +88,7 @@ void _thread_essential_clear(void)
  */
 int _is_thread_essential(void)
 {
-	return _nanokernel.current->flags & ESSENTIAL;
+	return _nanokernel.current->flags & K_ESSENTIAL;
 }
 
 void sys_thread_busy_wait(uint32_t usec_to_wait)

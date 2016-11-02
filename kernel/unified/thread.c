@@ -67,7 +67,7 @@ int k_am_in_isr(void)
  */
 void _thread_essential_set(void)
 {
-	_current->flags |= ESSENTIAL;
+	_current->flags |= K_ESSENTIAL;
 }
 
 /*
@@ -77,7 +77,7 @@ void _thread_essential_set(void)
  */
 void _thread_essential_clear(void)
 {
-	_current->flags &= ~ESSENTIAL;
+	_current->flags &= ~K_ESSENTIAL;
 }
 
 /*
@@ -87,7 +87,7 @@ void _thread_essential_clear(void)
  */
 int _is_thread_essential(void)
 {
-	return _current->flags & ESSENTIAL;
+	return _current->flags & K_ESSENTIAL;
 }
 
 void k_busy_wait(uint32_t usec_to_wait)

@@ -121,7 +121,7 @@ A thread that requires a thread option specifies it by name, using the
 
 The following thread options are supported.
 
-:c:macro:`ESSENTIAL`
+:c:macro:`K_ESSENTIAL`
     This option tags the thread as an :dfn:`essential thread`. This instructs
     the kernel to treat the termination or aborting of the thread as a fatal
     system error.

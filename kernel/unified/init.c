@@ -195,7 +195,7 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 	_init_static_threads();
 
-	_main_thread->flags &= ~ESSENTIAL;
+	_main_thread->flags &= ~K_ESSENTIAL;
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp for kernel's _main() function */
@@ -249,7 +249,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 * Do not insert dummy execution context in the list of fibers, so
 	 * that it does not get scheduled back in once context-switched out.
 	 */
-	dummy_thread->flags = ESSENTIAL;
+	dummy_thread->flags = K_ESSENTIAL;
 	dummy_thread->prio = K_PRIO_COOP(0);
 
 	/* _nanokernel.ready_q is all zeroes */
@@ -273,13 +273,13 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	_new_thread(main_stack, MAIN_STACK_SIZE, NULL,
 		    _main, NULL, NULL, NULL,
-		    CONFIG_MAIN_THREAD_PRIORITY, ESSENTIAL);
+		    CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
 	_mark_thread_as_started(_main_thread);
 	_add_thread_to_ready_q(_main_thread);
 
 	_new_thread(idle_stack, IDLE_STACK_SIZE, NULL,
 		    idle, NULL, NULL, NULL,
-		    K_LOWEST_THREAD_PRIO, ESSENTIAL);
+		    K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
 	_mark_thread_as_started(_idle_thread);
 	_add_thread_to_ready_q(_idle_thread);
 

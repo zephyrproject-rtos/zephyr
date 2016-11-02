@@ -81,7 +81,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
  * @param pStackMem pointer to thread stack memory
  * @param stackSize size of a stack in bytes
  * @param priority thread priority
- * @param options thread options: ESSENTIAL, USE_FP, USE_SSE
+ * @param options thread options: K_ESSENTIAL, USE_FP, USE_SSE
  *
  * @return N/A
  */
@@ -325,7 +325,7 @@ __asm__("\t.globl _thread_entry\n"
  * @param parameter2 second param to entry point
  * @param parameter3 third param to entry point
  * @param priority thread priority
- * @param options thread options: ESSENTIAL, USE_FP, USE_SSE
+ * @param options thread options: K_ESSENTIAL, USE_FP, USE_SSE
  *
  *
  * @return opaque pointer to initialized TCS structure

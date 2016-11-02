@@ -210,7 +210,7 @@ static void nano_init(struct tcs *dummyOutContext)
 	 */
 	dummyOutContext->link = (struct tcs *)NULL;
 
-	dummyOutContext->flags = FIBER | ESSENTIAL;
+	dummyOutContext->flags = FIBER | K_ESSENTIAL;
 	dummyOutContext->prio = 0;
 
 
@@ -249,7 +249,7 @@ static void nano_init(struct tcs *dummyOutContext)
 	 * operates on _nanokernel.current, not _nanokernel.task ...
 	 */
 
-	_nanokernel.task->flags |= ESSENTIAL;
+	_nanokernel.task->flags |= K_ESSENTIAL;
 
 	initialize_nano_timeouts();
 

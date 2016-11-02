@@ -125,7 +125,7 @@ typedef struct preempt tPreempt;
 #endif
 
 #define USE_FP 0x010	 /* 1 = thread uses floating point unit */
-#define ESSENTIAL 0x200  /* 1 = system thread that must not abort */
+#define K_ESSENTIAL 0x200  /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400 /* 1 = _Swap() not to update task metrics */
 
 /* stacks */

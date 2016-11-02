@@ -73,7 +73,7 @@ extern "C" {
 #define INT_ACTIVE     0x002 /* 1 = executing context is interrupt handler */
 #define EXC_ACTIVE     0x004 /* 1 = executing context is exception handler */
 #define USE_FP         0x010 /* 1 = thread uses floating point unit */
-#define ESSENTIAL      0x200 /* 1 = system thread that must not abort */
+#define K_ESSENTIAL    0x200 /* 1 = system thread that must not abort */
 #define NO_METRICS     0x400 /* 1 = _Swap() not to update task metrics */
 
 /* stacks */

@@ -82,7 +82,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
  * @param parameter2 second param to entry point
  * @param parameter3 third param to entry point
  * @param priority thread priority
- * @param options thread options: ESSENTIAL
+ * @param options thread options: K_ESSENTIAL
  *
  * @return N/A
  */

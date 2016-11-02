@@ -89,7 +89,7 @@
 #define EXC_ACTIVE 0x4     /* 1 = executing context is exception handler */
 #define USE_FP 0x10	       /* 1 = thread uses floating point unit */
 #define USE_SSE 0x20       /* 1 = thread uses SSEx instructions */
-#define ESSENTIAL 0x200    /* 1 = system thread that must not abort */
+#define K_ESSENTIAL 0x200  /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400   /* 1 = _Swap() not to update task metrics */
 #define NO_METRICS_BIT_OFFSET 0xa /* Bit position of NO_METRICS */
 
