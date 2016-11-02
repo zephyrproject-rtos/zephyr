@@ -114,10 +114,7 @@
 
 #include <device.h>
 #include <gpio.h>
-#include <sys_clock.h>
 #include <misc/util.h>
-
-#define SLEEPTICKS	SECONDS(1)
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 #define GPIO_OUT_PIN	2
@@ -157,13 +154,9 @@ static struct gpio_callback gpio_cb;
 
 void main(void)
 {
-	struct nano_timer timer;
-	void *timer_data[1];
 	struct device *gpio_dev;
 	int ret;
 	int toggle = 1;
-
-	nano_timer_init(&timer, timer_data);
 
 	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {
@@ -210,7 +203,6 @@ void main(void)
 			toggle = 1;
 		}
 
-		nano_timer_start(&timer, SLEEPTICKS);
-		nano_timer_test(&timer, TICKS_UNLIMITED);
+		k_sleep(MSEC_PER_SEC);
 	}
 }
