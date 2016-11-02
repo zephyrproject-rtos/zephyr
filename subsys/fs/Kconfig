@@ -40,14 +40,14 @@ config FILE_SYSTEM_FAT
 choice
 	prompt "Storage backend selection"
 
-config FS_FAT_RAM_DISK
+config DISK_ACCESS_RAM
 	bool "RAM Disk"
 	help
 	RAM buffer used to emulate storage disk.
 	This option can used to test the file
 	system.
 
-config FS_FAT_FLASH_DISK
+config DISK_ACCESS_FLASH
 	bool "Flash"
 	help
 	Flash device is used for the file system.
@@ -56,20 +56,20 @@ endchoice
 
 config FS_VOLUME_SIZE
 	hex
-	default 0x18000 if FS_FAT_RAM_DISK
+	default 0x18000 if DISK_ACCESS_RAM
 	default 0x200000 if FS_FAT_FLASH_DISK_W25QXXDV
 	help
 	This is the file system volume size in bytes.
 
 config FS_BLOCK_SIZE
 	hex
-	default 0x1000 if FS_FAT_RAM_DISK
+	default 0x1000 if DISK_ACCESS_RAM
 	default 0x1000 if FS_FAT_FLASH_DISK_W25QXXDV
 	help
 	This is typically the minimum block size that
 	is erased at one time in flash storage.
 
-if FS_FAT_FLASH_DISK
+if DISK_ACCESS_FLASH
 
 config FS_FAT_FLASH_DISK_W25QXXDV
 	bool "W25QXXDV flash component"
@@ -108,7 +108,7 @@ config FS_FLASH_ERASE_ALIGNMENT
 	the flash component.
 
 endif # FS_FAT_FLASH_DISK_W25QXXDV
-endif # FS_FAT_FLASH_DISK
+endif # DISK_ACCESS_FLASH
 endif # FILE_SYSTEM
 
 endmenu

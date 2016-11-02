@@ -18,10 +18,12 @@
 #include <stdint.h>
 #include <misc/__assert.h>
 #include <misc/util.h>
-#include <diskio.h>
-#include <ff.h>
+#include <disk_access.h>
+#include <errno.h>
 #include <device.h>
 #include <flash.h>
+
+#define SECTOR_SIZE 512
 
 static struct device *flash_dev;
 
@@ -40,36 +42,36 @@ static off_t lba_to_address(uint32_t sector_num)
 {
 	off_t flash_addr;
 
-	flash_addr = CONFIG_FS_FLASH_START + sector_num * _MIN_SS;
+	flash_addr = CONFIG_FS_FLASH_START + sector_num * SECTOR_SIZE;
 	__ASSERT(flash_addr < (CONFIG_FS_FLASH_START + CONFIG_FS_VOLUME_SIZE),
 		 "FS bound error");
 	return flash_addr;
 }
 
-DSTATUS fat_disk_status(void)
+int disk_access_status(void)
 {
 	if (!flash_dev) {
-		return STA_NOINIT;
+		return DISK_STATUS_NOMEDIA;
 	}
 
-	return RES_OK;
+	return DISK_STATUS_OK;
 }
 
-DSTATUS fat_disk_initialize(void)
+int disk_access_init(void)
 {
 	if (flash_dev) {
-		return RES_OK;
+		return 0;
 	}
 
 	flash_dev = device_get_binding(CONFIG_FS_FLASH_DEV_NAME);
 	if (!flash_dev) {
-		return STA_NOINIT;
+		return -ENODEV;
 	}
 
-	return RES_OK;
+	return 0;
 }
 
-DRESULT fat_disk_read(void *buff, uint32_t start_sector,
+int disk_access_read(uint8_t *buff, uint32_t start_sector,
 		      uint32_t sector_count)
 {
 	off_t fl_addr;
@@ -78,7 +80,7 @@ DRESULT fat_disk_read(void *buff, uint32_t start_sector,
 	uint32_t num_read;
 
 	fl_addr = lba_to_address(start_sector);
-	remaining = (sector_count * _MIN_SS);
+	remaining = (sector_count * SECTOR_SIZE);
 	len = CONFIG_FS_FLASH_MAX_RW_SIZE;
 
 	num_read = GET_NUM_BLOCK(remaining, CONFIG_FS_FLASH_MAX_RW_SIZE);
@@ -89,7 +91,7 @@ DRESULT fat_disk_read(void *buff, uint32_t start_sector,
 		}
 
 		if (flash_read(flash_dev, fl_addr, buff, len) != 0) {
-			return RES_ERROR;
+			return -EIO;
 		}
 
 		fl_addr += len;
@@ -97,11 +99,11 @@ DRESULT fat_disk_read(void *buff, uint32_t start_sector,
 		remaining -= len;
 	}
 
-	return RES_OK;
+	return 0;
 }
 
 /* This performs read-copy into an output buffer */
-static DRESULT read_copy_flash_block(off_t start_addr, uint32_t size,
+static int read_copy_flash_block(off_t start_addr, uint32_t size,
 				     const void *src_buff,
 				     uint8_t *dest_buff)
 {
@@ -126,18 +128,18 @@ static DRESULT read_copy_flash_block(off_t start_addr, uint32_t size,
 			fl_addr + (CONFIG_FS_FLASH_MAX_RW_SIZE * i),
 			dest_buff + (CONFIG_FS_FLASH_MAX_RW_SIZE * i),
 			CONFIG_FS_FLASH_MAX_RW_SIZE) != 0) {
-			return RES_ERROR;
+			return -EIO;
 		}
 	}
 
 	/* overwrite with user data */
 	memcpy(dest_buff + offset, src_buff, size);
 
-	return RES_OK;
+	return 0;
 }
 
 /* input size is either less or equal to a block size, CONFIG_FS_BLOCK_SIZE. */
-static DRESULT update_flash_block(off_t start_addr, uint32_t size,
+static int update_flash_block(off_t start_addr, uint32_t size,
 				  const void *buff)
 {
 	off_t fl_addr;
@@ -147,8 +149,8 @@ static DRESULT update_flash_block(off_t start_addr, uint32_t size,
 	/* if size is a partial block, perform read-copy with user data */
 	if (size < CONFIG_FS_BLOCK_SIZE) {
 		if (read_copy_flash_block(start_addr, size, buff, fs_buff) !=
-		    RES_OK) {
-			return RES_ERROR;
+		    0) {
+			return -EIO;
 		}
 
 		/* now use the local buffer as the source */
@@ -161,7 +163,7 @@ static DRESULT update_flash_block(off_t start_addr, uint32_t size,
 	/* disable write-protection first before erase */
 	flash_write_protection_set(flash_dev, false);
 	if (flash_erase(flash_dev, fl_addr, CONFIG_FS_BLOCK_SIZE) != 0) {
-		return RES_ERROR;
+		return -EIO;
 	}
 
 	/* write data to flash */
@@ -174,17 +176,17 @@ static DRESULT update_flash_block(off_t start_addr, uint32_t size,
 
 		if (flash_write(flash_dev, fl_addr, src,
 				CONFIG_FS_FLASH_MAX_RW_SIZE) != 0) {
-			return RES_ERROR;
+			return -EIO;
 		}
 
 		fl_addr += CONFIG_FS_FLASH_MAX_RW_SIZE;
 		src += CONFIG_FS_FLASH_MAX_RW_SIZE;
 	}
 
-	return RES_OK;
+	return 0;
 }
 
-DRESULT fat_disk_write(const void *buff, uint32_t start_sector,
+int disk_access_write(const uint8_t *buff, uint32_t start_sector,
 		       uint32_t sector_count)
 {
 	off_t fl_addr;
@@ -192,7 +194,7 @@ DRESULT fat_disk_write(const void *buff, uint32_t start_sector,
 	uint32_t size;
 
 	fl_addr = lba_to_address(start_sector);
-	remaining = (sector_count * _MIN_SS);
+	remaining = (sector_count * SECTOR_SIZE);
 
 	/* check if start address is erased-aligned address  */
 	if (fl_addr & (CONFIG_FS_FLASH_ERASE_ALIGNMENT - 1)) {
@@ -204,9 +206,9 @@ DRESULT fat_disk_write(const void *buff, uint32_t start_sector,
 		     ~(CONFIG_FS_BLOCK_SIZE - 1))) {
 			/* not over block boundary (a partial block also) */
 			if (update_flash_block(fl_addr, remaining, buff) != 0) {
-				return RES_ERROR;
+				return -EIO;
 			}
-			return RES_OK;
+			return 0;
 		}
 
 		/* write goes over block boundary */
@@ -214,7 +216,7 @@ DRESULT fat_disk_write(const void *buff, uint32_t start_sector,
 
 		/* write first partial block */
 		if (update_flash_block(fl_addr, size, buff) != 0) {
-			return RES_ERROR;
+			return -EIO;
 		}
 
 		fl_addr += size;
@@ -230,7 +232,7 @@ DRESULT fat_disk_write(const void *buff, uint32_t start_sector,
 
 		if (update_flash_block(fl_addr, CONFIG_FS_BLOCK_SIZE,
 					buff) != 0) {
-			return RES_ERROR;
+			return -EIO;
 		}
 
 		fl_addr += CONFIG_FS_BLOCK_SIZE;
@@ -241,27 +243,33 @@ DRESULT fat_disk_write(const void *buff, uint32_t start_sector,
 	/* remaining partial block */
 	if (remaining) {
 		if (update_flash_block(fl_addr, remaining, buff) != 0) {
-			return RES_ERROR;
+			return -EIO;
 		}
 	}
 
-	return RES_OK;
+	return 0;
 }
 
-DRESULT fat_disk_ioctl(uint8_t cmd, void *buff)
+int disk_access_ioctl(uint8_t cmd, void *buff)
 {
 	switch (cmd) {
-	case CTRL_SYNC:
-		return RES_OK;
-	case GET_SECTOR_COUNT:
-		*(uint32_t *)buff = CONFIG_FS_VOLUME_SIZE / _MIN_SS;
-		return RES_OK;
-	case GET_BLOCK_SIZE: /* in sectors */
-		*(uint32_t *)buff = CONFIG_FS_BLOCK_SIZE / _MIN_SS;
-		return RES_OK;
-	case CTRL_TRIM:
+	case DISK_IOCTL_CTRL_SYNC:
+		return 0;
+	case DISK_IOCTL_GET_SECTOR_COUNT:
+		*(uint32_t *)buff = CONFIG_FS_VOLUME_SIZE / SECTOR_SIZE;
+		return 0;
+	case DISK_IOCTL_GET_SECTOR_SIZE:
+		*(uint32_t *) buff = SECTOR_SIZE;
+		return 0;
+	case DISK_IOCTL_GET_ERASE_BLOCK_SZ: /* in sectors */
+		*(uint32_t *)buff = CONFIG_FS_BLOCK_SIZE / SECTOR_SIZE;
+		return 0;
+	case DISK_IOCTL_GET_DISK_SIZE:
+		*(uint32_t *)buff = CONFIG_FS_VOLUME_SIZE;
+		return 0;
+	default:
 		break;
 	}
 
-	return RES_PARERR;
+	return -EINVAL;
 }
