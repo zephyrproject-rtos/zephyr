@@ -351,6 +351,24 @@ static void rfcomm_disconnected(struct bt_l2cap_chan *chan)
 	session->state = BT_RFCOMM_STATE_IDLE;
 }
 
+static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
+			    struct bt_rfcomm_session *session,
+			    uint8_t dlci,
+			    bt_rfcomm_role_t role)
+{
+	BT_DBG("dlc %p", dlc);
+
+	dlc->dlci = dlci;
+	dlc->session = session;
+	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
+	dlc->state = BT_RFCOMM_STATE_INIT;
+	dlc->role = role;
+	nano_sem_init(&dlc->tx_credits);
+
+	dlc->_next = session->dlcs;
+	session->dlcs = dlc;
+}
+
 static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session,
 					       uint8_t dlci)
 {
@@ -375,18 +393,8 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 		return NULL;
 	}
 
-	BT_DBG("Dlc %p initialized", dlc);
-
-	dlc->_next = session->dlcs;
-	session->dlcs = dlc;
-
-	dlc->dlci = dlci;
-	dlc->session = session;
-	dlc->role = BT_RFCOMM_ROLE_ACCEPTOR;
-	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
-	dlc->state = BT_RFCOMM_STATE_INIT;
+	rfcomm_dlc_init(dlc, session, dlci, BT_RFCOMM_ROLE_ACCEPTOR);
 	dlc->mtu = min(dlc->mtu, session->mtu);
-	nano_sem_init(&dlc->tx_credits);
 
 	return dlc;
 }
