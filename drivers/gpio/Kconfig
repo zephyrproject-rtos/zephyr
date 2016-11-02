@@ -49,8 +49,6 @@ source "drivers/gpio/Kconfig.dw"
 
 source "drivers/gpio/Kconfig.pcal9535a"
 
-source "drivers/gpio/Kconfig.mmio"
-
 source "drivers/gpio/Kconfig.qmsi"
 
 source "drivers/gpio/Kconfig.sch"
