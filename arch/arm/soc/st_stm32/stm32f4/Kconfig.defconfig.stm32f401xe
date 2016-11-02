@@ -15,11 +15,11 @@
 # limitations under the License.
 #
 
-if SOC_STM32F401RE
+if SOC_STM32F401XE
 
 config SOC
 	string
-	default stm32f401re
+	default stm32f401xe
 
 config SRAM_SIZE
 	default 96
@@ -31,4 +31,4 @@ config NUM_IRQS
 	int
 	default 85
 
-endif # SOC_STM32F401RE
+endif # SOC_STM32F401XE

@@ -17,4 +17,4 @@
 
 config BOARD_NUCLEO_F401RE
 	bool "NUCLEO-64 F401RE Development Board"
-	depends on SOC_STM32F401RE
+	depends on SOC_STM32F401XE
