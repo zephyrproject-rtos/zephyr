@@ -1,5 +1,0 @@
-# @testcase dynamic
-# @targets \
-#    board:(galileo|qemu_x86|qemu_cortex_m3)
-#
-# @eval console-rx %(console)s:20 Enumeration complete on %(bsp)s
