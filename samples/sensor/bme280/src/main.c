@@ -37,6 +37,6 @@ void main(void)
 		      temp.val1, temp.val2, press.val1, press.val2,
 		      humidity.val1, humidity.val2);
 
-		task_sleep(sys_clock_ticks_per_sec/5);
+		k_sleep(1000);
 	}
 }
