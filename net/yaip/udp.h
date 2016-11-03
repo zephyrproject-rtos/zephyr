@@ -91,7 +91,7 @@ static inline int net_udp_register(const struct sockaddr *remote_addr,
 				   uint16_t local_port,
 				   net_conn_cb_t cb,
 				   void *user_data,
-				   void **handle)
+				   struct net_conn_handle **handle)
 {
 	return net_conn_register(IPPROTO_UDP, remote_addr, local_addr,
 				 remote_port, local_port, cb, user_data,
@@ -105,7 +105,7 @@ static inline int net_udp_register(const struct sockaddr *remote_addr,
  *
  * @return Return 0 if the unregistration succeed, <0 otherwise.
  */
-static inline int net_udp_unregister(void *handle)
+static inline int net_udp_unregister(struct net_conn_handle *handle)
 {
 	return net_conn_unregister(handle);
 }

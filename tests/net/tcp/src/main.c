@@ -222,7 +222,7 @@ struct ud {
 	uint16_t remote_port;
 	uint16_t local_port;
 	char *test;
-	void *handle;
+	struct net_conn_handle *handle;
 };
 
 static struct ud *returned_ud;
@@ -446,7 +446,7 @@ static void set_port(sa_family_t family, struct sockaddr *raddr,
 
 static bool test_register(void)
 {
-	void *handlers[CONFIG_NET_MAX_CONN];
+	struct net_conn_handle *handlers[CONFIG_NET_MAX_CONN];
 	struct net_if *iface = net_if_get_default();
 	struct net_if_addr *ifaddr;
 	struct ud *ud;

@@ -347,7 +347,7 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 #define cache_check(...) NET_CONTINUE
 #endif /* CONFIG_NET_CONN_CACHE */
 
-int net_conn_unregister(void *handle)
+int net_conn_unregister(struct net_conn_handle *handle)
 {
 	struct net_conn *conn = (struct net_conn *)handle;
 
@@ -427,7 +427,7 @@ int net_conn_register(enum net_ip_protocol proto,
 		      uint16_t local_port,
 		      net_conn_cb_t cb,
 		      void *user_data,
-		      void **handle)
+		      struct net_conn_handle **handle)
 {
 	int i;
 	uint8_t rank = 0;
@@ -556,7 +556,7 @@ int net_conn_register(enum net_ip_protocol proto,
 #endif /* NET_DEBUG */
 
 		if (handle) {
-			*handle = &conns[i];
+			*handle = (struct net_conn_handle *)&conns[i];
 		}
 
 		return 0;

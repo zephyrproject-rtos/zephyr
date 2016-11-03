@@ -363,8 +363,8 @@ static void set_port(sa_family_t family, struct sockaddr *raddr,
 
 static bool run_tests(void)
 {
-	void *handlers[CONFIG_NET_MAX_CONN];
-	struct net_if *iface = net_if_get_default();;
+	struct net_conn_handle *handlers[CONFIG_NET_MAX_CONN];
+	struct net_if *iface = net_if_get_default();
 	struct net_if_addr *ifaddr;
 	struct ud *ud;
 	int ret, i = 0;

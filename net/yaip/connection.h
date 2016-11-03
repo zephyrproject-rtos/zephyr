@@ -37,6 +37,8 @@ extern "C" {
 
 struct net_conn;
 
+struct net_conn_handle;
+
 /**
  * @brief Function that is called by connection subsystem when UDP/TCP
  * packet is received and which matches local and remote IP address
@@ -95,7 +97,7 @@ struct net_conn {
  * @param local_port Local port of the connection end point.
  * @param cb Callback to be called
  * @param user_data User data supplied by caller.
- * @param handle UDP handle that can be used when unregistering
+ * @param handle Connection handle that can be used when unregistering
  *
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
@@ -106,7 +108,7 @@ int net_conn_register(enum net_ip_protocol proto,
 		      uint16_t local_port,
 		      net_conn_cb_t cb,
 		      void *user_data,
-		      void **handle);
+		      struct net_conn_handle **handle);
 
 /**
  * @brief Unregister connection handler.
@@ -115,7 +117,7 @@ int net_conn_register(enum net_ip_protocol proto,
  *
  * @return Return 0 if the unregistration succeed, <0 otherwise.
  */
-int net_conn_unregister(void *handle);
+int net_conn_unregister(struct net_conn_handle *handle);
 
 /**
  * @brief Called by net_core.c when a network packet is received.

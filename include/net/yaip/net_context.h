@@ -125,6 +125,8 @@ typedef void (*net_context_accept_cb_t)(struct net_context *new_context,
 
 struct net_tcp;
 
+struct net_conn_handle;
+
 /**
  * Note that we do not store the actual source IP address in the context
  * because the address is already be set in the network interface struct.
@@ -141,7 +143,7 @@ struct net_context {
 	struct sockaddr remote;
 
 	/** Connection handle */
-	void *conn_handler;
+	struct net_conn_handle *conn_handler;
 
 	/** Receive callback to be called when desired packet
 	 * has been received.
