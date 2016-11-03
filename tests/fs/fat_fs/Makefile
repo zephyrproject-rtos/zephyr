@@ -1,4 +1,4 @@
-KERNEL_TYPE = nano
+KERNEL_TYPE = unified
 BOARD ?= arduino_101
 CONF_FILE = prj.conf
 
