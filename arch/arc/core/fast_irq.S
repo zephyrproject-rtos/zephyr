@@ -34,9 +34,12 @@
 GTEXT(_firq_enter)
 GTEXT(_firq_exit)
 GTEXT(_firq_stack_setup)
+GTEXT(_firq_stack_suspend)
+GTEXT(_firq_stack_resume)
 
 #if CONFIG_RGF_NUM_BANKS != 1
 GDATA(_firq_stack)
+GDATA(_saved_firq_stack)
 GTEXT(_is_next_thread_current)
 
 SECTION_VAR(NOINIT, _firq_stack)
@@ -342,6 +345,58 @@ SECTION_FUNC(TEXT, _firq_stack_setup)
 	 * We have to reload r0 here, because it is bank1 r0 which contains
 	 * garbage, not bank0 r0 containing the previous value of status32.
 	 */
+	lr r0, [_ARC_V2_STATUS32]
+	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
+	kflag r0
+#endif
+
+	j_s [blink]
+
+/**
+ *
+ * @brief Save the FIRQ context if CONFIG_RGF_NUM_BANK!=1
+ *
+ * @return N/A
+ */
+
+SECTION_FUNC(TEXT, _firq_stack_suspend)
+
+#if CONFIG_RGF_NUM_BANKS != 1
+	/* Switch to bank 1 */
+	lr r0, [_ARC_V2_STATUS32]
+	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
+	or r0, r0, _ARC_V2_STATUS32_RB(1)
+	kflag r0
+
+	st sp, [_saved_firq_stack]
+
+	/* Switch back to bank 0 */
+	lr r0, [_ARC_V2_STATUS32]
+	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
+	kflag r0
+#endif
+
+	j_s [blink]
+
+/**
+ *
+ * @brief Restore the FIRQ context if CONFIG_RGF_NUM_BANK!=1
+ *
+ * @return N/A
+ */
+
+SECTION_FUNC(TEXT, _firq_stack_resume)
+
+#if CONFIG_RGF_NUM_BANKS != 1
+	/* Switch to bank 1 */
+	lr r0, [_ARC_V2_STATUS32]
+	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
+	or r0, r0, _ARC_V2_STATUS32_RB(1)
+	kflag r0
+
+	ld sp, [_saved_firq_stack]
+
+	/* Switch back to bank 0 */
 	lr r0, [_ARC_V2_STATUS32]
 	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
 	kflag r0
