@@ -30,10 +30,6 @@ Each testcase.ini block can define the following key/value pairs:
     run under certain circumstances, like daily builds. These test cases
     are still compiled.
 
-  kernel = <nano|micro|unified>
-    Specify the kernel being tested instead of relying on parsing
-    Makefile for KERNEL_TYPE
-
   extra_args = <list of extra arguments>
     Extra arguments to pass to Make when building or running the
     test case.
@@ -137,9 +133,6 @@ no special definitions for that arch. Options are:
 
   qemu_support = <True|False> (default False)
     Indicates whether binaries for this platform can run under QEMU
-
-  microkernel_support = <True|False> (default True)
-    Indicates whether this platform supports microkernel or just nanokernel
 
 The set of test cases that actually run depends on directives in the
 testcase and archtecture .ini file and options passed in on the command
@@ -880,8 +873,9 @@ arch_valid_keys = {"name" : {"type" : "str", "required" : True},
                    "supported_toolchains" : {"type" : "list", "required" : True}}
 
 platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
-                       "microkernel_support" : {"type" : "bool",
-                                                "default" : True},
+                        # FIXME remove
+                        "microkernel_support" : {"type" : "bool",
+                                                 "default" : True},
                        "supported_toolchains" : {"type" : "list", "default" : []}}
 
 testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
@@ -891,6 +885,7 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "skip" : {"type" : "bool", "default" : False},
                        "slow" : {"type" : "bool", "default" : False},
                        "timeout" : {"type" : "int", "default" : 60},
+                       # FIXME remove once all testcase.ini are updated
                        "kernel" : {"type": "str", "required" : False},
                        "arch_whitelist" : {"type" : "set"},
                        "arch_exclude" : {"type" : "set"},
@@ -1038,40 +1033,13 @@ class Platform:
         """
         self.name = name
         self.qemu_support = plat_dict["qemu_support"]
-        self.microkernel_support = plat_dict["microkernel_support"]
         self.arch = arch
         self.supported_toolchains = arch.supported_toolchains
         if plat_dict["supported_toolchains"]:
             self.supported_toolchains = plat_dict["supported_toolchains"]
         # Gets populated in a separate step
-        self.defconfig = {"micro" : None, "nano" : None, "unified" : None}
+        self.defconfig = None
         pass
-
-    def set_defconfig(self, ktype, defconfig):
-        """Set defconfig information for a particular kernel type.
-
-        We do this in another step because all the defconfigs are generated
-        at once from a sub-make, see TestSuite constructor
-
-        @param ktype Kernel type, either "micro" or "nano" or "unified"
-        @param defconfig Dictionary containing defconfig information
-        """
-        self.defconfig[ktype] = defconfig
-
-    def get_defconfig(self, ktype):
-        """Return a dictionary representing the key/value pairs expressed
-        in the kernel defconfig used for this arch/platform. Used to identify
-        platform features.
-
-        @param ktype Kernel type, either "micro" or "nano" or "unified"
-        @return dictionary corresponding to the defconfig contents. unset
-            values will not be defined
-        """
-
-        if ktype == "micro" and not self.microkernel_support:
-            raise SanityRuntimeError("Invalid kernel type queried")
-
-        return self.defconfig[ktype]
 
     def __repr__(self):
         return "<%s on %s>" % (self.name, self.arch.name)
@@ -1106,17 +1074,12 @@ class Architecture:
 class TestCase:
     """Class representing a test application
     """
-    makefile_re = re.compile("\s*KERNEL_TYPE\s*[?=]+\s*(micro|nano|unified)\s*")
-
     def __init__(self, testcase_root, workdir, name, tc_dict, inifile):
         """TestCase constructor.
 
         This gets called by TestSuite as it finds and reads testcase.ini files.
         Multiple TestCase instances may be generated from a single testcase.ini,
         each one corresponds to a section within that file.
-
-        Reads the Makefile inside the testcase directory to figure out the
-        kernel type for purposes of configuration filtering
 
         We need to have a unique name for every single test case. Since
         a testcase.ini can define multiple tests, the canonical name for
@@ -1141,7 +1104,6 @@ class TestCase:
         self.arch_whitelist = tc_dict["arch_whitelist"]
         self.arch_exclude = tc_dict["arch_exclude"]
         self.skip = tc_dict["skip"]
-        self.kernel = tc_dict["kernel"]
         self.platform_exclude = tc_dict["platform_exclude"]
         self.platform_whitelist = tc_dict["platform_whitelist"]
         self.tc_filter = tc_dict["filter"]
@@ -1152,21 +1114,7 @@ class TestCase:
                                  workdir, name)
         self.name = self.path # for now
         self.defconfig = {}
-        self.ktype = None
         self.inifile = inifile
-
-        if self.kernel or self.type == "unit":
-            self.ktype = self.kernel
-        else:
-            with open(os.path.join(testcase_root, workdir, "Makefile")) as makefile:
-                for line in makefile.readlines():
-                    m = TestCase.makefile_re.match(line)
-                    if m:
-                        self.ktype = m.group(1)
-                        break
-            if not self.ktype:
-                raise ConfigurationError(os.path.join(workdir, "Makefile"),
-                                         "KERNEL_TYPE not found")
 
     def __repr__(self):
         return self.name
@@ -1367,22 +1315,19 @@ class TestSuite:
                     if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
                         continue
 
-                    if not plat.microkernel_support and tc.ktype == "micro":
-                        continue
-
                     if tc.tc_filter:
                         args = tc.extra_args[:]
                         args.extend(["ARCH=" + plat.arch.name,
                                 "BOARD=" + plat.name, "initconfig"])
                         args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
-                        # conf, gen_idt, etc aren't rebuilt for every plat/ktype combo,
+                        # conf, gen_idt, etc aren't rebuilt for every  combination,
                         # need a way to avoid different Make processe from clobbering
                         # each other since they all try to build them simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
-                        dlist[tc, plat, tc.ktype, tc.name.split("/")[-1]] = os.path.join(o,".config")
-                        goal = "_".join([plat.name, tc.ktype, "_".join(tc.name.split("/")), "initconfig"])
+                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o,".config")
+                        goal = "_".join([plat.name, "_".join(tc.name.split("/")), "initconfig"])
                         mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location), o, args)
 
         info("Building testcase defconfigs...")
@@ -1393,7 +1338,7 @@ class TestSuite:
                 raise SanityRuntimeError("Couldn't build some defconfigs")
 
         for k, out_config in dlist.items():
-            test, plat, ktype, name = k
+            test, plat, name = k
             defconfig = {}
             with open(out_config, "r") as fp:
                 for line in fp.readlines():
@@ -1403,7 +1348,7 @@ class TestSuite:
                             sys.stderr.write("Unrecognized line %s\n" % line)
                         continue
                     defconfig[m.group(1)] = m.group(2).strip()
-            test.defconfig[plat,ktype] = defconfig
+            test.defconfig[plat] = defconfig
 
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
@@ -1459,19 +1404,14 @@ class TestSuite:
                         discards[instance] = "Not in testcase platform whitelist"
                         continue
 
-                    if not plat.microkernel_support and tc.ktype == "micro":
-                        discards[instance] = "No microkernel support for platform"
-                        continue
-
                     if toolchain and toolchain not in plat.supported_toolchains:
                         discards[instance] = "Not supported by the toolchain"
                         continue
 
                     defconfig = {"ARCH" : arch.name, "PLATFORM" : plat.name}
                     defconfig.update(os.environ)
-                    for tcase, tdefconfig in tc.defconfig.items():
-                        p, k = tcase
-                        if k == tc.ktype and p == plat:
+                    for p, tdefconfig in tc.defconfig.items():
+                        if p == plat:
                             defconfig.update(tdefconfig)
                             break
 
@@ -1649,7 +1589,7 @@ def parse_arguments():
     parser.add_argument("-c", "--config", action="append",
             help="Specify platform configuration values filtering. This can be "
                  "specified two ways: <config>=<value> or just <config>. The "
-                 "defconfig for all platforms, for all kernel types will be "
+                 "defconfig for all platforms will be "
                  "checked. For the <config>=<value> case, only match defconfig "
                  "that have that value defined. For the <config> case, match "
                  "defconfig that have that value assigned to any value. "
