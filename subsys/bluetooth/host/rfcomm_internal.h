@@ -144,8 +144,20 @@ struct bt_rfcomm_msc {
 #define BT_RFCOMM_FCS_LEN_UIH      2
 #define BT_RFCOMM_FCS_LEN_NON_UIH  3
 
-#define BT_RFCOMM_PF_CREDIT      1
-#define BT_RFCOMM_PF_NO_CREDIT   0
+/* For non UIH packets
+ * The P bit set to 1 shall be used to solicit a response frame with the
+ * F bit set to 1 from the other station.
+ */
+#define BT_RFCOMM_PF_NON_UIH         1
+
+/* For UIH packets
+ * Both stations set the P-bit to 0
+ * If credit based flow control is used, If P/F is 1 then one credit byte
+ * will be there after control in the frame else no credit byte.
+ */
+#define BT_RFCOMM_PF_UIH             0
+#define BT_RFCOMM_PF_UIH_CREDIT      1
+#define BT_RFCOMM_PF_UIH_NO_CREDIT   0
 
 /* Initialize RFCOMM signal layer */
 void bt_rfcomm_init(void);

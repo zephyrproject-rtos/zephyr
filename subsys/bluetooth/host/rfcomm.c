@@ -319,7 +319,7 @@ static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr_cr = BT_RFCOMM_UIH_CR(dlc->session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(0, hdr_cr);
-	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, 0);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, BT_RFCOMM_PF_UIH);
 	hdr->length = BT_RFCOMM_SET_LEN_8(sizeof(*msg_hdr) + len);
 
 	msg_hdr = net_buf_add(buf, sizeof(*msg_hdr));
@@ -416,7 +416,8 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
-	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DM, 1);
+	/* For DM PF bit is not relevant, we set it 1 */
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DM, BT_RFCOMM_PF_NON_UIH);
 	hdr->length = BT_RFCOMM_SET_LEN_8(0);
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
@@ -482,7 +483,7 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
-	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UA, 1);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UA, BT_RFCOMM_PF_NON_UIH);
 	hdr->length = BT_RFCOMM_SET_LEN_8(0);
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
@@ -663,7 +664,8 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_UIH_CR(dlc->session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, cr);
-	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, BT_RFCOMM_PF_CREDIT);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH,
+					  BT_RFCOMM_PF_UIH_CREDIT);
 	hdr->length = BT_RFCOMM_SET_LEN_8(0);
 	net_buf_add_u8(buf, credits);
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
@@ -808,7 +810,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 		return;
 	}
 
-	if (pf == BT_RFCOMM_PF_CREDIT) {
+	if (pf == BT_RFCOMM_PF_UIH_CREDIT) {
 		rfcomm_dlc_tx_give_credits(dlc, net_buf_pull_u8(buf));
 	}
 
@@ -866,7 +868,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	cr = BT_RFCOMM_UIH_CR(dlc->session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, cr);
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH,
-					  BT_RFCOMM_PF_NO_CREDIT);
+					  BT_RFCOMM_PF_UIH_NO_CREDIT);
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
