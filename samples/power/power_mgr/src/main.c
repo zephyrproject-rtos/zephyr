@@ -24,7 +24,6 @@
 
 #define SECONDS_TO_SLEEP	5
 #define ALARM		(RTC_ALARM_SECOND * (SECONDS_TO_SLEEP - 1))
-#define SLEEPTICKS	SECONDS(SECONDS_TO_SLEEP)
 #define GPIO_IN_PIN	16
 
 static void create_device_list(void);
@@ -87,7 +86,7 @@ void main(void)
 	create_device_list();
 
 	while (1) {
-		task_sleep(SLEEPTICKS);
+		k_sleep(SECONDS_TO_SLEEP * 1000);
 	}
 }
 
