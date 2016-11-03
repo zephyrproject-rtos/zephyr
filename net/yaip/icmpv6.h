@@ -177,6 +177,23 @@ struct net_icmpv6_handler {
 int net_icmpv6_send_error(struct net_buf *buf, uint8_t type, uint8_t code,
 			  uint32_t param);
 
+/**
+ * @brief Send ICMPv6 echo request message.
+ *
+ * @param iface Network interface.
+ * @param dst IPv6 address of the target host.
+ * @param identifier An identifier to aid in matching Echo Replies
+ * to this Echo Request. May be zero.
+ * @param sequence A sequence number to aid in matching Echo Replies
+ * to this Echo Request. May be zero.
+ *
+ * @return Return 0 if the sending succeed, <0 otherwise.
+ */
+int net_icmpv6_send_echo_request(struct net_if *iface,
+				 struct in6_addr *dst,
+				 uint16_t identifier,
+				 uint16_t sequence);
+
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
 				  uint8_t type, uint8_t code);

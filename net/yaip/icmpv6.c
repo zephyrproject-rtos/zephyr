@@ -32,6 +32,7 @@
 #include <net/net_stats.h>
 #include "net_private.h"
 #include "icmpv6.h"
+#include "ipv6.h"
 
 static sys_slist_t handlers;
 
@@ -238,6 +239,65 @@ drop:
 	/* Note that we always return < 0 so that the caller knows to
 	 * discard the original buffer.
 	 */
+	return -EIO;
+}
+
+int net_icmpv6_send_echo_request(struct net_if *iface,
+				 struct in6_addr *dst,
+				 uint16_t identifier,
+				 uint16_t sequence)
+{
+	const struct in6_addr *src;
+	struct net_buf *buf;
+	uint16_t reserve;
+
+	src = net_if_ipv6_select_src_addr(iface, dst);
+
+	buf = net_nbuf_get_reserve_tx(0);
+
+	reserve = net_if_get_ll_reserve(iface, dst);
+
+	buf = net_ipv6_create_raw(buf, reserve, src, dst, iface,
+				  IPPROTO_ICMPV6);
+
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ll_reserve(buf, reserve);
+	net_nbuf_set_iface(buf, iface);
+
+	net_nbuf_append_u8(buf, NET_ICMPV6_ECHO_REQUEST);
+	net_nbuf_append_u8(buf, 0);   /* code */
+	net_nbuf_append_be16(buf, 0); /* checksum */
+	net_nbuf_append_be16(buf, identifier);
+	net_nbuf_append_be16(buf, sequence);
+
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, src);
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, dst);
+
+	NET_ICMP_BUF(buf)->chksum = 0;
+	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
+
+	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+
+#if NET_DEBUG > 0
+	do {
+		char out[NET_IPV6_ADDR_LEN];
+
+		snprintf(out, sizeof(out),
+			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+		NET_DBG("Sending ICMPv6 Echo Request type %d"
+			" from %s to %s", NET_ICMPV6_ECHO_REQUEST,
+			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
+	} while (0);
+#endif /* NET_DEBUG > 0 */
+
+	if (net_send_data(buf) >= 0) {
+		NET_STATS(++net_stats.icmp.sent);
+		return 0;
+	}
+
+	net_nbuf_unref(buf);
+	NET_STATS(++net_stats.icmp.drop);
+
 	return -EIO;
 }
 
