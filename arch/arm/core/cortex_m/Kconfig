@@ -95,6 +95,7 @@ config CPU_CORTEX_M7
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
+	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
 	help
 	This option signifies the use of a Cortex-M7 CPU
