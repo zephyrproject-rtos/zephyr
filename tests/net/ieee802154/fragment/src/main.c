@@ -236,6 +236,7 @@ static struct net_buf *create_buf(struct net_fragment_data *data)
 		return NULL;
 	}
 
+	net_nbuf_set_ll_reserve(buf, 0);
 	net_nbuf_set_iface(buf, net_if_get_default());
 	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
 
@@ -459,6 +460,8 @@ static int test_fragment(struct net_fragment_data *data)
 		if (!rxbuf) {
 			goto end;
 		}
+
+		net_nbuf_set_ll_reserve(rxbuf, 0);
 
 		dfrag = net_nbuf_get_reserve_data(0);
 		if (!dfrag) {

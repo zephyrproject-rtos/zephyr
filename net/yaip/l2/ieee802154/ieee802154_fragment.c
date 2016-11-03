@@ -100,66 +100,78 @@ static inline void set_datagram_tag(uint8_t *ptr, uint16_t tag)
 	ptr[1] = (uint8_t) tag;
 }
 
-static inline uint8_t calc_max_payload(struct net_buf *buf, uint8_t offset)
-{
-	uint8_t max;
-
-	max = net_nbuf_iface(buf)->mtu - net_nbuf_ll_reserve(buf);
-	max -= offset ? NET_6LO_FRAGN_HDR_LEN : NET_6LO_FRAG1_HDR_LEN;
-
-	return (max & 0xF8);
-}
-
-static inline void set_up_frag_hdr(struct net_buf *buf, uint16_t size,
+static inline void set_up_frag_hdr(struct net_buf *frag, uint16_t size,
 				   uint8_t offset)
 {
 	uint8_t pos = 0;
 
 	if (offset) {
-		buf->data[pos] = NET_6LO_DISPATCH_FRAGN;
+		frag->data[pos] = NET_6LO_DISPATCH_FRAGN;
 	} else {
-		buf->data[pos] = NET_6LO_DISPATCH_FRAG1;
+		frag->data[pos] = NET_6LO_DISPATCH_FRAG1;
 	}
 
-	set_datagram_size(buf->data, size);
+	set_datagram_size(frag->data, size);
 	pos += NET_6LO_FRAG_DATAGRAM_SIZE_LEN;
 
-	set_datagram_tag(buf->data + pos, datagram_tag);
+	set_datagram_tag(frag->data + pos, datagram_tag);
 	pos += NET_6LO_FRAG_DATAGRAM_OFFSET_LEN;
 
 	if (offset) {
-		buf->data[pos] = offset;
+		frag->data[pos] = offset;
 	}
+}
+
+static inline uint8_t calc_max_payload(struct net_buf *buf,
+				       struct net_buf *frag,
+				       uint8_t offset)
+{
+	uint8_t max;
+
+	max = frag->size - net_nbuf_ll_reserve(buf);
+	max -= offset ? NET_6LO_FRAGN_HDR_LEN : NET_6LO_FRAG1_HDR_LEN;
+
+	return (max & 0xF8);
+}
+
+static inline uint8_t move_frag_data(struct net_buf *frag,
+				     struct net_buf *next,
+				     uint8_t max, uint8_t moved,
+				     uint8_t offset,
+				     int hdr_diff)
+{
+	uint8_t remaining = max - moved;
+	uint8_t move;
+
+	if (!offset) {
+		remaining -= hdr_diff;
+	}
+
+	/* Calculate remaining space for data to move */
+	move = next->len > remaining ? remaining : next->len;
+
+	memmove(frag->data + frag->len, next->data, move);
+
+	net_buf_add(frag, move);
+
+	return move;
 }
 
 static inline uint8_t compact_frag(struct net_buf *frag, uint8_t moved)
 {
 	uint8_t remaining = frag->len - moved;
 
-	/** Move remaining data to next to fragmentation header,
-	 *  (leaving space for header).
+	/* Move remaining data next to fragmentation header,
+	 * (leave space for header).
 	 */
-	memmove(frag->data + NET_6LO_FRAGN_HDR_LEN, frag->data + moved,
-		remaining);
+	if (remaining) {
+		memmove(frag->data + NET_6LO_FRAGN_HDR_LEN,
+			frag->data + moved, remaining);
+	}
+
 	frag->len = NET_6LO_FRAGN_HDR_LEN + remaining;
 
 	return remaining;
-}
-
-static inline uint8_t move_frag_data(struct net_buf *frag,
-				     struct net_buf *next,
-				     uint8_t max, uint8_t data_len)
-{
-	uint8_t move, remaining;
-
-	/* Calculate remaining space for data to move */
-	remaining = max - data_len;
-	move = next->len > remaining ? remaining : next->len;
-
-	memmove(frag->data + frag->len, next->data, move);
-	net_buf_add(frag, move);
-
-	return move;
 }
 
 /**
@@ -189,10 +201,11 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 {
 	struct net_buf *frag;
 	struct net_buf *next;
-	uint16_t size;
+	uint16_t processed;
 	uint16_t offset;
+	uint16_t size;
+	uint8_t moved;
 	uint8_t move;
-	uint8_t pos;
 	uint8_t max;
 
 	if (!buf || !buf->frags) {
@@ -218,25 +231,33 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 	net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
 	net_buf_frag_insert(buf, frag);
 
-	offset = pos = 0;
+	offset = 0;
+	moved = 0;
+	processed = 0;
 	next = frag->frags;
 
+	/* First fragment has compressed header, but SIZE and OFFSET
+	 * values in fragmentation header are based on uncompressed
+	 * IP packet.
+	 */
 	while (1) {
 		/* Set fragmentation header in the beginning */
-		set_up_frag_hdr(frag, size, offset >> 3);
+		set_up_frag_hdr(frag, size, offset);
 
 		/* Calculate max payload in multiples of 8 bytes */
-		max = calc_max_payload(buf, offset >> 3);
+		max = calc_max_payload(buf, frag, offset);
 
 		/* Move data from next fragment to current fragment */
-		move = move_frag_data(frag, next, max, pos);
+		move = move_frag_data(frag, next, max, moved, offset,
+				      hdr_diff);
 
-		/* Compact the next fragment, returns the position of
-		 * data offset */
-		pos = compact_frag(next, move);
+		/* Compact the next fragment, returns how much data moved */
+		moved = compact_frag(next, move);
 
-		/* Keep track of offset how much data is processed */
-		offset += max + hdr_diff;
+		/* Calculate how much data is processed */
+		processed += max;
+
+		offset = processed >> 3;
 
 		/** If next fragment is last and data already moved to previous
 		 *  fragment, then delete this fragment, if data is left insert
@@ -246,7 +267,7 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 			if (next->len == NET_6LO_FRAGN_HDR_LEN) {
 				net_buf_frag_del(frag, next);
 			} else {
-				set_up_frag_hdr(next, size, offset >> 3);
+				set_up_frag_hdr(next, size, offset);
 			}
 
 			break;
@@ -357,8 +378,7 @@ static inline struct frag_cache *set_reass_cache(struct net_buf *buf,
  *  Return cache if it matches with size and tag of stored caches,
  *  otherwise return NULL.
  */
-static inline struct frag_cache *get_reass_cache(struct net_buf *buf,
-						 uint16_t size, uint16_t tag)
+static inline struct frag_cache *get_reass_cache(uint16_t size, uint16_t tag)
 {
 	uint8_t i;
 
@@ -374,6 +394,32 @@ static inline struct frag_cache *get_reass_cache(struct net_buf *buf,
 	return NULL;
 }
 
+/* Helper function to write fragment data to Rx buffer based on offset. */
+static inline bool copy_frag(struct net_buf *buf,
+			     struct net_buf *frag,
+			     uint16_t offset)
+{
+	struct net_buf *input = frag;
+	struct net_buf *write;
+	uint16_t pos = offset;
+
+	write = buf->frags;
+
+	while (input) {
+		write = net_nbuf_write(buf, write, pos, &pos, input->len,
+				       input->data);
+		if (!write && pos == 0xffff) {
+			return false;
+		}
+
+		input = input->frags;
+	}
+
+	net_nbuf_unref(frag);
+
+	return true;
+}
+
 /**
  *  Parse size and tag from the fragment, check if we have any cache
  *  related to it. If not create a new cache.
@@ -381,16 +427,15 @@ static inline struct frag_cache *get_reass_cache(struct net_buf *buf,
  *  Cache Rx part of fragment along with data buf for the first fragment
  *  in the cache, remaining fragments just cache data fragment, unref
  *  RX buf. So in both the cases caller can assume buffer is consumed.
- *
- *  TODO append based on offset
  */
 static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 						 bool first)
 {
 	struct frag_cache *cache;
+	struct net_buf *frag;
 	uint16_t size;
 	uint16_t tag;
-	uint16_t offset;
+	uint16_t offset = 0;
 	uint8_t pos = 0;
 
 	/* Parse total size of packet */
@@ -417,18 +462,38 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 		return NET_DROP;
 	}
 
-	/** If there are no fragments in the cache means this frag
-	 *  is the first one. So cache Rx buf and data buf.
-	 *  else
-	 *  If the cache already exists, reassemble the data according
-	 *  to offset. Unref the Rx buf and cache the data buf,
+	/* If there are no fragments in the cache means this frag
+	 * is the first one. So cache Rx buf otherwise not.
+	 * Write data fragment data to cached Rx based on offset parameter.
+	 * (Detach data fragment from incoming Rx and copy that data).
 	 */
 
-	cache = get_reass_cache(buf, size, tag);
+	frag = buf->frags;
+	buf->frags = NULL;
+
+	cache = get_reass_cache(size, tag);
 	if (!cache) {
 		cache = set_reass_cache(buf, size, tag);
 		if (!cache) {
 			NET_ERR("Could not get a cache entry");
+			return NET_DROP;
+		}
+
+		/* If write failed, then attach frag back to incoming buffer
+		 * and return NET_DROP, caller will take care of freeing it.
+		 */
+		if (!copy_frag(cache->buf, frag, offset)) {
+			buf->frags = frag;
+
+			/* Initialize to NULL to prevent duble free. It's only
+			 * needed here because this is the first fragment.
+			 */
+			cache->buf = NULL;
+
+			clear_reass_cache(size, tag);
+
+			NET_ERR("Copying frag failed");
+
 			return NET_DROP;
 		}
 
@@ -438,17 +503,24 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 	}
 
 	/* Add data buffer to reassembly buffer */
-	net_buf_frag_add(cache->buf, buf->frags);
-	buf->frags = NULL;
+	if (!copy_frag(cache->buf, frag, offset)) {
+		buf->frags = frag;
+
+		clear_reass_cache(size, tag);
+
+		return NET_DROP;
+	}
 
 	/* Check if all the fragments are received or not */
 	if (net_buf_frags_len(cache->buf->frags) == size) {
+		/* Assign frags back to input buffer. */
 		buf->frags = cache->buf->frags;
 		cache->buf->frags = NULL;
 
-		net_nbuf_compact(buf->frags);
+		/* Lengths are elided in compression, so calculate it. */
 		update_protocol_header_lengths(buf, cache->size);
 
+		/* Once reassemble is done, cache is no longer needed. */
 		clear_reass_cache(size, tag);
 
 		NET_DBG("All fragments received and reassembled");
