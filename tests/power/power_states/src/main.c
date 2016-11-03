@@ -328,6 +328,6 @@ void main(void)
 	 * triggers the suspend operation.
 	 */
 	while (1) {
-		task_sleep(SECONDS(TIMEOUT));
+		k_sleep(TIMEOUT * 1000);
 	}
 }

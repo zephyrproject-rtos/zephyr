@@ -37,6 +37,10 @@ int32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
  */
 unsigned char _sys_soc_notify_wake_event;
 
+void __attribute__((weak)) _sys_soc_resume(void)
+{
+}
+
 /**
  *
  * @brief Indicate that kernel is idling in tickless mode
