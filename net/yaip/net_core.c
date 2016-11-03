@@ -42,6 +42,7 @@
 #include <net/net_stats.h>
 
 #include "net_private.h"
+#include "net_shell.h"
 
 #include "icmpv6.h"
 #include "ipv6.h"
@@ -737,6 +738,8 @@ static inline void l2_init(void)
 static int net_init(struct device *unused)
 {
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
+
+	net_shell_init();
 
 	net_nbuf_init();
 

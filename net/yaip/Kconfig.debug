@@ -28,6 +28,17 @@ menuconfig NET_LOG
 
 if NET_LOG
 
+config NET_SHELL
+	bool "Enable network shell utilities"
+	default n
+	select ENABLE_SHELL
+	select CONSOLE_HANDLER
+	select CONSOLE_HANDLER_SHELL
+	select MINIMAL_LIBC_EXTENDED
+	help
+	Activate shell module that provides network commands like
+	ping to the console.
+
 config NET_DEBUG_CORE
 	bool "Debug core IP stack"
 	default n

@@ -17,6 +17,7 @@ obj-$(CONFIG_NET_RPL_MRHOF) += rpl-mrhof.o
 obj-$(CONFIG_NET_RPL_OF0) += rpl-of0.o
 obj-$(CONFIG_NET_MGMT_EVENT) += net_mgmt.o
 obj-$(CONFIG_NET_TCP) += tcp.o
+obj-$(CONFIG_NET_SHELL) += net_shell.o
 
 ifeq ($(CONFIG_NET_UDP),y)
 	obj-$(CONFIG_NET_UDP) += connection.o
