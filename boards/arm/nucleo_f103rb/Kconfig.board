@@ -17,4 +17,4 @@
 
 config BOARD_NUCLEO_F103RB
 	bool "NUCLEO-64 F103RB Development Board"
-	depends on SOC_STM32F103RB
+	depends on SOC_STM32F103XB

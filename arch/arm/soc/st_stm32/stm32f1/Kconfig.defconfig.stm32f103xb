@@ -1,4 +1,4 @@
-# Kconfig - ST Microelectronics STM32F103VE MCU
+# Kconfig - ST Microelectronics STM32F103RB MCU
 #
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 #
@@ -15,21 +15,20 @@
 # limitations under the License.
 #
 
-if SOC_STM32F103VE
+if SOC_STM32F103XB
 
 config SOC
 	string
-	default stm32f103ve
-
+	default stm32f103xb
 config SRAM_SIZE
-	default 64
+	default 20
 
 config FLASH_SIZE
-	default 512
+	default 128
 
 config NUM_IRQS
 	int
-	default 68
+	default 59
 
-endif # SOC_STM32F103VE
+endif # SOC_STM32F103XB
 

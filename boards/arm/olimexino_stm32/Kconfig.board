@@ -16,4 +16,4 @@
 #
 config BOARD_OLIMEXINO_STM32
 	bool "OLIMEXINO-STM32 Development Board"
-	depends on SOC_STM32F103RB
+	depends on SOC_STM32F103XB
