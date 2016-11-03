@@ -753,12 +753,82 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 #define dbg_addr_sent_tgt(...)
 #endif
 
+static int net_ipv6_send_na(struct net_if *iface,
+			    struct in6_addr *src,
+			    struct in6_addr *dst,
+			    struct in6_addr *tgt,
+			    uint8_t flags)
+{
+	struct net_buf *buf, *frag;
+	uint8_t llao_len;
+
+	buf = net_nbuf_get_reserve_tx(0);
+
+	NET_ASSERT_INFO(buf, "Out of TX buffers");
+
+	frag = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface, dst));
+
+	NET_ASSERT_INFO(frag, "Out of DATA buffers");
+
+	net_buf_frag_add(buf, frag);
+
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+
+	net_nbuf_ll_clear(buf);
+
+	llao_len = get_llao_len(iface);
+
+	net_nbuf_set_ext_len(buf, 0);
+
+	setup_headers(buf, sizeof(struct net_icmpv6_na_hdr) + llao_len,
+		      NET_ICMPV6_NA);
+
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, src);
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, dst);
+	net_ipaddr_copy(&NET_ICMPV6_NA_BUF(buf)->tgt, tgt);
+
+	set_llao(&net_nbuf_iface(buf)->link_addr,
+		 net_nbuf_icmp_data(buf) + sizeof(struct net_icmp_hdr) +
+					sizeof(struct net_icmpv6_na_hdr),
+		 llao_len, NET_ICMPV6_ND_OPT_TLLAO);
+
+	NET_ICMPV6_NA_BUF(buf)->flags = flags;
+
+	net_nbuf_set_len(buf->frags, NET_IPV6ICMPH_LEN +
+			 sizeof(struct net_icmpv6_na_hdr) +
+			 llao_len);
+
+	NET_ICMP_BUF(buf)->chksum = 0;
+	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
+
+	dbg_addr_sent_tgt("Neighbor Advertisement",
+			  &NET_IPV6_BUF(buf)->src,
+			  &NET_IPV6_BUF(buf)->dst,
+			  &NET_ICMPV6_NS_BUF(buf)->tgt);
+
+	if (net_send_data(buf) < 0) {
+		goto drop;
+	}
+
+	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.sent);
+	return 0;
+
+drop:
+	net_nbuf_unref(buf);
+	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
+	return -EINVAL;
+}
+
 static enum net_verdict handle_ns_input(struct net_buf *buf)
 {
 	uint16_t total_len = net_buf_frags_len(buf);
 	struct net_icmpv6_nd_opt_hdr *hdr;
 	struct net_if_addr *ifaddr;
-	uint8_t flags = 0, llao_len, prev_opt_len = 0;
+	uint8_t flags = 0, prev_opt_len = 0;
+	int ret;
 	size_t left_len;
 
 	dbg_addr_recv_tgt("Neighbor Solicitation",
@@ -906,37 +976,17 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 	}
 
 send_na:
-	llao_len = get_llao_len(net_nbuf_iface(buf));
-
-	net_nbuf_set_ext_len(buf, 0);
-
-	setup_headers(buf, sizeof(struct net_icmpv6_na_hdr) + llao_len,
-		      NET_ICMPV6_NA);
-
-	net_ipaddr_copy(&NET_ICMPV6_NA_BUF(buf)->tgt,
-			&ifaddr->address.in6_addr);
-
-	set_llao(&net_nbuf_iface(buf)->link_addr,
-		 net_nbuf_icmp_data(buf) + sizeof(struct net_icmp_hdr) +
-					sizeof(struct net_icmpv6_na_hdr),
-		 llao_len, NET_ICMPV6_ND_OPT_TLLAO);
-
-	NET_ICMPV6_NA_BUF(buf)->flags = flags;
-
-	NET_ICMP_BUF(buf)->chksum = 0;
-	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
-
-	net_nbuf_set_len(buf->frags, NET_IPV6ICMPH_LEN +
-			 sizeof(struct net_icmpv6_na_hdr) +
-			 llao_len);
-
-	if (net_send_data(buf) < 0) {
-		goto drop;
+	ret = net_ipv6_send_na(net_nbuf_iface(buf),
+			       &NET_IPV6_BUF(buf)->src,
+			       &NET_IPV6_BUF(buf)->dst,
+			       &ifaddr->address.in6_addr,
+			       flags);
+	if (!ret) {
+		net_nbuf_unref(buf);
+		return NET_OK;
 	}
 
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.sent);
-
-	return NET_OK;
+	return NET_DROP;
 
 drop:
 	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
