@@ -399,6 +399,14 @@ static inline int gpio_qmsi_disable_callback(struct device *port,
 	return 0;
 }
 
+static uint32_t gpio_qmsi_get_pending_int(struct device *dev)
+{
+	const struct gpio_qmsi_config *gpio_config = dev->config->config_info;
+	qm_gpio_t gpio = gpio_config->gpio;
+
+	return QM_GPIO[gpio]->gpio_intstatus;
+}
+
 static const struct gpio_driver_api api_funcs = {
 	.config = gpio_qmsi_config,
 	.write = gpio_qmsi_write,
@@ -406,6 +414,7 @@ static const struct gpio_driver_api api_funcs = {
 	.manage_callback = gpio_qmsi_manage_callback,
 	.enable_callback = gpio_qmsi_enable_callback,
 	.disable_callback = gpio_qmsi_disable_callback,
+	.get_pending_int = gpio_qmsi_get_pending_int,
 };
 
 static int gpio_qmsi_init(struct device *port)

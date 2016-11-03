@@ -194,6 +194,7 @@ typedef int (*gpio_enable_callback_t)(struct device *port,
 typedef int (*gpio_disable_callback_t)(struct device *port,
 				       int access_op,
 				       uint32_t pin);
+typedef uint32_t (*gpio_api_get_pending_int)(struct device *dev);
 
 struct gpio_driver_api {
 	gpio_config_t config;
@@ -202,6 +203,7 @@ struct gpio_driver_api {
 	gpio_manage_callback_t manage_callback;
 	gpio_enable_callback_t enable_callback;
 	gpio_disable_callback_t disable_callback;
+	gpio_api_get_pending_int get_pending_int;
 };
 /**
  * @endcond
@@ -392,6 +394,27 @@ static inline int gpio_port_disable_callback(struct device *port)
 	const struct gpio_driver_api *api = port->driver_api;
 
 	return api->disable_callback(port, GPIO_ACCESS_BY_PORT, 0);
+}
+
+/**
+ * @brief Function to get pending interrupts
+ *
+ * The purpose of this function is to return the interrupt
+ * status register for the device.
+ * This is especially useful when waking up from
+ * low power states to check the wake up source.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval status != 0 if at least one gpio interrupt is pending.
+ * @retval 0 if no gpio interrupt is pending.
+ */
+static inline int gpio_get_pending_int(struct device *dev)
+{
+	struct gpio_driver_api *api;
+
+	api = (struct gpio_driver_api *)dev->driver_api;
+	return api->get_pending_int(dev);
 }
 
 struct gpio_pin_config {
