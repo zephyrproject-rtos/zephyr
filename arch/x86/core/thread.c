@@ -22,12 +22,6 @@
  * processor architecture.
  */
 
-#if !defined(CONFIG_KERNEL_V2)
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
-#include <micro_private_types.h>
-#endif /* CONFIG_MICROKERNEL */
-#endif
 #ifdef CONFIG_INIT_STACKS
 #include <string.h>
 #endif /* CONFIG_INIT_STACKS */
@@ -98,7 +92,6 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	tcs->excNestCount = 0;
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
-#ifdef CONFIG_KERNEL_V2
 	/* k_q_node initialized upon first insertion in a list */
 #ifdef CONFIG_FP_SHARING
 	/* ensure USE_FP is set when USE_SSE is set */
@@ -112,14 +105,6 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	/* static threads overwrite it afterwards with real value */
 	tcs->init_data = NULL;
 	tcs->fn_abort = NULL;
-#else
-	if (priority == -1)
-		tcs->flags = PREEMPTIBLE | TASK;
-	else
-		tcs->flags = FIBER;
-	ARG_UNUSED(options);
-	tcs->link = (struct tcs *)NULL; /* thread not inserted into list yet */
-#endif
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
@@ -127,11 +112,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	tcs->custom_data = NULL;
 #endif
 
-#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
-	tcs->uk_task_ptr = uk_task_ptr;
-#else
 	ARG_UNUSED(uk_task_ptr);
-#endif
 
 	/*
 	 * The creation of the initial stack for the task has already been done.
@@ -163,64 +144,6 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 
 	tcs->coopReg.esp = (unsigned long)pInitialCtx;
 	PRINTK("\nInitial context ESP = 0x%x\n", tcs->coopReg.esp);
-
-#ifndef CONFIG_KERNEL_V2
-#ifdef CONFIG_FP_SHARING
-/*
- * Indicate if the thread is permitted to use floating point instructions.
- *
- * The first time the new thread is scheduled by _Swap() it is guaranteed
- * to inherit an FPU that is in a "sane" state (if the most recent user of
- * the FPU was cooperatively swapped out) or a completely "clean" state
- * (if the most recent user of the FPU was pre-empted, or if the new thread
- * is the first user of the FPU).
- *
- * The USE_FP flag bit is set in the struct tcs structure if a thread is
- * authorized to use _any_ non-integer capability, whether it's the basic
- * x87 FPU/MMX capability, SSE instructions, or a combination of both. The
- * USE_SSE flag bit is set only if a thread can use SSE instructions.
- *
- * Note: Callers need not follow the aforementioned protocol when passing
- * in thread options. It is legal for the caller to specify _only_ the
- * USE_SSE option bit if a thread will be utilizing SSE instructions (and
- * possibly x87 FPU/MMX instructions).
- */
-
-/*
- * Implementation Remark:
- * Until SysGen reserves SSE_GROUP as 0x10, the following conditional is
- * required so that at least systems configured with FLOAT will still operate
- * correctly.  The issue is that SysGen will utilize group 0x10 user-defined
- * groups, and thus tasks placed in the user-defined group will have the
- * SSE_GROUP (but not the FPU_GROUP) bit set.  This results in both the USE_FP
- * and USE_SSE bits being set in the struct tcs.  For systems configured only with
- * FLOAT, the setting of the USE_SSE is harmless, but the setting of USE_FP is
- * wasteful.  Thus to ensure that that systems configured only with FLOAT
- * behave as expected, the USE_SSE option bit is ignored.
- *
- * Clearly, even with the following conditional, systems configured with
- * SSE will not behave as expected since tasks may still be inadvertantly
- * have the USE_SSE+USE_FP sets even though they are integer only.
- *
- * Once the generator tool has been updated to reserve the SSE_GROUP, the
- * correct code to use is:
- *
- *    options &= USE_FP | USE_SSE;
- *
- */
-
-#ifdef CONFIG_SSE
-	options &= USE_FP | USE_SSE;
-#else
-	options &= USE_FP;
-#endif
-
-	if (options != 0) {
-		tcs->flags |= (options | USE_FP);
-	}
-#endif /* CONFIG_FP_SHARING */
-#endif /* CONFIG_KERNEL_V2 */
-
 	PRINTK("\nstruct tcs * = 0x%x", tcs);
 
 	thread_monitor_init(tcs);

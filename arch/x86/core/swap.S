@@ -38,12 +38,8 @@
 	GTEXT(_Swap)
 
 	/* externs */
-
-#ifdef CONFIG_KERNEL_V2
 	GTEXT(_get_next_ready_thread)
 	GDATA(_k_neg_eagain)
-#endif
-
 
 /**
  *
@@ -120,7 +116,6 @@ SECTION_FUNC(TEXT, _Swap)
 	pushl	%ebx
 	pushl	%ebp
 
-#if CONFIG_KERNEL_V2
 	/*
 	 * Carve space for the return value. Setting it to a defafult of
 	 * -EAGAIN eliminates the need for the timeout code to set it.
@@ -129,9 +124,6 @@ SECTION_FUNC(TEXT, _Swap)
 	 */
 
 	pushl   _k_neg_eagain
-#else
-	pushl	%ebx
-#endif
 
 
 	/* save esp into tTCS structure */
@@ -143,45 +135,13 @@ SECTION_FUNC(TEXT, _Swap)
 	/* Register the context switch */
 	call	_sys_k_event_logger_context_switch
 #endif
-
-#ifdef CONFIG_KERNEL_V2
 	call	_get_next_ready_thread
-#else
-	/*
-	 * Determine what thread needs to be swapped in.
-	 * Note that the %edi still contains &_nanokernel.
-	 */
-
-	movl	__tNANO_fiber_OFFSET (%edi), %eax
-	testl	%eax, %eax
-	jz	swapTask	/* Jump if no ready fibers */
-
-	/* remove the head 'TCS *' from the runnable fiber list */
-
-	movl	__tTCS_link_OFFSET (%eax), %ebx
-	movl	%ebx, __tNANO_fiber_OFFSET (%edi)
-	jmp 	restoreContext
-
-
-	/*
-	 * There are no fiber in the run queue, thus swap in the task
-	 * (_nanokernel.task).  The 'task' field will _never_ be NULL.
-	 */
-
-swapTask:
-	movl	__tNANO_task_OFFSET (%edi), %eax
-#endif
-
-	/* fall through to 'restoreContext' */
-
 
 	/*
 	 * At this point, the %eax register contains the 'tTCS *' of
 	 * the TASK or FIBER to be swapped in, and %edi still
 	 * contains &_nanokernel.
 	 */
-
-restoreContext:
 
 #ifdef CONFIG_FP_SHARING
 	/*

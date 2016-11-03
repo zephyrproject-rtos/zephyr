@@ -76,13 +76,6 @@
  * system to enable FP resource sharing on its behalf.
  */
 
-#if !defined(CONFIG_KERNEL_V2)
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
-#include <micro_private_types.h>
-#endif /* CONFIG_MICROKERNEL */
-#endif
-
 #include <nano_private.h>
 #include <toolchain.h>
 #include <asm_inline.h>
@@ -267,7 +260,6 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
 	irq_unlock(imask);
 }
 
-#ifdef CONFIG_KERNEL_V2
 /**
  *
  * @brief Enable preservation of non-integer context information
@@ -280,33 +272,6 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
  * @return N/A
  */
 FUNC_ALIAS(_FpEnable, k_float_enable, void);
-#else
-/**
- *
- * @brief Enable preservation of non-integer context information
- *
- * This routine allows a fiber to permit a task/fiber (including itself) to
- * safely share the system's floating point registers with other tasks/fibers.
- *
- * See the description of _FpEnable() for further details.
- *
- * @return N/A
- */
-FUNC_ALIAS(_FpEnable, fiber_float_enable, void);
-
-/**
- *
- * @brief Enable preservation of non-integer context information
- *
- * This routine allows a task to permit a task/fiber (including itself) to
- * safely share the system's floating point registers with other tasks/fibers.
- *
- * See the description of _FpEnable() for further details.
- *
- * @return N/A
- */
-FUNC_ALIAS(_FpEnable, task_float_enable, void);
-#endif /* CONFIG_KERNEL_V2 */
 
 /**
  *
@@ -367,7 +332,6 @@ void _FpDisable(struct tcs *tcs)
 	irq_unlock(imask);
 }
 
-#ifdef CONFIG_KERNEL_V2
 /**
  *
  * @brief Disable preservation of non-integer context information
@@ -383,40 +347,6 @@ void _FpDisable(struct tcs *tcs)
  * @return N/A
  */
 FUNC_ALIAS(_FpDisable, k_float_disable, void);
-#else
-/**
- *
- * @brief Disable preservation of non-integer context
- *information
- *
- * This routine allows a fiber to disallow a task/fiber (including itself) from
- * safely sharing any of the system's floating point registers with other
- * tasks/fibers.
- *
- * WARNING
- * This routine should only be used to disable floating point support for
- * a task/fiber that currently has such support enabled.
- *
- * @return N/A
- */
-FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
-
-/**
- *
- * @brief Disable preservation of non-integer context information
- *
- * This routine allows a task to disallow a task/fiber (including itself) from
- * safely sharing any of the system's floating point registers with other
- * tasks/fibers.
- *
- * WARNING
- * This routine should only be used to disable floating point support for
- * a task/fiber that currently has such support enabled.
- *
- * @return N/A
- */
-FUNC_ALIAS(_FpDisable, task_float_disable, void);
-#endif /* CONFIG_KERNEL_V2 */
 
 /**
  *

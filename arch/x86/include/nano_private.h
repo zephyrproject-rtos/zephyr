@@ -40,13 +40,8 @@
 #include <exception.h>
 
 #ifndef _ASMLANGUAGE
-#ifdef CONFIG_KERNEL_V2
 #include <kernel.h>		   /* public kernel API */
 #include <../../../kernel/unified/include/nano_internal.h>
-#else
-#include <nanokernel.h>		   /* public nanokernel API */
-#include <../../../kernel/nanokernel/include/nano_internal.h>
-#endif
 #include <stdint.h>
 #include <misc/dlist.h>
 #endif
@@ -67,7 +62,6 @@
  * nanokernel/x86/arch.h.
  */
 
-#ifdef CONFIG_KERNEL_V2
 #define K_STATIC  0x00000800
 
 #define K_READY              0x00000000    /* Thread is ready to run */
@@ -79,11 +73,6 @@
 #define K_DUMMY              0x00020000    /* Not a real thread */
 #define K_EXECUTION_MASK    (K_TIMING | K_PENDING | K_PRESTART | \
 			     K_DEAD | K_SUSPENDED | K_DUMMY)
-#else
-#define FIBER 0
-#define TASK 0x1	       /* 1 = task, 0 = fiber   */
-#define PREEMPTIBLE 0x100  /* 1 = preemptible thread */
-#endif
 
 #define INT_ACTIVE 0x2     /* 1 = executing context is interrupt handler */
 #define EXC_ACTIVE 0x4     /* 1 = executing context is exception handler */
@@ -624,7 +613,6 @@ typedef struct s_preempFloatReg {
 	} floatRegsUnion;
 } tPreempFloatReg;
 
-#if CONFIG_KERNEL_V2
 /* 'struct tcs_base' must match the beginning of 'struct tcs' */
 struct tcs_base {
 	sys_dnode_t  k_q_node;
@@ -635,7 +623,6 @@ struct tcs_base {
 	struct _timeout timeout;
 #endif
 };
-#endif
 
 /*
  * The thread control stucture definition.  It contains the
@@ -651,27 +638,12 @@ struct tcs {
 	 * nanokernel FIFO).
 	 */
 
-#if CONFIG_KERNEL_V2
 	sys_dnode_t k_q_node;	/* node object in any kernel queue */
 	int         flags;
 	int         prio;     /* thread priority used to sort linked list */
 	void       *swap_data;
 #ifdef CONFIG_NANO_TIMEOUTS
 	struct _timeout timeout;
-#endif
-#else
-	struct tcs *link;
-
-	/*
-	 * See the above flag definitions above for valid bit settings.  This
-	 * field must remain near the start of struct tcs, specifically
-	 * before any #ifdef'ed fields since the host tools currently use a
-	 * fixed
-	 * offset to read the 'flags' field.
-	 */
-
-	int flags;
-	int prio;     /* thread priority used to sort linked list */
 #endif
 
 	/*
@@ -704,25 +676,13 @@ struct tcs {
 	void *custom_data;     /* available for custom use */
 #endif
 
-#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_NANO_TIMEOUTS)
-	struct _nano_timeout nano_timeout;
-#endif
-
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif
 
-#if !defined(CONFIG_KERNEL_V2)
-#ifdef CONFIG_MICROKERNEL
-	void *uk_task_ptr;
-#endif
-#endif
-
-#ifdef CONFIG_KERNEL_V2
 	atomic_t sched_locked;
 	void *init_data;
 	void (*fn_abort)(void);
-#endif
 
 	/*
 	 * The location of all floating point related structures/fields MUST be
@@ -743,13 +703,11 @@ struct tcs {
 };
 
 
-#ifdef CONFIG_KERNEL_V2
 struct ready_q {
 	struct k_thread *cache;
 	uint32_t prio_bmap[1];
 	sys_dlist_t q[K_NUM_PRIORITIES];
 };
-#endif
 
 
 /*
@@ -758,10 +716,6 @@ struct ready_q {
  */
 
 typedef struct s_NANO {
-#if !defined(CONFIG_KERNEL_V2)
-	struct tcs *fiber;   /* singly linked list of runnable fibers */
-	struct tcs *task;    /* pointer to runnable task */
-#endif
 	struct tcs *current; /* currently scheduled thread (fiber or task) */
 #if defined(CONFIG_THREAD_MONITOR)
 	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
@@ -792,13 +746,8 @@ typedef struct s_NANO {
 #endif			  /* CONFIG_FP_SHARING */
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
-#ifndef CONFIG_KERNEL_V2
-	int32_t task_timeout;
 #endif
-#endif
-#ifdef CONFIG_KERNEL_V2
 	struct ready_q ready_q;
-#endif
 } tNANO;
 
 /* stack alignment related macros: STACK_ALIGN_SIZE is defined above */
@@ -878,7 +827,6 @@ static inline void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
 	*(unsigned int *)(fiber->coopReg.esp) = value;
 }
 
-#ifdef CONFIG_KERNEL_V2
 #define _current _nanokernel.current
 #define _ready_q _nanokernel.ready_q
 #define _timeout_q _nanokernel.timeout_q
@@ -891,7 +839,6 @@ _set_thread_return_value_with_data(struct k_thread *thread, unsigned int value,
 	thread->swap_data = data;
 }
 #define _IDLE_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES)
-#endif /* CONFIG_KERNEL_V2 */
 
 /* function prototypes */
 

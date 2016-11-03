@@ -42,10 +42,7 @@
 	/* externs */
 
 	GTEXT(_Swap)
-
-#ifdef CONFIG_KERNEL_V2
 	GTEXT(_is_next_thread_current)
-#endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
@@ -289,7 +286,6 @@ alreadyOnIntStack:
 
 	movl	__tNANO_current_OFFSET (%ecx), %edx
 
-#ifdef CONFIG_KERNEL_V2
 	/*
 	 * Determine whether the execution of the ISR requires a context
 	 * switch.  If the thread is preemptible, scheduler is not locked and
@@ -309,18 +305,6 @@ alreadyOnIntStack:
 	call	_is_next_thread_current
 	testl   %eax, %eax
 	jnz     noReschedule
-#else
-	/*
-	 * Determine whether the execution of the ISR requires a context
-	 * switch.  If the interrupted thread is PREEMPTIBLE (a task) and
-	 * _nanokernel.fiber is non-NULL, a _Swap() needs to occur.
-	 */
-
-	testl	$PREEMPTIBLE, __tTCS_flags_OFFSET(%edx)
-	je	noReschedule
-	cmpl	$0, __tNANO_fiber_OFFSET (%ecx)
-	je	noReschedule
-#endif
 
 	/*
 	 * Set the INT_ACTIVE bit in the tTCS to allow the upcoming call to
@@ -334,13 +318,11 @@ alreadyOnIntStack:
 	 */
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
-#ifdef CONFIG_KERNEL_V2
 	/*
 	 * Reload _nanokernel.current as _is_next_thread_current()
 	 * might have clobbered it.
 	 */
 	movl	_nanokernel + __tNANO_current_OFFSET, %edx
-#endif
 	orl	$INT_ACTIVE, __tTCS_flags_OFFSET(%edx)
 #endif
 

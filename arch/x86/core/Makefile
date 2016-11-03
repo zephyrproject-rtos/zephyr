@@ -1,9 +1,4 @@
-ifeq ($(CONFIG_KERNEL_V2),y)
 ccflags-y += -I$(srctree)/kernel/unified/include
-else
-ccflags-y += -I$(srctree)/kernel/nanokernel/include
-ccflags-y += -I$(srctree)/kernel/microkernel/include
-endif
 
 ifeq ($(COMPILER)$(CONFIG_X86_IAMCU),clang)
 # We rely on GAS for assembling, so don't use the integrated assembler
@@ -23,9 +18,6 @@ obj-y += cpuhalt.o \
 
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_FP_SHARING) += float.o
-ifneq ($(CONFIG_KERNEL_V2),y)
-obj-$(CONFIG_MICROKERNEL) += strtask.o
-endif
 obj-$(CONFIG_GDT_DYNAMIC) += gdt.o
 obj-$(CONFIG_REBOOT_RST_CNT) += reboot_rst_cnt.o
 
