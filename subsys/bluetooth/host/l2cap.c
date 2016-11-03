@@ -205,6 +205,77 @@ static struct bt_l2cap_le_chan *__l2cap_chan(struct bt_conn *conn,
 	return NULL;
 }
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state)
+{
+	switch (state) {
+	case BT_L2CAP_DISCONNECTED:
+		return "disconnected";
+	case BT_L2CAP_CONNECT:
+		return "connect";
+	case BT_L2CAP_CONFIG:
+		return "config";
+	case BT_L2CAP_CONNECTED:
+		return "connected";
+	case BT_L2CAP_DISCONNECT:
+		return "disconnect";
+	default:
+		return "unknown";
+	}
+}
+
+void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
+				   bt_l2cap_chan_state_t state,
+				   const char *func, int line)
+{
+	BT_DBG("chan %p psm 0x%04x %s -> %s", chan, chan->psm,
+	       bt_l2cap_chan_state_str(chan->state),
+	       bt_l2cap_chan_state_str(state));
+
+	/* check transitions validness */
+	switch (state) {
+	case BT_L2CAP_DISCONNECTED:
+		/* regardless of old state always allows this state */
+		break;
+	case BT_L2CAP_CONNECT:
+		if (chan->state != BT_L2CAP_DISCONNECTED) {
+			BT_WARN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_CONFIG:
+		if (chan->state != BT_L2CAP_CONNECT) {
+			BT_WARN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_CONNECTED:
+		if (chan->state != BT_L2CAP_CONFIG &&
+		    chan->state != BT_L2CAP_CONNECT) {
+			BT_WARN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_DISCONNECT:
+		if (chan->state != BT_L2CAP_CONFIG &&
+		    chan->state != BT_L2CAP_CONNECTED) {
+			BT_WARN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	default:
+		BT_ERR("%s()%d: unknown (%u) state was set", func, line, state);
+		return;
+	}
+
+	chan->state = state;
+}
+#else
+void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
+			     bt_l2cap_chan_state_t state)
+{
+	chan->state = state;
+}
+#endif /* CONFIG_BLUETOOTH_DEBUG_L2CAP */
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("conn %p chan %p", chan->conn, chan);
@@ -222,7 +293,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 destroy:
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	/* Reset internal members of common channel */
-	chan->state = BT_L2CAP_DISCONNECTED;
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
 	chan->psm = 0;
 #endif
 
@@ -732,8 +803,11 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		l2cap_chan_rx_init(ch);
 		l2cap_chan_rx_give_credits(ch, L2CAP_LE_MAX_CREDITS);
 
+		/* Set channel PSM */
+		chan->psm = server->psm;
+
 		/* Update state */
-		chan->state = BT_L2CAP_CONNECTED;
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTED);
 
 		if (chan->ops && chan->ops->connected) {
 			chan->ops->connected(chan);
@@ -910,7 +984,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		chan->tx.mps = mps;
 
 		/* Update state */
-		chan->chan.state = BT_L2CAP_CONNECTED;
+		bt_l2cap_chan_set_state(&chan->chan, BT_L2CAP_CONNECTED);
 
 		if (chan->chan.ops && chan->chan.ops->connected) {
 			chan->chan.ops->connected(&chan->chan);
@@ -1417,7 +1491,7 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	}
 
 	ch->chan.psm = psm;
-	ch->chan.state = BT_L2CAP_CONNECT;
+	bt_l2cap_chan_set_state(&ch->chan, BT_L2CAP_CONNECT);
 
 	return l2cap_le_conn_req(ch);
 }
@@ -1491,7 +1565,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 
 	l2cap_chan_send_req(ch, buf, L2CAP_DISC_TIMEOUT);
-	ch->chan.state = BT_L2CAP_DISCONNECT;
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECT);
 
 	return 0;
 }
