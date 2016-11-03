@@ -1395,13 +1395,40 @@ bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
 	return insert_data(buf, frag, temp, offset, len, data);
 }
 
+void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
+		       int *tx, int *rx, int *data)
+{
+	if (tx_size) {
+		*tx_size = sizeof(tx_buffers);
+	}
+
+	if (rx_size) {
+		*rx_size = sizeof(rx_buffers);
+	}
+
+	if (data_size) {
+		*data_size = sizeof(data_buffers);
+	}
+
+#if NET_DEBUG
+	*tx = get_frees(NET_NBUF_TX);
+	*rx = get_frees(NET_NBUF_RX);
+	*data = get_frees(NET_NBUF_DATA);
+#else
+	*tx = BIT(31);
+	*rx = BIT(31);
+	*data = BIT(31);
+#endif
+}
+
 #if NET_DEBUG
 void net_nbuf_print(void)
 {
-	NET_DBG("TX %d RX %d DATA %d",
-		get_frees(NET_NBUF_TX),
-		get_frees(NET_NBUF_RX),
-		get_frees(NET_NBUF_DATA));
+	int tx, rx, data;
+
+	net_nbuf_get_info(NULL, NULL, NULL, &tx, &rx, &data);
+
+	NET_DBG("TX %d RX %d DATA %d", tx, rx, data);
 }
 #endif
 

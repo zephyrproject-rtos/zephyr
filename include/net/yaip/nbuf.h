@@ -898,6 +898,21 @@ static inline bool net_nbuf_insert_be32(struct net_buf *buf,
 			       (uint8_t *)&value);
 }
 
+/**
+ * @brief Get information about available free buffer count in
+ * various network buffer pools. The amount of free buffers is
+ * only returned if network buffer debugging is enabled.
+ *
+ * @param tx_size Size of TX pool. Value is returned.
+ * @param rx_size Size of RX pool. Value is returned.
+ * @param data_size Size of DATA pool. Value is returned.
+ * @param tx Amount of free buffers in TX pool. Value is returned.
+ * @param rx Amount of free buffers in RX pool. Value is returned.
+ * @param data Amount of free buffers in DATA pool. Value is returned.
+ */
+void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
+		       int *tx, int *rx, int *data);
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 /**
  * @brief Debug helper to print out the buffer allocations
