@@ -78,7 +78,6 @@
 
 #include <misc/printk.h>
 #include <gpio.h>
-#include <sys_clock.h>
 #include <string.h>
 
 
@@ -145,7 +144,8 @@
 #define LCD_WIDTH			20	/* Max char per line */
 #define HIGH				1
 #define LOW				0
-#define	ENABLE_DELAY			0.0100
+/* in millisecond */
+#define	ENABLE_DELAY			10
 
 
 #define GPIO_PIN_WR(dev, pin, bit)						\
@@ -193,11 +193,11 @@ void _set_row_offsets(int8_t row0, int8_t row1, int8_t row2, int8_t row3)
 void _pi_lcd_toggle_enable(struct device *gpio_dev)
 {
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC25_E, LOW);
-	task_sleep(SECONDS(ENABLE_DELAY));
+	k_sleep(ENABLE_DELAY);
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC25_E, HIGH);
-	task_sleep(SECONDS(ENABLE_DELAY));
+	k_sleep(ENABLE_DELAY);
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC25_E, LOW);
-	task_sleep(SECONDS(ENABLE_DELAY));
+	k_sleep(ENABLE_DELAY);
 }
 
 
@@ -319,7 +319,7 @@ void _pi_lcd_write(struct device *gpio_dev, uint8_t bits)
 void pi_lcd_home(struct device *gpio_dev)
 {
 	_pi_lcd_command(gpio_dev, LCD_RETURN_HOME);
-	task_sleep(USEC(2000));         /* wait for 4.1ms */
+	k_sleep(2);			/* wait for 2ms */
 }
 
 /** Set curson position */
@@ -342,7 +342,7 @@ void pi_lcd_set_cursor(struct device *gpio_dev, uint8_t col, uint8_t row)
 void pi_lcd_clear(struct device *gpio_dev)
 {
 	_pi_lcd_command(gpio_dev, LCD_CLEAR_DISPLAY);
-	task_sleep(USEC(2000));         /* wait for 4.1ms */
+	k_sleep(2);			/* wait for 2ms */
 }
 
 
@@ -480,7 +480,7 @@ void pi_lcd_init(struct device *gpio_dev, uint8_t cols, uint8_t rows, uint8_t do
 	 * above 2.7V before sending commands. Arduino can turn on way
 	 * before 4.5V so we'll wait 50
 	 */
-	task_sleep(USEC(50000));
+	k_sleep(50);
 
 	/* this is according to the hitachi HD44780 datasheet
 	 * figure 23/24, pg 45/46 try to set 4/8 bits mode
@@ -488,30 +488,30 @@ void pi_lcd_init(struct device *gpio_dev, uint8_t cols, uint8_t rows, uint8_t do
 	if (lcd_data.disp_func & LCD_8BIT_MODE) {
 		/* 1st try */
 		_pi_lcd_command(gpio_dev, 0x30);
-		task_sleep(USEC(4500));		/* wait for 4.1ms */
+		k_sleep(5);			/* wait for 5ms */
 
 		/* 2nd try */
 		_pi_lcd_command(gpio_dev, 0x30);
-		task_sleep(USEC(4500));		/* wait for 4.1ms */
+		k_sleep(5);			/* wait for 5ms */
 
 		/* 3rd try */
 		_pi_lcd_command(gpio_dev, 0x30);
-		task_sleep(USEC(150));		/* wait for 100us */
+		k_sleep(1);			/* wait for 1ms */
 
 		/* Set 4bit interface */
 		_pi_lcd_command(gpio_dev, 0x30);
 	} else {
 		/* 1st try */
 		_pi_lcd_command(gpio_dev, 0x03);
-		task_sleep(USEC(4500));		/* wait for 4.1ms */
+		k_sleep(5);			/* wait for 5ms */
 
 		/* 2nd try */
 		_pi_lcd_command(gpio_dev, 0x03);
-		task_sleep(USEC(4500));		/* wait for 4.1ms */
+		k_sleep(5);			/* wait for 5ms */
 
 		/* 3rd try */
 		_pi_lcd_command(gpio_dev, 0x03);
-		task_sleep(USEC(150));		/* wait for 100us */
+		k_sleep(1);			/* wait for 1ms */
 
 		/* Set 4bit interface */
 		_pi_lcd_command(gpio_dev, 0x02);
@@ -572,7 +572,7 @@ void main(void)
 		pi_lcd_set_cursor(gpio_dev, 19, 3);
 		pi_lcd_left_to_right(gpio_dev);
 		pi_lcd_string(gpio_dev, "********************");
-		task_sleep(SECONDS(3));
+		k_sleep(MSEC_PER_SEC * 3);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
@@ -588,7 +588,7 @@ void main(void)
 		pi_lcd_string(gpio_dev, "My super RTOS");
 		pi_lcd_set_cursor(gpio_dev, 0, 3);
 		pi_lcd_string(gpio_dev, "-------------------");
-		task_sleep(SECONDS(3));
+		k_sleep(MSEC_PER_SEC * 3);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
@@ -603,7 +603,7 @@ void main(void)
 		pi_lcd_string(gpio_dev, "I am home!");
 		pi_lcd_set_cursor(gpio_dev, 0, 2);
 		pi_lcd_string(gpio_dev, "");
-		task_sleep(SECONDS(3));
+		k_sleep(MSEC_PER_SEC * 3);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
