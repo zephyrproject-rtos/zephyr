@@ -77,6 +77,7 @@ typedef int (*rtc_api_set_config)(struct device *dev,
 typedef int (*rtc_api_set_alarm)(struct device *dev,
 				 const uint32_t alarm_val);
 typedef uint32_t (*rtc_api_read)(struct device *dev);
+typedef uint32_t (*rtc_api_get_pending_int)(struct device *dev);
 
 struct rtc_driver_api {
 	rtc_api_enable enable;
@@ -84,6 +85,7 @@ struct rtc_driver_api {
 	rtc_api_read read;
 	rtc_api_set_config set_config;
 	rtc_api_set_alarm set_alarm;
+	rtc_api_get_pending_int get_pending_int;
 };
 
 static inline uint32_t rtc_read(struct device *dev)
@@ -122,6 +124,27 @@ static inline int rtc_set_alarm(struct device *dev,
 	const struct rtc_driver_api *api = dev->driver_api;
 
 	return api->set_alarm(dev, alarm_val);
+}
+
+/**
+ * @brief Function to get pending interrupts
+ *
+ * The purpose of this function is to return the interrupt
+ * status register for the device.
+ * This is especially useful when waking up from
+ * low power states to check the wake up source.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval 1 if the rtc interrupt is pending.
+ * @retval 0 if no rtc interrupt is pending.
+ */
+static inline int rtc_get_pending_int(struct device *dev)
+{
+	struct rtc_driver_api *api;
+
+	api = (struct rtc_driver_api *)dev->driver_api;
+	return api->get_pending_int(dev);
 }
 
 #ifdef __cplusplus
