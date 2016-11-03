@@ -457,6 +457,7 @@ config	NETWORKING_WITH_BT
 	select BLUETOOTH
 	select BLUETOOTH_PERIPHERAL
 	select BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
+	select BLUETOOTH_SMP
 	default n
 	help
 	  Enable Bluetooth driver that send and receives IPv6 packets,

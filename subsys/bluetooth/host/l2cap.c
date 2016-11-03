@@ -608,13 +608,11 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto rsp;
 	}
 
-#if defined(CONFIG_BLUETOOTH_SMP)
 	/* Check if connection has minimum required security level */
 	if (conn->sec_level < server->sec_level) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_AUTHENTICATION);
 		goto rsp;
 	}
-#endif /* CONFIG_BLUETOOTH_SMP */
 
 	if (!L2CAP_LE_CID_IS_DYN(scid)) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_INVALID_SCID);

@@ -253,6 +253,7 @@ endif # BLUETOOTH_SMP
 
 config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	bool "L2CAP Dynamic Channel support"
+	depends on BLUETOOTH_SMP
 	default n
 	help
 	  This option enables support for LE Connection oriented Channels,
