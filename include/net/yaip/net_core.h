@@ -98,17 +98,21 @@ int net_send_data(struct net_buf *buf);
 #if defined(CONFIG_INIT_STACKS)
 #include <offsets.h>
 
-static inline void net_analyze_stack(const char *name,
-				     unsigned char *stack,
-				     size_t size)
+static inline void net_analyze_stack_get_values(unsigned char *stack,
+						size_t size,
+						unsigned *stack_offset,
+						unsigned *pcnt,
+						unsigned *unused)
 {
-	unsigned i, stack_offset, pcnt, unused = 0;
+	unsigned i;
+
+	*unused = 0;
 
 	/* The TCS is always placed on a 4-byte aligned boundary - if
 	 * the stack beginning doesn't match that there will be some
 	 * unused bytes in the beginning.
 	 */
-	stack_offset = K_THREAD_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
+	*stack_offset = K_THREAD_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
 
 /* TODO
  * Currently all supported platforms have stack growth down and there is no
@@ -117,17 +121,17 @@ static inline void net_analyze_stack(const char *name,
  * is added this check should be confirmed that correct Kconfig option is used.
  */
 #if defined(CONFIG_STACK_GROWS_UP)
-	for (i = size - 1; i >= stack_offset; i--) {
+	for (i = size - 1; i >= *stack_offset; i--) {
 		if ((unsigned char)stack[i] == 0xaa) {
-			unused++;
+			(*unused)++;
 		} else {
 			break;
 		}
 	}
 #else
-	for (i = stack_offset; i < size; i++) {
+	for (i = *stack_offset; i < size; i++) {
 		if ((unsigned char)stack[i] == 0xaa) {
-			unused++;
+			(*unused)++;
 		} else {
 			break;
 		}
@@ -135,8 +139,18 @@ static inline void net_analyze_stack(const char *name,
 #endif
 
 	/* Calculate the real size reserved for the stack */
-	size -= stack_offset;
-	pcnt = ((size - unused) * 100) / size;
+	size -= *stack_offset;
+	*pcnt = ((size - *unused) * 100) / size;
+}
+
+static inline void net_analyze_stack(const char *name,
+				     unsigned char *stack,
+				     size_t size)
+{
+	unsigned stack_offset, pcnt, unused;
+
+	net_analyze_stack_get_values(stack, size, &stack_offset,
+				     &pcnt, &unused);
 
 	NET_INFO("net (%p): %s stack real size %u "
 		 "unused %u usage %u/%u (%u %%)",
