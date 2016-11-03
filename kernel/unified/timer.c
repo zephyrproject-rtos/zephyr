@@ -52,7 +52,7 @@ SYS_INIT(init_timer_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
  *
  * @return N/A
  */
-static void timer_expiration_handler(struct _timeout *t)
+void _timer_expiration_handler(struct _timeout *t)
 {
 	int key = irq_lock();
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
@@ -97,7 +97,7 @@ void k_timer_init(struct k_timer *timer,
 	timer->status = 0;
 
 	sys_dlist_init(&timer->wait_q);
-	_init_timeout(&timer->timeout, timer_expiration_handler);
+	_init_timeout(&timer->timeout, _timer_expiration_handler);
 	SYS_TRACING_OBJ_INIT(k_timer, timer);
 
 	timer->_legacy_data = NULL;

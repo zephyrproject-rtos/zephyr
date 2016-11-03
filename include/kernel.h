@@ -484,9 +484,17 @@ struct k_timer {
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_timer);
 };
 
-#define K_TIMER_INITIALIZER(obj) \
+#define K_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
+	.timeout.delta_ticks_from_prev = -1, \
+	.timeout.wait_q = NULL, \
+	.timeout.thread = NULL, \
+	.timeout.func = _timer_expiration_handler, \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
+	.expiry_fn = expiry, \
+	.stop_fn = stop, \
+	.status = 0, \
+	._legacy_data = NULL, \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
 
@@ -499,11 +507,13 @@ struct k_timer {
  *    extern struct k_timer @a name;
  *
  * @param name Name of the timer variable.
+ * @param expiry_fn Function to invoke each time timer expires.
+ * @param stop_fn   Function to invoke if timer is stopped while running.
  */
-#define K_TIMER_DEFINE(name) \
+#define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
 	struct k_timer name \
 		__in_section(_k_timer, static, name) = \
-		K_TIMER_INITIALIZER(name)
+		K_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
 
 /**
  * @brief Initialize a timer.
@@ -2368,6 +2378,7 @@ extern void k_free(void *ptr);
 
 extern int _is_thread_essential(void);
 extern void _init_static_threads(void);
+extern void _timer_expiration_handler(struct _timeout *t);
 
 #ifdef __cplusplus
 }
