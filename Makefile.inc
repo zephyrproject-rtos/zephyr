@@ -44,7 +44,6 @@ endif
 
 export ARCH MDEF_FILE QEMU_EXTRA_FLAGS PROJECT_BASE
 
-KERNEL_TYPE ?= micro
 override CONF_FILE := $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
 
 SOURCE_DIR ?= $(PROJECT_BASE)/src/
@@ -132,7 +131,7 @@ help:
 %:
 	$(Q)$(call zephyrmake,$(O),$@)
 
-KERNEL_CONFIG = $(ZEPHYR_BASE)/kernel/configs/$(KERNEL_TYPE).config
+KERNEL_CONFIG = $(ZEPHYR_BASE)/kernel/configs/unified.config
 
 $(DOTCONFIG): $(BOARDCONFIG) $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
