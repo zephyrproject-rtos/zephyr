@@ -142,6 +142,8 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 
 	rtc_critical_region_end(dev);
 
+	k_busy_wait(60);
+
 	return result;
 }
 
