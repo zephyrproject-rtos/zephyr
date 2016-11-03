@@ -23,11 +23,14 @@ An alert has the following key properties:
   to execute a function to process the alert, mark the alert as pending
   so it can be processed later by a thread, or ignore the alert.
 
-* An **alert pending flag**, which is set if the alert is signalled
-  and an alert handler function has not processed the signal.
+* An **pending count**, which records the number of pending alerts
+  that have yet to be received.
+
+* An **count limit**, which specifies the maximum number of pending alerts
+  that will be recorded.
 
 An alert must be initialized before it can be used. This establishes
-its alert handler and clears the alert pending flag.
+its alert handler and sets the pending count to zero.
 
 Alert Lifecycle
 ===============
@@ -40,30 +43,28 @@ to determine what action to take.
 
 * :c:macro:`K_ALERT_IGNORE` causes the alert to be ignored.
 
-* :c:macro:`K_ALERT_DEFAULT` causes the alert pending flag to be set.
+* :c:macro:`K_ALERT_DEFAULT` causes the pending count to be incremented,
+  unless this would exceed the count limit.
 
 * Any other value is assumed to be the address of an alert handler function,
   and is invoked by the system workqueue thread. If the function returns
-  zero, the signal is deemed to have been consumed; otherwise, the alert
-  pending flag is set.
+  zero, the signal is deemed to have been consumed; otherwise the pending
+  count is incremented, unless this would exceed the count limit.
 
   The kernel ensures that the alert handler function is executed once
   for each time an alert is sent, even if the alert is sent multiple times
   in rapid succession.
 
-An alert whose alert pending flag becomes set remains pending until
-the alert is accepted by a thread. This clears the alert pending flag.
-
 A thread accepts a pending alert by **receiving** the alert.
-If the alert's pending flag is currently clear, the thread may choose
-to wait for the alert to become pending.
+This decrements the pending count. If the pending count is currently zero,
+the thread may choose to wait for the alert to become pending.
 Any number of threads may wait for a pending alert simultaneously;
 when the alert is pended it is accepted by the highest priority thread
 that has waited longest.
 
 .. note::
-    A thread that accepts an alert cannot directly determine how many times
-    the alert pending flag was set since the alert was last accepted.
+    A thread must processes pending alerts one at a time. The thread
+    cannot receive multiple pending alerts in a single operation.
 
 Comparison to Unix-style Signals
 ================================
@@ -89,7 +90,9 @@ Defining an Alert
 An alert is defined using a variable of type :c:type:`struct k_alert`.
 It must then be initialized by calling :cpp:func:`k_alert_init()`.
 
-The following code defines and initializes an alert.
+The following code defines and initializes an alert. The alert allows
+up to 10 unreceived alert signals to pend before it begins to ignore
+new pending alerts.
 
 .. code-block:: c
 
@@ -97,7 +100,7 @@ The following code defines and initializes an alert.
 
     struct k_alert my_alert;
 
-    k_alert_init(&my_alert, my_alert_handler);
+    k_alert_init(&my_alert, my_alert_handler, 10);
 
 Alternatively, an alert can be defined and initialized at compile time
 by calling :c:macro:`K_ALERT_DEFINE()`.
@@ -108,7 +111,7 @@ The following code has the same effect as the code segment above.
 
     extern int my_alert_handler(struct k_alert *alert);
 
-    K_ALERT_DEFINE(my_alert, my_alert_handler);
+    K_ALERT_DEFINE(my_alert, my_alert_handler, 10);
 
 Signaling an Alert
 ==================
