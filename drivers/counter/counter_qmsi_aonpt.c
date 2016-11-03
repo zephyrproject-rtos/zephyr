@@ -176,8 +176,6 @@ static const struct counter_driver_api aon_timer_qmsi_api = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static uint32_t int_aonpt_mask_save;
-
 static void aonpt_qmsi_set_power_state(struct device *dev, uint32_t power_state)
 {
 	struct aon_data *context = dev->driver_data;
@@ -192,21 +190,36 @@ static uint32_t aonpt_qmsi_get_power_state(struct device *dev)
 	return context->device_power_state;
 }
 
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 static int aonpt_suspend_device(struct device *dev)
 {
-	int_aonpt_mask_save = QM_INTERRUPT_ROUTER->aonpt_0_int_mask;
-
 	aonpt_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
 	return 0;
 }
 
 static int aonpt_resume_device_from_suspend(struct device *dev)
 {
-	QM_INTERRUPT_ROUTER->aonpt_0_int_mask = int_aonpt_mask_save;
+	uint32_t int_aonpt_mask;
+
+	/* The interrupt router registers are sticky and retain their
+	 * values across warm resets, so we don't need to save them.
+	 * But for wake capable peripherals, if their interrupts are
+	 * configured to be edge sensitive, the wake event will be lost
+	 * by the time the interrupt controller is reconfigured, while
+	 * the interrupt is still pending. By masking and unmasking again
+	 * the corresponding routing register, the interrupt is forwared
+	 * to the core and the ISR will be serviced as expected.
+	 */
+	int_aonpt_mask = QM_INTERRUPT_ROUTER->aonpt_0_int_mask;
+	QM_INTERRUPT_ROUTER->aonpt_0_int_mask = 0xFFFFFFFF;
+	QM_INTERRUPT_ROUTER->aonpt_0_int_mask = int_aonpt_mask;
 
 	aonpt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
+#endif
 
 /*
 * Implements the driver control management functionality
@@ -216,11 +229,13 @@ static int aonpt_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				  void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return aonpt_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return aonpt_resume_device_from_suspend(dev);
 		}
+#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = aonpt_qmsi_get_power_state(dev);
 		return 0;
