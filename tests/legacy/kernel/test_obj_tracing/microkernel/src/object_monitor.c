@@ -50,6 +50,8 @@
 
 #define TOTAL_THREADS (N_PHILOSOPHERS + 3 + IPM_THREAD)
 
+void *force_sys_work_q_in = (void *)k_work_q_start;
+
 #define OBJ_LIST_NAME k_mutex
 #define OBJ_LIST_TYPE struct k_mutex
 
