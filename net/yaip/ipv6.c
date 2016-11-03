@@ -322,12 +322,20 @@ struct net_buf *net_ipv6_create(struct net_context *context,
 				struct net_buf *buf,
 				const struct in6_addr *addr)
 {
+	const struct in6_addr *src;
+
 	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
+
+	src = ((struct sockaddr_in6_ptr *)&context->local)->sin6_addr;
+
+	if (net_is_ipv6_addr_unspecified(src) || net_is_ipv6_addr_mcast(src)) {
+		src = net_if_ipv6_select_src_addr(net_nbuf_iface(buf),
+						  (struct in6_addr *)addr);
+	}
 
 	return net_ipv6_create_raw(buf,
 				   net_nbuf_ll_reserve(buf),
-				   ((struct sockaddr_in6_ptr *)
-				    &context->local)->sin6_addr,
+				   src,
 				   addr,
 				   net_context_get_iface(context),
 				   net_context_get_ip_proto(context));
