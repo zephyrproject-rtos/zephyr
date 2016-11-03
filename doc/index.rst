@@ -31,7 +31,6 @@ Sections
    introduction/introducing_zephyr.rst
    getting_started/getting_started.rst
    board/board.rst
-   kernel/kernel.rst
    kernel_v2/kernel.rst
    drivers/drivers.rst
    subsystems/subsystems.rst

@@ -17,8 +17,6 @@ The use of the Zephyr APIs is the same for all SoCs and boards.
 .. toctree::
    :maxdepth: 2
 
-   nanokernel_api.rst
-   microkernel_api.rst
    device.rst
    bluetooth.rst
    io_interfaces.rst

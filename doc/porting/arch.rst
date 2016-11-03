@@ -178,9 +178,6 @@ Two crucial concepts when writing an architecture port are the following:
   When talking about "the task" in this document, it refers to the task the
   nanokernel is currently aware of.
 
-For a refresher on nanokernel and microkernel concepts, see
-:ref:`kernel_fundamentals`.
-
 A context switch can happen in several circumstances:
 
 * When a thread executes a blocking operation, such as taking a semaphore that

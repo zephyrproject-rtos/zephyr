@@ -5,8 +5,7 @@ Memory Pools
 
 A :dfn:`memory pool` is a kernel object that allows memory blocks
 to be dynamically allocated from a designated memory region.
-Unlike :ref:`memory map <microkernel_memory_maps>` objects,
-the memory blocks in a memory pool can be of any size,
+The memory blocks in a memory pool can be of any size,
 thereby reducing the amount of wasted memory when an application
 needs to allocate storage for data structures of different sizes.
 The memory pool uses a "buddy memory allocation" algorithm
