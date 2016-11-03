@@ -38,9 +38,8 @@
 
 #include <device.h>
 #include <gpio.h>
-#include <sys_clock.h>
-
-#define SLEEPTICKS	MSEC(250)
+/* in millisecond */
+#define SLEEPTIME	250
 
 #define GPIO_DATA_PIN	16
 #define GPIO_CLK_PIN	19
@@ -84,14 +83,10 @@ void send_rgb(struct device *gpio_dev, uint32_t rgb)
 
 void main(void)
 {
-	struct nano_timer timer;
-	void *timer_data[1];
 	struct device *gpio_dev;
 	int ret;
 	int idx = 0;
 	int leds = 0;
-
-	nano_timer_init(&timer, timer_data);
 
 	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {
@@ -127,7 +122,6 @@ void main(void)
 			idx = 0;
 		}
 
-		nano_timer_start(&timer, SLEEPTICKS);
-		nano_timer_test(&timer, TICKS_UNLIMITED);
+		k_sleep(SLEEPTIME);
 	}
 }
