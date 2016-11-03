@@ -39,9 +39,6 @@
 
 /* ARM-specific tNANO structure member offsets */
 
-#if !defined(CONFIG_KERNEL_V2)
-GEN_OFFSET_SYM(tNANO, flags);
-#endif
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 GEN_OFFSET_SYM(tNANO, idle);
 #endif

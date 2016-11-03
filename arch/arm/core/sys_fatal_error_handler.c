@@ -22,38 +22,16 @@
  * platforms.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <sections.h>
-
-#ifdef CONFIG_KERNEL_V2
 #include <nano_private.h>
-#endif
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
 #define PRINTK(...) printk(__VA_ARGS__)
 #else
 #define PRINTK(...)
-#endif
-
-#ifdef CONFIG_MICROKERNEL
-static inline void nonEssentialTaskAbort(void)
-{
-	PRINTK("Fatal fault in task ! Aborting task.\n");
-
-#if defined(CONFIG_KERNEL_V2)
-	k_thread_abort(_current);
-#else
-	extern void _TaskAbort(void);
-	_TaskAbort();
-#endif
-}
-#define NON_ESSENTIAL_TASK_ABORT() nonEssentialTaskAbort()
-#else
-#define NON_ESSENTIAL_TASK_ABORT() \
-	do {/* nothing */          \
-	} while ((0))
 #endif
 
 /**
@@ -99,5 +77,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF * pEsf)
 		return;
 	}
 
-	NON_ESSENTIAL_TASK_ABORT();
+	PRINTK("Fatal fault in task ! Aborting task.\n");
+
+	k_thread_abort(_current);
 }

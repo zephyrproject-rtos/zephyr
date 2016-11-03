@@ -1,10 +1,6 @@
 ccflags-y +=-I$(srctree)/include/drivers
 ccflags-y +=-I$(srctree)/arch/arm/soc/$(SOC_PATH)
-ifeq ($(CONFIG_KERNEL_V2),y)
 ccflags-y +=-I$(srctree)/kernel/unified/include
-else
-ccflags-y +=-I$(srctree)/kernel/nanokernel/include
-endif
 
 asflags-y = $(ccflags-y)
 
