@@ -39,20 +39,14 @@ extern "C" {
 #include <arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
-#ifdef CONFIG_KERNEL_V2
 #include <kernel.h>		   /* public kernel API */
 #include <../../../kernel/unified/include/nano_internal.h>
-#else
-#include <nanokernel.h>            /* public nanokernel API */
-#include <../../../kernel/nanokernel/include/nano_internal.h>
-#endif
 #include <stdint.h>
 #include <misc/util.h>
 #include <misc/dlist.h>
 #endif
 
 /* Bitmask definitions for the struct tcs->flags bit field */
-#ifdef CONFIG_KERNEL_V2
 #define K_STATIC  0x00000800
 
 #define K_READY              0x00000000    /* Thread is ready to run */
@@ -64,11 +58,6 @@ extern "C" {
 #define K_DUMMY              0x00020000    /* Not a real thread */
 #define K_EXECUTION_MASK    (K_TIMING | K_PENDING | K_PRESTART | \
 			     K_DEAD | K_SUSPENDED | K_DUMMY)
-#else
-#define FIBER          0x000
-#define TASK           0x001 /* 1 = task, 0 = fiber   */
-#define PREEMPTIBLE    0x020 /* 1 = preemptible thread */
-#endif
 
 #define INT_ACTIVE     0x002 /* 1 = executing context is interrupt handler */
 #define EXC_ACTIVE     0x004 /* 1 = executing context is exception handler */
@@ -127,7 +116,6 @@ struct preempt {
 };
 
 
-#ifdef CONFIG_KERNEL_V2
 /* 'struct tcs_base' must match the beginning of 'struct tcs' */
 struct tcs_base {
 	sys_dnode_t  k_q_node;
@@ -138,11 +126,9 @@ struct tcs_base {
 	struct _timeout timeout;
 #endif
 };
-#endif
 
 
 struct tcs {
-#ifdef CONFIG_KERNEL_V2
 	sys_dnode_t k_q_node;	/* node object in any kernel queue */
 	int         flags;
 	int         prio;     /* thread priority used to sort linked list */
@@ -150,68 +136,42 @@ struct tcs {
 #ifdef CONFIG_NANO_TIMEOUTS
 	struct _timeout timeout;
 #endif
-#else
-	struct tcs *link;         /* node in singly-linked list
-				   * _nanokernel.fibers
-				   */
-	uint32_t flags;           /* bitmask of flags above */
-	int prio;                 /* fiber priority, -1 for a task */
-#endif /* CONFIG_KERNEL_V2 */
 	struct preempt preempReg;
 	t_coop coopReg;
 
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif
-#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_NANO_TIMEOUTS)
-	struct _nano_timeout nano_timeout;
-#endif
 #if defined(CONFIG_THREAD_MONITOR)
 	struct __thread_entry *entry; /* thread entry and parameters description */
 	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
 #endif
-#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
-	void *uk_task_ptr;
-#endif
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	void *custom_data;        /* available for custom use */
 #endif
-#ifdef CONFIG_KERNEL_V2
 	atomic_t sched_locked;
 	void *init_data;
 	void (*fn_abort)(void);
-#endif
 };
 
 
-#ifdef CONFIG_KERNEL_V2
 struct ready_q {
 	struct k_thread *cache;
 	uint32_t prio_bmap[1];
 	sys_dlist_t q[K_NUM_PRIORITIES];
 };
-#endif
 
 
 struct s_NANO {
-#if !defined(CONFIG_KERNEL_V2)
-	struct tcs *fiber;    /* singly linked list of runnable fibers */
-	struct tcs *task;     /* current task the nanokernel knows about */
-#endif
 	struct tcs *current;  /* currently scheduled thread (fiber or task) */
 
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
-#ifndef CONFIG_KERNEL_V2
-	int32_t task_timeout;
-#endif
 #endif
 #if defined(CONFIG_THREAD_MONITOR)
 	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
 #endif
-#ifdef CONFIG_KERNEL_V2
 	struct ready_q ready_q;
-#endif
 	/* Nios II-specific members */
 
 	char *irq_sp;		/* Interrupt stack pointer */
@@ -238,11 +198,11 @@ static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber,
 	fiber->coopReg.retval = value;
 }
 
-#ifdef CONFIG_KERNEL_V2
 #define _current _nanokernel.current
 #define _ready_q _nanokernel.ready_q
 #define _timeout_q _nanokernel.timeout_q
 #define _set_thread_return_value fiberRtnValueSet
+
 static ALWAYS_INLINE void
 _set_thread_return_value_with_data(struct k_thread *thread, unsigned int value,
 				   void *data)
@@ -250,8 +210,8 @@ _set_thread_return_value_with_data(struct k_thread *thread, unsigned int value,
 	_set_thread_return_value(thread, value);
 	thread->swap_data = data;
 }
+
 #define _IDLE_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES)
-#endif /* CONFIG_KERNEL_V2 */
 
 
 static inline void _IntLibInit(void)

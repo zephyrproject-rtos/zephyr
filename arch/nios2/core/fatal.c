@@ -230,18 +230,11 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 	ARG_UNUSED(pEsf);
 
 	if ((curCtx != NANO_CTX_ISR) && !_is_thread_essential()) {
-#ifdef CONFIG_MICROKERNEL
 		if (curCtx == NANO_CTX_TASK) {
 			extern FUNC_NORETURN void _TaskAbort(void);
 			printk("Fatal task error! Aborting task.\n");
-#ifdef CONFIG_KERNEL_V2
 			k_thread_abort(_current);
-#else
-			_TaskAbort();
-#endif
-		} else
-#endif /* CONFIG_MICROKERNEL */
-		{
+		} else {
 			printk("Fatal fiber error! Aborting fiber.\n");
 			fiber_abort();
 		}

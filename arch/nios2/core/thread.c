@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_KERNEL_V2
 #include <kernel.h>		   /* public kernel API */
 #include <../../../kernel/unified/include/nano_internal.h>
-#else
-#include <nanokernel.h>            /* public nanokernel API */
-#include <../../../kernel/nanokernel/include/nano_internal.h>
-#endif
 
 #include <nano_private.h>
 #include <wait_q.h>
@@ -93,7 +88,6 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 	tcs = (struct tcs *)stack_memory;
 	tcs->prio = priority;
 
-#ifdef CONFIG_KERNEL_V2
 	/* k_q_node initialized upon first insertion in a list */
 	tcs->flags = options | K_PRESTART;
 	tcs->sched_locked = 0;
@@ -101,26 +95,13 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 	/* static threads overwrite it afterwards with real value */
 	tcs->init_data = NULL;
 	tcs->fn_abort = NULL;
-#else
-	if (priority == -1) {
-		tcs->flags = PREEMPTIBLE | TASK;
-	} else {
-		tcs->flags = FIBER;
-	}
-	ARG_UNUSED(options);
-	tcs->link = (struct tcs *)NULL; /* thread not inserted into list yet */
-#endif /* CONFIG_KERNEL_V2 */
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
 	tcs->custom_data = NULL;
 #endif
-
-#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
-	tcs->uk_task_ptr = uk_task_ptr;
-#else
 	ARG_UNUSED(uk_task_ptr);
-#endif
+
 	tcs->coopReg.sp = (uint32_t)iframe;
 	tcs->coopReg.ra = (uint32_t)_thread_entry_wrapper;
 	tcs->coopReg.key = NIOS2_STATUS_PIE_MSK;

@@ -25,10 +25,8 @@ GTEXT(_thread_entry_wrapper)
 
 /* imports */
 GTEXT(_sys_k_event_logger_context_switch)
-#ifdef CONFIG_KERNEL_V2
 GTEXT(_get_next_ready_thread)
 GTEXT(_k_neg_eagain)
-#endif
 
 /* unsigned int _Swap(unsigned int key)
  *
@@ -65,13 +63,11 @@ SECTION_FUNC(exception.other, _Swap)
 	 */
 	stw r4, __tTCS_coopReg_OFFSET + __t_coop_key_OFFSET(r11)
 
-#ifdef CONFIG_KERNEL_V2
 	/* Populate default return value */
 	movhi r5, %hi(_k_neg_eagain)
 	ori   r5, r5, %lo(_k_neg_eagain)
 	ldw   r4, (r5)
 	stw   r4, __tTCS_coopReg_OFFSET + __t_coop_retval_OFFSET(r11)
-#endif /* CONFIG_KERNEL_V2 */
 
 #if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	call _sys_k_event_logger_context_switch
@@ -82,7 +78,6 @@ SECTION_FUNC(exception.other, _Swap)
 	ori   r10, r10, %lo(_nanokernel)
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
 
-#ifdef CONFIG_KERNEL_V2
 	/* Assign to _nanokernel.current the return value of
 	 * _get_next_ready_thread()
 	 */
@@ -90,25 +85,6 @@ SECTION_FUNC(exception.other, _Swap)
 	movhi r10, %hi(_nanokernel)
 	ori   r10, r10, %lo(_nanokernel)
 	stw   r2, __tNANO_current_OFFSET(r10)
-#else
-	/* Find the next context to run. Choose _nanokernel.fiber
-	 * if non-NULL */
-	ldw r2, __tNANO_fiber_OFFSET(r10)
-	beq r2, zero, not_fiber
-
-	/* _nanokernel.fiber = _nanokernel.fiber->link */
-	ldw r14, __tTCS_link_OFFSET(r2)
-	stw r14, __tNANO_fiber_OFFSET(r10)
-	br next_chosen
-
-not_fiber:
-	/* Fiber was NULL, we'll choose nanokernel.task */
-	ldw r2, __tNANO_task_OFFSET(r10)
-
-next_chosen:
-	/* Set _nanokernel.current to value we chose for r2 */
-	stw r2, __tNANO_current_OFFSET(r10)
-#endif /* CONFIG_KERNEL_V2 */
 
 	/* At this point r2 points to the next thread to be swapped in */
 
