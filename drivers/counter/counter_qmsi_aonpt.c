@@ -162,11 +162,17 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 	return result;
 }
 
+static uint32_t aon_timer_qmsi_get_pending_int(struct device *dev)
+{
+	return QM_AONC[QM_AONC_0].aonpt_stat;
+}
+
 static const struct counter_driver_api aon_timer_qmsi_api = {
 	.start = aon_timer_qmsi_start,
 	.stop = aon_timer_qmsi_stop,
 	.read = aon_timer_qmsi_read,
 	.set_alarm = aon_timer_qmsi_set_alarm,
+	.get_pending_int = aon_timer_qmsi_get_pending_int,
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT

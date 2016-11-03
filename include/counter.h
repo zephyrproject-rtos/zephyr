@@ -45,12 +45,14 @@ typedef uint32_t (*counter_api_read)(void);
 typedef int (*counter_api_set_alarm)(struct device *dev,
 				     counter_callback_t callback,
 				     uint32_t count, void *user_data);
+typedef uint32_t (*counter_api_get_pending_int)(struct device *dev);
 
 struct counter_driver_api {
 	counter_api_start start;
 	counter_api_stop stop;
 	counter_api_read read;
 	counter_api_set_alarm set_alarm;
+	counter_api_get_pending_int get_pending_int;
 };
 
 /**
@@ -121,6 +123,27 @@ static inline int counter_set_alarm(struct device *dev,
 	const struct counter_driver_api *api = dev->driver_api;
 
 	return api->set_alarm(dev, callback, count, user_data);
+}
+
+/**
+ * @brief Function to get pending interrupts
+ *
+ * The purpose of this function is to return the interrupt
+ * status register for the device.
+ * This is especially useful when waking up from
+ * low power states to check the wake up source.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval 1 if the counter interrupt is pending.
+ * @retval 0 if no counter interrupt is pending.
+ */
+static inline int counter_get_pending_int(struct device *dev)
+{
+	struct counter_driver_api *api;
+
+	api = (struct counter_driver_api *)dev->driver_api;
+	return api->get_pending_int(dev);
 }
 
 #ifdef __cplusplus
