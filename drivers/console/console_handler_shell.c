@@ -362,7 +362,7 @@ static void shell(int arg1, int arg2)
 	}
 }
 
-static int get_command_to_complete(char *str, char *command_prefix)
+static int get_command_to_complete(char *str, char **command_prefix)
 {
 	char dest_str[MODULE_NAME_MAX_LEN];
 	int dest = -1;
@@ -382,7 +382,7 @@ static int get_command_to_complete(char *str, char *command_prefix)
 	if (default_module != -1) {
 		dest = default_module;
 		/* caller function already checks str len and put '\0' */
-		strncpy(command_prefix, str, COMMAND_MAX_LEN);
+		*command_prefix = str;
 	}
 
 	/*
@@ -412,7 +412,7 @@ static int get_command_to_complete(char *str, char *command_prefix)
 	str++;
 
 	/* caller func has already checked str len and put '\0' at the end */
-	strncpy(command_prefix, str, COMMAND_MAX_LEN);
+	*command_prefix = str;
 	str = strchr(str, ' ');
 
 	/* only two parameters are possibles in case of no default module */
@@ -425,7 +425,7 @@ static uint8_t completion(char *line, uint8_t len)
 	int common_chars = -1, space = 0;
 	int i, dest, command_len;
 	const struct shell_module *module;
-	char command_prefix[COMMAND_MAX_LEN];
+	char *command_prefix;
 
 	if (len >= (MODULE_NAME_MAX_LEN + COMMAND_MAX_LEN - 1)) {
 		return 0;
@@ -436,7 +436,7 @@ static uint8_t completion(char *line, uint8_t len)
 	 * nano_fiber_fifo_get function
 	 */
 	line[len] = '\0';
-	dest = get_command_to_complete(line, command_prefix);
+	dest = get_command_to_complete(line, &command_prefix);
 	if (dest == -1) {
 		return 0;
 	}
