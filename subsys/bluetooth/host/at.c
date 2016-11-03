@@ -50,6 +50,8 @@ const char *skip_whitespace(const char *buf)
 
 int at_get_number(const char *buf, uint32_t *val)
 {
+	*val = 0;
+
 	for (buf = skip_whitespace(buf); isdigit(*buf); buf++) {
 		*val = *val * 10 + *buf - '0';
 	}
