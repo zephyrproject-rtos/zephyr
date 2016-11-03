@@ -49,12 +49,10 @@ sysgen_cmd=$(strip \
 	$(PYTHON) $(srctree)/scripts/sysgen \
 	-i $(CURDIR)/misc/generated/sysgen/prj.mdef \
 	-o $(CURDIR)/misc/generated/sysgen/ \
-	-k $(if $(CONFIG_KERNEL_V2),unified,micro) \
 )
 
 misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.mdef \
-				     kernel/microkernel/include/micro_private_types.h \
-				     kernel/microkernel/include/kernel_main.h
+				     $(srctree)/scripts/sysgen
 	$(Q)$(sysgen_cmd)
 
 define filechk_configs.c

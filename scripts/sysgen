@@ -78,18 +78,15 @@ copyright = \
 
 output_dir = ""
 input_mdef_file = ""
-kernel_type = 'micro'
 
 def get_cmdline_args():
     """ Handle optional output directory argument """
 
     global input_mdef_file
     global output_dir
-    global kernel_type
 
     output_dir_help='output directory for kernel_main.*, sysgen.h, etc'
     input_mdef_file_help='input MDEF file'
-    kernel_type_help="'micro' or 'unified'"
 
     parser = argparse.ArgumentParser()
 
@@ -97,8 +94,6 @@ def get_cmdline_args():
                         required=True, help=input_mdef_file_help)
     parser.add_argument('-o', '--output-dir', action='store',
                         help=output_dir_help)
-    parser.add_argument('-k', '--kernel-type', action='store',
-                        help=kernel_type_help)
 
     args = parser.parse_args()
 
@@ -106,9 +101,6 @@ def get_cmdline_args():
 
     if (args.output_dir != None):
         output_dir = args.output_dir
-
-    if (args.kernel_type != None):
-        kernel_type = args.kernel_type
 
 def write_file(filename, contents):
     """ Create file using specified name and contents """
@@ -172,34 +164,27 @@ def mdef_parse():
             continue
 
         if (words[0] == "TASK"):
-            if kernel_type == 'micro':
-                if (len(words) != 6):
-                    error_arg_count(line)
-                task_list.append((words[1], int(words[2]), words[3],
-                                  int(words[4]), words[5]))
-                continue
-            elif (kernel_type == 'unified'):
-                if len(words) < 6 and len(words) > 10:
-                    error_arg_count(line)
+            if len(words) < 6 and len(words) > 10:
+                error_arg_count(line)
 
-                p1 = 0
-                p2 = 0
-                p3 = 0
+            p1 = 0
+            p2 = 0
+            p3 = 0
 
-                if len(words) >= 7:
-                    p1 = words[6]
-                if len(words) >= 8:
-                    p2 = words[7]
-                if len(words) == 9:
-                    p3 = words[8]
+            if len(words) >= 7:
+                p1 = words[6]
+            if len(words) >= 8:
+                p2 = words[7]
+            if len(words) == 9:
+                p3 = words[8]
 
-                abort = 0
-                if len(words) == 10:
-                    abort = words[9]
+            abort = 0
+            if len(words) == 10:
+                abort = words[9]
 
-                task_list.append((words[1], int(words[2]), words[3],
-                                  int(words[4]), words[5], p1, p2, p3, abort))
-                continue
+            task_list.append((words[1], int(words[2]), words[3],
+                              int(words[4]), words[5], p1, p2, p3, abort))
+            continue
 
         if (words[0] == "TASKGROUP"):
             if (len(words) != 2):
@@ -218,21 +203,15 @@ def mdef_parse():
             continue
 
         if (words[0] == "SEMA"):
-            if (kernel_type == "micro"):
-                if (len(words) != 2):
-                    error_arg_count(line)
-                sema_list.append((words[1],))
-                continue
-            elif (kernel_type == "unified"):
-                if len(words) < 2 and len(words) > 4:
-                    error_arg_count(line)
-                if len(words) == 2:
-                    sema_list.append((words[1], 0, 0xffffffff))
-                elif len(words) == 3:
-                    sema_list.append((words[1], int(words[2]), 0xffffffff))
-                else:
-                    sema_list.append((words[1], int(words[2]), int(words[3])))
-                continue
+            if len(words) < 2 and len(words) > 4:
+                error_arg_count(line)
+            if len(words) == 2:
+                sema_list.append((words[1], 0, 0xffffffff))
+            elif len(words) == 3:
+                sema_list.append((words[1], int(words[2]), 0xffffffff))
+            else:
+                sema_list.append((words[1], int(words[2]), int(words[3])))
+            continue
 
         if (words[0] == "MUTEX"):
             if (len(words) != 2):
@@ -292,7 +271,7 @@ def mdef_parse():
 kernel_main_c_data = ""
 
 kernel_main_c_filename_str = \
-    "/* kernel_main.c - microkernel objects */\n\n"
+    "/* kernel_main.c - kernel objects */\n\n"
 
 
 def kernel_main_c_out(string):
@@ -305,84 +284,17 @@ def kernel_main_c_out(string):
 def kernel_main_c_header():
     """ Generate initial portion of kernel_main.c """
 
-    if kernel_type == 'micro':
-        kernel_main_c_out(
-            kernel_main_c_filename_str +
-            copyright +
-            do_not_edit_warning +
-            "\n" +
-            "#include <sysgen.h>\n" +
-            "#include <misc/debug/object_tracing_common.h>\n" +
-            "#include <micro_private_types.h>\n" +
-            "#include <kernel_main.h>\n" +
-            "#include <toolchain.h>\n" +
-            "#include <sections.h>\n")
-    else:
-        kernel_main_c_out(
-            kernel_main_c_filename_str +
-            copyright +
-            do_not_edit_warning +
-            "\n" +
-            "#include <sysgen.h>\n" +
-            "#include <misc/debug/object_tracing_common.h>\n" +
-            "#include <kernel.h>\n" +
-            "#include <toolchain.h>\n" +
-            "#include <sections.h>\n")
-
-
-def kernel_main_c_kargs():
-    """ Generate command packet variables """
-
-    # command packets
-
-    kernel_main_c_out("\n" +
-        "struct k_args _k_server_command_packets[%s] =\n" % (num_kargs) +
-        "{\n" +
-        "    {NULL, NULL, 0, 0, _K_SVC_UNDEFINED},\n")
-    for i in range(1, num_kargs - 1):
-        kernel_main_c_out(
-            "    {&_k_server_command_packets[%d], " % (i - 1) +
-            "NULL, 0, 0, _K_SVC_UNDEFINED},\n")
     kernel_main_c_out(
-        "    {&_k_server_command_packets[%d], " % (num_kargs - 2) +
-        "NULL, 0, 0, _K_SVC_UNDEFINED}\n" +
-        "};\n")
+        kernel_main_c_filename_str +
+        copyright +
+        do_not_edit_warning +
+        "\n" +
+        "#include <sysgen.h>\n" +
+        "#include <misc/debug/object_tracing_common.h>\n" +
+        "#include <kernel.h>\n" +
+        "#include <toolchain.h>\n" +
+        "#include <sections.h>\n")
 
-    # linked list of free command packets
-
-    kernel_main_c_out("\n" +
-        "struct nano_lifo _k_server_command_packet_free = " +
-        "{{NULL, &_k_server_command_packet_free.wait_q.head}, " +
-        "(void *) &_k_server_command_packets[%d]};\n" % (num_kargs - 1))
-
-
-def kernel_main_c_timers():
-    """ Generate timer system variables """
-
-    if (num_timers == 0):
-        return
-
-    # timer descriptors
-
-    kernel_main_c_out("\n" +
-        "struct k_timer _k_timer_blocks[%d] =\n" % (num_timers) +
-        "{\n" +
-        "    {NULL, NULL, 0, 0, (struct k_args *)0xffffffff},\n")
-    for i in range(1, num_timers - 1):
-        kernel_main_c_out(
-            "    {&_k_timer_blocks[%d], " % (i - 1) +
-            "NULL, 0, 0, (struct k_args *)0xffffffff},\n")
-    kernel_main_c_out(
-        "    {&_k_timer_blocks[%d], " % (num_timers - 2) +
-        "NULL, 0, 0, (struct k_args *)0xffffffff}\n" +
-        "};\n")
-
-    # linked list of free timers
-
-    kernel_main_c_out("\n" +
-        "struct nano_lifo _k_timer_free = " +
-        "{{NULL, &_k_timer_free.wait_q.head}, " +
-        "(void *) &_k_timer_blocks[%d]};\n" % (num_timers - 1))
 
 def get_group_bitmask(group_str):
 
@@ -413,7 +325,7 @@ def is_int(x):
 def is_number(x):
     return is_float(x) or is_int(x)
 
-def kernel_main_c_tasks_unified():
+def kernel_main_c_tasks():
     global num_prios
 
     kernel_main_c_out("\n")
@@ -464,145 +376,12 @@ def kernel_main_c_tasks_unified():
                 abort, int(prio), int(groups)))
 
 
-def kernel_main_c_tasks_micro():
-
-    global num_prios
-
-    # task stack areas
-
-    kernel_main_c_out("\n")
-    for task in task_list:
-        kernel_main_c_out("char __noinit __stack __%s_stack[%d];\n" %
-                          (task[0], task[3]))
-
-    kernel_main_c_out("extern char main_task_stack[CONFIG_MAIN_STACK_SIZE];\n")
-
-    # declare task entry points
-
-    kernel_main_c_out("\n")
-    for task in task_list:
-        kernel_main_c_out("EXTERN_C void %s(void);\n" % task[2])
-
-    # task descriptors (including one for idle task)
-    #
-    # compiler puts these objects into the section as if
-    # it is a stack. hence the need to reverse the list.
-    # this is to preseve the order defined in MDEF file.
-
-    kernel_main_c_out("\n")
-    for task in reversed(task_list):
-        name = task[0]
-        prio = task[1]
-        entry = task[2]
-        size = task[3]
-        obj_name = "_k_task_obj_%s" % (name)
-
-        stack = "__" + task[0] + "_stack"
-
-        # create bitmask of group(s) task belongs to
-        group_bitmask = get_group_bitmask(task[4])
-
-        # invert bitmask to convert SYS indication to non-SYS indication
-        #
-        # NOTE: There actually is no SYS group; instead, there is a non-SYS
-        # group that all tasks belong to unless they specify the 'SYS' name.
-        # This approach allows the kernel to easily suspend all non-SYS tasks
-        # during debugging, while minimizing the number of task entries that
-        # have to explicitly indicate their SYS/non-SYS status.
-        group_bitmask ^= group_dictionary['SYS']
-
-        kernel_main_c_out(
-            "struct k_task %s " % (obj_name)+
-            "__in_section(_k_task_list, public, task) =\n" +
-            "    {NULL, NULL, %d, (ktask_t)&%s,\n" % (prio, obj_name) +
-            "     0x00000001, %#010x,\n" % (group_bitmask) +
-            "     %s, %s, %d,\n" % (entry, stack, size) +
-            "     (taskabortfunction)NULL, NULL};\n" +
-            "ktask_t _k_task_ptr_%s " % (name) +
-            "    __in_section(_k_task_ptr, public, task) = " +
-            "    (ktask_t)&%s;\n" % (obj_name))
-
-    kernel_main_c_out(
-        "struct k_task _k_task_idle " +
-        "__in_section(_k_task_list, idle, task) =\n" +
-        "    {NULL, NULL, %d, 0x00000000,\n" % (num_prios - 1) +
-        "     0x00000000, 0x00000000,\n" +
-        "     (taskstartfunction)NULL, main_task_stack,\n"
-        "     CONFIG_MAIN_STACK_SIZE,\n" +
-        "     (taskabortfunction)NULL, NULL};\n" +
-        "ktask_t _k_task_ptr_idle " +
-        "    __in_section(_k_task_ptr, idle, task) = " +
-        "    (ktask_t)&_k_task_idle;\n")
-
-    # currently scheduled task (idle task)
-
-    kernel_main_c_out("\n" +
-        "struct k_task * _k_current_task = &_k_task_idle;\n")
-
-
-def kernel_main_c_tasks():
-    """ Generate task variables """
-
-    if kernel_type == 'micro':
-        kernel_main_c_tasks_micro()
-    else:
-        kernel_main_c_tasks_unified()
-
-
-def kernel_main_c_priorities():
-    """ Generate task scheduling variables """
-
-    global num_prios
-
-    total_tasks = len(task_list) + 1
-
-    # priority queue descriptors (lowest priority queue contains idle task)
-
-    kernel_main_c_out("\n" +
-        "struct k_tqhd _k_task_priority_list[%d] =\n" % (num_prios) +
-        "{\n")
-    for i in range(1, num_prios):
-        kernel_main_c_out(
-            "    {NULL, (struct k_task *)&_k_task_priority_list[%d]},\n" %
-            (i - 1))
-    kernel_main_c_out(
-        "    {&_k_task_idle, &_k_task_idle}\n" +
-        "};\n")
-
-    # active priority queue (idle task's queue)
-
-    kernel_main_c_out("\n" +
-        "struct k_tqhd * K_Prio = &_k_task_priority_list[%d];\n" %
-        (num_prios - 1))
-
-    # priority queue bit map (indicates which priority queues are non-empty;
-    # initially only the idle task's queue has a runnable task)
-
-    num_bit_maps = ((num_prios + 31) // 32)
-
-    kernel_main_c_out("\n" +
-        "uint32_t _k_task_priority_bitmap[%d] = {" % (num_bit_maps))
-    for i in range(1, num_bit_maps):
-        kernel_main_c_out("0, ")
-    kernel_main_c_out("(1u << %d)};\n" % ((num_prios - 1) & 0x1f))
-
-
 def kernel_main_c_events():
     """ Generate event variables """
 
-    if kernel_type == 'micro':
-        event_type = 'int'
-    else:
-        event_type = 'struct k_alert *'
+    event_type = 'struct k_alert *'
 
     # event descriptors
-
-    # pre-defined event for timer
-    if kernel_type == 'micro':
-        if (num_timers > 0):
-            kernel_main_c_out("DEFINE_EVENT(TICK_EVENT, _k_ticker);\n")
-        else:
-            kernel_main_c_out("DEFINE_EVENT(TICK_EVENT, NULL);\n")
 
     # project-specific events
     for event in event_list:
@@ -616,11 +395,8 @@ def kernel_main_c_events():
             kernel_main_c_out("extern int %s(%s event);\n" %
 	                      (event[1], event_type))
 
-        if kernel_type == 'micro':
-            kernel_main_c_out("DEFINE_EVENT(%s, %s);\n" % (event[0], event[1]))
-        else:
-            kernel_main_c_out("K_ALERT_DEFINE(_k_event_obj_%s, %s, 1);\n" %
-                              (event[0], event[1]))
+        kernel_main_c_out("K_ALERT_DEFINE(_k_event_obj_%s, %s, 1);\n" %
+                          (event[0], event[1]))
 
 def kernel_main_c_mutexes():
     """ Generate mutex variables """
@@ -635,11 +411,7 @@ def kernel_main_c_mutexes():
     kernel_main_c_out("\n")
     for mutex in mutex_list:
         name = mutex[0]
-        if kernel_type == 'micro':
-            kernel_main_c_out("struct _k_mutex_struct _k_mutex_obj_%s = " %
-                              (name) + "__MUTEX_DEFAULT;\n")
-        else:
-            kernel_main_c_out("K_MUTEX_DEFINE(_k_mutex_obj_%s);\n" % (name))
+        kernel_main_c_out("K_MUTEX_DEFINE(_k_mutex_obj_%s);\n" % (name))
 
 
 def kernel_main_c_semas():
@@ -655,14 +427,10 @@ def kernel_main_c_semas():
     kernel_main_c_out("\n")
     for semaphore in sema_list:
         name = semaphore[0]
-        if kernel_type == 'micro':
-            kernel_main_c_out("struct _k_sem_struct _k_sem_obj_%s = " %
-                              (name) + "__K_SEMAPHORE_DEFAULT;\n")
-        else:
-            initial_count = semaphore[1]
-            limit = semaphore[2]
-            kernel_main_c_out("K_SEM_DEFINE(_k_sem_obj_%s, %s, %s);\n" %
-                              (name, initial_count, limit))
+        initial_count = semaphore[1]
+        limit = semaphore[2]
+        kernel_main_c_out("K_SEM_DEFINE(_k_sem_obj_%s, %s, %s);\n" %
+                          (name, initial_count, limit))
 
 
 def kernel_main_c_fifos():
@@ -675,28 +443,13 @@ def kernel_main_c_fifos():
 
     kernel_main_c_out("\n")
 
-    if kernel_type == 'micro':
-        # FIFO buffers and descriptors
-
-        for fifo in fifo_list:
-            name = fifo[0]
-            depth = fifo[1]
-            width = fifo[2]
-            buffer = "__" + name + "_buffer"
-            kernel_main_c_out("char __noinit %s[%d];\n" %
-                (buffer, depth * width))
-            kernel_main_c_out(
-	        "struct _k_fifo_struct _k_fifo_obj_%s = " % (name) +
-                "__K_FIFO_DEFAULT(%d, %d, %s);\n" % (depth, width, buffer))
-    else:
-        # message queue objects
-
-        for fifo in fifo_list:
-            name = fifo[0]
-            depth = fifo[1]
-            width = fifo[2]
-            kernel_main_c_out("K_MSGQ_DEFINE(_k_fifo_obj_%s, %s, %s, 4);\n" %
-                              (name, width, depth))
+    # message queue objects
+    for fifo in fifo_list:
+        name = fifo[0]
+        depth = fifo[1]
+        width = fifo[2]
+        kernel_main_c_out("K_MSGQ_DEFINE(_k_fifo_obj_%s, %s, %s, 4);\n" %
+                          (name, width, depth))
 
 
 def kernel_main_c_pipes():
@@ -711,32 +464,12 @@ def kernel_main_c_pipes():
 
     kernel_main_c_out("\n")
 
-    if kernel_type == 'micro':
-        for pipe in pipe_list:
-            kernel_main_c_out(
-                "char __noinit __%s_buffer[%d];\n" % (pipe[0], pipe[1]))
-
-        # pipe descriptors
-
-        for pipe in pipe_list:
-            name = pipe[0]
-            size = pipe[1]
-            buffer = "__" + pipe[0] + "_buffer"
-            kernel_main_c_out("struct _k_pipe_struct _k_pipe_obj_%s = "
-                % (name) +
-                "    __K_PIPE_INITIALIZER(%d, %s);\n" % (size, buffer) +
-                "kpipe_t _k_pipe_ptr_%s " % (name) +
-                "    __in_section(_k_pipe_ptr, public, pipe) =\n" +
-                "    (kpipe_t)&_k_pipe_obj_%s;\n" % (name))
-
-    else:
-        # pipe objects
-
-        for pipe in pipe_list:
-            name = pipe[0]
-            size = pipe[1]
-            kernel_main_c_out("K_PIPE_DEFINE(_k_pipe_obj_%s, %d, 4);\n" %
-	                      (name, size))
+    # pipe objects
+    for pipe in pipe_list:
+        name = pipe[0]
+        size = pipe[1]
+        kernel_main_c_out("K_PIPE_DEFINE(_k_pipe_obj_%s, %d, 4);\n" %
+                          (name, size))
 
 
 def kernel_main_c_mailboxes():
@@ -749,20 +482,10 @@ def kernel_main_c_mailboxes():
 
     kernel_main_c_out("\n")
 
-    if kernel_type == 'micro':
-        # mailbox descriptors
-
-        for mbx in mbx_list:
-            name = mbx[0]
-            kernel_main_c_out(
-	        "struct _k_mbox_struct _k_mbox_obj_%s = " % (name) +
-                "__K_MAILBOX_DEFAULT;\n")
-    else:
-        # mailbox objects
-
-        for mbx in mbx_list:
-            name = mbx[0]
-            kernel_main_c_out("K_MBOX_DEFINE(_k_mbox_obj_%s);\n" % (name))
+    # mailbox objects
+    for mbx in mbx_list:
+        name = mbx[0]
+        kernel_main_c_out("K_MBOX_DEFINE(_k_mbox_obj_%s);\n" % (name))
 
 
 def kernel_main_c_maps():
@@ -775,32 +498,13 @@ def kernel_main_c_maps():
 
     kernel_main_c_out("\n")
 
-    if kernel_type == 'micro':
-	# memory map buffers and descriptors
-
-        for map in map_list:
-            name = map[0]
-            blocks = map[1]
-            block_size = map[2]
-            kernel_main_c_out("char __noinit __MAP_%s_buffer[%d];\n" %
-		    (map[0], blocks * block_size))
-            kernel_main_c_out(
-	        "struct _k_mem_map_struct _k_mem_map_obj_%s = " % (name) +
-	        "__K_MEM_MAP_INITIALIZER(%d, %d, __MAP_%s_buffer);\n" %
-		(blocks, block_size, map[0]))
-            kernel_main_c_out(
-	        "kmemory_map_t _k_mem_map_ptr_%s " % (name) +
-	        "    __in_section(_k_mem_map_ptr, public, mem_map) =\n" +
-	        "    (kmemory_map_t)&_k_mem_map_obj_%s;\n" % (name))
-    else:
-	# memory map objects
-
-        for map in map_list:
-            name = map[0]
-            blocks = map[1]
-            block_size = map[2]
-            kernel_main_c_out("K_MEM_SLAB_DEFINE(_k_mem_map_obj_%s, %s, %s, 4);\n" %
-                              (name, block_size, blocks))
+    # memory map objects
+    for map in map_list:
+        name = map[0]
+        blocks = map[1]
+        block_size = map[2]
+        kernel_main_c_out("K_MEM_SLAB_DEFINE(_k_mem_map_obj_%s, %s, %s, 4);\n" %
+                          (name, block_size, blocks))
 
 
 def kernel_main_c_pools():
@@ -813,170 +517,21 @@ def kernel_main_c_pools():
 
     kernel_main_c_out("\nint _k_mem_pool_count = %d;\n" % (total_pools))
 
-    if kernel_type == 'micro':
-        if (total_pools == 0):
-            kernel_main_c_out("\nstruct pool_struct * _k_mem_pool_list = NULL;\n")
-            return
-        #  Heap pool if present can be indexed using the below variable
-        if (heap_pos_in_pool_list != -1):
-            kernel_main_c_out("\nconst kmemory_pool_t _heap_mem_pool_id = %d;\n" \
-                                                         %(heap_pos_in_pool_list))
+    pool_descriptors = ""
+    for pool in pool_list:
+        kernel_main_c_out("\n")
+        min_block_size = pool[1]
+        max_block_size = pool[2]
+        num_maximal_blocks = pool[3]
+        pool_descriptors += "K_MEM_POOL_DEFINE(_k_mem_pool_obj_%s, %d, %d, %d, 4);\n" % \
+                      (pool[0], min_block_size, max_block_size,
+                       num_maximal_blocks)
 
-        # start accumulating memory pool descriptor info
-
-        pool_descriptors = "\nstruct pool_struct _k_mem_pool_list[%d] =\n{\n" % \
-                            (total_pools)
-        ident = 0x00010000
-
-        for pool in pool_list:
-
-            kernel_main_c_out("\n")
-
-            # create local variables relating to current pool
-
-            min_block_size = pool[1]
-            max_block_size = pool[2]
-            num_maximal_blocks = pool[3]
-            total_memory = max_block_size * num_maximal_blocks
-            buffer = "__" + pool[0] + "_buffer"
-            frag_table = "block_sets_%#010x" % ident
-
-            # determine block sizes used by pool (including actual minimum size)
-
-            block_size_list = [max_block_size]
-            while (ident != 0):    # loop forever
-                min_block_size_actual = block_size_list[len(block_size_list) - 1]
-                min_block_size_proposed = min_block_size_actual / 4
-                if (min_block_size_proposed < min_block_size):
-                    break
-                block_size_list.append(min_block_size_proposed)
-            frag_levels = len(block_size_list)
-
-            # determine size of quad-block arrays,
-            # from the largest block size to the smallest block size
-            # - each array must be big enough to track the status of
-            #   the entire memory pool buffer
-            # - each array entry tracks the status of 4 consecutive blocks
-            # - need to do rounding up with array for largest block size
-            #   in case the # of largest size blocks isn't a multiple of 4
-            #   (i.e. it's final array entry may be partly unused)
-
-            quad_block_sizes = [(num_maximal_blocks + 3) / 4]
-            quad_block_size_to_use = num_maximal_blocks
-            for index in range(1, frag_levels):
-                quad_block_sizes.append(quad_block_size_to_use)
-                quad_block_size_to_use *= 4
-
-            # generate array of quad-blocks for each block set
-
-            for index in range(0, frag_levels):
-                kernel_main_c_out(
-                    "struct pool_quad_block quad_blocks_%#010x_%d[%d];\n" %
-                    (ident, index, quad_block_sizes[index]))
-
-            # generate array of block sets for memory pool
-
-            kernel_main_c_out("\nstruct pool_block_set %s[%d] =\n{\n" %
-                            (frag_table, frag_levels))
-            for index in range(0, frag_levels):
-                kernel_main_c_out("    { %d, %d, quad_blocks_%#010x_%d},\n" %
-                    (block_size_list[index], quad_block_sizes[index],
-                     ident, index))
-            kernel_main_c_out("};\n")
-
-            # generate memory pool buffer
-
-            kernel_main_c_out("\nchar __noinit %s[%d];\n" % (buffer, total_memory))
-
-            # append memory pool descriptor info
-
-            pool_descriptors += "    {%d, %d, %d, %d, NULL, %s, %s},\n" % \
-                (max_block_size, min_block_size_actual,
-                num_maximal_blocks, frag_levels, frag_table, buffer)
-
-            ident += 1
-
-        # generate memory pool descriptor info
-
-        pool_descriptors += "};\n"
-    elif kernel_type == 'unified':
-        pool_descriptors = ""
-        for pool in pool_list:
-            kernel_main_c_out("\n")
-            min_block_size = pool[1]
-            max_block_size = pool[2]
-            num_maximal_blocks = pool[3]
-            pool_descriptors += "K_MEM_POOL_DEFINE(_k_mem_pool_obj_%s, %d, %d, %d, 4);\n" % \
-                          (pool[0], min_block_size, max_block_size,
-                           num_maximal_blocks)
-
-        if (heap_pos_in_pool_list != -1):
-            kernel_main_c_out(
-		"\nkmemory_pool_t _heap_mem_pool_ptr = " +
-		"&_k_mem_pool_obj__HEAP_MEM_POOL;\n")
+    if (heap_pos_in_pool_list != -1):
+        kernel_main_c_out(
+            "\nkmemory_pool_t _heap_mem_pool_ptr = " +
+            "&_k_mem_pool_obj__HEAP_MEM_POOL;\n")
     kernel_main_c_out(pool_descriptors)
-
-
-def kernel_main_c_node_init():
-    """ Generate node initialization routine """
-
-    kernel_main_c_out("\n" +
-        "void _k_init_dynamic(void)\n{\n")
-    kernel_main_c_out("    _k_pipe_init();\n")
-    kernel_main_c_out("    _k_mem_map_init();\n")
-    if (len(pool_list) > 0):
-        kernel_main_c_out("    _k_mem_pool_init();\n")
-
-    kernel_main_c_out("#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS\n")
-    # mutex object ids
-    for mutex in mutex_list:
-        name = mutex[0]
-        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mutex, " +
-            "&_k_mutex_obj_%s);\n" % (name))
-    # semaphore object ids
-    for semaphore in sema_list:
-        name = semaphore[0]
-        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_sem, " +
-            "&_k_sem_obj_%s);\n" % (name))
-    # fifo object ids
-    for fifo in fifo_list:
-        name = fifo[0]
-        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_fifo, " +
-            "&_k_fifo_obj_%s);\n" % (name))
-    # mailbox object ids
-    for mbx in mbx_list:
-        name = mbx[0]
-        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mbox, " +
-            "&_k_mbox_obj_%s);\n" % (name))
-    # pipe object id
-    for pipe in pipe_list:
-        name = pipe[0];
-        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_pipe, " +
-            "&_k_pipe_obj_%s);\n" % (name))
-    # memory map object id
-    for map in map_list:
-        name = map[0];
-        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mem_map, " +
-            "&_k_mem_map_obj_%s);\n" % (name))
-    # memory pool object id
-    pool_count = 0;
-    total_pools = len(pool_list);
-    while (pool_count < total_pools):
-        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mem_pool, " +
-            "&(_k_mem_pool_list[%d]));\n" % (pool_count))
-        pool_count = pool_count + 1;
-
-    # event map object id
-    for event in event_list:
-        # no need to expose the irq task events
-        if not (event[0].startswith("_TaskIrqEvt")):
-            name = event[0];
-            kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_event, " +
-            "&_k_event_obj_%s);\n" % (name))
-
-    kernel_main_c_out("#endif\n")
-
-    kernel_main_c_out("}\n")
 
 
 def kernel_main_c_generate():
@@ -996,49 +551,8 @@ def kernel_main_c_generate():
     kernel_main_c_pipes()
     kernel_main_c_pools()
 
-    if kernel_type == 'micro':
-        kernel_main_c_kargs()
-        kernel_main_c_timers()
-        kernel_main_c_node_init()
-        kernel_main_c_priorities()
-
     write_file(output_dir + 'kernel_main.c', kernel_main_c_data)
 
-
-#
-# GENERATE kernel_main.h FILE
-#
-
-
-def kernel_main_h_generate():
-    """ Generate kernel_main.h file """
-
-    global output_dir
-
-    subprocess.check_call([
-        "cp",
-        "-f",
-        os.environ["ZEPHYR_BASE"] +
-        "/kernel/microkernel/include/kernel_main.h",
-        output_dir])
-
-
-#
-# GENERATE micro_private_types.h FILE
-#
-
-
-def micro_private_types_h_generate():
-    """ Generate micro_private_types.h file """
-
-    global output_dir
-
-    subprocess.check_call([
-        "cp",
-        "-f",
-        os.environ["ZEPHYR_BASE"] +
-        "/kernel/microkernel/include/micro_private_types.h",
-        output_dir])
 
 
 #
@@ -1049,7 +563,7 @@ def micro_private_types_h_generate():
 sysgen_h_data = ""
 
 sysgen_h_filename_str = \
-    "/* sysgen.h - system generated microkernel definitions */\n\n"
+    "/* sysgen.h - system generated kernel definitions */\n\n"
 
 sysgen_h_include_guard = "_SYSGEN__H_"
 
@@ -1062,10 +576,7 @@ def generate_sysgen_h_header():
 
     global sysgen_h_data
 
-    if kernel_type == 'micro':
-        kernel_api_file = "#include <microkernel.h>\n"
-    else:
-        kernel_api_file = "#include <kernel.h>\n"
+    kernel_api_file = "#include <kernel.h>\n"
 
     sysgen_h_data += \
         sysgen_h_filename_str + \
@@ -1115,37 +626,21 @@ def generate_sysgen_h_obj_ids():
 
     global sysgen_h_data
 
-    if kernel_type == 'micro':
-        mutex_struct = '_k_mutex_struct'
-        mutex_type = 'kmutex_t'
-        sem_struct = '_k_sem_struct'
-        sem_type = 'ksem_t'
-        pipe_struct = '_k_pipe_struct'
-        pipe_type = 'kpipe_t'
-        map_struct = '_k_mem_map_struct'
-        map_type = 'kmemory_map_t'
-        fifo_struct = '_k_fifo_struct'
-        fifo_type = 'kfifo_t'
-        mbox_struct = '_k_mbox_struct'
-        mbox_type = 'kmbox_t'
-        event_type = 'kevent_t'
-        # add missing object types
-    else:
-        mutex_struct = 'k_mutex'
-        mutex_type = 'struct k_mutex *'
-        sem_struct = 'k_sem'
-        sem_type = 'struct k_sem *'
-        pipe_struct = 'k_pipe'
-        pipe_type = 'struct k_pipe *'
-        map_struct = 'k_mem_slab'
-        map_type = 'struct k_mem_slab *'
-        fifo_struct = 'k_msgq'
-        fifo_type = 'struct k_msgq *'
-        mbox_struct = 'k_mbox'
-        mbox_type = 'struct k_mbox *'
-        event_type = 'struct k_alert *'
-        mem_pool_type = 'struct k_mem_pool'
-        # add missing object types
+    mutex_struct = 'k_mutex'
+    mutex_type = 'struct k_mutex *'
+    sem_struct = 'k_sem'
+    sem_type = 'struct k_sem *'
+    pipe_struct = 'k_pipe'
+    pipe_type = 'struct k_pipe *'
+    map_struct = 'k_mem_slab'
+    map_type = 'struct k_mem_slab *'
+    fifo_struct = 'k_msgq'
+    fifo_type = 'struct k_msgq *'
+    mbox_struct = 'k_mbox'
+    mbox_type = 'struct k_mbox *'
+    event_type = 'struct k_alert *'
+    mem_pool_type = 'struct k_mem_pool'
+    # add missing object types
 
     # mutex object ids
 
@@ -1216,21 +711,16 @@ def generate_sysgen_h_obj_ids():
         entry = task[2]
         stack_size = task[3]
 
-        if kernel_type == 'micro':
+        if entry == "main":
+            # Special case: if the MDEF defines a main() thread,
+            # re-purpose the already existing main_thread for it.
             sysgen_h_data += \
-                "extern struct k_task _k_task_obj_%s;\n" % (name) + \
-                "#define %s ((ktask_t)&_k_task_obj_%s)\n" % (name, name)
-        elif (kernel_type == 'unified'):
-            if entry == "main":
-                # Special case: if the MDEF defines a main() thread,
-                # re-purpose the already existing main_thread for it.
-                sysgen_h_data += \
-                    "#define MDEF_MAIN_STACK_SIZE %d\n" % stack_size
-                sysgen_h_data += \
-                    "#define MDEF_MAIN_THREAD_PRIORITY %d\n" % prio
-            else:
-                sysgen_h_data += \
-                    "extern char _k_thread_obj_%s[];\n" % (name) + \
+                "#define MDEF_MAIN_STACK_SIZE %d\n" % stack_size
+            sysgen_h_data += \
+                "#define MDEF_MAIN_THREAD_PRIORITY %d\n" % prio
+        else:
+            sysgen_h_data += \
+                "extern char _k_thread_obj_%s[];\n" % (name) + \
                     "#define %s ((k_tid_t)_k_thread_obj_%s)\n" % (name, name)
 
     # event object ids
@@ -1240,28 +730,19 @@ def generate_sysgen_h_obj_ids():
         # no need to expose the irq task events
         if not (event[0].startswith("_TaskIrqEvt")):
             name = event[0];
-            if kernel_type == 'micro':
-                sysgen_h_data += "extern const %s %s;\n" % (event_type, name)
-            elif (kernel_type == 'unified'):
-                sysgen_h_data += \
-                    "extern struct k_alert _k_event_obj_%s;\n" % (name)
-                sysgen_h_data += \
-                    "#define %s (&_k_event_obj_%s)\n\n" % (name, name)
+            sysgen_h_data += \
+                "extern struct k_alert _k_event_obj_%s;\n" % (name)
+            sysgen_h_data += \
+                "#define %s (&_k_event_obj_%s)\n\n" % (name, name)
 
     # memory pool object ids
 
-    if kernel_type == 'micro':
-        obj_types = [
-            [pool_list, 0],
-        ]
-        sysgen_h_data += generate_obj_id_lines(obj_types)
-    elif (kernel_type == 'unified'):
-        for mem_pool in pool_list:
-            name = mem_pool[0];
-            sysgen_h_data += \
-                "extern %s _k_mem_pool_obj_%s;\n" % (mem_pool_type, name)
-            sysgen_h_data += \
-                "#define %s ((%s *)&_k_mem_pool_obj_%s)\n" % (name, mem_pool_type, name)
+    for mem_pool in pool_list:
+        name = mem_pool[0];
+        sysgen_h_data += \
+            "extern %s _k_mem_pool_obj_%s;\n" % (mem_pool_type, name)
+        sysgen_h_data += \
+            "#define %s ((%s *)&_k_mem_pool_obj_%s)\n" % (name, mem_pool_type, name)
 
     # all other object ids
 
@@ -1295,7 +776,4 @@ def sysgen_h_generate():
 get_cmdline_args()
 mdef_parse()
 kernel_main_c_generate()
-if kernel_type == 'micro':
-    kernel_main_h_generate()
-    micro_private_types_h_generate()
 sysgen_h_generate()
