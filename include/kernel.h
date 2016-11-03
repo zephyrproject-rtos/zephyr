@@ -2136,6 +2136,10 @@ struct k_mem_pool {
 /*
  * Static memory pool initialization
  */
+/**
+ * @cond internal
+ * Make Doxygen skip assembler macros
+ */
 /*
  * Use .altmacro to be able to recalculate values and pass them as string
  * arguments when calling assembler macros resursively
@@ -2260,6 +2264,29 @@ __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
 	char __noinit __aligned(align)                                  \
 		_mem_pool_buffer_##name[(max_size) * (n_max)]
 
+/*
+ * Dummy function that assigns the value of sizeof(struct k_mem_pool_quad_block)
+ * to __memory_pool_quad_block_size absolute symbol.
+ * This function does not get called, but compiler calculates the value and
+ * assigns it to the absolute symbol, that, in turn is used by assembler macros.
+ */
+static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
+{
+	__asm__(".globl __memory_pool_quad_block_size\n\t"
+#ifdef CONFIG_NIOS2
+	    "__memory_pool_quad_block_size = %0\n\t"
+#else
+	    "__memory_pool_quad_block_size = %c0\n\t"
+#endif
+	    :
+	    : "n"(sizeof(struct k_mem_pool_quad_block)));
+}
+
+/**
+ * @endcond
+ * End of assembler macros that Doxygen has to skip
+ */
+
 /**
  * @brief Define a memory pool
  *
@@ -2288,24 +2315,6 @@ __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
 	__asm__("_build_mem_pool " STRINGIFY(name) " " STRINGIFY(min_size) " " \
 	       STRINGIFY(max_size) " " STRINGIFY(n_max) "\n\t");	\
 	extern struct k_mem_pool name
-
-/*
- * Dummy function that assigns the value of sizeof(struct k_mem_pool_quad_block)
- * to __memory_pool_quad_block_size absolute symbol.
- * This function does not get called, but compiler calculates the value and
- * assigns it to the absolute symbol, that, in turn is used by assembler macros.
- */
-static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
-{
-	__asm__(".globl __memory_pool_quad_block_size\n\t"
-#ifdef CONFIG_NIOS2
-	    "__memory_pool_quad_block_size = %0\n\t"
-#else
-	    "__memory_pool_quad_block_size = %c0\n\t"
-#endif
-	    :
-	    : "n"(sizeof(struct k_mem_pool_quad_block)));
-}
 
 /**
  * @brief Allocate memory from a memory pool
