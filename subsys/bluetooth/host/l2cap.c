@@ -909,6 +909,9 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		chan->tx.mtu = mtu;
 		chan->tx.mps = mps;
 
+		/* Update state */
+		chan->chan.state = BT_L2CAP_CONNECTED;
+
 		if (chan->chan.ops && chan->chan.ops->connected) {
 			chan->chan.ops->connected(&chan->chan);
 		}
