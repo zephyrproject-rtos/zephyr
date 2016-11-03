@@ -1275,12 +1275,11 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		}
 
 		offset++;
-	}
 #else
 		NET_DBG("Context based uncompression not enabled");
 		return false;
-	}
 #endif
+	}
 
 	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
 	if (!frag) {
