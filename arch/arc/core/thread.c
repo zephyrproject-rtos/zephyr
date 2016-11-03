@@ -124,7 +124,6 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif
 
-#ifdef CONFIG_KERNEL_V2
 	/* k_q_node initialized upon first insertion in a list */
 	tcs->flags = options | K_PRESTART;
 	tcs->sched_locked = 0;
@@ -132,11 +131,6 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	/* static threads overwrite them afterwards with real values */
 	tcs->init_data = NULL;
 	tcs->fn_abort = NULL;
-#else
-	tcs->link = NULL;
-	tcs->flags = priority == -1 ? TASK | PREEMPTIBLE : FIBER;
-	ARG_UNUSED(options);
-#endif
 	tcs->prio = priority;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
@@ -153,11 +147,7 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	tcs->entry = (struct __thread_entry *)(pInitCtx);
 #endif
 
-#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
-	tcs->uk_task_ptr = uk_task_ptr;
-#else
 	ARG_UNUSED(uk_task_ptr);
-#endif
 
 	/*
 	 * intlock_key is constructed based on ARCv2 ISA Programmer's

@@ -35,9 +35,7 @@
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
 GTEXT(_rirq_common_interrupt_swap)
-#ifdef CONFIG_KERNEL_V2
 GTEXT(_is_next_thread_current)
-#endif
 
 #if 0 /* TODO: when FIRQ is not present, all would be regular */
 #define NUM_REGULAR_IRQ_PRIO_LEVELS CONFIG_NUM_IRQ_PRIO_LEVELS
@@ -131,7 +129,6 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 * b) needs to load it to restore the interrupted context.
 	 */
 
-#ifdef CONFIG_KERNEL_V2
 	/* coop thread ? do not schedule */
 	ld_s r0, [r2, __tTCS_prio_OFFSET]
 	cmp_s r0, 0
@@ -165,17 +162,6 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	pop_s blink
 	pop_s r1
 	pop_s r2
-#else
-	ld_s r0, [r2, __tTCS_flags_OFFSET]
-	and.f r0, r0, PREEMPTIBLE
-	bz.d _rirq_no_reschedule
-	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
-
-	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
-	cmp r0, 0
-	bz.d _rirq_no_reschedule
-	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
-#endif /* CONFIG_KERNEL_V2 */
 
 .balign 4
 _rirq_reschedule:
@@ -188,11 +174,8 @@ _rirq_reschedule:
 	/* incoming fiber is in r0: it becomes the new 'current' */
 	mov r2, r0
 	st_s r2, [r1, __tNANO_current_OFFSET]
-#if !defined(CONFIG_KERNEL_V2)
-	ld_s r3, [r2, __tTCS_link_OFFSET]
-	st_s r3, [r1, __tNANO_fiber_OFFSET]
-#endif
 
+.balign 4
 _rirq_common_interrupt_swap:
 	/* r2 contains pointer to new thread */
 

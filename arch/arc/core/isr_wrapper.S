@@ -42,9 +42,7 @@ SECTION_VAR(BSS, saved_r0)
         .word 0
 #endif
 
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-GTEXT(_power_save_idle_exit)
-#elif defined(CONFIG_KERNEL_V2) && defined(CONFIG_SYS_POWER_MANAGEMENT)
+#if defined(CONFIG_SYS_POWER_MANAGEMENT)
 GTEXT(_sys_power_save_idle_exit)
 #endif
 
@@ -311,17 +309,7 @@ GTEXT(_sys_k_event_logger_interrupt)
 	#define log_interrupt_k_event
 #endif
 
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-.macro exit_tickless_idle
-	clri r0 /* do not interrupt exiting tickless idle operations */
-	push_s r0
-	push_s blink
-	jl _power_save_idle_exit
-	pop_s blink
-	pop_s r0
-	seti r0
-.endm
-#elif defined(CONFIG_KERNEL_V2) && defined(CONFIG_SYS_POWER_MANAGEMENT)
+#if defined(CONFIG_SYS_POWER_MANAGEMENT)
 .macro exit_tickless_idle
 	clri r0 /* do not interrupt exiting tickless idle operations */
 	push_s r1

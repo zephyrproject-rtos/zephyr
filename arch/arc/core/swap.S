@@ -34,12 +34,8 @@
 #include "swap_macros.h"
 
 GTEXT(_Swap)
-
-#ifdef CONFIG_KERNEL_V2
 GTEXT(_get_next_ready_thread)
 GDATA(_k_neg_eagain)
-#endif
-
 GDATA(_nanokernel)
 
 /**
@@ -85,7 +81,6 @@ SECTION_FUNC(TEXT, _Swap)
 	st_s r0, [r2, __tTCS_intlock_key_OFFSET]
 	st _CAUSE_COOP, [r2, __tTCS_relinquish_cause_OFFSET]
 
-#ifdef CONFIG_KERNEL_V2
 	/*
          * Carve space for the return value. Setting it to a defafult of
          * -EAGAIN eliminates the need for the timeout code to set it.
@@ -94,7 +89,6 @@ SECTION_FUNC(TEXT, _Swap)
          */
 	ld r3, [_k_neg_eagain]
 	st_s r3, [r2, __tTCS_return_value_OFFSET]
-#endif /* CONFIG_KERNEL_V2 */
 
 	/*
 	 * Save status32 and blink on the stack before the callee-saved registers.
@@ -113,7 +107,6 @@ SECTION_FUNC(TEXT, _Swap)
 
 	/* find out incoming thread (fiber or task) */
 
-#ifdef CONFIG_KERNEL_V2
 	/*
 	 * Save needed registers to callee saved ones. It is faster than
 	 * pushing them to stack. It is possible to do since program has
@@ -128,36 +121,8 @@ SECTION_FUNC(TEXT, _Swap)
 	mov_s r1, r15
 	mov_s r0, r14
 	mov_s blink, r13
-#else
-	ld_s r2, [r1, __tNANO_fiber_OFFSET]
-	breq r2, 0, _swap_to_the_task
-
-.balign 4
-_swap_to_a_fiber:
-
-	ld_s r3, [r2, __tTCS_link_OFFSET]
-	b.d _finish_swapping_to_thread    /* always execute delay slot */
-	st_s r3, [r1, __tNANO_fiber_OFFSET] /* delay slot */
-
-.balign 4
-_swap_to_the_task:
-
-	ld_s r2, [r1, __tNANO_task_OFFSET]
-
-	/* fall through */
-#endif /* CONFIG_KERNEL_V2 */
-
-.balign 4
-_finish_swapping_to_thread:
-
 
 	/* entering here, r2 contains the new current thread */
-#if 0 && !defined(CONFIG_KERNEL_V2)
-/* don't save flags in tNANO: slower, error-prone, and might not even give
- * a speed boost where it's supposed to */
-	ld_s r3, [r2, __tTCS_flags_OFFSET]
-	st_s r3, [r1, __tNANO_flags_OFFSET]
-#endif
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Use stack top and down registers from restored context */
 	add r3, r2, __tTCS_NOFLOAT_SIZEOF
