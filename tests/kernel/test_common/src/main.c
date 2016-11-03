@@ -34,7 +34,9 @@ void test_main(void)
 			 ztest_unit_test(byteorder_test_memcpy_swap),
 			 ztest_unit_test(byteorder_test_mem_swap),
 			 ztest_unit_test(atomic_test),
+#ifdef CONFIG_PRINTK
 			 ztest_unit_test(printk_test),
+#endif
 			 ztest_unit_test(ring_buffer_test),
 			 ztest_unit_test(slist_test),
 			 ztest_unit_test(rand32_test),
