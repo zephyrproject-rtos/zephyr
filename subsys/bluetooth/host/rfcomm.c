@@ -986,7 +986,7 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 void bt_rfcomm_init(void)
 {
 	static struct bt_l2cap_server server = {
-		.psm	= BT_L2CAP_PSM_RFCOMM,
+		.psm    = BT_L2CAP_PSM_RFCOMM,
 		.accept = rfcomm_accept,
 	};
 
