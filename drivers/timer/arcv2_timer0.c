@@ -86,6 +86,12 @@ static bool     straddled_tick_on_idle_enter = false;
 extern int32_t _sys_idle_elapsed_ticks;
 #endif
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static uint32_t arcv2_timer0_device_power_state;
+static uint32_t saved_limit;
+static uint32_t saved_control;
+#endif
+
 /**
  *
  * @brief Get contents of Timer0 count register
@@ -128,6 +134,17 @@ static ALWAYS_INLINE uint32_t timer0_control_register_get(void)
 static ALWAYS_INLINE void timer0_control_register_set(uint32_t value)
 {
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, value);
+}
+
+/**
+ *
+ * @brief Get contents of Timer0 limit register
+ *
+ * @return N/A
+ */
+static ALWAYS_INLINE uint32_t timer0_limit_register_get(void)
+{
+	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
 }
 
 /**
@@ -352,6 +369,59 @@ int _sys_clock_driver_init(struct device *device)
 
 	return 0;
 }
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static int sys_clock_suspend(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	saved_limit = timer0_limit_register_get();
+	saved_control = timer0_control_register_get();
+
+	arcv2_timer0_device_power_state = DEVICE_PM_SUSPEND_STATE;
+
+	return 0;
+}
+
+static int sys_clock_resume(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	timer0_limit_register_set(saved_limit);
+	timer0_control_register_set(saved_control);
+
+	/*
+	 * It is difficult to accurately know the time spent in DS.
+	 * Expire the timer to get the scheduler called.
+	 */
+	timer0_count_register_set(saved_limit - 1);
+
+	arcv2_timer0_device_power_state = DEVICE_PM_ACTIVE_STATE;
+
+	return 0;
+}
+
+/*
+ * Implements the driver control management functionality
+ * the *context may include IN data or/and OUT data
+ */
+int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
+			  void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return sys_clock_suspend(port);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return sys_clock_resume(port);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = arcv2_timer0_device_power_state;
+		return 0;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 /**
  *

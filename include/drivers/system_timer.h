@@ -61,11 +61,11 @@ extern int sys_clock_device_ctrl(struct device *device,
 				 uint32_t ctrl_command, void *context);
 
 /*
- * Currently regarding timers, only loapic timer implements
+ * Currently regarding timers, only loapic timer and arcv2_timer0 implements
  * device pm functionality. For other timers, use default handler in case
  * the app enables CONFIG_DEVICE_POWER_MANAGEMENT.
  */
-#ifndef CONFIG_LOAPIC_TIMER
+#if !defined(CONFIG_LOAPIC_TIMER) && !defined(CONFIG_ARCV2_TIMER)
 #define sys_clock_device_ctrl device_pm_control_nop
 #endif
 
