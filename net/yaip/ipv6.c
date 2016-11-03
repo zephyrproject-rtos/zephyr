@@ -507,15 +507,12 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 			router = net_if_ipv6_router_find_default(NULL,
 						&NET_IPV6_BUF(buf)->dst);
 			if (!router) {
-				/* Packet cannot be sent because even
-				 * default router is missing.
-				 */
 				NET_DBG("No default route to %s",
 					net_sprint_ipv6_addr(
 						&NET_IPV6_BUF(buf)->dst));
 
-				net_nbuf_unref(buf);
-				return NULL;
+				/* Try to send the packet anyway */
+				goto try_send;
 			}
 
 			nexthop = &router->address.in6_addr;
@@ -527,6 +524,7 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 		return NULL;
 	}
 
+try_send:
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_IPV6_BUF(buf)->dst);
 
