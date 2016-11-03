@@ -39,9 +39,9 @@ Building and running on Arduino 101:
 Arduino 101 is equipped with Nordic nRF51 Bluetooth LE chip, thus nble
 driver has to be build.
 For building tester application for Arduino 101 board with Nordic Bluetooth Low
-Energy stack (NBLE) use prj_nble.conf:
+Energy stack (NBLE) use nble.conf:
 
-$ make pristine && make CONF_FILE=prj_nble.conf BOARD=arduino_101 flash
+$ make pristine && make CONF_FILE=nble.conf BOARD=arduino_101 flash
 
 While running tester application on Arduino 101, serial converter, typically
 UART <-> USB is required by BTP to operate. Connect Arduino 101 Tx and Rx lines

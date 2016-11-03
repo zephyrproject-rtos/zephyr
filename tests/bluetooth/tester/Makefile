@@ -21,7 +21,7 @@
 # default for qemu_cortex_m3 as only this currently supports enought UARTs
 BOARD ?= qemu_cortex_m3
 
-CONF_FILE ?= prj.conf
+CONF_FILE ?= qemu.conf
 
 # UART for Bluetooth
 QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
