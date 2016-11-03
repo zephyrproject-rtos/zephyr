@@ -598,10 +598,11 @@ def kernel_main_c_events():
     # event descriptors
 
     # pre-defined event for timer
-    if (num_timers > 0):
-        kernel_main_c_out("DEFINE_EVENT(TICK_EVENT, _k_ticker);\n")
-    else:
-        kernel_main_c_out("DEFINE_EVENT(TICK_EVENT, NULL);\n")
+    if kernel_type == 'micro':
+        if (num_timers > 0):
+            kernel_main_c_out("DEFINE_EVENT(TICK_EVENT, _k_ticker);\n")
+        else:
+            kernel_main_c_out("DEFINE_EVENT(TICK_EVENT, NULL);\n")
 
     # project-specific events
     for event in event_list:
