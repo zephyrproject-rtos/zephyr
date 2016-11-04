@@ -795,6 +795,20 @@ int zoap_packet_set_used(struct zoap_packet *pkt, uint16_t len)
 	return 0;
 }
 
+struct net_buf *zoap_packet_get_buf(struct zoap_packet *pkt)
+{
+	struct net_buf *frag = pkt->buf->frags;
+	uint8_t *str;
+
+	if (!pkt->start) {
+		str = net_buf_add(frag, 1);
+		*str = COAP_MARKER;
+		pkt->start = str + 1;
+	}
+
+	return frag;
+}
+
 int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
 		    const void *value, uint16_t len)
 {

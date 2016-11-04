@@ -371,6 +371,12 @@ bool zoap_request_is_observe(const struct zoap_packet *request);
 uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len);
 
 /**
+ * Returns the internal buffer of the CoAP packet, appending the
+ * COAP_MARKER to the buffer if necessary.
+ */
+struct net_buf *zoap_packet_get_buf(struct zoap_packet *pkt);
+
+/**
  * Sets how much space was used by the payload.
  */
 int zoap_packet_set_used(struct zoap_packet *pkt, uint16_t len);
