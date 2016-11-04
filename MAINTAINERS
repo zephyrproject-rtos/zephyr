@@ -392,6 +392,11 @@ F:	include/sensor.h
 F:	drivers/sensor/
 F:	samples/sensor/
 
+STM32CUBE SDK
+M:	Erwan Gouriou <erwan.gouriou@linaro.org>
+S:	Supported
+F:	ext/hal/st/stm32cube/
+
 STM32F4X SoC FAMILY and DRIVERS
 M:	Amit Kucheria <amit.kucheria@linaro.org>
 M:	Ricardo Salveti <ricardo.salveti@linaro.org>
