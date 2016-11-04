@@ -213,6 +213,9 @@ int net_context_get(sa_family_t family,
 #if defined(CONFIG_NET_TCP)
 static inline int send_fin(struct net_context *context,
 			   struct sockaddr *remote);
+static enum net_verdict tcp_active_close(struct net_conn *conn,
+					 struct net_buf *buf,
+					 void *user_data);
 
 static bool send_fin_if_active_close(struct net_context *context)
 {
@@ -225,6 +228,8 @@ static bool send_fin_if_active_close(struct net_context *context)
 		 * transitions to FIN_WAIT_1
 		 */
 		send_fin(context, &context->remote);
+		net_conn_change_callback(context->conn_handler,
+					 tcp_active_close, context);
 		return true;
 	default:
 		net_tcp_release(context->tcp);
@@ -583,6 +588,28 @@ static inline int send_fin(struct net_context *context,
 	return 0;
 }
 
+static inline int send_fin_ack(struct net_context *context,
+			       struct sockaddr *remote)
+{
+	struct net_buf *buf;
+	int ret;
+
+	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_FIN | NET_TCP_ACK,
+				      NULL, 0, remote, &buf);
+	if (ret) {
+		return ret;
+	}
+
+	net_tcp_print_send_info("FIN_ACK", buf, NET_TCP_BUF(buf)->dst_port);
+
+	ret = net_send_data(buf);
+	if (ret < 0) {
+		net_nbuf_unref(buf);
+	}
+
+	return 0;
+}
+
 static inline int send_ack(struct net_context *context,
 			   struct sockaddr *remote)
 {
@@ -679,6 +706,47 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 		- net_nbuf_ip_hdr_len(buf) - hdrlen;
 	send_ack(context, &conn->remote_addr);
 
+	return NET_DROP;
+}
+
+static enum net_verdict tcp_active_close(struct net_conn *conn,
+					 struct net_buf *buf,
+					 void *user_data)
+{
+	struct net_context *context = (struct net_context *)user_data;
+	struct net_tcp *tcp;
+
+	NET_ASSERT(context && context->tcp);
+
+	tcp = context->tcp;
+
+	if (NET_TCP_FLAGS(buf) == NET_TCP_FIN) {
+		if (tcp->state == NET_TCP_FIN_WAIT_1 ||
+		    tcp->state == NET_TCP_FIN_WAIT_2) {
+			/* Sending an ACK in FIN_WAIT_1 will transition
+			 * to CLOSING, and to TIME_WAIT if on FIN_WAIT_2
+			 */
+			send_ack(context, &context->remote);
+			return NET_DROP;
+		}
+	} else if (NET_TCP_FLAGS(buf) == NET_TCP_ACK) {
+		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+			net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_2);
+			return NET_DROP;
+		}
+
+		if (tcp->state == NET_TCP_CLOSING) {
+			net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
+			return NET_DROP;
+		}
+	} else if (NET_TCP_FLAGS(buf) == (NET_TCP_FIN | NET_TCP_ACK)) {
+		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+			send_fin_ack(context, &context->remote);
+			return NET_DROP;
+		}
+	}
+
+	NET_DBG("Context %p in wrong state %d", context, tcp->state);
 	return NET_DROP;
 }
 

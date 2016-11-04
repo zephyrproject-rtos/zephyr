@@ -321,6 +321,21 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 
 	if (flags & NET_TCP_ACK) {
 		ack = tcp->send_ack;
+
+		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+			if (flags & NET_TCP_FIN) {
+				/* FIN is used here only to determine which
+				 * state to go to next; it's not to be used
+				 * in the sent segment.
+				 */
+				flags &= ~NET_TCP_FIN;
+				net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
+			} else {
+				net_tcp_change_state(tcp, NET_TCP_CLOSING);
+			}
+		} else if (tcp->state == NET_TCP_FIN_WAIT_2) {
+			net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
+		}
 	}
 
 	if (flags & NET_TCP_FIN) {
