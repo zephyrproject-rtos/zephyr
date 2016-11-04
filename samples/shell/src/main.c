@@ -17,14 +17,6 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <misc/shell.h>
-#define DEVICE_NAME "test shell"
-
-/*
- * Since we don't have kConfig in application level, we have the define here as
- * an example to what is needed to be in the relevant module kConfig file
- */
-#define CONFIG_SAMPLE_MODULE_USE_SHELL
-
 
 static int shell_cmd_ping(int argc, char *argv[])
 {
@@ -40,8 +32,6 @@ static int shell_cmd_params(int argc, char *argv[])
 	return 0;
 }
 
-#ifdef CONFIG_SAMPLE_MODULE_USE_SHELL
-
 #define MY_SHELL_MODULE "sample_module"
 
 static struct shell_cmd commands[] = {
@@ -50,12 +40,8 @@ static struct shell_cmd commands[] = {
 	{ NULL, NULL }
 };
 
-#endif
-
 
 void main(void)
 {
-#ifdef CONFIG_SAMPLE_MODULE_USE_SHELL
 	SHELL_REGISTER(MY_SHELL_MODULE, commands);
-#endif
 }
