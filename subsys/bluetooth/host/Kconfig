@@ -137,6 +137,14 @@ config BLUETOOTH_L2CAP_IN_MTU
 endif # BLUETOOTH_LE && BLUETOOTH_CONN || BLUETOOTH_STACK_HCI_RAW
 
 if BLUETOOTH_LE
+config BLUETOOTH_INTERNAL_STORAGE
+	bool "Use an internal persistent storage handler"
+	depends on FILE_SYSTEM
+	help
+	  When selected the application doesn't need to register its own
+	  persistent storage handlers through the bt_storage API, rather
+	  an internal default handler is used for this.
+
 config BLUETOOTH_RX_STACK_SIZE
 	int "Size of the receiving fiber stack"
 	default 1024
