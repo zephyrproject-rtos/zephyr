@@ -85,7 +85,7 @@ static int arc_init(struct device *arg)
 	/* Block until ARC's quark_se_init() sets a flag indicating it is ready,
 	 * if we get stuck here ARC has run but has exploded very early */
 	SYS_LOG_DBG("Waiting for arc to init...");
-	while (!shared_data->flags & ARC_READY) {
+	while (!(shared_data->flags & ARC_READY)) {
 	}
 
 skip_arc_init:
