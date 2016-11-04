@@ -416,7 +416,7 @@ static void irq_config_func_0(struct device *port);
 
 static const struct uart_device_config uart_k20_dev_cfg_0 = {
 	.base = (uint8_t *)UART_K20_PORT_0_BASE_ADDR,
-	.sys_clk_freq = UART_K20_CLK_FREQ,
+	.sys_clk_freq = UART_K20_PORT_0_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_0,
@@ -453,7 +453,7 @@ static void irq_config_func_1(struct device *port);
 
 static const struct uart_device_config uart_k20_dev_cfg_1 = {
 	.base = (uint8_t *)UART_K20_PORT_1_BASE_ADDR,
-	.sys_clk_freq = UART_K20_CLK_FREQ,
+	.sys_clk_freq = UART_K20_PORT_1_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_1,
@@ -490,7 +490,7 @@ static void irq_config_func_2(struct device *port);
 
 static const struct uart_device_config uart_k20_dev_cfg_2 = {
 	.base = (uint8_t *)UART_K20_PORT_2_BASE_ADDR,
-	.sys_clk_freq = UART_K20_CLK_FREQ,
+	.sys_clk_freq = UART_K20_PORT_2_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_2,
@@ -527,7 +527,7 @@ static void irq_config_func_3(struct device *port);
 
 static struct uart_device_config uart_k20_dev_cfg_3 = {
 	.base = (uint8_t *)UART_K20_PORT_3_BASE_ADDR,
-	.sys_clk_freq = UART_K20_CLK_FREQ,
+	.sys_clk_freq = UART_K20_PORT_3_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_3,
@@ -564,7 +564,7 @@ static void irq_config_func_4(struct device *port);
 
 static const struct uart_device_config uart_k20_dev_cfg_4 = {
 	.base = (uint8_t *)UART_K20_PORT_4_BASE_ADDR,
-	.sys_clk_freq = UART_K20_CLK_FREQ,
+	.sys_clk_freq = UART_K20_PORT_4_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_4,
