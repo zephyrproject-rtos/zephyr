@@ -30,7 +30,12 @@
 
 #include <stm32f1xx.h>
 
-/* IO pin functions */
+/* IO pin functions are mostly common across STM32 devices. Notable
+ * exception is STM32F1 as these MCUs do not have registers for
+ * configuration of pin's alternate function. The configuration is
+ * done implicitly by setting specific mode and config in MODE and CNF
+ * registers for particular pin.
+ */
 enum stm32f10x_pin_config_mode {
 	STM32F10X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE,
 	STM32F10X_PIN_CONFIG_BIAS_PULL_UP,
