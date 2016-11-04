@@ -94,6 +94,14 @@ void power_soc_sleep();
 void power_soc_deep_sleep(const power_wake_event_t wake_event);
 
 /**
+ * Restore system state after sleep or deep sleep.
+ *
+ * On wakeup, the system is restored to the previous state before
+ * power_soc_sleep() or power_soc_deep_sleep() was called.
+ */
+void power_soc_restore(void);
+
+/**
  * Retention alternator regulator for Quark D2000.
  *
  * @defgroup groupRAR Quark(TM) D2000 Retention Alternator Regulator (RAR).

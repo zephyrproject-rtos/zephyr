@@ -229,8 +229,11 @@ void ss_power_cpu_ss2(void);
 			     "st r29, [r0, 116]\n\t"                           \
 			     "st r30, [r0, 120]\n\t"                           \
 			     "st r31, [r0, 124]\n\t"                           \
+			     "lr r31, [ic_ctrl]\n\t"                           \
+			     "st r31, [r0, 128]\n\t"                           \
 			     : /* Output operands. */                          \
 			     : /* Input operands. */                           \
+			     [ic_ctrl] "i"(QM_SS_AUX_IC_CTRL)                  \
 			     : /* Clobbered registers list. */                 \
 			     "r0")
 
@@ -278,12 +281,15 @@ void ss_power_cpu_ss2(void);
 	    "ld r29, [r0, 116]\n\t"                                            \
 	    "ld r30, [r0, 120]\n\t"                                            \
 	    "ld r31, [r0, 124]\n\t"                                            \
+	    "ld r0, [r0, 128]\n\t"                                             \
+	    "sr r0, [ic_ctrl]\n\t"                                             \
 	    "pop_s r0\n\t"                                                     \
 	    "sr 0,[0x101]\n\t" /* Setup Sensor Subsystem TimeStamp Counter */  \
 	    "sr 0,[0x100]\n\t"                                                 \
 	    "sr -1,[0x102]\n\t"                                                \
 	    : /* Output operands. */                                           \
 	    : /* Input operands. */                                            \
+	    [ic_ctrl] "i"(QM_SS_AUX_IC_CTRL)                                   \
 	    : /* Clobbered registers list. */                                  \
 	    "r0")
 #else

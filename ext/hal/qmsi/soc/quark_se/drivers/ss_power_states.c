@@ -174,7 +174,7 @@ void ss_power_cpu_ss2(void)
 
 #if (ENABLE_RESTORE_CONTEXT)
 extern uint32_t arc_restore_addr;
-uint32_t cpu_context[32];
+uint32_t cpu_context[33];
 void ss_power_soc_sleep_restore(void)
 {
 	/*

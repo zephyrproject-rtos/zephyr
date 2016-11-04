@@ -723,6 +723,14 @@ int qm_ss_adc_save_context(const qm_ss_adc_t adc,
 	ctx->adc_ctrl = __builtin_arc_lr(controller + QM_SS_ADC_CTRL) &
 			~QM_SS_ADC_CTRL_ADC_ENA;
 
+	/*
+	 * The IRQ associated with the mode change fires an interrupt as soon
+	 * as it is enabled so it is necessary to ignore it the first time the
+	 * ISR runs. This is set in the save function in case interrupts are
+	 * enabled before the restore function runs.
+	 */
+	ignore_spurious_interrupt[adc] = true;
+
 	return 0;
 }
 
@@ -733,13 +741,6 @@ int qm_ss_adc_restore_context(const qm_ss_adc_t adc,
 
 	QM_CHECK(adc < QM_SS_ADC_NUM, -EINVAL);
 	QM_CHECK(NULL != ctx, -EINVAL);
-
-	/*
-	 * The IRQ associated with the mode change fires an interrupt as soon
-	 * as it is enabled so it is necessary to ignore it the first time the
-	 * ISR runs.
-	 */
-	ignore_spurious_interrupt[adc] = true;
 
 	__builtin_arc_sr(ctx->adc_set, controller + QM_SS_ADC_SET);
 	__builtin_arc_sr(ctx->adc_divseqstat,

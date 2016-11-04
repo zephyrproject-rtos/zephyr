@@ -190,17 +190,14 @@ static void fill_tx_fifo(const qm_i2c_t i2c,
 	}
 }
 
-static __inline__ void
-handle_tx_abrt(const qm_i2c_t i2c,
-	       const volatile qm_i2c_transfer_t *const transfer,
-	       qm_i2c_reg_t *const controller)
+static __inline__ int handle_tx_abrt_common(qm_i2c_reg_t *const controller,
+					    qm_i2c_status_t *status)
 {
-	qm_i2c_status_t status = 0;
 	int rc = 0;
 
 	QM_ASSERT(!(controller->ic_tx_abrt_source &
 		    QM_I2C_IC_TX_ABRT_SOURCE_ABRT_SBYTE_NORSTRT));
-	status =
+	*status =
 	    (controller->ic_tx_abrt_source & QM_I2C_IC_TX_ABRT_SOURCE_ALL_MASK);
 
 	/* Clear TX ABORT interrupt. */
@@ -209,28 +206,44 @@ handle_tx_abrt(const qm_i2c_t i2c,
 	/* Mask interrupts. */
 	controller->ic_intr_mask = QM_I2C_IC_INTR_MASK_ALL;
 
-	rc = (status & QM_I2C_TX_ABRT_USER_ABRT) ? -ECANCELED : -EIO;
+	return rc = (*status & QM_I2C_TX_ABRT_USER_ABRT) ? -ECANCELED : -EIO;
+}
 
-	if ((i2c_dma_context[i2c].ongoing_dma_rx_operation == true) ||
-	    (i2c_dma_context[i2c].ongoing_dma_tx_operation == true)) {
-		/* If in DMA mode, raise a flag and stop the channels. */
-		i2c_dma_context[i2c].tx_abort_status = status;
-		i2c_dma_context[i2c].i2c_error_code = rc;
-		/*
-		 * When terminating the DMA transfer, the DMA controller calls
-		 * the TX or RX callback, which will trigger the error callback.
-		 * This will disable the I2C controller.
-		 */
-		qm_i2c_dma_transfer_terminate(i2c);
-	} else {
-		controller_disable(i2c);
-		if (transfer->callback) {
-			transfer->callback(transfer->callback_data, rc, status,
-					   i2c_write_pos[i2c]);
-		}
+static __inline__ void
+handle_irq_tx_abrt(const qm_i2c_t i2c,
+		   const volatile qm_i2c_transfer_t *const transfer,
+		   qm_i2c_reg_t *const controller)
+{
+	qm_i2c_status_t status = 0;
+	int rc = 0;
+
+	rc = handle_tx_abrt_common(controller, &status);
+
+	controller_disable(i2c);
+	if (transfer->callback) {
+		transfer->callback(transfer->callback_data, rc, status,
+				   i2c_write_pos[i2c]);
 	}
 }
 
+static __inline__ void handle_dma_tx_abrt(const qm_i2c_t i2c,
+					  qm_i2c_reg_t *const controller)
+{
+	qm_i2c_status_t status = 0;
+	int rc = 0;
+
+	rc = handle_tx_abrt_common(controller, &status);
+
+	/* In DMA mode, therefore raise a flag and stop the channels. */
+	i2c_dma_context[i2c].tx_abort_status = status;
+	i2c_dma_context[i2c].i2c_error_code = rc;
+	/*
+	 * When terminating the DMA transfer, the DMA controller calls
+	 * the TX or RX callback, which will trigger the error callback.
+	 * This will disable the I2C controller.
+	 */
+	qm_i2c_dma_transfer_terminate(i2c);
+}
 static __inline__ void
 i2c_isr_slave_handler(const qm_i2c_t i2c,
 		      const volatile qm_i2c_transfer_t *const transfer,
@@ -570,7 +583,7 @@ i2c_isr_master_handler(const qm_i2c_t i2c,
 	}
 }
 
-static void i2c_isr_handler(const qm_i2c_t i2c)
+static void i2c_isr_irq_handler(const qm_i2c_t i2c)
 {
 	const volatile qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 	qm_i2c_reg_t *const controller = QM_I2C[i2c];
@@ -587,7 +600,7 @@ static void i2c_isr_handler(const qm_i2c_t i2c)
 	if ((controller->ic_intr_stat &
 	     (QM_I2C_IC_INTR_STAT_TX_ABRT | QM_I2C_IC_INTR_STAT_RX_DONE)) ==
 	    QM_I2C_IC_INTR_STAT_TX_ABRT) {
-		handle_tx_abrt(i2c, transfer, controller);
+		handle_irq_tx_abrt(i2c, transfer, controller);
 	}
 
 	/* Master mode. */
@@ -602,18 +615,50 @@ static void i2c_isr_handler(const qm_i2c_t i2c)
 	}
 }
 
-QM_ISR_DECLARE(qm_i2c_0_isr)
+static void i2c_isr_dma_handler(const qm_i2c_t i2c)
 {
-	i2c_isr_handler(QM_I2C_0);
+	qm_i2c_reg_t *const controller = QM_I2C[i2c];
+
+	/* Check for errors. */
+	QM_ASSERT(!(controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_TX_OVER));
+	QM_ASSERT(!(controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_UNDER));
+	QM_ASSERT(!(controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_OVER));
+
+	/*
+	 * TX ABORT interrupt.
+	 * Avoid spurious interrupts by checking RX DONE interrupt.
+	 */
+
+	if (controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_TX_ABRT) {
+		handle_dma_tx_abrt(i2c, controller);
+	}
+}
+
+QM_ISR_DECLARE(qm_i2c_0_irq_isr)
+{
+	i2c_isr_irq_handler(QM_I2C_0);
+	QM_ISR_EOI(QM_IRQ_I2C_0_INT_VECTOR);
+}
+
+QM_ISR_DECLARE(qm_i2c_0_dma_isr)
+{
+	i2c_isr_dma_handler(QM_I2C_0);
 	QM_ISR_EOI(QM_IRQ_I2C_0_INT_VECTOR);
 }
 
 #if (QUARK_SE)
-QM_ISR_DECLARE(qm_i2c_1_isr)
+QM_ISR_DECLARE(qm_i2c_1_irq_isr)
 {
-	i2c_isr_handler(QM_I2C_1);
+	i2c_isr_irq_handler(QM_I2C_1);
 	QM_ISR_EOI(QM_IRQ_I2C_1_INT_VECTOR);
 }
+
+QM_ISR_DECLARE(qm_i2c_1_dma_isr)
+{
+	i2c_isr_dma_handler(QM_I2C_1);
+	QM_ISR_EOI(QM_IRQ_I2C_1_INT_VECTOR);
+}
+
 #endif
 
 static uint32_t get_lo_cnt(uint32_t lo_time_ns)
@@ -652,6 +697,8 @@ int qm_i2c_set_config(const qm_i2c_t i2c, const qm_i2c_config_t *const cfg)
 
 	qm_i2c_reg_t *const controller = QM_I2C[i2c];
 
+	i2c_dma_context[i2c].ongoing_dma_rx_operation = false;
+	i2c_dma_context[i2c].ongoing_dma_tx_operation = false;
 	/* Mask all interrupts. */
 	controller->ic_intr_mask = QM_I2C_IC_INTR_MASK_ALL;
 

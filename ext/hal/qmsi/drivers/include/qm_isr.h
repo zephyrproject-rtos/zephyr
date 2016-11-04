@@ -200,22 +200,40 @@ QM_ISR_DECLARE(qm_aon_gpio_0_isr);
 #endif /* HAS_AON_GPIO */
 
 /**
- * ISR for I2C 0 interrupt.
+ * ISR for I2C 0 irq mode transfer interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_I2C_0_INT, qm_i2c_0_isr);
+ * @code qm_irq_request(QM_IRQ_I2C_0_INT, qm_i2c_0_irq_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_i2c_0_isr);
+QM_ISR_DECLARE(qm_i2c_0_irq_isr);
 
 /**
- * ISR for I2C 1 interrupt.
+ * ISR for I2C 1 irq mode transfer interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_IRQ_I2C_1_INT, qm_i2c_1_isr);
+ * @code qm_irq_request(QM_IRQ_I2C_1_INT, qm_i2c_1_irq_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_i2c_1_isr);
+QM_ISR_DECLARE(qm_i2c_1_irq_isr);
+
+/**
+ * ISR for I2C 0 dma  mode transfer interrupt.
+ *
+ * This function needs to be registered with
+ * @code qm_irq_request(QM_IRQ_I2C_0_INT, qm_i2c_0_dma_isr);
+ * @endcode if DMA based transfers are used.
+ */
+QM_ISR_DECLARE(qm_i2c_0_dma_isr);
+
+/**
+ * ISR for I2C 1 dma mode transfer interrupt.
+ *
+ * This function needs to be registered with
+ * @code qm_irq_request(QM_IRQ_I2C_1_INT, qm_i2c_1_dma_isr);
+ * @endcode if DMA based transfers are used.
+ */
+QM_ISR_DECLARE(qm_i2c_1_dma_isr);
 
 /**
  * ISR for Mailbox interrupt.

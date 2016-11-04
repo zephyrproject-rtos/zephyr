@@ -43,6 +43,7 @@
 
 #define QUARK_D2000 (1)
 #define HAS_MVIC (1)
+#define HAS_SOC_CONTEXT_RETENTION (1)
 
 /**
  * @name System Core
@@ -186,8 +187,9 @@ qm_scss_gp_reg_t test_scss_gp;
 #define QM_SCSS_GP ((qm_scss_gp_reg_t *)QM_SCSS_GP_BASE)
 #endif
 
-#define QM_SCSS_GP_POWER_STATES_MASK (BIT(6) | BIT(7) | BIT(8) | BIT(9))
-#define QM_SCSS_GP_POWER_STATE_DEEP_SLEEP BIT(6)
+#define QM_GPS0_POWER_STATES_MASK (BIT(6) | BIT(7) | BIT(8) | BIT(9))
+#define QM_GPS0_POWER_STATE_SLEEP BIT(6)
+#define QM_GPS0_POWER_STATE_DEEP_SLEEP BIT(7)
 
 /** @} */
 
