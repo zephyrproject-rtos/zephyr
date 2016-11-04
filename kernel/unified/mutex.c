@@ -214,6 +214,7 @@ void k_mutex_unlock(struct k_mutex *mutex)
 {
 	int key;
 
+	__ASSERT(mutex->lock_count > 0, "");
 	__ASSERT(mutex->owner == _current, "");
 
 	k_sched_lock();
