@@ -508,6 +508,7 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 	}
 
 	if (read_reg_excflag0(spi) & EXCFLAG0_RX_UNDERFLOW) {
+		SYS_LOG_ERR("RX underflow!\n");
 		return false;
 	}
 
@@ -546,6 +547,7 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 	}
 
 	if (read_reg_excflag0(spi) & EXCFLAG0_RX_UNDERFLOW) {
+		SYS_LOG_ERR("RX underflow!\n");
 		return false;
 	}
 
@@ -571,13 +573,15 @@ static void cc2520_rx(int arg, int unused2)
 	struct device *dev = INT_TO_POINTER(arg);
 	struct cc2520_context *cc2520 = dev->driver_data;
 	struct net_buf *pkt_buf = NULL;
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 	uint8_t pkt_len;
 	uint8_t lqi;
 
 	ARG_UNUSED(unused2);
 
 	while (1) {
+		buf = NULL;
+
 		nano_fiber_sem_take(&cc2520->rx_lock, TICKS_UNLIMITED);
 
 		if (cc2520->overflow) {
@@ -609,14 +613,14 @@ static void cc2520_rx(int arg, int unused2)
 #endif
 		if (!pkt_buf) {
 			SYS_LOG_ERR("No pkt_buf available\n");
-			goto out;
+			goto flush;
 		}
 
 		net_buf_frag_insert(buf, pkt_buf);
 
 		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len)) {
 			SYS_LOG_ERR("No content read\n");
-			goto out;
+			goto flush;
 		}
 
 		if (!(pkt_buf->data[pkt_len - 1] & CC2520_FCS_CRC_OK)) {
@@ -660,11 +664,13 @@ static void cc2520_rx(int arg, int unused2)
 		net_analyze_stack("CC2520 Rx Fiber stack",
 				  (unsigned char *)cc2520->cc2520_rx_stack,
 				  CONFIG_CC2520_RX_STACK_SIZE);
-		goto flush;
-out:
-		net_buf_unref(buf);
+		continue;
 flush:
 		flush_rxfifo(cc2520);
+out:
+		if (buf) {
+			net_buf_unref(buf);
+		}
 	}
 }
 
