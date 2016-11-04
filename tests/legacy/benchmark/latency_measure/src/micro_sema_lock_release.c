@@ -113,7 +113,7 @@ int microMutexLockUnlock(void)
 		     timestamp / N_TEST_MUTEX,
 		     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_MUTEX));
 	timestamp = TIME_STAMP_DELTA_GET(0);
-	for (i = 0; i <= N_TEST_MUTEX; i++) {
+	for (i = 0; i < N_TEST_MUTEX; i++) {
 		task_mutex_unlock(TEST_MUTEX);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
