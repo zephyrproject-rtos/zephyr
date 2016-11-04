@@ -588,10 +588,33 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 
 	NET_ASSERT(context && context->tcp);
 
+	switch (context->tcp->state) {
+	case NET_TCP_ESTABLISHED:
+	case NET_TCP_CLOSE_WAIT:
+	case NET_TCP_LAST_ACK:
+		break;
+	default:
+		NET_DBG("Context %p in wrong state %d",
+			context, context->tcp->state);
+		return NET_DROP;
+	}
+
 	net_tcp_print_recv_info("DATA", buf, NET_TCP_BUF(buf)->src_port);
 
 	hdr = (void *)net_nbuf_tcp_data(buf);
 
+	if (NET_TCP_FLAGS(buf) & NET_TCP_FIN) {
+		/* Sending an ACK in the CLOSE_WAIT state will transition
+		 * to LAST_ACK state
+		 */
+		net_tcp_change_state(context->tcp, NET_TCP_CLOSE_WAIT);
+	}
+	if (NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
+		if (context->tcp->state == NET_TCP_LAST_ACK) {
+			net_context_put(context);
+			return NET_DROP;
+		}
+	}
 	if (sys_get_be32(hdr->seq) - context->tcp->send_ack) {
 		/* Don't try to reorder packets.  If it doesn't match
 		 * the next segment exactly, drop and wait for
