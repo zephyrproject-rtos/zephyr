@@ -83,3 +83,18 @@ void bt_keys_link_key_clear(struct bt_keys_link_key *link_key)
 
 	memset(link_key, 0, sizeof(*link_key));
 }
+
+void bt_keys_link_key_clear_addr(const bt_addr_t *addr)
+{
+	struct bt_keys_link_key *key;
+
+	if (!addr) {
+		memset(key_pool, 0, sizeof(key_pool));
+		return;
+	}
+
+	key = bt_keys_find_link_key(addr);
+	if (key) {
+		bt_keys_link_key_clear(key);
+	}
+}

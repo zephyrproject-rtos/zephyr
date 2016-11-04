@@ -4195,7 +4195,59 @@ void bt_storage_register(const struct bt_storage *storage)
 
 int bt_storage_clear(const bt_addr_le_t *addr)
 {
-	return -ENOSYS;
+	if (addr) {
+#if defined(CONFIG_BLUETOOTH_CONN)
+		struct bt_conn *conn;
+#endif
+#if defined(CONFIG_BLUETOOTH_SMP)
+		struct bt_keys *keys;
+#endif
+
+#if defined(CONFIG_BLUETOOTH_CONN)
+		conn = bt_conn_lookup_addr_le(addr);
+		if (conn) {
+			bt_conn_disconnect(conn,
+					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+			bt_conn_unref(conn);
+		}
+#endif
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		/* LE Public may indicate BR/EDR as well */
+		if (addr->type == BT_ADDR_LE_PUBLIC) {
+			bt_keys_link_key_clear_addr(&addr->a);
+		}
+#endif
+
+#if defined(CONFIG_BLUETOOTH_SMP)
+		keys = bt_keys_find_addr(addr);
+		if (keys) {
+			bt_keys_clear(keys);
+		}
+#endif
+
+		if (bt_storage) {
+			return bt_storage->clear(addr);
+		}
+
+		return 0;
+	}
+
+#if defined(CONFIG_BLUTEOOTH_CONN)
+	bt_conn_disconnect_all();
+#endif
+#if defined(CONFIG_BLUETOOTH_SMP)
+	bt_keys_clear_all();
+#endif
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	bt_keys_link_key_clear_addr(NULL);
+#endif
+
+	if (bt_storage) {
+		return bt_storage->clear(NULL);
+	}
+
+	return 0;
 }
 
 uint16_t bt_hci_get_cmd_opcode(struct net_buf *buf)

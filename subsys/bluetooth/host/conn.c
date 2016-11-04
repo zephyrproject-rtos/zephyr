@@ -1251,6 +1251,24 @@ struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 	return NULL;
 }
 
+void bt_conn_disconnect_all(void)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		struct bt_conn *conn = &conns[i];
+
+		if (!atomic_get(&conn->ref)) {
+			continue;
+		}
+
+		if (conn->state == BT_CONN_CONNECTED) {
+			bt_conn_disconnect(conn,
+					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		}
+	}
+}
+
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	atomic_inc(&conn->ref);

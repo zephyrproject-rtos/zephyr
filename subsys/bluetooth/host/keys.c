@@ -170,3 +170,8 @@ void bt_keys_clear(struct bt_keys *keys)
 
 	memset(keys, 0, sizeof(*keys));
 }
+
+void bt_keys_clear_all(void)
+{
+	memset(key_pool, 0, sizeof(key_pool));
+}

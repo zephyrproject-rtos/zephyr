@@ -145,6 +145,8 @@ uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
 void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey);
 #endif
 
+void bt_conn_disconnect_all(void);
+
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
 
