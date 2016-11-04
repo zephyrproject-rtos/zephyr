@@ -4610,7 +4610,7 @@ static inline void event_enc_prep(struct connection *conn)
 			start_enc_rsp_send(conn, pdu_ctrl_tx);
 		}
 		/* slave send reject ind or start enc req at control priority */
-		else if (!conn->pause_tx) {
+		else if (!conn->pause_tx || conn->refresh) {
 			/* ll ctrl packet */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 
