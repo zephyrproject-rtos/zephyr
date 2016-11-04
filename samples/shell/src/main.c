@@ -40,29 +40,12 @@ static int shell_cmd_params(int argc, char *argv[])
 	return 0;
 }
 
-static int shell_cmd_uptime(int argc, char *argv[])
-{
-	printk("uptime: %u ms\n", k_uptime_get_32());
-
-	return 0;
-}
-
-static int shell_cmd_cycles(int argc, char *argv[])
-{
-	printk("cycles: %u hw cycles\n", k_cycle_get_32());
-
-	return 0;
-}
-
-
 #ifdef CONFIG_SAMPLE_MODULE_USE_SHELL
 
 #define MY_SHELL_MODULE "sample_module"
 
 static struct shell_cmd commands[] = {
 	{ "ping", shell_cmd_ping },
-	{ "uptime", shell_cmd_uptime },
-	{ "cycles", shell_cmd_cycles },
 	{ "params", shell_cmd_params, "print argc" },
 	{ NULL, NULL }
 };

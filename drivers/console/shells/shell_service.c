@@ -26,33 +26,13 @@
 #include <misc/shell.h>
 #include <init.h>
 
-#define SHELL_KERNEL "kernel"
 #define SHELL_PROMPT "shell> "
-
-static int shell_cmd_version(int argc, char *argv[])
-{
-	uint32_t version = sys_kernel_version_get();
-
-	printk("Zephyr version %d.%d.%d\n",
-		SYS_KERNEL_VER_MAJOR(version),
-		SYS_KERNEL_VER_MINOR(version),
-		SYS_KERNEL_VER_PATCHLEVEL(version));
-	return 0;
-}
-
-
-struct shell_cmd kernel_commands[] = {
-	{ "version", shell_cmd_version, "show kernel version" },
-	{ NULL, NULL }
-};
-
 
 int shell_run(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	shell_init(SHELL_PROMPT);
-	SHELL_REGISTER(SHELL_KERNEL, kernel_commands);
 	return 0;
 }
 
