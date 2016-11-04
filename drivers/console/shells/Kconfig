@@ -1,0 +1,9 @@
+
+config ENABLE_SHELL
+	bool
+	prompt "Shell support"
+	default n
+	help
+	  Enabling shell services. If it is enabled, kernel shell commands are
+	  also available for use.
+

@@ -242,14 +242,6 @@ config OMIT_FRAME_POINTER
 	trace. Recommended only for production builds which do not need to be
 	debugged.
 
-config ENABLE_SHELL
-	bool
-	prompt "Shell support"
-	default n
-	help
-	Enabling shell services. If it is enabled, kernel shell commands are
-	also available for use.
-
 source "misc/debug/Kconfig"
 
 endmenu

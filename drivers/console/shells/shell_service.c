@@ -22,9 +22,6 @@
  * Includes also adding basic framework commands to shell commands.
  */
 
-#ifndef _SHELLSERVICE_H
-#define _SHELLSERVICE_H
-
 #include <misc/printk.h>
 #include <misc/shell.h>
 #include <init.h>
@@ -61,5 +58,3 @@ int shell_run(struct device *dev)
 
 
 SYS_INIT(shell_run, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* SHELLSERVICE_H */
