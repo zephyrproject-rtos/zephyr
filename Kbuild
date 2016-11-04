@@ -33,7 +33,7 @@ define filechk_prj.mdef
 	echo "% ==============";\
 	echo "  TASKGROUP EXE";\
 	echo "  TASKGROUP SYS";\
-	echo "  TASKGROUP FPU";\
+	echo "  TASKGROUP FPU_LEGACY";\
 	echo $(TASKGROUP_SSE);\
 	echo; \
 	if test -e "$(MDEF_FILE_PATH)"; then \
