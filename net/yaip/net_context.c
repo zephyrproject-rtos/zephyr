@@ -317,6 +317,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 			ptr = &maddr->address.in6_addr;
 
+		} else if (net_is_ipv6_addr_unspecified(&addr6->sin6_addr)) {
+			iface = net_if_get_default();
+
+			ptr = (struct in6_addr *)net_ipv6_unspecified_address();
 		} else {
 			struct net_if_addr *ifaddr;
 
@@ -357,18 +361,27 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 #if defined(CONFIG_NET_IPV4)
 	if (addr->family == AF_INET) {
-		struct net_if *iface;
-		struct net_if_addr *ifaddr;
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
+		struct net_if_addr *ifaddr;
+		struct net_if *iface;
+		struct in_addr *ptr;
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
 			return -EINVAL;
 		}
 
-		ifaddr = net_if_ipv4_addr_lookup(&addr4->sin_addr,
-						 &iface);
-		if (!ifaddr) {
-			return -ENOENT;
+		if (addr4->sin_addr.s_addr[0] == INADDR_ANY) {
+			iface = net_if_get_default();
+
+			ptr = (struct in_addr *)net_ipv4_unspecified_address();
+		} else {
+			ifaddr = net_if_ipv4_addr_lookup(&addr4->sin_addr,
+							 &iface);
+			if (!ifaddr) {
+				return -ENOENT;
+			}
+
+			ptr = &ifaddr->address.in_addr;
 		}
 
 		if (!iface) {
@@ -386,12 +399,11 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		net_context_set_iface(context, iface);
 
-		net_sin_ptr(&context->local)->sin_addr =
-						&ifaddr->address.in_addr;
+		net_sin_ptr(&context->local)->sin_addr = ptr;
 		net_sin_ptr(&context->local)->sin_port = addr4->sin_port;
 
 		NET_DBG("Context %p binding to %s:%d iface %p", context,
-			net_sprint_ipv4_addr(&ifaddr->address.in_addr),
+			net_sprint_ipv4_addr(ptr),
 			ntohs(addr4->sin_port), iface);
 
 		return 0;
