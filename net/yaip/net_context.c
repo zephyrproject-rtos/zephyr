@@ -210,6 +210,29 @@ int net_context_get(sa_family_t family,
 	return ret;
 }
 
+#if defined(CONFIG_NET_TCP)
+static inline int send_fin(struct net_context *context,
+			   struct sockaddr *remote);
+
+static bool send_fin_if_active_close(struct net_context *context)
+{
+	NET_ASSERT(context->tcp);
+
+	switch (context->tcp->state) {
+	case NET_TCP_SYN_RCVD:
+	case NET_TCP_ESTABLISHED:
+		/* Sending a packet with the FIN flag automatically
+		 * transitions to FIN_WAIT_1
+		 */
+		send_fin(context, &context->remote);
+		return true;
+	default:
+		net_tcp_release(context->tcp);
+		return false;
+	}
+}
+#endif /* CONFIG_NET_TCP */
+
 int net_context_put(struct net_context *context)
 {
 	NET_ASSERT(context);
@@ -220,12 +243,17 @@ int net_context_put(struct net_context *context)
 
 	k_sem_take(&contexts_lock, K_FOREVER);
 
+#if defined(CONFIG_NET_TCP)
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		if (send_fin_if_active_close(context))
+			goto still_in_use;
+	}
+#endif /* CONFIG_NET_TCP */
+
 	context->flags &= ~NET_CONTEXT_IN_USE;
 
 #if defined(CONFIG_NET_TCP)
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		net_tcp_release(context->tcp);
-	}
+still_in_use:
 #endif /* CONFIG_NET_TCP */
 
 	k_sem_give(&contexts_lock);
@@ -531,6 +559,28 @@ static inline int send_syn_ack(struct net_context *context,
 	}
 
 	return ret;
+}
+
+static inline int send_fin(struct net_context *context,
+			   struct sockaddr *remote)
+{
+	struct net_buf *buf;
+	int ret;
+
+	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_FIN,
+				      NULL, 0, remote, &buf);
+	if (ret) {
+		return ret;
+	}
+
+	net_tcp_print_send_info("FIN", buf, NET_TCP_BUF(buf)->dst_port);
+
+	ret = net_send_data(buf);
+	if (ret < 0) {
+		net_nbuf_unref(buf);
+	}
+
+	return 0;
 }
 
 static inline int send_ack(struct net_context *context,

@@ -93,6 +93,9 @@ enum net_tcp_state {
 /* Max received bytes to buffer internally */
 #define NET_TCP_BUF_MAX_LEN 1280
 
+/* Max segment lifetime, in seconds */
+#define NET_TCP_MAX_SEG_LIFETIME 60
+
 struct net_context;
 
 struct net_tcp {
@@ -107,6 +110,9 @@ struct net_tcp {
 
 	/** ACK message timer */
 	struct k_delayed_work ack_timer;
+
+	/** Active close timer */
+	struct k_delayed_work fin_timer;
 
 	/** Temp buf for received data. The first element of the fragment list
 	 * does not contain user data part.
@@ -185,48 +191,11 @@ static inline int net_tcp_unregister(struct net_conn_handle *handle)
 
 const char const *net_tcp_state_str(enum net_tcp_state state);
 
-static inline void net_tcp_change_state(struct net_tcp *tcp,
-					enum net_tcp_state new_state)
-{
 #if defined(CONFIG_NET_TCP)
-	NET_ASSERT(tcp);
-
-	if (tcp->state == new_state) {
-		return;
-	}
-
-	NET_ASSERT(new_state >= NET_TCP_CLOSED &&
-		   new_state <= NET_TCP_CLOSING);
-
-	NET_DBG("%s (%d) => %s (%d)",
-		net_tcp_state_str(tcp->state), tcp->state,
-		net_tcp_state_str(new_state), new_state);
-
-	tcp->state = new_state;
-
-	if (tcp->state != NET_TCP_CLOSED) {
-		return;
-	}
-
-	if (!tcp->context) {
-		return;
-	}
-
-	/* Remove any port handlers if we are closing */
-	if (tcp->context->conn_handler) {
-		net_tcp_unregister(tcp->context->conn_handler);
-		tcp->context->conn_handler = NULL;
-	}
-
-	if (tcp->context->accept_cb) {
-		tcp->context->accept_cb(tcp->context,
-					&tcp->context->remote,
-					sizeof(struct sockaddr),
-					-ENETRESET,
-					tcp->context->user_data);
-	}
-#endif /* CONFIG_NET_TCP */
-}
+void net_tcp_change_state(struct net_tcp *tcp, enum net_tcp_state new_state);
+#else
+#define net_tcp_change_state(...)
+#endif
 
 /**
  * @brief Allocate TCP connection context.

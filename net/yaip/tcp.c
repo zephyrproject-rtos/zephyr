@@ -149,6 +149,13 @@ int net_tcp_release(struct net_tcp *tcp)
 		return -EINVAL;
 	}
 
+	if (tcp->state == NET_TCP_FIN_WAIT_1 ||
+	    tcp->state == NET_TCP_FIN_WAIT_2 ||
+	    tcp->state == NET_TCP_CLOSING ||
+	    tcp->state == NET_TCP_TIME_WAIT) {
+		k_delayed_work_cancel(&tcp->fin_timer);
+	}
+
 	tcp->state = NET_TCP_CLOSED;
 	tcp->context = NULL;
 
@@ -320,7 +327,8 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 		tcp->flags |= NET_TCP_FINAL_SENT;
 		seq++;
 
-		if (tcp->state == NET_TCP_ESTABLISHED) {
+		if (tcp->state == NET_TCP_ESTABLISHED ||
+		    tcp->state == NET_TCP_SYN_RCVD) {
 			net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_1);
 		} else if (tcp->state == NET_TCP_CLOSE_WAIT) {
 			net_tcp_change_state(tcp, NET_TCP_LAST_ACK);
@@ -440,7 +448,8 @@ int net_tcp_prepare_data_segment(struct net_tcp *tcp,
 			flags |= NET_TCP_FIN;
 			seq++;
 
-			if (tcp->state == NET_TCP_ESTABLISHED) {
+			if (tcp->state == NET_TCP_ESTABLISHED ||
+			    tcp->state == NET_TCP_SYN_RCVD) {
 				net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_1);
 			} else if (tcp->state == NET_TCP_CLOSE_WAIT) {
 				net_tcp_change_state(tcp, NET_TCP_LAST_ACK);
@@ -665,4 +674,63 @@ void net_tcp_init(void)
 {
 	k_sem_init(&tcp_lock, 0, UINT_MAX);
 	k_sem_give(&tcp_lock);
+}
+
+#define FIN_TIMEOUT (2 * NET_TCP_MAX_SEG_LIFETIME * MSEC_PER_SEC)
+
+static void fin_timeout(struct k_work *work)
+{
+	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, fin_timer);
+
+	NET_DBG("Remote peer didn't confirm connection close");
+
+	net_context_put(tcp->context);
+}
+
+void net_tcp_change_state(struct net_tcp *tcp,
+			  enum net_tcp_state new_state)
+{
+	NET_ASSERT(tcp);
+
+	if (tcp->state == new_state) {
+		return;
+	}
+
+	NET_ASSERT(new_state >= NET_TCP_CLOSED &&
+		   new_state <= NET_TCP_CLOSING);
+
+	NET_DBG("%s (%d) => %s (%d)",
+		net_tcp_state_str(tcp->state), tcp->state,
+		net_tcp_state_str(new_state), new_state);
+
+	tcp->state = new_state;
+
+	if (tcp->state == NET_TCP_FIN_WAIT_1) {
+		/* Wait up to 2 * MSL before destroying this socket. */
+		k_delayed_work_cancel(&tcp->fin_timer);
+		k_delayed_work_init(&tcp->fin_timer, fin_timeout);
+		k_delayed_work_submit(&tcp->fin_timer, FIN_TIMEOUT);
+	}
+
+	if (tcp->state != NET_TCP_CLOSED) {
+		return;
+	}
+
+	if (!tcp->context) {
+		return;
+	}
+
+	/* Remove any port handlers if we are closing */
+	if (tcp->context->conn_handler) {
+		net_tcp_unregister(tcp->context->conn_handler);
+		tcp->context->conn_handler = NULL;
+	}
+
+	if (tcp->context->accept_cb) {
+		tcp->context->accept_cb(tcp->context,
+					&tcp->context->remote,
+					sizeof(struct sockaddr),
+					-ENETRESET,
+					tcp->context->user_data);
+	}
 }
