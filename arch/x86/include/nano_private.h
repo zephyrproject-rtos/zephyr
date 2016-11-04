@@ -53,13 +53,13 @@
 /*
  * Bitmask definitions for the struct tcs->flags bit field
  *
- * The USE_FP flag bit will be set whenever a thread uses any non-integer
+ * The K_FP_REGS flag bit will be set whenever a thread uses any non-integer
  * capability, whether it's just the x87 FPU capability, SSE instructions, or
- * a combination of both. The USE_SSE flag bit will only be set if a thread
+ * a combination of both. The K_SSE_REGS flag bit will only be set if a thread
  * uses SSE instructions.
  *
- * Note: Any change to the definitions USE_FP and USE_SSE must also be made to
- * nanokernel/x86/arch.h.
+ * Note: Any change to the definitions K_FP_REGS and K_SSE_REGS must also
+ * be made to nanokernel/x86/arch.h.
  */
 
 #define K_STATIC  0x00000800
@@ -76,8 +76,8 @@
 
 #define INT_ACTIVE 0x2     /* 1 = executing context is interrupt handler */
 #define EXC_ACTIVE 0x4     /* 1 = executing context is exception handler */
-#define USE_FP 0x10	       /* 1 = thread uses floating point unit */
-#define USE_SSE 0x20       /* 1 = thread uses SSEx instructions */
+#define K_FP_REGS 0x10	   /* 1 = thread uses floating point registers */
+#define K_SSE_REGS 0x20    /* 1 = thread uses SSEx registers */
 #define K_ESSENTIAL 0x200  /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400   /* 1 = _Swap() not to update task metrics */
 #define NO_METRICS_BIT_OFFSET 0xa /* Bit position of NO_METRICS */
@@ -606,9 +606,9 @@ typedef struct s_coopFloatReg {
 
 typedef struct s_preempFloatReg {
 	union {
-		/* threads with USE_FP utilize this format */
+		/* threads with K_FP_REGS utilize this format */
 		tFpRegSet fpRegs;
-		/* threads with USE_SSE utilize this format */
+		/* threads with K_SSE_REGS utilize this format */
 		tFpRegSetEx fpRegsEx;
 	} floatRegsUnion;
 } tPreempFloatReg;

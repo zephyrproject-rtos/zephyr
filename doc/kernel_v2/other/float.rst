@@ -101,14 +101,15 @@ handling overhead involved in auto-tagging threads, it is possible to
 pre-tag a thread using one of the techniques listed below.
 
 * A statically-spawned x86 thread can be pre-tagged by passing the
-  :c:macro:`USE_FP` or :c:macro:`USE_SSE` option to
+  :c:macro:`K_FP_REGS` or :c:macro:`K_SSE_REGS` option to
   :c:macro:`K_THREAD_DEFINE()`.
 
 * A dynamically-spawned x86 thread can be pre-tagged by passing the
-  :c:macro:`USE_FP` or :c:macro:`USE_SSE` option to :c:func:`k_thread_spawn()`.
+  :c:macro:`K_FP_REGS` or :c:macro:`K_SSE_REGS` option to
+  :c:func:`k_thread_spawn()`.
 
 * An already-spawned x86 thread can pre-tag itself once it has started
-  by passing the :c:macro:`USE_FP` or :c:macro:`USE_SSE` option to
+  by passing the :c:macro:`K_FP_REGS` or :c:macro:`K_SSE_REGS` option to
   :c:func:`k_float_enable()`.
 
 If an x86 thread uses the floating point registers infrequently it can call

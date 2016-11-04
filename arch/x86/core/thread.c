@@ -75,7 +75,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
  * @param pStackMem pointer to thread stack memory
  * @param stackSize size of a stack in bytes
  * @param priority thread priority
- * @param options thread options: K_ESSENTIAL, USE_FP, USE_SSE
+ * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
  *
  * @return N/A
  */
@@ -94,9 +94,9 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 
 	/* k_q_node initialized upon first insertion in a list */
 #ifdef CONFIG_FP_SHARING
-	/* ensure USE_FP is set when USE_SSE is set */
-	if (options & USE_SSE) {
-		options |= USE_FP;
+	/* ensure K_FP_REGS is set when K_SSE_REGS is set */
+	if (options & K_SSE_REGS) {
+		options |= K_FP_REGS;
 	}
 #endif
 	tcs->flags = options | K_PRESTART;
@@ -144,6 +144,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 
 	tcs->coopReg.esp = (unsigned long)pInitialCtx;
 	PRINTK("\nInitial context ESP = 0x%x\n", tcs->coopReg.esp);
+
 	PRINTK("\nstruct tcs * = 0x%x", tcs);
 
 	thread_monitor_init(tcs);
@@ -248,7 +249,7 @@ __asm__("\t.globl _thread_entry\n"
  * @param parameter2 second param to entry point
  * @param parameter3 third param to entry point
  * @param priority thread priority
- * @param options thread options: K_ESSENTIAL, USE_FP, USE_SSE
+ * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
  *
  *
  * @return opaque pointer to initialized TCS structure

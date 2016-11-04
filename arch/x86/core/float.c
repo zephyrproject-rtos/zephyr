@@ -43,10 +43,10 @@
  *
  * The 'options' parameter is used to specify what non-integer capabilities are
  * being used.  The same options accepted by fiber_fiber_start() are used in the
- * aforementioned APIs, namely USE_FP and USE_SSE.
+ * aforementioned APIs, namely K_FP_REGS and K_SSE_REGS.
  *
  * If the nanokernel has been built without SSE instruction support
- * (CONFIG_SSE), the system treats USE_SSE as if it was USE_FP.
+ * (CONFIG_SSE), the system treats K_SSE_REGS as if it was K_FP_REGS.
  *
  * If the nanokernel has been built without floating point resource sharing
  * support (CONFIG_FP_SHARING), the aforementioned APIs and capabilities do not
@@ -102,7 +102,7 @@ extern uint32_t _sse_mxcsr_default_value; /* SSE control/status register default
  */
 static void _FpCtxSave(struct tcs *tcs)
 {
-	_do_fp_ctx_save(tcs->flags & USE_SSE, &tcs->preempFloatReg);
+	_do_fp_ctx_save(tcs->flags & K_SSE_REGS, &tcs->preempFloatReg);
 }
 
 /**
@@ -117,7 +117,7 @@ static void _FpCtxSave(struct tcs *tcs)
  */
 static inline void _FpCtxInit(struct tcs *tcs)
 {
-	_do_fp_ctx_init(tcs->flags & USE_SSE);
+	_do_fp_ctx_init(tcs->flags & K_SSE_REGS);
 }
 
 /**
@@ -129,8 +129,8 @@ static inline void _FpCtxInit(struct tcs *tcs)
  * other tasks/fibers.  The <options> parameter indicates which floating point
  * register sets will be used by the specified task/fiber:
  *
- *  a) USE_FP  indicates x87 FPU and MMX registers only
- *  b) USE_SSE indicates x87 FPU and MMX and SSEx registers
+ *  a) K_FP_REGS  indicates x87 FPU and MMX registers only
+ *  b) K_SSE_REGS indicates x87 FPU and MMX and SSEx registers
  *
  * Invoking this routine creates a floating point thread for the task/fiber
  * that corresponds to an FPU that has been reset.  The system will thereafter
@@ -142,7 +142,7 @@ static inline void _FpCtxInit(struct tcs *tcs)
  * task/fiber that does not currently have such support enabled already.
  *
  * @param tcs  TDB
- * @param options set to either USE_FP or USE_SSE
+ * @param options set to either K_FP_REGS or K_SSE_REGS
  *
  * @return N/A
  *
@@ -173,7 +173,7 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
 
 	/* Indicate task/fiber requires non-integer context saving */
 
-	tcs->flags |= options | USE_FP; /* USE_FP is treated as a "dirty bit" */
+	tcs->flags |= options | K_FP_REGS;
 
 	/*
 	 * Current task/fiber might not allow FP instructions, so clear CR0[TS]
@@ -219,7 +219,7 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
 		 * of the FPU to them (unless we need it ourselves).
 		 */
 
-		if ((_nanokernel.current->flags & USE_FP) != USE_FP) {
+		if ((_nanokernel.current->flags & K_FP_REGS) != K_FP_REGS) {
 			/*
 			 * We are not FP-capable, so mark FPU as owned by the
 			 * thread
@@ -319,7 +319,7 @@ void _FpDisable(struct tcs *tcs)
 	 * of the options specified at the time support was enabled.
 	 */
 
-	tcs->flags &= ~(USE_FP | USE_SSE);
+	tcs->flags &= ~(K_FP_REGS | K_SSE_REGS);
 
 	if (tcs == _nanokernel.current) {
 		_FpAccessDisable();
@@ -357,8 +357,8 @@ FUNC_ALIAS(_FpDisable, k_float_disable, void);
  *
  * The processor will generate this exception if any x87 FPU, MMX, or SSEx
  * instruction is executed while CR0[TS]=1.  The handler then enables the
- * current task or fiber with the USE_FP option (or the USE_SSE option if the
- * SSE configuration option has been enabled).
+ * current task or fiber with the K_FP_REGS option (or the K_SSE_REGS option
+ * if the SSE configuration option has been enabled).
  *
  * @param pEsf this value is not used for this architecture
  *
@@ -382,9 +382,9 @@ void _FpNotAvailableExcHandler(NANO_ESF * pEsf)
 	/* Enable highest level of FP capability configured into the kernel */
 
 #ifdef CONFIG_SSE
-	enableOption = USE_SSE;
+	enableOption = K_SSE_REGS;
 #else
-	enableOption = USE_FP;
+	enableOption = K_FP_REGS;
 #endif
 
 	_FpEnable(_nanokernel.current, enableOption);

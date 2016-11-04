@@ -3064,6 +3064,9 @@ static inline int32_t nano_timer_ticks_remain(struct nano_timer *timer)
 
 /* floating point services */
 
+#define USE_FP  K_FP_REGS
+#define USE_SSE K_SSE_REGS
+
 /**
  * @brief Enable floating point hardware resources sharing
  *

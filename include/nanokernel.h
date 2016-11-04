@@ -97,6 +97,9 @@ typedef int nano_context_type_t;
 #define TICKS_UNLIMITED (-1)
 #define TICKS_NONE 0
 
+#define USE_FP  K_FP_REGS
+#define USE_SSE K_SSE_REGS
+
 /**
  * @brief Execution contexts APIs
  * @defgroup execution_contexts Execution Contexts

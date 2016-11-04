@@ -389,11 +389,11 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 #ifdef CONFIG_FP_SHARING
 /* Definitions for the 'options' parameter to the fiber_fiber_start() API */
 
-/** thread uses floating point unit */
-#define USE_FP		0x10
+/** thread uses floating point registers */
+#define K_FP_REGS		0x10
 #ifdef CONFIG_SSE
-/** thread uses SSEx instructions */
-#define USE_SSE		0x20
+/** thread uses SSEx registers */
+#define K_SSE_REGS		0x20
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
 
@@ -417,7 +417,7 @@ extern void k_float_disable(k_tid_t thread_id);
  * @brief Enable floating point hardware resources sharing
  * Dynamically enable/disable the capability of a thread to share floating
  * point hardware resources.  The same "floating point" options accepted by
- * fiber_fiber_start() are accepted by these APIs (i.e. USE_FP and USE_SSE).
+ * fiber_fiber_start() are accepted by these APIs (i.e. K_FP_REGS, K_SSE_REGS).
  */
 extern void	fiber_float_enable(nano_thread_id_t thread_id,
 								unsigned int options);

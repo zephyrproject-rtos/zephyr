@@ -107,7 +107,7 @@ typedef struct preempt tPreempt;
 #define K_EXECUTION_MASK    (K_TIMING | K_PENDING | K_PRESTART | \
 			     K_DEAD | K_SUSPENDED | K_DUMMY)
 
-#define USE_FP 0x010	 /* 1 = thread uses floating point unit */
+#define K_FP_REGS 0x010	   /* 1 = thread uses floating point registers */
 #define K_ESSENTIAL 0x200  /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400 /* 1 = _Swap() not to update task metrics */
 

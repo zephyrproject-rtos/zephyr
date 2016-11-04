@@ -70,7 +70,7 @@
  *
  * Floating point registers are handled using a lazy save/restore
  * mechanism since it's expected relatively few threads will be created
- * with the USE_FP or USE_SSE option bits.  The nanokernel data structure
+ * with the K_FP_REGS or K_SSE_REGS option bits.  The nanokernel data structure
  * maintains a 'current_fp' field to keep track of the thread that "owns"
  * the floating point registers.  Floating point registers consist of
  * ST0->ST7 (x87 FPU and MMX registers) and XMM0 -> XMM7.
@@ -167,7 +167,7 @@ SECTION_FUNC(TEXT, _Swap)
 	 * out preemptively.
 	 */
 
-	testl	$USE_FP, __tTCS_flags_OFFSET (%eax)
+	testl	$K_FP_REGS, __tTCS_flags_OFFSET (%eax)
 	je 	restoreContext_NoFloatSwap
 
 
@@ -208,7 +208,7 @@ SECTION_FUNC(TEXT, _Swap)
 
 
 #ifdef CONFIG_SSE
-	testl	$USE_SSE, __tTCS_flags_OFFSET (%ebx)
+	testl	$K_SSE_REGS, __tTCS_flags_OFFSET (%ebx)
 	je	x87FloatSave
 
 	/*
@@ -247,7 +247,7 @@ restoreContext_NoFloatSave:
 	je 	restoreContext_NoFloatRestore
 
 #ifdef CONFIG_SSE
-	testl	$USE_SSE, __tTCS_flags_OFFSET (%eax)
+	testl	$K_SSE_REGS, __tTCS_flags_OFFSET (%eax)
 	je	x87FloatRestore
 
 	fxrstor	__tTCS_preempFloatReg_OFFSET (%eax)
@@ -272,7 +272,7 @@ restoreContext_NoFloatRestore:
 	/*
 	 * Branch point when none of the non-integer registers need to be
 	 * swapped either due to a) the incoming thread does not
-	 * USE_FP | USE_SSE, or b) the incoming thread is the same as
+	 * K_FP_REGS | K_SSE_REGS, or b) the incoming thread is the same as
 	 * the last thread that utilized the non-integer registers.
 	 */
 
@@ -283,7 +283,7 @@ restoreContext_NoFloatSwap:
 	 * instructions
 	 */
 
-	testl	$USE_FP, __tTCS_flags_OFFSET (%eax)
+	testl	$K_FP_REGS, __tTCS_flags_OFFSET (%eax)
 	jne	CROHandlingDone
 
 	/*

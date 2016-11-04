@@ -128,7 +128,7 @@ The following thread options are supported.
 
     By default, the thread is not considered to be an essential thread.
 
-:c:macro:`USE_FP` and :c:macro:`USE_SSE`
+:c:macro:`K_FP_REGS` and :c:macro:`K_SSE_REGS`
     These x86-specific options indicate that the thread uses the CPU's
     floating point registers and SSE registers, respectively. This instructs
     the kernel to take additional steps to save and restore the contents
