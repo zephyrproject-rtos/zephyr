@@ -367,6 +367,28 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	return 0;
 }
 
+int net_conn_change_callback(struct net_conn_handle *handle,
+			     net_conn_cb_t cb, void *user_data)
+{
+	struct net_conn *conn = (struct net_conn *)handle;
+
+	if (conn < &conns[0] || conn > &conns[CONFIG_NET_MAX_CONN]) {
+		return -EINVAL;
+	}
+
+	if (!(conn->flags & NET_CONN_IN_USE)) {
+		return -ENOENT;
+	}
+
+	NET_DBG("[%d] connection handler %p changed callback",
+		(conn - conns) / sizeof(*conn), conn);
+
+	conn->cb = cb;
+	conn->user_data = user_data;
+
+	return 0;
+}
+
 #if NET_DEBUG
 static inline
 void prepare_register_debug_print(char *dst, int dst_len,
