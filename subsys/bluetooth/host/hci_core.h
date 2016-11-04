@@ -81,7 +81,9 @@ struct bt_dev {
 
 	/* Controller version & manufacturer information */
 	uint8_t			hci_version;
+	uint8_t			lmp_version;
 	uint16_t		hci_revision;
+	uint16_t		lmp_subversion;
 	uint16_t		manufacturer;
 
 	/* LMP features (pages 0, 1, 2) */

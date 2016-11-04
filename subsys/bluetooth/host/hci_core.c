@@ -2786,6 +2786,8 @@ static void read_local_ver_complete(struct net_buf *buf)
 
 	bt_dev.hci_version = rp->hci_version;
 	bt_dev.hci_revision = sys_le16_to_cpu(rp->hci_revision);
+	bt_dev.lmp_version = rp->lmp_version;
+	bt_dev.lmp_subversion = sys_le16_to_cpu(rp->lmp_subversion);
 	bt_dev.manufacturer = sys_le16_to_cpu(rp->manufacturer);
 }
 
@@ -3354,6 +3356,40 @@ set_addr:
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+static const char *ver_str(uint8_t ver)
+{
+	const char * const str[] = {
+		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
+	};
+
+	if (ver < ARRAY_SIZE(str)) {
+		return str[ver];
+	}
+
+	return "unknown";
+}
+
+static void show_dev_info(void)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(&bt_dev.id_addr, addr, sizeof(addr));
+
+	BT_INFO("Identity: %s", addr);
+	BT_INFO("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x",
+		ver_str(bt_dev.hci_version), bt_dev.hci_version,
+		bt_dev.hci_revision, bt_dev.manufacturer);
+	BT_INFO("LMP: version %s (0x%02x) subver 0x%04x",
+		ver_str(bt_dev.lmp_version), bt_dev.lmp_version,
+		bt_dev.lmp_subversion);
+}
+#else
+static inline void show_dev_info(void)
+{
+}
+#endif /* CONFIG_BLUETOOTH_DEBUG */
+
 static int hci_init(void)
 {
 	int err;
@@ -3396,8 +3432,7 @@ static int hci_init(void)
 		}
 	}
 
-	BT_DBG("HCI ver %u rev %u, manufacturer %u", bt_dev.hci_version,
-	       bt_dev.hci_revision, bt_dev.manufacturer);
+	show_dev_info();
 
 	return 0;
 }
