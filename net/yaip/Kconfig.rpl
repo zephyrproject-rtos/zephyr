@@ -210,6 +210,14 @@ config	NET_RPL_DEFAULT_INSTANCE
 	  This value decides which DAG instance we should participate in
 	  by default.
 
+config	NET_RPL_INSERT_HBH_OPTION
+	bool "Add RPL Hop-by-hop ext header to sent UDP packets"
+	depends on NET_RPL
+	default y
+	help
+	  This option control the insertion of the RPL Hop-by-Hop extension
+	  header into UDP packets originating from this node.
+
 config	NET_RPL_DIS_SEND
 	bool "Send DIS periodically"
 	depends on NET_RPL

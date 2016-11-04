@@ -354,6 +354,15 @@ struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
 	/* Set the length of the IPv6 header */
 	size_t total_len;
 
+#if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
+	if (next_header != IPPROTO_TCP && next_header != IPPROTO_ICMPV6) {
+		/* Check if we need to add RPL header to sent UDP packet. */
+		if (net_rpl_insert_header(buf) < 0) {
+			NET_DBG("RPL HBHO insert failed");
+		}
+	}
+#endif
+
 	net_nbuf_compact(buf);
 
 	total_len = net_buf_frags_len(buf->frags);

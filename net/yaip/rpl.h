@@ -931,6 +931,15 @@ bool net_rpl_verify_header(struct net_buf *buf, uint16_t offset,
 			   uint16_t *pos);
 
 /**
+ * @brief Insert RPL extension header to IPv6 packet.
+ *
+ * @param buf Network buffer.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int net_rpl_insert_header(struct net_buf *buf);
+
+/**
  * @brief Get parent IPv6 address.
  *
  * @param iface Network interface

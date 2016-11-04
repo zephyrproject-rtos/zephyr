@@ -3643,6 +3643,232 @@ bool net_rpl_verify_header(struct net_buf *buf,
 	return true;
 }
 
+static inline int add_rpl_opt(struct net_buf *buf, uint16_t offset)
+{
+	int ext_len = net_nbuf_ext_len(buf);
+	bool ret;
+
+	/* next header */
+	ret = net_nbuf_insert_u8(buf, buf->frags, offset++,
+				 NET_IPV6_BUF(buf)->nexthdr);
+	if (!ret) {
+		return -EINVAL;
+	}
+
+	/* Option len */
+	ret = net_nbuf_insert_u8(buf, buf->frags, offset++,
+				 NET_RPL_HOP_BY_HOP_LEN - 8);
+	if (!ret) {
+		return -EINVAL;
+	}
+
+	/* Sub-option type */
+	ret = net_nbuf_insert_u8(buf, buf->frags, offset++,
+				 NET_IPV6_EXT_HDR_OPT_RPL);
+	if (!ret) {
+		return -EINVAL;
+	}
+
+	/* Sub-option length */
+	ret = net_nbuf_insert_u8(buf, buf->frags, offset++,
+				 NET_RPL_HDR_OPT_LEN);
+	if (!ret) {
+		return -EINVAL;
+	}
+
+	/* RPL option flags */
+	ret = net_nbuf_insert_u8(buf, buf->frags, offset++, 0);
+	if (!ret) {
+		return -EINVAL;
+	}
+
+	/* RPL Instance id */
+	ret = net_nbuf_insert_u8(buf, buf->frags, offset++, 0);
+	if (!ret) {
+		return -EINVAL;
+	}
+
+	/* RPL sender rank */
+	ret = net_nbuf_insert_be16(buf, buf->frags, offset++, 0);
+	if (!ret) {
+		return -EINVAL;
+	}
+
+	NET_IPV6_BUF(buf)->nexthdr = NET_IPV6_NEXTHDR_HBHO;
+
+	net_nbuf_set_ext_len(buf, ext_len + NET_RPL_HOP_BY_HOP_LEN);
+
+	return 0;
+}
+
+static int net_rpl_update_header_empty(struct net_buf *buf)
+{
+	uint16_t offset = sizeof(struct net_ipv6_hdr);
+	uint8_t next = NET_IPV6_BUF(buf)->nexthdr;
+	struct net_buf *frag = buf->frags;
+	struct net_rpl_instance *instance;
+	struct net_rpl_parent *parent;
+	struct net_route_entry *route;
+	uint8_t next_hdr, len, length;
+	uint8_t opt_type = 0, opt_len;
+	uint8_t instance_id, flags;
+	uint16_t pos;
+
+	NET_DBG("Verifying the presence of the RPL header option");
+
+	frag = net_nbuf_read_u8(frag, offset, &offset, &next_hdr);
+	frag = net_nbuf_read_u8(frag, offset, &offset, &len);
+	if (!frag) {
+		return 0;
+	}
+
+	length = 0;
+
+	if (next != NET_IPV6_NEXTHDR_HBHO) {
+		NET_DBG("No hop-by-hop option found, creating it");
+
+		 /* We already read 2 bytes so go back accordingly. */
+		if (add_rpl_opt(buf, offset - 2) < 0) {
+			NET_DBG("Cannot add RPL options");
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+	if (len != NET_RPL_HOP_BY_HOP_LEN - 8) {
+		NET_DBG("Hop-by-hop ext header is wrong size "
+			"(%d vs %d)", length,
+			NET_RPL_HOP_BY_HOP_LEN - 8);
+
+		return 0;
+	}
+
+	length += 2;
+
+	/* Each extension option has type and length */
+	frag = net_nbuf_read_u8(frag, offset, &offset, &opt_type);
+	frag = net_nbuf_read_u8(frag, offset, &offset, &opt_len);
+
+	if (opt_type != NET_IPV6_EXT_HDR_OPT_RPL) {
+		/* FIXME: go through all the options instead */
+		NET_DBG("Non RPL Hop-by-hop option check not "
+			"implemented");
+		return 0;
+	}
+
+	if (opt_len != NET_RPL_HDR_OPT_LEN) {
+		NET_DBG("RPL Hop-by-hop option has wrong length");
+		return 0;
+	}
+
+	frag = net_nbuf_read_u8(buf, offset, &offset, &flags);
+	frag = net_nbuf_read_u8(frag, offset, &offset, &instance_id);
+
+	instance = net_rpl_get_instance(instance_id);
+	if (!instance || !instance->is_used ||
+	    !instance->current_dag->is_joined) {
+		NET_DBG("Incorrect instance so hop-by-hop ext header "
+			"not added");
+		return 0;
+	}
+
+	if (opt_type != NET_IPV6_EXT_HDR_OPT_RPL) {
+		NET_DBG("Multi Hop-by-hop options not implemented");
+		return 0;
+	}
+
+	NET_DBG("Updating RPL option");
+
+	/* The offset should point to "rank" right now */
+	net_nbuf_write_be16(buf, frag, offset, &pos,
+			    instance->current_dag->rank);
+
+	offset -= 2; /* move back to flags */
+
+	route = net_route_lookup(net_nbuf_iface(buf), &NET_IPV6_BUF(buf)->dst);
+
+	/*
+	 * Check the direction of the down flag, as per
+	 * Section 11.2.2.3, which states that if a packet is going
+	 * down it should in general not go back up again. If this
+	 * happens, a NET_RPL_HDR_OPT_FWD_ERR should be flagged.
+	 */
+	if (flags & NET_RPL_HDR_OPT_DOWN) {
+		struct net_nbr *nbr;
+
+		if (!route) {
+			net_nbuf_write_u8(buf, frag, offset, &pos,
+					  flags |= NET_RPL_HDR_OPT_FWD_ERR);
+
+			NET_DBG("RPL forwarding error");
+
+			/*
+			 * We should send back the packet to the
+			 * originating parent, but it is not feasible
+			 * yet, so we send a No-Path DAO instead.
+			 */
+			NET_DBG("RPL generate No-Path DAO");
+
+			nbr = net_nbr_lookup(&net_rpl_parents.table,
+					     net_nbuf_iface(buf),
+					     net_nbuf_ll_src(buf));
+
+			parent = nbr_data(nbr);
+			if (parent) {
+				net_rpl_dao_send(net_nbuf_iface(buf),
+						 parent,
+						 &NET_IPV6_BUF(buf)->dst,
+						 NET_RPL_ZERO_LIFETIME);
+			}
+
+			/* Drop packet */
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+	/*
+	 * Set the down extension flag correctly as described
+	 * in Section 11.2 of RFC6550. If the packet progresses
+	 * along a DAO route, the down flag should be set.
+	 */
+
+	if (!route) {
+		/* No route was found, so this packet will go
+		 * towards the RPL root. If so, we should not
+		 * set the down flag.
+		 */
+		net_nbuf_write_u8(buf, frag, offset, &pos,
+				  flags &= ~NET_RPL_HDR_OPT_DOWN);
+
+		NET_DBG("RPL option going up");
+	} else {
+		/* A DAO route was found so we set the down
+		 * flag.
+		 */
+		net_nbuf_write_u8(buf, frag, offset, &pos,
+				  flags |= NET_RPL_HDR_OPT_DOWN);
+
+		NET_DBG("RPL option going down");
+	}
+
+	return 0;
+}
+
+int net_rpl_insert_header(struct net_buf *buf)
+{
+#if defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
+	if (rpl_default_instance &&
+	    !net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+		return net_rpl_update_header_empty(buf);
+	}
+#endif
+
+	return 0;
+}
+
 static inline void create_linklocal_rplnodes_mcast(struct in6_addr *addr)
 {
 	net_ipv6_addr_create(addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x001a);
