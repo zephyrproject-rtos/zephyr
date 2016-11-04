@@ -240,6 +240,7 @@ static int show_help(int argc, char *argv[])
 		for (module = 0; module < NUM_OF_SHELL_ENTITIES; module++) {
 			printk("%s\n", __shell_cmd_start[module].module_name);
 		}
+		printk("\nTo select a module, enter 'set_module <module name>'.\n");
 	}
 
 	return 0;

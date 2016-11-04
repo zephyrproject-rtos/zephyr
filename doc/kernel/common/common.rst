@@ -13,4 +13,3 @@ microkernel applications and nanokernel applications.
    common_kernel_clocks.rst
    common_atomic.rst
    common_float.rst
-   common_shell.rst

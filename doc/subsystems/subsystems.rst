@@ -14,3 +14,4 @@ to applications.
    usb/usb.rst
    sensor
    power_management.rst
+   shell
