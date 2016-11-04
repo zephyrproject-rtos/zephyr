@@ -777,7 +777,7 @@ static bool test_create_v6_reset_packet(void)
 
 	net_hexdump_frags("TCPv6", buf);
 
-	if (!(NET_TCP_BUF(buf)->flags & NET_TCP_RST)) {
+	if (!(NET_TCP_FLAGS(buf) & NET_TCP_RST)) {
 		printk("Reset flag not set\n");
 		return false;
 	}
@@ -808,7 +808,7 @@ static bool test_create_v4_reset_packet(void)
 
 	net_hexdump_frags("TCPv4", buf);
 
-	if (!(NET_TCP_BUF(buf)->flags & NET_TCP_RST)) {
+	if (!(NET_TCP_FLAGS(buf) & NET_TCP_RST)) {
 		printk("Reset flag not set\n");
 		return false;
 	}
@@ -839,7 +839,7 @@ static bool test_create_v6_syn_packet(void)
 
 	net_hexdump_frags("TCPv6", buf);
 
-	if (!(NET_TCP_BUF(buf)->flags & NET_TCP_SYN)) {
+	if (!(NET_TCP_FLAGS(buf) & NET_TCP_SYN)) {
 		printk("SYN flag not set\n");
 		return false;
 	}
@@ -870,7 +870,7 @@ static bool test_create_v4_syn_packet(void)
 
 	net_hexdump_frags("TCPv4", buf);
 
-	if (!(NET_TCP_BUF(buf)->flags & NET_TCP_SYN)) {
+	if (!(NET_TCP_FLAGS(buf) & NET_TCP_SYN)) {
 		printk("Reset flag not set\n");
 		return false;
 	}
@@ -901,8 +901,8 @@ static bool test_create_v6_synack_packet(void)
 
 	net_hexdump_frags("TCPv6", buf);
 
-	if (!((NET_TCP_BUF(buf)->flags & NET_TCP_SYN) &&
-	      (NET_TCP_BUF(buf)->flags & NET_TCP_ACK))) {
+	if (!((NET_TCP_FLAGS(buf) & NET_TCP_SYN) &&
+	      (NET_TCP_FLAGS(buf) & NET_TCP_ACK))) {
 		printk("SYN|ACK flag not set\n");
 		return false;
 	}
@@ -933,8 +933,8 @@ static bool test_create_v4_synack_packet(void)
 
 	net_hexdump_frags("TCPv4", buf);
 
-	if (!((NET_TCP_BUF(buf)->flags & NET_TCP_SYN) &&
-	      (NET_TCP_BUF(buf)->flags & NET_TCP_ACK))) {
+	if (!((NET_TCP_FLAGS(buf) & NET_TCP_SYN) &&
+	      (NET_TCP_FLAGS(buf) & NET_TCP_ACK))) {
 		printk("SYN|ACK flag not set\n");
 		return false;
 	}
@@ -965,7 +965,7 @@ static bool test_create_v6_fin_packet(void)
 
 	net_hexdump_frags("TCPv6", buf);
 
-	if (!(NET_TCP_BUF(buf)->flags & NET_TCP_FIN)) {
+	if (!(NET_TCP_FLAGS(buf) & NET_TCP_FIN)) {
 		printk("FIN flag not set\n");
 		return false;
 	}
@@ -996,7 +996,7 @@ static bool test_create_v4_fin_packet(void)
 
 	net_hexdump_frags("TCPv4", buf);
 
-	if (!(NET_TCP_BUF(buf)->flags & NET_TCP_FIN)) {
+	if (!(NET_TCP_FLAGS(buf) & NET_TCP_FIN)) {
 		printk("FIN flag not set\n");
 		return false;
 	}

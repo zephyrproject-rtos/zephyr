@@ -74,6 +74,8 @@ enum net_tcp_state {
 #define NET_TCP_URG 0x20
 #define NET_TCP_CTL 0x3f
 
+#define NET_TCP_FLAGS(nbuf) (NET_TCP_BUF(nbuf)->flags & NET_TCP_CTL)
+
 /* TCP max window size */
 #define NET_TCP_MAX_WIN   (4 * 1024)
 

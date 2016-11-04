@@ -635,8 +635,7 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 	/*
 	 * If we receive SYN, we send SYN-ACK and go to SYN_RCVD state.
 	 */
-	if ((NET_TCP_BUF(buf)->flags & NET_TCP_CTL) ==
-	    (NET_TCP_SYN | NET_TCP_ACK)) {
+	if (NET_TCP_FLAGS(buf) == (NET_TCP_SYN | NET_TCP_ACK)) {
 		struct sockaddr *laddr;
 		struct sockaddr *raddr;
 
@@ -916,7 +915,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 	/*
 	 * If we receive SYN, we send SYN-ACK and go to SYN_RCVD state.
 	 */
-	if ((NET_TCP_BUF(buf)->flags & NET_TCP_CTL) == NET_TCP_SYN) {
+	if (NET_TCP_FLAGS(buf) == NET_TCP_SYN) {
 		struct sockaddr peer, *remote;
 
 		net_tcp_print_recv_info("SYN", buf, NET_TCP_BUF(buf)->src_port);
@@ -946,7 +945,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 	/*
 	 * If we receive RST, we go back to LISTEN state.
 	 */
-	if ((NET_TCP_BUF(buf)->flags & NET_TCP_CTL) == NET_TCP_RST) {
+	if (NET_TCP_FLAGS(buf) == NET_TCP_RST) {
 		k_delayed_work_cancel(&tcp->ack_timer);
 
 		net_tcp_print_recv_info("RST", buf, NET_TCP_BUF(buf)->src_port);
@@ -959,7 +958,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 	/*
 	 * If we receive ACK, we go to ESTABLISHED state.
 	 */
-	if ((NET_TCP_BUF(buf)->flags & NET_TCP_CTL) == NET_TCP_ACK) {
+	if (NET_TCP_FLAGS(buf) == NET_TCP_ACK) {
 		struct net_context *new_context;
 		struct sockaddr local_addr;
 		struct sockaddr remote_addr;

@@ -78,7 +78,7 @@ static char upper_if_set(char chr, bool set)
 
 static void net_tcp_trace(char *str, struct net_buf *buf)
 {
-	uint8_t flags = NET_TCP_BUF(buf)->flags;
+	uint8_t flags = NET_TCP_FLAGS(buf);
 
 	NET_INFO("%s[TCP header]", str);
 	NET_INFO("|(SrcPort)         %5u |(DestPort)      %5u |",
