@@ -269,8 +269,42 @@ config ARCH_HAS_NANO_FIBER_ABORT
 	# omit prompt to signify a "hidden" option
 	default n
 
-endmenu
+config CACHE_LINE_SIZE_DETECT
+	bool
+	prompt "Detect d-cache line size at runtime"
+	default n
+	help
+	This option enables querying the d-cache build register for finding
+	the d-cache line size at the expense of taking more memory and code
+	and a slightly increased boot time.
 
+	If the CPU's d-cache line size is known in advance, disable this
+	option and manually enter the value for CACHE_LINE_SIZE.
+
+config CACHE_LINE_SIZE
+	int
+	prompt "Cache line size" if !CACHE_LINE_SIZE_DETECT
+	default 32
+	help
+	Size in bytes of a CPU d-cache line.
+
+	Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
+
+config ARCH_CACHE_FLUSH_DETECT
+	bool
+	default n
+
+config CACHE_FLUSHING
+	bool
+	default n
+	prompt "Enable d-cache flushing mechanism"
+	help
+	This links in the sys_cache_flush() function, which provides a
+	way to flush multiple lines of the d-cache.
+	If the d-cache is present, set this to y.
+	If the d-cache is NOT present, set this to n.
+
+endmenu
 
 source "arch/arc/soc/*/Kconfig"
 

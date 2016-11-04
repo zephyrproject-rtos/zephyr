@@ -65,6 +65,9 @@ config DCCM_BASE_ADDRESS
 config DCCM_SIZE
 	default 64
 
+config CACHE_FLUSHING
+	def_bool y
+
 if GPIO
 
 config GPIO_DW

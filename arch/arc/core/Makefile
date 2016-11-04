@@ -3,7 +3,7 @@ ccflags-y +=-I$(srctree)/arch/$(ARCH)/include
 
 obj-y += thread.o thread_entry_wrapper.o \
 	cpu_idle.o  fast_irq.o  fatal.o  fault.o  \
-	fault_s.o  irq_manage.o  \
+	fault_s.o  irq_manage.o cache.o  \
 	isr_wrapper.o  regular_irq.o  swap_macros.h  swap.o \
 	sys_fatal_error_handler.o
 

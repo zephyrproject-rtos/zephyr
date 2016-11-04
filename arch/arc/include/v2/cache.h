@@ -16,10 +16,10 @@
 
 /**
  * @file
- * @brief Cache helper functions (ARC)
+ * @brief Cache helper functions and defines (ARC)
  *
- * This file contains private nanokernel structures definitions and various
- * other definitions for the ARCv2 processor architecture.
+ * This file contains cache related functions and definitions for the
+ * ARCv2 processor architecture.
  */
 
 #ifndef _ARCV2_CACHE__H_
@@ -33,28 +33,29 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#define CACHE_ENABLE 0x00
-#define CACHE_DISABLE 0x01
-#define CACHE_DIRECT 0x00
-#define CACHE_CACHE_CONTROLLED 0x20
+/* i-cache defines for IC_CTRL register */
+#define IC_CACHE_ENABLE   0x00
+#define IC_CACHE_DISABLE  0x01
+#define IC_CACHE_DIRECT   0x00
+#define IC_CACHE_INDIRECT 0x20
 
 /*
- * @brief Sets the I-cache
+ * @brief Initialize the I-cache
  *
- * Enables cache and sets the direct access.
+ * Enables the i-cache and sets it to direct access mode.
  */
 static ALWAYS_INLINE void _icache_setup(void)
 {
 	uint32_t icache_config = (
-		CACHE_DIRECT | /* direct mapping (one-way assoc.) */
-		CACHE_ENABLE   /* i-cache enabled */
+		IC_CACHE_DIRECT | /* direct mapping (one-way assoc.) */
+		IC_CACHE_ENABLE   /* i-cache enabled */
 	);
 	uint32_t val;
 
 	val = _arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
 	val &= 0xff;
-	if (val != 0) {
-		/* configure i-cache if present */
+	if (val != 0) { /* is i-cache present? */
+		/* configure i-cache */
 		_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, icache_config);
 	}
 }
