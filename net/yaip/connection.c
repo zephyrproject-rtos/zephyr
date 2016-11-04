@@ -355,7 +355,7 @@ int net_conn_unregister(struct net_conn_handle *handle)
 		return -EINVAL;
 	}
 
-	if (!conn->flags & NET_CONN_IN_USE) {
+	if (!(conn->flags & NET_CONN_IN_USE)) {
 		return -ENOENT;
 	}
 
