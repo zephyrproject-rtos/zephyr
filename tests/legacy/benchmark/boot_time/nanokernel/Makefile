@@ -6,7 +6,6 @@ CONF_galileo        	= quark_x1000/prj.conf
 CONF_minnowboard     	= ia32/prj_expert_test.conf
 CONF_arduino_101    	= quark_se/quark_se_prj.conf
 
-KERNEL_TYPE = nano
 BOARD ?= qemu_x86
 CONF_FILE = $(CONF_$(BOARD))
 

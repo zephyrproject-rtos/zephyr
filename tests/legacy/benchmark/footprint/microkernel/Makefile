@@ -3,7 +3,6 @@ TEST ?= min
 BOARD ?= qemu_x86
 
 MDEF_FILE = micro_${TEST}.mdef
-KERNEL_TYPE = micro
 CONF_FILE = $(or $(wildcard $(TEST)/$(BOARD).conf), \
                  $(wildcard $(TEST)/$(ARCH).conf))
 ifeq ($(TEST),float)

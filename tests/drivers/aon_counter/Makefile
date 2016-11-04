@@ -1,4 +1,3 @@
-KERNEL_TYPE = nano
 BOARD ?= quark_d2000_crb
 CONF_FILE = prj.conf
 

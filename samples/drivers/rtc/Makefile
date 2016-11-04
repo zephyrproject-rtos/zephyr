@@ -1,4 +1,3 @@
-KERNEL_TYPE = unified
 BOARD ?= quark_d2000_crb
 CONF_FILE = prj.conf
 

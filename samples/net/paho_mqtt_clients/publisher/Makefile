@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
-KERNEL_TYPE = nano
 BOARD = galileo
 CONF_FILE = prj_galileo.conf
 

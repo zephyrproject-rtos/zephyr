@@ -1,4 +1,3 @@
-KERNEL_TYPE = unified
 BOARD ?= qemu_cortex_m3
 CONF_FILE = prj.conf
 

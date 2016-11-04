@@ -1,4 +1,3 @@
-KERNEL_TYPE = nano
 BOARD = galileo
 
 ifeq (${PROFILER}, 1)

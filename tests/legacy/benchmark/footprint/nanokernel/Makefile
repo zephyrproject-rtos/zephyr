@@ -1,7 +1,6 @@
 # default configuration
 TEST ?= min
 
-KERNEL_TYPE = nano
 BOARD ?= qemu_x86
 CONF_FILE = $(or $(wildcard $(TEST)/$(BOARD).conf), \
                  $(wildcard $(TEST)/$(ARCH).conf))

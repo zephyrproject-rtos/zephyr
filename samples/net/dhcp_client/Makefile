@@ -18,7 +18,6 @@
 
 NET_IFACE ?= galileo
 MDEF_FILE = prj.mdef
-KERNEL_TYPE ?= nano
 BOARD ?= galileo
 CONF_FILE ?= prj_$(BOARD).conf
 

@@ -1,4 +1,3 @@
-KERNEL_TYPE = unified
 CONF_FILE = prj.conf
 BOARD ?= quark_se_c1000_devboard
 

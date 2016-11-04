@@ -7,7 +7,6 @@ CONF_galileo        	= quark_x1000/prj.conf
 CONF_arduino_101	= quark_se/quark_se_prj.conf
 
 MDEF_FILE = prj.mdef
-KERNEL_TYPE = micro
 BOARD ?= qemu_x86
 CONF_FILE = ${CONF_${BOARD}}
 

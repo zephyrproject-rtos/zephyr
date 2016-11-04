@@ -1,6 +1,5 @@
 # default configuration
 
-KERNEL_TYPE = nano
 BOARD ?= qemu_x86
 CONF_FILE ?= prj1.conf
 

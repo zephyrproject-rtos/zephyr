@@ -17,7 +17,6 @@
 #
 
 MDEF_FILE = prj.mdef
-KERNEL_TYPE ?= nano
 BOARD = qemu_x86
 CONF_FILE = prj.conf
 

@@ -1,4 +1,3 @@
-KERNEL_TYPE = nano
 BOARD ?= qemu_cortex_m3
 CONF_FILE = prj.conf
 

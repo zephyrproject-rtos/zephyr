@@ -17,7 +17,6 @@
 #
 
 MDEF_FILE = prj.mdef
-KERNEL_TYPE ?= nano
 BOARD ?= qemu_x86
 CONF_FILE = prj.conf
 CFLAGS += -DNET_802154_TX_STACK_SIZE=5120

@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-KERNEL_TYPE ?= unified
 BOARD ?= qemu_x86
 CONF_FILE ?= prj.conf
 

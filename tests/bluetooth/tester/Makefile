@@ -21,7 +21,6 @@
 # default for qemu_cortex_m3 as only this currently supports enought UARTs
 BOARD ?= qemu_cortex_m3
 
-KERNEL_TYPE = unified
 CONF_FILE ?= prj.conf
 
 # UART for Bluetooth
