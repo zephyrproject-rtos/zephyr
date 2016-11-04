@@ -14,7 +14,8 @@ cflags-cortex-m3 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m3) \
 			$(call cc-option,-mthumb -march=armv7-m)
 cflags-cortex-m4 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m4) \
 			$(call cc-option,-mthumb -march=armv7e-m)
-cflags-cortex-m7 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m7)
+cflags-cortex-m7 = $(call cc-option,-mabi=aapcs -mthumb-mcpu=cortex-m7) \
+			 $(call cc-option,-mthumb -march=armv7-m)
 
 ifeq ($(CONFIG_FLOAT), y)
 ifeq ($(CONFIG_FP_SOFTABI), y)

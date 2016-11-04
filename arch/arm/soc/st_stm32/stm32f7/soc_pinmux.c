@@ -23,33 +23,33 @@
 #include <drivers/clock_control/stm32_clock_control.h>
 
 static const stm32_pin_func_t pin_pa9_funcs[] = {
-	[STM32F4_PINMUX_FUNC_PA9_USART1_TX - 1] =
-			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
+	[STM32F7_PINMUX_FUNC_PA9_USART1_TX - 1] =
+			STM32F7X_PIN_CONFIG_AF_PUSH_UP,
 };
 
 static const stm32_pin_func_t pin_pa10_funcs[] = {
-	[STM32F4_PINMUX_FUNC_PA10_USART1_RX - 1] =
-			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
+	[STM32F7_PINMUX_FUNC_PA10_USART1_RX - 1] =
+			STM32F7X_PIN_CONFIG_AF_PUSH_UP,
 };
 
 static const stm32_pin_func_t pin_pb6_funcs[] = {
-	[STM32F4_PINMUX_FUNC_PB6_USART1_TX - 1] =
-			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
+	[STM32F7_PINMUX_FUNC_PB6_USART1_TX - 1] =
+			STM32F7X_PIN_CONFIG_AF_PUSH_UP,
 };
 
 static const stm32_pin_func_t pin_pb7_funcs[] = {
-	[STM32F4_PINMUX_FUNC_PB7_USART1_RX - 1] =
-			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
+	[STM32F7_PINMUX_FUNC_PB7_USART1_RX - 1] =
+			STM32F7X_PIN_CONFIG_AF_PUSH_UP,
 };
 
 static const stm32_pin_func_t pin_pa2_funcs[] = {
-	[STM32F4_PINMUX_FUNC_PA2_USART2_TX - 1] =
-			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
+	[STM32F7_PINMUX_FUNC_PA2_USART2_TX - 1] =
+			STM32F7X_PIN_CONFIG_AF_PUSH_UP,
 };
 
 static const stm32_pin_func_t pin_pa3_funcs[] = {
-	[STM32F4_PINMUX_FUNC_PA3_USART2_RX - 1] =
-			STM32F4X_PIN_CONFIG_AF_PUSH_UP,
+	[STM32F7_PINMUX_FUNC_PA3_USART2_RX - 1] =
+			STM32F7X_PIN_CONFIG_AF_PUSH_UP,
 };
 
 /**
@@ -70,12 +70,12 @@ int stm32_get_pin_config(int pin, int func)
 	 * listed in alternate functions array
 	 */
 	if (func == STM32_PINMUX_FUNC_GPIO) {
-		return STM32F4X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE;
+		return STM32F7X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE;
 	}
 
 	/* analog function is another 'known' setting */
 	if (func == STM32_PINMUX_FUNC_ANALOG) {
-		return STM32F4X_PIN_CONFIG_ANALOG;
+		return STM32F7X_PIN_CONFIG_ANALOG;
 	}
 
 	func -= 1;

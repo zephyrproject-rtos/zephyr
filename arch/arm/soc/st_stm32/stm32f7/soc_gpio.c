@@ -242,7 +242,12 @@ int stm32_gpio_enable_int(int port, int pin)
 {
 	volatile struct stm32f7x_syscfg *syscfg =
 		(struct stm32f7x_syscfg *)SYSCFG_BASE;
-	volatile union __syscfg_exticr *exticr;
+	volatile union syscfg_exticr *exticr;
+	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	struct stm32f7x_pclken pclken = {
+		.bus = STM32F7X_CLOCK_BUS_APB2,
+		.enr = STM32F7X_CLOCK_ENABLE_SYSCFG
+	};
 	int shift = 0;
 
 	if (pin <= 3) {

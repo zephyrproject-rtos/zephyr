@@ -59,6 +59,9 @@ struct __exti_cb {
 #define EXTI_LINES 19
 #elif CONFIG_SOC_SERIES_STM32F4X
 #define EXTI_LINES 23
+#elif CONFIG_SOC_SERIES_STM32F7X
+#define EXTI_LINES 25
+
 #endif
 
 /* driver data */
@@ -88,7 +91,7 @@ void stm32_exti_enable(int line)
 		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
 		irqnum = STM32F1_IRQ_EXTI0 + line;
 	}
-#elif CONFIG_SOC_SERIES_STM32F4X
+#elif CONFIG_SOC_SERIES_STM32F4X 
 	if (line >= 5 && line <= 9) {
 		irqnum = STM32F4_IRQ_EXTI9_5;
 	} else if (line >= 10 && line <= 15) {
@@ -112,6 +115,33 @@ void stm32_exti_enable(int line)
 			break;
 		case 22:
 			irqnum = STM32F4_IRQ_EXTI22;
+			break;
+		}
+	}
+#elif CONFIG_SOC_SERIES_STM32F7X
+	if (line >= 5 && line <= 9) {
+		irqnum = STM32F7_IRQ_EXTI9_5;
+	} else if (line >= 10 && line <= 15) {
+		irqnum = STM32F7_IRQ_EXTI15_10;
+	} else if (line >= 0 && line <= 4) {
+		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
+		irqnum = STM32F7_IRQ_EXTI0 + line;
+	} else {
+		switch (line) {
+		case 16:
+			irqnum = STM32F7_IRQ_EXTI16;
+			break;
+		case 17:
+			irqnum = STM32F7_IRQ_EXTI17;
+			break;
+		case 18:
+			irqnum = STM32F7_IRQ_EXTI18;
+			break;
+		case 21:
+			irqnum = STM32F7_IRQ_EXTI21;
+			break;
+		case 22:
+			irqnum = STM32F7_IRQ_EXTI22;
 			break;
 		}
 	}
