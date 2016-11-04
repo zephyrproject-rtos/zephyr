@@ -10,7 +10,7 @@ obj-$(CONFIG_QMSI_BUILTIN) += soc/$(SOC_SERIES)/drivers/vreg.o
 endif
 obj-$(CONFIG_RTC_QMSI) += drivers/rtc/qm_rtc.o
 obj-$(CONFIG_WDT_QMSI) += drivers/wdt/qm_wdt.o
-obj-$(CONFIG_I2C_QMSI) += drivers/i2c/qm_i2c.o drivers/dma/qm_dma.o
+obj-$(CONFIG_I2C_QMSI) += drivers/i2c/qm_i2c.o
 obj-$(CONFIG_PWM_QMSI) += drivers/pwm/qm_pwm.o
 obj-$(CONFIG_AIO_COMPARATOR_QMSI) += drivers/comparator/qm_comparator.o
 obj-$(CONFIG_AON_COUNTER_QMSI) += drivers/aon_counters/qm_aon_counters.o
