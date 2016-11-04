@@ -42,8 +42,8 @@
  */
 static const struct pin_config mux_config[] = {
 	/* pin,		selected mode */
-	{ K64_PIN_PTC16, K64_PINMUX_FUNC_GPIO },
-	{ K64_PIN_PTC17, K64_PINMUX_FUNC_GPIO },
+	{ K64_PIN_PTC16, K64_PINMUX_ALT_3 }, /* UART3 RX */
+	{ K64_PIN_PTC17, K64_PINMUX_ALT_3 }, /* UART3 TX */
 	{ K64_PIN_PTB9,  K64_PINMUX_FUNC_GPIO },
 #ifndef CONFIG_PRESERVE_JTAG_IO_PINS
 	{ K64_PIN_PTA1,  K64_PINMUX_FUNC_GPIO },
