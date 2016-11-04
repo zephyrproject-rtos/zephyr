@@ -27,7 +27,7 @@ struct bt_rfcomm_session {
 	struct bt_rfcomm_dlc *dlcs;
 	uint16_t mtu;
 	uint8_t state;
-	bool initiator;
+	bt_rfcomm_role_t role;
 };
 
 enum {
@@ -110,8 +110,29 @@ struct bt_rfcomm_msc {
 
 #define BT_RFCOMM_LEN_EXTENDED(len)        (!((len) & 0x01))
 
-#define BT_RFCOMM_MSG_CMD   1
-#define BT_RFCOMM_MSG_RESP  0
+/* For CR in UIH Packet header
+ * Initiating station have the C/R bit set to 1 and those sent by the
+ * responding station have the C/R bit set to 0
+ */
+#define BT_RFCOMM_UIH_CR(role)             ((role) == BT_RFCOMM_ROLE_INITIATOR)
+
+/* For CR in Non UIH Packet header
+ * Command
+ * Initiator --> Responder 1
+ * Responder --> Initiator 0
+ * Response
+ * Initiator --> Responder 0
+ * Responder --> Initiator 1
+ */
+#define BT_RFCOMM_CMD_CR(role)             ((role) == BT_RFCOMM_ROLE_INITIATOR)
+#define BT_RFCOMM_RESP_CR(role)            ((role) == BT_RFCOMM_ROLE_ACCEPTOR)
+
+/* For CR in MSG header
+ * If the C/R bit is set to 1 the message is a command,
+ * if it is set to 0 the message is a response.
+ */
+#define BT_RFCOMM_MSG_CMD_CR               1
+#define BT_RFCOMM_MSG_RESP_CR              0
 
 /* Excluding ext bit */
 #define BT_RFCOMM_MAX_LEN_8 127
@@ -123,8 +144,20 @@ struct bt_rfcomm_msc {
 #define BT_RFCOMM_FCS_LEN_UIH      2
 #define BT_RFCOMM_FCS_LEN_NON_UIH  3
 
-#define BT_RFCOMM_PF_CREDIT      1
-#define BT_RFCOMM_PF_NO_CREDIT   0
+/* For non UIH packets
+ * The P bit set to 1 shall be used to solicit a response frame with the
+ * F bit set to 1 from the other station.
+ */
+#define BT_RFCOMM_PF_NON_UIH         1
+
+/* For UIH packets
+ * Both stations set the P-bit to 0
+ * If credit based flow control is used, If P/F is 1 then one credit byte
+ * will be there after control in the frame else no credit byte.
+ */
+#define BT_RFCOMM_PF_UIH             0
+#define BT_RFCOMM_PF_UIH_CREDIT      1
+#define BT_RFCOMM_PF_UIH_NO_CREDIT   0
 
 /* Initialize RFCOMM signal layer */
 void bt_rfcomm_init(void);

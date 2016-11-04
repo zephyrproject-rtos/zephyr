@@ -1346,17 +1346,12 @@ static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 
 	BT_DBG("err 0x%02x", err);
 
-	if (err) {
+	if (err || !length) {
 		params->func(conn, err, params, NULL, 0);
 		return;
 	}
 
 	if (params->func(conn, 0, params, pdu, length) == BT_GATT_ITER_STOP) {
-		return;
-	}
-
-	/* Stop if no data left */
-	if (!length) {
 		return;
 	}
 
@@ -1408,16 +1403,12 @@ static void att_read_multiple_rsp(struct bt_conn *conn, uint8_t err,
 
 	BT_DBG("err 0x%02x", err);
 
-	if (err) {
+	if (err || !length) {
 		params->func(conn, err, params, NULL, 0);
 		return;
 	}
 
 	params->func(conn, 0, params, pdu, length);
-
-	if (!length) {
-		return;
-	}
 
 	/* mark read as complete since read multiple is single response */
 	params->func(conn, 0, params, NULL, 0);

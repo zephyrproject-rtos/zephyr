@@ -236,4 +236,3 @@ struct pdu_data_q_tx {
 #define LL_MEM_TOTAL (LL_MEM_CONN + LL_MEM_RXQ + (LL_MEM_TXQ * 2) + \
 		LL_MEM_RX_POOL_SZ + \
 		LL_MEM_RX_LINK_POOL + LL_MEM_TX_CTRL_POOL + LL_MEM_TX_DATA_POOL)
-

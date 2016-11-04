@@ -25,7 +25,7 @@
 
 #define CONTROLLER_INDEX 0
 #define DATA_MTU 230
-#define CHANNELS 1
+#define CHANNELS 2
 #define SERVERS 1
 
 static struct nano_fifo data_fifo;

@@ -205,6 +205,77 @@ static struct bt_l2cap_le_chan *__l2cap_chan(struct bt_conn *conn,
 	return NULL;
 }
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state)
+{
+	switch (state) {
+	case BT_L2CAP_DISCONNECTED:
+		return "disconnected";
+	case BT_L2CAP_CONNECT:
+		return "connect";
+	case BT_L2CAP_CONFIG:
+		return "config";
+	case BT_L2CAP_CONNECTED:
+		return "connected";
+	case BT_L2CAP_DISCONNECT:
+		return "disconnect";
+	default:
+		return "unknown";
+	}
+}
+
+void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
+				   bt_l2cap_chan_state_t state,
+				   const char *func, int line)
+{
+	BT_DBG("chan %p psm 0x%04x %s -> %s", chan, chan->psm,
+	       bt_l2cap_chan_state_str(chan->state),
+	       bt_l2cap_chan_state_str(state));
+
+	/* check transitions validness */
+	switch (state) {
+	case BT_L2CAP_DISCONNECTED:
+		/* regardless of old state always allows this state */
+		break;
+	case BT_L2CAP_CONNECT:
+		if (chan->state != BT_L2CAP_DISCONNECTED) {
+			BT_WARN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_CONFIG:
+		if (chan->state != BT_L2CAP_CONNECT) {
+			BT_WARN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_CONNECTED:
+		if (chan->state != BT_L2CAP_CONFIG &&
+		    chan->state != BT_L2CAP_CONNECT) {
+			BT_WARN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_DISCONNECT:
+		if (chan->state != BT_L2CAP_CONFIG &&
+		    chan->state != BT_L2CAP_CONNECTED) {
+			BT_WARN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	default:
+		BT_ERR("%s()%d: unknown (%u) state was set", func, line, state);
+		return;
+	}
+
+	chan->state = state;
+}
+#else
+void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
+			     bt_l2cap_chan_state_t state)
+{
+	chan->state = state;
+}
+#endif /* CONFIG_BLUETOOTH_DEBUG_L2CAP */
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("conn %p chan %p", chan->conn, chan);
@@ -220,6 +291,12 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 	chan->conn = NULL;
 
 destroy:
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+	/* Reset internal members of common channel */
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
+	chan->psm = 0;
+#endif
+
 	if (chan->destroy) {
 		chan->destroy(chan);
 	}
@@ -321,6 +398,77 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 	conn->channels = NULL;
 }
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
+				struct net_buf *buf, uint32_t ticks)
+{
+	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
+	 *
+	 * The value of this timer is implementation-dependent but the minimum
+	 * initial value is 1 second and the maximum initial value is 60
+	 * seconds. One RTX timer shall exist for each outstanding signaling
+	 * request, including each Echo Request. The timer disappears on the
+	 * final expiration, when the response is received, or the physical
+	 * link is lost.
+	 */
+	if (ticks) {
+		nano_delayed_work_submit(&chan->chan.rtx_work, ticks);
+	} else {
+		nano_delayed_work_cancel(&chan->chan.rtx_work);
+	}
+
+	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
+}
+
+static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
+{
+	struct net_buf *buf;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_le_conn_req *req;
+
+	buf = bt_l2cap_create_pdu(&le_sig, 0);
+	if (!buf) {
+		BT_ERR("Unable to send L2CAP connection request");
+		return -ENOMEM;
+	}
+
+	ch->chan.ident = get_ident();
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_LE_CONN_REQ;
+	hdr->ident = ch->chan.ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->psm = sys_cpu_to_le16(ch->chan.psm);
+	req->scid = sys_cpu_to_le16(ch->rx.cid);
+	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
+	req->mps = sys_cpu_to_le16(ch->rx.mps);
+	req->credits = sys_cpu_to_le16(L2CAP_LE_MAX_CREDITS);
+
+	l2cap_chan_send_req(ch, buf, L2CAP_CONN_TIMEOUT);
+
+	return 0;
+}
+
+static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
+{
+	/* Skip channels already connected or with a pending request */
+	if (chan->state != BT_L2CAP_CONNECT || chan->ident) {
+		return;
+	}
+
+	if (status) {
+		l2cap_detach_chan(chan->conn, chan);
+		bt_l2cap_chan_del(chan);
+		return;
+	}
+
+	/* Retry to connect */
+	l2cap_le_conn_req(BT_L2CAP_LE_CHAN(chan));
+}
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+
 void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan;
@@ -333,6 +481,10 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 	for (chan = conn->channels; chan; chan = chan->_next) {
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+		l2cap_le_encrypt_change(chan, hci_status);
+#endif
+
 		if (chan->ops->encrypt_change) {
 			chan->ops->encrypt_change(chan, hci_status);
 		}
@@ -608,13 +760,11 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto rsp;
 	}
 
-#if defined(CONFIG_BLUETOOTH_SMP)
 	/* Check if connection has minimum required security level */
 	if (conn->sec_level < server->sec_level) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_AUTHENTICATION);
 		goto rsp;
 	}
-#endif /* CONFIG_BLUETOOTH_SMP */
 
 	if (!L2CAP_LE_CID_IS_DYN(scid)) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_INVALID_SCID);
@@ -652,6 +802,12 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		/* Init RX parameters */
 		l2cap_chan_rx_init(ch);
 		l2cap_chan_rx_give_credits(ch, L2CAP_LE_MAX_CREDITS);
+
+		/* Set channel PSM */
+		chan->psm = server->psm;
+
+		/* Update state */
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTED);
 
 		if (chan->ops && chan->ops->connected) {
 			chan->ops->connected(chan);
@@ -752,6 +908,33 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
 
+static int l2cap_change_security(struct bt_l2cap_le_chan *chan, uint16_t err)
+{
+	switch (err) {
+	case BT_L2CAP_ERR_ENCRYPTION:
+		if (chan->chan.required_sec_level >= BT_SECURITY_MEDIUM) {
+			return -EALREADY;
+		}
+		chan->chan.required_sec_level = BT_SECURITY_MEDIUM;
+		break;
+	case BT_L2CAP_ERR_AUTHENTICATION:
+		if (chan->chan.required_sec_level < BT_SECURITY_MEDIUM) {
+			chan->chan.required_sec_level = BT_SECURITY_MEDIUM;
+		} else if (chan->chan.required_sec_level < BT_SECURITY_HIGH) {
+			chan->chan.required_sec_level = BT_SECURITY_HIGH;
+		} else if (chan->chan.required_sec_level < BT_SECURITY_FIPS) {
+			chan->chan.required_sec_level = BT_SECURITY_FIPS;
+		} else {
+			return -EALREADY;
+		}
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return bt_conn_security(chan->chan.conn, chan->chan.required_sec_level);
+}
+
 static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			struct net_buf *buf)
 {
@@ -774,7 +957,10 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	BT_DBG("dcid 0x%04x mtu %u mps %u credits %u result 0x%04x", dcid,
 	       mtu, mps, credits, result);
 
-	if (result == BT_L2CAP_SUCCESS) {
+	/* Keep the channel in case of security errors */
+	if (result == BT_L2CAP_SUCCESS ||
+	    result == BT_L2CAP_ERR_AUTHENTICATION ||
+	    result == BT_L2CAP_ERR_ENCRYPTION) {
 		chan = l2cap_lookup_ident(conn, ident);
 	} else {
 		chan = l2cap_remove_ident(conn, ident);
@@ -785,13 +971,20 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
+	/* Cancel RTX work */
+	nano_delayed_work_cancel(&chan->chan.rtx_work);
+
+	/* Reset ident since it got a response */
+	chan->chan.ident = 0;
+
 	switch (result) {
 	case BT_L2CAP_SUCCESS:
-		/* Reset ident since it is no longer pending */
-		chan->chan.ident = 0;
 		chan->tx.cid = dcid;
 		chan->tx.mtu = mtu;
 		chan->tx.mps = mps;
+
+		/* Update state */
+		bt_l2cap_chan_set_state(&chan->chan, BT_L2CAP_CONNECTED);
 
 		if (chan->chan.ops && chan->chan.ops->connected) {
 			chan->chan.ops->connected(&chan->chan);
@@ -801,11 +994,14 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		l2cap_chan_tx_give_credits(chan, credits);
 		l2cap_chan_rx_give_credits(chan, L2CAP_LE_MAX_CREDITS);
 
-		/* Cancel RTX work */
-		nano_delayed_work_cancel(&chan->chan.rtx_work);
-
 		break;
-	/* TODO: Retry on Authentication and Encryption errors */
+	case BT_L2CAP_ERR_AUTHENTICATION:
+	case BT_L2CAP_ERR_ENCRYPTION:
+		/* If security needs changing wait it to be completed */
+		if (l2cap_change_security(chan, result) == 0) {
+			return;
+		}
+		l2cap_detach_chan(conn, &chan->chan);
 	default:
 		bt_l2cap_chan_del(&chan->chan);
 	}
@@ -1280,34 +1476,9 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
-				struct net_buf *buf, uint32_t ticks)
-{
-	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
-	 *
-	 * The value of this timer is implementation-dependent but the minimum
-	 * initial value is 1 second and the maximum initial value is 60
-	 * seconds. One RTX timer shall exist for each outstanding signaling
-	 * request, including each Echo Request. The timer disappears on the
-	 * final expiration, when the response is received, or the physical
-	 * link is lost.
-	 */
-	if (ticks) {
-		nano_delayed_work_submit(&chan->chan.rtx_work, ticks);
-	} else {
-		nano_delayed_work_cancel(&chan->chan.rtx_work);
-	}
-
-	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
-}
-
 static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 			    uint16_t psm)
 {
-	struct net_buf *buf;
-	struct bt_l2cap_sig_hdr *hdr;
-	struct bt_l2cap_le_conn_req *req;
-
 	if (psm < L2CAP_LE_PSM_START || psm > L2CAP_LE_PSM_END) {
 		return -EINVAL;
 	}
@@ -1319,29 +1490,10 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 		return -ENOMEM;
 	}
 
-	buf = bt_l2cap_create_pdu(&le_sig, 0);
-	if (!buf) {
-		BT_ERR("Unable to send L2CAP connection request");
-		return -ENOMEM;
-	}
+	ch->chan.psm = psm;
+	bt_l2cap_chan_set_state(&ch->chan, BT_L2CAP_CONNECT);
 
-	ch->chan.ident = get_ident();
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->code = BT_L2CAP_LE_CONN_REQ;
-	hdr->ident = ch->chan.ident;
-	hdr->len = sys_cpu_to_le16(sizeof(*req));
-
-	req = net_buf_add(buf, sizeof(*req));
-	req->psm = sys_cpu_to_le16(psm);
-	req->scid = sys_cpu_to_le16(ch->rx.cid);
-	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
-	req->mps = sys_cpu_to_le16(ch->rx.mps);
-	req->credits = sys_cpu_to_le16(L2CAP_LE_MAX_CREDITS);
-
-	l2cap_chan_send_req(ch, buf, L2CAP_CONN_TIMEOUT);
-
-	return 0;
+	return l2cap_le_conn_req(ch);
 }
 
 int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
@@ -1413,6 +1565,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 
 	l2cap_chan_send_req(ch, buf, L2CAP_DISC_TIMEOUT);
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECT);
 
 	return 0;
 }

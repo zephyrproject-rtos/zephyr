@@ -28,8 +28,6 @@ source "drivers/bluetooth/hci/Kconfig"
 
 source "drivers/bluetooth/nble/Kconfig"
 
-source "drivers/bluetooth/controller/Kconfig"
-
 config BLUETOOTH_NRF51_PM
 	bool "nRF51 Power Management [EXPERIMENTAL]"
 	depends on BLUETOOTH_H4 || NBLE

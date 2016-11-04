@@ -118,82 +118,6 @@ struct bt_l2cap_br {
 
 static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
-static const char *state2str(bt_l2cap_chan_state_t state)
-{
-	switch (state) {
-	case BT_L2CAP_DISCONNECTED:
-		return "disconnected";
-	case BT_L2CAP_CONNECT:
-		return "connect";
-	case BT_L2CAP_CONFIG:
-		return "config";
-	case BT_L2CAP_CONNECTED:
-		return "connected";
-	case BT_L2CAP_DISCONNECT:
-		return "disconnect";
-	default:
-		return "unknown";
-	}
-}
-#endif /* CONFIG_BLUETOOTH_DEBUG_L2CAP */
-
-static void l2cap_br_state_set(struct bt_l2cap_chan *ch,
-			       bt_l2cap_chan_state_t state)
-{
-	bt_l2cap_chan_state_t old_state = ch->state;
-
-	BT_DBG("scid 0x%04x %s -> %s", BR_CHAN(ch)->rx.cid,
-	       state2str(old_state), state2str(state));
-
-	if (old_state == state) {
-		BT_WARN("no transition");
-		return;
-	}
-
-	/* check transitions validness */
-	switch (state) {
-	case BT_L2CAP_DISCONNECTED:
-		/* regardless of old state always allows this state */
-		break;
-	case BT_L2CAP_CONNECT:
-		if (old_state == BT_L2CAP_DISCONNECTED) {
-			break;
-		}
-
-		BT_WARN("no valid transition");
-		return;
-	case BT_L2CAP_CONFIG:
-		if (old_state == BT_L2CAP_CONNECT) {
-			break;
-		}
-
-		BT_WARN("no valid transition");
-		return;
-	case BT_L2CAP_CONNECTED:
-		if (old_state == BT_L2CAP_CONFIG) {
-			break;
-		}
-
-		BT_WARN("no valid transition");
-		return;
-	case BT_L2CAP_DISCONNECT:
-		if (old_state == BT_L2CAP_CONFIG ||
-		    old_state == BT_L2CAP_CONNECTED) {
-			break;
-		}
-
-		BT_WARN("no valid transition");
-		return;
-	default:
-		BT_WARN("no valid (%u) state was set", state);
-		return;
-	}
-
-	/* apply new valid channel state */
-	ch->state = state;
-}
-
 struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 						uint16_t cid)
 {
@@ -293,10 +217,7 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 
 	/* Cancel ongoing work */
 	nano_delayed_work_cancel(&chan->rtx_work);
-	/* Reset _ONLY_ internal members of common channel */
-	chan->state = BT_L2CAP_DISCONNECTED;
-	/* Reset _ONLY_ BR/EDR specific members on L2CAP app channel */
-	BR_CHAN(chan)->psm = 0;
+
 	atomic_clear(BR_CHAN(chan)->flags);
 }
 
@@ -312,7 +233,8 @@ static void l2cap_br_rtx_timeout(struct nano_work *work)
 		return;
 	}
 
-	BT_DBG("chan %p %s scid 0x%04x", chan, state2str(chan->chan.state),
+	BT_DBG("chan %p %s scid 0x%04x", chan,
+	       bt_l2cap_chan_state_str(chan->chan.state),
 	       chan->rx.cid);
 
 	switch (chan->chan.state) {
@@ -871,7 +793,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	BR_CHAN(chan)->tx.cid = scid;
 	dcid = BR_CHAN(chan)->rx.cid;
 	chan->ident = ident;
-	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR);
 
 	/* Disable fragmentation of l2cap rx pdu */
@@ -901,7 +823,7 @@ done:
 	}
 
 	if (result == BT_L2CAP_SUCCESS) {
-		l2cap_br_state_set(chan, BT_L2CAP_CONFIG);
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
 		l2cap_br_conf(chan);
 	}
 }
@@ -951,7 +873,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 			       BR_CHAN(chan)->rx.cid, BR_CHAN(chan)->rx.mtu,
 			       BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
 
-			l2cap_br_state_set(chan, BT_L2CAP_CONNECTED);
+			bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTED);
 			if (chan->ops && chan->ops->connected) {
 				chan->ops->connected(chan);
 			}
@@ -1177,7 +1099,7 @@ send_rsp:
 		       BR_CHAN(chan)->rx.cid, BR_CHAN(chan)->rx.mtu,
 		       BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
 
-		l2cap_br_state_set(chan, BT_L2CAP_CONNECTED);
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTED);
 		if (chan->ops && chan->ops->connected) {
 			chan->ops->connected(chan);
 		}
@@ -1318,7 +1240,7 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 
 	l2cap_br_chan_send_req(ch, buf, L2CAP_BR_DISCONN_TIMEOUT);
-	l2cap_br_state_set(chan, BT_L2CAP_DISCONNECT);
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECT);
 
 	return 0;
 }
@@ -1361,7 +1283,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -EINVAL;
 	}
 
-	if (BR_CHAN(chan)->psm) {
+	if (chan->psm) {
 		return -EEXIST;
 	}
 
@@ -1395,8 +1317,8 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -ENOMEM;
 	}
 
-	BR_CHAN(chan)->psm = psm;
-	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
+	chan->psm = psm;
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 
 	switch (l2cap_br_conn_security(chan, psm)) {
@@ -1466,7 +1388,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	if (chan->state != BT_L2CAP_CONNECT) {
 		BT_DBG("Invalid channel %p state %s", chan,
-		       state2str(chan->state));
+		       bt_l2cap_chan_state_str(chan->state));
 		return;
 	}
 
@@ -1475,7 +1397,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		chan->ident = 0;
 		BR_CHAN(chan)->tx.cid = dcid;
 		l2cap_br_conf(chan);
-		l2cap_br_state_set(chan, BT_L2CAP_CONFIG);
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_BR_PENDING:
@@ -1599,7 +1521,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 	 * response and initiate configuration request.
 	 */
 	if (l2cap_br_conn_req_reply(chan, BT_L2CAP_SUCCESS) == 0) {
-		l2cap_br_state_set(chan, BT_L2CAP_CONFIG);
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
 		/*
 		 * Initialize config request since remote needs to know
 		 * local MTU segmentation.
@@ -1619,7 +1541,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 		hdr->len = sys_cpu_to_le16(sizeof(*req));
 
 		req = net_buf_add(buf, sizeof(*req));
-		req->psm = sys_cpu_to_le16(BR_CHAN(chan)->psm);
+		req->psm = sys_cpu_to_le16(chan->psm);
 		req->scid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
 
 		l2cap_br_chan_send_req(BR_CHAN(chan), buf,
