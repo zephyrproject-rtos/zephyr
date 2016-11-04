@@ -65,7 +65,7 @@ config SHT3XD_TRIGGER_NONE
 config SHT3XD_TRIGGER_GLOBAL_FIBER
 	bool
 	prompt "Use global fiber"
-	depends on GPIO && SYSTEM_WORKQUEUE
+	depends on GPIO
 	select SHT3XD_TRIGGER
 
 config SHT3XD_TRIGGER_OWN_FIBER

@@ -91,7 +91,7 @@ config BMA280_TRIGGER_NONE
 config BMA280_TRIGGER_GLOBAL_FIBER
 	bool
 	prompt "Use global fiber"
-	depends on GPIO && SYSTEM_WORKQUEUE
+	depends on GPIO
 	select BMA280_TRIGGER
 
 config BMA280_TRIGGER_OWN_FIBER

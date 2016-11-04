@@ -165,8 +165,6 @@ config BLUETOOTH_CENTRAL
 
 config BLUETOOTH_CONN
 	bool
-	select NANO_WORKQUEUE
-	select SYSTEM_WORKQUEUE
 	default n
 
 if BLUETOOTH_CONN

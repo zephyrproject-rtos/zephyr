@@ -1079,8 +1079,6 @@ extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
-#if defined(CONFIG_SYSTEM_WORKQUEUE)
-
 extern struct k_work_q k_sys_work_q;
 
 /**
@@ -1114,7 +1112,6 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
-#endif /* CONFIG_SYSTEM_WORKQUEUE */
 
 /**
  * synchronization

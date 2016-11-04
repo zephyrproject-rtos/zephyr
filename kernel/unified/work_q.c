@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2016 Intel Corporation
  * Copyright (c) 2016 Wind River Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -145,27 +146,3 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 	return 0;
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
-
-#ifdef CONFIG_SYSTEM_WORKQUEUE
-
-#include <init.h>
-
-static char __stack sys_work_q_stack[CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE];
-
-struct k_work_q k_sys_work_q;
-
-static int k_sys_work_q_init(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	k_work_q_start(&k_sys_work_q,
-		       sys_work_q_stack,
-		       sizeof(sys_work_q_stack),
-		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
-
-	return 0;
-}
-
-SYS_INIT(k_sys_work_q_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif

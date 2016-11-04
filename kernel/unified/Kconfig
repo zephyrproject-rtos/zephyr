@@ -183,31 +183,13 @@ config ERRNO
 	symbol. The C library must access the per-thread errno via the
 	_get_errno() symbol.
 
-config NANO_WORKQUEUE
-	bool "Enable nano workqueue support"
-	default y
-	help
-	Nano workqueues allow scheduling work items to be executed in a fiber
-	context. Typically such work items are scheduled from ISRs, when the
-	work cannot be executed in interrupt context.
-
-config SYSTEM_WORKQUEUE
-	bool "Start a system workqueue"
-	default y
-	depends on NANO_WORKQUEUE
-	help
-	Start a system-wide nano_workqueue that can be used by any system
-	component.
-
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
 	default 1024
-	depends on SYSTEM_WORKQUEUE
 
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"
 	default -1
-	depends on SYSTEM_WORKQUEUE
 
 config OFFLOAD_WORKQUEUE_STACK_SIZE
 	int "Workqueue stack size for thread offload requests"

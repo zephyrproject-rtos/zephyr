@@ -53,7 +53,7 @@ config HTS221_TRIGGER_NONE
 config HTS221_TRIGGER_GLOBAL_FIBER
 	bool
 	prompt "Use global fiber"
-	depends on GPIO && SYSTEM_WORKQUEUE
+	depends on GPIO
 	select HTS221_TRIGGER
 
 config HTS221_TRIGGER_OWN_FIBER

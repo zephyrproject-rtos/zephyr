@@ -44,8 +44,6 @@ config BLUETOOTH_H5
 	select UART_INTERRUPT_DRIVEN
 	select BLUETOOTH_UART
 	select BLUETOOTH_HOST_BUFFERS
-	select NANO_WORKQUEUE
-	select SYSTEM_WORKQUEUE
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.

@@ -72,7 +72,7 @@ config TMP007_TRIGGER_NONE
 config TMP007_TRIGGER_GLOBAL_FIBER
 	bool
 	prompt "Use global fiber"
-	depends on GPIO && SYSTEM_WORKQUEUE
+	depends on GPIO
 	select TMP007_TRIGGER
 
 config TMP007_TRIGGER_OWN_FIBER

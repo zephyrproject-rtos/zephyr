@@ -138,7 +138,7 @@ config ISL29035_TRIGGER_NONE
 config ISL29035_TRIGGER_GLOBAL_FIBER
 	bool
 	prompt "Use global fiber"
-	depends on GPIO && SYSTEM_WORKQUEUE
+	depends on GPIO
 	select ISL29035_TRIGGER
 
 config ISL29035_TRIGGER_OWN_FIBER
