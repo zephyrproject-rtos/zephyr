@@ -88,7 +88,7 @@ endif
 endif # UART_K20
 
 config BLUETOOTH_UART_ON_DEV_NAME
-	default "UART_1" if BLUETOOTH_UART
+	default "UART_4" if BLUETOOTH_UART
 
 config PINMUX
 	def_bool y
