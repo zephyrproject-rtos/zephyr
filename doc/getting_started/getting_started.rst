@@ -207,7 +207,7 @@ To run an application using the ARM qemu_cortex_m3 board configuration, type:
 
 .. code-block:: console
 
-   $ make BOARD=qemu_cortex_m3 ARCH=arm qemu
+   $ make BOARD=qemu_cortex_m3 qemu
 
 QEMU is not supported on all boards and SoCs. When developing for a specific
 hardware target you should always test on the actual hardware and should not
