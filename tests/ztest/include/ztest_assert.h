@@ -87,7 +87,7 @@ static inline void _assert(int cond, const char *msg, const char *default_msg,
  */
 
 #define assert(cond, msg, default_msg) \
-	_assert(cond, msg, msg ? ("(" default_msg ")") : (default_msg), \
+	_assert(cond, msg ? msg : "", msg ? ("(" default_msg ")") : (default_msg), \
 		__FILE__, __LINE__, __func__)
 
 /**
