@@ -15,7 +15,7 @@ cd $1 || exit 127
 # If no modifications to the tree, check the previous commit;
 # otherwise, show the current modifications
 if git diff-index HEAD --quiet; then
-    git show HEAD || exit 127
+    git show --format=email HEAD || exit 127
 else
     git diff HEAD || exit 127
 fi  \
