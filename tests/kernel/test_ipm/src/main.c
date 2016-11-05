@@ -1,5 +1,3 @@
-/* ipm_dummy.c - Fake IPM driver */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
