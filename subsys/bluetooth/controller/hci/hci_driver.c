@@ -34,6 +34,10 @@
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF5
+#include <drivers/clock_control/nrf5_clock_control.h>
+#endif
+
 #include "util/defines.h"
 #include "util/work.h"
 #include "hal/rand.h"
@@ -269,7 +273,7 @@ static int hci_driver_open(void)
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, (void *)1);
+	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF5_K32SRC);
 
 	_ticker_users[RADIO_TICKER_USER_ID_WORKER][0] =
 	    RADIO_TICKER_USER_WORKER_OPS;
@@ -292,7 +296,7 @@ static int hci_driver_open(void)
 	}
 
 	err = radio_init(clk_m16,
-			 7, /* 20ppm = 7 ... 250ppm = 1, 500ppm = 0 */
+			 CLOCK_CONTROL_NRF5_K32SRC_ACCURACY,
 			 RADIO_CONNECTION_CONTEXT_MAX,
 			 RADIO_PACKET_COUNT_RX_MAX,
 			 RADIO_PACKET_COUNT_TX_MAX,
