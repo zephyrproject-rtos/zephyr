@@ -13,154 +13,160 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <zephyr.h>
+#include <ztest.h>
 
 #include <misc/printk.h>
 
 #include <device.h>
 #include <counter.h>
 
-static void aonpt_example_callback(struct device *dev, void *user_data);
 
-static void free_running_counter_example(void);
-static void periodic_timer_example(void);
+/*
+ * 0 if not called, != 0 is the value of the counter
+ *
+ * Note to avoid 0 being posted there because the counter reached 0,
+ * we'll add 1 if this is the case.
+ */
+static volatile uint32_t aonpt_example_callback_was_called;
 
-void main(void)
+static void aonpt_example_callback(struct device *dev, void *user_data)
 {
-	/* test quark Always-on free running counter */
-	free_running_counter_example();
+	uint32_t counter;
 
-	/* test quark Always-on periodic timer */
-	periodic_timer_example();
+	printk("Periodic timer callback data %p\n", user_data);
+	counter = counter_read(dev);
+	printk("Periodic timer callback value %u\n", counter);
+	aonpt_example_callback_was_called = counter == 0 ? 1 : counter;
 }
 
 static void free_running_counter_example(void)
 {
+	int r;
 	volatile uint32_t delay = 0;
-	uint32_t c_val = 0, i = 0;
-	uint32_t dummy_data = 30;
-	uint32_t counter_initial_value = 10000;
+	unsigned pt_loops = 20, i;
+	uint32_t c_vals[pt_loops + 1];
 
 	struct device *aon_counter_dev;
 
-	aon_counter_dev = device_get_binding("AON_COUNTER");
-
-	if (!aon_counter_dev) {
-		printk("Counter device not found\n");
-		return;
-	}
-
 	printk("Always-on free running counter example app\n");
 
-	if (counter_start(aon_counter_dev) != 0) {
-		printk("Counter device enabling fail!\n");
-		return;
-	}
+	aon_counter_dev = device_get_binding("AON_COUNTER");
+	assert_not_null(aon_counter_dev, "Counter device not found\n");
 
-	printk("Always-on counter started\n");
+	r = counter_start(aon_counter_dev);
+	assert_equal(r, 0, "Counter device enable didn't return 0\n");
 
-	/* The AON counter runs from the RTC clock at 32KHz (rather than
+	/*
+	 * The AON counter runs from the RTC clock at 32KHz (rather than
 	 * the system clock which is 32MHz) so we need to spin for a few cycles
 	 * allow the register change to propagate.
 	 */
+	c_vals[0] = counter_read(aon_counter_dev);
 	for (delay = 5000; delay--;) {
 	}
+	c_vals[1] = counter_read(aon_counter_dev);
+	printk("Always-on counter before 5k empty loop %u / after %u\n",
+	       c_vals[0], c_vals[1]);
+	assert_true(c_vals[1] > c_vals[0],
+		    "Always-on counter failed to increase during 5k loop");
 
-	for (i = 0; i < 20; i++) {
+	c_vals[0] = counter_read(aon_counter_dev);
+	for (i = 1; i <= pt_loops; i++) {	/* note the i + 1 */
 		for (delay = 500; delay--;) {
 		}
-
-		c_val = counter_read(aon_counter_dev);
-		printk("Always-on counter value: %d\n", c_val);
+		c_vals[i] = counter_read(aon_counter_dev);
+		printk("Always-on counter before 500 empty loop %u / after %u\n",
+		       c_vals[i - 1], c_vals[i]);
+		assert_true(c_vals[i] > c_vals[i - 1],
+			    "Always-on counter failed to increase "
+			    "during 500 loop");
 	}
-
-	if (counter_set_alarm(aon_counter_dev, NULL, counter_initial_value,
-			      (void *)&dummy_data) != 0) {
-		printk("Always-on counter does not support alarm!\n");
-	}
-
 	counter_stop(aon_counter_dev);
-
-	printk("Always-on counter stopped\n");
 }
 
 static void periodic_timer_example(void)
 {
+	int r;
 	volatile uint32_t delay = 0;
-	uint32_t pt_val = 0, i = 0;
+	uint32_t i = 0;
 	uint32_t dummy_data = 30;
 	uint32_t timer_initial_value = 10000;
-
+	const unsigned pt_loops = 20;
+	uint32_t pt_val0, pt_vals[pt_loops + 1];
 	struct device *aon_periodic_timer_dev = NULL;
 
-	aon_periodic_timer_dev = device_get_binding("AON_TIMER");
-
-	if (!aon_periodic_timer_dev) {
-		printk("Timer device not found\n");
-		return;
-	}
-
 	printk("Periodic timer example app\n");
+	aon_periodic_timer_dev = device_get_binding("AON_TIMER");
+	assert_not_null(aon_periodic_timer_dev, "Timer device not found\n");
 
 	counter_start(aon_periodic_timer_dev);
-
 	printk("Periodic timer started\n");
 
-	/* The AON timer runs from the RTC clock at 32KHz (rather than
+	/*
+	 * The AON timer runs from the RTC clock at 32KHz (rather than
 	 * the system clock which is 32MHz) so we need to spin for a few cycles
 	 * allow the register change to propagate.
+	 *
+	 * Note it counts down!
 	 */
+	pt_val0 = counter_read(aon_periodic_timer_dev);
 	for (delay = 5000; delay--;) {
 	}
-
-	for (i = 0; i < 20; i++) {
+	pt_vals[0] = counter_read(aon_periodic_timer_dev);
+	printk("Periodic timer value before 5k %u, after %u\n",
+	       pt_val0, pt_vals[0]);
+	assert_true(pt_vals[0] < pt_val0,
+		    "timer failed to decrease in 5k empty loop");
+	for (i = 1; i < pt_loops + 1; i++) {	/* note the +1 */
 		for (delay = 500; delay--;) {
 		}
-
-		pt_val = counter_read(aon_periodic_timer_dev);
-		printk("Periodic timer value: %x\n", pt_val);
+		pt_vals[i] = counter_read(aon_periodic_timer_dev);
+		printk("Periodic timer value before 500 %u, after %u\n",
+		       pt_vals[i - 1], pt_vals[i]);
+		assert_true(pt_vals[i] < pt_vals[i - 1],
+			    "timer failed to decrease in 500 empty loop");
 	}
 
-	if (counter_set_alarm(aon_periodic_timer_dev, aonpt_example_callback,
-			      timer_initial_value, (void *)&dummy_data)
-			      != 0) {
-		printk("Periodic Timer was not started yet\n");
-		return;
-	}
+	r = counter_set_alarm(aon_periodic_timer_dev, aonpt_example_callback,
+			      timer_initial_value, (void *)&dummy_data);
+	assert_equal(r, 0, "Periodic Timer was not started yet\n");
 
 	printk("Periodic Timer alarm on\n");
 
 	/* long delay for the alarm and callback to happen */
 	for (delay = 5000000; delay--;) {
 	}
+	assert_not_equal(aonpt_example_callback_was_called, 0,
+			 "alarm callback was not called");
+	printk("Alarm callback was called with counter %u\n",
+		aonpt_example_callback_was_called);
 
 	/* callback is turned off */
-	if (counter_set_alarm(aon_periodic_timer_dev, NULL,
-			      timer_initial_value, (void *)&dummy_data)
-			      != 0) {
-		printk("Periodic timer was not started yet\n");
-		return;
-	}
+	r = counter_set_alarm(aon_periodic_timer_dev, NULL,
+			      timer_initial_value, (void *)&dummy_data);
+	assert_equal(r, 0, "Periodic timer was not started yet\n");
 
 	printk("Periodic timer alarm off\n");
 
-	for (i = 0; i < 20; i++) {
+	pt_vals[0] = counter_read(aon_periodic_timer_dev);
+	for (i = 1; i < pt_loops + 1; i++) {	/* note the +1 */
 		for (delay = 500; delay--;) {
 		}
-
-		pt_val = counter_read(aon_periodic_timer_dev);
-		printk("Periodic timer value: %x\n", pt_val);
+		pt_vals[i] = counter_read(aon_periodic_timer_dev);
+		printk("Periodic timer value before 500 %u, after %u\n",
+		       pt_vals[i - 1], pt_vals[i]);
+		assert_true(pt_vals[i] < pt_vals[i - 1],
+			    "timer failed to decrease in 500 empty loop");
 	}
 
 	counter_stop(aon_periodic_timer_dev);
-
-	printk("Periodic timer stopped\n");
 }
 
-static void aonpt_example_callback(struct device *dev, void *user_data)
+void test_main(void)
 {
-	printk("Periodic timer callback data %d\n", *((uint32_t *)user_data));
-
-	printk("Periodic timer callback value %d\n", counter_read(dev));
+	ztest_test_suite(
+		aon_counter_test,
+		ztest_unit_test(free_running_counter_example),
+		ztest_unit_test(periodic_timer_example));
+	ztest_run_test_suite(aon_counter_test);
 }
