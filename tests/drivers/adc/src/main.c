@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <zephyr.h>
+#include <ztest.h>
 
 #include <device.h>
 #include <misc/byteorder.h>
@@ -38,15 +37,14 @@
  * A4 Channel 14
  */
 #define CHANNEL 10
-#define BUFFER_SIZE 40
+#define BUFFER_SIZE 10
 
-static uint8_t seq_buffer[BUFFER_SIZE];
+static uint32_t seq_buffer[2][BUFFER_SIZE];
 
 static struct adc_seq_entry sample = {
 	.sampling_delay = 12,
 	.channel_id = CHANNEL,
-	.buffer = seq_buffer,
-	.buffer_length = BUFFER_SIZE,
+	.buffer_length = BUFFER_SIZE * sizeof(seq_buffer[0][0])
 };
 
 static struct adc_seq_table table = {
@@ -54,36 +52,64 @@ static struct adc_seq_table table = {
 	.num_entries = 1,
 };
 
-static void _print_sample_in_hex(uint8_t *buf, uint32_t length)
+static void _print_sample_in_hex(const uint32_t *buf, uint32_t length)
 {
+	const uint32_t *top;
+
 	printk("Buffer content:\n");
-	for (; length > 0; length -= 4, buf += 4) {
-		printk("0x%x ", *((uint32_t *)buf));
-	}
+	for (top = buf + length; buf < top; buf++)
+		printk("0x%x ", *buf);
 	printk("\n");
 }
 
-void main(void)
+static long _abs(long x)
 {
-	struct device *adc;
+	return x < 0 ? -x : x;
+}
 
-	printk("ADC sample started on %s\n", ADC_DEVICE_NAME);
+
+static void adc_test(void)
+{
+	int result = TC_FAIL;
+	struct device *adc;
+	unsigned int loops = 10;
+	unsigned int bufi0 = ~0, bufi;
 
 	adc = device_get_binding(ADC_DEVICE_NAME);
-	if (!adc) {
-		printk("Cannot get adc controller\n");
-		return;
-	}
+	assert_not_null(adc, "Cannot get adc controller\n");
 
 	adc_enable(adc);
-	while (1) {
-		if (adc_read(adc, &table) != 0) {
-			printk("Sampling could not proceed, an error occurred\n");
-		} else {
-			printk("Sampling is done\n");
-			_print_sample_in_hex(seq_buffer, BUFFER_SIZE);
+	while (loops--) {
+		bufi = loops & 0x1;
+		/* .buffer should be void * ... */
+		sample.buffer = (void *) seq_buffer[bufi];
+		result = adc_read(adc, &table);
+		assert_equal(result, 0, "Sampling could not proceed, "
+			"an error occurred\n");
+		printk("loop %u: sampling done to buffer #%u\n", loops, bufi);
+		_print_sample_in_hex(seq_buffer[bufi], BUFFER_SIZE);
+		if (bufi0 != ~0) {
+			unsigned int cnt;
+			long delta;
+
+			for (cnt = 0; cnt < BUFFER_SIZE; cnt++) {
+				delta = _abs((long)seq_buffer[bufi][cnt]
+					     - seq_buffer[bufi0][cnt]);
+				printk("loop %u delta %u = %ld\n",
+				       loops, cnt, delta);
+			}
 		}
 		k_sleep(SLEEPTIME);
+		bufi0 = bufi;
 	}
 	adc_disable(adc);
 }
+
+
+void test_main(void)
+{
+	ztest_test_suite(_adc_test,
+			 ztest_unit_test(adc_test));
+	ztest_run_test_suite(_adc_test);
+}
+
