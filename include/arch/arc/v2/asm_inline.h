@@ -21,7 +21,7 @@
 
 /*
  * The file must not be included directly
- * Include nanokernel/cpu.h instead
+ * Include kernel.h instead
  */
 
 #if defined(__GNUC__)

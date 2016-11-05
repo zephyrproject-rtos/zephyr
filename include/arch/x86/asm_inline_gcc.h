@@ -23,7 +23,7 @@
 
 /*
  * The file must not be included directly
- * Include nanokernel/cpu.h instead
+ * Include kernel.h instead
  */
 
 #include <sys_io.h>
