@@ -24,7 +24,8 @@ menuconfig CLOCK_CONTROL_NRF5
 	  driver.
 
 config CLOCK_CONTROL_NRF5_IRQ_PRIORITY
-	int "Power Clock Interrupt Priority"
+	int
+	prompt "Power Clock Interrupt Priority"
 	depends on CLOCK_CONTROL_NRF5
 	range 0 7
 	default 1
@@ -42,3 +43,55 @@ config CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME
 	prompt "NRF5 32KHz clock device name"
 	depends on CLOCK_CONTROL_NRF5
 	default "clk_k32src"
+
+choice
+	prompt "32KHz clock source"
+	default CLOCK_CONTROL_NRF5_K32SRC_XTAL
+
+config CLOCK_CONTROL_NRF5_K32SRC_RC
+	bool
+	prompt "RC Oscillator"
+
+config CLOCK_CONTROL_NRF5_K32SRC_XTAL
+	bool
+	prompt "Crystal Oscillator"
+
+endchoice
+
+choice
+	prompt "32KHz clock accuracy"
+	default CLOCK_CONTROL_NRF5_K32SRC_20PPM
+
+config CLOCK_CONTROL_NRF5_K32SRC_500PPM
+	bool
+	prompt "251 ppm to 500 ppm"
+
+config CLOCK_CONTROL_NRF5_K32SRC_250PPM
+	bool
+	prompt "151 ppm to 250 ppm"
+
+config CLOCK_CONTROL_NRF5_K32SRC_150PPM
+	bool
+	prompt "101 ppm to 150 ppm"
+
+config CLOCK_CONTROL_NRF5_K32SRC_100PPM
+	bool
+	prompt "76 ppm to 100 ppm"
+
+config CLOCK_CONTROL_NRF5_K32SRC_75PPM
+	bool
+	prompt "51 ppm to 75 ppm"
+
+config CLOCK_CONTROL_NRF5_K32SRC_50PPM
+	bool
+	prompt "31 ppm to 50 ppm"
+
+config CLOCK_CONTROL_NRF5_K32SRC_30PPM
+	bool
+	prompt "21 ppm to 30 ppm"
+
+config CLOCK_CONTROL_NRF5_K32SRC_20PPM
+	bool
+	prompt "0 ppm to 20 ppm"
+
+endchoice
