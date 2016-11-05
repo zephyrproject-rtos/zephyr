@@ -444,7 +444,7 @@ int _k_kernel_idle(void)
 
 	extern uint64_t __idle_tsc;
 
-	__idle_tsc = _NanoTscRead();
+	__idle_tsc = _tsc_read();
 #endif
 
 	for (;;) {

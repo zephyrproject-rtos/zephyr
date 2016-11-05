@@ -138,7 +138,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 
 	extern uint64_t __idle_tsc;
 
-	__idle_tsc = _NanoTscRead();
+	__idle_tsc = _tsc_read();
 #endif
 
 	for (;;) {

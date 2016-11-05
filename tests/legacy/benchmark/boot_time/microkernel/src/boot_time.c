@@ -46,7 +46,7 @@ void bootTimeTask(void)
 	uint64_t idle_us;	/* begin of idle timestamp in us	 */
 	uint64_t s_idle_tsc;  /*__start->idle timestamp		 */
 
-	task_tsc = _NanoTscRead();
+	task_tsc = _tsc_read();
 	/* Go to sleep for 1 tick in order to timestamp when IdleTask halts. */
 	task_sleep(1);
 

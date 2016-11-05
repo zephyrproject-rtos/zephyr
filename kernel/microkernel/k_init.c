@@ -82,7 +82,7 @@ void _main(void)
 	 */
 	extern uint64_t __main_tsc;
 
-	__main_tsc = _NanoTscRead();
+	__main_tsc = _tsc_read();
 #endif
 
 	/*

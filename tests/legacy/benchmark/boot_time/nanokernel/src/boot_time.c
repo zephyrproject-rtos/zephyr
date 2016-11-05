@@ -42,7 +42,7 @@ void bootTimeTask(void)
 	uint64_t s_main_tsc; /* __start->main timestamp		 */
 	uint64_t s_task_tsc;  /*__start->task timestamp		 */
 
-	task_tsc = _NanoTscRead();
+	task_tsc = _tsc_read();
 
 	_start_us = __start_tsc / CONFIG_CPU_CLOCK_FREQ_MHZ;
 	s_main_tsc = __main_tsc-__start_tsc;
@@ -86,7 +86,7 @@ char __stack fiberStack[512];
 void main(void)
 {
 	/* record timestamp for nanokernel's main() function */
-	__main_tsc = _NanoTscRead();
+	__main_tsc = _tsc_read();
 
 	/* create bootTime fibers */
 	task_fiber_start(fiberStack, 512, (nano_fiber_entry_t) bootTimeTask,

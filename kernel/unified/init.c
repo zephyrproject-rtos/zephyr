@@ -201,7 +201,7 @@ static void _main(void *unused1, void *unused2, void *unused3)
 	/* record timestamp for kernel's _main() function */
 	extern uint64_t __main_tsc;
 
-	__main_tsc = _NanoTscRead();
+	__main_tsc = _tsc_read();
 #endif
 
 	extern void main(void);

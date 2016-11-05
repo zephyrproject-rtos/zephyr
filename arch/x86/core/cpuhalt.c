@@ -62,7 +62,7 @@ void nano_cpu_idle(void)
 	_int_latency_stop();
 	_sys_k_event_logger_enter_sleep();
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
-	__idle_tsc = _NanoTscRead();
+	__idle_tsc = _tsc_read();
 #endif
 
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)

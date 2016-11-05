@@ -48,7 +48,7 @@ typedef uint64_t _timer_res_t;
 
 /* timestamp routines */
 #define _TIMESTAMP_OPEN()
-#define _TIMESTAMP_READ()	(_NanoTscRead())
+#define _TIMESTAMP_READ()	(_tsc_read())
 #define _TIMESTAMP_CLOSE()
 
 #elif defined(CONFIG_ARM)
