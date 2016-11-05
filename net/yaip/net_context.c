@@ -520,94 +520,56 @@ int net_context_listen(struct net_context *context, int backlog)
 #define net_tcp_print_send_info(...)
 #endif
 
-static inline int send_syn(struct net_context *context,
-		    const struct sockaddr *remote)
+static inline int send_control_segment(struct net_context *context,
+				       const struct sockaddr *remote,
+				       int flags, const char *msg)
 {
 	struct net_buf *buf;
 	int ret;
 
-	net_tcp_change_state(context->tcp, NET_TCP_SYN_SENT);
-
-	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_SYN,
+	ret = net_tcp_prepare_segment(context->tcp, flags,
 				      NULL, 0, remote, &buf);
 	if (ret) {
 		return ret;
 	}
-
-	net_tcp_print_send_info("SYN", buf, NET_TCP_BUF(buf)->dst_port);
 
 	ret = net_send_data(buf);
 	if (ret < 0) {
 		net_nbuf_unref(buf);
 	}
 
+	net_tcp_print_send_info(msg, buf, NET_TCP_BUF(buf)->dst_port);
+
 	return ret;
+}
+
+static inline int send_syn(struct net_context *context,
+			   const struct sockaddr *remote)
+{
+	net_tcp_change_state(context->tcp, NET_TCP_SYN_SENT);
+
+	return send_control_segment(context, remote, NET_TCP_SYN, "SYN");
 }
 
 static inline int send_syn_ack(struct net_context *context,
 			       struct sockaddr *remote)
 {
-	struct net_buf *buf;
-	int ret;
-
-	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_SYN | NET_TCP_ACK,
-				      NULL, 0, remote, &buf);
-	if (ret) {
-		return ret;
-	}
-
-	net_tcp_print_send_info("SYN_ACK", buf, NET_TCP_BUF(buf)->dst_port);
-
-	ret = net_send_data(buf);
-	if (ret < 0) {
-		net_nbuf_unref(buf);
-	}
-
-	return ret;
+	return send_control_segment(context, remote,
+				    NET_TCP_SYN | NET_TCP_ACK,
+				    "SYN_ACK");
 }
 
 static inline int send_fin(struct net_context *context,
 			   struct sockaddr *remote)
 {
-	struct net_buf *buf;
-	int ret;
-
-	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_FIN,
-				      NULL, 0, remote, &buf);
-	if (ret) {
-		return ret;
-	}
-
-	net_tcp_print_send_info("FIN", buf, NET_TCP_BUF(buf)->dst_port);
-
-	ret = net_send_data(buf);
-	if (ret < 0) {
-		net_nbuf_unref(buf);
-	}
-
-	return 0;
+	return send_control_segment(context, remote, NET_TCP_FIN, "FIN");
 }
 
 static inline int send_fin_ack(struct net_context *context,
 			       struct sockaddr *remote)
 {
-	struct net_buf *buf;
-	int ret;
-
-	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_FIN | NET_TCP_ACK,
-				      NULL, 0, remote, &buf);
-	if (ret) {
-		return ret;
-	}
-
-	net_tcp_print_send_info("FIN_ACK", buf, NET_TCP_BUF(buf)->dst_port);
-
-	ret = net_send_data(buf);
-	if (ret < 0) {
-		net_nbuf_unref(buf);
-	}
-
-	return 0;
+	return send_control_segment(context, remote,
+				    NET_TCP_FIN | NET_TCP_ACK, "FIN_ACK");
 }
 
 static inline int send_ack(struct net_context *context,
