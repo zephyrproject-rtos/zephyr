@@ -1,0 +1,47 @@
+# Kconfig - Quark SE C1000 BLE (nRF51822) configuration
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+if BOARD_QUARK_SE_C1000_BLE
+
+config BOARD
+	default quark_se_c1000_ble
+
+if UART_NRF5
+
+config GPIO
+	default y
+
+config GPIO_NRF5
+	default y
+
+config GPIO_NRF5_P0
+	default y
+
+config UART_NRF5_GPIO_TX_PIN
+	default 9
+
+config UART_NRF5_GPIO_RX_PIN
+	default 11
+
+config UART_NRF5_GPIO_RTS_PIN
+	default 8
+
+config UART_NRF5_GPIO_CTS_PIN
+	default 10
+
+endif # UART_NRF5
+
+endif # BOARD_QUARK_SE_C1000_BLE
