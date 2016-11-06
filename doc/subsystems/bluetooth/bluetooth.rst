@@ -91,3 +91,4 @@ More information on the stack and its usage can be found in the
 
    ../../api/bluetooth.rst
    devel.rst
+   qualification.rst
