@@ -180,6 +180,7 @@ F:	include/bluetooth/
 F:	drivers/bluetooth/
 F:	samples/bluetooth/
 F:	tests/bluetooth/
+F:	doc/subsystems/bluetooth/
 
 BLUETOOTH CONTROLLER
 M:	Vinayak Chettimada <vinayak.kariappa.chettimada@nordicsemi.no>
