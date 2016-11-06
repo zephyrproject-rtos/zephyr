@@ -1165,13 +1165,13 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	uint16_t credits;
 
 	/* Only give more credits if it went bellow the defined threshold */
-	if (nano_sem_count_get(&chan->tx.credits) >
+	if (nano_sem_count_get(&chan->rx.credits) >
 	    L2CAP_LE_CREDITS_THRESHOLD) {
 		goto done;
 	}
 
 	/* Restore credits */
-	credits = L2CAP_LE_MAX_CREDITS - nano_sem_count_get(&chan->tx.credits);
+	credits = L2CAP_LE_MAX_CREDITS - nano_sem_count_get(&chan->rx.credits);
 	l2cap_chan_rx_give_credits(chan, credits);
 
 	buf = bt_l2cap_create_pdu(&le_sig, 0);
