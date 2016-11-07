@@ -35,7 +35,7 @@ extern "C" {
 #include <misc/ring_buffer.h>
 
 struct event_logger {
-	struct nano_sem sync_sema;
+	struct k_sem sync_sema;
 	struct ring_buf ring_buf;
 };
 
@@ -57,7 +57,7 @@ struct event_logger {
  * @return N/A
  */
 void sys_event_logger_init(struct event_logger *logger,
-	uint32_t *logger_buffer, uint32_t buffer_size);
+			   uint32_t *logger_buffer, uint32_t buffer_size);
 
 
 /**
@@ -74,7 +74,7 @@ void sys_event_logger_init(struct event_logger *logger,
  * @return N/A
  */
 void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
-	uint32_t *event_data, uint8_t data_size);
+			  uint32_t *event_data, uint8_t data_size);
 
 
 /**
@@ -162,9 +162,9 @@ int sys_event_logger_get_wait_timeout(struct event_logger *logger,
  * @}
  */
 
-#endif /* CONFIG_NANO_TIMEOUTS */
+#endif  /* CONFIG_NANO_TIMEOUTS */
 
-#endif /* _ASMLANGUAGE */
+#endif  /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
 }

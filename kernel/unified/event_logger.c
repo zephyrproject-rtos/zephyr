@@ -23,16 +23,16 @@
 #include <misc/ring_buffer.h>
 
 void sys_event_logger_init(struct event_logger *logger,
-	uint32_t *logger_buffer, uint32_t buffer_size)
+			   uint32_t *logger_buffer, uint32_t buffer_size)
 {
 	sys_ring_buf_init(&logger->ring_buf, buffer_size, logger_buffer);
-	nano_sem_init(&(logger->sync_sema));
+	k_sem_init(&(logger->sync_sema), 0, UINT_MAX);
 }
 
 
 static void event_logger_put(struct event_logger *logger, uint16_t event_id,
-	uint32_t *event_data, uint8_t data_size,
-	void (*sem_give_fn)(struct nano_sem *))
+			     uint32_t *event_data, uint8_t data_size,
+			     void (*sem_give_fn)(struct k_sem *))
 {
 	int ret;
 	unsigned int key;
@@ -52,9 +52,9 @@ static void event_logger_put(struct event_logger *logger, uint16_t event_id,
 
 
 void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
-	uint32_t *event_data, uint8_t data_size)
+			  uint32_t *event_data, uint8_t data_size)
 {
-	event_logger_put(logger, event_id, event_data, data_size, nano_sem_give);
+	event_logger_put(logger, event_id, event_data, data_size, k_sem_give);
 }
 
 
@@ -77,12 +77,12 @@ void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
  * @return No return value.
  */
 void _sys_event_logger_put_non_preemptible(struct event_logger *logger,
-	uint16_t event_id, uint32_t *event_data, uint8_t data_size)
+					   uint16_t event_id, uint32_t *event_data, uint8_t data_size)
 {
-	extern void _sem_give_non_preemptible(struct nano_sem *sem);
+	extern void _sem_give_non_preemptible(struct k_sem *sem);
 
 	event_logger_put(logger, event_id, event_data, data_size,
-		_sem_give_non_preemptible);
+			 _sem_give_non_preemptible);
 }
 
 
@@ -102,7 +102,7 @@ static int event_logger_get(struct event_logger *logger,
 		/* if the user can not retrieve the message, we increase the
 		 *  semaphore to indicate that the message remains in the buffer
 		 */
-		nano_fiber_sem_give(&(logger->sync_sema));
+		k_sem_give(&(logger->sync_sema));
 		return -EMSGSIZE;
 	case -EAGAIN:
 		return 0;
@@ -116,7 +116,7 @@ int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
 			 uint8_t *dropped_event_count, uint32_t *buffer,
 			 uint8_t *buffer_size)
 {
-	if (nano_fiber_sem_take(&(logger->sync_sema), TICKS_NONE)) {
+	if (k_sem_take(&(logger->sync_sema), K_NO_WAIT)) {
 		return event_logger_get(logger, event_id, dropped_event_count,
 					buffer, buffer_size);
 	}
@@ -128,7 +128,7 @@ int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
 			      uint8_t *dropped_event_count, uint32_t *buffer,
 			      uint8_t *buffer_size)
 {
-	nano_fiber_sem_take(&(logger->sync_sema), TICKS_UNLIMITED);
+	k_sem_take(&(logger->sync_sema), K_FOREVER);
 
 	return event_logger_get(logger, event_id, dropped_event_count, buffer,
 				buffer_size);
@@ -142,7 +142,7 @@ int sys_event_logger_get_wait_timeout(struct event_logger *logger,
 				      uint32_t *buffer, uint8_t *buffer_size,
 				      uint32_t timeout)
 {
-	if (nano_fiber_sem_take(&(logger->sync_sema), timeout)) {
+	if (k_sem_take(&(logger->sync_sema), timeout)) {
 		return event_logger_get(logger, event_id, dropped_event_count,
 					buffer, buffer_size);
 	}
