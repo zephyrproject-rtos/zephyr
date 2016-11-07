@@ -793,9 +793,9 @@ struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
  * @param buf    Network buffer fragment list.
  * @param frag   Network buffer fragment.
  * @param offset Offset
- * @param len    Length of the data to be written.
  * @param pos    Position of offset after write completed (this will be
  *               relative to return fragment)
+ * @param len    Length of the data to be written.
  * @param data   Data to be written
  *
  * @return Pointer to the fragment and position (*pos) where write ended,
