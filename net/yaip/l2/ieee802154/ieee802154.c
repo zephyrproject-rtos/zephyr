@@ -247,7 +247,7 @@ static inline bool ieee802154_manage_send_buffer(struct net_if *iface,
 #else /* CONFIG_NET_6LO */
 
 #define ieee802154_manage_recv_buffer(...) NET_CONTINUE
-#defite ieee802154_manage_send_buffer(...) true
+#define ieee802154_manage_send_buffer(...) true
 
 #endif /* CONFIG_NET_6LO */
 
