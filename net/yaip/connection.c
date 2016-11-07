@@ -742,7 +742,24 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 
 	cache_add_neg(cache_value);
 
-	send_icmp_error(buf);
+#if defined(CONFIG_NET_IPV6)
+	/* If the destination address is multicast address,
+	 * we do not send ICMP error as that makes no sense.
+	 */
+	if (net_nbuf_family(buf) == AF_INET6 &&
+	    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+		;
+	} else
+#endif
+#if defined(CONFIG_NET_IPV4)
+	if (net_nbuf_family(buf) == AF_INET &&
+	    net_is_ipv4_addr_mcast(&NET_IPV4_BUF(buf)->dst)) {
+		;
+	} else
+#endif
+	{
+		send_icmp_error(buf);
+	}
 
 drop:
 	if (proto == IPPROTO_UDP) {
