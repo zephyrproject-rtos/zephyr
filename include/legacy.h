@@ -1214,6 +1214,53 @@ static inline __deprecated int nano_sem_count_get(ksem_t sem)
 }
 
 #ifdef CONFIG_SEMAPHORE_GROUPS
+/*
+ * @internal Take the first available semaphore
+ *
+ * Given a list of semaphore pointers, this routine will attempt to take one
+ * of them, waiting up to a maximum of @a timeout ms to do so. The taken
+ * semaphore is identified by @a sem (set to NULL on error).
+ *
+ * Be aware that the more semaphores specified in the group, the more stack
+ * space is required by the waiting thread.
+ *
+ * @param sem_array Array of semaphore pointers terminated by a K_END entry
+ * @param sem Identifies the semaphore that was taken
+ * @param timeout Number of milliseconds to wait if semaphores are unavailable,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 A semaphore was successfully taken
+ * @retval -EBUSY No semaphore was available (@a timeout = K_NO_WAIT)
+ * @retval -EAGAIN Time out occurred while waiting for semaphore
+ */
+
+extern int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
+			    int32_t timeout);
+
+/*
+ * @internal Give all the semaphores in the group
+ *
+ * This routine will give each semaphore in the array of semaphore pointers.
+ *
+ * @param sem_array Array of semaphore pointers terminated by a K_END entry
+ *
+ * @return N/A
+ */
+extern void k_sem_group_give(struct k_sem *sem_array[]);
+
+/*
+ * @internal Reset the count to zero on each semaphore in the array
+ *
+ * This routine resets the count of each semaphore in the group to zero.
+ * Note that it does NOT have any impact on any thread that might have
+ * been previously pending on any of the semaphores.
+ *
+ * @param sem_array Array of semaphore pointers terminated by a K_END entry
+ *
+ * @return N/A
+ */
+extern void k_sem_group_reset(struct k_sem *sem_array[]);
+
 typedef ksem_t *ksemg_t;
 
 /**
