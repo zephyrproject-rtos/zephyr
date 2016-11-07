@@ -493,9 +493,21 @@ void uart_console_hook_install(void)
  */
 static int uart_console_init(struct device *arg)
 {
+
+	uint32_t  dtr = 0;
 	ARG_UNUSED(arg);
 
 	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+
+#ifdef CONFIG_USB_UART_CONSOLE
+	while (1) {
+		uart_line_ctrl_get(uart_console_dev, LINE_CTRL_DTR, &dtr);
+		if (dtr) {
+			break;
+		}
+	}
+	sys_thread_busy_wait(1000000);
+#endif
 
 	uart_console_hook_install();
 
@@ -504,7 +516,9 @@ static int uart_console_init(struct device *arg)
 
 /* UART console initializes after the UART device itself */
 SYS_INIT(uart_console_init,
-#if defined(CONFIG_EARLY_CONSOLE)
+#if defined(CONFIG_USB_UART_CONSOLE)
+			APPLICATION,
+#elif defined(CONFIG_EARLY_CONSOLE)
 			PRE_KERNEL_1,
 #else
 			POST_KERNEL,

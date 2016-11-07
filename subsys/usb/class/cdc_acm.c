@@ -72,6 +72,8 @@ static struct uart_driver_api cdc_acm_driver_api;
 
 struct device *cdc_acm_dev;
 
+static struct nano_sem poll_wait_sem;
+
 /* Device data structure */
 struct cdc_acm_dev_data_t {
 	/* USB device status code */
@@ -306,6 +308,7 @@ static void cdc_acm_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
 
 	dev_data->tx_ready = 1;
+	nano_sem_give(&poll_wait_sem);
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena)
 		dev_data->cb(cdc_acm_dev);
@@ -500,6 +503,7 @@ static int cdc_acm_init(struct device *dev)
 	}
 
 	dev->driver_api = &cdc_acm_driver_api;
+	nano_sem_init(&poll_wait_sem);
 
 	return 0;
 }
@@ -834,13 +838,18 @@ static int cdc_acm_poll_in(struct device *dev, unsigned char *c)
 /*
  * @brief Output a character in polled mode.
  *
- * @return 0 Since it is not supported. See the comments of
- * cdc_acm_poll_in() for details. Apps should use fifo_fill API instead.
+ * The UART poll method for USB UART is simulated by waiting till
+ * we get the next BULK In upcall from the USB device controller or 100 ms.
+ *
+ * @return the same character which is sent
  */
 static unsigned char cdc_acm_poll_out(struct device *dev,
 					     unsigned char c)
 {
-	return 0;
+	cdc_acm_fifo_fill(dev, &c, 1);
+	nano_sem_take(&poll_wait_sem, MSEC(100));
+
+	return c;
 }
 
 static struct uart_driver_api cdc_acm_driver_api = {

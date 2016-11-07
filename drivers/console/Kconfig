@@ -95,6 +95,20 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	they are some sort of control characters, or let the regular console
 	code handle them if they are of no special significance to it.
 
+config USB_UART_CONSOLE
+	bool
+	prompt "Use USB port for console outputs"
+	depends on SERIAL
+	select CONSOLE_HAS_DRIVER
+	select USB_CDC_ACM
+	default n
+	help
+	Enable this option to use the USB UART for console output. The output
+	can be viewed from the USB host via /dev/ttyACM* port. Note that console
+	inputs from the USB UART are not functional yet. Also since the USB
+	layer currently doesnt support multiple interfaces, this shouldnt be
+	selected in conjunction with say USB Mass Storage.
+
 config RAM_CONSOLE
 	bool
 	prompt "Use RAM console"
