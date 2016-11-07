@@ -202,8 +202,8 @@ static inline nano_thread_id_t fiber_start(char *stack, unsigned stack_size,
 						unsigned options)
 {
 	return k_thread_spawn(stack, stack_size, (k_thread_entry_t)entry,
-				(void *)arg1, (void *)arg2, NULL,
-				K_PRIO_COOP(prio), options, 0);
+				(void *)(intptr_t)arg1, (void *)(intptr_t)arg2,
+				NULL, K_PRIO_COOP(prio), options, 0);
 }
 
 /**
@@ -309,7 +309,8 @@ fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 {
 	return k_thread_spawn(stack, stack_size_in_bytes,
 			      (k_thread_entry_t)entry_point,
-			      (void *)param1, (void *)param2, NULL,
+			      (void *)(intptr_t)param1,
+			      (void *)(intptr_t)param2, NULL,
 			      K_PRIO_COOP(priority), options,
 			      _ticks_to_ms(timeout_in_ticks));
 }
