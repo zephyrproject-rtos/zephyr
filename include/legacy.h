@@ -2083,6 +2083,7 @@ static inline int task_pipe_get(kpipe_t id, void *buffer, int bytes_to_read,
 					_ticks_to_ms(timeout)));
 }
 
+#if CONFIG_NUM_PIPE_ASYNC_MSGS > 0
 /**
  * @brief Send a block of data asynchronously to a pipe
  *
@@ -2111,6 +2112,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
 
 	return RC_OK;
 }
+#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
 
 /**
  * @brief Define a private microkernel pipe.
