@@ -48,6 +48,13 @@
 /* end-of-list, mostly used for semaphore groups */
 #define ENDLIST K_END
 
+/* pre-defined task groups */
+#define K_TASK_GROUP_EXE 0x1
+#define K_TASK_GROUP_SYS 0x2
+#define K_TASK_GROUP_FPU 0x4
+/* the following is for x86 architecture only */
+#define K_TASK_GROUP_SSE 0x8
+
 /* pipe amount of content to receive (0+, 1+, all) */
 typedef enum {
 	_0_TO_N = 0x0,

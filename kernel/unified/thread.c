@@ -374,8 +374,8 @@ void _init_static_threads(void)
 	}
 
 	k_sched_lock();
-	/* Start all (legacy) threads that are part of the EXE group */
-	_k_thread_group_op(K_THREAD_GROUP_EXE, _k_thread_single_start);
+	/* Start all (legacy) threads that are part of the EXE task group */
+	_k_thread_group_op(K_TASK_GROUP_EXE, _k_thread_single_start);
 
 	/*
 	 * Non-legacy static threads may be started immediately or after a

@@ -211,18 +211,6 @@ extern int k_thread_cancel(k_tid_t thread);
  */
 extern void k_thread_abort(k_tid_t thread);
 
-#define K_THREAD_GROUP_EXE 0x1
-#define K_THREAD_GROUP_SYS 0x2
-#define K_THREAD_GROUP_FPU 0x4
-
-/* XXX - doesn't work because CONFIG_ARCH is a string */
-#if 0
-/* arch-specific groups */
-#if CONFIG_ARCH == "x86"
-#define K_THREAD_GROUP_SSE 0x4
-#endif
-#endif
-
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 #define _THREAD_TIMEOUT_INIT(obj) \
 	(obj).nano_timeout = { \
