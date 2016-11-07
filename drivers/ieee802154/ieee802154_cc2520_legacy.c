@@ -346,7 +346,7 @@ static inline void sfd_int_handler(struct device *port,
 
 	if (atomic_get(&cc2520->tx) == 1) {
 		atomic_set(&cc2520->tx, 0);
-		device_sync_call_complete(&cc2520->tx_sync);
+		nano_isr_sem_give(&cc2520->tx_sync);
 	}
 }
 
@@ -794,6 +794,7 @@ static inline int cc2520_tx(struct device *dev, struct net_buf *buf)
 	/* 1 retry is allowed here */
 	do {
 		atomic_set(&cc2520->tx, 1);
+		nano_sem_init(&cc2520->tx_sync);
 
 		if (!instruct_stxoncca(&cc2520->spi)) {
 			SYS_LOG_DBG("%s: Cannot start transmission\n", __func__);
@@ -801,8 +802,7 @@ static inline int cc2520_tx(struct device *dev, struct net_buf *buf)
 		}
 
 		/* _cc2520_print_exceptions(cc2520); */
-
-		device_sync_call_wait(&cc2520->tx_sync);
+		nano_sem_take(&cc2520->tx_sync, MSEC(10));
 
 		retry--;
 		status = verify_tx_done(cc2520);
@@ -1135,7 +1135,6 @@ int cc2520_init(struct device *dev)
 
 	dev->driver_api = NULL;
 
-	device_sync_call_init(&cc2520->tx_sync);
 	atomic_set(&cc2520->tx, 0);
 	nano_sem_init(&cc2520->rx_lock);
 

@@ -49,7 +49,7 @@ struct cc2520_context {
 	struct cc2520_spi spi;
 	uint8_t mac_addr[8];
 	/************TX************/
-	device_sync_call_t tx_sync;
+	struct nano_sem tx_sync;
 	atomic_t tx;
 	/************RX************/
 	char __stack cc2520_rx_stack[CONFIG_CC2520_RX_STACK_SIZE];
