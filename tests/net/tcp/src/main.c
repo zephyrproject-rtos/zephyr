@@ -1305,10 +1305,22 @@ static bool test_init_tcp_accept(void)
 {
 	int ret;
 
+	ret = net_context_listen(reply_v6_ctx, 0);
+	if (ret) {
+		TC_ERROR("Context listen v6 test failed (%d)\n", ret);
+		return false;
+	}
+
 	ret = net_context_accept(reply_v6_ctx, accept_v6_cb, 0,
 				 INT_TO_POINTER(AF_INET6));
 	if (ret) {
 		TC_ERROR("Context accept v6 test failed (%d)\n", ret);
+		return false;
+	}
+
+	ret = net_context_listen(reply_v4_ctx, 0);
+	if (ret) {
+		TC_ERROR("Context listen v4 test failed (%d)\n", ret);
 		return false;
 	}
 
