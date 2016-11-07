@@ -326,7 +326,7 @@ void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len)
 {
 	NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
 
-	NET_BUF_ASSERT(buf->len >= len);
+	NET_BUF_SIMPLE_ASSERT(buf->len >= len);
 
 	buf->len -= len;
 	return buf->data += len;
