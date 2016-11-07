@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <soc.h>
 #include <init.h>
 #include <device.h>
