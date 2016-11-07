@@ -576,13 +576,9 @@ else
 include/config/auto.conf: ;
 endif # $(dot-config)
 
-# Unified kernel objects are built as a static library
-ifeq ($(CONFIG_KERNEL_V2),y)
+# kernel objects are built as a static library
 libs-y := kernel/unified/
 core-y := lib/ misc/ net/ boards/ ext/ subsys/ tests/ arch/
-else
-core-y := lib/ kernel/ misc/ net/ boards/ ext/ subsys/ tests/ arch/
-endif
 drivers-y := drivers/
 
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))

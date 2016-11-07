@@ -88,21 +88,11 @@ define rule_cc_o_c_1
 	$(call echo-cmd,cc_o_c_1) $(cmd_cc_o_c_1);
 endef
 
-ifeq ($(CONFIG_KERNEL_V2),y)
-OFFSETS_INCLUDE_KERNEL_LOCATION=$(strip \
-	-I $(srctree)/kernel/unified/include \
-)
-else
-OFFSETS_INCLUDE_KERNEL_LOCATION=$(strip \
-	-I $(srctree)/kernel/microkernel/include \
-	-I $(srctree)/kernel/nanokernel/include \
-)
-endif
-
 OFFSETS_INCLUDE = $(strip \
 		-include $(CURDIR)/include/generated/autoconf.h \
 		-I $(srctree)/include \
 		-I $(CURDIR)/include/generated \
+		-I $(srctree)/kernel/unified/include \
 		$(OFFSETS_INCLUDE_KERNEL_LOCATION) \
 		-I $(srctree)/lib/libc/minimal/include \
 		-I $(srctree)/arch/${ARCH}/include )
