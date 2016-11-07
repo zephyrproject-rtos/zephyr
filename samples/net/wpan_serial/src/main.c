@@ -79,6 +79,7 @@ static struct net_buf *pkt_curr;
 
 /* General helpers */
 
+#ifdef VERBOSE_DEBUG
 static void hexdump(const char *str, const uint8_t *packet, size_t length)
 {
 	int n = 0;
@@ -109,11 +110,14 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 		printf("\n");
 	}
 }
+#else
+#define hexdump(...)
+#endif
 
 static int slip_process_byte(unsigned char c)
 {
 	struct net_buf *buf;
-#if VERBOSE_DEBUG
+#ifdef VERBOSE_DEBUG
 	SYS_LOG_DBG("recv: state %u byte %x", slip_state, c);
 #endif
 	switch (slip_state) {
@@ -146,7 +150,7 @@ static int slip_process_byte(unsigned char c)
 		break;
 	}
 
-#if VERBOSE_DEBUG
+#ifdef VERBOSE_DEBUG
 	SYS_LOG_DBG("processed: state %u byte %x", slip_state, c);
 #endif
 
@@ -183,11 +187,13 @@ static int slip_process_byte(unsigned char c)
 static void interrupt_handler(struct device *dev)
 {
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-#if VERBOSE_DEBUG
+#ifdef VERBOSE_DEBUG
 		SYS_LOG_DBG("");
 #endif
 		if (uart_irq_tx_ready(dev)) {
+#ifdef VERBOSE_DEBUG
 			SYS_LOG_DBG("TX ready interrupt");
+#endif
 
 			nano_sem_give(&tx_sem);
 		}
@@ -195,7 +201,9 @@ static void interrupt_handler(struct device *dev)
 		if (uart_irq_rx_ready(dev)) {
 			unsigned char byte;
 
+#ifdef VERBOSE_DEBUG
 			SYS_LOG_DBG("RX ready interrupt");
+#endif
 
 			while (uart_fifo_read(dev, &byte, sizeof(byte))) {
 				if (slip_process_byte(byte)) {
