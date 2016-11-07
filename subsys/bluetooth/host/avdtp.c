@@ -97,6 +97,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 	}
 
 	session->br_chan.chan.ops = &ops;
+	session->br_chan.chan.required_sec_level = BT_SECURITY_MEDIUM;
 
 	return bt_l2cap_chan_connect(conn, &session->br_chan.chan,
 				     BT_L2CAP_PSM_AVDTP);
@@ -160,6 +161,7 @@ int bt_avdtp_init(void)
 	int err;
 	static struct bt_l2cap_server avdtp_l2cap = {
 		.psm = BT_L2CAP_PSM_AVDTP,
+		.sec_level = BT_SECURITY_MEDIUM,
 		.accept = bt_avdtp_l2cap_accept,
 	};
 
