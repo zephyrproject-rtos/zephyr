@@ -16,64 +16,37 @@
 
 /**
  * @file
- * @brief Floating point resource sharing routines
+ * @brief Floating point register sharing routines
  *
- * This module allows multiple tasks and fibers to safely share the system's
- * floating point resources, by allowing the system to save FPU state
- * information in a task or fiber's stack region when a pre-emptive context
- * switch occurs.
+ * This module allows multiple preemptible threads to safely share the system's
+ * floating point registers, by allowing the system to save FPU state info
+ * in a thread's stack region when a preemptive context switch occurs.
  *
- * The floating point resource sharing mechanism is designed for minimal
- * intrusiveness.  Floating point thread saving is only performed for tasks and
- * fibers that explicitly enable FP resource sharing, to avoid impacting the
- * stack size requirements of all other tasks and fibers.  For those tasks and
- * fibers that do require FP resource sharing, a "lazy save/restore" mechanism
+ * Note: If the kernel has been built without floating point register sharing
+ * support (CONFIG_FP_SHARING), the floating point registers can still be used
+ * safely by one or more cooperative threads OR by a single preemptive thread,
+ * but not by both.
+ *
+ * The floating point register sharing mechanism is designed for minimal
+ * intrusiveness.  Floating point state saving is only performed for threads
+ * that explicitly indicate they are using FPU registers, to avoid impacting
+ * the stack size requirements of all other threads. Also, the SSE registers
+ * are only saved for threads that actually used them. For those threads that
+ * do require floating point state saving, a "lazy save/restore" mechanism
  * is employed so that the FPU's register sets are only switched in and out
  * when absolutely necessary; this avoids wasting effort preserving them when
  * there is no risk that they will be altered, or when there is no need to
  * preserve their contents.
- *
- * The following APIs are provided to allow floating point resource sharing to
- * be enabled or disabled at run-time:
- *
- * void fiber_float_enable  (nano_thread_id_t thread_id, unsigned int options)
- * void task_float_enable   (nano_thread_id_t thread_id, unsigned int options)
- * void fiber_float_disable (nano_thread_id_t thread_id)
- * void task_float_disable  (nano_thread_id_t thread_id)
- *
- * The 'options' parameter is used to specify what non-integer capabilities are
- * being used.  The same options accepted by fiber_fiber_start() are used in the
- * aforementioned APIs, namely K_FP_REGS and K_SSE_REGS.
- *
- * If the nanokernel has been built without SSE instruction support
- * (CONFIG_SSE), the system treats K_SSE_REGS as if it was K_FP_REGS.
- *
- * If the nanokernel has been built without floating point resource sharing
- * support (CONFIG_FP_SHARING), the aforementioned APIs and capabilities do not
- * exist.
- *
- * NOTE
- * It is possible for a single task or fiber to utilize floating instructions
- * _without_ enabling the FP resource sharing feature.  Since no other task or
- * fiber uses the FPU the FP registers won't change when the FP-capable task or
- * fiber isn't executing, meaning there is no need to save the registers.
  *
  * WARNING
  * The use of floating point instructions by ISRs is not supported by the
  * kernel.
  *
  * INTERNAL
- * If automatic enabling of floating point resource sharing _is not_ configured
- * the system leaves CR0[TS] = 0 for all tasks and fibers.  This means that any
- * task or fiber can perform floating point operations at any time without
- * causing an exception, and the system won't stop a task or fiber that
- * shouldn't be doing FP stuff from doing it.
- *
- * If automatic enabling of floating point resource sharing _is_ configured
- * the system leaves CR0[TS] = 0 only for tasks and fibers that are allowed to
- * perform FP operations.  All other tasks and fibers have CR0[TS] = 1 so that
- * an attempt to perform an FP operation will cause an exception, allowing the
- * system to enable FP resource sharing on its behalf.
+ * The kernel sets CR0[TS] to 0 only for threads that require FP register
+ * sharing. All other threads have CR0[TS] set to 1 so that an attempt
+ * to perform an FP operation will cause an exception, allowing the kernel
+ * to enable FP register sharing on its behalf.
  */
 
 #include <nano_private.h>
@@ -84,110 +57,115 @@
 
 #ifdef CONFIG_FP_SHARING
 
-#if defined(CONFIG_SSE)
-extern uint32_t _sse_mxcsr_default_value; /* SSE control/status register default value */
-#endif			/* CONFIG_SSE */
+/* SSE control/status register default value (used by assembler code) */
+extern uint32_t _sse_mxcsr_default_value;
 
 /**
  *
- * @brief Save non-integer context information
+ * @brief Save a thread's floating point context information.
  *
- * This routine saves the system's "live" non-integer context into the
- * specified TCS.  If the specified task or fiber supports SSE then
- * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
+ * This routine saves the system's "live" floating point context into the
+ * specified thread control block. The SSE registers are saved only if the
+ * thread is actually using them.
  *
- * @param tcs TBD
+ * @param tcs Pointer to thread control block.
  *
  * @return N/A
  */
 static void _FpCtxSave(struct tcs *tcs)
 {
-	_do_fp_ctx_save(tcs->flags & K_SSE_REGS, &tcs->preempFloatReg);
+#ifdef CONFIG_SSE
+	if (tcs->flags & K_SSE_REGS) {
+		_do_fp_and_sse_regs_save(&tcs->preempFloatReg);
+		return;
+	}
+#endif
+	_do_fp_regs_save(&tcs->preempFloatReg);
 }
 
 /**
  *
- * @brief Initialize non-integer context information
+ * @brief Initialize a thread's floating point context information.
  *
- * This routine initializes the system's "live" non-integer context.
+ * This routine initializes the system's "live" floating point context.
+ * The SSE registers are initialized only if the thread is actually using them.
  *
- * @param tcs TBD
+ * @param tcs Pointer to thread control block.
  *
  * @return N/A
  */
 static inline void _FpCtxInit(struct tcs *tcs)
 {
-	_do_fp_ctx_init(tcs->flags & K_SSE_REGS);
+	_do_fp_regs_init();
+#ifdef CONFIG_SSE
+	if (tcs->flags & K_SSE_REGS) {
+		_do_sse_regs_init();
+	}
+#endif
 }
 
 /**
  *
- * @brief Enable preservation of non-integer context information
+ * @brief Enable preservation of floating point context information.
  *
- * This routine allows the specified task/fiber (which may be the active
- * task/fiber) to safely share the system's floating point registers with
- * other tasks/fibers.  The <options> parameter indicates which floating point
- * register sets will be used by the specified task/fiber:
+ * This routine informs the kernel that the specified thread (which may be
+ * the current thread) will be using the floating point registers.
+ * The @a options parameter indicates which floating point register sets
+ * will be used by the specified thread:
  *
  *  a) K_FP_REGS  indicates x87 FPU and MMX registers only
- *  b) K_SSE_REGS indicates x87 FPU and MMX and SSEx registers
+ *  b) K_SSE_REGS indicates SSE registers (and also x87 FPU and MMX registers)
  *
- * Invoking this routine creates a floating point thread for the task/fiber
- * that corresponds to an FPU that has been reset.  The system will thereafter
- * protect the task/fiber's FP context so that it is not altered during
- * a pre-emptive context switch.
+ * Invoking this routine initializes the thread's floating point context info
+ * to that of an FPU that has been reset. The next time the thread is scheduled
+ * by _Swap() it will either inherit an FPU that is guaranteed to be in a "sane"
+ * state (if the most recent user of the FPU was cooperatively swapped out)
+ * or the thread's own floating point context will be loaded (if the most
+ * recent user of the FPU was pre-empted, or if this thread is the first user
+ * of the FPU). Thereafter, the kernel will protect the thread's FP context
+ * so that it is not altered during a preemptive context switch.
  *
- * WARNING
+ * @warning
  * This routine should only be used to enable floating point support for a
- * task/fiber that does not currently have such support enabled already.
+ * thread that does not currently have such support enabled already.
  *
- * @param tcs  TDB
- * @param options set to either K_FP_REGS or K_SSE_REGS
+ * @param tcs Pointer to thread control block.
+ * @param options Registers to be preserved (K_FP_REGS or K_SSE_REGS).
  *
  * @return N/A
  *
- * INTERNAL
- * Since the transition from "non-FP supporting" to "FP supporting" must be done
- * atomically to avoid confusing the floating point logic used by _Swap(),
- * this routine locks interrupts to ensure that a context switch does not occur,
- * The locking isn't really needed when the routine is called by a fiber
- * (since context switching can't occur), but it is harmless and allows a single
- * routine to be called by both tasks and fibers (thus saving code space).
- *
- * If necessary, the interrupt latency impact of calling this routine from a
- * fiber could be lessened by re-designing things so that only task-type callers
- * locked interrupts (i.e. move the locking to task_float_enable()). However,
- * all calls to fiber_float_enable() would need to be reviewed to ensure they
- * are only used from a fiber, rather than from "generic" code used by both
- * tasks and fibers.
+ * @internal
+ * The transition from "non-FP supporting" to "FP supporting" must be done
+ * atomically to avoid confusing the floating point logic used by _Swap(), so
+ * this routine locks interrupts to ensure that a context switch does not occur.
+ * The locking isn't really needed when the routine is called by a cooperative
+ * thread (since context switching can't occur), but it is harmless.
  */
-void _FpEnable(struct tcs *tcs, unsigned int options)
+void k_float_enable(struct tcs *tcs, unsigned int options)
 {
 	unsigned int imask;
 	struct tcs *fp_owner;
 
-	/* Lock interrupts to prevent a pre-emptive context switch from occuring
-	 */
+	/* Ensure a preemptive context switch does not occur */
 
 	imask = irq_lock();
 
-	/* Indicate task/fiber requires non-integer context saving */
+	/* Indicate thread requires floating point context saving */
 
-	tcs->flags |= options | K_FP_REGS;
+	tcs->flags |= options;
 
 	/*
-	 * Current task/fiber might not allow FP instructions, so clear CR0[TS]
+	 * The current thread might not allow FP instructions, so clear CR0[TS]
 	 * so we can use them. (CR0[TS] gets restored later on, if necessary.)
 	 */
 
 	__asm__ volatile("clts\n\t");
 
 	/*
-	 * Save the existing non-integer context (since it is about to change),
+	 * Save existing floating point context (since it is about to change),
 	 * but only if the FPU is "owned" by an FP-capable task that is
-	 * currently
-	 * handling an interrupt or exception (meaning it's FP context must be
-	 * preserved).
+	 * currently handling an interrupt or exception (meaning its FP context
+	 * must be preserved).
 	 */
 
 	fp_owner = _nanokernel.current_fp;
@@ -201,15 +179,14 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
 
 	_FpCtxInit(tcs);
 
-	/* Associate the new FP context with the specified task/fiber */
+	/* Associate the new FP context with the specified thread */
 
 	if (tcs == _nanokernel.current) {
 		/*
-		 * When enabling FP support for self, just claim ownership of
-		 *the FPU
-		 * and leave CR0[TS] unset.
+		 * When enabling FP support for the current thread, just claim
+		 * ownership of the FPU and leave CR0[TS] unset.
 		 *
-		 * (Note: the FP context is "live" in hardware, not saved in TCS.)
+		 * (The FP context is "live" in hardware, not saved in TCS.)
 		 */
 
 		_nanokernel.current_fp = tcs;
@@ -219,13 +196,12 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
 		 * of the FPU to them (unless we need it ourselves).
 		 */
 
-		if ((_nanokernel.current->flags & K_FP_REGS) != K_FP_REGS) {
+		if ((_nanokernel.current->flags & _FP_USER_MASK) == 0) {
 			/*
 			 * We are not FP-capable, so mark FPU as owned by the
-			 * thread
-			 * we've just enabled FP support for, then disable our
-			 * own
-			 * FP access by setting CR0[TS] to its original state.
+			 * thread we've just enabled FP support for, then
+			 * disable our own FP access by setting CR0[TS] back
+			 * to its original state.
 			 */
 
 			_nanokernel.current_fp = tcs;
@@ -233,24 +209,19 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
 		} else {
 			/*
 			 * We are FP-capable (and thus had FPU ownership on
-			 *entry), so save
-			 * the new FP context in their TCS, leave FPU ownership
-			 *with self,
-			 * and leave CR0[TS] unset.
+			 * entry), so save the new FP context in their TCS,
+			 * leave FPU ownership with self, and leave CR0[TS]
+			 * unset.
 			 *
-			 * Note: The saved FP context is needed in case the task
-			 *or fiber
+			 * The saved FP context is needed in case the thread
 			 * we enabled FP support for is currently pre-empted,
-			 *since _Swap()
-			 * uses it to restore FP context when the task/fiber
-			 *re-activates.
+			 * since _Swap() uses it to restore FP context when
+			 * the thread re-activates.
 			 *
-			 * Note: Saving the FP context reinits the FPU, and thus
-			 *our own
-			 * FP context, but that's OK since it didn't need to be
-			 *preserved.
-			 * (i.e. We aren't currently handling an interrupt or
-			 *exception.)
+			 * Saving the FP context reinits the FPU, and thus
+			 * our own FP context, but that's OK since it didn't
+			 * need to be preserved. (i.e. We aren't currently
+			 * handling an interrupt or exception.)
 			 */
 
 			_FpCtxSave(tcs);
@@ -262,64 +233,37 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
 
 /**
  *
- * @brief Enable preservation of non-integer context information
+ * @brief Disable preservation of floating point context information.
  *
- * This routine allows a thread to permit any thread (including itself) to
- * safely share the system's floating point registers with other threads.
+ * This routine informs the kernel that the specified thread (which may be
+ * the current thread) will no longer be using the floating point registers.
  *
- * See the description of _FpEnable() for further details.
- *
- * @return N/A
- */
-FUNC_ALIAS(_FpEnable, k_float_enable, void);
-
-/**
- *
- * @brief Disable preservation of non-integer context information
- *
- * This routine prevents the specified task/fiber (which may be the active
- * task/fiber) from safely sharing any of the system's floating point registers
- * with other tasks/fibers.
- *
- * WARNING
+ * @warning
  * This routine should only be used to disable floating point support for
- * a task/fiber that currently has such support enabled.
+ * a thread that currently has such support enabled.
  *
- * @param tcs TBD
+ * @param tcs Pointer to thread control block.
  *
  * @return N/A
  *
- * INTERNAL
- * Since the transition from "FP supporting" to "non-FP supporting" must be done
- * atomically to avoid confusing the floating point logic used by _Swap(),
- * this routine locks interrupts to ensure that a context switch does not occur,
- * The locking isn't really needed when the routine is called by a fiber
- * (since context switching can't occur), but it is harmless and allows a single
- * routine to be called by both tasks and fibers (thus saving code space).
- *
- * If necessary, the interrupt latency impact of calling this routine from a
- * fiber could be lessened by re-designing things so that only task-type callers
- * locked interrupts (i.e. move the locking to task_float_disable()). However,
- * all calls to fiber_float_disable() would need to be reviewed to ensure they
- * are only used from a fiber, rather than from "generic" code used by both
- * tasks and fibers.
+ * @internal
+ * The transition from "FP supporting" to "non-FP supporting" must be done
+ * atomically to avoid confusing the floating point logic used by _Swap(), so
+ * this routine locks interrupts to ensure that a context switch does not occur.
+ * The locking isn't really needed when the routine is called by a cooperative
+ * thread (since context switching can't occur), but it is harmless.
  */
-void _FpDisable(struct tcs *tcs)
+void k_float_disable(struct tcs *tcs)
 {
 	unsigned int imask;
 
-	/* Lock interrupts to prevent a pre-emptive context switch from occuring
-	 */
+	/* Ensure a preemptive context switch does not occur */
 
 	imask = irq_lock();
 
-	/*
-	 * Disable _all_ floating point capabilities for the task/fiber,
-	 * regardless
-	 * of the options specified at the time support was enabled.
-	 */
+	/* Disable all floating point capabilities for the thread */
 
-	tcs->flags &= ~(K_FP_REGS | K_SSE_REGS);
+	tcs->flags &= ~_FP_USER_MASK;
 
 	if (tcs == _nanokernel.current) {
 		_FpAccessDisable();
@@ -334,40 +278,21 @@ void _FpDisable(struct tcs *tcs)
 
 /**
  *
- * @brief Disable preservation of non-integer context information
- *
- * This routine allows a thread to disallow any thread (including itself) from
- * safely sharing any of the system's floating point registers with other
- * threads.
- *
- * WARNING
- * This routine should only be used to disable floating point support for
- * a thread that currently has such support enabled.
- *
- * @return N/A
- */
-FUNC_ALIAS(_FpDisable, k_float_disable, void);
-
-/**
- *
- * @brief Handler for "device not available" exception
+ * @brief Handler for "device not available" exception.
  *
  * This routine is registered to handle the "device not available" exception
- * (vector = 7)
+ * (vector = 7).
  *
  * The processor will generate this exception if any x87 FPU, MMX, or SSEx
- * instruction is executed while CR0[TS]=1.  The handler then enables the
- * current task or fiber with the K_FP_REGS option (or the K_SSE_REGS option
- * if the SSE configuration option has been enabled).
+ * instruction is executed while CR0[TS]=1. The handler then enables the
+ * current thread to use all supported floating point registers.
  *
- * @param pEsf this value is not used for this architecture
+ * @param pEsf This value is not used.
  *
  * @return N/A
  */
-void _FpNotAvailableExcHandler(NANO_ESF * pEsf)
+void _FpNotAvailableExcHandler(NANO_ESF *pEsf)
 {
-	unsigned int enableOption;
-
 	ARG_UNUSED(pEsf);
 
 	/*
@@ -381,13 +306,7 @@ void _FpNotAvailableExcHandler(NANO_ESF * pEsf)
 
 	/* Enable highest level of FP capability configured into the kernel */
 
-#ifdef CONFIG_SSE
-	enableOption = K_SSE_REGS;
-#else
-	enableOption = K_FP_REGS;
-#endif
-
-	_FpEnable(_nanokernel.current, enableOption);
+	k_float_enable(_nanokernel.current, _FP_USER_MASK);
 }
 _EXCEPTION_CONNECT_NOCODE(_FpNotAvailableExcHandler, IV_DEVICE_NOT_AVAILABLE);
 

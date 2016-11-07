@@ -93,12 +93,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
 	/* k_q_node initialized upon first insertion in a list */
-#ifdef CONFIG_FP_SHARING
-	/* ensure K_FP_REGS is set when K_SSE_REGS is set */
-	if (options & K_SSE_REGS) {
-		options |= K_FP_REGS;
-	}
-#endif
+
 	tcs->flags = options | K_PRESTART;
 	tcs->sched_locked = 0;
 

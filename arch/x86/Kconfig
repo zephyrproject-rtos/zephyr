@@ -88,12 +88,15 @@ config FLOAT
 	prompt "Floating point registers"
 	default n
 	help
-	This option allows tasks and fibers to use the floating point registers.
-	By default, only a single task or fiber may use the registers, and only
-	the x87 FPU/MMX registers may be used.
+	This option allows threads to use the x87 FPU/MMX registers. The
+	registers may be used by any number of cooperative threads or by
+	a single preemptible thread, but not both, since the kernel does not
+	preserve FPU context information when switching between threads.
+	Additional options must be enabled to permit the use of SSE registers or
+	to permit floating point register use by multiple preemptible threads.
 
-	Disabling this option means that any task or fiber that uses a
-	floating point register will get a fatal exception.
+	Disabling this option means that any thread that uses the floating
+	point registers will get a fatal exception.
 
 config FP_SHARING
 	bool
@@ -101,12 +104,12 @@ config FP_SHARING
 	depends on FLOAT
 	default n
 	help
-	This option allows multiple tasks and fibers to use the floating point
-	registers. Any task that uses the floating point registers must provide
-	stack space where the kernel can save these registers during context
-	switches; a task that uses only the x87 FPU/MMX registers must provide
-	108 bytes of added stack space, while a task the uses the SSE registers
-	must provide 464 bytes of added stack space.
+	This option allows multiple preemptible threads to use the floating
+	point registers. Any preemptible thread that uses the registers must
+	provide stack space where the kernel can save FPU context info during
+	a preemptive context switch. A thread that uses only the x87 FPU/MMX
+	registers must provide 108 bytes of added stack space, while a thread
+	the uses the SSE registers must provide 464 bytes of added stack space.
 
 config SSE
 	bool
@@ -114,7 +117,7 @@ config SSE
 	depends on FLOAT
 	default n
 	help
-	This option enables the use of SSE registers by tasks and fibers.
+	This option enables the use of SSE registers by threads.
 
 config SSE_FP_MATH
 	bool

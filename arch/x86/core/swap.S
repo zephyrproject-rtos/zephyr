@@ -162,19 +162,18 @@ SECTION_FUNC(TEXT, _Swap)
 
 
 	/*
-	 * Determine whether the incoming thread utilizes non-integer
-	 * capabilities _and_ whether the thread was context switched
-	 * out preemptively.
+	 * Determine whether the incoming thread utilizes floating point registers
+	 * _and_ whether the thread was context switched out preemptively.
 	 */
 
-	testl	$K_FP_REGS, __tTCS_flags_OFFSET (%eax)
+	testl	$_FP_USER_MASK, __tTCS_flags_OFFSET (%eax)
 	je 	restoreContext_NoFloatSwap
 
 
 	/*
-	 * The incoming thread uses non-integer capabilities (x87 FPU and/or
-	 * XMM regs): Was it the last thread to use non-integer capabilities?
-	 * If so, there there is no need to restore the non-integer context.
+	 * The incoming thread uses floating point registers:
+	 * Was it the last thread to use floating point registers?
+	 * If so, there there is no need to restore the floating point context.
 	 */
 
 	movl	__tNANO_current_fp_OFFSET (%edi), %ebx
@@ -183,10 +182,10 @@ SECTION_FUNC(TEXT, _Swap)
 
 
 	/*
-	 * The incoming thread uses non-integer capabilities (x87 FPU and/or
-	 * XMM regs) and it was _not_ the last thread to use the non-integer
-	 * capabilities: Check whether the current FP context actually needs
-	 * to be saved before swapping in the context of the incoming thread
+	 * The incoming thread uses floating point registers and it was _not_
+	 * the last thread to use those registers:
+	 * Check whether the current FP context actually needs to be saved
+	 * before swapping in the context of the incoming thread.
 	 */
 
 	testl	%ebx, %ebx
@@ -194,9 +193,9 @@ SECTION_FUNC(TEXT, _Swap)
 
 
 	/*
-	 * The incoming thread uses non-integer capabilities (x87 FPU and/or
-	 * XMM regs) and it was _not_ the last thread to use the non-integer
-	 * capabilities _and_ the current FP context needs to be saved.
+	 * The incoming thread uses floating point registers and it was _not_
+	 * the last thread to use those registers _and_ the current FP context
+	 * needs to be saved.
 	 *
 	 * Given that the ST[0] -> ST[7] and XMM0 -> XMM7 registers are all
 	 * 'volatile', only save the registers if the "current FP context"
@@ -237,10 +236,10 @@ restoreContext_NoFloatSave:
 	 * Restore floating point context of the incoming thread.
 	 *********************************************************/
 
-        /*
+	/*
 	 * Again, given that the ST[0] -> ST[7] and XMM0 -> XMM7 registers are
-	 * all 'volatile', only restore the registers if the incoming
-	 * thread was previously preemptively context switched out.
+	 * all 'volatile', only restore the registers if the incoming thread
+	 * was previously preemptively context switched out.
 	 */
 
 	testl   $INT_OR_EXC_MASK, __tTCS_flags_OFFSET (%eax)
@@ -264,31 +263,30 @@ x87FloatRestore:
 floatRestoreDone:
 restoreContext_NoFloatRestore:
 
-	/* record that the incoming thread "owns" the non-integer registers */
+	/* record that the incoming thread "owns" the floating point registers */
 
 	movl	%eax, __tNANO_current_fp_OFFSET (%edi)
 
 
 	/*
-	 * Branch point when none of the non-integer registers need to be
-	 * swapped either due to a) the incoming thread does not
-	 * K_FP_REGS | K_SSE_REGS, or b) the incoming thread is the same as
-	 * the last thread that utilized the non-integer registers.
+	 * Branch point when none of the floating point registers need to be
+	 * swapped because: a) the incoming thread does not use them OR
+	 * b) the incoming thread is the last thread that used those registers.
 	 */
 
 restoreContext_NoFloatSwap:
 
 	/*
-	 * Leave CR0[TS] clear if incoming thread utilizes "floating point"
-	 * instructions
+	 * Leave CR0[TS] clear if incoming thread utilizes the floating point
+	 * registers
 	 */
 
-	testl	$K_FP_REGS, __tTCS_flags_OFFSET (%eax)
+	testl	$_FP_USER_MASK, __tTCS_flags_OFFSET (%eax)
 	jne	CROHandlingDone
 
 	/*
-	 * The incoming thread does NOT currently utilize "floating point"
-	 * instructions, so set CR0[TS] to ensure the "device not available"
+	 * The incoming thread does NOT currently utilize the floating point
+	 * registers, so set CR0[TS] to ensure the "device not available"
 	 * exception occurs on the first attempt to access a x87 FPU, MMX,
 	 * or XMM register.
 	 */
@@ -300,9 +298,6 @@ restoreContext_NoFloatSwap:
 CROHandlingDone:
 
 #endif /* CONFIG_FP_SHARING */
-
-
-
 
 	/* update _nanokernel.current to reflect incoming thread */
 

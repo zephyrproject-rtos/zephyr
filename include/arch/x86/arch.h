@@ -386,17 +386,6 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
  */
 #define NANO_SOFT_IRQ	((unsigned int) (-1))
 
-#ifdef CONFIG_FP_SHARING
-/* Definitions for the 'options' parameter to the fiber_fiber_start() API */
-
-/** thread uses floating point registers */
-#define K_FP_REGS		0x10
-#ifdef CONFIG_SSE
-/** thread uses SSEx registers */
-#define K_SSE_REGS		0x20
-#endif /* CONFIG_SSE */
-#endif /* CONFIG_FP_SHARING */
-
 /**
  * @brief Enable a specific IRQ
  * @param irq IRQ

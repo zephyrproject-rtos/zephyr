@@ -86,51 +86,62 @@ static inline void _FpAccessDisable(void)
  *
  * @return N/A
  */
-static inline void _do_fp_ctx_save(int flags, void *preemp_float_reg)
+static inline void _do_fp_regs_save(void *preemp_float_reg)
 {
-#ifdef CONFIG_SSE
-	if (flags) {
-		__asm__ volatile("fxsave (%0);\n\t"
-				 :
-				 : "r"(preemp_float_reg)
-				 : "memory");
-	} else
-#else
-	ARG_UNUSED(flags);
-#endif /* CONFIG_SSE */
-	{
-		__asm__ volatile("fnsave (%0);\n\t"
-				 :
-				 : "r"(preemp_float_reg)
-				 : "memory");
-	}
+	__asm__ volatile("fnsave (%0);\n\t"
+			 :
+			 : "r"(preemp_float_reg)
+			 : "memory");
 }
 
+#ifdef CONFIG_SSE
 /**
  *
- * @brief Initialize non-integer context information
+ * @brief Save non-integer context information
  *
- * This routine initializes the system's "live" non-integer context.
- * Function is invoked by _FpCtxInit(struct tcs *tcs)
+ * This routine saves the system's "live" non-integer context into the
+ * specified area.  If the specified task or fiber supports SSE then
+ * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
+ * Function is invoked by _FpCtxSave(struct tcs *tcs)
  *
  * @return N/A
  */
-static inline void _do_fp_ctx_init(int flags)
+static inline void _do_fp_and_sse_regs_save(void *preemp_float_reg)
 {
-	/* initialize x87 FPU */
-	__asm__ volatile("fninit\n\t");
+	__asm__ volatile("fxsave (%0);\n\t"
+			 :
+			 : "r"(preemp_float_reg)
+			 : "memory");
+}
+#endif /* CONFIG_SSE */
 
+/**
+ *
+ * @brief Initialize floating point register context information.
+ *
+ * This routine initializes the system's "live" floating point registers.
+ *
+ * @return N/A
+ */
+static inline void _do_fp_regs_init(void)
+{
+	__asm__ volatile("fninit\n\t");
+}
 
 #ifdef CONFIG_SSE
-	if (flags) {
-		/* initialize SSE (since thread uses it) */
-		__asm__ volatile("ldmxcsr _sse_mxcsr_default_value\n\t");
-
-	}
-#else
-	ARG_UNUSED(flags);
-#endif /* CONFIG_SSE */
+/**
+ *
+ * @brief Initialize SSE register context information.
+ *
+ * This routine initializes the system's "live" SSE registers.
+ *
+ * @return N/A
+ */
+static inline void _do_sse_regs_init(void)
+{
+	__asm__ volatile("ldmxcsr _sse_mxcsr_default_value\n\t");
 }
+#endif /* CONFIG_SSE */
 
 #endif /* CONFIG_FP_SHARING */
 

@@ -52,14 +52,6 @@
 
 /*
  * Bitmask definitions for the struct tcs->flags bit field
- *
- * The K_FP_REGS flag bit will be set whenever a thread uses any non-integer
- * capability, whether it's just the x87 FPU capability, SSE instructions, or
- * a combination of both. The K_SSE_REGS flag bit will only be set if a thread
- * uses SSE instructions.
- *
- * Note: Any change to the definitions K_FP_REGS and K_SSE_REGS must also
- * be made to nanokernel/x86/arch.h.
  */
 
 #define K_STATIC  0x00000800
@@ -76,13 +68,23 @@
 
 #define INT_ACTIVE 0x2     /* 1 = executing context is interrupt handler */
 #define EXC_ACTIVE 0x4     /* 1 = executing context is exception handler */
-#define K_FP_REGS 0x10	   /* 1 = thread uses floating point registers */
-#define K_SSE_REGS 0x20    /* 1 = thread uses SSEx registers */
+#if defined(CONFIG_FP_SHARING)
+#define K_FP_REGS  0x10    /* 1 = thread uses floating point registers */
+#endif
+#if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
+#define K_SSE_REGS 0x20    /* 1 = thread uses SSEx (and also FP) registers */
+#endif
 #define K_ESSENTIAL 0x200  /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400   /* 1 = _Swap() not to update task metrics */
 #define NO_METRICS_BIT_OFFSET 0xa /* Bit position of NO_METRICS */
 
 #define INT_OR_EXC_MASK (INT_ACTIVE | EXC_ACTIVE)
+
+#if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
+#define _FP_USER_MASK (K_FP_REGS | K_SSE_REGS)
+#elif defined(CONFIG_FP_SHARING)
+#define _FP_USER_MASK (K_FP_REGS)
+#endif
 
 /*
  * Exception/interrupt vector definitions: vectors 20 to 31 are reserved for
