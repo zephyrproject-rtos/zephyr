@@ -390,6 +390,18 @@ static inline bool net_is_ipv6_prefix(const uint8_t *addr1,
 		(addr2[16 - bytes] & ((8 - remain) << 8)));
 }
 
+/**
+ * @brief Check if the IPv4 address is a multicast address.
+ *
+ * @param addr IPv4 address
+ *
+ * @return True if address is multicast address, False otherwise.
+ */
+static inline bool net_is_ipv4_addr_mcast(const struct in_addr *addr)
+{
+	return (addr->s_addr[0] & 0xE0000000) == 0xE0000000;
+}
+
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 						   struct net_if **iface);
 
