@@ -100,6 +100,13 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	mov r1, _nanokernel
 	ld_s r2, [r1, __tNANO_current_OFFSET]
 
+	/*
+	 * Lock interrupts to ensure kernel queues do not change from this
+	 * point on until return from interrupt.
+	 */
+
+	clri
+
 #if NUM_REGULAR_IRQ_PRIO_LEVELS > 1
 	/* check if we're a nested interrupt: if so, let the interrupted interrupt
 	 * handle the reschedule */
@@ -140,9 +147,9 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	brgt.d r0, 0,  _rirq_no_reschedule
 	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 
+	/* check if the current thread needs to be rescheduled */
 	push_s r2
 	push_s r1
-	/* check if the current thread needs to be rescheduled */
 	push_s blink
 	jl _is_next_thread_current
 	pop_s blink
@@ -171,7 +178,7 @@ _rirq_reschedule:
 
 	st _CAUSE_RIRQ, [r2, __tTCS_relinquish_cause_OFFSET]
 
-	/* incoming fiber is in r0: it becomes the new 'current' */
+	/* incoming thread is in r0: it becomes the new 'current' */
 	mov r2, r0
 	st_s r2, [r1, __tNANO_current_OFFSET]
 
