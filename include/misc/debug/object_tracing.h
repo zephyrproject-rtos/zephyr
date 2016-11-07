@@ -24,33 +24,6 @@
 
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 
-#if !defined(CONFIG_KERNEL_V2)
-
-#include <nanokernel.h>
-extern struct nano_fifo  *_trace_list_nano_fifo;
-extern struct nano_lifo  *_trace_list_nano_lifo;
-extern struct nano_sem   *_trace_list_nano_sem;
-extern struct nano_timer *_trace_list_nano_timer;
-extern struct nano_stack *_trace_list_nano_stack;
-extern struct ring_buf *_trace_list_sys_ring_buf;
-
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel/base_api.h>
-#include <micro_private_types.h>
-extern struct _k_mbox_struct  *_trace_list_micro_mbox;
-extern struct _k_mutex_struct *_trace_list_micro_mutex;
-extern struct _k_sem_struct   *_trace_list_micro_sem;
-extern struct _k_fifo_struct  *_trace_list_micro_fifo;
-extern struct _k_pipe_struct  *_trace_list_micro_pipe;
-extern struct pool_struct     *_trace_list_micro_mem_pool;
-extern struct _k_mem_map_struct *_trace_list_micro_mem_map;
-extern struct _k_event_struct *_trace_list_micro_event;
-extern struct k_timer         *_trace_list_micro_timer;
-extern struct k_task          *_trace_list_micro_task;
-#endif /*CONFIG_MICROKERNEL*/
-
-#else
-
 #include <kernel.h>
 extern struct k_timer    *_trace_list_k_timer;
 extern struct k_mem_slab *_trace_list_k_mem_slab;
@@ -66,8 +39,6 @@ extern struct k_mbox     *_trace_list_k_mbox;
 extern struct k_pipe     *_trace_list_k_pipe;
 
 extern struct ring_buf   *_trace_list_sys_ring_buf;
-
-#endif /*CONFIG_KERNEL_V2*/
 
 /**
  * @def SYS_TRACING_HEAD

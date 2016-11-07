@@ -2378,4 +2378,59 @@ extern void _timer_expiration_handler(struct _timeout *t);
 }
 #endif
 
+#if defined(CONFIG_CPLUSPLUS) && defined(__cplusplus)
+/*
+ * Define new and delete operators.
+ * At this moment, the operators do nothing since objects are supposed
+ * to be statically allocated.
+ */
+inline void operator delete(void *ptr)
+{
+	(void)ptr;
+}
+
+inline void operator delete[](void *ptr)
+{
+	(void)ptr;
+}
+
+inline void *operator new(size_t size)
+{
+	(void)size;
+	return NULL;
+}
+
+inline void *operator new[](size_t size)
+{
+	(void)size;
+	return NULL;
+}
+
+/* Placement versions of operator new and delete */
+inline void operator delete(void *ptr1, void *ptr2)
+{
+	(void)ptr1;
+	(void)ptr2;
+}
+
+inline void operator delete[](void *ptr1, void *ptr2)
+{
+	(void)ptr1;
+	(void)ptr2;
+}
+
+inline void *operator new(size_t size, void *ptr)
+{
+	(void)size;
+	return ptr;
+}
+
+inline void *operator new[](size_t size, void *ptr)
+{
+	(void)size;
+	return ptr;
+}
+
+#endif /* defined(CONFIG_CPLUSPLUS) && defined(__cplusplus) */
+
 #endif /* _kernel__h_ */

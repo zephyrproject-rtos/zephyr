@@ -55,10 +55,6 @@ extern void _timer_idle_enter(int32_t ticks);
 extern void _timer_idle_exit(void);
 #endif /* CONFIG_TICKLESS_IDLE */
 
-#ifndef CONFIG_KERNEL_V2
-extern uint32_t _nano_get_earliest_deadline(void);
-#endif /* CONFIG_KERNEL_V2 */
-
 extern void _nano_sys_clock_tick_announce(int32_t ticks);
 
 extern int sys_clock_device_ctrl(struct device *device,
@@ -74,32 +70,6 @@ extern int sys_clock_device_ctrl(struct device *device,
 #endif
 
 extern int32_t _sys_idle_elapsed_ticks;
-#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
-extern void (*_do_sys_clock_tick_announce)(kevent_t);
-
-#define _sys_clock_tick_announce() _do_sys_clock_tick_announce(TICK_EVENT)
-
-/**
- * @brief Account for the tick due to the timer interrupt
- *
- * @return N/A
- */
-static inline void _sys_clock_final_tick_announce(void)
-{
-	/*
-	 * Ticks are annnounced at interrupt level but processed later in
-	 * the kernel server fiber. Increment '_sys_idle_elapsed_ticks' as
-	 * some ticks may have previously been announced by _timer_idle_exit()
-	 * (if tickless idle is enabled) but not yet processed.
-	 */
-	_sys_idle_elapsed_ticks++;
-
-	/* If no ticks were previously announced, announce the tick now. */
-	if (_sys_idle_elapsed_ticks == 1) {
-		_sys_clock_tick_announce();
-	}
-}
-#else
 #define _sys_clock_tick_announce() \
 		_nano_sys_clock_tick_announce(_sys_idle_elapsed_ticks)
 
@@ -117,7 +87,6 @@ static inline void _sys_clock_final_tick_announce(void)
 	_sys_idle_elapsed_ticks = 1;
 	_sys_clock_tick_announce();
 }
-#endif
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

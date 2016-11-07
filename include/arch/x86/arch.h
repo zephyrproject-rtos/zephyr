@@ -409,24 +409,8 @@ extern void	_arch_irq_enable(unsigned int irq);
 extern void	_arch_irq_disable(unsigned int irq);
 
 #ifdef CONFIG_FP_SHARING
-#ifdef CONFIG_KERNEL_V2
 extern void k_float_enable(k_tid_t thread_id, unsigned int options);
 extern void k_float_disable(k_tid_t thread_id);
-#else
-/**
- * @brief Enable floating point hardware resources sharing
- * Dynamically enable/disable the capability of a thread to share floating
- * point hardware resources.  The same "floating point" options accepted by
- * fiber_fiber_start() are accepted by these APIs (i.e. K_FP_REGS, K_SSE_REGS).
- */
-extern void	fiber_float_enable(nano_thread_id_t thread_id,
-								unsigned int options);
-extern void	task_float_enable(nano_thread_id_t thread_id,
-								unsigned int options);
-extern void	fiber_float_disable(nano_thread_id_t thread_id);
-extern void	task_float_disable(nano_thread_id_t thread_id);
-
-#endif /* CONFIG_KERNEL_V2 */
 #endif /* CONFIG_FP_SHARING */
 
 #include <stddef.h>	/* for size_t */

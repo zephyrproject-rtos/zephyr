@@ -611,14 +611,7 @@ int device_busy_check(struct device *chk_dev);
  * Synchronous calls API
  */
 
-#ifdef CONFIG_KERNEL_V2
 #include <kernel.h>
-#else
-#include <nanokernel.h>
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
-#endif
-#endif
 #include <stdbool.h>
 
 /**

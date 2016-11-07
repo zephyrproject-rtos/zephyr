@@ -1382,6 +1382,7 @@ static inline int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
  */
 #define nano_work_submit k_work_submit
 
+#if CONFIG_SYS_CLOCK_EXISTS
 /**
  * @brief Submit a delayed work item to the system workqueue.
  *
@@ -1395,7 +1396,7 @@ static inline int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
  */
 #define nano_delayed_work_submit(work, ticks) \
 	nano_delayed_work_submit_to_queue(&k_sys_work_q, work, ticks)
-
+#endif
 /* events */
 
 #define kevent_t const struct k_alert *

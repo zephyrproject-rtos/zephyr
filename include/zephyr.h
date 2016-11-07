@@ -17,15 +17,7 @@
 #ifndef _ZEPHYR__H
 #define _ZEPHYR__H
 
-#ifdef CONFIG_KERNEL_V2
 #include <kernel.h>
-#elif CONFIG_MICROKERNEL
-#include <microkernel.h>
-#elif CONFIG_NANOKERNEL
-#include <nanokernel.h>
-#else
-#error "unknown kernel type!"
-#endif
 
 #ifdef CONFIG_MDEF
 #include <sysgen.h>
