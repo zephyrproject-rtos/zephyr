@@ -1614,7 +1614,8 @@ segment:
 		net_buf_add_le16(seg, net_buf_frags_len(buf));
 	}
 
-	len = min(min(buf->len, BT_L2CAP_MAX_LE_MPS - sdu_hdr_len), ch->tx.mps);
+	/* Don't send more that TX MPS including SDU length */
+	len = min(buf->len, ch->tx.mps - sdu_hdr_len);
 	memcpy(net_buf_add(seg, len), buf->data, len);
 	net_buf_pull(buf, len);
 
