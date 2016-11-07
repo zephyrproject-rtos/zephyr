@@ -20,11 +20,8 @@
 #define _kernel_nanokernel_include_wait_q__h_
 
 #include <nano_private.h>
-
-#ifdef CONFIG_KERNEL_V2
 #include <misc/dlist.h>
 #include <ksched.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {

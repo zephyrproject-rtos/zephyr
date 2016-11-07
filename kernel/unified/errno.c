@@ -24,13 +24,12 @@
 
 #include <nano_private.h>
 
-#ifdef CONFIG_KERNEL_V2
 /*
  * Define _k_neg_eagain for use in assembly files as errno.h is
  * not assembly language safe.
+ * FIXME: wastes 4 bytes
  */
 const int _k_neg_eagain = -EAGAIN;
-#endif
 
 #ifdef CONFIG_ERRNO
 int *_get_errno(void)

@@ -130,13 +130,8 @@ void _sys_k_event_logger_context_switch(void)
 		ARRAY_SIZE(data));
 }
 
-#ifdef CONFIG_KERNEL_V2
 #define ASSERT_CURRENT_IS_COOP_THREAD() \
 	__ASSERT(_current.prio < 0, "must be a coop thread")
-#else
-#define ASSERT_CURRENT_IS_COOP_THREAD() \
-	__ASSERT(_nanokernel.current->flags & FIBER, "must be a fiber")
-#endif
 
 void sys_k_event_logger_register_as_collector(void)
 {
