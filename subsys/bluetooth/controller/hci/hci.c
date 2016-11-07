@@ -1081,18 +1081,38 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 	ep->encrypt = !err ? 1 : 0;
 }
 
-static void le_remote_feat_complete(struct pdu_data *pdu_data, uint16_t handle,
-				    struct net_buf *buf)
+static void le_remote_feat_complete(uint8_t status, struct pdu_data *pdu_data,
+				    uint16_t handle, struct net_buf *buf)
 {
 	struct bt_hci_ev_le_remote_feat_complete *sep;
 
 	sep = meta_evt(buf, BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE, sizeof(*sep));
 
-	sep->status = 0x00;
+	sep->status = status;
 	sep->handle = sys_cpu_to_le16(handle);
-	memcpy(&sep->features[0],
-	       &pdu_data->payload.llctrl.ctrldata.feature_rsp.features[0],
-	       sizeof(sep->features));
+	if (!status) {
+		memcpy(&sep->features[0],
+		       &pdu_data->payload.llctrl.ctrldata.feature_rsp.features[0],
+		       sizeof(sep->features));
+	} else {
+		memset(&sep->features[0], 0x00, sizeof(sep->features));
+	}
+}
+
+static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
+			   struct net_buf *buf)
+{
+
+	switch (pdu_data->payload.llctrl.ctrldata.unknown_rsp.type) {
+	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+		le_remote_feat_complete(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
+					    NULL, handle, buf);
+		break;
+
+	default:
+		BT_ASSERT(0);
+		break;
+	}
 }
 
 static void remote_version_info(struct pdu_data *pdu_data, uint16_t handle,
@@ -1162,7 +1182,7 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
-		le_remote_feat_complete(pdu_data, handle, buf);
+		le_remote_feat_complete(0x00, pdu_data, handle, buf);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
@@ -1182,6 +1202,10 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
 		le_data_len_change(pdu_data, handle, buf);
+		break;
+
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		le_unknown_rsp(pdu_data, handle, buf);
 		break;
 
 	default:

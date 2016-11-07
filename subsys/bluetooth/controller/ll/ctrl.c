@@ -1677,9 +1677,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			 */
 			*rx_enqueue = 1;
 		} else {
-			/** @todo check opcode in unknown rsp, and take
-			 * necessary actions
-			 */
+			/* enqueue the error and let HCI handle it */
+			*rx_enqueue = 1;
 			/* Procedure complete */
 			_radio.conn_curr->procedure_expire = 0;
 		}
