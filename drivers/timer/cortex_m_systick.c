@@ -44,16 +44,6 @@
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
 
-#if !defined(CONFIG_KERNEL_V2)
-#ifdef CONFIG_MICROKERNEL
-
-#include <microkernel.h>
-
-extern struct nano_stack _k_command_stack;
-
-#endif /* CONFIG_MICROKERNEL */
-#endif
-
 /* running total of timer count */
 static uint32_t clock_accumulated_count;
 
@@ -600,11 +590,7 @@ int _sys_clock_driver_init(struct device *device)
  * systick counter is a 24-bit down counter which is reset to "reload" value
  * once it reaches 0.
  */
-#ifdef CONFIG_KERNEL_V2
 uint32_t k_cycle_get_32(void)
-#else
-uint32_t sys_cycle_get_32(void)
-#endif
 {
 	return clock_accumulated_count + (__scs.systick.strvr - __scs.systick.stcvr);
 }

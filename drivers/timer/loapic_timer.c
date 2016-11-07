@@ -83,13 +83,6 @@
 #include <arch/x86/irq_controller.h>
 #include <power.h>
 #include <device.h>
-
-#if !defined(CONFIG_KERNEL_V2)
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
-#endif /* CONFIG_MICROKERNEL */
-#endif
-
 #include <board.h>
 
 /* Local APIC Timer Bits */
@@ -163,14 +156,6 @@ static uint32_t reg_timer_save;
 #ifndef CONFIG_MVIC
 static uint32_t reg_timer_cfg_save;
 #endif
-#endif
-
-/* externs */
-
-#if !defined(CONFIG_KERNEL_V2)
-#ifdef CONFIG_MICROKERNEL
-extern struct nano_stack _k_command_stack;
-#endif /* CONFIG_MICROKERNEL */
 #endif
 
 /**
@@ -622,11 +607,7 @@ int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
  *
  * @return up counter of elapsed clock cycles
  */
-#ifdef CONFIG_KERNEL_V2
 uint32_t k_cycle_get_32(void)
-#else
-uint32_t sys_cycle_get_32(void)
-#endif
 {
 	uint32_t val; /* system clock value */
 
