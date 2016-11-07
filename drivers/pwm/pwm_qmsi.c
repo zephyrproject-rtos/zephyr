@@ -401,7 +401,7 @@ static int pwm_qmsi_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 		return -EINVAL;
 	}
 
-	*cycles = clk_sys_get_ticks_per_us() * USEC_PER_SEC;
+	*cycles = (uint64_t)clk_sys_get_ticks_per_us() * USEC_PER_SEC;
 
 	return 0;
 }
