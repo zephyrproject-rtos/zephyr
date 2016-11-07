@@ -90,7 +90,8 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf);
  *
  * @param buf Network buffer.
  *
- * @return 0 if ok, <0 if error.
+ * @return 0 if ok, <0 if error. If <0 is returned, then the caller needs
+ * to unref the buf in order to avoid buffer leak.
  */
 int net_send_data(struct net_buf *buf);
 
