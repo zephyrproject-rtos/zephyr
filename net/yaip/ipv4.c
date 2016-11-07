@@ -100,3 +100,10 @@ struct net_buf *net_ipv4_finalize(struct net_context *context,
 
 	return buf;
 }
+
+const struct in_addr *net_ipv4_unspecified_address(void)
+{
+	static const struct in_addr addr;
+
+	return &addr;
+}

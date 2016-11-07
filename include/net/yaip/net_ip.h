@@ -483,6 +483,13 @@ static inline const struct in6_addr *net_ipv6_unspecified_address(void)
 	return net_if_ipv6_unspecified_addr();
 }
 
+/**
+ * @brief Return pointer to any (all bits zeros) IPv4 address.
+ *
+ * @return Any IPv4 address.
+ */
+const struct in_addr *net_ipv4_unspecified_address(void);
+
 extern const struct in_addr *net_if_ipv4_broadcast_addr(void);
 
 /**
