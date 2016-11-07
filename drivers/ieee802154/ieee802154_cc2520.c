@@ -190,32 +190,13 @@ static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
  ********************/
 static void _usleep(uint32_t usec)
 {
-	static void (*func[3])(int32_t timeout_in_ticks) = {
-		NULL,
-#ifdef CONFIG_KERNEL_V2
-		_legacy_sleep,
-		_legacy_sleep,
-#else
-		fiber_sleep,
-		task_sleep,
-#endif
-	};
-
-	if (sys_execution_context_type_get() == 0) {
-		sys_thread_busy_wait(usec);
+	if (sys_execution_context_type_get() == K_ISR) {
+		k_busy_wait(usec);
 		return;
 	}
 
-	/* Timeout in ticks: */
-	usec = USEC(usec);
-	/** Most likely usec will generate 0 ticks,
-	 * so setting at least to 1
-	 */
-	if (!usec) {
-		usec = 1;
-	}
-
-	func[sys_execution_context_type_get()](usec);
+	/* k_sleep expects parameter to be in milliseconds */
+	k_sleep(usec * 1000);
 }
 
 uint8_t _cc2520_read_reg(struct cc2520_spi *spi,
