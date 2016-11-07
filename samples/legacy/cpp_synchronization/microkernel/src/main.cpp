@@ -52,11 +52,7 @@ public:
  */
 class task_semaphore: public semaphore {
 protected:
-#ifdef CONFIG_KERNEL_V2
 	struct k_sem _sema_internal;
-#else
-	struct _k_sem_struct _sema_internal;
-#endif
 	ksem_t sema;
 public:
 	task_semaphore();
@@ -69,13 +65,8 @@ public:
 /*
  * @brief task_semaphore basic constructor
  */
-#ifdef CONFIG_KERNEL_V2
 task_semaphore::task_semaphore():
 	_sema_internal(K_SEM_INITIALIZER(_sema_internal, 0, UINT32_MAX))
-#else
-task_semaphore::task_semaphore():
-	_sema_internal(__K_SEMAPHORE_DEFAULT)
-#endif
 {
 	printf("Create semaphore %p\n", this);
 	sema = (ksem_t)&_sema_internal;
