@@ -1171,11 +1171,8 @@ static int test_nbuf_read_write_insert(void)
 	return 0;
 }
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
+
 void main(void)
-#endif
 {
 	if (test_ipv6_multi_frags() < 0) {
 		goto fail;

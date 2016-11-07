@@ -554,18 +554,11 @@ void main_fiber(void)
 	fiber_yield();
 }
 
-#if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 3000
 char __noinit __stack fiberStack[STACKSIZE];
-#endif
 
 void main(void)
 {
-#if defined(CONFIG_MICROKERNEL)
-	main_fiber();
-#else
 	task_fiber_start(&fiberStack[0], STACKSIZE,
 				(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
-#endif
-	net_mgmt_del_event_callback(&rx_cb);
 }
