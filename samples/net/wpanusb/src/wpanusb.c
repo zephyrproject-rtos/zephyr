@@ -184,6 +184,7 @@ static const uint8_t wpanusb_desc[] = {
 #endif
 };
 
+#ifdef VERBOSE_DEBUG
 /* TODO: move to standard utils */
 static void hexdump(const char *str, const uint8_t *packet, size_t length)
 {
@@ -215,11 +216,13 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 		printf("\n");
 	}
 }
+#else
+#define hexdump(...)
+#endif
 
 /* EP Bulk IN handler, used to send data to the Host */
 static void wpanusb_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	SYS_LOG_DBG("");
 }
 
 /* Describe EndPoints configuration */
@@ -531,8 +534,6 @@ static void init_tx_queue(void)
 extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 						    struct net_buf *buf)
 {
-	SYS_LOG_DBG("");
-
 	/* parse on higher layer */
 	return NET_CONTINUE;
 }
