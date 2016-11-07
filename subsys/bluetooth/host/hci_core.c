@@ -2334,20 +2334,6 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
-static inline void mynewt_rand_delay(void)
-{
-#if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_QUARK_SE_DEVBOARD)
-	/* FIXME: Temporary hack for MyNewt HCI firmware which
-	 * crashes if it receives too rapid LE_Rand commands.
-	 */
-	if (sys_execution_context_type_get() == NANO_CTX_FIBER) {
-		fiber_sleep(MSEC(30));
-	} else {
-		task_sleep(MSEC(30));
-	}
-#endif /* CONFIG_BOARD_ARDUINO_101 || CONFIG_BOARD_QUARK_SE_DEVBOARD */
-}
-
 static int prng_reseed(struct tc_hmac_prng_struct *h)
 {
 	uint8_t seed[32];
@@ -2357,11 +2343,6 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 	for (i = 0; i < (sizeof(seed) / 8); i++) {
 		struct bt_hci_rp_le_rand *rp;
 		struct net_buf *rsp;
-
-		/* FIXME: Temporary hack for MyNewt HCI firmware which
-		 * crashes if it receives too rapid LE_Rand commands.
-		 */
-		mynewt_rand_delay();
 
 		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 		if (ret) {
@@ -2391,11 +2372,6 @@ static int prng_init(struct tc_hmac_prng_struct *h)
 	struct bt_hci_rp_le_rand *rp;
 	struct net_buf *rsp;
 	int ret;
-
-	/* FIXME: Temporary hack for MyNewt HCI firmware which
-	 * crashes if it receives too rapid LE_Rand commands.
-	 */
-	mynewt_rand_delay();
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 	if (ret) {
