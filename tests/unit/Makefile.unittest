@@ -6,7 +6,7 @@
 OBJECTS ?= main.o
 O ?= outdir
 INCLUDE += tests/ztest/include tests/include include
-CFLAGS += -O0 -Wall -Werror
+CFLAGS += -Wall -Werror
 
 ifdef COVERAGE
   export GCOV_PREFIX=$(O)
