@@ -46,8 +46,14 @@
 #define NET_BUF_ASSERT(cond)
 #endif /* CONFIG_NET_BUF_DEBUG */
 
+#if defined(CONFIG_NET_BUF_DEBUG)
+struct net_buf *net_buf_get_timeout_debug(struct k_fifo *fifo,
+					  size_t reserve_head, int32_t timeout,
+					  const char *func, int line)
+#else
 struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
 				    size_t reserve_head, int32_t timeout)
+#endif
 {
 	struct net_buf *buf, *frag;
 
@@ -58,7 +64,7 @@ struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
 
 	buf = k_fifo_get(fifo, timeout);
 	if (!buf) {
-		NET_BUF_ERR("Failed to get free buffer");
+		NET_BUF_ERR("%s():%d: Failed to get free buffer", func, line);
 		return NULL;
 	}
 
@@ -93,7 +99,12 @@ struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
 	return buf;
 }
 
+#if defined(CONFIG_NET_BUF_DEBUG)
+struct net_buf *net_buf_get_debug(struct k_fifo *fifo, size_t reserve_head,
+				  const char *func, int line)
+#else
 struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head)
+#endif
 {
 	struct net_buf *buf;
 
@@ -104,7 +115,8 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head)
 		return buf;
 	}
 
-	NET_BUF_WARN("Low on buffers. Waiting (fifo %p)", fifo);
+	NET_BUF_WARN("%s():%d: Low on buffers. Waiting (fifo %p)", func, line,
+		     fifo);
 
 	return net_buf_get_timeout(fifo, reserve_head, K_FOREVER);
 }
@@ -132,14 +144,24 @@ void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 	k_fifo_put_list(fifo, buf, tail);
 }
 
+#if defined(CONFIG_NET_BUF_DEBUG)
+void net_buf_unref_debug(struct net_buf *buf, const char *func, int line)
+#else
 void net_buf_unref(struct net_buf *buf)
+#endif
 {
 	NET_BUF_ASSERT(buf);
 
 	while (buf) {
 		struct net_buf *frags = buf->frags;
 
-		NET_BUF_ASSERT(buf->ref > 0);
+#if defined(CONFIG_NET_BUF_DEBUG)
+		if (!buf->ref) {
+			NET_BUF_ERR("%s():%d: buf %p double free", func, line,
+				    buf);
+			return;
+		}
+#endif
 		NET_BUF_DBG("buf %p ref %u fifo %p frags %p", buf, buf->ref,
 			    buf->free, buf->frags);
 

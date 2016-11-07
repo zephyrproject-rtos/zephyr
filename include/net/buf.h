@@ -507,7 +507,14 @@ struct net_buf {
  *  becomes available in the FIFO. If you want to make sure no blocking
  *  happens use net_buf_get_timeout() instead with K_NO_WAIT.
  */
+#if defined(CONFIG_NET_BUF_DEBUG)
+struct net_buf *net_buf_get_debug(struct k_fifo *fifo, size_t reserve_head,
+				  const char *func, int line);
+#define	net_buf_get(_fifo, _reserve_head) \
+	net_buf_get_debug(_fifo, _reserve_head, __func__, __LINE__)
+#else
 struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head);
+#endif
 
 /**
  *  @brief Get a new buffer from a FIFO.
@@ -526,8 +533,17 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head);
  *
  *  @return New buffer or NULL if out of buffers.
  */
+#if defined(CONFIG_NET_BUF_DEBUG)
+struct net_buf *net_buf_get_timeout_debug(struct k_fifo *fifo,
+					  size_t reserve_head, int32_t timeout,
+					  const char *func, int line);
+#define	net_buf_get_timeout(_fifo, _reserve_head, _timeout) \
+	net_buf_get_timeout_debug(_fifo, _reserve_head, _timeout, __func__, \
+				  __LINE__)
+#else
 struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
 				    size_t reserve_head, int32_t timeout);
+#endif
 
 /**
  *  @brief Initialize buffer with the given headroom.
@@ -560,7 +576,13 @@ void net_buf_put(struct k_fifo *fifo, struct net_buf *buf);
  *
  *  @param buf A valid pointer on a buffer
  */
+#if defined(CONFIG_NET_BUF_DEBUG)
+void net_buf_unref_debug(struct net_buf *buf, const char *func, int line);
+#define	net_buf_unref(_buf) \
+	net_buf_unref_debug(_buf, __func__, __LINE__)
+#else
 void net_buf_unref(struct net_buf *buf);
+#endif
 
 /**
  *  @brief Increment the reference count of a buffer.
