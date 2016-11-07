@@ -2331,6 +2331,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  */
 #define nano_task_fifo_put_slist k_fifo_put_slist
 
+#ifdef KERNEL /* ztest layer redefines to a different function */
 /**
  * @brief Get an element from the head a FIFO.
  *
@@ -2365,6 +2366,9 @@ static inline void *nano_fifo_get(struct nano_fifo *fifo,
 	return k_fifo_get((struct k_fifo *)fifo,
 			  _ticks_to_ms(timeout_in_ticks));
 }
+#else
+void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
+#endif /* KERNEL */
 
 /**
  * @brief Get an element from the head of a FIFO from an ISR context.
