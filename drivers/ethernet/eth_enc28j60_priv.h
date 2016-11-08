@@ -217,7 +217,7 @@
 
 /* Fiber Configuration */
 #define ENC28J60_FIBER_STACK_SIZE 512
-#define ENC28J60_FIBER_PRIORITY   100
+#define ENC28J60_FIBER_PRIORITY   15
 
 /* Microchip's OUI*/
 #define MICROCHIP_OUI_B0 0x00
