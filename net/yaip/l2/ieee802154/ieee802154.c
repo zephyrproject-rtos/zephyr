@@ -23,6 +23,8 @@
 #include <net/net_l2.h>
 #include <net/net_if.h>
 
+#include "ipv6.h"
+
 #include <errno.h>
 
 #ifdef CONFIG_NET_6LO
@@ -302,6 +304,14 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 
 	if (net_nbuf_family(buf) != AF_INET6) {
 		return NET_DROP;
+	}
+
+	if (!net_nbuf_ll_dst(buf)->addr &&
+	    !net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+		buf = net_ipv6_prepare_for_send(buf);
+		if (!buf) {
+			return NET_CONTINUE;
+		}
 	}
 
 	frag = buf->frags;
