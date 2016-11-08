@@ -1578,7 +1578,7 @@ static void report_discovery_results(void)
 	for (i = 0; i < discovery_results_count; i++) {
 		struct discovery_priv *priv;
 
-		priv = (struct discovery_priv *)&discovery_results[i].private;
+		priv = (struct discovery_priv *)&discovery_results[i]._priv;
 
 		if (eir_has_name(discovery_results[i].eir)) {
 			continue;
@@ -1673,7 +1673,7 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 			return;
 		}
 
-		priv = (struct discovery_priv *)&result->private;
+		priv = (struct discovery_priv *)&result->_priv;
 		priv->pscan_rep_mode = evt->pscan_rep_mode;
 		priv->clock_offset = evt->clock_offset;
 
@@ -1705,7 +1705,7 @@ static void extended_inquiry_result(struct net_buf *buf)
 		return;
 	}
 
-	priv = (struct discovery_priv *)&result->private;
+	priv = (struct discovery_priv *)&result->_priv;
 	priv->pscan_rep_mode = evt->pscan_rep_mode;
 	priv->clock_offset = evt->clock_offset;
 
@@ -1728,7 +1728,7 @@ static void remote_name_request_complete(struct net_buf *buf)
 		return;
 	}
 
-	priv = (struct discovery_priv *)&result->private;
+	priv = (struct discovery_priv *)&result->_priv;
 	priv->resolving = 0;
 
 	if (evt->status) {
@@ -1779,7 +1779,7 @@ check_names:
 	for (i = 0; i < discovery_results_count; i++) {
 		struct discovery_priv *priv;
 
-		priv = (struct discovery_priv *)&discovery_results[i].private;
+		priv = (struct discovery_priv *)&discovery_results[i]._priv;
 
 		if (priv->resolving) {
 			return;
@@ -4087,7 +4087,7 @@ int bt_br_discovery_stop(void)
 		struct bt_hci_cp_remote_name_cancel *cp;
 		struct net_buf *buf;
 
-		priv = (struct discovery_priv *)&discovery_results[i].private;
+		priv = (struct discovery_priv *)&discovery_results[i]._priv;
 
 		if (!priv->resolving) {
 			continue;
