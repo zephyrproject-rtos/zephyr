@@ -695,12 +695,6 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 	return NULL;
 }
 
-const struct in6_addr *net_if_ipv6_unspecified_addr(void)
-{
-	static const struct in6_addr addr = IN6ADDR_ANY_INIT;
-
-	return &addr;
-}
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state)
 {
@@ -892,7 +886,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 	}
 
 	if (!src) {
-		return net_if_ipv6_unspecified_addr();
+		return net_ipv6_unspecified_address();
 	}
 
 	return src;

@@ -471,17 +471,12 @@ static inline bool net_is_ipv6_ll_addr(const struct in6_addr *addr)
 		((addr->s6_addr[1]) == 0x80);
 }
 
-const struct in6_addr *net_if_ipv6_unspecified_addr(void);
-
 /**
  * @brief Return pointer to any (all bits zeros) IPv6 address.
  *
  * @return Any IPv6 address.
  */
-static inline const struct in6_addr *net_ipv6_unspecified_address(void)
-{
-	return net_if_ipv6_unspecified_addr();
-}
+const struct in6_addr *net_ipv6_unspecified_address(void);
 
 /**
  * @brief Return pointer to any (all bits zeros) IPv4 address.

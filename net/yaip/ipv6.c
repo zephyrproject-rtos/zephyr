@@ -285,6 +285,13 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
+const struct in6_addr *net_ipv6_unspecified_address(void)
+{
+	static const struct in6_addr addr = IN6ADDR_ANY_INIT;
+
+	return &addr;
+}
+
 struct net_buf *net_ipv6_create_raw(struct net_buf *buf,
 				    uint16_t reserve,
 				    const struct in6_addr *src,
@@ -1394,7 +1401,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	if (is_my_address) {
 		/* DAD */
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
-				net_if_ipv6_unspecified_addr());
+				net_ipv6_unspecified_address());
 
 		NET_IPV6_BUF(buf)->len[1] -= llao_len;
 

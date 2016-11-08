@@ -328,7 +328,7 @@ static bool run_tests(void)
 		return false;
 	}
 
-	if (memcmp(net_if_ipv6_unspecified_addr(), &any, sizeof(any))) {
+	if (memcmp(net_ipv6_unspecified_address(), &any, sizeof(any))) {
 		printk("My IPv6 unspecified address check failed\n");
 		return false;
 	}

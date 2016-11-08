@@ -807,13 +807,6 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
 						   struct in6_addr *dst);
 
 /**
- * @brief Return IPv6 any address (all zeros, ::)
- *
- * @return IPv6 any address with all bits set to zero.
- */
-const struct in6_addr *net_if_ipv6_unspecified_addr(void);
-
-/**
  * @brief Get a IPv6 link local address in a given state.
  *
  * @param iface Interface to use. Must be a valid pointer to an interface.

@@ -2970,7 +2970,7 @@ int net_rpl_dao_send(struct net_if *iface,
 
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
-	if (net_ipv6_addr_cmp(src, net_if_ipv6_unspecified_addr())) {
+	if (net_ipv6_addr_cmp(src, net_ipv6_unspecified_address())) {
 		NET_DBG("Invalid src addr %s found",
 			net_sprint_ipv6_addr(src));
 		return -EINVAL;
