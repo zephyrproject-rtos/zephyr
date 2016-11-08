@@ -25,7 +25,7 @@
 #include <sections.h>
 
 #include <nanokernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/printk.h>
 #include <arch/x86/irq_controller.h>
 #include <arch/x86/segmentation.h>

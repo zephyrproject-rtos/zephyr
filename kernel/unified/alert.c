@@ -20,7 +20,7 @@
 */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <atomic.h>
 #include <init.h>

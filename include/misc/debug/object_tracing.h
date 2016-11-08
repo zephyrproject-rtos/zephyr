@@ -70,7 +70,7 @@ extern struct ring_buf   *_trace_list_sys_ring_buf;
 
 #ifdef CONFIG_THREAD_MONITOR
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 
 /**
  * @def SYS_THREAD_MONITOR_HEAD
@@ -80,7 +80,7 @@ extern struct ring_buf   *_trace_list_sys_ring_buf;
  * @details Access the head element of the thread monitor list.
  *
  */
-#define SYS_THREAD_MONITOR_HEAD ((struct tcs *)(_nanokernel.threads))
+#define SYS_THREAD_MONITOR_HEAD ((struct k_thread *)(_kernel.threads))
 
 /**
  * @def SYS_THREAD_MONITOR_NEXT
@@ -92,7 +92,7 @@ extern struct ring_buf   *_trace_list_sys_ring_buf;
  *
  * @param obj Object to get the next element from.
  */
-#define SYS_THREAD_MONITOR_NEXT(obj) (((struct tcs *)obj)->next_thread)
+#define SYS_THREAD_MONITOR_NEXT(obj) (((struct k_thread *)obj)->next_thread)
 
 #endif /*CONFIG_THREAD_MONITOR*/
 

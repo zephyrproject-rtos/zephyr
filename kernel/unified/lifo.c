@@ -20,7 +20,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -111,5 +111,5 @@ void *k_lifo_get(struct k_lifo *lifo, int32_t timeout)
 
 	_pend_current_thread(&lifo->wait_q, timeout);
 
-	return _Swap(key) ? NULL : _current->swap_data;
+	return _Swap(key) ? NULL : _current->base.swap_data;
 }

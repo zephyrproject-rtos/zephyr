@@ -27,7 +27,7 @@
  * assuming that the module offsets.o contains the following absolute symbols:
  *
  *   $ nm offsets.o
- *   00000010 A __tNANO_common_isp_OFFSET
+ *   00000010 A __tNANO_irq_stack_OFFSET
  *   00000008 A __tNANO_current_OFFSET
  *   0000000c A __tNANO_nested_OFFSET
  *   00000000 A __tNANO_fiber_OFFSET
@@ -35,7 +35,7 @@
  *
  * ... the following C preprocessor code will be generated:
  *
- *   #define   __tNANO_common_isp_OFFSET  0x10
+ *   #define   __tNANO_irq_stack_OFFSET  0x10
  *   #define   __tNANO_current_OFFSET     0x8
  *   #define   __tNANO_nested_OFFSET      0xC
  *   #define   __tNANO_fiber_OFFSET       0x0

@@ -22,7 +22,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <ksched.h>
 #include <init.h>
 
@@ -46,7 +46,7 @@ static void offload_handler(struct k_work *work)
 	int result = (offload->offload_func)(offload->offload_args);
 	unsigned int key = irq_lock();
 
-	offload->thread->swap_data = (void *)result;
+	offload->thread->base.swap_data = (void *)result;
 	irq_unlock(key);
 }
 
@@ -68,7 +68,7 @@ int task_offload_to_fiber(int (*func)(), void *argp)
 
 	offload.thread = _current;
 	k_work_submit_to_queue(&offload_work_q, &offload.work_item);
-	return (int)_current->swap_data;
+	return (int)_current->base.swap_data;
 }
 
 static char __stack offload_work_q_stack[CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE];

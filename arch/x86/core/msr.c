@@ -28,7 +28,7 @@
  * This function is used to write to an MSR.
  *
  * The definitions of the so-called  "Architectural MSRs" are contained
- * in nano_private.h and have the format: IA32_XXX_MSR
+ * in kernel_structs.h and have the format: IA32_XXX_MSR
  *
  * INTERNAL
  * 1) The 'wrmsr' instruction was introduced in the Pentium processor; executing
@@ -61,7 +61,7 @@ void _MsrWrite(unsigned int msr, uint64_t msr_data)
  * This function is used to read from an MSR.
  *
  * The definitions of the so-called  "Architectural MSRs" are contained
- * in nano_private.h and have the format: IA32_XXX_MSR
+ * in kernel_structs.h and have the format: IA32_XXX_MSR
  *
  * INTERNAL
  * 1) The 'rdmsr' instruction was introduced in the Pentium processor; executing

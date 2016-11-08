@@ -22,7 +22,7 @@
 
 
 #include <nanokernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/cpu.h>
 #include <irq.h>
 #include <misc/printk.h>
@@ -80,7 +80,7 @@ void _enter_irq(uint32_t ipending)
 {
 	int index;
 
-	_nanokernel.nested++;
+	_kernel.nested++;
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	_irq_do_offload();
@@ -100,6 +100,6 @@ void _enter_irq(uint32_t ipending)
 		ite->isr(ite->arg);
 	}
 
-	_nanokernel.nested--;
+	_kernel.nested--;
 }
 

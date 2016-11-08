@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/gdb_server.h>
 
 #define GDB_ARCH_HAS_ALL_REGS

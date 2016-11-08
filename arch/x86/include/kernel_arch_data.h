@@ -16,23 +16,25 @@
 
 /**
  * @file
- * @brief Private nanokernel definitions (IA-32)
+ * @brief Private kernel definitions (IA-32)
  *
- * This file contains private nanokernel structures definitions and various
+ * This file contains private kernel structures definitions and various
  * other definitions for the Intel Architecture 32 bit (IA-32) processor
  * architecture.
- * The header include/nanokernel.h contains the public nanokernel interface
- * definitions, with include/arch/nanokernel/x86/arch.h supplying the
- * IA-32 specific portions of the public nanokernel interface.
+ * The header include/kernel.h contains the public kernel interface
+ * definitions, with include/arch/x86/arch.h supplying the
+ * IA-32 specific portions of the public kernel interface.
  *
  * This file is also included by assembly language files which must #define
- * _ASMLANGUAGE before including this header file.  Note that nanokernel
+ * _ASMLANGUAGE before including this header file.  Note that kernel
  * assembly source files obtains structure offset values via "absolute symbols"
  * in the offsets.o module.
  */
 
-#ifndef _NANO_PRIVATE_H
-#define _NANO_PRIVATE_H
+/* this file is only meant to be included by kernel_structs.h */
+
+#ifndef _kernel_arch_data__h_
+#define _kernel_arch_data__h_
 
 #include <toolchain.h>
 #include <sections.h>
@@ -40,8 +42,8 @@
 #include <exception.h>
 
 #ifndef _ASMLANGUAGE
-#include <kernel.h>		   /* public kernel API */
-#include <../../../kernel/unified/include/nano_internal.h>
+#include <kernel.h>
+#include <nano_internal.h>
 #include <stdint.h>
 #include <misc/dlist.h>
 #endif
@@ -51,7 +53,7 @@
 #define STACK_ALIGN_SIZE 4
 
 /*
- * Bitmask definitions for the struct tcs->flags bit field
+ * Bitmask definitions for the struct k_thread->flags bit field
  */
 
 #define K_STATIC  0x00000800
@@ -416,14 +418,31 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_THREAD_MONITOR
-struct __thread_entry {
-	_thread_entry_t pEntry;
-	void *parameter1;
-	void *parameter2;
-	void *parameter3;
+/*
+ * The following structure defines the set of 'volatile' integer registers.
+ * These registers need not be preserved by a called C function.  Given that
+ * they are not preserved across function calls, they must be save/restored
+ * (along with the struct _caller_saved) when a preemptive context switch
+ * occurs.
+ */
+
+struct _caller_saved {
+
+	/*
+	 * The volatile registers 'eax', 'ecx' and 'edx' area not included in
+	 * the definition of 'tPreempReg' since the interrupt and exception
+	 * handling routunes use the stack to save and restore the values of
+	 * these registers in order to support interrupt nesting.  The stubs
+	 * do _not_ copy the saved values from the stack into the TCS.
+	 *
+	 * unsigned long eax;
+	 * unsigned long ecx;
+	 * unsigned long edx;
+	 */
+
 };
-#endif /*CONFIG_THREAD_MONITOR*/
+
+typedef struct _caller_saved _caller_saved_t;
 
 /*
  * The following structure defines the set of 'non-volatile' integer registers.
@@ -432,7 +451,7 @@ struct __thread_entry {
  * switch occurs.
  */
 
-typedef struct s_coopReg {
+struct _callee_saved {
 	unsigned long esp;
 
 	/*
@@ -448,37 +467,16 @@ typedef struct s_coopReg {
 	 *  unsigned long edi;
 	 */
 
-} tCoopReg;
+};
 
-/*
- * The following structure defines the set of 'volatile' integer registers.
- * These registers need not be preserved by a called C function.  Given that
- * they are not preserved across function calls, they must be save/restored
- * (along with the s_coop_reg) when a preemptive context switch occurs.
- */
-
-typedef struct s_preempReg {
-
-	/*
-	 * The volatile registers 'eax', 'ecx' and 'edx' area not included in
-	 * the definition of 'tPreempReg' since the interrupt and exception
-	 * handling routunes use the stack to save and restore the values of
-	 * these registers in order to support interrupt nesting.  The stubs
-	 * do _not_ copy the saved values from the stack into the TCS.
-	 *
-	 * unsigned long eax;
-	 * unsigned long ecx;
-	 * unsigned long edx;
-	 */
-
-} tPreempReg;
+typedef struct _callee_saved _callee_saved_t;
 
 /*
  * The macro CONFIG_FP_SHARING shall be set to indicate that the
  * saving/restoring of the traditional x87 floating point (and MMX) registers
- * are supported by the nanokernel's context swapping code. The macro
+ * are supported by the kernel's context swapping code. The macro
  * CONFIG_SSE shall _also_ be set if saving/restoring of the XMM
- * registers is also supported in the nanokernel's context swapping code.
+ * registers is also supported in the kernel's context swapping code.
  */
 
 #ifdef CONFIG_FP_SHARING
@@ -615,17 +613,6 @@ typedef struct s_preempFloatReg {
 	} floatRegsUnion;
 } tPreempFloatReg;
 
-/* 'struct tcs_base' must match the beginning of 'struct tcs' */
-struct tcs_base {
-	sys_dnode_t  k_q_node;
-	uint32_t     flags;
-	int          prio;     /* thread priority used to sort linked list */
-	void        *swap_data;
-#ifdef CONFIG_NANO_TIMEOUTS
-	struct _timeout timeout;
-#endif
-};
-
 /*
  * The thread control stucture definition.  It contains the
  * various fields to manage a _single_ thread. The TCS will be aligned
@@ -633,38 +620,13 @@ struct tcs_base {
  * _new_thread() call.
  */
 
-struct tcs {
-	/*
-	 * Link to next thread in singly-linked thread list (such as
-	 * prioritized list of runnable fibers, or list of fibers waiting on a
-	 * nanokernel FIFO).
-	 */
+struct _thread_arch {
 
-	sys_dnode_t k_q_node;	/* node object in any kernel queue */
-	int         flags;
-	int         prio;     /* thread priority used to sort linked list */
-	void       *swap_data;
-#ifdef CONFIG_NANO_TIMEOUTS
-	struct _timeout timeout;
-#endif
-
-	/*
-	 * Storage space for integer registers.  These must also remain near
-	 * the start of struct tcs for the same reason mention for
-	 * 'flags'.
-	 */
-
-	tCoopReg coopReg;     /* non-volatile integer register storage */
-	tPreempReg preempReg; /* volatile integer register storage */
-
-#if defined(CONFIG_THREAD_MONITOR)
-	struct __thread_entry *entry; /* thread entry and parameters description */
-	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
-#endif
 #ifdef CONFIG_GDB_INFO
-	void *esfPtr; /* pointer to exception stack frame saved by */
-		      /* outermost exception wrapper */
-#endif		      /* CONFIG_GDB_INFO */
+	 /* pointer to ESF saved by outermost exception wrapper */
+	void *esf;
+#endif
+
 #if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
 	/*
 	 * Nested exception count to maintain setting of EXC_ACTIVE flag across
@@ -673,18 +635,6 @@ struct tcs {
 	 */
 	unsigned excNestCount; /* nested exception count */
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
-
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-	void *custom_data;     /* available for custom use */
-#endif
-
-#ifdef CONFIG_ERRNO
-	int errno_var;
-#endif
-
-	atomic_t sched_locked;
-	void *init_data;
-	void (*fn_abort)(void);
 
 	/*
 	 * The location of all floating point related structures/fields MUST be
@@ -704,172 +654,20 @@ struct tcs {
 	tPreempFloatReg preempFloatReg; /* volatile float register storage */
 };
 
+typedef struct _thread_arch _thread_arch_t;
 
-struct ready_q {
-	struct k_thread *cache;
-	uint32_t prio_bmap[1];
-	sys_dlist_t q[K_NUM_PRIORITIES];
-};
-
-
-/*
- * The nanokernel structure definition.  It contains various fields to
- * manage _all_ the threads in the nanokernel (system level).
- */
-
-typedef struct s_NANO {
-	struct tcs *current; /* currently scheduled thread (fiber or task) */
-#if defined(CONFIG_THREAD_MONITOR)
-	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
-#endif
-	unsigned nested;  /* nested interrupt count */
-	char *common_isp; /* interrupt stack pointer base */
-
+struct _kernel_arch {
 #if defined(CONFIG_DEBUG_INFO)
 	NANO_ISF *isf;    /* ptr to interrupt stack frame */
 #endif
+};
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-	int32_t idle; /* Number of ticks for kernel idling */
-#endif
-
-
-#ifdef CONFIG_FP_SHARING
-	/*
-	 * A 'current_sse' field does not exist in addition to the 'current_fp'
-	 * field since it's not possible to divide the IA-32 non-integer
-	 * registers into 2 distinct blocks owned by differing threads.  In
-	 * other words, given that the 'fxnsave/fxrstor' instructions
-	 * save/restore both the X87 FPU and XMM registers, it's not possible
-	 * for a thread to only "own" the XMM registers.
-	 */
-
-	struct tcs *current_fp; /* thread (fiber or task) that owns the FP regs */
-#endif			  /* CONFIG_FP_SHARING */
-#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
-	sys_dlist_t timeout_q;
-#endif
-	struct ready_q ready_q;
-} tNANO;
-
-/* stack alignment related macros: STACK_ALIGN_SIZE is defined above */
-
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
-
-/* variable declarations */
-
-/*
- * There is only a single instance of the s_NANO structure, given that there
- * is only a single nanokernel in the system: _nanokernel
- */
-
-extern tNANO _nanokernel;
-
-
-/* inline function definitions */
-
-/**
- *
- * @brief Performs architecture-specific initialization
- *
- * This routine performs architecture-specific initialization of the nanokernel.
- * Trivial stuff is done inline; more complex initialization is done via
- * function calls.
- *
- * @return N/A
- */
-static inline void nanoArchInit(void)
-{
-	extern void *__isr___SpuriousIntHandler;
-	extern void *_dummy_spurious_interrupt;
-	extern void *_dummy_exception_vector_stub;
-	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
-	extern void _exception_enter(void);
-
-	_nanokernel.nested = 0;
-
-	_nanokernel.common_isp = _interrupt_stack + CONFIG_ISR_STACK_SIZE;
-	/*
-	 * Forces the inclusion of the spurious interrupt handlers. If a
-	 * reference isn't made then intconnect.o is never pulled in by the
-	 * linker.
-	 */
-
-	_dummy_spurious_interrupt = &__isr___SpuriousIntHandler;
-
-	/*
-	 * Forces the inclusion of the exception vector stub code. If a
-	 * reference isn't made then excstubs.o is never pulled in by the
-	 * linker.
-	 */
-
-	_dummy_exception_vector_stub = &_exception_enter;
-
-
-}
-
-/**
- *
- * @brief Set the return value for the specified fiber (inline)
- *
- * @param fiber pointer to fiber
- * @param value value to set as return value
- *
- * The register used to store the return value from a function call invocation
- * is set to <value>.  It is assumed that the specified <fiber> is pending, and
- * thus the fibers context is stored in its TCS.
- *
- * @return N/A
- */
-static inline void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
-{
-	/* write into 'eax' slot created in _Swap() entry */
-
-	*(unsigned int *)(fiber->coopReg.esp) = value;
-}
-
-#define _current _nanokernel.current
-#define _ready_q _nanokernel.ready_q
-#define _timeout_q _nanokernel.timeout_q
-#define _set_thread_return_value fiberRtnValueSet
-static ALWAYS_INLINE void
-_set_thread_return_value_with_data(struct k_thread *thread, unsigned int value,
-				   void *data)
-{
-	_set_thread_return_value(thread, value);
-	thread->swap_data = data;
-}
-#define _IDLE_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES)
-
-/* function prototypes */
-
-extern void nano_cpu_atomic_idle(unsigned int imask);
-
-extern void _MsrWrite(unsigned int msr, uint64_t msrData);
-extern uint64_t _MsrRead(unsigned int msr);
-
-/*
- * _IntLibInit() is called from the non-arch specific nanokernel function,
- * _nano_init(). The IA-32 nanokernel does not require any special
- * initialization of the interrupt subsystem. However, we still need to
- * provide an _IntLibInit() of some sort to prevent build errors.
- */
-static inline void _IntLibInit(void)
-{
-}
-
-/* the _idt_base_address symbol is generated via a linker script */
-extern unsigned char _idt_base_address[];
-
-#include <stddef.h> /* For size_t */
+typedef struct _kernel_arch _kernel_arch_t;
 
 #ifdef __cplusplus
 }
 #endif
 
-#define _is_in_isr() (_nanokernel.nested != 0)
-
 #endif /* _ASMLANGUAGE */
 
-#endif /* _NANO_PRIVATE_H */
+#endif /* _kernel_arch_data__h_ */

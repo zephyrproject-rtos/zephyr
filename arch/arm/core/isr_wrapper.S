@@ -24,11 +24,11 @@
 
 #define _ASMLANGUAGE
 
-#include <offsets.h>
+#include <offsets_short.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <sw_isr_table.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
@@ -77,21 +77,24 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	cpsid i  /* PRIMASK = 1 */
 
 	/* is this a wakeup from idle ? */
-	ldr r2, =_nanokernel
-	ldr r0, [r2, #__tNANO_idle_OFFSET]  /* requested idle duration, in ticks */
+	ldr r2, =_kernel
+	/* requested idle duration, in ticks */
+	ldr r0, [r2, #_kernel_offset_to_idle]
 	cmp r0, #0
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 	beq _idle_state_cleared
 	movs.n r1, #0
-	str r1, [r2, #__tNANO_idle_OFFSET]  /* clear kernel idle state */
+	/* clear kernel idle state */
+	str r1, [r2, #_kernel_offset_to_idle]
 	blx _sys_power_save_idle_exit
 _idle_state_cleared:
 
 #else
 	ittt ne
 	movne	r1, #0
-		strne	r1, [r2, #__tNANO_idle_OFFSET]  /* clear kernel idle state */
+		/* clear kernel idle state */
+		strne	r1, [r2, #_kernel_offset_to_idle]
 		blxne	_sys_power_save_idle_exit
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 

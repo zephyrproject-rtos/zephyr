@@ -16,7 +16,7 @@
 
 #define _ASMLANGUAGE
 #include <arch/nios2/asm.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 
 /* exports */
 GTEXT(__start)

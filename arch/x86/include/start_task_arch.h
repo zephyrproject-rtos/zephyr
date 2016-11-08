@@ -28,7 +28,7 @@
 #include <sections.h>
 
 #include <micro_private.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <microkernel/task.h>
 
 #ifdef __cplusplus

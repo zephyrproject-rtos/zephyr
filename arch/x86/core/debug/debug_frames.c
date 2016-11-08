@@ -23,9 +23,9 @@
  */
 
 #include <nanokernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 
 NANO_ISF *sys_debug_current_isf_get(void)
 {
-	return _nanokernel.isf;
+	return _kernel.isf;
 }

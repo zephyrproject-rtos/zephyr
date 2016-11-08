@@ -23,8 +23,8 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
-#include <offsets.h>
+#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>

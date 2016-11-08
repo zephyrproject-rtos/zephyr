@@ -21,7 +21,7 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/x86/asm.h>
 
 	GTEXT(_loapic_spurious_handler)

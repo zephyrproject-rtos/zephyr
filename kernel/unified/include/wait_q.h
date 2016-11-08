@@ -19,7 +19,7 @@
 #ifndef _kernel_nanokernel_include_wait_q__h_
 #define _kernel_nanokernel_include_wait_q__h_
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/dlist.h>
 #include <ksched.h>
 
@@ -31,7 +31,7 @@ extern "C" {
 #include <timeout_q.h>
 #else
 #define _init_thread_timeout(thread) do { } while ((0))
-#define _nano_timeout_tcs_init(thread) _init_thread_timeout(thread)
+#define _nano_timeout_thread_init(thread) _init_thread_timeout(thread)
 #define _add_thread_timeout(thread, wait_q, timeout) do { } while (0)
 static inline int _abort_thread_timeout(struct k_thread *thread) { return 0; }
 #define _get_next_timeout_expiry() (K_FOREVER)

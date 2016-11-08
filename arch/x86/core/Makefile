@@ -1,4 +1,5 @@
 ccflags-y += -I$(srctree)/kernel/unified/include
+asflags-y += -I$(srctree)/kernel/unified/include
 
 ifeq ($(COMPILER)$(CONFIG_X86_IAMCU),clang)
 # We rely on GAS for assembling, so don't use the integrated assembler

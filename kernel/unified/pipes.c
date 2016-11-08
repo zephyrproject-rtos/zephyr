@@ -21,7 +21,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -40,7 +40,7 @@ struct k_pipe_desc {
 };
 
 struct k_pipe_async {
-	struct tcs_base     thread;   /* Dummy thread object */
+	struct _thread_base thread;   /* Dummy thread object */
 	struct k_pipe_desc  desc;     /* Pipe message descriptor */
 };
 
@@ -286,7 +286,7 @@ static bool _pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 		for (node = sys_dlist_peek_head(wait_q); node != NULL;
 		     node = sys_dlist_peek_next(wait_q, node)) {
 			thread = (struct k_thread *)node;
-			desc = (struct k_pipe_desc *)thread->swap_data;
+			desc = (struct k_pipe_desc *)thread->base.swap_data;
 
 			num_bytes += desc->bytes_to_xfer;
 
@@ -309,7 +309,7 @@ static bool _pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 	num_bytes = 0;
 
 	while ((thread = (struct k_thread *) sys_dlist_peek_head(wait_q))) {
-		desc = (struct k_pipe_desc *)thread->swap_data;
+		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		num_bytes += desc->bytes_to_xfer;
 
 		if (num_bytes > bytes_to_xfer) {
@@ -330,7 +330,7 @@ static bool _pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 		 */
 		_unpend_thread(thread);
 		_abort_thread_timeout(thread);
-		sys_dlist_append(xfer_list, &thread->k_q_node);
+		sys_dlist_append(xfer_list, &thread->base.k_q_node);
 	}
 
 	*waiter = (num_bytes > bytes_to_xfer) ? thread : NULL;
@@ -377,7 +377,7 @@ static void _pipe_thread_ready(struct k_thread *thread)
 	unsigned int  key;
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	if (thread->flags & K_DUMMY) {
+	if (thread->base.flags & K_DUMMY) {
 		_pipe_async_finish((struct k_pipe_async *)thread);
 		return;
 	}
@@ -440,7 +440,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	struct k_thread *thread = (struct k_thread *)
 				  sys_dlist_get(&xfer_list);
 	while (thread) {
-		desc = (struct k_pipe_desc *)thread->swap_data;
+		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		bytes_copied = _pipe_xfer(desc->buffer, desc->bytes_to_xfer,
 					  data + num_bytes_written,
 					  bytes_to_write - num_bytes_written);
@@ -462,7 +462,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	 * It is possible no data will be copied.
 	 */
 	if (reader) {
-		desc = (struct k_pipe_desc *)reader->swap_data;
+		desc = (struct k_pipe_desc *)reader->base.swap_data;
 		bytes_copied = _pipe_xfer(desc->buffer, desc->bytes_to_xfer,
 					  data + num_bytes_written,
 					  bytes_to_write - num_bytes_written);
@@ -515,7 +515,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	pipe_desc.bytes_to_xfer  = bytes_to_write - num_bytes_written;
 
 	if (timeout != K_NO_WAIT) {
-		_current->swap_data = &pipe_desc;
+		_current->base.swap_data = &pipe_desc;
 		/*
 		 * Lock interrupts and unlock the scheduler before
 		 * manipulating the writers wait_q.
@@ -584,7 +584,7 @@ int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	struct k_thread *thread = (struct k_thread *)
 				  sys_dlist_get(&xfer_list);
 	while (thread && (num_bytes_read < bytes_to_read)) {
-		desc = (struct k_pipe_desc *)thread->swap_data;
+		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		bytes_copied = _pipe_xfer(data + num_bytes_read,
 					  bytes_to_read - num_bytes_read,
 					  desc->buffer, desc->bytes_to_xfer);
@@ -608,7 +608,7 @@ int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	}
 
 	if (writer && (num_bytes_read < bytes_to_read)) {
-		desc = (struct k_pipe_desc *)writer->swap_data;
+		desc = (struct k_pipe_desc *)writer->base.swap_data;
 		bytes_copied = _pipe_xfer(data + num_bytes_read,
 					  bytes_to_read - num_bytes_read,
 					  desc->buffer, desc->bytes_to_xfer);
@@ -624,7 +624,7 @@ int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	 */
 
 	while (thread) {
-		desc = (struct k_pipe_desc *)thread->swap_data;
+		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		bytes_copied = _pipe_buffer_put(pipe, desc->buffer,
 						desc->bytes_to_xfer);
 
@@ -638,7 +638,7 @@ int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	}
 
 	if (writer) {
-		desc = (struct k_pipe_desc *)writer->swap_data;
+		desc = (struct k_pipe_desc *)writer->base.swap_data;
 		bytes_copied = _pipe_buffer_put(pipe, desc->buffer,
 						desc->bytes_to_xfer);
 
@@ -662,7 +662,7 @@ int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	pipe_desc.bytes_to_xfer = bytes_to_read - num_bytes_read;
 
 	if (timeout != K_NO_WAIT) {
-		_current->swap_data = &pipe_desc;
+		_current->base.swap_data = &pipe_desc;
 		key = irq_lock();
 		_sched_unlock_no_reschedule();
 		_pend_current_thread(&pipe->wait_q.readers, timeout);

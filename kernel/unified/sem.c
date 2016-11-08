@@ -27,7 +27,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -44,7 +44,7 @@ struct _sem_desc {
 };
 
 struct _sem_thread {
-	struct tcs_base    dummy;
+	struct _thread_base dummy;
 	struct _sem_desc   desc;
 };
 #endif
@@ -120,7 +120,7 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 	sys_dlist_t   list;
 
 	sys_dlist_init(&list);
-	_current->swap_data = &list;
+	_current->base.swap_data = &list;
 
 	for (int i = 0; i < num; i++) {
 		wait_objects[i].dummy.flags = K_DUMMY;
@@ -172,7 +172,7 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 	sys_dnode_t  *node;
 	sys_dnode_t  *next;
 
-	if (!(thread->flags & K_DUMMY)) {
+	if (!(thread->base.flags & K_DUMMY)) {
 		/*
 		 * The awakened thread is a real thread and thus was not
 		 * involved in a semaphore group operation.
@@ -185,7 +185,7 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 	 * in a semaphore group operation.
 	 */
 
-	list = (sys_dlist_t *)dummy->desc.thread->swap_data;
+	list = (sys_dlist_t *)dummy->desc.thread->base.swap_data;
 	node = sys_dlist_peek_head(list);
 
 	__ASSERT(node != NULL, "");

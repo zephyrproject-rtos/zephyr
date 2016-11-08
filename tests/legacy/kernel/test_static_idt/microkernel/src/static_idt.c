@@ -25,7 +25,7 @@ Ensures interrupt and exception stubs are installed correctly.
 #include <tc_util.h>
 #include <arch/x86/segmentation.h>
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #if defined(__GNUC__)
 #include <test_asm_inline_gcc.h>
 #else

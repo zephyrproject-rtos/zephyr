@@ -15,7 +15,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -109,7 +109,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, int32_t timeout)
 		_pend_current_thread(&slab->wait_q, timeout);
 		result = _Swap(key);
 		if (result == 0) {
-			*mem = _current->swap_data;
+			*mem = _current->base.swap_data;
 		}
 		return result;
 	}

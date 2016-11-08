@@ -27,7 +27,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <ksched.h>

@@ -27,7 +27,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>
-#include <offsets.h>
+#include <offsets_short.h>
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
@@ -128,7 +128,7 @@ SECTION_FUNC(TEXT,_force_exit_one_nested_irq)
 		ldrne r2, =_do_software_reboot
 
 	ldr ip, =_interrupt_stack
-	add.w ip, #(__tESF_SIZEOF * 2) /* enough for a stack frame */
+	add.w ip, #(___esf_t_SIZEOF * 2) /* enough for a stack frame */
 	ldr r1, =0xfffffffe
 	and.w r2, r1
 	str r2, [ip, #(6 * 4)]

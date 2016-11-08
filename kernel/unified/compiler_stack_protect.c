@@ -28,7 +28,7 @@
 
 #include <toolchain.h> /* compiler specific configurations */
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <toolchain.h>
 #include <sections.h>
 

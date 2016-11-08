@@ -16,7 +16,7 @@
 
 #include <zephyr.h>
 #include <tc_util.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <irq_offload.h>
 
 volatile uint32_t sentinel;

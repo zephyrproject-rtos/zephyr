@@ -67,16 +67,16 @@ static inline void _init_timeout(struct _timeout *t, _timeout_func_t func)
 
 static inline void _init_thread_timeout(struct k_thread *thread)
 {
-	_init_timeout(&thread->timeout, NULL);
+	_init_timeout(&thread->base.timeout, NULL);
 }
 
 /*
  * XXX - backwards compatibility until the arch part is updated to call
  * _init_thread_timeout()
  */
-static inline void _nano_timeout_tcs_init(struct tcs *tcs)
+static inline void _nano_timeout_thread_init(struct k_thread *thread)
 {
-	_init_thread_timeout(tcs);
+	_init_thread_timeout(thread);
 }
 
 /* remove a thread timing out from kernel object's wait queue */
@@ -86,7 +86,7 @@ static inline void _unpend_thread_timing_out(struct k_thread *thread,
 {
 	if (timeout_obj->wait_q) {
 		_unpend_thread(thread);
-		thread->timeout.wait_q = NULL;
+		thread->base.timeout.wait_q = NULL;
 	}
 }
 
@@ -132,7 +132,7 @@ static inline struct _timeout *_handle_one_timeout(
 
 static inline void _handle_timeouts(void)
 {
-	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
+	sys_dlist_t *timeout_q = &_timeout_q;
 	struct _timeout *next;
 
 	next = (struct _timeout *)sys_dlist_peek_head(timeout_q);
@@ -145,7 +145,7 @@ static inline void _handle_timeouts(void)
 
 static inline int _abort_timeout(struct _timeout *t)
 {
-	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
+	sys_dlist_t *timeout_q = &_timeout_q;
 
 	if (-1 == t->delta_ticks_from_prev) {
 		return -1;
@@ -165,7 +165,7 @@ static inline int _abort_timeout(struct _timeout *t)
 
 static inline int _abort_thread_timeout(struct k_thread *thread)
 {
-	return _abort_timeout(&thread->timeout);
+	return _abort_timeout(&thread->base.timeout);
 }
 
 /*
@@ -210,12 +210,12 @@ static inline void _add_timeout(struct k_thread *thread,
 	K_DEBUG("thread %p on wait_q %p, for timeout: %d\n",
 		thread, wait_q, timeout);
 
-	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
+	sys_dlist_t *timeout_q = &_timeout_q;
 
 	K_DEBUG("timeout_q %p before: head: %p, tail: %p\n",
-		&_nanokernel.timeout_q,
-		sys_dlist_peek_head(&_nanokernel.timeout_q),
-		_nanokernel.timeout_q.tail);
+		&_timeout_q,
+		sys_dlist_peek_head(&_timeout_q),
+		_timeout_q.tail);
 
 	K_DEBUG("timeout   %p before: next: %p, prev: %p\n",
 		timeout_obj, timeout_obj->node.next, timeout_obj->node.prev);
@@ -228,9 +228,9 @@ static inline void _add_timeout(struct k_thread *thread,
 			    &timeout_obj->delta_ticks_from_prev);
 
 	K_DEBUG("timeout_q %p after:  head: %p, tail: %p\n",
-		&_nanokernel.timeout_q,
-		sys_dlist_peek_head(&_nanokernel.timeout_q),
-		_nanokernel.timeout_q.tail);
+		&_timeout_q,
+		sys_dlist_peek_head(&_timeout_q),
+		_timeout_q.tail);
 
 	K_DEBUG("timeout   %p after:  next: %p, prev: %p\n",
 		timeout_obj, timeout_obj->node.next, timeout_obj->node.prev);
@@ -245,7 +245,7 @@ static inline void _add_timeout(struct k_thread *thread,
 static inline void _add_thread_timeout(struct k_thread *thread,
 				       _wait_q_t *wait_q, int32_t timeout)
 {
-	_add_timeout(thread, &thread->timeout, wait_q, timeout);
+	_add_timeout(thread, &thread->base.timeout, wait_q, timeout);
 }
 
 /* find the closest deadline in the timeout queue */

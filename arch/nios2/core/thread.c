@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-#include <kernel.h>		   /* public kernel API */
-#include <../../../kernel/unified/include/nano_internal.h>
-
-#include <nano_private.h>
+#include <kernel.h>
+#include <nano_internal.h>
+#include <kernel_structs.h>
 #include <wait_q.h>
 #include <string.h>
-
-tNANO _nanokernel = {0};
 
 #if defined(CONFIG_THREAD_MONITOR)
 /*
  * Add a thread to the kernel's list of active threads.
  */
-static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
+static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
 {
 	unsigned int key;
 
 	key = irq_lock();
-	tcs->next_thread = _nanokernel.threads;
-	_nanokernel.threads = tcs;
+	thread->next_thread = _kernel.threads;
+	_kernel.threads = thread;
 	irq_unlock(key);
 }
 #else
-#define thread_monitor_init(tcs) \
+#define thread_monitor_init(thread) \
 	do {/* do nothing */     \
 	} while ((0))
 #endif /* CONFIG_THREAD_MONITOR */
@@ -70,7 +67,7 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 {
 	_ASSERT_VALID_PRIO(priority, thread_func);
 
-	struct tcs *tcs;
+	struct k_thread *thread;
 	struct init_stack_frame *iframe;
 
 #ifdef CONFIG_INIT_STACKS
@@ -86,32 +83,32 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 	iframe->arg2 = arg2;
 	iframe->arg3 = arg3;
 
-	/* Initialize various struct tcs members */
-	tcs = (struct tcs *)stack_memory;
-	tcs->prio = priority;
+	/* Initialize various struct k_thread members */
+	thread = (struct k_thread *)stack_memory;
+	thread->base.prio = priority;
 
 	/* k_q_node initialized upon first insertion in a list */
-	tcs->flags = options | K_PRESTART;
-	tcs->sched_locked = 0;
+	thread->base.flags = options | K_PRESTART;
+	thread->base.sched_locked = 0;
 
 	/* static threads overwrite it afterwards with real value */
-	tcs->init_data = NULL;
-	tcs->fn_abort = NULL;
+	thread->init_data = NULL;
+	thread->fn_abort = NULL;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
-	tcs->custom_data = NULL;
+	thread->custom_data = NULL;
 #endif
 	ARG_UNUSED(uk_task_ptr);
 
-	tcs->coopReg.sp = (uint32_t)iframe;
-	tcs->coopReg.ra = (uint32_t)_thread_entry_wrapper;
-	tcs->coopReg.key = NIOS2_STATUS_PIE_MSK;
-	/* Leave the rest of tcs->coopReg junk */
+	thread->callee_saved.sp = (uint32_t)iframe;
+	thread->callee_saved.ra = (uint32_t)_thread_entry_wrapper;
+	thread->callee_saved.key = NIOS2_STATUS_PIE_MSK;
+	/* Leave the rest of thread->callee_saved junk */
 
 #ifdef CONFIG_NANO_TIMEOUTS
-	_nano_timeout_tcs_init(tcs);
+	_nano_timeout_thread_init(thread);
 #endif
 
-	thread_monitor_init(tcs);
+	thread_monitor_init(thread);
 }

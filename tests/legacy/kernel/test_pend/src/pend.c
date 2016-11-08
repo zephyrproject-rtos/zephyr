@@ -16,7 +16,7 @@
 
 #include <tc_util.h>
 #include <zephyr.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <stdbool.h>
 
 #define  SECONDS(x)                 ((x) * sys_clock_ticks_per_sec)

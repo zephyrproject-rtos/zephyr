@@ -26,8 +26,8 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
-#include <offsets.h>
+#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
 #include "swap_macros.h"
@@ -71,17 +71,17 @@ GTEXT(_is_next_thread_current)
 
 SECTION_FUNC(TEXT, _rirq_enter)
 
-	mov r1, _nanokernel
+	mov r1, _kernel
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* disable stack checking */
 	lr r2, [_ARC_V2_STATUS32]
 	bclr r2, r2, _ARC_V2_STATUS32_SC_BIT
 	kflag r2
 #endif
-	ld_s r2, [r1, __tNANO_current_OFFSET]
+	ld_s r2, [r1, _kernel_offset_to_current]
 #if NUM_REGULAR_IRQ_PRIO_LEVELS == 1
-	st sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
-	ld sp, [r1, __tNANO_rirq_sp_OFFSET]
+	st sp, [r2, _thread_offset_to_sp]
+	ld sp, [r1, _kernel_offset_to_irq_stack]
 #else
 #error regular irq nesting is not implemented
 #endif
@@ -97,8 +97,8 @@ SECTION_FUNC(TEXT, _rirq_enter)
 
 SECTION_FUNC(TEXT, _rirq_exit)
 
-	mov r1, _nanokernel
-	ld_s r2, [r1, __tNANO_current_OFFSET]
+	mov r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
 
 	/*
 	 * Lock interrupts to ensure kernel queues do not change from this
@@ -124,7 +124,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 
 	cmp r0, r3
 	brgt _rirq_return_from_rirq
-	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+	ld sp, [r2, _thread_offset_to_sp]
 #endif
 
 	/*
@@ -137,15 +137,15 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 */
 
 	/* coop thread ? do not schedule */
-	ld_s r0, [r2, __tTCS_prio_OFFSET]
+	ld_s r0, [r2, _thread_offset_to_prio]
 	cmp_s r0, 0
 	blt.d _rirq_no_reschedule
-	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+	ld sp, [r2, _thread_offset_to_sp]
 
 	/* scheduler locked ? do not schedule */
-	ld_s r0, [r2, __tTCS_sched_locked_OFFSET]
+	ld_s r0, [r2, _thread_offset_to_sched_locked]
 	brgt.d r0, 0,  _rirq_no_reschedule
-	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+	ld sp, [r2, _thread_offset_to_sp]
 
 	/* check if the current thread needs to be rescheduled */
 	push_s r2
@@ -156,7 +156,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	pop_s r1
 	pop_s r2
 	brne.d r0, 0, _rirq_no_reschedule
-	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+	ld sp, [r2, _thread_offset_to_sp]
 
 	/*
 	 * Get the next scheduled thread. On _get_next_ready_thread
@@ -176,11 +176,11 @@ _rirq_reschedule:
 	/* _save_callee_saved_regs expects outgoing thread in r2 */
 	_save_callee_saved_regs
 
-	st _CAUSE_RIRQ, [r2, __tTCS_relinquish_cause_OFFSET]
+	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
 
 	/* incoming thread is in r0: it becomes the new 'current' */
 	mov r2, r0
-	st_s r2, [r1, __tNANO_current_OFFSET]
+	st_s r2, [r1, _kernel_offset_to_current]
 
 .balign 4
 _rirq_common_interrupt_swap:
@@ -188,9 +188,9 @@ _rirq_common_interrupt_swap:
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Use stack top and down registers from restored context */
-	add r3, r2, __tTCS_NOFLOAT_SIZEOF
+	add r3, r2, _K_THREAD_NO_FLOAT_SIZEOF
 	sr r3, [_ARC_V2_KSTACK_TOP]
-	ld_s r3, [r2, __tTCS_stack_top_OFFSET]
+	ld_s r3, [r2, _thread_offset_to_stack_top]
 	sr r3, [_ARC_V2_KSTACK_BASE]
 #endif
 	/*
@@ -199,7 +199,7 @@ _rirq_common_interrupt_swap:
 	 */
 	_load_callee_saved_regs
 
-	ld_s r3, [r2, __tTCS_relinquish_cause_OFFSET]
+	ld_s r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _rirq_return_from_rirq
 	nop
@@ -215,19 +215,22 @@ _rirq_return_from_coop:
 
 	/* update status32.ie (explanation in firq_exit:_firq_return_from_coop) */
 	ld_s r0, [sp, 4]
-	ld_s r3, [r2, __tTCS_intlock_key_OFFSET]
-	st  0, [r2, __tTCS_intlock_key_OFFSET]
+	ld_s r3, [r2, _thread_offset_to_intlock_key]
+	st  0, [r2, _thread_offset_to_intlock_key]
 	cmp r3, 0
 	or.ne r0, r0, _ARC_V2_STATUS32_IE
 	st_s r0, [sp, 4]
 
 	/* carve fake stack */
 
-	sub sp, sp, (__tISF_SIZEOF - 12) /* a) status32/pc are already on the stack
-	                                  * b) a real value will be pushed in r0 */
+	/*
+	 * a) status32/pc are already on the stack
+	 * b) a real value will be pushed in r0
+	 */
+	sub sp, sp, (___isf_t_SIZEOF - 12)
 
 	/* push return value on stack */
-	ld_s r0, [r2, __tTCS_return_value_OFFSET]
+	ld_s r0, [r2, _thread_offset_to_return_value]
 	push_s r0
 
 	/*
@@ -236,7 +239,7 @@ _rirq_return_from_coop:
 	 * IRQ prologue. r13 thus has to be set to its correct value in the IRQ
 	 * stack frame.
 	 */
-	st_s r13, [sp, __tISF_r13_OFFSET]
+	st_s r13, [sp, ___isf_t_r13_OFFSET]
 
 	/* stack now has the IRQ stack frame layout, pointing to r0 */
 

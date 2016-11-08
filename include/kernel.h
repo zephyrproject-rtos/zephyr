@@ -79,8 +79,8 @@ typedef sys_dlist_t _wait_q_t;
 #define _DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(type)
 #endif
 
-#define k_thread tcs
-struct tcs;
+#define tcs k_thread
+struct k_thread;
 struct k_mutex;
 struct k_sem;
 struct k_alert;

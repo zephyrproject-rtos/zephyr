@@ -26,11 +26,10 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/x86/asm.h>
 #include <arch/x86/arch.h> /* For MK_ISR_NAME */
-#include <offsets.h>	/* nanokernel structure offset definitions */
-
+#include <offsets_short.h>
 
 
 	/* exports (internal APIs) */
@@ -122,9 +121,10 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
 
-	movl	_nanokernel + __tNANO_current_OFFSET, %edx
+	movl	_kernel + _kernel_offset_to_current, %edx
 
-	incl	__tTCS_excNestCount_OFFSET(%edx)	/* inc exception nest count */
+	/* inc exception nest count */
+	incl	_thread_offset_to_excNestCount(%edx)
 
 #ifdef CONFIG_GDB_INFO
 
@@ -135,9 +135,9 @@ SECTION_FUNC(TEXT, _exception_enter)
      * registers and the stack of the preempted thread.
      */
 
-	testl	$EXC_ACTIVE, __tTCS_flags_OFFSET (%edx)
+	testl	$EXC_ACTIVE, _thread_offset_to_flags(%edx)
 	jne	alreadyInException
-	movl	%esp, __tTCS_esfPtr_OFFSET(%edx)
+	movl	%esp, _thread_offset_to_esf(%edx)
 
 alreadyInException:
 
@@ -151,7 +151,7 @@ alreadyInException:
 	 * handled in the event of a context switch.
 	 */
 
-	orl	$EXC_ACTIVE, __tTCS_flags_OFFSET(%edx)
+	orl	$EXC_ACTIVE, _thread_offset_to_flags(%edx)
 
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
@@ -185,7 +185,7 @@ allDone:
 
 #if defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO)
 
-	movl	_nanokernel + __tNANO_current_OFFSET, %ecx
+	movl	_kernel + _kernel_offset_to_current, %ecx
 
 	/*
 	 * Must lock interrupts to prevent outside interference.
@@ -199,18 +199,18 @@ allDone:
 	 * Determine whether exiting from a nested interrupt.
 	 */
 
-	decl	__tTCS_excNestCount_OFFSET(%ecx)	/* dec exception nest count */
+	decl	_thread_offset_to_excNestCount(%ecx)
 
-	cmpl	$0, __tTCS_excNestCount_OFFSET(%ecx)
+	cmpl	$0, _thread_offset_to_excNestCount(%ecx)
 	jne	nestedException
 
 	/*
-	 * Clear the EXC_ACTIVE bit in the tTCS of the current execution context
-	 * if we are not in a nested exception (ie, when we exit the outermost
-	 * exception).
+	 * Clear the EXC_ACTIVE bit in the k_thread of the current execution
+	 * context if we are not in a nested exception (ie, when we exit the
+	 * outermost exception).
 	 */
 
-	andl	$~EXC_ACTIVE, __tTCS_flags_OFFSET (%ecx)
+	andl	$~EXC_ACTIVE, _thread_offset_to_flags (%ecx)
 
 nestedException:
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */

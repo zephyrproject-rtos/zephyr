@@ -22,12 +22,12 @@
 
 #define _ASMLANGUAGE
 
-#include <offsets.h>
+#include <offsets_short.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>
 #ifdef CONFIG_TICKLESS_IDLE
-#include <nano_private.h>
+#include <kernel_structs.h>
 #endif
 
 _ASM_FILE_PROLOGUE
@@ -78,8 +78,8 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
  */
 
 SECTION_FUNC(TEXT, _NanoIdleValGet)
-    ldr r0, =_nanokernel
-    ldr r0, [r0, #__tNANO_idle_OFFSET]
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_idle]
     bx lr
 
 /**
@@ -96,9 +96,9 @@ SECTION_FUNC(TEXT, _NanoIdleValGet)
  */
 
 SECTION_FUNC(TEXT, _NanoIdleValClear)
-    ldr r0, =_nanokernel
+    ldr r0, =_kernel
     eors.n r1, r1
-    str r1, [r0, #__tNANO_idle_OFFSET]
+    str r1, [r0, #_kernel_offset_to_idle]
     bx lr
 
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */

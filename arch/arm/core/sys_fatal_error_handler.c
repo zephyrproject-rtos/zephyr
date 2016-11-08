@@ -25,7 +25,7 @@
 #include <kernel.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/printk.h>
 
 /**

@@ -16,8 +16,8 @@
 
 #define _ASMLANGUAGE
 #include <arch/nios2/asm.h>
-#include <nano_private.h>
-#include <offsets.h>
+#include <kernel_structs.h>
+#include <offsets_short.h>
 
 /* exports */
 GTEXT(_exception)
@@ -94,11 +94,11 @@ SECTION_FUNC(exception.entry, _exception)
 is_interrupt:
 	/* If we get here, this is an interrupt */
 
-	/* Grab a reference to _nanokernel in r10 so we can determine the
+	/* Grab a reference to _kernel in r10 so we can determine the
 	 * current irq stack pointer
 	 */
-	movhi r10, %hi(_nanokernel)
-	ori r10, r10, %lo(_nanokernel)
+	movhi r10, %hi(_kernel)
+	ori r10, r10, %lo(_kernel)
 
 	/* Stash a copy of thread's sp in r12 so that we can put it on the IRQ
 	 * stack
@@ -106,7 +106,7 @@ is_interrupt:
 	mov r12, sp
 
 	/* Switch to interrupt stack */
-	ldw sp, __tNANO_irq_sp_OFFSET(r10)
+	ldw sp, _kernel_offset_to_irq_stack(r10)
 
 	/* Store thread stack pointer onto IRQ stack */
 	addi sp, sp, -4
@@ -122,21 +122,21 @@ on_irq_stack:
 	/* Interrupt handler finished and the interrupt should be serviced
 	 * now, the appropriate bits in ipending should be cleared */
 
-	/* Get a reference to _nanokernel again in r10 */
-	movhi r10, %hi(_nanokernel)
-	ori   r10, r10, %lo(_nanokernel)
+	/* Get a reference to _kernel again in r10 */
+	movhi r10, %hi(_kernel)
+	ori   r10, r10, %lo(_kernel)
 
-	ldw   r11, __tNANO_current_OFFSET(r10)
+	ldw   r11, _kernel_offset_to_current(r10)
 	/* Determine whether the exception of the ISR requires context
 	 * switch
 	 */
 
 	/* Do not reschedule coop threads (threads that have negative prio) */
-	ldw  r12, __tTCS_prio_OFFSET(r11)
+	ldw  r12, _thread_offset_to_prio(r11)
 	blt  r12, zero, no_reschedule
 
 	/* Do not reschedule if scheduler is locked */
-	ldw  r12, __tTCS_sched_locked_OFFSET(r11)
+	ldw  r12, _thread_offset_to_sched_locked(r11)
 	bne  r12, zero, no_reschedule
 
 	/* Call into the kernel to see if a scheduling decision is necessary */

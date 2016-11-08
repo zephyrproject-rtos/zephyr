@@ -29,10 +29,10 @@
 
 #define _ASMLANGUAGE
 
-#include <offsets.h>
+#include <offsets_short.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
@@ -61,7 +61,7 @@ _ASM_FILE_PROLOGUE
 
 SECTION_FUNC(TEXT, _GdbStubExcEntry)
 
-    ldr r1, =_nanokernel
+    ldr r1, =_kernel
     ldr r2, [r1, #__tNANO_flags_OFFSET]
 
     /* already in an exception, do not update the registers */
@@ -123,7 +123,7 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
 	bxeq lr
 #endif
 
-    ldr r1, =_nanokernel
+    ldr r1, =_kernel
     ldr r2, [r1, #__tNANO_flags_OFFSET]
 
     ldr r3, =EXC_ACTIVE

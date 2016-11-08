@@ -22,13 +22,13 @@
  */
 
 #include <zephyr.h>
-#include <offsets.h>
+#include <offsets_short.h>
 #include <kernel.h>
 #include <misc/printk.h>
 #include <drivers/rand32.h>
 #include <sections.h>
 #include <toolchain.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <device.h>
 #include <init.h>
 #include <linker-defs.h>
@@ -116,7 +116,7 @@ char __noinit __stack _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	#include <misc/dlist.h>
 	#define initialize_timeouts() do { \
-		sys_dlist_init(&_nanokernel.timeout_q); \
+		sys_dlist_init(&_timeout_q); \
 	} while ((0))
 #else
 	#define initialize_timeouts() do { } while ((0))
@@ -219,7 +219,7 @@ static void _main(void *unused1, void *unused2, void *unused3)
 	main();
 
 	/* Terminate thread normally since it has no more work to do */
-	_main_thread->flags &= ~K_ESSENTIAL;
+	_main_thread->base.flags &= ~K_ESSENTIAL;
 }
 
 void __weak main(void)
@@ -234,7 +234,7 @@ void __weak main(void)
  * This routine initializes various nanokernel data structures, including
  * the background (or idle) task and any architecture-specific initialization.
  *
- * Note that all fields of "_nanokernel" are set to zero on entry, which may
+ * Note that all fields of "_kernel" are set to zero on entry, which may
  * be all the initialization many of them require.
  *
  * @return N/A
@@ -255,10 +255,10 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 * Do not insert dummy execution context in the list of fibers, so
 	 * that it does not get scheduled back in once context-switched out.
 	 */
-	dummy_thread->flags = K_ESSENTIAL;
-	dummy_thread->prio = K_PRIO_COOP(0);
+	dummy_thread->base.flags = K_ESSENTIAL;
+	dummy_thread->base.prio = K_PRIO_COOP(0);
 
-	/* _nanokernel.ready_q is all zeroes */
+	/* _kernel.ready_q is all zeroes */
 
 
 	/*
@@ -274,7 +274,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	/* ready the init/main and idle threads */
 
 	for (int ii = 0; ii < K_NUM_PRIORITIES; ii++) {
-		sys_dlist_init(&_nanokernel.ready_q.q[ii]);
+		sys_dlist_init(&_ready_q.q[ii]);
 	}
 
 	_new_thread(main_stack, MAIN_STACK_SIZE, NULL,
@@ -359,7 +359,7 @@ FUNC_NORETURN void _Cstart(void)
 {
 	/* floating point operations are NOT performed during nanokernel init */
 
-	char __stack dummy_thread[__tTCS_NOFLOAT_SIZEOF];
+	char __stack dummy_thread[_K_THREAD_NO_FLOAT_SIZEOF];
 
 	/*
 	 * Initialize nanokernel data structures. This step includes

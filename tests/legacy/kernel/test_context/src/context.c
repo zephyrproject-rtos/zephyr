@@ -27,7 +27,7 @@
  */
 
 #include <tc_util.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/cpu.h>
 #include <irq_offload.h>
 
@@ -443,7 +443,7 @@ static void fiber_helper(int arg1, int arg2)
 	self_thread_id = sys_thread_self_get();
 
 	/* Lower priority to that of fiber_entry() */
-	fiber_priority_set(self_thread_id, self_thread_id->prio + 1);
+	fiber_priority_set(self_thread_id, self_thread_id->base.prio + 1);
 
 	fiber_yield();        /* Yield to fiber of equal priority */
 
@@ -515,7 +515,7 @@ static int test_fiber_yield(void)
 	 * not result in switching to the helper.
 	 */
 
-	fiber_priority_set(self_thread_id, self_thread_id->prio - 1);
+	fiber_priority_set(self_thread_id, self_thread_id->base.prio - 1);
 	fiber_yield();
 
 	if (fiber_evidence != 1) {

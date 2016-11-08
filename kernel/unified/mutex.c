@@ -37,7 +37,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
@@ -116,7 +116,7 @@ static int new_prio_for_inheritance(int target, int limit)
 
 static void adjust_owner_prio(struct k_mutex *mutex, int new_prio)
 {
-	if (mutex->owner->prio != new_prio) {
+	if (mutex->owner->base.prio != new_prio) {
 
 		K_DEBUG("%p (ready (y/n): %c) prio changed to %d (was %d)\n",
 			mutex->owner, _is_thread_ready(mutex->owner) ?
@@ -138,7 +138,7 @@ int k_mutex_lock(struct k_mutex *mutex, int32_t timeout)
 		RECORD_STATE_CHANGE();
 
 		mutex->owner_orig_prio = mutex->lock_count == 0 ?
-					_current->prio :
+					_current->base.prio :
 					mutex->owner_orig_prio;
 
 		mutex->lock_count++;
@@ -166,7 +166,8 @@ int k_mutex_lock(struct k_mutex *mutex, int32_t timeout)
 	}
 	new_prio = _get_new_prio_with_ceiling(new_prio);
 #endif
-	new_prio = new_prio_for_inheritance(_current->prio, mutex->owner->prio);
+	new_prio = new_prio_for_inheritance(_current->base.prio,
+					    mutex->owner->base.prio);
 
 	key = irq_lock();
 
@@ -196,8 +197,8 @@ int k_mutex_lock(struct k_mutex *mutex, int32_t timeout)
 		(struct k_thread *)sys_dlist_peek_head(&mutex->wait_q);
 
 	new_prio = mutex->owner_orig_prio;
-	new_prio = waiter ? new_prio_for_inheritance(waiter->prio, new_prio) :
-			    new_prio;
+	new_prio = waiter ? new_prio_for_inheritance(waiter->base.prio,
+						     new_prio) : new_prio;
 
 	K_DEBUG("adjusting prio down on mutex %p\n", mutex);
 
@@ -254,7 +255,7 @@ void k_mutex_unlock(struct k_mutex *mutex)
 		 */
 		mutex->owner = new_owner;
 		mutex->lock_count++;
-		mutex->owner_orig_prio = new_owner->prio;
+		mutex->owner_orig_prio = new_owner->base.prio;
 	} else {
 		irq_unlock(key);
 		mutex->owner = NULL;

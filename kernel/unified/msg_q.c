@@ -21,7 +21,7 @@
 
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -83,7 +83,8 @@ int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 		pending_thread = _unpend_first_thread(&q->wait_q);
 		if (pending_thread) {
 			/* give message to waiting thread */
-			memcpy(pending_thread->swap_data, data, q->msg_size);
+			memcpy(pending_thread->base.swap_data, data,
+			       q->msg_size);
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
 			_abort_thread_timeout(pending_thread);
@@ -108,7 +109,7 @@ int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 	} else {
 		/* wait for put message success, failure, or timeout */
 		_pend_current_thread(&q->wait_q, timeout);
-		_current->swap_data = data;
+		_current->base.swap_data = data;
 		return _Swap(key);
 	}
 
@@ -138,7 +139,7 @@ int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 		pending_thread = _unpend_first_thread(&q->wait_q);
 		if (pending_thread) {
 			/* add thread's message to queue */
-			memcpy(q->write_ptr, pending_thread->swap_data,
+			memcpy(q->write_ptr, pending_thread->base.swap_data,
 			       q->msg_size);
 			q->write_ptr += q->msg_size;
 			if (q->write_ptr == q->buffer_end) {
@@ -162,7 +163,7 @@ int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 	} else {
 		/* wait for get message success or timeout */
 		_pend_current_thread(&q->wait_q, timeout);
-		_current->swap_data = data;
+		_current->base.swap_data = data;
 		return _Swap(key);
 	}
 

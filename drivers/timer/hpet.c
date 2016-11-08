@@ -60,7 +60,7 @@
 #include <sys_clock.h>
 #include <drivers/ioapic.h>
 #include <drivers/system_timer.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 
 #include <board.h>
 

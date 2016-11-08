@@ -185,7 +185,7 @@ extern __deprecated int sys_execution_context_type_get(void);
  * Given that this routine is _not_ ISR-callable, the following code is used
  * to differentiate between a task and fiber:
  *
- * if ((_nanokernel.current->flags & TASK) == TASK)
+ * if ((_kernel.current->flags & TASK) == TASK)
  *
  * Given that the _fiber_start() primitive is not considered real-time
  * performance critical, a runtime check to differentiate between a calling

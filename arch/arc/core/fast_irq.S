@@ -25,8 +25,8 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
-#include <offsets.h>
+#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
 #include "swap_macros.h"
@@ -125,8 +125,8 @@ SECTION_FUNC(TEXT, _firq_exit)
 #endif
 #endif
 
-	mov_s r1, _nanokernel
-	ld_s r2, [r1, __tNANO_current_OFFSET]
+	mov_s r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
 
 #if CONFIG_NUM_IRQ_PRIO_LEVELS > 1
 	/* check if we're a nested interrupt: if so, let the interrupted
@@ -147,11 +147,11 @@ SECTION_FUNC(TEXT, _firq_exit)
 .balign 4
 _firq_check_for_swap:
 	/* coop thread ? do not schedule */
-	ld_s r0, [r2, __tTCS_prio_OFFSET]
+	ld_s r0, [r2, _thread_offset_to_prio]
 	brlt r0, 0, _firq_no_reschedule
 
 	/* scheduler locked ? do not schedule */
-	ld_s r0, [r2, __tTCS_sched_locked_OFFSET]
+	ld_s r0, [r2, _thread_offset_to_sched_locked]
 	brgt r0, 0, _firq_no_reschedule
 
 	/* check if the current thread needs to be rescheduled */
@@ -233,17 +233,17 @@ _firq_reschedule:
 	 */
 
 	lr r0, [_ARC_V2_STATUS32_P0]
-	st_s r0, [sp, __tISF_status32_OFFSET]
+	st_s r0, [sp, ___isf_t_status32_OFFSET]
 
-	st ilink, [sp, __tISF_pc_OFFSET] /* ilink into pc */
+	st ilink, [sp, ___isf_t_pc_OFFSET] /* ilink into pc */
 #endif
 
-	mov_s r1, _nanokernel
-	ld_s r2, [r1, __tNANO_current_OFFSET]
+	mov_s r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
 
 	_save_callee_saved_regs
 
-	st _CAUSE_FIRQ, [r2, __tTCS_relinquish_cause_OFFSET]
+	st _CAUSE_FIRQ, [r2, _thread_offset_to_relinquish_cause]
 
 	/*
 	 * Save needed registers to callee saved ones. It is faster than
@@ -257,13 +257,13 @@ _firq_reschedule:
 	mov_s blink, r13
 	mov_s r1, r14
 	mov_s r2, r0
-	st_s r2, [r1, __tNANO_current_OFFSET]
+	st_s r2, [r1, _kernel_offset_to_current]
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Use stack top and down registers from restored context */
-	add r3, r2, __tTCS_NOFLOAT_SIZEOF
+	add r3, r2, _K_THREAD_NO_FLOAT_SIZEOF
 	sr r3, [_ARC_V2_KSTACK_TOP]
-	ld_s r3, [r2, __tTCS_stack_top_OFFSET]
+	ld_s r3, [r2, _thread_offset_to_stack_top]
 	sr r3, [_ARC_V2_KSTACK_BASE]
 #endif
 	/*
@@ -272,7 +272,7 @@ _firq_reschedule:
 	 */
 	_load_callee_saved_regs
 
-	ld_s r3, [r2, __tTCS_relinquish_cause_OFFSET]
+	ld_s r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _firq_return_from_rirq
 	nop
@@ -284,8 +284,8 @@ _firq_reschedule:
 .balign 4
 _firq_return_from_coop:
 
-	ld_s r3, [r2, __tTCS_intlock_key_OFFSET]
-	st  0, [r2, __tTCS_intlock_key_OFFSET]
+	ld_s r3, [r2, _thread_offset_to_intlock_key]
+	st  0, [r2, _thread_offset_to_intlock_key]
 
 	/* pc into ilink */
 	pop_s r0
@@ -303,7 +303,7 @@ _firq_return_from_coop:
 	or.nz r0, r0, _ARC_V2_STATUS32_IE
 	sr r0, [_ARC_V2_STATUS32_P0]
 
-	ld_s r0, [r2, __tTCS_return_value_OFFSET]
+	ld_s r0, [r2, _thread_offset_to_return_value]
 	rtie
 
 .balign 4

@@ -15,7 +15,7 @@
  */
 
 #include <nanokernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 
 /**
  *

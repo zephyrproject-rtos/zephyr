@@ -34,74 +34,60 @@
  */
 
 #include <gen_offset.h>
-#include <nano_private.h>
-#include <nano_offsets.h>
+#include <kernel_structs.h>
+#include <kernel_offsets.h>
 
-/* ARCv2-specific tNANO structure member offsets */
-GEN_OFFSET_SYM(tNANO, rirq_sp);
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-GEN_OFFSET_SYM(tNANO, idle);
-#endif
-
-/* ARCv2-specific struct tcs structure member offsets */
-GEN_OFFSET_SYM(tTCS, intlock_key);
-GEN_OFFSET_SYM(tTCS, relinquish_cause);
-GEN_OFFSET_SYM(tTCS, return_value);
+GEN_OFFSET_SYM(_thread_arch_t, intlock_key);
+GEN_OFFSET_SYM(_thread_arch_t, relinquish_cause);
+GEN_OFFSET_SYM(_thread_arch_t, return_value);
 #ifdef CONFIG_ARC_STACK_CHECKING
-GEN_OFFSET_SYM(tTCS, stack_top);
+GEN_OFFSET_SYM(_thread_arch_t, stack_top);
 #endif
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-GEN_OFFSET_SYM(tTCS, custom_data);
-#endif
-
 
 /* ARCv2-specific IRQ stack frame structure member offsets */
-GEN_OFFSET_SYM(tISF, r0);
-GEN_OFFSET_SYM(tISF, r1);
-GEN_OFFSET_SYM(tISF, r2);
-GEN_OFFSET_SYM(tISF, r3);
-GEN_OFFSET_SYM(tISF, r4);
-GEN_OFFSET_SYM(tISF, r5);
-GEN_OFFSET_SYM(tISF, r6);
-GEN_OFFSET_SYM(tISF, r7);
-GEN_OFFSET_SYM(tISF, r8);
-GEN_OFFSET_SYM(tISF, r9);
-GEN_OFFSET_SYM(tISF, r10);
-GEN_OFFSET_SYM(tISF, r11);
-GEN_OFFSET_SYM(tISF, r12);
-GEN_OFFSET_SYM(tISF, r13);
-GEN_OFFSET_SYM(tISF, blink);
-GEN_OFFSET_SYM(tISF, lp_end);
-GEN_OFFSET_SYM(tISF, lp_start);
-GEN_OFFSET_SYM(tISF, lp_count);
-GEN_OFFSET_SYM(tISF, pc);
-GEN_OFFSET_SYM(tISF, status32);
-GEN_ABSOLUTE_SYM(__tISF_SIZEOF, sizeof(tISF));
+GEN_OFFSET_SYM(_isf_t, r0);
+GEN_OFFSET_SYM(_isf_t, r1);
+GEN_OFFSET_SYM(_isf_t, r2);
+GEN_OFFSET_SYM(_isf_t, r3);
+GEN_OFFSET_SYM(_isf_t, r4);
+GEN_OFFSET_SYM(_isf_t, r5);
+GEN_OFFSET_SYM(_isf_t, r6);
+GEN_OFFSET_SYM(_isf_t, r7);
+GEN_OFFSET_SYM(_isf_t, r8);
+GEN_OFFSET_SYM(_isf_t, r9);
+GEN_OFFSET_SYM(_isf_t, r10);
+GEN_OFFSET_SYM(_isf_t, r11);
+GEN_OFFSET_SYM(_isf_t, r12);
+GEN_OFFSET_SYM(_isf_t, r13);
+GEN_OFFSET_SYM(_isf_t, blink);
+GEN_OFFSET_SYM(_isf_t, lp_end);
+GEN_OFFSET_SYM(_isf_t, lp_start);
+GEN_OFFSET_SYM(_isf_t, lp_count);
+GEN_OFFSET_SYM(_isf_t, pc);
+GEN_OFFSET_SYM(_isf_t, status32);
+GEN_ABSOLUTE_SYM(___isf_t_SIZEOF, sizeof(_isf_t));
 
-/* ARCv2-specific preempt registers structure member offsets */
-GEN_OFFSET_SYM(tPreempt, sp);
-GEN_ABSOLUTE_SYM(__tPreempt_SIZEOF, sizeof(tPreempt));
+GEN_OFFSET_SYM(_callee_saved_t, sp);
+GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(_callee_saved_t));
 
-/* ARCv2-specific callee-saved stack */
-GEN_OFFSET_SYM(tCalleeSaved, r13);
-GEN_OFFSET_SYM(tCalleeSaved, r14);
-GEN_OFFSET_SYM(tCalleeSaved, r15);
-GEN_OFFSET_SYM(tCalleeSaved, r16);
-GEN_OFFSET_SYM(tCalleeSaved, r17);
-GEN_OFFSET_SYM(tCalleeSaved, r18);
-GEN_OFFSET_SYM(tCalleeSaved, r19);
-GEN_OFFSET_SYM(tCalleeSaved, r20);
-GEN_OFFSET_SYM(tCalleeSaved, r21);
-GEN_OFFSET_SYM(tCalleeSaved, r22);
-GEN_OFFSET_SYM(tCalleeSaved, r23);
-GEN_OFFSET_SYM(tCalleeSaved, r24);
-GEN_OFFSET_SYM(tCalleeSaved, r25);
-GEN_OFFSET_SYM(tCalleeSaved, r26);
-GEN_OFFSET_SYM(tCalleeSaved, fp);
-GEN_OFFSET_SYM(tCalleeSaved, r30);
-GEN_ABSOLUTE_SYM(__tCalleeSaved_SIZEOF, sizeof(tCalleeSaved));
+GEN_OFFSET_SYM(_callee_saved_stack_t, r13);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r14);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r15);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r16);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r17);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r18);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r19);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r20);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r21);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r22);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r23);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r24);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r25);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r26);
+GEN_OFFSET_SYM(_callee_saved_stack_t, fp);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r30);
+GEN_ABSOLUTE_SYM(___callee_saved_stack_t_SIZEOF, sizeof(_callee_saved_stack_t));
 
-/* size of the struct tcs structure sans save area for floating point regs */
-GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF, sizeof(tTCS));
+GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
 
 GEN_ABS_SYM_END

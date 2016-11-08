@@ -328,7 +328,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <board.h>
 #include <device.h>
 #include <uart.h>

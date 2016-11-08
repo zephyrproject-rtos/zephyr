@@ -26,7 +26,7 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/printk.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
@@ -69,7 +69,7 @@ int sys_execution_context_type_get(void)
 	if (k_is_in_isr())
 		return NANO_CTX_ISR;
 
-	if (_current->prio < 0)
+	if (_current->base.prio < 0)
 		return NANO_CTX_FIBER;
 
 	return NANO_CTX_TASK;
@@ -86,7 +86,7 @@ int k_is_in_isr(void)
  */
 void _thread_essential_set(void)
 {
-	_current->flags |= K_ESSENTIAL;
+	_current->base.flags |= K_ESSENTIAL;
 }
 
 /*
@@ -96,7 +96,7 @@ void _thread_essential_set(void)
  */
 void _thread_essential_clear(void)
 {
-	_current->flags &= ~K_ESSENTIAL;
+	_current->base.flags &= ~K_ESSENTIAL;
 }
 
 /*
@@ -106,7 +106,7 @@ void _thread_essential_clear(void)
  */
 int _is_thread_essential(void)
 {
-	return _current->flags & K_ESSENTIAL;
+	return _current->base.flags & K_ESSENTIAL;
 }
 
 void k_busy_wait(uint32_t usec_to_wait)
@@ -151,12 +151,12 @@ void _thread_monitor_exit(struct k_thread *thread)
 {
 	unsigned int key = irq_lock();
 
-	if (thread == _nanokernel.threads) {
-		_nanokernel.threads = _nanokernel.threads->next_thread;
+	if (thread == _kernel.threads) {
+		_kernel.threads = _kernel.threads->next_thread;
 	} else {
 		struct k_thread *prev_thread;
 
-		prev_thread = _nanokernel.threads;
+		prev_thread = _kernel.threads;
 		while (thread != prev_thread->next_thread) {
 			prev_thread = prev_thread->next_thread;
 		}

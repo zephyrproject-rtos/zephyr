@@ -25,13 +25,11 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <wait_q.h>
 #ifdef CONFIG_INIT_STACKS
 #include <string.h>
 #endif /* CONFIG_INIT_STACKS */
-
-tNANO _nanokernel = {0};
 
 #if defined(CONFIG_THREAD_MONITOR)
 /*
@@ -42,8 +40,8 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
 	unsigned int key;
 
 	key = irq_lock();
-	tcs->next_thread = _nanokernel.threads;
-	_nanokernel.threads = tcs;
+	tcs->next_thread = _kernel.threads;
+	_kernel.threads = tcs;
 	irq_unlock(key);
 }
 #else
@@ -115,13 +113,13 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
 	/* k_q_node initialized upon first insertion in a list */
-	tcs->flags = options | K_PRESTART;
-	tcs->sched_locked = 0;
+	tcs->base.flags = options | K_PRESTART;
+	tcs->base.sched_locked = 0;
 
 	/* static threads overwrite it afterwards with real value */
 	tcs->init_data = NULL;
 	tcs->fn_abort = NULL;
-	tcs->prio = priority;
+	tcs->base.prio = priority;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
@@ -139,10 +137,10 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 
 	ARG_UNUSED(uk_task_ptr);
 
-	tcs->preempReg.psp = (uint32_t)pInitCtx;
-	tcs->basepri = 0;
+	tcs->callee_saved.psp = (uint32_t)pInitCtx;
+	tcs->arch.basepri = 0;
 
-	_nano_timeout_tcs_init(tcs);
+	_nano_timeout_thread_init(tcs);
 
 	/* initial values in all other registers/TCS entries are irrelevant */
 

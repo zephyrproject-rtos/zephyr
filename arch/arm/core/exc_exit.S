@@ -26,8 +26,8 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
-#include <offsets.h>
+#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
 
@@ -35,7 +35,7 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(_ExcExit)
 GTEXT(_IntExit)
-GDATA(_nanokernel)
+GDATA(_kernel)
 GTEXT(_is_next_thread_current)
 
 #if CONFIG_GDB_INFO
@@ -88,11 +88,11 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
-    ldr r1, =_nanokernel
+    ldr r1, =_kernel
 
-    ldr r1, [r1, #__tNANO_current_OFFSET]
-    ldr r2, [r1, #__tTCS_prio_OFFSET]
-    ldr r3, [r1, #__tTCS_sched_locked_OFFSET]
+    ldr r1, [r1, #_kernel_offset_to_current]
+    ldr r2, [r1, #_thread_offset_to_prio]
+    ldr r3, [r1, #_thread_offset_to_sched_locked]
 
     /* coop thread ? do not schedule */
     cmp r2, #0

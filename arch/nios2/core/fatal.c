@@ -16,7 +16,7 @@
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/printk.h>
 #include <inttypes.h>
 

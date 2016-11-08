@@ -35,27 +35,23 @@
 
 
 #include <gen_offset.h>
-#include <nano_private.h>
-#include <nano_offsets.h>
-
-/* Nios II specific tNANO structure member offsets */
-GEN_OFFSET_SYM(tNANO, irq_sp);
-GEN_OFFSET_SYM(tNANO, nested);
+#include <kernel_structs.h>
+#include <kernel_offsets.h>
 
 /* struct coop member offsets */
-GEN_OFFSET_SYM(t_coop, r16);
-GEN_OFFSET_SYM(t_coop, r17);
-GEN_OFFSET_SYM(t_coop, r18);
-GEN_OFFSET_SYM(t_coop, r19);
-GEN_OFFSET_SYM(t_coop, r20);
-GEN_OFFSET_SYM(t_coop, r21);
-GEN_OFFSET_SYM(t_coop, r22);
-GEN_OFFSET_SYM(t_coop, r23);
-GEN_OFFSET_SYM(t_coop, r28);
-GEN_OFFSET_SYM(t_coop, ra);
-GEN_OFFSET_SYM(t_coop, sp);
-GEN_OFFSET_SYM(t_coop, key);
-GEN_OFFSET_SYM(t_coop, retval);
+GEN_OFFSET_SYM(_callee_saved_t, r16);
+GEN_OFFSET_SYM(_callee_saved_t, r17);
+GEN_OFFSET_SYM(_callee_saved_t, r18);
+GEN_OFFSET_SYM(_callee_saved_t, r19);
+GEN_OFFSET_SYM(_callee_saved_t, r20);
+GEN_OFFSET_SYM(_callee_saved_t, r21);
+GEN_OFFSET_SYM(_callee_saved_t, r22);
+GEN_OFFSET_SYM(_callee_saved_t, r23);
+GEN_OFFSET_SYM(_callee_saved_t, r28);
+GEN_OFFSET_SYM(_callee_saved_t, ra);
+GEN_OFFSET_SYM(_callee_saved_t, sp);
+GEN_OFFSET_SYM(_callee_saved_t, key);
+GEN_OFFSET_SYM(_callee_saved_t, retval);
 
 GEN_OFFSET_SYM(NANO_ESF, ra);
 GEN_OFFSET_SYM(NANO_ESF, r1);
@@ -78,6 +74,6 @@ GEN_OFFSET_SYM(NANO_ESF, instr);
 GEN_ABSOLUTE_SYM(__NANO_ESF_SIZEOF, sizeof(NANO_ESF));
 
 /* size of the struct tcs structure sans save area for floating point regs */
-GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF, sizeof(tTCS));
+GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
 
 GEN_ABS_SYM_END

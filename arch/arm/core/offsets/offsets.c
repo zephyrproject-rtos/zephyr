@@ -34,64 +34,52 @@
  */
 
 #include <gen_offset.h>
-#include <nano_private.h>
-#include <nano_offsets.h>
+#include <kernel_structs.h>
+#include <kernel_offsets.h>
 
-/* ARM-specific tNANO structure member offsets */
-
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-GEN_OFFSET_SYM(tNANO, idle);
-#endif
-
-/* ARM-specific struct tcs structure member offsets */
-
-GEN_OFFSET_SYM(tTCS, basepri);
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-GEN_OFFSET_SYM(tTCS, custom_data);
-#endif
+GEN_OFFSET_SYM(_thread_arch_t, basepri);
 
 #ifdef CONFIG_FLOAT
-GEN_OFFSET_SYM(tTCS, preemp_float_regs);
+GEN_OFFSET_SYM(_thread_arch_t, preempt_float);
 #endif
 
-/* ARM-specific ESF structure member offsets */
-
-GEN_OFFSET_SYM(tESF, a1);
-GEN_OFFSET_SYM(tESF, a2);
-GEN_OFFSET_SYM(tESF, a3);
-GEN_OFFSET_SYM(tESF, a4);
-GEN_OFFSET_SYM(tESF, ip);
-GEN_OFFSET_SYM(tESF, lr);
-GEN_OFFSET_SYM(tESF, pc);
-GEN_OFFSET_SYM(tESF, xpsr);
+GEN_OFFSET_SYM(_esf_t, a1);
+GEN_OFFSET_SYM(_esf_t, a2);
+GEN_OFFSET_SYM(_esf_t, a3);
+GEN_OFFSET_SYM(_esf_t, a4);
+GEN_OFFSET_SYM(_esf_t, ip);
+GEN_OFFSET_SYM(_esf_t, lr);
+GEN_OFFSET_SYM(_esf_t, pc);
+GEN_OFFSET_SYM(_esf_t, xpsr);
 
 #ifdef CONFIG_FLOAT
-GEN_OFFSET_SYM(tESF, s);
-GEN_OFFSET_SYM(tESF, fpscr);
+GEN_OFFSET_SYM(_esf_t, s);
+GEN_OFFSET_SYM(_esf_t, fpscr);
 #endif
 
-/* size of the entire tESF structure */
+GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
 
-GEN_ABSOLUTE_SYM(__tESF_SIZEOF, sizeof(tESF));
-
-/* ARM-specific preempt registers structure member offsets */
-
-GEN_OFFSET_SYM(tPreempt, v1);
-GEN_OFFSET_SYM(tPreempt, v2);
-GEN_OFFSET_SYM(tPreempt, v3);
-GEN_OFFSET_SYM(tPreempt, v4);
-GEN_OFFSET_SYM(tPreempt, v5);
-GEN_OFFSET_SYM(tPreempt, v6);
-GEN_OFFSET_SYM(tPreempt, v7);
-GEN_OFFSET_SYM(tPreempt, v8);
-GEN_OFFSET_SYM(tPreempt, psp);
+GEN_OFFSET_SYM(_callee_saved_t, v1);
+GEN_OFFSET_SYM(_callee_saved_t, v2);
+GEN_OFFSET_SYM(_callee_saved_t, v3);
+GEN_OFFSET_SYM(_callee_saved_t, v4);
+GEN_OFFSET_SYM(_callee_saved_t, v5);
+GEN_OFFSET_SYM(_callee_saved_t, v6);
+GEN_OFFSET_SYM(_callee_saved_t, v7);
+GEN_OFFSET_SYM(_callee_saved_t, v8);
+GEN_OFFSET_SYM(_callee_saved_t, psp);
 
 /* size of the entire preempt registers structure */
 
-GEN_ABSOLUTE_SYM(__tPreempt_SIZEOF, sizeof(tPreempt));
+GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
 
 /* size of the struct tcs structure sans save area for floating point regs */
 
-GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF, sizeof(tTCS));
+#ifdef CONFIG_FLOAT
+GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread) -
+					    sizeof(struct _preempt_float));
+#else
+GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
+#endif
 
 GEN_ABS_SYM_END

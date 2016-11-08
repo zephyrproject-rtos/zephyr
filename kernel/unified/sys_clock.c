@@ -17,7 +17,7 @@
  */
 
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
@@ -206,7 +206,7 @@ static void handle_time_slicing(int32_t ticks)
 		return;
 	}
 
-	if (_is_prio_higher(_current->prio, _time_slice_prio_ceiling)) {
+	if (_is_prio_higher(_current->base.prio, _time_slice_prio_ceiling)) {
 		return;
 	}
 

@@ -25,7 +25,7 @@
 #include <nanokernel.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <nano_private.h> /* to get access to '_current' */
+#include <kernel_structs.h>
 #include <misc/printk.h>
 
 /**

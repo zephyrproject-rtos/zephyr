@@ -23,7 +23,7 @@
 #include <misc/kernel_event_logger.h>
 #include <misc/util.h>
 #include <init.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <kernel_event_logger_arch.h>
 #include <misc/__assert.h>
 
@@ -81,7 +81,7 @@ void sys_k_event_logger_put_timed(uint16_t event_id)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 void _sys_k_event_logger_context_switch(void)
 {
-	extern tNANO _nanokernel;
+	extern struct _kernel _kernel;
 	uint32_t data[2];
 
 	extern void _sys_event_logger_put_non_preemptible(
@@ -101,12 +101,12 @@ void _sys_k_event_logger_context_switch(void)
 		return;
 	}
 
-	if (_collector_coop_thread == _nanokernel.current) {
+	if (_collector_coop_thread == _kernel.current) {
 		return;
 	}
 
 	data[0] = _sys_k_get_time();
-	data[1] = (uint32_t)_nanokernel.current;
+	data[1] = (uint32_t)_kernel.current;
 
 	/*
 	 * The mechanism we use to log the kernel events uses a sync semaphore
@@ -137,7 +137,7 @@ void sys_k_event_logger_register_as_collector(void)
 {
 	ASSERT_CURRENT_IS_COOP_THREAD();
 
-	_collector_coop_thread = _nanokernel.current;
+	_collector_coop_thread = _kernel.current;
 }
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
 

@@ -24,8 +24,8 @@
 
 #include <nanokernel.h>
 #include <toolchain.h>
-#include <nano_private.h>
-#include <offsets.h>
+#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <wait_q.h>
 #ifdef CONFIG_INIT_STACKS
 #include <string.h>
@@ -40,23 +40,21 @@ struct init_stack_frame {
 	uint32_t r0;
 };
 
-tNANO _nanokernel = {0};
-
 #if defined(CONFIG_THREAD_MONITOR)
 /*
  * Add a thread to the kernel's list of active threads.
  */
-static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
+static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
 {
 	unsigned int key;
 
 	key = irq_lock();
-	tcs->next_thread = _nanokernel.threads;
-	_nanokernel.threads = tcs;
+	thread->next_thread = _kernel.threads;
+	_kernel.threads = thread;
 	irq_unlock(key);
 }
 #else
-#define thread_monitor_init(tcs) \
+#define thread_monitor_init(thread) \
 	do {/* do nothing */     \
 	} while ((0))
 #endif /* CONFIG_THREAD_MONITOR */
@@ -64,7 +62,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
 /*
  * @brief Initialize a new thread from its stack space
  *
- * The control structure (TCS) is put at the lower address of the stack. An
+ * The thread control structure is put at the lower address of the stack. An
  * initial context, to be "restored" by __return_from_coop(), is put at
  * the other end of the stack, and thus reusable by the stack when not
  * needed anymore.
@@ -96,7 +94,7 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	char *stackEnd = pStackMem + stackSize;
 	struct init_stack_frame *pInitCtx;
 
-	struct tcs *tcs = (struct tcs *) pStackMem;
+	struct k_thread *thread = (struct k_thread *) pStackMem;
 
 #ifdef CONFIG_INIT_STACKS
 	memset(pStackMem, 0xaa, stackSize);
@@ -121,32 +119,32 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
 	pInitCtx->status32 = _ARC_V2_STATUS32_SC | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
-	tcs->stack_top = (uint32_t) stackEnd;
+	thread->arch.stack_top = (uint32_t) stackEnd;
 #else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif
 
 	/* k_q_node initialized upon first insertion in a list */
-	tcs->flags = options | K_PRESTART;
-	tcs->sched_locked = 0;
+	thread->base.flags = options | K_PRESTART;
+	thread->base.sched_locked = 0;
 
 	/* static threads overwrite them afterwards with real values */
-	tcs->init_data = NULL;
-	tcs->fn_abort = NULL;
-	tcs->prio = priority;
+	thread->init_data = NULL;
+	thread->fn_abort = NULL;
+	thread->base.prio = priority;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
 
-	tcs->custom_data = NULL;
+	thread->custom_data = NULL;
 #endif
 
 #ifdef CONFIG_THREAD_MONITOR
 	/*
-	 * In debug mode tcs->entry give direct access to the thread entry
+	 * In debug mode thread->entry give direct access to the thread entry
 	 * and the corresponding parameters.
 	 */
-	tcs->entry = (struct __thread_entry *)(pInitCtx);
+	thread->entry = (struct __thread_entry *)(pInitCtx);
 #endif
 
 	ARG_UNUSED(uk_task_ptr);
@@ -157,13 +155,14 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	 * dst[31:6] dst[5] dst[4]       dst[3:0]
 	 *    26'd0    1    STATUS32.IE  STATUS32.E[3:0]
 	 */
-	tcs->intlock_key = 0x3F;
-	tcs->relinquish_cause = _CAUSE_COOP;
-	tcs->preempReg.sp = (uint32_t)pInitCtx - __tCalleeSaved_SIZEOF;
+	thread->arch.intlock_key = 0x3F;
+	thread->arch.relinquish_cause = _CAUSE_COOP;
+	thread->callee_saved.sp =
+		(uint32_t)pInitCtx - ___callee_saved_stack_t_SIZEOF;
 
-	_nano_timeout_tcs_init(tcs);
+	_nano_timeout_thread_init(thread);
 
-	/* initial values in all other registers/TCS entries are irrelevant */
+	/* initial values in all other regs/k_thread entries are irrelevant */
 
-	thread_monitor_init(tcs);
+	thread_monitor_init(thread);
 }

@@ -20,7 +20,7 @@
  */
 
 #include <nanokernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <string.h>
 #include <debug/gdb_arch.h>
 #include <misc/debug/gdb_server.h>

@@ -56,22 +56,22 @@ void *force_sys_work_q_in = (void *)&k_sys_work_q;
 static inline int test_thread_monitor(void)
 {
 	int obj_counter = 0;
-	struct tcs *thread_list = NULL;
+	struct k_thread *thread_list = NULL;
 
 	/* wait a bit to allow any initialization-only threads to terminate */
 	fiber_sleep(100);
 
-	thread_list   = (struct tcs *)SYS_THREAD_MONITOR_HEAD;
+	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
 	while (thread_list != NULL) {
-		if (thread_list->prio == -1) {
+		if (thread_list->base.prio == -1) {
 			TC_PRINT("TASK: %p FLAGS: 0x%x\n",
-			thread_list, thread_list->flags);
+			thread_list, thread_list->base.flags);
 		} else {
 			TC_PRINT("FIBER: %p FLAGS: 0x%x\n",
-			thread_list, thread_list->flags);
+			thread_list, thread_list->base.flags);
 		}
 		thread_list =
-			(struct tcs *)SYS_THREAD_MONITOR_NEXT(thread_list);
+			(struct k_thread *)SYS_THREAD_MONITOR_NEXT(thread_list);
 		obj_counter++;
 	}
 	TC_PRINT("THREAD QUANTITY: %d\n", obj_counter);

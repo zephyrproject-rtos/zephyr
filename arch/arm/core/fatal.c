@@ -26,7 +26,7 @@
 #include <inttypes.h>
 
 #include <nanokernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>

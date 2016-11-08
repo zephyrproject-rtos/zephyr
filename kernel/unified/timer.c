@@ -201,7 +201,6 @@ int32_t k_timer_remaining_get(struct k_timer *timer)
 {
 	unsigned int key = irq_lock();
 	int32_t remaining_ticks;
-	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
 
 	if (timer->timeout.delta_ticks_from_prev == -1) {
 		remaining_ticks = 0;
@@ -211,11 +210,11 @@ int32_t k_timer_remaining_get(struct k_timer *timer)
 		 * and summing up the various tick deltas involved
 		 */
 		struct _timeout *t =
-			(struct _timeout *)sys_dlist_peek_head(timeout_q);
+			(struct _timeout *)sys_dlist_peek_head(&_timeout_q);
 
 		remaining_ticks = t->delta_ticks_from_prev;
 		while (t != &timer->timeout) {
-			t = (struct _timeout *)sys_dlist_peek_next(timeout_q,
+			t = (struct _timeout *)sys_dlist_peek_next(&_timeout_q,
 								   &t->node);
 			remaining_ticks += t->delta_ticks_from_prev;
 		}

@@ -17,8 +17,8 @@
 #define _ASMLANGUAGE
 
 #include <arch/cpu.h>
-#include <nano_private.h>
-#include <offsets.h>
+#include <kernel_structs.h>
+#include <offsets_short.h>
 
 GTEXT(__start)
 

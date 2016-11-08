@@ -22,7 +22,7 @@
 
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -156,5 +156,5 @@ void *k_fifo_get(struct k_fifo *fifo, int32_t timeout)
 
 	_pend_current_thread(&fifo->wait_q, timeout);
 
-	return _Swap(key) ? NULL : _current->swap_data;
+	return _Swap(key) ? NULL : _current->base.swap_data;
 }

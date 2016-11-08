@@ -24,7 +24,7 @@
 #ifndef _ARM_CORTEXM_STACK__H_
 #define _ARM_CORTEXM_STACK__H_
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <asm_inline.h>
 
 #ifdef __cplusplus

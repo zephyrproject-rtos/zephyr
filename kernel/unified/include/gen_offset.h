@@ -55,7 +55,7 @@
  * /@ include struct definitions for which offsets symbols are to be
  * generated @/
  *
- * #include <nano_private.h>
+ * #include <kernel_structs.h>
  * GEN_ABS_SYM_BEGIN (_OffsetAbsSyms)	/@ the name parameter is arbitrary @/
  * /@ tNANO structure member offsets @/
  *
@@ -63,7 +63,7 @@
  * GEN_OFFSET_SYM (tNANO, task);
  * GEN_OFFSET_SYM (tNANO, current);
  * GEN_OFFSET_SYM (tNANO, nested);
- * GEN_OFFSET_SYM (tNANO, common_isp);
+ * GEN_OFFSET_SYM (tNANO, irq_stack);
  *
  * GEN_ABSOLUTE_SYM (__tNANO_SIZEOF, sizeof(tNANO));
  *
@@ -73,7 +73,7 @@
  * Compiling the sample offsets.c results in the following symbols in offsets.o:
  *
  * $ nm offsets.o
- * 00000010 A __tNANO_common_isp_OFFSET
+ * 00000010 A __tNANO_irq_stack_OFFSET
  * 00000008 A __tNANO_current_OFFSET
  * 0000000c A __tNANO_nested_OFFSET
  * 00000000 A __tNANO_fiber_OFFSET

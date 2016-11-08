@@ -15,16 +15,19 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <atomic.h>
 #include <ksched.h>
 #include <wait_q.h>
+
+/* the only struct _kernel instance */
+struct _kernel _kernel = {0};
 
 /* set the bit corresponding to prio in ready q bitmap */
 static void _set_ready_q_prio_bit(int prio)
 {
 	int bmap_index = _get_ready_q_prio_bmap_index(prio);
-	uint32_t *bmap = &_nanokernel.ready_q.prio_bmap[bmap_index];
+	uint32_t *bmap = &_ready_q.prio_bmap[bmap_index];
 
 	*bmap |= _get_ready_q_prio_bit(prio);
 }
@@ -33,7 +36,7 @@ static void _set_ready_q_prio_bit(int prio)
 static void _clear_ready_q_prio_bit(int prio)
 {
 	int bmap_index = _get_ready_q_prio_bmap_index(prio);
-	uint32_t *bmap = &_nanokernel.ready_q.prio_bmap[bmap_index];
+	uint32_t *bmap = &_ready_q.prio_bmap[bmap_index];
 
 	*bmap &= ~_get_ready_q_prio_bit(prio);
 }
@@ -50,15 +53,16 @@ static void _clear_ready_q_prio_bit(int prio)
 
 void _add_thread_to_ready_q(struct k_thread *thread)
 {
-	int q_index = _get_ready_q_q_index(thread->prio);
-	sys_dlist_t *q = &_nanokernel.ready_q.q[q_index];
+	int q_index = _get_ready_q_q_index(thread->base.prio);
+	sys_dlist_t *q = &_ready_q.q[q_index];
 
-	_set_ready_q_prio_bit(thread->prio);
-	sys_dlist_append(q, &thread->k_q_node);
+	_set_ready_q_prio_bit(thread->base.prio);
+	sys_dlist_append(q, &thread->base.k_q_node);
 
-	struct k_thread **cache = &_nanokernel.ready_q.cache;
+	struct k_thread **cache = &_ready_q.cache;
 
-	*cache = *cache && _is_prio_higher(thread->prio, (*cache)->prio) ?
+	*cache = *cache && _is_prio_higher(thread->base.prio,
+					   (*cache)->base.prio) ?
 		 thread : *cache;
 }
 
@@ -71,15 +75,15 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 
 void _remove_thread_from_ready_q(struct k_thread *thread)
 {
-	int q_index = _get_ready_q_q_index(thread->prio);
-	sys_dlist_t *q = &_nanokernel.ready_q.q[q_index];
+	int q_index = _get_ready_q_q_index(thread->base.prio);
+	sys_dlist_t *q = &_ready_q.q[q_index];
 
-	sys_dlist_remove(&thread->k_q_node);
+	sys_dlist_remove(&thread->base.k_q_node);
 	if (sys_dlist_is_empty(q)) {
-		_clear_ready_q_prio_bit(thread->prio);
+		_clear_ready_q_prio_bit(thread->base.prio);
 	}
 
-	struct k_thread **cache = &_nanokernel.ready_q.cache;
+	struct k_thread **cache = &_ready_q.cache;
 
 	*cache = *cache == thread ? NULL : *cache;
 }
@@ -103,20 +107,20 @@ void k_sched_lock(void)
 {
 	__ASSERT(!_is_in_isr(), "");
 
-	atomic_inc(&_nanokernel.current->sched_locked);
+	atomic_inc(&_current->base.sched_locked);
 
 	K_DEBUG("scheduler locked (%p:%d)\n",
-		_current, _current->sched_locked);
+		_current, _current->base.sched_locked);
 }
 
 void k_sched_unlock(void)
 {
-	__ASSERT(_nanokernel.current->sched_locked > 0, "");
+	__ASSERT(_current->base.sched_locked > 0, "");
 	__ASSERT(!_is_in_isr(), "");
 
 	int key = irq_lock();
 
-	atomic_dec(&_nanokernel.current->sched_locked);
+	atomic_dec(&_current->base.sched_locked);
 
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->sched_locked);
@@ -128,12 +132,15 @@ void k_sched_unlock(void)
  * Callback for sys_dlist_insert_at() to find the correct insert point in a
  * wait queue (priority-based).
  */
-static int _is_wait_q_insert_point(sys_dnode_t *dnode_info, void *insert_prio)
+static int _is_wait_q_insert_point(sys_dnode_t *node, void *insert_prio)
 {
 	struct k_thread *waitq_node =
-		CONTAINER_OF(dnode_info, struct k_thread, k_q_node);
+		CONTAINER_OF(
+			CONTAINER_OF(node, struct _thread_base, k_q_node),
+			struct k_thread,
+			base);
 
-	return _is_prio_higher((int)insert_prio, waitq_node->prio);
+	return _is_prio_higher((int)insert_prio, waitq_node->base.prio);
 }
 
 /* convert milliseconds to ticks */
@@ -154,8 +161,9 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
 {
 	sys_dlist_t *dlist = (sys_dlist_t *)wait_q;
 
-	sys_dlist_insert_at(dlist, &thread->k_q_node,
-			    _is_wait_q_insert_point, (void *)thread->prio);
+	sys_dlist_insert_at(dlist, &thread->base.k_q_node,
+			    _is_wait_q_insert_point,
+			    (void *)thread->base.prio);
 
 	_mark_thread_as_pending(thread);
 
@@ -182,7 +190,7 @@ static struct k_thread *__get_next_ready_thread(void)
 {
 	int prio = _get_highest_ready_prio();
 	int q_index = _get_ready_q_q_index(prio);
-	sys_dlist_t *list = &_nanokernel.ready_q.q[q_index];
+	sys_dlist_t *list = &_ready_q.q[q_index];
 
 	__ASSERT(!sys_dlist_is_empty(list),
 		 "no thread to run (prio: %d, queue index: %u)!\n",
@@ -191,7 +199,7 @@ static struct k_thread *__get_next_ready_thread(void)
 	struct k_thread *thread =
 		(struct k_thread *)sys_dlist_peek_head_not_empty(list);
 
-	_nanokernel.ready_q.cache = thread;
+	_ready_q.cache = thread;
 
 	return thread;
 }
@@ -200,7 +208,7 @@ static struct k_thread *__get_next_ready_thread(void)
 /* must be called with interrupts locked */
 struct k_thread *_get_next_ready_thread(void)
 {
-	struct k_thread *cache = _nanokernel.ready_q.cache;
+	struct k_thread *cache = _ready_q.cache;
 
 	return cache ? cache : __get_next_ready_thread();
 }
@@ -217,7 +225,7 @@ int __must_switch_threads(void)
 	extern void _dump_ready_q(void);
 	_dump_ready_q();
 
-	return _is_prio_higher(_get_highest_ready_prio(), _current->prio);
+	return _is_prio_higher(_get_highest_ready_prio(), _current->base.prio);
 }
 
 int _is_next_thread_current(void)
@@ -227,7 +235,7 @@ int _is_next_thread_current(void)
 
 int  k_thread_priority_get(k_tid_t thread)
 {
-	return thread->prio;
+	return thread->base.prio;
 }
 
 void k_thread_priority_set(k_tid_t tid, int prio)
@@ -255,17 +263,17 @@ void k_thread_priority_set(k_tid_t tid, int prio)
  */
 void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
-	int q_index = _get_ready_q_q_index(thread->prio);
-	sys_dlist_t *q = &_nanokernel.ready_q.q[q_index];
+	int q_index = _get_ready_q_q_index(thread->base.prio);
+	sys_dlist_t *q = &_ready_q.q[q_index];
 
-	if (sys_dlist_is_tail(q, &thread->k_q_node)) {
+	if (sys_dlist_is_tail(q, &thread->base.k_q_node)) {
 		return;
 	}
 
-	sys_dlist_remove(&thread->k_q_node);
-	sys_dlist_append(q, &thread->k_q_node);
+	sys_dlist_remove(&thread->base.k_q_node);
+	sys_dlist_append(q, &thread->base.k_q_node);
 
-	struct k_thread **cache = &_nanokernel.ready_q.cache;
+	struct k_thread **cache = &_ready_q.cache;
 
 	*cache = *cache == thread ? NULL : *cache;
 }

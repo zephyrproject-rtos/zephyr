@@ -15,7 +15,7 @@
  */
 
 #include <nanokernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <drivers/system_timer.h>
@@ -58,7 +58,7 @@ void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
  */
 static void set_kernel_idle_time_in_ticks(int32_t ticks)
 {
-	_nanokernel.idle = ticks;
+	_kernel.idle = ticks;
 }
 #else
 #define set_kernel_idle_time_in_ticks(x) do { } while (0)

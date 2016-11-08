@@ -22,7 +22,7 @@
  * context switching.
  */
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 
 /*
  * Define _k_neg_eagain for use in assembly files as errno.h is
@@ -34,6 +34,6 @@ const int _k_neg_eagain = -EAGAIN;
 #ifdef CONFIG_ERRNO
 int *_get_errno(void)
 {
-	return &_nanokernel.current->errno_var;
+	return &_current->errno_var;
 }
 #endif

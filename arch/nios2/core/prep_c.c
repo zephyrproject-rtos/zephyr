@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <toolchain.h>
 #include <linker-defs.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <nano_internal.h>
 
 /**

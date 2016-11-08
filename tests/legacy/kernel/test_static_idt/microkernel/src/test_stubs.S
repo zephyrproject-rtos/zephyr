@@ -29,7 +29,7 @@ testing.
 /* IA-32 specific */
 
 #include <arch/cpu.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/x86/asm.h>
 #include <asm_inline.h>
 

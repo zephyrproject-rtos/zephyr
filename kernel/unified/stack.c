@@ -19,7 +19,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -116,7 +116,7 @@ int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout)
 
 	result = _Swap(key);
 	if (result == 0) {
-		*data = (uint32_t)_current->swap_data;
+		*data = (uint32_t)_current->base.swap_data;
 	}
 	return result;
 }

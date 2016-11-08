@@ -355,7 +355,7 @@ static inline void net_analyze_stack(const char *name,
 	 * the stack beginning doesn't match that there will be some
 	 * unused bytes in the beginning.
 	 */
-	stack_offset = __tTCS_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
+	stack_offset = K_THREAD_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
 
 /* TODO
  * Currently all supported platforms have stack growth down and there is no

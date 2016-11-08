@@ -21,7 +21,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <nano_internal.h>
 #include <string.h>
 #include <toolchain.h>

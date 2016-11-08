@@ -19,7 +19,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <ksched.h>
 #include <wait_q.h>
@@ -434,7 +434,7 @@ static void block_waiters_check(struct k_mem_pool *pool)
 
 	/* loop all waiters */
 	while (waiter != NULL) {
-		uint32_t req_size = (uint32_t)(waiter->swap_data);
+		uint32_t req_size = (uint32_t)(waiter->base.swap_data);
 
 		/* locate block set to try allocating from */
 		offset = compute_block_set_index(pool, req_size);
@@ -443,7 +443,7 @@ static void block_waiters_check(struct k_mem_pool *pool)
 		found_block = get_block_recursive(pool, offset, offset);
 
 		next_waiter = (struct k_thread *)sys_dlist_peek_next(
-			&pool->wait_q, &waiter->k_q_node);
+			&pool->wait_q, &waiter->base.k_q_node);
 
 		/* if success : remove task from list and reschedule */
 		if (found_block != NULL) {
@@ -509,13 +509,13 @@ int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 		unsigned int key = irq_lock();
 		_sched_unlock_no_reschedule();
 
-		_current->swap_data = (void *)size;
+		_current->base.swap_data = (void *)size;
 		_pend_current_thread(&pool->wait_q, timeout);
 		result = _Swap(key);
 		if (result == 0) {
 			block->pool_id = pool;
-			block->addr_in_pool = _current->swap_data;
-			block->data = _current->swap_data;
+			block->addr_in_pool = _current->base.swap_data;
+			block->data = _current->base.swap_data;
 			block->req_size = size;
 		}
 		return result;

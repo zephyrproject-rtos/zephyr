@@ -26,9 +26,9 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/x86/asm.h>
-#include <offsets.h>	/* nanokernel structure offset definitions */
+#include <offsets_short.h>
 #include <arch/cpu.h>	/* _NANO_ERR_SPURIOUS_INT */
 #include <arch/x86/irq_controller.h>
 
@@ -59,7 +59,7 @@
  *
  * This function is called from the interrupt stub created by IRQ_CONNECT()
  * to inform the kernel of an interrupt.  This routine increments
- * _nanokernel.nested (to support interrupt nesting), switches to the
+ * _kernel.nested (to support interrupt nesting), switches to the
  * base of the interrupt stack, if not already on the interrupt stack, and then
  * saves the volatile integer registers onto the stack.  Finally, control is
  * returned back to the interrupt stub code (which will then invoke the
@@ -185,24 +185,29 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	popl	%eax
 #endif
 
-	/* load %ecx with &_nanokernel */
+	/* load %ecx with &_kernel */
 
-	movl	$_nanokernel, %ecx
+	movl	$_kernel, %ecx
 
 	/* switch to the interrupt stack for the non-nested case */
 
-	incl	__tNANO_nested_OFFSET(%ecx)	/* inc interrupt nest count */
-	cmpl	$1, __tNANO_nested_OFFSET(%ecx)	/* use int stack if !nested */
+	incl	_kernel_offset_to_nested(%ecx)
+
+	/* use interrupt stack if not nested */
+	cmpl	$1, _kernel_offset_to_nested(%ecx)
 #ifdef CONFIG_DEBUG_INFO
 	jne	nested_save_isf
 #else
 	jne	alreadyOnIntStack
 #endif
 
-	/* switch to base of the interrupt stack */
+	/*
+	 * switch to base of the interrupt stack: save esp in edi, then load
+	 * irq_stack pointer
+	 */
 
-	movl	%esp, %edi		/* save current thread stack pointer */
-	movl	__tNANO_common_isp_OFFSET(%ecx), %esp	/* load new sp value */
+	movl	%esp, %edi
+	movl	_kernel_offset_to_irq_stack(%ecx), %esp
 
 
 	/* save thread's stack pointer onto base of interrupt stack */
@@ -213,14 +218,14 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	/*
 	 * The saved stack pointer happens to match the address of the
 	 * interrupt stack frame.  To simplify the exit case, push a dummy ISF
-	 * for the "old" ISF and save it to the _nanokernel.isf.
+	 * for the "old" ISF and save it to the _kernel.isf.
 	 */
 	pushl	%edi
-	movl	%edi, __tNANO_isf_OFFSET(%ecx)
+	movl	%edi, _kernel_offset_to_isf(%ecx)
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-	cmpl	$0, __tNANO_idle_OFFSET(%ecx)
+	cmpl	$0, _kernel_offset_to_idle(%ecx)
 	jne	handle_idle
 	/* fast path is !idle, in the pipeline */
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
@@ -229,8 +234,8 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	jmp alreadyOnIntStack
 
 nested_save_isf:
-	movl	__tNANO_isf_OFFSET(%ecx), %edi	/* Get old ISF */
-	movl	%esp, __tNANO_isf_OFFSET(%ecx)	/* Save new ISF */
+	movl	_kernel_offset_to_isf(%ecx), %edi	/* Get old ISF */
+	movl	%esp, _kernel_offset_to_isf(%ecx)	/* Save new ISF */
 	pushl	%edi                            /* Save old ISF */
 #endif
 
@@ -272,15 +277,15 @@ alreadyOnIntStack:
 #endif
 
 	/* determine whether exiting from a nested interrupt */
-	movl	$_nanokernel, %ecx
+	movl	$_kernel, %ecx
 #ifdef CONFIG_DEBUG_INFO
-	popl	__tNANO_isf_OFFSET(%ecx)    /* Restore old ISF */
+	popl	_kernel_offset_to_isf(%ecx)    /* Restore old ISF */
 #endif
-	decl	__tNANO_nested_OFFSET(%ecx)	/* dec interrupt nest count */
+	decl	_kernel_offset_to_nested(%ecx)	/* dec interrupt nest count */
 	jne	nestedInterrupt                 /* 'iret' if nested case */
 
 
-	movl	__tNANO_current_OFFSET (%ecx), %edx
+	movl	_kernel_offset_to_current(%ecx), %edx
 
 	/*
 	 * Determine whether the execution of the ISR requires a context
@@ -289,11 +294,11 @@ alreadyOnIntStack:
 	 */
 
 	/* do not reschedule coop threads (negative priority) */
-	cmpl	$0, __tTCS_prio_OFFSET (%edx)
+	cmpl	$0, _thread_offset_to_prio(%edx)
 	jl	noReschedule
 
 	/* do not reschedule if scheduler is locked */
-	cmpl	$0, __tTCS_sched_locked_OFFSET (%edx)
+	cmpl	$0, _thread_offset_to_sched_locked(%edx)
 	jg	noReschedule
 
 
@@ -303,7 +308,7 @@ alreadyOnIntStack:
 	jnz     noReschedule
 
 	/*
-	 * Set the INT_ACTIVE bit in the tTCS to allow the upcoming call to
+	 * Set the INT_ACTIVE bit in the k_thread to allow the upcoming call to
 	 * _Swap() to determine whether non-floating registers need to be
 	 * preserved using the lazy save/restore algorithm, or to indicate to
 	 * debug tools that a preemptive context switch has occurred.
@@ -315,11 +320,11 @@ alreadyOnIntStack:
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
 	/*
-	 * Reload _nanokernel.current as _is_next_thread_current()
+	 * Reload _kernel.current as _is_next_thread_current()
 	 * might have clobbered it.
 	 */
-	movl	_nanokernel + __tNANO_current_OFFSET, %edx
-	orl	$INT_ACTIVE, __tTCS_flags_OFFSET(%edx)
+	movl	_kernel + _kernel_offset_to_current, %edx
+	orl	$INT_ACTIVE, _thread_offset_to_flags(%edx)
 #endif
 
 	/*
@@ -366,8 +371,8 @@ alreadyOnIntStack:
 	 * since it has served its purpose.
 	 */
 
-	movl	_nanokernel + __tNANO_current_OFFSET, %eax
-	andl	$~INT_ACTIVE, __tTCS_flags_OFFSET (%eax)
+	movl	_kernel + _kernel_offset_to_current, %eax
+	andl	$~INT_ACTIVE, _thread_offset_to_flags (%eax)
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
 	/* Restore volatile registers and return to the interrupted thread */
@@ -427,13 +432,13 @@ handle_idle:
 	pushl	%edx
 	/* Populate 'ticks' argument to _sys_power_save_idle_exit */
 #ifdef CONFIG_X86_IAMCU
-	movl	__tNANO_idle_OFFSET(%ecx), %eax
+	movl	_kernel_offset_to_idle(%ecx), %eax
 #else
 	/* SYS V calling convention */
-	push	__tNANO_idle_OFFSET(%ecx)
+	push	_kernel_offset_to_idle(%ecx)
 #endif
-	/* Zero out _nanokernel.idle */
-	movl	$0, __tNANO_idle_OFFSET(%ecx)
+	/* Zero out _kernel.idle */
+	movl	$0, _kernel_offset_to_idle(%ecx)
 
 	/*
 	 * Beware that a timer driver's _sys_power_save_idle_exit() implementation might

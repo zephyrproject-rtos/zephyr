@@ -28,12 +28,8 @@
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <wait_q.h>
-
-/* the one and only nanokernel control structure */
-
-tNANO _nanokernel = {0};
 
 /* forward declaration */
 
@@ -47,17 +43,17 @@ void _thread_entry_wrapper(_thread_entry_t, void *,
 /*
  * Add a thread to the kernel's list of active threads.
  */
-static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
+static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
 {
 	unsigned int key;
 
 	key = irq_lock();
-	tcs->next_thread = _nanokernel.threads;
-	_nanokernel.threads = tcs;
+	thread->next_thread = _kernel.threads;
+	_kernel.threads = thread;
 	irq_unlock(key);
 }
 #else
-#define thread_monitor_init(tcs) \
+#define thread_monitor_init(thread) \
 	do {/* do nothing */     \
 	} while ((0))
 #endif /* CONFIG_THREAD_MONITOR */
@@ -84,27 +80,27 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 				 unsigned options)
 {
 	unsigned long *pInitialCtx;
-	/* ptr to the new task's tcs */
-	struct tcs *tcs = (struct tcs *)pStackMem;
+	/* ptr to the new task's k_thread */
+	struct k_thread *thread = (struct k_thread *)pStackMem;
 
-	tcs->prio = priority;
+	thread->base.prio = priority;
 #if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
-	tcs->excNestCount = 0;
+	thread->arch.excNestCount = 0;
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
 	/* k_q_node initialized upon first insertion in a list */
 
-	tcs->flags = options | K_PRESTART;
-	tcs->sched_locked = 0;
+	thread->base.flags = options | K_PRESTART;
+	thread->base.sched_locked = 0;
 
 	/* static threads overwrite it afterwards with real value */
-	tcs->init_data = NULL;
-	tcs->fn_abort = NULL;
+	thread->init_data = NULL;
+	thread->fn_abort = NULL;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
 
-	tcs->custom_data = NULL;
+	thread->custom_data = NULL;
 #endif
 
 	ARG_UNUSED(uk_task_ptr);
@@ -121,10 +117,10 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 
 #ifdef CONFIG_THREAD_MONITOR
 	/*
-	 * In debug mode tcs->entry give direct access to the thread entry
+	 * In debug mode thread->entry give direct access to the thread entry
 	 * and the corresponding parameters.
 	 */
-	tcs->entry = (struct __thread_entry *)(pInitialCtx -
+	thread->entry = (struct __thread_entry *)(pInitialCtx -
 		sizeof(struct __thread_entry));
 #endif
 
@@ -137,14 +133,14 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	 */
 	pInitialCtx -= 11;
 
-	tcs->coopReg.esp = (unsigned long)pInitialCtx;
-	PRINTK("\nInitial context ESP = 0x%x\n", tcs->coopReg.esp);
+	thread->callee_saved.esp = (unsigned long)pInitialCtx;
+	PRINTK("\nInitial context ESP = 0x%x\n", thread->coopReg.esp);
 
-	PRINTK("\nstruct tcs * = 0x%x", tcs);
+	PRINTK("\nstruct thread * = 0x%x", thread);
 
-	thread_monitor_init(tcs);
+	thread_monitor_init(thread);
 
-	_nano_timeout_tcs_init(tcs);
+	_nano_timeout_thread_init(thread);
 }
 
 #if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
@@ -234,7 +230,7 @@ __asm__("\t.globl _thread_entry\n"
  * This function is utilized to create execution threads for both fiber
  * threads and kernel tasks.
  *
- * The "thread control block" (TCS) is carved from the "end" of the specified
+ * The k_thread structure is carved from the "end" of the specified
  * thread stack memory.
  *
  * @param pStackmem the pointer to aligned stack memory
@@ -247,7 +243,7 @@ __asm__("\t.globl _thread_entry\n"
  * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
  *
  *
- * @return opaque pointer to initialized TCS structure
+ * @return opaque pointer to initialized k_thread structure
  */
 void _new_thread(char *pStackMem, unsigned stackSize,
 		 void *uk_task_ptr, _thread_entry_t pEntry,
@@ -308,8 +304,8 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	 */
 
 	/*
-	 * For kernel tasks and fibers the thread the thread control struct (TCS)
-	 * is located at the "low end" of memory set aside for the thread's stack.
+	 * The k_thread structure is located at the "low end" of memory set
+	 * aside for the thread's stack.
 	 */
 
 	_new_thread_internal(pStackMem, stackSize, uk_task_ptr, priority, options);

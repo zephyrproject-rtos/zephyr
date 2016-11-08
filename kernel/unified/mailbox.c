@@ -19,7 +19,7 @@
  */
 
 #include <kernel.h>
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -33,7 +33,7 @@
 
 /* asynchronous message descriptor type */
 struct k_mbox_async {
-	struct tcs_base thread;		/* dummy thread object */
+	struct _thread_base thread;		/* dummy thread object */
 	struct k_mbox_msg tx_msg;	/* transmit message descriptor */
 };
 
@@ -201,7 +201,7 @@ static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	/* recover sender info */
 	sending_thread = rx_msg->_syncing_thread;
 	rx_msg->_syncing_thread = NULL;
-	tx_msg = (struct k_mbox_msg *)sending_thread->swap_data;
+	tx_msg = (struct k_mbox_msg *)sending_thread->base.swap_data;
 
 	/* update data size field for sender */
 	tx_msg->size = rx_msg->size;
@@ -211,7 +211,7 @@ static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	 * asynchronous send: free asynchronous message descriptor +
 	 * dummy thread pair, then give semaphore (if needed)
 	 */
-	if (sending_thread->flags & K_DUMMY) {
+	if (sending_thread->base.flags & K_DUMMY) {
 		struct k_sem *async_sem = tx_msg->_async_sem;
 
 		_mbox_async_free((struct k_mbox_async *)sending_thread);
@@ -258,14 +258,14 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 
 	/* finish readying sending thread (actual or dummy) for send */
 	sending_thread = tx_msg->_syncing_thread;
-	sending_thread->swap_data = tx_msg;
+	sending_thread->base.swap_data = tx_msg;
 
 	/* search mailbox's rx queue for a compatible receiver */
 	key = irq_lock();
 
 	SYS_DLIST_FOR_EACH_NODE(&mbox->rx_msg_queue, wait_q_item) {
 		receiving_thread = (struct k_thread *)wait_q_item;
-		rx_msg = (struct k_mbox_msg *)receiving_thread->swap_data;
+		rx_msg = (struct k_mbox_msg *)receiving_thread->base.swap_data;
 
 		if (_mbox_message_match(tx_msg, rx_msg) == 0) {
 			/* take receiver out of rx queue */
@@ -284,7 +284,7 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			 * note: dummy sending thread sits (unqueued)
 			 * until the receiver consumes the message
 			 */
-			if (sending_thread->flags & K_DUMMY) {
+			if (sending_thread->base.flags & K_DUMMY) {
 				_reschedule_threads(key);
 				return 0;
 			}
@@ -308,7 +308,7 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 	/* asynchronous send: dummy thread waits on tx queue for receiver */
-	if (sending_thread->flags & K_DUMMY) {
+	if (sending_thread->base.flags & K_DUMMY) {
 		_pend_thread(sending_thread, &mbox->tx_msg_queue, K_FOREVER);
 		irq_unlock(key);
 		return 0;
@@ -340,7 +340,7 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	 */
 	_mbox_async_alloc(&async);
 
-	async->thread.prio = _current->prio;
+	async->thread.prio = _current->base.prio;
 
 	async->tx_msg = *tx_msg;
 	async->tx_msg._syncing_thread = (struct k_thread *)&async->thread;
@@ -448,7 +448,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 
 	SYS_DLIST_FOR_EACH_NODE(&mbox->tx_msg_queue, wait_q_item) {
 		sending_thread = (struct k_thread *)wait_q_item;
-		tx_msg = (struct k_mbox_msg *)sending_thread->swap_data;
+		tx_msg = (struct k_mbox_msg *)sending_thread->base.swap_data;
 
 		if (_mbox_message_match(tx_msg, rx_msg) == 0) {
 			/* take sender out of mailbox's tx queue */
@@ -472,7 +472,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 
 	/* wait until a matching sender appears or a timeout occurs */
 	_pend_current_thread(&mbox->rx_msg_queue, timeout);
-	_current->swap_data = rx_msg;
+	_current->base.swap_data = rx_msg;
 	result = _Swap(key);
 
 	/* consume message data immediately, if needed */
@@ -499,7 +499,7 @@ int task_mbox_put(kmbox_t mbox, kpriority_t prio, struct k_msg *msg,
 	}
 
 	/* handle sending message of current thread priority */
-	curr_prio = _current->prio;
+	curr_prio = _current->base.prio;
 	if (prio == curr_prio) {
 		return _error_to_rc(k_mbox_put(mbox, tx_msg,
 					       _ticks_to_ms(timeout)));
@@ -527,7 +527,7 @@ void task_mbox_block_put(kmbox_t mbox, kpriority_t prio, struct k_msg *msg,
 	unsigned int key;
 
 	/* handle sending message of current thread priority */
-	curr_prio = _current->prio;
+	curr_prio = _current->base.prio;
 	if (prio == curr_prio) {
 		k_mbox_async_put(mbox, tx_msg, sema);
 		return;

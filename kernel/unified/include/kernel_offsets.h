@@ -1,5 +1,3 @@
-/* nano_offsets.h - nanokernel structure member offset definitions */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -17,8 +15,8 @@
  */
 #include <device.h>
 
-#ifndef _NANO_OFFSETS__H_
-#define _NANO_OFFSETS__H_
+#ifndef _kernel_offsets__h_
+#define _kernel_offsets__h_
 
 /*
  * The final link step uses the symbol _OffsetAbsSyms to force the linkage of
@@ -29,38 +27,45 @@ GEN_ABS_SYM_BEGIN(_OffsetAbsSyms)
 
 /* arch-agnostic tNANO structure member offsets */
 
-GEN_OFFSET_SYM(tNANO, current);
+GEN_OFFSET_SYM(_kernel_t, current);
 
 #if defined(CONFIG_THREAD_MONITOR)
-GEN_OFFSET_SYM(tNANO, threads);
+GEN_OFFSET_SYM(_kernel_t, threads);
+#endif
+
+GEN_OFFSET_SYM(_kernel_t, nested);
+GEN_OFFSET_SYM(_kernel_t, irq_stack);
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+GEN_OFFSET_SYM(_kernel_t, idle);
 #endif
 
 #ifdef CONFIG_FP_SHARING
-GEN_OFFSET_SYM(tNANO, current_fp);
+GEN_OFFSET_SYM(_kernel_t, current_fp);
 #endif
 
-/* size of the entire tNANO structure */
+GEN_ABSOLUTE_SYM(_STRUCT_KERNEL_SIZE, sizeof(struct _kernel));
 
-GEN_ABSOLUTE_SYM(__tNANO_SIZEOF, sizeof(tNANO));
+GEN_OFFSET_SYM(_thread_base_t, flags);
+GEN_OFFSET_SYM(_thread_base_t, prio);
+GEN_OFFSET_SYM(_thread_base_t, sched_locked);
+GEN_OFFSET_SYM(_thread_base_t, swap_data);
 
-/* arch-agnostic struct tcs structure member offsets */
-
-GEN_OFFSET_SYM(tTCS, prio);
-GEN_OFFSET_SYM(tTCS, flags);
-GEN_OFFSET_SYM(tTCS, coopReg);   /* start of coop register set */
-GEN_OFFSET_SYM(tTCS, preempReg); /* start of prempt register set */
+GEN_OFFSET_SYM(_thread_t, base);
+GEN_OFFSET_SYM(_thread_t, caller_saved);
+GEN_OFFSET_SYM(_thread_t, callee_saved);
+GEN_OFFSET_SYM(_thread_t, arch);
 
 #if defined(CONFIG_THREAD_MONITOR)
-GEN_OFFSET_SYM(tTCS, next_thread);
+GEN_OFFSET_SYM(_thread_t, next_thread);
 #endif
 
-GEN_OFFSET_SYM(tTCS, sched_locked);
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+GEN_OFFSET_SYM(_thread_t, custom_data);
+#endif
 
-/* size of the entire struct tcs structure */
-
-GEN_ABSOLUTE_SYM(__tTCS_SIZEOF, sizeof(tTCS));
+GEN_ABSOLUTE_SYM(K_THREAD_SIZEOF, sizeof(struct k_thread));
 
 /* size of the device structure. Used by linker scripts */
-GEN_ABSOLUTE_SYM(__DEVICE_STR_SIZEOF, sizeof(struct device));
+GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZE, sizeof(struct device));
 
-#endif /* _NANO_OFFSETS__H_ */
+#endif /* _kernel_offsets__h_ */

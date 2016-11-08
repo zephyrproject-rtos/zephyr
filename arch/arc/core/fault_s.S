@@ -106,9 +106,9 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	_create_irq_stack_frame
 
 	lr r0,[_ARC_V2_ERSTATUS]
-	st_s r0, [sp, __tISF_status32_OFFSET]
+	st_s r0, [sp, ___isf_t_status32_OFFSET]
 	lr r0,[_ARC_V2_ERET]
-	st_s r0, [sp, __tISF_pc_OFFSET] /* eret into pc */
+	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
 	jl _Fault
 
@@ -143,14 +143,14 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	_create_irq_stack_frame
 
 	lr r0,[_ARC_V2_ERSTATUS]
-	st_s r0, [sp, __tISF_status32_OFFSET]
+	st_s r0, [sp, ___isf_t_status32_OFFSET]
 	lr r0,[_ARC_V2_ERET]
-	st_s r0, [sp, __tISF_pc_OFFSET] /* eret into pc */
+	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
 	jl _irq_do_offload
 
-	mov_s r1, _nanokernel
-	ld_s r2, [r1, __tNANO_current_OFFSET]
+	mov_s r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
 	/* check if we're a nested interrupt: if so, let the
 	 * interrupted interrupt handle the reschedule
 	 */
@@ -168,11 +168,11 @@ _trap_return:
 .balign 4
 _trap_check_for_swap:
 	/* coop thread ? do not schedule */
-	ld_s r0, [r2, __tTCS_prio_OFFSET]
+	ld_s r0, [r2, _thread_offset_to_prio]
 	brlt r0, 0, _trap_return
 
 	/* scheduler locked ? do not schedule */
-	ld_s r0, [r2, __tTCS_sched_locked_OFFSET]
+	ld_s r0, [r2, _thread_offset_to_sched_locked]
 	brgt r0, 0, _trap_return
 
 	/* check if the current thread needs to be rescheduled */
@@ -187,7 +187,7 @@ _trap_check_for_swap:
 
 	_save_callee_saved_regs
 
-	st _CAUSE_RIRQ, [r2, __tTCS_relinquish_cause_OFFSET]
+	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
 	/* note: Ok to use _CAUSE_RIRQ since everything is saved */
 
 	/*
@@ -204,7 +204,7 @@ _trap_check_for_swap:
 	mov_s r1, r15
 	mov_s r0, r14
 	mov_s blink, r13
-	st_s r2, [r1, __tNANO_current_OFFSET]
+	st_s r2, [r1, _kernel_offset_to_current]
 
 	/* clear AE bit to forget this was an exception */
 	lr r3, [_ARC_V2_STATUS32]

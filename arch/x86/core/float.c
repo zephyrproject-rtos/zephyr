@@ -49,7 +49,7 @@
  * to enable FP register sharing on its behalf.
  */
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <toolchain.h>
 #include <asm_inline.h>
 
@@ -75,12 +75,12 @@ extern uint32_t _sse_mxcsr_default_value;
 static void _FpCtxSave(struct tcs *tcs)
 {
 #ifdef CONFIG_SSE
-	if (tcs->flags & K_SSE_REGS) {
-		_do_fp_and_sse_regs_save(&tcs->preempFloatReg);
+	if (tcs->base.flags & K_SSE_REGS) {
+		_do_fp_and_sse_regs_save(&tcs->arch.preempFloatReg);
 		return;
 	}
 #endif
-	_do_fp_regs_save(&tcs->preempFloatReg);
+	_do_fp_regs_save(&tcs->arch.preempFloatReg);
 }
 
 /**
@@ -98,7 +98,7 @@ static inline void _FpCtxInit(struct tcs *tcs)
 {
 	_do_fp_regs_init();
 #ifdef CONFIG_SSE
-	if (tcs->flags & K_SSE_REGS) {
+	if (tcs->base.flags & K_SSE_REGS) {
 		_do_sse_regs_init();
 	}
 #endif
@@ -152,7 +152,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 
 	/* Indicate thread requires floating point context saving */
 
-	tcs->flags |= options;
+	tcs->base.flags |= options;
 
 	/*
 	 * The current thread might not allow FP instructions, so clear CR0[TS]
@@ -168,9 +168,9 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 	 * must be preserved).
 	 */
 
-	fp_owner = _nanokernel.current_fp;
+	fp_owner = _kernel.current_fp;
 	if (fp_owner) {
-		if (fp_owner->flags & INT_OR_EXC_MASK) {
+		if (fp_owner->base.flags & INT_OR_EXC_MASK) {
 			_FpCtxSave(fp_owner);
 		}
 	}
@@ -181,7 +181,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 
 	/* Associate the new FP context with the specified thread */
 
-	if (tcs == _nanokernel.current) {
+	if (tcs == _current) {
 		/*
 		 * When enabling FP support for the current thread, just claim
 		 * ownership of the FPU and leave CR0[TS] unset.
@@ -189,14 +189,14 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 		 * (The FP context is "live" in hardware, not saved in TCS.)
 		 */
 
-		_nanokernel.current_fp = tcs;
+		_kernel.current_fp = tcs;
 	} else {
 		/*
 		 * When enabling FP support for someone else, assign ownership
 		 * of the FPU to them (unless we need it ourselves).
 		 */
 
-		if ((_nanokernel.current->flags & _FP_USER_MASK) == 0) {
+		if ((_current->base.flags & _FP_USER_MASK) == 0) {
 			/*
 			 * We are not FP-capable, so mark FPU as owned by the
 			 * thread we've just enabled FP support for, then
@@ -204,7 +204,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 			 * to its original state.
 			 */
 
-			_nanokernel.current_fp = tcs;
+			_kernel.current_fp = tcs;
 			_FpAccessDisable();
 		} else {
 			/*
@@ -263,14 +263,14 @@ void k_float_disable(struct tcs *tcs)
 
 	/* Disable all floating point capabilities for the thread */
 
-	tcs->flags &= ~_FP_USER_MASK;
+	tcs->base.flags &= ~_FP_USER_MASK;
 
-	if (tcs == _nanokernel.current) {
+	if (tcs == _current) {
 		_FpAccessDisable();
-		_nanokernel.current_fp = (struct tcs *)0;
+		_kernel.current_fp = (struct tcs *)0;
 	} else {
-		if (_nanokernel.current_fp == tcs)
-			_nanokernel.current_fp = (struct tcs *)0;
+		if (_kernel.current_fp == tcs)
+			_kernel.current_fp = (struct tcs *)0;
 	}
 
 	irq_unlock(imask);
@@ -306,7 +306,7 @@ void _FpNotAvailableExcHandler(NANO_ESF *pEsf)
 
 	/* Enable highest level of FP capability configured into the kernel */
 
-	k_float_enable(_nanokernel.current, _FP_USER_MASK);
+	k_float_enable(_current, _FP_USER_MASK);
 }
 _EXCEPTION_CONNECT_NOCODE(_FpNotAvailableExcHandler, IV_DEVICE_NOT_AVAILABLE);
 

@@ -49,7 +49,6 @@ FUNC_NORETURN void _Cstart(void);
 
 /* helper type alias for thread control structure */
 
-typedef struct tcs tTCS;
 typedef void (*_thread_entry_t)(void *, void *, void *);
 
 extern void _thread_entry(void (*)(void *, void *, void *),
@@ -73,9 +72,9 @@ extern void _thread_essential_clear(void);
 /* clean up when a thread is aborted */
 
 #if defined(CONFIG_THREAD_MONITOR)
-extern void _thread_monitor_exit(struct tcs *tcs);
+extern void _thread_monitor_exit(struct k_thread *thread);
 #else
-#define _thread_monitor_exit(tcs) \
+#define _thread_monitor_exit(thread) \
 	do {/* nothing */    \
 	} while (0)
 #endif /* CONFIG_THREAD_MONITOR */

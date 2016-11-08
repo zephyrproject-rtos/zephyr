@@ -24,8 +24,8 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
-#include <offsets.h>
+#include <kernel_structs.h>
+#include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
 
@@ -39,7 +39,7 @@ GTEXT(__pendsv)
 GTEXT(_get_next_ready_thread)
 GDATA(_k_neg_eagain)
 
-GDATA(_nanokernel)
+GDATA(_kernel)
 
 /**
  *
@@ -52,10 +52,6 @@ GDATA(_nanokernel)
  * When PendSV is pended, the decision that a context switch must happen has
  * already been taken. In other words, when __pendsv() runs, we *know* we have
  * to swap *something*.
- *
- * The scheduling algorithm is simple: schedule the head of the runnable fibers
- * list (_nanokernel.fiber). If there are no runnable fibers, then schedule the
- * task (_nanokernel.task). The _nanokernel.task field will never be NULL.
  */
 
 SECTION_FUNC(TEXT, __pendsv)
@@ -70,12 +66,12 @@ SECTION_FUNC(TEXT, __pendsv)
 	mov lr, r0
 #endif
 
-    /* load _Nanokernel into r1 and current tTCS into r2 */
-    ldr r1, =_nanokernel
-    ldr r2, [r1, #__tNANO_current_OFFSET]
+    /* load _kernel into r1 and current k_thread into r2 */
+    ldr r1, =_kernel
+    ldr r2, [r1, #_kernel_offset_to_current]
 
     /* addr of callee-saved regs in TCS in r0 */
-    ldr r0, =__tTCS_preempReg_OFFSET
+    ldr r0, =_thread_offset_to_callee_saved
     add r0, r2
 
     /* save callee-saved + psp in TCS */
@@ -95,7 +91,7 @@ SECTION_FUNC(TEXT, __pendsv)
 #else
     stmia r0, {v1-v8, ip}
 #ifdef CONFIG_FP_SHARING
-    add r0, r2, #__tTCS_preemp_float_regs_OFFSET
+    add r0, r2, #_thread_offset_to_preempt_float
     vstmia r0, {s16-s31}
 #endif /* CONFIG_FP_SHARING */
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
@@ -128,7 +124,7 @@ SECTION_FUNC(TEXT, __pendsv)
     movs.n r2, r0
 
     /* r2 contains the new thread */
-    str r2, [r1, #__tNANO_current_OFFSET]
+    str r2, [r1, #_kernel_offset_to_current]
 
     /*
      * Clear PendSV so that if another interrupt comes in and
@@ -143,9 +139,9 @@ SECTION_FUNC(TEXT, __pendsv)
     str v3, [v4, #0]
 
     /* Restore previous interrupt disable state (irq_lock key) */
-    ldr r0, [r2, #__tTCS_basepri_OFFSET]
+    ldr r0, [r2, #_thread_offset_to_basepri]
     movs.n r3, #0
-    str r3, [r2, #__tTCS_basepri_OFFSET]
+    str r3, [r2, #_thread_offset_to_basepri]
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
     /* BASEPRI not available, previous interrupt disable state
@@ -159,7 +155,7 @@ SECTION_FUNC(TEXT, __pendsv)
     cpsie i
 _thread_irq_disabled:
 
-    ldr r4, =__tTCS_preempReg_OFFSET
+    ldr r4, =_thread_offset_to_callee_saved
     adds r0, r2, r4
 
     /* restore r4-r12 for new thread */
@@ -180,12 +176,12 @@ _thread_irq_disabled:
     msr BASEPRI, r0
 
 #ifdef CONFIG_FP_SHARING
-    add r0, r2, #__tTCS_preemp_float_regs_OFFSET
+    add r0, r2, #_thread_offset_to_preempt_float
     vldmia r0, {s16-s31}
 #endif
 
     /* load callee-saved + psp from TCS */
-    add r0, r2, #__tTCS_preempReg_OFFSET
+    add r0, r2, #_thread_offset_to_callee_saved
     ldmia r0, {v1-v8, ip}
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
@@ -246,7 +242,7 @@ _context_switch:
     mrs  r2, PSP   /* thread mode, stack frame is on PSP */
     ldr  r3, =_k_neg_eagain
     ldr  r3, [r3, #0]
-    str  r3, [r2, #__tESF_a1_OFFSET]
+    str  r3, [r2, #___esf_t_a1_OFFSET]
 
     /*
      * Unlock interrupts:
@@ -305,9 +301,9 @@ _context_switch:
 
 SECTION_FUNC(TEXT, _Swap)
 
-    ldr r1, =_nanokernel
-    ldr r2, [r1, #__tNANO_current_OFFSET]
-    str r0, [r2, #__tTCS_basepri_OFFSET]
+    ldr r1, =_kernel
+    ldr r2, [r1, #_kernel_offset_to_current]
+    str r0, [r2, #_thread_offset_to_basepri]
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
     /* No priority-based interrupt masking on M0/M0+,

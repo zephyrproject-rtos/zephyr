@@ -17,10 +17,7 @@
 #ifndef _ksched__h_
 #define _ksched__h_
 
-#include <kernel.h>
-#include <nano_private.h>
-#include <atomic.h>
-#include <misc/dlist.h>
+#include <kernel_structs.h>
 
 extern k_tid_t const _main_thread;
 extern k_tid_t const _idle_thread;
@@ -111,30 +108,30 @@ static inline int _is_prio_lower(int prio1, int prio2)
 static inline int _is_t1_higher_prio_than_t2(struct k_thread *t1,
 					     struct k_thread *t2)
 {
-	return _is_prio1_higher_than_prio2(t1->prio, t2->prio);
+	return _is_prio1_higher_than_prio2(t1->base.prio, t2->base.prio);
 }
 
 static inline int _is_higher_prio_than_current(struct k_thread *thread)
 {
-	return _is_t1_higher_prio_than_t2(thread, _nanokernel.current);
+	return _is_t1_higher_prio_than_t2(thread, _current);
 }
 
 /* is thread currenlty cooperative ? */
 static inline int _is_coop(struct k_thread *thread)
 {
-	return thread->prio < 0;
+	return thread->base.prio < 0;
 }
 
 /* is thread currently preemptible ? */
 static inline int _is_preempt(struct k_thread *thread)
 {
-	return !_is_coop(thread) && !atomic_get(&thread->sched_locked);
+	return !_is_coop(thread) && !atomic_get(&thread->base.sched_locked);
 }
 
 /* is current thread preemptible and we are not running in ISR context */
 static inline int _is_current_execution_context_preemptible(void)
 {
-	return !_is_in_isr() && _is_preempt(_nanokernel.current);
+	return !_is_in_isr() && _is_preempt(_current);
 }
 
 /* find out if priority is under priority inheritance ceiling */
@@ -178,7 +175,7 @@ static inline int _get_ready_q_q_index(int prio)
 /* interrupts must be locked */
 static inline int _get_highest_ready_prio(void)
 {
-	uint32_t ready = _nanokernel.ready_q.prio_bmap[0];
+	uint32_t ready = _ready_q.prio_bmap[0];
 
 	return find_lsb_set(ready) - 1 - CONFIG_NUM_COOP_PRIORITIES;
 }
@@ -204,7 +201,7 @@ static inline void _sched_lock(void)
 {
 	__ASSERT(!_is_in_isr(), "");
 
-	atomic_inc(&_nanokernel.current->sched_locked);
+	atomic_inc(&_current->base.sched_locked);
 
 	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->sched_locked);
@@ -220,77 +217,77 @@ static inline void _sched_unlock_no_reschedule(void)
 {
 	__ASSERT(!_is_in_isr(), "");
 
-	atomic_dec(&_nanokernel.current->sched_locked);
+	atomic_dec(&_current->base.sched_locked);
 }
 
 static inline void _set_thread_states(struct k_thread *thread, uint32_t states)
 {
-	thread->flags |= states;
+	thread->base.flags |= states;
 }
 
 static inline void _reset_thread_states(struct k_thread *thread,
 					uint32_t states)
 {
-	thread->flags &= ~states;
+	thread->base.flags &= ~states;
 }
 
 /* mark a thread as being suspended */
 static inline void _mark_thread_as_suspended(struct k_thread *thread)
 {
-	thread->flags |= K_SUSPENDED;
+	thread->base.flags |= K_SUSPENDED;
 }
 
 /* mark a thread as not being suspended */
 static inline void _mark_thread_as_not_suspended(struct k_thread *thread)
 {
-	thread->flags &= ~K_SUSPENDED;
+	thread->base.flags &= ~K_SUSPENDED;
 }
 
 /* mark a thread as being in the timer queue */
 static inline void _mark_thread_as_timing(struct k_thread *thread)
 {
-	thread->flags |= K_TIMING;
+	thread->base.flags |= K_TIMING;
 }
 
 /* mark a thread as not being in the timer queue */
 static inline void _mark_thread_as_not_timing(struct k_thread *thread)
 {
-	thread->flags &= ~K_TIMING;
+	thread->base.flags &= ~K_TIMING;
 }
 
 /* check if a thread is on the timer queue */
 static inline int _is_thread_timing(struct k_thread *thread)
 {
-	return !!(thread->flags & K_TIMING);
+	return !!(thread->base.flags & K_TIMING);
 }
 
 static inline int _has_thread_started(struct k_thread *thread)
 {
-	return !(thread->flags & K_PRESTART);
+	return !(thread->base.flags & K_PRESTART);
 }
 
 /* check if a thread is ready */
 static inline int _is_thread_ready(struct k_thread *thread)
 {
-	return (thread->flags & K_EXECUTION_MASK) == K_READY;
+	return (thread->base.flags & K_EXECUTION_MASK) == K_READY;
 }
 
 /* mark a thread as pending in its TCS */
 static inline void _mark_thread_as_pending(struct k_thread *thread)
 {
-	thread->flags |= K_PENDING;
+	thread->base.flags |= K_PENDING;
 }
 
 /* mark a thread as not pending in its TCS */
 static inline void _mark_thread_as_not_pending(struct k_thread *thread)
 {
-	thread->flags &= ~K_PENDING;
+	thread->base.flags &= ~K_PENDING;
 }
 
 /* check if a thread is pending */
 static inline int _is_thread_pending(struct k_thread *thread)
 {
-	return !!(thread->flags & K_PENDING);
+	return !!(thread->base.flags & K_PENDING);
 }
 
 /*
@@ -300,17 +297,17 @@ static inline int _is_thread_pending(struct k_thread *thread)
 /* must be called with interrupts locked */
 static inline void _ready_thread(struct k_thread *thread)
 {
-	__ASSERT(_is_prio_higher(thread->prio, K_LOWEST_THREAD_PRIO) ||
-		 ((thread->prio == K_LOWEST_THREAD_PRIO) &&
+	__ASSERT(_is_prio_higher(thread->base.prio, K_LOWEST_THREAD_PRIO) ||
+		 ((thread->base.prio == K_LOWEST_THREAD_PRIO) &&
 		  (thread == _idle_thread)),
 		 "thread %p prio too low (is %d, cannot be lower than %d)",
-		 thread, thread->prio,
+		 thread, thread->base.prio,
 		 thread == _idle_thread ? K_LOWEST_THREAD_PRIO :
 					  K_LOWEST_APPLICATION_THREAD_PRIO);
 
-	__ASSERT(!_is_prio_higher(thread->prio, K_HIGHEST_THREAD_PRIO),
+	__ASSERT(!_is_prio_higher(thread->base.prio, K_HIGHEST_THREAD_PRIO),
 		 "thread %p prio too high (id %d, cannot be higher than %d)",
-		 thread, thread->prio, K_HIGHEST_THREAD_PRIO);
+		 thread, thread->base.prio, K_HIGHEST_THREAD_PRIO);
 
 	/* K_PRESTART is needed to handle the start-with-delay case */
 	_reset_thread_states(thread, K_TIMING|K_PRESTART);
@@ -327,7 +324,7 @@ static inline void _ready_thread(struct k_thread *thread)
  */
 static inline void _mark_thread_as_started(struct k_thread *thread)
 {
-	thread->flags &= ~K_PRESTART;
+	thread->base.flags &= ~K_PRESTART;
 }
 
 /**
@@ -337,7 +334,7 @@ static inline void _mark_thread_as_started(struct k_thread *thread)
  */
 static inline void _mark_thread_as_dead(struct k_thread *thread)
 {
-	thread->flags |= K_DEAD;
+	thread->base.flags |= K_DEAD;
 }
 
 /*
@@ -349,10 +346,10 @@ static inline void _thread_priority_set(struct k_thread *thread, int prio)
 {
 	if (_is_thread_ready(thread)) {
 		_remove_thread_from_ready_q(thread);
-		thread->prio = prio;
+		thread->base.prio = prio;
 		_add_thread_to_ready_q(thread);
 	} else {
-		thread->prio = prio;
+		thread->base.prio = prio;
 	}
 }
 
@@ -378,9 +375,9 @@ static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 /* must be called with interrupts locked */
 static inline void _unpend_thread(struct k_thread *thread)
 {
-	__ASSERT(thread->flags & K_PENDING, "");
+	__ASSERT(thread->base.flags & K_PENDING, "");
 
-	sys_dlist_remove(&thread->k_q_node);
+	sys_dlist_remove(&thread->base.k_q_node);
 	_mark_thread_as_not_pending(thread);
 }
 

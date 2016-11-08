@@ -29,9 +29,9 @@
 
 #define _ASMLANGUAGE
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <arch/x86/asm.h>
-#include <offsets.h>	/* nanokernel structure offset definitions */
+#include <offsets_short.h>
 
 	/* exports (internal APIs) */
 
@@ -51,11 +51,11 @@
  * is passed as a parameter to _Swap().  The 'key' actually represents
  * the EFLAGS register prior to disabling interrupts via a 'cli' instruction.
  *
- * Given that _Swap() is called to effect a cooperative context switch,
- * only the non-volatile integer registers need to be saved in the TCS of the
+ * Given that _Swap() is called to effect a cooperative context switch, only
+ * the non-volatile integer registers need to be saved in the TCS of the
  * outgoing thread.  The restoration of the integer registers of the incoming
- * thread depends on whether that thread was preemptively context switched
- * out.  The INT_ACTIVE and EXC_ACTIVE bits in the tTCS->flags field will signify
+ * thread depends on whether that thread was preemptively context switched out.
+ * The INT_ACTIVE and EXC_ACTIVE bits in the k_thread->flags field will signify
  * that the thread was preemptively context switched out, and thus both the
  * volatile and non-volatile integer registers need to be restored.
  *
@@ -81,10 +81,6 @@
  * Floating point registers are currently NOT scrubbed, and are subject to
  * potential security leaks.
  *
- * The scheduling algorithm is simple: schedule the head of the runnable fiber
- * list (_nanokernel.fiber).  If there are no runnable fibers, then schedule
- * the task (_nanokernel.task).  The _nanokernel.task field will never be NULL.
- *
  * @return -EAGAIN, or a return value set by a call to fiberRtnValueSet()
  *
  * C function prototype:
@@ -103,14 +99,14 @@ SECTION_FUNC(TEXT, _Swap)
 #endif
 	/*
 	 * Push all non-volatile registers onto the stack; do not copy
-	 * any of these registers into the tTCS.  Only the 'esp' register
+	 * any of these registers into the k_thread.  Only the 'esp' register
 	 * after all the pushes have been performed) will be stored in the
-	 * tTCS.
+	 * k_thread.
 	 */
 
 	pushl	%edi
 
-	movl	$_nanokernel, %edi
+	movl	$_kernel, %edi
 
 	pushl	%esi
 	pushl	%ebx
@@ -126,10 +122,10 @@ SECTION_FUNC(TEXT, _Swap)
 	pushl   _k_neg_eagain
 
 
-	/* save esp into tTCS structure */
+	/* save esp into k_thread structure */
 
-	movl	__tNANO_current_OFFSET (%edi), %ecx
-	movl	%esp, __tTCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%ecx)
+	movl	_kernel_offset_to_current(%edi), %ecx
+	movl	%esp, _thread_offset_to_esp(%ecx)
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	/* Register the context switch */
@@ -138,9 +134,8 @@ SECTION_FUNC(TEXT, _Swap)
 	call	_get_next_ready_thread
 
 	/*
-	 * At this point, the %eax register contains the 'tTCS *' of
-	 * the TASK or FIBER to be swapped in, and %edi still
-	 * contains &_nanokernel.
+	 * At this point, the %eax register contains the 'k_thread *' of the
+	 * thread to be swapped in, and %edi still contains &_kernel.
 	 */
 
 #ifdef CONFIG_FP_SHARING
@@ -166,7 +161,7 @@ SECTION_FUNC(TEXT, _Swap)
 	 * _and_ whether the thread was context switched out preemptively.
 	 */
 
-	testl	$_FP_USER_MASK, __tTCS_flags_OFFSET (%eax)
+	testl	$_FP_USER_MASK, _thread_offset_to_flags(%eax)
 	je 	restoreContext_NoFloatSwap
 
 
@@ -176,7 +171,7 @@ SECTION_FUNC(TEXT, _Swap)
 	 * If so, there there is no need to restore the floating point context.
 	 */
 
-	movl	__tNANO_current_fp_OFFSET (%edi), %ebx
+	movl	_kernel_offset_to_current_fp(%edi), %ebx
 	cmpl	%ebx, %eax
 	je	restoreContext_NoFloatSwap
 
@@ -202,12 +197,12 @@ SECTION_FUNC(TEXT, _Swap)
 	 * was preemptively context switched.
 	 */
 
-	testl	$INT_OR_EXC_MASK, __tTCS_flags_OFFSET (%ebx)
+	testl	$INT_OR_EXC_MASK, _thread_offset_to_flags(%ebx)
 	je	restoreContext_NoFloatSave
 
 
 #ifdef CONFIG_SSE
-	testl	$K_SSE_REGS, __tTCS_flags_OFFSET (%ebx)
+	testl	$K_SSE_REGS, _thread_offset_to_flags(%ebx)
 	je	x87FloatSave
 
 	/*
@@ -216,7 +211,7 @@ SECTION_FUNC(TEXT, _Swap)
 	 * (for the case when the fxrstor is not executed).
 	 */
 
-	fxsave	__tTCS_preempFloatReg_OFFSET (%ebx)
+	fxsave	_thread_offset_to_preempFloatReg(%ebx)
 	fninit
 	jmp	floatSaveDone
 
@@ -225,7 +220,7 @@ x87FloatSave:
 
 	/* 'fnsave' performs an implicit 'fninit' after saving state! */
 
-	fnsave	 __tTCS_preempFloatReg_OFFSET (%ebx)
+	fnsave	 _thread_offset_to_preempFloatReg(%ebx)
 
 	/* fall through to 'floatSaveDone' */
 
@@ -242,21 +237,21 @@ restoreContext_NoFloatSave:
 	 * was previously preemptively context switched out.
 	 */
 
-	testl   $INT_OR_EXC_MASK, __tTCS_flags_OFFSET (%eax)
+	testl   $INT_OR_EXC_MASK, _thread_offset_to_flags(%eax)
 	je 	restoreContext_NoFloatRestore
 
 #ifdef CONFIG_SSE
-	testl	$K_SSE_REGS, __tTCS_flags_OFFSET (%eax)
+	testl	$K_SSE_REGS, _thread_offset_to_flags(%eax)
 	je	x87FloatRestore
 
-	fxrstor	__tTCS_preempFloatReg_OFFSET (%eax)
+	fxrstor	_thread_offset_to_preempFloatReg(%eax)
 	jmp	floatRestoreDone
 
 x87FloatRestore:
 
 #endif /* CONFIG_SSE */
 
-	frstor	__tTCS_preempFloatReg_OFFSET (%eax)
+	frstor	_thread_offset_to_preempFloatReg(%eax)
 
 	/* fall through to 'floatRestoreDone' */
 
@@ -265,7 +260,7 @@ restoreContext_NoFloatRestore:
 
 	/* record that the incoming thread "owns" the floating point registers */
 
-	movl	%eax, __tNANO_current_fp_OFFSET (%edi)
+	movl	%eax, _kernel_offset_to_current_fp(%edi)
 
 
 	/*
@@ -281,7 +276,7 @@ restoreContext_NoFloatSwap:
 	 * registers
 	 */
 
-	testl	$_FP_USER_MASK, __tTCS_flags_OFFSET (%eax)
+	testl	$_FP_USER_MASK, _thread_offset_to_flags(%eax)
 	jne	CROHandlingDone
 
 	/*
@@ -299,13 +294,13 @@ CROHandlingDone:
 
 #endif /* CONFIG_FP_SHARING */
 
-	/* update _nanokernel.current to reflect incoming thread */
+	/* update _kernel.current to reflect incoming thread */
 
-	movl    %eax, __tNANO_current_OFFSET (%edi)
+	movl    %eax, _kernel_offset_to_current(%edi)
 
-	/* recover task/fiber stack pointer from tTCS */
+	/* recover task/fiber stack pointer from k_thread */
 
-	movl	__tTCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%eax), %esp
+	movl	_thread_offset_to_esp(%eax), %esp
 
 
 	/* load return value from a possible fiberRtnValueSet() */

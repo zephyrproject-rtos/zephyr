@@ -21,7 +21,7 @@
  * Workqueue support functions
  */
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <wait_q.h>
 #include <errno.h>
 

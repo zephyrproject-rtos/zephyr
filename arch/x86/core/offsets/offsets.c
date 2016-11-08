@@ -36,48 +36,34 @@
 
 /* list of headers that define whose structure offsets will be generated */
 
-#include <nano_private.h>
+#include <kernel_structs.h>
 #include <swapstk.h>
 
 
-#include <nano_offsets.h>
+#include <kernel_offsets.h>
 
-/* Intel-specific tNANO structure member offsets */
-
-GEN_OFFSET_SYM(tNANO, nested);
-GEN_OFFSET_SYM(tNANO, common_isp);
 #ifdef CONFIG_DEBUG_INFO
-GEN_OFFSET_SYM(tNANO, isf);
+GEN_OFFSET_SYM(_kernel_arch_t, isf);
 #endif
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-GEN_OFFSET_SYM(tNANO, idle);
-#endif
-
-/* Intel-specific struct tcs structure member offsets */
 
 #ifdef CONFIG_GDB_INFO
-GEN_OFFSET_SYM(tTCS, esfPtr);
-#endif /* CONFIG_GDB_INFO */
-#if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
-GEN_OFFSET_SYM(tTCS, excNestCount);
-#endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-GEN_OFFSET_SYM(tTCS, custom_data);     /* available for custom use */
+GEN_OFFSET_SYM(_thread_arch_t, esf);
 #endif
-GEN_OFFSET_SYM(tTCS, coopFloatReg);   /* start of coop FP register set */
-GEN_OFFSET_SYM(tTCS, preempFloatReg); /* start of prempt FP register set */
+
+#if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
+GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
+#endif
+
+GEN_OFFSET_SYM(_thread_arch_t, coopFloatReg);
+GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 
 /* size of the struct tcs structure sans save area for floating point regs */
 
-GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF,
-		 sizeof(tTCS) - sizeof(tCoopFloatReg) -
+GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
+		 sizeof(struct k_thread) - sizeof(tCoopFloatReg) -
 			 sizeof(tPreempFloatReg));
 
-/* tCoopReg structure member offsets: tTCS->coopReg is of type tCoopReg */
-
-GEN_OFFSET_SYM(tCoopReg, esp);
-
-/* tSwapStk structure member offsets */
+GEN_OFFSET_SYM(_callee_saved_t, esp);
 
 GEN_OFFSET_SYM(tSwapStk, eax);
 GEN_OFFSET_SYM(tSwapStk, ebp);
