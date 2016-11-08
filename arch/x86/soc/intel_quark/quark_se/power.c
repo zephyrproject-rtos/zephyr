@@ -22,6 +22,9 @@
 
 #include "power_states.h"
 
+#define _REG_TIMER_ICR ((volatile uint32_t *) \
+			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR))
+
 /* Variables used to save CPU state */
 uint64_t _pm_save_gdtr;
 uint64_t _pm_save_idtr;
@@ -89,9 +92,19 @@ void _sys_soc_set_power_state(enum power_states state)
 
 void _sys_soc_power_state_post_ops(enum power_states state)
 {
-	if (state == SYS_POWER_STATE_CPU_LPS_2) {
-		return;
+	switch (state) {
+	case SYS_POWER_STATE_CPU_LPS:
+		*_REG_TIMER_ICR = 1;
+	case SYS_POWER_STATE_CPU_LPS_1:
+		__asm__ volatile("sti");
+		break;
+#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
+	case SYS_POWER_STATE_DEEP_SLEEP:
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
+		__asm__ volatile("sti");
+		break;
+#endif
+	default:
+		break;
 	}
-
-	__asm__ volatile("sti");
 }
