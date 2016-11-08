@@ -24,6 +24,13 @@ config FILE_SYSTEM
 
 if FILE_SYSTEM
 
+config FILE_SYSTEM_SHELL
+	bool "Enable file system shell"
+	depends on ENABLE_SHELL
+	help
+	This shell provides basic browsing of the contents of the
+	file system.
+
 config FILE_SYSTEM_FAT
 	bool "FAT file system support"
 	default y
