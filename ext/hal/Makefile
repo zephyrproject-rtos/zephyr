@@ -1,4 +1,7 @@
 
+ifdef CONFIG_ASF
+include $(srctree)/ext/hal/atmel/asf/Makefile
+endif
 
 include $(srctree)/ext/hal/cmsis/Makefile
 

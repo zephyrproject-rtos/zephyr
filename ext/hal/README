@@ -2,6 +2,11 @@ This directory contains different HALs for SoCs supported by Zephyr.
 
 The following HALs are supported:
 
+atmel
+-------
+The Atmel Software Framework (ASF) provides device header files and peripheral
+drivers for Atmel SoCs.
+
 cmsis
 -------
 The ARM Cortex Microcontroller Software Interface Standard (CMSIS) defines a
