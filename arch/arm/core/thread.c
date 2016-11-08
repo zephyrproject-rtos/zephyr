@@ -87,6 +87,8 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)
 {
+	_ASSERT_VALID_PRIO(priority, pEntry);
+
 	__ASSERT(!((uint32_t)pStackMem & (STACK_ALIGN - 1)),
 		 "stack is not aligned properly\n"
 		 "%d-byte alignment required\n", STACK_ALIGN);

@@ -36,6 +36,24 @@ extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 extern struct k_thread *_get_next_ready_thread(void);
 extern int __must_switch_threads(void);
 extern int32_t _ms_to_ticks(int32_t ms);
+extern void idle(void *, void *, void *);
+
+static inline int _is_idle_thread(void *entry_point)
+{
+	return entry_point == idle;
+}
+
+#define _ASSERT_VALID_PRIO(prio, entry_point) do { \
+	__ASSERT(((prio) == K_IDLE_PRIO && _is_idle_thread(entry_point)) || \
+		 (_is_prio_higher_or_equal((prio), \
+			K_LOWEST_APPLICATION_THREAD_PRIO) && \
+		  _is_prio_lower_or_equal((prio), \
+			K_HIGHEST_APPLICATION_THREAD_PRIO)), \
+		 "invalid priority (%d); allowed range: %d to %d", \
+		 (prio), \
+		 K_LOWEST_APPLICATION_THREAD_PRIO, \
+		 K_HIGHEST_APPLICATION_THREAD_PRIO); \
+	} while ((0))
 
 /*
  * The _is_prio_higher family: I created this because higher priorities are

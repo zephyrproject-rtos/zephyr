@@ -259,6 +259,8 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)
 {
+	_ASSERT_VALID_PRIO(priority, pEntry);
+
 	unsigned long *pInitialThread;
 
 #ifdef CONFIG_INIT_STACKS

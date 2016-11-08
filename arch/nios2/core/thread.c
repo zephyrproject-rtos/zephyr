@@ -68,6 +68,8 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned options)
 {
+	_ASSERT_VALID_PRIO(priority, thread_func);
+
 	struct tcs *tcs;
 	struct init_stack_frame *iframe;
 

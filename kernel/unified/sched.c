@@ -222,6 +222,11 @@ int  k_thread_priority_get(k_tid_t thread)
 
 void k_thread_priority_set(k_tid_t tid, int prio)
 {
+	/*
+	 * Use NULL, since we cannot know what the entry point is (we do not
+	 * keep track of it) and idle cannot change its priority.
+	 */
+	_ASSERT_VALID_PRIO(prio, NULL);
 	__ASSERT(!_is_in_isr(), "");
 
 	struct k_thread *thread = (struct k_thread *)tid;
