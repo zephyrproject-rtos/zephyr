@@ -36,8 +36,8 @@ Bluetooth stack:
 * Raw HCI interface to run Zephyr as a Controller instead of a full Host stack
 
   * Possible to export HCI over a physical transport
-  * ``samples/bluetooth/hci-uart`` sample for HCI over UART
-  * ``samples/bluetooth/hci-usb`` sample for HCI over USB
+  * ``samples/bluetooth/hci_uart`` sample for HCI over UART
+  * ``samples/bluetooth/hci_usb`` sample for HCI over USB
 
 * Verified with multiple popular controllers
 
