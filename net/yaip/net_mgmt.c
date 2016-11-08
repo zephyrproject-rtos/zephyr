@@ -152,7 +152,7 @@ static void mgmt_thread(void)
 			 * more events than we could handle
 			 */
 			NET_DBG("Some event got probably lost (%u)",
-				k_sem_count_get(&network_event.sem));
+				k_sem_count_get(&network_event));
 
 			k_sem_init(&network_event, 0, UINT_MAX);
 
