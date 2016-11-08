@@ -22,6 +22,7 @@
 #include <zephyr.h>
 
 #include <string.h>
+#include <misc/shell.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
@@ -98,4 +99,14 @@
 		       (result) == TC_PASS ? "SUCCESSFUL" : "FAILED");	\
 	} while (0)
 
+#define TC_CMD_DEFINE(name)				\
+	int cmd_##name(int argc, char *argv[])		\
+	{						\
+		TC_START(__func__);			\
+		name();					\
+		TC_END_RESULT(TC_PASS);			\
+		return 0;				\
+	}
+
+#define TC_CMD_ITEM(name) {STRINGIFY(name), cmd_##name, "none"}
 #endif /* __TC_UTIL_H__ */
