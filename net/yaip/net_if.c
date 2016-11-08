@@ -961,13 +961,6 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 	return NULL;
 }
 
-const struct in_addr *net_if_ipv4_broadcast_addr(void)
-{
-	static const struct in_addr addr = { { { 255, 255, 255, 255 } } };
-
-	return &addr;
-}
-
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			       struct in_addr *addr)
 {

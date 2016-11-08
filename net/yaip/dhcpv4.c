@@ -276,7 +276,7 @@ static void setup_header(struct net_buf *buf)
 	ipv4->len[1] = (uint8_t)len;
 	ipv4->chksum = ~net_calc_chksum_ipv4(buf);
 
-	net_ipaddr_copy(&ipv4->dst, net_if_ipv4_broadcast_addr());
+	net_ipaddr_copy(&ipv4->dst, net_ipv4_broadcast_address());
 
 	len -= NET_IPV4H_LEN;
 	/* Setup UDP header */

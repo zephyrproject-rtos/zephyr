@@ -922,14 +922,6 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 					     bool is_default,
 					     uint16_t router_lifetime);
 
-
-/**
- * @brief Return IPv4 broadcast address (all bits ones)
- *
- * @return IPv4 broadcast address with all bits set to one.
- */
-const struct in_addr *net_if_ipv4_broadcast_addr(void);
-
 /**
  * @brief Check if the given IPv4 address belongs to local subnet.
  *

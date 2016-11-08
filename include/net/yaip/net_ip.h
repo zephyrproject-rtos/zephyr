@@ -485,17 +485,12 @@ const struct in6_addr *net_ipv6_unspecified_address(void);
  */
 const struct in_addr *net_ipv4_unspecified_address(void);
 
-extern const struct in_addr *net_if_ipv4_broadcast_addr(void);
-
 /**
  * @brief Return pointer to broadcast (all bits ones) IPv4 address.
  *
  * @return Broadcast IPv4 address.
  */
-static inline const struct in_addr *net_ipv4_broadcast_address(void)
-{
-	return net_if_ipv4_broadcast_addr();
-}
+const struct in_addr *net_ipv4_broadcast_address(void);
 
 struct net_if;
 extern bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
