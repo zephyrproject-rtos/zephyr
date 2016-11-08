@@ -21,6 +21,7 @@
 #include <drivers/ioapic.h>
 #include <counter.h>
 #include <power.h>
+#include <soc.h>
 
 #include "qm_aon_counters.h"
 #include "qm_isr.h"
@@ -253,12 +254,13 @@ static int aon_timer_init(struct device *dev)
 
 	user_cb = NULL;
 
-	IRQ_CONNECT(QM_IRQ_AONPT_0_INT, CONFIG_AON_TIMER_IRQ_PRI,
-		    qm_aonpt_0_isr, NULL, IOAPIC_EDGE | IOAPIC_HIGH);
+	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_AONPT_0_INT),
+		    CONFIG_AON_TIMER_IRQ_PRI, qm_aonpt_0_isr, NULL,
+		    IOAPIC_EDGE | IOAPIC_HIGH);
 
-	irq_enable(QM_IRQ_AONPT_0_INT);
+	irq_enable(IRQ_GET_NUMBER(QM_IRQ_AONPT_0_INT));
 
-	QM_INTERRUPT_ROUTER->aonpt_0_int_mask &= ~BIT(0);
+	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->aonpt_0_int_mask);
 
 	aon_reentrancy_init(dev);
 

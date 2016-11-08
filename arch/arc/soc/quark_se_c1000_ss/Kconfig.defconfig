@@ -254,4 +254,17 @@ config DMA_QMSI
 
 endif # DMA
 
+if COUNTER
+
+config AON_COUNTER_QMSI
+	def_bool y
+
+config AON_TIMER_QMSI
+	def_bool y
+
+config AON_TIMER_IRQ_PRI
+	default 2
+
+endif # COUNTER
+
 endif #SOC_QUARK_SE_C1000_SS
