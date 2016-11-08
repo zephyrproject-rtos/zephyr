@@ -222,12 +222,14 @@ static inline uint8_t *net_nbuf_ip_data(struct net_buf *buf)
 
 static inline uint8_t *net_nbuf_udp_data(struct net_buf *buf)
 {
-	return &buf->frags->data[net_nbuf_ip_hdr_len(buf)];
+	return &buf->frags->data[net_nbuf_ip_hdr_len(buf) +
+				 net_nbuf_ext_len(buf)];
 }
 
 static inline uint8_t *net_nbuf_tcp_data(struct net_buf *buf)
 {
-	return &buf->frags->data[net_nbuf_ip_hdr_len(buf)];
+	return &buf->frags->data[net_nbuf_ip_hdr_len(buf) +
+				 net_nbuf_ext_len(buf)];
 }
 
 static inline uint8_t *net_nbuf_icmp_data(struct net_buf *buf)
