@@ -42,10 +42,6 @@
 extern uint64_t __idle_tsc;  /* timestamp when CPU went idle */
 #endif
 
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-extern void _power_save_idle(void);
-#endif
-
 /**
  *
  * @brief Power save idle routine for IA-32
@@ -63,11 +59,6 @@ void nano_cpu_idle(void)
 	_sys_k_event_logger_enter_sleep();
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
 	__idle_tsc = _tsc_read();
-#endif
-
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-	__asm__ volatile("cli");
-	_power_save_idle();
 #endif
 
 	__asm__ volatile (
@@ -101,10 +92,6 @@ void nano_cpu_atomic_idle(unsigned int imask)
 {
 	_int_latency_stop();
 	_sys_k_event_logger_enter_sleep();
-
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-	_power_save_idle();
-#endif
 
 	__asm__ volatile (
 	    "sti\n\t"

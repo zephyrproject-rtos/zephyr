@@ -45,11 +45,7 @@
 	GTEXT(_is_next_thread_current)
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-	GTEXT(_power_save_idle_exit)
-#else
 	GTEXT(_sys_power_save_idle_exit)
-#endif
 #endif
 
 
@@ -429,9 +425,6 @@ nestedInterrupt:
 handle_idle:
 	pushl	%eax
 	pushl	%edx
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-	call	_power_save_idle_exit
-#else
 	/* Populate 'ticks' argument to _sys_power_save_idle_exit */
 #ifdef CONFIG_X86_IAMCU
 	movl	__tNANO_idle_OFFSET(%ecx), %eax
@@ -454,7 +447,6 @@ handle_idle:
 	/* SYS V: discard 'ticks' argument passed on the stack */
 	add	$0x4, %esp
 #endif
-#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE */
 	popl	%edx
 	popl	%eax
 	jmp	alreadyOnIntStack
