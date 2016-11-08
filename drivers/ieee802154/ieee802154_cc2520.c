@@ -418,7 +418,7 @@ static inline bool write_txfifo_length(struct cc2520_spi *spi,
 static inline bool write_txfifo_content(struct cc2520_spi *spi,
 					struct net_buf *buf)
 {
-	uint8_t cmd[128 + 1];
+	uint8_t cmd[128];
 
 	cmd[0] = CC2520_INS_TXBUF;
 	memcpy(&cmd[1], net_nbuf_ll(buf),
@@ -427,7 +427,7 @@ static inline bool write_txfifo_content(struct cc2520_spi *spi,
 	spi_slave_select(spi->dev, spi->slave);
 
 	return (spi_write(spi->dev, cmd, net_nbuf_ll_reserve(buf) +
-			  net_buf_frags_len(buf) + 1) == 0);
+			  buf->frags->len + 1) == 0);
 }
 
 static inline bool verify_txfifo_status(struct cc2520_context *cc2520,
