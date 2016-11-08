@@ -92,17 +92,6 @@ static void pkt_hexdump(struct net_buf *buf, bool each_frag_reserve)
 #define pkt_hexdump(...)
 #endif
 
-static inline uint8_t get_lqi(struct net_buf *buf)
-{
-	uint8_t *lqi;
-
-	buf->len -= 1;
-
-	lqi = net_buf_tail(buf);
-
-	return *lqi;
-}
-
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 static inline void ieee802154_acknowledge(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu)
@@ -258,9 +247,6 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 {
 	struct ieee802154_mpdu mpdu;
 
-	/* Let's remove LQI for now as it is not used */
-	get_lqi(buf->frags);
-
 	if (!ieee802154_validate_frame(net_nbuf_ll(buf),
 				       net_buf_frags_len(buf), &mpdu)) {
 		return NET_DROP;
@@ -316,6 +302,12 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 
 	frag = buf->frags;
 	while (frag) {
+		if (frag->len > IEEE802154_MTU) {
+			NET_ERR("Frag %p as too big length %u",
+				frag, frag->len);
+			return NET_DROP;
+		}
+
 		if (!ieee802154_create_data_frame(iface, buf,
 						  frag->data - reserved_space,
 						  reserved_space)) {

@@ -79,8 +79,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 		net_buf_frag_insert(nbuf, pkt_buf);
 
 		memcpy(pkt_buf->data, upipe->rx_buf, upipe->rx_len);
-		/* packet length plus missing LQI (one byte) */
-		net_buf_add(pkt_buf, upipe->rx_len + 1);
+		net_buf_add(pkt_buf, upipe->rx_len);
 
 		if (ieee802154_radio_handle_ack(upipe->iface, nbuf) == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled");

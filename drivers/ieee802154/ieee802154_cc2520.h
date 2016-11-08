@@ -55,6 +55,7 @@ struct cc2520_context {
 	char __stack cc2520_rx_stack[CONFIG_CC2520_RX_STACK_SIZE];
 	struct nano_sem rx_lock;
 	bool overflow;
+	uint8_t lqi;
 };
 
 extern struct device **cc2520_configure_gpios(void);

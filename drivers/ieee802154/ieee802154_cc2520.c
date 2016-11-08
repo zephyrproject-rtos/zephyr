@@ -575,7 +575,6 @@ static void cc2520_rx(int arg, int unused2)
 	struct net_buf *pkt_buf = NULL;
 	struct net_buf *buf;
 	uint8_t pkt_len;
-	uint8_t lqi;
 
 	ARG_UNUSED(unused2);
 
@@ -643,18 +642,22 @@ static void cc2520_rx(int arg, int unused2)
 		 * else:
 		 * lqi = (lqi - 50) * 4
 		 */
-		lqi = pkt_buf->data[pkt_len - 1] & CC2520_FCS_CORRELATION;
-		if (lqi <= 50) {
-			lqi = 0;
-		} else if (lqi >= 110) {
-			lqi = 255;
+		cc2520->lqi = pkt_buf->data[pkt_len - 1] &
+			CC2520_FCS_CORRELATION;
+		if (cc2520->lqi <= 50) {
+			cc2520->lqi = 0;
+		} else if (cc2520->lqi >= 110) {
+			cc2520->lqi = 255;
 		} else {
-			lqi = (lqi - 50) << 2;
+			cc2520->lqi = (cc2520->lqi - 50) << 2;
 		}
 
-		net_buf_add_u8(pkt_buf, lqi);
+#if defined(CONFIG_TI_CC2520_RAW)
+		net_buf_add_u8(pkt_buf, cc2520->lqi);
+#endif
 
-		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)\n", pkt_len, lqi);
+		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)\n",
+			    pkt_len, cc2520->lqi);
 
 		if (net_recv_data(cc2520->iface, buf) < 0) {
 			SYS_LOG_DBG("Packet dropped by NET stack\n");
@@ -897,6 +900,12 @@ static int cc2520_stop(struct device *dev)
 	return 0;
 }
 
+static uint8_t cc2520_get_lqi(struct device *dev)
+{
+	struct cc2520_context *cc2520 = dev->driver_data;
+
+	return cc2520->lqi;
+}
 
 /******************
  * Initialization *
@@ -1053,6 +1062,7 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.start		= cc2520_start,
 	.stop		= cc2520_stop,
 	.tx		= cc2520_tx,
+	.get_lqi	= cc2520_get_lqi,
 };
 
 #if defined(CONFIG_TI_CC2520_RAW)
