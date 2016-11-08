@@ -1,3 +1,5 @@
+# Kconfig - MQTT Library for Zephyr
+
 #
 # Copyright (c) 2016 Intel Corporation
 #
@@ -14,12 +16,8 @@
 # limitations under the License.
 #
 
-menu "IoT Protocols"
-
-source "lib/iot/zoap/Kconfig"
-
-source "lib/iot/dns/Kconfig"
-
-source "lib/iot/mqtt/Kconfig"
-
-endmenu
+config  MQTT_LIB
+	bool "MQTT Library Support"
+	default n
+	help
+	Enable the Zephyr MQTT Library
