@@ -60,6 +60,9 @@ struct ieee802154_radio_api {
 
 	/** Stop the device */
 	int (*stop)(struct device *dev);
+
+	/** Get latest Link Quality Information */
+	uint8_t (*get_lqi)(struct device *dev);
 } __packed;
 
 /**
