@@ -208,6 +208,7 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 		    uint8_t rx_count_max, uint8_t tx_count_max,
 		    uint16_t data_octets_max, uint8_t *mem_radio,
 		    uint16_t mem_size);
+void ctrl_reset(void);
 void radio_ticks_active_to_start_set(uint32_t ticks_active_to_start);
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);

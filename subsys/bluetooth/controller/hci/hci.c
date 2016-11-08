@@ -145,7 +145,7 @@ static void reset(struct net_buf *buf, struct net_buf *evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
-	/** TODO */
+	ctrl_reset();
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
