@@ -30,6 +30,7 @@ ldflags-y  :=
 
 subdir-asflags-y :=
 subdir-ccflags-y :=
+subdir-cxxflags-y :=
 
 # Read auto.conf if it exists, otherwise ignore
 -include include/config/auto.conf
