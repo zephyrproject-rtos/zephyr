@@ -50,6 +50,16 @@ extern int32_t _ms_to_ticks(int32_t ms);
  * like overkill.
  */
 
+static inline int _is_prio1_higher_than_or_equal_to_prio2(int prio1, int prio2)
+{
+	return prio1 <= prio2;
+}
+
+static inline int _is_prio_higher_or_equal(int prio1, int prio2)
+{
+	return _is_prio1_higher_than_or_equal_to_prio2(prio1, prio2);
+}
+
 static inline int _is_prio1_higher_than_prio2(int prio1, int prio2)
 {
 	return prio1 < prio2;
@@ -58,6 +68,26 @@ static inline int _is_prio1_higher_than_prio2(int prio1, int prio2)
 static inline int _is_prio_higher(int prio, int test_prio)
 {
 	return _is_prio1_higher_than_prio2(prio, test_prio);
+}
+
+static inline int _is_prio1_lower_than_or_equal_to_prio2(int prio1, int prio2)
+{
+	return prio1 >= prio2;
+}
+
+static inline int _is_prio_lower_or_equal(int prio1, int prio2)
+{
+	return _is_prio1_lower_than_or_equal_to_prio2(prio1, prio2);
+}
+
+static inline int _is_prio1_lower_than_prio2(int prio1, int prio2)
+{
+	return prio1 > prio2;
+}
+
+static inline int _is_prio_lower(int prio1, int prio2)
+{
+	return _is_prio1_lower_than_prio2(prio1, prio2);
 }
 
 static inline int _is_t1_higher_prio_than_t2(struct k_thread *t1,
