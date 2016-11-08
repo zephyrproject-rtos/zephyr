@@ -43,6 +43,7 @@
 #include "hal/rand.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/hal_rtc.h"
 #include "ll/ticker.h"
 #include "ll/ctrl_internal.h"
 #include "hci_internal.h"
@@ -267,12 +268,18 @@ static int hci_driver_open(void)
 
 	DEBUG_INIT();
 
+	/* TODO: bind and use RNG driver */
+	rand_init(_rand_context, sizeof(_rand_context));
+
 	clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
 	if (!clk_k32) {
 		return -ENODEV;
 	}
 
 	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF5_K32SRC);
+
+	/* TODO: bind and use counter driver */
+	rtc_init();
 
 	_ticker_users[RADIO_TICKER_USER_ID_WORKER][0] =
 	    RADIO_TICKER_USER_WORKER_OPS;
@@ -286,8 +293,6 @@ static int hci_driver_open(void)
 		   , RADIO_TICKER_USERS, &_ticker_users[0]
 		   , RADIO_TICKER_USER_OPS, &_ticker_user_ops[0]
 	    );
-
-	rand_init(_rand_context, sizeof(_rand_context));
 
 	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	if (!clk_m16) {

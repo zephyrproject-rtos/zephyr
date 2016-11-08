@@ -1315,8 +1315,6 @@ uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 	instance->ticks_elapsed_first = 0;
 	instance->ticks_elapsed_last = 0;
 
-	rtc_init();
-
 	return TICKER_STATUS_SUCCESS;
 }
 
