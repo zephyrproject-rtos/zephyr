@@ -123,6 +123,21 @@ config NEWLIB_LIBC
 
 endchoice
 
+config NEWLIB_LIBC_FLOAT_PRINTF
+	bool "Build with newlib float printf"
+	default n
+	depends on NEWLIB_LIBC
+	help
+	Build with floating point printf enabled. This will increase the size of
+	the image.
+
+config NEWLIB_LIBC_FLOAT_SCANF
+	bool "Build with newlib float scanf"
+	default n
+	depends on NEWLIB_LIBC
+	help
+	Build with floating point scanf enabled. This will increase the size of
+	the image.
 
 config MINIMAL_LIBC_EXTENDED
 	bool "Build additional libc functions [EXPERIMENTAL]"
