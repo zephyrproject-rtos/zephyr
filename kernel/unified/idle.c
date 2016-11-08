@@ -127,6 +127,12 @@ void _sys_power_save_idle_exit(int32_t ticks)
 }
 
 
+#if K_IDLE_PRIO < 0
+#define IDLE_YIELD_IF_COOP() k_yield()
+#else
+#define IDLE_YIELD_IF_COOP() do { } while ((0))
+#endif
+
 void idle(void *unused1, void *unused2, void *unused3)
 {
 	ARG_UNUSED(unused1);
@@ -142,8 +148,9 @@ void idle(void *unused1, void *unused2, void *unused3)
 #endif
 
 	for (;;) {
+		(void)irq_lock();
 		_sys_power_save_idle(_get_next_timeout_expiry());
 
-		k_yield();
+		IDLE_YIELD_IF_COOP();
 	}
 }
