@@ -57,15 +57,6 @@ SECTION_VAR(NOINIT, _exception_stack)
 GDATA(_firq_stack)
 #endif
 
-#if CONFIG_NUM_IRQ_PRIO_LEVELS == 1
-#error "NUM_IRQ_PRIO_LEVELS==1 is not supported."
-/* The code below sets bit 1 in AUX_IRQ_ACT and thus requires
- * priority 0 and 1 at a minimum. Supporting only 1 priority
- * requires a change to this file but also changes to make
- * FIRQ optional.
- */
-#endif
-
 /*
  * @brief Fault handler installed in the fault and reserved vectors
  */
@@ -160,7 +151,6 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 
 	mov_s r1, _nanokernel
 	ld_s r2, [r1, __tNANO_current_OFFSET]
-#if CONFIG_NUM_IRQ_PRIO_LEVELS > 1
 	/* check if we're a nested interrupt: if so, let the
 	 * interrupted interrupt handle the reschedule
 	 */
@@ -174,7 +164,6 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 _trap_return:
 	_pop_irq_stack_frame
 	rtie
-#endif
 
 .balign 4
 _trap_check_for_swap:
