@@ -30,20 +30,20 @@ choice
 
 config BLUETOOTH_H4
 	bool "H:4 UART"
-	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 	select BLUETOOTH_UART
 	select BLUETOOTH_HOST_BUFFERS
+	depends on SERIAL
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
 
 config BLUETOOTH_H5
 	bool "H:5 UART [EXPERIMENTAL]"
-	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 	select BLUETOOTH_UART
 	select BLUETOOTH_HOST_BUFFERS
+	depends on SERIAL
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.

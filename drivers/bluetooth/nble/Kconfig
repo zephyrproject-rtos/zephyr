@@ -24,10 +24,10 @@ config NBLE
 	select BLUETOOTH_CENTRAL
 	select BLUETOOTH_GATT_CLIENT
 	select BLUETOOTH_SMP
-	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 	select NANO_TIMEOUTS
 	select NET_BUF
+	depends on SERIAL
 	depends on BLUETOOTH_STACK_NBLE
 	help
 	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
