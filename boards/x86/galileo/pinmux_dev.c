@@ -106,5 +106,5 @@ static int pinmux_dev_galileo_initialize(struct device *port)
 DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME,
 		    &pinmux_dev_galileo_initialize,
 		    &galileo_pinmux_driver, NULL,
-		    SECONDARY, CONFIG_PINMUX_INIT_PRIORITY,
+		    POST_KERNEL, CONFIG_PINMUX_INIT_PRIORITY,
 		    &api_funcs);

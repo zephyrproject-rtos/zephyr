@@ -217,7 +217,7 @@ static int dma_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 #endif
 
 DEVICE_DEFINE(dma_qmsi, CONFIG_DMA_0_NAME, &dma_qmsi_init, dma_qmsi_device_ctrl,
-	      &dma_qmsi_dev_data, &dma_qmsi_config_data, SECONDARY,
+	      &dma_qmsi_dev_data, &dma_qmsi_config_data, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&dma_funcs);
 
 static void dma_qmsi_config(struct device *dev)

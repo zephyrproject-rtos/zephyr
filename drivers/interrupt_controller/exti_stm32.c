@@ -287,7 +287,7 @@ static int stm32_exti_init(struct device *dev)
 static struct stm32_exti_data exti_data;
 DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
 	    &exti_data, NULL,
-	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 /**
  * @brief set & unset for the interrupt callbacks

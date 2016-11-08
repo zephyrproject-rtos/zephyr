@@ -306,7 +306,7 @@ require the use of kernel services. The DEVICE_INIT() APIs allow the user to
 specify at what time during the boot sequence the init function will be
 executed. Any driver will specify one of five initialization levels:
 
-`PRIMARY`
+`PRE_KERNEL_1`
         Used for devices that have no dependencies, such as those that rely
         solely on hardware present in the processor/SOC. These devices cannot
         use any kernel services during configuration, since the services are
@@ -314,30 +314,21 @@ executed. Any driver will specify one of five initialization levels:
         so it's OK to set up interrupts. Init functions at this level run on the
         interrupt stack.
 
-`SECONDARY`
+`PRE_KERNEL_2`
         Used for devices that rely on the initialization of devices initialized
         as part of the PRIMARY level. These devices cannot use any kernel
         services during configuration, since the kerne services are not yet
         available. Init functions at this level run on the interrupt stack.
 
-`NANOKERNEL`
-        Used for devices that require nanokernel services during configuration.
-        Init functions at this level run in context of the nanokernel
-        background task or microkernel idle task depending on kernel
-        configuration.
-
-`MICROKERNEL`
-        Used for devices that require microkernel services during
-        configuration.  Init functions at this level run in context of the
-        microkernel idle task. This init level is skipped if the microkernel is
-        not enabled.
+`POST_KERNEL`
+        Used for devices that require kernel services during configuration.
+        Init functions at this level run in context of the kernel main task.
 
 `APPLICATION`
         Used for application components (i.e. non-kernel components) that need
         automatic configuration. These devices can use all services provided by
         the kernel during configuration. Init functions at this level run on
-        either the nanokernel background task or microkernel idle task
-        depending on kernel configuration.
+        the kernel main task.
 
 Within each initialization level you may specify a priority level, relative to
 other devices in the same initialization level. The priority level is specified

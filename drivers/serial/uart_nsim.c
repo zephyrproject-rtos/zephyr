@@ -89,4 +89,4 @@ static struct uart_device_config uart_nsim_dev_cfg_0 = {
 
 DEVICE_INIT(uart_nsim0, CONFIG_UART_NSIM_PORT_0_NAME, &uart_nsim_init,
 			NULL, &uart_nsim_dev_cfg_0,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

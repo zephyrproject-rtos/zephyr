@@ -502,5 +502,5 @@ static int pwm_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 
 DEVICE_DEFINE(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
 	      pwm_qmsi_device_ctrl, &pwm_context, NULL,
-	      SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	      &pwm_qmsi_drv_api_funcs);

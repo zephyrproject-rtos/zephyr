@@ -188,7 +188,7 @@ struct aio_qmsi_cmp_dev_data_t aio_qmsi_cmp_dev_data = {
 
 DEVICE_AND_API_INIT(aio_qmsi_cmp, CONFIG_AIO_COMPARATOR_0_NAME,
 		    &aio_qmsi_cmp_init, &aio_qmsi_cmp_dev_data, NULL,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&aio_cmp_funcs);
 
 static int aio_cmp_config(struct device *dev)

@@ -119,6 +119,6 @@ static int uart_k20_init(struct device *dev)
 
 DEVICE_INIT(_uart_k20_init, "", uart_k20_init,
 				NULL, NULL,
-				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+				PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_UART_K20 */

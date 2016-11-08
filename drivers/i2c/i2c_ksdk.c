@@ -207,7 +207,7 @@ static struct i2c_ksdk_data i2c_ksdk_data_0;
 
 DEVICE_AND_API_INIT(i2c_ksdk_0, CONFIG_I2C_0_NAME, &i2c_ksdk_init,
 		    &i2c_ksdk_data_0, &i2c_ksdk_config_0,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_ksdk_driver_api);
 
 static void i2c_ksdk_config_func_0(struct device *dev)
@@ -233,7 +233,7 @@ static struct i2c_ksdk_data i2c_ksdk_data_1;
 
 DEVICE_AND_API_INIT(i2c_ksdk_1, CONFIG_I2C_1_NAME, &i2c_ksdk_init,
 		    &i2c_ksdk_data_1, &i2c_ksdk_config_1,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_ksdk_driver_api);
 
 static void i2c_ksdk_config_func_1(struct device *dev)

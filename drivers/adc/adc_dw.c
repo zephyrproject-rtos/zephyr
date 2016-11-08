@@ -499,7 +499,7 @@ static struct adc_config adc_config_dev = {
 
 DEVICE_AND_API_INIT(adc_dw, CONFIG_ADC_0_NAME, &adc_dw_init,
 		    &adc_info_dev, &adc_config_dev,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);
 
 static void adc_config_irq(void)

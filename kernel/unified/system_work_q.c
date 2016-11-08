@@ -40,4 +40,4 @@ static int k_sys_work_q_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(k_sys_work_q_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(k_sys_work_q_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

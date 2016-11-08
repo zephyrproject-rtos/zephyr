@@ -369,5 +369,5 @@ static const struct lsm9ds0_gyro_config lsm9ds0_gyro_config = {
 struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 
 DEVICE_INIT(lsm9ds0_gyro, CONFIG_LSM9DS0_GYRO_DEV_NAME, lsm9ds0_gyro_init,
-	    &lsm9ds0_gyro_data, &lsm9ds0_gyro_config, SECONDARY,
+	    &lsm9ds0_gyro_data, &lsm9ds0_gyro_config, POST_KERNEL,
 	    CONFIG_SENSOR_INIT_PRIORITY);

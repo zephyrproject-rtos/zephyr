@@ -69,7 +69,7 @@ static const struct i2c_qmsi_ss_config_info config_info_0 = {
 };
 
 DEVICE_INIT(i2c_ss_0, CONFIG_I2C_0_NAME, i2c_qmsi_ss_init, &driver_data_0,
-	    &config_info_0, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    &config_info_0, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 static void i2c_qmsi_ss_config_irq_0(void)
 {
@@ -125,7 +125,7 @@ static const struct i2c_qmsi_ss_config_info config_info_1 = {
 };
 
 DEVICE_INIT(i2c_ss_1, CONFIG_I2C_1_NAME, i2c_qmsi_ss_init, &driver_data_1,
-	    &config_info_1, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    &config_info_1, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 static void i2c_qmsi_ss_config_irq_1(void)
 {

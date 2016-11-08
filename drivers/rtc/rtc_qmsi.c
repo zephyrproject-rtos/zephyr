@@ -248,5 +248,5 @@ static int rtc_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 #endif
 
 DEVICE_DEFINE(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init, rtc_qmsi_device_ctrl,
-	      RTC_CONTEXT, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      RTC_CONTEXT, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	      &api);

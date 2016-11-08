@@ -148,7 +148,7 @@ struct shared_irq_runtime shared_irq_0_runtime;
 
 DEVICE_INIT(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME, shared_irq_initialize,
 				&shared_irq_0_runtime, &shared_irq_config_0,
-				SECONDARY, CONFIG_SHARED_IRQ_INIT_PRIORITY);
+				POST_KERNEL, CONFIG_SHARED_IRQ_INIT_PRIORITY);
 
 #if defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SHARED_IRQ_0_FALLING_EDGE)
@@ -186,7 +186,7 @@ struct shared_irq_runtime shared_irq_1_runtime;
 
 DEVICE_INIT(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME, shared_irq_initialize,
 				&shared_irq_1_runtime, &shared_irq_config_1,
-				SECONDARY, CONFIG_SHARED_IRQ_INIT_PRIORITY);
+				POST_KERNEL, CONFIG_SHARED_IRQ_INIT_PRIORITY);
 
 #if defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SHARED_IRQ_1_FALLING_EDGE)

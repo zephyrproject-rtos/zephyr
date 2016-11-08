@@ -271,7 +271,7 @@ static int aon_timer_init(struct device *dev)
 
 
 DEVICE_DEFINE(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME, aon_timer_init,
-	      aonpt_qmsi_device_ctrl, AONPT_CONTEXT, NULL, SECONDARY,
+	      aonpt_qmsi_device_ctrl, AONPT_CONTEXT, NULL, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	      &aon_timer_qmsi_api);
 

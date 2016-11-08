@@ -39,6 +39,28 @@
 extern "C" {
 #endif
 
+/* XXX the easiest way to trigger a warning on a preprocessor macro
+ * is to use _Pragma("GCC warning \"...\"), however it's impossible to filter
+ * those out of -Werror, needed for sanitycheck. So we do this nastiness
+ * instead. These functions get compiled but don't take up extra space in
+ * the binary..
+ */
+static __deprecated const int _INIT_LEVEL_PRIMARY = 1;
+static __deprecated const int _INIT_LEVEL_SECONDARY = 1;
+static __deprecated const int _INIT_LEVEL_NANOKERNEL = 1;
+static __deprecated const int _INIT_LEVEL_MICROKERNEL = 1;
+static const int _INIT_LEVEL_PRE_KERNEL_1 = 1;
+static const int _INIT_LEVEL_PRE_KERNEL_2 = 1;
+static const int _INIT_LEVEL_POST_KERNEL = 1;
+static const int _INIT_LEVEL_APPLICATION = 1;
+
+#define _DEPRECATION_CHECK(dev_name, level) \
+	static inline void _CONCAT(_deprecation_check_, dev_name)() \
+	{ \
+		int foo = _CONCAT(_INIT_LEVEL_, level); \
+		(void)foo; \
+	}
+
 /**
  * @def DEVICE_INIT
  *
@@ -63,19 +85,16 @@ extern "C" {
  * Must be one of the following symbols, which are listed in the order
  * they are performed by the kernel:
  * \n
- * \li PRIMARY: Used for devices that have no dependencies, such as those
+ * \li PRE_KERNEL_1: Used for devices that have no dependencies, such as those
  * that rely solely on hardware present in the processor/SOC. These devices
  * cannot use any kernel services during configuration, since they are not
  * yet available.
  * \n
- * \li SECONDARY: Used for devices that rely on the initialization of devices
+ * \li PRE_KERNEL_2: Used for devices that rely on the initialization of devices
  * initialized as part of the PRIMARY level. These devices cannot use any
  * kernel services during configuration, since they are not yet available.
  * \n
- * \li NANOKERNEL: Used for devices that require nanokernel services during
- * configuration.
- * \n
- * \li MICROKERNEL: Used for devices that require microkernel services during
+ * \li POST_KERNEL: Used for devices that require kernel services during
  * configuration.
  * \n
  * \li APPLICATION: Used for application components (i.e. non-kernel components)
@@ -113,7 +132,7 @@ extern "C" {
 		.name = drv_name, .init = (init_fn), \
 		.config_info = (cfg_info) \
 	}; \
-	\
+	_DEPRECATION_CHECK(dev_name, level) \
 	static struct device _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		 .config = &_CONCAT(__config_, dev_name), \
@@ -168,7 +187,7 @@ extern "C" {
 		.dev_pm_ops = (device_pm_ops), \
 		.config_info = (cfg_info) \
 	}; \
-	\
+	_DEPRECATION_CHECK(dev_name, level) \
 	static struct device _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		 .config = &_CONCAT(__config_, dev_name), \
@@ -197,7 +216,7 @@ extern struct device_pm_ops device_pm_ops_nop;
 		.dev_pm_ops = (&device_pm_ops_nop), \
 		.config_info = (cfg_info) \
 	}; \
-	\
+	_DEPRECATION_CHECK(dev_name, level) \
 	static struct device _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		 .config = &_CONCAT(__config_, dev_name), \

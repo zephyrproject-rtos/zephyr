@@ -51,6 +51,6 @@ static int uart_stellaris_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(uart_stellaris_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(uart_stellaris_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS */

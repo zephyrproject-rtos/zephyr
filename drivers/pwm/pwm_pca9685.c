@@ -216,6 +216,6 @@ static struct pwm_pca9685_drv_data pwm_pca9685_0_drvdata;
 DEVICE_INIT(pwm_pca9685_0, CONFIG_PWM_PCA9685_0_DEV_NAME,
 			pwm_pca9685_init,
 			&pwm_pca9685_0_drvdata, &pwm_pca9685_0_cfg,
-			SECONDARY, CONFIG_PWM_PCA9685_INIT_PRIORITY);
+			POST_KERNEL, CONFIG_PWM_PCA9685_INIT_PRIORITY);
 
 #endif /* CONFIG_PWM_PCA9685_0 */

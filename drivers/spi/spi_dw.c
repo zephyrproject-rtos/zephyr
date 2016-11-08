@@ -460,7 +460,7 @@ const struct spi_dw_config spi_dw_config_0 = {
 
 DEVICE_AND_API_INIT(spi_dw_port_0, CONFIG_SPI_0_NAME, spi_dw_init,
 		    &spi_dw_data_port_0, &spi_dw_config_0,
-		    SECONDARY, CONFIG_SPI_INIT_PRIORITY,
+		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
 
 void spi_config_0_irq(void)
@@ -507,7 +507,7 @@ static const struct spi_dw_config spi_dw_config_1 = {
 
 DEVICE_AND_API_INIT(spi_dw_port_1, CONFIG_SPI_1_NAME, spi_dw_init,
 		    &spi_dw_data_port_1, &spi_dw_config_1,
-		    SECONDARY, CONFIG_SPI_INIT_PRIORITY,
+		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
 
 void spi_config_1_irq(void)

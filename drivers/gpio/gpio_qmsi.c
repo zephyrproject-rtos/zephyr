@@ -163,7 +163,7 @@ static int gpio_qmsi_device_ctrl(struct device *port, uint32_t ctrl_command,
 
 DEVICE_DEFINE(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
 	      gpio_qmsi_device_ctrl, &gpio_0_runtime, &gpio_0_config,
-	      SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
+	      POST_KERNEL, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
 
 #endif /* CONFIG_GPIO_QMSI_0 */
 
@@ -202,7 +202,7 @@ static int gpio_aon_device_ctrl(struct device *port, uint32_t ctrl_command,
 
 DEVICE_DEFINE(gpio_aon, CONFIG_GPIO_QMSI_1_NAME, &gpio_qmsi_init,
 	      gpio_aon_device_ctrl, &gpio_aon_runtime, &gpio_aon_config,
-	      SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
+	      POST_KERNEL, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
 
 #endif /* CONFIG_GPIO_QMSI_1 */
 

@@ -28,4 +28,4 @@ static int ti_cc3200_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(ti_cc3200_init, PRIMARY, 0);
+SYS_INIT(ti_cc3200_init, PRE_KERNEL_1, 0);

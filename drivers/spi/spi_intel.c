@@ -490,7 +490,7 @@ const struct spi_intel_config spi_intel_config_0 = {
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
 DEVICE_DEFINE(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
 	      spi_intel_device_ctrl, &spi_intel_data_port_0,
-	      &spi_intel_config_0, SECONDARY, CONFIG_SPI_INIT_PRIORITY, NULL);
+	      &spi_intel_config_0, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, NULL);
 
 void spi_config_0_irq(void)
 {
@@ -528,7 +528,7 @@ const struct spi_intel_config spi_intel_config_1 = {
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
 DEVICE_DEFINE(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
 	      spi_intel_device_ctrl, &spi_intel_data_port_1,
-	      &spi_intel_config_1, SECONDARY, CONFIG_SPI_INIT_PRIORITY, NULL);
+	      &spi_intel_config_1, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, NULL);
 
 void spi_config_1_irq(void)
 {

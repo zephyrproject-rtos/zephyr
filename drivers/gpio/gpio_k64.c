@@ -274,7 +274,7 @@ static struct gpio_k64_data gpio_data_A;
 
 DEVICE_AND_API_INIT(gpio_k64_A, CONFIG_GPIO_K64_A_DEV_NAME, gpio_k64_A_init,
 		    &gpio_data_A, &gpio_k64_A_cfg,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
 
 static int gpio_k64_A_init(struct device *dev)
@@ -303,7 +303,7 @@ static struct gpio_k64_data gpio_data_B;
 
 DEVICE_AND_API_INIT(gpio_k64_B, CONFIG_GPIO_K64_B_DEV_NAME, gpio_k64_B_init,
 		    &gpio_data_B, &gpio_k64_B_cfg,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
 
 static int gpio_k64_B_init(struct device *dev)
@@ -332,7 +332,7 @@ static struct gpio_k64_data gpio_data_C;
 
 DEVICE_AND_API_INIT(gpio_k64_C, CONFIG_GPIO_K64_C_DEV_NAME, gpio_k64_C_init,
 		    &gpio_data_C, &gpio_k64_C_cfg,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
 
 static int gpio_k64_C_init(struct device *dev)
@@ -361,7 +361,7 @@ static struct gpio_k64_data gpio_data_D;
 
 DEVICE_AND_API_INIT(gpio_k64_D, CONFIG_GPIO_K64_D_DEV_NAME, gpio_k64_D_init,
 		    &gpio_data_D, &gpio_k64_D_cfg,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
 
 static int gpio_k64_D_init(struct device *dev)
@@ -390,7 +390,7 @@ static struct gpio_k64_data gpio_data_E;
 
 DEVICE_AND_API_INIT(gpio_k64_E, CONFIG_GPIO_K64_E_DEV_NAME, gpio_k64_E_init,
 		    &gpio_data_E, &gpio_k64_E_cfg,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
 
 static int gpio_k64_E_init(struct device *dev)

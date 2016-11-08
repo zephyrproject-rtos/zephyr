@@ -68,6 +68,6 @@ static int aon_counter_init(struct device *dev)
 }
 
 DEVICE_AND_API_INIT(aon_counter, CONFIG_AON_COUNTER_QMSI_DEV_NAME,
-		    aon_counter_init, NULL, NULL, SECONDARY,
+		    aon_counter_init, NULL, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &aon_counter_qmsi_api);

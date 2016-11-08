@@ -178,7 +178,7 @@ static int init_dcache(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(init_dcache, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(init_dcache, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_CACHE_FLUSHING */
 

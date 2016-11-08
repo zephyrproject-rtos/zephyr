@@ -340,5 +340,5 @@ static struct fxos8700_data fxos8700_data;
 
 DEVICE_AND_API_INIT(fxos8700, CONFIG_FXOS8700_NAME, fxos8700_init,
 		    &fxos8700_data, &fxos8700_config,
-		    SECONDARY, CONFIG_SENSOR_INIT_PRIORITY,
+		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &fxos8700_driver_api);

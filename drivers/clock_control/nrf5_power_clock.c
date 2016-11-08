@@ -325,7 +325,7 @@ static const struct clock_control_driver_api _m16src_clock_control_api = {
 
 DEVICE_AND_API_INIT(clock_nrf5_m16src,
 		    CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME,
-		    _clock_control_init, NULL, NULL, PRIMARY,
+		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_m16src_clock_control_api);
 
@@ -337,6 +337,6 @@ static const struct clock_control_driver_api _k32src_clock_control_api = {
 
 DEVICE_AND_API_INIT(clock_nrf5_k32src,
 		    CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME,
-		    _clock_control_init, NULL, NULL, PRIMARY,
+		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_k32src_clock_control_api);

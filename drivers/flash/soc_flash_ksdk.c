@@ -115,6 +115,6 @@ static int flash_ksdk_init(struct device *dev)
 }
 
 DEVICE_AND_API_INIT(flash_ksdk, CONFIG_SOC_FLASH_KSDK_DEV_NAME,
-			flash_ksdk_init, &flash_data, NULL, SECONDARY,
+			flash_ksdk_init, &flash_data, NULL, POST_KERNEL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_ksdk_api);
 

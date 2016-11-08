@@ -238,6 +238,6 @@ static const struct ti_adc108s102_config adc108s102_config = {
 DEVICE_INIT(adc108s102, CONFIG_ADC_0_NAME,
 			ti_adc108s102_init,
 			&adc108s102_data, &adc108s102_config,
-			SECONDARY, CONFIG_ADC_INIT_PRIORITY);
+			POST_KERNEL, CONFIG_ADC_INIT_PRIORITY);
 
 #endif /* CONFIG_ADC_TI_ADC108S102 */

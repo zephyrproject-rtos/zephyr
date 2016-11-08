@@ -429,7 +429,7 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_0 = {
 
 DEVICE_AND_API_INIT(uart_k20_0, CONFIG_UART_K20_PORT_0_NAME, &uart_k20_init,
 		    &uart_k20_dev_data_0, &uart_k20_dev_cfg_0,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_k20_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -466,7 +466,7 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_1 = {
 
 DEVICE_AND_API_INIT(uart_k20_1, CONFIG_UART_K20_PORT_1_NAME, &uart_k20_init,
 		    &uart_k20_dev_data_1, &uart_k20_dev_cfg_1,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_k20_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -503,7 +503,7 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_2 = {
 
 DEVICE_AND_API_INIT(uart_k20_2, CONFIG_UART_K20_PORT_2_NAME, &uart_k20_init,
 		    &uart_k20_dev_data_2, &uart_k20_dev_cfg_2,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_k20_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -540,7 +540,7 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_3 = {
 
 DEVICE_AND_API_INIT(uart_k20_3, CONFIG_UART_K20_PORT_3_NAME, &uart_k20_init,
 		    &uart_k20_dev_data_3, &uart_k20_dev_cfg_3,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_k20_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -577,7 +577,7 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_4 = {
 
 DEVICE_AND_API_INIT(uart_k20_4, CONFIG_UART_K20_PORT_4_NAME, &uart_k20_init,
 		    &uart_k20_dev_data_4, &uart_k20_dev_cfg_4,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_k20_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

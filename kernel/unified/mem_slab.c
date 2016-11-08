@@ -74,7 +74,8 @@ static int init_mem_slab_module(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init_mem_slab_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+SYS_INIT(init_mem_slab_module, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 		    size_t block_size, uint32_t num_blocks)

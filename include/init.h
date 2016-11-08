@@ -26,17 +26,25 @@ extern "C" {
 #endif
 
 /*
- * System initialization levels. The PRIMARY and SECONDARY levels are
+ * System initialization levels. The PRE_KERNEL_1 and PRE_KERNEL_2 levels are
  * executed in the kernel's initialization context, which uses the interrupt
- * stack. The remaining levels are executed in the kernel's main task
- * (i.e. the nanokernel's background task or the microkernel's idle task).
+ * stack. The remaining levels are executed in the kernel's main task.
+ *
+ * PRIMARY, SECONDARY, NANOKERNEL, MICROKERNEL levels are currently deprecated
+ * and will be removed in the future.
  */
 
-#define _SYS_INIT_LEVEL_PRIMARY      0
-#define _SYS_INIT_LEVEL_SECONDARY    1
-#define _SYS_INIT_LEVEL_NANOKERNEL   2
-#define _SYS_INIT_LEVEL_MICROKERNEL  3
-#define _SYS_INIT_LEVEL_APPLICATION  4
+#define _SYS_INIT_LEVEL_PRE_KERNEL_1	0
+#define _SYS_INIT_LEVEL_PRE_KERNEL_2	1
+#define _SYS_INIT_LEVEL_POST_KERNEL	2
+#define _SYS_INIT_LEVEL_APPLICATION	3
+
+/* Deprecated, remove eventually */
+#define _SYS_INIT_LEVEL_PRIMARY		4
+#define _SYS_INIT_LEVEL_SECONDARY	5
+#define _SYS_INIT_LEVEL_NANOKERNEL	6
+#define _SYS_INIT_LEVEL_MICROKERNEL	7
+
 
 /* Counter use to avoid issues if two or more system devices are declared
  * in the same C file with the same init function

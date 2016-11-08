@@ -247,4 +247,4 @@ static bool ftpan_36(void)
 	return false;
 }
 
-SYS_INIT(nordicsemi_nrf52_init, PRIMARY, 0);
+SYS_INIT(nordicsemi_nrf52_init, PRE_KERNEL_1, 0);

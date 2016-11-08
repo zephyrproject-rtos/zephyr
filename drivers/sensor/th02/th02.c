@@ -148,4 +148,4 @@ static int th02_init(struct device *dev)
 static struct th02_data th02_driver;
 
 DEVICE_INIT(th02, CONFIG_TH02_NAME, th02_init, &th02_driver,
-	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);
+	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);

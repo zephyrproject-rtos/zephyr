@@ -85,5 +85,5 @@ static int k_offload_work_q_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(k_offload_work_q_init, NANOKERNEL,
+SYS_INIT(k_offload_work_q_init, POST_KERNEL,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

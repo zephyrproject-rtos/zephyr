@@ -364,5 +364,5 @@ static int quark_flash_init(struct device *dev)
 }
 
 DEVICE_DEFINE(quark_flash, CONFIG_SOC_FLASH_QMSI_DEV_NAME, quark_flash_init,
-	      flash_qmsi_device_ctrl, FLASH_CONTEXT, NULL, SECONDARY,
+	      flash_qmsi_device_ctrl, FLASH_CONTEXT, NULL, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&flash_qmsi_api);

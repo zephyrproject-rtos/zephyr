@@ -130,5 +130,5 @@ static int pinmux_dev_init(struct device *port)
 
 DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME,
 		    &pinmux_dev_init, NULL, NULL,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);

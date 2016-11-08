@@ -503,7 +503,7 @@ static struct uart_nrf5_dev_data_t uart_nrf5_dev_data_0 = {
 
 DEVICE_INIT(uart_nrf5_0, CONFIG_UART_NRF5_NAME, &uart_nrf5_init,
 	    &uart_nrf5_dev_data_0, &uart_nrf5_dev_cfg_0,
-	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

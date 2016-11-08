@@ -84,6 +84,6 @@ static int pinmux_stm32_init(struct device *port)
 
 DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME, &pinmux_stm32_init,
 		    NULL, NULL,
-		    PRIMARY,
+		    PRE_KERNEL_1,
 		    CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY,
 		    &pinmux_stm32_api);

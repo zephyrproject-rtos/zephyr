@@ -274,7 +274,7 @@ struct adc_info adc_info_dev;
 
 DEVICE_INIT(adc_qmsi_ss, CONFIG_ADC_0_NAME, &adc_qmsi_ss_init,
 		    &adc_info_dev, NULL,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static void adc_config_irq(void)
 {

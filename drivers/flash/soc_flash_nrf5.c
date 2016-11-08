@@ -168,4 +168,4 @@ static int nrf5_flash_init(struct device *dev)
 }
 
 DEVICE_INIT(nrf5_flash, CONFIG_SOC_FLASH_NRF5_DEV_NAME, nrf5_flash_init,
-	     NULL, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	     NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

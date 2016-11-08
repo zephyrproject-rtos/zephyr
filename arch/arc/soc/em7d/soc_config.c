@@ -40,6 +40,6 @@ static int uart_ns16550_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(uart_ns16550_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(uart_ns16550_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_UART_NS16550 */

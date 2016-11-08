@@ -355,6 +355,6 @@ static struct stm32f4x_rcc_data stm32f4x_rcc_data = {
 DEVICE_AND_API_INIT(rcc_stm32f4x, STM32_CLOCK_CONTROL_NAME,
 		    &stm32f4x_clock_control_init,
 		    &stm32f4x_rcc_data, NULL,
-		    PRIMARY,
+		    PRE_KERNEL_1,
 		    CONFIG_CLOCK_CONTROL_STM32F4X_DEVICE_INIT_PRIORITY,
 		    &stm32f4x_clock_control_api);

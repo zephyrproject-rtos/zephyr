@@ -45,4 +45,4 @@ static int ram_console_init(struct device *d)
 	return 0;
 }
 
-SYS_INIT(ram_console_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(ram_console_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

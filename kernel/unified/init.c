@@ -180,9 +180,14 @@ static void _main(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
+
+	/* These 3 are deprecated */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_SECONDARY);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_NANOKERNEL);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_MICROKERNEL);
+
+	/* Final init level before app starts */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
 
 #ifdef CONFIG_CPLUSPLUS
@@ -363,9 +368,12 @@ FUNC_NORETURN void _Cstart(void)
 
 	prepare_multithreading((struct k_thread *)&dummy_thread);
 
-	/* perform basic hardware initialization */
-
+	/* Deprecated */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRIMARY);
+
+	/* perform basic hardware initialization */
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
 	/*
 	 * Initialize random number generator

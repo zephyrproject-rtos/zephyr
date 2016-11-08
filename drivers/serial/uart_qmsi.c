@@ -165,7 +165,7 @@ static const struct uart_qmsi_config_info config_info_0 = {
 static struct uart_qmsi_drv_data drv_data_0;
 
 DEVICE_DEFINE(uart_0, CONFIG_UART_QMSI_0_NAME, &uart_qmsi_init,
-	      uart_qmsi_device_ctrl, &drv_data_0, &config_info_0, PRIMARY,
+	      uart_qmsi_device_ctrl, &drv_data_0, &config_info_0, PRE_KERNEL_1,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 #endif /* CONFIG_UART_QMSI_0 */
 
@@ -193,7 +193,7 @@ static const struct uart_qmsi_config_info config_info_1 = {
 static struct uart_qmsi_drv_data drv_data_1;
 
 DEVICE_DEFINE(uart_1, CONFIG_UART_QMSI_1_NAME, &uart_qmsi_init,
-	      uart_qmsi_device_ctrl, &drv_data_1, &config_info_1, PRIMARY,
+	      uart_qmsi_device_ctrl, &drv_data_1, &config_info_1, PRE_KERNEL_1,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 #endif /* CONFIG_UART_QMSI_1 */
 

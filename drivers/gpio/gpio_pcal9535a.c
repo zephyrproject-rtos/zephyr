@@ -587,7 +587,7 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_0_drvdata = {
 DEVICE_INIT(gpio_pcal9535a_0, CONFIG_GPIO_PCAL9535A_0_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_0_drvdata, &gpio_pcal9535a_0_cfg,
-	    SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_0 */
 
@@ -614,7 +614,7 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_1_drvdata = {
 DEVICE_INIT(gpio_pcal9535a_1, CONFIG_GPIO_PCAL9535A_1_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_1_drvdata, &gpio_pcal9535a_1_cfg,
-	    SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_1 */
 
@@ -641,7 +641,7 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_2_drvdata = {
 DEVICE_INIT(gpio_pcal9535a_2, CONFIG_GPIO_PCAL9535A_2_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_2_drvdata, &gpio_pcal9535a_2_cfg,
-	    SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_2 */
 
@@ -668,6 +668,6 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_3_drvdata = {
 DEVICE_INIT(gpio_pcal9535a_3, CONFIG_GPIO_PCAL9535A_3_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_3_drvdata, &gpio_pcal9535a_3_cfg,
-	    SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_3 */

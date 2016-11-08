@@ -64,4 +64,4 @@ static int st_stm32f4_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(st_stm32f4_init, PRIMARY, 0);
+SYS_INIT(st_stm32f4_init, PRE_KERNEL_1, 0);

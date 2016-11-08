@@ -259,5 +259,5 @@ static struct uart_sam3_dev_data_t uart_sam3_dev_data_0 = {
 
 DEVICE_AND_API_INIT(uart_sam3_0, CONFIG_UART_ATMEL_SAM3_NAME, &uart_sam3_init,
 		    &uart_sam3_dev_data_0, &uart_sam3_dev_cfg_0,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_sam3_driver_api);

@@ -136,7 +136,7 @@ int quark_se_ipm_controller_initialize(struct device *d);
 	DEVICE_AND_API_INIT(name, _STRINGIFY(name), quark_se_ipm_initialize, \
 			    &quark_se_ipm_runtime_##name, \
 			    &quark_se_ipm_config_##name, \
-			    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
+			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
 			    &ipm_quark_se_api_funcs)
 
 #ifdef __cplusplus

@@ -110,5 +110,5 @@ static const struct uart_device_config uart_altera_jtag_dev_cfg_0 = {
 DEVICE_AND_API_INIT(uart_altera_jtag_0, "jtag_uart0",
 		    uart_altera_jtag_init, NULL,
 		    &uart_altera_jtag_dev_cfg_0,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_altera_jtag_driver_api);

@@ -21,19 +21,32 @@
 #include <atomic.h>
 
 extern struct device __device_init_start[];
+extern struct device __device_PRE_KERNEL_1_start[];
+extern struct device __device_PRE_KERNEL_2_start[];
+extern struct device __device_POST_KERNEL_start[];
+extern struct device __device_APPLICATION_start[];
+
+/* Deprecated */
 extern struct device __device_PRIMARY_start[];
 extern struct device __device_SECONDARY_start[];
 extern struct device __device_NANOKERNEL_start[];
 extern struct device __device_MICROKERNEL_start[];
-extern struct device __device_APPLICATION_start[];
+
 extern struct device __device_init_end[];
 
 static struct device *config_levels[] = {
+	__device_PRE_KERNEL_1_start,
+	__device_PRE_KERNEL_2_start,
+	__device_POST_KERNEL_start,
+	__device_APPLICATION_start,
+
+	/* Deprecated levels */
 	__device_PRIMARY_start,
 	__device_SECONDARY_start,
 	__device_NANOKERNEL_start,
 	__device_MICROKERNEL_start,
-	__device_APPLICATION_start,
+
+	/* End marker */
 	__device_init_end,
 };
 

@@ -361,7 +361,7 @@ static struct spi_qmsi_runtime spi_qmsi_mst_0_runtime;
 
 DEVICE_DEFINE(spi_master_0, CONFIG_SPI_0_NAME, spi_qmsi_init,
 	      spi_master_qmsi_device_ctrl, &spi_qmsi_mst_0_runtime,
-	      &spi_qmsi_mst_0_config, SECONDARY, CONFIG_SPI_INIT_PRIORITY,
+	      &spi_qmsi_mst_0_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 	      NULL);
 #endif /* CONFIG_SPI_0 */
 
@@ -378,6 +378,6 @@ static struct spi_qmsi_runtime spi_qmsi_mst_1_runtime;
 
 DEVICE_DEFINE(spi_master_1, CONFIG_SPI_1_NAME, spi_qmsi_init,
 	      spi_master_qmsi_device_ctrl, &spi_qmsi_mst_1_runtime,
-	      &spi_qmsi_mst_1_config, SECONDARY, CONFIG_SPI_INIT_PRIORITY,
+	      &spi_qmsi_mst_1_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 	      NULL);
 #endif /* CONFIG_SPI_1 */

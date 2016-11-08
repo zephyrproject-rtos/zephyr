@@ -72,5 +72,5 @@ static int pci_legacy_bridge_irq_config(struct device *unused)
 }
 
 SYS_INIT(pci_legacy_bridge_irq_config,
-		SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif /* CONFIG_PCI_LEGACY_BRIDGE */

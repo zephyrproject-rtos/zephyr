@@ -126,4 +126,4 @@ static bool ftpan_59(void)
 	return false;
 }
 
-SYS_INIT(nordicsemi_nrf51_init, PRIMARY, 0);
+SYS_INIT(nordicsemi_nrf51_init, PRE_KERNEL_1, 0);

@@ -45,4 +45,4 @@ static int quark_se_arc_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(quark_se_arc_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(quark_se_arc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

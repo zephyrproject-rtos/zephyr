@@ -301,4 +301,4 @@ static int pinmux_init(struct device *port)
 	return 0;
 }
 
-SYS_INIT(pinmux_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(pinmux_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

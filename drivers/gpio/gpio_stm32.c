@@ -222,7 +222,7 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 		    gpio_stm32_init,					\
 		    &gpio_stm32_data_## __suffix,			\
 		    &gpio_stm32_cfg_## __suffix,			\
-		    SECONDARY,						\
+		    POST_KERNEL,						\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
 		    &gpio_stm32_driver);
 
@@ -240,7 +240,7 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 		    gpio_stm32_init,					\
 		    &gpio_stm32_data_## __suffix,			\
 		    &gpio_stm32_cfg_## __suffix,			\
-		    SECONDARY,						\
+		    POST_KERNEL,						\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
 		    &gpio_stm32_driver);
 #endif

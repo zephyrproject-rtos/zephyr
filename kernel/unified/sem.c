@@ -71,7 +71,7 @@ static int init_sem_module(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init_sem_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+SYS_INIT(init_sem_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 

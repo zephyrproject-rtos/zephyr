@@ -383,5 +383,5 @@ static int spi_flash_init(struct device *dev)
 static struct spi_flash_data spi_flash_memory_data;
 
 DEVICE_INIT(spi_flash_memory, CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME, spi_flash_init,
-	    &spi_flash_memory_data, NULL, SECONDARY,
+	    &spi_flash_memory_data, NULL, POST_KERNEL,
 	    CONFIG_SPI_FLASH_W25QXXDV_INIT_PRIORITY);

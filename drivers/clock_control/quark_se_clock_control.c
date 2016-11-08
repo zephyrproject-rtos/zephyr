@@ -95,7 +95,7 @@ DEVICE_AND_API_INIT(clock_quark_se_peripheral,
 			CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME,
 			&quark_se_clock_control_init,
 			NULL, &clock_quark_se_peripheral_config,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&quark_se_clock_control_api);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL */
@@ -109,7 +109,7 @@ DEVICE_AND_API_INIT(clock_quark_se_external,
 			CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME,
 			&quark_se_clock_control_init,
 			NULL, &clock_quark_se_external_config,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&quark_se_clock_control_api);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL */
@@ -123,7 +123,7 @@ DEVICE_AND_API_INIT(clock_quark_se_sensor,
 			CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME,
 			&quark_se_clock_control_init,
 			NULL, &clock_quark_se_sensor_config,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&quark_se_clock_control_api);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR */

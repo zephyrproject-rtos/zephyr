@@ -40,7 +40,7 @@ config SHARED_IRQ_INIT_PRIORITY
 	default 45
 	prompt "Shared IRQ init priority"
 	help
-	 Shared IRQ are initialized on SECONDARY init level. They
+	 Shared IRQ are initialized on POST_KERNEL init level. They
 	 have to be initialized before any device that uses them.
 
 config SHARED_IRQ_0

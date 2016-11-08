@@ -443,8 +443,8 @@ static void _IoApicRedUpdateLo(unsigned int irq,
 
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-SYS_DEVICE_DEFINE("ioapic", _ioapic_init, ioapic_device_ctrl, PRIMARY,
+SYS_DEVICE_DEFINE("ioapic", _ioapic_init, ioapic_device_ctrl, PRE_KERNEL_1,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
-SYS_INIT(_ioapic_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(_ioapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif

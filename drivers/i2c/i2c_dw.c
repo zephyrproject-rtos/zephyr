@@ -741,7 +741,7 @@ static struct i2c_dw_dev_config i2c_0_runtime = {
 
 DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 		    &i2c_0_runtime, &i2c_config_dw_0,
-		    SECONDARY, CONFIG_I2C_INIT_PRIORITY,
+		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &funcs);
 
 static void i2c_config_0(struct device *port)
@@ -793,7 +793,7 @@ static struct i2c_dw_dev_config i2c_1_runtime = {
 
 DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_1_NAME, &i2c_dw_initialize,
 		    &i2c_1_runtime, &i2c_config_dw_1,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 
 static void i2c_config_1(struct device *port)

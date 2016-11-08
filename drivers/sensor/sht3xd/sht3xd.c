@@ -202,4 +202,4 @@ static int sht3xd_init(struct device *dev)
 struct sht3xd_data sht3xd_driver;
 
 DEVICE_INIT(sht3xd, CONFIG_SHT3XD_NAME, sht3xd_init, &sht3xd_driver,
-	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);
+	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);

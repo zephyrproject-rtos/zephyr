@@ -161,4 +161,4 @@ static int hdc1008_init(struct device *dev)
 static struct hdc1008_data hdc1008_data;
 
 DEVICE_INIT(hdc1008, CONFIG_HDC1008_NAME, hdc1008_init, &hdc1008_data,
-	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);
+	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);

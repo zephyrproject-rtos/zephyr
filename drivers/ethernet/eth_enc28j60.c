@@ -627,7 +627,7 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 
 DEVICE_AND_API_INIT(eth_enc28j60_0, CONFIG_ETH_ENC28J60_0_NAME,
 		    &eth_enc28j60_init, &eth_enc28j60_0_runtime,
-		    &eth_enc28j60_0_config, SECONDARY,
+		    &eth_enc28j60_0_config, POST_KERNEL,
 		    CONFIG_ETH_ENC28J60_0_INIT_PRIORITY, &api_funcs);
 
 static int eth_net_tx(struct net_buf *buf)

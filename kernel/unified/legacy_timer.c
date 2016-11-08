@@ -66,7 +66,7 @@ static int init_dyamic_timers(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init_dyamic_timers, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+SYS_INIT(init_dyamic_timers, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 ktimer_t task_timer_alloc(void)
 {

@@ -60,7 +60,7 @@ static int init_static_pools(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(init_static_pools, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+SYS_INIT(init_static_pools, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 /**
  *

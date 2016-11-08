@@ -63,4 +63,4 @@ static int stm32f1_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(stm32f1_init, PRIMARY, 0);
+SYS_INIT(stm32f1_init, PRE_KERNEL_1, 0);

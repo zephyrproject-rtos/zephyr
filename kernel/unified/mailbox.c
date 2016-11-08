@@ -106,7 +106,7 @@ static int init_mbox_module(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init_mbox_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS or CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 

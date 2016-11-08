@@ -49,7 +49,7 @@ static int init_alert_module(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init_alert_module, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+SYS_INIT(init_alert_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
 

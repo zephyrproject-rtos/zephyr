@@ -165,4 +165,4 @@ int hmc5883l_init(struct device *dev)
 struct hmc5883l_data hmc5883l_driver;
 
 DEVICE_INIT(hmc5883l, CONFIG_HMC5883L_NAME, hmc5883l_init, &hmc5883l_driver,
-	    NULL, SECONDARY, CONFIG_SENSOR_INIT_PRIORITY);
+	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);

@@ -338,7 +338,7 @@ static struct gpio_sch_data gpio_data_0;
 
 DEVICE_INIT(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME, gpio_sch_init,
 	    &gpio_data_0, &gpio_sch_0_config,
-	    SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_SCH_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_SCH_0 */
 #if CONFIG_GPIO_SCH_1
@@ -352,6 +352,6 @@ static struct gpio_sch_data gpio_data_1;
 
 DEVICE_INIT(gpio_1, CONFIG_GPIO_SCH_1_DEV_NAME, gpio_sch_init,
 	    &gpio_data_1, &gpio_sch_1_config,
-	    SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_SCH_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_SCH_1 */

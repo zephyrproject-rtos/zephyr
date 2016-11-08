@@ -352,7 +352,7 @@ static struct uart_stm32_data uart_stm32_dev_data_0 = {
 DEVICE_AND_API_INIT(uart_stm32_0, CONFIG_UART_STM32_PORT_0_NAME,
 		    &uart_stm32_init,
 		    &uart_stm32_dev_data_0, &uart_stm32_dev_cfg_0,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stm32_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -401,7 +401,7 @@ static struct uart_stm32_data uart_stm32_dev_data_1 = {
 DEVICE_AND_API_INIT(uart_stm32_1, CONFIG_UART_STM32_PORT_1_NAME,
 		    &uart_stm32_init,
 		    &uart_stm32_dev_data_1, &uart_stm32_dev_cfg_1,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stm32_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -449,7 +449,7 @@ static struct uart_stm32_data uart_stm32_dev_data_2 = {
 DEVICE_AND_API_INIT(uart_stm32_2, CONFIG_UART_STM32_PORT_2_NAME,
 		    &uart_stm32_init,
 		    &uart_stm32_dev_data_2, &uart_stm32_dev_cfg_2,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stm32_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

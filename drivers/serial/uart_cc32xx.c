@@ -324,5 +324,5 @@ static const struct uart_driver_api uart_cc32xx_driver_api = {
 DEVICE_AND_API_INIT(uart_cc32xx_0, CONFIG_UART_CONSOLE_ON_DEV_NAME,
 		    uart_cc32xx_init, &uart_cc32xx_dev_data_0,
 		    &uart_cc32xx_dev_cfg_0,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_cc32xx_driver_api);

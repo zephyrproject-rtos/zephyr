@@ -263,7 +263,7 @@ struct adc_info adc_info_dev;
 
 DEVICE_AND_API_INIT(adc_qmsi, CONFIG_ADC_0_NAME, &adc_qmsi_init,
 		    &adc_info_dev, NULL,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    (void *)&api_funcs);
 
 static void adc_config_irq(void)
