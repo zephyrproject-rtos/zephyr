@@ -421,8 +421,8 @@ define filechk_Makefile.export
 	(echo "# file is auto-generated, do not modify !"; \
 	echo "BOARD=$(BOARD)"; \
 	echo; \
-	$(foreach e,$(exports),echo $(e)=$($e);) echo; \
-	echo "include $(O)/.config";)
+	$(foreach e,$(exports),echo $(e)=$($(e));) echo; \
+	echo "include $(O)/include/config/auto.conf";)
 endef
 
 # Files to ignore in find ... statements
