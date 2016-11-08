@@ -33,23 +33,8 @@ GTEXT(nano_cpu_idle)
 GTEXT(nano_cpu_atomic_idle)
 GDATA(nano_cpu_sleep_mode)
 
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-	GTEXT(_power_save_idle)
-#endif
-
 SECTION_VAR(BSS, nano_cpu_sleep_mode)
 	.word 0
-
-#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-.macro enter_tickless_idle
-	/* interrupts are locked when entering here */
-	push_s blink
-	jl _power_save_idle
-	pop_s blink
-.endm
-#else
-	#define enter_tickless_idle
-#endif
 
 /*
  * @brief Put the CPU in low-power mode
@@ -66,7 +51,6 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 	jl    _sys_k_event_logger_enter_sleep
 	pop_s blink
 #endif
-	enter_tickless_idle
 
 	ld r1, [nano_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
@@ -88,8 +72,6 @@ SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 	jl    _sys_k_event_logger_enter_sleep
 	pop_s blink
 #endif
-
-	enter_tickless_idle
 
 	ld r1, [nano_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
