@@ -287,6 +287,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 {
 	uint8_t reserved_space = net_nbuf_ll_reserve(buf);
 	struct net_buf *frag;
+	struct in6_addr dst;
 
 	if (net_nbuf_family(buf) != AF_INET6) {
 		return NET_DROP;
@@ -300,6 +301,15 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 		}
 	}
 
+	/* 6lo is going to compress the ipv6 header, and thus accessing
+	 * packet's ipv6 address won't be possible anymore when creating
+	 * the frame */
+	memcpy(&dst, &NET_IPV6_BUF(buf)->dst, sizeof(struct in6_addr));
+
+	if (!ieee802154_manage_send_buffer(iface, buf)) {
+		return NET_DROP;
+	}
+
 	frag = buf->frags;
 	while (frag) {
 		if (frag->len > IEEE802154_MTU) {
@@ -308,7 +318,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		if (!ieee802154_create_data_frame(iface, buf,
+		if (!ieee802154_create_data_frame(iface, &dst,
 						  frag->data - reserved_space,
 						  reserved_space)) {
 			return NET_DROP;
@@ -318,10 +328,6 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 	}
 
 	pkt_hexdump(buf, true);
-
-	if (!ieee802154_manage_send_buffer(iface, buf)) {
-		return NET_DROP;
-	}
 
 	net_if_queue_tx(iface, buf);
 

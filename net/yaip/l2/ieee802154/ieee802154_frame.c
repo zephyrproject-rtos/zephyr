@@ -401,11 +401,11 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf,
 }
 
 static inline enum ieee802154_addressing_mode
-get_dst_addr_mode(struct net_if *iface, struct net_buf *buf,
+get_dst_addr_mode(struct net_if *iface, struct in6_addr *dst,
 		  struct net_nbr **nbr, bool *broadcast)
 {
-	if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst) ||
-	    net_is_ipv6_addr_unspecified(&NET_IPV6_BUF(buf)->dst)) {
+	if (net_is_ipv6_addr_mcast(dst) ||
+	    net_is_ipv6_addr_unspecified(dst)) {
 		*broadcast = true;
 		*nbr = NULL;
 
@@ -419,7 +419,7 @@ get_dst_addr_mode(struct net_if *iface, struct net_buf *buf,
 	 * - Check if dst is known nb and has short addr
 	 * - if so, return short.
 	 */
-	*nbr = net_ipv6_nbr_lookup(iface, &NET_IPV6_BUF(buf)->dst);
+	*nbr = net_ipv6_nbr_lookup(iface, dst);
 	if (!*nbr) {
 		return IEEE802154_ADDR_MODE_NONE;
 	}
@@ -429,14 +429,14 @@ get_dst_addr_mode(struct net_if *iface, struct net_buf *buf,
 
 static inline
 void data_addr_to_fs_settings(struct net_if *iface,
-			      struct net_buf *buf,
+			      struct in6_addr *dst,
 			      struct ieee802154_fcf_seq *fs,
 			      struct ieee802154_frame_params *params)
 {
 	struct net_nbr *nbr;
 	bool broadcast;
 
-	fs->fc.dst_addr_mode = get_dst_addr_mode(iface, buf, &nbr, &broadcast);
+	fs->fc.dst_addr_mode = get_dst_addr_mode(iface, dst, &nbr, &broadcast);
 	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
 		fs->fc.pan_id_comp = 1;
 
@@ -514,7 +514,7 @@ uint8_t *generate_addressing_fields(struct net_if *iface,
 }
 
 bool ieee802154_create_data_frame(struct net_if *iface,
-				  struct net_buf *buf,
+				  struct in6_addr *dst,
 				  uint8_t *p_buf,
 				  uint8_t len)
 {
@@ -530,11 +530,11 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 
 	params.dst.pan_id = ctx->pan_id;
 	params.pan_id = ctx->pan_id;
-	data_addr_to_fs_settings(iface, buf, fs, &params);
+	data_addr_to_fs_settings(iface, dst, fs, &params);
 
 	p_buf = generate_addressing_fields(iface, fs, &params, p_buf);
 
-	if ((p_buf - frag_start) != net_nbuf_ll_reserve(buf)) {
+	if ((p_buf - frag_start) != len) {
 		/* ll reserve was too small? We probably overwrote
 		 * payload bytes
 		 */
