@@ -132,4 +132,4 @@ These are the interrupt-related Application Program Interfaces.
 * :cpp:func:`irq_disable()`
 * :cpp:func:`irq_lock()`
 * :cpp:func:`irq_unlock()`
-* :cpp:func:`k_am_in_isr()`
+* :cpp:func:`k_is_in_isr()`

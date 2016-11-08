@@ -49,7 +49,7 @@ each thread calls a specific routine.
     {
         uint32_t call_count;
 
-        if (k_am_in_isr()) {
+        if (k_is_in_isr()) {
 	    /* ignore any call made by an ISR */
         } else {
             call_count = (uint32_t)k_thread_custom_data_get();

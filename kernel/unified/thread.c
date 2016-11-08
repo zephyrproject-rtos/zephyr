@@ -47,7 +47,7 @@ extern struct _static_thread_data _static_thread_data_list_end[];
 
 int sys_execution_context_type_get(void)
 {
-	if (k_am_in_isr())
+	if (k_is_in_isr())
 		return NANO_CTX_ISR;
 
 	if (_current->prio < 0)
@@ -56,7 +56,7 @@ int sys_execution_context_type_get(void)
 	return NANO_CTX_TASK;
 }
 
-int k_am_in_isr(void)
+int k_is_in_isr(void)
 {
 	return _is_in_isr();
 }

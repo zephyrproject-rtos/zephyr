@@ -381,7 +381,7 @@ extern void k_sched_time_slice_set(int32_t slice, int prio);
  *
  * @return 0 if invoked by a thread, or non-zero if invoked by an ISR
  */
-extern int k_am_in_isr(void);
+extern int k_is_in_isr(void);
 
 /**
  * @brief Set thread's custom data

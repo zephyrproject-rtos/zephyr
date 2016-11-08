@@ -215,7 +215,7 @@ static pfunc func_array[] = {
 	(pfunc)k_thread_suspend,
 	(pfunc)k_thread_resume,
 	(pfunc)k_sched_time_slice_set,
-	(pfunc)k_am_in_isr,
+	(pfunc)k_is_in_isr,
 	(pfunc)k_thread_custom_data_set,
 	(pfunc)k_thread_custom_data_get,
 #endif
