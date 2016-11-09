@@ -5,15 +5,15 @@
 
 % TASKGROUP	NAME
 % =====================================================
-  TASKGROUP	TEST
+  TASKGROUP	TESTGROUP
 
 % TASK NAME       PRIO ENTRY               STACK GROUPS
 % =====================================================
   TASK MONITORTASK   5 MonitorTaskEntry     2048 [EXE]
-  TASK tHigh         4 HighPriTaskEntry     2048 [TEST]
-  TASK tStartTask    5 RegressionTaskEntry  2048 [TEST]
-  TASK tAlternate    6 AlternateTaskEntry   2048 [TEST]
-  TASK tLow          7 LowPriTaskEntry      2048 [TEST]
+  TASK tHigh         4 HighPriTaskEntry     2048 [TESTGROUP]
+  TASK tStartTask    5 RegressionTaskEntry  2048 [TESTGROUP]
+  TASK tAlternate    6 AlternateTaskEntry   2048 [TESTGROUP]
+  TASK tLow          7 LowPriTaskEntry      2048 [TESTGROUP]
 
 % SEMA NAME
 % ======================
