@@ -25,6 +25,11 @@ obj-y += stm32f7xx/drivers/src/stm32f7xx_hal.o
 obj-y += stm32f7xx/soc/system_stm32f7xx.o
 endif
 
+ifdef CONFIG_SOC_SERIES_STM32L0X
+obj-y += stm32l0xx/drivers/src/stm32l0xx_hal.o
+obj-y += stm32l0xx/soc/system_stm32l0xx.o
+endif
+
 ifdef CONFIG_SOC_SERIES_STM32L4X
 obj-y += stm32l4xx/drivers/src/stm32l4xx_hal.o
 obj-y += stm32l4xx/soc/system_stm32l4xx.o
