@@ -587,7 +587,7 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 	ret = net_if_recv_data(net_nbuf_iface(buf), buf);
 	if (ret != NET_CONTINUE) {
 		if (ret == NET_DROP) {
-			NET_DBG("Buffer disgarded by L2");
+			NET_DBG("Buffer %p discarded by L2", buf);
 			NET_STATS(++net_stats.processing_error);
 		}
 
@@ -610,7 +610,8 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 #endif
 	}
 
-	NET_DBG("Unknown IP family packet");
+	NET_DBG("Unknown IP family packet (0x%x)",
+		NET_IPV6_BUF(buf)->vtc & 0xf0);
 	NET_STATS(++net_stats.ip_errors.protoerr);
 	NET_STATS(++net_stats.ip_errors.vhlerr);
 
