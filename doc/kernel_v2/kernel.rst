@@ -13,7 +13,6 @@ the code in the Zephyr source tree.
 
    overview/overview.rst
    threads/threads.rst
-   interrupts/interrupts.rst
    timing/timing.rst
    memory/memory.rst
    synchronization/synchronization.rst

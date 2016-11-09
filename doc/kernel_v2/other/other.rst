@@ -8,6 +8,7 @@ This section describes other services provided by the kernel.
 .. toctree::
    :maxdepth: 1
 
+   interrupts.rst
    atomic.rst
    float.rst
    ring_buffers.rst
