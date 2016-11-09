@@ -39,7 +39,7 @@ extern "C" {
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #endif /* NET_DEBUG */
 
-#define NET_DBG(fmt, ...) SYS_LOG_DBG("(%p): " fmt, sys_thread_self_get(), \
+#define NET_DBG(fmt, ...) SYS_LOG_DBG("(%p): " fmt, k_current_get(), \
 				      ##__VA_ARGS__)
 #define NET_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
@@ -62,7 +62,7 @@ extern "C" {
 #define NET_ASSERT_INFO(...)
 #endif /* CONFIG_NET_LOG */
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 struct net_buf;
 struct net_context;
@@ -155,7 +155,7 @@ static inline void net_analyze_stack(const char *name,
 
 	NET_INFO("net (%p): %s stack real size %u "
 		 "unused %u usage %u/%u (%u %%)",
-		 sys_thread_self_get(), name,
+		 k_current_get(), name,
 		 size + stack_offset, unused, size - unused, size, pcnt);
 }
 #else

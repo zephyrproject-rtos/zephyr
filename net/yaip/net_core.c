@@ -1,9 +1,8 @@
 /** @file
  * @brief Network initialization
  *
- * Initialize the network IP stack. Create two fibers, one for reading data
- * from applications (Tx fiber) and one for reading data from IP stack
- * and passing that data to applications (Rx fiber).
+ * Initialize the network IP stack. Create one thread for reading data
+ * from IP stack and passing that data to applications (Rx thread).
  */
 
 /*
@@ -28,7 +27,7 @@
 #endif
 
 #include <init.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <string.h>
@@ -58,30 +57,30 @@
 #include "udp.h"
 #include "tcp.h"
 
-/* Stack for the rx fiber.
+/* Stack for the rx thread.
  */
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
 #define CONFIG_NET_RX_STACK_SIZE 1024
 #endif
-static char __noinit __stack rx_fiber_stack[CONFIG_NET_RX_STACK_SIZE];
-static struct nano_fifo rx_queue;
-static nano_thread_id_t rx_fiber_id;
+static char __noinit __stack rx_stack[CONFIG_NET_RX_STACK_SIZE];
+static struct k_fifo rx_queue;
+static k_tid_t rx_tid;
 
 #if defined(CONFIG_NET_STATISTICS)
 #define PRINT(fmt, ...) NET_INFO(fmt, ##__VA_ARGS__)
 struct net_stats net_stats;
 #define GET_STAT(s) net_stats.s
-#define PRINT_STATISTICS_INTERVAL (30 * sys_clock_ticks_per_sec)
+#define PRINT_STATISTICS_INTERVAL (30 * MSEC_PER_SEC)
 #define net_print_statistics stats /* to make the debug print line shorter */
 
 static inline void stats(void)
 {
-	static uint32_t next_print;
-	uint32_t curr = sys_tick_get_32();
+	static int64_t next_print;
+	int64_t curr = k_uptime_get();
 
 	if (!next_print || (next_print < curr &&
 	    (!((curr - next_print) > PRINT_STATISTICS_INTERVAL)))) {
-		uint32_t new_print;
+		int64_t new_print;
 
 #if defined(CONFIG_NET_IPV6)
 		PRINT("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
@@ -173,7 +172,7 @@ static inline void stats(void)
 		} else {
 			/* Overflow */
 			next_print = PRINT_STATISTICS_INTERVAL -
-				(0xffffffff - curr);
+				(LLONG_MAX - curr);
 		}
 	}
 }
@@ -618,12 +617,12 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 	return NET_DROP;
 }
 
-static void net_rx_fiber(void)
+static void net_rx_thread(void)
 {
 	struct net_buf *buf;
 
-	NET_DBG("Starting RX fiber (stack %d bytes)",
-		sizeof(rx_fiber_stack));
+	NET_DBG("Starting RX thread (stack %d bytes)",
+		sizeof(rx_stack));
 
 	/* Starting TX side. The ordering is important here and the TX
 	 * can only be started when RX side is ready to receive packets.
@@ -633,8 +632,7 @@ static void net_rx_fiber(void)
 	while (1) {
 		buf = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
 
-		net_analyze_stack("RX fiber", rx_fiber_stack,
-				  sizeof(rx_fiber_stack));
+		net_analyze_stack("RX thread", rx_stack, sizeof(rx_stack));
 
 		NET_DBG("Received buf %p len %d", buf,
 			net_buf_frags_len(buf));
@@ -653,17 +651,17 @@ static void net_rx_fiber(void)
 		net_print_statistics();
 		net_nbuf_print();
 
-		fiber_yield();
+		k_yield();
 	}
 }
 
 static void init_rx_queue(void)
 {
-	nano_fifo_init(&rx_queue);
+	k_fifo_init(&rx_queue);
 
-	rx_fiber_id = fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-				  (nano_fiber_entry_t)net_rx_fiber,
-				  0, 0, 8, 0);
+	rx_tid = k_thread_spawn(rx_stack, sizeof(rx_stack),
+				(k_thread_entry_t)net_rx_thread,
+				NULL, NULL, NULL, K_PRIO_COOP(8), 0, 0);
 }
 
 /* Called when data needs to be sent to network */
@@ -709,7 +707,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 
 	net_buf_put(&rx_queue, buf);
 
-	fiber_wakeup(rx_fiber_id);
+	k_wakeup(rx_tid);
 
 	return 0;
 }
