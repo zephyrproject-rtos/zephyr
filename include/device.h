@@ -619,7 +619,7 @@ int device_busy_check(struct device *chk_dev);
  */
 typedef struct {
 	/** Nanokernel semaphore used for fiber context */
-	struct nano_sem f_sem;
+	struct k_sem f_sem;
 } device_sync_call_t;
 
 
@@ -630,7 +630,7 @@ typedef struct {
  */
 static inline void device_sync_call_init(device_sync_call_t *sync)
 {
-	nano_sem_init(&sync->f_sem);
+	k_sem_init(&sync->f_sem, 0, UINT_MAX);
 }
 
 /**
@@ -641,7 +641,7 @@ static inline void device_sync_call_init(device_sync_call_t *sync)
  */
 static inline void device_sync_call_wait(device_sync_call_t *sync)
 {
-	nano_sem_take(&sync->f_sem, TICKS_UNLIMITED);
+	k_sem_take(&sync->f_sem, K_FOREVER);
 }
 
 /**
@@ -652,7 +652,7 @@ static inline void device_sync_call_wait(device_sync_call_t *sync)
  */
 static inline void device_sync_call_complete(device_sync_call_t *sync)
 {
-	nano_sem_give(&sync->f_sem);
+	k_sem_give(&sync->f_sem);
 }
 
 #ifdef __cplusplus
