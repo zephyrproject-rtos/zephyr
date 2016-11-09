@@ -23,6 +23,9 @@
 #ifndef _DMA_H_
 #define _DMA_H_
 
+#include <kernel.h>
+#include <device.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
