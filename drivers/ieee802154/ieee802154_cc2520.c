@@ -1027,7 +1027,7 @@ static int cc2520_init(struct device *dev)
 	task_fiber_start(cc2520->cc2520_rx_stack,
 			 CONFIG_CC2520_RX_STACK_SIZE,
 			 cc2520_rx, POINTER_TO_INT(dev),
-			 0, 0, 0);
+			 0, 2, 0);
 
 	return 0;
 }
