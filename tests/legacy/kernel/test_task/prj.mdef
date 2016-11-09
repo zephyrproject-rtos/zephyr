@@ -2,11 +2,11 @@
 
 % TASKGROUP	NAME
 % ==================================================
-  TASKGROUP	TEST
+  TASKGROUP	TESTGROUP
 
 % TASK NAME        PRIO ENTRY           STACK GROUPS
 % ==================================================
-  TASK HT_TASKID    10 HelperTask        2048 [TEST]
+  TASK HT_TASKID    10 HelperTask        2048 [TESTGROUP]
   TASK RT_TASKID     5 RegressionTask    2048 [EXE]
 
 % SEMA NAME
