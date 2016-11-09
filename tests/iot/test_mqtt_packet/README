@@ -9,19 +9,35 @@ with enough RAM/ROM.
 Build and Run
 -------------
 
-* QEMU x86:
+* QEMU x86
 
+  Build & run:
   make && make qemu
 
-* Arduino 101:
+* Arduino 101
 
+  Build:
   make BOARD=arduino_101
 
+  Flashing:
   sudo dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
 
-  For more information about Arduino 101, see:
+  For more information about this board, see:
   https://wiki.zephyrproject.org/view/Arduino_101
 
+* NXP Freedom-K64F (frdm-k64f)
+
+  Build:
+  make pristine && make BOARD=frdm_k64f
+
+  Firmware version:
+  Version: 0226
+  Build:   Aug 24 2015 17:06:30
+  Git Commit SHA: 27a236b9fe39c674a703c5c89655fbd26b8e27e1
+  Git Local mods: Yes
+
+  For more information about this board, see:
+  https://developer.mbed.org/platforms/frdm-k64f/
 
 Sample Output
 -------------
@@ -30,7 +46,7 @@ To exit from QEMU enter: 'CTRL+a, x'
 [QEMU] CPU: qemu32
 tc_start() - MQTT Library test
 [PASS] 1 - CONNECT, new session, zeros
-[PASS] 2 - CONNECT, new session, zeros and keep alive = 60
+[PASS] 2 - CONNECT, new session, zeros and keep alive = 365
 [PASS] 3 - CONNECT, new session, will
 [PASS] 4 - CONNECT, new session, will retain
 [PASS] 5 - CONNECT, new session, will qos = 1
