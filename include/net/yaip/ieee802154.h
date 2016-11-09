@@ -29,7 +29,7 @@ struct ieee802154_context {
 	uint16_t pan_id;
 	uint16_t channel;
 	uint8_t sequence;
-	struct nano_sem ack_lock;
+	struct k_sem ack_lock;
 	uint8_t ack_received	: 1;
 	uint8_t ack_requested	: 1;
 	uint8_t _unused		: 6;

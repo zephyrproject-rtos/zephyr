@@ -20,7 +20,7 @@
 #define NET_DEBUG 1
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <string.h>

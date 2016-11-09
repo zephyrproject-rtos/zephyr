@@ -22,7 +22,7 @@
 #ifndef __IEEE802154_FRAME_H__
 #define __IEEE802154_FRAME_H__
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <net/nbuf.h>
 
 #define IEEE802154_MTU				127

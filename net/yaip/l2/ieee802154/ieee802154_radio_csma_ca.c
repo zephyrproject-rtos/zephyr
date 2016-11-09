@@ -55,7 +55,7 @@ loop:
 		if (be) {
 			uint8_t bo_n = sys_rand32_get() & (2 << (be + 1));
 
-			sys_thread_busy_wait(bo_n * 20);
+			k_busy_wait(bo_n * 20);
 		}
 
 		while (1) {

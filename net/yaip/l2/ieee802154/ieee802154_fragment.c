@@ -35,7 +35,7 @@
 #include "6lo.h"
 #include "6lo_private.h"
 
-#define FRAG_REASSEMBLY_TIMEOUT (sys_clock_ticks_per_sec * \
+#define FRAG_REASSEMBLY_TIMEOUT (MSEC_PER_SEC * \
 				 CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT)
 #define REASS_CACHE_SIZE CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
 
@@ -46,7 +46,7 @@ static uint16_t datagram_tag;
  *  IPv6 packets simultaneously.
  */
 struct frag_cache {
-	struct nano_delayed_work timer;	/* Reassemble timer */
+	struct k_delayed_work timer;	/* Reassemble timer */
 	struct net_buf *buf;		/* Reassemble buffer */
 	uint16_t size;			/* Datagram size */
 	uint16_t tag;			/* Datagram tag */
@@ -303,7 +303,7 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 		cache[i].size = 0;
 		cache[i].tag = 0;
 		cache[i].used = false;
-		nano_delayed_work_cancel(&cache[i].timer);
+		k_delayed_work_cancel(&cache[i].timer);
 	}
 }
 
@@ -311,7 +311,7 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
  *  If the reassembly not completed within reassembly timeout discard
  *  the whole packet.
  */
-static void reass_timeout(struct nano_work *work)
+static void reass_timeout(struct k_work *work)
 {
 	struct frag_cache *cache = CONTAINER_OF(work, struct frag_cache, timer);
 
@@ -345,9 +345,8 @@ static inline struct frag_cache *set_reass_cache(struct net_buf *buf,
 		cache[i].tag = tag;
 		cache[i].used = true;
 
-		nano_delayed_work_init(&cache[i].timer, reass_timeout);
-		nano_delayed_work_submit(&cache[i].timer,
-					 FRAG_REASSEMBLY_TIMEOUT);
+		k_delayed_work_init(&cache[i].timer, reass_timeout);
+		k_delayed_work_submit(&cache[i].timer, FRAG_REASSEMBLY_TIMEOUT);
 		return &cache[i];
 	}
 

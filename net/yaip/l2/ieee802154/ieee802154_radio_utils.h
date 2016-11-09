@@ -25,7 +25,7 @@ static inline bool prepare_for_ack(struct ieee802154_context *ctx,
 {
 	if (ieee802154_ack_required(buf)) {
 		ctx->ack_received = false;
-		nano_sem_init(&ctx->ack_lock);
+		k_sem_init(&ctx->ack_lock, 0, UINT_MAX);
 
 		return true;
 	}
@@ -40,12 +40,12 @@ static inline int wait_for_ack(struct ieee802154_context *ctx,
 		return 0;
 	}
 
-	if (nano_sem_take(&ctx->ack_lock, MSEC(10)) == 0) {
+	if (k_sem_take(&ctx->ack_lock, 10) == 0) {
 		/*
 		 * We reinit the semaphore in case handle_ack
 		 * got called multiple times.
 		 */
-		nano_sem_init(&ctx->ack_lock);
+		k_sem_init(&ctx->ack_lock, 0, UINT_MAX);
 	}
 
 	return ctx->ack_received ? 0 : -EIO;
@@ -56,7 +56,7 @@ static inline int handle_ack(struct ieee802154_context *ctx,
 {
 	if (buf->len == IEEE802154_ACK_PKT_LENGTH) {
 		ctx->ack_received = true;
-		nano_sem_give(&ctx->ack_lock);
+		k_sem_give(&ctx->ack_lock);
 
 		return NET_OK;
 	}
