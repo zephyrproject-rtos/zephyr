@@ -42,6 +42,25 @@ extern struct _static_thread_data _static_thread_data_list_end[];
 	     thread_data < _static_thread_data_list_end; \
 	     thread_data++)
 
+#ifdef CONFIG_FP_SHARING
+static inline void _task_group_adjust(struct _static_thread_data *thread_data)
+{
+	/*
+	 * set thread options corresponding to legacy FPU and SSE task groups
+	 * so thread spawns properly; EXE and SYS task groups need no adjustment
+	 */
+	if (thread_data->init_groups & K_TASK_GROUP_FPU) {
+		thread_data->init_options |= K_FP_REGS;
+	}
+#ifdef CONFIG_SSE
+	if (thread_data->init_groups & K_TASK_GROUP_SSE) {
+		thread_data->init_options |= K_SSE_REGS;
+	}
+#endif /* CONFIG_SSE */
+}
+#else
+#define _task_group_adjust(thread_data) do { } while (0)
+#endif /* CONFIG_FP_SHARING */
 
 /* Legacy API */
 
@@ -359,6 +378,7 @@ void _init_static_threads(void)
 	unsigned int  key;
 
 	_FOREACH_STATIC_THREAD(thread_data) {
+		_task_group_adjust(thread_data);
 		_new_thread(
 			thread_data->init_stack,
 			thread_data->init_stack_size,
