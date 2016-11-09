@@ -82,21 +82,18 @@ if BLUETOOTH_DEBUG
 
 config	BLUETOOTH_DEBUG_HCI_DRIVER
 	bool "Bluetooth driver debug"
-	default n
 	help
 	  This option enables debug support for the chosen
 	  Bluetooth UART driver to Nordic chip.
 
 config BLUETOOTH_DEBUG_GATT
 	bool "Bluetooth Generic Attribute Profile (GATT) debug"
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
 
 config NBLE_DEBUG_GAP
 	bool "NBLE Generic Access Profile (GAP) debug"
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Access Profile (GAP) in the interfaces to the
@@ -104,14 +101,12 @@ config NBLE_DEBUG_GAP
 
 config NBLE_DEBUG_CONN
 	bool "NBLE connection debug"
-	default n
 	help
 	  This option enables debug support for Bluetooth
 	  connections in the nble driver.
 
 config NBLE_DEBUG_RPC
 	bool "NBLE RPC debug"
-	default n
 	help
 	  This option enables debug for RPC interface to the Nordic
 	  Bluetooth LE chip.

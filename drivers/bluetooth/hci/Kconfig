@@ -24,7 +24,6 @@ if !BLUETOOTH_CONTROLLER
 
 config BLUETOOTH_UART
 	bool
-	default n
 
 choice
 	prompt "Bluetooth HCI driver"
@@ -62,7 +61,6 @@ endif # !BLUETOOTH_CONTROLLER
 
 config BLUETOOTH_HOST_BUFFERS
 	bool "Host managed incoming data buffers"
-	default n
 	help
 	  Enable this to have the host stack manage incoming ACL data
 	  and HCI event buffers. This makes sense for all HCI drivers
@@ -75,7 +73,6 @@ config BLUETOOTH_HOST_BUFFERS
 config BLUETOOTH_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"
 	depends on BLUETOOTH_DEBUG
-	default n
 	help
 	  This option enables debug support for the chosen
 	  Bluetooth HCI driver

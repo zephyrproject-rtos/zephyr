@@ -17,7 +17,6 @@
 
 menuconfig BLUETOOTH
 	bool "Bluetooth support"
-	default n
 	select NANO_TIMEOUTS
 	select NET_BUF
 	help
