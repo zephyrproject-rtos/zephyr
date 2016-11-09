@@ -108,7 +108,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	stack_size = CONFIG_NET_TX_STACK_SIZE;
 
-	net_analyze_stack_get_values(iface->tx_fiber_stack, stack_size,
+	net_analyze_stack_get_values(iface->tx_stack, stack_size,
 				     &stack_offset, &pcnt, &unused);
 
 	printf("Interface %p\n", iface);

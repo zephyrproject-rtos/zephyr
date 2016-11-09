@@ -20,7 +20,7 @@
 #endif
 
 #include <init.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sections.h>
 #include <string.h>
 #include <net/net_core.h>
@@ -33,7 +33,7 @@
 #include "ipv6.h"
 #include "rpl.h"
 
-#define REACHABLE_TIME 30000 /* in ms */
+#define REACHABLE_TIME (30 * MSEC_PER_SEC) /* in ms */
 #define MIN_RANDOM_FACTOR (1/2)
 #define MAX_RANDOM_FACTOR (3/2)
 
@@ -61,14 +61,14 @@ static sys_slist_t link_callbacks;
 #define debug_check_packet(...)
 #endif
 
-static void net_if_tx_fiber(struct net_if *iface)
+static void net_if_tx_thread(struct net_if *iface)
 {
 	struct net_if_api *api = (struct net_if_api *)iface->dev->driver_api;
 
 	NET_ASSERT(api && api->init && api->send);
 
-	NET_DBG("Starting TX fiber (stack %d bytes) for driver %p queue %p",
-		sizeof(iface->tx_fiber_stack), api, &iface->tx_queue);
+	NET_DBG("Starting TX thread (stack %d bytes) for driver %p queue %p",
+		sizeof(iface->tx_stack), api, &iface->tx_queue);
 
 	api->init(iface);
 
@@ -102,11 +102,11 @@ static void net_if_tx_fiber(struct net_if *iface)
 
 		net_if_call_link_cb(iface, dst, status);
 
-		net_analyze_stack("TX fiber", iface->tx_fiber_stack,
-				  sizeof(iface->tx_fiber_stack));
+		net_analyze_stack("TX thread", iface->tx_stack,
+				  sizeof(iface->tx_stack));
 		net_nbuf_print();
 
-		fiber_yield();
+		k_yield();
 	}
 }
 
@@ -114,10 +114,11 @@ static inline void init_tx_queue(struct net_if *iface)
 {
 	NET_DBG("On iface %p", iface);
 
-	nano_fifo_init(&iface->tx_queue);
+	k_fifo_init(&iface->tx_queue);
 
-	fiber_start(iface->tx_fiber_stack, sizeof(iface->tx_fiber_stack),
-		    (nano_fiber_entry_t)net_if_tx_fiber, (int)iface, 0, 7, 0);
+	k_thread_spawn(iface->tx_stack, sizeof(iface->tx_stack),
+		       (k_thread_entry_t)net_if_tx_thread,
+		       iface, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
@@ -187,9 +188,9 @@ struct net_if *net_if_get_default(void)
 #if defined(CONFIG_NET_IPV6)
 
 #if defined(CONFIG_NET_IPV6_DAD)
-#define DAD_TIMEOUT (sys_clock_ticks_per_sec / 10)
+#define DAD_TIMEOUT (MSEC_PER_SEC / 10)
 
-static void dad_timeout(struct nano_work *work)
+static void dad_timeout(struct k_work *work)
 {
 	/* This means that the DAD succeed. */
 	struct net_if_addr *ifaddr = CONTAINER_OF(work,
@@ -225,17 +226,17 @@ void net_if_start_dad(struct net_if *iface)
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 	if (!net_ipv6_start_dad(iface, ifaddr)) {
-		nano_delayed_work_init(&ifaddr->dad_timer, dad_timeout);
-		nano_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
+		k_delayed_work_init(&ifaddr->dad_timer, dad_timeout);
+		k_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
 	}
 }
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
-#define RS_TIMEOUT (sys_clock_ticks_per_sec)
+#define RS_TIMEOUT MSEC_PER_SEC
 #define RS_COUNT 3
 
-static void rs_timeout(struct nano_work *work)
+static void rs_timeout(struct k_work *work)
 {
 	/* Did not receive RA yet. */
 	struct net_if *iface = CONTAINER_OF(work, struct net_if, rs_timer);
@@ -254,8 +255,8 @@ void net_if_start_rs(struct net_if *iface)
 	NET_DBG("Interface %p", iface);
 
 	if (!net_ipv6_start_rs(iface)) {
-		nano_delayed_work_init(&iface->rs_timer, rs_timeout);
-		nano_delayed_work_submit(&iface->rs_timer, RS_TIMEOUT);
+		k_delayed_work_init(&iface->rs_timer, rs_timeout);
+		k_delayed_work_submit(&iface->rs_timer, RS_TIMEOUT);
 	}
 }
 #endif /* CONFIG_NET_IPV6_ND */
@@ -565,7 +566,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 	return false;
 }
 
-static inline void prefix_lf_timeout(struct nano_work *work)
+static inline void prefix_lf_timeout(struct k_work *work)
 {
 	struct net_if_ipv6_prefix *prefix =
 		CONTAINER_OF(work, struct net_if_ipv6_prefix, lifetime);
@@ -581,26 +582,26 @@ void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 {
 	/* The maximum lifetime might be shorter than expected
 	 * because we have only 32-bit int to store the value and
-	 * the timer API uses ticks value. The lifetime value with
+	 * the timer API uses ms value. The lifetime value with
 	 * all bits set means infinite and that value is never set
 	 * to timer.
 	 */
-	uint32_t timeout = SECONDS(lifetime);
+	uint32_t timeout = lifetime * MSEC_PER_SEC;
 
 	NET_ASSERT(lifetime != 0xffffffff);
 
-	if (lifetime > (0xfffffffe / sys_clock_ticks_per_sec)) {
+	if (lifetime > (0xfffffffe / MSEC_PER_SEC)) {
 		timeout = 0xfffffffe;
 
 		NET_ERR("Prefix %s/%d lifetime %u overflow, "
 			"setting it to %u secs",
 			net_sprint_ipv6_addr(&prefix->prefix),
 			prefix->len,
-			lifetime, timeout / sys_clock_ticks_per_sec);
+			lifetime, timeout / MSEC_PER_SEC);
 	}
 
-	nano_delayed_work_init(&prefix->lifetime, prefix_lf_timeout);
-	nano_delayed_work_submit(&prefix->lifetime, timeout);
+	k_delayed_work_init(&prefix->lifetime, prefix_lf_timeout);
+	k_delayed_work_submit(&prefix->lifetime, timeout);
 }
 
 void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
@@ -609,7 +610,7 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
 		return;
 	}
 
-	nano_delayed_work_cancel(&prefix->lifetime);
+	k_delayed_work_cancel(&prefix->lifetime);
 }
 
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,

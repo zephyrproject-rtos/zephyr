@@ -23,7 +23,6 @@
 #define __NET_IF_H__
 
 #include <device.h>
-#include <misc/nano_work.h>
 #include <misc/slist.h>
 
 #include <net/net_core.h>
@@ -62,11 +61,11 @@ struct net_if_addr {
 	bool is_infinite;
 
 	/** Timer that triggers renewal */
-	struct nano_delayed_work lifetime;
+	struct k_delayed_work lifetime;
 
 #if defined(CONFIG_NET_IPV6_DAD)
 	/** Duplicate address detection (DAD) timer */
-	struct nano_delayed_work dad_timer;
+	struct k_delayed_work dad_timer;
 
 	/** How many times we have done DAD */
 	uint8_t dad_count;
@@ -106,7 +105,7 @@ struct net_if_ipv6_prefix {
 	bool is_infinite;
 
 	/** Prefix lifetime */
-	struct nano_delayed_work lifetime;
+	struct k_delayed_work lifetime;
 };
 #endif /* CONFIG_NET_IPV6 */
 
@@ -132,7 +131,7 @@ struct net_if_router {
 	bool is_infinite;
 
 	/** Router lifetime */
-	struct nano_delayed_work lifetime;
+	struct k_delayed_work lifetime;
 };
 
 /*
@@ -181,13 +180,13 @@ struct net_if {
 	uint16_t mtu;
 
 	/** Queue for outgoing packets from apps */
-	struct nano_fifo tx_queue;
+	struct k_fifo tx_queue;
 
-	/** Stack for the TX fiber tied to this interface */
+	/** Stack for the TX thread tied to this interface */
 #ifndef CONFIG_NET_TX_STACK_SIZE
 #define CONFIG_NET_TX_STACK_SIZE 1024
 #endif
-	char tx_fiber_stack[CONFIG_NET_TX_STACK_SIZE];
+	char tx_stack[CONFIG_NET_TX_STACK_SIZE];
 
 #if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
@@ -213,7 +212,7 @@ struct net_if {
 #endif /* CONFIG_NET_IPV6_DAD */
 
 	/** Router solicitation timer */
-	struct nano_delayed_work rs_timer;
+	struct k_delayed_work rs_timer;
 
 	/** RS count */
 	uint8_t rs_count;
@@ -276,10 +275,10 @@ struct net_if {
 	} dhcpv4;
 
 	/** Timer for DHCPv4 Client requests (DISCOVER, REQUEST or RENEWAL) */
-	struct nano_delayed_work dhcpv4_timeout;
+	struct k_delayed_work dhcpv4_timeout;
 
 	/** T1 (Renewal) timer */
-	struct nano_delayed_work dhcpv4_t1_timer;
+	struct k_delayed_work dhcpv4_t1_timer;
 #endif
 } __net_if_align;
 

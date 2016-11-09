@@ -106,7 +106,7 @@ struct dhcp_msg {
 
 static uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 }; /* RFC 1497 [17] */
 
-static void dhcpv4_timeout(struct nano_work *work);
+static void dhcpv4_timeout(struct k_work *work);
 
 /*
  * Timeout for Initialization and allocation of network address.
@@ -138,9 +138,8 @@ static inline void unset_dhcpv4_on_iface(struct net_if *iface)
 	memset(iface->dhcpv4.server_id.s4_addr, 0, 4);
 	memset(iface->dhcpv4.server_id.s4_addr, 0, 4);
 	memset(iface->dhcpv4.requested_ip.s4_addr, 0, 4);
-
-	nano_delayed_work_cancel(&iface->dhcpv4_timeout);
-	nano_delayed_work_cancel(&iface->dhcpv4_t1_timer);
+	k_delayed_work_cancel(&iface->dhcpv4_timeout);
+	k_delayed_work_cancel(&iface->dhcpv4_t1_timer);
 }
 
 /* Add magic cookie to DCHPv4 messages */
@@ -382,8 +381,8 @@ static void send_request(struct net_if *iface, bool renewal)
 
 	iface->dhcpv4.attempts++;
 
-	nano_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
-	nano_delayed_work_submit(&iface->dhcpv4_timeout, get_dhcpv4_timeout());
+	k_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
+	k_delayed_work_submit(&iface->dhcpv4_timeout, get_dhcpv4_timeout());
 
 	return;
 
@@ -420,8 +419,8 @@ static void send_discover(struct net_if *iface)
 
 	iface->dhcpv4.state = NET_DHCPV4_DISCOVER;
 
-	nano_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
-	nano_delayed_work_submit(&iface->dhcpv4_timeout, get_dhcpv4_timeout());
+	k_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
+	k_delayed_work_submit(&iface->dhcpv4_timeout, get_dhcpv4_timeout());
 
 	return;
 
@@ -433,7 +432,7 @@ fail:
 	}
 }
 
-static void dhcpv4_timeout(struct nano_work *work)
+static void dhcpv4_timeout(struct k_work *work)
 {
 	struct net_if *iface = CONTAINER_OF(work, struct net_if,
 					    dhcpv4_timeout);
@@ -483,7 +482,7 @@ static void dhcpv4_timeout(struct nano_work *work)
 	}
 }
 
-static void dhcpv4_t1_timeout(struct nano_work *work)
+static void dhcpv4_t1_timeout(struct k_work *work)
 {
 	struct net_if *iface = CONTAINER_OF(work, struct net_if,
 					    dhcpv4_t1_timer);
@@ -612,7 +611,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 		}
 
 		/* Send DHCPv4 Request Message */
-		nano_delayed_work_cancel(&iface->dhcpv4_timeout);
+		k_delayed_work_cancel(&iface->dhcpv4_timeout);
 		send_request(iface, false);
 
 	} else if (iface->dhcpv4.state == NET_DHCPV4_REQUEST ||
@@ -623,7 +622,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 			return;
 		}
 
-		nano_delayed_work_cancel(&iface->dhcpv4_timeout);
+		k_delayed_work_cancel(&iface->dhcpv4_timeout);
 
 		switch (iface->dhcpv4.state) {
 		case NET_DHCPV4_REQUEST:
@@ -653,11 +652,11 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 		iface->dhcpv4.state = NET_DHCPV4_ACK;
 
 		/* Start renewal time */
-		nano_delayed_work_init(&iface->dhcpv4_t1_timer,
-				       dhcpv4_t1_timeout);
+		k_delayed_work_init(&iface->dhcpv4_t1_timer,
+				    dhcpv4_t1_timeout);
 
-		nano_delayed_work_submit(&iface->dhcpv4_t1_timer,
-					 get_dhcpv4_renewal_time(iface));
+		k_delayed_work_submit(&iface->dhcpv4_t1_timer,
+				      get_dhcpv4_renewal_time(iface));
 	}
 }
 
