@@ -83,10 +83,10 @@ struct net_ipv6_nbr_data {
 	struct in6_addr addr;
 
 	/** Reachable timer. */
-	struct nano_delayed_work reachable;
+	struct k_delayed_work reachable;
 
 	/** Neighbor Solicitation timer for DAD */
-	struct nano_delayed_work send_ns;
+	struct k_delayed_work send_ns;
 
 	/** State of the neighbor discovery */
 	enum net_nbr_state state;

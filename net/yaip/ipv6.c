@@ -161,7 +161,7 @@ static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 {
 	int ret;
 
-	ret = nano_delayed_work_cancel(&data->send_ns);
+	ret = k_delayed_work_cancel(&data->send_ns);
 	if (ret < 0) {
 		NET_DBG("Cannot cancel NS work (%d)", ret);
 	}
@@ -177,7 +177,7 @@ static inline void nbr_free(struct net_nbr *nbr)
 
 	nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 
-	nano_delayed_work_cancel(&net_ipv6_nbr_data(nbr)->reachable);
+	k_delayed_work_cancel(&net_ipv6_nbr_data(nbr)->reachable);
 
 	net_nbr_unref(nbr);
 }
@@ -446,9 +446,9 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #endif /* NET_DEBUG */
 
 #if defined(CONFIG_NET_IPV6_ND)
-#define NS_REPLY_TIMEOUT (sys_clock_ticks_per_sec * 1)
+#define NS_REPLY_TIMEOUT MSEC_PER_SEC
 
-static void ns_reply_timeout(struct nano_work *work)
+static void ns_reply_timeout(struct k_work *work)
 {
 	/* We did not receive reply to a sent NS */
 	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
@@ -1006,7 +1006,7 @@ drop:
 	return NET_DROP;
 }
 
-static void nd_reachable_timeout(struct nano_work *work)
+static void nd_reachable_timeout(struct k_work *work)
 {
 	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
 						      struct net_ipv6_nbr_data,
@@ -1087,14 +1087,14 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 {
 	uint32_t time;
 
-	time = MSEC(net_if_ipv6_get_reachable_time(iface));
+	time = net_if_ipv6_get_reachable_time(iface);
 
 	NET_ASSERT_INFO(time, "Zero reachable timeout!");
 
-	nano_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
-			       nd_reachable_timeout);
+	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
+			    nd_reachable_timeout);
 
-	nano_delayed_work_submit(&net_ipv6_nbr_data(nbr)->reachable, time);
+	k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->reachable, time);
 }
 
 static inline bool handle_na_neighbor(struct net_buf *buf,
@@ -1468,10 +1468,10 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 		NET_DBG("Setting timeout %d for NS", NS_REPLY_TIMEOUT);
 
-		nano_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
-				       ns_reply_timeout);
-		nano_delayed_work_submit(&net_ipv6_nbr_data(nbr)->send_ns,
-					 NS_REPLY_TIMEOUT);
+		k_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
+				    ns_reply_timeout);
+		k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->send_ns,
+				      NS_REPLY_TIMEOUT);
 	}
 
 	dbg_addr_sent_tgt("Neighbor Solicitation",
@@ -1720,7 +1720,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 
 #define TWO_HOURS (2 * 60 * 60)
 
-static inline uint32_t remaining(struct nano_delayed_work *work)
+static inline uint32_t remaining(struct k_delayed_work *work)
 {
 	if (work->timeout.delta_ticks_from_prev < 0) {
 		return NET_IPV6_ND_INFINITE_LIFETIME;
@@ -1730,14 +1730,10 @@ static inline uint32_t remaining(struct nano_delayed_work *work)
 		sys_clock_ticks_per_sec;
 }
 
-static inline void submit_work(struct nano_delayed_work *work,
+static inline void submit_work(struct k_delayed_work *work,
 			       uint32_t time_in_sec)
 {
-	int32_t ticks = (int32_t)(time_in_sec * sys_clock_ticks_per_sec);
-
-	NET_ASSERT_INFO(ticks >= 0, "Too long timeout");
-
-	nano_delayed_work_submit(work, ticks);
+	k_delayed_work_submit(work, time_in_sec * MSEC_PER_SEC);
 }
 
 static inline void handle_prefix_autonomous(struct net_buf *buf,
