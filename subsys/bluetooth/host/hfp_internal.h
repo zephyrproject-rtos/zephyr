@@ -18,7 +18,22 @@
  * limitations under the License.
  */
 
-#define BLUETOOTH_HFP_MAX_PDU 140
+#define BLUETOOTH_HFP_MAX_MTU           140
+#define BLUETOOTH_HF_CLIENT_MAX_PDU	20
+
+/* HFP AG Features */
+#define BT_HFP_AG_FEATURE_3WAY_CALL     0x00000001 /* Three-way calling */
+#define BT_HFP_AG_FEATURE_ECNR          0x00000002 /* EC and/or NR function */
+#define BT_HFP_AG_FEATURE_VOICE_RECG    0x00000004 /* Voice recognition */
+#define BT_HFP_AG_INBAND_RING_TONE      0x00000008 /* In-band ring capability */
+#define BT_HFP_AG_VOICE_TAG             0x00000010 /* Attach no. to voice tag */
+#define BT_HFP_AG_FEATURE_REJECT_CALL   0x00000020 /* Ability to reject call */
+#define BT_HFP_AG_FEATURE_ECS           0x00000040 /* Enhanced call status */
+#define BT_HFP_AG_FEATURE_ECC           0x00000080 /* Enhanced call control */
+#define BT_HFP_AG_FEATURE_EXT_ERR       0x00000100 /* Extented error codes */
+#define BT_HFP_AG_FEATURE_CODEC_NEG     0x00000200 /* Codec negotiation */
+#define BT_HFP_AG_FEATURE_HF_IND        0x00000400 /* HF Indicators */
+#define BT_HFP_AG_FEARTURE_ESCO_S4      0x00000800 /* eSCO S4 Settings */
 
 /* HFP HF Features */
 #define BT_HFP_HF_FEATURE_ECNR          0x00000001 /* EC and/or NR */
@@ -34,10 +49,14 @@
 
 /* HFP HF Supported features */
 #define BT_HFP_HF_SUPPORTED_FEATURES    (BT_HFP_HF_FEATURE_CLI | \
-					 BT_HFP_HF_FEATURE_VOLUME | \
-					 BT_HFP_HF_FEATURE_CODEC_NEG)
+					 BT_HFP_HF_FEATURE_VOLUME)
+
+#define HF_MAX_BUF_LEN 20
 
 struct bt_hfp_hf {
 	struct bt_rfcomm_dlc rfcomm_dlc;
+	char hf_buffer[HF_MAX_BUF_LEN];
+	struct at_client at;
 	uint32_t hf_features;
+	uint32_t ag_features;
 };

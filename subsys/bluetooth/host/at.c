@@ -50,10 +50,16 @@ const char *skip_whitespace(const char *buf)
 
 int at_get_number(const char *buf, uint32_t *val)
 {
-	*val = 0;
+	uint32_t i;
 
-	for (buf = skip_whitespace(buf); isdigit(*buf); buf++) {
+	buf = skip_whitespace(buf);
+
+	for (i = 0, *val = 0; isdigit(*buf); buf++, i++) {
 		*val = *val * 10 + *buf - '0';
+	}
+
+	if (i == 0) {
+		return -ENODATA;
 	}
 
 	return 0;
@@ -279,7 +285,12 @@ static int cmd_get_value(struct at_client *at, struct net_buf *buf,
 static int cmd_process_value(struct at_client *at, struct net_buf *buf,
 			     const char *prefix, parse_val_t func)
 {
-	return func(at);
+	int ret;
+
+	ret = func(at);
+	at->cmd_state = CMD_STATE_END_LF;
+
+	return ret;
 }
 
 static int cmd_state_end_lf(struct at_client *at, struct net_buf *buf,

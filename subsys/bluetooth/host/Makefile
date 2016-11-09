@@ -13,6 +13,8 @@ obj-$(CONFIG_BLUETOOTH_DEBUG_MONITOR) += monitor.o
 
 obj-$(CONFIG_BLUETOOTH_TINYCRYPT_ECC) += hci_ecc.o
 
+obj-$(CONFIG_BLUETOOTH_INTERNAL_STORAGE) += storage.o
+
 ifeq ($(CONFIG_BLUETOOTH_CONN),y)
 	obj-y += conn.o l2cap.o att.o gatt.o
 

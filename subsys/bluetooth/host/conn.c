@@ -905,7 +905,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	       flags);
 
 	/* Wait until the controller can accept ACL packets */
-	nano_fiber_sem_take(bt_conn_get_pkts(conn), TICKS_UNLIMITED);
+	k_sem_take(bt_conn_get_pkts(conn), K_FOREVER);
 
 	/* Check for disconnection while waiting for pkts_sem */
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -928,7 +928,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	return true;
 
 fail:
-	nano_fiber_sem_give(bt_conn_get_pkts(conn));
+	k_sem_give(bt_conn_get_pkts(conn));
 	if (always_consume) {
 		net_buf_unref(buf);
 	}
@@ -1140,7 +1140,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		/* Return any unacknowledged packets */
 		while (conn->pending_pkts) {
-			nano_fiber_sem_give(bt_conn_get_pkts(conn));
+			k_sem_give(bt_conn_get_pkts(conn));
 			conn->pending_pkts--;
 		}
 
@@ -1249,6 +1249,24 @@ struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 	}
 
 	return NULL;
+}
+
+void bt_conn_disconnect_all(void)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		struct bt_conn *conn = &conns[i];
+
+		if (!atomic_get(&conn->ref)) {
+			continue;
+		}
+
+		if (conn->state == BT_CONN_CONNECTED) {
+			bt_conn_disconnect(conn,
+					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		}
+	}
 }
 
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)

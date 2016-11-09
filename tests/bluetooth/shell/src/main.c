@@ -1736,6 +1736,54 @@ static int cmd_bredr_discovery(int argc, char *argv[])
 
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
+static int cmd_clear(int argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	int err;
+
+	if (argc < 2) {
+		printk("Specify remote address or \"all\"\n");
+		return 0;
+	}
+
+	if (strcmp(argv[1], "all") == 0) {
+		err = bt_storage_clear(NULL);
+		if (err) {
+			printk("Failed to clear storage (err %d)\n", err);
+		} else {
+			printk("Storage successfully cleared\n");
+		}
+
+		return 0;
+	}
+
+	if (argc < 3) {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		addr.type = BT_ADDR_LE_PUBLIC;
+		err = str2bt_addr(argv[1], &addr.a);
+#else
+		printk("Both address and address type needed\n");
+		return 0;
+#endif
+	} else {
+		err = str2bt_addr_le(argv[1], argv[2], &addr);
+	}
+
+	if (err) {
+		printk("Invalid address\n");
+		return 0;
+	}
+
+	err = bt_storage_clear(&addr);
+	if (err) {
+		printk("Failed to clear storage (err %d)\n", err);
+	} else {
+		printk("Storage successfully cleared\n");
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
@@ -2158,6 +2206,7 @@ static const struct shell_cmd commands[] = {
 	{ "advertise", cmd_advertise,
 	"<type: off, on, scan, nconn> <mode: discov, non_discov>"  },
 	{ "oob", cmd_oob },
+	{ "clear", cmd_clear },
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	{ "security", cmd_security, "<security level: 0, 1, 2, 3>" },
 	{ "auth", cmd_auth,

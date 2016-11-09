@@ -41,5 +41,5 @@ struct bt_conn {
 	struct nano_delayed_work update_work;
 
 	void *gatt_private;
-	struct nano_sem gatt_notif_sem;
+	struct k_sem gatt_notif_sem;
 };

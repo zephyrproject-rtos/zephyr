@@ -261,7 +261,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
-	struct nano_sem sync_sem;
+	struct k_sem sync_sem;
 	int err;
 
 	if (!buf) {
@@ -273,12 +273,12 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	BT_DBG("opcode 0x%04x len %u", opcode, buf->len);
 
-	nano_sem_init(&sync_sem);
+	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
 
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
-	nano_sem_take(&sync_sem, TICKS_UNLIMITED);
+	k_sem_take(&sync_sem, K_FOREVER);
 
 	/* Indicate failure if we failed to get the return parameters */
 	if (!cmd(buf)->sync) {
@@ -543,7 +543,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 		}
 
 		while (count--) {
-			nano_fiber_sem_give(bt_conn_get_pkts(conn));
+			k_sem_give(bt_conn_get_pkts(conn));
 		}
 
 		bt_conn_unref(conn);
@@ -1578,7 +1578,7 @@ static void report_discovery_results(void)
 	for (i = 0; i < discovery_results_count; i++) {
 		struct discovery_priv *priv;
 
-		priv = (struct discovery_priv *)&discovery_results[i].private;
+		priv = (struct discovery_priv *)&discovery_results[i]._priv;
 
 		if (eir_has_name(discovery_results[i].eir)) {
 			continue;
@@ -1673,7 +1673,7 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 			return;
 		}
 
-		priv = (struct discovery_priv *)&result->private;
+		priv = (struct discovery_priv *)&result->_priv;
 		priv->pscan_rep_mode = evt->pscan_rep_mode;
 		priv->clock_offset = evt->clock_offset;
 
@@ -1705,7 +1705,7 @@ static void extended_inquiry_result(struct net_buf *buf)
 		return;
 	}
 
-	priv = (struct discovery_priv *)&result->private;
+	priv = (struct discovery_priv *)&result->_priv;
 	priv->pscan_rep_mode = evt->pscan_rep_mode;
 	priv->clock_offset = evt->clock_offset;
 
@@ -1728,7 +1728,7 @@ static void remote_name_request_complete(struct net_buf *buf)
 		return;
 	}
 
-	priv = (struct discovery_priv *)&result->private;
+	priv = (struct discovery_priv *)&result->_priv;
 	priv->resolving = 0;
 
 	if (evt->status) {
@@ -1779,7 +1779,7 @@ check_names:
 	for (i = 0; i < discovery_results_count; i++) {
 		struct discovery_priv *priv;
 
-		priv = (struct discovery_priv *)&discovery_results[i].private;
+		priv = (struct discovery_priv *)&discovery_results[i]._priv;
 
 		if (priv->resolving) {
 			return;
@@ -2278,7 +2278,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
 	if (cmd(sent)->sync) {
-		struct nano_sem *sem = cmd(sent)->sync;
+		struct k_sem *sem = cmd(sent)->sync;
 
 		if (status) {
 			cmd(sent)->sync = NULL;
@@ -2286,7 +2286,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 			cmd(sent)->sync = net_buf_ref(buf);
 		}
 
-		nano_fiber_sem_give(sem);
+		k_sem_give(sem);
 	} else {
 		net_buf_unref(sent);
 	}
@@ -2312,7 +2312,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	if (evt->ncmd && !bt_dev.ncmd) {
 		/* Allow next command to be sent */
 		bt_dev.ncmd = 1;
-		nano_fiber_sem_give(&bt_dev.ncmd_sem);
+		k_sem_give(&bt_dev.ncmd_sem);
 	}
 }
 
@@ -2330,22 +2330,8 @@ static void hci_cmd_status(struct net_buf *buf)
 	if (evt->ncmd && !bt_dev.ncmd) {
 		/* Allow next command to be sent */
 		bt_dev.ncmd = 1;
-		nano_fiber_sem_give(&bt_dev.ncmd_sem);
+		k_sem_give(&bt_dev.ncmd_sem);
 	}
-}
-
-static inline void mynewt_rand_delay(void)
-{
-#if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_QUARK_SE_DEVBOARD)
-	/* FIXME: Temporary hack for MyNewt HCI firmware which
-	 * crashes if it receives too rapid LE_Rand commands.
-	 */
-	if (sys_execution_context_type_get() == NANO_CTX_FIBER) {
-		fiber_sleep(MSEC(30));
-	} else {
-		task_sleep(MSEC(30));
-	}
-#endif /* CONFIG_BOARD_ARDUINO_101 || CONFIG_BOARD_QUARK_SE_DEVBOARD */
 }
 
 static int prng_reseed(struct tc_hmac_prng_struct *h)
@@ -2357,11 +2343,6 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 	for (i = 0; i < (sizeof(seed) / 8); i++) {
 		struct bt_hci_rp_le_rand *rp;
 		struct net_buf *rsp;
-
-		/* FIXME: Temporary hack for MyNewt HCI firmware which
-		 * crashes if it receives too rapid LE_Rand commands.
-		 */
-		mynewt_rand_delay();
 
 		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 		if (ret) {
@@ -2391,11 +2372,6 @@ static int prng_init(struct tc_hmac_prng_struct *h)
 	struct bt_hci_rp_le_rand *rp;
 	struct net_buf *rsp;
 	int ret;
-
-	/* FIXME: Temporary hack for MyNewt HCI firmware which
-	 * crashes if it receives too rapid LE_Rand commands.
-	 */
-	mynewt_rand_delay();
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 	if (ret) {
@@ -2747,7 +2723,7 @@ static void hci_cmd_tx_fiber(void)
 
 		/* Wait until ncmd > 0 */
 		BT_DBG("calling sem_take_wait");
-		nano_fiber_sem_take(&bt_dev.ncmd_sem, TICKS_UNLIMITED);
+		k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
 
 		/* Get next command - wait if necessary */
 		BT_DBG("calling net_buf_get_timeout");
@@ -2770,7 +2746,7 @@ static void hci_cmd_tx_fiber(void)
 		err = bt_send(buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)", err);
-			nano_fiber_sem_give(&bt_dev.ncmd_sem);
+			k_sem_give(&bt_dev.ncmd_sem);
 			hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED,
 				     NULL);
 			net_buf_unref(buf);
@@ -2810,17 +2786,6 @@ static void read_le_features_complete(struct net_buf *buf)
 	memcpy(bt_dev.le.features, rp->features, sizeof(bt_dev.le.features));
 }
 
-static void init_sem(struct nano_sem *sem, size_t count)
-{
-	/* Initialize & prime the semaphore for counting controller-side
-	 * available ACL packet buffers.
-	 */
-	nano_sem_init(sem);
-	while (count--) {
-		nano_sem_give(sem);
-	};
-}
-
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static void read_buffer_size_complete(struct net_buf *buf)
 {
@@ -2834,7 +2799,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.br.mtu);
 
-	init_sem(&bt_dev.br.pkts, pkts);
+	k_sem_init(&bt_dev.br.pkts, pkts, pkts);
 }
 #else
 static void read_buffer_size_complete(struct net_buf *buf)
@@ -2854,7 +2819,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.le.mtu);
 
-	init_sem(&bt_dev.le.pkts, pkts);
+	k_sem_init(&bt_dev.le.pkts, pkts, pkts);
 }
 #endif
 
@@ -2867,7 +2832,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	bt_dev.le.mtu = sys_le16_to_cpu(rp->le_max_len);
 
 	if (bt_dev.le.mtu) {
-		init_sem(&bt_dev.le.pkts, rp->le_max_num);
+		k_sem_init(&bt_dev.le.pkts, rp->le_max_num, rp->le_max_num);
 		BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num,
 		       bt_dev.le.mtu);
 	}
@@ -3676,7 +3641,7 @@ int bt_enable(bt_ready_cb_t cb)
 #endif /* CONFIG_BLUETOOTH_CONN */
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
-	nano_sem_init(&bt_dev.ncmd_sem);
+	k_sem_init(&bt_dev.ncmd_sem, 0, 1);
 
 	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
 	 * exception is if the controller requests to wait for an
@@ -3684,7 +3649,7 @@ int bt_enable(bt_ready_cb_t cb)
 	 */
 #if !defined(CONFIG_BLUETOOTH_WAIT_NOP)
 	bt_dev.ncmd = 1;
-	nano_task_sem_give(&bt_dev.ncmd_sem);
+	k_sem_give(&bt_dev.ncmd_sem);
 #endif /* !CONFIG_BLUETOOTH_WAIT_NOP */
 
 	/* TX fiber */
@@ -4122,7 +4087,7 @@ int bt_br_discovery_stop(void)
 		struct bt_hci_cp_remote_name_cancel *cp;
 		struct net_buf *buf;
 
-		priv = (struct discovery_priv *)&discovery_results[i].private;
+		priv = (struct discovery_priv *)&discovery_results[i]._priv;
 
 		if (!priv->resolving) {
 			continue;
@@ -4230,7 +4195,59 @@ void bt_storage_register(const struct bt_storage *storage)
 
 int bt_storage_clear(const bt_addr_le_t *addr)
 {
-	return -ENOSYS;
+	if (addr) {
+#if defined(CONFIG_BLUETOOTH_CONN)
+		struct bt_conn *conn;
+#endif
+#if defined(CONFIG_BLUETOOTH_SMP)
+		struct bt_keys *keys;
+#endif
+
+#if defined(CONFIG_BLUETOOTH_CONN)
+		conn = bt_conn_lookup_addr_le(addr);
+		if (conn) {
+			bt_conn_disconnect(conn,
+					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+			bt_conn_unref(conn);
+		}
+#endif
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		/* LE Public may indicate BR/EDR as well */
+		if (addr->type == BT_ADDR_LE_PUBLIC) {
+			bt_keys_link_key_clear_addr(&addr->a);
+		}
+#endif
+
+#if defined(CONFIG_BLUETOOTH_SMP)
+		keys = bt_keys_find_addr(addr);
+		if (keys) {
+			bt_keys_clear(keys);
+		}
+#endif
+
+		if (bt_storage) {
+			return bt_storage->clear(addr);
+		}
+
+		return 0;
+	}
+
+#if defined(CONFIG_BLUTEOOTH_CONN)
+	bt_conn_disconnect_all();
+#endif
+#if defined(CONFIG_BLUETOOTH_SMP)
+	bt_keys_clear_all();
+#endif
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	bt_keys_link_key_clear_addr(NULL);
+#endif
+
+	if (bt_storage) {
+		return bt_storage->clear(NULL);
+	}
+
+	return 0;
 }
 
 uint16_t bt_hci_get_cmd_opcode(struct net_buf *buf)

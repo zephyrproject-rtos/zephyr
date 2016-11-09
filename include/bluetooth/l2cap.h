@@ -91,7 +91,7 @@ struct bt_l2cap_le_endpoint {
 	/** Endpoint Maximum PDU payload Size */
 	uint16_t			mps;
 	/** Endpoint credits */
-	struct nano_sem			credits;
+	struct k_sem			credits;
 };
 
 /** @brief LE L2CAP Channel structure. */

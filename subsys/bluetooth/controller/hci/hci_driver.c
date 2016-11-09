@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <soc.h>
 #include <init.h>
 #include <device.h>
@@ -66,7 +66,7 @@ static uint8_t ALIGNED(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 						[TICKER_USER_OP_T_SIZE];
 static uint8_t ALIGNED(4) _radio[LL_MEM_TOTAL];
 
-static struct nano_sem nano_sem_recv;
+static struct k_sem sem_recv;
 static BT_STACK_NOINIT(recv_fiber_stack,
 		       CONFIG_BLUETOOTH_CONTROLLER_RX_STACK_SIZE);
 
@@ -76,7 +76,7 @@ void radio_active_callback(uint8_t active)
 
 void radio_event_callback(void)
 {
-	nano_isr_sem_give(&nano_sem_recv);
+	k_sem_give(&sem_recv);
 }
 
 static void radio_nrf5_isr(void *arg)
@@ -190,7 +190,7 @@ static void recv_fiber(int unused0, int unused1)
 
 			fiber_yield();
 		} else {
-			nano_fiber_sem_take(&nano_sem_recv, TICKS_UNLIMITED);
+			k_sem_take(&sem_recv, K_FOREVER);
 		}
 
 		stack_analyze("recv fiber stack",
@@ -319,7 +319,7 @@ static int hci_driver_open(void)
 	irq_enable(NRF5_IRQ_SWI4_IRQn);
 	irq_enable(NRF5_IRQ_SWI5_IRQn);
 
-	nano_sem_init(&nano_sem_recv);
+	k_sem_init(&sem_recv, 0, UINT_MAX);
 	fiber_start(recv_fiber_stack, sizeof(recv_fiber_stack),
 		    (nano_fiber_entry_t)recv_fiber, 0, 0, 7, 0);
 

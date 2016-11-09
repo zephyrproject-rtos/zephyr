@@ -281,7 +281,7 @@ int bt_le_oob_get_local(struct bt_le_oob *oob);
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
 	/** private */
-	uint8_t private[4];
+	uint8_t _priv[4];
 
 	/** Remote device address */
 	bt_addr_t addr;
