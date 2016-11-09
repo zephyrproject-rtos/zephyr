@@ -43,7 +43,7 @@ static int i2c_qmsi_init(struct device *dev);
 struct i2c_qmsi_driver_data {
 	device_sync_call_t sync;
 	int transfer_status;
-	struct nano_sem sem;
+	struct k_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
@@ -187,9 +187,9 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 		return -EINVAL;
 	}
 
-	nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
+	k_sem_take(&driver_data->sem, K_FOREVER);
 	rc = qm_i2c_set_config(instance, &qm_cfg);
-	nano_sem_give(&driver_data->sem);
+	k_sem_give(&driver_data->sem);
 
 	controller->ic_sda_hold = (CONFIG_I2C_SDA_RX_HOLD << 16) +
 				   CONFIG_I2C_SDA_TX_HOLD;
@@ -239,9 +239,9 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 		xfer.callback_data = dev;
 		xfer.stop = stop;
 
-		nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
+		k_sem_take(&driver_data->sem, K_FOREVER);
 		rc = qm_i2c_master_irq_transfer(instance, &xfer, addr);
-		nano_sem_give(&driver_data->sem);
+		k_sem_give(&driver_data->sem);
 
 		if (rc != 0) {
 			device_busy_clear(dev);
@@ -275,8 +275,8 @@ static int i2c_qmsi_init(struct device *dev)
 	int err;
 
 	device_sync_call_init(&driver_data->sync);
-	nano_sem_init(&driver_data->sem);
-	nano_sem_give(&driver_data->sem);
+	k_sem_init(&driver_data->sem, 0, UINT_MAX);
+	k_sem_give(&driver_data->sem);
 
 	switch (instance) {
 	case QM_I2C_0:
