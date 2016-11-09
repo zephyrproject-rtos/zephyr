@@ -38,7 +38,7 @@ config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
 
 config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
 	bool "Bluetooth Controller Assertion Handler"
-	depends on BLUETOOTH_STACK_HCI_RAW
+	depends on BLUETOOTH_HCI_RAW
 	help
 	  This option enables an application-defined sink for the
 	  controller assertion mechanism. This must be defined in

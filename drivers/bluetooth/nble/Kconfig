@@ -17,18 +17,11 @@
 #
 
 config NBLE
-	bool "Support for custom Nordic Semiconductor BLE protocol"
-	default y if BLUETOOTH_STACK_NBLE
-	default n
-	select BLUETOOTH_PERIPHERAL
-	select BLUETOOTH_CENTRAL
-	select BLUETOOTH_GATT_CLIENT
-	select BLUETOOTH_SMP
+	bool "Support for custom non-HCI nRF51 firmware"
 	select UART_INTERRUPT_DRIVEN
 	select NANO_TIMEOUTS
 	select NET_BUF
 	depends on SERIAL
-	depends on BLUETOOTH_STACK_NBLE
 	help
 	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
 	  LE chips with a custom firmware. The API for this is a subset of
@@ -43,11 +36,11 @@ config NBLE
 if NBLE
 config BLUETOOTH_PERIPHERAL
 	bool
-	default n
+	default y
 
 config BLUETOOTH_CENTRAL
 	bool
-	default n
+	default y
 
 config BLUETOOTH_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
@@ -59,11 +52,11 @@ config BLUETOOTH_ATT_PREPARE_COUNT
 
 config BLUETOOTH_GATT_CLIENT
 	bool
-	default n
+	default y
 
 config BLUETOOTH_SMP
 	bool
-	default n
+	default y
 
 config	BLUETOOTH_MAX_CONN
 	int
