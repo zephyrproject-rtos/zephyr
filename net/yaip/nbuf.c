@@ -26,7 +26,7 @@
 #define NET_DEBUG 1
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <string.h>
 #include <stdint.h>
@@ -221,29 +221,29 @@ static inline int get_frees(enum net_nbuf_type type)
 #define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)
 #endif /* NET_DEBUG */
 
-static struct nano_fifo free_rx_bufs;
-static struct nano_fifo free_tx_bufs;
-static struct nano_fifo free_data_bufs;
+static struct k_fifo free_rx_bufs;
+static struct k_fifo free_tx_bufs;
+static struct k_fifo free_data_bufs;
 
 static inline void free_rx_bufs_func(struct net_buf *buf)
 {
 	inc_free_rx_bufs_func(buf);
 
-	nano_fifo_put(buf->free, buf);
+	k_fifo_put(buf->free, buf);
 }
 
 static inline void free_tx_bufs_func(struct net_buf *buf)
 {
 	inc_free_tx_bufs_func(buf);
 
-	nano_fifo_put(buf->free, buf);
+	k_fifo_put(buf->free, buf);
 }
 
 static inline void free_data_bufs_func(struct net_buf *buf)
 {
 	inc_free_data_bufs_func(buf);
 
-	nano_fifo_put(buf->free, buf);
+	k_fifo_put(buf->free, buf);
 }
 
 /* The RX and TX pools do not store any data. Only bearer / protocol
@@ -379,13 +379,13 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 
 	if (!buf) {
 #if NET_DEBUG
-#define PRINT_CYCLE (30 * sys_clock_ticks_per_sec)
-		static uint32_t next_print;
-		uint32_t curr = sys_tick_get_32();
+#define PRINT_CYCLE (30 * MSEC_PER_SEC)
+		static int64_t next_print;
+		int64_t curr = k_uptime_get();
 
 		if (!next_print || (next_print < curr &&
 				    (!((curr - next_print) > PRINT_CYCLE)))) {
-			uint32_t new_print;
+			int64_t new_print;
 
 			NET_ERR("Failed to get free %s buffer (%s():%d)",
 				type2str(type), caller, line);
@@ -396,7 +396,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 			} else {
 				/* Overflow */
 				next_print = PRINT_CYCLE -
-					(0xffffffff - curr);
+					(LLONG_MAX - curr);
 			}
 		}
 #endif /* NET_DEBUG */
