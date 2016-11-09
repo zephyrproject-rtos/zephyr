@@ -28,7 +28,7 @@
 #define NET_DEBUG 1
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -52,7 +52,7 @@
 #define NET_MAX_TCP_CONTEXT CONFIG_NET_MAX_CONTEXTS
 static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 
-static struct nano_sem tcp_lock;
+static struct k_sem tcp_lock;
 
 struct tcp_segment {
 	uint32_t seq;
@@ -663,6 +663,6 @@ const char const *net_tcp_state_str(enum net_tcp_state state)
 
 void net_tcp_init(void)
 {
-	nano_sem_init(&tcp_lock);
-	nano_sem_give(&tcp_lock);
+	k_sem_init(&tcp_lock, 0, UINT_MAX);
+	k_sem_give(&tcp_lock);
 }
