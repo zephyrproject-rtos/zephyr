@@ -22,7 +22,6 @@
 #include <misc/printk.h>
 
 #include <net/buf.h>
-#include <net/net_ip.h>
 
 #include <ztest.h>
 
@@ -37,6 +36,17 @@ struct bt_data {
 	};
 
 	uint8_t type;
+};
+
+struct in6_addr {
+	union {
+		uint8_t		u6_addr8[16];
+		uint16_t	u6_addr16[8]; /* In big endian */
+		uint32_t	u6_addr32[4]; /* In big endian */
+	} in6_u;
+#define s6_addr			in6_u.u6_addr8
+#define s6_addr16		in6_u.u6_addr16
+#define s6_addr32		in6_u.u6_addr32
 };
 
 struct ipv6_hdr {
