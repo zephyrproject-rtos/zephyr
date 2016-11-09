@@ -241,6 +241,7 @@ static int ipsp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 static struct bt_l2cap_server server = {
 	.psm		= L2CAP_IPSP_PSM,
+	.sec_level	= CONFIG_NET_L2_BLUETOOTH_SEC_LEVEL,
 	.accept		= ipsp_accept,
 };
 

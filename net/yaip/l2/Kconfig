@@ -52,6 +52,18 @@ config NET_L2_BLUETOOTH
 	  does header compression on it and writes it to the
 	  Bluetooth stack via L2CAP channel.
 
+config NET_L2_BLUETOOTH_SEC_LEVEL
+	int "Security level of Bluetooth Link"
+	depends on NET_L2_BLUETOOTH
+	default 1
+	range 1 4
+	help
+	Security level of Bluetooth Link:
+	Level 1 (BT_SECURITY_LOW) = No encryption or authentication required
+	Level 2 (BT_SECURITY_MEDIUM) = Only encryption required
+	Level 3 (BT_SECURITY_HIGH) = Encryption and authentication required
+	Level 4 (BT_SECURITY_FIPS) = Secure connection required
+
 config NET_DEBUG_L2_BLUETOOTH
 	bool "Debug Bluetooth L2 layer"
 	default n
