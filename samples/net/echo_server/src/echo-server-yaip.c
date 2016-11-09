@@ -284,10 +284,33 @@ static struct net_buf *udp_recv(const char *name,
 
 	NET_ASSERT(header_len < CONFIG_NET_NBUF_DATA_SIZE);
 
+	/* After this pull, the tmp->data points directly to application
+	 * data.
+	 */
 	net_buf_pull(tmp, header_len);
 
 	while (tmp) {
 		frag = net_nbuf_get_data(context);
+
+		if (!net_buf_headroom(tmp)) {
+			/* If there is no link layer headers in the
+			 * received fragment, then get rid of that also
+			 * in the sending fragment. We end up here
+			 * if MTU is larger than fragment size, this
+			 * is typical for ethernet.
+			 */
+			net_buf_push(frag, net_buf_headroom(frag));
+
+			frag->len = 0; /* to make fragment empty */
+
+			/* Make sure to set the reserve so that
+			 * in sending side we add the link layer
+			 * header if needed.
+			 */
+			net_nbuf_set_ll_reserve(reply_buf, 0);
+		}
+
+		NET_ASSERT(net_buf_tailroom(frag) >= tmp->len);
 
 		memcpy(net_buf_add(frag, tmp->len), tmp->data, tmp->len);
 
@@ -300,9 +323,9 @@ static struct net_buf *udp_recv(const char *name,
 
 	reply_len = net_buf_frags_len(reply_buf->frags);
 
-	NET_ASSERT_INFO(recv_len != reply_len,
+	NET_ASSERT_INFO((recv_len - header_len) == reply_len,
 			"Received %d bytes, sending %d bytes",
-			recv_len, reply_len);
+			recv_len - header_len, reply_len);
 
 	return reply_buf;
 }
