@@ -74,13 +74,9 @@ void _alert_deliver(struct k_work *work)
 void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
 		  unsigned int max_num_pending_alerts)
 {
-	const struct k_work my_work_item = {
-		NULL, _alert_deliver, { max_num_pending_alerts }
-	};
-
 	alert->handler = handler;
 	alert->send_count = ATOMIC_INIT(0);
-	alert->work_item = my_work_item;
+	alert->work_item = (struct k_work)K_WORK_INITIALIZER(_alert_deliver);
 	k_sem_init(&alert->sem, 0, max_num_pending_alerts);
 	SYS_TRACING_OBJ_INIT(k_alert, alert);
 }
