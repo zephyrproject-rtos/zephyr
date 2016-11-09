@@ -59,7 +59,7 @@ static uint32_t get_t(uint32_t I)
 	return I + (sys_rand32_get() % I);
 }
 
-static void double_interval_timeout(struct nano_work *work)
+static void double_interval_timeout(struct k_work *work)
 {
 	struct net_trickle *trickle = CONTAINER_OF(work,
 						   struct net_trickle,
@@ -72,7 +72,7 @@ static void double_interval_timeout(struct nano_work *work)
 
 	trickle->c = 0;
 
-	NET_DBG("now %u (was at %u)", sys_tick_get_32(), last_end);
+	NET_DBG("now %u (was at %u)", k_uptime_get_32(), last_end);
 
 	/* Check if we need to double the interval */
 	if (trickle->I <= (trickle->Imax_abs >> 1)) {
@@ -91,9 +91,9 @@ static void double_interval_timeout(struct nano_work *work)
 
 	NET_DBG("doubling time %u", rand_time);
 
-	trickle->Istart = sys_tick_get_32() + rand_time;
+	trickle->Istart = k_uptime_get_32() + rand_time;
 
-	nano_delayed_work_submit(&trickle->timer, rand_time);
+	k_delayed_work_submit(&trickle->timer, rand_time);
 
 	NET_DBG("last end %u new end %u for %u I %u",
 		last_end, get_end(trickle), trickle->Istart, trickle->I);
@@ -101,7 +101,7 @@ static void double_interval_timeout(struct nano_work *work)
 
 static inline void reschedule(struct net_trickle *trickle)
 {
-	uint32_t now = sys_tick_get_32();
+	uint32_t now = k_uptime_get_32();
 	uint32_t diff = get_end(trickle) - now;
 
 	NET_DBG("now %d end in %d", now, diff);
@@ -112,17 +112,17 @@ static inline void reschedule(struct net_trickle *trickle)
 		NET_DBG("Clock wrap");
 	}
 
-	nano_delayed_work_init(&trickle->timer, double_interval_timeout);
-	nano_delayed_work_submit(&trickle->timer, diff);
+	k_delayed_work_init(&trickle->timer, double_interval_timeout);
+	k_delayed_work_submit(&trickle->timer, diff);
 }
 
-static void trickle_timeout(struct nano_work *work)
+static void trickle_timeout(struct k_work *work)
 {
 	struct net_trickle *trickle = CONTAINER_OF(work,
 						   struct net_trickle,
 						   timer);
 
-	NET_DBG("Trickle timeout at %d", sys_tick_get_32());
+	NET_DBG("Trickle timeout at %d", k_uptime_get_32());
 
 	if (trickle->cb) {
 		NET_DBG("TX ok %d c(%u) < k(%u)",
@@ -145,9 +145,9 @@ static void setup_new_interval(struct net_trickle *trickle)
 
 	t = get_t(trickle->I);
 
-	trickle->Istart = sys_tick_get_32();
+	trickle->Istart = k_uptime_get_32();
 
-	nano_delayed_work_submit(&trickle->timer, t);
+	k_delayed_work_submit(&trickle->timer, t);
 
 	NET_DBG("new interval at %d ends %d t %d I %d",
 		trickle->Istart,
@@ -177,7 +177,7 @@ int net_trickle_create(struct net_trickle *trickle,
 		trickle->Imin, trickle->Imax, trickle->k,
 		trickle->Imax_abs);
 
-	nano_delayed_work_init(&trickle->timer, trickle_timeout);
+	k_delayed_work_init(&trickle->timer, trickle_timeout);
 
 	return 0;
 }
@@ -208,7 +208,7 @@ int net_trickle_stop(struct net_trickle *trickle)
 {
 	NET_ASSERT(trickle);
 
-	nano_delayed_work_cancel(&trickle->timer);
+	k_delayed_work_cancel(&trickle->timer);
 
 	trickle->I = 0;
 

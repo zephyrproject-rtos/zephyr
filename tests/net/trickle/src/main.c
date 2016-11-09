@@ -43,38 +43,50 @@
 
 static int token1 = 1, token2 = 2;
 
-static struct nano_sem wait;
-static bool cb_called;
+static struct k_sem wait;
+static bool cb_1_called;
+static bool cb_2_called;
 static bool test_failed;
 
-#define WAIT_TIME (sys_clock_ticks_per_sec * 2)
+#define WAIT_TIME (2 * MSEC_PER_SEC)
 
 /* Set CHECK_LONG_TIMEOUT to 1 if you want to check longer timeout.
  * Do not do this for automated tests as those need to finish asap.
  */
 #define CHECK_LONG_TIMEOUT 0
 #if CHECK_LONG_TIMEOUT > 0
-#define WAIT_TIME_LONG (sys_clock_ticks_per_sec * 10)
+#define WAIT_TIME_LONG (10 * MSEC_PER_SEC)
 #endif
 
-#define T1_IMIN 3
-#define T1_IMAX 10
-#define T1_K 2
+#define T1_IMIN 30
+#define T1_IMAX 100
+#define T1_K 20
 
-#define T2_IMIN 4
-#define T2_IMAX 11
-#define T2_K 2
+#define T2_IMIN 80
+#define T2_IMAX 200
+#define T2_K 40
 
 static struct net_trickle t1;
 static struct net_trickle t2;
 
-static void cb(struct net_trickle *trickle, bool do_suppress, void *user_data)
+static void cb_1(struct net_trickle *trickle, bool do_suppress,
+		 void *user_data)
 {
-	TC_PRINT("Trickle %p callback called\n", trickle);
+	TC_PRINT("Trickle 1 %p callback called\n", trickle);
 
-	nano_sem_give(&wait);
+	k_sem_give(&wait);
 
-	cb_called = true;
+	cb_1_called = true;
+}
+
+static void cb_2(struct net_trickle *trickle, bool do_suppress,
+		 void *user_data)
+{
+	TC_PRINT("Trickle 2 %p callback called\n", trickle);
+
+	k_sem_give(&wait);
+
+	cb_2_called = true;
 }
 
 static bool test_trickle_create(void)
@@ -100,13 +112,13 @@ static bool test_trickle_start(void)
 {
 	int ret;
 
-	ret = net_trickle_start(&t1, cb, &t1);
+	ret = net_trickle_start(&t1, cb_1, &t1);
 	if (ret) {
 		TC_ERROR("Trickle 1 start failed\n");
 		return false;
 	}
 
-	ret = net_trickle_start(&t2, cb, &t2);
+	ret = net_trickle_start(&t2, cb_2, &t2);
 	if (ret) {
 		TC_ERROR("Trickle 2 start failed\n");
 		return false;
@@ -168,10 +180,10 @@ static bool test_trickle_2_status(void)
 
 static bool test_trickle_1_wait(void)
 {
-	cb_called = false;
-	nano_sem_take(&wait, WAIT_TIME);
+	cb_1_called = false;
+	k_sem_take(&wait, WAIT_TIME);
 
-	if (!cb_called) {
+	if (!cb_1_called) {
 		TC_ERROR("Trickle 1 no timeout\n");
 		return false;
 	}
@@ -187,10 +199,10 @@ static bool test_trickle_1_wait(void)
 #if CHECK_LONG_TIMEOUT > 0
 static bool test_trickle_1_wait_long(void)
 {
-	cb_called = false;
-	nano_sem_take(&wait, WAIT_TIME_LONG);
+	cb_1_called = false;
+	k_sem_take(&wait, WAIT_TIME_LONG);
 
-	if (!cb_called) {
+	if (!cb_1_called) {
 		TC_ERROR("Trickle 1 no timeout\n");
 		return false;
 	}
@@ -206,10 +218,10 @@ static bool test_trickle_1_wait_long(void)
 
 static bool test_trickle_2_wait(void)
 {
-	cb_called = false;
-	nano_sem_take(&wait, WAIT_TIME);
+	cb_2_called = false;
+	k_sem_take(&wait, WAIT_TIME);
 
-	if (!cb_called) {
+	if (!cb_2_called) {
 		TC_ERROR("Trickle 2 no timeout\n");
 		return false;
 	}
@@ -258,7 +270,7 @@ static bool test_trickle_1_update(void)
 
 static bool test_init(void)
 {
-	nano_sem_init(&wait);
+	k_sem_init(&wait, 0, UINT_MAX);
 
 	return true;
 }

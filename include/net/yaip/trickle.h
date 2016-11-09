@@ -26,7 +26,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <misc/nano_work.h>
+#include <kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,18 +43,18 @@ typedef void (*net_trickle_cb_t)(struct net_trickle *trickle,
  * only via the Trickle API.
  */
 struct net_trickle {
-	uint32_t Imin;		/* Min interval size in ticks */
+	uint32_t Imin;		/* Min interval size in ms */
 	uint8_t Imax;		/* Max number of doublings */
 	uint8_t k;		/* Redundancy constant */
 
 	uint32_t I;		/* Current interval size */
-	uint32_t Istart;	/* Start of the interval in ticks */
+	uint32_t Istart;	/* Start of the interval in ms */
 	uint8_t c;		/* Consistency counter */
 
-	uint32_t Imax_abs;	/* Max interval size in ticks (not doublings)
+	uint32_t Imax_abs;	/* Max interval size in ms (not doublings)
 				 */
 
-	struct nano_delayed_work timer;
+	struct k_delayed_work timer;
 	net_trickle_cb_t cb;	/* Callback to be called when timer expires */
 	void *user_data;
 };
@@ -65,7 +65,7 @@ struct net_trickle {
  * @brief Create a Trickle timer.
  *
  * @param trickle Pointer to Trickle struct.
- * @param Imin Imin configuration parameter in ticks.
+ * @param Imin Imin configuration parameter in ms.
  * @param Imax Max number of doublings.
  * @param k Redundancy constant parameter. See RFC 6206 for details.
  *
