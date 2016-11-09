@@ -53,6 +53,9 @@ struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
 #define MY_IP6ADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 #define MY_PREFIX_LEN 64
+
+/* Allow binding to ANY IPv6 address. */
+#define NET_BIND_ANY_ADDR 1
 #endif
 
 #if defined(CONFIG_NET_TESTING)
@@ -138,7 +141,10 @@ static inline bool get_context(struct net_context **udp_recv4,
 	net_ipaddr_copy(&mcast_addr6.sin6_addr, &in6addr_mcast);
 	mcast_addr6.sin6_family = AF_INET6;
 
+#if !NET_BIND_ANY_ADDR
 	net_ipaddr_copy(&my_addr6.sin6_addr, &in6addr_my);
+#endif
+
 	my_addr6.sin6_family = AF_INET6;
 	my_addr6.sin6_port = htons(MY_PORT);
 #endif
