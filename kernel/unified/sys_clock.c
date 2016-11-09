@@ -51,14 +51,15 @@ int64_t _sys_clock_tick_count;
  * @return the current system tick count
  *
  */
-uint32_t sys_tick_get_32(void)
+uint32_t _tick_get_32(void)
 {
 	return (uint32_t)_sys_clock_tick_count;
 }
+FUNC_ALIAS(_tick_get_32, sys_tick_get_32, uint32_t);
 
 uint32_t k_uptime_get_32(void)
 {
-	return __ticks_to_ms(sys_tick_get_32());
+	return __ticks_to_ms(_tick_get_32());
 }
 
 /**
@@ -68,7 +69,7 @@ uint32_t k_uptime_get_32(void)
  * @return the current system tick count
  *
  */
-int64_t sys_tick_get(void)
+int64_t _tick_get(void)
 {
 	int64_t tmp_sys_clock_tick_count;
 	/*
@@ -83,10 +84,11 @@ int64_t sys_tick_get(void)
 	irq_unlock(imask);
 	return tmp_sys_clock_tick_count;
 }
+FUNC_ALIAS(_tick_get, sys_tick_get, int64_t);
 
 int64_t k_uptime_get(void)
 {
-	return __ticks_to_ms(sys_tick_get());
+	return __ticks_to_ms(_tick_get());
 }
 
 /**
