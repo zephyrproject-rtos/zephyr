@@ -200,8 +200,6 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 	_init_static_threads();
 
-	_main_thread->flags &= ~K_ESSENTIAL;
-
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp for kernel's _main() function */
 	extern uint64_t __main_tsc;
@@ -219,6 +217,9 @@ static void _main(void *unused1, void *unused2, void *unused3)
 	k_thread_priority_set(_main_thread, MDEF_MAIN_THREAD_PRIORITY);
 #endif
 	main();
+
+	/* Terminate thread normally since it has no more work to do */
+	_main_thread->flags &= ~K_ESSENTIAL;
 }
 
 void __weak main(void)
