@@ -77,7 +77,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	}
 	PR_EXC("Current thread ID = %p\n"
 	       "Faulting instruction address = 0x%lx\n",
-	       sys_thread_self_get(),
+	       k_current_get(),
 	       _arc_v2_aux_reg_read(_ARC_V2_ERET));
 
 	/*

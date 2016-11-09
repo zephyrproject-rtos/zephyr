@@ -100,8 +100,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	}
 	PR_EXC("Current thread ID = %p\n"
 	       "Faulting instruction address = 0x%" PRIx32 "\n",
-	       sys_thread_self_get(),
-	       pEsf->pc);
+	       k_current_get(), pEsf->pc);
 
 	/*
 	 * Now that the error has been reported, call the user implemented

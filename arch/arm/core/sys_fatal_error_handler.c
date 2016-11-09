@@ -26,13 +26,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <nano_private.h>
-
-#ifdef CONFIG_PRINTK
 #include <misc/printk.h>
-#define PRINTK(...) printk(__VA_ARGS__)
-#else
-#define PRINTK(...)
-#endif
 
 /**
  *
@@ -54,30 +48,20 @@
  *
  * @return N/A
  */
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF * pEsf)
+FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
+					 const NANO_ESF *pEsf)
 {
-	nano_context_type_t curCtx = sys_execution_context_type_get();
-
 	ARG_UNUSED(reason);
 	ARG_UNUSED(pEsf);
 
-	if ((curCtx == NANO_CTX_ISR) || _is_thread_essential()) {
-		PRINTK("Fatal fault in %s ! Spinning...\n",
-		       NANO_CTX_ISR == curCtx
-			       ? "ISR"
-			       : NANO_CTX_FIBER == curCtx ? "essential fiber"
-							  : "essential task");
+	if (k_is_in_isr() || _is_thread_essential()) {
+		printk("Fatal fault in %s! Spinning...\n",
+		       k_is_in_isr() ? "ISR" : "essential thread");
 		for (;;)
 			; /* spin forever */
 	}
-
-	if (NANO_CTX_FIBER == curCtx) {
-		PRINTK("Fatal fault in fiber ! Aborting fiber.\n");
-		fiber_abort();
-		return;
-	}
-
-	PRINTK("Fatal fault in task ! Aborting task.\n");
-
+	printk("Fatal fault in thread! Aborting.\n");
 	k_thread_abort(_current);
+
+	CODE_UNREACHABLE;
 }

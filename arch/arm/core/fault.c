@@ -117,8 +117,7 @@ static void _FaultThreadShow(const NANO_ESF *esf)
 {
 	PR_EXC("  Executing thread ID (thread): %p\n"
 	       "  Faulting instruction address:  0x%" PRIx32 "\n",
-	       sys_thread_self_get(),
-	       esf->pc);
+	       k_current_get(), esf->pc);
 }
 
 #if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
