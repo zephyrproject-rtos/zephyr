@@ -25,7 +25,7 @@
 #define NET_DEBUG 1
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -49,7 +49,7 @@ static struct net_context contexts[NET_MAX_CONTEXT];
 /* We need to lock the contexts array as these APIs are typically called
  * from applications which are usually run in task context.
  */
-static struct nano_sem contexts_lock;
+static struct k_sem contexts_lock;
 
 #if defined(CONFIG_NET_TCP)
 static struct sockaddr *create_sockaddr(struct net_buf *buf,
@@ -164,7 +164,7 @@ int net_context_get(sa_family_t family,
 	}
 #endif /* CONFIG_NET_CONTEXT_CHECK */
 
-	nano_sem_take(&contexts_lock, TICKS_UNLIMITED);
+	k_sem_take(&contexts_lock, K_FOREVER);
 
 	for (i = 0; i < NET_MAX_CONTEXT; i++) {
 		if (net_context_is_used(&contexts[i])) {
@@ -195,8 +195,8 @@ int net_context_get(sa_family_t family,
 		memset(&contexts[i].local, 0, sizeof(struct sockaddr_ptr));
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-		nano_sem_init(&contexts[i].recv_data_wait);
-		nano_sem_give(&contexts[i].recv_data_wait);
+		k_sem_init(&contexts[i].recv_data_wait, 0, UINT_MAX);
+		k_sem_give(&contexts[i].recv_data_wait);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 		*context = &contexts[i];
@@ -205,7 +205,7 @@ int net_context_get(sa_family_t family,
 		break;
 	}
 
-	nano_sem_give(&contexts_lock);
+	k_sem_give(&contexts_lock);
 
 	return ret;
 }
@@ -218,7 +218,7 @@ int net_context_put(struct net_context *context)
 		return -EINVAL;
 	}
 
-	nano_sem_take(&contexts_lock, TICKS_UNLIMITED);
+	k_sem_take(&contexts_lock, K_FOREVER);
 
 	context->flags &= ~NET_CONTEXT_IN_USE;
 
@@ -228,7 +228,7 @@ int net_context_put(struct net_context *context)
 	}
 #endif /* CONFIG_NET_TCP */
 
-	nano_sem_give(&contexts_lock);
+	k_sem_give(&contexts_lock);
 
 	return 0;
 }
@@ -864,9 +864,9 @@ int net_context_connect(struct net_context *context,
 
 #if defined(CONFIG_NET_TCP)
 
-#define ACK_TIMEOUT (sys_clock_ticks_per_sec)
+#define ACK_TIMEOUT MSEC_PER_SEC
 
-static void ack_timeout(struct nano_work *work)
+static void ack_timeout(struct k_work *work)
 {
 	/* This means that we did not receive ACK response in time. */
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, ack_timer);
@@ -936,9 +936,9 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		 * if the SYN is sent more than once. So we need to cancel
 		 * any pending timers.
 		 */
-		nano_delayed_work_cancel(&tcp->ack_timer);
-		nano_delayed_work_init(&tcp->ack_timer, ack_timeout);
-		nano_delayed_work_submit(&tcp->ack_timer, ACK_TIMEOUT);
+		k_delayed_work_cancel(&tcp->ack_timer);
+		k_delayed_work_init(&tcp->ack_timer, ack_timeout);
+		k_delayed_work_submit(&tcp->ack_timer, ACK_TIMEOUT);
 
 		return NET_DROP;
 	}
@@ -947,7 +947,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 	 * If we receive RST, we go back to LISTEN state.
 	 */
 	if ((NET_TCP_BUF(buf)->flags & NET_TCP_CTL) == NET_TCP_RST) {
-		nano_delayed_work_cancel(&tcp->ack_timer);
+		k_delayed_work_cancel(&tcp->ack_timer);
 
 		net_tcp_print_recv_info("RST", buf, NET_TCP_BUF(buf)->src_port);
 
@@ -971,7 +971,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		 * So if we are not in SYN_RCVD state, then it is an error.
 		 */
 		if (tcp->state != NET_TCP_SYN_RCVD) {
-			nano_delayed_work_cancel(&tcp->ack_timer);
+			k_delayed_work_cancel(&tcp->ack_timer);
 			goto reset;
 		}
 
@@ -1453,7 +1453,7 @@ enum net_verdict packet_received(struct net_conn *conn,
 		context->recv_cb(context, buf, 0, user_data);
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-		nano_sem_give(&context->recv_data_wait);
+		k_sem_give(&context->recv_data_wait);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 		return NET_OK;
@@ -1538,11 +1538,11 @@ int net_context_recv(struct net_context *context,
 		 * callback will release the semaphore when data has been
 		 * received.
 		 */
-		while (nano_sem_take(&context->recv_data_wait, 0)) {
+		while (k_sem_take(&context->recv_data_wait, K_NO_WAIT)) {
 			;
 		}
 
-		if (!nano_sem_take(&context->recv_data_wait, timeout)) {
+		if (!k_sem_take(&context->recv_data_wait, timeout)) {
 			/* timeout */
 			return -ETIMEDOUT;
 		}
@@ -1554,7 +1554,7 @@ int net_context_recv(struct net_context *context,
 
 void net_context_init(void)
 {
-	nano_sem_init(&contexts_lock);
+	k_sem_init(&contexts_lock, 0, UINT_MAX);
 
-	nano_sem_give(&contexts_lock);
+	k_sem_give(&contexts_lock);
 }

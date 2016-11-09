@@ -23,7 +23,7 @@
 #ifndef __NET_CONTEXT_H
 #define __NET_CONTEXT_H
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -69,7 +69,7 @@ struct net_context;
  * @brief Network data receive callback.
  *
  * @details The recv callback is called after a network data is
- * received. The callback is called in fiber context.
+ * received.
  *
  * @param context The context to use.
  * @param buf Network buffer that is received. If the buf is not NULL,
@@ -89,7 +89,7 @@ typedef void (*net_context_recv_cb_t)(struct net_context *context,
  * @brief Network data send callback.
  *
  * @details The send callback is called after a network data is
- * sent. The callback is called in fiber context.
+ * sent.
  *
  * @param context The context to use.
  * @param status Value is set to 0 if all data was sent ok, <0 if
@@ -109,7 +109,6 @@ typedef void (*net_context_send_cb_t)(struct net_context *context,
  * @details The accept callback is called after a successful
  * connection is being established or if there was an error
  * while we were waiting for a connection attempt.
- * The callback is called in fiber context.
  *
  * @param context The context to use.
  * @param addr The peer address.
@@ -163,7 +162,7 @@ struct net_context {
 	/**
 	 * Mutex for synchronous recv API call.
 	 */
-	struct nano_sem recv_data_wait;
+	struct k_sem recv_data_wait;
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 	/** Network interface assigned to this context */
@@ -458,7 +457,7 @@ int net_context_listen(struct net_context *context,
  * @brief Connection callback.
  *
  * @details The connect callback is called after a connection is being
- * established. The callback is called in fiber context.
+ * established.
  *
  * @param context The context to use.
  * @param user_data The user data given in net_context_connect() call.
@@ -473,7 +472,7 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
  *                   connection to the host specified by addr. After the
  *                   connection is established, the user supplied callback (cb)
  *                   is executed. cb is called even if the timeout was set to
- *                   TICKS_UNLIMITED. cb is not called if the timeout expires.
+ *                   K_FOREVER. cb is not called if the timeout expires.
  *                   For datagram sockets (SOCK_DGRAM), this function only sets
  *                   the peer address.
  *                   This function is similar to the BSD connect() function.
@@ -484,9 +483,9 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
  * @param cb         Callback function. Set to NULL if not required.
  * @param timeout    The timeout value for the connection. Possible values:
  *                   * 0: this function will return immediately,
- *                   * TICKS_UNLIMITED: this function will block until the
+ *                   * K_FOREVER: this function will block until the
  *                                      connection is established,
- *                   * >0: this function will wait the specified system ticks.
+ *                   * >0: this function will wait the specified ms.
  * @param user_data  Data passed to the callback function.
  *
  * @return           0 on success.
@@ -508,11 +507,11 @@ int net_context_connect(struct net_context *context,
  * the context will call the supplied callback when ever there is
  * a connection established to this context. This is "a register
  * handler and forget" type of call (async).
- * If the timeout is set to TICKS_UNLIMITED, the function will wait
+ * If the timeout is set to K_FOREVER, the function will wait
  * until the connection is established. Timeout value > 0, will wait as
- * many system ticks.
+ * many ms.
  * After the connection is established a caller supplied callback is called.
- * The callback is called even if timeout was set to TICKS_UNLIMITED, the
+ * The callback is called even if timeout was set to K_FOREVER, the
  * callback is called before this function will return in this case.
  * The callback is not called if the timeout expires.
  * This is similar as BSD accept() function.
@@ -520,7 +519,7 @@ int net_context_connect(struct net_context *context,
  * @param context The context to use.
  * @param cb Caller supplied callback function.
  * @param timeout Timeout for the connection. Possible values
- * are TICKS_UNLIMITED, 0, >0.
+ * are K_FOREVER, 0, >0.
  * @param user_data Caller supplied user data.
  *
  * @return 0 if ok, < 0 if error
@@ -535,11 +534,11 @@ int net_context_accept(struct net_context *context,
  *
  * @details This function can be used to send network data to a peer
  * connection. This function will return immediately if the timeout
- * is set to 0. If the timeout is set to TICKS_UNLIMITED, the function
+ * is set to 0. If the timeout is set to K_FOREVER, the function
  * will wait until the network buffer is sent. Timeout value > 0 will
- * wait as many system ticks. After the network buffer is sent,
+ * wait as many ms. After the network buffer is sent,
  * a caller supplied callback is called. The callback is called even
- * if timeout was set to TICKS_UNLIMITED, the callback is called
+ * if timeout was set to K_FOREVER, the callback is called
  * before this function will return in this case. The callback is not
  * called if the timeout expires. For context of type SOCK_DGRAM,
  * the destination address must have been set by the call to
@@ -549,7 +548,7 @@ int net_context_accept(struct net_context *context,
  * @param buf The network buffer to send.
  * @param cb Caller supplied callback function.
  * @param timeout Timeout for the connection. Possible values
- * are TICKS_UNLIMITED, 0, >0.
+ * are K_FOREVER, 0, >0.
  * @param token Caller specified value that is passed as is to callback.
  * @param user_data Caller supplied user data.
  *
@@ -567,11 +566,11 @@ int net_context_send(struct net_buf *buf,
  * @details This function can be used to send network data to a peer
  * specified by address. This variant can only be used for datagram
  * connections of type SOCK_DGRAM. This function will return immediately
- * if the timeout is set to 0. If the timeout is set to TICKS_UNLIMITED,
+ * if the timeout is set to 0. If the timeout is set to K_FOREVER,
  * the function will wait until the network buffer is sent. Timeout
- * value > 0 will wait as many system ticks. After the network buffer
+ * value > 0 will wait as many ms. After the network buffer
  * is sent, a caller supplied callback is called. The callback is called
- * even if timeout was set to TICKS_UNLIMITED, the callback is called
+ * even if timeout was set to K_FOREVER, the callback is called
  * before this function will return. The callback is not called if the
  * timeout expires.
  * This is similar as BSD sendto() function.
@@ -582,7 +581,7 @@ int net_context_send(struct net_buf *buf,
  * @param addrlen Length of the address.
  * @param cb Caller supplied callback function.
  * @param timeout Timeout for the connection. Possible values
- * are TICKS_UNLIMITED, 0, >0.
+ * are K_FOREVER, 0, >0.
  * @param token Caller specified value that is passed as is to callback.
  * @param user_data Caller supplied user data.
  *
@@ -606,10 +605,10 @@ int net_context_sendto(struct net_buf *buf,
  * If callback function or user data changes, then the function can be called
  * multiple times to register new values.
  * This function will return immediately if the timeout is set to 0. If the
- * timeout is set to TICKS_UNLIMITED, the function will wait until the
- * network buffer is received. Timeout value > 0 will wait as many system
- * ticks. After the network buffer is received, a caller supplied callback is
- * called. The callback is called even if timeout was set to TICKS_UNLIMITED,
+ * timeout is set to K_FOREVER, the function will wait until the
+ * network buffer is received. Timeout value > 0 will wait as many ms.
+ * After the network buffer is received, a caller supplied callback is
+ * called. The callback is called even if timeout was set to K_FOREVER,
  * the callback is called before this function will return in this case.
  * The callback is not called if the timeout expires. The timeout functionality
  * can be compiled out if synchronous behaviour is not needed. The sync call

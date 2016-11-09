@@ -104,7 +104,7 @@ struct net_tcp {
 	struct nano_delayed_work retransmit_timer;
 
 	/** ACK message timer */
-	struct nano_delayed_work ack_timer;
+	struct k_delayed_work ack_timer;
 
 	/** Temp buf for received data. The first element of the fragment list
 	 * does not contain user data part.
