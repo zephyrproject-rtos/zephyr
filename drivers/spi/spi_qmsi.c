@@ -47,7 +47,7 @@ struct spi_qmsi_runtime {
 	qm_spi_config_t cfg;
 	int rc;
 	bool loopback;
-	struct nano_sem sem;
+	struct k_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
@@ -155,13 +155,13 @@ static int spi_qmsi_transceive(struct device *dev,
 	qm_spi_async_transfer_t *xfer;
 	int rc;
 
-	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+	k_sem_take(&context->sem, K_FOREVER);
 	if (pending_transfers[spi].dev) {
-		nano_sem_give(&context->sem);
+		k_sem_give(&context->sem);
 		return -EBUSY;
 	}
 	pending_transfers[spi].dev = dev;
-	nano_sem_give(&context->sem);
+	k_sem_give(&context->sem);
 
 	device_busy_set(dev);
 
@@ -285,8 +285,8 @@ static int spi_qmsi_init(struct device *dev)
 	context->gpio_cs = gpio_cs_init(spi_config);
 
 	device_sync_call_init(&context->sync);
-	nano_sem_init(&context->sem);
-	nano_sem_give(&context->sem);
+	k_sem_init(&context->sem, 0, UINT_MAX);
+	k_sem_give(&context->sem);
 
 	spi_master_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
