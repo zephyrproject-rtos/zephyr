@@ -49,8 +49,13 @@ extern "C" {
 
 #define IS_SYS_LOG_ACTIVE 1
 
+extern void (*syslog_hook)(const char *fmt, ...);
+void syslog_hook_install(void (*hook)(const char *, ...));
+
 /* decide print func */
-#if defined(CONFIG_STDOUT_CONSOLE)
+#if defined(CONFIG_SYS_LOG_EXT_HOOK)
+#define SYS_LOG_BACKEND_FN syslog_hook
+#elif defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define SYS_LOG_BACKEND_FN printf
 #else

@@ -323,6 +323,13 @@ config SYS_LOG_OVERRIDE_LEVEL
 	  3 INFO, override to write SYS_LOG_INF in adition to previous levels
 	  4 DEBUG, override to write SYS_LOG_DBG in adition to previous levels
 
+config SYS_LOG_EXT_HOOK
+	bool
+	prompt "Use external hook function for logging"
+	depends on SYS_LOG
+	default n
+	help
+	Use external hook function for logging.
 endmenu
 
 menu "System Monitoring Options"
