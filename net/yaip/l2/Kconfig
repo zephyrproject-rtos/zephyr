@@ -68,6 +68,7 @@ config NET_DEBUG_L2_BLUETOOTH
 	bool "Debug Bluetooth L2 layer"
 	default n
 	depends on NET_LOG
+	depends on NET_L2_BLUETOOTH
 	help
 	Enables Bluetooth L2 output debug messages
 
