@@ -29,7 +29,7 @@
 
 struct rtc_data {
 #ifdef CONFIG_RTC_QMSI_API_REENTRANCY
-	struct nano_sem sem;
+	struct k_sem sem;
 #endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
@@ -79,8 +79,8 @@ static void rtc_reentrancy_init(struct device *dev)
 		return;
 	}
 
-	nano_sem_init(RP_GET(dev));
-	nano_sem_give(RP_GET(dev));
+	k_sem_init(RP_GET(dev), 0, UINT_MAX);
+	k_sem_give(RP_GET(dev));
 }
 
 static void rtc_critical_region_start(struct device *dev)
@@ -89,7 +89,7 @@ static void rtc_critical_region_start(struct device *dev)
 		return;
 	}
 
-	nano_sem_take(RP_GET(dev), TICKS_UNLIMITED);
+	k_sem_take(RP_GET(dev), K_FOREVER);
 }
 
 static void rtc_critical_region_end(struct device *dev)
@@ -98,7 +98,7 @@ static void rtc_critical_region_end(struct device *dev)
 		return;
 	}
 
-	nano_sem_give(RP_GET(dev));
+	k_sem_give(RP_GET(dev));
 }
 
 static void rtc_qmsi_enable(struct device *dev)
