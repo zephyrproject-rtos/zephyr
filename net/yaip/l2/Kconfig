@@ -43,6 +43,7 @@ config NET_L2_BLUETOOTH
 	bool "Enable Bluetooth support"
 	select BLUETOOTH
 	select BLUETOOTH_PERIPHERAL
+	select BLUETOOTH_SMP
 	select BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	select NET_6LO
 	default n
