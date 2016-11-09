@@ -348,11 +348,110 @@ static int query_get(struct zoap_resource *resource,
 				  NULL, 0, NULL, NULL);
 }
 
+static int separate_get(struct zoap_resource *resource,
+			struct zoap_packet *request,
+			const struct sockaddr *from)
+{
+	struct net_buf *buf, *frag;
+	struct zoap_packet response;
+	uint8_t *payload, code, type;
+	uint16_t len, id;
+	int r;
+
+	payload = zoap_packet_get_payload(request, &len);
+	if (!payload) {
+		NET_ERR("Packet without payload\n");
+		return -EINVAL;
+	}
+
+	code = zoap_header_get_code(request);
+	type = zoap_header_get_type(request);
+	id = zoap_header_get_id(request);
+
+	NET_INFO("*******\n");
+	NET_INFO("type: %u code %u id %u\n", type, code, id);
+	NET_INFO("*******\n");
+
+	buf = net_nbuf_get_tx(context);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	frag = net_nbuf_get_data(context);
+	if (!frag) {
+		return -ENOMEM;
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	r = zoap_packet_init(&response, buf);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_code(&response, 0);
+	zoap_header_set_id(&response, id);
+
+	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+				  NULL, 0, NULL, NULL);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	buf = net_nbuf_get_tx(context);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	frag = net_nbuf_get_data(context);
+	if (!frag) {
+		return -ENOMEM;
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	r = zoap_packet_init(&response, buf);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, ZOAP_TYPE_CON);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
+	zoap_header_set_id(&response, id);
+
+	payload = zoap_packet_get_payload(&response, &len);
+	if (!payload) {
+		return -EINVAL;
+	}
+
+	/* The response that coap-client expects */
+	r = snprintf((char *) payload, len, "Type: %u\nCode: %u\nMID: %u\n",
+		     type, code, id);
+	if (r < 0 || r > len) {
+		return -EINVAL;
+	}
+
+	r = zoap_packet_set_used(&response, r);
+	if (r) {
+		return -EINVAL;
+	}
+
+	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+				  NULL, 0, NULL, NULL);
+}
+
 static const char * const test_path[] = { "test", NULL };
 
 static const char * const segments_path[] = { "seg1", "seg2", "seg3", NULL };
 
 static const char * const query_path[] = { "query", NULL };
+
+static const char * const separate_path[] = { "separate", NULL };
 
 static struct zoap_resource resources[] = {
 	{ .get = piggyback_get,
@@ -365,6 +464,9 @@ static struct zoap_resource resources[] = {
 	},
 	{ .get = query_get,
 	  .path = query_path,
+	},
+	{ .get = separate_get,
+	  .path = separate_path,
 	},
 	{ },
 };
