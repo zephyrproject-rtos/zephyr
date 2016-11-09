@@ -24,7 +24,7 @@
 #define NET_DEBUG 1
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <limits.h>
 #include <stdint.h>
 #include <misc/slist.h>
@@ -713,4 +713,3 @@ void net_route_init(void)
 	NET_DBG("Allocated %d nexthop entries (%d bytes)",
 		CONFIG_NET_MAX_NEXTHOPS, sizeof(net_route_nexthop_pool));
 }
-

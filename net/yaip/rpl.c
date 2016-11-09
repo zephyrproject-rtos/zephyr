@@ -53,7 +53,7 @@
 #define NET_DEBUG 1
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <limits.h>
 #include <stdint.h>
 
@@ -121,7 +121,7 @@ static uint8_t rpl_dao_sequence;
 
 #if defined(CONFIG_NET_RPL_DIS_SEND)
 /* DODAG Information Solicitation timer. */
-struct nano_delayed_work dis_timer;
+struct k_delayed_work dis_timer;
 
 #define NET_RPL_DIS_START_DELAY  5 /* in seconds */
 #endif
@@ -131,7 +131,7 @@ static bool rpl_dio_send_ok;
 
 static int dao_send(struct net_rpl_parent *parent, uint8_t lifetime,
 		    struct net_if *iface);
-static void dao_send_timer(struct nano_work *work);
+static void dao_send_timer(struct k_work *work);
 static void set_dao_lifetime_timer(struct net_rpl_instance *instance);
 
 static struct net_rpl_parent *find_parent(struct net_if *iface,
@@ -155,7 +155,7 @@ enum net_rpl_mode net_rpl_get_mode(void)
 
 static inline void net_rpl_cancel_dao(struct net_rpl_instance *instance)
 {
-	nano_delayed_work_cancel(&instance->dao_timer);
+	k_delayed_work_cancel(&instance->dao_timer);
 }
 
 void net_rpl_set_mode(enum net_rpl_mode new_mode)
@@ -585,9 +585,9 @@ int net_rpl_dio_send(struct net_if *iface,
 	return ret;
 }
 
-#define DIO_TIMEOUT (sys_clock_ticks_per_sec)
+#define DIO_TIMEOUT (MSEC_PER_SEC)
 
-static void dio_timer(struct nano_work *work)
+static void dio_timer(struct k_work *work)
 {
 	struct net_rpl_instance *instance = CONTAINER_OF(work,
 						       struct net_rpl_instance,
@@ -605,8 +605,8 @@ static void dio_timer(struct nano_work *work)
 			NET_DBG("Sending DIO later because IPv6 link local "
 				"address is not found");
 
-			nano_delayed_work_submit(&instance->dio_timer,
-						 DIO_TIMEOUT);
+			k_delayed_work_submit(&instance->dio_timer,
+					      DIO_TIMEOUT);
 			return;
 		}
 	}
@@ -631,11 +631,11 @@ static void dio_timer(struct nano_work *work)
 		}
 		instance->dio_send = false;
 
-		NET_DBG("Next DIO send after %lu ticks",
+		NET_DBG("Next DIO send after %lu ms",
 			instance->dio_next_delay);
 
-		nano_delayed_work_submit(&instance->dio_timer,
-					 instance->dio_next_delay);
+		k_delayed_work_submit(&instance->dio_timer,
+				      instance->dio_next_delay);
 	} else {
 		if (instance->dio_interval_current <
 		    instance->dio_interval_min +
@@ -655,21 +655,18 @@ static void dio_timer(struct nano_work *work)
 static void new_dio_interval(struct net_rpl_instance *instance)
 {
 	uint32_t time;
-	uint32_t ticks;
 
 	time = 1 << instance->dio_interval_current;
 
-	ticks = MSEC(time);
+	NET_ASSERT(time);
 
-	NET_ASSERT(ticks);
-
-	instance->dio_next_delay = ticks;
-	ticks = ticks / 2 + (ticks / 2 * sys_rand32_get()) / UINT32_MAX;
+	instance->dio_next_delay = time;
+	time = time / 2 + (time / 2 * sys_rand32_get()) / UINT32_MAX;
 
 	/* Adjust the interval so that they are equally long among the nodes.
 	 * This is needed so that Trickle algo can operate efficiently.
 	 */
-	instance->dio_next_delay -= ticks;
+	instance->dio_next_delay -= time;
 
 #if defined(CONFIG_NET_RPL_STATS)
 	instance->dio_intervals++;
@@ -692,11 +689,11 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 	instance->dio_counter = 0;
 	instance->dio_send = true;
 
-	NET_DBG("DIO Timer interval set to %d", ticks);
+	NET_DBG("DIO Timer interval set to %d", time);
 
-	nano_delayed_work_cancel(&instance->dio_timer);
-	nano_delayed_work_init(&instance->dio_timer, dio_timer);
-	nano_delayed_work_submit(&instance->dio_timer, ticks);
+	k_delayed_work_cancel(&instance->dio_timer);
+	k_delayed_work_init(&instance->dio_timer, dio_timer);
+	k_delayed_work_submit(&instance->dio_timer, time);
 }
 
 static void net_rpl_dio_reset_timer(struct net_rpl_instance *instance)
@@ -820,11 +817,11 @@ static struct net_rpl_instance *net_rpl_get_instance(uint8_t instance_id)
 #if defined(CONFIG_NET_RPL_PROBING)
 
 #if !defined(NET_RPL_PROBING_INTERVAL)
-#define NET_RPL_PROBING_INTERVAL (120 * sys_clock_ticks_per_sec)
+#define NET_RPL_PROBING_INTERVAL (120 * MSEC_PER_SEC)
 #endif
 
 #if !defined(NET_RPL_PROBING_EXPIRATION_TIME)
-#define NET_RPL_PROBING_EXPIRATION_TIME SECONDS(10 * 60)
+#define NET_RPL_PROBING_EXPIRATION_TIME ((10 * 60) * MSEC_PER_SEC)
 #endif
 
 static void net_rpl_schedule_probing(struct net_rpl_instance *instance);
@@ -904,7 +901,7 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 	return probing_target;
 }
 
-static void rpl_probing_timer(struct nano_work *work)
+static void rpl_probing_timer(struct k_work *work)
 {
 	struct net_rpl_instance *instance =
 		CONTAINER_OF(work, struct net_rpl_instance, probing_timer);
@@ -949,14 +946,15 @@ static void net_rpl_schedule_probing(struct net_rpl_instance *instance)
 {
 	int expiration;
 
-	expiration = (NET_RPL_PROBING_INTERVAL / 2) +
-		sys_rand32_get() % NET_RPL_PROBING_INTERVAL;
+	expiration = ((NET_RPL_PROBING_INTERVAL / 2) +
+		      sys_rand32_get() % NET_RPL_PROBING_INTERVAL) *
+		MSEC_PER_SEC;
 
-	NET_DBG("Send probe in %lu ticks, instance %p (%d)",
+	NET_DBG("Send probe in %lu ms, instance %p (%d)",
 		expiration, instance, instance->instance_id);
 
-	nano_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
-	nano_delayed_work_submit(&instance->probing_timer, expiration);
+	k_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
+	k_delayed_work_submit(&instance->probing_timer, expiration);
 }
 #endif /* CONFIG_NET_RPL_PROBING */
 
@@ -1537,7 +1535,7 @@ static void dao_timer(struct net_rpl_instance *instance)
 	}
 }
 
-static void dao_lifetime_timer(struct nano_work *work)
+static void dao_lifetime_timer(struct k_work *work)
 {
 	struct net_rpl_instance *instance =
 		CONTAINER_OF(work, struct net_rpl_instance,
@@ -1565,21 +1563,21 @@ static void set_dao_lifetime_timer(struct net_rpl_instance *instance)
 
 		expiration_time = (uint32_t)instance->default_lifetime *
 			(uint32_t)instance->lifetime_unit *
-			SECONDS(1) / 2;
+			MSEC_PER_SEC / 2;
 
 		instance->dao_lifetime_timer_active = true;
 
-		NET_DBG("Scheduling DAO lifetime timer %d ticks in the future",
+		NET_DBG("Scheduling DAO lifetime timer %d ms in the future",
 			expiration_time);
 
-		nano_delayed_work_init(&instance->dao_lifetime_timer,
-				       dao_lifetime_timer);
-		nano_delayed_work_submit(&instance->dao_lifetime_timer,
-					 expiration_time);
+		k_delayed_work_init(&instance->dao_lifetime_timer,
+				    dao_lifetime_timer);
+		k_delayed_work_submit(&instance->dao_lifetime_timer,
+				      expiration_time);
 	}
 }
 
-static void dao_send_timer(struct nano_work *work)
+static void dao_send_timer(struct k_work *work)
 {
 	struct net_rpl_instance *instance =
 		CONTAINER_OF(work, struct net_rpl_instance, dao_timer);
@@ -1592,8 +1590,7 @@ static void dao_send_timer(struct nano_work *work)
 
 		instance->dao_timer_active = true;
 
-		nano_delayed_work_submit(&instance->dao_timer,
-					 sys_clock_ticks_per_sec);
+		k_delayed_work_submit(&instance->dao_timer, MSEC_PER_SEC);
 		return;
 	}
 
@@ -1614,19 +1611,19 @@ static void schedule_dao(struct net_rpl_instance *instance, int latency)
 	}
 
 	if (latency != 0) {
-		latency = latency * sys_clock_ticks_per_sec;
+		latency = latency * MSEC_PER_SEC;
 		expiration = latency / 2 + (sys_rand32_get() % latency);
 	} else {
 		expiration = 0;
 	}
 
-	NET_DBG("Scheduling DAO timer %u ticks in the future",
+	NET_DBG("Scheduling DAO timer %u ms in the future",
 		(unsigned int)expiration);
 
 	instance->dao_timer_active = true;
 
-	nano_delayed_work_init(&instance->dao_timer, dao_send_timer);
-	nano_delayed_work_submit(&instance->dao_timer, expiration);
+	k_delayed_work_init(&instance->dao_timer, dao_send_timer);
+	k_delayed_work_submit(&instance->dao_timer, expiration);
 
 	if (!instance->dao_lifetime_timer_active) {
 		set_dao_lifetime_timer(instance);
@@ -3652,7 +3649,7 @@ static inline void create_linklocal_rplnodes_mcast(struct in6_addr *addr)
 }
 
 #if defined(CONFIG_NET_RPL_DIS_SEND)
-static void dis_timeout(struct nano_work *work)
+static void dis_timeout(struct k_work *work)
 {
 	uint32_t dis_interval;
 
@@ -3660,9 +3657,9 @@ static void dis_timeout(struct nano_work *work)
 
 	net_rpl_dis_send(NULL, NULL);
 
-	dis_interval = SECONDS(CONFIG_NET_RPL_DIS_INTERVAL);
+	dis_interval = CONFIG_NET_RPL_DIS_INTERVAL * MSEC_PER_SEC;
 
-	nano_delayed_work_submit(&dis_timer, dis_interval);
+	k_delayed_work_submit(&dis_timer, dis_interval);
 }
 #endif
 
@@ -3672,13 +3669,13 @@ static inline void net_rpl_init_timers(void)
 	/* Randomize the first DIS sending*/
 	uint32_t dis_interval;
 
-	dis_interval = SECONDS(CONFIG_NET_RPL_DIS_INTERVAL / 2 +
-			       ((uint32_t)CONFIG_NET_RPL_DIS_INTERVAL *
-				(uint32_t)sys_rand32_get()) / UINT_MAX -
-			       NET_RPL_DIS_START_DELAY);
+	dis_interval = (CONFIG_NET_RPL_DIS_INTERVAL / 2 +
+			((uint32_t)CONFIG_NET_RPL_DIS_INTERVAL *
+			 (uint32_t)sys_rand32_get()) / UINT_MAX -
+			NET_RPL_DIS_START_DELAY) * MSEC_PER_SEC;
 
-	nano_delayed_work_init(&dis_timer, dis_timeout);
-	nano_delayed_work_submit(&dis_timer, dis_interval);
+	k_delayed_work_init(&dis_timer, dis_timeout);
+	k_delayed_work_submit(&dis_timer, dis_interval);
 #endif
 }
 

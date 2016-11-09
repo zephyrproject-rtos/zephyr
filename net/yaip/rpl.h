@@ -23,7 +23,7 @@
 #ifndef __RPL_H
 #define __RPL_H
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <stdbool.h>
 
 #include <net/net_ip.h>
@@ -425,17 +425,17 @@ struct net_rpl_instance {
 
 #if defined(CONFIG_NET_RPL_PROBING)
 	/** When next probe message will be sent. */
-	struct nano_delayed_work probing_timer;
+	struct k_delayed_work probing_timer;
 #endif /* CONFIG_NET_RPL_PROBING */
 
 	/** DODAG Information Object timer. */
-	struct nano_delayed_work dio_timer;
+	struct k_delayed_work dio_timer;
 
 	/** Destination Advertisement Object timer. */
-	struct nano_delayed_work dao_timer;
+	struct k_delayed_work dao_timer;
 
 	/** DAO lifetime timer. */
-	struct nano_delayed_work dao_lifetime_timer;
+	struct k_delayed_work dao_lifetime_timer;
 
 	/** Network interface to send DAO */
 	struct net_if *iface;

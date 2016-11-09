@@ -23,7 +23,7 @@
 #ifndef __ROUTE_H
 #define __ROUTE_H
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <misc/slist.h>
 
 #include <net/net_ip.h>

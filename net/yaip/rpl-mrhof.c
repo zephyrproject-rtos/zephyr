@@ -53,7 +53,7 @@
 #define NET_DEBUG 1
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <limits.h>
 #include <stdint.h>
 
