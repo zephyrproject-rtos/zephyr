@@ -339,7 +339,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 			return NULL;
 		}
 
-		NET_ASSERT(buf->ref);
+		NET_ASSERT_INFO(buf->ref, "RX buf %p ref %d", buf, buf->ref);
 
 		dec_free_rx_bufs(buf);
 		net_nbuf_set_type(buf, type);
@@ -350,7 +350,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 			return NULL;
 		}
 
-		NET_ASSERT(buf->ref);
+		NET_ASSERT_INFO(buf->ref, "TX buf %p ref %d", buf, buf->ref);
 
 		dec_free_tx_bufs(buf);
 		net_nbuf_set_type(buf, type);
@@ -361,7 +361,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 			return NULL;
 		}
 
-		NET_ASSERT(buf->ref);
+		NET_ASSERT_INFO(buf->ref, "DATA buf %p ref %d", buf, buf->ref);
 
 		/* The buf->data will point to the start of the L3
 		 * header (like IPv4 or IPv6 packet header) after the
