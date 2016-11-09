@@ -45,7 +45,7 @@
 #include "net_private.h"
 
 static bool fail = true;
-static struct nano_sem recv_lock;
+static struct k_sem recv_lock;
 
 struct net_udp_context {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -150,7 +150,7 @@ static enum net_verdict test_ok(struct net_conn *conn,
 {
 	struct ud *ud = (struct ud *)user_data;
 
-	nano_sem_give(&recv_lock);
+	k_sem_give(&recv_lock);
 
 	if (!ud) {
 		fail = true;
@@ -238,7 +238,7 @@ static void setup_ipv4_udp(struct net_buf *buf,
 				sizeof(struct net_udp_hdr));
 }
 
-#define TIMEOUT (sys_clock_ticks_per_sec / 6)
+#define TIMEOUT 200
 
 static bool send_ipv6_udp_msg(struct net_if *iface,
 			      struct in6_addr *src,
@@ -267,7 +267,7 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 		return false;
 	}
 
-	if (!nano_sem_take(&recv_lock, TIMEOUT)) {
+	if (k_sem_take(&recv_lock, TIMEOUT)) {
 		printk("Timeout, packet not received\n");
 		if (expect_failure) {
 			return false;
@@ -315,7 +315,7 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 		return false;
 	}
 
-	if (!nano_sem_take(&recv_lock, TIMEOUT)) {
+	if (k_sem_take(&recv_lock, TIMEOUT)) {
 		printk("Timeout, packet not received\n");
 		if (expect_failure) {
 			return false;
@@ -408,7 +408,7 @@ static bool run_tests(void)
 	net_ipaddr_copy(&peer_addr4.sin_addr, &in4addr_peer);
 	peer_addr4.sin_family = AF_INET;
 
-	nano_sem_init(&recv_lock);
+	k_sem_init(&recv_lock, 0, UINT_MAX);
 
 	ifaddr = net_if_ipv6_addr_add(iface, &in6addr_my, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
@@ -591,7 +591,7 @@ static bool run_tests(void)
 	return true;
 }
 
-void main_fiber(void)
+void main_thread(void)
 {
 	if (run_tests()) {
 		TC_END_REPORT(TC_PASS);
@@ -600,17 +600,12 @@ void main_fiber(void)
 	}
 }
 
-#if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000
-char __noinit __stack fiberStack[STACKSIZE];
-#endif
+char __noinit __stack thread_stack[STACKSIZE];
 
 void main(void)
 {
-#if defined(CONFIG_MICROKERNEL)
-	main_fiber();
-#else
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-			(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
-#endif
+	k_thread_spawn(&thread_stack[0], STACKSIZE,
+		       (k_thread_entry_t)main_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

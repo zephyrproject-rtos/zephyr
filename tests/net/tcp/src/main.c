@@ -47,7 +47,7 @@
 
 static bool test_failed;
 static bool fail = true;
-static struct nano_sem recv_lock;
+static struct k_sem recv_lock;
 static struct net_context *v6_ctx;
 static struct net_context *reply_v6_ctx;
 static struct net_context *v4_ctx;
@@ -74,12 +74,12 @@ static struct sockaddr_in peer_v4_addr;
 #define MY_TCP_PORT 5545
 #define PEER_TCP_PORT 9876
 
-#define WAIT_TIME (sys_clock_ticks_per_sec / 4)
-#define WAIT_TIME_LONG (sys_clock_ticks_per_sec)
+#define WAIT_TIME 250
+#define WAIT_TIME_LONG MSEC_PER_SEC
 
-static struct nano_sem wait_connect;
+static struct k_sem wait_connect;
 #if 0
-static struct nano_sem wait_in_accept;
+static struct k_sem wait_in_accept;
 static bool connect_cb_called;
 static int accept_cb_called;
 #endif
@@ -161,7 +161,7 @@ static void v6_send_syn_ack(struct net_if *iface, struct net_buf *req)
 		net_nbuf_unref(rsp);
 	}
 
-	nano_sem_give(&wait_connect);
+	k_sem_give(&wait_connect);
 }
 
 static int send_status = -EINVAL;
@@ -233,7 +233,7 @@ static enum net_verdict test_ok(struct net_conn *conn,
 {
 	struct ud *ud = (struct ud *)user_data;
 
-	nano_sem_give(&recv_lock);
+	k_sem_give(&recv_lock);
 
 	if (!ud) {
 		fail = true;
@@ -321,7 +321,7 @@ static void setup_ipv4_tcp(struct net_buf *buf,
 				sizeof(struct net_tcp_hdr));
 }
 
-#define TIMEOUT (sys_clock_ticks_per_sec / 6)
+#define TIMEOUT 200
 
 static bool send_ipv6_tcp_msg(struct net_if *iface,
 			      struct in6_addr *src,
@@ -350,7 +350,7 @@ static bool send_ipv6_tcp_msg(struct net_if *iface,
 		return false;
 	}
 
-	if (!nano_sem_take(&recv_lock, TIMEOUT)) {
+	if (k_sem_take(&recv_lock, TIMEOUT)) {
 		printk("Timeout, packet not received\n");
 		if (expect_failure) {
 			return false;
@@ -398,7 +398,7 @@ static bool send_ipv4_tcp_msg(struct net_if *iface,
 		return false;
 	}
 
-	if (!nano_sem_take(&recv_lock, TIMEOUT)) {
+	if (k_sem_take(&recv_lock, TIMEOUT)) {
 		printk("Timeout, packet not received\n");
 		if (expect_failure) {
 			return false;
@@ -479,7 +479,7 @@ static bool test_register(void)
 	net_ipaddr_copy(&peer_addr4.sin_addr, &in4addr_peer);
 	peer_addr4.sin_family = AF_INET;
 
-	nano_sem_init(&recv_lock);
+	k_sem_init(&recv_lock, 0, UINT_MAX);
 
 	ifaddr = net_if_ipv6_addr_add(iface, &in6addr_my, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
@@ -1098,7 +1098,7 @@ static void connect_v4_cb(struct net_context *context, void *user_data)
 	fail = false;
 
 	connect_cb_called = true;
-	nano_sem_give(&wait_connect);
+	k_sem_give(&wait_connect);
 
 	DBG("IPv4 connect cb called\n");
 }
@@ -1352,7 +1352,7 @@ static bool test_init_tcp_connect(void)
 		return false;
 	}
 
-	if (!nano_sem_take(&wait_in_accept, WAIT_TIME_LONG)) {
+	if (k_sem_take(&wait_in_accept, WAIT_TIME_LONG)) {
 		TC_ERROR("Timeout while waiting data back\n");
 		return false;
 	}
@@ -1374,7 +1374,7 @@ static bool test_init_tcp_connect(void)
 
 	DBG("Waiting v6 connection\n");
 
-	if (!nano_sem_take(&wait_connect, WAIT_TIME_LONG)) {
+	if (k_sem_take(&wait_connect, WAIT_TIME_LONG)) {
 		TC_ERROR("Timeout while waiting data back\n");
 		return false;
 	}
@@ -1394,7 +1394,7 @@ static bool test_init_tcp_connect(void)
 		return false;
 	}
 
-	nano_sem_take(&wait_connect, WAIT_TIME);
+	k_sem_take(&wait_connect, WAIT_TIME);
 	if (!connect_cb_called) {
 		TC_ERROR("No IPv4 connect cb called on time, "
 			 "TCP connect test failed\n");
@@ -1414,7 +1414,7 @@ static bool test_init(void)
 	net_ipaddr_copy(&any_addr4.sin_addr, &in4addr_any);
 	any_addr4.sin_family = AF_INET;
 
-	nano_sem_init(&wait_connect);
+	k_sem_init(&wait_connect, 0, UINT_MAX);
 
 	return true;
 }

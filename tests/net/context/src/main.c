@@ -66,10 +66,10 @@ static bool recv_cb_reconfig_called;
 static bool recv_cb_timeout_called;
 static int test_token, timeout_token;
 
-static struct nano_sem wait_data;
+static struct k_sem wait_data;
 
-#define WAIT_TIME (sys_clock_ticks_per_sec / 4)
-#define WAIT_TIME_LONG (sys_clock_ticks_per_sec)
+#define WAIT_TIME 250
+#define WAIT_TIME_LONG MSEC_PER_SEC
 #define SENDING 93244
 #define MY_PORT 1969
 #define PEER_PORT 16233
@@ -640,7 +640,7 @@ static void recv_cb(struct net_context *context,
 	DBG("Data received.\n");
 
 	recv_cb_called = true;
-	nano_sem_give(&wait_data);
+	k_sem_give(&wait_data);
 }
 
 static bool net_ctx_recv_v6(void)
@@ -656,7 +656,7 @@ static bool net_ctx_recv_v6(void)
 
 	net_ctx_sendto_v6();
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (!recv_cb_called) {
 		TC_ERROR("No data received on time, IPv6 recv test failed\n");
@@ -681,7 +681,7 @@ static bool net_ctx_recv_v4(void)
 
 	net_ctx_sendto_v4();
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (!recv_cb_called) {
 		TC_ERROR("No data received on time, IPv4 recv test failed\n");
@@ -735,7 +735,7 @@ static bool net_ctx_recv_v6_fail(void)
 {
 	net_ctx_sendto_v6_wrong_src();
 
-	if (nano_sem_take(&wait_data, WAIT_TIME)) {
+	if (!k_sem_take(&wait_data, WAIT_TIME)) {
 		TC_ERROR("Semaphore triggered but should not\n");
 		return false;
 	}
@@ -791,7 +791,7 @@ static bool net_ctx_recv_v4_fail(void)
 {
 	net_ctx_sendto_v4_wrong_src();
 
-	if (nano_sem_take(&wait_data, WAIT_TIME)) {
+	if (!k_sem_take(&wait_data, WAIT_TIME)) {
 		TC_ERROR("Semaphore triggered but should not\n");
 		return false;
 	}
@@ -811,7 +811,7 @@ static bool net_ctx_recv_v6_again(void)
 {
 	net_ctx_sendto_v6();
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (!recv_cb_called) {
 		TC_ERROR("No data received on time 2nd time, "
@@ -828,7 +828,7 @@ static bool net_ctx_recv_v4_again(void)
 {
 	net_ctx_sendto_v4();
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (!recv_cb_called) {
 		TC_ERROR("No data received on time 2nd time, "
@@ -849,7 +849,7 @@ static void recv_cb_another(struct net_context *context,
 	DBG("Data received in another callback.\n");
 
 	recv_cb_reconfig_called = true;
-	nano_sem_give(&wait_data);
+	k_sem_give(&wait_data);
 }
 
 static bool net_ctx_recv_v6_reconfig(void)
@@ -866,7 +866,7 @@ static bool net_ctx_recv_v6_reconfig(void)
 
 	net_ctx_sendto_v6();
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (!recv_cb_reconfig_called) {
 		TC_ERROR("No data received on time, "
@@ -893,7 +893,7 @@ static bool net_ctx_recv_v4_reconfig(void)
 
 	net_ctx_sendto_v4();
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (!recv_cb_reconfig_called) {
 		TC_ERROR("No data received on time, "
@@ -906,10 +906,8 @@ static bool net_ctx_recv_v4_reconfig(void)
 	return true;
 }
 
-#if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 1024
-char __noinit __stack fiberStack[STACKSIZE];
-#endif
+char __noinit __stack thread_stack[STACKSIZE];
 
 static void recv_cb_timeout(struct net_context *context,
 			    struct net_buf *buf,
@@ -919,15 +917,14 @@ static void recv_cb_timeout(struct net_context *context,
 	DBG("Data received after a timeout.\n");
 
 	recv_cb_timeout_called = true;
-	nano_sem_give(&wait_data);
+	k_sem_give(&wait_data);
 }
 
-void timeout_fiber(struct net_context *ctx, sa_family_t family)
+void timeout_thread(struct net_context *ctx, sa_family_t *family)
 {
 	int ret;
 
-	ret = net_context_recv(ctx, recv_cb_timeout, WAIT_TIME_LONG,
-			       INT_TO_POINTER((int)family));
+	ret = net_context_recv(ctx, recv_cb_timeout, WAIT_TIME_LONG, family);
 
 	if (ret || cb_failure) {
 		TC_ERROR("Context recv UDP timeout test failed (%d)\n", ret);
@@ -941,44 +938,38 @@ void timeout_fiber(struct net_context *ctx, sa_family_t family)
 		return;
 	}
 
-	fiber_abort();
+	k_thread_abort(k_current_get());
 }
 
-static void start_timeout_v6_fiber(void)
+static void start_timeout_v6_thread(void)
 {
-#if defined(CONFIG_MICROKERNEL)
-	timeout_fiber(udp_v6_ctx, AF_INET6);
-#else
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-			(nano_fiber_entry_t)timeout_fiber,
-			 (int)udp_v6_ctx, AF_INET6, 7, 0);
-#endif
+	k_thread_spawn(&thread_stack[0], STACKSIZE,
+		       (k_thread_entry_t)timeout_thread,
+		       udp_v6_ctx, INT_TO_POINTER(AF_INET6), NULL,
+		       K_PRIO_COOP(7), 0, 0);
 }
 
-static void start_timeout_v4_fiber(void)
+static void start_timeout_v4_thread(void)
 {
-#if defined(CONFIG_MICROKERNEL)
-	timeout_fiber(udp_v4_ctx, AF_INET);
-#else
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-			(nano_fiber_entry_t)timeout_fiber,
-			 (int)udp_v4_ctx, AF_INET, 7, 0);
-#endif
+	k_thread_spawn(&thread_stack[0], STACKSIZE,
+		       (k_thread_entry_t)timeout_thread,
+		       udp_v4_ctx, INT_TO_POINTER(AF_INET), NULL,
+		       K_PRIO_COOP(7), 0, 0);
 }
 
 static bool net_ctx_recv_v6_timeout(void)
 {
 	cb_failure = false;
 
-	/* Start a fiber that will send data to receiver. */
-	start_timeout_v6_fiber();
+	/* Start a thread that will send data to receiver. */
+	start_timeout_v6_thread();
 
 	net_ctx_send_v6();
 	timeout_token = SENDING;
 
 	DBG("Sent data\n");
 
-	nano_sem_take(&wait_data, TICKS_UNLIMITED);
+	k_sem_take(&wait_data, K_FOREVER);
 
 	return !cb_failure;
 }
@@ -987,13 +978,13 @@ static bool net_ctx_recv_v4_timeout(void)
 {
 	cb_failure = false;
 
-	/* Start a fiber that will send data to receiver. */
-	start_timeout_v4_fiber();
+	/* Start a thread that will send data to receiver. */
+	start_timeout_v4_thread();
 
 	net_ctx_send_v4();
 	timeout_token = SENDING;
 
-	nano_sem_take(&wait_data, TICKS_UNLIMITED);
+	k_sem_take(&wait_data, K_FOREVER);
 
 	return !cb_failure;
 }
@@ -1186,7 +1177,7 @@ static bool test_init(void)
 	}
 
 	/* The semaphore is there to wait the data to be received. */
-	nano_sem_init(&wait_data);
+	k_sem_init(&wait_data, 0, UINT_MAX);
 
 	return true;
 }

@@ -888,7 +888,7 @@ static const struct {
 #endif
 };
 
-static void main_fiber(void)
+static void main_thread(void)
 {
 	int count, pass;
 
@@ -913,17 +913,12 @@ static void main_fiber(void)
 	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
 }
 
-#if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000
-char __noinit __stack fiberStack[STACKSIZE];
-#endif
+char __noinit __stack thread_stack[STACKSIZE];
 
 void main(void)
 {
-#if defined(CONFIG_MICROKERNEL)
-	main_fiber();
-#else
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-				(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
-#endif
+	k_thread_spawn(&thread_stack[0], STACKSIZE,
+		       (k_thread_entry_t)main_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

@@ -31,7 +31,7 @@
 static uint32_t event2throw;
 static uint32_t throw_times;
 static char __noinit __stack thrower_stack[512];
-static struct nano_sem thrower_lock;
+static struct k_sem thrower_lock;
 
 /* Receiver infra */
 static uint32_t rx_event;
@@ -102,10 +102,10 @@ static inline int test_requesting_nm(void)
 	return TC_PASS;
 }
 
-static void thrower_fiber(void)
+static void thrower_thread(void)
 {
 	while (1) {
-		nano_fiber_sem_take(&thrower_lock, TICKS_UNLIMITED);
+		k_sem_take(&thrower_lock, K_FOREVER);
 
 		TC_PRINT("\tThrowing event 0x%08X %u times\n",
 			 event2throw, throw_times);
@@ -139,9 +139,9 @@ static inline int test_sending_event(uint32_t times, bool receiver)
 		net_mgmt_add_event_callback(&rx_cb);
 	}
 
-	nano_sem_give(&thrower_lock);
+	k_sem_give(&thrower_lock);
 
-	fiber_yield();
+	k_yield();
 
 	if (receiver) {
 		TC_PRINT("\tReceived 0x%08X %u times\n",
@@ -170,12 +170,13 @@ static void initialize_event_tests(void)
 	rx_event = 0;
 	rx_calls = 0;
 
-	nano_sem_init(&thrower_lock);
+	k_sem_init(&thrower_lock, 0, UINT_MAX);
 
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb, TEST_MGMT_EVENT);
 
-	fiber_start(thrower_stack, sizeof(thrower_stack),
-		    (nano_fiber_entry_t)thrower_fiber, 0, 0, 7, 0);
+	k_thread_spawn(thrower_stack, sizeof(thrower_stack),
+		       (k_thread_entry_t)thrower_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
 
 static int test_core_event(uint32_t event, bool (*func)(void))
@@ -193,7 +194,7 @@ static int test_core_event(uint32_t event, bool (*func)(void))
 		goto out;
 	}
 
-	fiber_yield();
+	k_yield();
 
 	if (!rx_calls) {
 		ret = TC_FAIL;

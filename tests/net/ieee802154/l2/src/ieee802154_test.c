@@ -87,7 +87,7 @@ struct ieee802154_pkt_test test_beacon_pkt = {
 };
 
 struct net_buf *current_buf;
-struct nano_sem driver_lock;
+struct k_sem driver_lock;
 struct net_if *iface;
 
 static void pkt_hexdump(uint8_t *pkt, uint8_t length)
@@ -161,7 +161,7 @@ static inline int test_ns_sending(struct ieee802154_pkt_test *t)
 		return TC_FAIL;
 	}
 
-	nano_sem_take(&driver_lock, MSEC(10));
+	k_sem_take(&driver_lock, 10);
 
 	if (!current_buf->frags) {
 		TC_ERROR("*** Could not send IPv6 NS packet\n");
@@ -212,7 +212,7 @@ static inline int test_ack_reply(struct ieee802154_pkt_test *t)
 
 	net_recv_data(iface, buf);
 
-	nano_sem_take(&driver_lock, MSEC(20));
+	k_sem_take(&driver_lock, 20);
 
 	/* an ACK packet should be in current_buf */
 	if (!current_buf->frags) {
@@ -244,7 +244,7 @@ static inline int initialize_test_environment(void)
 {
 	struct device *dev;
 
-	nano_sem_init(&driver_lock);
+	k_sem_init(&driver_lock, 0, UINT_MAX);
 
 	current_buf = net_nbuf_get_reserve_rx(0);
 	if (!current_buf) {

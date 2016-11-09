@@ -22,7 +22,7 @@
 #include <string.h>
 #include <misc/printk.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include <net/buf.h>
 #include <net/nbuf.h>
@@ -39,15 +39,15 @@
 #define NUM_OBSERVERS 3
 #define NUM_REPLIES 3
 
-static struct nano_fifo zoap_nbuf_fifo;
+static struct k_fifo zoap_nbuf_fifo;
 static NET_BUF_POOL(zoap_nbuf_pool, 4, 0,
 		    &zoap_nbuf_fifo, NULL, sizeof(struct net_nbuf));
 
-static struct nano_fifo zoap_data_fifo;
+static struct k_fifo zoap_data_fifo;
 static NET_BUF_POOL(zoap_data_pool, 4, ZOAP_BUF_SIZE,
 		    &zoap_data_fifo, NULL, 0);
 
-static struct nano_fifo zoap_limited_data_fifo;
+static struct k_fifo zoap_limited_data_fifo;
 static NET_BUF_POOL(zoap_limited_data_pool, 4, ZOAP_LIMITED_BUF_SIZE,
 		    &zoap_limited_data_fifo, NULL, 0);
 

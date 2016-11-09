@@ -534,7 +534,7 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 	test_result(true);
 }
 
-void main_fiber(void)
+void main_thread(void)
 {
 	struct net_if *iface;
 
@@ -551,14 +551,15 @@ void main_fiber(void)
 
 	net_dhcpv4_start(iface);
 
-	fiber_yield();
+	k_yield();
 }
 
 #define STACKSIZE 3000
-char __noinit __stack fiberStack[STACKSIZE];
+char __noinit __stack thread_stack[STACKSIZE];
 
 void main(void)
 {
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-				(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
+	k_thread_spawn(&thread_stack[0], STACKSIZE,
+		       (k_thread_entry_t)main_thread, NULL, NULL, NULL,
+		       K_PRIO_COOP(7), 0, 0);
 }

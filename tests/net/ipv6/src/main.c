@@ -130,10 +130,10 @@ static const unsigned char ipv6_hbho[] = {
 };
 
 static bool test_failed;
-static struct nano_sem wait_data;
+static struct k_sem wait_data;
 
-#define WAIT_TIME (sys_clock_ticks_per_sec / 4)
-#define WAIT_TIME_LONG (sys_clock_ticks_per_sec)
+#define WAIT_TIME 250
+#define WAIT_TIME_LONG MSEC_PER_SEC
 #define SENDING 93244
 #define MY_PORT 1969
 #define PEER_PORT 16233
@@ -278,7 +278,7 @@ static bool test_init(void)
 	}
 
 	/* The semaphore is there to wait the data to be received. */
-	nano_sem_init(&wait_data);
+	k_sem_init(&wait_data, 0, UINT_MAX);
 
 	return true;
 }
@@ -437,7 +437,7 @@ static bool net_test_prefix_timeout(void)
 	net_if_ipv6_prefix_set_lf(prefix, false);
 	net_if_ipv6_prefix_set_timer(prefix, lifetime);
 
-	nano_sem_take(&wait_data, SECONDS(lifetime * 3/2));
+	k_sem_take(&wait_data, (lifetime * 3/2) * MSEC_PER_SEC);
 
 	prefix = net_if_ipv6_prefix_lookup(net_if_get_default(),
 					   &addr, len);
@@ -463,7 +463,7 @@ static bool net_test_prefix_timeout_overflow(void)
 	net_if_ipv6_prefix_set_lf(prefix, false);
 	net_if_ipv6_prefix_set_timer(prefix, lifetime);
 
-	if (nano_sem_take(&wait_data, SECONDS(lifetime * 3/2))) {
+	if (!k_sem_take(&wait_data, (lifetime * 3/2) * MSEC_PER_SEC)) {
 		TC_ERROR("Prefix %s/%d lock should still be there",
 			 net_sprint_ipv6_addr(&addr), len);
 		return false;
@@ -567,7 +567,7 @@ void main(void)
 			pass++;
 		}
 
-		fiber_yield();
+		k_yield();
 	}
 
 	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));

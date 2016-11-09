@@ -84,17 +84,12 @@ static bool feed_data; /* feed data back to IP stack */
 static int msg_sending;
 static int expected_icmpv6 = NET_ICMPV6_RPL;
 
-static struct nano_sem wait_data;
+static struct k_sem wait_data;
 
 static struct net_if_link_cb link_cb;
 static bool link_cb_called;
 
-#define WAIT_TIME (sys_clock_ticks_per_sec / 4)
-
-#if defined(CONFIG_NANOKERNEL)
-#define STACKSIZE 1024
-char __noinit __stack fiberStack[STACKSIZE];
-#endif
+#define WAIT_TIME 250
 
 struct net_rpl_test {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -165,7 +160,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 			test_failed = true;
 		}
 
-		nano_sem_give(&wait_data);
+		k_sem_give(&wait_data);
 
 		return 0;
 	}
@@ -216,7 +211,7 @@ out:
 
 	msg_sending = 0;
 
-	nano_sem_give(&wait_data);
+	k_sem_give(&wait_data);
 
 	return 0;
 }
@@ -286,7 +281,7 @@ static bool test_init(void)
 	}
 
 	/* The semaphore is there to wait the data to be received. */
-	nano_sem_init(&wait_data);
+	k_sem_init(&wait_data, 0, UINT_MAX);
 
 	net_if_register_link_cb(&link_cb, send_link_cb);
 
@@ -360,7 +355,7 @@ static bool test_dio_dummy_input(void)
 	}
 
 	data_failure = false;
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (data_failure) {
 		TC_ERROR("%d: Unexpected ICMPv6 code received\n", __LINE__);
@@ -387,7 +382,7 @@ static bool test_dis_sending(void)
 		return false;
 	}
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (data_failure) {
 		data_failure = false;
@@ -509,7 +504,7 @@ static bool populate_nbr_cache(void)
 		return false;
 	}
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	feed_data = false;
 
@@ -574,7 +569,7 @@ static bool test_dao_sending_ok(void)
 		return false;
 	}
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (data_failure) {
 		data_failure = false;
@@ -596,7 +591,7 @@ static bool test_link_cb(void)
 
 	net_test_send_ns();
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	/* Restore earlier expected value, by default we only accept
 	 * RPL ICMPv6 messages.
@@ -666,7 +661,7 @@ static bool test_dio_receive_dest(void)
 		return false;
 	}
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (data_failure) {
 		data_failure = false;

@@ -370,7 +370,7 @@ static bool run_tests(void)
 }
 
 
-void main_fiber(void)
+void main_thread(void)
 {
 	if (run_tests()) {
 		TC_END_REPORT(TC_PASS);
@@ -379,17 +379,12 @@ void main_fiber(void)
 	}
 }
 
-#if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000
-char __noinit __stack fiberStack[STACKSIZE];
-#endif
+char __noinit __stack thread_stack[STACKSIZE];
 
 void main(void)
 {
-#if defined(CONFIG_MICROKERNEL)
-	main_fiber();
-#else
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-			(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
-#endif
+	k_thread_spawn(&thread_stack[0], STACKSIZE,
+		       (k_thread_entry_t)main_thread, NULL, NULL, NULL,
+		       K_PRIO_COOP(7), 0, 0);
 }

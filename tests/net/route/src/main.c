@@ -88,14 +88,9 @@ static bool feed_data; /* feed data back to IP stack */
 
 static int msg_sending;
 
-static struct nano_sem wait_data;
+static struct k_sem wait_data;
 
-#define WAIT_TIME (sys_clock_ticks_per_sec / 4)
-
-#if defined(CONFIG_NANOKERNEL)
-#define STACKSIZE 1024
-char __noinit __stack fiberStack[STACKSIZE];
-#endif
+#define WAIT_TIME 250
 
 struct net_route_test {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -154,7 +149,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 			test_failed = true;
 		}
 
-		nano_sem_give(&wait_data);
+		k_sem_give(&wait_data);
 
 		return 0;
 	}
@@ -169,7 +164,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 
 	msg_sending = 0;
 
-	nano_sem_give(&wait_data);
+	k_sem_give(&wait_data);
 
 	return 0;
 }
@@ -194,7 +189,7 @@ static int tester_send_peer(struct net_if *iface, struct net_buf *buf)
 			test_failed = true;
 		}
 
-		nano_sem_give(&wait_data);
+		k_sem_give(&wait_data);
 
 		return 0;
 	}
@@ -209,7 +204,7 @@ static int tester_send_peer(struct net_if *iface, struct net_buf *buf)
 
 	msg_sending = 0;
 
-	nano_sem_give(&wait_data);
+	k_sem_give(&wait_data);
 
 	return 0;
 }
@@ -307,7 +302,7 @@ static bool test_init(void)
 	}
 
 	/* The semaphore is there to wait the data to be received. */
-	nano_sem_init(&wait_data);
+	k_sem_init(&wait_data, 0, UINT_MAX);
 
 	return true;
 }
@@ -485,7 +480,7 @@ static bool populate_nbr_cache(void)
 		return false;
 	}
 
-	nano_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, WAIT_TIME);
 
 	feed_data = false;
 

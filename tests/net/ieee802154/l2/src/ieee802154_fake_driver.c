@@ -23,7 +23,7 @@
 #include <net/ieee802154_radio.h>
 
 extern struct net_buf *current_buf;
-extern struct nano_sem driver_lock;
+extern struct k_sem driver_lock;
 
 static int fake_cca(struct device *dev)
 {
@@ -94,7 +94,7 @@ static int fake_tx(struct device *dev, struct net_buf *buf)
 
 	insert_frag_dummy_way(buf);
 
-	nano_sem_give(&driver_lock);
+	k_sem_give(&driver_lock);
 
 	return 0;
 }
