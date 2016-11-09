@@ -36,19 +36,19 @@ config NET_MGMT_EVENT
 	(ip address change for instance) to trigger some related work.
 
 config NET_MGMT_EVENT_STACK_SIZE
-	int "Stack size for the inner fiber handling event callbacks"
+	int "Stack size for the inner thread handling event callbacks"
 	default 512
 	depends on NET_MGMT_EVENT
 	help
 	Set the internal stack size for NM to run registered callbacks
 	on events.
 
-config NET_MGMT_EVENT_FIBER_PRIO
-	int "Inner fiber priority (use with care)"
+config NET_MGMT_EVENT_THREAD_PRIO
+	int "Inner thread priority (use with care)"
 	default 7
 	depends on NET_MGMT_EVENT
 	help
-	Set the network management event core's inner fiber priority.
+	Set the network management event core's inner thread priority.
 	Do not change this unless you know what you are doing.
 
 config NET_MGMT_EVENT_QUEUE_SIZE
