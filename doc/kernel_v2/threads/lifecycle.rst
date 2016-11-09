@@ -162,7 +162,7 @@ The following code spawns a thread that starts immediately.
 
     extern void my_entry_point(void *, void *, void *);
 
-    char __noinit __stack my_stack_area[MY_THREAD_SIZE];
+    char __noinit __stack my_stack_area[MY_STACK_SIZE];
 
     k_tid_t my_tid = k_thread_spawn(my_stack_area, MY_STACK_SIZE,
                                     my_entry_point, NULL, NULL, NULL,

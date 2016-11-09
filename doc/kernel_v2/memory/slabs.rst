@@ -1,6 +1,6 @@
 .. _memory_slabs_v2:
 
-Memory slabs
+Memory Slabs
 ############
 
 A :dfn:`memory slab` is a kernel object that allows memory blocks
@@ -22,13 +22,21 @@ by its memory address.
 A memory slab has the following key properties:
 
 * The **block size** of each block, measured in bytes.
-  It must be at least 4 bytes long.
+  It must be at least 4N bytes long, where N is greater than 0.
 
 * The **number of blocks** available for allocation.
   It must be greater than zero.
 
 * A **buffer** that provides the memory for the memory slab's blocks.
   It must be at least "block size" times "number of blocks" bytes long.
+
+The memory slab's buffer must be aligned to an N-byte boundary, where
+N is a power of 2 larger than 2 (i.e. 4, 8, 16, ...). To ensure that
+all memory blocks in the buffer are similarly aligned to this boundary,
+the block size must also be a multiple of N.
+
+A memory slab must be initialized before it can be used. This marks all of
+its blocks as unused.
 
 A thread that needs to use a memory block simply allocates it from a memory
 slab. When the thread finishes with a memory block,
@@ -63,7 +71,7 @@ A memory slab is defined using a variable of type :c:type:`struct k_mem_slab`.
 It must then be initialized by calling :cpp:func:`k_mem_slab_init()`.
 
 The following code defines and initializes a memory slab that has 6 blocks
-of 400 bytes each and is aligned to a 4-byte boundary..
+that are 400 bytes long, each of which is aligned to a 4-byte boundary..
 
 .. code-block:: c
 

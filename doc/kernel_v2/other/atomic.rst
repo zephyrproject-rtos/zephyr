@@ -97,6 +97,15 @@ on a set of flag bits in a bit array longer than 32 bits.
     other techniques to implement critical sections such as using a mutex
     or locking interrupts.
 
+Configuration Options
+*********************
+
+Related configuration options:
+
+* :option:`CONFIG_ATOMIC_OPERATIONS_BUILTIN`
+* :option:`CONFIG_ATOMIC_OPERATIONS_CUSTOM`
+* :option:`CONFIG_ATOMIC_OPERATIONS_C`
+
 APIs
 ****
 

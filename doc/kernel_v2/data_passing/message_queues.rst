@@ -19,15 +19,19 @@ by its memory address.
 
 A message queue has the following key properties:
 
-* A **queue** of data items that have been sent but not yet received.
-  The queue is implemented using a ring buffer.
+* A **ring buffer** of data items that have been sent but not yet received.
 
-* The **data item size**, measured in bytes, of each data item.
+* A **data item size**, measured in bytes.
 
 * A **maximum quantity** of data items that can be queued in the ring buffer.
 
+The message queue's ring buffer must be aligned to an N-byte boundary, where
+N is a power of 2 (i.e. 1, 2, 4, 8, ...). To ensure that the messages stored in
+the ring buffer are similarly aligned to this boundary, the data item size
+must also be a multiple of N.
+
 A message queue must be initialized before it can be used.
-This sets its queue to empty.
+This sets its ring buffer to empty.
 
 A data item can be **sent** to a message queue by a thread or an ISR.
 The data item a pointed at by the sending thread is copied to a waiting thread,
@@ -65,12 +69,14 @@ A message queue is defined using a variable of type :c:type:`struct k_msgq`.
 It must then be initialized by calling :cpp:func:`k_msgq_init()`.
 
 The following code defines and initializes an empty message queue
-that is capable of holding 10 items.
+that is capable of holding 10 items, each of which is 12 bytes long.
 
 .. code-block:: c
 
     struct data_item_type {
-        ...
+        uint32_t field1;
+	uint32_t field2;
+	uint32_t field3;
     };
 
     char __aligned(4) my_msgq_buffer[10 * sizeof(data_item_type)];

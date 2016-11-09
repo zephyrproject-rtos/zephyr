@@ -224,6 +224,7 @@ Related configuration options:
 
 * :option:`CONFIG_NUM_COOP_PRIORITIES`
 * :option:`CONFIG_NUM_PREEMPT_PRIORITIES`
+* :option:`CONFIG_TIMESLICING`
 * :option:`CONFIG_TIMESLICE_SIZE`
 * :option:`CONFIG_TIMESLICE_PRIORITY`
 

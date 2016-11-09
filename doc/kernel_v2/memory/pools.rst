@@ -26,12 +26,12 @@ by its memory address.
 A memory pool has the following key properties:
 
 * A **minimum block size**, measured in bytes.
-  This must be at least 4 bytes long.
+  It must be at least 4X bytes long, where X is greater than 0.
 
 * A **maximum block size**, measured in bytes.
   This should be a power of 4 times larger than the minimum block size.
-  That is, "maximum block size" must equal "minimum block size" times 4^n,
-  where n is greater than or equal to zero.
+  That is, "maximum block size" must equal "minimum block size" times 4^Y,
+  where Y is greater than or equal to zero.
 
 * The **number of maximum-size blocks** initially available.
   This must be greater than zero.
@@ -39,6 +39,11 @@ A memory pool has the following key properties:
 * A **buffer** that provides the memory for the memory pool's blocks.
   This must be at least "maximum block size" times
   "number of maximum-size blocks" bytes long.
+
+The memory pool's buffer must be aligned to an N-byte boundary, where
+N is a power of 2 larger than 2 (i.e. 4, 8, 16, ...). To ensure that
+all memory blocks in the buffer are similarly aligned to this boundary,
+the minimum block size must also be a multiple of N.
 
 A thread that needs to use a memory block simply allocates it from a memory
 pool. Following a successful allocation, the :c:data:`data` field
@@ -129,7 +134,7 @@ as well as its buffer.
 
 .. code-block:: c
 
-    K_MEM_POOL_DEFINE(my_map, 64, 4096, 3, 4);
+    K_MEM_POOL_DEFINE(my_pool, 64, 4096, 3, 4);
 
 Allocating a Memory Block
 =========================
@@ -197,9 +202,10 @@ Configuration Options
 
 Related configuration options:
 
-* CONFIG_MEM_POOL_AD_BEFORE_SEARCH_FOR_BIGGER_BLOCK
-* CONFIG_MEM_POOL_AD_AFTER_SEARCH_FOR_BIGGER_BLOCK
-* CONFIG_MEM_POOL_AD_NONE
+* :option:`CONFIG_MEM_POOL_AD_BEFORE_SEARCH_FOR_BIGGERBLOCK`
+* :option:`CONFIG_MEM_POOL_AD_AFTER_SEARCH_FOR_BIGGERBLOCK`
+* :option:`CONFIG_MEM_POOL_AD_NONE`
+
 
 APIs
 ****

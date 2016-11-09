@@ -96,6 +96,7 @@ Related configuration options:
 
 * :option:`CONFIG_MAIN_THREAD_PRIORITY`
 * :option:`CONFIG_MAIN_STACK_SIZE`
+* :option:`CONFIG_IDLE_STACK_SIZE`
 
 APIs
 ****

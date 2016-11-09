@@ -318,13 +318,18 @@ to hold off the sending of a new message until the previous message
 has been consumed, so that a backlog of messages doesn't build up
 when the consuming thread is unable to keep up.
 
-The message data is stored in a memory block obtained from ``TXPOOL``,
+The message data is stored in a memory block obtained from a memory pool,
 thereby eliminating unneeded data copying when exchanging large messages.
+The memory pool contains only two blocks: one block gets filled with
+data while the previously sent block is being processed
 
 .. code-block:: c
 
     /* define a semaphore, indicating that no message has been sent */
     K_SEM_DEFINE(my_sem, 1, 1);
+
+    /* define a memory pool containing 2 blocks of 4096 bytes */
+    K_MEM_POOL_DEFINE(my_pool, 4096, 4096, 2, 4);
 
     void producer_thread(void)
     {
@@ -334,20 +339,20 @@ thereby eliminating unneeded data copying when exchanging large messages.
 
         while (1) {
             /* allocate a memory block to hold the message data */
-            k_mem_pool_alloc(&send_msg.tx_block, TXPOOL, 4096, K_FOREVER);
+            k_mem_pool_alloc(&mp_pool, &send_msg.tx_block, 4096, K_FOREVER);
 
             /* keep overwriting the hardware-generated data in the block    */
             /* until the previous message has been received by the consumer */
             do {
-                memcpy(send_msg.tx_block.pointer_to_data, hw_buffer, 4096);
+                memcpy(send_msg.tx_block.data, hw_buffer, 4096);
             } while (k_sem_take(&my_sem, K_NO_WAIT) != 0);
 
             /* finish preparing to send message */
             send_msg.size = 4096;
-            send_msg.rx_target_thread = K_ANY;
+            send_msg.tx_target_thread = K_ANY;
 
             /* send message containing most current data and loop around */
-            k_mbox_async_put(&my_mailbox, &send_msg, MY_SEMA);
+            k_mbox_async_put(&my_mailbox, &send_msg, &my_sem);
         }
     }
 
@@ -570,6 +575,9 @@ thereby eliminating unneeded data copying when processing a large message.
 
 .. code-block:: c
 
+    /* define a memory pool containing 1 block of 10000 bytes */
+    K_MEM_POOL_DEFINE(my_pool, 10000, 10000, 1, 4);
+
     void consumer_thread(void)
     {
         struct k_mbox_msg recv_msg;
@@ -588,11 +596,11 @@ thereby eliminating unneeded data copying when processing a large message.
             k_mbox_get(&my_mailbox, &recv_msg, NULL, K_FOREVER);
 
             /* get message data as a memory block and discard message */
-            k_mbox_data_block_get(&recv_msg, RXPOOL, &recv_block, K_FOREVER);
+            k_mbox_data_block_get(&recv_msg, &my_pool, &recv_block, K_FOREVER);
 
             /* compute sum of all message bytes in memory block */
             total = 0;
-            data_ptr = (char *)(recv_block.pointer_to_data);
+            data_ptr = (char *)(recv_block.data);
             for (i = 0; i < recv_msg.size; i++) {
                 total += data_ptr++;
             }
@@ -604,9 +612,9 @@ thereby eliminating unneeded data copying when processing a large message.
 
 .. note::
     An incoming message that was sent using a message buffer is also processed
-    correctly by this algorithm, since the mailbox automatically creates
-    a memory block containing the message data using ``RXPOOL``. However,
-    the performance benefit of using the memory block approach is lost.
+    correctly by this algorithm, since the mailbox automatically allocates
+    a memory block from the memory pool and fills it with the message data.
+    However, the performance benefit of using the memory block approach is lost.
 
 Suggested Uses
 **************

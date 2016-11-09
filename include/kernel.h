@@ -1561,8 +1561,9 @@ struct k_msgq {
  *
  * The message queue's ring buffer contains space for @a q_max_msgs messages,
  * each of which is @a q_msg_size bytes long. The buffer is aligned to a
- * @a q_align -byte boundary. To ensure that each message is aligned to a
- * @a q_align -byte boundary, @a q_msg_size must be a multiple of @a q_align.
+ * @a q_align -byte boundary, which must be a power of 2. To ensure that each
+ * message is similarly aligned to this boundary, @a q_msg_size must also be
+ * a multiple of @a q_align.
  *
  * The message queue can be accessed outside the module where it is defined
  * using:
@@ -1572,7 +1573,7 @@ struct k_msgq {
  * @param q_name Name of the message queue.
  * @param q_msg_size Message size (in bytes).
  * @param q_max_msgs Maximum number of messages that can be queued.
- * @param q_align Alignment of the message queue's ring buffer (power of 2).
+ * @param q_align Alignment of the message queue's ring buffer.
  */
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)      \
 	static char __noinit __aligned(q_align)                     \
@@ -1586,6 +1587,12 @@ struct k_msgq {
  * @brief Initialize a message queue.
  *
  * This routine initializes a message queue object, prior to its first use.
+ *
+ * The message queue's ring buffer must contain space for @a max_msgs messages,
+ * each of which is @a msg_size bytes long. The buffer must be aligned to an
+ * N-byte boundary, where N is a power of 2 (i.e. 1, 2, 4, ...). To ensure
+ * that each message is similarly aligned to this boundary, @a q_msg_size
+ * must also be a multiple of N.
  *
  * @param q Address of the message queue.
  * @param buffer Pointer to ring buffer that holds queued messages.
@@ -2022,15 +2029,15 @@ struct k_mem_slab {
 	}
 
 /**
- * @brief Statically define and initialize a memory slab allocator.
+ * @brief Statically define and initialize a memory slab.
  *
- * The slab allocator's buffer contains @a slab_num_blocks memory blocks
+ * The memory slab's buffer contains @a slab_num_blocks memory blocks
  * that are @a slab_block_size bytes long. The buffer is aligned to a
- * @a slab_align -byte boundary. To ensure that each memory block is aligned
- * to a @a slab_align -byte boundary, @a slab_block_size must be a multiple of
+ * @a slab_align -byte boundary. To ensure that each memory block is similarly
+ * aligned to this boundary, @a slab_block_size must also be a multiple of
  * @a slab_align.
  *
- * The slab allocator can be accessed outside the module where it is defined
+ * The memory slab can be accessed outside the module where it is defined
  * using:
  *
  *    extern struct k_mem_slab @a name;
@@ -2052,6 +2059,12 @@ struct k_mem_slab {
  * @brief Initialize a memory slab.
  *
  * Initializes a memory slab, prior to its first use.
+ *
+ * The memory slab's buffer contains @a slab_num_blocks memory blocks
+ * that are @a slab_block_size bytes long. The buffer must be aligned to an
+ * N-byte boundary, where N is a power of 2 larger than 2 (i.e. 4, 8, 16, ...).
+ * To ensure that each memory block is similarly aligned to this boundary,
+ * @a slab_block_size must also be a multiple of N.
  *
  * @param slab Address of the memory slab.
  * @param buffer Pointer to buffer used for the memory blocks.
@@ -2338,7 +2351,7 @@ static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
  * long. The memory pool allows blocks to be repeatedly partitioned into
  * quarters, down to blocks of @a min_size bytes long. The buffer is aligned
  * to a @a align -byte boundary. To ensure that the minimum sized blocks are
- * aligned to @a align -byte boundary, @a min_size must be a multiple of
+ * similarly aligned to this boundary, @a min_size must also be a multiple of
  * @a align.
  *
  * If the pool is to be accessed outside the module where it is defined, it
