@@ -2615,7 +2615,8 @@ static void hci_le_meta_event(struct net_buf *buf)
 		le_adv_report(buf);
 		break;
 	default:
-		BT_DBG("Unhandled LE event 0x%02x", evt->subevent);
+		BT_WARN("Unhandled LE event 0x%02x len %u: %s",
+			evt->subevent, buf->len, bt_hex(buf->data, buf->len));
 		break;
 	}
 }
@@ -2705,7 +2706,8 @@ static void hci_event(struct net_buf *buf)
 		hci_le_meta_event(buf);
 		break;
 	default:
-		BT_WARN("Unhandled event 0x%02x", hdr->evt);
+		BT_WARN("Unhandled event 0x%02x len %u: %s", hdr->evt,
+			buf->len, bt_hex(buf->data, buf->len));
 		break;
 
 	}
