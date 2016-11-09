@@ -40,6 +40,12 @@ struct adc_info  {
 	atomic_t  state;
 	device_sync_call_t sync;
 	struct k_sem sem;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t device_power_state;
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+	qm_ss_adc_context_t adc_ctx;
+#endif
+#endif
 };
 
 static void adc_config_irq(void);
@@ -243,12 +249,69 @@ static const struct adc_driver_api api_funcs = {
 	.read    = adc_qmsi_ss_read,
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void adc_qmsi_ss_set_power_state(struct device *dev,
+					uint32_t power_state)
+{
+	struct adc_info *context = dev->driver_data;
+
+	context->device_power_state = power_state;
+}
+
+static uint32_t adc_qmsi_ss_get_power_state(struct device *dev)
+{
+	struct adc_info *context = dev->driver_data;
+
+	return context->device_power_state;
+}
+
+#if CONFIG_SYS_POWER_DEEP_SLEEP
+static int adc_qmsi_ss_suspend_device(struct device *dev)
+{
+	struct adc_info *context = dev->driver_data;
+
+	qm_ss_adc_save_context(QM_SS_ADC_0, &context->adc_ctx);
+
+	adc_qmsi_ss_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
+
+	return 0;
+}
+
+static int adc_qmsi_ss_resume_device_from_suspend(struct device *dev)
+{
+	struct adc_info *context = dev->driver_data;
+
+	qm_ss_adc_restore_context(QM_SS_ADC_0, &context->adc_ctx);
+
+	adc_qmsi_ss_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+
+static int adc_qmsi_ss_device_ctrl(struct device *dev, uint32_t ctrl_command,
+				   void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			return adc_qmsi_ss_suspend_device(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return adc_qmsi_ss_resume_device_from_suspend(dev);
+		}
+#endif
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((uint32_t *)context) = adc_qmsi_ss_get_power_state(dev);
+	}
+
+	return 0;
+}
+#else
+#define adc_qmsi_ss_set_power_state(...)
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 int adc_qmsi_ss_init(struct device *dev)
 {
 	struct adc_info *info = dev->driver_data;
-
-	dev->driver_api = &api_funcs;
-
 
 	/* Set up config */
 	/* Clock cycles between the start of each sample */
@@ -267,14 +330,16 @@ int adc_qmsi_ss_init(struct device *dev)
 
 	adc_config_irq();
 
+	adc_qmsi_ss_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
 	return 0;
 }
 
 struct adc_info adc_info_dev;
 
-DEVICE_INIT(adc_qmsi_ss, CONFIG_ADC_0_NAME, &adc_qmsi_ss_init,
-		    &adc_info_dev, NULL,
-			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_DEFINE(adc_qmsi_ss, CONFIG_ADC_0_NAME, &adc_qmsi_ss_init,
+	      adc_qmsi_ss_device_ctrl, &adc_info_dev, NULL, POST_KERNEL,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &api_funcs);
 
 static void adc_config_irq(void)
 {
