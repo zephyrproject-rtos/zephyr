@@ -45,7 +45,8 @@ static int test_del(struct zoap_resource *resource,
 {
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
-	uint8_t code, type, *payload;
+	uint8_t tkl, code, type, *payload;
+	const uint8_t *token;
 	uint16_t id, len;
 	int r;
 
@@ -58,6 +59,7 @@ static int test_del(struct zoap_resource *resource,
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
 
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
@@ -91,6 +93,7 @@ static int test_del(struct zoap_resource *resource,
 	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_DELETED);
 	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
 
 	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
@@ -102,7 +105,8 @@ static int test_put(struct zoap_resource *resource,
 {
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
-	uint8_t *payload, code, type;
+	uint8_t *payload, code, type, tkl;
+	const uint8_t *token;
 	uint16_t len, id;
 	int r;
 
@@ -114,6 +118,7 @@ static int test_put(struct zoap_resource *resource,
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
 
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
@@ -147,6 +152,7 @@ static int test_put(struct zoap_resource *resource,
 	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CHANGED);
 	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
 
 	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
@@ -158,7 +164,8 @@ static int test_post(struct zoap_resource *resource,
 {
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
-	uint8_t *payload, code, type;
+	uint8_t *payload, code, type, tkl;
+	const uint8_t *token;
 	uint16_t len, id;
 	int r;
 
@@ -171,6 +178,7 @@ static int test_post(struct zoap_resource *resource,
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
 
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
@@ -204,6 +212,7 @@ static int test_post(struct zoap_resource *resource,
 	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CREATED);
 	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
 
 	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
@@ -215,8 +224,10 @@ static int piggyback_get(struct zoap_resource *resource,
 {
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
+	const uint8_t *token;
 	uint8_t *payload, code, type;
 	uint16_t len, id;
+	uint8_t tkl;
 	int r;
 
 	payload = zoap_packet_get_payload(request, &len);
@@ -228,6 +239,7 @@ static int piggyback_get(struct zoap_resource *resource,
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
 
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
@@ -262,6 +274,7 @@ static int piggyback_get(struct zoap_resource *resource,
 	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
 	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
 
 	payload = zoap_packet_get_payload(&response, &len);
 	if (!payload) {
@@ -291,7 +304,8 @@ static int query_get(struct zoap_resource *resource,
 	struct zoap_option options[4];
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
-	uint8_t *payload, code, type;
+	uint8_t *payload, code, type, tkl;
+	const uint8_t *token;
 	uint16_t len, id;
 	int i, r;
 
@@ -304,6 +318,7 @@ static int query_get(struct zoap_resource *resource,
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
 
 	r = zoap_find_options(request, ZOAP_OPTION_URI_QUERY, options, 4);
 	if (r <= 0) {
@@ -354,6 +369,7 @@ static int query_get(struct zoap_resource *resource,
 	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
 	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
 
 	payload = zoap_packet_get_payload(&response, &len);
 	if (!payload) {
@@ -382,7 +398,8 @@ static int separate_get(struct zoap_resource *resource,
 {
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
-	uint8_t *payload, code, type;
+	uint8_t *payload, code, type, tkl;
+	const uint8_t *token;
 	uint16_t len, id;
 	int r;
 
@@ -395,6 +412,7 @@ static int separate_get(struct zoap_resource *resource,
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
 
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
@@ -426,6 +444,7 @@ static int separate_get(struct zoap_resource *resource,
 	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
 	zoap_header_set_code(&response, 0);
 	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
 
 	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
@@ -462,6 +481,7 @@ done:
 	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
 	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
 
 	payload = zoap_packet_get_payload(&response, &len);
 	if (!payload) {
