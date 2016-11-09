@@ -1068,7 +1068,7 @@ struct net_if_api {
 			data, cfg_info, prio, api, l2,		\
 			l2_ctx_type, mtu)			\
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
-			    cfg_info, NANOKERNEL, prio, api);	\
+			    cfg_info, POST_KERNEL, prio, api);	\
 	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, 0, l2, mtu)
 
@@ -1081,7 +1081,7 @@ struct net_if_api {
 				 data, cfg_info, prio, api, l2,		\
 				 l2_ctx_type, mtu)			\
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		\
-			    cfg_info, NANOKERNEL, prio, api);		\
+			    cfg_info, POST_KERNEL, prio, api);		\
 	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, instance, l2, mtu)
 

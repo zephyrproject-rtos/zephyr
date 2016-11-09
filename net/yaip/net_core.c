@@ -755,4 +755,4 @@ static int net_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(net_init, NANOKERNEL, CONFIG_NET_INIT_PRIO);
+SYS_INIT(net_init, POST_KERNEL, CONFIG_NET_INIT_PRIO);
