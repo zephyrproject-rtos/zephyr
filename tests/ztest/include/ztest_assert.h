@@ -136,6 +136,17 @@ static inline void _assert(int cond, const char *msg, const char *default_msg,
 #define assert_equal(a, b, msg) assert((a) == (b), msg, #a " not equal to " #b)
 
 /**
+ * @brief Assert that @a a does not equal @a b
+ *
+ * @a a and @a b won't be converted and will be compared directly.
+ *
+ * @param a Value to compare
+ * @param b Value to compare
+ * @param msg Optional message to print if the assertion fails
+ */
+#define assert_not_equal(a, b, msg) assert((a) != (b), msg, #a " equal to " #b)
+
+/**
  * @brief Assert that @a a equals @a b
  *
  * @a a and @a b will be converted to `void *` before comparing.
