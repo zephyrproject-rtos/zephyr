@@ -1496,7 +1496,6 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	struct bt_att_error_rsp *rsp;
-	struct bt_att_hdr *hdr;
 	uint8_t err;
 
 	rsp = (void *)buf->data;
@@ -1504,17 +1503,17 @@ static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	if (!att->req || !att->req->buf) {
+	if (!att->req) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
 
-	/* Restore state to be resent */
-	net_buf_simple_restore(&att->req->buf->b, &att->req->state);
+	if (att->req->buf) {
+		/* Restore state to be resent */
+		net_buf_simple_restore(&att->req->buf->b, &att->req->state);
+	}
 
-	hdr = (void *)att->req->buf->data;
-
-	err = rsp->request == hdr->code ? rsp->error : BT_ATT_ERR_UNLIKELY;
+	err = rsp->error;
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (att->req->retrying) {
 		goto done;
