@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <limits.h>
+#include <misc/__assert.h>
 
 /* nanokernel/microkernel execution context types */
 #define NANO_CTX_ISR (K_ISR)
@@ -131,7 +132,10 @@ typedef int nano_context_type_t;
  *
  * @return The ID of the currently executing thread.
  */
-#define sys_thread_self_get k_current_get
+static inline __deprecated nano_thread_id_t sys_thread_self_get(void)
+{
+	return k_current_get();
+}
 
 /**
  * @brief Cause the currently executing thread to busy wait.
@@ -149,7 +153,10 @@ typedef int nano_context_type_t;
  *
  * @return N/A
  */
-#define sys_thread_busy_wait k_busy_wait
+static inline __deprecated void sys_thread_busy_wait(uint32_t usec_to_wait)
+{
+	k_busy_wait(usec_to_wait);
+}
 
 /**
  * @brief Return the type of the current execution context.
@@ -163,7 +170,7 @@ typedef int nano_context_type_t;
  * @retval NANO_CTX_FIBER (1): current thread is a fiber.
  * @retval NANO_CTX_TASK (2): current thread is a task.
  */
-extern int sys_execution_context_type_get(void);
+extern __deprecated int sys_execution_context_type_get(void);
 
 /**
  * @brief Initialize and start a fiber.
@@ -195,11 +202,9 @@ extern int sys_execution_context_type_get(void);
  *
  * @return nanokernel thread identifier
  */
-static inline nano_thread_id_t fiber_start(char *stack, unsigned stack_size,
-						nano_fiber_entry_t entry,
-						int arg1, int arg2,
-						unsigned prio,
-						unsigned options)
+static inline __deprecated nano_thread_id_t
+fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
+	    int arg1, int arg2, unsigned prio, unsigned options)
 {
 	return k_thread_spawn(stack, stack_size, (k_thread_entry_t)entry,
 				(void *)(intptr_t)arg1, (void *)(intptr_t)arg2,
@@ -301,7 +306,7 @@ struct fiber_config {
  *
  * @return A handle potentially used to cancel the delayed start.
  */
-static inline nano_thread_id_t
+static inline __deprecated nano_thread_id_t
 fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 			nano_fiber_entry_t entry_point, int param1,
 			int param2, unsigned int priority,
@@ -346,7 +351,11 @@ fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
  *
  * @return N/A
  */
-#define fiber_delayed_start_cancel k_thread_cancel
+static inline __deprecated void
+fiber_delayed_start_cancel(nano_thread_id_t handle)
+{
+	k_thread_cancel(handle);
+}
 
 /**
  * @brief Cancel a delayed fiber start from a fiber
@@ -384,7 +393,10 @@ fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
  *
  * @return N/A
  */
-#define fiber_yield k_yield
+static inline __deprecated void fiber_yield(void)
+{
+	k_yield();
+}
 
 /**
  * @brief Abort the currently executing fiber.
@@ -401,9 +413,12 @@ fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
  *
  * @return N/A
  */
-#define fiber_abort() k_thread_abort(k_current_get())
+static inline __deprecated void fiber_abort(void)
+{
+	k_thread_abort(k_current_get());
+}
 
-extern void _legacy_sleep(int32_t ticks);
+extern void __deprecated _legacy_sleep(int32_t ticks);
 
 /**
  * @brief Put the current fiber to sleep.
@@ -453,7 +468,10 @@ extern void _legacy_sleep(int32_t ticks);
  *
  * @return N/A
  */
-#define fiber_wakeup k_wakeup
+static inline __deprecated void fiber_wakeup(nano_thread_id_t fiber)
+{
+	k_wakeup(fiber);
+}
 
 /**
  * @brief Wake the specified fiber from sleep
@@ -464,7 +482,7 @@ extern void _legacy_sleep(int32_t ticks);
  *
  * @sa fiber_wakeup
  */
-#define isr_fiber_wakeup k_wakeup
+#define isr_fiber_wakeup fiber_wakeup
 
 /**
  * @brief Wake the specified fiber from sleep
@@ -475,7 +493,7 @@ extern void _legacy_sleep(int32_t ticks);
  *
  * @sa fiber_wakeup
  */
-#define fiber_fiber_wakeup k_wakeup
+#define fiber_fiber_wakeup fiber_wakeup
 
 /**
  * @brief Wake the specified fiber from sleep
@@ -486,7 +504,7 @@ extern void _legacy_sleep(int32_t ticks);
  *
  * @sa fiber_wakeup
  */
-#define task_fiber_wakeup k_wakeup
+#define task_fiber_wakeup fiber_wakeup
 
 /**
  * @brief Yield the CPU to another task.
@@ -500,7 +518,7 @@ extern void _legacy_sleep(int32_t ticks);
  *
  * @return N/A
  */
-#define task_yield k_yield
+#define task_yield fiber_yield
 
 /**
  * @brief Set the priority of a task.
@@ -520,7 +538,11 @@ extern void _legacy_sleep(int32_t ticks);
  *
  * @return N/A
  */
-#define task_priority_set(task, prio) k_thread_priority_set(task, (int)prio)
+static inline __deprecated void task_priority_set(ktask_t task,
+						  kpriority_t prio)
+{
+	k_thread_priority_set(task, (int)prio);
+}
 
 /**
  * @brief Set the entry point of a task.
@@ -540,8 +562,20 @@ extern void _legacy_sleep(int32_t ticks);
  *
  * @return N/A
  */
-#define task_entry_set(task, entry) \
-	k_thread_entry_set(task, (k_thread_entry_t)entry)
+static inline __deprecated void
+task_entry_set(ktask_t task, void (*entry)(void))
+{
+	__ASSERT(0, "task_entry_set is unsupported");
+	ARG_UNUSED(task);
+	ARG_UNUSED(entry);
+
+	/* This is impractical to implement in the new kernel and there are
+	 * workarounds.
+	 * 1) Set entry point in MDEF files
+	 * 2) Set entry point in DEFINE_TASK macro
+	 * 3) Set entry point in k_thread_spawn() invocation
+	 */
+}
 
 /**
  * @brief Install an abort handler.
@@ -563,7 +597,7 @@ extern void _legacy_sleep(int32_t ticks);
  *
  * @return N/A
  */
-extern void task_abort_handler_set(void (*handler)(void));
+extern void __deprecated task_abort_handler_set(void (*handler)(void));
 
 /**
  * @brief Process an "offload" request
@@ -581,7 +615,7 @@ extern void task_abort_handler_set(void (*handler)(void));
  *
  * @return result of @a func call
  */
-extern int task_offload_to_fiber(int (*func)(), void *argp);
+extern int __deprecated task_offload_to_fiber(int (*func)(), void *argp);
 
 /**
  * @brief Gets task identifier
@@ -590,7 +624,10 @@ extern int task_offload_to_fiber(int (*func)(), void *argp);
  *
  * @return identifier for current task
  */
-#define task_id_get k_current_get
+static inline __deprecated ktask_t task_id_get(void)
+{
+	return k_current_get();
+}
 
 /**
  * @brief Gets task priority
@@ -599,8 +636,10 @@ extern int task_offload_to_fiber(int (*func)(), void *argp);
  *
  * @return priority of current task
  */
-#define task_priority_get() \
-	(kpriority_t)(k_thread_priority_get(k_current_get()))
+static inline __deprecated kpriority_t task_priority_get(void)
+{
+	return (kpriority_t)(k_thread_priority_get(k_current_get()));
+}
 
 /**
  * @brief Abort a task
@@ -611,7 +650,10 @@ extern int task_offload_to_fiber(int (*func)(), void *argp);
  *
  * @return N/A
  */
-#define task_abort k_thread_abort
+static inline __deprecated void task_abort(ktask_t task)
+{
+	k_thread_abort(task);
+}
 
 /**
  * @brief Suspend a task
@@ -622,7 +664,10 @@ extern int task_offload_to_fiber(int (*func)(), void *argp);
  *
  * @return N/A
  */
-#define task_suspend k_thread_suspend
+static inline __deprecated void task_suspend(ktask_t task)
+{
+	k_thread_suspend(task);
+}
 
 /**
  * @brief Resume a task
@@ -633,7 +678,10 @@ extern int task_offload_to_fiber(int (*func)(), void *argp);
  *
  * @return N/A
  */
-#define task_resume k_thread_resume
+static inline __deprecated void task_resume(ktask_t task)
+{
+	k_thread_resume(task);
+}
 
 /**
  * @brief Start a task
@@ -644,7 +692,7 @@ extern int task_offload_to_fiber(int (*func)(), void *argp);
  *
  * @return N/A
  */
-extern void task_start(ktask_t task);
+extern void __deprecated task_start(ktask_t task);
 
 /**
  * @brief Set time-slicing period and scope
@@ -679,7 +727,7 @@ extern void task_start(ktask_t task);
  *
  * @return N/A
  */
-static inline void sys_scheduler_time_slice_set(int32_t ticks,
+static inline void __deprecated sys_scheduler_time_slice_set(int32_t ticks,
 						kpriority_t priority)
 {
 	k_sched_time_slice_set(_ticks_to_ms(ticks), (int)priority);
@@ -694,7 +742,7 @@ extern void _k_thread_group_op(uint32_t groups, void (*func)(struct tcs *));
  *
  * @return task groups associated with current task
  */
-static inline uint32_t task_group_mask_get(void)
+static inline __deprecated uint32_t task_group_mask_get(void)
 {
 	extern uint32_t _k_thread_group_mask_get(struct tcs *thread);
 
@@ -719,7 +767,7 @@ static inline uint32_t task_group_mask_get(void)
  *
  * @return N/A
  */
-static inline void task_group_join(uint32_t groups)
+static inline __deprecated void task_group_join(uint32_t groups)
 {
 	extern void _k_thread_group_join(uint32_t groups, struct tcs *thread);
 
@@ -735,7 +783,7 @@ static inline void task_group_join(uint32_t groups)
  *
  * @return N/A
  */
-static inline void task_group_leave(uint32_t groups)
+static inline __deprecated void task_group_leave(uint32_t groups)
 {
 	extern void _k_thread_group_leave(uint32_t groups, struct tcs *thread);
 
@@ -751,7 +799,7 @@ static inline void task_group_leave(uint32_t groups)
  *
  * @return N/A
  */
-static inline void task_group_start(uint32_t groups)
+static inline __deprecated void task_group_start(uint32_t groups)
 {
 	extern void _k_thread_single_start(struct tcs *thread);
 
@@ -767,7 +815,7 @@ static inline void task_group_start(uint32_t groups)
  *
  * @return N/A
  */
-static inline void task_group_suspend(uint32_t groups)
+static inline __deprecated void task_group_suspend(uint32_t groups)
 {
 	extern void _k_thread_single_suspend(struct tcs *thread);
 
@@ -783,7 +831,7 @@ static inline void task_group_suspend(uint32_t groups)
  *
  * @return N/A
  */
-static inline void task_group_resume(uint32_t groups)
+static inline __deprecated void task_group_resume(uint32_t groups)
 {
 	extern void _k_thread_single_resume(struct tcs *thread);
 
@@ -799,7 +847,7 @@ static inline void task_group_resume(uint32_t groups)
  *
  * @return N/A
  */
-static inline void task_group_abort(uint32_t groups)
+static inline __deprecated void task_group_abort(uint32_t groups)
 {
 	extern void _k_thread_single_abort(struct tcs *thread);
 
@@ -853,7 +901,7 @@ static inline void task_group_abort(uint32_t groups)
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int task_mutex_lock(kmutex_t mutex, int32_t timeout)
+static inline __deprecated int task_mutex_lock(kmutex_t mutex, int32_t timeout)
 {
 	return _error_to_rc(k_mutex_lock(mutex, _ticks_to_ms(timeout)));
 }
@@ -873,7 +921,10 @@ static inline int task_mutex_lock(kmutex_t mutex, int32_t timeout)
  *
  * @return N/A
  */
-#define task_mutex_unlock k_mutex_unlock
+static inline __deprecated void task_mutex_unlock(kmutex_t mutex)
+{
+	k_mutex_unlock(mutex);
+}
 
 /**
  * @brief Define a private mutex.
@@ -905,7 +956,7 @@ static inline int task_mutex_lock(kmutex_t mutex, int32_t timeout)
  *
  * @return N/A
  */
-static inline void nano_sem_init(struct nano_sem *sem)
+static inline __deprecated void nano_sem_init(struct nano_sem *sem)
 {
 	k_sem_init(sem, 0, UINT_MAX);
 }
@@ -927,7 +978,10 @@ static inline void nano_sem_init(struct nano_sem *sem)
  * @return N/A
  */
 
-#define nano_sem_give k_sem_give
+static inline __deprecated void nano_sem_give(struct nano_sem *sem)
+{
+	k_sem_give(sem);
+}
 
 /**
  * @brief Give a nanokernel semaphore (no context switch).
@@ -943,7 +997,7 @@ static inline void nano_sem_init(struct nano_sem *sem)
  * @sa nano_sem_give
  */
 
-#define nano_isr_sem_give k_sem_give
+#define nano_isr_sem_give nano_sem_give
 
 /**
  * @brief Give a nanokernel semaphore (no context switch).
@@ -957,7 +1011,7 @@ static inline void nano_sem_init(struct nano_sem *sem)
  * @sa nano_sem_give
  */
 
-#define nano_fiber_sem_give k_sem_give
+#define nano_fiber_sem_give nano_sem_give
 
 /**
  * @brief Give a nanokernel semaphore.
@@ -973,7 +1027,7 @@ static inline void nano_sem_init(struct nano_sem *sem)
  * @sa nano_sem_give
  */
 
-#define nano_task_sem_give k_sem_give
+#define nano_task_sem_give nano_sem_give
 
 /**
  * @brief Take a nanokernel semaphore, poll/pend if not available.
@@ -1003,7 +1057,8 @@ static inline void nano_sem_init(struct nano_sem *sem)
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int nano_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks)
+static inline __deprecated int nano_sem_take(struct nano_sem *sem,
+					     int32_t timeout_in_ticks)
 {
 	return k_sem_take((struct k_sem *)sem, _ticks_to_ms(timeout_in_ticks))
 		== 0 ? 1 : 0;
@@ -1054,7 +1109,7 @@ static inline int nano_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks)
  *
  * @return N/A
  */
-#define isr_sem_give k_sem_give
+#define isr_sem_give nano_sem_give
 
 /**
  * @brief Give semaphore from a fiber.
@@ -1067,7 +1122,7 @@ static inline int nano_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks)
  *
  * @return N/A
  */
-#define fiber_sem_give k_sem_give
+#define fiber_sem_give nano_sem_give
 
 /**
  * @brief Give semaphore.
@@ -1080,7 +1135,7 @@ static inline int nano_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks)
  *
  * @return N/A
  */
-#define task_sem_give k_sem_give
+#define task_sem_give nano_sem_give
 
 /**
  *
@@ -1105,7 +1160,7 @@ static inline int nano_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks)
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int task_sem_take(ksem_t sem, int32_t timeout)
+static inline __deprecated int task_sem_take(ksem_t sem, int32_t timeout)
 {
 	return _error_to_rc(k_sem_take(sem, _ticks_to_ms(timeout)));
 }
@@ -1121,7 +1176,10 @@ static inline int task_sem_take(ksem_t sem, int32_t timeout)
  *
  * @return N/A
  */
-#define task_sem_reset k_sem_reset
+static inline __deprecated void task_sem_reset(ksem_t sem)
+{
+	k_sem_reset(sem);
+}
 
 /**
  * @brief Read a semaphore's count.
@@ -1134,7 +1192,10 @@ static inline int task_sem_take(ksem_t sem, int32_t timeout)
  *
  * @return Semaphore count.
  */
-#define task_sem_count_get k_sem_count_get
+static inline __deprecated int task_sem_count_get(ksem_t sem)
+{
+	return k_sem_count_get(sem);
+}
 
 /**
  * @brief Read a nanokernel semaphore's count.
@@ -1147,7 +1208,10 @@ static inline int task_sem_take(ksem_t sem, int32_t timeout)
  *
  * @return Semaphore count.
  */
-#define nano_sem_count_get k_sem_count_get
+static inline __deprecated int nano_sem_count_get(ksem_t sem)
+{
+	return k_sem_count_get(sem);
+}
 
 #ifdef CONFIG_SEMAPHORE_GROUPS
 typedef ksem_t *ksemg_t;
@@ -1172,7 +1236,8 @@ typedef ksem_t *ksemg_t;
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
+static inline __deprecated ksem_t task_sem_group_take(ksemg_t group,
+						      int32_t timeout)
 {
 	struct k_sem *sem;
 
@@ -1194,7 +1259,10 @@ static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
  *
  * @return N/A
  */
-#define task_sem_group_give k_sem_group_give
+static inline __deprecated void task_sem_group_give(ksemg_t group)
+{
+	k_sem_group_give(group);
+}
 
 /**
  * @brief Reset a group of semaphores.
@@ -1209,7 +1277,10 @@ static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
  *
  * @return N/A
  */
-#define task_sem_group_reset k_sem_group_reset
+static inline __deprecated void task_sem_group_reset(ksemg_t group)
+{
+	k_sem_group_reset(group);
+}
 #endif
 
 /**
@@ -1254,7 +1325,11 @@ static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
  *
  * @return N/A
  */
-#define nano_work_init k_work_init
+static inline void nano_work_init(struct nano_work *work,
+				  work_handler_t handler)
+{
+	k_work_init(work, handler);
+}
 
 /**
  * @brief Submit a work item to a workqueue.
@@ -1273,7 +1348,11 @@ static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
  *
  * @return N/A
  */
-#define nano_work_submit_to_queue k_work_submit_to_queue
+static inline __deprecated void
+nano_work_submit_to_queue(struct nano_workqueue *wq, struct nano_work *work)
+{
+	k_work_submit_to_queue(wq, work);
+}
 
 /**
  * @brief Start a new workqueue.
@@ -1287,7 +1366,12 @@ static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
  *
  * @return N/A
  */
-#define nano_workqueue_start k_work_q_start
+static inline __deprecated void
+nano_workqueue_start(struct nano_workqueue *wq,
+		     const struct fiber_config *config)
+{
+	k_work_q_start(wq, config->stack, config->stack_size, config->prio);
+}
 
 /**
  * @brief Start a new workqueue.
@@ -1322,7 +1406,11 @@ static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
  *
  * @return N/A
  */
-#define nano_delayed_work_init k_delayed_work_init
+static inline __deprecated void
+nano_delayed_work_init(struct nano_delayed_work *work, work_handler_t handler)
+{
+	k_delayed_work_init(work, handler);
+}
 
 /**
  * @brief Submit a delayed work item to a workqueue.
@@ -1345,9 +1433,9 @@ static inline ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
  *
  * @return 0 in case of success or negative value in case of error.
  */
-static inline int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
-				      struct nano_delayed_work *work,
-				      int ticks)
+static inline __deprecated int
+nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
+				  struct nano_delayed_work *work, int ticks)
 {
 	return k_delayed_work_submit_to_queue(wq, work, _ticks_to_ms(ticks));
 }
@@ -1366,7 +1454,11 @@ static inline int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
  *
  * @return 0 in case of success or negative value in case of error.
  */
-#define nano_delayed_work_cancel k_delayed_work_cancel
+static inline __deprecated int
+nano_delayed_work_cancel(struct nano_delayed_work *work)
+{
+	return k_delayed_work_cancel(work);
+}
 #endif
 
 /**
@@ -1380,7 +1472,10 @@ static inline int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
  * on the handler since its fiber is shared system wide it may cause
  * unexpected behavior.
  */
-#define nano_work_submit k_work_submit
+static inline __deprecated void nano_work_submit(struct nano_work *work)
+{
+	k_work_submit(work);
+}
 
 #if CONFIG_SYS_CLOCK_EXISTS
 /**
@@ -1448,8 +1543,8 @@ typedef int (*kevent_handler_t)(int event);
  * @retval RC_FAIL If an event handler exists or the event number is invalid.
  * @retval RC_OK Otherwise.
  */
-static inline int task_event_handler_set(kevent_t legacy_event,
-					 kevent_handler_t handler)
+static inline __deprecated int
+task_event_handler_set(kevent_t legacy_event, kevent_handler_t handler)
 {
 	struct k_alert *alert = (struct k_alert *)legacy_event;
 
@@ -1476,7 +1571,7 @@ static inline int task_event_handler_set(kevent_t legacy_event,
  * @retval RC_FAIL If the event number is invalid.
  * @retval RC_OK Otherwise.
  */
-static inline int task_event_send(kevent_t legacy_event)
+static inline __deprecated int task_event_send(kevent_t legacy_event)
 {
 	k_alert_send((struct k_alert *)legacy_event);
 	return RC_OK;
@@ -1502,7 +1597,8 @@ static inline int task_event_send(kevent_t legacy_event)
  * @retval RC_FAIL Failed to immediately receive signaled event when
  *                 timeout = TICKS_NONE
  */
-static inline int task_event_recv(kevent_t legacy_event, int32_t timeout)
+static inline __deprecated int task_event_recv(kevent_t legacy_event,
+					       int32_t timeout)
 {
 	return _error_to_rc(k_alert_recv((struct k_alert *)legacy_event,
 					 _ticks_to_ms(timeout)));
@@ -1552,8 +1648,8 @@ static inline int task_event_recv(kevent_t legacy_event, int32_t timeout)
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int task_mem_map_alloc(kmemory_map_t map, void **mptr,
-					int32_t timeout)
+static inline __deprecated int
+task_mem_map_alloc(kmemory_map_t map, void **mptr, int32_t timeout)
 {
 	return _error_to_rc(k_mem_slab_alloc(map, mptr,
 			    _ticks_to_ms(timeout)));
@@ -1571,7 +1667,11 @@ static inline int task_mem_map_alloc(kmemory_map_t map, void **mptr,
  *
  * @return N/A
  */
-#define task_mem_map_free k_mem_slab_free
+static inline __deprecated void
+task_mem_map_free(kmemory_map_t m, void **p)
+{
+	k_mem_slab_free(m, p);
+}
 
 
 /**
@@ -1585,7 +1685,7 @@ static inline int task_mem_map_alloc(kmemory_map_t map, void **mptr,
  *
  * @return Number of used blocks.
  */
-static inline int task_mem_map_used_get(kmemory_map_t map)
+static inline __deprecated int task_mem_map_used_get(kmemory_map_t map)
 {
 	return (int)k_mem_slab_num_used_get(map);
 }
@@ -1637,9 +1737,9 @@ static inline int task_mem_map_used_get(kmemory_map_t map)
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int task_mem_pool_alloc(struct k_block *blockptr,
-				      kmemory_pool_t pool_id,
-				      int reqsize, int32_t timeout)
+static inline __deprecated int
+task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
+		    int reqsize, int32_t timeout)
 {
 	return _error_to_rc(k_mem_pool_alloc(pool_id, blockptr, reqsize,
 						_ticks_to_ms(timeout)));
@@ -1656,7 +1756,10 @@ static inline int task_mem_pool_alloc(struct k_block *blockptr,
  *
  * @return N/A
  */
-#define task_mem_pool_free k_mem_pool_free
+static inline __deprecated void task_mem_pool_free(struct k_block *block)
+{
+	k_mem_pool_free(block);
+}
 
 /**
  * @brief Defragment memory pool.
@@ -1674,7 +1777,10 @@ static inline int task_mem_pool_alloc(struct k_block *blockptr,
  *
  * @return N/A
  */
-#define task_mem_pool_defragment k_mem_pool_defrag
+static inline __deprecated void task_mem_pool_defragment(kmemory_pool_t pool)
+{
+	k_mem_pool_defrag(pool);
+}
 
 /**
  * @brief Allocate memory
@@ -1693,7 +1799,10 @@ static inline int task_mem_pool_alloc(struct k_block *blockptr,
  *
  * @retval address of the block if successful otherwise returns NULL
  */
-#define task_malloc k_malloc
+static inline __deprecated void *task_malloc(uint32_t size)
+{
+	return k_malloc(size);
+}
 
 /**
  * @brief Free memory allocated through task_malloc
@@ -1707,8 +1816,10 @@ static inline int task_mem_pool_alloc(struct k_block *blockptr,
  *
  * @return NA
  */
-#define task_free k_free
-
+static inline __deprecated void task_free(void *ptr)
+{
+	k_free(ptr);
+}
 /* message queues */
 
 #define kfifo_t struct k_msgq *
@@ -1736,7 +1847,8 @@ static inline int task_mem_pool_alloc(struct k_block *blockptr,
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int task_fifo_put(kfifo_t queue, void *data, int32_t timeout)
+static inline __deprecated int task_fifo_put(kfifo_t queue, void *data,
+					     int32_t timeout)
 {
 	return _error_to_rc(k_msgq_put(queue, data, _ticks_to_ms(timeout)));
 }
@@ -1764,7 +1876,8 @@ static inline int task_fifo_put(kfifo_t queue, void *data, int32_t timeout)
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int task_fifo_get(kfifo_t queue, void *data, int32_t timeout)
+static inline __deprecated int task_fifo_get(kfifo_t queue, void *data,
+					     int32_t timeout)
 {
 	return _error_to_rc(k_msgq_get(queue, data, _ticks_to_ms(timeout)));
 }
@@ -1778,7 +1891,7 @@ static inline int task_fifo_get(kfifo_t queue, void *data, int32_t timeout)
  *
  * @return RC_OK on purge.
  */
-static inline int task_fifo_purge(kfifo_t queue)
+static inline __deprecated int task_fifo_purge(kfifo_t queue)
 {
 	k_msgq_purge(queue);
 	return RC_OK;
@@ -1793,7 +1906,7 @@ static inline int task_fifo_purge(kfifo_t queue)
  *
  * @return # of FIFO entries on query.
  */
-static inline int task_fifo_size_get(kfifo_t queue)
+static inline __deprecated int task_fifo_size_get(kfifo_t queue)
 {
 	return queue->used_msgs;
 }
@@ -1867,8 +1980,8 @@ struct k_msg {
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-int task_mbox_put(kmbox_t mbox, kpriority_t prio, struct k_msg *msg,
-		  int32_t timeout);
+__deprecated int task_mbox_put(kmbox_t mbox, kpriority_t prio,
+			       struct k_msg *msg, int32_t timeout);
 
 /**
  * @brief Send a message asynchronously to a mailbox.
@@ -1886,8 +1999,8 @@ int task_mbox_put(kmbox_t mbox, kpriority_t prio, struct k_msg *msg,
  *
  * @return N/A
  */
-void task_mbox_block_put(kmbox_t mbox, kpriority_t prio, struct k_msg *msg,
-			 ksem_t sema);
+__deprecated void task_mbox_block_put(kmbox_t mbox, kpriority_t prio,
+				      struct k_msg *msg, ksem_t sema);
 
 /**
  * @brief Get @b struct @b k_msg message header structure information from
@@ -1910,7 +2023,8 @@ void task_mbox_block_put(kmbox_t mbox, kpriority_t prio, struct k_msg *msg,
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-int task_mbox_get(kmbox_t mbox, struct k_msg *msg, int32_t timeout);
+__deprecated int task_mbox_get(kmbox_t mbox, struct k_msg *msg,
+			       int32_t timeout);
 
 /**
  * @brief Get message data.
@@ -1927,7 +2041,7 @@ int task_mbox_get(kmbox_t mbox, struct k_msg *msg, int32_t timeout);
  *
  * @return N/A
  */
-void task_mbox_data_get(struct k_msg *msg);
+__deprecated void task_mbox_data_get(struct k_msg *msg);
 
 /**
  * @brief Retrieve message data into a block, with time-limited waiting.
@@ -1949,8 +2063,9 @@ void task_mbox_data_get(struct k_msg *msg);
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-int task_mbox_data_block_get(struct k_msg *msg, struct k_block *block,
-			     kmemory_pool_t pool_id, int32_t timeout);
+__deprecated int
+task_mbox_data_block_get(struct k_msg *msg, struct k_block *block,
+			 kmemory_pool_t pool_id, int32_t timeout);
 
 /**
  * @brief Define a private microkernel mailbox.
@@ -1998,9 +2113,9 @@ int task_mbox_data_block_get(struct k_msg *msg, struct k_block *block,
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int task_pipe_put(kpipe_t id, void *buffer, int bytes_to_write,
-				int *bytes_written, K_PIPE_OPTION options,
-				int32_t timeout)
+static inline __deprecated int
+task_pipe_put(kpipe_t id, void *buffer, int bytes_to_write, int *bytes_written,
+	      K_PIPE_OPTION options, int32_t timeout)
 {
 	size_t  min_xfer = (size_t)options;
 
@@ -2055,9 +2170,9 @@ static inline int task_pipe_put(kpipe_t id, void *buffer, int bytes_to_write,
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline int task_pipe_get(kpipe_t id, void *buffer, int bytes_to_read,
-				int *bytes_read, K_PIPE_OPTION options,
-				int32_t timeout)
+static inline __deprecated int
+task_pipe_get(kpipe_t id, void *buffer, int bytes_to_read, int *bytes_read,
+	      K_PIPE_OPTION options, int32_t timeout)
 {
 	size_t  min_xfer = (size_t)options;
 
@@ -2102,8 +2217,8 @@ static inline int task_pipe_get(kpipe_t id, void *buffer, int bytes_to_read,
  * @retval RC_OK Successfully sent data to the pipe.
  * @retval RC_FAIL Block size is zero
  */
-static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
-				      int size, ksem_t sem)
+static inline __deprecated int
+task_pipe_block_put(kpipe_t id, struct k_block block, int size, ksem_t sem)
 {
 	if (size == 0) {
 		return RC_FAIL;
@@ -2128,6 +2243,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
 	struct k_pipe * const name = &_k_pipe_obj_##name
 
 #define nano_fifo k_fifo
+#ifdef KERNEL /* XXX ztest layer redefines to a different function */
 
 /**
  * @brief Initialize a nanokernel FIFO (fifo) object.
@@ -2143,7 +2259,10 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @return N/A
  */
-#define nano_fifo_init k_fifo_init
+static inline __deprecated void nano_fifo_init(struct nano_fifo *fifo)
+{
+	k_fifo_init(fifo);
+}
 
 /* nanokernel fifos */
 
@@ -2167,7 +2286,15 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @return N/A
  */
-#define nano_fifo_put k_fifo_put
+static inline __deprecated void nano_fifo_put(struct nano_fifo *fifo,
+					      void *data)
+{
+	k_fifo_put(fifo, data);
+}
+#else
+void __deprecated nano_fifo_put(struct nano_fifo *fifo, void *data);
+void nano_fifo_init(struct nano_fifo *fifo);
+#endif /* KERNEL */
 
 /**
  * @brief Add an element to the end of a FIFO from an ISR context.
@@ -2178,7 +2305,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put
  */
-#define nano_isr_fifo_put k_fifo_put
+#define nano_isr_fifo_put nano_fifo_put
 
 /**
  * @brief Add an element to the end of a FIFO from a fiber.
@@ -2189,7 +2316,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put
  */
-#define nano_fiber_fifo_put k_fifo_put
+#define nano_fiber_fifo_put nano_fifo_put
 
 /**
  * @brief Add an element to the end of a FIFO.
@@ -2200,8 +2327,9 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put
  */
-#define nano_task_fifo_put k_fifo_put
+#define nano_task_fifo_put nano_fifo_put
 
+#ifdef KERNEL /* XXX ztest layer redefines to a different function */
 /**
  * @brief Atomically add a list of elements to the end of a FIFO.
  *
@@ -2239,7 +2367,14 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  * @sa nano_fifo_put_slist, nano_isr_fifo_put_list, nano_fiber_fifo_put_list,
  *     nano_task_fifo_put_list
  */
-#define nano_fifo_put_list k_fifo_put_list
+static inline __deprecated void
+nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail)
+{
+	k_fifo_put_list(fifo, head, tail);
+}
+#else
+void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail);
+#endif
 
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from an ISR.
@@ -2250,7 +2385,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put_list
  */
-#define nano_isr_fifo_put_list k_fifo_put_list
+#define nano_isr_fifo_put_list nano_fifo_put_list
 
 /**
  *
@@ -2262,7 +2397,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put_list
  */
-#define nano_fiber_fifo_put_list k_fifo_put_list
+#define nano_fiber_fifo_put_list nano_fifo_put_list
 
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
@@ -2273,7 +2408,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put_list
  */
-#define nano_task_fifo_put_list k_fifo_put_list
+#define nano_task_fifo_put_list nano_fifo_put_list
 
 /**
  * @brief Atomically add a list of elements to the end of a FIFO.
@@ -2299,7 +2434,11 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  * @sa nano_fifo_put_list, nano_isr_fifo_put_slist, nano_fiber_fifo_put_slist,
  *     nano_task_fifo_put_slist
  */
-#define nano_fifo_put_slist k_fifo_put_slist
+static inline __deprecated void
+nano_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list)
+{
+	k_fifo_put_slist(fifo, list);
+}
 
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from an ISR.
@@ -2310,7 +2449,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put_slist
  */
-#define nano_isr_fifo_put_slist k_fifo_put_slist
+#define nano_isr_fifo_put_slist nano_fifo_put_slist
 
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
@@ -2321,7 +2460,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put_slist
  */
-#define nano_fiber_fifo_put_slist k_fifo_put_slist
+#define nano_fiber_fifo_put_slist nano_fifo_put_slist
 
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
@@ -2330,7 +2469,7 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa nano_fifo_put_slist
  */
-#define nano_task_fifo_put_slist k_fifo_put_slist
+#define nano_task_fifo_put_slist nano_fifo_put_slist
 
 #ifdef KERNEL /* ztest layer redefines to a different function */
 /**
@@ -2361,14 +2500,15 @@ static inline int task_pipe_block_put(kpipe_t id, struct k_block block,
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline void *nano_fifo_get(struct nano_fifo *fifo,
-				  int32_t timeout_in_ticks)
+static inline __deprecated void *nano_fifo_get(struct nano_fifo *fifo,
+					       int32_t timeout_in_ticks)
 {
 	return k_fifo_get((struct k_fifo *)fifo,
 			  _ticks_to_ms(timeout_in_ticks));
 }
 #else
-void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
+void __deprecated *nano_fifo_get(struct nano_fifo *fifo,
+				 int32_t timeout_in_ticks);
 #endif /* KERNEL */
 
 /**
@@ -2424,7 +2564,10 @@ void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
  *
  * @return N/A
  */
-#define nano_lifo_init k_lifo_init
+static inline __deprecated void nano_lifo_init(struct nano_lifo *lifo)
+{
+	k_lifo_init(lifo);
+}
 
 /**
  * @brief Prepend an element to a LIFO.
@@ -2443,7 +2586,11 @@ void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
  *
  * @return N/A
  */
-#define nano_lifo_put k_lifo_put
+static inline __deprecated void
+nano_lifo_put(struct nano_lifo *lifo, void *data)
+{
+	k_lifo_put(lifo, data);
+}
 
 /**
  * @brief Prepend an element to a LIFO without a context switch.
@@ -2456,7 +2603,7 @@ void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
  *
  * @sa nano_lifo_put
  */
-#define nano_isr_lifo_put k_lifo_put
+#define nano_isr_lifo_put nano_lifo_put
 
 /**
  * @brief Prepend an element to a LIFO without a context switch.
@@ -2469,7 +2616,7 @@ void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
  *
  * @sa nano_lifo_put
  */
-#define nano_fiber_lifo_put k_lifo_put
+#define nano_fiber_lifo_put nano_lifo_put
 
 /**
  * @brief Add an element to the LIFO's linked list head.
@@ -2482,7 +2629,7 @@ void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
  *
  * @sa nano_lifo_put
  */
-#define nano_task_lifo_put k_lifo_put
+#define nano_task_lifo_put nano_lifo_put
 
 /**
  * @brief Get the first element from a LIFO.
@@ -2508,8 +2655,8 @@ void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline void *nano_lifo_get(struct nano_lifo *lifo,
-				  int32_t timeout_in_ticks)
+static inline __deprecated void *nano_lifo_get(struct nano_lifo *lifo,
+					       int32_t timeout_in_ticks)
 {
 	return k_lifo_get((struct k_lifo *)lifo,
 			  _ticks_to_ms(timeout_in_ticks));
@@ -2564,7 +2711,8 @@ static inline void *nano_lifo_get(struct nano_lifo *lifo,
  *
  * @return N/A
  */
-static inline void nano_stack_init(struct nano_stack *stack, uint32_t *data)
+static inline __deprecated void nano_stack_init(struct nano_stack *stack,
+						uint32_t *data)
 {
 	k_stack_init(stack, data, UINT_MAX);
 }
@@ -2584,7 +2732,11 @@ static inline void nano_stack_init(struct nano_stack *stack, uint32_t *data)
  *
  * @return N/A
  */
-#define nano_stack_push k_stack_push
+static inline __deprecated void
+nano_stack_push(struct nano_stack *stack, uint32_t data)
+{
+	k_stack_push(stack, data);
+}
 
 /**
  * @brief Push data onto a stack (no context switch).
@@ -2596,7 +2748,7 @@ static inline void nano_stack_init(struct nano_stack *stack, uint32_t *data)
  *
  * @sa nano_stack_push
  */
-#define nano_isr_stack_push k_stack_push
+#define nano_isr_stack_push nano_stack_push
 
 /**
  * @brief Push data onto a stack (no context switch).
@@ -2608,7 +2760,7 @@ static inline void nano_stack_init(struct nano_stack *stack, uint32_t *data)
  *
  * @sa nano_stack_push
  */
-#define nano_fiber_stack_push k_stack_push
+#define nano_fiber_stack_push nano_stack_push
 
 /**
  * @brief Push data onto a nanokernel stack.
@@ -2621,7 +2773,7 @@ static inline void nano_stack_init(struct nano_stack *stack, uint32_t *data)
  *
  * @sa nano_stack_push
  */
-#define nano_task_stack_push k_stack_push
+#define nano_task_stack_push nano_stack_push
 
 /**
  * @brief Pop data off a stack.
@@ -2650,8 +2802,9 @@ static inline void nano_stack_init(struct nano_stack *stack, uint32_t *data)
  * @retval 1 When data is popped from the stack.
  * @retval 0 Otherwise.
  */
-static inline int nano_stack_pop(struct nano_stack *stack, uint32_t *data,
-				 int32_t timeout_in_ticks)
+static inline __deprecated int
+nano_stack_pop(struct nano_stack *stack, uint32_t *data,
+	       int32_t timeout_in_ticks)
 {
 	return k_stack_pop((struct k_stack *)stack, data,
 			   _ticks_to_ms(timeout_in_ticks)) == 0 ? 1 : 0;
@@ -2701,7 +2854,7 @@ extern int32_t _ms_to_ticks(int32_t ms);
  *
  * @return The current system tick count.
  */
-extern int64_t sys_tick_get(void);
+extern __deprecated int64_t sys_tick_get(void);
 
 /**
  * @brief Return the lower part of the current system tick count.
@@ -2710,7 +2863,7 @@ extern int64_t sys_tick_get(void);
  *
  * @return The current system tick count.
  */
-extern uint32_t sys_tick_get_32(void);
+extern __deprecated uint32_t sys_tick_get_32(void);
 
 /**
  * @brief Return number of ticks elapsed since a reference time.
@@ -2721,7 +2874,7 @@ extern uint32_t sys_tick_get_32(void);
  *
  * @return The tick count since reference time; undefined for first invocation.
  */
-extern int64_t sys_tick_delta(int64_t *reftime);
+extern __deprecated int64_t sys_tick_delta(int64_t *reftime);
 
 /**
  *
@@ -2734,7 +2887,7 @@ extern int64_t sys_tick_delta(int64_t *reftime);
  * @return A 32-bit tick count since reference time. Undefined for first
  *         invocation.
  */
-extern uint32_t sys_tick_delta_32(int64_t *reftime);
+extern __deprecated uint32_t sys_tick_delta_32(int64_t *reftime);
 
 /**
  * @brief Return a time stamp in high-resolution format.
@@ -2766,7 +2919,7 @@ extern uint32_t sys_tick_delta_32(int64_t *reftime);
  *
  * @return timer identifier
  */
-extern ktimer_t task_timer_alloc(void);
+extern __deprecated ktimer_t task_timer_alloc(void);
 
 /**
  * @brief Deallocate a timer
@@ -2780,7 +2933,7 @@ extern ktimer_t task_timer_alloc(void);
  *
  * @return N/A
  */
-extern void task_timer_free(ktimer_t timer);
+extern __deprecated void task_timer_free(ktimer_t timer);
 
 /**
  * @brief Start or restart the specified low-resolution timer
@@ -2807,8 +2960,8 @@ extern void task_timer_free(ktimer_t timer);
  *
  * @return N/A
  */
-extern void task_timer_start(ktimer_t timer, int32_t duration,
-			     int32_t period, ksem_t sema);
+extern __deprecated void
+task_timer_start(ktimer_t timer, int32_t duration, int32_t period, ksem_t sema);
 
 /**
  * @brief Restart a timer
@@ -2824,8 +2977,8 @@ extern void task_timer_start(ktimer_t timer, int32_t duration,
  *
  * @return N/A
  */
-static inline void task_timer_restart(ktimer_t timer, int32_t duration,
-				      int32_t period)
+static inline __deprecated void
+task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
 {
 	k_timer_start(timer, _ticks_to_ms(duration), _ticks_to_ms(period));
 }
@@ -2842,8 +2995,10 @@ static inline void task_timer_restart(ktimer_t timer, int32_t duration,
  *
  * @return N/A
  */
-
-#define task_timer_stop k_timer_stop
+static inline __deprecated void task_timer_stop(ktimer_t timer)
+{
+	k_timer_stop(timer);
+}
 
 #endif /* CONFIG_NUM_DYNAMIC_TIMERS > 0 */
 
@@ -2871,7 +3026,8 @@ static inline void task_timer_restart(ktimer_t timer, int32_t duration,
  *
  * @return N/A
  */
-static inline void nano_timer_init(struct k_timer *timer, void *data)
+static inline __deprecated void
+nano_timer_init(struct k_timer *timer, void *data)
 {
 	k_timer_init(timer, NULL, NULL);
 	timer->_legacy_data = data;
@@ -2893,7 +3049,8 @@ static inline void nano_timer_init(struct k_timer *timer, void *data)
  *
  * @return N/A
  */
-static inline void nano_timer_start(struct nano_timer *timer, int ticks)
+static inline __deprecated void
+nano_timer_start(struct nano_timer *timer, int ticks)
 {
 	k_timer_start(timer, _ticks_to_ms(ticks), 0);
 }
@@ -2956,8 +3113,8 @@ static inline void nano_timer_start(struct nano_timer *timer, int ticks)
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-extern void *nano_timer_test(struct nano_timer *timer,
-			     int32_t timeout_in_ticks);
+extern __deprecated void *nano_timer_test(struct nano_timer *timer,
+					  int32_t timeout_in_ticks);
 
 /**
  * @brief Make the current ISR check for a timer expiry.
@@ -2994,20 +3151,6 @@ extern void *nano_timer_test(struct nano_timer *timer,
 #define nano_task_timer_test nano_timer_test
 
 /**
- * @brief Stop a timer.
- *
- * <b> Legacy API </b>
- *
- * This routine stops the specified timer. If the timer period has already
- * elapsed, the call has no effect.
- *
- * @param timer Timer to stop.
- *
- * @return N/A
- */
-#define task_timer_stop k_timer_stop
-
-/**
  * @brief Stop a nanokernel timer
  *
  * <b> Legacy API </b>
@@ -3022,7 +3165,25 @@ extern void *nano_timer_test(struct nano_timer *timer,
  * @return N/A
  */
 
-#define nano_timer_stop k_timer_stop
+static inline __deprecated void nano_timer_stop(struct nano_timer *timer)
+{
+	k_timer_stop(timer);
+}
+
+/**
+ * @brief Stop a timer.
+ *
+ * <b> Legacy API </b>
+ *
+ * This routine stops the specified timer. If the timer period has already
+ * elapsed, the call has no effect.
+ *
+ * @param timer Timer to stop.
+ *
+ * @return N/A
+ */
+
+#define task_timer_stop nano_timer_stop
 
 /**
  * @brief Stop a nanokernel timer from an ISR.
@@ -3034,7 +3195,7 @@ extern void *nano_timer_test(struct nano_timer *timer,
  * @sa nano_timer_stop
  */
 
-#define nano_isr_timer_stop k_timer_stop
+#define nano_isr_timer_stop nano_timer_stop
 
 /**
  * @brief Stop a nanokernel timer.
@@ -3046,7 +3207,7 @@ extern void *nano_timer_test(struct nano_timer *timer,
  * @sa nano_timer_stop
  */
 
-#define nano_fiber_timer_stop k_timer_stop
+#define nano_fiber_timer_stop nano_timer_stop
 
 /**
  * @brief Stop a nanokernel timer from a task.
@@ -3058,7 +3219,7 @@ extern void *nano_timer_test(struct nano_timer *timer,
  * @sa nano_timer_stop
  */
 
-#define nano_task_timer_stop k_timer_stop
+#define nano_task_timer_stop nano_timer_stop
 
 /**
  * @brief Get nanokernel timer remaining ticks.
@@ -3072,10 +3233,16 @@ extern void *nano_timer_test(struct nano_timer *timer,
  *
  * @return remaining ticks or 0 if the timer has expired
  */
-static inline int32_t nano_timer_ticks_remain(struct nano_timer *timer)
+static inline __deprecated int32_t
+nano_timer_ticks_remain(struct nano_timer *timer)
 {
 	return _ms_to_ticks(k_timer_remaining_get(timer));
 }
+
+#if CONFIG_X86
+#if CONFIG_FP_SHARING
+
+#include <arch/cpu.h>
 
 /* floating point services */
 
@@ -3096,8 +3263,11 @@ static inline int32_t nano_timer_ticks_remain(struct nano_timer *timer)
  *
  * @return N/A
  */
-
-#define fiber_float_enable k_float_enable
+static inline __deprecated void
+fiber_float_enable(struct tcs *tcs, unsigned int options)
+{
+	k_float_enable(tcs, options);
+}
 
 /**
  * @brief Enable floating point hardware resources sharing
@@ -3115,7 +3285,7 @@ static inline int32_t nano_timer_ticks_remain(struct nano_timer *timer)
  * @return N/A
  */
 
-#define task_float_enable k_float_enable
+#define task_float_enable fiber_float_enable
 
 /**
  * @brief Disable floating point hardware resources sharing
@@ -3131,8 +3301,10 @@ static inline int32_t nano_timer_ticks_remain(struct nano_timer *timer)
  *
  * @return N/A
  */
-
-#define fiber_float_disable k_float_disable
+static inline __deprecated void fiber_float_disable(struct tcs *tcs)
+{
+	k_float_disable(tcs);
+}
 
 /**
  * @brief Enable floating point hardware resources sharing
@@ -3149,6 +3321,8 @@ static inline int32_t nano_timer_ticks_remain(struct nano_timer *timer)
  * @return N/A
  */
 
-#define task_float_disable k_float_disable
+#define task_float_disable fiber_float_disable
 
+#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_X86 */
 #endif /* _legacy__h_ */
