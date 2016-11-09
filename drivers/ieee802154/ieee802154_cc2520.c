@@ -23,7 +23,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 
 #include <board.h>
@@ -179,16 +179,7 @@ static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
 /*********************
  * Generic functions *
  ********************/
-static void _usleep(uint32_t usec)
-{
-	if (sys_execution_context_type_get() == K_ISR) {
-		k_busy_wait(usec);
-		return;
-	}
-
-	/* k_sleep expects parameter to be in milliseconds */
-	k_sleep(usec * 1000);
-}
+#define _usleep(usec) k_busy_wait(usec)
 
 uint8_t _cc2520_read_reg(struct cc2520_spi *spi,
 			 bool freg, uint8_t addr)
@@ -338,7 +329,7 @@ static inline void sfd_int_handler(struct device *port,
 
 	if (atomic_get(&cc2520->tx) == 1) {
 		atomic_set(&cc2520->tx, 0);
-		nano_isr_sem_give(&cc2520->tx_sync);
+		k_sem_give(&cc2520->tx_sync);
 	}
 }
 
@@ -357,7 +348,7 @@ static inline void fifop_int_handler(struct device *port,
 		cc2520->overflow = true;
 	}
 
-	nano_isr_sem_give(&cc2520->rx_lock);
+	k_sem_give(&cc2520->rx_lock);
 }
 
 static void enable_fifop_interrupt(struct cc2520_context *cc2520,
@@ -568,7 +559,7 @@ static inline bool verify_rxfifo_validity(struct cc2520_spi *spi,
 	return true;
 }
 
-static void cc2520_rx(int arg, int unused2)
+static void cc2520_rx(int arg)
 {
 	struct device *dev = INT_TO_POINTER(arg);
 	struct cc2520_context *cc2520 = dev->driver_data;
@@ -576,12 +567,10 @@ static void cc2520_rx(int arg, int unused2)
 	struct net_buf *buf;
 	uint8_t pkt_len;
 
-	ARG_UNUSED(unused2);
-
 	while (1) {
 		buf = NULL;
 
-		nano_fiber_sem_take(&cc2520->rx_lock, TICKS_UNLIMITED);
+		k_sem_take(&cc2520->rx_lock, K_FOREVER);
 
 		if (cc2520->overflow) {
 			SYS_LOG_ERR("RX overflow!\n");
@@ -834,7 +823,7 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 	/* 1 retry is allowed here */
 	do {
 		atomic_set(&cc2520->tx, 1);
-		nano_sem_init(&cc2520->tx_sync);
+		k_sem_init(&cc2520->tx_sync, 0, UINT_MAX);
 
 		if (!instruct_stxoncca(&cc2520->spi)) {
 			SYS_LOG_ERR(" Cannot start transmission\n");
@@ -842,7 +831,7 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 		}
 
 		/* _cc2520_print_exceptions(cc2520); */
-		nano_sem_take(&cc2520->tx_sync, MSEC(10));
+		k_sem_take(&cc2520->tx_sync, 10);
 
 		retry--;
 		status = verify_tx_done(cc2520);
@@ -1004,7 +993,7 @@ static int cc2520_init(struct device *dev)
 	struct cc2520_context *cc2520 = dev->driver_data;
 
 	atomic_set(&cc2520->tx, 0);
-	nano_sem_init(&cc2520->rx_lock);
+	k_sem_init(&cc2520->rx_lock, 0, UINT_MAX);
 
 	cc2520->gpios = cc2520_configure_gpios();
 	if (!cc2520->gpios) {
@@ -1024,10 +1013,11 @@ static int cc2520_init(struct device *dev)
 		return -EIO;
 	}
 
-	task_fiber_start(cc2520->cc2520_rx_stack,
-			 CONFIG_CC2520_RX_STACK_SIZE,
-			 cc2520_rx, POINTER_TO_INT(dev),
-			 0, 2, 0);
+	k_thread_spawn(cc2520->cc2520_rx_stack,
+		       CONFIG_CC2520_RX_STACK_SIZE,
+		       (k_thread_entry_t)cc2520_rx,
+		       dev, NULL, NULL,
+		       K_PRIO_COOP(2), 0, 0);
 
 	return 0;
 }
