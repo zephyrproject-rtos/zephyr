@@ -27,7 +27,6 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
-#include <misc/nano_work.h>
 
 #include <net/buf.h>
 #include <bluetooth/log.h>
@@ -53,7 +52,7 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define SMP_TIMEOUT (30 * sys_clock_ticks_per_sec)
+#define SMP_TIMEOUT (30 * MSEC_PER_SEC)
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
 #define SIGN_DIST BT_SMP_DIST_SIGN
@@ -174,7 +173,7 @@ struct bt_smp {
 	uint8_t			remote_dist;
 
 	/* Delayed work for timeout handling */
-	struct nano_delayed_work work;
+	struct k_delayed_work work;
 };
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
@@ -233,7 +232,7 @@ struct bt_smp_br {
 	uint8_t enc_key_size;
 
 	/* Delayed work for timeout handling */
-	struct nano_delayed_work work;
+	struct k_delayed_work work;
 };
 
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -649,7 +648,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 
 static void smp_br_reset(struct bt_smp_br *smp)
 {
-	nano_delayed_work_cancel(&smp->work);
+	k_delayed_work_cancel(&smp->work);
 
 	atomic_set(smp->flags, 0);
 	atomic_set(&smp->allowed_cmds, 0);
@@ -682,7 +681,7 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 	smp_br_reset(smp);
 }
 
-static void smp_br_timeout(struct nano_work *work)
+static void smp_br_timeout(struct k_work *work)
 {
 	struct bt_smp_br *smp = CONTAINER_OF(work, struct bt_smp_br, work);
 
@@ -695,7 +694,7 @@ static void smp_br_timeout(struct nano_work *work)
 static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf);
-	nano_delayed_work_submit(&smp->work, SMP_TIMEOUT);
+	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
 }
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
@@ -723,7 +722,7 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
-	nano_delayed_work_cancel(&smp->work);
+	k_delayed_work_cancel(&smp->work);
 
 	memset(smp, 0, sizeof(*smp));
 }
@@ -1281,7 +1280,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 		*chan = &smp->chan.chan;
 
-		nano_delayed_work_init(&smp->work, smp_br_timeout);
+		k_delayed_work_init(&smp->work, smp_br_timeout);
 		smp_br_reset(smp);
 
 		return 0;
@@ -1394,7 +1393,7 @@ static void smp_reset(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 
-	nano_delayed_work_cancel(&smp->work);
+	k_delayed_work_cancel(&smp->work);
 
 	smp->method = JUST_WORKS;
 	atomic_set(&smp->allowed_cmds, 0);
@@ -1438,7 +1437,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 	smp_reset(smp);
 }
 
-static void smp_timeout(struct nano_work *work)
+static void smp_timeout(struct k_work *work)
 {
 	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
 
@@ -1461,7 +1460,7 @@ static void smp_timeout(struct nano_work *work)
 static void smp_send(struct bt_smp *smp, struct net_buf *buf)
 {
 	bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf);
-	nano_delayed_work_submit(&smp->work, SMP_TIMEOUT);
+	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
 }
 
 static int smp_error(struct bt_smp *smp, uint8_t reason)
@@ -3446,7 +3445,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	nano_delayed_work_init(&smp->work, smp_timeout);
+	k_delayed_work_init(&smp->work, smp_timeout);
 	smp_reset(smp);
 }
 
@@ -3458,7 +3457,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	nano_delayed_work_cancel(&smp->work);
+	k_delayed_work_cancel(&smp->work);
 
 	if (keys) {
 		/*
