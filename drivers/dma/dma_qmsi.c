@@ -17,7 +17,7 @@
 #include <errno.h>
 
 #include <stdio.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <board.h>
 #include <device.h>
 #include <init.h>
