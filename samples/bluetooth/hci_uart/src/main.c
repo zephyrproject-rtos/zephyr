@@ -283,6 +283,7 @@ static int h4_send(struct net_buf *buf)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER)
 void bt_controller_assert_handle(char *file, uint32_t line)
 {
 	uint32_t len = 0, pos = 0;
@@ -327,6 +328,7 @@ void bt_controller_assert_handle(char *file, uint32_t line)
 	while (1) {
 	};
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER */
 
 static int hci_uart_init(struct device *unused)
 {
