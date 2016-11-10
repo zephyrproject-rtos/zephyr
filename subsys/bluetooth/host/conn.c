@@ -23,7 +23,6 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -54,7 +53,7 @@ static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
 /* How long until we cancel HCI_LE_Create_Connection */
-#define CONN_TIMEOUT	(3 * sys_clock_ticks_per_sec)
+#define CONN_TIMEOUT	(3 * MSEC_PER_SEC)
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 const struct bt_conn_auth_cb *bt_auth;
@@ -136,7 +135,7 @@ void notify_le_param_updated(struct bt_conn *conn)
 	}
 }
 
-static void le_conn_update(struct nano_work *work)
+static void le_conn_update(struct k_work *work)
 {
 	struct bt_conn_le *le = CONTAINER_OF(work, struct bt_conn_le,
 					     update_work);
@@ -1056,7 +1055,7 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	conn->type = BT_CONN_TYPE_LE;
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
 	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
-	nano_delayed_work_init(&conn->le.update_work, le_conn_update);
+	k_delayed_work_init(&conn->le.update_work, le_conn_update);
 
 	return conn;
 }
@@ -1146,7 +1145,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		/* Cancel Connection Update if it is pending */
 		if (conn->type == BT_CONN_TYPE_LE)
-			nano_delayed_work_cancel(&conn->le.update_work);
+			k_delayed_work_cancel(&conn->le.update_work);
 
 		/* Release the reference we took for the very first
 		 * state transition.
@@ -1370,7 +1369,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	}
 
 	/* Cancel any pending update */
-	nano_delayed_work_cancel(&conn->le.update_work);
+	k_delayed_work_cancel(&conn->le.update_work);
 
 	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
 	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {

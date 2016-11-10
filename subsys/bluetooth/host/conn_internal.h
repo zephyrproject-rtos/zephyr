@@ -56,7 +56,7 @@ struct bt_conn_le {
 	struct bt_keys		*keys;
 
 	/* Delayed work for connection update handling */
-	struct nano_delayed_work update_work;
+	struct k_delayed_work	update_work;
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
