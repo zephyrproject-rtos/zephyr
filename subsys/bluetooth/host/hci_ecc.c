@@ -22,7 +22,6 @@
 #include <zephyr.h>
 #include <atomic.h>
 #include <misc/byteorder.h>
-#include <misc/nano_work.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/ecc.h>
