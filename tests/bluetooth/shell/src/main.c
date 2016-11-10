@@ -2310,7 +2310,7 @@ void main(void)
 	shell_register_default_module(MY_SHELL_MODULE);
 
 	while (1) {
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(MSEC_PER_SEC);
 
 		/* Heartrate measurements simulation */
 		if (hrs_simulate) {

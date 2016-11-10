@@ -304,7 +304,7 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(MSEC_PER_SEC);
 
 		/* Current Time Service updates only when time is changed */
 		cts_notify();
