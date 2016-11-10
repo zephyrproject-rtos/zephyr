@@ -323,6 +323,7 @@ void main(void)
 		return;
 	}
 
-	task_fiber_start(stack, STACK_SIZE, (nano_fiber_entry_t) dtls_client,
-			 0, 0, 7, 0);
+	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t) dtls_client,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+
 }
