@@ -23,8 +23,8 @@
 #include <adc.h>
 #include <misc/printk.h>
 
-#define SLEEPTIME  2
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec)
+/* in millisecond */
+#define SLEEPTIME  2000
 
 #define ADC_DEVICE_NAME "ADC_0"
 
@@ -66,8 +66,6 @@ static void _print_sample_in_hex(uint8_t *buf, uint32_t length)
 void main(void)
 {
 	struct device *adc;
-	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
 
 	printk("ADC sample started on %s\n", ADC_DEVICE_NAME);
 
@@ -77,7 +75,6 @@ void main(void)
 		return;
 	}
 
-	nano_timer_init(&timer, data);
 	adc_enable(adc);
 	while (1) {
 		if (adc_read(adc, &table) != 0) {
@@ -86,8 +83,7 @@ void main(void)
 			printk("Sampling is done\n");
 			_print_sample_in_hex(seq_buffer, BUFFER_SIZE);
 		}
-		nano_timer_start(&timer, SLEEPTICKS);
-		nano_timer_test(&timer, TICKS_UNLIMITED);
+		k_sleep(SLEEPTIME);
 	}
 	adc_disable(adc);
 }
