@@ -23,7 +23,6 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -59,7 +58,7 @@
 						BT_GATT_PERM_WRITE_AUTHEN)
 #define BT_ATT_OP_CMD_FLAG			0x40
 
-#define ATT_TIMEOUT				(30 * sys_clock_ticks_per_sec)
+#define ATT_TIMEOUT				(30 * MSEC_PER_SEC)
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 struct bt_attr_data {
@@ -80,7 +79,7 @@ struct bt_att {
 	struct bt_l2cap_le_chan	chan;
 	struct bt_att_req	*req;
 	sys_slist_t		reqs;
-	struct nano_delayed_work timeout_work;
+	struct k_delayed_work	timeout_work;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct k_fifo		prep_queue;
 #endif
@@ -199,7 +198,7 @@ static int att_send_req(struct bt_att *att, struct bt_att_req *req)
 	net_buf_simple_save(&req->buf->b, &req->state);
 
 	/* Start timeout work */
-	nano_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
+	k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
 
 	/* Keep a reference for resending in case of an error */
 	bt_l2cap_send(att->chan.chan.conn, BT_L2CAP_CID_ATT,
@@ -234,7 +233,7 @@ static uint8_t att_handle_rsp(struct bt_att *att, void *pdu, uint16_t len,
 	}
 
 	/* Cancel timeout if ongoing */
-	nano_delayed_work_cancel(&att->timeout_work);
+	k_delayed_work_cancel(&att->timeout_work);
 
 	/* Release original buffer */
 	if (att->req->buf) {
@@ -1843,7 +1842,7 @@ static void att_reset(struct bt_att *att)
 	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
 }
 
-static void att_timeout(struct nano_work *work)
+static void att_timeout(struct k_work *work)
 {
 	struct bt_att *att = CONTAINER_OF(work, struct bt_att, timeout_work);
 	struct bt_l2cap_le_chan *ch =
@@ -1880,7 +1879,7 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	ch->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
 	ch->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 
-	nano_delayed_work_init(&att->timeout_work, att_timeout);
+	k_delayed_work_init(&att->timeout_work, att_timeout);
 	sys_slist_init(&att->reqs);
 
 	bt_gatt_connected(ch->chan.conn);
