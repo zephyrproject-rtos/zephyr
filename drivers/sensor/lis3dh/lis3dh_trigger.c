@@ -55,14 +55,14 @@ static void lis3dh_gpio_callback(struct device *dev,
 
 	gpio_pin_disable_callback(dev, CONFIG_LIS3DH_GPIO_PIN_NUM);
 
-#if defined(CONFIG_LIS3DH_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_LIS3DH_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
-#elif defined(CONFIG_LIS3DH_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_LIS3DH_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&drv_data->work);
 #endif
 }
 
-static void lis3dh_fiber_cb(void *arg)
+static void lis3dh_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct lis3dh_data *drv_data = dev->driver_data;
@@ -75,8 +75,8 @@ static void lis3dh_fiber_cb(void *arg)
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3DH_GPIO_PIN_NUM);
 }
 
-#ifdef CONFIG_LIS3DH_TRIGGER_OWN_FIBER
-static void lis3dh_fiber(int dev_ptr, int unused)
+#ifdef CONFIG_LIS3DH_TRIGGER_OWN_THREAD
+static void lis3dh_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct lis3dh_data *drv_data = dev->driver_data;
@@ -85,18 +85,18 @@ static void lis3dh_fiber(int dev_ptr, int unused)
 
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		lis3dh_fiber_cb(dev);
+		lis3dh_thread_cb(dev);
 	}
 }
 #endif
 
-#ifdef CONFIG_LIS3DH_TRIGGER_GLOBAL_FIBER
+#ifdef CONFIG_LIS3DH_TRIGGER_GLOBAL_THREAD
 static void lis3dh_work_cb(struct k_work *work)
 {
 	struct lis3dh_data *drv_data =
 		CONTAINER_OF(work, struct lis3dh_data, work);
 
-	lis3dh_fiber_cb(drv_data->dev);
+	lis3dh_thread_cb(drv_data->dev);
 }
 #endif
 
@@ -138,13 +138,13 @@ int lis3dh_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-#if defined(CONFIG_LIS3DH_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_LIS3DH_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
-	fiber_start(drv_data->fiber_stack, CONFIG_LIS3DH_FIBER_STACK_SIZE,
-		    (nano_fiber_entry_t)lis3dh_fiber, POINTER_TO_INT(dev),
-		    0, CONFIG_LIS3DH_FIBER_PRIORITY, 0);
-#elif defined(CONFIG_LIS3DH_TRIGGER_GLOBAL_FIBER)
+	k_thread_spawn(drv_data->thread_stack, CONFIG_LIS3DH_THREAD_STACK_SIZE,
+		    (k_thread_entry_t)lis3dh_thread, POINTER_TO_INT(dev),
+		    0, NULL, K_PRIO_COOP(CONFIG_LIS3DH_THREAD_PRIORITY), 0, 0);
+#elif defined(CONFIG_LIS3DH_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lis3dh_work_cb;
 	drv_data->dev = dev;
 #endif

@@ -117,12 +117,12 @@ config LSM9DS0_GYRO_TRIGGERS
 	depends on LSM9DS0_GYRO && GPIO
 	default n
 
-config LSM9DS0_GYRO_FIBER_STACK_SIZE
-	int "Fiber stack size"
+config LSM9DS0_GYRO_THREAD_STACK_SIZE
+	int "Thread stack size"
 	depends on LSM9DS0_GYRO_TRIGGERS
 	default 1024
 	help
-	  Specify the internal fiber stack size.
+	  Specify the internal thread stack size.
 
 config LSM9DS0_GYRO_TRIGGER_DRDY
 	bool "Enable data ready trigger"

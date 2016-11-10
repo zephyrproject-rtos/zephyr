@@ -116,7 +116,7 @@ int mcp9808_trigger_set(struct device *dev,
 				  handler == NULL ? 0 : MCP9808_ALERT_CNT);
 }
 
-#ifdef CONFIG_MCP9808_TRIGGER_OWN_FIBER
+#ifdef CONFIG_MCP9808_TRIGGER_OWN_THREAD
 
 static void mcp9808_gpio_cb(struct device *dev,
 			    struct gpio_callback *cb, uint32_t pins)
@@ -129,7 +129,7 @@ static void mcp9808_gpio_cb(struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-static void mcp9808_fiber_main(int arg1, int arg2)
+static void mcp9808_thread_main(int arg1, int arg2)
 {
 	struct device *dev = INT_TO_POINTER(arg1);
 	struct mcp9808_data *data = dev->driver_data;
@@ -144,9 +144,9 @@ static void mcp9808_fiber_main(int arg1, int arg2)
 	}
 }
 
-static char __stack mcp9808_fiber_stack[CONFIG_MCP9808_FIBER_STACK_SIZE];
+static char __stack mcp9808_thread_stack[CONFIG_MCP9808_THREAD_STACK_SIZE];
 
-#else /* CONFIG_MCP9808_TRIGGER_GLOBAL_FIBER */
+#else /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 
 static void mcp9808_gpio_cb(struct device *dev,
 			    struct gpio_callback *cb, uint32_t pins)
@@ -159,7 +159,7 @@ static void mcp9808_gpio_cb(struct device *dev,
 	k_work_submit(&data->work);
 }
 
-static void mcp9808_gpio_fiber_cb(struct k_work *work)
+static void mcp9808_gpio_thread_cb(struct k_work *work)
 {
 	struct mcp9808_data *data =
 		CONTAINER_OF(work, struct mcp9808_data, work);
@@ -170,7 +170,7 @@ static void mcp9808_gpio_fiber_cb(struct k_work *work)
 			   MCP9808_INT_CLEAR, MCP9808_INT_CLEAR);
 }
 
-#endif /* CONFIG_MCP9808_TRIGGER_GLOBAL_FIBER */
+#endif /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 
 void mcp9808_setup_interrupt(struct device *dev)
 {
@@ -183,15 +183,15 @@ void mcp9808_setup_interrupt(struct device *dev)
 	mcp9808_reg_update(data, MCP9808_REG_CONFIG, MCP9808_INT_CLEAR,
 			   MCP9808_INT_CLEAR);
 
-#ifdef CONFIG_MCP9808_TRIGGER_OWN_FIBER
+#ifdef CONFIG_MCP9808_TRIGGER_OWN_THREAD
 	k_sem_init(&data->sem, 0, UINT_MAX);
 
-	fiber_fiber_start(mcp9808_fiber_stack,
-			  CONFIG_MCP9808_FIBER_STACK_SIZE,
-			  mcp9808_fiber_main, POINTER_TO_INT(dev), 0,
-			  CONFIG_MCP9808_FIBER_PRIORITY, 0);
-#else /* CONFIG_MCP9808_TRIGGER_GLOBAL_FIBER */
-	data->work.handler = mcp9808_gpio_fiber_cb;
+	k_thread_spawn(mcp9808_thread_stack,
+			  CONFIG_MCP9808_THREAD_STACK_SIZE,
+			  mcp9808_thread_main, POINTER_TO_INT(dev), 0, NULL,
+			  K_PRIO_COOP(CONFIG_MCP9808_THREAD_PRIORITY), 0, 0);
+#else /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
+	data->work.handler = mcp9808_gpio_thread_cb;
 	data->dev = dev;
 #endif
 

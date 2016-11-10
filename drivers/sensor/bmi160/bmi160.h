@@ -453,11 +453,11 @@ struct bmi160_device_data {
 	union bmi160_sample sample;
 	struct bmi160_scale scale;
 
-#ifdef CONFIG_BMI160_TRIGGER_OWN_FIBER
+#ifdef CONFIG_BMI160_TRIGGER_OWN_THREAD
 	struct k_sem sem;
 #endif
 
-#ifdef CONFIG_BMI160_TRIGGER_GLOBAL_FIBER
+#ifdef CONFIG_BMI160_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
 	struct device *dev;
 #endif

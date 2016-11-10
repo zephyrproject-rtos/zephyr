@@ -62,15 +62,15 @@ config SHT3XD_TRIGGER_NONE
 	bool
 	prompt "No trigger"
 
-config SHT3XD_TRIGGER_GLOBAL_FIBER
+config SHT3XD_TRIGGER_GLOBAL_THREAD
 	bool
-	prompt "Use global fiber"
+	prompt "Use global thread"
 	depends on GPIO
 	select SHT3XD_TRIGGER
 
-config SHT3XD_TRIGGER_OWN_FIBER
+config SHT3XD_TRIGGER_OWN_THREAD
 	bool
-	prompt "Use own fiber"
+	prompt "Use own thread"
 	depends on GPIO
 	select SHT3XD_TRIGGER
 
@@ -98,21 +98,21 @@ config SHT3XD_GPIO_PIN_NUM
 	  The number of the GPIO on which the interrupt signal from the
 	  SHT3xD chip will be received.
 
-config SHT3XD_FIBER_PRIORITY
+config SHT3XD_THREAD_PRIORITY
 	int
-	prompt "Fiber priority"
-	depends on SHT3XD && SHT3XD_TRIGGER_OWN_FIBER
+	prompt "Thread priority"
+	depends on SHT3XD && SHT3XD_TRIGGER_OWN_THREAD
 	default 10
 	help
-	  Priority of fiber used by the driver to handle interrupts.
+	  Priority of thread used by the driver to handle interrupts.
 
-config SHT3XD_FIBER_STACK_SIZE
+config SHT3XD_THREAD_STACK_SIZE
 	int
-	prompt "Fiber stack size"
-	depends on SHT3XD && SHT3XD_TRIGGER_OWN_FIBER
+	prompt "Thread stack size"
+	depends on SHT3XD && SHT3XD_TRIGGER_OWN_THREAD
 	default 1024
 	help
-	  Stack size of fiber used by the driver to handle interrupts.
+	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Measurement repeatability"

@@ -105,12 +105,12 @@ config BMC150_MAGN_TRIGGER
 	help
 	  Enable triggers for BMC150 magnetometer
 
-config BMC150_MAGN_TRIGGER_FIBER_STACK
-	int "Fiber stack size"
+config BMC150_MAGN_TRIGGER_THREAD_STACK
+	int "Thread stack size"
 	depends on BMC150_MAGN_TRIGGER
 	default 1024
 	help
-	  Specify the internal fiber stack size.
+	  Specify the internal thread stack size.
 
 config BMC150_MAGN_TRIGGER_DRDY
 	bool "Enable data ready trigger"

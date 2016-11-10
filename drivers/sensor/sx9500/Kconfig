@@ -55,20 +55,20 @@ config SX9500_PROX_CHANNEL
 choice
 	prompt "SX9500 trigger mode"
 	depends on SX9500
-	default SX9500_TRIGGER_GLOBAL_FIBER
+	default SX9500_TRIGGER_GLOBAL_THREAD
 
 config SX9500_TRIGGER_NONE
 	bool "No trigger"
 
-config SX9500_TRIGGER_GLOBAL_FIBER
+config SX9500_TRIGGER_GLOBAL_THREAD
 	depends on GPIO
 	select SX9500_TRIGGER
-	bool "Use global fiber"
+	bool "Use global thread"
 
-config SX9500_TRIGGER_OWN_FIBER
+config SX9500_TRIGGER_OWN_THREAD
 	depends on GPIO
 	select SX9500_TRIGGER
-	bool "Use own fiber"
+	bool "Use own thread"
 
 endchoice
 
@@ -89,12 +89,12 @@ config SX9500_GPIO_PIN
 	depends on SX9500 && SX9500_TRIGGER
 	default 3
 
-config SX9500_FIBER_STACK_SIZE
-	int "Sensor delayed work fiber stack size"
-	depends on SX9500 && SX9500_TRIGGER_OWN_FIBER
+config SX9500_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on SX9500 && SX9500_TRIGGER_OWN_THREAD
 	default 1024
 
-config SX9500_FIBER_PRIORITY
-	int "Fiber priority"
-	depends on SX9500 && SX9500_TRIGGER_OWN_FIBER
+config SX9500_THREAD_PRIORITY
+	int "Thread priority"
+	depends on SX9500 && SX9500_TRIGGER_OWN_THREAD
 	default 10

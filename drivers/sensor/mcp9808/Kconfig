@@ -52,15 +52,15 @@ choice
 config MCP9808_TRIGGER_NONE
 	bool "No trigger"
 
-config MCP9808_TRIGGER_GLOBAL_FIBER
+config MCP9808_TRIGGER_GLOBAL_THREAD
 	depends on GPIO
 	select MCP9808_TRIGGER
-	bool "Use global fiber"
+	bool "Use global thread"
 
-config MCP9808_TRIGGER_OWN_FIBER
+config MCP9808_TRIGGER_OWN_THREAD
 	depends on GPIO
 	select MCP9808_TRIGGER
-	bool "Use own fiber"
+	bool "Use own thread"
 
 endchoice
 
@@ -82,12 +82,12 @@ config MCP9808_GPIO_PIN
 	help
 	  The GPIO pin the MCP9808 interrupt is connected to.
 
-config MCP9808_FIBER_STACK_SIZE
-	int "Sensor delayed work fiber stack size"
-	depends on MCP9808 && MCP9808_TRIGGER_OWN_FIBER
+config MCP9808_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on MCP9808 && MCP9808_TRIGGER_OWN_THREAD
 	default 1024
 
-config MCP9808_FIBER_PRIORITY
-	int "MCP9808 fiber priority"
-	depends on MCP9808 && MCP9808_TRIGGER_OWN_FIBER
+config MCP9808_THREAD_PRIORITY
+	int "MCP9808 thread priority"
+	depends on MCP9808 && MCP9808_TRIGGER_OWN_THREAD
 	default 10

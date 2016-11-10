@@ -92,11 +92,13 @@ static void bmi160_handle_interrupts(void *arg)
 
 }
 
-#ifdef CONFIG_BMI160_TRIGGER_OWN_FIBER
-static char __stack bmi160_fiber_stack[CONFIG_BMI160_FIBER_STACK_SIZE];
+#ifdef CONFIG_BMI160_TRIGGER_OWN_THREAD
+static char __stack bmi160_thread_stack[CONFIG_BMI160_THREAD_STACK_SIZE];
 
-static void bmi160_fiber_main(int arg1, int unused)
+static void bmi160_thread_main(void *arg1, void *unused1, void *unused2)
 {
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
 	struct device *dev = (struct device *)arg1;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
@@ -107,7 +109,7 @@ static void bmi160_fiber_main(int arg1, int unused)
 }
 #endif
 
-#ifdef CONFIG_BMI160_TRIGGER_GLOBAL_FIBER
+#ifdef CONFIG_BMI160_TRIGGER_GLOBAL_THREAD
 static void bmi160_work_handler(struct k_work *work)
 {
 	struct bmi160_device_data *bmi160 =
@@ -126,9 +128,9 @@ static void bmi160_gpio_callback(struct device *port,
 	struct bmi160_device_data *bmi160 =
 		CONTAINER_OF(cb, struct bmi160_device_data, gpio_cb);
 
-#if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
 	k_sem_give(&bmi160->sem);
-#elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&bmi160->work);
 #endif
 }
@@ -139,9 +141,9 @@ static void bmi160_ipm_callback(void *context, uint32_t id, volatile void *data)
 {
 	struct bmi160_device_data *bmi160 = context;
 
-#if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
 	k_sem_give(&bmi160->sem);
-#elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&bmi160->work);
 #endif
 }
@@ -320,13 +322,13 @@ int bmi160_trigger_mode_init(struct device *dev)
 	}
 #endif
 
-#if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
 	k_sem_init(&bmi160->sem, 0, UINT_MAX);
 
-	fiber_start(bmi160_fiber_stack, CONFIG_BMI160_FIBER_STACK_SIZE,
-		    bmi160_fiber_main, (int)dev, 0,
-		    CONFIG_BMI160_FIBER_PRIORITY, 0);
-#elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
+	k_thread_spawn(bmi160_thread_stack, CONFIG_BMI160_THREAD_STACK_SIZE,
+		    bmi160_thread_main, dev, NULL, NULL,
+		    K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY), 0, 0);
+#elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
 	bmi160->work.handler = bmi160_work_handler;
 	bmi160->dev = dev;
 #endif

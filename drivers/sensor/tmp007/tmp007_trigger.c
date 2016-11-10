@@ -64,14 +64,14 @@ static void tmp007_gpio_callback(struct device *dev,
 
 	gpio_pin_disable_callback(dev, CONFIG_TMP007_GPIO_PIN_NUM);
 
-#if defined(CONFIG_TMP007_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_TMP007_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
-#elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&drv_data->work);
 #endif
 }
 
-static void tmp007_fiber_cb(void *arg)
+static void tmp007_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct tmp007_data *drv_data = dev->driver_data;
@@ -94,8 +94,8 @@ static void tmp007_fiber_cb(void *arg)
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_TMP007_GPIO_PIN_NUM);
 }
 
-#ifdef CONFIG_TMP007_TRIGGER_OWN_FIBER
-static void tmp007_fiber(int dev_ptr, int unused)
+#ifdef CONFIG_TMP007_TRIGGER_OWN_THREAD
+static void tmp007_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct tmp007_data *drv_data = dev->driver_data;
@@ -104,18 +104,18 @@ static void tmp007_fiber(int dev_ptr, int unused)
 
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		tmp007_fiber_cb(dev);
+		tmp007_thread_cb(dev);
 	}
 }
 #endif
 
-#ifdef CONFIG_TMP007_TRIGGER_GLOBAL_FIBER
+#ifdef CONFIG_TMP007_TRIGGER_GLOBAL_THREAD
 static void tmp007_work_cb(struct k_work *work)
 {
 	struct tmp007_data *drv_data =
 		CONTAINER_OF(work, struct tmp007_data, work);
 
-	tmp007_fiber_cb(drv_data->dev);
+	tmp007_thread_cb(drv_data->dev);
 }
 #endif
 
@@ -171,13 +171,13 @@ int tmp007_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-#if defined(CONFIG_TMP007_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_TMP007_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
-	fiber_start(drv_data->fiber_stack, CONFIG_TMP007_FIBER_STACK_SIZE,
-		    (nano_fiber_entry_t)tmp007_fiber, POINTER_TO_INT(dev),
-		    0, CONFIG_TMP007_FIBER_PRIORITY, 0);
-#elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_FIBER)
+	k_thread_spawn(drv_data->thread_stack, CONFIG_TMP007_THREAD_STACK_SIZE,
+		    (k_thread_entry_t)tmp007_thread, POINTER_TO_INT(dev),
+		    0, NULL, K_PRIO_COOP(CONFIG_TMP007_THREAD_PRIORITY), 0, 0);
+#elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = tmp007_work_cb;
 	drv_data->dev = dev;
 #endif

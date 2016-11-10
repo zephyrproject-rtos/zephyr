@@ -80,12 +80,14 @@ static void bmc150_magn_gpio_drdy_callback(struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
+static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
 {
 	struct device *dev = (struct device *) arg1;
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t reg_val;
+
+	int gpio_pin = config->gpio_drdy_int_pin;
 
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
@@ -123,8 +125,9 @@ static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
 int bmc150_magn_init_interrupt(struct device *dev)
 {
 	const struct bmc150_magn_config * const config =
-					  dev->config->config_info;
+						dev->config->config_info;
 	struct bmc150_magn_data *data = dev->driver_data;
+
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	if (bmc150_magn_set_drdy_polarity(dev, 0) < 0) {
@@ -145,10 +148,10 @@ int bmc150_magn_init_interrupt(struct device *dev)
 
 	k_sem_init(&data->sem, 0, UINT_MAX);
 
-	task_fiber_start(data->fiber_stack,
-			 CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK,
-			 bmc150_magn_fiber_main, (int) dev,
-			 config->gpio_drdy_int_pin, 10, 0);
+	k_thread_spawn(data->thread_stack,
+			 CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK,
+			 bmc150_magn_thread_main, dev, NULL, NULL,
+			 K_PRIO_COOP(10), 0, 0);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {

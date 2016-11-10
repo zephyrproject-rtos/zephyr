@@ -23,8 +23,8 @@
 #include <misc/util.h>
 #include "sx9500.h"
 
-#ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
-static char __stack sx9500_fiber_stack[CONFIG_SX9500_FIBER_STACK_SIZE];
+#ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
+static char __stack sx9500_thread_stack[CONFIG_SX9500_THREAD_STACK_SIZE];
 #endif
 
 int sx9500_trigger_set(struct device *dev,
@@ -65,7 +65,7 @@ int sx9500_trigger_set(struct device *dev,
 	return 0;
 }
 
-#ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
+#ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 
 static void sx9500_gpio_cb(struct device *port,
 			   struct gpio_callback *cb, uint32_t pins)
@@ -78,7 +78,7 @@ static void sx9500_gpio_cb(struct device *port,
 	k_sem_give(&data->sem);
 }
 
-static void sx9500_fiber_main(int arg1, int unused)
+static void sx9500_thread_main(int arg1, int unused)
 {
 	struct device *dev = INT_TO_POINTER(arg1);
 	struct sx9500_data *data = dev->driver_data;
@@ -105,7 +105,7 @@ static void sx9500_fiber_main(int arg1, int unused)
 	}
 }
 
-#else /* CONFIG_SX9500_TRIGGER_GLOBAL_FIBER */
+#else /* CONFIG_SX9500_TRIGGER_GLOBAL_THREAD */
 
 static void sx9500_gpio_cb(struct device *port,
 			   struct gpio_callback *cb, uint32_t pins)
@@ -118,7 +118,7 @@ static void sx9500_gpio_cb(struct device *port,
 	k_work_submit(&data->work);
 }
 
-static void sx9500_gpio_fiber_cb(void *arg)
+static void sx9500_gpio_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct sx9500_data *data = dev->driver_data;
@@ -138,15 +138,15 @@ static void sx9500_gpio_fiber_cb(void *arg)
 		data->handler_near_far(dev, &data->trigger_near_far);
 	}
 }
-#endif /* CONFIG_SX9500_TRIGGER_GLOBAL_FIBER */
+#endif /* CONFIG_SX9500_TRIGGER_GLOBAL_THREAD */
 
-#ifdef CONFIG_SX9500_TRIGGER_GLOBAL_FIBER
+#ifdef CONFIG_SX9500_TRIGGER_GLOBAL_THREAD
 static void sx9500_work_cb(struct k_work *work)
 {
 	struct sx9500_data *data =
 		CONTAINER_OF(work, struct sx9500_data, work);
 
-	sx9500_gpio_fiber_cb(data->dev);
+	sx9500_gpio_thread_cb(data->dev);
 }
 #endif
 
@@ -155,7 +155,7 @@ int sx9500_setup_interrupt(struct device *dev)
 	struct sx9500_data *data = dev->driver_data;
 	struct device *gpio;
 
-#ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
+#ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_sem_init(&data->sem, 0, UINT_MAX);
 #else
 	data->work.handler = sx9500_work_cb;
@@ -180,10 +180,10 @@ int sx9500_setup_interrupt(struct device *dev)
 	gpio_add_callback(gpio, &data->gpio_cb);
 	gpio_pin_enable_callback(gpio, CONFIG_SX9500_GPIO_PIN);
 
-#ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
-	fiber_fiber_start(sx9500_fiber_stack, CONFIG_SX9500_FIBER_STACK_SIZE,
-			  sx9500_fiber_main, POINTER_TO_INT(dev), 0,
-			  CONFIG_SX9500_FIBER_PRIORITY, 0);
+#ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
+	k_thread_spawn(sx9500_thread_stack, CONFIG_SX9500_THREAD_STACK_SIZE,
+			  sx9500_thread_main, POINTER_TO_INT(dev), 0, NULL,
+			  K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY), 0, 0);
 #endif
 
 	return 0;

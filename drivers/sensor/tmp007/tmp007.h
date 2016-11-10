@@ -57,10 +57,10 @@ struct tmp007_data {
 	sensor_trigger_handler_t th_handler;
 	struct sensor_trigger th_trigger;
 
-#if defined(CONFIG_TMP007_TRIGGER_OWN_FIBER)
-	char __stack fiber_stack[CONFIG_TMP007_FIBER_STACK_SIZE];
+#if defined(CONFIG_TMP007_TRIGGER_OWN_THREAD)
+	char __stack thread_stack[CONFIG_TMP007_THREAD_STACK_SIZE];
 	struct k_sem gpio_sem;
-#elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 	struct device *dev;
 #endif

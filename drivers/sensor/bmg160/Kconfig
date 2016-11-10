@@ -47,7 +47,7 @@ endchoice
 choice
 	prompt "Trigger mode"
 	depends on BMG160
-	default BMG160_TRIGGER_GLOBAL_FIBER
+	default BMG160_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
@@ -55,12 +55,12 @@ config BMG160_TRIGGER_NONE
 	bool
 	prompt "No trigger"
 
-config BMG160_TRIGGER_GLOBAL_FIBER
-	bool "Use global fiber"
+config BMG160_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
 	select BMG160_TRIGGER
 
-config BMG160_TRIGGER_OWN_FIBER
-	bool "Use own fiber"
+config BMG160_TRIGGER_OWN_THREAD
+	bool "Use own thread"
 	select BMG160_TRIGGER
 endchoice
 
@@ -68,19 +68,19 @@ config BMG160_TRIGGER
 	bool
 	depends on BMG160
 
-config BMG160_FIBER_PRIORITY
-	int "Own fiber priority"
-	depends on BMG160 && BMG160_TRIGGER_OWN_FIBER
+config BMG160_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMG160 && BMG160_TRIGGER_OWN_THREAD
 	default 10
 	help
-	  The priority of the fiber used for handling interrupts.
+	  The priority of the thread used for handling interrupts.
 
-config BMG160_FIBER_STACK_SIZE
-	int "Own fiber stack size"
-	depends on BMG160 && BMG160_TRIGGER_OWN_FIBER
+config BMG160_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMG160 && BMG160_TRIGGER_OWN_THREAD
 	default 1024
 	help
-	  The fiber stack size.
+	  The thread stack size.
 
 config BMG160_GPIO_PORT_NAME
 	string "GPIO controller port name"

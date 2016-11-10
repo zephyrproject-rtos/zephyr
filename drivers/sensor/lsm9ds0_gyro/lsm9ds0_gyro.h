@@ -239,7 +239,7 @@ struct lsm9ds0_gyro_data {
 #endif
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-	char __stack fiber_stack[CONFIG_LSM9DS0_GYRO_FIBER_STACK_SIZE];
+	char __stack thread_stack[CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE];
 	struct device *dev;
 
 	struct device *gpio_drdy;

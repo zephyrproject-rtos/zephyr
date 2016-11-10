@@ -120,8 +120,8 @@
 #define BMA280_REG_ACCEL_Y_MSB		0x5
 #define BMA280_REG_ACCEL_Z_MSB		0x7
 
-#define BMA280_FIBER_PRIORITY		10
-#define BMA280_FIBER_STACKSIZE_UNIT	1024
+#define BMA280_THREAD_PRIORITY		10
+#define BMA280_THREAD_STACKSIZE_UNIT	1024
 
 struct bma280_data {
 	struct device *i2c;
@@ -140,10 +140,10 @@ struct bma280_data {
 	struct sensor_trigger any_motion_trigger;
 	sensor_trigger_handler_t any_motion_handler;
 
-#if defined(CONFIG_BMA280_TRIGGER_OWN_FIBER)
-	char __stack fiber_stack[CONFIG_BMA280_FIBER_STACK_SIZE];
+#if defined(CONFIG_BMA280_TRIGGER_OWN_THREAD)
+	char __stack thread_stack[CONFIG_BMA280_THREAD_STACK_SIZE];
 	struct k_sem gpio_sem;
-#elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 	struct device *dev;
 #endif

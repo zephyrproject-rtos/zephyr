@@ -116,10 +116,10 @@ struct lis3mdl_data {
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
 
-#if defined(CONFIG_LIS3MDL_TRIGGER_OWN_FIBER)
-	char __stack fiber_stack[CONFIG_LIS3MDL_FIBER_STACK_SIZE];
+#if defined(CONFIG_LIS3MDL_TRIGGER_OWN_THREAD)
+	char __stack thread_stack[CONFIG_LIS3MDL_THREAD_STACK_SIZE];
 	struct k_sem gpio_sem;
-#elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 	struct device *dev;
 #endif

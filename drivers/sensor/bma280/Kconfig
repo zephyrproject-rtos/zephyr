@@ -80,7 +80,7 @@ config BMA280_I2C_MASTER_DEV_NAME
 choice
 	prompt "Trigger mode"
 	depends on BMA280
-	default BMA280_TRIGGER_GLOBAL_FIBER
+	default BMA280_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
@@ -88,15 +88,15 @@ config BMA280_TRIGGER_NONE
 	bool
 	prompt "No trigger"
 
-config BMA280_TRIGGER_GLOBAL_FIBER
+config BMA280_TRIGGER_GLOBAL_THREAD
 	bool
-	prompt "Use global fiber"
+	prompt "Use global thread"
 	depends on GPIO
 	select BMA280_TRIGGER
 
-config BMA280_TRIGGER_OWN_FIBER
+config BMA280_TRIGGER_OWN_THREAD
 	bool
-	prompt "Use own fiber"
+	prompt "Use own thread"
 	depends on GPIO
 	select BMA280_TRIGGER
 
@@ -124,21 +124,21 @@ config BMA280_GPIO_PIN_NUM
 	  The number of the GPIO on which the interrupt signal from the chip
 	  will be received.
 
-config BMA280_FIBER_PRIORITY
+config BMA280_THREAD_PRIORITY
 	int
-	prompt "Fiber priority"
-	depends on BMA280 && BMA280_TRIGGER_OWN_FIBER
+	prompt "Thread priority"
+	depends on BMA280 && BMA280_TRIGGER_OWN_THREAD
 	default 10
 	help
-	  Priority of fiber used by the driver to handle interrupts.
+	  Priority of thread used by the driver to handle interrupts.
 
-config BMA280_FIBER_STACK_SIZE
+config BMA280_THREAD_STACK_SIZE
 	int
-	prompt "Fiber stack size"
-	depends on BMA280 && BMA280_TRIGGER_OWN_FIBER
+	prompt "Thread stack size"
+	depends on BMA280 && BMA280_TRIGGER_OWN_THREAD
 	default 1024
 	help
-	  Stack size of fiber used by the driver to handle interrupts.
+	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Acceleration measurement range"

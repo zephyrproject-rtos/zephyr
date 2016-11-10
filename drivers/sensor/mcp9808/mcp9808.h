@@ -50,11 +50,11 @@ struct mcp9808_data {
 
 	struct gpio_callback gpio_cb;
 
-#ifdef CONFIG_MCP9808_TRIGGER_OWN_FIBER
+#ifdef CONFIG_MCP9808_TRIGGER_OWN_THREAD
 	struct k_sem sem;
 #endif
 
-#ifdef CONFIG_MCP9808_TRIGGER_GLOBAL_FIBER
+#ifdef CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
 	struct device *dev;
 #endif

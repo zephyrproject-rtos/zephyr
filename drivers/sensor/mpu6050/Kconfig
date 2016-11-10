@@ -55,7 +55,7 @@ config MPU6050_I2C_MASTER_DEV_NAME
 choice
 	prompt "Trigger mode"
 	depends on MPU6050
-	default MPU6050_TRIGGER_GLOBAL_FIBER
+	default MPU6050_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
@@ -63,15 +63,15 @@ config MPU6050_TRIGGER_NONE
 	bool
 	prompt "No trigger"
 
-config MPU6050_TRIGGER_GLOBAL_FIBER
+config MPU6050_TRIGGER_GLOBAL_THREAD
 	bool
-	prompt "Use global fiber"
+	prompt "Use global thread"
 	depends on GPIO
 	select MPU6050_TRIGGER
 
-config MPU6050_TRIGGER_OWN_FIBER
+config MPU6050_TRIGGER_OWN_THREAD
 	bool
-	prompt "Use own fiber"
+	prompt "Use own thread"
 	depends on GPIO
 	select MPU6050_TRIGGER
 
@@ -99,21 +99,21 @@ config MPU6050_GPIO_PIN_NUM
 	  The number of the GPIO on which the interrupt signal from the MPU6050
 	  chip will be received.
 
-config MPU6050_FIBER_PRIORITY
+config MPU6050_THREAD_PRIORITY
 	int
-	prompt "Fiber priority"
-	depends on MPU6050 && MPU6050_TRIGGER_OWN_FIBER
+	prompt "Thread priority"
+	depends on MPU6050 && MPU6050_TRIGGER_OWN_THREAD
 	default 10
 	help
-	  Priority of fiber used by the driver to handle interrupts.
+	  Priority of thread used by the driver to handle interrupts.
 
-config MPU6050_FIBER_STACK_SIZE
+config MPU6050_THREAD_STACK_SIZE
 	int
-	prompt "Fiber stack size"
-	depends on MPU6050 && MPU6050_TRIGGER_OWN_FIBER
+	prompt "Thread stack size"
+	depends on MPU6050 && MPU6050_TRIGGER_OWN_THREAD
 	default 1024
 	help
-	  Stack size of fiber used by the driver to handle interrupts.
+	  Stack size of thread used by the driver to handle interrupts.
 
 config MPU6050_ACCEL_FS
 	int

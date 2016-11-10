@@ -31,9 +31,9 @@ static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 	struct bmg160_device_data *bmg160 =
 		CONTAINER_OF(cb, struct bmg160_device_data, gpio_cb);
 
-#if defined(CONFIG_BMG160_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_BMG160_TRIGGER_OWN_THREAD)
 	k_sem_give(&bmg160->trig_sem);
-#elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&bmg160->work);
 #endif
 }
@@ -177,10 +177,10 @@ static void bmg160_handle_int(void *arg)
 	}
 }
 
-#ifdef CONFIG_BMG160_TRIGGER_OWN_FIBER
-static char __stack bmg160_fiber_stack[CONFIG_BMG160_FIBER_STACK_SIZE];
+#ifdef CONFIG_BMG160_TRIGGER_OWN_THREAD
+static char __stack bmg160_thread_stack[CONFIG_BMG160_THREAD_STACK_SIZE];
 
-static void bmg160_fiber_main(int arg1, int unused)
+static void bmg160_thread_main(void *arg1, void *arg2, void *arg3)
 {
 	struct device *dev = (struct device *)arg1;
 	struct bmg160_device_data *bmg160 = dev->driver_data;
@@ -193,7 +193,7 @@ static void bmg160_fiber_main(int arg1, int unused)
 }
 #endif
 
-#ifdef CONFIG_BMG160_TRIGGER_GLOBAL_FIBER
+#ifdef CONFIG_BMG160_TRIGGER_GLOBAL_THREAD
 static void bmg160_work_cb(struct k_work *work)
 {
 	struct bmg160_device_data *bmg160 =
@@ -241,11 +241,12 @@ int bmg160_trigger_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BMG160_TRIGGER_OWN_FIBER)
+#if defined(CONFIG_BMG160_TRIGGER_OWN_THREAD)
 	k_sem_init(&bmg160->trig_sem, 0, UINT_MAX);
-	fiber_start(bmg160_fiber_stack, CONFIG_BMG160_FIBER_STACK_SIZE,
-		    bmg160_fiber_main, (int)dev, 0, 10, 0);
-#elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_FIBER)
+	k_thread_spawn(bmg160_thread_stack, CONFIG_BMG160_THREAD_STACK_SIZE,
+		    bmg160_thread_main, dev, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+
+#elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_THREAD)
 	bmg160->work.handler = bmg160_work_cb;
 	bmg160->dev = dev;
 #endif

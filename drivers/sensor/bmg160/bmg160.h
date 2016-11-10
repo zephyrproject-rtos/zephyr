@@ -205,11 +205,11 @@ struct bmg160_device_data {
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
 #endif
-#ifdef CONFIG_BMG160_TRIGGER_OWN_FIBER
+#ifdef CONFIG_BMG160_TRIGGER_OWN_THREAD
 	struct k_sem trig_sem;
 #endif
 	struct k_sem sem;
-#ifdef CONFIG_BMG160_TRIGGER_GLOBAL_FIBER
+#ifdef CONFIG_BMG160_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
 	struct device *dev;
 #endif

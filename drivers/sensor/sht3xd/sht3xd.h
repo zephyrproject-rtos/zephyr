@@ -84,10 +84,10 @@ struct sht3xd_data {
 	sensor_trigger_handler_t handler;
 	struct sensor_trigger trigger;
 
-#if defined(CONFIG_SHT3XD_TRIGGER_OWN_FIBER)
-	char __stack fiber_stack[CONFIG_SHT3XD_FIBER_STACK_SIZE];
+#if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
+	char __stack thread_stack[CONFIG_SHT3XD_THREAD_STACK_SIZE];
 	struct k_sem gpio_sem;
-#elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_FIBER)
+#elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 	struct device *dev;
 #endif

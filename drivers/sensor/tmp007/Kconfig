@@ -69,15 +69,15 @@ config TMP007_TRIGGER_NONE
 	bool
 	prompt "No trigger"
 
-config TMP007_TRIGGER_GLOBAL_FIBER
+config TMP007_TRIGGER_GLOBAL_THREAD
 	bool
-	prompt "Use global fiber"
+	prompt "Use global thread"
 	depends on GPIO
 	select TMP007_TRIGGER
 
-config TMP007_TRIGGER_OWN_FIBER
+config TMP007_TRIGGER_OWN_THREAD
 	bool
-	prompt "Use own fiber"
+	prompt "Use own thread"
 	depends on GPIO
 	select TMP007_TRIGGER
 
@@ -105,18 +105,18 @@ config TMP007_GPIO_PIN_NUM
 	  The number of the GPIO pin on which the interrupt signal from the
 	  TMP007 chip will be received.
 
-config TMP007_FIBER_PRIORITY
+config TMP007_THREAD_PRIORITY
 	int
-	prompt "Fiber priority"
-	depends on TMP007 && TMP007_TRIGGER_OWN_FIBER
+	prompt "Thread priority"
+	depends on TMP007 && TMP007_TRIGGER_OWN_THREAD
 	default 10
 	help
-	  Priority of fiber used by the driver to handle interrupts.
+	  Priority of thread used by the driver to handle interrupts.
 
-config TMP007_FIBER_STACK_SIZE
+config TMP007_THREAD_STACK_SIZE
 	int
-	prompt "Fiber stack size"
-	depends on TMP007 && TMP007_TRIGGER_OWN_FIBER
+	prompt "Thread stack size"
+	depends on TMP007 && TMP007_TRIGGER_OWN_THREAD
 	default 1024
 	help
-	  Stack size of fiber used by the driver to handle interrupts.
+	  Stack size of thread used by the driver to handle interrupts.

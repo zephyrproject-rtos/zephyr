@@ -37,7 +37,7 @@ config BMI160_SPI_BUS_FREQ
 choice
 	prompt "Trigger mode"
 	depends on BMI160
-	default BMI160_TRIGGER_GLOBAL_FIBER
+	default BMI160_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
@@ -45,12 +45,12 @@ config BMI160_TRIGGER_NONE
 	bool
 	prompt "No trigger"
 
-config BMI160_TRIGGER_GLOBAL_FIBER
-	bool "Use global fiber"
+config BMI160_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
 	select BMI160_TRIGGER
 
-config BMI160_TRIGGER_OWN_FIBER
-	bool "Use own fiber"
+config BMI160_TRIGGER_OWN_THREAD
+	bool "Use own thread"
 	select BMI160_TRIGGER
 endchoice
 
@@ -72,19 +72,19 @@ config BMI160_TRIGGER_SOURCE_GPIO
 	depends on GPIO
 endchoice
 
-config BMI160_FIBER_PRIORITY
-	int "Own fiber priority"
-	depends on BMI160 && BMI160_TRIGGER_OWN_FIBER
+config BMI160_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMI160 && BMI160_TRIGGER_OWN_THREAD
 	default 10
 	help
-	  The priority of the fiber used for handling interrupts.
+	  The priority of the thread used for handling interrupts.
 
-config BMI160_FIBER_STACK_SIZE
-	int "Own fiber stack size"
-	depends on BMI160 && BMI160_TRIGGER_OWN_FIBER
+config BMI160_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMI160 && BMI160_TRIGGER_OWN_THREAD
 	default 1024
 	help
-	  The fiber stack size.
+	  The thread stack size.
 
 config BMI160_GPIO_DEV_NAME
 	string "Gpio device"
