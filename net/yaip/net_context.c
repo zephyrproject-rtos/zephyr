@@ -503,12 +503,12 @@ static inline int send_syn(struct net_context *context,
 
 	net_tcp_print_send_info("SYN", buf, NET_TCP_BUF(buf)->dst_port);
 
-	ret =  net_send_data(buf);
-	if (!ret) {
+	ret = net_send_data(buf);
+	if (ret < 0) {
 		net_nbuf_unref(buf);
 	}
 
-	return 0;
+	return ret;
 }
 
 static inline int send_syn_ack(struct net_context *context,
@@ -525,12 +525,12 @@ static inline int send_syn_ack(struct net_context *context,
 
 	net_tcp_print_send_info("SYN_ACK", buf, NET_TCP_BUF(buf)->dst_port);
 
-	ret =  net_send_data(buf);
-	if (!ret) {
+	ret = net_send_data(buf);
+	if (ret < 0) {
 		net_nbuf_unref(buf);
 	}
 
-	return 0;
+	return ret;
 }
 
 static inline int send_ack(struct net_context *context,
@@ -546,12 +546,12 @@ static inline int send_ack(struct net_context *context,
 
 	net_tcp_print_send_info("ACK", buf, NET_TCP_BUF(buf)->dst_port);
 
-	ret =  net_send_data(buf);
-	if (!ret) {
+	ret = net_send_data(buf);
+	if (ret < 0) {
 		net_nbuf_unref(buf);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int send_reset(struct net_context *context,
@@ -567,12 +567,12 @@ static int send_reset(struct net_context *context,
 
 	net_tcp_print_send_info("RST", buf, NET_TCP_BUF(buf)->dst_port);
 
-	ret =  net_send_data(buf);
-	if (!ret) {
+	ret = net_send_data(buf);
+	if (ret < 0) {
 		net_nbuf_unref(buf);
 	}
 
-	return 0;
+	return ret;
 }
 
 /* This is called when we receive data after the connection has been
