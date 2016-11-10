@@ -17,7 +17,7 @@
  */
 
 #include <errno.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <i2c.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
@@ -126,7 +126,7 @@ static void mcp9808_gpio_cb(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	nano_isr_sem_give(&data->sem);
+	k_sem_give(&data->sem);
 }
 
 static void mcp9808_fiber_main(int arg1, int arg2)
@@ -137,7 +137,7 @@ static void mcp9808_fiber_main(int arg1, int arg2)
 	ARG_UNUSED(arg2);
 
 	while (1) {
-		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
+		k_sem_take(&data->sem, K_FOREVER);
 		data->trigger_handler(dev, &data->trig);
 		mcp9808_reg_update(data, MCP9808_REG_CONFIG,
 				   MCP9808_INT_CLEAR, MCP9808_INT_CLEAR);
@@ -156,10 +156,10 @@ static void mcp9808_gpio_cb(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	nano_work_submit(&data->work);
+	k_work_submit(&data->work);
 }
 
-static void mcp9808_gpio_fiber_cb(struct nano_work *work)
+static void mcp9808_gpio_fiber_cb(struct k_work *work)
 {
 	struct mcp9808_data *data =
 		CONTAINER_OF(work, struct mcp9808_data, work);
@@ -184,7 +184,7 @@ void mcp9808_setup_interrupt(struct device *dev)
 			   MCP9808_INT_CLEAR);
 
 #ifdef CONFIG_MCP9808_TRIGGER_OWN_FIBER
-	nano_sem_init(&data->sem);
+	k_sem_init(&data->sem, 0, UINT_MAX);
 
 	fiber_fiber_start(mcp9808_fiber_stack,
 			  CONFIG_MCP9808_FIBER_STACK_SIZE,

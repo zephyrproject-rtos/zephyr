@@ -124,7 +124,7 @@ struct bmc150_magn_trim_regs {
 
 struct bmc150_magn_data {
 	struct device *i2c_master;
-	struct nano_sem sem;
+	struct k_sem sem;
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER)
 	char __stack fiber_stack[CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK];

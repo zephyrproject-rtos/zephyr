@@ -19,7 +19,7 @@
  */
 
 #include <sensor.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <i2c.h>

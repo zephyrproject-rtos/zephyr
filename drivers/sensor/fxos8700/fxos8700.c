@@ -33,7 +33,7 @@ static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -ENOTSUP;
 	}
 
-	nano_sem_take(&data->sem, TICKS_UNLIMITED);
+	k_sem_take(&data->sem, K_FOREVER);
 
 	/* Read all the channels in one I2C transaction. The number of bytes to
 	 * read and the starting register address depend on the mode
@@ -65,7 +65,7 @@ static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 exit:
-	nano_sem_give(&data->sem);
+	k_sem_give(&data->sem);
 
 	return ret;
 }
@@ -123,7 +123,7 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 	int ret;
 	int i;
 
-	nano_sem_take(&data->sem, TICKS_UNLIMITED);
+	k_sem_take(&data->sem, K_FOREVER);
 
 	/* Start with an error return code by default, then clear it if we find
 	 * a supported sensor channel.
@@ -209,7 +209,7 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 		SYS_LOG_DBG("Unsupported sensor channel");
 	}
 
-	nano_sem_give(&data->sem);
+	k_sem_give(&data->sem);
 
 	return ret;
 }
@@ -294,8 +294,8 @@ static int fxos8700_init(struct device *dev)
 		return -EIO;
 	}
 
-	nano_sem_init(&data->sem);
-	nano_sem_give(&data->sem);
+	k_sem_init(&data->sem, 0, UINT_MAX);
+	k_sem_give(&data->sem);
 
 	SYS_LOG_DBG("Init complete");
 

@@ -17,7 +17,7 @@
 #include <device.h>
 #include <i2c.h>
 #include <gpio.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sensor.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
@@ -33,7 +33,7 @@ static void hdc1008_gpio_callback(struct device *dev,
 	ARG_UNUSED(pins);
 
 	gpio_pin_disable_callback(dev, CONFIG_HDC1008_GPIO_PIN_NUM);
-	nano_sem_give(&drv_data->data_sem);
+	k_sem_give(&drv_data->data_sem);
 }
 
 static int hdc1008_sample_fetch(struct device *dev, enum sensor_channel chan)
@@ -51,7 +51,7 @@ static int hdc1008_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -EIO;
 	}
 
-	nano_sem_take(&drv_data->data_sem, TICKS_UNLIMITED);
+	k_sem_take(&drv_data->data_sem, K_FOREVER);
 
 	if (i2c_read(drv_data->i2c, buf, 4, HDC1008_I2C_ADDRESS) < 0) {
 		SYS_LOG_DBG("Failed to read sample data");
@@ -130,7 +130,7 @@ static int hdc1008_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	nano_sem_init(&drv_data->data_sem);
+	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
 
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_HDC1008_GPIO_DEV_NAME);

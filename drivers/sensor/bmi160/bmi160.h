@@ -20,7 +20,6 @@
 
 #include <gpio.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 /* registers */
 #define BMI160_REG_CHIPID		0x00
@@ -455,11 +454,11 @@ struct bmi160_device_data {
 	struct bmi160_scale scale;
 
 #ifdef CONFIG_BMI160_TRIGGER_OWN_FIBER
-	struct nano_sem sem;
+	struct k_sem sem;
 #endif
 
 #ifdef CONFIG_BMI160_TRIGGER_GLOBAL_FIBER
-	struct nano_work work;
+	struct k_work work;
 	struct device *dev;
 #endif
 

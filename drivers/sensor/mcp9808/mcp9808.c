@@ -18,7 +18,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <i2c.h>
 #include <init.h>
 #include <misc/byteorder.h>

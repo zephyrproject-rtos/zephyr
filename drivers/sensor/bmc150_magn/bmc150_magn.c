@@ -20,7 +20,7 @@
  */
 
 #include <sensor.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <misc/byteorder.h>

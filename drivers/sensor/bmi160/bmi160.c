@@ -22,7 +22,7 @@
 #include <sensor.h>
 #include <spi.h>
 #include <misc/byteorder.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <misc/__assert.h>
 
 #include "bmi160.h"

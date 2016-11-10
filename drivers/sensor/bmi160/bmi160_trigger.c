@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sensor.h>
 
 #ifdef CONFIG_BMI160_TRIGGER_SOURCE_GPIO
@@ -101,14 +101,14 @@ static void bmi160_fiber_main(int arg1, int unused)
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
 	while (1) {
-		nano_fiber_sem_take(&bmi160->sem, TICKS_UNLIMITED);
+		k_sem_take(&bmi160->sem, K_FOREVER);
 		bmi160_handle_interrupts(dev);
 	}
 }
 #endif
 
 #ifdef CONFIG_BMI160_TRIGGER_GLOBAL_FIBER
-static void bmi160_work_handler(struct nano_work *work)
+static void bmi160_work_handler(struct k_work *work)
 {
 	struct bmi160_device_data *bmi160 =
 		CONTAINER_OF(work, struct bmi160_device_data, work);
@@ -127,9 +127,9 @@ static void bmi160_gpio_callback(struct device *port,
 		CONTAINER_OF(cb, struct bmi160_device_data, gpio_cb);
 
 #if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
-	nano_sem_give(&bmi160->sem);
+	k_sem_give(&bmi160->sem);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
-	nano_work_submit(&bmi160->work);
+	k_work_submit(&bmi160->work);
 #endif
 }
 #else
@@ -140,9 +140,9 @@ static void bmi160_ipm_callback(void *context, uint32_t id, volatile void *data)
 	struct bmi160_device_data *bmi160 = context;
 
 #if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
-	nano_sem_give(&bmi160->sem);
+	k_sem_give(&bmi160->sem);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
-	nano_work_submit(&bmi160->work);
+	k_work_submit(&bmi160->work);
 #endif
 }
 #endif
@@ -321,7 +321,7 @@ int bmi160_trigger_mode_init(struct device *dev)
 #endif
 
 #if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
-	nano_sem_init(&bmi160->sem);
+	k_sem_init(&bmi160->sem, 0, UINT_MAX);
 
 	fiber_start(bmi160_fiber_stack, CONFIG_BMI160_FIBER_STACK_SIZE,
 		    bmi160_fiber_main, (int)dev, 0,

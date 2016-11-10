@@ -21,7 +21,7 @@
 #include <init.h>
 #include <sensor.h>
 #include <misc/byteorder.h>
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include "bmg160.h"
 
@@ -49,14 +49,14 @@ int bmg160_read(struct device *dev, uint8_t reg_addr, uint8_t *data,
 
 	bmg160_bus_config(dev);
 
-	nano_sem_take(&bmg160->sem, TICKS_UNLIMITED);
+	k_sem_take(&bmg160->sem, K_FOREVER);
 
 	if (i2c_burst_read(bmg160->i2c, dev_cfg->i2c_addr,
 			   reg_addr, data, len) < 0) {
 		ret = -EIO;
 	}
 
-	nano_sem_give(&bmg160->sem);
+	k_sem_give(&bmg160->sem);
 
 	return ret;
 }
@@ -75,14 +75,14 @@ static int bmg160_write(struct device *dev, uint8_t reg_addr, uint8_t *data,
 
 	bmg160_bus_config(dev);
 
-	nano_sem_take(&bmg160->sem, TICKS_UNLIMITED);
+	k_sem_take(&bmg160->sem, K_FOREVER);
 
 	if (i2c_burst_write(bmg160->i2c, dev_cfg->i2c_addr,
 			    reg_addr, data, len) < 0) {
 		ret = -EIO;
 	}
 
-	nano_sem_give(&bmg160->sem);
+	k_sem_give(&bmg160->sem);
 
 	return ret;
 }
@@ -101,14 +101,14 @@ int bmg160_update_byte(struct device *dev, uint8_t reg_addr, uint8_t mask,
 
 	bmg160_bus_config(dev);
 
-	nano_sem_take(&bmg160->sem, TICKS_UNLIMITED);
+	k_sem_take(&bmg160->sem, K_FOREVER);
 
 	if (i2c_reg_update_byte(bmg160->i2c, dev_cfg->i2c_addr,
 				reg_addr, mask, value) < 0) {
 		ret = -EIO;
 	}
 
-	nano_sem_give(&bmg160->sem);
+	k_sem_give(&bmg160->sem);
 
 	return ret;
 }
@@ -301,8 +301,8 @@ int bmg160_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	nano_sem_init(&bmg160->sem);
-	nano_sem_give(&bmg160->sem);
+	k_sem_init(&bmg160->sem, 0, UINT_MAX);
+	k_sem_give(&bmg160->sem);
 
 	if (bmg160_read_byte(dev, BMG160_REG_CHIPID, &chip_id) < 0) {
 		SYS_LOG_DBG("Failed to read chip id.");

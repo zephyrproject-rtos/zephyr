@@ -96,6 +96,6 @@ struct fxos8700_config {
 
 struct fxos8700_data {
 	struct device *i2c;
-	struct nano_sem sem;
+	struct k_sem sem;
 	int16_t raw[FXOS8700_MAX_NUM_CHANNELS];
 };

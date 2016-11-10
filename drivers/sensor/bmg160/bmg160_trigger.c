@@ -18,7 +18,7 @@
  * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sensor.h>
 
 #include "bmg160.h"
@@ -32,9 +32,9 @@ static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 		CONTAINER_OF(cb, struct bmg160_device_data, gpio_cb);
 
 #if defined(CONFIG_BMG160_TRIGGER_OWN_FIBER)
-	nano_isr_sem_give(&bmg160->trig_sem);
+	k_sem_give(&bmg160->trig_sem);
 #elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_FIBER)
-	nano_work_submit(&bmg160->work);
+	k_work_submit(&bmg160->work);
 #endif
 }
 
@@ -186,7 +186,7 @@ static void bmg160_fiber_main(int arg1, int unused)
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 
 	while (true) {
-		nano_fiber_sem_take(&bmg160->trig_sem, TICKS_UNLIMITED);
+		k_sem_take(&bmg160->trig_sem, K_FOREVER);
 
 		bmg160_handle_int(dev);
 	}
@@ -194,7 +194,7 @@ static void bmg160_fiber_main(int arg1, int unused)
 #endif
 
 #ifdef CONFIG_BMG160_TRIGGER_GLOBAL_FIBER
-static void bmg160_work_cb(struct nano_work *work)
+static void bmg160_work_cb(struct k_work *work)
 {
 	struct bmg160_device_data *bmg160 =
 		CONTAINER_OF(work, struct bmg160_device_data, work);
@@ -242,7 +242,7 @@ int bmg160_trigger_init(struct device *dev)
 	}
 
 #if defined(CONFIG_BMG160_TRIGGER_OWN_FIBER)
-	nano_sem_init(&bmg160->trig_sem);
+	k_sem_init(&bmg160->trig_sem, 0, UINT_MAX);
 	fiber_start(bmg160_fiber_stack, CONFIG_BMG160_FIBER_STACK_SIZE,
 		    bmg160_fiber_main, (int)dev, 0, 10, 0);
 #elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_FIBER)

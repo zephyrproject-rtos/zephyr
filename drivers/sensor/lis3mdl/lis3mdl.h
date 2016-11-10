@@ -21,7 +21,6 @@
 #include <misc/util.h>
 #include <stdint.h>
 #include <gpio.h>
-#include <misc/nano_work.h>
 
 #define SYS_LOG_DOMAIN "LIS3MDL"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
@@ -119,9 +118,9 @@ struct lis3mdl_data {
 
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_FIBER)
 	char __stack fiber_stack[CONFIG_LIS3MDL_FIBER_STACK_SIZE];
-	struct nano_sem gpio_sem;
+	struct k_sem gpio_sem;
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_FIBER)
-	struct nano_work work;
+	struct k_work work;
 	struct device *dev;
 #endif
 

@@ -17,7 +17,7 @@
 #include <device.h>
 #include <gpio.h>
 #include <misc/util.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sensor.h>
 
 #include "bmc150_magn.h"
@@ -77,7 +77,7 @@ static void bmc150_magn_gpio_drdy_callback(struct device *dev,
 
 	gpio_pin_disable_callback(dev, config->gpio_drdy_int_pin);
 
-	nano_isr_sem_give(&data->sem);
+	k_sem_give(&data->sem);
 }
 
 static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
@@ -88,7 +88,7 @@ static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
 	uint8_t reg_val;
 
 	while (1) {
-		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
+		k_sem_take(&data->sem, K_FOREVER);
 
 		while (i2c_reg_read_byte(data->i2c_master,
 					 config->i2c_slave_addr,
@@ -143,7 +143,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 
 	data->handler_drdy = NULL;
 
-	nano_sem_init(&data->sem);
+	k_sem_init(&data->sem, 0, UINT_MAX);
 
 	task_fiber_start(data->fiber_stack,
 			 CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK,

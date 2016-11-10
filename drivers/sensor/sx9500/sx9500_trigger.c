@@ -16,7 +16,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <i2c.h>
 #include <sensor.h>
 #include <gpio.h>
@@ -75,7 +75,7 @@ static void sx9500_gpio_cb(struct device *port,
 
 	ARG_UNUSED(pins);
 
-	nano_isr_sem_give(&data->sem);
+	k_sem_give(&data->sem);
 }
 
 static void sx9500_fiber_main(int arg1, int unused)
@@ -87,7 +87,7 @@ static void sx9500_fiber_main(int arg1, int unused)
 	ARG_UNUSED(unused);
 
 	while (1) {
-		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
+		k_sem_take(&data->sem, K_FOREVER);
 
 		if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 					SX9500_REG_IRQ_SRC, &reg_val) < 0) {
@@ -115,7 +115,7 @@ static void sx9500_gpio_cb(struct device *port,
 
 	ARG_UNUSED(pins);
 
-	nano_work_submit(&data->work);
+	k_work_submit(&data->work);
 }
 
 static void sx9500_gpio_fiber_cb(void *arg)
@@ -141,7 +141,7 @@ static void sx9500_gpio_fiber_cb(void *arg)
 #endif /* CONFIG_SX9500_TRIGGER_GLOBAL_FIBER */
 
 #ifdef CONFIG_SX9500_TRIGGER_GLOBAL_FIBER
-static void sx9500_work_cb(struct nano_work *work)
+static void sx9500_work_cb(struct k_work *work)
 {
 	struct sx9500_data *data =
 		CONTAINER_OF(work, struct sx9500_data, work);
@@ -156,7 +156,7 @@ int sx9500_setup_interrupt(struct device *dev)
 	struct device *gpio;
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
-	nano_sem_init(&data->sem);
+	k_sem_init(&data->sem, 0, UINT_MAX);
 #else
 	data->work.handler = sx9500_work_cb;
 	data->dev = dev;

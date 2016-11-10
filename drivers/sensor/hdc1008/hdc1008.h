@@ -17,7 +17,7 @@
 #ifndef _SENSOR_HDC1008
 #define _SENSOR_HDC1008
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #define HDC1008_I2C_ADDRESS	0x40
 
@@ -32,7 +32,7 @@ struct hdc1008_data {
 	struct gpio_callback gpio_cb;
 	uint16_t t_sample;
 	uint16_t rh_sample;
-	struct nano_sem data_sem;
+	struct k_sem data_sem;
 };
 
 #define SYS_LOG_DOMAIN "HDC1008"

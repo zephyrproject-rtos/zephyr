@@ -17,7 +17,7 @@
 #include <device.h>
 #include <gpio.h>
 #include <misc/util.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sensor.h>
 
 #include "tmp007.h"
@@ -65,9 +65,9 @@ static void tmp007_gpio_callback(struct device *dev,
 	gpio_pin_disable_callback(dev, CONFIG_TMP007_GPIO_PIN_NUM);
 
 #if defined(CONFIG_TMP007_TRIGGER_OWN_FIBER)
-	nano_sem_give(&drv_data->gpio_sem);
+	k_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_FIBER)
-	nano_work_submit(&drv_data->work);
+	k_work_submit(&drv_data->work);
 #endif
 }
 
@@ -103,14 +103,14 @@ static void tmp007_fiber(int dev_ptr, int unused)
 	ARG_UNUSED(unused);
 
 	while (1) {
-		nano_fiber_sem_take(&drv_data->gpio_sem, TICKS_UNLIMITED);
+		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		tmp007_fiber_cb(dev);
 	}
 }
 #endif
 
 #ifdef CONFIG_TMP007_TRIGGER_GLOBAL_FIBER
-static void tmp007_work_cb(struct nano_work *work)
+static void tmp007_work_cb(struct k_work *work)
 {
 	struct tmp007_data *drv_data =
 		CONTAINER_OF(work, struct tmp007_data, work);
@@ -172,7 +172,7 @@ int tmp007_init_interrupt(struct device *dev)
 	}
 
 #if defined(CONFIG_TMP007_TRIGGER_OWN_FIBER)
-	nano_sem_init(&drv_data->gpio_sem);
+	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
 	fiber_start(drv_data->fiber_stack, CONFIG_TMP007_FIBER_STACK_SIZE,
 		    (nano_fiber_entry_t)tmp007_fiber, POINTER_TO_INT(dev),

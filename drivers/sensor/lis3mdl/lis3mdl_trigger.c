@@ -18,7 +18,7 @@
 #include <i2c.h>
 #include <misc/__assert.h>
 #include <misc/util.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sensor.h>
 
 #include "lis3mdl.h"
@@ -56,9 +56,9 @@ static void lis3mdl_gpio_callback(struct device *dev,
 	gpio_pin_disable_callback(dev, CONFIG_LIS3MDL_GPIO_PIN_NUM);
 
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_FIBER)
-	nano_sem_give(&drv_data->gpio_sem);
+	k_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_FIBER)
-	nano_work_submit(&drv_data->work);
+	k_work_submit(&drv_data->work);
 #endif
 }
 
@@ -84,14 +84,14 @@ static void lis3mdl_fiber(int dev_ptr, int unused)
 	ARG_UNUSED(unused);
 
 	while (1) {
-		nano_fiber_sem_take(&drv_data->gpio_sem, TICKS_UNLIMITED);
+		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		lis3mdl_fiber_cb(dev);
 	}
 }
 #endif
 
 #ifdef CONFIG_LIS3MDL_TRIGGER_GLOBAL_FIBER
-static void lis3mdl_work_cb(struct nano_work *work)
+static void lis3mdl_work_cb(struct k_work *work)
 {
 	struct lis3mdl_data *drv_data =
 		CONTAINER_OF(work, struct lis3mdl_data, work);
@@ -139,7 +139,7 @@ int lis3mdl_init_interrupt(struct device *dev)
 	}
 
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_FIBER)
-	nano_sem_init(&drv_data->gpio_sem);
+	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
 	fiber_start(drv_data->fiber_stack, CONFIG_LIS3MDL_FIBER_STACK_SIZE,
 		    (nano_fiber_entry_t)lis3mdl_fiber, POINTER_TO_INT(dev),

@@ -16,7 +16,7 @@
 
 #include <device.h>
 #include <i2c.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
 

@@ -22,7 +22,7 @@
 #include <sensor.h>
 #include <i2c.h>
 #include <misc/byteorder.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <gpio.h>
 
 #include "hp206c.h"
@@ -181,10 +181,10 @@ static int hp206c_wait_dev_ready(struct device *dev, uint32_t timeout_ms)
 	uint8_t int_src;
 
 #ifdef CONFIG_NANO_TIMERS
-	nano_timer_start(&hp206c->tmr, MSEC(timeout_ms));
-	nano_timer_test(&hp206c->tmr, TICKS_UNLIMITED);
+	k_timer_start(&hp206c->tmr, MSEC(timeout_ms), 0);
+	k_timer_status_sync(&hp206c->tmr);
 #else
-	sys_thread_busy_wait(timeout_ms * 1000);
+	k_busy_wait(timeout_ms * 1000);
 #endif
 
 	if (hp206c_read_reg(dev, HP206C_REG_INT_SRC, &int_src) < 0) {
@@ -320,7 +320,7 @@ static int hp206c_init(struct device *dev)
 	}
 
 #ifdef CONFIG_NANO_TIMERS
-	nano_timer_init(&hp206c->tmr, NULL);
+	k_timer_init(&hp206c->tmr, NULL, NULL);
 #endif
 
 	sys_thread_busy_wait(500);

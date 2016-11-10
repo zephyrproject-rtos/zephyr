@@ -15,7 +15,7 @@
  */
 
  #include <sensor.h>
- #include <nanokernel.h>
+ #include <kernel.h>
  #include <device.h>
  #include <init.h>
  #include <i2c.h>
@@ -77,7 +77,7 @@ static void lsm9ds0_gyro_gpio_drdy_callback(struct device *dev,
 
 	gpio_pin_disable_callback(dev, config->gpio_drdy_int_pin);
 
-	nano_isr_sem_give(&data->sem);
+	k_sem_give(&data->sem);
 }
 
 static void lsm9ds0_gyro_fiber_main(int arg1, int gpio_pin)
@@ -86,7 +86,7 @@ static void lsm9ds0_gyro_fiber_main(int arg1, int gpio_pin)
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 
 	while (1) {
-		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
+		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->handler_drdy) {
 			data->handler_drdy(dev, &data->trigger_drdy);
@@ -102,7 +102,7 @@ int lsm9ds0_gyro_init_interrupt(struct device *dev)
 					   dev->config->config_info;
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 
-	nano_sem_init(&data->sem);
+	k_sem_init(&data->sem, 0, UINT_MAX);
 
 	task_fiber_start(data->fiber_stack,
 			 CONFIG_LSM9DS0_GYRO_FIBER_STACK_SIZE,

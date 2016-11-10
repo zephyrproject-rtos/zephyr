@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <i2c.h>
 #include <sensor.h>
 #include <init.h>

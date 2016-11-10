@@ -19,7 +19,7 @@
 #include <gpio.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
 

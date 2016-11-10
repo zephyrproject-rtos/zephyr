@@ -235,7 +235,7 @@ struct lsm9ds0_gyro_data {
 	struct device *i2c_master;
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGERS)
-	struct nano_sem sem;
+	struct k_sem sem;
 #endif
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)

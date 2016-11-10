@@ -22,7 +22,6 @@
 #include <i2c.h>
 #include <gpio.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 /* registers */
 #define BMG160_REG_CHIPID		0x00
@@ -207,11 +206,11 @@ struct bmg160_device_data {
 	struct gpio_callback gpio_cb;
 #endif
 #ifdef CONFIG_BMG160_TRIGGER_OWN_FIBER
-	struct nano_sem trig_sem;
+	struct k_sem trig_sem;
 #endif
-	struct nano_sem sem;
+	struct k_sem sem;
 #ifdef CONFIG_BMG160_TRIGGER_GLOBAL_FIBER
-	struct nano_work work;
+	struct k_work work;
 	struct device *dev;
 #endif
 #ifdef CONFIG_BMG160_TRIGGER
