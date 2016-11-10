@@ -18,7 +18,7 @@
 #include <errno.h>
 
 #include <init.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <string.h>
 #include <stdlib.h>
 #include <board.h>
@@ -39,7 +39,7 @@ enum {
 struct adc_info  {
 	atomic_t  state;
 	device_sync_call_t sync;
-	struct nano_sem sem;
+	struct k_sem sem;
 };
 
 static void adc_config_irq(void);
@@ -69,13 +69,13 @@ static void complete_callback(void *data, int error, qm_ss_adc_status_t status,
 
 static void adc_lock(struct adc_info *data)
 {
-	nano_sem_take(&data->sem, TICKS_UNLIMITED);
+	k_sem_take(&data->sem, K_FOREVER);
 	data->state = ADC_STATE_BUSY;
 
 }
 static void adc_unlock(struct adc_info *data)
 {
-	nano_sem_give(&data->sem);
+	k_sem_give(&data->sem);
 	data->state = ADC_STATE_IDLE;
 
 }
@@ -261,8 +261,8 @@ int adc_qmsi_ss_init(struct device *dev)
 	ss_clk_adc_set_div(CONFIG_ADC_QMSI_CLOCK_RATIO);
 	device_sync_call_init(&info->sync);
 
-	nano_sem_init(&info->sem);
-	nano_sem_give(&info->sem);
+	k_sem_init(&info->sem, 0, UINT_MAX);
+	k_sem_give(&info->sem);
 	info->state = ADC_STATE_IDLE;
 
 	adc_config_irq();
