@@ -2354,7 +2354,7 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 		net_buf_unref(rsp);
 	}
 
-	extra = sys_tick_get();
+	extra = k_uptime_get();
 
 	ret = tc_hmac_prng_reseed(h, seed, sizeof(seed), (uint8_t *)&extra,
 				  sizeof(extra));
