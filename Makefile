@@ -366,6 +366,7 @@ export ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME KERNEL_HEX_NAME
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \
+		-I$(srctree)/kernel/unified/include \
 		-I$(srctree)/arch/$(ARCH)/include \
 		-I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH) \
 		-I$(srctree)/boards/$(ARCH)/$(BOARD_NAME) \
