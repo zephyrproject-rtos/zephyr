@@ -80,14 +80,14 @@ static struct bt_l2cap_server *servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 /* Pool for outgoing LE signaling packets, MTU is 23 */
-static struct nano_fifo le_sig;
+static struct k_fifo le_sig;
 static NET_BUF_POOL(le_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_sig, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Pool for outgoing LE data packets, MTU is 23 */
-static struct nano_fifo le_data;
+static struct k_fifo le_data;
 static NET_BUF_POOL(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(BT_L2CAP_MAX_LE_MPS), &le_data, NULL,
 		    BT_BUF_USER_DATA_MIN);
@@ -506,7 +506,7 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 	}
 }
 
-struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo, size_t reserve)
+struct net_buf *bt_l2cap_create_pdu(struct k_fifo *fifo, size_t reserve)
 {
 	return bt_conn_create_pdu(fifo, sizeof(struct bt_l2cap_hdr) + reserve);
 }

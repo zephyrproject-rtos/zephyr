@@ -28,7 +28,7 @@
 #define CHANNELS 2
 #define SERVERS 1
 
-static struct nano_fifo data_fifo;
+static struct k_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
 		    BT_BUF_USER_DATA_MIN);
 

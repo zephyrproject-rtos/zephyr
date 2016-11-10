@@ -85,7 +85,7 @@ typedef enum bt_rfcomm_role {
 /** @brief RFCOMM DLC structure. */
 struct bt_rfcomm_dlc {
 	/* Queue for outgoing data */
-	struct nano_fifo           tx_queue;
+	struct k_fifo              tx_queue;
 
 	/** TX credits */
 	struct k_sem               tx_credits;
@@ -171,7 +171,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
  *
  *  @return New buffer.
  */
-struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo);
+struct net_buf *bt_rfcomm_create_pdu(struct k_fifo *fifo);
 
 #ifdef __cplusplus
 }

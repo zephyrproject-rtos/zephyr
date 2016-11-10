@@ -81,14 +81,14 @@ static struct device *btusb_dev;
 #define DEV_DATA(dev) \
 	((struct btusb_dev_data_t * const)(dev)->driver_data)
 
-static struct nano_fifo rx_queue;
+static struct k_fifo rx_queue;
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
 		      sizeof(struct bt_hci_cmd_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
 
-static struct nano_fifo avail_tx;
+static struct k_fifo avail_tx;
 static NET_BUF_POOL(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    &avail_tx, NULL, sizeof(uint8_t));
 
@@ -99,7 +99,7 @@ static NET_BUF_POOL(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 			 4 /* L2CAP header size */ + \
 			 BT_L2CAP_MTU)
 
-static struct nano_fifo avail_acl_tx;
+static struct k_fifo avail_acl_tx;
 static NET_BUF_POOL(acl_tx_pool, 2, BT_BUF_ACL_SIZE, &avail_acl_tx, NULL,
 		    sizeof(uint8_t));
 
@@ -697,7 +697,7 @@ void main(void)
 	/* Initialize the buffer pools */
 	net_buf_pool_init(tx_pool);
 	net_buf_pool_init(acl_tx_pool);
-	nano_fifo_init(&rx_queue);
+	k_fifo_init(&rx_queue);
 
 	bt_enable_raw(&rx_queue);
 

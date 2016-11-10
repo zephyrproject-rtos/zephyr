@@ -39,7 +39,7 @@
 
 struct bt_hfp_hf_cb *bt_hf;
 
-static struct nano_fifo hf_fifo;
+static struct k_fifo hf_fifo;
 static NET_BUF_POOL(hf_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
 		    BT_RFCOMM_BUF_SIZE(BLUETOOTH_HF_CLIENT_MAX_PDU),
 		    &hf_fifo, NULL, BT_BUF_USER_DATA_MIN);

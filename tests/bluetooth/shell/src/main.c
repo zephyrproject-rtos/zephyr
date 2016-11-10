@@ -57,12 +57,12 @@ static bt_addr_le_t id_addr;
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
 static struct bt_conn *pairing_conn;
 
-static struct nano_fifo data_fifo;
+static struct k_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static struct nano_fifo data_bredr_fifo;
+static struct k_fifo data_bredr_fifo;
 static NET_BUF_POOL(data_bredr_pool, 1, DATA_BREDR_MTU, &data_bredr_fifo, NULL,
 		    BT_BUF_USER_DATA_MIN);
 

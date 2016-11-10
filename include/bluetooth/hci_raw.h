@@ -52,7 +52,7 @@ int bt_send(struct net_buf *buf);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_enable_raw(struct nano_fifo *rx_queue);
+int bt_enable_raw(struct k_fifo *rx_queue);
 
 #ifdef __cplusplus
 }

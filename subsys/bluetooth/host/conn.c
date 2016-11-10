@@ -45,12 +45,12 @@
 #endif
 
 /* Pool for outgoing ACL fragments */
-static struct nano_fifo frag_buf;
+static struct k_fifo frag_buf;
 static NET_BUF_POOL(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), &frag_buf, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
 /* Pool for dummy buffers to wake up the tx fibers */
-static struct nano_fifo dummy;
+static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
 /* How long until we cancel HCI_LE_Create_Connection */
@@ -1112,7 +1112,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	/* Actions needed for entering the new state */
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
-		nano_fifo_init(&conn->tx_queue);
+		k_fifo_init(&conn->tx_queue);
 		fiber_start(conn->stack, sizeof(conn->stack), conn_tx_fiber,
 			    (int)bt_conn_ref(conn), 0, 7, 0);
 
@@ -1555,7 +1555,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
 
-struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve)
+struct net_buf *bt_conn_create_pdu(struct k_fifo *fifo, size_t reserve)
 {
 	size_t head_reserve = reserve + sizeof(struct bt_hci_acl_hdr) +
 					CONFIG_BLUETOOTH_HCI_SEND_RESERVE;

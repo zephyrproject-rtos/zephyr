@@ -110,16 +110,16 @@ struct bt_dev {
 	struct net_buf		*sent_cmd;
 
 	/* Queue for incoming HCI events & ACL data */
-	struct nano_fifo	rx_queue;
+	struct k_fifo		rx_queue;
 
 	/* Queue for high priority HCI events which may unlock waiters
 	 * in other fibers. Such events include Number of Completed
 	 * Packets, as well as the Command Complete/Status events.
 	 */
-	struct nano_fifo	rx_prio_queue;
+	struct k_fifo		rx_prio_queue;
 
 	/* Queue for outgoing HCI commands */
-	struct nano_fifo	cmd_tx_queue;
+	struct k_fifo		cmd_tx_queue;
 
 	/* Registered HCI driver */
 	struct bt_hci_driver	*drv;

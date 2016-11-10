@@ -108,13 +108,13 @@ struct acl_data {
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
 		      sizeof(struct bt_hci_cmd_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
-static struct nano_fifo avail_hci_cmd;
+static struct k_fifo avail_hci_cmd;
 static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    &avail_hci_cmd, NULL, sizeof(struct cmd_data));
 
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 /* HCI event buffers */
-static struct nano_fifo avail_hci_evt;
+static struct k_fifo avail_hci_evt;
 static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
 		    BT_BUF_EVT_SIZE, &avail_hci_evt, NULL,
 		    BT_BUF_USER_DATA_MIN);
@@ -124,7 +124,7 @@ static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
  * Complete Packets) if running low on buffers. Buffers from this pool are not
  * allowed to be passed to RX fiber and must be returned from bt_recv().
  */
-static struct nano_fifo avail_prio_hci_evt;
+static struct k_fifo avail_prio_hci_evt;
 static NET_BUF_POOL(hci_evt_prio_pool, 1,
 		    BT_BUF_EVT_SIZE, &avail_prio_hci_evt, NULL,
 		    BT_BUF_USER_DATA_MIN);
@@ -141,7 +141,7 @@ static void report_completed_packet(struct net_buf *buf)
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 
-	nano_fifo_put(buf->free, buf);
+	k_fifo_put(buf->free, buf);
 
 	/* Do nothing if controller to host flow control is not supported */
 	if (!(bt_dev.supported_commands[10] & 0x20)) {
@@ -167,7 +167,7 @@ static void report_completed_packet(struct net_buf *buf)
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 }
 
-static struct nano_fifo avail_acl_in;
+static struct k_fifo avail_acl_in;
 static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
 		    BT_BUF_ACL_IN_SIZE, &avail_acl_in, report_completed_packet,
 		    sizeof(struct acl_data));
@@ -3655,12 +3655,12 @@ int bt_enable(bt_ready_cb_t cb)
 #endif /* !CONFIG_BLUETOOTH_WAIT_NOP */
 
 	/* TX fiber */
-	nano_fifo_init(&bt_dev.cmd_tx_queue);
+	k_fifo_init(&bt_dev.cmd_tx_queue);
 	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
 		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
 
 	/* RX fiber */
-	nano_fifo_init(&bt_dev.rx_queue);
+	k_fifo_init(&bt_dev.rx_queue);
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t)hci_rx_fiber, (int)cb, 0, 7, 0);
 

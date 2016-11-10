@@ -46,7 +46,7 @@ static uint8_t tx_fiber_stack[STACK_SIZE];
 		      sizeof(struct bt_hci_cmd_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
 
-static struct nano_fifo avail_cmd_tx;
+static struct k_fifo avail_cmd_tx;
 static NET_BUF_POOL(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    &avail_cmd_tx, NULL, BT_BUF_USER_DATA_MIN);
 
@@ -63,11 +63,12 @@ static NET_BUF_POOL(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 #define TX_BUF_COUNT 6
 #endif
 
-static struct nano_fifo avail_acl_tx;
+static struct k_fifo avail_acl_tx;
+
 static NET_BUF_POOL(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE,
 		    &avail_acl_tx, NULL, BT_BUF_USER_DATA_MIN);
 
-static struct nano_fifo tx_queue;
+static struct k_fifo tx_queue;
 
 #define H4_CMD 0x01
 #define H4_ACL 0x02
@@ -356,7 +357,7 @@ DEVICE_INIT(hci_uart, "hci_uart", &hci_uart_init, NULL, NULL,
 void main(void)
 {
 	/* incoming events and data from the controller */
-	static struct nano_fifo rx_queue;
+	static struct k_fifo rx_queue;
 	int err;
 
 	SYS_LOG_DBG("Start");
@@ -365,8 +366,8 @@ void main(void)
 	net_buf_pool_init(cmd_tx_pool);
 	net_buf_pool_init(acl_tx_pool);
 	/* Initialize the FIFOs */
-	nano_fifo_init(&tx_queue);
-	nano_fifo_init(&rx_queue);
+	k_fifo_init(&tx_queue);
+	k_fifo_init(&rx_queue);
 
 	task_fiber_start(tx_fiber_stack, STACK_SIZE,
 			 (nano_fiber_entry_t)tx_fiber, 0, 0, 7, 0);

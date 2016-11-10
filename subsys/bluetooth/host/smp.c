@@ -240,7 +240,7 @@ static struct bt_smp_br bt_smp_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 /* Pool for outgoing LE signaling packets, MTU is 65 */
-static struct nano_fifo smp_buf;
+static struct k_fifo smp_buf;
 static NET_BUF_POOL(smp_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(65), &smp_buf, NULL,
 		    BT_BUF_USER_DATA_MIN);

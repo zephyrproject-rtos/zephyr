@@ -94,7 +94,7 @@ struct bt_conn {
 	struct net_buf		*rx;
 
 	/* Queue for outgoing ACL data */
-	struct nano_fifo	tx_queue;
+	struct k_fifo		tx_queue;
 
 	/* L2CAP channels */
 	void			*channels;
@@ -179,7 +179,7 @@ void bt_conn_security_changed(struct bt_conn *conn);
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 /* Prepare a PDU to be sent over a connection */
-struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve);
+struct net_buf *bt_conn_create_pdu(struct k_fifo *fifo, size_t reserve);
 
 /* Initialize connection management */
 int bt_conn_init(void);

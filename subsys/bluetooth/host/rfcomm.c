@@ -54,13 +54,13 @@
 static struct bt_rfcomm_server *servers;
 
 /* Pool for outgoing RFCOMM control packets, min MTU is 23 */
-static struct nano_fifo rfcomm_session;
+static struct k_fifo rfcomm_session;
 static NET_BUF_POOL(rfcomm_session_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_RFCOMM_BUF_SIZE(RFCOMM_MIN_MTU), &rfcomm_session, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
 /* Pool for dummy buffers to wake up the tx fibers */
-static struct nano_fifo dummy;
+static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
@@ -307,7 +307,7 @@ static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
 	session->dlcs = NULL;
 }
 
-struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo)
+struct net_buf *bt_rfcomm_create_pdu(struct k_fifo *fifo)
 {
 	/* Length in RFCOMM header can be 2 bytes depending on length of user
 	 * data
@@ -564,7 +564,7 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR);
 
-	nano_fifo_init(&dlc->tx_queue);
+	k_fifo_init(&dlc->tx_queue);
 	fiber_start(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_fiber,
 		    (int)dlc, 0, 7, 0);
 

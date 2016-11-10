@@ -55,7 +55,7 @@ static const uint8_t debug_public_key[64] = {
 };
 #endif
 
-static struct nano_fifo ecc_queue;
+static struct k_fifo ecc_queue;
 static bool ecc_queue_ready;
 static int (*drv_send)(struct net_buf *buf);
 static uint32_t private_key[8];
@@ -210,7 +210,7 @@ static void ecc_queue_init(void)
 	mask = irq_lock();
 
 	if (!ecc_queue_ready) {
-		nano_fifo_init(&ecc_queue);
+		k_fifo_init(&ecc_queue);
 		ecc_queue_ready = true;
 	}
 
@@ -224,7 +224,7 @@ static void ecc_task(void)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = nano_task_fifo_get(&ecc_queue, TICKS_UNLIMITED);
+		buf = k_fifo_get(&ecc_queue, K_FOREVER);
 
 		switch (bt_hci_get_cmd_opcode(buf)) {
 		case BT_HCI_OP_LE_P256_PUBLIC_KEY:

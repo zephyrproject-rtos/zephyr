@@ -68,7 +68,7 @@ struct bt_attr_data {
 };
 
 /* Pool for incoming ATT packets, MTU is 23 */
-static struct nano_fifo prep_data;
+static struct k_fifo prep_data;
 static NET_BUF_POOL(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
 		    CONFIG_BLUETOOTH_ATT_MTU, &prep_data, NULL,
 		    sizeof(struct bt_attr_data));
@@ -82,7 +82,7 @@ struct bt_att {
 	sys_slist_t		reqs;
 	struct nano_delayed_work timeout_work;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	struct nano_fifo	prep_queue;
+	struct k_fifo		prep_queue;
 #endif
 };
 
@@ -91,7 +91,7 @@ static struct bt_att bt_req_pool[CONFIG_BLUETOOTH_MAX_CONN];
 /*
  * Pool for outgoing ATT requests packets.
  */
-static struct nano_fifo req_data;
+static struct k_fifo req_data;
 static NET_BUF_POOL(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
 		    &req_data, NULL, BT_BUF_USER_DATA_MIN);
@@ -102,7 +102,7 @@ static NET_BUF_POOL(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
  * may only be freed after a response is received which would never happen if
  * the RX fiber is waiting a buffer causing a deadlock.
  */
-static struct nano_fifo rsp_data;
+static struct k_fifo rsp_data;
 static NET_BUF_POOL(rsp_pool, 1,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
 		    &rsp_data, NULL, BT_BUF_USER_DATA_MIN);
@@ -1285,7 +1285,7 @@ static uint8_t att_prep_write_rsp(struct bt_att *att, uint16_t handle,
 	}
 
 	/* Store buffer in the outstanding queue */
-	nano_fifo_put(&att->prep_queue, data.buf);
+	k_fifo_put(&att->prep_queue, data.buf);
 
 	/* Generate response */
 	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_RSP, 0);
@@ -1332,7 +1332,7 @@ static uint8_t att_exec_write_rsp(struct bt_att *att, uint8_t flags)
 	struct net_buf *buf;
 	uint8_t err = 0;
 
-	while ((buf = nano_fifo_get(&att->prep_queue, TICKS_NONE))) {
+	while ((buf = k_fifo_get(&att->prep_queue, K_NO_WAIT))) {
 		struct bt_attr_data *data = net_buf_user_data(buf);
 
 		/* Just discard the data if an error was set */
@@ -1816,7 +1816,7 @@ static void att_reset(struct bt_att *att)
 	struct net_buf *buf;
 
 	/* Discard queued buffers */
-	while ((buf = nano_fifo_get(&att->prep_queue, TICKS_NONE))) {
+	while ((buf = k_fifo_get(&att->prep_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 #endif
@@ -1874,7 +1874,7 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	nano_fifo_init(&att->prep_queue);
+	k_fifo_init(&att->prep_queue);
 #endif
 
 	ch->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
