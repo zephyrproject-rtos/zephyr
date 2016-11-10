@@ -1448,8 +1448,8 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 			 * page 375:
 			 *
 			 * If an LTK is not available, the service request
-			 * shall be rejected with the error code “Insufficient
-			 * Authentication”.
+			 * shall be rejected with the error code 'Insufficient
+			 * Authentication'.
 			 * Note: When the link is not encrypted, the error code
 			 * "Insufficient Authentication" does not indicate that
 			 * MITM protection is required.
@@ -1462,11 +1462,11 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 			 * If an authenticated pairing is required but only an
 			 * unauthenticated pairing has occurred and the link is
 			 * currently encrypted, the service request shall be
-			 * rejected with the error code “Insufficient
-			 * Authentication.”
+			 * rejected with the error code 'Insufficient
+			 * Authentication'.
 			 * Note: When unauthenticated pairing has occurred and
 			 * the link is currently encrypted, the error code
-			 * “Insufficient Authentication” indicates that MITM
+			 * 'Insufficient Authentication' indicates that MITM
 			 * protection is required.
 			 */
 			sec = BT_SECURITY_HIGH;
@@ -1477,8 +1477,8 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 			 * If LE Secure Connections authenticated pairing is
 			 * required but LE legacy pairing has occurred and the
 			 * link is currently encrypted, the service request
-			 * shall be rejected with the error code “Insufficient
-			 * Authentication”.
+			 * shall be rejected with the error code ''Insufficient
+			 * Authentication'.
 			 */
 			sec = BT_SECURITY_FIPS;
 		} else {
