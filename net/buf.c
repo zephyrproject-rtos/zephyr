@@ -102,7 +102,7 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 	NET_BUF_DBG("fifo %p reserve %u", fifo, reserve_head);
 
 	buf = net_buf_get_timeout(fifo, reserve_head, TICKS_NONE);
-	if (buf || sys_execution_context_type_get() == NANO_CTX_ISR) {
+	if (buf || k_is_in_isr()) {
 		return buf;
 	}
 

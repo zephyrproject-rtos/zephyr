@@ -21,9 +21,9 @@
 void nano_fifo_init(struct nano_fifo *fifo) {}
 void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail) {}
 
-nano_context_type_t sys_execution_context_type_get(void)
+int k_is_in_isr(void)
 {
-	return NANO_CTX_FIBER;
+	return 0;
 }
 
 void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout)
