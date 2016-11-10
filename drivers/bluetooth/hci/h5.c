@@ -97,9 +97,9 @@ static bool reliable_packet(uint8_t type)
 static struct h5 {
 	struct net_buf		*rx_buf;
 
-	struct nano_fifo	tx_queue;
-	struct nano_fifo	rx_queue;
-	struct nano_fifo	unack_queue;
+	struct k_fifo		tx_queue;
+	struct k_fifo		rx_queue;
+	struct k_fifo		unack_queue;
 
 	uint8_t			tx_win;
 	uint8_t			tx_ack;
@@ -134,7 +134,7 @@ static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 #define CONFIG_BLUETOOTH_SIGNAL_COUNT	2
 #define SIG_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
 		      CONFIG_BLUETOOTH_MAX_SIG_LEN)
-static struct nano_fifo h5_sig;
+static struct k_fifo h5_sig;
 static NET_BUF_POOL(signal_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE,
 		    &h5_sig, NULL, 0);
 
@@ -341,10 +341,10 @@ static void retx_timeout(struct nano_work *work)
 	BT_DBG("unack_queue_len %u", unack_queue_len);
 
 	if (unack_queue_len) {
-		struct nano_fifo tmp_queue;
+		struct k_fifo tmp_queue;
 		struct net_buf *buf;
 
-		nano_fifo_init(&tmp_queue);
+		k_fifo_init(&tmp_queue);
 
 		/* Queue to temperary queue */
 		while ((buf = net_buf_get_timeout(&h5.tx_queue, 0,
@@ -703,19 +703,19 @@ static void h5_init(void)
 	h5.tx_win = 4;
 
 	/* TX fiber */
-	nano_fifo_init(&h5.tx_queue);
+	k_fifo_init(&h5.tx_queue);
 	fiber_start(tx_stack, sizeof(tx_stack), (nano_fiber_entry_t)tx_fiber,
 		    0, 0, 7, 0);
 
 	/* RX fiber */
 	net_buf_pool_init(signal_pool);
 
-	nano_fifo_init(&h5.rx_queue);
+	k_fifo_init(&h5.rx_queue);
 	fiber_start(rx_stack, sizeof(rx_stack), (nano_fiber_entry_t)rx_fiber,
 		    0, 0, 7, 0);
 
 	/* Unack queue */
-	nano_fifo_init(&h5.unack_queue);
+	k_fifo_init(&h5.unack_queue);
 
 	/* Init delayed work */
 	nano_delayed_work_init(&ack_work, ack_timeout);

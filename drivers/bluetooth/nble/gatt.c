@@ -39,12 +39,12 @@
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 /* Pool for incoming ATT packets */
-static struct nano_fifo prep_data;
+static struct k_fifo prep_data;
 static NET_BUF_POOL(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
 		    BLE_GATT_MTU_SIZE, &prep_data, NULL,
 		    sizeof(struct nble_gatts_write_evt));
 
-static struct nano_fifo queue;
+static struct k_fifo queue;
 #endif
 
 struct nble_gatt_service {
@@ -1432,7 +1432,7 @@ static int32_t prep_write_evt(const struct nble_gatts_write_evt *ev,
 	memcpy(net_buf_user_data(buf), ev, sizeof(*ev));
 	memcpy(net_buf_add(buf, len), data, len);
 
-	nano_fifo_put(&queue, buf);
+	k_fifo_put(&queue, buf);
 
 	return 0;
 #else
@@ -1513,13 +1513,13 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 		return;
 	}
 
-	while ((buf = nano_fifo_get(&queue, TICKS_NONE))) {
+	while ((buf = k_fifo_get(&queue, TICKS_NONE))) {
 		struct nble_gatts_write_evt *ev = net_buf_user_data(buf);
 		const struct bt_gatt_attr *attr = ev->attr;
 
 		/* Skip buffer for other connections */
 		if (ev->conn_handle != evt->conn_handle) {
-			nano_fifo_put(&queue, buf);
+			k_fifo_put(&queue, buf);
 			continue;
 		}
 
@@ -1584,7 +1584,7 @@ void bt_gatt_init(void)
 	BT_DBG("");
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	nano_fifo_init(&queue);
+	k_fifo_init(&queue);
 	net_buf_pool_init(prep_pool);
 #endif
 }
@@ -1603,7 +1603,7 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
-	while ((buf = nano_fifo_get(&queue, TICKS_NONE))) {
+	while ((buf = k_fifo_get(&queue, TICKS_NONE))) {
 		net_buf_unref(buf);
 	}
 #endif

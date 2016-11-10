@@ -57,17 +57,17 @@ struct ipc_uart_header {
 #define NBLE_RX_BUF_COUNT	10
 #define NBLE_BUF_SIZE		384
 
-static struct nano_fifo rx;
+static struct k_fifo rx;
 static NET_BUF_POOL(rx_pool, NBLE_RX_BUF_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
 
-static struct nano_fifo tx;
+static struct k_fifo tx;
 static NET_BUF_POOL(tx_pool, NBLE_TX_BUF_COUNT, NBLE_BUF_SIZE, &tx, NULL, 0);
 
 static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 static struct device *nble_dev;
 
-static struct nano_fifo rx_queue;
+static struct k_fifo rx_queue;
 
 static void rx_fiber(void)
 {
@@ -219,7 +219,7 @@ int nble_open(void)
 	BT_DBG("");
 
 	/* Initialize receive queue and start rx_fiber */
-	nano_fifo_init(&rx_queue);
+	k_fifo_init(&rx_queue);
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t)rx_fiber, 0, 0, 7, 0);
 
