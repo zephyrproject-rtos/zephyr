@@ -145,7 +145,7 @@ static void recv_fiber(int unused0, int unused1)
 				BT_ERR("Cannot allocate Num Complete");
 			}
 
-			fiber_yield();
+			k_yield();
 		}
 
 		if (node_rx) {
@@ -188,7 +188,7 @@ static void recv_fiber(int unused0, int unused1)
 			node_rx->hdr.onion.next = 0;
 			radio_rx_mem_release(&node_rx);
 
-			fiber_yield();
+			k_yield();
 		} else {
 			k_sem_take(&sem_recv, K_FOREVER);
 		}

@@ -86,7 +86,7 @@ static void rx_fiber(void)
 		/* Make sure we don't hog the CPU if the rx_queue never
 		 * gets empty.
 		 */
-		fiber_yield();
+		k_yield();
 	}
 }
 
