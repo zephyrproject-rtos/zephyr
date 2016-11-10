@@ -66,7 +66,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 {
 	PR_EXC("Fault! EXC #%d, Thread: %p, instr @ 0x%" PRIx32 "\n",
 	       fault,
-	       sys_thread_self_get(),
+	       k_current_get(),
 	       esf->pc);
 
 #if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
