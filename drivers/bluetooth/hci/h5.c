@@ -211,7 +211,7 @@ static void process_unack(void)
 
 	while (number_removed) {
 		struct net_buf *buf = net_buf_get_timeout(&h5.unack_queue, 0,
-							  TICKS_NONE);
+							  K_NO_WAIT);
 
 		if (!buf) {
 			BT_ERR("Unack queue is empty");
@@ -348,13 +348,13 @@ static void retx_timeout(struct nano_work *work)
 
 		/* Queue to temperary queue */
 		while ((buf = net_buf_get_timeout(&h5.tx_queue, 0,
-						  TICKS_NONE))) {
+						  K_NO_WAIT))) {
 			net_buf_put(&tmp_queue, buf);
 		}
 
 		/* Queue unack packets to the beginning of the queue */
 		while ((buf = net_buf_get_timeout(&h5.unack_queue, 0,
-						  TICKS_NONE))) {
+						  K_NO_WAIT))) {
 			/* include also packet type */
 			net_buf_push(buf, sizeof(uint8_t));
 			net_buf_put(&h5.tx_queue, buf);
@@ -363,7 +363,7 @@ static void retx_timeout(struct nano_work *work)
 		}
 
 		/* Queue saved packets from temp queue */
-		while ((buf = net_buf_get_timeout(&tmp_queue, 0, TICKS_NONE))) {
+		while ((buf = net_buf_get_timeout(&tmp_queue, 0, K_NO_WAIT))) {
 			net_buf_put(&h5.tx_queue, buf);
 		}
 	}
@@ -501,7 +501,7 @@ static void bt_uart_isr(struct device *unused)
 			case HCI_3WIRE_LINK_PKT:
 			case HCI_3WIRE_ACK_PKT:
 				h5.rx_buf = net_buf_get_timeout(&h5_sig, 0,
-								TICKS_NONE);
+								K_NO_WAIT);
 				if (!h5.rx_buf) {
 					BT_WARN("No available signal buffers");
 					h5_reset_rx();
@@ -612,8 +612,7 @@ static void tx_fiber(void)
 			fiber_sleep(10);
 			break;
 		case ACTIVE:
-			buf = net_buf_get_timeout(&h5.tx_queue, 0,
-						  TICKS_UNLIMITED);
+			buf = net_buf_get_timeout(&h5.tx_queue, 0, K_FOREVER);
 			type = h5_get_type(buf);
 
 			h5_send(buf->data, type, buf->len);
@@ -643,7 +642,7 @@ static void rx_fiber(void)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&h5.rx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&h5.rx_queue, 0, K_FOREVER);
 
 		hexdump("=> ", buf->data, buf->len);
 

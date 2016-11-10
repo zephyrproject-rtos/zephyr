@@ -2728,8 +2728,7 @@ static void hci_cmd_tx_fiber(void)
 
 		/* Get next command - wait if necessary */
 		BT_DBG("calling net_buf_get_timeout");
-		buf = net_buf_get_timeout(&bt_dev.cmd_tx_queue, 0,
-					  TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&bt_dev.cmd_tx_queue, 0, K_FOREVER);
 		bt_dev.ncmd = 0;
 
 		/* Clear out any existing sent command */
@@ -3594,7 +3593,7 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait");
-		buf = net_buf_get_timeout(&bt_dev.rx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&bt_dev.rx_queue, 0, K_FOREVER);
 
 		BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		       buf->len);

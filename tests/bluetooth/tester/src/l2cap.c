@@ -218,7 +218,7 @@ static void send_data(uint8_t *data, uint16_t len)
 	}
 
 	buf = net_buf_get_timeout(&data_fifo, BT_L2CAP_CHAN_SEND_RESERVE,
-				  TICKS_UNLIMITED);
+				  K_FOREVER);
 	if (!buf) {
 		SYS_LOG_ERR("Out of buffers");
 		goto fail;

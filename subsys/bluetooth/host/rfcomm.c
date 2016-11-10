@@ -479,7 +479,7 @@ static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
 	while (dlc->state == BT_RFCOMM_STATE_CONNECTED) {
 		/* Get next packet for dlc */
 		BT_DBG("Wait for buf %p", dlc);
-		buf = net_buf_get_timeout(&dlc->tx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&dlc->tx_queue, 0, K_FOREVER);
 		if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
 			net_buf_unref(buf);
 			break;
@@ -503,7 +503,7 @@ static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
 	BT_DBG("dlc %p disconnected - cleaning up", dlc);
 
 	/* Give back any allocated buffers */
-	while ((buf = net_buf_get_timeout(&dlc->tx_queue, 0, TICKS_NONE))) {
+	while ((buf = net_buf_get_timeout(&dlc->tx_queue, 0, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 

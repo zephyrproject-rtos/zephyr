@@ -246,7 +246,7 @@ static void tx_fiber(int unused0, int unused1)
 		struct net_buf *buf;
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get_timeout(&tx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&tx_queue, 0, K_FOREVER);
 		/* Pass buffer to the stack */
 		bt_send(buf);
 
@@ -377,7 +377,7 @@ void main(void)
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&rx_queue, 0, K_FOREVER);
 		err = h4_send(buf);
 		if (err) {
 			SYS_LOG_ERR("Failed to send");

@@ -1013,7 +1013,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Get next ACL packet for connection */
-		buf = net_buf_get_timeout(&conn->tx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&conn->tx_queue, 0, K_FOREVER);
 		if (conn->state != BT_CONN_CONNECTED) {
 			net_buf_unref(buf);
 			break;
@@ -1027,7 +1027,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	BT_DBG("handle %u disconnected - cleaning up", conn->handle);
 
 	/* Give back any allocated buffers */
-	while ((buf = net_buf_get_timeout(&conn->tx_queue, 0, TICKS_NONE))) {
+	while ((buf = net_buf_get_timeout(&conn->tx_queue, 0, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 

@@ -704,7 +704,7 @@ void main(void)
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&rx_queue, 0, K_FOREVER);
 
 		hexdump("<", buf->data, buf->len);
 

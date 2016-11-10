@@ -1926,7 +1926,7 @@ static int cmd_l2cap_send(int argc, char *argv[])
 	while (count--) {
 		buf = net_buf_get_timeout(&data_fifo,
 					  BT_L2CAP_CHAN_SEND_RESERVE,
-					  TICKS_UNLIMITED);
+					  K_FOREVER);
 
 		memcpy(net_buf_add(buf, len), buf_data, len);
 		ret = bt_l2cap_chan_send(&l2cap_chan.chan, buf);
