@@ -112,6 +112,7 @@ enum zoap_response_code {
 	ZOAP_RESPONSE_CODE_VALID = zoap_make_response_code(2, 3),
 	ZOAP_RESPONSE_CODE_CHANGED = zoap_make_response_code(2, 4),
 	ZOAP_RESPONSE_CODE_CONTENT = zoap_make_response_code(2, 5),
+	ZOAP_RESPONSE_CODE_CONTINUE = zoap_make_response_code(2, 31),
 	ZOAP_RESPONSE_CODE_BAD_REQUEST = zoap_make_response_code(4, 0),
 	ZOAP_RESPONSE_CODE_UNAUTHORIZED = zoap_make_response_code(4, 1),
 	ZOAP_RESPONSE_CODE_BAD_OPTION = zoap_make_response_code(4, 2),
