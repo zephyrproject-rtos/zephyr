@@ -277,7 +277,7 @@ void _k_thread_group_op(uint32_t groups, void (*func)(struct k_thread *))
 
 	__ASSERT(!_is_in_isr(), "");
 
-	k_sched_lock();
+	_sched_lock();
 
 	/* Invoke func() on each static thread in the specified group set. */
 
@@ -393,7 +393,7 @@ void _init_static_threads(void)
 		thread_data->thread->init_data = thread_data;
 	}
 
-	k_sched_lock();
+	_sched_lock();
 	/* Start all (legacy) threads that are part of the EXE task group */
 	_k_thread_group_op(K_TASK_GROUP_EXE, _k_thread_single_start);
 

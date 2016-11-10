@@ -70,7 +70,7 @@ SYS_INIT(init_dyamic_timers, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 ktimer_t task_timer_alloc(void)
 {
-	k_sched_lock();
+	_sched_lock();
 
 	/*
 	 * This conversion works only if timeout member
@@ -85,7 +85,7 @@ ktimer_t task_timer_alloc(void)
 void task_timer_free(ktimer_t timer)
 {
 	k_timer_stop(timer);
-	k_sched_lock();
+	_sched_lock();
 	sys_dlist_append(&timer_pool, &timer->timeout.node);
 	k_sched_unlock();
 }
@@ -105,7 +105,7 @@ void task_timer_start(ktimer_t timer, int32_t duration,
 
 bool _timer_pool_is_empty(void)
 {
-	k_sched_lock();
+	_sched_lock();
 
 	bool is_empty = sys_dlist_is_empty(&timer_pool);
 

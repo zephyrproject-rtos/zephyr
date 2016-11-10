@@ -193,14 +193,14 @@ static inline int _must_switch_threads(void)
 }
 
 /*
- * Application API.
+ * Internal equivalent to k_sched_lock so that it does not incur a function
+ * call penalty in the kernel guts.
  *
- * lock the scheduler: prevents another thread from preempting the current one
- * except if the current thread does an operation that causes it to pend
- *
- * Can be called recursively.
+ * Must be kept in sync until the header files are cleaned-up and the
+ * applications have access to the kernel internal deta structures (through
+ * APIs of course).
  */
-static inline void k_sched_lock(void)
+static inline void _sched_lock(void)
 {
 	__ASSERT(!_is_in_isr(), "");
 

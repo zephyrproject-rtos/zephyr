@@ -131,7 +131,7 @@ int k_mutex_lock(struct k_mutex *mutex, int32_t timeout)
 {
 	int new_prio, key;
 
-	k_sched_lock();
+	_sched_lock();
 
 	if (likely(mutex->lock_count == 0 || mutex->owner == _current)) {
 
@@ -217,7 +217,7 @@ void k_mutex_unlock(struct k_mutex *mutex)
 	__ASSERT(mutex->lock_count > 0, "");
 	__ASSERT(mutex->owner == _current, "");
 
-	k_sched_lock();
+	_sched_lock();
 
 	RECORD_STATE_CHANGE();
 

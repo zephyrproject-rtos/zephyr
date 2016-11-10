@@ -422,7 +422,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		return -EIO;
 	}
 
-	k_sched_lock();
+	_sched_lock();
 	irq_unlock(key);
 
 	/*
@@ -562,7 +562,7 @@ int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		return -EIO;
 	}
 
-	k_sched_lock();
+	_sched_lock();
 	irq_unlock(key);
 
 	num_bytes_read = _pipe_buffer_get(pipe, data, bytes_to_read);

@@ -420,6 +420,38 @@ extern void k_sched_time_slice_set(int32_t slice, int prio);
  */
 extern int k_is_in_isr(void);
 
+/*
+ * @brief Lock the scheduler
+ *
+ * Prevent another thread from preempting the current thread.
+ *
+ * @note If the thread does an operation that causes it to pend, it will still
+ * be context switched out.
+ *
+ * @note Similar to irq_lock, the scheduler lock state is tracked per-thread.
+ *
+ * This should be chosen over irq_lock when possible, basically when the data
+ * protected by it is not accessible from ISRs. However, the associated
+ * k_sched_unlock() is heavier to use than irq_unlock, so if the amount of
+ * processing is really small, irq_lock might be a better choice.
+ *
+ * Can be called recursively.
+ *
+ * @return N/A
+ */
+extern void k_sched_lock(void);
+
+/*
+ * @brief Unlock the scheduler
+ *
+ * Re-enable scheduling previously disabled by k_sched_lock(). Must be called
+ * an equal amount of times k_sched_lock() was called. Threads are rescheduled
+ * upon exit.
+ *
+ * @return N/A
+ */
+extern void k_sched_unlock(void);
+
 /**
  * @brief Set current thread's custom data.
  *

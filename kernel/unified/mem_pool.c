@@ -467,7 +467,7 @@ static void block_waiters_check(struct k_mem_pool *pool)
 
 void k_mem_pool_defrag(struct k_mem_pool *pool)
 {
-	k_sched_lock();
+	_sched_lock();
 
 	/* do complete defragmentation of memory pool (i.e. all block sets) */
 	defrag(pool, pool->nr_of_block_sets - 1, 0);
@@ -483,7 +483,7 @@ int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 	char *found_block;
 	int offset;
 
-	k_sched_lock();
+	_sched_lock();
 	/* locate block set to try allocating from */
 	offset = compute_block_set_index(pool, size);
 
@@ -529,7 +529,7 @@ void k_mem_pool_free(struct k_mem_block *block)
 	int offset;
 	struct k_mem_pool *pool = block->pool_id;
 
-	k_sched_lock();
+	_sched_lock();
 	/* determine block set that block belongs to */
 	offset = compute_block_set_index(pool, block->req_size);
 

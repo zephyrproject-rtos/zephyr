@@ -99,6 +99,16 @@ void _reschedule_threads(int key)
 	}
 }
 
+void k_sched_lock(void)
+{
+	__ASSERT(!_is_in_isr(), "");
+
+	atomic_inc(&_nanokernel.current->sched_locked);
+
+	K_DEBUG("scheduler locked (%p:%d)\n",
+		_current, _current->sched_locked);
+}
+
 void k_sched_unlock(void)
 {
 	__ASSERT(_nanokernel.current->sched_locked > 0, "");
