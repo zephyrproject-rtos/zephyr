@@ -521,15 +521,19 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	for (i = 0; i < num_handles; i++) {
 		uint16_t handle, count;
 		struct bt_conn *conn;
+		int key;
 
 		handle = sys_le16_to_cpu(evt->h[i].handle);
 		count = sys_le16_to_cpu(evt->h[i].count);
 
 		BT_DBG("handle %u count %u", handle, count);
 
+		key = irq_lock();
+
 		conn = bt_conn_lookup_handle(handle);
 		if (!conn) {
 			BT_ERR("No connection for handle %u", handle);
+			irq_unlock(key);
 			continue;
 		}
 
@@ -540,6 +544,8 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			       count, conn->pending_pkts);
 			conn->pending_pkts = 0;
 		}
+
+		irq_unlock(key);
 
 		while (count--) {
 			k_sem_give(bt_conn_get_pkts(conn));
@@ -2261,19 +2267,25 @@ static void hci_reset_complete(struct net_buf *buf)
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 {
-	struct net_buf *sent = bt_dev.sent_cmd;
+	struct net_buf *sent;
+	int key = irq_lock();
 
+	sent = bt_dev.sent_cmd;
 	if (!sent) {
+		irq_unlock(key);
 		return;
 	}
 
 	if (cmd(sent)->opcode != opcode) {
 		BT_ERR("Unexpected completion of opcode 0x%04x expected 0x%04x",
 		       opcode, cmd(sent)->opcode);
+		irq_unlock(key);
 		return;
 	}
 
 	bt_dev.sent_cmd = NULL;
+
+	irq_unlock(key);
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
 	if (cmd(sent)->sync) {
@@ -2296,6 +2308,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
 	uint8_t status;
+	int key;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2308,17 +2321,25 @@ static void hci_cmd_complete(struct net_buf *buf)
 
 	hci_cmd_done(opcode, status, buf);
 
-	if (evt->ncmd && !bt_dev.ncmd) {
-		/* Allow next command to be sent */
-		bt_dev.ncmd = 1;
-		k_sem_give(&bt_dev.ncmd_sem);
+	key = irq_lock();
+
+	if (!evt->ncmd || bt_dev.ncmd) {
+		irq_unlock(key);
+		return;
 	}
+
+	/* Allow next command to be sent */
+	bt_dev.ncmd = 1;
+	irq_unlock(key);
+
+	k_sem_give(&bt_dev.ncmd_sem);
 }
 
 static void hci_cmd_status(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_status *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
+	int key;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2326,11 +2347,18 @@ static void hci_cmd_status(struct net_buf *buf)
 
 	hci_cmd_done(opcode, evt->status, buf);
 
-	if (evt->ncmd && !bt_dev.ncmd) {
-		/* Allow next command to be sent */
-		bt_dev.ncmd = 1;
-		k_sem_give(&bt_dev.ncmd_sem);
+	key = irq_lock();
+
+	if (!evt->ncmd || bt_dev.ncmd) {
+		irq_unlock(key);
+		return;
 	}
+
+	/* Allow next command to be sent */
+	bt_dev.ncmd = 1;
+	irq_unlock(key);
+
+	k_sem_give(&bt_dev.ncmd_sem);
 }
 
 static int prng_reseed(struct tc_hmac_prng_struct *h)
@@ -3416,12 +3444,6 @@ int bt_send(struct net_buf *buf)
 int bt_recv(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr;
-
-#if defined(CONFIG_MICROKERNEL)
-	if (sys_execution_context_type_get() == NANO_CTX_TASK) {
-		return task_offload_to_fiber(bt_recv, buf);
-	}
-#endif /* CONFIG_MICROKERNEL */
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
