@@ -45,7 +45,7 @@ struct ss_spi_qmsi_runtime {
 	struct device *gpio_cs;
 #endif
 	device_sync_call_t sync;
-	struct nano_sem sem;
+	struct k_sem sem;
 	qm_ss_spi_config_t cfg;
 	int rc;
 	bool loopback;
@@ -155,13 +155,13 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 	qm_ss_spi_async_transfer_t *xfer;
 	int rc;
 
-	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+	k_sem_take(&context->sem, K_FOREVER);
 	if (pending_transfers[spi_id].dev) {
-		nano_sem_give(&context->sem);
+		k_sem_give(&context->sem);
 		return -EBUSY;
 	}
 	pending_transfers[spi_id].dev = dev;
-	nano_sem_give(&context->sem);
+	k_sem_give(&context->sem);
 
 	xfer = &pending_transfers[spi_id].xfer;
 
@@ -385,8 +385,8 @@ static int ss_spi_qmsi_init(struct device *dev)
 	context->gpio_cs = gpio_cs_init(spi_config);
 #endif
 	device_sync_call_init(&context->sync);
-	nano_sem_init(&context->sem);
-	nano_sem_give(&context->sem);
+	k_sem_init(&context->sem, 0, UINT_MAX);
+	k_sem_give(&context->sem);
 
 	dev->driver_api = &ss_spi_qmsi_api;
 
