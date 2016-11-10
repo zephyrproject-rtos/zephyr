@@ -60,9 +60,8 @@ static struct nano_fifo tx_queue;
 static char __noinit __stack tx_fiber_stack[1024];
 static nano_thread_id_t tx_fiber_id;
 
-/* Buffer for SLIP encoded data */
-/* FIXME size */
-static uint8_t slip_buf[1000];
+/* Buffer for SLIP encoded data for the worst case */
+static uint8_t slip_buf[1 + 2 * CONFIG_NET_NBUF_DATA_SIZE];
 
 /* ieee802.15.4 device */
 static struct ieee802154_radio_api *radio_api;
