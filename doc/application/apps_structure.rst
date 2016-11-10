@@ -129,3 +129,37 @@ Example Makefile
    BOARD ?= qemu_x86
    CONF_FILE ?= prj.conf
    include ${ZEPHYR_BASE}/Makefile.inc
+
+Support for building third-party library code
+=============================================
+
+When building library code it is important that both application and library
+code targets the same Application Binary Interface (ABI). On most architectures
+there are compiler flags that control the ABI targeted, making it important
+that both libraries and applications have certain compiler flags in common. It
+may also be useful for glue code to have access to Zephyr kernel header files.
+
+To make it easier to integrate third-party components, the Zephyr project
+build system includes a special build target, ``outputexports``, that takes a
+number of critical variables from the Zephyr project build system and copies
+them into :file:`Makefile.export`. This allows the critical variables to be
+included by wrapper code for use in a third-party build system.
+
+The following variables are available for use within the third-party build:
+
+* ``CROSS_COMPILE``, together with related convenience variables to call the
+  cross-tools directly (including ``AR``, ``AS``, ``CC``, ``CXX``, ``CPP``
+  and ``LD``).
+
+* ``ARCH`` and ``BOARD``, together with several variables that identify the
+  Zephyr kernel version.
+
+* ``KBUILD_CFLAGS``, ``NOSTDINC_FLAGS`` and ``ZEPHYRINCLUDE`` all of which
+  should normally be added, in that order, to ``CFLAGS`` (or
+  ``CXXFLAGS``).
+
+* All kconfig variables, allowing features of the library code to be
+  enabled/disabled automatically based on the Zephyr kernel configuration.
+
+:file:`samples/static_lib` is a sample project that demonstrates
+some of these features.
