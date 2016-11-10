@@ -74,30 +74,21 @@ static struct in_addr in4addr_my = MY_IP4ADDR;
 
 #define MY_PORT 4242
 
-#if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000
-char __noinit __stack fiberStack[STACKSIZE];
-#endif
+char __noinit __stack thread_stack[STACKSIZE];
 
-/* How many tics to wait for a network packet */
-#if 1
-#define WAIT_TICKS (sys_clock_ticks_per_sec)
-#else
-#define WAIT_TICKS TICKS_UNLIMITED
-#endif
-
-static struct nano_sem quit_lock;
+static struct k_sem quit_lock;
 
 static inline void quit(void)
 {
-	nano_sem_give(&quit_lock);
+	k_sem_give(&quit_lock);
 }
 
 static inline void init_app(void)
 {
 	NET_INFO("Run echo server");
 
-	nano_sem_init(&quit_lock);
+	k_sem_init(&quit_lock, 0, UINT_MAX);
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_setup();
@@ -458,7 +449,7 @@ void receive(void)
 	setup_udp_recv(udp_recv4, udp_recv6);
 #endif
 
-	nano_sem_take(&quit_lock, TICKS_UNLIMITED);
+	k_sem_take(&quit_lock, K_FOREVER);
 
 	NET_INFO("Stopping...");
 
@@ -493,10 +484,7 @@ void main(void)
 	ipss_advertise();
 #endif
 
-#if defined(CONFIG_MICROKERNEL)
-	receive();
-#else
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-			(nano_fiber_entry_t)receive, 0, 0, 7, 0);
-#endif
+	k_thread_spawn(&thread_stack[0], STACKSIZE,
+		       (k_thread_entry_t)receive,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

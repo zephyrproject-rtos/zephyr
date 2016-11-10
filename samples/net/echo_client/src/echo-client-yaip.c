@@ -99,9 +99,9 @@ static int ipsum_len;
 static struct in6_addr in6addr_my = MY_IP6ADDR;
 static struct in6_addr in6addr_peer = PEER_IP6ADDR;
 static struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
-static struct nano_sem recv_ipv6;
+static struct k_sem recv_ipv6;
 static int expecting_ipv6;
-static char __noinit __stack fiber_ipv6_stack[STACKSIZE];
+static char __noinit __stack ipv6_stack[STACKSIZE];
 
 #endif /* CONFIG_NET_IPV6 */
 
@@ -114,19 +114,16 @@ static char __noinit __stack fiber_ipv6_stack[STACKSIZE];
 
 static struct in_addr in4addr_my = MY_IP4ADDR;
 static struct in_addr in4addr_peer = PEER_IP4ADDR;
-static struct nano_sem recv_ipv4;
+static struct k_sem recv_ipv4;
 static int expecting_ipv4;
-static char __noinit __stack fiber_ipv4_stack[STACKSIZE];
+static char __noinit __stack ipv4_stack[STACKSIZE];
 
 #endif /* CONFIG_NET_IPV4 */
 
 #define MY_PORT 8484
 #define PEER_PORT 4242
 
-#define WAIT_TIME  2
-#define WAIT_TICKS (WAIT_TIME * sys_clock_ticks_per_sec)
-
-#define WAIT_TINY_TICKS 50
+#define WAIT_TIME  (2 * MSEC_PER_SEC)
 
 static inline void init_app(void)
 {
@@ -154,14 +151,14 @@ static inline void init_app(void)
 
 	net_if_ipv6_maddr_add(net_if_get_default(), &in6addr_mcast);
 
-	nano_sem_init(&recv_ipv6);
+	k_sem_init(&recv_ipv6, 0, UINT_MAX);
 #endif
 
 #if defined(CONFIG_NET_IPV4)
 	net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my,
 			     NET_ADDR_MANUAL, 0);
 
-	nano_sem_init(&recv_ipv4);
+	k_sem_init(&recv_ipv4, 0, UINT_MAX);
 #endif
 }
 
@@ -247,9 +244,9 @@ static inline bool get_context(struct net_context **udp_recv4,
 }
 
 static inline bool wait_reply(const char *name,
-			      struct nano_sem *sem)
+			      struct k_sem *sem)
 {
-	if (nano_sem_take(sem, WAIT_TICKS)) {
+	if (k_sem_take(sem, WAIT_TIME)) {
 		return true;
 	}
 
@@ -410,7 +407,7 @@ static void udp_ipv4_received(struct net_context *context,
 			      void *user_data)
 {
 	sa_family_t family = net_nbuf_family(buf);
-	struct nano_sem *recv = user_data;
+	struct k_sem *recv = user_data;
 
 	if (family == AF_INET) {
 		if (expecting_ipv4 != net_nbuf_appdatalen(buf)) {
@@ -424,7 +421,7 @@ static void udp_ipv4_received(struct net_context *context,
 
 		net_nbuf_unref(buf);
 
-		nano_sem_give(recv);
+		k_sem_give(recv);
 	}
 }
 
@@ -447,7 +444,7 @@ static void send_ipv4(struct net_context *udp)
 				expecting_ipv4);
 		}
 
-		fiber_yield();
+		k_yield();
 	} while (1);
 }
 #endif
@@ -498,7 +495,7 @@ static void udp_ipv6_received(struct net_context *context,
 			      void *user_data)
 {
 	sa_family_t family = net_nbuf_family(buf);
-	struct nano_sem *recv = user_data;
+	struct k_sem *recv = user_data;
 
 	if (family == AF_INET6) {
 		if (expecting_ipv6 != net_nbuf_appdatalen(buf)) {
@@ -512,7 +509,7 @@ static void udp_ipv6_received(struct net_context *context,
 
 		net_nbuf_unref(buf);
 
-		nano_sem_give(recv);
+		k_sem_give(recv);
 	}
 }
 
@@ -535,7 +532,7 @@ static void send_ipv6(struct net_context *udp)
 				expecting_ipv6);
 		}
 
-		fiber_yield();
+		k_yield();
 	} while (1);
 }
 #endif
@@ -565,14 +562,14 @@ void main(void)
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	task_fiber_start(fiber_ipv4_stack, STACKSIZE,
-			 (nano_fiber_entry_t)send_ipv4, (int)udp_send4,
-			 0, 7, 0);
+	k_thread_spawn(ipv4_stack, STACKSIZE,
+		       (k_thread_entry_t)send_ipv4,
+		       udp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-	task_fiber_start(fiber_ipv6_stack, STACKSIZE,
-			 (nano_fiber_entry_t)send_ipv6, (int)udp_send6,
-			 0, 7, 0);
+	k_thread_spawn(ipv6_stack, STACKSIZE,
+		       (k_thread_entry_t)send_ipv6,
+		       udp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 }
