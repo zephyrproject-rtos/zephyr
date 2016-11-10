@@ -24,7 +24,6 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
@@ -55,8 +54,8 @@
 #endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT	(5 * sys_clock_ticks_per_sec)
-#define RPA_TIMEOUT (CONFIG_BLUETOOTH_RPA_TIMEOUT * sys_clock_ticks_per_sec)
+#define CONN_UPDATE_TIMEOUT	(5 * MSEC_PER_SEC)
+#define RPA_TIMEOUT (CONFIG_BLUETOOTH_RPA_TIMEOUT * MSEC_PER_SEC)
 
 /* Stacks for the fibers */
 static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
@@ -431,12 +430,12 @@ static int le_set_rpa(void)
 	}
 
 	/* restart timer even if failed to set new RPA */
-	nano_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
+	k_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
 
 	return err;
 }
 
-static void rpa_timeout(struct nano_work *work)
+static void rpa_timeout(struct k_work *work)
 {
 	BT_DBG("");
 
@@ -664,8 +663,8 @@ static void update_conn_param(struct bt_conn *conn)
 	 * The Peripheral device should not perform a Connection Parameter
 	 * Update procedure within 5 s after establishing a connection.
 	 */
-	nano_delayed_work_submit(&conn->le.update_work,
-				 conn->role == BT_HCI_ROLE_MASTER ? TICKS_NONE :
+	k_delayed_work_submit(&conn->le.update_work,
+				 conn->role == BT_HCI_ROLE_MASTER ? K_NO_WAIT :
 				 CONN_UPDATE_TIMEOUT);
 }
 
@@ -3573,7 +3572,7 @@ static int bt_init(void)
 		return err;
 	}
 
-	nano_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
+	k_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
 #endif
 
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);

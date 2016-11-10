@@ -129,7 +129,7 @@ struct bt_dev {
 	uint8_t			irk[16];
 
 	/* Work used for RPA rotation */
-	struct nano_delayed_work rpa_update;
+	struct k_delayed_work rpa_update;
 #endif
 };
 
