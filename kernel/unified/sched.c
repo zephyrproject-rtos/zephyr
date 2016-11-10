@@ -363,3 +363,8 @@ void k_sched_time_slice_set(int32_t duration_in_ms, int prio)
 	_time_slice_prio_ceiling = prio;
 }
 #endif /* CONFIG_TIMESLICING */
+
+int k_is_preempt_thread(void)
+{
+	return !_is_in_isr() && _is_preempt(_current);
+}

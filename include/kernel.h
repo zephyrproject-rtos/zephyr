@@ -420,6 +420,20 @@ extern void k_sched_time_slice_set(int32_t slice, int prio);
  */
 extern int k_is_in_isr(void);
 
+/**
+ * @brief Determine if code is running in a preemptible thread.
+ *
+ * Returns a 'true' value if these conditions are all met:
+ *
+ * - the code is not running in an ISR
+ * - the thread's priority is in the preemptible range
+ * - the thread has not locked the scheduler
+ *
+ * @return 0 if invoked by either an ISR or a cooperative thread.
+ * @return Non-zero if invoked by a preemptible thread.
+ */
+extern int k_is_preempt_thread(void);
+
 /*
  * @brief Lock the scheduler
  *
