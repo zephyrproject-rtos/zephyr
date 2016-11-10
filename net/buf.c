@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
-#include <toolchain.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stddef.h>
@@ -50,7 +48,7 @@
 #define NET_BUF_ASSERT(cond)
 #endif /* CONFIG_NET_BUF_DEBUG */
 
-struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
+struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
 				    size_t reserve_head, int32_t timeout)
 {
 	struct net_buf *buf, *frag;
@@ -58,7 +56,7 @@ struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 	NET_BUF_DBG("fifo %p reserve %u timeout %d", fifo, reserve_head,
 		    timeout);
 
-	buf = nano_fifo_get(fifo, timeout);
+	buf = k_fifo_get(fifo, timeout);
 	if (!buf) {
 		NET_BUF_ERR("Failed to get free buffer");
 		return NULL;
@@ -82,7 +80,7 @@ struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 
 	/* Get any fragments belonging to this buffer */
 	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
-		frag->frags = nano_fifo_get(fifo, TICKS_NONE);
+		frag->frags = k_fifo_get(fifo, K_NO_WAIT);
 		NET_BUF_ASSERT(frag->frags);
 
 		/* The fragments flag is only for FIFO-internal usage */
@@ -95,20 +93,20 @@ struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 	return buf;
 }
 
-struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
+struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head)
 {
 	struct net_buf *buf;
 
 	NET_BUF_DBG("fifo %p reserve %u", fifo, reserve_head);
 
-	buf = net_buf_get_timeout(fifo, reserve_head, TICKS_NONE);
+	buf = net_buf_get_timeout(fifo, reserve_head, K_NO_WAIT);
 	if (buf || k_is_in_isr()) {
 		return buf;
 	}
 
 	NET_BUF_WARN("Low on buffers. Waiting (fifo %p)", fifo);
 
-	return net_buf_get_timeout(fifo, reserve_head, TICKS_UNLIMITED);
+	return net_buf_get_timeout(fifo, reserve_head, K_FOREVER);
 }
 
 void net_buf_reserve(struct net_buf *buf, size_t reserve)
@@ -119,7 +117,7 @@ void net_buf_reserve(struct net_buf *buf, size_t reserve)
 	buf->data = buf->__buf + reserve;
 }
 
-void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf)
+void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 {
 	struct net_buf *tail;
 
@@ -127,7 +125,7 @@ void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf)
 		tail->flags |= NET_BUF_FRAGS;
 	}
 
-	nano_fifo_put_list(fifo, buf, tail);
+	k_fifo_put_list(fifo, buf, tail);
 }
 
 void net_buf_unref(struct net_buf *buf)
@@ -144,7 +142,7 @@ void net_buf_unref(struct net_buf *buf)
 		if (buf->destroy) {
 			buf->destroy(buf);
 		} else {
-			nano_fifo_put(buf->free, buf);
+			k_fifo_put(buf->free, buf);
 		}
 
 		buf = frags;

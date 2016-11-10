@@ -109,7 +109,7 @@ static void net_buf_test_1(void)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
-		buf = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+		buf = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
 		assert_not_null(buf, "Failed to get buffer");
 		bufs[i] = buf;
 	}
@@ -128,19 +128,19 @@ static void net_buf_test_2(void)
 	struct nano_fifo fifo;
 	int i;
 
-	head = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+	head = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
 	assert_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
 	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
-		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
 		assert_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
 
 	nano_fifo_init(&fifo);
 	net_buf_put(&fifo, head);
-	head = net_buf_get_timeout(&fifo, 0, TICKS_NONE);
+	head = net_buf_get_timeout(&fifo, 0, K_NO_WAIT);
 
 	destroy_called = 0;
 	net_buf_unref(head);
@@ -175,12 +175,12 @@ static void net_buf_test_3(void)
 	struct nano_sem sema;
 	int i;
 
-	head = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+	head = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
 	assert_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
 	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
-		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
 		assert_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
