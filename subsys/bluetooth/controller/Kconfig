@@ -13,6 +13,7 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
 	int
+	default 6 if BLUETOOTH_HCI_RAW
 	default 1
 	range 1 10
 	help
@@ -21,6 +22,7 @@ config BLUETOOTH_CONTROLLER_RX_BUFFERS
 config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	prompt "Number of Tx buffers"
 	int
+	default 7 if BLUETOOTH_HCI_RAW
 	default 1
 	range 1 10
 	help
