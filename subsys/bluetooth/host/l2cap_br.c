@@ -22,7 +22,6 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -61,10 +60,10 @@
 
 #define L2CAP_BR_PSM_SDP	0x0001
 
-#define L2CAP_BR_INFO_TIMEOUT		SECONDS(4)
-#define L2CAP_BR_CFG_TIMEOUT		SECONDS(4)
-#define L2CAP_BR_DISCONN_TIMEOUT	SECONDS(1)
-#define L2CAP_BR_CONN_TIMEOUT		SECONDS(40)
+#define L2CAP_BR_INFO_TIMEOUT		(4 * MSEC_PER_SEC)
+#define L2CAP_BR_CFG_TIMEOUT		(4 * MSEC_PER_SEC)
+#define L2CAP_BR_DISCONN_TIMEOUT	(1 * MSEC_PER_SEC)
+#define L2CAP_BR_CONN_TIMEOUT		(40 * MSEC_PER_SEC)
 
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
@@ -216,12 +215,12 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
 
 	/* Cancel ongoing work */
-	nano_delayed_work_cancel(&chan->rtx_work);
+	k_delayed_work_cancel(&chan->rtx_work);
 
 	atomic_clear(BR_CHAN(chan)->flags);
 }
 
-static void l2cap_br_rtx_timeout(struct nano_work *work)
+static void l2cap_br_rtx_timeout(struct k_work *work)
 {
 	struct bt_l2cap_br_chan *chan = BR_CHAN_RTX(work);
 
@@ -260,7 +259,7 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	nano_delayed_work_init(&chan->rtx_work, l2cap_br_rtx_timeout);
+	k_delayed_work_init(&chan->rtx_work, l2cap_br_rtx_timeout);
 	bt_l2cap_chan_add(conn, chan, destroy);
 
 	return true;
@@ -280,7 +279,7 @@ static uint8_t l2cap_br_get_ident(void)
 }
 
 static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
-				   struct net_buf *buf, uint32_t ticks)
+				   struct net_buf *buf, int32_t timeout)
 {
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
 	 *
@@ -291,10 +290,10 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	if (ticks) {
-		nano_delayed_work_submit(&chan->chan.rtx_work, ticks);
+	if (timeout) {
+		k_delayed_work_submit(&chan->chan.rtx_work, timeout);
 	} else {
-		nano_delayed_work_cancel(&chan->chan.rtx_work);
+		k_delayed_work_cancel(&chan->chan.rtx_work);
 	}
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf);
@@ -383,7 +382,7 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		 * Release RTX timer since got the response & there's pending
 		 * command request.
 		 */
-		nano_delayed_work_cancel(&l2cap->chan.chan.rtx_work);
+		k_delayed_work_cancel(&l2cap->chan.chan.rtx_work);
 	}
 
 	if (buf->len < sizeof(*rsp)) {
@@ -856,7 +855,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	/* Release RTX work since got the response */
-	nano_delayed_work_cancel(&chan->rtx_work);
+	k_delayed_work_cancel(&chan->rtx_work);
 
 	/*
 	 * TODO: handle other results than success and parse response data if
@@ -1199,7 +1198,7 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
 				      L2CAP_FLAG_SIG_INFO_PENDING)) {
 		/* Cancel RTX work on signal channel */
-		nano_delayed_work_cancel(&chan->rtx_work);
+		k_delayed_work_cancel(&chan->rtx_work);
 	}
 }
 
@@ -1384,7 +1383,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	/* Release RTX work since got the response */
-	nano_delayed_work_cancel(&chan->rtx_work);
+	k_delayed_work_cancel(&chan->rtx_work);
 
 	if (chan->state != BT_L2CAP_CONNECT) {
 		BT_DBG("Invalid channel %p state %s", chan,
@@ -1401,8 +1400,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_BR_PENDING:
-		nano_delayed_work_submit(&chan->rtx_work,
-					 L2CAP_BR_CONN_TIMEOUT);
+		k_delayed_work_submit(&chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
 		break;
 	default:
 		l2cap_br_chan_cleanup(chan);
