@@ -157,7 +157,7 @@ static uint8_t usb_dw_ep_is_enabled(uint8_t ep)
 
 static inline void usb_dw_udelay(uint32_t us)
 {
-	sys_thread_busy_wait(us);
+	k_busy_wait(us);
 }
 
 static int usb_dw_reset(void)
