@@ -200,7 +200,8 @@ __csSet:
 	movl	$_interrupt_stack, %esp
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#if defined(CONFIG_SYS_POWER_DEEP_SLEEP) && \
+             !defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
 	/*
 	 * Invoke _sys_soc_resume_from_deep_sleep() hook to handle resume from
 	 * deep sleep. It should first check whether system is recovering from

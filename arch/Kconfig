@@ -58,6 +58,15 @@ config SYS_POWER_DEEP_SLEEP_SUPPORTED
 	help
 	This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
 	configuration option.
+
+config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
+	# Hidden
+	bool
+	default n
+	help
+	This option signifies that the target has options of bootloaders
+	that support context restore upon resume from deep sleep
+
 #
 # End hidden PM feature configs
 #

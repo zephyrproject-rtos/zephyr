@@ -397,6 +397,16 @@ config BOOTLOADER_UNKNOWN
 	at build time which method is to be used. When this option is enabled
 	the board may have to do extra work to ensure a proper startup.
 
+config BOOTLOADER_CONTEXT_RESTORE
+	bool
+	prompt "Boot loader has context restore support"
+	default y
+	depends on SYS_POWER_DEEP_SLEEP && BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
+	help
+	This option signifies that the target has a bootloader
+	that restores CPU context upon resuming from deep sleep
+	power state.
+
 config REBOOT
 	bool "Reboot functionality"
 	default n
