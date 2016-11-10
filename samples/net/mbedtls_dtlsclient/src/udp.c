@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
+#include <net/net_core.h>
+#include <net/net_context.h>
+#include <net/yaip/nbuf.h>
+#include <net/net_if.h>
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
@@ -21,143 +26,131 @@
 #include "udp_cfg.h"
 #include "udp.h"
 
-#include <net/ip_buf.h>
-#include <net/net_core.h>
-#include <net/net_socket.h>
+static struct in_addr client_addr = CLIENT_IP_ADDR;
+static struct in_addr server_addr = SERVER_IP_ADDR;
 
-#if !defined(CONFIG_MBEDTLS_CFG_FILE)
-#include "mbedtls/config.h"
-#else
-#include CONFIG_MBEDTLS_CFG_FILE
-#endif
+static void udp_received(struct net_context *context,
+			 struct net_buf *buf, int status, void *user_data)
+{
+	ARG_UNUSED(context);
 
-#include "mbedtls/ssl.h"
-
-uip_ipaddr_t uip_hostaddr = { {CLIENT_IPADDR0, CLIENT_IPADDR1,
-			       CLIENT_IPADDR2, CLIENT_IPADDR3}
-};
-
-uip_ipaddr_t uip_netmask = { {NETMASK0, NETMASK1, NETMASK2, NETMASK3}
-};
-
-#define INET_FAMILY		AF_INET
+	struct udp_context *ctx = user_data;
+	ctx->rx_nbuf = buf;
+}
 
 int udp_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
-	struct net_buf *nbuf;
-	uint8_t *ptr;
-	int rc = 0;
+	struct net_context *udp_ctx;
+	struct net_buf *send_buf;
+	struct sockaddr_in dst_addr;
+	int rc, len;
 
-	nbuf = ip_buf_get_tx(ctx->net_ctx);
+	udp_ctx = ctx->net_ctx;
 
-	printk("\nin udp TX\n");
-	if (nbuf == NULL) {
-		printk("in udp TX !nbuf\n");
-		return -EINVAL;
+	send_buf = net_nbuf_get_tx(udp_ctx);
+	if (!send_buf) {
+		printk("cannot create buf\n");
+		return -EIO;
 	}
 
-	ptr = net_buf_add(nbuf, size);
-	memcpy(ptr, buf, size);
-	ip_buf_appdatalen(nbuf) = size;
+	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf);
+	if (!rc) {
+		printk("cannot write buf\n");
+		return -EIO;
+	}
 
-	do {
-		fiber_sleep(10);
-		rc = net_send(nbuf);
-		fiber_sleep(10);
-		if (rc >= 0) {
-			return size;
-		}
-		switch (rc) {
-		case -EINPROGRESS:
-			printk("in udp TX inpro\n");
-			break;
-		case -EAGAIN:
-		case -ECONNRESET:
-			printk("in udp TX again\n");
-			break;
-		default:
-			ip_buf_unref(nbuf);
-			printk("in udp TX ERROR!!\n");
-			return -EIO;
-		}
-	} while (0);
+	net_ipaddr_copy(&dst_addr.sin_addr, &server_addr);
+	dst_addr.sin_family = AF_INET;
+	dst_addr.sin_port = htons(SERVER_PORT);
 
-	ip_buf_unref(nbuf);
-	return 0;
+	len = net_buf_frags_len(send_buf);
+	k_sleep(UDP_TX_TIMEOUT);
+
+	rc = net_context_sendto(send_buf, (struct sockaddr *)&dst_addr,
+				sizeof(struct sockaddr_in),
+				NULL, K_FOREVER,
+				NULL, NULL);
+
+	if (rc < 0) {
+		printk("Cannot send IPv4 data to peer (%d)\n", rc);
+		net_nbuf_unref(send_buf);
+		return -EIO;
+	} else {
+		return len;
+	}
 }
 
 int udp_rx(void *context, unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
-	struct net_buf *nbuf;
-	int8_t *ptr;
+	uint8_t *ptr;
+	int pos = 0;
+	int len;
+	struct net_buf *rx_buf;
 	int rc, read_bytes;
 
-	printk("\nin udp RX size = %d\n", (int)size);
-	if (ctx->rx_nbuf == NULL) {
-		fiber_sleep(10);
-		nbuf = net_receive(ctx->net_ctx, UDP_RX_TIMEOUT);
-		fiber_sleep(10);
-		rc = -EIO;
-		if (nbuf != NULL) {
-			read_bytes = ip_buf_appdatalen(nbuf);
-			printk("\nin udp RX size = %d read = %d\n", (int)size,
-			       read_bytes);
-			if (read_bytes > size) {
-				memcpy(buf, ip_buf_appdata(nbuf), size);
-				ctx->rx_nbuf = nbuf;
-				ctx->remaining = read_bytes - size;
-				return size;
-			} else {
-				memcpy(buf, ip_buf_appdata(nbuf), read_bytes);
-				rc = read_bytes;
-			}
-			ip_buf_unref(nbuf);
+	rc = net_context_recv(ctx->net_ctx, udp_received, K_FOREVER, ctx);
+	if (rc != 0) {
+		return 0;
+	}
+	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
+
+	ptr = net_nbuf_appdata(ctx->rx_nbuf);
+	rx_buf = ctx->rx_nbuf->frags;
+	len = rx_buf->len - (ptr - rx_buf->data);
+
+	while (rx_buf) {
+		memcpy(buf + pos, ptr, len);
+		pos += len;
+		rx_buf = rx_buf->frags;
+		if (!rx_buf) {
+			break;
 		}
-	} else {
-		ptr = ip_buf_appdata(ctx->rx_nbuf);
-		read_bytes = ip_buf_appdatalen(ctx->rx_nbuf) - ctx->remaining;
-		ptr += read_bytes;
-		if (ctx->remaining > size) {
-			memcpy(buf, ptr, size);
-			ctx->remaining -= size;
-			rc = size;
-		} else {
-			read_bytes =
-			    size < ctx->remaining ? size : ctx->remaining;
-			memcpy(buf, ptr, read_bytes);
-			ip_buf_unref(ctx->rx_nbuf);
-			ctx->remaining = 0;
-			ctx->rx_nbuf = NULL;
-			rc = read_bytes;
-		}
+		ptr = rx_buf->data;
+		len = rx_buf->len;
 	}
 
+	if (read_bytes != pos) {
+		return -EIO;
+	}
+	rc = read_bytes;
+	net_nbuf_unref(ctx->rx_nbuf);
+	ctx->remaining = 0;
+	ctx->rx_nbuf = NULL;
 	return rc;
 }
 
 int udp_init(struct udp_context *ctx)
 {
-	static struct in_addr server_addr = SERVER_IP_ADDR;
-	static struct in_addr client_addr = CLIENT_IP_ADDR;
-	static struct net_addr server;
-	static struct net_addr client;
+	struct net_context *udp_ctx = { 0 };
+	struct sockaddr_in my_addr4 = { 0 };
+	int rc;
 
-	server.in_addr = server_addr;
-	server.family = AF_INET;
+	net_ipaddr_copy(&my_addr4.sin_addr, &client_addr);
+	my_addr4.sin_family = AF_INET;
+	my_addr4.sin_port = htons(CLIENT_PORT);
 
-	client.in_addr = client_addr;
-	client.family = AF_INET;
+	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &udp_ctx);
+	if (rc < 0) {
+		printk("Cannot get network context for IPv4 UDP (%d)", rc);
+		return -EIO;
+	}
+
+	rc = net_context_bind(udp_ctx, (struct sockaddr *)&my_addr4,
+			      sizeof(struct sockaddr_in));
+	if (rc < 0) {
+		printk("Cannot bind IPv4 UDP port %d (%d)", CLIENT_PORT, rc);
+		goto error;
+	}
 
 	ctx->rx_nbuf = NULL;
 	ctx->remaining = 0;
+	ctx->net_ctx = udp_ctx;
 
-	ctx->net_ctx = net_context_get(IPPROTO_UDP,
-				       &server, SERVER_PORT,
-				       &client, CLIENT_PORT);
-	if (ctx->net_ctx == NULL) {
-		return -EINVAL;
-	}
 	return 0;
+
+error:
+	net_context_put(udp_ctx);
+	return -EINVAL;
 }

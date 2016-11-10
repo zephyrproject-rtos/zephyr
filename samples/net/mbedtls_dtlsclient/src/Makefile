@@ -16,11 +16,4 @@
 
 ccflags-$(CONFIG_NET_UIP) +=-I${ZEPHYR_BASE}/net/ip
 
-ifeq ($(CONFIG_NET_YAIP), y)
-obj-y += dtls_client.o udp_native.o
-else
-ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki
-ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os/lib
-ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os
 obj-y += dtls_client.o udp.o
-endif

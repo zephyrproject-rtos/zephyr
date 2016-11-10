@@ -35,8 +35,7 @@
 #define SERVER_PORT	4433
 #define CLIENT_PORT	8484
 
-#define UDP_RX_TIMEOUT 20
-#define UDP_TX_TIMEOUT 10
+#define UDP_TX_TIMEOUT 100 /* Timeout in milliseconds */
 
 #define CLIENT_IP_ADDR          { { { CLIENT_IPADDR0, CLIENT_IPADDR1,   \
 				      CLIENT_IPADDR2, CLIENT_IPADDR3 } } }
