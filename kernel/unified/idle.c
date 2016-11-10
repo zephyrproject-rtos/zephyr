@@ -41,6 +41,10 @@ void __attribute__((weak)) _sys_soc_resume(void)
 {
 }
 
+void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
+{
+}
+
 /**
  *
  * @brief Indicate that kernel is idling in tickless mode

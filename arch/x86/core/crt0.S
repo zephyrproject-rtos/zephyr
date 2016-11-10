@@ -49,7 +49,7 @@
 #endif
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
-	GTEXT(_sys_soc_resume)
+	GTEXT(_sys_soc_resume_from_deep_sleep)
 #endif
 
 
@@ -180,14 +180,14 @@ __csSet:
 	 * the ISR stack size are some multiple of STACK_ALIGN, which
 	 * is at least 4.
 	 *
-	 * This is also used to call the _sys_soc_resume() routine
-	 * to avoid memory corruption if the system is resuming from
-	 * deep sleep. It is important that _sys_soc_resume() restores
-	 * the stack pointer to what it was at deep sleep before
+	 * This is also used to call the _sys_soc_resume_from_deep_sleep()
+	 * routine to avoid memory corruption if the system is resuming from
+	 * deep sleep. It is important that _sys_soc_resume_from_deep_sleep()
+	 * restores the stack pointer to what it was at deep sleep before
          * enabling interrupts.  This is necessary to avoid
 	 * interfering with interrupt handler use of this stack.
-	 * If it is a cold boot then _sys_soc_resume() should not do
-	 * anything and must return immediately.
+	 * If it is a cold boot then _sys_soc_resume_from_deep_sleep() should
+	 * not do anything and must return immediately.
 	 */
 #ifdef CONFIG_INIT_STACKS
 	movl $0xAAAAAAAA, %eax
@@ -202,8 +202,8 @@ __csSet:
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	/*
-	 * Invoke _sys_soc_resume() hook to handle resume from deep sleep.
-	 * It should first check whether system is recovering from
+	 * Invoke _sys_soc_resume_from_deep_sleep() hook to handle resume from
+	 * deep sleep. It should first check whether system is recovering from
 	 * deep sleep state. If it is, then this function should restore
 	 * states and resume at the point system went to deep sleep.
 	 * In this case this function will never return.
@@ -213,7 +213,7 @@ __csSet:
 	 * return and execution falls through to cold boot path.
 	 */
 
-	call	_sys_soc_resume
+	call _sys_soc_resume_from_deep_sleep
 
 #endif
 

@@ -53,21 +53,30 @@ static inline void _sys_soc_disable_wake_event_notification(void)
 }
 
 /**
- * @brief Hook function to notify exit from low power state
+ * @brief Hook function to notify exit from deep sleep
  *
  * The purpose of this function is to notify exit from
- * low power states. The implementation of this function can vary
+ * deep sleep. The implementation of this function can vary
  * depending on the soc specific boot flow.
  *
- * In the case of recovery from soc low power states like deep sleep,
- * this function would switch cpu context to the execution point at the time
- * system entered the soc low power state.
+ * This function would switch cpu context to the execution point at the time
+ * system entered deep sleep power state. Some implementations may not require
+ * use of this function e.g. the BSP or boot loader may do the context switch.
  *
  * In boot flows where this function gets called even at cold boot, the
  * function should return immediately.
  *
- * Wake event notification:
- * This function would also be called from the ISR context of the event
+ */
+void _sys_soc_resume_from_deep_sleep(void);
+
+/**
+ * @brief Hook function to notify exit from kernel idling after PM operations
+ *
+ * This function would notify exit from kernel idling if a corresponding
+ * _sys_soc_suspend() notification was handled and did not return
+ * SYS_PM_NOT_HANDLED.
+ *
+ * This function would be called from the ISR context of the event
  * that caused exit from the low power state. This will be called immediately
  * after interrupts are enabled. This is called to give a chance to do
  * any operations before the kernel would switch tasks or processes nested
@@ -79,8 +88,6 @@ static inline void _sys_soc_disable_wake_event_notification(void)
  * notification. Alternatively _sys_soc_disable_wake_event_notification() can
  * be called in _sys_soc_suspend to disable this notification.
  *
- * @note A dedicated function may be created in future to notify wake
- * events, instead of overloading this one.
  */
 void _sys_soc_resume(void);
 
