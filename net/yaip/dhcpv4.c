@@ -115,13 +115,13 @@ static void dhcpv4_timeout(struct k_work *work);
  */
 static inline uint32_t get_dhcpv4_timeout(void)
 {
-	return 5 * sys_clock_ticks_per_sec; /* TODO Should be between 1-10 */
+	return 5 * MSEC_PER_SEC; /* TODO Should be between 1-10 */
 }
 
 static inline uint32_t get_dhcpv4_renewal_time(struct net_if *iface)
 {
 	return (iface->dhcpv4.renewal_time ? iface->dhcpv4.renewal_time :
-		iface->dhcpv4.lease_time / 2) * sys_clock_ticks_per_sec;
+		iface->dhcpv4.lease_time / 2) * MSEC_PER_SEC;
 }
 
 static inline void unset_dhcpv4_on_iface(struct net_if *iface)
