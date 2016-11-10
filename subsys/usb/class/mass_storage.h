@@ -93,8 +93,8 @@ struct CSW {
 #define MSC_REQUEST_RESET          0xFF
 #define MSC_REQUEST_GET_MAX_LUN    0xFE
 
-#define FIBER_OP_READ_QUEUED		1
-#define FIBER_OP_WRITE_QUEUED		3
-#define FIBER_OP_WRITE_DONE		4
+#define THREAD_OP_READ_QUEUED		1
+#define THREAD_OP_WRITE_QUEUED		3
+#define THREAD_OP_WRITE_DONE		4
 
 #endif /* __MASS_STORAGE_H__ */

@@ -53,11 +53,11 @@
 #define MAX_PACKET  MASS_STORAGE_BULK_EP_MPS
 
 #define BLOCK_SIZE	512
-#define DISK_FIBER_STACK_SZ	512
-#define DISK_FIBER_PRIO	-5
+#define DISK_THREAD_STACK_SZ	512
+#define DISK_THREAD_PRIO	-5
 
-static volatile int fiber_op;
-static char __stack mass_fiber_stack[DISK_FIBER_STACK_SZ];
+static volatile int thread_op;
+static char __stack mass_thread_stack[DISK_THREAD_STACK_SZ];
 static struct k_sem disk_wait_sem;
 static volatile uint32_t defered_wr_sz;
 
@@ -382,7 +382,7 @@ static bool readCapacity(void)
 	return true;
 }
 
-static void fiber_memory_read_done(void)
+static void thread_memory_read_done(void)
 {
 	uint32_t n;
 
@@ -419,8 +419,8 @@ static void memoryRead(void)
 
 	/* we read an entire block */
 	if (!(addr % BLOCK_SIZE)) {
-		fiber_op = FIBER_OP_READ_QUEUED;
-		SYS_LOG_DBG("Signal fiber for %d", (addr/BLOCK_SIZE));
+		thread_op = THREAD_OP_READ_QUEUED;
+		SYS_LOG_DBG("Signal thread for %d", (addr/BLOCK_SIZE));
 		k_sem_give(&disk_wait_sem);
 		return;
 	}
@@ -661,7 +661,7 @@ static void memoryWrite(uint8_t *buf, uint16_t size)
 	if (!((addr + size) % BLOCK_SIZE)) {
 		if (!(disk_access_status() & DISK_STATUS_WR_PROTECT)) {
 			SYS_LOG_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
-			fiber_op = FIBER_OP_WRITE_QUEUED;  /* write_queued */
+			thread_op = THREAD_OP_WRITE_QUEUED;  /* write_queued */
 			defered_wr_sz = size;
 			k_sem_give(&disk_wait_sem);
 			return;
@@ -722,7 +722,7 @@ static void mass_storage_bulk_out(uint8_t ep,
 		break;
 	}
 
-	if (fiber_op != FIBER_OP_WRITE_QUEUED) {
+	if (thread_op != THREAD_OP_WRITE_QUEUED) {
 		usb_ep_read_continue(ep);
 	} else {
 		SYS_LOG_DBG("> BO not clearing NAKs yet");
@@ -730,7 +730,7 @@ static void mass_storage_bulk_out(uint8_t ep,
 
 }
 
-static void fiber_memory_write_done(void)
+static void thread_memory_write_done(void)
 {
 	uint32_t size = defered_wr_sz;
 
@@ -744,7 +744,7 @@ static void fiber_memory_write_done(void)
 		sendCSW();
 	}
 
-	fiber_op = FIBER_OP_WRITE_DONE;
+	thread_op = THREAD_OP_WRITE_DONE;
 
 	usb_ep_read_continue(EPBULK_OUT);
 }
@@ -865,33 +865,33 @@ static struct usb_cfg_data mass_storage_config = {
 	.endpoint = mass_ep_data
 };
 
-static void mass_fiber_main(int arg1, int unused)
+static void mass_thread_main(int arg1, int unused)
 {
 
 	ARG_UNUSED(unused);
 
 	while (1) {
 		k_sem_take(&disk_wait_sem, K_FOREVER);
-		SYS_LOG_DBG("sem %d", fiber_op);
+		SYS_LOG_DBG("sem %d", thread_op);
 
-		switch (fiber_op) {
-		case FIBER_OP_READ_QUEUED:
+		switch (thread_op) {
+		case THREAD_OP_READ_QUEUED:
 			if (disk_access_read(page, (addr/BLOCK_SIZE), 1)) {
 				SYS_LOG_ERR("!! Disk Read Error %d !",
 						addr/BLOCK_SIZE);
 			}
 
-			fiber_memory_read_done();
+			thread_memory_read_done();
 			break;
-		case FIBER_OP_WRITE_QUEUED:
+		case THREAD_OP_WRITE_QUEUED:
 			if (disk_access_write(page, (addr/BLOCK_SIZE), 1)) {
 				SYS_LOG_ERR("!!!!! Disk Write Error %d !!!!!",
 					    addr/BLOCK_SIZE);
 			}
-			fiber_memory_write_done();
+			thread_memory_write_done();
 			break;
 		default:
-			SYS_LOG_ERR("XXXXXX fiber_op  %d ! XXXXX", fiber_op);
+			SYS_LOG_ERR("XXXXXX thread_op  %d ! XXXXX", thread_op);
 		}
 	}
 }
@@ -959,10 +959,10 @@ static int mass_storage_init(struct device *dev)
 
 	k_sem_init(&disk_wait_sem, 0, 1);
 
-	/* Start a fiber to offload disk ops */
-	fiber_start(mass_fiber_stack, DISK_FIBER_STACK_SZ,
-		    mass_fiber_main, 0, 0,
-		    DISK_FIBER_PRIO, 0);
+	/* Start a thread to offload disk ops */
+	k_thread_spawn(mass_thread_stack, DISK_THREAD_STACK_SZ,
+		       (k_thread_entry_t)mass_thread_main, NULL, NULL, NULL,
+			DISK_THREAD_PRIO, 0, 0);
 
 	return 0;
 }
