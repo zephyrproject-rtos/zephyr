@@ -19,7 +19,7 @@
 #include <device.h>
 #include <drivers/ioapic.h>
 #include <init.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <rtc.h>
 #include <power.h>
 #include <soc.h>
