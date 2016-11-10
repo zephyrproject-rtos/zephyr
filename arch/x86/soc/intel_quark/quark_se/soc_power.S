@@ -25,6 +25,7 @@ GDATA(_pm_save_esp)
 
 GTEXT(_sys_soc_save_cpu_context)
 GTEXT(_sys_soc_restore_cpu_context)
+GTEXT(_sys_soc_resume_from_deep_sleep)
 
 SECTION_FUNC(TEXT, _sys_soc_save_cpu_context)
 	movl %esp, %eax			/* save ptr to return address */
@@ -64,4 +65,21 @@ SECTION_FUNC(TEXT, _sys_soc_restore_cpu_context)
 	xorl %eax, %eax
 	incl %eax
 	ret
+
+/*
+ * This is an example function to handle the deep sleep resume notification
+ * in the absence of bootloader context restore support.
+ *
+ * Bootloader in Intel Quark SE Microcontroller C1000 boards have
+ * context restore support and this would not be required.
+ *
+ * Disclaimer: This can be used for debug or development purposes. This is not
+ * a supported feature in Quark SE boards and to be used at one's own risk.
+ */
+SECTION_FUNC(TEXT, _sys_soc_resume_from_deep_sleep)
+	movl $CONFIG_BSP_SHARED_RAM_ADDR, %eax
+	cmpl $_sys_soc_restore_cpu_context, (%eax)
+	je _sys_soc_restore_cpu_context
+	ret
+
 #endif
