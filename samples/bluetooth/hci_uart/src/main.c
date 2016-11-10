@@ -326,7 +326,7 @@ void bt_controller_assert_handle(char *file, uint32_t line)
 	uart_poll_out(hci_uart_dev, line >> 24 & 0xff);
 
 	while (1) {
-	};
+	}
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER */
 
