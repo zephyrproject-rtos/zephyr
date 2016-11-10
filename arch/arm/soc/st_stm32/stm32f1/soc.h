@@ -32,13 +32,6 @@
 /* base address for where GPIO registers start */
 #define GPIO_PORTS_BASE       (GPIOA_BASE)
 
-/* FIXME: keep these defines until we enable STM32CUBE on this family */
-/* Then they will bre replaced by "USARTX_BASE" defines */
-/* UART */
-#define USART1_ADDR           (APB2PERIPH_BASE + 0x3800)
-#define USART2_ADDR           (APB1PERIPH_BASE + 0x4400)
-#define USART3_ADDR           (APB1PERIPH_BASE + 0x4800)
-
 #ifndef _ASMLANGUAGE
 
 #include <device.h>
