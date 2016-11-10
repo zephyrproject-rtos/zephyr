@@ -106,8 +106,8 @@ struct bt_conn {
 
 	bt_conn_state_t		state;
 
-	/* Handle allowing to cancel timeout fiber */
-	nano_thread_id_t timeout;
+	/* Handle allowing to cancel timeout thread */
+	k_tid_t			timeout;
 
 	union {
 		struct bt_conn_le	le;

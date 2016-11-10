@@ -57,9 +57,9 @@
 #define CONN_UPDATE_TIMEOUT	(5 * MSEC_PER_SEC)
 #define RPA_TIMEOUT (CONFIG_BLUETOOTH_RPA_TIMEOUT * MSEC_PER_SEC)
 
-/* Stacks for the fibers */
-static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
-static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
+/* Stacks for the threads */
+static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static BT_STACK_NOINIT(cmd_tx_thread_stack, 256);
 
 struct bt_dev bt_dev;
 
@@ -121,7 +121,7 @@ static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
  * This priority pool is to handle HCI events that must not be dropped
  * (currently this is Command Status, Command Complete and Number of
  * Complete Packets) if running low on buffers. Buffers from this pool are not
- * allowed to be passed to RX fiber and must be returned from bt_recv().
+ * allowed to be passed to RX thread and must be returned from bt_recv().
  */
 static struct k_fifo avail_prio_hci_evt;
 static NET_BUF_POOL(hci_evt_prio_pool, 1,
@@ -598,9 +598,9 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn->err = evt->reason;
 
 	/* Check stacks usage (no-ops if not enabled) */
-	stack_analyze("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack));
-	stack_analyze("cmd tx stack", cmd_tx_fiber_stack,
-		      sizeof(cmd_tx_fiber_stack));
+	stack_analyze("rx stack", rx_thread_stack, sizeof(rx_thread_stack));
+	stack_analyze("cmd tx stack", cmd_tx_thread_stack,
+		      sizeof(cmd_tx_thread_stack));
 	stack_analyze("conn tx stack", conn->stack, sizeof(conn->stack));
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
@@ -2714,7 +2714,7 @@ static void hci_event(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static void hci_cmd_tx_fiber(void)
+static void hci_cmd_tx_thread(void)
 {
 	BT_DBG("started");
 
@@ -3581,7 +3581,7 @@ static int bt_init(void)
 	return 0;
 }
 
-static void hci_rx_fiber(bt_ready_cb_t ready_cb)
+static void hci_rx_thread(bt_ready_cb_t ready_cb)
 {
 	struct net_buf *buf;
 
@@ -3652,15 +3652,17 @@ int bt_enable(bt_ready_cb_t cb)
 	k_sem_give(&bt_dev.ncmd_sem);
 #endif /* !CONFIG_BLUETOOTH_WAIT_NOP */
 
-	/* TX fiber */
+	/* TX thread */
 	k_fifo_init(&bt_dev.cmd_tx_queue);
-	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
-		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
+	k_thread_spawn(cmd_tx_thread_stack, sizeof(cmd_tx_thread_stack),
+		       (k_thread_entry_t)hci_cmd_tx_thread, NULL, NULL, NULL,
+		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	/* RX fiber */
+	/* RX thread */
 	k_fifo_init(&bt_dev.rx_queue);
-	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-		    (nano_fiber_entry_t)hci_rx_fiber, (int)cb, 0, 7, 0);
+	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
+		       (k_thread_entry_t)hci_rx_thread, cb, NULL, NULL,
+		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	if (!cb) {
 		return bt_init();

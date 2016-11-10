@@ -589,7 +589,7 @@ static int h5_queue(struct net_buf *buf)
 	return 0;
 }
 
-static void tx_fiber(void)
+static void tx_thread(void)
 {
 	BT_DBG("");
 
@@ -635,7 +635,7 @@ static void h5_set_txwin(uint8_t *conf)
 	conf[2] = h5.tx_win & 0x07;
 }
 
-static void rx_fiber(void)
+static void rx_thread(void)
 {
 	BT_DBG("");
 
@@ -701,17 +701,17 @@ static void h5_init(void)
 	h5.rx_state = START;
 	h5.tx_win = 4;
 
-	/* TX fiber */
+	/* TX thread */
 	k_fifo_init(&h5.tx_queue);
-	fiber_start(tx_stack, sizeof(tx_stack), (nano_fiber_entry_t)tx_fiber,
-		    0, 0, 7, 0);
+	k_thread_spawn(tx_stack, sizeof(tx_stack), (k_thread_entry_t)tx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	/* RX fiber */
+	/* RX thread */
 	net_buf_pool_init(signal_pool);
 
 	k_fifo_init(&h5.rx_queue);
-	fiber_start(rx_stack, sizeof(rx_stack), (nano_fiber_entry_t)rx_fiber,
-		    0, 0, 7, 0);
+	k_thread_spawn(rx_stack, sizeof(rx_stack), (k_thread_entry_t)rx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Unack queue */
 	k_fifo_init(&h5.unack_queue);

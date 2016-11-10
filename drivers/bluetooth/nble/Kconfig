@@ -67,11 +67,11 @@ config	BLUETOOTH_MAX_PAIRED
 	default 7
 
 config BLUETOOTH_RX_STACK_SIZE
-	int "Size of the receiving fiber stack"
+	int "Size of the receiving thread stack"
 	default 1024
 	range 1024 65536
 	help
-	  Size of the receiving fiber stack. This is the context from
+	  Size of the receiving thread stack. This is the context from
 	  which all event callbacks to the application occur. The
 	  default value is sufficient for basic operation, but if the
 	  application needs to do advanced things in its callbacks that

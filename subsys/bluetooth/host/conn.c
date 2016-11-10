@@ -1004,9 +1004,9 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	return send_frag(conn, buf, BT_ACL_CONT, false);
 }
 
-static void conn_tx_fiber(int arg1, int arg2)
+static void conn_tx_thread(void *p1, void *p2, void *p3)
 {
-	struct bt_conn *conn = (struct bt_conn *)arg1;
+	struct bt_conn *conn = p1;
 	struct net_buf *buf;
 
 	BT_DBG("Started for handle %u", conn->handle);
@@ -1060,11 +1060,12 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	return conn;
 }
 
-static void timeout_fiber(int arg1, int arg2)
+static void timeout_thread(void *p1, void *p2, void *p3)
 {
-	struct bt_conn *conn = (struct bt_conn *)arg1;
+	struct bt_conn *conn = p1;
 
-	ARG_UNUSED(arg2);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	conn->timeout = NULL;
 
@@ -1097,7 +1098,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		break;
 	case BT_CONN_CONNECT:
 		if (conn->timeout) {
-			fiber_delayed_start_cancel(conn->timeout);
+			k_thread_cancel(conn->timeout);
 			conn->timeout = NULL;
 
 			/* Drop the reference taken by timeout fiber */
@@ -1112,8 +1113,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
 		k_fifo_init(&conn->tx_queue);
-		fiber_start(conn->stack, sizeof(conn->stack), conn_tx_fiber,
-			    (int)bt_conn_ref(conn), 0, 7, 0);
+		k_thread_spawn(conn->stack, sizeof(conn->stack), conn_tx_thread,
+			    bt_conn_ref(conn), NULL, NULL, K_PRIO_COOP(7),
+			    0, K_NO_WAIT);
 
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
@@ -1165,11 +1167,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		}
 
 		/* Add LE Create Connection timeout */
-		conn->timeout = fiber_delayed_start(conn->stack,
-						    sizeof(conn->stack),
-						    timeout_fiber,
-						    (int)bt_conn_ref(conn),
-						    0, 7, 0, CONN_TIMEOUT);
+		conn->timeout = k_thread_spawn(conn->stack, sizeof(conn->stack),
+					       timeout_thread,
+					       bt_conn_ref(conn), NULL, NULL,
+					       K_PRIO_COOP(7), 0, CONN_TIMEOUT);
 		break;
 	case BT_CONN_DISCONNECT:
 		break;
@@ -1345,7 +1346,7 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 {
 	if (conn->timeout) {
-		fiber_delayed_start_cancel(conn->timeout);
+		k_thread_cancel(conn->timeout);
 		conn->timeout = NULL;
 
 		/* Drop the reference took by timeout fiber */

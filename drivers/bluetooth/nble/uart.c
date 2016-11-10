@@ -63,13 +63,13 @@ static NET_BUF_POOL(rx_pool, NBLE_RX_BUF_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
 static struct k_fifo tx;
 static NET_BUF_POOL(tx_pool, NBLE_TX_BUF_COUNT, NBLE_BUF_SIZE, &tx, NULL, 0);
 
-static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 static struct device *nble_dev;
 
 static struct k_fifo rx_queue;
 
-static void rx_fiber(void)
+static void rx_thread(void)
 {
 	BT_DBG("Started");
 
@@ -218,10 +218,11 @@ int nble_open(void)
 {
 	BT_DBG("");
 
-	/* Initialize receive queue and start rx_fiber */
+	/* Initialize receive queue and start rx_thread */
 	k_fifo_init(&rx_queue);
-	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-		    (nano_fiber_entry_t)rx_fiber, 0, 0, 7, 0);
+	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
+		       (k_thread_entry_t)rx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	uart_irq_rx_disable(nble_dev);
 	uart_irq_tx_disable(nble_dev);
