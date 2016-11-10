@@ -20,7 +20,6 @@
 #include <drivers/ioapic.h>
 #include <gpio.h>
 #include <init.h>
-#include <nanokernel.h>
 #include <sys_io.h>
 
 #include "qm_gpio.h"
@@ -39,7 +38,7 @@ struct gpio_qmsi_runtime {
 	sys_slist_t callbacks;
 	uint32_t pin_callbacks;
 #ifdef CONFIG_GPIO_QMSI_API_REENTRANCY
-	struct nano_sem sem;
+	struct k_sem sem;
 #endif /* CONFIG_GPIO_QMSI_API_REENTRANCY */
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
@@ -60,8 +59,8 @@ static void gpio_reentrancy_init(struct device *dev)
 		return;
 	}
 
-	nano_sem_init(RP_GET(dev));
-	nano_sem_give(RP_GET(dev));
+	k_sem_init(RP_GET(dev), 0, UINT_MAX);
+	k_sem_give(RP_GET(dev));
 }
 
 static void gpio_critical_region_start(struct device *dev)
@@ -70,7 +69,7 @@ static void gpio_critical_region_start(struct device *dev)
 		return;
 	}
 
-	nano_sem_take(RP_GET(dev), TICKS_UNLIMITED);
+	k_sem_take(RP_GET(dev), K_FOREVER);
 }
 
 static void gpio_critical_region_end(struct device *dev)
@@ -79,7 +78,7 @@ static void gpio_critical_region_end(struct device *dev)
 		return;
 	}
 
-	nano_sem_give(RP_GET(dev));
+	k_sem_give(RP_GET(dev));
 }
 
 static int gpio_qmsi_init(struct device *dev);
