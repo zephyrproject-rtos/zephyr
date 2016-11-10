@@ -1602,6 +1602,8 @@ extern void k_msgq_init(struct k_msgq *q, char *buffer,
  *
  * This routine sends a message to message queue @a q.
  *
+ * @note Can be called by ISRs.
+ *
  * @param q Address of the message queue.
  * @param data Pointer to the message.
  * @param timeout Waiting period to add the message (in milliseconds),
@@ -1618,6 +1620,8 @@ extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
  *
  * This routine receives a message from message queue @a q in a "first in,
  * first out" manner.
+ *
+ * @note Can be called by ISRs.
  *
  * @param q Address of the message queue.
  * @param data Address of area to hold the received message.

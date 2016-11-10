@@ -72,6 +72,8 @@ void k_msgq_init(struct k_msgq *q, char *buffer,
 
 int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 {
+	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
+
 	unsigned int key = irq_lock();
 	struct k_thread *pending_thread;
 	int result;
@@ -86,7 +88,7 @@ int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 			_set_thread_return_value(pending_thread, 0);
 			_abort_thread_timeout(pending_thread);
 			_ready_thread(pending_thread);
-			if (_must_switch_threads()) {
+			if (!_is_in_isr() && _must_switch_threads()) {
 				_Swap(key);
 				return 0;
 			}
@@ -117,6 +119,8 @@ int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 
 int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 {
+	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
+
 	unsigned int key = irq_lock();
 	struct k_thread *pending_thread;
 	int result;
@@ -146,7 +150,7 @@ int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
 			_set_thread_return_value(pending_thread, 0);
 			_abort_thread_timeout(pending_thread);
 			_ready_thread(pending_thread);
-			if (_must_switch_threads()) {
+			if (!_is_in_isr() && _must_switch_threads()) {
 				_Swap(key);
 				return 0;
 			}
