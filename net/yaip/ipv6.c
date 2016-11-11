@@ -1733,7 +1733,7 @@ static inline uint32_t remaining(struct k_delayed_work *work)
 static inline void handle_prefix_autonomous(struct net_buf *buf,
 			struct net_icmpv6_nd_opt_prefix_info *prefix_info)
 {
-	struct in6_addr addr = { 0 };
+	struct in6_addr addr = { };
 	struct net_if_addr *ifaddr;
 
 	/* Create IPv6 address using the given prefix and iid. We first

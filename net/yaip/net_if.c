@@ -223,7 +223,7 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 void net_if_start_dad(struct net_if *iface)
 {
 	struct net_if_addr *ifaddr;
-	struct in6_addr addr = { 0 };
+	struct in6_addr addr = { };
 
 	net_ipv6_addr_create_iid(&addr, &iface->link_addr);
 
