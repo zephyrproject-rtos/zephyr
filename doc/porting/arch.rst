@@ -388,7 +388,7 @@ expected to be implemented as part of an architecture port.
 
 * Atomic operators.
 
-  * If instructions do not exist for a give architecture,
+  * If instructions do not exist for a given architecture,
     a generic version that wraps :c:func:`irq_lock` or :c:func:`irq_unlock`
     around non-atomic operations exists. It is configured using the
     :option:`CONFIG_ATOMIC_OPERATIONS_C` Kconfig option.
