@@ -113,7 +113,7 @@ struct bt_dev {
 	struct k_fifo		rx_queue;
 
 	/* Queue for high priority HCI events which may unlock waiters
-	 * in other fibers. Such events include Number of Completed
+	 * in other threads. Such events include Number of Completed
 	 * Packets, as well as the Command Complete/Status events.
 	 */
 	struct k_fifo		rx_prio_queue;
@@ -187,7 +187,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
 
-/* The helper is only safe to be called from internal fibers as it's
+/* The helper is only safe to be called from internal threads as it's
  * not multi-threading safe
  */
 #if defined(CONFIG_BLUETOOTH_DEBUG)

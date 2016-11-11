@@ -97,9 +97,9 @@ static NET_BUF_POOL(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
 
 /*
  * Pool for ougoing ATT responses packets. This is necessary in order not to
- * block the RX fiber since otherwise req_pool would have be used but buffers
+ * block the RX thread since otherwise req_pool would have be used but buffers
  * may only be freed after a response is received which would never happen if
- * the RX fiber is waiting a buffer causing a deadlock.
+ * the RX thread is waiting a buffer causing a deadlock.
  */
 static struct k_fifo rsp_data;
 static NET_BUF_POOL(rsp_pool, 1,
@@ -1790,7 +1790,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	case BT_ATT_OP_PREPARE_WRITE_RSP:
 	case BT_ATT_OP_EXEC_WRITE_RSP:
 		/* Use a different buffer pool for responses as this is
-		 * usually sent from RX fiber it shall never block.
+		 * usually sent from RX thread it shall never block.
 		 */
 		buf = bt_l2cap_create_pdu(&rsp_data, 0);
 		break;

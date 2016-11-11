@@ -116,8 +116,8 @@ struct bt_conn {
 #endif
 	};
 
-	/* Stack for TX fiber and timeout fiber.
-	 * Since these fibers don't overlap, one stack can be used by
+	/* Stack for TX thread and timeout thread.
+	 * Since these threads don't overlap, one stack can be used by
 	 * both of them.
 	 */
 	BT_STACK(stack, 256);

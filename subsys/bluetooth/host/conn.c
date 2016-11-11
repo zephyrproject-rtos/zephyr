@@ -48,7 +48,7 @@ static struct k_fifo frag_buf;
 static NET_BUF_POOL(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), &frag_buf, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
-/* Pool for dummy buffers to wake up the tx fibers */
+/* Pool for dummy buffers to wake up the tx threads */
 static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
@@ -1101,7 +1101,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			k_thread_cancel(conn->timeout);
 			conn->timeout = NULL;
 
-			/* Drop the reference taken by timeout fiber */
+			/* Drop the reference taken by timeout thread */
 			bt_conn_unref(conn);
 		}
 		break;
@@ -1122,7 +1122,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		break;
 	case BT_CONN_DISCONNECTED:
 		/* Notify disconnection and queue a dummy buffer to wake
-		 * up and stop the tx fiber for states where it was
+		 * up and stop the tx thread for states where it was
 		 * running.
 		 */
 		if (old_state == BT_CONN_CONNECTED ||
@@ -1349,7 +1349,7 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 		k_thread_cancel(conn->timeout);
 		conn->timeout = NULL;
 
-		/* Drop the reference took by timeout fiber */
+		/* Drop the reference took by timeout thread */
 		bt_conn_unref(conn);
 	}
 
