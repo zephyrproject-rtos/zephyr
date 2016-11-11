@@ -114,4 +114,4 @@ static int fsl_frdm_k64f_pin_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(fsl_frdm_k64f_pin_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(fsl_frdm_k64f_pin_init, POST_KERNEL, CONFIG_PINMUX_INIT_PRIORITY);

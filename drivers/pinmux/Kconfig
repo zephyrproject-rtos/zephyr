@@ -37,12 +37,17 @@ config PINMUX_NAME
 config PINMUX_INIT_PRIORITY
 	int
 	prompt "Init priority"
-	default 60
+	default 45
 	depends on PINMUX
 	help
-	  Device driver initialization priority.
-	  The device needs to be initialized after all the devices it
-	  uses.
+	  Pinmux driver initialization priority.
+	  Pinmux driver almost certainly should be initialized before the
+	  rest of hardware devices (which may need specific pins already
+	  configured for them), and usually after generic GPIO drivers.
+	  Thus, its priority should be between KERNEL_INIT_PRIORITY_DEFAULT
+	  and KERNEL_INIT_PRIORITY_DEVICE. There are exceptions to this
+	  rule for particular boards. Don't change this value unless you
+	  know what you are doing.
 
 config PINMUX_K64
 	bool "Freescale K64-based Pin multiplexer driver"
