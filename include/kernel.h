@@ -96,8 +96,6 @@ struct k_timer;
 
 typedef struct k_thread *k_tid_t;
 
-/* threads/scheduler/execution contexts */
-
 enum execution_context_types {
 	K_ISR = 0,
 	K_COOP_THREAD,
@@ -105,6 +103,12 @@ enum execution_context_types {
 };
 
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
+
+/**
+ * @defgroup thread_apis Thread APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Spawn a thread.
@@ -133,14 +137,14 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  * @return ID of new thread.
  */
 extern k_tid_t k_thread_spawn(char *stack, unsigned stack_size,
-			      void (*entry)(void *, void *, void*),
+			      void (*entry)(void *, void *, void *),
 			      void *p1, void *p2, void *p3,
 			      int32_t prio, uint32_t options, int32_t delay);
 
 /**
  * @brief Put the current thread to sleep.
  *
- * This routine puts the currently thread to sleep for @a duration
+ * This routine puts the current thread to sleep for @a duration
  * milliseconds.
  *
  * @param duration Number of milliseconds to sleep.
@@ -154,9 +158,6 @@ extern void k_sleep(int32_t duration);
  *
  * This routine causes the current thread to execute a "do nothing" loop for
  * @a usec_to_wait microseconds.
- *
- * @warning This routine utilizes the system clock, so it must not be invoked
- * until the system clock is operational or while interrupts are locked.
  *
  * @return N/A
  */
@@ -207,7 +208,7 @@ extern k_tid_t k_current_get(void);
 extern int k_thread_cancel(k_tid_t thread);
 
 /**
- * @brief Abort thread.
+ * @brief Abort a thread.
  *
  * This routine permanently stops execution of @a thread. The thread is taken
  * off all kernel queues it is part of (i.e. the ready queue, the timeout
@@ -221,6 +222,10 @@ extern int k_thread_cancel(k_tid_t thread);
  * @return N/A
  */
 extern void k_thread_abort(k_tid_t thread);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 #define _THREAD_TIMEOUT_INIT(obj) \
@@ -273,6 +278,10 @@ struct _static_thread_data {
 	.init_abort = (abort),                                   \
 	.init_groups = (groups),                                 \
 	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Statically define and initialize a thread.
@@ -413,7 +422,21 @@ extern void k_thread_resume(k_tid_t thread);
 extern void k_sched_time_slice_set(int32_t slice, int prio);
 
 /**
+ * @} end defgroup thread_apis
+ */
+
+/**
+ * @addtogroup isr_apis
+ * @{
+ */
+
+/**
  * @brief Determine if code is running at interrupt level.
+ *
+ * This routine allows the caller to customize its actions, depending on
+ * whether it is a thread or an ISR.
+ *
+ * @note Can be called by ISRs.
  *
  * @return 0 if invoked by a thread.
  * @return Non-zero if invoked by an ISR.
@@ -423,44 +446,56 @@ extern int k_is_in_isr(void);
 /**
  * @brief Determine if code is running in a preemptible thread.
  *
- * Returns a 'true' value if these conditions are all met:
+ * This routine allows the caller to customize its actions, depending on
+ * whether it can be preempted by another thread. The routine returns a 'true'
+ * value if all of the following conditions are met:
  *
- * - the code is not running in an ISR
- * - the thread's priority is in the preemptible range
- * - the thread has not locked the scheduler
+ * - The code is running in a thread, not at ISR.
+ * - The thread's priority is in the preemptible range.
+ * - The thread has not locked the scheduler.
  *
- * @return 0 if invoked by either an ISR or a cooperative thread.
+ * @note Can be called by ISRs.
+ *
+ * @return 0 if invoked by an ISR or by a cooperative thread.
  * @return Non-zero if invoked by a preemptible thread.
  */
 extern int k_is_preempt_thread(void);
 
-/*
- * @brief Lock the scheduler
+/**
+ * @} end addtogroup isr_apis
+ */
+
+/**
+ * @addtogroup thread_apis
+ * @{
+ */
+
+/**
+ * @brief Lock the scheduler.
  *
- * Prevent another thread from preempting the current thread.
+ * This routine prevents the current thread from being preempted by another
+ * thread by instructing the scheduler to treat it as a cooperative thread.
+ * If the thread subsequently performs an operation that makes it unready,
+ * it will be context switched out in the normal manner. When the thread
+ * again becomes the current thread, its non-preemptible status is maintained.
  *
- * @note If the thread does an operation that causes it to pend, it will still
- * be context switched out.
+ * This routine can be called recursively.
  *
- * @note Similar to irq_lock, the scheduler lock state is tracked per-thread.
- *
- * This should be chosen over irq_lock when possible, basically when the data
- * protected by it is not accessible from ISRs. However, the associated
- * k_sched_unlock() is heavier to use than irq_unlock, so if the amount of
- * processing is really small, irq_lock might be a better choice.
- *
- * Can be called recursively.
+ * @note k_sched_lock() and k_sched_unlock() should normally be used
+ * when the operation being performed can be safely interrupted by ISRs.
+ * However, if the amount of processing involved is very small, better
+ * performance may be obtained by using irq_lock() and irq_unlock().
  *
  * @return N/A
  */
 extern void k_sched_lock(void);
 
-/*
- * @brief Unlock the scheduler
+/**
+ * @brief Unlock the scheduler.
  *
- * Re-enable scheduling previously disabled by k_sched_lock(). Must be called
- * an equal amount of times k_sched_lock() was called. Threads are rescheduled
- * upon exit.
+ * This routine reverses the effect of a previous call to k_sched_lock().
+ * A thread must call the routine once for each time it called k_sched_lock()
+ * before the thread becomes preemptible.
  *
  * @return N/A
  */
@@ -491,6 +526,10 @@ extern void k_thread_custom_data_set(void *value);
 extern void *k_thread_custom_data_get(void);
 
 /**
+ * @} end addtogroup thread_apis
+ */
+
+/**
  *  kernel timing
  */
 
@@ -502,7 +541,9 @@ extern void *k_thread_custom_data_get(void);
 #define K_MINUTES(m)   K_SECONDS((m) * 60)
 #define K_HOURS(h)     K_MINUTES((h) * 60)
 
-/* private internal time manipulation (users should never play with ticks) */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
@@ -517,7 +558,6 @@ static int64_t __ticks_to_ms(int64_t ticks)
 #endif
 }
 
-
 /* timeouts */
 
 struct _timeout;
@@ -531,8 +571,13 @@ struct _timeout {
 	_timeout_func_t func;
 };
 
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
-/* timers */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_timer {
 	/*
@@ -576,6 +621,16 @@ struct k_timer {
 	._legacy_data = NULL, \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup timer_apis Timer APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Statically define and initialize a timer.
@@ -687,8 +742,15 @@ extern uint32_t k_timer_status_sync(struct k_timer *timer);
  */
 extern int32_t k_timer_remaining_get(struct k_timer *timer);
 
+/**
+ * @} end defgroup timer_apis
+ */
 
-/* kernel clocks */
+/**
+ * @defgroup clock_apis Kernel Clock APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Get system uptime.
@@ -757,10 +819,12 @@ extern uint32_t k_uptime_delta_32(int64_t *reftime);
 extern uint32_t k_cycle_get_32(void);
 
 /**
- *  data transfers (basic)
+ * @} end defgroup clock_apis
  */
 
-/* fifos */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_fifo {
 	_wait_q_t wait_q;
@@ -768,6 +832,23 @@ struct k_fifo {
 
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_fifo);
 };
+
+#define K_FIFO_INITIALIZER(obj) \
+	{ \
+	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
+	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
+	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup fifo_apis Fifo APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Initialize a fifo.
@@ -848,13 +929,6 @@ extern void k_fifo_put_slist(struct k_fifo *fifo, sys_slist_t *list);
  */
 extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
 
-#define K_FIFO_INITIALIZER(obj) \
-	{ \
-	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
-	}
-
 /**
  * @brief Statically define and initialize a fifo.
  *
@@ -869,7 +943,13 @@ extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
 		__in_section(_k_fifo, static, name) = \
 		K_FIFO_INITIALIZER(name)
 
-/* lifos */
+/**
+ * @} end defgroup fifo_apis
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_lifo {
 	_wait_q_t wait_q;
@@ -877,6 +957,23 @@ struct k_lifo {
 
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_lifo);
 };
+
+#define K_LIFO_INITIALIZER(obj) \
+	{ \
+	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
+	.list = NULL, \
+	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup lifo_apis Lifo APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Initialize a lifo.
@@ -922,13 +1019,6 @@ extern void k_lifo_put(struct k_lifo *lifo, void *data);
  */
 extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
 
-#define K_LIFO_INITIALIZER(obj) \
-	{ \
-	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.list = NULL, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
-	}
-
 /**
  * @brief Statically define and initialize a lifo.
  *
@@ -943,7 +1033,13 @@ extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
 		__in_section(_k_lifo, static, name) = \
 		K_LIFO_INITIALIZER(name)
 
-/* stacks */
+/**
+ * @} end defgroup lifo_apis
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_stack {
 	_wait_q_t wait_q;
@@ -951,6 +1047,25 @@ struct k_stack {
 
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_stack);
 };
+
+#define K_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
+	{ \
+	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
+	.base = stack_buffer, \
+	.next = stack_buffer, \
+	.top = stack_buffer + stack_num_entries, \
+	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup stack_apis Stack APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Initialize a stack.
@@ -999,15 +1114,6 @@ extern void k_stack_push(struct k_stack *stack, uint32_t data);
  */
 extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 
-#define K_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
-	{ \
-	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.base = stack_buffer, \
-	.next = stack_buffer, \
-	.top = stack_buffer + stack_num_entries, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
-	}
-
 /**
  * @brief Statically define and initialize a stack
  *
@@ -1027,7 +1133,13 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 				    stack_num_entries)
 
 /**
- *  workqueues
+ * @} end defgroup stack_apis
+ */
+
+/**
+ * @defgroup workqueue_apis Workqueue Thread APIs
+ * @ingroup kernel_apis
+ * @{
  */
 
 struct k_work;
@@ -1228,10 +1340,12 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 /**
- * synchronization
+ * @} end defgroup workqueue_apis
  */
 
-/* mutexes */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_mutex {
 	_wait_q_t wait_q;
@@ -1262,6 +1376,16 @@ struct k_mutex {
 	_MUTEX_INIT_OBJECT_MONITOR \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup mutex_apis Mutex APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Statically define and initialize a mutex.
@@ -1326,7 +1450,13 @@ extern int k_mutex_lock(struct k_mutex *mutex, int32_t timeout);
  */
 extern void k_mutex_unlock(struct k_mutex *mutex);
 
-/* semaphores */
+/**
+ * @} end defgroup mutex_apis
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_sem {
 	_wait_q_t wait_q;
@@ -1335,6 +1465,24 @@ struct k_sem {
 
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_sem);
 };
+
+#define K_SEM_INITIALIZER(obj, initial_count, count_limit) \
+	{ \
+	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
+	.count = initial_count, \
+	.limit = count_limit, \
+	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup semaphore_apis Semaphore APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Initialize a semaphore.
@@ -1409,14 +1557,6 @@ static inline unsigned int k_sem_count_get(struct k_sem *sem)
 	return sem->count;
 }
 
-#define K_SEM_INITIALIZER(obj, initial_count, count_limit) \
-	{ \
-	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.count = initial_count, \
-	.limit = count_limit, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
-	}
-
 /**
  * @brief Statically define and initialize a semaphore.
  *
@@ -1433,12 +1573,28 @@ static inline unsigned int k_sem_count_get(struct k_sem *sem)
 		__in_section(_k_sem, static, name) = \
 		K_SEM_INITIALIZER(name, initial_count, count_limit)
 
-/* alerts */
+/**
+ * @} end defgroup semaphore_apis
+ */
+
+/**
+ * @defgroup alert_apis Alert APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+typedef int (*k_alert_handler_t)(struct k_alert *);
+
+/**
+ * @} end defgroup alert_apis
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define K_ALERT_DEFAULT NULL
 #define K_ALERT_IGNORE ((void *)(-1))
-
-typedef int (*k_alert_handler_t)(struct k_alert *);
 
 struct k_alert {
 	k_alert_handler_t handler;
@@ -1459,6 +1615,15 @@ extern void _alert_deliver(struct k_work *work);
 	.sem = K_SEM_INITIALIZER(obj.sem, 0, max_num_pending_alerts), \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @addtogroup alert_apis
+ * @{
+ */
 
 /**
  * @brief Statically define and initialize an alert.
@@ -1531,10 +1696,12 @@ extern int k_alert_recv(struct k_alert *alert, int32_t timeout);
 extern void k_alert_send(struct k_alert *alert);
 
 /**
- *  data transfers (complex)
+ * @} end addtogroup alert_apis
  */
 
-/* message queues */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_msgq {
 	_wait_q_t wait_q;
@@ -1561,6 +1728,16 @@ struct k_msgq {
 	.used_msgs = 0, \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup msgq_apis Message Queue APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Statically define and initialize a message queue.
@@ -1634,7 +1811,7 @@ extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
  * This routine receives a message from message queue @a q in a "first in,
  * first out" manner.
  *
- * @note Can be called by ISRs.
+ * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
  *
  * @param q Address of the message queue.
  * @param data Address of area to hold the received message.
@@ -1689,6 +1866,16 @@ static inline uint32_t k_msgq_num_used_get(struct k_msgq *q)
 	return q->used_msgs;
 }
 
+/**
+ * @} end defgroup msgq_apis
+ */
+
+/**
+ * @defgroup mem_pool_apis Memory Pool APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
 struct k_mem_block {
 	struct k_mem_pool *pool_id;
 	void *addr_in_pool;
@@ -1696,7 +1883,15 @@ struct k_mem_block {
 	size_t req_size;
 };
 
-/* mailboxes */
+/**
+ * @} end defgroup mem_pool_apis
+ */
+
+/**
+ * @defgroup mailbox_apis Mailbox APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 struct k_mbox_msg {
 	/** internal use only - needed for legacy API support */
@@ -1723,6 +1918,10 @@ struct k_mbox_msg {
 #endif
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
 struct k_mbox {
 	_wait_q_t tx_msg_queue;
 	_wait_q_t rx_msg_queue;
@@ -1736,6 +1935,10 @@ struct k_mbox {
 	.rx_msg_queue = SYS_DLIST_STATIC_INIT(&obj.rx_msg_queue), \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Statically define and initialize a mailbox.
@@ -1784,7 +1987,6 @@ extern void k_mbox_init(struct k_mbox *mbox);
 extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		      int32_t timeout);
 
-#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 /**
  * @brief Send a mailbox message in an asynchronous manner.
  *
@@ -1802,7 +2004,6 @@ extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  */
 extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     struct k_sem *sem);
-#endif
 
 /**
  * @brief Receive a mailbox message.
@@ -1876,7 +2077,13 @@ extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
 				 struct k_mem_pool *pool,
 				 struct k_mem_block *block, int32_t timeout);
 
-/* pipes */
+/**
+ * @} end defgroup mailbox_apis
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_pipe {
 	unsigned char *buffer;          /* Pipe buffer: may be NULL */
@@ -1904,6 +2111,16 @@ struct k_pipe {
 	.wait_q.readers = SYS_DLIST_STATIC_INIT(&obj.wait_q.readers), \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT                            \
 	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup pipe_apis Pipe APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Statically define and initialize a pipe.
@@ -1986,7 +2203,6 @@ extern int k_pipe_get(struct k_pipe *pipe, void *data,
 		      size_t bytes_to_read, size_t *bytes_read,
 		      size_t min_xfer, int32_t timeout);
 
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 /**
  * @brief Write memory block to a pipe.
  *
@@ -2003,13 +2219,14 @@ extern int k_pipe_get(struct k_pipe *pipe, void *data,
  */
 extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 			     size_t size, struct k_sem *sem);
-#endif
 
 /**
- *  memory management
+ * @} end defgroup pipe_apis
  */
 
-/* memory slabs */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct k_mem_slab {
 	_wait_q_t wait_q;
@@ -2033,6 +2250,16 @@ struct k_mem_slab {
 	.num_used = 0, \
 	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
 	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup mem_slab_apis Memory Slab APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Statically define and initialize a memory slab.
@@ -2144,7 +2371,13 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 	return slab->num_blocks - slab->num_used;
 }
 
-/* memory pools */
+/**
+ * @} end defgroup mem_slab_apis
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 /*
  * Memory pool requires a buffer and two arrays of structures for the
@@ -2197,10 +2430,7 @@ struct k_mem_pool {
 /*
  * Static memory pool initialization
  */
-/**
- * @cond internal
- * Make Doxygen skip assembler macros
- */
+
 /*
  * Use .altmacro to be able to recalculate values and pass them as string
  * arguments when calling assembler macros resursively
@@ -2344,14 +2574,16 @@ static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
 }
 
 /**
- * @endcond
- * End of assembler macros that Doxygen has to skip
+ * INTERNAL_HIDDEN @endcond
  */
 
 /**
- * @brief Define a memory pool
- *
- * This defines and initializes a memory pool.
+ * @addtogroup mem_pool_apis
+ * @{
+ */
+
+/**
+ * @brief Statically define and initialize a memory pool.
  *
  * The memory pool's buffer contains @a n_max blocks that are @a max_size bytes
  * long. The memory pool allows blocks to be repeatedly partitioned into
@@ -2426,6 +2658,16 @@ extern void k_mem_pool_free(struct k_mem_block *block);
 extern void k_mem_pool_defrag(struct k_mem_pool *pool);
 
 /**
+ * @} end addtogroup mem_pool_apis
+ */
+
+/**
+ * @defgroup heap_apis Heap Memory Pool APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
  * @brief Allocate memory from heap.
  *
  * This routine provides traditional malloc() semantics. Memory is
@@ -2448,6 +2690,10 @@ extern void *k_malloc(size_t size);
  * @return N/A
  */
 extern void k_free(void *ptr);
+
+/**
+ * @} end defgroup heap_apis
+ */
 
 /*
  * legacy.h must be before arch/cpu.h to allow the ioapic/loapic drivers to

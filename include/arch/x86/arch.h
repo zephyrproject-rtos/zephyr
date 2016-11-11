@@ -381,7 +381,7 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 
 /**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
- * to NANO_CPU_INT_REGSITER when connecting to an interrupt that does not
+ * to NANO_CPU_INT_REGISTER when connecting to an interrupt that does not
  * correspond to any IRQ line (such as spurious vector or SW IRQ)
  */
 #define NANO_SOFT_IRQ	((unsigned int) (-1))
@@ -397,10 +397,62 @@ extern void	_arch_irq_enable(unsigned int irq);
  */
 extern void	_arch_irq_disable(unsigned int irq);
 
-#ifdef CONFIG_FP_SHARING
-extern void k_float_enable(k_tid_t thread_id, unsigned int options);
-extern void k_float_disable(k_tid_t thread_id);
-#endif /* CONFIG_FP_SHARING */
+/**
+ * @defgroup float_apis Floating Point APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @brief Enable preservation of floating point context information.
+ *
+ * This routine informs the kernel that the specified thread (which may be
+ * the current thread) will be using the floating point registers.
+ * The @a options parameter indicates which floating point register sets
+ * will be used by the specified thread:
+ *
+ *  a) K_FP_REGS  indicates x87 FPU and MMX registers only
+ *  b) K_SSE_REGS indicates SSE registers (and also x87 FPU and MMX registers)
+ *
+ * Invoking this routine initializes the thread's floating point context info
+ * to that of an FPU that has been reset. The next time the thread is scheduled
+ * by _Swap() it will either inherit an FPU that is guaranteed to be in a "sane"
+ * state (if the most recent user of the FPU was cooperatively swapped out)
+ * or the thread's own floating point context will be loaded (if the most
+ * recent user of the FPU was pre-empted, or if this thread is the first user
+ * of the FPU). Thereafter, the kernel will protect the thread's FP context
+ * so that it is not altered during a preemptive context switch.
+ *
+ * @warning
+ * This routine should only be used to enable floating point support for a
+ * thread that does not currently have such support enabled already.
+ *
+ * @param thread ID of thread.
+ * @param options Registers to be preserved (K_FP_REGS or K_SSE_REGS).
+ *
+ * @return N/A
+ */
+extern void k_float_enable(k_tid_t thread, unsigned int options);
+
+/**
+ * @brief Disable preservation of floating point context information.
+ *
+ * This routine informs the kernel that the specified thread (which may be
+ * the current thread) will no longer be using the floating point registers.
+ *
+ * @warning
+ * This routine should only be used to disable floating point support for
+ * a thread that currently has such support enabled.
+ *
+ * @param thread ID of thread.
+ *
+ * @return N/A
+ */
+extern void k_float_disable(k_tid_t thread);
+
+/**
+ * @}
+ */
 
 #include <stddef.h>	/* for size_t */
 

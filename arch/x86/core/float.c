@@ -60,17 +60,12 @@
 /* SSE control/status register default value (used by assembler code) */
 extern uint32_t _sse_mxcsr_default_value;
 
-/**
- *
- * @brief Save a thread's floating point context information.
+/*
+ * Save a thread's floating point context information.
  *
  * This routine saves the system's "live" floating point context into the
  * specified thread control block. The SSE registers are saved only if the
  * thread is actually using them.
- *
- * @param tcs Pointer to thread control block.
- *
- * @return N/A
  */
 static void _FpCtxSave(struct tcs *tcs)
 {
@@ -83,16 +78,11 @@ static void _FpCtxSave(struct tcs *tcs)
 	_do_fp_regs_save(&tcs->arch.preempFloatReg);
 }
 
-/**
- *
- * @brief Initialize a thread's floating point context information.
+/*
+ * Initialize a thread's floating point context information.
  *
  * This routine initializes the system's "live" floating point context.
  * The SSE registers are initialized only if the thread is actually using them.
- *
- * @param tcs Pointer to thread control block.
- *
- * @return N/A
  */
 static inline void _FpCtxInit(struct tcs *tcs)
 {
@@ -104,37 +94,9 @@ static inline void _FpCtxInit(struct tcs *tcs)
 #endif
 }
 
-/**
+/*
+ * Enable preservation of floating point context information.
  *
- * @brief Enable preservation of floating point context information.
- *
- * This routine informs the kernel that the specified thread (which may be
- * the current thread) will be using the floating point registers.
- * The @a options parameter indicates which floating point register sets
- * will be used by the specified thread:
- *
- *  a) K_FP_REGS  indicates x87 FPU and MMX registers only
- *  b) K_SSE_REGS indicates SSE registers (and also x87 FPU and MMX registers)
- *
- * Invoking this routine initializes the thread's floating point context info
- * to that of an FPU that has been reset. The next time the thread is scheduled
- * by _Swap() it will either inherit an FPU that is guaranteed to be in a "sane"
- * state (if the most recent user of the FPU was cooperatively swapped out)
- * or the thread's own floating point context will be loaded (if the most
- * recent user of the FPU was pre-empted, or if this thread is the first user
- * of the FPU). Thereafter, the kernel will protect the thread's FP context
- * so that it is not altered during a preemptive context switch.
- *
- * @warning
- * This routine should only be used to enable floating point support for a
- * thread that does not currently have such support enabled already.
- *
- * @param tcs Pointer to thread control block.
- * @param options Registers to be preserved (K_FP_REGS or K_SSE_REGS).
- *
- * @return N/A
- *
- * @internal
  * The transition from "non-FP supporting" to "FP supporting" must be done
  * atomically to avoid confusing the floating point logic used by _Swap(), so
  * this routine locks interrupts to ensure that a context switch does not occur.
@@ -232,21 +194,8 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 }
 
 /**
+ * Disable preservation of floating point context information.
  *
- * @brief Disable preservation of floating point context information.
- *
- * This routine informs the kernel that the specified thread (which may be
- * the current thread) will no longer be using the floating point registers.
- *
- * @warning
- * This routine should only be used to disable floating point support for
- * a thread that currently has such support enabled.
- *
- * @param tcs Pointer to thread control block.
- *
- * @return N/A
- *
- * @internal
  * The transition from "FP supporting" to "non-FP supporting" must be done
  * atomically to avoid confusing the floating point logic used by _Swap(), so
  * this routine locks interrupts to ensure that a context switch does not occur.
@@ -276,9 +225,8 @@ void k_float_disable(struct tcs *tcs)
 	irq_unlock(imask);
 }
 
-/**
- *
- * @brief Handler for "device not available" exception.
+/*
+ * Handler for "device not available" exception.
  *
  * This routine is registered to handle the "device not available" exception
  * (vector = 7).
@@ -286,10 +234,6 @@ void k_float_disable(struct tcs *tcs)
  * The processor will generate this exception if any x87 FPU, MMX, or SSEx
  * instruction is executed while CR0[TS]=1. The handler then enables the
  * current thread to use all supported floating point registers.
- *
- * @param pEsf This value is not used.
- *
- * @return N/A
  */
 void _FpNotAvailableExcHandler(NANO_ESF *pEsf)
 {
