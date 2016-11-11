@@ -84,8 +84,8 @@ config BLUETOOTH_UART_TO_HOST_DEV_NAME
 if BLUETOOTH_CONN || BLUETOOTH_HCI_RAW
 config BLUETOOTH_ACL_IN_COUNT
 	int "Number of incoming ACL data buffers"
-	default BLUETOOTH_CONTROLLER_RX_BUFFERS if BLUETOOTH_CONTROLLER
 	default 6
+	default BLUETOOTH_CONTROLLER_RX_BUFFERS if BLUETOOTH_CONTROLLER
 	range 2 64
 	help
 	  Number of buffers available for incoming ACL data.
