@@ -699,7 +699,7 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 	switch (timeout) {
 	case TICKS_UNLIMITED:
 	case TICKS_NONE:
-		buf = net_buf_get_timeout(rx_queue, 0, timeout);
+		buf = net_buf_get_timeout(rx_queue, 0, _ticks_to_ms(timeout));
 		break;
 	default:
 #ifdef CONFIG_NANO_TIMEOUTS

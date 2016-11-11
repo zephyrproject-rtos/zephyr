@@ -62,7 +62,7 @@
 
 static struct bt_gatt_attr server_db[SERVER_MAX_ATTRIBUTES];
 static struct net_buf *server_buf;
-static struct nano_fifo server_fifo;
+static struct k_fifo server_fifo;
 static NET_BUF_POOL(server_pool, 1, SERVER_BUF_SIZE, &server_fifo, NULL, 0);
 
 static uint8_t attr_count;
@@ -1790,7 +1790,7 @@ uint8_t tester_init_gatt(void)
 	net_buf_pool_init(server_pool);
 
 	server_buf = net_buf_get_timeout(&server_fifo, SERVER_BUF_SIZE,
-					 TICKS_NONE);
+					 K_NO_WAIT);
 	if (!server_buf) {
 		return BTP_STATUS_FAILED;
 	}

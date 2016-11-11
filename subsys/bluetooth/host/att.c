@@ -23,7 +23,6 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -59,7 +58,7 @@
 						BT_GATT_PERM_WRITE_AUTHEN)
 #define BT_ATT_OP_CMD_FLAG			0x40
 
-#define ATT_TIMEOUT				(30 * sys_clock_ticks_per_sec)
+#define ATT_TIMEOUT				(30 * MSEC_PER_SEC)
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 struct bt_attr_data {
@@ -68,7 +67,7 @@ struct bt_attr_data {
 };
 
 /* Pool for incoming ATT packets, MTU is 23 */
-static struct nano_fifo prep_data;
+static struct k_fifo prep_data;
 static NET_BUF_POOL(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
 		    CONFIG_BLUETOOTH_ATT_MTU, &prep_data, NULL,
 		    sizeof(struct bt_attr_data));
@@ -80,9 +79,9 @@ struct bt_att {
 	struct bt_l2cap_le_chan	chan;
 	struct bt_att_req	*req;
 	sys_slist_t		reqs;
-	struct nano_delayed_work timeout_work;
+	struct k_delayed_work	timeout_work;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	struct nano_fifo	prep_queue;
+	struct k_fifo		prep_queue;
 #endif
 };
 
@@ -91,18 +90,18 @@ static struct bt_att bt_req_pool[CONFIG_BLUETOOTH_MAX_CONN];
 /*
  * Pool for outgoing ATT requests packets.
  */
-static struct nano_fifo req_data;
+static struct k_fifo req_data;
 static NET_BUF_POOL(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
 		    &req_data, NULL, BT_BUF_USER_DATA_MIN);
 
 /*
  * Pool for ougoing ATT responses packets. This is necessary in order not to
- * block the RX fiber since otherwise req_pool would have be used but buffers
+ * block the RX thread since otherwise req_pool would have be used but buffers
  * may only be freed after a response is received which would never happen if
- * the RX fiber is waiting a buffer causing a deadlock.
+ * the RX thread is waiting a buffer causing a deadlock.
  */
-static struct nano_fifo rsp_data;
+static struct k_fifo rsp_data;
 static NET_BUF_POOL(rsp_pool, 1,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
 		    &rsp_data, NULL, BT_BUF_USER_DATA_MIN);
@@ -199,7 +198,7 @@ static int att_send_req(struct bt_att *att, struct bt_att_req *req)
 	net_buf_simple_save(&req->buf->b, &req->state);
 
 	/* Start timeout work */
-	nano_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
+	k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
 
 	/* Keep a reference for resending in case of an error */
 	bt_l2cap_send(att->chan.chan.conn, BT_L2CAP_CID_ATT,
@@ -234,7 +233,7 @@ static uint8_t att_handle_rsp(struct bt_att *att, void *pdu, uint16_t len,
 	}
 
 	/* Cancel timeout if ongoing */
-	nano_delayed_work_cancel(&att->timeout_work);
+	k_delayed_work_cancel(&att->timeout_work);
 
 	/* Release original buffer */
 	if (att->req->buf) {
@@ -1285,7 +1284,7 @@ static uint8_t att_prep_write_rsp(struct bt_att *att, uint16_t handle,
 	}
 
 	/* Store buffer in the outstanding queue */
-	nano_fifo_put(&att->prep_queue, data.buf);
+	k_fifo_put(&att->prep_queue, data.buf);
 
 	/* Generate response */
 	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_RSP, 0);
@@ -1332,7 +1331,7 @@ static uint8_t att_exec_write_rsp(struct bt_att *att, uint8_t flags)
 	struct net_buf *buf;
 	uint8_t err = 0;
 
-	while ((buf = nano_fifo_get(&att->prep_queue, TICKS_NONE))) {
+	while ((buf = k_fifo_get(&att->prep_queue, K_NO_WAIT))) {
 		struct bt_attr_data *data = net_buf_user_data(buf);
 
 		/* Just discard the data if an error was set */
@@ -1448,8 +1447,8 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 			 * page 375:
 			 *
 			 * If an LTK is not available, the service request
-			 * shall be rejected with the error code “Insufficient
-			 * Authentication”.
+			 * shall be rejected with the error code 'Insufficient
+			 * Authentication'.
 			 * Note: When the link is not encrypted, the error code
 			 * "Insufficient Authentication" does not indicate that
 			 * MITM protection is required.
@@ -1462,11 +1461,11 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 			 * If an authenticated pairing is required but only an
 			 * unauthenticated pairing has occurred and the link is
 			 * currently encrypted, the service request shall be
-			 * rejected with the error code “Insufficient
-			 * Authentication.”
+			 * rejected with the error code 'Insufficient
+			 * Authentication'.
 			 * Note: When unauthenticated pairing has occurred and
 			 * the link is currently encrypted, the error code
-			 * “Insufficient Authentication” indicates that MITM
+			 * 'Insufficient Authentication' indicates that MITM
 			 * protection is required.
 			 */
 			sec = BT_SECURITY_HIGH;
@@ -1477,8 +1476,8 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 			 * If LE Secure Connections authenticated pairing is
 			 * required but LE legacy pairing has occurred and the
 			 * link is currently encrypted, the service request
-			 * shall be rejected with the error code “Insufficient
-			 * Authentication”.
+			 * shall be rejected with the error code ''Insufficient
+			 * Authentication'.
 			 */
 			sec = BT_SECURITY_FIPS;
 		} else {
@@ -1496,7 +1495,6 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	struct bt_att_error_rsp *rsp;
-	struct bt_att_hdr *hdr;
 	uint8_t err;
 
 	rsp = (void *)buf->data;
@@ -1504,17 +1502,17 @@ static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	if (!att->req || !att->req->buf) {
+	if (!att->req) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
 
-	/* Restore state to be resent */
-	net_buf_simple_restore(&att->req->buf->b, &att->req->state);
+	if (att->req->buf) {
+		/* Restore state to be resent */
+		net_buf_simple_restore(&att->req->buf->b, &att->req->state);
+	}
 
-	hdr = (void *)att->req->buf->data;
-
-	err = rsp->request == hdr->code ? rsp->error : BT_ATT_ERR_UNLIKELY;
+	err = rsp->error;
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (att->req->retrying) {
 		goto done;
@@ -1792,7 +1790,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	case BT_ATT_OP_PREPARE_WRITE_RSP:
 	case BT_ATT_OP_EXEC_WRITE_RSP:
 		/* Use a different buffer pool for responses as this is
-		 * usually sent from RX fiber it shall never block.
+		 * usually sent from RX thread it shall never block.
 		 */
 		buf = bt_l2cap_create_pdu(&rsp_data, 0);
 		break;
@@ -1817,7 +1815,7 @@ static void att_reset(struct bt_att *att)
 	struct net_buf *buf;
 
 	/* Discard queued buffers */
-	while ((buf = nano_fifo_get(&att->prep_queue, TICKS_NONE))) {
+	while ((buf = k_fifo_get(&att->prep_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 #endif
@@ -1844,7 +1842,7 @@ static void att_reset(struct bt_att *att)
 	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
 }
 
-static void att_timeout(struct nano_work *work)
+static void att_timeout(struct k_work *work)
 {
 	struct bt_att *att = CONTAINER_OF(work, struct bt_att, timeout_work);
 	struct bt_l2cap_le_chan *ch =
@@ -1875,13 +1873,13 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	nano_fifo_init(&att->prep_queue);
+	k_fifo_init(&att->prep_queue);
 #endif
 
 	ch->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
 	ch->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 
-	nano_delayed_work_init(&att->timeout_work, att_timeout);
+	k_delayed_work_init(&att->timeout_work, att_timeout);
 	sys_slist_init(&att->reqs);
 
 	bt_gatt_connected(ch->chan.conn);

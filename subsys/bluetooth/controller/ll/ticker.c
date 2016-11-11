@@ -1053,7 +1053,7 @@ static inline void ticker_job_compare_update(
 	do {
 		uint32_t ticks_elapsed;
 
-		BT_ASSERT(i);
+		LL_ASSERT(i);
 		i--;
 
 		ctr = rtc_tick_get();

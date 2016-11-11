@@ -423,7 +423,7 @@ void main(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 	while (1) {
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(MSEC_PER_SEC);
 
 		/* CSC simulation */
 		if (csc_simulate) {

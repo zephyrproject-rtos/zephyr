@@ -32,7 +32,6 @@ extern "C" {
 #endif
 
 #include <atomic.h>
-#include <misc/nano_work.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
@@ -71,7 +70,7 @@ struct bt_l2cap_chan {
 	struct bt_l2cap_chan		*_next;
 	bt_l2cap_chan_destroy_t		destroy;
 	/* Response Timeout eXpired (RTX) timer */
-	struct nano_delayed_work	rtx_work;
+	struct k_delayed_work		rtx_work;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
 	/** Remote PSM to be connected */

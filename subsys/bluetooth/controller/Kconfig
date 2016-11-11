@@ -8,32 +8,45 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH
 	default 27
 	range 27 251
 	help
-		Set the maximum data length of PDU supported in the stack.
+	  Set the maximum data length of PDU supported in the stack.
 
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
 	int
 	default 1
+	default 6 if BLUETOOTH_HCI_RAW
 	range 1 10
 	help
-		Set the number of Rx PDUs to be buffered in the controller.
+	  Set the number of Rx PDUs to be buffered in the controller.
 
 config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	prompt "Number of Tx buffers"
 	int
 	default 1
+	default 7 if BLUETOOTH_HCI_RAW
 	range 1 10
 	help
-		Set the number of Tx PDUs to be queued for transmission
-		in the controller.
+	  Set the number of Tx PDUs to be queued for transmission
+	  in the controller.
 
 config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
-	int "Size of the receiving fiber stack"
+	int "Size of the receiving thread stack"
 	default 256
 	range 256 65536
 	help
-	  Size of the receiving fiber stack. This is the context from
+	  Size of the receiving thread stack. This is the context from
 	  which all radio messages are encoded into HCI events or data
-	  before passing it to Bluetooth receiving fiber.
+	  before passing it to Bluetooth receiving thread.
+
+config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
+	bool "Bluetooth Controller Assertion Handler"
+	depends on BLUETOOTH_HCI_RAW
+	help
+	  This option enables an application-defined sink for the
+	  controller assertion mechanism. This must be defined in
+	  application code as void \"bt_controller_assert_handle(char \*, int)\"
+	  and will be invoked whenever the controller code encounters
+	  an unrecoverable error.
+
 
 endif # BLUETOOTH_CONTROLLER

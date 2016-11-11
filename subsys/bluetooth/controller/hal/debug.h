@@ -20,6 +20,16 @@
 
 #include <bluetooth/log.h>
 
+#ifdef CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER
+void bt_controller_assert_handle(char *file, uint32_t line);
+#define LL_ASSERT(cond) if (!(cond)) { \
+				bt_controller_assert_handle(__FILE__, \
+							    __LINE__); \
+			}
+#else
+#define LL_ASSERT(cond) BT_ASSERT(cond)
+#endif
+
 /* below are some interesting macros referenced by controller
  * which can be defined to SoC's GPIO toggle to observe/debug the
  * controller's runtime behavior.

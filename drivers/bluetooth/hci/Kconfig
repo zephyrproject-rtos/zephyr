@@ -16,13 +16,14 @@
 # limitations under the License.
 #
 
-if BLUETOOTH_STACK_HCI || BLUETOOTH_STACK_HCI_RAW
-
 comment "Bluetooth HCI Driver Options"
+
+# Controller support is an HCI driver in itself, so these HCI driver
+# options are only applicable if controller support hasn't been enabled.
+if !BLUETOOTH_CONTROLLER
 
 config BLUETOOTH_UART
 	bool
-	default n
 
 choice
 	prompt "Bluetooth HCI driver"
@@ -48,12 +49,6 @@ config BLUETOOTH_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
-config BLUETOOTH_CONTROLLER
-	bool "Controller"
-	select BLUETOOTH_HOST_BUFFERS
-	help
-	  Enables support for SoC native controller implementation.
-
 config BLUETOOTH_NO_DRIVER
 	bool "No default HCI driver"
 	help
@@ -62,9 +57,10 @@ config BLUETOOTH_NO_DRIVER
 
 endchoice
 
+endif # !BLUETOOTH_CONTROLLER
+
 config BLUETOOTH_HOST_BUFFERS
 	bool "Host managed incoming data buffers"
-	default n
 	help
 	  Enable this to have the host stack manage incoming ACL data
 	  and HCI event buffers. This makes sense for all HCI drivers
@@ -76,8 +72,7 @@ config BLUETOOTH_HOST_BUFFERS
 
 config BLUETOOTH_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"
-	depends on BLUETOOTH_DEBUG && (BLUETOOTH_UART || BLUETOOTH_CONTROLLER)
-	default n
+	depends on BLUETOOTH_DEBUG
 	help
 	  This option enables debug support for the chosen
 	  Bluetooth HCI driver
@@ -110,5 +105,3 @@ config BLUETOOTH_HCI_RECV_RESERVE
 	default 0
 	default 0 if BLUETOOTH_H4
 	default 0 if BLUETOOTH_H5
-
-endif # BLUETOOTH_STACK_HCI || BLUETOOTH_STACK_HCI_RAW

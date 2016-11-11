@@ -24,9 +24,13 @@ if BLUETOOTH
 
 menu "Bluetooth Drivers"
 
+if BLUETOOTH_HCI
 source "drivers/bluetooth/hci/Kconfig"
+endif
 
+if BLUETOOTH_CUSTOM
 source "drivers/bluetooth/nble/Kconfig"
+endif
 
 config BLUETOOTH_NRF51_PM
 	bool "nRF51 Power Management [EXPERIMENTAL]"
@@ -37,7 +41,7 @@ config BLUETOOTH_NRF51_PM
 
 config BLUETOOTH_WAIT_NOP
 	bool "Wait for \"NOP\" Command Complete event during init"
-	depends on BLUETOOTH_STACK_HCI || BLUETOOTH_STACK_HCI_RAW
+	depends on BLUETOOTH_HCI
 	help
 	  Some controllers emit a Command Complete event for the NOP
 	  opcode to indicate that they're ready to receive commands.

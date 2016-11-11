@@ -56,7 +56,7 @@ struct bt_conn_le {
 	struct bt_keys		*keys;
 
 	/* Delayed work for connection update handling */
-	struct nano_delayed_work update_work;
+	struct k_delayed_work	update_work;
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
@@ -94,7 +94,7 @@ struct bt_conn {
 	struct net_buf		*rx;
 
 	/* Queue for outgoing ACL data */
-	struct nano_fifo	tx_queue;
+	struct k_fifo		tx_queue;
 
 	/* L2CAP channels */
 	void			*channels;
@@ -106,8 +106,8 @@ struct bt_conn {
 
 	bt_conn_state_t		state;
 
-	/* Handle allowing to cancel timeout fiber */
-	nano_thread_id_t timeout;
+	/* Handle allowing to cancel timeout thread */
+	k_tid_t			timeout;
 
 	union {
 		struct bt_conn_le	le;
@@ -116,8 +116,8 @@ struct bt_conn {
 #endif
 	};
 
-	/* Stack for TX fiber and timeout fiber.
-	 * Since these fibers don't overlap, one stack can be used by
+	/* Stack for TX thread and timeout thread.
+	 * Since these threads don't overlap, one stack can be used by
 	 * both of them.
 	 */
 	BT_STACK(stack, 256);
@@ -179,7 +179,7 @@ void bt_conn_security_changed(struct bt_conn *conn);
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 /* Prepare a PDU to be sent over a connection */
-struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve);
+struct net_buf *bt_conn_create_pdu(struct k_fifo *fifo, size_t reserve);
 
 /* Initialize connection management */
 int bt_conn_init(void);

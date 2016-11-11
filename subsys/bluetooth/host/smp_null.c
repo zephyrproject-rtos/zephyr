@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <atomic.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
@@ -38,7 +37,7 @@
 static struct bt_l2cap_le_chan bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
 /* Pool for outgoing SMP signaling packets, MTU is 23 */
-static struct nano_fifo smp_buf;
+static struct k_fifo smp_buf;
 static NET_BUF_POOL(smp_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(23), &smp_buf, NULL,
 		    BT_BUF_USER_DATA_MIN);

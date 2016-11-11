@@ -34,8 +34,8 @@ static char __stack stack[STACKSIZE];
 #define CMD_QUEUED 2
 static uint8_t cmd_buf[CMD_QUEUED * BTP_MTU];
 
-static struct nano_fifo cmds_queue;
-static struct nano_fifo avail_queue;
+static struct k_fifo cmds_queue;
+static struct k_fifo avail_queue;
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
@@ -126,13 +126,13 @@ static void handle_core(uint8_t opcode, uint8_t index, uint8_t *data,
 	}
 }
 
-static void cmd_handler(int arg1, int arg2)
+static void cmd_handler(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		struct btp_hdr *cmd;
 		uint16_t len;
 
-		cmd = nano_fiber_fifo_get(&cmds_queue, TICKS_UNLIMITED);
+		cmd = k_fifo_get(&cmds_queue, TICKS_UNLIMITED);
 
 		len = sys_le16_to_cpu(cmd->len);
 
@@ -164,7 +164,7 @@ static void cmd_handler(int arg1, int arg2)
 			break;
 		}
 
-		nano_fiber_fifo_put(&avail_queue, cmd);
+		k_fifo_put(&avail_queue, cmd);
 	}
 }
 
@@ -189,14 +189,14 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		return buf;
 	}
 
-	new_buf =  nano_fifo_get(&avail_queue, TICKS_NONE);
+	new_buf =  k_fifo_get(&avail_queue, K_NO_WAIT);
 	if (!new_buf) {
 		SYS_LOG_ERR("BT tester: RX overflow");
 		*off = 0;
 		return buf;
 	}
 
-	nano_fifo_put(&cmds_queue, buf);
+	k_fifo_put(&cmds_queue, buf);
 
 	*off = 0;
 	return new_buf;
@@ -206,16 +206,17 @@ void tester_init(void)
 {
 	int i;
 
-	nano_fifo_init(&cmds_queue);
-	nano_fifo_init(&avail_queue);
+	k_fifo_init(&cmds_queue);
+	k_fifo_init(&avail_queue);
 
 	for (i = 0; i < CMD_QUEUED; i++) {
-		nano_fifo_put(&avail_queue, &cmd_buf[i * BTP_MTU]);
+		k_fifo_put(&avail_queue, &cmd_buf[i * BTP_MTU]);
 	}
 
-	task_fiber_start(stack, STACKSIZE, cmd_handler, 0, 0, 7, 0);
+	k_thread_spawn(stack, STACKSIZE, cmd_handler, NULL, NULL, NULL,
+		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	uart_pipe_register(nano_fifo_get(&avail_queue, TICKS_NONE),
+	uart_pipe_register(k_fifo_get(&avail_queue, K_NO_WAIT),
 			   BTP_MTU, recv_cb);
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_EV_IUT_READY, BTP_INDEX_NONE,

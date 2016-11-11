@@ -44,7 +44,7 @@
 
 struct bt_sdp {
 	struct bt_l2cap_br_chan chan;
-	struct nano_fifo        partial_resp_queue;
+	struct k_fifo           partial_resp_queue;
 	/* TODO: Allow more than one pending request */
 };
 
@@ -54,7 +54,7 @@ static uint8_t num_services;
 static struct bt_sdp bt_sdp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
-static struct nano_fifo sdp_buf;
+static struct k_fifo sdp_buf;
 static NET_BUF_POOL(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(SDP_MTU), &sdp_buf, NULL,
 		    BT_BUF_USER_DATA_MIN);
@@ -77,7 +77,7 @@ static void bt_sdp_connected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
-	nano_fifo_init(&sdp->partial_resp_queue);
+	k_fifo_init(&sdp->partial_resp_queue);
 
 	ch->tx.mtu = SDP_MTU;
 	ch->rx.mtu = SDP_MTU;

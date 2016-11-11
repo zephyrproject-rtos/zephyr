@@ -65,7 +65,7 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint16_t opcode,
 
 	/* Extended header */
 	hdr->type = BT_MONITOR_TS32;
-	ts32 = sys_tick_get_32() * sys_clock_us_per_tick / 100;
+	ts32 = k_uptime_get() * 10;
 	hdr->ts32 = sys_cpu_to_le32(ts32);
 }
 

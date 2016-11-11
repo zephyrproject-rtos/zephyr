@@ -29,9 +29,6 @@
 #include <bluetooth/gatt.h>
 #include <misc/byteorder.h>
 
-#define SLEEPTIME  5000
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
-
 static struct bt_conn *default_conn;
 
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
@@ -272,9 +269,4 @@ void main(void)
 	}
 
 	printk("Scanning successfully started\n");
-
-	while (1) {
-		task_sleep(SLEEPTICKS);
-	}
 }
-

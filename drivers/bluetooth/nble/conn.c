@@ -35,7 +35,7 @@
 #endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT	(5 * sys_clock_ticks_per_sec)
+#define CONN_UPDATE_TIMEOUT	(5 * MSEC_PER_SEC)
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
@@ -180,7 +180,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	}
 
 	/* Cancel any pending update */
-	nano_delayed_work_cancel(&conn->update_work);
+	k_delayed_work_cancel(&conn->update_work);
 
 	if (!bt_le_conn_params_valid(param->interval_min, param->interval_max,
 				     param->latency, param->timeout)) {
@@ -446,7 +446,7 @@ static void notify_disconnected(struct bt_conn *conn)
 	}
 }
 
-static void le_conn_update(struct nano_work *work)
+static void le_conn_update(struct k_work *work)
 {
 	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, update_work);
 
@@ -471,7 +471,7 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	conn->latency = ev->conn_values.latency;
 	conn->timeout = ev->conn_values.supervision_to;
 	bt_addr_le_copy(&conn->dst, &ev->peer_bda);
-	nano_delayed_work_init(&conn->update_work, le_conn_update);
+	k_delayed_work_init(&conn->update_work, le_conn_update);
 
 	conn->state = BT_CONN_CONNECTED;
 
@@ -482,9 +482,9 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	 * The Peripheral device should not perform a Connection Parameter
 	 * Update procedure within 5 s after establishing a connection.
 	 */
-	nano_delayed_work_submit(&conn->update_work,
-				 conn->role == BT_HCI_ROLE_MASTER ? TICKS_NONE :
-				 CONN_UPDATE_TIMEOUT);
+	k_delayed_work_submit(&conn->update_work,
+			      conn->role == BT_HCI_ROLE_MASTER ? TICKS_NONE :
+			      CONN_UPDATE_TIMEOUT);
 }
 
 void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *ev)
@@ -504,7 +504,7 @@ void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *ev)
 	notify_disconnected(conn);
 
 	/* Cancel Connection Update if it is pending */
-	nano_delayed_work_cancel(&conn->update_work);
+	k_delayed_work_cancel(&conn->update_work);
 
 	/* Drop the reference given by lookup_handle() */
 	bt_conn_unref(conn);

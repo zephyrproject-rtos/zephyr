@@ -22,7 +22,6 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -53,8 +52,8 @@
 #define L2CAP_LE_PSM_START	0x0001
 #define L2CAP_LE_PSM_END	0x00ff
 
-#define L2CAP_CONN_TIMEOUT	(40 * sys_clock_ticks_per_sec)
-#define L2CAP_DISC_TIMEOUT	sys_clock_ticks_per_sec
+#define L2CAP_CONN_TIMEOUT	(40 * MSEC_PER_SEC)
+#define L2CAP_DISC_TIMEOUT	(1 * MSEC_PER_SEC)
 
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
@@ -80,14 +79,14 @@ static struct bt_l2cap_server *servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 /* Pool for outgoing LE signaling packets, MTU is 23 */
-static struct nano_fifo le_sig;
+static struct k_fifo le_sig;
 static NET_BUF_POOL(le_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_sig, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Pool for outgoing LE data packets, MTU is 23 */
-static struct nano_fifo le_data;
+static struct k_fifo le_data;
 static NET_BUF_POOL(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(BT_L2CAP_MAX_LE_MPS), &le_data, NULL,
 		    BT_BUF_USER_DATA_MIN);
@@ -302,7 +301,7 @@ destroy:
 	}
 }
 
-static void l2cap_rtx_timeout(struct nano_work *work)
+static void l2cap_rtx_timeout(struct k_work *work)
 {
 	struct bt_l2cap_le_chan *chan = LE_CHAN_RTX(work);
 
@@ -334,7 +333,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	nano_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
+	k_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
@@ -419,7 +418,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
-				struct net_buf *buf, uint32_t ticks)
+				struct net_buf *buf, int32_t timeout)
 {
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
 	 *
@@ -430,10 +429,10 @@ static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	if (ticks) {
-		nano_delayed_work_submit(&chan->chan.rtx_work, ticks);
+	if (timeout) {
+		k_delayed_work_submit(&chan->chan.rtx_work, timeout);
 	} else {
-		nano_delayed_work_cancel(&chan->chan.rtx_work);
+		k_delayed_work_cancel(&chan->chan.rtx_work);
 	}
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
@@ -506,7 +505,7 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 	}
 }
 
-struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo, size_t reserve)
+struct net_buf *bt_l2cap_create_pdu(struct k_fifo *fifo, size_t reserve)
 {
 	return bt_conn_create_pdu(fifo, sizeof(struct bt_l2cap_hdr) + reserve);
 }
@@ -700,7 +699,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", ch, ch->rx.cid);
 
 	/* Cancel ongoing work */
-	nano_delayed_work_cancel(&chan->rtx_work);
+	k_delayed_work_cancel(&chan->rtx_work);
 
 	/* There could be a writer waiting for credits so return a dummy credit
 	 * to wake it up.
@@ -967,7 +966,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Cancel RTX work */
-	nano_delayed_work_cancel(&chan->chan.rtx_work);
+	k_delayed_work_cancel(&chan->chan.rtx_work);
 
 	/* Reset ident since it got a response */
 	chan->chan.ident = 0;

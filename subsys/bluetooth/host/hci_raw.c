@@ -24,16 +24,16 @@
 
 #include "monitor.h"
 
-static struct nano_fifo *raw_rx;
+static struct k_fifo *raw_rx;
 
 /* ACL incoming buffers */
-static struct nano_fifo avail_acl_in;
+static struct k_fifo avail_acl_in;
 static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
 		    BT_BUF_ACL_IN_SIZE, &avail_acl_in, NULL,
 		    sizeof(uint8_t));
 
 /* HCI event buffers */
-static struct nano_fifo avail_hci_evt;
+static struct k_fifo avail_hci_evt;
 static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
 		    BT_BUF_EVT_SIZE, &avail_hci_evt, NULL,
 		    sizeof(uint8_t));
@@ -113,7 +113,7 @@ int bt_send(struct net_buf *buf)
 	return bt_dev.drv->send(buf);
 }
 
-int bt_enable_raw(struct nano_fifo *rx_queue)
+int bt_enable_raw(struct k_fifo *rx_queue)
 {
 	struct bt_hci_driver *drv = bt_dev.drv;
 	int err;

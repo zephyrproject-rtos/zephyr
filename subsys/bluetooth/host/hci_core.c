@@ -24,7 +24,6 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
@@ -55,12 +54,12 @@
 #endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT	(5 * sys_clock_ticks_per_sec)
-#define RPA_TIMEOUT (CONFIG_BLUETOOTH_RPA_TIMEOUT * sys_clock_ticks_per_sec)
+#define CONN_UPDATE_TIMEOUT	(5 * MSEC_PER_SEC)
+#define RPA_TIMEOUT (CONFIG_BLUETOOTH_RPA_TIMEOUT * MSEC_PER_SEC)
 
-/* Stacks for the fibers */
-static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
-static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
+/* Stacks for the threads */
+static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static BT_STACK_NOINIT(cmd_tx_thread_stack, 256);
 
 struct bt_dev bt_dev;
 
@@ -108,13 +107,13 @@ struct acl_data {
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
 		      sizeof(struct bt_hci_cmd_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
-static struct nano_fifo avail_hci_cmd;
+static struct k_fifo avail_hci_cmd;
 static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    &avail_hci_cmd, NULL, sizeof(struct cmd_data));
 
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 /* HCI event buffers */
-static struct nano_fifo avail_hci_evt;
+static struct k_fifo avail_hci_evt;
 static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
 		    BT_BUF_EVT_SIZE, &avail_hci_evt, NULL,
 		    BT_BUF_USER_DATA_MIN);
@@ -122,9 +121,9 @@ static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
  * This priority pool is to handle HCI events that must not be dropped
  * (currently this is Command Status, Command Complete and Number of
  * Complete Packets) if running low on buffers. Buffers from this pool are not
- * allowed to be passed to RX fiber and must be returned from bt_recv().
+ * allowed to be passed to RX thread and must be returned from bt_recv().
  */
-static struct nano_fifo avail_prio_hci_evt;
+static struct k_fifo avail_prio_hci_evt;
 static NET_BUF_POOL(hci_evt_prio_pool, 1,
 		    BT_BUF_EVT_SIZE, &avail_prio_hci_evt, NULL,
 		    BT_BUF_USER_DATA_MIN);
@@ -141,7 +140,7 @@ static void report_completed_packet(struct net_buf *buf)
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 
-	nano_fifo_put(buf->free, buf);
+	k_fifo_put(buf->free, buf);
 
 	/* Do nothing if controller to host flow control is not supported */
 	if (!(bt_dev.supported_commands[10] & 0x20)) {
@@ -167,7 +166,7 @@ static void report_completed_packet(struct net_buf *buf)
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 }
 
-static struct nano_fifo avail_acl_in;
+static struct k_fifo avail_acl_in;
 static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
 		    BT_BUF_ACL_IN_SIZE, &avail_acl_in, report_completed_packet,
 		    sizeof(struct acl_data));
@@ -431,12 +430,12 @@ static int le_set_rpa(void)
 	}
 
 	/* restart timer even if failed to set new RPA */
-	nano_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
+	k_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
 
 	return err;
 }
 
-static void rpa_timeout(struct nano_work *work)
+static void rpa_timeout(struct k_work *work)
 {
 	BT_DBG("");
 
@@ -522,15 +521,19 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	for (i = 0; i < num_handles; i++) {
 		uint16_t handle, count;
 		struct bt_conn *conn;
+		int key;
 
 		handle = sys_le16_to_cpu(evt->h[i].handle);
 		count = sys_le16_to_cpu(evt->h[i].count);
 
 		BT_DBG("handle %u count %u", handle, count);
 
+		key = irq_lock();
+
 		conn = bt_conn_lookup_handle(handle);
 		if (!conn) {
 			BT_ERR("No connection for handle %u", handle);
+			irq_unlock(key);
 			continue;
 		}
 
@@ -541,6 +544,8 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			       count, conn->pending_pkts);
 			conn->pending_pkts = 0;
 		}
+
+		irq_unlock(key);
 
 		while (count--) {
 			k_sem_give(bt_conn_get_pkts(conn));
@@ -599,9 +604,9 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn->err = evt->reason;
 
 	/* Check stacks usage (no-ops if not enabled) */
-	stack_analyze("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack));
-	stack_analyze("cmd tx stack", cmd_tx_fiber_stack,
-		      sizeof(cmd_tx_fiber_stack));
+	stack_analyze("rx stack", rx_thread_stack, sizeof(rx_thread_stack));
+	stack_analyze("cmd tx stack", cmd_tx_thread_stack,
+		      sizeof(cmd_tx_thread_stack));
 	stack_analyze("conn tx stack", conn->stack, sizeof(conn->stack));
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
@@ -664,8 +669,8 @@ static void update_conn_param(struct bt_conn *conn)
 	 * The Peripheral device should not perform a Connection Parameter
 	 * Update procedure within 5 s after establishing a connection.
 	 */
-	nano_delayed_work_submit(&conn->le.update_work,
-				 conn->role == BT_HCI_ROLE_MASTER ? TICKS_NONE :
+	k_delayed_work_submit(&conn->le.update_work,
+				 conn->role == BT_HCI_ROLE_MASTER ? K_NO_WAIT :
 				 CONN_UPDATE_TIMEOUT);
 }
 
@@ -2262,19 +2267,25 @@ static void hci_reset_complete(struct net_buf *buf)
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 {
-	struct net_buf *sent = bt_dev.sent_cmd;
+	struct net_buf *sent;
+	int key = irq_lock();
 
+	sent = bt_dev.sent_cmd;
 	if (!sent) {
+		irq_unlock(key);
 		return;
 	}
 
 	if (cmd(sent)->opcode != opcode) {
 		BT_ERR("Unexpected completion of opcode 0x%04x expected 0x%04x",
 		       opcode, cmd(sent)->opcode);
+		irq_unlock(key);
 		return;
 	}
 
 	bt_dev.sent_cmd = NULL;
+
+	irq_unlock(key);
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
 	if (cmd(sent)->sync) {
@@ -2297,6 +2308,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
 	uint8_t status;
+	int key;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2309,17 +2321,25 @@ static void hci_cmd_complete(struct net_buf *buf)
 
 	hci_cmd_done(opcode, status, buf);
 
-	if (evt->ncmd && !bt_dev.ncmd) {
-		/* Allow next command to be sent */
-		bt_dev.ncmd = 1;
-		k_sem_give(&bt_dev.ncmd_sem);
+	key = irq_lock();
+
+	if (!evt->ncmd || bt_dev.ncmd) {
+		irq_unlock(key);
+		return;
 	}
+
+	/* Allow next command to be sent */
+	bt_dev.ncmd = 1;
+	irq_unlock(key);
+
+	k_sem_give(&bt_dev.ncmd_sem);
 }
 
 static void hci_cmd_status(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_status *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
+	int key;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2327,11 +2347,18 @@ static void hci_cmd_status(struct net_buf *buf)
 
 	hci_cmd_done(opcode, evt->status, buf);
 
-	if (evt->ncmd && !bt_dev.ncmd) {
-		/* Allow next command to be sent */
-		bt_dev.ncmd = 1;
-		k_sem_give(&bt_dev.ncmd_sem);
+	key = irq_lock();
+
+	if (!evt->ncmd || bt_dev.ncmd) {
+		irq_unlock(key);
+		return;
 	}
+
+	/* Allow next command to be sent */
+	bt_dev.ncmd = 1;
+	irq_unlock(key);
+
+	k_sem_give(&bt_dev.ncmd_sem);
 }
 
 static int prng_reseed(struct tc_hmac_prng_struct *h)
@@ -2355,7 +2382,7 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 		net_buf_unref(rsp);
 	}
 
-	extra = sys_tick_get();
+	extra = k_uptime_get();
 
 	ret = tc_hmac_prng_reseed(h, seed, sizeof(seed), (uint8_t *)&extra,
 				  sizeof(extra));
@@ -2615,7 +2642,8 @@ static void hci_le_meta_event(struct net_buf *buf)
 		le_adv_report(buf);
 		break;
 	default:
-		BT_DBG("Unhandled LE event 0x%02x", evt->subevent);
+		BT_WARN("Unhandled LE event 0x%02x len %u: %s",
+			evt->subevent, buf->len, bt_hex(buf->data, buf->len));
 		break;
 	}
 }
@@ -2705,7 +2733,8 @@ static void hci_event(struct net_buf *buf)
 		hci_le_meta_event(buf);
 		break;
 	default:
-		BT_WARN("Unhandled event 0x%02x", hdr->evt);
+		BT_WARN("Unhandled event 0x%02x len %u: %s", hdr->evt,
+			buf->len, bt_hex(buf->data, buf->len));
 		break;
 
 	}
@@ -2713,7 +2742,7 @@ static void hci_event(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static void hci_cmd_tx_fiber(void)
+static void hci_cmd_tx_thread(void)
 {
 	BT_DBG("started");
 
@@ -2727,8 +2756,7 @@ static void hci_cmd_tx_fiber(void)
 
 		/* Get next command - wait if necessary */
 		BT_DBG("calling net_buf_get_timeout");
-		buf = net_buf_get_timeout(&bt_dev.cmd_tx_queue, 0,
-					  TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&bt_dev.cmd_tx_queue, 0, K_FOREVER);
 		bt_dev.ncmd = 0;
 
 		/* Clear out any existing sent command */
@@ -3417,12 +3445,6 @@ int bt_recv(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr;
 
-#if defined(CONFIG_MICROKERNEL)
-	if (sys_execution_context_type_get() == NANO_CTX_TASK) {
-		return task_offload_to_fiber(bt_recv, buf);
-	}
-#endif /* CONFIG_MICROKERNEL */
-
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
@@ -3571,7 +3593,7 @@ static int bt_init(void)
 		return err;
 	}
 
-	nano_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
+	k_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
 #endif
 
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
@@ -3581,7 +3603,7 @@ static int bt_init(void)
 	return 0;
 }
 
-static void hci_rx_fiber(bt_ready_cb_t ready_cb)
+static void hci_rx_thread(bt_ready_cb_t ready_cb)
 {
 	struct net_buf *buf;
 
@@ -3593,7 +3615,7 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait");
-		buf = net_buf_get_timeout(&bt_dev.rx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&bt_dev.rx_queue, 0, K_FOREVER);
 
 		BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		       buf->len);
@@ -3616,7 +3638,7 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 		/* Make sure we don't hog the CPU if the rx_queue never
 		 * gets empty.
 		 */
-		fiber_yield();
+		k_yield();
 	}
 }
 
@@ -3652,15 +3674,17 @@ int bt_enable(bt_ready_cb_t cb)
 	k_sem_give(&bt_dev.ncmd_sem);
 #endif /* !CONFIG_BLUETOOTH_WAIT_NOP */
 
-	/* TX fiber */
-	nano_fifo_init(&bt_dev.cmd_tx_queue);
-	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
-		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
+	/* TX thread */
+	k_fifo_init(&bt_dev.cmd_tx_queue);
+	k_thread_spawn(cmd_tx_thread_stack, sizeof(cmd_tx_thread_stack),
+		       (k_thread_entry_t)hci_cmd_tx_thread, NULL, NULL, NULL,
+		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	/* RX fiber */
-	nano_fifo_init(&bt_dev.rx_queue);
-	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-		    (nano_fiber_entry_t)hci_rx_fiber, (int)cb, 0, 7, 0);
+	/* RX thread */
+	k_fifo_init(&bt_dev.rx_queue);
+	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
+		       (k_thread_entry_t)hci_rx_thread, cb, NULL, NULL,
+		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	if (!cb) {
 		return bt_init();

@@ -459,7 +459,7 @@ void main(void)
 	bt_conn_auth_cb_register(&auth_cb_display);
 
 	while (1) {
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(MSEC_PER_SEC);
 
 		/* Temperature simulation */
 		if (simulate_temp) {

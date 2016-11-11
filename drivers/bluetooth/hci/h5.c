@@ -27,7 +27,6 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
-#include <misc/nano_work.h>
 #include <string.h>
 
 #include <bluetooth/bluetooth.h>
@@ -45,8 +44,8 @@
 static BT_STACK_NOINIT(tx_stack, 256);
 static BT_STACK_NOINIT(rx_stack, 256);
 
-static struct nano_delayed_work ack_work;
-static struct nano_delayed_work retx_work;
+static struct k_delayed_work ack_work;
+static struct k_delayed_work retx_work;
 
 #define HCI_3WIRE_ACK_PKT	0x00
 #define HCI_COMMAND_PKT		0x01
@@ -69,8 +68,8 @@ static bool reliable_packet(uint8_t type)
 }
 
 /* FIXME: Correct timeout */
-#define H5_RX_ACK_TIMEOUT	(sys_clock_ticks_per_sec / 4)
-#define H5_TX_ACK_TIMEOUT	(sys_clock_ticks_per_sec / 4)
+#define H5_RX_ACK_TIMEOUT	250
+#define H5_TX_ACK_TIMEOUT	250
 
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb
@@ -97,9 +96,9 @@ static bool reliable_packet(uint8_t type)
 static struct h5 {
 	struct net_buf		*rx_buf;
 
-	struct nano_fifo	tx_queue;
-	struct nano_fifo	rx_queue;
-	struct nano_fifo	unack_queue;
+	struct k_fifo		tx_queue;
+	struct k_fifo		rx_queue;
+	struct k_fifo		unack_queue;
 
 	uint8_t			tx_win;
 	uint8_t			tx_ack;
@@ -134,7 +133,7 @@ static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 #define CONFIG_BLUETOOTH_SIGNAL_COUNT	2
 #define SIG_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
 		      CONFIG_BLUETOOTH_MAX_SIG_LEN)
-static struct nano_fifo h5_sig;
+static struct k_fifo h5_sig;
 static NET_BUF_POOL(signal_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE,
 		    &h5_sig, NULL, 0);
 
@@ -211,7 +210,7 @@ static void process_unack(void)
 
 	while (number_removed) {
 		struct net_buf *buf = net_buf_get_timeout(&h5.unack_queue, 0,
-							  TICKS_NONE);
+							  K_NO_WAIT);
 
 		if (!buf) {
 			BT_ERR("Unack queue is empty");
@@ -304,7 +303,7 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 
 	/* Set ACK for outgoing packet and stop delayed work */
 	H5_SET_ACK(hdr, h5.tx_ack);
-	nano_delayed_work_cancel(&ack_work);
+	k_delayed_work_cancel(&ack_work);
 
 	if (reliable_packet(type)) {
 		H5_SET_RELIABLE(hdr);
@@ -334,27 +333,27 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 }
 
 /* Delayed work taking care about retransmitting packets */
-static void retx_timeout(struct nano_work *work)
+static void retx_timeout(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
 	BT_DBG("unack_queue_len %u", unack_queue_len);
 
 	if (unack_queue_len) {
-		struct nano_fifo tmp_queue;
+		struct k_fifo tmp_queue;
 		struct net_buf *buf;
 
-		nano_fifo_init(&tmp_queue);
+		k_fifo_init(&tmp_queue);
 
 		/* Queue to temperary queue */
 		while ((buf = net_buf_get_timeout(&h5.tx_queue, 0,
-						  TICKS_NONE))) {
+						  K_NO_WAIT))) {
 			net_buf_put(&tmp_queue, buf);
 		}
 
 		/* Queue unack packets to the beginning of the queue */
 		while ((buf = net_buf_get_timeout(&h5.unack_queue, 0,
-						  TICKS_NONE))) {
+						  K_NO_WAIT))) {
 			/* include also packet type */
 			net_buf_push(buf, sizeof(uint8_t));
 			net_buf_put(&h5.tx_queue, buf);
@@ -363,13 +362,13 @@ static void retx_timeout(struct nano_work *work)
 		}
 
 		/* Queue saved packets from temp queue */
-		while ((buf = net_buf_get_timeout(&tmp_queue, 0, TICKS_NONE))) {
+		while ((buf = net_buf_get_timeout(&tmp_queue, 0, K_NO_WAIT))) {
 			net_buf_put(&h5.tx_queue, buf);
 		}
 	}
 }
 
-static void ack_timeout(struct nano_work *work)
+static void ack_timeout(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
@@ -395,7 +394,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 		/* For reliable packet increment next transmit ack number */
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
 		/* Submit delayed work to ack the packet */
-		nano_delayed_work_submit(&ack_work, H5_RX_ACK_TIMEOUT);
+		k_delayed_work_submit(&ack_work, H5_RX_ACK_TIMEOUT);
 	}
 
 	h5_print_header(hdr, "RX: >");
@@ -501,7 +500,7 @@ static void bt_uart_isr(struct device *unused)
 			case HCI_3WIRE_LINK_PKT:
 			case HCI_3WIRE_ACK_PKT:
 				h5.rx_buf = net_buf_get_timeout(&h5_sig, 0,
-								TICKS_NONE);
+								K_NO_WAIT);
 				if (!h5.rx_buf) {
 					BT_WARN("No available signal buffers");
 					h5_reset_rx();
@@ -589,7 +588,7 @@ static int h5_queue(struct net_buf *buf)
 	return 0;
 }
 
-static void tx_fiber(void)
+static void tx_thread(void)
 {
 	BT_DBG("");
 
@@ -605,15 +604,14 @@ static void tx_fiber(void)
 		switch (h5.link_state) {
 		case UNINIT:
 			/* FIXME: send sync */
-			fiber_sleep(10);
+			k_sleep(100);
 			break;
 		case INIT:
 			/* FIXME: send conf */
-			fiber_sleep(10);
+			k_sleep(100);
 			break;
 		case ACTIVE:
-			buf = net_buf_get_timeout(&h5.tx_queue, 0,
-						  TICKS_UNLIMITED);
+			buf = net_buf_get_timeout(&h5.tx_queue, 0, K_FOREVER);
 			type = h5_get_type(buf);
 
 			h5_send(buf->data, type, buf->len);
@@ -624,7 +622,7 @@ static void tx_fiber(void)
 			net_buf_put(&h5.unack_queue, buf);
 			unack_queue_len++;
 
-			nano_delayed_work_submit(&retx_work, H5_TX_ACK_TIMEOUT);
+			k_delayed_work_submit(&retx_work, H5_TX_ACK_TIMEOUT);
 
 			break;
 		}
@@ -636,14 +634,14 @@ static void h5_set_txwin(uint8_t *conf)
 	conf[2] = h5.tx_win & 0x07;
 }
 
-static void rx_fiber(void)
+static void rx_thread(void)
 {
 	BT_DBG("");
 
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&h5.rx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&h5.rx_queue, 0, K_FOREVER);
 
 		hexdump("=> ", buf->data, buf->len);
 
@@ -690,7 +688,7 @@ static void rx_fiber(void)
 		/* Make sure we don't hog the CPU if the rx_queue never
 		 * gets empty.
 		 */
-		fiber_yield();
+		k_yield();
 	}
 }
 
@@ -702,24 +700,24 @@ static void h5_init(void)
 	h5.rx_state = START;
 	h5.tx_win = 4;
 
-	/* TX fiber */
-	nano_fifo_init(&h5.tx_queue);
-	fiber_start(tx_stack, sizeof(tx_stack), (nano_fiber_entry_t)tx_fiber,
-		    0, 0, 7, 0);
+	/* TX thread */
+	k_fifo_init(&h5.tx_queue);
+	k_thread_spawn(tx_stack, sizeof(tx_stack), (k_thread_entry_t)tx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	/* RX fiber */
+	/* RX thread */
 	net_buf_pool_init(signal_pool);
 
-	nano_fifo_init(&h5.rx_queue);
-	fiber_start(rx_stack, sizeof(rx_stack), (nano_fiber_entry_t)rx_fiber,
-		    0, 0, 7, 0);
+	k_fifo_init(&h5.rx_queue);
+	k_thread_spawn(rx_stack, sizeof(rx_stack), (k_thread_entry_t)rx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Unack queue */
-	nano_fifo_init(&h5.unack_queue);
+	k_fifo_init(&h5.unack_queue);
 
 	/* Init delayed work */
-	nano_delayed_work_init(&ack_work, ack_timeout);
-	nano_delayed_work_init(&retx_work, retx_timeout);
+	k_delayed_work_init(&ack_work, ack_timeout);
+	k_delayed_work_init(&retx_work, retx_timeout);
 }
 
 static int h5_open(void)
@@ -762,4 +760,4 @@ static int _bt_uart_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(_bt_uart_init, NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(_bt_uart_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

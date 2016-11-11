@@ -39,14 +39,14 @@
 static struct device *hci_uart_dev;
 
 #define STACK_SIZE 1024
-static uint8_t tx_fiber_stack[STACK_SIZE];
+static uint8_t tx_thread_stack[STACK_SIZE];
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
 		      sizeof(struct bt_hci_cmd_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
 
-static struct nano_fifo avail_cmd_tx;
+static struct k_fifo avail_cmd_tx;
 static NET_BUF_POOL(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    &avail_cmd_tx, NULL, BT_BUF_USER_DATA_MIN);
 
@@ -57,11 +57,18 @@ static NET_BUF_POOL(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 			 4 /* L2CAP header size */ + \
 			 BT_L2CAP_MTU)
 
-static struct nano_fifo avail_acl_tx;
-static NET_BUF_POOL(acl_tx_pool, CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS,
-		    BT_BUF_ACL_SIZE, &avail_acl_tx, NULL, BT_BUF_USER_DATA_MIN);
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS)
+#define TX_BUF_COUNT CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS
+#else
+#define TX_BUF_COUNT 6
+#endif
 
-static struct nano_fifo tx_queue;
+static struct k_fifo avail_acl_tx;
+
+static NET_BUF_POOL(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE,
+		    &avail_acl_tx, NULL, BT_BUF_USER_DATA_MIN);
+
+static struct k_fifo tx_queue;
 
 #define H4_CMD 0x01
 #define H4_ACL 0x02
@@ -226,27 +233,27 @@ static void bt_uart_isr(struct device *unused)
 		if (!remaining) {
 			SYS_LOG_DBG("full packet received");
 
-			/* Put buffer into TX queue, fiber will dequeue */
+			/* Put buffer into TX queue, thread will dequeue */
 			net_buf_put(&tx_queue, buf);
 			buf = NULL;
 		}
 	}
 }
 
-static void tx_fiber(int unused0, int unused1)
+static void tx_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		struct net_buf *buf;
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get_timeout(&tx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&tx_queue, 0, K_FOREVER);
 		/* Pass buffer to the stack */
 		bt_send(buf);
 
-		/* Give other fibers a chance to run if tx_queue keeps getting
+		/* Give other threads a chance to run if tx_queue keeps getting
 		 * new data all the time.
 		 */
-		fiber_yield();
+		k_yield();
 	}
 }
 
@@ -277,6 +284,52 @@ static int h4_send(struct net_buf *buf)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER)
+void bt_controller_assert_handle(char *file, uint32_t line)
+{
+	uint32_t len = 0, pos = 0;
+
+	/* Disable interrupts, this is unrecoverable */
+	(void)irq_lock();
+
+	uart_irq_rx_disable(hci_uart_dev);
+	uart_irq_tx_disable(hci_uart_dev);
+
+	if (file) {
+		while (file[len] != '\0') {
+			if (file[len] == '/') {
+				pos = len + 1;
+			}
+			len++;
+		}
+		file += pos;
+		len -= pos;
+	}
+
+	uart_poll_out(hci_uart_dev, H4_EVT);
+	/* Vendor-Specific debug event */
+	uart_poll_out(hci_uart_dev, 0xff);
+	/* 0xAA + strlen + \0 + 32-bit line number */
+	uart_poll_out(hci_uart_dev, 1 + len + 1 + 4);
+	uart_poll_out(hci_uart_dev, 0xAA);
+
+	if (len) {
+		while (*file != '\0') {
+			uart_poll_out(hci_uart_dev, *file);
+			file++;
+		}
+		uart_poll_out(hci_uart_dev, 0x00);
+	}
+
+	uart_poll_out(hci_uart_dev, line >> 0 & 0xff);
+	uart_poll_out(hci_uart_dev, line >> 8 & 0xff);
+	uart_poll_out(hci_uart_dev, line >> 16 & 0xff);
+	uart_poll_out(hci_uart_dev, line >> 24 & 0xff);
+
+	while (1) {
+	}
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER */
 
 static int hci_uart_init(struct device *unused)
 {
@@ -304,7 +357,7 @@ DEVICE_INIT(hci_uart, "hci_uart", &hci_uart_init, NULL, NULL,
 void main(void)
 {
 	/* incoming events and data from the controller */
-	static struct nano_fifo rx_queue;
+	static struct k_fifo rx_queue;
 	int err;
 
 	SYS_LOG_DBG("Start");
@@ -313,18 +366,18 @@ void main(void)
 	net_buf_pool_init(cmd_tx_pool);
 	net_buf_pool_init(acl_tx_pool);
 	/* Initialize the FIFOs */
-	nano_fifo_init(&tx_queue);
-	nano_fifo_init(&rx_queue);
+	k_fifo_init(&tx_queue);
+	k_fifo_init(&rx_queue);
 
-	task_fiber_start(tx_fiber_stack, STACK_SIZE,
-			 (nano_fiber_entry_t)tx_fiber, 0, 0, 7, 0);
+	k_thread_spawn(tx_thread_stack, STACK_SIZE, tx_thread, NULL, NULL,
+		       NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	bt_enable_raw(&rx_queue);
 
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&rx_queue, 0, K_FOREVER);
 		err = h4_send(buf);
 		if (err) {
 			SYS_LOG_ERR("Failed to send");

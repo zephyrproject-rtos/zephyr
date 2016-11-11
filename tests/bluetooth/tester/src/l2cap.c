@@ -28,7 +28,7 @@
 #define CHANNELS 2
 #define SERVERS 1
 
-static struct nano_fifo data_fifo;
+static struct k_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
@@ -218,7 +218,7 @@ static void send_data(uint8_t *data, uint16_t len)
 	}
 
 	buf = net_buf_get_timeout(&data_fifo, BT_L2CAP_CHAN_SEND_RESERVE,
-				  TICKS_UNLIMITED);
+				  K_FOREVER);
 	if (!buf) {
 		SYS_LOG_ERR("Out of buffers");
 		goto fail;

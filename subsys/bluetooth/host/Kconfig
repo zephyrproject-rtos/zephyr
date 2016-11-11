@@ -16,59 +16,24 @@
 # limitations under the License.
 #
 
-menuconfig BLUETOOTH
-	bool "Bluetooth support"
-	default n
-	select NANO_TIMEOUTS
-	select NET_BUF
-	help
-	  This option enables Bluetooth support.
+comment "Host Stack Configuration"
 
-if BLUETOOTH
-
-choice
-	prompt "Bluetooth Stack Selection"
-	default BLUETOOTH_STACK_HCI
-	help
-	  Select the Bluetooth stack to compile.
-
-config BLUETOOTH_STACK_HCI
-	bool "HCI Stack"
-	help
-	  Select the Bluetooth stack to use with HCI drivers.
-
-config BLUETOOTH_STACK_NBLE
-	bool "Nordic BLE Stack"
-	help
-	  Select the Bluetooth stack to use with Nordic BLE drivers.
-
-config BLUETOOTH_STACK_HCI_RAW
-	bool "Bluetooth RAW HCI access to the controller"
+config BLUETOOTH_HCI_RAW
+	bool "RAW HCI access"
 	help
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
 
-endchoice
-
-comment "HCI Stack Configurations"
-	depends on BLUETOOTH_STACK_HCI
-
-config BLUETOOTH_LE
-	bool "Bluetooth Low Energy (LE) support"
+# Virtual/hidden option to make the conditions more intuitive
+config BLUETOOTH_HCI_HOST
+	bool
 	default y
+	depends on !BLUETOOTH_HCI_RAW
 	select TINYCRYPT
-	select TINYCRYPT_AES if BLUETOOTH_SMP
-	select TINYCRYPT_AES_CMAC if BLUETOOTH_SMP
 	select TINYCRYPT_SHA256
 	select TINYCRYPT_SHA256_HMAC
 	select TINYCRYPT_SHA256_HMAC_PRNG
-	depends on BLUETOOTH_STACK_HCI
-	help
-	  This option enables Bluetooth Low Energy (LE) support.
-	  Currently it is mandatory whenever Bluetooth support
-	  (CONFIG_BLUETOOTH) is enabled.
 
-if BLUETOOTH_LE || BLUETOOTH_STACK_HCI_RAW
 config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
@@ -106,21 +71,21 @@ config BLUETOOTH_MAX_EVT_LEN
 	  for LE is the Command Complete for Read Local Supported
 	  Commands. It is a 3 byte Command Complete header + 65 byte
 	  return parameters = 68 bytes in total.
-endif # BLUETOOTH_LE || BLUETOOTH_STACK_HCI_RAW
 
 config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	string "Device Name of UART Device to an external Bluetooth Host"
 	default "UART_0"
-	depends on BLUETOOTH_STACK_HCI_RAW
+	depends on BLUETOOTH_HCI_RAW
 	help
 	  This option specifies the name of UART device to be used
 	  to connect to an external Bluetooth Host when Zephyr is
 	  acting as a Bluetooth Controller.
 
-if (BLUETOOTH_LE && BLUETOOTH_CONN) || BLUETOOTH_STACK_HCI_RAW
+if BLUETOOTH_CONN || BLUETOOTH_HCI_RAW
 config BLUETOOTH_ACL_IN_COUNT
 	int "Number of incoming ACL data buffers"
-	default 5
+	default 6
+	default BLUETOOTH_CONTROLLER_RX_BUFFERS if BLUETOOTH_CONTROLLER
 	range 2 64
 	help
 	  Number of buffers available for incoming ACL data.
@@ -134,9 +99,9 @@ config BLUETOOTH_L2CAP_IN_MTU
 	range 65 1300 if BLUETOOTH_SMP
 	help
 	  Maximum size of each incoming L2CAP PDU.
-endif # BLUETOOTH_LE && BLUETOOTH_CONN || BLUETOOTH_STACK_HCI_RAW
+endif # BLUETOOTH_CONN || BLUETOOTH_HCI_RAW
 
-if BLUETOOTH_LE
+if BLUETOOTH_HCI_HOST
 config BLUETOOTH_INTERNAL_STORAGE
 	bool "Use an internal persistent storage handler"
 	depends on FILE_SYSTEM
@@ -146,11 +111,11 @@ config BLUETOOTH_INTERNAL_STORAGE
 	  an internal default handler is used for this.
 
 config BLUETOOTH_RX_STACK_SIZE
-	int "Size of the receiving fiber stack"
+	int "Size of the receiving thread stack"
 	default 1024
 	range 1024 65536
 	help
-	  Size of the receiving fiber stack. This is the context from
+	  Size of the receiving thread stack. This is the context from
 	  which all event callbacks to the application occur. The
 	  default value is sufficient for basic operation, but if the
 	  application needs to do advanced things in its callbacks that
@@ -159,21 +124,18 @@ config BLUETOOTH_RX_STACK_SIZE
 
 config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
-	default n
 	select BLUETOOTH_CONN
 	help
 	  Select this for LE Peripheral role support.
 
 config BLUETOOTH_CENTRAL
 	bool "Central Role support"
-	default n
 	select BLUETOOTH_CONN
 	help
 	  Select this for LE Central role support.
 
 config BLUETOOTH_CONN
 	bool
-	default n
 
 if BLUETOOTH_CONN
 config BLUETOOTH_ATT_MTU
@@ -204,7 +166,8 @@ config BLUETOOTH_ATT_REQ_COUNT
 
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
-	default n
+	select TINYCRYPT_AES
+	select TINYCRYPT_AES_CMAC
 	help
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
@@ -212,7 +175,6 @@ config BLUETOOTH_SMP
 if BLUETOOTH_SMP
 config BLUETOOTH_PRIVACY
 	bool "Privacy Feature"
-	default n
 	help
 	  Enable local Privacy Feature support. This makes it possible
 	  to use Resolvable Private Addresses (RPAs).
@@ -228,14 +190,12 @@ config BLUETOOTH_RPA_TIMEOUT
 
 config BLUETOOTH_SIGNING
 	bool "Data signing support"
-	default n
 	help
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
 
 config BLUETOOTH_SMP_SC_ONLY
 	bool "Secure Connections Only Mode"
-	default n
 	help
 	  This option enables support for Secure Connection Only Mode. In this
 	  mode device shall only use Security Mode 1 Level 4 with exception
@@ -245,7 +205,6 @@ config BLUETOOTH_SMP_SC_ONLY
 
 config BLUETOOTH_USE_DEBUG_KEYS
 	bool "Enable Security Manager Debug Mode"
-	default n
 	depends on BLUETOOTH_TINYCRYPT_ECC
 	help
 	  This option places Security Manager in a Debug Mode. In this mode
@@ -260,20 +219,17 @@ endif # BLUETOOTH_SMP
 config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	bool "L2CAP Dynamic Channel support"
 	depends on BLUETOOTH_SMP
-	default n
 	help
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
 
 config BLUETOOTH_GATT_DYNAMIC_DB
 	bool "GATT dynamic database support"
-	default n
 	help
 	  This option enables GATT services to be added dynamically to database.
 
 config BLUETOOTH_GATT_CLIENT
 	bool "GATT client support"
-	default n
 	help
 	  This option enables support for the GATT Client role.
 
@@ -289,7 +245,6 @@ endif # BLUETOOTH_CONN
 
 config BLUETOOTH_TINYCRYPT_ECC
 	bool "Use TinyCrypt library for ECDH"
-	default n
 	select TINYCRYPT_ECC_DH
 	depends on MICROKERNEL
 	help
@@ -299,7 +254,7 @@ config BLUETOOTH_TINYCRYPT_ECC
 	  controller doesn't support required HCI commands LE Secure
 	  Connections support will be disabled.
 
-endif # BLUETOOTH_LE
+endif # BLUETOOTH_HCI_HOST
 
 config BLUETOOTH_MAX_CONN
 	int "Maximum number of simultaneous connections"
@@ -312,7 +267,6 @@ config BLUETOOTH_MAX_CONN
 
 config BLUETOOTH_DEBUG
 	bool
-	default n
 
 choice
 	prompt "Bluetooth debug type"
@@ -335,7 +289,6 @@ config BLUETOOTH_DEBUG_LOG
 
 config BLUETOOTH_DEBUG_MONITOR
 	bool "Monitor protocol over UART"
-	depends on BLUETOOTH_STACK_HCI
 	select BLUETOOTH_DEBUG
 	select CONSOLE_HAS_DRIVER
 	help
@@ -371,8 +324,7 @@ config BLUETOOTH_MONITOR_ON_DEV_NAME
 if BLUETOOTH_DEBUG
 config BLUETOOTH_DEBUG_HCI_CORE
 	bool "Bluetooth HCI core debug"
-	depends on BLUETOOTH_STACK_HCI
-	default n
+	depends on BLUETOOTH_HCI_HOST
 	help
 	  This option enables debug support for Bluetooth HCI
 	  core.
@@ -380,16 +332,14 @@ config BLUETOOTH_DEBUG_HCI_CORE
 config BLUETOOTH_DEBUG_CONN
 	bool "Bluetooth connection debug"
 	depends on BLUETOOTH_CONN
-	default n
 	help
 	  This option enables debug support for Bluetooth
 	  connection handling.
 
 config BLUETOOTH_DEBUG_KEYS
 	bool "Bluetooth security keys debug"
-	depends on BLUETOOTH_STACK_HCI
+	depends on BLUETOOTH_HCI_HOST
 	depends on BLUETOOTH_SMP
-	default n
 	help
 	  This option enables debug support for the handling of
 	  Bluetooth security keys.
@@ -397,16 +347,14 @@ config BLUETOOTH_DEBUG_KEYS
 config BLUETOOTH_DEBUG_L2CAP
 	bool "Bluetooth L2CAP debug"
 	depends on BLUETOOTH_CONN
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  L2ACP layer.
 
 config BLUETOOTH_DEBUG_SMP
 	bool "Bluetooth Security Manager Protocol (SMP) debug"
-	depends on BLUETOOTH_STACK_HCI
+	depends on BLUETOOTH_HCI_HOST
 	depends on BLUETOOTH_SMP
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Security Manager Protocol (SMP).
@@ -414,7 +362,6 @@ config BLUETOOTH_DEBUG_SMP
 config BLUETOOTH_SMP_SELFTEST
 	bool "Bluetooth SMP self tests executed on init"
 	depends on BLUETOOTH_DEBUG_SMP
-	default n
 	help
 	  This option enables SMP self-tests executed on startup
 	  to verify security and crypto functions.
@@ -422,7 +369,6 @@ config BLUETOOTH_SMP_SELFTEST
 config BLUETOOTH_SMP_FORCE_BREDR
 	bool "Force Bluetooth SMP over BR/EDR"
 	depends on BLUETOOTH_DEBUG_SMP
-	default n
 	help
 	  This option enables SMP over BR/EDR even if controller is not
 	  supporting BR/EDR Secure Connections. This optino is solely for
@@ -431,7 +377,6 @@ config BLUETOOTH_SMP_FORCE_BREDR
 config BLUETOOTH_DEBUG_ATT
 	bool "Bluetooth Attribute Protocol (ATT) debug"
 	depends on BLUETOOTH_CONN
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Attribute Protocol (ATT).
@@ -439,7 +384,6 @@ config BLUETOOTH_DEBUG_ATT
 config BLUETOOTH_DEBUG_GATT
 	bool "Bluetooth Generic Attribute Profile (GATT) debug"
 	depends on BLUETOOTH_CONN
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
@@ -447,7 +391,6 @@ config BLUETOOTH_DEBUG_GATT
 config BLUETOOTH_DEBUG_RFCOMM
 	bool "Bluetooth RFCOMM debug"
 	depends on BLUETOOTH_RFCOMM
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  RFCOMM layer.
@@ -455,7 +398,6 @@ config BLUETOOTH_DEBUG_RFCOMM
 config BLUETOOTH_DEBUG_HFP_HF
 	bool "Bluetooth Hands Free Profile (HFP) debug"
 	depends on BLUETOOTH_HFP_HF
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Hands Free Profile (HFP).
@@ -463,14 +405,12 @@ config BLUETOOTH_DEBUG_HFP_HF
 config BLUETOOTH_DEBUG_AVDTP
 	bool "Bluetooth AVDTP debug"
 	depends on BLUETOOTH_AVDTP
-	default n
 	help
 	  This option enables debug support for the Bluetooth AVDTP.
 
 config BLUETOOTH_DEBUG_A2DP
 	bool "Bluetooth A2DP debug"
 	depends on BLUETOOTH_A2DP
-	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  A2DP profile.
@@ -478,7 +418,6 @@ config BLUETOOTH_DEBUG_A2DP
 config BLUETOOTH_DEBUG_SDP
 	bool "Bluetooth Service Discovery Protocol (SDP) debug"
 	depends on BLUETOOTH_BREDR
-	default n
 	help
 		This option enables debug support for the Bluetooth
 		Service Discovery Protocol (SDP).
@@ -487,8 +426,7 @@ endif # BLUETOOTH_DEBUG
 
 config BLUETOOTH_BREDR
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
-	default n
-	depends on BLUETOOTH_STACK_HCI
+	depends on BLUETOOTH_HCI_HOST
 	select BLUETOOTH_CONN
 	select BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	help
@@ -497,7 +435,6 @@ config BLUETOOTH_BREDR
 if BLUETOOTH_BREDR
 config BLUETOOTH_RFCOMM
 	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
-	default n
 	help
 	  This option enables Bluetooth RFCOMM support
 
@@ -511,20 +448,17 @@ config BLUETOOTH_RFCOMM_L2CAP_MTU
 
 config BLUETOOTH_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
-	default n
 	select BLUETOOTH_RFCOMM
 	help
 	  This option enables Bluetooth HF support
 
 config BLUETOOTH_AVDTP
 	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
-	default n
 	help
 	  This option enables Bluetooth AVDTP support
 
 config BLUETOOTH_A2DP
 	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
-	default n
 	select BLUETOOTH_AVDTP
 	help
 	  This option enables the A2DP profile
@@ -544,4 +478,3 @@ config BLUETOOTH_BREDR_NAME
 	  Bluetooth BR/EDR name. Name can be up to 248 bytes long (excluding
 	  NULL termination). Can be empty string.
 endif # BLUETOOTH_BREDR
-endif # BLUETOOTH

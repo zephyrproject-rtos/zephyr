@@ -54,13 +54,13 @@
 static struct bt_rfcomm_server *servers;
 
 /* Pool for outgoing RFCOMM control packets, min MTU is 23 */
-static struct nano_fifo rfcomm_session;
+static struct k_fifo rfcomm_session;
 static NET_BUF_POOL(rfcomm_session_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_RFCOMM_BUF_SIZE(RFCOMM_MIN_MTU), &rfcomm_session, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
-/* Pool for dummy buffers to wake up the tx fibers */
-static struct nano_fifo dummy;
+/* Pool for dummy buffers to wake up the tx threads */
+static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
@@ -190,6 +190,22 @@ static struct bt_rfcomm_server *rfcomm_server_lookup_channel(uint8_t channel)
 	return NULL;
 }
 
+static struct bt_rfcomm_session *
+rfcomm_sessions_lookup_bt_conn(struct bt_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_rfcomm_pool); i++) {
+		struct bt_rfcomm_session *session = &bt_rfcomm_pool[i];
+
+		if (session->br_chan.chan.conn == conn) {
+			return session;
+		}
+	}
+
+	return NULL;
+}
+
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 {
 	if (server->channel < RFCOMM_CHANNEL_START ||
@@ -250,7 +266,7 @@ static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 	switch (old_state) {
 	case BT_RFCOMM_STATE_CONNECTED:
 		/* Queue a dummy buffer to wake up and stop the
-		 * tx fiber for states where it was running.
+		 * tx thread for states where it was running.
 		 */
 		net_buf_put(&dlc->tx_queue, net_buf_get(&dummy, 0));
 
@@ -291,7 +307,7 @@ static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
 	session->dlcs = NULL;
 }
 
-struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo)
+struct net_buf *bt_rfcomm_create_pdu(struct k_fifo *fifo)
 {
 	/* Length in RFCOMM header can be 2 bytes depending on length of user
 	 * data
@@ -299,6 +315,30 @@ struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo)
 	return bt_conn_create_pdu(fifo,
 				  sizeof(struct bt_l2cap_hdr) +
 				  sizeof(struct bt_rfcomm_hdr) + 1);
+}
+
+static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
+{
+	struct bt_rfcomm_hdr *hdr;
+	struct net_buf *buf;
+	uint8_t cr, fcs;
+
+	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
+	if (!buf) {
+		BT_ERR("No buffers");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	cr = BT_RFCOMM_CMD_CR(session->role);
+	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_SABM, BT_RFCOMM_PF_NON_UIH);
+	hdr->length = BT_RFCOMM_SET_LEN_8(0);
+
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
 static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
@@ -339,6 +379,10 @@ static void rfcomm_connected(struct bt_l2cap_chan *chan)
 	session->mtu = min(session->br_chan.rx.mtu,
 			   session->br_chan.tx.mtu) -
 			   BT_RFCOMM_HDR_SIZE + BT_RFCOMM_FCS_SIZE;
+
+	if (session->state == BT_RFCOMM_STATE_CONNECTING) {
+		rfcomm_send_sabm(session, 0);
+	}
 }
 
 static void rfcomm_disconnected(struct bt_l2cap_chan *chan)
@@ -425,9 +469,9 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
-static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
+static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 {
-	struct bt_rfcomm_dlc *dlc = (struct bt_rfcomm_dlc *)arg1;
+	struct bt_rfcomm_dlc *dlc = p1;
 	struct net_buf *buf;
 
 	BT_DBG("Started for dlc %p", dlc);
@@ -435,7 +479,7 @@ static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
 	while (dlc->state == BT_RFCOMM_STATE_CONNECTED) {
 		/* Get next packet for dlc */
 		BT_DBG("Wait for buf %p", dlc);
-		buf = net_buf_get_timeout(&dlc->tx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&dlc->tx_queue, 0, K_FOREVER);
 		if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
 			net_buf_unref(buf);
 			break;
@@ -459,7 +503,7 @@ static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
 	BT_DBG("dlc %p disconnected - cleaning up", dlc);
 
 	/* Give back any allocated buffers */
-	while ((buf = net_buf_get_timeout(&dlc->tx_queue, 0, TICKS_NONE))) {
+	while ((buf = net_buf_get_timeout(&dlc->tx_queue, 0, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -520,9 +564,9 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR);
 
-	nano_fifo_init(&dlc->tx_queue);
-	fiber_start(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_fiber,
-		    (int)dlc, 0, 7, 0);
+	k_fifo_init(&dlc->tx_queue);
+	k_thread_spawn(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_thread,
+		       dlc, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
@@ -672,6 +716,17 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 	net_buf_add_u8(buf, fcs);
 
 	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+}
+
+static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
+{
+	if (!dlci) {
+		if (session->state != BT_RFCOMM_STATE_CONNECTING) {
+			return;
+		}
+		session->state = BT_RFCOMM_STATE_CONNECTED;
+		/* TODO: STart dlc */
+	}
 }
 
 static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
@@ -923,6 +978,9 @@ static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_RFCOMM_DISC:
 		rfcomm_handle_disc(session, dlci);
 		break;
+	case BT_RFCOMM_UA:
+		rfcomm_handle_ua(session, dlci);
+		break;
 	default:
 		BT_WARN("Unknown/Unsupported RFCOMM Frame type 0x%02x",
 			frame_type);
@@ -986,6 +1044,62 @@ static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 	}
 
 	return NULL;
+}
+
+int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
+			  uint8_t channel)
+{
+	struct bt_rfcomm_session *session;
+	struct bt_l2cap_chan *chan;
+	int ret;
+
+	BT_DBG("conn %p dlc %p channel %d", conn, dlc, channel);
+
+	if (!dlc) {
+		return -EINVAL;
+	}
+
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (channel < RFCOMM_CHANNEL_START || channel > RFCOMM_CHANNEL_END) {
+		return -EINVAL;
+	}
+
+	session = rfcomm_sessions_lookup_bt_conn(conn);
+	if (!session) {
+		session = rfcomm_session_new(BT_RFCOMM_ROLE_INITIATOR);
+		if (!session) {
+			return -ENOMEM;
+		}
+	}
+
+	switch (session->state) {
+	case BT_RFCOMM_STATE_INIT:
+		if (session->role == BT_RFCOMM_ROLE_ACCEPTOR) {
+			/* There is an ongoing incoming conn */
+			break;
+		}
+		chan = &session->br_chan.chan;
+		ret = bt_l2cap_chan_connect(conn, chan, BT_L2CAP_PSM_RFCOMM);
+		if (ret < 0) {
+			session->state = BT_RFCOMM_STATE_IDLE;
+			return ret;
+		}
+		session->state = BT_RFCOMM_STATE_CONNECTING;
+		break;
+	case BT_RFCOMM_STATE_CONNECTING:
+		break;
+	case BT_RFCOMM_STATE_CONNECTED:
+		/* TODO: Start dlc */
+		break;
+	default:
+		BT_ERR("Invalid session state %d", session->state);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)

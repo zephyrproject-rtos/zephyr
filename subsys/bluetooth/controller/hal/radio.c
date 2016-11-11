@@ -489,7 +489,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	NRF_CCM->INTENCLR = CCM_INTENCLR_ENDCRYPT_Msk;
 	_NvicIrqUnpend(CCM_AAR_IRQn);
 
-	BT_ASSERT(NRF_CCM->EVENTS_ERROR == 0);
+	LL_ASSERT(NRF_CCM->EVENTS_ERROR == 0);
 #else
 	/* start KSGEN early, but dont wait for ENDCRYPT */
 	NRF_CCM->TASKS_KSGEN = 1;

@@ -1,11 +1,8 @@
 ccflags-y +=-I$(srctree)/include/drivers
 
-obj-$(CONFIG_BLUETOOTH_STACK_HCI) += \
-	uuid.o \
-	hci_core.o
+obj-$(CONFIG_BLUETOOTH_HCI_HOST) += uuid.o hci_core.o
 
-obj-$(CONFIG_BLUETOOTH_STACK_HCI_RAW) += \
-	hci_raw.o
+obj-$(CONFIG_BLUETOOTH_HCI_RAW) += hci_raw.o
 
 obj-$(CONFIG_BLUETOOTH_DEBUG) += log.o
 

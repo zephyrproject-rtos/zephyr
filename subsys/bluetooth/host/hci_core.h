@@ -110,16 +110,16 @@ struct bt_dev {
 	struct net_buf		*sent_cmd;
 
 	/* Queue for incoming HCI events & ACL data */
-	struct nano_fifo	rx_queue;
+	struct k_fifo		rx_queue;
 
 	/* Queue for high priority HCI events which may unlock waiters
-	 * in other fibers. Such events include Number of Completed
+	 * in other threads. Such events include Number of Completed
 	 * Packets, as well as the Command Complete/Status events.
 	 */
-	struct nano_fifo	rx_prio_queue;
+	struct k_fifo		rx_prio_queue;
 
 	/* Queue for outgoing HCI commands */
-	struct nano_fifo	cmd_tx_queue;
+	struct k_fifo		cmd_tx_queue;
 
 	/* Registered HCI driver */
 	struct bt_hci_driver	*drv;
@@ -129,7 +129,7 @@ struct bt_dev {
 	uint8_t			irk[16];
 
 	/* Work used for RPA rotation */
-	struct nano_delayed_work rpa_update;
+	struct k_delayed_work rpa_update;
 #endif
 };
 
@@ -187,7 +187,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
 
-/* The helper is only safe to be called from internal fibers as it's
+/* The helper is only safe to be called from internal threads as it's
  * not multi-threading safe
  */
 #if defined(CONFIG_BLUETOOTH_DEBUG)

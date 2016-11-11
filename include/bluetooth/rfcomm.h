@@ -85,7 +85,7 @@ typedef enum bt_rfcomm_role {
 /** @brief RFCOMM DLC structure. */
 struct bt_rfcomm_dlc {
 	/* Queue for outgoing data */
-	struct nano_fifo           tx_queue;
+	struct k_fifo              tx_queue;
 
 	/** TX credits */
 	struct k_sem               tx_credits;
@@ -137,6 +137,21 @@ struct bt_rfcomm_server {
  */
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
 
+/** @brief Connect RFCOMM channel
+ *
+ *  Connect RFCOMM dlc by channel, once the connection is completed dlc
+ *  connected() callback will be called. If the connection is rejected
+ *  disconnected() callback is called instead.
+ *
+ *  @param conn Connection object.
+ *  @param dlc Dlc object.
+ *  @param channel Server channel to connect to.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
+			  uint8_t channel);
+
 /** @brief Send data to RFCOMM
  *
  *  Send data from buffer to the dlc. Length should be less than or equal to
@@ -156,7 +171,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
  *
  *  @return New buffer.
  */
-struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo);
+struct net_buf *bt_rfcomm_create_pdu(struct k_fifo *fifo);
 
 #ifdef __cplusplus
 }

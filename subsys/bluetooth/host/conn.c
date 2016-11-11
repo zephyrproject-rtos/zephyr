@@ -23,7 +23,6 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -45,16 +44,16 @@
 #endif
 
 /* Pool for outgoing ACL fragments */
-static struct nano_fifo frag_buf;
+static struct k_fifo frag_buf;
 static NET_BUF_POOL(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), &frag_buf, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
-/* Pool for dummy buffers to wake up the tx fibers */
-static struct nano_fifo dummy;
+/* Pool for dummy buffers to wake up the tx threads */
+static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
 /* How long until we cancel HCI_LE_Create_Connection */
-#define CONN_TIMEOUT	(3 * sys_clock_ticks_per_sec)
+#define CONN_TIMEOUT	(3 * MSEC_PER_SEC)
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 const struct bt_conn_auth_cb *bt_auth;
@@ -136,7 +135,7 @@ void notify_le_param_updated(struct bt_conn *conn)
 	}
 }
 
-static void le_conn_update(struct nano_work *work)
+static void le_conn_update(struct k_work *work)
 {
 	struct bt_conn_le *le = CONTAINER_OF(work, struct bt_conn_le,
 					     update_work);
@@ -1005,16 +1004,16 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	return send_frag(conn, buf, BT_ACL_CONT, false);
 }
 
-static void conn_tx_fiber(int arg1, int arg2)
+static void conn_tx_thread(void *p1, void *p2, void *p3)
 {
-	struct bt_conn *conn = (struct bt_conn *)arg1;
+	struct bt_conn *conn = p1;
 	struct net_buf *buf;
 
 	BT_DBG("Started for handle %u", conn->handle);
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Get next ACL packet for connection */
-		buf = net_buf_get_timeout(&conn->tx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&conn->tx_queue, 0, K_FOREVER);
 		if (conn->state != BT_CONN_CONNECTED) {
 			net_buf_unref(buf);
 			break;
@@ -1028,7 +1027,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	BT_DBG("handle %u disconnected - cleaning up", conn->handle);
 
 	/* Give back any allocated buffers */
-	while ((buf = net_buf_get_timeout(&conn->tx_queue, 0, TICKS_NONE))) {
+	while ((buf = net_buf_get_timeout(&conn->tx_queue, 0, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -1056,16 +1055,17 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	conn->type = BT_CONN_TYPE_LE;
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
 	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
-	nano_delayed_work_init(&conn->le.update_work, le_conn_update);
+	k_delayed_work_init(&conn->le.update_work, le_conn_update);
 
 	return conn;
 }
 
-static void timeout_fiber(int arg1, int arg2)
+static void timeout_thread(void *p1, void *p2, void *p3)
 {
-	struct bt_conn *conn = (struct bt_conn *)arg1;
+	struct bt_conn *conn = p1;
 
-	ARG_UNUSED(arg2);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	conn->timeout = NULL;
 
@@ -1098,10 +1098,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		break;
 	case BT_CONN_CONNECT:
 		if (conn->timeout) {
-			fiber_delayed_start_cancel(conn->timeout);
+			k_thread_cancel(conn->timeout);
 			conn->timeout = NULL;
 
-			/* Drop the reference taken by timeout fiber */
+			/* Drop the reference taken by timeout thread */
 			bt_conn_unref(conn);
 		}
 		break;
@@ -1112,16 +1112,17 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	/* Actions needed for entering the new state */
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
-		nano_fifo_init(&conn->tx_queue);
-		fiber_start(conn->stack, sizeof(conn->stack), conn_tx_fiber,
-			    (int)bt_conn_ref(conn), 0, 7, 0);
+		k_fifo_init(&conn->tx_queue);
+		k_thread_spawn(conn->stack, sizeof(conn->stack), conn_tx_thread,
+			    bt_conn_ref(conn), NULL, NULL, K_PRIO_COOP(7),
+			    0, K_NO_WAIT);
 
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
 		break;
 	case BT_CONN_DISCONNECTED:
 		/* Notify disconnection and queue a dummy buffer to wake
-		 * up and stop the tx fiber for states where it was
+		 * up and stop the tx thread for states where it was
 		 * running.
 		 */
 		if (old_state == BT_CONN_CONNECTED ||
@@ -1146,7 +1147,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		/* Cancel Connection Update if it is pending */
 		if (conn->type == BT_CONN_TYPE_LE)
-			nano_delayed_work_cancel(&conn->le.update_work);
+			k_delayed_work_cancel(&conn->le.update_work);
 
 		/* Release the reference we took for the very first
 		 * state transition.
@@ -1166,11 +1167,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		}
 
 		/* Add LE Create Connection timeout */
-		conn->timeout = fiber_delayed_start(conn->stack,
-						    sizeof(conn->stack),
-						    timeout_fiber,
-						    (int)bt_conn_ref(conn),
-						    0, 7, 0, CONN_TIMEOUT);
+		conn->timeout = k_thread_spawn(conn->stack, sizeof(conn->stack),
+					       timeout_thread,
+					       bt_conn_ref(conn), NULL, NULL,
+					       K_PRIO_COOP(7), 0, CONN_TIMEOUT);
 		break;
 	case BT_CONN_DISCONNECT:
 		break;
@@ -1346,10 +1346,10 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 {
 	if (conn->timeout) {
-		fiber_delayed_start_cancel(conn->timeout);
+		k_thread_cancel(conn->timeout);
 		conn->timeout = NULL;
 
-		/* Drop the reference took by timeout fiber */
+		/* Drop the reference took by timeout thread */
 		bt_conn_unref(conn);
 	}
 
@@ -1370,7 +1370,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	}
 
 	/* Cancel any pending update */
-	nano_delayed_work_cancel(&conn->le.update_work);
+	k_delayed_work_cancel(&conn->le.update_work);
 
 	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
 	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
@@ -1555,7 +1555,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
 
-struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve)
+struct net_buf *bt_conn_create_pdu(struct k_fifo *fifo, size_t reserve)
 {
 	size_t head_reserve = reserve + sizeof(struct bt_hci_acl_hdr) +
 					CONFIG_BLUETOOTH_HCI_SEND_RESERVE;

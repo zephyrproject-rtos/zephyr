@@ -21,7 +21,6 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -40,7 +39,7 @@
 #define CONFIG_BLUETOOTH_AVDTP_CONN CONFIG_BLUETOOTH_MAX_CONN
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-static struct nano_fifo avdtp_sig;
+static struct k_fifo avdtp_sig;
 static NET_BUF_POOL(avdtp_sig_pool, CONFIG_BLUETOOTH_AVDTP_CONN,
 		    BT_AVDTP_BUF_SIZE(BT_AVDTP_MIN_MTU),
 		    &avdtp_sig, NULL, BT_BUF_USER_DATA_MIN);

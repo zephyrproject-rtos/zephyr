@@ -22,9 +22,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <toolchain.h>
 #include <misc/util.h>
-#include <nanokernel.h>
+#include <zephyr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -407,7 +406,7 @@ struct net_buf {
 	uint8_t flags;
 
 	/** Where the buffer should go when freed up. */
-	struct nano_fifo * const free;
+	struct k_fifo * const free;
 
 	/** Function to be called when the buffer is freed. */
 	void (*const destroy)(struct net_buf *buf);
@@ -447,7 +446,7 @@ struct net_buf {
  *
  *  If provided with a custom destroy callback this callback is
  *  responsible for eventually returning the buffer back to the free
- *  buffers FIFO through nano_fifo_put(buf->free, buf).
+ *  buffers FIFO through k_fifo_put(buf->free, buf).
  *
  *  @param _name     Name of buffer pool.
  *  @param _count    Number of buffers in the pool.
@@ -483,10 +482,10 @@ struct net_buf {
 	do {								\
 		int i;							\
 									\
-		nano_fifo_init(pool[0].buf.free);			\
+		k_fifo_init(pool[0].buf.free);				\
 									\
 		for (i = 0; i < ARRAY_SIZE(pool); i++) {		\
-			nano_fifo_put(pool[i].buf.free, &pool[i]);	\
+			k_fifo_put(pool[i].buf.free, &pool[i]);		\
 		}							\
 	} while (0)
 
@@ -506,9 +505,9 @@ struct net_buf {
  *  @warning If there are no available buffers and the function is
  *  called from a task or fiber the call will block until a buffer
  *  becomes available in the FIFO. If you want to make sure no blocking
- *  happens use net_buf_get_timeout() instead with TICKS_NONE.
+ *  happens use net_buf_get_timeout() instead with K_NO_WAIT.
  */
-struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head);
+struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head);
 
 /**
  *  @brief Get a new buffer from a FIFO.
@@ -521,13 +520,13 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head);
  *  @param fifo Which FIFO to take the buffer from.
  *  @param reserve_head How much headroom to reserve.
  *  @param timeout Affects the action taken should the FIFO be empty.
- *         If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
- *         wait as long as necessary. Otherwise, wait up to the specified
- *         number of ticks before timing out.
+ *         If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as
+ *         long as necessary. Otherwise, wait up to the specified number of
+ *         miliseconds before timing out.
  *
  *  @return New buffer or NULL if out of buffers.
  */
-struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
+struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
 				    size_t reserve_head, int32_t timeout);
 
 /**
@@ -551,7 +550,7 @@ void net_buf_reserve(struct net_buf *buf, size_t reserve);
  *  @param fifo Which FIFO to put the buffer to.
  *  @param buf Buffer.
  */
-void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf);
+void net_buf_put(struct k_fifo *fifo, struct net_buf *buf);
 
 /**
  *  @brief Decrements the reference count of a buffer.

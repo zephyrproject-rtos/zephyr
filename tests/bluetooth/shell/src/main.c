@@ -57,12 +57,12 @@ static bt_addr_le_t id_addr;
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
 static struct bt_conn *pairing_conn;
 
-static struct nano_fifo data_fifo;
+static struct k_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static struct nano_fifo data_bredr_fifo;
+static struct k_fifo data_bredr_fifo;
 static NET_BUF_POOL(data_bredr_pool, 1, DATA_BREDR_MTU, &data_bredr_fifo, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
@@ -1926,7 +1926,7 @@ static int cmd_l2cap_send(int argc, char *argv[])
 	while (count--) {
 		buf = net_buf_get_timeout(&data_fifo,
 					  BT_L2CAP_CHAN_SEND_RESERVE,
-					  TICKS_UNLIMITED);
+					  K_FOREVER);
 
 		memcpy(net_buf_add(buf, len), buf_data, len);
 		ret = bt_l2cap_chan_send(&l2cap_chan.chan, buf);
@@ -2081,6 +2081,33 @@ static int cmd_bredr_rfcomm_register(int argc, char *argv[])
 	} else {
 		printk("RFCOMM channel %u registered\n", rfcomm_server.channel);
 		bt_sdp_register_service(&spp_rec);
+	}
+
+	return 0;
+}
+
+static int cmd_rfcomm_connect(int argc, char *argv[])
+{
+	uint8_t channel;
+	int err;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return 0;
+	}
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	channel = strtoul(argv[1], NULL, 16);
+
+	err = bt_rfcomm_dlc_connect(default_conn, &rfcomm_dlc, channel);
+	if (err < 0) {
+		printk("Unable to connect to channel %d (err %u)\n",
+		       channel, err);
+	} else {
+		printk("RFCOMM connection pending\n");
 	}
 
 	return 0;
@@ -2259,6 +2286,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-oob", cmd_bredr_oob },
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 	{ "br-rfcomm-register", cmd_bredr_rfcomm_register },
+	{ "br-rfcomm-connect", cmd_rfcomm_connect, "<channel>" },
 	{ "br-rfcomm-send", cmd_rfcomm_send, "<number of packets>"},
 #endif /* CONFIG_BLUETOOTH_RFCOMM */
 #endif
@@ -2282,7 +2310,7 @@ void main(void)
 	shell_register_default_module(MY_SHELL_MODULE);
 
 	while (1) {
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(MSEC_PER_SEC);
 
 		/* Heartrate measurements simulation */
 		if (hrs_simulate) {

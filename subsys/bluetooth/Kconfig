@@ -15,6 +15,48 @@
 # limitations under the License.
 #
 
+menuconfig BLUETOOTH
+	bool "Bluetooth support"
+	select NANO_TIMEOUTS
+	select NET_BUF
+	help
+	  This option enables Bluetooth support.
+
+if BLUETOOTH
+
+choice
+	prompt "Bluetooth Stack Selection"
+	default BLUETOOTH_HCI
+	help
+	  Select the Bluetooth stack to compile.
+
+config BLUETOOTH_HCI
+	bool "HCI-based"
+	help
+	  HCI-based stack with optional host & controller parts and an
+	  HCI driver in between.
+
+config BLUETOOTH_CUSTOM
+	bool "Custom"
+	help
+	  Select a custom, non-HCI based stack. If you're not sure what
+	  this is, you probably want the HCI-based stack instead.
+
+endchoice
+
+if BLUETOOTH_HCI
+
+config BLUETOOTH_CONTROLLER
+	bool "Bluetooth Controller"
+	select BLUETOOTH_HOST_BUFFERS
+	help
+	  Enables support for SoC native controller implementation.
+
 source "subsys/bluetooth/host/Kconfig"
 
+if BLUETOOTH_CONTROLLER
 source "subsys/bluetooth/controller/Kconfig"
+endif
+
+endif # BLUETOOTH_HCI
+endif # BLUETOOTH
