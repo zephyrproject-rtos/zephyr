@@ -203,20 +203,9 @@ static void dad_timeout(struct k_work *work)
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 }
 
-void net_if_start_dad(struct net_if *iface)
+static void net_if_ipv6_start_dad(struct net_if *iface,
+				  struct net_if_addr *ifaddr)
 {
-	struct net_if_addr *ifaddr;
-	struct in6_addr addr = { 0 };
-
-	net_ipv6_addr_create_iid(&addr, &iface->link_addr);
-
-	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
-	if (!ifaddr) {
-		NET_ERR("Cannot add %s address to interface %p, DAD fails",
-			net_sprint_ipv6_addr(&addr), iface);
-		return;
-	}
-
 	ifaddr->addr_state = NET_ADDR_TENTATIVE;
 	ifaddr->dad_count = 1;
 
@@ -230,6 +219,22 @@ void net_if_start_dad(struct net_if *iface)
 		k_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
 	}
 }
+
+void net_if_start_dad(struct net_if *iface)
+{
+	struct net_if_addr *ifaddr;
+	struct in6_addr addr = { 0 };
+
+	net_ipv6_addr_create_iid(&addr, &iface->link_addr);
+
+	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
+	if (!ifaddr) {
+		NET_ERR("Cannot add %s address to interface %p, DAD fails",
+			net_sprint_ipv6_addr(&addr), iface);
+	}
+}
+#else
+#define net_if_ipv6_start_dad(...)
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
@@ -291,6 +296,18 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 	return NULL;
 }
 
+static void ipv6_addr_expired(struct k_work *work)
+{
+	struct net_if_addr *ifaddr = CONTAINER_OF(work,
+						  struct net_if_addr,
+						  lifetime);
+
+	NET_DBG("IPv6 address %s is deprecated",
+		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+
+	ifaddr->addr_state = NET_ADDR_DEPRECATED;
+}
+
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 				      uint32_t vlifetime)
 {
@@ -324,7 +341,15 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		if (vlifetime) {
 			iface->ipv6.unicast[i].is_infinite = false;
 
-			/* FIXME - set the timer */
+			k_delayed_work_init(
+				&iface->ipv6.unicast[i].lifetime,
+				ipv6_addr_expired);
+
+			NET_DBG("Expiring %s in %lu secs",
+				net_sprint_ipv6_addr(addr), vlifetime);
+
+			net_if_ipv6_addr_update_lifetime(
+				&iface->ipv6.unicast[i], vlifetime);
 		} else {
 			iface->ipv6.unicast[i].is_infinite = true;
 		}
@@ -332,6 +357,8 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
 			net_sprint_ipv6_addr(addr),
 			net_addr_type2str(addr_type));
+
+		net_if_ipv6_start_dad(iface, &iface->ipv6.unicast[i]);
 
 		net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_ADD, iface);
 
@@ -359,6 +386,8 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr)
 			    addr)) {
 			continue;
 		}
+
+		k_delayed_work_cancel(&iface->ipv6.unicast[i].lifetime);
 
 		iface->ipv6.unicast[i].is_used = false;
 
