@@ -71,16 +71,16 @@ static inline void _cc2520_print_gpio_config(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG(" GPIOCTRL0/1/2/3/4/5 = 0x%x/0x%x/0x%x/0x%x/0x%x/0x%x\n",
+	SYS_LOG_DBG("GPIOCTRL0/1/2/3/4/5 = 0x%x/0x%x/0x%x/0x%x/0x%x/0x%x\n",
 	    read_reg_gpioctrl0(&cc2520->spi),
 	    read_reg_gpioctrl1(&cc2520->spi),
 	    read_reg_gpioctrl2(&cc2520->spi),
 	    read_reg_gpioctrl3(&cc2520->spi),
 	    read_reg_gpioctrl4(&cc2520->spi),
 	    read_reg_gpioctrl5(&cc2520->spi));
-	SYS_LOG_DBG(" GPIOPOLARITY: 0x%x\n",
+	SYS_LOG_DBG("GPIOPOLARITY: 0x%x\n",
 	    read_reg_gpiopolarity(&cc2520->spi));
-	SYS_LOG_DBG(" GPIOCTRL: 0x%x\n",
+	SYS_LOG_DBG("GPIOCTRL: 0x%x\n",
 	    read_reg_gpioctrl(&cc2520->spi));
 }
 
@@ -88,7 +88,7 @@ static inline void _cc2520_print_exceptions(struct cc2520_context *cc2520)
 {
 	uint8_t flag = read_reg_excflag0(&cc2520->spi);
 
-	SYS_LOG_DBG(" EXCFLAG0: ");
+	SYS_LOG_DBG("EXCFLAG0: ");
 	if (flag & EXCFLAG0_RF_IDLE) {
 		SYS_LOG_DBG("RF_IDLE ");
 	}
@@ -117,7 +117,7 @@ static inline void _cc2520_print_exceptions(struct cc2520_context *cc2520)
 
 	flag = read_reg_excflag1(&cc2520->spi);
 
-	SYS_LOG_DBG(" EXCFLAG1: ");
+	SYS_LOG_DBG("EXCFLAG1: ");
 	if (flag & EXCFLAG1_RX_FRM_DONE) {
 		SYS_LOG_DBG("RX_FRM_DONE ");
 	}
@@ -684,7 +684,7 @@ static int cc2520_set_channel(struct device *dev, uint16_t channel)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG(" %u\n", channel);
+	SYS_LOG_DBG("%u\n", channel);
 
 	if (channel < 11 || channel > 26) {
 		return -EINVAL;
@@ -694,7 +694,7 @@ static int cc2520_set_channel(struct device *dev, uint16_t channel)
 	channel = 11 + 5 * (channel - 11);
 
 	if (!write_reg_freqctrl(&cc2520->spi, FREQCTRL_FREQ(channel))) {
-		SYS_LOG_ERR(" FAILED\n");
+		SYS_LOG_ERR("FAILED\n");
 		return -EIO;
 	}
 
@@ -705,12 +705,12 @@ static int cc2520_set_pan_id(struct device *dev, uint16_t pan_id)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG(" 0x%x\n", pan_id);
+	SYS_LOG_DBG("0x%x\n", pan_id);
 
 	pan_id = sys_le16_to_cpu(pan_id);
 
 	if (!write_mem_pan_id(&cc2520->spi, (uint8_t *) &pan_id)) {
-		SYS_LOG_ERR(" FAILED\n");
+		SYS_LOG_ERR("FAILED\n");
 		return -EIO;
 	}
 
@@ -721,12 +721,12 @@ static int cc2520_set_short_addr(struct device *dev, uint16_t short_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG(" 0x%x\n", short_addr);
+	SYS_LOG_DBG("0x%x\n", short_addr);
 
 	short_addr = sys_le16_to_cpu(short_addr);
 
 	if (!write_mem_short_addr(&cc2520->spi, (uint8_t *) &short_addr)) {
-		SYS_LOG_ERR(" FAILED\n");
+		SYS_LOG_ERR("FAILED\n");
 		return -EIO;
 	}
 
@@ -738,11 +738,11 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	struct cc2520_context *cc2520 = dev->driver_data;
 
 	if (!write_mem_ext_addr(&cc2520->spi, (void *)ieee_addr)) {
-		SYS_LOG_ERR(" FAILED\n");
+		SYS_LOG_ERR("FAILED\n");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG(" IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
 		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
 		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
@@ -811,12 +811,12 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 	if (!write_reg_excflag0(&cc2520->spi, EXCFLAG0_RESET_TX_FLAGS) ||
 	    !write_txfifo_length(&cc2520->spi, buf) ||
 	    !write_txfifo_content(&cc2520->spi, buf)) {
-		SYS_LOG_ERR(" Cannot feed in TX fifo\n");
+		SYS_LOG_ERR("Cannot feed in TX fifo\n");
 		goto error;
 	}
 
 	if (!verify_txfifo_status(cc2520, buf)) {
-		SYS_LOG_ERR(" Did not write properly into TX FIFO\n");
+		SYS_LOG_ERR("Did not write properly into TX FIFO\n");
 		goto error;
 	}
 
@@ -826,7 +826,7 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 		k_sem_init(&cc2520->tx_sync, 0, UINT_MAX);
 
 		if (!instruct_stxoncca(&cc2520->spi)) {
-			SYS_LOG_ERR(" Cannot start transmission\n");
+			SYS_LOG_ERR("Cannot start transmission\n");
 			goto error;
 		}
 
@@ -838,7 +838,7 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 	} while (!status && retry);
 
 	if (!status) {
-		SYS_LOG_ERR(" No TX_FRM_DONE\n");
+		SYS_LOG_ERR("No TX_FRM_DONE\n");
 		goto error;
 	}
 
