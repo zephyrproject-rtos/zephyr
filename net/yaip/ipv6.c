@@ -1976,12 +1976,23 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 
 			break;
 #endif
+		case NET_ICMPV6_ND_OPT_ROUTE:
+			NET_DBG("Route option (0x%x) skipped", type);
+			goto skip;
+
 #if defined(CONFIG_NET_IPV6_RA_RDNSS)
 		case NET_ICMPV6_ND_OPT_RDNSS:
-			NET_DBG("RDNSS option skipped");
+			NET_DBG("RDNSS option (0x%x) skipped", type);
+			goto skip;
 #endif
+
+		case NET_ICMPV6_ND_OPT_DNSSL:
+			NET_DBG("DNSSL option (0x%x) skipped", type);
+			goto skip;
+
 		default:
 			NET_DBG("Unknown ND option 0x%x", type);
+		skip:
 			frag = net_nbuf_skip(frag, offset, &offset,
 					     length * 8 - 2);
 			if (!frag && offset) {

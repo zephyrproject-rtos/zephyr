@@ -113,6 +113,7 @@ struct net_icmpv6_nd_opt_6co {
 #define NET_ICMPV6_ND_OPT_TLLAO       2
 #define NET_ICMPV6_ND_OPT_PREFIX_INFO 3
 #define NET_ICMPV6_ND_OPT_MTU         5
+#define NET_ICMPV6_ND_OPT_ROUTE       24
 #define NET_ICMPV6_ND_OPT_RDNSS       25
 #define NET_ICMPV6_ND_OPT_DNSSL       31
 #define NET_ICMPV6_ND_OPT_6CO         34
