@@ -18,14 +18,7 @@ BOARD = qemu_x86
 CONF_FILE = prj.conf
 
 export SOURCE_DIR = $(ZEPHYR_BASE)/samples/static_lib/hello_world
-export LDFLAGS_zephyr += -L$(O)/mylib/lib
+export LDFLAGS_zephyr += -L$(CURDIR)/../mylib/lib
 export ALL_LIBS += mylib
 
 include ${ZEPHYR_BASE}/Makefile.inc
-
-all qemu zephyr : all-mylib
-clean pristine mrproper : clean-mylib
-all-mylib: initconfig outputexports
-
-all-mylib clean-mylib:
-	$(MAKE) -C ../mylib O=$(O) $(@:-mylib=)
