@@ -33,9 +33,9 @@ int32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 /*
  * Used to allow _sys_soc_suspend() implementation to control notification
- * of the wake event that caused exit from low power state
+ * of the event that caused exit from kernel idling after pm operations.
  */
-unsigned char _sys_soc_notify_wake_event;
+unsigned char _sys_pm_idle_exit_notify;
 
 void __attribute__((weak)) _sys_soc_resume(void)
 {
@@ -81,8 +81,7 @@ static void _sys_power_save_idle(int32_t ticks __unused)
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
 	defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 
-	/* This assignment will be controlled by Kconfig flag in future */
-	_sys_soc_notify_wake_event = 1;
+	_sys_pm_idle_exit_notify = 1;
 
 	/*
 	 * Call the suspend hook function of the soc interface to allow
@@ -98,7 +97,7 @@ static void _sys_power_save_idle(int32_t ticks __unused)
 	 * the kernel's scheduling logic.
 	 */
 	if (_sys_soc_suspend(ticks) == SYS_PM_NOT_HANDLED) {
-		_sys_soc_notify_wake_event = 0;
+		_sys_pm_idle_exit_notify = 0;
 		nano_cpu_idle();
 	}
 #else
@@ -112,10 +111,10 @@ void _sys_power_save_idle_exit(int32_t ticks)
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
 	 * switches task or processes nested interrupts. This can be
-	 * disabled by calling _sys_soc_disable_wake_event_notification().
+	 * disabled by calling _sys_soc_pm_idle_exit_notification_disable().
 	 * Alternatively it can be simply ignored if not required.
 	 */
-	if (_sys_soc_notify_wake_event) {
+	if (_sys_pm_idle_exit_notify) {
 		_sys_soc_resume();
 	}
 #endif

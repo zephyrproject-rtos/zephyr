@@ -174,8 +174,8 @@ static int deep_sleep_entry(int32_t ticks)
 
 	start_time = rtc_read(rtc_dev);
 
-	/* Don't need wake event notification */
-	_sys_soc_disable_wake_event_notification();
+	/* Don't need pm idle exit event notification */
+	_sys_soc_pm_idle_exit_notification_disable();
 
 	/* Turn off peripherals/clocks here */
 	suspend_devices();
@@ -245,7 +245,7 @@ void _sys_soc_resume(void)
 	* so that restores are completed before scheduler swithes to other
 	* tasks.
 	*
-	* Call _sys_soc_disable_wake_event_notification() if this
+	* Call _sys_soc_pm_idle_exit_notification_disable() if this
 	* notification is not required.
 	*/
 }

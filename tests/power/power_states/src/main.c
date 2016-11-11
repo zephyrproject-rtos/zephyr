@@ -296,8 +296,8 @@ int _sys_soc_suspend(int32_t ticks)
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP:
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
-		/* Don't need wake event notification */
-		_sys_soc_disable_wake_event_notification();
+		/* Don't need pm idle exit notification */
+		_sys_soc_pm_idle_exit_notification_disable();
 
 		pm_operation = SYS_PM_DEEP_SLEEP;
 		do_soc_sleep(state);
