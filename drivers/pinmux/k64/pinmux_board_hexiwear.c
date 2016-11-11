@@ -66,4 +66,4 @@ static int hexiwear_pin_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(hexiwear_pin_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(hexiwear_pin_init, POST_KERNEL, CONFIG_PINMUX_INIT_PRIORITY);
