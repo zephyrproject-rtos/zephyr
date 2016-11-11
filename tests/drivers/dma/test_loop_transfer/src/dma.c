@@ -23,8 +23,8 @@
 #include <misc/printk.h>
 #include <string.h>
 
-#define SLEEPTIME  1
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec)
+/* in millisecond */
+#define SLEEPTIME  1000
 
 #define TRANSFER_LOOPS (5)
 #define RX_BUFF_SIZE (50)
@@ -64,9 +64,7 @@ static void test_error(struct device *dev, void *data)
 void main(void)
 {
 	struct device *dma;
-	struct nano_timer timer;
 	static uint32_t chan_id;
-	uint32_t data[2] = {0, 0};
 	struct dma_channel_config dma_chan_cfg = {0};
 	struct dma_transfer_config dma_trans = {0};
 
@@ -110,9 +108,7 @@ void main(void)
 		return;
 	}
 
-	nano_timer_init(&timer, data);
-	nano_timer_start(&timer, SLEEPTICKS);
-	nano_timer_test(&timer, TICKS_UNLIMITED);
+	k_sleep(SLEEPTIME);
 
 	if (transfer_count < TRANSFER_LOOPS) {
 		transfer_count = TRANSFER_LOOPS;
