@@ -16,6 +16,4 @@
 
 #if defined(CONFIG_NET_YAIP)
 #include <net/yaip/net_core.h>
-#else
-#include <net/uip/net_core.h>
 #endif

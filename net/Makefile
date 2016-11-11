@@ -5,6 +5,4 @@ obj-y += yaip/nbuf.o
 else
 obj-y += yaip/
 endif
-else
-obj-$(CONFIG_NETWORKING) += ip/
 endif
