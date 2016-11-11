@@ -257,5 +257,5 @@ static int _bt_nble_init(struct device *unused)
 	return 0;
 }
 
-DEVICE_INIT(bt_nble, "", _bt_nble_init, NULL, NULL, NANOKERNEL,
+DEVICE_INIT(bt_nble, "", _bt_nble_init, NULL, NULL, POST_KERNEL,
 	    CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
