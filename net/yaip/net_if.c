@@ -695,6 +695,18 @@ struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
 	return NULL;
 }
 
+static void ipv6_router_expired(struct k_work *work)
+{
+	struct net_if_router *router = CONTAINER_OF(work,
+						    struct net_if_router,
+						    lifetime);
+
+	NET_DBG("IPv6 router %s is expired",
+		net_sprint_ipv6_addr(&router->address.in6_addr));
+
+	router->is_used = false;
+}
+
 void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 					uint32_t lifetime)
 {
@@ -728,7 +740,11 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 			routers[i].is_default = true;
 			routers[i].is_infinite = false;
 
-			/* FIXME - add timer */
+			k_delayed_work_init(&routers[i].lifetime,
+					    ipv6_router_expired);
+
+			NET_DBG("Expiring %s in %lu secs",
+				net_sprint_ipv6_addr(addr), lifetime);
 		} else {
 			routers[i].is_default = false;
 			routers[i].is_infinite = true;

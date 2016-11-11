@@ -1730,12 +1730,6 @@ static inline uint32_t remaining(struct k_delayed_work *work)
 		sys_clock_ticks_per_sec;
 }
 
-static inline void submit_work(struct k_delayed_work *work,
-			       uint32_t time_in_sec)
-{
-	k_delayed_work_submit(work, time_in_sec * MSEC_PER_SEC);
-}
-
 static inline void handle_prefix_autonomous(struct net_buf *buf,
 			struct net_icmpv6_nd_opt_prefix_info *prefix_info)
 {
@@ -2039,7 +2033,8 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 				net_ipv6_nbr_data(nbr)->is_router = true;
 			}
 
-			submit_work(&router->lifetime, router_lifetime);
+			net_if_ipv6_router_update_lifetime(router,
+							   router_lifetime);
 		}
 	} else {
 		net_if_ipv6_router_add(net_nbuf_iface(buf),
