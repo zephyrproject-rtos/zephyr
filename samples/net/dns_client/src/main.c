@@ -72,7 +72,7 @@ char *domains[] = {"not_a_real_domain_name",
 		   "training.linuxfoundation.org",
 		   NULL};
 
-/* from net/yaip/utils.c */
+/* from subsys/net/ip/utils.c */
 char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 			     char *buf, int buflen);
 

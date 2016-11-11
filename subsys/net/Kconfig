@@ -43,8 +43,6 @@ config NET_BUF_SIMPLE_DEBUG
 	help
 	  Enable extra debug logs and checks for the generic network buffers.
 
-source "net/bluetooth/Kconfig"
-
 config  NETWORKING
 	bool "Link layer and IP networking support"
 	select NANO_TIMEOUTS
@@ -57,7 +55,7 @@ config  NETWORKING
 
 if NETWORKING
 
-source "net/yaip/Kconfig"
+source "subsys/net/ip/Kconfig"
 
 endif
 

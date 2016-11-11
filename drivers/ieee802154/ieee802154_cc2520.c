@@ -1,4 +1,4 @@
-/* ieee802154_cc2520_yaip.c - YAIP version of TI CC2520 driver */
+/* ieee802154_cc2520.c - TI CC2520 driver */
 
 /*
  * Copyright (c) 2016 Intel Corporation.

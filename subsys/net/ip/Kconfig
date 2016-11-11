@@ -1,4 +1,4 @@
-# Kconfig.yaip - Yet another IP stack config
+# Kconfig - IP stack config
 
 #
 # Copyright (c) 2016 Intel Corporation.
@@ -33,11 +33,11 @@ config NET_INIT_PRIO
 	Network initialization priority level. This number tells how
 	early in the boot the network stack is initialized.
 
-source "net/yaip/Kconfig.debug"
+source "subsys/net/ip/Kconfig.debug"
 
-source "net/yaip/Kconfig.ipv6"
+source "subsys/net/ip/Kconfig.ipv6"
 
-source "net/yaip/Kconfig.ipv4"
+source "subsys/net/ip/Kconfig.ipv4"
 
 config NET_IP_ADDR_CHECK
 	bool "Check IP address validity before sending IP packet"
@@ -252,14 +252,14 @@ config NET_NBUF_USER_DATA_SIZE
 	Example: For Bluetooth, the user_data shall be at least 4 bytes as
 	that is used for identifying the type of data they are carrying.
 
-source "net/yaip/Kconfig.stack"
+source "subsys/net/ip/Kconfig.stack"
 
-source "net/yaip/l2/Kconfig"
+source "subsys/net/ip/l2/Kconfig"
 
-source "net/yaip/Kconfig.mgmt"
+source "subsys/net/ip/Kconfig.mgmt"
 
-source "net/yaip/Kconfig.rpl"
+source "subsys/net/ip/Kconfig.rpl"
 
-source "net/yaip/Kconfig.samples"
+source "subsys/net/ip/Kconfig.samples"
 
 endmenu

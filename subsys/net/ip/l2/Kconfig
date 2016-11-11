@@ -86,7 +86,7 @@ config NET_DEBUG_L2_BLUETOOTH
 	help
 	Enables Bluetooth L2 output debug messages
 
-source "net/yaip/l2/ieee802154/Kconfig"
+source "subsys/net/ip/l2/ieee802154/Kconfig"
 
 config NET_ARP
 	bool "Enable ARP"

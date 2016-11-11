@@ -126,6 +126,6 @@ config  NET_DEBUG_L2_IEEE802154_FRAGMENT
 	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
 	default n
 
-source "net/yaip/l2/ieee802154/Kconfig.radio"
+source "subsys/net/ip/l2/ieee802154/Kconfig.radio"
 
 endif

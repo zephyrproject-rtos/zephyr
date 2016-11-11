@@ -1,4 +1,4 @@
-ccflags-y += -I${ZEPHYR_BASE}/net/yaip
+ccflags-y += -I${ZEPHYR_BASE}/subsys/net/ip
 
 ifeq ($(CONFIG_NET_TESTING), y)
 ccflags-y +=-I${ZEPHYR_BASE}/samples/net/common/

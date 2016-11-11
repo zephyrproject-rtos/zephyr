@@ -1,4 +1,4 @@
-ccflags-y += -I${ZEPHYR_BASE}/net/yaip
+ccflags-y += -I${ZEPHYR_BASE}/subsys/net/ip
 
 obj-$(CONFIG_NET_L2_DUMMY) += dummy.o
 obj-${CONFIG_NET_L2_ETHERNET} += ethernet.o
