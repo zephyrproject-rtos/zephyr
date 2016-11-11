@@ -276,9 +276,9 @@ void radio_filter_configure(uint8_t bitmask_enable,
 				uint8_t bitmask_addr_type,
 				uint8_t *bdaddr)
 {
-	uint8_t index = 8;
+	uint8_t index;
 
-	while (index--) {
+	for (index = 0; index < 8; index++) {
 		NRF_RADIO->DAB[index] = ((uint32_t)bdaddr[3] << 24) |
 			((uint32_t)bdaddr[2] << 16) |
 			((uint32_t)bdaddr[1] << 8) |
