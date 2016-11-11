@@ -718,6 +718,15 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     uint16_t router_lifetime);
 
 /**
+ * @brief Remove IPv6 router from the system.
+ *
+ * @param router Router information.
+ *
+ * @return True if successfully removed, false otherwise
+ */
+bool net_if_ipv6_router_rm(struct net_if_router *router);
+
+/**
  * @brief Get IPv6 hop limit specified for a given interface
  *
  * @param iface Network interface

@@ -747,6 +747,32 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 	return NULL;
 }
 
+bool net_if_ipv6_router_rm(struct net_if_router *router)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (!routers[i].is_used) {
+			continue;
+		}
+
+		if (&routers[i] != router) {
+			continue;
+		}
+
+		k_delayed_work_cancel(&routers[i].lifetime);
+
+		routers[i].is_used = false;
+
+		NET_DBG("[%d] router %s removed",
+			i, net_sprint_ipv6_addr(&routers[i].address.in6_addr));
+
+		return true;
+	}
+
+	return false;
+}
+
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state)
 {
