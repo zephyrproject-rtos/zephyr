@@ -1742,10 +1742,13 @@ static inline void handle_prefix_autonomous(struct net_buf *buf,
 	struct in6_addr addr = { 0 };
 	struct net_if_addr *ifaddr;
 
-	net_ipaddr_copy(&addr, &prefix_info->prefix);
-
+	/* Create IPv6 address using the given prefix and iid. We first
+	 * setup link local address, and then copy prefix over first 8
+	 * bytes of that address.
+	 */
 	net_ipv6_addr_create_iid(&addr,
 				 net_if_get_link_addr(net_nbuf_iface(buf)));
+	memcpy(&addr, &prefix_info->prefix, sizeof(struct in6_addr) / 2);
 
 	ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
 	if (ifaddr && ifaddr->addr_type == NET_ADDR_AUTOCONF) {
@@ -1760,16 +1763,20 @@ static inline void handle_prefix_autonomous(struct net_buf *buf,
 		    (prefix_info->valid_lifetime >
 		     remaining(&ifaddr->lifetime))) {
 			NET_DBG("Timer updating for address %s "
-				"lifetime %lu secs", &addr,
+				"long lifetime %lu secs",
+				net_sprint_ipv6_addr(&addr),
 				prefix_info->valid_lifetime);
 
-			submit_work(&ifaddr->lifetime,
-				    ntohl(prefix_info->valid_lifetime));
+			net_if_ipv6_addr_update_lifetime(ifaddr,
+						  prefix_info->valid_lifetime);
 		} else {
 			NET_DBG("Timer updating for address %s "
-				"lifetime %lu secs", &addr, TWO_HOURS);
-			submit_work(&ifaddr->lifetime, TWO_HOURS);
+				"lifetime %lu secs",
+				net_sprint_ipv6_addr(&addr), TWO_HOURS);
+
+			net_if_ipv6_addr_update_lifetime(ifaddr, TWO_HOURS);
 		}
+
 		net_if_addr_set_lf(ifaddr, false);
 	} else {
 		if (prefix_info->valid_lifetime ==
@@ -1801,7 +1808,8 @@ static inline struct net_buf *handle_ra_prefix(struct net_buf *buf,
 				  &prefix_info.preferred_lifetime);
 	/* Skip reserved bytes */
 	frag = net_nbuf_skip(frag, *pos, pos, 4);
-	frag = net_nbuf_read(frag, *pos, pos, 16, prefix_info.prefix.s6_addr);
+	frag = net_nbuf_read(frag, *pos, pos, sizeof(struct in6_addr),
+			     prefix_info.prefix.s6_addr);
 	if (!frag && *pos) {
 		return NULL;
 	}
@@ -1873,6 +1881,10 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	struct net_nbr *nbr = NULL;
 	struct net_if_router *router;
 	struct net_buf *frag;
+	uint16_t router_lifetime;
+	uint32_t reachable_time;
+	uint32_t retrans_timer;
+	uint8_t hop_limit;
 	uint16_t offset;
 	uint8_t length;
 	uint8_t type;
@@ -1894,31 +1906,42 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 		goto drop;
 	}
 
-	if (NET_ICMPV6_RA_BUF(buf)->cur_hop_limit) {
-		net_ipv6_set_hop_limit(net_nbuf_iface(buf),
-				       NET_ICMPV6_RA_BUF(buf)->cur_hop_limit);
+	frag = buf->frags;
+	offset = sizeof(struct net_ipv6_hdr) + net_nbuf_ext_len(buf) +
+		sizeof(struct net_icmp_hdr);
+
+	frag = net_nbuf_read_u8(frag, offset, &offset, &hop_limit);
+	frag = net_nbuf_skip(frag, offset, &offset, 1); /* flags */
+	if (!frag) {
+		goto drop;
+	}
+
+	if (hop_limit) {
+		net_ipv6_set_hop_limit(net_nbuf_iface(buf), hop_limit);
 		NET_DBG("New hop limit %d",
 			net_if_ipv6_get_hop_limit(net_nbuf_iface(buf)));
 	}
 
-	if (NET_ICMPV6_RA_BUF(buf)->reachable_time &&
+	frag = net_nbuf_read_be16(frag, offset, &offset, &router_lifetime);
+	frag = net_nbuf_read_be32(frag, offset, &offset, &reachable_time);
+	frag = net_nbuf_read_be32(frag, offset, &offset, &retrans_timer);
+	if (!frag) {
+		goto drop;
+	}
+
+	if (reachable_time &&
 	    (net_if_ipv6_get_reachable_time(net_nbuf_iface(buf)) !=
-	     ntohl(NET_ICMPV6_RA_BUF(buf)->reachable_time))) {
+	     NET_ICMPV6_RA_BUF(buf)->reachable_time)) {
 		net_if_ipv6_set_base_reachable_time(net_nbuf_iface(buf),
-			    ntohl(NET_ICMPV6_RA_BUF(buf)->reachable_time));
+						    reachable_time);
 
 		net_if_ipv6_set_reachable_time(net_nbuf_iface(buf));
 	}
 
-	if (NET_ICMPV6_RA_BUF(buf)->retrans_timer) {
+	if (retrans_timer) {
 		net_if_ipv6_set_retrans_timer(net_nbuf_iface(buf),
-			      ntohl(NET_ICMPV6_RA_BUF(buf)->retrans_timer));
+					      retrans_timer);
 	}
-
-	frag = buf->frags;
-	offset = sizeof(struct net_ipv6_hdr) +
-		 sizeof(struct net_icmp_hdr) +
-		 sizeof(struct net_icmpv6_ra_hdr);
 
 	while (frag) {
 		frag = net_nbuf_read(frag, offset, &offset, 1, &type);
@@ -2006,7 +2029,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	router = net_if_ipv6_router_lookup(net_nbuf_iface(buf),
 					   &NET_IPV6_BUF(buf)->src);
 	if (router) {
-		if (!NET_ICMPV6_RA_BUF(buf)->router_lifetime) {
+		if (!router_lifetime) {
 			/*TODO: Start rs_timer on iface if no routers
 			 * at all available on iface.
 			 */
@@ -2016,13 +2039,12 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 				net_ipv6_nbr_data(nbr)->is_router = true;
 			}
 
-			submit_work(&router->lifetime, (uint32_t)
-				ntohs(NET_ICMPV6_RA_BUF(buf)->router_lifetime));
+			submit_work(&router->lifetime, router_lifetime);
 		}
 	} else {
 		net_if_ipv6_router_add(net_nbuf_iface(buf),
-				&NET_IPV6_BUF(buf)->src,
-				ntohs(NET_ICMPV6_RA_BUF(buf)->router_lifetime));
+				       &NET_IPV6_BUF(buf)->src,
+				       router_lifetime);
 	}
 
 	if (nbr && net_ipv6_nbr_data(nbr)->pending) {
