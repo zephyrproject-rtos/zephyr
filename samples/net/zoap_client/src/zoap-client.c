@@ -118,7 +118,7 @@ static void retransmit_request(struct nano_work *work)
 	struct zoap_pending *pending;
 	struct zoap_packet *request;
 	struct net_buf *buf;
-	int r, timeout;
+	int r;
 
 	pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
@@ -140,8 +140,7 @@ static void retransmit_request(struct nano_work *work)
 		return;
 	}
 
-	timeout = pending->timeout * (sys_clock_ticks_per_sec / MSEC_PER_SEC);
-	nano_delayed_work_submit(&retransmit_work, timeout);
+	k_delayed_work_submit(&retransmit_work, pending->timeout);
 }
 
 void main(void)
@@ -175,7 +174,7 @@ void main(void)
 		return;
 	}
 
-	nano_delayed_work_init(&retransmit_work, retransmit_request);
+	k_delayed_work_init(&retransmit_work, retransmit_request);
 
 	buf = net_nbuf_get_tx(context);
 	if (!buf) {
@@ -253,5 +252,5 @@ void main(void)
 	zoap_pending_cycle(pending);
 	timeout = pending->timeout * (sys_clock_ticks_per_sec / MSEC_PER_SEC);
 
-	nano_delayed_work_submit(&retransmit_work, timeout);
+	k_delayed_work_submit(&retransmit_work, timeout);
 }
