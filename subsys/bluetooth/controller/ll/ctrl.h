@@ -213,6 +213,7 @@ struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
 void radio_filter_clear(void);
 uint32_t radio_filter_add(uint8_t addr_type, uint8_t *addr);
+uint32_t radio_filter_remove(uint8_t addr_type, uint8_t *addr);
 void radio_irk_clear(void);
 uint32_t radio_irk_add(uint8_t *irk);
 uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,

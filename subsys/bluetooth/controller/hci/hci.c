@@ -205,9 +205,8 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf *evt)
 	/* All LE commands in this octet. */
 	rp->commands[26] = 0xFF;
 	/* All LE commands in this octet,
-	 * except LE Remove Device From White List
 	 */
-	rp->commands[27] = 0xFD;
+	rp->commands[27] = 0xFF;
 	/* LE Start Encryption, LE Long Term Key Req Reply,
 	 * LE Long Term Key Req Neg Reply. and
 	 * LE Read Supported States.
@@ -480,6 +479,18 @@ static void le_add_dev_to_wl(struct net_buf *buf, struct net_buf *evt)
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 }
 
+static void le_rem_dev_from_wl(struct net_buf *buf, struct net_buf *evt)
+{
+	struct bt_hci_cp_le_rem_dev_from_wl *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint32_t status;
+
+	status = radio_filter_remove(cmd->addr.type, &cmd->addr.a.val[0]);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+}
+
 static void le_conn_update(struct net_buf *buf, struct net_buf *evt)
 {
 	struct hci_cp_le_conn_update *cmd = (void *)buf->data;
@@ -734,6 +745,10 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 
 	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_WL):
 		le_add_dev_to_wl(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_REM_DEV_FROM_WL):
+		le_rem_dev_from_wl(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CONN_UPDATE):
