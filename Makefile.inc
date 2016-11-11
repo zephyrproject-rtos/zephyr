@@ -109,7 +109,7 @@ debugserver: FORCE
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/support/$(FLASH_SCRIPT) debugserver
 
 
-initconfig: $(DOTCONFIG)
+initconfig outputexports: $(DOTCONFIG)
 
 $(BOARDCONFIG):
 	@rm -f $(O)/.board_*

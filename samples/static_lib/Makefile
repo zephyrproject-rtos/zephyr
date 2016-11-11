@@ -14,28 +14,7 @@
 # limitations under the License.
 #
 
-BOARD ?= qemu_x86
-CONF_FILE = prj.conf
+all qemu pristine clean:
+	$(MAKE) -C hello_world $@
 
-MYLIB = mylib/lib/libmylib.a
-
-all:
-	$(MAKE) clean
-	$(MAKE) mylib
-	$(MAKE) hello_world
-
-hello_world: $(MYLIB)
-	$(MAKE) -C hello_world
-
-$(MYLIB):
-	$(MAKE) -C mylib
-
-run:
-	$(MAKE) -C hello_world qemu
-
-pristine:
-	$(MAKE) -C mylib clean
-	$(MAKE) -C hello_world pristine
-
-clean:
-	$(MAKE) pristine
+run : qemu

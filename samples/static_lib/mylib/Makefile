@@ -14,24 +14,17 @@
 # limitations under the License.
 #
 
-# This Makefile is like a replacement of the $(ZEPHYR_BASE)/Makefile
-# for libraries. So, we need to define ARCH, and do it before including
-# Makefile.toolchain.*
-ARCH ?= x86
+O ?= $(error $$(O) is not set.  Try `make all-mylib` from hello_world)
 
-# This include will set CROSS_COMPILE & TOOLCHAIN_CFLAGS for us. It uses
-# two-pass compile flag configuration, so needs to be included twice.
-include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
-include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
-
-CC = $(CROSS_COMPILE)gcc
-AR = $(CROSS_COMPILE)ar
+-include $(O)/Makefile.export
+CFLAGS = $(KBUILD_CFLAGS) $(NOSTDINC_FLAGS) $(ZEPHYRINCLUDE)
+OBJDIR=$(O)/mylib/obj
+LIBDIR=$(O)/mylib/lib
 
 all:
-	mkdir -p obj lib
-	$(CC) -c $(TOOLCHAIN_CFLAGS) -Iinclude src/mylib.c -o obj/mylib.o
-	$(AR) -rcs lib/libmylib.a obj/mylib.o
+	mkdir -p $(OBJDIR) $(LIBDIR)
+	$(CC) -c $(CFLAGS) -Iinclude src/mylib.c -o $(OBJDIR)/mylib.o
+	$(AR) -rcs $(LIBDIR)/libmylib.a $(OBJDIR)/mylib.o
 
 clean:
-	rm -rf obj lib
-
+	rm -rf $(OBJDIR) $(LIBDIR)
