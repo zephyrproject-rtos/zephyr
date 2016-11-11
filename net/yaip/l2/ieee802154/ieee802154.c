@@ -215,21 +215,6 @@ static inline bool ieee802154_manage_send_buffer(struct net_if *iface,
 	ret = net_6lo_compress(buf, true, NULL);
 #endif
 
-	/* Upper IP stack sets the link layer address to be in
-	 * big endian format so we must swap it here.
-	 */
-	if (net_nbuf_ll_src(buf)->addr &&
-	    net_nbuf_ll_src(buf)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_nbuf_ll_src(buf)->addr,
-			     net_nbuf_ll_src(buf)->len);
-	}
-
-	if (net_nbuf_ll_dst(buf)->addr &&
-	    net_nbuf_ll_dst(buf)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_nbuf_ll_dst(buf)->addr,
-			     net_nbuf_ll_dst(buf)->len);
-	}
-
 	pkt_hexdump(buf, true);
 
 	return ret;
