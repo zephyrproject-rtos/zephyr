@@ -718,29 +718,46 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
 }
 
-static void rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
+static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 {
+	enum security_result result;
+
 	BT_DBG("dlc %p", dlc);
 
-	/* TODO: Need to check Security */
-	dlc->mtu = min(dlc->mtu, dlc->session->mtu);
-	dlc->state = BT_RFCOMM_STATE_CONFIG;
-	rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
+	result = rfcomm_dlc_security(dlc);
+	switch (result) {
+	case RFCOMM_SECURITY_PASSED:
+		dlc->mtu = min(dlc->mtu, dlc->session->mtu);
+		dlc->state = BT_RFCOMM_STATE_CONFIG;
+		rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
+		break;
+	case RFCOMM_SECURITY_PENDING:
+		dlc->state = BT_RFCOMM_STATE_SECURITY_PENDING;
+		break;
+	case RFCOMM_SECURITY_REJECT:
+	default:
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 {
-	struct bt_rfcomm_dlc *dlc;
+	struct bt_rfcomm_dlc *dlc, *tmp;
 
 	if (!dlci) {
 		if (session->state != BT_RFCOMM_STATE_CONNECTING) {
 			return;
 		}
 		session->state = BT_RFCOMM_STATE_CONNECTED;
-		for (dlc = session->dlcs; dlc; dlc = dlc->_next) {
+		for (dlc = session->dlcs; dlc; dlc = tmp) {
+			tmp = dlc->_next;
 			if (dlc->role == BT_RFCOMM_ROLE_INITIATOR &&
 			    dlc->state == BT_RFCOMM_STATE_INIT) {
-				rfcomm_dlc_start(dlc);
+				if (rfcomm_dlc_start(dlc) < 0) {
+					rfcomm_dlc_drop(dlc);
+				}
 			}
 		}
 	} else {
@@ -1058,6 +1075,10 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 		if (dlc->role == BT_RFCOMM_ROLE_ACCEPTOR) {
 			rfcomm_send_ua(session, dlc->dlci);
 			rfcomm_dlc_connected(dlc);
+		} else {
+			dlc->mtu = min(dlc->mtu, session->mtu);
+			dlc->state = BT_RFCOMM_STATE_CONFIG;
+			rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
 		}
 	}
 }
@@ -1141,6 +1162,7 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 			break;
 		}
 		chan = &session->br_chan.chan;
+		chan->required_sec_level = dlc->required_sec_level;
 		ret = bt_l2cap_chan_connect(conn, chan, BT_L2CAP_PSM_RFCOMM);
 		if (ret < 0) {
 			session->state = BT_RFCOMM_STATE_IDLE;
@@ -1151,7 +1173,10 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 	case BT_RFCOMM_STATE_CONNECTING:
 		break;
 	case BT_RFCOMM_STATE_CONNECTED:
-		rfcomm_dlc_start(dlc);
+		ret = rfcomm_dlc_start(dlc);
+		if (ret < 0) {
+			goto fail;
+		}
 		break;
 	default:
 		BT_ERR("Invalid session state %d", session->state);
