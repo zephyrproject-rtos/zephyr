@@ -30,13 +30,13 @@ config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	  in the controller.
 
 config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
-	int "Size of the receiving fiber stack"
+	int "Size of the receiving thread stack"
 	default 256
 	range 256 65536
 	help
-	  Size of the receiving fiber stack. This is the context from
+	  Size of the receiving thread stack. This is the context from
 	  which all radio messages are encoded into HCI events or data
-	  before passing it to Bluetooth receiving fiber.
+	  before passing it to Bluetooth receiving thread.
 
 config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
 	bool "Bluetooth Controller Assertion Handler"

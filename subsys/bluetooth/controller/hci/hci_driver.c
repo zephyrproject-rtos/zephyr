@@ -67,7 +67,7 @@ static uint8_t ALIGNED(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 static uint8_t ALIGNED(4) _radio[LL_MEM_TOTAL];
 
 static struct k_sem sem_recv;
-static BT_STACK_NOINIT(recv_fiber_stack,
+static BT_STACK_NOINIT(recv_thread_stack,
 		       CONFIG_BLUETOOTH_CONTROLLER_RX_STACK_SIZE);
 
 void radio_active_callback(uint8_t active)
@@ -124,7 +124,7 @@ static void swi5_nrf5_isr(void *arg)
 	work_run(NRF5_IRQ_SWI5_IRQn);
 }
 
-static void recv_fiber(int unused0, int unused1)
+static void recv_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		struct radio_pdu_node_rx *node_rx;
@@ -193,9 +193,8 @@ static void recv_fiber(int unused0, int unused1)
 			k_sem_take(&sem_recv, K_FOREVER);
 		}
 
-		stack_analyze("recv fiber stack",
-			      recv_fiber_stack,
-			      sizeof(recv_fiber_stack));
+		stack_analyze("recv thread stack", recv_thread_stack,
+			      sizeof(recv_thread_stack));
 	}
 }
 
@@ -320,8 +319,9 @@ static int hci_driver_open(void)
 	irq_enable(NRF5_IRQ_SWI5_IRQn);
 
 	k_sem_init(&sem_recv, 0, UINT_MAX);
-	fiber_start(recv_fiber_stack, sizeof(recv_fiber_stack),
-		    (nano_fiber_entry_t)recv_fiber, 0, 0, 7, 0);
+	k_thread_spawn(recv_thread_stack, sizeof(recv_thread_stack),
+		       recv_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
+		       K_NO_WAIT);
 
 	BT_DBG("Success.");
 
@@ -344,4 +344,4 @@ static int _hci_driver_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(_hci_driver_init, NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(_hci_driver_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
