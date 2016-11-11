@@ -6320,6 +6320,30 @@ uint32_t radio_filter_add(uint8_t addr_type, uint8_t *addr)
 	return 1;
 }
 
+uint32_t radio_filter_remove(uint8_t addr_type, uint8_t *addr)
+{
+	uint8_t index;
+
+	if (!_radio.filter_enable_bitmask) {
+		return 1;
+	}
+
+	index = 8;
+	while (index--) {
+		if ((_radio.filter_enable_bitmask & BIT(index)) &&
+		    (((_radio.filter_addr_type_bitmask >> index) & 0x01) ==
+		     (addr_type & 0x01)) &&
+		    !memcmp(_radio.filter_bdaddr[index], addr, BDADDR_SIZE)) {
+			_radio.filter_enable_bitmask &= ~BIT(index);
+			_radio.filter_addr_type_bitmask &= ~BIT(index);
+
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 void radio_irk_clear(void)
 {
 	_radio.nirk = 0;
