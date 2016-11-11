@@ -5,11 +5,10 @@ Initialization
 **************
 
 The Bluetooth subsystem is initialized using the :c:func:`bt_init()`
-function. The caller shall be either a task or a fiber. The caller
-should ensure that function succeeds by checking the return code for
-errors. If a function pointer is passed to :c:func:`bt_init()` the
-initialization happens synchronously and the completion is notified
-through the given function.
+function. The caller should ensure that function succeeds by checking
+the return code for errors. If a function pointer is passed to
+:c:func:`bt_init()` the initialization happens synchronously and the
+completion is notified through the given function.
 
 Bluetooth Application Example
 *****************************
