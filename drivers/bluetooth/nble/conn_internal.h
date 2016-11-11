@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <misc/nano_work.h>
-
 struct bt_conn {
 	uint16_t handle;
 	uint8_t role;
@@ -38,7 +36,7 @@ struct bt_conn {
 	} state;
 
 	/* Delayed work used to update connection parameters */
-	struct nano_delayed_work update_work;
+	struct k_delayed_work update_work;
 
 	void *gatt_private;
 	struct k_sem gatt_notif_sem;
