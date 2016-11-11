@@ -1666,13 +1666,13 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 		prefix = net_if_ipv6_prefix_add(net_nbuf_iface(buf),
 					&prefix_info->prefix,
 					prefix_info->len,
-					ntohl(prefix_info->valid_lifetime));
+					prefix_info->valid_lifetime);
 		if (prefix) {
 			NET_DBG("Interface %p add prefix %s/%d lifetime %lu",
 				net_nbuf_iface(buf),
 				net_sprint_ipv6_addr(&prefix_info->prefix),
 				prefix_info->prefix_len,
-				ntohl(prefix_info->valid_lifetime));
+				prefix_info->valid_lifetime);
 		} else {
 			NET_ERR("Prefix %s/%d could not be added to iface %p",
 				net_sprint_ipv6_addr(&prefix_info->prefix),
@@ -1709,11 +1709,11 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 			net_nbuf_iface(buf),
 			net_sprint_ipv6_addr(&prefix_info->prefix),
 			prefix_info->prefix_len,
-			ntohl(prefix_info->valid_lifetime));
+			prefix_info->valid_lifetime);
 
 		net_if_ipv6_prefix_set_lf(prefix, false);
 		net_if_ipv6_prefix_set_timer(prefix,
-					ntohl(prefix_info->valid_lifetime));
+					prefix_info->valid_lifetime);
 		break;
 	}
 }
@@ -1756,12 +1756,12 @@ static inline void handle_prefix_autonomous(struct net_buf *buf,
 		}
 
 		/* RFC 4862 ch 5.5.3 */
-		if ((ntohl(prefix_info->valid_lifetime) > TWO_HOURS) ||
-			(ntohl(prefix_info->valid_lifetime) >
-			 remaining(&ifaddr->lifetime))) {
+		if ((prefix_info->valid_lifetime > TWO_HOURS) ||
+		    (prefix_info->valid_lifetime >
+		     remaining(&ifaddr->lifetime))) {
 			NET_DBG("Timer updating for address %s "
 				"lifetime %lu secs", &addr,
-				ntohl(prefix_info->valid_lifetime));
+				prefix_info->valid_lifetime);
 
 			submit_work(&ifaddr->lifetime,
 				    ntohl(prefix_info->valid_lifetime));
@@ -1772,14 +1772,14 @@ static inline void handle_prefix_autonomous(struct net_buf *buf,
 		}
 		net_if_addr_set_lf(ifaddr, false);
 	} else {
-		if (ntohl(prefix_info->valid_lifetime) ==
+		if (prefix_info->valid_lifetime ==
 		    NET_IPV6_ND_INFINITE_LIFETIME) {
 			net_if_ipv6_addr_add(net_nbuf_iface(buf),
 					     &addr, NET_ADDR_AUTOCONF, 0);
 		} else {
 			net_if_ipv6_addr_add(net_nbuf_iface(buf),
-					&addr, NET_ADDR_AUTOCONF,
-					ntohl(prefix_info->valid_lifetime));
+					     &addr, NET_ADDR_AUTOCONF,
+					     prefix_info->valid_lifetime);
 		}
 	}
 }
