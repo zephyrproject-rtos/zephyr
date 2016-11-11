@@ -29,13 +29,6 @@
 extern "C" {
 #endif
 
-/**
- * @brief Ring Buffer APIs
- * @defgroup nanokernel_ringbuffer Ring Bufer
- * @ingroup nanokernel_services
- * @{
- */
-
 #define SIZE32_OF(x) (sizeof((x))/sizeof(uint32_t))
 
 /**
@@ -54,6 +47,12 @@ struct ring_buf {
 	struct ring_buf *__next;
 #endif
 };
+
+/**
+ * @defgroup ring_buffer_apis Ring Buffer APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 /**
  * @brief Declare a power-of-two sized ring buffer
