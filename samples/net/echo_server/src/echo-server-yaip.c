@@ -103,12 +103,6 @@ static inline void init_app(void)
 
 		ifaddr = net_if_ipv6_addr_add(net_if_get_default(),
 					      &in6addr_my, NET_ADDR_MANUAL, 0);
-
-		/*
-		 * Make the address preferred so that it gets selected
-		 * properly.
-		 */
-		ifaddr->addr_state = NET_ADDR_PREFERRED;
 	} while (0);
 
 	net_if_ipv6_maddr_add(net_if_get_default(), &in6addr_mcast);
