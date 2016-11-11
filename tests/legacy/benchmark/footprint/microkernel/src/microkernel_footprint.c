@@ -44,63 +44,6 @@ typedef void* (*pfunc) (void*);
 
 volatile int i = 0;		/* counter used by foreground task */
 
-#ifndef CONFIG_KERNEL_V2
-
-/* legacy microkernel */
-
-/* pointer array ensures specified functions are linked into the image */
-static pfunc func_array[] = {
-	/* event functions */
-	(pfunc)task_event_send,
-	(pfunc)task_event_recv,
-	/* mutex functions */
-	(pfunc)task_mutex_lock,
-	(pfunc)_task_mutex_unlock,
-	/* FIFO functions */
-	(pfunc)task_fifo_put,
-	(pfunc)task_fifo_get,
-	(pfunc)_task_fifo_ioctl,
-	/* memory map functions */
-	(pfunc)task_mem_map_used_get,
-	(pfunc)task_mem_map_alloc,
-	(pfunc)_task_mem_map_free,
-#ifdef TEST_max
-	/* semaphore functions */
-	(pfunc)isr_sem_give,
-	(pfunc)task_sem_give,
-	(pfunc)task_sem_group_give,
-	(pfunc)task_sem_count_get,
-	(pfunc)task_sem_reset,
-	(pfunc)task_sem_group_reset,
-	(pfunc)task_sem_take,
-	(pfunc)task_sem_group_take,
-	/* pipe functions */
-	(pfunc)task_pipe_put,
-	(pfunc)task_pipe_get,
-	(pfunc)_task_pipe_block_put,
-	/* mailbox functions */
-	(pfunc)task_mbox_put,
-	(pfunc)task_mbox_get,
-	(pfunc)_task_mbox_block_put,
-	(pfunc)_task_mbox_data_get,
-	(pfunc)task_mbox_data_block_get,
-	/* memory pool functions */
-	(pfunc)task_mem_pool_alloc,
-	(pfunc)task_mem_pool_free,
-	(pfunc)task_mem_pool_defragment,
-	/* task functions */
-	(pfunc)_task_ioctl,
-	(pfunc)_task_group_ioctl,
-	(pfunc)task_abort_handler_set,
-	(pfunc)task_entry_set,
-	(pfunc)task_priority_set,
-	(pfunc)task_sleep,
-	(pfunc)task_yield,
-#endif /* TEST_max */
-};
-
-#else
-
 static pfunc func_array[] = {
 	/* mutexes */
 	(pfunc)k_mutex_init,
@@ -220,7 +163,6 @@ static pfunc func_array[] = {
 	(pfunc)k_thread_custom_data_get,
 #endif
 };
-#endif
 
 /**
  *

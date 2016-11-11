@@ -38,8 +38,6 @@
 #define IPM_THREAD 0
 #endif /* CONFIG_IPM_CONSOLE_RECEIVER && CONFIG_PRINTK*/
 
-#if defined(CONFIG_KERNEL_V2)
-
 /* Must account for:
  *	N Philosopher threads
  *	1 Object monitor thread
@@ -54,24 +52,6 @@ void *force_sys_work_q_in = (void *)&k_sys_work_q;
 
 #define OBJ_LIST_NAME k_sem
 #define OBJ_LIST_TYPE struct k_sem
-
-#else
-
-/* Must account for:
- *	N Philosopher fibers
- *	1 Object monitor fiber
- *	1 main() task
- *	1 IPM console fiber
- */
-
-#define TOTAL_FIBERS (N_PHILOSOPHERS + 1 + IPM_THREAD)
-#define TOTAL_TASKS 1
-#define TOTAL_THREADS (TOTAL_FIBERS + TOTAL_TASKS)
-
-#define OBJ_LIST_NAME nano_sem
-#define OBJ_LIST_TYPE struct nano_sem
-
-#endif /* CONFIG_KERNEL_V2 */
 
 static inline int test_thread_monitor(void)
 {

@@ -423,12 +423,7 @@ static int test_nano_fiber(nano_thread_id_t task_thread_id)
  *
  * @return N/A
  */
-#ifdef CONFIG_KERNEL_V2
 #define fiber_priority_set(fiber, new_prio) task_priority_set(fiber, new_prio)
-#else
-#define fiber_priority_set(thread, new_prio) \
-	do { (thread)->prio = (new_prio); } while ((0))
-#endif
 
 static void fiber_helper(int arg1, int arg2)
 {

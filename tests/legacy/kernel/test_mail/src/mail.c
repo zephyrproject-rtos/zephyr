@@ -52,15 +52,8 @@
 #define MSG_INFO1	1234  /* Message info test value */
 #define MSG_INFO2	666   /* Message info test value */
 
-#ifdef CONFIG_KERNEL_V2
-/* unified kernel: sender (correctly) told that receiver consumed no data */
 #define MSG_CANCEL_SIZE 0
 #define DATA_PTR(x) x.data
-#else
-/* classic microkernel: sender (wrongly) told that receiver consumed all data */
-#define MSG_CANCEL_SIZE MSGSIZE
-#define DATA_PTR(x) x.pointer_to_data
-#endif
 
 static char myData1[MSGSIZE] = "This is myData1";
 static char myData2[MSGSIZE] = "This is myData2";

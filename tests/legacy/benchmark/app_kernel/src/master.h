@@ -70,11 +70,6 @@ extern char sline[];
 extern void dummy_test(void);
 
 /* other external functions */
-#ifdef MICROKERNEL_CALL_BENCH
-extern void call_test(void);
-#else
-#define call_test dummy_test
-#endif
 
 #ifdef MAILBOX_BENCH
 extern void mailbox_test(void);

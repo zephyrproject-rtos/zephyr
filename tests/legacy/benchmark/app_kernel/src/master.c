@@ -115,9 +115,6 @@ void BenchTask(void)
 					 output_file);
 		PRINT_STRING(dashline, output_file);
 		task_start(RECVTASK);
-#ifndef CONFIG_KERNEL_V2
-		call_test();
-#endif
 		queue_test();
 		sema_test();
 		mutex_test();

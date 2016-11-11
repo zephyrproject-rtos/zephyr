@@ -317,11 +317,9 @@ SECTION_FUNC(TEXT, _Swap)
     ldr r2, =_SCS_ICSR_PENDSV
     str r2, [r1, #0]
 
-#ifdef CONFIG_KERNEL_V2
     /* load -EAGAIN as the default return value */
     ldr r0, =_k_neg_eagain
     ldr r0, [r0]
-#endif
 
     /* Unlock interrupts to allow PendSV, since it's running at prio 0xff
      *

@@ -34,7 +34,6 @@ Sample Output:
 |-----------------------------------------------------------------------------|
 |          S I M P L E   S E R V I C E    M E A S U R E M E N T S  |  nsec    |
 |-----------------------------------------------------------------------------|
-| kernel service request overhead                                  |     NNNNN|
 |-----------------------------------------------------------------------------|
 | enqueue 1 byte msg in FIFO                                       |    NNNNNN|
 | dequeue 1 byte msg in FIFO                                       |    NNNNNN|

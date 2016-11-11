@@ -22,7 +22,6 @@ config KERNEL_V2_DEBUG
 	bool
 	prompt "Kernel V2 debug help"
 	default n
-	depends on KERNEL_V2
 	select INIT_STACKS
 
 config NUM_COOP_PRIORITIES

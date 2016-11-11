@@ -324,7 +324,6 @@ int taskLifoWaitTest(void)
 	void *data;    /* ptr to data retrieved from LIFO */
 	int i;
 
-#ifdef CONFIG_KERNEL_V2
 	/*
 	 * the first item sent by the fiber is given directly to the waiting
 	 * task, which then ceases waiting (but doesn't get to execute yet);
@@ -333,20 +332,6 @@ int taskLifoWaitTest(void)
 	 */
 
 	int expected_item[3] = { 3, 1, 2 };
-#else
-	/*
-	 * all 3 items sent by the fiber are queued internally by the LIFO,
-	 * while the task is busy waiting; when the task finally gets to run
-	 * it retrieves all of the items in LIFO order
-	 *
-	 * note that the items would be received in a different order
-	 * if a fiber was waiting on the FIFO!; in this case, the first
-	 * item would be given directly to the fiber, and only the two
-	 * remaining items would be queued internally by the LIFO
-	 */
-
-	int expected_item[3] = { 1, 2, 3 };
-#endif
 
 	/* Wait on <taskWaitSem> in case fiber's print message blocked */
 	nano_fiber_sem_take(&taskWaitSem, TICKS_UNLIMITED);

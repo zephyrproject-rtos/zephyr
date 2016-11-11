@@ -47,34 +47,6 @@ typedef void* (*pfunc) (void*);
 /* stack used by fiber */
 static char __stack pStack[FIBER_STACK_SIZE];
 
-#ifndef CONFIG_KERNEL_V2
-
-/* pointer array ensures specified functions are linked into the image */
-volatile pfunc func_array[] = {
-	/* nano timer functions */
-	(pfunc)nano_timer_init,
-	(pfunc)nano_fiber_timer_start,
-	(pfunc)nano_fiber_timer_test,
-	/* nano semaphore functions */
-	(pfunc)nano_sem_init,
-	(pfunc)nano_fiber_sem_take,
-	(pfunc)nano_fiber_sem_give,
-#ifdef TEST_max
-	/* nano LIFO functions */
-	(pfunc)nano_lifo_init,
-	(pfunc)nano_fiber_lifo_put,
-	(pfunc)nano_fiber_lifo_get,
-	/* nano stack functions */
-	(pfunc)nano_stack_init,
-	(pfunc)nano_fiber_stack_push,
-	(pfunc)nano_fiber_stack_pop,
-	/* nano FIFO functions */
-	(pfunc)nano_fifo_init,
-	(pfunc)nano_fiber_fifo_put,
-	(pfunc)nano_fiber_fifo_get,
-#endif /* TEST_max */
-	};
-#else
 static pfunc func_array[] = {
 	/* timers */
 	(pfunc)k_timer_init,
@@ -114,7 +86,6 @@ static pfunc func_array[] = {
 	(pfunc)k_fifo_get,
 #endif
 };
-#endif
 
 /**
  *

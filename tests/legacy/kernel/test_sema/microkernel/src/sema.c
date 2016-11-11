@@ -30,9 +30,7 @@
  * fiber_sem_give()
  */
 
-#ifdef CONFIG_KERNEL_V2
 #define  __printf_like(f, a)
-#endif
 
 #include <zephyr.h>
 #include <tc_util.h>
@@ -323,7 +321,6 @@ int simpleGroupWaitTest(void)
 		}
 	}
 
-#ifdef CONFIG_KERNEL_V2
 	/*
 	 * In the current implementation of semaphore groups, the taken
 	 * semaphore is the first semaphore in 'semList'. Note that the
@@ -338,22 +335,6 @@ int simpleGroupWaitTest(void)
 			return TC_FAIL;
 		}
 	}
-#else
-	/*
-	 * The Alternate Task will signal the semaphore group once.  Note that
-	 * when the semaphore group is signalled, the last semaphore in the
-	 * group is the value that is returned, not the first.
-	 */
-
-	for (i = 3; i >= 0; i--) {
-		sema = task_sem_group_take(semList, TICKS_UNLIMITED);
-		if (sema != semList[i]) {
-			TC_ERROR("task_sem_group_take() error.  Expected %d, not %d\n",
-					 (int) semList[3], (int) sema);
-			return TC_FAIL;
-		}
-	}
-#endif
 
 	/*
 	 * Again wait for a semaphore to be signalled.  This time, the alternate

@@ -16,11 +16,6 @@
 # limitations under the License.
 #
 
-config KERNEL_V2
-	bool
-	prompt "Unified Kernel"
-	default n
-
 choice
 prompt "Kernel Type"
 default MICROKERNEL
@@ -226,17 +221,7 @@ endmenu
 
 endmenu
 
-if !KERNEL_V2
-source "kernel/nanokernel/Kconfig"
-endif
-
-if KERNEL_V2
 source "kernel/unified/Kconfig"
-endif
-
-if MICROKERNEL && !KERNEL_V2
-source "kernel/microkernel/Kconfig"
-endif
 
 menu "Power Management"
 config SYS_POWER_MANAGEMENT
@@ -296,8 +281,6 @@ config TICKLESS_IDLE
 	bool
 	prompt "Tickless idle"
 	default y
-	depends on MICROKERNEL || KERNEL_V2 ||     \
-		NANOKERNEL_TICKLESS_IDLE_SUPPORTED
 	help
 	This option suppresses periodic system clock interrupts whenever the
 	kernel becomes idle. This permits the system to remain in a power
@@ -325,7 +308,6 @@ endmenu
 config MDEF
 	bool
 	prompt "Use MDEF files for statically configured kernel objects"
-	depends on KERNEL_V2 || MICROKERNEL
 	default y
 	help
 	Using an MDEF file can help the startup time of the application since
