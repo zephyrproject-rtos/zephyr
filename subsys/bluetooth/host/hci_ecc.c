@@ -21,6 +21,7 @@
 
 #include <zephyr.h>
 #include <atomic.h>
+#include <misc/stack.h>
 #include <misc/byteorder.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
@@ -36,6 +37,8 @@
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif
+
+static BT_STACK_NOINIT(ecc_thread_stack, 1280);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const uint32_t debug_private_key[8] = {
@@ -55,7 +58,6 @@ static const uint8_t debug_public_key[64] = {
 #endif
 
 static struct k_fifo ecc_queue;
-static bool ecc_queue_ready;
 static int (*drv_send)(struct net_buf *buf);
 static uint32_t private_key[8];
 
@@ -202,24 +204,8 @@ static void emulate_le_generate_dhkey(struct net_buf *buf)
 	bt_recv(buf);
 }
 
-static void ecc_queue_init(void)
+static void ecc_thread(void *p1, void *p2, void *p3)
 {
-	unsigned int mask;
-
-	mask = irq_lock();
-
-	if (!ecc_queue_ready) {
-		k_fifo_init(&ecc_queue);
-		ecc_queue_ready = true;
-	}
-
-	irq_unlock(mask);
-}
-
-static void ecc_task(void)
-{
-	ecc_queue_init();
-
 	while (true) {
 		struct net_buf *buf;
 
@@ -238,11 +224,11 @@ static void ecc_task(void)
 			net_buf_unref(buf);
 			break;
 		}
+
+		stack_analyze("ecc stack", ecc_thread_stack,
+			      sizeof(ecc_thread_stack));
 	}
 }
-
-/* TODO measure required stack size, 1024 is not enough */
-DEFINE_TASK(ECC_TASKID, 10, ecc_task, 2048, EXE);
 
 static void clear_ecc_events(struct net_buf *buf)
 {
@@ -279,7 +265,11 @@ static int ecc_send(struct net_buf *buf)
 
 void bt_hci_ecc_init(void)
 {
-	ecc_queue_init();
+	k_fifo_init(&ecc_queue);
+
+	k_thread_spawn(ecc_thread_stack, sizeof(ecc_thread_stack),
+		       ecc_thread, NULL, NULL, NULL,
+		       K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
 
 	/* set wrapper for driver send function */
 	drv_send = bt_dev.drv->send;
