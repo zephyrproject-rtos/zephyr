@@ -37,7 +37,7 @@ menu "IEEE 802.15.4 drivers options"
 
 config  TI_CC2520
 	bool "TI CC2520 Driver support"
-	depends on NET_YAIP
+	depends on NETWORKING
 	select NET_L2_IEEE802154
 	default n
 
@@ -130,7 +130,7 @@ endif
 config UPIPE_15_4
 	bool "UART PIPE fake radio driver support for QEMU"
 	depends on BOARD_QEMU_X86
-	select NET_YAIP
+	select NETWORKING
 	select UART_PIPE
 	default n
 

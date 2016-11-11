@@ -16,8 +16,8 @@
 # limitations under the License.
 #
 
-menu "New IP stack [EXPERIMENTAL]"
-	depends on NET_YAIP
+menu "IP stack"
+	depends on NETWORKING
 
 # Hidden option
 config NET_L2_RAW_CHANNEL

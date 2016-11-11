@@ -236,9 +236,7 @@ struct eth_enc28j60_config {
 };
 
 struct eth_enc28j60_runtime {
-#ifdef CONFIG_NET_YAIP
 	struct net_if *iface;
-#endif
 	char __stack thread_stack[ENC28J60_THREAD_STACK_SIZE];
 	struct device *gpio;
 	struct device *spi;
@@ -249,9 +247,6 @@ struct eth_enc28j60_runtime {
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
 	struct k_sem spi_sem;
-#ifndef CONFIG_NET_YAIP
-	void (*receive_callback)(uint8_t *buffer, uint16_t len);
-#endif
 };
 
 #endif /*_ENC28J60_*/

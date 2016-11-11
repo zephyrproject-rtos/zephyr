@@ -17,7 +17,7 @@
 #include <zephyr.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
-#include <net/yaip/nbuf.h>
+#include <net/nbuf.h>
 #include <net/net_if.h>
 #include <string.h>
 #include <errno.h>

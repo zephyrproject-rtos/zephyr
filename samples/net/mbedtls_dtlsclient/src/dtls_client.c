@@ -65,9 +65,7 @@ static unsigned char heap[20480];
 
 const char *pers = "mini_client";
 
-#if defined(CONFIG_NET_YAIP)
 static struct in_addr client_addr = CLIENT_IP_ADDR;
-#endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
 #define ECJPAKE_PW_SIZE 6
@@ -303,17 +301,11 @@ uint8_t stack[STACK_SIZE];
 
 static inline int init_app(void)
 {
-#if defined(CONFIG_NET_YAIP)
 	if (!net_if_ipv4_addr_add(net_if_get_default(), &client_addr,
 				  NET_ADDR_MANUAL, 0)) {
 		return -EIO;
 	}
 	return 0;
-#else
-	net_init();
-	return 0;
-#endif
-
 }
 
 void main(void)
