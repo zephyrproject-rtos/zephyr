@@ -292,8 +292,8 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 	uint32_t new_offset = offset;
 	uint32_t size_remaining = size;
 
-	if ((offset < 0) ||
-	    ((size + offset) >= CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE) ||
+	if ((offset < 0) || ((offset & W25QXXDV_SECTOR_MASK) != 0) ||
+	    ((size + offset) > CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE) ||
 	    ((size & W25QXXDV_SECTOR_MASK) != 0)) {
 		return -ENODEV;
 	}
