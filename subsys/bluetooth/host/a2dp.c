@@ -15,11 +15,13 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 #include <misc/printk.h>
+#include <assert.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_A2DP)
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/avdtp.h>
 #include <bluetooth/a2dp.h>
 
 #include "hci_core.h"
@@ -138,4 +140,21 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 
 	BT_DBG("Connect request sent");
 	return a2dp_conn;
+}
+
+int bt_a2dp_register_endpoint(struct bt_a2dp_endpoint *endpoint,
+			      uint8_t media_type, uint8_t role)
+{
+	int err;
+
+	BT_ASSERT(endpoint);
+
+	err = bt_avdtp_register_sep(media_type, role, &(endpoint->info));
+	if (err < 0) {
+		return err;
+	}
+
+	/* TODO: Register SDP record */
+
+	return 0;
 }
