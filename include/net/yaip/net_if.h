@@ -696,6 +696,15 @@ struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
 						      struct in6_addr *addr);
 
 /**
+ * @brief Update validity lifetime time of a router.
+ *
+ * @param router Network IPv6 address
+ * @param lifetime Lifetime of this router.
+ */
+void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
+					uint32_t lifetime);
+
+/**
  * @brief Add IPv6 router to the system.
  *
  * @param iface Network interface

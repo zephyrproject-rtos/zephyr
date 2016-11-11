@@ -695,6 +695,17 @@ struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
 	return NULL;
 }
 
+void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
+					uint32_t lifetime)
+{
+	NET_DBG("Updating expire time of %s by %lu secs",
+		net_sprint_ipv6_addr(&router->address.in6_addr),
+		lifetime);
+
+	k_delayed_work_submit(&router->lifetime,
+			      lifetime * MSEC_PER_SEC);
+}
+
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     struct in6_addr *addr,
 					     uint16_t lifetime)
