@@ -40,9 +40,9 @@ This project includes:
 |  |_ scripts: post-processing scripts
 |  |  |_ term: terminal to use to get zephyr console logs and retrieve profiler
 |  |           data into a separate file for post-processing (linux only)
-|_ sample_microkernel_app: sample code to exercise profiler in microkernel
+|_ microkernel: sample code to exercise profiler in microkernel
 |                          mode
-|_ sample_nanokernel_app: sample code to exercise profiler in nanokernel mode
+|_ nanokernel: sample code to exercise profiler in nanokernel mode
 
 Following guide explains how to enable profiling in your application and
 how to use profiling data
