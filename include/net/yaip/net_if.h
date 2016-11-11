@@ -540,6 +540,15 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 uint32_t vlifetime);
 
 /**
+ * @brief Update validity lifetime time of an IPv6 address.
+ *
+ * @param ifaddr Network IPv6 address
+ * @param vlifetime Validity time for this address
+ */
+void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
+				      uint32_t vlifetime);
+
+/**
  * @brief Remove an IPv6 address from an interface
  *
  * @param iface Network interface

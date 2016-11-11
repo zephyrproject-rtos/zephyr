@@ -291,6 +291,17 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 	return NULL;
 }
 
+void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
+				      uint32_t vlifetime)
+{
+	NET_DBG("Updating expire time of %s by %lu secs",
+		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
+		vlifetime);
+
+	k_delayed_work_submit(&ifaddr->lifetime,
+			      vlifetime * MSEC_PER_SEC);
+}
+
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 struct in6_addr *addr,
 					 enum net_addr_type addr_type,
