@@ -27,7 +27,6 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
-#include <misc/nano_work.h>
 #include <string.h>
 
 #include <bluetooth/bluetooth.h>
@@ -45,8 +44,8 @@
 static BT_STACK_NOINIT(tx_stack, 256);
 static BT_STACK_NOINIT(rx_stack, 256);
 
-static struct nano_delayed_work ack_work;
-static struct nano_delayed_work retx_work;
+static struct k_delayed_work ack_work;
+static struct k_delayed_work retx_work;
 
 #define HCI_3WIRE_ACK_PKT	0x00
 #define HCI_COMMAND_PKT		0x01
@@ -69,8 +68,8 @@ static bool reliable_packet(uint8_t type)
 }
 
 /* FIXME: Correct timeout */
-#define H5_RX_ACK_TIMEOUT	(sys_clock_ticks_per_sec / 4)
-#define H5_TX_ACK_TIMEOUT	(sys_clock_ticks_per_sec / 4)
+#define H5_RX_ACK_TIMEOUT	250
+#define H5_TX_ACK_TIMEOUT	250
 
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb
@@ -304,7 +303,7 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 
 	/* Set ACK for outgoing packet and stop delayed work */
 	H5_SET_ACK(hdr, h5.tx_ack);
-	nano_delayed_work_cancel(&ack_work);
+	k_delayed_work_cancel(&ack_work);
 
 	if (reliable_packet(type)) {
 		H5_SET_RELIABLE(hdr);
@@ -334,7 +333,7 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 }
 
 /* Delayed work taking care about retransmitting packets */
-static void retx_timeout(struct nano_work *work)
+static void retx_timeout(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
@@ -369,7 +368,7 @@ static void retx_timeout(struct nano_work *work)
 	}
 }
 
-static void ack_timeout(struct nano_work *work)
+static void ack_timeout(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
@@ -395,7 +394,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 		/* For reliable packet increment next transmit ack number */
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
 		/* Submit delayed work to ack the packet */
-		nano_delayed_work_submit(&ack_work, H5_RX_ACK_TIMEOUT);
+		k_delayed_work_submit(&ack_work, H5_RX_ACK_TIMEOUT);
 	}
 
 	h5_print_header(hdr, "RX: >");
@@ -623,7 +622,7 @@ static void tx_thread(void)
 			net_buf_put(&h5.unack_queue, buf);
 			unack_queue_len++;
 
-			nano_delayed_work_submit(&retx_work, H5_TX_ACK_TIMEOUT);
+			k_delayed_work_submit(&retx_work, H5_TX_ACK_TIMEOUT);
 
 			break;
 		}
@@ -717,8 +716,8 @@ static void h5_init(void)
 	k_fifo_init(&h5.unack_queue);
 
 	/* Init delayed work */
-	nano_delayed_work_init(&ack_work, ack_timeout);
-	nano_delayed_work_init(&retx_work, retx_timeout);
+	k_delayed_work_init(&ack_work, ack_timeout);
+	k_delayed_work_init(&retx_work, retx_timeout);
 }
 
 static int h5_open(void)
