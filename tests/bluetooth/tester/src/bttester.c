@@ -126,7 +126,7 @@ static void handle_core(uint8_t opcode, uint8_t index, uint8_t *data,
 	}
 }
 
-static void cmd_handler(int arg1, int arg2)
+static void cmd_handler(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		struct btp_hdr *cmd;
@@ -164,7 +164,7 @@ static void cmd_handler(int arg1, int arg2)
 			break;
 		}
 
-		nano_fiber_fifo_put(&avail_queue, cmd);
+		k_fifo_put(&avail_queue, cmd);
 	}
 }
 
@@ -213,7 +213,8 @@ void tester_init(void)
 		k_fifo_put(&avail_queue, &cmd_buf[i * BTP_MTU]);
 	}
 
-	task_fiber_start(stack, STACKSIZE, cmd_handler, 0, 0, 7, 0);
+	k_thread_spawn(stack, STACKSIZE, cmd_handler, NULL, NULL, NULL,
+		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	uart_pipe_register(k_fifo_get(&avail_queue, K_NO_WAIT),
 			   BTP_MTU, recv_cb);
