@@ -10,11 +10,6 @@ obj-y += stm32f1xx/drivers/src/stm32f1xx_hal.o
 obj-y += stm32f1xx/soc/system_stm32f1xx.o
 endif
 
-ifdef CONFIG_SOC_SERIES_STM32F2X
-obj-y += stm32f2xx/drivers/src/stm32f2xx_hal.o
-obj-y += stm32f2xx/soc/system_stm32f2xx.o
-endif
-
 ifdef CONFIG_SOC_SERIES_STM32F4X
 obj-y += stm32f4xx/drivers/src/stm32f4xx_hal.o
 obj-y += stm32f4xx/soc/system_stm32f4xx.o
