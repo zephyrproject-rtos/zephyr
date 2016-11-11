@@ -59,7 +59,7 @@ static NET_BUF_POOL(rfcomm_session_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_RFCOMM_BUF_SIZE(RFCOMM_MIN_MTU), &rfcomm_session, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
-/* Pool for dummy buffers to wake up the tx fibers */
+/* Pool for dummy buffers to wake up the tx threads */
 static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
@@ -266,7 +266,7 @@ static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 	switch (old_state) {
 	case BT_RFCOMM_STATE_CONNECTED:
 		/* Queue a dummy buffer to wake up and stop the
-		 * tx fiber for states where it was running.
+		 * tx thread for states where it was running.
 		 */
 		net_buf_put(&dlc->tx_queue, net_buf_get(&dummy, 0));
 
@@ -469,9 +469,9 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
-static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
+static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 {
-	struct bt_rfcomm_dlc *dlc = (struct bt_rfcomm_dlc *)arg1;
+	struct bt_rfcomm_dlc *dlc = p1;
 	struct net_buf *buf;
 
 	BT_DBG("Started for dlc %p", dlc);
@@ -565,8 +565,8 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR);
 
 	k_fifo_init(&dlc->tx_queue);
-	fiber_start(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_fiber,
-		    (int)dlc, 0, 7, 0);
+	k_thread_spawn(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_thread,
+		       dlc, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
