@@ -52,8 +52,8 @@ static char __stack stack[STACKSIZE];
 #define MAX_CMD_QUEUED 3
 static struct uart_console_input buf[MAX_CMD_QUEUED];
 
-static struct nano_fifo avail_queue;
-static struct nano_fifo cmds_queue;
+static struct k_fifo avail_queue;
+static struct k_fifo cmds_queue;
 
 static shell_cmd_function_t app_cmd_handler;
 static shell_prompt_function_t app_prompt_handler;
@@ -81,7 +81,7 @@ static void line_queue_init(void)
 	int i;
 
 	for (i = 0; i < MAX_CMD_QUEUED; i++) {
-		nano_fifo_put(&avail_queue, &buf[i]);
+		k_fifo_put(&avail_queue, &buf[i]);
 	}
 }
 
@@ -323,7 +323,7 @@ static shell_cmd_function_t get_cb(int argc, char *argv[])
 	return NULL;
 }
 
-static void shell(int arg1, int arg2)
+static void shell(void *p1, void *p2, void *p3)
 {
 	char *argv[ARGC_MAX + 1];
 	size_t argc;
@@ -334,11 +334,11 @@ static void shell(int arg1, int arg2)
 
 		printk("%s", get_prompt());
 
-		cmd = nano_fiber_fifo_get(&cmds_queue, TICKS_UNLIMITED);
+		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
 		argc = line2argv(cmd->line, argv, ARRAY_SIZE(argv));
 		if (!argc) {
-			nano_fiber_fifo_put(&avail_queue, cmd);
+			k_fifo_put(&avail_queue, cmd);
 			continue;
 		}
 
@@ -349,7 +349,7 @@ static void shell(int arg1, int arg2)
 			} else {
 				printk("Unrecognized command: %s\n", argv[0]);
 				printk("Type 'help' for list of available commands\n");
-				nano_fiber_fifo_put(&avail_queue, cmd);
+				k_fifo_put(&avail_queue, cmd);
 				continue;
 			}
 		}
@@ -359,7 +359,7 @@ static void shell(int arg1, int arg2)
 			show_cmd_help(argv);
 		}
 
-		nano_fiber_fifo_put(&avail_queue, cmd);
+		k_fifo_put(&avail_queue, cmd);
 	}
 }
 
@@ -434,7 +434,7 @@ static uint8_t completion(char *line, uint8_t len)
 
 	/*
 	 * line to completion is not ended by '\0' as the line that gets from
-	 * nano_fiber_fifo_get function
+	 * k_fifo_get function
 	 */
 	line[len] = '\0';
 	dest = get_command_to_complete(line, &command_prefix);
@@ -508,14 +508,15 @@ static uint8_t completion(char *line, uint8_t len)
 
 void shell_init(const char *str)
 {
-	nano_fifo_init(&cmds_queue);
-	nano_fifo_init(&avail_queue);
+	k_fifo_init(&cmds_queue);
+	k_fifo_init(&avail_queue);
 
 	line_queue_init();
 
 	prompt = str ? str : "";
 
-	task_fiber_start(stack, STACKSIZE, shell, 0, 0, 7, 0);
+	k_thread_spawn(stack, STACKSIZE, shell, NULL, NULL, NULL,
+		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Register serial console handler */
 	uart_register_input(&avail_queue, &cmds_queue, completion);
