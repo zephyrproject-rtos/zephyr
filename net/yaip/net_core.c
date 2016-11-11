@@ -444,18 +444,27 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		 * one of the main protocols.
 		 */
 		case IPPROTO_ICMPV6:
+			net_nbuf_set_ext_len(buf,
+					     offset -
+					     sizeof(struct net_ipv6_hdr));
 			net_nbuf_set_ip_hdr_len(buf,
 						sizeof(struct net_ipv6_hdr));
 			return process_icmpv6_pkt(buf, hdr);
 
 #if defined(CONFIG_NET_UDP)
 		case IPPROTO_UDP:
+			net_nbuf_set_ext_len(buf,
+					     offset -
+					     sizeof(struct net_ipv6_hdr));
 			net_nbuf_set_ip_hdr_len(buf,
 						sizeof(struct net_ipv6_hdr));
 			return net_conn_input(IPPROTO_UDP, buf);
 #endif
 #if defined(CONFIG_NET_TCP)
 		case IPPROTO_TCP:
+			net_nbuf_set_ext_len(buf,
+					     offset -
+					     sizeof(struct net_ipv6_hdr));
 			net_nbuf_set_ip_hdr_len(buf,
 						sizeof(struct net_ipv6_hdr));
 			return net_conn_input(IPPROTO_TCP, buf);
