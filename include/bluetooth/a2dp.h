@@ -14,6 +14,19 @@
 extern "C" {
 #endif
 
+#include <bluetooth/avdtp.h>
+
+/** @brief Stream Structure */
+struct bt_a2dp_stream {
+	/* TODO */
+};
+
+/** @brief Stream End Point */
+struct bt_a2dp_endpoint {
+	/** Stream End Point Information */
+	struct bt_avdtp_seid_lsep info;
+};
+
 /** @brief A2DP structure */
 struct bt_a2dp;
 
