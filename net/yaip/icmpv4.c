@@ -101,6 +101,74 @@ static inline void setup_ipv4_header(struct net_buf *buf, uint8_t extra_len,
 	       NET_ICMPV4_UNUSED_LEN);
 }
 
+int net_icmpv4_send_echo_request(struct net_if *iface,
+				 struct in_addr *dst,
+				 uint16_t identifier,
+				 uint16_t sequence)
+{
+	const struct in_addr *src;
+	struct net_buf *buf, *frag;
+	uint16_t reserve;
+
+	/* Take the first address of the network interface */
+	src = &iface->ipv4.unicast[0].address.in_addr;
+
+	buf = net_nbuf_get_reserve_tx(0);
+
+	/* We cast to IPv6 address but that should be ok in this case
+	 * as IPv4 cannot be used in 802.15.4 where it is the reserve
+	 * size can change depending on address.
+	 */
+	reserve = net_if_get_ll_reserve(iface,
+					(const struct in6_addr *)dst);
+
+	frag = net_nbuf_get_reserve_data(reserve);
+
+	net_buf_frag_add(buf, frag);
+	net_nbuf_set_family(buf, AF_INET);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_ll_reserve(buf, reserve);
+
+	setup_ipv4_header(buf, 0, net_if_ipv4_get_ttl(iface),
+			  NET_ICMPV4_ECHO_REQUEST, 0);
+
+	net_ipaddr_copy(&NET_IPV4_BUF(buf)->src, src);
+	net_ipaddr_copy(&NET_IPV4_BUF(buf)->dst, dst);
+
+	NET_ICMPV4_ECHO_REQ_BUF(buf)->identifier = htons(identifier);
+	NET_ICMPV4_ECHO_REQ_BUF(buf)->sequence = htons(sequence);
+
+	NET_ICMP_BUF(buf)->chksum = 0;
+	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv4(buf);
+
+#if NET_DEBUG > 0
+	do {
+		char out[NET_IPV4_ADDR_LEN];
+
+		snprintf(out, sizeof(out),
+			 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
+
+		NET_DBG("Sending ICMPv4 Echo Request type %d"
+			" from %s to %s", NET_ICMPV4_ECHO_REQUEST,
+			net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), out);
+	} while (0);
+#endif /* NET_DEBUG > 0 */
+
+	net_buf_add(buf->frags, sizeof(struct net_ipv4_hdr) +
+		    sizeof(struct net_icmp_hdr) +
+		    sizeof(struct net_icmpv4_echo_req));
+
+	if (net_send_data(buf) >= 0) {
+		NET_STATS(++net_stats.icmp.sent);
+		return 0;
+	}
+
+	net_nbuf_unref(buf);
+	NET_STATS(++net_stats.icmp.drop);
+
+	return -EIO;
+}
+
 enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
 				  uint8_t type, uint8_t code)
 {
