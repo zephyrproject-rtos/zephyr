@@ -403,6 +403,18 @@ static inline bool net_is_ipv4_addr_loopback(struct in_addr *addr)
 }
 
 /**
+ *  @brief Check if the IPv4 address is unspecified (all bits zero)
+ *
+ *  @param addr IPv4 address.
+ *
+ *  @return True if the address is unspecified, false otherwise.
+ */
+static inline bool net_is_ipv4_addr_unspecified(const struct in_addr *addr)
+{
+	return addr->s_addr[0] == 0;
+}
+
+/**
  * @brief Check if the IPv4 address is a multicast address.
  *
  * @param addr IPv4 address
