@@ -391,6 +391,18 @@ static inline bool net_is_ipv6_prefix(const uint8_t *addr1,
 }
 
 /**
+ * @brief Check if the IPv4 address is a loopback address (127.0.0.0/8).
+ *
+ * @param addr IPv4 address
+ *
+ * @return True if address is a loopback address, False otherwise.
+ */
+static inline bool net_is_ipv4_addr_loopback(struct in_addr *addr)
+{
+	return addr->s4_addr[0] == 127;
+}
+
+/**
  * @brief Check if the IPv4 address is a multicast address.
  *
  * @param addr IPv4 address
