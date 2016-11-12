@@ -21,7 +21,7 @@
 #define __BT_LOG_H
 
 #include <sections.h>
-#include <nanokernel.h>
+#include <zephyr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +39,7 @@ extern "C" {
 void bt_log(int prio, const char *fmt, ...);
 
 #define BT_DBG(fmt, ...) bt_log(BT_LOG_DBG, "%s (%p): " fmt, \
-				__func__, sys_thread_self_get(), ##__VA_ARGS__)
+				__func__, k_current_get(), ##__VA_ARGS__)
 #define BT_ERR(fmt, ...) bt_log(BT_LOG_ERR, "%s: " fmt, \
 				__func__, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) bt_log(BT_LOG_WARN, "%s: " fmt, \
@@ -55,7 +55,7 @@ void bt_log(int prio, const char *fmt, ...);
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #include <misc/sys_log.h>
 
-#define BT_DBG(fmt, ...) SYS_LOG_DBG("(%p) " fmt, sys_thread_self_get(), \
+#define BT_DBG(fmt, ...) SYS_LOG_DBG("(%p) " fmt, k_current_get(), \
 				##__VA_ARGS__)
 #define BT_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
