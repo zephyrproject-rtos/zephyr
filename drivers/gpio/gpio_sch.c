@@ -18,7 +18,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <board.h>
 #include <init.h>
 #include <sys_io.h>
@@ -47,15 +47,15 @@
 #define _REG_CLEAR_BIT sys_clear_bit
 #endif /* GPIO_SCH_LEGACY_IO_PORTS_ACCESS */
 
-#define DEFINE_MM_REG_READ(__reg, __off)				\
-	static inline uint32_t _read_##__reg(uint32_t addr)		\
-	{								\
-		return _REG_READ(addr + __off);				\
+#define DEFINE_MM_REG_READ(__reg, __off)                                \
+	static inline uint32_t _read_##__reg(uint32_t addr)             \
+	{                                                               \
+		return _REG_READ(addr + __off);                         \
 	}
-#define DEFINE_MM_REG_WRITE(__reg, __off)				\
-	static inline void _write_##__reg(uint32_t data, uint32_t addr)	\
-	{								\
-		_REG_WRITE(data, addr + __off);				\
+#define DEFINE_MM_REG_WRITE(__reg, __off)                               \
+	static inline void _write_##__reg(uint32_t data, uint32_t addr) \
+	{                                                               \
+		_REG_WRITE(data, addr + __off);                         \
 	}
 
 DEFINE_MM_REG_READ(glvl, GPIO_SCH_REG_GLVL)
@@ -66,7 +66,7 @@ DEFINE_MM_REG_READ(gts, GPIO_SCH_REG_GTS)
 DEFINE_MM_REG_WRITE(gts, GPIO_SCH_REG_GTS)
 
 static void _set_bit(uint32_t base_addr,
-				uint32_t bit, uint8_t set)
+		     uint32_t bit, uint8_t set)
 {
 	if (!set) {
 		_REG_CLEAR_BIT(base_addr, bit);
@@ -75,11 +75,11 @@ static void _set_bit(uint32_t base_addr,
 	}
 }
 
-#define DEFINE_MM_REG_SET_BIT(__reg, __off)				\
-	static inline void _set_bit_##__reg(uint32_t addr,		\
-					    uint32_t bit, uint8_t set)	\
-	{								\
-		_set_bit(addr + __off, bit, set);			\
+#define DEFINE_MM_REG_SET_BIT(__reg, __off)                             \
+	static inline void _set_bit_##__reg(uint32_t addr,              \
+					    uint32_t bit, uint8_t set)  \
+	{                                                               \
+		_set_bit(addr + __off, bit, set);                       \
 	}
 
 DEFINE_MM_REG_SET_BIT(gen, GPIO_SCH_REG_GEN)
@@ -169,7 +169,7 @@ static int gpio_sch_write(struct device *dev,
 }
 
 static int gpio_sch_read(struct device *dev,
-			  int access_op, uint32_t pin, uint32_t *value)
+			 int access_op, uint32_t pin, uint32_t *value)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 
@@ -186,13 +186,14 @@ static int gpio_sch_read(struct device *dev,
 	return 0;
 }
 
-static void _gpio_sch_poll_status(int data, int unused)
+static void _gpio_sch_poll_status(void *arg1, void *unused1, void *unused2)
 {
-	struct device *dev = INT_TO_POINTER(data);
+	struct device *dev = (struct device *)arg1;
 	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
 
-	ARG_UNUSED(unused);
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
 
 	/* Cleaning up GTS first */
 	_write_gts(_read_gts(info->regs), info->regs);
@@ -212,9 +213,8 @@ static void _gpio_sch_poll_status(int data, int unused)
 		 */
 		_write_gts(status, info->regs);
 loop:
-		nano_fiber_timer_start(&gpio->poll_timer,
-				       GPIO_SCH_POLLING_TICKS);
-		nano_fiber_timer_test(&gpio->poll_timer, TICKS_UNLIMITED);
+		k_timer_start(&gpio->poll_timer, GPIO_SCH_POLLING_MSEC, 0);
+		k_timer_status_sync(&gpio->poll_timer);
 	}
 }
 
@@ -227,10 +227,11 @@ static void _gpio_sch_manage_callback(struct device *dev)
 		if (!gpio->poll) {
 			SYS_LOG_DBG("Starting SCH GPIO polling fiber");
 			gpio->poll = 1;
-			fiber_start(gpio->polling_stack,
-				    GPIO_SCH_POLLING_STACK_SIZE,
-				    _gpio_sch_poll_status,
-				    POINTER_TO_INT(dev), 0, 0, 0);
+			k_thread_spawn(gpio->polling_stack,
+				       GPIO_SCH_POLLING_STACK_SIZE,
+				       (k_thread_entry_t)_gpio_sch_poll_status,
+				       dev, NULL, NULL,
+				       K_PRIO_COOP(1), 0, 0);
 		}
 	} else {
 		gpio->poll = 0;
@@ -320,7 +321,7 @@ static int gpio_sch_init(struct device *dev)
 
 	dev->driver_api = &gpio_sch_api;
 
-	nano_timer_init(&gpio->poll_timer, NULL);
+	k_timer_init(&gpio->poll_timer, NULL, NULL);
 
 	SYS_LOG_DBG("SCH GPIO Intel Driver initialized on device: %p", dev);
 

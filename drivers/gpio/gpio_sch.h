@@ -39,8 +39,8 @@ struct gpio_sch_config {
 	uint8_t stride[3];
 };
 
-#define GPIO_SCH_POLLING_STACK_SIZE 1024
-#define GPIO_SCH_POLLING_TICKS (sys_clock_ticks_per_sec / 5)
+#define GPIO_SCH_POLLING_STACK_SIZE 	1024
+#define GPIO_SCH_POLLING_MSEC		200
 
 struct gpio_sch_data {
 	char __stack polling_stack[GPIO_SCH_POLLING_STACK_SIZE];
