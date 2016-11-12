@@ -250,7 +250,7 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	struct k_thread *sending_thread;
 	struct k_thread *receiving_thread;
 	struct k_mbox_msg *rx_msg;
-	sys_dnode_t *wait_q_item;
+	sys_dnode_t *wait_q_item, *next_wait_q_item;
 	unsigned int key;
 
 	/* save sender id so it can be used during message matching */
@@ -263,7 +263,9 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	/* search mailbox's rx queue for a compatible receiver */
 	key = irq_lock();
 
-	SYS_DLIST_FOR_EACH_NODE(&mbox->rx_msg_queue, wait_q_item) {
+	SYS_DLIST_FOR_EACH_NODE_SAFE(&mbox->rx_msg_queue, wait_q_item,
+				     next_wait_q_item) {
+
 		receiving_thread = (struct k_thread *)wait_q_item;
 		rx_msg = (struct k_mbox_msg *)receiving_thread->base.swap_data;
 
@@ -436,7 +438,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 {
 	struct k_thread *sending_thread;
 	struct k_mbox_msg *tx_msg;
-	sys_dnode_t *wait_q_item;
+	sys_dnode_t *wait_q_item, *next_wait_q_item;
 	unsigned int key;
 	int result;
 
@@ -446,7 +448,9 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	/* search mailbox's tx queue for a compatible sender */
 	key = irq_lock();
 
-	SYS_DLIST_FOR_EACH_NODE(&mbox->tx_msg_queue, wait_q_item) {
+	SYS_DLIST_FOR_EACH_NODE_SAFE(&mbox->tx_msg_queue, wait_q_item,
+				     next_wait_q_item) {
+
 		sending_thread = (struct k_thread *)wait_q_item;
 		tx_msg = (struct k_mbox_msg *)sending_thread->base.swap_data;
 
