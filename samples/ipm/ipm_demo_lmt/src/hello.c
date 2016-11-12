@@ -27,24 +27,25 @@ QUARK_SE_IPM_DEFINE(message_ipm2, 3, QUARK_SE_IPM_OUTBOUND);
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
-#define SLEEPTIME  1000
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
-#define SCSS_REGISTER_BASE		0xB0800000
-#define SCSS_SS_STS                    0x0604
+#define SLEEPTIME               1000
+#define SCSS_REGISTER_BASE      0xB0800000
+#define SCSS_SS_STS             0x0604
 
-#define PING_TICKS 100
-#define STACKSIZE 2000
+#define PING_TIME               1000
+#define STACKSIZE               2000
 
-#define MSG_FIBER_PRI		6
-#define MAIN_FIBER_PRI		2
-#define PING_FIBER_PRI		4
+#define MSG_FIBER_PRI           6
+#define MAIN_FIBER_PRI          2
+#define PING_FIBER_PRI          4
+#define TASK_PRIO               7
 
-char fiber_stacks[2][STACKSIZE];
+char thread_stacks[2][STACKSIZE];
 
 uint32_t scss_reg(uint32_t offset)
 {
 	volatile uint32_t *ret = (volatile uint32_t *)(SCSS_REGISTER_BASE +
 						       offset);
+
 	return *ret;
 }
 
@@ -80,44 +81,46 @@ void message_source_task_2(void)
 	message_source(device_get_binding("message_ipm2"));
 }
 
-void ping_source_fiber(int arg1, int arg2)
+void ping_source_thread(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
 	struct device *ipm = device_get_binding("ping_ipm");
 
 	while (1) {
-		fiber_sleep(PING_TICKS);
-		printk("pinging arc for counter status\n");
+		k_sleep(PING_TIME);
+		printk("pinging sensor subsystem (ARC) for counter status\n");
 		ipm_send(ipm, 1, 0, NULL, 0);
 	}
 }
 
-void main_fiber(int arg1, int arg2)
+void main_thread(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 	int ctr = 0;
 	uint32_t ss_sts;
 
 	while (1) {
 		/* say "hello" */
-		printk("Hello from lakemont! (%d) ", ctr++);
+		printk("Hello from application processor (x86)! (%d) ", ctr++);
 
 		ss_sts = scss_reg(SCSS_SS_STS);
 		switch (ss_sts) {
 		case 0x4000:
-			printk("ARC is halted");
+			printk("Sensor Subsystem (ARC) is halted");
 			break;
 		case 0x0400:
-			printk("ARC is sleeping");
+			printk("Sensor Subsystem (ARC) is sleeping");
 			break;
 		case 0:
-			printk("ARC is running");
+			printk("Sensor Subsystem (ARC) is running");
 			break;
 		default:
-			printk("ARC status: %x", ss_sts);
+			printk("Sensor Subsystem (ARC) status: %x", ss_sts);
 			break;
 		}
 
@@ -125,19 +128,28 @@ void main_fiber(int arg1, int arg2)
 		       scss_reg(0x4a0));
 
 		/* wait a while, then let other task have a turn */
-		fiber_sleep(SLEEPTICKS);
+		k_sleep(SLEEPTIME);
 	}
 }
 
-void main_task(void)
+K_THREAD_DEFINE(MSG_TASK0, STACKSIZE, message_source_task_0, NULL, NULL, NULL,
+		TASK_PRIO, 0, K_NO_WAIT);
+
+K_THREAD_DEFINE(MSG_TASK1, STACKSIZE, message_source_task_1, NULL, NULL, NULL,
+		TASK_PRIO, 0, K_NO_WAIT);
+
+K_THREAD_DEFINE(MSG_TASK2, STACKSIZE, message_source_task_2, NULL, NULL, NULL,
+		TASK_PRIO, 0, K_NO_WAIT);
+
+void main(void)
 {
 	printk("===== app started ========\n");
 
-	task_fiber_start(&fiber_stacks[0][0], STACKSIZE, main_fiber,
-			 0, 0, MAIN_FIBER_PRI, 0);
+	k_thread_spawn(&thread_stacks[0][0], STACKSIZE, main_thread,
+		       0, 0, 0, K_PRIO_COOP(MAIN_FIBER_PRI), 0, 0);
 
-	task_fiber_start(&fiber_stacks[1][0], STACKSIZE, ping_source_fiber,
-			 0, 0, PING_FIBER_PRI, 0);
+	k_thread_spawn(&thread_stacks[1][0], STACKSIZE, ping_source_thread,
+		       0, 0, 0, K_PRIO_COOP(PING_FIBER_PRI), 0, 0);
 
 }
 

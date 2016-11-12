@@ -31,15 +31,10 @@ QUARK_SE_IPM_DEFINE(message_ipm2, 3, QUARK_SE_IPM_INBOUND);
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
 #define SLEEPTIME  1100
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 800)
 
 #define STACKSIZE 2000
 
-char fiberStack[STACKSIZE];
 uint8_t counters[3];
-
-struct nano_sem nanoSemTask;
-struct nano_sem nanoSemFiber;
 
 void ping_ipm_callback(void *context, uint32_t id, volatile void *data)
 {
@@ -97,6 +92,6 @@ void main(void)
 		/* say "hello" */
 		printk("Hello from ARC!\n");
 
-		task_sleep(SLEEPTICKS);
+		k_sleep(SLEEPTIME);
 	}
 }
