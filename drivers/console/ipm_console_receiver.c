@@ -18,7 +18,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <misc/ring_buffer.h>
 #include <misc/printk.h>
 #include <stdio.h>
@@ -26,7 +26,7 @@
 #include <console/ipm_console.h>
 #include <misc/__assert.h>
 
-static void ipm_console_fiber(int arg1, int arg2)
+static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {
 	uint8_t size32;
 	uint16_t type;
@@ -44,7 +44,7 @@ static void ipm_console_fiber(int arg1, int arg2)
 	pos = 0;
 
 	while (1) {
-		nano_fiber_sem_take(&driver_data->sem, TICKS_UNLIMITED);
+		k_sem_take(&driver_data->sem, TICKS_UNLIMITED);
 
 		ret = sys_ring_buf_get(&driver_data->rb, &type,
 				       (uint8_t *)&config_info->line_buf[pos],
@@ -108,10 +108,10 @@ static void ipm_console_receive_callback(void *context, uint32_t id,
 	/* Should always be at least one free buffer slot */
 	ret = sys_ring_buf_put(&driver_data->rb, 0, id, NULL, 0);
 	__ASSERT(ret == 0, "Failed to insert data into ring buffer");
-	nano_isr_sem_give(&driver_data->sem);
+	k_sem_give(&driver_data->sem);
 
 	/* If the buffer is now full, disable future interrupts for this channel
-	 * until the fiber has a chance to consume characters.
+	 * until the thread has a chance to consume characters.
 	 *
 	 * This works without losing data if the sending side tries to send
 	 * more characters because the sending side is making an ipm_send()
@@ -148,15 +148,15 @@ int ipm_console_receiver_init(struct device *d)
 
 	driver_data->ipm_device = ipm;
 	driver_data->channel_disabled = 0;
-	nano_sem_init(&driver_data->sem);
+	k_sem_init(&driver_data->sem, 0, UINT_MAX);
 	sys_ring_buf_init(&driver_data->rb, config_info->rb_size32,
 			  config_info->ring_buf_data);
 
 	ipm_register_callback(ipm, ipm_console_receive_callback, d);
 
-	task_fiber_start(config_info->fiber_stack, IPM_CONSOLE_STACK_SIZE,
-			 ipm_console_fiber, (int)d, 0,
-			 IPM_CONSOLE_PRI, 0);
+	k_thread_spawn(config_info->thread_stack, IPM_CONSOLE_STACK_SIZE,
+			 ipm_console_thread, d, NULL, NULL,
+			 K_PRIO_COOP(IPM_CONSOLE_PRI), 0, 0);
 	ipm_set_enabled(ipm, 1);
 
 	return 0;

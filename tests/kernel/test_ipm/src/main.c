@@ -60,13 +60,13 @@ DEVICE_INIT(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
 #define RING_BUF_SIZE32		8
 
 static uint32_t ring_buf_data[RING_BUF_SIZE32];
-static char __stack fiber_stack[IPM_CONSOLE_STACK_SIZE];
+static char __stack thread_stack[IPM_CONSOLE_STACK_SIZE];
 static char line_buf[LINE_BUF_SIZE];
 
 /* Dump incoming messages to printk() */
 static struct ipm_console_receiver_config_info receiver_config = {
 	.bind_to = "ipm_dummy0",
-	.fiber_stack = fiber_stack,
+	.thread_stack = thread_stack,
 	.ring_buf_data = ring_buf_data,
 	.rb_size32 = RING_BUF_SIZE32,
 	.line_buf = line_buf,

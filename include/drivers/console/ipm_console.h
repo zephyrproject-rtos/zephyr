@@ -19,7 +19,7 @@
 #ifndef _IPM_CONSOLE_H_
 #define _IPM_CONSOLE_H_
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 #include <misc/ring_buffer.h>
 
@@ -32,7 +32,7 @@ extern "C" {
 
 /*
  * Good way to determine these numbers other than trial-and-error?
- * using printf() in the fiber seems to require a lot more stack space
+ * using printf() in the thread seems to require a lot more stack space
  */
 #define IPM_CONSOLE_STACK_SIZE		512
 #define IPM_CONSOLE_PRI			2
@@ -42,10 +42,10 @@ struct ipm_console_receiver_config_info {
 	char *bind_to;
 
 	/**
-	 * Stack for the receiver's fiber, which prints out messages as
+	 * Stack for the receiver's thread, which prints out messages as
 	 * they come in. Should be sized IPM_CONSOLE_STACK_SIZE
 	 */
-	char *fiber_stack;
+	char *thread_stack;
 
 	/**
 	 * Ring buffer data area for stashing characters from the interrupt
@@ -77,8 +77,8 @@ struct ipm_console_receiver_runtime_data {
 	/** Buffer for received bytes from the low-level IPM device */
 	struct ring_buf rb;
 
-	/** Semaphore to wake up the fiber to print out messages */
-	struct nano_sem sem;
+	/** Semaphore to wake up the thread to print out messages */
+	struct k_sem sem;
 
 	/** pointer to the bound low-level IPM device */
 	struct device *ipm_device;
