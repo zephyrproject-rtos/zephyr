@@ -29,6 +29,7 @@
 
 #include "route.h"
 #include "icmpv6.h"
+#include "icmpv4.h"
 
 #include "net_shell.h"
 
@@ -483,7 +484,12 @@ static int shell_cmd_mem(int argc, char *argv[])
 
 static int shell_cmd_ping(int argc, char *argv[])
 {
-	struct in6_addr target;
+#if defined(CONFIG_NET_IPV6)
+	struct in6_addr ipv6_target;
+#endif
+#if defined(CONFIG_NET_IPV4)
+	struct in_addr ipv4_target;
+#endif
 	char *host;
 	int ret;
 
@@ -493,17 +499,67 @@ static int shell_cmd_ping(int argc, char *argv[])
 		host = argv[2];
 	}
 
-	ret = net_addr_pton(AF_INET6, host, (struct sockaddr *)&target);
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+	ret = net_addr_pton(AF_INET6, host, (struct sockaddr *)&ipv6_target);
 	if (ret < 0) {
 		printf("Invalid IPv6 address\n");
 		return 0;
 	}
 
-	ret = net_icmpv6_send_echo_request(net_if_get_default(), &target,
-					   sys_rand32_get(), sys_rand32_get());
+	ret = net_icmpv6_send_echo_request(net_if_get_default(),
+					   &ipv6_target,
+					   sys_rand32_get(),
+					   sys_rand32_get());
 	if (ret < 0) {
-		printf("Cannot send ping\n");
+		printf("Cannot send IPv6 ping\n");
 	}
+#endif
+
+#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+	ret = net_addr_pton(AF_INET, host, (struct sockaddr *)&ipv4_target);
+	if (ret < 0) {
+		printf("Invalid IPv4 address\n");
+		return 0;
+	}
+
+	ret = net_icmpv4_send_echo_request(net_if_get_default(),
+					   &ipv4_target,
+					   sys_rand32_get(),
+					   sys_rand32_get());
+	if (ret < 0) {
+		printf("Cannot send IPv4 ping\n");
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
+	ret = net_addr_pton(AF_INET6, host, (struct sockaddr *)&ipv6_target);
+	if (ret < 0) {
+		ret = net_addr_pton(AF_INET, host,
+				    (struct sockaddr *)&ipv4_target);
+		if (ret < 0) {
+			printf("Invalid IP address\n");
+			return 0;
+		}
+
+		ret = net_icmpv4_send_echo_request(net_if_get_default(),
+						   &ipv4_target,
+						   sys_rand32_get(),
+						   sys_rand32_get());
+		if (ret < 0) {
+			printf("Cannot send IPv4 ping\n");
+		}
+
+		return 0;
+	} else {
+		ret = net_icmpv6_send_echo_request(net_if_get_default(),
+						   &ipv6_target,
+						   sys_rand32_get(),
+						   sys_rand32_get());
+		if (ret < 0) {
+			printf("Cannot send IPv6 ping\n");
+		}
+	}
+#endif
 
 	return 0;
 }
