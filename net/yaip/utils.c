@@ -255,10 +255,14 @@ int net_addr_pton(sa_family_t family, const char *src,
 			}
 		}
 
-		for (i = 0; i < 4; i++) {
-			addr->s4_addr[i] = strtol(src, NULL, 10);
+		memset(addr, 0, sizeof(struct in_addr));
 
-			src++;
+		for (i = 0; i < sizeof(struct in_addr); i++) {
+			char *endptr;
+
+			addr->s4_addr[i] = strtol(src, &endptr, 10);
+
+			src = ++endptr;
 		}
 
 	} else if (family == AF_INET6) {
