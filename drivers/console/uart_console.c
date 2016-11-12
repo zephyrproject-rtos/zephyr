@@ -494,13 +494,14 @@ void uart_console_hook_install(void)
 static int uart_console_init(struct device *arg)
 {
 
-	uint32_t  dtr = 0;
 	ARG_UNUSED(arg);
 
 	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 
 #ifdef CONFIG_USB_UART_CONSOLE
 	while (1) {
+		uint32_t dtr = 0;
+
 		uart_line_ctrl_get(uart_console_dev, LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
