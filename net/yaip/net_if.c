@@ -80,7 +80,7 @@ static void net_if_tx_thread(struct net_if *iface)
 		int status;
 
 		/* Get next packet from application - wait if necessary */
-		buf = net_buf_get_timeout(&iface->tx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&iface->tx_queue, 0, K_FOREVER);
 
 		debug_check_packet(buf);
 
