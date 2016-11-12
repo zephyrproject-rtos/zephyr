@@ -483,9 +483,15 @@ static int shell_cmd_mem(int argc, char *argv[])
 
 static int shell_cmd_ping(int argc, char *argv[])
 {
-	char *host = argv[2];
 	struct in6_addr target;
+	char *host;
 	int ret;
+
+	if (!strcmp(argv[0], "ping")) {
+		host = argv[1];
+	} else {
+		host = argv[2];
+	}
 
 	ret = net_addr_pton(AF_INET6, host, (struct sockaddr *)&target);
 	if (ret < 0) {
