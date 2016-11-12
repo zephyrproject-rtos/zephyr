@@ -167,6 +167,7 @@ struct net_addr {
 
 #define INET6_ADDRSTRLEN 46
 #define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")
+#define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
 #define INADDR_ANY 0
 
