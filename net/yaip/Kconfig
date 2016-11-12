@@ -39,6 +39,13 @@ source "net/yaip/Kconfig.ipv6"
 
 source "net/yaip/Kconfig.ipv4"
 
+config NET_IP_ADDR_CHECK
+	bool "Check IP address validity before sending IP packet"
+	default y
+	help
+	Check that either the source or destination address is
+	correct before sending either IPv4 or IPv6 network packet.
+
 config NET_MAX_ROUTERS
 	int "How many routers are supported"
 	default 2 if NET_IPV4 && NET_IPV6

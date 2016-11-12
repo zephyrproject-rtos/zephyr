@@ -574,7 +574,8 @@ drop:
 }
 #endif /* CONFIG_NET_IPV4 */
 
-static inline enum net_verdict process_data(struct net_buf *buf)
+static inline enum net_verdict process_data(struct net_buf *buf,
+					    bool is_loopback)
 {
 	int ret;
 
@@ -592,14 +593,16 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 		return NET_DROP;
 	}
 
-	ret = net_if_recv_data(net_nbuf_iface(buf), buf);
-	if (ret != NET_CONTINUE) {
-		if (ret == NET_DROP) {
-			NET_DBG("Buffer %p discarded by L2", buf);
-			NET_STATS(++net_stats.processing_error);
-		}
+	if (!is_loopback) {
+		ret = net_if_recv_data(net_nbuf_iface(buf), buf);
+		if (ret != NET_CONTINUE) {
+			if (ret == NET_DROP) {
+				NET_DBG("Buffer %p discarded by L2", buf);
+				NET_STATS(++net_stats.processing_error);
+			}
 
-		return ret;
+			return ret;
+		}
 	}
 
 	/* IP version and header length. */
@@ -626,6 +629,20 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 	return NET_DROP;
 }
 
+static void processing_data(struct net_buf *buf, bool is_loopback)
+{
+	switch (process_data(buf, is_loopback)) {
+	case NET_OK:
+		NET_DBG("Consumed buf %p", buf);
+		break;
+	case NET_DROP:
+	default:
+		NET_DBG("Dropping buf %p", buf);
+		net_nbuf_unref(buf);
+		break;
+	}
+}
+
 static void net_rx_thread(void)
 {
 	struct net_buf *buf;
@@ -646,16 +663,7 @@ static void net_rx_thread(void)
 		NET_DBG("Received buf %p len %d", buf,
 			net_buf_frags_len(buf));
 
-		switch (process_data(buf)) {
-		case NET_OK:
-			NET_DBG("Consumed buf %p", buf);
-			break;
-		case NET_DROP:
-		default:
-			NET_DBG("Dropping buf %p", buf);
-			net_nbuf_unref(buf);
-			break;
-		}
+		processing_data(buf, false);
 
 		net_print_statistics();
 		net_nbuf_print();
@@ -673,9 +681,91 @@ static void init_rx_queue(void)
 				NULL, NULL, NULL, K_PRIO_COOP(8), 0, 0);
 }
 
+#if defined(CONFIG_NET_IP_ADDR_CHECK)
+/* Check if the IPv{4|6} addresses are proper. As this can be expensive,
+ * make this optional.
+ */
+static inline int check_ip_addr(struct net_buf *buf)
+{
+#if defined(CONFIG_NET_IPV6)
+	if (net_nbuf_family(buf) == AF_INET6) {
+		if (net_ipv6_addr_cmp(&NET_IPV6_BUF(buf)->dst,
+				      net_ipv6_unspecified_address())) {
+			NET_DBG("IPv6 dst address missing");
+			return -EADDRNOTAVAIL;
+		}
+
+		if (net_is_ipv6_addr_loopback(&NET_IPV6_BUF(buf)->dst)) {
+			struct in6_addr addr;
+
+			/* Swap the addresses so that in receiving side
+			 * the packet is accepted.
+			 */
+			net_ipaddr_copy(&addr, &NET_IPV6_BUF(buf)->src);
+			net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
+					&NET_IPV6_BUF(buf)->dst);
+			net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, &addr);
+
+			return 1;
+		}
+
+		/* The source check must be done after the destination check
+		 * as having src ::1 is perfectly ok if dst is ::1 too.
+		 */
+		if (net_is_ipv6_addr_loopback(&NET_IPV6_BUF(buf)->src)) {
+			NET_DBG("IPv6 loopback src address");
+			return -EADDRNOTAVAIL;
+		}
+	} else
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_nbuf_family(buf) == AF_INET) {
+		if (net_ipv4_addr_cmp(&NET_IPV4_BUF(buf)->dst,
+				      net_ipv4_unspecified_address())) {
+			return -EADDRNOTAVAIL;
+		}
+
+		if (net_is_ipv4_addr_loopback(&NET_IPV4_BUF(buf)->dst)) {
+			struct in_addr addr;
+
+			/* Swap the addresses so that in receiving side
+			 * the packet is accepted.
+			 */
+			net_ipaddr_copy(&addr, &NET_IPV4_BUF(buf)->src);
+			net_ipaddr_copy(&NET_IPV4_BUF(buf)->src,
+					&NET_IPV4_BUF(buf)->dst);
+			net_ipaddr_copy(&NET_IPV4_BUF(buf)->dst, &addr);
+
+			return 1;
+		}
+
+		/* The source check must be done after the destination check
+		 * as having src 127.0.0.0/8 is perfectly ok if dst is in
+		 * localhost subnet too.
+		 */
+		if (net_is_ipv4_addr_loopback(&NET_IPV4_BUF(buf)->src)) {
+			NET_DBG("IPv4 loopback src address");
+			return -EADDRNOTAVAIL;
+		}
+	} else
+#endif /* CONFIG_NET_IPV4 */
+
+	{
+		;
+	}
+
+	return 0;
+}
+#else
+#define check_ip_addr(buf) 0
+#endif
+
 /* Called when data needs to be sent to network */
 int net_send_data(struct net_buf *buf)
 {
+	int status;
+
 	if (!buf || !buf->frags) {
 		return -ENODATA;
 	}
@@ -694,6 +784,18 @@ int net_send_data(struct net_buf *buf)
 		break;
 	}
 #endif
+
+	status = check_ip_addr(buf);
+	if (status < 0) {
+		net_nbuf_unref(buf);
+		return status;
+	} else if (status > 0) {
+		/* Packet is destined back to us so send it directly
+		 * to RX processing.
+		 */
+		processing_data(buf, true);
+		return 0;
+	}
 
 	if (net_if_send_data(net_nbuf_iface(buf), buf) == NET_DROP) {
 		return -EIO;
