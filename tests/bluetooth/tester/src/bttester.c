@@ -132,7 +132,7 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 		struct btp_hdr *cmd;
 		uint16_t len;
 
-		cmd = k_fifo_get(&cmds_queue, TICKS_UNLIMITED);
+		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
 		len = sys_le16_to_cpu(cmd->len);
 

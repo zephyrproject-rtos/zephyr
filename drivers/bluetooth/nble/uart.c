@@ -76,7 +76,7 @@ static void rx_thread(void)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&rx_queue, 0, K_FOREVER);
 		BT_DBG("Got buf %p", buf);
 
 		rpc_deserialize(buf);
@@ -185,7 +185,7 @@ static void bt_uart_isr(struct device *unused)
 				BT_ERR("Too much data to fit buffer");
 				buf = NULL;
 			} else {
-				buf = net_buf_get_timeout(&rx, 0, TICKS_NONE);
+				buf = net_buf_get_timeout(&rx, 0, K_NO_WAIT);
 				if (!buf) {
 					BT_ERR("No available IPC buffers");
 				}

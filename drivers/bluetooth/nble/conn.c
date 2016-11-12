@@ -483,7 +483,7 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	 * Update procedure within 5 s after establishing a connection.
 	 */
 	k_delayed_work_submit(&conn->update_work,
-			      conn->role == BT_HCI_ROLE_MASTER ? TICKS_NONE :
+			      conn->role == BT_HCI_ROLE_MASTER ? K_NO_WAIT :
 			      CONN_UPDATE_TIMEOUT);
 }
 

@@ -1422,7 +1422,7 @@ static int32_t prep_write_evt(const struct nble_gatts_write_evt *ev,
 		return ret;
 	}
 
-	buf = net_buf_get_timeout(&prep_data, 0, TICKS_NONE);
+	buf = net_buf_get_timeout(&prep_data, 0, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("No more buffers for prepare write");
 		return BT_GATT_ERR(BT_ATT_ERR_PREPARE_QUEUE_FULL);
@@ -1513,7 +1513,7 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 		return;
 	}
 
-	while ((buf = k_fifo_get(&queue, TICKS_NONE))) {
+	while ((buf = k_fifo_get(&queue, K_NO_WAIT))) {
 		struct nble_gatts_write_evt *ev = net_buf_user_data(buf);
 		const struct bt_gatt_attr *attr = ev->attr;
 
@@ -1603,7 +1603,7 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
-	while ((buf = k_fifo_get(&queue, TICKS_NONE))) {
+	while ((buf = k_fifo_get(&queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 #endif

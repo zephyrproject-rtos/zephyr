@@ -106,7 +106,7 @@ static inline void receive_and_reply(struct net_context *recv,
 {
 	struct net_buf *buf;
 
-	buf = net_receive(recv, TICKS_UNLIMITED);
+	buf = net_receive(recv, K_FOREVER);
 	if (buf) {
 		prepare_reply("unicast ", buf);
 
@@ -116,7 +116,7 @@ static inline void receive_and_reply(struct net_context *recv,
 		return;
 	}
 
-	buf = net_receive(mcast_recv, TICKS_UNLIMITED);
+	buf = net_receive(mcast_recv, K_FOREVER);
 	if (buf) {
 		prepare_reply("multicast ", buf);
 

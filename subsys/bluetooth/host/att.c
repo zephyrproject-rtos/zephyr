@@ -1237,7 +1237,7 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	/* Copy data into the outstanding queue */
-	data->buf = net_buf_get_timeout(&prep_data, 0, TICKS_NONE);
+	data->buf = net_buf_get_timeout(&prep_data, 0, K_NO_WAIT);
 	if (!data->buf) {
 		data->err = BT_ATT_ERR_PREPARE_QUEUE_FULL;
 		return BT_GATT_ITER_STOP;
