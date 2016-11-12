@@ -17,12 +17,15 @@
 #
 
 config NBLE
-	bool "Support for custom non-HCI nRF51 firmware"
+	bool "Support for custom non-HCI nRF51 firmware [DEPRECATED]"
 	select UART_INTERRUPT_DRIVEN
 	select NANO_TIMEOUTS
 	select NET_BUF
 	depends on SERIAL
 	help
+	  Note: This feature is deprecated and will be removed in a
+	  future Zephyr version.
+
 	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
 	  LE chips with a custom firmware. The API for this is a subset of
 	  the normal Bluetooth API (include/bluetooth/). This driver can
