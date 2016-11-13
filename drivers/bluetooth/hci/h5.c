@@ -68,8 +68,8 @@ static bool reliable_packet(uint8_t type)
 }
 
 /* FIXME: Correct timeout */
-#define H5_RX_ACK_TIMEOUT	250
-#define H5_TX_ACK_TIMEOUT	250
+#define H5_RX_ACK_TIMEOUT	K_MSEC(250)
+#define H5_TX_ACK_TIMEOUT	K_MSEC(250)
 
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb

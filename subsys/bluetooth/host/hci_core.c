@@ -54,8 +54,8 @@
 #endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT	(5 * MSEC_PER_SEC)
-#define RPA_TIMEOUT (CONFIG_BLUETOOTH_RPA_TIMEOUT * MSEC_PER_SEC)
+#define CONN_UPDATE_TIMEOUT  K_SECONDS(5)
+#define RPA_TIMEOUT          K_SECONDS(CONFIG_BLUETOOTH_RPA_TIMEOUT)
 
 /* Stacks for the threads */
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
