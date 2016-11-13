@@ -496,6 +496,12 @@ extern void *k_thread_custom_data_get(void);
 
 #include <sys_clock.h>
 
+/* Convenience helpers to convert durations into milliseconds */
+#define K_MSEC(ms)     (ms)
+#define K_SECONDS(s)   K_MSEC((s) * MSEC_PER_SEC)
+#define K_MINUTES(m)   K_SECONDS((m) * 60)
+#define K_HOURS(h)     K_MINUTES((h) * 60)
+
 /* private internal time manipulation (users should never play with ticks) */
 
 /* added tick needed to account for tick in progress */
