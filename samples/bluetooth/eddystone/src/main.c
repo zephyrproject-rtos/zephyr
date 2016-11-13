@@ -37,7 +37,7 @@
 #define EDS_VERSION 0x00
 #define EDS_URL_READ_OFFSET 2
 #define EDS_URL_WRITE_OFFSET 4
-#define EDS_IDLE_TIMEOUT (30 * MSEC_PER_SEC)
+#define EDS_IDLE_TIMEOUT K_SECONDS(30)
 
 /* Idle timer */
 struct k_delayed_work idle_work;

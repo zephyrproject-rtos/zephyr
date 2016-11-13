@@ -53,7 +53,7 @@ static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
 /* How long until we cancel HCI_LE_Create_Connection */
-#define CONN_TIMEOUT	(3 * MSEC_PER_SEC)
+#define CONN_TIMEOUT	K_SECONDS(3)
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 const struct bt_conn_auth_cb *bt_auth;

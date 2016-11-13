@@ -60,10 +60,10 @@
 
 #define L2CAP_BR_PSM_SDP	0x0001
 
-#define L2CAP_BR_INFO_TIMEOUT		(4 * MSEC_PER_SEC)
-#define L2CAP_BR_CFG_TIMEOUT		(4 * MSEC_PER_SEC)
-#define L2CAP_BR_DISCONN_TIMEOUT	(1 * MSEC_PER_SEC)
-#define L2CAP_BR_CONN_TIMEOUT		(40 * MSEC_PER_SEC)
+#define L2CAP_BR_INFO_TIMEOUT		K_SECONDS(4)
+#define L2CAP_BR_CFG_TIMEOUT		K_SECONDS(4)
+#define L2CAP_BR_DISCONN_TIMEOUT	K_SECONDS(1)
+#define L2CAP_BR_CONN_TIMEOUT		K_SECONDS(40)
 
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
