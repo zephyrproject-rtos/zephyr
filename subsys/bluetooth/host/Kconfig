@@ -427,7 +427,9 @@ endif # BLUETOOTH_DEBUG
 config BLUETOOTH_BREDR
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	depends on BLUETOOTH_HCI_HOST
-	select BLUETOOTH_CONN
+	select BLUETOOTH_PERIPHERAL
+	select BLUETOOTH_CENTRAL
+	select BLUETOOTH_SMP
 	select BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	help
 	  This option enables Bluetooth BR/EDR support"
