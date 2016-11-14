@@ -208,7 +208,7 @@ int32_t tc_ctr_prng_reseed(TCCtrPrng_t * const ctx,
 		}
 
 		/* 10.2.1.4.1 step 4 */
-		tc_ctr_prng_update(ctx, entropy);
+		tc_ctr_prng_update(ctx, seed_material);
 
 		/* 10.2.1.4.1 step 5 */
 		ctx->reseedCount = 1U;
