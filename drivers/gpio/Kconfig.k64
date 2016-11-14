@@ -28,12 +28,10 @@ if GPIO_K64
 
 config PORT_K64_INT_STATUS_OFFSET
 	hex "Freescale K64-based Port Control interrupt status register offset"
-	depends on GPIO_K64
 	default 0xA0
 
 config GPIO_K64_A
 	bool "Freescale K64-based GPIO Port A"
-	depends on GPIO_K64
 	default n
 	help
 	  Enable config options for Freescale K64-based GPIO port A.
@@ -54,7 +52,6 @@ config GPIO_K64_PORTA_PRI
 
 config GPIO_K64_B
 	bool "Freescale K64-based GPIO Port B"
-	depends on GPIO_K64
 	default n
 	help
 	  Enable config options for Freescale K64-based GPIO port B.
@@ -75,7 +72,6 @@ config GPIO_K64_PORTB_PRI
 
 config GPIO_K64_C
 	bool "Freescale K64-based GPIO Port B"
-	depends on GPIO_K64
 	default n
 	help
 	  Enable config options for Freescale K64-based GPIO port C.
@@ -96,7 +92,6 @@ config GPIO_K64_PORTC_PRI
 
 config GPIO_K64_D
 	bool "Freescale K64-based GPIO Port D"
-	depends on GPIO_K64
 	default n
 	help
 	  Enable config options for Freescale K64-based GPIO port D.
@@ -117,10 +112,9 @@ config GPIO_K64_PORTD_PRI
 
 config GPIO_K64_E
 	bool "Freescale K64-based GPIO Port E"
-	depends on GPIO_K64
 	default n
 	help
-	Enable config options for Freescale K64-based GPIO port E.
+	  Enable config options for Freescale K64-based GPIO port E.
 
 config GPIO_K64_E_DEV_NAME
 	string "Freescale K64-based GPIO Port E Device Name"
