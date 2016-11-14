@@ -46,7 +46,7 @@ int at_check_byte(struct net_buf *buf, char check_byte)
 	return 0;
 }
 
-static void skip_whitespace(struct at_client *at)
+static void skip_space(struct at_client *at)
 {
 	while (at->buf[at->pos] == ' ') {
 		at->pos++;
@@ -57,7 +57,7 @@ int at_get_number(struct at_client *at, uint32_t *val)
 {
 	uint32_t i;
 
-	skip_whitespace(at);
+	skip_space(at);
 
 	for (i = 0, *val = 0; isdigit(at->buf[at->pos]); at->pos++, i++) {
 		*val = *val * 10 + at->buf[at->pos] - '0';
@@ -354,7 +354,7 @@ int at_has_next_list(struct at_client *at)
 
 int at_open_list(struct at_client *at)
 {
-	skip_whitespace(at);
+	skip_space(at);
 
 	/* The list shall start with '(' open parenthesis */
 	if (at->buf[at->pos] != '(') {
@@ -367,7 +367,7 @@ int at_open_list(struct at_client *at)
 
 int at_close_list(struct at_client *at)
 {
-	skip_whitespace(at);
+	skip_space(at);
 
 	if (at->buf[at->pos] != ')') {
 		return -ENODATA;
@@ -383,7 +383,7 @@ int at_list_get_string(struct at_client *at, char *name, uint8_t len)
 {
 	int i = 0;
 
-	skip_whitespace(at);
+	skip_space(at);
 
 	if (at->buf[at->pos] != '"') {
 		return -ENODATA;
@@ -408,7 +408,7 @@ int at_list_get_string(struct at_client *at, char *name, uint8_t len)
 	}
 	at->pos++;
 
-	skip_whitespace(at);
+	skip_space(at);
 	next_list(at);
 
 	return 0;
