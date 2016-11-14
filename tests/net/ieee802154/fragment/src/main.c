@@ -436,7 +436,7 @@ static int test_fragment(struct net_fragment_data *data)
 	}
 
 #if DEBUG > 0
-	printk("length before compression %d\n", net_buf_frags_len(buf->frags));
+	printk("length before compression %zd\n", net_buf_frags_len(buf->frags));
 	net_hexdump_frags("before-compression", buf);
 #endif
 
@@ -447,7 +447,7 @@ static int test_fragment(struct net_fragment_data *data)
 	}
 
 #if DEBUG > 0
-	printk("length after compression and fragmentation %d\n",
+	printk("length after compression and fragmentation %zd\n",
 	       net_buf_frags_len(buf->frags));
 	net_hexdump_frags("after-compression", buf);
 #endif
@@ -484,9 +484,9 @@ static int test_fragment(struct net_fragment_data *data)
 
 compare:
 #if DEBUG > 0
-	printk("length after reassembly and uncompression %d\n",
-	       net_buf_frags_len(rbuf->frags));
-	net_hexdump_frags("after-uncompression", rbuf);
+	printk("length after reassembly and uncompression %zd\n",
+	       net_buf_frags_len(rxbuf->frags));
+	net_hexdump_frags("after-uncompression", rxbuf);
 #endif
 
 	if (compare_data(rxbuf, data)) {
