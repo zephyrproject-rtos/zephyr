@@ -27,6 +27,13 @@
 
 #include "at.h"
 
+static void next_stream(struct at_client *at)
+{
+	if (at->buf[at->pos] == ',') {
+		at->pos++;
+	}
+}
+
 int at_check_byte(struct net_buf *buf, char check_byte)
 {
 	const char *str = buf->data;
@@ -60,6 +67,7 @@ int at_get_number(struct at_client *at, uint32_t *val)
 		return -ENODATA;
 	}
 
+	next_stream(at);
 	return 0;
 }
 
@@ -335,6 +343,105 @@ int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 			return 0;
 		}
 	}
+
+	return 0;
+}
+
+int at_has_next_stream(struct at_client *at)
+{
+	return at->buf[at->pos] != '\0';
+}
+
+int at_open_stream(struct at_client *at)
+{
+	skip_whitespace(at);
+
+	/* The stream shall start with '(' open parenthesis */
+	if (at->buf[at->pos] != '(') {
+		return -ENODATA;
+	}
+	at->pos++;
+
+	return 0;
+}
+
+int at_close_stream(struct at_client *at)
+{
+	skip_whitespace(at);
+
+	if (at->buf[at->pos] != ')') {
+		return -ENODATA;
+	}
+	at->pos++;
+
+	next_stream(at);
+
+	return 0;
+}
+
+int at_stream_get_string(struct at_client *at, char *name, uint8_t len)
+{
+	int i = 0;
+
+	skip_whitespace(at);
+
+	if (at->buf[at->pos] != '"') {
+		return -ENODATA;
+	}
+	at->pos++;
+
+	while (at->buf[at->pos] != '\0' && at->buf[at->pos] != '"') {
+		if (i == len) {
+			return -ENODATA;
+		}
+		name[i++] = at->buf[at->pos++];
+	}
+
+	if (i == len) {
+		return -ENODATA;
+	}
+
+	name[i] = '\0';
+
+	if (at->buf[at->pos] != '"') {
+		return -ENODATA;
+	}
+	at->pos++;
+
+	skip_whitespace(at);
+	next_stream(at);
+
+	return 0;
+}
+
+int at_stream_get_range(struct at_client *at, uint32_t *min, uint32_t *max)
+{
+	uint32_t low, high;
+	int ret;
+
+	ret = at_get_number(at, &low);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (at->buf[at->pos] == '-') {
+		at->pos++;
+		goto out;
+	}
+
+	if (!isdigit(at->buf[at->pos])) {
+		return -ENODATA;
+	}
+out:
+	ret = at_get_number(at, &high);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*min = low;
+	*max = high;
+
+	next_stream(at);
 
 	return 0;
 }
