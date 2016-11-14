@@ -25,8 +25,6 @@
 
 GEN_ABS_SYM_BEGIN(_OffsetAbsSyms)
 
-/* arch-agnostic tNANO structure member offsets */
-
 GEN_OFFSET_SYM(_kernel_t, current);
 
 #if defined(CONFIG_THREAD_MONITOR)
