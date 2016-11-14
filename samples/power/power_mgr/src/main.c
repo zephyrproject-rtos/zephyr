@@ -17,7 +17,6 @@
 #include <zephyr.h>
 #include <power.h>
 #include <soc_power.h>
-#include <gpio.h>
 #include <misc/printk.h>
 #include <string.h>
 #include <rtc.h>
@@ -33,6 +32,8 @@ static void resume_devices(void);
 static struct device *device_list;
 static int device_count;
 
+static int post_ops_done = 1;
+
 /*
  * Example ordered list to store devices on which
  * device power policies would be executed.
@@ -40,10 +41,6 @@ static int device_count;
 #define DEVICE_POLICY_MAX 15
 static char device_ordered_list[DEVICE_POLICY_MAX];
 static char device_retval[DEVICE_POLICY_MAX];
-
-static struct device *gpio_dev;
-static int setup_gpio(void);
-static int wait_gpio_low(void);
 
 static struct device *rtc_dev;
 static uint32_t start_time, end_time;
@@ -54,38 +51,14 @@ int pm_state;
 
 void main(void)
 {
-	printk("Power Management Demo\n");
+	printk("Power Management Demo on %s\n", CONFIG_ARCH);
 
-	if (setup_gpio()) {
-		printk("Demo aborted\n");
-		return;
-	}
-
-	/*
-	 * This is a safety measure to avoid
-	 * bricking boards if anything went wrong.
-	 * The pause here will allow re-flashing.
-	 *
-	 * Toggle GPIO pin 16 in following sequence:-
-	 * (GPIO Pin 16 is DIO 8 in arduino_101 and
-	 * DIO 4 in quark_se_c1000_devboard.)
-	 * 1) Start connected to GND during power on or reset.
-	 * 2) Disconnect from GND and connect to 3.3V
-	 * 3) Disconnect from 3.3V. Test should start now.
-	 *
-	 */
-	printk("Toggle gpio pin 16 to start demo\n");
-	if (wait_gpio_low()) {
-		printk("Demo aborted\n");
-		return;
-	}
-
-	printk("PM demo started\n");
 	setup_rtc();
 
 	create_device_list();
 
 	while (1) {
+		printk("\nApplication main thread\n");
 		k_sleep(SECONDS_TO_SLEEP * 1000);
 	}
 }
@@ -100,7 +73,6 @@ static int check_pm_policy(int32_t ticks)
 	 * Compare time available with wake latencies and select
 	 * appropriate power saving policy
 	 *
-	 l
 	 * For the demo we will alternate between following policies
 	 *
 	 * 0 = no power saving operation
@@ -130,7 +102,7 @@ static int check_pm_policy(int32_t ticks)
 
 static void low_power_state_exit(void)
 {
-	resume_devices();
+	/* Turn on suspended peripherals/clocks as necessary */
 
 	end_time = rtc_read(rtc_dev);
 	printk("\nLow power state exit!\n");
@@ -140,6 +112,7 @@ static void low_power_state_exit(void)
 
 static void deep_sleep_exit(void)
 {
+	/* Turn on peripherals and restore device states as necessary */
 	resume_devices();
 
 	printk("Wake from Deep Sleep!\n");
@@ -152,32 +125,29 @@ static void deep_sleep_exit(void)
 
 static int low_power_state_entry(int32_t ticks)
 {
-	printk("\n\nLow power state entry!\n");
+	printk("\nLow power state entry!\n");
 
 	start_time = rtc_read(rtc_dev);
 
-	/* Turn off peripherals/clocks here */
-	suspend_devices();
+	/* Turn off peripherals/clocks as necessary */
 
 	enable_wake_event();
 
 	_sys_soc_set_power_state(SYS_POWER_STATE_CPU_LPS);
-
-	low_power_state_exit();
 
 	return SYS_PM_LOW_POWER_STATE;
 }
 
 static int deep_sleep_entry(int32_t ticks)
 {
-	printk("\n\nDeep sleep entry!\n");
+	printk("\nDeep sleep entry!\n");
 
 	start_time = rtc_read(rtc_dev);
 
 	/* Don't need pm idle exit event notification */
 	_sys_soc_pm_idle_exit_notification_disable();
 
-	/* Turn off peripherals/clocks here */
+	/* Save device states and turn off peripherals as necessary */
 	suspend_devices();
 
 	enable_wake_event();
@@ -198,6 +168,14 @@ int _sys_soc_suspend(int32_t ticks)
 {
 	int ret = SYS_PM_NOT_HANDLED;
 
+	post_ops_done = 0;
+
+	if (ticks < (SECONDS_TO_SLEEP * CONFIG_SYS_CLOCK_TICKS_PER_SEC)) {
+		printk("Not enough time for PM operations (ticks: %d).\n",
+		       ticks);
+		return SYS_PM_NOT_HANDLED;
+	}
+
 	pm_state = check_pm_policy(ticks);
 
 	switch (pm_state) {
@@ -211,6 +189,7 @@ int _sys_soc_suspend(int32_t ticks)
 		break;
 	default:
 		/* No PM operations */
+		printk("\nNo PM operations done\n");
 		ret = SYS_PM_NOT_HANDLED;
 		break;
 	}
@@ -222,8 +201,20 @@ int _sys_soc_suspend(int32_t ticks)
 		 *
 		 * If this enables interrupts, then it should be done
 		 * right before function return.
+		 *
+		 * Some CPU power states would require interrupts to be
+		 * enabled at the time of entering the low power state.
+		 * For such states the post operations need to be done
+		 * at _sys_soc_resume. To avoid doing it twice, check a
+		 * flag.
 		 */
-		_sys_soc_power_state_post_ops(pm_state);
+		if (!post_ops_done) {
+			if (pm_state == SYS_POWER_STATE_CPU_LPS) {
+				low_power_state_exit();
+			}
+			post_ops_done = 1;
+			_sys_soc_power_state_post_ops(pm_state);
+		}
 	}
 
 	return ret;
@@ -232,22 +223,27 @@ int _sys_soc_suspend(int32_t ticks)
 void _sys_soc_resume(void)
 {
 	/*
-	* Nothing to do in this example
-	*
-	* low_power_state_exit() was called inside low_power_state_entry
-	* after exiting the CPU LPS states.
-
-	* Some CPU LPS power states require enabling of interrupts
-	* atomically when entering those states. The wake up from
-	* such a state first executes code in the ISR of the interrupt
-	* that caused the wake. This hook will be called from the ISR.
-	* For such CPU LPS states, call low_power_state_exit() from here
-	* so that restores are completed before scheduler swithes to other
-	* tasks.
-	*
-	* Call _sys_soc_pm_idle_exit_notification_disable() if this
-	* notification is not required.
-	*/
+	 * This notification is called from the ISR of the event
+	 * that caused exit from kernel idling after PM operations.
+	 *
+	 * Some CPU low power states require enabling of interrupts
+	 * atomically when entering those states. The wake up from
+	 * such a state first executes code in the ISR of the interrupt
+	 * that caused the wake. This hook will be called from the ISR.
+	 * For such CPU LPS states, do post operations and restores here.
+	 * The kernel scheduler will get control after the ISR finishes
+	 * and it may schedule another thread.
+	 *
+	 * Call _sys_soc_pm_idle_exit_notification_disable() if this
+	 * notification is not required.
+	 */
+	if (!post_ops_done) {
+		if (pm_state == SYS_POWER_STATE_CPU_LPS) {
+			low_power_state_exit();
+		}
+		post_ops_done = 1;
+		_sys_soc_power_state_post_ops(pm_state);
+	}
 }
 
 static void suspend_devices(void)
@@ -315,53 +311,7 @@ static void create_device_list(void)
 	}
 }
 
-static int setup_gpio(void)
-{
-	int ret;
-
-	gpio_dev = device_get_binding("GPIO_0");
-	if (!gpio_dev) {
-		printk("Cannot find %s!\n", "GPIO_0");
-		return 1;
-	}
-
-	/* Setup GPIO input */
-	ret = gpio_pin_configure(gpio_dev, GPIO_IN_PIN, (GPIO_DIR_IN));
-	if (ret) {
-		printk("Error configuring GPIO!\n");
-		return ret;
-	}
-
-	return 0;
-}
-
-static int wait_gpio_low(void)
-{
-	int ret;
-	uint32_t v;
-
-	/* Start with high */
-	do {
-		ret = gpio_pin_read(gpio_dev, GPIO_IN_PIN, &v);
-		if (ret) {
-			printk("Error reading GPIO!\n");
-			return ret;
-		}
-	} while (!v);
-
-	/* Wait till low */
-	do {
-		ret = gpio_pin_read(gpio_dev, GPIO_IN_PIN, &v);
-		if (ret) {
-			printk("Error reading GPIO!\n");
-			return ret;
-		}
-	} while (v);
-
-	return 0;
-}
-
-void rtc_interrupt_fn(struct device *rtc_dev)
+static void rtc_interrupt_fn(struct device *rtc_dev)
 {
 	printk("Wake up event handler\n");
 }
@@ -391,12 +341,7 @@ static void enable_wake_event(void)
 	alarm = (rtc_read(rtc_dev) + ALARM);
 	rtc_set_alarm(rtc_dev, alarm);
 
-	/* Wait a few ticks to ensure the 'Counter Match Register' was loaded
-	 * with the 'alarm' value.
-	 * This is required for the ARC core to wake up from LPS and DEEP_SLEEP
-	 * states.
-	 * Refer to the documentation in qm_rtc.h for more details.
-	 */
+	/* Wait a few ticks to ensure the alarm value gets loaded */
 	while (rtc_read(rtc_dev) < now + 5)
 		;
 }
