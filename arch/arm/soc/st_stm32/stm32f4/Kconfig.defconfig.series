@@ -40,15 +40,6 @@ config UART_CONSOLE
 config UART_STM32
 	def_bool y
 
-config UART_STM32_PORT_0
-	def_bool y
-
-config UART_STM32_PORT_0_NAME
-	default UART_0
-
-config UART_STM32_PORT_0_BAUD_RATE
-	default 115200
-
 config UART_STM32_PORT_1
 	def_bool y
 
@@ -56,6 +47,15 @@ config UART_STM32_PORT_1_NAME
 	default UART_1
 
 config UART_STM32_PORT_1_BAUD_RATE
+	default 115200
+
+config UART_STM32_PORT_2
+	def_bool y
+
+config UART_STM32_PORT_2_NAME
+	default UART_2
+
+config UART_STM32_PORT_2_BAUD_RATE
 	default 115200
 
 endif #SERIAL
