@@ -57,15 +57,14 @@
  *
  * #include <kernel_structs.h>
  * GEN_ABS_SYM_BEGIN (_OffsetAbsSyms)	/@ the name parameter is arbitrary @/
- * /@ tNANO structure member offsets @/
+ * /@ _kernel_t structure member offsets @/
  *
- * GEN_OFFSET_SYM (tNANO, fiber);
- * GEN_OFFSET_SYM (tNANO, task);
- * GEN_OFFSET_SYM (tNANO, current);
- * GEN_OFFSET_SYM (tNANO, nested);
- * GEN_OFFSET_SYM (tNANO, irq_stack);
+ * GEN_OFFSET_SYM (_kernel_t, nested);
+ * GEN_OFFSET_SYM (_kernel_t, irq_stack);
+ * GEN_OFFSET_SYM (_kernel_t, current);
+ * GEN_OFFSET_SYM (_kernel_t, idle);
  *
- * GEN_ABSOLUTE_SYM (__tNANO_SIZEOF, sizeof(tNANO));
+ * GEN_ABSOLUTE_SYM (___kernel_t_SIZEOF, sizeof(_kernel_t));
  *
  * GEN_ABS_SYM_END
  * <END of sample source file: offsets.c>
@@ -73,11 +72,10 @@
  * Compiling the sample offsets.c results in the following symbols in offsets.o:
  *
  * $ nm offsets.o
- * 00000010 A __tNANO_irq_stack_OFFSET
- * 00000008 A __tNANO_current_OFFSET
- * 0000000c A __tNANO_nested_OFFSET
- * 00000000 A __tNANO_fiber_OFFSET
- * 00000004 A __tNANO_task_OFFSET
+ * 00000000 A ___kernel_t_nested_OFFSET
+ * 00000004 A ___kernel_t_irq_stack_OFFSET
+ * 00000008 A ___kernel_t_current_OFFSET
+ * 0000000c A ___kernel_t_idle_OFFSET
  */
 
 #ifndef _GEN_OFFSET_H
