@@ -39,23 +39,21 @@ int at_check_byte(struct net_buf *buf, char check_byte)
 	return 0;
 }
 
-const char *skip_whitespace(const char *buf)
+static void skip_whitespace(struct at_client *at)
 {
-	while (*buf == ' ') {
-		buf++;
+	while (at->buf[at->pos] == ' ') {
+		at->pos++;
 	}
-
-	return buf;
 }
 
-int at_get_number(const char *buf, uint32_t *val)
+int at_get_number(struct at_client *at, uint32_t *val)
 {
 	uint32_t i;
 
-	buf = skip_whitespace(buf);
+	skip_whitespace(at);
 
-	for (i = 0, *val = 0; isdigit(*buf); buf++, i++) {
-		*val = *val * 10 + *buf - '0';
+	for (i = 0, *val = 0; isdigit(at->buf[at->pos]); at->pos++, i++) {
+		*val = *val * 10 + at->buf[at->pos] - '0';
 	}
 
 	if (i == 0) {
@@ -65,13 +63,13 @@ int at_get_number(const char *buf, uint32_t *val)
 	return 0;
 }
 
-int str_has_prefix(const char *str, const char *prefix)
+static bool str_has_prefix(const char *str, const char *prefix)
 {
 	if (strncmp(str, prefix, strlen(prefix)) != 0) {
-		return -EINVAL;
+		return false;
 	}
 
-	return 0;
+	return true;
 }
 
 static int at_parse_result(const char *str, struct net_buf *buf,
@@ -95,25 +93,26 @@ static int get_cmd_value(struct at_client *at, struct net_buf *buf,
 			 char stop_byte, enum at_cmd_state cmd_state)
 {
 	int cmd_len = 0;
-	int len = buf->len;
+	uint8_t pos = at->pos;
 	const char *str = buf->data;
 
-	while (cmd_len < len && at->buf_pos != at->buf_max_len) {
+	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
 		if (*str != stop_byte) {
-			at->buf[at->buf_pos] = *str;
+			at->buf[at->pos++] = *str;
 			cmd_len++;
 			str++;
-			at->buf_pos++;
+			pos = at->pos;
 		} else {
 			cmd_len++;
-			at->buf[at->buf_pos] = '\0';
+			at->buf[at->pos] = '\0';
+			at->pos = 0;
 			at->cmd_state = cmd_state;
 			break;
 		}
 	}
 	net_buf_pull(buf, cmd_len);
 
-	if (at->buf_pos == at->buf_max_len) {
+	if (pos == at->buf_max_len) {
 		return -ENOBUFS;
 	}
 
@@ -124,25 +123,26 @@ static int get_response_string(struct at_client *at, struct net_buf *buf,
 			       char stop_byte, enum at_state state)
 {
 	int cmd_len = 0;
-	int len = buf->len;
+	uint8_t pos = at->pos;
 	const char *str = buf->data;
 
-	while (cmd_len < len && at->buf_pos != at->buf_max_len) {
+	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
 		if (*str != stop_byte) {
-			at->buf[at->buf_pos] = *str;
+			at->buf[at->pos++] = *str;
 			cmd_len++;
 			str++;
-			at->buf_pos++;
+			pos = at->pos;
 		} else {
 			cmd_len++;
-			at->buf[at->buf_pos] = '\0';
+			at->buf[at->pos] = '\0';
+			at->pos = 0;
 			at->state = state;
 			break;
 		}
 	}
 	net_buf_pull(buf, cmd_len);
 
-	if (at->buf_pos == at->buf_max_len) {
+	if (pos == at->buf_max_len) {
 		return -ENOBUFS;
 	}
 
@@ -152,7 +152,7 @@ static int get_response_string(struct at_client *at, struct net_buf *buf,
 static void reset_buffer(struct at_client *at)
 {
 	memset(at->buf, 0, at->buf_max_len);
-	at->buf_pos = 0;
+	at->pos = 0;
 }
 
 static int at_state_start(struct at_client *at, struct net_buf *buf)
@@ -266,7 +266,7 @@ int at_parse_input(struct at_client *at, struct net_buf *buf)
 static int cmd_start(struct at_client *at, struct net_buf *buf,
 		     const char *prefix, parse_val_t func)
 {
-	if (str_has_prefix(at->buf, prefix) < 0) {
+	if (!str_has_prefix(at->buf, prefix)) {
 		at->state = AT_STATE_UNSOLICITED_CMD;
 		return -ENODATA;
 	}
