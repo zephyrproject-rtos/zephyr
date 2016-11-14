@@ -190,4 +190,4 @@ static int bt_monitor_init(struct device *d)
 	return 0;
 }
 
-SYS_INIT(bt_monitor_init, PRIMARY, MONITOR_INIT_PRIORITY);
+SYS_INIT(bt_monitor_init, PRE_KERNEL_1, MONITOR_INIT_PRIORITY);
