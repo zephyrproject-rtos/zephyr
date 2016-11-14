@@ -19,7 +19,7 @@
  */
 
 #define BLUETOOTH_HFP_MAX_MTU           140
-#define BLUETOOTH_HF_CLIENT_MAX_PDU	20
+#define BLUETOOTH_HF_CLIENT_MAX_PDU     BLUETOOTH_HFP_MAX_MTU
 
 /* HFP AG Features */
 #define BT_HFP_AG_FEATURE_3WAY_CALL     0x00000001 /* Three-way calling */
@@ -51,7 +51,8 @@
 #define BT_HFP_HF_SUPPORTED_FEATURES    (BT_HFP_HF_FEATURE_CLI | \
 					 BT_HFP_HF_FEATURE_VOLUME)
 
-#define HF_MAX_BUF_LEN 20
+#define HF_MAX_BUF_LEN                  BLUETOOTH_HF_CLIENT_MAX_PDU
+#define HF_MAX_AG_INDICATORS            20
 
 struct bt_hfp_hf {
 	struct bt_rfcomm_dlc rfcomm_dlc;
@@ -59,4 +60,5 @@ struct bt_hfp_hf {
 	struct at_client at;
 	uint32_t hf_features;
 	uint32_t ag_features;
+	int8_t ind_table[HF_MAX_AG_INDICATORS];
 };
