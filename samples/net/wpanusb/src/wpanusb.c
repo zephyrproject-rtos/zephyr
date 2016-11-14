@@ -368,17 +368,17 @@ static int tx(struct net_buf *pkt)
 
 	SYS_LOG_DBG("len %d seq %u", buf->len, seq);
 
-	/**
-	 * Pass to ieee802154 driver nbuf packet
-	 */
 	do {
 		ret = radio_api->tx(ieee802154_dev, pkt);
-		if (!ret) {
-
-			try_write(WPANUSB_ENDP_BULK_IN, &seq, sizeof(seq));
-		}
-
 	} while (ret && retries--);
+
+	if (ret) {
+		SYS_LOG_ERR("Error sending data, seq %u", seq);
+		/* Send seq = 0 for unsuccessful send */
+		seq = 0;
+	}
+
+	try_write(WPANUSB_ENDP_BULK_IN, &seq, sizeof(seq));
 
 	return ret;
 }
