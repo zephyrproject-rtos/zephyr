@@ -37,10 +37,6 @@
 #include <gatt/ipss.h>
 #endif
 
-#if defined(CONFIG_NET_TESTING)
-#include <net_testing.h>
-#endif /* CONFIG_NET_TESTING */
-
 /* Allow binding to ANY IP address. */
 #define NET_BIND_ANY_ADDR 1
 
@@ -52,17 +48,11 @@
 struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
 
 /* Define my IP address where to expect messages */
-#if !defined(CONFIG_NET_TESTING)
 #define MY_IP6ADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 #define MY_PREFIX_LEN 64
-#endif
 
-#if defined(CONFIG_NET_TESTING)
-static struct in6_addr in6addr_my = IN6ADDR_ANY_INIT;
-#else
 static struct in6_addr in6addr_my = MY_IP6ADDR;
-#endif
 #endif /* IPv6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -97,11 +87,16 @@ static inline void init_app(void)
 
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
-#if defined(CONFIG_NET_TESTING)
-	net_testing_setup();
+#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
+	if (net_addr_pton(AF_INET6,
+			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+			  (struct sockaddr *)&in6addr_my) < 0) {
+		NET_ERR("Invalid IPv6 address %s",
+			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+	}
 #endif
 
-#if defined(CONFIG_NET_IPV6)
 	do {
 		struct net_if_addr *ifaddr;
 
@@ -116,6 +111,15 @@ static inline void init_app(void)
 #if defined(CONFIG_NET_DHCPV4)
 	net_dhcpv4_start(net_if_get_default());
 #else
+#if defined(CONFIG_NET_SAMPLES_MY_IPV4_ADDR)
+	if (net_addr_pton(AF_INET,
+			  CONFIG_NET_SAMPLES_MY_IPV4_ADDR,
+			  (struct sockaddr *)&in4addr_my) < 0) {
+		NET_ERR("Invalid IPv4 address %s",
+			CONFIG_NET_SAMPLES_MY_IPV4_ADDR);
+	}
+#endif
+
 	net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my,
 			     NET_ADDR_MANUAL, 0);
 #endif /* CONFIG_NET_DHCPV4 */
