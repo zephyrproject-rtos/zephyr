@@ -771,12 +771,6 @@ end:
 	       buf->frags->len - compressed);
 	net_buf_add(frag, buf->frags->len - compressed);
 
-	/* Copying ll part, if any */
-	if (net_nbuf_ll_reserve(buf)) {
-		memcpy(IPHC - net_nbuf_ll_reserve(buf),
-		       net_nbuf_ll(buf), net_nbuf_ll_reserve(buf));
-	}
-
 	/* Delete uncompressed(original) header fragment */
 	net_buf_frag_del(buf, buf->frags);
 
