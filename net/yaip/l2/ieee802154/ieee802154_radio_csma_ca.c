@@ -46,7 +46,7 @@ static inline int csma_ca_tx_fragment(struct net_if *iface,
 	uint8_t nb = 0;
 	int ret = -EIO;
 
-	NET_DBG("buf %p", buf);
+	NET_DBG("frag %p", buf->frags);
 
 loop:
 	while (retries) {

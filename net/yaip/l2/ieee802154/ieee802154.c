@@ -50,7 +50,7 @@ static inline void hexdump(uint8_t *pkt, uint16_t length, uint8_t reserve)
 
 		for (j = 0; j < 10 && i < length; j++, i++) {
 #if defined(CONFIG_SYS_LOG_SHOW_COLOR)
-			if (i < reserve) {
+			if (i < reserve && reserve) {
 				printf(SYS_LOG_COLOR_YELLOW);
 			} else {
 				printf(SYS_LOG_COLOR_OFF);
@@ -215,7 +215,7 @@ static inline bool ieee802154_manage_send_buffer(struct net_if *iface,
 	ret = net_6lo_compress(buf, true, NULL);
 #endif
 
-	pkt_hexdump(buf, true);
+	pkt_hexdump(buf, false);
 
 	return ret;
 }

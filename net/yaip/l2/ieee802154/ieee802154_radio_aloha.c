@@ -39,7 +39,7 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 		(struct ieee802154_radio_api *)iface->dev->driver_api;
 	int ret = -EIO;
 
-	NET_DBG("buf %p", buf);
+	NET_DBG("frag %p", buf->frags);
 
 	while (retries) {
 		retries--;
