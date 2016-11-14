@@ -354,10 +354,15 @@ exit_test:
 static
 int test_reseed(void)
 {
+	uint8_t expectedV1[] = {0x7E, 0xE3, 0xA0, 0xCB, 0x6D, 0x5C, 0x4B, 0xC2,
+				0x4B, 0x7E, 0x3C, 0x48, 0x88, 0xC3, 0x69, 0x70};
+	uint8_t expectedV2[] = {0x5E, 0xC1, 0x84, 0xED, 0x45, 0x76, 0x67, 0xEC,
+				0x7B, 0x4C, 0x08, 0x7E, 0xB0, 0xF9, 0x55, 0x4E};
 	uint8_t extra_input[32] = {0};
 	uint8_t entropy[32] = {0}; /* value not important */
 	uint8_t output[32];
 	TCCtrPrng_t ctx;
+	uint32_t i;
 	int rc;
 
 	rc = tc_ctr_prng_init(&ctx, entropy, sizeof(entropy), 0, 0U);
@@ -382,8 +387,8 @@ int test_reseed(void)
 		goto exit_test;
 	}
 
-	/* reseed and confirm generate works again */
-	/* make entropy different from original value - not really important
+	/* reseed and confirm generate works again
+	 * make entropy different from original value - not really important
 	 * for the purpose of this test
 	 */
 	memset(entropy, 0xFF, sizeof(entropy));
@@ -396,6 +401,43 @@ int test_reseed(void)
 
 	rc = tc_ctr_prng_generate(&ctx, 0, 0, output, sizeof(output));
 	if (rc != TC_CRYPTO_SUCCESS) {
+		rc = TC_FAIL;
+		goto exit_test;
+	}
+
+	/* confirm entropy and additional_input are being used correctly
+	 * first, entropy only
+	 */
+	memset(&ctx, 0x0, sizeof(ctx));
+	for (i = 0; i < sizeof(entropy); i++) {
+		entropy[i] = i;
+	}
+
+	rc = tc_ctr_prng_reseed(&ctx, entropy, sizeof(entropy), 0, 0);
+	if (rc != 1) {
+		rc = TC_FAIL;
+		goto exit_test;
+	}
+
+	if (memcmp(ctx.V, expectedV1, sizeof(expectedV1))) {
+		rc = TC_FAIL;
+		goto exit_test;
+	}
+
+	/* now, entropy and additional_input */
+	memset(&ctx, 0x00, sizeof(ctx));
+	for (i = 0; i < sizeof(extra_input); i++) {
+		extra_input[i] = i * 2;
+	}
+
+	rc = tc_ctr_prng_reseed(&ctx, entropy, sizeof(entropy),
+				 extra_input, sizeof(extra_input));
+	if (rc != 1) {
+		rc = TC_FAIL;
+		goto exit_test;
+	}
+
+	if (memcmp(ctx.V, expectedV2, sizeof(expectedV2))) {
 		rc = TC_FAIL;
 		goto exit_test;
 	}
