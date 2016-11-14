@@ -2,6 +2,8 @@ ifdef CONFIG_HAS_STM32CUBE
 
 ifdef CONFIG_SOC_SERIES_STM32F1X
 obj-y += stm32f1xx/drivers/src/stm32f1xx_hal.o
+obj-y += stm32f1xx/drivers/src/stm32f1xx_hal_rcc.o
+obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32f1xx/drivers/src/stm32f1xx_hal_uart.o
 obj-y += stm32f1xx/soc/system_stm32f1xx.o
 endif
 
@@ -12,6 +14,8 @@ endif
 
 ifdef CONFIG_SOC_SERIES_STM32F4X
 obj-y += stm32f4xx/drivers/src/stm32f4xx_hal.o
+obj-y += stm32f4xx/drivers/src/stm32f4xx_hal_rcc.o
+obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32f4xx/drivers/src/stm32f4xx_hal_uart.o
 obj-y += stm32f4xx/soc/system_stm32f4xx.o
 endif
 

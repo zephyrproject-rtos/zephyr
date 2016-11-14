@@ -60,6 +60,9 @@ static int stm32f1_init(struct device *arg)
 
 	irq_unlock(key);
 
+	/* Update CMSIS SystemCoreClock variable (HCLK) */
+	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+
 	return 0;
 }
 
