@@ -1318,52 +1318,6 @@ static int send_data(struct net_context *context,
 	return ret;
 }
 
-int net_context_send(struct net_buf *buf,
-		     net_context_send_cb_t cb,
-		     int32_t timeout,
-		     void *token,
-		     void *user_data)
-{
-	struct net_context *context = net_nbuf_context(buf);
-
-	NET_ASSERT(context);
-
-	if (!net_context_is_used(context)) {
-		return -ENOENT;
-	}
-
-	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
-	    !net_sin(&context->remote)->sin_port) {
-		return -EDESTADDRREQ;
-	}
-
-#if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
-		buf = net_ipv6_create(context, buf,
-			&((struct sockaddr_in6 *)&context->remote)->sin6_addr);
-		buf = net_udp_append(context, buf,
-				ntohs(net_sin6(&context->remote)->sin6_port));
-		buf = net_ipv6_finalize(context, buf);
-	} else
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
-		buf = net_ipv4_create(context, buf,
-			&((struct sockaddr_in *)&context->remote)->sin_addr);
-		buf = net_udp_append(context, buf,
-				ntohs(net_sin(&context->remote)->sin_port));
-		buf = net_ipv4_finalize(context, buf);
-	} else
-#endif /* CONFIG_NET_IPV4 */
-	{
-		NET_DBG("Invalid protocol family %d", net_nbuf_family(buf));
-		return -EINVAL;
-	}
-
-	return send_data(context, buf, cb, timeout, token, user_data);
-}
-
 /* If the reserve has changed, we need to adjust it accordingly in the
  * fragment chain. This can only happen in IEEE 802.15.4 where the link
  * layer header size can change if the destination address changes.
@@ -1435,17 +1389,15 @@ static inline struct net_buf *update_ll_reserve(struct net_buf *buf,
 	return buf;
 }
 
-int net_context_sendto(struct net_buf *buf,
-		       const struct sockaddr *dst_addr,
-		       socklen_t addrlen,
-		       net_context_send_cb_t cb,
-		       int32_t timeout,
-		       void *token,
-		       void *user_data)
+static int sendto(struct net_buf *buf,
+		  const struct sockaddr *dst_addr,
+		  socklen_t addrlen,
+		  net_context_send_cb_t cb,
+		  int32_t timeout,
+		  void *token,
+		  void *user_data)
 {
 	struct net_context *context = net_nbuf_context(buf);
-
-	NET_ASSERT(context);
 
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
@@ -1499,6 +1451,63 @@ int net_context_sendto(struct net_buf *buf,
 	}
 
 	return send_data(context, buf, cb, timeout, token, user_data);
+}
+
+int net_context_send(struct net_buf *buf,
+		     net_context_send_cb_t cb,
+		     int32_t timeout,
+		     void *token,
+		     void *user_data)
+{
+	struct net_context *context = net_nbuf_context(buf);
+	socklen_t addrlen;
+
+	NET_ASSERT(context);
+
+	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
+	    !net_sin(&context->remote)->sin_port) {
+		return -EDESTADDRREQ;
+	}
+
+#if defined(CONFIG_NET_IPV6)
+	if (net_nbuf_family(buf) == AF_INET6) {
+		addrlen = sizeof(struct sockaddr_in6);
+	} else
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_nbuf_family(buf) == AF_INET) {
+		addrlen = sizeof(struct sockaddr_in);
+	} else
+#endif /* CONFIG_NET_IPV4 */
+	{
+		addrlen = 0;
+	}
+
+	return sendto(buf, &context->remote, addrlen, cb, timeout, token,
+		      user_data);
+}
+
+int net_context_sendto(struct net_buf *buf,
+		       const struct sockaddr *dst_addr,
+		       socklen_t addrlen,
+		       net_context_send_cb_t cb,
+		       int32_t timeout,
+		       void *token,
+		       void *user_data)
+{
+#if defined(CONFIG_NET_TCP)
+	struct net_context *context = net_nbuf_context(buf);
+
+	NET_ASSERT(context);
+
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		/* Match POSIX behavior and ignore dst_address and addrlen */
+		return net_context_send(buf, cb, timeout, token, user_data);
+	}
+#endif /* CONFIG_NET_TCP */
+
+	return sendto(buf, dst_addr, addrlen, cb, timeout, token, user_data);
 }
 
 static void set_appdata_values(struct net_buf *buf,
