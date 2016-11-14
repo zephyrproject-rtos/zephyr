@@ -284,7 +284,7 @@ static const struct gpio_driver_api gpio_sam3_drv_api_funcs = {
  * @param dev Device struct
  * @return 0 if successful, failed otherwise.
  */
-int gpio_sam3_init(struct device *dev)
+static int gpio_sam3_init(struct device *dev)
 {
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
 
