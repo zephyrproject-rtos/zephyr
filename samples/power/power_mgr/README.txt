@@ -11,19 +11,11 @@ It will cycle through following states
 1. CPU Low Power State
 2. Deep Sleep - demonstrates invoking suspend/resume handlers of devices to
 save device states and switching to deep sleep state.
-4. No-op - no operation and letting kernel do its idle
+3. No-op - no operation and letting kernel do its idle
 
 This application uses Intel Quark SE Microcontroller C1000 board for
-the demo.
-
-When started, the app waits for a toggle of GPIO pin 16.  GPIO Pin 16 is
-DIO 8 in arduino_101 and DIO 4 in quark_se_c1000_devboard.
-
-Toggle the GPIO pin in the following sequence:-
-	1) Start connected to GND during power on or reset.
-	2) Disconnect from GND and connect to 3.3V
-	3) Disconnect from 3.3V. Test should start now.
-
+the demo. It demonstrates power operations on the x86 and ARC cores in
+the board.
 --------------------------------------------------------------------------------
 
 Building and Running Project:
@@ -45,23 +37,59 @@ or
 
 --------------------------------------------------------------------------------
 
-Sample Output:
+***Sample output on x86 core***
 
-Power Management Demo
-Toggle gpio pin 16 to start test
-PM demo started
+Power Management Demo on x86
 
+Application main thread
 
 Low power state entry!
 
 Low power state exit!
-Total Elapsed From Suspend To Resume = 163869 RTC Cycles
+Total Elapsed From Suspend To Resume = 131073 RTC Cycles
+Wake up event handler
+
+Application main thread
 
 Deep sleep entry!
 Wake from Deep Sleep!
 
 Deep sleep exit!
-Total Elapsed From Suspend To Resume = 163986 RTC Cycles
-Deep Sleep wake up event handler
+Total Elapsed From Suspend To Resume = 291542 RTC Cycles
+Wake up event handler
+
+Application main thread
+
+No PM operations done
+
+Application main thread
+
+Low power state entry!
+
+Low power state exit!
+
+...
+
+***Sample output on ARC core***
+
+Power Management Demo on arc
+
+Application main thread
+
+Low power state entry!
+
+Low power state exit!
+Total Elapsed From Suspend To Resume = 131073 RTC Cycles
+Wake up event handler
+
+Application main thread
+
+No PM operations done
+
+Application main thread
+
+Low power state entry!
+
+Low power state exit!
 
 ...
