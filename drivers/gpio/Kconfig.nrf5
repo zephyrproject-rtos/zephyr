@@ -26,7 +26,6 @@ if GPIO_NRF5
 
 config GPIO_NRF5_P0
 	bool "nRF5x GPIO Port P0 options"
-	depends on GPIO_NRF5
 	default n
 	help
 	  Enable nRF5 GPIO port P0 config options.
