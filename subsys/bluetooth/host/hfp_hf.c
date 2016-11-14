@@ -47,18 +47,19 @@ NET_BUF_POOL_DEFINE(hf_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
 
 static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
+/* The order should follow the enum hfp_hf_ag_indicators */
 static const struct {
 	char *name;
 	uint32_t min;
 	uint32_t max;
 } ag_ind[] = {
-	{"service", 0, 1},
-	{"call", 0, 1},
-	{"callsetup", 0, 3},
-	{"callheld", 0, 2},
-	{"signal", 0, 5},
-	{"roam", 0, 1},
-	{"battchg", 0, 5}
+	{"service", 0, 1}, /* HF_SERVICE_IND */
+	{"call", 0, 1}, /* HF_CALL_IND */
+	{"callsetup", 0, 3}, /* HF_CALL_SETUP_IND */
+	{"callheld", 0, 2}, /* HF_CALL_HELD_IND */
+	{"signal", 0, 5}, /* HF_SINGNAL_IND */
+	{"roam", 0, 1}, /* HF_ROAM_IND */
+	{"battchg", 0, 5} /* HF_BATTERY_IND */
 };
 
 void hf_slc_error(struct at_client *hf_at)
@@ -221,8 +222,105 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
-int cind_finish(struct at_client *hf_at, struct net_buf *buf,
-		enum at_result result)
+void cind_status_handle_values(struct at_client *hf_at, uint32_t index,
+			       uint32_t value)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
+
+	BT_DBG("Index :%u, Value :%u", index, value);
+
+	if (index >= ARRAY_SIZE(ag_ind)) {
+		BT_ERR("Max only %lu indicators are supported",
+		       ARRAY_SIZE(ag_ind));
+		return;
+	}
+
+	if (value > ag_ind[hf->ind_table[index]].max ||
+	    value < ag_ind[hf->ind_table[index]].min) {
+		BT_ERR("Indicators out of range - value: %u", value);
+		return;
+	}
+
+	switch (hf->ind_table[index]) {
+	case HF_SERVICE_IND:
+		if (bt_hf->service) {
+			bt_hf->service(conn, value);
+		}
+		break;
+	case HF_CALL_IND:
+		if (bt_hf->call) {
+			bt_hf->call(conn, value);
+		}
+		break;
+	case HF_CALL_SETUP_IND:
+		if (bt_hf->call_setup) {
+			bt_hf->call_setup(conn, value);
+		}
+		break;
+	case HF_CALL_HELD_IND:
+		if (bt_hf->call_held) {
+			bt_hf->call_held(conn, value);
+		}
+		break;
+	case HF_SINGNAL_IND:
+		if (bt_hf->signal) {
+			bt_hf->signal(conn, value);
+		}
+		break;
+	case HF_ROAM_IND:
+		if (bt_hf->roam) {
+			bt_hf->roam(conn, value);
+		}
+		break;
+	case HF_BATTERY_IND:
+		if (bt_hf->battery) {
+			bt_hf->battery(conn, value);
+		}
+		break;
+	default:
+		BT_ERR("Unknown AG indicator");
+		break;
+	}
+}
+
+int cind_status_handle(struct at_client *hf_at)
+{
+	uint32_t index = 0;
+
+	while (at_has_next_list(hf_at)) {
+		uint32_t value;
+		int ret;
+
+		ret = at_get_number(hf_at, &value);
+		if (ret < 0) {
+			BT_ERR("could not get the value");
+			return ret;
+		}
+
+		cind_status_handle_values(hf_at, index, value);
+
+		index++;
+	}
+
+	return 0;
+}
+
+int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
+{
+	int err;
+
+	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_status_handle);
+	if (err < 0) {
+		BT_ERR("Error parsing CMD input");
+		hf_slc_error(hf_at);
+	}
+
+	return 0;
+}
+
+int cind_status_finish(struct at_client *hf_at, struct net_buf *buf,
+		       enum at_result result)
 {
 	if (result != AT_RESULT_OK) {
 		BT_ERR("SLC Connection ERROR in response");
@@ -231,6 +329,28 @@ int cind_finish(struct at_client *hf_at, struct net_buf *buf,
 	}
 
 	/* Continue SLC creation */
+
+	return 0;
+}
+
+int cind_finish(struct at_client *hf_at, struct net_buf *buf,
+		enum at_result result)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
+	if (result != AT_RESULT_OK) {
+		BT_ERR("SLC Connection ERROR in response");
+		hf_slc_error(hf_at);
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, cind_status_resp, cind_status_finish,
+			      "AT+CIND?");
+	if (err < 0) {
+		hf_slc_error(hf_at);
+		return err;
+	}
 
 	return 0;
 }

@@ -62,3 +62,13 @@ struct bt_hfp_hf {
 	uint32_t ag_features;
 	int8_t ind_table[HF_MAX_AG_INDICATORS];
 };
+
+enum hfp_hf_ag_indicators {
+	HF_SERVICE_IND,
+	HF_CALL_IND,
+	HF_CALL_SETUP_IND,
+	HF_CALL_HELD_IND,
+	HF_SINGNAL_IND,
+	HF_ROAM_IND,
+	HF_BATTERY_IND
+};
