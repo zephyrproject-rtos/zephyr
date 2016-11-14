@@ -54,7 +54,7 @@ typedef void (*_thread_entry_t)(void *, void *, void *);
 extern void _thread_entry(void (*)(void *, void *, void *),
 			  void *, void *, void *);
 
-extern void _new_thread(char *pStack, unsigned stackSize,
+extern void _new_thread(char *pStack, size_t stackSize,
 			void *uk_task_ptr,
 			void (*pEntry)(void *, void *, void *),
 			void *p1, void *p2, void *p3,

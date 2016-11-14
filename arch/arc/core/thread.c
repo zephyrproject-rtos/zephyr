@@ -84,7 +84,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
  *
  * @return N/A
  */
-void _new_thread(char *pStackMem, unsigned stackSize,
+void _new_thread(char *pStackMem, size_t stackSize,
 		 void *uk_task_ptr, _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)

@@ -152,10 +152,10 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  *
  * @return ID of new thread.
  */
-extern k_tid_t k_thread_spawn(char *stack, unsigned stack_size,
+extern k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
-			      int32_t prio, uint32_t options, int32_t delay);
+			      int prio, uint32_t options, int32_t delay);
 
 /**
  * @brief Put the current thread to sleep.
@@ -1391,7 +1391,7 @@ static inline int k_work_pending(struct k_work *work)
  * @return N/A
  */
 extern void k_work_q_start(struct k_work_q *work_q, char *stack,
-			   unsigned stack_size, unsigned prio);
+			   size_t stack_size, int prio);
 
 /**
  * @brief Initialize a delayed work item.
