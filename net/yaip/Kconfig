@@ -259,4 +259,6 @@ source "net/yaip/Kconfig.mgmt"
 
 source "net/yaip/Kconfig.rpl"
 
+source "net/yaip/Kconfig.samples"
+
 endmenu
