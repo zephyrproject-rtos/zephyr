@@ -1372,8 +1372,12 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	/* Cancel any pending update */
 	k_delayed_work_cancel(&conn->le.update_work);
 
+	/*
+	 * If remote does not support LL Connection Parameters Request
+	 * Procedure
+	 */
 	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
-	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
+	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features)) {
 		return bt_l2cap_update_conn_param(conn, param);
 	}
 
