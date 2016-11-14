@@ -60,7 +60,7 @@ struct init_stack_frame {
 };
 
 
-void _new_thread(char *stack_memory, unsigned stack_size,
+void _new_thread(char *stack_memory, size_t stack_size,
 		 void *uk_task_ptr, _thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned options)

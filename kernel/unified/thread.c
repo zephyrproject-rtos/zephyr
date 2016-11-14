@@ -230,10 +230,10 @@ static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 #endif
 }
 
-k_tid_t k_thread_spawn(char *stack, unsigned stack_size,
+k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 			void (*entry)(void *, void *, void*),
 			void *p1, void *p2, void *p3,
-			int32_t prio, uint32_t options, int32_t delay)
+			int prio, uint32_t options, int32_t delay)
 {
 	__ASSERT(!_is_in_isr(), "");
 
