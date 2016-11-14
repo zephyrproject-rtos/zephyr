@@ -135,7 +135,7 @@ struct _kernel {
 
 	/*
 	 * ready queue: can be big, keep after small fields, since some
-	 * assembly (e.g. ARC are limited in the encoding of the offset)
+	 * assembly (e.g. ARC) are limited in the encoding of the offset
 	 */
 	struct _ready_q ready_q;
 
