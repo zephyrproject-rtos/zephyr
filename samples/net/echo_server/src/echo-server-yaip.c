@@ -80,6 +80,8 @@ static struct in_addr in4addr_my = MY_IP4ADDR;
 #define STACKSIZE 2000
 char __noinit __stack thread_stack[STACKSIZE];
 
+#define MAX_DBG_PRINT 64
+
 static struct k_sem quit_lock;
 
 static inline void quit(void)
@@ -253,9 +255,9 @@ static inline bool get_context(struct net_context **udp_recv4,
 	return true;
 }
 
-static struct net_buf *udp_recv(const char *name,
-				struct net_context *context,
-				struct net_buf *buf)
+static struct net_buf *build_reply_buf(const char *name,
+				       struct net_context *context,
+				       struct net_buf *buf)
 {
 	struct net_buf *reply_buf, *frag, *tmp;
 	int header_len, recv_len, reply_len;
@@ -324,10 +326,7 @@ static struct net_buf *udp_recv(const char *name,
 	return reply_buf;
 }
 
-#if defined(CONFIG_NET_UDP)
-#define MAX_DBG_PRINT 64
-
-static inline void udp_sent(struct net_context *context,
+static inline void pkt_sent(struct net_context *context,
 			    int status,
 			    void *token,
 			    void *user_data)
@@ -337,6 +336,7 @@ static inline void udp_sent(struct net_context *context,
 	}
 }
 
+#if defined(CONFIG_NET_UDP)
 static inline void set_dst_addr(sa_family_t family,
 				struct net_buf *buf,
 				struct sockaddr *dst_addr)
@@ -376,7 +376,7 @@ static void udp_received(struct net_context *context,
 
 	set_dst_addr(family, buf, &dst_addr);
 
-	reply_buf = udp_recv(dbg, context, buf);
+	reply_buf = build_reply_buf(dbg, context, buf);
 
 	net_nbuf_unref(buf);
 
@@ -384,7 +384,7 @@ static void udp_received(struct net_context *context,
 				 family == AF_INET6 ?
 				 sizeof(struct sockaddr_in6) :
 				 sizeof(struct sockaddr_in),
-				 udp_sent, 0,
+				 pkt_sent, 0,
 				 UINT_TO_POINTER(net_buf_frags_len(reply_buf)),
 				 user_data);
 	if (ret < 0) {
@@ -418,12 +418,48 @@ static void setup_udp_recv(struct net_context *udp_recv4,
 
 #if defined(CONFIG_NET_TCP)
 static void tcp_received(struct net_context *context,
+			 struct net_buf *buf,
+			 int status,
+			 void *user_data)
+{
+	static char dbg[MAX_DBG_PRINT + 1];
+	sa_family_t family = net_nbuf_family(buf);
+	struct net_buf *reply_buf;
+	int ret;
+
+	snprintf(dbg, MAX_DBG_PRINT, "TCP IPv%c",
+		 family == AF_INET6 ? '6' : '4');
+
+	reply_buf = build_reply_buf(dbg, context, buf);
+
+	net_buf_unref(buf);
+
+	ret = net_context_send(reply_buf, pkt_sent, K_NO_WAIT,
+			       UINT_TO_POINTER(net_buf_frags_len(reply_buf)),
+			       NULL);
+	if (ret < 0) {
+		NET_ERR("Cannot send data to peer (%d)", ret);
+		net_nbuf_unref(reply_buf);
+
+		quit();
+	}
+}
+
+static void tcp_accepted(struct net_context *context,
 			 struct sockaddr *addr,
 			 socklen_t addrlen,
 			 int error,
 			 void *user_data)
 {
+	int ret;
+
 	NET_DBG("Accept called, context %p error %d", context, error);
+
+	ret = net_context_recv(context, tcp_received, 0, NULL);
+	if (ret < 0) {
+		NET_ERR("Cannot receive TCP packet (family %d)",
+			net_context_get_family(context));
+	}
 }
 
 static void setup_tcp_accept(struct net_context *tcp_recv4,
@@ -432,14 +468,14 @@ static void setup_tcp_accept(struct net_context *tcp_recv4,
 	int ret;
 
 #if defined(CONFIG_NET_IPV6)
-	ret = net_context_accept(tcp_recv6, tcp_received, 0, NULL);
+	ret = net_context_accept(tcp_recv6, tcp_accepted, 0, NULL);
 	if (ret < 0) {
 		NET_ERR("Cannot receive IPv6 TCP packets (%d)", ret);
 	}
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	ret = net_context_accept(tcp_recv4, tcp_received, 0, NULL);
+	ret = net_context_accept(tcp_recv4, tcp_accepted, 0, NULL);
 	if (ret < 0) {
 		NET_ERR("Cannot receive IPv4 TCP packets (%d)", ret);
 	}
