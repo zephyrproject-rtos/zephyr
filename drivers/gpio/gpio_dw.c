@@ -407,7 +407,7 @@ static inline void gpio_dw_unmask_int(uint32_t mask_addr)
 #define gpio_dw_unmask_int(...)
 #endif
 
-void gpio_dw_isr(void *arg)
+static void gpio_dw_isr(void *arg)
 {
 	struct device *port = (struct device *)arg;
 	struct gpio_dw_runtime *context = port->driver_data;

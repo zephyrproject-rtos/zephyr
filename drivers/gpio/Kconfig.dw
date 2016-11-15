@@ -29,19 +29,16 @@ if GPIO_DW
 config GPIO_DW_SHARED_IRQ
 	bool
 	default n
-	depends on GPIO_DW
 
 config GPIO_DW_INIT_PRIORITY
 	int
 	default 60
-	depends on GPIO_DW
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.
 
 config GPIO_DW_CLOCK_GATE
 	bool "Enable glock gating"
-	depends on GPIO_DW
 	select CLOCK_CONTROL
 	default n
 
@@ -52,10 +49,9 @@ config GPIO_DW_CLOCK_GATE_DRV_NAME
 
 config GPIO_DW_0
 	bool "Designware GPIO block 0"
-	depends on GPIO_DW
 	default n
 	help
-	Include Designware GPIO driver
+	  Include Designware GPIO driver
 
 config GPIO_DW_0_NAME
 	string "Driver name"
@@ -98,14 +94,13 @@ config GPIO_DW_0_IRQ_PRI
 	int "Controller interrupt priority"
 	depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
 	help
-	IRQ priority
+	  IRQ priority
 
 config GPIO_DW_1
 	bool "Designware GPIO block 1"
-	depends on GPIO_DW
 	default n
 	help
-	Include Designware GPIO driver
+	  Include Designware GPIO driver
 
 config GPIO_DW_1_NAME
 	string "Driver name"
@@ -148,14 +143,13 @@ config GPIO_DW_1_IRQ_PRI
 	int "Controller interrupt priority"
 	depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
 	help
-	IRQ priority
+	  IRQ priority
 
 config GPIO_DW_2
 	bool "Designware GPIO block 1"
-	depends on GPIO_DW
 	default n
 	help
-	Include Designware GPIO driver
+	  Include Designware GPIO driver
 
 config GPIO_DW_2_NAME
 	string "Driver name"
@@ -198,14 +192,13 @@ config GPIO_DW_2_IRQ_PRI
 	int "Controller interrupt priority"
 	depends on GPIO_DW_2 && GPIO_DW_2_IRQ_DIRECT
 	help
-	IRQ priority
+	  IRQ priority
 
 config GPIO_DW_3
 	bool "Designware GPIO block 1"
-	depends on GPIO_DW
 	default n
 	help
-	Include Designware GPIO driver
+	  Include Designware GPIO driver
 
 config GPIO_DW_3_NAME
 	string "Driver name"

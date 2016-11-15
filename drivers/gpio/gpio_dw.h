@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef _GPIO_DW_H_
+#define _GPIO_DW_H_
+
 #include <stdint.h>
 #include <gpio.h>
 #include "gpio_dw_registers.h"
@@ -61,3 +64,5 @@ struct gpio_dw_runtime {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _GPIO_DW_H_ */
