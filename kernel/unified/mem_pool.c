@@ -342,7 +342,7 @@ static char *get_block_recursive(struct k_mem_pool *pool,
 		return found;
 	}
 
-#ifdef CONFIG_MEM_POOL_AD_BEFORE_SEARCH_FOR_BIGGERBLOCK
+#ifdef CONFIG_MEM_POOL_DEFRAG_BEFORE_SPLIT
 	/*
 	 * do a partial defragmentation of memory pool & try allocating again
 	 * - do this on initial invocation only, not recursive ones
@@ -385,7 +385,7 @@ static char *get_block_recursive(struct k_mem_pool *pool,
 		return larger_block;
 	}
 
-#ifdef CONFIG_MEM_POOL_AD_AFTER_SEARCH_FOR_BIGGERBLOCK
+#ifdef CONFIG_MEM_POOL_SPLIT_BEFORE_DEFRAG
 	/*
 	 * do a partial defragmentation of memory pool & try allocating again
 	 * - do this on initial invocation only, not recursive ones
