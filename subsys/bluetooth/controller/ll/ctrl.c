@@ -3287,8 +3287,11 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 static void work_sched_free_win_offset_calc(void *params)
 {
 	struct connection *conn = (struct connection *)params;
-	uint32_t *ticks_to_offset_next = 0;
+	uint32_t ticks_to_offset_default = 0;
+	uint32_t *ticks_to_offset_next;
 	uint8_t offset_max = 6;
+
+	ticks_to_offset_next = &ticks_to_offset_default;
 
 	if (conn->role.slave.role != 0) {
 		conn->llcp.connection_update.ticks_to_offset_next =
