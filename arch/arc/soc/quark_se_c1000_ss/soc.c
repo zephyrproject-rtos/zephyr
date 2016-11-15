@@ -26,13 +26,8 @@
 #include <init.h>
 #include <quark_se/shared_mem.h>
 
-
 /**
- *
  * @brief perform basic hardware initialization
- *
- * Hardware initialized:
- * - interrupt unit
  *
  * RETURNS: N/A
  */
@@ -40,9 +35,8 @@ static int quark_se_arc_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	_arc_v2_irq_unit_init();
 	shared_data->flags |= ARC_READY;
 	return 0;
 }
 
-SYS_INIT(quark_se_arc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(quark_se_arc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

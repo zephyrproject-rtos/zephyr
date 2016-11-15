@@ -19,28 +19,6 @@
 /**
  * This module provides routines to initialize and support board-level hardware
  * for the ARC EM Starter kit board.
+ *
+ * Nothing to be done for now.
  */
-
-#include <nanokernel.h>
-#include "soc.h"
-#include <init.h>
-
-
-/**
- *
- * @brief perform basic hardware initialization
- *
- * Hardware initialized:
- * - interrupt unit
- *
- * RETURNS: N/A
- */
-static int em7d_arc_init(struct device *arg)
-{
-	ARG_UNUSED(arg);
-
-	_arc_v2_irq_unit_init();
-	return 0;
-}
-
-SYS_INIT(em7d_arc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -161,21 +161,6 @@ unsigned int _arc_v2_irq_unit_trigger_get(int irq);
 
 void _arc_v2_irq_unit_int_eoi(int irq);
 
-/*
- * @brief Initialize the interrupt unit device driver
- *
- * Initializes the interrupt unit device driver and the device
- * itself.
- *
- * Interrupts are still locked at this point, so there is no need to protect
- * the window between a write to IRQ_SELECT and subsequent writes to the
- * selected IRQ's registers.
- *
- * @return N/A
- */
-
-void _arc_v2_irq_unit_init(void);
-
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

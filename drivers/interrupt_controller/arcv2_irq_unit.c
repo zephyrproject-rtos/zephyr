@@ -28,11 +28,26 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <board.h>
+#include <init.h>
 
 extern void *_VectorTable;
 
-void _arc_v2_irq_unit_init(void)
+/*
+ * @brief Initialize the interrupt unit device driver
+ *
+ * Initializes the interrupt unit device driver and the device
+ * itself.
+ *
+ * Interrupts are still locked at this point, so there is no need to protect
+ * the window between a write to IRQ_SELECT and subsequent writes to the
+ * selected IRQ's registers.
+ *
+ * @return N/A
+ */
+
+static int _arc_v2_irq_unit_init(struct device *unused)
 {
+	ARG_UNUSED(unused);
 	int irq; /* the interrupt index */
 
 	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
@@ -42,6 +57,8 @@ void _arc_v2_irq_unit_init(void)
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
 	}
+
+	return 0;
 }
 
 void _arc_v2_irq_unit_int_eoi(int irq)
@@ -61,3 +78,6 @@ unsigned int _arc_v2_irq_unit_trigger_get(int irq)
 	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 	return _arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER);
 }
+
+SYS_INIT(_arc_v2_irq_unit_init, PRE_KERNEL_1,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
