@@ -825,7 +825,6 @@ static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
 {
 	const struct bt_att_find_type_rsp *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
-	struct bt_gatt_service value;
 	uint8_t i;
 	uint16_t end_handle = 0, start_handle;
 
@@ -838,7 +837,7 @@ static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
 	/* Parse attributes found */
 	for (i = 0; length >= sizeof(rsp->list[i]);
 	     i++, length -=  sizeof(rsp->list[i])) {
-		struct bt_gatt_attr *attr;
+		struct bt_gatt_attr attr = {};
 
 		start_handle = sys_le16_to_cpu(rsp->list[i].start_handle);
 		end_handle = sys_le16_to_cpu(rsp->list[i].end_handle);
@@ -846,20 +845,15 @@ static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		BT_DBG("start_handle 0x%04x end_handle 0x%04x", start_handle,
 		       end_handle);
 
-		value.end_handle = end_handle;
-		value.uuid = params->uuid;
-
 		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-			attr = (&(struct bt_gatt_attr)
-				BT_GATT_PRIMARY_SERVICE(&value));
+			attr.uuid = BT_UUID_GATT_PRIMARY;
 		} else {
-			attr = (&(struct bt_gatt_attr)
-				BT_GATT_SECONDARY_SERVICE(&value));
+			attr.uuid = BT_UUID_GATT_SECONDARY;
 		}
 
-		attr->handle = start_handle;
+		attr.handle = start_handle;
 
-		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
+		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return;
 		}
 	}
