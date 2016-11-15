@@ -38,6 +38,7 @@
 #include <kernel_offsets.h>
 
 GEN_OFFSET_SYM(_thread_arch_t, basepri);
+GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 
 #ifdef CONFIG_FLOAT
 GEN_OFFSET_SYM(_thread_arch_t, preempt_float);

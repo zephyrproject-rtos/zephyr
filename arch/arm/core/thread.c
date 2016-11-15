@@ -140,6 +140,8 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 	tcs->callee_saved.psp = (uint32_t)pInitCtx;
 	tcs->arch.basepri = 0;
 
+	/* swap_return_value can contain garbage */
+
 	_nano_timeout_thread_init(tcs);
 
 	/* initial values in all other registers/TCS entries are irrelevant */

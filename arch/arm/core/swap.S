@@ -235,16 +235,6 @@ _context_switch:
 #endif
 
     /*
-     * Set _Swap()'s default return code to -EAGAIN. This eliminates the
-     * need for the timeout code to invoke fiberRtnValueSet().
-     */
-
-    mrs  r2, PSP   /* thread mode, stack frame is on PSP */
-    ldr  r3, =_k_neg_eagain
-    ldr  r3, [r3, #0]
-    str  r3, [r2, #___esf_t_a1_OFFSET]
-
-    /*
      * Unlock interrupts:
      * - in a SVC call, so protected against context switches
      * - allow PendSV, since it's running at prio 0xff
@@ -305,17 +295,21 @@ SECTION_FUNC(TEXT, _Swap)
     ldr r2, [r1, #_kernel_offset_to_current]
     str r0, [r2, #_thread_offset_to_basepri]
 
+    /*
+     * Set _Swap()'s default return code to -EAGAIN. This eliminates the need
+     * for the timeout code to set it itself.
+     */
+    ldr r1, =_k_neg_eagain
+    ldr r1, [r1]
+    str r1, [r2, #_thread_offset_to_swap_return_value]
+
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
     /* No priority-based interrupt masking on M0/M0+,
      * pending PendSV is used instead of svc
      */
     ldr r1, =_SCS_ICSR
-    ldr r2, =_SCS_ICSR_PENDSV
-    str r2, [r1, #0]
-
-    /* load -EAGAIN as the default return value */
-    ldr r0, =_k_neg_eagain
-    ldr r0, [r0]
+    ldr r3, =_SCS_ICSR_PENDSV
+    str r3, [r1, #0]
 
     /* Unlock interrupts to allow PendSV, since it's running at prio 0xff
      *
@@ -323,12 +317,10 @@ SECTION_FUNC(TEXT, _Swap)
      * of a higher priority pending.
      */
     cpsie i
-
-    /* PC stored in stack frame by the hw */
-    bx lr
 #else /* CONFIG_CPU_CORTEX_M3_M4 */
     svc #0
-
-    /* r0 contains the return value if needed */
-    bx lr
 #endif
+
+    /* coming back from exception, r2 still holds the pointer to _current */
+    ldr r0, [r2, #_thread_offset_to_swap_return_value]
+    bx lr
