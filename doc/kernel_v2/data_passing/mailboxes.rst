@@ -484,12 +484,12 @@ The receiving thread must then respond as follows:
   the mailbox has already completed data retrieval and deleted the message.
 
 * If the message descriptor size is non-zero and the receiving thread still
-  wants to retrieve the data, the thread must call :c:func:`k_mbox_data_get()`
+  wants to retrieve the data, the thread must call :cpp:func:`k_mbox_data_get()`
   and supply a message buffer large enough to hold the data. The mailbox copies
   the data into the message buffer and deletes the message.
 
 * If the message descriptor size is non-zero and the receiving thread does *not*
-  want to retrieve the data, the thread must call :c:func:`k_mbox_data_get()`.
+  want to retrieve the data, the thread must call :cpp:func:`k_mbox_data_get()`.
   and specify a message buffer of :c:macro:`NULL`. The mailbox deletes
   the message without copying the data.
 
@@ -548,7 +548,7 @@ A receiving thread may choose to retrieve message data into a memory block,
 rather than a message buffer. This is done in much the same way as retrieving
 data subsequently into a message buffer --- the receiving thread first
 receives the message without its data, then retrieves the data by calling
-:c:func:`k_mbox_data_block_get()`. The mailbox fills in the block descriptor
+:cpp:func:`k_mbox_data_block_get()`. The mailbox fills in the block descriptor
 supplied by the receiving thread, allowing the thread to access the data.
 The mailbox also deletes the received message, since data retrieval
 has been completed. The receiving thread is then responsible for freeing

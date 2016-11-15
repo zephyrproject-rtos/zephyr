@@ -135,7 +135,7 @@ are measured in system clock ticks. The time slice size is configurable,
 but this size can be changed while the application is running.
 
 At the end of every time slice, the scheduler checks to see if the current
-thread is preemptible and, if so, implicitly invokes :c:func:`k_yield()`
+thread is preemptible and, if so, implicitly invokes :cpp:func:`k_yield()`
 on behalf of the thread. This gives other ready threads of the same priority
 the opportunity to execute before the current thread is scheduled again.
 If no threads of equal priority are ready, the current thread remains
@@ -234,6 +234,8 @@ APIs
 The following thread scheduling-related APIs are provided by :file:`kernel.h`:
 
 * :cpp:func:`k_current_get()`
+* :cpp:func:`k_sched_lock()`
+* :cpp:func:`k_sched_unlock()`
 * :cpp:func:`k_yield()`
 * :cpp:func:`k_sleep()`
 * :cpp:func:`k_wakeup()`

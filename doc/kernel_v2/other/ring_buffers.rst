@@ -175,8 +175,8 @@ APIs
 
 The following ring buffer APIs are provided by :file:`misc/ring_buffer.h`:
 
-* :c:func:`SYS_RING_BUF_DECLARE_POW2()`
-* :c:func:`SYS_RING_BUF_DECLARE_SIZE()`
+* :cpp:func:`SYS_RING_BUF_DECLARE_POW2()`
+* :cpp:func:`SYS_RING_BUF_DECLARE_SIZE()`
 * :cpp:func:`sys_ring_buf_init()`
 * :cpp:func:`sys_ring_buf_is_empty()`
 * :cpp:func:`sys_ring_buf_space_get()`

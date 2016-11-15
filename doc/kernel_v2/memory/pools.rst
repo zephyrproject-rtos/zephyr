@@ -214,4 +214,4 @@ The following memory pool APIs are provided by :file:`kernel.h`:
 
 * :cpp:func:`k_mem_pool_alloc()`
 * :cpp:func:`k_mem_pool_free()`
-* :cpp:func:`k_mem_pool_defragment()`
+* :cpp:func:`k_mem_pool_defrag()`

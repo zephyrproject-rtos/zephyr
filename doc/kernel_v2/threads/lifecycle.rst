@@ -78,7 +78,7 @@ automatically aborts a thread if the thread triggers a fatal error condition,
 such as dereferencing a null pointer.
 
 A thread can also be aborted by another thread (or by itself)
-by calling :c:func:`k_thread_abort()`. However, it is typically preferable
+by calling :cpp:func:`k_thread_abort()`. However, it is typically preferable
 to signal a thread to terminate itself gracefully, rather than aborting it.
 
 As with thread termination, the kernel does not reclaim shared resources
@@ -92,16 +92,16 @@ Thread Suspension
 =================
 
 A thread can be prevented from executing for an indefinite period of time
-if it becomes **suspended**. The function :c:func:`k_thread_suspend()`
+if it becomes **suspended**. The function :cpp:func:`k_thread_suspend()`
 can be used to suspend any thread, including the calling thread.
 Suspending a thread that is already suspended has no additional effect.
 
 Once suspended, a thread cannot be scheduled until another thread calls
-:c:func:`k_thread_resume()` to remove the suspension.
+:cpp:func:`k_thread_resume()` to remove the suspension.
 
 .. note::
    A thread can prevent itself from executing for a specified period of time
-   using :c:func:`k_sleep()`. However, this is different from suspending
+   using :cpp:func:`k_sleep()`. However, this is different from suspending
    a thread since a sleeping thread becomes executable automatically when the
    time limit is reached.
 
@@ -146,7 +146,7 @@ Spawning a Thread
 
 A thread is spawned by defining its stack area and then calling
 :cpp:func:`k_thread_spawn()`. The stack area is an array of bytes
-whose size must equal :c:func:`sizeof(struct k_thread)` plus the size
+whose size must equal :c:macro:`K_THREAD_SIZEOF` plus the size
 of the thread's stack. The stack area must be defined using the
 :c:macro:`__stack` attribute to ensure it is properly aligned.
 
@@ -226,7 +226,7 @@ Related configuration options:
 APIs
 ****
 
-The following thread APIs are are provided by :file:`kernel.h`:
+The following thread APIs are provided by :file:`kernel.h`:
 
 * :cpp:func:`k_thread_spawn()`
 * :cpp:func:`k_thread_cancel()`

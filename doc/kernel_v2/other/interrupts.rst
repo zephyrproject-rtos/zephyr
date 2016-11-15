@@ -195,3 +195,4 @@ The following interrupt-related APIs are provided by :file:`irq.h`:
 The following interrupt-related APIs are provided by :file:`kernel.h`:
 
 * :cpp:func:`k_is_in_isr()`
+* :cpp:func:`k_is_preempt_thread`
