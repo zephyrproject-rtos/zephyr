@@ -82,10 +82,9 @@ static struct device *ieee802154_dev;
 static struct nano_fifo tx_queue;
 
 /**
- * Stack for the tx fiber.
+ * Stack for the tx thread.
  */
-static char __noinit __stack tx_fiber_stack[1024];
-static nano_thread_id_t tx_fiber_id;
+static char __noinit __stack tx_stack[1024];
 
 #define DEV_DATA(dev) \
 	((struct wpanusb_dev_data_t * const)(dev)->driver_data)
@@ -412,9 +411,9 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 	return 0;
 }
 
-static void tx_fiber(void)
+static void tx_thread(void)
 {
-	SYS_LOG_INF("Tx fiber started");
+	SYS_LOG_DBG("Tx thread started");
 
 	while (1) {
 		uint8_t cmd;
@@ -458,7 +457,7 @@ static void tx_fiber(void)
 
 		net_nbuf_unref(pkt);
 
-		fiber_yield();
+		k_yield();
 	}
 }
 
@@ -527,11 +526,10 @@ static void wpanusb_start(struct device *dev)
 static void init_tx_queue(void)
 {
 	/* Transmit queue init */
-	nano_fifo_init(&tx_queue);
+	k_fifo_init(&tx_queue);
 
-	tx_fiber_id = fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
-				  (nano_fiber_entry_t)tx_fiber,
-				  0, 0, 8, 0);
+	k_thread_spawn(tx_stack, sizeof(tx_stack), (k_thread_entry_t)tx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 }
 
 extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
