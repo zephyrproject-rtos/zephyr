@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define SYS_LOG_LEVEL 4
+#define SYS_LOG_LEVEL 3
 #define SYS_LOG_DOMAIN "wpanusb"
 #include <misc/sys_log.h>
 
