@@ -207,7 +207,7 @@ static const struct adc_driver_api ti_adc108s102_api = {
 	.read = ti_adc108s102_read,
 };
 
-int ti_adc108s102_init(struct device *dev)
+static int ti_adc108s102_init(struct device *dev)
 {
 	const struct ti_adc108s102_config *config = dev->config->config_info;
 	struct ti_adc108s102_data *adc = dev->driver_data;
