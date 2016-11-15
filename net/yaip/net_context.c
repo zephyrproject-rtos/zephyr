@@ -33,6 +33,7 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
+#include <net/offload_ip.h>
 
 #include "connection.h"
 #include "net_private.h"
@@ -211,6 +212,25 @@ int net_context_get(sa_family_t family,
 
 	k_sem_give(&contexts_lock);
 
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+	/* FIXME - Figure out a way to get the correct network interface
+	 * as it is not known at this point yet.
+	 */
+	if (!ret && net_if_is_ip_offloaded(net_if_get_default())) {
+		ret = net_l2_offload_ip_get(net_if_get_default(),
+					    family,
+					    type,
+					    ip_proto,
+					    context);
+		if (ret < 0) {
+			(*context)->flags &= ~NET_CONTEXT_IN_USE;
+			*context = NULL;
+		}
+
+		return ret;
+	}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
+
 	return ret;
 }
 
@@ -251,6 +271,14 @@ int net_context_put(struct net_context *context)
 	}
 
 	k_sem_take(&contexts_lock, K_FOREVER);
+
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		context->flags &= ~NET_CONTEXT_IN_USE;
+		return net_l2_offload_ip_put(
+			net_context_get_iface(context), context);
+	}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
@@ -379,6 +407,17 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EADDRNOTAVAIL;
 		}
 
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+		if (net_if_is_ip_offloaded(iface)) {
+			net_context_set_iface(context, iface);
+
+			return net_l2_offload_ip_bind(iface,
+						      context,
+						      addr,
+						      addrlen);
+		}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
+
 		addr6->sin6_port = find_available_port(context,
 						     (struct sockaddr *)addr6);
 		if (!addr6->sin6_port) {
@@ -430,6 +469,17 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EADDRNOTAVAIL;
 		}
 
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+		if (net_if_is_ip_offloaded(iface)) {
+			net_context_set_iface(context, iface);
+
+			return net_l2_offload_ip_bind(iface,
+						      context,
+						      addr,
+						      addrlen);
+		}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
+
 		addr4->sin_port = find_available_port(context,
 						     (struct sockaddr *)addr4);
 		if (!addr4->sin_port) {
@@ -478,6 +528,13 @@ int net_context_listen(struct net_context *context, int backlog)
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
 	}
+
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		return net_l2_offload_ip_listen(
+			net_context_get_iface(context), context, backlog);
+	}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
@@ -865,6 +922,19 @@ int net_context_connect(struct net_context *context,
 				net_context_get_family(context));
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		return net_l2_offload_ip_connect(
+			net_context_get_iface(context),
+			context,
+			addr,
+			addrlen,
+			cb,
+			timeout,
+			user_data);
+	}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
 
 	if (net_context_get_state(context) == NET_CONTEXT_LISTENING) {
 		return -EOPNOTSUPP;
@@ -1269,6 +1339,17 @@ int net_context_accept(struct net_context *context,
 		return -ENOENT;
 	}
 
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		return net_l2_offload_ip_accept(
+			net_context_get_iface(context),
+			context,
+			cb,
+			timeout,
+			user_data);
+	}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
+
 	if ((net_context_get_state(context) != NET_CONTEXT_LISTENING) &&
 	    (net_context_get_type(context) != SOCK_STREAM)) {
 		NET_DBG("Invalid socket, state %d type %d",
@@ -1513,6 +1594,15 @@ static int sendto(struct net_buf *buf,
 		return -EDESTADDRREQ;
 	}
 
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+	if (net_if_is_ip_offloaded(net_nbuf_iface(buf))) {
+		return net_l2_offload_ip_sendto(
+			net_nbuf_iface(buf),
+			buf, dst_addr, addrlen,
+			cb, timeout, token, user_data);
+	}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
+
 #if defined(CONFIG_NET_IPV6)
 	if (net_nbuf_family(buf) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
@@ -1582,6 +1672,15 @@ int net_context_send(struct net_buf *buf,
 	socklen_t addrlen;
 
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
+
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+	if (net_if_is_ip_offloaded(net_nbuf_iface(buf))) {
+		return net_l2_offload_ip_send(
+			net_nbuf_iface(buf),
+			buf, cb, timeout,
+			token, user_data);
+	}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
 
 	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
 	    !net_sin(&context->remote)->sin_port) {
@@ -1780,6 +1879,14 @@ int net_context_recv(struct net_context *context,
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
 	}
+
+#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		return net_l2_offload_ip_recv(
+			net_context_get_iface(context),
+			context, cb, timeout, user_data);
+	}
+#endif /* CONFIG_NET_L2_OFFLOAD_IP */
 
 #if defined(CONFIG_NET_UDP)
 	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {

@@ -179,6 +179,12 @@ struct net_if {
 	/** The hardware MTU */
 	uint16_t mtu;
 
+	/** Is the IP stack is offloaded. If set, then the IP stack is located
+	 * in the communication chip that is accessed via this network
+	 * interface.
+	 */
+	bool offload_ip;
+
 	/** Queue for outgoing packets from apps */
 	struct k_fifo tx_queue;
 
@@ -353,6 +359,18 @@ static inline struct device *net_if_get_device(struct net_if *iface)
 static inline void net_if_queue_tx(struct net_if *iface, struct net_buf *buf)
 {
 	net_buf_put(&iface->tx_queue, buf);
+}
+
+/**
+ * @brief Return the IP offload status.
+ *
+ * @param iface Network interface
+ *
+ * @return True if IP offlining is active, false otherwise.
+ */
+static inline bool net_if_is_ip_offloaded(struct net_if *iface)
+{
+	return iface->offload_ip;
 }
 
 /**

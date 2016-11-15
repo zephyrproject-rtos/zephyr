@@ -39,6 +39,20 @@ config NET_DEBUG_L2_ETHERNET
 	help
 	Enables Ethernet L2 output debug messages
 
+config NET_L2_OFFLOAD_IP
+	bool "Offload IP stack [EXPERIMENTAL]"
+	default n
+	help
+	Enables IP stack to be offload to a co-processor.
+
+config NET_DEBUG_L2_OFFLOAD
+	bool "Debug IP Offload L2 layer"
+	default n
+	depends on NET_LOG
+	depends on NET_L2_OFFLOAD
+	help
+	Enables offload IP stack L2 output debug messages.
+
 config NET_L2_BLUETOOTH
 	bool "Enable Bluetooth support"
 	select BLUETOOTH
