@@ -7,7 +7,6 @@ depends on SOC_SERIES_CC32XX
 
 config SOC_CC3200
 	bool "CC3200"
-	select CPU_HAS_FPU
 	select HAS_CC3200SDK
 
 endchoice
