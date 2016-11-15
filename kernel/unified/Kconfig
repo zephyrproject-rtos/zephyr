@@ -285,29 +285,44 @@ config SEMAPHORE_GROUPS
 	the k_sem_give() routine.
 
 choice
-	prompt "Memory pools auto-defragmentation policy"
-	default MEM_POOL_AD_AFTER_SEARCH_FOR_BIGGERBLOCK
+	prompt "Memory pool block allocation policy"
+	default MEM_POOL_SPLIT_BEFORE_DEFRAG
 	help
-	Memory pool auto-defragmentation is performed if a memory
-	block of the requested size can not be found. Defragmentation
-	can be done:
-	Before trying to find a block in the next largest block set.
-	This is an attempt to preserve the memory pool's larger blocks
-	by fragmenting them only when necessary (i.e. at the cost of
-	doing more frequent auto-defragmentations).
-	After trying to find a block in the next largest block set.
-	This is an attempt to limit the cost of doing auto-defragmentations
-	by doing them only when necessary (i.e. at the cost of fragmenting
-	the memory pool's larger blocks).
+	This option specifies how a memory pool reacts if an unused memory
+	block of the required size is not available.
 
-config MEM_POOL_AD_NONE
-	bool "No auto-defragmentation"
+config MEM_POOL_SPLIT_BEFORE_DEFRAG
+	bool "Split a larger block before merging smaller blocks"
+	help
+	This option instruct a memory pool to try splitting a larger unused
+	block if an unused block of the required size is not available; only
+	if no such blocks exist will the memory pool try merging smaller unused
+	blocks. This policy attempts to limit the cost of performing automatic
+	partial defragmention of the memory pool, at the cost of fragmenting
+	the memory pool's larger blocks.
 
-config MEM_POOL_AD_BEFORE_SEARCH_FOR_BIGGERBLOCK
-	bool "Before trying to find a block in the next largest block set"
+config MEM_POOL_DEFRAG_BEFORE_SPLIT
+	bool "Merge smaller blocks before splitting a larger block"
+	help
+	This option instructs a memory pool to try merging smaller unused
+	blocks if an unused block of the required size is not available; only
+	if this does not generate a sufficiently large block will the memory
+	pool try splitting a larger unused block. This policy attempts to
+	preserve the memory pool's larger blocks, at the cost of performing
+	automatic partial defragmentations more frequently.
 
-config MEM_POOL_AD_AFTER_SEARCH_FOR_BIGGERBLOCK
-	bool "After trying to find a block in the next largest block set"
+config MEM_POOL_SPLIT_ONLY
+	bool "Split a larger block, but never merge smaller blocks"
+	help
+	This option instructs a memory pool to try splitting a larger unused
+	block if an unused block of the required size is not available; if no
+	such blocks exist the block allocation operation fails. This policy
+	attempts to limit the cost of defragmenting the memory pool by avoiding
+	automatic partial defragmentation, at the cost of requiring the
+	application to explicitly request a full defragmentation of the memory
+	pool when an allocation fails. Depending on how a memory pool is used,
+	it may be more efficient for a memory pool to perform an occasional
+	full defragmentation than to perform frequent partial defragmentations.
 
 endchoice
 
