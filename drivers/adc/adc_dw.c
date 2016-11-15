@@ -357,7 +357,7 @@ int adc_dw_init(struct device *dev)
 }
 
 #ifdef CONFIG_ADC_DW_SINGLESHOT
-void adc_dw_rx_isr(void *arg)
+static void adc_dw_rx_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct device_config *dev_config = dev->config;
@@ -390,7 +390,7 @@ void adc_dw_rx_isr(void *arg)
 	device_sync_call_complete(&info->sync);
 }
 #else /*CONFIG_ADC_DW_REPETITIVE*/
-void adc_dw_rx_isr(void *arg)
+static void adc_dw_rx_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct device_config *dev_config = dev->config;
@@ -442,7 +442,7 @@ void adc_dw_rx_isr(void *arg)
 #endif
 
 
-void adc_dw_err_isr(void *arg)
+static void adc_dw_err_isr(void *arg)
 {
 	struct device *dev = (struct device *) arg;
 	const struct adc_config  *config = dev->config->config_info;
