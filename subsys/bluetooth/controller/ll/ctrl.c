@@ -105,10 +105,9 @@ struct observer {
 	uint8_t scan_type:1;
 	uint8_t scan_state:1;
 	uint8_t scan_channel:2;
-	uint8_t filter_policy:1;
+	uint8_t filter_policy:2;
 	uint8_t adv_addr_type:1;
 	uint8_t init_addr_type:1;
-	uint8_t rfu0:1;
 
 	uint8_t adv_addr[BDADDR_SIZE];
 	uint8_t init_addr[BDADDR_SIZE];
