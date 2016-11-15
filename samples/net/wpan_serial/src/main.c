@@ -16,10 +16,10 @@
 
 /**
  * @file
- * @brief Sample app for CDC ACM class driver
+ * @brief App implementing 802.15.4 "serial-radio" protocol
  *
- * Sample app for USB CDC ACM class driver. The received data is echoed back
- * to the serial port.
+ * Application implementing 802.15.4 "serial-radio" protocol compatible
+ * with popular Contiki-based native border routers.
  */
 
 #include <stdio.h>
