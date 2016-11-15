@@ -192,8 +192,8 @@ static int bme280_read_compensation(struct bme280_data *data)
 
 	data->dig_p1 = sys_le16_to_cpu(buf[3]);
 	data->dig_p2 = sys_le16_to_cpu(buf[4]);
-	data->dig_p4 = sys_le16_to_cpu(buf[5]);
-	data->dig_p3 = sys_le16_to_cpu(buf[6]);
+	data->dig_p3 = sys_le16_to_cpu(buf[5]);
+	data->dig_p4 = sys_le16_to_cpu(buf[6]);
 	data->dig_p5 = sys_le16_to_cpu(buf[7]);
 	data->dig_p6 = sys_le16_to_cpu(buf[8]);
 	data->dig_p7 = sys_le16_to_cpu(buf[9]);
