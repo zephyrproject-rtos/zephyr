@@ -231,7 +231,7 @@ static const struct adc_driver_api api_funcs = {
 	.read    = adc_qmsi_read,
 };
 
-int adc_qmsi_init(struct device *dev)
+static int adc_qmsi_init(struct device *dev)
 {
 	struct adc_info *info = dev->driver_data;
 
@@ -259,7 +259,7 @@ int adc_qmsi_init(struct device *dev)
 	return 0;
 }
 
-struct adc_info adc_info_dev;
+static struct adc_info adc_info_dev;
 
 DEVICE_AND_API_INIT(adc_qmsi, CONFIG_ADC_0_NAME, &adc_qmsi_init,
 		    &adc_info_dev, NULL,
