@@ -231,13 +231,13 @@ static int adc_qmsi_ss_read(struct device *dev, struct adc_seq_table *seq_tbl)
 }
 #endif /* CONFIG_ADC_QMSI_POLL */
 
-void adc_qmsi_ss_rx_isr(void *arg)
+static void adc_qmsi_ss_rx_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	qm_ss_adc_0_isr(NULL);
 }
 
-void adc_qmsi_ss_err_isr(void *arg)
+static void adc_qmsi_ss_err_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	qm_ss_adc_0_error_isr(NULL);
@@ -309,7 +309,7 @@ static int adc_qmsi_ss_device_ctrl(struct device *dev, uint32_t ctrl_command,
 #else
 #define adc_qmsi_ss_set_power_state(...)
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
-int adc_qmsi_ss_init(struct device *dev)
+static int adc_qmsi_ss_init(struct device *dev)
 {
 	struct adc_info *info = dev->driver_data;
 
@@ -335,7 +335,7 @@ int adc_qmsi_ss_init(struct device *dev)
 	return 0;
 }
 
-struct adc_info adc_info_dev;
+static struct adc_info adc_info_dev;
 
 DEVICE_DEFINE(adc_qmsi_ss, CONFIG_ADC_0_NAME, &adc_qmsi_ss_init,
 	      adc_qmsi_ss_device_ctrl, &adc_info_dev, NULL, POST_KERNEL,
