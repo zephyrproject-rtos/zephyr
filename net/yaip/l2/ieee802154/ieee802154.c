@@ -70,7 +70,7 @@ static inline void hexdump(uint8_t *pkt, uint16_t length, uint8_t reserve)
 
 static void pkt_hexdump(struct net_buf *buf, bool each_frag_reserve)
 {
-	uint16_t reserve = net_nbuf_ll_reserve(buf);
+	uint16_t reserve = each_frag_reserve ? net_nbuf_ll_reserve(buf) : 0;
 	struct net_buf *frag;
 
 	printf("IEEE 802.15.4 packet content:\n");
@@ -78,12 +78,8 @@ static void pkt_hexdump(struct net_buf *buf, bool each_frag_reserve)
 	frag = buf->frags;
 	while (frag) {
 		hexdump(each_frag_reserve ?
-			net_nbuf_ll(buf) : net_nbuf_ip_data(buf),
+			frag->data - reserve : frag->data,
 			frag->len + reserve, reserve);
-
-		if (!each_frag_reserve) {
-			reserve = 0;
-		}
 
 		frag = frag->frags;
 	}
@@ -208,6 +204,8 @@ static inline bool ieee802154_manage_send_buffer(struct net_if *iface,
 						 struct net_buf *buf)
 {
 	bool ret;
+
+	pkt_hexdump(buf, false);
 
 #ifdef NET_L2_IEEE802154_FRAGMENT
 	ret = net_6lo_compress(buf, true, ieee802154_fragment);
