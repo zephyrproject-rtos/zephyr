@@ -46,6 +46,13 @@ config UART_NS16550_DRV_CMD
 
 	  Says n if not sure.
 
+config UART_NS16750
+	bool "Enable 64-bytes FIFO for UART 16750"
+	default n
+	depends on UART_NS16550
+	help
+	  This enables support for 64-bytes FIFO if UART controller is 16750.
+
 # ---------- Port 0 ----------
 
 menuconfig UART_NS16550_PORT_0

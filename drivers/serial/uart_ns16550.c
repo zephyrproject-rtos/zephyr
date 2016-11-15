@@ -125,6 +125,12 @@
 #define FCR_FIFO_8 0x80  /* 8 bytes in RCVR FIFO */
 #define FCR_FIFO_14 0xC0 /* 14 bytes in RCVR FIFO */
 
+/*
+ * UART NS16750 supports 64 bytes FIFO, which can be enabled
+ * via the FCR register
+ */
+#define FCR_FIFO_64 0x20 /* Enable 64 bytes FIFO */
+
 /* constants for line control register */
 
 #define LCR_CS5 0x00   /* 5 bits data size */
@@ -347,7 +353,11 @@ static int uart_ns16550_init(struct device *dev)
 	 * Clear TX and RX FIFO
 	 */
 	OUTBYTE(FCR(dev),
-		FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR);
+		FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR
+#ifdef CONFIG_UART_NS16750
+		| FCR_FIFO_64
+#endif
+		);
 
 	/* clear the port */
 	INBYTE(RDR(dev));
