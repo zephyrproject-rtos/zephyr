@@ -47,25 +47,10 @@ static ALWAYS_INLINE void nanoArchInit(void)
 	_CpuIdleInit();
 }
 
-/**
- *
- * @brief Set the return value for the specified fiber (inline)
- *
- * The register used to store the return value from a function call invocation
- * to <value>.  It is assumed that the specified <fiber> is pending, and thus
- * the fiber's thread is stored in its struct tcs structure.
- *
- * @param fiber pointer to the fiber
- * @param value is the value to set as a return value
- *
- * @return N/A
- */
 static ALWAYS_INLINE void
 _set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
-	struct __esf *esf = (struct __esf *)thread->callee_saved.psp;
-
-	esf->a1 = value;
+	thread->arch.swap_return_value = value;
 }
 
 extern void nano_cpu_atomic_idle(unsigned int);
