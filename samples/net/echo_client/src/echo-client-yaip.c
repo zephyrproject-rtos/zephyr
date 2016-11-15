@@ -240,9 +240,14 @@ static inline bool get_context(struct net_context **udp_recv4,
 static inline bool wait_reply(const char *name,
 			      struct k_sem *sem)
 {
-	if (k_sem_take(sem, WAIT_TIME)) {
+	int ret = k_sem_take(sem, WAIT_TIME);
+
+	if (!ret) {
 		return true;
 	}
+
+	NET_ERR("wait_reply returned %s",
+		ret == -EAGAIN ? "on time out" : "directly");
 
 	return false;
 }
