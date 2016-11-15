@@ -28,7 +28,7 @@ static int _irq_is_priority_equal(unsigned int irq)
 	int curr_prio;
 
 	curr_ctx = _ScbActiveVectorGet();
-	if (curr_ctx > 16) {
+	if (curr_ctx > 15) {
 		/* Interrupts */
 		curr_prio = _NvicIrqPrioGet(curr_ctx - 16);
 	} else if (curr_ctx > 3) {
