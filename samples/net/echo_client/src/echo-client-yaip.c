@@ -78,7 +78,7 @@ static char *lorem_ipsum =
 	"Phasellus efficitur imperdiet metus."
 	"\n";
 
-#define STACKSIZE 1024
+#define STACKSIZE 2048
 
 static int ipsum_len;
 
