@@ -47,7 +47,7 @@ Adding a Kernel Event Logging Point
 
 Custom trace points can be added with the following API:
 
-* :c:func:`sys_k_event_logger_put()`
+* :cpp:func:`sys_k_event_logger_put()`
 
   Adds the profile of a new event with custom data.
 
@@ -69,9 +69,9 @@ event logger.
 
 The API functions provided are:
 
-* :c:func:`sys_k_event_logger_get()`
-* :c:func:`sys_k_event_logger_get_wait()`
-* :c:func:`sys_k_event_logger_get_wait_timeout()`
+* :cpp:func:`sys_k_event_logger_get()`
+* :cpp:func:`sys_k_event_logger_get_wait()`
+* :cpp:func:`sys_k_event_logger_get_wait_timeout()`
 
 The above functions specify various ways to retrieve a event message and to
 copy it to the provided buffer. When the buffer size is smaller than the
@@ -249,19 +249,19 @@ The following APIs are provided by the :file:`k_event_logger.h` file:
 :cpp:func:`sys_k_event_logger_register_as_collector()`
    Register the current cooperative thread as the collector thread.
 
-:c:func:`sys_k_event_logger_put()`
+:cpp:func:`sys_k_event_logger_put()`
    Enqueue a kernel event logger message with custom data.
 
 :cpp:func:`sys_k_event_logger_put_timed()`
    Enqueue a kernel event logger message with the current time.
 
-:c:func:`sys_k_event_logger_get()`
+:cpp:func:`sys_k_event_logger_get()`
    De-queue a kernel event logger message.
 
-:c:func:`sys_k_event_logger_get_wait()`
+:cpp:func:`sys_k_event_logger_get_wait()`
    De-queue a kernel event logger message. Wait if the buffer is empty.
 
-:c:func:`sys_k_event_logger_get_wait_timeout()`
+:cpp:func:`sys_k_event_logger_get_wait_timeout()`
    De-queue a kernel event logger message. Wait if the buffer is empty until
    the timeout expires.
 

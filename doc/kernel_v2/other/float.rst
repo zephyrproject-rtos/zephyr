@@ -106,19 +106,19 @@ pre-tag a thread using one of the techniques listed below.
 
 * A dynamically-spawned x86 thread can be pre-tagged by passing the
   :c:macro:`K_FP_REGS` or :c:macro:`K_SSE_REGS` option to
-  :c:func:`k_thread_spawn()`.
+  :cpp:func:`k_thread_spawn()`.
 
 * An already-spawned x86 thread can pre-tag itself once it has started
   by passing the :c:macro:`K_FP_REGS` or :c:macro:`K_SSE_REGS` option to
-  :c:func:`k_float_enable()`.
+  :cpp:func:`k_float_enable()`.
 
 If an x86 thread uses the floating point registers infrequently it can call
-:c:func:`k_float_disable()` to remove its tagging as an FPU user or SSE user.
+:cpp:func:`k_float_disable()` to remove its tagging as an FPU user or SSE user.
 This eliminates the need for the kernel to take steps to preserve
 the contents of the floating point registers during context switches
 when there is no need to do so.
 When the thread again needs to use the floating point registers it can re-tag
-itself as an FPU user or SSE user by calling :c:func:`k_float_enable()`.
+itself as an FPU user or SSE user by calling :cpp:func:`k_float_enable()`.
 
 Implementation
 **************

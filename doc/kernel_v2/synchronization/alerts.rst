@@ -234,5 +234,6 @@ APIs
 
 The following alert APIs are provided by :file:`kernel.h`:
 
+* :cpp:func:`k_alert_init()`
 * :cpp:func:`k_alert_send()`
 * :cpp:func:`k_alert_recv()`
