@@ -72,6 +72,7 @@ int file_write_dep(const char *name)
 
 	fprintf(out, "\n$(deps_config): ;\n");
 	fclose(out);
+	remove(name);
 	rename("..config.tmp", name);
 	return 0;
 }
