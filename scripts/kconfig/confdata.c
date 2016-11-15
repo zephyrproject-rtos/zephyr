@@ -824,7 +824,9 @@ next:
 	if (*tmpname) {
 		strcat(dirname, basename);
 		strcat(dirname, ".old");
+		remove(dirname);
 		rename(newname, dirname);
+		remove(newname);
 		if (rename(tmpname, newname))
 			return 1;
 	}
@@ -1004,11 +1006,13 @@ int conf_write_autoconf(void)
 	name = getenv("KCONFIG_AUTOHEADER");
 	if (!name)
 		name = "include/generated/autoconf.h";
+	remove(name);
 	if (rename(".tmpconfig.h", name))
 		return 1;
 	name = getenv("KCONFIG_TRISTATE");
 	if (!name)
 		name = "include/config/tristate.conf";
+	remove(name);
 	if (rename(".tmpconfig_tristate", name))
 		return 1;
 	name = conf_get_autoconfig_name();
@@ -1016,6 +1020,7 @@ int conf_write_autoconf(void)
 	 * This must be the last step, kbuild has a dependency on auto.conf
 	 * and this marks the successful completion of the previous steps.
 	 */
+	remove(name);
 	if (rename(".tmpconfig", name))
 		return 1;
 
