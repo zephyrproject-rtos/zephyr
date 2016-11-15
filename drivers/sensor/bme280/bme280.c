@@ -172,13 +172,19 @@ static const struct sensor_driver_api bme280_api_funcs = {
 	.channel_get = bme280_channel_get,
 };
 
-static void bme280_read_compensation(struct bme280_data *data)
+static int bme280_read_compensation(struct bme280_data *data)
 {
 	uint16_t buf[12];
 	uint8_t hbuf[7];
+	int err = 0;
 
-	i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
-		       BME280_REG_COMP_START, (uint8_t *)buf, sizeof(buf));
+	err = i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
+			     BME280_REG_COMP_START,
+			     (uint8_t *)buf, sizeof(buf));
+
+	if (err < 0) {
+		return err;
+	}
 
 	data->dig_t1 = sys_le16_to_cpu(buf[0]);
 	data->dig_t2 = sys_le16_to_cpu(buf[1]);
@@ -195,11 +201,20 @@ static void bme280_read_compensation(struct bme280_data *data)
 	data->dig_p9 = sys_le16_to_cpu(buf[11]);
 
 	if (data->chip_id == BME280_CHIP_ID) {
-		i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-				  BME280_REG_HUM_COMP_PART1, &data->dig_h1);
+		err = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+					BME280_REG_HUM_COMP_PART1,
+					&data->dig_h1);
 
-		i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
-			       BME280_REG_HUM_COMP_PART2, hbuf, 7);
+		if (err < 0) {
+			return err;
+		}
+
+		err = i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
+				     BME280_REG_HUM_COMP_PART2, hbuf, 7);
+
+		if (err < 0) {
+			return err;
+		}
 
 		data->dig_h2 = (hbuf[1] << 8) | hbuf[0];
 		data->dig_h3 = hbuf[2];
@@ -207,14 +222,20 @@ static void bme280_read_compensation(struct bme280_data *data)
 		data->dig_h5 = ((hbuf[4] >> 4) & 0x0F) | (hbuf[5] << 4);
 		data->dig_h6 = hbuf[6];
 	}
+
+	return 0;
 }
 
 static int bme280_chip_init(struct device *dev)
 {
 	struct bme280_data *data = (struct bme280_data *) dev->driver_data;
 
-	i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-			  BME280_REG_ID, &data->chip_id);
+	int err = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+				    BME280_REG_ID, &data->chip_id);
+
+	if (err < 0) {
+		return err;
+	}
 
 	if (data->chip_id == BME280_CHIP_ID) {
 		SYS_LOG_DBG("BME280 chip detected");
@@ -226,7 +247,11 @@ static int bme280_chip_init(struct device *dev)
 		return -ENOTSUP;
 	}
 
-	bme280_read_compensation(data);
+	err = bme280_read_compensation(data);
+
+	if (err < 0) {
+		return err;
+	}
 
 	if (data->chip_id == BME280_CHIP_ID) {
 		i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
