@@ -85,7 +85,7 @@ void main(void)
 	printk("SPI sent: %s\n", wbuf);
 	print_buf_hex(rbuf, 6);
 
-	strcpy(wbuf, "So what then?");
+	strcpy((char *)wbuf, "So what then?");
 	spi_transceive(spi, wbuf, 14, rbuf, 16);
 
 	printk("SPI transceived: %s\n", rbuf);
