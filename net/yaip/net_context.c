@@ -1452,6 +1452,13 @@ static int sendto(struct net_buf *buf,
 		return -ENOENT;
 	}
 
+#if defined(CONFIG_NET_TCP)
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP &&
+	    net_context_get_state(context) != NET_CONTEXT_CONNECTED) {
+		return -ENOTCONN;
+	}
+#endif /* CONFIG_NET_TCP */
+
 	if (!dst_addr) {
 		return -EDESTADDRREQ;
 	}
