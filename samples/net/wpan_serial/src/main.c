@@ -51,14 +51,12 @@ enum slip_state {
 
 /* RX queue */
 static struct nano_fifo rx_queue;
-static char __noinit __stack rx_fiber_stack[1024];
-static nano_thread_id_t rx_fiber_id;
+static char __noinit __stack rx_stack[1024];
 
 /* TX queue */
 static struct nano_sem tx_sem;
 static struct nano_fifo tx_queue;
-static char __noinit __stack tx_fiber_stack[1024];
-static nano_thread_id_t tx_fiber_id;
+static char __noinit __stack tx_stack[1024];
 
 /* Buffer for SLIP encoded data for the worst case */
 static uint8_t slip_buf[1 + 2 * CONFIG_NET_NBUF_DATA_SIZE];
@@ -194,7 +192,7 @@ static void interrupt_handler(struct device *dev)
 			SYS_LOG_DBG("TX ready interrupt");
 #endif
 
-			nano_sem_give(&tx_sem);
+			k_sem_give(&tx_sem);
 		}
 
 		if (uart_irq_rx_ready(dev)) {
@@ -352,9 +350,9 @@ static void process_config(struct net_buf *pkt)
 	}
 }
 
-static void rx_fiber(void)
+static void rx_thread(void)
 {
-	SYS_LOG_INF("RX fiber started");
+	SYS_LOG_INF("RX thread started");
 
 	while (1) {
 		struct net_buf *pkt, *buf;
@@ -383,7 +381,7 @@ static void rx_fiber(void)
 
 		net_nbuf_unref(pkt);
 
-		fiber_yield();
+		k_yield();
 	}
 }
 
@@ -423,18 +421,18 @@ static size_t slip_buffer(uint8_t *sbuf, struct net_buf *buf)
 /**
  * TX - transmit to SLIP interface
  */
-static void tx_fiber(void)
+static void tx_thread(void)
 {
-	SYS_LOG_INF("TX fiber started");
+	SYS_LOG_DBG("TX thread started");
 
 	/* Allow to send one TX */
-	nano_sem_give(&tx_sem);
+	k_sem_give(&tx_sem);
 
 	while (1) {
 		struct net_buf *pkt, *buf;
 		size_t len;
 
-		nano_sem_take(&tx_sem, TICKS_UNLIMITED);
+		k_sem_take(&tx_sem, K_FOREVER);
 
 		pkt = net_buf_get_timeout(&tx_queue, 0, TICKS_UNLIMITED);
 		buf = net_buf_frag_last(pkt);
@@ -458,28 +456,26 @@ static void tx_fiber(void)
 		net_nbuf_unref(pkt);
 
 #if 0
-		fiber_yield();
+		k_yield();
 #endif
 	}
 }
 
 static void init_rx_queue(void)
 {
-	nano_fifo_init(&rx_queue);
+	k_fifo_init(&rx_queue);
 
-	rx_fiber_id = fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-				  (nano_fiber_entry_t)rx_fiber,
-				  0, 0, 8, 0);
+	k_thread_spawn(rx_stack, sizeof(rx_stack), (k_thread_entry_t)rx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 }
 
 static void init_tx_queue(void)
 {
-	nano_sem_init(&tx_sem);
-	nano_fifo_init(&tx_queue);
+	k_sem_init(&tx_sem, 0, UINT_MAX);
+	k_fifo_init(&tx_queue);
 
-	tx_fiber_id = fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
-				  (nano_fiber_entry_t)tx_fiber,
-				  0, 0, 8, 0);
+	k_thread_spawn(tx_stack, sizeof(tx_stack), (k_thread_entry_t)tx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 }
 
 /**
