@@ -246,11 +246,6 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	ieee802154_acknowledge(iface, &mpdu);
 
-	/**
-	 * We now remove the size of the MFR from the total length
-	 * so net_core will not count it as IP data.
-	 */
-	buf->frags->len -= IEEE802154_MFR_LENGTH;
 	net_nbuf_set_ll_reserve(buf, mpdu.payload - (void *)net_nbuf_ll(buf));
 	net_buf_pull(buf->frags, net_nbuf_ll_reserve(buf));
 

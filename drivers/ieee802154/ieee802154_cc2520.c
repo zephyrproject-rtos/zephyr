@@ -487,7 +487,7 @@ static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 				       struct net_buf *buf, uint8_t len)
 {
-	uint8_t data[128+1];
+	uint8_t data[128];
 
 	data[0] = CC2520_INS_RXBUF;
 	memset(&data[1], 0, len);
@@ -527,7 +527,7 @@ static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 				       struct net_buf *buf, uint8_t len)
 {
-	uint8_t data[128+1];
+	uint8_t data[128];
 
 	spi->cmd_buf[0] = CC2520_INS_RXBUF;
 
@@ -548,6 +548,45 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 	return true;
 }
 #endif /* CONFIG_SPI_QMSI */
+
+static inline bool verify_crc(struct cc2520_context *cc2520)
+{
+	cc2520->spi.cmd_buf[0] = CC2520_INS_RXBUF;
+	cc2520->spi.cmd_buf[1] = 0;
+	cc2520->spi.cmd_buf[2] = 0;
+
+	spi_slave_select(cc2520->spi.dev, cc2520->spi.slave);
+
+	if (spi_transceive(cc2520->spi.dev, cc2520->spi.cmd_buf, 3,
+			   cc2520->spi.cmd_buf, 3) != 0) {
+		return false;
+	}
+
+	if (!(cc2520->spi.cmd_buf[2] & CC2520_FCS_CRC_OK)) {
+		return false;
+	}
+
+	/**
+	 * CC2520 does not provide an LQI but a correlation factor.
+	 * See Section 20.6
+	 * Such calculation can be loosely used to transform it to lqi:
+	 * corr <= 50 ? lqi = 0
+	 * or:
+	 * corr >= 110 ? lqi = 255
+	 * else:
+	 * lqi = (lqi - 50) * 4
+	 */
+	cc2520->lqi = cc2520->spi.cmd_buf[2] & CC2520_FCS_CORRELATION;
+	if (cc2520->lqi <= 50) {
+		cc2520->lqi = 0;
+	} else if (cc2520->lqi >= 110) {
+		cc2520->lqi = 255;
+	} else {
+		cc2520->lqi = (cc2520->lqi - 50) << 2;
+	}
+
+	return true;
+}
 
 static inline bool verify_rxfifo_validity(struct cc2520_spi *spi,
 					  uint8_t pkt_len)
@@ -606,12 +645,12 @@ static void cc2520_rx(int arg)
 
 		net_buf_frag_insert(buf, pkt_buf);
 
-		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len)) {
+		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len - 2)) {
 			SYS_LOG_ERR("No content read\n");
 			goto flush;
 		}
 
-		if (!(pkt_buf->data[pkt_len - 1] & CC2520_FCS_CRC_OK)) {
+		if (!verify_crc(cc2520)) {
 			SYS_LOG_ERR("Bad packet CRC\n");
 			goto out;
 		}
@@ -619,26 +658,6 @@ static void cc2520_rx(int arg)
 		if (ieee802154_radio_handle_ack(cc2520->iface, buf) == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled\n");
 			goto out;
-		}
-
-		/**
-		 * CC2520 does not provide an LQI but a correlation factor.
-		 * See Section 20.6
-		 * Such calculation can be loosely used to transform it to lqi:
-		 * corr <= 50 ? lqi = 0
-		 * or:
-		 * corr >= 110 ? lqi = 255
-		 * else:
-		 * lqi = (lqi - 50) * 4
-		 */
-		cc2520->lqi = pkt_buf->data[pkt_len - 1] &
-			CC2520_FCS_CORRELATION;
-		if (cc2520->lqi <= 50) {
-			cc2520->lqi = 0;
-		} else if (cc2520->lqi >= 110) {
-			cc2520->lqi = 255;
-		} else {
-			cc2520->lqi = (cc2520->lqi - 50) << 2;
 		}
 
 #if defined(CONFIG_TI_CC2520_RAW)

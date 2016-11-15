@@ -247,7 +247,7 @@ config NET_NBUF_DATA_COUNT
 config NET_NBUF_DATA_SIZE
 	int "Size of each network data fragment"
 	default 128
-	default 127 if NET_L2_IEEE802154
+	default 125 if NET_L2_IEEE802154
 	help
 	This value tells what is the size of the data fragment that is
 	received from the network.
