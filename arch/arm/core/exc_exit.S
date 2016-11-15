@@ -104,28 +104,10 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
     push {lr}
 
-    /*
-     * _is_next_thread_current() calls _get_next_ready_thread(), which is
-     * supposed to be called only with interrupts locked: interrupts are _not_
-     * locked at this point. However, that is not a problem in this case:
-     *
-     * - Threads can only be added to the ready queue in an ISR, not removed.
-     *   Thus, priorities with runnable thread can only be added as well.
-     *
-     * - The PendSV handler is the context that will decide which thread to
-     *   run, not the current context.
-     *
-     * - The current decision to pend PendSV or not is started with the ready
-     *   queue state that the currently exiting ISR updated: if that state
-     *   changes, it can only be to add a thread as runnable, not remove one.
-     *
-     * - The only discrepancy that can happen is if another ISR preempts the
-     *   current one and makes another thread than the current the next thread
-     *   to run, if the current ISR did not do already that. In that case, even
-     *   if the decision is interrupted, the current code running in the higher
-     *   priority ISR _will_ take the correct decision to pend PendSV.
-     */
+    /* _is_next_thread_current must be called with interrupts locked */
+    cpsid i
     blx _is_next_thread_current
+    cpsie i
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
     pop {r1}
     mov lr, r1
