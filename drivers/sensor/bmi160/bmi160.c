@@ -225,7 +225,7 @@ static int bmi160_acc_odr_set(struct device *dev, uint16_t freq_int,
 			      uint16_t freq_milli)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
-	uint8_t odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
+	int odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
 
 	if (odr < 0) {
 		return odr;
@@ -242,7 +242,7 @@ static int bmi160_acc_odr_set(struct device *dev, uint16_t freq_int,
 	return bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
 				       BMI160_ACC_CONF_ODR_POS,
 				       BMI160_ACC_CONF_ODR_MASK,
-				       odr);
+				       (uint8_t) odr);
 }
 #endif
 
@@ -482,7 +482,7 @@ static int bmi160_acc_config(struct device *dev, enum sensor_channel chan,
 static int bmi160_gyr_odr_set(struct device *dev, uint16_t freq_int,
 			      uint16_t freq_milli)
 {
-	uint8_t odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
+	int odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
 
 	if (odr < 0) {
 		return odr;
@@ -495,7 +495,7 @@ static int bmi160_gyr_odr_set(struct device *dev, uint16_t freq_int,
 	return bmi160_reg_field_update(dev, BMI160_REG_GYR_CONF,
 				       BMI160_GYR_CONF_ODR_POS,
 				       BMI160_GYR_CONF_ODR_MASK,
-				       odr);
+				       (uint8_t) odr);
 }
 #endif
 
