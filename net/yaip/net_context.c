@@ -1389,6 +1389,54 @@ static inline struct net_buf *update_ll_reserve(struct net_buf *buf,
 	return buf;
 }
 
+#if defined(CONFIG_NET_UDP)
+static int create_udp_packet(struct net_context *context,
+			     struct net_buf *buf,
+			     const struct sockaddr *dst_addr,
+			     struct net_buf **out_buf)
+{
+#if defined(CONFIG_NET_IPV6)
+	if (net_nbuf_family(buf) == AF_INET6) {
+		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
+
+		buf = net_ipv6_create(context, buf, &addr6->sin6_addr);
+		buf = net_udp_append(context, buf, ntohs(addr6->sin6_port));
+		buf = net_ipv6_finalize(context, buf);
+	} else
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_nbuf_family(buf) == AF_INET) {
+		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
+
+		buf = net_ipv4_create(context, buf, &addr4->sin_addr);
+		buf = net_udp_append(context, buf, ntohs(addr4->sin_port));
+		buf = net_ipv4_finalize(context, buf);
+	} else
+#endif /* CONFIG_NET_IPV4 */
+	{
+		return -EPROTONOSUPPORT;
+	}
+
+	*out_buf = buf;
+
+	return 0;
+}
+#endif /* CONFIG_NET_UDP */
+
+#if defined(CONFIG_NET_TCP)
+static int create_tcp_packet(struct net_context *context,
+			     struct net_buf *buf,
+			     const struct sockaddr *dst_addr,
+			     struct net_buf **out_buf)
+{
+	NET_ASSERT(context->tcp);
+
+	return net_tcp_prepare_data_segment(context->tcp, buf, NULL, 0,
+					    dst_addr, out_buf);
+}
+#endif /* CONFIG_NET_TCP */
+
 static int sendto(struct net_buf *buf,
 		  const struct sockaddr *dst_addr,
 		  socklen_t addrlen,
@@ -1398,6 +1446,7 @@ static int sendto(struct net_buf *buf,
 		  void *user_data)
 {
 	struct net_context *context = net_nbuf_context(buf);
+	int ret;
 
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
@@ -1420,11 +1469,6 @@ static int sendto(struct net_buf *buf,
 		}
 
 		buf = update_ll_reserve(buf, &addr6->sin6_addr);
-
-		buf = net_ipv6_create(context, buf, &addr6->sin6_addr);
-		buf = net_udp_append(context, buf, ntohs(addr6->sin6_port));
-		buf = net_ipv6_finalize(context, buf);
-
 	} else
 #endif /* CONFIG_NET_IPV6 */
 
@@ -1439,15 +1483,33 @@ static int sendto(struct net_buf *buf,
 		if (!addr4->sin_addr.s_addr[0]) {
 			return -EDESTADDRREQ;
 		}
-
-		buf = net_ipv4_create(context, buf, &addr4->sin_addr);
-		buf = net_udp_append(context, buf, ntohs(addr4->sin_port));
-		buf = net_ipv4_finalize(context, buf);
 	} else
 #endif /* CONFIG_NET_IPV4 */
 	{
 		NET_DBG("Invalid protocol family %d", net_nbuf_family(buf));
 		return -EINVAL;
+	}
+
+#if defined(CONFIG_NET_UDP)
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		ret = create_udp_packet(context, buf, dst_addr, &buf);
+	} else
+#endif /* CONFIG_NET_UDP */
+
+#if defined(CONFIG_NET_TCP)
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		ret = create_tcp_packet(context, buf, dst_addr, &buf);
+	} else
+#endif /* CONFIG_NET_TCP */
+	{
+		NET_DBG("Unknown protocol while sending packet: %d",
+			net_context_get_ip_proto(context));
+		return -EPROTONOSUPPORT;
+	}
+
+	if (ret < 0) {
+		NET_DBG("Could not create network packet to send");
+		return ret;
 	}
 
 	return send_data(context, buf, cb, timeout, token, user_data);
