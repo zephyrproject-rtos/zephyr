@@ -82,29 +82,37 @@ static void bma280_thread_cb(void *arg)
 	struct device *dev = arg;
 	struct bma280_data *drv_data = dev->driver_data;
 	uint8_t status = 0;
+	int err = 0;
 
 	/* check for data ready */
-	i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-			  BMA280_REG_INT_STATUS_1, &status);
+	err = i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				BMA280_REG_INT_STATUS_1, &status);
 	if (status & BMA280_BIT_DATA_INT_STATUS &&
-	    drv_data->data_ready_handler != NULL) {
+	    drv_data->data_ready_handler != NULL &&
+	    err == 0) {
 		drv_data->data_ready_handler(dev,
 					     &drv_data->data_ready_trigger);
 	}
 
 	/* check for any motion */
-	i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-			  BMA280_REG_INT_STATUS_0, &status);
+	err = i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				BMA280_REG_INT_STATUS_0, &status);
 	if (status & BMA280_BIT_SLOPE_INT_STATUS &&
-	    drv_data->any_motion_handler != NULL) {
+	    drv_data->any_motion_handler != NULL &&
+	    err == 0) {
 		drv_data->any_motion_handler(dev,
 					     &drv_data->data_ready_trigger);
 
 		/* clear latched interrupt */
-		i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-				    BMA280_REG_INT_RST_LATCH,
-				    BMA280_BIT_INT_LATCH_RESET,
-				    BMA280_BIT_INT_LATCH_RESET);
+		err = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+					  BMA280_REG_INT_RST_LATCH,
+					  BMA280_BIT_INT_LATCH_RESET,
+					  BMA280_BIT_INT_LATCH_RESET);
+
+		if (err < 0) {
+			SYS_LOG_DBG("Could not update clear the interrupt");
+			return;
+		}
 	}
 
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_BMA280_GPIO_PIN_NUM);
