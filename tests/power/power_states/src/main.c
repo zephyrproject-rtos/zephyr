@@ -196,7 +196,7 @@ static void setup_wake_event(void)
 
 static void do_soc_sleep(enum power_states state)
 {
-	int wake_rtc = 0, wake_counter = 0, wake_gpio = 0, wake_cmp = 0;
+	int woken_up = 0;
 	int i, devices_retval[suspend_device_count];
 
 	setup_wake_event();
@@ -213,13 +213,17 @@ static void do_soc_sleep(enum power_states state)
 	 * as it will get cleared after.
 	 */
 #if (CONFIG_RTC)
-	wake_rtc = rtc_get_pending_int(rtc_dev);
+	woken_up = rtc_get_pending_int(rtc_dev);
+	const char source[] = "RTC";
 #elif (CONFIG_COUNTER)
-	wake_counter = counter_get_pending_int(counter_dev);
+	woken_up = counter_get_pending_int(counter_dev);
+	const char source[] = "counter";
 #elif (CONFIG_GPIO_QMSI_1)
-	wake_gpio = gpio_get_pending_int(gpio_dev);
+	woken_up = gpio_get_pending_int(gpio_dev);
+	const char source[] = "GPIO";
 #elif (CONFIG_AIO_COMPARATOR)
-	wake_cmp = aio_cmp_get_pending_int(cmp_dev);
+	woken_up = aio_cmp_get_pending_int(cmp_dev);
+	const char source[] = "AON compare";
 #endif
 
 	for (i = 0; i < suspend_device_count; i++) {
@@ -229,19 +233,8 @@ static void do_soc_sleep(enum power_states state)
 		}
 	}
 
-	if (wake_rtc) {
-		printk("Woke up with the rtc\n");
-	}
-	if (wake_counter) {
-		printk("Woke up with the counter\n");
-	}
-	if (wake_gpio) {
-		printk("Woke up with the aon gpio (pin:%x)\n",
-		       wake_gpio);
-	}
-	if (wake_cmp) {
-		printk("Woke up with the aon cmp (pin:%x)\n",
-		       wake_cmp);
+	if (woken_up) {
+		printk("Woke up with %s (pin:%x)\n", source, woken_up);
 	}
 }
 
