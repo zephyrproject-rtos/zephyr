@@ -137,6 +137,7 @@ static int __set_one_port(struct device *dev, qm_pwm_t id, uint32_t pwm,
 	/* No interrupts */
 	cfg.mask_interrupt = true;
 	cfg.callback = NULL;
+	cfg.callback_data = NULL;
 
 	/* Data for the timer to stay high and low */
 	cfg.hi_count = on;
