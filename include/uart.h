@@ -211,7 +211,8 @@ static inline int uart_err_check(struct device *dev)
  * @param p_char Pointer to character.
  *
  * @retval 0 If a character arrived.
- * @retval -1 If the input buffer if empty.
+ * @retval -1 If no character was available to read (i.e., the UART
+ *            input buffer was empty).
  * @retval -ENOTSUP If the operation is not supported.
  */
 static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
