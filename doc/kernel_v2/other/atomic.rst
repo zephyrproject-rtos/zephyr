@@ -31,7 +31,7 @@ Defining an Atomic Variable
 An atomic variable is defined using a variable of type :c:type:`atomic_t`.
 
 By default an atomic variable is initialized to zero. However, it can be given
-a different value using :c:macro:`ATOMIC_INIT()`:
+a different value using :c:macro:`ATOMIC_INIT`:
 
 .. code-block:: c
 
@@ -67,7 +67,7 @@ Manipulating an Array of Atomic Variables
 
 An array of 32-bit atomic variables can be defined in the conventional manner.
 However, you can also define an N-bit array of atomic variables using
-:c:macro:`ATOMIC_DEFINE()`.
+:c:macro:`ATOMIC_DEFINE`.
 
 A single bit in array of atomic variables can be manipulated using
 the APIs listed at the end of this section that end with :cpp:func:`_bit`.
@@ -115,8 +115,8 @@ APIs
 
 The following atomic operation APIs are provided by :file:`atomic.h`:
 
-* :c:macro:`ATOMIC_INIT()`
-* :c:macro:`ATOMIC_DEFINE()`
+* :c:macro:`ATOMIC_INIT`
+* :c:macro:`ATOMIC_DEFINE`
 * :cpp:func:`atomic_get()`
 * :cpp:func:`atomic_set()`
 * :cpp:func:`atomic_clear()`

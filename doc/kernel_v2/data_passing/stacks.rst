@@ -69,7 +69,7 @@ up to ten 32-bit data values.
     k_stack_init(&my_stack, my_stack_array, MAX_ITEMS);
 
 Alternatively, a stack can be defined and initialized at compile time
-by calling :c:macro:`K_STACK_DEFINE()`.
+by calling :c:macro:`K_STACK_DEFINE`.
 
 The following code has the same effect as the code segment above. Observe
 that the macro defines both the stack and its array of data values.
@@ -136,6 +136,7 @@ APIs
 
 The following stack APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_STACK_DEFINE`
 * :cpp:func:`k_stack_init()`
 * :cpp:func:`k_stack_push()`
 * :cpp:func:`k_stack_pop()`

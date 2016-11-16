@@ -103,7 +103,7 @@ new pending alerts.
     k_alert_init(&my_alert, my_alert_handler, 10);
 
 Alternatively, an alert can be defined and initialized at compile time
-by calling :c:macro:`K_ALERT_DEFINE()`.
+by calling :c:macro:`K_ALERT_DEFINE`.
 
 The following code has the same effect as the code segment above.
 
@@ -234,6 +234,7 @@ APIs
 
 The following alert APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_ALERT_DEFINE`
 * :cpp:func:`k_alert_init()`
 * :cpp:func:`k_alert_send()`
 * :cpp:func:`k_alert_recv()`

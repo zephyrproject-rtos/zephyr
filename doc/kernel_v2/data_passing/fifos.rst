@@ -71,7 +71,7 @@ The following code defines and initializes an empty fifo.
     k_fifo_init(&my_fifo);
 
 Alternatively, an empty fifo can be defined and initialized at compile time
-by calling :c:macro:`K_FIFO_DEFINE()`.
+by calling :c:macro:`K_FIFO_DEFINE`.
 
 The following code has the same effect as the code segment above.
 
@@ -153,6 +153,7 @@ APIs
 
 The following fifo APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_FIFO_DEFINE`
 * :cpp:func:`k_fifo_init()`
 * :cpp:func:`k_fifo_put()`
 * :cpp:func:`k_fifo_put_list()`

@@ -105,7 +105,7 @@ The following code defines and initializes a mutex.
     k_mutex_init(&my_mutex);
 
 Alternatively, a mutex can be defined and initialized at compile time
-by calling :c:macro:`K_MUTEX_DEFINE()`.
+by calling :c:macro:`K_MUTEX_DEFINE`.
 
 The following code has the same effect as the code segment above.
 
@@ -166,6 +166,7 @@ APIs
 
 The following mutex APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_MUTEX_DEFINE`
 * :cpp:func:`k_mutex_init()`
 * :cpp:func:`k_mutex_lock()`
 * :cpp:func:`k_mutex_unlock()`

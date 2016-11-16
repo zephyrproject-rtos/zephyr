@@ -85,7 +85,7 @@ that is capable of holding 10 items, each of which is 12 bytes long.
     k_msgq_init(&my_msgq, my_msgq_buffer, sizeof(data_item_type), 10);
 
 Alternatively, a message queue can be defined and initialized at compile time
-by calling :c:macro:`K_MSGQ_DEFINE()`.
+by calling :c:macro:`K_MSGQ_DEFINE`.
 
 The following code has the same effect as the code segment above. Observe
 that the macro defines both the message queue and its buffer.
@@ -176,6 +176,7 @@ APIs
 
 The following message queue APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_MSGQ_DEFINE`
 * :cpp:func:`k_msgq_init()`
 * :cpp:func:`k_msgq_put()`
 * :cpp:func:`k_msgq_get()`

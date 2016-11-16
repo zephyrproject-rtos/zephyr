@@ -122,7 +122,7 @@ However, since a memory pool also requires a number of variable-size data
 structures to represent its block sets and the status of its quad-blocks,
 the kernel does not support the run-time definition of a memory pool.
 A memory pool can only be defined and initialized at compile time
-by calling :c:macro:`K_MEM_POOL_DEFINE()`.
+by calling :c:macro:`K_MEM_POOL_DEFINE`.
 
 The following code defines and initializes a memory pool that has 3 blocks
 of 4096 bytes each, which can be partitioned into blocks as small as 64 bytes
@@ -212,6 +212,7 @@ APIs
 
 The following memory pool APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_MEM_POOL_DEFINE`
 * :cpp:func:`k_mem_pool_alloc()`
 * :cpp:func:`k_mem_pool_free()`
 * :cpp:func:`k_mem_pool_defrag()`

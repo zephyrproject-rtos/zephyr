@@ -127,7 +127,7 @@ Implementation
 Defining an ISR
 ===============
 
-An ISR is defined at run-time by calling :c:macro:`IRQ_CONNECT()`. It must
+An ISR is defined at run-time by calling :c:macro:`IRQ_CONNECT`. It must
 then be enabled by calling :cpp:func:`irq_enable()`.
 
 .. important::
@@ -185,7 +185,7 @@ APIs
 
 The following interrupt-related APIs are provided by :file:`irq.h`:
 
-* :c:macro:`IRQ_CONNECT()`
+* :c:macro:`IRQ_CONNECT`
 * :cpp:func:`irq_lock()`
 * :cpp:func:`irq_unlock()`
 * :cpp:func:`irq_enable()`

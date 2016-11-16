@@ -62,7 +62,7 @@ The following defines and initializes an empty lifo.
     k_lifo_init(&my_lifo);
 
 Alternatively, an empty lifo can be defined and initialized at compile time
-by calling :c:macro:`K_LIFO_DEFINE()`.
+by calling :c:macro:`K_LIFO_DEFINE`.
 
 The following code has the same effect as the code segment above.
 
@@ -141,6 +141,7 @@ APIs
 
 The following lifo APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_LIFO_DEFINE`
 * :cpp:func:`k_lifo_init()`
 * :cpp:func:`k_lifo_put()`
 * :cpp:func:`k_lifo_get()`

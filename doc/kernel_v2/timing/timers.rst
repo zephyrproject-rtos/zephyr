@@ -112,7 +112,7 @@ The following code defines and initializes a timer.
     k_timer_init(&my_timer, my_expiry_function, NULL);
 
 Alternatively, a timer can be defined and initialized at compile time
-by calling :c:macro:`K_TIMER_DEFINE()`.
+by calling :c:macro:`K_TIMER_DEFINE`.
 
 The following code has the same effect as the code segment above.
 
@@ -241,6 +241,7 @@ APIs
 
 The following timer APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_TIMER_DEFINE`
 * :cpp:func:`k_timer_init()`
 * :cpp:func:`k_timer_start()`
 * :cpp:func:`k_timer_stop()`
