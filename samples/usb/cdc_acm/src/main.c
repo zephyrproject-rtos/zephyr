@@ -54,7 +54,7 @@ static void write_data(struct device *dev, const char *buf, int len)
 	uart_irq_tx_enable(dev);
 
 	data_transmitted = false;
-	uart_fifo_fill(dev, buf, len);
+	uart_fifo_fill(dev, (const uint8_t *)buf, len);
 	while (data_transmitted == false)
 		;
 
@@ -70,7 +70,7 @@ static void read_and_echo_data(struct device *dev, int *bytes_read)
 
 	/* Read all data and echo it back */
 	while ((*bytes_read = uart_fifo_read(dev,
-	    data_buf, sizeof(data_buf)))) {
+	    (uint8_t *)data_buf, sizeof(data_buf)))) {
 		write_data(dev, data_buf, *bytes_read);
 	}
 }
@@ -122,6 +122,6 @@ void main(void)
 
 	/* Echo the received data */
 	while (1) {
-		read_and_echo_data(dev, &bytes_read);
+		read_and_echo_data(dev, (int *) &bytes_read);
 	}
 }
