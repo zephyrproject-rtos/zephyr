@@ -73,7 +73,7 @@ void main(void)
 	gpio_pin_enable_callback(gpiob, PIN);
 
 	while (1) {
-		int val = 0;
+		uint32_t val = 0;
 
 		gpio_pin_read(gpiob, PIN, &val);
 		k_sleep(SLEEP_TIME);
