@@ -55,13 +55,20 @@ struct ring_buf {
  */
 
 /**
- * @brief Declare a power-of-two sized ring buffer
+ * @brief Statically define and initialize a high performance ring buffer.
  *
- * Use of this macro is preferred over SYS_RING_BUF_DECLARE_SIZE() as it
- * will not need to use expensive modulo operations.
+ * This macro establishes a ring buffer whose size must be a power of 2;
+ * that is, the ring buffer contains 2^pow 32-bit words, where @a pow is
+ * the specified ring buffer size exponent. A high performance ring buffer
+ * doesn't require the use of modulo arithmetic operations to maintain itself.
  *
- * @param name File-scoped name of the ring buffer to declare
- * @param pow Create a buffer of 2^pow 32-bit elements
+ * The ring buffer can be accessed outside the module where it is defined
+ * using:
+ *
+ * @code extern struct ring_buf <name>; @endcode
+ *
+ * @param name Name of the ring buffer.
+ * @param pow Ring buffer size exponent.
  */
 #define SYS_RING_BUF_DECLARE_POW2(name, pow) \
 	static uint32_t _ring_buffer_data_##name[1 << (pow)]; \
@@ -72,13 +79,18 @@ struct ring_buf {
 	};
 
 /**
- * @brief Declare an arbitrary sized ring buffer
+ * @brief Statically define and initialize a standard ring buffer.
  *
- * A ring buffer declared in this way has more flexibility on buffer size
- * but will use more expensive modulo operations to maintain itself.
+ * This macro establishes a ring buffer of an arbitrary size. A standard
+ * ring buffer uses modulo arithmetic operations to maintain itself.
  *
- * @param name File-scoped name of the ring buffer to declare
- * @param size32 Size of buffer in 32-bit elements
+ * The ring buffer can be accessed outside the module where it is defined
+ * using:
+ *
+ * @code extern struct ring_buf <name>; @endcode
+ *
+ * @param name Name of the ring buffer.
+ * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define SYS_RING_BUF_DECLARE_SIZE(name, size32) \
 	static uint32_t _ring_buffer_data_##name[size32]; \
@@ -88,16 +100,19 @@ struct ring_buf {
 	};
 
 /**
- * @brief Initialize a ring buffer, in cases where DECLARE_RING_BUF_STATIC
- * isn't used.
+ * @brief Initialize a ring buffer.
  *
- * For optimal performance, use size values that are a power of 2 as they
- * don't require expensive modulo operations when maintaining the buffer.
+ * This routine initializes a ring buffer, prior to its first use. It is only
+ * used for ring buffers not defined using SYS_RING_BUF_DECLARE_POW2 or
+ * SYS_RING_BUF_DECLARE_SIZE.
  *
- * @param buf Ring buffer to initialize
- * @param size Size of the provided buffer in 32-bit chunks
- * @param data Data area for the ring buffer, typically
- *	  uint32_t data[size]
+ * Setting @a size to a power of 2 establishes a high performance ring buffer
+ * that doesn't require the use of modulo arithmetic operations to maintain
+ * itself.
+ *
+ * @param buf Address of ring buffer.
+ * @param size Ring buffer size (in 32-bit words).
+ * @param data Ring buffer data area (typically uint32_t data[size]).
  */
 static inline void sys_ring_buf_init(struct ring_buf *buf, uint32_t size,
 				     uint32_t *data)
@@ -117,9 +132,11 @@ static inline void sys_ring_buf_init(struct ring_buf *buf, uint32_t size,
 }
 
 /**
- * @brief Determine if a ring buffer is empty
+ * @brief Determine if a ring buffer is empty.
  *
- * @return nonzero if the buffer is empty
+ * @param buf Address of ring buffer.
+ *
+ * @return 1 if the ring buffer is empty, or 0 if not.
  */
 static inline int sys_ring_buf_is_empty(struct ring_buf *buf)
 {
@@ -127,10 +144,11 @@ static inline int sys_ring_buf_is_empty(struct ring_buf *buf)
 }
 
 /**
- * @brief Obtain available space in a ring buffer
+ * @brief Determine free space in a ring buffer.
  *
- * @param buf Ring buffer to examine
- * @return Available space in the buffer in 32-bit chunks
+ * @param buf Address of ring buffer.
+ *
+ * @return Ring buffer free space (in 32-bit words).
  */
 static inline int sys_ring_buf_space_get(struct ring_buf *buf)
 {
@@ -147,36 +165,52 @@ static inline int sys_ring_buf_space_get(struct ring_buf *buf)
 }
 
 /**
- * @brief Place an entry into the ring buffer
+ * @brief Write a data item to a ring buffer.
  *
- * Concurrency control is not implemented, however no synchronization is needed
- * between put() and get() operations as they independently work on the
- * tail and head values, respectively.
- * Any use-cases involving multiple producers will need to synchronize use
- * of this function, by either disabling preemption or using a mutex.
+ * This routine writes a data item to ring buffer @a buf. The data item
+ * is an array of 32-bit words (from zero to 1020 bytes in length),
+ * coupled with a 16-bit type identifier and an 8-bit integer value.
  *
- * @param buf Ring buffer to insert data to
- * @param type Application-specific type identifier
- * @param value Integral data to include, application specific
- * @param data Pointer to a buffer containing data to enqueue
- * @param size32 Size of data buffer, in 32-bit chunks (not bytes)
- * @return 0 on success, -EMSGSIZE if there isn't sufficient space
+ * @warning
+ * Use cases involving multiple writers to the ring buffer must prevent
+ * concurrent write operations, either by preventing all writers from
+ * being preempted or by using a mutex to govern writes to the ring buffer.
+ *
+ * @param buf Address of ring buffer.
+ * @param type Data item's type identifier (application specific).
+ * @param value Data item's integer value (application specific).
+ * @param data Address of data item.
+ * @param size32 Data item size (number of 32-bit words).
+ *
+ * @retval 0 Data item was written.
+ * @retval -EMSGSIZE Ring buffer has insufficient free space.
  */
 int sys_ring_buf_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 		     uint32_t *data, uint8_t size32);
 
 /**
- * @brief Fetch data from the ring buffer
+ * @brief Read a data item from a ring buffer.
  *
- * @param buf Ring buffer to extract data from
- * @param type Return storage of the retrieved event type
- * @param value Return storage of the data value
- * @param data Buffer to copy data into
- * @param size32 Indicates the size of the data buffer. On return,
- *	updated with the actual amount of 32-bit chunks written to the buffer
- * @return 0 on success, -EAGAIN if the ring buffer is empty, -EMSGSIZE
- *	if the supplied buffer is too small (size32 will be updated with
- *	the actual size needed)
+ * This routine reads a data item from ring buffer @a buf. The data item
+ * is an array of 32-bit words (up to 1020 bytes in length),
+ * coupled with a 16-bit type identifier and an 8-bit integer value.
+ *
+ * @warning
+ * Use cases involving multiple reads of the ring buffer must prevent
+ * concurrent read operations, either by preventing all readers from
+ * being preempted or by using a mutex to govern reads to the ring buffer.
+ *
+ * @param buf Address of ring buffer.
+ * @param type Area to store the data item's type identifier.
+ * @param value Area to store the data item's integer value.
+ * @param data Area to store the data item.
+ * @param size32 Size of the data item storage area (number of 32-bit chunks).
+ *
+ * @retval 0 Data item was fetched; @a size32 now contains the number of
+ *         32-bit words read into data area @a data.
+ * @retval -EAGAIN Ring buffer is empty.
+ * @retval -EMSGSIZE Data area @a data is too small; @a size32 now contains
+ *         the number of 32-bit words needed.
  */
 int sys_ring_buf_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 		     uint32_t *data, uint8_t *size32);
