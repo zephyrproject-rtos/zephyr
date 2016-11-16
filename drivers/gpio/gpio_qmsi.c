@@ -272,8 +272,9 @@ static inline void qmsi_port_config(struct device *port, int flags)
 static inline int gpio_qmsi_config(struct device *port,
 				   int access_op, uint32_t pin, int flags)
 {
-	if (((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) ||
-	    ((flags & GPIO_DIR_IN) && (flags & GPIO_DIR_OUT))) {
+	/* If the pin/port is set to receive interrupts, make sure the pin
+	   is an input */
+	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
 		return -EINVAL;
 	}
 
