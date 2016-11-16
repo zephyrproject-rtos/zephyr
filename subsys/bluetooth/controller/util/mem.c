@@ -59,7 +59,7 @@ void *mem_acquire(void **mem_head)
 		free_count--;
 
 		mem = *mem_head;
-		memcpy(mem_head, mem, sizeof(mem_head));
+		memcpy(mem_head, mem, sizeof(*mem_head));
 
 		/* Store free mem_count after the list's next pointer */
 		if (*mem_head) {
