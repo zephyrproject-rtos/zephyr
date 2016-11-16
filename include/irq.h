@@ -38,17 +38,23 @@ extern "C" {
  */
 
 /**
- * Configure a static interrupt.
+ * @brief Initialize an interrupt handler.
  *
- * All arguments must be computable by the compiler at build time.
+ * This routine initializes an interrupt handler for an IRQ. The IRQ must be
+ * subsequently enabled before the interrupt handler begins servicing
+ * interrupts.
  *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p Arch-specific IRQ configuration flags
+ * @warning
+ * Although this routine is invoked at run-time, all of its arguments must be
+ * computable by the compiler at build time.
  *
- * @return The vector assigned to this interrupt
+ * @param irq_p IRQ line number.
+ * @param priority_p Interrupt priority.
+ * @param isr_p Address of interrupt service routine.
+ * @param isr_param_p Parameter passed to interrupt service routine.
+ * @param flags_p Architecture-specific IRQ configuration flags..
+ *
+ * @return Interrupt vector assigned to this interrupt.
  */
 #define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 	_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
