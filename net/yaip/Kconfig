@@ -133,7 +133,7 @@ config NET_CONN_CACHE
 
 config NET_TX_STACK_SIZE
 	int "TX thread stack size"
-	default 1024
+	default 1200
 	help
 	Set the TX thread stack size in bytes. The TX thread is waiting
 	data from application. Each network interface will start one
