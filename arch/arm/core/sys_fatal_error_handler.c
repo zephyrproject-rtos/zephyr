@@ -60,7 +60,7 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 		for (;;)
 			; /* spin forever */
 	}
-	printk("Fatal fault in thread! Aborting.\n");
+	printk("Fatal fault in thread %p! Aborting.\n", _current);
 	k_thread_abort(_current);
 
 	CODE_UNREACHABLE;
