@@ -895,6 +895,8 @@ static int cc2520_stop(struct device *dev)
 
 	SYS_LOG_DBG("\n");
 
+	flush_rxfifo(cc2520);
+
 	enable_fifop_interrupt(cc2520, false);
 	enable_sfd_interrupt(cc2520, false);
 
@@ -902,8 +904,6 @@ static int cc2520_stop(struct device *dev)
 	    !instruct_sxoscoff(&cc2520->spi)) {
 		return -EIO;
 	}
-
-	flush_rxfifo(cc2520);
 
 	return 0;
 }
