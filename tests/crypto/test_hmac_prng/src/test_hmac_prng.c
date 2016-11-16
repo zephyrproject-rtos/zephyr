@@ -31,14 +31,14 @@
  */
 
 /*
-  DESCRIPTION
-  This module tests the following PRNG routines:
-
-  Scenarios tested include:
-  - HMAC-PRNG init
-  - HMAC-PRNG reseed
-  - HMAC-PRNG generate)
-*/
+ * DESCRIPTION
+ * This module tests the following PRNG routines:
+ *
+ * Scenarios tested include:
+ * - HMAC-PRNG init
+ * - HMAC-PRNG reseed
+ * - HMAC-PRNG generate)
+ */
 
 #include <tinycrypt/hmac_prng.h>
 #include <tinycrypt/constants.h>
@@ -53,26 +53,26 @@
 
 void main(void)
 {
-	uint8_t seed[128];
-	struct tc_hmac_prng_struct h;
+	/* Fake personalization and additional_input
+	 * (replace by appropriate values)
+	 * e.g.: hostname+timestamp
+	 */
+	uint8_t additional_input[] = "additional input";
+	uint8_t personalization[] = "HOSTNAME";
 	uint32_t size = (1 << 15);
-	uint8_t random[size];
-	uint32_t i;
 	uint32_t result = TC_PASS;
+	struct tc_hmac_prng_struct h;
+	uint8_t random[size];
+	uint8_t seed[128];
+	uint32_t i;
 
 	TC_START("Performing HMAC-PRNG tests:");
 	TC_PRINT("HMAC-PRNG test#1 (init, reseed, generate):\n");
 
 	/* Fake seed (replace by a a truly random seed): */
-	for (i = 0; i < (uint32_t) sizeof(seed); ++i) {
+	for (i = 0; i < (uint32_t)sizeof(seed); ++i) {
 		seed[i] = i;
 	}
-
-	/* Fake personalization and additional_input (replace by appropriate
-	 * values): */
-	/* e.g.: hostname+timestamp */
-	uint8_t personalization[] = "HOSTNAME";
-	uint8_t additional_input[] = "additional input";
 
 	TC_PRINT("HMAC-PRNG test#1 (init):\n");
 	if (tc_hmac_prng_init(&h, personalization,
@@ -90,7 +90,6 @@ void main(void)
 		result = TC_FAIL;
 		goto exitTest;
 	}
-
 	TC_END_RESULT(result);
 
 	TC_PRINT("HMAC-PRNG test#1 (generate):\n");
