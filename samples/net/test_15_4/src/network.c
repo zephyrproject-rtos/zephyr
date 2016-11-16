@@ -164,7 +164,7 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 		PRINT("%s: %s(): received %d bytes\n", taskname,
 		      __func__, ip_buf_appdatalen(buf));
 		if (memcmp(ip_buf_appdata(buf),
-			   lorem_ipsum, sizeof(lorem_ipsum))) {
+			   lorem_ipsum, strlen(lorem_ipsum))) {
 			PRINT("ERROR: data does not match\n");
 
 #ifdef CONFIG_NET_SANITY_TEST
