@@ -102,13 +102,31 @@ enum execution_context_types {
 	K_PREEMPT_THREAD,
 };
 
-typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
-
 /**
  * @defgroup thread_apis Thread APIs
  * @ingroup kernel_apis
  * @{
  */
+
+/**
+ * @typedef k_thread_entry_t
+ * @brief Thread entry point function type.
+ *
+ * A thread's entry point function is invoked when the thread starts executing.
+ * Up to 3 argument values can be passed to the function.
+ *
+ * The thread terminates execution permanently if the entry point function
+ * returns. The thread is responsible for releasing any shared resources
+ * it may own (such as mutexes and dynamically allocated memory), prior to
+ * returning.
+ *
+ * @param p1 First argument.
+ * @param p2 Second argument.
+ * @param p3 Third argument.
+ *
+ * @return N/A
+ */
+typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
 /**
  * @brief Spawn a thread.
@@ -137,7 +155,7 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  * @return ID of new thread.
  */
 extern k_tid_t k_thread_spawn(char *stack, unsigned stack_size,
-			      void (*entry)(void *, void *, void *),
+			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
 			      int32_t prio, uint32_t options, int32_t delay);
 
@@ -633,6 +651,35 @@ struct k_timer {
  */
 
 /**
+ * @typedef k_timer_expiry_t
+ * @brief Timer expiry function type.
+ *
+ * A timer's expiry function is executed by the system clock interrupt handler
+ * each time the timer expires. The expiry function is optional, and is only
+ * invoked if the timer has been initialized with one.
+ *
+ * @param timer     Address of timer.
+ *
+ * @return N/A
+ */
+typedef void (*k_timer_expiry_t)(struct k_timer *timer);
+
+/**
+ * @typedef k_timer_stop_t
+ * @brief Timer stop function type.
+ *
+ * A timer's stop function is executed if the timer is stopped prematurely.
+ * The function runs in the context of the thread that stops the timer.
+ * The stop function is optional, and is only invoked if the timer has been
+ * initialized with one.
+ *
+ * @param timer     Address of timer.
+ *
+ * @return N/A
+ */
+typedef void (*k_timer_stop_t)(struct k_timer *timer);
+
+/**
  * @brief Statically define and initialize a timer.
  *
  * The timer can be accessed outside the module where it is defined using:
@@ -660,8 +707,8 @@ struct k_timer {
  * @return N/A
  */
 extern void k_timer_init(struct k_timer *timer,
-			 void (*expiry_fn)(struct k_timer *),
-			 void (*stop_fn)(struct k_timer *));
+			 k_timer_expiry_t expiry_fn,
+			 k_timer_stop_t stop_fn);
 
 /**
  * @brief Start a timer.
@@ -1583,7 +1630,19 @@ static inline unsigned int k_sem_count_get(struct k_sem *sem)
  * @{
  */
 
-typedef int (*k_alert_handler_t)(struct k_alert *);
+/**
+ * @typedef k_alert_handler_t
+ * @brief Alert handler function type.
+ *
+ * An alert's alert handler function is invoked by the system workqueue
+ * when the alert is signalled. The alert handler function is optional,
+ * and is only invoked if the alert has been initialized with one.
+ *
+ * @param alert Address of the alert.
+ *
+ * @return 0 if alert has been consumed; non-zero if alert should pend.
+ */
+typedef int (*k_alert_handler_t)(struct k_alert *alert);
 
 /**
  * @} end defgroup alert_apis
