@@ -28,6 +28,9 @@
 #include <errno.h>
 
 #ifdef CONFIG_NET_6LO
+#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
+#include "ieee802154_fragment.h"
+#endif
 #include <6lo.h>
 #endif /* CONFIG_NET_6LO */
 
@@ -180,7 +183,7 @@ enum net_verdict ieee802154_manage_recv_buffer(struct net_if *iface,
 	dst = net_nbuf_ll_dst(buf)->addr ?
 		net_nbuf_ll_dst(buf)->addr - net_nbuf_ll(buf) : 0;
 
-#ifdef NET_L2_IEEE802154_FRAGMENT
+#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	verdict = ieee802154_reassemble(buf);
 	if (verdict == NET_DROP) {
 		goto out;
@@ -207,7 +210,7 @@ static inline bool ieee802154_manage_send_buffer(struct net_if *iface,
 
 	pkt_hexdump(buf, false);
 
-#ifdef NET_L2_IEEE802154_FRAGMENT
+#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	ret = net_6lo_compress(buf, true, ieee802154_fragment);
 #else
 	ret = net_6lo_compress(buf, true, NULL);
