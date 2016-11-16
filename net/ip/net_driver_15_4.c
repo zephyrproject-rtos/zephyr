@@ -121,7 +121,8 @@ static void net_rx_15_4_fiber(void)
 #endif
 		}
 
-		net_analyze_stack("802.15.4 RX", rx_fiber_stack,
+		net_analyze_stack("802.15.4 RX",
+				  (unsigned char *)rx_fiber_stack,
 				  sizeof(rx_fiber_stack));
 	}
 }
