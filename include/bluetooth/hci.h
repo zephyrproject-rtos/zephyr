@@ -141,9 +141,23 @@ struct bt_hci_cmd_hdr {
 #define BT_FEAT_SC(feat)                        BT_FEAT_TEST(feat, 2, 1, 0)
 
 /* LE features */
-#define BT_FEAT_LE_ENCR(feat)                   BT_FEAT_TEST(feat, 0, 0, 0)
-#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_FEAT_TEST(feat, 0, 0, 1)
-#define BT_FEAT_LE_SLAVE_FEATURE_XCHG(feat)     BT_FEAT_TEST(feat, 0, 0, 3)
+#define BT_LE_FEAT_BIT_ENC                      0
+#define BT_LE_FEAT_BIT_CONN_PARAM_REQ           1
+#define BT_LE_FEAT_BIT_EXT_REJ_IND              2
+#define BT_LE_FEAT_BIT_SLAVE_FEAT_REQ           3
+#define BT_LE_FEAT_BIT_PING                     4
+#define BT_LE_FEAT_BIT_DLE                      5
+#define BT_LE_FEAT_BIT_PRIVACY                  6
+#define BT_LE_FEAT_BIT_EXT_SCAN                 7
+
+#define BT_FEAT_LE_ENCR(feat)                   BT_FEAT_TEST(feat, 0, 0, \
+						BT_LE_FEAT_BIT_ENC)
+#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_FEAT_TEST(feat, 0, 0, \
+						BT_LE_FEAT_BIT_CONN_PARAM_REQ)
+#define BT_FEAT_LE_SLAVE_FEATURE_XCHG(feat)     BT_FEAT_TEST(feat, 0, 0, \
+						BT_LE_FEAT_BIT_SLAVE_FEAT_REQ)
+#define BT_FEAT_LE_DLE(feat)                    BT_FEAT_TEST(feat, 0, 0, \
+						BT_LE_FEAT_BIT_DLE)
 
 /* LE States */
 #define BT_LE_STATES_SLAVE_CONN_ADV(states)     (states & 0x0000004000000000)

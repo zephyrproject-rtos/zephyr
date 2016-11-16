@@ -55,7 +55,7 @@ struct connection {
 	uint16_t latency;
 	uint16_t latency_prepare;
 	uint16_t latency_event;
-	uint16_t sug_tx_octets;
+	uint16_t default_tx_octets;
 	uint16_t max_tx_octets;
 	uint16_t max_rx_octets;
 	uint16_t supervision_reload;

@@ -159,6 +159,10 @@ static struct {
 	uint8_t data_channel_count;
 	uint8_t sca;
 
+	/* DLE global settings */
+	uint16_t default_tx_octets;
+	uint16_t default_tx_time;
+
 	/** @todo below members to be made role specific and quota managed for
 	 * Rx-es.
 	 */
@@ -474,6 +478,10 @@ static void common_init(void)
 	_radio.data_channel_map[3] = 0xFF;
 	_radio.data_channel_map[4] = 0x1F;
 	_radio.data_channel_count = 37;
+
+	/* Initialize the DLE defaults */
+	_radio.default_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+	_radio.default_tx_time = RADIO_LL_LENGTH_TIME_RX_MIN;
 
 	/* allocate the rx queue */
 	packet_rx_allocate(0xFF);
@@ -1249,11 +1257,11 @@ static inline void isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		lr = (struct pdu_data_llctrl_length_req_rsp *)
 			&pdu_data_rx->payload.llctrl.ctrldata.length_req;
 
-		/* use the minimal of our sugg_tx_octets and
+		/* use the minimal of our default_tx_octets and
 		 * peer max_rx_octets
 		 */
-		if (lr->max_rx_octets > _radio.conn_curr->sug_tx_octets) {
-			eff_tx_octets = _radio.conn_curr->sug_tx_octets;
+		if (lr->max_rx_octets > _radio.conn_curr->default_tx_octets) {
+			eff_tx_octets = _radio.conn_curr->default_tx_octets;
 		} else {
 			eff_tx_octets = lr->max_rx_octets;
 		}
@@ -4907,8 +4915,8 @@ static inline void event_len_prep(struct connection *conn)
 		/* wait for resp before completing the procedure */
 		conn->llcp_length.state = LLCP_LENGTH_STATE_ACK_WAIT;
 
-		/* set the suggested tx octets to requested value */
-		conn->sug_tx_octets = conn->llcp_length.tx_octets;
+		/* set the default tx octets to requested value */
+		conn->default_tx_octets = conn->llcp_length.tx_octets;
 
 		/* place the length req packet as next in tx queue */
 		pdu_ctrl_tx = (struct pdu_data *) node_tx->pdu_data;
@@ -4922,8 +4930,8 @@ static inline void event_len_prep(struct connection *conn)
 			&pdu_ctrl_tx->payload.llctrl.ctrldata.length_req;
 		lr->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
 		lr->max_rx_time = ((RADIO_LL_LENGTH_OCTETS_RX_MAX + 14) << 3);
-		lr->max_tx_octets = conn->sug_tx_octets;
-		lr->max_tx_time = ((conn->sug_tx_octets + 14) << 3);
+		lr->max_tx_octets = conn->default_tx_octets;
+		lr->max_tx_time = ((conn->default_tx_octets + 14) << 3);
 
 		ctrl_tx_enqueue(conn, node_tx);
 
@@ -6656,7 +6664,7 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 		conn->event_counter = 0;
 		conn->latency_prepare = 0;
 		conn->latency_event = 0;
-		conn->sug_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+		conn->default_tx_octets = _radio.default_tx_octets;
 		conn->max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 		conn->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 		conn->role.slave.role = 1;
@@ -6977,7 +6985,7 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	conn->latency_prepare = 0;
 	conn->latency_event = 0;
 	conn->latency = _radio.observer.conn_latency;
-	conn->sug_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+	conn->default_tx_octets = _radio.default_tx_octets;
 	conn->max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 	conn->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 	conn->role.master.role = 0;
@@ -7313,6 +7321,35 @@ uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets)
 	conn->llcp_length.req++;
 
 	return 0;
+}
+
+void radio_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
+{
+	*max_tx_octets = _radio.default_tx_octets;
+	*max_tx_time = _radio.default_tx_time;
+}
+
+uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
+{
+	if (max_tx_octets > RADIO_LL_LENGTH_OCTETS_RX_MAX ||
+	    max_tx_time > RADIO_LL_LENGTH_TIME_RX_MAX) {
+
+		return 1;
+	}
+
+	_radio.default_tx_octets = max_tx_octets;
+	_radio.default_tx_time = max_tx_time;
+
+	return 0;
+}
+
+void radio_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
+			  uint16_t *max_rx_octets, uint16_t *max_rx_time)
+{
+	*max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
+	*max_tx_time = RADIO_LL_LENGTH_TIME_RX_MAX;
+	*max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
+	*max_rx_time = RADIO_LL_LENGTH_TIME_RX_MAX;
 }
 
 static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
