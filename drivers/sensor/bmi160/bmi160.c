@@ -769,7 +769,7 @@ static inline void bmi160_acc_channel_get(struct device *dev,
 
 static int bmi160_temp_channel_get(struct device *dev, struct sensor_value *val)
 {
-	int16_t temp_raw = 0;
+	uint16_t temp_raw = 0;
 	int32_t temp_micro = 0;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
