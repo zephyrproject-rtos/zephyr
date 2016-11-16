@@ -55,37 +55,75 @@ void _init_mock(void)
 
 #else
 
-static struct parameter params[CONFIG_ZTEST_PARAMETER_COUNT];
-static struct k_fifo *fifo;
+/*
+ * FIXME: move to sys_io.h once the argument signature for bitmap has
+ * been fixed to void* or similar ZEP-1347
+ */
+#define BITS_PER_UL (8 * sizeof(unsigned long int))
+#define DEFINE_BITFIELD(name, bits)					\
+	unsigned long int (name)[((bits) + BITS_PER_UL - 1) / BITS_PER_UL]
 
-static void free_parameter(struct parameter *param)
+static inline
+int sys_bitfield_find_first_clear(const unsigned long *bitmap,
+				  unsigned int bits)
 {
-	if (param) {
-		k_fifo_put(fifo, param);
+	unsigned int words = (bits + BITS_PER_UL - 1) / BITS_PER_UL;
+	unsigned int cnt;
+	unsigned int long neg_bitmap;
+
+	/*
+	 * By bitwise negating the bitmap, we are actually implemeting
+	 * ffc (find first clear) using ffs (find first set).
+	 */
+	for (cnt = 0; cnt < words; cnt++) {
+		neg_bitmap = ~bitmap[cnt];
+		if (neg_bitmap == 0)	/* all full */
+			continue;
+		else if (neg_bitmap == ~0UL)	/* first bit */
+			return cnt * BITS_PER_UL;
+		else
+			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap);
 	}
+	return -1;
 }
-static struct parameter *alloc_parameter(void)
+
+static DEFINE_BITFIELD(params_allocation, CONFIG_ZTEST_PARAMETER_COUNT);
+static struct parameter params[CONFIG_ZTEST_PARAMETER_COUNT];
+
+static
+void free_parameter(struct parameter *param)
 {
+	unsigned int allocation_index = param - params;
+
+	if (param == NULL)
+		return;
+	__ASSERT(allocation_index < CONFIG_ZTEST_PARAMETER_COUNT,
+		 "param %p given to free is not in the static buffer %p:%u",
+		 param, params, CONFIG_ZTEST_PARAMETER_COUNT);
+	sys_bitfield_clear_bit((mem_addr_t) params_allocation,
+			       allocation_index);
+}
+
+static
+struct parameter *alloc_parameter(void)
+{
+	int allocation_index;
 	struct parameter *param;
 
-	param = k_fifo_get(fifo, K_NO_WAIT);
-	if (!param) {
-		PRINT("Failed to allocate mock parameter\n");
+	allocation_index = sys_bitfield_find_first_clear(
+		params_allocation, CONFIG_ZTEST_PARAMETER_COUNT);
+	if (allocation_index == -1) {
+		printk("No more mock parameters available for allocation\n");
 		ztest_test_fail();
 	}
-
+	sys_bitfield_set_bit((mem_addr_t) params_allocation, allocation_index);
+	param = params + allocation_index;
+	memset(param, 0, sizeof(*param));
 	return param;
 }
 
 void _init_mock(void)
 {
-	int i;
-
-	k_fifo_init(fifo);
-	for (i = 0; i < CONFIG_ZTEST_PARAMETER_COUNT; i++) {
-
-		k_fifo_put(fifo, &params[i]);
-	}
 }
 
 #endif
@@ -157,8 +195,7 @@ void _ztest_check_expected_value(const char *fn, const char *name,
 		 * provide inttypes.h
 		 */
 		PRINT("%s received wrong value: Got %lu, expected %lu\n",
-		      fn, (unsigned long)val,
-		      (unsigned long)expected);
+		      fn, (unsigned long)val, (unsigned long)expected);
 		ztest_test_fail();
 	}
 }
