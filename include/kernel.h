@@ -1183,45 +1183,66 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
  * @} end defgroup stack_apis
  */
 
+struct k_work;
+
 /**
  * @defgroup workqueue_apis Workqueue Thread APIs
  * @ingroup kernel_apis
  * @{
  */
 
-struct k_work;
-
-typedef void (*k_work_handler_t)(struct k_work *);
+/**
+ * @typedef k_work_handler_t
+ * @brief Work item handler function type.
+ *
+ * A work item's handler function is executed by a workqueue's thread
+ * when the work item is processed by the workqueue.
+ *
+ * @param work Address of the work item.
+ *
+ * @return N/A
+ */
+typedef void (*k_work_handler_t)(struct k_work *work);
 
 /**
- * A workqueue is a thread that executes @ref k_work items that are
- * queued to it.  This is useful for drivers which need to schedule
- * execution of code which might sleep from ISR context.  The actual
- * thread identifier is not stored in the structure in order to save
- * space.
+ * @cond INTERNAL_HIDDEN
  */
+
 struct k_work_q {
 	struct k_fifo fifo;
 };
 
-/**
- * @brief Work flags.
- */
 enum {
 	K_WORK_STATE_PENDING,	/* Work item pending state */
 };
 
-/**
- * @brief An item which can be scheduled on a @ref k_work_q.
- */
 struct k_work {
 	void *_reserved;		/* Used by k_fifo implementation. */
 	k_work_handler_t handler;
 	atomic_t flags[1];
 };
 
+struct k_delayed_work {
+	struct k_work work;
+	struct _timeout timeout;
+	struct k_work_q *work_q;
+};
+
+extern struct k_work_q k_sys_work_q;
+
 /**
- * @brief Statically initialize work item
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Initialize a statically-defined work item.
+ *
+ * This macro can be used to initialize a statically-defined workqueue work
+ * item, prior to its first use. For example,
+ *
+ * @code struct k_work <work> = K_WORK_INITIALIZER(<work_handler>); @endcode
+ *
+ * @param work_handler Function to invoke each time work item is processed.
  */
 #define K_WORK_INITIALIZER(work_handler) \
 	{ \
@@ -1231,7 +1252,14 @@ struct k_work {
 	}
 
 /**
- * @brief Dynamically initialize work item
+ * @brief Initialize a work item.
+ *
+ * This routine initializes a workqueue work item, prior to its first use.
+ *
+ * @param work Address of work item.
+ * @param handler Function to invoke each time work item is processed.
+ *
+ * @return N/A
  */
 static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 {
@@ -1240,17 +1268,23 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 }
 
 /**
- * @brief Submit a work item to a workqueue.
+ * @brief Submit a work item.
  *
- * This procedure schedules a work item to be processed.
- * In the case where the work item has already been submitted and is pending
- * execution, calling this function will result in a no-op. In this case, the
- * work item must not be modified externally (e.g. by the caller of this
- * function), since that could cause the work item to be processed in a
- * corrupted state.
+ * This routine submits work item @a work to be processed by workqueue
+ * @a work_q. If the work item is already pending in the workqueue's queue
+ * as a result of an earlier submission, this routine has no effect on the
+ * work item. If the work item has already been processed, or is currently
+ * being processed, its work is considered complete and the work item can be
+ * resubmitted.
  *
- * @param work_q to schedule the work item
- * @param work work item
+ * @warning
+ * A submitted work item must not be modified until it has been processed
+ * by the workqueue.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work_q Address of workqueue.
+ * @param work Address of work item.
  *
  * @return N/A
  */
@@ -1263,11 +1297,16 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 }
 
 /**
- * @brief Check if work item is pending.
+ * @brief Check if a work item is pending.
  *
- * @param work Work item to query
+ * This routine indicates if work item @a work is pending in a workqueue's
+ * queue.
  *
- * @return K_WORK_STATE_PENDING if pending, 0 if not
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of work item.
+ *
+ * @return 1 if work item is pending, or 0 if it is not pending.
  */
 static inline int k_work_pending(struct k_work *work)
 {
@@ -1275,38 +1314,29 @@ static inline int k_work_pending(struct k_work *work)
 }
 
 /**
- * @brief Start a new workqueue.
+ * @brief Start a workqueue.
  *
- * This routine must not be called from an ISR.
+ * This routine starts workqueue @a work_q. The workqueue spawns its work
+ * processing thread, which runs forever.
  *
- * @param work_q Pointer to Work queue
- * @param stack Pointer to work queue thread's stack
- * @param stack_size Size of the work queue thread's stack
- * @param prio Priority of the work queue's thread
+ * @param work_q Address of workqueue.
+ * @param stack Pointer to work queue thread's stack space.
+ * @param stack_size Size of the work queue thread's stack (in bytes).
+ * @param prio Priority of the work queue's thread.
  *
  * @return N/A
  */
 extern void k_work_q_start(struct k_work_q *work_q, char *stack,
 			   unsigned stack_size, unsigned prio);
 
-#if defined(CONFIG_SYS_CLOCK_EXISTS)
-
 /**
- * @brief An item which can be scheduled on a @ref k_work_q with a delay
- */
-struct k_delayed_work {
-	struct k_work work;
-	struct _timeout timeout;
-	struct k_work_q *work_q;
-};
-
-/**
- * @brief Initialize delayed work
+ * @brief Initialize a delayed work item.
  *
- * Initialize a delayed work item.
+ * This routine initializes a workqueue delayed work item, prior to
+ * its first use.
  *
- * @param work Delayed work item
- * @param handler Routine invoked when processing delayed work item
+ * @param work Address of delayed work item.
+ * @param handler Function to invoke each time work item is processed.
  *
  * @return N/A
  */
@@ -1314,77 +1344,121 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
 				k_work_handler_t handler);
 
 /**
- * @brief Submit a delayed work item to a workqueue.
+ * @brief Submit a delayed work item.
  *
- * This routine schedules a work item to be processed after a delay.
- * Once the delay has passed, the work item is submitted to the work queue:
- * at this point, it is no longer possible to cancel it. Once the work item's
- * handler is about to be executed, the work is considered complete and can be
- * resubmitted.
+ * This routine schedules work item @a work to be processed by workqueue
+ * @a work_q after a delay of @a delay milliseconds. The routine initiates
+ * an asychronous countdown for the work item and then returns to the caller.
+ * Only when the countdown completes is the work item actually submitted to
+ * the workqueue and becomes pending.
  *
- * Care must be taken if the handler blocks or yield as there is no implicit
- * mutual exclusion mechanism. Such usage is not recommended and if necessary,
- * it should be explicitly done between the submitter and the handler.
+ * Submitting a previously submitted delayed work item that is still
+ * counting down cancels the existing submission and restarts the countdown
+ * using the new delay. If the work item is currently pending on the
+ * workqueue's queue because the countdown has completed it is too late to
+ * resubmit the item, and resubmission fails without impacting the work item.
+ * If the work item has already been processed, or is currently being processed,
+ * its work is considered complete and the work item can be resubmitted.
  *
- * @param work_q Workqueue to schedule the work item
- * @param work Delayed work item
- * @param delay Delay before scheduling the work item (in milliseconds)
+ * @warning
+ * A delayed work item must not be modified until it has been processed
+ * by the workqueue.
  *
- * @return 0 in case of success, or negative value in case of error.
+ * @note Can be called by ISRs.
+ *
+ * @param work_q Address of workqueue.
+ * @param work Address of delayed work item.
+ * @param delay Delay before submitting the work item (in milliseconds).
+ *
+ * @retval 0 Work item countdown started.
+ * @retval -EINPROGRESS Work item is already pending.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_delayed_work *work,
 					  int32_t delay);
 
 /**
- * @brief Cancel a delayed work item
+ * @brief Cancel a delayed work item.
  *
- * This routine cancels a scheduled work item. If the work has been completed
- * or is idle, this will do nothing. The only case where this can fail is when
- * the work has been submitted to the work queue, but the handler has not run
- * yet.
+ * This routine cancels the submission of delayed work item @a work.
+ * A delayed work item can only be cancelled while its countdown is still
+ * underway.
  *
- * @param work Delayed work item to be canceled
+ * @note Can be called by ISRs.
  *
- * @return 0 in case of success, or negative value in case of error.
+ * @param work Address of delayed work item.
+ *
+ * @retval 0 Work item countdown cancelled.
+ * @retval -EINPROGRESS Work item is already pending.
+ * @retval -EINVAL Work item is being processed or has completed its work.
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
-
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
-
-extern struct k_work_q k_sys_work_q;
 
 /**
  * @brief Submit a work item to the system workqueue.
  *
- * @ref k_work_submit_to_queue
+ * This routine submits work item @a work to be processed by the system
+ * workqueue. If the work item is already pending in the workqueue's queue
+ * as a result of an earlier submission, this routine has no effect on the
+ * work item. If the work item has already been processed, or is currently
+ * being processed, its work is considered complete and the work item can be
+ * resubmitted.
  *
- * When using the system workqueue it is not recommended to block or yield
- * on the handler since its thread is shared system wide it may cause
- * unexpected behavior.
+ * @warning
+ * Work items submitted to the system workqueue should avoid using handlers
+ * that block or yield since this may prevent the system workqueue from
+ * processing other work items in a timely manner.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of work item.
+ *
+ * @return N/A
  */
 static inline void k_work_submit(struct k_work *work)
 {
 	k_work_submit_to_queue(&k_sys_work_q, work);
 }
 
-#if defined(CONFIG_SYS_CLOCK_EXISTS)
 /**
  * @brief Submit a delayed work item to the system workqueue.
  *
- * @ref k_delayed_work_submit_to_queue
+ * This routine schedules work item @a work to be processed by the system
+ * workqueue after a delay of @a delay milliseconds. The routine initiates
+ * an asychronous countdown for the work item and then returns to the caller.
+ * Only when the countdown completes is the work item actually submitted to
+ * the workqueue and becomes pending.
  *
- * When using the system workqueue it is not recommended to block or yield
- * on the handler since its thread is shared system wide it may cause
- * unexpected behavior.
+ * Submitting a previously submitted delayed work item that is still
+ * counting down cancels the existing submission and restarts the countdown
+ * using the new delay. If the work item is currently pending on the
+ * workqueue's queue because the countdown has completed it is too late to
+ * resubmit the item, and resubmission fails without impacting the work item.
+ * If the work item has already been processed, or is currently being processed,
+ * its work is considered complete and the work item can be resubmitted.
+ *
+ * @warning
+ * Work items submitted to the system workqueue should avoid using handlers
+ * that block or yield since this may prevent the system workqueue from
+ * processing other work items in a timely manner.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of delayed work item.
+ * @param delay Delay before submitting the work item (in milliseconds).
+ *
+ * @retval 0 Work item countdown started.
+ * @retval -EINPROGRESS Work item is already pending.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
-					   int32_t delay)
+					int32_t delay)
 {
 	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, delay);
 }
-
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 /**
  * @} end defgroup workqueue_apis
