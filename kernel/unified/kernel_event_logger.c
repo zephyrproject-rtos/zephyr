@@ -58,7 +58,7 @@ static int _sys_k_event_logger_init(struct device *arg)
 	return 0;
 }
 SYS_INIT(_sys_k_event_logger_init,
-		NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
 sys_k_timer_func timer_func;
