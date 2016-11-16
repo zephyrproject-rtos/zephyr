@@ -51,6 +51,10 @@ static struct net_context contexts[NET_MAX_CONTEXT];
  */
 static struct k_sem contexts_lock;
 
+enum net_verdict packet_received(struct net_conn *conn,
+				 struct net_buf *buf,
+				 void *user_data);
+
 #if defined(CONFIG_NET_TCP)
 static struct sockaddr *create_sockaddr(struct net_buf *buf,
 					struct sockaddr *addr)
@@ -614,6 +618,14 @@ static int send_reset(struct net_context *context,
 	return ret;
 }
 
+static int tcp_hdr_len(struct net_buf *buf)
+{
+	/* "Offset": 4-bit field in high nibble, units of dwords */
+	struct net_tcp_hdr *hdr = (void *)net_nbuf_tcp_data(buf);
+
+	return 4 * (hdr->offset >> 4);
+}
+
 /* This is called when we receive data after the connection has been
  * established. The core TCP logic is located here.
  */
@@ -623,7 +635,7 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 {
 	struct net_context *context = (struct net_context *)user_data;
 	struct net_tcp_hdr *hdr;
-	int hdrlen;
+	enum net_verdict ret;
 
 	NET_ASSERT(context && context->tcp);
 
@@ -662,13 +674,13 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 		return NET_DROP;
 	}
 
-	/* "Offset" is a 4-bit field in high nibble, units of dwords */
-	hdrlen = 4 * (hdr->offset >> 4);
+	ret = packet_received(conn, buf, user_data);
+
 	context->tcp->send_ack += net_buf_frags_len(buf)
-		- net_nbuf_ip_hdr_len(buf) - hdrlen;
+		- net_nbuf_ip_hdr_len(buf) - tcp_hdr_len(buf);
 	send_ack(context, &conn->remote_addr);
 
-	return NET_DROP;
+	return ret;
 }
 
 static enum net_verdict tcp_active_close(struct net_conn *conn,
@@ -1583,13 +1595,26 @@ static void set_appdata_values(struct net_buf *buf,
 			       enum net_ip_protocol proto,
 			       size_t total_len)
 {
+#if defined(CONFIG_NET_UDP)
 	if (proto == IPPROTO_UDP) {
 		net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
 				     sizeof(struct net_udp_hdr));
 		net_nbuf_set_appdatalen(buf, total_len -
 					net_nbuf_ip_hdr_len(buf) -
 					sizeof(struct net_udp_hdr));
-	} else {
+	} else
+#endif /* CONFIG_NET_UDP */
+
+#if defined(CONFIG_NET_TCP)
+	if (proto == IPPROTO_TCP) {
+		net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
+				     tcp_hdr_len(buf));
+		net_nbuf_set_appdatalen(buf, total_len -
+					net_nbuf_ip_hdr_len(buf) -
+					tcp_hdr_len(buf));
+	} else
+#endif /* CONFIG_NET_TCP */
+	{
 		net_nbuf_set_appdata(buf, net_nbuf_ip_data(buf) +
 				     net_nbuf_ip_hdr_len(buf));
 		net_nbuf_set_appdatalen(buf, total_len -
@@ -1701,9 +1726,6 @@ static int recv_udp(struct net_context *context,
 				packet_received,
 				user_data,
 				&context->conn_handler);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -1721,9 +1743,22 @@ int net_context_recv(struct net_context *context,
 		return -ENOENT;
 	}
 
-	ret = recv_udp(context, cb, timeout, user_data);
-	if (ret) {
-		return ret;
+#if defined(CONFIG_NET_UDP)
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		ret = recv_udp(context, cb, timeout, user_data);
+		if (ret < 0) {
+			return ret;
+		}
+	} else
+#endif /* CONFIG_NET_UDP */
+
+#if defined(CONFIG_NET_TCP)
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		context->recv_cb = cb;
+	} else
+#endif /* CONFIG_NET_TCP */
+	{
+		return -EPROTOTYPE;
 	}
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
