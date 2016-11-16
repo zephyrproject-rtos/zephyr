@@ -327,7 +327,7 @@ int test_prng_vector(struct prng_vector *v)
 		goto exit_test;
 	}
 
-	tc_ctr_prng_generate(&ctx, extra1, extra1_len, output, exp_len);
+	rc = tc_ctr_prng_generate(&ctx, extra1, extra1_len, output, exp_len);
 	if (rc != TC_CRYPTO_SUCCESS) {
 		rc = TC_FAIL;
 		goto exit_test;
