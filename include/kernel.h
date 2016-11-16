@@ -220,8 +220,8 @@ extern k_tid_t k_current_get(void);
  *
  * @param thread ID of thread to cancel.
  *
- * @retval 0 if successful.
- * @retval -EINVAL if the thread has already started executing.
+ * @retval 0 Thread spawning cancelled.
+ * @retval -EINVAL Thread has already started executing.
  */
 extern int k_thread_cancel(k_tid_t thread);
 
@@ -971,8 +971,8 @@ extern void k_fifo_put_slist(struct k_fifo *fifo, sys_slist_t *list);
  * @param timeout Waiting period to obtain a data item (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @return Address of the data item if successful.
- * @retval NULL if returned without waiting or waiting period timed out.
+ * @return Address of the data item if successful; NULL if returned
+ * without waiting, or waiting period timed out.
  */
 extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
 
@@ -1061,8 +1061,8 @@ extern void k_lifo_put(struct k_lifo *lifo, void *data);
  * @param timeout Waiting period to obtain a data item (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @return Address of the data item if successful.
- * @retval NULL if returned without waiting or waiting period timed out.
+ * @return Address of the data item if successful; NULL if returned
+ * without waiting, or waiting period timed out.
  */
 extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
 
@@ -1155,9 +1155,9 @@ extern void k_stack_push(struct k_stack *stack, uint32_t data);
  * @param timeout Waiting period to obtain a value (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @retval 0 if successful.
- * @retval -EBUSY if returned without waiting.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Element popped from stack.
+ * @retval -EBUSY Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
 
@@ -1549,9 +1549,9 @@ extern void k_mutex_init(struct k_mutex *mutex);
  * @param timeout Waiting period to lock the mutex (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @retval 0 if successful.
- * @retval -EBUSY if returned without waiting.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Mutex locked.
+ * @retval -EBUSY Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mutex_lock(struct k_mutex *mutex, int32_t timeout);
 
@@ -1630,9 +1630,9 @@ extern void k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @param timeout Waiting period to take the semaphore (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @retval 0 if successful.
- * @retval -EBUSY if returned without waiting.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Semaphore taken.
+ * @retval -EBUSY Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_sem_take(struct k_sem *sem, int32_t timeout);
 
@@ -1806,9 +1806,9 @@ extern void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
  * @param timeout Waiting period to receive the alert (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @retval 0 if successful.
- * @retval -EBUSY if returned without waiting.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Alert received.
+ * @retval -EBUSY Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_alert_recv(struct k_alert *alert, int32_t timeout);
 
@@ -1932,9 +1932,9 @@ extern void k_msgq_init(struct k_msgq *q, char *buffer,
  * @param timeout Waiting period to add the message (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @retval 0 if successful.
- * @retval -ENOMSG if returned without waiting or after a queue purge.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Message sent.
+ * @retval -ENOMSG Returned without waiting or queue purged.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
 
@@ -1951,9 +1951,9 @@ extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
  * @param timeout Waiting period to receive the message (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @retval 0 if successful.
- * @retval -ENOMSG if returned without waiting.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Message received.
+ * @retval -ENOMSG Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout);
 
@@ -2113,9 +2113,9 @@ extern void k_mbox_init(struct k_mbox *mbox);
  *                this routine waits as long as necessary for the message
  *                to be completely processed.
  *
- * @retval 0 if successful.
- * @retval -ENOMSG if returned without waiting.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Message sent.
+ * @retval -ENOMSG Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		      int32_t timeout);
@@ -2152,9 +2152,9 @@ extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  *                milliseconds), or one of the special values K_NO_WAIT
  *                and K_FOREVER.
  *
- * @retval 0 if successful.
- * @retval -ENOMSG if returned without waiting.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Message received.
+ * @retval -ENOMSG Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
 		      void *buffer, int32_t timeout);
@@ -2202,9 +2202,9 @@ extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  *                milliseconds), or one of the special values K_NO_WAIT
  *                and K_FOREVER.
  *
- * @retval 0 if successful.
- * @retval -ENOMEM if returned without waiting.
- * @retval -EAGAIN if waiting period timed out.
+ * @retval 0 Data retrieved.
+ * @retval -ENOMEM Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
 				 struct k_mem_pool *pool,
@@ -2304,9 +2304,9 @@ extern void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer,
  *                milliseconds), or one of the special values K_NO_WAIT
  *                and K_FOREVER.
  *
- * @retval 0 if at least @a min_xfer data bytes were written.
- * @retval -EIO if returned without waiting; zero data bytes were written.
- * @retval -EAGAIN if waiting period timed out; between zero and @a min_xfer
+ * @retval 0 At least @a min_xfer bytes of data were written.
+ * @retval -EIO Returned without waiting; zero data bytes were written.
+ * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were written.
  */
 extern int k_pipe_put(struct k_pipe *pipe, void *data,
@@ -2327,9 +2327,9 @@ extern int k_pipe_put(struct k_pipe *pipe, void *data,
  *                milliseconds), or one of the special values K_NO_WAIT
  *                and K_FOREVER.
  *
- * @retval 0 if at least @a min_xfer data bytes were read.
- * @retval -EIO if returned without waiting; zero data bytes were read.
- * @retval -EAGAIN if waiting period timed out; between zero and @a min_xfer
+ * @retval 0 At least @a min_xfer bytes of data were read.
+ * @retval -EIO Returned without waiting; zero data bytes were read.
+ * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were read.
  */
 extern int k_pipe_get(struct k_pipe *pipe, void *data,
@@ -2453,10 +2453,10 @@ extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  *        (in milliseconds). Use K_NO_WAIT to return without waiting,
  *        or K_FOREVER to wait as long as necessary.
  *
- * @retval 0 if successful. The block address area pointed at by @a mem
+ * @retval 0 Memory allocated. The block address area pointed at by @a mem
  *         is set to the starting address of the memory block.
- * @retval -ENOMEM if failed immediately.
- * @retval -EAGAIN if timed out.
+ * @retval -ENOMEM Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
 			    int32_t timeout);
@@ -2756,10 +2756,10 @@ static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
  *        (in milliseconds). Use K_NO_WAIT to return without waiting,
  *        or K_FOREVER to wait as long as necessary.
  *
- * @retval 0 if successful. The @a data field of the block descriptor
+ * @retval 0 Memory allocated. The @a data field of the block descriptor
  *         is set to the starting address of the memory block.
- * @retval -ENOMEM if unable to allocate a memory block.
- * @retval -EAGAIN if timed out.
+ * @retval -ENOMEM Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 			    size_t size, int32_t timeout);
