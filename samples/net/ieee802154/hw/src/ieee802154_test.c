@@ -15,6 +15,13 @@
 #include <misc/printk.h>
 #define PRINT	printk
 
+#ifdef CONFIG_TI_CC2520_DRV_NAME
+#define IEEE802154_DRV_NAME	CONFIG_TI_CC2520_DRV_NAME
+#endif
+#ifdef CONFIG_NXP_MCR20A_DRV_NAME
+#define IEEE802154_DRV_NAME	CONFIG_NXP_MCR20A_DRV_NAME
+#endif
+
 #ifndef CONFIG_NET_L2_IEEE802154_SHELL
 
 static struct ieee802154_req_params scan_ctx;
@@ -56,15 +63,15 @@ static struct net_if *init_device(void)
 	struct net_if *iface;
 	struct device *dev;
 
-	dev = device_get_binding(CONFIG_TI_CC2520_DRV_NAME);
+	dev = device_get_binding(IEEE802154_DRV_NAME);
 	if (!dev) {
-		PRINT("Cannot get CC250 device\n");
+		PRINT("Cannot get device binding\n");
 		return NULL;
 	}
 
 	iface = net_if_lookup_by_dev(dev);
 	if (!iface) {
-		PRINT("Cannot get CC2520 network interface\n");
+		PRINT("Cannot get 802.15.4 network interface\n");
 		return NULL;
 	}
 
