@@ -379,9 +379,10 @@ _Idt:
 	 * exceptions even if physical memory does not reside at the referenced
 	 * address.
 	 *
-	 * The 'A' (accessed) bit in the type field is _not_ set for all the
+	 * The 'A' (accessed) bit in the type field is set for all the
 	 * data/code segment descriptors to accommodate placing these entries
-	 * in ROM, since such use is not planned for this platform.
+	 * in ROM, to prevent the processor from freaking out when it tries
+	 * and fails to set it.
 	 */
 
 #ifndef CONFIG_GDT_DYNAMIC
@@ -401,7 +402,7 @@ _gdt_rom:
 	.word   0xffff		/* limit: xffff */
 	.word   0x0000		/* base : xxxx0000 */
 	.byte   0x00		/* base : xx00xxxx */
-	.byte   0x9a		/* Code e/r, Present, DPL0 */
+	.byte   0x9b		/* Accessed, Code e/r, Present, DPL0 */
 	.byte   0xcf		/* limit: fxxxx, Page Gra, 32bit */
 	.byte   0x00		/* base : 00xxxxxx */
 
@@ -410,7 +411,7 @@ _gdt_rom:
 	.word   0xffff		/* limit: xffff */
 	.word   0x0000		/* base : xxxx0000 */
 	.byte   0x00		/* base : xx00xxxx */
-	.byte   0x92		/* Data r/w, Present, DPL0 */
+	.byte   0x93		/* Accessed, Data r/w, Present, DPL0 */
 	.byte   0xcf		/* limit: fxxxx, Page Gra, 32bit */
 	.byte   0x00		/* base : 00xxxxxx */
 
