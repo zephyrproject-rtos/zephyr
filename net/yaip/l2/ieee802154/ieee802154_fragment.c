@@ -411,14 +411,16 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 
 	/* Uncompress the IP headers */
 	if (first && !net_6lo_uncompress(buf)) {
+		NET_ERR("Could not uncompress first frag's 6lo hdr");
 		clear_reass_cache(size, tag);
+
 		return NET_DROP;
 	}
 
 	/** If there are no fragments in the cache means this frag
 	 *  is the first one. So cache Rx buf and data buf.
 	 *  else
-	 *  If the cache already exists, reasseble the data according
+	 *  If the cache already exists, reassemble the data according
 	 *  to offset. Unref the Rx buf and cache the data buf,
 	 */
 
@@ -426,8 +428,11 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 	if (!cache) {
 		cache = set_reass_cache(buf, size, tag);
 		if (!cache) {
+			NET_ERR("Could not get a cache entry");
 			return NET_DROP;
 		}
+
+		NET_DBG("buffer inserted into cache");
 
 		return NET_OK;
 	}
@@ -446,6 +451,8 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 
 		clear_reass_cache(size, tag);
 
+		NET_DBG("All fragments received and reassembled");
+
 		return NET_CONTINUE;
 	}
 
@@ -458,6 +465,7 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 enum net_verdict ieee802154_reassemble(struct net_buf *buf)
 {
 	if (!buf || !buf->frags) {
+		NET_ERR("Nothing to reassemble");
 		return NET_DROP;
 	}
 
@@ -469,10 +477,13 @@ enum net_verdict ieee802154_reassemble(struct net_buf *buf)
 		/* Further fragments */
 		return add_frag_to_cache(buf, false);
 	default:
+		NET_DBG("No frag dispatch (%02x)", buf->frags->data[0]);
 		/* Received unfragmented packet, uncompress */
 		if (net_6lo_uncompress(buf)) {
 			return NET_CONTINUE;
 		}
+
+		NET_ERR("Could not uncompress. Bogus packet?");
 	}
 
 	return NET_DROP;
