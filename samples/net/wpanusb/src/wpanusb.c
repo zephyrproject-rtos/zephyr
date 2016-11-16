@@ -27,6 +27,7 @@
 #include <uart.h>
 
 #include <misc/util.h>
+#include <misc/shell.h>
 
 #include <net/buf.h>
 
@@ -574,6 +575,19 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 	return 0;
 }
 
+static int shell_cmd_help(int argc, char *argv[])
+{
+	/* Keep the commands in alphabetical order */
+	printf("wpanusb help\n");
+
+	return 0;
+}
+
+struct shell_cmd commands[] = {
+	{ "help", shell_cmd_help, "help" },
+	{ NULL, NULL }
+};
+
 void main(void)
 {
 	wpanusb_start(&__dev);
@@ -601,4 +615,6 @@ void main(void)
 	/* TODO: Initialize more */
 
 	SYS_LOG_DBG("radio_api %p initialized", radio_api);
+
+	SHELL_REGISTER("wpan", commands);
 }
