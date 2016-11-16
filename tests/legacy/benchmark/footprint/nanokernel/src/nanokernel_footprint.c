@@ -114,9 +114,9 @@ static void fiberEntry(int message,	int arg1)
 	ARG_UNUSED(arg1);
 
 #ifdef TEST_max
-	printf((char *)message);
+	printf("%s", (char *)message);
 #else
-	printk((char *)message);
+	printk("%s", (char *)message);
 #endif /* TEST_max */
 }
 
