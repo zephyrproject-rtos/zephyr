@@ -37,6 +37,8 @@ int atoi(const char *s)
 	switch (*s) {
 	case '-':
 		neg = 1;
+		s++;
+		break;	/* artifact to quiet coverity warning */
 	case '+':
 		s++;
 	}
