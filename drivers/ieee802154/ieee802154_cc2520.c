@@ -487,7 +487,7 @@ static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 				       struct net_buf *buf, uint8_t len)
 {
-	uint8_t data[128];
+	uint8_t data[128+1];
 
 	data[0] = CC2520_INS_RXBUF;
 	memset(&data[1], 0, len);
@@ -527,7 +527,7 @@ static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 				       struct net_buf *buf, uint8_t len)
 {
-	uint8_t data[128];
+	uint8_t data[128+1];
 
 	spi->cmd_buf[0] = CC2520_INS_RXBUF;
 
@@ -645,6 +645,26 @@ static void cc2520_rx(int arg)
 
 		net_buf_frag_insert(buf, pkt_buf);
 
+#if defined(CONFIG_TI_CC2520_RAW)
+		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len)) {
+			SYS_LOG_ERR("No content read\n");
+			goto flush;
+		}
+
+		if (!(pkt_buf->data[pkt_len - 1] & CC2520_FCS_CRC_OK)) {
+			goto out;
+		}
+
+		cc2520->lqi = pkt_buf->data[pkt_len - 1] &
+			CC2520_FCS_CORRELATION;
+		if (cc2520->lqi <= 50) {
+			cc2520->lqi = 0;
+		} else if (cc2520->lqi >= 110) {
+			cc2520->lqi = 255;
+		} else {
+			cc2520->lqi = (cc2520->lqi - 50) << 2;
+		}
+#else
 		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len - 2)) {
 			SYS_LOG_ERR("No content read\n");
 			goto flush;
@@ -654,6 +674,7 @@ static void cc2520_rx(int arg)
 			SYS_LOG_ERR("Bad packet CRC\n");
 			goto out;
 		}
+#endif
 
 		if (ieee802154_radio_handle_ack(cc2520->iface, buf) == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled\n");
