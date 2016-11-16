@@ -71,8 +71,8 @@ void main(void)
 	/* Fake personalization and additional_input (replace by appropriate
 	 * values): */
 	/* e.g.: hostname+timestamp */
-	uint8_t *personalization = (uint8_t *) "HOSTNAME";
-	uint8_t *additional_input = (uint8_t *) "additional input";
+	uint8_t personalization[] = "HOSTNAME";
+	uint8_t additional_input[] = "additional input";
 
 	TC_PRINT("HMAC-PRNG test#1 (init):\n");
 	if (tc_hmac_prng_init(&h, personalization,
