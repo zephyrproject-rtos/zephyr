@@ -479,7 +479,7 @@ struct zoap_pending *zoap_pending_next_to_expire(
 
 #define LAST_TIMEOUT (2345 * 4)
 
-static uint16_t next_timeout(uint16_t previous)
+static int32_t next_timeout(int32_t previous)
 {
 	switch (previous) {
 	case 0:
@@ -497,7 +497,7 @@ static uint16_t next_timeout(uint16_t previous)
 
 bool zoap_pending_cycle(struct zoap_pending *pending)
 {
-	uint16_t old = pending->timeout;
+	int32_t old = pending->timeout;
 
 	pending->timeout = next_timeout(pending->timeout);
 

@@ -210,7 +210,7 @@ typedef int (*zoap_reply_t)(const struct zoap_packet *response,
  */
 struct zoap_pending {
 	struct zoap_packet request;
-	uint16_t timeout;
+	int32_t timeout;
 };
 
 /**
