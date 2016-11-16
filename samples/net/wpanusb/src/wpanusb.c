@@ -347,14 +347,14 @@ static int set_pan_id(void *data, int len)
 
 static int start(void)
 {
-	SYS_LOG_DBG("");
+	SYS_LOG_INF("Start IEEE 802.15.4 device");
 
 	return radio_api->start(ieee802154_dev);
 }
 
 static int stop(void)
 {
-	SYS_LOG_DBG("");
+	SYS_LOG_INF("Stop IEEE 802.15.4 device");
 
 	return radio_api->stop(ieee802154_dev);
 }
