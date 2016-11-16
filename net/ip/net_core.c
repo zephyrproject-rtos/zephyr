@@ -893,7 +893,7 @@ static void net_tx_fiber(void)
 
 	wait_next:
 		/* Check stack usage (no-op if not enabled) */
-		net_analyze_stack("TX fiber", tx_fiber_stack,
+		net_analyze_stack("TX fiber", (unsigned char *)tx_fiber_stack,
 				  sizeof(tx_fiber_stack));
 
 		net_print_statistics();
@@ -911,7 +911,7 @@ static void net_rx_fiber(void)
 		buf = net_buf_get_timeout(&netdev.rx_queue, 0, TICKS_UNLIMITED);
 
 		/* Check stack usage (no-op if not enabled) */
-		net_analyze_stack("RX fiber", rx_fiber_stack,
+		net_analyze_stack("RX fiber", (unsigned char *)rx_fiber_stack,
 				  sizeof(rx_fiber_stack));
 
 		NET_DBG("Received buf %p\n", buf);
@@ -965,8 +965,8 @@ static void net_timer_fiber(void)
 					uint32_t new_print;
 
 					net_analyze_stack("timer fiber",
-							  timer_fiber_stack,
-						  sizeof(timer_fiber_stack));
+					    (unsigned char *)timer_fiber_stack,
+					    sizeof(timer_fiber_stack));
 					new_print = curr + PRINT_CYCLE;
 					if (new_print > curr) {
 						next_print = new_print;
