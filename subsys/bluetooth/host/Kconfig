@@ -243,17 +243,22 @@ config BLUETOOTH_MAX_PAIRED
 
 endif # BLUETOOTH_CONN
 
+endif # BLUETOOTH_HCI_HOST
+
 config BLUETOOTH_TINYCRYPT_ECC
 	bool "Use TinyCrypt library for ECDH"
+	select TINYCRYPT
 	select TINYCRYPT_ECC_DH
+	depends on BLUETOOTH_HCI_RAW || BLUETOOTH_HCI_HOST
 	help
 	  If this option is set TinyCrypt library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
-	  If not set controller crypto is used for ECDH and if
-	  controller doesn't support required HCI commands LE Secure
-	  Connections support will be disabled.
-
-endif # BLUETOOTH_HCI_HOST
+	  In builds including the BLE Host, if not set the controller crypto is
+	  used for ECDH and if the controller doesn't support the required HCI
+	  commands the LE Secure Connections support will be disabled.
+	  In builds including the HCI Raw interface and the BLE Controller, this
+	  option injects support for the 2 HCI commands required for LE Secure
+	  Connections so that Hosts can make use of those.
 
 config BLUETOOTH_MAX_CONN
 	int "Maximum number of simultaneous connections"

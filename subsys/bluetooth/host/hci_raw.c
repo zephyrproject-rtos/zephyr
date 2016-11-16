@@ -20,9 +20,12 @@
 #include <atomic.h>
 
 #include <bluetooth/hci_driver.h>
+#include <bluetooth/hci_raw.h>
 #include <bluetooth/log.h>
 
+#include "hci_ecc.h"
 #include "monitor.h"
+#include "hci_raw_internal.h"
 
 static struct k_fifo *raw_rx;
 
@@ -38,10 +41,7 @@ static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
 		    BT_BUF_EVT_SIZE, &avail_hci_evt, NULL,
 		    sizeof(uint8_t));
 
-static struct bt_dev {
-	/* Registered HCI driver */
-	struct bt_hci_driver	*drv;
-} bt_dev;
+struct bt_dev_raw bt_dev;
 
 int bt_hci_driver_register(struct bt_hci_driver *drv)
 {
@@ -129,6 +129,8 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 		BT_ERR("No HCI driver registered");
 		return -ENODEV;
 	}
+
+	bt_hci_ecc_init();
 
 	err = drv->open();
 	if (err) {

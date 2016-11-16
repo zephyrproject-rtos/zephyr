@@ -31,7 +31,12 @@
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+#ifdef CONFIG_BLUETOOTH_HCI_RAW
+#include <bluetooth/hci_raw.h>
+#include "hci_raw_internal.h"
+#else
 #include "hci_core.h"
+#endif
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #undef BT_DBG
@@ -208,10 +213,13 @@ static void ecc_thread(void *p1, void *p2, void *p3)
 {
 	while (true) {
 		struct net_buf *buf;
+		struct bt_hci_cmd_hdr *chdr;
+		uint16_t opcode;
 
 		buf = k_fifo_get(&ecc_queue, K_FOREVER);
-
-		switch (bt_hci_get_cmd_opcode(buf)) {
+		chdr = (void *)buf->data;
+		opcode = sys_le16_to_cpu(chdr->opcode);
+		switch (opcode) {
 		case BT_HCI_OP_LE_P256_PUBLIC_KEY:
 			emulate_le_p256_public_key_cmd(buf);
 			break;
@@ -220,7 +228,7 @@ static void ecc_thread(void *p1, void *p2, void *p3)
 			break;
 		default:
 			BT_ERR("Unhandled command for ECC task (opcode %x)",
-			       bt_hci_get_cmd_opcode(buf));
+			       opcode);
 			net_buf_unref(buf);
 			break;
 		}
@@ -247,7 +255,10 @@ static void clear_ecc_events(struct net_buf *buf)
 static int ecc_send(struct net_buf *buf)
 {
 	if (bt_buf_get_type(buf) == BT_BUF_CMD) {
-		switch (bt_hci_get_cmd_opcode(buf)) {
+
+		struct bt_hci_cmd_hdr *chdr = (void *)buf->data;
+
+		switch (sys_le16_to_cpu(chdr->opcode)) {
 		case BT_HCI_OP_LE_P256_PUBLIC_KEY:
 		case BT_HCI_OP_LE_GENERATE_DHKEY:
 			net_buf_put(&ecc_queue, buf);

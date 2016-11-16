@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
- * Copyright (c) 2016 Vinayak Kariappa Chettimada
+ * Copyright (c) 2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef __BT_HCI_RAW_INTERNAL_H
+#define __BT_HCI_RAW_INTERNAL_H
 
-#ifndef _HCI_CONTROLLER_H_
-#define _HCI_CONTROLLER_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int hci_cmd_handle(struct net_buf *cmd, struct net_buf *evt);
-int hci_acl_handle(struct net_buf *acl);
-void hci_evt_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);
-void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);
-void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num);
-void hci_le_rand(void *buf, uint8_t len);
-#endif /* _HCI_CONTROLLER_H_ */
+struct bt_dev_raw {
+	/* Registered HCI driver */
+	struct bt_hci_driver	*drv;
+};
+
+extern struct bt_dev_raw bt_dev;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __BT_HCI_RAW_INTERNAL_H */
