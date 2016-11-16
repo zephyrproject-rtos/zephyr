@@ -132,7 +132,7 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	 * values defined by clk_rtc_div and by QMSI's clk_rtc_div_t match for
 	 * both D2000 and SE.
 	 */
-	qm_cfg.prescaler = RTC_DIVIDER;
+	qm_cfg.prescaler = (clk_rtc_div_t)RTC_DIVIDER;
 
 	rtc_critical_region_start(dev);
 
