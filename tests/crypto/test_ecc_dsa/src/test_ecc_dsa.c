@@ -334,6 +334,8 @@ int verify_vectors(TCSha256State_t hash, char **msg_vec, char **qx_vec,
 	int rc = TC_FAIL;
 
 	for (int i = 0; i < tests; i++) {
+		int hash_dwords;
+
 		str_to_scalar(pub.x, NUM_ECC_DIGITS, qx_vec[i]);
 		str_to_scalar(pub.y, NUM_ECC_DIGITS, qy_vec[i]);
 		str_to_scalar(r, NUM_ECC_DIGITS, r_vec[i]);
@@ -358,11 +360,10 @@ int verify_vectors(TCSha256State_t hash, char **msg_vec, char **qx_vec,
 		/* if digest larger than ECC scalar, drop the end
 		 * if digest smaller than ECC scalar, zero-pad front
 		 */
-		int hash_dwords = TC_SHA256_DIGEST_SIZE / 4;
-
-		if (hash_dwords > NUM_ECC_DIGITS) {
-			hash_dwords = NUM_ECC_DIGITS;
-		}
+		/* Note: here it is assumed that:
+		 * NUM_ECC_DIGITS * 4 == TC_SHA256_DIGEST_SIZE
+		 */
+		hash_dwords = TC_SHA256_DIGEST_SIZE / 4;
 
 		memset(dig32, 0, NUM_ECC_BYTES - 4 * hash_dwords);
 		ecc_bytes2native(dig32 + (NUM_ECC_DIGITS - hash_dwords),
