@@ -67,7 +67,7 @@ void power_soc_deep_sleep()
  * The variable __x86_restore_info is defined in the linker script as a new
  * and independent memory segment.
  */
-extern uint32_t __x86_restore_info[];
+extern uint32_t *__x86_restore_info;
 /*
  * The stack pointer is saved in the global variable sp_restore_storage
  * by qm_x86_save_context() before sleep and it is restored by
