@@ -68,6 +68,7 @@ int sign_vectors(TCSha256State_t hash, char **d_vec, char **k_vec,
 	int rc = TC_FAIL;
 
 	for (int i = 0; i < tests; i++) {
+		int hash_dwords;
 
 		/* use keygen test to generate+validate pubkey */
 		rc = keygen_vectors(&point, d_vec+i, qx_vec+i, qy_vec+i, 1,
@@ -99,11 +100,10 @@ int sign_vectors(TCSha256State_t hash, char **d_vec, char **k_vec,
 		/* if digest larger than ECC scalar, drop the end
 		 * if digest smaller than ECC scalar, zero-pad front
 		 */
-		int hash_dwords = TC_SHA256_DIGEST_SIZE / 4;
-
-		if (hash_dwords > NUM_ECC_DIGITS) {
-			hash_dwords = NUM_ECC_DIGITS;
-		}
+		/* Note: here it is assumed that:
+		 * NUM_ECC_DIGITS * 4 == TC_SHA256_DIGEST_SIZE
+		 */
+		hash_dwords = TC_SHA256_DIGEST_SIZE / 4;
 
 		memset(dig32, 0, NUM_ECC_BYTES - 4 * hash_dwords);
 		ecc_bytes2native(dig32+(NUM_ECC_DIGITS - hash_dwords), digest);
