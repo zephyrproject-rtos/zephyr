@@ -666,7 +666,7 @@ static void cc2520_rx(int arg, int unused2)
 		}
 
 		net_analyze_stack("CC2520 Rx Fiber stack",
-				  cc2520->cc2520_rx_stack,
+				  (unsigned char *)cc2520->cc2520_rx_stack,
 				  CONFIG_CC2520_RX_STACK_SIZE);
 		goto flush;
 error:
