@@ -410,7 +410,7 @@ uint32_t test_vector_8(void)
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
 	};
 
-	uint8_t *data = NULL;
+	uint8_t data[] = {};
 
 	struct tc_ccm_mode_struct c;
 	struct tc_aes_key_sched_struct sched;
@@ -426,20 +426,25 @@ uint32_t test_vector_8(void)
 		goto exitTest1;
 	}
 
-	if (tc_ccm_generation_encryption(ciphertext, hdr, sizeof(hdr), data, 0, &c) == 0) {
+	result = tc_ccm_generation_encryption(ciphertext, hdr, sizeof(hdr),
+					      data, sizeof(data), &c);
+	if (result == 0) {
 		TC_ERROR("ccm_encrypt failed in %s.\n", __func__);
 		result = TC_FAIL;
 		goto exitTest1;
 	}
 
-	if (tc_ccm_decryption_verification(decrypted, hdr, sizeof(hdr),
-					   ciphertext, mlen, &c) == 0) {
+	result = tc_ccm_decryption_verification(decrypted, hdr, sizeof(hdr),
+						ciphertext, mlen, &c);
+	if (result == 0) {
 		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
 		show_str("\t\tExpected", data, sizeof(data));
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 		result = TC_FAIL;
 		goto exitTest1;
 	}
+
+	result = TC_PASS;
 
 exitTest1:
 	TC_END_RESULT(result);
