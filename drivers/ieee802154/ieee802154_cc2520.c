@@ -878,6 +878,7 @@ static int cc2520_start(struct device *dev)
 	if (!instruct_sxoscon(&cc2520->spi) ||
 	    !instruct_srxon(&cc2520->spi) ||
 	    !verify_osc_stabilization(cc2520)) {
+		SYS_LOG_ERR("Error starting CC2520\n");
 		return -EIO;
 	}
 
@@ -902,6 +903,7 @@ static int cc2520_stop(struct device *dev)
 
 	if (!instruct_srfoff(&cc2520->spi) ||
 	    !instruct_sxoscoff(&cc2520->spi)) {
+		SYS_LOG_ERR("Error stopping CC2520\n");
 		return -EIO;
 	}
 
