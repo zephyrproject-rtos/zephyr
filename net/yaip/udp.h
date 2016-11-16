@@ -50,20 +50,18 @@ static inline struct net_buf *net_udp_append(struct net_context *context,
 					     struct net_buf *buf,
 					     uint16_t port)
 {
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		NET_UDP_BUF(buf)->src_port =
-			net_sin((struct sockaddr *)&context->local)->
-								sin_port;
-		NET_UDP_BUF(buf)->dst_port = htons(port);
+	NET_UDP_BUF(buf)->src_port =
+		net_sin((struct sockaddr *)&context->local)->
+							sin_port;
+	NET_UDP_BUF(buf)->dst_port = htons(port);
 
-		net_buf_add(buf->frags, sizeof(struct net_udp_hdr));
+	net_buf_add(buf->frags, sizeof(struct net_udp_hdr));
 
-		NET_UDP_BUF(buf)->len = htons(net_buf_frags_len(buf) -
-					      net_nbuf_ip_hdr_len(buf));
+	NET_UDP_BUF(buf)->len = htons(net_buf_frags_len(buf) -
+				      net_nbuf_ip_hdr_len(buf));
 
-		net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
-				     sizeof(struct net_udp_hdr));
-	}
+	net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
+			     sizeof(struct net_udp_hdr));
 
 	return buf;
 }
