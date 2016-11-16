@@ -81,7 +81,7 @@ that are 400 bytes long, each of which is aligned to a 4-byte boundary..
     k_mem_slab_init(&my_slab, my_slab_buffer, 400, 6);
 
 Alternatively, a memory slab can be defined and initialized at compile time
-by calling :c:macro:`K_MEM_SLAB_DEFINE()`.
+by calling :c:macro:`K_MEM_SLAB_DEFINE`.
 
 The following code has the same effect as the code segment above. Observe
 that the macro defines both the memory slab and its buffer.
@@ -146,6 +146,7 @@ APIs
 
 The following memory slab APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_MEM_SLAB_DEFINE`
 * :cpp:func:`k_mem_slab_init()`
 * :cpp:func:`k_mem_slab_alloc()`
 * :cpp:func:`k_mem_slab_free()`

@@ -68,7 +68,7 @@ buffer capable of holding 100 bytes and is aligned to a 4-byte boundary.
     k_pipe_init(&my_pipe, my_ring_buffer, sizeof(my_ring_buffer));
 
 Alternatively, a pipe can be defined and initialized at compile time by
-calling :c:macro:`K_PIPE_DEFINE()`.
+calling :c:macro:`K_PIPE_DEFINE`.
 
 The following code has the same effect as the code segment above. Observe
 that that macro defines both the pipe and its ring buffer.
@@ -179,6 +179,7 @@ APIs
 
 The following message queue APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_PIPE_DEFINE`
 * :cpp:func:`k_pipe_init()`
 * :cpp:func:`k_pipe_put()`
 * :cpp:func:`k_pipe_get()`

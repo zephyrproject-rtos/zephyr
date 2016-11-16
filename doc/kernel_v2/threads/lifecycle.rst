@@ -169,7 +169,7 @@ The following code spawns a thread that starts immediately.
                                     MY_PRIORITY, 0, K_NO_WAIT);
 
 Alternatively, a thread can be spawned at compile time by calling
-:c:macro:`K_THREAD_DEFINE()`. Observe that the macro defines
+:c:macro:`K_THREAD_DEFINE`. Observe that the macro defines
 the stack area and thread id variables automatically.
 
 The following code has the same effect as the code segment above.
@@ -228,6 +228,7 @@ APIs
 
 The following thread APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_THREAD_DEFINE`
 * :cpp:func:`k_thread_spawn()`
 * :cpp:func:`k_thread_cancel()`
 * :cpp:func:`k_thread_abort()`

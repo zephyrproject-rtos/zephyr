@@ -60,7 +60,7 @@ semaphore by setting its count to 0 and its limit to 1.
     k_sem_init(&my_sem, 0, 1);
 
 Alternatively, a semaphore can be defined and initialized at compile time
-by calling :c:macro:`K_SEM_DEFINE()`.
+by calling :c:macro:`K_SEM_DEFINE`.
 
 The following code has the same effect as the code segment above.
 
@@ -130,6 +130,7 @@ APIs
 
 The following semaphore APIs are provided by :file:`kernel.h`:
 
+* :c:macro:`K_SEM_DEFINE`
 * :cpp:func:`k_sem_init()`
 * :cpp:func:`k_sem_give()`
 * :cpp:func:`k_sem_take()`

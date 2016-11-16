@@ -130,7 +130,7 @@ The following code defines and initializes an empty mailbox.
     k_mbox_init(&my_mailbox);
 
 Alternatively, a mailbox can be defined and initialized at compile time
-by calling :c:macro:`K_MBOX_DEFINE()`.
+by calling :c:macro:`K_MBOX_DEFINE`.
 
 The following code has the same effect as the code segment above.
 
@@ -634,6 +634,8 @@ APIs
 
 The following APIs for a mailbox are provided by :file:`kernel.h`:
 
+* :c:macro:`K_MBOX_DEFINE`
+* :cpp:func:`k_mbox_init()`
 * :cpp:func:`k_mbox_put()`
 * :cpp:func:`k_mbox_async_put()`
 * :cpp:func:`k_mbox_get()`
