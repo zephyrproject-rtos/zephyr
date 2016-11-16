@@ -1645,10 +1645,10 @@ enum net_verdict packet_received(struct net_conn *conn,
 	return NET_DROP;
 }
 
-int net_context_recv(struct net_context *context,
-		     net_context_recv_cb_t cb,
-		     int32_t timeout,
-		     void *user_data)
+static int recv_udp(struct net_context *context,
+		    net_context_recv_cb_t cb,
+		    int32_t timeout,
+		    void *user_data)
 {
 	struct sockaddr local_addr = {
 		.family = net_context_get_family(context),
@@ -1656,12 +1656,6 @@ int net_context_recv(struct net_context *context,
 	struct sockaddr *laddr = NULL;
 	uint16_t lport = 0;
 	int ret;
-
-	NET_ASSERT(context);
-
-	if (!net_context_is_used(context)) {
-		return -ENOENT;
-	}
 
 	if (context->conn_handler) {
 		net_conn_unregister(context->conn_handler);
@@ -1708,7 +1702,27 @@ int net_context_recv(struct net_context *context,
 				user_data,
 				&context->conn_handler);
 	if (ret < 0) {
-		context->recv_cb = NULL;
+		return ret;
+	}
+
+	return ret;
+}
+
+int net_context_recv(struct net_context *context,
+		     net_context_recv_cb_t cb,
+		     int32_t timeout,
+		     void *user_data)
+{
+	int ret;
+
+	NET_ASSERT(context);
+
+	if (!net_context_is_used(context)) {
+		return -ENOENT;
+	}
+
+	ret = recv_udp(context, cb, timeout, user_data);
+	if (ret) {
 		return ret;
 	}
 
