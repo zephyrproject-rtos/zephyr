@@ -17,7 +17,6 @@
 
 menuconfig BLUETOOTH
 	bool "Bluetooth support"
-	select NANO_TIMEOUTS
 	select NET_BUF
 	help
 	  This option enables Bluetooth support.
