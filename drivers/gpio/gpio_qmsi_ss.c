@@ -262,8 +262,8 @@ static inline void ss_qmsi_port_config(struct device *port, int flags)
 static inline int ss_gpio_qmsi_config(struct device *port, int access_op,
 				      uint32_t pin, int flags)
 {
-	if (((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) ||
-	    ((flags & GPIO_DIR_IN) && (flags & GPIO_DIR_OUT))) {
+	/* check for an invalid pin configuration */
+	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
 		return -EINVAL;
 	}
 
