@@ -72,21 +72,39 @@ void main(void)
 
 	spi = device_get_binding(SPI_DRV_NAME);
 
+	if (!spi) {
+		printk("SPI device not found\n");
+		return;
+	}
+
 	printk("Running...\n");
 
-	spi_configure(spi, &spi_conf);
-	spi_slave_select(spi, SPI_SLAVE);
+	if (spi_configure(spi, &spi_conf) != 0) {
+		printk("SPI config failed\n");
+		return;
+	}
+
+	if (spi_slave_select(spi, SPI_SLAVE) != 0) {
+		printk("SPI slave select failed\n");
+		return;
+	}
 
 	_spi_show(&spi_conf);
 
 	printk("Writing...\n");
-	spi_write(spi, (uint8_t *) wbuf, 6);
+	if (spi_write(spi, (uint8_t *) wbuf, 6) != 0) {
+		printk("SPI write failed\n");
+		return;
+	}
 
 	printk("SPI sent: %s\n", wbuf);
 	print_buf_hex(rbuf, 6);
 
 	strcpy((char *)wbuf, "So what then?");
-	spi_transceive(spi, wbuf, 14, rbuf, 16);
+	if (spi_transceive(spi, wbuf, 14, rbuf, 16) != 0) {
+		printk("SPI transceive failed\n");
+		return;
+	}
 
 	printk("SPI transceived: %s\n", rbuf);
 	print_buf_hex(rbuf, 6);
