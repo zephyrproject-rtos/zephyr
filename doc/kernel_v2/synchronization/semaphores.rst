@@ -101,7 +101,7 @@ A warning is issued if the semaphore is not obtained in time.
     {
         ...
 
-        if (k_sem_take(&my_sem, 50) != 0) {
+        if (k_sem_take(&my_sem, K_MSEC(50)) != 0) {
             printk("Input data not available!");
         } else {
             /* fetch available data */

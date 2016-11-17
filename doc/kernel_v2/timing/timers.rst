@@ -148,7 +148,7 @@ the timer's expiry function submits a work item to the
     ...
 
     /* start periodic timer that expires once every second */
-    k_timer_start(&my_timer, 1000, 1000);
+    k_timer_start(&my_timer, K_SECONDS(1), K_SECONDS(1));
 
 Reading Timer Status
 ====================
@@ -163,7 +163,7 @@ if the timer has expired on not.
     ...
 
     /* start one shot timer that expires after 200 ms */
-    k_timer_start(&my_status_timer, 200, 0);
+    k_timer_start(&my_status_timer, K_MSEC(200), 0);
 
     /* do work */
     ...
@@ -194,7 +194,7 @@ are separated by the specified time interval.
     ...
 
     /* start one shot timer that expires after 500 ms */
-    k_timer_start(&my_sync_timer, 500, 0);
+    k_timer_start(&my_sync_timer, K_MSEC(500), 0);
 
     /* do other work */
     ...

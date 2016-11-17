@@ -88,7 +88,27 @@ extern int sys_clock_hw_cycles_per_tick;
 #define SYS_CLOCK_HW_CYCLES_TO_NS_AVG(X, NCYCLES) \
 	(uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X) / NCYCLES)
 
+/**
+ * @defgroup clock_apis Kernel Clock APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @brief Compute nanoseconds from hardware clock cycles.
+ *
+ * This macro converts a time duration expressed in hardware clock cycles
+ * to the equivalent duration expressed in nanoseconds.
+ *
+ * @param X Duration in hardware clock cycles.
+ *
+ * @return Duration in nanoseconds.
+ */
 #define SYS_CLOCK_HW_CYCLES_TO_NS(X) (uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X))
+
+/**
+ * @} end defgroup clock_apis
+ */
 
 extern int64_t _sys_clock_tick_count;
 
