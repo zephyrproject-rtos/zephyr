@@ -63,10 +63,15 @@ void main(void)
 
 	while (1) {
 		struct sensor_value temp;
+		int rc;
 
-		sensor_sample_fetch(dev);
+		rc = sensor_sample_fetch(dev);
+		if (rc != 0) {
+			printf("sensor_sample_fetch error: %d\n", rc);
+			break;
+		}
+
 		sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
-
 		printf("temp: %d.%06d\n", temp.val1, temp.val2);
 
 		k_sleep(2000);
