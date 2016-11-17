@@ -15,7 +15,7 @@
  */
 
 /**
- * @brief Driver for UART port on STM32F10x, STM32F40x family processor.
+ * @brief Driver for UART port on STM32 family processor.
  *
  */
 
@@ -26,9 +26,9 @@
 struct uart_stm32_config {
 	struct uart_device_config uconf;
 	/* clock subsystem driving this peripheral */
-#ifdef CONFIG_SOC_SERIES_STM32F1X
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32L4X)
 	clock_control_subsys_t clock_subsys;
-#elif CONFIG_SOC_SERIES_STM32F4X
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_pclken pclken;
 #endif
 };

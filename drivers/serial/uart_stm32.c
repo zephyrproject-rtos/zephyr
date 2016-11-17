@@ -296,9 +296,9 @@ static int uart_stm32_init(struct device *dev)
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
-#ifdef CONFIG_SOC_SERIES_STM32F1X
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32L4X)
 	clock_control_on(data->clock, config->clock_subsys);
-#elif CONFIG_SOC_SERIES_STM32F4X
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
 	clock_control_on(data->clock,
 			(clock_control_subsys_t *)&config->pclken);
 #endif
@@ -338,6 +338,8 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_1 = {
 #elif CONFIG_SOC_SERIES_STM32F4X
 	.pclken = { .bus = STM32F4X_CLOCK_BUS_APB2,
 		    .enr = STM32F4X_CLOCK_ENABLE_USART1 },
+#elif CONFIG_SOC_SERIES_STM32L4X
+	.clock_subsys = UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_USART1),
 #endif	/* CONFIG_SOC_SERIES_STM32FX */
 };
 
@@ -360,6 +362,8 @@ static void uart_stm32_irq_config_func_1(struct device *dev)
 #define PORT_1_IRQ STM32F1_IRQ_USART1
 #elif CONFIG_SOC_SERIES_STM32F4X
 #define PORT_1_IRQ STM32F4_IRQ_USART1
+#elif CONFIG_SOC_SERIES_STM32L4X
+#define PORT_1_IRQ STM32L4_IRQ_USART1
 #endif
 	IRQ_CONNECT(PORT_1_IRQ,
 		CONFIG_UART_STM32_PORT_1_IRQ_PRI,
@@ -390,6 +394,8 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_2 = {
 #elif CONFIG_SOC_SERIES_STM32F4X
 	.pclken = { .bus = STM32F4X_CLOCK_BUS_APB1,
 		    .enr = STM32F4X_CLOCK_ENABLE_USART2 },
+#elif CONFIG_SOC_SERIES_STM32L4X
+	.clock_subsys = UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_USART2),
 #endif	/* CONFIG_SOC_SERIES_STM32FX */
 };
 
@@ -412,6 +418,8 @@ static void uart_stm32_irq_config_func_2(struct device *dev)
 #define PORT_2_IRQ STM32F1_IRQ_USART2
 #elif CONFIG_SOC_SERIES_STM32F4X
 #define PORT_2_IRQ STM32F4_IRQ_USART2
+#elif CONFIG_SOC_SERIES_STM32L4X
+#define PORT_2_IRQ STM32L4_IRQ_USART2
 #endif
 	IRQ_CONNECT(PORT_2_IRQ,
 		CONFIG_UART_STM32_PORT_2_IRQ_PRI,
@@ -441,6 +449,8 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_3 = {
 	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART3),
 #elif CONFIG_SOC_SERIES_STM32F4X
 	.clock_subsys = UINT_TO_POINTER(STM32F40X_CLOCK_SUBSYS_USART3),
+#elif CONFIG_SOC_SERIES_STM32L4X
+	.clock_subsys = UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_USART3),
 #endif	/* CONFIG_SOC_SERIES_STM32F4X */
 };
 
@@ -463,6 +473,8 @@ static void uart_stm32_irq_config_func_3(struct device *dev)
 #define PORT_3_IRQ STM32F1_IRQ_USART3
 #elif CONFIG_SOC_SERIES_STM32F4X
 #define PORT_3_IRQ STM32F4_IRQ_USART3
+#elif CONFIG_SOC_SERIES_STM32L4X
+#define PORT_3_IRQ STM32L4_IRQ_USART3
 #endif
 	IRQ_CONNECT(PORT_3_IRQ,
 		CONFIG_UART_STM32_PORT_3_IRQ_PRI,
