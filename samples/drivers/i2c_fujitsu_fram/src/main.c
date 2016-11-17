@@ -91,6 +91,7 @@ void main(void)
 	i2c_dev = device_get_binding("I2C_0");
 	if (!i2c_dev) {
 		printk("I2C: Device not found.\n");
+		return;
 	}
 
 	/* Do one-byte read/write */
