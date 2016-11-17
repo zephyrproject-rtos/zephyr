@@ -1251,7 +1251,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 {
 	uint16_t sdu_len;
 
-	if (!k_sem_take(&chan->rx.credits, K_NO_WAIT)) {
+	if (k_sem_take(&chan->rx.credits, K_NO_WAIT)) {
 		BT_ERR("No credits to receive packet");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
