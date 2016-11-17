@@ -237,14 +237,3 @@ of variable-size data items.
 .. doxygengroup:: ring_buffer_apis
    :project: Zephyr
    :content-only:
-
-Kernel Event Logger
-*******************
-
-The kernel event logger is a standardized mechanism to record events within the
-kernel while providing a single interface for the user to collect the data.
-(See :ref:`event_logger_v2`.)
-
-.. doxygengroup:: event_logger
-   :project: Zephyr
-   :content-only:
