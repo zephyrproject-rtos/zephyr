@@ -12,6 +12,6 @@ This section describes other services provided by the kernel.
    atomic.rst
    float.rst
    ring_buffers.rst
-   event_logger.rst
+   kernel_event_logger.rst
    c_library.rst
    cxx_support.rst
