@@ -46,9 +46,6 @@ extern "C" {
 #define K_PRIO_COOP(x) (-(CONFIG_NUM_COOP_PRIORITIES - (x)))
 #define K_PRIO_PREEMPT(x) (x)
 
-#define K_FOREVER (-1)
-#define K_NO_WAIT 0
-
 #define K_ANY NULL
 #define K_END NULL
 
@@ -547,17 +544,84 @@ extern void *k_thread_custom_data_get(void);
  * @} end addtogroup thread_apis
  */
 
-/**
- *  kernel timing
- */
-
 #include <sys_clock.h>
 
-/* Convenience helpers to convert durations into milliseconds */
+/**
+ * @addtogroup clock_apis
+ * @{
+ */
+
+/**
+ * @brief Generate null timeout delay.
+ *
+ * This macro generates a timeout delay that that instructs a kernel API
+ * not to wait if the requested operation cannot be performed immediately.
+ *
+ * @return Timeout delay value.
+ */
+#define K_NO_WAIT 0
+
+/**
+ * @brief Generate timeout delay from milliseconds.
+ *
+ * This macro generates a timeout delay that that instructs a kernel API
+ * to wait up to @a ms milliseconds to perform the requested operation.
+ *
+ * @param ms Duration in milliseconds.
+ *
+ * @return Timeout delay value.
+ */
 #define K_MSEC(ms)     (ms)
+
+/**
+ * @brief Generate timeout delay from seconds.
+ *
+ * This macro generates a timeout delay that that instructs a kernel API
+ * to wait up to @a s seconds to perform the requested operation.
+ *
+ * @param s Duration in seconds.
+ *
+ * @return Timeout delay value.
+ */
 #define K_SECONDS(s)   K_MSEC((s) * MSEC_PER_SEC)
+
+/**
+ * @brief Generate timeout delay from minutes.
+ *
+ * This macro generates a timeout delay that that instructs a kernel API
+ * to wait up to @a m minutes to perform the requested operation.
+ *
+ * @param m Duration in minutes.
+ *
+ * @return Timeout delay value.
+ */
 #define K_MINUTES(m)   K_SECONDS((m) * 60)
+
+/**
+ * @brief Generate timeout delay from hours.
+ *
+ * This macro generates a timeout delay that that instructs a kernel API
+ * to wait up to @a h hours to perform the requested operation.
+ *
+ * @param h Duration in hours.
+ *
+ * @return Timeout delay value.
+ */
 #define K_HOURS(h)     K_MINUTES((h) * 60)
+
+/**
+ * @brief Generate infinite timeout delay.
+ *
+ * This macro generates a timeout delay that that instructs a kernel API
+ * to wait as long as necessary to perform the requested operation.
+ *
+ * @return Timeout delay value.
+ */
+#define K_FOREVER (-1)
+
+/**
+ * @} end addtogroup clock_apis
+ */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -794,8 +858,7 @@ extern int32_t k_timer_remaining_get(struct k_timer *timer);
  */
 
 /**
- * @defgroup clock_apis Kernel Clock APIs
- * @ingroup kernel_apis
+ * @addtogroup clock_apis
  * @{
  */
 
@@ -866,7 +929,7 @@ extern uint32_t k_uptime_delta_32(int64_t *reftime);
 extern uint32_t k_cycle_get_32(void);
 
 /**
- * @} end defgroup clock_apis
+ * @} end addtogroup clock_apis
  */
 
 /**

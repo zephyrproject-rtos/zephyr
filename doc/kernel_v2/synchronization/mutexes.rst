@@ -130,7 +130,7 @@ available, and gives a warning if the mutex does not become availablee.
 
 .. code-block:: c
 
-    if (k_mutex_lock(&my_mutex, 100) == 0) {
+    if (k_mutex_lock(&my_mutex, K_MSEC(100)) == 0) {
         /* mutex successfully locked */
     } else {
         printf("Cannot lock XYZ display\n");

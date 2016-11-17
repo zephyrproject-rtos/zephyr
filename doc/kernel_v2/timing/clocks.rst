@@ -164,17 +164,10 @@ The following kernel clock APIs are provided by :file:`kernel.h`:
 * :cpp:func:`k_uptime_delta()`
 * :cpp:func:`k_uptime_delta_32()`
 * :cpp:func:`k_cycle_get_32()`
-
-The following kernel clock variables are provided by :file:`kernel.h`:
-
-:c:data:`sys_clock_ticks_per_sec`
-    The number of system clock ticks in a single second.
-
-:c:data:`sys_clock_hw_cycles_per_sec`
-    The number of hardware clock cycles in a single second.
-
-:c:data:`sys_clock_us_per_tick`
-    The number of microseconds in a single system clock tick.
-
-:c:data:`sys_clock_hw_cycles_per_tick`
-    The number of hardware clock cycles in a single system clock tick.
+* :c:macro:`SYS_CLOCK_HW_CYCLES_TO_NS`
+* :c:macro:`K_NO_WAIT`
+* :c:macro:`K_MSEC`
+* :c:macro:`K_SECONDS`
+* :c:macro:`K_MINUTES`
+* :c:macro:`K_HOURS`
+* :c:macro:`K_FOREVER`
