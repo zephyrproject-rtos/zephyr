@@ -64,7 +64,7 @@ void cb(void *param)
 
 	aio_cmp_dev = device_get_binding("AIO_CMP_0");
 
-	printf("*** %s triggered %s.\n", &p->name,
+	printf("*** %s triggered %s.\n", p->name,
 	      (p->pol == AIO_CMP_POL_RISE) ? "rising" : "falling"
 	);
 
@@ -93,7 +93,7 @@ void main(void)
 					cb, &cb_data);
 		if (ret)
 			printf("ERROR registering callback for %s (%d)\n",
-			      &cb_data.name, ret);
+			      cb_data.name, ret);
 	}
 
 	while (1) {
