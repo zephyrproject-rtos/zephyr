@@ -1670,6 +1670,7 @@ enum net_verdict packet_received(struct net_conn *conn,
 	return NET_DROP;
 }
 
+#if defined(CONFIG_NET_UDP)
 static int recv_udp(struct net_context *context,
 		    net_context_recv_cb_t cb,
 		    int32_t timeout,
@@ -1729,14 +1730,13 @@ static int recv_udp(struct net_context *context,
 
 	return ret;
 }
+#endif /* CONFIG_NET_UDP */
 
 int net_context_recv(struct net_context *context,
 		     net_context_recv_cb_t cb,
 		     int32_t timeout,
 		     void *user_data)
 {
-	int ret;
-
 	NET_ASSERT(context);
 
 	if (!net_context_is_used(context)) {
@@ -1745,7 +1745,7 @@ int net_context_recv(struct net_context *context,
 
 #if defined(CONFIG_NET_UDP)
 	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		ret = recv_udp(context, cb, timeout, user_data);
+		int ret = recv_udp(context, cb, timeout, user_data);
 		if (ret < 0) {
 			return ret;
 		}
