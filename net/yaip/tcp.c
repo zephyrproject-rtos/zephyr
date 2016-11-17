@@ -702,6 +702,43 @@ static void fin_timeout(struct k_work *work)
 	net_context_put(tcp->context);
 }
 
+#if NET_DEBUG
+static void validate_state_transition(enum net_tcp_state current,
+				      enum net_tcp_state new)
+{
+	static const uint16_t valid_transitions[] = {
+		[NET_TCP_CLOSED] = 1 << NET_TCP_LISTEN |
+			1 << NET_TCP_SYN_SENT,
+		[NET_TCP_LISTEN] = 1 << NET_TCP_SYN_RCVD |
+			1 << NET_TCP_SYN_SENT,
+		[NET_TCP_SYN_RCVD] = 1 << NET_TCP_FIN_WAIT_1 |
+			1 << NET_TCP_ESTABLISHED |
+			1 << NET_TCP_LISTEN |
+			1 << NET_TCP_CLOSED,
+		[NET_TCP_SYN_SENT] = 1 << NET_TCP_CLOSED |
+			1 << NET_TCP_ESTABLISHED |
+			1 << NET_TCP_SYN_RCVD,
+		[NET_TCP_ESTABLISHED] = 1 << NET_TCP_LISTEN |
+			1 << NET_TCP_CLOSE_WAIT |
+			1 << NET_TCP_FIN_WAIT_1,
+		[NET_TCP_CLOSE_WAIT] = 1 << NET_TCP_LAST_ACK,
+		[NET_TCP_LAST_ACK] = 1 << NET_TCP_CLOSED,
+		[NET_TCP_FIN_WAIT_1] = 1 << NET_TCP_CLOSING |
+			1 << NET_TCP_FIN_WAIT_2 |
+			1 << NET_TCP_TIME_WAIT,
+		[NET_TCP_FIN_WAIT_2] = 1 << NET_TCP_TIME_WAIT,
+		[NET_TCP_CLOSING] = 1 << NET_TCP_TIME_WAIT,
+		[NET_TCP_TIME_WAIT] = 1 << NET_TCP_CLOSED
+	};
+
+	if (!(valid_transitions[current] & 1 << new)) {
+		NET_DBG("Invalid state transition: %s (%d) => %s (%d)",
+			net_tcp_state_str(current), current,
+			net_tcp_state_str(new), new);
+	}
+}
+#endif /* NET_DEBUG */
+
 void net_tcp_change_state(struct net_tcp *tcp,
 			  enum net_tcp_state new_state)
 {
@@ -717,6 +754,10 @@ void net_tcp_change_state(struct net_tcp *tcp,
 	NET_DBG("%s (%d) => %s (%d)",
 		net_tcp_state_str(tcp->state), tcp->state,
 		net_tcp_state_str(new_state), new_state);
+
+#if NET_DEBUG
+	validate_state_transition(tcp->state, new_state);
+#endif /* NET_DEBUG */
 
 	tcp->state = new_state;
 
