@@ -68,8 +68,6 @@ struct kat_table {
 uint32_t test_1(void)
 {
         uint32_t result = TC_PASS;
-
-        TC_PRINT("AES128 %s (NIST key schedule test):\n", __func__);
         const uint8_t nist_key[NUM_OF_NIST_KEYS] = {
                 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
                 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
@@ -89,7 +87,9 @@ uint32_t test_1(void)
                 } };
         struct tc_aes_key_sched_struct s;
 
-        if (tc_aes128_set_encrypt_key(&s, nist_key) == 0) {
+	TC_PRINT("AES128 %s (NIST key schedule test):\n", __func__);
+
+	if (tc_aes128_set_encrypt_key(&s, nist_key) == 0) {
                 TC_ERROR("AES128 test %s (NIST key schedule test) failed.\n",
 			 __func__);
                 result = TC_FAIL;
@@ -111,8 +111,6 @@ uint32_t test_1(void)
 int32_t test_2(void)
 {
         int result = TC_PASS;
-
-        TC_PRINT("AES128 %s (NIST encryption test):\n", __func__);
         const uint8_t nist_key[NUM_OF_NIST_KEYS] = {
                 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
                 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
@@ -127,6 +125,8 @@ int32_t test_2(void)
         };
         struct tc_aes_key_sched_struct s;
         uint8_t ciphertext[NUM_OF_NIST_KEYS];
+
+	TC_PRINT("AES128 %s (NIST encryption test):\n", __func__);
 
         (void)tc_aes128_set_encrypt_key(&s, nist_key);
         if (tc_aes_encrypt(ciphertext, nist_input, &s) == 0) {
@@ -173,8 +173,6 @@ uint32_t var_text_test(uint32_t r, const uint8_t *in, const uint8_t *out,
 uint32_t test_3(void)
 {
         uint32_t result = TC_PASS;
-
-        TC_PRINT("AES128 %s (NIST fixed-key and variable-text):\n", __func__);
         const uint8_t key[NUM_OF_NIST_KEYS] = {
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -1080,6 +1078,8 @@ uint32_t test_3(void)
         struct tc_aes_key_sched_struct s;
         uint32_t i;
 
+	TC_PRINT("AES128 %s (NIST fixed-key and variable-text):\n", __func__);
+
         (void)tc_aes128_set_encrypt_key(&s, key);
 
         for (i = 0; i < 128; ++i) {
@@ -1118,8 +1118,6 @@ uint32_t var_key_test(uint32_t r, const uint8_t *in, const uint8_t *out)
 uint32_t test_4(void)
 {
         uint32_t result = TC_PASS;
-
-        TC_PRINT("AES128 test #4 (NIST variable-key and fixed-text):\n");
 	const struct kat_table kat_tbl[NUM_OF_FIXED_KEYS] = {
                 {{
                                 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -2020,7 +2018,9 @@ uint32_t test_4(void)
         };
         uint32_t i;
 
-        for (i = 0; i < NUM_OF_FIXED_KEYS; ++i) {
+	TC_PRINT("AES128 test #4 (NIST variable-key and fixed-text):\n");
+
+	for (i = 0; i < NUM_OF_FIXED_KEYS; ++i) {
 		result = var_key_test(i, kat_tbl[i].in, kat_tbl[i].out);
                 if (result == TC_FAIL){
                         break;
