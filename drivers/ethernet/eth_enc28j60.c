@@ -132,7 +132,7 @@ static void eth_enc28j60_clear_eth_reg(struct device *dev, uint16_t reg_addr,
 }
 
 static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
-				   uint8_t buf_len)
+				   uint16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	uint8_t tx_buf[MAX_BUFFER_LENGTH + 1];
@@ -149,7 +149,7 @@ static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
 	tx_buf[0] = ENC28J60_SPI_WBM;
 
 	for (int i = 0; i < num_segments;
-	     ++i, index_buf += i * MAX_BUFFER_LENGTH) {
+	     ++i, index_buf += MAX_BUFFER_LENGTH) {
 
 		memcpy(tx_buf + 1, index_buf, MAX_BUFFER_LENGTH);
 
@@ -164,7 +164,7 @@ static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
 }
 
 static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
-				  uint8_t buf_len)
+				  uint16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	uint8_t *index_buf;
@@ -181,7 +181,7 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 	tx_buf[0] = ENC28J60_SPI_RBM;
 
 	for (int i = 0; i < num_segments;
-	     ++i, index_buf += i * MAX_BUFFER_LENGTH) {
+	     ++i, index_buf += MAX_BUFFER_LENGTH) {
 
 		spi_transceive(context->spi, tx_buf, MAX_BUFFER_LENGTH + 1,
 			       tx_buf, MAX_BUFFER_LENGTH + 1);
