@@ -56,6 +56,12 @@
 #define NUM_OF_NIST_KEYS 16
 #define NUM_OF_FIXED_KEYS 128
 
+
+struct kat_table {
+	uint8_t in[NUM_OF_NIST_KEYS];
+	uint8_t out[NUM_OF_NIST_KEYS];
+};
+
 /*
  * NIST test key schedule.
  */
@@ -173,10 +179,7 @@ uint32_t test_3(void)
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
-        const struct {
-                uint8_t in[NUM_OF_NIST_KEYS];
-                uint8_t out[NUM_OF_NIST_KEYS];
-        } kat_tbl[NUM_OF_FIXED_KEYS] = {
+	const struct kat_table kat_tbl[NUM_OF_FIXED_KEYS] = {
                 {{
                                 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -1117,10 +1120,7 @@ uint32_t test_4(void)
         uint32_t result = TC_PASS;
 
         TC_PRINT("AES128 test #4 (NIST variable-key and fixed-text):\n");
-        const struct {
-                uint8_t key[NUM_OF_NIST_KEYS];
-                uint8_t out[NUM_OF_NIST_KEYS];
-        } kat_tbl[NUM_OF_FIXED_KEYS] = {
+	const struct kat_table kat_tbl[NUM_OF_FIXED_KEYS] = {
                 {{
                                 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -2021,7 +2021,7 @@ uint32_t test_4(void)
         uint32_t i;
 
         for (i = 0; i < NUM_OF_FIXED_KEYS; ++i) {
-                result = var_key_test(i, kat_tbl[i].key, kat_tbl[i].out);
+		result = var_key_test(i, kat_tbl[i].in, kat_tbl[i].out);
                 if (result == TC_FAIL){
                         break;
                 }
