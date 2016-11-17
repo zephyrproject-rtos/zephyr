@@ -177,12 +177,13 @@ static inline sys_dnode_t *sys_dlist_peek_head_not_empty(sys_dlist_t *list)
  * @param node the node from which to get the next element in the list
  *
  * @return a pointer to the next element from a node, NULL if node is the tail
+ * or NULL (when node comes from reading the head of an empty list).
  */
 
 static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
 					       sys_dnode_t *node)
 {
-	return node == list->tail ? NULL : node->next;
+	return (!node || node == list->tail) ? NULL : node->next;
 }
 
 /**
