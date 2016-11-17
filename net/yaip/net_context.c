@@ -1114,12 +1114,10 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			goto reset;
 		}
 
-#if defined(CONFIG_NET_TCP)
 		new_context->tcp->recv_ack = context->tcp->recv_ack;
 		new_context->tcp->recv_max_ack = context->tcp->recv_max_ack;
 		new_context->tcp->send_seq = context->tcp->send_seq;
 		new_context->tcp->send_ack = context->tcp->send_ack;
-#endif
 
 #if defined(CONFIG_NET_IPV6)
 		if (net_context_get_family(context) == AF_INET6) {
