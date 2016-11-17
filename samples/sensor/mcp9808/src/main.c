@@ -71,7 +71,12 @@ void main(void)
 			break;
 		}
 
-		sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
+		rc = sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
+		if (rc != 0) {
+			printf("sensor_channel_get error: %d\n", rc);
+			break;
+		}
+
 		printf("temp: %d.%06d\n", temp.val1, temp.val2);
 
 		k_sleep(2000);
