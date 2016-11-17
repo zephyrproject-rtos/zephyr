@@ -40,8 +40,7 @@ static int gpio_k64_config(struct device *dev,
 	uint8_t i;
 
 	/* check for an invalid pin configuration */
-	if (((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) ||
-	    ((flags & GPIO_DIR_IN) && (flags & GPIO_DIR_OUT))) {
+	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
 		return -ENOTSUP;
 	}
 
