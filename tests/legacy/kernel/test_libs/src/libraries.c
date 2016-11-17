@@ -271,9 +271,9 @@ int strcpy_test(void)
 	TC_PRINT("\tstrcpy ...\t");
 
 	memset(buffer, '\0', BUFSIZE);
-	strcpy(buffer, "10 chars!!\0");
+	strcpy(buffer, "10 chars!\0");
 
-	if (strcmp(buffer, "10 chars!!\0") != 0) {
+	if (strcmp(buffer, "10 chars!\0") != 0) {
 		TC_PRINT("failed\n");
 		return TC_FAIL;
 	}
