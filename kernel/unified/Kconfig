@@ -294,7 +294,7 @@ choice
 config MEM_POOL_SPLIT_BEFORE_DEFRAG
 	bool "Split a larger block before merging smaller blocks"
 	help
-	This option instruct a memory pool to try splitting a larger unused
+	This option instructs a memory pool to try splitting a larger unused
 	block if an unused block of the required size is not available; only
 	if no such blocks exist will the memory pool try merging smaller unused
 	blocks. This policy attempts to limit the cost of performing automatic

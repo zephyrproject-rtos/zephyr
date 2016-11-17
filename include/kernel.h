@@ -309,7 +309,7 @@ struct _static_thread_data {
  *
  * The ID of the thread can be accessed using:
  *
- *    extern const k_tid_t @a name;
+ * @code extern const k_tid_t <name>; @endcode
  *
  * @param name Name of the thread.
  * @param stack_size Stack size in bytes.
@@ -748,7 +748,7 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  *
  * The timer can be accessed outside the module where it is defined using:
  *
- *    extern struct k_timer @a name;
+ * @code extern struct k_timer <name>; @endcode
  *
  * @param name Name of the timer variable.
  * @param expiry_fn Function to invoke each time the timer expires.
@@ -1044,7 +1044,7 @@ extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
  *
  * The fifo can be accessed outside the module where it is defined using:
  *
- *    extern struct k_fifo @a name;
+ * @code extern struct k_fifo <name>; @endcode
  *
  * @param name Name of the fifo.
  */
@@ -1134,7 +1134,7 @@ extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
  *
  * The lifo can be accessed outside the module where it is defined using:
  *
- *    extern struct k_lifo @a name;
+ * @code extern struct k_lifo <name>; @endcode
  *
  * @param name Name of the fifo.
  */
@@ -1229,7 +1229,7 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
  *
  * The stack can be accessed outside the module where it is defined using:
  *
- *    extern struct k_stack @a name;
+ * @code extern struct k_stack <name>; @endcode
  *
  * @param name Name of the stack.
  * @param stack_num_entries Maximum number of values that can be stacked.
@@ -1576,7 +1576,7 @@ struct k_mutex {
  *
  * The mutex can be accessed outside the module where it is defined using:
  *
- *    extern struct k_mutex @a name;
+ * @code extern struct k_mutex <name>; @endcode
  *
  * @param name Name of the mutex.
  */
@@ -1746,7 +1746,7 @@ static inline unsigned int k_sem_count_get(struct k_sem *sem)
  *
  * The semaphore can be accessed outside the module where it is defined using:
  *
- *    extern struct k_sem @a name;
+ * @code extern struct k_sem <name>; @endcode
  *
  * @param name Name of the semaphore.
  * @param initial_count Initial semaphore count.
@@ -1824,9 +1824,9 @@ extern void _alert_deliver(struct k_work *work);
 /**
  * @brief Statically define and initialize an alert.
  *
- * The alert is to be accessed outside the module where it is defined using:
+ * The alert can be accessed outside the module where it is defined using:
  *
- *    extern struct k_alert @a name;
+ * @code extern struct k_alert <name>; @endcode
  *
  * @param name Name of the alert.
  * @param alert_handler Action to take when alert is sent. Specify either
@@ -1947,7 +1947,7 @@ struct k_msgq {
  * The message queue can be accessed outside the module where it is defined
  * using:
  *
- *    extern struct k_msgq @a name;
+ * @code extern struct k_msgq <name>; @endcode
  *
  * @param q_name Name of the message queue.
  * @param q_msg_size Message size (in bytes).
@@ -2141,7 +2141,7 @@ struct k_mbox {
  *
  * The mailbox is to be accessed outside the module where it is defined using:
  *
- *    extern struct k_mbox @a name;
+ * @code extern struct k_mbox <name>; @endcode
  *
  * @param name Name of the mailbox.
  */
@@ -2323,7 +2323,7 @@ struct k_pipe {
  *
  * The pipe can be accessed outside the module where it is defined using:
  *
- *    extern struct k_pipe @a name;
+ * @code extern struct k_pipe <name>; @endcode
  *
  * @param name Name of the pipe.
  * @param pipe_buffer_size Size of the pipe's ring buffer (in bytes),
@@ -2469,7 +2469,7 @@ struct k_mem_slab {
  * The memory slab can be accessed outside the module where it is defined
  * using:
  *
- *    extern struct k_mem_slab @a name;
+ * @code extern struct k_mem_slab <name>; @endcode
  *
  * @param name Name of the memory slab.
  * @param slab_block_size Size of each memory block (in bytes).
@@ -2791,7 +2791,7 @@ static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
  * If the pool is to be accessed outside the module where it is defined, it
  * can be declared via
  *
- *    extern struct k_mem_pool @a name;
+ * @code extern struct k_mem_pool <name>; @endcode
  *
  * @param name Name of the memory pool.
  * @param min_size Size of the smallest blocks in the pool (in bytes).
