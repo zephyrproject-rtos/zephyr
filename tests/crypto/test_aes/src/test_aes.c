@@ -1,4 +1,6 @@
-/* test_aes.c - TinyCrypt  implementation of some AES-128 tests (including NIST tests) */
+/* test_aes.c - TinyCrypt
+ * Implementation of some AES-128 tests (including NIST tests)
+ */
 
 /*
  *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
@@ -31,15 +33,15 @@
  */
 
 /*
-  DESCRIPTION
-  This module tests the following AES routines:
-
-  Scenarios tested include:
-  - AES128 NIST key schedule test
-  - AES128 NIST encryption test
-  - AES128 NIST fixed-key and variable-text
-  - AES128 NIST variable-key and fixed-text
-*/
+ * DESCRIPTION
+ * This module tests the following AES routines:
+ *
+ * Scenarios tested include:
+ * - AES128 NIST key schedule test
+ * - AES128 NIST encryption test
+ * - AES128 NIST fixed-key and variable-text
+ * - AES128 NIST variable-key and fixed-text
+ */
 
 #include <tinycrypt/aes.h>
 #include <tinycrypt/constants.h>
