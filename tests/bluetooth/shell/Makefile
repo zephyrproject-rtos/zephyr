@@ -1,4 +1,4 @@
-# Makefile - Bluetooth shell Makefile for microkernel
+# Makefile - Bluetooth shell
 
 #
 # Copyright (c) 2015-2016 Intel Corporation
