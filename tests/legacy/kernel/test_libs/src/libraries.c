@@ -27,6 +27,7 @@ it guarantee that ALL functionality provided is working correctly.
  */
 
 #include <zephyr.h>
+#include <misc/__assert.h>
 #include <tc_util.h>
 
 #include <limits.h>
@@ -229,7 +230,11 @@ int strcmp_test(void)
 
 int strncmp_test(void)
 {
-	strncpy(buffer, "eeeeeeeeeeee", BUFSIZE);
+	const char pattern[] = "eeeeeeeeeeee";
+
+	/* Note we don't want to count the final \0 that sizeof will */
+	__ASSERT_NO_MSG(sizeof(pattern) - 1 > BUFSIZE);
+	memcpy(buffer, pattern, BUFSIZE);
 
 	TC_PRINT("\tstrncmp 0 ...\t");
 	if (strncmp(buffer, "fffff", 0) != 0) {
