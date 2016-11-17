@@ -74,10 +74,12 @@ static void _config(struct device *dev, uint32_t mask, int flags)
 				cfg->port->lsr = mask;
 			}
 
-			if (flags & GPIO_INT_ACTIVE_LOW) {
-				cfg->port->fellsr = mask;
-			} else if (flags & GPIO_INT_ACTIVE_HIGH) {
+			if (flags & GPIO_INT_ACTIVE_HIGH) {
+				/* Trigger in high level or rising edge */
 				cfg->port->rehlsr = mask;
+			} else {
+				/* Trigger in low level or falling edge */
+				cfg->port->fellsr = mask;
 			}
 		}
 	}
