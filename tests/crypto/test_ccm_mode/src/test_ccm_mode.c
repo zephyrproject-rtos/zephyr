@@ -103,7 +103,7 @@ uint32_t do_test(const uint8_t *key, uint8_t *nonce, size_t nlen,
 
 	if (tc_ccm_decryption_verification(decrypted, hdr, hlen, ciphertext, dlen+mlen, &c) == 0) {
 		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
-		show_str("\t\tExpected", data, sizeof(data));
+		show_str("\t\tExpected", data, dlen);
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 		result = TC_FAIL;
 		goto exitTest1;
