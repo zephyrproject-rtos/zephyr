@@ -198,19 +198,13 @@ void main(void)
 	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {
 		printf("Cannot find %s!\n", GPIO_DRV_NAME);
-
-		while (!gpio_dev) {
-			/* spin if error */
-		};
+		return;
 	}
 
 	i2c_dev = device_get_binding(I2C_DRV_NAME);
 	if (!i2c_dev) {
 		printf("Cannot find %s!\n", I2C_DRV_NAME);
-
-		while (!i2c_dev) {
-			/* spin if error */
-		};
+		return;
 	}
 
 	/*
