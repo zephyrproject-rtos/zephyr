@@ -311,6 +311,9 @@ void RegressionTask(void)
 	void *b;                   /* Pointer to memory block */
 	void *ptr[NUMBLOCKS];      /* Pointer to memory block */
 
+	/* not strictly necessary, but keeps coverity checks happy */
+	memset(ptr, 0, sizeof(ptr));
+
 	/* Part 1 of test */
 
 	TC_START("Test Microkernel Memory Maps");
