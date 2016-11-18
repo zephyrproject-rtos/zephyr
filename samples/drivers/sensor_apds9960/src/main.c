@@ -100,7 +100,7 @@ void apa102c_led_program(struct device *gpio_dev, uint32_t rgb)
 	apa102c_rgb_send(gpio_dev, APA102C_END_FRAME);
 }
 
-void apds9960_reg_write(struct device *i2c_dev,
+int apds9960_reg_write(struct device *i2c_dev,
 			uint8_t reg_addr, uint8_t reg_val)
 {
 	struct i2c_msg msg;
@@ -119,14 +119,12 @@ void apds9960_reg_write(struct device *i2c_dev,
 	if (ret) {
 		printf("Cannot write APDS9960 reg 0x%X to 0x%X\n",
 		      reg_addr, reg_val);
-
-		while (ret) {
-			/* spin if error */
-		}
 	}
+
+	return ret;
 }
 
-void apds9960_reg_read(struct device *i2c_dev, uint8_t reg_addr,
+int apds9960_reg_read(struct device *i2c_dev, uint8_t reg_addr,
 		       uint8_t *data, uint8_t data_len)
 {
 	struct i2c_msg msgs[2];
@@ -147,11 +145,9 @@ void apds9960_reg_read(struct device *i2c_dev, uint8_t reg_addr,
 	ret = i2c_transfer(i2c_dev, msgs, 2, APDS9960_ADDR);
 	if (ret) {
 		printf("Cannot read from APDS9960 reg 0x%X\n", reg_addr);
-
-		while (ret) {
-			/* spin if error */
-		}
 	}
+
+	return ret;
 }
 
 void apds9960_setup(struct device *i2c_dev, int gain)
