@@ -115,7 +115,7 @@ void load_store_low(void)
 	unsigned char *store_ptr = (unsigned char *)&float_reg_set_store;
 	unsigned char *load_ptr = (unsigned char *)&float_reg_set_load;
 
-	volatile char volatile_stack_var;
+	volatile char volatile_stack_var = 0;
 
 	PRINT_DATA("Floating point sharing tests started\n");
 	PRINT_LINE;
