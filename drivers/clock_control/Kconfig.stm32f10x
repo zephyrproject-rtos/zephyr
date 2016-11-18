@@ -20,7 +20,6 @@ if SOC_SERIES_STM32F1X
 menuconfig CLOCK_CONTROL_STM32F10X
 	bool
 	prompt "STM32F10x Reset & Clock Control"
-	depends on CLOCK_CONTROL && SOC_SERIES_STM32F1X
 	default y if SOC_SERIES_STM32F1X
 	help
 	 Enable driver for Reset & Clock Control subsystem found
@@ -121,4 +120,3 @@ config CLOCK_STM32F10X_APB2_PRESCALER
 	 0, 2, 4, 8, 16
 
 endif
-

@@ -78,7 +78,7 @@ struct regval_map {
 	int reg;
 };
 
-int map_reg_val(const struct regval_map *map, size_t cnt, int val)
+static int map_reg_val(const struct regval_map *map, size_t cnt, int val)
 {
 	for (int i = 0; i < cnt; i++) {
 		if (map[i].val == val) {
@@ -149,7 +149,7 @@ static int __pllmul(int mul)
 #endif	/* CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER */
 
 
-uint32_t __get_ahb_clock(uint32_t sysclk)
+static uint32_t __get_ahb_clock(uint32_t sysclk)
 {
 	/* AHB clock is generated based on SYSCLK  */
 	uint32_t sysclk_div = CONFIG_CLOCK_STM32F10X_AHB_PRESCALER;
@@ -160,7 +160,7 @@ uint32_t __get_ahb_clock(uint32_t sysclk)
 	return sysclk / sysclk_div;
 }
 
-uint32_t __get_apb_clock(uint32_t ahb_clock, uint32_t prescaler)
+static uint32_t __get_apb_clock(uint32_t ahb_clock, uint32_t prescaler)
 {
 	if (prescaler == 0) {
 		prescaler = 1;
@@ -216,7 +216,7 @@ static inline void __setup_flash(void)
 	}
 }
 
-int stm32f10x_clock_control_init(struct device *dev)
+static int stm32f10x_clock_control_init(struct device *dev)
 {
 	struct stm32f10x_rcc_data *data = dev->driver_data;
 	volatile struct stm32f10x_rcc *rcc =
