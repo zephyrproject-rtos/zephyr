@@ -44,15 +44,6 @@ config ETH_EN28J60_0_FULL_DUPLEX
 	Enable Full Duplex. Device is configured half duplex
 	when disabled.
 
-config ETH_ENC28J60_0_INIT_PRIORITY
-	int
-	prompt "ENC28J60C init priority"
-	default 80
-	help
-	Device driver initialization priority.
-	Since the device is connected to SPI bus, its driver has
-	to be initialized after the SPI one.
-
 config ETH_ENC28J60_0_GPIO_PORT_NAME
 	string "GPIO controller port name"
 	default "GPIO_0"

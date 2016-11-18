@@ -689,7 +689,7 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 NET_DEVICE_INIT(enc28j60_0, CONFIG_ETH_ENC28J60_0_NAME,
 		eth_enc28j60_init, &eth_enc28j60_0_runtime,
 		&eth_enc28j60_0_config,
-		CONFIG_ETH_ENC28J60_0_INIT_PRIORITY,
+		CONFIG_ETH_INIT_PRIORITY,
 		&api_funcs_0, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 1500);
 
 #endif /* CONFIG_ETH_ENC28J60_0 */

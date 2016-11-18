@@ -411,7 +411,7 @@ static struct eth_context eth_0_context = {
 NET_DEVICE_INIT(eth_ksdk_0, CONFIG_ETH_KSDK_0_NAME,
 		eth_0_init, &eth_0_context,
 		NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		CONFIG_ETH_INIT_PRIORITY,
 		&api_funcs_0, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 1500);
 
 static void eth_0_config_func(void)

@@ -312,7 +312,7 @@ static struct eth_context eth_0_context = {
 
 DEVICE_INIT(eth_ksdk_0, CONFIG_ETH_KSDK_0_NAME, eth_0_init,
 	    &eth_0_context, NULL,
-	    NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    NANOKERNEL, CONFIG_ETH_INIT_PRIORITY);
 
 static int eth_net_tx(struct net_buf *buf)
 {

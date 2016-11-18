@@ -31,6 +31,16 @@ config SYS_LOG_ETHERNET_LEVEL
 	  3 INFO, write SYS_LOG_INF in adition to previous levels
 	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
+config ETH_INIT_PRIORITY
+	int
+	prompt "Ethernet driver init priority"
+	default 80
+	help
+	  Ethernet device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
 menuconfig ETH_DW
 	bool
 	prompt "Synopsys DesignWare Ethernet driver"
