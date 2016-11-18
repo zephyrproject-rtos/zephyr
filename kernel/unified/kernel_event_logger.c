@@ -63,12 +63,16 @@ SYS_INIT(_sys_k_event_logger_init,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
-sys_k_timer_func_t _sys_k_timer_func;
-void sys_k_event_logger_set_timer(sys_k_timer_func_t func)
-{
-	_sys_k_timer_func = func;
-}
-#endif
+/*
+ * _sys_k_get_time()
+ *
+ * This function pointer can be invoked to generate an event timestamp.
+ * By default it uses the kernel's hardware clock, but can be changed
+ * to point to an application-defined routine.
+ *
+ */
+sys_k_timer_func_t _sys_k_get_time = sys_cycle_get_32;
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
 void sys_k_event_logger_put_timed(uint16_t event_id)
 {

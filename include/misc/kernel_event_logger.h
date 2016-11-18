@@ -57,8 +57,6 @@ static inline void _sys_k_event_logger_interrupt(void) {};
  * @{
  */
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
-
 /**
  * @typedef sys_k_timer_func_t
  * @brief Event timestamp generator function type.
@@ -74,15 +72,11 @@ typedef uint32_t (*sys_k_timer_func_t)(void);
  * @cond INTERNAL_HIDDEN
  */
 
-extern sys_k_timer_func_t _sys_k_timer_func;
-
-static inline uint32_t _sys_k_get_time(void)
-{
-	if (_sys_k_timer_func)
-		return _sys_k_timer_func();
-	else
-		return sys_cycle_get_32();
-}
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
+extern sys_k_timer_func_t _sys_k_get_time;
+#else
+#define _sys_k_get_time sys_cycle_get_32
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -108,11 +102,10 @@ static inline uint32_t _sys_k_get_time(void)
  *
  * @return N/A
  */
-void sys_k_event_logger_set_timer(sys_k_timer_func_t func);
-#else
-static inline uint32_t _sys_k_get_time(void)
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
+static inline void sys_k_event_logger_set_timer(sys_k_timer_func_t func)
 {
-	return sys_cycle_get_32();
+	_sys_k_get_time = func;
 }
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
