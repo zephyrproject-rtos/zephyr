@@ -32,7 +32,7 @@
 #include <board.h>
 #include <device.h>
 #include <misc/util.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
 
@@ -90,7 +90,7 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 
 	uint16_t total_len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
 
-	nano_sem_take(&context->tx_buf_sem, TICKS_UNLIMITED);
+	k_sem_take(&context->tx_buf_sem, K_FOREVER);
 
 	/* As context->frame_buf is shared resource used by both eth_tx
 	 * and eth_rx, we need to protect it with irq_lock.
@@ -237,7 +237,7 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		break;
 	case kENET_TxEvent:
 		/* Free the TX buffer. */
-		nano_sem_give(&context->tx_buf_sem);
+		k_sem_give(&context->tx_buf_sem);
 		break;
 	case kENET_ErrEvent:
 		/* Error event: BABR/BABT/EBERR/LC/RL/UN/PLR.  */
@@ -296,9 +296,9 @@ static int eth_0_init(struct device *dev)
 		.txBufferAlign = tx_buffer[0],
 	};
 
-	nano_sem_init(&context->tx_buf_sem);
+	k_sem_init(&context->tx_buf_sem, 0, UINT_MAX);
 	for (int i = 0; i < CONFIG_ETH_KSDK_TX_BUFFERS; i++) {
-		nano_sem_give(&context->tx_buf_sem);
+		k_sem_give(&context->tx_buf_sem);
 	}
 
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
