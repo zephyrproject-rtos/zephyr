@@ -1593,7 +1593,7 @@ segment:
 	}
 
 	/* Don't send more that TX MPS including SDU length */
-	len = min(buf->len, ch->tx.mps - sdu_hdr_len);
+	len = min(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
 	memcpy(net_buf_add(seg, len), buf->data, len);
 	net_buf_pull(buf, len);
 
