@@ -19,202 +19,153 @@
  * @brief Kernel event logger support.
  */
 
-
 #include <misc/event_logger.h>
 
 #ifndef __KERNEL_EVENT_LOGGER_H__
 #define __KERNEL_EVENT_LOGGER_H__
 
-/**
- * @brief Kernel Event Logger
- * @defgroup nanokernel_event_logger Kernel Event Logger
- * @{
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER
+/* pre-defined event types */
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 #define KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID             0x0001
-#endif
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 #define KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID                  0x0002
-#endif
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 #define KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID                      0x0003
-#endif
-
-#ifdef CONFIG_TASK_MONITOR
-#define KERNEL_EVENT_LOGGER_TASK_MON_TASK_STATE_CHANGE_EVENT_ID 0x0004
-#define KERNEL_EVENT_LOGGER_TASK_MON_CMD_PACKET_EVENT_ID        0x0005
-#define KERNEL_EVENT_LOGGER_TASK_MON_KEVENT_EVENT_ID            0x0006
-#endif
 
 #ifndef _ASMLANGUAGE
 
-/**
- * Global variable of the ring buffer that allows user to implement
- * their own reading routine.
- */
-struct event_logger sys_k_event_logger;
+extern struct event_logger sys_k_event_logger;
+extern int _sys_k_event_logger_mask;
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+extern void _sys_k_event_logger_enter_sleep(void);
+#else
+static inline void _sys_k_event_logger_enter_sleep(void) {};
+#endif
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
+extern void _sys_k_event_logger_interrupt(void);
+#else
+static inline void _sys_k_event_logger_interrupt(void) {};
+#endif
+
+/**
+ * @brief Kernel Event Logger
+ * @defgroup kernel_event_logger Kernel Event Logger
+ * @{
+ */
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
 
 /**
- * Callback used to set event timestamp
+ * @typedef sys_k_timer_func_t
+ * @brief Event timestamp generator function type.
+ *
+ * A timestamp generator function is executed when the kernel event logger
+ * generates an event containing a timestamp.
+ *
+ * @return Timestamp value (application-defined).
  */
-typedef uint32_t (*sys_k_timer_func)(void);
-extern sys_k_timer_func timer_func;
+typedef uint32_t (*sys_k_timer_func_t)(void);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+extern sys_k_timer_func_t _sys_k_timer_func;
 
 static inline uint32_t _sys_k_get_time(void)
 {
-	if (timer_func)
-		return timer_func();
+	if (_sys_k_timer_func)
+		return _sys_k_timer_func();
 	else
 		return sys_cycle_get_32();
 }
 
 /**
- * @brief Set kernel event logger timestamp function
- *
- * @details Calling this function permits to set the function
- * to be called by kernel event logger for setting the event
- * timestamp. By default, kernel event logger is using the
- * system timer. But on some boards where the timer driver
- * maintains the system timer cycle accumulator in software,
- * such as ones using the LOAPIC timer, the system timer behavior
- * leads to timestamp errors. For example, the timer interrupt is
- * logged with a wrong timestamp since the HW timer value has been
- * reset (periodic mode) but accumulated value not updated yet
- * (done later in the ISR).
- *
- * @param func Pointer to a function returning a 32-bit timer
- *             Prototype: uint32_t (*func)(void)
+ * INTERNAL_HIDDEN @endcond
  */
-void sys_k_event_logger_set_timer(sys_k_timer_func func);
+
+/**
+ * @brief Set kernel event logger timestamp function.
+ *
+ * This routine instructs the kernel event logger to call @a func
+ * whenever it needs to generate an event timestamp. By default,
+ * the kernel's hardware timer is used.
+ *
+ * @note
+ * On some boards the hardware timer is not a pure hardware up counter,
+ * which can lead to timestamp errors. For example, boards using the LOAPIC
+ * timer can run it in periodic mode, which requires software to update
+ * a count of accumulated cycles each time the timer hardware resets itself
+ * to zero. This can result in an incorrect timestamp being generated
+ * if it occurs after the timer hardware has reset but before the timer ISR
+ * has updated accumulated cycle count.
+ *
+ * @param func Address of timestamp function to be used.
+ *
+ * @return N/A
+ */
+void sys_k_event_logger_set_timer(sys_k_timer_func_t func);
 #else
 static inline uint32_t _sys_k_get_time(void)
 {
 	return sys_cycle_get_32();
 }
-#endif
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
-
-extern int _sys_k_event_logger_mask;
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
 /**
- * @brief Set kernel event logger filtering mask
+ * @brief Set kernel event logger filtering mask.
  *
- * @details Calling this macro sets the mask used to select which events
- * to store in the kernel event logger ring buffer. This flag can be set
- * at runtime and at any moment.
- * This capability is only available when CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
- * is set. If enabled, no event is enabled for logging at initialization.
- * The mask bits shall be set according to events ID defined in
- * kernel_event_logger.h
- * For example, to enable interrupt logging the following shall be done:
- * sys_k_event_logger_set_mask(sys_k_event_logger_get_mask |
- *                (1 << (KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID - 1)))
- * To disable it:
- * sys_k_event_logger_set_mask(sys_k_event_logger_get_mask &
- *                ~(1 << (KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID - 1)))
+ * This routine specifies which events are recorded by the kernel event logger.
+ * It can only be used when dynamic event logging has been configured.
  *
- * WARNING: task monitor events are not covered by this API. Please refer
- * to sys_k_event_logger_set_monitor_mask / sys_k_event_logger_get_monitor_mask
+ * Each mask bit corresponds to a kernel event type. The least significant
+ * mask bit corresponds to event type 1, the next bit to event type 2,
+ * and so on.
+ *
+ * @param value Bitmask indicating events to be recorded.
+ *
+ * @return N/A
  */
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
 static inline void sys_k_event_logger_set_mask(int value)
 {
 	_sys_k_event_logger_mask = value;
 }
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC */
 
 /**
- * @brief Get kernel event logger filtering mask
+ * @brief Get kernel event logger filtering mask.
  *
- * @details Calling this macro permits to read the mask used to select which
- * events are stored in the kernel event logger ring buffer. This macro can be
- * used at runtime and at any moment.
- * This capability is only available when CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
- * is set. If enabled, no event is enabled for logging at initialization.
+ * This routine indicates which events are currently being recorded by
+ * the kernel event logger. It can only be used when dynamic event logging
+ * has been configured. By default, no events are recorded.
  *
- * @see sys_k_event_logger_set_mask(value) for details
- *
- * WARNING: task monitor events are not covered by this API. Please refer
- * to sys_k_event_logger_set_monitor_mask / sys_k_event_logger_get_monitor_mask
+ * @return Bitmask indicating events that are being recorded.
  */
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
 static inline int sys_k_event_logger_get_mask(void)
 {
 	return _sys_k_event_logger_mask;
 }
-
-#ifdef CONFIG_TASK_MONITOR
-
-extern int _k_monitor_mask;
-
-/**
- * @brief Set task monitor filtering mask
- *
- * @details Calling this function sets the mask used to select which task monitor
- * events to store in the kernel event logger ring buffer. This flag can be set
- * at runtime and at any moment.
- * This capability is only available when CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
- * is set. If enabled, no event is enabled for logging at initialization
- * so CONFIG_TASK_MONITOR_MASK is ignored
- *
- * The mask bits shall be set according to monitor events defined in
- * micro_private.h
- *
- * For example, to enable k_swapper cmd logging the following shall be done:
- * sys_k_event_logger_set_monitor_mask(sys_k_event_logger_get_monitor_mask |
- *                (1 << (MON_KSERV - 1)))
- * To disable it:
- * sys_k_event_logger_set_mask(sys_k_event_logger_get_mask &
- *                ~(1 << (MON_KSERV - 1)))
- *
- */
-static inline void sys_k_event_logger_set_monitor_mask(int value)
-{
-	_k_monitor_mask = value;
-}
-
-/**
- * @brief Get task monitor filtering mask
- *
- * @details Calling this function permits to read the mask used to select which
- * task monitor events to store in the kernel event logger ring buffer. This
- * function can be used at runtime and at any moment.
- * This capability is only available when CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
- * is set. If enabled, no event is enabled for logging at initialization
- * so CONFIG_TASK_MONITOR_MASK is ignored
- *
- * @see sys_k_event_logger_set_monitor_mask() for details
- *
- */
-static inline int sys_k_event_logger_get_monitor_mask(void)
-{
-	return _k_monitor_mask;
-}
-
-#endif /* CONFIG_TASK_MONITOR */
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC */
 
 /**
- * @brief Check if an event type has to be logged or not
+ * @brief Indicate if an event type is currently being recorded.
  *
- * @details This function must be used before calling any sys_k_event_logger_put*
- * function. In case CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC is enabled, that function
- * permits to enable or disable the logging of each individual event at runtime
+ * This routine indicates if event type @a event_type should be recorded
+ * by the kernel event logger when the event occurs. The routine should be
+ * used by code that writes an event to the kernel event logger to ensure
+ * that only events of interest to the application are recorded.
  *
- * @param event_type   The identification of the event.
+ * @param event_type Event ID.
+ *
+ * @return 1 if event should be recorded, or 0 if not.
  *
  */
-
 static inline int sys_k_must_log_event(int event_type)
 {
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
@@ -225,159 +176,150 @@ static inline int sys_k_must_log_event(int event_type)
 }
 
 /**
- * @brief Sends a event message to the kernel event logger.
+ * @brief Write an event to the kernel event logger.
  *
- * @details Sends a event message to the kernel event logger
- * and informs that there are messages available.
+ * This routine writes an event message to the kernel event logger.
  *
- * @param event_id   The identification of the event.
- * @param data       Pointer to the data of the message.
- * @param data_size  Size of the data in 32-bit words.
+ * @param event_id   Event ID.
+ * @param event_data Address of event data.
+ * @param data_size  Size of event data (number of 32-bit words).
  *
- * @return No return value.
+ * @return N/A
  */
-#define sys_k_event_logger_put(event_id, data, data_size) \
-	sys_event_logger_put(&sys_k_event_logger, event_id, data, data_size)
-
+static inline void sys_k_event_logger_put(uint16_t event_id,
+					  uint32_t *event_data,
+					  uint8_t data_size)
+{
+#ifdef CONFIG_KERNEL_EVENT_LOGGER
+	sys_event_logger_put(&sys_k_event_logger, event_id,
+			     event_data, data_size);
+#endif /* CONFIG_KERNEL_EVENT_LOGGER */
+};
 
 /**
- * @brief Sends a event message to the kernel event logger with the current
- * timestamp.
+ * @brief Write an event to the kernel event logger (with timestamp only).
  *
- * @details Sends a event message to the kernel event logger and informs that
- * there messages available. The timestamp when the event occurred is stored
- * as part of the event message.
+ * This routine writes an event message to the kernel event logger.
+ * The event records a single 32-bit word containing a timestamp.
  *
- * @param event_id   The identification of the event.
+ * @param event_id Event ID.
  *
- * @return No return value.
+ * @return N/A
  */
-void sys_k_event_logger_put_timed(uint16_t event_id);
+#ifdef CONFIG_KERNEL_EVENT_LOGGER
+extern void sys_k_event_logger_put_timed(uint16_t event_id);
+#else
+static inline void sys_k_event_logger_put_timed(uint16_t event_id) {};
+#endif /* CONFIG_KERNEL_EVENT_LOGGER */
 
+/**
+ * @brief Retrieves a kernel event message, or returns without waiting.
+ *
+ * This routine retrieves the next recorded event from the kernel event logger,
+ * or returns immediately if no such event exists.
+ *
+ * @param event_id     Area to store event type ID.
+ * @param dropped      Area to store number of events that were dropped between
+ *                     the previous event and the retrieved event.
+ * @param event_data   Buffer to store event data.
+ * @param data_size    Size of event data buffer (number of 32-bit words).
+ *
+ * @retval positive_integer Number of event data words retrieved;
+ *         @a event_id, @a dropped, and @a buffer have been updated.
+ * @retval 0 Returned without waiting; no event was retrieved.
+ * @retval -EMSGSIZE Buffer too small; @a data_size now indicates
+ *         the size of the event to be retrieved.
+ */
+#ifdef CONFIG_KERNEL_EVENT_LOGGER
+static inline int sys_k_event_logger_get(uint16_t *event_id, uint8_t *dropped,
+				     uint32_t *event_data, uint8_t *data_size)
+{
+	return sys_event_logger_get(&sys_k_event_logger, event_id, dropped,
+				    event_data, data_size);
+}
+#endif /* CONFIG_KERNEL_EVENT_LOGGER */
 
 /**
  * @brief Retrieves a kernel event message.
  *
- * @details Retrieves a kernel event message copying it to the provided
- * buffer. If the buffer is smaller than the message size the function returns
- * an error. The function retrieves messages in FIFO order.
+ * This routine retrieves the next recorded event from the kernel event logger.
+ * If there is no such event the caller pends until it is available.
  *
- * @param event_id     Pointer to the id of the event fetched
- * @param dropped      Pointer to how many events were dropped
- * @param buffer       Pointer to the buffer where the message will be copied.
- * @param buffer_size  Size of the buffer in 32-bit words.
+ * @param event_id     Area to store event type ID.
+ * @param dropped      Area to store number of events that were dropped between
+ *                     the previous event and the retrieved event.
+ * @param event_data   Buffer to store event data.
+ * @param data_size    Size of event data buffer (number of 32-bit words).
  *
- * @return -EMSGSIZE if the buffer size is smaller than the message size,
- * the amount of 32-bit words copied or zero if there are no kernel event
- * messages available.
+ * @retval positive_integer Number of event data words retrieved;
+ *         @a event_id, @a dropped, and @a buffer have been updated.
+ * @retval -EMSGSIZE Buffer too small; @a data_size now indicates
+ *         the size of the event to be retrieved.
  */
-#define sys_k_event_logger_get(event_id, dropped, buffer, buffer_size) \
-	sys_event_logger_get(&sys_k_event_logger, event_id, dropped, buffer, \
-			     buffer_size)
-
-
-/**
- * @brief Retrieves a kernel event message, wait if there is no message
- * available.
- *
- * @details Retrieves a kernel event message copying it to the provided
- * buffer. If the buffer is smaller than the message size the function returns
- * an error. The function retrieves messages in FIFO order. If there is no
- * kernel event message available the caller pends until a new message is
- * logged.
- *
- * @param event_id     Pointer to the id of the event fetched
- * @param dropped      Pointer to how many events were dropped
- * @param buffer       Pointer to the buffer where the message will be copied.
- * @param buffer_size  Size of the buffer in 32-bit words.
- *
- * @return -EMSGSIZE if the buffer size is smaller than the message size, or
- * the amount of 32-bit words copied.
- */
-#define sys_k_event_logger_get_wait(event_id, dropped, buffer, buffer_size) \
-	sys_event_logger_get_wait(&sys_k_event_logger, event_id, dropped, \
-				  buffer, buffer_size)
-
-
-#ifdef CONFIG_NANO_TIMEOUTS
-
-/**
- * @brief Retrieves a kernel event message, wait with a timeout if there is
- * no profiling event messages available.
- *
- * @details Retrieves a kernel event message copying it to the provided
- * buffer. If the buffer is smaller than the message size the function returns
- * an error. The function retrieves messages in FIFO order. If there are no
- * kernel event messages available the caller pends until a new message is
- * logged or the timeout expires.
- *
- * @param event_id     Pointer to the id of the event fetched
- * @param dropped      Pointer to how many events were dropped
- * @param buffer       Pointer to the buffer where the message will be copied.
- * @param buffer_size  Size of the buffer in 32-bit words.
- * @param timeout      Timeout in ticks.
- *
- * @return -EMSGSIZE if the buffer size is smaller than the message size, the
- * amount of 32-bit words copied or zero if the timeout expires and the was no
- * message available.
- */
-#define sys_k_event_logger_get_wait_timeout(event_id, dropped, buffer, buffer_size, \
-				      timeout) \
-	sys_event_logger_get_wait_timeout(&sys_k_event_logger, event_id, \
-					  dropped, buffer, \
-					  buffer_size, timeout)
-#endif /* CONFIG_NANO_TIMEOUTS */
-
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-
-/**
- * @brief Register the fiber that calls the function as collector
- *
- * @details Initialize internal profiling data. This avoid registering
- * the context switch of the collector fiber when
- * CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH is enable.
- *
- * @return No return value.
- */
-void sys_k_event_logger_register_as_collector(void);
-#else /* !CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
-static inline void sys_k_event_logger_register_as_collector(void) {};
-#endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
-void _sys_k_event_logger_enter_sleep(void);
-#else
-static inline void _sys_k_event_logger_enter_sleep(void) {};
-#endif
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
-void _sys_k_event_logger_interrupt(void);
-#else
-static inline void _sys_k_event_logger_interrupt(void) {};
-#endif
-
-#endif /* _ASMLANGUAGE */
-
-#else /* !CONFIG_KERNEL_EVENT_LOGGER */
-
-#ifndef _ASMLANGUAGE
-
-static inline void sys_k_event_logger_put(uint16_t event_id, uint32_t *event_data,
-	uint8_t data_size) {};
-static inline void sys_k_event_logger_put_timed(uint16_t event_id) {};
-static inline void _sys_k_event_logger_enter_sleep(void) {};
-
-#endif /* _ASMLANGUAGE */
-
+#ifdef CONFIG_KERNEL_EVENT_LOGGER
+static inline int sys_k_event_logger_get_wait(uint16_t *event_id,
+		uint8_t *dropped, uint32_t *event_data, uint8_t *data_size)
+{
+	return sys_event_logger_get_wait(&sys_k_event_logger, event_id, dropped,
+					 event_data, data_size);
+}
 #endif /* CONFIG_KERNEL_EVENT_LOGGER */
+
+
+/**
+ * @brief Retrieves a kernel event message, or waits for a specified time.
+ *
+ * This routine retrieves the next recorded event from the kernel event logger.
+ * If there is no such event the caller pends until it is available or until
+ * the specified timeout expires.
+ *
+ * @param event_id     Area to store event type ID.
+ * @param dropped      Area to store number of events that were dropped between
+ *                     the previous event and the retrieved event.
+ * @param event_data   Buffer to store event data.
+ * @param data_size    Size of event data buffer (number of 32-bit words).
+ * @param timeout      Timeout in system clock ticks.
+ *
+ * @retval positive_integer Number of event data words retrieved;
+ *         @a event_id, @a dropped, and @a buffer have been updated.
+ * @retval 0 Waiting period timed out; no event was retrieved.
+ * @retval -EMSGSIZE Buffer too small; @a data_size now indicates
+ *         the size of the event to be retrieved.
+ */
+#if defined(CONFIG_KERNEL_EVENT_LOGGER) && defined(CONFIG_NANO_TIMEOUTS)
+static inline int sys_k_event_logger_get_wait_timeout(uint16_t *event_id,
+			uint8_t *dropped, uint32_t *event_data,
+			uint8_t *data_size, uint32_t timeout)
+{
+	return sys_event_logger_get_wait_timeout(&sys_k_event_logger, event_id,
+						 dropped, event_data,
+						 data_size, timeout);
+}
+#endif /* CONFIG_KERNEL_EVENT_LOGGER && CONFIG_NANO_TIMEOUTS */
+
+/**
+ * @brief Register thread that retrieves kernel events.
+ *
+ * This routine instructs the kernel event logger not to record context
+ * switch events for the calling thread. It is typically called by the thread
+ * that retrieves events from the kernel event logger.
+ *
+ * @return N/A
+ */
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
+void sys_k_event_logger_register_as_collector(void);
+#else
+static inline void sys_k_event_logger_register_as_collector(void) {};
+#endif
+
+/**
+* @} end defgroup kernel_event_logger
+*/
+
+#endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
 }
 #endif
-
-/**
-* @}
-*/
 
 #endif /* __KERNEL_EVENT_LOGGER_H__ */

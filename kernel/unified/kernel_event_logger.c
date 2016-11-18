@@ -27,6 +27,8 @@
 #include <kernel_event_logger_arch.h>
 #include <misc/__assert.h>
 
+struct event_logger sys_k_event_logger;
+
 uint32_t _sys_k_event_logger_buffer[CONFIG_KERNEL_EVENT_LOGGER_BUFFER_SIZE];
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
@@ -61,10 +63,10 @@ SYS_INIT(_sys_k_event_logger_init,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
-sys_k_timer_func timer_func;
-void sys_k_event_logger_set_timer(sys_k_timer_func func)
+sys_k_timer_func_t _sys_k_timer_func;
+void sys_k_event_logger_set_timer(sys_k_timer_func_t func)
 {
-	timer_func = func;
+	_sys_k_timer_func = func;
 }
 #endif
 
