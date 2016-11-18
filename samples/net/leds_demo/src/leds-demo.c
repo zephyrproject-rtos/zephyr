@@ -464,7 +464,7 @@ void main(void)
 {
 	static struct sockaddr_in6 any_addr = {
 		.sin6_family = AF_INET6,
-		.sin6_addr = ALL_NODES_LOCAL_COAP_MCAST,
+		.sin6_addr = IN6ADDR_ANY_INIT,
 		.sin6_port = htons(MY_COAP_PORT) };
 	int r;
 
