@@ -142,7 +142,7 @@ int sys_event_logger_get_wait_timeout(struct event_logger *logger,
 				      uint32_t *buffer, uint8_t *buffer_size,
 				      uint32_t timeout)
 {
-	if (k_sem_take(&(logger->sync_sema), timeout)) {
+	if (k_sem_take(&(logger->sync_sema), __ticks_to_ms(timeout))) {
 		return event_logger_get(logger, event_id, dropped_event_count,
 					buffer, buffer_size);
 	}
