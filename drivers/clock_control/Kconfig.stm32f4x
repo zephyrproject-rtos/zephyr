@@ -21,7 +21,6 @@ if SOC_SERIES_STM32F4X
 menuconfig CLOCK_CONTROL_STM32F4X
 	bool
 	prompt "STM32F4X Reset & Clock Control"
-	depends on CLOCK_CONTROL && SOC_SERIES_STM32F4X
 	default y if SOC_SERIES_STM32F4X
 	help
 	 Enable driver for Reset & Clock Control subsystem found
@@ -148,4 +147,3 @@ config CLOCK_STM32F4X_APB2_PRESCALER
 	 0, 2, 4, 8, 16. The APB2 clock must not exceed 84MHz.
 
 endif
-
