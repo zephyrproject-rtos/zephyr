@@ -167,17 +167,32 @@ static inline int _get_ready_q_q_index(int prio)
 	return prio + CONFIG_NUM_COOP_PRIORITIES;
 }
 
-#if (K_NUM_PRIORITIES > 32)
-	#error not supported yet
-#endif
-
 /* find out the currently highest priority where a thread is ready to run */
 /* interrupts must be locked */
 static inline int _get_highest_ready_prio(void)
 {
-	uint32_t ready = _ready_q.prio_bmap[0];
+	int bitmap = 0;
+	uint32_t ready_range;
 
-	return find_lsb_set(ready) - 1 - CONFIG_NUM_COOP_PRIORITIES;
+#if (K_NUM_PRIORITIES <= 32)
+	ready_range = _ready_q.prio_bmap[0];
+#else
+	for (;; bitmap++) {
+
+		__ASSERT(bitmap < K_NUM_PRIO_BITMAPS, "prio out-of-range\n");
+
+		if (_ready_q.prio_bmap[bitmap]) {
+			ready_range = _ready_q.prio_bmap[bitmap];
+			break;
+		}
+	}
+#endif
+
+	int abs_prio = (find_lsb_set(ready_range) - 1) + (bitmap << 5);
+
+	__ASSERT(abs_prio < K_NUM_PRIORITIES, "prio out-of-range\n");
+
+	return abs_prio - CONFIG_NUM_COOP_PRIORITIES;
 }
 
 /*

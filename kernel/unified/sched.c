@@ -348,7 +348,11 @@ k_tid_t k_current_get(void)
 /* debug aid */
 void _dump_ready_q(void)
 {
-	K_DEBUG("bitmap: %x\n", _ready_q.prio_bmap[0]);
+	K_DEBUG("bitmaps: ");
+	for (int bitmap = 0; bitmap < K_NUM_PRIO_BITMAPS; bitmap++) {
+		K_DEBUG("%x", _ready_q.prio_bmap[bitmap]);
+	}
+	K_DEBUG("\n");
 	for (int prio = 0; prio < K_NUM_PRIORITIES; prio++) {
 		K_DEBUG("prio: %d, head: %p\n",
 			prio - CONFIG_NUM_COOP_PRIORITIES,
