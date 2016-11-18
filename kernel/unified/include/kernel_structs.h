@@ -107,7 +107,7 @@ struct _ready_q {
 	struct k_thread *cache;
 
 	/* bitmap of priorities that contain at least one ready thread */
-	uint32_t prio_bmap[1];
+	uint32_t prio_bmap[K_NUM_PRIO_BITMAPS];
 
 	/* ready queues, one per priority */
 	sys_dlist_t q[K_NUM_PRIORITIES];

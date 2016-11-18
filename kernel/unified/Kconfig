@@ -45,8 +45,16 @@ config NUM_COOP_PRIORITIES
 	This can be set to zero to disable cooperative scheduling. Cooperative
 	threads always preempt preemptible threads.
 
-	Each priority requires an extra 8 bytes of RAM. If there are more than
-	32 total priorities, an extra 4 bytes is required.
+	Each priority requires an extra 8 bytes of RAM. Each set of 32 extra
+	total priorities require an extra 4 bytes and add one possible
+	iteration to loops that search for the next thread to run.
+
+	The total number of priorities is
+
+	   NUM_COOP_PRIORITIES + NUM_PREEMPT_PRIORITIES + 1
+
+	The extra one is for the idle thread, which must run at the lowest
+	priority, and be the only thread at that priority.
 
 config NUM_PREEMPT_PRIORITIES
 	int
@@ -58,11 +66,16 @@ config NUM_PREEMPT_PRIORITIES
 
 	This can be set to 0 to disable preemptible scheduling.
 
-	The idle thread is always installed as a preemptible thread of the
-	lowest priority.
+	Each priority requires an extra 8 bytes of RAM. Each set of 32 extra
+	total priorities require an extra 4 bytes and add one possible
+	iteration to loops that search for the next thread to run.
 
-	Each priority requires an extra 8 bytes of RAM. If there are more than
-	32 total priorities, an extra 4 bytes is required.
+	The total number of priorities is
+
+	   NUM_COOP_PRIORITIES + NUM_PREEMPT_PRIORITIES + 1
+
+	The extra one is for the idle thread, which must run at the lowest
+	priority, and be the only thread at that priority.
 
 config PRIORITY_CEILING
 	int
