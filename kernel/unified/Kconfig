@@ -18,15 +18,19 @@
 
 menu "Unified Kernel Options"
 
-config KERNEL_V2_DEBUG
+config KERNEL_DEBUG
 	bool
-	prompt "Kernel V2 debug help"
+	prompt "Kernel debugging"
 	default n
 	select INIT_STACKS
+	help
+	  Enable kernel debugging.
+
+	  Note that debugging the kernel internals can be very verbose.
 
 config NUM_COOP_PRIORITIES
 	int
-	prompt "Kernel V2: number of coop priorities"
+	prompt "Number of coop priorities"
 	default 16
 	help
 	Number of cooperative priorities configured in the system. Gives access
@@ -46,7 +50,7 @@ config NUM_COOP_PRIORITIES
 
 config NUM_PREEMPT_PRIORITIES
 	int
-	prompt "Kernel V2: number of preemptible priorities"
+	prompt "Number of preemptible priorities"
 	default 15
 	help
 	Number of preemptible priorities available in the system. Gives access
@@ -62,7 +66,7 @@ config NUM_PREEMPT_PRIORITIES
 
 config PRIORITY_CEILING
 	int
-	prompt "Kernel V2: priority inheritance ceiling"
+	prompt "Priority inheritance ceiling"
 	default 0
 
 config BOOT_BANNER

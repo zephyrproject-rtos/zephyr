@@ -37,7 +37,8 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_KERNEL_V2_DEBUG
+#ifdef CONFIG_KERNEL_DEBUG
+#include <misc/printk.h>
 #define K_DEBUG(fmt, ...) printk("[%s]  " fmt, __func__, ##__VA_ARGS__)
 #else
 #define K_DEBUG(fmt, ...)
