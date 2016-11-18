@@ -453,7 +453,8 @@ static inline bool net_is_my_ipv4_addr(const struct in_addr *addr)
  *
  *  @return Destination address.
  */
-#define net_ipaddr_copy(dest, src) (*(dest) = *(src))
+#define net_ipaddr_copy(dest, src) \
+	UNALIGNED_PUT(UNALIGNED_GET(src), dest)
 
 /**
  *  @brief Compare two IPv4 addresses
