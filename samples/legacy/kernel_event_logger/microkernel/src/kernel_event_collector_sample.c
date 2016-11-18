@@ -210,7 +210,7 @@ void fork_manager_entry(void)
 void busy_task_entry(void)
 {
 	int ticks_when_awake;
-	int i;
+	int i = 0;
 
 	while (1) {
 		/*
