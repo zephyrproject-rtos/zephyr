@@ -78,7 +78,7 @@ static int decode_delta(int num, const uint8_t *buf, int16_t buflen,
 			return -EINVAL;
 		}
 
-		num = sys_be16_to_cpu((uint16_t)*buf) + 269;
+		num = sys_get_be16(buf) + 269;
 		hdrlen += 2;
 		break;
 	case 15:
