@@ -121,7 +121,7 @@ static void adjust_owner_prio(struct k_mutex *mutex, int new_prio)
 		K_DEBUG("%p (ready (y/n): %c) prio changed to %d (was %d)\n",
 			mutex->owner, _is_thread_ready(mutex->owner) ?
 			'y' : 'n',
-			new_prio, mutex->owner->prio);
+			new_prio, mutex->owner->base.prio);
 
 		_thread_priority_set(mutex->owner, new_prio);
 	}
@@ -238,7 +238,7 @@ void k_mutex_unlock(struct k_mutex *mutex)
 	struct k_thread *new_owner = _unpend_first_thread(&mutex->wait_q);
 
 	K_DEBUG("new owner of mutex %p: %p (prio: %d)\n",
-		mutex, new_owner, new_owner ? new_owner->prio : -1000);
+		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
 	if (new_owner) {
 		_abort_thread_timeout(new_owner);

@@ -204,7 +204,7 @@ static inline void _sched_lock(void)
 	atomic_inc(&_current->base.sched_locked);
 
 	K_DEBUG("scheduler locked (%p:%d)\n",
-		_current, _current->sched_locked);
+		_current, _current->base.sched_locked);
 }
 
 /**
