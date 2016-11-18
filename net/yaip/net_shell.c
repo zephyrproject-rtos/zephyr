@@ -42,6 +42,10 @@
 
 #define NET_SHELL_MODULE "net"
 
+/* net_stack dedicated section limiters */
+extern struct net_stack_info __net_stack_start[];
+extern struct net_stack_info __net_stack_end[];
+
 static inline const char *addrtype2str(enum net_addr_type addr_type)
 {
 	switch (addr_type) {
@@ -96,6 +100,24 @@ static inline const char *dhcpv4state2str(enum net_dhcpv4_state state)
 }
 #endif /* CONFIG_NET_DHCPV4 */
 
+static void tx_stack(struct net_if *iface, unsigned char *stack,
+		     size_t stack_size)
+{
+#if defined(CONFIG_INIT_STACKS)
+	unsigned int stack_offset, pcnt, unused;
+
+	net_analyze_stack_get_values(stack, stack_size,
+				     &stack_offset, &pcnt, &unused);
+
+	printf("TX stack size %u/%u bytes unused %u usage %u/%u (%u %%)\n",
+	       stack_size,
+	       stack_size + stack_offset, unused,
+	       stack_size - unused, stack_size, pcnt);
+#else
+	printf("TX stack usage not available.\n");
+#endif
+}
+
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -105,19 +127,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
 	int i, count;
-	unsigned stack_offset, pcnt, unused, stack_size;
-
-	stack_size = CONFIG_NET_TX_STACK_SIZE;
-
-	net_analyze_stack_get_values(iface->tx_stack, stack_size,
-				     &stack_offset, &pcnt, &unused);
 
 	printf("Interface %p\n", iface);
 	printf("====================\n");
 
-	printf("TX stack size %u bytes unused %u usage %u/%u (%u %%)\n",
-	       stack_size + stack_offset, unused,
-	       stack_size - unused, stack_size, pcnt);
+	tx_stack(iface, iface->tx_stack, CONFIG_NET_TX_STACK_SIZE);
+
 	printf("Link addr : %s\n", net_sprint_ll_addr(iface->link_addr.addr,
 						      iface->link_addr.len));
 	printf("MTU       : %d\n", iface->mtu);
@@ -579,6 +594,32 @@ static int shell_cmd_route(int argc, char *argv[])
 	return 0;
 }
 
+static int shell_cmd_stacks(int argc, char *argv[])
+{
+#if defined(CONFIG_INIT_STACKS)
+	unsigned int stack_offset, pcnt, unused;
+#endif
+	struct net_stack_info *info;
+
+	for (info = __net_stack_start; info != __net_stack_end; info++) {
+		net_analyze_stack_get_values(info->stack, info->size,
+					     &stack_offset, &pcnt, &unused);
+
+#if defined(CONFIG_INIT_STACKS)
+		printf("%s [%s] stack size %u/%u bytes unused %u usage %u/%u "
+		       "(%u %%)\n",
+		       info->pretty_name, info->name, info->orig_size,
+		       info->size + stack_offset, unused,
+		       info->size - unused, info->size, pcnt);
+#else
+		printf("%s [%s] stack size %u usage not available\n",
+		       info->pretty_name, info->name, info->orig_size);
+#endif
+	}
+
+	return 0;
+}
+
 static int shell_cmd_stats(int argc, char *argv[])
 {
 #if defined(CONFIG_NET_STATISTICS)
@@ -597,6 +638,7 @@ static int shell_cmd_help(int argc, char *argv[])
 	printf("net mem\n\tPrint network buffer information\n");
 	printf("net ping <host>\n\tPing a network host\n");
 	printf("net route\n\tShow network routes\n");
+	printf("net stacks\n\tShow network stacks information\n");
 	printf("net stats\n\tShow network statistics\n");
 	return 0;
 }
@@ -608,6 +650,7 @@ static struct shell_cmd net_commands[] = {
 	{ "mem", shell_cmd_mem },
 	{ "ping", shell_cmd_ping },
 	{ "route", shell_cmd_route },
+	{ "stacks", shell_cmd_stacks },
 	{ "stats", shell_cmd_stats },
 	{ NULL, NULL }
 };
