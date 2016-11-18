@@ -123,7 +123,7 @@ void k_sched_unlock(void)
 	atomic_dec(&_current->base.sched_locked);
 
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
-		_current, _current->sched_locked);
+		_current, _current->base.sched_locked);
 
 	_reschedule_threads(key);
 }
@@ -220,7 +220,7 @@ struct k_thread *_get_next_ready_thread(void)
 int __must_switch_threads(void)
 {
 	K_DEBUG("current prio: %d, highest prio: %d\n",
-		_current->prio, _get_highest_ready_prio());
+		_current->base.prio, _get_highest_ready_prio());
 
 	extern void _dump_ready_q(void);
 	_dump_ready_q();
