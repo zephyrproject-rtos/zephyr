@@ -230,8 +230,7 @@ static inline void dw_port_config(struct device *port, int flags)
 static inline int gpio_dw_config(struct device *port, int access_op,
 				 uint32_t pin, int flags)
 {
-	if (((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) ||
-	    ((flags & GPIO_DIR_IN) && (flags & GPIO_DIR_OUT))) {
+	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
 		return -1;
 	}
 
