@@ -100,10 +100,10 @@ static void iface_cb(struct net_if *iface, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6_prefix *prefix;
+	struct net_if_router *router;
 #endif
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
-	struct net_if_router *router;
 	int i, count;
 	unsigned stack_offset, pcnt, unused, stack_size;
 
