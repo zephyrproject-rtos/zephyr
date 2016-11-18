@@ -96,8 +96,7 @@ int32_t tc_hmac_set_key(TCHmacState_t ctx,
 int32_t tc_hmac_init(TCHmacState_t ctx)
 {
 	/* input sanity check: */
-	if (ctx == (TCHmacState_t) 0 ||
-	    ctx->key == (uint8_t *) 0) {
+	if (ctx == (TCHmacState_t) 0) {
 		return TC_CRYPTO_FAIL;
 	}
 
@@ -114,7 +113,7 @@ int32_t tc_hmac_update(TCHmacState_t ctx,
 		       uint32_t data_length)
 {
 	/* input sanity check: */
-	if (ctx == (TCHmacState_t) 0 || ctx->key == (uint8_t *) 0) {
+	if (ctx == (TCHmacState_t) 0) {
 		return TC_CRYPTO_FAIL;
 	}
 
@@ -128,8 +127,7 @@ int32_t tc_hmac_final(uint8_t *tag, uint32_t taglen, TCHmacState_t ctx)
 	/* input sanity check: */
 	if (tag == (uint8_t *) 0 ||
 	    taglen != TC_SHA256_DIGEST_SIZE ||
-	    ctx == (TCHmacState_t) 0 ||
-	    ctx->key == (uint8_t *) 0) {
+	    ctx == (TCHmacState_t) 0) {
 		return TC_CRYPTO_FAIL;
 	}
 
