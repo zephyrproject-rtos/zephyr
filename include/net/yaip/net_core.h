@@ -160,6 +160,7 @@ static inline void net_analyze_stack(const char *name,
 }
 #else
 #define net_analyze_stack(...)
+#define net_analyze_stack_get_values(...)
 #endif
 /* @endcond */
 
