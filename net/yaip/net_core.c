@@ -62,8 +62,9 @@
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
 #define CONFIG_NET_RX_STACK_SIZE 1024
 #endif
+
 NET_STACK_DEFINE("RX", rx_stack, CONFIG_NET_RX_STACK_SIZE,
-		 CONFIG_NET_RX_STACK_SIZE);
+		 CONFIG_NET_RX_STACK_SIZE + CONFIG_NET_RX_STACK_RPL);
 
 static struct k_fifo rx_queue;
 static k_tid_t rx_tid;
