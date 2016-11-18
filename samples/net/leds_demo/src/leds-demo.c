@@ -89,7 +89,7 @@ static bool read_led(void)
 		return false;
 	}
 
-	return led;
+	return !led;
 }
 
 static void write_led(bool led)
@@ -99,7 +99,7 @@ static void write_led(bool led)
 		return;
 	}
 
-	gpio_pin_write(led0, LED_PIN, led);
+	gpio_pin_write(led0, LED_PIN, !led);
 }
 
 static int led_get(struct zoap_resource *resource,
@@ -479,6 +479,10 @@ void main(void)
 
 	led0 = device_get_binding(LED_GPIO_NAME);
 	/* Want it to be NULL if not available */
+
+	if (led0) {
+		gpio_pin_configure(led0, LED_PIN, GPIO_DIR_OUT);
+	}
 
 	if (!join_coap_multicast_group()) {
 		NET_ERR("Could not join CoAP multicast group\n");
