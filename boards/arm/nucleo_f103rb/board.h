@@ -23,4 +23,9 @@
 #define SW0_GPIO_PIN	13
 #define SW0_GPIO_NAME	"GPIOC"
 
+
+/* Onboard LED */
+#define LED0_GPIO_PORT  "GPIOA"
+#define LED0_GPIO_PIN   5
+
 #endif /* __INC_BOARD_H */
