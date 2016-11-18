@@ -36,7 +36,7 @@ static struct nano_sem quit_lock;
 
 static inline void quit(void)
 {
-	nano_sem_give(&quit_lock);
+	k_sem_give(&quit_lock);
 }
 
 static inline void init_app(void)
@@ -49,12 +49,12 @@ static inline void init_app(void)
 
 	net_dhcpv4_start(iface);
 
-	nano_sem_init(&quit_lock);
+	k_sem_init(&quit_lock, 0, UINT_MAX);
 }
 
 void main_fiber(void)
 {
-	nano_sem_take(&quit_lock, TICKS_UNLIMITED);
+	k_sem_take(&quit_lock, K_FOREVER);
 }
 
 #if defined(CONFIG_NANOKERNEL)
