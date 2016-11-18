@@ -131,21 +131,6 @@ config NET_CONN_CACHE
 	Caching takes slight more memory but will speedup connection
 	handling of UDP and TCP connections.
 
-config NET_TX_STACK_SIZE
-	int "TX thread stack size"
-	default 1200
-	help
-	Set the TX thread stack size in bytes. The TX thread is waiting
-	data from application. Each network interface will start one
-	TX thread for sending network packets destined to it.
-
-config NET_RX_STACK_SIZE
-	int "RX thread stack size"
-	default 1200
-	help
-	Set the RX thread stack size in bytes. The RX thread is waiting
-	data from network. There is one RX thread in the system.
-
 config NET_MAX_CONTEXTS
 	int "Number of network contexts to allocate"
 	default 2
@@ -265,6 +250,8 @@ config NET_NBUF_USER_DATA_SIZE
 	each network data fragment.
 	Example: For Bluetooth, the user_data shall be at least 4 bytes as
 	that is used for identifying the type of data they are carrying.
+
+source "net/yaip/Kconfig.stack"
 
 source "net/yaip/l2/Kconfig"
 
