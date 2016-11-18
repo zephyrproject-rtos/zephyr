@@ -86,6 +86,7 @@ void HelperTask(void)
 {
 	void *ptr[NUMBLOCKS];      /* Pointer to memory block */
 
+	memset(ptr, 0, sizeof(ptr));	/* keep static checkers happy */
 	/* Wait for part 1 to complete */
 	task_sem_take(SEM_REGRESSDONE, TICKS_UNLIMITED);
 
