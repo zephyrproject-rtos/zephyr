@@ -52,7 +52,7 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define SMP_TIMEOUT (30 * MSEC_PER_SEC)
+#define SMP_TIMEOUT K_SECONDS(30)
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
 #define SIGN_DIST BT_SMP_DIST_SIGN

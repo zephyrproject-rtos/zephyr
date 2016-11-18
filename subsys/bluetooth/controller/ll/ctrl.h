@@ -18,6 +18,8 @@
 #ifndef _CTRL_H_
 #define _CTRL_H_
 
+#include <bluetooth/hci.h>
+
 /*****************************************************************************
  * Zephyr Kconfig defined
  ****************************************************************************/
@@ -81,11 +83,13 @@
 #define RADIO_BLE_VERSION_NUMBER	(0x08)
 #define RADIO_BLE_COMPANY_ID		(0xFFFF)
 #define RADIO_BLE_SUB_VERSION_NUMBER	(0xFFFF)
-#define RADIO_BLE_FEATURES		(0x1F) /* LE Ping, Slave Initiated
-						* Feature request, Extended
-						* Reject Indication, Conn Param
-						* Req Procedure, LE encryption.
-						*/
+
+#define RADIO_BLE_FEATURES              (BT_LE_FEAT_BIT_ENC | \
+					 BT_LE_FEAT_BIT_CONN_PARAM_REQ | \
+					 BT_LE_FEAT_BIT_EXT_REJ_IND | \
+					 BT_LE_FEAT_BIT_SLAVE_FEAT_REQ | \
+					 BT_LE_FEAT_BIT_PING | \
+					 BT_LE_FEAT_BIT_DLE)
 
 /*****************************************************************************
  * Controller Reference Defines (compile time override-able)
@@ -208,6 +212,7 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 		    uint8_t rx_count_max, uint8_t tx_count_max,
 		    uint16_t data_octets_max, uint8_t *mem_radio,
 		    uint16_t mem_size);
+void ctrl_reset(void);
 void radio_ticks_active_to_start_set(uint32_t ticks_active_to_start);
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
@@ -240,6 +245,10 @@ uint32_t radio_feature_req_send(uint16_t handle);
 uint32_t radio_version_ind_send(uint16_t handle);
 uint32_t radio_terminate_ind_send(uint16_t handle, uint8_t reason);
 uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets);
+void radio_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time);
+uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
+void radio_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
+			  uint16_t *max_rx_octets, uint16_t *max_rx_time);
 uint8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx,
 		uint16_t *handle);
 void radio_rx_dequeue(void);

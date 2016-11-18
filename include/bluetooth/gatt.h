@@ -772,7 +772,8 @@ struct bt_gatt_discover_params;
  *
  *  If discovery procedure has completed this callback will be called with
  *  attr set to NULL. This will not happen if procedure was stopped by returning
- *  BT_GATT_ITER_STOP.
+ *  BT_GATT_ITER_STOP. The attribute is read-only and cannot be cached without
+ *  copying its contents.
  *
  *  @return BT_GATT_ITER_CONTINUE if should continue attribute discovery
  *  or BT_GATT_ITER_STOP to stop discovery procedure.

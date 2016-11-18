@@ -18,9 +18,6 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-void util_itoa(char *buf, int base, int d);
-int util_atoi(char *s);
-void util_sprintf(char *str, const char *format, ...);
 uint8_t util_ones_count_get(uint8_t *octets, uint8_t octets_len);
 
 #endif

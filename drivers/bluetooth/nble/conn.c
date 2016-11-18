@@ -35,7 +35,7 @@
 #endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT	(5 * MSEC_PER_SEC)
+#define CONN_UPDATE_TIMEOUT	K_SECONDS(5)
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;

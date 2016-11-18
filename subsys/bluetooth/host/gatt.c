@@ -428,8 +428,8 @@ struct notify_data {
 	struct bt_gatt_indicate_params *params;
 };
 
-static int att_notify(struct bt_conn *conn, uint16_t handle, const void *data,
-		      size_t len)
+static int gatt_notify(struct bt_conn *conn, uint16_t handle, const void *data,
+		       size_t len)
 {
 	struct net_buf *buf;
 	struct bt_att_notify *nfy;
@@ -487,8 +487,8 @@ static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
 	return err;
 }
 
-static int att_indicate(struct bt_conn *conn,
-			struct bt_gatt_indicate_params *params)
+static int gatt_indicate(struct bt_conn *conn,
+			 struct bt_gatt_indicate_params *params)
 {
 	struct net_buf *buf;
 	struct bt_att_indicate *ind;
@@ -552,9 +552,9 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		if (data->type == BT_GATT_CCC_INDICATE) {
-			err = att_indicate(conn, data->params);
+			err = gatt_indicate(conn, data->params);
 		} else {
-			err = att_notify(conn, data->attr->handle, data->data,
+			err = gatt_notify(conn, data->attr->handle, data->data,
 					 data->len);
 		}
 
@@ -578,7 +578,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	if (conn) {
-		return att_notify(conn, attr->handle, data, len);
+		return gatt_notify(conn, attr->handle, data, len);
 	}
 
 	nfy.attr = attr;
@@ -601,7 +601,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	}
 
 	if (conn) {
-		return att_indicate(conn, params);
+		return gatt_indicate(conn, params);
 	}
 
 	nfy.type = BT_GATT_CCC_INDICATE;
@@ -819,13 +819,12 @@ done:
 	params->func(conn, NULL, params);
 }
 
-static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
-			      const void *pdu, uint16_t length,
-			      void *user_data)
+static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
+			       const void *pdu, uint16_t length,
+			       void *user_data)
 {
 	const struct bt_att_find_type_rsp *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
-	struct bt_gatt_service value;
 	uint8_t i;
 	uint16_t end_handle = 0, start_handle;
 
@@ -838,7 +837,7 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 	/* Parse attributes found */
 	for (i = 0; length >= sizeof(rsp->list[i]);
 	     i++, length -=  sizeof(rsp->list[i])) {
-		struct bt_gatt_attr *attr;
+		struct bt_gatt_attr attr = {};
 
 		start_handle = sys_le16_to_cpu(rsp->list[i].start_handle);
 		end_handle = sys_le16_to_cpu(rsp->list[i].end_handle);
@@ -846,20 +845,15 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		BT_DBG("start_handle 0x%04x end_handle 0x%04x", start_handle,
 		       end_handle);
 
-		value.end_handle = end_handle;
-		value.uuid = params->uuid;
-
 		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-			attr = (&(struct bt_gatt_attr)
-				BT_GATT_PRIMARY_SERVICE(&value));
+			attr.uuid = BT_UUID_GATT_PRIMARY;
 		} else {
-			attr = (&(struct bt_gatt_attr)
-				BT_GATT_SECONDARY_SERVICE(&value));
+			attr.uuid = BT_UUID_GATT_SECONDARY;
 		}
 
-		attr->handle = start_handle;
+		attr.handle = start_handle;
 
-		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
+		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return;
 		}
 	}
@@ -876,7 +870,7 @@ done:
 	params->func(conn, NULL, params);
 }
 
-static int att_find_type(struct bt_conn *conn,
+static int gatt_find_type(struct bt_conn *conn,
 			 struct bt_gatt_discover_params *params)
 {
 	struct net_buf *buf;
@@ -915,7 +909,7 @@ static int att_find_type(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	return gatt_send(conn, buf, att_find_type_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_find_type_rsp, params, NULL);
 }
 
 static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
@@ -1150,9 +1144,9 @@ done:
 	return 0;
 }
 
-static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
-			      const void *pdu, uint16_t length,
-			      void *user_data)
+static void gatt_read_type_rsp(struct bt_conn *conn, uint8_t err,
+			       const void *pdu, uint16_t length,
+			       void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
 	uint16_t handle;
@@ -1177,8 +1171,8 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 	gatt_discover_next(conn, handle, params);
 }
 
-static int att_read_type(struct bt_conn *conn,
-			 struct bt_gatt_discover_params *params)
+static int gatt_read_type(struct bt_conn *conn,
+			  struct bt_gatt_discover_params *params)
 {
 	struct net_buf *buf;
 	struct bt_att_read_type_req *req;
@@ -1201,12 +1195,12 @@ static int att_read_type(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
 
-	return gatt_send(conn, buf, att_read_type_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_type_rsp, params, NULL);
 }
 
-static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
-			      const void *pdu, uint16_t length,
-			      void *user_data)
+static void gatt_find_info_rsp(struct bt_conn *conn, uint8_t err,
+			       const void *pdu, uint16_t length,
+			       void *user_data)
 {
 	const struct bt_att_find_info_rsp *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
@@ -1289,8 +1283,8 @@ done:
 	params->func(conn, NULL, params);
 }
 
-static int att_find_info(struct bt_conn *conn,
-			 struct bt_gatt_discover_params *params)
+static int gatt_find_info(struct bt_conn *conn,
+			  struct bt_gatt_discover_params *params)
 {
 	struct net_buf *buf;
 	struct bt_att_find_info_req *req;
@@ -1307,7 +1301,7 @@ static int att_find_info(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
 
-	return gatt_send(conn, buf, att_find_info_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_find_info_rsp, params, NULL);
 }
 
 int bt_gatt_discover(struct bt_conn *conn,
@@ -1325,12 +1319,12 @@ int bt_gatt_discover(struct bt_conn *conn,
 	switch (params->type) {
 	case BT_GATT_DISCOVER_PRIMARY:
 	case BT_GATT_DISCOVER_SECONDARY:
-		return att_find_type(conn, params);
+		return gatt_find_type(conn, params);
 	case BT_GATT_DISCOVER_INCLUDE:
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
-		return att_read_type(conn, params);
+		return gatt_read_type(conn, params);
 	case BT_GATT_DISCOVER_DESCRIPTOR:
-		return att_find_info(conn, params);
+		return gatt_find_info(conn, params);
 	default:
 		BT_ERR("Invalid discovery type: %u", params->type);
 	}
@@ -1338,8 +1332,8 @@ int bt_gatt_discover(struct bt_conn *conn,
 	return -EINVAL;
 }
 
-static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
-			 uint16_t length, void *user_data)
+static void gatt_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
+			  uint16_t length, void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
 
@@ -1391,12 +1385,12 @@ static int gatt_read_blob(struct bt_conn *conn,
 	BT_DBG("handle 0x%04x offset 0x%04x", params->single.handle,
 	       params->single.offset);
 
-	return gatt_send(conn, buf, att_read_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
 }
 
-static void att_read_multiple_rsp(struct bt_conn *conn, uint8_t err,
-				  const void *pdu, uint16_t length,
-				  void *user_data)
+static void gatt_read_multiple_rsp(struct bt_conn *conn, uint8_t err,
+				   const void *pdu, uint16_t length,
+				   void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
 
@@ -1429,7 +1423,7 @@ static int gatt_read_multiple(struct bt_conn *conn,
 		net_buf_add_le16(buf, params->handles[i]);
 	}
 
-	return gatt_send(conn, buf, att_read_multiple_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_multiple_rsp, params, NULL);
 }
 
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
@@ -1463,11 +1457,11 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 
 	BT_DBG("handle 0x%04x", params->single.handle);
 
-	return gatt_send(conn, buf, att_read_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
 }
 
-static void att_write_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
-			  uint16_t length, void *user_data)
+static void gatt_write_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
+			   uint16_t length, void *user_data)
 {
 	struct bt_gatt_write_params *params = user_data;
 
@@ -1536,12 +1530,12 @@ static int gatt_exec_write(struct bt_conn *conn,
 
 	BT_DBG("");
 
-	return gatt_send(conn, buf, att_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_write_rsp, params, NULL);
 }
 
-static void att_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
-				  const void *pdu, uint16_t length,
-				  void *user_data)
+static void gatt_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
+				   const void *pdu, uint16_t length,
+				   void *user_data)
 {
 	struct bt_gatt_write_params *params = user_data;
 
@@ -1593,7 +1587,7 @@ static int gatt_prepare_write(struct bt_conn *conn,
 	BT_DBG("handle 0x%04x offset %u len %u", params->handle, params->offset,
 	       params->length);
 
-	return gatt_send(conn, buf, att_prepare_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_prepare_write_rsp, params, NULL);
 }
 
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
@@ -1628,7 +1622,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 
 	BT_DBG("handle 0x%04x length %u", params->handle, params->length);
 
-	return gatt_send(conn, buf, att_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_write_rsp, params, NULL);
 }
 
 static void gatt_subscription_add(struct bt_conn *conn,
@@ -1641,8 +1635,9 @@ static void gatt_subscription_add(struct bt_conn *conn,
 	subscriptions = params;
 }
 
-static void att_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
-			      const void *pdu, uint16_t length, void *user_data)
+static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
+			       const void *pdu, uint16_t length,
+			       void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
 
@@ -1720,7 +1715,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		int err;
 
 		err = gatt_write_ccc(conn, params->ccc_handle, params->value,
-				     att_write_ccc_rsp, NULL);
+				     gatt_write_ccc_rsp, NULL);
 		if (err) {
 			return err;
 		}

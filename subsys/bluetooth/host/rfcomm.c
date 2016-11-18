@@ -718,14 +718,36 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
 }
 
+static void rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
+{
+	BT_DBG("dlc %p", dlc);
+
+	/* TODO: Need to check Security */
+	dlc->mtu = min(dlc->mtu, dlc->session->mtu);
+	dlc->state = BT_RFCOMM_STATE_CONFIG;
+	rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
+}
+
 static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 {
+	struct bt_rfcomm_dlc *dlc;
+
 	if (!dlci) {
 		if (session->state != BT_RFCOMM_STATE_CONNECTING) {
 			return;
 		}
 		session->state = BT_RFCOMM_STATE_CONNECTED;
-		/* TODO: STart dlc */
+		for (dlc = session->dlcs; dlc; dlc = dlc->_next) {
+			if (dlc->role == BT_RFCOMM_ROLE_INITIATOR &&
+			    dlc->state == BT_RFCOMM_STATE_INIT) {
+				rfcomm_dlc_start(dlc);
+			}
+		}
+	} else {
+		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
+		if (dlc && dlc->state == BT_RFCOMM_STATE_CONNECTING) {
+			rfcomm_dlc_connected(dlc);
+		}
 	}
 }
 
@@ -754,14 +776,19 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 	struct bt_rfcomm_pn *pn = (void *)buf->data;
 	struct bt_rfcomm_dlc *dlc;
 
-	if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
-		BT_ERR("Invalid mtu %d", pn->mtu);
-		rfcomm_send_dm(session, pn->dlci);
-		return;
-	}
-
 	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, pn->dlci);
 	if (!dlc) {
+		/*  Ignore if it is a response */
+		if (!cr) {
+			return;
+		}
+
+		if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
+			BT_ERR("Invalid mtu %d", pn->mtu);
+			rfcomm_send_dm(session, pn->dlci);
+			return;
+		}
+
 		dlc = rfcomm_dlc_accept(session, pn->dlci);
 		if (!dlc) {
 			rfcomm_send_dm(session, pn->dlci);
@@ -773,9 +800,28 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
 		rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
-	}
+		rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+	} else {
+		/* If its a command */
+		if (cr) {
+			if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
+				BT_ERR("Invalid mtu %d", pn->mtu);
+				/* TODO: Disconnect */
+				return;
+			}
+			dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
+			rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+		} else {
+			if (dlc->state != BT_RFCOMM_STATE_CONFIG) {
+				return;
+			}
 
-	rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+			dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
+			rfcomm_dlc_tx_give_credits(dlc, pn->credits);
+			dlc->state = BT_RFCOMM_STATE_CONNECTING;
+			rfcomm_send_sabm(session, dlc->dlci);
+		}
+	}
 }
 
 static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
@@ -1051,6 +1097,7 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 {
 	struct bt_rfcomm_session *session;
 	struct bt_l2cap_chan *chan;
+	uint8_t dlci;
 	int ret;
 
 	BT_DBG("conn %p dlc %p channel %d", conn, dlc, channel);
@@ -1067,6 +1114,10 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 		return -EINVAL;
 	}
 
+	if (!BT_RFCOMM_CHECK_MTU(dlc->mtu)) {
+		return -EINVAL;
+	}
+
 	session = rfcomm_sessions_lookup_bt_conn(conn);
 	if (!session) {
 		session = rfcomm_session_new(BT_RFCOMM_ROLE_INITIATOR);
@@ -1074,6 +1125,14 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 			return -ENOMEM;
 		}
 	}
+
+	dlci = BT_RFCOMM_DLCI(session->role, channel);
+
+	if (rfcomm_dlcs_lookup_dlci(session->dlcs, dlci)) {
+		return -EBUSY;
+	}
+
+	rfcomm_dlc_init(dlc, session, dlci, BT_RFCOMM_ROLE_INITIATOR);
 
 	switch (session->state) {
 	case BT_RFCOMM_STATE_INIT:
@@ -1085,21 +1144,28 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 		ret = bt_l2cap_chan_connect(conn, chan, BT_L2CAP_PSM_RFCOMM);
 		if (ret < 0) {
 			session->state = BT_RFCOMM_STATE_IDLE;
-			return ret;
+			goto fail;
 		}
 		session->state = BT_RFCOMM_STATE_CONNECTING;
 		break;
 	case BT_RFCOMM_STATE_CONNECTING:
 		break;
 	case BT_RFCOMM_STATE_CONNECTED:
-		/* TODO: Start dlc */
+		rfcomm_dlc_start(dlc);
 		break;
 	default:
 		BT_ERR("Invalid session state %d", session->state);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto fail;
 	}
 
 	return 0;
+
+fail:
+	rfcomm_dlcs_remove_dlci(session->dlcs, dlc->dlci);
+	dlc->state = BT_RFCOMM_STATE_IDLE;
+	dlc->session = NULL;
+	return ret;
 }
 
 static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)

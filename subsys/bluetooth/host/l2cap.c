@@ -52,8 +52,8 @@
 #define L2CAP_LE_PSM_START	0x0001
 #define L2CAP_LE_PSM_END	0x00ff
 
-#define L2CAP_CONN_TIMEOUT	(40 * MSEC_PER_SEC)
-#define L2CAP_DISC_TIMEOUT	(1 * MSEC_PER_SEC)
+#define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
+#define L2CAP_DISC_TIMEOUT	K_SECONDS(1)
 
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
@@ -1251,7 +1251,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 {
 	uint16_t sdu_len;
 
-	if (!k_sem_take(&chan->rx.credits, K_NO_WAIT)) {
+	if (k_sem_take(&chan->rx.credits, K_NO_WAIT)) {
 		BT_ERR("No credits to receive packet");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;

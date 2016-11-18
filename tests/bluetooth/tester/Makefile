@@ -1,4 +1,4 @@
-# Makefile - Bluetooth tester Makefile for microkernel
+# Makefile - Bluetooth tester
 
 #
 # Copyright (c) 2015-2016 Intel Corporation
