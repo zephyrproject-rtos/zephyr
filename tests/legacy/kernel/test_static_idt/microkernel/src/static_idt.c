@@ -195,6 +195,7 @@ void idtTestTask(void)
 	 * Use excHandlerExecuted instead of 0 to prevent the compiler issuing a
 	 * 'divide by zero' warning.
 	 */
+	error = 32;	/* avoid static checker uninitialized warnings */
 	error = error / excHandlerExecuted;
 
 	if (excHandlerExecuted == 0) {
