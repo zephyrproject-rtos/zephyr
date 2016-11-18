@@ -55,6 +55,7 @@ void main(void)
 	glcd = device_get_binding(GROVE_LCD_NAME);
 	if (!glcd) {
 		printk("Grove LCD: Device not found.\n");
+		return;
 	}
 
 	/* Now configure the LCD the way we want it */
