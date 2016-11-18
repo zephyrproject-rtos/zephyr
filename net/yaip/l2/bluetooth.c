@@ -200,10 +200,6 @@ static int bt_iface_send(struct net_if *iface, struct net_buf *buf)
 
 	NET_DBG("iface %p buf %p len %u", iface, buf, net_buf_frags_len(buf));
 
-	/* bt_l2cap_chan_send will attempt to unref but net_nbuf_unref does
-	 * some extra book keeping so add a reference to prevent it to be
-	 * freed.
-	 */
 	ret = bt_l2cap_chan_send(&ctxt->ipsp_chan.chan, buf);
 	if (ret < 0) {
 		return ret;
