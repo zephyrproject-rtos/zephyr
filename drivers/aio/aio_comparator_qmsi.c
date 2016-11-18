@@ -182,7 +182,7 @@ static void aio_qmsi_cmp_isr(void *data)
 	QM_SCSS_CMP->cmp_stat_clr = int_status;
 }
 
-struct aio_qmsi_cmp_dev_data_t aio_qmsi_cmp_dev_data = {
+static struct aio_qmsi_cmp_dev_data_t aio_qmsi_cmp_dev_data = {
 		.num_cmp = AIO_QMSI_CMP_COUNT,
 };
 
