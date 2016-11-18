@@ -186,7 +186,7 @@ struct net_if {
 #ifndef CONFIG_NET_TX_STACK_SIZE
 #define CONFIG_NET_TX_STACK_SIZE 1024
 #endif
-	char tx_stack[CONFIG_NET_TX_STACK_SIZE];
+	NET_STACK_DEFINE_EMBEDDED(tx_stack, CONFIG_NET_TX_STACK_SIZE);
 
 #if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
@@ -1086,7 +1086,14 @@ struct net_if_api {
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
 		.mtu = _mtu,						\
-	}
+	};								\
+	NET_STACK_INFO_ADDR("TX",					\
+			    dev_name,					\
+			    CONFIG_NET_TX_STACK_SIZE,			\
+			    CONFIG_NET_TX_STACK_SIZE,			\
+			    NET_IF_GET(dev_name, sfx)->tx_stack,	\
+			    sfx)
+
 
 /* Network device initialization macros */
 

@@ -95,6 +95,47 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf);
  */
 int net_send_data(struct net_buf *buf);
 
+struct net_stack_info {
+	unsigned char *stack;
+	const char *pretty_name;
+	const char *name;
+	size_t orig_size;
+	size_t size;
+};
+
+#if defined(CONFIG_NET_SHELL)
+#define NET_STACK_GET_NAME(name, sfx) (__net_stack_##name##_##sfx)
+
+#define NET_STACK_INFO_ADDR(_pretty, _name, _orig, _size, _addr, sfx)	\
+	static struct net_stack_info					\
+	(NET_STACK_GET_NAME(_name, sfx)) __used				\
+	__attribute__((__section__(".net_stack.data"))) = {		\
+		.stack = _addr,						\
+		.size = _size,						\
+		.orig_size = _orig,					\
+		.name = #_name,						\
+		.pretty_name = _pretty,					\
+	}
+
+#define NET_STACK_INFO(_pretty_name, _name, _orig, _size)		\
+	NET_STACK_INFO_ADDR(_pretty_name, _name, _orig, _size, _name, 0)
+
+#define NET_STACK_DEFINE(pretty_name, name, orig, size)			\
+	static unsigned char __noinit __stack name[size];		\
+	NET_STACK_INFO(pretty_name, name, orig, size)
+
+#else /* CONFIG_NET_SHELL */
+
+#define NET_STACK_INFO(...)
+#define NET_STACK_INFO_ADDR(...)
+
+#define NET_STACK_DEFINE(pretty_name, name, orig, size)			\
+	static unsigned char __noinit __stack name[size]
+
+#endif /* CONFIG_NET_SHELL */
+
+#define NET_STACK_DEFINE_EMBEDDED(name, size) unsigned char name[size]
+
 /** @cond ignore */
 #if defined(CONFIG_INIT_STACKS)
 #include <offsets.h>
