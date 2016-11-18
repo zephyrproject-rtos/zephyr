@@ -33,7 +33,8 @@ struct mgmt_event_entry {
 };
 
 static struct k_sem network_event;
-static char __noinit __stack mgmt_stack[CONFIG_NET_MGMT_EVENT_STACK_SIZE];
+NET_STACK_DEFINE("MGMT", mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE,
+		 CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
 static uint32_t global_event_mask;
 static sys_slist_t event_callbacks;
