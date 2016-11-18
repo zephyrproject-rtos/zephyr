@@ -62,6 +62,7 @@ void main(void)
 	gpiob = device_get_binding(PORT);
 	if (!gpiob) {
 		printk("error\n");
+		return;
 	}
 
 	gpio_pin_configure(gpiob, PIN,
