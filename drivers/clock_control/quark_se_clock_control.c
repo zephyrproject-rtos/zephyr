@@ -87,7 +87,7 @@ int quark_se_clock_control_init(struct device *dev)
 
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL
 
-struct quark_se_clock_control_config clock_quark_se_peripheral_config = {
+static struct quark_se_clock_control_config clock_quark_se_peripheral_config = {
 	.base_address = CLOCK_PERIPHERAL_BASE_ADDR
 };
 
@@ -101,7 +101,7 @@ DEVICE_AND_API_INIT(clock_quark_se_peripheral,
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL */
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL
 
-struct quark_se_clock_control_config clock_quark_se_external_config = {
+static struct quark_se_clock_control_config clock_quark_se_external_config = {
 	.base_address = CLOCK_EXTERNAL_BASE_ADDR
 };
 
@@ -115,7 +115,7 @@ DEVICE_AND_API_INIT(clock_quark_se_external,
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL */
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR
 
-struct quark_se_clock_control_config clock_quark_se_sensor_config = {
+static struct quark_se_clock_control_config clock_quark_se_sensor_config = {
 	.base_address = CLOCK_SENSOR_BASE_ADDR
 };
 
