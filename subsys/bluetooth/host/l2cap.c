@@ -1594,6 +1594,8 @@ segment:
 
 	/* Don't send more that TX MPS including SDU length */
 	len = min(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
+	/* Limit if original buffer is smaller than the segment */
+	len = min(buf->len, len);
 	memcpy(net_buf_add(seg, len), buf->data, len);
 	net_buf_pull(buf, len);
 
