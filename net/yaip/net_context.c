@@ -985,11 +985,11 @@ static void ack_timeout(struct k_work *work)
 	/* This means that we did not receive ACK response in time. */
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, ack_timer);
 
-	NET_DBG("Did not receive ACK");
+	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
 
 	send_reset(tcp->context, &tcp->context->remote);
 
-	net_tcp_change_state(tcp, NET_TCP_CLOSED);
+	net_tcp_change_state(tcp, NET_TCP_LISTEN);
 }
 
 /* This callback is called when we are waiting connections and we receive
@@ -1197,6 +1197,8 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 		net_tcp_change_state(new_context->tcp, NET_TCP_ESTABLISHED);
 		net_context_set_state(new_context, NET_CONTEXT_CONNECTED);
+
+		k_delayed_work_cancel(&tcp->ack_timer);
 
 		new_context->user_data = context->user_data;
 		context->user_data = NULL;
