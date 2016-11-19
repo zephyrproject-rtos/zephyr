@@ -48,9 +48,9 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		asn1parse.o	asn1write.o	base64.o	\
 		bignum.o	blowfish.o	camellia.o	\
 		ccm.o		cipher.o	cipher_wrap.o	\
-		ctr_drbg.o	des.o		dhm.o		\
-		ecdh.o		ecdsa.o		ecjpake.o	\
-		ecp.o						\
+		cmac.o		ctr_drbg.o	des.o		\
+		dhm.o		ecdh.o		ecdsa.o		\
+		ecjpake.o	ecp.o				\
 		ecp_curves.o	entropy.o	entropy_poll.o	\
 		error.o		gcm.o		havege.o	\
 		hmac_drbg.o	md.o		md2.o		\
@@ -68,9 +68,10 @@ OBJS_X509=	certs.o		pkcs11.o	x509.o		\
 		x509_create.o	x509_crl.o	x509_crt.o	\
 		x509_csr.o	x509write_crt.o	x509write_csr.o
 
-OBJS_TLS=	debug.o		net.o		ssl_cache.o	\
-		ssl_ciphersuites.o		ssl_cli.o	\
-		ssl_cookie.o	ssl_srv.o	ssl_ticket.o	\
+OBJS_TLS=	debug.o		net_sockets.o		\
+		ssl_cache.o	ssl_ciphersuites.o	\
+		ssl_cli.o	ssl_cookie.o		\
+		ssl_srv.o	ssl_ticket.o		\
 		ssl_tls.o
 
 .SILENT:
