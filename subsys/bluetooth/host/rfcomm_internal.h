@@ -135,6 +135,9 @@ struct bt_rfcomm_msc {
 #define BT_RFCOMM_MSG_CMD_CR               1
 #define BT_RFCOMM_MSG_RESP_CR              0
 
+#define BT_RFCOMM_DLCI(role, channel)      ((((channel) & 0x1f) << 1) | \
+					    ((role) == BT_RFCOMM_ROLE_ACCEPTOR))
+
 /* Excluding ext bit */
 #define BT_RFCOMM_MAX_LEN_8 127
 

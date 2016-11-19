@@ -145,7 +145,7 @@ static void reset(struct net_buf *buf, struct net_buf *evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
-	/** TODO */
+	ctrl_reset();
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
@@ -679,6 +679,39 @@ static void le_set_data_len(struct net_buf *buf, struct net_buf *evt)
 	rp->handle = cmd->handle;
 }
 
+static void le_read_default_data_len(struct net_buf *buf, struct net_buf *evt)
+{
+	struct bt_hci_rp_le_read_default_data_len *rp;
+
+	rp = cmd_complete(evt, sizeof(*rp));
+
+	radio_length_default_get(&rp->max_tx_octets, &rp->max_tx_time);
+	rp->status = 0x00;
+}
+
+static void le_write_default_data_len(struct net_buf *buf, struct net_buf *evt)
+{
+	struct bt_hci_cp_le_write_default_data_len *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint32_t status;
+
+	status = radio_length_default_set(cmd->max_tx_octets, cmd->max_tx_time);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_INVALID_LL_PARAMS;
+}
+
+static void le_read_max_data_len(struct net_buf *buf, struct net_buf *evt)
+{
+	struct bt_hci_rp_le_read_max_data_len *rp;
+
+	rp = cmd_complete(evt, sizeof(*rp));
+
+	radio_length_max_get(&rp->max_tx_octets, &rp->max_tx_time,
+			     &rp->max_rx_octets, &rp->max_rx_time);
+	rp->status = 0x00;
+}
+
 static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 				 struct net_buf *evt)
 {
@@ -797,6 +830,18 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 
 	case BT_OCF(BT_HCI_OP_LE_SET_DATA_LEN):
 		le_set_data_len(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_READ_DEFAULT_DATA_LEN):
+		le_read_default_data_len(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN):
+		le_write_default_data_len(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_READ_MAX_DATA_LEN):
+		le_read_max_data_len(cmd, evt);
 		break;
 
 	default:

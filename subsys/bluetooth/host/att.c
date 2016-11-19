@@ -58,7 +58,7 @@
 						BT_GATT_PERM_WRITE_AUTHEN)
 #define BT_ATT_OP_CMD_FLAG			0x40
 
-#define ATT_TIMEOUT				(30 * MSEC_PER_SEC)
+#define ATT_TIMEOUT				K_SECONDS(30)
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 struct bt_attr_data {

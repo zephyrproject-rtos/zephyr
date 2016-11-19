@@ -77,7 +77,7 @@ The stack is split up as follows in the source tree:
   functionality of the Bluetooth stack, but are not necessary the best
   source for sample code (see ``samples/bluetooth`` instead).
 
-``doc/bluetooth/``
+``doc/subsystems/bluetooth/``
   Extra documentation, such as PICS documents.
 
 Further reading

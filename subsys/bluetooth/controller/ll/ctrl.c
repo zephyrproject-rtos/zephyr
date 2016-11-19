@@ -105,10 +105,9 @@ struct observer {
 	uint8_t scan_type:1;
 	uint8_t scan_state:1;
 	uint8_t scan_channel:2;
-	uint8_t filter_policy:1;
+	uint8_t filter_policy:2;
 	uint8_t adv_addr_type:1;
 	uint8_t init_addr_type:1;
-	uint8_t rfu0:1;
 
 	uint8_t adv_addr[BDADDR_SIZE];
 	uint8_t init_addr[BDADDR_SIZE];
@@ -159,6 +158,10 @@ static struct {
 	uint8_t data_channel_map[5];
 	uint8_t data_channel_count;
 	uint8_t sca;
+
+	/* DLE global settings */
+	uint16_t default_tx_octets;
+	uint16_t default_tx_time;
 
 	/** @todo below members to be made role specific and quota managed for
 	 * Rx-es.
@@ -213,6 +216,7 @@ static struct {
 
 static uint16_t const gc_lookup_ppm[] = { 500, 250, 150, 100, 75, 50, 30, 20 };
 
+static void common_init(void);
 static void ticker_success_assert(uint32_t status, void *params);
 static void event_inactive(uint32_t ticks_at_expire, uint32_t remainder,
 			   uint16_t lazy, void *context);
@@ -271,6 +275,8 @@ static void reject_ind_ext_send(struct connection *conn,
 static void length_resp_send(struct connection *conn,
 				uint16_t eff_rx_octets,
 				uint16_t eff_tx_octets);
+static uint32_t role_disable(uint8_t ticker_id_primary,
+			     uint8_t ticker_id_stop);
 static void rx_fc_lock(uint16_t handle);
 
 /*****************************************************************************
@@ -282,9 +288,7 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 		    uint16_t mem_size)
 {
 	uint32_t retcode;
-	uint16_t packet_tx_ctrl_size;
 	uint8_t *mem_radio_end;
-	void *link;
 
 	/* intialise hf_clock device to use in prepare */
 	_radio.hf_clock = hf_clock;
@@ -339,11 +343,9 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 			(ALIGN4(offsetof(struct radio_pdu_node_rx, pdu_data) +
 			  (RADIO_ACPDU_SIZE_MAX + 1)) * rx_count_max);
 	}
-	_radio.packet_rx_data_size =
-		ALIGN4(offsetof(struct radio_pdu_node_rx, pdu_data) +
-		       (RADIO_ACPDU_SIZE_MAX + 1));
-	_radio.packet_rx_data_count =
-		_radio.packet_rx_data_pool_size / _radio.packet_rx_data_size;
+	_radio.packet_rx_data_size = PACKET_RX_DATA_SIZE_MIN;
+	_radio.packet_rx_data_count = (_radio.packet_rx_data_pool_size /
+				       _radio.packet_rx_data_size);
 
 	/* initialise rx data pool memory */
 	_radio.pkt_rx_data_pool = mem_radio;
@@ -356,10 +358,7 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 
 	/* initialise tx ctrl pool memory */
 	_radio.pkt_tx_ctrl_pool = mem_radio;
-	packet_tx_ctrl_size =
-		ALIGN4(offsetof(struct radio_pdu_node_tx, pdu_data) +
-		       offsetof(struct pdu_data, payload) + 27);
-	mem_radio += packet_tx_ctrl_size * PACKET_MEM_COUNT_TX_CTRL;
+	mem_radio += PACKET_TX_CTRL_SIZE_MIN * PACKET_MEM_COUNT_TX_CTRL;
 
 	/* initialise tx data memory size and count */
 	_radio.packet_tx_data_size =
@@ -380,6 +379,61 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 	if (retcode) {
 		return (retcode + mem_size);
 	}
+
+	/* enable connection handle based on-off flow control feature.
+	 * This is a simple flow control to rx data only on one selected
+	 * connection handle.
+	 * TODO: replace this feature with host-to-controller flowcontrol
+	 * implementation/design.
+	 */
+	_radio.fc_ena = 1;
+
+	/* memory allocations */
+	common_init();
+
+	return retcode;
+}
+
+void ctrl_reset(void)
+{
+	uint16_t conn_handle;
+
+	/* disable advertiser events */
+	role_disable(RADIO_TICKER_ID_ADV, RADIO_TICKER_ID_ADV_STOP);
+
+	/* disable oberver events */
+	role_disable(RADIO_TICKER_ID_OBS, RADIO_TICKER_ID_OBS_STOP);
+
+	/* disable connection events */
+	for (conn_handle = 0; conn_handle < _radio.connection_count;
+	     conn_handle++) {
+		role_disable(RADIO_TICKER_ID_FIRST_CONNECTION + conn_handle,
+			     TICKER_NULL);
+	}
+
+	/* reset controller context members */
+	_radio.filter_enable_bitmask = 0;
+	_radio.nirk = 0;
+	_radio.advertiser.conn = NULL;
+	_radio.observer.conn = NULL;
+	_radio.packet_rx_data_size = PACKET_RX_DATA_SIZE_MIN;
+	_radio.packet_rx_data_count = (_radio.packet_rx_data_pool_size /
+				       _radio.packet_rx_data_size);
+	_radio.packet_rx_last = 0;
+	_radio.packet_rx_acquire = 0;
+	_radio.link_rx_data_quota = _radio.packet_rx_count - 1;
+	_radio.packet_tx_first = 0;
+	_radio.packet_tx_last = 0;
+	_radio.packet_release_first = 0;
+	_radio.packet_release_last = 0;
+
+	/* memory allocations */
+	common_init();
+}
+
+static void common_init(void)
+{
+	void *link;
 
 	/* initialise connection pool. */
 	if (_radio.connection_count) {
@@ -402,17 +456,17 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 		 &_radio.link_rx_free);
 
 	/* initialise ctrl tx pool. */
-	mem_init(_radio.pkt_tx_ctrl_pool, packet_tx_ctrl_size,
+	mem_init(_radio.pkt_tx_ctrl_pool, PACKET_TX_CTRL_SIZE_MIN,
 		 PACKET_MEM_COUNT_TX_CTRL, &_radio.pkt_tx_ctrl_free);
 
 	/* initialise data tx pool. */
 	mem_init(_radio.pkt_tx_data_pool, _radio.packet_tx_data_size,
 		 (_radio.packet_tx_count - 1), &_radio.pkt_tx_data_free);
 
-	/* initialise controller states and flags */
-	_radio.role = ROLE_NONE;
-	_radio.state = STATE_NONE;
-	_radio.fc_ena = 1;
+	/* initialise the event-cum-data memq */
+	link = mem_acquire(&_radio.link_rx_free);
+	LL_ASSERT(link);
+	memq_init(link, &_radio.link_rx_head, (void *)&_radio.link_rx_tail);
 
 	/* initialise advertiser channel map */
 	_radio.advertiser.chl_map = 0x07;
@@ -425,18 +479,12 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 	_radio.data_channel_map[4] = 0x1F;
 	_radio.data_channel_count = 37;
 
+	/* Initialize the DLE defaults */
+	_radio.default_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+	_radio.default_tx_time = RADIO_LL_LENGTH_TIME_RX_MIN;
+
 	/* allocate the rx queue */
 	packet_rx_allocate(0xFF);
-
-	/* initialise the event-cum-data memq */
-	link = mem_acquire(&_radio.link_rx_free);
-	link = memq_init(link, &_radio.link_rx_head,
-			 (void *)&_radio.link_rx_tail);
-
-	/* after rx queue allocation, one link mem should still be available */
-	LL_ASSERT(link);
-
-	return retcode;
 }
 
 static inline void isr_radio_state_tx(void)
@@ -1209,11 +1257,11 @@ static inline void isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		lr = (struct pdu_data_llctrl_length_req_rsp *)
 			&pdu_data_rx->payload.llctrl.ctrldata.length_req;
 
-		/* use the minimal of our sugg_tx_octets and
+		/* use the minimal of our default_tx_octets and
 		 * peer max_rx_octets
 		 */
-		if (lr->max_rx_octets > _radio.conn_curr->sug_tx_octets) {
-			eff_tx_octets = _radio.conn_curr->sug_tx_octets;
+		if (lr->max_rx_octets > _radio.conn_curr->default_tx_octets) {
+			eff_tx_octets = _radio.conn_curr->default_tx_octets;
 		} else {
 			eff_tx_octets = lr->max_rx_octets;
 		}
@@ -3247,8 +3295,11 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 static void work_sched_free_win_offset_calc(void *params)
 {
 	struct connection *conn = (struct connection *)params;
-	uint32_t *ticks_to_offset_next = 0;
+	uint32_t ticks_to_offset_default = 0;
+	uint32_t *ticks_to_offset_next;
 	uint8_t offset_max = 6;
+
+	ticks_to_offset_next = &ticks_to_offset_default;
 
 	if (conn->role.slave.role != 0) {
 		conn->llcp.connection_update.ticks_to_offset_next =
@@ -4864,8 +4915,8 @@ static inline void event_len_prep(struct connection *conn)
 		/* wait for resp before completing the procedure */
 		conn->llcp_length.state = LLCP_LENGTH_STATE_ACK_WAIT;
 
-		/* set the suggested tx octets to requested value */
-		conn->sug_tx_octets = conn->llcp_length.tx_octets;
+		/* set the default tx octets to requested value */
+		conn->default_tx_octets = conn->llcp_length.tx_octets;
 
 		/* place the length req packet as next in tx queue */
 		pdu_ctrl_tx = (struct pdu_data *) node_tx->pdu_data;
@@ -4879,8 +4930,8 @@ static inline void event_len_prep(struct connection *conn)
 			&pdu_ctrl_tx->payload.llctrl.ctrldata.length_req;
 		lr->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
 		lr->max_rx_time = ((RADIO_LL_LENGTH_OCTETS_RX_MAX + 14) << 3);
-		lr->max_tx_octets = conn->sug_tx_octets;
-		lr->max_tx_time = ((conn->sug_tx_octets + 14) << 3);
+		lr->max_tx_octets = conn->default_tx_octets;
+		lr->max_tx_time = ((conn->default_tx_octets + 14) << 3);
 
 		ctrl_tx_enqueue(conn, node_tx);
 
@@ -6361,7 +6412,21 @@ uint32_t radio_irk_add(uint8_t *irk)
 	return 0;
 }
 
-static inline void do_adv_scan_disable(uint8_t ticker_id_stop,
+static struct connection *connection_get(uint16_t handle)
+{
+	struct connection *conn;
+
+	if (handle < _radio.connection_count) {
+		conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE, handle);
+		if ((conn) && (conn->handle == handle)) {
+			return conn;
+		}
+	}
+
+	return 0;
+}
+
+static inline void role_active_disable(uint8_t ticker_id_stop,
 				       uint32_t ticks_xtal_to_start,
 				       uint32_t ticks_active_to_start)
 {
@@ -6485,12 +6550,48 @@ static inline void do_adv_scan_disable(uint8_t ticker_id_stop,
 
 }
 
-static uint32_t adv_scan_disable(uint8_t ticker_id_primary,
-				 uint8_t ticker_id_stop,
-				 uint32_t ticks_xtal_to_start,
-				 uint32_t ticks_active_to_start)
+static uint32_t role_disable(uint8_t ticker_id_primary,
+			     uint8_t ticker_id_stop)
 {
 	uint32_t volatile ticker_status;
+	uint32_t ticks_xtal_to_start = 0;
+	uint32_t ticks_active_to_start = 0;
+
+	switch (ticker_id_primary) {
+	case RADIO_TICKER_ID_ADV:
+		ticks_xtal_to_start =
+			_radio.advertiser.hdr.ticks_xtal_to_start;
+		ticks_active_to_start =
+			_radio.advertiser.hdr.ticks_active_to_start;
+		break;
+
+	case RADIO_TICKER_ID_OBS:
+		ticks_xtal_to_start =
+			_radio.observer.hdr.ticks_xtal_to_start;
+		ticks_active_to_start =
+			_radio.observer.hdr.ticks_active_to_start;
+		break;
+	default:
+		if (ticker_id_primary >= RADIO_TICKER_ID_FIRST_CONNECTION) {
+			struct connection *conn;
+			uint16_t conn_handle;
+
+			conn_handle = ticker_id_primary -
+				      RADIO_TICKER_ID_FIRST_CONNECTION;
+			conn = connection_get(conn_handle);
+			if (!conn) {
+				return 1;
+			}
+
+			ticks_xtal_to_start =
+				conn->hdr.ticks_xtal_to_start;
+			ticks_active_to_start =
+				conn->hdr.ticks_active_to_start;
+		} else {
+			BT_ASSERT(0);
+		}
+		break;
+	}
 
 	/* Step 1: Is Primary started? Stop the Primary ticker */
 	ticker_status =
@@ -6519,7 +6620,7 @@ static uint32_t adv_scan_disable(uint8_t ticker_id_primary,
 	if ((_radio.ticker_id_prepare == ticker_id_primary)
 	    || (_radio.ticker_id_event == ticker_id_primary)) {
 
-		do_adv_scan_disable(ticker_id_stop,
+		role_active_disable(ticker_id_stop,
 				    ticks_xtal_to_start, ticks_active_to_start);
 	}
 
@@ -6563,7 +6664,7 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 		conn->event_counter = 0;
 		conn->latency_prepare = 0;
 		conn->latency_event = 0;
-		conn->sug_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+		conn->default_tx_octets = _radio.default_tx_octets;
 		conn->max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 		conn->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 		conn->role.slave.role = 1;
@@ -6709,10 +6810,8 @@ uint32_t radio_adv_disable(void)
 {
 	uint32_t status;
 
-	status = adv_scan_disable(RADIO_TICKER_ID_ADV,
-				  RADIO_TICKER_ID_ADV_STOP,
-				  _radio.advertiser.hdr.ticks_xtal_to_start,
-				  _radio.advertiser.hdr.ticks_active_to_start);
+	status = role_disable(RADIO_TICKER_ID_ADV,
+			      RADIO_TICKER_ID_ADV_STOP);
 	if (!status) {
 		struct connection *conn;
 
@@ -6816,10 +6915,8 @@ uint32_t radio_scan_disable(void)
 {
 	uint32_t status;
 
-	status = adv_scan_disable(RADIO_TICKER_ID_OBS,
-				  RADIO_TICKER_ID_OBS_STOP,
-				  _radio.observer.hdr.ticks_xtal_to_start,
-				  _radio.observer.hdr.ticks_active_to_start);
+	status = role_disable(RADIO_TICKER_ID_OBS,
+			      RADIO_TICKER_ID_OBS_STOP);
 	if (!status) {
 		struct connection *conn;
 
@@ -6888,7 +6985,7 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	conn->latency_prepare = 0;
 	conn->latency_event = 0;
 	conn->latency = _radio.observer.conn_latency;
-	conn->sug_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+	conn->default_tx_octets = _radio.default_tx_octets;
 	conn->max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 	conn->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 	conn->role.master.role = 0;
@@ -6952,20 +7049,6 @@ uint32_t radio_connect_disable(void)
 	status = radio_scan_disable();
 
 	return status;
-}
-
-static struct connection *connection_get(uint16_t handle)
-{
-	struct connection *conn;
-
-	if (handle < _radio.connection_count) {
-		conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE, handle);
-		if ((conn) && (conn->handle == handle)) {
-			return conn;
-		}
-	}
-
-	return 0;
 }
 
 uint32_t radio_conn_update(uint16_t handle, uint8_t cmd, uint8_t status,
@@ -7238,6 +7321,35 @@ uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets)
 	conn->llcp_length.req++;
 
 	return 0;
+}
+
+void radio_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
+{
+	*max_tx_octets = _radio.default_tx_octets;
+	*max_tx_time = _radio.default_tx_time;
+}
+
+uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
+{
+	if (max_tx_octets > RADIO_LL_LENGTH_OCTETS_RX_MAX ||
+	    max_tx_time > RADIO_LL_LENGTH_TIME_RX_MAX) {
+
+		return 1;
+	}
+
+	_radio.default_tx_octets = max_tx_octets;
+	_radio.default_tx_time = max_tx_time;
+
+	return 0;
+}
+
+void radio_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
+			  uint16_t *max_rx_octets, uint16_t *max_rx_time)
+{
+	*max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
+	*max_tx_time = RADIO_LL_LENGTH_TIME_RX_MAX;
+	*max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
+	*max_rx_time = RADIO_LL_LENGTH_TIME_RX_MAX;
 }
 
 static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)

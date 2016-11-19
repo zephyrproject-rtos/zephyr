@@ -53,7 +53,7 @@ static struct k_fifo dummy;
 static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 
 /* How long until we cancel HCI_LE_Create_Connection */
-#define CONN_TIMEOUT	(3 * MSEC_PER_SEC)
+#define CONN_TIMEOUT	K_SECONDS(3)
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 const struct bt_conn_auth_cb *bt_auth;
@@ -1372,8 +1372,12 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	/* Cancel any pending update */
 	k_delayed_work_cancel(&conn->le.update_work);
 
+	/*
+	 * If remote does not support LL Connection Parameters Request
+	 * Procedure
+	 */
 	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
-	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
+	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features)) {
 		return bt_l2cap_update_conn_param(conn, param);
 	}
 

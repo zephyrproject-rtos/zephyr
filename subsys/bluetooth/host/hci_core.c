@@ -54,8 +54,8 @@
 #endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT	(5 * MSEC_PER_SEC)
-#define RPA_TIMEOUT (CONFIG_BLUETOOTH_RPA_TIMEOUT * MSEC_PER_SEC)
+#define CONN_UPDATE_TIMEOUT  K_SECONDS(5)
+#define RPA_TIMEOUT          K_SECONDS(CONFIG_BLUETOOTH_RPA_TIMEOUT)
 
 /* Stacks for the threads */
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
@@ -2466,14 +2466,18 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 	set_param->window = sys_cpu_to_le16(window);
 	set_param->filter_policy = 0x00;
 
-	if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
-		err = le_set_rpa();
-		if (err) {
-			net_buf_unref(buf);
-			return err;
-		}
+	err = le_set_rpa();
+	if (err) {
+		net_buf_unref(buf);
+		return err;
+	}
+
+	set_param->addr_type = BT_ADDR_LE_RANDOM;
 #else
+	set_param->addr_type =  bt_dev.id_addr.type;
+
+	if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
 		/* only set NRPA if there is no advertising ongoing */
 		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 			err = le_set_nrpa();
@@ -2481,13 +2485,11 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 				net_buf_unref(buf);
 				return err;
 			}
-		}
-#endif
 
-		set_param->addr_type = BT_ADDR_LE_RANDOM;
-	} else {
-		set_param->addr_type = BT_ADDR_LE_PUBLIC;
+			set_param->addr_type = BT_ADDR_LE_RANDOM;
+		}
 	}
+#endif
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,

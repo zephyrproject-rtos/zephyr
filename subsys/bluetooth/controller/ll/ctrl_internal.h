@@ -55,7 +55,7 @@ struct connection {
 	uint16_t latency;
 	uint16_t latency_prepare;
 	uint16_t latency_event;
-	uint16_t sug_tx_octets;
+	uint16_t default_tx_octets;
 	uint16_t max_tx_octets;
 	uint16_t max_rx_octets;
 	uint16_t supervision_reload;
@@ -198,6 +198,16 @@ struct pdu_data_q_tx {
 	struct radio_pdu_node_tx *node_tx;
 };
 
+/* Minimum Rx Data allocation size */
+#define PACKET_RX_DATA_SIZE_MIN \
+			ALIGN4(offsetof(struct radio_pdu_node_rx, pdu_data) + \
+			(RADIO_ACPDU_SIZE_MAX + 1))
+
+/* Minimum Tx Ctrl allocation size */
+#define PACKET_TX_CTRL_SIZE_MIN \
+			ALIGN4(offsetof(struct radio_pdu_node_tx, pdu_data) + \
+			offsetof(struct pdu_data, payload) + 27)
+
 /** @todo fix starvation when ctrl rx in radio ISR
  * for multiple connections needs to tx back to peer.
  */
@@ -223,10 +233,7 @@ struct pdu_data_q_tx {
 #define LL_MEM_RX_LINK_POOL (sizeof(void *) * 2 * ((RADIO_PACKET_COUNT_RX_MAX +\
 				4) + RADIO_CONNECTION_CONTEXT_MAX))
 
-#define LL_MEM_TX_CTRL_POOL ((ALIGN4(offsetof( \
-					struct radio_pdu_node_tx, pdu_data) + \
-		   offsetof(struct pdu_data, payload) + 27)) * \
-		PACKET_MEM_COUNT_TX_CTRL)
+#define LL_MEM_TX_CTRL_POOL (PACKET_TX_CTRL_SIZE_MIN * PACKET_MEM_COUNT_TX_CTRL)
 #define LL_MEM_TX_DATA_POOL ((ALIGN4(offsetof( \
 					struct radio_pdu_node_tx, pdu_data) + \
 		   offsetof(struct pdu_data, payload) + \

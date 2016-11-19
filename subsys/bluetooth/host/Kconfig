@@ -246,7 +246,6 @@ endif # BLUETOOTH_CONN
 config BLUETOOTH_TINYCRYPT_ECC
 	bool "Use TinyCrypt library for ECDH"
 	select TINYCRYPT_ECC_DH
-	depends on MICROKERNEL
 	help
 	  If this option is set TinyCrypt library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
@@ -427,7 +426,9 @@ endif # BLUETOOTH_DEBUG
 config BLUETOOTH_BREDR
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	depends on BLUETOOTH_HCI_HOST
-	select BLUETOOTH_CONN
+	select BLUETOOTH_PERIPHERAL
+	select BLUETOOTH_CENTRAL
+	select BLUETOOTH_SMP
 	select BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	help
 	  This option enables Bluetooth BR/EDR support"
