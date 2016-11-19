@@ -61,7 +61,7 @@ struct init_stack_frame {
 
 
 void _new_thread(char *stack_memory, size_t stack_size,
-		 void *uk_task_ptr, _thread_entry_t thread_func,
+		 _thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned options)
 {
@@ -99,8 +99,6 @@ void _new_thread(char *stack_memory, size_t stack_size,
 	/* Initialize custom data field (value is opaque to kernel) */
 	thread->custom_data = NULL;
 #endif
-	ARG_UNUSED(uk_task_ptr);
-
 	thread->callee_saved.sp = (uint32_t)iframe;
 	thread->callee_saved.ra = (uint32_t)_thread_entry_wrapper;
 	thread->callee_saved.key = NIOS2_STATUS_PIE_MSK;

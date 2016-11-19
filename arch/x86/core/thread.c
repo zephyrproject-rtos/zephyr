@@ -76,7 +76,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
  * @return N/A
  */
 static void _new_thread_internal(char *pStackMem, unsigned stackSize,
-				 void *uk_task_ptr, int priority,
+				 int priority,
 				 unsigned options)
 {
 	unsigned long *pInitialCtx;
@@ -102,8 +102,6 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 
 	thread->custom_data = NULL;
 #endif
-
-	ARG_UNUSED(uk_task_ptr);
 
 	/*
 	 * The creation of the initial stack for the task has already been done.
@@ -246,7 +244,7 @@ __asm__("\t.globl _thread_entry\n"
  * @return opaque pointer to initialized k_thread structure
  */
 void _new_thread(char *pStackMem, size_t stackSize,
-		 void *uk_task_ptr, _thread_entry_t pEntry,
+		 _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)
 {
@@ -308,5 +306,5 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	 * aside for the thread's stack.
 	 */
 
-	_new_thread_internal(pStackMem, stackSize, uk_task_ptr, priority, options);
+	_new_thread_internal(pStackMem, stackSize, priority, options);
 }
