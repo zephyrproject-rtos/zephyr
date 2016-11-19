@@ -57,6 +57,13 @@ SPI Interface
    :project: Zephyr
    :content-only:
 
+Random Interface
+****************
+
+.. doxygengroup:: random_interface
+   :project: Zephyr
+   :content-only:
+
 UART Interface
 **************
 
