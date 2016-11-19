@@ -1086,6 +1086,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		 */
 		if (tcp->state != NET_TCP_SYN_RCVD) {
 			k_delayed_work_cancel(&tcp->ack_timer);
+			NET_DBG("Not in SYN_RCVD state, sending RST");
 			goto reset;
 		}
 
