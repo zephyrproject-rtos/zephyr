@@ -971,8 +971,6 @@ int net_context_connect(struct net_context *context,
 	if (cb) {
 		cb(context, user_data);
 	}
-
-	return 0;
 #endif
 
 	return 0;
