@@ -626,21 +626,15 @@ static int tcp_hdr_len(struct net_buf *buf)
 	return 4 * (hdr->offset >> 4);
 }
 
-/* This is called when we receive data after the connection has been
- * established. The core TCP logic is located here.
- */
-static enum net_verdict tcp_established(struct net_conn *conn,
+static enum net_verdict tcp_passive_close(struct net_conn *conn,
 					  struct net_buf *buf,
 					  void *user_data)
 {
 	struct net_context *context = (struct net_context *)user_data;
-	struct net_tcp_hdr *hdr;
-	enum net_verdict ret;
 
 	NET_ASSERT(context && context->tcp);
 
 	switch (context->tcp->state) {
-	case NET_TCP_ESTABLISHED:
 	case NET_TCP_CLOSE_WAIT:
 	case NET_TCP_LAST_ACK:
 		break;
@@ -650,36 +644,65 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 		return NET_DROP;
 	}
 
+	net_tcp_print_recv_info("PASSCLOSE", buf, NET_TCP_BUF(buf)->src_port);
+
+	if (context->tcp->state == NET_TCP_LAST_ACK &&
+	    NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
+		net_context_put(context);
+	}
+
+	return NET_DROP;
+}
+
+/* This is called when we receive data after the connection has been
+ * established. The core TCP logic is located here.
+ */
+static enum net_verdict tcp_established(struct net_conn *conn,
+					struct net_buf *buf,
+					void *user_data)
+{
+	struct net_context *context = (struct net_context *)user_data;
+	enum net_verdict ret;
+
+	NET_ASSERT(context && context->tcp);
+
+	if (context->tcp->state != NET_TCP_ESTABLISHED) {
+		NET_DBG("Context %p in wrong state %d",
+			context, context->tcp->state);
+		return NET_DROP;
+	}
+
 	net_tcp_print_recv_info("DATA", buf, NET_TCP_BUF(buf)->src_port);
 
-	hdr = (void *)net_nbuf_tcp_data(buf);
-
 	if (NET_TCP_FLAGS(buf) & NET_TCP_FIN) {
-		/* Sending a FIN and ACK in the CLOSE_WAIT state will
-		 * transition to LAST_ACK state
+		/* Sending an ACK in the CLOSE_WAIT state will transition to
+		 * LAST_ACK state
 		 */
 		net_tcp_change_state(context->tcp, NET_TCP_CLOSE_WAIT);
-		send_fin_ack(context, &conn->remote_addr);
-		return NET_DROP;
-	}
-	if (NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
-		if (context->tcp->state == NET_TCP_LAST_ACK) {
-			net_context_put(context);
+		net_conn_change_callback(context->conn_handler,
+					 tcp_passive_close, context);
+
+		ret = NET_DROP;
+
+		context->tcp->send_ack =
+			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
+	} else {
+		struct net_tcp_hdr *hdr = (void *)net_nbuf_tcp_data(buf);
+
+		if (sys_get_be32(hdr->seq) - context->tcp->send_ack) {
+			/* Don't try to reorder packets.  If it doesn't
+			 * match the next segment exactly, drop and wait for
+			 * retransmit
+			 */
 			return NET_DROP;
 		}
-	}
-	if (sys_get_be32(hdr->seq) - context->tcp->send_ack) {
-		/* Don't try to reorder packets.  If it doesn't match
-		 * the next segment exactly, drop and wait for
-		 * retransmit
-		 */
-		return NET_DROP;
+
+		ret = packet_received(conn, buf, user_data);
+
+		context->tcp->send_ack += net_buf_frags_len(buf)
+			- net_nbuf_ip_hdr_len(buf) - tcp_hdr_len(buf);
 	}
 
-	ret = packet_received(conn, buf, user_data);
-
-	context->tcp->send_ack += net_buf_frags_len(buf)
-		- net_nbuf_ip_hdr_len(buf) - tcp_hdr_len(buf);
 	send_ack(context, &conn->remote_addr);
 
 	return ret;
