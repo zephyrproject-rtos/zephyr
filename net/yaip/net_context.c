@@ -1252,10 +1252,14 @@ int net_context_accept(struct net_context *context,
 	}
 
 #if defined(CONFIG_NET_TCP)
-	if (context->tcp->state != NET_TCP_LISTEN) {
-		NET_DBG("Context %p in wrong state %d, should be %d",
-			context, context->tcp->state, NET_TCP_LISTEN);
-		return -EINVAL;
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		NET_ASSERT(context->tcp);
+
+		if (context->tcp->state != NET_TCP_LISTEN) {
+			NET_DBG("Context %p in wrong state %d, should be %d",
+				context, context->tcp->state, NET_TCP_LISTEN);
+			return -EINVAL;
+		}
 	}
 
 	local_addr.family = net_context_get_family(context);
