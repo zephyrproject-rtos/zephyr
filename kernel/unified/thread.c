@@ -239,7 +239,7 @@ k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 
 	struct k_thread *new_thread = (struct k_thread *)stack;
 
-	_new_thread(stack, stack_size, NULL, entry, p1, p2, p3, prio, options);
+	_new_thread(stack, stack_size, entry, p1, p2, p3, prio, options);
 
 	schedule_new_thread(new_thread, delay);
 
@@ -382,7 +382,6 @@ void _init_static_threads(void)
 		_new_thread(
 			thread_data->init_stack,
 			thread_data->init_stack_size,
-			NULL,
 			thread_data->init_entry,
 			thread_data->init_p1,
 			thread_data->init_p2,

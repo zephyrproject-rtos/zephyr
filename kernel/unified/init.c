@@ -277,13 +277,13 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 		sys_dlist_init(&_ready_q.q[ii]);
 	}
 
-	_new_thread(main_stack, MAIN_STACK_SIZE, NULL,
+	_new_thread(main_stack, MAIN_STACK_SIZE,
 		    _main, NULL, NULL, NULL,
 		    CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
 	_mark_thread_as_started(_main_thread);
 	_add_thread_to_ready_q(_main_thread);
 
-	_new_thread(idle_stack, IDLE_STACK_SIZE, NULL,
+	_new_thread(idle_stack, IDLE_STACK_SIZE,
 		    idle, NULL, NULL, NULL,
 		    K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
 	_mark_thread_as_started(_idle_thread);
