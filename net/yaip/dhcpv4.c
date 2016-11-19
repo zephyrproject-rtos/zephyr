@@ -704,7 +704,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	NET_DBG("received dhcp msg [op=0x%x htype=0x%x hlen=%u xid=0x%x "
 		"secs=%u flags=0x%x ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d "
 		"siaddr=%d.%d.%d.%d giaddr=%d.%d.%d.%d chaddr=%s]",
-		msg->op, msg->htype, msg->hlen, msg->xid, msg->secs, msg->flags,
+		msg->op, msg->htype, msg->hlen, ntohl(msg->xid),
+		msg->secs, msg->flags,
 		msg->ciaddr[0], msg->ciaddr[1], msg->ciaddr[2], msg->ciaddr[3],
 		msg->yiaddr[0], msg->yiaddr[1], msg->yiaddr[2], msg->yiaddr[3],
 		msg->siaddr[0], msg->siaddr[1], msg->siaddr[2], msg->siaddr[3],
@@ -716,7 +717,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	      !memcmp(msg->chaddr, iface->link_addr.addr,
 		      iface->link_addr.len))) {
 
-		NET_DBG("Unexpected op, xid or chaddr");
+		NET_DBG("Unexpected op (%d), xid (%x vs %x) or chaddr",
+			msg->op, iface->dhcpv4.xid, ntohl(msg->xid));
 		goto drop;
 	}
 
