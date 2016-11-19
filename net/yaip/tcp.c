@@ -750,8 +750,8 @@ void net_tcp_change_state(struct net_tcp *tcp,
 	NET_ASSERT(new_state >= NET_TCP_CLOSED &&
 		   new_state <= NET_TCP_CLOSING);
 
-	NET_DBG("%s (%d) => %s (%d)",
-		net_tcp_state_str(tcp->state), tcp->state,
+	NET_DBG("state@%p %s (%d) => %s (%d)",
+		tcp, net_tcp_state_str(tcp->state), tcp->state,
 		net_tcp_state_str(new_state), new_state);
 
 #if NET_DEBUG
