@@ -43,7 +43,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
 #endif
 
-    .word __CORTEXM_BOOT_MSP
+    .word 0 /* no need for a stack, the kernel sets one up before running C */
     .word __reset
     .word __nmi
 

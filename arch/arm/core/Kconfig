@@ -28,6 +28,7 @@ config CPU_CORTEX_M
 	# Omit prompt to signify "hidden" option
 	default n
 	select CPU_CORTEX
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	help
 	This option signifies the use of a CPU of the Cortex-M family.
 
