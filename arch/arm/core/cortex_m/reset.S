@@ -33,6 +33,7 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(__reset)
+GDATA(_interrupt_stack)
 
 /**
  *
@@ -81,7 +82,8 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
      * Set PSP and use it to boot without using MSP, so that it
      * gets set to _interrupt_stack during nanoInit().
      */
-    ldr r0, =__CORTEXM_BOOT_PSP
+    ldr r0, =_interrupt_stack
+    adds r0, r0, CONFIG_ISR_STACK_SIZE
     msr PSP, r0
     movs.n r0, #2	/* switch to using PSP (bit1 of CONTROL reg) */
     msr CONTROL, r0

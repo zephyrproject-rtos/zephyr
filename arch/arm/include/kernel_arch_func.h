@@ -48,6 +48,47 @@ static ALWAYS_INLINE void nanoArchInit(void)
 }
 
 static ALWAYS_INLINE void
+_arch_switch_to_main_thread(char *main_stack, size_t main_stack_size,
+			    _thread_entry_t _main)
+{
+	/* get high address of the stack, i.e. its start (stack grows down) */
+	char *start_of_main_stack;
+
+	start_of_main_stack = main_stack + main_stack_size;
+	start_of_main_stack = (void *)STACK_ROUND_DOWN(start_of_main_stack);
+
+	_current = (void *)main_stack;
+
+	__asm__ __volatile__(
+
+		/* move to main() thread stack */
+		"msr PSP, %0 \t\n"
+
+		/* unlock interrupts */
+#ifdef CONFIG_CPU_CORTEX_M0_M0PLUS
+		"cpsie i \t\n"
+#else
+		"movs %%r1, #0 \n\t"
+		"msr BASEPRI, %%r1 \n\t"
+#endif
+
+		/* branch to _thread_entry(_main, 0, 0, 0) */
+		"mov %%r0, %1 \n\t"
+		"bx %2 \t\n"
+
+		/* never gets here */
+
+		:
+		: "r"(start_of_main_stack),
+		  "r"(_main), "r"(_thread_entry)
+
+		: "r0", "r1", "sp"
+	);
+
+	CODE_UNREACHABLE;
+}
+
+static ALWAYS_INLINE void
 _set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
