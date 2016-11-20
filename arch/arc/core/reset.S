@@ -28,11 +28,25 @@
 #include <sections.h>
 #include <arch/cpu.h>
 
-#ifdef CONFIG_HARVARD
-#define _TOP_OF_MEMORY (CONFIG_DCCM_BASE_ADDRESS + CONFIG_DCCM_SIZE * 1024)
-/* harvard places the initial stack in the dccm memory */
+GDATA(_interrupt_stack)
+GDATA(_firq_stack)
+
+/* use one of the available interrupt stacks during init */
+
+/* FIRQ only ? */
+#if CONFIG_NUM_IRQ_PRIO_LEVELS == 1
+
+	/* FIRQ, but uses _interrupt_stack ? */
+	#if CONFIG_RGF_NUM_BANKS == 1
+		#define INIT_STACK _interrupt_stack
+		#define INIT_STACK_SIZE CONFIG_ISR_STACK_SIZE
+	#else
+		#define INIT_STACK _firq_stack
+		#define INIT_STACK_SIZE CONFIG_FIRQ_STACK_SIZE
+	#endif
 #else
-#define _TOP_OF_MEMORY (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024)
+	#define INIT_STACK _interrupt_stack
+	#define INIT_STACK_SIZE CONFIG_ISR_STACK_SIZE
 #endif
 
 GTEXT(__reset)
@@ -58,7 +72,7 @@ SECTION_FUNC(TEXT,__start)
 	/* lock interrupts: will get unlocked when switch to main task */
 	clri
 
-	/* setup a stack at the end of MEMORY */
-	mov sp, _TOP_OF_MEMORY
+	mov sp, INIT_STACK
+	add sp, sp, INIT_STACK_SIZE
 
 	j @_PrepC
