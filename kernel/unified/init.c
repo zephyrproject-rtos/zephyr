@@ -241,6 +241,9 @@ void __weak main(void)
  */
 static void prepare_multithreading(struct k_thread *dummy_thread)
 {
+#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	ARG_UNUSED(dummy_thread);
+#else
 	/*
 	 * Initialize the current execution thread to permit a level of
 	 * debugging output if an exception should happen during nanokernel
@@ -257,6 +260,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 */
 	dummy_thread->base.flags = K_ESSENTIAL;
 	dummy_thread->base.prio = K_PRIO_COOP(0);
+#endif
 
 	/* _kernel.ready_q is all zeroes */
 
@@ -298,6 +302,9 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 static void switch_to_main_thread(void)
 {
+#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	_arch_switch_to_main_thread(main_stack, MAIN_STACK_SIZE, _main);
+#else
 	/*
 	 * Context switch to main task (entry function is _main()): the
 	 * current fake thread is not on a wait queue or ready queue, so it
@@ -305,6 +312,7 @@ static void switch_to_main_thread(void)
 	 */
 
 	_Swap(irq_lock());
+#endif
 }
 
 #ifdef CONFIG_STACK_CANARIES
@@ -357,9 +365,14 @@ extern void *__stack_chk_guard;
  */
 FUNC_NORETURN void _Cstart(void)
 {
-	/* floating point operations are NOT performed during nanokernel init */
+#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	void *dummy_thread = NULL;
+#else
+	/* floating point is NOT used during nanokernel init */
 
-	char __stack dummy_thread[_K_THREAD_NO_FLOAT_SIZEOF];
+	char __stack dummy_stack[_K_THREAD_NO_FLOAT_SIZEOF];
+	void *dummy_thread = dummy_stack;
+#endif
 
 	/*
 	 * Initialize nanokernel data structures. This step includes
@@ -367,7 +380,7 @@ FUNC_NORETURN void _Cstart(void)
 	 * before the hardware initialization phase.
 	 */
 
-	prepare_multithreading((struct k_thread *)&dummy_thread);
+	prepare_multithreading(dummy_thread);
 
 	/* Deprecated */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRIMARY);
