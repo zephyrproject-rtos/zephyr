@@ -50,12 +50,12 @@ enum slip_state {
 };
 
 /* RX queue */
-static struct nano_fifo rx_queue;
+static struct k_fifo rx_queue;
 static char __noinit __stack rx_stack[1024];
 
 /* TX queue */
-static struct nano_sem tx_sem;
-static struct nano_fifo tx_queue;
+static struct k_sem tx_sem;
+static struct k_fifo tx_queue;
 static char __noinit __stack tx_stack[1024];
 
 /* Buffer for SLIP encoded data for the worst case */

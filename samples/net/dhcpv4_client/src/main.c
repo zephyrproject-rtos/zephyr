@@ -32,7 +32,7 @@
 #include <net/net_core.h>
 #include <net/net_context.h>
 
-static struct nano_sem quit_lock;
+static struct k_sem quit_lock;
 
 static inline void quit(void)
 {
