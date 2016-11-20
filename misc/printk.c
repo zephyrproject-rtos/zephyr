@@ -27,8 +27,10 @@
 #include <toolchain.h>
 #include <sections.h>
 
-static void _printk_dec_ulong(const unsigned long num);
-static void _printk_hex_ulong(const unsigned long num);
+static void _printk_dec_ulong(const unsigned long num, int pad_zero,
+			      int min_width);
+static void _printk_hex_ulong(const unsigned long num, int pad_zero,
+			      int min_width);
 
 /**
  * @brief Default character output routine that does nothing
@@ -73,6 +75,8 @@ void __printk_hook_install(int (*fn)(int))
 static inline void _vprintk(const char *fmt, va_list ap)
 {
 	int might_format = 0; /* 1 if encountered a '%' */
+	int pad_zero = 0;
+	int min_width = -1;
 
 	/* fmt has already been adjusted if needed */
 
@@ -82,9 +86,24 @@ static inline void _vprintk(const char *fmt, va_list ap)
 				_char_out((int)*fmt);
 			} else {
 				might_format = 1;
+				min_width = -1;
+				pad_zero = 0;
 			}
 		} else {
 			switch (*fmt) {
+			case '0':
+				if (min_width < 0 && pad_zero == 0) {
+					pad_zero = 1;
+					goto still_might_format;
+				}
+				/* Fall through */
+			case '1' ... '9':
+				if (min_width < 0) {
+					min_width = *fmt - '0';
+				} else {
+					min_width = 10 * min_width + *fmt - '0';
+				}
+				goto still_might_format;
 			case 'z':
 			case 'l':
 			case 'h':
@@ -97,25 +116,29 @@ static inline void _vprintk(const char *fmt, va_list ap)
 				if (d < 0) {
 					_char_out((int)'-');
 					d = -d;
+					min_width--;
 				}
-				_printk_dec_ulong(d);
+				_printk_dec_ulong(d, pad_zero, min_width);
 				break;
 			}
 			case 'u': {
 				unsigned long u = va_arg(
 					ap, unsigned long);
-				_printk_dec_ulong(u);
+				_printk_dec_ulong(u, pad_zero, min_width);
 				break;
 			}
 			case 'p':
 				  _char_out('0');
 				  _char_out('x');
+				  /* left-pad pointers with zeros */
+				  pad_zero = 1;
+				  min_width = 8;
 				  /* Fall through */
 			case 'x':
 			case 'X': {
 				unsigned long x = va_arg(
 					ap, unsigned long);
-				_printk_hex_ulong(x);
+				_printk_hex_ulong(x, pad_zero, min_width);
 				break;
 			}
 			case 's': {
@@ -183,14 +206,26 @@ void printk(const char *fmt, ...)
  *
  * @return N/A
  */
-static void _printk_hex_ulong(const unsigned long num)
+static void _printk_hex_ulong(const unsigned long num, int pad_zero,
+			      int min_width)
 {
 	int size = sizeof(num) * 2;
+	int found_largest_digit = 0;
+	int remaining = 8; /* 8 digits max */
 
 	for (; size; size--) {
 		char nibble = (num >> ((size - 1) << 2) & 0xf);
-		nibble += nibble > 9 ? 87 : 48;
-		_char_out((int)nibble);
+
+		if (nibble || found_largest_digit || size == 1) {
+			found_largest_digit = 1;
+			nibble += nibble > 9 ? 87 : 48;
+			_char_out((int)nibble);
+			continue;
+		}
+
+		if (remaining-- <= min_width) {
+			_char_out((int)(pad_zero ? '0' : ' '));
+		}
 	}
 }
 
@@ -203,17 +238,27 @@ static void _printk_hex_ulong(const unsigned long num)
  *
  * @return N/A
  */
-static void _printk_dec_ulong(const unsigned long num)
+static void _printk_dec_ulong(const unsigned long num, int pad_zero,
+			      int min_width)
 {
 	unsigned long pos = 999999999;
 	unsigned long remainder = num;
 	int found_largest_digit = 0;
+	int remaining = 10; /* 10 digits max */
+
+	/* make sure we don't skip if value is zero */
+	if (min_width <= 0) {
+		min_width = 1;
+	}
 
 	while (pos >= 9) {
 		if (found_largest_digit || remainder > pos) {
 			found_largest_digit = 1;
 			_char_out((int)((remainder / (pos + 1)) + 48));
+		} else if (remaining <= min_width) {
+			_char_out((int)(pad_zero ? '0' : ' '));
 		}
+		remaining--;
 		remainder %= (pos + 1);
 		pos /= 10;
 	}
