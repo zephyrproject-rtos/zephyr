@@ -699,8 +699,7 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 
 		ret = packet_received(conn, buf, user_data);
 
-		context->tcp->send_ack += net_buf_frags_len(buf)
-			- net_nbuf_ip_hdr_len(buf) - tcp_hdr_len(buf);
+		context->tcp->send_ack += net_nbuf_appdatalen(buf);
 	}
 
 	send_ack(context, &conn->remote_addr);
