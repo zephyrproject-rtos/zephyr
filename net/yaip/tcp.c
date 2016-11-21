@@ -184,16 +184,27 @@ static inline int net_tcp_add_options(struct net_buf *header, size_t len,
 }
 
 static struct net_buf *prepare_segment(struct net_tcp *tcp,
-				       struct tcp_segment *segment)
+				       struct tcp_segment *segment,
+				       struct net_buf *buf)
 {
-	struct net_buf *buf, *header;
+	struct net_buf *header, *tail = NULL;
 	struct net_tcp_hdr *tcphdr;
 	struct net_context *context = tcp->context;
 	uint16_t dst_port, src_port;
 
 	NET_ASSERT(context);
 
-	buf = net_nbuf_get_tx(context);
+	if (buf) {
+		/* TCP transmit data comes in with a pre-allocated
+		 * nbuf at the head (so that net_context_send can find
+		 * the context), and the data after.  Rejigger so we
+		 * can insert a TCP header cleanly
+		 */
+		tail = buf->frags;
+		buf->frags = NULL;
+	} else {
+		buf = net_nbuf_get_tx(context);
+	}
 
 #if defined(CONFIG_NET_IPV4)
 	if (net_nbuf_family(buf) == AF_INET) {
@@ -242,6 +253,10 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	tcphdr->flags = segment->flags;
 	tcphdr->wnd[0] = segment->wnd >> 8;
 	tcphdr->wnd[1] = segment->wnd;
+
+	if (tail) {
+		net_buf_frag_add(buf, tail);
+	}
 
 #if defined(CONFIG_NET_IPV4)
 	if (net_nbuf_family(buf) == AF_INET) {
@@ -348,7 +363,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	segment.options = options;
 	segment.optlen = optlen;
 
-	*send_buf = prepare_segment(tcp, &segment);
+	*send_buf = prepare_segment(tcp, &segment, NULL);
 
 	tcp->send_seq = seq;
 
@@ -495,7 +510,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 		segment.options = NULL;
 		segment.optlen = 0;
 
-		*buf = prepare_segment(tcp, &segment);
+		*buf = prepare_segment(tcp, &segment, NULL);
 	}
 
 	return 0;
