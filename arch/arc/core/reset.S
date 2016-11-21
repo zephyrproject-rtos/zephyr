@@ -30,6 +30,7 @@
 
 GDATA(_interrupt_stack)
 GDATA(_firq_stack)
+GDATA(_main_stack)
 
 /* use one of the available interrupt stacks during init */
 
@@ -71,6 +72,26 @@ SECTION_FUNC(TEXT,__start)
 
 	/* lock interrupts: will get unlocked when switch to main task */
 	clri
+
+#ifdef CONFIG_INIT_STACKS
+	/*
+	 * use the main stack to call memset on the interrupt stack and the
+	 * FIRQ stack when CONFIG_INIT_STACKS is enabled before switching to
+	 * one of them for the rest of the early boot
+	 */
+	mov sp, _main_stack
+	add sp, sp, CONFIG_MAIN_STACK_SIZE
+
+	mov_s r0, _interrupt_stack
+	mov_s r1, 0xaa
+	mov_s r2, CONFIG_ISR_STACK_SIZE
+	jl memset
+
+	mov_s r0, _firq_stack
+	mov_s r1, 0xaa
+	mov_s r2, CONFIG_FIRQ_STACK_SIZE
+	jl memset
+#endif
 
 	mov sp, INIT_STACK
 	add sp, sp, INIT_STACK_SIZE
