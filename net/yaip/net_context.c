@@ -1268,6 +1268,8 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			goto reset;
 		}
 
+		new_context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
+
 		memcpy(&new_context->remote, &remote_addr,
 		       sizeof(remote_addr));
 
