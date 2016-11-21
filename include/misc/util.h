@@ -18,7 +18,7 @@
  * @file
  * @brief Misc utilities
  *
- * Misc utilities usable by nanokernel, microkernel, and application code.
+ * Misc utilities usable by the kernel and application code.
  */
 
 #ifndef _UTIL__H_
@@ -40,13 +40,32 @@ extern "C" {
 #define POINTER_TO_INT(x)  ((int32_t) (x))
 #define INT_TO_POINTER(x)  ((void *) (x))
 
-#define ARRAY_SIZE(array) ((unsigned long)(sizeof(array) / sizeof((array)[0])))
-#define CONTAINER_OF(ptr, type, field) \
-	((type *)(((char *)(ptr)) - offsetof(type, field)))
+/* Evaluates to 0 if cond is true-ish; compile error otherwise */
+#define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
 
-/* evaluates to 1 if ptr is part of array, 0 otherwise */
+/* Evaluates to 0 if array is an array; compile error if not array (e.g.
+ * pointer)
+ */
+#define IS_ARRAY(array) \
+	ZERO_OR_COMPILE_ERROR( \
+		!__builtin_types_compatible_p(__typeof__(array), \
+					      __typeof__(&(array)[0])))
+
+/* Evaluates to number of elements in an array; compile error if not
+ * an array (e.g. pointer)
+ */
+#define ARRAY_SIZE(array) \
+	((unsigned long) (IS_ARRAY(array) + \
+		(sizeof(array) / sizeof((array)[0]))))
+
+/* Evaluates to 1 if ptr is part of array, 0 otherwise; compile error if
+ * "array" argument is not an array (e.g. "ptr" and "array" mixed up)
+ */
 #define PART_OF_ARRAY(array, ptr) \
 	((ptr) && ((ptr) >= &array[0] && (ptr) < &array[ARRAY_SIZE(array)]))
+
+#define CONTAINER_OF(ptr, type, field) \
+	((type *)(((char *)(ptr)) - offsetof(type, field)))
 
 /* round "x" up/down to next multiple of "align" (which must be a power of 2) */
 #define ROUND_UP(x, align)                                   \
