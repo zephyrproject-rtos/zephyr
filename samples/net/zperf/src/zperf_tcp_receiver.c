@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-#include <misc/printk.h>
-#include <net/net_core.h>
-#include <net/net_socket.h>
-#include <net/ip_buf.h>
-#include <net/net_ip.h>
+#error "FIXME - TCP not supported yet"
+
+#include <zephyr.h>
+
 #include <sections.h>
 #include <toolchain.h>
-#include <zephyr.h>
+
+#include <misc/printk.h>
+
+#include <net/net_core.h>
+#include <net/net_ip.h>
+#include <net/nbuf.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
@@ -35,7 +39,7 @@
 static char __noinit __stack zperf_tcp_rx_fiber_stack[TCP_RX_FIBER_STACK_SIZE];
 
 static struct net_addr in_addr_any = {
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 	.family = AF_INET6,
 	.in6_addr = IN6ADDR_ANY_INIT
 #else
@@ -44,7 +48,7 @@ static struct net_addr in_addr_any = {
 };
 
 static struct net_addr in_addr_my = {
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 	.family = AF_INET6,
 	.in6_addr = IN6ADDR_ANY_INIT
 #else

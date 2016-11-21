@@ -23,11 +23,12 @@
 #define CMD_STR_CONNECTAP "connectap"
 #define CMD_STR_VERSION "version"
 #define CMD_STR_UDP_UPLOAD "udp.upload"
+#define CMD_STR_UDP_UPLOAD2 "udp.upload2"
 #define CMD_STR_UDP_DOWNLOAD "udp.download"
 #define CMD_STR_TCP_UPLOAD "tcp.upload"
 #define CMD_STR_TCP_DOWNLOAD "tcp.download"
 
-typedef struct zperf_results {
+struct zperf_results {
 	uint32_t nb_packets_sent;
 	uint32_t nb_packets_rcvd;
 	uint32_t nb_packets_lost;
@@ -38,9 +39,9 @@ typedef struct zperf_results {
 	uint32_t client_time_in_us;
 	uint32_t packet_size;
 	uint32_t nb_packets_errors;
-} zperf_results;
+};
 
-typedef void (*zperf_callback)(int status, zperf_results*);
+typedef void (*zperf_callback)(int status, struct zperf_results *);
 
 #define IPV4_STR_LEN_MAX 15
 #define IPV4_STR_LEN_MIN 7

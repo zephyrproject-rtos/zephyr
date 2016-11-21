@@ -17,12 +17,27 @@
 #define __ZPERF_INTERNAL_H
 
 #include <limits.h>
-#include <misc/byteorder.h>
+#include <net/net_ip.h>
 
-/* Constants */
+#define IP6PREFIX_STR2(s) #s
+#define IP6PREFIX_STR(p) IP6PREFIX_STR2(p)
+
+#define MY_PREFIX_LEN 64
+#define MY_PREFIX_LEN_STR IP6PREFIX_STR(MY_PREFIX_LEN)
+
+/* Note that you can set local endpoint address in config file */
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#define MY_IP6ADDR CONFIG_NET_SAMPLES_MY_IPV6_ADDR
+#define DST_IP6ADDR CONFIG_NET_SAMPLES_PEER_IPV6_ADDR
+#endif
+
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#define MY_IP4ADDR CONFIG_NET_SAMPLES_MY_IPV4_ADDR
+#define DST_IP4ADDR CONFIG_NET_SAMPLES_PEER_IPV4_ADDR
+#endif
+
 #define PACKET_SIZE_MAX      1024
 
-/* Macro */
 #define HW_CYCLES_TO_USEC(__hw_cycle__) \
 	( \
 		((uint64_t)(__hw_cycle__) * (uint64_t)sys_clock_us_per_tick) / \
@@ -49,14 +64,13 @@
 		USEC_TO_HW_CYCLES((uint64_t)(__msec__) * \
 		(uint64_t)MSEC_PER_SEC)
 
-/* Types */
-typedef struct zperf_udp_datagram {
+struct zperf_udp_datagram {
 	int32_t id;
 	uint32_t tv_sec;
 	uint32_t tv_usec;
-} zperf_udp_datagram;
+};
 
-typedef struct zperf_server_hdr {
+struct zperf_server_hdr {
 	int32_t flags;
 	int32_t total_len1;
 	int32_t total_len2;
@@ -67,33 +81,40 @@ typedef struct zperf_server_hdr {
 	int32_t datagrams;
 	int32_t jitter1;
 	int32_t jitter2;
-} zperf_server_hdr;
+};
 
-/* Inline functions */
 static inline uint32_t time_delta(uint32_t ts, uint32_t t)
 {
 	return (t >= ts) ? (t - ts) : (ULONG_MAX - ts + t);
 }
 
-/* byte order */
-#define z_htonl(val) sys_cpu_to_be32(val)
-#define z_ntohl(val) sys_be32_to_cpu(val)
+#if defined(CONFIG_NET_IPV6)
+int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr,
+			const char *str);
+struct sockaddr_in6 *zperf_get_sin6(void);
+#endif
 
-/* internal functions */
+#if defined(CONFIG_NET_IPV4)
+int zperf_get_ipv4_addr(char *host, struct in_addr *addr, const char *str);
+struct sockaddr_in *zperf_get_sin(void);
+#endif
+
 extern void zperf_udp_upload(struct net_context *net_context,
-		unsigned int duration_in_ms, unsigned int packet_size,
-		unsigned int rate_in_kbps, zperf_results *results);
-extern void zperf_upload_fin(struct net_context *net_context,
-		uint32_t nb_packets, uint32_t end_time, uint32_t packet_size,
-		zperf_results *results);
-extern void zperf_upload_decode_stat(struct net_buf *net_stat,
-		zperf_results *results);
+			     unsigned int duration_in_ms,
+			     unsigned int packet_size,
+			     unsigned int rate_in_kbps,
+			     struct zperf_results *results);
+
 extern void zperf_receiver_init(int port);
-#ifdef CONFIG_NETWORKING_WITH_TCP
+
+#if defined(CONFIG_NET_TCP)
 extern void zperf_tcp_receiver_init(int port);
 extern void zperf_tcp_upload(struct net_context *net_context,
-		unsigned int duration_in_ms, unsigned int packet_size,
-		zperf_results *results);
+			     unsigned int duration_in_ms,
+			     unsigned int packet_size,
+			     struct zperf_results *results);
 #endif
+
 extern void connect_ap(char *ssid);
+
 #endif /* __ZPERF_INTERNAL_H */
