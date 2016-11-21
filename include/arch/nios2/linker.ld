@@ -127,6 +127,12 @@ SECTIONS
         *(.rodata)
         *(".rodata.*")
         *(.gnu.linkonce.r.*)
+
+#ifdef CONFIG_CUSTOM_RODATA_LD
+/* Located in project source directory */
+#include <custom-rodata.ld>
+#endif
+
         } GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_rom_end = .;
@@ -176,6 +182,11 @@ SECTIONS
 
         *(.data)
         *(".data.*")
+
+#ifdef CONFIG_CUSTOM_RWDATA_LD
+/* Located in project source directory */
+#include <custom-rwdata.ld>
+#endif
 
         /* the Nios2 architecture only has 16-bit signed immediate offsets in
          * the instructions, so accessing a general address requires typically
@@ -236,6 +247,11 @@ SECTIONS
     _end = .; /* end of image */
 
     GROUP_END(RAMABLE_REGION)
+
+#ifdef CONFIG_CUSTOM_SECTIONS_LD
+/* Located in project source directory */
+#include <custom-sections.ld>
+#endif
 
     }
 

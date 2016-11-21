@@ -117,6 +117,12 @@ SECTIONS {
 		*(.rodata)
 		*(".rodata.*")
 		*(.gnu.linkonce.r.*)
+
+#ifdef CONFIG_CUSTOM_RODATA_LD
+/* Located in project source directory */
+#include <custom-rodata.ld>
+#endif
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_rom_end = .;
@@ -134,6 +140,11 @@ SECTIONS {
 		__data_ram_start = .;
 		*(.data)
 		*(".data.*")
+
+#ifdef CONFIG_CUSTOM_RWDATA_LD
+/* Located in project source directory */
+#include <custom-rwdata.ld>
+#endif
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -183,5 +194,10 @@ SECTIONS {
 		DEVICE_INIT_UNDEFINED_SECTION()
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
+
+#ifdef CONFIG_CUSTOM_SECTIONS_LD
+/* Located in project source directory */
+#include <custom-sections.ld>
+#endif
 
 	}

@@ -109,6 +109,11 @@ SECTIONS
 	KEEP(*(irq_int_vector_map))
 #endif
 
+#ifdef CONFIG_CUSTOM_RODATA_LD
+/* Located in project source directory */
+#include <custom-rodata.ld>
+#endif
+
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -129,6 +134,12 @@ SECTIONS
 	*(.top_of_image_ram.*)
 	*(.data)
 	*(".data.*")
+
+#ifdef CONFIG_CUSTOM_RWDATA_LD
+/* Located in project source directory */
+#include <custom-rwdata.ld>
+#endif
+
 	. = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -180,6 +191,7 @@ SECTIONS
 	*(.bottom_of_image_ram.*)
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+
 	/* Define linker symbols */
 	_image_ram_end = .;
 	_end = .; /* end of image */
@@ -201,6 +213,12 @@ SECTIONS
 	KEEP(*(.gnu.linkonce.intList.*))
 	__INT_LIST_END__ = .;
 	} > IDT_LIST
+
+#ifdef CONFIG_CUSTOM_SECTIONS_LD
+/* Located in project source directory */
+#include <custom-sections.ld>
+#endif
+
 	}
 
 #ifdef CONFIG_XIP

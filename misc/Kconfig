@@ -53,6 +53,27 @@ config CUSTOM_LINKER_SCRIPT
 	linker script and avoid having to change the script provided by
 	Zephyr.
 
+config CUSTOM_RODATA_LD
+	bool "Include custom-rodata.ld"
+	default n
+	help
+	Include a customized linker script fragment for inserting additional
+	data and linker directives into the rodata section.
+
+config CUSTOM_RWDATA_LD
+	bool "Include custom-rwdata.ld"
+	default n
+	help
+	Include a customized linker script fragment for inserting additional
+	data and linker directives into the data section.
+
+config CUSTOM_SECTIONS_LD
+	bool "Include custom-sections.ld"
+	default n
+	help
+	Include a customized linker script fragment for inserting additional
+	arbitrary sections.
+
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
 	help

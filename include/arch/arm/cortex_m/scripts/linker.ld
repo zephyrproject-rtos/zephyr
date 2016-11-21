@@ -139,6 +139,11 @@ SECTIONS
 	*(.rodata)
 	*(".rodata.*")
 	*(.gnu.linkonce.r.*)
+
+#ifdef CONFIG_CUSTOM_RODATA_LD
+/* Located in project source directory */
+#include <custom-rodata.ld>
+#endif
 	/*
 	 * For XIP images, in order to avoid the situation when __data_rom_start
 	 * is 32-bit aligned, but the actual data is placed right after rodata
@@ -167,6 +172,12 @@ SECTIONS
 	*(.top_of_image_ram.*)
 	*(.data)
 	*(".data.*")
+
+#ifdef CONFIG_CUSTOM_RWDATA_LD
+/* Located in project source directory */
+#include <custom-rwdata.ld>
+#endif
+
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <linker/common-ram.ld>
@@ -235,5 +246,10 @@ SECTIONS
 	*(".scs.*")
 	 } GROUP_LINK_IN(SYSTEM_CONTROL_SPACE)
     GROUP_END(SYSTEM_CONTROL_SPACE)
+
+#ifdef CONFIG_CUSTOM_SECTIONS_LD
+/* Located in project source directory */
+#include <custom-sections.ld>
+#endif
 
     }

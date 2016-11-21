@@ -843,6 +843,7 @@ $(KERNEL_NAME).lnk: $(zephyr-deps)
 linker.cmd: $(zephyr-deps)
 	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
 	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -I$(srctree)/include \
+	-I$(SOURCE_DIR) \
 	-I$(objtree)/include/generated $(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
 
 PREBUILT_KERNEL = $(KERNEL_NAME)_prebuilt.elf
