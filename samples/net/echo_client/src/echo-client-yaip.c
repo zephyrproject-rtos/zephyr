@@ -149,8 +149,12 @@ static inline void init_app(void)
 #endif
 
 #if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_DHCPV4)
+	net_dhcpv4_start(net_if_get_default());
+#else
 	net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my,
 			     NET_ADDR_MANUAL, 0);
+#endif /* CONFIG_NET_DHCPV4 */
 
 	k_sem_init(&recv_ipv4, 0, UINT_MAX);
 #endif
