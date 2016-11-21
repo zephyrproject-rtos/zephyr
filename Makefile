@@ -377,7 +377,7 @@ ZEPHYRINCLUDE    = \
 		$(USERINCLUDE) \
 		$(STDINCLUDE)
 
-KBUILD_CPPFLAGS := -DKERNEL
+KBUILD_CPPFLAGS := -DKERNEL -D__ZEPHYR__=1
 
 KBUILD_CFLAGS   := -c -g -std=c99 \
 		-fno-asynchronous-unwind-tables \
