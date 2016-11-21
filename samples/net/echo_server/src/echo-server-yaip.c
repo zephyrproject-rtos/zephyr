@@ -41,6 +41,9 @@
 #include <net_testing.h>
 #endif /* CONFIG_NET_TESTING */
 
+/* Allow binding to ANY IP address. */
+#define NET_BIND_ANY_ADDR 1
+
 #if defined(CONFIG_NET_IPV6)
 /* admin-local, dynamically allocated multicast address */
 #define MCAST_IP6ADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, \
@@ -53,9 +56,6 @@ struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
 #define MY_IP6ADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 #define MY_PREFIX_LEN 64
-
-/* Allow binding to ANY IPv6 address. */
-#define NET_BIND_ANY_ADDR 1
 #endif
 
 #if defined(CONFIG_NET_TESTING)
@@ -72,7 +72,9 @@ static struct in6_addr in6addr_my = MY_IP6ADDR;
 /* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
 #define MY_IP4ADDR { { { 192, 0, 2, 1 } } }
 
+#if !NET_BIND_ANY_ADDR
 static struct in_addr in4addr_my = MY_IP4ADDR;
+#endif
 #endif /* IPv4 */
 
 #define MY_PORT 4242
@@ -150,7 +152,10 @@ static inline bool get_context(struct net_context **udp_recv4,
 #endif
 
 #if defined(CONFIG_NET_IPV4)
+#if !NET_BIND_ANY_ADDR
 	net_ipaddr_copy(&my_addr4.sin_addr, &in4addr_my);
+#endif
+
 	my_addr4.sin_family = AF_INET;
 	my_addr4.sin_port = htons(MY_PORT);
 #endif
