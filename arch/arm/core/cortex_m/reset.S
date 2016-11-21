@@ -33,6 +33,7 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(__reset)
+GTEXT(memset)
 GDATA(_interrupt_stack)
 
 /**
@@ -76,6 +77,13 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 #else /* CONFIG_CPU_CORTEX_M3_M4 */
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
+#endif
+
+#ifdef CONFIG_INIT_STACKS
+    ldr r0, =_interrupt_stack
+    mov r1, #0xaa
+    ldr r2, =CONFIG_ISR_STACK_SIZE
+    bl memset
 #endif
 
     /*
