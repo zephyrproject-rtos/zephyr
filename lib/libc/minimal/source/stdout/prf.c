@@ -520,28 +520,15 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 			if (strchr("hlLz", c) != NULL) {
 				i = c;
 				c = *format++;
-				switch (i) {
-				case 'h':
-					if (strchr("diouxX", c) == NULL)
-						break;
-					break;
-
-				case 'l':
-					if (strchr("diouxX", c) == NULL)
-						break;
-					break;
-
-				case 'L':
-					if (strchr("eEfgG", c) == NULL)
-						break;
-					break;
-
-				case 'z':
-					if (strchr("diouxX", c) == NULL)
-						break;
-					break;
-
-				}
+				/*
+				 * Here there was a switch() block
+				 * which was doing nothing useful, I
+				 * am still puzzled at why it was left
+				 * over. Maybe before it contained
+				 * stuff that was needed, but in its
+				 * current form, it was being
+				 * optimized out.
+				 */
 			}
 
 			need_justifying = false;
