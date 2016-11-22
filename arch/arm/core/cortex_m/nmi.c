@@ -26,6 +26,7 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <misc/printk.h>
+#include <misc/reboot.h>
 #include <toolchain.h>
 #include <sections.h>
 
@@ -51,7 +52,8 @@ static _NmiHandler_t handler = _SysNmiOnReset;
 static void _DefaultHandler(void)
 {
 	printk("NMI received! Rebooting...\n");
-	_ScbSystemReset();
+	/* In ARM implementation sys_reboot ignores the parameter */
+	sys_reboot(0);
 }
 
 /**
