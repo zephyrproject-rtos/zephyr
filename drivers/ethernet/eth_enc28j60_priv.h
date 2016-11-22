@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <gpio.h>
 
 #ifndef _ENC28J60_
@@ -215,9 +215,9 @@
 #define TSV_SIZE 7
 #define RSV_SIZE 4
 
-/* Fiber Configuration */
-#define ENC28J60_FIBER_STACK_SIZE 512
-#define ENC28J60_FIBER_PRIORITY   15
+/* Thread Configuration */
+#define ENC28J60_THREAD_STACK_SIZE 512
+#define ENC28J60_THREAD_PRIORITY   15
 
 /* Microchip's OUI*/
 #define MICROCHIP_OUI_B0 0x00
@@ -239,16 +239,16 @@ struct eth_enc28j60_runtime {
 #ifdef CONFIG_NET_YAIP
 	struct net_if *iface;
 #endif
-	char __stack fiber_stack[ENC28J60_FIBER_STACK_SIZE];
+	char __stack thread_stack[ENC28J60_THREAD_STACK_SIZE];
 	struct device *gpio;
 	struct device *spi;
 	struct gpio_callback gpio_cb;
 	uint8_t mem_buf[MAX_BUFFER_LENGTH + 1];
 	uint8_t  tx_tsv[TSV_SIZE];
 	uint8_t  rx_rsv[RSV_SIZE];
-	struct nano_sem tx_rx_sem;
-	struct nano_sem int_sem;
-	struct nano_sem spi_sem;
+	struct k_sem tx_rx_sem;
+	struct k_sem int_sem;
+	struct k_sem spi_sem;
 #ifndef CONFIG_NET_YAIP
 	void (*receive_callback)(uint8_t *buffer, uint16_t len);
 #endif
