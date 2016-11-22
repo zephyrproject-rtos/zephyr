@@ -44,6 +44,10 @@ extern "C" {
 #define CONTAINER_OF(ptr, type, field) \
 	((type *)(((char *)(ptr)) - offsetof(type, field)))
 
+/* evaluates to 1 if ptr is part of array, 0 otherwise */
+#define PART_OF_ARRAY(array, ptr) \
+	((ptr) && ((ptr) >= &array[0] && (ptr) < &array[ARRAY_SIZE(array)]))
+
 /* round "x" up/down to next multiple of "align" (which must be a power of 2) */
 #define ROUND_UP(x, align)                                   \
 	(((unsigned long)(x) + ((unsigned long)align - 1)) & \
