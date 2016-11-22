@@ -348,7 +348,7 @@ static void net_rpl_print_neighbors(void)
 	if (rpl_default_instance && rpl_default_instance->current_dag) {
 		int curr_interval = rpl_default_instance->dio_interval_current;
 		int curr_rank = rpl_default_instance->current_dag->rank;
-		uint32_t now = sys_tick_get_32();
+		uint32_t now = k_uptime_get_32();
 		struct net_rpl_parent *parent;
 		int i;
 
@@ -385,7 +385,7 @@ static void net_rpl_print_neighbors(void)
 				parent == rpl_default_instance->current_dag->
 						preferred_parent ? '*' : ' ',
 				(unsigned)((now - parent->last_tx_time) /
-					   (60 * sys_clock_ticks_per_sec)));
+					   (60 * MSEC_PER_SEC)));
 		}
 	}
 }
@@ -593,7 +593,7 @@ static void dio_timer(struct k_work *work)
 						       struct net_rpl_instance,
 						       dio_timer);
 
-	NET_DBG("DIO Timer triggered at %u", sys_tick_get_32());
+	NET_DBG("DIO Timer triggered at %u", k_uptime_get_32());
 
 	if (!rpl_dio_send_ok) {
 		struct in6_addr *tmp;
@@ -842,7 +842,7 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 	/* min_last_tx is the clock time NET_RPL_PROBING_EXPIRATION_TIME in
 	 * the past
 	 */
-	uint32_t min_last_tx = sys_tick_get_32();
+	uint32_t min_last_tx = k_uptime_get_32();
 	struct net_rpl_parent *parent;
 	int i;
 
@@ -2361,7 +2361,7 @@ static void net_rpl_link_neighbor_callback(struct net_if *iface,
 			 */
 			net_rpl_of_neighbor_link_cb(iface, parent, status, 1);
 
-			parent->last_tx_time = sys_tick_get_32();
+			parent->last_tx_time = k_uptime_get_32();
 		}
 	}
 }
@@ -3879,7 +3879,7 @@ static void dis_timeout(struct k_work *work)
 {
 	uint32_t dis_interval;
 
-	NET_DBG("DIS Timer triggered at %u", sys_tick_get_32());
+	NET_DBG("DIS Timer triggered at %u", k_uptime_get_32());
 
 	net_rpl_dis_send(NULL, NULL);
 
