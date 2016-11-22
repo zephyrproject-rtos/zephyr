@@ -88,7 +88,7 @@ static int init_mbox_module(struct device *dev)
 	int i;
 
 	for (i = 0; i < CONFIG_NUM_MBOX_ASYNC_MSGS; i++) {
-		async_msg[i].thread.flags = K_DUMMY;
+		_init_thread_base(&async_msg[i].thread, 0, K_DUMMY, 0);
 		k_stack_push(&async_msg_free, (uint32_t)&async_msg[i]);
 	}
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
