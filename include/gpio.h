@@ -50,8 +50,9 @@ extern "C" {
 /** GPIO pin to be output. */
 #define GPIO_DIR_OUT		(1 << 0)
 
-/** For internal use. */
+/** @cond INTERNAL_HIDDEN */
 #define GPIO_DIR_MASK		0x1
+/** @endcond */
 
 /** GPIO pin to trigger interrupt. */
 #define GPIO_INT		(1 << 1)
@@ -81,8 +82,9 @@ extern "C" {
  * GPIO_POL_* define the polarity of the GPIO (1 bit).
  */
 
-/** For internal use. */
+/** @cond INTERNAL_HIDDEN */
 #define GPIO_POL_POS		7
+/** @endcond */
 
 /** GPIO pin polarity is normal. */
 #define GPIO_POL_NORMAL		(0 << GPIO_POL_POS)
@@ -90,15 +92,17 @@ extern "C" {
 /** GPIO pin polarity is inverted. */
 #define GPIO_POL_INV		(1 << GPIO_POL_POS)
 
-/** For internal use. */
+/** @cond INTERNAL_HIDDEN */
 #define GPIO_POL_MASK		(1 << GPIO_POL_POS)
+/** @endcond */
 
 /*
  * GPIO_PUD_* are related to pull-up/pull-down.
  */
 
-/** For internal use. */
+/** @cond INTERNAL_HIDDEN */
 #define GPIO_PUD_POS		8
+/** @endcond */
 
 /** GPIO pin to have no pull-up or pull-down. */
 #define GPIO_PUD_NORMAL		(0 << GPIO_PUD_POS)
@@ -109,8 +113,9 @@ extern "C" {
 /** Enable GPIO pin pull-down. */
 #define GPIO_PUD_PULL_DOWN	(2 << GPIO_PUD_POS)
 
-/** For internal use. */
+/** @cond INTERNAL_HIDDEN */
 #define GPIO_PUD_MASK		(3 << GPIO_PUD_POS)
+/** @endcond */
 
 /*
  * GPIO_PIN_(EN-/DIS-)ABLE are for pin enable / disable.
