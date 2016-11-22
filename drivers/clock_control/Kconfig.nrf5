@@ -47,6 +47,7 @@ config CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME
 choice
 	prompt "32KHz clock source"
 	default CLOCK_CONTROL_NRF5_K32SRC_XTAL
+	depends on CLOCK_CONTROL_NRF5
 
 config CLOCK_CONTROL_NRF5_K32SRC_RC
 	bool
@@ -61,6 +62,7 @@ endchoice
 choice
 	prompt "32KHz clock accuracy"
 	default CLOCK_CONTROL_NRF5_K32SRC_20PPM
+	depends on CLOCK_CONTROL_NRF5
 
 config CLOCK_CONTROL_NRF5_K32SRC_500PPM
 	bool
