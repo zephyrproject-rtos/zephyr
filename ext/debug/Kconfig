@@ -1,7 +1,7 @@
-# Kconfig - external source code configuration options
+# Kconfig - external debug source code configuration options
 
 #
-# Copyright (c) 2016 Linaro Ltd.
+# Copyright (c) 2016 Nordic Semiconductor ASA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,14 +16,10 @@
 # limitations under the License.
 #
 
-menu "External Sources"
+# When adding new entries keep the list in alphabetical order
 
-source "ext/hal/Kconfig"
+menu "Debug libraries"
 
-source "ext/lib/crypto/Kconfig"
-
-source "ext/fs/Kconfig"
-
-source "ext/debug/Kconfig"
+source "ext/debug/segger/Kconfig"
 
 endmenu

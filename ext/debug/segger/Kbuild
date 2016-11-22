@@ -1,0 +1,1 @@
+obj-$(CONFIG_HAS_SEGGER_RTT) += rtt/SEGGER_RTT.o

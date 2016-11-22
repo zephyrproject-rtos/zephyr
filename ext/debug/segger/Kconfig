@@ -1,7 +1,5 @@
-# Kconfig - external source code configuration options
-
 #
-# Copyright (c) 2016 Linaro Ltd.
+# Copyright (c) 2016 Nordic Semiconductor ASA
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,14 +14,7 @@
 # limitations under the License.
 #
 
-menu "External Sources"
-
-source "ext/hal/Kconfig"
-
-source "ext/lib/crypto/Kconfig"
-
-source "ext/fs/Kconfig"
-
-source "ext/debug/Kconfig"
-
-endmenu
+config HAS_SEGGER_RTT
+	bool
+	prompt "Segger RTT support"
+	default n
