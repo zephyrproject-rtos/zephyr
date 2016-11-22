@@ -1497,9 +1497,15 @@ static int sendto(struct net_buf *buf,
 	}
 
 #if defined(CONFIG_NET_TCP)
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP &&
-	    net_context_get_state(context) != NET_CONTEXT_CONNECTED) {
-		return -ENOTCONN;
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		if (net_context_get_state(context) != NET_CONTEXT_CONNECTED) {
+			return -ENOTCONN;
+		}
+
+		NET_ASSERT(context->tcp);
+		if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
+			return -ESHUTDOWN;
+		}
 	}
 #endif /* CONFIG_NET_TCP */
 
@@ -1786,6 +1792,12 @@ int net_context_recv(struct net_context *context,
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		NET_ASSERT(context->tcp);
+
+		if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
+			return -ESHUTDOWN;
+		}
+
 		context->recv_cb = cb;
 	} else
 #endif /* CONFIG_NET_TCP */
