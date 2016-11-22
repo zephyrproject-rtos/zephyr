@@ -40,20 +40,18 @@ extern "C" {
 /**
  * @brief Append UDP packet into net_buf
  *
- * @param context Network context for a connection
  * @param buf Network buffer
- * @param port Destination port
+ * @param src_port Source port in host byte order.
+ * @param dst_port Destination port in host byte order.
  *
  * @return Return network buffer that contains the UDP packet.
  */
-static inline struct net_buf *net_udp_append(struct net_context *context,
-					     struct net_buf *buf,
-					     uint16_t port)
+static inline struct net_buf *net_udp_append_raw(struct net_buf *buf,
+						 uint16_t src_port,
+						 uint16_t dst_port)
 {
-	NET_UDP_BUF(buf)->src_port =
-		net_sin((struct sockaddr *)&context->local)->
-							sin_port;
-	NET_UDP_BUF(buf)->dst_port = htons(port);
+	NET_UDP_BUF(buf)->src_port = htons(src_port);
+	NET_UDP_BUF(buf)->dst_port = htons(dst_port);
 
 	net_buf_add(buf->frags, sizeof(struct net_udp_hdr));
 
@@ -65,7 +63,27 @@ static inline struct net_buf *net_udp_append(struct net_context *context,
 
 	return buf;
 }
+
+/**
+ * @brief Append UDP packet into net_buf
+ *
+ * @param context Network context for a connection
+ * @param buf Network buffer
+ * @param port Destination port in host byte order.
+ *
+ * @return Return network buffer that contains the UDP packet.
+ */
+static inline struct net_buf *net_udp_append(struct net_context *context,
+					     struct net_buf *buf,
+					     uint16_t port)
+{
+	return net_udp_append_raw(buf,
+				  ntohs(net_sin((struct sockaddr *)
+						&context->local)->sin_port),
+				  port);
+}
 #else
+#define net_udp_append_raw(buf, src_port, dst_port) (buf)
 #define net_udp_append(context, buf, port) (buf)
 #endif /* CONFIG_NET_UDP */
 
