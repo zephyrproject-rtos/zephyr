@@ -85,11 +85,8 @@ void _new_thread(char *stack_memory, size_t stack_size,
 
 	/* Initialize various struct k_thread members */
 	thread = (struct k_thread *)stack_memory;
-	thread->base.prio = priority;
 
-	/* k_q_node initialized upon first insertion in a list */
-	thread->base.flags = options | K_PRESTART;
-	thread->base.sched_locked = 0;
+	_init_thread_base(&thread->base, priority, K_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
 	thread->init_data = NULL;
@@ -103,10 +100,6 @@ void _new_thread(char *stack_memory, size_t stack_size,
 	thread->callee_saved.ra = (uint32_t)_thread_entry_wrapper;
 	thread->callee_saved.key = NIOS2_STATUS_PIE_MSK;
 	/* Leave the rest of thread->callee_saved junk */
-
-#ifdef CONFIG_NANO_TIMEOUTS
-	_nano_timeout_thread_init(thread);
-#endif
 
 	thread_monitor_init(thread);
 }

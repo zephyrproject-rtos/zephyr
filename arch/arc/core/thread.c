@@ -124,14 +124,11 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif
 
-	/* k_q_node initialized upon first insertion in a list */
-	thread->base.flags = options | K_PRESTART;
-	thread->base.sched_locked = 0;
+	_init_thread_base(&thread->base, priority, K_PRESTART, options);
 
 	/* static threads overwrite them afterwards with real values */
 	thread->init_data = NULL;
 	thread->fn_abort = NULL;
-	thread->base.prio = priority;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
@@ -157,8 +154,6 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	thread->arch.relinquish_cause = _CAUSE_COOP;
 	thread->callee_saved.sp =
 		(uint32_t)pInitCtx - ___callee_saved_stack_t_SIZEOF;
-
-	_nano_timeout_thread_init(thread);
 
 	/* initial values in all other regs/k_thread entries are irrelevant */
 

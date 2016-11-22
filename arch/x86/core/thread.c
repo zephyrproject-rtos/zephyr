@@ -83,15 +83,11 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	/* ptr to the new task's k_thread */
 	struct k_thread *thread = (struct k_thread *)pStackMem;
 
-	thread->base.prio = priority;
 #if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
 	thread->arch.excNestCount = 0;
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
-	/* k_q_node initialized upon first insertion in a list */
-
-	thread->base.flags = options | K_PRESTART;
-	thread->base.sched_locked = 0;
+	_init_thread_base(&thread->base, priority, K_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
 	thread->init_data = NULL;
@@ -137,8 +133,6 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	PRINTK("\nstruct thread * = 0x%x", thread);
 
 	thread_monitor_init(thread);
-
-	_nano_timeout_thread_init(thread);
 }
 
 #if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
