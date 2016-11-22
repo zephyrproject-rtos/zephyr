@@ -254,8 +254,11 @@ int net_context_put(struct net_context *context)
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		if (send_fin_if_active_close(context))
+		if (send_fin_if_active_close(context)) {
+			NET_DBG("TCP connection in active close, not "
+				"disposing yet");
 			goto still_in_use;
+		}
 	}
 #endif /* CONFIG_NET_TCP */
 
@@ -647,6 +650,7 @@ static enum net_verdict tcp_passive_close(struct net_conn *conn,
 
 	if (context->tcp->state == NET_TCP_LAST_ACK &&
 	    NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
+		NET_DBG("ACK received in LAST_ACK, disposing of connection");
 		net_context_put(context);
 	}
 

@@ -172,6 +172,8 @@ int net_tcp_release(struct net_tcp *tcp)
 	tcp->flags &= ~NET_TCP_IN_USE;
 	irq_unlock(key);
 
+	NET_DBG("Disposed of TCP connection state");
+
 	return 0;
 }
 
