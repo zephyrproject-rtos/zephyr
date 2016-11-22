@@ -83,7 +83,7 @@ is capable of holding 64 words of data and metadata information.
     #define MY_RING_BUF_SIZE 64
 
     struct my_struct {
-        struct ring_buffer rb;
+        struct ring_buf rb;
         uint32_t buffer[MY_RING_BUF_SIZE];
         ...
     };
