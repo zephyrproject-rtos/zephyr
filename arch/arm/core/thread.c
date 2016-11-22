@@ -112,14 +112,11 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	pInitCtx->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
-	/* k_q_node initialized upon first insertion in a list */
-	tcs->base.flags = options | K_PRESTART;
-	tcs->base.sched_locked = 0;
+	_init_thread_base(&tcs->base, priority, K_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
 	tcs->init_data = NULL;
 	tcs->fn_abort = NULL;
-	tcs->base.prio = priority;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
@@ -139,8 +136,6 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	tcs->arch.basepri = 0;
 
 	/* swap_return_value can contain garbage */
-
-	_nano_timeout_thread_init(tcs);
 
 	/* initial values in all other registers/TCS entries are irrelevant */
 

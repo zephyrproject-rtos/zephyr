@@ -123,10 +123,8 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 	_current->base.swap_data = &list;
 
 	for (int i = 0; i < num; i++) {
-		wait_objects[i].dummy.flags = K_DUMMY;
-		wait_objects[i].dummy.prio = priority;
 
-		_init_thread_timeout((struct k_thread *)&wait_objects[i].dummy);
+		_init_thread_base(&wait_objects[i].dummy, priority, K_DUMMY, 0);
 
 		sys_dlist_append(&list, &wait_objects[i].desc.semg_node);
 		wait_objects[i].desc.thread = _current;

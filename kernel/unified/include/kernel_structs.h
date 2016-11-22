@@ -181,6 +181,10 @@ _set_thread_return_value_with_data(struct k_thread *thread,
 	thread->base.swap_data = data;
 }
 
+extern void _init_thread_base(struct _thread_base *thread_base,
+			      int priority, uint32_t initial_state,
+			      unsigned int options);
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* _kernel_structs__h_ */

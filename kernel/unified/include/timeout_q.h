@@ -65,18 +65,10 @@ static inline void _init_timeout(struct _timeout *t, _timeout_func_t func)
 	 */
 }
 
-static inline void _init_thread_timeout(struct k_thread *thread)
+static ALWAYS_INLINE void
+_init_thread_timeout(struct _thread_base *thread_base)
 {
-	_init_timeout(&thread->base.timeout, NULL);
-}
-
-/*
- * XXX - backwards compatibility until the arch part is updated to call
- * _init_thread_timeout()
- */
-static inline void _nano_timeout_thread_init(struct k_thread *thread)
-{
-	_init_thread_timeout(thread);
+	_init_timeout(&thread_base->timeout, NULL);
 }
 
 /* remove a thread timing out from kernel object's wait queue */

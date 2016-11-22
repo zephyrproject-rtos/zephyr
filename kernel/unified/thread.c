@@ -416,6 +416,22 @@ void _init_static_threads(void)
 	k_sched_unlock();
 }
 
+void _init_thread_base(struct _thread_base *thread_base, int priority,
+		       uint32_t initial_state, unsigned int options)
+{
+	/* k_q_node is initialized upon first insertion in a list */
+
+	thread_base->flags = options | initial_state;
+
+	thread_base->prio = priority;
+
+	thread_base->sched_locked = 0;
+
+	/* swap_data does not need to be initialized */
+
+	_init_thread_timeout(thread_base);
+}
+
 uint32_t _k_thread_group_mask_get(struct k_thread *thread)
 {
 	struct _static_thread_data *thread_data = thread->init_data;
