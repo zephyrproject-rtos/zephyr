@@ -62,9 +62,9 @@ static struct in6_addr in6addr_my = MY_IP6ADDR;
 /* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
 #define MY_IP4ADDR { { { 192, 0, 2, 1 } } }
 
-#if !NET_BIND_ANY_ADDR
+#if !defined(CONFIG_NET_DHCPV4) || !NET_BIND_ANY_ADDR
 static struct in_addr in4addr_my = MY_IP4ADDR;
-#endif
+#endif /* CONFIG_NET_DHCPV4 || !NET_BIND_ANY_ADDR */
 #endif /* IPv4 */
 
 #define MY_PORT 4242
