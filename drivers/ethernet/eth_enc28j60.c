@@ -146,7 +146,7 @@ static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
 
 	for (int i = 0; i < num_segments;
 	     ++i, index_buf += MAX_BUFFER_LENGTH) {
-
+		context->mem_buf[0] = ENC28J60_SPI_WBM;
 		memcpy(context->mem_buf + 1, index_buf, MAX_BUFFER_LENGTH);
 		spi_write(context->spi,
 			  context->mem_buf, MAX_BUFFER_LENGTH + 1);
@@ -177,7 +177,7 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 
 	for (int i = 0; i < num_segments;
 	     ++i, index_buf += MAX_BUFFER_LENGTH) {
-
+		context->mem_buf[0] = ENC28J60_SPI_RBM;
 		spi_transceive(context->spi,
 			       context->mem_buf, MAX_BUFFER_LENGTH + 1,
 			       context->mem_buf, MAX_BUFFER_LENGTH + 1);
