@@ -62,6 +62,8 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 	/* Disable comparator according to index */
 	config.int_en &= ~(1 << index);
 	config.power &= ~(1 << index);
+	config.reference &= ~(1 << index);
+	config.polarity &= ~(1 << index);
 
 	if (qm_ac_set_config(&config) != 0) {
 		return -EINVAL;
