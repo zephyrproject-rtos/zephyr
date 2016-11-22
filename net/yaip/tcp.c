@@ -144,8 +144,7 @@ int net_tcp_release(struct net_tcp *tcp)
 {
 	int key;
 
-	if (tcp < &tcp_context[0] ||
-	    tcp >= &tcp_context[NET_MAX_TCP_CONTEXT]) {
+	if (!PART_OF_ARRAY(tcp_context, tcp)) {
 		return -EINVAL;
 	}
 

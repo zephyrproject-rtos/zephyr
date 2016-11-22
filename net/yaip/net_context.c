@@ -246,7 +246,7 @@ int net_context_put(struct net_context *context)
 {
 	NET_ASSERT(context);
 
-	if (!context) {
+	if (!PART_OF_ARRAY(contexts, context)) {
 		return -EINVAL;
 	}
 
@@ -329,9 +329,8 @@ static uint16_t find_available_port(struct net_context *context,
 int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		     socklen_t addrlen)
 {
-	NET_ASSERT(context && addr);
-	NET_ASSERT(context >= &context[0] || \
-		   context <= &context[NET_MAX_CONTEXT]);
+	NET_ASSERT(addr);
+	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 #if defined(CONFIG_NET_IPV6)
 	if (addr->family == AF_INET6) {
@@ -471,7 +470,7 @@ int net_context_listen(struct net_context *context, int backlog)
 {
 	ARG_UNUSED(backlog);
 
-	NET_ASSERT(context);
+	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
@@ -847,7 +846,8 @@ int net_context_connect(struct net_context *context,
 	int ret;
 #endif
 
-	NET_ASSERT(context && addr);
+	NET_ASSERT(addr);
+	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
@@ -1259,7 +1259,7 @@ int net_context_accept(struct net_context *context,
 	int ret;
 #endif /* CONFIG_NET_TCP */
 
-	NET_ASSERT(context);
+	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
@@ -1571,7 +1571,7 @@ int net_context_send(struct net_buf *buf,
 	struct net_context *context = net_nbuf_context(buf);
 	socklen_t addrlen;
 
-	NET_ASSERT(context);
+	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
 	    !net_sin(&context->remote)->sin_port) {
@@ -1608,7 +1608,7 @@ int net_context_sendto(struct net_buf *buf,
 #if defined(CONFIG_NET_TCP)
 	struct net_context *context = net_nbuf_context(buf);
 
-	NET_ASSERT(context);
+	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		/* Match POSIX behavior and ignore dst_address and addrlen */
