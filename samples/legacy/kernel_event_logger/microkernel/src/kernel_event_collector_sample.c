@@ -110,7 +110,7 @@ void register_context_switch_data(uint32_t timestamp, uint32_t thread_id)
 
 void register_interrupt_event_data(uint32_t timestamp, uint32_t irq)
 {
-	if ((irq >= 0) && (irq < 255)) {
+	if (irq < 255) {
 		interrupt_counters[irq] += 1;
 	}
 }
