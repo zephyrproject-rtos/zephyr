@@ -214,6 +214,7 @@ struct gpio_driver_api {
  * @param port Pointer to device structure for the driver instance.
  * @param pin Pin number to configure.
  * @param flags Flags for pin configuration. IN/OUT, interrupt ...
+ * @return 0 if successful, negative errno code on failure.
  */
 static inline int gpio_pin_configure(struct device *port, uint8_t pin,
 				     int flags)
@@ -228,6 +229,7 @@ static inline int gpio_pin_configure(struct device *port, uint8_t pin,
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where the data is written.
  * @param value Value set on the pin.
+ * @return 0 if successful, negative errno code on failure.
  */
 static inline int gpio_pin_write(struct device *port, uint32_t pin,
 				 uint32_t value)
@@ -242,6 +244,7 @@ static inline int gpio_pin_write(struct device *port, uint32_t pin,
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where data is read.
  * @param value Integer pointer to receive the data values from the pin.
+ * @return 0 if successful, negative errno code on failure.
  */
 static inline int gpio_pin_read(struct device *port, uint32_t pin,
 				uint32_t *value)
@@ -272,6 +275,7 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
  * @brief Add an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid Application's callback structure pointer.
+ * @return 0 if successful, negative errno code on failure.
  *
  * Note: enables to add as many callback as needed on the same port.
  */
@@ -289,6 +293,7 @@ static inline int gpio_add_callback(struct device *port,
  * @brief Remove an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid application's callback structure pointer.
+ * @return 0 if successful, negative errno code on failure.
  *
  * Note: enables to remove as many callbacks as added through
  *       gpio_add_callback().
@@ -307,6 +312,7 @@ static inline int gpio_remove_callback(struct device *port,
  * @brief Enable callback(s) for a single pin.
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where the callback function is enabled.
+ * @return 0 if successful, negative errno code on failure.
  *
  * Note: Depending on the driver implementation, this function will enable
  *       the pin to trigger an interruption. So as a semantic detail, if no
@@ -323,6 +329,7 @@ static inline int gpio_pin_enable_callback(struct device *port, uint32_t pin)
  * @brief Disable callback(s) for a single pin.
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where the callback function is disabled.
+ * @return 0 if successful, negative errno code on failure.
  */
 static inline int gpio_pin_disable_callback(struct device *port, uint32_t pin)
 {
@@ -337,6 +344,7 @@ static inline int gpio_pin_disable_callback(struct device *port, uint32_t pin)
  *
  * @param port Pointer to the device structure for the driver instance.
  * @param flags Flags for the port configuration. IN/OUT, interrupt ...
+ * @return 0 if successful, negative errno code on failure.
  */
 static inline int gpio_port_configure(struct device *port, int flags)
 {
@@ -349,6 +357,7 @@ static inline int gpio_port_configure(struct device *port, int flags)
  * @brief Write a data value to the port.
  * @param port Pointer to the device structure for the driver instance.
  * @param value Value to set on the port.
+ * @return 0 if successful, negative errno code on failure.
  */
 static inline int gpio_port_write(struct device *port, uint32_t value)
 {
@@ -361,6 +370,7 @@ static inline int gpio_port_write(struct device *port, uint32_t value)
  * @brief Read data value from the port.
  * @param port Pointer to the device structure for the driver instance.
  * @param value Integer pointer to receive the data value from the port.
+ * @return 0 if successful, negative errno code on failure.
  */
 static inline int gpio_port_read(struct device *port, uint32_t *value)
 {
@@ -372,6 +382,7 @@ static inline int gpio_port_read(struct device *port, uint32_t *value)
 /**
  * @brief Enable callback(s) for the port.
  * @param port Pointer to the device structure for the driver instance.
+ * @return 0 if successful, negative errno code on failure.
  *
  * Note: Depending on the driver implementation, this function will enable
  *       the port to trigger an interruption on all pins, as long as these
@@ -388,6 +399,7 @@ static inline int gpio_port_enable_callback(struct device *port)
 /**
  * @brief Disable callback(s) for the port.
  * @param port Pointer to the device structure for the driver instance.
+ * @return 0 if successful, negative errno code on failure.
  */
 static inline int gpio_port_disable_callback(struct device *port)
 {
