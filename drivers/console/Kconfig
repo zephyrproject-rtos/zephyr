@@ -127,6 +127,17 @@ config RAM_CONSOLE_BUFFER_SIZE
 	Size of the RAM console buffer. Messages will wrap around if the
 	length is exceeded.
 
+config RTT_CONSOLE
+	bool
+	prompt "Use RTT console"
+	depends on HAS_SEGGER_RTT
+	select CONSOLE_HAS_DRIVER
+	default n
+	help
+	Emit console messages to a RAM buffer that is then read by the
+	Segger J-Link software and displayed on a computer in real-time.
+	Requires support for Segger J-Link on the companion IC onboard.
+
 config IPM_CONSOLE_SENDER
 	bool
 	prompt "Inter-processor Mailbox console sender"
