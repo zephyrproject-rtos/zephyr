@@ -24,6 +24,5 @@ config  SOC_SERIES_NRF52X
 	select XIP
 	select HAS_CMSIS
 	select HAS_NORDIC_MDK
-	select CPU_HAS_SYSTICK
 	help
 	 Enable support for NRF52 MCU series

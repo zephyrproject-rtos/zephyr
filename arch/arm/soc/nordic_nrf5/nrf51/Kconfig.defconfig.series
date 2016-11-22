@@ -26,6 +26,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 32768
 
+config SYS_POWER_MANAGEMENT
+	default y
+
 config SRAM_BASE_ADDRESS
 	default 0x20000000
 

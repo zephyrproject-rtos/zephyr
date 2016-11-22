@@ -22,19 +22,11 @@ config SOC
 	string
 	default nRF52832
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
-	default 64000000
-
 config SRAM_SIZE
 	default 64
 
 config FLASH_SIZE
 	default 512
-
-config NUM_IRQS
-	int
-	default 39
 
 endif # SOC_NRF52832
 
