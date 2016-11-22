@@ -28,7 +28,7 @@ static const stm32_pin_func_t pin_pa9_funcs[] = {
 };
 
 static const stm32_pin_func_t pin_pa10_funcs[] = {
-	[STM32F1_PINMUX_FUNC_PA9_USART1_TX - 1] =
+	[STM32F1_PINMUX_FUNC_PA10_USART1_RX - 1] =
 			STM32F10X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE,
 };
 
