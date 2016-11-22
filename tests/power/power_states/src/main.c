@@ -305,7 +305,7 @@ int _sys_soc_suspend(int32_t ticks)
 		if (!post_ops_done) {
 			post_ops_done = 1;
 			printk("Exiting %s state\n", state_to_string(state));
-			_sys_soc_power_state_post_ops(current_state);
+			_sys_soc_power_state_post_ops(state);
 		}
 	}
 
@@ -323,7 +323,7 @@ void _sys_soc_resume(void)
 		if (!post_ops_done) {
 			post_ops_done = 1;
 			printk("Exiting %s state\n", state_to_string(state));
-			_sys_soc_power_state_post_ops(current_state);
+			_sys_soc_power_state_post_ops(state);
 		}
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP:
