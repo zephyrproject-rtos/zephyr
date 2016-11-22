@@ -45,12 +45,8 @@ int snprintf(char *_Restrict s, size_t len, const char *_Restrict format, ...)
 	int     r;
 	char    dummy;
 
-	if ((int) len <= 0) {
-		if (len == 0) {
-			s = &dummy; /* write final NUL to dummy, since can't change *s */
-		} else {
-		len = 0x7fffffff;  /* allow up to "maxint" characters */
-		}
+	if (len == 0) {
+		s = &dummy; /* write final NUL to dummy, can't change *s */
 	}
 
 	p.ptr = s;
@@ -88,12 +84,8 @@ int vsnprintf(char *_Restrict s, size_t len, const char *_Restrict format, va_li
 	int     r;
 	char    dummy;
 
-	if ((int) len <= 0) {
-		if (len == 0) {
-			s = &dummy; /* write final NUL to dummy, since can't change *s */
-		} else {
-			len = 0x7fffffff;  /* allow up to "maxint" characters */
-		}
+	if (len == 0) {
+		s = &dummy; /* write final NUL to dummy, can't change * *s */
 	}
 
 	p.ptr = s;
