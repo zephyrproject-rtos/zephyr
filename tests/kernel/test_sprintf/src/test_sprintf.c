@@ -235,27 +235,6 @@ int vsnprintfTest(void)
 	int  status = TC_PASS;
 	char buffer[100];
 
-	/*
-	 * The string size may be handled in a non-standard manner.
-	 * If a negative value is supplied for the string size, it is converted
-	 * to 0x7fffffff--maximum integer size.  Since there is insufficient
-	 * memory to test a string of that length, we just check that the string
-	 * was fully written so that we can exercise the code path.
-	 */
-	buffer[0] = '\0';
-	len = tvsnprintf(buffer, (size_t)(-4), "%x", DEADBEEF);
-	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("vsnprintf(%%x).  Expected return value %d, not %d\n",
-				 strlen(DEADBEEF_LHEX_STR), len);
-		status = TC_FAIL;
-	}
-
-	if (strcmp(buffer, DEADBEEF_LHEX_STR) != 0) {
-		TC_ERROR("vsnprintf(%%x).  Expected '%s', got '%s'\n",
-				 DEADBEEF_LHEX_STR, buffer);
-		status = TC_FAIL;
-	}
-
 	/*******************/
 	buffer[0] = '\0';
 	len = tvsnprintf(buffer, 0, "%x", DEADBEEF);
@@ -356,26 +335,6 @@ int snprintfTest(void)
 	int  status = TC_PASS;
 	char buffer[100];
 
-	/*
-	 * The string size may be handled in a non-standard manner.
-	 * If a negative value is supplied for the string size, it is converted
-	 * to 0x7fffffff--maximum integer size.  Since there is insufficient
-	 * memory to test a string of that length, we just check that the string
-	 * was fully written so that we can exercise the code path.
-	 */
-	buffer[0] = '\0';
-	len = snprintf(buffer, (size_t)(-4), "%x", DEADBEEF);
-	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("snprintf(%%x).  Expected return value %d, not %d\n",
-				 strlen(DEADBEEF_LHEX_STR), len);
-		status = TC_FAIL;
-	}
-
-	if (strcmp(buffer, DEADBEEF_LHEX_STR) != 0) {
-		TC_ERROR("snprintf(%%x).  Expected '%s', got '%s'\n",
-				 DEADBEEF_LHEX_STR, buffer);
-		status = TC_FAIL;
-	}
 
 	/*******************/
 	buffer[0] = '\0';
