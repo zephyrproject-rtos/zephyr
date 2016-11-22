@@ -335,6 +335,8 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 		} else if (tcp->state == NET_TCP_FIN_WAIT_2) {
 			net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
 		} else if (tcp->state == NET_TCP_CLOSE_WAIT) {
+			tcp->flags |= NET_TCP_IS_SHUTDOWN;
+			flags |= NET_TCP_FIN;
 			net_tcp_change_state(tcp, NET_TCP_LAST_ACK);
 		}
 	}
