@@ -1016,15 +1016,18 @@ static inline int configure_spi(struct device *dev)
 	};
 
 	cc2520->spi.dev = device_get_binding(CONFIG_TI_CC2520_SPI_DRV_NAME);
-	if (cc2520->spi.dev) {
-		cc2520->spi.slave = CONFIG_TI_CC2520_SPI_SLAVE;
+	if (!cc2520->spi.dev) {
+		SYS_LOG_ERR("Unable to get SPI device\n");
+		return -ENODEV;
+	}
 
-		if (spi_configure(cc2520->spi.dev, &spi_conf) != 0 ||
-		    spi_slave_select(cc2520->spi.dev,
-				     cc2520->spi.slave) != 0) {
-			cc2520->spi.dev = NULL;
-			return -EIO;
-		}
+	cc2520->spi.slave = CONFIG_TI_CC2520_SPI_SLAVE;
+
+	if (spi_configure(cc2520->spi.dev, &spi_conf) != 0 ||
+	    spi_slave_select(cc2520->spi.dev,
+			     cc2520->spi.slave) != 0) {
+		cc2520->spi.dev = NULL;
+		return -EIO;
 	}
 
 	return 0;
