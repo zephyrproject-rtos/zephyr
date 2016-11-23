@@ -369,10 +369,13 @@ void main(void)
 	k_fifo_init(&tx_queue);
 	k_fifo_init(&rx_queue);
 
+	/* Enable the raw interface, this will in turn open the HCI driver */
+	bt_enable_raw(&rx_queue);
+	/* Spawn the TX thread and start feeding commands and data to the
+	 * controller
+	 */
 	k_thread_spawn(tx_thread_stack, STACK_SIZE, tx_thread, NULL, NULL,
 		       NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
-
-	bt_enable_raw(&rx_queue);
 
 	while (1) {
 		struct net_buf *buf;
