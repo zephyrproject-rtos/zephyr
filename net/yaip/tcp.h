@@ -280,6 +280,17 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 int net_tcp_prepare_reset(struct net_tcp *tcp, const struct sockaddr *remote,
 			  struct net_buf **buf);
 
+typedef void (*net_tcp_cb_t)(struct net_tcp *tcp, void *user_data);
+
+/**
+ * @brief Go through all the TCP connections and call callback
+ * for each of them.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ */
+void net_tcp_foreach(net_tcp_cb_t cb, void *user_data);
+
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);
 #else

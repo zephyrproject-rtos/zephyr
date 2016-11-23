@@ -792,3 +792,24 @@ void net_tcp_change_state(struct net_tcp *tcp,
 					tcp->context->user_data);
 	}
 }
+
+void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
+{
+	int i, key;
+
+	key = irq_lock();
+
+	for (i = 0; i < NET_MAX_TCP_CONTEXT; i++) {
+		if (!net_tcp_is_used(&tcp_context[i])) {
+			continue;
+		}
+
+		irq_unlock(key);
+
+		cb(&tcp_context[i], user_data);
+
+		key = irq_lock();
+	}
+
+	irq_unlock(key);
+}
