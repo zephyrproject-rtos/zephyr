@@ -607,9 +607,6 @@ static void rfcomm_dlc_drop(struct bt_rfcomm_dlc *dlc)
 {
 	BT_DBG("dlc %p", dlc);
 
-	if (dlc->role == BT_RFCOMM_ROLE_ACCEPTOR) {
-		rfcomm_send_dm(dlc->session, dlc->dlci);
-	}
 	rfcomm_dlcs_remove_dlci(dlc->session->dlcs, dlc->dlci);
 	rfcomm_dlc_destroy(dlc);
 }
@@ -645,6 +642,7 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 			break;
 		case RFCOMM_SECURITY_REJECT:
 		default:
+			rfcomm_send_dm(session, dlci);
 			rfcomm_dlc_drop(dlc);
 			return;
 		}
@@ -1068,6 +1066,7 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 
 		if (hci_status || !conn->encrypt ||
 		    conn->sec_level < dlc->required_sec_level) {
+			rfcomm_send_dm(session, dlc->dlci);
 			rfcomm_dlc_drop(dlc);
 			continue;
 		}
