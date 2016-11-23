@@ -30,15 +30,15 @@ uint64_t _pm_save_gdtr;
 uint64_t _pm_save_idtr;
 uint32_t _pm_save_esp;
 
+extern void _power_soc_sleep(void);
+extern void _power_restore_cpu_context(void);
+extern void _power_soc_deep_sleep(void);
+
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 static uint32_t  *__x86_restore_info = (uint32_t *)CONFIG_BSP_SHARED_RAM_ADDR;
 
 static void _deep_sleep(enum power_states state)
 {
-	int restore;
-
-	__asm__ volatile ("wbinvd");
-
 	/*
 	 * Setting resume vector inside the restore_cpu_context
 	 * function since we have nothing to do before cpu context
@@ -47,22 +47,20 @@ static void _deep_sleep(enum power_states state)
 	 * can be done before cpu context is restored and control
 	 * transferred to _sys_soc_suspend.
 	 */
-	qm_x86_set_resume_vector(_sys_soc_restore_cpu_context,
+	qm_x86_set_resume_vector(_power_restore_cpu_context,
 				 *__x86_restore_info);
 
-	restore = _sys_soc_save_cpu_context();
+	power_soc_set_x86_restore_flag();
 
-	if (!restore) {
-		power_soc_set_x86_restore_flag();
-
-		switch (state) {
-		case SYS_POWER_STATE_DEEP_SLEEP_1:
-			power_soc_sleep();
-		case SYS_POWER_STATE_DEEP_SLEEP:
-			power_soc_deep_sleep();
-		default:
-			break;
-		}
+	switch (state) {
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
+		_power_soc_sleep();
+		break;
+	case SYS_POWER_STATE_DEEP_SLEEP:
+		_power_soc_deep_sleep();
+		break;
+	default:
+		break;
 	}
 }
 #endif
