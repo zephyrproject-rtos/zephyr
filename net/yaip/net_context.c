@@ -426,6 +426,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		net_context_set_iface(context, iface);
 
+		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
 		net_sin6_ptr(&context->local)->sin6_addr = ptr;
 		net_sin6_ptr(&context->local)->sin6_port = addr6->sin6_port;
 
@@ -488,6 +489,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		net_context_set_iface(context, iface);
 
+		net_sin_ptr(&context->local)->sin_family = AF_INET;
 		net_sin_ptr(&context->local)->sin_addr = ptr;
 		net_sin_ptr(&context->local)->sin_port = addr4->sin_port;
 
