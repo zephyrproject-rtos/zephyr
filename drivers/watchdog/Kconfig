@@ -32,4 +32,6 @@ source "drivers/watchdog/Kconfig.qmsi"
 
 source "drivers/watchdog/Kconfig.stm32"
 
+source "drivers/watchdog/Kconfig.cmsdk_apb"
+
 endif
