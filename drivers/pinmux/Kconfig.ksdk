@@ -1,0 +1,57 @@
+# Kconfig - Kinetis SDK pinmux
+#
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig PINMUX_KSDK
+	bool "KSDK pinmux driver"
+	depends on HAS_KSDK
+	default n
+	help
+	  Enable the KSDK pinmux driver.
+
+if PINMUX_KSDK
+
+config PINMUX_KSDK_PORTA
+	bool "Port A"
+	default n
+	help
+	  Enable Port A.
+
+config PINMUX_KSDK_PORTB
+	bool "Port B"
+	default n
+	help
+	  Enable Port B.
+
+config PINMUX_KSDK_PORTC
+	bool "Port C"
+	default n
+	help
+	  Enable Port C.
+
+config PINMUX_KSDK_PORTD
+	bool "Port D"
+	default n
+	help
+	  Enable Port D.
+
+config PINMUX_KSDK_PORTE
+	bool "Port E"
+	default n
+	help
+	  Enable Port E.
+
+endif # PINMUX_KSDK

@@ -56,6 +56,8 @@ config PINMUX_K64
 	help
 	Enable driver for Freescale K64-based Pin multiplexer.
 
+source "drivers/pinmux/Kconfig.ksdk"
+
 source "drivers/pinmux/Kconfig.stm32"
 
 source "drivers/pinmux/Kconfig.beetle"
