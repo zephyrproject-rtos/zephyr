@@ -469,34 +469,72 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
+static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
+{
+	struct bt_rfcomm_hdr *hdr;
+	struct net_buf *buf;
+	uint8_t fcs, cr;
+
+	BT_DBG("dlci %d", dlci);
+
+	buf = bt_l2cap_create_pdu(&rfcomm_session, 0);
+	if (!buf) {
+		BT_ERR("No buffers");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	cr = BT_RFCOMM_RESP_CR(session->role);
+	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DISC, BT_RFCOMM_PF_NON_UIH);
+	hdr->length = BT_RFCOMM_SET_LEN_8(0);
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+}
+
 static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 {
 	struct bt_rfcomm_dlc *dlc = p1;
+	int32_t timeout = K_FOREVER;
 	struct net_buf *buf;
 
 	BT_DBG("Started for dlc %p", dlc);
 
-	while (dlc->state == BT_RFCOMM_STATE_CONNECTED) {
+	while (dlc->state == BT_RFCOMM_STATE_CONNECTED ||
+	       dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
 		/* Get next packet for dlc */
 		BT_DBG("Wait for buf %p", dlc);
-		buf = net_buf_get_timeout(&dlc->tx_queue, 0, K_FOREVER);
-		if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
-			net_buf_unref(buf);
+		buf = net_buf_get_timeout(&dlc->tx_queue, 0, timeout);
+		/* If its dummy buffer or non user disconnect then break */
+		if ((dlc->state != BT_RFCOMM_STATE_CONNECTED &&
+		     dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) ||
+		    !buf || !buf->len) {
+			if (buf) {
+				net_buf_unref(buf);
+			}
 			break;
 		}
 
 		BT_DBG("Wait for credits %p", dlc);
 		/* Wait for credits */
 		k_sem_take(&dlc->tx_credits, K_FOREVER);
-		if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+		if (dlc->state != BT_RFCOMM_STATE_CONNECTED &&
+		    dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) {
 			net_buf_unref(buf);
 			break;
 		}
 
 		if (bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf) < 0) {
 			/* This fails only if channel is disconnected */
+			dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
 			net_buf_unref(buf);
 			break;
+		}
+
+		if (dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
+			timeout = K_NO_WAIT;
 		}
 	}
 
@@ -507,7 +545,15 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 		net_buf_unref(buf);
 	}
 
-	rfcomm_dlc_destroy(dlc);
+	if (dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
+		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
+	}
+
+	if (dlc->state == BT_RFCOMM_STATE_DISCONNECTING) {
+		rfcomm_send_disc(dlc->session, dlc->dlci);
+	} else {
+		rfcomm_dlc_destroy(dlc);
+	}
 
 	BT_DBG("dlc %p exiting", dlc);
 }
@@ -609,6 +655,48 @@ static void rfcomm_dlc_drop(struct bt_rfcomm_dlc *dlc)
 
 	rfcomm_dlcs_remove_dlci(dlc->session->dlcs, dlc->dlci);
 	rfcomm_dlc_destroy(dlc);
+}
+
+static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
+{
+	BT_DBG("dlc %p", dlc);
+
+	switch (dlc->state) {
+	case BT_RFCOMM_STATE_SECURITY_PENDING:
+		if (dlc->role == BT_RFCOMM_ROLE_ACCEPTOR) {
+			rfcomm_send_dm(dlc->session, dlc->dlci);
+		}
+		/* Fall Through */
+	case BT_RFCOMM_STATE_INIT:
+		rfcomm_dlc_drop(dlc);
+		break;
+	case BT_RFCOMM_STATE_CONNECTING:
+	case BT_RFCOMM_STATE_CONFIG:
+		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
+		rfcomm_send_disc(dlc->session, dlc->dlci);
+		break;
+	case BT_RFCOMM_STATE_CONNECTED:
+		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
+
+		/* Queue a dummy buffer to wake up and stop the
+		 * tx thread.
+		 */
+		net_buf_put(&dlc->tx_queue, net_buf_get(&dummy, 0));
+
+		/* There could be a writer waiting for credits so return a
+		 * dummy credit to wake it up.
+		 */
+		rfcomm_dlc_tx_give_credits(dlc, 1);
+		break;
+	case BT_RFCOMM_STATE_DISCONNECTING:
+	case BT_RFCOMM_STATE_DISCONNECTED:
+		break;
+	case BT_RFCOMM_STATE_IDLE:
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
@@ -760,8 +848,19 @@ static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 		}
 	} else {
 		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-		if (dlc && dlc->state == BT_RFCOMM_STATE_CONNECTING) {
+		if (!dlc) {
+			return;
+		}
+
+		switch (dlc->state) {
+		case BT_RFCOMM_STATE_CONNECTING:
 			rfcomm_dlc_connected(dlc);
+			break;
+		case BT_RFCOMM_STATE_DISCONNECTING:
+			rfcomm_dlc_drop(dlc);
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -821,7 +920,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		if (cr) {
 			if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
 				BT_ERR("Invalid mtu %d", pn->mtu);
-				/* TODO: Disconnect */
+				rfcomm_dlc_close(dlc);
 				return;
 			}
 			dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
@@ -933,7 +1032,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 	if (buf->len > BT_RFCOMM_FCS_SIZE) {
 		if (!dlc->rx_credit) {
 			BT_ERR("Data recvd when rx credit is 0");
-			/* Disconnect */
+			rfcomm_dlc_close(dlc);
 			return;
 		}
 
@@ -1054,20 +1153,21 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
 	struct bt_conn *conn = chan->conn;
-	struct bt_rfcomm_dlc *dlc;
+	struct bt_rfcomm_dlc *dlc, *tmp;
 
 	BT_DBG("session %p status 0x%02x encr 0x%02x", session, hci_status,
 	       conn->encrypt);
 
-	for (dlc = session->dlcs; dlc; dlc = dlc->_next) {
+	for (dlc = session->dlcs; dlc; dlc = tmp) {
+		tmp = dlc->_next;
+
 		if (dlc->state != BT_RFCOMM_STATE_SECURITY_PENDING) {
 			continue;
 		}
 
 		if (hci_status || !conn->encrypt ||
 		    conn->sec_level < dlc->required_sec_level) {
-			rfcomm_send_dm(session, dlc->dlci);
-			rfcomm_dlc_drop(dlc);
+			rfcomm_dlc_close(dlc);
 			continue;
 		}
 
@@ -1190,6 +1290,29 @@ fail:
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
 	return ret;
+}
+
+int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
+{
+	BT_DBG("dlc %p", dlc);
+
+	if (!dlc) {
+		return -EINVAL;
+	}
+
+	if (dlc->state == BT_RFCOMM_STATE_CONNECTED) {
+		/* This is to handle user initiated disconnect to send pending
+		 * bufs in the queue before disconnecting
+		 * Queue a dummy buffer (in case if queue is empty) to wake up
+		 * and stop the tx thread.
+		 */
+		dlc->state = BT_RFCOMM_STATE_USER_DISCONNECT;
+		net_buf_put(&dlc->tx_queue, net_buf_get(&dummy, 0));
+
+		return 0;
+	}
+
+	return rfcomm_dlc_close(dlc);
 }
 
 static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
