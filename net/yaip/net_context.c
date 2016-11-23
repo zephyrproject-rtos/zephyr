@@ -1932,6 +1932,23 @@ int net_context_recv(struct net_context *context,
 	return 0;
 }
 
+void net_context_foreach(net_context_cb_t cb, void *user_data)
+{
+	int i;
+
+	k_sem_take(&contexts_lock, K_FOREVER);
+
+	for (i = 0; i < NET_MAX_CONTEXT; i++) {
+		if (!net_context_is_used(&contexts[i])) {
+			continue;
+		}
+
+		cb(&contexts[i], user_data);
+	}
+
+	k_sem_give(&contexts_lock);
+}
+
 void net_context_init(void)
 {
 	k_sem_init(&contexts_lock, 0, UINT_MAX);

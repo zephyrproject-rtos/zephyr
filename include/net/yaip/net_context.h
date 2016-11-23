@@ -652,6 +652,17 @@ static inline void net_context_send_cb(struct net_context *context,
 	}
 }
 
+typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
+
+/**
+ * @brief Go through all the network connections and call callback
+ * for each network context.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ */
+void net_context_foreach(net_context_cb_t cb, void *user_data);
+
 #ifdef __cplusplus
 }
 #endif
