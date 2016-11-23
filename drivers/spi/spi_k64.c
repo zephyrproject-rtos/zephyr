@@ -714,8 +714,9 @@ static void spi_k64_push_data(struct device *dev)
 
 	} while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TFFF);
 
+#ifdef CONFIG_SPI_DEBUG
 	SYS_LOG_DBG("pushed: %d\n", cnt);
-
+#endif
 }
 
 /**
@@ -776,7 +777,9 @@ static void spi_k64_pull_data(struct device *dev)
 	} while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_RFDF);
 
 
+#ifdef CONFIG_SPI_DEBUG
 	SYS_LOG_DBG("pulled: %d\n", cnt);
+#endif
 }
 
 /**
