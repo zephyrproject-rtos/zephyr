@@ -60,6 +60,29 @@ config I2C_MCUX
 	help
 	Enable the mcux I2C driver.
 
+config I2C_NRF5
+	bool "NRF5 I2C driver"
+	depends on I2C && SOC_FAMILY_NRF5
+	select GPIO
+	default n
+	help
+	  This option enables the I2C driver for Nordic Semiconductor nRF5
+	  family porcessors.
+
+config I2C_NRF5_GPIO_SCA_PIN
+	int "SCA Pin Number"
+	range 0 31
+	depends on I2C_NRF5
+	help
+	  The GPIO pin to use for SCA.
+
+config I2C_NRF5_GPIO_SCL_PIN
+	int "SCL Pin Number"
+	range 0 31
+	depends on I2C_NRF5
+	help
+	  The GPIO pin to use for SCL.
+
 config I2C_STM32LX
 	bool "STM32Lx MCU I2C Driver"
 	depends on I2C &&  SOC_FAMILY_STM32 && SOC_SERIES_STM32L4X
