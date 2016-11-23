@@ -135,6 +135,7 @@ config NUM_IRQ_PRIO_BITS
 config RUNTIME_NMI
 	bool
 	prompt "Attach an NMI handler at runtime"
+	select REBOOT
 	default n
 	help
 	The kernel provides a simple NMI handler that simply hangs in a tight
