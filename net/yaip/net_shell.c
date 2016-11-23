@@ -453,7 +453,80 @@ static inline void net_print_statistics(void)
 }
 #endif /* CONFIG_NET_STATISTICS */
 
+static void context_cb(struct net_context *context, void *user_data)
+{
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#elif defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+#define ADDR_LEN NET_IPV4_ADDR_LEN
+#else
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#endif
+
+	int *count = user_data;
+	char addr_str[ADDR_LEN];
+
+	if (context->local.family == AF_INET6) {
+		snprintf(addr_str, ADDR_LEN,
+			 net_sprint_ipv6_addr(
+				 net_sin6_ptr(&context->local)->sin6_addr));
+
+		printf("%p\t%-16s\t%-16s\t%p\t%c%c%c\n", context, addr_str,
+		       net_sprint_ipv6_addr(
+			       &net_sin6(&context->remote)->sin6_addr),
+		       net_context_get_iface(context),
+		       net_context_get_family(context) == AF_INET6 ? '6' : '4',
+		       net_context_get_type(context) == SOCK_DGRAM ? 'D' : 'S',
+		       net_context_get_ip_proto(context) == IPPROTO_UDP ?
+		       'U' : 'T');
+
+		(*count)++;
+
+		return;
+	}
+
+	if (context->local.family == AF_INET) {
+		snprintf(addr_str, ADDR_LEN,
+			 net_sprint_ipv4_addr(
+				 net_sin_ptr(&context->local)->sin_addr));
+
+		printf("%p\t%-16s\t%-16s\t%p\t%c%c%c\n", context, addr_str,
+		       net_sprint_ipv4_addr(
+			       &net_sin(&context->remote)->sin_addr),
+		       net_context_get_iface(context),
+		       net_context_get_family(context) == AF_INET6 ? '6' : '4',
+		       net_context_get_type(context) == SOCK_DGRAM ? 'D' : 'S',
+		       net_context_get_ip_proto(context) == IPPROTO_UDP ?
+		       'U' : 'T');
+
+		(*count)++;
+
+		return;
+	}
+
+	if (context->local.family != AF_UNSPEC) {
+		printf("Invalid address family (%d) for context %p\n",
+		       context->local.family, context);
+	}
+}
+
 /* Put the actual shell commands after this */
+
+static int shell_cmd_conn(int argc, char *argv[])
+{
+	int count = 0;
+
+	printf("Context   \tLocal           \tRemote          \tIface     \t"
+	       "Flags\n");
+
+	net_context_foreach(context_cb, &count);
+
+	if (count == 0) {
+		printf("No connections\n");
+	}
+
+	return 0;
+}
 
 static int shell_cmd_iface(int argc, char *argv[])
 {
@@ -634,6 +707,7 @@ static int shell_cmd_stats(int argc, char *argv[])
 static int shell_cmd_help(int argc, char *argv[])
 {
 	/* Keep the commands in alphabetical order */
+	printf("net conn\n\tPrint information about network connections\n");
 	printf("net iface\n\tPrint information about network interfaces\n");
 	printf("net mem\n\tPrint network buffer information\n");
 	printf("net ping <host>\n\tPing a network host\n");
@@ -645,6 +719,7 @@ static int shell_cmd_help(int argc, char *argv[])
 
 static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
+	{ "conn", shell_cmd_conn },
 	{ "help", shell_cmd_help },
 	{ "iface", shell_cmd_iface },
 	{ "mem", shell_cmd_mem },
