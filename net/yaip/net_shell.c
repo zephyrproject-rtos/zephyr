@@ -31,6 +31,10 @@
 #include "icmpv6.h"
 #include "icmpv4.h"
 
+#if defined(CONFIG_NET_TCP)
+#include "tcp.h"
+#endif
+
 #include "net_shell.h"
 
 /*
@@ -510,6 +514,21 @@ static void context_cb(struct net_context *context, void *user_data)
 	}
 }
 
+#if defined(CONFIG_NET_TCP)
+static void tcp_cb(struct net_tcp *tcp, void *user_data)
+{
+	int *count = user_data;
+
+	printf("%p\t%-12s\t%-10u%-10u%-11u%-11u%-11u%-5u\n",
+	       tcp, net_tcp_state_str(tcp->state),
+	       ntohs(net_sin6_ptr(&tcp->context->local)->sin6_port),
+	       ntohs(net_sin6(&tcp->context->remote)->sin6_port),
+	       tcp->recv_ack, tcp->send_seq, tcp->send_ack, tcp->recv_mss);
+
+	(*count)++;
+}
+#endif
+
 /* Put the actual shell commands after this */
 
 static int shell_cmd_conn(int argc, char *argv[])
@@ -524,6 +543,19 @@ static int shell_cmd_conn(int argc, char *argv[])
 	if (count == 0) {
 		printf("No connections\n");
 	}
+
+#if defined(CONFIG_NET_TCP)
+	printf("\nTCP       \tState    \tSrc port  Dst port  Recv-Ack   "
+	       "Send-Seq   Send-Ack   MSS\n");
+
+	count = 0;
+
+	net_tcp_foreach(tcp_cb, &count);
+
+	if (count == 0) {
+		printf("No TCP connections\n");
+	}
+#endif
 
 	return 0;
 }
