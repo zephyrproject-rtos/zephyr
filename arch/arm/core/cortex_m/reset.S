@@ -81,7 +81,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #ifdef CONFIG_INIT_STACKS
     ldr r0, =_interrupt_stack
-    mov r1, #0xaa
+    ldr r1, =0xaa
     ldr r2, =CONFIG_ISR_STACK_SIZE
     bl memset
 #endif
@@ -91,7 +91,8 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
      * gets set to _interrupt_stack during nanoInit().
      */
     ldr r0, =_interrupt_stack
-    adds r0, r0, CONFIG_ISR_STACK_SIZE
+    ldr r1, =CONFIG_ISR_STACK_SIZE
+    adds r0, r0, r1
     msr PSP, r0
     movs.n r0, #2	/* switch to using PSP (bit1 of CONTROL reg) */
     msr CONTROL, r0
