@@ -43,4 +43,11 @@ config NUM_IRQ_PRIO_BITS
 	int
 	default 2
 
+if SENSOR
+
+config TEMP_NRF5
+	def_bool y
+
+endif # SENSOR
+
 endif # SOC_SERIES_NRF51X
