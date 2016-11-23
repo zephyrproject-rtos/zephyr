@@ -31,35 +31,6 @@ enum power_states {
 };
 
 /**
- * @brief Save CPU context
- *
- * This function would save the CPU context in the stack. It
- * would also save the idtr and gdtr registers. When context is
- * restored by _sys_soc_restore_cpu_context(), control will be
- * transferred into this function where the context was originally
- * saved.  The return values would indicate whether it is returning
- * after saving context or after a context restore transferred
- * control to it.
- *
- * @retval 0 Indicates it is returning after saving cpu context
- * @retval 1 Indicates cpu context restore transferred control to it.
- */
-int _sys_soc_save_cpu_context(void);
-
-/**
- * @brief Restore CPU context
- *
- * This function would restore the CPU context that was saved in
- * the stack by _sys_soc_save_cpu_context(). It would also restore
- * the idtr and gdtr registers.
- *
- * After context is restored, control will be transferred into
- * _sys_soc_save_cpu_context() function where the context was originally
- * saved.
- */
-FUNC_NORETURN void _sys_soc_restore_cpu_context(void);
-
-/**
  * @brief Put processor into low power state
  *
  * This function implements the SoC specific details necessary
