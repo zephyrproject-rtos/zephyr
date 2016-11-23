@@ -51,6 +51,8 @@ struct net_buf *net_buf_get_timeout(struct k_fifo *fifo,
 {
 	struct net_buf *buf, *frag;
 
+	NET_BUF_ASSERT(fifo);
+
 	NET_BUF_DBG("fifo %p reserve %u timeout %d", fifo, reserve_head,
 		    timeout);
 
@@ -109,6 +111,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, size_t reserve_head)
 
 void net_buf_reserve(struct net_buf *buf, size_t reserve)
 {
+	NET_BUF_ASSERT(buf);
 	NET_BUF_ASSERT(buf->len == 0);
 	NET_BUF_DBG("buf %p reserve %u", buf, reserve);
 
@@ -119,6 +122,9 @@ void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 {
 	struct net_buf *tail;
 
+	NET_BUF_ASSERT(fifo);
+	NET_BUF_ASSERT(buf);
+
 	for (tail = buf; tail->frags; tail = tail->frags) {
 		tail->flags |= NET_BUF_FRAGS;
 	}
@@ -128,9 +134,10 @@ void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 
 void net_buf_unref(struct net_buf *buf)
 {
+	NET_BUF_ASSERT(buf);
+	NET_BUF_ASSERT(buf->ref > 0);
 	NET_BUF_DBG("buf %p ref %u fifo %p frags %p", buf, buf->ref,
 		    buf->free, buf->frags);
-	NET_BUF_ASSERT(buf->ref > 0);
 
 	while (buf && --buf->ref == 0) {
 		struct net_buf *frags = buf->frags;
@@ -149,6 +156,8 @@ void net_buf_unref(struct net_buf *buf)
 
 struct net_buf *net_buf_ref(struct net_buf *buf)
 {
+	NET_BUF_ASSERT(buf);
+
 	NET_BUF_DBG("buf %p (old) ref %u fifo %p", buf, buf->ref, buf->free);
 	buf->ref++;
 	return buf;
@@ -157,6 +166,8 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 struct net_buf *net_buf_clone(struct net_buf *buf)
 {
 	struct net_buf *clone;
+
+	NET_BUF_ASSERT(buf);
 
 	clone = net_buf_get(buf->free, net_buf_headroom(buf));
 	if (!clone) {
@@ -171,6 +182,8 @@ struct net_buf *net_buf_clone(struct net_buf *buf)
 
 struct net_buf *net_buf_frag_last(struct net_buf *buf)
 {
+	NET_BUF_ASSERT(buf);
+
 	while (buf->frags) {
 		buf = buf->frags;
 	}
@@ -180,6 +193,9 @@ struct net_buf *net_buf_frag_last(struct net_buf *buf)
 
 void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag)
 {
+	NET_BUF_ASSERT(parent);
+	NET_BUF_ASSERT(frag);
+
 	if (parent->frags) {
 		net_buf_frag_last(frag)->frags = parent->frags;
 	}
@@ -189,6 +205,8 @@ void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag)
 
 struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)
 {
+	NET_BUF_ASSERT(frag);
+
 	if (!head) {
 		return net_buf_ref(frag);
 	}
@@ -201,6 +219,8 @@ struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)
 struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 {
 	struct net_buf *next_frag;
+
+	NET_BUF_ASSERT(frag);
 
 	if (parent) {
 		NET_BUF_ASSERT(parent->frags);
