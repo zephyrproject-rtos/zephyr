@@ -93,6 +93,25 @@ config BLUETOOTH_UART_ON_DEV_NAME
 config PINMUX
 	def_bool y
 
+if PINMUX_KSDK
+
+config PINMUX_KSDK_PORTA
+	def_bool y
+
+config PINMUX_KSDK_PORTB
+	def_bool y
+
+config PINMUX_KSDK_PORTC
+	def_bool y
+
+config PINMUX_KSDK_PORTD
+	def_bool y
+
+config PINMUX_KSDK_PORTE
+	def_bool y
+
+endif # PINMUX_KSDK
+
 if GPIO_K64
 
 config GPIO_K64_A
