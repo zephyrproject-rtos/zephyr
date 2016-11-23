@@ -2141,6 +2141,18 @@ static int cmd_rfcomm_send(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_rfcomm_disconnect(int argc, char *argv[])
+{
+	int err;
+
+	err = bt_rfcomm_dlc_disconnect(&rfcomm_dlc);
+	if (err) {
+		printk("Unable to disconnect: %u\n", -err);
+	}
+
+	return 0;
+}
+
 #endif /* CONFIG_BLUETOOTH_RFCOMM) */
 
 static int cmd_bredr_discoverable(int argc, char *argv[])
@@ -2288,6 +2300,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-rfcomm-register", cmd_bredr_rfcomm_register },
 	{ "br-rfcomm-connect", cmd_rfcomm_connect, "<channel>" },
 	{ "br-rfcomm-send", cmd_rfcomm_send, "<number of packets>"},
+	{ "br-rfcomm-disconnect", cmd_rfcomm_disconnect, HELP_NONE },
 #endif /* CONFIG_BLUETOOTH_RFCOMM */
 #endif
 	{ NULL, NULL }
