@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2016 BayLibre, SAS
+ * Copyright (c) 2016 RnDity Sp. z o.o.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,8 @@
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #include "stm32f1_clock_control.h"
+#elif CONFIG_SOC_SERIES_STM32F3X
+#include "stm32f3_clock_control.h"
 #elif CONFIG_SOC_SERIES_STM32F4X
 #include "stm32f4_clock_control.h"
 #elif CONFIG_SOC_SERIES_STM32L4X

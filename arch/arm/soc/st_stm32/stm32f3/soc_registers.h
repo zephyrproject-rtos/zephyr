@@ -19,5 +19,6 @@
 
 /* include register mapping headers */
 #include "rcc_registers.h"
+#include "flash_registers.h"
 
 #endif /* _STM32F3X_SOC_REGISTERS_H_ */
