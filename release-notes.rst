@@ -9,7 +9,6 @@ Major enhancements included with the release:
 * The legacy API is still supported but deprecated. All the test were moved to tests/legacy.
 * Added Unified Kernel documentation.
 * Added support for ARM LTD Beetle SoC and V2M Beetle board.
-* Cleaned Build System and separated Kernel / Application build.
 * Added support for USB mass storage access to the internal filesystem.
 
 A detailed list of changes since v1.5.0 by component follows:
@@ -18,12 +17,11 @@ Kernel
 ******
 
 * Introduced Unified kernel.
-* Micro: Removed deprecated Tasks IRQs.
+* Removed deprecated Tasks IRQs.
 * Removed deprecated dynamic interrupt API.
 * Added DLIST to operate in all elements of a doubly-linked list.
 * SLIST: Added sys_slist_get() to fetch and remove the head, also Added append_list and merge_slist.
 * Added nano_work_pending to check if it is pending execution.
-* ARM: Added choice to use floating point ABI.
 * Unified: Added support for k_malloc and k_free.
 * Renamed kernel objects event to alert and memory map to memory slab.
 * Changed memory pool, memory maps, message queues and event handling APIs.
@@ -34,15 +32,16 @@ Architectures
 * ARC: Removed CONFIG_TIMER0_CLOCK_FREQ.
 * ARC: Unified linker scripts.
 * ARC: Removed dynamic interrupts.
+* ARM: Added choice to use floating point ABI.
 * ARM: Added NXP Kinetis kconfig options to configure clocks.
 * ARM: Removed dynamic interrupts and exceptions.
 * ARM: Atmel: Added constants and structures for watchdog registers.
+* ARM: Added support for ARM Cortex-M0/M0+.
 * x86: Removed dynamic interrupts and exceptions.
 * x86: Declared internal API for interrupt controllers.
 * x86: Changed IRQ controller to return -1 if cannot determine source vector.
 * x86: Grouped Quark SoC's under intel_quark family.
 * x86: Optimized and simplified IRQ and exception stubs.
-* Changed memory pool, memory maps, message queues and event handling APIs.
 
 Boards
 ******
@@ -50,13 +49,13 @@ Boards
 * Renamed board Quark SE devboard to Quark SE C1000 devboard.
 * Renamed board Quark SE SSS devboard to Quark SE C1000 SS devboard.
 * Quark SE C1000: Disabled IPM and enabled UART0 on the Sensor SubSytem.
-* Removed basic_cortex_m3 and basic_minuteia.
-* Arduino 101: Removed backup/restore scripts use flashpack utility instead.
+* Removed basic_cortex_m3 and basic_minuteia boards.
+* Arduino 101: Removed backup/restore scripts. To restore original bootloader
+  use flashpack utility instead.
 * Renamed nRF52 Nitrogen to 96Boards Nitrogen.
 * Added ARM LTD Beetle SoC and V2M Beetle board.
-* SoC: Added Texas Instruments CC3200 LaunchXL support.
-* SoC: Added support for Nordic Semiconductor nRF51822.
-* SoC: Added support for ARM Cortex-M0/M0+.
+* Added Texas Instruments CC3200 LaunchXL support.
+* Added support for Nordic Semiconductor nRF51822.
 * Added support for NXP Hexiwear board.
 
 Drivers and Sensors
@@ -105,7 +104,7 @@ Build Infrastructure
 * Sysgen: Added --kernel_type argument.
 * Modified build infrastructure to support unified kernel.
 * SDK: Zephyr: Added check for minimum required version.
-* Cleaned Build System and separated Kernel / Application build.
+* Imported get_maintainer.pl from Linux kernel.
 
 Libraries
 *********
@@ -114,16 +113,19 @@ Libraries
 * libc: Added support for 'z' length specifier.
 * libc: Removed stddef.h which is provided by the compiler.
 * libc: printf: Improved code for printing.
-* Imported Nordic MDK nRF51 files.
-* Imported Kinetis SDK Ethernet phy driver.
-* Imported SDK RNGA driver.
-* Imported get_maintainer.pl from kernel.
 * Added CoAP implementation for Zephyr.
 * File system: Added API to grow or shrink a file.
 * File system: Added API to get volume statistics.
 * File system: Added API to flush cache of an opened file.
+
+HALs
+****
+
 * QMSI: Updated to version 1.3.
 * HAL: Imported CC3200 SDK.
+* Imported Nordic MDK nRF51 files.
+* Imported Kinetis SDK Ethernet phy driver.
+* Imported SDK RNGA driver.
 
 Documentation
 *************
@@ -140,7 +142,6 @@ Test and Samples
 * Fixed incorrect printk usage.
 * Removed test for dynamic exceptions.
 * Added USB sample.
-* Added microkernel support for the shell sample.
 * Added tests and samples for CoAP client and server.
 * Added philosophers unified sample.
 * Removed printf/printk wrappers.
