@@ -479,6 +479,7 @@ static int spi_k64_configure(struct device *dev, struct spi_config *config)
 
 	frame_sz = SPI_WORD_SIZE_GET(flags);
 	if (frame_sz > SPI_K64_WORD_SIZE_MAX) {
+		SYS_LOG_ERR("Frame size not supported: %u", frame_sz);
 		return -ENOTSUP;
 	}
 
@@ -489,6 +490,7 @@ static int spi_k64_configure(struct device *dev, struct spi_config *config)
 	/* Set baud rate and signal timing parameters (delays) */
 
 	if (spi_k64_set_baud_rate(config->max_sys_freq, &ctar) == 0) {
+		SYS_LOG_ERR("Cannot set baud rate");
 		return -ENOTSUP;
 	}
 
@@ -501,8 +503,9 @@ static int spi_k64_configure(struct device *dev, struct spi_config *config)
 	 */
 
 	if (spi_k64_set_delay(DELAY_AFTER_SCK,
-							(NSEC_PER_SEC / 2) / config->max_sys_freq,
-							&ctar) == 0) {
+			      (NSEC_PER_SEC / 2) / config->max_sys_freq,
+			      &ctar) == 0) {
+		SYS_LOG_ERR("Cannot set delay");
 		return -ENOTSUP;
 	}
 
