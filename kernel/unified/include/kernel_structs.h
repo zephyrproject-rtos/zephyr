@@ -33,11 +33,6 @@
 /* thread is defined statically */
 #define K_STATIC (1 << 8)
 
-#define K_READY 0
-
-/* Thread is waiting on a timeout */
-#define K_TIMING (1 << 12)
-
 /* Thread is waiting on an object */
 #define K_PENDING (1 << 13)
 
@@ -52,9 +47,6 @@
 
 /* Not a real thread */
 #define K_DUMMY (1 << 17)
-
-#define K_EXECUTION_MASK \
-	(K_TIMING | K_PENDING | K_PRESTART | K_DEAD | K_SUSPENDED | K_DUMMY)
 
 #if defined(CONFIG_FP_SHARING)
 /* thread uses floating point registers */

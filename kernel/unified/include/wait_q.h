@@ -34,8 +34,21 @@ static ALWAYS_INLINE void _init_thread_timeout(struct _thread_base *thread_base)
 {
 	ARG_UNUSED(thread_base);
 }
-#define _add_thread_timeout(thread, wait_q, timeout) do { } while (0)
-static inline int _abort_thread_timeout(struct k_thread *thread) { return 0; }
+
+static ALWAYS_INLINE void
+_add_thread_timeout(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(wait_q);
+	ARG_UNUSED(timeout);
+}
+
+static ALWAYS_INLINE int _abort_thread_timeout(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+
+	return 0;
+}
 #define _get_next_timeout_expiry() (K_FOREVER)
 #endif
 
