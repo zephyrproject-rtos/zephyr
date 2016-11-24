@@ -68,6 +68,7 @@
 #define K64_PINMUX_FUNC_DISABLED	K64_PINMUX_ALT_0
 #define K64_PINMUX_FUNC_ANALOG		K64_PINMUX_ALT_0
 #define K64_PINMUX_FUNC_ETHERNET	K64_PINMUX_ALT_4
+#define K64_PINMUX_FUNC_SPI		K64_PINMUX_ALT_2
 
 /*
  * Pin drive strength configuration, for output:
