@@ -87,11 +87,14 @@ SECTION_FUNC(TEXT,__start)
 	mov_s r2, CONFIG_ISR_STACK_SIZE
 	jl memset
 
+#if CONFIG_RGF_NUM_BANKS != 1
 	mov_s r0, _firq_stack
 	mov_s r1, 0xaa
 	mov_s r2, CONFIG_FIRQ_STACK_SIZE
 	jl memset
 #endif
+
+#endif /* CONFIG_INIT_STACKS */
 
 	mov sp, INIT_STACK
 	add sp, sp, INIT_STACK_SIZE
