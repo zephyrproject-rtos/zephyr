@@ -1104,8 +1104,8 @@ static const struct spi_k64_config spi_k64_config_0 = {
 
 DEVICE_DEFINE(spi_k64_port_0, CONFIG_SPI_0_NAME, spi_k64_init,
 	      spi_k64_device_ctrl, &spi_k64_data_port_0,
-	      &spi_k64_config_0, PRE_KERNEL_1,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
+	      &spi_k64_config_0, POST_KERNEL,
+	      CONFIG_SPI_INIT_PRIORITY, &k64_spi_api);
 
 
 void spi_config_0_irq(void)
@@ -1133,8 +1133,8 @@ static const struct spi_k64_config spi_k64_config_1 = {
 
 DEVICE_DEFINE(spi_k64_port_1, CONFIG_SPI_1_NAME, spi_k64_init,
 	      spi_k64_device_ctrl, &spi_k64_data_port_1,
-	      &spi_k64_config_1, PRE_KERNEL_1,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
+	      &spi_k64_config_1, POST_KERNEL,
+	      CONFIG_SPI_INIT_PRIORITY, &k64_spi_api);
 
 
 void spi_config_1_irq(void)
@@ -1162,8 +1162,8 @@ static const struct spi_k64_config spi_k64_config_2 = {
 
 DEVICE_DEFINE(spi_k64_port_2, CONFIG_SPI_2_NAME, spi_k64_init,
 	      spi_k64_device_ctrl, &spi_k64_data_port_2,
-	      &spi_k64_config_2, PRE_KERNEL_1,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
+	      &spi_k64_config_2, POST_KERNEL,
+	      CONFIG_SPI_INIT_PRIORITY, &k64_spi_api);
 
 
 void spi_config_2_irq(void)
