@@ -5,8 +5,8 @@ Zephyr Kernel 1.6.0 Release Notes
 
 Major enhancements included with the release:
 
-* New Unified Kernel. The nano and micro kernel were removed.
-* The legacy API is still supported but deprecated. All the test were moved to tests/legacy.
+* Introduced the Unified Kernel; the nano and micro kernel were removed.
+* The legacy API is still supported but deprecated. All legacy tests were moved to tests/legacy.
 * Added Unified Kernel documentation.
 * Added support for ARM LTD Beetle SoC and V2M Beetle board.
 * Added support for USB mass storage access to the internal filesystem.
