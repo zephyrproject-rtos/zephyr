@@ -20,12 +20,13 @@
 #include <power.h>
 #include <soc_power.h>
 #include <init.h>
+#include <kernel_structs.h>
 
 #include "ss_power_states.h"
 
 #define SLEEP_MODE_CORE_OFF (0x0)
 #define SLEEP_MODE_CORE_TIMERS_RTC_OFF (0x60)
-#define ENABLE_INTERRUPTS BIT(4)
+#define ENABLE_INTERRUPTS (BIT(4) | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL))
 
 #define ARC_SS1 (SLEEP_MODE_CORE_OFF | ENABLE_INTERRUPTS)
 #define ARC_SS2 (SLEEP_MODE_CORE_TIMERS_RTC_OFF | ENABLE_INTERRUPTS)
