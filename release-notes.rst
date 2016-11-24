@@ -81,7 +81,14 @@ Networking
 Bluetooth
 *********
 
-* [Content: component changes]
+* Added native Bluetooth Controller support. Currently nRF51 & nRF52 are supported.
+* New location for Controller & Host implementations: subsys/bluetooth/
+* Added raw HCI API to enable physical HCI transport for a Controller-only build.
+* Added sample raw HCI apps for USB and UART.
+* Added cross-transport pairing support for the Security Manager Protocol.
+* Added RFCOMM support (for Bluetooth Classic)
+* Added basic persistent storage support (filesystem-backed)
+* Renamed bt_driver API to bt_hci_driver, in anticipation of Bluetooth radio drivers.
 
 Build Infrastructure
 ********************
