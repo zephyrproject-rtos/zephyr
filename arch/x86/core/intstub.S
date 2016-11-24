@@ -312,10 +312,6 @@ alreadyOnIntStack:
 	 * _Swap() to determine whether non-floating registers need to be
 	 * preserved using the lazy save/restore algorithm, or to indicate to
 	 * debug tools that a preemptive context switch has occurred.
-	 *
-	 * Setting the NO_METRICS bit tells _Swap() that the per-execution context
-	 * [totalRunTime] calculation has already been performed and that
-	 * there is no need to do it again.
 	 */
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)

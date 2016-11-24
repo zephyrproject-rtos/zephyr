@@ -86,24 +86,6 @@ typedef struct __esf _esf_t;
 
 #endif /* _ASMLANGUAGE */
 
-/* Bitmask definitions for the struct tcs.flags bit field */
-
-#define K_STATIC  0x00000800
-
-#define K_READY              0x00000000    /* Thread is ready to run */
-#define K_TIMING             0x00001000    /* Thread is waiting on a timeout */
-#define K_PENDING            0x00002000    /* Thread is waiting on an object */
-#define K_PRESTART           0x00004000    /* Thread has not yet started */
-#define K_DEAD               0x00008000    /* Thread has terminated */
-#define K_SUSPENDED          0x00010000    /* Thread is suspended */
-#define K_DUMMY              0x00020000    /* Not a real thread */
-#define K_EXECUTION_MASK \
-	(K_TIMING | K_PENDING | K_PRESTART | K_DEAD | K_SUSPENDED | K_DUMMY)
-
-#define K_FP_REGS 0x010	   /* 1 = thread uses floating point registers */
-#define K_ESSENTIAL 0x200  /* 1 = system thread that must not abort */
-#define NO_METRICS 0x400 /* 1 = _Swap() not to update task metrics */
-
 /* stacks */
 
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)

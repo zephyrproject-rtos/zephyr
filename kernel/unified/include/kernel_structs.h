@@ -23,6 +23,47 @@
 #include <misc/dlist.h>
 #endif
 
+/*
+ * Common bitmask definitions for the struct tcs->flags bit field.
+ *
+ * Must be before kerneL_arch_data.h because it might need them to be already
+ * defined.
+ */
+
+/* thread is defined statically */
+#define K_STATIC (1 << 8)
+
+#define K_READY 0
+
+/* Thread is waiting on a timeout */
+#define K_TIMING (1 << 12)
+
+/* Thread is waiting on an object */
+#define K_PENDING (1 << 13)
+
+/* Thread has not yet started */
+#define K_PRESTART (1 << 14)
+
+/* Thread has terminated */
+#define K_DEAD (1 << 15)
+
+/* Thread is suspended */
+#define K_SUSPENDED (1 << 16)
+
+/* Not a real thread */
+#define K_DUMMY (1 << 17)
+
+#define K_EXECUTION_MASK \
+	(K_TIMING | K_PENDING | K_PRESTART | K_DEAD | K_SUSPENDED | K_DUMMY)
+
+#if defined(CONFIG_FP_SHARING)
+/* thread uses floating point registers */
+#define K_FP_REGS (1 << 4)
+#endif
+
+/* system thread that must not abort */
+#define K_ESSENTIAL (1 << 9)
+
 #include <kernel_arch_data.h>
 
 #if !defined(_ASMLANGUAGE)
