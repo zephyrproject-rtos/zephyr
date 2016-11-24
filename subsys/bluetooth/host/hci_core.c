@@ -2308,7 +2308,6 @@ static void hci_cmd_complete(struct net_buf *buf)
 	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
 	uint8_t status;
-	int key;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2321,25 +2320,16 @@ static void hci_cmd_complete(struct net_buf *buf)
 
 	hci_cmd_done(opcode, status, buf);
 
-	key = irq_lock();
-
-	if (!evt->ncmd || bt_dev.ncmd) {
-		irq_unlock(key);
-		return;
-	}
-
 	/* Allow next command to be sent */
-	bt_dev.ncmd = 1;
-	irq_unlock(key);
-
-	k_sem_give(&bt_dev.ncmd_sem);
+	if (evt->ncmd) {
+		k_sem_give(&bt_dev.ncmd_sem);
+	}
 }
 
 static void hci_cmd_status(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_status *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
-	int key;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2347,18 +2337,10 @@ static void hci_cmd_status(struct net_buf *buf)
 
 	hci_cmd_done(opcode, evt->status, buf);
 
-	key = irq_lock();
-
-	if (!evt->ncmd || bt_dev.ncmd) {
-		irq_unlock(key);
-		return;
-	}
-
 	/* Allow next command to be sent */
-	bt_dev.ncmd = 1;
-	irq_unlock(key);
-
-	k_sem_give(&bt_dev.ncmd_sem);
+	if (evt->ncmd) {
+		k_sem_give(&bt_dev.ncmd_sem);
+	}
 }
 
 static int prng_reseed(struct tc_hmac_prng_struct *h)
@@ -2759,7 +2741,6 @@ static void hci_cmd_tx_thread(void)
 		/* Get next command - wait if necessary */
 		BT_DBG("calling net_buf_get_timeout");
 		buf = net_buf_get_timeout(&bt_dev.cmd_tx_queue, 0, K_FOREVER);
-		bt_dev.ncmd = 0;
 
 		/* Clear out any existing sent command */
 		if (bt_dev.sent_cmd) {
@@ -3665,16 +3646,15 @@ int bt_enable(bt_ready_cb_t cb)
 #endif /* CONFIG_BLUETOOTH_CONN */
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
-	k_sem_init(&bt_dev.ncmd_sem, 0, 1);
-
 	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
 	 * exception is if the controller requests to wait for an
 	 * initial Command Complete for NOP.
 	 */
 #if !defined(CONFIG_BLUETOOTH_WAIT_NOP)
-	bt_dev.ncmd = 1;
-	k_sem_give(&bt_dev.ncmd_sem);
-#endif /* !CONFIG_BLUETOOTH_WAIT_NOP */
+	k_sem_init(&bt_dev.ncmd_sem, 1, 1);
+#else
+	k_sem_init(&bt_dev.ncmd_sem, 0, 1);
+#endif
 
 	/* TX thread */
 	k_fifo_init(&bt_dev.cmd_tx_queue);

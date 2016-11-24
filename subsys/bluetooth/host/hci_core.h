@@ -103,7 +103,6 @@ struct bt_dev {
 #endif
 
 	/* Number of commands controller can accept */
-	uint8_t			ncmd;
 	struct k_sem		ncmd_sem;
 
 	/* Last sent HCI command */
