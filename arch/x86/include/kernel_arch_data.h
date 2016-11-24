@@ -52,35 +52,20 @@
 
 #define STACK_ALIGN_SIZE 4
 
-/*
- * Bitmask definitions for the struct k_thread->flags bit field
- */
+/* x86 Bitmask definitions for the struct k_thread->flags bit field */
 
-#define K_STATIC  0x00000800
+/* executing context is interrupt handler */
+#define INT_ACTIVE (1 << 1)
 
-#define K_READY              0x00000000    /* Thread is ready to run */
-#define K_TIMING             0x00001000    /* Thread is waiting on a timeout */
-#define K_PENDING            0x00002000    /* Thread is waiting on an object */
-#define K_PRESTART           0x00004000    /* Thread has not yet started */
-#define K_DEAD               0x00008000    /* Thread has terminated */
-#define K_SUSPENDED          0x00010000    /* Thread is suspended */
-#define K_DUMMY              0x00020000    /* Not a real thread */
-#define K_EXECUTION_MASK    (K_TIMING | K_PENDING | K_PRESTART | \
-			     K_DEAD | K_SUSPENDED | K_DUMMY)
-
-#define INT_ACTIVE 0x2     /* 1 = executing context is interrupt handler */
-#define EXC_ACTIVE 0x4     /* 1 = executing context is exception handler */
-#if defined(CONFIG_FP_SHARING)
-#define K_FP_REGS  0x10    /* 1 = thread uses floating point registers */
-#endif
-#if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
-#define K_SSE_REGS 0x20    /* 1 = thread uses SSEx (and also FP) registers */
-#endif
-#define K_ESSENTIAL 0x200  /* 1 = system thread that must not abort */
-#define NO_METRICS 0x400   /* 1 = _Swap() not to update task metrics */
-#define NO_METRICS_BIT_OFFSET 0xa /* Bit position of NO_METRICS */
+/* executing context is exception handler */
+#define EXC_ACTIVE (1 << 2)
 
 #define INT_OR_EXC_MASK (INT_ACTIVE | EXC_ACTIVE)
+
+#if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
+/* thread uses SSEx (and also FP) registers */
+#define K_SSE_REGS (1 << 5)
+#endif
 
 #if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
 #define _FP_USER_MASK (K_FP_REGS | K_SSE_REGS)
