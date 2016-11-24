@@ -258,22 +258,14 @@ static inline void _mark_thread_as_not_suspended(struct k_thread *thread)
 	thread->base.flags &= ~K_SUSPENDED;
 }
 
-/* mark a thread as being in the timer queue */
-static inline void _mark_thread_as_timing(struct k_thread *thread)
+/* check if a thread is on the timeout queue */
+static inline int _is_thread_timeout_active(struct k_thread *thread)
 {
-	thread->base.flags |= K_TIMING;
-}
-
-/* mark a thread as not being in the timer queue */
-static inline void _mark_thread_as_not_timing(struct k_thread *thread)
-{
-	thread->base.flags &= ~K_TIMING;
-}
-
-/* check if a thread is on the timer queue */
-static inline int _is_thread_timing(struct k_thread *thread)
-{
-	return !!(thread->base.flags & K_TIMING);
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	return thread->base.timeout.delta_ticks_from_prev != -1;
+#else
+	return 0;
+#endif
 }
 
 static inline int _has_thread_started(struct k_thread *thread)
@@ -281,10 +273,19 @@ static inline int _has_thread_started(struct k_thread *thread)
 	return !(thread->base.flags & K_PRESTART);
 }
 
+static inline int _is_thread_prevented_from_running(struct k_thread *thread)
+{
+	return thread->base.flags & (K_PENDING   | K_PRESTART |
+				     K_DEAD      | K_DUMMY    |
+				     K_SUSPENDED);
+
+}
+
 /* check if a thread is ready */
 static inline int _is_thread_ready(struct k_thread *thread)
 {
-	return (thread->base.flags & K_EXECUTION_MASK) == K_READY;
+	return !(_is_thread_prevented_from_running(thread) ||
+		 _is_thread_timeout_active(thread));
 }
 
 /* mark a thread as pending in its TCS */
@@ -305,11 +306,22 @@ static inline int _is_thread_pending(struct k_thread *thread)
 	return !!(thread->base.flags & K_PENDING);
 }
 
-/*
- * Mark the thread as not being in the timer queue. If this makes it ready,
- * then add it to the ready queue according to its priority.
+/**
+ * @brief Mark a thread as started
+ *
+ * This routine must be called with interrupts locked.
  */
-/* must be called with interrupts locked */
+static inline void _mark_thread_as_started(struct k_thread *thread)
+{
+	thread->base.flags &= ~K_PRESTART;
+}
+
+/*
+ * Put the thread in the ready queue according to its priority if it is not
+ * blocked for another reason (eg. suspended).
+ *
+ * Must be called with interrupts locked.
+ */
 static inline void _ready_thread(struct k_thread *thread)
 {
 	__ASSERT(_is_prio_higher(thread->base.prio, K_LOWEST_THREAD_PRIO) ||
@@ -324,22 +336,12 @@ static inline void _ready_thread(struct k_thread *thread)
 		 "thread %p prio too high (id %d, cannot be higher than %d)",
 		 thread, thread->base.prio, K_HIGHEST_THREAD_PRIO);
 
-	/* K_PRESTART is needed to handle the start-with-delay case */
-	_reset_thread_states(thread, K_TIMING|K_PRESTART);
+	/* needed to handle the start-with-delay case */
+	_mark_thread_as_started(thread);
 
 	if (_is_thread_ready(thread)) {
 		_add_thread_to_ready_q(thread);
 	}
-}
-
-/**
- * @brief Mark a thread as started
- *
- * This routine must be called with interrupts locked.
- */
-static inline void _mark_thread_as_started(struct k_thread *thread)
-{
-	thread->base.flags &= ~K_PRESTART;
 }
 
 /**

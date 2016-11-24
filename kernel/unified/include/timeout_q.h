@@ -98,20 +98,14 @@ static inline struct _timeout *_handle_one_timeout(
 	struct _timeout *t = (void *)sys_dlist_get(timeout_q);
 	struct k_thread *thread = t->thread;
 
+	t->delta_ticks_from_prev = -1;
+
 	K_DEBUG("timeout %p\n", t);
 	if (thread != NULL) {
 		_unpend_thread_timing_out(thread, t);
 		_ready_thread(thread);
 	} else if (t->func) {
 		t->func(t);
-	}
-	/*
-	 * Note: t->func() may add timeout again. Make sure that
-	 * delta_ticks_from_prev is set to -1 only if timeout is
-	 * still expired (delta_ticks_from_prev == 0)
-	 */
-	if (t->delta_ticks_from_prev == 0) {
-		t->delta_ticks_from_prev = -1;
 	}
 
 	return (struct _timeout *)sys_dlist_peek_head(timeout_q);

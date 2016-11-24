@@ -222,8 +222,8 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 	 */
 
 	if (!_is_thread_ready(desc->thread)) {
-		_reset_thread_states(desc->thread, K_PENDING | K_TIMING);
 		_abort_thread_timeout(desc->thread);
+		_mark_thread_as_not_pending(desc->thread);
 		if (_is_thread_ready(desc->thread)) {
 			_add_thread_to_ready_q(desc->thread);
 		}

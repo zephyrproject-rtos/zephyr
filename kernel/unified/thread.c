@@ -220,9 +220,9 @@ static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 	if (delay == 0) {
 		start_thread(thread);
 	} else {
-		_mark_thread_as_timing(thread);
-		_add_thread_timeout(thread, NULL,
-					_TICK_ALIGN + _ms_to_ticks(delay));
+		int32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
+
+		_add_thread_timeout(thread, NULL, ticks);
 	}
 #else
 	ARG_UNUSED(delay);
@@ -252,7 +252,8 @@ int k_thread_cancel(k_tid_t tid)
 
 	int key = irq_lock();
 
-	if (_has_thread_started(thread) || !_is_thread_timing(thread)) {
+	if (_has_thread_started(thread) ||
+	    !_is_thread_timeout_active(thread)) {
 		irq_unlock(key);
 		return -EINVAL;
 	}
@@ -365,9 +366,8 @@ void _k_thread_single_abort(struct k_thread *thread)
 		if (_is_thread_pending(thread)) {
 			_unpend_thread(thread);
 		}
-		if (_is_thread_timing(thread)) {
+		if (_is_thread_timeout_active(thread)) {
 			_abort_thread_timeout(thread);
-			_mark_thread_as_not_timing(thread);
 		}
 	}
 	_mark_thread_as_dead(thread);

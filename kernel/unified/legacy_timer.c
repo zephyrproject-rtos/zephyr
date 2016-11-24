@@ -33,7 +33,6 @@ void _legacy_sleep(int32_t ticks)
 
 	int key = irq_lock();
 
-	_mark_thread_as_timing(_current);
 	_remove_thread_from_ready_q(_current);
 	_add_thread_timeout(_current, NULL, ticks);
 
