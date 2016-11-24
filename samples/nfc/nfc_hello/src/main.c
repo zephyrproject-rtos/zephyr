@@ -22,6 +22,8 @@
 #include <board.h>
 #include <uart.h>
 
+#include <misc/byteorder.h> /* for sys_cpu_to_be32 */
+
 #define BUF_MAXSIZE 256
 
 struct device *uart1_dev;
@@ -34,13 +36,6 @@ do {							\
 
 static uint8_t buf[BUF_MAXSIZE];
 static uint8_t nci_reset[] = { 0x20, 0x00, 0x01, 0x00 };
-
-
-static inline const uint32_t htonl(uint32_t x)
-{
-	__asm__ __volatile__ ("bswap %0" : "=r" (x) : "0" (x));
-	return x;
-}
 
 static void msg_dump(const char *s, uint8_t *data, unsigned len)
 {
@@ -76,11 +71,13 @@ void main(void)
 	uint8_t *pdu = buf;
 	uint32_t *len = (void *) pdu;
 
+	printf("Sample app running on: %s\n", CONFIG_ARCH);
+
 	nano_timer_init(&t, &t_data);
 
 	uart1_init();
 
-	*len = htonl(sizeof(nci_reset));
+	*len = sys_cpu_to_be32(sizeof(nci_reset));
 
 	memcpy(pdu + sizeof(*len), nci_reset, sizeof(nci_reset));
 
