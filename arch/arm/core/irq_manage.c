@@ -100,7 +100,7 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 * Our policy is to express priority levels with special properties
 	 * via flags
 	 */
-	if (flags | IRQ_ZERO_LATENCY) {
+	if (flags & IRQ_ZERO_LATENCY) {
 		prio = 2;
 	} else {
 		prio += IRQ_PRIORITY_OFFSET;
