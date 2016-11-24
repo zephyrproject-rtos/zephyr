@@ -838,6 +838,7 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 	for (i = 0; length >= sizeof(rsp->list[i]);
 	     i++, length -=  sizeof(rsp->list[i])) {
 		struct bt_gatt_attr attr = {};
+		struct bt_gatt_service value;
 
 		start_handle = sys_le16_to_cpu(rsp->list[i].start_handle);
 		end_handle = sys_le16_to_cpu(rsp->list[i].end_handle);
@@ -851,7 +852,11 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 			attr.uuid = BT_UUID_GATT_SECONDARY;
 		}
 
+		value.end_handle = end_handle;
+		value.uuid = params->uuid;
+
 		attr.handle = start_handle;
+		attr.user_data = &value;
 
 		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return;
