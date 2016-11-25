@@ -159,10 +159,13 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
 
       $ source zephyr-env.sh
 
-#. Build the example project and make sure you supply the CROSS_COMPILE on the
-   command line, enter:
+#. Build the example project and make sure you supply the CROSS_COMPILE on the command line, enter:
 
    .. code-block:: console
+
+      $ export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
+
+      $ export ZEPHYR_GCC_VARIANT=gccarmemb
 
       $ cd $ZEPHYR_BASE/samples/hello_world
 
