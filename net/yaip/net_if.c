@@ -319,12 +319,37 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 			      vlifetime * MSEC_PER_SEC);
 }
 
+static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
+					  struct in6_addr *addr)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!iface->ipv6.unicast[i].is_used) {
+			continue;
+		}
+
+		if (net_ipv6_addr_cmp(addr,
+				&iface->ipv6.unicast[i].address.in6_addr)) {
+			return &iface->ipv6.unicast[i];
+		}
+	}
+
+	return NULL;
+}
+
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 struct in6_addr *addr,
 					 enum net_addr_type addr_type,
 					 uint32_t vlifetime)
 {
+	struct net_if_addr *ifaddr;
 	int i;
+
+	ifaddr = ipv6_addr_find(iface, addr);
+	if (ifaddr) {
+		return ifaddr;
+	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (iface->ipv6.unicast[i].is_used) {
