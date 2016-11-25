@@ -1156,12 +1156,37 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 	return NULL;
 }
 
+static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
+					  struct in_addr *addr)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!iface->ipv4.unicast[i].is_used) {
+			continue;
+		}
+
+		if (net_ipv4_addr_cmp(addr,
+				&iface->ipv4.unicast[i].address.in_addr)) {
+			return &iface->ipv4.unicast[i];
+		}
+	}
+
+	return NULL;
+}
+
 struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 					 struct in_addr *addr,
 					 enum net_addr_type addr_type,
 					 uint32_t vlifetime)
 {
+	struct net_if_addr *ifaddr;
 	int i;
+
+	ifaddr = ipv4_addr_find(iface, addr);
+	if (ifaddr) {
+		return ifaddr;
+	}
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
 		if (iface->ipv4.unicast[i].is_used) {
