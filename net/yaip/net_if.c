@@ -520,12 +520,38 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 	return NULL;
 }
 
+static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
+						   struct in6_addr *prefix,
+						   uint8_t prefix_len)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+		if (!iface->ipv6.unicast[i].is_used) {
+			continue;
+		}
+
+		if (net_ipv6_addr_cmp(prefix, &iface->ipv6.prefix[i].prefix) &&
+		    prefix_len == iface->ipv6.prefix[i].len) {
+			return &iface->ipv6.prefix[i];
+		}
+	}
+
+	return NULL;
+}
+
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 						  struct in6_addr *prefix,
 						  uint8_t len,
 						  uint32_t lifetime)
 {
+	struct net_if_ipv6_prefix *if_prefix;
 	int i;
+
+	if_prefix = ipv6_prefix_find(iface, prefix, len);
+	if (if_prefix) {
+		return if_prefix;
+	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
 		if (iface->ipv6.prefix[i].is_used) {
