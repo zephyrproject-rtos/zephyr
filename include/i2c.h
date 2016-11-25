@@ -55,8 +55,9 @@ extern "C" {
 /** I2C Ultra Fast Speed */
 #define I2C_SPEED_ULTRA			(0x5)
 
-/** For internal use. */
+/** @cond INTERNAL_HIDDEN */
 #define I2C_SPEED_MASK			(0x7 << 1)	/* 3 bits */
+/** @endcond  */
 
 /** Use 10-bit addressing. */
 #define I2C_ADDR_10_BITS		(1 << 0)
@@ -78,8 +79,9 @@ extern "C" {
 /** Read message from I2C bus. */
 #define I2C_MSG_READ			(1 << 0)
 
-/** For internal use. */
+/** @cond INTERNAL_HIDDEN */
 #define I2C_MSG_RW_MASK			(1 << 0)
+/** @endcond  */
 
 /** Send STOP after this message. */
 #define I2C_MSG_STOP			(1 << 1)
