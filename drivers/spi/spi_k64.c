@@ -575,6 +575,7 @@ static int spi_k64_transceive(struct device *dev,
 	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *spi_data = dev->driver_data;
 	uint32_t int_config;	/* interrupt configuration */
+	uint32_t mcr;
 
 	SYS_LOG_DBG("dev %p, txbuf %p txlen %u rxbuf %p rxlen %u",
 		    dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
@@ -593,6 +594,13 @@ static int spi_k64_transceive(struct device *dev,
 		SYS_LOG_ERR("Tx FIFO is already full");
 		return -EBUSY;
 	}
+
+	/**
+	 * Clear RX and TX FIFO
+	 */
+	mcr = sys_read32(info->regs + SPI_K64_REG_MCR);
+	mcr |= (SPI_K64_MCR_CLR_RXF | SPI_K64_MCR_CLR_TXF);
+	sys_write32(mcr, (info->regs + SPI_K64_REG_MCR));
 
 	/* Set buffers info */
 	spi_data->tx_buf = tx_buf;
