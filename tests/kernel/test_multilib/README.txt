@@ -14,7 +14,7 @@ will call support routine(s) in libgcc and checks for expected result.
 
 Building and Running Project:
 
-This nanokernel project outputs to the console.  It can be built and executed
+This project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
     make qemu
