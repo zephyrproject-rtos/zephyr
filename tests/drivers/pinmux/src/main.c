@@ -17,16 +17,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 
-
-/*
- * @file
- * @brief Hello World demo
- * Nanokernel version of hello world demo
- */
-
-
 void main(void)
 {
-	printk("Hello World!\n");
+	printk("Hello World! %s\n", CONFIG_ARCH);
 }
-
