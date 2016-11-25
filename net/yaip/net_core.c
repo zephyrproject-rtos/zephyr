@@ -790,7 +790,6 @@ int net_send_data(struct net_buf *buf)
 
 	status = check_ip_addr(buf);
 	if (status < 0) {
-		net_nbuf_unref(buf);
 		return status;
 	} else if (status > 0) {
 		/* Packet is destined back to us so send it directly
