@@ -804,23 +804,46 @@ static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 	return 0;
 }
 
+static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
+{
+	if (session->dlcs) {
+		return;
+	}
+
+	session->state = BT_RFCOMM_STATE_DISCONNECTING;
+	rfcomm_send_disc(session, 0);
+}
+
 static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	struct bt_rfcomm_dlc *dlc, *tmp;
+	int err;
 
 	if (!dlci) {
-		if (session->state != BT_RFCOMM_STATE_CONNECTING) {
-			return;
-		}
-		session->state = BT_RFCOMM_STATE_CONNECTED;
-		for (dlc = session->dlcs; dlc; dlc = tmp) {
-			tmp = dlc->_next;
-			if (dlc->role == BT_RFCOMM_ROLE_INITIATOR &&
-			    dlc->state == BT_RFCOMM_STATE_INIT) {
-				if (rfcomm_dlc_start(dlc) < 0) {
-					rfcomm_dlc_drop(dlc);
+		switch (session->state) {
+		case BT_RFCOMM_STATE_CONNECTING:
+			session->state = BT_RFCOMM_STATE_CONNECTED;
+			for (dlc = session->dlcs; dlc; dlc = tmp) {
+				tmp = dlc->_next;
+				if (dlc->role == BT_RFCOMM_ROLE_INITIATOR &&
+				    dlc->state == BT_RFCOMM_STATE_INIT) {
+					if (rfcomm_dlc_start(dlc) < 0) {
+						rfcomm_dlc_drop(dlc);
+					}
 				}
 			}
+			/* Disconnect session if there is no dlcs left */
+			rfcomm_session_disconnect(session);
+			break;
+		case BT_RFCOMM_STATE_DISCONNECTING:
+			session->state = BT_RFCOMM_STATE_DISCONNECTED;
+			err = bt_l2cap_chan_disconnect(&session->br_chan.chan);
+			if (err < 0) {
+				session->state = BT_RFCOMM_STATE_IDLE;
+			}
+			break;
+		default:
+			break;
 		}
 	} else {
 		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
@@ -834,6 +857,7 @@ static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 			break;
 		case BT_RFCOMM_STATE_DISCONNECTING:
 			rfcomm_dlc_drop(dlc);
+			rfcomm_session_disconnect(session);
 			break;
 		default:
 			break;
