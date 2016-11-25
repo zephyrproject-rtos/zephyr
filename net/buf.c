@@ -29,12 +29,10 @@
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #include <misc/sys_log.h>
 
-#define NET_BUF_DBG(fmt, ...) SYS_LOG_DBG("%s (%p): " fmt, __func__, \
-				sys_thread_self_get(), ##__VA_ARGS__)
-#define NET_BUF_ERR(fmt, ...) SYS_LOG_ERR("%s: " fmt, __func__, \
-				##__VA_ARGS__)
-#define NET_BUF_WARN(fmt, ...) SYS_LOG_WRN("%s: " fmt, __func__, \
-				##__VA_ARGS__)
+#define NET_BUF_DBG(fmt, ...) SYS_LOG_DBG("(%p) " fmt, k_current_get(), \
+					  ##__VA_ARGS__)
+#define NET_BUF_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
+#define NET_BUF_WARN(fmt, ...) SYS_LOG_WRN(fmt,	##__VA_ARGS__)
 #define NET_BUF_INFO(fmt, ...) SYS_LOG_INF(fmt,  ##__VA_ARGS__)
 #define NET_BUF_ASSERT(cond) do { if (!(cond)) {			  \
 			NET_BUF_ERR("assert: '" #cond "' failed"); \
