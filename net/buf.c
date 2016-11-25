@@ -135,12 +135,17 @@ void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 void net_buf_unref(struct net_buf *buf)
 {
 	NET_BUF_ASSERT(buf);
-	NET_BUF_ASSERT(buf->ref > 0);
-	NET_BUF_DBG("buf %p ref %u fifo %p frags %p", buf, buf->ref,
-		    buf->free, buf->frags);
 
-	while (buf && --buf->ref == 0) {
+	while (buf) {
 		struct net_buf *frags = buf->frags;
+
+		NET_BUF_ASSERT(buf->ref > 0);
+		NET_BUF_DBG("buf %p ref %u fifo %p frags %p", buf, buf->ref,
+			    buf->free, buf->frags);
+
+		if (--buf->ref > 0) {
+			return;
+		}
 
 		buf->frags = NULL;
 
