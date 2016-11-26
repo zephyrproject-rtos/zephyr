@@ -582,7 +582,7 @@ err_poweroff:
 	return -EIO;
 }
 
-int bmc150_magn_init(struct device *dev)
+static int bmc150_magn_init(struct device *dev)
 {
 	const struct bmc150_magn_config * const config =
 					  dev->config->config_info;
@@ -621,7 +621,7 @@ static const struct bmc150_magn_config bmc150_magn_config = {
 #endif
 };
 
-struct bmc150_magn_data bmc150_magn_data;
+static struct bmc150_magn_data bmc150_magn_data;
 
 DEVICE_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init,
 	    &bmc150_magn_data, &bmc150_magn_config, NANOKERNEL,
