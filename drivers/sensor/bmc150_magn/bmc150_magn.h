@@ -184,6 +184,6 @@ int bmc150_magn_init_interrupt(struct device *dev);
 #endif
 
 #define SYS_LOG_DOMAIN "BMC150_MAGN"
-#define SYS_LOG_LEVEL CONFIG_BMC150_MAGN_SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <misc/sys_log.h>
 #endif /* __SENSOR_BMC150_MAGN_H__ */
