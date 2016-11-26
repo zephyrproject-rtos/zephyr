@@ -32,6 +32,13 @@ config CPU_CORTEX_M
 	help
 	This option signifies the use of a CPU of the Cortex-M family.
 
+config CPU_HAS_SYSTICK
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	This option is enabled when the CPU has systick timer implemented.
+
 config CPU_HAS_FPU
 	# Hidden config selected by CPU family
 	bool
