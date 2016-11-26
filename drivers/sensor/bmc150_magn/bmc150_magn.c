@@ -1,4 +1,4 @@
-/* sensor_bmc150_magn.c - Driver for Bosch BMC150 magnetometer sensor */
+/* bmc150_magn.c - Driver for Bosch BMC150 magnetometer sensor */
 
 /*
  * Copyright (c) 2016 Intel Corporation
