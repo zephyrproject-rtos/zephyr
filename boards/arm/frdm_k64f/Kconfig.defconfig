@@ -142,6 +142,22 @@ endif # I2C_1
 
 endif # I2C
 
+if FXOS8700
+
+config FXOS8700_I2C_NAME
+	default I2C_0_NAME
+
+config FXOS8700_I2C_ADDRESS
+	default 0x1d
+
+config FXOS8700_GPIO_NAME
+	default GPIO_K64_C_DEV_NAME
+
+config FXOS8700_GPIO_PIN
+	default 13
+
+endif # FXOS8700
+
 if PWM_K64_FTM
 
 config PWM_K64_FTM_0
