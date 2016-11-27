@@ -1,4 +1,4 @@
-/* sensor_lps25hb.c - Driver for LPS25HB pressure and temperature sensor */
+/* lps25hb.c - Driver for LPS25HB pressure and temperature sensor */
 
 /*
  * Copyright (c) 2016 Intel Corporation
