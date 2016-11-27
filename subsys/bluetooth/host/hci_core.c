@@ -3844,11 +3844,21 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
 		set_param->type = BT_LE_ADV_IND;
 	} else {
+		if (param->own_addr) {
+			/* Only NRPA is allowed */
+			if (!BT_ADDR_IS_NRPA(param->own_addr)) {
+				return -EINVAL;
+			}
+
+			err = set_random_address(param->own_addr);
+		} else {
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
-		err = le_set_rpa();
+			err = le_set_rpa();
 #else
-		err = le_set_nrpa();
+			err = le_set_nrpa();
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
+		}
+
 		if (err) {
 			net_buf_unref(buf);
 			return err;
