@@ -16,3 +16,4 @@
 #
 
 obj-$(CONFIG_FXOS8700) += fxos8700.o
+obj-$(CONFIG_FXOS8700_TRIGGER) += fxos8700_trigger.o

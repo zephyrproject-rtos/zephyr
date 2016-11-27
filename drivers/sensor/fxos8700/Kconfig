@@ -82,3 +82,52 @@ config FXOS8700_RANGE_2G
 	bool "2g (0.244 mg/LSB)"
 
 endchoice
+
+choice
+	prompt "Trigger mode"
+	depends on FXOS8700
+	default FXOS8700_TRIGGER_NONE
+
+config FXOS8700_TRIGGER_NONE
+	bool "No trigger"
+
+config FXOS8700_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select FXOS8700_TRIGGER
+
+config FXOS8700_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select FXOS8700_TRIGGER
+
+endchoice
+
+config FXOS8700_TRIGGER
+	bool
+	depends on FXOS8700
+	default n
+
+config FXOS8700_GPIO_NAME
+	string "GPIO device name"
+	depends on FXOS8700_TRIGGER
+
+config FXOS8700_GPIO_PIN
+	int "GPIO pin"
+	depends on FXOS8700_TRIGGER
+
+config FXOS8700_DRDY_INT1
+	bool "Data ready interrupt to INT1 pin"
+	depends on FXOS8700_TRIGGER
+	default n
+	help
+	Say Y to route data ready interrupt to INT1 pin. Say N to route to INT2
+	pin.
+
+config FXOS8700_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on FXOS8700_TRIGGER_OWN_THREAD
+	default 10
+
+config FXOS8700_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on FXOS8700_TRIGGER_OWN_THREAD
+	default 1024

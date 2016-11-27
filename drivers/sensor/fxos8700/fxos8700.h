@@ -16,6 +16,7 @@
 
 #include <sensor.h>
 #include <i2c.h>
+#include <gpio.h>
 
 #define SYS_LOG_DOMAIN "FXOS8700"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
@@ -34,6 +35,8 @@
 #define FXOS8700_REG_M_OUTXMSB			0x33
 #define FXOS8700_REG_M_CTRLREG1			0x5b
 #define FXOS8700_REG_M_CTRLREG2			0x5c
+
+#define FXOS8700_DRDY_MASK			(1 << 0)
 
 #define FXOS8700_XYZ_DATA_CFG_FS_MASK		0x03
 
@@ -85,6 +88,10 @@ enum fxos8700_channel {
 
 struct fxos8700_config {
 	char *i2c_name;
+#ifdef CONFIG_FXOS8700_TRIGGER
+	char *gpio_name;
+	uint8_t gpio_pin;
+#endif
 	uint8_t i2c_address;
 	uint8_t whoami;
 	enum fxos8700_mode mode;
@@ -97,5 +104,28 @@ struct fxos8700_config {
 struct fxos8700_data {
 	struct device *i2c;
 	struct k_sem sem;
+#ifdef CONFIG_FXOS8700_TRIGGER
+	struct device *gpio;
+	struct gpio_callback gpio_cb;
+	sensor_trigger_handler_t drdy_handler;
+#endif
+#ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
+	char __stack thread_stack[CONFIG_FXOS8700_THREAD_STACK_SIZE];
+	struct k_sem trig_sem;
+#endif
+#ifdef CONFIG_FXOS8700_TRIGGER_GLOBAL_THREAD
+	struct k_work work;
+	struct device *dev;
+#endif
 	int16_t raw[FXOS8700_MAX_NUM_CHANNELS];
 };
+
+int fxos8700_get_power(struct device *dev, enum fxos8700_power *power);
+int fxos8700_set_power(struct device *dev, enum fxos8700_power power);
+
+#if CONFIG_FXOS8700_TRIGGER
+int fxos8700_trigger_init(struct device *dev);
+int fxos8700_trigger_set(struct device *dev,
+			 const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler);
+#endif

@@ -214,6 +214,35 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
+int fxos8700_get_power(struct device *dev, enum fxos8700_power *power)
+{
+	const struct fxos8700_config *config = dev->config->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+	uint8_t val = *power;
+
+	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
+			      FXOS8700_REG_CTRLREG1,
+			      &val)) {
+		SYS_LOG_DBG("Could not get power setting");
+		return -EIO;
+	}
+	val &= FXOS8700_M_CTRLREG1_MODE_MASK;
+	*power = val;
+
+	return 0;
+}
+
+int fxos8700_set_power(struct device *dev, enum fxos8700_power power)
+{
+	const struct fxos8700_config *config = dev->config->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+
+	return i2c_reg_update_byte(data->i2c, config->i2c_address,
+				   FXOS8700_REG_CTRLREG1,
+				   FXOS8700_CTRLREG1_ACTIVE_MASK,
+				   power);
+}
+
 static int fxos8700_init(struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config->config_info;
@@ -285,11 +314,15 @@ static int fxos8700_init(struct device *dev)
 		return -EIO;
 	}
 
+#if CONFIG_FXOS8700_TRIGGER
+	if (fxos8700_trigger_init(dev)) {
+		SYS_LOG_DBG("Could not initialize interrupts");
+		return -EIO;
+	}
+#endif
+
 	/* Set active */
-	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				FXOS8700_REG_CTRLREG1,
-				FXOS8700_CTRLREG1_ACTIVE_MASK,
-				FXOS8700_CTRLREG1_ACTIVE_MASK)) {
+	if (fxos8700_set_power(dev, FXOS8700_POWER_ACTIVE)) {
 		SYS_LOG_DBG("Could not set active");
 		return -EIO;
 	}
@@ -305,6 +338,9 @@ static int fxos8700_init(struct device *dev)
 static const struct sensor_driver_api fxos8700_driver_api = {
 	.sample_fetch = fxos8700_sample_fetch,
 	.channel_get = fxos8700_channel_get,
+#if CONFIG_FXOS8700_TRIGGER
+	.trigger_set = fxos8700_trigger_set,
+#endif
 };
 
 static const struct fxos8700_config fxos8700_config = {
@@ -333,6 +369,10 @@ static const struct fxos8700_config fxos8700_config = {
 	.range = FXOS8700_RANGE_4G,
 #else
 	.range = FXOS8700_RANGE_2G,
+#endif
+#ifdef CONFIG_FXOS8700_TRIGGER
+	.gpio_name = CONFIG_FXOS8700_GPIO_NAME,
+	.gpio_pin = CONFIG_FXOS8700_GPIO_PIN,
 #endif
 };
 
