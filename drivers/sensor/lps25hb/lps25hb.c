@@ -160,7 +160,7 @@ err_poweroff:
 	return -EIO;
 }
 
-int lps25hb_init(struct device *dev)
+static int lps25hb_init(struct device *dev)
 {
 	const struct lps25hb_config * const config = dev->config->config_info;
 	struct lps25hb_data *data = dev->driver_data;
@@ -187,7 +187,7 @@ static const struct lps25hb_config lps25hb_config = {
 	.i2c_slave_addr = CONFIG_LPS25HB_I2C_ADDR,
 };
 
-struct lps25hb_data lps25hb_data;
+static struct lps25hb_data lps25hb_data;
 
 DEVICE_INIT(lps25hb, CONFIG_LPS25HB_DEV_NAME, lps25hb_init,
 	    &lps25hb_data, &lps25hb_config, NANOKERNEL,
