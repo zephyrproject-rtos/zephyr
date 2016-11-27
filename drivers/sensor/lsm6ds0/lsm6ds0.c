@@ -1,4 +1,4 @@
-/* sensor_lsm6ds0.c - Driver for LSM6DS0 accelerometer, gyroscope and
+/* lsm6ds0.c - Driver for LSM6DS0 accelerometer, gyroscope and
  * temperature sensor
  */
 
