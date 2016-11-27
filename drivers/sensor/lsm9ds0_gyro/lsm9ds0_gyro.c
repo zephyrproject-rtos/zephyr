@@ -1,4 +1,4 @@
-/* sensor_lsm9ds0_gyro.c - Driver for LSM9DS0 gyroscope sensor */
+/* lsm9ds0_gyro.c - Driver for LSM9DS0 gyroscope sensor */
 
 /*
  * Copyright (c) 2016 Intel Corporation
