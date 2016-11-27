@@ -475,7 +475,7 @@ static int lsm6ds0_init_chip(struct device *dev)
 	return 0;
 }
 
-int lsm6ds0_init(struct device *dev)
+static int lsm6ds0_init(struct device *dev)
 {
 	const struct lsm6ds0_config * const config = dev->config->config_info;
 	struct lsm6ds0_data *data = dev->driver_data;
@@ -502,7 +502,7 @@ static const struct lsm6ds0_config lsm6ds0_config = {
 	.i2c_slave_addr = CONFIG_LSM6DS0_I2C_ADDR,
 };
 
-struct lsm6ds0_data lsm6ds0_data;
+static struct lsm6ds0_data lsm6ds0_data;
 
 DEVICE_INIT(lsm6ds0, CONFIG_LSM6DS0_DEV_NAME, lsm6ds0_init,
 	    &lsm6ds0_data, &lsm6ds0_config, NANOKERNEL,
