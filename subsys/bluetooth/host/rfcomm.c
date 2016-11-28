@@ -865,6 +865,21 @@ static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	}
 }
 
+static void rfcomm_handle_dm(struct bt_rfcomm_session *session, uint8_t dlci)
+{
+	struct bt_rfcomm_dlc *dlc;
+
+	BT_DBG("dlci %d", dlci);
+
+	dlc = rfcomm_dlcs_remove_dlci(session->dlcs, dlci);
+	if (!dlc) {
+		return;
+	}
+
+	rfcomm_dlc_disconnect(dlc);
+	rfcomm_session_disconnect(session);
+}
+
 static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 			      struct net_buf *buf, uint8_t cr)
 {
@@ -1140,6 +1155,9 @@ static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_RFCOMM_UA:
 		rfcomm_handle_ua(session, dlci);
+		break;
+	case BT_RFCOMM_DM:
+		rfcomm_handle_dm(session, dlci);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported RFCOMM Frame type 0x%02x",
