@@ -318,12 +318,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	uint8_t first_option;
 	uint16_t offset;
 
-	if (real_len > pkt_len) {
-		NET_DBG("IPv6 adjust pkt len to %d (was %d)",
-			pkt_len, real_len);
-		net_buf_frag_last(buf)->len -= real_len - pkt_len;
-		real_len -= pkt_len;
-	} else if (real_len < pkt_len) {
+	if (real_len != pkt_len) {
 		NET_DBG("IPv6 packet size %d buf len %d", pkt_len, real_len);
 		NET_STATS_IPV6(++net_stats.ipv6.drop);
 		goto drop;
@@ -518,12 +513,7 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 	int pkt_len = (hdr->len[0] << 8) + hdr->len[1];
 	enum net_verdict verdict = NET_DROP;
 
-	if (real_len > pkt_len) {
-		NET_DBG("IPv4 adjust pkt len to %d (was %d)",
-			pkt_len, real_len);
-		net_buf_frag_last(buf)->len -= real_len - pkt_len;
-		real_len -= pkt_len;
-	} else if (real_len < pkt_len) {
+	if (real_len != pkt_len) {
 		NET_DBG("IPv4 packet size %d buf len %d", pkt_len, real_len);
 		goto drop;
 	}
