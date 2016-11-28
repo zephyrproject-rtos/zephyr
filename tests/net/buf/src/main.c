@@ -60,16 +60,16 @@ struct udp_hdr {
 static int destroy_called;
 static int frag_destroy_called;
 
-static struct nano_fifo bufs_fifo;
-static struct nano_fifo no_data_buf_fifo;
-static struct nano_fifo frags_fifo;
-static struct nano_fifo big_frags_fifo;
+static struct k_fifo bufs_fifo;
+static struct k_fifo no_data_buf_fifo;
+static struct k_fifo frags_fifo;
+static struct k_fifo big_frags_fifo;
 
 static void buf_destroy(struct net_buf *buf)
 {
 	destroy_called++;
 	assert_equal(buf->free, &bufs_fifo, "Invalid free pointer in buffer");
-	nano_fifo_put(buf->free, buf);
+	k_fifo_put(buf->free, buf);
 }
 
 static void frag_destroy(struct net_buf *buf)
@@ -77,7 +77,7 @@ static void frag_destroy(struct net_buf *buf)
 	frag_destroy_called++;
 	assert_equal(buf->free, &frags_fifo,
 		     "Invalid free frag pointer in buffer");
-	nano_fifo_put(buf->free, buf);
+	k_fifo_put(buf->free, buf);
 }
 
 static void frag_destroy_big(struct net_buf *buf)
@@ -85,7 +85,7 @@ static void frag_destroy_big(struct net_buf *buf)
 	frag_destroy_called++;
 	assert_equal(buf->free, &big_frags_fifo,
 		     "Invalid free big frag pointer in buffer");
-	nano_fifo_put(buf->free, buf);
+	k_fifo_put(buf->free, buf);
 }
 
 static NET_BUF_POOL(bufs_pool, 22, 74, &bufs_fifo, buf_destroy,
@@ -125,7 +125,7 @@ static void net_buf_test_1(void)
 static void net_buf_test_2(void)
 {
 	struct net_buf *frag, *head;
-	struct nano_fifo fifo;
+	struct k_fifo fifo;
 	int i;
 
 	head = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
@@ -138,7 +138,7 @@ static void net_buf_test_2(void)
 		frag = frag->frags;
 	}
 
-	nano_fifo_init(&fifo);
+	k_fifo_init(&fifo);
 	net_buf_put(&fifo, head);
 	head = net_buf_get_timeout(&fifo, 0, K_NO_WAIT);
 
@@ -148,13 +148,13 @@ static void net_buf_test_2(void)
 		     "Incorrect fragment destroy callback count");
 }
 
-static void test_3_fiber(int arg1, int arg2)
+static void test_3_thread(void *arg1, void *arg2, void *arg3)
 {
-	struct nano_fifo *fifo = (struct nano_fifo *)arg1;
-	struct nano_sem *sema = (struct nano_sem *)arg2;
+	struct k_fifo *fifo = (struct k_fifo *)arg1;
+	struct k_sem *sema = (struct k_sem *)arg2;
 	struct net_buf *buf;
 
-	nano_sem_give(sema);
+	k_sem_give(sema);
 
 	buf = net_buf_get_timeout(fifo, 0, TEST_TIMEOUT);
 	assert_not_null(buf, "Unable to get buffer");
@@ -164,15 +164,15 @@ static void test_3_fiber(int arg1, int arg2)
 	assert_equal(destroy_called, ARRAY_SIZE(bufs_pool),
 		     "Incorrect destroy callback count");
 
-	nano_sem_give(sema);
+	k_sem_give(sema);
 }
 
 static void net_buf_test_3(void)
 {
-	static char __stack test_3_fiber_stack[1024];
+	static char __stack test_3_thread_stack[1024];
 	struct net_buf *frag, *head;
-	struct nano_fifo fifo;
-	struct nano_sem sema;
+	struct k_fifo fifo;
+	struct k_sem sema;
 	int i;
 
 	head = net_buf_get_timeout(&bufs_fifo, 0, K_NO_WAIT);
@@ -185,18 +185,19 @@ static void net_buf_test_3(void)
 		frag = frag->frags;
 	}
 
-	nano_fifo_init(&fifo);
-	nano_sem_init(&sema);
+	k_fifo_init(&fifo);
+	k_sem_init(&sema, 0, UINT_MAX);
 
-	fiber_start(test_3_fiber_stack, sizeof(test_3_fiber_stack),
-		    test_3_fiber, (int)&fifo, (int)&sema, 7, 0);
+	k_thread_spawn(test_3_thread_stack, sizeof(test_3_thread_stack),
+		       (k_thread_entry_t) test_3_thread, &fifo, &sema, NULL,
+		       K_PRIO_COOP(7), 0, 0);
 
-	assert_true(nano_sem_take(&sema, TEST_TIMEOUT),
+	assert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		    "Timeout while waiting for semaphore");
 
 	net_buf_put(&fifo, head);
 
-	assert_true(nano_sem_take(&sema, TEST_TIMEOUT),
+	assert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		    "Timeout while waiting for semaphore");
 }
 
@@ -250,7 +251,7 @@ static void net_buf_test_4(void)
 			net_buf_frag_del(frag, next);
 			net_buf_unref(next);
 			removed++;
-		} else  {
+		} else {
 			frag = next;
 		}
 		i++;
