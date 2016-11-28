@@ -88,7 +88,6 @@ static void rtc1_nrf5_isr(void *arg)
 int _sys_clock_driver_init(struct device *device)
 {
 	struct device *clock;
-	int retval;
 
 	ARG_UNUSED(device);
 
@@ -110,7 +109,7 @@ int _sys_clock_driver_init(struct device *device)
 
 	NRF_RTC1->TASKS_START = 1;
 
-	return retval;
+	return 0;
 }
 
 uint32_t sys_cycle_get_32(void)
