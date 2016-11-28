@@ -863,17 +863,16 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_l2cap_le_chan *chan;
 	struct bt_l2cap_disconn_req *req = (void *)buf->data;
 	struct bt_l2cap_disconn_rsp *rsp;
-	uint16_t scid, dcid;
+	uint16_t scid;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small LE conn req packet size");
 		return;
 	}
 
-	dcid = sys_le16_to_cpu(req->dcid);
 	scid = sys_le16_to_cpu(req->scid);
 
-	BT_DBG("scid 0x%04x dcid 0x%04x", dcid, scid);
+	BT_DBG("scid 0x%04x dcid 0x%04x", scid, sys_le16_to_cpu(req->dcid));
 
 	chan = l2cap_remove_tx_cid(conn, scid);
 	if (!chan) {
@@ -1007,7 +1006,7 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_le_chan *chan;
 	struct bt_l2cap_disconn_rsp *rsp = (void *)buf->data;
-	uint16_t dcid, scid;
+	uint16_t dcid;
 
 	if (buf->len < sizeof(*rsp)) {
 		BT_ERR("Too small LE disconn rsp packet size");
@@ -1015,9 +1014,8 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	dcid = sys_le16_to_cpu(rsp->dcid);
-	scid = sys_le16_to_cpu(rsp->scid);
 
-	BT_DBG("dcid 0x%04x scid 0x%04x", dcid, scid);
+	BT_DBG("dcid 0x%04x scid 0x%04x", dcid, sys_le16_to_cpu(rsp->scid));
 
 	chan = l2cap_remove_tx_cid(conn, dcid);
 	if (!chan) {
