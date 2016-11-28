@@ -104,17 +104,18 @@ struct net_stack_info {
 };
 
 #if defined(CONFIG_NET_SHELL)
-#define NET_STACK_GET_NAME(name, sfx) (__net_stack_##name##_##sfx)
+#define NET_STACK_GET_NAME(pretty, name, sfx) \
+	(__net_stack_##pretty##_##name##_##sfx)
 
 #define NET_STACK_INFO_ADDR(_pretty, _name, _orig, _size, _addr, sfx)	\
 	static struct net_stack_info					\
-	(NET_STACK_GET_NAME(_name, sfx)) __used				\
+	(NET_STACK_GET_NAME(_pretty, _name, sfx)) __used		\
 	__attribute__((__section__(".net_stack.data"))) = {		\
 		.stack = _addr,						\
 		.size = _size,						\
 		.orig_size = _orig,					\
 		.name = #_name,						\
-		.pretty_name = _pretty,					\
+		.pretty_name = #_pretty,				\
 	}
 
 #define NET_STACK_INFO(_pretty_name, _name, _orig, _size)		\

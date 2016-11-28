@@ -1105,7 +1105,7 @@ struct net_if_api {
 		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
 		.mtu = _mtu,						\
 	};								\
-	NET_STACK_INFO_ADDR("TX",					\
+	NET_STACK_INFO_ADDR(TX,						\
 			    dev_name,					\
 			    CONFIG_NET_TX_STACK_SIZE,			\
 			    CONFIG_NET_TX_STACK_SIZE,			\
