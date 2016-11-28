@@ -16,19 +16,28 @@
 # limitations under the License.
 #
 
-menu "Random Generation Configuration"
-config RANDOM_GENERATOR
+menuconfig RANDOM_GENERATOR
 	bool
-	prompt "Custom random generator"
+	prompt "Random Drivers"
 	default n
 	help
-	  This option signifies that the target uses a real random number
-	  generator.
+	  Include RANDOM drivers in system config.
+
+if RANDOM_GENERATOR
+
+source "drivers/random/Kconfig.ksdk"
+
+config RANDOM_HAS_DRIVER
+	bool
+	default n
+	help
+	  This is an option to be enabled by individual random driver
+	  to signal that there is a true random driver.
 
 config TEST_RANDOM_GENERATOR
 	bool
 	prompt "Non-random number generator"
-	depends on !RANDOM_GENERATOR
+	depends on RANDOM_GENERATOR && ! RANDOM_HAS_DRIVER
 	default n
 	help
 	  This option signifies that the kernel's random number APIs are
@@ -56,13 +65,4 @@ config TIMER_RANDOM_GENERATOR
 	  clock. This number generator is not random and used for
 	  testing only.
 
-config RANDOM_KSDK
-	bool
-	prompt "KSDK Random driver"
-	depends on RANDOM_GENERATOR && HAS_RNGA
-	default n
-	help
-	  This option enables the random number generator accelerator (RNGA)
-	  driver based on the KSDK RNGA driver.
-
-endmenu
+endif
