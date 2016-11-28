@@ -23,6 +23,8 @@
 #include <atomic.h>
 #include <spi.h>
 
+#include <ieee802154/cc2520.h>
+
 #define CONFIG_CC2520_RX_STACK_SIZE CONFIG_TI_CC2520_FIBER_STACK_SIZE
 
 /* Runtime context structure
@@ -41,7 +43,7 @@ struct cc2520_spi {
 struct cc2520_context {
 	struct net_if *iface;
 	/**************************/
-	struct device **gpios;
+	struct cc2520_gpio_configuration *gpios;
 	struct gpio_callback sfd_cb;
 	struct gpio_callback fifop_cb;
 	struct cc2520_spi spi;
@@ -55,8 +57,6 @@ struct cc2520_context {
 	bool overflow;
 	uint8_t lqi;
 };
-
-extern struct device **cc2520_configure_gpios(void);
 
 #include "ieee802154_cc2520_regs.h"
 

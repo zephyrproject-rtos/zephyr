@@ -279,24 +279,24 @@ static inline void set_reset(struct device *dev, uint32_t value)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	gpio_pin_write(cc2520->gpios[CC2520_GPIO_IDX_RESET],
-		       CONFIG_CC2520_GPIO_RESET, value);
+	gpio_pin_write(cc2520->gpios[CC2520_GPIO_IDX_RESET].dev,
+		       cc2520->gpios[CC2520_GPIO_IDX_RESET].pin, value);
 }
 
 static inline void set_vreg_en(struct device *dev, uint32_t value)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	gpio_pin_write(cc2520->gpios[CC2520_GPIO_IDX_VREG_EN],
-		       CONFIG_CC2520_GPIO_VREG_EN, value);
+	gpio_pin_write(cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].dev,
+		       cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].pin, value);
 }
 
 static inline uint32_t get_fifo(struct cc2520_context *cc2520)
 {
 	uint32_t pin_value;
 
-	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_FIFO],
-		      CONFIG_CC2520_GPIO_FIFO, &pin_value);
+	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_FIFO].dev,
+		      cc2520->gpios[CC2520_GPIO_IDX_FIFO].pin, &pin_value);
 
 	return pin_value;
 }
@@ -305,8 +305,8 @@ static inline uint32_t get_fifop(struct cc2520_context *cc2520)
 {
 	uint32_t pin_value;
 
-	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_FIFOP],
-		      CONFIG_CC2520_GPIO_FIFOP, &pin_value);
+	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
+		      cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin, &pin_value);
 
 	return pin_value;
 }
@@ -315,8 +315,8 @@ static inline uint32_t get_cca(struct cc2520_context *cc2520)
 {
 	uint32_t pin_value;
 
-	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_CCA],
-		      CONFIG_CC2520_GPIO_CCA, &pin_value);
+	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_CCA].dev,
+		      cc2520->gpios[CC2520_GPIO_IDX_CCA].pin, &pin_value);
 
 	return pin_value;
 }
@@ -355,11 +355,13 @@ static void enable_fifop_interrupt(struct cc2520_context *cc2520,
 				   bool enable)
 {
 	if (enable) {
-		gpio_pin_enable_callback(cc2520->gpios[CC2520_GPIO_IDX_FIFOP],
-					 CONFIG_CC2520_GPIO_FIFOP);
+		gpio_pin_enable_callback(
+			cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
+			cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin);
 	} else {
-		gpio_pin_disable_callback(cc2520->gpios[CC2520_GPIO_IDX_FIFOP],
-					  CONFIG_CC2520_GPIO_FIFOP);
+		gpio_pin_disable_callback(
+			cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
+			cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin);
 	}
 }
 
@@ -367,11 +369,13 @@ static void enable_sfd_interrupt(struct cc2520_context *cc2520,
 				 bool enable)
 {
 	if (enable) {
-		gpio_pin_enable_callback(cc2520->gpios[CC2520_GPIO_IDX_SFD],
-					 CONFIG_CC2520_GPIO_SFD);
+		gpio_pin_enable_callback(
+			cc2520->gpios[CC2520_GPIO_IDX_SFD].dev,
+			cc2520->gpios[CC2520_GPIO_IDX_SFD].pin);
 	} else {
-		gpio_pin_disable_callback(cc2520->gpios[CC2520_GPIO_IDX_SFD],
-					  CONFIG_CC2520_GPIO_SFD);
+		gpio_pin_disable_callback(
+			cc2520->gpios[CC2520_GPIO_IDX_SFD].dev,
+			cc2520->gpios[CC2520_GPIO_IDX_SFD].pin);
 	}
 }
 
@@ -379,14 +383,14 @@ static inline void setup_gpio_callbacks(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	gpio_init_callback(&cc2520->sfd_cb,
-			   sfd_int_handler, BIT(CONFIG_CC2520_GPIO_SFD));
-	gpio_add_callback(cc2520->gpios[CC2520_GPIO_IDX_SFD],
+	gpio_init_callback(&cc2520->sfd_cb, sfd_int_handler,
+			   BIT(cc2520->gpios[CC2520_GPIO_IDX_SFD].pin));
+	gpio_add_callback(cc2520->gpios[CC2520_GPIO_IDX_SFD].dev,
 			  &cc2520->sfd_cb);
 
-	gpio_init_callback(&cc2520->fifop_cb,
-			   fifop_int_handler, BIT(CONFIG_CC2520_GPIO_FIFOP));
-	gpio_add_callback(cc2520->gpios[CC2520_GPIO_IDX_FIFOP],
+	gpio_init_callback(&cc2520->fifop_cb, fifop_int_handler,
+			   BIT(cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin));
+	gpio_add_callback(cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
 			  &cc2520->fifop_cb);
 }
 
@@ -714,6 +718,7 @@ static int cc2520_cca(struct device *dev)
 	struct cc2520_context *cc2520 = dev->driver_data;
 
 	if (!get_cca(cc2520)) {
+		SYS_LOG_DBG("BUSY\n");
 		return -EBUSY;
 	}
 
