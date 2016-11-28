@@ -65,6 +65,19 @@
 #include <spi/spi_k64.h>
 #include "spi_k64_priv.h"
 
+#if (CONFIG_SYS_LOG_SPI_LEVEL == 4)
+#define DBG_COUNTER_INIT()	\
+	uint32_t __cnt = 0
+#define DBG_COUNTER_INC()	\
+	(__cnt++)
+#define DBG_COUNTER_RESULT()	\
+	(__cnt)
+#else
+#define DBG_COUNTER_INIT() {; }
+#define DBG_COUNTER_INC() {; }
+#define DBG_COUNTER_RESULT() 0
+#endif
+
 /* SPI protocol frequency = K64 bus clock frequency, in hz */
 
 #define SPI_K64_PROTOCOL_FREQ (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / \
@@ -580,12 +593,6 @@ static int spi_k64_transceive(struct device *dev,
 	SYS_LOG_DBG("dev %p, txbuf %p txlen %u rxbuf %p rxlen %u",
 		    dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 
-#ifdef CONFIG_SPI_DEBUG
-	__ASSERT(!((tx_buf_len && (tx_buf == NULL)) ||
-				(rx_buf_len && (rx_buf == NULL))),
-			"spi_k64_transceive: ERROR - NULL buffer");
-#endif
-
 	/* Check Tx FIFO status */
 
 	if (tx_buf_len &&
@@ -658,9 +665,7 @@ static void spi_k64_push_data(struct device *dev)
 	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *spi_data = dev->driver_data;
 	uint32_t data;
-#ifdef CONFIG_SPI_DEBUG
-	uint32_t cnt = 0;		/* # of bytes pushed */
-#endif
+	DBG_COUNTER_INIT();
 
 	SYS_LOG_DBG("");
 
@@ -676,20 +681,17 @@ static void spi_k64_push_data(struct device *dev)
 
 				spi_data->tx_buf += 2;
 				spi_data->tx_buf_len -= 2;
+				DBG_COUNTER_INC();
+				DBG_COUNTER_INC();
 
-#ifdef CONFIG_SPI_DEBUG
-				cnt += 2;
-#endif
 			} else {
 
 				data = (uint32_t)(*(spi_data->tx_buf));
 
 				spi_data->tx_buf++;
 				spi_data->tx_buf_len--;
+				DBG_COUNTER_INC();
 
-#ifdef CONFIG_SPI_DEBUG
-				cnt++;
-#endif
 			}
 
 			/* Write data to the selected slave */
@@ -721,9 +723,7 @@ static void spi_k64_push_data(struct device *dev)
 
 	} while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TFFF);
 
-#ifdef CONFIG_SPI_DEBUG
-	SYS_LOG_DBG("pushed: %d", cnt);
-#endif
+	SYS_LOG_DBG("Pushed: %d", DBG_COUNTER_RESULT());
 }
 
 /**
@@ -736,9 +736,7 @@ static void spi_k64_pull_data(struct device *dev)
 	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *spi_data = dev->driver_data;
 	uint16_t data;
-#ifdef CONFIG_SPI_DEBUG
-	uint32_t cnt = 0;		/* # of bytes pulled */
-#endif
+	DBG_COUNTER_INIT();
 
 	SYS_LOG_DBG("");
 
@@ -755,19 +753,15 @@ static void spi_k64_pull_data(struct device *dev)
 				*((uint16_t *)(spi_data->rx_buf)) = data;
 				spi_data->rx_buf += 2;
 				spi_data->rx_buf_len -= 2;
+				DBG_COUNTER_INC();
+				DBG_COUNTER_INC();
 
-#ifdef CONFIG_SPI_DEBUG
-				cnt += 2;
-#endif
 			} else {
 
 				*(spi_data->rx_buf) = (uint8_t)data;
 				spi_data->rx_buf++;
 				spi_data->rx_buf_len--;
-
-#ifdef CONFIG_SPI_DEBUG
-				cnt++;
-#endif
+				DBG_COUNTER_INC();
 			}
 
 			/* Clear interrupt */
@@ -783,10 +777,7 @@ static void spi_k64_pull_data(struct device *dev)
 
 	} while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_RFDF);
 
-
-#ifdef CONFIG_SPI_DEBUG
-	SYS_LOG_DBG("pulled: %d", cnt);
-#endif
+	SYS_LOG_DBG("Pulled: %d", DBG_COUNTER_RESULT());
 }
 
 /**
