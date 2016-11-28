@@ -2290,7 +2290,6 @@ task_pipe_block_put(kpipe_t id, struct k_block block, int size, ksem_t sem)
 	struct k_pipe * const name = &_k_pipe_obj_##name
 
 #define nano_fifo k_fifo
-#ifdef KERNEL /* XXX ztest layer redefines to a different function */
 
 /**
  * @brief Initialize a nanokernel FIFO (fifo) object.
@@ -2338,10 +2337,6 @@ static inline __deprecated void nano_fifo_put(struct nano_fifo *fifo,
 {
 	k_fifo_put(fifo, data);
 }
-#else
-void __deprecated nano_fifo_put(struct nano_fifo *fifo, void *data);
-void nano_fifo_init(struct nano_fifo *fifo);
-#endif /* KERNEL */
 
 /**
  * @brief Add an element to the end of a FIFO from an ISR context.
