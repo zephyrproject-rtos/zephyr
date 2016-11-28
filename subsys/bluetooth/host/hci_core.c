@@ -59,7 +59,7 @@
 
 /* Stacks for the threads */
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
-static BT_STACK_NOINIT(cmd_tx_thread_stack, 256);
+static BT_STACK_NOINIT(cmd_tx_thread_stack, CONFIG_BLUETOOTH_HCI_SEND_STACK);
 
 struct bt_dev bt_dev;
 
