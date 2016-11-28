@@ -95,15 +95,8 @@ SECTION_FUNC(TEXT_START, __start)
 	lidt	_Idt		/* load 32-bit operand size IDT */
 
 
-#ifdef CONFIG_BOOTLOADER_UNKNOWN
-	/*
-	 * Where we do not do the protected mode switch and the
-	 * bootloader is unknown, do not make the assumption that the segment
-	 * registers are set correctly.
-	 *
-	 * This is a special case for the ia32 platform, which must work for
-	 * multiple platforms (QEMU, generic PC board, etc.). With other
-	 * platforms the bootloader is well known so assumptions can be made.
+#ifdef CONFIG_SET_GDT
+	/* If we set our own GDT, update the segment registers as well.
 	 */
 	movw	$0x10, %ax	/* data segment selector (entry = 3) */
 	movw	%ax, %ds	/* set DS */
@@ -115,7 +108,7 @@ SECTION_FUNC(TEXT_START, __start)
 	ljmp	$0x08, $__csSet	/* set CS = 0x08 */
 
 __csSet:
-#endif /* CONFIG_BOOTLOADER_UNKNOWN */
+#endif /* CONFIG_SET_GDT */
 
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
