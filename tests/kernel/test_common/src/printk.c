@@ -67,6 +67,8 @@ static int ram_console_out(int character)
 
 void printk_test(void)
 {
+	int count;
+
 	_old_char_out = _char_out;
 	_char_out = ram_console_out;
 
@@ -82,4 +84,30 @@ void printk_test(void)
 
 	ram_console[pos] = '\0';
 	assert_true((strcmp(ram_console, expected) == 0), "printk failed");
+
+	memset(ram_console, 0, sizeof(ram_console));
+	count = 0;
+
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			 "%zu %hhu %hu %u %lu %llu\n",
+			 stv, uc, usi, ui, ul, ull);
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "0x%x %p\n", hex, ptr);
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "0x%x 0x%02x 0x%04x 0x%08x\n", 1, 1, 1, 1);
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "0x%x 0x%2x 0x%4x 0x%8x\n", 1, 1, 1, 1);
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "%d %02d %04d %08d\n", 42, 42, 42, 42);
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "%d %02d %04d %08d\n", -42, -42, -42, -42);
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "%u %2u %4u %8u\n", 42, 42, 42, 42);
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "%u %02u %04u %08u\n", 42, 42, 42, 42);
+
+	ram_console[count] = '\0';
+	assert_true((strcmp(ram_console, expected) == 0), "snprintk failed");
 }

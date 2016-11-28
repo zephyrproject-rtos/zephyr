@@ -287,3 +287,53 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 	out((int)(remainder + 48), ctx);
 }
 
+struct str_context {
+	char *str;
+	int max;
+	int count;
+};
+
+static int str_out(int c, struct str_context *ctx)
+{
+	if (!ctx->str || ctx->count >= ctx->max) {
+		ctx->count++;
+		return c;
+	}
+
+	if (ctx->count == ctx->max - 1) {
+		ctx->str[ctx->count++] = '\0';
+	} else {
+		ctx->str[ctx->count++] = c;
+	}
+
+	return c;
+}
+
+int snprintk(char *str, size_t size, const char *fmt, ...)
+{
+	struct str_context ctx = { str, size, 0 };
+	va_list ap;
+
+	va_start(ap, fmt);
+	_vprintk((out_func_t)str_out, &ctx, fmt, ap);
+	va_end(ap);
+
+	if (ctx.count < ctx.max) {
+		str[ctx.count] = '\0';
+	}
+
+	return ctx.count;
+}
+
+int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
+{
+	struct str_context ctx = { str, size, 0 };
+
+	_vprintk((out_func_t)str_out, &ctx, fmt, ap);
+
+	if (ctx.count < ctx.max) {
+		str[ctx.count] = '\0';
+	}
+
+	return ctx.count;
+}

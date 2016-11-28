@@ -19,6 +19,8 @@
 #define _PRINTK_H_
 
 #include <toolchain.h>
+#include <stddef.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,9 +52,30 @@ extern "C" {
  */
 #ifdef CONFIG_PRINTK
 extern __printf_like(1, 2) int printk(const char *fmt, ...);
+extern __printf_like(3, 4) int snprintk(char *str, size_t size,
+					const char *fmt, ...);
+extern int vsnprintk(char *str, size_t size, const char *fmt, va_list ap);
 #else
 static inline __printf_like(1, 2) int printk(const char *fmt, ...)
 {
+	ARG_UNUSED(fmt);
+	return 0;
+}
+
+static inline __printf_like(3, 4) int snprintk(char *str, size_t size,
+					       const char *fmt, ...)
+{
+	ARG_UNUSED(str);
+	ARG_UNUSED(size);
+	ARG_UNUSED(fmt);
+	return 0;
+}
+
+static inline int vsnprintk(char *str, size_t size, const char *fmt,
+			    va_list ap)
+{
+	ARG_UNUSED(str);
+	ARG_UNUSED(size);
 	ARG_UNUSED(fmt);
 	return 0;
 }
