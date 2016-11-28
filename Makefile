@@ -382,6 +382,9 @@ KBUILD_CPPFLAGS := -DKERNEL -D__ZEPHYR__=1
 KBUILD_CFLAGS   := -c -g -std=c99 \
 		-fno-asynchronous-unwind-tables \
 		-Wall \
+		-Wformat \
+		-Wformat-security \
+		-D_FORTIFY_SOURCE=2 \
 		-Wno-format-zero-length \
 		-Wno-main -ffreestanding
 
