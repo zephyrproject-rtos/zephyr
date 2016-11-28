@@ -554,7 +554,7 @@ static inline void _set_ldt(uint16_t ldt)
  */
 static inline void _set_gdt(const struct pseudo_descriptor *gdt)
 {
-	__asm__ __volatile__ ("lgdt %0" :: "m" (gdt));
+	__asm__ __volatile__ ("lgdt %0" :: "m" (*gdt));
 }
 
 
