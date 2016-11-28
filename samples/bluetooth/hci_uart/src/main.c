@@ -32,14 +32,13 @@
 
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
 
 static struct device *hci_uart_dev;
-
-#define STACK_SIZE 1024
-static uint8_t tx_thread_stack[STACK_SIZE];
+static BT_STACK_NOINIT(tx_thread_stack, 1024);
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
@@ -374,8 +373,8 @@ void main(void)
 	/* Spawn the TX thread and start feeding commands and data to the
 	 * controller
 	 */
-	k_thread_spawn(tx_thread_stack, STACK_SIZE, tx_thread, NULL, NULL,
-		       NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_spawn(tx_thread_stack, sizeof(tx_thread_stack), tx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	while (1) {
 		struct net_buf *buf;
