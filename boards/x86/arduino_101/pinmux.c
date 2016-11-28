@@ -126,7 +126,9 @@ static void _pinmux_defaults(uint32_t base)
 	uint32_t mux_config[PINMUX_MAX_REGISTERS] = { 0, 0, 0, 0, 0 };
 	int i = 0;
 
+#if !defined(CONFIG_SPI_1) && !defined(CONFIG_SPI_CS_GPIO)
 	PIN_CONFIG(mux_config,  0,  PINMUX_FUNC_B);
+#endif
 	PIN_CONFIG(mux_config,  1,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config,  2,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config,  3,  PINMUX_FUNC_B);
@@ -144,7 +146,9 @@ static void _pinmux_defaults(uint32_t base)
 	PIN_CONFIG(mux_config, 42,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 43,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 44,  PINMUX_FUNC_B);
+#ifndef CONFIG_SPI_CS_GPIO
 	PIN_CONFIG(mux_config, 45,  PINMUX_FUNC_B);
+#endif
 #endif
 	PIN_CONFIG(mux_config, 55,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 56,  PINMUX_FUNC_B);
