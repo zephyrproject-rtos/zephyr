@@ -27,9 +27,13 @@
 #include <toolchain.h>
 #include <sections.h>
 
-static void _printk_dec_ulong(const unsigned long num, int pad_zero,
+typedef int (*out_func_t)(int c, void *ctx);
+
+static void _printk_dec_ulong(out_func_t out, void *ctx,
+			      const unsigned long num, int pad_zero,
 			      int min_width);
-static void _printk_hex_ulong(const unsigned long num, int pad_zero,
+static void _printk_hex_ulong(out_func_t out, void *ctx,
+			      const unsigned long num, int pad_zero,
 			      int min_width);
 
 /**
@@ -47,7 +51,6 @@ static int _nop_char_out(int c)
 }
 
 int (*_char_out)(int) = _nop_char_out;
-
 
 /**
  * @brief Install the character output routine for printk
@@ -72,7 +75,8 @@ void __printk_hook_install(int (*fn)(int))
  *
  * @return N/A
  */
-static inline void _vprintk(const char *fmt, va_list ap)
+static inline void _vprintk(out_func_t out, void *ctx, const char *fmt,
+			    va_list ap)
 {
 	int might_format = 0; /* 1 if encountered a '%' */
 	int pad_zero = 0;
@@ -83,7 +87,7 @@ static inline void _vprintk(const char *fmt, va_list ap)
 	while (*fmt) {
 		if (!might_format) {
 			if (*fmt != '%') {
-				_char_out((int)*fmt);
+				out((int)*fmt, ctx);
 			} else {
 				might_format = 1;
 				min_width = -1;
@@ -114,22 +118,24 @@ static inline void _vprintk(const char *fmt, va_list ap)
 				long d = va_arg(ap, long);
 
 				if (d < 0) {
-					_char_out((int)'-');
+					out((int)'-', ctx);
 					d = -d;
 					min_width--;
 				}
-				_printk_dec_ulong(d, pad_zero, min_width);
+				_printk_dec_ulong(out, ctx, d, pad_zero,
+						  min_width);
 				break;
 			}
 			case 'u': {
 				unsigned long u = va_arg(
 					ap, unsigned long);
-				_printk_dec_ulong(u, pad_zero, min_width);
+				_printk_dec_ulong(out, ctx, u, pad_zero,
+						  min_width);
 				break;
 			}
 			case 'p':
-				  _char_out('0');
-				  _char_out('x');
+				  out('0', ctx);
+				  out('x', ctx);
 				  /* left-pad pointers with zeros */
 				  pad_zero = 1;
 				  min_width = 8;
@@ -138,29 +144,30 @@ static inline void _vprintk(const char *fmt, va_list ap)
 			case 'X': {
 				unsigned long x = va_arg(
 					ap, unsigned long);
-				_printk_hex_ulong(x, pad_zero, min_width);
+				_printk_hex_ulong(out, ctx, x, pad_zero,
+						  min_width);
 				break;
 			}
 			case 's': {
 				char *s = va_arg(ap, char *);
 
 				while (*s)
-					_char_out((int)(*s++));
+					out((int)(*s++), ctx);
 				break;
 			}
 			case 'c': {
 				int c = va_arg(ap, int);
 
-				_char_out(c);
+				out(c, ctx);
 				break;
 			}
 			case '%': {
-				_char_out((int)'%');
+				out((int)'%', ctx);
 				break;
 			}
 			default:
-				_char_out((int)'%');
-				_char_out((int)*fmt);
+				out((int)'%', ctx);
+				out((int)*fmt, ctx);
 				break;
 			}
 			might_format = 0;
@@ -168,6 +175,16 @@ static inline void _vprintk(const char *fmt, va_list ap)
 still_might_format:
 		++fmt;
 	}
+}
+
+struct out_context {
+	int count;
+};
+
+static int char_out(int c, struct out_context *ctx)
+{
+	ctx->count++;
+	return _char_out(c);
 }
 
 /**
@@ -186,15 +203,18 @@ still_might_format:
  *
  * @param fmt formatted string to output
  *
- * @return N/A
+ * @return Number of characters printed
  */
-void printk(const char *fmt, ...)
+int printk(const char *fmt, ...)
 {
+	struct out_context ctx = { 0 };
 	va_list ap;
 
 	va_start(ap, fmt);
-	_vprintk(fmt, ap);
+	_vprintk((out_func_t)char_out, &ctx, fmt, ap);
 	va_end(ap);
+
+	return ctx.count;
 }
 
 /**
@@ -206,7 +226,8 @@ void printk(const char *fmt, ...)
  *
  * @return N/A
  */
-static void _printk_hex_ulong(const unsigned long num, int pad_zero,
+static void _printk_hex_ulong(out_func_t out, void *ctx,
+			      const unsigned long num, int pad_zero,
 			      int min_width)
 {
 	int size = sizeof(num) * 2;
@@ -219,12 +240,12 @@ static void _printk_hex_ulong(const unsigned long num, int pad_zero,
 		if (nibble || found_largest_digit || size == 1) {
 			found_largest_digit = 1;
 			nibble += nibble > 9 ? 87 : 48;
-			_char_out((int)nibble);
+			out((int)nibble, ctx);
 			continue;
 		}
 
 		if (remaining-- <= min_width) {
-			_char_out((int)(pad_zero ? '0' : ' '));
+			out((int)(pad_zero ? '0' : ' '), ctx);
 		}
 	}
 }
@@ -238,7 +259,8 @@ static void _printk_hex_ulong(const unsigned long num, int pad_zero,
  *
  * @return N/A
  */
-static void _printk_dec_ulong(const unsigned long num, int pad_zero,
+static void _printk_dec_ulong(out_func_t out, void *ctx,
+			      const unsigned long num, int pad_zero,
 			      int min_width)
 {
 	unsigned long pos = 999999999;
@@ -254,14 +276,14 @@ static void _printk_dec_ulong(const unsigned long num, int pad_zero,
 	while (pos >= 9) {
 		if (found_largest_digit || remainder > pos) {
 			found_largest_digit = 1;
-			_char_out((int)((remainder / (pos + 1)) + 48));
+			out((int)((remainder / (pos + 1)) + 48), ctx);
 		} else if (remaining <= min_width) {
-			_char_out((int)(pad_zero ? '0' : ' '));
+			out((int)(pad_zero ? '0' : ' '), ctx);
 		}
 		remaining--;
 		remainder %= (pos + 1);
 		pos /= 10;
 	}
-	_char_out((int)(remainder + 48));
+	out((int)(remainder + 48), ctx);
 }
 

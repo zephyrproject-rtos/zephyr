@@ -49,11 +49,12 @@ extern "C" {
  * @return N/A
  */
 #ifdef CONFIG_PRINTK
-extern __printf_like(1, 2) void printk(const char *fmt, ...);
+extern __printf_like(1, 2) int printk(const char *fmt, ...);
 #else
-static inline __printf_like(1, 2) void printk(const char *fmt, ...)
+static inline __printf_like(1, 2) int printk(const char *fmt, ...)
 {
 	ARG_UNUSED(fmt);
+	return 0;
 }
 #endif
 
