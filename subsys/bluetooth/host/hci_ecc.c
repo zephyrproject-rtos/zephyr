@@ -31,6 +31,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+#include "hci_ecc.h"
 #ifdef CONFIG_BLUETOOTH_HCI_RAW
 #include <bluetooth/hci_raw.h>
 #include "hci_raw_internal.h"
