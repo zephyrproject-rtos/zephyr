@@ -79,6 +79,11 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     msr BASEPRI, r0
 #endif
 
+#ifdef CONFIG_WDOG_INIT
+    /* board-specific watchdog initialization is necessary */
+    bl _WdogInit
+#endif
+
 #ifdef CONFIG_INIT_STACKS
     ldr r0, =_interrupt_stack
     ldr r1, =0xaa
@@ -96,11 +101,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     msr PSP, r0
     movs.n r0, #2	/* switch to using PSP (bit1 of CONTROL reg) */
     msr CONTROL, r0
-
-#ifdef CONFIG_WDOG_INIT
-    /* board-specific watchdog initialization is necessary */
-    bl _WdogInit
-#endif
 
     b _PrepC
 
