@@ -404,6 +404,14 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 #endif
 
 		switch (next) {
+		case NET_IPV6_NEXTHDR_NONE:
+			/* There is nothing after this header (see RFC 2460,
+			 * ch 4.7), so we can drop the packet now.
+			 * This is not an error case so do not update drop
+			 * statistics.
+			 */
+			goto drop;
+
 		case NET_IPV6_NEXTHDR_HBHO:
 			/* Hop by hop option */
 			if (net_nbuf_ext_bitmap(buf) &
