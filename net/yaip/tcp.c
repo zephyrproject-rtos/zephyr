@@ -183,10 +183,30 @@ static inline int net_tcp_add_options(struct net_buf *header, size_t len,
 	return 0;
 }
 
+static int finalize_segment(struct net_context *context, struct net_buf *buf)
+{
+	int ret = 0;
+#if defined(CONFIG_NET_IPV4)
+	if (net_nbuf_family(buf) == AF_INET) {
+		net_ipv4_finalize(context, buf);
+	} else
+#endif
+#if defined(CONFIG_NET_IPV6)
+	if (net_nbuf_family(buf) == AF_INET6) {
+		net_ipv6_finalize(context, buf);
+	} else
+#endif
+	{
+		ret = -EPROTOTYPE;
+	}
+	return ret;
+}
+
 static struct net_buf *prepare_segment(struct net_tcp *tcp,
 				       struct tcp_segment *segment,
 				       struct net_buf *buf)
 {
+	int err;
 	struct net_buf *header, *tail = NULL;
 	struct net_tcp_hdr *tcphdr;
 	struct net_context *context = tcp->context;
@@ -260,17 +280,8 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		net_buf_frag_add(buf, tail);
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
-		net_ipv4_finalize(context, buf);
-	} else
-#endif
-#if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
-		net_ipv6_finalize(context, buf);
-	} else
-#endif
-	{
+	err = finalize_segment(context, buf);
+	if (err) {
 	proto_err:
 		NET_DBG("Protocol family %d not supported",
 			net_nbuf_family(buf));
