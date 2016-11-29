@@ -24,6 +24,7 @@
 #include "qm_i2c.h"
 #include "qm_isr.h"
 #include "clk.h"
+#include "soc.h"
 
 /* Convenient macros to get the controller instance and the driver data. */
 #define GET_CONTROLLER_INSTANCE(dev) \
@@ -283,21 +284,22 @@ static int i2c_qmsi_init(struct device *dev)
 		/* Register interrupt handler, unmask IRQ and route it
 		 * to Lakemont core.
 		 */
-		IRQ_CONNECT(QM_IRQ_I2C_0_INT,
+		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_I2C_0_INT),
 			    CONFIG_I2C_0_IRQ_PRI, qm_i2c_0_irq_isr, NULL,
 			    (IOAPIC_LEVEL | IOAPIC_HIGH));
-		irq_enable(QM_IRQ_I2C_0_INT);
-		QM_INTERRUPT_ROUTER->i2c_master_0_int_mask &= ~BIT(0);
+		irq_enable(IRQ_GET_NUMBER(QM_IRQ_I2C_0_INT));
+		QM_IR_UNMASK_INTERRUPTS(
+				QM_INTERRUPT_ROUTER->i2c_master_0_int_mask);
 		break;
 
 #ifdef CONFIG_I2C_1
 	case QM_I2C_1:
-		IRQ_CONNECT(QM_IRQ_I2C_1_INT,
+		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_I2C_1_INT),
 			    CONFIG_I2C_1_IRQ_PRI, qm_i2c_1_irq_isr, NULL,
 			    (IOAPIC_LEVEL | IOAPIC_HIGH));
-		irq_enable(QM_IRQ_I2C_1_INT);
-		QM_INTERRUPT_ROUTER->i2c_master_1_int_mask &= ~BIT(0);
-
+		irq_enable(IRQ_GET_NUMBER(QM_IRQ_I2C_1_INT));
+		QM_IR_UNMASK_INTERRUPTS(
+				QM_INTERRUPT_ROUTER->i2c_master_1_int_mask);
 		break;
 #endif /* CONFIG_I2C_1 */
 

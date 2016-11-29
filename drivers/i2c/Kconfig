@@ -207,6 +207,48 @@ config I2C_1_IRQ_PRI
 	help
 	IRQ priority.
 
+config I2C_SS_0
+	bool "Enable I2C_SS_0"
+	depends on I2C_QMSI_SS
+	default n
+
+config I2C_SS_0_NAME
+	string "Select a name for finding the device"
+	depends on I2C_SS_0
+	default "I2C_SS_0"
+
+config I2C_SS_0_DEFAULT_CFG
+	hex "I2C default configuration"
+	depends on I2C_SS_0
+	default 0x0
+	help
+	Allows the I2C port to be brought up with a default configuration.
+	This is useful to set if other drivers depend upon using the I2C bus
+	before the application has a chance to custom configure the port.
+	Setting this value does not prohibit the application from customizing
+	the values later.  Refer to the I2C datasheet for proper values.
+
+config I2C_SS_1
+	bool "Enable I2C SS Port 1"
+	depends on I2C_QMSI_SS
+	default n
+
+config I2C_SS_1_NAME
+	string "Select a name for finding the device"
+	default "I2C_SS_1"
+	depends on I2C_SS_1
+
+config I2C_SS_1_DEFAULT_CFG
+	hex "I2C SS default configuration"
+	depends on I2C_SS_1
+	default 0x0
+	help
+	Allows the I2C port to be brought up with a default configuration.
+	This is useful to set if other drivers depend upon using the I2C bus
+	before the application has a chance to custom configure the port.
+	Setting this value does not prohibit the application from customizing
+	the values later.  Refer to the I2C datasheet for proper values.
+
 config I2C_SS_SDA_HOLD
 	int
 	depends on I2C_QMSI_SS
@@ -214,9 +256,16 @@ config I2C_SS_SDA_HOLD
 	The hold time on the data signal after a negative edge of i2c clock.
 	The unit is i2c module base clock.
 
+config I2C_SS_SDA_SETUP
+	int
+	depends on I2C_QMSI_SS
+	help
+	The delay time of clock rising edge relative to i2c data signal change.
+	The unit is i2c module base clock.
+
 config I2C_SDA_SETUP
 	int
-	depends on I2C_QMSI || I2C_QMSI_SS
+	depends on I2C_QMSI
 	help
 	The delay time of clock rising edge relative to i2c data signal change.
 	The unit is i2c module base clock.

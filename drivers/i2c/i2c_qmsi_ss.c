@@ -133,7 +133,7 @@ static void i2c_qmsi_ss_isr(void *arg)
 	}
 }
 
-#ifdef CONFIG_I2C_0
+#ifdef CONFIG_I2C_SS_0
 
 static struct i2c_qmsi_ss_driver_data driver_data_0;
 
@@ -141,11 +141,11 @@ static void i2c_qmsi_ss_config_irq_0(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_0 = {
 	.instance = QM_SS_I2C_0,
-	.default_cfg.raw = CONFIG_I2C_0_DEFAULT_CFG,
+	.default_cfg.raw = CONFIG_I2C_SS_0_DEFAULT_CFG,
 	.irq_cfg = i2c_qmsi_ss_config_irq_0,
 };
 
-DEVICE_DEFINE(i2c_ss_0, CONFIG_I2C_0_NAME, i2c_qmsi_ss_init,
+DEVICE_DEFINE(i2c_ss_0, CONFIG_I2C_SS_0_NAME, i2c_qmsi_ss_init,
 	      ss_i2c_device_ctrl, &driver_data_0, &config_info_0, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
@@ -188,9 +188,9 @@ static void i2c_qmsi_ss_config_irq_0(void)
 	irq_enable(I2C_SS_0_TX_VECTOR);
 	irq_enable(I2C_SS_0_STOP_VECTOR);
 }
-#endif /* CONFIG_I2C_0 */
+#endif /* CONFIG_I2C_SS_0 */
 
-#ifdef CONFIG_I2C_1
+#ifdef CONFIG_I2C_SS_1
 
 static struct i2c_qmsi_ss_driver_data driver_data_1;
 
@@ -198,11 +198,11 @@ static void i2c_qmsi_ss_config_irq_1(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_1 = {
 	.instance = QM_SS_I2C_1,
-	.default_cfg.raw = CONFIG_I2C_1_DEFAULT_CFG,
+	.default_cfg.raw = CONFIG_I2C_SS_1_DEFAULT_CFG,
 	.irq_cfg = i2c_qmsi_ss_config_irq_1,
 };
 
-DEVICE_DEFINE(i2c_ss_1, CONFIG_I2C_1_NAME, i2c_qmsi_ss_init,
+DEVICE_DEFINE(i2c_ss_1, CONFIG_I2C_SS_1_NAME, i2c_qmsi_ss_init,
 	      ss_i2c_device_ctrl, &driver_data_1, &config_info_1, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
@@ -245,7 +245,7 @@ static void i2c_qmsi_ss_config_irq_1(void)
 	irq_enable(I2C_SS_1_TX_VECTOR);
 	irq_enable(I2C_SS_1_STOP_VECTOR);
 }
-#endif /* CONFIG_I2C_1 */
+#endif /* CONFIG_I2C_SS_1 */
 
 static int i2c_qmsi_ss_configure(struct device *dev, uint32_t config)
 {
@@ -287,7 +287,7 @@ static int i2c_qmsi_ss_configure(struct device *dev, uint32_t config)
 		i2c_base = QM_SS_I2C_1_BASE;
 	}
 
-	__builtin_arc_sr(((CONFIG_I2C_SDA_SETUP << 16) +
+	__builtin_arc_sr(((CONFIG_I2C_SS_SDA_SETUP << 16) +
 			   CONFIG_I2C_SS_SDA_HOLD),
 			 (i2c_base + QM_SS_I2C_SDA_CONFIG));
 
