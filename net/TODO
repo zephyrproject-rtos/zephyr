@@ -14,14 +14,6 @@ This is a TODO list for networking related work.
 IPv6
 ====
 
-- Hop-by-Hop option handling
-
-   Priority: Medium
-   Complexity: C1
-
-   Parse IPv6 Hop-by-Hop options and act accordingly.
-   See RFC 2460 for details.
-
 - Anycast address support
 
    Priority: Low
@@ -35,14 +27,6 @@ IPv6
    Complexity: C1
 
    Add support for sending "Packet Too Big" error when
-   needed. RFC 4443
-
-- ICMPv6 "Parameter Problem" support
-
-   Priority: Low
-   Complexity: C1
-
-   Add support for sending "Parameter Problem" error when
    needed. RFC 4443
 
 - Multicast join/leave support
@@ -69,15 +53,6 @@ IPv6
 
    Add support for acting as a DHCPv6 in client role.
    See RFC 3315 and 3646 for details.
-
-- RPL (Ripple) support
-
-   Priority: Med
-   Complexity: C4
-
-   Add support for RPL (Ripple): IPv6 routing protocol for low power
-   and lossy networks. See RFC 6550 for details. This entry is for
-   the new IP stack.
 
 
 IPv4
@@ -111,14 +86,6 @@ TCP
 
 6LoWPAN
 =======
-
-- Offset based Reassembly of 802.15.4 packets
-
-  Priority: Medium
-  Complexicity: C2
-
-  Offset based reassembly of 802.15.4 packets. Fragments can come in
-  any order [e.g. mesh].
 
 - Mesh Header compression and uncompression
 
@@ -283,14 +250,6 @@ Bluetooth
 IP-based services
 =================
 
-- Domain Name Service client
-
-   Priority: Low
-   Complexity: C4
-
-   Create DNS client functionality so that applications can use
-   Domain Name Service to query IP addresses.
-
 - Simple Network Time Protocol
 
    Priority: Low
@@ -306,13 +265,6 @@ IP-based services
 
    Create a simple HTTP server for demo / diagnostic purposes.
 
-- CoAP support
-
-   Priority: High
-   Complexity: C4
-
-   Create CoAP server and client support.
-
 - IPSO (IP Smart Object) support
 
    Priority: Low
@@ -327,13 +279,6 @@ IP-based services
 
    Create support for OMA LWM2M protocol.
 
-- MQTT support
-
-   Priority: High
-   Complexity: C4
-
-   Create support for MQTT. This requires working TCP support.
-
 - Simple Network Management Protocol support
 
    Priority: Low
@@ -345,21 +290,6 @@ IP-based services
 
 Documentation
 =============
-
-- Architecture documentation
-
-   Priority: Medium
-   Complexity: C2
-
-   Create documentation of the new networking stack to doc/
-
-- Developer API usage documentation
-
-   Priority: Medium
-   Complexity: C2
-
-   Create documentation for the developer how to create networking
-   applications using the new IP stack.
 
 - Network device driver documentation
 
