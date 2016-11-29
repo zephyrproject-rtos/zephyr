@@ -17,7 +17,7 @@ config BMI160_SPI_PORT_NAME
 	depends on BMI160
 	default ""
 	help
-	  Master I2C port name through which BMI160 chip is accessed.
+	  Master SPI port name through which BMI160 chip is accessed.
 
 config BMI160_SLAVE
 	hex "BMI160 SPI slave select pin"
