@@ -39,7 +39,7 @@ static int aon_counter_qmsi_stop(struct device *dev)
 	return 0;
 }
 
-static uint32_t aon_counter_qmsi_read(void)
+static uint32_t aon_counter_qmsi_read(struct device *dev)
 {
 	uint32_t value;
 

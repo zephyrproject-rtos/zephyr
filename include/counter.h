@@ -41,7 +41,7 @@ typedef void (*counter_callback_t)(struct device *dev, void *user_data);
 
 typedef int (*counter_api_start)(struct device *dev);
 typedef int (*counter_api_stop)(struct device *dev);
-typedef uint32_t (*counter_api_read)(void);
+typedef uint32_t (*counter_api_read)(struct device *dev);
 typedef int (*counter_api_set_alarm)(struct device *dev,
 				     counter_callback_t callback,
 				     uint32_t count, void *user_data);
@@ -99,7 +99,7 @@ static inline uint32_t counter_read(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
-	return api->read();
+	return api->read(dev);
 }
 
 /**
