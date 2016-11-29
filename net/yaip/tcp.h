@@ -294,6 +294,14 @@ int tcp_queue_data(struct net_context *context, struct net_buf *buf);
  */
 int net_tcp_send_buf(struct net_buf *buf);
 
+/**
+ * @brief Handle a received TCP ACK
+ *
+ * @param cts Context
+ * @param seq Received ACK sequence number
+ */
+void net_tcp_ack_received(struct net_context *ctx, uint32_t ack);
+
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);
 #else

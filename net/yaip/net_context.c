@@ -743,6 +743,10 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 
 	net_tcp_print_recv_info("DATA", buf, NET_TCP_BUF(buf)->src_port);
 
+	if (NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
+		net_tcp_ack_received(context,
+				     sys_get_be32(NET_TCP_BUF(buf)->ack));
+	}
 	if (NET_TCP_FLAGS(buf) & NET_TCP_FIN) {
 		/* Sending an ACK in the CLOSE_WAIT state will transition to
 		 * LAST_ACK state

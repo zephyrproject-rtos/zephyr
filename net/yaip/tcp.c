@@ -614,13 +614,35 @@ int tcp_send_data(struct net_context *context)
 	 */
 	SYS_SLIST_FOR_EACH_NODE(&context->tcp->sent_list, node) {
 		buf = CONTAINER_OF(node, struct net_buf, sent_list);
-		net_send_data(buf);
-		net_nbuf_unref(buf);
+		net_tcp_send_buf(buf);
 	}
 
-	sys_slist_init(&context->tcp->sent_list);
-
 	return 0;
+}
+
+void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
+{
+	sys_slist_t *list = &ctx->tcp->sent_list;
+	sys_snode_t *head;
+	struct net_buf *buf;
+	struct net_tcp_hdr *tcphdr;
+	uint32_t seq;
+
+	while (!sys_slist_is_empty(list)) {
+		head = sys_slist_peek_head(list);
+		buf = CONTAINER_OF(head, struct net_buf, sent_list);
+		tcphdr = NET_TCP_BUF(buf);
+
+		seq = sys_get_be32(tcphdr->seq)
+			+ net_buf_frags_len(buf) - 1;
+
+		if (seq_greater(ack, seq)) {
+			sys_slist_remove(list, NULL, head);
+			net_nbuf_unref(buf);
+		} else {
+			break;
+		}
+	}
 }
 
 void net_tcp_init(void)
