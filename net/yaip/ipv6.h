@@ -126,6 +126,10 @@ int net_ipv6_send_ns(struct net_if *iface, struct net_buf *pending,
 int net_ipv6_send_rs(struct net_if *iface);
 int net_ipv6_start_rs(struct net_if *iface);
 
+int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
+		     struct in6_addr *dst, struct in6_addr *tgt,
+		     uint8_t flags);
+
 /**
  * @brief Create IPv6 packet in provided net_buf.
  *

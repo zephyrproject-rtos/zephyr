@@ -775,11 +775,9 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 #define dbg_addr_sent_tgt(...)
 #endif
 
-static int net_ipv6_send_na(struct net_if *iface,
-			    struct in6_addr *src,
-			    struct in6_addr *dst,
-			    struct in6_addr *tgt,
-			    uint8_t flags)
+int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
+		     struct in6_addr *dst, struct in6_addr *tgt,
+		     uint8_t flags)
 {
 	struct net_buf *buf, *frag;
 	uint8_t llao_len;
