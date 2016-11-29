@@ -73,6 +73,32 @@ SECTION_FUNC(TEXT,__start)
 	/* lock interrupts: will get unlocked when switch to main task */
 	clri
 
+	mov r1, 1
+
+invalidate_and_disable_icache:
+
+	lr r0, [_ARC_V2_I_CACHE_BUILD]
+	and.f r0, r0, 0xff
+	bz.nd invalidate_dcache
+
+	mov_s r2, 0
+	sr r2, [_ARC_V2_IC_IVIC]
+	/* writing to IC_IVIC needs 3 NOPs */
+	nop
+	nop
+	nop
+	sr r1, [_ARC_V2_IC_CTRL]
+
+invalidate_dcache:
+
+	lr r3, [_ARC_V2_D_CACHE_BUILD]
+	and.f r3, r3, 0xff
+	bz.nd done_cache_invalidate
+
+	sr r1, [_ARC_V2_DC_IVDC]
+
+done_cache_invalidate:
+
 #ifdef CONFIG_INIT_STACKS
 	/*
 	 * use the main stack to call memset on the interrupt stack and the
