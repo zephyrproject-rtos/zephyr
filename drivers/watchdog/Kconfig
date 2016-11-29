@@ -24,37 +24,11 @@ menuconfig WATCHDOG
 	prompt "Watchdog Support"
 	default n
 	help
-	Include support for watchdogs.
+	  Include support for watchdogs.
 
 if WATCHDOG
-config WDT_QMSI
-	bool "QMSI Watchdog driver"
-	default n
-	help
-	This option enables the QMSI watchdog driver.
 
-	This driver is simply a shim driver based on the watchdog
-	driver provided by the QMSI BSP.
-
-config WDT_0_NAME
-	string "Watchdog driver instance name"
-	default "WATCHDOG_0"
-	help
-	Watchdog driver instance name
-
-config WDT_0_IRQ_PRI
-	int "Interrupt priority"
-	depends on WDT_QMSI
-	help
-	Watchdog interrupt priority
-
-config WDT_QMSI_API_REENTRANCY
-	bool
-	prompt "WDT shim driver API reentrancy"
-	depends on WDT_QMSI
-	default n
-	help
-	Enable support for WDT shim driver API reentrancy.
+source "drivers/watchdog/Kconfig.qmsi"
 
 source "drivers/watchdog/Kconfig.stm32"
 
