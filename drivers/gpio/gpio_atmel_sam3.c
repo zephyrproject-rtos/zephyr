@@ -70,7 +70,7 @@ static void _config(struct device *dev, uint32_t mask, int flags)
 
 			if (flags & GPIO_INT_EDGE) {
 				cfg->port->esr = mask;
-			} else if (flags & GPIO_INT_LEVEL) {
+			} else {
 				cfg->port->lsr = mask;
 			}
 
