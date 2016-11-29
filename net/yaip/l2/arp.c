@@ -208,18 +208,40 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 		return NULL;
 	}
 
-	/* If the destination address is already known, we do not need
-	 * to send any ARP packet.
-	 */
 	if (net_nbuf_ll_reserve(buf) != sizeof(struct net_eth_hdr)) {
-		NET_DBG("Ethernet header missing from buf %p, len %d min %d",
-			buf, net_nbuf_ll_reserve(buf),
-			sizeof(struct net_eth_hdr));
-		return NULL;
+		/* Add the ethernet header if it is missing. */
+		struct net_buf *header;
+		struct net_linkaddr *ll;
+
+		net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
+
+		header = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
+
+		hdr = (struct net_eth_hdr *)net_nbuf_ll(header);
+		hdr->type = htons(NET_ETH_PTYPE_IP);
+
+		ll = net_nbuf_ll_dst(buf);
+		if (ll->addr) {
+			memcpy(&hdr->dst.addr, ll->addr,
+			       sizeof(struct net_eth_addr));
+		}
+
+		ll = net_nbuf_ll_src(buf);
+		if (ll->addr) {
+			memcpy(&hdr->src.addr, ll->addr,
+			       sizeof(struct net_eth_addr));
+		}
+
+		net_buf_frag_insert(buf, header);
+
+		buf = net_nbuf_compact(buf);
 	}
 
 	hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
 
+	/* If the destination address is already known, we do not need
+	 * to send any ARP packet.
+	 */
 	entry = find_entry(net_nbuf_iface(buf),
 			   &NET_IPV4_BUF(buf)->dst,
 			   &free_entry, &non_pending);
