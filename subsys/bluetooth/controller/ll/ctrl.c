@@ -1266,8 +1266,12 @@ static inline void isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			eff_tx_octets = lr->max_rx_octets;
 		}
 
-		/* use the peer tx as eff rx octets */
-		if (lr->max_tx_octets != _radio.conn_curr->max_rx_octets) {
+		/* use the minimal of our max supported and
+		 * peer max_tx_octets
+		 */
+		if (lr->max_tx_octets > RADIO_LL_LENGTH_OCTETS_RX_MAX) {
+			eff_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
+		} else {
 			eff_rx_octets = lr->max_tx_octets;
 		}
 
