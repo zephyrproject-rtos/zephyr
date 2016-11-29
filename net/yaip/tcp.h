@@ -114,16 +114,6 @@ struct net_tcp {
 	/** Active close timer */
 	struct k_delayed_work fin_timer;
 
-	/** Temp buf for received data. The first element of the fragment list
-	 * does not contain user data part.
-	 */
-	struct net_buf *recv;
-
-	/** Temp buf for data to be sent. The first element of the fragment
-	 * list does not contain user data part.
-	 */
-	struct net_buf *send;
-
 	/** Highest acknowledged number of sent segments. */
 	uint32_t recv_ack;
 
@@ -235,26 +225,6 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr *remote,
 			    struct net_buf **send_buf);
-
-/**
- * @brief Prepare a TCP segment with data. The returned buffer
- * is a ready made packet that can be sent via net_send_data()
- * function.
- *
- * @param tcp TCP context
- * @param buf Data fragments to send. This should have been allocated
- * by net_nbuf_get_tx() or net_nbuf_get_reserve_tx() function.
- * @param options Pointer TCP options, NULL if no options.
- * @param optlen Length of the options.
- * @param remote Peer address
- * @param send_buf Full IP + TCP header + data that is to be sent.
- *
- * @return 0 if ok, < 0 if error
- */
-int net_tcp_prepare_data_segment(struct net_tcp *tcp, struct net_buf *buf,
-				 void *options, size_t optlen,
-				 const struct sockaddr *remote,
-				 struct net_buf **send_buf);
 
 /**
  * @brief Prepare a TCP ACK message that can be send to peer.

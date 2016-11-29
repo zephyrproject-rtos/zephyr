@@ -61,7 +61,6 @@ struct tcp_segment {
 	uint8_t flags;
 	uint8_t optlen;
 	void *options;
-	struct net_buf *data;
 	struct sockaddr_ptr *src_addr;
 	const struct sockaddr *dst_addr;
 };
@@ -158,16 +157,6 @@ int net_tcp_release(struct net_tcp *tcp)
 	tcp->state = NET_TCP_CLOSED;
 	tcp->context = NULL;
 
-	if (tcp->send) {
-		net_nbuf_unref(tcp->send);
-		tcp->send = NULL;
-	}
-
-	if (tcp->recv) {
-		net_nbuf_unref(tcp->recv);
-		tcp->recv = NULL;
-	}
-
 	key = irq_lock();
 	tcp->flags &= ~NET_TCP_IN_USE;
 	irq_unlock(key);
@@ -254,10 +243,6 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	tcphdr->wnd[0] = segment->wnd >> 8;
 	tcphdr->wnd[1] = segment->wnd;
 
-	if (segment->data) {
-		net_buf_frag_add(header, segment->data);
-	}
-
 #if defined(CONFIG_NET_IPV4)
 	if (net_nbuf_family(buf) == AF_INET) {
 		net_ipv4_finalize(context, buf);
@@ -269,11 +254,6 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	} else
 #endif
 	{
-		/* Set the data to NULL that we avoid double free when
-		 * called from net_tcp_prepare_data_segment()
-		 */
-		segment->data = NULL;
-
 	proto_err:
 		NET_DBG("Protocol family %d not supported",
 			net_nbuf_family(buf));
@@ -367,7 +347,6 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	segment.wnd = wnd;
 	segment.options = options;
 	segment.optlen = optlen;
-	segment.data = NULL;
 
 	*send_buf = prepare_segment(tcp, &segment);
 
@@ -410,139 +389,6 @@ static inline size_t ip_max_packet_len(struct in_addr *dest_ip)
 #else /* CONFIG_NET_IPV4 */
 #define ip_max_packet_len(...) 0
 #endif /* CONFIG_NET_IPV4 */
-
-int net_tcp_prepare_data_segment(struct net_tcp *tcp,
-				 struct net_buf *buf,
-				 void *options, size_t optlen,
-				 const struct sockaddr *remote,
-				 struct net_buf **send_buf)
-{
-	struct tcp_segment segment;
-	size_t new_size;
-	uint32_t seq;
-	size_t data_size = net_buf_frags_len(buf);
-	struct net_buf *data = NULL;
-	uint8_t flags = 0;
-	uint32_t tmp = 0;
-	int ret = 0;
-
-	NET_ASSERT_INFO(tcp, "TCP control block NULL");
-	NET_ASSERT_INFO(buf, "No data to send");
-
-	seq = tcp->send_seq;
-
-	/* How much data can we send? */
-	if (tcp->send) {
-		new_size = net_buf_frags_len(tcp->send) -
-			get_size(tcp->recv_ack, tcp->send_seq);
-	} else {
-		new_size = get_size(tcp->recv_ack, tcp->send_seq);
-	}
-
-	if (data_size > new_size) {
-		/* Now we will only use part of the data in net_buf's */
-		data_size = new_size;
-	}
-
-	if (net_sin(&tcp->context->remote)->sin_family == AF_INET) {
-		tmp = ip_max_packet_len(&net_sin(&tcp->context->remote)->
-					sin_addr);
-	}
-
-	/* TCP header needs to fit the MTU */
-	if (data_size + NET_TCPH_LEN > tmp) {
-		data_size = tmp - NET_TCPH_LEN;
-	}
-
-	flags |= NET_TCP_ACK;
-
-	if (data_size > 0 && new_size == data_size) {
-		flags |= NET_TCP_PSH;
-	}
-
-	if (tcp->flags & NET_TCP_IS_SHUTDOWN) {
-		if (new_size == data_size) {
-			/* End of the data sending. */
-			flags |= NET_TCP_FIN;
-			seq++;
-
-			if (tcp->state == NET_TCP_ESTABLISHED ||
-			    tcp->state == NET_TCP_SYN_RCVD) {
-				net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_1);
-			} else if (tcp->state == NET_TCP_CLOSE_WAIT) {
-				net_tcp_change_state(tcp, NET_TCP_LAST_ACK);
-			}
-
-			tcp->flags |= NET_TCP_FINAL_SENT;
-		}
-	}
-
-	if (data_size) {
-		/* The data will not contain the TX user data buf as a first
-		 * element after the copy.
-		 */
-		if (buf->user_data_size) {
-			if (!buf->frags) {
-				NET_ERR("Wrong TX buf when sending TCP data");
-				return -EINVAL;
-			}
-
-			data = net_nbuf_copy(buf->frags, data_size, 0);
-		} else {
-			data = net_nbuf_copy(buf, data_size, 0);
-		}
-
-		/* Remove stuff from the buf so that it only contains
-		 * stuff that we have not been sent yet.
-		 */
-		net_nbuf_pull(buf, data_size);
-
-		/* If there is already pending data, append new data after
-		 * the old one.
-		 */
-		if (tcp->send) {
-			net_buf_frag_add(tcp->send, data);
-		} else {
-			tcp->send = data;
-		}
-
-		if (unlikely(!data)) {
-			tcp->send_seq = seq + data_size;
-			return -ENOMEM;
-		}
-	}
-
-	/* Send the segment. */
-	segment.src_addr = &tcp->context->local;
-	segment.dst_addr = remote;
-	segment.seq = tcp->send_seq;
-	segment.ack = tcp->send_ack;
-	segment.flags = flags;
-	segment.wnd = get_recv_wnd(tcp);
-	segment.options = options;
-	segment.optlen = optlen;
-	segment.data = tcp->send;
-
-	*send_buf = prepare_segment(tcp, &segment);
-	if (!*send_buf) {
-		if (segment.data) {
-			/* tcp->send is not yet freed if we get here */
-			net_nbuf_unref(tcp->send);
-		}
-
-		tcp->send = NULL;
-
-		ret = -EINVAL;
-	}
-
-	tcp->send_seq = seq + data_size;
-
-	if (seq_greater(tcp->send_seq, tcp->recv_max_ack)) {
-		tcp->recv_max_ack = tcp->send_seq;
-	}
-
-	return ret;
-}
 
 static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
 				uint8_t *optionlen)
@@ -648,7 +494,6 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 		segment.wnd = 0;
 		segment.options = NULL;
 		segment.optlen = 0;
-		segment.data = NULL;
 
 		*buf = prepare_segment(tcp, &segment);
 	}

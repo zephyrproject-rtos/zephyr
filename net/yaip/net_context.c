@@ -1559,8 +1559,7 @@ static int create_tcp_packet(struct net_context *context,
 {
 	NET_ASSERT(context->tcp);
 
-	return net_tcp_prepare_data_segment(context->tcp, buf, NULL, 0,
-					    dst_addr, out_buf);
+	return 0;
 }
 #endif /* CONFIG_NET_TCP */
 
