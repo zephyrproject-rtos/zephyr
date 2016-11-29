@@ -226,12 +226,20 @@ class BuildError(MakeError):
 class ExecutionError(MakeError):
     pass
 
+log_file = None
+
 # Debug Functions
 def info(what):
     sys.stdout.write(what + "\n")
+    if log_file:
+        log_file.write(what + "\n")
+        log_file.flush()
 
 def error(what):
     sys.stderr.write(COLOR_RED + what + COLOR_NORMAL + "\n")
+    if log_file:
+        log_file(what + "\n")
+        log_file.flush()
 
 def debug(what):
     if VERBOSE >= 1:
@@ -1174,7 +1182,10 @@ def defconfig_cb(context, goals, goal):
          (COLOR_RED, goal.name, COLOR_NORMAL));
     if INLINE_LOGS:
         with open(goal.get_error_log()) as fp:
-            sys.stdout.write(fp.read())
+            data = fp.read()
+            sys.stdout.write(data)
+            if log_file:
+                log_file.write(data)
     else:
         info("\tsee: " + COLOR_YELLOW + goal.get_error_log() + COLOR_NORMAL)
 
@@ -1641,6 +1652,8 @@ def parse_arguments():
     parser.add_argument("-i", "--inline-logs", action="store_true",
             help="Upon test failure, print relevant log data to stdout "
                  "instead of just a path to it")
+    parser.add_argument("--log-file", metavar="FILENAME", action="store",
+            help="log also to file")
     parser.add_argument("-m", "--last-metrics", action="store_true",
             help="Instead of comparing metrics from the last --release, "
                  "compare with the results of the previous sanity check "
@@ -1701,7 +1714,10 @@ def log_info(filename):
     if INLINE_LOGS:
         info("{:-^100}".format(filename))
         with open(filename) as fp:
-            sys.stdout.write(fp.read())
+            data = fp.read()
+            sys.stdout.write(data)
+            if log_file:
+                log_file.write(data)
         info("{:-^100}".format(filename))
     else:
         info("\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
@@ -1784,7 +1800,7 @@ def generate_coverage(outdir, ignores):
 
 def main():
     start_time = time.time()
-    global VERBOSE, INLINE_LOGS, CPU_COUNTS
+    global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
     args = parse_arguments()
     toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
 
@@ -1795,6 +1811,8 @@ def main():
 
     VERBOSE += args.verbose
     INLINE_LOGS = args.inline_logs
+    if args.log_file:
+        log_file = open(args.log_file, "w")
     if args.jobs:
         CPU_COUNTS = args.jobs
 
@@ -1891,7 +1909,8 @@ def main():
         ts.testcase_report(LAST_SANITY)
     if args.release:
         ts.testcase_report(RELEASE_DATA)
-
+    if log_file:
+        log_file.close()
     if failed or (warnings and args.warnings_as_errors):
         sys.exit(1)
 
