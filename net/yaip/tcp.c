@@ -52,6 +52,8 @@
 #define NET_MAX_TCP_CONTEXT CONFIG_NET_MAX_CONTEXTS
 static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 
+#define INIT_RETRY_MS 200
+
 static struct k_sem tcp_lock;
 
 struct tcp_segment {
@@ -110,6 +112,24 @@ static inline uint32_t init_isn(void)
 	return sys_rand32_get();
 }
 
+static void tcp_retry_expired(struct k_timer *timer)
+{
+	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
+	struct net_buf *buf;
+
+	/* Double the retry period for exponential backoff and resent
+	 * the first (only the first!) unack'd packet.
+	 */
+	if (!sys_slist_is_empty(&tcp->sent_list)) {
+		tcp->retry_timeout_ms *= 2;
+		k_timer_start(&tcp->retry_timer, tcp->retry_timeout_ms, 0);
+
+		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
+				   struct net_buf, sent_list);
+		net_tcp_send_buf(buf);
+	}
+}
+
 struct net_tcp *net_tcp_alloc(struct net_context *context)
 {
 	int i, key;
@@ -135,6 +155,8 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 	tcp_context[i].send_seq = init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
+
+	k_timer_init(&tcp_context[i].retry_timer, tcp_retry_expired, NULL);
 
 	return &tcp_context[i];
 }
@@ -601,7 +623,21 @@ int net_tcp_send_buf(struct net_buf *buf)
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
+	net_nbuf_set_buf_sent(buf, true);
+
 	return net_send_data(buf);
+}
+
+static void restart_timer(struct net_tcp *tcp)
+{
+	if (sys_slist_is_empty(&tcp->sent_list)) {
+		tcp->flags |= NET_TCP_RETRYING;
+		tcp->retry_timeout_ms = INIT_RETRY_MS;
+		k_timer_start(&tcp->retry_timer, INIT_RETRY_MS, 0);
+	} else {
+		k_timer_stop(&tcp->retry_timer);
+		tcp->flags &= ~NET_TCP_RETRYING;
+	}
 }
 
 int tcp_send_data(struct net_context *context)
@@ -614,7 +650,9 @@ int tcp_send_data(struct net_context *context)
 	 */
 	SYS_SLIST_FOR_EACH_NODE(&context->tcp->sent_list, node) {
 		buf = CONTAINER_OF(node, struct net_buf, sent_list);
-		net_tcp_send_buf(buf);
+		if (!net_nbuf_buf_sent(buf)) {
+			net_tcp_send_buf(buf);
+		}
 	}
 
 	return 0;
@@ -627,6 +665,7 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 	struct net_buf *buf;
 	struct net_tcp_hdr *tcphdr;
 	uint32_t seq;
+	bool valid_ack = false;
 
 	while (!sys_slist_is_empty(list)) {
 		head = sys_slist_peek_head(list);
@@ -639,8 +678,36 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 		if (seq_greater(ack, seq)) {
 			sys_slist_remove(list, NULL, head);
 			net_nbuf_unref(buf);
+			valid_ack = true;
 		} else {
 			break;
+		}
+	}
+
+	if (valid_ack) {
+		/* Restart the timer on a valid inbound ACK.  This
+		 * isn't quite the same behavior as per-packet retry
+		 * timers, but is close in practice (it starts retries
+		 * one timer period after the connection "got stuck")
+		 * and avoids the need to track per-packet timers or
+		 * sent times.
+		 */
+		restart_timer(ctx->tcp);
+
+		/* And, if we had been retrying, mark all packets
+		 * untransmitted and then resend them.  The stalled
+		 * pipe is uncorked again.
+		 */
+		if (ctx->tcp->flags & NET_TCP_RETRYING) {
+			struct net_buf *buf;
+			sys_snode_t *node;
+
+			SYS_SLIST_FOR_EACH_NODE(&ctx->tcp->sent_list, node) {
+				buf = CONTAINER_OF(node, struct net_buf,
+						   sent_list);
+				net_nbuf_set_buf_sent(buf, false);
+			}
+			tcp_send_data(ctx);
 		}
 	}
 }

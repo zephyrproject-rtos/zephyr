@@ -48,6 +48,9 @@ extern "C" {
 /** Is the socket shutdown for read/write */
 #define NET_TCP_IS_SHUTDOWN BIT(3)
 
+/** A retransmitted packet has been sent and not yet ack'd */
+#define NET_TCP_RETRYING BIT(4)
+
 /*
  * TCP connection states
  */
@@ -113,6 +116,12 @@ struct net_tcp {
 
 	/** Active close timer */
 	struct k_delayed_work fin_timer;
+
+	/** Retransmit timer */
+	struct k_timer retry_timer;
+
+	/** Current retransmit period */
+	uint32_t retry_timeout_ms;
 
 	/** List pointer used for TCP retransmit buffering */
 	sys_slist_t sent_list;
