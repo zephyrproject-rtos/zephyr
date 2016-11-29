@@ -253,6 +253,8 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	tcphdr->flags = segment->flags;
 	tcphdr->wnd[0] = segment->wnd >> 8;
 	tcphdr->wnd[1] = segment->wnd;
+	tcphdr->urg[0] = 0;
+	tcphdr->urg[1] = 0;
 
 	if (tail) {
 		net_buf_frag_add(buf, tail);

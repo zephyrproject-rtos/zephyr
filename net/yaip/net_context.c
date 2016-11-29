@@ -589,7 +589,7 @@ static inline int send_control_segment(struct net_context *context,
 				       const struct sockaddr *remote,
 				       int flags, const char *msg)
 {
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(context->tcp, flags,
@@ -640,7 +640,7 @@ static inline int send_fin_ack(struct net_context *context,
 static inline int send_ack(struct net_context *context,
 			   struct sockaddr *remote)
 {
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_ack(context->tcp, remote, &buf);
@@ -661,7 +661,7 @@ static inline int send_ack(struct net_context *context,
 static int send_reset(struct net_context *context,
 		      struct sockaddr *remote)
 {
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_reset(context->tcp, remote, &buf);
