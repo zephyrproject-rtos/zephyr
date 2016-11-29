@@ -1,7 +1,12 @@
 Zephyr Kernel 1.6.0 Release Notes
 #################################
 
-[Content: create executive summary]
+We are pleased to announce the release of Zephyr kernel version 1.6.0. This release introduces
+a Unified Kernel replacing the separate nano- and micro-kernels, simplifying the overall Zephyr
+architecture and programming interfaces. This release also enables USB mass storage, increases
+board support for ARM Cortex-M0/M0+ family and includes numerous major features and bug fixes
+described below. It also adds many improvements for documentation, build infrastructure, and
+testing. The next three-month cadence release is planned for the end of February.
 
 Major enhancements included with the release:
 
