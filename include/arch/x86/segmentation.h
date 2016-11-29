@@ -559,6 +559,17 @@ static inline void _set_gdt(const struct pseudo_descriptor *gdt)
 
 
 /**
+ * Set the interrupt descriptor table
+ *
+ * @param idt Pointer to IDT pseudo descriptor.
+ */
+static inline void _set_idt(const struct pseudo_descriptor *idt)
+{
+	__asm__ __volatile__ ("lidt %0" :: "m" (*idt));
+}
+
+
+/**
  * Get the segment selector for the current code segment
  *
  * @return Segment selector
