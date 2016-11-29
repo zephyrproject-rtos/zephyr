@@ -403,8 +403,6 @@ static void udp_received(struct net_context *context,
 	if (ret < 0) {
 		NET_ERR("Cannot send data to peer (%d)", ret);
 		net_nbuf_unref(reply_buf);
-
-		quit();
 	}
 }
 
