@@ -54,6 +54,11 @@ Each testcase.ini block can define the following key/value pairs:
   platform_exclude = <list of platforms>
     Set of platforms that this test case should not run on.
 
+  extra_sections = <list of extra binary sections>
+    When computing sizes, sanitycheck will report errors if it finds
+    extra, unexpected sections in the Zephyr binary unless they are named
+    here. They will not be included in the size calculation.
+
   filter = <expression>
     Filter whether the testcase should be run by evaluating an expression
     against an environment containing the following values:
@@ -463,7 +468,7 @@ class SizeCalculator:
     ro_sections = ["text", "ctors", "init_array", "reset",
                    "rodata", "devconfig"]
 
-    def __init__(self, filename):
+    def __init__(self, filename, extra_sections):
         """Constructor
 
         @param filename Path to the output binary
@@ -489,6 +494,7 @@ class SizeCalculator:
         self.sections = []
         self.rom_size = 0
         self.ram_size = 0
+        self.extra_sections = extra_sections
 
         self._calculate_sizes()
 
@@ -564,7 +570,8 @@ class SizeCalculator:
                 stype = "ro"
             else:
                 stype = "unknown"
-                recognized = False
+                if name not in self.extra_sections:
+                    recognized = False
 
             self.sections.append({"name" : name, "load_addr" : load_addr,
                                   "size" : size, "virt_addr" : virt_addr,
@@ -889,6 +896,7 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "kernel" : {"type": "str", "required" : False},
                        "arch_whitelist" : {"type" : "set"},
                        "arch_exclude" : {"type" : "set"},
+                       "extra_sections" : {"type" : "list", "default" : []},
                        "platform_exclude" : {"type" : "set"},
                        "platform_whitelist" : {"type" : "set"},
                        "filter" : {"type" : "str"}}
@@ -1110,6 +1118,7 @@ class TestCase:
         self.timeout = tc_dict["timeout"]
         self.build_only = tc_dict["build_only"]
         self.slow = tc_dict["slow"]
+        self.extra_sections = tc_dict["extra_sections"]
         self.path = os.path.join(os.path.basename(os.path.abspath(testcase_root)),
                                  workdir, name)
         self.name = self.path # for now
@@ -1149,8 +1158,7 @@ class TestInstance:
         fns = [x for x in fns if not x.endswith('_prebuilt.elf')]
         if (len(fns) != 1):
             raise BuildError("Missing/multiple output ELF binary")
-
-        return SizeCalculator(fns[0])
+        return SizeCalculator(fns[0], self.test.extra_sections)
 
     def __repr__(self):
         return "<TestCase %s on %s>" % (self.test.name, self.platform.name)
@@ -1778,7 +1786,7 @@ def main():
 
     if args.size:
         for fn in args.size:
-            size_report(SizeCalculator(fn))
+            size_report(SizeCalculator(fn, []))
         sys.exit(0)
 
     VERBOSE += args.verbose
