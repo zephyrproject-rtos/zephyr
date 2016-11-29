@@ -1,0 +1,61 @@
+# Kconfig - counter configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+config AON_COUNTER_QMSI
+	bool
+	prompt "AON counter driver"
+	depends on COUNTER && QMSI
+	default n
+	help
+	  Enable support for AON counter.
+
+config AON_COUNTER_QMSI_DEV_NAME
+	string "QMSI AON Counter Device Name"
+	depends on AON_COUNTER_QMSI
+	default "AON_COUNTER"
+	help
+	  Specify the device name for AON counter driver.
+
+config AON_TIMER_QMSI
+	bool
+	prompt "AON periodic timer driver"
+	depends on COUNTER && QMSI
+	default n
+	help
+	  Enable support for AON periodic timer.
+
+config AON_TIMER_QMSI_DEV_NAME
+	string "QMSI AON Timer Device Name"
+	depends on AON_TIMER_QMSI
+	default "AON_TIMER"
+	help
+	  Specify the device name for AON timer driver.
+
+config AON_TIMER_IRQ_PRI
+	int "Interrupt priority"
+	depends on AON_TIMER_QMSI
+	help
+	  aon timer interrupt priority.
+
+config AON_API_REENTRANCY
+	bool
+	prompt "AON driver API reentrancy"
+	depends on AON_TIMER_QMSI
+	default n
+	help
+	  Enable support for AON driver API reentrancy.
