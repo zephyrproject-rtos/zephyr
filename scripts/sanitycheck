@@ -1234,7 +1234,7 @@ class TestSuite:
 
     def get_last_failed(self):
         if not os.path.exists(LAST_SANITY):
-            return []
+            raise SanityRuntimeError("Couldn't find last sanity run.")
         result = []
         with open(LAST_SANITY, "r") as fp:
             cr = csv.DictReader(fp)
