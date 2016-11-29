@@ -643,6 +643,13 @@ static inline int send_ack(struct net_context *context,
 	struct net_buf *buf = NULL;
 	int ret;
 
+	/* Something (e.g. a data transmission under the user
+	 * callback) already sent the ACK, no need
+	 */
+	if (context->tcp->send_ack == context->tcp->sent_ack) {
+		return 0;
+	}
+
 	ret = net_tcp_prepare_ack(context->tcp, remote, &buf);
 	if (ret) {
 		return ret;
@@ -650,7 +657,7 @@ static inline int send_ack(struct net_context *context,
 
 	net_tcp_print_send_info("ACK", buf, NET_TCP_BUF(buf)->dst_port);
 
-	ret = net_send_data(buf);
+	ret = net_tcp_send_buf(buf);
 	if (ret < 0) {
 		net_nbuf_unref(buf);
 	}
@@ -759,9 +766,9 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 			return NET_DROP;
 		}
 
-		ret = packet_received(conn, buf, user_data);
-
 		context->tcp->send_ack += net_nbuf_appdatalen(buf);
+
+		ret = packet_received(conn, buf, user_data);
 	}
 
 	send_ack(context, &conn->remote_addr);

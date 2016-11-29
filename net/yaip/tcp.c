@@ -323,14 +323,11 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 {
 	uint32_t seq;
 	uint16_t wnd;
-	uint32_t ack = 0;
 	struct tcp_segment segment = { 0 };
 
 	seq = tcp->send_seq;
 
 	if (flags & NET_TCP_ACK) {
-		ack = tcp->send_ack;
-
 		if (tcp->state == NET_TCP_FIN_WAIT_1) {
 			if (flags & NET_TCP_FIN) {
 				/* FIN is used here only to determine which
@@ -370,7 +367,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	segment.src_addr = &tcp->context->local;
 	segment.dst_addr = remote;
 	segment.seq = tcp->send_seq;
-	segment.ack = ack;
+	segment.ack = tcp->send_ack;
 	segment.flags = flags;
 	segment.wnd = wnd;
 	segment.options = options;
@@ -584,6 +581,27 @@ int tcp_queue_data(struct net_context *context, struct net_buf *buf)
 	net_buf_ref(buf);
 
 	return 0;
+}
+
+int net_tcp_send_buf(struct net_buf *buf)
+{
+	struct net_context *ctx = net_nbuf_context(buf);
+	struct net_tcp_hdr *tcphdr = NET_TCP_BUF(buf);
+
+	sys_put_be32(ctx->tcp->send_ack, tcphdr->ack);
+
+	/* The data stream code always sets this flag, because
+	 * existing stacks (Linux, anyway) seem to ignore data packets
+	 * without a valid-but-already-transmitted ACK.  But set it
+	 * anyway if we know we need it just to sanify edge cases.
+	 */
+	if (ctx->tcp->sent_ack != ctx->tcp->send_ack) {
+		tcphdr->flags |= NET_TCP_ACK;
+	}
+
+	ctx->tcp->sent_ack = ctx->tcp->send_ack;
+
+	return net_send_data(buf);
 }
 
 int tcp_send_data(struct net_context *context)

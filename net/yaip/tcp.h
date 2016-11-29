@@ -126,8 +126,11 @@ struct net_tcp {
 	/** Current sequence number. */
 	uint32_t send_seq;
 
-	/** Acknowledgment number. */
+	/** Acknowledgment number to send in next packet. */
 	uint32_t send_ack;
+
+	/** Last ACK value sent */
+	uint32_t sent_ack;
 
 	/** Max RX segment size (MSS). */
 	uint16_t recv_mss;
@@ -282,6 +285,14 @@ int tcp_send_data(struct net_context *context);
  * @return 0 if ok, < 0 if error
  */
 int tcp_queue_data(struct net_context *context, struct net_buf *buf);
+
+/**
+ * @brief Sends one TCP packet initialized with the _prepare_*()
+ *        family of functions.
+ *
+ * @param buf Packet
+ */
+int net_tcp_send_buf(struct net_buf *buf);
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);
