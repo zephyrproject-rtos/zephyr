@@ -949,7 +949,9 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 
 		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
 			NET_DBG("DAD failed for %s iface %p",
-				net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+				net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
+				net_nbuf_iface(buf));
+
 			dad_failed(net_nbuf_iface(buf),
 				   &ifaddr->address.in6_addr);
 			goto drop;
