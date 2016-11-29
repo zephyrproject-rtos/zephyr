@@ -51,7 +51,7 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
-#include <misc/__assert.h>
+#include <misc/util.h>
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
 #include <misc/sys_log.h>
 #include <board.h>
@@ -91,6 +91,8 @@
 
 #define SPI_K64_NUM_PRESCALERS	4
 #define SPI_K64_NUM_SCALERS		16
+
+#define SPI_K64_FIFO_MAX		0x40
 
 /*
  * SPI baud rate prescaler and scaler values, indexed by the clocking and timing
@@ -607,46 +609,47 @@ static int spi_k64_transceive(struct device *dev,
 	 */
 	mcr = sys_read32(info->regs + SPI_K64_REG_MCR);
 	mcr |= (SPI_K64_MCR_CLR_RXF | SPI_K64_MCR_CLR_TXF);
+
+	if (rx_buf == NULL || rx_buf_len == 0) {
+		/* Ignore incoming data */
+		mcr |= SPI_K64_MCR_ROOE;
+	} else {
+		mcr &= ~SPI_K64_MCR_ROOE;
+	}
 	sys_write32(mcr, (info->regs + SPI_K64_REG_MCR));
+
+	/* Clear all status flags */
+	sys_write32(SPI_K64_SR_TCF | SPI_K64_SR_TXRXS | SPI_K64_SR_EOQF
+		    | SPI_K64_SR_TFUF | SPI_K64_SR_TFFF
+		    | SPI_K64_SR_RFOF | SPI_K64_SR_RFDF,
+		    (info->regs + SPI_K64_REG_SR));
 
 	/* Set buffers info */
 	spi_data->tx_buf = tx_buf;
 	spi_data->tx_buf_len = tx_buf_len;
 	spi_data->rx_buf = rx_buf;
 	spi_data->rx_buf_len = rx_buf_len;
+	spi_data->xfer_len = max(tx_buf_len, rx_buf_len);
+	SYS_LOG_DBG("dev %p, number of transfers %d", dev, spi_data->xfer_len);
 
 	/* enable transfer operations - must be done before enabling interrupts */
-
 	spi_k64_start(dev);
 
-	/*
-	 * Enable interrupts:
-	 * - Transmit FIFO Fill (Tx FIFO not full); and/or
-	 * - Receive FIFO Drain (Rx FIFO not empty);
-	 *
-	 * Note: DMA requests are not supported.
-	 */
-
 	int_config = sys_read32(info->regs + SPI_K64_REG_RSER);
+	/* Enable Transmit FIFO Fill interrupt request */
+	int_config |= SPI_K64_RSER_TFFF_RE;
 
-	if (tx_buf_len) {
-
-		int_config |= SPI_K64_RSER_TFFF_RE;
-	}
-
-	if (rx_buf_len) {
-
-		int_config |= SPI_K64_RSER_RFDF_RE;
+	if (rx_buf != NULL && rx_buf_len != 0) {
+		/* Enable Receive FIFO Drain and Overflow interrupt requests */
+		int_config |= SPI_K64_RSER_RFDF_RE | SPI_K64_RSER_RFOF_RE;
 	}
 
 	sys_write32(int_config, (info->regs + SPI_K64_REG_RSER));
 
-    /* wait for transfer to complete */
-
+	/* wait for transfer to complete */
 	device_sync_call_wait(&spi_data->sync_info);
 
-    /* check completion status */
-
+	/* check completion status */
 	if (spi_data->error) {
 		spi_data->error = 0;
 		return -EIO;
@@ -664,12 +667,29 @@ static void spi_k64_push_data(struct device *dev)
 {
 	const struct spi_k64_config *info = dev->config->config_info;
 	struct spi_k64_data *spi_data = dev->driver_data;
-	uint32_t data;
+	uint32_t data = 0xff | SPI_K64_PUSHR_PCS_SET(spi_data->pcs);
+	uint32_t status;
 	DBG_COUNTER_INIT();
 
 	SYS_LOG_DBG("");
 
 	do {	/* initial status already checked by spi_k64_isr() */
+
+		/*
+		 * Check if the RX FIFO is full and leave the push loop
+		 * if necessary.
+		 */
+		if (spi_data->rx_buf != NULL) {
+			status = sys_read32(info->regs + SPI_K64_REG_SR);
+			status &= SPI_K64_SR_RXCTR_MSK;
+			if (status == SPI_K64_FIFO_MAX) {
+				break;
+			}
+		}
+
+		if (spi_data->xfer_len == 0) {
+			break;
+		}
 
 		if (spi_data->tx_buf && (spi_data->tx_buf_len > 0)) {
 
@@ -693,33 +713,18 @@ static void spi_k64_push_data(struct device *dev)
 				DBG_COUNTER_INC();
 
 			}
-
-			/* Write data to the selected slave */
-
-			if (spi_data->cont_pcs_sel && (spi_data->tx_buf_len == 0)) {
-
-				/* clear continuous PCS enabling in the last frame */
-
-				sys_write32((data | SPI_K64_PUSHR_PCS_SET(spi_data->pcs)),
-							(info->regs + SPI_K64_REG_PUSHR));
-
-			} else {
-
-				sys_write32((data | SPI_K64_PUSHR_PCS_SET(spi_data->pcs) |
-								SPI_K64_PUSHR_CONT_SET(spi_data->cont_pcs_sel)),
-							(info->regs + SPI_K64_REG_PUSHR));
-			}
-
-			/* Clear interrupt */
-
-			sys_write32(SPI_K64_SR_TFFF, (info->regs + SPI_K64_REG_SR));
-
-		} else {
-
-			/* Nothing more to push */
-
-			break;
 		}
+
+		/* Write data to the selected slave */
+		if (spi_data->cont_pcs_sel && (spi_data->xfer_len > 1)) {
+			/* set continuous PCS enabling */
+			data |= SPI_K64_PUSHR_CONT_SET(spi_data->cont_pcs_sel);
+		}
+		sys_write32(data, (info->regs + SPI_K64_REG_PUSHR));
+		spi_data->xfer_len--;
+
+		/* Clear interrupt */
+		sys_write32(SPI_K64_SR_TFFF, (info->regs + SPI_K64_REG_SR));
 
 	} while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TFFF);
 
@@ -742,37 +747,35 @@ static void spi_k64_pull_data(struct device *dev)
 
 	do {	/* initial status already checked by spi_k64_isr() */
 
-		if (spi_data->rx_buf && spi_data->rx_buf_len > 0) {
+		/*
+		 * Always drain the fifo to prevent overflow when
+		 *  rx_buf_len < tx_buf_len.
+		 */
+		data = (uint16_t)sys_read32(info->regs + SPI_K64_REG_POPR);
 
-			data = (uint16_t)sys_read32(info->regs + SPI_K64_REG_POPR);
+		/* Clear interrupt */
+		sys_write32(SPI_K64_SR_RFDF, (info->regs + SPI_K64_REG_SR));
 
-			if (spi_data->frame_sz > CHAR_BIT) {
-
-				/* store 2nd byte with frame sizes larger than 8 bits  */
-
-				*((uint16_t *)(spi_data->rx_buf)) = data;
-				spi_data->rx_buf += 2;
-				spi_data->rx_buf_len -= 2;
-				DBG_COUNTER_INC();
-				DBG_COUNTER_INC();
-
-			} else {
-
-				*(spi_data->rx_buf) = (uint8_t)data;
-				spi_data->rx_buf++;
-				spi_data->rx_buf_len--;
-				DBG_COUNTER_INC();
-			}
-
-			/* Clear interrupt */
-
-			sys_write32(SPI_K64_SR_RFDF, (info->regs + SPI_K64_REG_SR));
-
-		} else {
-
-			/* No buffer to store data to */
-
+		if (spi_data->rx_buf == NULL) {
 			break;
+		}
+
+		if ((spi_data->frame_sz > CHAR_BIT) &&
+		    (spi_data->rx_buf_len > 1)) {
+
+			/* store 2nd byte with frame sizes larger than 8 bits */
+			*((uint16_t *)(spi_data->rx_buf)) = data;
+			spi_data->rx_buf += 2;
+			spi_data->rx_buf_len -= 2;
+			DBG_COUNTER_INC();
+			DBG_COUNTER_INC();
+
+		} else if (spi_data->rx_buf_len != 0) {
+
+			*(spi_data->rx_buf) = (uint8_t)data;
+			spi_data->rx_buf++;
+			spi_data->rx_buf_len--;
+			DBG_COUNTER_INC();
 		}
 
 	} while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_RFDF);
@@ -800,58 +803,36 @@ static void spi_k64_complete(struct device *dev, uint32_t error)
 	}
 
 	/* Check for a completed transfer */
-
-	if (spi_data->tx_buf && (spi_data->tx_buf_len == 0) && !spi_data->rx_buf) {
-
-		/* disable Tx interrupts */
-
-		int_config = sys_read32(info->regs + SPI_K64_REG_RSER);
-
-		int_config &= ~SPI_K64_RSER_TFFF_RE;
-
-		sys_write32(int_config, (info->regs + SPI_K64_REG_RSER));
-
-	} else if (spi_data->rx_buf && (spi_data->rx_buf_len == 0) &&
-				!spi_data->tx_buf) {
-
-		/* disable Rx interrupts */
-
-		int_config = sys_read32(info->regs + SPI_K64_REG_RSER);
-
-		int_config &= ~SPI_K64_RSER_RFDF_RE;
-
-		sys_write32(int_config, (info->regs + SPI_K64_REG_RSER));
-
-	} else if (spi_data->tx_buf && spi_data->tx_buf_len == 0 &&
-			spi_data->rx_buf && spi_data->rx_buf_len == 0) {
-
-		/* disable Tx, Rx interrupts */
-
-		int_config = sys_read32(info->regs + SPI_K64_REG_RSER);
-
-		int_config &= ~(SPI_K64_RSER_TFFF_RE | SPI_K64_RSER_RFDF_RE);
-
-		sys_write32(int_config, (info->regs + SPI_K64_REG_RSER));
-
-	} else {
-
+	if (spi_data->xfer_len != 0) {
 		return;
 	}
+	if (spi_data->rx_buf && (spi_data->rx_buf_len != 0)) {
+		return;
+	}
+	SYS_LOG_DBG("Transfer completed, disable interrupts");
 
 complete:
 
+	/* disable all interrupts */
+	int_config = sys_read32(info->regs + SPI_K64_REG_RSER);
+	int_config &= ~(SPI_K64_RSER_TFFF_RE
+		    | SPI_K64_RSER_RFDF_RE
+		    | SPI_K64_RSER_RFOF_RE);
+	sys_write32(int_config, (info->regs + SPI_K64_REG_RSER));
+
 	spi_data->tx_buf = spi_data->rx_buf = NULL;
 	spi_data->tx_buf_len = spi_data->rx_buf_len = 0;
+	spi_data->xfer_len = 0;
 
 	/* Disable transfer operations */
 
 	spi_k64_halt(dev);
 
-    /* Save status */
+	/* Save status */
 
 	spi_data->error = error;
 
-    /* Signal completion */
+	/* Signal completion */
 
 	device_sync_call_complete(&spi_data->sync_info);
 }
@@ -867,19 +848,23 @@ void spi_k64_isr(void *arg)
 	const struct spi_k64_config *info = dev->config->config_info;
 	uint32_t error = 0;
 	uint32_t status;
+	uint32_t int_config;
 
 	status = sys_read32(info->regs + SPI_K64_REG_SR);
+	int_config = sys_read32(info->regs + SPI_K64_REG_RSER);
 
-	SYS_LOG_DBG("dev %p, status 0x%x", dev, status);
+	SYS_LOG_DBG("dev %p, SR 0x%x, RSER 0x%x", dev, status, int_config);
 
-	if (status & (SPI_K64_SR_RFOF | SPI_K64_SR_TFUF)) {
+	if (status & SPI_K64_SR_TFUF) {
+		SYS_LOG_ERR("Tx underflow\n");
+		error = 1;
 
-		/* Unrecoverable error: Rx overflow, Tx underflow */
-
+	} else if ((status & SPI_K64_SR_RFOF) &&
+		   (int_config & SPI_K64_RSER_RFOF_RE)) {
+		SYS_LOG_ERR("Rx overflow\n");
 		error = 1;
 
 	} else {
-
 		if (status & SPI_K64_SR_TFFF) {
 			spi_k64_push_data(dev);
 		}
@@ -887,11 +872,9 @@ void spi_k64_isr(void *arg)
 		if (status & SPI_K64_SR_RFDF) {
 			spi_k64_pull_data(dev);
 		}
-
 	}
 
 	/* finish processing, if data transfer is complete */
-
 	spi_k64_complete(dev, error);
 }
 
@@ -971,7 +954,7 @@ int spi_k64_init(struct device *dev)
 				SPI_K64_SR_EOQF	| SPI_K64_SR_TCF),
 				(info->regs + SPI_K64_REG_SR));
 
-    /* Set up the synchronous call mechanism */
+	/* Set up the synchronous call mechanism */
 
 	device_sync_call_init(&data->sync_info);
 
@@ -982,14 +965,6 @@ int spi_k64_init(struct device *dev)
 	spi_k64_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
 	irq_enable(info->irq);
-
-	/*
-	 * Enable Rx overflow interrupt generation.
-	 * Note that Tx underflow is only generated when in slave mode.
-	 */
-
-	SYS_LOG_DBG("rxfifo overflow enable");
-	sys_write32(SPI_K64_RSER_RFOF_RE, (info->regs + SPI_K64_REG_RSER));
 
 	SYS_LOG_DBG("K64 SPI Driver initialized on device: %p", dev);
 
