@@ -135,8 +135,11 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 
 	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_dst(orig)->addr;
 	net_nbuf_ll_src(buf)->len = net_nbuf_ll_dst(orig)->len;
-	net_nbuf_ll_dst(buf)->addr = net_nbuf_ll_src(orig)->addr;
-	net_nbuf_ll_dst(buf)->len = net_nbuf_ll_src(orig)->len;
+
+	/* We must not set the destination ll address here but trust
+	 * that it is set properly using a value from neighbor cache.
+	 */
+	net_nbuf_ll_dst(buf)->addr = NULL;
 
 	ptr = (uint8_t *)NET_ICMP_BUF(buf) + sizeof(struct net_icmp_hdr);
 	sys_put_be32(id, ptr);
