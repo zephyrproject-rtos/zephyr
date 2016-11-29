@@ -114,6 +114,9 @@ struct net_tcp {
 	/** Active close timer */
 	struct k_delayed_work fin_timer;
 
+	/** List pointer used for TCP retransmit buffering */
+	sys_slist_t sent_list;
+
 	/** Highest acknowledged number of sent segments. */
 	uint32_t recv_ack;
 
@@ -260,6 +263,25 @@ typedef void (*net_tcp_cb_t)(struct net_tcp *tcp, void *user_data);
  * @param user_data User specified data.
  */
 void net_tcp_foreach(net_tcp_cb_t cb, void *user_data);
+
+/**
+ * @brief Send available queued data over TCP connection
+ *
+ * @param context TCP context
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int tcp_send_data(struct net_context *context);
+
+/**
+ * @brief Enqueue a single packet for transmission
+ *
+ * @param context TCP context
+ * @param buf Packet
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int tcp_queue_data(struct net_context *context, struct net_buf *buf);
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);

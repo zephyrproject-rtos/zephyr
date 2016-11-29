@@ -365,7 +365,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	segment.options = options;
 	segment.optlen = optlen;
 
-	*send_buf = prepare_segment(tcp, &segment, NULL);
+	*send_buf = prepare_segment(tcp, &segment, *send_buf);
 
 	tcp->send_seq = seq;
 
@@ -548,6 +548,50 @@ const char const *net_tcp_state_str(enum net_tcp_state state)
 #endif
 
 	return "";
+}
+
+int tcp_queue_data(struct net_context *context, struct net_buf *buf)
+{
+	int ret, data_len;
+	struct net_conn *conn = (struct net_conn *)context->conn_handler;
+
+	data_len = net_buf_frags_len(buf);
+
+	/* Set PSH on all packets, our window is so small that there's
+	 * no point in the remote side trying to finesse things and
+	 * coalesce packets.
+	 */
+	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_PSH | NET_TCP_ACK,
+				      NULL, 0, &conn->remote_addr, &buf);
+	if (ret) {
+		return ret;
+	}
+
+	context->tcp->send_seq += data_len;
+
+	sys_slist_append(&context->tcp->sent_list, &buf->sent_list);
+	net_buf_ref(buf);
+
+	return 0;
+}
+
+int tcp_send_data(struct net_context *context)
+{
+	struct net_buf *buf;
+	sys_snode_t *node;
+
+	/* For now, just send all queued data synchronously.  Need to
+	 * add window handling and retry/ACK logic.
+	 */
+	SYS_SLIST_FOR_EACH_NODE(&context->tcp->sent_list, node) {
+		buf = CONTAINER_OF(node, struct net_buf, sent_list);
+		net_send_data(buf);
+		net_nbuf_unref(buf);
+	}
+
+	sys_slist_init(&context->tcp->sent_list);
+
+	return 0;
 }
 
 void net_tcp_init(void)

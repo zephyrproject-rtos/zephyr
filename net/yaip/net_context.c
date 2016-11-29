@@ -1428,23 +1428,33 @@ static int send_data(struct net_context *context,
 		     void *token,
 		     void *user_data)
 {
-	int ret;
-
 	context->send_cb = cb;
 	context->user_data = user_data;
 	net_nbuf_set_token(buf, token);
 
-	ret =  net_send_data(buf);
-
 	if (!timeout || net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		return ret;
+		return net_send_data(buf);
 	}
 
 #if defined(CONFIG_NET_TCP)
-	/* FIXME - Add TCP support here */
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		int ret = tcp_send_data(context);
+
+		/* Just make the callback synchronously even if it didn't
+		 * go over the wire.  In theory it would be nice to track
+		 * specific ACK locations in the stream and make the
+		 * callback at that time, but there's nowhere to store the
+		 * potentially-separate token/user_data values right now.
+		 */
+		if (cb) {
+			cb(context, ret, token, user_data);
+		}
+
+		return ret;
+	}
 #endif
 
-	return ret;
+	return -EPROTONOSUPPORT;
 }
 
 /* If the reserve has changed, we need to adjust it accordingly in the
@@ -1553,18 +1563,6 @@ static int create_udp_packet(struct net_context *context,
 }
 #endif /* CONFIG_NET_UDP */
 
-#if defined(CONFIG_NET_TCP)
-static int create_tcp_packet(struct net_context *context,
-			     struct net_buf *buf,
-			     const struct sockaddr *dst_addr,
-			     struct net_buf **out_buf)
-{
-	NET_ASSERT(context->tcp);
-
-	return 0;
-}
-#endif /* CONFIG_NET_TCP */
-
 static int sendto(struct net_buf *buf,
 		  const struct sockaddr *dst_addr,
 		  socklen_t addrlen,
@@ -1648,7 +1646,7 @@ static int sendto(struct net_buf *buf,
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		ret = create_tcp_packet(context, buf, dst_addr, &buf);
+		ret = tcp_queue_data(context, buf);
 	} else
 #endif /* CONFIG_NET_TCP */
 	{
