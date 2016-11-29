@@ -544,6 +544,81 @@ static bool net_test_hbho_message(void)
 	return true;
 }
 
+static bool net_test_change_ll_addr(void)
+{
+	uint8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
+	struct net_linkaddr_storage *ll;
+	struct net_linkaddr *ll_iface;
+	struct net_buf *buf, *frag;
+	struct in6_addr dst;
+	struct net_if *iface;
+	struct net_nbr *nbr;
+	uint16_t reserve;
+	uint32_t flags;
+	int ret;
+
+	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 1);
+
+	buf = net_nbuf_get_reserve_tx(0);
+
+	NET_ASSERT_INFO(buf, "Out of TX buffers");
+
+	iface = net_if_get_default();
+
+	reserve = net_if_get_ll_reserve(iface, NULL);
+
+	frag = net_nbuf_get_reserve_data(reserve);
+
+	net_buf_frag_add(buf, frag);
+
+	net_nbuf_set_ll_reserve(buf, reserve);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+
+	flags = NET_ICMPV6_NA_FLAG_ROUTER |
+		NET_ICMPV6_NA_FLAG_OVERRIDE;
+
+	ret = net_ipv6_send_na(iface, &peer_addr, &dst,
+			       &peer_addr, flags);
+	if (ret < 0) {
+		TC_ERROR("Cannot send NA 1\n");
+		return false;
+	}
+
+	nbr = net_ipv6_nbr_lookup(iface, &peer_addr);
+	ll = net_nbr_get_lladdr(nbr->idx);
+
+	ll_iface = net_if_get_link_addr(iface);
+
+	if (memcmp(ll->addr, ll_iface->addr, ll->len) != 0) {
+		TC_ERROR("Wrong link address 1\n");
+		return false;
+	}
+
+	/* As the net_ipv6_send_na() uses interface link address to
+	 * greate tllao, change the interface ll address here.
+	 */
+	ll_iface->addr = new_mac;
+
+	ret = net_ipv6_send_na(iface, &peer_addr, &dst,
+			       &peer_addr, flags);
+	if (ret < 0) {
+		TC_ERROR("Cannot send NA 2\n");
+		return false;
+	}
+
+	nbr = net_ipv6_nbr_lookup(iface, &peer_addr);
+	ll = net_nbr_get_lladdr(nbr->idx);
+
+	if (memcmp(ll->addr, ll_iface->addr, ll->len) != 0) {
+		TC_ERROR("Wrong link address 2\n");
+		return false;
+	}
+
+	return true;
+}
+
 static const struct {
 	const char *name;
 	bool (*func)(void);
@@ -557,6 +632,7 @@ static const struct {
 	{ "IPv6 send NS no options", net_test_send_ns_no_options },
 	{ "IPv6 handle RA message", net_test_ra_message },
 	{ "IPv6 parse Hop-By-Hop Option", net_test_hbho_message },
+	{ "IPv6 change ll address", net_test_change_ll_addr },
 	{ "IPv6 prefix timeout", net_test_prefix_timeout },
 	/*{ "IPv6 prefix timeout overflow", net_test_prefix_timeout_overflow },*/
 };
