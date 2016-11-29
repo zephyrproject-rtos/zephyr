@@ -312,7 +312,7 @@ static bool net_test_send_ns(void)
 			       NULL,
 			       &peer_addr,
 			       &my_addr,
-			       &my_addr,
+			       &peer_addr,
 			       false);
 	if (ret < 0) {
 		TC_ERROR("Cannot send NS (%d)\n", ret);
