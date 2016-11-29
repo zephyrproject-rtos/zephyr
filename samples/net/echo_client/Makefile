@@ -17,7 +17,6 @@
 #
 
 NET_IFACE ?= slip
-MDEF_FILE = prj.mdef
 BOARD ?= qemu_x86
 CONF_FILE ?= prj_$(NET_IFACE).conf
 
