@@ -150,6 +150,9 @@ void bt_conn_disconnect_all(void);
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
 
+/* Compare an address with bt_conn destination address */
+int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer);
+
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
  */
