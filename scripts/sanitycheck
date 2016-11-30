@@ -648,14 +648,14 @@ class MakeGenerator:
 """
 
     MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
-\t$(MAKE) -C {directory} USE_CCACHE={use_ccache} O={outdir} V={verb} EXTRA_CFLAGS="-Werror {cflags} -Wno-deprecated-declarations" EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
+\t$(MAKE) -C {directory} USE_CCACHE={use_ccache} O={outdir} V={verb} EXTRA_CFLAGS="-Werror {cflags}" EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
 """
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
 
     re_make = re.compile("sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
 
-    def __init__(self, base_outdir, asserts=False, ccache=0):
+    def __init__(self, base_outdir, asserts=False,  deprecations=False, ccache=0):
         """MakeGenerator constructor
 
         @param base_outdir Intended to be the base out directory. A make.log
@@ -670,6 +670,7 @@ class MakeGenerator:
         self.logfile = os.path.join(base_outdir, "make.log")
         self.makefile = os.path.join(base_outdir, "Makefile")
         self.asserts = asserts
+        self.deprecations = deprecations
         self.ccache = ccache
 
     def _get_rule_header(self, name):
@@ -678,10 +679,14 @@ class MakeGenerator:
     def _get_sub_make(self, name, phase, workdir, outdir, logfile, args):
         verb = "1" if VERBOSE else "0"
         args = " ".join(args)
+
         if self.asserts:
             cflags="-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
         else:
             cflags=""
+
+        if self.deprecations:
+            cflags = cflags + "  -Wno-deprecated-declarations"
         return MakeGenerator.MAKE_RULE_TMPL.format(phase=phase, goal=name, use_ccache=self.ccache,
                                                    outdir=outdir, cflags=cflags,
                                                    directory=workdir, verb=verb,
@@ -1453,7 +1458,7 @@ class TestSuite:
         for ti in ti_list:
             self.instances[ti.name] = ti
 
-    def execute(self, cb, cb_context, build_only, enable_slow, enable_asserts,
+    def execute(self, cb, cb_context, build_only, enable_slow, enable_asserts, enable_deprecations,
                 extra_args, enable_ccache):
 
         def calc_one_elf_size(name, goal):
@@ -1464,7 +1469,8 @@ class TestSuite:
                 goal.metrics["rom_size"] = sc.get_rom_size()
                 goal.metrics["unrecognized"] = sc.unrecognized_sections()
 
-        mg = MakeGenerator(self.outdir, asserts=enable_asserts, ccache=enable_ccache)
+        mg = MakeGenerator(self.outdir, asserts=enable_asserts, deprecations=enable_deprecations,
+                ccache=enable_ccache)
         for i in self.instances.values():
             mg.add_test_instance(i, build_only, enable_slow, self.coverage, extra_args)
         self.goals = mg.execute(cb, cb_context)
@@ -1683,6 +1689,8 @@ def parse_arguments():
                  "as 'slow' in testcase.ini. Normally these are only built.")
     parser.add_argument("-R", "--enable-asserts", action="store_true",
             help="Build all test cases with assertions enabled.")
+    parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
+            help="Error on deprecation warnings.")
     parser.add_argument("-x", "--extra-args", action="append", default=[],
             help="Extra arguments to pass to the build when compiling test "
                  "cases. May be called multiple times. These will be passed "
@@ -1823,11 +1831,11 @@ def main():
 
     if VERBOSE or not TERMINAL:
         goals = ts.execute(chatty_test_cb, ts.instances, args.build_only,
-                           args.enable_slow, args.enable_asserts,
+                           args.enable_slow, args.enable_asserts, args.error_on_deprecations,
                            args.extra_args, args.ccache)
     else:
         goals = ts.execute(terse_test_cb, ts.instances, args.build_only,
-                           args.enable_slow, args.enable_asserts,
+                           args.enable_slow, args.enable_asserts, args.error_on_deprecations,
                            args.extra_args, args.ccache)
         info("")
 
