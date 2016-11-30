@@ -4,6 +4,6 @@ ccflags-$(CONFIG_TI_CC2520_LEGACY) += -I${ZEPHYR_BASE}/net/ip/contiki/os
 ccflags-$(CONFIG_TI_CC2520_LEGACY) += -I${ZEPHYR_BASE}/net/ip/contiki
 ccflags-$(CONFIG_TI_CC2520_LEGACY) += -I${ZEPHYR_BASE}/net/ip
 
-ccflags-$(CONFIG_TI_CC2520_RAW) += -I${ZEPHYR_BASE}/net/yaip
+ccflags-$(CONFIG_TI_CC2520_RAW) += -I${ZEPHYR_BASE}/subsys/net/ip
 
 obj-y += wpanusb.o
