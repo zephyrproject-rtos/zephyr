@@ -317,7 +317,7 @@ int bmg160_init(struct device *dev)
 	/* reset the chip */
 	bmg160_write_byte(dev, BMG160_REG_BGW_SOFTRESET, BMG160_RESET);
 
-	sys_thread_busy_wait(1000); /* wait for the chip to come up */
+	k_busy_wait(1000); /* wait for the chip to come up */
 
 	if (bmg160_write_byte(dev, BMG160_REG_RANGE,
 			      BMG160_DEFAULT_RANGE) < 0) {

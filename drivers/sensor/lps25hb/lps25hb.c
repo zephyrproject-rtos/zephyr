@@ -118,14 +118,14 @@ static int lps25hb_init_chip(struct device *dev)
 	uint8_t chip_id;
 
 	lps25hb_power_ctrl(dev, 0);
-	sys_thread_busy_wait(50 * USEC_PER_MSEC);
+	k_busy_wait(50 * USEC_PER_MSEC);
 
 	if (lps25hb_power_ctrl(dev, 1) < 0) {
 		SYS_LOG_DBG("failed to power on device");
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(20 * USEC_PER_MSEC);
+	k_busy_wait(20 * USEC_PER_MSEC);
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LPS25HB_REG_WHO_AM_I, &chip_id) < 0) {

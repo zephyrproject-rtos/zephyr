@@ -39,7 +39,7 @@ static inline int lsm6ds0_reboot(struct device *dev)
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(50 * USEC_PER_MSEC);
+	k_busy_wait(50 * USEC_PER_MSEC);
 
 	return 0;
 }

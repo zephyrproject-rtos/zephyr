@@ -37,7 +37,7 @@ static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(AK8975_MEASURE_TIME_US);
+	k_busy_wait(AK8975_MEASURE_TIME_US);
 
 	if (i2c_burst_read(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			   AK8975_REG_DATA_START, buf, 6) < 0) {

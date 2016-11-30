@@ -42,7 +42,7 @@ static inline int lsm9ds0_mfd_reboot_memory(struct device *dev)
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(50 * USEC_PER_MSEC);
+	k_busy_wait(50 * USEC_PER_MSEC);
 
 	return 0;
 }

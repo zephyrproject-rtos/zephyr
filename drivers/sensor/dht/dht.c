@@ -73,7 +73,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 	/* send start signal */
 	gpio_pin_write(drv_data->gpio, CONFIG_DHT_GPIO_PIN_NUM, 0);
 
-	sys_thread_busy_wait(DHT_START_SIGNAL_DURATION);
+	k_busy_wait(DHT_START_SIGNAL_DURATION);
 
 	gpio_pin_write(drv_data->gpio, CONFIG_DHT_GPIO_PIN_NUM, 1);
 

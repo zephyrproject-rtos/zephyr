@@ -175,7 +175,7 @@ static int sht3xd_init(struct device *dev)
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(SHT3XD_CLEAR_STATUS_WAIT_USEC);
+	k_busy_wait(SHT3XD_CLEAR_STATUS_WAIT_USEC);
 
 	/* set periodic measurement mode */
 	if (sht3xd_write_command(drv_data,
@@ -185,7 +185,7 @@ static int sht3xd_init(struct device *dev)
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(sht3xd_measure_wait[SHT3XD_REPEATABILITY_IDX]);
+	k_busy_wait(sht3xd_measure_wait[SHT3XD_REPEATABILITY_IDX]);
 
 #ifdef CONFIG_SHT3XD_TRIGGER
 	if (sht3xd_init_interrupt(dev) < 0) {

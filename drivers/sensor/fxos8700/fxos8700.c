@@ -254,7 +254,7 @@ static int fxos8700_init(struct device *dev)
 	/* The sensor requires us to wait 1 ms after a software reset before
 	 * attempting further communications.
 	 */
-	sys_thread_busy_wait(USEC_PER_MSEC);
+	k_busy_wait(USEC_PER_MSEC);
 
 	/* Set the mode (accel-only, mag-only, or hybrid) */
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,

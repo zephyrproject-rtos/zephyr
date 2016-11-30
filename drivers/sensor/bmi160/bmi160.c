@@ -153,7 +153,7 @@ static int bmi160_pmu_set(struct device *dev, union bmi160_pmu_status *pmu_sts)
 		 * Cannot use a nano timer here since this is called from the
 		 * init function and the timeouts were not initialized yet.
 		 */
-		sys_thread_busy_wait(cmds[i].delay_us);
+		k_busy_wait(cmds[i].delay_us);
 
 		/* make sure the PMU_STATUS was set, though */
 		do {
@@ -318,7 +318,7 @@ static int bmi160_do_calibration(struct device *dev, uint8_t foc_conf)
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(250000); /* calibration takes a maximum of 250ms */
+	k_busy_wait(250000); /* calibration takes a maximum of 250ms */
 
 	return 0;
 }
@@ -851,7 +851,7 @@ int bmi160_init(struct device *dev)
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(1000);
+	k_busy_wait(1000);
 
 	/* do a dummy read from 0x7F to activate SPI */
 	if (bmi160_byte_read(dev, 0x7F, &val) < 0) {
@@ -859,7 +859,7 @@ int bmi160_init(struct device *dev)
 		return -EIO;
 	}
 
-	sys_thread_busy_wait(100);
+	k_busy_wait(100);
 
 	if (bmi160_byte_read(dev, BMI160_REG_CHIPID, &val) < 0) {
 		SYS_LOG_DBG("Failed to read chip id.");

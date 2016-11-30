@@ -323,7 +323,7 @@ static int hp206c_init(struct device *dev)
 	k_timer_init(&hp206c->tmr, NULL, NULL);
 #endif
 
-	sys_thread_busy_wait(500);
+	k_busy_wait(500);
 
 	if (hp206c_osr_set(dev, HP206C_DEFAULT_OSR) < 0) {
 		SYS_LOG_ERR("OSR value is not supported.");
