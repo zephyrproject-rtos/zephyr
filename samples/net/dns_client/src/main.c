@@ -129,11 +129,11 @@ void run_dns(void)
 #ifdef CONFIG_NET_IPV6
 		rc = dns6_resolve(ctx, addresses, &items, ARRAY_SIZE(addresses),
 				  domains[d], (struct sockaddr *)&remote_sock,
-				  APP_SLEEP_TICKS);
+				  APP_SLEEP_MSECS);
 #else
 		rc = dns4_resolve(ctx, addresses, &items, ARRAY_SIZE(addresses),
 				  domains[d], (struct sockaddr *)&remote_sock,
-				  APP_SLEEP_TICKS);
+				  APP_SLEEP_MSECS);
 #endif
 		if (rc != 0) {
 			printk("rc: %d\n", rc);
@@ -151,7 +151,7 @@ void run_dns(void)
 			printk("[%s:%d] %s\n", __func__, __LINE__, str);
 		}
 
-		fiber_sleep(APP_SLEEP_TICKS);
+		k_sleep(APP_SLEEP_MSECS);
 	}
 
 lb_exit:
@@ -163,6 +163,7 @@ lb_exit:
 void main(void)
 {
 	dns_init();
-	task_fiber_start(stack, STACK_SIZE, (nano_fiber_entry_t)run_dns,
-			 0, 0, 7, 0);
+
+	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t)run_dns,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

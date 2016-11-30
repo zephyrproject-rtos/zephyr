@@ -30,6 +30,6 @@
 #define MY_PORT			0
 #define PEER_PORT		5353
 
-#define APP_SLEEP_TICKS		500
+#define APP_SLEEP_MSECS		200
 
 #endif
