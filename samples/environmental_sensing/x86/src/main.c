@@ -139,5 +139,5 @@ void main(void)
 	ipm_register_callback(ipm, sensor_ipm_callback, NULL);
 	ipm_set_enabled(ipm, 1);
 
-	task_sleep(TICKS_UNLIMITED);
+	k_sleep(K_FOREVER);
 }

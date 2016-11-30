@@ -47,7 +47,7 @@ void helloLoop(const char *my_name,
 {
 	while (1) {
 		/* take my semaphore */
-		k_sem_take(my_sem, TICKS_UNLIMITED);
+		k_sem_take(my_sem, K_FOREVER);
 
 		/* say "hello" */
 		printk("%s: Hello World from %s!\n", my_name, CONFIG_ARCH);

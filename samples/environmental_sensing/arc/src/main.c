@@ -134,6 +134,6 @@ void main(void)
 		glcd_print(glcd, row, strlen(row));
 #endif
 
-		task_sleep(sys_clock_ticks_per_sec);
+		k_sleep(K_MSEC(100));
 	}
 }
