@@ -37,7 +37,7 @@
  * Driver for USB CDC ACM device class driver
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <init.h>
 #include <uart.h>
 #include <string.h>
@@ -747,7 +747,7 @@ static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
 
 	/* Wait for notification to be sent */
 	while (!((volatile uint8_t)dev_data->notification_sent)) {
-		sys_thread_busy_wait(1);
+		k_busy_wait(1);
 
 		if (++cnt > CDC_CONTROL_SERIAL_STATE_TIMEOUT_US) {
 			SYS_LOG_DBG("CDC ACM notification timeout!");
