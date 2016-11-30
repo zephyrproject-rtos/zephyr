@@ -23,7 +23,7 @@
  * Hooks into the printk and fputc (for printf) modules. Poll driven.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 
 #include <stdio.h>
@@ -510,7 +510,7 @@ static int uart_console_init(struct device *arg)
 			break;
 		}
 	}
-	sys_thread_busy_wait(1000000);
+	k_busy_wait(1000000);
 #endif
 
 	uart_console_hook_install();
