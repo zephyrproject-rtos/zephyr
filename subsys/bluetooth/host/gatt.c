@@ -688,6 +688,10 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 				ccc->cfg[i].valid = false;
 				memset(&ccc->cfg[i].value, 0,
 				       sizeof(ccc->cfg[i].value));
+			} else {
+				/* Update address in case it has changed */
+				bt_addr_le_copy(&ccc->cfg[i].peer,
+						&conn->le.dst);
 			}
 		}
 	}
@@ -1805,6 +1809,26 @@ static void add_subscriptions(struct bt_conn *conn)
 	}
 }
 
+static void update_subscriptions(struct bt_conn *conn)
+{
+	struct bt_gatt_subscribe_params *params, *prev;
+
+	/* Update existing subscriptions */
+	for (params = subscriptions, prev = NULL; params;
+	     prev = params, params = params->_next) {
+		if (params->_peer.type == BT_ADDR_LE_PUBLIC) {
+			continue;
+		}
+
+		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
+			continue;
+		}
+
+		/* Update address */
+		bt_addr_le_copy(&params->_peer, &conn->le.dst);
+	}
+}
+
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
 void bt_gatt_connected(struct bt_conn *conn)
@@ -1824,6 +1848,7 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 	/* If bonded don't remove subscriptions */
 	if (bt_addr_le_is_bonded(&conn->le.dst)) {
+		update_subscriptions(conn);
 		return;
 	}
 
