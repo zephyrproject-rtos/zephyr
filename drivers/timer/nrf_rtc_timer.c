@@ -122,3 +122,26 @@ uint32_t sys_cycle_get_32(void)
 	return (_sys_clock_tick_count * sys_clock_hw_cycles_per_tick) +
 	       elapsed_cycles;
 }
+
+#ifdef CONFIG_SYSTEM_CLOCK_DISABLE
+/**
+ *
+ * @brief Stop announcing ticks into the kernel
+ *
+ * This routine disables the RTC1 so that timer interrupts are no
+ * longer delivered.
+ *
+ * @return N/A
+ */
+void sys_clock_disable(void)
+{
+	irq_disable(NRF5_IRQ_RTC1_IRQn);
+
+	NRF_RTC1->TASKS_STOP = 1;
+
+	/* TODO: turn off (release) 32 KHz clock source.
+	 * Turning off of 32 KHz clock source is not implemented in clock
+	 * driver.
+	 */
+}
+#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */
