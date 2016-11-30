@@ -246,6 +246,8 @@ F:	include/drivers/mvic.h
 KERNEL CORE
 M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 M:	Allan Stephens <allan.stephens@windriver.com>
+M:	Andrew Boie <andrew.p.boie@intel.com>
+M:	Andy Ross <andrew.j.ross@intel.com>
 S:	Supported
 F:	kernel/
 F:	include/nanokernel.h
@@ -270,6 +272,8 @@ F:	include/sys_clock.h
 F:	include/sys_io.h
 F:	include/toolchain.h
 F:	include/zephyr.h
+F:	include/kernel.h
+F:	include/legacy.h
 
 KINETIS SOFTWARE DEVELOPMENT KIT (KSDK)
 M:	Maureen Helm <maureen.helm@nxp.com>
