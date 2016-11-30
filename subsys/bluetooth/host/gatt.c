@@ -290,7 +290,7 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 	size_t i;
 
 	for (i = 0; i < ccc->cfg_len; i++) {
-		if (bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->le.dst)) {
+		if (bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
 			continue;
 		}
 
@@ -347,7 +347,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Check for existing configuration */
-		if (!bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->le.dst)) {
+		if (!bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
 			break;
 		}
 	}
@@ -632,7 +632,7 @@ static uint8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Ignore configuration for different peer */
-		if (bt_addr_le_cmp(&conn->le.dst, &ccc->cfg[i].peer)) {
+		if (bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
 			continue;
 		}
 
@@ -669,7 +669,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			continue;
 		}
 
-		if (bt_addr_le_cmp(&conn->le.dst, &ccc->cfg[i].peer)) {
+		if (bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
 			struct bt_conn *tmp;
 
 			/* Skip if there is another peer connected */
@@ -744,7 +744,7 @@ static void remove_subscriptions(struct bt_conn *conn)
 	/* Lookup existing subscriptions */
 	for (params = subscriptions, prev = NULL; params;
 	     prev = params, params = params->_next) {
-		if (bt_addr_le_cmp(&params->_peer, &conn->le.dst)) {
+		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
 			continue;
 		}
 
@@ -1708,7 +1708,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		}
 
 		/* Check if another subscription exists */
-		if (!bt_addr_le_cmp(&tmp->_peer, &conn->le.dst) &&
+		if (!bt_conn_addr_le_cmp(conn, &tmp->_peer) &&
 		    tmp->value_handle == params->value_handle &&
 		    tmp->value >= params->value) {
 			has_subscription = true;
@@ -1764,7 +1764,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		}
 
 		/* Check if there still remains any other subscription */
-		if (!bt_addr_le_cmp(&tmp->_peer, &conn->le.dst) &&
+		if (!bt_conn_addr_le_cmp(conn, &tmp->_peer) &&
 		    tmp->value_handle == params->value_handle) {
 			has_subscription = true;
 		}
@@ -1793,7 +1793,7 @@ static void add_subscriptions(struct bt_conn *conn)
 	/* Lookup existing subscriptions */
 	for (params = subscriptions, prev = NULL; params;
 	     prev = params, params = params->_next) {
-		if (bt_addr_le_cmp(&params->_peer, &conn->le.dst)) {
+		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
 			continue;
 		}
 
