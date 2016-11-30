@@ -3,175 +3,98 @@
 Power Management
 ################
 
-The power management infrastructure consists of interfaces exported by the
-power management subsystem.  This subsystem exports interfaces that a
-:abbr:`Power Management Application (PMA)` uses to implement power management
-policies.
+Zephyr RTOS power management subsystem provides several means for a system
+integrator to implement power management support that can take full
+advantage of the power saving features of SOCs.
+
 
 Terminology
 ***********
 
-:dfn:`PMA`
+:dfn:`SOC interface`
+   This is a general term for the components that have knowledge of the
+   SOC and provide interfaces to the hardware features. It will abstract
+   the SOC specific implementations to the applications and the OS.
 
-   The system integrator provides the :abbr:`PMA (Power Manager
-   Application)`. The PMA maintains any power management policies and
-   executes the power management actions based on those policies.
-   The PMA must be integrated into the main Zephyr application.
+:dfn:`CPU LPS (Low Power State)`
+   Refers to any one of the low power states supported by the CPU. The CPU is
+   usually powered on while the clocks are power gated.
 
-:dfn:`LPS`
+:dfn:`Active State`
+   The CPU and clocks are powered on. This is the normal operating state when
+   the system is running.
 
-   :abbr:`LPS (Low Power States)` refers to any one of the low power states supported by the CPU.
+:dfn:`Deep Sleep State`
+   The CPU is power gated and loses context. Most peripherals would also be
+   power gated. RAM is selectively retained.
 
-:dfn:`SoC Power State`
+:dfn:`SOC Power State`
+   SOC Power State describes processor and device power states implemented at
+   the SOC level. Deep Sleep State is an example of SOC Power State.
 
-   An SoC Power State describes processor and device power statuses
-   implemented at the SoC level.
+:dfn:`Idle Thread`
+   A system thread that runs when there are no other threads ready to run.
 
-:dfn:`Hook function`
-
-   A Hook function is a callback function that one component implements and
-   another component calls. For example, the PMA implements functions that
-   the kernel calls.
-
-Architecture and SoC dependent Power States:
-============================================
-
-On x86:
--------
-
-   `Active`
-      The CPU is active and running in the hardware defined C0 C-state.
-
-   `Idle`
-      The CPU is not active but continues to be powered.
-      The CPU may be in one of any lower C-states: C1, C2, etc.
-
-   `Deep Sleep`
-      The Power is off to the processor and system clock. RAM is retained.
-
-On ARM
-------
-
-    `Active`
-        The CPU is active and running.
-
-    `Idle`
-        Stops the processor clock. The ARM documentation describes
-        this as *Sleep*.
-
-    `Deep Sleep`
-        Stops the system clock and switches off the PLL and flash
-        memory. RAM is retained.
-
-On ARC
-------
-
-    `Active`
-        The CPU is currently active and running in the SS0 state.
-
-    `Idle`
-        Defined as the SS1 and SS2 states.
-
-The power states described here are generic terms that map to the power
-states commonly supported by processors and SoCs based on the three
-architectures. When coding a PMA, please refer to the data sheet of the SoC
-to get details on each power state.
+:dfn:`Power gating`
+   Power gating reduces power consumption by shutting off current to blocks of
+   the integrated circuit that are not in use.
 
 Overview
 ********
 
-The Zephyr power management subsystem provides interfaces that a system
-integrator can use to create a PMA. The PMA then enforces any policies
-needed. The design is based on the philosophy of not enforcing any policies
-in the kernel giving full flexibility to the PMA.
+The interfaces and APIs provided by the power management subsystem
+are designed to be architecture and SOC independent. This enables power
+management implementations to be easily adapted to different SOCs and
+architectures. The kernel does not implement any power schemes of its own, giving
+the system integrator the flexibility of implementing custom power schemes.
 
-The provided infrastructure has an architecture independent interface.
-The kernel notifies the PMA when it is about to
-enter or exit a system idle state. The PMA can perform the power management
-policy operations during these notifications.
+The architecture and SOC independence is achieved by separating the core
+infrastructure and the SOC specific implementations. The SOC specific
+implementations are abstracted to the application and the OS using hardware
+abstraction layers.
 
-Policies
-********
+The power management features are classified into the following categories.
 
-When the power management subsystem notifies the PMA that the kernel is about
-to enter a system idle state, it specifies the period of time the system
-intends to stay idle. The PMA performs any power management operations during
-this time. The PMA can perform various operations. For example, put the
-processor or the SoC in a low power state, turn off some or all of the
-peripherals, and gate device clocks. Using combinations of these operations,
-the PMA can create fine grain custom power management policies.
+* Tickless Idle
+* System Power Management
+* Device Power Management
 
-Different levels of power savings and different wake latencies characterize
-these fine grain policies. In general, operations that save more power have a
-higher wake latency. When making policy decisions, the PMA chooses the
-policy that saves the most power. At the same time, the policy's total
-execution time must fit well within the idle time allotted by the power
-management subsystem.
+Tickless Idle
+*************
 
-The Zephyr power management subsystem classifies policies into categories
-based on relative power savings and the corresponding wake latencies. These
-policies also loosely map to common processor and SoC power states in the
-supported architectures. The PMA should map the fine grain custom policies to
-the policy categories of the power management subsystem. The power management
-subsystem defines three categories:
+This is the name used to identify the event-based idling mechanism of the
+Zephyr RTOS kernel scheduler. The kernel scheduler can run in two modes. During
+normal operation, when at least one thread is active, it sets up the system
+timer in periodic mode and runs in an interval-based scheduling mode. The
+interval-based mode allows it to time slice between tasks. Many times, the
+threads would be waiting on semaphores, timeouts or for events. When there
+are no threads running, it is inefficient for the kernel scheduler to run
+in interval-based mode. This is because, in this mode the timer would trigger
+an interrupt at fixed intervals causing the scheduler to be invoked at each
+interval. The scheduler checks if any thread is ready to run. If no thread
+is ready to run then it is a waste of power because of the unnecessary CPU
+processing. This is avoided by the kernel switching to event-based idling
+mode whenever there is no thread ready to run.
 
-* SYS_PM_LOW_POWER_STATE
-* SYS_PM_DEEP_SLEEP
-* SYS_PM_DEVICE_SUSPEND_ONLY
+The kernel holds an ordered list of thread timeouts in the system. These are
+the amount of time each thread has requested to wait. When the last active
+thread goes to wait, the idle thread is scheduled. The idle thread programs
+the timer to one-shot mode and programs the count to the earliest timeout
+from the ordered thread timeout list. When the timer expires, a timer event
+is generated. The ISR of this event will invoke the scheduler, which would
+schedule the thread associated with the timeout. Before scheduling the
+thread, the scheduler would switch the timer again to periodic mode. This
+method saves power because the CPU is removed from the wait only when there
+is a thread ready to run or if an external event occurred.
 
-SYS_PM_LOW_POWER_STATE
-======================
+System Power Management
+***********************
 
-In this policy category, the PMA performs power management operations on some
-or all devices and puts the processor into a low power state. The device
-power management operations can involve turning off peripherals and gating
-device clocks. When any of those operations causes the device registers to
-lose their state, then those states must be saved and restored. The PMA
-should map fine grain policies with relatively less wake latency to this
-category. Policies with larger wake latency should be mapped to the
-`SYS_PM_DEEP_SLEEP`_ category. Policies in this category exit from an
-external interrupt, a wake up event set by the PMA, or when the idle time
-alloted by the power management subsystem expires.
-
-SYS_PM_DEEP_SLEEP
-=================
-
-In this policy category, the PMA puts the system into the deep sleep power
-states supported by SoCs. In this state, the system clock is turned off. The
-processor is turned off and loses its state. RAM is expected to be retained
-and can save and restore processor states. Only the devices necessary to wake
-up the system from the deep sleep power state stay on. The SoC turns off the
-power to all other devices. Since this causes device registers to lose their
-state, they must be saved and restored. The PMA should map fine grain
-policies with the highest wake latency to this policy category. Policies in
-this category exit from SoC dependent wake events.
-
-SYS_PM_DEVICE_SUSPEND_ONLY
-==========================
-
-In this policy category, the PMA performs power management operations on some
-devices but none that result in a processor or SoC power state transition.
-The PMA should map its fine grain policies that have the lowest wake latency
-to this policy category. Policies in this category exit from an external
-interrupt or when the idle time alloted by the power management subsystem
-expires.
-
-Some policy categories names are similar to the power states of processors or
-SoCs, for example, :code:`SYS_PM_DEEP_SLEEP`. However, they must be seen
-as policy categories and do not indicate any specific processor or SoC power
-state by themselves.
-
-.. _pm_hook_infra:
-
-Power Management Hook Infrastructure
-************************************
-
-This infrastructure consists of the hook functions that the PMA implemented.
-The power management subsystem calls these hook functions when the kernel
-enters and exits the idle state, in other words, when the kernel has nothing
-to schedule. This section provides a general overview and general concepts of
-the hook functions. Refer to :ref:`power_management_api` for the detailed
-description of the APIs.
+This consists of the hook functions that the power management subsystem calls
+when the kernel enters and exits the idle state, in other words, when the kernel
+has nothing to schedule. This section provides a general overview of the hook
+functions. Refer to :ref:`power_management_api` for the detailed description of
+the APIs.
 
 Suspend Hook function
 =====================
@@ -181,39 +104,31 @@ Suspend Hook function
    int _sys_soc_suspend(int32_t ticks);
 
 When the kernel is about to go idle, the power management subsystem calls the
-:code:`_sys_soc_suspend()` function, notifying the PMA that the kernel is
-ready to enter the idle state.
+:code:`_sys_soc_suspend()` function, notifying the SOC interface that the kernel
+is ready to enter the idle state.
 
 At this point, the kernel has disabled interrupts and computed the maximum
-number of ticks the system can remain idle. The function passes the time that
-the system can remain idle to the PMA along with the notification. When
-notified, the PMA selects and executes one of the fine grain power policies
-that can be executed within the allotted time.
+time the system can remain idle. The function passes the time that
+the system can remain idle. The SOC interface performs power operations that
+can be done in the available time. The power management operation must halt
+execution on a CPU or SOC low power state. Before entering the low power state,
+the SOC interface must setup a wake event.
 
 The power management subsystem expects the :code:`_sys_soc_suspend()` to
 return one of the following values based on the power management operations
-the PMA executed:
+the SOC interface executed:
 
 :code:`SYS_PM_NOT_HANDLED`
 
-   No power management operations. Indicates that the PMA could not
-   accomplish any actions in the time allotted by the kernel.
-
-:code:`SYS_PM_DEVICE_SUSPEND_ONLY`
-
-   Only devices are suspended. Indicates that the PMA could accomplish any
-   device suspend operations. These operations do not include any processor
-   or SOC power operations.
+   Indicates that no power management operations were performed.
 
 :code:`SYS_PM_LOW_POWER_STATE`
 
-   Entered a LPS. Indicates that the PMA could put the processor into a low
-   power state.
+   Indicates that the CPU was put in a low power state.
 
 :code:`SYS_PM_DEEP_SLEEP`
 
-   Entered deep sleep. Indicates that the PMA could put the SoC in a deep
-   sleep state.
+   Indicates that the SOC was put in a deep sleep state.
 
 Resume Hook function
 ====================
@@ -222,29 +137,126 @@ Resume Hook function
 
    void _sys_soc_resume(void);
 
-The kernel calls this hook function when exiting from an idle state or a low
-power state. Based on which policy the PMA executed in the
-:code:`_sys_soc_suspend()` function, the PMA performs the necessary recovery
-operations in this hook function.
+The power management subsystem optionally calls this hook function when exiting
+kernel idling if power management operations were performed in
+:code:`_sys_soc_suspend()`. Any necessary recovery operations can be performed
+in this function before the kernel scheduler schedules another thread. Some
+power states may not need this notification. It can be disabled by calling
+:code:`_sys_soc_pm_idle_exit_notification_disable()` from
+:code:`_sys_soc_suspend()`.
 
-Since the hook functions are called with the interrupts disabled, the PMA
-should ensure that its operations are completed quickly. Thus, the PMA
-ensures that the kernel's scheduling performance is not disrupted.
+Resume From Deep Sleep Hook function
+====================================
+
+.. code-block:: c
+
+   void _sys_soc_resume_from_deep_sleep(void);
+
+This function is optionally called when exiting from deep sleep if the SOC
+interface does not have bootloader support to handle resume from deep sleep.
+This function should restore context to the point where system entered
+the deep sleep state.
+
+.. note::
+
+   Since the hook functions are called with the interrupts disabled, the SOC
+   interface should ensure that its operations are completed quickly. Thus, the
+   SOC interface ensures that the kernel's scheduling performance is not
+   disrupted.
+
+Power Schemes
+*************
+
+When the power management subsystem notifies the SOC interface that the kernel
+is about to enter a system idle state, it specifies the period of time the
+system intends to stay idle. The SOC interface can perform various power
+management operations during this time. For example, put the processor or the
+SOC in a low power state, turn off some or all of the peripherals or power gate
+device clocks.
+
+Different levels of power savings and different wake latencies characterize
+these power schemes. In general, operations that save more power have a
+higher wake latency. When making decisions, the SOC interface chooses the
+scheme that saves the most power. At the same time, the scheme's total
+execution time must fit within the idle time allotted by the power management
+subsystem.
+
+The power management subsystem classifies power management schemes
+into two categories based on whether the CPU loses execution context during the
+power state transition.
+
+* SYS_PM_LOW_POWER_STATE
+* SYS_PM_DEEP_SLEEP
+
+SYS_PM_LOW_POWER_STATE
+======================
+
+CPU does not lose execution context. Devices also do not lose power while
+entering power states in this category. The wake latencies of power states
+in this category are relatively low.
+
+SYS_PM_DEEP_SLEEP
+=================
+
+CPU is power gated and loses execution context. Execution will resume at
+OS startup code or at a resume point determined by a bootloader that supports
+deep sleep resume. Depending on the SOC's implementation of the power saving
+feature, it may turn off power to most devices. RAM may be retained by some
+implementations, while others may remove power from RAM saving considerable
+power. Power states in this category save more power than
+`SYS_PM_LOW_POWER_STATE`_ and would have higher wake latencies.
 
 Device Power Management Infrastructure
 **************************************
 
-The device power management infrastructure consists of interfaces to the Zephyr
-device model. These APIs send control commands to the device driver
+The device power management infrastructure consists of interfaces to the
+Zephyr RTOS device model. These APIs send control commands to the device driver
 to update its power state or to get its current power state.
 Refer to  :ref:`power_management_api` for detailed descriptions of the APIs.
 
+Zephyr RTOS supports two methods of doing device power management.
+
+* Distributed method
+* Central method
+
+Distributed method
+==================
+
+In this method, the application or any component that deals with devices directly
+and has the best knowledge of their use does the device power management. This
+saves power if some devices that are not in use can be turned off or put
+in power saving mode. This method allows saving power even when the CPU is
+active. The components that use the devices need to be power aware and should
+be able to make decisions related to managing device power. In this method, the
+SOC interface can enter CPU or SOC low power states quickly when
+:code:`_sys_soc_suspend()` gets called. This is because it does not need to
+spend time doing device power management if the devices are already put in
+the appropriate low power state by the application or component managing the
+devices.
+
+Central method
+==============
+
+In this method device power management is mostly done inside
+:code:`_sys_soc_suspend()` along with entering a CPU or SOC low power state.
+
+If a decision to enter deep sleep is made, the implementation would enter it
+only after checking if the devices are not in the middle of a hardware
+transaction that cannot be interrupted. This method can be used in
+implementations where the applications and components using devices are not
+expected to be power aware and do not implement device power management.
+
+This method can also be used to emulate a hardware feature supported by some
+SOCs which cause automatic entry to deep sleep when all devices are idle.
+Refer to `Busy Status Indication`_ to see how to indicate whether a device is busy
+or idle.
+
 Device Power Management States
 ==============================
-The Zephyr OS power management subsystem defines four device states.
-These states are classified based on the degree of context that gets lost in
-those states, kind of operations done to save power and the impact on the device
-behavior due to the state transition. Device context include device hardware
+The Zephyr RTOS power management subsystem defines four device states.
+These states are classified based on the degree of device context that gets lost
+in those states, kind of operations done to save power, and the impact on the
+device behavior due to the state transition. Device context includes device
 registers, clocks, memory etc.
 
 The four device power states:
@@ -271,15 +283,13 @@ The four device power states:
 Device Power Management Operations
 ==================================
 
-Zephyr OS provides a generic API function to send control commands to the driver.
-Currently the supported control commands are:
+Zephyr RTOS power management subsystem provides a control function interface
+to device drivers to indicate power management operations to perform.
+The supported PM control commands are:
 
 * DEVICE_PM_SET_POWER_STATE
 * DEVICE_PM_GET_POWER_STATE
 
-In the future Zephyr OS may support additional control commands.
-Drivers can implement the control command handler to support the device driver's
-power management functionality.
 Each device driver defines:
 
 * The device's supported power states.
@@ -299,20 +309,20 @@ Device Model with Power Management Support
 
 Drivers initialize the devices using macros. See :ref:`device_drivers` for
 details on how these macros are used. Use the DEVICE_DEFINE macro to initialize
-drivers providing power management support via the control function.
-One of the macro parameters is the pointer to the device_control handler function.
+drivers providing power management support via the PM control function.
+One of the macro parameters is the pointer to the device_pm_control handler function.
 
 Default Initializer Function
 ----------------------------
 
 .. code-block:: c
 
-   int device_control_nop(struct device *unused_device, uint32_t unused_ctrl_command, void *unused_context);
+   int device_pm_control_nop(struct device *unused_device, uint32_t unused_ctrl_command, void *unused_context);
 
 
 If the driver doesn't implement any power control operations, the driver can
 initialize the corresponding pointer with this default nop function. This
-default initializer function does nothing and should be used instead of
+default nop function does nothing and should be used instead of
 implementing a dummy function to avoid wasting code memory in the driver.
 
 
@@ -329,18 +339,14 @@ Get Device List
 
    void device_list_get(struct device **device_list, int *device_count);
 
-The Zephyr kernel internally maintains a list of all devices in the system.
-The PMA uses this API to get the device list. The PMA can use the list to
+The Zephyr RTOS kernel internally maintains a list of all devices in the system.
+The SOC interface uses this API to get the device list. The SOC interface can use the list to
 identify the devices on which to execute power management operations.
-
-The PMA can use this list to create a sorted order list based on device
-dependencies. The PMA creates device groups to execute different policies
-on each device group.
 
 .. note::
 
-   Ensure that the PMA does not alter the original list. Since the kernel
-   uses the original list, it should remain unchanged.
+   Ensure that the SOC interface does not alter the original list. Since the kernel
+   uses the original list, it must remain unchanged.
 
 Device Set Power State
 ----------------------
@@ -349,7 +355,7 @@ Device Set Power State
 
    int device_set_power_state(struct device *device, uint32_t device_power_state);
 
-Calls the :c:func:`device_control()` handler function implemented by the
+Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_SET_POWER_STATE command.
 
 Device Get Power State
@@ -359,28 +365,37 @@ Device Get Power State
 
    int device_get_power_state(struct device *device, uint32_t * device_power_state);
 
-Calls the :c:func:`device_control()` handler function implemented by the
+Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_GET_POWER_STATE command.
 
 Busy Status Indication
 ======================
 
-The PMA executes some power policies that can turn off power to devices,
+The SOC interface executes some power policies that can turn off power to devices,
 causing them to lose their state. If the devices are in the middle of some
 hardware transaction, like writing to flash memory when the power is turned
 off, then such transactions would be left in an inconsistent state. This
-infrastructure guards such transactions by indicating to the PMA that
+infrastructure guards such transactions by indicating to the SOC interface that
 the device is in the middle of a hardware transaction.
 
-When the :code:`_sys_soc_suspend()` is called, the PMA checks if any device
-is busy. The PMA can then decide to execute a policy other than deep sleep or
+When the :code:`_sys_soc_suspend()` is called, the SOC interface checks if any device
+is busy. The SOC interface can then decide to execute a power management scheme other than deep sleep or
 to defer power management operations until the next call of
 :code:`_sys_soc_suspend()`.
 
-If other recovery or retrieval methods are in place, the driver can avoid
-guarding the transactions. Not all hardware transactions must be guarded. The
-Zephyr kernel provides the following APIs for the device drivers and the PMA
-to decide whether a particular transaction must be guarded.
+An alternative to using the busy status mechanism is to use the
+`distributed method`_ of device power management. In such a method where the
+device power management is handled in a distributed manner rather than centrally in
+:code:`_sys_soc_suspend()`, the decision to enter deep sleep can be made based
+on whether all devices are already turned off.
+
+This feature can be also used to emulate a hardware feature found in some SOCs
+that causes the system to automatically enter deep sleep when all devices are idle.
+In such an usage, the busy status can be set by default and cleared as each
+device becomes idle. When :code:`_sys_soc_suspend()` is called, deep sleep can
+be entered if no device is found to be busy.
+
+Here are the APIs used to set, clear, and check the busy status of devices.
 
 Indicate Busy Status API
 ------------------------
@@ -422,8 +437,6 @@ Check Busy Status of All Devices API
 
 Checks if any device is busy. The API returns 0 if no device in the system is busy.
 
-.. _pm_config_flags:
-
 Power Management Configuration Flags
 ************************************
 
@@ -434,9 +447,13 @@ the following configuration flags.
 
    This flag enables the power management subsystem.
 
+:code:`CONFIG_TICKLESS_IDLE`
+
+   This flag enables the tickless idle power saving feature.
+
 :code:`CONFIG_SYS_POWER_LOW_POWER_STATE`
 
-   The PMA enables this flag to use the :code:`SYS_PM_LOW_POWER_STATE` policy.
+   The SOC interface enables this flag to use the :code:`SYS_PM_LOW_POWER_STATE` policy.
 
 :code:`CONFIG_SYS_POWER_DEEP_SLEEP`
 
@@ -444,155 +461,6 @@ the following configuration flags.
 
 :code:`CONFIG_DEVICE_POWER_MANAGEMENT`
 
-   This flag is enabled if the PMA and the devices support device power
+   This flag is enabled if the SOC interface and the devices support device power
    management.
 
-Writing a Power Management Application
-**************************************
-
-A typical PMA executes policies through power management APIS.  This section
-details various scenarios that can be used to help developers write their own
-custom PMAs.
-
-The PMA is part of a larger application doing more than just power
-management. This section focuses on the power management aspects of the
-application.
-
-Initial Setup
-=============
-
-To enable the power management support, the application must do the following:
-
-#. Enable the :code:`CONFIG_SYS_POWER_MANAGEMENT` flag
-
-#. Enable other required config flags described in :ref:`pm_config_flags`.
-
-#. Implement the hook functions described in :ref:`pm_hook_infra`.
-
-Device List and Policies
-========================
-
-The PMA retrieves the list of enabled devices in the system using the
-:c:func:`device_list_get()` function. Since the PMA is part of the
-application, the PMA starts after all devices in the system have been
-initialized. Thus, the list of devices will not change once the application
-has begun.
-
-Once the device list has been retrieved and stored, the PMA can form device
-groups and sorted lists based on device dependencies. The PMA uses the device
-lists and the known aggregate wake latency of the combination of power
-operations to create the fine grain custom power policies. Finally, the PMA
-maps these custom policies to the policy categories defined by the power
-management subsystem as described in `Policies`_.
-
-Scenarios During Suspend
-========================
-
-When the power management subsystem calls the :code:`_sys_soc_suspend()`
-function, the PMA can select between multiple scenarios.
-
-Scenario 1
-----------
-
-The time allotted is too short for any power management.
-
-In this case, the PMA leaves the interrupts disabled, and returns the code
-:code:`SYS_PM_NOT_HANDLED`. This actions allow the Zephyr kernel to continue
-with its normal idling process.
-
-Scenario 2
-----------
-
-The time allotted allows the suspension of some devices.
-
-The PMA scans through the devices that meet the criteria and calls the
-:c:func:`device_set_power_state()` function with DEVICE_PM_SUSPEND_STATE state
-for each device.
-
-After all devices are suspended properly, the PMA executes the following
-operations:
-
-* If the time allotted is enough for the :code:`SYS_PM_LOW_POWER_STATE`
-  policy:
-
-   #. The PMA sets up the wake event, puts the CPU in a LPS, and re- enables
-      the interrupts at the same time.
-
-   #. The PMA returns the :code:`SYS_PM_LOW_POWER_STATE` code.
-
-* If the time allotted is not enough for the :code:`SYS_PM_LOW_POWER_STATE`
-  policy, the PMA returns the :code:`SYS_PM_DEVICE_SUSPEND_ONLY` code.
-
-When a device fails to suspend, the PMA executes the following operations:
-
-* If the system integrator determined that the device is not essential to the
-  suspend process, the PMA can ignore the failure.
-
-* If the system integrator determined that the device is essential to the
-  suspend process, the PMA takes any necessary recovery actions and
-  returns the :code:`SYS_PM_NOT_HANDLED` code.
-
-Scenario 3
-----------
-
-The time allotted is enough for all devices to be suspended.
-
-The PMA calls the :c:func:`device_set_power_stated()` function with
-DEVICE_PM_SUSPEND_STATE state for each device.
-
-After all devices are suspended properly and the time allotted is enough for
-the :code:`SYS_PM_DEEP_SLEEP` policy, the PMA executes the following
-operations:
-
-#. Calls the :c:func:`device_any_busy_check()` function to get device busy
-   status. If any device is busy, the PMA must choose a policy other than
-   :code:`SYS_PM_DEEP_SLEEP`.
-#. Sets up wake event.
-#. Puts the SOC in the deep sleep state.
-#. Re-enables interrupts.
-#. Returns the :code:`SYS_PM_DEEP_SLEEP` code.
-
-If, on the other hand, the time allotted is only enough for the
-:code:`SYS_PM_LOW_POWER_STATE` policy, The PMA executes the following
-operations:
-
-#. Sets up wake event.
-#. Puts the CPU in a LPS re-enabling interrupts at the same time.
-#. Returns the :code:`SYS_PM_LOW_POWER_STATE` code.
-
-If the time allotted is not enough for any CPU or SOC power management
-operations, the PMA returns the :code:`SYS_PM_DEVICE_SUSPEND_ONLY` code.
-
-When a device fails to suspend, the PMA executes the following operations:
-
-* If the system integrator determined that the device is not essential to the
-  suspend process the PMA can ignore the failure.
-
-* If the system integrator determined that the device is essential to the
-  suspend process, the PMA takes any necessary recovery actions and
-  returns the :code:`SYS_PM_NOT_HANDLED` code.
-
-Policy Decision Summary
-=======================
-
-+---------------------------------+---------------------------------------+
-| PM operations                   | Policy and Return Code                |
-+=================================+=======================================+
-| Suspend some devices and        | :code:`SYS_PM_LOW_POWER_STATE`        |
-|                                 |                                       |
-| Enter Low Power State           |                                       |
-+---------------------------------+---------------------------------------+
-| Suspend all devices and         | :code:`SYS_PM_LOW_POWER_STATE`        |
-|                                 |                                       |
-| Enter Low Power State           |                                       |
-+---------------------------------+---------------------------------------+
-| Suspend all devices and         | :code:`SYS_PM_DEEP_SLEEP`             |
-|                                 |                                       |
-| Enter Deep Sleep                |                                       |
-+---------------------------------+---------------------------------------+
-| Suspend some or all devices and | :code:`SYS_PM_DEVICE_SUSPEND_ONLY`    |
-|                                 |                                       |
-| No CPU/SoC PM Operation         |                                       |
-+---------------------------------+---------------------------------------+
-| No PM operation                 | :code:`SYS_PM_NOT_HANDLED`            |
-+---------------------------------+---------------------------------------+
