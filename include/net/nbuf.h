@@ -84,6 +84,10 @@ struct net_nbuf {
 #if defined(CONFIG_NET_IPV6)
 	uint8_t ext_opt_len; /* IPv6 ND option length */
 #endif
+
+#if defined(CONFIG_NET_TCP)
+	bool buf_sent; /* Is this net_buf sent or not */
+#endif
 	/* @endcond */
 };
 
@@ -202,6 +206,18 @@ static inline uint8_t net_nbuf_ext_opt_len(struct net_buf *buf)
 static inline void net_nbuf_set_ext_opt_len(struct net_buf *buf, uint8_t len)
 {
 	((struct net_nbuf *)net_buf_user_data(buf))->ext_opt_len = len;
+}
+#endif
+
+#if defined(CONFIG_NET_TCP)
+static inline uint8_t net_nbuf_buf_sent(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->buf_sent;
+}
+
+static inline void net_nbuf_set_buf_sent(struct net_buf *buf, bool sent)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->buf_sent = sent;
 }
 #endif
 
