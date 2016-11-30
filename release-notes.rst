@@ -1,20 +1,24 @@
 Zephyr Kernel 1.6.0 Release Notes
 #################################
 
-We are pleased to announce the release of Zephyr kernel version 1.6.0. This release introduces
-a Unified Kernel replacing the separate nano- and micro-kernels, simplifying the overall Zephyr
-architecture and programming interfaces. This release also enables USB mass storage, increases
-board support for ARM Cortex-M0/M0+ family and includes numerous major features and bug fixes
-described below. It also adds many improvements for documentation, build infrastructure, and
-testing. The next three-month cadence release is planned for the end of February.
+We are pleased to announce the release of Zephyr kernel version 1.6.0. This
+release introduces a Unified Kernel replacing the separate nano- and
+micro-kernels, simplifying the overall Zephyr architecture and programming
+interfaces.
+In this release we added support for the ARM Cortex-M0/M0+ family and expanded
+board support for Cortex-M.
+Additionally, this release adds many improvements for documentation, build
+infrastructure, and testing.
 
 Major enhancements included with the release:
 
 * Introduced the Unified Kernel; the nano and micro kernel were removed.
-* The legacy API is still supported but deprecated. All legacy tests were moved to tests/legacy.
+* The legacy API is still supported but deprecated. All legacy tests were moved
+  to tests/legacy.
 * Added Unified Kernel documentation.
 * Added support for several ARM Cortex-M boards
-* Added support for USB mass storage access to the internal filesystem.
+* Added support for USB mass storage and access to the filesystem.
+* Added native Bluetooth Controller support. Currently nRF51 & nRF52 are supported.
 
 A detailed list of changes since v1.5.0 by component follows:
 
@@ -25,7 +29,8 @@ Kernel
 * Removed deprecated Tasks IRQs.
 * Removed deprecated dynamic interrupt API.
 * Added DLIST to operate in all elements of a doubly-linked list.
-* SLIST: Added sys_slist_get() to fetch and remove the head, also Added append_list and merge_slist.
+* SLIST: Added sys_slist_get() to fetch and remove the head, also Added
+  append_list and merge_slist.
 * Added nano_work_pending to check if it is pending execution.
 * Unified: Added support for k_malloc and k_free.
 * Renamed kernel objects event to alert and memory map to memory slab.
@@ -72,7 +77,7 @@ Drivers and Sensors
 * Ethernet: Added KSDK shim driver.
 * Flash: Added KSDK shim driver
 * I2C: Changed config parameters to SoC specific.
-* QMSI: Implemented suspend and resume functions in WDT, I2C, SPI and AONPT.
+* QMSI: Implemented suspend and resume functions QMSI shim drivers
 * Added HP206C sensor.
 * Changed config_info pointers to const.
 * Added support for SoCWatch driver.
@@ -81,7 +86,7 @@ Drivers and Sensors
 Networking
 **********
 
-* [Content: component changes]
+* Minor fixes to uIP networking stack (This will be deprecated in 1.7)
 
 Bluetooth
 *********
@@ -127,7 +132,7 @@ Libraries
 HALs
 ****
 
-* QMSI: Updated to version 1.3.
+* QMSI: Updated to version 1.3.1.
 * HAL: Imported CC3200 SDK.
 * Imported Nordic MDK nRF51 files.
 * Imported Kinetis SDK Ethernet phy driver.
