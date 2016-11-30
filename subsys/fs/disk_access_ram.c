@@ -38,7 +38,8 @@ static uint8_t ramdisk_buf[RAMDISK_VOLUME_SIZE];
 static void *lba_to_address(uint32_t lba)
 {
 	__ASSERT(((lba * RAMDISK_SECTOR_SIZE) < RAMDISK_VOLUME_SIZE),
-		"FS bound error");
+		 "FS bound error");
+
 	return &ramdisk_buf[(lba * RAMDISK_SECTOR_SIZE)];
 }
 
@@ -72,16 +73,16 @@ int disk_access_ioctl(uint8_t cmd, void *buff)
 	case DISK_IOCTL_CTRL_SYNC:
 		break;
 	case DISK_IOCTL_GET_SECTOR_COUNT:
-		*(uint32_t *) buff = RAMDISK_VOLUME_SIZE / RAMDISK_SECTOR_SIZE;
+		*(uint32_t *)buff = RAMDISK_VOLUME_SIZE / RAMDISK_SECTOR_SIZE;
 		break;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
-		*(uint32_t *) buff = RAMDISK_SECTOR_SIZE;
+		*(uint32_t *)buff = RAMDISK_SECTOR_SIZE;
 		break;
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
-		*(uint32_t *) buff  = 1;
+		*(uint32_t *)buff  = 1;
 		break;
 	case DISK_IOCTL_GET_DISK_SIZE:
-		*(uint32_t *) buff  = RAMDISK_VOLUME_SIZE;
+		*(uint32_t *)buff  = RAMDISK_VOLUME_SIZE;
 		break;
 	default:
 		return -EINVAL;

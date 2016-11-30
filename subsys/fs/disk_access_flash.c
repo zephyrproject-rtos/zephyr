@@ -43,8 +43,10 @@ static off_t lba_to_address(uint32_t sector_num)
 	off_t flash_addr;
 
 	flash_addr = CONFIG_FS_FLASH_START + sector_num * SECTOR_SIZE;
+
 	__ASSERT(flash_addr < (CONFIG_FS_FLASH_START + CONFIG_FS_VOLUME_SIZE),
 		 "FS bound error");
+
 	return flash_addr;
 }
 
@@ -72,7 +74,7 @@ int disk_access_init(void)
 }
 
 int disk_access_read(uint8_t *buff, uint32_t start_sector,
-		      uint32_t sector_count)
+		     uint32_t sector_count)
 {
 	off_t fl_addr;
 	uint32_t remaining;
@@ -104,8 +106,8 @@ int disk_access_read(uint8_t *buff, uint32_t start_sector,
 
 /* This performs read-copy into an output buffer */
 static int read_copy_flash_block(off_t start_addr, uint32_t size,
-				     const void *src_buff,
-				     uint8_t *dest_buff)
+				 const void *src_buff,
+				 uint8_t *dest_buff)
 {
 	off_t fl_addr;
 	uint32_t num_read;
@@ -124,10 +126,13 @@ static int read_copy_flash_block(off_t start_addr, uint32_t size,
 
 	/* read one block from flash */
 	for (uint32_t i = 0; i < num_read; i++) {
-		if (flash_read(flash_dev,
-			fl_addr + (CONFIG_FS_FLASH_MAX_RW_SIZE * i),
-			dest_buff + (CONFIG_FS_FLASH_MAX_RW_SIZE * i),
-			CONFIG_FS_FLASH_MAX_RW_SIZE) != 0) {
+		int rc;
+
+		rc = flash_read(flash_dev,
+				fl_addr + (CONFIG_FS_FLASH_MAX_RW_SIZE * i),
+				dest_buff + (CONFIG_FS_FLASH_MAX_RW_SIZE * i),
+				CONFIG_FS_FLASH_MAX_RW_SIZE);
+		if (rc != 0) {
 			return -EIO;
 		}
 	}
@@ -139,8 +144,7 @@ static int read_copy_flash_block(off_t start_addr, uint32_t size,
 }
 
 /* input size is either less or equal to a block size, CONFIG_FS_BLOCK_SIZE. */
-static int update_flash_block(off_t start_addr, uint32_t size,
-				  const void *buff)
+static int update_flash_block(off_t start_addr, uint32_t size, const void *buff)
 {
 	off_t fl_addr;
 	uint8_t *src = (uint8_t *)buff;
@@ -148,8 +152,10 @@ static int update_flash_block(off_t start_addr, uint32_t size,
 
 	/* if size is a partial block, perform read-copy with user data */
 	if (size < CONFIG_FS_BLOCK_SIZE) {
-		if (read_copy_flash_block(start_addr, size, buff, fs_buff) !=
-		    0) {
+		int rc;
+
+		rc = read_copy_flash_block(start_addr, size, buff, fs_buff);
+		if (rc != 0) {
 			return -EIO;
 		}
 
@@ -187,7 +193,7 @@ static int update_flash_block(off_t start_addr, uint32_t size,
 }
 
 int disk_access_write(const uint8_t *buff, uint32_t start_sector,
-		       uint32_t sector_count)
+		      uint32_t sector_count)
 {
 	off_t fl_addr;
 	uint32_t remaining;
@@ -198,12 +204,13 @@ int disk_access_write(const uint8_t *buff, uint32_t start_sector,
 
 	/* check if start address is erased-aligned address  */
 	if (fl_addr & (CONFIG_FS_FLASH_ERASE_ALIGNMENT - 1)) {
+		off_t block_bnd;
 
 		/* not aligned */
 		/* check if the size goes over flash block boundary */
-		if ((fl_addr + remaining) <
-		    ((fl_addr + CONFIG_FS_BLOCK_SIZE) &
-		     ~(CONFIG_FS_BLOCK_SIZE - 1))) {
+		block_bnd = fl_addr + CONFIG_FS_BLOCK_SIZE;
+		block_bnd = block_bnd & ~(CONFIG_FS_BLOCK_SIZE - 1);
+		if ((fl_addr + remaining) < block_bnd) {
 			/* not over block boundary (a partial block also) */
 			if (update_flash_block(fl_addr, remaining, buff) != 0) {
 				return -EIO;
@@ -226,12 +233,14 @@ int disk_access_write(const uint8_t *buff, uint32_t start_sector,
 
 	/* start is an erase-aligned address */
 	while (remaining) {
+		int rc;
+
 		if (remaining < CONFIG_FS_BLOCK_SIZE) {
 			break;
 		}
 
-		if (update_flash_block(fl_addr, CONFIG_FS_BLOCK_SIZE,
-					buff) != 0) {
+		rc = update_flash_block(fl_addr, CONFIG_FS_BLOCK_SIZE, buff);
+		if (rc != 0) {
 			return -EIO;
 		}
 
