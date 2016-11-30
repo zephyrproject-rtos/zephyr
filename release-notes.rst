@@ -13,7 +13,7 @@ Major enhancements included with the release:
 * Introduced the Unified Kernel; the nano and micro kernel were removed.
 * The legacy API is still supported but deprecated. All legacy tests were moved to tests/legacy.
 * Added Unified Kernel documentation.
-* Added support for ARM LTD Beetle SoC and V2M Beetle board.
+* Added support for several ARM Cortex-M boards
 * Added support for USB mass storage access to the internal filesystem.
 
 A detailed list of changes since v1.5.0 by component follows:
@@ -70,6 +70,7 @@ Drivers and Sensors
 * Pinmux: Removed Quark dev unused file.
 * I2C: Added KSDK shim driver.
 * Ethernet: Added KSDK shim driver.
+* Flash: Added KSDK shim driver
 * I2C: Changed config parameters to SoC specific.
 * QMSI: Implemented suspend and resume functions in WDT, I2C, SPI and AONPT.
 * Added HP206C sensor.
