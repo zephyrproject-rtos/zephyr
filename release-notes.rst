@@ -284,7 +284,7 @@ Bug
 * [ZEP-199] - Zephyr driver model is undocumented
 * [ZEP-471] - Ethernet packet with multicast address is not working
 * [ZEP-472] - Ethernet packets are getting missed if sent in quick succession.
-* [ZEP-517] - build on windows failed "zephyr/Makefile:869: *** multiple target patterns"
+* [ZEP-517] - build on windows failed "zephyr/Makefile:869: \*\*\* multiple target patterns"
 * [ZEP-528] - ARC has 2 almost identical copies of the linker script
 * [ZEP-577] - Sample application source does not compile on Windows
 * [ZEP-601] - enable CONFIG_DEBUG_INFO
@@ -308,7 +308,7 @@ Bug
 * [ZEP-1048] - grove_lcd sample: sample does not work if you disable serial
 * [ZEP-1100] - Current master still identifies itself as 1.5.0
 * [ZEP-1101] - SYS_KERNEL_VER_PATCHLEVEL() and friends artificially limit version numbers to 4 bits
-* [ZEP-1130] - region `RAM' overflowed occurs while building test_hmac_prng
+* [ZEP-1130] - region 'RAM' overflowed occurs while building test_hmac_prng
 * [ZEP-1141] - Tinycrypt SHA256 test fails with system crash using unified kernel type
 * [ZEP-1144] - Tinycrypt AES128 fixed-key with variable-text test fails using unified kernel type
 * [ZEP-1145] - system hang after tinycrypt HMAC test
