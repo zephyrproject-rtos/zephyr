@@ -55,7 +55,7 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_CDC_ACM_LEVEL
 #include <misc/sys_log.h>
 
-#define DEV_DATA(dev) \
+#define DEV_DATA(dev)						\
 	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)
 
 static struct uart_driver_api cdc_acm_driver_api;
@@ -255,19 +255,19 @@ static const uint8_t cdc_acm_usb_description[] = {
  * @return  0 on success, negative errno code on fail.
  */
 int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
-		int32_t *len, uint8_t **data)
+			     int32_t *len, uint8_t **data)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
 
 	switch (pSetup->bRequest) {
 	case CDC_SET_LINE_CODING:
 		memcpy(&dev_data->line_coding,
-		    *data, sizeof(dev_data->line_coding));
+		       *data, sizeof(dev_data->line_coding));
 		SYS_LOG_DBG("\nCDC_SET_LINE_CODING %d %d %d %d",
-		    sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
-		    dev_data->line_coding.bCharFormat,
-		    dev_data->line_coding.bParityType,
-		    dev_data->line_coding.bDataBits);
+			    sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
+			    dev_data->line_coding.bCharFormat,
+			    dev_data->line_coding.bParityType,
+			    dev_data->line_coding.bDataBits);
 		break;
 
 	case CDC_SET_CONTROL_LINE_STATE:
@@ -280,10 +280,10 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 		*data = (uint8_t *)(&dev_data->line_coding);
 		*len = sizeof(dev_data->line_coding);
 		SYS_LOG_DBG("\nCDC_GET_LINE_CODING %d %d %d %d",
-		    sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
-		    dev_data->line_coding.bCharFormat,
-		    dev_data->line_coding.bParityType,
-		    dev_data->line_coding.bDataBits);
+			    sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
+			    dev_data->line_coding.bCharFormat,
+			    dev_data->line_coding.bParityType,
+			    dev_data->line_coding.bDataBits);
 		break;
 
 	default:
@@ -310,8 +310,9 @@ static void cdc_acm_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	dev_data->tx_ready = 1;
 	k_sem_give(&poll_wait_sem);
 	/* Call callback only if tx irq ena */
-	if (dev_data->cb && dev_data->tx_irq_ena)
+	if (dev_data->cb && dev_data->tx_irq_ena) {
 		dev_data->cb(cdc_acm_dev);
+	}
 }
 
 /**
@@ -323,7 +324,7 @@ static void cdc_acm_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
  * @return  N/A.
  */
 static void cdc_acm_bulk_out(uint8_t ep,
-		enum usb_dc_ep_cb_status_code ep_status)
+			     enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
 	uint32_t bytes_to_read, i, j, buf_head;
@@ -340,6 +341,7 @@ static void cdc_acm_bulk_out(uint8_t ep,
 	 */
 	for (i = 0; i < bytes_to_read; i += 4) {
 		usb_read(ep, tmp_buf, 4, NULL);
+
 		for (j = 0; j < 4; j++) {
 			if (i + j == bytes_to_read) {
 				/* We read all the data */
@@ -360,8 +362,9 @@ static void cdc_acm_bulk_out(uint8_t ep,
 	dev_data->rx_buf_head = buf_head;
 	dev_data->rx_ready = 1;
 	/* Call callback only if rx irq ena */
-	if (dev_data->cb && dev_data->rx_irq_ena)
+	if (dev_data->cb && dev_data->rx_irq_ena) {
 		dev_data->cb(cdc_acm_dev);
+	}
 }
 
 /**
@@ -421,7 +424,7 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status)
 	default:
 		SYS_LOG_DBG("USB unknown state");
 		break;
-		}
+	}
 }
 
 /* Describe EndPoints configuration */
@@ -518,13 +521,14 @@ static int cdc_acm_init(struct device *dev)
  * @return Number of bytes sent.
  */
 static int cdc_acm_fifo_fill(struct device *dev,
-	const uint8_t *tx_data, int len)
+			     const uint8_t *tx_data, int len)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	uint32_t bytes_written = 0;
 
-	if (dev_data->usb_status != USB_DC_CONFIGURED)
+	if (dev_data->usb_status != USB_DC_CONFIGURED) {
 		return 0;
+	}
 
 	dev_data->tx_ready = 0;
 	usb_write(CDC_ENDP_IN, tx_data, len, &bytes_written);
@@ -542,24 +546,26 @@ static int cdc_acm_fifo_fill(struct device *dev,
  * @return Number of bytes read.
  */
 static int cdc_acm_fifo_read(struct device *dev, uint8_t *rx_data,
-						const int size)
+			     const int size)
 {
 	uint32_t avail_data, bytes_read, i;
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	avail_data = (CDC_ACM_BUFFER_SIZE + dev_data->rx_buf_head -
-	    dev_data->rx_buf_tail) % CDC_ACM_BUFFER_SIZE;
-	if (avail_data > size)
+		      dev_data->rx_buf_tail) % CDC_ACM_BUFFER_SIZE;
+	if (avail_data > size) {
 		bytes_read = size;
-	else
+	} else {
 		bytes_read = avail_data;
+	}
 
-	for (i = 0; i < bytes_read; i++)
+	for (i = 0; i < bytes_read; i++) {
 		rx_data[i] = dev_data->rx_buf[(dev_data->rx_buf_tail + i) %
-		    CDC_ACM_BUFFER_SIZE];
+					      CDC_ACM_BUFFER_SIZE];
+	}
 
 	dev_data->rx_buf_tail = (dev_data->rx_buf_tail + bytes_read) %
-	    CDC_ACM_BUFFER_SIZE;
+		CDC_ACM_BUFFER_SIZE;
 
 	if (dev_data->rx_buf_tail == dev_data->rx_buf_head) {
 		/* Buffer empty */
@@ -674,8 +680,9 @@ static int cdc_acm_irq_is_pending(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	if (dev_data->tx_ready || dev_data->rx_ready)
+	if (dev_data->tx_ready || dev_data->rx_ready) {
 		return 1;
+	}
 
 	return 0;
 }
@@ -701,7 +708,7 @@ static int cdc_acm_irq_update(struct device *dev)
  * @return N/A
  */
 static void cdc_acm_irq_callback_set(struct device *dev,
-							uart_irq_callback_t cb)
+				     uart_irq_callback_t cb)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -736,11 +743,12 @@ static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
 
 	dev_data->notification_sent = 0;
 	usb_write(CDC_ENDP_INT, (const uint8_t *)&notification,
-	    sizeof(notification), NULL);
+		  sizeof(notification), NULL);
 
 	/* Wait for notification to be sent */
 	while (!((volatile uint8_t)dev_data->notification_sent)) {
 		sys_thread_busy_wait(1);
+
 		if (++cnt > CDC_CONTROL_SERIAL_STATE_TIMEOUT_US) {
 			SYS_LOG_DBG("CDC ACM notification timeout!");
 			return -EIO;
@@ -760,7 +768,7 @@ static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
  * @return 0 if successful, failed otherwise.
  */
 static int cdc_acm_line_ctrl_set(struct device *dev,
-				      uint32_t ctrl, uint32_t val)
+				 uint32_t ctrl, uint32_t val)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -770,15 +778,19 @@ static int cdc_acm_line_ctrl_set(struct device *dev,
 		return 0;
 	case LINE_CTRL_DCD:
 		dev_data->serial_state &= ~CDC_CONTROL_SERIAL_STATE_DCD;
-		if (val)
+
+		if (val) {
 			dev_data->serial_state |= CDC_CONTROL_SERIAL_STATE_DCD;
+		}
 
 		cdc_acm_send_notification(dev, CDC_CONTROL_SERIAL_STATE_DCD);
 		return 0;
 	case LINE_CTRL_DSR:
 		dev_data->serial_state &= ~CDC_CONTROL_SERIAL_STATE_DSR;
-		if (val)
+
+		if (val) {
 			dev_data->serial_state |= CDC_CONTROL_SERIAL_STATE_DSR;
+		}
 
 		cdc_acm_send_notification(dev, dev_data->serial_state);
 		return 0;
@@ -799,7 +811,7 @@ static int cdc_acm_line_ctrl_set(struct device *dev,
  * @return 0 if successful, failed otherwise.
  */
 static int cdc_acm_line_ctrl_get(struct device *dev,
-				      uint32_t ctrl, uint32_t *val)
+				 uint32_t ctrl, uint32_t *val)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -808,12 +820,12 @@ static int cdc_acm_line_ctrl_get(struct device *dev,
 		*val = sys_le32_to_cpu(dev_data->line_coding.dwDTERate);
 		return 0;
 	case LINE_CTRL_RTS:
-		*val =
-		    (dev_data->line_state & CDC_CONTROL_LINE_STATE_RTS) ? 1 : 0;
+		*val = (dev_data->line_state &
+			CDC_CONTROL_LINE_STATE_RTS) ? 1 : 0;
 		return 0;
 	case LINE_CTRL_DTR:
-		*val =
-		    (dev_data->line_state & CDC_CONTROL_LINE_STATE_DTR) ? 1 : 0;
+		*val = (dev_data->line_state &
+			CDC_CONTROL_LINE_STATE_DTR) ? 1 : 0;
 		return 0;
 	}
 
@@ -844,7 +856,7 @@ static int cdc_acm_poll_in(struct device *dev, unsigned char *c)
  * @return the same character which is sent
  */
 static unsigned char cdc_acm_poll_out(struct device *dev,
-					     unsigned char c)
+				      unsigned char c)
 {
 	cdc_acm_fifo_fill(dev, &c, 1);
 	k_sem_take(&poll_wait_sem, K_MSEC(100));
@@ -878,5 +890,5 @@ static struct cdc_acm_dev_data_t cdc_acm_dev_data = {
 };
 
 DEVICE_INIT(cdc_acm, CONFIG_CDC_ACM_PORT_NAME, &cdc_acm_init,
-			&cdc_acm_dev_data, NULL,
-			APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    &cdc_acm_dev_data, NULL,
+	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
