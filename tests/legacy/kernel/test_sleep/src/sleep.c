@@ -34,7 +34,11 @@
 
 #include <util_test_common.h>
 
+#if defined(CONFIG_ASSERT) && defined(CONFIG_DEBUG)
+#define FIBER_STACKSIZE    384
+#else
 #define FIBER_STACKSIZE    256
+#endif
 
 #define TEST_FIBER_PRIORITY       4
 #define HELPER_FIBER_PRIORITY    10

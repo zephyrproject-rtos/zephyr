@@ -46,7 +46,12 @@
 
 #include <util_test_common.h>
 
+#if defined(CONFIG_ASSERT) && defined(CONFIG_DEBUG)
+#define FIBER_STACKSIZE    512
+#else
 #define FIBER_STACKSIZE    384
+#endif
+
 #define FIBER_PRIORITY     4
 
 typedef struct {
