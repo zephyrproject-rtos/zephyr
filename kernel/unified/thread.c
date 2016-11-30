@@ -221,8 +221,10 @@ static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 		start_thread(thread);
 	} else {
 		int32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
+		int key = irq_lock();
 
 		_add_thread_timeout(thread, NULL, ticks);
+		irq_unlock(key);
 	}
 #else
 	ARG_UNUSED(delay);
