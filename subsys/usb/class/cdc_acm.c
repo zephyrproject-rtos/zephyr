@@ -72,7 +72,7 @@ static struct uart_driver_api cdc_acm_driver_api;
 
 struct device *cdc_acm_dev;
 
-static struct nano_sem poll_wait_sem;
+static struct k_sem poll_wait_sem;
 
 /* Device data structure */
 struct cdc_acm_dev_data_t {
@@ -308,7 +308,7 @@ static void cdc_acm_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
 
 	dev_data->tx_ready = 1;
-	nano_sem_give(&poll_wait_sem);
+	k_sem_give(&poll_wait_sem);
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena)
 		dev_data->cb(cdc_acm_dev);
@@ -503,7 +503,7 @@ static int cdc_acm_init(struct device *dev)
 	}
 
 	dev->driver_api = &cdc_acm_driver_api;
-	nano_sem_init(&poll_wait_sem);
+	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
 
 	return 0;
 }
@@ -847,7 +847,7 @@ static unsigned char cdc_acm_poll_out(struct device *dev,
 					     unsigned char c)
 {
 	cdc_acm_fifo_fill(dev, &c, 1);
-	nano_sem_take(&poll_wait_sem, MSEC(100));
+	k_sem_take(&poll_wait_sem, K_MSEC(100));
 
 	return c;
 }
