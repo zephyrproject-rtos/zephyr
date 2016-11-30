@@ -194,7 +194,7 @@ static inline int net_tcp_unregister(struct net_conn_handle *handle)
 	return net_conn_unregister(handle);
 }
 
-const char const *net_tcp_state_str(enum net_tcp_state state);
+const char * const net_tcp_state_str(enum net_tcp_state state);
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_change_state(struct net_tcp *tcp, enum net_tcp_state new_state);
