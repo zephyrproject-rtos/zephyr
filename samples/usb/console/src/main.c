@@ -21,6 +21,6 @@ void main(void)
 {
 	while (1) {
 		printk("Hello World! %s\n", CONFIG_ARCH);
-		task_sleep(100);
+		k_sleep(K_SECONDS(1));
 	}
 }
