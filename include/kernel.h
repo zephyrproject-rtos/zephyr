@@ -1694,6 +1694,12 @@ extern void k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @param timeout Waiting period to take the semaphore (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
+ * @note When porting code from the nanokernel legacy API to the new API, be
+ * careful with the return value of this function. The return value is the
+ * reverse of the one of nano_sem_take family of APIs: 0 means success, and
+ * non-zero means failure, while the nano_sem_take family returns 1 for success
+ * and 0 for failure.
+ *
  * @retval 0 Semaphore taken.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
