@@ -1060,8 +1060,9 @@ static inline __deprecated void nano_sem_give(struct nano_sem *sem)
 static inline __deprecated int nano_sem_take(struct nano_sem *sem,
 					     int32_t timeout_in_ticks)
 {
-	return k_sem_take((struct k_sem *)sem, _ticks_to_ms(timeout_in_ticks))
-		== 0 ? 1 : 0;
+	int32_t ms = _ticks_to_ms(timeout_in_ticks);
+
+	return k_sem_take((struct k_sem *)sem, ms) == 0 ? 1 : 0;
 }
 
 /**
