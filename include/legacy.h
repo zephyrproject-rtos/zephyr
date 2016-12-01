@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <limits.h>
+#include <misc/util.h>
 #include <misc/__assert.h>
 
 /* nanokernel/microkernel execution context types */
@@ -2757,7 +2758,12 @@ static inline __deprecated void *nano_lifo_get(struct nano_lifo *lifo,
 static inline __deprecated void nano_stack_init(struct nano_stack *stack,
 						uint32_t *data)
 {
-	k_stack_init(stack, data, UINT_MAX);
+	int entries;
+
+	/* use max possible number of entries */
+	entries = min(INT_MAX, UINTPTR_MAX - (uint32_t)data) / sizeof(*data);
+
+	k_stack_init(stack, data, entries);
 }
 
 /**
