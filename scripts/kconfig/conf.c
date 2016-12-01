@@ -600,10 +600,22 @@ int main(int ac, char **av)
 		if (!name)
 			break;
 		if ((strcmp(name, "") != 0) && (strcmp(name, "1") != 0)) {
-			if (conf_read_simple(name, S_DEF_USER)) {
+			/*
+			 * "640kb ought to be enough for anybody" sic
+			 *
+			 * Limit the _name variable, as environment
+			 * wise it is not limited and this way we
+			 * ensure there can be no attacks through it.
+			 *
+			 * Coverity made me do it.
+			 */
+			char _name[256];
+
+			strncpy(_name, name, sizeof(_name));
+			if (conf_read_simple(_name, S_DEF_USER)) {
 				fprintf(stderr,
 					_("*** Can't read seed configuration \"%s\"!\n"),
-					name);
+					_name);
 				exit(1);
 			}
 			break;
