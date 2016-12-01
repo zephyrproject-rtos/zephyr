@@ -40,7 +40,7 @@
 struct ipm_dummy_driver_data ipm_dummy0_driver_data;
 DEVICE_INIT(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
 				&ipm_dummy0_driver_data, NULL,
-				SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+				POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /* Sending side of the console IPM driver, will forward anything sent
  * to printf() since we selected IPM_CONSOLE_STDOUT
@@ -51,7 +51,7 @@ static struct ipm_console_sender_config_info sender_config = {
 };
 DEVICE_INIT(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
 				NULL, &sender_config,
-				NANOKERNEL, INIT_PRIO_IPM_SEND);
+				APPLICATION, INIT_PRIO_IPM_SEND);
 
 /* Receiving side of the console IPM driver. These numbers are
  * more or less arbitrary
@@ -77,7 +77,7 @@ static struct ipm_console_receiver_config_info receiver_config = {
 struct ipm_console_receiver_runtime_data receiver_data;
 DEVICE_INIT(ipm_console_recv0, "ipm_recv0", ipm_console_receiver_init,
 				&receiver_data, &receiver_config,
-				NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+				APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static const char thestr[] = "everything is awesome\n";
 
