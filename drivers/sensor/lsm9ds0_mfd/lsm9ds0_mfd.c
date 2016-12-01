@@ -818,5 +818,5 @@ static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
 static struct lsm9ds0_mfd_data lsm9ds0_mfd_data;
 
 DEVICE_INIT(lsm9ds0_mfd, CONFIG_LSM9DS0_MFD_DEV_NAME, lsm9ds0_mfd_init,
-	    &lsm9ds0_mfd_data, &lsm9ds0_mfd_config, NANOKERNEL,
+	    &lsm9ds0_mfd_data, &lsm9ds0_mfd_config, POST_KERNEL,
 	    CONFIG_SENSOR_INIT_PRIORITY);

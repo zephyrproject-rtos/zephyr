@@ -190,5 +190,5 @@ static const struct lps25hb_config lps25hb_config = {
 static struct lps25hb_data lps25hb_data;
 
 DEVICE_INIT(lps25hb, CONFIG_LPS25HB_DEV_NAME, lps25hb_init,
-	    &lps25hb_data, &lps25hb_config, NANOKERNEL,
+	    &lps25hb_data, &lps25hb_config, POST_KERNEL,
 	    CONFIG_SENSOR_INIT_PRIORITY);
