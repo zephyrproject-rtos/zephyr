@@ -12,4 +12,22 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default 0x40034000
 
+if FLASH && SPI
+
+config SPI_FLASH_W25QXXDV
+	def_bool y
+
+config SPI_CS_GPIO
+	def_bool y
+
+config SPI_0_CS_GPIO_PIN
+	default 24
+
+config SPI_FLASH_W25QXXDV_SPI_NAME
+	default "SPI_0"
+config SPI_FLASH_W25QXXDV_SPI_SLAVE
+	default 1
+
+endif # FLASH && SPI
+
 endif # BOARD_ARDUINO_101_SSS

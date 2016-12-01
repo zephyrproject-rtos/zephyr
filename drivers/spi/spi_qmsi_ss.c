@@ -34,14 +34,14 @@ static struct ss_pending_transfer pending_transfers[2];
 
 struct ss_spi_qmsi_config {
 	qm_ss_spi_t spi;
-#ifdef CONFIG_SPI_CS_GPIO
+#ifdef CONFIG_SPI_SS_CS_GPIO
 	char *cs_port;
 	uint32_t cs_pin;
 #endif
 };
 
 struct ss_spi_qmsi_runtime {
-#ifdef CONFIG_SPI_CS_GPIO
+#ifdef CONFIG_SPI_SS_CS_GPIO
 	struct device *gpio_cs;
 #endif
 	struct k_sem device_sync_sem;
@@ -71,7 +71,7 @@ static inline qm_ss_spi_bmode_t config_to_bmode(uint8_t mode)
 	}
 }
 
-#ifdef CONFIG_SPI_CS_GPIO
+#ifdef CONFIG_SPI_SS_CS_GPIO
 static void spi_control_cs(struct device *dev, bool active)
 {
 	struct ss_spi_qmsi_runtime *context = dev->driver_data;
@@ -118,7 +118,7 @@ static void spi_qmsi_callback(void *data, int error, qm_ss_spi_status_t status,
 
 	context = dev->driver_data;
 
-#ifdef CONFIG_SPI_CS_GPIO
+#ifdef CONFIG_SPI_SS_CS_GPIO
 	spi_control_cs(dev, false);
 #endif
 
@@ -209,13 +209,13 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SPI_CS_GPIO
+#ifdef CONFIG_SPI_SS_CS_GPIO
 	spi_control_cs(dev, true);
 #endif
 
 	rc = qm_ss_spi_irq_transfer(spi_id, xfer);
 	if (rc != 0) {
-#ifdef CONFIG_SPI_CS_GPIO
+#ifdef CONFIG_SPI_SS_CS_GPIO
 		spi_control_cs(dev, false);
 #endif
 		return -EIO;
@@ -232,7 +232,7 @@ static const struct spi_driver_api ss_spi_qmsi_api = {
 	.transceive = ss_spi_qmsi_transceive,
 };
 
-#ifdef CONFIG_SPI_CS_GPIO
+#ifdef CONFIG_SPI_SS_CS_GPIO
 static struct device *gpio_cs_init(const struct ss_spi_qmsi_config *config)
 {
 	struct device *gpio;
@@ -324,39 +324,39 @@ static int ss_spi_master_qmsi_device_ctrl(struct device *port,
 #define ss_spi_master_set_power_state(...)
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-#ifdef CONFIG_SPI_0
+#ifdef CONFIG_SPI_SS_0
 static const struct ss_spi_qmsi_config spi_qmsi_mst_0_config = {
 	.spi = QM_SS_SPI_0,
-#ifdef CONFIG_SPI_CS_GPIO
-	.cs_port = CONFIG_SPI_0_CS_GPIO_PORT,
-	.cs_pin = CONFIG_SPI_0_CS_GPIO_PIN,
+#ifdef CONFIG_SPI_SS_CS_GPIO
+	.cs_port = CONFIG_SPI_SS_0_CS_GPIO_PORT,
+	.cs_pin = CONFIG_SPI_SS_0_CS_GPIO_PIN,
 #endif
 };
 
 static struct ss_spi_qmsi_runtime spi_qmsi_mst_0_runtime;
 
-DEVICE_DEFINE(ss_spi_master_0, CONFIG_SPI_0_NAME, ss_spi_qmsi_init,
+DEVICE_DEFINE(ss_spi_master_0, CONFIG_SPI_SS_0_NAME, ss_spi_qmsi_init,
 	      ss_spi_master_qmsi_device_ctrl, &spi_qmsi_mst_0_runtime,
-	      &spi_qmsi_mst_0_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
+	      &spi_qmsi_mst_0_config, POST_KERNEL, CONFIG_SPI_SS_INIT_PRIORITY,
 	      NULL);
-#endif /* CONFIG_SPI_0 */
+#endif /* CONFIG_SPI_SS_0 */
 
-#ifdef CONFIG_SPI_1
+#ifdef CONFIG_SPI_SS_1
 static const struct ss_spi_qmsi_config spi_qmsi_mst_1_config = {
 	.spi = QM_SS_SPI_1,
-#ifdef CONFIG_SPI_CS_GPIO
-	.cs_port = CONFIG_SPI_1_CS_GPIO_PORT,
-	.cs_pin = CONFIG_SPI_1_CS_GPIO_PIN,
+#ifdef CONFIG_SPI_SS_CS_GPIO
+	.cs_port = CONFIG_SPI_SS_1_CS_GPIO_PORT,
+	.cs_pin = CONFIG_SPI_SS_1_CS_GPIO_PIN,
 #endif
 };
 
 static struct ss_spi_qmsi_runtime spi_qmsi_mst_1_runtime;
 
-DEVICE_DEFINE(ss_spi_master_1, CONFIG_SPI_1_NAME, ss_spi_qmsi_init,
+DEVICE_DEFINE(ss_spi_master_1, CONFIG_SPI_SS_1_NAME, ss_spi_qmsi_init,
 	      ss_spi_master_qmsi_device_ctrl, &spi_qmsi_mst_1_runtime,
-	      &spi_qmsi_mst_1_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
+	      &spi_qmsi_mst_1_config, POST_KERNEL, CONFIG_SPI_SS_INIT_PRIORITY,
 	      NULL);
-#endif /* CONFIG_SPI_1 */
+#endif /* CONFIG_SPI_SS_1 */
 
 static void ss_spi_err_isr(void *arg)
 {
@@ -401,17 +401,17 @@ static int ss_spi_qmsi_init(struct device *dev)
 	uint32_t *scss_intmask = NULL;
 
 	switch (spi_config->spi) {
-#ifdef CONFIG_SPI_0
+#ifdef CONFIG_SPI_SS_0
 	case QM_SS_SPI_0:
-		IRQ_CONNECT(IRQ_SPI0_ERR_INT, CONFIG_SPI_0_IRQ_PRI,
+		IRQ_CONNECT(IRQ_SPI0_ERR_INT, CONFIG_SPI_SS_0_IRQ_PRI,
 			    ss_spi_err_isr, DEVICE_GET(ss_spi_master_0), 0);
 		irq_enable(IRQ_SPI0_ERR_INT);
 
-		IRQ_CONNECT(IRQ_SPI0_RX_AVAIL, CONFIG_SPI_0_IRQ_PRI,
+		IRQ_CONNECT(IRQ_SPI0_RX_AVAIL, CONFIG_SPI_SS_0_IRQ_PRI,
 			    ss_spi_rx_isr, DEVICE_GET(ss_spi_master_0), 0);
 		irq_enable(IRQ_SPI0_RX_AVAIL);
 
-		IRQ_CONNECT(IRQ_SPI0_TX_REQ, CONFIG_SPI_0_IRQ_PRI,
+		IRQ_CONNECT(IRQ_SPI0_TX_REQ, CONFIG_SPI_SS_0_IRQ_PRI,
 			    ss_spi_tx_isr, DEVICE_GET(ss_spi_master_0), 0);
 		irq_enable(IRQ_SPI0_TX_REQ);
 
@@ -425,19 +425,19 @@ static int ss_spi_qmsi_init(struct device *dev)
 		scss_intmask++;
 		*scss_intmask &= ~BIT(8);
 		break;
-#endif /* CONFIG_SPI_0 */
+#endif /* CONFIG_SPI_SS_0 */
 
-#ifdef CONFIG_SPI_1
+#ifdef CONFIG_SPI_SS_1
 	case QM_SS_SPI_1:
-		IRQ_CONNECT(IRQ_SPI1_ERR_INT, CONFIG_SPI_1_IRQ_PRI,
+		IRQ_CONNECT(IRQ_SPI1_ERR_INT, CONFIG_SPI_SS_1_IRQ_PRI,
 			    ss_spi_err_isr, DEVICE_GET(ss_spi_master_1), 0);
 		irq_enable(IRQ_SPI1_ERR_INT);
 
-		IRQ_CONNECT(IRQ_SPI1_RX_AVAIL, CONFIG_SPI_1_IRQ_PRI,
+		IRQ_CONNECT(IRQ_SPI1_RX_AVAIL, CONFIG_SPI_SS_1_IRQ_PRI,
 			    ss_spi_rx_isr, DEVICE_GET(ss_spi_master_1), 0);
 		irq_enable(IRQ_SPI1_RX_AVAIL);
 
-		IRQ_CONNECT(IRQ_SPI1_TX_REQ, CONFIG_SPI_1_IRQ_PRI,
+		IRQ_CONNECT(IRQ_SPI1_TX_REQ, CONFIG_SPI_SS_1_IRQ_PRI,
 			    ss_spi_tx_isr, DEVICE_GET(ss_spi_master_1), 0);
 		irq_enable(IRQ_SPI1_TX_REQ);
 
@@ -451,13 +451,13 @@ static int ss_spi_qmsi_init(struct device *dev)
 		scss_intmask++;
 		*scss_intmask &= ~BIT(8);
 		break;
-#endif /* CONFIG_SPI_1 */
+#endif /* CONFIG_SPI_SS_1 */
 
 	default:
 		return -EIO;
 	}
 
-#ifdef CONFIG_SPI_CS_GPIO
+#ifdef CONFIG_SPI_SS_CS_GPIO
 	context->gpio_cs = gpio_cs_init(spi_config);
 #endif
 	k_sem_init(&context->device_sync_sem, 0, UINT_MAX);

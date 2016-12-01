@@ -176,6 +176,78 @@ config SPI_2_CS_GPIO_PIN
 	depends on SPI_2 && SPI_CS_GPIO
 	default 0
 
+config SPI_SS_INIT_PRIORITY
+	int "Init priority"
+	depends on SPI_QMSI_SS
+	default 70
+	help
+	  Device driver initialization priority.
+
+config SPI_SS_CS_GPIO
+	bool "SPI port CS pin is controlled via a GPIO port"
+	depends on GPIO && SPI_QMSI_SS
+	default n
+
+config	SPI_SS_0
+	bool
+	prompt "SPI SS port 0"
+	depends on SPI_QMS_SS
+	default n
+	help
+	  Enable SPI controller port 0.
+
+config SPI_SS_0_NAME
+	string
+	prompt "SPI SS port 0 device name"
+	depends on SPI_SS_0
+	default "SPI_SS_0"
+
+config SPI_SS_0_IRQ_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_SS_0
+
+config SPI_SS_0_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_SS_0 && SPI_SS_CS_GPIO
+	default "GPIO_0"
+
+config SPI_SS_0_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_SS_0 && SPI_SS_CS_GPIO
+	default 0
+
+config SPI_SS_1
+	bool
+	prompt "SPI SS port 1"
+	depends on SPI_QMSI_SS
+	default n
+	help
+	  Enable SPI controller port 1.
+
+config SPI_SS_1_NAME
+	string
+	prompt "SPI port 1 device name"
+	depends on SPI_SS_1
+	default "SPI_SS_1"
+
+config SPI_SS_1_IRQ_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_SS_1
+
+config SPI_SS_1_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_SS_1 && SPI_SS_CS_GPIO
+	default "GPIO_0"
+
+config SPI_SS_1_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_SS_1 && SPI_SS_CS_GPIO
+	default 0
+
 source "drivers/spi/Kconfig.dw"
 
 endif # SPI

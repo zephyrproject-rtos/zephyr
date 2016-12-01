@@ -27,6 +27,7 @@
 #include "qm_spi.h"
 #include "clk.h"
 #include "qm_isr.h"
+#include "soc.h"
 
 struct pending_transfer {
 	struct device *dev;
@@ -264,22 +265,24 @@ static int spi_qmsi_init(struct device *dev)
 
 	switch (spi_config->spi) {
 	case QM_SPI_MST_0:
-		IRQ_CONNECT(QM_IRQ_SPI_MASTER_0_INT,
+		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_SPI_MASTER_0_INT),
 			    CONFIG_SPI_0_IRQ_PRI, qm_spi_master_0_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(QM_IRQ_SPI_MASTER_0_INT);
+		irq_enable(IRQ_GET_NUMBER(QM_IRQ_SPI_MASTER_0_INT));
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M0_REGISTER);
-		QM_INTERRUPT_ROUTER->spi_master_0_int_mask &= ~BIT(0);
+		QM_IR_UNMASK_INTERRUPTS(
+				QM_INTERRUPT_ROUTER->spi_master_0_int_mask);
 		break;
 
 #ifdef CONFIG_SPI_1
 	case QM_SPI_MST_1:
-		IRQ_CONNECT(QM_IRQ_SPI_MASTER_1_INT,
+		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_SPI_MASTER_1_INT),
 			    CONFIG_SPI_1_IRQ_PRI, qm_spi_master_1_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(QM_IRQ_SPI_MASTER_1_INT);
+		irq_enable(IRQ_GET_NUMBER(QM_IRQ_SPI_MASTER_1_INT));
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M1_REGISTER);
-		QM_INTERRUPT_ROUTER->spi_master_1_int_mask &= ~BIT(0);
+		QM_IR_UNMASK_INTERRUPTS(
+				QM_INTERRUPT_ROUTER->spi_master_1_int_mask);
 		break;
 #endif /* CONFIG_SPI_1 */
 
