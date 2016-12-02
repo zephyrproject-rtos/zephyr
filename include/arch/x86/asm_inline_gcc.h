@@ -82,7 +82,7 @@ static ALWAYS_INLINE void _do_irq_unlock(void)
 {
 	__asm__ volatile (
 		"sti;\n\t"
-		: :
+		: : : "memory"
 		);
 }
 
