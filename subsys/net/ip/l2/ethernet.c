@@ -59,6 +59,39 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 #define print_ll_addrs(...)
 #endif
 
+static inline void ethernet_update_length(struct net_if *iface,
+					  struct net_buf *buf)
+{
+	uint16_t len;
+
+	/* Let's check IP payload's length. If it's smaller than 46 bytes,
+	 * i.e. smaller than minimal Ethernet frame size minus ethernet
+	 * header size,then Ethernet has padded so it fits in the minimal
+	 * frame size of 60 bytes. In that case, we need to get rid of it.
+	 */
+
+	if (net_nbuf_family(buf) == AF_INET) {
+		len = ((NET_IPV4_BUF(buf)->len[0] << 8) +
+		       NET_IPV4_BUF(buf)->len[1]);
+	} else {
+		len = ((NET_IPV6_BUF(buf)->len[0] << 8) +
+		       NET_IPV6_BUF(buf)->len[1]);
+	}
+
+	if (len < NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr)) {
+		struct net_buf *frag;
+
+		for (frag = buf->frags; frag; frag = frag->frags) {
+			if (frag->len < len) {
+				len -= frag->len;
+			} else {
+				frag->len = len;
+				len = 0;
+			}
+		}
+	}
+}
+
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_buf *buf)
 {
@@ -116,6 +149,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		return net_arp_input(buf);
 	}
 #endif
+	ethernet_update_length(iface, buf);
+
 	return NET_CONTINUE;
 }
 
