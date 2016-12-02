@@ -81,7 +81,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
 	unsigned int key;
 
-	__asm__ volatile("clri %0" : "=r"(key));
+	__asm__ volatile("clri %0" : "=r"(key):: "memory");
 	return key;
 }
 
@@ -100,7 +100,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 
 static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 {
-	__asm__ volatile("seti %0" : : "ir"(key));
+	__asm__ volatile("seti %0" : : "ir"(key) : "memory");
 }
 
 #endif /* _ASMLANGUAGE */
