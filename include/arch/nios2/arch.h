@@ -94,10 +94,15 @@ typedef unsigned int vaddr_t;
 
 static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
-	unsigned int key;
+	unsigned int key, tmp;
 
-	key = _nios2_creg_read(NIOS2_CR_STATUS);
-	_nios2_creg_write(NIOS2_CR_STATUS, key & ~NIOS2_STATUS_PIE_MSK);
+	__asm__ volatile (
+	    "rdctl %[key], status\n\t"
+	    "movi %[tmp], -2\n\t"
+	    "and %[tmp], %[key], %[tmp]\n\t"
+	    "wrctl status, %[tmp]\n\t"
+	    : [key] "=r" (key), [tmp] "=r" (tmp)
+	    : : "memory");
 
 	return key;
 }
@@ -117,18 +122,20 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 		(defined ALT_CPU_EIC_PRESENT) || \
 		(defined ALT_CPU_MMU_PRESENT) || \
 		(defined ALT_CPU_MPU_PRESENT)
-	uint32_t status_reg;
-
-	/* Interrupts were already locked when irq_lock() was called,
-	 * so don't do anything
-	 */
-	if (!(key & NIOS2_STATUS_PIE_MSK))
-		return;
-
-	status_reg = _nios2_creg_read(NIOS2_CR_STATUS);
-	_nios2_creg_write(NIOS2_CR_STATUS, status_reg | NIOS2_STATUS_PIE_MSK);
+	__asm__ volatile (
+	    "andi %[key], %[key], 1\n\t"
+	    "beq %[key], zero, 1f\n\t"
+	    "rdctl %[key], status\n\t"
+	    "ori %[key], %[key], 1\n\t"
+	    "wrctl status, %[key]\n\t"
+	    "1:\n\t"
+	    : [key] "+r" (key)
+	    : : "memory");
 #else
-	_nios2_creg_write(NIOS2_CR_STATUS, key);
+	__asm__ volatile (
+	    "wrctl status, %[key]"
+	    : : [key] "r" (key)
+	    : "memory");
 #endif
 }
 
