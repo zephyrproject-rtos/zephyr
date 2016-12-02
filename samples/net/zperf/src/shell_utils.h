@@ -16,12 +16,6 @@
 #ifndef __SHELL_UTILS_H
 #define __SHELL_UTILS_H
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
-#define IP_INDEX_MAX 8
-#else
-#define IP_INDEX_MAX 4
-#endif
-
 #define IPV4_STR_LEN_MAX 15
 #define IPV4_STR_LEN_MIN 7
 
@@ -32,8 +26,6 @@ extern const char *KBPS_UNIT[];
 extern const int K[];
 extern const char *K_UNIT[];
 
-extern int parseIpString(char *str, int res[]);
-extern void print_address(int *value);
 extern void print_number(uint32_t value, const uint32_t *divisor,
 		const char **units);
 extern long parse_number(const char *string, const uint32_t *divisor,

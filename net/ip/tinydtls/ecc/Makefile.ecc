@@ -1,3 +1,0 @@
-# This is a -*- Makefile -*-
-
-ecc_src = ecc.c test_helper.c

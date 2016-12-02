@@ -15,180 +15,155 @@
  */
 
 #include <zephyr.h>
-#include <stdio.h>
+#include <iot/dns_client.h>
+#include <net/net_core.h>
+#include <net/net_if.h>
+
+#include <misc/printk.h>
 #include <string.h>
 #include <errno.h>
 
-#include "tcp_config.h"
-#include "tcp.h"
-
-#include "dns_utils.h"
-#include "dns_pack.h"
-
-#define STACK_SIZE	1024
-uint8_t stack[STACK_SIZE];
-
-#define BUF_SIZE	1024
-uint8_t tx_buf[BUF_SIZE];
-uint8_t rx_buf[BUF_SIZE];
-
-size_t tx_len;
-size_t rx_len;
-
-struct net_context *ctx;
+#include "config.h"
 
 #define RC_STR(rc)	(rc == 0 ? "OK" : "ERROR")
+#define MAX_ADDRESSES	4
+#define STACK_SIZE	2048
+uint8_t stack[STACK_SIZE];
 
+static struct net_context *ctx;
+
+#ifdef CONFIG_NET_IPV6
+	struct in6_addr local_addr = LOCAL_ADDR;
+	struct sockaddr_in6 local_sock = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(MY_PORT),
+		.sin6_addr = LOCAL_ADDR };
+	struct sockaddr_in6 remote_sock = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(PEER_PORT),
+		.sin6_addr = REMOTE_ADDR };
+	struct in6_addr addresses[MAX_ADDRESSES];
+#else
+	struct in_addr local_addr = LOCAL_ADDR;
+	struct sockaddr_in local_sock = {
+		.sin_family = AF_INET,
+		.sin_port = htons(MY_PORT),
+		.sin_addr = LOCAL_ADDR };
+	struct sockaddr_in remote_sock = {
+		.sin_family = AF_INET,
+		.sin_port = htons(PEER_PORT),
+		.sin_addr = REMOTE_ADDR };
+	struct in_addr addresses[MAX_ADDRESSES];
+#endif
+
+static char str[128];
+
+static
 char *domains[] = {"not_a_real_domain_name",
-		   "linuxfoundation.org", "www.linuxfoundation.org",
-		   "wikipedia.org", "www.wikipedia.org",
-		   "zephyrproject.org", "www.zephyrproject.org",
+		   "zephyrproject.org",
+		   "www.zephyrproject.org",
+		   "gerrit.zephyrproject.org",
+		   "jira.zephyrproject.org",
+		   "jenkins.zephyrproject.org",
+		   "linuxfoundation.org",
+		   "www.linuxfoundation.org",
+		   "collabprojects.linuxfoundation.org",
+		   "events.linuxfoundation.org",
+		   "training.linuxfoundation.org",
 		   NULL};
 
-/* this function creates the DNS query					*/
-int dns_query(uint8_t *buf, size_t *len, size_t size,
-	      char *str, uint16_t id, enum dns_rr_type qtype);
+/* from subsys/net/ip/utils.c */
+char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
+			     char *buf, int buflen);
 
-/* this function parses the DNS server response				*/
-int dns_response(uint8_t *buf, size_t size, int *response_type, int src_id);
-
-void fiber(void)
+void run_dns(void)
 {
-	int response_type;
-	int counter;
-	char *name;
+	void *p;
+	int items = 0;
 	int rc;
+	int d;
+	int i;
 
-	rc = tcp_init(&ctx);
-	if (rc != 0) {
-		printk("[%s:%d] Unable to init net_context\n",
+#ifdef CONFIG_NET_IPV6
+	p = net_if_ipv6_addr_add(net_if_get_default(), &local_addr,
+				 NET_ADDR_MANUAL, 0);
+#else
+	p = net_if_ipv4_addr_add(net_if_get_default(), &local_addr,
+				 NET_ADDR_MANUAL, 0);
+#endif
+	if (p == NULL) {
+		printk("[%s:%d] Unable to add address to network interface\n",
 		       __func__, __LINE__);
 		return;
 	}
 
-	counter = 0;
-	do {
-		printf("\n-----------------------------------------\n");
+#ifdef CONFIG_NET_IPV6
+	rc = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &ctx);
+#else
+	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &ctx);
+#endif
+	if (rc != 0) {
+		printk("[%s:%d] Cannot get network context for IPv4 UDP: %d\n",
+		       __func__, __LINE__, rc);
+		return;
+	}
 
-		name = domains[counter];
-		if (name == NULL) {
-			counter = 0;
+#ifdef CONFIG_NET_IPV6
+	rc = net_context_bind(ctx, (struct sockaddr *)&local_sock,
+			      sizeof(struct sockaddr_in6));
+#else
+	rc = net_context_bind(ctx, (struct sockaddr *)&local_sock,
+			      sizeof(struct sockaddr_in));
+#endif
+	if (rc != 0) {
+		printk("[%s:%d] Cannot bind: %d\n",
+		       __func__, __LINE__, rc);
+		goto lb_exit;
+	}
+
+	for (d = 0; domains[d] != NULL; d++) {
+
+		printk("\n -------------------------------------------\n"
+		       "[%s:%d] name: %s\n", __func__, __LINE__, domains[d]);
+
+#ifdef CONFIG_NET_IPV6
+		rc = dns6_resolve(ctx, addresses, &items, ARRAY_SIZE(addresses),
+				  domains[d], (struct sockaddr *)&remote_sock,
+				  APP_SLEEP_MSECS);
+#else
+		rc = dns4_resolve(ctx, addresses, &items, ARRAY_SIZE(addresses),
+				  domains[d], (struct sockaddr *)&remote_sock,
+				  APP_SLEEP_MSECS);
+#endif
+		if (rc != 0) {
+			printk("rc: %d\n", rc);
 			continue;
 		}
 
-		printf("Domain name: %s\n", name);
-
-		rc = dns_query(tx_buf, &tx_len, sizeof(tx_buf), name, counter,
-			       DNS_RR_TYPE_A);
-		printf("[%s:%d] DNS Query: %s, ID: %d\n",
-		       __func__, __LINE__, RC_STR(rc), counter);
-
-		rc = tcp_tx(ctx, tx_buf, tx_len);
-		printf("[%s:%d] TX: %s\n", __func__, __LINE__, RC_STR(rc));
-
-		fiber_sleep(APP_SLEEP_TICKS);
-
-		rc = tcp_rx(ctx, rx_buf, &rx_len, sizeof(rx_buf));
-		printf("[%s:%d] RX: %s\n", __func__, __LINE__, RC_STR(rc));
-
-		if (rc == 0) {
-			rc = dns_response(rx_buf, rx_len,
-					  &response_type, counter);
-			printf("[%s:%d] DNS Response: %s %s\n",
-			       __func__, __LINE__, RC_STR(rc),
-			       (rc != 0 && counter == 0 ? "<- :)" : ""));
+		for (i = 0; i < items; i++) {
+#ifdef CONFIG_NET_IPV6
+			net_sprint_ip_addr_buf(addresses[i].in6_u.u6_addr8,
+					       16, str, sizeof(str));
+#else
+			net_sprint_ip_addr_buf(addresses[i].in4_u.u4_addr8,
+					       4, str, sizeof(str));
+#endif
+			printk("[%s:%d] %s\n", __func__, __LINE__, str);
 		}
 
-		counter += 1;
-		fiber_sleep(APP_SLEEP_TICKS);
-	} while (1);
+		k_sleep(APP_SLEEP_MSECS);
+	}
 
+lb_exit:
+	net_context_put(ctx);
+	printk("\nBye!\n");
 }
+
 
 void main(void)
 {
-	net_init();
+	dns_init();
 
-	task_fiber_start(stack, STACK_SIZE, (nano_fiber_entry_t)fiber,
-			 0, 0, 7, 0);
-}
-
-/* Next versions must handle the transaction id internally		*/
-int dns_query(uint8_t *buf, size_t *len, size_t size,
-	      char *str, uint16_t id, enum dns_rr_type qtype)
-{
-	return dns_msg_pack_query(buf, len, size, str, id, qtype);
-}
-
-/* See dns_unpack_answer, and also see:
- * https://tools.ietf.org/html/rfc1035#section-4.1.2
- */
-#define DNS_QUERY_POS	0x0c
-
-int dns_response(uint8_t *buf, size_t size, int *response_type, int src_id)
-{
-	struct dns_msg_t dns_msg = DNS_MSG_INIT(buf, size);
-	int ptr;
-	int rc;
-	int i;
-
-	rc = dns_unpack_response_header(&dns_msg, src_id);
-	if (rc != 0) {
-		return -EINVAL;
-	}
-
-	if (dns_header_qdcount(dns_msg.msg) != 1) {
-		return -EINVAL;
-	}
-
-	rc = dns_unpack_response_query(&dns_msg);
-	if (rc != 0) {
-		return -EINVAL;
-	}
-
-	i = 0;
-	ptr = DNS_QUERY_POS;
-	while (i < dns_header_ancount(dns_msg.msg)) {
-
-		printf("\n****** DNS ANSWER: %d ******\n", i);
-
-		rc = dns_unpack_answer(&dns_msg, ptr);
-		if (rc != 0) {
-			return -EINVAL;
-		}
-
-		switch (dns_msg.response_type) {
-		case DNS_RESPONSE_IP:
-			printf("Response: IP address\t\tSize: %d:\t",
-			       dns_msg.response_length);
-			print_buf(dns_msg.msg + dns_msg.response_position,
-				  dns_msg.response_length);
-			printf("\n");
-			break;
-
-		case DNS_RESPONSE_CNAME_NO_IP:
-			printf("Response: CNAME NO IP address");
-			printf("\nCNAME: ");
-			dns_print_readable_msg_label(dns_msg.response_position,
-						     dns_msg.msg,
-						     dns_msg.msg_size);
-			printf("\n");
-			ptr = dns_msg.response_position;
-
-			break;
-
-		case DNS_RESPONSE_CNAME_WITH_IP:
-			printf("Response: CNAME WITH IP addr\t\tSize: %d:\t",
-			       dns_msg.response_length);
-			break;
-		}
-
-		dns_msg.answer_offset = dns_msg.answer_offset + 12 +
-					dns_msg.response_length;
-		++i;
-	}
-
-	*response_type = dns_msg.response_type;
-
-	return 0;
+	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t)run_dns,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

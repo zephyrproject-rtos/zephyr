@@ -20,3 +20,5 @@ source "subsys/fs/Kconfig"
 source "subsys/usb/Kconfig"
 
 source "subsys/bluetooth/Kconfig"
+
+source "subsys/net/Kconfig"

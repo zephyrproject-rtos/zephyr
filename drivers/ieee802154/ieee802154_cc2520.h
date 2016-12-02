@@ -19,15 +19,11 @@
 #ifndef __IEEE802154_CC2520_H__
 #define __IEEE802154_CC2520_H__
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_TI_CC2520_LEVEL
-#define SYS_LOG_NO_NEWLINE
-#include <misc/sys_log.h>
-
 #include <sections.h>
 #include <atomic.h>
 #include <spi.h>
 
-#define CONFIG_CC2520_RX_STACK_SIZE CONFIG_TI_CC2520_FIBER_STACK_SIZE
+#include <ieee802154/cc2520.h>
 
 /* Runtime context structure
  ***************************
@@ -43,22 +39,22 @@ struct cc2520_spi {
 };
 
 struct cc2520_context {
+	struct net_if *iface;
 	/**************************/
-	struct device **gpios;
+	struct cc2520_gpio_configuration *gpios;
 	struct gpio_callback sfd_cb;
 	struct gpio_callback fifop_cb;
 	struct cc2520_spi spi;
 	uint8_t mac_addr[8];
 	/************TX************/
-	device_sync_call_t tx_sync;
+	struct k_sem tx_sync;
 	atomic_t tx;
 	/************RX************/
-	char __stack cc2520_rx_stack[CONFIG_CC2520_RX_STACK_SIZE];
-	struct nano_sem rx_lock;
+	char __stack cc2520_rx_stack[CONFIG_TI_CC2520_RX_STACK_SIZE];
+	struct k_sem rx_lock;
 	bool overflow;
+	uint8_t lqi;
 };
-
-extern struct device **cc2520_configure_gpios(void);
 
 #include "ieee802154_cc2520_regs.h"
 
@@ -184,7 +180,7 @@ static inline bool _cc2520_command_strobe_snop(struct cc2520_spi *spi,
 		return _cc2520_command_strobe(spi, __ins);		\
 	}
 
-#define DEFINE_STROBE_SNOP_INSTRUCTION(__ins_name, __ins)			\
+#define DEFINE_STROBE_SNOP_INSTRUCTION(__ins_name, __ins)		\
 	static inline bool instruct_##__ins_name(struct cc2520_spi *spi) \
 	{								\
 		return _cc2520_command_strobe_snop(spi, __ins);		\

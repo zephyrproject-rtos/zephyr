@@ -27,8 +27,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include <contiki/ip/uip.h>
-
 #include <misc/slist.h>
 
 /**
@@ -134,6 +132,7 @@ enum zoap_response_code {
 	ZOAP_RESPONSE_CODE_INCOMPLETE = zoap_make_response_code(4, 8),
 	ZOAP_RESPONSE_CODE_PRECONDITION_FAILED = zoap_make_response_code(4, 12),
 	ZOAP_RESPONSE_CODE_REQUEST_TOO_LARGE = zoap_make_response_code(4, 13),
+	ZOAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT = zoap_make_response_code(4, 15),
 	ZOAP_RESPONSE_CODE_INTERNAL_ERROR = zoap_make_response_code(5, 0),
 	ZOAP_RESPONSE_CODE_NOT_IMPLEMENTED = zoap_make_response_code(5, 1),
 	ZOAP_RESPONSE_CODE_BAD_GATEWAY = zoap_make_response_code(5, 2),
@@ -156,8 +155,7 @@ struct zoap_resource;
  */
 typedef int (*zoap_method_t)(struct zoap_resource *resource,
 			     struct zoap_packet *request,
-			     const uip_ipaddr_t *addr,
-			     uint16_t port);
+			     const struct sockaddr *from);
 
 /**
  * Type of the callback being called when a resource's has observers to be
@@ -186,8 +184,7 @@ struct zoap_resource {
  */
 struct zoap_observer {
 	sys_snode_t list;
-	uip_ipaddr_t addr;
-	uint16_t port;
+	struct sockaddr addr;
 	uint8_t token[8];
 	uint8_t tkl;
 };
@@ -206,15 +203,14 @@ struct zoap_packet {
  */
 typedef int (*zoap_reply_t)(const struct zoap_packet *response,
 			    struct zoap_reply *reply,
-			    const uip_ipaddr_t *addr,
-			    uint16_t port);
+			    const struct sockaddr *from);
 
 /**
  * Represents a request awaiting for an acknowledgment (ACK).
  */
 struct zoap_pending {
 	struct zoap_packet request;
-	uint16_t timeout;
+	int32_t timeout;
 };
 
 /**
@@ -235,8 +231,7 @@ struct zoap_reply {
  */
 void zoap_observer_init(struct zoap_observer *observer,
 			const struct zoap_packet *request,
-			const uip_ipaddr_t *addr,
-			uint16_t port);
+			const struct sockaddr *addr);
 
 /**
  * After the observer is initialized, associate the observer with an resource.
@@ -322,7 +317,7 @@ struct zoap_pending *zoap_pending_received(
  */
 struct zoap_reply *zoap_response_received(
 	const struct zoap_packet *response,
-	const uip_ipaddr_t *addr, uint16_t port,
+	const struct sockaddr *from,
 	struct zoap_reply *replies, size_t len);
 
 /**
@@ -355,7 +350,7 @@ void zoap_reply_clear(struct zoap_reply *reply);
  */
 int zoap_handle_request(struct zoap_packet *pkt,
 			struct zoap_resource *resources,
-			const uip_ipaddr_t *addr, uint16_t port);
+			const struct sockaddr *from);
 
 /**
  * Indicates that this resource was updated and that the @a notify callback
@@ -374,6 +369,12 @@ bool zoap_request_is_observe(const struct zoap_packet *request);
  * COAP_MARKER (0xFF).
  */
 uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len);
+
+/**
+ * Returns the internal buffer of the CoAP packet, appending the
+ * COAP_MARKER to the buffer if necessary.
+ */
+struct net_buf *zoap_packet_get_buf(struct zoap_packet *pkt);
 
 /**
  * Sets how much space was used by the payload.
@@ -547,5 +548,11 @@ static inline uint16_t zoap_next_id(void)
 
 	return ++message_id;
 }
+
+/**
+ * Returns a randomly generated array of 8 bytes, that can be used as a
+ * message's token.
+ */
+uint8_t *zoap_next_token(void);
 
 #endif /* __ZOAP_H__ */

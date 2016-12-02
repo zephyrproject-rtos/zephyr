@@ -314,7 +314,7 @@ static struct eth_runtime eth_0_runtime = {
 
 DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME, eth_initialize,
 				&eth_0_runtime, &eth_config_0,
-				NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+				NANOKERNEL, CONFIG_ETH_INIT_PRIORITY);
 
 static int eth_net_tx(struct net_buf *buf)
 {
