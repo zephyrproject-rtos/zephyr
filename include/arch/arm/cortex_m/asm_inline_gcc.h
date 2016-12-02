@@ -129,8 +129,8 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 	unsigned int key;
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
-	__asm__ volatile("mrs %0, PRIMASK;\n\t"
-		"cpsid i;\n\t"
+	__asm__ volatile("mrs %0, PRIMASK;"
+		"cpsid i"
 		: "=r" (key)
 		:
 		: "memory");
@@ -138,9 +138,9 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 	unsigned int tmp;
 
 	__asm__ volatile(
-		"mov %1, %2;\n\t"
-		"mrs %0, BASEPRI;\n\t"
-		"msr BASEPRI, %1;\n\t"
+		"mov %1, %2;"
+		"mrs %0, BASEPRI;"
+		"msr BASEPRI, %1"
 		: "=r"(key), "=r"(tmp)
 		: "i"(_EXC_IRQ_DEFAULT_PRIO)
 		: "memory");
@@ -175,9 +175,9 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 	if (key) {
 		return;
 	}
-	__asm__ volatile("cpsie i;\n\t" : : : "memory");
+	__asm__ volatile("cpsie i" : : : "memory");
 #else /* CONFIG_CPU_CORTEX_M3_M4 */
-	__asm__ volatile("msr BASEPRI, %0;\n\t" :  : "r"(key) : "memory");
+	__asm__ volatile("msr BASEPRI, %0" :  : "r"(key) : "memory");
 #endif
 }
 
