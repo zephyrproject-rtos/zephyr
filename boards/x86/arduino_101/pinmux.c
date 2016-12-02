@@ -171,6 +171,8 @@ static inline void _pinmux_pullups(uint32_t base_address)
 
 static int pinmux_initialize(struct device *port)
 {
+	ARG_UNUSED(port);
+
 	_pinmux_defaults(PINMUX_BASE_ADDR);
 	_pinmux_pullups(PINMUX_BASE_ADDR);
 

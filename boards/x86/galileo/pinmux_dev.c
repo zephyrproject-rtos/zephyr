@@ -93,6 +93,8 @@ static struct pinmux_driver_api api_funcs = {
 
 static int pinmux_dev_galileo_initialize(struct device *port)
 {
+	ARG_UNUSED(port);
+
 	return 0;
 }
 
