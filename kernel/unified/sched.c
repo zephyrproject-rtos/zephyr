@@ -295,6 +295,12 @@ void k_yield(void)
 
 void k_sleep(int32_t duration)
 {
+	/* volatile to guarantee that irq_lock() is executed after ticks is
+	 * populated
+	 */
+	volatile int32_t ticks;
+	unsigned int key;
+
 	__ASSERT(!_is_in_isr(), "");
 	__ASSERT(duration != K_FOREVER, "");
 
@@ -306,8 +312,8 @@ void k_sleep(int32_t duration)
 		return;
 	}
 
-	int32_t ticks = _TICK_ALIGN + _ms_to_ticks(duration);
-	int key = irq_lock();
+	ticks = _TICK_ALIGN + _ms_to_ticks(duration);
+	key = irq_lock();
 
 	_remove_thread_from_ready_q(_current);
 	_add_thread_timeout(_current, NULL, ticks);
