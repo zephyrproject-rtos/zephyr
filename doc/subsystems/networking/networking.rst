@@ -43,9 +43,8 @@ Source tree layout
 
 The IP stack source code tree is organized as follows:
 
-``net/ip/``
-  The core stack itself. This is where the Contiki uIP stack code
-  is located.
+``subsys/net/ip/``
+  This is where the IP stack code is located.
 
 ``include/net/``
   Public API header files. These are the header files applications need
