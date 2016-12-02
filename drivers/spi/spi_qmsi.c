@@ -229,8 +229,13 @@ static struct device *gpio_cs_init(const struct spi_qmsi_config *config)
 	if (!gpio)
 		return NULL;
 
-	gpio_pin_configure(gpio, config->cs_pin, GPIO_DIR_OUT);
-	gpio_pin_write(gpio, config->cs_pin, 1);
+	if (gpio_pin_configure(gpio, config->cs_pin, GPIO_DIR_OUT) != 0) {
+		return NULL;
+	}
+
+	if (gpio_pin_write(gpio, config->cs_pin, 1) != 0) {
+		return NULL;
+	}
 
 	return gpio;
 }
