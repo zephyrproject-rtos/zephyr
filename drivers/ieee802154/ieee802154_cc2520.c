@@ -17,7 +17,6 @@
  */
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_TI_CC2520_LEVEL
-#define SYS_LOG_NO_NEWLINE
 #define SYS_LOG_DOMAIN "dev/cc2520"
 #include <misc/sys_log.h>
 
@@ -62,118 +61,144 @@
 /*********
  * DEBUG *
  ********/
-#ifndef CONFIG_TI_CC2520_DEBUG
-#define _cc2520_print_gpio_config(...)
-#define _cc2520_print_exceptions(...)
-#define _cc2520_print_errors(...)
-#else
+#if CONFIG_SYS_LOG_TI_CC2520_LEVEL == 4
 static inline void _cc2520_print_gpio_config(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("GPIOCTRL0/1/2/3/4/5 = 0x%x/0x%x/0x%x/0x%x/0x%x/0x%x\n",
-	    read_reg_gpioctrl0(&cc2520->spi),
-	    read_reg_gpioctrl1(&cc2520->spi),
-	    read_reg_gpioctrl2(&cc2520->spi),
-	    read_reg_gpioctrl3(&cc2520->spi),
-	    read_reg_gpioctrl4(&cc2520->spi),
-	    read_reg_gpioctrl5(&cc2520->spi));
-	SYS_LOG_DBG("GPIOPOLARITY: 0x%x\n",
-	    read_reg_gpiopolarity(&cc2520->spi));
-	SYS_LOG_DBG("GPIOCTRL: 0x%x\n",
-	    read_reg_gpioctrl(&cc2520->spi));
+	SYS_LOG_DBG("GPIOCTRL0/1/2/3/4/5 = 0x%x/0x%x/0x%x/0x%x/0x%x/0x%x",
+		    read_reg_gpioctrl0(&cc2520->spi),
+		    read_reg_gpioctrl1(&cc2520->spi),
+		    read_reg_gpioctrl2(&cc2520->spi),
+		    read_reg_gpioctrl3(&cc2520->spi),
+		    read_reg_gpioctrl4(&cc2520->spi),
+		    read_reg_gpioctrl5(&cc2520->spi));
+	SYS_LOG_DBG("GPIOPOLARITY: 0x%x",
+		    read_reg_gpiopolarity(&cc2520->spi));
+	SYS_LOG_DBG("GPIOCTRL: 0x%x",
+		    read_reg_gpioctrl(&cc2520->spi));
 }
 
 static inline void _cc2520_print_exceptions(struct cc2520_context *cc2520)
 {
 	uint8_t flag = read_reg_excflag0(&cc2520->spi);
 
-	SYS_LOG_DBG("EXCFLAG0: ");
+	SYS_LOG_DBG("EXCFLAG0:");
+
 	if (flag & EXCFLAG0_RF_IDLE) {
-		SYS_LOG_DBG("RF_IDLE ");
+		SYS_LOG_BACKEND_FN("RF_IDLE ");
 	}
+
 	if (flag & EXCFLAG0_TX_FRM_DONE) {
-		SYS_LOG_DBG("TX_FRM_DONE ");
+		SYS_LOG_BACKEND_FN("TX_FRM_DONE ");
 	}
+
 	if (flag & EXCFLAG0_TX_ACK_DONE) {
-		SYS_LOG_DBG("TX_ACK_DONE ");
+		SYS_LOG_BACKEND_FN("TX_ACK_DONE ");
 	}
+
 	if (flag & EXCFLAG0_TX_UNDERFLOW) {
-		SYS_LOG_DBG("TX_UNDERFLOW ");
+		SYS_LOG_BACKEND_FN("TX_UNDERFLOW ");
 	}
+
 	if (flag & EXCFLAG0_TX_OVERFLOW) {
-		SYS_LOG_DBG("TX_OVERFLOW ");
+		SYS_LOG_BACKEND_FN("TX_OVERFLOW ");
 	}
+
 	if (flag & EXCFLAG0_RX_UNDERFLOW) {
-		SYS_LOG_DBG("RX_UNDERFLOW ");
+		SYS_LOG_BACKEND_FN("RX_UNDERFLOW ");
 	}
+
 	if (flag & EXCFLAG0_RX_OVERFLOW) {
-		SYS_LOG_DBG("RX_OVERFLOW ");
+		SYS_LOG_BACKEND_FN("RX_OVERFLOW ");
 	}
+
 	if (flag & EXCFLAG0_RXENABLE_ZERO) {
-		SYS_LOG_DBG("RXENABLE_ZERO");
+		SYS_LOG_BACKEND_FN("RXENABLE_ZERO");
 	}
-	SYS_LOG_DBG("\n");
+
+	SYS_LOG_BACKEND_FN("\n");
 
 	flag = read_reg_excflag1(&cc2520->spi);
 
-	SYS_LOG_DBG("EXCFLAG1: ");
+	SYS_LOG_DBG("EXCFLAG1:");
+
 	if (flag & EXCFLAG1_RX_FRM_DONE) {
-		SYS_LOG_DBG("RX_FRM_DONE ");
+		SYS_LOG_BACKEND_FN("RX_FRM_DONE ");
 	}
+
 	if (flag & EXCFLAG1_RX_FRM_ACCEPTED) {
-		SYS_LOG_DBG("RX_FRM_ACCEPTED ");
+		SYS_LOG_BACKEND_FN("RX_FRM_ACCEPTED ");
 	}
+
 	if (flag & EXCFLAG1_SRC_MATCH_DONE) {
-		SYS_LOG_DBG("SRC_MATCH_DONE ");
+		SYS_LOG_BACKEND_FN("SRC_MATCH_DONE ");
 	}
+
 	if (flag & EXCFLAG1_SRC_MATCH_FOUND) {
-		SYS_LOG_DBG("SRC_MATCH_FOUND ");
+		SYS_LOG_BACKEND_FN("SRC_MATCH_FOUND ");
 	}
+
 	if (flag & EXCFLAG1_FIFOP) {
-		SYS_LOG_DBG("FIFOP ");
+		SYS_LOG_BACKEND_FN("FIFOP ");
 	}
+
 	if (flag & EXCFLAG1_SFD) {
-		SYS_LOG_DBG("SFD ");
+		SYS_LOG_BACKEND_FN("SFD ");
 	}
+
 	if (flag & EXCFLAG1_DPU_DONE_L) {
-		SYS_LOG_DBG("DPU_DONE_L ");
+		SYS_LOG_BACKEND_FN("DPU_DONE_L ");
 	}
+
 	if (flag & EXCFLAG1_DPU_DONE_H) {
-		SYS_LOG_DBG("DPU_DONE_H");
+		SYS_LOG_BACKEND_FN("DPU_DONE_H");
 	}
-	SYS_LOG_DBG("\n");
+
+	SYS_LOG_BACKEND_FN("\n");
 }
 
 static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
 {
 	uint8_t flag = read_reg_excflag2(&cc2520->spi);
 
-	SYS_LOG_DBG("EXCFLAG2: ");
+	SYS_LOG_DBG("EXCFLAG2:");
+
 	if (flag & EXCFLAG2_MEMADDR_ERROR) {
-		SYS_LOG_DBG("MEMADDR_ERROR ");
+		SYS_LOG_BACKEND_FN("MEMADDR_ERROR ");
 	}
+
 	if (flag & EXCFLAG2_USAGE_ERROR) {
-		SYS_LOG_DBG("USAGE_ERROR ");
+		SYS_LOG_BACKEND_FN("USAGE_ERROR ");
 	}
+
 	if (flag & EXCFLAG2_OPERAND_ERROR) {
-		SYS_LOG_DBG("OPERAND_ERROR ");
+		SYS_LOG_BACKEND_FN("OPERAND_ERROR ");
 	}
+
 	if (flag & EXCFLAG2_SPI_ERROR) {
-		SYS_LOG_DBG("SPI_ERROR ");
+		SYS_LOG_BACKEND_FN("SPI_ERROR ");
 	}
+
 	if (flag & EXCFLAG2_RF_NO_LOCK) {
-		SYS_LOG_DBG("RF_NO_LOCK ");
+		SYS_LOG_BACKEND_FN("RF_NO_LOCK ");
 	}
+
 	if (flag & EXCFLAG2_RX_FRM_ABORTED) {
-		SYS_LOG_DBG("RX_FRM_ABORTED ");
+		SYS_LOG_BACKEND_FN("RX_FRM_ABORTED ");
 	}
+
 	if (flag & EXCFLAG2_RFBUFMOV_TIMEOUT) {
-		SYS_LOG_DBG("RFBUFMOV_TIMEOUT");
+		SYS_LOG_BACKEND_FN("RFBUFMOV_TIMEOUT");
 	}
-	SYS_LOG_DBG("\n");
+
+	SYS_LOG_BACKEND_FN("\n");
 }
-#endif
+#else
+#define _cc2520_print_gpio_config(...)
+#define _cc2520_print_exceptions(...)
+#define _cc2520_print_errors(...)
+#endif /* CONFIG_SYS_LOG_TI_CC2520_LEVEL == 4 */
 
 
 /*********************
@@ -498,7 +523,7 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 	}
 
 	if (read_reg_excflag0(spi) & EXCFLAG0_RX_UNDERFLOW) {
-		SYS_LOG_ERR("RX underflow!\n");
+		SYS_LOG_ERR("RX underflow!");
 		return false;
 	}
 
@@ -571,7 +596,7 @@ static void cc2520_rx(int arg)
 		k_sem_take(&cc2520->rx_lock, K_FOREVER);
 
 		if (cc2520->overflow) {
-			SYS_LOG_ERR("RX overflow!\n");
+			SYS_LOG_ERR("RX overflow!");
 			cc2520->overflow = false;
 
 			goto flush;
@@ -579,13 +604,13 @@ static void cc2520_rx(int arg)
 
 		pkt_len = read_rxfifo_length(&cc2520->spi) & 0x7f;
 		if (!verify_rxfifo_validity(&cc2520->spi, pkt_len)) {
-			SYS_LOG_ERR("Invalid content\n");
+			SYS_LOG_ERR("Invalid content");
 			goto flush;
 		}
 
 		buf = net_nbuf_get_reserve_rx(0);
 		if (!buf) {
-			SYS_LOG_ERR("No buf available\n");
+			SYS_LOG_ERR("No buf available");
 			goto flush;
 		}
 
@@ -598,7 +623,7 @@ static void cc2520_rx(int arg)
 		pkt_buf = net_nbuf_get_reserve_data(0);
 #endif
 		if (!pkt_buf) {
-			SYS_LOG_ERR("No pkt_buf available\n");
+			SYS_LOG_ERR("No pkt_buf available");
 			goto flush;
 		}
 
@@ -606,7 +631,7 @@ static void cc2520_rx(int arg)
 
 #if defined(CONFIG_TI_CC2520_RAW)
 		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len)) {
-			SYS_LOG_ERR("No content read\n");
+			SYS_LOG_ERR("No content read");
 			goto flush;
 		}
 
@@ -625,18 +650,18 @@ static void cc2520_rx(int arg)
 		}
 #else
 		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len - 2)) {
-			SYS_LOG_ERR("No content read\n");
+			SYS_LOG_ERR("No content read");
 			goto flush;
 		}
 
 		if (!verify_crc(cc2520)) {
-			SYS_LOG_ERR("Bad packet CRC\n");
+			SYS_LOG_ERR("Bad packet CRC");
 			goto out;
 		}
 #endif
 
 		if (ieee802154_radio_handle_ack(cc2520->iface, buf) == NET_OK) {
-			SYS_LOG_DBG("ACK packet handled\n");
+			SYS_LOG_DBG("ACK packet handled");
 			goto out;
 		}
 
@@ -644,11 +669,11 @@ static void cc2520_rx(int arg)
 		net_buf_add_u8(pkt_buf, cc2520->lqi);
 #endif
 
-		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)\n",
+		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)",
 			    pkt_len, cc2520->lqi);
 
 		if (net_recv_data(cc2520->iface, buf) < 0) {
-			SYS_LOG_DBG("Packet dropped by NET stack\n");
+			SYS_LOG_DBG("Packet dropped by NET stack");
 			goto out;
 		}
 
@@ -657,6 +682,8 @@ static void cc2520_rx(int arg)
 				  CONFIG_TI_CC2520_RX_STACK_SIZE);
 		continue;
 flush:
+		_cc2520_print_exceptions(cc2520);
+		_cc2520_print_errors(cc2520);
 		flush_rxfifo(cc2520);
 out:
 		if (buf) {
@@ -673,7 +700,7 @@ static int cc2520_cca(struct device *dev)
 	struct cc2520_context *cc2520 = dev->driver_data;
 
 	if (!get_cca(cc2520)) {
-		SYS_LOG_DBG("BUSY\n");
+		SYS_LOG_DBG("Busy");
 		return -EBUSY;
 	}
 
@@ -684,7 +711,7 @@ static int cc2520_set_channel(struct device *dev, uint16_t channel)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("%u\n", channel);
+	SYS_LOG_DBG("%u", channel);
 
 	if (channel < 11 || channel > 26) {
 		return -EINVAL;
@@ -694,7 +721,7 @@ static int cc2520_set_channel(struct device *dev, uint16_t channel)
 	channel = 11 + 5 * (channel - 11);
 
 	if (!write_reg_freqctrl(&cc2520->spi, FREQCTRL_FREQ(channel))) {
-		SYS_LOG_ERR("FAILED\n");
+		SYS_LOG_ERR("Failed");
 		return -EIO;
 	}
 
@@ -705,12 +732,12 @@ static int cc2520_set_pan_id(struct device *dev, uint16_t pan_id)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("0x%x\n", pan_id);
+	SYS_LOG_DBG("0x%x", pan_id);
 
 	pan_id = sys_le16_to_cpu(pan_id);
 
 	if (!write_mem_pan_id(&cc2520->spi, (uint8_t *) &pan_id)) {
-		SYS_LOG_ERR("FAILED\n");
+		SYS_LOG_ERR("Failed");
 		return -EIO;
 	}
 
@@ -721,12 +748,12 @@ static int cc2520_set_short_addr(struct device *dev, uint16_t short_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("0x%x\n", short_addr);
+	SYS_LOG_DBG("0x%x", short_addr);
 
 	short_addr = sys_le16_to_cpu(short_addr);
 
 	if (!write_mem_short_addr(&cc2520->spi, (uint8_t *) &short_addr)) {
-		SYS_LOG_ERR("FAILED\n");
+		SYS_LOG_ERR("Failed");
 		return -EIO;
 	}
 
@@ -738,11 +765,11 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	struct cc2520_context *cc2520 = dev->driver_data;
 
 	if (!write_mem_ext_addr(&cc2520->spi, (void *)ieee_addr)) {
-		SYS_LOG_ERR("FAILED\n");
+		SYS_LOG_ERR("Failed");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
 		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
@@ -754,7 +781,7 @@ static int cc2520_set_txpower(struct device *dev, int16_t dbm)
 	struct cc2520_context *cc2520 = dev->driver_data;
 	uint8_t pwr;
 
-	SYS_LOG_DBG("%s: %d\n", dbm);
+	SYS_LOG_DBG("%d", dbm);
 
 	/* See chapter 19 part 8 */
 	switch (dbm) {
@@ -795,7 +822,7 @@ static int cc2520_set_txpower(struct device *dev, int16_t dbm)
 
 	return 0;
 error:
-	SYS_LOG_DBG("%s: FAILED\n");
+	SYS_LOG_DBG("Failed");
 	return -EIO;
 }
 
@@ -805,18 +832,17 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 	uint8_t retry = 2;
 	bool status;
 
-	SYS_LOG_DBG("%s: %p (%u)\n", __func__,
-		    buf, net_nbuf_ll_reserve(buf) + buf->frags->len);
+	SYS_LOG_DBG("%p (%u)", buf, net_nbuf_ll_reserve(buf) + buf->frags->len);
 
 	if (!write_reg_excflag0(&cc2520->spi, EXCFLAG0_RESET_TX_FLAGS) ||
 	    !write_txfifo_length(&cc2520->spi, buf) ||
 	    !write_txfifo_content(&cc2520->spi, buf)) {
-		SYS_LOG_ERR("Cannot feed in TX fifo\n");
+		SYS_LOG_ERR("Cannot feed in TX fifo");
 		goto error;
 	}
 
 	if (!verify_txfifo_status(cc2520, buf)) {
-		SYS_LOG_ERR("Did not write properly into TX FIFO\n");
+		SYS_LOG_ERR("Did not write properly into TX FIFO");
 		goto error;
 	}
 
@@ -826,11 +852,10 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 		k_sem_init(&cc2520->tx_sync, 0, UINT_MAX);
 
 		if (!instruct_stxoncca(&cc2520->spi)) {
-			SYS_LOG_ERR("Cannot start transmission\n");
+			SYS_LOG_ERR("Cannot start transmission");
 			goto error;
 		}
 
-		/* _cc2520_print_exceptions(cc2520); */
 		k_sem_take(&cc2520->tx_sync, 10);
 
 		retry--;
@@ -838,7 +863,10 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 	} while (!status && retry);
 
 	if (!status) {
-		SYS_LOG_ERR("No TX_FRM_DONE\n");
+		SYS_LOG_ERR("No TX_FRM_DONE");
+		_cc2520_print_exceptions(cc2520);
+		_cc2520_print_errors(cc2520);
+
 		goto error;
 	}
 
@@ -854,12 +882,12 @@ static int cc2520_start(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("\n");
+	SYS_LOG_DBG("");
 
 	if (!instruct_sxoscon(&cc2520->spi) ||
 	    !instruct_srxon(&cc2520->spi) ||
 	    !verify_osc_stabilization(cc2520)) {
-		SYS_LOG_ERR("Error starting CC2520\n");
+		SYS_LOG_ERR("Error starting CC2520");
 		return -EIO;
 	}
 
@@ -875,7 +903,7 @@ static int cc2520_stop(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("\n");
+	SYS_LOG_DBG("");
 
 	flush_rxfifo(cc2520);
 
@@ -884,7 +912,7 @@ static int cc2520_stop(struct device *dev)
 
 	if (!instruct_srfoff(&cc2520->spi) ||
 	    !instruct_sxoscoff(&cc2520->spi)) {
-		SYS_LOG_ERR("Error stopping CC2520\n");
+		SYS_LOG_ERR("Error stopping CC2520");
 		return -EIO;
 	}
 
@@ -977,7 +1005,7 @@ static inline int configure_spi(struct device *dev)
 
 	cc2520->spi.dev = device_get_binding(CONFIG_TI_CC2520_SPI_DRV_NAME);
 	if (!cc2520->spi.dev) {
-		SYS_LOG_ERR("Unable to get SPI device\n");
+		SYS_LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
@@ -1002,19 +1030,19 @@ static int cc2520_init(struct device *dev)
 
 	cc2520->gpios = cc2520_configure_gpios();
 	if (!cc2520->gpios) {
-		SYS_LOG_ERR("Configuring GPIOS failed\n");
+		SYS_LOG_ERR("Configuring GPIOS failed");
 		return -EIO;
 	}
 
 	if (configure_spi(dev) != 0) {
-		SYS_LOG_ERR("Configuring SPI failed\n");
+		SYS_LOG_ERR("Configuring SPI failed");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("GPIO and SPI configured\n");
+	SYS_LOG_DBG("GPIO and SPI configured");
 
 	if (power_on_and_setup(dev) != 0) {
-		SYS_LOG_ERR("Configuring CC2520 failed\n");
+		SYS_LOG_ERR("Configuring CC2520 failed");
 		return -EIO;
 	}
 
@@ -1023,6 +1051,8 @@ static int cc2520_init(struct device *dev)
 		       (k_thread_entry_t)cc2520_rx,
 		       dev, NULL, NULL,
 		       K_PRIO_COOP(2), 0, 0);
+
+	SYS_LOG_INF("CC2520 initialized");
 
 	return 0;
 }
@@ -1033,7 +1063,7 @@ static void cc2520_iface_init(struct net_if *iface)
 	struct cc2520_context *cc2520 = dev->driver_data;
 	uint8_t *mac = get_mac(dev);
 
-	SYS_LOG_DBG("cc2520_iface_init\n");
+	SYS_LOG_DBG("");
 
 	net_if_set_link_addr(iface, mac, 8);
 
