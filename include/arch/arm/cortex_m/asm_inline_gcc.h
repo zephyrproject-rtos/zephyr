@@ -173,9 +173,9 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 	if (key) {
 		return;
 	}
-	__asm__ volatile("cpsie i;\n\t");
+	__asm__ volatile("cpsie i;\n\t" : : : "memory");
 #else /* CONFIG_CPU_CORTEX_M3_M4 */
-	__asm__ volatile("msr BASEPRI, %0;\n\t" :  : "r"(key));
+	__asm__ volatile("msr BASEPRI, %0;\n\t" :  : "r"(key) : "memory");
 #endif
 }
 
