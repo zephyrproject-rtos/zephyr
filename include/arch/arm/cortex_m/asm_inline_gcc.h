@@ -135,13 +135,15 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 		:
 		: "memory");
 #else /* CONFIG_CPU_CORTEX_M3_M4 */
+	unsigned int tmp;
+
 	__asm__ volatile(
-		"mov %%r1, %1;\n\t"
+		"mov %1, %2;\n\t"
 		"mrs %0, BASEPRI;\n\t"
-		"msr BASEPRI, %%r1;\n\t"
-		: "=r"(key)
+		"msr BASEPRI, %1;\n\t"
+		: "=r"(key), "=r"(tmp)
 		: "i"(_EXC_IRQ_DEFAULT_PRIO)
-		: "r1", "memory");
+		: "memory");
 #endif
 
 	return key;
