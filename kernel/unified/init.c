@@ -33,6 +33,7 @@
 #include <init.h>
 #include <linker-defs.h>
 #include <ksched.h>
+#include <version.h>
 
 /* kernel build timestamp items */
 
@@ -44,7 +45,7 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 
 /* boot banner items */
 
-#define BOOT_BANNER "BOOTING ZEPHYR OS"
+#define BOOT_BANNER "BOOTING ZEPHYR OS v" KERNEL_VERSION_STRING
 
 #if !defined(CONFIG_BOOT_BANNER)
 #define PRINT_BOOT_BANNER() do { } while (0)
