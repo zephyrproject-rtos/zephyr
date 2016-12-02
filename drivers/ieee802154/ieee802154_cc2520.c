@@ -654,7 +654,7 @@ static void cc2520_rx(int arg)
 
 		net_analyze_stack("CC2520 Rx Fiber stack",
 				  (unsigned char *)cc2520->cc2520_rx_stack,
-				  CONFIG_CC2520_RX_STACK_SIZE);
+				  CONFIG_TI_CC2520_RX_STACK_SIZE);
 		continue;
 flush:
 		flush_rxfifo(cc2520);
@@ -1019,7 +1019,7 @@ static int cc2520_init(struct device *dev)
 	}
 
 	k_thread_spawn(cc2520->cc2520_rx_stack,
-		       CONFIG_CC2520_RX_STACK_SIZE,
+		       CONFIG_TI_CC2520_RX_STACK_SIZE,
 		       (k_thread_entry_t)cc2520_rx,
 		       dev, NULL, NULL,
 		       K_PRIO_COOP(2), 0, 0);
@@ -1073,8 +1073,8 @@ NET_DEVICE_INIT(cc2520, CONFIG_TI_CC2520_DRV_NAME,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
 
 NET_STACK_INFO_ADDR(RX, cc2520,
-		    CONFIG_CC2520_RX_STACK_SIZE,
-		    CONFIG_CC2520_RX_STACK_SIZE,
+		    CONFIG_TI_CC2520_RX_STACK_SIZE,
+		    CONFIG_TI_CC2520_RX_STACK_SIZE,
 		    ((struct cc2520_context *)(&__device_cc2520))->
 							cc2520_rx_stack,
 		    0);

@@ -25,8 +25,6 @@
 
 #include <ieee802154/cc2520.h>
 
-#define CONFIG_CC2520_RX_STACK_SIZE CONFIG_TI_CC2520_FIBER_STACK_SIZE
-
 /* Runtime context structure
  ***************************
  */
@@ -52,7 +50,7 @@ struct cc2520_context {
 	struct k_sem tx_sync;
 	atomic_t tx;
 	/************RX************/
-	char __stack cc2520_rx_stack[CONFIG_CC2520_RX_STACK_SIZE];
+	char __stack cc2520_rx_stack[CONFIG_TI_CC2520_RX_STACK_SIZE];
 	struct k_sem rx_lock;
 	bool overflow;
 	uint8_t lqi;
