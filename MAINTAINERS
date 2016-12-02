@@ -307,7 +307,7 @@ NETWORKING
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
 S:	Supported
 W:	https://www.zephyrproject.org/doc/subsystems/networking/networking.html
-F:	net/ip/
+F:	subsys/net/ip/
 F:	include/net/
 F:	samples/net/
 F:	tests/net/
@@ -324,7 +324,7 @@ M:	Johan Hedberg <johan.hedberg@intel.com>
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
 S:	Supported
 W:	https://www.zephyrproject.org/doc/subsystems/networking/buffers.html
-F:	net/buf.c
+F:	subsys/net/buf.c
 F:	include/net/buf.h
 F:	tests/net/buf/
 
