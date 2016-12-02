@@ -41,7 +41,7 @@ static void enter_arc_state(int mode)
 	__asm__ volatile("sleep %0"
 			: /* No output operands. */
 			: /* Input operands. */
-			"r"(mode));
+			"r"(mode) : "memory");
 }
 
 void _sys_soc_set_power_state(enum power_states state)
