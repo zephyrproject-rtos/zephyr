@@ -157,15 +157,11 @@ static int ti_adc108s102_read(struct device *dev,
 	const struct ti_adc108s102_config *config = dev->config->config_info;
 	struct ti_adc108s102_data *adc = dev->driver_data;
 	struct spi_config spi_conf;
-	uint32_t data[2] = {0, 0};
-	struct nano_timer timer;
 	int ret = 0;
 	int32_t delay;
 
 	spi_conf.config = config->spi_config_flags;
 	spi_conf.max_sys_freq = config->spi_freq;
-
-	nano_timer_init(&timer, data);
 
 	if (spi_configure(adc->spi, &spi_conf)) {
 		return -EIO;
@@ -191,8 +187,11 @@ static int ti_adc108s102_read(struct device *dev,
 			break;
 		}
 
-		nano_timer_start(&timer, delay);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+		/* convert to milliseconds */
+		delay = (int32_t)((MSEC_PER_SEC * (uint64_t)delay) /
+			sys_clock_ticks_per_sec);
+
+		k_sleep(delay);
 
 		ret = _ti_adc108s102_sampling(dev);
 		if (ret != 0) {
