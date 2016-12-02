@@ -117,26 +117,26 @@ struct bt_avdtp_single_sig_hdr {
 
 struct bt_avdtp_cfm_cb {
 	/*
-	* Discovery_cfm;
-	* get_capabilities_cfm;
-	* set_configuration_cfm;
-	* open_cfm;
-	* start_cfm;
-	* suspend_cfm;
-	* close_cfm;
-	*/
+	 * Discovery_cfm;
+	 * get_capabilities_cfm;
+	 * set_configuration_cfm;
+	 * open_cfm;
+	 * start_cfm;
+	 * suspend_cfm;
+	 * close_cfm;
+	 */
 };
 
 struct bt_avdtp_ind_cb {
 	/*
-	* discovery_ind;
-	* get_capabilities_ind;
-	* set_configuration_ind;
-	* open_ind;
-	* start_ind;
-	* suspend_ind;
-	* close_ind;
-	*/
+	 * discovery_ind;
+	 * get_capabilities_ind;
+	 * set_configuration_ind;
+	 * open_ind;
+	 * start_ind;
+	 * suspend_ind;
+	 * close_ind;
+	 */
 };
 
 struct bt_avdtp_event_cb {
