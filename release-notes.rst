@@ -169,29 +169,24 @@ Deprecations
 JIRA Related Items
 ******************
 
-Epic
-====
-
 * [ZEP-308] - Build System cleanup and Kernel / Application build separation
 * [ZEP-334] - Unified Kernel
-* [ZEP-760] - Clean up samples and sanitise them.
 * [ZEP-766] - USB Mass Storage access to internal filesystem
 * [ZEP-1090] - CPU x86 save/restore using new QMSI bootloader flow
-
-Story
-=====
-
+* [ZEP-1173] - Add support for bonding remove
 * [ZEP-48] - define API for interrupt controllers
+* [ZEP-181] - Persistent storage APIs
 * [ZEP-233] - Support USB mass storage device class
 * [ZEP-237] - Support pre-built host tools
 * [ZEP-240] - printk/printf usage in samples
 * [ZEP-248] - Add a BOARD/SOC porting guide
-* [ZEP-328] - HW Encryption Abstraction
 * [ZEP-342] - USB DFU
 * [ZEP-451] - Quark SE output by default redirected to IPM
 * [ZEP-521] - ARM - add choice to floating point ABI selection
 * [ZEP-546] - UART interrupts not triggered on ARC
 * [ZEP-584] - warn user if SDK is out of date
+* [ZEP-592] - Sanitycheck support for multiple toolchains
+* [ZEP-605] - SMP over BR/EDR
 * [ZEP-614] - Port tinycrypt 2.0 test cases to Zephyr
 * [ZEP-622] - Add FS API to truncate/shrink a file
 * [ZEP-627] - Port Trickle support from Contiki into current stack
@@ -209,6 +204,7 @@ Story
 * [ZEP-718] - Add ksdk ethernet shim driver
 * [ZEP-721] - Add FXOS8700 accelerometer/magnetometer sensor driver
 * [ZEP-737] - Update host tools from upstream: fixdep.c
+* [ZEP-740] - PWM API: Check if 'flags' argument is really required
 * [ZEP-745] - Revisit design of PWM Driver API
 * [ZEP-750] - Arduino 101 board should support one configuration using original bootloader
 * [ZEP-758] - Rename Quark SE Devboard to its official name: Quark SE C1000
@@ -222,7 +218,6 @@ Story
 * [ZEP-908] - Add task offload to fiber support
 * [ZEP-909] - Adapt tickless idle + power management for ARM
 * [ZEP-910] - Adapt tickless idle for x86
-* [ZEP-911] - Refine thread priorities & locking
 * [ZEP-912] - Finish renaming kernel object types
 * [ZEP-916] - Eliminate kernel object API anomalies
 * [ZEP-920] - Investigate malloc/free support
@@ -241,6 +236,8 @@ Story
 * [ZEP-954] - Update device PM API to allow setting additional power states
 * [ZEP-957] - Create example sample for new unified kernel API usage
 * [ZEP-959] - sync checkpatch.pl with upstream Linux
+* [ZEP-966] - need support for EM7D SOC on em_starterkit
+* [ZEP-975] - DNS client port to new IP stack
 * [ZEP-981] - Add doxygen documentation to both include/kernel.h and include/legacy.h
 * [ZEP-989] - Cache next ready thread instead of finding out the long way
 * [ZEP-993] - Quark SE (x86): Refactor save/restore execution context feature
@@ -256,7 +253,9 @@ Story
 * [ZEP-1005] - Extend dma_qmsi driver to support save/restore peripheral context
 * [ZEP-1006] - Extend soc_flash_qmsi driver to support save/restore peripheral context
 * [ZEP-1008] - Extend pwm_qmsi driver to support save/restore peripheral context
+* [ZEP-1023] - workq in Kernel primer for unified kernel
 * [ZEP-1030] - Enable QMSI shim drivers of SoC peripherals on the sensor subsystem
+* [ZEP-1043] - Update QMSI to 1.2
 * [ZEP-1045] - Add/Enhance shim layer to wrap SOC specific PM implementations
 * [ZEP-1046] - Implement RAM sharing between bootloader and Zephyr
 * [ZEP-1047] - Adapt to new PM related boot flow changes in QMSI boot loader
@@ -266,22 +265,15 @@ Story
 * [ZEP-1119] - move top level usb/ to sys/usb
 * [ZEP-1120] - move top level fs/ to sys/fs
 * [ZEP-1121] - Add config support for enabling SoCWatch in Zephyr
+* [ZEP-1140] - Add a unified kernel version of power_mgr sample app for testing PM code with the new kernel
 * [ZEP-1188] - Add an API to retrieve pending interrupts for wake events
 * [ZEP-1191] - Create wiki page for Hexiwear board
+* [ZEP-1235] - Basic shell support for file system browsing
 * [ZEP-1245] - ARM LTD V2M Beetle Support
 * [ZEP-1313] - porting and user guides must include a security section
-
-Task
-====
-
-* [ZEP-592] - Sanitycheck support for multiple toolchains
-* [ZEP-740] - PWM API: Check if 'flags' argument is really required
-
-Bug
-===
-
-* [ZEP-145] - no 'make flash' for Arduino Due
+* [ZEP-1386] - Revise power management document to reflect latest changes
 * [ZEP-199] - Zephyr driver model is undocumented
+* [ZEP-436] - Test case tests/kernel/test_mem_safe fails on ARM hardware
 * [ZEP-471] - Ethernet packet with multicast address is not working
 * [ZEP-472] - Ethernet packets are getting missed if sent in quick succession.
 * [ZEP-517] - build on windows failed "zephyr/Makefile:869: \*\*\* multiple target patterns"
@@ -300,29 +292,72 @@ Bug
 * [ZEP-777] - samples/driver/i2c_stts751: kconfig build warning from "select DMA_QMSI"
 * [ZEP-778] - Samples/drivers/i2c_lsm9ds0: kconfig build warning from "select DMA_QMSI"
 * [ZEP-779] - Using current MinGW gcc version 5.3.0 breaks Zephyr build on Windows
+* [ZEP-845] - UART for ARC on Arduino 101 behaves unexpectedly
 * [ZEP-905] - hello_world compilation for arduino_due target fails when using CROSS_COMPILE
+* [ZEP-940] - Fail to get ATT response
 * [ZEP-950] - USB: Device is not listed by USB20CV test suite
 * [ZEP-961] - samples: other cases cannot execute after run aon_counter case
+* [ZEP-967] - Sanity doesnt build 'samples/usb/dfu' with assertions (-R)
+* [ZEP-970] - Sanity doesnt build 'tests/kernel/test_build' with assertions (-R)
+* [ZEP-982] - Minimal libc has EWOULDBLOCK != EAGAIN
+* [ZEP-1014] - [TCF] tests/bluetooth/init build fail
 * [ZEP-1025] - Unified kernel build sometimes breaks on a missing .d dependency file.
 * [ZEP-1027] - Doccumentation for GCC ARM is not accurate
+* [ZEP-1031] - qmsi: dma: driver test fails with LLVM
 * [ZEP-1048] - grove_lcd sample: sample does not work if you disable serial
+* [ZEP-1051] - mpool allocation failed after defrag twice...
+* [ZEP-1062] - Unified kernel isn't compatible with CONFIG_NEWLIB_LIBC
+* [ZEP-1074] - ATT retrying misbehaves when ATT insufficient Authentication is received
+* [ZEP-1076] - "samples/philosophers/unified" build failed with dynamic stack
+* [ZEP-1077] - "samples/philosophers/unified" build warnings with NUM_PHIL<6
+* [ZEP-1079] - Licensing not clear for imported components
+* [ZEP-1097] - ENC28J60 driver fails on concurrent tx and rx
+* [ZEP-1098] - ENC28J60 fails to receive big data frames
 * [ZEP-1100] - Current master still identifies itself as 1.5.0
 * [ZEP-1101] - SYS_KERNEL_VER_PATCHLEVEL() and friends artificially limit version numbers to 4 bits
+* [ZEP-1124] - tests/kernel/test_sprintf/microkernel/testcase.ini#test failure on frdm_k64f
 * [ZEP-1130] - region 'RAM' overflowed occurs while building test_hmac_prng
+* [ZEP-1138] - Recived packets not being passed to upper layer from IP stack when using ENC28J60 driver
+* [ZEP-1139] - Fix build error when power management is built with unified kernel
 * [ZEP-1141] - Tinycrypt SHA256 test fails with system crash using unified kernel type
 * [ZEP-1144] - Tinycrypt AES128 fixed-key with variable-text test fails using unified kernel type
 * [ZEP-1145] - system hang after tinycrypt HMAC test
 * [ZEP-1146] - zephyrproject.org home page needs technical scrub for 1.6 release
 * [ZEP-1149] - port ztest framework to unified kernel
+* [ZEP-1154] - tests/samples failing with unified kernel
 * [ZEP-1155] - Fix filesystem API namespace
 * [ZEP-1163] - LIB_INCLUDE_DIR is clobbered in Makefile second pass
 * [ZEP-1164] - ztest skip waiting the test case to finish its execution
 * [ZEP-1179] - Build issues when compiling with LLVM from ISSM (icx)
+* [ZEP-1182] - kernel.h doxygen show unexpected "asm" blocks
+* [ZEP-1183] - btshell return "panic: errcode -1" when init bt
+* [ZEP-1195] - Wrong ATT error code passed to the application
+* [ZEP-1199] - [L2CAP] No credits to receive packet
+* [ZEP-1219] - [L2CAP] Data sent exceeds maximum PDU size
+* [ZEP-1221] - Connection Timeout during pairing
 * [ZEP-1226] - cortex M7 port assembler error
+* [ZEP-1227] - ztest native testing not working in unified kernel
+* [ZEP-1232] - Daily build is failing asserts
+* [ZEP-1234] - Removal of fiber* APIs due to unified migration breaks USB mass storage patchset
+* [ZEP-1247] - Test tests/legacy/benchmark/latency_measure is broken for daily sanitycheck
+* [ZEP-1252] - Test test_chan_blen_transfer does not build for quark_d2000_crb
+* [ZEP-1277] - Flash driver (w25qxxdv) erase function is not checking for offset alignment
+* [ZEP-1278] - Incorrect boundary check in flash driver (w25qxxdv) for erase offset
 * [ZEP-1287] - ARC SPI 1 Port is not working
+* [ZEP-1289] - Race condition with k_sem_take
+* [ZEP-1291] - libzephyr.a dependency on phony "gcc" target
+* [ZEP-1293] - ENC28J60 driver doesn't work on Arduino 101
+* [ZEP-1295] - incorrect doxygen comment in kernel.h:k_work_pending()
 * [ZEP-1297] - test/legacy/kernel/test_mail: failure on ARC platforms
 * [ZEP-1299] - System can't resume completely with DMA suspend and resume operation
+* [ZEP-1302] - ENC28J60 fails with rx/tx of long frames
 * [ZEP-1303] - Configuration talks about >32 thread prios, but the kernel does not support it
 * [ZEP-1309] - ARM uses the end of memory for its init stack
 * [ZEP-1310] - ARC uses the end of memory for its init stack
+* [ZEP-1312] - ARC: software crashed at k_mbox_get() with async sending a message
 * [ZEP-1319] - Zephyr is unable to compile when CONFIG_RUNTIME_NMI is enabled on ARM platforms
+* [ZEP-1341] - power_states test app passes wrong value as power state to post_ops functions
+* [ZEP-1343] - tests/drivers/pci_enum: failing on QEMU ARM and X86 due to missing commit
+* [ZEP-1345] - cpu context save and restore could corrupt stack
+* [ZEP-1349] - ARC sleep needs to pass interrupt priority threshold when interrupts are enabled
+* [ZEP-1353] - FDRM k64f Console output broken on normal flash mode
