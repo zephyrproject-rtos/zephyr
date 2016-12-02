@@ -23,6 +23,7 @@
 #include <spi.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
+#include <net/ethernet.h>
 
 #include "eth_enc28j60_priv.h"
 
@@ -165,23 +166,24 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 				  uint16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t *index_buf;
 	uint16_t num_segments;
 	uint16_t num_remaining;
 
-	index_buf = data_buffer;
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
 	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	for (int i = 0; i < num_segments;
-	     ++i, index_buf += MAX_BUFFER_LENGTH) {
+	     ++i, data_buffer += MAX_BUFFER_LENGTH) {
 		context->mem_buf[0] = ENC28J60_SPI_RBM;
 		spi_transceive(context->spi,
 			       context->mem_buf, MAX_BUFFER_LENGTH + 1,
 			       context->mem_buf, MAX_BUFFER_LENGTH + 1);
-		memcpy(index_buf, context->mem_buf + 1, MAX_BUFFER_LENGTH);
+		if (data_buffer) {
+			memcpy(data_buffer, context->mem_buf + 1,
+			       MAX_BUFFER_LENGTH);
+		}
 	}
 
 	if (num_remaining > 0) {
@@ -189,7 +191,10 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 		spi_transceive(context->spi,
 			       context->mem_buf, num_remaining + 1,
 			       context->mem_buf, num_remaining + 1);
-		memcpy(index_buf, context->mem_buf + 1, num_remaining);
+		if (data_buffer) {
+			memcpy(data_buffer, context->mem_buf + 1,
+			       num_remaining);
+		}
 	}
 
 	k_sem_give(&context->spi_sem);
@@ -532,8 +537,10 @@ static int eth_enc28j60_rx(struct device *dev)
 		/* Read reception status vector */
 		eth_enc28j60_read_mem(dev, context->rx_rsv, 4);
 
-		/* Get the frame length from the rx status vector */
-		frm_len = (context->rx_rsv[1] << 8) | context->rx_rsv[0];
+		/* Get the frame length from the rx status vector,
+		 * minus CRC size at the end which is always present
+		 */
+		frm_len = (context->rx_rsv[1] << 8) | (context->rx_rsv[0] - 4);
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
@@ -578,13 +585,14 @@ static int eth_enc28j60_rx(struct device *dev)
 			frm_len -= spi_frame_len;
 		} while (frm_len > 0);
 
+		/* Let's pop the useless CRC */
+		eth_enc28j60_read_mem(dev, NULL, 4);
+
 		/* Pops one padding byte from spi circular buffer
 		 * introduced by the device when the frame length is odd
 		 */
 		if (lengthfr & 0x01) {
-			uint8_t pad;
-
-			eth_enc28j60_read_mem(dev, &pad, 1);
+			eth_enc28j60_read_mem(dev, NULL, 1);
 		}
 
 		/*Feed buffer frame to IP stack */
@@ -666,8 +674,8 @@ static void eth_enc28j60_iface_init_0(struct net_if *iface)
 }
 
 static struct net_if_api api_funcs_0 = {
-	.init	= eth_enc28j60_iface_init_0,
-	.send	= eth_net_tx,
+	.init			= eth_enc28j60_iface_init_0,
+	.send			= eth_net_tx,
 };
 
 static struct eth_enc28j60_runtime eth_enc28j60_0_runtime;
