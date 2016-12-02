@@ -5,3 +5,4 @@
 #
 
 obj-y += soc.o
+obj-y += soc_config.o
