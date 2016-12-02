@@ -144,8 +144,16 @@ SECTION_FUNC(TEXT, _rirq_exit)
 
 	/* scheduler locked ? do not schedule */
 	ld_s r0, [r2, _thread_offset_to_sched_locked]
+#ifdef CONFIG_ARC_STACK_CHECKING
+	brle.d r0, 0,  _rirq_reschedule_check
+	ld sp, [r2, _thread_offset_to_sp]
+	b  _rirq_no_reschedule
+	/* This branch is a bit far */
+_rirq_reschedule_check:
+#else
 	brgt.d r0, 0,  _rirq_no_reschedule
 	ld sp, [r2, _thread_offset_to_sp]
+#endif
 
 	/* check if the current thread needs to be rescheduled */
 	push_s r2
