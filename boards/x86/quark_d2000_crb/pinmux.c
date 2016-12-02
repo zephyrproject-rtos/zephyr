@@ -23,7 +23,7 @@
  * @file pinmux operations for Quark_D2000
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <board.h>
 #include <device.h>
 #include <init.h>
