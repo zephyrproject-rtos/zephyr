@@ -468,11 +468,6 @@ static inline void flush_rxfifo(struct cc2520_context *cc2520)
 	write_reg_excflag0(&cc2520->spi, EXCFLAG0_RESET_RX_FLAGS);
 }
 
-#ifdef CONFIG_SPI_QMSI
-/** This is a workaround, for SPI QMSI drivers as current QMSI API does not
- * support asymmetric tx/rx buffer lengths.
- * (i.e.: it's up to the user to handle tx dummy bytes in tx buffer)
- */
 static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 {
 	spi->cmd_buf[0] = CC2520_INS_RXBUF;
@@ -512,46 +507,6 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 
 	return true;
 }
-
-#else /* CONFIG_SPI_QMSI */
-static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
-{
-	spi->cmd_buf[0] = CC2520_INS_RXBUF;
-
-	spi_slave_select(spi->dev, spi->slave);
-
-	if (spi_transceive(spi->dev, spi->cmd_buf, 1,
-			   spi->cmd_buf, 2) == 0) {
-		return spi->cmd_buf[1];
-	}
-
-	return 0;
-}
-
-static inline bool read_rxfifo_content(struct cc2520_spi *spi,
-				       struct net_buf *buf, uint8_t len)
-{
-	uint8_t data[128+1];
-
-	spi->cmd_buf[0] = CC2520_INS_RXBUF;
-
-	spi_slave_select(spi->dev, spi->slave);
-
-	if (spi_transceive(spi->dev, spi->cmd_buf, 1, data, len+1) != 0) {
-		return false;
-	}
-
-	if (read_reg_excflag0(spi) & EXCFLAG0_RX_UNDERFLOW) {
-		SYS_LOG_ERR("RX underflow!\n");
-		return false;
-	}
-
-	memcpy(buf->data, &data[1], len);
-	net_buf_add(buf, len);
-
-	return true;
-}
-#endif /* CONFIG_SPI_QMSI */
 
 static inline bool verify_crc(struct cc2520_context *cc2520)
 {
