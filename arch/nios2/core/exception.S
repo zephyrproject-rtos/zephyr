@@ -25,7 +25,6 @@ GTEXT(_exception)
 /* import */
 GTEXT(_Fault)
 GTEXT(_Swap)
-GTEXT(_is_next_thread_current)
 #ifdef CONFIG_IRQ_OFFLOAD
 GTEXT(_irq_do_offload)
 GTEXT(_offload_routine)
@@ -140,8 +139,8 @@ on_irq_stack:
 	bne  r12, zero, no_reschedule
 
 	/* Call into the kernel to see if a scheduling decision is necessary */
-	call _is_next_thread_current
-	bne  r2, zero, no_reschedule
+	ldw  r2, _kernel_offset_to_ready_q_cache(r10)
+	beq  r2, r11, no_reschedule
 
 	/*
 	 * A context reschedule is required: keep the volatile registers of

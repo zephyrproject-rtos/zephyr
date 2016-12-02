@@ -265,6 +265,17 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 		sys_dlist_init(&_ready_q.q[ii]);
 	}
 
+	/*
+	 * prime the cache with the main thread since:
+	 *
+	 * - the cache can never be NULL
+	 * - the main thread will be the one to run first
+	 * - no other thread is initialized yet and thus their priority fields
+	 *   contain garbage, which would prevent the cache loading algorithm
+	 *   to work as intended
+	 */
+	_ready_q.cache = _main_thread;
+
 	_new_thread(_main_stack, MAIN_STACK_SIZE,
 		    _main, NULL, NULL, NULL,
 		    CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);

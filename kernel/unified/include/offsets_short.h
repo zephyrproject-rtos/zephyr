@@ -39,6 +39,9 @@
 #define _kernel_offset_to_current_fp \
 	(___kernel_t_current_fp_OFFSET)
 
+#define _kernel_offset_to_ready_q_cache \
+	(___kernel_t_ready_q_OFFSET + ___ready_q_t_cache_OFFSET)
+
 /* end - kernel */
 
 /* threads */

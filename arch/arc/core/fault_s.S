@@ -176,34 +176,15 @@ _trap_check_for_swap:
 	brgt r0, 0, _trap_return
 
 	/* check if the current thread needs to be rescheduled */
-	push_s r2
-	push_s r1
-	push_s blink
-	jl _is_next_thread_current
-	pop_s blink
-	pop_s r1
-	pop_s r2
-	brne r0, 0, _trap_return
+	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
+	breq r0, r2, _trap_return
 
 	_save_callee_saved_regs
 
 	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
 	/* note: Ok to use _CAUSE_RIRQ since everything is saved */
 
-	/*
-	 * Save needed registers to callee saved ones. It is faster than
-	 * pushing registers to stack. It is possible to do since program has
-	 * just saved them and the calling routine will save them in turn
-	 * if it uses them.
-	 */
-	mov_s r13, blink
-	mov_s r14, r0
-	mov_s r15, r1
-	jl _get_next_ready_thread
-	mov_s r2, r0
-	mov_s r1, r15
-	mov_s r0, r14
-	mov_s blink, r13
+	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
 	st_s r2, [r1, _kernel_offset_to_current]
 
 	/* clear AE bit to forget this was an exception */

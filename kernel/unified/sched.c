@@ -42,6 +42,26 @@ static void _clear_ready_q_prio_bit(int prio)
 }
 
 /*
+ * Find the next thread to run when there is no thread in the cache and update
+ * the cache.
+ */
+static struct k_thread *_get_ready_q_head(void)
+{
+	int prio = _get_highest_ready_prio();
+	int q_index = _get_ready_q_q_index(prio);
+	sys_dlist_t *list = &_ready_q.q[q_index];
+
+	__ASSERT(!sys_dlist_is_empty(list),
+		 "no thread to run (prio: %d, queue index: %u)!\n",
+		 prio, q_index);
+
+	struct k_thread *thread =
+		(struct k_thread *)sys_dlist_peek_head_not_empty(list);
+
+	return thread;
+}
+
+/*
  * Add thread to the ready queue, in the slot for its priority; the thread
  * must not be on a wait queue.
  *
@@ -61,9 +81,7 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 
 	struct k_thread **cache = &_ready_q.cache;
 
-	*cache = *cache && _is_prio_higher(thread->base.prio,
-					   (*cache)->base.prio) ?
-		 thread : *cache;
+	*cache = _is_t1_higher_prio_than_t2(thread, *cache) ? thread : *cache;
 }
 
 /*
@@ -85,7 +103,7 @@ void _remove_thread_from_ready_q(struct k_thread *thread)
 
 	struct k_thread **cache = &_ready_q.cache;
 
-	*cache = *cache == thread ? NULL : *cache;
+	*cache = *cache == thread ? _get_ready_q_head() : *cache;
 }
 
 /* reschedule threads if the scheduler is not locked */
@@ -183,37 +201,6 @@ void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout)
 }
 
 /*
- * Find the next thread to run when there is no thread in the cache and update
- * the cache.
- */
-static struct k_thread *__get_next_ready_thread(void)
-{
-	int prio = _get_highest_ready_prio();
-	int q_index = _get_ready_q_q_index(prio);
-	sys_dlist_t *list = &_ready_q.q[q_index];
-
-	__ASSERT(!sys_dlist_is_empty(list),
-		 "no thread to run (prio: %d, queue index: %u)!\n",
-		 prio, q_index);
-
-	struct k_thread *thread =
-		(struct k_thread *)sys_dlist_peek_head_not_empty(list);
-
-	_ready_q.cache = thread;
-
-	return thread;
-}
-
-/* find which one is the next thread to run */
-/* must be called with interrupts locked */
-struct k_thread *_get_next_ready_thread(void)
-{
-	struct k_thread *cache = _ready_q.cache;
-
-	return cache ? cache : __get_next_ready_thread();
-}
-
-/*
  * Check if there is a thread of higher prio than the current one. Should only
  * be called if we already know that the current thread is preemptible.
  */
@@ -226,11 +213,6 @@ int __must_switch_threads(void)
 	_dump_ready_q();
 
 	return _is_prio_higher(_get_highest_ready_prio(), _current->base.prio);
-}
-
-int _is_next_thread_current(void)
-{
-	return _get_next_ready_thread() == _current;
 }
 
 int  k_thread_priority_get(k_tid_t thread)
@@ -275,7 +257,7 @@ void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 
 	struct k_thread **cache = &_ready_q.cache;
 
-	*cache = *cache == thread ? NULL : *cache;
+	*cache = *cache == thread ? _get_ready_q_head() : *cache;
 }
 
 void k_yield(void)

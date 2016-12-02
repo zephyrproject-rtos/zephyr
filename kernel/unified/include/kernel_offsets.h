@@ -37,6 +37,9 @@ GEN_OFFSET_SYM(_kernel_t, irq_stack);
 GEN_OFFSET_SYM(_kernel_t, idle);
 #endif
 
+GEN_OFFSET_SYM(_kernel_t, ready_q);
+GEN_OFFSET_SYM(_ready_q_t, cache);
+
 #ifdef CONFIG_FP_SHARING
 GEN_OFFSET_SYM(_kernel_t, current_fp);
 #endif

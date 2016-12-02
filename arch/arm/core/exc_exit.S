@@ -36,7 +36,6 @@ _ASM_FILE_PROLOGUE
 GTEXT(_ExcExit)
 GTEXT(_IntExit)
 GDATA(_kernel)
-GTEXT(_is_next_thread_current)
 
 #if CONFIG_GDB_INFO
   #define _EXIT_EXC_IF_FIBER_PREEMPTED beq _ExcExitWithGdbStub
@@ -88,9 +87,9 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
-    ldr r1, =_kernel
+    ldr r0, =_kernel
 
-    ldr r1, [r1, #_kernel_offset_to_current]
+    ldr r1, [r0, #_kernel_offset_to_current]
     ldr r2, [r1, #_thread_offset_to_prio]
     ldr r3, [r1, #_thread_offset_to_sched_locked]
 
@@ -102,20 +101,9 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
     cmp r3, #0
     bgt _EXIT_EXC
 
-    push {lr}
-
-    /* _is_next_thread_current must be called with interrupts locked */
-    cpsid i
-    blx _is_next_thread_current
-    cpsie i
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
-    pop {r1}
-    mov lr, r1
-#else
-    pop {lr}
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS  */
-    cmp r0, #0
-    bne _EXIT_EXC
+    ldr r0, [r0, _kernel_offset_to_ready_q_cache]
+    cmp r0, r1
+    beq _EXIT_EXC
 
     /* context switch required, pend the PendSV exception */
     ldr r1, =_SCS_ICSR

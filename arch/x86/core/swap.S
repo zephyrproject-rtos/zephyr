@@ -38,7 +38,6 @@
 	GTEXT(_Swap)
 
 	/* externs */
-	GTEXT(_get_next_ready_thread)
 	GDATA(_k_neg_eagain)
 
 /**
@@ -131,7 +130,7 @@ SECTION_FUNC(TEXT, _Swap)
 	/* Register the context switch */
 	call	_sys_k_event_logger_context_switch
 #endif
-	call	_get_next_ready_thread
+	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
 
 	/*
 	 * At this point, the %eax register contains the 'k_thread *' of the

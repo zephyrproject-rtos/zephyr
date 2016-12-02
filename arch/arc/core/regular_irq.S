@@ -35,7 +35,6 @@
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
 GTEXT(_rirq_common_interrupt_swap)
-GTEXT(_is_next_thread_current)
 
 #if 0 /* TODO: when FIRQ is not present, all would be regular */
 #define NUM_REGULAR_IRQ_PRIO_LEVELS CONFIG_NUM_IRQ_PRIO_LEVELS
@@ -156,27 +155,13 @@ _rirq_reschedule_check:
 #endif
 
 	/* check if the current thread needs to be rescheduled */
-	push_s r2
-	push_s r1
-	push_s blink
-	jl _is_next_thread_current
-	pop_s blink
-	pop_s r1
-	pop_s r2
-	brne.d r0, 0, _rirq_no_reschedule
+	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
+	breq.d r0, r2, _rirq_no_reschedule
+
+	/* delay slot: always load the current thread's stack */
 	ld sp, [r2, _thread_offset_to_sp]
 
-	/*
-	 * Get the next scheduled thread. On _get_next_ready_thread
-	 * return it is stored in r0.
-	 */
-	push_s r2
-	push_s r1
-	push_s blink
-	jl _get_next_ready_thread
-	pop_s blink
-	pop_s r1
-	pop_s r2
+	/* cached thread to run is in r0, fall through */
 
 .balign 4
 _rirq_reschedule:

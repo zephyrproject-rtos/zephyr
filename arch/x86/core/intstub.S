@@ -42,7 +42,6 @@
 	/* externs */
 
 	GTEXT(_Swap)
-	GTEXT(_is_next_thread_current)
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	GTEXT(_sys_power_save_idle_exit)
@@ -303,9 +302,8 @@ alreadyOnIntStack:
 
 
 	/* reschedule only if the scheduler says that we must do so */
-	call	_is_next_thread_current
-	testl   %eax, %eax
-	jnz     noReschedule
+	cmpl	%edx, _kernel_offset_to_ready_q_cache(%ecx)
+	je	noReschedule
 
 	/*
 	 * Set the INT_ACTIVE bit in the k_thread to allow the upcoming call to
@@ -315,11 +313,6 @@ alreadyOnIntStack:
 	 */
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
-	/*
-	 * Reload _kernel.current as _is_next_thread_current()
-	 * might have clobbered it.
-	 */
-	movl	_kernel + _kernel_offset_to_current, %edx
 	orl	$INT_ACTIVE, _thread_offset_to_flags(%edx)
 #endif
 

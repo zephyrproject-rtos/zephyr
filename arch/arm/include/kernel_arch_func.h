@@ -59,6 +59,8 @@ _arch_switch_to_main_thread(char *main_stack, size_t main_stack_size,
 
 	_current = (void *)main_stack;
 
+	/* the ready queue cache already contains the main thread */
+
 	__asm__ __volatile__(
 
 		/* move to main() thread stack */

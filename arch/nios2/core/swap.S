@@ -25,7 +25,6 @@ GTEXT(_thread_entry_wrapper)
 
 /* imports */
 GTEXT(_sys_k_event_logger_context_switch)
-GTEXT(_get_next_ready_thread)
 GTEXT(_k_neg_eagain)
 
 /* unsigned int _Swap(unsigned int key)
@@ -78,15 +77,16 @@ SECTION_FUNC(exception.other, _Swap)
 	ori   r10, r10, %lo(_kernel)
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
 
-	/* Assign to _kernel.current the return value of
-	 * _get_next_ready_thread()
-	 */
-	call  _get_next_ready_thread
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
-	stw   r2, _kernel_offset_to_current(r10)
+
+	/* get cached thread to run */
+	ldw   r2, _kernel_offset_to_ready_q_cache(r10)
 
 	/* At this point r2 points to the next thread to be swapped in */
+
+	/* the thread to be swapped in is now the current thread */
+	stw   r2, _kernel_offset_to_current(r10)
 
 	/* Restore callee-saved registers and switch to the incoming
 	 * thread's stack

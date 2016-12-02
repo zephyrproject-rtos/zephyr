@@ -40,7 +40,6 @@ GTEXT(_firq_stack_resume)
 #if CONFIG_RGF_NUM_BANKS != 1
 GDATA(_firq_stack)
 GDATA(_saved_firq_stack)
-GTEXT(_is_next_thread_current)
 
 SECTION_VAR(NOINIT, _firq_stack)
 	.space CONFIG_FIRQ_STACK_SIZE
@@ -157,26 +156,10 @@ _firq_check_for_swap:
 	ld_s r0, [r2, _thread_offset_to_sched_locked]
 	brgt r0, 0, _firq_no_reschedule
 
-	/* check if the current thread needs to be rescheduled */
-	push_s r2
-	push_s r1
-	push_s blink
-	jl _is_next_thread_current
-	pop_s blink
-	pop_s r1
-	pop_s r2
-#if CONFIG_RGF_NUM_BANKS != 1
-#ifndef CONFIG_FIRQ_NO_LPCC
-	/*
-	 * restore lp_count, lp_start, lp_end from r23-r25 in case
-	 * _is_next_thread_current() routine used them
-	 */
-	mov lp_count,r23
-	sr r24, [_ARC_V2_LP_START]
-	sr r25, [_ARC_V2_LP_END]
-#endif
-#endif
-	breq r0, 0, _firq_reschedule
+	/* Check if the current thread (in r2) is the cached thread */
+	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
+	brne r0, r2, _firq_reschedule
+
 	/* fall to no rescheduling */
 
 .balign 4
@@ -248,18 +231,7 @@ _firq_reschedule:
 
 	st _CAUSE_FIRQ, [r2, _thread_offset_to_relinquish_cause]
 
-	/*
-	 * Save needed registers to callee saved ones. It is faster than
-	 * pushing them to stack. It is possible to do since program has
-	 * just saved them and the calling routine will save them in turn
-	 * if it uses them.
-	 */
-	mov_s r13, blink
-	mov_s r14, r1
-	jl _get_next_ready_thread
-	mov_s blink, r13
-	mov_s r1, r14
-	mov_s r2, r0
+	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
 	st_s r2, [r1, _kernel_offset_to_current]
 
 #ifdef CONFIG_ARC_STACK_CHECKING

@@ -34,7 +34,6 @@
 #include <swap_macros.h>
 
 GTEXT(_Swap)
-GTEXT(_get_next_ready_thread)
 GDATA(_k_neg_eagain)
 GDATA(_kernel)
 
@@ -106,22 +105,8 @@ SECTION_FUNC(TEXT, _Swap)
 
 	_save_callee_saved_regs
 
-	/* find out incoming thread (fiber or task) */
-
-	/*
-	 * Save needed registers to callee saved ones. It is faster than
-	 * pushing them to stack. It is possible to do since program has
-	 * just saved them and the calling routine will save them in turn
-	 * if it uses them.
-	 */
-	mov_s r13, blink
-	mov_s r14, r0
-	mov_s r15, r1
-	jl _get_next_ready_thread
-	mov_s r2, r0
-	mov_s r1, r15
-	mov_s r0, r14
-	mov_s blink, r13
+	/* get the cached thread to run */
+	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
 
 	/* entering here, r2 contains the new current thread */
 #ifdef CONFIG_ARC_STACK_CHECKING

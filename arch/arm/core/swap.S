@@ -36,7 +36,6 @@ GTEXT(_Swap)
 GTEXT(__svc)
 #endif
 GTEXT(__pendsv)
-GTEXT(_get_next_ready_thread)
 GDATA(_k_neg_eagain)
 
 GDATA(_kernel)
@@ -114,16 +113,11 @@ SECTION_FUNC(TEXT, __pendsv)
     msr BASEPRI, r0
 #endif
 
-    /* find out incoming thread (fiber or task) */
+    /* _kernel is still in r1 */
 
-    mov.n v2, lr
-    movs.n v1, r1
-    blx _get_next_ready_thread
-    movs.n r1, v1
-    mov.n lr, v2
-    movs.n r2, r0
+    /* fetch the thread to run from the ready queue cache */
+    ldr r2, [r1, _kernel_offset_to_ready_q_cache]
 
-    /* r2 contains the new thread */
     str r2, [r1, #_kernel_offset_to_current]
 
     /*

@@ -30,10 +30,16 @@ extern void _pend_thread(struct k_thread *thread,
 			 _wait_q_t *wait_q, int32_t timeout);
 extern void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout);
 extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
-extern struct k_thread *_get_next_ready_thread(void);
 extern int __must_switch_threads(void);
 extern int32_t _ms_to_ticks(int32_t ms);
 extern void idle(void *, void *, void *);
+
+/* find which one is the next thread to run */
+/* must be called with interrupts locked */
+static ALWAYS_INLINE struct k_thread *_get_next_ready_thread(void)
+{
+	return _ready_q.cache;
+}
 
 static inline int _is_idle_thread(void *entry_point)
 {

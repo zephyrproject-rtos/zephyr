@@ -146,6 +146,8 @@ struct _ready_q {
 	sys_dlist_t q[K_NUM_PRIORITIES];
 };
 
+typedef struct _ready_q _ready_q_t;
+
 struct _kernel {
 
 	/* nested interrupt count */
