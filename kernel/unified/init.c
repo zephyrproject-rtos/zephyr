@@ -34,6 +34,7 @@
 #include <linker-defs.h>
 #include <ksched.h>
 #include <version.h>
+#include <string.h>
 
 /* kernel build timestamp items */
 
@@ -133,14 +134,10 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  *
  * @return N/A
  */
-
 void _bss_zero(void)
 {
-	uint32_t *pos = (uint32_t *)&__bss_start;
-
-	for ( ; pos < (uint32_t *)&__bss_end; pos++) {
-		*pos = 0;
-	}
+	memset(&__bss_start, 0,
+		 ((uint32_t) &__bss_end - (uint32_t) &__bss_start));
 }
 
 
@@ -155,14 +152,8 @@ void _bss_zero(void)
  */
 void _data_copy(void)
 {
-	uint32_t *pROM, *pRAM;
-
-	pROM = (uint32_t *)&__data_rom_start;
-	pRAM = (uint32_t *)&__data_ram_start;
-
-	for ( ; pRAM < (uint32_t *)&__data_ram_end; pROM++, pRAM++) {
-		*pRAM = *pROM;
-	}
+	memcpy(&__data_ram_start, &__data_rom_start,
+		 ((uint32_t) &__data_ram_end - (uint32_t) &__data_ram_start));
 }
 #endif
 
