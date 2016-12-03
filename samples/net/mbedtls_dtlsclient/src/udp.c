@@ -35,7 +35,9 @@ static void udp_received(struct net_context *context,
 	ARG_UNUSED(context);
 
 	struct udp_context *ctx = user_data;
+
 	ctx->rx_nbuf = buf;
+	k_sem_give(&ctx->rx_sem);
 }
 
 int udp_tx(void *context, const unsigned char *buf, size_t size)
@@ -90,10 +92,8 @@ int udp_rx(void *context, unsigned char *buf, size_t size)
 	struct net_buf *rx_buf;
 	int rc, read_bytes;
 
-	rc = net_context_recv(ctx->net_ctx, udp_received, K_FOREVER, ctx);
-	if (rc != 0) {
-		return 0;
-	}
+	k_sem_take(&ctx->rx_sem, K_FOREVER);
+
 	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
 
 	ptr = net_nbuf_appdata(ctx->rx_nbuf);
@@ -131,6 +131,8 @@ int udp_init(struct udp_context *ctx)
 	my_addr4.sin_family = AF_INET;
 	my_addr4.sin_port = htons(CLIENT_PORT);
 
+	k_sem_init(&ctx->rx_sem, 0, UINT_MAX);
+
 	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &udp_ctx);
 	if (rc < 0) {
 		printk("Cannot get network context for IPv4 UDP (%d)", rc);
@@ -147,6 +149,12 @@ int udp_init(struct udp_context *ctx)
 	ctx->rx_nbuf = NULL;
 	ctx->remaining = 0;
 	ctx->net_ctx = udp_ctx;
+
+	rc = net_context_recv(ctx->net_ctx, udp_received, K_NO_WAIT, ctx);
+
+	if (rc != 0) {
+		return -EIO;
+	}
 
 	return 0;
 
