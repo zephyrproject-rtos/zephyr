@@ -239,6 +239,8 @@ static void _UsageFault(const NANO_ESF *esf)
  */
 static void _DebugMonitor(const NANO_ESF *esf)
 {
+	ARG_UNUSED(esf);
+
 	PR_EXC("***** Debug monitor exception (not implemented) *****\n");
 }
 
@@ -284,6 +286,8 @@ static void _HardFault(const NANO_ESF *esf)
  */
 static void _ReservedException(const NANO_ESF *esf, int fault)
 {
+	ARG_UNUSED(esf);
+
 	PR_EXC("***** %s %d) *****\n",
 	       fault < 16 ? "Reserved Exception (" : "Spurious interrupt (IRQ ",
 	       fault - 16);

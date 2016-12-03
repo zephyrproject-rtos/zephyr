@@ -119,6 +119,8 @@ int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf, int altf)
 	 */
 	volatile uint32_t *reg = &gpio->crl;
 
+	ARG_UNUSED(altf);
+
 	if (crpin > 7) {
 		reg = &gpio->crh;
 		crpin -= 8;
