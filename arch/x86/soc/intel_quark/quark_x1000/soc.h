@@ -213,6 +213,8 @@ extern "C" {
 
 static inline int pci_pin2irq(int bus, int dev, int pin)
 {
+	ARG_UNUSED(dev);
+
 	if (bus < 0 || bus > 1) {
 		return -1;
 	}
