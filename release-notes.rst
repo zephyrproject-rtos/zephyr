@@ -2,20 +2,21 @@ Zephyr Kernel 1.6.0 Release Notes
 #################################
 
 We are pleased to announce the release of Zephyr kernel version 1.6.0. This
-release introduces a Unified Kernel replacing the separate nano- and
-micro-kernels, simplifying the overall Zephyr architecture and programming
+release introduces a the unified Kernel replacing the separate nano- and
+micro-kernels and simplifying the overall Zephyr architecture and programming
 interfaces.
-In this release we added support for the ARM Cortex-M0/M0+ family and expanded
-board support for Cortex-M.
+Support for the ARM Cortex-M0/M0+ family was added and board support for
+Cortex-M was expanded.
 Additionally, this release adds many improvements for documentation, build
 infrastructure, and testing.
 
 Major enhancements included with the release:
 
 * Introduced the Unified Kernel; the nano and micro kernel were removed.
-* The legacy API is still supported but deprecated. All legacy tests were moved
-  to tests/legacy.
-* Added Unified Kernel documentation.
+* The legacy API is still supported but deprecated.
+* Legacy tests and samples were moved to tests/legacy and samples/legacy.
+* Unified kernel documentation was added and legacy nanokernel/microkernel
+  documentation was removed.
 * Added support for several ARM Cortex-M boards
 * Added support for USB mass storage and access to the filesystem.
 * Added native Bluetooth Controller support. Currently nRF51 & nRF52 are supported.
@@ -25,7 +26,7 @@ A detailed list of changes since v1.5.0 by component follows:
 Kernel
 ******
 
-* Introduced Unified kernel.
+* Introduced the unified kernel.
 * Removed deprecated Tasks IRQs.
 * Removed deprecated dynamic interrupt API.
 * Added DLIST to operate in all elements of a doubly-linked list.
@@ -106,7 +107,6 @@ Build Infrastructure
 * Makefile: Changed outdir into board-specific directory to avoid build collisions.
 * Makefile: Changed to use HOST_OS environment variable.
 * Makefile: Added support for third party build systems.
-* printk: Added support for modifiers.
 * Sanity: Added support to filter using environment variables.
 * Sanity: Added support for multiple toolchains.
 * Sanity: Added ISSM and ARM GCC embedded toolchains to the supported toolchains.
@@ -124,6 +124,7 @@ Libraries
 * libc: Added support for 'z' length specifier.
 * libc: Removed stddef.h which is provided by the compiler.
 * libc: printf: Improved code for printing.
+* printk: Added support for modifiers.
 * Added CoAP implementation for Zephyr.
 * File system: Added API to grow or shrink a file.
 * File system: Added API to get volume statistics.
@@ -361,3 +362,9 @@ JIRA Related Items
 * [ZEP-1345] - cpu context save and restore could corrupt stack
 * [ZEP-1349] - ARC sleep needs to pass interrupt priority threshold when interrupts are enabled
 * [ZEP-1353] - FDRM k64f Console output broken on normal flash mode
+
+Known Issues
+************
+
+* [ZEP-1405] - function l2cap_br_conn_req in /subsys/bluetooth/host/l2cap_br.c
+  references uninitialized pointer
