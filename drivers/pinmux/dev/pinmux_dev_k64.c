@@ -47,6 +47,8 @@ static const struct pinmux_driver_api api_funcs = {
 
 int pinmux_fsl_k64_initialize(struct device *port)
 {
+	ARG_UNUSED(port);
+
 	return 0;
 }
 

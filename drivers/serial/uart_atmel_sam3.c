@@ -145,6 +145,8 @@ static void baudrate_set(struct device *dev,
 	struct uart_sam3_dev_data_t * const dev_data = DEV_DATA(dev);
 	uint32_t divisor; /* baud rate divisor */
 
+	ARG_UNUSED(sys_clk_freq_hz);
+
 	if ((baudrate != 0) && (dev_cfg->sys_clk_freq != 0)) {
 		/* calculate baud rate divisor */
 		divisor = (dev_cfg->sys_clk_freq / baudrate) >> 4;

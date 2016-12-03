@@ -166,6 +166,8 @@ static inline void dw_interrupt_config(struct device *port, int access_op,
 	uint32_t base_addr = dw_base_to_block_base(context->base_addr);
 	uint8_t flag_is_set;
 
+	ARG_UNUSED(access_op);
+
 	/* set as an input pin */
 	dw_set_bit(context->base_addr, SWPORTA_DDR, pin, 0);
 

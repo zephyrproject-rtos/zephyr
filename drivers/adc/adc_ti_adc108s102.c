@@ -111,6 +111,8 @@ static inline int32_t _ti_adc108s102_prepare(struct device *dev)
 
 static void ti_adc108s102_enable(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	/*
 	 * There is nothing to be done. If there is no sampling going on,
 	 * the chip will put itself on power-saving mode (that is because
@@ -120,6 +122,8 @@ static void ti_adc108s102_enable(struct device *dev)
 
 static void ti_adc108s102_disable(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	/* Same issue as with ti_adc108s102_enable() */
 }
 

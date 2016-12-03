@@ -278,6 +278,8 @@ DEVICE_AND_API_INIT(gpio_k64_A, CONFIG_GPIO_K64_A_DEV_NAME, gpio_k64_A_init,
 
 static int gpio_k64_A_init(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(GPIO_K64_A_IRQ, CONFIG_GPIO_K64_PORTA_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_A), 0);
 
@@ -307,6 +309,8 @@ DEVICE_AND_API_INIT(gpio_k64_B, CONFIG_GPIO_K64_B_DEV_NAME, gpio_k64_B_init,
 
 static int gpio_k64_B_init(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(GPIO_K64_B_IRQ, CONFIG_GPIO_K64_PORTB_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_B), 0);
 
@@ -336,6 +340,8 @@ DEVICE_AND_API_INIT(gpio_k64_C, CONFIG_GPIO_K64_C_DEV_NAME, gpio_k64_C_init,
 
 static int gpio_k64_C_init(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(GPIO_K64_C_IRQ, CONFIG_GPIO_K64_PORTC_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_C), 0);
 
@@ -365,6 +371,8 @@ DEVICE_AND_API_INIT(gpio_k64_D, CONFIG_GPIO_K64_D_DEV_NAME, gpio_k64_D_init,
 
 static int gpio_k64_D_init(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(GPIO_K64_D_IRQ, CONFIG_GPIO_K64_PORTD_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_D), 0);
 
@@ -394,6 +402,8 @@ DEVICE_AND_API_INIT(gpio_k64_E, CONFIG_GPIO_K64_E_DEV_NAME, gpio_k64_E_init,
 
 static int gpio_k64_E_init(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(GPIO_K64_E_IRQ, CONFIG_GPIO_K64_PORTE_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_E), 0);
 

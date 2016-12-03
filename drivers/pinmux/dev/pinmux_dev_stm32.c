@@ -79,6 +79,8 @@ static const struct pinmux_driver_api pinmux_stm32_api = {
 
 static int pinmux_stm32_init(struct device *port)
 {
+	ARG_UNUSED(port);
+
 	return 0;
 }
 

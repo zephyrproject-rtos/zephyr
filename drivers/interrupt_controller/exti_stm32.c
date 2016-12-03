@@ -318,6 +318,8 @@ void stm32_exti_unset_callback(int line)
  */
 static void __stm32_exti_connect_irqs(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	IRQ_CONNECT(STM32F1_IRQ_EXTI0,
 		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
