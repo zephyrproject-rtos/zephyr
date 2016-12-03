@@ -21,6 +21,7 @@
 #define __BT_LOG_H
 
 #include <sections.h>
+#include <offsets.h>
 #include <zephyr.h>
 
 #ifdef __cplusplus
@@ -81,9 +82,11 @@ void bt_log(int prio, const char *fmt, ...);
 			}
 
 #define BT_STACK(name, size) \
-		char __stack name[(size) + BT_STACK_DEBUG_EXTRA]
+		char __stack name[(size) + K_THREAD_SIZEOF + \
+				  BT_STACK_DEBUG_EXTRA]
 #define BT_STACK_NOINIT(name, size) \
-		char __noinit __stack name[(size) + BT_STACK_DEBUG_EXTRA]
+		char __noinit __stack name[(size) + K_THREAD_SIZEOF + \
+					   BT_STACK_DEBUG_EXTRA]
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_hex(const void *buf, size_t len);
