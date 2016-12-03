@@ -1,4 +1,4 @@
-# Kconfig.soc - ST Microelectronics STM32F4 MCU line
+# Kconfig - ST STM32F411CE MCU configuration options
 #
 # Copyright (c) 2016 Linaro Limited.
 #
@@ -15,14 +15,20 @@
 # limitations under the License.
 #
 
-choice
-prompt "STM32F4x MCU Selection"
-depends on SOC_SERIES_STM32F4X
+if SOC_STM32F411XE
 
-config SOC_STM32F401XE
-	bool "STM32F401XE"
+config SOC
+	string
+	default stm32f411xe
 
-config SOC_STM32F411XE
-	bool "STM32F411XE"
+config SRAM_SIZE
+	default 128
 
-endchoice
+config FLASH_SIZE
+	default 512
+
+config NUM_IRQS
+	int
+	default 85
+
+endif # SOC_STM32F411XE

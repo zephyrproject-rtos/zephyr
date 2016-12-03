@@ -1,6 +1,6 @@
-# Kconfig.soc - ST Microelectronics STM32F4 MCU line
+# Kconfig - NUCLEO-64 F411RE board configuration
 #
-# Copyright (c) 2016 Linaro Limited.
+# Copyright (c) 2016 Matthias Boesl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,14 +15,6 @@
 # limitations under the License.
 #
 
-choice
-prompt "STM32F4x MCU Selection"
-depends on SOC_SERIES_STM32F4X
-
-config SOC_STM32F401XE
-	bool "STM32F401XE"
-
-config SOC_STM32F411XE
-	bool "STM32F411XE"
-
-endchoice
+config BOARD_NUCLEO_F411RE
+	bool "NUCLEO-64 F411RE Development Board"
+	depends on SOC_STM32F411XE
