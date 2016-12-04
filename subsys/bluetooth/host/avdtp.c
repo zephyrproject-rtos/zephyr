@@ -17,6 +17,7 @@
 
 #include <zephyr.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <atomic.h>
 #include <misc/byteorder.h>
@@ -26,6 +27,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/avdtp.h>
 
 #include "l2cap_internal.h"
 #include "avdtp_internal.h"
@@ -47,6 +49,8 @@ static NET_BUF_POOL(avdtp_sig_pool, CONFIG_BLUETOOTH_AVDTP_CONN,
 static struct bt_avdtp bt_avdtp_pool[CONFIG_BLUETOOTH_AVDTP_CONN];
 
 static struct bt_avdtp_event_cb *event_cb;
+
+static struct bt_avdtp_seid_lsep *lseps;
 
 #define AVDTP_CHAN(_ch) CONTAINER_OF(_ch, struct bt_avdtp, br_chan.chan)
 
@@ -150,6 +154,32 @@ int bt_avdtp_register(struct bt_avdtp_event_cb *cb)
 	}
 
 	event_cb = cb;
+
+	return 0;
+}
+
+int bt_avdtp_register_sep(uint8_t media_type, uint8_t role,
+			  struct bt_avdtp_seid_lsep *lsep)
+{
+	BT_DBG("");
+
+	static uint8_t bt_avdtp_seid = BT_AVDTP_MIN_SEID;
+
+	if (!lsep) {
+		return -EIO;
+	}
+
+	if (bt_avdtp_seid == BT_AVDTP_MAX_SEID) {
+		return -EIO;
+	}
+
+	lsep->sep.id = bt_avdtp_seid++;
+	lsep->sep.inuse = 0;
+	lsep->sep.media_type = media_type;
+	lsep->sep.tsep = role;
+
+	lsep->next = lseps;
+	lseps = lsep;
 
 	return 0;
 }

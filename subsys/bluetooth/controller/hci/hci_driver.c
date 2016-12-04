@@ -44,6 +44,7 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/hal_rtc.h"
+#include "hal/cpu.h"
 #include "ll/ticker.h"
 #include "ll/ctrl_internal.h"
 #include "hci_internal.h"
@@ -70,6 +71,30 @@ static uint8_t ALIGNED(4) _radio[LL_MEM_TOTAL];
 static struct k_sem sem_recv;
 static BT_STACK_NOINIT(recv_thread_stack,
 		       CONFIG_BLUETOOTH_CONTROLLER_RX_STACK_SIZE);
+
+K_MUTEX_DEFINE(mutex_rand);
+
+void hci_le_rand(void *buf, uint8_t len)
+{
+	while (len) {
+		k_mutex_lock(&mutex_rand, K_FOREVER);
+		len = rand_get(len, buf);
+		k_mutex_unlock(&mutex_rand);
+		if (len) {
+			cpu_sleep();
+		}
+	}
+}
+
+#if defined(CONFIG_BLUETOOTH_HCI_RAW) && defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
+int bt_rand(void *buf, size_t len)
+{
+	LL_ASSERT(len < UINT8_MAX);
+	hci_le_rand(buf, (uint8_t) len);
+
+	return 0;
+}
+#endif
 
 void radio_active_callback(uint8_t active)
 {

@@ -84,12 +84,12 @@
 #define RADIO_BLE_COMPANY_ID		(0xFFFF)
 #define RADIO_BLE_SUB_VERSION_NUMBER	(0xFFFF)
 
-#define RADIO_BLE_FEATURES              (BT_LE_FEAT_BIT_ENC | \
-					 BT_LE_FEAT_BIT_CONN_PARAM_REQ | \
-					 BT_LE_FEAT_BIT_EXT_REJ_IND | \
-					 BT_LE_FEAT_BIT_SLAVE_FEAT_REQ | \
-					 BT_LE_FEAT_BIT_PING | \
-					 BT_LE_FEAT_BIT_DLE)
+#define RADIO_BLE_FEATURES              (BIT(BT_LE_FEAT_BIT_ENC) | \
+					 BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ) | \
+					 BIT(BT_LE_FEAT_BIT_EXT_REJ_IND) | \
+					 BIT(BT_LE_FEAT_BIT_SLAVE_FEAT_REQ) | \
+					 BIT(BT_LE_FEAT_BIT_PING) | \
+					 BIT(BT_LE_FEAT_BIT_DLE))
 
 /*****************************************************************************
  * Controller Reference Defines (compile time override-able)

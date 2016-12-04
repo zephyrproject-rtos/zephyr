@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <bluetooth/avdtp.h>
+
 /* @brief A2DP ROLE's */
 #define A2DP_SRC_ROLE 0x00
 #define A2DP_SNK_ROLE 0x01
@@ -97,6 +99,9 @@
 #define BT_AVDTP_MIN_MTU 48
 #define BT_AVDTP_MAX_MTU CONFIG_BLUETOOTH_L2CAP_IN_MTU
 
+#define BT_AVDTP_MIN_SEID 0x01
+#define BT_AVDTP_MAX_SEID 0x3E
+
 /* Helper to calculate needed outgoing buffer size. */
 #define BT_AVDTP_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
 				sizeof(struct bt_hci_acl_hdr) + \
@@ -156,3 +161,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session);
 
 /* AVDTP disconnect */
 int bt_avdtp_disconnect(struct bt_avdtp *session);
+
+/* AVDTP SEP register function */
+int bt_avdtp_register_sep(uint8_t media_type, uint8_t role,
+				struct bt_avdtp_seid_lsep *sep);

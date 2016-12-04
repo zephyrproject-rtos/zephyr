@@ -218,6 +218,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf *evt)
 	rp->commands[33] = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7);
 	/* LE Write Suggested Data Length. */
 	rp->commands[34] = (1 << 0);
+#if defined(CONFIG_BLUETOOTH_HCI_RAW) && defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
+	/* LE Read Local P256 Public Key and LE Generate DH Key*/
+	rp->commands[34] |= (1 << 1) | (1 << 2);
+#endif
 	/* LE Read Maximum Data Length. */
 	rp->commands[35] = (1 << 3);
 }
@@ -558,12 +562,7 @@ static void le_rand(struct net_buf *buf, struct net_buf *evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	while (count) {
-		count = rand_get(count, rp->rand);
-		if (count) {
-			cpu_sleep();
-		}
-	}
+	hci_le_rand(rp->rand, count);
 }
 
 static void le_start_encryption(struct net_buf *buf, struct net_buf *evt)
