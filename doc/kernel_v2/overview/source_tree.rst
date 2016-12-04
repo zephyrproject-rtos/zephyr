@@ -34,9 +34,6 @@ which are not described here.
     from other sources, such as hardware interface code supplied by
     manufacturers and cryptographic library code.
 
-:file:`fs`
-    File system code.
-
 :file:`include`
     Include files for all public APIs, except those defined under :file:`lib`.
 
@@ -50,9 +47,6 @@ which are not described here.
     Miscellaneous code that doesn't belong to any of the other top-level
     directories.
 
-:file:`net`
-    Networking code, including the Bluetooth stack and networking stacks.
-
 :file:`samples`
     Sample applications that demonstrate the use of Zephyr features.
 
@@ -63,5 +57,10 @@ which are not described here.
 :file:`tests`
     Test code and benchmarks for Zephyr features.
 
-:file:`usb`
-    USB device stack code.
+:file:`subsys`
+    Subsystems of Zephyr, including:
+    * USB device stack code.
+    * Networking code, including the Bluetooth stack and networking stacks.
+    * File system code.
+    * Bluetooth host and controller
+
