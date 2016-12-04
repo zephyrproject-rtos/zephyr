@@ -21,7 +21,7 @@
 #include <stdbool.h>
 
 #include <i2c.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <init.h>
 #include <arch/cpu.h>
 #include <string.h>

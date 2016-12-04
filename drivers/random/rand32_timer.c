@@ -26,7 +26,7 @@
 
 #include <drivers/rand32.h>
 #include <drivers/system_timer.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <atomic.h>
 
 #if defined(__GNUC__)

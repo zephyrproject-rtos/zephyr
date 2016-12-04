@@ -17,7 +17,7 @@
  */
 
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <misc/printk.h>
 #include <device.h>
 #include <init.h>

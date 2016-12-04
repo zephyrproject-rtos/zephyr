@@ -20,7 +20,7 @@
  * UART has two wires for RX and TX, and does not provide CTS or RTS.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/__assert.h>
 #include <board.h>

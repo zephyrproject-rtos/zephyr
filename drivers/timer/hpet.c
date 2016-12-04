@@ -54,7 +54,7 @@
  * microkernel.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <sys_clock.h>

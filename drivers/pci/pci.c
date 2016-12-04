@@ -79,7 +79,7 @@
  * That will work as long as there are relevant results found.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/printk.h>
 #include <toolchain.h>

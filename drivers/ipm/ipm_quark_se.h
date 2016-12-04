@@ -20,7 +20,7 @@
 #ifndef __INCquark_se_mailboxh
 #define __INCquark_se_mailboxh
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <board.h> /* for SCSS_REGISTER_BASE */
 #include <ipm.h>
 #include <device.h>

@@ -15,7 +15,7 @@
  */
 
 #include <errno.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <init.h>
 #include <stdbool.h>
 

@@ -15,7 +15,7 @@
  */
 
 #include <misc/sys_log.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 #include <string.h>
 #include <flash.h>

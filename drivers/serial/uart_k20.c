@@ -21,7 +21,7 @@
  * called to setup the port.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <stdint.h>
 

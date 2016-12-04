@@ -22,7 +22,7 @@
  * This module implements the PCI H/W access functions.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 
 #include <pci/pci_mgr.h>

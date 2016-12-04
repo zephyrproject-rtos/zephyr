@@ -16,7 +16,7 @@
 
 /* See www.ti.com/lit/pdf/swru367, section 6, for CC3200 UART info. */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <uart.h>
 

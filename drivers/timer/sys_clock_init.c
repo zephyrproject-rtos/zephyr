@@ -28,7 +28,7 @@
  * processing any queued ticks.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <init.h>
 #include <drivers/system_timer.h>
 

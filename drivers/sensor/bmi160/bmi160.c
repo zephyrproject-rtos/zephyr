@@ -150,7 +150,7 @@ static int bmi160_pmu_set(struct device *dev, union bmi160_pmu_status *pmu_sts)
 		}
 
 		/*
-		 * Cannot use a nano timer here since this is called from the
+		 * Cannot use a timer here since this is called from the
 		 * init function and the timeouts were not initialized yet.
 		 */
 		k_busy_wait(cmds[i].delay_us);

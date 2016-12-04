@@ -16,7 +16,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 #include <shared_irq.h>
 #include <init.h>

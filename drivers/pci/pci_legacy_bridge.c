@@ -22,7 +22,7 @@
  * detection of the bridge and using the bridge to configure the routing between
  * PCI interrupt pins and IRQs.
  */
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 
 #include <drivers/pci/pci_mgr.h>

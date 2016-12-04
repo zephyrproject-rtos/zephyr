@@ -19,7 +19,7 @@
 #include <errno.h>
 
 #include <init.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <string.h>
 #include <stdlib.h>
 #include <board.h>

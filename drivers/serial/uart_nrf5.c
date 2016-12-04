@@ -18,7 +18,7 @@
  * @brief Driver for Nordic Semiconductor nRF5X UART
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/__assert.h>
 #include <board.h>

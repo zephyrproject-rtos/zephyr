@@ -25,9 +25,10 @@
  * interrupt unit. The ARCv2 interrupt unit is highly programmable.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <board.h>
+
 extern void *_VectorTable;
 
 void _arc_v2_irq_unit_init(void)

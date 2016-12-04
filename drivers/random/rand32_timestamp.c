@@ -24,7 +24,7 @@
  * provide a random number generator.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <drivers/rand32.h>
 

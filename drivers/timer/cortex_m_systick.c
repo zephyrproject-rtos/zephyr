@@ -37,7 +37,7 @@
  * conjunction with a microkernel.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>

@@ -87,7 +87,7 @@
  * INCLUDE FILES: loapic.h
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <stdint.h>
 #include <string.h>

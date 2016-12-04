@@ -21,7 +21,7 @@
 #ifndef _GPIO_K64_H_
 #define _GPIO_K64_H_
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include <gpio.h>
 

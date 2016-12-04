@@ -23,7 +23,7 @@
  *
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 
 #include <pci/pci_mgr.h>

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nanokernel.h>
+#include <kernel.h>
 #include <board.h>
 
 #include <device.h>

@@ -15,7 +15,7 @@
  */
 
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <uart.h>
 #include <sys_io.h>

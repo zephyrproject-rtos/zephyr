@@ -47,7 +47,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include <board.h>
 #include <k20_sim.h>

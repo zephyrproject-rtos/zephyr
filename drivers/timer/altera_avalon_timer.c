@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <device.h>
 #include <system_timer.h>

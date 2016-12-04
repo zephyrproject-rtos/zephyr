@@ -16,7 +16,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <gpio.h>
 #include "gpio_dw.h"
 #include "gpio_utils.h"
