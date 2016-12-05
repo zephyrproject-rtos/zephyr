@@ -414,8 +414,8 @@ static int eth_enc28j60_init(struct device *dev)
 
 	/* Start interruption-poll thread */
 	k_thread_spawn(context->thread_stack, ENC28J60_THREAD_STACK_SIZE,
-		    enc28j60_thread_main, (void *) dev, NULL, NULL,
-		    K_PRIO_COOP(ENC28J60_THREAD_PRIORITY), 0, K_NO_WAIT);
+		       enc28j60_thread_main, (void *) dev, NULL, NULL,
+		       K_PRIO_COOP(ENC28J60_THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	return 0;
 }
