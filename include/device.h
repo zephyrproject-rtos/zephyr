@@ -639,7 +639,7 @@ int device_busy_check(struct device *chk_dev);
 typedef struct {
 	/** Nanokernel semaphore used for fiber context */
 	struct k_sem f_sem;
-} device_sync_call_t;
+} __deprecated  device_sync_call_t;
 
 
 /**
@@ -647,7 +647,7 @@ typedef struct {
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
-static inline void device_sync_call_init(device_sync_call_t *sync)
+static inline void __deprecated device_sync_call_init(device_sync_call_t *sync)
 {
 	k_sem_init(&sync->f_sem, 0, UINT_MAX);
 }
@@ -658,7 +658,7 @@ static inline void device_sync_call_init(device_sync_call_t *sync)
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
-static inline void device_sync_call_wait(device_sync_call_t *sync)
+static inline void __deprecated device_sync_call_wait(device_sync_call_t *sync)
 {
 	k_sem_take(&sync->f_sem, K_FOREVER);
 }
@@ -669,7 +669,8 @@ static inline void device_sync_call_wait(device_sync_call_t *sync)
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
-static inline void device_sync_call_complete(device_sync_call_t *sync)
+static inline void __deprecated
+		   device_sync_call_complete(device_sync_call_t *sync)
 {
 	k_sem_give(&sync->f_sem);
 }
