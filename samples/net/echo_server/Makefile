@@ -16,10 +16,8 @@
 # limitations under the License.
 #
 
-NET_IFACE ?= slip
-MDEF_FILE = prj.mdef
 BOARD ?= qemu_x86
-CONF_FILE ?= prj_$(NET_IFACE).conf
+CONF_FILE ?= prj_$(BOARD).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
 

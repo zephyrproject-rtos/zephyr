@@ -1,1 +1,0 @@
-By hashing data that is one byte less than a multiple of a hash block length (like this 127-byte string), bugs may be revealed.

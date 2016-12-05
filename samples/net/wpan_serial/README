@@ -1,0 +1,28 @@
+Application implementing 802.15.4 "serial-radio" protocol.
+
+How to use:
+
+1. Build and flash Zephyr application to Quark board with 802.15.4 radio,
+   at the moment CC2520 radio is supported.
+2. Connect board to Linux PC, /dev/ttyACM[number] should appear
+3. Run Contiki-based native border router (6lbr, native-router, etc)
+     Example for Contiki:
+     $ cd examples/ipv6/native-border-router
+     $ make
+     $ sudo ./border-router.native -v5 -s ttyACM0 fd01::1/64
+
+Now you have Contiki native border router, simple web server should show some
+802.15.4 devices. Web server address is printed in the border-router output
+screen:
+...
+Server IPv6 addresses:
+ 0x62c5c0: =>fd01::212:4b00:531f:113a
+...
+Go to http://[fd01::212:4b00:531f:113a]/
+
+It shall show you Neighbors and Routes.
+
+PS: Make sure your disto ModemManager is disabled, otherwise it sends AT commands
+to our device ;)
+
+$ sudo systemctl disable ModemManager.service

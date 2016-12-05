@@ -1,0 +1,32 @@
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+config HTTP_PARSER
+	bool
+	prompt "HTTP Parser support"
+	default n
+	help
+	This option enables the http_parser library from nodejs.
+	This parser requires some string-related routines commonly
+	provided by a libc implementation. So, MINIMAL_LIBC_EXTENDED
+	can be used here to resolve all the required dependencies.
+
+config HTTP_PARSER_STRICT
+	bool
+	prompt "HTTP strict parsing"
+	default n
+	depends on HTTP_PARSER
+	help
+	This option enables the strict parsing option

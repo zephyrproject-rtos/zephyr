@@ -33,10 +33,25 @@
 #
 # IEEE 802.15.4 options
 #
-menu "IEEE 802.15.4 Options"
-depends on NETWORKING_WITH_15_4
+menu "IEEE 802.15.4 drivers options"
 
-if NETWORKING_WITH_15_4_TI_CC2520
+config  TI_CC2520
+	bool "TI CC2520 Driver support"
+	depends on NETWORKING
+	select NET_L2_IEEE802154
+	default n
+
+config	TI_CC2520_RAW
+	bool "TI CC2520 Driver RAW channel"
+	select NET_L2_RAW_CHANNEL
+	default n
+	help
+	Enable TI_CC2520 driver with RAW channel
+
+	The CC2520 driver with RAW channel allows to export radio interface
+	over USB making an USB 802.15.4 dongle.
+
+if TI_CC2520 || TI_CC2520_RAW
 
 config SYS_LOG_TI_CC2520_LEVEL
 	int
@@ -61,73 +76,86 @@ config TI_CC2520_DRV_NAME
 	string "TI CC2520 Driver's name"
 	default "cc2520"
 	help
-	  This option sets the driver name
+	This option sets the driver name
 
 config TI_CC2520_SPI_DRV_NAME
 	string "SPI driver's name to use to access CC2520"
 	default ""
 	help
-	  This option is mandatory to set which SPI controller to use in order
-	  to actually control the CC2520 chip.
+	This option is mandatory to set which SPI controller to use in order
+	to actually control the CC2520 chip.
 
 config TI_CC2520_SPI_FREQ
 	int "SPI system frequency"
 	default 0
 	help
-	  This option sets the SPI controller's frequency. Beware this value
-	  depends on the SPI controller being used and also on the system
-	  clock.
+	This option sets the SPI controller's frequency. Beware this value
+	depends on the SPI controller being used and also on the system
+	clock.
 
-config	TI_CC2520_SPI_SLAVE
+config TI_CC2520_SPI_SLAVE
 	int "SPI slave linked to CC2520"
 	default 0
 	help
-	  This option sets the SPI slave number SPI controller has to switch
-	  to when dealing with CC2520 chip.
+	This option sets the SPI slave number SPI controller has to switch
+	to when dealing with CC2520 chip.
 
-config	TI_CC2520_FIBER_STACK_SIZE
-	int "Driver's internal fiber stack size"
-	default 640
+config TI_CC2520_RX_STACK_SIZE
+	int "Driver's internal rx thread stack size"
+	default 800
 	help
-	  This option sets the driver's stack size for its internal fiber.
-	  The default value should be sufficient, but it case it prooves to be
-	  a too little, this option makes it easy to play with the size.
+	This option sets the driver's stack size for its internal rx thread.
+	The default value should be sufficient, but in case it prooves to be
+	a too little one, this option makes it easy to play with the size.
 
-config	TI_CC2520_CHANNEL
+config TI_CC2520_CHANNEL
 	int "TI CC2520 Channel"
 	default 26
 	range 11 26
 	help
-	  All the 802.15.4 devices that want to connect to each other need
-	  to have same channel. Default channel is 26.
+	All the 802.15.4 devices that want to connect to each other need
+	to have same channel. Default channel is 26.
 
-config TI_CC2520_AUTO_CRC
-	bool "Let the chip handling CRC on reception"
-	default y
+config TI_CC2520_INIT_PRIO
+	int "CC2520 intialization priority"
+	default 80
 	help
-	  When receiving a packet, the hardware can verify the CRC by itself
-	  and will provide a flag letting know the success - or not - on
-	  a flag on the footer.
-
-config TI_CC2520_LINK_DETAILS
-	bool "Forward RSSI and link information on reception to upper stack"
-	default n
-	select TI_CC2520_AUTO_CRC
-	help
-	  If necessary, it will be possible to grab link and RSSI information
-	  from the packet footer and forward them to the above stack.
-
-config TI_CC2520_AUTO_ACK
-	bool "Let the chip handle TX/RX IEEE 802.15.4 ACK requests"
-	default n
-	select TI_CC2520_AUTO_CRC
-	help
-	  The chip is able to reply by itself to ACK requests as well as
-	  waiting for an ACK when a TX packet is requesting an ACK. However,
-	  this feature requires the chip to get hardware filtering on, and
-	  thus the above stack needs to provide the right information for such
-	  filtering feature to work.
+	Set the initialization priority number. Do not mess with it unless
+	you know what you are doing. Beware cc2520 requires gpio and spi to
+	be ready first (and sometime gpio should be the very first as spi
+	might need it too). And of course it has to start before the net stack.
 
 endif
+
+config UPIPE_15_4
+	bool "UART PIPE fake radio driver support for QEMU"
+	depends on BOARD_QEMU_X86
+	select NETWORKING
+	select UART_PIPE
+	default n
+
+config UPIPE_15_4_DRV_NAME
+	string "UART PIPE Driver name"
+	default "upipe_15_4"
+	depends on UPIPE_15_4
+
+config SYS_LOG_UPIPE_15_4_LEVEL
+	int "UART PIPE driver log level"
+	default 0
+	depends on UPIPE_15_4
+	help
+	Sets log level for fake 802.15.4 UPIPE driver.
+
+	Levels are:
+
+	- 0 OFF, do not write
+
+	- 1 ERROR, only write SYS_LOG_ERR
+
+	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+
+	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+
+	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 endmenu

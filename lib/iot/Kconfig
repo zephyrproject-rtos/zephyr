@@ -18,4 +18,10 @@ menu "IoT Protocols"
 
 source "lib/iot/zoap/Kconfig"
 
+source "lib/iot/dns/Kconfig"
+
+source "lib/iot/mqtt/Kconfig"
+
+source "lib/iot/http/Kconfig"
+
 endmenu

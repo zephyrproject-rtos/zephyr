@@ -164,3 +164,29 @@
 		KEEP(*(SORT_BY_NAME("._k_memory_pool*")))
 		_k_mem_pool_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	SECTION_DATA_PROLOGUE(net_if, (OPTIONAL),)
+	{
+		__net_if_start = .;
+		*(".net_if.*")
+		KEEP(*(SORT_BY_NAME(".net_if*")))
+		__net_if_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#if defined(CONFIG_NET_SHELL)
+	SECTION_DATA_PROLOGUE(net_stack, (OPTIONAL),)
+	{
+		__net_stack_start = .;
+		*(".net_stack.*")
+		KEEP(*(SORT_BY_NAME(".net_stack*")))
+		__net_stack_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif /* CONFIG_NET_SHELL */
+
+	SECTION_DATA_PROLOGUE(net_l2_data, (OPTIONAL),)
+	{
+		__net_l2_data_start = .;
+		*(".net_l2.data")
+		KEEP(*(SORT_BY_NAME(".net_l2.data*")))
+		__net_l2_data_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

@@ -1,0 +1,265 @@
+# Kconfig - IP stack config
+
+#
+# Copyright (c) 2016 Intel Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menu "IP stack"
+	depends on NETWORKING
+
+# Hidden option
+config NET_L2_RAW_CHANNEL
+	bool
+	default n
+
+if !NET_L2_RAW_CHANNEL
+
+config NET_INIT_PRIO
+	int
+	default 90
+	help
+	Network initialization priority level. This number tells how
+	early in the boot the network stack is initialized.
+
+source "subsys/net/ip/Kconfig.debug"
+
+source "subsys/net/ip/Kconfig.ipv6"
+
+source "subsys/net/ip/Kconfig.ipv4"
+
+config NET_IP_ADDR_CHECK
+	bool "Check IP address validity before sending IP packet"
+	default y
+	help
+	Check that either the source or destination address is
+	correct before sending either IPv4 or IPv6 network packet.
+
+config NET_MAX_ROUTERS
+	int "How many routers are supported"
+	default 2 if NET_IPV4 && NET_IPV6
+	default 1 if NET_IPV4 && !NET_IPV6
+	default 1 if !NET_IPV4 && NET_IPV6
+	range 1 254
+	help
+	The value depends on your network needs.
+
+config NET_ROUTE
+	bool
+	depends on NET_IPV6
+	select NET_IPV6_ND
+	default n
+	default y if NET_IPV6
+
+config	NET_MAX_ROUTES
+	int "Max number of routing entries stored."
+	default NET_IPV6_MAX_NEIGHBORS
+	depends on NET_ROUTE
+	help
+	This determines how many entries can be stored in routing table.
+
+config	NET_MAX_NEXTHOPS
+	int "Max number of next hop entries stored."
+	default NET_MAX_ROUTES
+	depends on NET_ROUTE
+	help
+	This determines how many entries can be stored in nexthop table.
+
+config NET_ROUTE_MCAST
+	bool
+	depends on NET_ROUTE
+	default n
+
+config	NET_MAX_MCAST_ROUTES
+	int "Max number of multicast routing entries stored."
+	default 1
+	depends on NET_ROUTE_MCAST
+	help
+	This determines how many entries can be stored in multicast
+	routing table.
+
+config NET_TCP
+	bool "Enable TCP"
+	default n
+	help
+	The value depends on your network needs.
+
+config NET_DEBUG_TCP
+	bool "Debug TCP"
+	default n
+	depends on NET_TCP && NET_LOG
+	help
+	Enables TCP handler output debug messages
+
+config NET_UDP
+	bool "Enable UDP"
+	default y
+	help
+	The value depends on your network needs.
+
+config NET_DEBUG_UDP
+	bool "Debug UDP"
+	default n
+	depends on NET_UDP && NET_LOG
+	help
+	Enables UDP handler output debug messages
+
+config NET_MAX_CONN
+	int "How many network connections are supported"
+	depends on NET_UDP || NET_TCP
+	default 4
+	default 8 if NET_IPV6 && NET_IPV4
+	help
+	The value depends on your network needs. The value
+	should include both UDP and TCP connections.
+
+config NET_CONN_CACHE
+	bool "Cache network connections"
+	depends on NET_UDP || NET_TCP
+	default n
+	help
+	Caching takes slight more memory but will speedup connection
+	handling of UDP and TCP connections.
+
+config NET_MAX_CONTEXTS
+	int "Number of network contexts to allocate"
+	default 2
+	help
+	Each network context is used to describe a network 5-tuple that
+	is used when listening or sending network traffic. This is very
+	similar as one could call a network socket in some other systems.
+
+config NET_CONTEXT_SYNC_RECV
+	bool "Support synchronous functionality in net_context_recv() API"
+	default y
+	help
+	You can disable sync support to save some memory if you are calling
+	net_context_recv() in async way only when timeout is set to 0.
+
+config NET_CONTEXT_CHECK
+	bool "Check options when calling various net_context functions"
+	default y
+	help
+	If you know that the options passed to net_context...() functions
+	are ok, then you can disable the checks to save some memory.
+
+choice NET_SLIP
+	prompt "Use SLIP connectivity with QEMU"
+	optional
+	default NET_SLIP_TUN
+	help
+	The SLIP support is only used when the application is
+	run inside QEMU and the network peer is run in your
+	host.
+	The SLIP support is only used when the application is
+	run inside QEMU and the network peer is run in your
+	host. The host needs to have tunslip running in order
+	to receive and send network packets via the SLIP driver.
+	The SLIP driver Kconfig options can be tweaked in drivers
+	section.
+	Options are provided to communicate with QEMU via a TUN driver,
+	the default, as it requires less configuration in the host side,
+	or via a TAP driver.
+config NET_SLIP_TUN
+	bool "TUN SLIP driver"
+	select SLIP
+	select UART_PIPE
+	select UART_INTERRUPT_DRIVEN
+	select NET_L2_DUMMY
+	help
+	The host needs to have tunslip running in order
+	to receive and send network packets via the SLIP driver.
+	Choose this if unsure.
+config NET_SLIP_TAP
+	bool "TAP SLIP driver"
+	select SLIP
+	select UART_PIPE
+	select UART_INTERRUPT_DRIVEN
+	select SLIP_TAP
+	help
+	SLIP TAP support is necessary when testing IPv4/ARP. The host
+	needs to have tunslip with TAP support running in order to
+	communicate via the SLIP driver.
+endchoice
+
+config NET_TRICKLE
+	bool "Enable Trickle library"
+	default n
+	help
+	Normally this is enabled automatically if needed,
+	so say 'n' if unsure.
+
+config NET_DEBUG_TRICKLE
+	bool "Debug Trickle algorithm"
+	default n
+	depends on NET_TRICKLE && NET_LOG
+	help
+	Enables Trickle library output debug messages
+
+endif # NET_L2_RAW_CHANNEL
+
+config NET_NBUF_RX_COUNT
+	int "How many network receives can be pending at the same time"
+	default 2
+	help
+	Each RX buffer will occupy smallish amount of memory.
+	See include/net/nbuf.h and the sizeof(struct nbuf)
+
+config NET_NBUF_TX_COUNT
+	int "How many network sends can be pending at the same time"
+	default 2
+	help
+	Each TX buffer will occupy smallish amount of memory.
+	See include/net/nbuf.h and the sizeof(struct nbuf)
+
+config NET_NBUF_DATA_COUNT
+	int "How many network data buffers are allocated"
+	default 16
+	help
+	Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish
+	header (sizeof(struct net_buf)) amount of data.
+
+config NET_NBUF_DATA_SIZE
+	int "Size of each network data fragment"
+	default 128
+	default 125 if NET_L2_IEEE802154
+	help
+	This value tells what is the size of the data fragment that is
+	received from the network.
+	Example: For IEEE 802.15.4, the network packet is 127 bytes long,
+	which leaves in worst case 81 bytes for user data (MTU).
+	In order to be able to receive at least full IPv6 packet which
+	has a size of 1280 bytes, the one should allocate 16 fragments here.
+
+config NET_NBUF_USER_DATA_SIZE
+	int "Size of user_data reserved"
+	default 0
+	default 4 if NET_L2_BLUETOOTH
+	help
+	This is for drivers to set how much user_data shall be included in
+	each network data fragment.
+	Example: For Bluetooth, the user_data shall be at least 4 bytes as
+	that is used for identifying the type of data they are carrying.
+
+source "subsys/net/ip/Kconfig.stack"
+
+source "subsys/net/ip/l2/Kconfig"
+
+source "subsys/net/ip/Kconfig.mgmt"
+
+source "subsys/net/ip/Kconfig.rpl"
+
+source "subsys/net/ip/Kconfig.samples"
+
+endmenu

@@ -20,17 +20,16 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NET_IPV4)
-
 #ifndef __ARP_H
 #define __ARP_H
 
+#if defined(CONFIG_NET_ARP)
+
 #include <net/ethernet.h>
 
-#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ll(buf))
+#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ip_data(buf))
 
 struct net_arp_hdr {
-	struct net_eth_hdr eth_hdr;
 	uint16_t hwtype;		/* HTYPE */
 	uint16_t protocol;		/* PTYPE */
 	uint8_t hwlen;			/* HLEN */
@@ -49,8 +48,13 @@ struct net_arp_hdr {
 
 struct net_buf *net_arp_prepare(struct net_buf *buf);
 enum net_verdict net_arp_input(struct net_buf *buf);
+
 void net_arp_init(void);
 
-#endif /* __ARP_H */
+#else /* CONFIG_NET_ARP */
 
-#endif /* CONFIG_NET_IPV4 */
+#define net_arp_init(...)
+
+#endif /* CONFIG_NET_ARP */
+
+#endif /* __ARP_H */

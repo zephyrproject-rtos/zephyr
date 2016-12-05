@@ -16,19 +16,18 @@
 #ifndef __ZPERF_SESSION_H
 #define __ZPERF_SESSION_H
 
-#include <misc/printk.h>
-#include <net/net_core.h>
-#include <net/net_socket.h>
-#include <net/ip_buf.h>
-#include <net/net_ip.h>
 #include <sections.h>
 #include <toolchain.h>
+
 #include <zephyr.h>
+#include <misc/printk.h>
+
+#include <net/net_ip.h>
+#include <net/net_core.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
 #include "shell_utils.h"
-
 
 /* Type definition */
 enum state {
@@ -47,7 +46,8 @@ enum session_proto {
 struct session {
 	/* Tuple */
 	uint16_t port;
-	uip_ipaddr_t ip;
+
+	struct net_addr ip;
 
 	enum state state;
 

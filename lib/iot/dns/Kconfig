@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+config DNS_RESOLVER
+	bool
+	prompt "DNS resolver"
+	default n
+	help
+	This option enables the DNS client side support for Zephyr
+
+config DNS_RESOLVER_ADDITIONAL_BUF_CTR
+	int
+	prompt "Additional DNS buffers"
+	depends on DNS_RESOLVER
+	default 0
+	help
+	Number of additional buffers available for the DNS resolver.
+	The DNS resolver requires at least one buffer. This option
+	enables additional buffers required for multiple concurrent
+	DNS connections.
+
+config DNS_RESOLVER_ADDITIONAL_QUERIES
+	int
+	prompt "Additional DNS queries"
+	depends on DNS_RESOLVER
+	range 0 2
+	default 1
+	help
+	Number of additional DNS queries that the DNS resolver may
+	generate when the RR ANSWER only contains CNAME(s).
+	The maximum value of this variable is constrained to avoid
+	'alias loops'.
