@@ -25,7 +25,7 @@
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define RADIO_PDU_LEN_MAX (BIT(5) - 1)
-#elif defined(NRF52)
+#elif defined(CONFIG_SOC_SERIES_NRF52X)
 #define RADIO_PDU_LEN_MAX (BIT(8) - 1)
 #else
 #error "Platform not defined."
