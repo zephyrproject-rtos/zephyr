@@ -67,15 +67,12 @@ int dns_init(void)
 }
 
 static
-int dns_write(struct net_context *net_ctx, struct net_buf *dns_data,
-	      int32_t timeout, uint16_t dns_id, enum dns_query_type type,
-	      struct net_buf *dns_qname, struct sockaddr *dns_server);
+int dns_write(struct dns_context *ctx, struct net_buf *dns_data,
+	      uint16_t dns_id, struct net_buf *dns_qname);
 
 static
-int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
-	     int32_t timeout, uint16_t dns_id, enum dns_query_type type,
-	     uint8_t *addresses, uint8_t *items, uint8_t elements,
-	     uint8_t *cname, uint16_t *cname_len);
+int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
+	     uint16_t dns_id, uint8_t *cname, uint16_t *cname_len);
 
 /*
  * Note about the DNS transaction identifier:
@@ -88,12 +85,9 @@ int dns_resolve(struct dns_context *ctx)
 {
 	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
-	uint8_t *addresses;
 	uint16_t dns_id;
 	int rc;
 	int i;
-
-	addresses = (uint8_t *)ctx->address.ipv4;
 
 	dns_id = sys_rand32_get();
 
@@ -118,15 +112,12 @@ int dns_resolve(struct dns_context *ctx)
 
 	i = 0;
 	do {
-		rc = dns_write(ctx->net_ctx, dns_data, ctx->timeout, dns_id,
-			       ctx->query_type, dns_qname, ctx->dns_server);
+		rc = dns_write(ctx, dns_data, dns_id, dns_qname);
 		if (rc != 0) {
 			goto exit_resolve;
 		}
 
-		rc = dns_read(ctx->net_ctx, dns_data, ctx->timeout, dns_id,
-			      ctx->query_type, addresses,
-			      &ctx->items, ctx->elements,
+		rc = dns_read(ctx, dns_data, dns_id,
 			      dns_qname->data, &dns_qname->len);
 		if (rc != 0) {
 			goto exit_resolve;
@@ -153,9 +144,8 @@ exit_resolve:
 }
 
 static
-int dns_write(struct net_context *net_ctx, struct net_buf *dns_data,
-	      int32_t timeout, uint16_t dns_id, enum dns_query_type type,
-	      struct net_buf *dns_qname, struct sockaddr *dns_server)
+int dns_write(struct dns_context *ctx, struct net_buf *dns_data,
+	      uint16_t dns_id, struct net_buf *dns_qname)
 {
 	struct net_buf *tx;
 	int server_addr_len;
@@ -163,13 +153,13 @@ int dns_write(struct net_context *net_ctx, struct net_buf *dns_data,
 
 	rc = dns_msg_pack_query(dns_data->data, &dns_data->len, dns_data->size,
 				dns_qname->data, dns_qname->len, dns_id,
-				(enum dns_rr_type)type);
+				(enum dns_rr_type)ctx->query_type);
 	if (rc != 0) {
 		rc = -EINVAL;
 		goto exit_write;
 	}
 
-	tx = net_nbuf_get_tx(net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_write;
@@ -181,15 +171,15 @@ int dns_write(struct net_context *net_ctx, struct net_buf *dns_data,
 		goto exit_write;
 	}
 
-	if (dns_server->family == AF_INET) {
+	if (ctx->dns_server->family == AF_INET) {
 		server_addr_len = sizeof(struct sockaddr_in);
 	} else {
 		server_addr_len = sizeof(struct sockaddr_in6);
 	}
 
 	/* tx and dns_data buffers will be dereferenced after this call */
-	rc = net_context_sendto(tx, dns_server, server_addr_len, NULL,
-				timeout, NULL, NULL);
+	rc = net_context_sendto(tx, ctx->dns_server, server_addr_len, NULL,
+				ctx->timeout, NULL, NULL);
 	if (rc != 0) {
 		rc = -EIO;
 		goto exit_write;
@@ -235,14 +225,13 @@ int nbuf_copy(struct net_buf *dst, struct net_buf *src, int offset,
 	      int len);
 
 static
-int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
-	     int32_t timeout, uint16_t dns_id, enum dns_query_type type,
-	     uint8_t *addresses, uint8_t *items, uint8_t elements,
-	     uint8_t *cname, uint16_t *cname_len)
+int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
+	     uint16_t dns_id, uint8_t *cname, uint16_t *cname_len)
 {
 	struct net_buf *rx = NULL;
 	/* helper struct to track the dns msg received from the server */
 	struct dns_msg_t dns_msg;
+	uint8_t *addresses;
 	/* RR ttl, so far it is not passed to caller */
 	uint32_t ttl;
 	uint8_t *src;
@@ -255,12 +244,17 @@ int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
 	int rc;
 	int i;
 
-	if (elements <= 0) {
+	/* The cast is applied on address.ipv4, however we can also apply it on
+	 * address.ipv6 and we will get the same result.
+	 */
+	addresses = (uint8_t *)ctx->address.ipv4;
+
+	if (ctx->elements <= 0) {
 		rc = -EINVAL;
 		goto exit_error;
 	}
 
-	rc = dns_recv(net_ctx, &rx, timeout);
+	rc = dns_recv(ctx->net_ctx, &rx, ctx->timeout);
 	if (rc != 0) {
 		rc = -EIO;
 		goto exit_error;
@@ -294,7 +288,7 @@ int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
 		goto exit_error;
 	}
 
-	if (type == DNS_QUERY_TYPE_A) {
+	if (ctx->query_type == DNS_QUERY_TYPE_A) {
 		address_size = DNS_IPV4_LEN;
 	} else {
 		address_size = DNS_IPV6_LEN;
@@ -302,7 +296,7 @@ int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
 
 	/* while loop to traverse the response */
 	answer_ptr = DNS_QUERY_POS;
-	*items = 0;
+	ctx->items = 0;
 	i = 0;
 	while (i < dns_header_ancount(dns_msg.msg)) {
 		rc = dns_unpack_answer(&dns_msg, answer_ptr, &ttl);
@@ -320,11 +314,11 @@ int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
 			}
 
 			src = dns_msg.msg + dns_msg.response_position;
-			dst = addresses + *items * address_size;
+			dst = addresses + ctx->items * address_size;
 			memcpy(dst, src, address_size);
 
-			*items += 1;
-			if (*items >= elements) {
+			ctx->items += 1;
+			if (ctx->items >= ctx->elements) {
 				/* elements is always >= 1, so it is assumed
 				 * that at least one address was returned.
 				 */
@@ -355,11 +349,13 @@ int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
 	/* No IP addresses were found, so we take the last CNAME to generate
 	 * another query. Number of additional queries is controlled via Kconfig
 	 */
-	if (*items == 0 && dns_msg.response_type == DNS_RESPONSE_CNAME_NO_IP) {
-		src = dns_msg.msg + dns_msg.response_position;
-		*cname_len = dns_msg.response_length;
+	if (ctx->items == 0) {
+		if (dns_msg.response_type == DNS_RESPONSE_CNAME_NO_IP) {
+			src = dns_msg.msg + dns_msg.response_position;
+			*cname_len = dns_msg.response_length;
 
-		memcpy(cname, src, *cname_len);
+			memcpy(cname, src, *cname_len);
+		}
 	}
 
 exit_ok:
