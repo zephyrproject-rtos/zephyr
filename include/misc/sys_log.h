@@ -55,13 +55,10 @@ void syslog_hook_install(void (*hook)(const char *, ...));
 /* decide print func */
 #if defined(CONFIG_SYS_LOG_EXT_HOOK)
 #define SYS_LOG_BACKEND_FN syslog_hook
-#elif defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define SYS_LOG_BACKEND_FN printf
 #else
 #include <misc/printk.h>
 #define SYS_LOG_BACKEND_FN printk
-#endif /* CONFIG_STDOUT_CONSOLE */
+#endif
 
 /* Should use color? */
 #if defined(CONFIG_SYS_LOG_SHOW_COLOR)
