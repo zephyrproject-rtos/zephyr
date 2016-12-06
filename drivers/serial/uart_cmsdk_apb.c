@@ -22,6 +22,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
+#include <clock_control/arm_clock_control.h>
 #include <misc/__assert.h>
 #include <board.h>
 #include <init.h>
@@ -74,6 +75,12 @@ struct uart_cmsdk_apb_dev_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_t irq_cb;
 #endif
+	/* UART Clock control in Active State */
+	const struct arm_clock_control_t uart_cc_as;
+	/* UART Clock control in Sleep State */
+	const struct arm_clock_control_t uart_cc_ss;
+	/* UART Clock control in Deep Sleep State */
+	const struct arm_clock_control_t uart_cc_dss;
 };
 
 /* convenience defines */
@@ -127,6 +134,20 @@ static int uart_cmsdk_apb_init(struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 #endif
+
+#ifdef CONFIG_CLOCK_CONTROL
+	/* Enable clock for subsystem */
+	struct device *clk =
+		device_get_binding(CONFIG_ARM_CLOCK_CONTROL_DEV_NAME);
+
+	struct uart_cmsdk_apb_dev_data * const data = DEV_DATA(dev);
+
+#ifdef CONFIG_SOC_SERIES_BEETLE
+	clock_control_on(clk, (clock_control_subsys_t *) &data->uart_cc_as);
+	clock_control_on(clk, (clock_control_subsys_t *) &data->uart_cc_ss);
+	clock_control_on(clk, (clock_control_subsys_t *) &data->uart_cc_dss);
+#endif /* CONFIG_SOC_SERIES_BEETLE */
+#endif /* CONFIG_CLOCK_CONTROL */
 
 	/* Set baud rate */
 	baudrate_set(dev);
@@ -450,6 +471,12 @@ static const struct uart_device_config uart_cmsdk_apb_dev_cfg_0 = {
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
 	.baud_rate = CONFIG_UART_CMSDK_APB_PORT0_BAUD_RATE,
+	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
+		       .device = CMSDK_APB_UART0,},
+	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
+		       .device = CMSDK_APB_UART0,},
+	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_APB_UART0,},
 };
 
 DEVICE_AND_API_INIT(uart_cmsdk_apb_0,
@@ -509,6 +536,12 @@ static const struct uart_device_config uart_cmsdk_apb_dev_cfg_1 = {
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_1 = {
 	.baud_rate = CONFIG_UART_CMSDK_APB_PORT1_BAUD_RATE,
+	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
+		       .device = CMSDK_APB_UART1,},
+	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
+		       .device = CMSDK_APB_UART1,},
+	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_APB_UART1,},
 };
 
 DEVICE_AND_API_INIT(uart_cmsdk_apb_1,
@@ -568,6 +601,12 @@ static const struct uart_device_config uart_cmsdk_apb_dev_cfg_2 = {
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_2 = {
 	.baud_rate = CONFIG_UART_CMSDK_APB_PORT2_BAUD_RATE,
+	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
+		       .device = CMSDK_APB_UART2,},
+	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
+		       .device = CMSDK_APB_UART2,},
+	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_APB_UART2,},
 };
 
 DEVICE_AND_API_INIT(uart_cmsdk_apb_2,
@@ -627,6 +666,12 @@ static const struct uart_device_config uart_cmsdk_apb_dev_cfg_3 = {
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_3 = {
 	.baud_rate = CONFIG_UART_CMSDK_APB_PORT3_BAUD_RATE,
+	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
+		       .device = CMSDK_APB_UART3,},
+	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
+		       .device = CMSDK_APB_UART3,},
+	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_APB_UART3,},
 };
 
 DEVICE_AND_API_INIT(uart_cmsdk_apb_3,
@@ -686,6 +731,12 @@ static const struct uart_device_config uart_cmsdk_apb_dev_cfg_4 = {
 
 static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
 	.baud_rate = CONFIG_UART_CMSDK_APB_PORT4_BAUD_RATE,
+	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
+		       .device = CMSDK_APB_UART4,},
+	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
+		       .device = CMSDK_APB_UART4,},
+	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_APB_UART4,},
 };
 
 DEVICE_AND_API_INIT(uart_cmsdk_apb_3,

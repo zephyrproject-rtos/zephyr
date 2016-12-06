@@ -21,6 +21,7 @@
 #include <gpio.h>
 #include <init.h>
 #include <soc.h>
+#include <clock_control/arm_clock_control.h>
 
 #include "gpio_cmsdk_ahb.h"
 #include "gpio_utils.h"
@@ -34,6 +35,12 @@ typedef void (*gpio_config_func_t)(struct device *port);
 struct gpio_cmsdk_ahb_cfg {
 	volatile struct gpio_cmsdk_ahb *port;
 	gpio_config_func_t gpio_config_func;
+	/* GPIO Clock control in Active State */
+	struct arm_clock_control_t gpio_cc_as;
+	/* GPIO Clock control in Sleep State */
+	struct arm_clock_control_t gpio_cc_ss;
+	/* GPIO Clock control in Deep Sleep State */
+	struct arm_clock_control_t gpio_cc_dss;
 };
 
 struct gpio_cmsdk_ahb_dev_data {
@@ -297,6 +304,18 @@ static int gpio_cmsdk_ahb_init(struct device *dev)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
 
+#ifdef CONFIG_CLOCK_CONTROL
+	/* Enable clock for subsystem */
+	struct device *clk =
+		device_get_binding(CONFIG_ARM_CLOCK_CONTROL_DEV_NAME);
+
+#ifdef CONFIG_SOC_SERIES_BEETLE
+	clock_control_on(clk, (clock_control_subsys_t *) &cfg->gpio_cc_as);
+	clock_control_off(clk, (clock_control_subsys_t *) &cfg->gpio_cc_ss);
+	clock_control_off(clk, (clock_control_subsys_t *) &cfg->gpio_cc_dss);
+#endif /* CONFIG_SOC_SERIES_BEETLE */
+#endif /* CONFIG_CLOCK_CONTROL */
+
 	cfg->gpio_config_func(dev);
 
 	return 0;
@@ -309,6 +328,12 @@ static void gpio_cmsdk_ahb_config_0(struct device *dev);
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_0_cfg = {
 	.port = ((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO0),
 	.gpio_config_func = gpio_cmsdk_ahb_config_0,
+	.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,
+		       .device = CMSDK_AHB_GPIO0,},
+	.gpio_cc_ss = {.bus = CMSDK_AHB, .state = SOC_SLEEP,
+		       .device = CMSDK_AHB_GPIO0,},
+	.gpio_cc_dss = {.bus = CMSDK_AHB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_AHB_GPIO0,},
 };
 
 static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_ahb_0_data;
@@ -336,6 +361,12 @@ static void gpio_cmsdk_ahb_config_1(struct device *dev);
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_1_cfg = {
 	.port = ((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO1),
 	.gpio_config_func = gpio_cmsdk_ahb_config_1,
+	.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,
+		       .device = CMSDK_AHB_GPIO1,},
+	.gpio_cc_ss = {.bus = CMSDK_AHB, .state = SOC_SLEEP,
+		       .device = CMSDK_AHB_GPIO1,},
+	.gpio_cc_dss = {.bus = CMSDK_AHB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_AHB_GPIO1,},
 };
 
 static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_ahb_1_data;
@@ -363,6 +394,12 @@ static void gpio_cmsdk_ahb_config_2(struct device *dev);
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_2_cfg = {
 	.port = ((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO2),
 	.gpio_config_func = gpio_cmsdk_ahb_config_2,
+	.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,
+		       .device = CMSDK_AHB_GPIO2,},
+	.gpio_cc_ss = {.bus = CMSDK_AHB, .state = SOC_SLEEP,
+		       .device = CMSDK_AHB_GPIO2,},
+	.gpio_cc_dss = {.bus = CMSDK_AHB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_AHB_GPIO2,},
 };
 
 static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_ahb_2_data;
@@ -390,6 +427,12 @@ static void gpio_cmsdk_ahb_config_3(struct device *dev);
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_3_cfg = {
 	.port = ((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO3),
 	.gpio_config_func = gpio_cmsdk_ahb_config_3,
+	.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,
+		       .device = CMSDK_AHB_GPIO3,},
+	.gpio_cc_ss = {.bus = CMSDK_AHB, .state = SOC_SLEEP,
+		       .device = CMSDK_AHB_GPIO3,},
+	.gpio_cc_dss = {.bus = CMSDK_AHB, .state = SOC_DEEPSLEEP,
+			.device = CMSDK_AHB_GPIO3,},
 };
 
 static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_ahb_3_data;

@@ -1,0 +1,40 @@
+How to introduce a new version of stm32cube:
+============================================
+
+Original STM32Cube tree structure has been modified to a minimum
+structure for a better fit into Zephyr.
+STM32Cube is divided into drivers and soc section, with:
+
+drivers/
+       include/ contains Cube HAL/LL files from:
+       STM32Cube_FW_F1_VX.X.X/Drivers/STM32YYxx_HAL_Driver/Inc/*
+       src/ contains:
+       STM32Cube_FW_F1_VX.X.X/Drivers/STM32YYxx_HAL_Driver/Src/*
+soc/ contains STM32 CMSIS files from
+       *STM32Cube_FW_F1_VX.X.X/Drivers/CMSIS/Device/ST/STM32F1xx/Include/*
+       *STM32Cube_FW_F1_VX.X.X/Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c
+
+One file needs to be renamed:
+driver/include/stm32f1xx_hal_conf_template.h
+into:
+driver/include/stm32f1xx_hal_conf.h
+
+
+In order to enjoy ST CMSIS definitions:
+    *CONFIG_HAS_STM32CUBE should be defined
+    *stm32yyxx.h should be included in soc.h
+       **E.g.: #include <stm32f1xx.h>
+
+In order to use STM32Cube HAL, these files should be compiled:
+In /ext/hal/st/stm32cube/Kbuild :
+obj-y += stm32yyxx/drivers/src/stm32yyxx_hal.o
+obj-y += stm32yyxx/drivers/src/stm32yyxx_hal_rcc.o
+obj-y += stm32yyxx/soc/system_stm32yyxx.o
+Plus add HAL driver file (when needed):
+obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32yyxx/drivers/src/stm32yyxx_hal_uart.o
+
+
+Additionally, in order to use STM32Cube LL (when needed):
+    *include stm32yyxx_ll_usart.h in soc.h
+       **E.g.: #include <stm32f1xx_ll_usart.h>
+

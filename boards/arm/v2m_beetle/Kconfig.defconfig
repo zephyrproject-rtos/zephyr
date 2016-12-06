@@ -70,4 +70,24 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
+if WATCHDOG
+
+config WDOG_CMSDK_APB
+	def_bool y
+
+endif # WATCHDOG
+
+if COUNTER
+
+config COUNTER_TMR_CMSDK_APB
+	def_bool y
+
+config COUNTER_TMR_CMSDK_APB_0
+	def_bool y
+
+config COUNTER_TMR_CMSDK_APB_1
+	def_bool y
+
+endif # COUNTER
+
 endif # BOARD_V2M_BEETLE

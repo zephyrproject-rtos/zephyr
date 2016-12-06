@@ -58,4 +58,8 @@ source "drivers/clock_control/Kconfig.stm32f4x"
 
 source "drivers/clock_control/Kconfig.nrf5"
 
+source "drivers/clock_control/Kconfig.stm32l4x"
+
+source "drivers/clock_control/Kconfig.beetle"
+
 endif # CLOCK_CONTROL

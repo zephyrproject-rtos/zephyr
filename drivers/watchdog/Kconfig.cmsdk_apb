@@ -1,0 +1,45 @@
+# Kconfig.cmsdk_ahb - ARM CMSDK (Cortex-M System Design Kit) AHB WDOG cfg
+#
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_FAMILY_ARM
+
+config WDOG_CMSDK_APB
+	bool "CMSDK APB Watchdog Driver for ARM family of MCUs"
+	depends on RUNTIME_NMI
+	help
+	  Enable CMSDK APB Watchdog (WDOG_CMSDK_APB) Driver for ARM
+	  family of MCUs.
+
+config WDOG_CMSDK_APB_START_AT_BOOT
+	bool "Start Watchdog during boot"
+	depends on WDOG_CMSDK_APB
+	default n
+	help
+	  Enable this setting to allow WDOG to be automatically started
+	  during device initialization. Note that once WDOG is started
+	  it must be reloaded before the counter reaches 0, otherwise
+	  the MCU will be reset.
+
+config WDOG_CMSDK_APB_DEVICE_NAME
+	string "Device name for CMSDK APB Watchdog"
+	depends on WDOG_CMSDK_APB
+	default "WATCHDOG_0"
+	help
+	  Set the name used by WDOG device during registration.
+
+endif # SOC_FAMILY_ARM

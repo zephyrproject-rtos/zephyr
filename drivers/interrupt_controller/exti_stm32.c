@@ -36,6 +36,8 @@
 #define EXTI_LINES 19
 #elif CONFIG_SOC_SERIES_STM32F4X
 #define EXTI_LINES 23
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+#define EXTI_LINES 40
 #endif
 
 /* 10.3.7 EXTI register map */
@@ -126,6 +128,23 @@ void stm32_exti_enable(int line)
 			irqnum = STM32F4_IRQ_EXTI22;
 			break;
 		}
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+	if (line >= 5 && line <= 9) {
+		irqnum = STM32L4_IRQ_EXTI9_5;
+	} else if (line >= 10 && line <= 15) {
+		irqnum = STM32L4_IRQ_EXTI15_10;
+	} else if (line < 5) {
+		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
+		irqnum = STM32L4_IRQ_EXTI0 + line;
+	} else {/* > 15 are not mapped on an IRQ */
+		/*
+		 * On STM32L4X, this function also support enabling EXTI
+		 * lines that are not connected to an IRQ. This might be used
+		 * by other drivers or boards, to allow the device wakeup on
+		 * some non-GPIO signals.
+		 */
+		return;
 	}
 #else
 	#error "Unknown STM32 SoC"
@@ -398,7 +417,36 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_EXTI22_IRQ_PRI,
 		__stm32_exti_isr_22, DEVICE_GET(exti_stm32),
 		0);
-#endif /* CONFIG_SOC_SERIES_STM32FXX */
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+	IRQ_CONNECT(STM32L4_IRQ_EXTI0,
+		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
+		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32L4_IRQ_EXTI1,
+		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
+		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32L4_IRQ_EXTI2,
+		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
+		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32L4_IRQ_EXTI3,
+		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
+		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32L4_IRQ_EXTI4,
+		CONFIG_EXTI_STM32_EXTI4_IRQ_PRI,
+		__stm32_exti_isr_4, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32L4_IRQ_EXTI9_5,
+		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
+		__stm32_exti_isr_9_5, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32L4_IRQ_EXTI15_10,
+		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
+		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
+		0);
+#endif
 }
 
 

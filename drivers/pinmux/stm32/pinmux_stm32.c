@@ -61,7 +61,7 @@ static int enable_port(uint32_t port, struct device *clk)
 	}
 
 	/* TODO: Merge this and move the port clock to the soc file */
-#ifdef	CONFIG_SOC_SERIES_STM32F1X
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32L4X)
 	clock_control_subsys_t subsys = stm32_get_port_clock(port);
 
 	return clock_control_on(clk, subsys);

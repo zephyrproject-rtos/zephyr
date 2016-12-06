@@ -26,4 +26,6 @@ if COUNTER
 
 source "drivers/counter/Kconfig.qmsi"
 
+source "drivers/counter/Kconfig.tmr_cmsdk_apb"
+
 endif # COUNTER

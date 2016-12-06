@@ -1,0 +1,65 @@
+# Kconfig - counter configuration options
+#
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_FAMILY_ARM
+
+config COUNTER_TMR_CMSDK_APB
+	bool
+	prompt "ARM CMSDK (Cortex-M System Design Kit) Counter driver"
+	default n
+	help
+	  The timers (TMR) present in the platform are used as counters.
+	  This option enables the support for the counters.
+
+if COUNTER_TMR_CMSDK_APB
+
+# ---------- Counter 0 ----------
+
+config COUNTER_TMR_CMSDK_APB_0
+	bool
+	prompt "Counter 0 driver"
+	default n
+	help
+	  Enable support for Counter 0.
+
+config COUNTER_TMR_CMSDK_APB_0_DEV_NAME
+	string "Counter 0 Device Name"
+	depends on COUNTER_TMR_CMSDK_APB_0
+	default "COUNTER_0"
+	help
+	  Specify the device name for Counter 0 driver.
+
+# ---------- Counter 1 ----------
+
+config COUNTER_TMR_CMSDK_APB_1
+	bool
+	prompt "Counter 1 driver"
+	default n
+	help
+	  Enable support for Counter 1.
+
+config COUNTER_TMR_CMSDK_APB_1_DEV_NAME
+	string "Counter 1 Device Name"
+	depends on COUNTER_TMR_CMSDK_APB_1
+	default "COUNTER_1"
+	help
+	  Specify the device name for Counter 1 driver.
+
+endif # COUNTER_TMR_CMSDK_APB
+
+endif # SOC_FAMILY_ARM

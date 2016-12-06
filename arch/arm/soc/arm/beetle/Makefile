@@ -16,4 +16,4 @@
 # limitations under the License.
 #
 
-obj-y += soc.o
+obj-y += soc.o power.o
