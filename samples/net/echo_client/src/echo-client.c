@@ -124,8 +124,6 @@ static inline void init_app(void)
 {
 	NET_INFO("Run echo client");
 
-	sys_rand32_init();
-
 #if defined(CONFIG_NET_IPV6)
 #if defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
 	if (net_addr_pton(AF_INET6,

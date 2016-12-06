@@ -49,7 +49,6 @@
 int random_start(const char *fn)
 {
 	(void)fn;
-	sys_rand32_init();
 
 	return 0;
 }
