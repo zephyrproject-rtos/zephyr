@@ -15,8 +15,8 @@
  */
 
 #include <errno.h>
-#include <stdio.h>
 #include <string.h>
+#include <misc/printk.h>
 
 #include <zephyr.h>
 #include <init.h>
@@ -56,7 +56,7 @@ static int storage_open(const bt_addr_le_t *addr, uint16_t key,
 #if MAX_FILE_NAME >= STORAGE_FILE_NAME_LEN
 		int len;
 
-		len = snprintf(path, sizeof(path),
+		len = snprintk(path, sizeof(path),
 			       STORAGE_ROOT "/%2.2X%2.2X%2.2X%2.2X%2.2X%2.2X%u",
 			       addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			       addr->a.val[2], addr->a.val[1], addr->a.val[0],
@@ -76,12 +76,12 @@ static int storage_open(const bt_addr_le_t *addr, uint16_t key,
 			}
 		}
 
-		snprintf(path + len, sizeof(path) - len, "/%04x", key);
+		snprintk(path + len, sizeof(path) - len, "/%04x", key);
 #else
 		return -ENAMETOOLONG;
 #endif
 	} else {
-		snprintf(path, sizeof(path), STORAGE_ROOT "/%04x", key);
+		snprintk(path, sizeof(path), STORAGE_ROOT "/%04x", key);
 	}
 
 	return fs_open(file, path);
@@ -149,7 +149,7 @@ static int unlink_recursive(char path[STORAGE_PATH_MAX])
 			break;
 		}
 
-		snprintf(path + path_len, STORAGE_PATH_MAX - path_len, "/%s",
+		snprintk(path + path_len, STORAGE_PATH_MAX - path_len, "/%s",
 			 entry.name);
 
 		if (entry.type == FS_DIR_ENTRY_DIR) {
@@ -180,7 +180,7 @@ static int storage_clear(const bt_addr_le_t *addr)
 
 	if (addr) {
 #if MAX_FILE_NAME >= STORAGE_FILE_NAME_LEN
-		snprintf(path, STORAGE_PATH_MAX,
+		snprintk(path, STORAGE_PATH_MAX,
 			 STORAGE_ROOT "/%2.2X%2.2X%2.2X%2.2X%2.2X%2.2X%u",
 			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			 addr->a.val[2], addr->a.val[1], addr->a.val[0],

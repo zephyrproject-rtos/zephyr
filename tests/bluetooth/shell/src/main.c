@@ -1316,7 +1316,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	snprintf(passkey_str, 7, "%06u", passkey);
+	snprintk(passkey_str, 7, "%06u", passkey);
 
 	printk("Passkey for %s: %s\n", addr, passkey_str);
 }
@@ -1328,7 +1328,7 @@ static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	snprintf(passkey_str, 7, "%06u", passkey);
+	snprintk(passkey_str, 7, "%06u", passkey);
 
 	printk("Confirm passkey for %s: %s\n", addr, passkey_str);
 }
