@@ -106,7 +106,7 @@ out:
 	SYS_LOG_DBG("SPI transaction completed %s error",
 	    error ? "with" : "without");
 
-	device_sync_call_complete(&spi->sync);
+	k_sem_give(&spi->device_sync_sem);
 }
 
 static void push_data(struct device *dev)
@@ -361,7 +361,7 @@ static int spi_dw_transceive(struct device *dev,
 	/* Enable the controller */
 	set_bit_ssienr(info->regs);
 
-	device_sync_call_wait(&spi->sync);
+	k_sem_take(&spi->device_sync_sem, K_FOREVER);
 
 	if (spi->error) {
 		spi->error = 0;
@@ -427,7 +427,7 @@ int spi_dw_init(struct device *dev)
 
 	info->config_func();
 
-	device_sync_call_init(&spi->sync);
+	k_sem_init(&spi->device_sync_sem, 0, UINT_MAX);
 
 	_spi_config_cs(dev);
 

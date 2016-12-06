@@ -43,7 +43,7 @@ struct spi_qmsi_config {
 
 struct spi_qmsi_runtime {
 	struct device *gpio_cs;
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 	qm_spi_config_t cfg;
 	int rc;
 	bool loopback;
@@ -119,7 +119,7 @@ static void transfer_complete(void *data, int error, qm_spi_status_t status,
 
 	pending->dev = NULL;
 	context->rc = error;
-	device_sync_call_complete(&context->sync);
+	k_sem_give(&context->device_sync_sem);
 }
 
 static int spi_qmsi_slave_select(struct device *dev, uint32_t slave)
@@ -205,7 +205,7 @@ static int spi_qmsi_transceive(struct device *dev,
 		device_busy_clear(dev);
 		return -EIO;
 	}
-	device_sync_call_wait(&context->sync);
+	k_sem_take(&context->device_sync_sem, K_FOREVER);
 
 	device_busy_clear(dev);
 
@@ -289,7 +289,7 @@ static int spi_qmsi_init(struct device *dev)
 
 	context->gpio_cs = gpio_cs_init(spi_config);
 
-	device_sync_call_init(&context->sync);
+	k_sem_init(&context->device_sync_sem, 0, UINT_MAX);
 	k_sem_init(&context->sem, 0, UINT_MAX);
 	k_sem_give(&context->sem);
 

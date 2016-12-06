@@ -38,7 +38,7 @@ struct spi_k64_data {
 	uint8_t *rx_buf;
 	uint32_t rx_buf_len;
 	uint32_t xfer_len;
-	device_sync_call_t sync_info;   /* sync call information */
+	struct k_sem device_sync_sem;   /* sync call information */
 	uint8_t error;                  /* error condition */
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;

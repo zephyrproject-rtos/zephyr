@@ -43,7 +43,7 @@ struct spi_intel_data {
 #ifdef CONFIG_PCI
 	struct pci_dev_info pci_dev;
 #endif /* CONFIG_PCI */
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 	uint8_t error;
 	uint8_t padding[3];
 #ifdef CONFIG_SPI_CS_GPIO

@@ -140,7 +140,7 @@ static void completed(struct device *dev, uint32_t error)
 	write_sscr1(spi->sscr1, spi->regs);
 	clear_bit_sscr0_sse(spi->regs);
 
-	device_sync_call_complete(&spi->sync);
+	k_sem_give(&spi->device_sync_sem);
 }
 
 static void pull_data(struct device *dev)
@@ -288,7 +288,7 @@ static int spi_intel_transceive(struct device *dev,
 	write_sscr1(spi->sscr1 | INTEL_SPI_SSCR1_RIE |
 				INTEL_SPI_SSCR1_TIE, spi->regs);
 
-	device_sync_call_wait(&spi->sync);
+	k_sem_take(&spi->device_sync_sem, K_FOREVER);
 
 	if (spi->error) {
 		spi->error = 0;
@@ -385,7 +385,7 @@ int spi_intel_init(struct device *dev)
 
 	_spi_config_cs(dev);
 
-	device_sync_call_init(&spi->sync);
+	k_sem_init(&spi->device_sync_sem, 0, UINT_MAX);
 
 	spi_intel_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 

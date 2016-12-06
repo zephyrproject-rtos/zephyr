@@ -647,7 +647,7 @@ static int spi_k64_transceive(struct device *dev,
 	sys_write32(int_config, (info->regs + SPI_K64_REG_RSER));
 
 	/* wait for transfer to complete */
-	device_sync_call_wait(&spi_data->sync_info);
+	k_sem_take(&spi_data->device_sync_sem, K_FOREVER);
 
 	/* check completion status */
 	if (spi_data->error) {
@@ -834,7 +834,7 @@ complete:
 
 	/* Signal completion */
 
-	device_sync_call_complete(&spi_data->sync_info);
+	k_sem_give(&spi_data->device_sync_sem);
 }
 
 /**
@@ -956,7 +956,7 @@ int spi_k64_init(struct device *dev)
 
 	/* Set up the synchronous call mechanism */
 
-	device_sync_call_init(&data->sync_info);
+	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 
 	/* Configure and enable SPI module IRQs */
 

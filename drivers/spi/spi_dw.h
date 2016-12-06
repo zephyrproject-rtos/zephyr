@@ -41,7 +41,7 @@ struct spi_dw_config {
 };
 
 struct spi_dw_data {
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 	uint32_t error:1;
 	uint32_t dfs:3; /* dfs in bytes: 1,2 or 4 */
 	uint32_t slave:17; /* up 16 slaves */
