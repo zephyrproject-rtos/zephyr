@@ -48,6 +48,15 @@ struct bt_avdtp_seid_lsep {
 	struct bt_avdtp_seid_lsep *next;
 };
 
+/** @brief AVDTP Stream */
+struct bt_avdtp_stream {
+	struct bt_l2cap_br_chan chan; /* Transport Channel*/
+	struct bt_avdtp_seid_info lsep; /* Configured Local SEP */
+	struct bt_avdtp_seid_info rsep; /* Configured Remote SEP*/
+	uint8_t state; /* current state of the stream */
+	struct bt_avdtp_stream *next;
+};
+
 #ifdef __cplusplus
 }
 #endif
