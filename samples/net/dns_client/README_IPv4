@@ -78,54 +78,75 @@ Sample Output (CONFIG_NET_IPV6=n, CONFIG_NET_IPV4=y)
 To exit from QEMU enter: 'CTRL+a, x'
 [QEMU] CPU: qemu32
 
--------------------------------------------
-[run_dns:127] name: not_a_real_domain_name
-rc: -22
-
--------------------------------------------
-[run_dns:127] name: zephyrproject.org
-[run_dns:151] 140.211.169.8
-
--------------------------------------------
-[run_dns:127] name: www.zephyrproject.org
-[run_dns:151] 140.211.169.8
-
--------------------------------------------
-[run_dns:127] name: gerrit.zephyrproject.org
-[run_dns:151] 199.19.213.246
-
--------------------------------------------
-[run_dns:127] name: jira.zephyrproject.org
-[run_dns:151] 199.19.213.246
-
--------------------------------------------
-[run_dns:127] name: jenkins.zephyrproject.org
-[run_dns:151] 199.19.213.246
-
--------------------------------------------
-[run_dns:127] name: linuxfoundation.org
+ -------------------------------------------
+[run_dns:141] name: not_a_real_domain_name
 rc: -5
 
--------------------------------------------
-[run_dns:127] name: www.linuxfoundation.org
-[run_dns:151] 140.211.169.4
+ -------------------------------------------
+[run_dns:141] name: zephyrproject.org
+rc: -22
 
--------------------------------------------
-[run_dns:127] name: collabprojects.linuxfoundation.org
-[run_dns:151] 140.211.169.4
+ -------------------------------------------
+[run_dns:141] name: linux.org
+[run_dns:158] 192.243.104.10
 
--------------------------------------------
-[run_dns:127] name: events.linuxfoundation.org
-[run_dns:151] 140.211.169.4
+ -------------------------------------------
+[run_dns:141] name: www.zephyrproject.org
+[run_dns:158] 140.211.169.8
 
--------------------------------------------
-[run_dns:127] name: training.linuxfoundation.org
-[run_dns:151] 140.211.169.4
+ -------------------------------------------
+[run_dns:141] name: kernel.org
+[run_dns:158] 149.20.4.69
+[run_dns:158] 199.204.44.194
+[run_dns:158] 198.145.20.140
+
+ -------------------------------------------
+[run_dns:141] name: gerrit.zephyrproject.org
+[run_dns:158] 199.19.213.246
+
+ -------------------------------------------
+[run_dns:141] name: linuxfoundation.org
+[run_dns:158] 140.211.169.4
+
+ -------------------------------------------
+[run_dns:141] name: jira.zephyrproject.org
+[run_dns:158] 199.19.213.246
+
+ -------------------------------------------
+[run_dns:141] name: www.wikipedia.org
+[run_dns:158] 208.80.153.224
+
+ -------------------------------------------
+[run_dns:141] name: collabprojects.linuxfoundation.org
+[run_dns:158] 140.211.169.4
+
+ -------------------------------------------
+[run_dns:141] name: gcc.gnu.org
+[run_dns:158] 209.132.180.131
+
+ -------------------------------------------
+[run_dns:141] name: events.linuxfoundation.org
+[run_dns:158] 140.211.169.4
+
+ -------------------------------------------
+[run_dns:141] name: www.google.com
+[run_dns:158] 189.203.166.207
+[run_dns:158] 189.203.166.241
+[run_dns:158] 189.203.166.234
+[run_dns:158] 189.203.166.211
 
 Bye!
+
 
 Known Issues
 ============
 
 The above sample contains a rc: -22 (-EINVAL). This is the expected behavior
 for that domain name.
+
+If a lot of rc: -5 (-EIO) errors are flooding the screen, increment
+APP_SLEEP_MSECS to 500 or even 1000. See src/config.h.
+
+There is still an issue not yet isolated that causes the application to fail
+during the first two queries. The issue lies between L2 (ARP) and UDP and it
+only appears during application startup.

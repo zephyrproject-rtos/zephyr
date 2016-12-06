@@ -61,15 +61,17 @@ static char str[128];
 static
 char *domains[] = {"not_a_real_domain_name",
 		   "zephyrproject.org",
+		   "linux.org",
 		   "www.zephyrproject.org",
+		   "kernel.org",
 		   "gerrit.zephyrproject.org",
-		   "jira.zephyrproject.org",
-		   "jenkins.zephyrproject.org",
 		   "linuxfoundation.org",
-		   "www.linuxfoundation.org",
+		   "jira.zephyrproject.org",
+		   "www.wikipedia.org",
 		   "collabprojects.linuxfoundation.org",
+		   "gcc.gnu.org",
 		   "events.linuxfoundation.org",
-		   "training.linuxfoundation.org",
+		   "www.google.com",
 		   NULL};
 
 /* from subsys/net/ip/utils.c */
