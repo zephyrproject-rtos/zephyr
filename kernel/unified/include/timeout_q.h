@@ -38,7 +38,7 @@ static inline void _init_timeout(struct _timeout *t, _timeout_func_t func)
 	 * not dealing with timeouts does not have to handle this, such as when
 	 * waiting forever on a semaphore.
 	 */
-	t->delta_ticks_from_prev = -1;
+	t->delta_ticks_from_prev = _INACTIVE;
 
 	/*
 	 * Must be initialized here so that the _fiber_wakeup family of APIs can
@@ -98,7 +98,7 @@ static inline struct _timeout *_handle_one_timeout(
 	struct _timeout *t = (void *)sys_dlist_get(timeout_q);
 	struct k_thread *thread = t->thread;
 
-	t->delta_ticks_from_prev = -1;
+	t->delta_ticks_from_prev = _INACTIVE;
 
 	K_DEBUG("timeout %p\n", t);
 	if (thread != NULL) {
@@ -127,14 +127,13 @@ static inline void _handle_timeouts(void)
 	}
 }
 
-/* returns 0 in success and -1 if the timer has expired */
-
+/* returns _INACTIVE if the timer has already expired */
 static inline int _abort_timeout(struct _timeout *t)
 {
 	sys_dlist_t *timeout_q = &_timeout_q;
 
-	if (-1 == t->delta_ticks_from_prev) {
-		return -1;
+	if (t->delta_ticks_from_prev == _INACTIVE) {
+		return _INACTIVE;
 	}
 
 	if (!sys_dlist_is_tail(timeout_q, &t->node)) {
@@ -144,11 +143,12 @@ static inline int _abort_timeout(struct _timeout *t)
 		next->delta_ticks_from_prev += t->delta_ticks_from_prev;
 	}
 	sys_dlist_remove(&t->node);
-	t->delta_ticks_from_prev = -1;
+	t->delta_ticks_from_prev = _INACTIVE;
 
 	return 0;
 }
 
+/* returns _INACTIVE if the timer has already expired */
 static inline int _abort_thread_timeout(struct k_thread *thread)
 {
 	return _abort_timeout(&thread->base.timeout);

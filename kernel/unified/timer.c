@@ -111,7 +111,7 @@ void k_timer_start(struct k_timer *timer, int32_t duration, int32_t period)
 
 	unsigned int key = irq_lock();
 
-	if (timer->timeout.delta_ticks_from_prev != -1) {
+	if (timer->timeout.delta_ticks_from_prev != _INACTIVE) {
 		_abort_timeout(&timer->timeout);
 	}
 
@@ -128,11 +128,11 @@ void k_timer_stop(struct k_timer *timer)
 	__ASSERT(!_is_in_isr(), "");
 
 	int key = irq_lock();
-	int stopped = _abort_timeout(&timer->timeout);
+	int inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
 
 	irq_unlock(key);
 
-	if (stopped == -1) {
+	if (inactive) {
 		return;
 	}
 
@@ -175,7 +175,7 @@ uint32_t k_timer_status_sync(struct k_timer *timer)
 	uint32_t result = timer->status;
 
 	if (result == 0) {
-		if (timer->timeout.delta_ticks_from_prev != -1) {
+		if (timer->timeout.delta_ticks_from_prev != _INACTIVE) {
 			/* wait for timer to expire or stop */
 			_pend_current_thread(&timer->wait_q, K_FOREVER);
 			_Swap(key);
@@ -201,7 +201,7 @@ int32_t _timeout_remaining_get(struct _timeout *timeout)
 	unsigned int key = irq_lock();
 	int32_t remaining_ticks;
 
-	if (timeout->delta_ticks_from_prev == -1) {
+	if (timeout->delta_ticks_from_prev == _INACTIVE) {
 		remaining_ticks = 0;
 	} else {
 		/*

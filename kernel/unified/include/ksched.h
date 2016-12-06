@@ -268,7 +268,7 @@ static inline void _mark_thread_as_not_suspended(struct k_thread *thread)
 static inline int _is_thread_timeout_active(struct k_thread *thread)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	return thread->base.timeout.delta_ticks_from_prev != -1;
+	return thread->base.timeout.delta_ticks_from_prev != _INACTIVE;
 #else
 	return 0;
 #endif
