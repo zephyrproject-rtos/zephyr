@@ -215,10 +215,6 @@
 #define TSV_SIZE 7
 #define RSV_SIZE 4
 
-/* Thread Configuration */
-#define ENC28J60_THREAD_STACK_SIZE 512
-#define ENC28J60_THREAD_PRIORITY   15
-
 /* Microchip's OUI*/
 #define MICROCHIP_OUI_B0 0x00
 #define MICROCHIP_OUI_B1 0x04
@@ -237,7 +233,7 @@ struct eth_enc28j60_config {
 
 struct eth_enc28j60_runtime {
 	struct net_if *iface;
-	char __stack thread_stack[ENC28J60_THREAD_STACK_SIZE];
+	char __stack thread_stack[CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE];
 	struct device *gpio;
 	struct device *spi;
 	struct gpio_callback gpio_cb;
