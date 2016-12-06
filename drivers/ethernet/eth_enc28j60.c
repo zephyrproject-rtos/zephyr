@@ -644,10 +644,10 @@ static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2)
 
 static int eth_net_tx(struct net_if *iface, struct net_buf *buf)
 {
-	uint16_t ll_len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
+	uint16_t len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
 	int ret;
 
-	ret = eth_enc28j60_tx(iface->dev, buf, ll_len);
+	ret = eth_enc28j60_tx(iface->dev, buf, len);
 	if (ret == 0) {
 		net_nbuf_unref(buf);
 	}
