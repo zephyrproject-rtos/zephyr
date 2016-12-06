@@ -3655,7 +3655,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	cnt = sys_cpu_to_le32(keys->remote_csrk.cnt);
 	memcpy(net_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
 
-	BT_DBG("Sign data len %u key %s count %u", buf->len - sizeof(sig),
+	BT_DBG("Sign data len %zu key %s count %u", buf->len - sizeof(sig),
 	       bt_hex(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
 
 	err = smp_sign_buf(keys->remote_csrk.val, buf->data,

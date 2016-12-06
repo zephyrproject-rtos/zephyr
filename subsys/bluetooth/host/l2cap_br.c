@@ -956,7 +956,7 @@ static uint16_t l2cap_br_conf_opt_mtu(struct bt_l2cap_chan *chan,
 
 	/* Core 4.2 [Vol 3, Part A, 5.1] MTU payload length */
 	if (len != 2) {
-		BT_ERR("tx MTU length %u invalid", len);
+		BT_ERR("tx MTU length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}

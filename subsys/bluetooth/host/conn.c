@@ -1359,9 +1359,9 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
-	BT_DBG("conn %p features 0x%x params (%d-%d %d %d)", conn,
-	       conn->le.features[0], param->interval_min, param->interval_max,
-	       param->latency, param->timeout);
+	BT_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
+	       conn->le.features[0][0], param->interval_min,
+	       param->interval_max, param->latency, param->timeout);
 
 	/* Check if there's a need to update conn params */
 	if (conn->le.interval >= param->interval_min &&

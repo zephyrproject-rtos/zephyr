@@ -1190,7 +1190,7 @@ static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
 		return NULL;
 	}
 
-	BT_DBG("frag %p tailroom %u", frag, net_buf_tailroom(frag));
+	BT_DBG("frag %p tailroom %zu", frag, net_buf_tailroom(frag));
 
 	net_buf_frag_add(chan->_sdu, frag);
 
@@ -1203,7 +1203,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 	struct net_buf *frag;
 	uint16_t len;
 
-	BT_DBG("chan %p len %u sdu %u", chan, buf->len,
+	BT_DBG("chan %p len %u sdu %zu", chan, buf->len,
 	       net_buf_frags_len(chan->_sdu));
 
 	if (net_buf_frags_len(chan->_sdu) + buf->len > chan->_sdu_len) {

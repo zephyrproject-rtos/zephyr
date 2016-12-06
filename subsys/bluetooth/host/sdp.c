@@ -294,7 +294,7 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	uint32_t handle = SDP_SERVICE_HANDLE_BASE;
 
 	if (!service) {
-		BT_ERR("No service record specified", service);
+		BT_ERR("No service record specified");
 		return 0;
 	}
 
