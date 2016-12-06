@@ -84,6 +84,8 @@ void run_dns(void)
 	int d;
 	int i;
 
+	dns_init(&ctx);
+
 #ifdef CONFIG_NET_IPV6
 	p = net_if_ipv6_addr_add(net_if_get_default(), &local_addr,
 				 NET_ADDR_MANUAL, 0);
@@ -167,8 +169,6 @@ lb_exit:
 
 void main(void)
 {
-	dns_init();
-
 	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t)run_dns,
 		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

@@ -26,6 +26,10 @@ enum dns_query_type {
 };
 
 struct dns_context {
+	/* rx_sem and rx buffer, for internal use only */
+	struct k_sem rx_sem;
+	struct net_buf *rx_buf;
+
 	/** Previously initialized network context */
 	struct net_context *net_ctx;
 
@@ -63,10 +67,11 @@ struct dns_context {
  * @brief dns_init	DNS resolver initialization routine
  * @details		This routine must be called before any other
  *			dns routine.
+ * @param ctx		DNS Client structure
  * @return		0, always.
  *			Note: new versions may return error codes.
  */
-int dns_init(void);
+int dns_init(struct dns_context *ctx);
 
 /**
  * @brief dns_resolve	Retrieves the IP addresses associated to the
