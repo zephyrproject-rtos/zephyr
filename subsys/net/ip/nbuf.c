@@ -311,8 +311,8 @@ void net_nbuf_print_frags(struct net_buf *buf)
 		frag = frag->frags;
 	}
 
-	NET_DBG("Total data size %d, occupied %d bytes, ll overhead %d, "
-		"utilization %u%%",
+	NET_DBG("Total data size %zu, occupied %d bytes, ll overhead %d, "
+		"utilization %zu%%",
 		total, count * frag_size - count * ll_overhead,
 		count * ll_overhead, (total * 100) / (count * frag_size));
 }
@@ -654,7 +654,7 @@ struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
 	frag = net_nbuf_get_reserve_data(ll_reserve);
 
 	if (reserve > net_buf_tailroom(frag)) {
-		NET_ERR("Reserve %d is too long, max is %d",
+		NET_ERR("Reserve %zu is too long, max is %zu",
 			reserve, net_buf_tailroom(frag));
 		net_nbuf_unref(frag);
 		return NULL;
@@ -664,7 +664,7 @@ struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
 
 	first = frag;
 
-	NET_DBG("Copying frag %p with %d bytes and reserving %d bytes",
+	NET_DBG("Copying frag %p with %zu bytes and reserving %zu bytes",
 		first, amount, reserve);
 
 	if (!orig->len) {
@@ -761,7 +761,7 @@ bool net_nbuf_is_compact(struct net_buf *buf)
 		return true;
 	}
 
-	NET_DBG("Not compacted total %u real %u", total, calc);
+	NET_DBG("Not compacted total %zu real %zu", total, calc);
 
 	return false;
 }
@@ -856,11 +856,11 @@ struct net_buf *net_nbuf_push(struct net_buf *parent,
 	struct net_buf *frag;
 
 	NET_ASSERT_INFO(amount > 3,
-			"Amount %d very small and not recommended", amount);
+			"Amount %zu very small and not recommended", amount);
 
 	if (amount > buf->len) {
-		NET_DBG("Cannot move amount %d because the buf "
-			"length is only %d bytes", amount, buf->len);
+		NET_DBG("Cannot move amount %zu because the buf "
+			"length is only %u bytes", amount, buf->len);
 		return NULL;
 	}
 
@@ -895,7 +895,7 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
 		buf = buf->frags;
 	}
 
-	NET_DBG("Removing first %d bytes from the fragments (%u bytes)",
+	NET_DBG("Removing first %zd bytes from the fragments (%zu bytes)",
 		count, net_buf_frags_len(buf));
 
 	while (buf && count > 0) {
@@ -1434,8 +1434,8 @@ void net_nbuf_print(void)
 
 void net_nbuf_init(void)
 {
-	NET_DBG("Allocating %d RX (%d bytes), %d TX (%d bytes) "
-		"and %d data (%d bytes) buffers",
+	NET_DBG("Allocating %u RX (%zu bytes), %u TX (%zu bytes) "
+		"and %u data (%zu bytes) buffers",
 		NBUF_RX_COUNT, sizeof(rx_buffers),
 		NBUF_TX_COUNT, sizeof(tx_buffers),
 		NBUF_DATA_COUNT, sizeof(data_buffers));

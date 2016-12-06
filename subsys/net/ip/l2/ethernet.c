@@ -48,10 +48,10 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 			 net_sprint_ll_addr(net_nbuf_ll_src(buf)->addr,    \
 					    sizeof(struct net_eth_addr))); \
 									   \
-		NET_DBG("src %s dst %s type 0x%x len %u", out,		   \
+		NET_DBG("src %s dst %s type 0x%x len %zu", out,		   \
 			net_sprint_ll_addr(net_nbuf_ll_dst(buf)->addr,	   \
 					   sizeof(struct net_eth_addr)),   \
-			type, len);					   \
+			type, (size_t)len);				   \
 	} while (0)
 #else
 #define print_ll_addrs(...)

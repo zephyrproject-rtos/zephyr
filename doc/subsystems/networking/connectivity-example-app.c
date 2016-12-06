@@ -92,7 +92,7 @@ static struct net_buf *udp_recv(const char *name,
 	struct net_buf *reply_buf, *frag, *tmp;
 	int header_len, recv_len, reply_len;
 
-	NET_INFO("%s received %d bytes", name,
+	NET_INFO("%s received %u bytes", name,
 	      net_nbuf_appdatalen(buf));
 
 	reply_buf = net_nbuf_get_tx(context);

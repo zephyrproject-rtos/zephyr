@@ -359,7 +359,7 @@ int net_conn_unregister(struct net_conn_handle *handle)
 		return -ENOENT;
 	}
 
-	NET_DBG("[%d] connection handler %p removed",
+	NET_DBG("[%zu] connection handler %p removed",
 		(conn - conns) / sizeof(*conn), conn);
 
 	conn->flags = 0;
@@ -380,7 +380,7 @@ int net_conn_change_callback(struct net_conn_handle *handle,
 		return -ENOENT;
 	}
 
-	NET_DBG("[%d] connection handler %p changed callback",
+	NET_DBG("[%zu] connection handler %p changed callback",
 		(conn - conns) / sizeof(*conn), conn);
 
 	conn->cb = cb;

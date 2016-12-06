@@ -1771,7 +1771,7 @@ static void set_appdata_values(struct net_buf *buf,
 	}
 
 	NET_ASSERT_INFO(net_nbuf_appdatalen(buf) < total_len,
-			"Wrong appdatalen %d, total %d",
+			"Wrong appdatalen %u, total %zu",
 			net_nbuf_appdatalen(buf), total_len);
 }
 
@@ -1800,7 +1800,7 @@ enum net_verdict packet_received(struct net_conn *conn,
 					   total_len);
 		}
 
-		NET_DBG("Set appdata to %p len %d (total %d)",
+		NET_DBG("Set appdata to %p len %u (total %zu)",
 			net_nbuf_appdata(buf), net_nbuf_appdatalen(buf),
 			total_len);
 

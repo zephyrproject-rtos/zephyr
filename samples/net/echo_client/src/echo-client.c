@@ -441,7 +441,7 @@ static void udp_ipv4_received(struct net_context *context,
 
 	if (family == AF_INET) {
 		if (expecting_ipv4 != net_nbuf_appdatalen(buf)) {
-			NET_ERR("Sent %d bytes, received %d bytes",
+			NET_ERR("Sent %d bytes, received %u bytes",
 				expecting_ipv4, net_nbuf_appdatalen(buf));
 		}
 

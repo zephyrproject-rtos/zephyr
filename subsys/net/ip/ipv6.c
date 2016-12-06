@@ -864,7 +864,7 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 	    (NET_ICMP_BUF(buf)->code != 0) ||
 	    (NET_IPV6_BUF(buf)->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
 	    net_is_ipv6_addr_mcast(&NET_ICMPV6_NS_BUF(buf)->tgt)) {
-		NET_DBG("Preliminary check failed %u/%u, code %u, hop %u",
+		NET_DBG("Preliminary check failed %u/%zu, code %u, hop %u",
 			total_len, (sizeof(struct net_ipv6_hdr) +
 				    sizeof(struct net_icmp_hdr) +
 				    sizeof(struct net_icmpv6_ns_hdr)),
@@ -1072,7 +1072,7 @@ static void nd_reachable_timeout(struct k_work *work)
 			router = net_if_ipv6_router_lookup(nbr->iface,
 							   &data->addr);
 			if (router && !router->is_infinite) {
-				NET_DBG("nbr %p address %s PROBE ended",
+				NET_DBG("nbr %p address %s PROBE ended (%d)",
 					nbr, net_sprint_ipv6_addr(&data->addr),
 					data->state);
 
@@ -1677,7 +1677,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 					prefix_info->len,
 					prefix_info->valid_lifetime);
 		if (prefix) {
-			NET_DBG("Interface %p add prefix %s/%d lifetime %lu",
+			NET_DBG("Interface %p add prefix %s/%d lifetime %u",
 				net_nbuf_iface(buf),
 				net_sprint_ipv6_addr(&prefix_info->prefix),
 				prefix_info->prefix_len,
@@ -1714,7 +1714,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 		break;
 
 	default:
-		NET_DBG("Interface %p update prefix %s/%d lifetime %lu",
+		NET_DBG("Interface %p update prefix %s/%u lifetime %u",
 			net_nbuf_iface(buf),
 			net_sprint_ipv6_addr(&prefix_info->prefix),
 			prefix_info->prefix_len,
@@ -1766,7 +1766,7 @@ static inline void handle_prefix_autonomous(struct net_buf *buf,
 		    (prefix_info->valid_lifetime >
 		     remaining(&ifaddr->lifetime))) {
 			NET_DBG("Timer updating for address %s "
-				"long lifetime %lu secs",
+				"long lifetime %u secs",
 				net_sprint_ipv6_addr(&addr),
 				prefix_info->valid_lifetime);
 
@@ -1774,7 +1774,7 @@ static inline void handle_prefix_autonomous(struct net_buf *buf,
 						  prefix_info->valid_lifetime);
 		} else {
 			NET_DBG("Timer updating for address %s "
-				"lifetime %lu secs",
+				"lifetime %u secs",
 				net_sprint_ipv6_addr(&addr), TWO_HOURS);
 
 			net_if_ipv6_addr_update_lifetime(ifaddr, TWO_HOURS);
@@ -1974,7 +1974,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 
 			if (mtu > 0xffff) {
 				/* TODO: discard packet? */
-				NET_ERR("MTU %lu, max is %d", mtu, 0xffff);
+				NET_ERR("MTU %u, max is %u", mtu, 0xffff);
 			}
 
 			break;

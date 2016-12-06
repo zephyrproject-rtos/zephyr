@@ -48,14 +48,14 @@ static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
 static sys_slist_t link_callbacks;
 
 #if NET_DEBUG
-#define debug_check_packet(buf)						   \
-	{								   \
-		size_t len = net_buf_frags_len(buf->frags);		   \
-									   \
-		NET_DBG("Processing (buf %p, data len %u) network packet", \
-			buf, len);					   \
-									   \
-		NET_ASSERT(buf->frags && len);				   \
+#define debug_check_packet(buf)						    \
+	{								    \
+		size_t len = net_buf_frags_len(buf->frags);		    \
+									    \
+		NET_DBG("Processing (buf %p, data len %zu) network packet", \
+			buf, len);					    \
+									    \
+		NET_ASSERT(buf->frags && len);				    \
 	} while (0)
 #else
 #define debug_check_packet(...)
@@ -67,7 +67,7 @@ static void net_if_tx_thread(struct net_if *iface)
 
 	NET_ASSERT(api && api->init && api->send);
 
-	NET_DBG("Starting TX thread (stack %d bytes) for driver %p queue %p",
+	NET_DBG("Starting TX thread (stack %zu bytes) for driver %p queue %p",
 		sizeof(iface->tx_stack), api, &iface->tx_queue);
 
 	api->init(iface);
@@ -311,7 +311,7 @@ static void ipv6_addr_expired(struct k_work *work)
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 				      uint32_t vlifetime)
 {
-	NET_DBG("Updating expire time of %s by %lu secs",
+	NET_DBG("Updating expire time of %s by %u secs",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 		vlifetime);
 
@@ -370,7 +370,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 				&iface->ipv6.unicast[i].lifetime,
 				ipv6_addr_expired);
 
-			NET_DBG("Expiring %s in %lu secs",
+			NET_DBG("Expiring %s in %u secs",
 				net_sprint_ipv6_addr(addr), vlifetime);
 
 			net_if_ipv6_addr_update_lifetime(
@@ -763,7 +763,7 @@ static void ipv6_router_expired(struct k_work *work)
 void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 					uint32_t lifetime)
 {
-	NET_DBG("Updating expire time of %s by %lu secs",
+	NET_DBG("Updating expire time of %s by %u secs",
 		net_sprint_ipv6_addr(&router->address.in6_addr),
 		lifetime);
 
@@ -796,7 +796,7 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 			k_delayed_work_init(&routers[i].lifetime,
 					    ipv6_router_expired);
 
-			NET_DBG("Expiring %s in %lu secs",
+			NET_DBG("Expiring %s in %u secs",
 				net_sprint_ipv6_addr(addr), lifetime);
 		} else {
 			routers[i].is_default = false;

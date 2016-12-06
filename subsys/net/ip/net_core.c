@@ -587,7 +587,7 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	 * be data fragments without user data.
 	 */
 	if (!buf->frags || !buf->user_data_size) {
-		NET_DBG("Corrupted buffer (frags %p, data size %zu)",
+		NET_DBG("Corrupted buffer (frags %p, data size %u)",
 			buf->frags, buf->user_data_size);
 		NET_STATS(++net_stats.processing_error);
 
@@ -648,8 +648,7 @@ static void net_rx_thread(void)
 {
 	struct net_buf *buf;
 
-	NET_DBG("Starting RX thread (stack %d bytes)",
-		sizeof(rx_stack));
+	NET_DBG("Starting RX thread (stack %zu bytes)", sizeof(rx_stack));
 
 	/* Starting TX side. The ordering is important here and the TX
 	 * can only be started when RX side is ready to receive packets.
@@ -661,7 +660,7 @@ static void net_rx_thread(void)
 
 		net_analyze_stack("RX thread", rx_stack, sizeof(rx_stack));
 
-		NET_DBG("Received buf %p len %d", buf,
+		NET_DBG("Received buf %p len %zu", buf,
 			net_buf_frags_len(buf));
 
 		processing_data(buf, false);
@@ -811,7 +810,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 		return -ENODATA;
 	}
 
-	NET_DBG("fifo %p iface %p buf %p len %d", &rx_queue, iface, buf,
+	NET_DBG("fifo %p iface %p buf %p len %zu", &rx_queue, iface, buf,
 		net_buf_frags_len(buf));
 
 	net_nbuf_set_iface(buf, iface);

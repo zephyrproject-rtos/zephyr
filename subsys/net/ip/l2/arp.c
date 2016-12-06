@@ -432,7 +432,7 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 
 	if (net_buf_frags_len(buf) < (sizeof(struct net_arp_hdr) -
 				       net_nbuf_ll_reserve(buf))) {
-		NET_DBG("Invalid ARP header (len %d, min %d bytes)",
+		NET_DBG("Invalid ARP header (len %zu, min %zu bytes)",
 			net_buf_frags_len(buf),
 			sizeof(struct net_arp_hdr) -
 			net_nbuf_ll_reserve(buf));
