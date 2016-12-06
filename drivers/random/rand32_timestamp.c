@@ -30,20 +30,6 @@
 
 /**
  *
- * @brief Initialize the random number generator
- *
- * The non-random number generator does not require any initialization.
- * Routine is automatically invoked by the kernel during system startup.
- *
- * @return N/A
- */
-
-void sys_rand32_init(void)
-{
-}
-
-/**
- *
  * @brief Get a 32 bit random number
  *
  * The non-random number generator returns values that are based off the

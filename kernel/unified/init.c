@@ -65,14 +65,6 @@ uint64_t __noinit __main_tsc;  /* timestamp when main task starts */
 uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
 #endif
 
-/* random number generator items */
-#if defined(CONFIG_TEST_RANDOM_GENERATOR) || \
-	defined(CONFIG_CUSTOM_RANDOM_GENERATOR)
-#define RAND32_INIT() sys_rand32_init()
-#else
-#define RAND32_INIT()
-#endif
-
 /* init/main and idle threads */
 
 #define IDLE_STACK_SIZE CONFIG_IDLE_STACK_SIZE
@@ -380,15 +372,6 @@ FUNC_NORETURN void _Cstart(void)
 	/* perform basic hardware initialization */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
-
-	/*
-	 * Initialize random number generator
-	 * As a platform may implement it in hardware, it has to be
-	 * initialized after rest of hardware initialization and
-	 * before stack canaries that use it
-	 */
-
-	RAND32_INIT();
 
 	/* initialize stack canaries */
 

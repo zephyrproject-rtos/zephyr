@@ -21,12 +21,10 @@
  * This header file declares prototypes for the kernel's random number generator
  * APIs.
  *
- * Typically, a platform enables the hidden CUSTOM_RANDOM_GENERATOR
- * configuration option and provide its own driver that implements both
- * sys_rand32_init() and sys_rand32_get(). If it does not do this, then for
- * projects that require random numbers, the project must either implement
- * those routines, or (for testing purposes only) enable the
- * TEST_RANDOM_GENERATOR configuration option.
+ * Typically, a platform enables the hidden CUSTOM_RANDOM_GENERATOR or
+ * (for testing purposes only) enables the TEST_RANDOM_GENERATOR
+ * configuration option and provide its own driver that implements
+ * sys_rand32_get().
  */
 
 #ifndef __INCrand32h
@@ -38,7 +36,6 @@
 extern "C" {
 #endif
 
-extern void sys_rand32_init(void);
 extern uint32_t sys_rand32_get(void);
 
 #ifdef __cplusplus

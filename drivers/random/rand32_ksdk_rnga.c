@@ -18,13 +18,16 @@
 #include <drivers/rand32.h>
 #include <drivers/system_timer.h>
 #include <misc/sys_log.h>
+#include <init.h>
 
 #include "fsl_rnga.h"
 
 
-void sys_rand32_init(void)
+static int random_ksdk_init(struct device *dev)
 {
 	uint32_t seed = sys_cycle_get_32();
+
+	ARG_UNUSED(dev);
 
 	RNGA_Init(RNG);
 
@@ -36,6 +39,7 @@ void sys_rand32_init(void)
 	 */
 	RNGA_Seed(RNG, seed);
 	RNGA_SetMode(RNG, kRNGA_ModeSleep);
+	return 0;
 }
 
 uint32_t sys_rand32_get(void)
@@ -66,3 +70,5 @@ uint32_t sys_rand32_get(void)
 
 	return output;
 }
+
+SYS_INIT(random_ksdk_init, PRE_KERNEL_2, 99);
