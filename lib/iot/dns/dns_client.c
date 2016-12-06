@@ -67,14 +67,14 @@ int dns_init(void)
 }
 
 static
-int dns_write(struct net_context *ctx, struct net_buf *dns_data,
-	      uint32_t timeout, uint16_t dns_id, enum dns_query_type type,
+int dns_write(struct net_context *net_ctx, struct net_buf *dns_data,
+	      int32_t timeout, uint16_t dns_id, enum dns_query_type type,
 	      struct net_buf *dns_qname, struct sockaddr *dns_server);
 
 static
-int dns_read(struct net_context *ctx, struct net_buf *dns_data,
-	     uint32_t timeout, uint16_t dns_id, enum dns_query_type type,
-	     uint8_t *addresses, int *items, int elements,
+int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
+	     int32_t timeout, uint16_t dns_id, enum dns_query_type type,
+	     uint8_t *addresses, uint8_t *items, uint8_t elements,
 	     uint8_t *cname, uint16_t *cname_len);
 
 /*
@@ -84,33 +84,33 @@ int dns_read(struct net_context *ctx, struct net_buf *dns_data,
  * Here we assume that even after the cast, dns_id = sys_rand32_get(), there is
  * enough entropy :)
  */
-static
-int dns_resolve(struct net_context *ctx, uint8_t *addresses, int *items,
-		int elements, char *name, enum dns_query_type type,
-		struct sockaddr *dns_server, uint32_t timeout)
+int dns_resolve(struct dns_context *ctx)
 {
 	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
+	uint8_t *addresses;
 	uint16_t dns_id;
 	int rc;
 	int i;
 
+	addresses = (uint8_t *)ctx->address.ipv4;
+
 	dns_id = sys_rand32_get();
 
-	dns_data = net_buf_alloc(&dns_msg_pool, timeout);
+	dns_data = net_buf_alloc(&dns_msg_pool, ctx->timeout);
 	if (dns_data == NULL) {
 		rc = -ENOMEM;
 		goto exit_resolve;
 	}
 
-	dns_qname = net_buf_alloc(&dns_qname_pool, timeout);
+	dns_qname = net_buf_alloc(&dns_qname_pool, ctx->timeout);
 	if (dns_qname == NULL) {
 		rc = -ENOMEM;
 		goto exit_resolve;
 	}
 
 	rc = dns_msg_pack_qname(&dns_qname->len, dns_qname->data,
-				DNS_MAX_NAME_LEN, name);
+				DNS_MAX_NAME_LEN, ctx->name);
 	if (rc != 0) {
 		rc = -EINVAL;
 		goto exit_resolve;
@@ -118,27 +118,29 @@ int dns_resolve(struct net_context *ctx, uint8_t *addresses, int *items,
 
 	i = 0;
 	do {
-		rc = dns_write(ctx, dns_data, timeout, dns_id, type, dns_qname,
-			       dns_server);
+		rc = dns_write(ctx->net_ctx, dns_data, ctx->timeout, dns_id,
+			       ctx->query_type, dns_qname, ctx->dns_server);
 		if (rc != 0) {
 			goto exit_resolve;
 		}
 
-		rc = dns_read(ctx, dns_data, timeout, dns_id, type,
-			      addresses, items, elements, dns_qname->data,
-			      &dns_qname->len);
+		rc = dns_read(ctx->net_ctx, dns_data, ctx->timeout, dns_id,
+			      ctx->query_type, addresses,
+			      &ctx->items, ctx->elements,
+			      dns_qname->data, &dns_qname->len);
 		if (rc != 0) {
 			goto exit_resolve;
 		}
 
 		/* Server response includes at least one IP address */
-		if (*items > 0) {
+		if (ctx->items > 0) {
 			break;
 		}
 	} while (++i < DNS_RESOLVER_QUERIES);
 
-	rc = 0;
-	if (*items <= 0) {
+	if (ctx->items > 0) {
+		rc = 0;
+	} else {
 		rc = -EINVAL;
 	}
 
@@ -150,29 +152,12 @@ exit_resolve:
 	return rc;
 }
 
-int dns4_resolve(struct net_context *ctx, struct in_addr *addresses,
-		 int *items, int elements, char *name,
-		 struct sockaddr *dns_server, uint32_t timeout)
-{
-	return dns_resolve(ctx, (uint8_t *)addresses, items, elements,
-			   name, DNS_QUERY_TYPE_A, dns_server, timeout);
-}
-
-int dns6_resolve(struct net_context *ctx, struct in6_addr *addresses,
-		 int *items, int elements, char *name,
-		 struct sockaddr *dns_server, uint32_t timeout)
-{
-	return dns_resolve(ctx, (uint8_t *)addresses, items, elements,
-			   name, DNS_QUERY_TYPE_AAAA, dns_server, timeout);
-}
-
 static
-int dns_write(struct net_context *ctx, struct net_buf *dns_data,
-	      uint32_t timeout, uint16_t dns_id, enum dns_query_type type,
+int dns_write(struct net_context *net_ctx, struct net_buf *dns_data,
+	      int32_t timeout, uint16_t dns_id, enum dns_query_type type,
 	      struct net_buf *dns_qname, struct sockaddr *dns_server)
 {
 	struct net_buf *tx;
-
 	int server_addr_len;
 	int rc;
 
@@ -184,7 +169,7 @@ int dns_write(struct net_context *ctx, struct net_buf *dns_data,
 		goto exit_write;
 	}
 
-	tx = net_nbuf_get_tx(ctx);
+	tx = net_nbuf_get_tx(net_ctx);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_write;
@@ -233,11 +218,11 @@ void cb_recv(struct net_context *context, struct net_buf *buf, int status,
 }
 
 static
-int dns_recv(struct net_context *ctx, struct net_buf **buf, uint32_t timeout)
+int dns_recv(struct net_context *net_ctx, struct net_buf **buf, int32_t timeout)
 {
 	int rc;
 
-	rc = net_context_recv(ctx, cb_recv, timeout, buf);
+	rc = net_context_recv(net_ctx, cb_recv, timeout, buf);
 	if (rc != 0) {
 		return -EIO;
 	}
@@ -250,9 +235,9 @@ int nbuf_copy(struct net_buf *dst, struct net_buf *src, int offset,
 	      int len);
 
 static
-int dns_read(struct net_context *ctx, struct net_buf *dns_data,
-	     uint32_t timeout, uint16_t dns_id, enum dns_query_type type,
-	     uint8_t *addresses, int *items, int elements,
+int dns_read(struct net_context *net_ctx, struct net_buf *dns_data,
+	     int32_t timeout, uint16_t dns_id, enum dns_query_type type,
+	     uint8_t *addresses, uint8_t *items, uint8_t elements,
 	     uint8_t *cname, uint16_t *cname_len)
 {
 	struct net_buf *rx = NULL;
@@ -275,7 +260,7 @@ int dns_read(struct net_context *ctx, struct net_buf *dns_data,
 		goto exit_error;
 	}
 
-	rc = dns_recv(ctx, &rx, timeout);
+	rc = dns_recv(net_ctx, &rx, timeout);
 	if (rc != 0) {
 		rc = -EIO;
 		goto exit_error;
@@ -335,7 +320,7 @@ int dns_read(struct net_context *ctx, struct net_buf *dns_data,
 			}
 
 			src = dns_msg.msg + dns_msg.response_position;
-			dst = (uint8_t *)addresses + *items * address_size;
+			dst = addresses + *items * address_size;
 			memcpy(dst, src, address_size);
 
 			*items += 1;

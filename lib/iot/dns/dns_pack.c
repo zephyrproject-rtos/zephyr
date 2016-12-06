@@ -43,7 +43,7 @@
 #define DNS_FLAGS2		0		/* RA, Z and RCODE = 0 */
 
 static inline
-uint16_t dns_strlen(char *str)
+uint16_t dns_strlen(const char *str)
 {
 	if (str == NULL) {
 		return 0;
@@ -52,7 +52,7 @@ uint16_t dns_strlen(char *str)
 }
 
 int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
-		       char *domain_name)
+		       const char *domain_name)
 {
 	uint16_t dn_size;
 	uint16_t lb_start;

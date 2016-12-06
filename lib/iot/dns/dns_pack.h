@@ -267,7 +267,7 @@ int dns_unpack_answer_rdlength(uint16_t dname_size, uint8_t *answer)
  *				an argument
  */
 int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
-		       char *domain_name);
+		       const char *domain_name);
 
 /**
  * @brief dns_unpack_answer	Unpacks an answer message
