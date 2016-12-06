@@ -188,7 +188,7 @@ struct adc_config {
  * during driver execution.
  */
 struct adc_info {
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 #ifdef CONFIG_ADC_DW_REPETITIVE
 	/**Current reception buffer index*/
 	uint8_t  index[BUFS_NUM];

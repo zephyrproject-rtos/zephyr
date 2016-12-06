@@ -291,7 +291,7 @@ static int adc_dw_read_request(struct device *dev, struct adc_seq_table *seq_tbl
 	info->state = ADC_STATE_SAMPLING;
 	sys_out32(START_ADC_SEQ, adc_base + ADC_CTRL);
 
-	device_sync_call_wait(&info->sync);
+	k_sem_take(&info->device_sync_sem, K_FOREVER);
 
 	if (info->state == ADC_STATE_ERROR) {
 		info->state = ADC_STATE_IDLE;
@@ -348,7 +348,7 @@ int adc_dw_init(struct device *dev)
 
 	config->config_func();
 
-	device_sync_call_init(&info->sync);
+	k_sem_init(&info->device_sync_sem, 0, UINT_MAX);
 
 	int_unmask(config->reg_irq_mask);
 	int_unmask(config->reg_err_mask);
@@ -387,7 +387,7 @@ static void adc_dw_rx_isr(void *arg)
 	reg_val = sys_in32(adc_base + ADC_CTRL);
 	sys_out32(reg_val | ADC_CLR_DATA_A, adc_base + ADC_CTRL);
 
-	device_sync_call_complete(&info->sync);
+	k_sem_give(&info->device_sync_sem);
 }
 #else /*CONFIG_ADC_DW_REPETITIVE*/
 static void adc_dw_rx_isr(void *arg)
@@ -431,7 +431,7 @@ static void adc_dw_rx_isr(void *arg)
 		reg_val = sys_in32(adc_base + ADC_CTRL);
 		sys_out32(reg_val | ADC_CLR_DATA_A, adc_base + ADC_CTRL);
 
-		device_sync_call_complete(&info->sync);
+		k_sem_give(&info->device_sync_sem);
 		return;
 	}
 
@@ -457,7 +457,7 @@ static void adc_dw_err_isr(void *arg)
 
 	info->state = ADC_STATE_ERROR;
 
-	device_sync_call_complete(&info->sync);
+	k_sem_give(&info->device_sync_sem);
 }
 
 #ifdef CONFIG_ADC_DW

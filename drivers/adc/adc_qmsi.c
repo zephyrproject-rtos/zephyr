@@ -38,7 +38,7 @@ enum {
 
 struct adc_info  {
 	atomic_t  state;
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 	struct k_sem sem;
 };
 
@@ -55,7 +55,7 @@ static void complete_callback(void *data, int error, qm_adc_status_t status,
 		if (error) {
 			adc_context->state = ADC_STATE_ERROR;
 		}
-		device_sync_call_complete(&adc_context->sync);
+		k_sem_give(&adc_context->device_sync_sem);
 	}
 }
 
@@ -208,7 +208,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 		}
 
 		/* Wait for the interrupt to finish */
-		device_sync_call_wait(&info->sync);
+		k_sem_take(&info->device_sync_sem, K_FOREVER);
 
 		if (info->state == ADC_STATE_ERROR) {
 			ret =  -EIO;
@@ -248,7 +248,7 @@ static int adc_qmsi_init(struct device *dev)
 
 	qm_adc_set_config(QM_ADC_0, &cfg);
 
-	device_sync_call_init(&info->sync);
+	k_sem_init(&info->device_sync_sem, 0, UINT_MAX);
 
 	k_sem_init(&info->sem, 0, UINT_MAX);
 	k_sem_give(&info->sem);
