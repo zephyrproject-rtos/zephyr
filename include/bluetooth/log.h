@@ -47,8 +47,8 @@ void bt_log(int prio, const char *fmt, ...);
 				 __func__, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) bt_log(BT_LOG_INFO, fmt, ##__VA_ARGS__)
 
-/* Enabling debug increases stack size requirement considerably */
-#define BT_STACK_DEBUG_EXTRA	512
+/* Enabling debug increases stack size requirement */
+#define BT_STACK_DEBUG_EXTRA	160
 
 #elif defined(CONFIG_BLUETOOTH_DEBUG_LOG)
 
