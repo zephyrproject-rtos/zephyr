@@ -340,7 +340,7 @@ static int eth_0_init(struct device *dev)
 		  context->mac_addr,
 		  sys_clock);
 
-	SYS_LOG_DBG("MAC %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x",
+	SYS_LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		    context->mac_addr[0], context->mac_addr[1],
 		    context->mac_addr[2], context->mac_addr[3],
 		    context->mac_addr[4], context->mac_addr[5]);
