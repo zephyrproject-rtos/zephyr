@@ -110,7 +110,7 @@ static int tmp112_attr_set(struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
 
-		if (val->type != SENSOR_VALUE_TYPE_INT) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -ENOTSUP;
 		}
 

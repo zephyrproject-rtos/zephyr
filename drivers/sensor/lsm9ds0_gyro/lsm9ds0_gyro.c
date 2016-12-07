@@ -227,8 +227,7 @@ static int lsm9ds0_gyro_attr_set(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_VALUE_TYPE_INT &&
-		    val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -ENOTSUP;
 		}
 
@@ -240,7 +239,7 @@ static int lsm9ds0_gyro_attr_set(struct device *dev,
 #endif
 #if defined(CONFIG_LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -ENOTSUP;
 		}
 

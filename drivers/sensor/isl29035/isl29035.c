@@ -62,8 +62,9 @@ static int isl29035_channel_get(struct device *dev,
 	val->val2 = tmp >> ISL29035_ADC_DATA_BITS;
 #elif CONFIG_ISL29035_MODE_IR
 	ARG_UNUSED(tmp);
-	val->type = SENSOR_VALUE_TYPE_INT;
+	val->type = SENSOR_VALUE_TYPE_INT_INT_PLUS_MICRO;
 	val->val1 = drv_data->data_sample;
+	val->val2 = 0;
 #endif
 
 	return 0;

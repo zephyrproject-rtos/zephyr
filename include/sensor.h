@@ -39,8 +39,6 @@ extern "C" {
 
 /** @brief Sensor value types. */
 enum sensor_value_type {
-	/** val1 contains an integer value, val2 is unused. */
-	SENSOR_VALUE_TYPE_INT,
 	/**
 	 * val1 contains an integer value, val2 is the fractional value.
 	 * To obtain the final value, use the formula: val1 + val2 *

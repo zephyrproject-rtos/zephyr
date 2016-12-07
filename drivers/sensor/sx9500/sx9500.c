@@ -68,9 +68,10 @@ static int sx9500_channel_get(struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PROX);
 
-	val->type = SENSOR_VALUE_TYPE_INT;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = !!(data->prox_stat &
 		       (1 << (4 + CONFIG_SX9500_PROX_CHANNEL)));
+	val->val2 = 0;
 
 	return 0;
 }

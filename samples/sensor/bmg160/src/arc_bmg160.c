@@ -114,8 +114,9 @@ static void test_trigger_mode(struct device *bmg160)
 	}
 
 	/* set slope duration to 4 samples */
-	attr.type = SENSOR_VALUE_TYPE_INT;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 4;
+	attr.val2 = 0;
 
 	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_ANY,
 			    SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
@@ -143,7 +144,7 @@ static void test_trigger_mode(struct device *bmg160)
 
 	printf("Gyro: Testing data ready trigger.\n");
 
-	attr.type = SENSOR_VALUE_TYPE_INT;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 100;
 	attr.val2 = 0;
 

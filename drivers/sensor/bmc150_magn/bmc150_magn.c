@@ -444,7 +444,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			SYS_LOG_DBG("invalid parameter type");
 			return -ENOTSUP;
 		}
@@ -468,7 +468,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 #endif
 #if defined(BMC150_MAGN_SET_ATTR_REP)
 	case SENSOR_ATTR_OVERSAMPLING:
-		if (val->type != SENSOR_VALUE_TYPE_INT) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			SYS_LOG_DBG("invalid parameter type");
 			return -ENOTSUP;
 		}

@@ -135,8 +135,6 @@ static inline int sensor_value_snprintf(char *buf, size_t len,
 	int32_t val1, val2;
 
 	switch (val->type) {
-	case SENSOR_VALUE_TYPE_INT:
-		return snprintf(buf, len, "%d", val->val1);
 	case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
 		if (val->val2 == 0) {
 			return snprintf(buf, len, "%d", val->val1);
@@ -329,8 +327,9 @@ static void test_anymotion_trigger(struct device *bmi160)
 	 *
 	 * Allowed values are from 1 to 4.
 	 */
-	attr.type = SENSOR_VALUE_TYPE_INT;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 2;
+	attr.val2 = 0;
 	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
 			    SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
 		printf("Cannot set anymotion slope duration.\n");

@@ -23,33 +23,19 @@
 
 static uint16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
 {
-	uint32_t val2;
 	uint64_t uval;
 
-	if (val->type == SENSOR_VALUE_TYPE_INT) {
-		val2 = 0;
-	} else {
-		val2 = val->val2;
-	}
-
 	/* ret = (val + 45) * (2^16 - 1) / 175 */
-	uval = (uint64_t)(val->val1 + 45) * 1000000 + val2;
+	uval = (uint64_t)(val->val1 + 45) * 1000000 + val->val2;
 	return ((uval * 0xFFFF) / 175) / 1000000;
 }
 
 static int sht3xd_rh_processed_to_raw(const struct sensor_value *val)
 {
-	uint32_t val2;
 	uint64_t uval;
 
-	if (val->type == SENSOR_VALUE_TYPE_INT) {
-		val2 = 0;
-	} else {
-		val2 = val->val2;
-	}
-
 	/* ret = val * (2^16 -1) / 100000 */
-	uval = (uint64_t)val->val1 * 1000000 + val2;
+	uval = (uint64_t)val->val1 * 1000000 + val->val2;
 	return ((uval * 0xFFFF) / 100000) / 1000000;
 }
 
@@ -61,8 +47,7 @@ int sht3xd_attr_set(struct device *dev,
 	struct sht3xd_data *drv_data = dev->driver_data;
 	uint16_t set_cmd, clear_cmd, reg_val, temp, rh;
 
-	if (val->type != SENSOR_VALUE_TYPE_INT &&
-	    val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
+	if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 		return -ENOTSUP;
 	}
 

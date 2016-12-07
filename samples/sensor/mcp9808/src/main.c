@@ -49,8 +49,9 @@ void main(void)
 	struct sensor_value val;
 	struct sensor_trigger trig;
 
-	val.type = SENSOR_VALUE_TYPE_INT;
+	val.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val.val1 = 26;
+	val.val2 = 0;
 
 	sensor_attr_set(dev, SENSOR_CHAN_TEMP,
 			SENSOR_ATTR_UPPER_THRESH, &val);

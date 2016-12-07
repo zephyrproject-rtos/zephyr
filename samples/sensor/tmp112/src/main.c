@@ -26,8 +26,9 @@ static void do_main(struct device *dev)
 	struct sensor_value temp_value;
 	struct sensor_value attr;
 
-	attr.type = SENSOR_VALUE_TYPE_INT;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 150;
+	attr.val2 = 0;
 	ret = sensor_attr_set(dev, SENSOR_CHAN_TEMP,
 			      SENSOR_ATTR_FULL_SCALE, &attr);
 	if (ret) {

@@ -26,18 +26,11 @@ extern struct isl29035_driver_data isl29035_data;
 
 static uint16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 {
-	uint64_t raw_val, ival, uval;
-
-	ival = val->val1;
-	if (val->type == SENSOR_VALUE_TYPE_INT) {
-		uval = 0;
-	} else {
-		uval = val->val2;
-	}
+	uint64_t raw_val;
 
 	/* raw_val = val * (2 ^ adc_data_bits) / lux_range */
-	raw_val = (ival << ISL29035_ADC_DATA_BITS) +
-		  (uval << ISL29035_ADC_DATA_BITS) / 1000000;
+	raw_val = (((uint64_t)val->val1) << ISL29035_ADC_DATA_BITS) +
+		  (((uint64_t)val->val2) << ISL29035_ADC_DATA_BITS) / 1000000;
 
 	return raw_val / ISL29035_LUX_RANGE;
 }

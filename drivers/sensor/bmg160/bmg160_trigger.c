@@ -100,7 +100,7 @@ int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
 		return bmg160_write_byte(dev, BMG160_REG_THRES,
 					 any_th_dps & BMG160_THRES_MASK);
 	} else if (attr == SENSOR_ATTR_SLOPE_DUR) {
-		if (val->type != SENSOR_VALUE_TYPE_INT) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 

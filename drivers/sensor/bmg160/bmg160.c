@@ -171,7 +171,7 @@ static int bmg160_attr_set(struct device *dev, enum sensor_channel chan,
 		return 0;
 
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -ENOTSUP;
 		}
 

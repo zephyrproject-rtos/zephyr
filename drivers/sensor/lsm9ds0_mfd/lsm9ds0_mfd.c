@@ -591,8 +591,7 @@ static inline int lsm9ds0_mfd_attr_set_accel(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT &&
-		    val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 
@@ -600,8 +599,7 @@ static inline int lsm9ds0_mfd_attr_set_accel(struct device *dev,
 #endif
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_VALUE_TYPE_INT &&
-		    val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 
@@ -623,8 +621,7 @@ static inline int lsm9ds0_mfd_attr_set_magn(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT &&
-		    val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 
@@ -632,8 +629,7 @@ static inline int lsm9ds0_mfd_attr_set_magn(struct device *dev,
 #endif
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_VALUE_TYPE_INT &&
-		    val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 

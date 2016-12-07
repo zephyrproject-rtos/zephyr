@@ -153,7 +153,7 @@ static int hp206c_attr_set(struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	if (val->type != SENSOR_VALUE_TYPE_INT) {
+	if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 		return -EINVAL;
 	}
 
