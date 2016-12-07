@@ -1,4 +1,4 @@
-# Kconfig.soc - Nordic Semiconductor nRF52 MCU line
+# Kconfig.defconfig.nrf52840 - Nordic Semiconductor nRF52840 MCU
 #
 # Copyright (c) 2016 Nordic Semiconductor ASA
 #
@@ -15,14 +15,22 @@
 # limitations under the License.
 #
 
-choice
-prompt "nRF52x MCU Selection"
-depends on SOC_SERIES_NRF52X
 
-config SOC_NRF52832
-	bool "NRF52832"
+if SOC_NRF52840
 
-config SOC_NRF52840
-	bool "NRF52840"
+config SOC
+	string
+	default nRF52840
 
-endchoice
+config SRAM_SIZE
+	default 256
+
+config FLASH_SIZE
+	default 1024
+
+config NUM_IRQS
+	int
+	default 46
+
+endif # SOC_NRF52840
+
