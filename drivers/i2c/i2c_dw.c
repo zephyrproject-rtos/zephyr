@@ -187,7 +187,7 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 	regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
 	value = regs->ic_clr_intr;
 
-	device_sync_call_complete(&dw->sync);
+	k_sem_give(&dw->device_sync_sem);
 }
 
 static void i2c_dw_isr(void *arg)
@@ -446,7 +446,7 @@ static int i2c_dw_transfer(struct device *dev,
 	regs->ic_enable.bits.enable = 1;
 
 	/*
-	 * While waiting at device_sync_call_wait(), kernel can switch to idle
+	 * While waiting at device_sync_sem, kernel can switch to idle
 	 * task which in turn can call _sys_soc_suspend() hook of Power
 	 * Management App (PMA).
 	 * device_busy_set() call here, would indicate to PMA that it should not
@@ -500,7 +500,7 @@ static int i2c_dw_transfer(struct device *dev,
 		}
 
 		/* Wait for transfer to be done */
-		device_sync_call_wait(&dw->sync);
+		k_sem_take(&dw->device_sync_sem, K_FOREVER);
 
 		if (dw->state & I2C_DW_CMD_ERROR) {
 			ret = -EIO;
@@ -672,7 +672,7 @@ static int i2c_dw_initialize(struct device *port)
 		return -EPERM;
 	}
 
-	device_sync_call_init(&dev->sync);
+	k_sem_init(&dev->device_sync_sem, 0, UINT_MAX);
 
 	regs = (struct i2c_dw_registers *) dev->base_address;
 

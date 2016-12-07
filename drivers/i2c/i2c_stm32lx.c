@@ -125,13 +125,13 @@ static void i2c_stm32lx_ev_isr(void *arg)
 			data->current.len--;
 
 			if (!data->current.len)
-				device_sync_call_complete(&data->sync);
+				k_sem_give(&data->device_sync_sem);
 		} else {
 			/* Impossible situation */
 			data->current.is_err = 1;
 			i2c->cr1.bit.txie = 0;
 
-			device_sync_call_complete(&data->sync);
+			k_sem_give(&data->device_sync_sem);
 		}
 	} else {
 		if (data->current.len && i2c->isr.bit.rxne) {
@@ -140,13 +140,13 @@ static void i2c_stm32lx_ev_isr(void *arg)
 			data->current.len--;
 
 			if (!data->current.len)
-				device_sync_call_complete(&data->sync);
+				k_sem_give(&data->device_sync_sem);
 		} else {
 			/* Impossible situation */
 			data->current.is_err = 1;
 			i2c->cr1.bit.rxie = 0;
 
-			device_sync_call_complete(&data->sync);
+			k_sem_give(&data->device_sync_sem);
 		}
 	}
 }
@@ -162,12 +162,12 @@ static void i2c_stm32lx_er_isr(void *arg)
 
 		data->current.is_nack = 1;
 
-		device_sync_call_complete(&data->sync);
+		k_sem_give(&data->device_sync_sem);
 	} else {
 		/* Unknown Error */
 		data->current.is_err = 1;
 
-		device_sync_call_complete(&data->sync);
+		k_sem_give(&data->device_sync_sem);
 	}
 }
 #endif
@@ -225,7 +225,7 @@ static inline int msg_write(struct device *dev, struct i2c_msg *msg,
 	i2c->cr1.bit.txie = 1;
 	i2c->cr1.bit.nackie = 1;
 
-	device_sync_call_wait(&data->sync);
+	k_sem_take(&data->device_sync_sem, K_FOREVER);
 
 	if (data->current.is_nack || data->current.is_err) {
 		i2c->cr1.bit.txie = 0;
@@ -309,7 +309,7 @@ static inline int msg_read(struct device *dev, struct i2c_msg *msg,
 #ifdef CONFIG_I2C_STM32LX_INTERRUPT
 	i2c->cr1.bit.rxie = 1;
 
-	device_sync_call_wait(&data->sync);
+	k_sem_take(&data->device_sync_sem, K_FOREVER);
 
 	if (data->current.is_err) {
 		i2c->cr1.bit.rxie = 0;
@@ -413,7 +413,7 @@ static int i2c_stm32lx_init(struct device *dev)
 	struct i2c_stm32lx_data *data = DEV_DATA(dev);
 	const struct i2c_stm32lx_config *cfg = DEV_CFG(dev);
 
-	device_sync_call_init(&data->sync);
+	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 
 	__i2c_stm32lx_get_clock(dev);
 

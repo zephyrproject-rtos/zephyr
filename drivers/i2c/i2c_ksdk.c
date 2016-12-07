@@ -37,7 +37,7 @@ struct i2c_ksdk_config {
 
 struct i2c_ksdk_data {
 	i2c_master_handle_t handle;
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 	status_t callback_status;
 };
 
@@ -85,7 +85,7 @@ static void i2c_ksdk_master_transfer_callback(I2C_Type *base,
 	struct i2c_ksdk_data *data = DEV_DATA(dev);
 
 	data->callback_status = status;
-	device_sync_call_complete(&data->sync);
+	k_sem_give(&data->device_sync_sem);
 }
 
 static uint32_t i2c_ksdk_convert_flags(int msg_flags)
@@ -136,7 +136,7 @@ static int i2c_ksdk_transfer(struct device *dev, struct i2c_msg *msgs,
 		}
 
 		/* Wait for the transfer to complete */
-		device_sync_call_wait(&data->sync);
+		k_sem_take(&data->device_sync_sem, K_FOREVER);
 
 		/* Return an error if the transfer didn't complete
 		 * successfully. e.g., nak, timeout, lost arbitration
@@ -170,7 +170,7 @@ static int i2c_ksdk_init(struct device *dev)
 	i2c_master_config_t master_config;
 	int error;
 
-	device_sync_call_init(&data->sync);
+	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 
 	clock_freq = CLOCK_GetFreq(config->clock_source);
 	I2C_MasterGetDefaultConfig(&master_config);

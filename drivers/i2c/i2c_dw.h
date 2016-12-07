@@ -107,7 +107,7 @@ struct i2c_dw_rom_config {
 
 struct i2c_dw_dev_config {
 	uint32_t base_address;
-	device_sync_call_t	sync;
+	struct k_sem		device_sync_sem;
 	union dev_config	app_config;
 
 

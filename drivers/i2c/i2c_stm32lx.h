@@ -204,7 +204,7 @@ struct i2c_stm32lx_data {
 	/* Device config */
 	union dev_config dev_config;
 	/* ISR Sync */
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 	/* Current message data */
 	struct {
 		struct i2c_msg *msg;

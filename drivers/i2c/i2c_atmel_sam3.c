@@ -69,7 +69,7 @@ struct i2c_sam3_dev_config {
 };
 
 struct i2c_sam3_dev_data {
-	device_sync_call_t	sync;
+	struct k_sem		device_sync_sem;
 	union dev_config	dev_config;
 
 	volatile uint32_t	state;
@@ -235,7 +235,7 @@ static void i2c_sam3_isr(void *arg)
 	 */
 	cfg->port->idr = TWI_IRQ_DISABLE;
 
-	device_sync_call_complete(&dev_data->sync);
+	k_sem_give(&dev_data->device_sync_sem);
 }
 
 /* This should be used ONLY IF <bits> are the only bits of concern.
@@ -330,7 +330,7 @@ static inline int msg_write(struct device *dev)
 	cfg->port->pdc.ptcr = PDC_PTCR_TXTEN;
 
 	/* Wait till transfer is done or error occurs */
-	device_sync_call_wait(&dev_data->sync);
+	k_sem_take(&dev_data->device_sync_sem, K_FOREVER);
 
 	/* Check for error */
 	if (cfg->port->sr & TWI_IRQ_NACK) {
@@ -425,7 +425,7 @@ static inline int msg_read(struct device *dev)
 		cfg->port->ier = TWI_IRQ_ENDRX | TWI_IRQ_NACK | TWI_IRQ_OVRE;
 
 		/* Wait till transfer is done or error occurs */
-		device_sync_call_wait(&dev_data->sync);
+		k_sem_take(&dev_data->device_sync_sem, K_FOREVER);
 
 		/* Check for errors */
 		stat_reg = cfg->port->sr;
@@ -591,7 +591,7 @@ static int i2c_sam3_init(struct device *dev)
 	const struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 
-	device_sync_call_init(&dev_data->sync);
+	k_sem_init(&dev_data->device_sync_sem, 0, UINT_MAX);
 
 	/* Disable all interrupts */
 	cfg->port->idr = TWI_IRQ_DISABLE;

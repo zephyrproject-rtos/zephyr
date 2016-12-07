@@ -37,7 +37,7 @@ struct i2c_qmsi_ss_config_info {
 };
 
 struct i2c_qmsi_ss_driver_data {
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 	int transfer_status;
 	struct k_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -302,7 +302,7 @@ static void transfer_complete(void *data, int rc, qm_ss_i2c_status_t status,
 
 	driver_data = GET_DRIVER_DATA(dev);
 	driver_data->transfer_status = rc;
-	device_sync_call_complete(&driver_data->sync);
+	k_sem_give(&driver_data->device_sync_sem);
 }
 
 static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
@@ -343,7 +343,7 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 		}
 
 		/* Block current thread until the I2C transfer completes. */
-		device_sync_call_wait(&driver_data->sync);
+		k_sem_take(&driver_data->device_sync_sem, K_FOREVER);
 
 		if (driver_data->transfer_status != 0) {
 			return -EIO;
@@ -377,7 +377,7 @@ static int i2c_qmsi_ss_init(struct device *dev)
 		return err;
 	}
 
-	device_sync_call_init(&driver_data->sync);
+	k_sem_init(&driver_data->device_sync_sem, 0, UINT_MAX);
 	dev->driver_api = &api;
 
 	ss_i2c_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
