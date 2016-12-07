@@ -401,7 +401,7 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
  */
 static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 {
-	return snprintk(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X",
 			addr->val[5], addr->val[4], addr->val[3],
 			addr->val[2], addr->val[1], addr->val[0]);
 }
@@ -433,7 +433,7 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 		break;
 	}
 
-	return snprintk(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)",
+	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X (%s)",
 			addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }
