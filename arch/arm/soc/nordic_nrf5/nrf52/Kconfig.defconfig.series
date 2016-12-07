@@ -35,10 +35,6 @@ config SRAM_BASE_ADDRESS
 config FLASH_BASE_ADDRESS
 	default 0x00000000
 
-config NUM_IRQS
-	int
-	default 39
-
 config NUM_IRQ_PRIO_BITS
 	int
 	default 3

@@ -38,36 +38,48 @@ extern void _NmiInit(void);
 
 #define __SYSTEM_CLOCK_64M (64000000UL)
 
-static bool ftpan_32(void);
-static bool ftpan_37(void);
-static bool ftpan_36(void);
-
-uint32_t SystemCoreClock __used = __SYSTEM_CLOCK_64M;
-
-static void clock_init(void)
+#ifdef CONFIG_SOC_NRF52832
+static bool ftpan_32(void)
 {
-	SystemCoreClock = __SYSTEM_CLOCK_64M;
+	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
+		(((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
+			(((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
-static int nordicsemi_nrf52_init(struct device *arg)
+static bool ftpan_37(void)
 {
-	uint32_t key;
+	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
+		(((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
+			(((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+			return true;
+		}
+	}
 
-	ARG_UNUSED(arg);
+	return false;
+}
 
-	/* Note:
-	* Magic numbers below are obtained by reading the registers
-	* when the SoC was running the SAM-BA bootloader
-	* (with reserved bits set to 0).
-	*/
+static bool ftpan_36(void)
+{
+	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
+		(((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
+			(((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+			return true;
+		}
+	}
 
-	key = irq_lock();
+	return false;
+}
 
-	/* Setup the vector table offset register (VTOR),
-	* which is located at the beginning of flash area.
-	*/
-	_scs_relocate_vector_table((void *)CONFIG_FLASH_BASE_ADDRESS);
-
+static void nordicsemi_nrf52832_init(void)
+{
 	/* Workaround for FTPAN-32 "DIF: Debug session automatically
 	* enables TracePort pins" found at Product Anomaly document
 	* for your device located at https://www.nordicsemi.com/
@@ -94,18 +106,15 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	}
 
 	/* Enable the FPU if the compiler used floating point unit
-	* instructions. __FPU_USED is a MACRO defined by the
-	* compiler. Since the FPU consumes energy, remember to
+	* instructions. Since the FPU consumes energy, remember to
 	* disable FPU use in the compiler if floating point unit
 	* operations are not used in your code.
 	*/
-	#if (__FPU_USED == 1)
-
+#if defined(CONFIG_FLOAT)
 	SCB->CPACR |= (3UL << 20) | (3UL << 22);
 	__DSB();
 	__ISB();
-
-	#endif
+#endif
 
 	/* Configure NFCT pins as GPIOs if NFCT is not to be used in
 	* your code. If CONFIG_NFCT_PINS_AS_GPIOS is not defined,
@@ -113,8 +122,7 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	* will be reserved for NFC and will not be available as
 	* normal GPIOs.
 	*/
-	#if defined(CONFIG_NFCT_PINS_AS_GPIOS)
-
+#if defined(CONFIG_NFCT_PINS_AS_GPIOS)
 	if ((NRF_UICR->NFCPINS & UICR_NFCPINS_PROTECT_Msk) ==
 	    (UICR_NFCPINS_PROTECT_NFC << UICR_NFCPINS_PROTECT_Pos)) {
 
@@ -132,8 +140,7 @@ static int nordicsemi_nrf52_init(struct device *arg)
 		}
 		NVIC_SystemReset();
 	}
-
-	#endif
+#endif
 
 	/* Configure GPIO pads as pPin Reset pin if Pin Reset
 	* capabilities desired. If CONFIG_GPIO_AS_PINRESET is not
@@ -141,7 +148,7 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	* Product Specification to see which one) will then be
 	* reserved for PinReset and not available as normal GPIO.
 	*/
-	#if defined(CONFIG_GPIO_AS_PINRESET)
+#if defined(CONFIG_GPIO_AS_PINRESET)
 	if (((NRF_UICR->PSELRESET[0] & UICR_PSELRESET_CONNECT_Msk) !=
 	     (UICR_PSELRESET_CONNECT_Connected << UICR_PSELRESET_CONNECT_Pos)) ||
 	    ((NRF_UICR->PSELRESET[0] & UICR_PSELRESET_CONNECT_Msk) !=
@@ -165,30 +172,55 @@ static int nordicsemi_nrf52_init(struct device *arg)
 		}
 		NVIC_SystemReset();
 	}
-	#endif
+#endif
 
 	/* Enable SWO trace functionality. If ENABLE_SWO is not
 	* defined, SWO pin will be used as GPIO (see Product
 	* Specification to see which one).
 	*/
-	#if defined(ENABLE_SWO)
-
+#if defined(ENABLE_SWO)
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 	NRF_CLOCK->TRACECONFIG |= CLOCK_TRACECONFIG_TRACEMUX_Serial <<
 				  CLOCK_TRACECONFIG_TRACEMUX_Pos;
-	#endif
+#endif
 
 	/* Enable Trace functionality. If ENABLE_TRACE is not
 	* defined, TRACE pins will be used as GPIOs (see Product
 	* Specification to see which ones).
 	*/
-	#if defined(ENABLE_TRACE)
+#if defined(ENABLE_TRACE)
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 	NRF_CLOCK->TRACECONFIG |= CLOCK_TRACECONFIG_TRACEMUX_Parallel <<
 				  CLOCK_TRACECONFIG_TRACEMUX_Pos;
-	#endif
+#endif
+}
+#endif /* CONFIG_SOC_NRF52832 */
 
-	/* Clear all faults */
+uint32_t SystemCoreClock __used = __SYSTEM_CLOCK_64M;
+
+static void clock_init(void)
+{
+	SystemCoreClock = __SYSTEM_CLOCK_64M;
+}
+
+static int nordicsemi_nrf52_init(struct device *arg)
+{
+	uint32_t key;
+
+	ARG_UNUSED(arg);
+
+	key = irq_lock();
+
+	/* Setup the vector table offset register (VTOR),
+	 * which is located at the beginning of flash area.
+	 */
+	_scs_relocate_vector_table((void *)CONFIG_FLASH_BASE_ADDRESS);
+
+#ifdef CONFIG_SOC_NRF52832
+	nordicsemi_nrf52832_init();
+#endif
+
+	/* Reset all faults */
 	_ScbMemFaultAllFaultsReset();
 	_ScbBusFaultAllFaultsReset();
 	_ScbUsageFaultAllFaultsReset();
@@ -206,45 +238,6 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	irq_unlock(key);
 
 	return 0;
-}
-
-static bool ftpan_32(void)
-{
-	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
-	    (((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
-		    (((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-static bool ftpan_37(void)
-{
-	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
-	    (((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
-		    (((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-static bool ftpan_36(void)
-{
-	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
-	    (((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
-		    (((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
-			return true;
-		}
-	}
-
-	return false;
 }
 
 SYS_INIT(nordicsemi_nrf52_init, PRE_KERNEL_1, 0);
