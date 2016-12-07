@@ -33,9 +33,10 @@
 #define ALL_NODES_LOCAL_COAP_MCAST \
 	{ { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xfd } } }
 
-static const struct net_addr mcast_addr = {
-	.in6_addr = ALL_NODES_LOCAL_COAP_MCAST,
-	.family = AF_INET6 };
+static const struct sockaddr_in6 mcast_addr = {
+	.sin6_addr = ALL_NODES_LOCAL_COAP_MCAST,
+	.sin6_family = AF_INET6,
+	.sin6_port = htons(MY_COAP_PORT)};
 
 static struct net_context *context;
 
@@ -140,8 +141,8 @@ static void retransmit_request(struct nano_work *work)
 
 void main(void)
 {
-	static struct net_addr any_addr = { .in6_addr = IN6ADDR_ANY_INIT,
-					   .family = AF_INET6 };
+	static struct sockaddr_in6 any_addr = { .sin6_addr = IN6ADDR_ANY_INIT,
+						.sin6_family = AF_INET6 };
 	struct zoap_packet request;
 	struct zoap_pending *pending;
 	struct zoap_reply *reply;
