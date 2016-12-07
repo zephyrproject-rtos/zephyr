@@ -47,11 +47,6 @@ enum sensor_value_type {
 	 * 10^(-6).
 	 */
 	SENSOR_VALUE_TYPE_INT_PLUS_MICRO,
-	/**
-	 * @brief val1 contains a Q16.16 representation, val2 is
-	 * unused.
-	 */
-	SENSOR_VALUE_TYPE_Q16_16,
 	/** @brief dval contains a floating point value. */
 	SENSOR_VALUE_TYPE_DOUBLE,
 };
