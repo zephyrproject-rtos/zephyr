@@ -1,4 +1,4 @@
-This is a sample app to read and write the to
+This is a sample app to read and write
 the Fujitsu MB85RC256V FRAM chip via I2C
 on the Quark SE Sensor Subsystem.
 
