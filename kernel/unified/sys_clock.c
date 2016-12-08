@@ -178,21 +178,69 @@ uint32_t k_uptime_delta_32(int64_t *reftime)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 #include <wait_q.h>
 
-static inline void handle_expired_timeouts(int32_t ticks)
+/*
+ * Handle timeouts by dequeuing the expired ones from _timeout_q and queue
+ * them on a local one, then doing the real handling from that queue. This
+ * allows going through the second queue without needing to have the
+ * interrupts locked since it is a local queue. Each expired timeout is marked
+ * as _EXPIRED so that an ISR preempting us and releasing an object on which
+ * a thread was timing out and expiredwill not give the object to that thread.
+ *
+ * Always called from interrupt level, and always only from the system clock
+ * interrupt.
+ */
+static inline void handle_timeouts(int32_t ticks)
 {
+	sys_dlist_t expired;
+	unsigned int key;
+
+	/* init before locking interrupts */
+	sys_dlist_init(&expired);
+
+	key = irq_lock();
+
 	struct _timeout *head =
 		(struct _timeout *)sys_dlist_peek_head(&_timeout_q);
 
 	K_DEBUG("head: %p, delta: %d\n",
 		head, head ? head->delta_ticks_from_prev : -2112);
 
-	if (head) {
-		head->delta_ticks_from_prev -= ticks;
-		_handle_timeouts();
+	if (!head) {
+		irq_unlock(key);
+		return;
 	}
+
+	head->delta_ticks_from_prev -= ticks;
+
+	/*
+	 * Dequeue all expired timeouts from _timeout_q, relieving irq lock
+	 * pressure between each of them, allowing handling of higher priority
+	 * interrupts. We know that no new timeout will be prepended in front
+	 * of a timeout which delta is 0, since timeouts of 0 ticks are
+	 * prohibited.
+	 */
+	sys_dnode_t *next = &head->node;
+	struct _timeout *timeout = (struct _timeout *)next;
+
+	while (timeout && timeout->delta_ticks_from_prev == 0) {
+
+		sys_dlist_remove(next);
+		sys_dlist_append(&expired, next);
+		timeout->delta_ticks_from_prev = _EXPIRED;
+
+		irq_unlock(key);
+		key = irq_lock();
+
+		next = sys_dlist_peek_head(&_timeout_q);
+		timeout = (struct _timeout *)next;
+	}
+
+	irq_unlock(key);
+
+	_handle_expired_timeouts(&expired);
 }
 #else
-	#define handle_expired_timeouts(ticks) do { } while ((0))
+	#define handle_timeouts(ticks) do { } while ((0))
 #endif
 
 #ifdef CONFIG_TIMESLICING
@@ -200,6 +248,16 @@ int32_t _time_slice_elapsed;
 int32_t _time_slice_duration = CONFIG_TIMESLICE_SIZE;
 int  _time_slice_prio_ceiling = CONFIG_TIMESLICE_PRIORITY;
 
+/*
+ * Always called from interrupt level, and always only from the system clock
+ * interrupt, thus:
+ * - _current does not have to be protected, since it only changes at thread
+ *   level or when exiting a non-nested interrupt
+ * - _time_slice_elapsed does not have to be protected, since it can only change
+ *   in this function and at thread level
+ * - _time_slice_duration does not have to be protected, since it can only
+ *   change at thread level
+ */
 static void handle_time_slicing(int32_t ticks)
 {
 	if (_time_slice_duration == 0) {
@@ -212,8 +270,14 @@ static void handle_time_slicing(int32_t ticks)
 
 	_time_slice_elapsed += _ticks_to_ms(ticks);
 	if (_time_slice_elapsed >= _time_slice_duration) {
+
+		unsigned int key;
+
 		_time_slice_elapsed = 0;
+
+		key = irq_lock();
 		_move_thread_to_end_of_prio_q(_current);
+		irq_unlock(key);
 	}
 }
 #else
@@ -235,11 +299,13 @@ void _nano_sys_clock_tick_announce(int32_t ticks)
 
 	K_DEBUG("ticks: %d\n", ticks);
 
+	/* 64-bit value, ensure atomic access with irq lock */
 	key = irq_lock();
 	_sys_clock_tick_count += ticks;
-	handle_expired_timeouts(ticks);
-
-	handle_time_slicing(ticks);
-
 	irq_unlock(key);
+
+	handle_timeouts(ticks);
+
+	/* time slicing is basically handled like just yet another timeout */
+	handle_time_slicing(ticks);
 }

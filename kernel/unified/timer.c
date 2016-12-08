@@ -54,17 +54,19 @@ SYS_INIT(init_timer_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
  */
 void _timer_expiration_handler(struct _timeout *t)
 {
-	int key = irq_lock();
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
-	struct k_thread *pending_thread;
+	struct k_thread *thread;
+	unsigned int key;
 
 	/*
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
 	 * since we're already aligned to a tick boundary
 	 */
 	if (timer->period > 0) {
+		key = irq_lock();
 		_add_timeout(NULL, &timer->timeout, &timer->wait_q,
 				timer->period);
+		irq_unlock(key);
 	}
 
 	/* update timer's status */
@@ -74,17 +76,27 @@ void _timer_expiration_handler(struct _timeout *t)
 	if (timer->expiry_fn) {
 		timer->expiry_fn(timer);
 	}
-	/*
-	 * wake up the (only) thread waiting on the timer, if there is one;
-	 * don't invoke _Swap() since the timeout ISR called us, not a thread
-	 */
-	pending_thread = _unpend_first_thread(&timer->wait_q);
-	if (pending_thread) {
-		_ready_thread(pending_thread);
-		_set_thread_return_value(pending_thread, 0);
+
+	thread = (struct k_thread *)sys_dlist_peek_head(&timer->wait_q);
+
+	if (!thread) {
+		return;
 	}
 
+	/*
+	 * Interrupts _DO NOT_ have to be locked in this specific instance of
+	 * calling _unpend_thread() because a) this is the only place a thread
+	 * can be taken off this pend queue, and b) the only place a thread
+	 * can be put on the pend queue is at thread level, which of course
+	 * cannot interrupt the current context.
+	 */
+	_unpend_thread(thread);
+
+	key = irq_lock();
+	_ready_thread(thread);
 	irq_unlock(key);
+
+	_set_thread_return_value(thread, 0);
 }
 
 

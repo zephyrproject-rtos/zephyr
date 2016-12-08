@@ -199,6 +199,9 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 			struct k_thread *dummy_thread =
 				(struct k_thread *)&sem_thread->dummy;
 
+			if (_is_thread_timeout_expired(dummy_thread)) {
+				continue;
+			}
 			_abort_thread_timeout(dummy_thread);
 			_unpend_thread(dummy_thread);
 

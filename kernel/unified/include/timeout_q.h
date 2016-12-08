@@ -83,67 +83,63 @@ static inline void _unpend_thread_timing_out(struct k_thread *thread,
 }
 
 /*
- * Handle one expired timeout.
- *
- * This removes the thread from the timeout queue head, and also removes it
- * from the wait queue it is on if waiting for an object. In that case,
- * the return value is kept as -EAGAIN, set previously in _Swap().
- *
- * Must be called with interrupts locked.
+ * Handle one timeout from the expired timeout queue. Removes it from the wait
+ * queue it is on if waiting for an object; in this case, the return value is
+ * kept as -EAGAIN, set previously in _Swap().
  */
 
-static inline struct _timeout *_handle_one_timeout(
-	sys_dlist_t *timeout_q)
+static inline void _handle_one_expired_timeout(struct _timeout *timeout)
 {
-	struct _timeout *t = (void *)sys_dlist_get(timeout_q);
-	struct k_thread *thread = t->thread;
+	struct k_thread *thread = timeout->thread;
+	unsigned int key = irq_lock();
 
-	t->delta_ticks_from_prev = _INACTIVE;
+	timeout->delta_ticks_from_prev = _INACTIVE;
 
-	K_DEBUG("timeout %p\n", t);
-	if (thread != NULL) {
-		_unpend_thread_timing_out(thread, t);
+	K_DEBUG("timeout %p\n", timeout);
+	if (thread) {
+		_unpend_thread_timing_out(thread, timeout);
 		_ready_thread(thread);
-	} else if (t->func) {
-		t->func(t);
+		irq_unlock(key);
+	} else {
+		irq_unlock(key);
+		if (timeout->func) {
+			timeout->func(timeout);
+		}
 	}
-
-	return (struct _timeout *)sys_dlist_peek_head(timeout_q);
 }
 
 /*
- * Loop over all expired timeouts and handle them one by one.
- * Must be called with interrupts locked.
+ * Loop over all expired timeouts and handle them one by one. Should be called
+ * with interrupts unlocked: interrupts will be locked on each interation only
+ * for the amount of time necessary.
  */
 
-static inline void _handle_timeouts(void)
+static inline void _handle_expired_timeouts(sys_dlist_t *expired)
 {
-	sys_dlist_t *timeout_q = &_timeout_q;
-	struct _timeout *next;
+	sys_dnode_t *timeout, *next;
 
-	next = (struct _timeout *)sys_dlist_peek_head(timeout_q);
-	while (next && next->delta_ticks_from_prev == 0) {
-		next = _handle_one_timeout(timeout_q);
+	SYS_DLIST_FOR_EACH_NODE_SAFE(expired, timeout, next) {
+		sys_dlist_remove(timeout);
+		_handle_one_expired_timeout((struct _timeout *)timeout);
 	}
 }
 
-/* returns _INACTIVE if the timer has already expired */
-static inline int _abort_timeout(struct _timeout *t)
+/* returns _INACTIVE if the timer is not active */
+static inline int _abort_timeout(struct _timeout *timeout)
 {
-	sys_dlist_t *timeout_q = &_timeout_q;
-
-	if (t->delta_ticks_from_prev == _INACTIVE) {
+	if (timeout->delta_ticks_from_prev == _INACTIVE) {
 		return _INACTIVE;
 	}
 
-	if (!sys_dlist_is_tail(timeout_q, &t->node)) {
-		struct _timeout *next =
-			(struct _timeout *)sys_dlist_peek_next(timeout_q,
-								    &t->node);
-		next->delta_ticks_from_prev += t->delta_ticks_from_prev;
+	if (!sys_dlist_is_tail(&_timeout_q, &timeout->node)) {
+		sys_dnode_t *next_node =
+			sys_dlist_peek_next(&_timeout_q, &timeout->node);
+		struct _timeout *next = (struct _timeout *)next_node;
+
+		next->delta_ticks_from_prev += timeout->delta_ticks_from_prev;
 	}
-	sys_dlist_remove(&t->node);
-	t->delta_ticks_from_prev = _INACTIVE;
+	sys_dlist_remove(&timeout->node);
+	timeout->delta_ticks_from_prev = _INACTIVE;
 
 	return 0;
 }
@@ -185,6 +181,8 @@ static int _is_timeout_insert_point(sys_dnode_t *test, void *timeout)
  * Add timeout to timeout queue. Record waiting thread and wait queue if any.
  *
  * Cannot handle timeout == 0 and timeout == K_FOREVER.
+ *
+ * Must be called with interrupts locked.
  */
 
 static inline void _add_timeout(struct k_thread *thread,
@@ -226,6 +224,8 @@ static inline void _add_timeout(struct k_thread *thread,
  * Put thread on timeout queue. Record wait queue if any.
  *
  * Cannot handle timeout == 0 and timeout == K_FOREVER.
+ *
+ * Must be called with interrupts locked.
  */
 
 static inline void _add_thread_timeout(struct k_thread *thread,

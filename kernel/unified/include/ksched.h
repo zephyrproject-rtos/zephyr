@@ -264,6 +264,15 @@ static inline void _mark_thread_as_not_suspended(struct k_thread *thread)
 	thread->base.flags &= ~K_SUSPENDED;
 }
 
+static ALWAYS_INLINE int _is_thread_timeout_expired(struct k_thread *thread)
+{
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	return thread->base.timeout.delta_ticks_from_prev == _EXPIRED;
+#else
+	return 0;
+#endif
+}
+
 /* check if a thread is on the timeout queue */
 static inline int _is_thread_timeout_active(struct k_thread *thread)
 {
@@ -382,10 +391,36 @@ static inline struct k_thread *_peek_first_pending_thread(_wait_q_t *wait_q)
 	return (struct k_thread *)sys_dlist_peek_head(wait_q);
 }
 
+static inline struct k_thread *_get_thread_to_unpend(_wait_q_t *wait_q)
+{
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	if (_is_in_isr()) {
+		/* skip threads that have an expired timeout */
+		sys_dlist_t *q = (sys_dlist_t *)wait_q;
+		sys_dnode_t *cur, *next;
+
+		SYS_DLIST_FOR_EACH_NODE_SAFE(q, cur, next) {
+			struct k_thread *thread = (struct k_thread *)cur;
+
+			if (_is_thread_timeout_expired(thread)) {
+				continue;
+			}
+
+			sys_dlist_remove(cur);
+			return thread;
+		}
+		return NULL;
+	}
+#endif
+
+	return (struct k_thread *)sys_dlist_get(wait_q);
+}
+
 /* unpend the first thread from a wait queue */
+/* must be called with interrupts locked */
 static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 {
-	struct k_thread *thread = (struct k_thread *)sys_dlist_get(wait_q);
+	struct k_thread *thread = _get_thread_to_unpend(wait_q);
 
 	if (thread) {
 		_mark_thread_as_not_pending(thread);
