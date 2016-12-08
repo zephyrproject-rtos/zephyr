@@ -583,14 +583,15 @@ int net_context_listen(struct net_context *context, int backlog)
 #endif /* CONFIG_NET_DEBUG_CONTEXT */
 
 static inline int send_control_segment(struct net_context *context,
+				       const struct sockaddr_ptr *local,
 				       const struct sockaddr *remote,
 				       int flags, const char *msg)
 {
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(context->tcp, flags,
-				      NULL, 0, remote, &buf);
+	ret = net_tcp_prepare_segment(context->tcp, flags, NULL, 0,
+				      local, remote, &buf);
 	if (ret) {
 		return ret;
 	}
@@ -610,13 +611,14 @@ static inline int send_syn(struct net_context *context,
 {
 	net_tcp_change_state(context->tcp, NET_TCP_SYN_SENT);
 
-	return send_control_segment(context, remote, NET_TCP_SYN, "SYN");
+	return send_control_segment(context, NULL, remote, NET_TCP_SYN, "SYN");
 }
 
 static inline int send_syn_ack(struct net_context *context,
+			       struct sockaddr_ptr *local,
 			       struct sockaddr *remote)
 {
-	return send_control_segment(context, remote,
+	return send_control_segment(context, local, remote,
 				    NET_TCP_SYN | NET_TCP_ACK,
 				    "SYN_ACK");
 }
@@ -624,13 +626,13 @@ static inline int send_syn_ack(struct net_context *context,
 static inline int send_fin(struct net_context *context,
 			   struct sockaddr *remote)
 {
-	return send_control_segment(context, remote, NET_TCP_FIN, "FIN");
+	return send_control_segment(context, NULL, remote, NET_TCP_FIN, "FIN");
 }
 
 static inline int send_fin_ack(struct net_context *context,
 			       struct sockaddr *remote)
 {
-	return send_control_segment(context, remote,
+	return send_control_segment(context, NULL, remote,
 				    NET_TCP_FIN | NET_TCP_ACK, "FIN_ACK");
 }
 
@@ -1098,6 +1100,32 @@ static void ack_timeout(struct k_work *work)
 	net_tcp_change_state(tcp, NET_TCP_LISTEN);
 }
 
+static void buf_get_sockaddr(sa_family_t family, struct net_buf *buf,
+			     struct sockaddr_ptr *addr)
+{
+	memset(addr, 0, sizeof(*addr));
+
+#if defined(CONFIG_NET_IPV4)
+	if (family == AF_INET) {
+		struct sockaddr_in_ptr *addr4 = net_sin_ptr(addr);
+
+		addr4->sin_family = AF_INET;
+		addr4->sin_port = NET_TCP_BUF(buf)->dst_port;
+		addr4->sin_addr = &NET_IPV4_BUF(buf)->dst;
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+	if (family == AF_INET6) {
+		struct sockaddr_in6_ptr *addr6 = net_sin6_ptr(addr);
+
+		addr6->sin6_family = AF_INET6;
+		addr6->sin6_port = NET_TCP_BUF(buf)->dst_port;
+		addr6->sin6_addr = &NET_IPV6_BUF(buf)->dst;
+	}
+#endif
+}
+
 /* This callback is called when we are waiting connections and we receive
  * a packet. We need to check if we are receiving proper msg (SYN) here.
  * The ACK could also be received, in which case we have an established
@@ -1109,6 +1137,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 {
 	struct net_context *context = (struct net_context *)user_data;
 	struct net_tcp *tcp;
+	struct sockaddr_ptr buf_src_addr;
 
 	NET_ASSERT(context && context->tcp);
 
@@ -1150,7 +1179,9 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
 		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 
-		send_syn_ack(context, remote);
+		buf_get_sockaddr(net_context_get_family(context),
+				 buf, &buf_src_addr);
+		send_syn_ack(context, &buf_src_addr, remote);
 
 		/* We might be entering this section multiple times
 		 * if the SYN is sent more than once. So we need to cancel
@@ -1546,7 +1577,7 @@ static int create_udp_packet(struct net_context *context,
 	if (net_nbuf_family(buf) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
-		buf = net_ipv6_create(context, buf, &addr6->sin6_addr);
+		buf = net_ipv6_create(context, buf, NULL, &addr6->sin6_addr);
 		buf = net_udp_append(context, buf, ntohs(addr6->sin6_port));
 		buf = net_ipv6_finalize(context, buf);
 	} else
@@ -1556,7 +1587,7 @@ static int create_udp_packet(struct net_context *context,
 	if (net_nbuf_family(buf) == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
-		buf = net_ipv4_create(context, buf, &addr4->sin_addr);
+		buf = net_ipv4_create(context, buf, NULL, &addr4->sin_addr);
 		buf = net_udp_append(context, buf, ntohs(addr4->sin_port));
 		buf = net_ipv4_finalize(context, buf);
 	} else

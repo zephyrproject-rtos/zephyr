@@ -67,22 +67,24 @@ struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
 
 struct net_buf *net_ipv4_create(struct net_context *context,
 				struct net_buf *buf,
-				const struct in_addr *addr)
+				const struct in_addr *src,
+				const struct in_addr *dst)
 {
-	const struct in_addr *src;
-
 	NET_ASSERT(((struct sockaddr_in_ptr *)&context->local)->sin_addr);
 
-	src = ((struct sockaddr_in_ptr *)&context->local)->sin_addr;
+	if (!src) {
+		src = ((struct sockaddr_in_ptr *)&context->local)->sin_addr;
+	}
 
-	if (net_is_ipv4_addr_unspecified(src) || net_is_ipv4_addr_mcast(src)) {
+	if (net_is_ipv4_addr_unspecified(src)
+	    || net_is_ipv4_addr_mcast(src)) {
 		src = &net_nbuf_iface(buf)->ipv4.unicast[0].address.in_addr;
 	}
 
 	return net_ipv4_create_raw(buf,
 				   net_nbuf_ll_reserve(buf),
 				   src,
-				   addr,
+				   dst,
 				   net_context_get_iface(context),
 				   net_context_get_ip_proto(context));
 }

@@ -154,12 +154,14 @@ struct net_buf *net_ipv6_create_raw(struct net_buf *buf,
  *
  * @param context Network context for a connection
  * @param buf Network buffer
+ * @param src_addr Source address, or NULL to choose a default from context
  * @param dst_addr Destination IPv6 address
  *
  * @return Return network buffer that contains the IPv6 packet.
  */
 struct net_buf *net_ipv6_create(struct net_context *context,
 				struct net_buf *buf,
+				const struct in6_addr *src_addr,
 				const struct in6_addr *dst_addr);
 
 /**

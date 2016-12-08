@@ -231,6 +231,8 @@ int net_tcp_release(struct net_tcp *tcp);
  * @param flags TCP flags
  * @param options Pointer TCP options, NULL if no options.
  * @param optlen Length of the options.
+ * @param local Source address, or NULL to use the local address of
+ *        the TCP context
  * @param remote Peer address
  * @param send_buf Full IP + TCP header that is to be sent.
  *
@@ -238,6 +240,7 @@ int net_tcp_release(struct net_tcp *tcp);
  */
 int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			    void *options, size_t optlen,
+			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
 			    struct net_buf **send_buf);
 

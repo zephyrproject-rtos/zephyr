@@ -251,6 +251,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 #if defined(CONFIG_NET_IPV4)
 	if (net_nbuf_family(buf) == AF_INET) {
 		net_ipv4_create(context, buf,
+				net_sin_ptr(segment->src_addr)->sin_addr,
 				&(net_sin(segment->dst_addr)->sin_addr));
 		dst_port = net_sin(segment->dst_addr)->sin_port;
 		src_port = ((struct sockaddr_in_ptr *)&context->local)->
@@ -261,6 +262,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 #if defined(CONFIG_NET_IPV6)
 	if (net_nbuf_family(buf) == AF_INET6) {
 		net_ipv6_create(tcp->context, buf,
+				net_sin6_ptr(segment->src_addr)->sin6_addr,
 				&(net_sin6(segment->dst_addr)->sin6_addr));
 		dst_port = net_sin6(segment->dst_addr)->sin6_port;
 		src_port = ((struct sockaddr_in6_ptr *)&context->local)->
@@ -342,12 +344,17 @@ static inline bool seq_greater(uint32_t seq1, uint32_t seq2)
 
 int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			    void *options, size_t optlen,
+			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
 			    struct net_buf **send_buf)
 {
 	uint32_t seq;
 	uint16_t wnd;
 	struct tcp_segment segment = { 0 };
+
+	if (!local) {
+		local = &tcp->context->local;
+	}
 
 	seq = tcp->send_seq;
 
@@ -388,7 +395,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 
 	wnd = get_recv_wnd(tcp);
 
-	segment.src_addr = &tcp->context->local;
+	segment.src_addr = (struct sockaddr_ptr *)local;
 	segment.dst_addr = remote;
 	segment.seq = tcp->send_seq;
 	segment.ack = tcp->send_ack;
@@ -495,7 +502,7 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 		net_tcp_set_syn_opt(tcp, options, &optionlen);
 
 		net_tcp_prepare_segment(tcp, NET_TCP_SYN | NET_TCP_ACK,
-					options, optionlen, remote, buf);
+					options, optionlen, NULL, remote, buf);
 		break;
 
 	case NET_TCP_FIN_WAIT_1:
@@ -506,11 +513,12 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 		tcp->send_seq--;
 
 		net_tcp_prepare_segment(tcp, NET_TCP_FIN | NET_TCP_ACK,
-					0, 0, remote, buf);
+					0, 0, NULL, remote, buf);
 		break;
 
 	default:
-		net_tcp_prepare_segment(tcp, NET_TCP_ACK, 0, 0, remote, buf);
+		net_tcp_prepare_segment(tcp, NET_TCP_ACK, 0, 0, NULL, remote,
+					buf);
 		break;
 	}
 
@@ -596,7 +604,7 @@ int tcp_queue_data(struct net_context *context, struct net_buf *buf)
 	 * coalesce packets.
 	 */
 	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_PSH | NET_TCP_ACK,
-				      NULL, 0, &conn->remote_addr, &buf);
+				      NULL, 0, NULL, &conn->remote_addr, &buf);
 	if (ret) {
 		return ret;
 	}
