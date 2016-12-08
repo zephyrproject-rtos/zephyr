@@ -38,7 +38,7 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 	offload_routine = routine;
 	offload_param = parameter;
 
-	__asm__ volatile ("svc #1");
+	__asm__ volatile ("svc #1" : : : "memory");
 
 	irq_unlock(key);
 }
