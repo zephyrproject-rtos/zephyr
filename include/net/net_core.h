@@ -195,8 +195,8 @@ static inline void net_analyze_stack(const char *name,
 	net_analyze_stack_get_values(stack, size, &stack_offset,
 				     &pcnt, &unused);
 
-	NET_INFO("net (%p): %s stack real size %u "
-		 "unused %u usage %u/%u (%u %%)",
+	NET_INFO("net (%p): %s stack real size %zu "
+		 "unused %u usage %zu/%zu (%u %%)",
 		 k_current_get(), name,
 		 size + stack_offset, unused, size - unused, size, pcnt);
 }

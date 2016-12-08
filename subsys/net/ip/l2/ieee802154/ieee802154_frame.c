@@ -280,7 +280,7 @@ validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 	payload_length = length - (p_buf - buf) - IEEE802154_MFR_LENGTH;
 
 	NET_DBG("Header size: %u, vs total length %u: payload size %u",
-		p_buf - buf, length, payload_length);
+		(uint32_t)(p_buf - buf), length, payload_length);
 
 	if (type == IEEE802154_FRAME_TYPE_BEACON) {
 		if (!validate_beacon(mpdu, p_buf, payload_length)) {

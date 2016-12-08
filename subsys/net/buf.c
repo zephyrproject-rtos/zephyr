@@ -183,7 +183,7 @@ void net_buf_reserve(struct net_buf *buf, size_t reserve)
 {
 	NET_BUF_ASSERT(buf);
 	NET_BUF_ASSERT(buf->len == 0);
-	NET_BUF_DBG("buf %p reserve %u", buf, reserve);
+	NET_BUF_DBG("buf %p reserve %zu", buf, reserve);
 
 	buf->data = buf->__buf + reserve;
 }
@@ -341,7 +341,7 @@ void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 {
 	uint8_t *tail = net_buf_simple_tail(buf);
 
-	NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
+	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
 	NET_BUF_SIMPLE_ASSERT(net_buf_simple_tailroom(buf) >= len);
 
@@ -395,7 +395,7 @@ void net_buf_simple_add_be32(struct net_buf_simple *buf, uint32_t val)
 
 void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 {
-	NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
+	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
 	NET_BUF_SIMPLE_ASSERT(net_buf_simple_headroom(buf) >= len);
 
@@ -429,7 +429,7 @@ void net_buf_simple_push_u8(struct net_buf_simple *buf, uint8_t val)
 
 void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len)
 {
-	NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
+	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
 	NET_BUF_SIMPLE_ASSERT(buf->len >= len);
 
