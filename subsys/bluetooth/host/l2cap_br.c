@@ -690,17 +690,13 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	return L2CAP_CONN_SECURITY_REJECT;
 }
 
-static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
+static int l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
+				  uint16_t dcid, uint8_t ident, uint16_t result)
 {
 	struct net_buf *buf;
 	struct bt_l2cap_conn_rsp *rsp;
 	struct bt_l2cap_sig_hdr *hdr;
 
-	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-		return -ESRCH;
-	}
-
-	/* Send response to connection request only when in acceptor role */
 	buf = bt_l2cap_create_pdu(&br_sig, 0);
 	if (!buf) {
 		BT_ERR("No buffers for PDU");
@@ -709,12 +705,12 @@ static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONN_RSP;
-	hdr->ident = chan->ident;
+	hdr->ident = ident;
 	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
-	rsp->dcid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
-	rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
+	rsp->dcid = sys_cpu_to_le16(dcid);
+	rsp->scid = sys_cpu_to_le16(scid);
 	rsp->result = sys_cpu_to_le16(result);
 
 	if (result == BT_L2CAP_BR_PENDING) {
@@ -723,10 +719,26 @@ static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
 	}
 
-	bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
-	chan->ident = 0;
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 
 	return 0;
+}
+
+static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
+{
+	int err;
+
+	/* Send response to connection request only when in acceptor role */
+	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		return -ESRCH;
+	}
+
+	err = l2cap_br_send_conn_rsp(chan->conn, BR_CHAN(chan)->tx.cid,
+				     BR_CHAN(chan)->rx.cid, chan->ident,
+				     result);
+	chan->ident = 0;
+
+	return err;
 }
 
 static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
@@ -779,11 +791,13 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	/*
 	 * Request server to accept the new connection and allocate the
-	 * channel.
+	 * channel. If no free channels available for PSM server reply with
+	 * proper result and quit since chan pointer is uninitialized then.
 	 */
 	if (server->accept(conn, &chan) < 0) {
-		result = BT_L2CAP_BR_ERR_NO_RESOURCES;
-		goto done;
+		l2cap_br_send_conn_rsp(conn, scid, dcid, ident,
+				       BT_L2CAP_BR_ERR_NO_RESOURCES);
+		return;
 	}
 
 	chan->required_sec_level = server->sec_level;
