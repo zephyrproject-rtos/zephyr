@@ -358,8 +358,10 @@ static int lsm6ds0_gyro_channel_get(enum sensor_channel chan,
 static void lsm6ds0_gyro_channel_get_temp(struct sensor_value *val,
 					  struct lsm6ds0_data *data)
 {
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
-	val->dval = (double)(data->temp_sample) / 16.0 + 25.0;
+	/* val = temp_sample / 16 + 25 */
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+	val->val1 = data->temp_sample / 16 + 25;
+	val->val2 = (data->temp_sample % 16) * (1000000 / 16);
 }
 #endif
 

@@ -114,11 +114,15 @@ static int th02_channel_get(struct device *dev, enum sensor_channel chan,
 			chan == SENSOR_CHAN_HUMIDITY);
 
 	if (chan == SENSOR_CHAN_TEMP) {
-		val->type = SENSOR_VALUE_TYPE_DOUBLE;
-		val->dval = (double)drv_data->t_sample  / 32.0 - 50.0;
+		/* val = sample / 32 - 50 */
+		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+		val->val1 = drv_data->t_sample / 32 - 50;
+		val->val2 = (drv_data->t_sample % 32) * (1000000 / 32);
 	} else {
-		val->type = SENSOR_VALUE_TYPE_DOUBLE;
-		val->dval = (double)drv_data->rh_sample / 16.0 - 24.0;
+		/* val = sample / 16 -24 */
+		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+		val->val1 = drv_data->rh_sample / 16 - 24;
+		val->val2 = (drv_data->rh_sample % 16) * (1000000 / 16);
 	}
 
 	return 0;

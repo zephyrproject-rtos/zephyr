@@ -164,9 +164,10 @@ static int max44009_channel_get(struct device *dev, enum sensor_channel chan,
 	       ((uval & MAX44009_MANTISSA_HIGH_NIBBLE_MASK) >> 4);
 	uval = uval << (drv_data->sample >> MAX44009_SAMPLE_EXPONENT_SHIFT);
 
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
 	/* lux is the integer of sample output multiplied by 0.045. */
-	val->dval = ((double)uval) * 0.045;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+	val->val1 = (uval * 45) / 1000;
+	val->val2 = ((uval * 45) % 1000) * 1000;
 
 	return 0;
 }

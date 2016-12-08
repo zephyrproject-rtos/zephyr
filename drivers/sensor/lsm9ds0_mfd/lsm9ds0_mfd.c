@@ -574,8 +574,9 @@ static int lsm9ds0_mfd_channel_get(struct device *dev,
 #endif
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
 	case SENSOR_CHAN_TEMP:
-		val->type = SENSOR_VALUE_TYPE_DOUBLE;
-		val->dval = data->sample_temp;
+		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+		val->val1 = data->sample_temp;
+		val->val2 = 0;
 		return 0;
 #endif
 	default:

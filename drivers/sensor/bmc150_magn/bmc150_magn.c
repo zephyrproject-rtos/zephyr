@@ -331,8 +331,10 @@ static int bmc150_magn_sample_fetch(struct device *dev,
 
 static void bmc150_magn_convert(struct sensor_value *val, int raw_val)
 {
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
-	val->dval = (double)(raw_val) * (1.0/1600.0);
+	/* val = raw_val / 1600 */
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+	val->val1 = raw_val / 1600;
+	val->val2 = ((int32_t)raw_val * (1000000 / 1600)) % 1000000;
 }
 
 static int bmc150_magn_channel_get(struct device *dev,
