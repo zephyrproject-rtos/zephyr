@@ -39,7 +39,7 @@
 #include <net/net_core.h>
 #include <net/net_context.h>
 
-#if defined(CONFIG_NETWORKING_WITH_BT)
+#if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
 #endif
