@@ -28,7 +28,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <misc/byteorder.h>
-#include "usb_dc.h"
+#include <usb/usb_dc.h>
 #include "usb_dw_registers.h"
 #include "clk.h"
 
