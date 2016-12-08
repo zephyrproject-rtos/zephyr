@@ -573,7 +573,7 @@ const struct url_test url_tests[] = {
 
 int test_preserve_data(void)
 {
-	struct http_parser parser;
+	struct http_parser parser = { 0 };
 	char my_data[] = "application-specific data";
 
 	parser.data = my_data;
@@ -635,7 +635,7 @@ int test_method_str(void)
 
 int test_header_nread_value(void)
 {
-	struct http_parser parser;
+	struct http_parser parser = { 0 };
 	const char *buf;
 	size_t parsed;
 
@@ -655,7 +655,7 @@ int test_header_nread_value(void)
 
 int test_invalid_header_content(int req, const char *str)
 {
-	struct http_parser parser;
+	struct http_parser parser = { 0 };
 	const char *buf;
 	size_t parsed;
 	size_t buflen;
@@ -699,7 +699,7 @@ int test_invalid_header_field_content_error(int req)
 
 int test_invalid_header_field(int req, const char *str)
 {
-	struct http_parser parser;
+	struct http_parser parser = { 0 };
 	const char *buf;
 	size_t parsed;
 	size_t buflen;
@@ -743,7 +743,7 @@ int test_invalid_header_field_token_error(int req)
 
 int test_double_content_length_error(int req)
 {
-	struct http_parser parser;
+	struct http_parser parser = { 0 };
 	const char *buf;
 	size_t parsed;
 	size_t buflen;
@@ -772,7 +772,7 @@ int test_double_content_length_error(int req)
 
 int test_chunked_content_length_error(int req)
 {
-	struct http_parser parser;
+	struct http_parser parser = { 0 };
 	const char *buf;
 	size_t parsed;
 	size_t buflen;
@@ -802,7 +802,7 @@ int test_chunked_content_length_error(int req)
 
 int test_header_cr_no_lf_error(int req)
 {
-	struct http_parser parser;
+	struct http_parser parser = { 0 };
 	const char *buf;
 	size_t parsed;
 	size_t buflen;
