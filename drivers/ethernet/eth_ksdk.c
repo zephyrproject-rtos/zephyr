@@ -403,16 +403,10 @@ static struct eth_context eth_0_context = {
 #endif
 };
 
-#ifdef CONFIG_NET_L2_ETHERNET
-#define _ETH_L2_LAYER ETHERNET_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-#endif
-
 NET_DEVICE_INIT(eth_ksdk_0, CONFIG_ETH_KSDK_0_NAME,
 		eth_0_init, &eth_0_context,
-		NULL,
-		CONFIG_ETH_INIT_PRIORITY,
-		&api_funcs_0, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 1500);
+		NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs_0,
+		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
 
 static void eth_0_config_func(void)
 {
