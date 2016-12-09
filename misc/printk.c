@@ -75,8 +75,7 @@ void __printk_hook_install(int (*fn)(int))
  *
  * @return N/A
  */
-static inline void _vprintk(out_func_t out, void *ctx, const char *fmt,
-			    va_list ap)
+void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 {
 	int might_format = 0; /* 1 if encountered a '%' */
 	int pad_zero = 0;

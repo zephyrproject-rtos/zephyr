@@ -55,6 +55,8 @@ extern __printf_like(1, 2) int printk(const char *fmt, ...);
 extern __printf_like(3, 4) int snprintk(char *str, size_t size,
 					const char *fmt, ...);
 extern int vsnprintk(char *str, size_t size, const char *fmt, va_list ap);
+
+void _vprintk(int (*out)(int, void *), void *ctx, const char *fmt, va_list ap);
 #else
 static inline __printf_like(1, 2) int printk(const char *fmt, ...)
 {
