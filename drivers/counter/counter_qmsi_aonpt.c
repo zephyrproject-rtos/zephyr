@@ -22,6 +22,7 @@
 #include <counter.h>
 #include <power.h>
 #include <soc.h>
+#include <misc/util.h>
 
 #include "qm_aon_counters.h"
 #include "qm_isr.h"
@@ -50,40 +51,10 @@ static struct aon_data aonpt_context;
 #endif
 
 #ifdef CONFIG_AON_API_REENTRANCY
-static const int reentrancy_protection = 1;
 #define RP_GET(dev) (&((struct aon_data *)(dev->driver_data))->sem)
 #else
-static const int reentrancy_protection;
 #define RP_GET(dev) (NULL)
 #endif
-
-static void aon_reentrancy_init(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_init(RP_GET(dev), 0, UINT_MAX);
-	k_sem_give(RP_GET(dev));
-}
-
-static void aon_critical_region_start(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_take(RP_GET(dev), K_FOREVER);
-}
-
-static void aon_critical_region_end(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_give(RP_GET(dev));
-}
 
 static int aon_timer_qmsi_start(struct device *dev)
 {
@@ -100,11 +71,17 @@ static int aon_timer_qmsi_start(struct device *dev)
 	qmsi_cfg.count = 0xffffffff;
 	qmsi_cfg.callback_data = NULL;
 
-	aon_critical_region_start(dev);
+	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
+		k_sem_take(RP_GET(dev), K_FOREVER);
+	}
+
 	if (qm_aonpt_set_config(QM_AONC_0, &qmsi_cfg)) {
 		result = -EIO;
 	}
-	aon_critical_region_end(dev);
+
+	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
+		k_sem_give(RP_GET(dev));
+	}
 
 	return result;
 }
@@ -118,9 +95,15 @@ static int aon_timer_qmsi_stop(struct device *dev)
 	qmsi_cfg.count = 0;
 	qmsi_cfg.callback_data = NULL;
 
-	aon_critical_region_start(dev);
+	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
+		k_sem_take(RP_GET(dev), K_FOREVER);
+	}
+
 	qm_aonpt_set_config(QM_AONC_0, &qmsi_cfg);
-	aon_critical_region_end(dev);
+
+	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
+		k_sem_give(RP_GET(dev));
+	}
 
 	return 0;
 }
@@ -153,12 +136,18 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 	qmsi_cfg.count = count;
 	qmsi_cfg.callback_data = user_data;
 
-	aon_critical_region_start(dev);
+	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
+		k_sem_take(RP_GET(dev), K_FOREVER);
+	}
+
 	if (qm_aonpt_set_config(QM_AONC_0, &qmsi_cfg)) {
 		user_cb = NULL;
 		result = -EIO;
 	}
-	aon_critical_region_end(dev);
+
+	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
+		k_sem_give(RP_GET(dev));
+	}
 
 	return result;
 }
@@ -262,7 +251,10 @@ static int aon_timer_init(struct device *dev)
 
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->aonpt_0_int_mask);
 
-	aon_reentrancy_init(dev);
+	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
+		k_sem_init(RP_GET(dev), 0, UINT_MAX);
+		k_sem_give(RP_GET(dev));
+	}
 
 	aonpt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
