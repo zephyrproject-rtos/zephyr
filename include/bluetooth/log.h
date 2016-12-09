@@ -63,7 +63,7 @@ void bt_log(int prio, const char *fmt, ...);
 #define BT_INFO(fmt, ...) SYS_LOG_INF(fmt, ##__VA_ARGS__)
 
 /* Enabling debug increases stack size requirement considerably */
-#define BT_STACK_DEBUG_EXTRA	512
+#define BT_STACK_DEBUG_EXTRA	160
 
 #else
 
