@@ -55,6 +55,7 @@ config SYS_LOG_USB_CDC_ACM_LEVEL
 config USB_MASS_STORAGE
 	bool
 	prompt "USB Mass Storage Device Class Driver"
+	select DISK_ACCESS
 	default n
 	help
 	USB Mass Storage device class driver
