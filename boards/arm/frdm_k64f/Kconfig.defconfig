@@ -206,11 +206,11 @@ config SPI_2_IRQ_PRI
 
 endif # SPI
 
-if ETHERNET
+if NET_L2_ETHERNET
 
 config ETH_KSDK_0
 	def_bool y
 
-endif # ETHERNET
+endif # NET_L2_ETHERNET
 
 endif # BOARD_FRDM_K64F
