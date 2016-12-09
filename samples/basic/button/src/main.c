@@ -35,12 +35,19 @@
 #error SW0_GPIO_PIN needs to be set in board.h
 #endif
 
+/* change to use another GPIO pin interrupt config */
+#ifdef SW0_GPIO_INT_CONF
+#define EDGE    SW0_GPIO_INT_CONF
+#else
+/*
+ * If SW0_GPIO_INT_CONF not defined used default EDGE value.
+ * Change this to use a different interrupt trigger
+ */
+#define EDGE    (GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW)
+#endif
+
 /* change this to enable pull-up/pull-down */
 #define PULL_UP 0
-
-/* change this to use a different interrupt trigger */
-#define EDGE    (GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW)
-
 
 /* Sleep time */
 #define SLEEP_TIME	500
