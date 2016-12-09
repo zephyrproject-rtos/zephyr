@@ -1530,6 +1530,22 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
 }
 
 /**
+ * @brief Get time remaining before a delayed work gets scheduled.
+ *
+ * This routine computes the (approximate) time remaining before a
+ * delayed work gets executed. If the delayed work is not waiting to be
+ * schedules, it returns zero.
+ *
+ * @param work     Delayed work item.
+ *
+ * @return Remaining time (in milliseconds).
+ */
+static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
+{
+	return _timeout_remaining_get(&work->timeout);
+}
+
+/**
  * @} end defgroup workqueue_apis
  */
 
