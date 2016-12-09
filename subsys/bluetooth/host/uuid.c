@@ -23,10 +23,6 @@
 
 #include <bluetooth/uuid.h>
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-#include <stdio.h>
-#endif /* CONFIG_BLUETOOTH_DEBUG */
-
 #define UUID_16_BASE_OFFSET 12
 
 /* TODO: Decide whether to continue using BLE format or switch to RFC 4122 */
