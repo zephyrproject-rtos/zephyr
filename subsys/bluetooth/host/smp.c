@@ -3574,9 +3574,7 @@ int bt_smp_create_rpa(const uint8_t irk[16], bt_addr_t *rpa)
 		return err;
 	}
 
-	/* Set the two most significant bits to 01 (indicating an RPA) */
-	rpa->val[5] &= 0x3f;
-	rpa->val[5] |= 0x40;
+	BT_ADDR_SET_RPA(rpa);
 
 	err = smp_ah(irk, rpa->val + 3, rpa->val);
 	if (err) {

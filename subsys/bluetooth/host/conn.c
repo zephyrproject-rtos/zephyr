@@ -1204,6 +1204,21 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 	return NULL;
 }
 
+int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer)
+{
+	/* Check against conn dst address as it may be the identity address */
+	if (!bt_addr_le_cmp(peer, &conn->le.dst)) {
+		return 0;
+	}
+
+	/* Check against initial connection address */
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		return bt_addr_le_cmp(peer, &conn->le.resp_addr);
+	}
+
+	return bt_addr_le_cmp(peer, &conn->le.init_addr);
+}
+
 struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 {
 	int i;
@@ -1217,7 +1232,7 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 			continue;
 		}
 
-		if (!bt_addr_le_cmp(peer, &conns[i].le.dst)) {
+		if (!bt_conn_addr_le_cmp(&conns[i], peer)) {
 			return bt_conn_ref(&conns[i]);
 		}
 	}
@@ -1239,7 +1254,7 @@ struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 			continue;
 		}
 
-		if (peer && bt_addr_le_cmp(peer, &conns[i].le.dst)) {
+		if (peer && bt_conn_addr_le_cmp(&conns[i], peer)) {
 			continue;
 		}
 

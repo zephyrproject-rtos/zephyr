@@ -20,6 +20,7 @@
 
 #include <toolchain.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <misc/util.h>
 
@@ -62,6 +63,36 @@ static inline void bt_addr_copy(bt_addr_t *dst, const bt_addr_t *src)
 static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 {
 	memcpy(dst, src, sizeof(*dst));
+}
+
+#define BT_ADDR_IS_RPA(addr)     (((addr)->val[5] & 0xc0) == 0x40)
+#define BT_ADDR_IS_NRPA(addr)    (((addr)->val[5] & 0xc0) == 0x00)
+#define BT_ADDR_IS_STATIC(addr)  (((addr)->val[5] & 0xc0) == 0xc0)
+
+#define BT_ADDR_SET_RPA(addr)    ((addr)->val[5] = \
+					(((addr)->val[5] & 0x3f) | 0x40))
+#define BT_ADDR_SET_NRPA(addr)   ((addr)->val[5] &= 0x3f)
+#define BT_ADDR_SET_STATIC(addr) ((addr)->val[5] |= 0xc0)
+
+int bt_addr_le_create_nrpa(bt_addr_le_t *addr);
+int bt_addr_le_create_static(bt_addr_le_t *addr);
+
+static inline bool bt_addr_le_is_rpa(const bt_addr_le_t *addr)
+{
+	if (addr->type != BT_ADDR_LE_RANDOM) {
+		return false;
+	}
+
+	return BT_ADDR_IS_RPA(&addr->a);
+}
+
+static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
+{
+	if (addr->type == BT_ADDR_LE_PUBLIC) {
+		return true;
+	}
+
+	return BT_ADDR_IS_STATIC(&addr->a);
 }
 
 /* HCI Error Codes */

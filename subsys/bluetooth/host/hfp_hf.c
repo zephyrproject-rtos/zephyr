@@ -20,6 +20,7 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
+#include <misc/printk.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/conn.h>
@@ -67,7 +68,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	}
 
 	va_start(vargs, format);
-	ret = vsnprintf(buf->data, (net_buf_tailroom(buf) - 1), format, vargs);
+	ret = vsnprintk(buf->data, (net_buf_tailroom(buf) - 1), format, vargs);
 	if (ret < 0) {
 		BT_ERR("Unable to format variable arguments");
 		return ret;

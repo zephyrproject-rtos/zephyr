@@ -3277,6 +3277,41 @@ static int set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 }
 
+static inline int create_random_addr(bt_addr_le_t *addr)
+{
+	addr->type = BT_ADDR_LE_RANDOM;
+
+	return bt_rand(addr->a.val, 6);
+}
+
+int bt_addr_le_create_nrpa(bt_addr_le_t *addr)
+{
+	int err;
+
+	err = create_random_addr(addr);
+	if (err) {
+		return err;
+	}
+
+	BT_ADDR_SET_NRPA(&addr->a);
+
+	return 0;
+}
+
+int bt_addr_le_create_static(bt_addr_le_t *addr)
+{
+	int err;
+
+	err = create_random_addr(addr);
+	if (err) {
+		return err;
+	}
+
+	BT_ADDR_SET_STATIC(&addr->a);
+
+	return 0;
+}
+
 static int set_static_addr(void)
 {
 	int err;
@@ -3293,15 +3328,10 @@ static int set_static_addr(void)
 
 	BT_DBG("Generating new static random address");
 
-	bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
-
-	err = bt_rand(bt_dev.id_addr.a.val, 6);
+	err = bt_addr_le_create_static(&bt_dev.id_addr);
 	if (err) {
 		return err;
 	}
-
-	/* Make sure the address bits indicate static address */
-	bt_dev.id_addr.a.val[5] |= 0xc0;
 
 	if (bt_storage) {
 		ssize_t ret;
@@ -3814,11 +3844,21 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
 		set_param->type = BT_LE_ADV_IND;
 	} else {
+		if (param->own_addr) {
+			/* Only NRPA is allowed */
+			if (!BT_ADDR_IS_NRPA(param->own_addr)) {
+				return -EINVAL;
+			}
+
+			err = set_random_address(param->own_addr);
+		} else {
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
-		err = le_set_rpa();
+			err = le_set_rpa();
 #else
-		err = le_set_nrpa();
+			err = le_set_nrpa();
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
+		}
+
 		if (err) {
 			net_buf_unref(buf);
 			return err;
