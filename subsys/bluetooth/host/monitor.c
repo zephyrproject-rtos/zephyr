@@ -105,7 +105,7 @@ void bt_log(int prio, const char *fmt, ...)
 	monitor_send(id, sizeof(id));
 
 	va_start(ap, fmt);
-	_prf(log_out, NULL, fmt, ap);
+	_vprintk(log_out, NULL, fmt, ap);
 	va_end(ap);
 
 	/* Terminate the string with null */
