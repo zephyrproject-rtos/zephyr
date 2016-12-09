@@ -398,8 +398,12 @@ static inline void lsm9ds0_mfd_convert_accel(struct sensor_value *val,
 					     int raw_val,
 					     float scale)
 {
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
-	val->dval = (double)(raw_val) * scale;
+	double dval;
+
+	dval = (double)(raw_val) * scale;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+	val->val1 = (int32_t)dval;
+	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
 
 static inline int lsm9ds0_mfd_get_accel_channel(enum sensor_channel chan,
@@ -481,8 +485,12 @@ static inline void lsm9ds0_mfd_convert_magn(struct sensor_value *val,
 					    int raw_val,
 					    float scale)
 {
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
-	val->dval = (double)(raw_val) * scale;
+	double dval;
+
+	dval = (double)(raw_val) * scale;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+	val->val1 = (int32_t)dval;
+	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
 
 static inline int lsm9ds0_mfd_get_magn_channel(enum sensor_channel chan,

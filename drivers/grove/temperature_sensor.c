@@ -51,6 +51,7 @@ static int gts_channel_get(struct device *dev,
 {
 	struct gts_data *drv_data = dev->driver_data;
 	uint16_t analog_val;
+	double dval;
 
 	/* rescale sample from 12bit (Zephyr) to 10bit (Grove) */
 	analog_val = ((uint16_t)drv_data->adc_buffer[1] << 8) |
@@ -62,9 +63,12 @@ static int gts_channel_get(struct device *dev,
 	 * is taken from the sensor reference page:
 	 *     http://www.seeedstudio.com/wiki/Grove_-_Temperature_Sensor
 	 */
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
-	val->dval = 1 / (log(1023.0 / analog_val - 1.0) / B_CONST +
-			 1 / 298.15) - 273.15;
+	dval = 1 / (log(1023.0 / analog_val - 1.0) / B_CONST +
+		    1 / 298.15) - 273.15;
+
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+	val->val1 = (int32_t)dval;
+	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 
 	return 0;
 }

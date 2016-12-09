@@ -162,8 +162,12 @@ static int lsm9ds0_gyro_sample_fetch(struct device *dev,
 static inline void lsm9ds0_gyro_convert(struct sensor_value *val, int raw_val,
 					float numerator)
 {
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
-	val->dval = (double)(raw_val) * numerator / 1000.0 * DEG2RAD;
+	double dval;
+
+	dval = (double)(raw_val) * numerator / 1000.0 * DEG2RAD;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+	val->val1 = (int32_t)dval;
+	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
 
 static inline int lsm9ds0_gyro_get_channel(enum sensor_channel chan,
