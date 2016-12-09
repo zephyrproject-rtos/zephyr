@@ -26,6 +26,7 @@
 #include <init.h>
 #include <drivers/console/uart_pipe.h>
 #include <misc/byteorder.h>
+#include <misc/printk.h>
 #include <uart.h>
 
 #include <bluetooth/buf.h>
@@ -84,7 +85,7 @@ void bt_log(int prio, const char *fmt, ...)
 	int len, key;
 
 	va_start(ap, fmt);
-	len = vsnprintf(NULL, 0, fmt, ap);
+	len = vsnprintk(NULL, 0, fmt, ap);
 	va_end(ap);
 
 	if (len < 0) {
