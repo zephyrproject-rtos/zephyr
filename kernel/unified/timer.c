@@ -109,15 +109,19 @@ void k_timer_start(struct k_timer *timer, int32_t duration, int32_t period)
 	__ASSERT(duration >= 0 && period >= 0 &&
 		 (duration != 0 || period != 0), "invalid parameters\n");
 
+	volatile int32_t period_in_ticks, duration_in_ticks;
+
+	period_in_ticks = _ms_to_ticks(period);
+	duration_in_ticks = _TICK_ALIGN + _ms_to_ticks(duration);
+
 	unsigned int key = irq_lock();
 
 	if (timer->timeout.delta_ticks_from_prev != _INACTIVE) {
 		_abort_timeout(&timer->timeout);
 	}
 
-	timer->period = _ms_to_ticks(period);
-	_add_timeout(NULL, &timer->timeout, &timer->wait_q,
-			_TICK_ALIGN + _ms_to_ticks(duration));
+	timer->period = period_in_ticks;
+	_add_timeout(NULL, &timer->timeout, &timer->wait_q, duration_in_ticks);
 	timer->status = 0;
 	irq_unlock(key);
 }
