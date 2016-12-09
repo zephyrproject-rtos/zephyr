@@ -80,6 +80,11 @@ config RTC_0_IRQ_PRI
 
 endif # RTC
 
+if PWM
+config PWM_QMSI
+	def_bool y
+endif # PWM
+
 if GPIO
 
 config GPIO_QMSI
