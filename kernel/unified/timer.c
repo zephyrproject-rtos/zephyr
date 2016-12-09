@@ -196,13 +196,12 @@ uint32_t k_timer_status_sync(struct k_timer *timer)
 	return result;
 }
 
-
-int32_t k_timer_remaining_get(struct k_timer *timer)
+int32_t _timeout_remaining_get(struct _timeout *timeout)
 {
 	unsigned int key = irq_lock();
 	int32_t remaining_ticks;
 
-	if (timer->timeout.delta_ticks_from_prev == -1) {
+	if (timeout->delta_ticks_from_prev == -1) {
 		remaining_ticks = 0;
 	} else {
 		/*
@@ -213,7 +212,7 @@ int32_t k_timer_remaining_get(struct k_timer *timer)
 			(struct _timeout *)sys_dlist_peek_head(&_timeout_q);
 
 		remaining_ticks = t->delta_ticks_from_prev;
-		while (t != &timer->timeout) {
+		while (t != timeout) {
 			t = (struct _timeout *)sys_dlist_peek_next(&_timeout_q,
 								   &t->node);
 			remaining_ticks += t->delta_ticks_from_prev;

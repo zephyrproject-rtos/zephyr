@@ -654,6 +654,8 @@ struct _timeout {
 	_timeout_func_t func;
 };
 
+extern int32_t _timeout_remaining_get(struct _timeout *timeout);
+
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -852,7 +854,10 @@ extern uint32_t k_timer_status_sync(struct k_timer *timer);
  *
  * @return Remaining time (in milliseconds).
  */
-extern int32_t k_timer_remaining_get(struct k_timer *timer);
+static inline int32_t k_timer_remaining_get(struct k_timer *timer)
+{
+	return _timeout_remaining_get(&timer->timeout);
+}
 
 /**
  * @} end defgroup timer_apis
