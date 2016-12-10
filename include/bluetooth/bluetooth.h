@@ -27,9 +27,8 @@
  */
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
-
+#include <misc/printk.h>
 #include <misc/util.h>
 #include <net/buf.h>
 #include <bluetooth/hci.h>
@@ -126,6 +125,12 @@ struct bt_le_adv_param {
 
 	/** Maximum Advertising Interval (N * 0.625) */
 	uint16_t interval_max;
+
+	/** Optional pre-defined (random) own address. Currently
+	 *  the only permitted use of this is for NRPA with
+	 *  non-connectable advertising.
+	 */
+	const bt_addr_t *own_addr;
 };
 
 /** Helper to declare advertising parameters inline
@@ -396,7 +401,7 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
  */
 static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 {
-	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X",
 			addr->val[5], addr->val[4], addr->val[3],
 			addr->val[2], addr->val[1], addr->val[0]);
 }
@@ -424,11 +429,11 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 		strcpy(type, "random");
 		break;
 	default:
-		sprintf(type, "0x%02x", addr->type);
+		snprintk(type, sizeof(type), "0x%02x", addr->type);
 		break;
 	}
 
-	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)",
+	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X (%s)",
 			addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }

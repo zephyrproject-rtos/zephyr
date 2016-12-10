@@ -164,6 +164,17 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
  */
 int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
+/** @brief Disconnect RFCOMM dlc
+ *
+ *  Disconnect RFCOMM dlc, if the connection is pending it will be
+ *  canceled and as a result the dlc disconnected() callback is called.
+ *
+ *  @param dlc Dlc object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
+
 /** @brief Get the buffer from fifo after reserving head room for RFCOMM, L2CAP
  *  and ACL headers.
  *

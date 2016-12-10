@@ -115,6 +115,7 @@ if BLUETOOTH_HCI_HOST
 config BLUETOOTH_INTERNAL_STORAGE
 	bool "Use an internal persistent storage handler"
 	depends on FILE_SYSTEM
+	depends on PRINTK
 	help
 	  When selected the application doesn't need to register its own
 	  persistent storage handlers through the bt_storage API, rather
@@ -464,6 +465,7 @@ config BLUETOOTH_RFCOMM_L2CAP_MTU
 
 config BLUETOOTH_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
+	depends on PRINTK
 	select BLUETOOTH_RFCOMM
 	help
 	  This option enables Bluetooth HF support

@@ -583,7 +583,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	timeout = sys_le16_to_cpu(req->timeout);
 	param = BT_LE_CONN_PARAM(min, max, latency, timeout);
 
-	BT_DBG("min 0x%4.4x max 0x%4.4x latency: 0x%4.4x timeout: 0x%4.4x",
+	BT_DBG("min 0x%04x max 0x%04x latency: 0x%04x timeout: 0x%04x",
 	       min, max, latency, timeout);
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_CONN_PARAM_RSP, ident,

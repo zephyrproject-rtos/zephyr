@@ -138,25 +138,6 @@ extern const struct bt_storage *bt_storage;
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-static inline bool bt_addr_le_is_rpa(const bt_addr_le_t *addr)
-{
-	if (addr->type != BT_ADDR_LE_RANDOM) {
-		return false;
-	}
-
-	return ((addr->a.val[5] & 0xc0) == 0x40);
-}
-
-static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
-{
-	if (addr->type == BT_ADDR_LE_PUBLIC) {
-		return true;
-	}
-
-	/* Check for Random Static address type */
-	return ((addr->a.val[5] & 0xc0) == 0xc0);
-}
-
 static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
 					   uint16_t latency, uint16_t timeout)
 {

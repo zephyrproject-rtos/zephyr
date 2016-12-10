@@ -31,11 +31,11 @@
 
 #include <bluetooth/log.h>
 
-#include "util.h"
+#include "../util.h"
 #include "rpc.h"
 
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
-#include "nrf51_pm.h"
+#include "../nrf51_pm.h"
 #endif
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
