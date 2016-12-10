@@ -26,6 +26,16 @@
 #include <gpio.h>
 #include <soc.h>
 #include <sys_io.h>
+#include "nrf5_common.h"
+#include "gpio_utils.h"
+
+#if defined(CONFIG_SOC_SERIES_NRF51X)
+#define GPIOTE_CHAN_COUNT (4)
+#elif defined(CONFIG_SOC_SERIES_NRF52X)
+#define GPIOTE_CHAN_COUNT (8)
+#else
+#error "Platform not defined."
+#endif
 
 /* GPIO structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
 struct _gpio {
@@ -75,17 +85,20 @@ struct gpio_nrf5_config {
 };
 
 struct gpio_nrf5_data {
+	/* list of registered callbacks */
+	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
 	uint32_t pin_callback_enables;
-	/* port callback routine enable flag */
-	uint8_t port_callback_enable;
+
+	/*@todo: move GPIOTE channel management to a separate module */
+	uint32_t gpiote_chan_mask;
 };
 
 /* convenience defines for GPIO */
 #define DEV_GPIO_CFG(dev) \
 	((const struct gpio_nrf5_config * const)(dev)->config->config_info)
 #define DEV_GPIO_DATA(dev) \
-	((struct gpio_nrf5_dev_data_t * const)(dev)->driver_data)
+	((struct gpio_nrf5_data * const)(dev)->driver_data)
 #define GPIO_STRUCT(dev) \
 	((volatile struct _gpio *)(DEV_GPIO_CFG(dev))->gpio_base_addr)
 
@@ -113,12 +126,39 @@ struct gpio_nrf5_data {
 #define GPIO_DRIVE_S0D1 (GPIO_PIN_CNF_DRIVE_S0D1 << GPIO_PIN_CNF_DRIVE_Pos)
 #define GPIO_DRIVE_H0D1 (GPIO_PIN_CNF_DRIVE_H0D1 << GPIO_PIN_CNF_DRIVE_Pos)
 
+#define GPIOTE_CFG_EVT (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos)
+#define GPIOTE_CFG_TASK (GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos)
+#define GPIOTE_CFG_POL_L2H (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos)
+#define GPIOTE_CFG_POL_H2L (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos)
+#define GPIOTE_CFG_POL_TOGG (GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos)
+#define GPIOTE_CFG_PIN(pin) ((pin << GPIOTE_CONFIG_PSEL_Pos) & GPIOTE_CONFIG_PSEL_Msk)
+#define GPIOTE_CFG_PIN_GET(config) ((config & GPIOTE_CONFIG_PSEL_Msk) >> \
+				GPIOTE_CONFIG_PSEL_Pos)
+
+static int gpiote_find_channel(struct device *dev, uint32_t pin)
+{
+	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
+	int i;
+
+	for (i = 0; i < GPIOTE_CHAN_COUNT; i++) {
+		if ((data->gpiote_chan_mask & BIT(i)) &&
+		    (GPIOTE_CFG_PIN_GET(gpiote->CONFIG[i]) == pin)) {
+			return i;
+		}
+	}
+
+	return -ENODEV;
+}
+
 /**
  * @brief Configure pin or port
  */
 static int gpio_nrf5_config(struct device *dev,
 			    int access_op, uint32_t pin, int flags)
 {
+	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
 	volatile struct _gpio *gpio = GPIO_STRUCT(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
@@ -147,7 +187,47 @@ static int gpio_nrf5_config(struct device *dev,
 					     GPIO_INPUT_CONNECT |
 					     GPIO_DIR_INPUT;
 		}
+	} else {
+		return -ENOTSUP;
 	}
+
+	if (flags & GPIO_INT) {
+		uint32_t config = 0;
+
+		if (flags & GPIO_INT_EDGE) {
+			if (flags & GPIO_INT_DOUBLE_EDGE) {
+				config |= GPIOTE_CFG_POL_TOGG;
+			} else if (flags & GPIO_INT_ACTIVE_HIGH) {
+				config |= GPIOTE_CFG_POL_L2H;
+			} else {
+				config |= GPIOTE_CFG_POL_H2L;
+			}
+		} else { /* GPIO_INT_LEVEL */
+			/*@todo: use SENSE for this? */
+			return -ENOTSUP;
+		}
+		if (__builtin_popcount(data->gpiote_chan_mask) ==
+				GPIOTE_CHAN_COUNT) {
+			return -EIO;
+		}
+
+		/* check if already allocated to replace */
+		int i = gpiote_find_channel(dev, pin);
+
+		if (i < 0) {
+			/* allocate a GPIOTE channel */
+			i = __builtin_ffs(~(data->gpiote_chan_mask)) - 1;
+		}
+
+		data->gpiote_chan_mask |= BIT(i);
+
+		/* configure GPIOTE channel */
+		config |= GPIOTE_CFG_EVT;
+		config |= GPIOTE_CFG_PIN(pin);
+
+		gpiote->CONFIG[i] = config;
+	}
+
 
 	return 0;
 }
@@ -182,20 +262,108 @@ static int gpio_nrf5_write(struct device *dev,
 	return 0;
 }
 
+static int gpio_nrf5_manage_callback(struct device *dev,
+				    struct gpio_callback *callback, bool set)
+{
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
+
+	_gpio_manage_callback(&data->callbacks, callback, set);
+
+	return 0;
+}
+
+
+static int gpio_nrf5_enable_callback(struct device *dev,
+				    int access_op, uint32_t pin)
+{
+	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
+	int i;
+
+	if (access_op == GPIO_ACCESS_BY_PIN) {
+
+		i = gpiote_find_channel(dev, pin);
+		if (i < 0) {
+			return i;
+		}
+
+		data->pin_callback_enables |= BIT(pin);
+		/* clear event before any interrupt triggers */
+		gpiote->EVENTS_IN[i] = 0;
+		/* enable interrupt for the GPIOTE channel */
+		gpiote->INTENSET |= BIT(i);
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+
+static int gpio_nrf5_disable_callback(struct device *dev,
+				     int access_op, uint32_t pin)
+{
+	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
+	int i;
+
+	if (access_op == GPIO_ACCESS_BY_PIN) {
+		i = gpiote_find_channel(dev, pin);
+		if (i < 0) {
+			return i;
+		}
+
+		data->pin_callback_enables &= ~(BIT(pin));
+		/* disable interrupt for the GPIOTE channel */
+		gpiote->INTENCLR &= ~(BIT(i));
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+
+
 /**
  * @brief Handler for port interrupts
  * @param dev Pointer to device structure for driver instance
  *
  * @return N/A
  */
-static void gpio_nrf5_port_isr(void *dev)
+static void gpio_nrf5_port_isr(void *arg)
 {
+	struct device *dev = arg;
+	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
+	uint32_t enabled_int, int_status = 0;
+	int i;
+
+	for (i = 0; i < GPIOTE_CHAN_COUNT; i++) {
+		if (gpiote->EVENTS_IN[i]) {
+			gpiote->EVENTS_IN[i] = 0;
+			int_status |= BIT(GPIOTE_CFG_PIN_GET(gpiote->CONFIG[i]));
+		}
+	}
+
+	enabled_int = int_status & data->pin_callback_enables;
+
+	irq_disable(NRF5_IRQ_GPIOTE_IRQn);
+
+	/* Call the registered callbacks */
+	_gpio_fire_callbacks(&data->callbacks, (struct device *)dev,
+			     enabled_int);
+
+	irq_enable(NRF5_IRQ_GPIOTE_IRQn);
 }
 
 static const struct gpio_driver_api gpio_nrf5_drv_api_funcs = {
 	.config = gpio_nrf5_config,
 	.read = gpio_nrf5_read,
 	.write = gpio_nrf5_write,
+	.manage_callback = gpio_nrf5_manage_callback,
+	.enable_callback = gpio_nrf5_enable_callback,
+	.disable_callback = gpio_nrf5_disable_callback,
 };
 
 /* Initialization for GPIO Port 0 */
@@ -218,10 +386,10 @@ DEVICE_AND_API_INIT(gpio_nrf5_P0, CONFIG_GPIO_NRF5_P0_DEV_NAME, gpio_nrf5_P0_ini
 
 static int gpio_nrf5_P0_init(struct device *dev)
 {
-	IRQ_CONNECT(GPIOTE_IRQn, CONFIG_GPIO_NRF5_PORT_P0_PRI,
+	IRQ_CONNECT(NRF5_IRQ_GPIOTE_IRQn, CONFIG_GPIO_NRF5_PORT_P0_PRI,
 		    gpio_nrf5_port_isr, DEVICE_GET(gpio_nrf5_P0), 0);
 
-	irq_enable(GPIOTE_IRQn);
+	irq_enable(NRF5_IRQ_GPIOTE_IRQn);
 
 	return 0;
 }
