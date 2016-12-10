@@ -32,8 +32,10 @@ static struct in_addr server_addr = SERVER_IP_ADDR;
 static void udp_received(struct net_context *context,
 			 struct net_buf *buf, int status, void *user_data)
 {
-	ARG_UNUSED(context);
 	struct udp_context *ctx = user_data;
+
+	ARG_UNUSED(context);
+	ARG_UNUSED(status);
 
 	ctx->rx_nbuf = buf;
 	k_sem_give(&ctx->rx_sem);
