@@ -288,7 +288,7 @@ void k_sleep(int32_t duration)
 
 	K_DEBUG("thread %p for %d ns\n", _current, duration);
 
-	/* wait of 0 ns is treated as a 'yield' */
+	/* wait of 0 ms is treated as a 'yield' */
 	if (duration == 0) {
 		k_yield();
 		return;
