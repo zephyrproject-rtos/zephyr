@@ -76,6 +76,8 @@ do {                                                                    \
 #define likely(x)   __builtin_expect((long)!!(x), 1L)
 #define unlikely(x) __builtin_expect((long)!!(x), 0L)
 
+#define popcount(x) __builtin_popcount(x)
+
 #define __weak __attribute__((__weak__))
 #define __unused __attribute__((__unused__))
 
