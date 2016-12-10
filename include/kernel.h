@@ -653,7 +653,7 @@ struct _timeout;
 typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
-	sys_dlist_t node;
+	sys_dnode_t node;
 	struct k_thread *thread;
 	sys_dlist_t *wait_q;
 	int32_t delta_ticks_from_prev;
