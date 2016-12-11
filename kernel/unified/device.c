@@ -140,6 +140,8 @@ void device_busy_set(struct device *busy_dev)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	atomic_set_bit((atomic_t *) __device_busy_start,
 				 (busy_dev - __device_init_start));
+#else
+	ARG_UNUSED(busy_dev);
 #endif
 }
 
@@ -148,5 +150,7 @@ void device_busy_clear(struct device *busy_dev)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	atomic_clear_bit((atomic_t *) __device_busy_start,
 				 (busy_dev - __device_init_start));
+#else
+	ARG_UNUSED(busy_dev);
 #endif
 }

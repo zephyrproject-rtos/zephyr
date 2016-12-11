@@ -695,6 +695,8 @@ void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 	struct k_pipe_async  *async_desc;
 	size_t                dummy_bytes_written;
 
+	ARG_UNUSED(bytes_to_write);
+
 	/* For simplicity, always allocate an asynchronous descriptor */
 	_pipe_async_alloc(&async_desc);
 
