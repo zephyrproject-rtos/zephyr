@@ -345,7 +345,6 @@ void prof_flush(void)
 #endif /* ! PROF_UART_TESTMODE */
 }
 
-#ifdef CONFIG_MICROKERNEL
 
 void prof(void)
 {
@@ -359,4 +358,3 @@ void prof(void)
 	}
 }
 
-#endif /* CONFIG_MICROKERNEL */

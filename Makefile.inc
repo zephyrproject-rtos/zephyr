@@ -132,7 +132,7 @@ help:
 %:
 	$(Q)$(call zephyrmake,$(O),$@)
 
-KERNEL_CONFIG = $(ZEPHYR_BASE)/kernel/configs/unified.config
+KERNEL_CONFIG = $(ZEPHYR_BASE)/kernel/configs/kernel.config
 
 $(DOTCONFIG): $(BOARDCONFIG) $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \

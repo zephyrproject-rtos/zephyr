@@ -20,8 +20,6 @@
 #include <stdio.h>
 #include "profiler.h"
 
-#ifdef CONFIG_NANOKERNEL
-
 /*
  * Nanokernel version of hello world demo has a task and a fiber that utilize
  * semaphores and timers to take turns printing a greeting message at
@@ -76,5 +74,3 @@ void main(void)
 		nano_task_sem_take(&nanoSemTask, TICKS_UNLIMITED);
 	}
 }
-
-#endif /* CONFIG_NANOKERNEL */

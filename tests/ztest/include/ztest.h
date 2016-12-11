@@ -31,7 +31,6 @@
 #define CONFIG_STDOUT_CONSOLE 1
 #define CONFIG_ZTEST_ASSERT_VERBOSE 1
 #define CONFIG_ZTEST_MOCKING
-#define CONFIG_MICROKERNEL 1
 #define CONFIG_NUM_COOP_PRIORITIES 16
 /* FIXME: Properly integrate with Zephyr's arch specific code */
 #define CONFIG_X86 1

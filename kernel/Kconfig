@@ -16,17 +16,6 @@
 # limitations under the License.
 #
 
-choice
-prompt "Kernel Type"
-default MICROKERNEL
-
-config NANOKERNEL
-	bool "Nano Kernel"
-
-config MICROKERNEL
-	bool "Micro Kernel"
-
-endchoice
 
 menu "General Kernel Options"
 
@@ -188,7 +177,7 @@ config KERNEL_EVENT_LOGGER_SLEEP
 	bool
 	prompt "Sleep event logging point"
 	default n
-	depends on KERNEL_EVENT_LOGGER && ((MICROKERNEL && SYS_POWER_MANAGEMENT) || NANOKERNEL)
+	depends on KERNEL_EVENT_LOGGER && SYS_POWER_MANAGEMENT
 	help
 	Enable low power condition event messages. These messages provide the
 	following information:
@@ -241,7 +230,7 @@ config SYS_POWER_LOW_POWER_STATE
 	bool
 	prompt "Low power state"
 	default n
-	depends on MICROKERNEL && SYS_POWER_MANAGEMENT && SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	depends on SYS_POWER_MANAGEMENT && SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	help
 	This option enables the kernel to interface with a power manager
 	application.  This permits the system to enter a custom CPU low power
@@ -253,7 +242,7 @@ config SYS_POWER_DEEP_SLEEP
 	bool
 	prompt "Deep sleep state"
 	default n
-	depends on MICROKERNEL && SYS_POWER_MANAGEMENT && SYS_POWER_DEEP_SLEEP_SUPPORTED
+	depends on SYS_POWER_MANAGEMENT && SYS_POWER_DEEP_SLEEP_SUPPORTED
 	help
 	This option enables the kernel to interface with a power manager
 	application. This permits the system to enter a Deep sleep state
@@ -267,7 +256,7 @@ config DEVICE_POWER_MANAGEMENT
 	bool
 	prompt "Device power management"
 	default n
-	depends on MICROKERNEL && SYS_POWER_MANAGEMENT
+	depends on SYS_POWER_MANAGEMENT
 	help
 	This option enables the device power management interface.  The
 	interface consists of hook functions implemented by device drivers

@@ -19,8 +19,6 @@
 #include <zephyr.h>
 #include <stdio.h>
 
-#ifdef CONFIG_MICROKERNEL
-
 /*
  * Microkernel version of hello world demo has two tasks that utilize
  * semaphores and sleeps to take turns printing a greeting message at
@@ -90,5 +88,3 @@ void taskB(void)
 	helloLoop(__func__, TASKBSEM, TASKASEM);
 }
 
-
-#endif /* CONFIG_MICROKERNEL */

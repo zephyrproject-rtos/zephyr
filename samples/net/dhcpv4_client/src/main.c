@@ -57,10 +57,6 @@ void main_fiber(void)
 	k_sem_take(&quit_lock, K_FOREVER);
 }
 
-#if defined(CONFIG_NANOKERNEL)
-#define STACKSIZE 2000
-char __noinit __stack fiberStack[STACKSIZE];
-#endif
 
 void main(void)
 {
@@ -68,10 +64,5 @@ void main(void)
 
 	init_app();
 
-#if defined(CONFIG_MICROKERNEL)
 	main_fiber();
-#else
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-			(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
-#endif
 }
