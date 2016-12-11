@@ -118,9 +118,9 @@ static void init_one_memory_pool(struct k_mem_pool *pool)
  *
  * @return block set index
  */
-static int compute_block_set_index(struct k_mem_pool *pool, int data_size)
+static int compute_block_set_index(struct k_mem_pool *pool, size_t data_size)
 {
-	int block_size = pool->min_block_size;
+	size_t block_size = pool->min_block_size;
 	int offset = pool->nr_of_block_sets - 1;
 
 	while (data_size > block_size) {
@@ -147,7 +147,7 @@ static void free_existing_block(char *ptr, struct k_mem_pool *pool, int index)
 	struct k_mem_pool_quad_block *quad_block =
 		pool->block_set[index].quad_block;
 	char *block_ptr;
-	int i, j;
+	uint32_t i, j;
 
 	/*
 	 * search block set's quad-blocks until the block is located,
@@ -190,7 +190,9 @@ static void free_existing_block(char *ptr, struct k_mem_pool *pool, int index)
 static void defrag(struct k_mem_pool *pool,
 		   int start_block_set_index, int last_block_set_index)
 {
-	int i, j, k;
+	uint32_t i;
+	uint32_t k;
+	int j;
 	struct k_mem_pool_quad_block *quad_block;
 
 	/* process block sets from smallest to largest permitted sizes */
@@ -268,7 +270,7 @@ static char *get_existing_block(struct k_mem_pool_block_set *block_set,
 				int *unused_block_index)
 {
 	char *found = NULL;
-	int i = 0;
+	uint32_t i = 0;
 	int status;
 	int free_bit;
 
