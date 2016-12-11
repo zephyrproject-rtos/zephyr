@@ -39,8 +39,8 @@ struct k_mem_slab *_trace_list_k_mem_slab;
  */
 static void create_free_list(struct k_mem_slab *slab)
 {
+	uint32_t j;
 	char *p;
-	int j;
 
 	slab->free_list = NULL;
 	p = slab->buffer;
