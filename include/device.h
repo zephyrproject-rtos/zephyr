@@ -639,7 +639,7 @@ int device_busy_check(struct device *chk_dev);
 typedef struct {
 	/** Nanokernel semaphore used for fiber context */
 	struct k_sem f_sem;
-} __deprecated  device_sync_call_t;
+} device_sync_call_t;
 
 
 /**
