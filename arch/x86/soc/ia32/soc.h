@@ -76,6 +76,8 @@
 
 static inline int pci_pin2irq(int bus, int dev, int pin)
 {
+	ARG_UNUSED(bus);
+
 	if ((pin < PCI_INTA) || (pin > PCI_INTD))
 		return -1;
 	return 10 + (((pin + dev - 1) >> 1) & 1);
