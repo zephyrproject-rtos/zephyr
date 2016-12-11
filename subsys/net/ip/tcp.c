@@ -723,10 +723,14 @@ void net_tcp_init(void)
 static void fin_timeout(struct k_work *work)
 {
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, fin_timer);
+	int rc;
 
 	NET_DBG("Remote peer didn't confirm connection close");
 
-	net_context_put(tcp->context);
+	rc = net_context_put(tcp->context);
+	if (rc < 0) {
+		NET_DBG("Cannot close TCP context");
+	}
 }
 
 #if NET_DEBUG
