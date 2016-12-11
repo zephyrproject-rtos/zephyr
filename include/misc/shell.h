@@ -118,7 +118,12 @@ void shell_register_default_module(const char *name);
 #ifdef CONFIG_ENABLE_SHELL
 int shell_run(struct device *dev);
 #else
-static inline int shell_run(struct device *dev) { return 0; }
+static inline int shell_run(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
 #endif
 
 
