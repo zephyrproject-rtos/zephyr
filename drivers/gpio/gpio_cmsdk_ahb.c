@@ -82,7 +82,7 @@ static void cmsdk_ahb_gpio_config(struct device *dev, uint32_t mask, int flags)
 			 */
 			if (flags & GPIO_INT_EDGE) {
 				cfg->port->inttypeclr = mask;
-			} else if (flags & GPIO_INT_LEVEL) {
+			} else {
 				cfg->port->inttypeset = mask;
 			}
 			/*
@@ -90,10 +90,10 @@ static void cmsdk_ahb_gpio_config(struct device *dev, uint32_t mask, int flags)
 			 * 0 - Low level or falling edge
 			 * 1 - High level or rising edge
 			 */
-			if (flags & GPIO_INT_ACTIVE_LOW) {
-				cfg->port->intpolclr = mask;
-			} else if (flags & GPIO_INT_ACTIVE_HIGH) {
+			if (flags & GPIO_INT_ACTIVE_HIGH) {
 				cfg->port->intpolset = mask;
+			} else {
+				cfg->port->intpolclr = mask;
 			}
 		}
 	}
