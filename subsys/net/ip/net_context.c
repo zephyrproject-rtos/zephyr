@@ -1333,6 +1333,8 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		tmp_tcp = new_context->tcp;
 		new_context->tcp = tcp;
 		context->tcp = tmp_tcp;
+		tcp->context = new_context;
+		tmp_tcp->context = context;
 
 		net_tcp_change_state(tmp_tcp, NET_TCP_LISTEN);
 
