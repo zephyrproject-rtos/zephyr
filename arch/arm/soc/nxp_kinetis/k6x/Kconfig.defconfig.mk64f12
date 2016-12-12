@@ -34,7 +34,7 @@ config GPIO
 
 if GPIO
 
-config GPIO_K64
+config GPIO_MCUX
 	def_bool y
 
 endif # GPIO
