@@ -817,8 +817,6 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 
 	net_buf_put(&rx_queue, buf);
 
-	k_wakeup(rx_tid);
-
 	return 0;
 }
 
