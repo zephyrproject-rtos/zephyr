@@ -72,6 +72,7 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
+	. = CONFIG_TEXT_SECTION_OFFSET;
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))
 

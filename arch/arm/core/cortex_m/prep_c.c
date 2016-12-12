@@ -29,7 +29,8 @@ static inline void relocate_vector_table(void) { /* do nothing */ }
 static inline void relocate_vector_table(void)
 {
 	/* vector table is located at the the beginning of the flash */
-	_scs_relocate_vector_table((void *)CONFIG_FLASH_BASE_ADDRESS);
+	_scs_relocate_vector_table((void *)(CONFIG_FLASH_BASE_ADDRESS +
+					    CONFIG_TEXT_SECTION_OFFSET));
 }
 #else
 static inline void relocate_vector_table(void)
