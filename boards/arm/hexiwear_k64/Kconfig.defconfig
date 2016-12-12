@@ -131,6 +131,25 @@ config GPIO_K64_E
 
 endif # GPIO_K64
 
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	def_bool n
+
+config GPIO_MCUX_PORTB
+	def_bool y
+
+config GPIO_MCUX_PORTC
+	def_bool y
+
+config GPIO_MCUX_PORTD
+	def_bool y
+
+config GPIO_MCUX_PORTE
+	def_bool y
+
+endif # GPIO_MCUX
+
 if I2C
 
 config I2C_0
@@ -170,7 +189,8 @@ config FXOS8700_I2C_ADDRESS
 	default 0x1e
 
 config FXOS8700_GPIO_NAME
-	default GPIO_K64_D_DEV_NAME
+	default GPIO_K64_D_DEV_NAME if GPIO_K64
+	default GPIO_MCUX_PORTD_NAME if GPIO_MCUX
 
 config FXOS8700_GPIO_PIN
 	default 13
