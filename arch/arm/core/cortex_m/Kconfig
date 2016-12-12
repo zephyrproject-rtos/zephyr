@@ -45,6 +45,13 @@ config ISA_THUMB2
 	technology is featured in the  processor, and in all ARMv7
 	architecture-based processors.
 
+config CPU_CORTEX_M_HAS_BASEPRI
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	This option signifies the CPU has the BASEPRI register.
+
 config CPU_CORTEX_M0_M0PLUS
 	bool
 	# Omit prompt to signify "hidden" option
@@ -60,6 +67,7 @@ config CPU_CORTEX_M3_M4
 	default n
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
+	select CPU_CORTEX_M_HAS_BASEPRI
 	help
 	This option signifies the use of either a Cortex-M3 or Cortex-M4 CPU.
 
@@ -97,6 +105,7 @@ config CPU_CORTEX_M7
 	default n
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
+	select CPU_CORTEX_M_HAS_BASEPRI
 	help
 	This option signifies the use of a Cortex-M7 CPU
 
@@ -246,6 +255,7 @@ config ZERO_LATENCY_IRQS
 	bool
 	prompt "Enable zero-latency interrupts"
 	default n
+	depends on CPU_CORTEX_M_HAS_BASEPRI
 	help
 	Interrupt locking is done by setting exception masking to priority
 	one, thus allowing exception of priority zero to still come in. By
