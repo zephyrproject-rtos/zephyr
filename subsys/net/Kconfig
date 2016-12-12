@@ -48,7 +48,7 @@ config  NETWORKING
 	select NANO_TIMEOUTS
 	select NANO_TIMERS
 	select NET_BUF
-	select TEST_RANDOM_GENERATOR
+	select RANDOM_GENERATOR
 	default n
 	help
 	This option enabled generic link layer and IP networking support.
