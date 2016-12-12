@@ -45,11 +45,14 @@ extern "C" {
 
 /* for assembler, only works with constants */
 #define _EXC_PRIO(pri) (((pri) << (8 - CONFIG_NUM_IRQ_PRIO_BITS)) & 0xff)
+
 #if defined(CONFIG_ZERO_LATENCY_IRQS)
-#define _EXC_IRQ_DEFAULT_PRIO _EXC_PRIO(0x03)
+#define _IRQ_PRIO_OFFSET 3
 #else
-#define _EXC_IRQ_DEFAULT_PRIO _EXC_PRIO(0x02)
+#define _IRQ_PRIO_OFFSET 2
 #endif
+
+#define _EXC_IRQ_DEFAULT_PRIO _EXC_PRIO(_IRQ_PRIO_OFFSET)
 
 /* no exc #0 */
 #define _EXC_RESET 1

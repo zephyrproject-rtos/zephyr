@@ -94,7 +94,6 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 */
 
 #if CONFIG_ZERO_LATENCY_IRQS
-#define IRQ_PRIORITY_OFFSET 3
 	/* If we have zero latency interrupts, that makes priority level 2
 	 * a case with special semantics; it is not masked by irq_lock().
 	 * Our policy is to express priority levels with special properties
@@ -103,12 +102,11 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	if (flags & IRQ_ZERO_LATENCY) {
 		prio = 2;
 	} else {
-		prio += IRQ_PRIORITY_OFFSET;
+		prio += _IRQ_PRIO_OFFSET;
 	}
 #else
-#define IRQ_PRIORITY_OFFSET 2
 	ARG_UNUSED(flags);
-	prio += IRQ_PRIORITY_OFFSET;
+	prio += _IRQ_PRIO_OFFSET;
 #endif
 	/* The last priority level is also used by PendSV exception, but
 	 * allow other interrupts to use the same level, even if it ends up
@@ -117,8 +115,8 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 */
 	__ASSERT(prio <= ((1 << CONFIG_NUM_IRQ_PRIO_BITS) - 1),
 		 "invalid priority %d! values must be less than %d\n",
-		 prio - IRQ_PRIORITY_OFFSET,
-		 (1 << CONFIG_NUM_IRQ_PRIO_BITS) - (IRQ_PRIORITY_OFFSET));
+		 prio - _IRQ_PRIO_OFFSET,
+		 (1 << CONFIG_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	_NvicIrqPrioSet(irq, _EXC_PRIO(prio));
 }
 
