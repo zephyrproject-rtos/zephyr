@@ -602,6 +602,32 @@ static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP_SELFTEST)
+static int smp_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16])
+{
+	uint8_t ws[16];
+	uint8_t salt_s[16];
+	int err;
+
+	BT_DBG("w %s", bt_hex(w, 16));
+	BT_DBG("salt %s", bt_hex(salt, 16));
+
+	sys_memcpy_swap(ws, w, 16);
+	sys_memcpy_swap(salt_s, salt, 16);
+
+	err = bt_smp_aes_cmac(salt_s, ws, 16, res);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("res %s", bt_hex(res, 16));
+
+	sys_mem_swap(res, 16);
+
+	return 0;
+}
+#endif
+
 static void sc_derive_link_key(struct bt_smp *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
@@ -4034,6 +4060,30 @@ static int smp_h6_test(void)
 
 	return 0;
 }
+
+static int smp_h7_test(void)
+{
+	uint8_t salt[16] = { 0x31, 0x70, 0x6d, 0x74, 0x00, 0x00, 0x00, 0x00,
+			     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	uint8_t w[16] = { 0x9b, 0x7d, 0x39, 0x0a, 0xa6, 0x10, 0x10, 0x34,
+			  0x05, 0xad, 0xc8, 0x57, 0xa3, 0x34, 0x02, 0xec };
+	uint8_t exp_res[16] = { 0x11, 0x70, 0xa5, 0x75, 0x2a, 0x8c, 0x99, 0xd2,
+				0xec, 0xc0, 0xa3, 0xc6, 0x97, 0x35, 0x17, 0xfb};
+	uint8_t res[16];
+	int err;
+
+	err = smp_h7(salt, w, res);
+	if (err) {
+		return err;
+	}
+
+	if (memcmp(res, exp_res, 16)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 static int smp_self_test(void)
@@ -4080,6 +4130,12 @@ static int smp_self_test(void)
 	err = smp_h6_test();
 	if (err) {
 		BT_ERR("SMP h6 self test failed");
+		return err;
+	}
+
+	err = smp_h7_test();
+	if (err) {
+		BT_ERR("SMP h7 self test failed");
 		return err;
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
