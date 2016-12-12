@@ -102,7 +102,7 @@ int fxos8700_trigger_set(struct device *dev,
 {
 	const struct fxos8700_config *config = dev->config->config_info;
 	struct fxos8700_data *data = dev->driver_data;
-	enum fxos8700_power power;
+	enum fxos8700_power power = FXOS8700_POWER_STANDBY;
 	uint8_t mask;
 	int ret = 0;
 
