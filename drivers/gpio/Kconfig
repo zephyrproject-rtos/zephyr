@@ -55,6 +55,8 @@ source "drivers/gpio/Kconfig.sch"
 
 source "drivers/gpio/Kconfig.k64"
 
+source "drivers/gpio/Kconfig.mcux"
+
 source "drivers/gpio/Kconfig.atmel_sam3"
 
 source "drivers/gpio/Kconfig.stm32"
