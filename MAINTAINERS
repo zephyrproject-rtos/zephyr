@@ -315,9 +315,10 @@ F:	tests/net/
 NETWORK APPLICATIONS
 M:	Flavio Santes <flavio.santes@intel.com>
 S:	Supported
+F:	lib/iot/dns/
+F:	lib/iot/http/
+F:	lib/iot/mqtt/
 F:	samples/net/dns_client/
-F:	samples/net/nats_clients/
-F:	samples/net/paho_mqtt_clients/
 
 NETWORK BUFFERS
 M:	Johan Hedberg <johan.hedberg@intel.com>
