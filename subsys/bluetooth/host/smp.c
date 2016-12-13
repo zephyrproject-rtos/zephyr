@@ -83,7 +83,15 @@
 #define BR_SEND_KEYS_SC (SEND_KEYS & ~(LINK_DIST))
 
 #define BT_SMP_AUTH_MASK	0x07
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+#define BT_SMP_AUTH_MASK_SC	0x2f
+#define BT_SMP_AUTH_DEFAULT (BT_SMP_AUTH_BONDING | BT_SMP_AUTH_SC |\
+			     BT_SMP_AUTH_CT2)
+#else
 #define BT_SMP_AUTH_MASK_SC	0x0f
+#define BT_SMP_AUTH_DEFAULT (BT_SMP_AUTH_BONDING | BT_SMP_AUTH_SC)
+#endif
 
 enum pairing_method {
 	JUST_WORKS,		/* JustWorks pairing */
@@ -111,6 +119,7 @@ enum {
 	SMP_FLAG_DERIVE_LK,	/* if Link Key should be derived */
 	SMP_FLAG_BR_CONNECTED,	/* if BR/EDR channel is connected */
 	SMP_FLAG_BR_PAIR,	/* if should start BR/EDR pairing */
+	SMP_FLAG_CT2,		/* if should use H7 for keys derivation */
 
 	/* Total number of flags - must be at the end */
 	SMP_NUM_FLAGS,
@@ -602,7 +611,6 @@ static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP_SELFTEST)
 static int smp_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16])
 {
 	uint8_t ws[16];
@@ -626,12 +634,10 @@ static int smp_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16])
 
 	return 0;
 }
-#endif
 
 static void sc_derive_link_key(struct bt_smp *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
-	static const uint8_t tmp1[4] = { 0x31, 0x70, 0x6d, 0x74 };
 	static const uint8_t lebr[4] = { 0x72, 0x62, 0x65, 0x6c };
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_keys_link_key *link_key;
@@ -650,9 +656,25 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		return;
 	}
 
-	if (smp_h6(conn->le.keys->ltk.val, tmp1, ilk)) {
-		bt_keys_link_key_clear(link_key);
-		return;
+	if (atomic_test_bit(smp->flags, SMP_FLAG_CT2)) {
+		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
+		static const uint8_t salt[16] = { 0x31, 0x70, 0x6d, 0x74,
+						  0x00, 0x00, 0x00, 0x00,
+						  0x00, 0x00, 0x00, 0x00,
+						  0x00, 0x00, 0x00, 0x00 };
+
+		if (smp_h7(salt, conn->le.keys->ltk.val, ilk)) {
+			bt_keys_link_key_clear(link_key);
+			return;
+		}
+	} else {
+		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
+		static const uint8_t tmp1[4] = { 0x31, 0x70, 0x6d, 0x74 };
+
+		if (smp_h6(conn->le.keys->ltk.val, tmp1, ilk)) {
+			bt_keys_link_key_clear(link_key);
+			return;
+		}
 	}
 
 	if (smp_h6(ilk, lebr, link_key->val)) {
@@ -761,7 +783,6 @@ static void smp_br_init(struct bt_smp_br *smp)
 static void smp_br_derive_ltk(struct bt_smp_br *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
-	static const uint8_t tmp2[4] = { 0x32, 0x70, 0x6d, 0x74 };
 	static const uint8_t brle[4] = { 0x65, 0x6c, 0x72, 0x62 };
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_keys_link_key *link_key = conn->br.link_key;
@@ -794,9 +815,25 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		return;
 	}
 
-	if (smp_h6(link_key->val, tmp2, ilk)) {
-		bt_keys_clear(keys);
-		return;
+	if (atomic_test_bit(smp->flags, SMP_FLAG_CT2)) {
+		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
+		static const uint8_t salt[16] = { 0x32, 0x70, 0x6d, 0x74,
+						  0x00, 0x00, 0x00, 0x00,
+						  0x00, 0x00, 0x00, 0x00,
+						  0x00, 0x00, 0x00, 0x00 };
+
+		if (smp_h7(salt, link_key->val, ilk)) {
+			bt_keys_link_key_clear(link_key);
+			return;
+		}
+	} else {
+		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
+		static const uint8_t tmp2[4] = { 0x32, 0x70, 0x6d, 0x74 };
+
+		if (smp_h6(link_key->val, tmp2, ilk)) {
+			bt_keys_clear(keys);
+			return;
+		}
 	}
 
 	if (smp_h6(ilk, brle, keys->ltk.val)) {
@@ -2263,7 +2300,7 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	}
 
 	req = net_buf_add(req_buf, sizeof(*req));
-	req->auth_req = get_auth(BT_SMP_AUTH_BONDING | BT_SMP_AUTH_SC);
+	req->auth_req = get_auth(BT_SMP_AUTH_DEFAULT);
 
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
@@ -2312,6 +2349,11 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 		rsp->init_key_dist &= RECV_KEYS_SC;
 		rsp->resp_key_dist &= SEND_KEYS_SC;
+	}
+
+	if ((rsp->auth_req & BT_SMP_AUTH_CT2) &&
+	    (req->auth_req & BT_SMP_AUTH_CT2)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_CT2);
 	}
 
 	smp->local_dist = rsp->resp_key_dist;
@@ -2429,7 +2471,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	req = net_buf_add(req_buf, sizeof(*req));
 
-	req->auth_req = get_auth(BT_SMP_AUTH_BONDING | BT_SMP_AUTH_SC);
+	req->auth_req = get_auth(BT_SMP_AUTH_DEFAULT);
 	req->io_capability = get_io_capa();
 	req->oob_flag = BT_SMP_OOB_NOT_PRESENT;
 	req->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
@@ -2473,6 +2515,11 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_SC);
+	}
+
+	if ((rsp->auth_req & BT_SMP_AUTH_CT2) &&
+	    (req->auth_req & BT_SMP_AUTH_CT2)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_CT2);
 	}
 
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
@@ -4083,7 +4130,6 @@ static int smp_h7_test(void)
 
 	return 0;
 }
-
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 static int smp_self_test(void)
