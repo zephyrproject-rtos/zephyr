@@ -193,29 +193,31 @@ struct net_stats {
 
 	struct net_stats_ip_errors ip_errors;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_STATISTICS_IPV6)
 	struct net_stats_ip ipv6;
 #endif
 
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_STATISTICS_IPV4)
 	struct net_stats_ip ipv4;
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_ICMP)
 	struct net_stats_icmp icmp;
+#endif
 
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_STATISTICS_TCP)
 	struct net_stats_tcp tcp;
 #endif
 
-#if defined (CONFIG_NET_UDP)
+#if defined(CONFIG_NET_STATISTICS_UDP)
 	struct net_stats_udp udp;
 #endif
 
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
 	struct net_stats_ipv6_nd ipv6_nd;
 #endif
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	struct {
 		uint16_t mem_overflows;
 		uint16_t local_repairs;
@@ -233,7 +235,7 @@ struct net_stats {
 		struct net_stats_rpl_dao dao;
 		struct net_stats_rpl_dao_ack dao_ack;
 	} rpl;
-#endif /* CONFIG_NET_RPL_STATS */
+#endif /* CONFIG_NET_STATISTICS_RPL */
 };
 
 #ifdef __cplusplus

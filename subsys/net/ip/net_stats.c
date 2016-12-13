@@ -26,6 +26,8 @@
 
 struct net_stats net_stats;
 
+#ifdef CONFIG_NET_STATISTICS_PERIODIC_OUTPUT
+
 #define PRINT_STATISTICS_INTERVAL (30 * MSEC_PER_SEC)
 
 void net_print_statistics(void)
@@ -37,27 +39,27 @@ void net_print_statistics(void)
 	    (!((curr - next_print) > PRINT_STATISTICS_INTERVAL)))) {
 		int64_t new_print;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_STATISTICS_IPV6)
 		NET_INFO("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
 			 GET_STAT(ipv6.recv),
 			 GET_STAT(ipv6.sent),
 			 GET_STAT(ipv6.drop),
 			 GET_STAT(ipv6.forwarded));
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
 		NET_INFO("IPv6 ND recv   %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(ipv6_nd.recv),
 			 GET_STAT(ipv6_nd.sent),
 			 GET_STAT(ipv6_nd.drop));
-#endif /* CONFIG_NET_IPV6_ND */
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+#endif /* CONFIG_NET_STATISTICS_IPV6 */
 
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_STATISTICS_IPV4)
 		NET_INFO("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
 			 GET_STAT(ipv4.recv),
 			 GET_STAT(ipv4.sent),
 			 GET_STAT(ipv4.drop),
 			 GET_STAT(ipv4.forwarded));
-#endif /* CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_STATISTICS_IPV4 */
 
 		NET_INFO("IP vhlerr      %d\thblener\t%d\tlblener\t%d",
 			 GET_STAT(ip_errors.vhlerr),
@@ -76,7 +78,7 @@ void net_print_statistics(void)
 			 GET_STAT(icmp.typeerr),
 			 GET_STAT(icmp.chkerr));
 
-#if defined(CONFIG_NET_UDP)
+#if defined(CONFIG_NET_STATISTICS_UDP)
 		NET_INFO("UDP recv       %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(udp.recv),
 			 GET_STAT(udp.sent),
@@ -85,7 +87,7 @@ void net_print_statistics(void)
 			 GET_STAT(udp.chkerr));
 #endif
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL_STATS)
 		NET_INFO("RPL DIS recv   %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(rpl.dis.recv),
 			 GET_STAT(rpl.dis.sent),
@@ -131,3 +133,5 @@ void net_print_statistics(void)
 		}
 	}
 }
+
+#endif /* CONFIG_NET_STATISTICS_PERIODIC_OUTPUT */

@@ -78,11 +78,4 @@ config NET_DEBUG_ROUTE
 	help
 	Enables routing engine debug messages
 
-config NET_STATISTICS
-	bool "Print network statistics"
-	default n
-	help
-	Print network send/receive statistics to console.
-	This takes memory so say 'n' if unsure.
-
 endif # NET_LOG

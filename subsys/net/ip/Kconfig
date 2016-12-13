@@ -260,6 +260,8 @@ source "subsys/net/ip/Kconfig.mgmt"
 
 source "subsys/net/ip/Kconfig.rpl"
 
+source "subsys/net/ip/Kconfig.stats"
+
 source "subsys/net/ip/Kconfig.samples"
 
 endmenu

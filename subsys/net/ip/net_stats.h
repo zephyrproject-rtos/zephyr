@@ -47,7 +47,7 @@ static inline void net_stats_update_ip_errors_vhlerr(void)
 #define net_stats_update_ip_errors_vhlerr()
 #endif /* CONFIG_NET_STATISTICS */
 
-#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_STATISTICS)
+#if defined(CONFIG_NET_STATISTICS_IPV6)
 /* IPv6 stats */
 
 static inline void net_stats_update_ipv6_sent(void)
@@ -68,9 +68,9 @@ static inline void net_stats_update_ipv6_drop(void)
 #define net_stats_update_ipv6_drop()
 #define net_stats_update_ipv6_sent()
 #define net_stats_update_ipv6_recv()
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_STATISTICS_IPV6 */
 
-#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_STATISTICS)
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
 /* IPv6 Neighbor Discovery stats*/
 
 static inline void net_stats_update_ipv6_nd_sent(void)
@@ -91,9 +91,9 @@ static inline void net_stats_update_ipv6_nd_drop(void)
 #define net_stats_update_ipv6_nd_sent()
 #define net_stats_update_ipv6_nd_recv()
 #define net_stats_update_ipv6_nd_drop()
-#endif /* CONFIG_NET_IPV6_ND */
+#endif /* CONFIG_NET_STATISTICS_IPV6_ND */
 
-#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_STATISTICS)
+#if defined(CONFIG_NET_STATISTICS_IPV4)
 /* IPv4 stats */
 
 static inline void net_stats_update_ipv4_drop(void)
@@ -114,9 +114,9 @@ static inline void net_stats_update_ipv4_recv(void)
 #define net_stats_update_ipv4_drop()
 #define net_stats_update_ipv4_sent()
 #define net_stats_update_ipv4_recv()
-#endif /* CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_STATISTICS_IPV4 */
 
-#if defined(CONFIG_NET_STATISTICS)
+#if defined(CONFIG_NET_STATISTICS_ICMP)
 /* Common ICMPv4/ICMPv6 stats */
 static inline void net_stats_update_icmp_sent(void)
 {
@@ -136,9 +136,9 @@ static inline void net_stats_update_icmp_drop(void)
 #define net_stats_update_icmp_sent()
 #define net_stats_update_icmp_recv()
 #define net_stats_update_icmp_drop()
-#endif
+#endif /* CONFIG_NET_STATISTICS_ICMP */
 
-#if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_STATISTICS)
+#if defined(CONFIG_NET_STATISTICS_UDP)
 /* UDP stats */
 static inline void net_stats_update_udp_sent(void)
 {
@@ -158,9 +158,9 @@ static inline void net_stats_update_udp_drop(void)
 #define net_stats_update_udp_sent()
 #define net_stats_update_udp_recv()
 #define net_stats_update_udp_drop()
-#endif /* CONFIG_NET_UDP */
+#endif /* CONFIG_NET_STATISTICS_UDP */
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 /* RPL stats */
 static inline void net_stats_update_rpl_resets(void)
 {
@@ -258,17 +258,13 @@ static inline void net_stats_update_rpl_dao_ack_recv(void)
 #define net_stats_update_rpl_dao_forwarded()
 #define net_stats_update_rpl_dao_ack_sent()
 #define net_stats_update_rpl_dao_ack_recv()
-#endif
+#endif /* CONFIG_NET_STATISTICS_RPL */
 
-#if defined(CONFIG_NET_STATISTICS)
-
+#if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
 /* A simple periodic statistic printer, used only in net core */
 void net_print_statistics(void);
-
 #else
-
 #define net_print_statistics()
-
-#endif /* CONFIG_NET_STATISTICS */
+#endif
 
 #endif /* __NET_STATS_H__ */
