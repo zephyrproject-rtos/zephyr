@@ -1,0 +1,39 @@
+# Kconfig - counter configuration options
+#
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_FAMILY_ARM
+
+config COUNTER_DTMR_CMSDK_APB
+	bool
+	prompt "ARM CMSDK (Cortex-M System Design Kit) DTMR Counter driver"
+	default n
+	help
+	  The dualtimer (DTMR) present in the platform is used as a counter.
+	  This option enables the support for the counter.
+
+if COUNTER_DTMR_CMSDK_APB
+
+# ---------- Counter 0 ----------
+
+config COUNTER_DTMR_CMSDK_APB_0
+	bool
+	prompt "Counter 0 driver"
+	default n
+	help
+	  Enable support for Counter 0.
+
+config COUNTER_DTMR_CMSDK_APB_0_DEV_NAME
+	string "Counter 0 Device Name"
+	depends on COUNTER_DTMR_CMSDK_APB_0
+	default "COUNTER_0"
+	help
+	  Specify the device name for Counter 0 driver.
+
+endif # COUNTER_DTMR_CMSDK_APB
+
+endif # SOC_FAMILY_ARM
