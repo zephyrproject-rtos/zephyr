@@ -202,10 +202,6 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	BT_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
 	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
-	if (!buf) {
-		BT_ERR("Cannot get free buffer");
-		return NULL;
-	}
 
 	BT_DBG("buf %p", buf);
 
