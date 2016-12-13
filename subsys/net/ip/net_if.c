@@ -33,6 +33,8 @@
 #include "ipv6.h"
 #include "rpl.h"
 
+#include "net_stats.h"
+
 #define REACHABLE_TIME (30 * MSEC_PER_SEC) /* in ms */
 #define MIN_RANDOM_FACTOR (1/2)
 #define MAX_RANDOM_FACTOR (3/2)
@@ -60,6 +62,20 @@ static sys_slist_t link_callbacks;
 #else
 #define debug_check_packet(...)
 #endif
+
+static inline void net_context_send_cb(struct net_context *context,
+				       void *token, int status)
+{
+	if (context->send_cb) {
+		context->send_cb(context, status, token, context->user_data);
+	}
+
+#if defined(CONFIG_NET_UDP)
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		net_stats_update_udp_sent();
+	}
+#endif
+}
 
 static void net_if_tx_thread(struct net_if *iface)
 {

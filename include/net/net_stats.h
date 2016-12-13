@@ -30,13 +30,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_STATISTICS)
-#define NET_STATS(s) s
-extern struct net_stats net_stats;
-#else
-#define NET_STATS(s)
-#endif
-
 typedef uint32_t net_stats_t;
 
 struct net_stats_ip {
@@ -202,39 +195,24 @@ struct net_stats {
 
 #if defined(CONFIG_NET_IPV6)
 	struct net_stats_ip ipv6;
-#define NET_STATS_IPV6(s) NET_STATS(s)
-#else
-#define NET_STATS_IPV6(s)
 #endif
 
 #if defined(CONFIG_NET_IPV4)
 	struct net_stats_ip ipv4;
-#define NET_STATS_IPV4(s) NET_STATS(s)
-#else
-#define NET_STATS_IPV4(s)
 #endif
 
 	struct net_stats_icmp icmp;
 
 #if defined(CONFIG_NET_TCP)
 	struct net_stats_tcp tcp;
-#define NET_STATS_TCP(s) NET_STATS(s)
-#else
-#define NET_STATS_TCP(s)
 #endif
 
 #if defined (CONFIG_NET_UDP)
 	struct net_stats_udp udp;
-#define NET_STATS_UDP(s) NET_STATS(s)
-#else
-#define NET_STATS_UDP(s)
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
 	struct net_stats_ipv6_nd ipv6_nd;
-#define NET_STATS_IPV6_ND(s) NET_STATS(s)
-#else
-#define NET_STATS_IPV6_ND(s)
 #endif
 
 #if defined(CONFIG_NET_RPL_STATS)
@@ -255,11 +233,6 @@ struct net_stats {
 		struct net_stats_rpl_dao dao;
 		struct net_stats_rpl_dao_ack dao_ack;
 	} rpl;
-#define NET_STATS_RPL(s) NET_STATS(s)
-#define NET_STATS_RPL_DIS(s) NET_STATS(s)
-#else
-#define NET_STATS_RPL(s)
-#define NET_STATS_RPL_DIS(s)
 #endif /* CONFIG_NET_RPL_STATS */
 };
 

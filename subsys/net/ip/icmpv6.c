@@ -29,10 +29,10 @@
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
-#include <net/net_stats.h>
 #include "net_private.h"
 #include "icmpv6.h"
 #include "ipv6.h"
+#include "net_stats.h"
 
 static sys_slist_t handlers;
 
@@ -163,14 +163,14 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 		goto drop;
 	}
 
-	NET_STATS(++net_stats.icmp.sent);
+	net_stats_update_icmp_sent();
 
 	return NET_DROP;
 
 drop:
 	net_nbuf_unref(buf);
+	net_stats_update_icmp_drop();
 
-	NET_STATS(++net_stats.icmp.drop);
 	return NET_DROP;
 }
 
@@ -279,13 +279,13 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 #endif /* NET_DEBUG > 0 */
 
 	if (net_send_data(buf) >= 0) {
-		NET_STATS(++net_stats.icmp.sent);
+		net_stats_update_icmp_sent();
 		return -EIO;
 	}
 
 drop:
 	net_nbuf_unref(buf);
-	NET_STATS(++net_stats.icmp.drop);
+	net_stats_update_icmp_drop();
 
 	/* Note that we always return < 0 so that the caller knows to
 	 * discard the original buffer.
@@ -342,12 +342,12 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 #endif /* NET_DEBUG > 0 */
 
 	if (net_send_data(buf) >= 0) {
-		NET_STATS(++net_stats.icmp.sent);
+		net_stats_update_icmp_sent();
 		return 0;
 	}
 
 	net_nbuf_unref(buf);
-	NET_STATS(++net_stats.icmp.drop);
+	net_stats_update_icmp_drop();
 
 	return -EIO;
 }
@@ -368,7 +368,7 @@ enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
 		}
 
 		if (cb->type == type && (cb->code == code || cb->code == 0)) {
-			NET_STATS(++net_stats.icmp.recv);
+			net_stats_update_icmp_recv();
 			return cb->handler(buf);
 		}
 	}

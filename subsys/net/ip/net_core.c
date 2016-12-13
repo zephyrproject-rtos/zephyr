@@ -207,7 +207,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 
 	if (real_len != pkt_len) {
 		NET_DBG("IPv6 packet size %d buf len %d", pkt_len, real_len);
-		NET_STATS_IPV6(++net_stats.ipv6.drop);
+		net_stats_update_ipv6_drop();
 		goto drop;
 	}
 
@@ -221,8 +221,8 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 #endif /* NET_DEBUG > 0 */
 
 	if (net_is_ipv6_addr_mcast(&hdr->src)) {
-		NET_STATS_IPV6(++net_stats.ipv6.drop);
 		NET_DBG("Dropping src multicast packet");
+		net_stats_update_ipv6_drop();
 		goto drop;
 	}
 
@@ -231,7 +231,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	    !net_is_ipv6_addr_mcast(&hdr->dst) &&
 	    !net_is_ipv6_addr_loopback(&hdr->dst)) {
 		NET_DBG("IPv6 packet in buf %p not for me", buf);
-		NET_STATS_IPV6(++net_stats.ipv6.drop);
+		net_stats_update_ipv6_drop();
 		goto drop;
 	}
 
@@ -380,7 +380,7 @@ bad_hdr:
 			      offset - 1);
 
 	NET_DBG("Unknown next header type");
-	NET_STATS(++net_stats.ip_errors.protoerr);
+	net_stats_update_ip_errors_protoerr();
 
 	return NET_DROP;
 }
@@ -457,7 +457,7 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 	}
 
 drop:
-	NET_STATS(++net_stats.ipv4.drop);
+	net_stats_update_ipv4_drop();
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV4 */
@@ -476,7 +476,7 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	if (!buf->frags || !buf->pool->user_data_size) {
 		NET_DBG("Corrupted buffer (frags %p, data size %u)",
 			buf->frags, buf->pool->user_data_size);
-		NET_STATS(++net_stats.processing_error);
+		net_stats_update_processing_error();
 
 		return NET_DROP;
 	}
@@ -486,7 +486,7 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Buffer %p discarded by L2", buf);
-				NET_STATS(++net_stats.processing_error);
+				net_stats_update_processing_error();
 			}
 
 			return ret;
@@ -497,13 +497,13 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	switch (NET_IPV6_BUF(buf)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
-		NET_STATS_IPV6(++net_stats.ipv6.recv);
+		net_stats_update_ipv6_recv();
 		net_nbuf_set_family(buf, PF_INET6);
 		return process_ipv6_pkt(buf);
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
-		NET_STATS_IPV4(++net_stats.ipv4.recv);
+		net_stats_update_ipv4_recv();
 		net_nbuf_set_family(buf, PF_INET);
 		return process_ipv4_pkt(buf);
 #endif
@@ -511,8 +511,8 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 
 	NET_DBG("Unknown IP family packet (0x%x)",
 		NET_IPV6_BUF(buf)->vtc & 0xf0);
-	NET_STATS(++net_stats.ip_errors.protoerr);
-	NET_STATS(++net_stats.ip_errors.vhlerr);
+	net_stats_update_ip_errors_protoerr();
+	net_stats_update_ip_errors_vhlerr();
 
 	return NET_DROP;
 }
@@ -664,10 +664,10 @@ int net_send_data(struct net_buf *buf)
 #if defined(CONFIG_NET_STATISTICS)
 	switch (net_nbuf_family(buf)) {
 	case AF_INET:
-		NET_STATS_IPV4(++net_stats.ipv4.sent);
+		net_stats_update_ipv4_sent();
 		break;
 	case AF_INET6:
-		NET_STATS_IPV6(++net_stats.ipv6.sent);
+		net_stats_update_ipv6_sent();
 		break;
 	}
 #endif

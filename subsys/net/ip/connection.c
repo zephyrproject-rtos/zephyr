@@ -28,12 +28,12 @@
 
 #include <net/net_core.h>
 #include <net/nbuf.h>
-#include <net/net_stats.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
 #include "icmpv4.h"
 #include "connection.h"
+#include "net_stats.h"
 
 /** Is this connection used or not */
 #define NET_CONN_IN_USE BIT(0)
@@ -754,7 +754,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 		}
 
 		if (proto == IPPROTO_UDP) {
-			NET_STATS_UDP(++net_stats.udp.recv);
+			net_stats_update_udp_recv();
 		}
 
 		return NET_OK;
@@ -785,7 +785,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 
 drop:
 	if (proto == IPPROTO_UDP) {
-		NET_STATS_UDP(++net_stats.udp.drop);
+		net_stats_update_udp_drop();
 	}
 
 	return NET_DROP;

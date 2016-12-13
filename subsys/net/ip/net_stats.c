@@ -21,11 +21,11 @@
 #include <kernel.h>
 #include <string.h>
 #include <net/net_core.h>
-#include <net/net_stats.h>
+
+#include "net_stats.h"
 
 struct net_stats net_stats;
 
-#define GET_STAT(s) net_stats.s
 #define PRINT_STATISTICS_INTERVAL (30 * MSEC_PER_SEC)
 
 void net_print_statistics(void)

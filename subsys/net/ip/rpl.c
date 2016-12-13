@@ -59,7 +59,6 @@
 
 #include <net/nbuf.h>
 #include <net/net_core.h>
-#include <net/net_stats.h>
 
 #include "net_private.h"
 #include "ipv6.h"
@@ -67,6 +66,7 @@
 #include "nbr.h"
 #include "route.h"
 #include "rpl.h"
+#include "net_stats.h"
 
 #define NET_RPL_DIO_GROUNDED         0x80
 #define NET_RPL_DIO_MOP_SHIFT        3
@@ -574,8 +574,8 @@ int net_rpl_dio_send(struct net_if *iface,
 				net_sprint_ipv6_addr(dst));
 		}
 
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL(++net_stats.rpl.dio.sent);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dio_sent();
 
 		return 0;
 	}
@@ -705,7 +705,7 @@ static void net_rpl_dio_reset_timer(struct net_rpl_instance *instance)
 		new_dio_interval(instance);
 	}
 
-	NET_STATS_RPL(net_stats.rpl.resets++);
+	net_stats_update_rpl_resets();
 }
 
 static inline void send_dis_all_interfaces(struct net_if *iface,
@@ -765,8 +765,8 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 		NET_DBG("Sent a %s DIS to %s", dst ? "unicast" : "multicast",
 			net_sprint_ipv6_addr(dst_addr));
 
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL_DIS(++net_stats.rpl.dis.sent);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dis_sent();
 	} else {
 		net_nbuf_unref(buf);
 	}
@@ -994,7 +994,8 @@ static struct net_rpl_dag *alloc_dag(uint8_t instance_id,
 		instance = net_rpl_alloc_instance(instance_id);
 		if (!instance) {
 			NET_DBG("Cannot allocate instance id %d", instance_id);
-			NET_STATS_RPL(net_stats.rpl.mem_overflows++);
+			net_stats_update_rpl_mem_overflows();
+
 			return NULL;
 		}
 	}
@@ -1186,7 +1187,7 @@ static void net_rpl_reset_dio_timer(struct net_rpl_instance *instance)
 		new_dio_interval(instance);
 	}
 
-	NET_STATS_RPL(net_stats.rpl.resets++);
+	net_stats_update_rpl_resets();
 }
 
 static
@@ -1840,7 +1841,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 		NET_DBG("Changed preferred parent, rank changed from %u to %u",
 			old_rank, best_dag->rank);
 
-		NET_STATS_RPL(net_stats.rpl.parent_switch++);
+		net_stats_update_rpl_parent_switch();
 
 		if (instance->mop != NET_RPL_MOP_NO_DOWNWARD_ROUTES) {
 			if (last_parent) {
@@ -1914,7 +1915,7 @@ static void net_rpl_local_repair(struct net_if *iface,
 
 	net_rpl_reset_dio_timer(instance);
 
-	NET_STATS_RPL(net_stats.rpl.local_repairs++);
+	net_stats_update_rpl_local_repairs();
 }
 
 /* Return true if parent is kept, false if it is dropped */
@@ -1991,7 +1992,7 @@ static bool net_rpl_repair_root(uint8_t instance_id)
 		return false;
 	}
 
-	NET_STATS_RPL(net_stats.rpl.root_repairs++);
+	net_stats_update_rpl_root_repairs();
 
 	net_rpl_lollipop_increment(&instance->current_dag->version);
 	net_rpl_lollipop_increment(&instance->dtsn);
@@ -2067,7 +2068,7 @@ static void global_repair(struct net_if *iface,
 	NET_DBG("Participating in a global repair version %d rank %d",
 		dag->version, dag->rank);
 
-	NET_STATS_RPL(net_stats.rpl.global_repairs++);
+	net_stats_update_rpl_global_repairs();
 }
 
 #define net_rpl_print_parent_info(parent, instance)			\
@@ -2757,7 +2758,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 
 		if (!frag && pos) {
 			NET_DBG("Invalid DIO packet");
-			NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+			net_stats_update_rpl_malformed_msgs();
 			goto out;
 		}
 
@@ -2767,7 +2768,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 		case NET_RPL_OPTION_DAG_METRIC_CONTAINER:
 			if (len < 6) {
 				NET_DBG("Invalid DAG MC len %d", len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -2808,7 +2809,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 			if (len < 9) {
 				NET_DBG("Invalid destination prefix "
 					"option len %d", len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -2832,7 +2833,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 			} else {
 				NET_DBG("Invalid route info option len %d",
 					len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -2841,7 +2842,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 			if (len != 16) {
 				NET_DBG("Invalid DAG configuration option "
 					"len %d", len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -2882,7 +2883,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 			if (len != 32) {
 				NET_DBG("Invalid DAG prefix info len %d != 32",
 					len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -3027,8 +3028,8 @@ int net_rpl_dao_send(struct net_if *iface,
 	if (ret >= 0) {
 		net_rpl_dao_info(buf, src, dst, prefix);
 
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL(++net_stats.rpl.dao.sent);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dao_sent();
 	} else {
 		net_nbuf_unref(buf);
 	}
@@ -3076,8 +3077,8 @@ static inline int dao_forward(struct net_if *iface,
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL(++net_stats.rpl.dao.forwarded);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dao_forwarded();
 	} else {
 		net_nbuf_unref(buf);
 	}
@@ -3123,8 +3124,8 @@ static int dao_ack_send(struct net_buf *orig,
 		net_rpl_dao_ack_info(buf, src, dst, instance->instance_id,
 				     sequence);
 
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL(++net_stats.rpl.dao_ack.sent);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dao_ack_sent();
 	} else {
 		net_nbuf_unref(buf);
 	}
@@ -3274,7 +3275,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 
 		if (!frag && pos) {
 			NET_DBG("Invalid DAO packet");
-			NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+			net_stats_update_rpl_malformed_msgs();
 			goto out;
 		}
 
@@ -3387,7 +3388,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	route = net_rpl_add_route(dag, net_nbuf_iface(buf),
 				  &addr, target_len, dao_sender);
 	if (!route) {
-		NET_STATS_RPL(net_stats.rpl.mem_overflows++);
+		net_stats_update_rpl_mem_overflows();
 
 		NET_DBG("Could not add a route after receiving a DAO");
 		return NET_DROP;
@@ -3425,7 +3426,7 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 {
 	net_rpl_info(buf, "Destination Advertisement Object Ack");
 
-	NET_STATS_RPL(++net_stats.rpl.dao_ack.recv);
+	net_stats_update_rpl_dao_ack_recv();
 
 	return NET_DROP;
 }
@@ -3584,7 +3585,7 @@ bool net_rpl_verify_header(struct net_buf *buf,
 			net_route_del(route);
 		}
 
-		NET_STATS_RPL(net_stats.rpl.forward_errors++);
+		net_stats_update_rpl_forward_errors();
 
 		/* Trigger DAO retransmission */
 		net_rpl_reset_dio_timer(instance);
@@ -3618,7 +3619,7 @@ bool net_rpl_verify_header(struct net_buf *buf,
 			sender_closer);
 
 		if (flags & NET_RPL_HDR_OPT_RANK_ERR) {
-			NET_STATS_RPL(net_stats.rpl.loop_errors++);
+			net_stats_update_rpl_loop_errors();
 
 			NET_DBG("Rank error signalled in RPL option!");
 
@@ -3631,7 +3632,7 @@ bool net_rpl_verify_header(struct net_buf *buf,
 		}
 
 		NET_DBG("Single error tolerated.");
-		NET_STATS_RPL(net_stats.rpl.loop_warnings++);
+		net_stats_update_rpl_loop_warnings();
 
 		net_nbuf_write_u8(buf, buf->frags, offset, pos,
 				  flags | NET_RPL_HDR_OPT_RANK_ERR);

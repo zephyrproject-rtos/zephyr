@@ -28,9 +28,9 @@
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
-#include <net/net_stats.h>
 #include "net_private.h"
 #include "icmpv4.h"
+#include "net_stats.h"
 
 static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 {
@@ -66,11 +66,11 @@ static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 #endif /* NET_DEBUG > 0 */
 
 	if (net_send_data(buf) < 0) {
-		NET_STATS(++net_stats.icmp.drop);
+		net_stats_update_icmp_drop();
 		return NET_DROP;
 	}
 
-	NET_STATS(++net_stats.icmp.sent);
+	net_stats_update_icmp_sent();
 
 	return NET_OK;
 }
@@ -159,12 +159,12 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 		    sizeof(struct net_icmpv4_echo_req));
 
 	if (net_send_data(buf) >= 0) {
-		NET_STATS(++net_stats.icmp.sent);
+		net_stats_update_icmp_sent();
 		return 0;
 	}
 
 	net_nbuf_unref(buf);
-	NET_STATS(++net_stats.icmp.drop);
+	net_stats_update_icmp_drop();
 
 	return -EIO;
 }
@@ -268,13 +268,13 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 #endif /* NET_DEBUG > 0 */
 
 	if (net_send_data(buf) >= 0) {
-		NET_STATS(++net_stats.icmp.sent);
+		net_stats_update_icmp_sent();
 		return -EIO;
 	}
 
 drop:
 	net_nbuf_unref(buf);
-	NET_STATS(++net_stats.icmp.drop);
+	net_stats_update_icmp_drop();
 
 	/* Note that we always return < 0 so that the caller knows to
 	 * discard the original buffer.
