@@ -222,10 +222,6 @@ void cb_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
 }
 
 static
-int nbuf_copy(struct net_buf *dst, struct net_buf *src, int offset,
-	      int len);
-
-static
 int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
 	     uint16_t dns_id, uint8_t *cname, uint16_t *cname_len)
 {
@@ -271,7 +267,8 @@ int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
 		       DNS_RESOLVER_MAX_BUF_SIZE);
 	offset = net_buf_frags_len(ctx->rx_buf) - data_len;
 
-	if (nbuf_copy(dns_data, ctx->rx_buf, offset, data_len) != 0) {
+	rc = net_nbuf_linear_copy(dns_data, ctx->rx_buf, offset, data_len);
+	if (rc != 0) {
 		rc = -ENOMEM;
 		goto exit_error;
 	}
@@ -374,37 +371,4 @@ exit_ok:
 exit_error:
 	net_nbuf_unref(ctx->rx_buf);
 	return rc;
-}
-
-static
-int nbuf_copy(struct net_buf *dst, struct net_buf *src, int offset,
-	      int len)
-{
-	int copied;
-	int to_copy;
-
-	/* find the right fragment to start copying from */
-	while (src && offset >= src->len) {
-		offset -= src->len;
-		src = src->frags;
-	}
-
-	/* traverse the fragment chain until len bytes are copied */
-	copied = 0;
-	while (src && len > 0) {
-		to_copy = min(len, src->len - offset);
-		memcpy(dst->data + copied, src->data + offset, to_copy);
-
-		copied += to_copy;
-		len -= to_copy;
-		src = src->frags;
-		/* after the first iteration, this value will be 0 */
-		offset = 0;
-	}
-
-	if (len > 0) {
-		return -ENOMEM;
-	}
-
-	return 0;
 }
