@@ -54,7 +54,9 @@ struct net_stats_ip {
 };
 
 struct net_stats_ip_errors {
-	/** Number of packets dropped due to wrong IP version or header length. */
+	/** Number of packets dropped due to wrong IP version
+	 * or header length.
+	 */
 	net_stats_t vhlerr;
 
 	 /** Number of packets dropped due to wrong IP length, high byte. */
@@ -69,7 +71,9 @@ struct net_stats_ip_errors {
 	/** Number of packets dropped due to IP checksum errors. */
 	net_stats_t chkerr;
 
-	/** Number of packets dropped because they were neither ICMP, UDP nor TCP. */
+	/** Number of packets dropped because they were neither ICMP,
+	 * UDP nor TCP.
+	 */
 	net_stats_t protoerr;
 };
 
@@ -112,7 +116,9 @@ struct net_stats_tcp {
 	/** Number of retransmitted TCP segments. */
 	net_stats_t rexmit;
 
-	/** Number of dropped SYNs because too few connections were available. */
+	/** Number of dropped SYNs because too few connections were
+	 * available.
+	 */
 	net_stats_t syndrop;
 
 	/** Number of SYNs for closed ports, triggering a RST. */
