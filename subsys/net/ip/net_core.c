@@ -38,7 +38,6 @@
 #include <net/arp.h>
 #include <net/nbuf.h>
 #include <net/net_core.h>
-#include <net/net_stats.h>
 
 #include "net_private.h"
 #include "net_shell.h"
@@ -57,6 +56,8 @@
 #include "udp.h"
 #include "tcp.h"
 
+#include "net_stats.h"
+
 /* Stack for the rx thread.
  */
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
@@ -68,120 +69,6 @@ NET_STACK_DEFINE(RX, rx_stack, CONFIG_NET_RX_STACK_SIZE,
 
 static struct k_fifo rx_queue;
 static k_tid_t rx_tid;
-
-#if defined(CONFIG_NET_STATISTICS)
-#define PRINT(fmt, ...) NET_INFO(fmt, ##__VA_ARGS__)
-struct net_stats net_stats;
-#define GET_STAT(s) net_stats.s
-#define PRINT_STATISTICS_INTERVAL (30 * MSEC_PER_SEC)
-#define net_print_statistics stats /* to make the debug print line shorter */
-
-static inline void stats(void)
-{
-	static int64_t next_print;
-	int64_t curr = k_uptime_get();
-
-	if (!next_print || (next_print < curr &&
-	    (!((curr - next_print) > PRINT_STATISTICS_INTERVAL)))) {
-		int64_t new_print;
-
-#if defined(CONFIG_NET_IPV6)
-		PRINT("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
-		      GET_STAT(ipv6.recv),
-		      GET_STAT(ipv6.sent),
-		      GET_STAT(ipv6.drop),
-		      GET_STAT(ipv6.forwarded));
-#if defined(CONFIG_NET_IPV6_ND)
-		PRINT("IPv6 ND recv   %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(ipv6_nd.recv),
-		      GET_STAT(ipv6_nd.sent),
-		      GET_STAT(ipv6_nd.drop));
-#endif /* CONFIG_NET_IPV6_ND */
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-		PRINT("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
-		      GET_STAT(ipv4.recv),
-		      GET_STAT(ipv4.sent),
-		      GET_STAT(ipv4.drop),
-		      GET_STAT(ipv4.forwarded));
-#endif /* CONFIG_NET_IPV4 */
-
-		PRINT("IP vhlerr      %d\thblener\t%d\tlblener\t%d",
-		      GET_STAT(ip_errors.vhlerr),
-		      GET_STAT(ip_errors.hblenerr),
-		      GET_STAT(ip_errors.lblenerr));
-		PRINT("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d",
-		      GET_STAT(ip_errors.fragerr),
-		      GET_STAT(ip_errors.chkerr),
-		      GET_STAT(ip_errors.protoerr));
-
-		PRINT("ICMP recv      %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(icmp.recv),
-		      GET_STAT(icmp.sent),
-		      GET_STAT(icmp.drop));
-		PRINT("ICMP typeer    %d\tchkerr\t%d",
-		      GET_STAT(icmp.typeerr),
-		      GET_STAT(icmp.chkerr));
-
-#if defined(CONFIG_NET_UDP)
-		PRINT("UDP recv       %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(udp.recv),
-		      GET_STAT(udp.sent),
-		      GET_STAT(udp.drop));
-		PRINT("UDP chkerr     %d",
-		      GET_STAT(udp.chkerr));
-#endif
-
-#if defined(CONFIG_NET_RPL_STATS)
-		PRINT("RPL DIS recv   %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(rpl.dis.recv),
-		      GET_STAT(rpl.dis.sent),
-		      GET_STAT(rpl.dis.drop));
-		PRINT("RPL DIO recv   %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(rpl.dio.recv),
-		      GET_STAT(rpl.dio.sent),
-		      GET_STAT(rpl.dio.drop));
-		PRINT("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
-		      GET_STAT(rpl.dao.recv),
-		      GET_STAT(rpl.dao.sent),
-		      GET_STAT(rpl.dao.drop),
-		      GET_STAT(rpl.dao.forwarded));
-		PRINT("RPL DAOACK rcv %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(rpl.dao_ack.recv),
-		      GET_STAT(rpl.dao_ack.sent),
-		      GET_STAT(rpl.dao_ack.drop));
-		PRINT("RPL overflows  %d\tl-repairs\t%d\tg-repairs\t%d",
-		      GET_STAT(rpl.mem_overflows),
-		      GET_STAT(rpl.local_repairs),
-		      GET_STAT(rpl.global_repairs));
-		PRINT("RPL malformed  %d\tresets   \t%d\tp-switch\t%d",
-		      GET_STAT(rpl.malformed_msgs),
-		      GET_STAT(rpl.resets),
-		      GET_STAT(rpl.parent_switch));
-		PRINT("RPL f-errors   %d\tl-errors\t%d\tl-warnings\t%d",
-		      GET_STAT(rpl.forward_errors),
-		      GET_STAT(rpl.loop_errors),
-		      GET_STAT(rpl.loop_warnings));
-		PRINT("RPL r-repairs  %d",
-		      GET_STAT(rpl.root_repairs));
-#endif
-
-		PRINT("Processing err %d", GET_STAT(processing_error));
-
-		new_print = curr + PRINT_STATISTICS_INTERVAL;
-		if (new_print > curr) {
-			next_print = new_print;
-		} else {
-			/* Overflow */
-			next_print = PRINT_STATISTICS_INTERVAL -
-				(LLONG_MAX - curr);
-		}
-	}
-}
-#else /* CONFIG_NET_STATISTICS */
-#define net_print_statistics()
-#endif /* CONFIG_NET_STATISTICS */
 
 #if defined(CONFIG_NET_IPV6)
 static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
