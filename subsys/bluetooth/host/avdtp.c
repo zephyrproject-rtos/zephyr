@@ -55,15 +55,36 @@ static struct bt_avdtp_seid_lsep *lseps;
 
 #define AVDTP_CHAN(_ch) CONTAINER_OF(_ch, struct bt_avdtp, br_chan.chan)
 
+#define AVDTP_KWORK(_work) CONTAINER_OF(_work, struct bt_avdtp,\
+					req.timeout_work)
+
+#define AVDTP_TIMEOUT K_SECONDS(6)
+
+/* Timeout handler */
+static void avdtp_timeout(struct k_work *work)
+{
+	BT_DBG("Failed Signal_id = %d", (AVDTP_KWORK(work))->req.signal_id);
+
+	/* Gracefully Disconnect the Signalling and streaming L2cap chann*/
+
+}
+
 /* L2CAP Interface callbacks */
 void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 {
+	struct bt_avdtp *session;
+
 	if (!chan) {
 		BT_ERR("Invalid AVDTP chan");
 		return;
 	}
 
-	BT_DBG("chan %p session %p", chan, AVDTP_CHAN(chan));
+	session = AVDTP_CHAN(chan);
+	BT_DBG("chan %p session %p", chan, session);
+
+	/* Init the timer */
+	k_delayed_work_init(&session->req.timeout_work, avdtp_timeout);
+
 }
 
 void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
