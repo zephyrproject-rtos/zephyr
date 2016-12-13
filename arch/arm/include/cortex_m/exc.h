@@ -72,16 +72,20 @@ static ALWAYS_INLINE int _IsInIsr(void)
 static ALWAYS_INLINE void _ExcSetup(void)
 {
 	_ScbExcPrioSet(_EXC_PENDSV, _EXC_PRIO(0xff));
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
-	_ScbExcPrioSet(_EXC_SVC, _EXC_PRIO(0x01));
-	_ScbExcPrioSet(_EXC_MPU_FAULT, _EXC_PRIO(0x01));
-	_ScbExcPrioSet(_EXC_BUS_FAULT, _EXC_PRIO(0x01));
-	_ScbExcPrioSet(_EXC_USAGE_FAULT, _EXC_PRIO(0x01));
+
+#ifdef CONFIG_CPU_CORTEX_M_HAS_BASEPRI
+	_ScbExcPrioSet(_EXC_SVC, _EXC_PRIO(_EXC_SVC_PRIO));
+#endif
+
+#ifdef CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
+	_ScbExcPrioSet(_EXC_MPU_FAULT, _EXC_PRIO(_EXC_FAULT_PRIO));
+	_ScbExcPrioSet(_EXC_BUS_FAULT, _EXC_PRIO(_EXC_FAULT_PRIO));
+	_ScbExcPrioSet(_EXC_USAGE_FAULT, _EXC_PRIO(_EXC_FAULT_PRIO));
 
 	_ScbUsageFaultEnable();
 	_ScbBusFaultEnable();
 	_ScbMemFaultEnable();
-#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif
 }
 
 #endif /* _ASMLANGUAGE */
