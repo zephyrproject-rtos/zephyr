@@ -822,6 +822,27 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
+			     uint16_t latency, uint16_t timeout)
+{
+	if (min > max || min < 6 || max > 3200) {
+		return false;
+	}
+
+	/* Limits according to BT Core spec 4.2 [Vol 2, Part E, 7.8.12] */
+	if (timeout < 10 || timeout > 3200 ||
+	    (2 * timeout) < ((1 + latency) * max * 5)) {
+		return false;
+	}
+
+	/* Limits according to BT Core spec 4.2 [Vol 6, Part B, 4.5.1] */
+	if (latency > 499 || ((latency + 1) * max) > (timeout * 4)) {
+		return false;
+	}
+
+	return true;
+}
+
 static int le_conn_param_neg_reply(uint16_t handle, uint8_t reason)
 {
 	struct bt_hci_cp_le_conn_param_req_neg_reply *cp;
