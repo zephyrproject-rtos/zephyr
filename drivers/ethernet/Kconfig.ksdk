@@ -68,27 +68,6 @@ config ETH_KSDK_0_RANDOM_MAC
 
 if ETH_KSDK_0 && ! ETH_KSDK_0_RANDOM_MAC
 
-config ETH_KSDK_0_MAC0
-	hex "MAC Address Byte 0"
-	default 0
-	range 0 ff
-	help
-	This is byte 0 of the MAC address.
-
-config ETH_KSDK_0_MAC1
-	hex "MAC Address Byte 1"
-	default 0
-	range 0 ff
-	help
-	This is the byte 1 of the MAC address.
-
-config ETH_KSDK_0_MAC2
-	hex "MAC Address Byte 2"
-	default 0
-	range 0 ff
-	help
-	This is the byte 2 of the MAC address.
-
 config ETH_KSDK_0_MAC3
 	hex "MAC Address Byte 3"
 	default 0
