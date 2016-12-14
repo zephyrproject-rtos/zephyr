@@ -24,6 +24,7 @@
 struct _kernel _kernel = {0};
 
 /* set the bit corresponding to prio in ready q bitmap */
+#ifdef CONFIG_MULTITHREADING
 static void _set_ready_q_prio_bit(int prio)
 {
 	int bmap_index = _get_ready_q_prio_bmap_index(prio);
@@ -31,8 +32,10 @@ static void _set_ready_q_prio_bit(int prio)
 
 	*bmap |= _get_ready_q_prio_bit(prio);
 }
+#endif
 
 /* clear the bit corresponding to prio in ready q bitmap */
+#ifdef CONFIG_MULTITHREADING
 static void _clear_ready_q_prio_bit(int prio)
 {
 	int bmap_index = _get_ready_q_prio_bmap_index(prio);
@@ -40,6 +43,7 @@ static void _clear_ready_q_prio_bit(int prio)
 
 	*bmap &= ~_get_ready_q_prio_bit(prio);
 }
+#endif
 
 /*
  * Find the next thread to run when there is no thread in the cache and update
@@ -73,6 +77,7 @@ static struct k_thread *_get_ready_q_head(void)
 
 void _add_thread_to_ready_q(struct k_thread *thread)
 {
+#ifdef CONFIG_MULTITHREADING
 	int q_index = _get_ready_q_q_index(thread->base.prio);
 	sys_dlist_t *q = &_ready_q.q[q_index];
 
@@ -82,6 +87,11 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 	struct k_thread **cache = &_ready_q.cache;
 
 	*cache = _is_t1_higher_prio_than_t2(thread, *cache) ? thread : *cache;
+#else
+	sys_dlist_append(&_ready_q.q[0], &thread->base.k_q_node);
+	_ready_q.prio_bmap[0] = 1;
+	_ready_q.cache = thread;
+#endif
 }
 
 /*
@@ -93,6 +103,7 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 
 void _remove_thread_from_ready_q(struct k_thread *thread)
 {
+#ifdef CONFIG_MULTITHREADING
 	int q_index = _get_ready_q_q_index(thread->base.prio);
 	sys_dlist_t *q = &_ready_q.q[q_index];
 
@@ -104,6 +115,11 @@ void _remove_thread_from_ready_q(struct k_thread *thread)
 	struct k_thread **cache = &_ready_q.cache;
 
 	*cache = *cache == thread ? _get_ready_q_head() : *cache;
+#else
+	_ready_q.prio_bmap[0] = 0;
+	_ready_q.cache = NULL;
+	sys_dlist_remove(&thread->base.k_q_node);
+#endif
 }
 
 /* reschedule threads if the scheduler is not locked */
@@ -158,6 +174,7 @@ void k_sched_unlock(void)
  * Callback for sys_dlist_insert_at() to find the correct insert point in a
  * wait queue (priority-based).
  */
+#ifdef CONFIG_MULTITHREADING
 static int _is_wait_q_insert_point(sys_dnode_t *node, void *insert_prio)
 {
 	struct k_thread *waitq_node =
@@ -168,6 +185,7 @@ static int _is_wait_q_insert_point(sys_dnode_t *node, void *insert_prio)
 
 	return _is_prio_higher((int)insert_prio, waitq_node->base.prio);
 }
+#endif
 
 /* convert milliseconds to ticks */
 
@@ -185,6 +203,7 @@ int32_t _ms_to_ticks(int32_t ms)
 /* must be called with interrupts locked */
 void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
 {
+#ifdef CONFIG_MULTITHREADING
 	sys_dlist_t *dlist = (sys_dlist_t *)wait_q;
 
 	sys_dlist_insert_at(dlist, &thread->base.k_q_node,
@@ -198,6 +217,7 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
 
 		_add_thread_timeout(thread, wait_q, ticks);
 	}
+#endif
 }
 
 /* pend the current thread */
@@ -257,6 +277,7 @@ void k_thread_priority_set(k_tid_t tid, int prio)
  */
 void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
+#ifdef CONFIG_MULTITHREADING
 	int q_index = _get_ready_q_q_index(thread->base.prio);
 	sys_dlist_t *q = &_ready_q.q[q_index];
 
@@ -270,6 +291,7 @@ void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 	struct k_thread **cache = &_ready_q.cache;
 
 	*cache = *cache == thread ? _get_ready_q_head() : *cache;
+#endif
 }
 
 void k_yield(void)
@@ -289,6 +311,7 @@ void k_yield(void)
 
 void k_sleep(int32_t duration)
 {
+#ifdef CONFIG_MULTITHREADING
 	/* volatile to guarantee that irq_lock() is executed after ticks is
 	 * populated
 	 */
@@ -313,6 +336,7 @@ void k_sleep(int32_t duration)
 	_add_thread_timeout(_current, NULL, ticks);
 
 	_Swap(key);
+#endif
 }
 
 void k_wakeup(k_tid_t thread)

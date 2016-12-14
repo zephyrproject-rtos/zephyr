@@ -2963,8 +2963,13 @@ extern void k_cpu_atomic_idle(unsigned int key);
  * private APIs that are utilized by one or more public APIs
  */
 
-extern int _is_thread_essential(void);
+#ifdef CONFIG_MULTITHREADING
 extern void _init_static_threads(void);
+#else
+#define _init_static_threads() do { } while ((0))
+#endif
+
+extern int _is_thread_essential(void);
 extern void _timer_expiration_handler(struct _timeout *t);
 
 #ifdef __cplusplus

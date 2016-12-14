@@ -182,12 +182,18 @@ FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 {
 	entry(p1, p2, p3);
 
+#ifdef CONFIG_MULTITHREADING
 	if (_is_thread_essential()) {
 		_NanoFatalErrorHandler(_NANO_ERR_INVALID_TASK_EXIT,
 				       &_default_esf);
 	}
 
 	k_thread_abort(_current);
+#else
+	for (;;) {
+		k_cpu_idle();
+	}
+#endif
 
 	/*
 	 * Compiler can't tell that k_thread_abort() won't return and issues a
@@ -232,6 +238,7 @@ static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 #endif
 }
 
+#ifdef CONFIG_MULTITHREADING
 k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 			void (*entry)(void *, void *, void*),
 			void *p1, void *p2, void *p3,
@@ -247,6 +254,7 @@ k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 
 	return new_thread;
 }
+#endif
 
 int k_thread_cancel(k_tid_t tid)
 {
@@ -375,6 +383,7 @@ void _k_thread_single_abort(struct k_thread *thread)
 	_mark_thread_as_dead(thread);
 }
 
+#ifdef CONFIG_MULTITHREADING
 void _init_static_threads(void)
 {
 	unsigned int  key;
@@ -417,6 +426,7 @@ void _init_static_threads(void)
 	irq_unlock(key);
 	k_sched_unlock();
 }
+#endif
 
 void _init_thread_base(struct _thread_base *thread_base, int priority,
 		       uint32_t initial_state, unsigned int options)

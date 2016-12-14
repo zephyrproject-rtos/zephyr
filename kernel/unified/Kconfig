@@ -28,10 +28,25 @@ config KERNEL_DEBUG
 
 	  Note that debugging the kernel internals can be very verbose.
 
+config MULTITHREADING
+	bool
+	prompt "Multi-threading"
+	default y
+	help
+	If disabled, only the main thread is available, so a main() function
+	must be provided. Interrupts are available. Kernel objects will most
+	probably not behave as expected, especially with regards to pending,
+	since the main thread cannot pend, it being the only thread in the
+	system.
+
+	Many drivers and subsystems will not work with this option; use only
+	when you REALLY know what you are doing.
+
 config NUM_COOP_PRIORITIES
 	int
-	prompt "Number of coop priorities"
+	prompt "Number of coop priorities" if MULTITHREADING
 	default 16
+	default 1 if !MULTITHREADING
 	help
 	Number of cooperative priorities configured in the system. Gives access
 	to priorities:
@@ -58,8 +73,9 @@ config NUM_COOP_PRIORITIES
 
 config NUM_PREEMPT_PRIORITIES
 	int
-	prompt "Number of preemptible priorities"
+	prompt "Number of preemptible priorities" if MULTITHREADING
 	default 15
+	default 0 if !MULTITHREADING
 	help
 	Number of preemptible priorities available in the system. Gives access
 	to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.

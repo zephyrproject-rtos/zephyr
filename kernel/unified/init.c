@@ -277,11 +277,13 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	_mark_thread_as_started(_main_thread);
 	_add_thread_to_ready_q(_main_thread);
 
+#ifdef CONFIG_MULTITHREADING
 	_new_thread(_idle_stack, IDLE_STACK_SIZE,
 		    idle, NULL, NULL, NULL,
 		    K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
 	_mark_thread_as_started(_idle_thread);
 	_add_thread_to_ready_q(_idle_thread);
+#endif
 
 	initialize_timeouts();
 

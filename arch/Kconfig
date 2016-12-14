@@ -71,6 +71,7 @@ config SIMPLE_FATAL_ERROR_HANDLER
 	prompt "Simple system fatal error handler"
 	bool
 	default n
+	default y if !MULTITHREADING
 	help
 	Provides an implementation of _SysFatalErrorHandler() that hard hangs
 	instead of aborting the faulting thread, and does not print anything,

@@ -46,6 +46,7 @@ static inline int _is_idle_thread(void *entry_point)
 	return entry_point == idle;
 }
 
+#ifdef CONFIG_MULTITHREADING
 #define _ASSERT_VALID_PRIO(prio, entry_point) do { \
 	__ASSERT(((prio) == K_IDLE_PRIO && _is_idle_thread(entry_point)) || \
 		 (_is_prio_higher_or_equal((prio), \
@@ -57,6 +58,9 @@ static inline int _is_idle_thread(void *entry_point)
 		 K_LOWEST_APPLICATION_THREAD_PRIO, \
 		 K_HIGHEST_APPLICATION_THREAD_PRIO); \
 	} while ((0))
+#else
+#define _ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
+#endif
 
 /*
  * The _is_prio_higher family: I created this because higher priorities are
