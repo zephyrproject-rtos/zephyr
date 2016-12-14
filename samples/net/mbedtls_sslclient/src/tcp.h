@@ -18,7 +18,7 @@
 #define _TCP_H_
 
 #include <net/net_core.h>
-#include <net/ip_buf.h>
+#include <net/buf.h>
 
 struct tcp_context {
 	struct net_context *net_ctx;

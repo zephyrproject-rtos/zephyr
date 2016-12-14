@@ -21,9 +21,10 @@
 #include "tcp_cfg.h"
 #include "tcp.h"
 
-#include <net/ip_buf.h>
 #include <net/net_core.h>
-#include <net/net_socket.h>
+#include <net/net_context.h>
+#include <net/nbuf.h>
+#include <net/net_if.h>
 
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
@@ -33,13 +34,6 @@
 
 #include "mbedtls/ssl.h"
 
-uip_ipaddr_t uip_hostaddr = { {CLIENT_IPADDR0, CLIENT_IPADDR1,
-			       CLIENT_IPADDR2, CLIENT_IPADDR3}
-};
-
-uip_ipaddr_t uip_netmask = { {NETMASK0, NETMASK1, NETMASK2, NETMASK3}
-};
-
 #define CLIENT_IP_ADDR		{ { { CLIENT_IPADDR0, CLIENT_IPADDR1,	\
 				      CLIENT_IPADDR2, CLIENT_IPADDR3 } } }
 
@@ -48,117 +42,130 @@ uip_ipaddr_t uip_netmask = { {NETMASK0, NETMASK1, NETMASK2, NETMASK3}
 
 #define INET_FAMILY		AF_INET
 
+static struct in_addr client_addr = CLIENT_IP_ADDR;
+static struct in_addr server_addr = SERVER_IP_ADDR;
+
+static void tcp_received(struct net_context *context,
+			 struct net_buf *buf, int status, void *user_data)
+{
+	ARG_UNUSED(context);
+	struct tcp_context *ctx = user_data;
+
+	ctx->rx_nbuf = buf;
+}
+
 int tcp_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct tcp_context *ctx = context;
-	struct net_buf *nbuf;
-	uint8_t *ptr;
-	int rc = 0;
-	nbuf = ip_buf_get_tx(ctx->net_ctx);
+	struct net_context *tcp_ctx;
+	struct net_buf *send_buf;
+	struct sockaddr_in dst_addr;
+	int rc, len;
 
-	if (nbuf == NULL) {
-		return -EINVAL;
+	tcp_ctx = ctx->net_ctx;
+
+	send_buf = net_nbuf_get_tx(tcp_ctx);
+	if (!send_buf) {
+		printk("cannot create buf\n");
+		return -EIO;
 	}
 
-	ptr = net_buf_add(nbuf, size);
-	memcpy(ptr, buf, size);
-	ip_buf_appdatalen(nbuf) = size;
+	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf);
+	if (!rc) {
+		printk("cannot write buf\n");
+		return -EIO;
+	}
 
-	do {
-		rc = net_send(nbuf);
-		k_sleep(TCP_RETRY_TIMEOUT);
-		if (rc >= 0) {
-			return size;
-		}
-		switch (rc) {
-		case -EINPROGRESS:
-			break;
-		case -EAGAIN:
-		case -ECONNRESET:
-			break;
-		default:
-			ip_buf_unref(nbuf);
-			return -EIO;
-		}
-	} while (1);
+	net_ipaddr_copy(&dst_addr.sin_addr, &server_addr);
+	dst_addr.sin_family = AF_INET;
+	dst_addr.sin_port = htons(SERVER_PORT);
 
-	return -EIO;
+	len = net_buf_frags_len(send_buf);
+	k_sleep(TCP_TX_TIMEOUT);
+
+	rc = net_context_sendto(send_buf, (struct sockaddr *)&dst_addr,
+				sizeof(struct sockaddr_in),
+				NULL, K_FOREVER, NULL, NULL);
+
+	if (rc < 0) {
+		printk("Cannot send IPv4 data to peer (%d)\n", rc);
+		net_nbuf_unref(send_buf);
+		return -EIO;
+	} else {
+		return len;
+	}
 }
 
 int tcp_rx(void *context, unsigned char *buf, size_t size)
 {
 	struct tcp_context *ctx = context;
-	struct net_buf *nbuf;
-	int8_t *ptr;
+	uint8_t *ptr;
+	int pos = 0;
+	int len;
+	struct net_buf *rx_buf;
 	int rc, read_bytes;
 
-	if (ctx->rx_nbuf == NULL) {
-		nbuf = net_receive(ctx->net_ctx, TCP_RX_TIMEOUT);
-		rc = -EIO;
-		if (nbuf != NULL) {
-			read_bytes = ip_buf_appdatalen(nbuf);
-			if (read_bytes > size) {
-				memcpy(buf, ip_buf_appdata(nbuf), size);
-				ctx->rx_nbuf = nbuf;
-				ctx->remaining = read_bytes - size;
-				return size;
-			} else {
-				memcpy(buf, ip_buf_appdata(nbuf), read_bytes);
-				rc = read_bytes;
-			}
-			ip_buf_unref(nbuf);
+	rc = net_context_recv(ctx->net_ctx, tcp_received, K_FOREVER, ctx);
+	if (rc != 0) {
+		return 0;
+	}
+	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
+
+	ptr = net_nbuf_appdata(ctx->rx_nbuf);
+	rx_buf = ctx->rx_nbuf->frags;
+	len = rx_buf->len - (ptr - rx_buf->data);
+
+	while (rx_buf) {
+		memcpy(buf + pos, ptr, len);
+		pos += len;
+		rx_buf = rx_buf->frags;
+		if (!rx_buf) {
+			break;
 		}
-	} else {
-		ptr = ip_buf_appdata(ctx->rx_nbuf);
-		read_bytes = ip_buf_appdatalen(ctx->rx_nbuf) - ctx->remaining;
-		ptr += read_bytes;
-		if (ctx->remaining > size) {
-			memcpy(buf, ptr, size);
-			ctx->remaining -= size;
-			rc = size;
-		} else {
-			read_bytes = size < ctx->remaining ? size : ctx->remaining;
-			memcpy(buf, ptr, read_bytes);
-			ip_buf_unref(ctx->rx_nbuf);
-			ctx->remaining = 0;
-			ctx->rx_nbuf = NULL;
-			rc = read_bytes;
-		}
+		ptr = rx_buf->data;
+		len = rx_buf->len;
 	}
 
+	if (read_bytes != pos) {
+		return -EIO;
+	}
+	rc = read_bytes;
+	net_nbuf_unref(ctx->rx_nbuf);
+	ctx->remaining = 0;
+	ctx->rx_nbuf = NULL;
 	return rc;
 }
 
 int tcp_init(struct tcp_context *ctx)
 {
-	static struct in_addr server_addr = SERVER_IP_ADDR;
-	static struct in_addr client_addr = CLIENT_IP_ADDR;
-	static struct net_addr server;
-	static struct net_addr client;
-	char woke = 0;
+	struct net_context *tcp_ctx = { 0 };
+	struct sockaddr_in my_addr4 = { 0 };
+	int rc;
 
-	server.in_addr = server_addr;
-	server.family = AF_INET;
+	net_ipaddr_copy(&my_addr4.sin_addr, &client_addr);
+	my_addr4.sin_family = AF_INET;
+	my_addr4.sin_port = htons(CLIENT_PORT);
 
-	client.in_addr = client_addr;
-	client.family = AF_INET;
+	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_TCP, &tcp_ctx);
+	if (rc < 0) {
+		printk("Cannot get network context for IPv4 TCP (%d)", rc);
+		return -EIO;
+	}
+
+	rc = net_context_bind(tcp_ctx, (struct sockaddr *)&my_addr4,
+			      sizeof(struct sockaddr_in));
+	if (rc < 0) {
+		printk("Cannot bind IPv4 TCP port %d (%d)", CLIENT_PORT, rc);
+		goto error;
+	}
 
 	ctx->rx_nbuf = NULL;
 	ctx->remaining = 0;
-
-	ctx->net_ctx = net_context_get(IPPROTO_TCP,
-				      &server, SERVER_PORT,
-				      &client, CLIENT_PORT);
-	if (ctx->net_ctx == NULL) {
-		return -EINVAL;
-	}
-
-	/* In order to stablish connection, at least one packet has to be sent,
-	 * sending a 0 size packet is no longer possible,  as noted in
-	 * https://jira.zephyrproject.org/browse/ZEP-612 so at least one byte
-	 * has to be sent.
-	 */
-	tcp_tx(ctx, &woke, 1);
+	ctx->net_ctx = tcp_ctx;
 
 	return 0;
+
+error:
+	net_context_put(tcp_ctx);
+	return -EINVAL;
 }

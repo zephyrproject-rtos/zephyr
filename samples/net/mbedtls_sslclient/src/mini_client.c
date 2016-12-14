@@ -327,8 +327,6 @@ uint8_t stack[STACK_SIZE];
 
 void main(void)
 {
-	net_init();
-
 	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t) tls_client,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
