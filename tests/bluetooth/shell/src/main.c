@@ -57,7 +57,9 @@ static bt_addr_le_t id_addr;
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
 static struct bt_conn *pairing_conn;
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 NET_BUF_POOL_DEFINE(data_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
+#endif
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 NET_BUF_POOL_DEFINE(data_bredr_pool, 1, DATA_BREDR_MTU, BT_BUF_USER_DATA_MIN,
@@ -2305,11 +2307,6 @@ static const struct shell_cmd commands[] = {
 void main(void)
 {
 	bt_conn_cb_register(&conn_callbacks);
-
-	net_buf_pool_init(&data_pool);
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	net_buf_pool_init(&data_bredr_pool);
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	printk("Type \"help\" for supported commands.\n");
 	printk("Before any Bluetooth commands you must run \"init\".\n");

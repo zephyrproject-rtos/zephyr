@@ -75,9 +75,6 @@ static bool run_tests(void)
 	struct net_buf *buf, *frag;
 	int ret;
 
-	net_buf_pool_init(&bufs_pool);
-	net_buf_pool_init(&data_pool);
-
 	net_icmpv6_register_handler(&test_handler1);
 	net_icmpv6_register_handler(&test_handler2);
 

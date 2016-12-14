@@ -14,18 +14,18 @@ Network buffers are created by first defining a pool of them:
 
    NET_BUF_POOL_DEFINE(pool_name, buf_count, buf_size, user_data_size, NULL);
 
-Before operating on the pool it also needs to be initialized at runtime:
+The pool is a static variable, so if it's needed to be exported to
+another module a separate pointer is needed.
+
+Once the pool has been defined, buffers can be allocated from it with:
 
 .. code-block:: c
 
-   net_buf_pool_init(&pool_name);
+   buf = net_buf_alloc(&pool_name, timeout);
 
-Once the pool has been initialized the available buffers are managed
-with the help of a nano_fifo object and can be acquired with:
-
-.. code-block:: c
-
-   buf = net_buf_alloc(&pool_name);
+There is no explicit initialization function for the pool or its
+buffers, rather this is done implicitly as :c:func:`net_buf_alloc` gets
+called.
 
 If there is a need to reserve space in the buffer for protocol headers
 to be prependend later, it's possible to reserve this headroom with:

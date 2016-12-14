@@ -277,8 +277,6 @@ void bt_sdp_init(void)
 	};
 	int res;
 
-	net_buf_pool_init(&sdp_pool);
-
 	res = bt_l2cap_br_server_register(&server);
 	if (res) {
 		BT_ERR("L2CAP server registration failed with error %d", res);

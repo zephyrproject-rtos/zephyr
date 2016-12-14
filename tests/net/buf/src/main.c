@@ -217,9 +217,6 @@ static void net_buf_test_4(void)
 	struct net_buf *buf, *frag;
 	int i, removed;
 
-	net_buf_pool_init(&no_data_pool);
-	net_buf_pool_init(&frags_pool);
-
 	/* Create a buf that does not have any data to store, it just
 	 * contains link to fragments.
 	 */
@@ -331,8 +328,6 @@ static void net_buf_test_big_buf(void)
 	struct udp_hdr *udp;
 	int i, len;
 
-	net_buf_pool_init(&big_frags_pool);
-
 	frag_destroy_called = 0;
 
 	buf = net_buf_alloc(&no_data_pool, K_FOREVER);
@@ -419,8 +414,6 @@ static void net_buf_test_multi_frags(void)
 
 void test_main(void)
 {
-	net_buf_pool_init(&bufs_pool);
-
 	ztest_test_suite(net_buf_test,
 			 ztest_unit_test(net_buf_test_1),
 			 ztest_unit_test(net_buf_test_2),

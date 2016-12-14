@@ -1658,7 +1658,6 @@ void bt_l2cap_br_init(void)
 			.accept = l2cap_br_accept,
 			};
 
-	net_buf_pool_init(&br_sig_pool);
 	bt_l2cap_br_fixed_chan_register(&chan_br);
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 	bt_rfcomm_init();

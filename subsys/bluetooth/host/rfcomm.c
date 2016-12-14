@@ -1317,7 +1317,5 @@ void bt_rfcomm_init(void)
 		.sec_level = BT_SECURITY_LOW,
 	};
 
-	net_buf_pool_init(&rfcomm_session_pool);
-	net_buf_pool_init(&dummy_pool);
 	bt_l2cap_br_server_register(&server);
 }

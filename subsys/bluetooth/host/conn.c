@@ -1739,9 +1739,6 @@ int bt_conn_init(void)
 {
 	int err;
 
-	net_buf_pool_init(&frag_pool);
-	net_buf_pool_init(&dummy_pool);
-
 	bt_att_init();
 
 	err = bt_smp_init();

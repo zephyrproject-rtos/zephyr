@@ -701,9 +701,6 @@ static void h5_init(void)
 	k_thread_spawn(tx_stack, sizeof(tx_stack), (k_thread_entry_t)tx_thread,
 		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	/* RX thread */
-	net_buf_pool_init(&h5_pool);
-
 	k_fifo_init(&h5.rx_queue);
 	k_thread_spawn(rx_stack, sizeof(rx_stack), (k_thread_entry_t)rx_thread,
 		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);

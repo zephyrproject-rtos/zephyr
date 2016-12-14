@@ -46,6 +46,29 @@
 #define NET_BUF_ASSERT(cond)
 #endif /* CONFIG_NET_BUF_DEBUG */
 
+/* Helpers to access the storage array, since we don't have access to its
+ * type at this point anymore.
+ */
+#define BUF_SIZE(pool) (sizeof(struct net_buf) + \
+			ROUND_UP(pool->buf_size, 4) + \
+			ROUND_UP(pool->user_data_size, 4))
+#define UNINIT_BUF(pool, n) (struct net_buf *)(((uint8_t *)(pool->__bufs)) + \
+					       ((n) * BUF_SIZE(pool)))
+
+static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
+					      uint16_t uninit_count)
+{
+	struct net_buf *buf;
+
+	buf = UNINIT_BUF(pool, pool->buf_count - uninit_count);
+
+	buf->pool = pool;
+	buf->size = pool->buf_size;
+	buf->user_data_size = pool->user_data_size;
+
+	return buf;
+}
+
 #if defined(CONFIG_NET_BUF_DEBUG)
 struct net_buf *net_buf_alloc_debug(struct net_buf_pool *pool, int32_t timeout,
 				    const char *func, int line)
@@ -54,14 +77,47 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 #endif
 {
 	struct net_buf *buf;
+	unsigned int key;
 
 	NET_BUF_ASSERT(pool);
 
 	NET_BUF_DBG("pool %p timeout %d", pool, timeout);
 
+	/* We need to lock interrupts temporarily to prevent race conditions
+	 * when accessing pool->uninit_count.
+	 */
+	key = irq_lock();
+
+	/* If there are uninitialized buffers we're guaranteed to succeed
+	 * with the allocation one way or another.
+	 */
+	if (pool->uninit_count) {
+		uint16_t uninit_count;
+
+		/* If this is not the first access to the pool, we can
+		 * be opportunistic and try to fetch a previously used
+		 * buffer from the FIFO with K_NO_WAIT.
+		 */
+		if (pool->uninit_count < pool->buf_count) {
+			buf = k_fifo_get(&pool->free, K_NO_WAIT);
+			if (buf) {
+				irq_unlock(key);
+				goto success;
+			}
+		}
+
+		uninit_count = pool->uninit_count--;
+		irq_unlock(key);
+
+		buf = pool_get_uninit(pool, uninit_count);
+		goto success;
+	}
+
+	irq_unlock(key);
+
 #if defined(CONFIG_NET_BUF_DEBUG)
 	if (timeout == K_FOREVER) {
-		buf = net_buf_alloc(pool, K_NO_WAIT);
+		buf = k_fifo_get(&pool->free, K_NO_WAIT);
 		if (!buf) {
 			NET_BUF_WARN("%s():%d: Pool %p low on buffers.",
 				     func, line, pool);
@@ -78,6 +134,7 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 		return NULL;
 	}
 
+success:
 	NET_BUF_DBG("allocated buf %p");
 
 	buf->ref   = 1;
@@ -121,28 +178,6 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout)
 	frag->frags = NULL;
 
 	return buf;
-}
-
-/* Helper to iterate the storage array, since we don't have access to its type
- * at this point anymore.
- */
-#define NEXT_BUF(buf) ((struct net_buf *)(((uint8_t *)buf) + sizeof(*buf) + \
-					  ROUND_UP(buf->size, 4) + \
-					  ROUND_UP(buf->user_data_size, 4)))
-
-void net_buf_pool_init(struct net_buf_pool *pool)
-{
-	struct net_buf *buf;
-	uint16_t i;
-
-	k_fifo_init(&pool->free);
-
-	buf = pool->__bufs;
-	for (i = 0; i < pool->buf_count; i++) {
-		buf->pool = pool;
-		k_fifo_put(&pool->free, buf);
-		buf = NEXT_BUF(buf);
-	}
 }
 
 void net_buf_reserve(struct net_buf *buf, size_t reserve)

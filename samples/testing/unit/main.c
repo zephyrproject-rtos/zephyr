@@ -16,6 +16,15 @@
 
 #include <ztest.h>
 
+unsigned int irq_lock(void)
+{
+	return 0;
+}
+
+void irq_unlock(unsigned int key)
+{
+}
+
 #include <net/buf.c>
 
 void k_fifo_init(struct k_fifo *fifo) {}
@@ -28,35 +37,36 @@ int k_is_in_isr(void)
 
 void *k_fifo_get(struct k_fifo *fifo, int32_t timeout)
 {
-	return ztest_get_return_value_ptr();
+	return NULL;
 }
 
 void k_fifo_put(struct k_fifo *fifo, void *data)
 {
-	ztest_check_expected_value(data);
 }
 
-#define BUF_COUNT 1
-#define BUF_SIZE 74
+void k_lifo_init(struct k_lifo *lifo) {}
 
-NET_BUF_POOL_DEFINE(bufs_pool, BUF_COUNT, BUF_SIZE, sizeof(int), NULL);
-
-static void init_pool(void)
+void *k_lifo_get(struct k_lifo *lifo, int32_t timeout)
 {
-	ztest_expect_value(k_fifo_put, data, bufs_pool.__bufs);
-	net_buf_pool_init(&bufs_pool);
+	return NULL;
 }
+
+void k_lifo_put(struct k_lifo *lifo, void *data)
+{
+}
+
+#define TEST_BUF_COUNT 1
+#define TEST_BUF_SIZE 74
+
+NET_BUF_POOL_DEFINE(bufs_pool, TEST_BUF_COUNT, TEST_BUF_SIZE,
+		    sizeof(int), NULL);
 
 static void test_get_single_buffer(void)
 {
 	struct net_buf *buf;
 
-	init_pool();
-
-	ztest_returns_value(k_fifo_get, bufs_pool.__bufs);
 	buf = net_buf_alloc(&bufs_pool, K_NO_WAIT);
 
-	assert_equal_ptr(buf, bufs_pool.__bufs, "Returned buffer not from pool");
 	assert_equal(buf->ref, 1, "Invalid refcount");
 	assert_equal(buf->len, 0, "Invalid length");
 	assert_equal(buf->flags, 0, "Invalid flags");

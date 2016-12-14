@@ -1410,11 +1410,6 @@ void bt_l2cap_init(void)
 		.accept	= l2cap_accept,
 	};
 
-	net_buf_pool_init(&le_sig_pool);
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-	net_buf_pool_init(&le_data_pool);
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
-
 	bt_l2cap_le_fixed_chan_register(&chan);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)

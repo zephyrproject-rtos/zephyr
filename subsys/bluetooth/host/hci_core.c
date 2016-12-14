@@ -3662,16 +3662,6 @@ int bt_enable(bt_ready_cb_t cb)
 		return -EALREADY;
 	}
 
-	/* Initialize the buffer pools */
-	net_buf_pool_init(&hci_cmd_pool);
-#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-	net_buf_pool_init(&hci_evt_pool);
-	net_buf_pool_init(&hci_evt_prio_pool);
-#if defined(CONFIG_BLUETOOTH_CONN)
-	net_buf_pool_init(&acl_in_pool);
-#endif /* CONFIG_BLUETOOTH_CONN */
-#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
-
 	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
 	 * exception is if the controller requests to wait for an
 	 * initial Command Complete for NOP.

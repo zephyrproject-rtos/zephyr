@@ -1058,10 +1058,6 @@ int main(int argc, char *argv[])
 
 	TC_START("Test Zoap CoAP PDU parsing and building");
 
-	net_buf_pool_init(&zoap_nbuf_pool);
-	net_buf_pool_init(&zoap_data_pool);
-	net_buf_pool_init(&zoap_limited_data_pool);
-
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		if (tests[count].func() == TC_PASS) {
 			pass++;

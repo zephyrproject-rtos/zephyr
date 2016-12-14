@@ -691,9 +691,6 @@ void main(void)
 {
 	SYS_LOG_DBG("Start");
 
-	/* Initialize the buffer pools */
-	net_buf_pool_init(&tx_pool);
-	net_buf_pool_init(&acl_tx_pool);
 	k_fifo_init(&rx_queue);
 
 	bt_enable_raw(&rx_queue);

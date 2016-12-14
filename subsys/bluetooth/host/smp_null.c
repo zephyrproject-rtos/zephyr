@@ -109,8 +109,6 @@ int bt_smp_init(void)
 		.accept	= bt_smp_accept,
 	};
 
-	net_buf_pool_init(&smp_pool);
-
 	bt_l2cap_le_fixed_chan_register(&chan);
 
 	return 0;

@@ -1584,7 +1584,6 @@ void bt_gatt_init(void)
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	k_fifo_init(&queue);
-	net_buf_pool_init(&prep_pool);
 #endif
 }
 

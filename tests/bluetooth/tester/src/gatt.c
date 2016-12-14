@@ -1786,8 +1786,6 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 
 uint8_t tester_init_gatt(void)
 {
-	net_buf_pool_init(&server_pool);
-
 	server_buf = net_buf_alloc(&server_pool, K_NO_WAIT);
 	if (!server_buf) {
 		return BTP_STATUS_FAILED;

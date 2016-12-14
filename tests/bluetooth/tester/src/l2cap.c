@@ -358,7 +358,5 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 
 uint8_t tester_init_l2cap(void)
 {
-	net_buf_pool_init(&data_pool);
-
 	return BTP_STATUS_SUCCESS;
 }

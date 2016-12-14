@@ -63,9 +63,6 @@ NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, DNS_MAX_NAME_LEN,
 
 int dns_init(void)
 {
-	net_buf_pool_init(&dns_msg_pool);
-	net_buf_pool_init(&dns_qname_pool);
-
 	return 0;
 }
 

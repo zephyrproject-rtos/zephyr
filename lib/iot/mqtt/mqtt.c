@@ -38,8 +38,6 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 	/* So far, only clean session = 1 is supported */
 	ctx->clean_session = 1;
 
-	net_buf_pool_init(&mqtt_msg_pool);
-
 	return 0;
 }
 

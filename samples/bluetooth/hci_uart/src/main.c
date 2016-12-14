@@ -358,9 +358,6 @@ void main(void)
 
 	SYS_LOG_DBG("Start");
 
-	/* Initialize the buffer pools */
-	net_buf_pool_init(&cmd_tx_pool);
-	net_buf_pool_init(&acl_tx_pool);
 	/* Initialize the FIFOs */
 	k_fifo_init(&tx_queue);
 	k_fifo_init(&rx_queue);

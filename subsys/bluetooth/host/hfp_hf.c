@@ -218,8 +218,6 @@ static void hfp_hf_init(void)
 		.accept = bt_hfp_hf_accept,
 	};
 
-	net_buf_pool_init(&hf_pool);
-
 	bt_rfcomm_server_register(&chan);
 }
 

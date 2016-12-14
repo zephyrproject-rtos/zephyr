@@ -1390,8 +1390,4 @@ void net_nbuf_init(void)
 		NBUF_RX_COUNT, sizeof(rx_buffers),
 		NBUF_TX_COUNT, sizeof(tx_buffers),
 		NBUF_DATA_COUNT, sizeof(data_buffers));
-
-	net_buf_pool_init(&rx_buffers);
-	net_buf_pool_init(&tx_buffers);
-	net_buf_pool_init(&data_buffers);
 }

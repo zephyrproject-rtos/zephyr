@@ -250,9 +250,6 @@ static int _bt_nble_init(struct device *unused)
 		return -EINVAL;
 	}
 
-	net_buf_pool_init(&rx_pool);
-	net_buf_pool_init(&tx_pool);
-
 	return 0;
 }
 

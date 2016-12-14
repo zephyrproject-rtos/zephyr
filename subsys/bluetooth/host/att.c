@@ -1970,12 +1970,6 @@ void bt_att_init(void)
 		.accept		= bt_att_accept,
 	};
 
-	net_buf_pool_init(&req_pool);
-	net_buf_pool_init(&rsp_pool);
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	net_buf_pool_init(&prep_pool);
-#endif
-
 	bt_l2cap_le_fixed_chan_register(&chan);
 }
 

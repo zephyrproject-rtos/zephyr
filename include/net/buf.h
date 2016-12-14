@@ -76,7 +76,7 @@ struct net_buf_simple {
 	uint16_t len;
 
 	/** Amount of data that this buffer can store. */
-	const uint16_t size;
+	uint16_t size;
 
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
@@ -400,7 +400,7 @@ struct net_buf {
 	sys_snode_t sent_list;
 
 	/** Size of the user data associated with this buffer. */
-	const uint16_t user_data_size;
+	uint16_t user_data_size;
 
 	/** Reference count. */
 	uint8_t ref;
@@ -424,7 +424,7 @@ struct net_buf {
 			uint16_t len;
 
 			/** Amount of data that this buffer can store. */
-			const uint16_t size;
+			uint16_t size;
 		};
 
 		struct net_buf_simple b;
@@ -443,6 +443,15 @@ struct net_buf_pool {
 	/** Number of buffers in pool */
 	const uint16_t buf_count;
 
+	/** Number of uninitialized buffers */
+	uint16_t uninit_count;
+
+	/** Data size of each buffer in the pool */
+	const uint16_t buf_size;
+
+	/** Size of the user data associated with each buffer. */
+	const uint16_t user_data_size;
+
 	/** Optional destroy callback when buffer is freed. */
 	void (*const destroy)(struct net_buf *buf);
 
@@ -450,10 +459,15 @@ struct net_buf_pool {
 	struct net_buf * const __bufs;
 };
 
-#define NET_BUF_POOL_INITIALIZER(_bufs, _count, _destroy)                    \
+#define NET_BUF_POOL_INITIALIZER(_pool, _bufs, _count, _size, _ud_size,      \
+				 _destroy)                                   \
 	{                                                                    \
+		.free = K_FIFO_INITIALIZER(_pool.free),                      \
 		.__bufs = (struct net_buf *)_bufs,                           \
 		.buf_count = _count,                                         \
+		.uninit_count = _count,                                      \
+		.buf_size = _size,                                           \
+		.user_data_size = _ud_size,                                  \
 		.destroy = _destroy,                                         \
 	}
 
@@ -461,12 +475,11 @@ struct net_buf_pool {
  *  @brief Define a new pool for buffers
  *
  *  Defines a net_buf_pool struct and the necessary memory storage (array of
- *  structs) for the needed amount of buffers. After this the
- *  net_buf_pool_init(&pool_name) API still needs to be used (at runtime),
- *  after which the buffers can be accessed from the pool. The pool is defined
- *  as a static variable, so if it needs to be exported outside the current
- *  module this needs to happen with the help of a separate pointer rather
- *  than an extern declaration.
+ *  structs) for the needed amount of buffers. After this,the buffers can be
+ *  accessed from the pool through net_buf_alloc. The pool is defined as a
+ *  static variable, so if it needs to be exported outside the current module
+ *  this needs to happen with the help of a separate pointer rather than an
+ *  extern declaration.
  *
  *  If provided with a custom destroy callback this callback is
  *  responsible for eventually calling net_buf_destroy() to complete the
@@ -483,26 +496,10 @@ struct net_buf_pool {
 		struct net_buf buf;                                          \
 		uint8_t data[_size] __net_buf_align;	                     \
 		uint8_t ud[ROUND_UP(_ud_size, 4)] __net_buf_align;           \
-	} _net_buf_pool_##_name[_count] = {                                  \
-		[0 ... (_count - 1)] = {                                     \
-			.buf = {                                             \
-				 .size = _size,                              \
-				 .user_data_size = _ud_size,                 \
-			},                                                   \
-		}                                                            \
-	};                                                                   \
+	} _net_buf_pool_##_name[_count] __noinit;                            \
 	static struct net_buf_pool _name =                                   \
-		NET_BUF_POOL_INITIALIZER(_net_buf_pool_##_name, _count,      \
-					 _destroy)
-
-/**
- *  @brief Initialize a buffer pool.
- *
- *  Initializes a buffer pool defined using NET_BUF_POOL_DEFINE().
- *
- *  @param pool  Buffer pool to initialize.
- */
-void net_buf_pool_init(struct net_buf_pool *pool);
+		NET_BUF_POOL_INITIALIZER(_name, _net_buf_pool_##_name,       \
+					 _count, _size, _ud_size, _destroy)
 
 /**
  *  @brief Allocate a new buffer from a pool.

@@ -116,9 +116,6 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 
 	BT_DBG("");
 
-	net_buf_pool_init(&hci_evt_pool);
-	net_buf_pool_init(&acl_in_pool);
-
 	raw_rx = rx_queue;
 
 	if (!bt_dev.drv) {

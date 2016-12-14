@@ -4420,8 +4420,6 @@ int bt_smp_init(void)
 	}
 #endif /* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
-	net_buf_pool_init(&smp_pool);
-
 	bt_l2cap_le_fixed_chan_register(&chan);
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	/* Register BR/EDR channel only if BR/EDR SC is supported */
