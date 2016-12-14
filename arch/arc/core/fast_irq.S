@@ -127,6 +127,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 #endif
 #endif
 
+#ifdef CONFIG_PREEMPT_ENABLED
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
@@ -162,6 +163,8 @@ _firq_check_for_swap:
 
 	/* fall to no rescheduling */
 
+#endif /* CONFIG_PREEMPT_ENABLED */
+
 .balign 4
 _firq_no_reschedule:
 	/*
@@ -194,6 +197,8 @@ _firq_no_reschedule:
 	add sp,sp,8 /* don't need ilink & status32_po from stack */
 #endif
 	rtie
+
+#ifdef CONFIG_PREEMPT_ENABLED
 
 .balign 4
 _firq_reschedule:
@@ -294,6 +299,7 @@ _firq_return_from_firq:
 	/* LP registers are already restored, just switch back to bank 0 */
 	rtie
 
+#endif /* CONFIG_PREEMPT_ENABLED */
 
 /**
  *

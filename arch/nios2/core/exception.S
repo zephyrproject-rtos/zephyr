@@ -125,6 +125,7 @@ on_irq_stack:
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
 
+#ifdef CONFIG_PREEMPT_ENABLED
 	ldw   r11, _kernel_offset_to_current(r10)
 	/* Determine whether the exception of the ISR requires context
 	 * switch
@@ -164,6 +165,9 @@ on_irq_stack:
 
 	call _Swap
 	jmpi _exception_exit
+#else
+	jmpi no_reschedule
+#endif /* CONFIG_PREEMPT_ENABLED */
 
 not_interrupt:
 

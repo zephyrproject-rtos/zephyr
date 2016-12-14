@@ -284,6 +284,7 @@ alreadyOnIntStack:
 	jne	nestedInterrupt                 /* 'iret' if nested case */
 
 
+#ifdef CONFIG_PREEMPT_ENABLED
 	movl	_kernel_offset_to_current(%ecx), %edx
 
 	/*
@@ -376,6 +377,7 @@ alreadyOnIntStack:
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	iret
 
+#endif /* CONFIG_PREEMPT_ENABLED */
 
 noReschedule:
 

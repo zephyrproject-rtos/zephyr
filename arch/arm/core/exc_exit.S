@@ -87,6 +87,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
+#ifdef CONFIG_PREEMPT_ENABLED
     ldr r0, =_kernel
 
     ldr r1, [r0, #_kernel_offset_to_current]
@@ -115,5 +116,6 @@ _ExcExitWithGdbStub:
     _GDB_STUB_EXC_EXIT
 
 _EXIT_EXC:
+#endif /* CONFIG_PREEMPT_ENABLED */
 
     bx lr

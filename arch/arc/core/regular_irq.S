@@ -96,6 +96,8 @@ SECTION_FUNC(TEXT, _rirq_enter)
 
 SECTION_FUNC(TEXT, _rirq_exit)
 
+#ifdef CONFIG_PREEMPT_ENABLED
+
 	mov r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
@@ -245,6 +247,8 @@ _rirq_return_from_rirq:
 	/* rtie will pop the rest from the stack */
 
 	/* fall through to rtie instruction */
+
+#endif /* CONFIG_PREEMPT_ENABLED */
 
 .balign 4
 _rirq_no_reschedule:

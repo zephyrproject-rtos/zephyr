@@ -125,19 +125,35 @@ static inline int _is_higher_prio_than_current(struct k_thread *thread)
 /* is thread currenlty cooperative ? */
 static inline int _is_coop(struct k_thread *thread)
 {
+#if defined(CONFIG_PREEMPT_ENABLED) && defined(CONFIG_COOP_ENABLED)
 	return thread->base.prio < 0;
+#elif defined(CONFIG_COOP_ENABLED)
+	return 1;
+#elif defined(CONFIG_PREEMPT_ENABLED)
+	return 0;
+#else
+#error "Impossible configuration"
+#endif
 }
 
 /* is thread currently preemptible ? */
 static inline int _is_preempt(struct k_thread *thread)
 {
+#ifdef CONFIG_PREEMPT_ENABLED
 	return !_is_coop(thread) && !atomic_get(&thread->base.sched_locked);
+#else
+	return 0;
+#endif
 }
 
 /* is current thread preemptible and we are not running in ISR context */
 static inline int _is_current_execution_context_preemptible(void)
 {
+#ifdef CONFIG_PREEMPT_ENABLED
 	return !_is_in_isr() && _is_preempt(_current);
+#else
+	return 0;
+#endif
 }
 
 /* find out if priority is under priority inheritance ceiling */
@@ -220,12 +236,14 @@ static inline int _must_switch_threads(void)
  */
 static inline void _sched_lock(void)
 {
+#ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!_is_in_isr(), "");
 
 	atomic_inc(&_current->base.sched_locked);
 
 	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
+#endif
 }
 
 /**
@@ -236,9 +254,11 @@ static inline void _sched_lock(void)
  */
 static inline void _sched_unlock_no_reschedule(void)
 {
+#ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!_is_in_isr(), "");
 
 	atomic_dec(&_current->base.sched_locked);
+#endif
 }
 
 static inline void _set_thread_states(struct k_thread *thread, uint32_t states)

@@ -111,6 +111,7 @@ void _remove_thread_from_ready_q(struct k_thread *thread)
 /* must be called with interrupts locked */
 void _reschedule_threads(int key)
 {
+#ifdef CONFIG_PREEMPT_ENABLED
 	K_DEBUG("rescheduling threads\n");
 
 	if (_must_switch_threads()) {
@@ -119,20 +120,26 @@ void _reschedule_threads(int key)
 	} else {
 		irq_unlock(key);
 	}
+#else
+	irq_unlock(key);
+#endif
 }
 
 void k_sched_lock(void)
 {
+#ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!_is_in_isr(), "");
 
 	atomic_inc(&_current->base.sched_locked);
 
 	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
+#endif
 }
 
 void k_sched_unlock(void)
 {
+#ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(_current->base.sched_locked > 0, "");
 	__ASSERT(!_is_in_isr(), "");
 
@@ -144,6 +151,7 @@ void k_sched_unlock(void)
 		_current, _current->base.sched_locked);
 
 	_reschedule_threads(key);
+#endif
 }
 
 /*
@@ -206,6 +214,7 @@ void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout)
  */
 int __must_switch_threads(void)
 {
+#ifdef CONFIG_PREEMPT_ENABLED
 	K_DEBUG("current prio: %d, highest prio: %d\n",
 		_current->base.prio, _get_highest_ready_prio());
 
@@ -213,6 +222,9 @@ int __must_switch_threads(void)
 	_dump_ready_q();
 
 	return _is_prio_higher(_get_highest_ready_prio(), _current->base.prio);
+#else
+	return 0;
+#endif
 }
 
 int  k_thread_priority_get(k_tid_t thread)
