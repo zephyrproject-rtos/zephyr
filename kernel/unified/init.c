@@ -238,12 +238,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	_current = dummy_thread;
 
-	/*
-	 * Do not insert dummy execution context in the list of fibers, so
-	 * that it does not get scheduled back in once context-switched out.
-	 */
 	dummy_thread->base.flags = K_ESSENTIAL;
-	dummy_thread->base.prio = K_PRIO_COOP(0);
 #endif
 
 	/* _kernel.ready_q is all zeroes */
