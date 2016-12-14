@@ -469,8 +469,8 @@ struct net_buf_pool {
  *  than an extern declaration.
  *
  *  If provided with a custom destroy callback this callback is
- *  responsible for eventually returning the buffer back to the free
- *  buffers FIFO through k_fifo_put(buf->free, buf).
+ *  responsible for eventually calling net_buf_destroy() to complete the
+ *  process of returning the buffer to the pool.
  *
  *  @param _name     Name of the pool variable.
  *  @param _count    Number of buffers in the pool.
@@ -547,6 +547,20 @@ struct net_buf *net_buf_get_debug(struct k_fifo *fifo, int32_t timeout,
 #else
 struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout);
 #endif
+
+/**
+ *  @brief Destroy buffer from custom destroy callback
+ *
+ *  This helper is only intended to be used from custom destroy callbacks.
+ *  If no custom destroy callback is given to NET_BUF_POOL_DEFINE() then
+ *  there is no need to use this API.
+ *
+ *  @param buf Buffer to destroy.
+ */
+static inline void net_buf_destroy(struct net_buf *buf)
+{
+	k_fifo_put(&buf->pool->free, buf);
+}
 
 /**
  *  @brief Initialize buffer with the given headroom.

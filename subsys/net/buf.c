@@ -198,7 +198,7 @@ void net_buf_unref(struct net_buf *buf)
 		if (buf->pool->destroy) {
 			buf->pool->destroy(buf);
 		} else {
-			k_fifo_put(&buf->pool->free, buf);
+			net_buf_destroy(buf);
 		}
 
 		buf = frags;

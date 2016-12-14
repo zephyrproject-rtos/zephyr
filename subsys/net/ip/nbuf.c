@@ -225,21 +225,21 @@ static inline void free_rx_bufs_func(struct net_buf *buf)
 {
 	inc_free_rx_bufs_func(buf);
 
-	k_fifo_put(&buf->pool->free, buf);
+	net_buf_destroy(buf);
 }
 
 static inline void free_tx_bufs_func(struct net_buf *buf)
 {
 	inc_free_tx_bufs_func(buf);
 
-	k_fifo_put(&buf->pool->free, buf);
+	net_buf_destroy(buf);
 }
 
 static inline void free_data_bufs_func(struct net_buf *buf)
 {
 	inc_free_data_bufs_func(buf);
 
-	k_fifo_put(&buf->pool->free, buf);
+	net_buf_destroy(buf);
 }
 
 /* The RX and TX pools do not store any data. Only bearer / protocol

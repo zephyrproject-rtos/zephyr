@@ -135,7 +135,7 @@ static void report_completed_packet(struct net_buf *buf)
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 
-	k_fifo_put(&buf->pool->free, buf);
+	net_buf_destroy(buf);
 
 	/* Do nothing if controller to host flow control is not supported */
 	if (!(bt_dev.supported_commands[10] & 0x20)) {

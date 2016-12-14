@@ -85,7 +85,7 @@ static void buf_destroy(struct net_buf *buf)
 
 	destroy_called++;
 	assert_equal(pool, &bufs_pool, "Invalid free pointer in buffer");
-	k_fifo_put(&pool->free, buf);
+	net_buf_destroy(buf);
 }
 
 static void frag_destroy(struct net_buf *buf)
@@ -95,7 +95,7 @@ static void frag_destroy(struct net_buf *buf)
 	frag_destroy_called++;
 	assert_equal(pool, &frags_pool,
 		     "Invalid free frag pointer in buffer");
-	k_fifo_put(&pool->free, buf);
+	net_buf_destroy(buf);
 }
 
 static void frag_destroy_big(struct net_buf *buf)
@@ -105,7 +105,7 @@ static void frag_destroy_big(struct net_buf *buf)
 	frag_destroy_called++;
 	assert_equal(pool, &big_frags_pool,
 		     "Invalid free big frag pointer in buffer");
-	k_fifo_put(&pool->free, buf);
+	net_buf_destroy(buf);
 }
 
 static const char example_data[] = "0123456789"
