@@ -53,6 +53,7 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 	ARG_UNUSED(reason);
 	ARG_UNUSED(pEsf);
 
+#if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
 	if (k_is_in_isr() || _is_thread_essential()) {
 		printk("Fatal fault in %s! Spinning...\n",
 		       k_is_in_isr() ? "ISR" : "essential thread");
@@ -61,6 +62,11 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 	}
 	printk("Fatal fault in thread %p! Aborting.\n", _current);
 	k_thread_abort(_current);
+#else
+	for (;;) {
+		k_cpu_idle();
+	}
+#endif
 
 	CODE_UNREACHABLE;
 }
