@@ -37,6 +37,6 @@ void sys_reboot(int type)
 	/* should never get here */
 	printk("Failed to reboot: spinning endlessly...\n");
 	for (;;) {
-		nano_cpu_idle();
+		k_cpu_idle();
 	}
 }

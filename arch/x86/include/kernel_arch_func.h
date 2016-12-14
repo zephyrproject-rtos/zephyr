@@ -92,7 +92,7 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 	*(unsigned int *)(thread->callee_saved.esp) = value;
 }
 
-extern void nano_cpu_atomic_idle(unsigned int imask);
+extern void k_cpu_atomic_idle(unsigned int imask);
 
 extern void _MsrWrite(unsigned int msr, uint64_t msrData);
 extern uint64_t _MsrRead(unsigned int msr);

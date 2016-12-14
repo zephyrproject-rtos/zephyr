@@ -45,7 +45,7 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 
-/* needed by nano_cpu_atomic_idle() written in asm */
+/* needed by k_cpu_atomic_idle() written in asm */
 #define _SCB_SCR 0xE000ED10
 
 #define _SCB_SCR_SEVONPEND (1 << 4)

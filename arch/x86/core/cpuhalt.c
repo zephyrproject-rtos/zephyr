@@ -18,20 +18,20 @@
  *
  * DESCRIPTION
  * This module provides an implementation of the architecture-specific
- * nano_cpu_idle() primitive required by the nanokernel idle loop component.
+ * k_cpu_idle() primitive required by the nanokernel idle loop component.
  * It can be called within an implementation of _sys_power_save_idle(),
  * which is provided for the microkernel by the platform.
  *
- * The module also provides an implementation of nano_cpu_atomic_idle(), which
+ * The module also provides an implementation of k_cpu_atomic_idle(), which
  * atomically re-enables interrupts and enters low power mode.
  *
  * INTERNAL
- * These implementations of nano_cpu_idle() and nano_cpu_atomic_idle() could be
+ * These implementations of k_cpu_idle() and k_cpu_atomic_idle() could be
  * used when operating as a Hypervisor guest.  More specifically, the Hypervisor
  * supports the execution of the 'hlt' instruction from a guest (results in a
  * VM exit), and more importantly, the Hypervisor will respect the
  * single instruction delay slot after the 'sti' instruction as required
- * by nano_cpu_atomic_idle().
+ * by k_cpu_atomic_idle().
  */
 
 #include <zephyr.h>
@@ -53,7 +53,7 @@ extern uint64_t __idle_tsc;  /* timestamp when CPU went idle */
  *
  * @return N/A
  */
-void nano_cpu_idle(void)
+void k_cpu_idle(void)
 {
 	_int_latency_stop();
 	_sys_k_event_logger_enter_sleep();
@@ -75,7 +75,7 @@ void nano_cpu_idle(void)
  * nano_task_stack_pop(), and nano_task_fifo_get().
  *
  * INTERNAL
- * The requirements for nano_cpu_atomic_idle() are as follows:
+ * The requirements for k_cpu_atomic_idle() are as follows:
  * 1) The enablement of interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
@@ -88,7 +88,7 @@ void nano_cpu_idle(void)
  * @return N/A
  */
 
-void nano_cpu_atomic_idle(unsigned int imask)
+void k_cpu_atomic_idle(unsigned int imask)
 {
 	_int_latency_stop();
 	_sys_k_event_logger_enter_sleep();
@@ -104,7 +104,7 @@ void nano_cpu_atomic_idle(unsigned int imask)
 	     *    external, maskable interrupts after the next instruction is
 	     *    executed."
 	     *
-	     * Thus the IA-32 implementation of nano_cpu_atomic_idle() will
+	     * Thus the IA-32 implementation of k_cpu_atomic_idle() will
 	     * atomically re-enable interrupts and enter a low-power mode.
 	     */
 	    "hlt\n\t");

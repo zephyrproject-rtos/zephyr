@@ -96,7 +96,7 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 	thread->arch.swap_return_value = value;
 }
 
-extern void nano_cpu_atomic_idle(unsigned int);
+extern void k_cpu_atomic_idle(unsigned int key);
 
 #define _is_in_isr() _IsInIsr()
 

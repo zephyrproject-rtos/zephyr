@@ -372,7 +372,7 @@ consumption.
 
 The microkernel has built-in support for going into tickless idle. However, in
 nanokernel-only systems, part of the support has to be built in the
-architecture (:c:func:`nano_cpu_idle` and :c:func:`nano_cpu_atomic_idle`).
+architecture (:c:func:`k_cpu_idle` and :c:func:`k_cpu_atomic_idle`).
 
 The interrupt entry stub (:code:`_interrupt_enter`, :code:`_isr_wrapper`) needs
 to be adapted to handle exiting tickless idle. See examples in the code for
@@ -412,9 +412,9 @@ CPU Idling/Power Management
 ***************************
 
 The kernel provides support for CPU power management with two functions:
-:c:func:`nano_cpu_idle` and :c:func:`nano_cpu_atomic_idle`.
+:c:func:`k_cpu_idle` and :c:func:`k_cpu_atomic_idle`.
 
-:c:func:`nano_cpu_idle` can be as simple as calling the power saving
+:c:func:`k_cpu_idle` can be as simple as calling the power saving
 instruction for the architecture with interrupts unlocked, for example :code:`hlt` on
 x86, :code:`wfi` or :code:`wfe` on ARM, :code:`sleep` on ARC. This function can be called in a
 loop within a context that does not care if it get interrupted or not by an interrupt
@@ -427,7 +427,7 @@ use this function:
 
 * In a microkernel system, in the idle task.
 
-:c:func:`nano_cpu_atomic_idle`, on the other hand, must be able to atomically
+:c:func:`k_cpu_atomic_idle`, on the other hand, must be able to atomically
 re-enable interrupts and invoke the power saving instruction. It can thus be
 used in real application code. For example, it is used in the implementation of
 nanokernel objects when the task is polling an object, waiting for the object

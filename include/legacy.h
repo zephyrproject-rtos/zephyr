@@ -3288,6 +3288,37 @@ nano_timer_ticks_remain(struct nano_timer *timer)
 	return _ms_to_ticks(k_timer_remaining_get(timer));
 }
 
+/**
+ * @brief Make the CPU idle.
+ *
+ * <b> Legacy API </b>
+ *
+ * This function makes the CPU idle until an event wakes it up.
+ *
+ * @return N/A
+ */
+static inline __deprecated void nano_cpu_idle(void)
+{
+	k_cpu_idle();
+}
+
+/**
+ * @brief Make the CPU idle in an atomic fashion.
+ *
+ * <b> Legacy API </b>
+ *
+ * Similar to k_cpu_idle(), but called with interrupts locked if operations
+ * must be done atomically before making the CPU idle.
+ *
+ * @param key Interrupt locking key obtained from irq_lock().
+ *
+ * @return N/A
+ */
+static inline __deprecated void nano_cpu_atomic_idle(unsigned int key)
+{
+	k_cpu_atomic_idle(key);
+}
+
 #if CONFIG_X86
 #if CONFIG_FP_SHARING
 

@@ -494,7 +494,6 @@ int main(void)
 
 	/* wait forever */
 	while (1) {
-		extern void nano_cpu_idle(void);
 		nano_cpu_idle();
 	}
 }

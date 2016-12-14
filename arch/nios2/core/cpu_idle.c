@@ -27,7 +27,7 @@
  *
  * @return N/A
  */
-void nano_cpu_idle(void)
+void k_cpu_idle(void)
 {
 	/* Do nothing but unconditionally unlock interrupts and return to the
 	 * caller. This CPU does not have any kind of power saving instruction.
@@ -44,7 +44,7 @@ void nano_cpu_idle(void)
  * nano_task_stack_pop(), and nano_task_fifo_get().
  *
  * INTERNAL
- * The requirements for nano_cpu_atomic_idle() are as follows:
+ * The requirements for k_cpu_atomic_idle() are as follows:
  * 1) The enablement of interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
@@ -56,7 +56,7 @@ void nano_cpu_idle(void)
  *
  * @return N/A
  */
-void nano_cpu_atomic_idle(unsigned int key)
+void k_cpu_atomic_idle(unsigned int key)
 {
 	/* Do nothing but restore IRQ state. This CPU does not have any
 	 * kind of power saving instruction.

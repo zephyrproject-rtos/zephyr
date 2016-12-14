@@ -92,16 +92,16 @@ static void _sys_power_save_idle(int32_t ticks __unused)
 	 * This function is entered with interrupts disabled. If a low power
 	 * state was entered, then the hook function should enable inerrupts
 	 * before exiting. This is because the kernel does not do its own idle
-	 * processing in those cases i.e. skips nano_cpu_idle(). The kernel's
+	 * processing in those cases i.e. skips k_cpu_idle(). The kernel's
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
 	if (_sys_soc_suspend(ticks) == SYS_PM_NOT_HANDLED) {
 		_sys_pm_idle_exit_notify = 0;
-		nano_cpu_idle();
+		k_cpu_idle();
 	}
 #else
-	nano_cpu_idle();
+	k_cpu_idle();
 #endif
 }
 

@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-extern void nano_cpu_idle(void);
+extern void k_cpu_idle(void);
 #endif
 
 #ifdef __cplusplus

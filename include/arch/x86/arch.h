@@ -456,7 +456,7 @@ extern void k_float_disable(k_tid_t thread);
 
 #include <stddef.h>	/* for size_t */
 
-extern void	nano_cpu_idle(void);
+extern void	k_cpu_idle(void);
 
 /** Nanokernel provided routine to report any detected fatal error. */
 extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,

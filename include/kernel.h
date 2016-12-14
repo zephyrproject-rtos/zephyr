@@ -2925,6 +2925,32 @@ extern void k_free(void *ptr);
  * @} end defgroup heap_apis
  */
 
+/**
+ * @brief Make the CPU idle.
+ *
+ * This function makes the CPU idle until an event wakes it up.
+ *
+ * In a regular system, the idle thread should be the only thread responsible
+ * for making the CPU idle and triggering any type of power management.
+ * However, in some more constrained systems, such as a single-threaded system,
+ * the only thread would be responsible for this if needed.
+ *
+ * @return N/A
+ */
+extern void k_cpu_idle(void);
+
+/**
+ * @brief Make the CPU idle in an atomic fashion.
+ *
+ * Similar to k_cpu_idle(), but called with interrupts locked if operations
+ * must be done atomically before making the CPU idle.
+ *
+ * @param key Interrupt locking key obtained from irq_lock().
+ *
+ * @return N/A
+ */
+extern void k_cpu_atomic_idle(unsigned int key);
+
 /*
  * legacy.h must be before arch/cpu.h to allow the ioapic/loapic drivers to
  * hook into the device subsystem, which itself uses nanokernel semaphores,

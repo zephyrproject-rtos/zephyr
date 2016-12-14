@@ -29,9 +29,9 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-extern unsigned int nano_cpu_sleep_mode;
-extern void nano_cpu_idle(void);
-extern void nano_cpu_atomic_idle(unsigned int key);
+extern unsigned int k_cpu_sleep_mode;
+extern void k_cpu_idle(void);
+extern void k_cpu_atomic_idle(unsigned int key);
 #endif
 
 #ifdef __cplusplus

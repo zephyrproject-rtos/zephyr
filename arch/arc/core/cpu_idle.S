@@ -29,11 +29,11 @@
 #include <sections.h>
 #include <arch/cpu.h>
 
-GTEXT(nano_cpu_idle)
-GTEXT(nano_cpu_atomic_idle)
-GDATA(nano_cpu_sleep_mode)
+GTEXT(k_cpu_idle)
+GTEXT(k_cpu_atomic_idle)
+GDATA(k_cpu_sleep_mode)
 
-SECTION_VAR(BSS, nano_cpu_sleep_mode)
+SECTION_VAR(BSS, k_cpu_sleep_mode)
 	.word 0
 
 /*
@@ -44,7 +44,7 @@ SECTION_VAR(BSS, nano_cpu_sleep_mode)
  * void nanCpuIdle(void)
  */
 
-SECTION_FUNC(TEXT, nano_cpu_idle)
+SECTION_FUNC(TEXT, k_cpu_idle)
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	push_s blink
@@ -52,7 +52,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 	pop_s blink
 #endif
 
-	ld r1, [nano_cpu_sleep_mode]
+	ld r1, [k_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
 	sleep r1
 	j_s [blink]
@@ -63,9 +63,9 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  *
  * This function exits with interrupts restored to <key>.
  *
- * void nano_cpu_atomic_idle(unsigned int key)
+ * void k_cpu_atomic_idle(unsigned int key)
  */
-SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
+SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	push_s blink
@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 	pop_s blink
 #endif
 
-	ld r1, [nano_cpu_sleep_mode]
+	ld r1, [k_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
 	sleep r1
 	j_s.d [blink]

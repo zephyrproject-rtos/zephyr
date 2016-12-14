@@ -37,8 +37,8 @@ GTEXT(_CpuIdleInit)
 GTEXT(_NanoIdleValGet)
 GTEXT(_NanoIdleValClear)
 #endif
-GTEXT(nano_cpu_idle)
-GTEXT(nano_cpu_atomic_idle)
+GTEXT(k_cpu_idle)
+GTEXT(k_cpu_atomic_idle)
 
 #define _SCR_INIT_BITS _SCB_SCR_SEVONPEND
 
@@ -116,10 +116,10 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
  *
  * C function prototype:
  *
- * void nano_cpu_idle (void);
+ * void k_cpu_idle (void);
  */
 
-SECTION_FUNC(TEXT, nano_cpu_idle)
+SECTION_FUNC(TEXT, k_cpu_idle)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	push {lr}
 	bl    _sys_k_event_logger_enter_sleep
@@ -148,7 +148,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  * nano_task_stack_pop(), and nano_task_fifo_get().
  *
  * INTERNAL
- * The requirements for nano_cpu_atomic_idle() are as follows:
+ * The requirements for k_cpu_atomic_idle() are as follows:
  * 1) The enablement of interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
@@ -162,10 +162,10 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  *
  * C function prototype:
  *
- * void nano_cpu_atomic_idle (unsigned int imask);
+ * void k_cpu_atomic_idle (unsigned int imask);
  */
 
-SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
+SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	push {lr}
 	bl    _sys_k_event_logger_enter_sleep
