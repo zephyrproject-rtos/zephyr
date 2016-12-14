@@ -64,7 +64,6 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 
 	buf->pool = pool;
 	buf->size = pool->buf_size;
-	buf->user_data_size = pool->user_data_size;
 
 	return buf;
 }

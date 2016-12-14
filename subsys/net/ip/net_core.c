@@ -586,9 +586,9 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	 * contains user data. The rest of the fragments should
 	 * be data fragments without user data.
 	 */
-	if (!buf->frags || !buf->user_data_size) {
+	if (!buf->frags || !buf->pool->user_data_size) {
 		NET_DBG("Corrupted buffer (frags %p, data size %u)",
-			buf->frags, buf->user_data_size);
+			buf->frags, buf->pool->user_data_size);
 		NET_STATS(++net_stats.processing_error);
 
 		return NET_DROP;

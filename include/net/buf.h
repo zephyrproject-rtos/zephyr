@@ -399,9 +399,6 @@ struct net_buf {
 	/** List pointer used for TCP retransmit buffering */
 	sys_snode_t sent_list;
 
-	/** Size of the user data associated with this buffer. */
-	uint16_t user_data_size;
-
 	/** Reference count. */
 	uint8_t ref;
 

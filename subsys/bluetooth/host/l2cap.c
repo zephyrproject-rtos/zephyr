@@ -1553,9 +1553,9 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	}
 
 	/* Segment if there is no space in the user_data */
-	if (buf->user_data_size < BT_BUF_USER_DATA_MIN) {
+	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
 		BT_WARN("Too small buffer user_data_size %u",
-			buf->user_data_size);
+			buf->pool->user_data_size);
 		goto segment;
 	}
 

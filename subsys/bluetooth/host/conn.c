@@ -876,7 +876,7 @@ int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	BT_DBG("conn handle %u buf len %u", conn->handle, buf->len);
 
-	if (buf->user_data_size < BT_BUF_USER_DATA_MIN) {
+	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
 		BT_ERR("Too small user data size");
 		net_buf_unref(buf);
 		return -EINVAL;

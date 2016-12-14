@@ -238,7 +238,7 @@ static void net_buf_test_4(void)
 
 	frag = buf->frags;
 
-	assert_equal(frag->user_data_size, 0, "Invalid user data size");
+	assert_equal(frag->pool->user_data_size, 0, "Invalid user data size");
 
 	i = 0;
 	while (frag) {

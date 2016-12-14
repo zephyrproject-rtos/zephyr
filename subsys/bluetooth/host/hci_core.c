@@ -3458,7 +3458,7 @@ int bt_recv(struct net_buf *buf)
 
 	BT_DBG("buf %p len %u", buf, buf->len);
 
-	if (buf->user_data_size < BT_BUF_USER_DATA_MIN) {
+	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
 		BT_ERR("Too small user data size");
 		net_buf_unref(buf);
 		return -EINVAL;
