@@ -394,7 +394,7 @@ struct bmi160_range {
 
 struct bmi160_device_config {
 	const char *spi_port;
-#if defined(CONFIG_BMI160_TRIGGER) && defined(CONFIG_BMI160_TRIGGER_SOURCE_GPIO)
+#if defined(CONFIG_BMI160_TRIGGER)
 	const char *gpio_port;
 	uint8_t int_pin;
 #endif
@@ -442,12 +442,9 @@ struct bmi160_scale {
 
 struct bmi160_device_data {
 	struct device *spi;
-#if defined(CONFIG_BMI160_TRIGGER) && defined(CONFIG_BMI160_TRIGGER_SOURCE_GPIO)
+#if defined(CONFIG_BMI160_TRIGGER)
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
-#elif defined(CONFIG_BMI160_TRIGGER) && \
-				defined(CONFIG_BMI160_TRIGGER_SOURCE_IPM)
-	struct device *ipm;
 #endif
 	union bmi160_pmu_status pmu_sts;
 	union bmi160_sample sample;

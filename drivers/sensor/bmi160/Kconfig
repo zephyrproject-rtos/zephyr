@@ -76,20 +76,6 @@ config BMI160_TRIGGER
 	bool
 	depends on BMI160
 
-choice
-	prompt "Trigger source"
-	depends on BMI160 && BMI160_TRIGGER && (GPIO || IPM)
-	default BMI160_TRIGGER_SOURCE_IPM
-
-config BMI160_TRIGGER_SOURCE_IPM
-	bool "IPM device"
-	depends on IPM
-
-config BMI160_TRIGGER_SOURCE_GPIO
-	bool "GPIO device"
-	depends on GPIO
-endchoice
-
 config BMI160_THREAD_PRIORITY
 	int "Own thread priority"
 	depends on BMI160 && BMI160_TRIGGER_OWN_THREAD
@@ -107,7 +93,7 @@ config BMI160_THREAD_STACK_SIZE
 config BMI160_GPIO_DEV_NAME
 	string "Gpio device"
 	default "GPIO_1"
-	depends on BMI160 && BMI160_TRIGGER && BMI160_TRIGGER_SOURCE_GPIO
+	depends on BMI160 && BMI160_TRIGGER
 	help
 	  The name of the GPIO device to which the BMI160 interrupt pin is
 	  connected.
@@ -115,7 +101,7 @@ config BMI160_GPIO_DEV_NAME
 config BMI160_GPIO_PIN_NUM
 	int "Interrupt GPIO pin number"
 	default 4
-	depends on BMI160 && BMI160_TRIGGER && BMI160_TRIGGER_SOURCE_GPIO
+	depends on BMI160 && BMI160_TRIGGER
 	help
 	  The number of the GPIO pin which is connected to BMI160 interrupt pin.
 

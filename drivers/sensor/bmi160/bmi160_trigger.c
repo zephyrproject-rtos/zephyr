@@ -17,13 +17,7 @@
 
 #include <kernel.h>
 #include <sensor.h>
-
-#ifdef CONFIG_BMI160_TRIGGER_SOURCE_GPIO
 #include <gpio.h>
-#else
-#include <ipm.h>
-#include <ipm/ipm_quark_se.h>
-#endif
 
 #include "bmi160.h"
 
@@ -121,7 +115,6 @@ static void bmi160_work_handler(struct k_work *work)
 
 extern struct bmi160_device_data bmi160_data;
 
-#ifdef CONFIG_BMI160_TRIGGER_SOURCE_GPIO
 static void bmi160_gpio_callback(struct device *port,
 				 struct gpio_callback *cb, uint32_t pin)
 {
@@ -134,20 +127,6 @@ static void bmi160_gpio_callback(struct device *port,
 	k_work_submit(&bmi160->work);
 #endif
 }
-#else
-QUARK_SE_IPM_DEFINE(bmi160_ipm, 0, QUARK_SE_IPM_INBOUND);
-
-static void bmi160_ipm_callback(void *context, uint32_t id, volatile void *data)
-{
-	struct bmi160_device_data *bmi160 = context;
-
-#if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
-	k_sem_give(&bmi160->sem);
-#elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
-	k_work_submit(&bmi160->work);
-#endif
-}
-#endif
 
 static int bmi160_trigger_drdy_set(struct device *dev,
 				   enum sensor_channel chan,
@@ -306,7 +285,6 @@ int bmi160_trigger_mode_init(struct device *dev)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
-#ifdef CONFIG_BMI160_TRIGGER_SOURCE_GPIO
 	const struct bmi160_device_config *cfg = dev->config->config_info;
 
 	bmi160->gpio = device_get_binding((char *)cfg->gpio_port);
@@ -314,13 +292,6 @@ int bmi160_trigger_mode_init(struct device *dev)
 		SYS_LOG_DBG("Gpio controller %s not found.", cfg->gpio_port);
 		return -EINVAL;
 	}
-#else /* CONFIG_BMI160_TRIGGER_SOURCE_IPM */
-	bmi160->ipm = device_get_binding("bmi160_ipm");
-	if (!bmi160->ipm) {
-		SYS_LOG_DBG("Ipm device bmi160_ipm not found.");
-		return -EINVAL;
-	}
-#endif
 
 #if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
 	k_sem_init(&bmi160->sem, 0, UINT_MAX);
@@ -339,7 +310,6 @@ int bmi160_trigger_mode_init(struct device *dev)
 		return -EIO;
 	}
 
-#if defined(CONFIG_BMI160_TRIGGER_SOURCE_GPIO)
 	gpio_pin_configure(bmi160->gpio, cfg->int_pin,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
@@ -350,10 +320,6 @@ int bmi160_trigger_mode_init(struct device *dev)
 
 	gpio_add_callback(bmi160->gpio, &bmi160->gpio_cb);
 	gpio_pin_enable_callback(bmi160->gpio, cfg->int_pin);
-#elif defined(CONFIG_BMI160_TRIGGER_SOURCE_IPM)
-	ipm_register_callback(bmi160->ipm, bmi160_ipm_callback, bmi160);
-	ipm_set_enabled(bmi160->ipm, 1);
-#endif
 
 	return bmi160_byte_write(dev, BMI160_REG_INT_OUT_CTRL,
 				 BMI160_INT1_OUT_EN | BMI160_INT1_EDGE_CTRL);

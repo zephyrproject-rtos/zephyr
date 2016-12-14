@@ -942,7 +942,7 @@ const struct bmi160_device_config bmi160_config = {
 	.spi_port = CONFIG_BMI160_SPI_PORT_NAME,
 	.spi_freq = CONFIG_BMI160_SPI_BUS_FREQ,
 	.spi_slave = CONFIG_BMI160_SLAVE,
-#if defined(CONFIG_BMI160_TRIGGER) && defined(CONFIG_BMI160_TRIGGER_SOURCE_GPIO)
+#if defined(CONFIG_BMI160_TRIGGER)
 	.gpio_port = CONFIG_BMI160_GPIO_DEV_NAME,
 	.int_pin = CONFIG_BMI160_GPIO_PIN_NUM,
 #endif
