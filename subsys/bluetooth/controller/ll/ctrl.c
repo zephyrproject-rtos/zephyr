@@ -1219,12 +1219,12 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 }
 
-static inline void isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
+static inline uint8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		uint8_t *rx_enqueue)
 {
 	uint16_t eff_rx_octets;
 	uint16_t eff_tx_octets;
-	uint8_t no_resp = 0;
+	uint8_t nack = 0;
 
 	eff_rx_octets = _radio.conn_curr->max_rx_octets;
 	eff_tx_octets = _radio.conn_curr->max_tx_octets;
@@ -1300,10 +1300,7 @@ static inline void isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 				 */
 				_radio.state = STATE_CLOSE;
 			} else {
-				/* nack ctrl packet */
-				_radio.conn_curr->nesn--;
-
-				no_resp = 1;
+				nack = 1;
 			}
 		} else {
 			/* resume data packet tx */
@@ -1333,16 +1330,20 @@ static inline void isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	}
 
 	if ((PDU_DATA_LLCTRL_TYPE_LENGTH_REQ ==
-	     pdu_data_rx->payload.llctrl.opcode) && !no_resp) {
+	     pdu_data_rx->payload.llctrl.opcode) && !nack) {
 		length_resp_send(_radio.conn_curr, eff_rx_octets,
 				 eff_tx_octets);
 	}
+
+	return nack;
 }
 
-static inline void
+static inline uint8_t
 isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		     struct pdu_data *pdu_data_rx, uint8_t *rx_enqueue)
 {
+	uint8_t nack = 0;
+
 	switch (pdu_data_rx->payload.llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_REQ:
 		if (conn_update(_radio.conn_curr, pdu_data_rx) == 0) {
@@ -1733,7 +1734,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
-		isr_rx_conn_pkt_ctrl_dle(pdu_data_rx, rx_enqueue);
+		nack = isr_rx_conn_pkt_ctrl_dle(pdu_data_rx, rx_enqueue);
 		break;
 
 	default:
@@ -1742,12 +1743,14 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		break;
 	}
 
+	return nack;
 }
 
 static inline uint32_t
 isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		struct pdu_data *pdu_data_rx)
 {
+	uint8_t nack = 0;
 	uint8_t terminate = 0;
 	struct pdu_data *pdu_data_tx;
 
@@ -1821,13 +1824,12 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		 ((_radio.fc_req != 0) &&
 		  (_radio.fc_handle[_radio.fc_req - 1] ==
 		   _radio.conn_curr->handle)))))) {
-		_radio.conn_curr->nesn++;
+		uint8_t ccm_rx_increment = 0;
 
 		if (pdu_data_rx->len != 0) {
 			uint8_t rx_enqueue = 0;
 
-			/* If required wait for CCM to finish and then
-			 * increment counter
+			/* If required, wait for CCM to finish
 			 */
 			if (_radio.conn_curr->enc_rx) {
 				uint32_t done;
@@ -1835,7 +1837,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				done = radio_ccm_is_done();
 				LL_ASSERT(done);
 
-				_radio.conn_curr->ccm_rx.counter++;
+				ccm_rx_increment = 1;
 			}
 
 			/* MIC Failure Check or data rx during pause */
@@ -1867,8 +1869,23 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				break;
 
 			case PDU_DATA_LLID_CTRL:
-				isr_rx_conn_pkt_ctrl(radio_pdu_node_rx,
-						     pdu_data_rx, &rx_enqueue);
+				/* Handling control procedure takes more CPU
+				 * time hence check how much CPU time we have
+				 * used up inside tIFS (150us) and decide to
+				 * NACK rx-ed packet if consumed more than half
+				 * the tIFS value. Control Procedure will be
+				 * handled in the next re-transmission of the
+				 * packet by peer.
+				 */
+				radio_tmr_sample();
+				if ((radio_tmr_sample_get() -
+				     radio_tmr_end_get()) < 75) {
+					nack = isr_rx_conn_pkt_ctrl(
+						radio_pdu_node_rx,
+						pdu_data_rx, &rx_enqueue);
+				} else {
+					nack = 1;
+				}
 				break;
 			case PDU_DATA_LLID_RESV:
 			default:
@@ -1895,6 +1912,14 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 					_radio.conn_curr->appto_reload;
 				_radio.conn_curr->apto_expire =
 					_radio.conn_curr->apto_reload;
+			}
+		}
+
+		if (!nack) {
+			_radio.conn_curr->nesn++;
+
+			if (ccm_rx_increment) {
+				_radio.conn_curr->ccm_rx.counter++;
 			}
 		}
 	}
