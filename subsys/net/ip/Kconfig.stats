@@ -24,6 +24,14 @@ menuconfig NET_STATISTICS
 
 if NET_STATISTICS
 
+config NET_STATISTICS_USER_API
+	bool "Expose statistics through NET MGMT API"
+	select NET_MGMT
+	default n
+	help
+	Enable this if you need to grab relevant statistics in your code,
+	via calling net_mgmt() with relevant NET_REQUEST_STATS_GET_* command.
+
 config NET_STATISTICS_PERIODIC_OUTPUT
 	bool "Simple periodic output"
 	depends on NET_LOG

@@ -20,6 +20,7 @@
 
 #include <kernel.h>
 #include <string.h>
+#include <errno.h>
 #include <net/net_core.h>
 
 #include "net_stats.h"
@@ -135,3 +136,125 @@ void net_print_statistics(void)
 }
 
 #endif /* CONFIG_NET_STATISTICS_PERIODIC_OUTPUT */
+
+#if defined(CONFIG_NET_STATISTICS_USER_API)
+
+static int net_stats_get(uint32_t mgmt_request, struct net_if *iface,
+			 void *data, size_t len)
+{
+	size_t len_chk = 0;
+	void *src = NULL;
+
+	ARG_UNUSED(iface);
+
+	switch (NET_MGMT_GET_COMMAND(mgmt_request)) {
+	case NET_REQUEST_STATS_CMD_GET_ALL:
+		len_chk = sizeof(struct net_stats);
+		src = &net_stats;
+		break;
+	case NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR:
+		len_chk = sizeof(net_stats_t);
+		src = &net_stats.processing_error;
+		break;
+	case NET_REQUEST_STATS_CMD_GET_IP_ERRORS:
+		len_chk = sizeof(struct net_stats_ip_errors);
+		src = &net_stats.ip_errors;
+		break;
+#if defined(CONFIG_NET_STATISTICS_IPV4)
+	case NET_REQUEST_STATS_CMD_GET_IPV4:
+		len_chk = sizeof(struct net_stats_ip);
+		src = &net_stats.ipv4;
+		break;
+#endif
+#if defined(CONFIG_NET_STATISTICS_IPV6)
+	case NET_REQUEST_STATS_CMD_GET_IPV6:
+		len_chk = sizeof(struct net_stats_ip);
+		src = &net_stats.ipv6;
+		break;
+#endif
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
+	case NET_REQUEST_STATS_CMD_GET_IPV6_ND:
+		len_chk = sizeof(struct net_stats_ipv6_nd);
+		src = &net_stats.ipv6_nd;
+		break;
+#endif
+#if defined(CONFIG_NET_STATISTICS_ICMP)
+	case NET_REQUEST_STATS_CMD_GET_ICMP:
+		len_chk = sizeof(struct net_stats_icmp);
+		src = &net_stats.icmp;
+		break;
+#endif
+#if defined(CONFIG_NET_STATISTICS_UDP)
+	case NET_REQUEST_STATS_CMD_GET_UDP:
+		len_chk = sizeof(struct net_stats_udp);
+		src = &net_stats.udp;
+		break;
+#endif
+#if defined(CONFIG_NET_STATISTICS_TCP)
+	case NET_REQUEST_STATS_CMD_GET_TCP:
+		len_chk = sizeof(struct net_stats_tcp);
+		src = &net_stats.tcp;
+		break;
+#endif
+#if defined(CONFIG_NET_STATISTICS_RPL)
+	case NET_REQUEST_STATS_CMD_GET_RPL:
+		len_chk = sizeof(struct net_stats_rpl);
+		src = &net_stats.rpl;
+		break;
+#endif
+	}
+
+	if (len != len_chk || !src) {
+		return -EINVAL;
+	}
+
+	memcpy(src, data, len);
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ALL,
+				  net_stats_get);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PROCESSING_ERROR,
+				  net_stats_get);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IP_ERRORS,
+				  net_stats_get);
+
+#if defined(CONFIG_NET_STATISTICS_IPV4)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_IPV6)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_ND,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_ICMP)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_UDP)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_TCP)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_RPL)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_RPL,
+				  net_stats_get);
+#endif
+
+#endif /* CONFIG_NET_STATISTICS_USER_API */
