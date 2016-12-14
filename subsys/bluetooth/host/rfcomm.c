@@ -816,15 +816,15 @@ static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
 
 static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 {
-	struct bt_rfcomm_dlc *dlc, *tmp;
+	struct bt_rfcomm_dlc *dlc, *next;
 	int err;
 
 	if (!dlci) {
 		switch (session->state) {
 		case BT_RFCOMM_STATE_CONNECTING:
 			session->state = BT_RFCOMM_STATE_CONNECTED;
-			for (dlc = session->dlcs; dlc; dlc = tmp) {
-				tmp = dlc->_next;
+			for (dlc = session->dlcs; dlc; dlc = next) {
+				next = dlc->_next;
 				if (dlc->role == BT_RFCOMM_ROLE_INITIATOR &&
 				    dlc->state == BT_RFCOMM_STATE_INIT) {
 					if (rfcomm_dlc_start(dlc) < 0) {
@@ -1171,13 +1171,13 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
 	struct bt_conn *conn = chan->conn;
-	struct bt_rfcomm_dlc *dlc, *tmp;
+	struct bt_rfcomm_dlc *dlc, *next;
 
 	BT_DBG("session %p status 0x%02x encr 0x%02x", session, hci_status,
 	       conn->encrypt);
 
-	for (dlc = session->dlcs; dlc; dlc = tmp) {
-		tmp = dlc->_next;
+	for (dlc = session->dlcs; dlc; dlc = next) {
+		next = dlc->_next;
 
 		if (dlc->state != BT_RFCOMM_STATE_SECURITY_PENDING) {
 			continue;
