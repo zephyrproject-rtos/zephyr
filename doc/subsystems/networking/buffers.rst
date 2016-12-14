@@ -39,9 +39,8 @@ buffers may also contain protocol-specific context, known as user data.
 Both the maximum data and user data capacity of the buffers is
 compile-time defined when declaring the buffer pool.
 
-Since the free buffers are managed with the help of a k_fifo it means
-the buffers have native support for being passed through other FIFOs
-as well. This is a very practical feature when the buffers need to be
+The buffers have native support for being passed through k_fifo kernel
+objects. This is a very practical feature when the buffers need to be
 passed from one thread to another. However, since a net_buf may have a
 fragment chain attached to it, instead of using the :c:func:`k_fifo_put`
 and :c:func:`k_fifo_get` APIs, special :c:func:`net_buf_put` and

@@ -95,10 +95,10 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 
 		/* If this is not the first access to the pool, we can
 		 * be opportunistic and try to fetch a previously used
-		 * buffer from the FIFO with K_NO_WAIT.
+		 * buffer from the LIFO with K_NO_WAIT.
 		 */
 		if (pool->uninit_count < pool->buf_count) {
-			buf = k_fifo_get(&pool->free, K_NO_WAIT);
+			buf = k_lifo_get(&pool->free, K_NO_WAIT);
 			if (buf) {
 				irq_unlock(key);
 				goto success;
@@ -116,17 +116,17 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 
 #if defined(CONFIG_NET_BUF_DEBUG)
 	if (timeout == K_FOREVER) {
-		buf = k_fifo_get(&pool->free, K_NO_WAIT);
+		buf = k_lifo_get(&pool->free, K_NO_WAIT);
 		if (!buf) {
 			NET_BUF_WARN("%s():%d: Pool %p low on buffers.",
 				     func, line, pool);
-			buf = k_fifo_get(&pool->free, timeout);
+			buf = k_lifo_get(&pool->free, timeout);
 		}
 	} else {
-		buf = k_fifo_get(&pool->free, timeout);
+		buf = k_lifo_get(&pool->free, timeout);
 	}
 #else
-	buf = k_fifo_get(&pool->free, timeout);
+	buf = k_lifo_get(&pool->free, timeout);
 #endif
 	if (!buf) {
 		NET_BUF_ERR("%s():%d: Failed to get free buffer", func, line);

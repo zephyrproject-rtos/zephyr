@@ -434,8 +434,8 @@ struct net_buf {
 };
 
 struct net_buf_pool {
-	/** FIFO to place the buffer into when free */
-	struct k_fifo free;
+	/** LIFO to place the buffer into when free */
+	struct k_lifo free;
 
 	/** Number of buffers in pool */
 	const uint16_t buf_count;
@@ -459,7 +459,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _bufs, _count, _size, _ud_size,      \
 				 _destroy)                                   \
 	{                                                                    \
-		.free = K_FIFO_INITIALIZER(_pool.free),                      \
+		.free = K_LIFO_INITIALIZER(_pool.free),                      \
 		.__bufs = (struct net_buf *)_bufs,                           \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
@@ -553,7 +553,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout);
  */
 static inline void net_buf_destroy(struct net_buf *buf)
 {
-	k_fifo_put(&buf->pool->free, buf);
+	k_lifo_put(&buf->pool->free, buf);
 }
 
 /**
