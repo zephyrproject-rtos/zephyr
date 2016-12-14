@@ -188,6 +188,24 @@ struct net_stats_rpl_dao_ack {
 	net_stats_t drop;
 };
 
+struct net_stats_rpl {
+	uint16_t mem_overflows;
+	uint16_t local_repairs;
+	uint16_t global_repairs;
+	uint16_t malformed_msgs;
+	uint16_t resets;
+	uint16_t parent_switch;
+	uint16_t forward_errors;
+	uint16_t loop_errors;
+	uint16_t loop_warnings;
+	uint16_t root_repairs;
+
+	struct net_stats_rpl_dis dis;
+	struct net_stats_rpl_dio dio;
+	struct net_stats_rpl_dao dao;
+	struct net_stats_rpl_dao_ack dao_ack;
+};
+
 struct net_stats {
 	net_stats_t processing_error;
 
@@ -218,24 +236,8 @@ struct net_stats {
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_RPL)
-	struct {
-		uint16_t mem_overflows;
-		uint16_t local_repairs;
-		uint16_t global_repairs;
-		uint16_t malformed_msgs;
-		uint16_t resets;
-		uint16_t parent_switch;
-		uint16_t forward_errors;
-		uint16_t loop_errors;
-		uint16_t loop_warnings;
-		uint16_t root_repairs;
-
-		struct net_stats_rpl_dis dis;
-		struct net_stats_rpl_dio dio;
-		struct net_stats_rpl_dao dao;
-		struct net_stats_rpl_dao_ack dao_ack;
-	} rpl;
-#endif /* CONFIG_NET_STATISTICS_RPL */
+	struct net_stats_rpl rpl;
+#endif
 };
 
 #ifdef __cplusplus
