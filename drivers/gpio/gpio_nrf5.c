@@ -147,6 +147,13 @@ static int gpiote_find_channel(struct device *dev, uint32_t pin)
 static int gpio_nrf5_config(struct device *dev,
 			    int access_op, uint32_t pin, int flags)
 {
+	/* Note D0D1 is not supported so we switch to S0S1.  */
+	static const uint32_t drive_strength[4][4] = {
+		{GPIO_DRIVE_S0S1, GPIO_DRIVE_S0H1, 0, GPIO_DRIVE_S0D1},
+		{GPIO_DRIVE_H0S1, GPIO_DRIVE_H0H1, 0, GPIO_DRIVE_H0D1},
+		{0, 0, 0, 0},
+		{GPIO_DRIVE_D0S1, GPIO_DRIVE_D0H1, 0, GPIO_DRIVE_S0S1}
+	};
 	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
 	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
 	volatile struct _gpio *gpio = GPIO_STRUCT(dev);
@@ -155,6 +162,11 @@ static int gpio_nrf5_config(struct device *dev,
 
 		/* Check pull */
 		uint8_t pull = GPIO_PULL_DISABLE;
+		int ds_low = (flags & GPIO_DS_LOW_MASK) >> GPIO_DS_LOW_POS;
+		int ds_high = (flags & GPIO_DS_HIGH_MASK) >> GPIO_DS_HIGH_POS;
+
+		__ASSERT_NO_MSG(ds_low != 2);
+		__ASSERT_NO_MSG(ds_high != 2);
 
 		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
 			pull = GPIO_PULL_UP;
@@ -164,18 +176,18 @@ static int gpio_nrf5_config(struct device *dev,
 
 		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
 			/* Config as output */
-			gpio->PIN_CNF[pin] = GPIO_SENSE_DISABLE |
-					     GPIO_DRIVE_S0S1    |
-					     pull               |
-					     GPIO_INPUT_DISCONNECT |
-					     GPIO_DIR_OUTPUT;
+			gpio->PIN_CNF[pin] = (GPIO_SENSE_DISABLE |
+					      drive_strength[ds_low][ds_high] |
+					      pull |
+					      GPIO_INPUT_DISCONNECT |
+					      GPIO_DIR_OUTPUT);
 		} else {
 			/* Config as input */
-			gpio->PIN_CNF[pin] = GPIO_SENSE_DISABLE |
-					     GPIO_DRIVE_S0S1    |
-					     pull               |
-					     GPIO_INPUT_CONNECT |
-					     GPIO_DIR_INPUT;
+			gpio->PIN_CNF[pin] = (GPIO_SENSE_DISABLE |
+					      drive_strength[ds_low][ds_high] |
+					      pull |
+					      GPIO_INPUT_CONNECT |
+					      GPIO_DIR_INPUT);
 		}
 	} else {
 		return -ENOTSUP;
