@@ -708,6 +708,9 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 
 	fs = generate_fcf_grounds(&p_buf, 0);
 
+	fs->fc.dst_addr_mode = 0;
+	fs->fc.src_addr_mode = 0;
+
 	fs->fc.frame_type = IEEE802154_FRAME_TYPE_ACK;
 	fs->sequence = seq;
 
