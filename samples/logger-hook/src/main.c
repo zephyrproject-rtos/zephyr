@@ -86,10 +86,9 @@ void main(void)
 
 static inline void ring_buf_print(struct ring_buf *buf)
 {
+	uint8_t size;
 	uint8_t data[512];
-	int ret = EAGAIN;
-	uint8_t size = 0;
-	int count = 0;
+	int ret = EAGAIN, count = 0;
 
 	while (ret == EAGAIN && count < 2) {
 		count++;
