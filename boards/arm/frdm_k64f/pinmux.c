@@ -57,6 +57,9 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	/* SW2 / FXOS8700 INT1 */
 	pinmux_pin_set(portc,  6, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
+	/* FXOS8700 INT2 */
+	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
 	/* SW3 */
 	pinmux_pin_set(porta,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
