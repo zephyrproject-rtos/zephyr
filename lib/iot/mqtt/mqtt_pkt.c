@@ -162,7 +162,7 @@ static int rlen_decode(uint16_t *rlen, uint16_t *rlen_size,
 	uint8_t encoded;
 
 	do {
-		if (i >= ENCLENBUF_MAX_SIZE || i > size) {
+		if (i >= ENCLENBUF_MAX_SIZE || i >= size) {
 			return -ENOMEM;
 		}
 
