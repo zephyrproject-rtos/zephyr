@@ -77,6 +77,16 @@ config NUM_PREEMPT_PRIORITIES
 	The extra one is for the idle thread, which must run at the lowest
 	priority, and be the only thread at that priority.
 
+config COOP_ENABLED
+	bool
+	default y
+	default n if (NUM_COOP_PRIORITIES = 0)
+
+config PREEMPT_ENABLED
+	bool
+	default y
+	default n if (NUM_PREEMPT_PRIORITIES = 0)
+
 config PRIORITY_CEILING
 	int
 	prompt "Priority inheritance ceiling"
