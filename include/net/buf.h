@@ -515,7 +515,7 @@ struct net_buf_pool {
 struct net_buf *net_buf_alloc_debug(struct net_buf_pool *pool, int32_t timeout,
 				    const char *func, int line);
 #define	net_buf_alloc(_pool, _timeout) \
-	net_buf_get_debug(_pool, _timeout, __func__, __LINE__)
+	net_buf_alloc_debug(_pool, _timeout, __func__, __LINE__)
 #else
 struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout);
 #endif
