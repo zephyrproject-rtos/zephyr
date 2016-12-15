@@ -19,7 +19,6 @@
 menuconfig NET_SAMPLES_IP_ADDRESSES
 	bool "Set IP addresses for sample applications"
 	default n
-	select MINIMAL_LIBC_EXTENDED
 	help
 	  Allow IP addresses to be set in config file for
 	  networking client/server sample applications.

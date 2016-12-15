@@ -122,58 +122,6 @@ config CPLUSPLUS
 	help
 	This option enables the use of applications built with C++.
 
-choice
-prompt "C Library"
-default MINIMAL_LIBC
-
-config MINIMAL_LIBC
-	bool
-	prompt "Build minimal c library"
-	help
-	Build integrated minimal c library. This integrated library is available
-	to support kernel functionality and test cases. It is not designed to be
-	used with applications. For applications, please use an external C
-	library such as newlib.
-
-config NEWLIB_LIBC
-	bool
-	prompt "Build with newlib c library"
-	help
-	Build with newlib library. The newlib library is expected to be
-	part of the SDK in this case.
-
-endchoice
-
-config NEWLIB_LIBC_FLOAT_PRINTF
-	bool "Build with newlib float printf"
-	default n
-	depends on NEWLIB_LIBC
-	help
-	Build with floating point printf enabled. This will increase the size of
-	the image.
-
-config NEWLIB_LIBC_FLOAT_SCANF
-	bool "Build with newlib float scanf"
-	default n
-	depends on NEWLIB_LIBC
-	help
-	Build with floating point scanf enabled. This will increase the size of
-	the image.
-
-config MINIMAL_LIBC_EXTENDED
-	bool "Build additional libc functions [EXPERIMENTAL]"
-	default n
-	depends on MINIMAL_LIBC
-	help
-	This option enables building some optional libc functions that
-	are not used directly by the kernel but can be used in applications.
-	The option adds the following functions: strtoul, strtol, atoi,
-	strncasecmp.
-	Warning: Use the above functions only for testing, if you need to
-	use any of the functions in an application you probably should be
-	linking against a full lib c implementation instead.
-
-
 endmenu
 
 menu "Debugging Options"

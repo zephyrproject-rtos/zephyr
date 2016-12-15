@@ -20,3 +20,5 @@ source "lib/crypto/tinycrypt/Kconfig"
 endmenu
 
 source "lib/iot/Kconfig"
+
+source "lib/libc/Kconfig"

@@ -1,3 +1,6 @@
+# Kconfig - C library
+
+#
 # Copyright (c) 2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,19 +16,29 @@
 # limitations under the License.
 #
 
-config HTTP_PARSER
-	bool
-	prompt "HTTP Parser support"
-	default n
-	help
-	This option enables the http_parser library from nodejs.
-	This parser requires some string-related routines commonly
-	provided by a libc implementation.
+menu "C Library"
 
-config HTTP_PARSER_STRICT
+config NEWLIB_LIBC
 	bool
-	prompt "HTTP strict parsing"
-	default n
-	depends on HTTP_PARSER
+	prompt "Build with newlib c library"
 	help
-	This option enables the strict parsing option
+	Build with newlib library. The newlib library is expected to be
+	part of the SDK in this case.
+
+config NEWLIB_LIBC_FLOAT_PRINTF
+	bool "Build with newlib float printf"
+	default n
+	depends on NEWLIB_LIBC
+	help
+	Build with floating point printf enabled. This will increase the size of
+	the image.
+
+config NEWLIB_LIBC_FLOAT_SCANF
+	bool "Build with newlib float scanf"
+	default n
+	depends on NEWLIB_LIBC
+	help
+	Build with floating point scanf enabled. This will increase the size of
+	the image.
+
+endmenu

@@ -231,10 +231,8 @@ For that purpose, following flags must be enabled in project configuration file
 CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC=y
 CONFIG_CONSOLE_HANDLER=y
 CONFIG_CONSOLE_HANDLER_SHELL=y
-CONFIG_MINIMAL_LIBC_EXTENDED=y
 -->
 
-CONFIG_MINIMAL_LIBC_EXTENDED is required for atoi() function used in profiler shell
 command implementation.
 
 If done, the profiler will automatically enable a shell over UART allowing to
