@@ -18,9 +18,9 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_DEBUG_ARP
+#if defined(CONFIG_NET_DEBUG_ARP)
 #define SYS_LOG_DOMAIN "net/arp"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -456,7 +456,7 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 			return NET_DROP;
 		}
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ARP)
 		do {
 			char out[sizeof("xxx.xxx.xxx.xxx")];
 			snprintf(out, sizeof(out),
@@ -468,7 +468,7 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 					arp_hdr->hwlen),
 				net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		} while (0);
-#endif
+#endif /* CONFIG_NET_DEBUG_ARP */
 
 		/* Send reply */
 		reply = prepare_arp_reply(net_nbuf_iface(buf), buf);

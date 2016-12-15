@@ -37,7 +37,7 @@
 
 #if defined(CONFIG_NET_DEBUG_TCP)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #else
 #define DBG(fmt, ...)
 #endif

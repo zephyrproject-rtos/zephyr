@@ -18,9 +18,9 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_DEBUG_IPV6
+#if defined(CONFIG_NET_DEBUG_IPV6)
 #define SYS_LOG_DOMAIN "net/ipv6"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 
 /* By default this prints too much data, set the value to 1 to see
  * neighbor cache contents.
@@ -423,7 +423,7 @@ static inline bool dad_failed(struct net_if *iface, struct in6_addr *addr)
 }
 #endif /* CONFIG_NET_IPV6_DAD */
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_IPV6)
 static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
 				struct net_linkaddr_storage *old_lladdr,
 				struct in6_addr *addr)
@@ -453,7 +453,7 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #else
 #define dbg_update_neighbor_lladdr(...)
 #define dbg_update_neighbor_lladdr_raw(...)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_IPV6 */
 
 #if defined(CONFIG_NET_IPV6_ND)
 #define NS_REPLY_TIMEOUT MSEC_PER_SEC
@@ -730,7 +730,7 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 	}
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_IPV6)
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
@@ -774,7 +774,7 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 #define dbg_addr_with_tgt(...)
 #define dbg_addr_recv_tgt(...)
 #define dbg_addr_sent_tgt(...)
-#endif
+#endif /* CONFIG_NET_DEBUG_IPV6 */
 
 int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 		     struct in6_addr *dst, struct in6_addr *tgt,

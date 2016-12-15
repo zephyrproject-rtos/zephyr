@@ -22,8 +22,7 @@
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 #define SYS_LOG_DOMAIN "net/nbuf"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -34,11 +33,10 @@
 
 #include <misc/util.h>
 
+#include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/buf.h>
 #include <net/nbuf.h>
-
-#include <net/net_core.h>
 
 #include "net_private.h"
 
@@ -105,7 +103,7 @@ NET_BUF_POOL_DEFINE(tx_buffers, NBUF_TX_COUNT, 0, sizeof(struct net_nbuf),
 NET_BUF_POOL_DEFINE(data_buffers, NBUF_DATA_COUNT, NBUF_DATA_LEN,
 		    NBUF_USER_DATA_LEN, free_data_bufs_func);
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 
 #define NET_BUF_CHECK_IF_IN_USE(buf, ref)				\
 	do {								\
@@ -230,7 +228,7 @@ static inline int get_frees(struct net_buf_pool *pool)
 	return 0xffffffff;
 }
 
-#else /* NET_DEBUG */
+#else /* CONFIG_NET_DEBUG_NET_BUF */
 #define dec_free_rx_bufs(...)
 #define inc_free_rx_bufs(...)
 #define dec_free_tx_bufs(...)
@@ -240,7 +238,7 @@ static inline int get_frees(struct net_buf_pool *pool)
 #define dec_free_bufs(...)
 #define NET_BUF_CHECK_IF_IN_USE(buf, ref)
 #define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 static inline bool is_from_data_pool(struct net_buf *buf)
 {
@@ -268,7 +266,7 @@ static inline void free_data_bufs_func(struct net_buf *buf)
 	net_buf_destroy(buf);
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 static inline const char *pool2str(struct net_buf_pool *pool)
 {
 	if (pool == &rx_buffers) {
@@ -318,10 +316,10 @@ static struct net_buf *net_nbuf_get_reserve_debug(struct net_buf_pool *pool,
 						  uint16_t reserve_head,
 						  const char *caller,
 						  int line)
-#else
+#else /* CONFIG_NET_DEBUG_NET_BUF */
 static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 					    uint16_t reserve_head)
-#endif
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
 	struct net_buf *buf = NULL;
 
@@ -352,7 +350,7 @@ static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 	return buf;
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 struct net_buf *net_nbuf_get_reserve_rx_debug(uint16_t reserve_head,
 					      const char *caller, int line)
 {
@@ -374,7 +372,7 @@ struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
 					  caller, line);
 }
 
-#else
+#else /* CONFIG_NET_DEBUG_NET_BUF */
 
 struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head)
 {
@@ -391,17 +389,17 @@ struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head)
 	return net_nbuf_get_reserve(&data_buffers, reserve_head);
 }
 
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 static struct net_buf *net_nbuf_get_debug(struct net_buf_pool *pool,
 					  struct net_context *context,
 					  const char *caller, int line)
 #else
 static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 				    struct net_context *context)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
 	struct net_if *iface = net_context_get_iface(context);
 	struct in6_addr *addr6 = NULL;
@@ -417,7 +415,7 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 
 	reserve = net_if_get_ll_reserve(iface, addr6);
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 	buf = net_nbuf_get_reserve_debug(pool, reserve, caller, line);
 #else
 	buf = net_nbuf_get_reserve(pool, reserve);
@@ -436,7 +434,7 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 	return buf;
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
 				      const char *caller, int line)
 {
@@ -455,7 +453,7 @@ struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
 	return net_nbuf_get_debug(&data_buffers, context, caller, line);
 }
 
-#else /* NET_DEBUG */
+#else /* CONFIG_NET_DEBUG_NET_BUF */
 
 struct net_buf *net_nbuf_get_rx(struct net_context *context)
 {
@@ -478,10 +476,10 @@ struct net_buf *net_nbuf_get_data(struct net_context *context)
 	return net_nbuf_get(&data_buffers, context);
 }
 
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line)
 {
 	struct net_buf *frag;
@@ -489,7 +487,7 @@ void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line)
 #else
 void net_nbuf_unref(struct net_buf *buf)
 {
-#endif
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 	if (!buf) {
 		NET_DBG("*** ERROR *** buf %p (%s():%d)", buf, caller, line);
 		return;
@@ -505,7 +503,7 @@ void net_nbuf_unref(struct net_buf *buf)
 		pool2str(buf->pool), get_frees(buf->pool),
 		buf, buf->ref - 1, buf->frags, caller, line);
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 	if (buf->ref > 1) {
 		goto done;
 	}
@@ -528,17 +526,17 @@ void net_nbuf_unref(struct net_buf *buf)
 	}
 
 done:
-#endif
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 	net_buf_unref(buf);
 }
 
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller,
 				   int line)
 #else
 struct net_buf *net_nbuf_ref(struct net_buf *buf)
-#endif
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
 	if (!buf) {
 		NET_DBG("*** ERROR *** buf %p (%s():%d)", buf, caller, line);
@@ -1322,7 +1320,7 @@ void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
 		*data_size = sizeof(data_buffers);
 	}
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 	*tx = get_frees(&tx_buffers);
 	*rx = get_frees(&rx_buffers);
 	*data = get_frees(&data_buffers);
@@ -1330,10 +1328,10 @@ void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
 	*tx = BIT(31);
 	*rx = BIT(31);
 	*data = BIT(31);
-#endif
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 void net_nbuf_print(void)
 {
 	int tx, rx, data;
@@ -1342,7 +1340,7 @@ void net_nbuf_print(void)
 
 	NET_DBG("TX %d RX %d DATA %d", tx, rx, data);
 }
-#endif
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 void net_nbuf_init(void)
 {

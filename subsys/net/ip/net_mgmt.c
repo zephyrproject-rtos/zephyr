@@ -16,7 +16,7 @@
 
 #if defined(CONFIG_NET_DEBUG_MGMT_EVENT)
 #define SYS_LOG_DOMAIN "net/mgmt"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>

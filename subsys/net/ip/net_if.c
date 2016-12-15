@@ -16,7 +16,7 @@
 
 #if defined(CONFIG_NET_DEBUG_IF)
 #define SYS_LOG_DOMAIN "net/if"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <init.h>
@@ -49,7 +49,7 @@ static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
  */
 static sys_slist_t link_callbacks;
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_IF)
 #define debug_check_packet(buf)						    \
 	{								    \
 		size_t len = net_buf_frags_len(buf->frags);		    \
@@ -61,7 +61,7 @@ static sys_slist_t link_callbacks;
 	} while (0)
 #else
 #define debug_check_packet(...)
-#endif
+#endif /* CONFIG_NET_DEBUG_IF */
 
 static inline void net_context_send_cb(struct net_context *context,
 				       void *token, int status)

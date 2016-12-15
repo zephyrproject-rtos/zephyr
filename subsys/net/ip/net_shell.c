@@ -38,10 +38,10 @@
 #include "net_stats.h"
 
 /*
- * Set NET_DEBUG in order to activate address printing functions
+ * Set NET_LOG_ENABLED in order to activate address printing functions
  * in net_private.h
  */
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 #define NET_SHELL_MODULE "net"

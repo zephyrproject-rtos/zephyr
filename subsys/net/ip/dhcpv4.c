@@ -20,7 +20,7 @@
 
 #if defined(CONFIG_NET_DEBUG_DHCPV4)
 #define SYS_LOG_DOMAIN "net/dhcpv4"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>

@@ -23,7 +23,7 @@
 
 #if defined(CONFIG_NET_DEBUG_CORE)
 #define SYS_LOG_DOMAIN "net/core"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <init.h>
@@ -211,14 +211,14 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		goto drop;
 	}
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_CORE)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 		snprintf(out, sizeof(out), net_sprint_ipv6_addr(&hdr->dst));
 		NET_DBG("IPv6 packet len %d received from %s to %s",
 			real_len, net_sprint_ipv6_addr(&hdr->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_CORE */
 
 	if (net_is_ipv6_addr_mcast(&hdr->src)) {
 		NET_DBG("Dropping src multicast packet");
@@ -279,7 +279,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		length = length * 8 + 8;
 		verdict = NET_OK;
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_CORE)
 		/* Print the length only for IPv6 extension */
 		if (next != IPPROTO_ICMPV6 && next != IPPROTO_UDP &&
 		    next != IPPROTO_TCP) {
@@ -288,7 +288,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		} else {
 			NET_DBG("IPv6 next header %d", next);
 		}
-#endif
+#endif /* CONFIG_NET_DEBUG_CORE */
 
 		switch (next) {
 		case NET_IPV6_NEXTHDR_NONE:
@@ -413,14 +413,14 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 		goto drop;
 	}
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_CORE)
 	do {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 		snprintf(out, sizeof(out), net_sprint_ipv4_addr(&hdr->dst));
 		NET_DBG("IPv4 packet received from %s to %s",
 			net_sprint_ipv4_addr(&hdr->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_CORE */
 
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 

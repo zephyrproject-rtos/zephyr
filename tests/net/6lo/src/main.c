@@ -35,7 +35,7 @@
 #include "6lo.h"
 #include "icmpv6.h"
 
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 #define DEBUG 0

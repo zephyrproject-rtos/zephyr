@@ -25,7 +25,7 @@
 
 #if defined(CONFIG_NET_DEBUG_TCP)
 #define SYS_LOG_DOMAIN "net/tcp"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -67,7 +67,7 @@ struct tcp_segment {
 	const struct sockaddr *dst_addr;
 };
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_TCP)
 static char upper_if_set(char chr, bool set)
 {
 	if (set) {
@@ -104,7 +104,7 @@ static void net_tcp_trace(char *str, struct net_buf *buf)
 }
 #else
 #define net_tcp_trace(...)
-#endif
+#endif /* CONFIG_NET_DEBUG_TCP */
 
 static inline uint32_t init_isn(void)
 {
@@ -552,7 +552,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 
 const char * const net_tcp_state_str(enum net_tcp_state state)
 {
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_TCP)
 	switch (state) {
 	case NET_TCP_CLOSED:
 		return "CLOSED";
@@ -577,9 +577,9 @@ const char * const net_tcp_state_str(enum net_tcp_state state)
 	case NET_TCP_CLOSING:
 		return "CLOSING";
 	}
-#else
+#else /* CONFIG_NET_DEBUG_TCP */
 	ARG_UNUSED(state);
-#endif
+#endif /* CONFIG_NET_DEBUG_TCP */
 
 	return "";
 }
@@ -737,7 +737,7 @@ static void fin_timeout(struct k_work *work)
 	}
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_TCP)
 static void validate_state_transition(enum net_tcp_state current,
 				      enum net_tcp_state new)
 {
@@ -771,7 +771,7 @@ static void validate_state_transition(enum net_tcp_state current,
 			net_tcp_state_str(new), new);
 	}
 }
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_TCP */
 
 void net_tcp_change_state(struct net_tcp *tcp,
 			  enum net_tcp_state new_state)
@@ -789,9 +789,9 @@ void net_tcp_change_state(struct net_tcp *tcp,
 		tcp, net_tcp_state_str(tcp->state), tcp->state,
 		net_tcp_state_str(new_state), new_state);
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_TCP)
 	validate_state_transition(tcp->state, new_state);
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_TCP */
 
 	tcp->state = new_state;
 

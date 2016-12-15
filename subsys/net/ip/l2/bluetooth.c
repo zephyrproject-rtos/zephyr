@@ -16,8 +16,7 @@
 
 #if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
 #define SYS_LOG_DOMAIN "net/bt"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -116,14 +115,14 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_context *ctxt = CHAN_CTXT(chan);
 	struct bt_conn_info info;
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
 	char src[BT_ADDR_LE_STR_LEN];
 	char dst[BT_ADDR_LE_STR_LEN];
 #endif
 
 	bt_conn_get_info(chan->conn, &info);
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
 	bt_addr_le_to_str(info.le.src, src, sizeof(src));
 	bt_addr_le_to_str(info.le.dst, dst, sizeof(dst));
 

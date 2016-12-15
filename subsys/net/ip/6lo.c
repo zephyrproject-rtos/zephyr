@@ -20,7 +20,7 @@
 
 #if defined(CONFIG_NET_DEBUG_6LO)
 #define SYS_LOG_DOMAIN "net/6lo"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>

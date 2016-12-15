@@ -32,7 +32,7 @@
 #include <net/net_if.h>
 #include <net/net_context.h>
 
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 #include "ipv6.h"
 #include "icmpv6.h"

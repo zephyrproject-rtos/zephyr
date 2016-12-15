@@ -61,7 +61,7 @@ static inline uint16_t net_calc_chksum_tcp(struct net_buf *buf)
 	return net_calc_chksum(buf, IPPROTO_TCP);
 }
 
-#if NET_DEBUG > 0
+#if NET_LOG_ENABLED > 0
 static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 {
 	static char buf[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
@@ -158,7 +158,7 @@ static inline void net_hexdump_frags(const char *str, struct net_buf *buf)
 	}
 }
 
-#else /* NET_DEBUG */
+#else /* NET_LOG_ENABLED */
 
 static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 {
@@ -200,4 +200,4 @@ static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 #define net_hexdump(str, packet, length)
 #define net_hexdump_frags(...)
 
-#endif /* NET_DEBUG */
+#endif /* NET_LOG_ENABLED */

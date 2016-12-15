@@ -202,7 +202,7 @@ enum net_addr_type {
 	NET_ADDR_MANUAL,
 };
 
-#if NET_DEBUG > 0
+#if NET_LOG_ENABLED > 0
 static inline char *net_addr_type2str(enum net_addr_type type)
 {
 	switch (type) {
@@ -219,14 +219,14 @@ static inline char *net_addr_type2str(enum net_addr_type type)
 
 	return "<unknown>";
 }
-#else
+#else /* NET_LOG_ENABLED */
 static inline char *net_addr_type2str(enum net_addr_type type)
 {
 	ARG_UNUSED(type);
 
 	return NULL;
 }
-#endif
+#endif /* NET_LOG_ENABLED */
 
 /** What is the current state of the network address */
 enum net_addr_state {

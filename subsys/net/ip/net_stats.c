@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NET_DEBUG_CORE)
-#define SYS_LOG_DOMAIN "net/core"
+#if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
+#define SYS_LOG_DOMAIN "net/stats"
+#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>

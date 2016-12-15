@@ -50,7 +50,7 @@
 
 #if defined(CONFIG_NET_DEBUG_RPL)
 #define SYS_LOG_DOMAIN "net/rpl"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -215,7 +215,7 @@ NET_NBR_POOL_INIT(net_rpl_neighbor_pool, CONFIG_NET_IPV6_MAX_NEIGHBORS,
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		   net_rpl_neighbor_table_clear);
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 #define net_rpl_info(buf, req)						     \
 	do {								     \
 		char out[NET_IPV6_ADDR_LEN];				     \
@@ -245,11 +245,11 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		NET_DBG("Send DAO-ACK (id %d, seq %d) from %s to %s",	\
 			id, seq, net_sprint_ipv6_addr(src), out);	\
 	} while (0)
-#else /* NET_DEBUG */
+#else /* CONFIG_NET_DEBUG_RPL */
 #define net_rpl_info(...)
 #define net_rpl_dao_info(...)
 #define net_rpl_dao_ack_info(...)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 static void new_dio_interval(struct net_rpl_instance *instance);
 
@@ -342,7 +342,7 @@ struct in6_addr *net_rpl_get_parent_addr(struct net_if *iface,
 	return net_ipv6_nbr_lookup_by_index(iface, nbr->idx);
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 static void net_rpl_print_neighbors(void)
 {
 	if (rpl_default_instance && rpl_default_instance->current_dag) {
@@ -389,11 +389,7 @@ static void net_rpl_print_neighbors(void)
 		}
 	}
 }
-#else
-#define net_rpl_print_neighbors(...)
-#endif /* NET_DEBUG */
 
-#if NET_DEBUG
 #define net_route_info(str, route, addr, len, nexthop)			\
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
@@ -404,8 +400,9 @@ static void net_rpl_print_neighbors(void)
 			net_sprint_ipv6_addr(nexthop), route->iface);	\
 	} while (0)
 #else
+#define net_rpl_print_neighbors(...)
 #define net_route_info(...)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
 					  struct net_if *iface,
@@ -1364,7 +1361,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 				   struct net_rpl_parent *parent)
 {
 	struct net_rpl_dag *dag = parent->dag;
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 	struct in6_addr *addr = net_rpl_get_parent_addr(iface, parent);
 #endif
 
@@ -1406,7 +1403,7 @@ static void net_rpl_remove_parent(struct net_if *iface,
 	NET_ASSERT(iface);
 
 	if (nbr) {
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 		struct in6_addr *addr;
 		struct net_linkaddr_storage *lladdr;
 
@@ -1416,7 +1413,7 @@ static void net_rpl_remove_parent(struct net_if *iface,
 		NET_DBG("Removing parent %s [%s]",
 			net_sprint_ipv6_addr(addr),
 			net_sprint_ll_addr(lladdr->addr, lladdr->len));
-#endif
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 		net_rpl_nullify_parent(iface, parent);
 
@@ -1925,7 +1922,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 {
 	bool ret = true;
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 	uint16_t old_rank = instance->current_dag->rank;
 #endif
 
@@ -1954,7 +1951,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 		return false;
 	}
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 	if (NET_RPL_DAG_RANK(old_rank, instance) !=
 	    NET_RPL_DAG_RANK(instance->current_dag->rank, instance)) {
 		NET_DBG("Moving in the instance from rank %u to %u",
@@ -1976,7 +1973,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 			NET_DBG("We don't have any parent");
 		}
 	}
-#endif
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 	return ret;
 }
@@ -3342,7 +3339,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 			if (dag->preferred_parent) {
 				forwarding_dao(instance, dag, dao_sender,
 					       buf, sequence, flags,
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 					       "Forwarding no-path DAO to "
 					       "parent"
 #else
@@ -3409,7 +3406,7 @@ fwd_dao:
 			forwarding_dao(instance, dag,
 				       dao_sender, buf,
 				       sequence, flags,
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 				       "Forwarding DAO to parent"
 #else
 				       ""

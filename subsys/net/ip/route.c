@@ -21,7 +21,7 @@
 
 #if defined(CONFIG_NET_DEBUG_ROUTE)
 #define SYS_LOG_DOMAIN "net/route"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -155,7 +155,7 @@ struct net_nbr *net_route_get_nbr(struct net_route_entry *route)
 	return NULL;
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_ROUTE)
 void net_routes_print(void)
 {
 	int i;
@@ -181,7 +181,7 @@ void net_routes_print(void)
 }
 #else
 #define net_routes_print(...)
-#endif
+#endif /* CONFIG_NET_DEBUG_ROUTE */
 
 static inline void nbr_free(struct net_nbr *nbr)
 {
@@ -245,7 +245,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 	return 0;
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_ROUTE)
 #define net_route_info(str, route, dst)					\
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
@@ -260,7 +260,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 	} while (0)
 #else
 #define net_route_info(...)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_ROUTE */
 
 /* Route was accessed, so place it in front of the routes list */
 static inline void update_route_access(struct net_route_entry *route)
@@ -371,7 +371,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 		route = CONTAINER_OF(last,
 				     struct net_route_entry,
 				     node);
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_ROUTE)
 		do {
 			char out[NET_IPV6_ADDR_LEN];
 			struct in6_addr *tmp;
@@ -389,7 +389,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 				net_sprint_ll_addr(llstorage->addr,
 						   llstorage->len));
 		} while (0);
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_ROUTE */
 
 		net_route_del(route);
 
@@ -707,9 +707,9 @@ net_route_mcast_lookup(struct in6_addr *group)
 
 void net_route_init(void)
 {
-	NET_DBG("Allocated %d routing entries (%d bytes)",
+	NET_DBG("Allocated %d routing entries (%zu bytes)",
 		CONFIG_NET_MAX_ROUTES, sizeof(net_route_entries_pool));
 
-	NET_DBG("Allocated %d nexthop entries (%d bytes)",
+	NET_DBG("Allocated %d nexthop entries (%zu bytes)",
 		CONFIG_NET_MAX_NEXTHOPS, sizeof(net_route_nexthop_pool));
 }
