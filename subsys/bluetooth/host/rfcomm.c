@@ -618,6 +618,22 @@ static int rfcomm_send_rpn(struct bt_rfcomm_session *session, uint8_t cr,
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
+static int rfcomm_send_test(struct bt_rfcomm_session *session, uint8_t cr,
+			    uint8_t *pattern, uint8_t len)
+{
+	struct net_buf *buf;
+	uint8_t fcs;
+
+	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_TEST, len);
+
+	net_buf_add_mem(buf, pattern, len);
+
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+}
+
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
@@ -1101,6 +1117,13 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		break;
 	case BT_RFCOMM_RPN:
 		rfcomm_handle_rpn(session, buf, cr);
+		break;
+	case BT_RFCOMM_TEST:
+		if (!cr) {
+			break;
+		}
+		rfcomm_send_test(session, BT_RFCOMM_MSG_RESP_CR, buf->data,
+				 buf->len - 1);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported RFCOMM Msg type 0x%02x", msg_type);

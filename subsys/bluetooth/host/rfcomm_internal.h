@@ -94,6 +94,8 @@ struct bt_rfcomm_rpn {
 	uint16_t param_mask;
 } __packed;
 
+#define BT_RFCOMM_TEST  0x08
+
 /* Default RPN Settings */
 #define BT_RFCOMM_RPN_BAUD_RATE_9600    0x03
 #define BT_RFCOMM_RPN_DATA_BITS_8       0x03
