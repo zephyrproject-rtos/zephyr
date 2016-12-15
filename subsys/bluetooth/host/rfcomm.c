@@ -568,9 +568,6 @@ static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	uint8_t fcs;
 
 	buf = rfcomm_make_uih_msg(dlc, cr, BT_RFCOMM_MSC, sizeof(*msc));
-	if (!buf) {
-		return -ENOMEM;
-	}
 
 	msc = net_buf_add(buf, sizeof(*msc));
 	/* cr bit should be always 1 in MSC */
@@ -730,9 +727,6 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	uint8_t fcs;
 
 	buf = rfcomm_make_uih_msg(dlc, cr, BT_RFCOMM_PN, sizeof(*pn));
-	if (!buf) {
-		return -ENOMEM;
-	}
 
 	BT_DBG("mtu %x", dlc->mtu);
 
