@@ -76,7 +76,7 @@ config SYS_LOG_SPI_LEVEL
 	default 0
 	range 0 4
 	help
-	  Sets log level for Grove Device Drivers.
+	  Sets log level for SPI drivers.
 	  Levels are:
 	  0 OFF, do not write
 	  1 ERROR, only write SYS_LOG_ERR
