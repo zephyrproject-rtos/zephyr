@@ -28,8 +28,10 @@
 #include "net_private.h"
 #include "ipv6.h"
 
+#if defined(CONFIG_NET_IPV6)
 static const struct net_eth_addr multicast_eth_addr = {
 	{ 0x33, 0x33, 0x00, 0x00, 0x00, 0x00 } };
+#endif
 
 static const struct net_eth_addr broadcast_eth_addr = {
 	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
