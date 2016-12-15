@@ -56,6 +56,10 @@ enum net_verdict packet_received(struct net_conn *conn,
 				 struct net_buf *buf,
 				 void *user_data);
 
+static void set_appdata_values(struct net_buf *buf,
+			       enum net_ip_protocol proto,
+			       size_t total_len);
+
 #if defined(CONFIG_NET_TCP)
 static struct sockaddr *create_sockaddr(struct net_buf *buf,
 					struct sockaddr *addr)
@@ -769,6 +773,7 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 			return NET_DROP;
 		}
 
+		set_appdata_values(buf, IPPROTO_TCP, net_buf_frags_len(buf));
 		context->tcp->send_ack += net_nbuf_appdatalen(buf);
 
 		ret = packet_received(conn, buf, user_data);
@@ -1822,12 +1827,17 @@ enum net_verdict packet_received(struct net_conn *conn,
 	if (context->recv_cb) {
 		size_t total_len = net_buf_frags_len(buf);
 
-		if (net_nbuf_family(buf) == AF_INET6) {
-			set_appdata_values(buf, NET_IPV6_BUF(buf)->nexthdr,
-					   total_len);
-		} else {
-			set_appdata_values(buf, NET_IPV4_BUF(buf)->proto,
-					   total_len);
+		/* TCP packets get appdata earlier in tcp_established() */
+		if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
+			if (net_nbuf_family(buf) == AF_INET6) {
+				set_appdata_values(buf,
+						   NET_IPV6_BUF(buf)->nexthdr,
+						   total_len);
+			} else {
+				set_appdata_values(buf,
+						   NET_IPV4_BUF(buf)->proto,
+						   total_len);
+			}
 		}
 
 		NET_DBG("Set appdata to %p len %u (total %zu)",
