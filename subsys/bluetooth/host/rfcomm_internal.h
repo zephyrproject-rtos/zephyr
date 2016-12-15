@@ -95,6 +95,7 @@ struct bt_rfcomm_rpn {
 } __packed;
 
 #define BT_RFCOMM_TEST  0x08
+#define BT_RFCOMM_NSC   0x04
 
 /* Default RPN Settings */
 #define BT_RFCOMM_RPN_BAUD_RATE_9600    0x03
