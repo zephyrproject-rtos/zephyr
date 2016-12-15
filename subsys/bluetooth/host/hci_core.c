@@ -61,7 +61,19 @@
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 static BT_STACK_NOINIT(cmd_tx_thread_stack, CONFIG_BLUETOOTH_HCI_SEND_STACK);
 
-struct bt_dev bt_dev;
+struct bt_dev bt_dev = {
+	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
+	 * exception is if the controller requests to wait for an
+	 * initial Command Complete for NOP.
+	 */
+#if !defined(CONFIG_BLUETOOTH_WAIT_NOP)
+	.ncmd_sem      = K_SEM_INITIALIZER(bt_dev.ncmd_sem, 1, 1),
+#else
+	.ncmd_sem      = K_SEM_INITIALIZER(bt_dev.ncmd_sem, 0, 1),
+#endif
+	.cmd_tx_queue  = K_FIFO_INITIALIZER(bt_dev.cmd_tx_queue),
+	.rx_queue      = K_FIFO_INITIALIZER(bt_dev.rx_queue),
+};
 
 const struct bt_storage *bt_storage;
 
@@ -3679,24 +3691,12 @@ int bt_enable(bt_ready_cb_t cb)
 		return -EALREADY;
 	}
 
-	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
-	 * exception is if the controller requests to wait for an
-	 * initial Command Complete for NOP.
-	 */
-#if !defined(CONFIG_BLUETOOTH_WAIT_NOP)
-	k_sem_init(&bt_dev.ncmd_sem, 1, 1);
-#else
-	k_sem_init(&bt_dev.ncmd_sem, 0, 1);
-#endif
-
 	/* TX thread */
-	k_fifo_init(&bt_dev.cmd_tx_queue);
 	k_thread_spawn(cmd_tx_thread_stack, sizeof(cmd_tx_thread_stack),
 		       (k_thread_entry_t)hci_cmd_tx_thread, NULL, NULL, NULL,
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* RX thread */
-	k_fifo_init(&bt_dev.rx_queue);
 	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
 		       (k_thread_entry_t)hci_rx_thread, cb, NULL, NULL,
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);

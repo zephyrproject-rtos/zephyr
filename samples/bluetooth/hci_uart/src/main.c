@@ -64,7 +64,7 @@ NET_BUF_POOL_DEFINE(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 NET_BUF_POOL_DEFINE(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
 
-static struct k_fifo tx_queue;
+static K_FIFO_DEFINE(tx_queue);
 
 #define H4_CMD 0x01
 #define H4_ACL 0x02
@@ -353,14 +353,10 @@ DEVICE_INIT(hci_uart, "hci_uart", &hci_uart_init, NULL, NULL,
 void main(void)
 {
 	/* incoming events and data from the controller */
-	static struct k_fifo rx_queue;
+	static K_FIFO_DEFINE(rx_queue);
 	int err;
 
 	SYS_LOG_DBG("Start");
-
-	/* Initialize the FIFOs */
-	k_fifo_init(&tx_queue);
-	k_fifo_init(&rx_queue);
 
 	/* Enable the raw interface, this will in turn open the HCI driver */
 	bt_enable_raw(&rx_queue);

@@ -43,7 +43,7 @@ NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
 		    BLE_GATT_MTU_SIZE, sizeof(struct nble_gatts_write_evt),
 		    NULL);
 
-static struct k_fifo queue;
+static K_FIFO_DEFINE(queue);
 #endif
 
 struct nble_gatt_service {
@@ -1581,10 +1581,6 @@ void on_nble_gatts_read_evt(const struct nble_gatts_read_evt *ev)
 void bt_gatt_init(void)
 {
 	BT_DBG("");
-
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	k_fifo_init(&queue);
-#endif
 }
 
 void bt_gatt_connected(struct bt_conn *conn)

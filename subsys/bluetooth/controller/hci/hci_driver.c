@@ -68,7 +68,7 @@ static uint8_t ALIGNED(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 						[TICKER_USER_OP_T_SIZE];
 static uint8_t ALIGNED(4) _radio[LL_MEM_TOTAL];
 
-static struct k_sem sem_recv;
+static K_SEM_DEFINE(sem_recv, 0, UINT_MAX);
 static BT_STACK_NOINIT(recv_thread_stack,
 		       CONFIG_BLUETOOTH_CONTROLLER_RX_STACK_SIZE);
 
@@ -348,7 +348,6 @@ static int hci_driver_open(void)
 	irq_enable(NRF5_IRQ_SWI4_IRQn);
 	irq_enable(NRF5_IRQ_SWI5_IRQn);
 
-	k_sem_init(&sem_recv, 0, UINT_MAX);
 	k_thread_spawn(recv_thread_stack, sizeof(recv_thread_stack),
 		       recv_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
 		       K_NO_WAIT);
