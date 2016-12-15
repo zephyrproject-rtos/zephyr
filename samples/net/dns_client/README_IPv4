@@ -32,6 +32,9 @@ Requirements
     dnsmasq -v
     Dnsmasq version 2.76  Copyright (c) 2000-2016 Simon Kelley
 
+Read the "Getting Started Guide":
+
+    https://www.zephyrproject.org/doc/getting_started/getting_started.html
 
 Building Instructions
 =====================
@@ -39,11 +42,31 @@ Building Instructions
 Read src/config.h, change the IP addresses according to the LAN
 environment.
 
-In a terminal window, type make pristine && make to build this sample.
+* QEMU x86:
+
+    In a terminal window, type:
+
+    make pristine && make
 
 
-Usage
-=====
+* FRDM K64F (firmware version: 0226)
+
+    make pristine && make BOARD=frdm_k64f
+
+    The FRDM K64F board is detected as a USB storage device. The board
+    must be mounted (i.e. to /mnt) to 'flash' the binary:
+
+    cp outdir/frdm_k64f/zephyr.bin /mnt
+
+    See https://developer.mbed.org/platforms/frdm-k64f/ for more information
+    about this board.
+
+* For Arduino 101 with the ENC Ethernet module, see the README_arduino_101
+file.
+
+
+Usage QEMU
+==========
 
 Run 'loop_socat.sh' and 'loop-slip-tap.sh' as indicated at:
 
@@ -67,9 +90,21 @@ open a terminal window and type:
 
     killall -s KILL dnsmasq
 
-For QEMU, type:
+Open a terminal where the project was build (i.e. samples/net/dns_client) and type:
 
     make qemu
+
+
+Usage FRDM K64F
+===============
+
+Open a terminal window and type:
+
+    screen /dev/ttyACM0 115200
+
+Use 'dmesg' to find the right USB device.
+
+Once the binary is loaded into the FRDM board, press the RESET button.
 
 
 Sample Output (CONFIG_NET_IPV6=n, CONFIG_NET_IPV4=y)
