@@ -602,6 +602,22 @@ static int rfcomm_send_rls(struct bt_rfcomm_dlc *dlc, uint8_t cr,
 	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
 }
 
+static int rfcomm_send_rpn(struct bt_rfcomm_session *session, uint8_t cr,
+			   struct bt_rfcomm_rpn *rpn)
+{
+	struct net_buf *buf;
+	uint8_t fcs;
+
+	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_RPN, sizeof(*rpn));
+
+	memcpy(net_buf_add(buf, sizeof(*rpn)), rpn, sizeof(*rpn));
+
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+}
+
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
@@ -938,6 +954,52 @@ static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
 	rfcomm_send_rls(dlc, BT_RFCOMM_MSG_RESP_CR, rls->line_status);
 }
 
+static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
+			      struct net_buf *buf, uint8_t cr)
+{
+	struct bt_rfcomm_rpn default_rpn, *rpn = (void *)buf->data;
+	uint8_t dlci = BT_RFCOMM_GET_DLCI(rpn->dlci);
+	uint8_t data_bits, stop_bits, parity_bits;
+	/* Exclude fcs to get number of value bytes */
+	uint8_t value_len = buf->len - 1;
+
+	BT_DBG("dlci %d", dlci);
+
+	if (!cr) {
+		/* Ignore if its a response */
+		return;
+	}
+
+	if (value_len == sizeof(*rpn)) {
+		/* Accept all the values proposed by the sender */
+		rpn->param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
+		rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, rpn);
+		return;
+	}
+
+	if (value_len != 1) {
+		return;
+	}
+
+	/* If only one value byte then current port settings has to be returned
+	 * We will send default values
+	 */
+	default_rpn.dlci = BT_RFCOMM_SET_ADDR(dlci, 1);
+	default_rpn.baud_rate = BT_RFCOMM_RPN_BAUD_RATE_9600;
+	default_rpn.flow_control = BT_RFCOMM_RPN_FLOW_NONE;
+	default_rpn.xoff_char = BT_RFCOMM_RPN_XOFF_CHAR;
+	default_rpn.xon_char = BT_RFCOMM_RPN_XON_CHAR;
+	data_bits = BT_RFCOMM_RPN_DATA_BITS_8;
+	stop_bits = BT_RFCOMM_RPN_STOP_BITS_1;
+	parity_bits = BT_RFCOMM_RPN_PARITY_NONE;
+	default_rpn.line_settings = BT_RFCOMM_SET_LINE_SETTINGS(data_bits,
+								stop_bits,
+								parity_bits);
+	default_rpn.param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
+
+	rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, &default_rpn);
+}
+
 static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 			     struct net_buf *buf, uint8_t cr)
 {
@@ -1036,6 +1098,9 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		break;
 	case BT_RFCOMM_RLS:
 		rfcomm_handle_rls(session, buf, cr);
+		break;
+	case BT_RFCOMM_RPN:
+		rfcomm_handle_rpn(session, buf, cr);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported RFCOMM Msg type 0x%02x", msg_type);
