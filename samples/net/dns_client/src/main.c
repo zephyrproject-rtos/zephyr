@@ -102,7 +102,7 @@ void run_dns(void)
 	}
 
 #ifdef CONFIG_NET_IPV6
-	rc = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &ctx);
+	rc = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
 #else
 	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
 #endif
@@ -130,7 +130,7 @@ void run_dns(void)
 	ctx.dns_server = (struct sockaddr *)&remote_sock;
 	ctx.elements = MAX_ADDRESSES;
 #ifdef CONFIG_NET_IPV6
-	ctx.type = DNS_QUERY_TYPE_AAAA;
+	ctx.query_type = DNS_QUERY_TYPE_AAAA;
 	ctx.address.ipv6 = addresses;
 #else
 	ctx.query_type = DNS_QUERY_TYPE_A;
