@@ -148,8 +148,6 @@ static const struct net_eth_addr dst_addr = {
 	{ 0x10, 0x00, 0x00, 0x00, 0x00, 0x02 } };
 static const struct in_addr server_addr = { { { 192, 0, 2, 1 } } };
 static const struct in_addr client_addr = { { { 255, 255, 255, 255 } } };
-static const struct in_addr broascast_addr = { { { 255, 255, 255, 255 } } };
-static const struct in_addr zero_addr = { { { 0, 0, 0, 0 } } };
 
 #define SERVER_PORT	67
 #define CLIENT_PORT	68
