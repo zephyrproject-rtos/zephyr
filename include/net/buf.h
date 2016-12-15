@@ -526,7 +526,7 @@ struct net_buf_pool {
  *
  *  @return New buffer or NULL if out of buffers.
  */
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_debug(struct net_buf_pool *pool, int32_t timeout,
 				    const char *func, int line);
 #define	net_buf_alloc(_pool, _timeout) \
@@ -548,7 +548,7 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout);
  *
  *  @return New buffer or NULL if the FIFO is empty.
  */
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_get_debug(struct k_fifo *fifo, int32_t timeout,
 				  const char *func, int line);
 #define	net_buf_get(_fifo, _timeout) \
@@ -602,7 +602,7 @@ void net_buf_put(struct k_fifo *fifo, struct net_buf *buf);
  *
  *  @param buf A valid pointer on a buffer
  */
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG)
 void net_buf_unref_debug(struct net_buf *buf, const char *func, int line);
 #define	net_buf_unref(_buf) \
 	net_buf_unref_debug(_buf, __func__, __LINE__)
