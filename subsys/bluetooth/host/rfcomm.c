@@ -580,6 +580,26 @@ static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
 }
 
+static int rfcomm_send_rls(struct bt_rfcomm_dlc *dlc, uint8_t cr,
+			   uint8_t line_status)
+{
+	struct bt_rfcomm_rls *rls;
+	struct net_buf *buf;
+	uint8_t fcs;
+
+	buf = rfcomm_make_uih_msg(dlc, cr, BT_RFCOMM_RLS, sizeof(*rls));
+
+	rls = net_buf_add(buf, sizeof(*rls));
+	/* cr bit should be always 1 in RLS */
+	rls->dlci = BT_RFCOMM_SET_ADDR(dlc->dlci, 1);
+	rls->line_status = line_status;
+
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+}
+
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
@@ -893,6 +913,29 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 	}
 }
 
+static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
+			      struct net_buf *buf, uint8_t cr)
+{
+	struct bt_rfcomm_rls *rls = (void *)buf->data;
+	uint8_t dlci = BT_RFCOMM_GET_DLCI(rls->dlci);
+	struct bt_rfcomm_dlc *dlc;
+
+	BT_DBG("dlci %d", dlci);
+
+	if (!cr) {
+		/* Ignore if its a response */
+		return;
+	}
+
+	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
+	if (!dlc) {
+		return;
+	}
+
+	/* As per the ETSI same line status has to returned in the response */
+	rfcomm_send_rls(dlc, BT_RFCOMM_MSG_RESP_CR, rls->line_status);
+}
+
 static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 			     struct net_buf *buf, uint8_t cr)
 {
@@ -988,6 +1031,9 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		break;
 	case BT_RFCOMM_MSC:
 		rfcomm_handle_msc(session, buf, cr);
+		break;
+	case BT_RFCOMM_RLS:
+		rfcomm_handle_rls(session, buf, cr);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported RFCOMM Msg type 0x%02x", msg_type);

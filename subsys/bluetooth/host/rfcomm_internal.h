@@ -77,6 +77,12 @@ struct bt_rfcomm_msc {
 #define BT_RFCOMM_DISC  0x43
 #define BT_RFCOMM_DM    0x0f
 
+#define BT_RFCOMM_RLS   0x14
+struct bt_rfcomm_rls {
+	uint8_t  dlci;
+	uint8_t  line_status;
+} __packed;
+
 /* DV = 1 IC = 0 RTR = 1 RTC = 1 FC = 0 EXT = 0 */
 #define BT_RFCOMM_DEFAULT_V24_SIG 0x8d
 
