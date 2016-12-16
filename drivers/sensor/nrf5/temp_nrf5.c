@@ -32,7 +32,7 @@
 #define TEMP_NRF5_TEMP_SCALE (1000000 / 4)
 
 struct temp_nrf5_data {
-	device_sync_call_t sync;
+	struct k_sem device_sync_sem;
 	int32_t sample;
 	struct device *clk_m16_dev;
 };
@@ -66,7 +66,7 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 	__ASSERT_NO_MSG(!r);
 
 	temp->TASKS_START = 1;
-	device_sync_call_wait(&data->sync);
+	k_sem_take(&data->device_sync_sem, K_FOREVER);
 
 	r = clock_control_off(data->clk_m16_dev, (void *)1);
 	__ASSERT_NO_MSG(!r);
@@ -106,7 +106,7 @@ static void temp_nrf5_isr(void *arg)
 	struct temp_nrf5_data *data = dev->driver_data;
 
 	temp->EVENTS_DATARDY = 0;
-	device_sync_call_complete(&data->sync);
+	k_sem_give(&data->device_sync_sem);
 }
 
 static const struct sensor_driver_api temp_nrf5_driver_api = {
@@ -135,7 +135,7 @@ static int temp_nrf5_init(struct device *dev)
 		device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	__ASSERT_NO_MSG(data->clk_m16_dev);
 
-	device_sync_call_init(&data->sync);
+	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 	IRQ_CONNECT(NRF5_IRQ_TEMP_IRQn, CONFIG_TEMP_NRF5_PRI,
 		    temp_nrf5_isr, DEVICE_GET(temp_nrf5), 0);
 	irq_enable(NRF5_IRQ_TEMP_IRQn);
