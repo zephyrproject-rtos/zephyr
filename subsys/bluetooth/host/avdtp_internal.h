@@ -147,7 +147,7 @@ struct bt_avdtp_event_cb {
 /** @brief Global AVDTP session structure. */
 struct bt_avdtp {
 	struct bt_l2cap_br_chan br_chan;
-	uint8_t state;	/* current state of AVDTP*/
+	struct bt_avdtp_stream *streams; /* List of AV streams */
 };
 
 /* Initialize AVDTP layer*/

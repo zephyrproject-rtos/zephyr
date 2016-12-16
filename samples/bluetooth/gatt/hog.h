@@ -18,4 +18,12 @@
  * limitations under the License.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void hog_init(void);
+
+#ifdef __cplusplus
+}
+#endif

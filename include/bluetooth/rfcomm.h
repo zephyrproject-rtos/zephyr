@@ -35,7 +35,7 @@ extern "C" {
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
-/* RFCOMM channels (1-31): pre-allocated for profiles to avoid conflicts */
+/* RFCOMM channels (1-30): pre-allocated for profiles to avoid conflicts */
 enum {
 	BT_RFCOMM_CHAN_HFP_HF = 1,
 	BT_RFCOMM_CHAN_HFP_AG,

@@ -18,5 +18,13 @@
  * limitations under the License.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void hrs_init(uint8_t blsc);
 void hrs_notify(void);
+
+#ifdef __cplusplus
+}
+#endif

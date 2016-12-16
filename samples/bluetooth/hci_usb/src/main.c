@@ -81,7 +81,7 @@ static struct device *btusb_dev;
 #define DEV_DATA(dev) \
 	((struct btusb_dev_data_t * const)(dev)->driver_data)
 
-static struct k_fifo rx_queue;
+static K_FIFO_DEFINE(rx_queue);
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
@@ -690,8 +690,6 @@ static int try_write(uint8_t ep, struct net_buf *buf)
 void main(void)
 {
 	SYS_LOG_DBG("Start");
-
-	k_fifo_init(&rx_queue);
 
 	bt_enable_raw(&rx_queue);
 
