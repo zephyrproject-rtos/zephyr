@@ -325,6 +325,8 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 	case NET_NBUF_RX:
 		buf = net_buf_alloc(&rx_buffers, K_FOREVER);
 
+		memset(net_buf_user_data(buf), 0, sizeof(struct net_nbuf));
+
 		NET_ASSERT_INFO(buf->ref, "RX buf %p ref %d", buf, buf->ref);
 
 		dec_free_rx_bufs(buf);
@@ -332,6 +334,8 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 		break;
 	case NET_NBUF_TX:
 		buf = net_buf_alloc(&tx_buffers, K_FOREVER);
+
+		memset(net_buf_user_data(buf), 0, sizeof(struct net_nbuf));
 
 		NET_ASSERT_INFO(buf->ref, "TX buf %p ref %d", buf, buf->ref);
 
@@ -356,17 +360,6 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 	}
 
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
-
-	if (type != NET_NBUF_DATA) {
-		net_nbuf_set_context(buf, NULL);
-		net_nbuf_ll_dst(buf)->addr = NULL;
-		net_nbuf_ll_src(buf)->addr = NULL;
-
-		/* Let's make sure ll_reserve is not set
-		 * from a previous usage of the buffer.
-		 */
-		net_nbuf_set_ll_reserve(buf, 0);
-	}
 
 	NET_DBG("%s [%d] buf %p reserve %u ref %d (%s():%d)",
 		type2str(type), get_frees(type),
