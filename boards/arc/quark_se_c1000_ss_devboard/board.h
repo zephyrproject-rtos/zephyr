@@ -27,4 +27,9 @@
 #define SW1_GPIO_PIN	5
 #define SW1_GPIO_NAME	CONFIG_GPIO_QMSI_0_NAME
 
+
+/* Onboard LED */
+#define LED0_GPIO_PORT  CONFIG_GPIO_QMSI_0_NAME
+#define LED0_GPIO_PIN   25
+
 #endif /* __INC_BOARD_H */
