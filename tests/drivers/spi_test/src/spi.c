@@ -11,12 +11,12 @@
 #include <spi.h>
 #include <misc/printk.h>
 
-#define SPI_DRV_NAME "SPI_0"
+#define SPI_DRV_NAME CONFIG_SPI_0_NAME
 
 #ifdef CONFIG_SPI_INTEL
 #include <spi/spi_intel.h>
 #if defined(CONFIG_SPI_1)
-#define SPI_DRV_NAME "SPI_1"
+#define SPI_DRV_NAME CONFIG_SPI_1_NAME
 #endif
 #define SPI_SLAVE 0
 #elif defined(CONFIG_SPI_DW)
@@ -25,6 +25,9 @@
 #elif defined(CONFIG_SPI_QMSI)
 #define SPI_MAX_CLK_FREQ_250KHZ 128
 #define SPI_SLAVE 1
+#elif defined(CONFIG_SPI_MCUX)
+#define SPI_MAX_CLK_FREQ_250KHZ KHZ(250)
+#define SPI_SLAVE 0
 #endif
 
 unsigned char wbuf[16] = "Hello";
