@@ -403,4 +403,14 @@ int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx);
  */
 int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx);
 
+/**
+ * @brief mqtt_rx_publish	Parses the MQTT PUBLISH message
+ * @param [in] ctx		MQTT context structure
+ * @param [in] rx		RX buffer from the IP stack
+ * @return			0 on success
+ * @return			-EINVAL on error
+ * @return			-ENOMEM if no data buffer is available
+ */
+int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx);
+
 #endif

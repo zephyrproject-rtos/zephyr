@@ -595,3 +595,37 @@ int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx)
 
 	return 0;
 }
+
+int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx)
+{
+	struct mqtt_publish_msg msg;
+	int rc;
+
+	rc = mqtt_unpack_publish(rx->data, rx->len, &msg);
+	if (rc != 0) {
+		return -EINVAL;
+	}
+
+	rc = ctx->publish_rx(ctx->publish_rx_data, &msg, msg.pkt_id,
+			     MQTT_PUBLISH);
+	if (rc != 0) {
+		return -EINVAL;
+	}
+
+	switch (msg.qos) {
+	case MQTT_QoS2:
+		rc = mqtt_tx_pubrec(ctx, msg.pkt_id);
+		break;
+	case MQTT_QoS1:
+		rc = mqtt_tx_puback(ctx, msg.pkt_id);
+		break;
+	case MQTT_QoS0:
+		break;
+	default:
+		rc = -EINVAL;
+		break;
+	}
+
+	return rc;
+}
+
