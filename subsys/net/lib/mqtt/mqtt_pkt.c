@@ -634,7 +634,7 @@ int subscribe_size(uint16_t *rlen_size, uint16_t *payload_size, uint8_t items,
 static int mqtt_pack_subscribe_unsubscribe(uint8_t *buf, uint16_t *length,
 					   uint16_t size, uint16_t pkt_id,
 					   uint8_t items, const char *topics[],
-					   enum mqtt_qos qos[],
+					   const enum mqtt_qos qos[],
 					   enum mqtt_packet type)
 {
 	uint16_t rlen_size;
@@ -699,7 +699,7 @@ static int mqtt_pack_subscribe_unsubscribe(uint8_t *buf, uint16_t *length,
 
 int mqtt_pack_subscribe(uint8_t *buf, uint16_t *length, uint16_t size,
 			uint16_t pkt_id, uint8_t items, const char *topics[],
-			enum mqtt_qos qos[])
+			const enum mqtt_qos qos[])
 {
 
 	return mqtt_pack_subscribe_unsubscribe(buf, length, size, pkt_id,

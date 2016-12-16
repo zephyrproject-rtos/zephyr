@@ -166,7 +166,7 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
  */
 int mqtt_pack_subscribe(uint8_t *buf, uint16_t *length, uint16_t size,
 			uint16_t pkt_id, uint8_t items, const char *topics[],
-			enum mqtt_qos qos[]);
+			const enum mqtt_qos qos[]);
 
 /**
  * @brief mqtt_pack_unsubscribe	Packs the MQTT UNSUBSCRIBE message
