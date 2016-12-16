@@ -24,12 +24,12 @@
  * @brief mqtt_app	MQTT application type
  */
 enum mqtt_app {
+	/** Publisher and Subscriber application */
+	MQTT_APP_PUBLISHER_SUBSCRIBER,
 	/** Publisher only application */
 	MQTT_APP_PUBLISHER,
 	/** Subscriber only application */
 	MQTT_APP_SUBSCRIBER,
-	/** Publisher and Subscriber application */
-	MQTT_APP_PUBLISHER_SUBSCRIBER,
 	/** MQTT Server */
 	MQTT_APP_SERVER
 };
@@ -183,7 +183,10 @@ struct mqtt_ctx {
 	/** Data passed to the #unsubscribe callback */
 	void *unsubscribe_data;
 
-	/** Application type */
+	/* Internal use only */
+	int (*rcv)(struct mqtt_ctx *, struct net_buf *);
+
+	/** Application type, see: enum mqtt_app */
 	uint8_t app_type;
 
 	/* Clean session is also part of the MQTT CONNECT msg, however app
