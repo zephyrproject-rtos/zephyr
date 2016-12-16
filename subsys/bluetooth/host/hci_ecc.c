@@ -63,7 +63,7 @@ static const uint8_t debug_public_key[64] = {
 };
 #endif
 
-static struct k_fifo ecc_queue;
+static K_FIFO_DEFINE(ecc_queue);
 static int (*drv_send)(struct net_buf *buf);
 static uint32_t private_key[8];
 
@@ -277,8 +277,6 @@ static int ecc_send(struct net_buf *buf)
 
 void bt_hci_ecc_init(void)
 {
-	k_fifo_init(&ecc_queue);
-
 	k_thread_spawn(ecc_thread_stack, sizeof(ecc_thread_stack),
 		       ecc_thread, NULL, NULL, NULL,
 		       K_PRIO_PREEMPT(10), 0, K_NO_WAIT);

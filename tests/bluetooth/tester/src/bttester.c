@@ -34,8 +34,8 @@ static char __stack stack[STACKSIZE];
 #define CMD_QUEUED 2
 static uint8_t cmd_buf[CMD_QUEUED * BTP_MTU];
 
-static struct k_fifo cmds_queue;
-static struct k_fifo avail_queue;
+static K_FIFO_DEFINE(cmds_queue);
+static K_FIFO_DEFINE(avail_queue);
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
@@ -205,9 +205,6 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 void tester_init(void)
 {
 	int i;
-
-	k_fifo_init(&cmds_queue);
-	k_fifo_init(&avail_queue);
 
 	for (i = 0; i < CMD_QUEUED; i++) {
 		k_fifo_put(&avail_queue, &cmd_buf[i * BTP_MTU]);

@@ -296,7 +296,7 @@ config BLUETOOTH_DEBUG_NONE
 config BLUETOOTH_DEBUG_LOG
 	bool "Normal printf-style to console"
 	select BLUETOOTH_DEBUG
-	select STDOUT_CONSOLE
+	select PRINTK
 	select SYS_LOG
 	help
 	  This option enables Bluetooth debug going to standard
@@ -305,6 +305,7 @@ config BLUETOOTH_DEBUG_LOG
 config BLUETOOTH_DEBUG_MONITOR
 	bool "Monitor protocol over UART"
 	select BLUETOOTH_DEBUG
+	select PRINTK
 	select CONSOLE_HAS_DRIVER
 	help
 	  Use a custom logging protocol over the console UART

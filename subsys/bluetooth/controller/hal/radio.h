@@ -94,6 +94,8 @@ void radio_tmr_aa_capture(void);
 uint32_t radio_tmr_aa_get(void);
 void radio_tmr_end_capture(void);
 uint32_t radio_tmr_end_get(void);
+void radio_tmr_sample(void);
+uint32_t radio_tmr_sample_get(void);
 
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt);
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt);

@@ -64,7 +64,7 @@ static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 static struct device *nble_dev;
 
-static struct k_fifo rx_queue;
+static K_FIFO_DEFINE(rx_queue);
 
 static void rx_thread(void)
 {
@@ -218,7 +218,6 @@ int nble_open(void)
 	BT_DBG("");
 
 	/* Initialize receive queue and start rx_thread */
-	k_fifo_init(&rx_queue);
 	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
 		       (k_thread_entry_t)rx_thread,
 		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);

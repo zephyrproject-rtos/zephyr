@@ -138,25 +138,8 @@ extern const struct bt_storage *bt_storage;
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
-					   uint16_t latency, uint16_t timeout)
-{
-	if (min > max || min < 6 || max > 3200) {
-		return false;
-	}
-
-	/* Limits according to BT Core spec 4.2 [Vol 2, Part E, 7.8.12] */
-	if (timeout < 10 || timeout > 3200) {
-		return false;
-	}
-
-	/* Limits according to BT Core spec 4.2 [Vol 6, Part B, 4.5.1] */
-	if (latency > 499 || ((latency + 1) * max) > (timeout * 4)) {
-		return false;
-	}
-
-	return true;
-}
+bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
+			     uint16_t latency, uint16_t timeout);
 
 struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);

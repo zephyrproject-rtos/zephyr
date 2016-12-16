@@ -421,6 +421,16 @@ uint32_t radio_tmr_end_get(void)
 	return NRF_TIMER0->CC[2];
 }
 
+void radio_tmr_sample(void)
+{
+	NRF_TIMER0->TASKS_CAPTURE[3] = 1;
+}
+
+uint32_t radio_tmr_sample_get(void)
+{
+	return NRF_TIMER0->CC[3];
+}
+
 static uint8_t ALIGNED(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
 
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt)
