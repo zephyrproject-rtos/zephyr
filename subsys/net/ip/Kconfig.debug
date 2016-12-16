@@ -19,7 +19,6 @@
 menuconfig NET_LOG
 	bool "Enable network stack logging and debugging"
 	default n
-	select STDOUT_CONSOLE
 	select SYS_LOG
 	help
 	Enable logging in various parts of the network stack.
