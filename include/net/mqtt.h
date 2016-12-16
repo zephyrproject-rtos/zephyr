@@ -64,7 +64,7 @@ struct mqtt_ctx {
 	/** IP stack context structure */
 	struct net_context *net_ctx;
 	/** Network timeout for tx and rx routines */
-	uint32_t net_timeout;
+	int32_t net_timeout;
 
 	/** Callback executed when a MQTT CONNACK msg is received and validated.
 	 * If this function pointer is not used, must be set to NULL.
@@ -183,6 +183,9 @@ struct mqtt_ctx {
 	/** Data passed to the #unsubscribe callback */
 	void *unsubscribe_data;
 
+	/** Application type */
+	uint8_t app_type;
+
 	/* Clean session is also part of the MQTT CONNECT msg, however app
 	 * behavior is influenced by this parameter, so we keep a copy here
 	 */
@@ -191,9 +194,6 @@ struct mqtt_ctx {
 
 	/** 1 if the MQTT application is connected and 0 otherwise */
 	uint8_t connected:1;
-
-	/** Application type */
-	enum mqtt_app app_type;
 };
 
 /**
@@ -314,8 +314,8 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx);
  * @return			-ENOMEM if a tx buffer is not available
  * @return			-EIO on network error
  */
-int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
-		      const char *topics[], enum mqtt_qos qos[]);
+int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
+		      const char *topics[], const enum mqtt_qos qos[]);
 
 /**
  * @brief mqtt_tx_unsubscribe	Sends the MQTT UNSUBSCRIBE message
@@ -325,7 +325,7 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
  * @param [in] topics		Array of 'items' elements containing C strings
  * @return
  */
-int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
+int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 			const char *topics[]);
 
 int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx,

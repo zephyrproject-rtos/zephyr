@@ -283,8 +283,8 @@ exit_pingreq:
 	return rc;
 }
 
-int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
-		      const char *topics[], enum mqtt_qos qos[])
+int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
+		      const char *topics[], const enum mqtt_qos qos[])
 {
 	struct net_buf *data;
 	struct net_buf *tx;
@@ -324,7 +324,7 @@ exit_subs:
 	return rc;
 }
 
-int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
+int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 			const char *topics[])
 {
 	struct net_buf *data;
