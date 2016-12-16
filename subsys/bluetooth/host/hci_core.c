@@ -130,10 +130,17 @@ NET_BUF_POOL_DEFINE(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
  * This priority pool is to handle HCI events that must not be dropped
  * (currently this is Command Status, Command Complete and Number of
  * Complete Packets) if running low on buffers. Buffers from this pool are not
- * allowed to be passed to RX thread and must be returned from bt_recv().
+ * allowed to be passed to RX thread and must be returned from bt_recv(). Since
+ * the HCI ECC emulation is able to also allocate command status events
+ * we need to reserve one extra buffer for it.
  */
+#if defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
+NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 2, BT_BUF_EVT_SIZE,
+		    BT_BUF_USER_DATA_MIN, NULL);
+#else
 NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 1, BT_BUF_EVT_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
+#endif
 
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
