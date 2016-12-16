@@ -220,8 +220,8 @@ void net_buf_unref(struct net_buf *buf)
 			return;
 		}
 #endif
-		NET_BUF_DBG("buf %p ref %u fifo %p frags %p", buf, buf->ref,
-			    buf->free, buf->frags);
+		NET_BUF_DBG("buf %p ref %u pool %p frags %p", buf, buf->ref,
+			    buf->pool, buf->frags);
 
 		if (--buf->ref > 0) {
 			return;
@@ -243,7 +243,8 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 {
 	NET_BUF_ASSERT(buf);
 
-	NET_BUF_DBG("buf %p (old) ref %u fifo %p", buf, buf->ref, buf->free);
+	NET_BUF_DBG("buf %p (old) ref %u pool %p",
+		    buf, buf->ref, buf->pool);
 	buf->ref++;
 	return buf;
 }
