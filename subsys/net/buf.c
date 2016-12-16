@@ -80,7 +80,7 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 
 	NET_BUF_ASSERT(pool);
 
-	NET_BUF_DBG("pool %p timeout %d", pool, timeout);
+	NET_BUF_DBG("%s():%d: pool %p timeout %d", func, line, pool, timeout);
 
 	/* We need to lock interrupts temporarily to prevent race conditions
 	 * when accessing pool->uninit_count.
@@ -154,7 +154,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout)
 {
 	struct net_buf *buf, *frag;
 
-	NET_BUF_DBG("fifo %p timeout %d", fifo, timeout);
+	NET_BUF_DBG("%s():%d: fifo %p timeout %d", func, line, fifo, timeout);
 
 	buf = k_fifo_get(fifo, timeout);
 	if (!buf) {
@@ -162,7 +162,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout)
 		return NULL;
 	}
 
-	NET_BUF_DBG("buf %p fifo %p", buf, fifo);
+	NET_BUF_DBG("%s():%d: buf %p fifo %p", func, line, buf, fifo);
 
 	/* Get any fragments belonging to this buffer */
 	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
