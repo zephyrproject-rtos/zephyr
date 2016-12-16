@@ -32,10 +32,13 @@ static struct in_addr server_addr = SERVER_IP_ADDR;
 static void udp_received(struct net_context *context,
 			 struct net_buf *buf, int status, void *user_data)
 {
-	ARG_UNUSED(context);
-
 	struct udp_context *ctx = user_data;
+
+	ARG_UNUSED(context);
+	ARG_UNUSED(status);
+
 	ctx->rx_nbuf = buf;
+	k_sem_give(&ctx->rx_sem);
 }
 
 int udp_tx(void *context, const unsigned char *buf, size_t size)
@@ -84,40 +87,48 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 int udp_rx(void *context, unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
+	struct net_buf *rx_buf = NULL;
+	uint16_t read_bytes;
 	uint8_t *ptr;
-	int pos = 0;
+	int pos;
 	int len;
-	struct net_buf *rx_buf;
-	int rc, read_bytes;
+	int rc;
 
-	rc = net_context_recv(ctx->net_ctx, udp_received, K_FOREVER, ctx);
-	if (rc != 0) {
-		return 0;
-	}
+	k_sem_take(&ctx->rx_sem, K_FOREVER);
+
 	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
+	if (read_bytes > size) {
+		return -ENOMEM;
+	}
 
 	ptr = net_nbuf_appdata(ctx->rx_nbuf);
 	rx_buf = ctx->rx_nbuf->frags;
 	len = rx_buf->len - (ptr - rx_buf->data);
+	pos = 0;
 
 	while (rx_buf) {
 		memcpy(buf + pos, ptr, len);
 		pos += len;
+
 		rx_buf = rx_buf->frags;
 		if (!rx_buf) {
 			break;
 		}
+
 		ptr = rx_buf->data;
 		len = rx_buf->len;
 	}
 
+	net_nbuf_unref(ctx->rx_nbuf);
+	ctx->rx_nbuf = NULL;
+
 	if (read_bytes != pos) {
 		return -EIO;
 	}
+
 	rc = read_bytes;
-	net_nbuf_unref(ctx->rx_nbuf);
 	ctx->remaining = 0;
-	ctx->rx_nbuf = NULL;
+
 	return rc;
 }
 
@@ -130,6 +141,8 @@ int udp_init(struct udp_context *ctx)
 	net_ipaddr_copy(&my_addr4.sin_addr, &client_addr);
 	my_addr4.sin_family = AF_INET;
 	my_addr4.sin_port = htons(CLIENT_PORT);
+
+	k_sem_init(&ctx->rx_sem, 0, UINT_MAX);
 
 	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &udp_ctx);
 	if (rc < 0) {
@@ -147,6 +160,12 @@ int udp_init(struct udp_context *ctx)
 	ctx->rx_nbuf = NULL;
 	ctx->remaining = 0;
 	ctx->net_ctx = udp_ctx;
+
+	rc = net_context_recv(ctx->net_ctx, udp_received, K_NO_WAIT, ctx);
+
+	if (rc != 0) {
+		return -EIO;
+	}
 
 	return 0;
 

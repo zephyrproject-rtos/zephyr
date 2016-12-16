@@ -30,7 +30,7 @@
 #define STACK_SIZE	2048
 uint8_t stack[STACK_SIZE];
 
-static struct net_context *ctx;
+static struct net_context *net_ctx;
 
 #ifdef CONFIG_NET_IPV6
 	struct in6_addr local_addr = LOCAL_ADDR;
@@ -61,15 +61,17 @@ static char str[128];
 static
 char *domains[] = {"not_a_real_domain_name",
 		   "zephyrproject.org",
+		   "linux.org",
 		   "www.zephyrproject.org",
+		   "kernel.org",
 		   "gerrit.zephyrproject.org",
-		   "jira.zephyrproject.org",
-		   "jenkins.zephyrproject.org",
 		   "linuxfoundation.org",
-		   "www.linuxfoundation.org",
+		   "jira.zephyrproject.org",
+		   "www.wikipedia.org",
 		   "collabprojects.linuxfoundation.org",
+		   "gcc.gnu.org",
 		   "events.linuxfoundation.org",
-		   "training.linuxfoundation.org",
+		   "www.google.com",
 		   NULL};
 
 /* from subsys/net/ip/utils.c */
@@ -78,11 +80,13 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 
 void run_dns(void)
 {
+	struct dns_context ctx;
 	void *p;
-	int items = 0;
 	int rc;
 	int d;
 	int i;
+
+	dns_init(&ctx);
 
 #ifdef CONFIG_NET_IPV6
 	p = net_if_ipv6_addr_add(net_if_get_default(), &local_addr,
@@ -98,9 +102,9 @@ void run_dns(void)
 	}
 
 #ifdef CONFIG_NET_IPV6
-	rc = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &ctx);
+	rc = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
 #else
-	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &ctx);
+	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
 #endif
 	if (rc != 0) {
 		printk("[%s:%d] Cannot get network context for IPv4 UDP: %d\n",
@@ -109,10 +113,10 @@ void run_dns(void)
 	}
 
 #ifdef CONFIG_NET_IPV6
-	rc = net_context_bind(ctx, (struct sockaddr *)&local_sock,
+	rc = net_context_bind(net_ctx, (struct sockaddr *)&local_sock,
 			      sizeof(struct sockaddr_in6));
 #else
-	rc = net_context_bind(ctx, (struct sockaddr *)&local_sock,
+	rc = net_context_bind(net_ctx, (struct sockaddr *)&local_sock,
 			      sizeof(struct sockaddr_in));
 #endif
 	if (rc != 0) {
@@ -121,26 +125,31 @@ void run_dns(void)
 		goto lb_exit;
 	}
 
+	ctx.net_ctx = net_ctx;
+	ctx.timeout = APP_SLEEP_MSECS;
+	ctx.dns_server = (struct sockaddr *)&remote_sock;
+	ctx.elements = MAX_ADDRESSES;
+#ifdef CONFIG_NET_IPV6
+	ctx.query_type = DNS_QUERY_TYPE_AAAA;
+	ctx.address.ipv6 = addresses;
+#else
+	ctx.query_type = DNS_QUERY_TYPE_A;
+	ctx.address.ipv4 = addresses;
+#endif
+
 	for (d = 0; domains[d] != NULL; d++) {
 
 		printk("\n -------------------------------------------\n"
 		       "[%s:%d] name: %s\n", __func__, __LINE__, domains[d]);
 
-#ifdef CONFIG_NET_IPV6
-		rc = dns6_resolve(ctx, addresses, &items, ARRAY_SIZE(addresses),
-				  domains[d], (struct sockaddr *)&remote_sock,
-				  APP_SLEEP_MSECS);
-#else
-		rc = dns4_resolve(ctx, addresses, &items, ARRAY_SIZE(addresses),
-				  domains[d], (struct sockaddr *)&remote_sock,
-				  APP_SLEEP_MSECS);
-#endif
+		ctx.name = domains[d];
+		rc = dns_resolve(&ctx);
 		if (rc != 0) {
 			printk("rc: %d\n", rc);
 			continue;
 		}
 
-		for (i = 0; i < items; i++) {
+		for (i = 0; i < ctx.items; i++) {
 #ifdef CONFIG_NET_IPV6
 			net_sprint_ip_addr_buf(addresses[i].in6_u.u6_addr8,
 					       16, str, sizeof(str));
@@ -155,15 +164,13 @@ void run_dns(void)
 	}
 
 lb_exit:
-	net_context_put(ctx);
+	net_context_put(net_ctx);
 	printk("\nBye!\n");
 }
 
 
 void main(void)
 {
-	dns_init();
-
 	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t)run_dns,
 		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

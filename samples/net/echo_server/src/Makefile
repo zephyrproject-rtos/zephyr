@@ -1,5 +1,3 @@
-ccflags-$(CONFIG_NETWORKING_WITH_BT) +=-I${ZEPHYR_BASE}/samples/bluetooth/
-
 obj-y = echo-server.o
 
 ifeq ($(CONFIG_BOARD_ARDUINO_101),y)
@@ -7,11 +5,18 @@ ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/
 obj-y += ../../common/cc2520_a101.o
 endif
 
+ifeq ($(CONFIG_BOARD_FRDM_K64F),y)
+ccflags-y +=-I${ZEPHYR_BASE}/drivers/
+ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/
+obj-y += ../../common/cc2520_frdm_k64f.o
+endif
+
 ifeq ($(CONFIG_NET_TESTING), y)
 ccflags-y +=-I${ZEPHYR_BASE}/samples/net/common/
 ccflags-y +=-DNET_TESTING_SERVER=1
 endif
 
-ifeq ($(CONFIG_NETWORKING_WITH_BT), y)
-	obj-y += ../../../bluetooth/gatt/ipss.o
+ifeq ($(CONFIG_NET_L2_BLUETOOTH), y)
+ccflags-y +=-I${ZEPHYR_BASE}/samples/bluetooth/
+obj-y += ../../../bluetooth/gatt/ipss.o
 endif

@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
+#define SYS_LOG_DOMAIN "dev/enc28j60"
+#include <misc/sys_log.h>
+
 #include <zephyr.h>
 #include <device.h>
 #include <string.h>
@@ -23,6 +27,7 @@
 #include <spi.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
+#include <net/ethernet.h>
 
 #include "eth_enc28j60_priv.h"
 
@@ -165,23 +170,24 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 				  uint16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t *index_buf;
 	uint16_t num_segments;
 	uint16_t num_remaining;
 
-	index_buf = data_buffer;
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
 	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	for (int i = 0; i < num_segments;
-	     ++i, index_buf += MAX_BUFFER_LENGTH) {
+	     ++i, data_buffer += MAX_BUFFER_LENGTH) {
 		context->mem_buf[0] = ENC28J60_SPI_RBM;
 		spi_transceive(context->spi,
 			       context->mem_buf, MAX_BUFFER_LENGTH + 1,
 			       context->mem_buf, MAX_BUFFER_LENGTH + 1);
-		memcpy(index_buf, context->mem_buf + 1, MAX_BUFFER_LENGTH);
+		if (data_buffer) {
+			memcpy(data_buffer, context->mem_buf + 1,
+			       MAX_BUFFER_LENGTH);
+		}
 	}
 
 	if (num_remaining > 0) {
@@ -189,7 +195,10 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 		spi_transceive(context->spi,
 			       context->mem_buf, num_remaining + 1,
 			       context->mem_buf, num_remaining + 1);
-		memcpy(index_buf, context->mem_buf + 1, num_remaining);
+		if (data_buffer) {
+			memcpy(data_buffer, context->mem_buf + 1,
+			       num_remaining);
+		}
 	}
 
 	k_sem_give(&context->spi_sem);
@@ -343,11 +352,13 @@ static int eth_enc28j60_init(struct device *dev)
 
 	context->gpio = device_get_binding((char *)config->gpio_port);
 	if (!context->gpio) {
+		SYS_LOG_ERR("GPIO port %s not found", config->gpio_port);
 		return -EINVAL;
 	}
 
 	context->spi = device_get_binding((char *)config->spi_port);
 	if (!context->spi) {
+		SYS_LOG_ERR("SPI master port %s not found", config->spi_port);
 		return -EINVAL;
 	}
 
@@ -355,6 +366,8 @@ static int eth_enc28j60_init(struct device *dev)
 	if (gpio_pin_configure(context->gpio, config->gpio_pin,
 			       (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
 			       | GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE))) {
+		SYS_LOG_ERR("Unable to configure GPIO pin %u",
+			    config->gpio_pin);
 		return -EINVAL;
 	}
 
@@ -376,6 +389,7 @@ static int eth_enc28j60_init(struct device *dev)
 	spi_cfg.max_sys_freq = config->spi_freq;
 
 	if (spi_configure(context->spi, &spi_cfg) < 0) {
+		SYS_LOG_ERR("Failed to configure SPI");
 		return -EIO;
 	}
 
@@ -384,6 +398,7 @@ static int eth_enc28j60_init(struct device *dev)
 	}
 
 	if (eth_enc28j60_soft_reset(dev)) {
+		SYS_LOG_ERR("Soft-reset failed");
 		return -EIO;
 	}
 
@@ -408,9 +423,13 @@ static int eth_enc28j60_init(struct device *dev)
 	k_sem_give(&context->tx_rx_sem);
 
 	/* Start interruption-poll thread */
-	k_thread_spawn(context->thread_stack, ENC28J60_THREAD_STACK_SIZE,
-		    enc28j60_thread_main, (void *) dev, NULL, NULL,
-		    K_PRIO_COOP(ENC28J60_THREAD_PRIORITY), 0, K_NO_WAIT);
+	k_thread_spawn(context->thread_stack,
+		       CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE,
+		       enc28j60_thread_main, (void *) dev, NULL, NULL,
+		       K_PRIO_COOP(CONFIG_ETH_ENC28J60_RX_THREAD_PRIO),
+		       0, K_NO_WAIT);
+
+	SYS_LOG_INF("ENC28J60 Initialized");
 
 	return 0;
 }
@@ -489,6 +508,7 @@ static int eth_enc28j60_tx(struct device *dev, struct net_buf *buf,
 	k_sem_give(&context->tx_rx_sem);
 
 	if (tx_end & ENC28J60_BIT_ESTAT_TXABRT) {
+		SYS_LOG_ERR("TX failed!");
 		return -EIO;
 	}
 
@@ -505,6 +525,8 @@ static int eth_enc28j60_rx(struct device *dev)
 	 * does not reliably/accurately report the status of pending packet.
 	 * Use EPKTCNT register instead.
 	*/
+
+	SYS_LOG_DBG("");
 
 	k_sem_take(&context->tx_rx_sem, K_FOREVER);
 
@@ -532,13 +554,16 @@ static int eth_enc28j60_rx(struct device *dev)
 		/* Read reception status vector */
 		eth_enc28j60_read_mem(dev, context->rx_rsv, 4);
 
-		/* Get the frame length from the rx status vector */
-		frm_len = (context->rx_rsv[1] << 8) | context->rx_rsv[0];
+		/* Get the frame length from the rx status vector,
+		 * minus CRC size at the end which is always present
+		 */
+		frm_len = (context->rx_rsv[1] << 8) | (context->rx_rsv[0] - 4);
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
 		buf = net_nbuf_get_reserve_rx(0);
 		if (!buf) {
+			SYS_LOG_ERR("Could not allocate rx buffer");
 			goto done;
 		}
 
@@ -552,7 +577,9 @@ static int eth_enc28j60_rx(struct device *dev)
 			/* Reserve a data frag to receive the frame */
 			pkt_buf = net_nbuf_get_reserve_data(0);
 			if (!pkt_buf) {
+				SYS_LOG_ERR("Could not allocate data buffer");
 				net_buf_unref(buf);
+
 				goto done;
 			}
 
@@ -578,16 +605,18 @@ static int eth_enc28j60_rx(struct device *dev)
 			frm_len -= spi_frame_len;
 		} while (frm_len > 0);
 
+		/* Let's pop the useless CRC */
+		eth_enc28j60_read_mem(dev, NULL, 4);
+
 		/* Pops one padding byte from spi circular buffer
 		 * introduced by the device when the frame length is odd
 		 */
 		if (lengthfr & 0x01) {
-			uint8_t pad;
-
-			eth_enc28j60_read_mem(dev, &pad, 1);
+			eth_enc28j60_read_mem(dev, NULL, 1);
 		}
 
-		/*Feed buffer frame to IP stack */
+		/* Feed buffer frame to IP stack */
+		SYS_LOG_DBG("Received packet of length %u", lengthfr);
 		net_recv_data(context->iface, buf);
 done:
 		/* Free buffer memory and decrement rx counter */
@@ -636,10 +665,12 @@ static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2)
 
 static int eth_net_tx(struct net_if *iface, struct net_buf *buf)
 {
-	uint16_t ll_len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
+	uint16_t len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
 	int ret;
 
-	ret = eth_enc28j60_tx(iface->dev, buf, ll_len);
+	SYS_LOG_DBG("buf %p (len %u)", buf, len);
+
+	ret = eth_enc28j60_tx(iface->dev, buf, len);
 	if (ret == 0) {
 		net_nbuf_unref(buf);
 	}
@@ -661,13 +692,15 @@ static void eth_enc28j60_iface_init_0(struct net_if *iface)
 	struct device *dev = net_if_get_device(iface);
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 
+	SYS_LOG_DBG("");
+
 	net_if_set_link_addr(iface, mac_address_0, sizeof(mac_address_0));
 	context->iface = iface;
 }
 
 static struct net_if_api api_funcs_0 = {
-	.init	= eth_enc28j60_iface_init_0,
-	.send	= eth_net_tx,
+	.init			= eth_enc28j60_iface_init_0,
+	.send			= eth_net_tx,
 };
 
 static struct eth_enc28j60_runtime eth_enc28j60_0_runtime;
@@ -681,15 +714,9 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.full_duplex = CONFIG_ETH_EN28J60_0_FULL_DUPLEX,
 };
 
-#ifdef CONFIG_NET_L2_ETHERNET
-#define _ETH_L2_LAYER ETHERNET_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-#endif
-
 NET_DEVICE_INIT(enc28j60_0, CONFIG_ETH_ENC28J60_0_NAME,
 		eth_enc28j60_init, &eth_enc28j60_0_runtime,
-		&eth_enc28j60_0_config,
-		CONFIG_ETH_INIT_PRIORITY,
-		&api_funcs_0, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 1500);
+		&eth_enc28j60_0_config, CONFIG_ETH_INIT_PRIORITY, &api_funcs_0,
+		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
 
 #endif /* CONFIG_ETH_ENC28J60_0 */

@@ -125,7 +125,7 @@ static void net_tcp_iface_init(struct net_if *iface)
 
 static void v6_send_syn_ack(struct net_if *iface, struct net_buf *req)
 {
-	struct net_buf *rsp;
+	struct net_buf *rsp = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(reply_v6_ctx->tcp,
@@ -765,7 +765,7 @@ static bool test_create_v6_reset_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
 	uint8_t flags = NET_TCP_RST;
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
@@ -794,9 +794,9 @@ static bool test_create_v6_reset_packet(void)
 
 static bool test_create_v4_reset_packet(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v4_ctx->tcp;
 	uint8_t flags = NET_TCP_RST;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
@@ -825,9 +825,9 @@ static bool test_create_v4_reset_packet(void)
 
 static bool test_create_v6_syn_packet(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v6_ctx->tcp;
 	uint8_t flags = NET_TCP_SYN;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
@@ -856,9 +856,9 @@ static bool test_create_v6_syn_packet(void)
 
 static bool test_create_v4_syn_packet(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v4_ctx->tcp;
 	uint8_t flags = NET_TCP_SYN;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
@@ -887,9 +887,9 @@ static bool test_create_v4_syn_packet(void)
 
 static bool test_create_v6_synack_packet(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v6_ctx->tcp;
 	uint8_t flags = NET_TCP_SYN | NET_TCP_ACK;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
@@ -919,9 +919,9 @@ static bool test_create_v6_synack_packet(void)
 
 static bool test_create_v4_synack_packet(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v4_ctx->tcp;
 	uint8_t flags = NET_TCP_SYN | NET_TCP_ACK;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
@@ -951,9 +951,9 @@ static bool test_create_v4_synack_packet(void)
 
 static bool test_create_v6_fin_packet(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v6_ctx->tcp;
 	uint8_t flags = NET_TCP_FIN;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
@@ -982,9 +982,9 @@ static bool test_create_v6_fin_packet(void)
 
 static bool test_create_v4_fin_packet(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v4_ctx->tcp;
 	uint8_t flags = NET_TCP_FIN;
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
@@ -1013,9 +1013,9 @@ static bool test_create_v4_fin_packet(void)
 
 static bool test_v6_seq_check(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v6_ctx->tcp;
 	uint8_t flags = NET_TCP_SYN;
+	struct net_buf *buf = NULL;
 	uint32_t seq;
 	int ret;
 
@@ -1045,9 +1045,9 @@ static bool test_v6_seq_check(void)
 
 static bool test_v4_seq_check(void)
 {
-	struct net_buf *buf;
 	struct net_tcp *tcp = v4_ctx->tcp;
 	uint8_t flags = NET_TCP_SYN;
+	struct net_buf *buf = NULL;
 	uint32_t seq;
 	int ret;
 

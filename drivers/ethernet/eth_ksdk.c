@@ -263,17 +263,10 @@ static void generate_mac(uint8_t *mac_addr)
 
 	entropy = sys_rand32_get();
 
+	mac_addr[3] = entropy >> 8;
+	mac_addr[4] = entropy >> 16;
 	/* Locally administered, unicast */
-	mac_addr[0] = ((entropy >> 0) & 0xfc) | 0x02;
-
-	mac_addr[1] = entropy >> 8;
-	mac_addr[2] = entropy >> 16;
-	mac_addr[3] = entropy >> 24;
-
-	entropy = sys_rand32_get();
-
-	mac_addr[4] = entropy >> 0;
-	mac_addr[5] = entropy >> 8;
+	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
 }
 #endif
 
@@ -391,28 +384,23 @@ static void eth_ksdk_error_isr(void *p)
 }
 
 static struct eth_context eth_0_context = {
-#if !defined(CONFIG_ETH_KSDK_0_RANDOM_MAC)
 	.mac_addr = {
-		CONFIG_ETH_KSDK_0_MAC0,
-		CONFIG_ETH_KSDK_0_MAC1,
-		CONFIG_ETH_KSDK_0_MAC2,
+		/* Freescale's OUI */
+		0x00,
+		0x04,
+		0x9f,
+#if !defined(CONFIG_ETH_KSDK_0_RANDOM_MAC)
 		CONFIG_ETH_KSDK_0_MAC3,
 		CONFIG_ETH_KSDK_0_MAC4,
 		CONFIG_ETH_KSDK_0_MAC5
+#endif
 	}
-#endif
 };
-
-#ifdef CONFIG_NET_L2_ETHERNET
-#define _ETH_L2_LAYER ETHERNET_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-#endif
 
 NET_DEVICE_INIT(eth_ksdk_0, CONFIG_ETH_KSDK_0_NAME,
 		eth_0_init, &eth_0_context,
-		NULL,
-		CONFIG_ETH_INIT_PRIORITY,
-		&api_funcs_0, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 1500);
+		NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs_0,
+		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
 
 static void eth_0_config_func(void)
 {
