@@ -18,4 +18,12 @@
  * limitations under the License.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void gap_init(const char *name, uint16_t appearance);
+
+#ifdef __cplusplus
+}
+#endif
