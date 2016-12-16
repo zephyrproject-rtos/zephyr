@@ -739,7 +739,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
 			.device = CMSDK_APB_UART4,},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_3,
+DEVICE_AND_API_INIT(uart_cmsdk_apb_4,
 		    CONFIG_UART_CMSDK_APB_PORT4_NAME,
 		    &uart_cmsdk_apb_init,
 		    &uart_cmsdk_apb_dev_data_4,
