@@ -197,6 +197,14 @@ struct mqtt_ctx {
 };
 
 /**
+ * @brief mqtt_init		Initializes the MQTT context structure
+ * @param ctx			MQTT context structure
+ * @param app_type		See enum mqtt_app
+ * @return			0, always.
+ */
+int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type);
+
+/**
  * @brief mqtt_tx_connect	Sends the MQTT CONNECT message
  * @param [in] ctx		MQTT context structure
  * @param [in] msg		MQTT CONNECT msg
@@ -385,5 +393,14 @@ int mqtt_rx_pingresp(struct mqtt_ctx *ctx, struct net_buf *rx);
  * @return			-EINVAL on error
  */
 int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx);
+
+/**
+ * @brief mqtt_rx_unsuback	Parses the MQTT UNSUBACK message
+ * @param [in] ctx		MQTT context structure
+ * @param [in] rx		RX buffer from the IP stack
+ * @return			0 on success
+ * @return			-EINVAL on error
+ */
+int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 #endif
