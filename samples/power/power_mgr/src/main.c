@@ -296,6 +296,7 @@ static void create_device_list(void)
 	 */
 	device_list_get(&device_list, &count);
 
+#if (CONFIG_X86)
 	device_count = 3; /* Reserve for ioapic, loapic and uart */
 
 	for (i = 0; (i < count) && (device_count < DEVICE_POLICY_MAX); i++) {
@@ -309,6 +310,17 @@ static void create_device_list(void)
 			device_ordered_list[device_count++] = i;
 		}
 	}
+#elif (CONFIG_ARC)
+	device_count = 1; /* Reserve for irq unit */
+
+	for (i = 0; (i < count) && (device_count < DEVICE_POLICY_MAX); i++) {
+		if (!strcmp(device_list[i].config->name, "arc_v2_irq_unit")) {
+			device_ordered_list[0] = i;
+		} else {
+			device_ordered_list[device_count++] = i;
+		}
+	}
+#endif
 }
 
 static void rtc_interrupt_fn(struct device *rtc_dev)
