@@ -203,6 +203,7 @@ FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 	CODE_UNREACHABLE;
 }
 
+#ifdef CONFIG_MULTITHREADING
 static void start_thread(struct k_thread *thread)
 {
 	int key = irq_lock(); /* protect kernel queues */
@@ -219,7 +220,9 @@ static void start_thread(struct k_thread *thread)
 
 	irq_unlock(key);
 }
+#endif
 
+#ifdef CONFIG_MULTITHREADING
 static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -237,6 +240,7 @@ static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 	start_thread(thread);
 #endif
 }
+#endif
 
 #ifdef CONFIG_MULTITHREADING
 k_tid_t k_thread_spawn(char *stack, size_t stack_size,

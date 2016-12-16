@@ -45,6 +45,7 @@ static void _clear_ready_q_prio_bit(int prio)
 }
 #endif
 
+#ifdef CONFIG_MULTITHREADING
 /*
  * Find the next thread to run when there is no thread in the cache and update
  * the cache.
@@ -64,6 +65,7 @@ static struct k_thread *_get_ready_q_head(void)
 
 	return thread;
 }
+#endif
 
 /*
  * Add thread to the ready queue, in the slot for its priority; the thread
