@@ -177,11 +177,11 @@ config ISR_STACK_SIZE
 
 config  THREAD_CUSTOM_DATA
 	bool
-	prompt "Task and fiber custom data"
+	prompt "Thread custom data"
 	default n
 	help
-	This option allows each task and fiber to store 32 bits of custom data,
-	which can be accessed using the sys_thread_custom_data_xxx() APIs.
+	This option allows each thread to store 32 bits of custom data,
+	which can be accessed using the k_thread_custom_data_xxx() APIs.
 
 config  NANO_TIMEOUTS
 	bool

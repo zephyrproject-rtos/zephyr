@@ -3,8 +3,8 @@
 Custom Data
 ###########
 
-A thread's :dfn:`custom data` is a 32-bit, thread-specific value
-that may be used by an application for any purpose.
+A thread's :dfn:`custom data` is a 32-bit, thread-specific value that may be
+used by an application for any purpose.
 
 .. contents::
     :local:
@@ -14,8 +14,8 @@ Concepts
 ********
 
 Every thread has a 32-bit custom data area.
-The custom data is accessible only by the thread itself,
-and may be used by the application for any purpose it chooses.
+The custom data is accessible only by the thread itself, and may be used by the
+application for any purpose it chooses.
 The default custom data for a thread is zero.
 
 .. note::
