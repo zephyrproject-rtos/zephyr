@@ -297,7 +297,7 @@ endmenu
 config MDEF
 	bool
 	prompt "Use MDEF files for statically configured kernel objects"
-	default n
+	default y
 	help
 	Using an MDEF file can help the startup time of the application since
 	the objects it lists are statically allocated and initialized, and may
@@ -305,6 +305,6 @@ config MDEF
 
 	Disabling this option can reduce the compilation time slightly.
 
-	In doubt, select 'n'.
+	In doubt, select 'y'.
 
 endmenu
