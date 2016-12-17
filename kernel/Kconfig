@@ -113,39 +113,6 @@ config APPLICATION_INIT_PRIORITY
 	This priority level is for end-user drivers such as sensors and display
 	which have no inward dependencies.
 
-menu "Kernel event logging points"
-depends on KERNEL_EVENT_LOGGER
-
-config KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	bool
-	prompt "Context switch event logging point"
-	default n
-	depends on KERNEL_EVENT_LOGGER
-	help
-	Enable the context switch event messages.
-
-config KERNEL_EVENT_LOGGER_INTERRUPT
-	bool
-	prompt "Interrupt event logging point"
-	default n
-	depends on KERNEL_EVENT_LOGGER
-	help
-	Enable interrupt event messages. These messages provide the following
-	information: The time when interrupts occur.
-
-config KERNEL_EVENT_LOGGER_SLEEP
-	bool
-	prompt "Sleep event logging point"
-	default n
-	depends on KERNEL_EVENT_LOGGER && SYS_POWER_MANAGEMENT
-	help
-	Enable low power condition event messages. These messages provide the
-	following information:
-
-		- When the CPU went to sleep mode.
-		- When the CPU woke up.
-		- The ID of the interrupt that woke the CPU up.
-endmenu
 
 menu "Security Options"
 
