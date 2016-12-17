@@ -17,7 +17,7 @@
 
 #include <drivers/rand32.h>
 #include <drivers/system_timer.h>
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <init.h>
 
 #include "fsl_rnga.h"

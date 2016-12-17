@@ -22,7 +22,7 @@
 #include <misc/util.h>
 #define SYS_LOG_NO_NEWLINE
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <string.h>
 #include <init.h>
 

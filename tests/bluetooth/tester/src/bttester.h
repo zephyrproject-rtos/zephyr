@@ -34,7 +34,7 @@
 
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #define SYS_LOG_DOMAIN "bttester"
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 struct btp_hdr {
 	uint8_t  service;

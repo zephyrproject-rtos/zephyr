@@ -53,7 +53,7 @@
 /* definitions */
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_CDC_ACM_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define DEV_DATA(dev)						\
 	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)

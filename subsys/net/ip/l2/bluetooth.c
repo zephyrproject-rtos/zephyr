@@ -26,7 +26,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #include <board.h>
 #include <device.h>

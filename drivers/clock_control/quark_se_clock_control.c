@@ -30,7 +30,7 @@
 #include <clock_control/quark_se_clock_control.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_CLOCK_CONTROL_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 struct quark_se_clock_control_config {
 	uint32_t base_address;

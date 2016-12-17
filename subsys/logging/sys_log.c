@@ -15,7 +15,7 @@
  * .
  */
 
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 void syslog_hook_default(const char *fmt, ...)
 {

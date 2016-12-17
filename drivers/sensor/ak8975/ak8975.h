@@ -21,7 +21,7 @@
 
 #define SYS_LOG_DOMAIN "AK8975"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define AK8975_REG_CHIP_ID		0x00
 #define AK8975_CHIP_ID			0x48

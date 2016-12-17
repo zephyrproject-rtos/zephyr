@@ -504,5 +504,5 @@ struct lsm6ds0_data {
 
 #define SYS_LOG_DOMAIN "LSM6DS0"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #endif /* __SENSOR_LSM6DS0_H__ */

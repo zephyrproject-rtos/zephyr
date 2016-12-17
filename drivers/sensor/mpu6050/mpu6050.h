@@ -24,7 +24,7 @@
 
 #define SYS_LOG_DOMAIN "MPU6050"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define MPU6050_REG_CHIP_ID		0x75
 #define MPU6050_CHIP_ID			0x68

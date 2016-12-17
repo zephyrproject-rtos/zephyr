@@ -45,7 +45,7 @@
 #include "i2c_atmel_sam3.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 /* for use with dev_data->state */
 #define STATE_READY		0

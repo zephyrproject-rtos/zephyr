@@ -53,7 +53,7 @@
 
 #include <misc/util.h>
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <board.h>
 #include <init.h>
 

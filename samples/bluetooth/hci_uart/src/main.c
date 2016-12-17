@@ -23,7 +23,7 @@
 #include <zephyr.h>
 #include <arch/cpu.h>
 #include <misc/byteorder.h>
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <misc/util.h>
 
 #include <device.h>

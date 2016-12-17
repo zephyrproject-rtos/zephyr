@@ -43,7 +43,7 @@
 #include "usb_common.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_MASS_STORAGE_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 /* Misc. macros */
 #define LOW_BYTE(x)  ((x) & 0xFF)

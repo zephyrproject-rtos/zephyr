@@ -18,7 +18,7 @@
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_TI_CC2520_LEVEL
 #define SYS_LOG_DOMAIN "dev/cc2520"
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #include <errno.h>
 

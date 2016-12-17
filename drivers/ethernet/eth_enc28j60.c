@@ -17,7 +17,7 @@
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
 #define SYS_LOG_DOMAIN "dev/enc28j60"
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #include <zephyr.h>
 #include <device.h>

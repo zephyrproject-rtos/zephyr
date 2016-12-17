@@ -22,7 +22,7 @@
 
 #define SYS_LOG_DOMAIN "GROVE_TEMPERATURE_SENSOR"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_GROVE_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 /* thermistor Nominal B-Constant */
 #if defined(CONFIG_GROVE_TEMPERATURE_SENSOR_V1_0)

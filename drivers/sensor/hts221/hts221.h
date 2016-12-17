@@ -24,7 +24,7 @@
 
 #define SYS_LOG_DOMAIN "HTS221"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define HTS221_I2C_ADDR			0x5F
 #define HTS221_AUTOINCREMENT_ADDR	BIT(7)

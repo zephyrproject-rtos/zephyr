@@ -38,7 +38,7 @@
 
 #define SYS_LOG_DOMAIN "SPI Intel"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)				\

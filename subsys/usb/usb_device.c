@@ -68,7 +68,7 @@
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_LEVEL
 #define SYS_LOG_NO_NEWLINE
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define MAX_DESC_HANDLERS           4 /** Device, interface, endpoint, other */
 

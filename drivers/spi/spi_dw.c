@@ -39,7 +39,7 @@
 
 #define SYS_LOG_DOMAIN "SPI DW"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #if (CONFIG_SYS_LOG_SPI_LEVEL == 4)
 #define DBG_COUNTER_INIT()	\

@@ -32,7 +32,7 @@
 #include <net/buf.h>
 
 #define SYS_LOG_DOMAIN "main"
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #include <net_private.h>
 

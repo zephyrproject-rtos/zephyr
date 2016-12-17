@@ -19,7 +19,7 @@
 #include <device.h>
 #include <uart.h>
 
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <misc/util.h>
 
 #include <net/buf.h>

@@ -22,7 +22,7 @@
  */
 
 #include <ztest.h>
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define N_VALUES 10
 

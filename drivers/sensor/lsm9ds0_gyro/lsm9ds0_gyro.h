@@ -265,5 +265,5 @@ int lsm9ds0_gyro_init_interrupt(struct device *dev);
 
 #define SYS_LOG_DOMAIN "LSM9DS0_GYRO"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #endif /* __SENSOR_LSM9DS0_GYRO_H__ */

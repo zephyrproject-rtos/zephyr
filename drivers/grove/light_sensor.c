@@ -22,7 +22,7 @@
 
 #define SYS_LOG_DOMAIN "GROVE_LIGHT_SENSOR"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_GROVE_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 struct gls_data {
 	struct device *adc;

@@ -28,7 +28,7 @@
 #include "i2c_stm32lx.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 /* convenience defines */
 #define DEV_CFG(dev)							\

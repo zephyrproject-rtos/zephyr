@@ -54,7 +54,7 @@ void bt_log(int prio, const char *fmt, ...);
 
 #define SYS_LOG_DOMAIN "bt"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define BT_DBG(fmt, ...) SYS_LOG_DBG("(%p) " fmt, k_current_get(), \
 				##__VA_ARGS__)

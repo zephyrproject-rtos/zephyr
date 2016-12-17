@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <kernel.h>
 #include <device.h>
 #include <string.h>

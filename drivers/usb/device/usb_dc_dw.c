@@ -33,7 +33,7 @@
 #include "clk.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DW_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 /* convert from endpoint address to hardware endpoint index */
 #define USB_DW_EP_ADDR2IDX(ep)  ((ep) & ~USB_EP_DIR_MASK)

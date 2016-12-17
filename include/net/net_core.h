@@ -68,7 +68,7 @@ struct net_buf;
 struct net_context;
 struct net_if;
 
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <string.h>
 
 enum net_verdict {

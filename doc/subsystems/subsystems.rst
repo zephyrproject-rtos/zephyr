@@ -15,3 +15,4 @@ to applications.
    sensor
    power_management.rst
    shell
+   system_log

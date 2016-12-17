@@ -17,7 +17,7 @@
 /* Sample to put the device in USB mass storage mode backed on a 16k RAMDisk. */
 
 #include <zephyr.h>
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 void main(void)
 {

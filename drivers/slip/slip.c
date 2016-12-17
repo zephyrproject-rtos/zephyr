@@ -22,7 +22,7 @@
 #if defined(CONFIG_SLIP_DEBUG)
 #define SYS_LOG_DOMAIN "slip"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <stdio.h>
 #endif
 

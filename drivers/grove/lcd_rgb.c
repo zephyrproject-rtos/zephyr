@@ -25,7 +25,7 @@
 
 #define SYS_LOG_DOMAIN "Grove LCD"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_GROVE_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define SLEEP_IN_US(_x_)	((_x_) * 1000)
 

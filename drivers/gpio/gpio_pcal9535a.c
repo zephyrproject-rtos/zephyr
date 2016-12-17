@@ -29,7 +29,7 @@
 #include "gpio_pcal9535a.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_PCAL9535A_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 /* Register definitions */
 #define REG_INPUT_PORT0			0x00

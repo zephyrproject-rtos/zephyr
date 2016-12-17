@@ -18,7 +18,7 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <stdio.h>
 #include <misc/ring_buffer.h>
 

@@ -43,7 +43,7 @@
 #include <uart.h>
 #include <string.h>
 #include <misc/byteorder.h>
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include "cdc_acm.h"
 #include "usb_device.h"
 #include "usb_common.h"

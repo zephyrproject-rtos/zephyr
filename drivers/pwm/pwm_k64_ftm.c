@@ -64,7 +64,7 @@
 #undef COMBINE_MODE_SUPPORT
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_PWM_K64_FTM_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 /* Maximum PWM outputs */
 #define MAX_PWM_OUT		8

@@ -37,7 +37,7 @@
 	(*((volatile uint32_t *)(SCSS_REGISTER_BASE+offset)))
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_ARC_INIT_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 /**
  *

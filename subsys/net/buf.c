@@ -27,7 +27,7 @@
 #if defined(CONFIG_NET_BUF_DEBUG)
 #define SYS_LOG_DOMAIN "net/buf"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define NET_BUF_DBG(fmt, ...) SYS_LOG_DBG("(%p) " fmt, k_current_get(), \
 					  ##__VA_ARGS__)

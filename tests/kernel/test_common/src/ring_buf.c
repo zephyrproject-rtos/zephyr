@@ -18,7 +18,7 @@
 
 #include <ztest.h>
 #include <misc/ring_buffer.h>
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 SYS_RING_BUF_DECLARE_POW2(ring_buf, 8);
 

@@ -27,7 +27,7 @@
 
 #define SYS_LOG_DOMAIN "dev/eth_ksdk"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #include <board.h>
 #include <device.h>

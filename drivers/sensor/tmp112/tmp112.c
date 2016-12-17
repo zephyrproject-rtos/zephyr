@@ -24,7 +24,7 @@
 
 #define SYS_LOG_DOMAIN "TMP112"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 
 #define TMP112_I2C_ADDRESS		CONFIG_TMP112_I2C_ADDR
 
