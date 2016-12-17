@@ -112,7 +112,7 @@ static inline int is_in_a_rw_region(vaddr_t addr, vaddr_t end_addr)
 }
 
 static inline int mem_probe_no_check(void *p, int perm, size_t num_bytes,
-										void *buf)
+				     void *buf)
 {
 	vaddr_t addr = (vaddr_t)p;
 	vaddr_t end_addr = addr + num_bytes - 1;
@@ -162,7 +162,7 @@ int _mem_probe(void *p, int perm, size_t num_bytes, void *buf)
 }
 
 static inline int mem_access(void *p, void *buf, size_t num_bytes,
-								int len, int perm)
+			     int len, int perm)
 {
 	char *p_char = p, *buf_char = buf, *p_end = ((char *)p + len);
 
@@ -185,7 +185,7 @@ static inline int get_align(const uint32_t value)
 }
 
 static inline int get_width(const void *p1, const void *p2,
-							size_t num_bytes, int width)
+			    size_t num_bytes, int width)
 {
 	vaddr_t p1_addr = (vaddr_t)p1, p2_addr = (vaddr_t)p2;
 
@@ -205,15 +205,15 @@ static inline int get_width(const void *p1, const void *p2,
 int _mem_safe_read(void *src, char *buf, size_t num_bytes, int width)
 {
 	width = get_width(src, buf, num_bytes, width);
-	return  unlikely(width < 0) ? -EINVAL :
-			mem_access(src, buf, width, num_bytes, SYS_MEM_SAFE_READ);
+	return unlikely(width < 0) ? -EINVAL :
+	       mem_access(src, buf, width, num_bytes, SYS_MEM_SAFE_READ);
 }
 
 int _mem_safe_write(void *dest, char *buf, size_t num_bytes, int width)
 {
 	width = get_width(dest, buf, num_bytes, width);
-	return  unlikely(width < 0) ? -EINVAL :
-			mem_access(dest, buf, width, num_bytes, SYS_MEM_SAFE_WRITE);
+	return unlikely(width < 0) ? -EINVAL :
+	       mem_access(dest, buf, width, num_bytes, SYS_MEM_SAFE_WRITE);
 }
 
 #if defined(CONFIG_XIP)
@@ -231,7 +231,7 @@ int _mem_safe_write_to_text_section(void *dest, char *buf, size_t num_bytes)
 {
 	vaddr_t v = (vaddr_t)dest;
 	int is_in_text = ((v >= IMAGE_TEXT_START) &&
-						((v + num_bytes) <= IMAGE_TEXT_END));
+			  ((v + num_bytes) <= IMAGE_TEXT_END));
 
 	if (unlikely(!is_in_text)) {
 		return -EFAULT;

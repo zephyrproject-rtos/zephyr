@@ -322,7 +322,7 @@
  *
  *     For example:
  *       %CONFIG_GDB_REMOTE_SERIAL_EXT_NOTIF_PREFIX_STR:<notificationData>#<checksum>
-*/
+ */
 
 #include <nanokernel.h>
 #include <stdint.h>
@@ -370,22 +370,22 @@
 #endif
 
 #ifdef GDB_ARCH_HAS_RUNCONTROL
-#define	RESUME_SYSTEM() resume_system()
-#define	REMOVE_ALL_INSTALLED_BREAKPOINTS() \
-			remove_all_installed_breakpoints()
+#define RESUME_SYSTEM() resume_system()
+#define REMOVE_ALL_INSTALLED_BREAKPOINTS() \
+	remove_all_installed_breakpoints()
 #define UNINSTALL_BREAKPOINTS() uninstall_breakpoints()
 #else
-#define	RESUME_SYSTEM()
-#define	REMOVE_ALL_INSTALLED_BREAKPOINTS()
+#define RESUME_SYSTEM()
+#define REMOVE_ALL_INSTALLED_BREAKPOINTS()
 #define UNINSTALL_BREAKPOINTS()
 #endif
 
 #ifdef GDB_ARCH_HAS_RUNCONTROL
 struct bp_array {
-	gdb_instr_t *addr;	/* breakpoint address */
-	gdb_instr_t instr;	/* saved instruction */
-	char valid;		/* breakpoint is valid? */
-	char enabled;		/* breakpoint is enabled? */
+	gdb_instr_t *addr;      /* breakpoint address */
+	gdb_instr_t instr;      /* saved instruction */
+	char valid;             /* breakpoint is valid? */
+	char enabled;           /* breakpoint is enabled? */
 };
 #endif
 
@@ -402,9 +402,11 @@ static volatile int cpu_stop_signal = GDB_SIG_NULL;
 static volatile int cpu_pending_signal;
 static struct gdb_reg_set gdb_regs;
 
-static const char *xml_target_header = "<?xml version=\"1.0\"?> "
+static const char *xml_target_header =
+	"<?xml version=\"1.0\"?> "
 	"<!DOCTYPE target SYSTEM "
 	"\"gdb-target.dtd\"> <target version=\"1.0\">\n";
+
 static const char *xml_target_footer = "</target>";
 static unsigned char gdb_buffer[GDB_BUF_SIZE];
 
@@ -468,9 +470,9 @@ static void handle_system_stop(NANO_ISF *reg, int sig);
 
 #define ADD_DEL_BP_SIG(x) \
 	int(x)(enum gdb_bp_type type, long addr, int len, \
-		enum gdb_error_code *err)
+	       enum gdb_error_code *err)
 
-typedef ADD_DEL_BP_SIG(add_del_bp_t);
+typedef ADD_DEL_BP_SIG (add_del_bp_t);
 static ADD_DEL_BP_SIG(add_bp);
 static ADD_DEL_BP_SIG(delete_bp);
 
@@ -573,7 +575,7 @@ static int hex_str_to_int(unsigned char **ptr, int *value)
 /*
  * Consume two hex characters from a string and return the corresponding
  * value.
-*/
+ */
 static int hex_str_to_byte(unsigned char **str)
 {
 	unsigned char *ptr = *str;
@@ -673,7 +675,7 @@ static unsigned char *compress(unsigned char *buf)
  */
 
 static unsigned char *mem2hex(unsigned char *mem, unsigned char *buf,
-				int count, int do_compress)
+			      int count, int do_compress)
 {
 	int i;
 	unsigned char ch;
@@ -693,7 +695,7 @@ static unsigned char *mem2hex(unsigned char *mem, unsigned char *buf,
 }
 
 static inline int do_mem_probe(char *addr, int mode, int width,
-				 int preserve, long *dummy)
+			       int preserve, long *dummy)
 {
 	char *p = (char *)dummy;
 
@@ -710,19 +712,19 @@ static inline int do_mem_probe(char *addr, int mode, int width,
 }
 
 /**
-* @brief Probe if memory location is valid
-*
-* @param addr Address to test
-* @param mode Mode of access (SYS_MEM_SAFE_READ/WRITE)
-* @param size Number of bytes to test
-* @param width Width of memory access (1, 2, or 4)
-* @param preserve Preserve memory on write test ?
-*
-* @return 0 if memory is accessible, -1 otherwise.
-*/
+ * @brief Probe if memory location is valid
+ *
+ * @param addr Address to test
+ * @param mode Mode of access (SYS_MEM_SAFE_READ/WRITE)
+ * @param size Number of bytes to test
+ * @param width Width of memory access (1, 2, or 4)
+ * @param preserve Preserve memory on write test ?
+ *
+ * @return 0 if memory is accessible, -1 otherwise.
+ */
 
 static int mem_probe(char *addr, int mode, int size,
-			int width, int preserve)
+		     int width, int preserve)
 {
 	long dummy;
 
@@ -851,7 +853,7 @@ static void request_notification_packet_flush(void)
 static inline int must_flush_notification_buffer(unsigned char ch)
 {
 	return (notif_data_idx == GDB_NOTIF_DATA_SIZE) ||
-		    (ch == '\n') || (ch == '\r');
+	       (ch == '\n') || (ch == '\r');
 }
 
 /*
@@ -947,7 +949,7 @@ again:
 		more_data = 0;
 	} else {
 		data_size = max_packet_size / 2;
-		more_data = 1;	/* Not enough room in notif packet */
+		more_data = 1;  /* Not enough room in notif packet */
 	}
 
 	/* Encode data using hex values */
@@ -981,8 +983,8 @@ static int has_hit_a_hw_bp(void)
 {
 	/* instruction hw breakpoints are reported as sw breakpoints */
 	return (cpu_stop_signal == GDB_SIG_TRAP) &&
-		(cpu_stop_bp_type != GDB_SOFT_BP) &&
-		(cpu_stop_bp_type != GDB_HW_INST_BP);
+	       (cpu_stop_bp_type != GDB_SOFT_BP) &&
+	       (cpu_stop_bp_type != GDB_HW_INST_BP);
 }
 #endif
 
@@ -1022,7 +1024,7 @@ static void do_post_event_hw_bp(unsigned char **buf, size_t *buf_size)
 		*buf += count;
 		*buf_size -= count;
 		count = snprintf((char *)*buf, *buf_size, ":%lx",
-					cpu_stop_hw_bp_addr);
+				 cpu_stop_hw_bp_addr);
 		*buf += count;
 		*buf_size -= count;
 	}
@@ -1069,7 +1071,7 @@ static void do_post_event(void)
 		buf_size--;
 	}
 	count = snprintf((char *)buf, buf_size, "T%02xthread:%02x",
-				cpu_stop_signal, 1);
+			 cpu_stop_signal, 1);
 	buf += count;
 	buf_size -= count;
 
@@ -1204,7 +1206,7 @@ static unsigned char *get_packet(unsigned char *buffer, size_t size)
 			cs[0] = get_hex_char_value(get_debug_char()) << 4;
 			cs[1] = get_hex_char_value(get_debug_char());
 
-			if (checksum != (cs[0]|cs[1])) {
+			if (checksum != (cs[0] | cs[1])) {
 				/* checksum failed */
 				put_debug_char('-');
 			} else {
@@ -1244,7 +1246,7 @@ static void write_xml_string(char *buf, const char *xml_str, int off, int len)
 			/* we can read the full data */
 			buf[0] = 'l';
 			int size_to_copy = len <= (GDB_BUF_SIZE - 2) ? len :
-						GDB_BUF_SIZE - 2;
+					   GDB_BUF_SIZE - 2;
 			strncpy(&buf[1], xml_str + off, size_to_copy);
 		} else {
 			buf[0] = 'm';
@@ -1255,15 +1257,15 @@ static void write_xml_string(char *buf, const char *xml_str, int off, int len)
 }
 
 /**
-* @brief get XML target description
-*
-* This routine is used to build the string that will hold the XML target
-* description provided to the GDB client.
-*
-* NOTE: Non-re-entrant, since it uses a static buffer.
-*
-* @return a pointer on XML target description
-*/
+ * @brief get XML target description
+ *
+ * This routine is used to build the string that will hold the XML target
+ * description provided to the GDB client.
+ *
+ * NOTE: Non-re-entrant, since it uses a static buffer.
+ *
+ * @return a pointer on XML target description
+ */
 
 static char *get_xml_target_description(void)
 {
@@ -1366,11 +1368,12 @@ static size_t concat_reboot_feature_if_supported(size_t size)
 #endif
 
 static ALWAYS_INLINE int is_valid_xml_query(unsigned char **packet,
-						int *off, int *len)
+					    int *off, int *len)
 {
 	unsigned char *p = *packet;
 	int is_valid = hex_str_to_int(&p, off) && *p++ == ','
-			&& hex_str_to_int(&p, len) && *p == '\0';
+		       && hex_str_to_int(&p, len) && *p == '\0';
+
 	*packet = p;
 	return is_valid;
 }
@@ -1396,7 +1399,7 @@ static const char *supported_features_cmd =
 #ifdef GDB_ARCH_HAS_REMOTE_SERIAL_EXT_USING_NOTIF_PACKETS
 	";" CONFIG_GDB_REMOTE_SERIAL_EXT_NOTIF_PREFIX_STR "+"
 #endif
-	;
+;
 
 static unsigned char *handle_general_query(unsigned char *packet)
 {
@@ -1409,7 +1412,7 @@ static unsigned char *handle_general_query(unsigned char *packet)
 		size_t size = GDB_BUF_SIZE;
 
 		snprintf((char *)gdb_buffer, size, supported_features_cmd,
-				GDB_BUF_SIZE);
+			 GDB_BUF_SIZE);
 		size -= (strlen((char *)gdb_buffer) + 1);
 
 		size -= concat_reboot_feature_if_supported(size);
@@ -1560,7 +1563,7 @@ unsigned char *handle_read_memory(unsigned char *packet)
 
 #define WRITE_MEM_SIG(x) \
 	unsigned char *(x)(unsigned char *packet, unsigned char *dest, int len)
-typedef WRITE_MEM_SIG(write_mem_t);
+typedef WRITE_MEM_SIG (write_mem_t);
 
 static ALWAYS_INLINE unsigned char *handle_write_memory(unsigned char *packet,
 							write_mem_t *write_mem)
@@ -1595,7 +1598,6 @@ static ALWAYS_INLINE unsigned char *handle_write_memory(unsigned char *packet,
 	fill_output_buffer(STUB_OK);
 	return packet;
 }
-
 
 static WRITE_MEM_SIG(write_memory)
 {
@@ -1751,13 +1753,13 @@ unsigned char *handle_breakpoint_install(unsigned char *packet,
 #endif
 
 /**
-* @brief parse given GDB command string
-*
-* Parse and execute the given GDB command string, and send acknowledgment if
-* acknowledgment is enabled.
-*
-* @return 0 on success, -1 if failed to send acknowledgment.
-*/
+ * @brief parse given GDB command string
+ *
+ * Parse and execute the given GDB command string, and send acknowledgment if
+ * acknowledgment is enabled.
+ *
+ * @return 0 on success, -1 if failed to send acknowledgment.
+ */
 
 static int protocol_parse(unsigned char *packet)
 {
@@ -1816,12 +1818,12 @@ static int protocol_parse(unsigned char *packet)
 		break;
 	case 'X':
 		packet = handle_write_memory(packet,
-					write_memory_from_binary_format);
+					     write_memory_from_binary_format);
 		break;
 
 	case 'C':
 		packet = handle_pass_signal_to_context(packet);
-		/* fall through */
+	/* fall through */
 	case 'c':
 		packet = handle_continue_execution(packet);
 		do_not_send_ack = 1;
@@ -1829,7 +1831,7 @@ static int protocol_parse(unsigned char *packet)
 
 	case 'S':
 		packet = handle_pass_signal_to_context(packet);
-		/* fall through */
+	/* fall through */
 	case 's':
 		packet = handle_step(packet);
 		do_not_send_ack = 1;
@@ -1899,7 +1901,7 @@ static void put_debug_char(unsigned char ch)
  */
 
 static int add_hw_bp(long addr, enum gdb_bp_type type, int len,
-			enum gdb_error_code *err)
+		     enum gdb_error_code *err)
 {
 #ifdef GDB_ARCH_HAS_HW_BP
 	if (gdb_hw_bp_set(&dbg_regs, addr, type, len, err) == -1) {
@@ -1926,7 +1928,7 @@ static int add_hw_bp(long addr, enum gdb_bp_type type, int len,
  * @param err Container for returning error code
  *
  * @return 0 on success, -1 if failed (Error code returned via @a err).
-*/
+ */
 
 static int remove_hw_bp(long addr, enum gdb_bp_type type, int len,
 			enum gdb_error_code *err)
@@ -1969,7 +1971,7 @@ static int remove_hw_bp(long addr, enum gdb_bp_type type, int len,
  */
 
 static int add_bp(enum gdb_bp_type type, long addr, int len,
-			enum gdb_error_code *err)
+		  enum gdb_error_code *err)
 {
 	if (type != GDB_SOFT_BP) {
 		return add_hw_bp(addr, type, len, err);
@@ -1996,13 +1998,13 @@ static int add_bp(enum gdb_bp_type type, long addr, int len,
 }
 
 /**
-* @brief delete a breakpoint or watchpoint from breakpoint list
-*
-* @return 0 on success, -1 if failed to remove breakpoint.
-*/
+ * @brief delete a breakpoint or watchpoint from breakpoint list
+ *
+ * @return 0 on success, -1 if failed to remove breakpoint.
+ */
 
 static int delete_bp(enum gdb_bp_type type, long addr, int len,
-			enum gdb_error_code *err)
+		     enum gdb_error_code *err)
 {
 	gdb_instr_t *bp_addr = (gdb_instr_t *)addr;
 
@@ -2102,11 +2104,11 @@ static inline void clear_debug_regs_for_hw_breakpoints(void)
 #endif
 
 /*
-* Physically uninstall breakpoints, and make sure that modified memory is
-* flushed on all CPUs.
-*
-* Must only be called in the CPU control loop.
-*/
+ * Physically uninstall breakpoints, and make sure that modified memory is
+ * flushed on all CPUs.
+ *
+ * Must only be called in the CPU control loop.
+ */
 
 static void uninstall_breakpoints(void)
 {
@@ -2160,8 +2162,8 @@ static inline void disable_trace_mode(void)
 #ifdef GDB_ARCH_NO_SINGLE_STEP
 	/* remove temporary breakpoint */
 	(void)set_instruction(gdb_step_emu_next_pc,
-				&gdb_step_emu_instr,
-				sizeof(gdb_instr_t));
+			      &gdb_step_emu_instr,
+			      sizeof(gdb_instr_t));
 	/* Disable trace mode */
 	gdb_int_regs_unlock(&gdb_regs, trace_lock_key);
 #else
@@ -2171,13 +2173,13 @@ static inline void disable_trace_mode(void)
 }
 
 /**
-* @brief stop mode agent BP/trace handler
-*
-* Common handler of breakpoint and trace mode exceptions.
-* It is invoked with interrupts locked.
-*
-* @return n/a
-*/
+ * @brief stop mode agent BP/trace handler
+ *
+ * Common handler of breakpoint and trace mode exceptions.
+ * It is invoked with interrupts locked.
+ *
+ * @return n/a
+ */
 
 void gdb_handler(enum gdb_exc_mode mode, void *esf, int signal)
 {
@@ -2249,24 +2251,24 @@ static inline int handle_single_stepping(void)
 }
 
 /**
-* @brief GDB control loop
-*
-* The CPU control loop is an active wait loop used to stop CPU activity.
-*
-* It must be called with interrupts locked.
-*
-* It loops while waiting for debug events which can be:
-*
-* - System resumed: gdb_debug_status != NOT_DEBUGGING
-*       The control loop must be exited.
-*
-* - Single step request: gdb_debug_status == SINGLE_STEP
-*       Notify client that CPU is already stopped.
-*       This is done by setting event_is_pending = 1.
-*       event_is_pending will be handled by next get_packet().
-*
-* @return n/a
-*/
+ * @brief GDB control loop
+ *
+ * The CPU control loop is an active wait loop used to stop CPU activity.
+ *
+ * It must be called with interrupts locked.
+ *
+ * It loops while waiting for debug events which can be:
+ *
+ * - System resumed: gdb_debug_status != NOT_DEBUGGING
+ *       The control loop must be exited.
+ *
+ * - Single step request: gdb_debug_status == SINGLE_STEP
+ *       Notify client that CPU is already stopped.
+ *       This is done by setting event_is_pending = 1.
+ *       event_is_pending will be handled by next get_packet().
+ *
+ * @return n/a
+ */
 
 static void control_loop(void)
 {
@@ -2312,17 +2314,17 @@ static void control_loop(void)
 }
 
 /**
-* @brief handle a system stop request
-*
-* The purpose of this routine is to handle a stop request issued by remote
-* debug client. It is called when receiving a break char.
-*
-* It indicates that a GDB event is pending (the answer to stop request) and
-* transfer control from the runtime system to the stop mode agent. The event
-* will be posted by this control loop.
-*
-* @return n/a
-*/
+ * @brief handle a system stop request
+ *
+ * The purpose of this routine is to handle a stop request issued by remote
+ * debug client. It is called when receiving a break char.
+ *
+ * It indicates that a GDB event is pending (the answer to stop request) and
+ * transfer control from the runtime system to the stop mode agent. The event
+ * will be posted by this control loop.
+ *
+ * @return n/a
+ */
 
 static void handle_system_stop(NANO_ISF *regs, int signal)
 {
@@ -2332,7 +2334,7 @@ static void handle_system_stop(NANO_ISF *regs, int signal)
 	if (signal != 0) {
 		cpu_stop_signal = signal;
 	} else {
-		cpu_stop_signal = GDB_SIG_INT;	/* Stopped by a command */
+		cpu_stop_signal = GDB_SIG_INT;  /* Stopped by a command */
 	}
 
 	/* Save registers */
@@ -2364,14 +2366,14 @@ static void handle_system_stop(NANO_ISF *regs, int signal)
 }
 
 /**
-* @brief wrapper to send a character to console
-*
-* This routine is a specific wrapper to send a character to console.
-* If the GDB Server is started, this routine intercepts the data and transfer
-* it to the connected debug clients using a GDB notification packet.
-*
-* @return n/a
-*/
+ * @brief wrapper to send a character to console
+ *
+ * This routine is a specific wrapper to send a character to console.
+ * If the GDB Server is started, this routine intercepts the data and transfer
+ * it to the connected debug clients using a GDB notification packet.
+ *
+ * @return n/a
+ */
 
 static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(gdb_console_out)
 {
