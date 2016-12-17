@@ -269,17 +269,12 @@ config DEVICE_POWER_MANAGEMENT
 config TICKLESS_IDLE
 	bool
 	prompt "Tickless idle"
-	default y
+	default y if TICKLESS_IDLE_SUPPORTED
 	help
 	This option suppresses periodic system clock interrupts whenever the
 	kernel becomes idle. This permits the system to remain in a power
 	saving state for extended periods without having to wake up to
 	service each tick as it occurs.
-
-	As a policy, an architecture should always provide support for tickless in
-	the microkernel. If an architecture also provides support for nanokernel
-	systems, it must select the NANOKERNEL_TICKLESS_IDLE_SUPPORTED kconfig
-	option.
 
 config TICKLESS_IDLE_THRESH
 	int
