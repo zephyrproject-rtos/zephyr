@@ -258,8 +258,6 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	/*
 	 * Create an initial context on the stack expected by the _Swap()
 	 * primitive.
-	 * Given that both task and fibers execute at privilege 0, the
-	 * setup for both threads are equivalent.
 	 */
 
 	/* push arguments required by _thread_entry() */
