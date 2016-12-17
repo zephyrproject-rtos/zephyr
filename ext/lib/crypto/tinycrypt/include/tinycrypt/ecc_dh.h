@@ -83,7 +83,7 @@ extern "C" {
  * @return returns TC_CRYPTO_SUCCESS (1) if the key pair was generated successfully
  *         returns TC_CRYPTO_FAIL (0) if:
  *                the private key is 0
-
+ *
  * @param p_publicKey OUT -- the point representing the public key.
  * @param p_privateKey OUT -- the private key.
  * @param p_random IN -- The random number to use to generate the key pair.
