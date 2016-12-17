@@ -35,7 +35,6 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);
-GTEXT(_arch_irq_connect)
 GTEXT(_arch_irq_enable)
 GTEXT(_arch_irq_disable)
 #else

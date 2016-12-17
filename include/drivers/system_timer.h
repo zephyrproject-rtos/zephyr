@@ -38,12 +38,7 @@ GTEXT(_timer_int_handler)
 #include <device.h>
 
 extern int _sys_clock_driver_init(struct device *device);
-/*
- * Timer interrupt handler is one of the routines that the driver
- * has to implement, but it is not necessarily an external function.
- * The driver may implement it and use only when setting an
- * interrupt handler by calling irq_connect.
- */
+
 extern void _timer_int_handler(void *arg);
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
