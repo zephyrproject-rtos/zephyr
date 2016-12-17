@@ -20,9 +20,7 @@ menuconfig NET_MGMT
 	help
 	Add support for NM API that enables managing different aspects
 	of the network stack as well as receiving notification on network
-	events (ip address change, iface up and running ...). Beware this
-	requires the new unified kernel (KERNEL_V2) and cannot be used in
-	former nanokernel.
+	events (ip address change, iface up and running ...).
 
 if NET_MGMT
 

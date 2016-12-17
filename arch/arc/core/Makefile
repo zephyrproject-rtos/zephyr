@@ -1,4 +1,4 @@
-ccflags-y += -I$(srctree)/kernel/unified/include
+ccflags-y += -I$(srctree)/kernel/include
 ccflags-y +=-I$(srctree)/arch/$(ARCH)/include
 
 obj-y += thread.o thread_entry_wrapper.o \

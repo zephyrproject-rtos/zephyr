@@ -92,7 +92,7 @@ OFFSETS_INCLUDE = $(strip \
 		-include $(CURDIR)/include/generated/autoconf.h \
 		-I $(srctree)/include \
 		-I $(CURDIR)/include/generated \
-		-I $(srctree)/kernel/unified/include \
+		-I $(srctree)/kernel/include \
 		$(OFFSETS_INCLUDE_KERNEL_LOCATION) \
 		-I $(srctree)/lib/libc/minimal/include \
 		-I $(srctree)/arch/${ARCH}/include )

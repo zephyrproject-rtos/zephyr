@@ -17,7 +17,7 @@
 /**
  * @file
  *
- * Dining philosophers demo for unified kernel.
+ * Dining philosophers demo
  *
  * The demo can be configured to use different object types for its
  * synchronization: SEMAPHORES, MUTEXES, STACKS, FIFOS and LIFOS. To configure

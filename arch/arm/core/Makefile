@@ -1,4 +1,4 @@
-ccflags-y += -I$(srctree)/kernel/unified/include
+ccflags-y += -I$(srctree)/kernel/include
 asflags-y := ${ccflags-y}
 
 obj-y = exc_exit.o irq_init.o \
