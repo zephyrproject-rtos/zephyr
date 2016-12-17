@@ -345,7 +345,7 @@ int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx,
 /**
  * @brief mqtt_rx_puback	Parses and validates the MQTT PUBACK message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -354,7 +354,7 @@ int mqtt_rx_puback(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_pubcomp	Parses and validates the MQTT PUBCOMP message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -363,7 +363,7 @@ int mqtt_rx_pubcomp(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_pubrec	Parses and validates the MQTT PUBREC message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -373,7 +373,7 @@ int mqtt_rx_pubrec(struct mqtt_ctx *ctx, struct net_buf *rx);
  * @brief mqtt_rx_pubrel	Parses and validates the MQTT PUBREL message
  * @details			rx is an RX buffer from the IP stack
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -382,7 +382,7 @@ int mqtt_rx_pubrel(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_pingresp	Parses the MQTT PINGRESP message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -391,7 +391,7 @@ int mqtt_rx_pingresp(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_suback	Parses the MQTT SUBACK message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -400,7 +400,7 @@ int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_unsuback	Parses the MQTT UNSUBACK message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -409,7 +409,7 @@ int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_publish	Parses the MQTT PUBLISH message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  * @return			-ENOMEM if no data buffer is available

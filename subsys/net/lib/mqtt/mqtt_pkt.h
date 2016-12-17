@@ -32,6 +32,8 @@
 
 #include <net/mqtt_types.h>
 
+#define MQTT_PACKET_TYPE(first_byte)	(((first_byte) & 0xF0) >> 4)
+
 /**
  * @brief mqtt_pack_connack	Packs the MQTT CONNACK message
  * @details			See MQTT 3.2 CONNACK - Acknowledge connection
