@@ -62,7 +62,6 @@ config XIP
 	  supply a linker command file when building your image. Enabling this
 	  option increases both the code and data footprint of the image.
 
-
 config RING_BUFFER
 	bool
 	prompt "Enable ring buffers"
@@ -71,45 +70,6 @@ config RING_BUFFER
 	Enable usage of ring buffers. Similar to nanokernel FIFOs but manage
 	their own buffer memory and can store arbitrary data. For optimal
 	performance, use buffer sizes that are a power of 2.
-
-config KERNEL_EVENT_LOGGER
-	bool
-	prompt "Enable kernel event logger features"
-	default n
-	select RING_BUFFER
-	help
-	This feature enables the usage of the profiling logger. Provides the
-	logging of sleep events (either entering or leaving low power conditions),
-	context switch events, interrupt events, boot events and a method to
-	collect these event messages.
-
-config KERNEL_EVENT_LOGGER_BUFFER_SIZE
-	int
-	prompt "Kernel event logger buffer size"
-	default 128
-	depends on KERNEL_EVENT_LOGGER
-	help
-	Buffer size in 32-bit words.
-
-config KERNEL_EVENT_LOGGER_DYNAMIC
-	bool
-	prompt "Kernel event logger dynamic enabling"
-	default n
-	depends on KERNEL_EVENT_LOGGER
-	help
-	If enabled, kernel event logger is not logging any data to the ring buffer
-	It is up to the application to set the appropriate flags to enable/disable the
-	logging of each event type.
-
-config KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
-	bool
-	prompt "Kernel event logger custom timestamp"
-	default n
-	depends on KERNEL_EVENT_LOGGER
-	help
-	This flag enables the possibility to set the timer function to be used to
-	populate kernel event logger timestamp. This has to be done at runtime by
-	calling sys_k_event_logger_set_timer and providing the function callback.
 
 config THREAD_MONITOR
 	bool
@@ -303,3 +263,5 @@ config MDEF
 	In doubt, select 'y'.
 
 endmenu
+
+source "kernel/Kconfig.event_logger"
