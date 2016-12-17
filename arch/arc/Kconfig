@@ -259,16 +259,6 @@ config	IRQ_VECTOR_TABLE_BSP
 	help
 	  Not user-selectable, helps build system logic.
 
-config ARCH_HAS_TASK_ABORT
-	bool
-	# omit prompt to signify a "hidden" option
-	default n
-
-config ARCH_HAS_NANO_FIBER_ABORT
-	bool
-	# omit prompt to signify a "hidden" option
-	default n
-
 config CACHE_LINE_SIZE_DETECT
 	bool
 	prompt "Detect d-cache line size at runtime"

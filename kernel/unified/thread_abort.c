@@ -31,7 +31,7 @@
 
 extern void _k_thread_single_abort(struct k_thread *thread);
 
-#if !defined(CONFIG_ARCH_HAS_NANO_FIBER_ABORT)
+#if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void k_thread_abort(k_tid_t thread)
 {
 	unsigned int key;
