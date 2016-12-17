@@ -73,12 +73,12 @@ config RING_BUFFER
 
 config THREAD_MONITOR
 	bool
-	prompt "Task and fiber monitoring [EXPERIMENTAL]"
+	prompt "Thread monitoring [EXPERIMENTAL]"
 	default n
 	help
-	  This option instructs the kernel to maintain a list of all tasks
-	  and fibers (excluding those that have not yet started or have
-	  already terminated).
+	  This option instructs the kernel to maintain a list of all threads
+	  (excluding those that have not yet started or have already
+	  terminated).
 
 config KERNEL_INIT_PRIORITY_OBJECTS
 	int
