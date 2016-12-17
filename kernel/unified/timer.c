@@ -15,7 +15,7 @@
  */
 
 #include <kernel.h>
-#include <misc/debug/object_tracing_common.h>
+#include <debug/object_tracing_common.h>
 #include <init.h>
 #include <wait_q.h>
 

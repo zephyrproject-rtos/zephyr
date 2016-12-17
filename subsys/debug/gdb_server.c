@@ -335,7 +335,7 @@
 #include <cache.h>
 #include <init.h>
 #include <debug/gdb_arch.h>
-#include <misc/debug/mem_safe.h>
+#include <debug/mem_safe.h>
 #include <gdb_server.h>
 #include <debug_info.h>
 #ifdef CONFIG_GDB_SERVER_INTERRUPT_DRIVEN

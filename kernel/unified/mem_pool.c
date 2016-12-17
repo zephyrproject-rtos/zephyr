@@ -20,7 +20,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <misc/debug/object_tracing_common.h>
+#include <debug/object_tracing_common.h>
 #include <ksched.h>
 #include <wait_q.h>
 #include <init.h>

@@ -21,7 +21,7 @@
 #define __RING_BUFFER_H__
 
 #include <nanokernel.h>
-#include <misc/debug/object_tracing_common.h>
+#include <debug/object_tracing_common.h>
 #include <misc/util.h>
 #include <errno.h>
 

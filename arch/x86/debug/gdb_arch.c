@@ -23,7 +23,7 @@
 #include <kernel_structs.h>
 #include <string.h>
 #include <debug/gdb_arch.h>
-#include <misc/debug/gdb_server.h>
+#include <debug/gdb_server.h>
 
 #define TRACE_FLAG	0x0100 /* EFLAGS:TF */
 #define INT_FLAG	0x0200 /* EFLAGS:IF */

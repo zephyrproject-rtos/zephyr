@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <misc/util.h>
 #include <linker-defs.h>
-#include <misc/debug/mem_safe.h>
+#include <debug/mem_safe.h>
 #include <tc_util.h>
 #include <cache.h>
 

@@ -27,7 +27,7 @@
 #include <toolchain.h>
 #include <linker-defs.h>
 #include <misc/util.h>
-#include <misc/debug/mem_safe.h>
+#include <debug/mem_safe.h>
 #include <string.h>
 
 #define NUM_REGIONS (CONFIG_MEM_SAFE_NUM_EXTRA_REGIONS + 2)

@@ -42,7 +42,7 @@
 #include <sections.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
-#include <misc/debug/object_tracing_common.h>
+#include <debug/object_tracing_common.h>
 #include <errno.h>
 #include <init.h>
 

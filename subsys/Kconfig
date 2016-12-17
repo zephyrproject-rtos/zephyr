@@ -24,3 +24,5 @@ source "subsys/bluetooth/Kconfig"
 source "subsys/net/Kconfig"
 
 source "subsys/logging/Kconfig"
+
+source "subsys/debug/Kconfig"

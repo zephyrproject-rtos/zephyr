@@ -217,8 +217,6 @@ config OMIT_FRAME_POINTER
 	trace. Recommended only for production builds which do not need to be
 	debugged.
 
-source "misc/debug/Kconfig"
-
 endmenu
 
 menu "System Monitoring Options"

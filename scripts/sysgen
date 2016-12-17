@@ -290,7 +290,7 @@ def kernel_main_c_header():
         do_not_edit_warning +
         "\n" +
         "#include <sysgen.h>\n" +
-        "#include <misc/debug/object_tracing_common.h>\n" +
+        "#include <debug/object_tracing_common.h>\n" +
         "#include <kernel.h>\n" +
         "#include <toolchain.h>\n" +
         "#include <sections.h>\n")

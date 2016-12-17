@@ -1,4 +1,4 @@
-ccflags-y +=-I$(srctree)/include/misc/debug
+ccflags-y +=-I$(srctree)/include/debug
 CFLAGS_gdb_server.o =-I$(srctree)/include/drivers
 
 obj-y =

@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 #include <kernel_structs.h>
-#include <misc/debug/gdb_server.h>
+#include <debug/gdb_server.h>
 
 #define GDB_ARCH_HAS_ALL_REGS
 

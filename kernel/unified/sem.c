@@ -28,7 +28,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <misc/debug/object_tracing_common.h>
+#include <debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>

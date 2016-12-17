@@ -19,7 +19,7 @@
 #include <zephyr.h>
 #include <tc_util.h>
 #include <util_test_common.h>
-#include <misc/debug/object_tracing.h>
+#include <debug/object_tracing.h>
 #include "phil.h"
 
 /**
