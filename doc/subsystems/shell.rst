@@ -1,7 +1,7 @@
 .. _shell:
 
-Zephyr OS Shell
-###############
+Shell
+######
 
 Overview
 ********
