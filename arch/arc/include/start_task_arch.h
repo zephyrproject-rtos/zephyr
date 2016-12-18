@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief ARC nanokernel declarations to start a task
+ * @brief ARC declarations to start a task
  *
  * ARC-specific parts of start_task().
  *

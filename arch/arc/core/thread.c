@@ -18,8 +18,7 @@
  * @file
  * @brief New thread creation for ARCv2
  *
- * Core nanokernel fiber related primitives for the ARCv2 processor
- * architecture.
+ * Core thread related primitives for the ARCv2 processor architecture.
  */
 
 #include <nanokernel.h>

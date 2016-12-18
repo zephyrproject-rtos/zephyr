@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief Nanokernel initialization module
+ * @brief Kernel initialization module
  *
  * This module contains routines that are used to initialize the nanokernel.
  */

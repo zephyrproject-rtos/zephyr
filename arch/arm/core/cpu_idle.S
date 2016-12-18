@@ -68,7 +68,7 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
  *
  * @brief Get the kernel idle setting
  *
- * Returns the nanokernel idle setting, in ticks. Only called by __systick().
+ * Returns the kernel idle setting, in ticks. Only called by __systick().
  *
  * @return the requested number of ticks for the kernel to be idle
  *
@@ -86,7 +86,7 @@ SECTION_FUNC(TEXT, _NanoIdleValGet)
  *
  * @brief Clear the kernel idle setting
  *
- * Sets the nanokernel idle setting to 0. Only called by __systick().
+ * Sets the kernel idle setting to 0. Only called by __systick().
  *
  * @return N/A
  *
@@ -107,8 +107,8 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
  *
  * @brief Power save idle routine for ARM Cortex-M
  *
- * This function will be called by the nanokernel idle loop or possibly within
- * an implementation of _sys_power_save_idle in the microkernel when the
+ * This function will be called by the ernel idle loop or possibly within
+ * an implementation of _sys_power_save_idle in the kernel when the
  * '_sys_power_save_flag' variable is non-zero.  The ARM 'wfi' instruction
  * will be issued, causing a low-power consumption sleep mode.
  *
@@ -143,16 +143,12 @@ SECTION_FUNC(TEXT, k_cpu_idle)
  *
  * @brief Atomically re-enable interrupts and enter low power mode
  *
- * This function is utilized by the nanokernel object "wait" APIs for tasks,
- * e.g. nano_task_lifo_get(), nano_task_sem_take(),
- * nano_task_stack_pop(), and nano_task_fifo_get().
- *
  * INTERNAL
  * The requirements for k_cpu_atomic_idle() are as follows:
  * 1) The enablement of interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
- *    in nano_task_lifo_get(), for example, of the race condition that occurs
+ *    in k_lifo_get(), for example, of the race condition that occurs
  *    if this requirement is not met.
  *
  * 2) After waking up from the low-power mode, the interrupt lockout state

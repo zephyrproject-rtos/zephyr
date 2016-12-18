@@ -18,7 +18,7 @@
  * @file
  * @brief ARM Cortex-M interrupt initialization
  *
- * The ARM Cortex-M architecture provides its own fiber_abort() to deal with
+ * The ARM Cortex-M architecture provides its own k_thread_abort() to deal with
  * different CPU modes (handler vs thread) when a fiber aborts. When its entry
  * point returns or when it aborts itself, the CPU is in thread mode and must
  * call _Swap() (which triggers a service call), but when in handler mode, the

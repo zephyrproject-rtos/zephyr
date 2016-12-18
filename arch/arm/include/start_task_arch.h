@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief ARM nanokernel declarations to start a task
+ * @brief ARM kernel declarations to start a task
  *
  * ARM-specific parts of start_task().
  *

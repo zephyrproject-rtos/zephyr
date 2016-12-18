@@ -112,7 +112,7 @@ SECTION_FUNC(TEXT, __start)
 
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in _interrupt_stack with 0xAA
-	 * nano_init.c enforces that the _interrupt_stack pointer
+	 * init.c enforces that the _interrupt_stack pointer
 	 * and CONFIG_ISR_STACK_SIZE are a multiple of STACK_ALIGN (4) */
 	movhi r1, %hi(_interrupt_stack)
 	ori r1, r1, %lo(_interrupt_stack)
@@ -151,6 +151,6 @@ SECTION_FUNC(TEXT, __start)
 	 */
 
 	/* Jump into C domain. _PrepC zeroes BSS, copies rw data into RAM,
-	 * and then enters nanokernel _Cstart */
+	 * and then enters _Cstart */
 	call _PrepC
 

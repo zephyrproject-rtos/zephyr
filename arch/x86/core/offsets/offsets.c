@@ -16,14 +16,14 @@
 
 /**
  * @file
- * @brief Nanokernel structure member offset definition file
+ * @brief Kernel structure member offset definition file
  *
  * This module is responsible for the generation of the absolute symbols whose
- * value represents the member offsets for various IA-32 nanokernel structures.
+ * value represents the member offsets for various IA-32 structures.
  *
  * All of the absolute symbols defined by this module will be present in the
- * final microkernel or nanokernel ELF image (due to the linker's reference to
- * the _OffsetAbsSyms symbol).
+ * final kernel ELF image (due to the linker's reference to the _OffsetAbsSyms
+ * symbol).
  *
  * INTERNAL
  * It is NOT necessary to define the offset for every member of a structure.
@@ -32,7 +32,7 @@
  * completeness.
  */
 
-#include <gen_offset.h> /* located in kernel/arch/common/include */
+#include <gen_offset.h> /* located in kernel/include */
 
 /* list of headers that define whose structure offsets will be generated */
 

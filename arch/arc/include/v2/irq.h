@@ -18,7 +18,7 @@
  * @file
  * @brief Interrupt helper functions (ARC)
  *
- * This file contains private nanokernel structures definitions and various
+ * This file contains private kernel structures definitions and various
  * other definitions for the ARCv2 processor architecture.
  */
 

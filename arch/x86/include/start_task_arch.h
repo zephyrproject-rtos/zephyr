@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief Intel nanokernel declarations to start a task
+ * @brief Kernel declarations to start a thread for X86
  *
  * Intel-specific parts of start_task(). Only FP functionality currently.
  */

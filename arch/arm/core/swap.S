@@ -243,7 +243,7 @@ _context_switch:
  *
  * @brief Initiate a cooperative context switch
  *
- * The _Swap() routine is invoked by various nanokernel services to effect
+ * The _Swap() routine is invoked by various kernel services to effect
  * a cooperative context context switch.  Prior to invoking _Swap(), the caller
  * disables interrupts via irq_lock() and the return 'key' is passed as a
  * parameter to _Swap().  The 'key' actually represents the BASEPRI register

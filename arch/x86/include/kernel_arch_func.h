@@ -34,7 +34,7 @@ extern "C" {
  *
  * @brief Performs architecture-specific initialization
  *
- * This routine performs architecture-specific initialization of the nanokernel.
+ * This routine performs architecture-specific initialization of the kernel.
  * Trivial stuff is done inline; more complex initialization is done via
  * function calls.
  *
@@ -98,8 +98,8 @@ extern void _MsrWrite(unsigned int msr, uint64_t msrData);
 extern uint64_t _MsrRead(unsigned int msr);
 
 /*
- * _IntLibInit() is called from the non-arch specific nanokernel function,
- * _nano_init(). The IA-32 nanokernel does not require any special
+ * _IntLibInit() is called from the non-arch specific function,
+ * prepare_multithreading(). The IA-32 kernel does not require any special
  * initialization of the interrupt subsystem. However, we still need to
  * provide an _IntLibInit() of some sort to prevent build errors.
  */

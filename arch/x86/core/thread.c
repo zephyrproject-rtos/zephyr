@@ -16,9 +16,9 @@
 
 /**
  * @file
- * @brief Nanokernel thread support primitives
+ * @brief Thread support primitives
  *
- * This module provides core nanokernel fiber related primitives for the IA-32
+ * This module provides core thread related primitives for the IA-32
  * processor architecture.
  */
 

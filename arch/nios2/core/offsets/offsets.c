@@ -16,15 +16,15 @@
 
 /**
  * @file
- * @brief Nios II nano kernel structure member offset definition file
+ * @brief Nios II kernel structure member offset definition file
  *
  * This module is responsible for the generation of the absolute symbols whose
- * value represents the member offsets for various Nios II nanokernel
+ * value represents the member offsets for various Nios II kernel
  * structures.
  *
  * All of the absolute symbols defined by this module will be present in the
- * final microkernel or nanokernel ELF image (due to the linker's reference to
- * the _OffsetAbsSyms symbol).
+ * final kernel ELF image (due to the linker's reference to the _OffsetAbsSyms
+ * symbol).
  *
  * INTERNAL
  * It is NOT necessary to define the offset for every member of a structure.

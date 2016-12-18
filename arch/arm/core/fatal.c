@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief Nanokernel fatal error handler for ARM Cortex-M
+ * @brief Kernel fatal error handler for ARM Cortex-M
  *
  * This module provides the _NanoFatalErrorHandler() routine for ARM Cortex-M.
  */
@@ -60,7 +60,7 @@ const NANO_ESF _default_esf = {
 
 /**
  *
- * @brief Nanokernel fatal error handler
+ * @brief Kernel fatal error handler
  *
  * This routine is called when fatal error conditions are detected by software
  * and is responsible only for reporting the error. Once reported, it then

@@ -1,4 +1,4 @@
-/* wait queue for multiple fibers on nanokernel objects */
+/* wait queue for multiple threads on kernel objects */
 
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.

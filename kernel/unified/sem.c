@@ -17,7 +17,7 @@
 /**
  * @file
  *
- * @brief Nanokernel semaphore object.
+ * @brief Kernel semaphore object.
  *
  * The semaphores are of the 'counting' type, i.e. each 'give' operation will
  * increment the internal count by 1, if no fiber is pending on it. The 'init'

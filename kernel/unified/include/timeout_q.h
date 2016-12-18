@@ -1,9 +1,3 @@
-/** @file
- * @brief timeout queue for fibers on nanokernel objects
- *
- * This file is meant to be included by nanokernel/include/wait_q.h only
- */
-
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
  *
@@ -20,8 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef _kernel_nanokernel_include_timeout_q__h_
-#define _kernel_nanokernel_include_timeout_q__h_
+#ifndef _kernel_include_timeout_q__h_
+#define _kernel_include_timeout_q__h_
+
+/**
+ * @file
+ * @brief timeout queue for threads on kernel objects
+ *
+ * This file is meant to be included by kernel/include/wait_q.h only
+ */
 
 #include <misc/dlist.h>
 
@@ -29,7 +30,7 @@
 extern "C" {
 #endif
 
-/* initialize the nano timeouts part of k_thread when enabled in the kernel */
+/* initialize the timeouts part of k_thread when enabled in the kernel */
 
 static inline void _init_timeout(struct _timeout *t, _timeout_func_t func)
 {
@@ -248,4 +249,4 @@ static inline int32_t _get_next_timeout_expiry(void)
 }
 #endif
 
-#endif /* _kernel_nanokernel_include_timeout_q__h_ */
+#endif /* _kernel_include_timeout_q__h_ */

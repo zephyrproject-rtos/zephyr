@@ -18,12 +18,10 @@
  * @file
  * @brief New thread creation for ARM Cortex-M
  *
- * Core nanokernel fiber related primitives for the ARM Cortex-M processor
- * architecture.
+ * Core thread related primitives for the ARM Cortex-M processor architecture.
  */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <toolchain.h>
 #include <kernel_structs.h>
 #include <wait_q.h>
