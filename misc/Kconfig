@@ -18,12 +18,7 @@
 
 menu "Compile and Link Features"
 
-config KERNEL_BIN_NAME
-	string "The kernel binary name"
-	default "zephyr"
-	help
-	This option sets the name of the generated kernel binary.
-
+menu "Linker Options"
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
 	default 0
@@ -74,6 +69,16 @@ config CUSTOM_SECTIONS_LD
 	Include a customized linker script fragment for inserting additional
 	arbitrary sections.
 
+config LINK_WHOLE_ARCHIVE
+	bool "Allow linking with --whole-archive"
+	default n
+	help
+	This options allows linking external libraries with the
+	--whole-archive option to keep all symbols.
+
+endmenu
+
+menu "Compiler Options"
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
 	help
@@ -81,22 +86,6 @@ config CROSS_COMPILE
 	default make runs in this kernel build directory.  You don't
 	need to set this unless you want the configured kernel build
 	directory to select the cross-compiler automatically.
-
-config GDB_INFO
-	bool
-	prompt "Task-aware debugging with GDB"
-	default n
-	help
-	  This option enables the kernel to collect additional information
-	  during interrupts, exceptions, and context switches. This information
-	  is required for task-aware debugging with GDB.
-
-config LINK_WHOLE_ARCHIVE
-	bool "Allow linking with --whole-archive"
-	default n
-	help
-	This options allows linking external libraries with the
-	--whole-archive option to keep all symbols.
 
 config COMPILER_OPT
 	string
@@ -116,11 +105,28 @@ config TOOLCHAIN_VARIANT
 	For optimized compilers with reduced features, specify the name
 	of the variant.
 
+endmenu
+
 config CPLUSPLUS
 	bool "Enable C++ support for the application"
 	default n
 	help
 	This option enables the use of applications built with C++.
+
+config GDB_INFO
+	bool
+	prompt "Task-aware debugging with GDB"
+	default n
+	help
+	  This option enables the kernel to collect additional information
+	  during interrupts, exceptions, and context switches. This information
+	  is required for task-aware debugging with GDB.
+
+config KERNEL_BIN_NAME
+	string "The kernel binary name"
+	default "zephyr"
+	help
+	This option sets the name of the generated kernel binary.
 
 endmenu
 
