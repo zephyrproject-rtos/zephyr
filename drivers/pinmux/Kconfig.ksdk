@@ -30,11 +30,21 @@ config PINMUX_KSDK_PORTA
 	help
 	  Enable Port A.
 
+config PINMUX_KSDK_PORTA_NAME
+	string "Pinmux Port A driver name"
+	depends on PINMUX_KSDK_PORTA
+	default "porta"
+
 config PINMUX_KSDK_PORTB
 	bool "Port B"
 	default n
 	help
 	  Enable Port B.
+
+config PINMUX_KSDK_PORTB_NAME
+	string "Pinmux Port B driver name"
+	depends on PINMUX_KSDK_PORTB
+	default "portb"
 
 config PINMUX_KSDK_PORTC
 	bool "Port C"
@@ -42,16 +52,31 @@ config PINMUX_KSDK_PORTC
 	help
 	  Enable Port C.
 
+config PINMUX_KSDK_PORTC_NAME
+	string "Pinmux Port C driver name"
+	depends on PINMUX_KSDK_PORTC
+	default "portc"
+
 config PINMUX_KSDK_PORTD
 	bool "Port D"
 	default n
 	help
 	  Enable Port D.
 
+config PINMUX_KSDK_PORTD_NAME
+	string "Pinmux Port D driver name"
+	depends on PINMUX_KSDK_PORTD
+	default "portd"
+
 config PINMUX_KSDK_PORTE
 	bool "Port E"
 	default n
 	help
 	  Enable Port E.
+
+config PINMUX_KSDK_PORTE_NAME
+	string "Pinmux Port E driver name"
+	depends on PINMUX_KSDK_PORTE
+	default "porte"
 
 endif # PINMUX_KSDK

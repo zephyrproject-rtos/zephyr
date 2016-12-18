@@ -15,37 +15,56 @@
  */
 
 #include <init.h>
-#include <pinmux/pinmux_ksdk.h>
+#include <pinmux.h>
+#include <fsl_port.h>
 
 static int hexiwear_k64_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	pinmux_ksdk_init();
+#ifdef CONFIG_PINMUX_KSDK_PORTA
+	struct device *porta =
+		device_get_binding(CONFIG_PINMUX_KSDK_PORTA_NAME);
+#endif
+#ifdef CONFIG_PINMUX_KSDK_PORTB
+	struct device *portb =
+		device_get_binding(CONFIG_PINMUX_KSDK_PORTB_NAME);
+#endif
+#ifdef CONFIG_PINMUX_KSDK_PORTC
+	struct device *portc =
+		device_get_binding(CONFIG_PINMUX_KSDK_PORTC_NAME);
+#endif
+#ifdef CONFIG_PINMUX_KSDK_PORTD
+	struct device *portd =
+		device_get_binding(CONFIG_PINMUX_KSDK_PORTD_NAME);
+#endif
+#ifdef CONFIG_PINMUX_KSDK_PORTE
+	struct device *porte =
+		device_get_binding(CONFIG_PINMUX_KSDK_PORTE_NAME);
+#endif
 
 	/* Red, green, blue LEDs */
-	pinmux_ksdk_set(PORTC,  8, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_ksdk_set(PORTC,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_ksdk_set(PORTD,  0, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 #if CONFIG_I2C_1
 	/* I2C1 SCL, SDA - accel/mag, gyro, pressure */
-	pinmux_ksdk_set(PORTC, 10, PORT_PCR_MUX(kPORT_MuxAlt5)
+	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt5)
 					| PORT_PCR_ODE_MASK);
-	pinmux_ksdk_set(PORTC, 11, PORT_PCR_MUX(kPORT_MuxAlt5)
+	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt5)
 					| PORT_PCR_ODE_MASK);
 #endif
 	/* FXOS8700 INT1 */
-	pinmux_ksdk_set(PORTC,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 #ifdef CONFIG_UART_K20_PORT_4
 	/* UART4 RX, TX - BLE */
-	pinmux_ksdk_set(PORTE, 24, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_ksdk_set(PORTE, 25, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
 	return 0;
 }
 
-SYS_INIT(hexiwear_k64_pinmux_init, PRE_KERNEL_1,
-	 CONFIG_PINMUX_INIT_PRIORITY);
+SYS_INIT(hexiwear_k64_pinmux_init, PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY);
