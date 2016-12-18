@@ -441,8 +441,8 @@ static unsigned char notif_data[GDB_NOTIF_DATA_SIZE];
 #endif
 
 #ifdef CONFIG_GDB_SERVER_INTERRUPT_DRIVEN
-static struct nano_fifo avail_queue;
-static struct nano_fifo cmds_queue;
+static struct k_fifo avail_queue;
+static struct k_fifo cmds_queue;
 #endif
 
 static struct device *uart_console_dev;
@@ -2424,8 +2424,8 @@ void _debug_fatal_hook(const NANO_ESF *esf)
 #ifdef CONFIG_GDB_SERVER_INTERRUPT_DRIVEN
 static void init_interrupt_handling(void)
 {
-	nano_fifo_init(&cmds_queue);
-	nano_fifo_init(&avail_queue);
+	k_fifo_init(&cmds_queue);
+	k_fifo_init(&avail_queue);
 	uart_console_in_debug_hook_install(console_irq_input_hook);
 	uart_register_input(&avail_queue, &cmds_queue, NULL);
 }
@@ -2468,4 +2468,4 @@ static int init_gdb_server(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(init_gdb_server, NANOKERNEL, 1);
+SYS_INIT(init_gdb_server, POST_KERNEL, 1);

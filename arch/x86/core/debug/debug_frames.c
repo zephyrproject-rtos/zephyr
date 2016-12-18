@@ -27,5 +27,5 @@
 
 NANO_ISF *sys_debug_current_isf_get(void)
 {
-	return _kernel.isf;
+	return _kernel.arch.isf;
 }
