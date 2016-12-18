@@ -33,7 +33,7 @@ extern struct k_lifo _k_lifo_list_end[];
 
 struct k_lifo *_trace_list_k_lifo;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 /*
  * Complete initialization of statically defined lifos.
@@ -52,7 +52,7 @@ static int init_lifo_module(struct device *dev)
 
 SYS_INIT(init_lifo_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 void k_lifo_init(struct k_lifo *lifo)
 {

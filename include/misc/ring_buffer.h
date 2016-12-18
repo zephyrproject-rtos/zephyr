@@ -43,7 +43,7 @@ struct ring_buf {
 	uint32_t size;   /**< Size of buf in 32-bit chunks */
 	uint32_t *buf;	 /**< Memory region for stored entries */
 	uint32_t mask;   /**< Modulo mask if size is a power of 2 */
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 	struct ring_buf *__next;
 #endif
 };

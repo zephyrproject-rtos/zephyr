@@ -202,12 +202,19 @@ config ASSERT_LEVEL
 	Level 2: on + no warning
 
 config DEBUG_TRACING_KERNEL_OBJECTS
+	bool "Kernel object tracing (deprecated)"
+	select OBJECT_TRACING
+	default n
+	help
+	  For backward compatibility only
+
+config OBJECT_TRACING
 	bool
-	prompt "Debug tracing object"
+	prompt "Kernel object tracing"
 	default n
 	help
 	This option enable the feature for tracing kernel objects. This option
-	is for debug purposes and increase the memory footprint of the kernel.
+	is for debug purposes and increases the memory footprint of the kernel.
 
 config OMIT_FRAME_POINTER
 	bool

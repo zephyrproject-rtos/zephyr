@@ -88,7 +88,7 @@ static void _pipe_async_finish(struct k_pipe_async *async_desc)
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0) || \
-	defined(CONFIG_DEBUG_TRACING_KERNEL_OBJECTS)
+	defined(CONFIG_OBJECT_TRACING)
 
 /*
  * Do run-time initialization of pipe object subsystem.
@@ -119,20 +119,20 @@ static int init_pipes_module(struct device *dev)
 
 	/* Complete initialization of statically defined mailboxes. */
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 	struct k_pipe *pipe;
 
 	for (pipe = _k_pipe_list_start; pipe < _k_pipe_list_end; pipe++) {
 		SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 	}
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 	return 0;
 }
 
 SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {

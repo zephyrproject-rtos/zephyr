@@ -54,7 +54,7 @@ extern struct k_sem _k_sem_list_end[];
 
 struct k_sem *_trace_list_k_sem;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 /*
  * Complete initialization of statically defined semaphores.
@@ -73,7 +73,7 @@ static int init_sem_module(struct device *dev)
 
 SYS_INIT(init_sem_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		unsigned int limit)

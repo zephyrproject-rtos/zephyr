@@ -69,12 +69,12 @@ extern "C" {
 
 typedef sys_dlist_t _wait_q_t;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-#define _DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(type) struct type *__next
-#define _DEBUG_TRACING_KERNEL_OBJECTS_INIT .__next = NULL,
+#ifdef CONFIG_OBJECT_TRACING
+#define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next
+#define _OBJECT_TRACING_INIT .__next = NULL,
 #else
-#define _DEBUG_TRACING_KERNEL_OBJECTS_INIT
-#define _DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(type)
+#define _OBJECT_TRACING_INIT
+#define _OBJECT_TRACING_NEXT_PTR(type)
 #endif
 
 #define tcs k_thread
@@ -696,7 +696,7 @@ struct k_timer {
 	/* used to support legacy timer APIs */
 	void *_legacy_data;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_timer);
+	_OBJECT_TRACING_NEXT_PTR(k_timer);
 };
 
 #define K_TIMER_INITIALIZER(obj, expiry, stop) \
@@ -710,7 +710,7 @@ struct k_timer {
 	.stop_fn = stop, \
 	.status = 0, \
 	._legacy_data = NULL, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -952,14 +952,14 @@ struct k_fifo {
 	_wait_q_t wait_q;
 	sys_slist_t data_q;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_fifo);
+	_OBJECT_TRACING_NEXT_PTR(k_fifo);
 };
 
 #define K_FIFO_INITIALIZER(obj) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -1077,14 +1077,14 @@ struct k_lifo {
 	_wait_q_t wait_q;
 	void *list;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_lifo);
+	_OBJECT_TRACING_NEXT_PTR(k_lifo);
 };
 
 #define K_LIFO_INITIALIZER(obj) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.list = NULL, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -1167,7 +1167,7 @@ struct k_stack {
 	_wait_q_t wait_q;
 	uint32_t *base, *next, *top;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_stack);
+	_OBJECT_TRACING_NEXT_PTR(k_stack);
 };
 
 #define K_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
@@ -1176,7 +1176,7 @@ struct k_stack {
 	.base = stack_buffer, \
 	.next = stack_buffer, \
 	.top = stack_buffer + stack_num_entries, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -1569,7 +1569,7 @@ struct k_mutex {
 	int num_conflicts;
 #endif
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mutex);
+	_OBJECT_TRACING_NEXT_PTR(k_mutex);
 };
 
 #ifdef CONFIG_OBJECT_MONITOR
@@ -1586,7 +1586,7 @@ struct k_mutex {
 	.lock_count = 0, \
 	.owner_orig_prio = K_LOWEST_THREAD_PRIO, \
 	_MUTEX_INIT_OBJECT_MONITOR \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -1675,7 +1675,7 @@ struct k_sem {
 	unsigned int count;
 	unsigned int limit;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_sem);
+	_OBJECT_TRACING_NEXT_PTR(k_sem);
 };
 
 #define K_SEM_INITIALIZER(obj, initial_count, count_limit) \
@@ -1683,7 +1683,7 @@ struct k_sem {
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.count = initial_count, \
 	.limit = count_limit, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -1832,7 +1832,7 @@ struct k_alert {
 	struct k_work work_item;
 	struct k_sem sem;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_alert);
+	_OBJECT_TRACING_NEXT_PTR(k_alert);
 };
 
 extern void _alert_deliver(struct k_work *work);
@@ -1843,7 +1843,7 @@ extern void _alert_deliver(struct k_work *work);
 	.send_count = ATOMIC_INIT(0), \
 	.work_item = K_WORK_INITIALIZER(_alert_deliver), \
 	.sem = K_SEM_INITIALIZER(obj.sem, 0, max_num_pending_alerts), \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -1943,7 +1943,7 @@ struct k_msgq {
 	char *write_ptr;
 	uint32_t used_msgs;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_msgq);
+	_OBJECT_TRACING_NEXT_PTR(k_msgq);
 };
 
 #define K_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
@@ -1956,7 +1956,7 @@ struct k_msgq {
 	.read_ptr = q_buffer, \
 	.write_ptr = q_buffer, \
 	.used_msgs = 0, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -2156,14 +2156,14 @@ struct k_mbox {
 	_wait_q_t tx_msg_queue;
 	_wait_q_t rx_msg_queue;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mbox);
+	_OBJECT_TRACING_NEXT_PTR(k_mbox);
 };
 
 #define K_MBOX_INITIALIZER(obj) \
 	{ \
 	.tx_msg_queue = SYS_DLIST_STATIC_INIT(&obj.tx_msg_queue), \
 	.rx_msg_queue = SYS_DLIST_STATIC_INIT(&obj.rx_msg_queue), \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -2327,7 +2327,7 @@ struct k_pipe {
 		_wait_q_t      writers; /* Writer wait queue */
 	} wait_q;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_pipe);
+	_OBJECT_TRACING_NEXT_PTR(k_pipe);
 };
 
 #define K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)        \
@@ -2339,7 +2339,7 @@ struct k_pipe {
 	.write_index = 0,                                             \
 	.wait_q.writers = SYS_DLIST_STATIC_INIT(&obj.wait_q.writers), \
 	.wait_q.readers = SYS_DLIST_STATIC_INIT(&obj.wait_q.readers), \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT                            \
+	_OBJECT_TRACING_INIT                            \
 	}
 
 /**
@@ -2466,7 +2466,7 @@ struct k_mem_slab {
 	char *free_list;
 	uint32_t num_used;
 
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mem_slab);
+	_OBJECT_TRACING_NEXT_PTR(k_mem_slab);
 };
 
 #define K_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
@@ -2478,7 +2478,7 @@ struct k_mem_slab {
 	.buffer = slab_buffer, \
 	.free_list = NULL, \
 	.num_used = 0, \
-	_DEBUG_TRACING_KERNEL_OBJECTS_INIT \
+	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -2648,7 +2648,7 @@ struct k_mem_pool {
 	struct k_mem_pool_block_set *block_set;
 	char *bufblock;
 	_wait_q_t wait_q;
-	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mem_pool);
+	_OBJECT_TRACING_NEXT_PTR(k_mem_pool);
 };
 
 #ifdef CONFIG_ARM

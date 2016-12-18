@@ -63,7 +63,7 @@ extern struct k_mbox _k_mbox_list_end[];
 struct k_mbox *_trace_list_k_mbox;
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0) || \
-	defined(CONFIG_DEBUG_TRACING_KERNEL_OBJECTS)
+	defined(CONFIG_OBJECT_TRACING)
 
 /*
  * Do run-time initialization of mailbox object subsystem.
@@ -95,20 +95,20 @@ static int init_mbox_module(struct device *dev)
 
 	/* Complete initialization of statically defined mailboxes. */
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 	struct k_mbox *mbox;
 
 	for (mbox = _k_mbox_list_start; mbox < _k_mbox_list_end; mbox++) {
 		SYS_TRACING_OBJ_INIT(k_mbox, mbox);
 	}
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 	return 0;
 }
 
 SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS or CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
 void k_mbox_init(struct k_mbox *mbox_ptr)
 {

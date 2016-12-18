@@ -70,7 +70,7 @@ extern struct k_mutex _k_mutex_list_end[];
 
 struct k_mutex *_trace_list_k_mutex;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 /*
  * Complete initialization of statically defined mutexes.
@@ -89,7 +89,7 @@ static int init_mutex_module(struct device *dev)
 
 SYS_INIT(init_mutex_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 void k_mutex_init(struct k_mutex *mutex)
 {

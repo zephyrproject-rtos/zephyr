@@ -22,7 +22,7 @@
 #ifndef _OBJECT_TRACING_COMMON_H_
 #define _OBJECT_TRACING_COMMON_H_
 
-#ifndef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifndef CONFIG_OBJECT_TRACING
 
 #define SYS_TRACING_OBJ_INIT(name, obj) do { } while ((0))
 #define SYS_TRACING_OBJ_INIT_DLL(name, obj) do { } while ((0))
@@ -111,5 +111,5 @@ struct ring_buf;
 
 struct ring_buf   *_trace_list_sys_ring_buf;
 
-#endif  /*CONFIG_DEBUG_TRACING_KERNEL_OBJECTS*/
+#endif  /*CONFIG_OBJECT_TRACING*/
 #endif  /*_OBJECT_TRACING_COMMON_H_*/

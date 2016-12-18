@@ -32,7 +32,7 @@ extern struct k_alert _k_alert_list_end[];
 
 struct k_alert *_trace_list_k_alert;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 /*
  * Complete initialization of statically defined alerts.
@@ -51,7 +51,7 @@ static int init_alert_module(struct device *dev)
 
 SYS_INIT(init_alert_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 void _alert_deliver(struct k_work *work)
 {

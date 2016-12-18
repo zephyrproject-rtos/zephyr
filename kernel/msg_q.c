@@ -35,7 +35,7 @@ extern struct k_msgq _k_msgq_list_end[];
 
 struct k_msgq *_trace_list_k_msgq;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 /*
  * Complete initialization of statically defined message queues.
@@ -54,7 +54,7 @@ static int init_msgq_module(struct device *dev)
 
 SYS_INIT(init_msgq_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 void k_msgq_init(struct k_msgq *q, char *buffer,
 		 size_t msg_size, uint32_t max_msgs)

@@ -22,7 +22,7 @@
 #ifndef _OBJECT_TRACING_H_
 #define _OBJECT_TRACING_H_
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 #include <kernel.h>
 extern struct k_timer    *_trace_list_k_timer;
@@ -66,7 +66,7 @@ extern struct ring_buf   *_trace_list_sys_ring_buf;
  */
 #define SYS_TRACING_NEXT(type, name, obj) (((type *)obj)->__next)
 
-#endif /*CONFIG_DEBUG_TRACING_KERNEL_OBJECTS*/
+#endif /*CONFIG_OBJECT_TRACING*/
 
 #ifdef CONFIG_THREAD_MONITOR
 

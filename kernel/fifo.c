@@ -36,7 +36,7 @@ extern struct k_fifo _k_fifo_list_end[];
 
 struct k_fifo *_trace_list_k_fifo;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 /*
  * Complete initialization of statically defined fifos.
@@ -55,7 +55,7 @@ static int init_fifo_module(struct device *dev)
 
 SYS_INIT(init_fifo_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 void k_fifo_init(struct k_fifo *fifo)
 {

@@ -33,7 +33,7 @@ extern struct k_stack _k_stack_list_end[];
 
 struct k_stack *_trace_list_k_stack;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 /*
  * Complete initialization of statically defined stacks.
@@ -52,7 +52,7 @@ static int init_stack_module(struct device *dev)
 
 SYS_INIT(init_stack_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 void k_stack_init(struct k_stack *stack, uint32_t *buffer, int num_entries)
 {

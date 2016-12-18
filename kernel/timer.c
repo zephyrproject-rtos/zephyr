@@ -24,7 +24,7 @@ extern struct k_timer _k_timer_list_end[];
 
 struct k_timer *_trace_list_k_timer;
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+#ifdef CONFIG_OBJECT_TRACING
 
 /*
  * Complete initialization of statically defined timers.
@@ -43,7 +43,7 @@ static int init_timer_module(struct device *dev)
 
 SYS_INIT(init_timer_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_DEBUG_TRACING_KERNEL_OBJECTS */
+#endif /* CONFIG_OBJECT_TRACING */
 
 /**
  * @brief Handle expiration of a kernel timer object.
