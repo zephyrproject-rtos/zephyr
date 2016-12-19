@@ -181,9 +181,9 @@ extern uint32_t _hw_irq_to_c_handler_latency;
 
 #ifdef CONFIG_HPET_TIMER_DEBUG
 #include <misc/printk.h>
-#define PRINTK(...) printk(__VA_ARGS__)
+#define DBG(...) printk(__VA_ARGS__)
 #else
-#define PRINTK(...)
+#define DBG(...)
 #endif
 
 #ifdef CONFIG_TICKLESS_IDLE
@@ -492,11 +492,11 @@ int _sys_clock_driver_init(struct device *device)
 
 	counter_load_value = (uint32_t)(tickFempto / hpetClockPeriod);
 
-	PRINTK("\n\nHPET: configuration: 0x%x, clock period: 0x%x (%d pico-s)\n",
+	DBG("\n\nHPET: configuration: 0x%x, clock period: 0x%x (%d pico-s)\n",
 	       (uint32_t)(*_HPET_GENERAL_CAPS),
 	       (uint32_t)hpetClockPeriod, (uint32_t)hpetClockPeriod / 1000);
 
-	PRINTK("HPET: timer0: available interrupts mask 0x%x\n",
+	DBG("HPET: timer0: available interrupts mask 0x%x\n",
 	       (uint32_t)(*_HPET_TIMER0_CONFIG_CAPS >> 32));
 
 	/* Initialize sys_clock_hw_cycles_per_tick/sec */
