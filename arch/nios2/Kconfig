@@ -105,9 +105,9 @@ config GP_GLOBAL
 	help
 	Use global pointer relative offsets for small globals declared
 	anywhere in the executable. Note that if any small globals that are put
-	in alternate sections (such as _k_task_list_ptr in the microkernel)
-	they must be declared in headers with proper __attribute__((section)) or
-	the linker will error out.
+	in alternate sections (such as _k_task_list_ptr) they must be declared
+	in headers with proper __attribute__((section)) or the linker will
+	error out.
 
 config GP_ALL_DATA
 	bool "All data global pointer references"

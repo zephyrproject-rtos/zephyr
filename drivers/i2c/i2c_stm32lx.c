@@ -16,7 +16,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include <board.h>
 #include <i2c.h>

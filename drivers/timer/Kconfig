@@ -179,7 +179,7 @@ config SYSTEM_CLOCK_INIT_PRIORITY
 	default 0
 	help
 	This options can be used to set a specific initialization priority
-	value for the system clock driver. As drivers on nanokernel
-	initialization level might need the clock to be running already, you
-	should let the default value as it is (0).
+	value for the system clock driver. As driver initialization  might need
+	the clock to be running already, you should let the default value as it
+	is (0).
 endmenu

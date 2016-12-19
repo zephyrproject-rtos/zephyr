@@ -47,11 +47,8 @@
  * non-timer interrupt to occur. When the CPU ceases idling the driver
  * determines how many complete ticks have elapsed, reprograms the timer so that
  * it expires on the next tick, and announces the number of elapsed ticks (if
- * any) to the microkernel.
+ * any) to the kernel.
  *
- * In a nanokernel-only system this device driver omits more complex
- * capabilities (such as tickless idle support) that are only used with a
- * microkernel.
  */
 
 #include <kernel.h>
@@ -232,7 +229,7 @@ static uint64_t _hpetMainCounterAtomic(void)
  * @brief System clock tick handler
  *
  * This routine handles the system clock tick interrupt. A TICK_EVENT event
- * is pushed onto the microkernel stack.
+ * is pushed onto the kernel stack.
  *
  * @return N/A
  */
@@ -365,9 +362,9 @@ void _timer_idle_exit(void)
 		_sys_idle_elapsed_ticks = programmed_ticks - 1;
 
 		/*
-		 * Announce elapsed ticks to the microkernel. Note we are
-		 * guaranteed that the timer ISR will execute first before the
-		 * tick event is serviced.
+		 * Announce elapsed ticks to the kernel. Note we are guaranteed
+		 * that the timer ISR will execute first before the tick event
+		 * is serviced.
 		 */
 		_sys_clock_tick_announce();
 
@@ -387,7 +384,7 @@ void _timer_idle_exit(void)
 	 * and program the timer for the tick after that
 	 *
 	 * note: a premature tick declaration has no significant impact on
-	 * the microkernel, which gets informed of the correct number of elapsed
+	 * the kernel, which gets informed of the correct number of elapsed
 	 * ticks when the following tick finally occurs; however, any ISRs that
 	 * access _sys_idle_elapsed_ticks to determine the current time may be
 	 * misled during the (very brief) interval before the tick-in-progress
@@ -419,7 +416,7 @@ void _timer_idle_exit(void)
 	_sys_idle_elapsed_ticks = elapsedTicks;
 
 	if (_sys_idle_elapsed_ticks) {
-		/* Announce elapsed ticks to the microkernel */
+		/* Announce elapsed ticks to the kernel */
 		_sys_clock_tick_announce();
 	}
 

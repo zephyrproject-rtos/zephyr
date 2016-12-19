@@ -27,14 +27,6 @@
  * The systick device provides a 24-bit clear-on-write, decrementing,
  * wrap-on-zero counter. Only edge sensitive triggered interrupt is supported.
  *
- * \INTERNAL PACKAGING DETAILS
- * The systick device driver is part of the microkernel in both a monolithic
- * kernel system and a split kernel system; it is not included in the
- * nanokernel portion of a split kernel.
- *
- * The device driver is also part of a nanokernel-only system, but omits more
- * complex capabilities (such as tickless idle support) that are only used in
- * conjunction with a microkernel.
  */
 
 #include <kernel.h>
@@ -199,7 +191,7 @@ static ALWAYS_INLINE void sysTickReloadSet(
  * @brief System clock tick handler
  *
  * This routine handles the system clock tick interrupt. A TICK_EVENT event
- * is pushed onto the microkernel stack.
+ * is pushed onto the kernel stack.
  *
  * The symbol for this routine is either _timer_int_handler.
  *
@@ -455,9 +447,8 @@ void _timer_idle_exit(void)
 	if (timer_mode == TIMER_MODE_PERIODIC) {
 		/*
 		 * The timer interrupt handler is handling a completed tickless
-		 * idle
-		 * or this has been called by mistake; there's nothing to do
-		 * here.
+		 * idle or this has been called by mistake; there's nothing to
+		 * do here.
 		 */
 		return;
 	}
@@ -477,11 +468,10 @@ void _timer_idle_exit(void)
 		timer_mode = TIMER_MODE_PERIODIC;
 
 		/*
-		 * Announce elapsed ticks to the microkernel. Note we are
-		 * guaranteed
+		 * Announce elapsed ticks to the kernel. Note we are guaranteed
 		 * that the timer ISR will execute before the tick event is
-		 * serviced,
-		 * so _sys_idle_elapsed_ticks is adjusted to account for it.
+		 * serviced, so _sys_idle_elapsed_ticks is adjusted to account
+		 * for it.
 		 */
 		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
 		_sys_clock_tick_announce();
@@ -498,16 +488,15 @@ void _timer_idle_exit(void)
 		if (remaining == 0) {
 			/*
 			 * Idle was interrupted on a tick boundary. Re-set the
-			 * timer to
-			 * its default value and mode.
+			 * timer to its default value and mode.
 			 */
 			sysTickReloadSet(default_load_value);
 			timer_mode = TIMER_MODE_PERIODIC;
 		} else if (count > remaining) {
 			/*
 			 * There is less time remaining to the next tick
-			 * boundary than
-			 * time left for idle. Leave in "one shot" mode.
+			 * boundary than time left for idle. Leave in "one
+			 * shot" mode.
 			 */
 			sysTickReloadSet(remaining);
 		}

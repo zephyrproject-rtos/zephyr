@@ -422,8 +422,7 @@ config INIT_STACKS
 	This option instructs the kernel to initialize stack areas with a
 	known value (0xaa) before they are first used, so that the high
 	water mark can be easily determined. This applies to the stack areas
-	for both tasks and fibers, as well as for the microkernel server's command
-	stack.
+	for threads.
 
 config XIP
 	bool
@@ -440,11 +439,12 @@ config RING_BUFFER
 	prompt "Enable ring buffers"
 	default n
 	help
-	Enable usage of ring buffers. Similar to nanokernel FIFOs but manage
-	their own buffer memory and can store arbitrary data. For optimal
-	performance, use buffer sizes that are a power of 2.
+	Enable usage of ring buffers. This is similar to kernel FIFOs but ring
+	buffers manage their own buffer memory and can store arbitrary data.
+	For optimal performance, use buffer sizes that are a power of 2.
 
 menu "Initialization Priorities"
+
 config KERNEL_INIT_PRIORITY_OBJECTS
 	int
 	prompt "Kernel objects initialization priority"

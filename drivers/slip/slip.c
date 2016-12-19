@@ -26,7 +26,7 @@
 #include <stdio.h>
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include <stdbool.h>
 #include <errno.h>

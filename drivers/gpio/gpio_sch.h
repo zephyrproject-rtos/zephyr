@@ -21,7 +21,7 @@
 #define __GPIO_SCH_H__
 
 #include <stdint.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <gpio.h>
 
 #define GPIO_SCH_REG_GEN		(0x00)

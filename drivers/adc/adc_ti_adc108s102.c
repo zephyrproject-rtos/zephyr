@@ -18,7 +18,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <misc/util.h>
 #define SYS_LOG_NO_NEWLINE
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL

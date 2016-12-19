@@ -249,15 +249,6 @@ static inline uint32_t initial_count_register_get(void)
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
-/**
- *
- * @brief System clock tick handler
- *
- * This routine handles the system clock tick interrupt.  A TICK_EVENT event
- * is pushed onto the microkernel stack.
- *
- * @return N/A
- */
 void _timer_int_handler(void *unused /* parameter is not used */
 				 )
 {
@@ -432,7 +423,7 @@ void _timer_idle_exit(void)
 		_sys_idle_elapsed_ticks = programmed_full_ticks;
 
 		/*
-		 * Announce elapsed ticks to the microkernel. Note we are guaranteed
+		 * Announce elapsed ticks to the kernel. Note we are guaranteed
 		 * that the timer ISR will execute before the tick event is serviced.
 		 * (The timer ISR reprograms the timer for the next tick.)
 		 */

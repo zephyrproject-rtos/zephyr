@@ -19,19 +19,12 @@
  * @brief Initialize system clock driver
  *
  * Initializing the timer driver is done in this module to reduce code
- * duplication.  Although both nanokernel and microkernel systems initialize
- * the timer driver at the same point, the two systems differ in when the system
- * can begin to process system clock ticks.  A nanokernel system can process
- * system clock ticks once the driver has initialized.  However, in a
- * microkernel system all system clock ticks are deferred (and stored on the
- * kernel server command stack) until the kernel server fiber starts and begins
- * processing any queued ticks.
+ * duplication.
  */
 
 #include <kernel.h>
 #include <init.h>
 #include <drivers/system_timer.h>
 
-SYS_DEVICE_DEFINE("sys_clock", _sys_clock_driver_init,
-		  sys_clock_device_ctrl, POST_KERNEL,
-		  CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_DEVICE_DEFINE("sys_clock", _sys_clock_driver_init, sys_clock_device_ctrl,
+		POST_KERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

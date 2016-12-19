@@ -21,7 +21,7 @@
 #ifndef _GPIO_PCAL9535A_H_
 #define _GPIO_PCAL9535A_H_
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include <gpio.h>
 #include <i2c.h>
