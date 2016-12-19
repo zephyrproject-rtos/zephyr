@@ -57,6 +57,14 @@ static struct bt_sdp bt_sdp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(SDP_MTU), BT_BUF_USER_DATA_MIN, NULL);
 
+#define SDP_CLIENT_MTU 64
+
+struct bt_sdp_client {
+	struct bt_l2cap_br_chan chan;
+};
+
+static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BLUETOOTH_MAX_CONN];
+
 /** @brief Callback for SDP connection
  *
  *  Gets called when an SDP connection is established
@@ -305,4 +313,38 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	BT_DBG("Service registered at %u", handle);
 
 	return 0;
+}
+
+static int sdp_client_chan_connect(struct bt_sdp_client *session)
+{
+	return bt_l2cap_br_chan_connect(session->chan.chan.conn,
+					&session->chan.chan, SDP_PSM);
+}
+
+static int sdp_client_connect(struct bt_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_sdp_client_pool); i++) {
+		struct bt_sdp_client *session = &bt_sdp_client_pool[i];
+
+		if (session->chan.chan.conn) {
+			continue;
+		}
+
+		session->chan.chan.conn = conn;
+		session->chan.rx.mtu = SDP_CLIENT_MTU;
+
+		return sdp_client_chan_connect(session);
+	}
+
+	BT_ERR("No available SDP client context");
+
+	return -ENOMEM;
+}
+
+int bt_sdp_discover(struct bt_conn *conn,
+		    const struct bt_sdp_discover_params *params)
+{
+	return sdp_client_connect(conn);
 }
