@@ -1655,10 +1655,11 @@ static void inquiry_complete(struct net_buf *buf)
 	report_discovery_results();
 }
 
-static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr)
+static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr,
+						      int8_t rssi)
 {
+	struct bt_br_discovery_result *result = NULL;
 	size_t i;
-	int err;
 
 	/* check if already present in results */
 	for (i = 0; i < discovery_results_count; i++) {
@@ -1674,17 +1675,33 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr)
 		return &discovery_results[discovery_results_count++];
 	}
 
-	BT_WARN("Got more Inquiry results than requested");
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
-	if (err) {
-		BT_ERR("Failed to cancel discovery (%d)", err);
+	/* ignore if invalid RSSI */
+	if (rssi == 0xff) {
 		return NULL;
 	}
 
-	report_discovery_results();
+	/*
+	 * Pick slot with smallest RSSI that is smaller then passed RSSI
+	 * TODO handle TX if present
+	 */
+	for (i = 0; i < discovery_results_size; i++) {
+		if (discovery_results[i].rssi > rssi) {
+			continue;
+		}
 
-	return NULL;
+		if (!result || result->rssi > discovery_results[i].rssi) {
+			result = &discovery_results[i];
+		}
+	}
+
+	if (result) {
+		BT_DBG("Reusing slot (old %s rssi %d dBm)",
+		       bt_addr_str(&result->addr), result->rssi);
+
+		bt_addr_copy(&result->addr, addr);
+	}
+
+	return result;
 }
 
 static void inquiry_result_with_rssi(struct net_buf *buf)
@@ -1705,7 +1722,7 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 
 		BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
-		result = get_result_slot(&evt->addr);
+		result = get_result_slot(&evt->addr, evt->rssi);
 		if (!result) {
 			return;
 		}
@@ -1716,6 +1733,9 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 
 		memcpy(result->cod, evt->cod, 3);
 		result->rssi = evt->rssi;
+
+		/* we could reuse slot so make sure EIR is cleared */
+		memset(result->eir, 0, sizeof(result->eir));
 
 		/*
 		 * Get next report iteration by moving pointer to right offset
@@ -1737,7 +1757,7 @@ static void extended_inquiry_result(struct net_buf *buf)
 
 	BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
-	result = get_result_slot(&evt->addr);
+	result = get_result_slot(&evt->addr, evt->rssi);
 	if (!result) {
 		return;
 	}
@@ -1760,7 +1780,7 @@ static void remote_name_request_complete(struct net_buf *buf)
 	uint8_t *eir;
 	int i;
 
-	result = get_result_slot(&evt->bdaddr);
+	result = get_result_slot(&evt->bdaddr, 0xff);
 	if (!result) {
 		return;
 	}
@@ -4049,8 +4069,7 @@ struct net_buf *bt_buf_get_acl(void)
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static int br_start_inquiry(const struct bt_br_discovery_param *param,
-			    size_t num_rsp)
+static int br_start_inquiry(const struct bt_br_discovery_param *param)
 {
 	const uint8_t iac[3] = { 0x33, 0x8b, 0x9e };
 	struct bt_hci_op_inquiry *cp;
@@ -4064,7 +4083,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param,
 	cp = net_buf_add(buf, sizeof(*cp));
 
 	cp->length = param->length;
-	cp->num_rsp = num_rsp;
+	cp->num_rsp = 0xff; /* we limit discovery only by time */
 
 	memcpy(cp->lap, iac, 3);
 	if (param->limited) {
@@ -4104,7 +4123,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 		return -EALREADY;
 	}
 
-	err = br_start_inquiry(param, cnt);
+	err = br_start_inquiry(param);
 	if (err) {
 		return err;
 	}
