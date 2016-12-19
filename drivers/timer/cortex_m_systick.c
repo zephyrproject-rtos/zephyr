@@ -58,17 +58,6 @@ static uint32_t clock_accumulated_count;
 
 #include <board.h>
 
-/*
- * When GDB_INFO is enabled, the handler installed in the vector table
- * (__systick), can be found in systick_gdb.s. In this case, the handler
- * in this file becomes _Systick() and will be called by __systick.
- */
-#ifdef CONFIG_GDB_INFO
-#define _TIMER_INT_HANDLER _real_timer_int_handler
-#else
-#define _TIMER_INT_HANDLER _timer_int_handler
-#endif
-
 #ifdef CONFIG_TICKLESS_IDLE
 #define TIMER_MODE_PERIODIC 0 /* normal running mode */
 #define TIMER_MODE_ONE_SHOT 1 /* emulated, since sysTick has 1 mode */
@@ -212,12 +201,11 @@ static ALWAYS_INLINE void sysTickReloadSet(
  * This routine handles the system clock tick interrupt. A TICK_EVENT event
  * is pushed onto the microkernel stack.
  *
- * The symbol for this routine is either _timer_int_handler (for normal
- * system operation) or _real_timer_int_handler (when GDB_INFO is enabled).
+ * The symbol for this routine is either _timer_int_handler.
  *
  * @return N/A
  */
-void _TIMER_INT_HANDLER(void *unused)
+void _timer_int_handler(void *unused)
 {
 	ARG_UNUSED(unused);
 

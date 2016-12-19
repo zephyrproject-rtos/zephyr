@@ -53,8 +53,6 @@ GTEXT(_IntExit)
  */
 SECTION_FUNC(TEXT, _isr_wrapper)
 
-	_GDB_STUB_EXC_ENTRY
-
 	push {lr}		/* lr is now the first item on the stack */
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
@@ -124,5 +122,5 @@ _idle_state_cleared:
 	pop {lr}
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
-	/* exception return is done in _IntExit(), including _GDB_STUB_EXC_EXIT */
+	/* exception return is done in _IntExit() */
 	b _IntExit

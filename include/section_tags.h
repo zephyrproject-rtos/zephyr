@@ -37,14 +37,7 @@
 
 #define __security_frdm_k64f_section   __in_section(SECURITY_FRDM_K64F,	\
 						 _FILE_PATH_HASH, __COUNTER__)
-
-#if defined(CONFIG_GDB_INFO) && !defined(CONFIG_SW_ISR_TABLE)
-#define __gdb_stub_irq_vector_table  __in_section(GDB_STUB_IRQ_VECTOR_TABLE, \
-					       _FILE_PATH_HASH, __COUNTER__)
-#endif  /* CONFIG_GDB_INFO && !CONFIG_SW_ISR_TABLE */
-
 #elif defined(CONFIG_ARC)
-
 	#define __irq_vector_table \
 		__in_section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, __COUNTER__)
 

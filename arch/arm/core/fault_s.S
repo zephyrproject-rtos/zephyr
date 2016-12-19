@@ -72,8 +72,6 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__debug_monitor)
 #endif
 SECTION_SUBSEC_FUNC(TEXT,__fault,__reserved)
 
-    _GDB_STUB_EXC_ENTRY
-
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
     /* force unlock interrupts */
     cpsie i
@@ -108,8 +106,6 @@ _stack_frame_endif:
 
     push {lr}
     bl _Fault
-
-    _GDB_STUB_EXC_EXIT
 
     pop {pc}
 

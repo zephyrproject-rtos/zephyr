@@ -37,13 +37,6 @@ GTEXT(_ExcExit)
 GTEXT(_IntExit)
 GDATA(_kernel)
 
-#if CONFIG_GDB_INFO
-  #define _EXIT_EXC_IF_FIBER_PREEMPTED beq _ExcExitWithGdbStub
-#else
-  #define _EXIT_EXC_IF_FIBER_PREEMPTED beq _EXIT_EXC
-#endif
-#define _EXIT_EXC_IF_FIBER_NOT_READY _EXIT_EXC_IF_FIBER_PREEMPTED
-
 /**
  *
  * @brief Kernel housekeeping when exiting interrupt handler installed
@@ -112,8 +105,6 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
     str r2, [r1]
 
 _ExcExitWithGdbStub:
-
-    _GDB_STUB_EXC_EXIT
 
 _EXIT_EXC:
 #endif /* CONFIG_PREEMPT_ENABLED */

@@ -55,8 +55,6 @@ GDATA(_kernel)
 
 SECTION_FUNC(TEXT, __pendsv)
 
-    _GDB_STUB_EXC_ENTRY
-
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	/* Register the context switch */
 	push {lr}
@@ -181,8 +179,6 @@ _thread_irq_disabled:
 
     msr PSP, ip
 
-    _GDB_STUB_EXC_EXIT
-
     /* exc return */
     bx lr
 
@@ -198,8 +194,6 @@ _thread_irq_disabled:
  */
 
 SECTION_FUNC(TEXT, __svc)
-
-    _GDB_STUB_EXC_ENTRY
 
 #if CONFIG_IRQ_OFFLOAD
     tst lr, #0x4    /* did we come from thread mode ? */
@@ -222,7 +216,7 @@ SECTION_FUNC(TEXT, __svc)
     blx _irq_do_offload  /* call C routine which executes the offload */
     pop {lr}
 
-    /* exception return is done in _IntExit(), including _GDB_STUB_EXC_EXIT */
+    /* exception return is done in _IntExit() */
     b _IntExit
 
 _context_switch:
@@ -240,8 +234,6 @@ _context_switch:
     ldr r1, =_SCS_ICSR
     ldr r2, =_SCS_ICSR_PENDSV
     str r2, [r1, #0]
-
-    _GDB_STUB_EXC_EXIT
 
     /* handler mode exit, to PendSV */
     bx lr

@@ -85,11 +85,6 @@ SECTIONS
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))
 
-#if defined(CONFIG_GDB_INFO) && !defined(CONFIG_SW_ISR_TABLE)
-	KEEP(*(.gdb_stub_irq_vector_table))
-	KEEP(*(".gdb_stub_irq_vector_table.*"))
-#endif
-
 	KEEP(*(.irq_vector_table))
 	KEEP(*(".irq_vector_table.*"))
 
