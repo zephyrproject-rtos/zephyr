@@ -592,7 +592,7 @@ const char * const net_tcp_state_str(enum net_tcp_state state)
 	return "";
 }
 
-int tcp_queue_data(struct net_context *context, struct net_buf *buf)
+int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 {
 	int ret, data_len;
 	struct net_conn *conn = (struct net_conn *)context->conn_handler;
@@ -652,7 +652,7 @@ static void restart_timer(struct net_tcp *tcp)
 	}
 }
 
-int tcp_send_data(struct net_context *context)
+int net_tcp_send_data(struct net_context *context)
 {
 	struct net_buf *buf;
 	sys_snode_t *node;
@@ -719,7 +719,8 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 						   sent_list);
 				net_nbuf_set_buf_sent(buf, false);
 			}
-			tcp_send_data(ctx);
+
+			net_tcp_send_data(ctx);
 		}
 	}
 }

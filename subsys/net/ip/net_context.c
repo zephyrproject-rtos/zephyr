@@ -1484,7 +1484,7 @@ static int send_data(struct net_context *context,
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		int ret = tcp_send_data(context);
+		int ret = net_tcp_send_data(context);
 
 		/* Just make the callback synchronously even if it didn't
 		 * go over the wire.  In theory it would be nice to track
@@ -1692,7 +1692,7 @@ static int sendto(struct net_buf *buf,
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		ret = tcp_queue_data(context, buf);
+		ret = net_tcp_queue_data(context, buf);
 	} else
 #endif /* CONFIG_NET_TCP */
 	{
