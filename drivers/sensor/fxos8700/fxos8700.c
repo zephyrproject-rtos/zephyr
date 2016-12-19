@@ -374,6 +374,15 @@ static const struct fxos8700_config fxos8700_config = {
 	.gpio_name = CONFIG_FXOS8700_GPIO_NAME,
 	.gpio_pin = CONFIG_FXOS8700_GPIO_PIN,
 #endif
+#ifdef CONFIG_FXOS8700_PULSE
+	.pulse_cfg = CONFIG_FXOS8700_PULSE_CFG,
+	.pulse_ths[0] = CONFIG_FXOS8700_PULSE_THSX,
+	.pulse_ths[1] = CONFIG_FXOS8700_PULSE_THSY,
+	.pulse_ths[2] = CONFIG_FXOS8700_PULSE_THSZ,
+	.pulse_tmlt = CONFIG_FXOS8700_PULSE_TMLT,
+	.pulse_ltcy = CONFIG_FXOS8700_PULSE_LTCY,
+	.pulse_wind = CONFIG_FXOS8700_PULSE_WIND,
+#endif
 };
 
 static struct fxos8700_data fxos8700_data;

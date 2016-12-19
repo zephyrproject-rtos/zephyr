@@ -48,6 +48,44 @@ static int fxos8700_handle_drdy_int(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_FXOS8700_PULSE
+static int fxos8700_handle_pulse_int(struct device *dev)
+{
+	const struct fxos8700_config *config = dev->config->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+	sensor_trigger_handler_t handler = NULL;
+	uint8_t pulse_source;
+
+	struct sensor_trigger pulse_trig = {
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	k_sem_take(&data->sem, K_FOREVER);
+
+	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
+			      FXOS8700_REG_PULSE_SRC,
+			      &pulse_source)) {
+		SYS_LOG_DBG("Could not read pulse source");
+	}
+
+	k_sem_give(&data->sem);
+
+	if (pulse_source & FXOS8700_PULSE_SRC_DPE) {
+		pulse_trig.type = SENSOR_TRIG_DOUBLE_TAP;
+		handler = data->double_tap_handler;
+	} else {
+		pulse_trig.type = SENSOR_TRIG_TAP;
+		handler = data->tap_handler;
+	}
+
+	if (handler) {
+		handler(dev, &pulse_trig);
+	}
+
+	return 0;
+}
+#endif
+
 static void fxos8700_handle_int(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -69,6 +107,11 @@ static void fxos8700_handle_int(void *arg)
 	if (int_source & FXOS8700_DRDY_MASK) {
 		fxos8700_handle_drdy_int(dev);
 	}
+#ifdef CONFIG_FXOS8700_PULSE
+	if (int_source & FXOS8700_PULSE_MASK) {
+		fxos8700_handle_pulse_int(dev);
+	}
+#endif
 
 	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
 }
@@ -116,6 +159,16 @@ int fxos8700_trigger_set(struct device *dev,
 		mask = FXOS8700_DRDY_MASK;
 		data->drdy_handler = handler;
 		break;
+#ifdef CONFIG_FXOS8700_PULSE
+	case SENSOR_TRIG_TAP:
+		mask = FXOS8700_PULSE_MASK;
+		data->tap_handler = handler;
+		break;
+	case SENSOR_TRIG_DOUBLE_TAP:
+		mask = FXOS8700_PULSE_MASK;
+		data->double_tap_handler = handler;
+		break;
+#endif
 	default:
 		SYS_LOG_DBG("Unsupported sensor trigger");
 		ret = -ENOTSUP;
@@ -162,6 +215,51 @@ exit:
 	return ret;
 }
 
+#ifdef CONFIG_FXOS8700_PULSE
+static int fxos8700_pulse_init(struct device *dev)
+{
+	const struct fxos8700_config *config = dev->config->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_PULSE_CFG, config->pulse_cfg)) {
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_PULSE_THSX, config->pulse_ths[0])) {
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_PULSE_THSY, config->pulse_ths[1])) {
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_PULSE_THSZ, config->pulse_ths[2])) {
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_PULSE_TMLT, config->pulse_tmlt)) {
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_PULSE_LTCY, config->pulse_ltcy)) {
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_PULSE_WIND, config->pulse_wind)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
 int fxos8700_trigger_init(struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config->config_info;
@@ -183,11 +281,22 @@ int fxos8700_trigger_init(struct device *dev)
 #if CONFIG_FXOS8700_DRDY_INT1
 	ctrl_reg5 |= FXOS8700_DRDY_MASK;
 #endif
+#if CONFIG_FXOS8700_PULSE_INT1
+	ctrl_reg5 |= FXOS8700_PULSE_MASK;
+#endif
+
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 			       FXOS8700_REG_CTRLREG5, ctrl_reg5)) {
 		SYS_LOG_DBG("Could not configure interrupt pin routing");
 		return -EIO;
 	}
+
+#ifdef CONFIG_FXOS8700_PULSE
+	if (fxos8700_pulse_init(dev)) {
+		SYS_LOG_DBG("Could not configure pulse");
+		return -EIO;
+	}
+#endif
 
 	/* Get the GPIO device */
 	data->gpio = device_get_binding(config->gpio_name);

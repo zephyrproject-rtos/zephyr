@@ -27,6 +27,14 @@
 #define FXOS8700_REG_INT_SOURCE			0x0c
 #define FXOS8700_REG_WHOAMI			0x0d
 #define FXOS8700_REG_XYZ_DATA_CFG		0x0e
+#define FXOS8700_REG_PULSE_CFG			0x21
+#define FXOS8700_REG_PULSE_SRC			0x22
+#define FXOS8700_REG_PULSE_THSX			0x23
+#define FXOS8700_REG_PULSE_THSY			0x24
+#define FXOS8700_REG_PULSE_THSZ			0x25
+#define FXOS8700_REG_PULSE_TMLT			0x26
+#define FXOS8700_REG_PULSE_LTCY			0x27
+#define FXOS8700_REG_PULSE_WIND			0x28
 #define FXOS8700_REG_CTRLREG1			0x2a
 #define FXOS8700_REG_CTRLREG2			0x2b
 #define FXOS8700_REG_CTRLREG3			0x2c
@@ -37,8 +45,11 @@
 #define FXOS8700_REG_M_CTRLREG2			0x5c
 
 #define FXOS8700_DRDY_MASK			(1 << 0)
+#define FXOS8700_PULSE_MASK			(1 << 3)
 
 #define FXOS8700_XYZ_DATA_CFG_FS_MASK		0x03
+
+#define FXOS8700_PULSE_SRC_DPE			(1 << 3)
 
 #define FXOS8700_CTRLREG1_ACTIVE_MASK		0x01
 #define FXOS8700_CTRLREG1_DR_MASK		(7 << 3)
@@ -99,6 +110,13 @@ struct fxos8700_config {
 	uint8_t start_addr;
 	uint8_t start_channel;
 	uint8_t num_channels;
+#ifdef CONFIG_FXOS8700_PULSE
+	uint8_t pulse_cfg;
+	uint8_t pulse_ths[3];
+	uint8_t pulse_tmlt;
+	uint8_t pulse_ltcy;
+	uint8_t pulse_wind;
+#endif
 };
 
 struct fxos8700_data {
@@ -108,6 +126,10 @@ struct fxos8700_data {
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
+#endif
+#ifdef CONFIG_FXOS8700_PULSE
+	sensor_trigger_handler_t tap_handler;
+	sensor_trigger_handler_t double_tap_handler;
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
 	char __stack thread_stack[CONFIG_FXOS8700_THREAD_STACK_SIZE];
