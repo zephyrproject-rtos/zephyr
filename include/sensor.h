@@ -143,6 +143,12 @@ enum sensor_trigger_type {
 	 * attributes.
 	 */
 	SENSOR_TRIG_THRESHOLD,
+
+	/** Trigger fires when a single tap is detected. */
+	SENSOR_TRIG_TAP,
+
+	/** Trigger fires when a double tap is detected. */
+	SENSOR_TRIG_DOUBLE_TAP,
 };
 
 /**
