@@ -135,11 +135,17 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	sys_memcpy_swap(ctxt->dst.val, info.le.dst->a.val, sizeof(ctxt->dst));
 
 	net_if_set_link_addr(ctxt->iface, ctxt->src.val, sizeof(ctxt->src.val));
+
+	/* Set iface up */
+	net_if_up(ctxt->iface);
 }
 
 static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p disconnected", chan);
+
+	/* Set iface down */
+	net_if_down(ctxt->iface);
 }
 
 static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)

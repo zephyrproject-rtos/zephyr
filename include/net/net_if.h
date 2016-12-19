@@ -150,6 +150,14 @@ struct net_if_router {
  */
 #define __net_if_align __aligned(32)
 
+enum {
+	/* interface is up/ready to receive and transmit */
+	NET_IF_UP,
+
+	/* Total number of flags - must be at the end of the enum */
+	NET_IF_NUM_FLAGS
+};
+
 /**
  * @brief Network Interface structure
  *
@@ -166,6 +174,9 @@ struct net_if_router {
 struct net_if {
 	/** The actually device driver instance the net_if is related to */
 	struct device *dev;
+
+	/* For internal use */
+	ATOMIC_DEFINE(flags, NET_IF_NUM_FLAGS);
 
 	/** Interface's L2 layer */
 	const struct net_l2 const *l2;
@@ -409,22 +420,20 @@ void net_if_start_rs(struct net_if *iface);
  * @param iface Pointer to a network interface structure
  * @param addr a pointer on a uint8_t buffer representing the address
  * @param len length of the address buffer
+ *
+ * @return 0 on success
  */
-static inline void net_if_set_link_addr(struct net_if *iface,
+static inline int net_if_set_link_addr(struct net_if *iface,
 					uint8_t *addr, uint8_t len)
 {
+	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+		return -EPERM;
+	}
+
 	iface->link_addr.addr = addr;
 	iface->link_addr.len = len;
 
-#if defined(CONFIG_NET_IPV6_DAD)
-	NET_DBG("Starting DAD for iface %p", iface);
-	net_if_start_dad(iface);
-#endif
-
-#if defined(CONFIG_NET_IPV6_ND)
-	NET_DBG("Starting ND/RS for iface %p", iface);
-	net_if_start_rs(iface);
-#endif
+	return 0;
 }
 
 /**
@@ -1087,6 +1096,24 @@ typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
  * @param user_data User specified data.
  */
 void net_if_foreach(net_if_cb_t cb, void *user_data);
+
+/**
+ * @brief Bring interface up
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return 0 on success
+ */
+int net_if_up(struct net_if *iface);
+
+/*
+ * @brief Bring interface down
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return 0 on success
+ */
+int net_if_down(struct net_if *iface);
 
 struct net_if_api {
 	void (*init)(struct net_if *iface);
