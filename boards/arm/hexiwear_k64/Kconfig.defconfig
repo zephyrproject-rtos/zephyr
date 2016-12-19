@@ -96,10 +96,10 @@ config PINMUX
 if PINMUX_KSDK
 
 config PINMUX_KSDK_PORTA
-	def_bool y
+	def_bool n
 
 config PINMUX_KSDK_PORTB
-	def_bool y
+	def_bool n
 
 config PINMUX_KSDK_PORTC
 	def_bool y
@@ -108,7 +108,7 @@ config PINMUX_KSDK_PORTD
 	def_bool y
 
 config PINMUX_KSDK_PORTE
-	def_bool y
+	def_bool y if UART_K20_PORT_4
 
 endif # PINMUX_KSDK
 
