@@ -317,6 +317,20 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	return 0;
 }
 
+/* Make sure whether there's existing valid session that can be still used */
+static struct bt_sdp_client *get_client_session(struct bt_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_sdp_client_pool); i++) {
+		if (bt_sdp_client_pool[i].chan.chan.conn == conn) {
+			return &bt_sdp_client_pool[i];
+		}
+	}
+
+	return NULL;
+}
+
 static int sdp_client_chan_connect(struct bt_sdp_client *session)
 {
 	return bt_l2cap_br_chan_connect(session->chan.chan.conn,
@@ -372,5 +386,16 @@ static int sdp_client_connect(struct bt_conn *conn)
 int bt_sdp_discover(struct bt_conn *conn,
 		    const struct bt_sdp_discover_params *params)
 {
-	return sdp_client_connect(conn);
+	struct bt_sdp_client *session;
+	int err;
+
+	session = get_client_session(conn);
+	if (!session) {
+		err = sdp_client_connect(conn);
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
 }
