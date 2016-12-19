@@ -418,11 +418,13 @@ static inline struct k_thread *_peek_first_pending_thread(_wait_q_t *wait_q)
 static inline struct k_thread *_get_thread_to_unpend(_wait_q_t *wait_q)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	if (_is_in_isr()) {
-		/* skip threads that have an expired timeout */
+	extern volatile int _handling_timeouts;
+
+	if (_handling_timeouts) {
 		sys_dlist_t *q = (sys_dlist_t *)wait_q;
 		sys_dnode_t *cur, *next;
 
+		/* skip threads that have an expired timeout */
 		SYS_DLIST_FOR_EACH_NODE_SAFE(q, cur, next) {
 			struct k_thread *thread = (struct k_thread *)cur;
 

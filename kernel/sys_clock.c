@@ -189,6 +189,9 @@ uint32_t k_uptime_delta_32(int64_t *reftime)
  * Always called from interrupt level, and always only from the system clock
  * interrupt.
  */
+
+volatile int _handling_timeouts;
+
 static inline void handle_timeouts(int32_t ticks)
 {
 	sys_dlist_t expired;
@@ -222,6 +225,8 @@ static inline void handle_timeouts(int32_t ticks)
 	sys_dnode_t *next = &head->node;
 	struct _timeout *timeout = (struct _timeout *)next;
 
+	_handling_timeouts = 1;
+
 	while (timeout && timeout->delta_ticks_from_prev == 0) {
 
 		sys_dlist_remove(next);
@@ -238,6 +243,8 @@ static inline void handle_timeouts(int32_t ticks)
 	irq_unlock(key);
 
 	_handle_expired_timeouts(&expired);
+
+	_handling_timeouts = 0;
 }
 #else
 	#define handle_timeouts(ticks) do { } while ((0))
