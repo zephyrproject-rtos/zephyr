@@ -522,31 +522,39 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 		frag = net_nbuf_read_u8(frag, pos, &pos, &type);
 
 		if (type == DHCPV4_OPTIONS_END) {
+			NET_DBG("options_end");
 			end = true;
 			return NET_OK;
 		}
 
 		frag = net_nbuf_read_u8(frag, pos, &pos, &length);
 		if (!frag) {
+			NET_ERR("option parsing, bad length");
 			return NET_DROP;
 		}
 
 		switch (type) {
 		case DHCPV4_OPTIONS_SUBNET_MASK:
 			if (length != 4) {
+				NET_ERR("options_subnet_mask, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read(frag, pos, &pos, length,
 					     iface->ipv4.netmask.s4_addr);
+			NET_DBG("options_subnet_mask %s",
+				net_sprint_ipv4_addr(&iface->ipv4.netmask));
 			break;
 		case DHCPV4_OPTIONS_LEASE_TIME:
 			if (length != 4) {
+				NET_ERR("options_lease_time, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read_be32(frag, pos, &pos,
 						  &iface->dhcpv4.lease_time);
+			NET_DBG("options_lease_time: %u",
+				iface->dhcpv4.lease_time);
 			if (!iface->dhcpv4.lease_time) {
 				return NET_DROP;
 			}
@@ -554,11 +562,14 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 			break;
 		case DHCPV4_OPTIONS_RENEWAL:
 			if (length != 4) {
+				NET_DBG("options_renewal, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read_be32(frag, pos, &pos,
 						  &iface->dhcpv4.renewal_time);
+			NET_DBG("options_renewal: %u",
+				iface->dhcpv4.renewal_time);
 			if (!iface->dhcpv4.renewal_time) {
 				return NET_DROP;
 			}
@@ -566,20 +577,25 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 			break;
 		case DHCPV4_OPTIONS_SERVER_ID:
 			if (length != 4) {
+				NET_DBG("options_server_id, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read(frag, pos, &pos, length,
 					     iface->dhcpv4.server_id.s4_addr);
+			NET_DBG("options_server_id: %s",
+				net_sprint_ipv4_addr(&iface->dhcpv4.server_id));
 			break;
 		case DHCPV4_OPTIONS_MSG_TYPE:
 			if (length != 1) {
+				NET_DBG("options_msg_type, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read_u8(frag, pos, &pos, msg_type);
 			break;
 		default:
+			NET_DBG("option unknown: %d", type);
 			frag = net_nbuf_skip(frag, pos, &pos, length);
 			break;
 		}
