@@ -336,7 +336,7 @@ static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
-static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
+static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_session *session,
 					   uint8_t cr, uint8_t type,
 					   uint8_t len)
 {
@@ -348,7 +348,7 @@ static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
 	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr_cr = BT_RFCOMM_UIH_CR(dlc->session->role);
+	hdr_cr = BT_RFCOMM_UIH_CR(session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(0, hdr_cr);
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, BT_RFCOMM_PF_UIH);
 	hdr->length = BT_RFCOMM_SET_LEN_8(sizeof(*msg_hdr) + len);
@@ -567,7 +567,8 @@ static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	struct net_buf *buf;
 	uint8_t fcs;
 
-	buf = rfcomm_make_uih_msg(dlc, cr, BT_RFCOMM_MSC, sizeof(*msc));
+	buf = rfcomm_make_uih_msg(dlc->session, cr, BT_RFCOMM_MSC,
+				  sizeof(*msc));
 
 	msc = net_buf_add(buf, sizeof(*msc));
 	/* cr bit should be always 1 in MSC */
@@ -587,7 +588,8 @@ static int rfcomm_send_rls(struct bt_rfcomm_dlc *dlc, uint8_t cr,
 	struct net_buf *buf;
 	uint8_t fcs;
 
-	buf = rfcomm_make_uih_msg(dlc, cr, BT_RFCOMM_RLS, sizeof(*rls));
+	buf = rfcomm_make_uih_msg(dlc->session, cr, BT_RFCOMM_RLS,
+				  sizeof(*rls));
 
 	rls = net_buf_add(buf, sizeof(*rls));
 	/* cr bit should be always 1 in RLS */
@@ -746,7 +748,7 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	struct net_buf *buf;
 	uint8_t fcs;
 
-	buf = rfcomm_make_uih_msg(dlc, cr, BT_RFCOMM_PN, sizeof(*pn));
+	buf = rfcomm_make_uih_msg(dlc->session, cr, BT_RFCOMM_PN, sizeof(*pn));
 
 	BT_DBG("mtu %x", dlc->mtu);
 
