@@ -57,6 +57,8 @@ static struct bt_sdp bt_sdp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(SDP_MTU), BT_BUF_USER_DATA_MIN, NULL);
 
+#define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
+
 #define SDP_CLIENT_MTU 64
 
 struct bt_sdp_client {
@@ -321,6 +323,29 @@ static int sdp_client_chan_connect(struct bt_sdp_client *session)
 					&session->chan.chan, SDP_PSM);
 }
 
+static void sdp_client_connected(struct bt_l2cap_chan *chan)
+{
+	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+
+	BT_DBG("session %p chan %p connected", session, chan);
+
+	ARG_UNUSED(session);
+}
+
+static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
+{
+	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+
+	BT_DBG("session %p chan %p disconnected", session, chan);
+
+	ARG_UNUSED(session);
+}
+
+static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
+		.connected = sdp_client_connected,
+		.disconnected = sdp_client_disconnected,
+};
+
 static int sdp_client_connect(struct bt_conn *conn)
 {
 	int i;
@@ -332,6 +357,7 @@ static int sdp_client_connect(struct bt_conn *conn)
 			continue;
 		}
 
+		session->chan.chan.ops = &sdp_client_chan_ops;
 		session->chan.chan.conn = conn;
 		session->chan.rx.mtu = SDP_CLIENT_MTU;
 
