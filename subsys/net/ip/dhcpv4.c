@@ -545,6 +545,33 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 			NET_DBG("options_subnet_mask %s",
 				net_sprint_ipv4_addr(&iface->ipv4.netmask));
 			break;
+		case DHCPV4_OPTIONS_ROUTER: {
+			struct in_addr router;
+
+			/* Router option may present 1 or more
+			 * addresses for routers on the clients
+			 * subnet.  Routers should be listed in order
+			 * of preference.  Hence we choose the first
+			 * and skip the rest.
+			 */
+			if (length % 4 != 0 || length < 4) {
+				NET_ERR("options_router, bad length");
+				return NET_DROP;
+			}
+
+			frag = net_nbuf_read(frag, pos, &pos, 4,
+					     router.s4_addr);
+			frag = net_nbuf_skip(frag, pos, &pos, length - 4);
+			if (!frag && pos) {
+				NET_ERR("options_router, short packet");
+				return NET_DROP;
+			}
+
+			NET_DBG("options_router: %s",
+				net_sprint_ipv4_addr(&router));
+			net_if_ipv4_set_gw(iface, &router);
+			break;
+		}
 		case DHCPV4_OPTIONS_LEASE_TIME:
 			if (length != 4) {
 				NET_ERR("options_lease_time, bad length");
