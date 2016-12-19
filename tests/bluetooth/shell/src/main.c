@@ -2294,7 +2294,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-pscan", cmd_bredr_connectable, "value: on, off" },
 	{ "br-connect", cmd_connect_bredr, "<address>" },
 	{ "br-discovery", cmd_bredr_discovery,
-	  "<value: on, off> [length: 0x01-0x30] [mode: limited]"  },
+	  "<value: on, off> [length: 1-48] [mode: limited]"  },
 	{ "br-l2cap-register", cmd_bredr_l2cap_register, "<psm>" },
 	{ "br-oob", cmd_bredr_oob },
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
