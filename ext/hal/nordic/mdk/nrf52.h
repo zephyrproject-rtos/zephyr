@@ -6,7 +6,7 @@
  *           nrf52 from Nordic Semiconductor.
  *
  * @version  V1
- * @date     9. April 2016
+ * @date     18. November 2016
  *
  * @note     Generated with SVDConv V2.81d 
  *           from CMSIS SVD File 'nrf52.svd' Version 1,
@@ -134,7 +134,7 @@ typedef enum {
 #define __FPU_PRESENT                  1            /*!< FPU present or not                                                    */
 /** @} */ /* End of group Configuration_of_CMSIS */
 
-#include <core_cm4.h>                               /*!< Cortex-M4 processor and core peripherals                              */
+#include "core_cm4.h"                               /*!< Cortex-M4 processor and core peripherals                              */
 #include "system_nrf52.h"                           /*!< nrf52 System                                                          */
 
 
@@ -211,25 +211,6 @@ typedef struct {
   __O  uint32_t  POWERCLR;                          /*!< Description cluster[0]: RAM0 power control clear register             */
   __I  uint32_t  RESERVED0;
 } POWER_RAM_Type;
-
-typedef struct {
-  __IO uint32_t  CPU0;                              /*!< AHB bus master priority register for CPU0                             */
-  __IO uint32_t  SPIS1;                             /*!< AHB bus master priority register for SPIM1, SPIS1, TWIM1 and
-                                                         TWIS1                                                                 */
-  __IO uint32_t  RADIO;                             /*!< AHB bus master priority register for RADIO                            */
-  __IO uint32_t  ECB;                               /*!< AHB bus master priority register for ECB                              */
-  __IO uint32_t  CCM;                               /*!< AHB bus master priority register for CCM                              */
-  __IO uint32_t  AAR;                               /*!< AHB bus master priority register for AAR                              */
-  __IO uint32_t  SAADC;                             /*!< AHB bus master priority register for SAADC                            */
-  __IO uint32_t  UARTE;                             /*!< AHB bus master priority register for UARTE                            */
-  __IO uint32_t  SERIAL0;                           /*!< AHB bus master priority register for SPIM0, SPIS0, TWIM0 and
-                                                         TWIS0                                                                 */
-  __IO uint32_t  SERIAL2;                           /*!< AHB bus master priority register for SPIM2 and SPIS2                  */
-  __IO uint32_t  NFCT;                              /*!< AHB bus master priority register for NFCT                             */
-  __IO uint32_t  I2S;                               /*!< AHB bus master priority register for I2S                              */
-  __IO uint32_t  PDM;                               /*!< AHB bus master priority register for PDM                              */
-  __IO uint32_t  PWM;                               /*!< AHB bus master priority register for PWM0, PWM1 and PWM2              */
-} AMLI_RAMPRI_Type;
 
 typedef struct {
   __IO uint32_t  RTS;                               /*!< Pin select for RTS signal                                             */
@@ -371,12 +352,12 @@ typedef struct {
 } QDEC_PSEL_Type;
 
 typedef struct {
-  __IO uint32_t  PTR;                               /*!< Description cluster[0]: Beginning address in Data RAM of sequence
-                                                         A                                                                     */
-  __IO uint32_t  CNT;                               /*!< Description cluster[0]: Amount of values (duty cycles) in sequence
-                                                         A                                                                     */
+  __IO uint32_t  PTR;                               /*!< Description cluster[0]: Beginning address in Data RAM of this
+                                                         sequence                                                              */
+  __IO uint32_t  CNT;                               /*!< Description cluster[0]: Amount of values (duty cycles) in this
+                                                         sequence                                                              */
   __IO uint32_t  REFRESH;                           /*!< Description cluster[0]: Amount of additional PWM periods between
-                                                         samples loaded to compare register (load every CNT+1 PWM periods)     */
+                                                         samples loaded into compare register                                  */
   __IO uint32_t  ENDDELAY;                          /*!< Description cluster[0]: Time added after the sequence                 */
   __I  uint32_t  RESERVED1[4];
 } PWM_SEQ_Type;
@@ -633,26 +614,10 @@ typedef struct {                                    /*!< CLOCK Structure        
   __I  uint32_t  RESERVED5[62];
   __IO uint32_t  LFCLKSRC;                          /*!< Clock source for the LFCLK                                            */
   __I  uint32_t  RESERVED6[7];
-  __IO uint32_t  CTIV;                              /*!< Calibration timer interval (retained register, same reset behaviour
-                                                         as RESETREAS)                                                         */
+  __IO uint32_t  CTIV;                              /*!< Calibration timer interval                                            */
   __I  uint32_t  RESERVED7[8];
   __IO uint32_t  TRACECONFIG;                       /*!< Clocking options for the Trace Port debug interface                   */
 } NRF_CLOCK_Type;
-
-
-/* ================================================================================ */
-/* ================                      AMLI                      ================ */
-/* ================================================================================ */
-
-
-/**
-  * @brief AHB Multi-Layer Interface (AMLI)
-  */
-
-typedef struct {                                    /*!< AMLI Structure                                                        */
-  __I  uint32_t  RESERVED0[896];
-  AMLI_RAMPRI_Type RAMPRI;                          /*!< RAM configurable priority configuration structure                     */
-} NRF_AMLI_Type;
 
 
 /* ================================================================================ */
@@ -754,9 +719,12 @@ typedef struct {                                    /*!< UARTE Structure        
   __I  uint32_t  RESERVED1[52];
   __IO uint32_t  EVENTS_CTS;                        /*!< CTS is activated (set low). Clear To Send.                            */
   __IO uint32_t  EVENTS_NCTS;                       /*!< CTS is deactivated (set high). Not Clear To Send.                     */
-  __I  uint32_t  RESERVED2[2];
+  __IO uint32_t  EVENTS_RXDRDY;                     /*!< Data received in RXD (but potentially not yet transferred to
+                                                         Data RAM)                                                             */
+  __I  uint32_t  RESERVED2;
   __IO uint32_t  EVENTS_ENDRX;                      /*!< Receive buffer is filled up                                           */
-  __I  uint32_t  RESERVED3[3];
+  __I  uint32_t  RESERVED3[2];
+  __IO uint32_t  EVENTS_TXDRDY;                     /*!< Data sent from TXD                                                    */
   __IO uint32_t  EVENTS_ENDTX;                      /*!< Last TX byte transmitted                                              */
   __IO uint32_t  EVENTS_ERROR;                      /*!< Error detected                                                        */
   __I  uint32_t  RESERVED4[7];
@@ -779,7 +747,7 @@ typedef struct {                                    /*!< UARTE Structure        
   __I  uint32_t  RESERVED11;
   UARTE_PSEL_Type PSEL;                             /*!< Unspecified                                                           */
   __I  uint32_t  RESERVED12[3];
-  __IO uint32_t  BAUDRATE;                          /*!< Baud rate                                                             */
+  __IO uint32_t  BAUDRATE;                          /*!< Baud rate. Accuracy depends on the HFCLK source selected.             */
   __I  uint32_t  RESERVED13[3];
   UARTE_RXD_Type RXD;                               /*!< RXD EasyDMA channel                                                   */
   __I  uint32_t  RESERVED14;
@@ -1977,7 +1945,6 @@ typedef struct {                                    /*!< GPIO Structure         
 #define NRF_BPROT_BASE                  0x40000000UL
 #define NRF_POWER_BASE                  0x40000000UL
 #define NRF_CLOCK_BASE                  0x40000000UL
-#define NRF_AMLI_BASE                   0x40000000UL
 #define NRF_RADIO_BASE                  0x40001000UL
 #define NRF_UARTE0_BASE                 0x40002000UL
 #define NRF_UART0_BASE                  0x40002000UL
@@ -2049,7 +2016,6 @@ typedef struct {                                    /*!< GPIO Structure         
 #define NRF_BPROT                       ((NRF_BPROT_Type          *) NRF_BPROT_BASE)
 #define NRF_POWER                       ((NRF_POWER_Type          *) NRF_POWER_BASE)
 #define NRF_CLOCK                       ((NRF_CLOCK_Type          *) NRF_CLOCK_BASE)
-#define NRF_AMLI                        ((NRF_AMLI_Type           *) NRF_AMLI_BASE)
 #define NRF_RADIO                       ((NRF_RADIO_Type          *) NRF_RADIO_BASE)
 #define NRF_UARTE0                      ((NRF_UARTE_Type          *) NRF_UARTE0_BASE)
 #define NRF_UART0                       ((NRF_UART_Type           *) NRF_UART0_BASE)

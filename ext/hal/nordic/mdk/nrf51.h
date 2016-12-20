@@ -6,7 +6,7 @@
  *           nrf51 from Nordic Semiconductor.
  *
  * @version  V522
- * @date     24. May 2016
+ * @date     18. November 2016
  *
  * @note     Generated with SVDConv V2.81d 
  *           from CMSIS SVD File 'nrf51.svd' Version 522,
@@ -148,15 +148,6 @@ typedef enum {
 
 
 typedef struct {
-  __IO uint32_t  CPU0;                              /*!< Configurable priority configuration register for CPU0.                */
-  __IO uint32_t  SPIS1;                             /*!< Configurable priority configuration register for SPIS1.               */
-  __IO uint32_t  RADIO;                             /*!< Configurable priority configuration register for RADIO.               */
-  __IO uint32_t  ECB;                               /*!< Configurable priority configuration register for ECB.                 */
-  __IO uint32_t  CCM;                               /*!< Configurable priority configuration register for CCM.                 */
-  __IO uint32_t  AAR;                               /*!< Configurable priority configuration register for AAR.                 */
-} AMLI_RAMPRI_Type;
-
-typedef struct {
   __O  uint32_t  EN;                                /*!< Enable channel group.                                                 */
   __O  uint32_t  DIS;                               /*!< Disable channel group.                                                */
 } PPI_TASKS_CHG_Type;
@@ -272,21 +263,6 @@ typedef struct {                                    /*!< MPU Structure          
   __IO uint32_t  DISABLEINDEBUG;                    /*!< Disable erase and write protection mechanism in debug mode.           */
   __IO uint32_t  PROTBLOCKSIZE;                     /*!< Erase and write protection block size.                                */
 } NRF_MPU_Type;
-
-
-/* ================================================================================ */
-/* ================                      AMLI                      ================ */
-/* ================================================================================ */
-
-
-/**
-  * @brief AHB Multi-Layer Interface. (AMLI)
-  */
-
-typedef struct {                                    /*!< AMLI Structure                                                        */
-  __I  uint32_t  RESERVED0[896];
-  AMLI_RAMPRI_Type RAMPRI;                          /*!< RAM configurable priority configuration structure.                    */
-} NRF_AMLI_Type;
 
 
 /* ================================================================================ */
@@ -1137,7 +1113,6 @@ typedef struct {                                    /*!< GPIO Structure         
 #define NRF_POWER_BASE                  0x40000000UL
 #define NRF_CLOCK_BASE                  0x40000000UL
 #define NRF_MPU_BASE                    0x40000000UL
-#define NRF_AMLI_BASE                   0x40000000UL
 #define NRF_RADIO_BASE                  0x40001000UL
 #define NRF_UART0_BASE                  0x40002000UL
 #define NRF_SPI0_BASE                   0x40003000UL
@@ -1175,7 +1150,6 @@ typedef struct {                                    /*!< GPIO Structure         
 #define NRF_POWER                       ((NRF_POWER_Type          *) NRF_POWER_BASE)
 #define NRF_CLOCK                       ((NRF_CLOCK_Type          *) NRF_CLOCK_BASE)
 #define NRF_MPU                         ((NRF_MPU_Type            *) NRF_MPU_BASE)
-#define NRF_AMLI                        ((NRF_AMLI_Type           *) NRF_AMLI_BASE)
 #define NRF_RADIO                       ((NRF_RADIO_Type          *) NRF_RADIO_BASE)
 #define NRF_UART0                       ((NRF_UART_Type           *) NRF_UART0_BASE)
 #define NRF_SPI0                        ((NRF_SPI_Type            *) NRF_SPI0_BASE)

@@ -39,4 +39,16 @@
 #define BLUE_GPIO_NAME	CONFIG_GPIO_K64_B_DEV_NAME
 #define BLUE_GPIO_PIN	21
 
+/* LED0. There is no physical LED on the board with this name, so create an
+ * alias to the green LED to make the basic blinky sample work.
+ */
+#define LED0_GPIO_PORT	GREEN_GPIO_NAME
+#define LED0_GPIO_PIN	GREEN_GPIO_PIN
+
+/* Push button switch 0. There is no physical switch on the board with this
+ * name, so create an alias to SW3 to make the basic button sample work.
+ */
+#define SW0_GPIO_NAME	SW3_GPIO_NAME
+#define SW0_GPIO_PIN	SW3_GPIO_PIN
+
 #endif /* __INC_BOARD_H */

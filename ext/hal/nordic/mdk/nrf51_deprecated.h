@@ -45,8 +45,10 @@
  
 /* LPCOMP */
 /* The interrupt ISR was renamed. Adding old name to the macros. */
-#define LPCOMP_COMP_IRQHandler      LPCOMP_IRQHandler
-#define LPCOMP_COMP_IRQn            LPCOMP_IRQn
+#define LPCOMP_COMP_IRQHandler          LPCOMP_IRQHandler
+#define LPCOMP_COMP_IRQn                LPCOMP_IRQn
+/* Corrected typo in RESULT register. */
+#define LPCOMP_RESULT_RESULT_Bellow     LPCOMP_RESULT_RESULT_Below
  
  
 /* MPU */

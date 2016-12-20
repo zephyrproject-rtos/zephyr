@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
+ 
 #ifndef SYSTEM_NRF52_H
 #define SYSTEM_NRF52_H
 
@@ -57,7 +57,7 @@ extern void SystemInit (void);
  * @param  none
  * @return none
  *
- * @brief  Updates the SystemCoreClock with current core Clock
+ * @brief  Updates the SystemCoreClock with current core Clock 
  *         retrieved from cpu registers.
  */
 extern void SystemCoreClockUpdate (void);

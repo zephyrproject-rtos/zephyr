@@ -28,5 +28,9 @@ config SRAM_SIZE
 config FLASH_SIZE
 	default 512
 
+config NUM_IRQS
+	int
+	default 39
+
 endif # SOC_NRF52832
 

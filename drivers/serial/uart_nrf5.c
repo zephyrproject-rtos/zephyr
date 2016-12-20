@@ -27,6 +27,22 @@
 #include <sections.h>
 #include <gpio.h>
 
+#ifdef CONFIG_SOC_NRF52840
+/* Undefine MDK-defined macros */
+#ifdef PSELRTS
+#undef PSELRTS
+#endif
+#ifdef PSELCTS
+#undef PSELCTS
+#endif
+#ifdef PSELTXD
+#undef PSELTXD
+#endif
+#ifdef PSELRXD
+#undef PSELRXD
+#endif
+#endif
+
 /* UART structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
 struct _uart {
 	__O uint32_t  TASKS_STARTRX;
