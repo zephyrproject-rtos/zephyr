@@ -320,6 +320,8 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 
 static inline uint32_t get_recv_wnd(struct net_tcp *tcp)
 {
+	ARG_UNUSED(tcp);
+
 	/* We don't queue received data inside the stack, we hand off
 	 * packets to synchronous callbacks (who can queue if they
 	 * want, but it's not our business).  So the available window
@@ -575,6 +577,8 @@ const char * const net_tcp_state_str(enum net_tcp_state state)
 	case NET_TCP_CLOSING:
 		return "CLOSING";
 	}
+#else
+	ARG_UNUSED(state);
 #endif
 
 	return "";

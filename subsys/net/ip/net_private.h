@@ -162,26 +162,38 @@ static inline void net_hexdump_frags(const char *str, struct net_buf *buf)
 
 static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 {
+	ARG_UNUSED(ll);
+	ARG_UNUSED(ll_len);
+
 	return NULL;
 }
 
 static inline char *net_sprint_ip_addr_ptr(const uint8_t *ptr, uint8_t len)
 {
+	ARG_UNUSED(ptr);
+	ARG_UNUSED(len);
+
 	return NULL;
 }
 
 static inline char *net_sprint_ipv6_addr(const struct in6_addr *addr)
 {
+	ARG_UNUSED(addr);
+
 	return NULL;
 }
 
 static inline char *net_sprint_ipv4_addr(const struct in_addr *addr)
 {
+	ARG_UNUSED(addr);
+
 	return NULL;
 }
 
 static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 {
+	ARG_UNUSED(addr);
+
 	return NULL;
 }
 

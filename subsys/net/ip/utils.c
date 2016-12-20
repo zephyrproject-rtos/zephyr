@@ -398,6 +398,8 @@ static inline uint16_t calc_chksum_buf(uint16_t sum, struct net_buf *buf,
 	int16_t len = frag->len - proto_len;
 	uint8_t *ptr = frag->data + proto_len;
 
+	ARG_UNUSED(upper_layer_len);
+
 	if (len < 0) {
 		NET_DBG("1st fragment len %u < IP header len %u",
 			frag->len, proto_len);

@@ -222,6 +222,8 @@ static inline char *net_addr_type2str(enum net_addr_type type)
 #else
 static inline char *net_addr_type2str(enum net_addr_type type)
 {
+	ARG_UNUSED(type);
+
 	return NULL;
 }
 #endif

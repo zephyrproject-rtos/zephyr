@@ -1832,6 +1832,8 @@ static int recv_udp(struct net_context *context,
 	uint16_t lport = 0;
 	int ret;
 
+	ARG_UNUSED(timeout);
+
 	if (context->conn_handler) {
 		net_conn_unregister(context->conn_handler);
 		context->conn_handler = NULL;

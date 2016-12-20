@@ -358,6 +358,8 @@ enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
 	sys_snode_t *node;
 	struct net_icmpv6_handler *cb;
 
+	ARG_UNUSED(len);
+
 	SYS_SLIST_FOR_EACH_NODE(&handlers, node) {
 		cb = (struct net_icmpv6_handler *)node;
 

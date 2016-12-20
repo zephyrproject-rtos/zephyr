@@ -107,6 +107,8 @@ static inline const char *dhcpv4state2str(enum net_dhcpv4_state state)
 static void tx_stack(struct net_if *iface, unsigned char *stack,
 		     size_t stack_size)
 {
+	ARG_UNUSED(iface);
+
 #if defined(CONFIG_INIT_STACKS)
 	unsigned int stack_offset, pcnt, unused;
 
@@ -118,6 +120,9 @@ static void tx_stack(struct net_if *iface, unsigned char *stack,
 	       stack_size + stack_offset, unused,
 	       stack_size - unused, stack_size, pcnt);
 #else
+	ARG_UNUSED(stack_size);
+	ARG_UNUSED(stack);
+
 	printf("TX stack usage not available.\n");
 #endif
 }
@@ -131,6 +136,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
 	int i, count;
+
+	ARG_UNUSED(user_data);
 
 	printf("Interface %p\n", iface);
 	printf("====================\n");
@@ -339,6 +346,8 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 
 static void iface_per_route_cb(struct net_if *iface, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	net_route_foreach(route_cb, iface);
 }
 #endif /* CONFIG_NET_ROUTE */
@@ -535,6 +544,9 @@ static int shell_cmd_conn(int argc, char *argv[])
 {
 	int count = 0;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	printf("Context   \tLocal           \tRemote          \tIface     \t"
 	       "Flags\n");
 
@@ -562,6 +574,9 @@ static int shell_cmd_conn(int argc, char *argv[])
 
 static int shell_cmd_iface(int argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	net_if_foreach(iface_cb, NULL);
 
 	return 0;
@@ -571,6 +586,9 @@ static int shell_cmd_mem(int argc, char *argv[])
 {
 	size_t tx_size, rx_size, data_size;
 	int tx, rx, data;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	net_nbuf_get_info(&tx_size, &rx_size, &data_size, &tx, &rx, &data);
 
@@ -612,6 +630,8 @@ static int shell_cmd_ping(int argc, char *argv[])
 #endif
 	char *host;
 	int ret;
+
+	ARG_UNUSED(argc);
 
 	if (!strcmp(argv[0], "ping")) {
 		host = argv[1];
@@ -686,6 +706,9 @@ static int shell_cmd_ping(int argc, char *argv[])
 
 static int shell_cmd_route(int argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 #if defined(CONFIG_NET_ROUTE)
 	net_if_foreach(iface_per_route_cb, NULL);
 #else
@@ -705,6 +728,9 @@ static int shell_cmd_stacks(int argc, char *argv[])
 	unsigned int stack_offset, pcnt, unused;
 #endif
 	struct net_stack_info *info;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	for (info = __net_stack_start; info != __net_stack_end; info++) {
 		net_analyze_stack_get_values(info->stack, info->size,
@@ -727,6 +753,9 @@ static int shell_cmd_stacks(int argc, char *argv[])
 
 static int shell_cmd_stats(int argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 #if defined(CONFIG_NET_STATISTICS)
 	net_print_statistics();
 #else
@@ -738,6 +767,9 @@ static int shell_cmd_stats(int argc, char *argv[])
 
 static int shell_cmd_help(int argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	/* Keep the commands in alphabetical order */
 	printf("net conn\n\tPrint information about network connections\n");
 	printf("net iface\n\tPrint information about network interfaces\n");
@@ -751,15 +783,15 @@ static int shell_cmd_help(int argc, char *argv[])
 
 static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
-	{ "conn", shell_cmd_conn },
-	{ "help", shell_cmd_help },
-	{ "iface", shell_cmd_iface },
-	{ "mem", shell_cmd_mem },
-	{ "ping", shell_cmd_ping },
-	{ "route", shell_cmd_route },
-	{ "stacks", shell_cmd_stacks },
-	{ "stats", shell_cmd_stats },
-	{ NULL, NULL }
+	{ "conn", shell_cmd_conn, NULL },
+	{ "help", shell_cmd_help, NULL },
+	{ "iface", shell_cmd_iface, NULL },
+	{ "mem", shell_cmd_mem, NULL },
+	{ "ping", shell_cmd_ping, NULL },
+	{ "route", shell_cmd_route, NULL },
+	{ "stacks", shell_cmd_stacks, NULL },
+	{ "stats", shell_cmd_stats, NULL },
+	{ NULL, NULL, NULL }
 };
 
 void net_shell_init(void)

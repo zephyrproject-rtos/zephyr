@@ -172,6 +172,9 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
 				  uint8_t type, uint8_t code)
 {
+	ARG_UNUSED(code);
+	ARG_UNUSED(len);
+
 	switch (type) {
 	case NET_ICMPV4_ECHO_REQUEST:
 		return handle_echo_request(buf);
@@ -184,7 +187,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 {
 	struct net_buf *buf, *frag;
 	struct net_if *iface = net_nbuf_iface(orig);
-	int extra_len, reserve;
+	size_t extra_len, reserve;
 	struct in_addr addr, *src, *dst;
 
 	if (NET_IPV4_BUF(orig)->proto == IPPROTO_ICMP) {

@@ -1115,6 +1115,8 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 	struct net_linkaddr_storage *cached_lladdr;
 	struct net_buf *pending;
 
+	ARG_UNUSED(hdr);
+
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_ICMPV6_NS_BUF(buf)->tgt);
 

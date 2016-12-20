@@ -145,6 +145,8 @@ int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
 
 int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr)
 {
+	ARG_UNUSED(lladdr);
+
 	if (nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
 		return -EALREADY;
 	}
