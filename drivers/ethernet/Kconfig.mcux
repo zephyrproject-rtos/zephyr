@@ -1,6 +1,6 @@
 # Kconfig - ETH_MCUX Ethernet driver configuration options
 
-# Copyright (c) 2016 ARM Ltd
+# Copyright (c) 2016-2017 ARM Ltd
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,9 +10,9 @@ menuconfig ETH_MCUX
 	depends on NET_L2_ETHERNET && HAS_MCUX
 	default n
 	help
-	Enable MCUX Ethernet driver.  Note, this driver performs one shot PHY
-	setup.  There is no support for PHY disconnect, reconnect or
-	configuration change.
+	  Enable MCUX Ethernet driver.  Note, this driver performs one shot PHY
+	  setup.  There is no support for PHY disconnect, reconnect or
+	  configuration change.
 
 if ETH_MCUX
 config ETH_MCUX_PROMISCUOUS_MODE
@@ -35,7 +35,7 @@ config ETH_MCUX_RX_BUFFERS
 	default 2
 	range 1 16
 	help
-	Set the number of RX buffers provided to the MCUX driver.
+	  Set the number of RX buffers provided to the MCUX driver.
 
 config ETH_MCUX_TX_BUFFERS
 	int "Number of MCUX TX buffers"
@@ -43,13 +43,13 @@ config ETH_MCUX_TX_BUFFERS
 	default 2
 	range 1 16
 	help
-	Set the number of TX buffers provided to the MCUX driver.
+	  Set the number of TX buffers provided to the MCUX driver.
 
 config ETH_MCUX_0
 	bool "MCUX Ethernet port 0"
 	default n
 	help
-	Include port 0 driver
+	 Include port 0 driver
 
 config ETH_MCUX_0_NAME
 	string "Driver name"
@@ -61,14 +61,14 @@ config ETH_MCUX_0_IRQ_PRI
 	depends on ETH_MCUX_0
 	default 0
 	help
-	IRQ priority
+	  IRQ priority
 
 config ETH_MCUX_0_RANDOM_MAC
 	bool "Random MAC address"
 	depends on ETH_MCUX_0 && RANDOM_GENERATOR
 	default y
 	help
-	Generate a random MAC address dynamically.
+	  Generate a random MAC address dynamically.
 
 if ETH_MCUX_0 && ! ETH_MCUX_0_RANDOM_MAC
 
@@ -77,20 +77,20 @@ config ETH_MCUX_0_MAC3
 	default 0
 	range 0 ff
 	help
-	This is the byte 3 of the MAC address.
+	  This is the byte 3 of the MAC address.
 
 config ETH_MCUX_0_MAC4
 	hex "MAC Address Byte 4"
 	default 0
 	range 0 ff
 	help
-	This is the byte 4 of the MAC address.
+	  This is the byte 4 of the MAC address.
 
 config ETH_MCUX_0_MAC5
 	hex "MAC Address Byte 5"
 	default 0
 	range 0 ff
 	help
-	This is the byte 5 of the MAC address.
+	  This is the byte 5 of the MAC address.
 endif
 endif
