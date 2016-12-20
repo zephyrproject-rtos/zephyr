@@ -19,6 +19,7 @@
 #include <atomic.h>
 #include <ksched.h>
 #include <wait_q.h>
+#include <misc/util.h>
 
 /* the only struct _kernel instance */
 struct _kernel _kernel = {0};
@@ -191,15 +192,14 @@ static int _is_wait_q_insert_point(sys_dnode_t *node, void *insert_prio)
 
 /* convert milliseconds to ticks */
 
-#define ceiling(numerator, divider) \
-	(((numerator) + ((divider) - 1)) / (divider))
-
+#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
 int32_t _ms_to_ticks(int32_t ms)
 {
 	int64_t ms_ticks_per_sec = (int64_t)ms * sys_clock_ticks_per_sec;
 
-	return (int32_t)ceiling(ms_ticks_per_sec, MSEC_PER_SEC);
+	return (int32_t)ceiling_fraction(ms_ticks_per_sec, MSEC_PER_SEC);
 }
+#endif
 
 /* pend the specified thread: it must *not* be in the ready queue */
 /* must be called with interrupts locked */

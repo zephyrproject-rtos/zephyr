@@ -2892,10 +2892,6 @@ nano_stack_pop(struct nano_stack *stack, uint32_t *data,
  */
 #define nano_task_stack_pop nano_stack_pop
 
-/* kernel clocks */
-
-extern int32_t _ms_to_ticks(int32_t ms);
-
 /**
  * @brief Return the current system tick count.
  *

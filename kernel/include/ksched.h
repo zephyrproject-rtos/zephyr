@@ -31,7 +31,9 @@ extern void _pend_thread(struct k_thread *thread,
 extern void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout);
 extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 extern int __must_switch_threads(void);
+#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
 extern int32_t _ms_to_ticks(int32_t ms);
+#endif
 extern void idle(void *, void *, void *);
 
 /* find which one is the next thread to run */

@@ -399,6 +399,30 @@ config SYS_CLOCK_TICKS_PER_SEC
 	help
 	This option specifies the frequency of the system clock in Hz.
 
+	Depending on the choice made, an amount of possibly expensive math must
+	occur when converting ticks to milliseconds and vice-versa. Some values
+	are optimized, and yield significantly less math.
+
+	The optimal values from a computational point-of-view are 1000, 500,
+	250 and 125, since in these cases there is either no computation
+	required, or it is all done via bit-shifting. These also give a
+	granularity from 1ms to 8ms.
+
+	Other good values are 100, 50, 25, 20 and 10. In this case, some math
+	is required but is minimized. These are also values that necessitate a
+	reduced number of clock interrupts per second, at the cost of
+	granularity (10ms to 100ms).
+
+	All other values require some extensive 64-bit math, and in some
+	configurations even require calls to compiler built-in functions, and
+	can require a non-trivial extra amount of stack space (e.g. around 80
+	bytes on x86).
+
+	Using the legacy API also incurs an extra penalty, since when asking
+	for a timeout, a translation is made from ticks to milliseconds to call
+	the native kernel APIs, and then another translation is made back to
+	ticks, since the kernel is tick-based.
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	help

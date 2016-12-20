@@ -32,6 +32,7 @@
 #include <misc/__assert.h>
 #include <misc/dlist.h>
 #include <misc/slist.h>
+#include <misc/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -634,13 +635,47 @@ extern void *k_thread_custom_data_get(void);
  * @cond INTERNAL_HIDDEN
  */
 
+/* kernel clocks */
+
+#if	(sys_clock_ticks_per_sec == 1000) || \
+	(sys_clock_ticks_per_sec == 500)  || \
+	(sys_clock_ticks_per_sec == 250)  || \
+	(sys_clock_ticks_per_sec == 125)  || \
+	(sys_clock_ticks_per_sec == 100)  || \
+	(sys_clock_ticks_per_sec == 50)   || \
+	(sys_clock_ticks_per_sec == 25)   || \
+	(sys_clock_ticks_per_sec == 20)   || \
+	(sys_clock_ticks_per_sec == 10)   || \
+	(sys_clock_ticks_per_sec == 1)
+
+	#define _ms_per_tick (MSEC_PER_SEC / sys_clock_ticks_per_sec)
+#else
+	/* yields horrible 64-bit math on many architectures: try to avoid */
+	#define _NON_OPTIMIZED_TICKS_PER_SEC
+#endif
+
+#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
+extern int32_t _ms_to_ticks(int32_t ms);
+#else
+static ALWAYS_INLINE int32_t _ms_to_ticks(int32_t ms)
+{
+	return (int32_t)ceiling_fraction((uint32_t)ms, _ms_per_tick);
+}
+#endif
+
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 
-static int64_t __ticks_to_ms(int64_t ticks)
+static inline int64_t __ticks_to_ms(int64_t ticks)
 {
-#if CONFIG_SYS_CLOCK_EXISTS
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
 	return (MSEC_PER_SEC * (uint64_t)ticks) / sys_clock_ticks_per_sec;
+#else
+	return (uint64_t)ticks * _ms_per_tick;
+#endif
+
 #else
 	__ASSERT(ticks == 0, "");
 	return 0;

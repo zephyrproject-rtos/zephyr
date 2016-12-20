@@ -24,6 +24,12 @@
 #include <drivers/system_timer.h>
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
+#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
+#warning "non-optimized system clock frequency chosen: performance may suffer"
+#endif
+#endif
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
 int sys_clock_hw_cycles_per_tick =
 	CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / sys_clock_ticks_per_sec;
