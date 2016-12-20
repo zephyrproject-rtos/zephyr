@@ -317,20 +317,6 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	return 0;
 }
 
-/* Make sure whether there's existing valid session that can be still used */
-static struct bt_sdp_client *get_client_session(struct bt_conn *conn)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(bt_sdp_client_pool); i++) {
-		if (bt_sdp_client_pool[i].chan.chan.conn == conn) {
-			return &bt_sdp_client_pool[i];
-		}
-	}
-
-	return NULL;
-}
-
 static int sdp_client_chan_connect(struct bt_sdp_client *session)
 {
 	return bt_l2cap_br_chan_connect(session->chan.chan.conn,
@@ -360,12 +346,13 @@ static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
 		.disconnected = sdp_client_disconnected,
 };
 
-static int sdp_client_connect(struct bt_conn *conn)
+static struct bt_sdp_client *sdp_client_new_session(struct bt_conn *conn)
 {
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bt_sdp_client_pool); i++) {
 		struct bt_sdp_client *session = &bt_sdp_client_pool[i];
+		int err;
 
 		if (session->chan.chan.conn) {
 			continue;
@@ -375,26 +362,46 @@ static int sdp_client_connect(struct bt_conn *conn)
 		session->chan.chan.conn = conn;
 		session->chan.rx.mtu = SDP_CLIENT_MTU;
 
-		return sdp_client_chan_connect(session);
+		err = sdp_client_chan_connect(session);
+		if (err) {
+			memset(session, 0, sizeof(*session));
+			BT_ERR("Cannot connect %d", err);
+			return NULL;
+		}
+
+		return session;
 	}
 
 	BT_ERR("No available SDP client context");
 
-	return -ENOMEM;
+	return NULL;
+}
+
+static struct bt_sdp_client *sdp_client_get_session(struct bt_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_sdp_client_pool); i++) {
+		if (bt_sdp_client_pool[i].chan.chan.conn == conn) {
+			return &bt_sdp_client_pool[i];
+		}
+	}
+
+	/*
+	 * Try to allocate session context since not found in pool and attempt
+	 * connect to remote SDP endpoint.
+	 */
+	return sdp_client_new_session(conn);
 }
 
 int bt_sdp_discover(struct bt_conn *conn,
 		    const struct bt_sdp_discover_params *params)
 {
 	struct bt_sdp_client *session;
-	int err;
 
-	session = get_client_session(conn);
+	session = sdp_client_get_session(conn);
 	if (!session) {
-		err = sdp_client_connect(conn);
-		if (err) {
-			return err;
-		}
+		return -ENOMEM;
 	}
 
 	return 0;
