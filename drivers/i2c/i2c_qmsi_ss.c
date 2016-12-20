@@ -319,6 +319,8 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 		return -ENOTSUP;
 	}
 
+	device_busy_set(dev);
+
 	for (int i = 0; i < num_msgs; i++) {
 		uint8_t *buf = msgs[i].buf;
 		uint32_t len = msgs[i].len;
@@ -342,6 +344,7 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 		rc = qm_ss_i2c_master_irq_transfer(instance, &xfer, addr);
 		k_sem_give(&driver_data->sem);
 		if (rc != 0) {
+			device_busy_clear(dev);
 			return -EIO;
 		}
 
@@ -349,9 +352,12 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 		k_sem_take(&driver_data->device_sync_sem, K_FOREVER);
 
 		if (driver_data->transfer_status != 0) {
+			device_busy_clear(dev);
 			return -EIO;
 		}
 	}
+
+	device_busy_clear(dev);
 
 	return 0;
 }
