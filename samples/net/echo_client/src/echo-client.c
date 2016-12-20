@@ -271,6 +271,8 @@ static inline bool wait_reply(const char *name,
 {
 	int ret = k_sem_take(sem, WAIT_TIME);
 
+	ARG_UNUSED(name);
+
 	if (!ret) {
 		return true;
 	}
@@ -306,6 +308,8 @@ static inline void udp_sent(struct net_context *context,
 			    void *bytes_sent,
 			    void *user_data)
 {
+	ARG_UNUSED(context);
+
 	if (!status) {
 		NET_INFO("%s: sent %u bytes", (char *)user_data,
 			 POINTER_TO_UINT(bytes_sent));
@@ -316,6 +320,8 @@ static inline void set_dst_addr(sa_family_t family,
 				struct net_buf *buf,
 				struct sockaddr *dst_addr)
 {
+	ARG_UNUSED(buf);
+
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
@@ -437,6 +443,9 @@ static void udp_ipv4_received(struct net_context *context,
 	sa_family_t family = net_nbuf_family(buf);
 	struct k_sem *recv = user_data;
 
+	ARG_UNUSED(context);
+	ARG_UNUSED(status);
+
 	if (family == AF_INET) {
 		if (expecting_ipv4 != net_nbuf_appdatalen(buf)) {
 			NET_ERR("Sent %d bytes, received %u bytes",
@@ -524,6 +533,9 @@ static void udp_ipv6_received(struct net_context *context,
 {
 	sa_family_t family = net_nbuf_family(buf);
 	struct k_sem *recv = user_data;
+
+	ARG_UNUSED(context);
+	ARG_UNUSED(status);
 
 	if (family == AF_INET6) {
 		if (expecting_ipv6 != net_nbuf_appdatalen(buf)) {
