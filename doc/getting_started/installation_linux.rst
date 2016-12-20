@@ -74,11 +74,15 @@ architectures. Additionally, it includes host tools such as a custom QEMU and
 a host compiler for building host tools if necessary. The SDK supports the
 following architectures:
 
-* :abbr:`IA-32 (Intel Architecture 32 bits)`
+* :abbr:`X86 (Intel Architecture 32 bits)`
+
+* :abbr:`X86 IAMCU ABI (Intel Architecture 32 bits IAMCU ABI)`
 
 * :abbr:`ARM (Advanced RISC Machines)`
 
 * :abbr:`ARC (Argonaut RISC Core)`
+
+* :abbr:`NIOS II`
 
 Follow these steps to install the SDK on your Linux host system.
 
@@ -95,6 +99,11 @@ Follow these steps to install the SDK on your Linux host system.
       $ wget https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/<version>-i686/zephyr-sdk-<version>-i686-setup.run
 
 #. Run the installation binary, follow this example:
+
+   .. important::
+      Make sure you have installed all required packages for your host
+      distribution as described in the previous section
+      `linux_required_software`_ otherwise the SDK installation will fail.
 
    .. code-block:: console
 
@@ -130,4 +139,4 @@ Follow these steps to install the SDK on your Linux host system.
      EOF
 
 .. _Zephyr SDK archive:
-   https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/
+    https://zephyrproject.org/downloads/tools
