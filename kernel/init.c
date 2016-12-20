@@ -18,7 +18,7 @@
  * @file
  * @brief Kernel initialization module
  *
- * This module contains routines that are used to initialize the nanokernel.
+ * This module contains routines that are used to initialize the kernel.
  */
 
 #include <zephyr.h>
@@ -97,10 +97,10 @@ k_tid_t const _idle_thread = (k_tid_t)_idle_stack;
 /*
  * storage space for the interrupt stack
  *
- * Note: This area is used as the system stack during nanokernel initialization,
- * since the nanokernel hasn't yet set up its own stack areas. The dual
- * purposing of this area is safe since interrupts are disabled until the
- * nanokernel context switches to the background (or idle) task.
+ * Note: This area is used as the system stack during kernel initialization,
+ * since the kernel hasn't yet set up its own stack areas. The dual purposing
+ * of this area is safe since interrupts are disabled until the kernel context
+ * switches to the init thread.
  */
 #if CONFIG_ISR_STACK_SIZE & (STACK_ALIGN - 1)
     #error "ISR_STACK_SIZE must be a multiple of the stack alignment"
@@ -151,7 +151,7 @@ void _data_copy(void)
 
 /**
  *
- * @brief Mainline for nanokernel's background task
+ * @brief Mainline for kernel's background task
  *
  * This routine completes kernel initialization by invoking the remaining
  * init functions, then invokes application's main() routine.
@@ -213,10 +213,10 @@ void __weak main(void)
 
 /**
  *
- * @brief Initializes nanokernel data structures
+ * @brief Initializes kernel data structures
  *
- * This routine initializes various nanokernel data structures, including
- * the background (or idle) task and any architecture-specific initialization.
+ * This routine initializes various kernel data structures, including
+ * the init and idle threads and any architecture-specific initialization.
  *
  * Note that all fields of "_kernel" are set to zero on entry, which may
  * be all the initialization many of them require.
@@ -230,7 +230,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 #else
 	/*
 	 * Initialize the current execution thread to permit a level of
-	 * debugging output if an exception should happen during nanokernel
+	 * debugging output if an exception should happen during kernel
 	 * initialization.  However, don't waste effort initializing the
 	 * fields of the dummy thread beyond those needed to identify it as a
 	 * dummy thread.
@@ -247,7 +247,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	/*
 	 * The interrupt library needs to be initialized early since a series
 	 * of handlers are installed into the interrupt table to catch
-	 * spurious interrupts. This must be performed before other nanokernel
+	 * spurious interrupts. This must be performed before other kernel
 	 * subsystems install bonafide handlers, or before hardware device
 	 * drivers are initialized.
 	 */
@@ -347,7 +347,7 @@ extern void *__stack_chk_guard;
 
 /**
  *
- * @brief Initialize nanokernel
+ * @brief Initialize kernel
  *
  * This routine is invoked when the system is ready to run C code. The
  * processor must be running in 32-bit mode, and the BSS must have been
@@ -360,14 +360,14 @@ FUNC_NORETURN void _Cstart(void)
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	void *dummy_thread = NULL;
 #else
-	/* floating point is NOT used during nanokernel init */
+	/* floating point is NOT used during kernel init */
 
 	char __stack dummy_stack[_K_THREAD_NO_FLOAT_SIZEOF];
 	void *dummy_thread = dummy_stack;
 #endif
 
 	/*
-	 * Initialize nanokernel data structures. This step includes
+	 * Initialize kernel data structures. This step includes
 	 * initializing the interrupt subsystem, which must be performed
 	 * before the hardware initialization phase.
 	 */

@@ -18,11 +18,11 @@
  * @file
  * @brief Macros to generate structure member offset definitions
  *
- * This header contains macros to allow a nanokernel implementation to
- * generate absolute symbols whose values represents the member offsets for
- * various nanokernel structures.  These absolute symbols are typically
- * utilized by assembly source files rather than hardcoding the values in
- * some local header file.
+ * This header contains macros to allow a kernel implementation to generate
+ * absolute symbols whose values represents the member offsets for various
+ * kernel structures.  These absolute symbols are typically utilized by
+ * assembly source files rather than hardcoding the values in some local header
+ * file.
  *
  * WARNING: Absolute symbols can potentially be utilized by external tools --
  * for example, to locate a specific field within a data structure.

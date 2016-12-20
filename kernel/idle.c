@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <kernel_structs.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -49,7 +49,7 @@ void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
  *
  * @brief Indicate that kernel is idling in tickless mode
  *
- * Sets the nanokernel data structure idle field to either a positive value or
+ * Sets the kernel data structure idle field to either a positive value or
  * K_FOREVER.
  *
  * @param ticks the number of ticks to idle

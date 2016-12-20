@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-#ifndef _kernel_nanokernel_include_wait_q__h_
-#define _kernel_nanokernel_include_wait_q__h_
+#ifndef _kernel_include_wait_q__h_
+#define _kernel_include_wait_q__h_
 
 #include <kernel_structs.h>
 #include <misc/dlist.h>
@@ -56,4 +56,4 @@ static ALWAYS_INLINE int _abort_thread_timeout(struct k_thread *thread)
 }
 #endif
 
-#endif /* _kernel_nanokernel_include_wait_q__h_ */
+#endif /* _kernel_include_wait_q__h_ */

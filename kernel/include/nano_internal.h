@@ -16,10 +16,9 @@
 
 /**
  * @file
- * @brief Architecture-independent private nanokernel APIs
+ * @brief Architecture-independent private kernel APIs
  *
- * This file contains private nanokernel APIs that are not
- * architecture-specific.
+ * This file contains private kernel APIs that are not architecture-specific.
  */
 
 #ifndef _NANO_INTERNAL__H_

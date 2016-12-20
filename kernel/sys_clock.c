@@ -1,4 +1,4 @@
-/* system clock support for nanokernel-only systems */
+/* system clock support */
 
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.
@@ -285,11 +285,11 @@ static void handle_time_slicing(int32_t ticks)
 #endif
 /**
  *
- * @brief Announce a tick to the nanokernel
+ * @brief Announce a tick to the kernel
  *
  * This function is only to be called by the system clock timer driver when a
- * tick is to be announced to the nanokernel. It takes care of dequeuing the
- * timers that have expired and wake up the fibers pending on them.
+ * tick is to be announced to the kernel. It takes care of dequeuing the
+ * timers that have expired and wake up the threads pending on them.
  *
  * @return N/A
  */
