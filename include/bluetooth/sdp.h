@@ -487,6 +487,7 @@ typedef uint8_t (*bt_sdp_discover_func_t)
 
 /** @brief Main user structure used in SDP discovery of remote. */
 struct bt_sdp_discover_params {
+	sys_snode_t		_node;
 	/** UUID (service) to be discovered on remote SDP entity */
 	const struct bt_uuid   *uuid;
 	/** Discover callback to be called on resolved SDP record */

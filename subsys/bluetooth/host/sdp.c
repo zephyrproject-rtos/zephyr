@@ -63,6 +63,8 @@ NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
 
 struct bt_sdp_client {
 	struct bt_l2cap_br_chan chan;
+	/* list of waiting to be resolved UUID params */
+	sys_slist_t             reqs;
 };
 
 static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -358,6 +360,8 @@ static struct bt_sdp_client *sdp_client_new_session(struct bt_conn *conn)
 			continue;
 		}
 
+		sys_slist_init(&session->reqs);
+
 		session->chan.chan.ops = &sdp_client_chan_ops;
 		session->chan.chan.conn = conn;
 		session->chan.rx.mtu = SDP_CLIENT_MTU;
@@ -403,6 +407,8 @@ int bt_sdp_discover(struct bt_conn *conn,
 	if (!session) {
 		return -ENOMEM;
 	}
+
+	sys_slist_append(&session->reqs, (sys_snode_t *)&params->_node);
 
 	return 0;
 }
