@@ -306,7 +306,7 @@ static inline void sys_memcpy_swap(void *dst, const void *src, size_t length)
  */
 static inline void sys_mem_swap(void *buf, size_t length)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < (length/2); i++) {
 		uint8_t tmp = ((uint8_t *)buf)[i];
