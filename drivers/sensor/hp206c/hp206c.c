@@ -181,7 +181,7 @@ static int hp206c_wait_dev_ready(struct device *dev, uint32_t timeout_ms)
 	uint8_t int_src;
 
 #ifdef CONFIG_NANO_TIMERS
-	k_timer_start(&hp206c->tmr, MSEC(timeout_ms), 0);
+	k_timer_start(&hp206c->tmr, timeout_ms, 0);
 	k_timer_status_sync(&hp206c->tmr);
 #else
 	k_busy_wait(timeout_ms * 1000);
