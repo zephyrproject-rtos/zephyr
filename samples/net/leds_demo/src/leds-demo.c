@@ -36,10 +36,6 @@
 
 #include <gpio.h>
 
-#if defined(CONFIG_NET_TESTING)
-#include <net_testing.h>
-#endif
-
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>

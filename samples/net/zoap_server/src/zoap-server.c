@@ -25,10 +25,6 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 
-#if defined(CONFIG_NET_TESTING)
-#include <net_testing.h>
-#endif
-
 #include <zoap.h>
 
 #define MY_COAP_PORT 5683
