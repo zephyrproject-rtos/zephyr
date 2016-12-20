@@ -332,7 +332,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 {
 	struct slip_context *slip =
 		CONTAINER_OF(buf, struct slip_context, buf);
-	int i;
+	size_t i;
 
 	if (!slip->init_done) {
 		*off = 0;
