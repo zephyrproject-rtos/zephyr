@@ -35,7 +35,7 @@
 
 /* This file is given to prevent your SW from not compiling with the name changes between nRF51 and nRF52 devices.
  * It redefines the old nRF51 names into the new ones as long as the functionality is still supported. If the
- * functionality is gone, there old names are not define, so compilation will fail. Note that also includes macros
+ * functionality is gone, there old names are not defined, so compilation will fail. Note that also includes macros
  * from the nrf51_deprecated.h file. */
 
 
@@ -80,6 +80,13 @@
 /* GPIO port was renamed to P0. */
 #define NRF_GPIO        NRF_P0
 #define NRF_GPIO_BASE   NRF_P0_BASE
+
+
+/* QDEC */
+/* The registers PSELA, PSELB and PSELLED were restructured into a struct. */
+#define PSELLED     PSEL.LED
+#define PSELA       PSEL.A
+#define PSELB       PSEL.B
 
 
 /* SPIS */
@@ -522,6 +529,16 @@
 /* COMP module was eliminated. Adapted to nrf52 headers. */
 #define LPCOMP_COMP_IRQHandler  COMP_LPCOMP_IRQHandler
 #define LPCOMP_COMP_IRQn        COMP_LPCOMP_IRQn
+
+
+/* REFSEL register redefined enumerated values and added some more. */
+#define LPCOMP_REFSEL_REFSEL_SupplyOneEighthPrescaling          LPCOMP_REFSEL_REFSEL_Ref1_8Vdd
+#define LPCOMP_REFSEL_REFSEL_SupplyTwoEighthsPrescaling         LPCOMP_REFSEL_REFSEL_Ref2_8Vdd
+#define LPCOMP_REFSEL_REFSEL_SupplyThreeEighthsPrescaling       LPCOMP_REFSEL_REFSEL_Ref3_8Vdd
+#define LPCOMP_REFSEL_REFSEL_SupplyFourEighthsPrescaling        LPCOMP_REFSEL_REFSEL_Ref4_8Vdd
+#define LPCOMP_REFSEL_REFSEL_SupplyFiveEighthsPrescaling        LPCOMP_REFSEL_REFSEL_Ref5_8Vdd
+#define LPCOMP_REFSEL_REFSEL_SupplySixEighthsPrescaling         LPCOMP_REFSEL_REFSEL_Ref6_8Vdd
+#define LPCOMP_REFSEL_REFSEL_SupplySevenEighthsPrescaling       LPCOMP_REFSEL_REFSEL_Ref7_8Vdd
 
 
 /* RADIO */

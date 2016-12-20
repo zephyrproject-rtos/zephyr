@@ -60,9 +60,9 @@
 #define I2S_CONFIG_CHANNELS_CHANNELS_LEFT   I2S_CONFIG_CHANNELS_CHANNELS_Left
 #define I2S_CONFIG_CHANNELS_CHANNELS_RIGHT  I2S_CONFIG_CHANNELS_CHANNELS_Right
 
-
-
-
+/* LPCOMP */
+/* Corrected typo in RESULT register. */
+#define LPCOMP_RESULT_RESULT_Bellow         LPCOMP_RESULT_RESULT_Below
 
 /*lint --flb "Leave library region" */
 

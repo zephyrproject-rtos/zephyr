@@ -51,6 +51,10 @@
         #define __ALIGN(n)          __align(n)
     #endif
 
+    #ifndef __PACKED
+        #define __PACKED            __packed
+    #endif
+
     #define GET_SP()                __current_sp()
 
 #elif defined ( __ICCARM__ )
@@ -67,11 +71,15 @@
         #define __WEAK              __weak
     #endif
 
-    /* Not defined for IAR since it requires a new line to work, and C preprocessor does not allow that. */
     #ifndef __ALIGN
-        #define __ALIGN(n)
+        #define STRING_PRAGMA(x) _Pragma(#x)
+        #define __ALIGN(n) STRING_PRAGMA(data_alignment = n)
     #endif
 
+    #ifndef __PACKED
+        #define __PACKED            __packed
+    #endif
+    
     #define GET_SP()                __get_SP()
 
 #elif defined   ( __GNUC__ )
@@ -90,6 +98,10 @@
 
     #ifndef __ALIGN
         #define __ALIGN(n)          __attribute__((aligned(n)))
+    #endif
+
+    #ifndef __PACKED
+        #define __PACKED           __attribute__((packed)) 
     #endif
 
     #define GET_SP()                gcc_current_sp()
@@ -116,6 +128,11 @@
 
     #ifndef __ALIGN
         #define __ALIGN(n)          __align(n)
+    #endif
+    
+    /* Not defined for TASKING. */
+    #ifndef __PACKED
+        #define __PACKED
     #endif
 
     #define GET_SP()                __get_MSP()
