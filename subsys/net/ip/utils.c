@@ -245,7 +245,7 @@ int net_addr_pton(sa_family_t family, const char *src,
 {
 	if (family == AF_INET) {
 		struct in_addr *addr = (struct in_addr *)dst;
-		int i, len;
+		size_t i, len;
 
 		len = strlen(src);
 		for (i = 0; i < len; i++) {
