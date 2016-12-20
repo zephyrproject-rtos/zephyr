@@ -319,6 +319,33 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	return 0;
 }
 
+static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+	struct bt_sdp_hdr *hdr = (void *)buf->data;
+	uint16_t len, tid;
+
+	ARG_UNUSED(session);
+
+	BT_DBG("session %p buf %p", session, buf);
+
+	if (buf->len < sizeof(*hdr)) {
+		BT_ERR("Too small SDP PDU");
+		return;
+	}
+
+	len = sys_be16_to_cpu(hdr->param_len);
+	tid = sys_be16_to_cpu(hdr->tid);
+	net_buf_pull(buf, sizeof(*hdr));
+
+	BT_DBG("SDP PDU tid %u len %u", tid, len);
+
+	if (buf->len != len) {
+		BT_ERR("SDP PDU length mismatch (%u != %u)", buf->len, len);
+		return;
+	}
+}
+
 static int sdp_client_chan_connect(struct bt_sdp_client *session)
 {
 	return bt_l2cap_br_chan_connect(session->chan.chan.conn,
@@ -350,6 +377,7 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
 		.connected = sdp_client_connected,
 		.disconnected = sdp_client_disconnected,
+		.recv = sdp_client_receive,
 };
 
 static struct bt_sdp_client *sdp_client_new_session(struct bt_conn *conn)
