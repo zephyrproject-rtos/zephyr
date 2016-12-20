@@ -16,6 +16,8 @@
 # limitations under the License.
 #
 
+menu "Ethernet Drivers"
+
 config SYS_LOG_ETHERNET_LEVEL
 	int
 	prompt "Ethernet driver log level"
@@ -44,3 +46,5 @@ config ETH_INIT_PRIORITY
 source "drivers/ethernet/Kconfig.enc28j60"
 source "drivers/ethernet/Kconfig.ksdk"
 source "drivers/ethernet/Kconfig.dw"
+
+endmenu
