@@ -4024,7 +4024,7 @@ int bt_le_scan_stop(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-struct net_buf *bt_buf_get_evt(uint8_t opcode)
+struct net_buf *bt_buf_get_evt(uint8_t opcode, int32_t timeout)
 {
 	struct net_buf *buf;
 
@@ -4032,12 +4032,12 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode)
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		buf = net_buf_alloc(&hci_evt_prio_pool, K_NO_WAIT);
+		buf = net_buf_alloc(&hci_evt_prio_pool, timeout);
 		break;
 	default:
 		buf = net_buf_alloc(&hci_evt_pool, K_NO_WAIT);
 		if (!buf && opcode == 0x00) {
-			buf = net_buf_alloc(&hci_evt_prio_pool, K_NO_WAIT);
+			buf = net_buf_alloc(&hci_evt_prio_pool, timeout);
 		}
 		break;
 	}
@@ -4050,12 +4050,12 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode)
 	return buf;
 }
 
-struct net_buf *bt_buf_get_acl(void)
+struct net_buf *bt_buf_get_acl(int32_t timeout)
 {
 #if defined(CONFIG_BLUETOOTH_CONN)
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&acl_in_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&acl_in_pool, timeout);
 	if (buf) {
 		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);

@@ -41,9 +41,11 @@ extern "C" {
  *  CONFIG_BLUETOOTH_HOST_BUFFERS has been selected.
  *
  *  @param opcode HCI event opcode or 0 if not known
+ *  @param timeout Timeout in milliseconds, or one of the special values
+ *                 K_NO_WAIT and K_FOREVER.
  *  @return A new buffer with the BT_BUF_EVT type.
  */
-struct net_buf *bt_buf_get_evt(uint8_t opcode);
+struct net_buf *bt_buf_get_evt(uint8_t opcode, int32_t timeout);
 
 /** Allocate a buffer for incoming ACL data
  *
@@ -51,9 +53,11 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode);
  *  doesn't need to be explicitly called. Only available when
  *  CONFIG_BLUETOOTH_HOST_BUFFERS has been selected.
  *
+ *  @param timeout Timeout in milliseconds, or one of the special values
+ *                 K_NO_WAIT and K_FOREVER.
  *  @return A new buffer with the BT_BUF_ACL_IN type.
  */
-struct net_buf *bt_buf_get_acl(void);
+struct net_buf *bt_buf_get_acl(int32_t timeout);
 
 /* Receive data from the controller/HCI driver */
 int bt_recv(struct net_buf *buf);
