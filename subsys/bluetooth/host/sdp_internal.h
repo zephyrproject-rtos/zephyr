@@ -53,4 +53,7 @@ struct bt_sdp_hdr {
 	uint16_t param_len;
 } __packed;
 
+/* Allowed attributes length in SSA Request PDU to be taken from server */
+#define BT_SDP_MAX_ATTR_LEN 0xffff
+
 void bt_sdp_init(void);
