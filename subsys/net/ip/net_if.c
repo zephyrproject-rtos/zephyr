@@ -63,7 +63,7 @@ static sys_slist_t link_callbacks;
 
 static void net_if_tx_thread(struct net_if *iface)
 {
-	struct net_if_api *api = (struct net_if_api *)iface->dev->driver_api;
+	const struct net_if_api *api = iface->dev->driver_api;
 
 	NET_ASSERT(api && api->init && api->send);
 
