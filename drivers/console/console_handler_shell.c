@@ -328,6 +328,10 @@ static void shell(void *p1, void *p2, void *p3)
 	char *argv[ARGC_MAX + 1];
 	size_t argc;
 
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (1) {
 		struct uart_console_input *cmd;
 		shell_cmd_function_t cb;

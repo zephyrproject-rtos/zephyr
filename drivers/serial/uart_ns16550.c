@@ -784,6 +784,8 @@ DEVICE_AND_API_INIT(uart_ns16550_0, CONFIG_UART_NS16550_PORT_0_NAME, &uart_ns165
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_0(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(UART_NS16550_PORT_0_IRQ,
 		    CONFIG_UART_NS16550_PORT_0_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_0),
@@ -836,6 +838,8 @@ DEVICE_AND_API_INIT(uart_ns16550_1, CONFIG_UART_NS16550_PORT_1_NAME, &uart_ns165
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_1(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(UART_NS16550_PORT_1_IRQ,
 		    CONFIG_UART_NS16550_PORT_1_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_1),
