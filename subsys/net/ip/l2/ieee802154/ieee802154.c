@@ -112,8 +112,8 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	if (ieee802154_create_ack_frame(iface, buf, mpdu->mhr.fs->sequence)) {
-		struct ieee802154_radio_api *radio =
-			(struct ieee802154_radio_api *)iface->dev->driver_api;
+		const struct ieee802154_radio_api *radio =
+			iface->dev->driver_api;
 
 		net_buf_add(frag, IEEE802154_ACK_PKT_LENGTH);
 
@@ -325,8 +325,8 @@ NET_L2_INIT(IEEE802154_L2,
 
 void ieee802154_init(struct net_if *iface)
 {
-	struct ieee802154_radio_api *radio =
-		(struct ieee802154_radio_api *)iface->dev->driver_api;
+	const struct ieee802154_radio_api *radio =
+		iface->dev->driver_api;
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 

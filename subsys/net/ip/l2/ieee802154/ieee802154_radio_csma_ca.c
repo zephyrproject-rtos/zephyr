@@ -39,8 +39,7 @@ static inline int csma_ca_tx_fragment(struct net_if *iface,
 	const uint8_t max_be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE;
 	uint8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct ieee802154_radio_api *radio =
-		(struct ieee802154_radio_api *)iface->dev->driver_api;
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	bool ack_required = prepare_for_ack(ctx, buf);
 	uint8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
 	uint8_t nb = 0;
