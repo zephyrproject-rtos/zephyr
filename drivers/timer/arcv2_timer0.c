@@ -423,16 +423,7 @@ int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-/**
- *
- * @brief Read the platform's timer hardware
- *
- * This routine returns the current time in terms of timer hardware clock
- * cycles.
- *
- * @return up counter of elapsed clock cycles
- */
-uint32_t sys_cycle_get_32(void)
+uint32_t k_cycle_get_32(void)
 {
 	return (accumulated_cycle_count + timer0_count_register_get());
 }
