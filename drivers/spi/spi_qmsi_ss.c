@@ -169,6 +169,8 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 	pending_transfers[spi_id].dev = dev;
 	k_sem_give(&context->sem);
 
+	device_busy_set(dev);
+
 	xfer = &pending_transfers[spi_id].xfer;
 
 	xfer->rx = rx_buf;
@@ -206,6 +208,7 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 
 	rc = qm_ss_spi_set_config(spi_id, cfg);
 	if (rc != 0) {
+		device_busy_clear(dev);
 		return -EINVAL;
 	}
 
@@ -218,11 +221,13 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 #ifdef CONFIG_SPI_SS_CS_GPIO
 		spi_control_cs(dev, false);
 #endif
+		device_busy_clear(dev);
 		return -EIO;
 	}
 
 	k_sem_take(&context->device_sync_sem, K_FOREVER);
 
+	device_busy_clear(dev);
 	return context->rc ? -EIO : 0;
 }
 
