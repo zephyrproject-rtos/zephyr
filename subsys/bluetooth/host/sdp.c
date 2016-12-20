@@ -407,6 +407,11 @@ int bt_sdp_discover(struct bt_conn *conn,
 {
 	struct bt_sdp_client *session;
 
+	if (!params || !params->uuid || !params->func || !params->pool) {
+		BT_WARN("Invalid user params");
+		return -EINVAL;
+	}
+
 	session = sdp_client_get_session(conn);
 	if (!session) {
 		return -ENOMEM;
