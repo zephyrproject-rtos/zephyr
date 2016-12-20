@@ -2915,6 +2915,8 @@ extern void *k_malloc(size_t size);
  * This routine provides traditional free() semantics. The memory being
  * returned must have been allocated from the heap memory pool.
  *
+ * If @a ptr is NULL, no operation is performed.
+ *
  * @param ptr Pointer to previously allocated memory.
  *
  * @return N/A
