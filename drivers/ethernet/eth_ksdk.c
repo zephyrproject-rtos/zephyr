@@ -289,10 +289,8 @@ static int eth_0_init(struct device *dev)
 		.txBufferAlign = tx_buffer[0],
 	};
 
-	k_sem_init(&context->tx_buf_sem, 0, UINT_MAX);
-	for (int i = 0; i < CONFIG_ETH_KSDK_TX_BUFFERS; i++) {
-		k_sem_give(&context->tx_buf_sem);
-	}
+	k_sem_init(&context->tx_buf_sem,
+		   CONFIG_ETH_KSDK_TX_BUFFERS, CONFIG_ETH_KSDK_TX_BUFFERS);
 
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 
