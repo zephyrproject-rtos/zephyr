@@ -126,6 +126,7 @@ static inline void slip_writeb(unsigned char c)
 
 static int slip_send(struct net_if *iface, struct net_buf *buf)
 {
+	struct net_buf *frag;
 #if defined(CONFIG_SLIP_TAP)
 	uint16_t ll_reserve = net_nbuf_ll_reserve(buf);
 	bool send_header_once = false;
@@ -141,8 +142,7 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 
 	slip_writeb(SLIP_END);
 
-	while (buf->frags) {
-		struct net_buf *frag = buf->frags;
+	for (frag = buf->frags; frag; frag = frag->frags) {
 #if defined(CONFIG_SLIP_DEBUG)
 		int frag_count = 0;
 #endif
@@ -197,7 +197,6 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 				net_nbuf_ll_reserve(buf));
 		}
 #endif
-		net_buf_frag_del(buf, frag);
 	}
 
 	net_nbuf_unref(buf);
