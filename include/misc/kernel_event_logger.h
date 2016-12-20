@@ -164,6 +164,8 @@ static inline int sys_k_must_log_event(int event_type)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
 	return !!(_sys_k_event_logger_mask & (1 << (event_type - 1)));
 #else
+	ARG_UNUSED(event_type);
+
 	return 1;
 #endif
 }
@@ -186,6 +188,10 @@ static inline void sys_k_event_logger_put(uint16_t event_id,
 #ifdef CONFIG_KERNEL_EVENT_LOGGER
 	sys_event_logger_put(&sys_k_event_logger, event_id,
 			     event_data, data_size);
+#else
+	ARG_UNUSED(event_id);
+	ARG_UNUSED(event_data);
+	ARG_UNUSED(data_size);
 #endif /* CONFIG_KERNEL_EVENT_LOGGER */
 };
 
@@ -202,7 +208,10 @@ static inline void sys_k_event_logger_put(uint16_t event_id,
 #ifdef CONFIG_KERNEL_EVENT_LOGGER
 extern void sys_k_event_logger_put_timed(uint16_t event_id);
 #else
-static inline void sys_k_event_logger_put_timed(uint16_t event_id) {};
+static inline void sys_k_event_logger_put_timed(uint16_t event_id)
+{
+	ARG_UNUSED(event_id);
+};
 #endif /* CONFIG_KERNEL_EVENT_LOGGER */
 
 /**
