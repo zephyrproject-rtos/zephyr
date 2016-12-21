@@ -3520,34 +3520,9 @@ int bt_send(struct net_buf *buf)
 	return bt_dev.drv->send(buf);
 }
 
-/* Interface to HCI driver layer */
-
-int bt_recv(struct net_buf *buf)
+static inline void handle_event(struct net_buf *buf)
 {
-	struct bt_hci_evt_hdr *hdr;
-
-	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
-
-	BT_DBG("buf %p len %u", buf, buf->len);
-
-	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
-		BT_ERR("Too small user data size");
-		net_buf_unref(buf);
-		return -EINVAL;
-	}
-
-	if (bt_buf_get_type(buf) == BT_BUF_ACL_IN) {
-		net_buf_put(&bt_dev.rx_queue, buf);
-		return 0;
-	}
-
-	if (bt_buf_get_type(buf) != BT_BUF_EVT) {
-		BT_ERR("Invalid buf type %u", bt_buf_get_type(buf));
-		net_buf_unref(buf);
-		return -EINVAL;
-	}
-
-	hdr = (void *)buf->data;
+	struct bt_hci_evt_hdr *hdr = (void *)buf->data;
 
 	switch (hdr->evt) {
 	case BT_HCI_EVT_CMD_COMPLETE:
@@ -3579,7 +3554,32 @@ int bt_recv(struct net_buf *buf)
 	}
 
 	net_buf_unref(buf);
-	return 0;
+}
+
+int bt_recv(struct net_buf *buf)
+{
+	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+
+	BT_DBG("buf %p len %u", buf, buf->len);
+
+	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
+		BT_ERR("Too small user data size");
+		net_buf_unref(buf);
+		return -EINVAL;
+	}
+
+	switch (bt_buf_get_type(buf)) {
+	case BT_BUF_ACL_IN:
+		net_buf_put(&bt_dev.rx_queue, buf);
+		return 0;
+	case BT_BUF_EVT:
+		handle_event(buf);
+		return 0;
+	default:
+		BT_ERR("Invalid buf type %u", bt_buf_get_type(buf));
+		net_buf_unref(buf);
+		return -EINVAL;
+	}
 }
 
 int bt_hci_driver_register(struct bt_hci_driver *drv)
