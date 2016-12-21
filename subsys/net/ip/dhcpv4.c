@@ -3,6 +3,7 @@
  */
 
 /*
+ * Copyright (c) 2017 ARM Ltd.
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -14,6 +15,7 @@
 #endif
 
 #include <errno.h>
+#include <inttypes.h>
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
@@ -96,6 +98,46 @@ static uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 }; /* RFC 1497 [17] */
 
 static void dhcpv4_timeout(struct k_work *work);
 
+static const char *
+net_dhcpv4_state_name(enum net_dhcpv4_state state)  __attribute__((unused));
+
+static const char *
+net_dhcpv4_msg_type_name(uint8_t msg_type)  __attribute__((unused));
+
+static const char *
+net_dhcpv4_state_name(enum net_dhcpv4_state state)
+{
+	static const char * const name[] = {
+		"init",
+		"discover",
+		"offer",
+		"request",
+		"renewal",
+		"ack"
+	};
+
+	__ASSERT_NO_MSG(state >= 0 && state < sizeof(name));
+	return name[state];
+}
+
+static const char *
+net_dhcpv4_msg_type_name(uint8_t msg_type)
+{
+	static const char * const name[] = {
+		"discover",
+		"offer",
+		"request",
+		"decline",
+		"ack",
+		"nak",
+		"release",
+		"inform"
+	};
+
+	__ASSERT_NO_MSG(msg_type >= 1 && msg_type <= sizeof(name));
+	return name[msg_type - 1];
+}
+
 /* Timeout for Initialization and allocation of network address.
  * Timeout value is from random number between 1-10 seconds.
  * RFC 2131, Chapter 4.4.1.
@@ -118,6 +160,8 @@ static inline void unset_dhcpv4_on_iface(struct net_if *iface)
 	}
 
 	iface->dhcpv4.state = NET_DHCPV4_INIT;
+	NET_DBG("state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
+
 	iface->dhcpv4.attempts = 0;
 	iface->dhcpv4.lease_time = 0;
 	iface->dhcpv4.renewal_time = 0;
@@ -367,6 +411,10 @@ static void send_request(struct net_if *iface, bool renewal)
 		iface->dhcpv4.state = NET_DHCPV4_REQUEST;
 	}
 
+	NET_DBG("enter state=%s xid=0x%"PRIx32,
+		net_dhcpv4_state_name(iface->dhcpv4.state),
+		iface->dhcpv4.xid);
+
 	iface->dhcpv4.attempts++;
 
 	k_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
@@ -407,6 +455,10 @@ static void send_discover(struct net_if *iface)
 
 	iface->dhcpv4.state = NET_DHCPV4_DISCOVER;
 
+	NET_DBG("enter state=%s xid=0x%"PRIx32,
+		net_dhcpv4_state_name(iface->dhcpv4.state),
+		iface->dhcpv4.xid);
+
 	k_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
 	k_delayed_work_submit(&iface->dhcpv4_timeout, get_dhcpv4_timeout());
 
@@ -425,9 +477,9 @@ static void dhcpv4_timeout(struct k_work *work)
 	struct net_if *iface = CONTAINER_OF(work, struct net_if,
 					    dhcpv4_timeout);
 
+	NET_DBG("state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
 	if (!iface) {
 		NET_DBG("Invalid iface");
-
 		return;
 	}
 
@@ -441,6 +493,7 @@ static void dhcpv4_timeout(struct k_work *work)
 		 * from the beginning.
 		 */
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
+			NET_DBG("too many attempts, restart");
 			send_discover(iface);
 		} else {
 			/* Repeat requests until max number of attempts */
@@ -449,6 +502,7 @@ static void dhcpv4_timeout(struct k_work *work)
 		break;
 	case NET_DHCPV4_RENEWAL:
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
+			NET_DBG("too many attempts, restart");
 			if (!net_if_ipv4_addr_rm(iface,
 						 &iface->dhcpv4.requested_ip)) {
 				NET_DBG("Failed to remove addr from iface");
@@ -464,6 +518,7 @@ static void dhcpv4_timeout(struct k_work *work)
 		}
 		break;
 	default:
+		NET_DBG("ignore");
 		break;
 	}
 }
@@ -473,9 +528,10 @@ static void dhcpv4_t1_timeout(struct k_work *work)
 	struct net_if *iface = CONTAINER_OF(work, struct net_if,
 					    dhcpv4_t1_timer);
 
+	NET_DBG("");
+
 	if (!iface) {
 		NET_DBG("Invalid iface");
-
 		return;
 	}
 
@@ -630,13 +686,16 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 /* TODO: Handles only DHCPv4 OFFER and ACK messages */
 static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 {
+	NET_DBG("state=%s msg=%s",
+		net_dhcpv4_state_name(iface->dhcpv4.state),
+		net_dhcpv4_msg_type_name(msg_type));
 	/* Check for previous state, reason behind this check is, if client
 	 * receives multiple OFFER messages, first one will be handled.
 	 * Rest of the replies are discarded.
 	 */
 	if (iface->dhcpv4.state == NET_DHCPV4_DISCOVER) {
 		if (msg_type != NET_DHCPV4_OFFER) {
-			NET_DBG("Reply not handled %d", msg_type);
+			NET_DBG("Reply ignored");
 			return;
 		}
 
@@ -648,7 +707,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 		   iface->dhcpv4.state == NET_DHCPV4_RENEWAL) {
 
 		if (msg_type != NET_DHCPV4_ACK) {
-			NET_DBG("Reply not handled %d", msg_type);
+			NET_DBG("Reply ignored");
 			return;
 		}
 
@@ -680,6 +739,8 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 
 		iface->dhcpv4.attempts = 0;
 		iface->dhcpv4.state = NET_DHCPV4_ACK;
+		NET_DBG("enter state=%s",
+			net_dhcpv4_state_name(iface->dhcpv4.state));
 
 		/* Start renewal time */
 		k_delayed_work_init(&iface->dhcpv4_t1_timer,
@@ -713,6 +774,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 
 	iface = net_nbuf_iface(buf);
 	if (!iface) {
+		NET_DBG("no iface");
 		return NET_DROP;
 	}
 
@@ -757,6 +819,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	/* SNAME, FILE are not used at the moment, skip it */
 	frag = net_nbuf_skip(frag, min, &pos, SIZE_OF_SNAME + SIZE_OF_FILE);
 	if (!frag && pos) {
+		NET_DBG("short packet while skipping sname");
 		goto drop;
 	}
 
@@ -780,6 +843,8 @@ void net_dhcpv4_start(struct net_if *iface)
 	int ret;
 
 	iface->dhcpv4.state = NET_DHCPV4_INIT;
+	NET_DBG("state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
+
 	iface->dhcpv4.attempts = 0;
 	iface->dhcpv4.lease_time = 0;
 	iface->dhcpv4.renewal_time = 0;
