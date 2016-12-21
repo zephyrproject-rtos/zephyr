@@ -321,7 +321,7 @@ static uint16_t ieeee802154_reserve(struct net_if *iface, void *data)
 }
 
 NET_L2_INIT(IEEE802154_L2,
-	    ieee802154_recv, ieee802154_send, ieeee802154_reserve);
+	    ieee802154_recv, ieee802154_send, ieeee802154_reserve, NULL);
 
 void ieee802154_init(struct net_if *iface)
 {

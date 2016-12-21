@@ -46,4 +46,4 @@ static inline uint16_t dummy_reserve(struct net_if *iface, void *unused)
 	return 0;
 }
 
-NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, dummy_reserve);
+NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, dummy_reserve, NULL);

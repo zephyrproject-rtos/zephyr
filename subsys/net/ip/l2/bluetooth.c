@@ -109,7 +109,21 @@ static inline uint16_t net_bt_reserve(struct net_if *iface, void *unused)
 	return 0;
 }
 
-NET_L2_INIT(BLUETOOTH_L2, net_bt_recv, net_bt_send, net_bt_reserve);
+static int net_bt_enable(struct net_if *iface, bool state)
+{
+	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+
+	NET_DBG("iface %p %s", iface, state ? "up" : "down");
+
+	if (state && !ctxt->ipsp_chan.chan.conn) {
+		return -ENETDOWN;
+	}
+
+	return 0;
+}
+
+NET_L2_INIT(BLUETOOTH_L2, net_bt_recv, net_bt_send, net_bt_reserve,
+	    net_bt_enable);
 
 static void ipsp_connected(struct bt_l2cap_chan *chan)
 {

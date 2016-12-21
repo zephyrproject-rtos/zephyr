@@ -1343,12 +1343,26 @@ void net_if_foreach(net_if_cb_t cb, void *user_data)
 
 int net_if_up(struct net_if *iface)
 {
+	int status;
+
 	NET_DBG("iface %p", iface);
 
 	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
 		return 0;
 	}
 
+	/* If the L2 does not support enable just set the flag */
+	if (!iface->l2->enable) {
+		goto done;
+	}
+
+	/* Notify L2 to enable the interface */
+	status = iface->l2->enable(iface, true);
+	if (status < 0) {
+		return status;
+	}
+
+done:
 	atomic_set_bit(iface->flags, NET_IF_UP);
 
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -1366,8 +1380,22 @@ int net_if_up(struct net_if *iface)
 
 int net_if_down(struct net_if *iface)
 {
+	int status;
+
 	NET_DBG("iface %p", iface);
 
+	/* If the L2 does not support enable just set the flag */
+	if (!iface->l2->enable) {
+		goto done;
+	}
+
+	/* Notify L2 to disable the interface */
+	status = iface->l2->enable(iface, false);
+	if (status < 0) {
+		return status;
+	}
+
+done:
 	atomic_clear_bit(iface->flags, NET_IF_UP);
 
 	return 0;
