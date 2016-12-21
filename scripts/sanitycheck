@@ -1335,7 +1335,7 @@ class TestSuite:
                     if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
                         continue
 
-                    if tc.tc_filter:
+                    if tc.tc_filter and (plat in arch.platforms[:platform_limit] or all_plats or platform_filter):
                         args = tc.extra_args[:]
                         args.extend(["ARCH=" + plat.arch.name,
                                 "BOARD=" + plat.name, "initconfig"])
