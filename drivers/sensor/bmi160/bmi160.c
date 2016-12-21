@@ -139,7 +139,7 @@ static int bmi160_pmu_set(struct device *dev, union bmi160_pmu_status *pmu_sts)
 		{BMI160_CMD_PMU_ACC | pmu_sts->acc, 3200},
 		{BMI160_CMD_PMU_GYR | pmu_sts->gyr, 55000}
 	};
-	int i;
+	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(cmds); i++) {
 		union bmi160_pmu_status sts;
@@ -201,7 +201,7 @@ struct {
 
 static int bmi160_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 {
-	int i;
+	size_t i;
 
 	/* An ODR of 0 Hz is not allowed */
 	if (freq_int == 0 && freq_milli == 0) {
@@ -586,6 +586,8 @@ static int bmi160_gyr_calibrate(struct device *dev, enum sensor_channel chan)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
+	ARG_UNUSED(chan);
+
 	/* Calibration has to be done in normal mode. */
 	if (bmi160->pmu_sts.gyr != BMI160_PMU_NORMAL) {
 		return -ENOTSUP;
@@ -672,7 +674,7 @@ static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 	uint8_t tx[BMI160_BUF_SIZE] = {0};
-	int i;
+	size_t i;
 
 	tx[0] = BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7);
 
