@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-#ifndef _RTC_H_
-#define _RTC_H_
+#ifndef _CNTR_H_
+#define _CNTR_H_
 
-void rtc_init(void);
-uint32_t rtc_start(void);
-uint32_t rtc_stop(void);
-uint32_t rtc_tick_get(void);
-uint32_t rtc_compare_set(uint8_t instance, uint32_t value);
+void cntr_init(void);
+uint32_t cntr_start(void);
+uint32_t cntr_stop(void);
+uint32_t cntr_cnt_get(void);
+void cntr_cmp_set(uint8_t cmp, uint32_t value);
 
-#endif /* _RTC_H_ */
+#endif /* _CNTR_H_ */

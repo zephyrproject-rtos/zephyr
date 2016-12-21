@@ -18,7 +18,7 @@
 #ifndef _PDU_H_
 #define _PDU_H_
 
-#include <toolchain.h>
+#define BDADDR_SIZE 6
 
 struct pdu_adv_payload_adv_ind {
 	uint8_t addr[BDADDR_SIZE];

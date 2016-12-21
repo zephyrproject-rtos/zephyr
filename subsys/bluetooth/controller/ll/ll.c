@@ -17,14 +17,18 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "defines.h"
-#include "mem.h"
-#include "ticker.h"
+
+#include <soc.h>
+
 #include "ccm.h"
 #include "radio.h"
+
+#include "mem.h"
+#include "util.h"
+#include "ticker.h"
+
 #include "pdu.h"
 #include "ctrl.h"
-
 #include "ll.h"
 
 #include "debug.h"

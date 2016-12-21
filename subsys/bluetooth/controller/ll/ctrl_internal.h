@@ -15,11 +15,6 @@
  * limitations under the License.
  */
 
-#include <stddef.h>
-#include "util/defines.h"
-#include "pdu.h"
-#include "ctrl.h"
-
 enum llcp {
 	LLCP_NONE,
 	LLCP_CONNECTION_UPDATE,
@@ -204,7 +199,7 @@ struct connection {
 	uint8_t rssi_sample_count;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 };
-#define CONNECTION_T_SIZE ALIGN4(sizeof(struct connection))
+#define CONNECTION_T_SIZE MROUND(sizeof(struct connection))
 
 struct pdu_data_q_tx {
 	uint16_t handle;
@@ -213,12 +208,12 @@ struct pdu_data_q_tx {
 
 /* Minimum Rx Data allocation size */
 #define PACKET_RX_DATA_SIZE_MIN \
-			ALIGN4(offsetof(struct radio_pdu_node_rx, pdu_data) + \
+			MROUND(offsetof(struct radio_pdu_node_rx, pdu_data) + \
 			(RADIO_ACPDU_SIZE_MAX + 1))
 
 /* Minimum Tx Ctrl allocation size */
 #define PACKET_TX_CTRL_SIZE_MIN \
-			ALIGN4(offsetof(struct radio_pdu_node_tx, pdu_data) + \
+			MROUND(offsetof(struct radio_pdu_node_tx, pdu_data) + \
 			offsetof(struct pdu_data, payload) + 27)
 
 /** @todo fix starvation when ctrl rx in radio ISR
@@ -232,7 +227,7 @@ struct pdu_data_q_tx {
 #define LL_MEM_TXQ (sizeof(struct pdu_data_q_tx) * \
 		    (RADIO_PACKET_COUNT_TX_MAX + 2))
 
-#define LL_MEM_RX_POOL_SZ (ALIGN4(offsetof(struct radio_pdu_node_rx,\
+#define LL_MEM_RX_POOL_SZ (MROUND(offsetof(struct radio_pdu_node_rx,\
 				pdu_data) + ((\
 			(RADIO_ACPDU_SIZE_MAX + 1) < \
 			 (offsetof(struct pdu_data, payload) + \
@@ -247,7 +242,7 @@ struct pdu_data_q_tx {
 				4) + RADIO_CONNECTION_CONTEXT_MAX))
 
 #define LL_MEM_TX_CTRL_POOL (PACKET_TX_CTRL_SIZE_MIN * PACKET_MEM_COUNT_TX_CTRL)
-#define LL_MEM_TX_DATA_POOL ((ALIGN4(offsetof( \
+#define LL_MEM_TX_DATA_POOL ((MROUND(offsetof( \
 					struct radio_pdu_node_tx, pdu_data) + \
 		   offsetof(struct pdu_data, payload) + \
 				RADIO_PACKET_TX_DATA_SIZE)) \

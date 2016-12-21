@@ -18,18 +18,20 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+
+#include <soc.h>
 #include <toolchain.h>
 #include <errno.h>
-#include <misc/byteorder.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
+#include <misc/byteorder.h>
 
-#include "defines.h"
-#include "ticker.h"
+#include "util.h"
 #include "mem.h"
-#include "rand.h"
+#include "ticker.h"
 #include "cpu.h"
+#include "rand.h"
 #include "ecb.h"
 #include "ccm.h"
 #include "radio.h"
@@ -38,6 +40,7 @@
 #include "ll.h"
 #include "hci_internal.h"
 
+#include <bluetooth/log.h>
 #include "debug.h"
 
 /* opcode of the HCI command currently being processed. The opcode is stored

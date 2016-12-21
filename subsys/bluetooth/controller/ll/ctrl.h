@@ -18,8 +18,6 @@
 #ifndef _CTRL_H_
 #define _CTRL_H_
 
-#include <bluetooth/hci.h>
-
 /*****************************************************************************
  * Zephyr Kconfig defined
  ****************************************************************************/
@@ -76,9 +74,12 @@
 
 #define RADIO_TICKER_USERS		 3
 
-#define RADIO_TICKER_USER_ID_WORKER	 0
-#define RADIO_TICKER_USER_ID_JOB	 1
-#define RADIO_TICKER_USER_ID_APP	 2
+#define RADIO_TICKER_USER_ID_WORKER	 TICKER_MAYFLY_CALL_ID_WORKER0
+#define RADIO_TICKER_USER_ID_JOB	 TICKER_MAYFLY_CALL_ID_JOB0
+#define RADIO_TICKER_USER_ID_APP	 TICKER_MAYFLY_CALL_ID_PROGRAM
+
+#define RADIO_TICKER_USER_ID_WORKER_PRIO TICKER_MAYFLY_CALL_ID_WORKER0_PRIO
+#define RADIO_TICKER_USER_ID_JOB_PRIO    TICKER_MAYFLY_CALL_ID_JOB0_PRIO
 
 #define RADIO_TICKER_USER_WORKER_OPS	(7 + 1)
 #define RADIO_TICKER_USER_JOB_OPS	(2 + 1)
@@ -289,6 +290,7 @@ uint8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx,
 void radio_rx_dequeue(void);
 void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx);
 uint8_t radio_rx_fc_set(uint16_t handle, uint8_t fc);
+uint8_t radio_rx_fc_get(uint16_t *handle);
 struct radio_pdu_node_tx *radio_tx_mem_acquire(void);
 void radio_tx_mem_release(struct radio_pdu_node_tx *pdu_data_node_tx);
 uint32_t radio_tx_mem_enqueue(uint16_t handle,

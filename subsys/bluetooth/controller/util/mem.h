@@ -18,6 +18,14 @@
 #ifndef _MEM_H_
 #define _MEM_H_
 
+#ifndef MALIGN
+#define MALIGN(x) __attribute__((aligned(x)))
+#endif
+
+#ifndef MROUND
+#define MROUND(x) (((uint32_t)(x)+3) & (~((uint32_t)3)))
+#endif
+
 void mem_init(void *mem_pool, uint16_t mem_size, uint16_t mem_count,
 	      void **mem_head);
 void *mem_acquire(void **mem_head);
