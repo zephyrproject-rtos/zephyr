@@ -131,13 +131,13 @@ on_irq_stack:
 	 * switch
 	 */
 
-	/* Do not reschedule coop threads (threads that have negative prio) */
-	ldb  r12, _thread_offset_to_prio(r11)
-	blt  r12, zero, no_reschedule
-
-	/* Do not reschedule if scheduler is locked */
-	ldb  r12, _thread_offset_to_sched_locked(r11)
-	bne  r12, zero, no_reschedule
+	/*
+	 * Non-preemptible thread ? Do not schedule (see explanation of
+	 * preempt field in kernel_struct.h).
+	 */
+	ldhu r12, _thread_offset_to_preempt(r11)
+	movui r3, _NON_PREEMPT_THRESHOLD
+	bgeu r12, r3, no_reschedule
 
 	/* Call into the kernel to see if a scheduling decision is necessary */
 	ldw  r2, _kernel_offset_to_ready_q_cache(r10)

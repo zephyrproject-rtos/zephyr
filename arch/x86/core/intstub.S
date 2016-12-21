@@ -288,18 +288,11 @@ alreadyOnIntStack:
 	movl	_kernel_offset_to_current(%ecx), %edx
 
 	/*
-	 * Determine whether the execution of the ISR requires a context
-	 * switch.  If the thread is preemptible, scheduler is not locked and
-	 * a higher priority thread exists, a _Swap() needs to occur.
+	 * Non-preemptible thread ? Do not schedule (see explanation of
+	 * preempt field in kernel_struct.h).
 	 */
-
-	/* do not reschedule coop threads (negative priority) */
-	cmpb	$0, _thread_offset_to_prio(%edx)
-	jl	noReschedule
-
-	/* do not reschedule if scheduler is locked */
-	cmpb	$0, _thread_offset_to_sched_locked(%edx)
-	jne	noReschedule
+	cmpw	$_NON_PREEMPT_THRESHOLD, _thread_offset_to_preempt(%edx)
+	jae	noReschedule
 
 
 	/* reschedule only if the scheduler says that we must do so */

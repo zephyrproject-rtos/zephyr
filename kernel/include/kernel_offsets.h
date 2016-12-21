@@ -52,6 +52,7 @@ GEN_OFFSET_SYM(_thread_base_t, execution_flags);
 GEN_OFFSET_SYM(_thread_base_t, thread_state);
 GEN_OFFSET_SYM(_thread_base_t, prio);
 GEN_OFFSET_SYM(_thread_base_t, sched_locked);
+GEN_OFFSET_SYM(_thread_base_t, preempt);
 GEN_OFFSET_SYM(_thread_base_t, swap_data);
 
 GEN_OFFSET_SYM(_thread_t, base);

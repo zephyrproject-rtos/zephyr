@@ -65,6 +65,9 @@
 #define _thread_offset_to_sched_locked \
 	(___thread_t_base_OFFSET + ___thread_base_t_sched_locked_OFFSET)
 
+#define _thread_offset_to_preempt \
+	(___thread_t_base_OFFSET + ___thread_base_t_preempt_OFFSET)
+
 #define _thread_offset_to_esf \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_esf_OFFSET)
 

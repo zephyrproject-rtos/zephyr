@@ -167,13 +167,12 @@ _trap_return:
 
 .balign 4
 _trap_check_for_swap:
-	/* coop thread ? do not schedule */
-	ldb.x r0, [r2, _thread_offset_to_prio]
-	brlt r0, 0, _trap_return
-
-	/* scheduler locked ? do not schedule */
-	ldb_s r0, [r2, _thread_offset_to_sched_locked]
-	brne r0, 0, _trap_return
+	/*
+	 * Non-preemptible thread ? Do not schedule (see explanation of
+	 * preempt field in kernel_struct.h).
+	 */
+	ldh_s r0, [r2, _thread_offset_to_preempt]
+	brhs r0, _NON_PREEMPT_THRESHOLD, _trap_return
 
 	/* check if the current thread needs to be rescheduled */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]

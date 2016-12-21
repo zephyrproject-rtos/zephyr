@@ -125,43 +125,31 @@ SECTION_FUNC(TEXT, _rirq_exit)
 
 	cmp r0, r3
 	brgt _rirq_return_from_rirq
-	ld sp, [r2, _thread_offset_to_sp]
 #endif
 
 	/*
-	 * Both (a)reschedule and (b)non-reschedule cases need to load the current
-	 * thread's stack, but don't have to use it until the decision is taken:
-	 * load the delay slots with the 'load stack pointer' instruction.
+	 * Non-preemptible thread ? Do not schedule (see explanation of
+	 * preempt field in kernel_struct.h).
+	 */
+	ldh_s r0, [r2, _thread_offset_to_preempt]
+	mov r3, _NON_PREEMPT_THRESHOLD
+	brhs.d r0, r3, _rirq_no_reschedule
+
+	/*
+	 * Both (a)reschedule and (b)non-reschedule cases need to load the
+	 * current thread's stack, but don't have to use it until the decision
+	 * is taken: load the delay slots with the 'load stack pointer'
+	 * instruction.
 	 *
 	 * a) needs to load it to save outgoing context.
 	 * b) needs to load it to restore the interrupted context.
 	 */
 
-	/* coop thread ? do not schedule */
-	ldb.x r0, [r2, _thread_offset_to_prio]
-	cmp_s r0, 0
-	blt.d _rirq_no_reschedule
 	ld sp, [r2, _thread_offset_to_sp]
-
-	/* scheduler locked ? do not schedule */
-	ldb_s r0, [r2, _thread_offset_to_sched_locked]
-#ifdef CONFIG_ARC_STACK_CHECKING
-	breq.d r0, 0,  _rirq_reschedule_check
-	ld sp, [r2, _thread_offset_to_sp]
-	b  _rirq_no_reschedule
-	/* This branch is a bit far */
-_rirq_reschedule_check:
-#else
-	brne.d r0, 0,  _rirq_no_reschedule
-	ld sp, [r2, _thread_offset_to_sp]
-#endif
 
 	/* check if the current thread needs to be rescheduled */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
-	breq.d r0, r2, _rirq_no_reschedule
-
-	/* delay slot: always load the current thread's stack */
-	ld sp, [r2, _thread_offset_to_sp]
+	breq r0, r2, _rirq_no_reschedule
 
 	/* cached thread to run is in r0, fall through */
 

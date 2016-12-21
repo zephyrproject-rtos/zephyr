@@ -84,21 +84,14 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
     ldr r0, =_kernel
 
     ldr r1, [r0, #_kernel_offset_to_current]
-#ifdef CONFIG_CPU_CORTEX_M0_M0PLUS
-    movs r3, #_thread_offset_to_prio
-    ldrsb r2, [r1, r3]
-#else
-    ldrsb r2, [r1, #_thread_offset_to_prio]
-#endif
-    ldrb r3, [r1, #_thread_offset_to_sched_locked]
 
-    /* coop thread ? do not schedule */
-    cmp r2, #0
-    blt _EXIT_EXC
-
-    /* scheduler locked ? do not schedule */
-    cmp r3, #0
-    bne _EXIT_EXC
+    /*
+     * Non-preemptible thread ? Do not schedule (see explanation of
+     * preempt field in kernel_struct.h).
+     */
+    ldrh r2, [r1, #_thread_offset_to_preempt]
+    cmp r2, #_PREEMPT_THRESHOLD
+    bhi _EXIT_EXC
 
     ldr r0, [r0, _kernel_offset_to_ready_q_cache]
     cmp r0, r1

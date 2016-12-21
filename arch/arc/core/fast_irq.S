@@ -149,13 +149,12 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 .balign 4
 _firq_check_for_swap:
-	/* coop thread ? do not schedule */
-	ldb.x r0, [r2, _thread_offset_to_prio]
-	brlt r0, 0, _firq_no_reschedule
-
-	/* scheduler locked ? do not schedule */
-	ldb_s r0, [r2, _thread_offset_to_sched_locked]
-	brne r0, 0, _firq_no_reschedule
+	/*
+	 * Non-preemptible thread ? Do not schedule (see explanation of
+	 * preempt field in kernel_struct.h).
+	 */
+	ldh_s r0, [r2, _thread_offset_to_preempt]
+	brhs r0, _NON_PREEMPT_THRESHOLD, _firq_no_reschedule
 
 	/* Check if the current thread (in r2) is the cached thread */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]

@@ -65,6 +65,11 @@
 #endif
 /* end - execution flags */
 
+/* lowest value of _thread_base.preempt at which a thread is non-preemptible */
+#define _NON_PREEMPT_THRESHOLD 0x0080
+
+/* highest value of _thread_base.preempt at which a thread is preemptible */
+#define _PREEMPT_THRESHOLD (_NON_PREEMPT_THRESHOLD - 1)
 
 #include <kernel_arch_data.h>
 
@@ -91,11 +96,32 @@ struct _thread_base {
 	/* thread state */
 	uint8_t thread_state;
 
-	/* scheduler lock count */
-	volatile uint8_t sched_locked;
-
-	/* thread priority used to sort linked list */
-	int8_t prio;
+	/*
+	 * scheduler lock count and thread priority
+	 *
+	 * These two fields control the preemptibility of a thread.
+	 *
+	 * When the scheduler is locked, sched_locked is decremented, which
+	 * means that the scheduler is locked for values from 0xff to 0x01. A
+	 * thread is coop if its prio is negative, thus 0x80 to 0xff when
+	 * looked at the value as unsigned.
+	 *
+	 * By putting them end-to-end, this means that a thread is
+	 * non-preemptible if the bundled value is greater than or equal to
+	 * 0x0080.
+	 */
+	union {
+		struct {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			uint8_t sched_locked;
+			volatile int8_t prio;
+#else /* LITTLE and PDP */
+			volatile int8_t prio;
+			uint8_t sched_locked;
+#endif
+		};
+		uint16_t preempt;
+	};
 
 	/* data returned by APIs */
 	void *swap_data;

@@ -146,7 +146,8 @@ static inline int _is_coop(struct k_thread *thread)
 static inline int _is_preempt(struct k_thread *thread)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	return !_is_coop(thread) && !thread->base.sched_locked;
+	/* explanation in kernel_struct.h */
+	return thread->base.preempt <= _PREEMPT_THRESHOLD;
 #else
 	return 0;
 #endif
