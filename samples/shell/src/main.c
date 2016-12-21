@@ -20,6 +20,9 @@
 
 static int shell_cmd_ping(int argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	printk("pong\n");
 
 	return 0;
@@ -35,9 +38,9 @@ static int shell_cmd_params(int argc, char *argv[])
 #define MY_SHELL_MODULE "sample_module"
 
 static struct shell_cmd commands[] = {
-	{ "ping", shell_cmd_ping },
+	{ "ping", shell_cmd_ping, NULL },
 	{ "params", shell_cmd_params, "print argc" },
-	{ NULL, NULL }
+	{ NULL, NULL, NULL }
 };
 
 
