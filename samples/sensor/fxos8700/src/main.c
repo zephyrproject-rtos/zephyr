@@ -23,6 +23,8 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 	struct sensor_value accel[3];
 	struct sensor_value magn[3];
 
+	ARG_UNUSED(trigger);
+
 	if (sensor_sample_fetch(dev)) {
 		printf("sensor_sample_fetch failed\n");
 		return;

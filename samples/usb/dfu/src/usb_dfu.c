@@ -600,6 +600,8 @@ static void dfu_status_cb(enum usb_dc_status_code status)
 static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 		int32_t *data_len, uint8_t **data)
 {
+	ARG_UNUSED(data);
+
 	if (REQTYPE_GET_RECIP(pSetup->bmRequestType) ==
 	    REQTYPE_RECIP_INTERFACE) {
 		if (pSetup->bRequest == REQ_SET_INTERFACE) {

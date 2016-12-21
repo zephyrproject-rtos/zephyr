@@ -68,6 +68,10 @@ K_SEM_DEFINE(threadB_sem, 0, 1);	/* starts off "not available" */
 
 void threadB(void *dummy1, void *dummy2, void *dummy3)
 {
+	ARG_UNUSED(dummy1);
+	ARG_UNUSED(dummy2);
+	ARG_UNUSED(dummy3);
+
 	/* invoke routine to ping-pong hello messages with threadA */
 	helloLoop(__func__, &threadB_sem, &threadA_sem);
 }
@@ -79,6 +83,10 @@ char __noinit __stack threadB_stack_area[STACKSIZE];
 
 void threadA(void *dummy1, void *dummy2, void *dummy3)
 {
+	ARG_UNUSED(dummy1);
+	ARG_UNUSED(dummy2);
+	ARG_UNUSED(dummy3);
+
 	/* spawn threadB */
 	k_thread_spawn(threadB_stack_area, STACKSIZE, threadB, NULL, NULL, NULL,
 		       PRIORITY, 0, K_NO_WAIT);

@@ -394,6 +394,9 @@ static void webusb_serial_bulk_in(uint8_t ep,
 	struct webusb_serial_dev_data_t * const dev_data =
 	    DEV_DATA(webusb_serial_dev);
 
+	ARG_UNUSED(ep_status);
+	ARG_UNUSED(ep);
+
 	dev_data->tx_ready = 1;
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
@@ -416,6 +419,8 @@ static void webusb_serial_bulk_out(uint8_t ep,
 	    DEV_DATA(webusb_serial_dev);
 	uint32_t bytes_to_read, i, j, buf_head;
 	uint8_t tmp_buf[4];
+
+	ARG_UNUSED(ep_status);
 
 	/* Check how many bytes were received */
 	if (usb_read(ep, NULL, 0, &bytes_to_read) != 0) {
@@ -469,6 +474,8 @@ static void webusb_serial_int_in(uint8_t ep,
 {
 	struct webusb_serial_dev_data_t * const dev_data =
 	    DEV_DATA(webusb_serial_dev);
+
+	ARG_UNUSED(ep_status);
 
 	dev_data->notification_sent = 1;
 	SYS_LOG_DBG("CDC_IntIN EP[%x]\r", ep);
@@ -798,6 +805,8 @@ static int webusb_serial_irq_is_pending(struct device *dev)
  */
 static int webusb_serial_irq_update(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	return 1;
 }
 
@@ -943,6 +952,9 @@ static int webusb_serial_line_ctrl_get(struct device *dev,
 
 static int webusb_serial_poll_in(struct device *dev, unsigned char *c)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(c);
+
 	return -ENOTSUP;
 }
 
@@ -955,6 +967,9 @@ static int webusb_serial_poll_in(struct device *dev, unsigned char *c)
 static unsigned char webusb_serial_poll_out(struct device *dev,
 		unsigned char c)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(c);
+
 	return 0;
 }
 
