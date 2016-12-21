@@ -92,6 +92,8 @@ struct bt_dev {
 	/* Supported commands */
 	uint8_t			supported_commands[64];
 
+	struct k_work           init;
+
 	ATOMIC_DEFINE(flags, BT_DEV_NUM_FLAGS);
 
 	/* LE controller specific features */
@@ -108,8 +110,10 @@ struct bt_dev {
 	/* Last sent HCI command */
 	struct net_buf		*sent_cmd;
 
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	/* Queue for incoming HCI events & ACL data */
 	struct k_fifo		rx_queue;
+#endif
 
 	/* Queue for high priority HCI events which may unlock waiters
 	 * in other threads. Such events include Number of Completed

@@ -58,10 +58,15 @@
 #define RPA_TIMEOUT          K_SECONDS(CONFIG_BLUETOOTH_RPA_TIMEOUT)
 
 /* Stacks for the threads */
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+#endif
 static BT_STACK_NOINIT(cmd_tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 
+static void init_work(struct k_work *work);
+
 struct bt_dev bt_dev = {
+	.init          = K_WORK_INITIALIZER(init_work),
 	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
 	 * exception is if the controller requests to wait for an
 	 * initial Command Complete for NOP.
@@ -72,8 +77,12 @@ struct bt_dev bt_dev = {
 	.ncmd_sem      = K_SEM_INITIALIZER(bt_dev.ncmd_sem, 0, 1),
 #endif
 	.cmd_tx_queue  = K_FIFO_INITIALIZER(bt_dev.cmd_tx_queue),
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	.rx_queue      = K_FIFO_INITIALIZER(bt_dev.rx_queue),
+#endif
 };
+
+static bt_ready_cb_t ready_cb;
 
 const struct bt_storage *bt_storage;
 
@@ -629,7 +638,9 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn->err = evt->reason;
 
 	/* Check stacks usage (no-ops if not enabled) */
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	stack_analyze("rx stack", rx_thread_stack, sizeof(rx_thread_stack));
+#endif
 	stack_analyze("cmd tx stack", cmd_tx_thread_stack,
 		      sizeof(cmd_tx_thread_stack));
 	stack_analyze("conn tx stack", conn->stack, sizeof(conn->stack));
@@ -3549,7 +3560,11 @@ static inline void handle_event(struct net_buf *buf)
 			break;
 		}
 
+#if defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+		hci_event(net_buf_ref(buf));
+#else
 		net_buf_put(&bt_dev.rx_queue, net_buf_ref(buf));
+#endif
 		break;
 	}
 
@@ -3569,9 +3584,15 @@ int bt_recv(struct net_buf *buf)
 	}
 
 	switch (bt_buf_get_type(buf)) {
+#if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_BUF_ACL_IN:
+#if defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+		hci_acl(buf);
+#else
 		net_buf_put(&bt_dev.rx_queue, buf);
+#endif
 		return 0;
+#endif /* BLUETOOTH_CONN */
 	case BT_BUF_EVT:
 		handle_event(buf);
 		return 0;
@@ -3643,16 +3664,7 @@ static int irk_init(void)
 
 static int bt_init(void)
 {
-	struct bt_hci_driver *drv = bt_dev.drv;
 	int err;
-
-	bt_hci_ecc_init();
-
-	err = drv->open();
-	if (err) {
-		BT_ERR("HCI driver open failed (%d)", err);
-		return err;
-	}
 
 	err = hci_init();
 	if (err) {
@@ -3682,15 +3694,22 @@ static int bt_init(void)
 	return 0;
 }
 
-static void hci_rx_thread(bt_ready_cb_t ready_cb)
+static void init_work(struct k_work *work)
+{
+	int err;
+
+	err = bt_init();
+	if (ready_cb) {
+		ready_cb(err);
+	}
+}
+
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+static void hci_rx_thread(void)
 {
 	struct net_buf *buf;
 
 	BT_DBG("started");
-
-	if (ready_cb) {
-		ready_cb(bt_init());
-	}
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait");
@@ -3720,9 +3739,12 @@ static void hci_rx_thread(bt_ready_cb_t ready_cb)
 		k_yield();
 	}
 }
+#endif /* !CONFIG_BLUETOOTH_RECV_IS_RX_THREAD */
 
 int bt_enable(bt_ready_cb_t cb)
 {
+	int err;
+
 	if (!bt_dev.drv) {
 		BT_ERR("No HCI driver registered");
 		return -ENODEV;
@@ -3732,20 +3754,33 @@ int bt_enable(bt_ready_cb_t cb)
 		return -EALREADY;
 	}
 
+	ready_cb = cb;
+
 	/* TX thread */
 	k_thread_spawn(cmd_tx_thread_stack, sizeof(cmd_tx_thread_stack),
 		       (k_thread_entry_t)hci_cmd_tx_thread, NULL, NULL, NULL,
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	/* RX thread */
 	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
-		       (k_thread_entry_t)hci_rx_thread, cb, NULL, NULL,
+		       (k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+#endif
+
+	bt_hci_ecc_init();
+
+	err = bt_dev.drv->open();
+	if (err) {
+		BT_ERR("HCI driver open failed (%d)", err);
+		return err;
+	}
 
 	if (!cb) {
 		return bt_init();
 	}
 
+	k_work_submit(&bt_dev.init);
 	return 0;
 }
 

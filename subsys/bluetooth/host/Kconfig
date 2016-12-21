@@ -44,6 +44,14 @@ config BLUETOOTH_HCI_HOST
 	select TINYCRYPT_SHA256_HMAC
 	select TINYCRYPT_SHA256_HMAC_PRNG
 
+config BLUETOOTH_RECV_IS_RX_THREAD
+	# Virtual option set by the HCI driver to indicate that there's
+	# no need for the host to have its own RX thread, rather the
+	# context that bt_recv() gets called in is already good enough.
+	# If this is set, the driver RX thread is required as the first
+	# thing to make a call to bt_rx_thread_ready().
+	bool
+
 config BLUETOOTH_COMBINED_RX_BUF
 	# Virtual option usually set by the controller to request a
 	# combined pool for incoming buffers.
