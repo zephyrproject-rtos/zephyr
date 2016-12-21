@@ -106,6 +106,7 @@
 
 #include <misc/util.h>
 #include <drivers/rand32.h>
+#include <quark_se/shared_mem.h>
 
 #define INT_ENABLE_ARC					~(0x00000001 << 8)
 #define INT_ENABLE_ARC_BIT_POS				(8)
@@ -183,6 +184,11 @@
 #define SPI_DW_PORT_1_TX_INT_MASK			(SCSS_REGISTER_BASE + 0x444)
 
 #define SPI_DW_IRQ_FLAGS				0
+
+static inline void _quark_se_ss_ready(void)
+{
+	shared_data->flags |= ARC_READY;
+}
 
 #endif /* !_ASMLANGUAGE */
 

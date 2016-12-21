@@ -14,7 +14,6 @@
 #include <kernel.h>
 #include "soc.h"
 #include <init.h>
-#include <quark_se/shared_mem.h>
 
 /**
  * @brief perform basic hardware initialization
@@ -25,7 +24,8 @@ static int quark_se_arc_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	shared_data->flags |= ARC_READY;
+	_quark_se_ss_ready();
+
 	return 0;
 }
 

@@ -73,6 +73,10 @@ extern "C" {
 
 .endm
 
+.macro _discard_callee_saved_regs
+	add_s sp, sp, ___callee_saved_stack_t_SIZEOF
+.endm
+
 /*
  * Must be called with interrupts locked or in P0.
  * Upon exit, sp will be pointing to the stack frame.

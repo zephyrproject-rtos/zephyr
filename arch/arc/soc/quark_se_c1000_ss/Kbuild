@@ -1,4 +1,3 @@
-ccflags-y +=-I$(srctree)/arch/x86/soc/intel_quark
 ccflags-y +=-I$(srctree)/include
 ccflags-y +=-I$(srctree)/include/drivers
 ccflags-y +=-I$(srctree)/drivers

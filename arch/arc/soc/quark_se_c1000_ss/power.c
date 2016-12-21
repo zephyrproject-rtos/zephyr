@@ -11,6 +11,7 @@
 #include <soc_power.h>
 #include <init.h>
 #include <kernel_structs.h>
+#include <soc.h>
 
 #include "power_states.h"
 #include "ss_power_states.h"
@@ -19,6 +20,7 @@
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 extern void _power_soc_sleep(void);
 extern void _power_soc_deep_sleep(void);
+extern void _power_soc_deep_sleep_2(void);
 
 static void _deep_sleep(enum power_states state)
 {
@@ -75,6 +77,11 @@ void _sys_soc_set_power_state(enum power_states state)
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		_deep_sleep(state);
 		break;
+	case SYS_POWER_STATE_DEEP_SLEEP_2:
+		ss_power_soc_lpss_enable();
+		power_soc_set_ss_restore_flag();
+		_power_soc_deep_sleep_2();
+		break;
 #endif
 	default:
 		break;
@@ -96,6 +103,22 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 	case SYS_POWER_STATE_DEEP_SLEEP:
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		__builtin_arc_seti(0);
+		break;
+	case SYS_POWER_STATE_DEEP_SLEEP_2:
+		ss_power_soc_lpss_disable();
+
+		/* If flag is cleared it means the system entered in
+		 * sleep state while we were in LPS. In that case, we
+		 * must set ARC_READY flag so x86 core can continue
+		 * its execution.
+		 */
+		if ((QM_SCSS_GP->gp0 & GP0_BIT_SLEEP_READY) == 0) {
+			_quark_se_ss_ready();
+			__builtin_arc_seti(0);
+		} else {
+			QM_SCSS_GP->gp0 &= ~GP0_BIT_SLEEP_READY;
+			QM_SCSS_GP->gps0 &= ~QM_GPS0_BIT_SENSOR_WAKEUP;
+		}
 		break;
 	default:
 		break;

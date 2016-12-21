@@ -9,6 +9,7 @@
 #include <misc/__assert.h>
 #include <power.h>
 #include <soc_power.h>
+#include <soc.h>
 
 #include "power_states.h"
 
@@ -47,6 +48,7 @@ static void _deep_sleep(enum power_states state)
 		_power_soc_sleep();
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP:
+	case SYS_POWER_STATE_DEEP_SLEEP_2:
 		_power_soc_deep_sleep();
 		break;
 	default:
@@ -70,6 +72,7 @@ void _sys_soc_set_power_state(enum power_states state)
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 	case SYS_POWER_STATE_DEEP_SLEEP:
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case SYS_POWER_STATE_DEEP_SLEEP_2:
 		_deep_sleep(state);
 		break;
 #endif
@@ -87,6 +90,11 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 		__asm__ volatile("sti");
 		break;
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
+	case SYS_POWER_STATE_DEEP_SLEEP_2:
+#ifdef CONFIG_ARC_INIT
+		_arc_init(NULL);
+#endif /* CONFIG_ARC_INIT */
+		/* Fallthrough */
 	case SYS_POWER_STATE_DEEP_SLEEP:
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		__asm__ volatile("sti");
@@ -95,4 +103,9 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 	default:
 		break;
 	}
+}
+
+bool _sys_soc_power_state_is_arc_ready(void)
+{
+	return QM_SCSS_GP->gp0 & GP0_BIT_SLEEP_READY ? true : false;
 }

@@ -11,12 +11,24 @@
 extern "C" {
 #endif
 
+/*
+ * Bit 0 from GP0 register is used internally by the kernel
+ * to handle PM multicore support. Any change on QMSI and/or
+ * bootloader which affects this bit should take it in
+ * consideration.
+ */
+#define GP0_BIT_SLEEP_READY BIT(0)
+
 enum power_states {
 	SYS_POWER_STATE_CPU_LPS,       /* SS2 with LPSS enabled state */
 	SYS_POWER_STATE_CPU_LPS_1,     /* SS2 state */
 	SYS_POWER_STATE_CPU_LPS_2,     /* SS1 state with Timer ON */
 	SYS_POWER_STATE_DEEP_SLEEP,    /* DEEP SLEEP state */
 	SYS_POWER_STATE_DEEP_SLEEP_1,  /* SLEEP state */
+	SYS_POWER_STATE_DEEP_SLEEP_2,  /* Multicore DEEP SLEEP state.
+					* Execution context is saved
+					* and core enters in LPS state.
+					*/
 	SYS_POWER_STATE_MAX
 };
 
@@ -40,6 +52,9 @@ enum power_states {
  * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
  *
  * SYS_POWER_STATE_DEEP_SLEEP_1: Only Always-On peripherals can wake up
+ * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
+ *
+ * SYS_POWER_STATE_DEEP_SLEEP_2: Only Always-On peripherals can wake up
  * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
  *
  * Considerations around SYS_POWER_STATE_CPU_LPS (LPSS state):

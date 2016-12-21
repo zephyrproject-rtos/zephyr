@@ -37,7 +37,8 @@
  * starts the ARC processor.
  * @return N/A
  */
-static int arc_init(struct device *arg)
+/* This function is also called at deep sleep resume. */
+int _arc_init(struct device *arg)
 {
 	uint32_t *reset_vector;
 
@@ -83,7 +84,7 @@ skip_arc_init:
 	return 0;
 }
 
-SYS_INIT(arc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(_arc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /*CONFIG_ARC_INIT*/
 

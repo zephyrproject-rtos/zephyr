@@ -64,4 +64,8 @@
 
 #endif /*  _ASMLANGUAGE */
 
+#ifdef CONFIG_ARC_INIT
+int _arc_init(struct device *arg);
+#endif /* CONFIG_ARC_INIT */
+
 #endif /* __SOC_H_ */
