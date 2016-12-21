@@ -168,11 +168,11 @@ _trap_return:
 .balign 4
 _trap_check_for_swap:
 	/* coop thread ? do not schedule */
-	ld_s r0, [r2, _thread_offset_to_prio]
+	ldb.x r0, [r2, _thread_offset_to_prio]
 	brlt r0, 0, _trap_return
 
 	/* scheduler locked ? do not schedule */
-	ld_s r0, [r2, _thread_offset_to_sched_locked]
+	ldb_s r0, [r2, _thread_offset_to_sched_locked]
 	brne r0, 0, _trap_return
 
 	/* check if the current thread needs to be rescheduled */

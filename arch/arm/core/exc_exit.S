@@ -84,8 +84,13 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
     ldr r0, =_kernel
 
     ldr r1, [r0, #_kernel_offset_to_current]
-    ldr r2, [r1, #_thread_offset_to_prio]
-    ldr r3, [r1, #_thread_offset_to_sched_locked]
+#ifdef CONFIG_CPU_CORTEX_M0_M0PLUS
+    movs r3, #_thread_offset_to_prio
+    ldrsb r2, [r1, r3]
+#else
+    ldrsb r2, [r1, #_thread_offset_to_prio]
+#endif
+    ldrb r3, [r1, #_thread_offset_to_sched_locked]
 
     /* coop thread ? do not schedule */
     cmp r2, #0

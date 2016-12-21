@@ -132,11 +132,11 @@ on_irq_stack:
 	 */
 
 	/* Do not reschedule coop threads (threads that have negative prio) */
-	ldw  r12, _thread_offset_to_prio(r11)
+	ldb  r12, _thread_offset_to_prio(r11)
 	blt  r12, zero, no_reschedule
 
 	/* Do not reschedule if scheduler is locked */
-	ldw  r12, _thread_offset_to_sched_locked(r11)
+	ldb  r12, _thread_offset_to_sched_locked(r11)
 	bne  r12, zero, no_reschedule
 
 	/* Call into the kernel to see if a scheduling decision is necessary */

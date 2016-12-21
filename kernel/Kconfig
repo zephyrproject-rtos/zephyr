@@ -37,6 +37,7 @@ config NUM_COOP_PRIORITIES
 	prompt "Number of coop priorities" if MULTITHREADING
 	default 16
 	default 1 if !MULTITHREADING
+	range 0 128
 	help
 	Number of cooperative priorities configured in the system. Gives access
 	to priorities:
@@ -66,6 +67,7 @@ config NUM_PREEMPT_PRIORITIES
 	prompt "Number of preemptible priorities" if MULTITHREADING
 	default 15
 	default 0 if !MULTITHREADING
+	range 0 128
 	help
 	Number of preemptible priorities available in the system. Gives access
 	to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.

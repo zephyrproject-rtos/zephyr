@@ -294,11 +294,11 @@ alreadyOnIntStack:
 	 */
 
 	/* do not reschedule coop threads (negative priority) */
-	cmpl	$0, _thread_offset_to_prio(%edx)
+	cmpb	$0, _thread_offset_to_prio(%edx)
 	jl	noReschedule
 
 	/* do not reschedule if scheduler is locked */
-	cmpl	$0, _thread_offset_to_sched_locked(%edx)
+	cmpb	$0, _thread_offset_to_sched_locked(%edx)
 	jne	noReschedule
 
 
@@ -314,7 +314,7 @@ alreadyOnIntStack:
 	 */
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
-	orl	$INT_ACTIVE, _thread_offset_to_flags(%edx)
+	orb	$INT_ACTIVE, _thread_offset_to_execution_flags(%edx)
 #endif
 
 	/*
@@ -362,7 +362,7 @@ alreadyOnIntStack:
 	 */
 
 	movl	_kernel + _kernel_offset_to_current, %eax
-	andl	$~INT_ACTIVE, _thread_offset_to_flags (%eax)
+	andb	$~INT_ACTIVE, _thread_offset_to_execution_flags(%eax)
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
 	/* Restore volatile registers and return to the interrupted thread */

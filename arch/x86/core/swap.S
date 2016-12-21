@@ -54,9 +54,9 @@
  * the non-volatile integer registers need to be saved in the TCS of the
  * outgoing thread.  The restoration of the integer registers of the incoming
  * thread depends on whether that thread was preemptively context switched out.
- * The INT_ACTIVE and EXC_ACTIVE bits in the k_thread->flags field will signify
- * that the thread was preemptively context switched out, and thus both the
- * volatile and non-volatile integer registers need to be restored.
+ * The INT_ACTIVE and EXC_ACTIVE bits in the k_thread->execution_flags field
+ * will signify that the thread was preemptively context switched out, and thus
+ * both the volatile and non-volatile integer registers need to be restored.
  *
  * The non-volatile registers need to be scrubbed to ensure they contain no
  * sensitive information that could compromise system security.  This is to
@@ -161,7 +161,7 @@ SECTION_FUNC(TEXT, _Swap)
 	 * _and_ whether the thread was context switched out preemptively.
 	 */
 
-	testl	$_FP_USER_MASK, _thread_offset_to_flags(%eax)
+	testb	$_FP_USER_MASK, _thread_offset_to_execution_flags(%eax)
 	je 	restoreContext_NoFloatSwap
 
 
@@ -197,12 +197,12 @@ SECTION_FUNC(TEXT, _Swap)
 	 * was preemptively context switched.
 	 */
 
-	testl	$INT_OR_EXC_MASK, _thread_offset_to_flags(%ebx)
+	testb	$INT_OR_EXC_MASK, _thread_offset_to_execution_flags(%ebx)
 	je	restoreContext_NoFloatSave
 
 
 #ifdef CONFIG_SSE
-	testl	$K_SSE_REGS, _thread_offset_to_flags(%ebx)
+	testb	$K_SSE_REGS, _thread_offset_to_execution_flags(%ebx)
 	je	x87FloatSave
 
 	/*
@@ -237,11 +237,11 @@ restoreContext_NoFloatSave:
 	 * was previously preemptively context switched out.
 	 */
 
-	testl   $INT_OR_EXC_MASK, _thread_offset_to_flags(%eax)
+	testb   $INT_OR_EXC_MASK, _thread_offset_to_execution_flags(%eax)
 	je 	restoreContext_NoFloatRestore
 
 #ifdef CONFIG_SSE
-	testl	$K_SSE_REGS, _thread_offset_to_flags(%eax)
+	testb	$K_SSE_REGS, _thread_offset_to_execution_flags(%eax)
 	je	x87FloatRestore
 
 	fxrstor	_thread_offset_to_preempFloatReg(%eax)
@@ -276,7 +276,7 @@ restoreContext_NoFloatSwap:
 	 * registers
 	 */
 
-	testl	$_FP_USER_MASK, _thread_offset_to_flags(%eax)
+	testb	$_FP_USER_MASK, _thread_offset_to_execution_flags(%eax)
 	jne	CROHandlingDone
 
 	/*

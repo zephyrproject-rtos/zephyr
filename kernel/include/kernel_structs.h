@@ -24,14 +24,17 @@
 #endif
 
 /*
- * Common bitmask definitions for the struct tcs->flags bit field.
+ * bitmask definitions for the execution_flags and state
  *
  * Must be before kerneL_arch_data.h because it might need them to be already
  * defined.
  */
 
-/* thread is defined statically */
-#define K_STATIC (1 << 0)
+
+/* states: common uses low bits, arch-specific use high bits */
+
+/* system thread that must not abort */
+#define K_ESSENTIAL (1 << 0)
 
 /* Thread is waiting on an object */
 #define K_PENDING (1 << 1)
@@ -48,13 +51,20 @@
 /* Not a real thread */
 #define K_DUMMY (1 << 5)
 
-/* system thread that must not abort */
-#define K_ESSENTIAL (1 << 6)
+/* end - states */
+
+
+/* execution flags: common uses low bits, arch-specific use high bits */
+
+/* thread is defined statically */
+#define K_STATIC (1 << 0)
 
 #if defined(CONFIG_FP_SHARING)
 /* thread uses floating point registers */
-#define K_FP_REGS (1 << 7)
+#define K_FP_REGS (1 << 1)
 #endif
+/* end - execution flags */
+
 
 #include <kernel_arch_data.h>
 
@@ -76,13 +86,16 @@ struct _thread_base {
 	sys_dnode_t k_q_node;
 
 	/* execution flags */
-	uint32_t flags;
+	uint8_t execution_flags;
 
-	/* thread priority used to sort linked list */
-	int prio;
+	/* thread state */
+	uint8_t thread_state;
 
 	/* scheduler lock count */
-	volatile uint32_t sched_locked;
+	volatile uint8_t sched_locked;
+
+	/* thread priority used to sort linked list */
+	int8_t prio;
 
 	/* data returned by APIs */
 	void *swap_data;

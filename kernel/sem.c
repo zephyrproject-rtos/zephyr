@@ -170,7 +170,7 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 	sys_dnode_t  *node;
 	sys_dnode_t  *next;
 
-	if (!(thread->base.flags & K_DUMMY)) {
+	if (!(thread->base.thread_state & K_DUMMY)) {
 		/*
 		 * The awakened thread is a real thread and thus was not
 		 * involved in a semaphore group operation.

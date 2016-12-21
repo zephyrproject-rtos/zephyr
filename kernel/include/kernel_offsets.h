@@ -48,7 +48,8 @@ GEN_OFFSET_SYM(_kernel_t, current_fp);
 
 GEN_ABSOLUTE_SYM(_STRUCT_KERNEL_SIZE, sizeof(struct _kernel));
 
-GEN_OFFSET_SYM(_thread_base_t, flags);
+GEN_OFFSET_SYM(_thread_base_t, execution_flags);
+GEN_OFFSET_SYM(_thread_base_t, thread_state);
 GEN_OFFSET_SYM(_thread_base_t, prio);
 GEN_OFFSET_SYM(_thread_base_t, sched_locked);
 GEN_OFFSET_SYM(_thread_base_t, swap_data);

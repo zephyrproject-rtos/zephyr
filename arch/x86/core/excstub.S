@@ -135,7 +135,7 @@ SECTION_FUNC(TEXT, _exception_enter)
      * registers and the stack of the preempted thread.
      */
 
-	testl	$EXC_ACTIVE, _thread_offset_to_flags(%edx)
+	testb	$EXC_ACTIVE, _thread_offset_to_execution_flags(%edx)
 	jne	alreadyInException
 	movl	%esp, _thread_offset_to_esf(%edx)
 
@@ -151,7 +151,7 @@ alreadyInException:
 	 * handled in the event of a context switch.
 	 */
 
-	orl	$EXC_ACTIVE, _thread_offset_to_flags(%edx)
+	orb	$EXC_ACTIVE, _thread_offset_to_execution_flags(%edx)
 
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
@@ -210,7 +210,7 @@ allDone:
 	 * outermost exception).
 	 */
 
-	andl	$~EXC_ACTIVE, _thread_offset_to_flags (%ecx)
+	andb	$~EXC_ACTIVE, _thread_offset_to_execution_flags (%ecx)
 
 nestedException:
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */

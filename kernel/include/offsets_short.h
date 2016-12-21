@@ -53,8 +53,11 @@
 
 /* base */
 
-#define _thread_offset_to_flags \
-	(___thread_t_base_OFFSET + ___thread_base_t_flags_OFFSET)
+#define _thread_offset_to_thread_state \
+	(___thread_t_base_OFFSET + ___thread_base_t_thread_state_OFFSET)
+
+#define _thread_offset_to_execution_flags \
+	(___thread_t_base_OFFSET + ___thread_base_t_execution_flags_OFFSET)
 
 #define _thread_offset_to_prio \
 	(___thread_t_base_OFFSET + ___thread_base_t_prio_OFFSET)

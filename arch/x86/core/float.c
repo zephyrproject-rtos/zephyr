@@ -70,7 +70,7 @@ extern uint32_t _sse_mxcsr_default_value;
 static void _FpCtxSave(struct tcs *tcs)
 {
 #ifdef CONFIG_SSE
-	if (tcs->base.flags & K_SSE_REGS) {
+	if (tcs->base.execution_flags & K_SSE_REGS) {
 		_do_fp_and_sse_regs_save(&tcs->arch.preempFloatReg);
 		return;
 	}
@@ -88,7 +88,7 @@ static inline void _FpCtxInit(struct tcs *tcs)
 {
 	_do_fp_regs_init();
 #ifdef CONFIG_SSE
-	if (tcs->base.flags & K_SSE_REGS) {
+	if (tcs->base.execution_flags & K_SSE_REGS) {
 		_do_sse_regs_init();
 	}
 #endif
@@ -114,7 +114,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 
 	/* Indicate thread requires floating point context saving */
 
-	tcs->base.flags |= options;
+	tcs->base.execution_flags |= (uint8_t)options;
 
 	/*
 	 * The current thread might not allow FP instructions, so clear CR0[TS]
@@ -132,7 +132,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 
 	fp_owner = _kernel.current_fp;
 	if (fp_owner) {
-		if (fp_owner->base.flags & INT_OR_EXC_MASK) {
+		if (fp_owner->base.execution_flags & INT_OR_EXC_MASK) {
 			_FpCtxSave(fp_owner);
 		}
 	}
@@ -158,7 +158,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 		 * of the FPU to them (unless we need it ourselves).
 		 */
 
-		if ((_current->base.flags & _FP_USER_MASK) == 0) {
+		if ((_current->base.execution_flags & _FP_USER_MASK) == 0) {
 			/*
 			 * We are not FP-capable, so mark FPU as owned by the
 			 * thread we've just enabled FP support for, then
@@ -212,7 +212,7 @@ void k_float_disable(struct tcs *tcs)
 
 	/* Disable all floating point capabilities for the thread */
 
-	tcs->base.flags &= ~_FP_USER_MASK;
+	tcs->base.execution_flags &= ~_FP_USER_MASK;
 
 	if (tcs == _current) {
 		_FpAccessDisable();
