@@ -54,8 +54,11 @@
 
 #define RFCOMM_CONN_TIMEOUT     K_SECONDS(60)
 #define RFCOMM_DISC_TIMEOUT     K_SECONDS(20)
+#define RFCOMM_IDLE_TIMEOUT     K_SECONDS(2)
 
 #define DLC_RTX(_w) CONTAINER_OF(_w, struct bt_rfcomm_dlc, rtx_work)
+
+#define SESSION_RTX(_w) CONTAINER_OF(_w, struct bt_rfcomm_session, rtx_work)
 
 static struct bt_rfcomm_server *servers;
 
@@ -248,6 +251,14 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 {
 	BT_DBG("dlc %p", dlc);
 
+	if (!dlc->session->dlcs) {
+		/* Start an idle timer. Incase we initiate session disconnect
+		 * then this will be restarted as DISC timer
+		 */
+		k_delayed_work_submit(&dlc->session->rtx_work,
+				      RFCOMM_IDLE_TIMEOUT);
+	}
+
 	k_delayed_work_cancel(&dlc->rtx_work);
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
@@ -375,6 +386,7 @@ static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
 
 	session->state = BT_RFCOMM_STATE_DISCONNECTING;
 	rfcomm_send_disc(session, 0);
+	k_delayed_work_submit(&session->rtx_work, RFCOMM_DISC_TIMEOUT);
 }
 
 static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_session *session,
@@ -423,6 +435,7 @@ static void rfcomm_disconnected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("Session %p", session);
 
+	k_delayed_work_cancel(&session->rtx_work);
 	rfcomm_session_disconnected(session);
 	session->state = BT_RFCOMM_STATE_IDLE;
 }
@@ -826,6 +839,9 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 			return;
 		}
 
+		/* Cancel idle timer if any */
+		k_delayed_work_cancel(&session->rtx_work);
+
 		rfcomm_dlc_connected(dlc);
 	}
 }
@@ -931,6 +947,8 @@ static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 			break;
 		case BT_RFCOMM_STATE_DISCONNECTING:
 			session->state = BT_RFCOMM_STATE_DISCONNECTED;
+			/* Cancel disc timer */
+			k_delayed_work_cancel(&session->rtx_work);
 			err = bt_l2cap_chan_disconnect(&session->br_chan.chan);
 			if (err < 0) {
 				session->state = BT_RFCOMM_STATE_IDLE;
@@ -1093,6 +1111,8 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
 		rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+		/* Cancel idle timer if any */
+		k_delayed_work_cancel(&session->rtx_work);
 	} else {
 		/* If its a command */
 		if (cr) {
@@ -1132,6 +1152,8 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 		rfcomm_send_ua(session, dlci);
 		rfcomm_dlc_disconnect(dlc);
 	} else {
+		/* Cancel idle timer */
+		k_delayed_work_cancel(&session->rtx_work);
 		rfcomm_send_ua(session, 0);
 		rfcomm_session_disconnected(session);
 	}
@@ -1377,6 +1399,25 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 	}
 }
 
+static void rfcomm_session_rtx_timeout(struct k_work *work)
+{
+	struct bt_rfcomm_session *session = SESSION_RTX(work);
+
+	BT_WARN("session %p state %d timeout", session, session->state);
+
+	switch (session->state) {
+	case BT_RFCOMM_STATE_CONNECTED:
+		rfcomm_session_disconnect(session);
+		break;
+	case BT_RFCOMM_STATE_DISCONNECTING:
+		session->state = BT_RFCOMM_STATE_DISCONNECTED;
+		if (bt_l2cap_chan_disconnect(&session->br_chan.chan) < 0) {
+			session->state = BT_RFCOMM_STATE_IDLE;
+		}
+		break;
+	}
+}
+
 static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 {
 	int i;
@@ -1400,6 +1441,8 @@ static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 		session->br_chan.rx.mtu	= CONFIG_BLUETOOTH_RFCOMM_L2CAP_MTU;
 		session->state = BT_RFCOMM_STATE_INIT;
 		session->role = role;
+		k_delayed_work_init(&session->rtx_work,
+				    rfcomm_session_rtx_timeout);
 
 		return session;
 	}
@@ -1471,6 +1514,8 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 		if (ret < 0) {
 			goto fail;
 		}
+		/* Cancel idle timer if any */
+		k_delayed_work_cancel(&session->rtx_work);
 		break;
 	default:
 		BT_ERR("Invalid session state %d", session->state);
