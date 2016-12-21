@@ -50,10 +50,10 @@ extern "C" {
 /* nios2 bitmask definitions for the struct k_thread->flags bit field */
 
 /* 1 = executing context is interrupt handler */
-#define INT_ACTIVE (1 << 1)
+#define INT_ACTIVE (1 << 31)
 
 /* 1 = executing context is exception handler */
-#define EXC_ACTIVE (1 << 2)
+#define EXC_ACTIVE (1 << 30)
 
 /* stacks */
 

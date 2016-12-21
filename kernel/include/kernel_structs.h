@@ -31,30 +31,30 @@
  */
 
 /* thread is defined statically */
-#define K_STATIC (1 << 8)
+#define K_STATIC (1 << 0)
 
 /* Thread is waiting on an object */
-#define K_PENDING (1 << 13)
+#define K_PENDING (1 << 1)
 
 /* Thread has not yet started */
-#define K_PRESTART (1 << 14)
+#define K_PRESTART (1 << 2)
 
 /* Thread has terminated */
-#define K_DEAD (1 << 15)
+#define K_DEAD (1 << 3)
 
 /* Thread is suspended */
-#define K_SUSPENDED (1 << 16)
+#define K_SUSPENDED (1 << 4)
 
 /* Not a real thread */
-#define K_DUMMY (1 << 17)
+#define K_DUMMY (1 << 5)
+
+/* system thread that must not abort */
+#define K_ESSENTIAL (1 << 6)
 
 #if defined(CONFIG_FP_SHARING)
 /* thread uses floating point registers */
-#define K_FP_REGS (1 << 4)
+#define K_FP_REGS (1 << 7)
 #endif
-
-/* system thread that must not abort */
-#define K_ESSENTIAL (1 << 9)
 
 #include <kernel_arch_data.h>
 
@@ -76,7 +76,7 @@ struct _thread_base {
 	sys_dnode_t k_q_node;
 
 	/* execution flags */
-	int flags;
+	uint32_t flags;
 
 	/* thread priority used to sort linked list */
 	int prio;

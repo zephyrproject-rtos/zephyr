@@ -55,16 +55,16 @@
 /* x86 Bitmask definitions for the struct k_thread->flags bit field */
 
 /* executing context is interrupt handler */
-#define INT_ACTIVE (1 << 1)
+#define INT_ACTIVE (1 << 31)
 
 /* executing context is exception handler */
-#define EXC_ACTIVE (1 << 2)
+#define EXC_ACTIVE (1 << 30)
 
 #define INT_OR_EXC_MASK (INT_ACTIVE | EXC_ACTIVE)
 
 #if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
 /* thread uses SSEx (and also FP) registers */
-#define K_SSE_REGS (1 << 5)
+#define K_SSE_REGS (1 << 29)
 #endif
 
 #if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
