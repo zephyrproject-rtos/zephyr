@@ -300,6 +300,9 @@ static void transfer_complete(void *data, int rc, qm_ss_i2c_status_t status,
 	struct device *dev = data;
 	struct i2c_qmsi_ss_driver_data *driver_data;
 
+	ARG_UNUSED(status);
+	ARG_UNUSED(len);
+
 	driver_data = GET_DRIVER_DATA(dev);
 	driver_data->transfer_status = rc;
 	k_sem_give(&driver_data->device_sync_sem);

@@ -385,6 +385,8 @@ static void uart_qmsi_isr(void *arg)
 #ifdef CONFIG_UART_QMSI_0
 static void irq_config_func_0(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_UART_0_INT),
 		    CONFIG_UART_QMSI_0_IRQ_PRI, uart_qmsi_isr,
 		    DEVICE_GET(uart_0), UART_IRQ_FLAGS);
@@ -396,6 +398,8 @@ static void irq_config_func_0(struct device *dev)
 #ifdef CONFIG_UART_QMSI_1
 static void irq_config_func_1(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_UART_1_INT),
 		    CONFIG_UART_QMSI_1_IRQ_PRI, uart_qmsi_isr,
 		    DEVICE_GET(uart_1), UART_IRQ_FLAGS);

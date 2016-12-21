@@ -84,6 +84,9 @@ static void i2c_ksdk_master_transfer_callback(I2C_Type *base,
 	struct device *dev = userData;
 	struct i2c_ksdk_data *data = DEV_DATA(dev);
 
+	ARG_UNUSED(handle);
+	ARG_UNUSED(base);
+
 	data->callback_status = status;
 	k_sem_give(&data->device_sync_sem);
 }
@@ -212,6 +215,8 @@ DEVICE_AND_API_INIT(i2c_ksdk_0, CONFIG_I2C_0_NAME, &i2c_ksdk_init,
 
 static void i2c_ksdk_config_func_0(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(IRQ_I2C0, CONFIG_I2C_0_IRQ_PRI,
 		    i2c_ksdk_isr, DEVICE_GET(i2c_ksdk_0), 0);
 

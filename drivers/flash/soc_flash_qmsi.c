@@ -126,6 +126,8 @@ static uint32_t get_page_num(uint32_t addr)
 static int flash_qmsi_read(struct device *dev, off_t addr,
 			   void *data, size_t len)
 {
+	ARG_UNUSED(dev);
+
 	if ((!is_aligned_32(len)) || (!is_aligned_32(addr))) {
 		return -EINVAL;
 	}
