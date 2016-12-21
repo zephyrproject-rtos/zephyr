@@ -58,9 +58,10 @@
 
 #define RADIO_IRK_COUNT_MAX	8
 
-#define FAST_ENC_PROCEDURE	0
 #define XTAL_ADVANCED		1
 #define SCHED_ADVANCED		1
+#define PROFILE_ISR		0
+#define FAST_ENC_PROCEDURE	0
 #define SILENT_CONNECTION	0
 
 #define RADIO_PHY_ADV		0
@@ -1944,12 +1945,22 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 			       uint8_t rssi_ready)
 {
-
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	uint8_t is_empty_pdu_tx_retry;
 	struct pdu_data *pdu_data_rx;
 	struct pdu_data *pdu_data_tx;
 	uint8_t crc_close = 0;
-	uint8_t is_empty_pdu_tx_retry;
+#if PROFILE_ISR
+	static uint8_t s_lmax;
+	static uint8_t s_lmin = (uint8_t) -1;
+	static uint8_t s_lprv;
+	static uint8_t s_max;
+	static uint8_t s_min = (uint8_t) -1;
+	static uint8_t s_prv;
+	uint32_t sample;
+	uint8_t latency, elapsed, prv;
+	uint8_t chg = 0;
+#endif
 
 	/* Collect RSSI for connection */
 	if (_radio.packet_counter == 0) {
@@ -2023,7 +2034,8 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 			    (pdu_data_tx->md == 0)) {
 				_radio.state = STATE_CLOSE;
 				radio_disable();
-				return;
+
+				goto isr_rx_conn_exit;
 			}
 		}
 	}
@@ -2038,11 +2050,11 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 	if (_radio.state == STATE_CLOSE) {
 		/* Event close for master */
 		if (_radio.role == ROLE_MASTER) {
-			radio_disable();
-
 			_radio.conn_curr->empty = is_empty_pdu_tx_retry;
 
-			return;
+			radio_disable();
+
+			goto isr_rx_conn_exit;
 		}
 		/* Event close for slave */
 		else {
@@ -2058,8 +2070,84 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 	pdu_data_tx->sn = _radio.conn_curr->sn;
 	pdu_data_tx->nesn = _radio.conn_curr->nesn;
 
-	/* Setup the radio tx packet buffer */
+	/* setup the radio tx packet buffer */
 	tx_packet_set(_radio.conn_curr, pdu_data_tx);
+
+isr_rx_conn_exit:
+
+#if PROFILE_ISR
+	/* get the ISR latency sample */
+	sample = radio_tmr_sample_get();
+
+	/* sample the packet timer again, use it to calculate ISR execution time
+	 * and use it in profiling event
+	 */
+	radio_tmr_sample();
+
+	/* calculate the elapsed time in us since on-air radio packet end
+	 * to ISR entry
+	 */
+	latency = sample - radio_tmr_end_get();
+
+	/* check changes in min, avg and max of latency */
+	if (latency > s_lmax) {
+		s_lmax = latency;
+		chg = 1;
+	}
+	if (latency < s_lmin) {
+		s_lmin = latency;
+		chg = 1;
+	}
+
+	/* check for +/- 1us change */
+	prv = ((uint16_t)s_lprv + latency) >> 1;
+	if (prv != s_lprv) {
+		s_lprv = latency;
+		chg = 1;
+	}
+
+	/* calculate the elapsed time in us since ISR entry */
+	elapsed = radio_tmr_sample_get() - sample;
+
+	/* check changes in min, avg and max */
+	if (elapsed > s_max) {
+		s_max = elapsed;
+		chg = 1;
+	}
+
+	if (elapsed < s_min) {
+		s_min = elapsed;
+		chg = 1;
+	}
+
+	/* check for +/- 1us change */
+	prv = ((uint16_t)s_prv + elapsed) >> 1;
+	if (prv != s_prv) {
+		s_prv = elapsed;
+		chg = 1;
+	}
+
+	/* generate event if any change */
+	if (chg) {
+		/* NOTE: enqueue only if rx buffer available, else ignore */
+		radio_pdu_node_rx = packet_rx_reserve_get(2);
+		if (radio_pdu_node_rx) {
+			radio_pdu_node_rx->hdr.handle = 0xFFFF;
+			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_PROFILE;
+			pdu_data_rx = (struct pdu_data *)
+				radio_pdu_node_rx->pdu_data;
+			pdu_data_rx->payload.profile.lcur = latency;
+			pdu_data_rx->payload.profile.lmin = s_lmin;
+			pdu_data_rx->payload.profile.lmax = s_lmax;
+			pdu_data_rx->payload.profile.cur = elapsed;
+			pdu_data_rx->payload.profile.min = s_min;
+			pdu_data_rx->payload.profile.max = s_max;
+			packet_rx_enqueue();
+		}
+	}
+#endif
+
+	return;
 }
 
 static inline void isr_radio_state_rx(uint8_t trx_done, uint8_t crc_ok,
@@ -2541,6 +2629,12 @@ static void isr(void)
 	/* Read radio status and events */
 	trx_done = radio_is_done();
 	if (trx_done) {
+#if PROFILE_ISR
+		/* sample the packet timer here, use it to calculate ISR latency
+		 * and generate the profiling event at the end of the ISR.
+		 */
+		radio_tmr_sample();
+#endif
 		crc_ok = radio_crc_is_valid();
 		devmatch_ok = radio_filter_has_match();
 		irkmatch_ok = radio_ar_has_match();

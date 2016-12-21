@@ -233,9 +233,12 @@ struct pdu_data_llctrl {
 } __packed;
 
 struct profile {
-	uint32_t min;
-	uint32_t avg;
-	uint32_t max;
+	uint8_t lcur;
+	uint8_t lmin;
+	uint8_t lmax;
+	uint8_t cur;
+	uint8_t min;
+	uint8_t max;
 } __packed;
 
 struct pdu_data {
