@@ -29,8 +29,8 @@
  */
 
 /**
-  * @brief Reset and Clock Control
-  */
+ * @brief Reset and Clock Control
+ */
 
 union __rcc_cr {
 	uint32_t val;
