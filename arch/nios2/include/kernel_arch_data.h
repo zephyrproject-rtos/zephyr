@@ -47,14 +47,6 @@ extern "C" {
 #include <misc/dlist.h>
 #endif
 
-/* nios2 bitmask definitions for the struct k_thread->flags bit field */
-
-/* 1 = executing context is interrupt handler */
-#define INT_ACTIVE (1 << 31)
-
-/* 1 = executing context is exception handler */
-#define EXC_ACTIVE (1 << 30)
-
 /* stacks */
 
 #define STACK_ALIGN_SIZE 4
