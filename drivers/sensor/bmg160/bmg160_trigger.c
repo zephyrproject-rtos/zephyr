@@ -31,6 +31,9 @@ static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 	struct bmg160_device_data *bmg160 =
 		CONTAINER_OF(cb, struct bmg160_device_data, gpio_cb);
 
+	ARG_UNUSED(port);
+	ARG_UNUSED(pin);
+
 #if defined(CONFIG_BMG160_TRIGGER_OWN_THREAD)
 	k_sem_give(&bmg160->trig_sem);
 #elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_THREAD)

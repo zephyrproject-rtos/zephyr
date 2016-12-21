@@ -79,6 +79,9 @@ static void fxos8700_thread_main(void *arg1, void *unused1, void *unused2)
 	struct device *dev = (struct device *)arg1;
 	struct fxos8700_data *data = dev->driver_data;
 
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
+
 	while (true) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
 		fxos8700_handle_int(dev);
