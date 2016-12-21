@@ -52,6 +52,11 @@
 #define RFCOMM_CREDITS_THRESHOLD	(RFCOMM_MAX_CREDITS / 2)
 #define RFCOMM_DEFAULT_CREDIT		RFCOMM_MAX_CREDITS
 
+#define RFCOMM_CONN_TIMEOUT     K_SECONDS(60)
+#define RFCOMM_DISC_TIMEOUT     K_SECONDS(20)
+
+#define DLC_RTX(_w) CONTAINER_OF(_w, struct bt_rfcomm_dlc, rtx_work)
+
 static struct bt_rfcomm_server *servers;
 
 /* Pool for outgoing RFCOMM control packets, min MTU is 23 */
@@ -243,6 +248,7 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 {
 	BT_DBG("dlc %p", dlc);
 
+	k_delayed_work_cancel(&dlc->rtx_work);
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
 
@@ -421,6 +427,18 @@ static void rfcomm_disconnected(struct bt_l2cap_chan *chan)
 	session->state = BT_RFCOMM_STATE_IDLE;
 }
 
+static void rfcomm_dlc_rtx_timeout(struct k_work *work)
+{
+	struct bt_rfcomm_dlc *dlc = DLC_RTX(work);
+	struct bt_rfcomm_session *session = dlc->session;
+
+	BT_WARN("dlc %p state %d timeout", dlc, dlc->state);
+
+	rfcomm_dlcs_remove_dlci(session->dlcs, dlc->dlci);
+	rfcomm_dlc_disconnect(dlc);
+	rfcomm_session_disconnect(session);
+}
+
 static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 			    struct bt_rfcomm_session *session,
 			    uint8_t dlci,
@@ -434,6 +452,10 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->role = role;
 	k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
+	k_delayed_work_init(&dlc->rtx_work, rfcomm_dlc_rtx_timeout);
+
+	/* Start a conn timer which includes auth as well */
+	k_delayed_work_submit(&dlc->rtx_work, RFCOMM_CONN_TIMEOUT);
 
 	dlc->_next = session->dlcs;
 	session->dlcs = dlc;
@@ -548,6 +570,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 
 	if (dlc->state == BT_RFCOMM_STATE_DISCONNECTING) {
 		rfcomm_send_disc(dlc->session, dlc->dlci);
+		k_delayed_work_submit(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
 	} else {
 		rfcomm_dlc_destroy(dlc);
 	}
@@ -670,6 +693,9 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR);
 
+	/* Cancel conn timer */
+	k_delayed_work_cancel(&dlc->rtx_work);
+
 	k_fifo_init(&dlc->tx_queue);
 	k_thread_spawn(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_thread,
 		       dlc, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
@@ -734,6 +760,7 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 	case BT_RFCOMM_STATE_CONFIG:
 		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
 		rfcomm_send_disc(dlc->session, dlc->dlci);
+		k_delayed_work_submit(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
 		break;
 	case BT_RFCOMM_STATE_CONNECTED:
 		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
@@ -785,7 +812,6 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 		switch (result) {
 		case RFCOMM_SECURITY_PENDING:
 			dlc->state = BT_RFCOMM_STATE_SECURITY_PENDING;
-			/* TODO: Start an auth timer */
 			return;
 		case RFCOMM_SECURITY_PASSED:
 			break;
@@ -1478,6 +1504,8 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		dlc->state = BT_RFCOMM_STATE_USER_DISCONNECT;
 		net_buf_put(&dlc->tx_queue,
 			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
+
+		k_delayed_work_submit(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
 
 		return 0;
 	}
