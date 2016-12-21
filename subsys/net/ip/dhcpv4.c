@@ -41,7 +41,7 @@ struct dhcp_msg {
 				 */
 	uint32_t xid;		/* Transaction ID, random number */
 	uint16_t secs;		/* Seconds elapsed since client began address
-				 * acqusition or renewal process
+				 * acquisition or renewal process
 				 */
 	uint16_t flags;		/* Broadcast or Unicast */
 	uint8_t ciaddr[4];	/* Client IP Address */
@@ -394,7 +394,7 @@ fail:
 	}
 }
 
-/* Prepare DHCPv4 Dicover message and braodcast it */
+/* Prepare DHCPv4 Discover message and broadcast it */
 static void send_discover(struct net_if *iface)
 {
 	struct net_buf *buf;
