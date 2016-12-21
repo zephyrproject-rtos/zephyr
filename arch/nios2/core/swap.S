@@ -108,9 +108,10 @@ SECTION_FUNC(exception.other, _Swap)
 	 */
 	ldw r3, _thread_offset_to_key(r2)
 
-	/* Load return value into r2 (return value register). -EAGAIN
-	 * unless someone previously called fiberRtnValueSet(). Do this
-	 * before we potentially unlock interrupts.
+	/*
+	 * Load return value into r2 (return value register). -EAGAIN unless
+	 * someone previously called _set_thread_return_value(). Do this before
+	 * we potentially unlock interrupts.
 	 */
 	ldw r2, _thread_offset_to_retval(r2)
 

@@ -267,7 +267,8 @@ _context_switch:
  * On Cortex-M0/M0+ the intlock key is represented by the PRIMASK register,
  * as BASEPRI is not available.
  *
- * @return may contain a return value setup by a call to fiberRtnValueSet()
+ * @return may contain a return value setup by a call to
+ * _set_thread_return_value()
  *
  * C function prototype:
  *

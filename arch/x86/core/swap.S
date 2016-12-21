@@ -80,7 +80,8 @@
  * Floating point registers are currently NOT scrubbed, and are subject to
  * potential security leaks.
  *
- * @return -EAGAIN, or a return value set by a call to fiberRtnValueSet()
+ * @return -EAGAIN, or a return value set by a call to
+ * _set_thread_return_value()
  *
  * C function prototype:
  *
@@ -115,7 +116,7 @@ SECTION_FUNC(TEXT, _Swap)
 	 * Carve space for the return value. Setting it to a defafult of
 	 * -EAGAIN eliminates the need for the timeout code to set it.
 	 * If another value is ever needed, it can be modified with
-	 * fiberRtnValueSet().
+	 * _set_thread_return_value().
 	 */
 
 	pushl   _k_neg_eagain
@@ -302,7 +303,7 @@ CROHandlingDone:
 	movl	_thread_offset_to_esp(%eax), %esp
 
 
-	/* load return value from a possible fiberRtnValueSet() */
+	/* load return value from a possible _set_thread_return_value() */
 
 	popl	%eax
 
@@ -317,7 +318,7 @@ CROHandlingDone:
 	 * %eax may contain one of these values:
 	 *
 	 * - the return value for _Swap() that was set up by a call to
-	 * fiberRtnValueSet()
+	 * _set_thread_return_value()
 	 * - in legacy kernel, same value as %ebx, which is non-volatile
 	 * - in unified kernel, -EINVAL
 	 */
