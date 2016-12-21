@@ -432,7 +432,9 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
 	struct bt_sdp_hdr *hdr = (void *)buf->data;
-	uint16_t len, tid;
+	struct bt_sdp_pdu_cstate *cstate;
+	struct bt_conn *conn = session->chan.chan.conn;
+	uint16_t len, tid, frame_len;
 
 	BT_DBG("session %p buf %p", session, buf);
 
@@ -460,6 +462,58 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (tid != session->tid) {
 		BT_ERR("Mismatch transaction ID value in SDP PDU");
 		return;
+	}
+
+	switch (hdr->op_code) {
+	case BT_SDP_SVC_SEARCH_ATTR_RSP:
+		/* Get number of attributes in this frame. */
+		frame_len = net_buf_pull_be16(buf);
+		/* Get PDU continuation state */
+		cstate = (struct bt_sdp_pdu_cstate *)(buf->data + frame_len);
+
+		if (cstate->length > BT_SDP_MAX_PDU_CSTATE_LEN) {
+			BT_ERR("Invalid SDP PDU Continuation State length %u",
+			       cstate->length);
+			return;
+		}
+
+		/* No record found for given UUID */
+		if (frame_len == 2 && cstate->length == 0 &&
+		    session->cstate.length == 0) {
+			BT_DBG("record for UUID 0x%s not found",
+				bt_uuid_str(session->param->uuid));
+			/* Call user UUID handler */
+			session->param->func(conn, NULL);
+			net_buf_pull(buf, frame_len + sizeof(cstate->length));
+			break;
+		}
+
+		/* TO DO: fillup user buffer with record's data */
+
+		net_buf_pull(buf, frame_len);
+
+		/*
+		 * check if current response says there's next portion to be
+		 * fetched
+		 */
+		if (cstate->length) {
+			/* Cache original Continuation State in context */
+			memcpy(&session->cstate, cstate,
+			       sizeof(struct bt_sdp_pdu_cstate));
+
+			net_buf_pull(buf, cstate->length +
+				     sizeof(cstate->length));
+
+			/* Request for next portion of attributes data */
+			sdp_client_ssa_search(session);
+			break;
+		}
+
+		net_buf_pull(buf, sizeof(cstate->length));
+		break;
+	default:
+		BT_DBG("PDU 0x%0x response not handled", hdr->op_code);
+		break;
 	}
 }
 
