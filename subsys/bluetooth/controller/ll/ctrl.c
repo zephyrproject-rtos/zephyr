@@ -502,6 +502,9 @@ static inline void isr_radio_state_tx(void)
 	case ROLE_ADV:
 		radio_pkt_rx_set(radio_pkt_scratch_get());
 
+		/* assert if radio packet ptr is not set and radio started rx */
+		LL_ASSERT(!radio_is_ready());
+
 		if (_radio.advertiser.filter_policy && _radio.nirk) {
 			radio_ar_configure(_radio.nirk, _radio.irk);
 		}
@@ -512,6 +515,10 @@ static inline void isr_radio_state_tx(void)
 	case ROLE_OBS:
 		radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->
 				    pdu_data);
+
+		/* assert if radio packet ptr is not set and radio started rx */
+		LL_ASSERT(!radio_is_ready());
+
 		radio_rssi_measure();
 		break;
 
@@ -525,9 +532,17 @@ static inline void isr_radio_state_tx(void)
 		rx_packet_set(_radio.conn_curr, (struct pdu_data *)_radio.
 			      packet_rx[_radio.packet_rx_last]->pdu_data);
 
+		/* assert if radio packet ptr is not set and radio started rx */
+		LL_ASSERT(!radio_is_ready());
+
 		radio_tmr_end_capture();
 
 		/* Route the tx packet to respective connections */
+		/* TODO: use timebox for tx enqueue (instead of 1 packet
+		 * that is routed, which may not be for the current connection)
+		 * try to route as much tx packet in queue into corresponding
+		 * connection's tx list.
+		 */
 		packet_tx_enqueue(1);
 		break;
 
@@ -536,7 +551,6 @@ static inline void isr_radio_state_tx(void)
 		LL_ASSERT(0);
 		break;
 	}
-
 }
 
 static inline uint32_t isr_rx_adv(uint8_t devmatch_ok, uint8_t irkmatch_ok,
@@ -853,6 +867,7 @@ static inline uint32_t isr_rx_obs(uint8_t irkmatch_id, uint8_t rssi_ready)
 
 		radio_pkt_tx_set(pdu_adv_tx);
 
+		/* assert if radio packet ptr is not set and radio started tx */
 		LL_ASSERT(!radio_is_ready());
 
 		radio_tmr_end_capture();
@@ -1030,6 +1045,9 @@ static inline uint8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		_radio.state = STATE_CLOSE;
 		radio_disable();
 
+		/* assert if radio packet ptr is not set and radio started tx */
+		LL_ASSERT(!radio_is_ready());
+
 		terminate_ind_rx_enqueue(_radio.conn_curr,
 		     (pdu_data_tx->payload.llctrl.ctrldata.terminate_ind.
 		      error_code == 0x13) ?  0x16 :
@@ -1131,9 +1149,9 @@ static inline uint8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 	return terminate;
 }
 
-static inline void isr_rx_conn_pkt_release(struct radio_pdu_node_tx *node_tx)
+static inline struct radio_pdu_node_tx *
+isr_rx_conn_pkt_release(struct radio_pdu_node_tx *node_tx)
 {
-
 	_radio.conn_curr->packet_tx_head_len = 0;
 	_radio.conn_curr->packet_tx_head_offset = 0;
 
@@ -1160,13 +1178,15 @@ static inline void isr_rx_conn_pkt_release(struct radio_pdu_node_tx *node_tx)
 		_radio.conn_curr->pkt_tx_head =
 			_radio.conn_curr->pkt_tx_head->next;
 
-		pdu_node_tx_release(_radio.conn_curr->handle, node_tx);
+		return node_tx;
 	}
+
+	return NULL;
 }
 
 static inline void
 isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
-			 struct pdu_data *pdu_data_rx, uint8_t *rx_enqueue)
+			 uint8_t *rx_enqueue)
 {
 	/* reset ctrl procedure */
 	_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
@@ -1192,10 +1212,13 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		if (!_radio.conn_curr->llcp.connection_update.is_internal) {
 			struct radio_le_conn_update_cmplt
 				*radio_le_conn_update_cmplt;
+			struct pdu_data *pdu_data_rx;
 
 			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
 
 			/* prepare connection update complete structure */
+			pdu_data_rx =
+				(struct pdu_data *)radio_pdu_node_rx->pdu_data;
 			radio_le_conn_update_cmplt =
 				(struct radio_le_conn_update_cmplt *)
 				&pdu_data_rx->payload;
@@ -1340,10 +1363,12 @@ static inline uint8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 
 static inline uint8_t
 isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
-		     struct pdu_data *pdu_data_rx, uint8_t *rx_enqueue)
+		     uint8_t *rx_enqueue)
 {
+	struct pdu_data *pdu_data_rx;
 	uint8_t nack = 0;
 
+	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
 	switch (pdu_data_rx->payload.llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_REQ:
 		if (conn_update(_radio.conn_curr, pdu_data_rx) == 0) {
@@ -1680,8 +1705,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND_EXT:
 		if (_radio.conn_curr->llcp_req != _radio.conn_curr->llcp_ack) {
-			isr_rx_conn_pkt_ctrl_rej(radio_pdu_node_rx,
-					pdu_data_rx, rx_enqueue);
+			isr_rx_conn_pkt_ctrl_rej(radio_pdu_node_rx, rx_enqueue);
 
 		} else {
 			/* By spec. slave shall not generate a conn update
@@ -1762,16 +1786,18 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 static inline uint32_t
 isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
-		struct pdu_data *pdu_data_rx)
+		struct radio_pdu_node_tx **tx_release, uint8_t *rx_enqueue)
 {
-	uint8_t nack = 0;
-	uint8_t terminate = 0;
+	struct pdu_data *pdu_data_rx;
 	struct pdu_data *pdu_data_tx;
+	uint8_t terminate = 0;
+	uint8_t nack = 0;
 
 	/* Reset CRC expiry counter */
 	_radio.crc_expire = 0;
 
 	/* Ack for transmitted data */
+	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
 	if (pdu_data_rx->nesn != _radio.conn_curr->sn) {
 
 		/* Increment serial number */
@@ -1806,7 +1832,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			_radio.conn_curr->packet_tx_head_offset += pdu_data_tx_len;
 			if (_radio.conn_curr->packet_tx_head_offset ==
 			    _radio.conn_curr->packet_tx_head_len) {
-				isr_rx_conn_pkt_release(node_tx);
+				*tx_release = isr_rx_conn_pkt_release(node_tx);
 			}
 		} else {
 			_radio.conn_curr->empty = 0;
@@ -1841,8 +1867,6 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		uint8_t ccm_rx_increment = 0;
 
 		if (pdu_data_rx->len != 0) {
-			uint8_t rx_enqueue = 0;
-
 			/* If required, wait for CCM to finish
 			 */
 			if (_radio.conn_curr->enc_rx) {
@@ -1862,6 +1886,10 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				_radio.state = STATE_CLOSE;
 				radio_disable();
 
+				/* assert if radio packet ptr is not set and
+				 * radio started tx */
+				LL_ASSERT(!radio_is_ready());
+
 				terminate_ind_rx_enqueue(_radio.conn_curr,
 							 0x3d);
 
@@ -1879,44 +1907,17 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			case PDU_DATA_LLID_DATA_CONTINUE:
 			case PDU_DATA_LLID_DATA_START:
 				/* enqueue data packet */
-				rx_enqueue = 1;
+				*rx_enqueue = 1;
 				break;
 
 			case PDU_DATA_LLID_CTRL:
-				/* Handling control procedure takes more CPU
-				 * time hence check how much CPU time we have
-				 * used up inside tIFS (150us) and decide to
-				 * NACK rx-ed packet if consumed more than half
-				 * the tIFS value. Control Procedure will be
-				 * handled in the next re-transmission of the
-				 * packet by peer.
-				 */
-				radio_tmr_sample();
-				if ((radio_tmr_sample_get() -
-				     radio_tmr_end_get()) < 75) {
-					nack = isr_rx_conn_pkt_ctrl(
-						radio_pdu_node_rx,
-						pdu_data_rx, &rx_enqueue);
-				} else {
-					nack = 1;
-				}
+				nack = isr_rx_conn_pkt_ctrl(radio_pdu_node_rx,
+							    rx_enqueue);
 				break;
 			case PDU_DATA_LLID_RESV:
 			default:
 				LL_ASSERT(0);
 				break;
-			}
-
-			if (rx_enqueue) {
-				rx_fc_lock(_radio.conn_curr->handle);
-
-				/* as packet is to be enqueued, store the
-				 * correct handle for it and enqueue it
-				 */
-				radio_pdu_node_rx->hdr.handle =
-					_radio.conn_curr->handle;
-
-				packet_rx_enqueue();
 			}
 		} else if ((_radio.conn_curr->enc_rx) ||
 			   (_radio.conn_curr->pause_rx)) {
@@ -1945,9 +1946,11 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 			       uint8_t rssi_ready)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct radio_pdu_node_tx *tx_release = NULL;
 	uint8_t is_empty_pdu_tx_retry;
 	struct pdu_data *pdu_data_rx;
 	struct pdu_data *pdu_data_tx;
+	uint8_t rx_enqueue = 0;
 	uint8_t crc_close = 0;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
@@ -1987,14 +1990,14 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 	/* received data packet */
 	radio_pdu_node_rx = _radio.packet_rx[_radio.packet_rx_last];
 	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
 
 	if (crc_ok) {
 		uint32_t terminate;
 
-		terminate = isr_rx_conn_pkt(radio_pdu_node_rx, pdu_data_rx);
+		terminate = isr_rx_conn_pkt(radio_pdu_node_rx, &tx_release,
+					    &rx_enqueue);
 		if (terminate) {
-			return;
+			goto isr_rx_conn_exit;
 		}
 	} else {
 		/* Start CRC error countdown, if not already started */
@@ -2041,6 +2044,7 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 	}
 
 	/* Decide on event continuation and hence Radio Shorts to use */
+	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
 	_radio.state = ((_radio.state == STATE_CLOSE) || (crc_close) ||
 			((crc_ok) && (pdu_data_rx->md == 0) &&
 			 (pdu_data_tx->len == 0)) ||
@@ -2084,6 +2088,24 @@ isr_rx_conn_exit:
 	 */
 	radio_tmr_sample();
 
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+
+	/* release tx node and generate event for num complete */
+	if (tx_release) {
+		pdu_node_tx_release(_radio.conn_curr->handle, tx_release);
+	}
+
+	/* enqueue any rx packet/event towards application */
+	if (rx_enqueue) {
+		/* set data flow control lock on currently rx-ed connection */
+		rx_fc_lock(_radio.conn_curr->handle);
+
+		/* set the connection handle and enqueue */
+		radio_pdu_node_rx->hdr.handle = _radio.conn_curr->handle;
+		packet_rx_enqueue();
+	}
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	/* calculate the elapsed time in us since on-air radio packet end
 	 * to ISR entry
 	 */
@@ -2680,9 +2702,6 @@ static void isr(void)
 		LL_ASSERT(0);
 		break;
 	}
-
-	LL_ASSERT(((_radio.state != STATE_RX) && (_radio.state != STATE_TX)) ||
-		  (!radio_is_ready()));
 
 	DEBUG_RADIO_ISR(0);
 }
