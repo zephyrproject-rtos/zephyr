@@ -428,6 +428,39 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session)
 	return bt_l2cap_chan_send(&session->chan.chan, buf);
 }
 
+static void sdp_client_params_iterator(struct bt_sdp_client *session)
+{
+	struct bt_l2cap_chan *chan = &session->chan.chan;
+	const struct bt_sdp_discover_params *param;
+	sys_snode_t *node, *node_s;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&session->reqs, node, node_s) {
+		param = GET_PARAM(node);
+		if (param != session->param) {
+			continue;
+		}
+
+		BT_DBG("");
+
+		/* Remove already checked UUID node */
+		sys_slist_remove(&session->reqs, NULL, node);
+		/* Invalidate cached param in context */
+		session->param = NULL;
+		/* Reset continuation state in current context */
+		memset(&session->cstate, 0, sizeof(session->cstate));
+
+		/* Check if there's valid next UUID */
+		if (!sys_slist_is_empty(&session->reqs)) {
+			sdp_client_ssa_search(session);
+			return;
+		}
+
+		/* No UUID items, disconnect channel */
+		bt_l2cap_chan_disconnect(chan);
+		break;
+	}
+}
+
 static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
@@ -485,7 +518,7 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			/* Call user UUID handler */
 			session->param->func(conn, NULL);
 			net_buf_pull(buf, frame_len + sizeof(cstate->length));
-			break;
+			goto iterate;
 		}
 
 		/* TO DO: fillup user buffer with record's data */
@@ -510,6 +543,11 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		}
 
 		net_buf_pull(buf, sizeof(cstate->length));
+
+		BT_DBG("UUID 0x%s resolved", bt_uuid_str(session->param->uuid));
+iterate:
+		/* Get next UUID and start resolving it */
+		sdp_client_params_iterator(session);
 		break;
 	default:
 		BT_DBG("PDU 0x%0x response not handled", hdr->op_code);
