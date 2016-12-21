@@ -33,7 +33,6 @@ config BLUETOOTH_H4
 	bool "H:4 UART"
 	select UART_INTERRUPT_DRIVEN
 	select BLUETOOTH_UART
-	select BLUETOOTH_HOST_BUFFERS
 	depends on SERIAL
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
@@ -43,7 +42,6 @@ config BLUETOOTH_H5
 	bool "H:5 UART [EXPERIMENTAL]"
 	select UART_INTERRUPT_DRIVEN
 	select BLUETOOTH_UART
-	select BLUETOOTH_HOST_BUFFERS
 	depends on SERIAL
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
@@ -58,17 +56,6 @@ config BLUETOOTH_NO_DRIVER
 endchoice
 
 endif # !BLUETOOTH_CONTROLLER
-
-config BLUETOOTH_HOST_BUFFERS
-	bool "Host managed incoming data buffers"
-	help
-	  Enable this to have the host stack manage incoming ACL data
-	  and HCI event buffers. This makes sense for all HCI drivers
-	  that talk to a controller running on a different CPU.
-
-	  If the controller resides in the same address space it may
-	  make sense to have the lower layers manage these buffers, in
-	  which case this option can be left disabled.
 
 config BLUETOOTH_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"

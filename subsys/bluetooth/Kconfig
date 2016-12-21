@@ -47,7 +47,6 @@ if BLUETOOTH_HCI
 
 config BLUETOOTH_CONTROLLER
 	bool "Bluetooth Controller"
-	select BLUETOOTH_HOST_BUFFERS
 	help
 	  Enables support for SoC native controller implementation.
 

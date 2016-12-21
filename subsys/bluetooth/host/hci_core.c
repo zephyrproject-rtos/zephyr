@@ -122,7 +122,6 @@ struct acl_data {
 NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 		    CMD_BUF_SIZE, sizeof(struct cmd_data), NULL);
 
-#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 /* HCI event buffers */
 NET_BUF_POOL_DEFINE(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
 		    BT_BUF_EVT_SIZE, BT_BUF_USER_DATA_MIN, NULL);
@@ -142,11 +141,9 @@ NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 1, BT_BUF_EVT_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
 #endif
 
-#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
-
 static struct tc_hmac_prng_struct prng;
 
-#if defined(CONFIG_BLUETOOTH_CONN) && defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
+#if defined(CONFIG_BLUETOOTH_CONN)
 static void report_completed_packet(struct net_buf *buf)
 {
 
@@ -183,7 +180,7 @@ static void report_completed_packet(struct net_buf *buf)
 NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
 		    BT_BUF_ACL_IN_SIZE, sizeof(struct acl_data),
 		    report_completed_packet);
-#endif /* CONFIG_BLUETOOTH_CONN && CONFIG_BLUETOOTH_HOST_BUFFERS */
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
@@ -3549,7 +3546,6 @@ int bt_recv(struct net_buf *buf)
 		break;
 #endif /* CONFIG_BLUETOOTH_CONN */
 	default:
-#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 		/*
 		 * If buffer used is from priority pool we are running low on
 		 * buffers and those needs to be kept for 'critical' events
@@ -3558,7 +3554,6 @@ int bt_recv(struct net_buf *buf)
 		if (buf->pool == &hci_evt_prio_pool) {
 			break;
 		}
-#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 		net_buf_put(&bt_dev.rx_queue, net_buf_ref(buf));
 		break;
@@ -4023,7 +4018,6 @@ int bt_le_scan_stop(void)
 	return bt_le_scan_update(false);
 }
 
-#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 struct net_buf *bt_buf_get_evt(uint8_t opcode, int32_t timeout)
 {
 	struct net_buf *buf;
@@ -4066,7 +4060,6 @@ struct net_buf *bt_buf_get_acl(int32_t timeout)
 	return NULL;
 #endif /* CONFIG_BLUETOOTH_CONN */
 }
-#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static int br_start_inquiry(const struct bt_br_discovery_param *param)

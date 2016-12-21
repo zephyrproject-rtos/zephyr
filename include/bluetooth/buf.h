@@ -61,8 +61,7 @@ enum bt_buf_type {
 /** Allocate a buffer for an HCI event
  *
  *  This will set the BT_BUF_EVT buffer type so bt_buf_set_type()
- *  doesn't need to be explicitly called. Only available when
- *  CONFIG_BLUETOOTH_HOST_BUFFERS has been selected.
+ *  doesn't need to be explicitly called.
  *
  *  @param opcode HCI event opcode or 0 if not known
  *  @param timeout Timeout in milliseconds, or one of the special values
@@ -74,8 +73,7 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode, int32_t timeout);
 /** Allocate a buffer for incoming ACL data
  *
  *  This will set the BT_BUF_ACL_IN buffer type so bt_buf_set_type()
- *  doesn't need to be explicitly called. Only available when
- *  CONFIG_BLUETOOTH_HOST_BUFFERS has been selected.
+ *  doesn't need to be explicitly called.
  *
  *  @param timeout Timeout in milliseconds, or one of the special values
  *                 K_NO_WAIT and K_FOREVER.
