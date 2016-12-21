@@ -299,7 +299,7 @@ alreadyOnIntStack:
 
 	/* do not reschedule if scheduler is locked */
 	cmpl	$0, _thread_offset_to_sched_locked(%edx)
-	jg	noReschedule
+	jne	noReschedule
 
 
 	/* reschedule only if the scheduler says that we must do so */

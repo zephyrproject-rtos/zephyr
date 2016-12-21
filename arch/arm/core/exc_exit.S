@@ -93,7 +93,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
     /* scheduler locked ? do not schedule */
     cmp r3, #0
-    bgt _EXIT_EXC
+    bne _EXIT_EXC
 
     ldr r0, [r0, _kernel_offset_to_ready_q_cache]
     cmp r0, r1

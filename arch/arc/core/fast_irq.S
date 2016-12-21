@@ -155,7 +155,7 @@ _firq_check_for_swap:
 
 	/* scheduler locked ? do not schedule */
 	ld_s r0, [r2, _thread_offset_to_sched_locked]
-	brgt r0, 0, _firq_no_reschedule
+	brne r0, 0, _firq_no_reschedule
 
 	/* Check if the current thread (in r2) is the cached thread */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]

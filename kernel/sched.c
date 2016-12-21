@@ -147,9 +147,10 @@ void _reschedule_threads(int key)
 void k_sched_lock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
+	__ASSERT(_current->base.sched_locked != 1, "");
 	__ASSERT(!_is_in_isr(), "");
 
-	++_current->base.sched_locked;
+	--_current->base.sched_locked;
 
 	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
@@ -159,12 +160,12 @@ void k_sched_lock(void)
 void k_sched_unlock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(_current->base.sched_locked > 0, "");
+	__ASSERT(_current->base.sched_locked != 0, "");
 	__ASSERT(!_is_in_isr(), "");
 
 	int key = irq_lock();
 
-	--_current->base.sched_locked;
+	++_current->base.sched_locked;
 
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
