@@ -307,6 +307,9 @@ static void cdc_acm_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
 
+	ARG_UNUSED(ep_status);
+	ARG_UNUSED(ep);
+
 	dev_data->tx_ready = 1;
 	k_sem_give(&poll_wait_sem);
 	/* Call callback only if tx irq ena */
@@ -329,6 +332,8 @@ static void cdc_acm_bulk_out(uint8_t ep,
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
 	uint32_t bytes_to_read, i, j, buf_head;
 	uint8_t tmp_buf[4];
+
+	ARG_UNUSED(ep_status);
 
 	/* Check how many bytes were received */
 	usb_read(ep, NULL, 0, &bytes_to_read);
@@ -378,6 +383,8 @@ static void cdc_acm_bulk_out(uint8_t ep,
 static void cdc_acm_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
+
+	ARG_UNUSED(ep_status);
 
 	dev_data->notification_sent = 1;
 	SYS_LOG_DBG("CDC_IntIN EP[%x]\r", ep);
@@ -696,6 +703,8 @@ static int cdc_acm_irq_is_pending(struct device *dev)
  */
 static int cdc_acm_irq_update(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	return 1;
 }
 
@@ -844,6 +853,9 @@ static int cdc_acm_line_ctrl_get(struct device *dev,
 
 static int cdc_acm_poll_in(struct device *dev, unsigned char *c)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(c);
+
 	return -ENOTSUP;
 }
 

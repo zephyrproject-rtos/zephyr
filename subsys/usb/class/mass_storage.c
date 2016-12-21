@@ -685,6 +685,8 @@ static void mass_storage_bulk_out(uint8_t ep,
 	uint32_t bytes_read = 0;
 	uint8_t bo_buf[MASS_STORAGE_BULK_EP_MPS];
 
+	ARG_UNUSED(ep_status);
+
 	usb_ep_read_wait(ep, bo_buf, MASS_STORAGE_BULK_EP_MPS, &bytes_read);
 
 	switch (stage) {
@@ -760,6 +762,9 @@ static void thread_memory_write_done(void)
 static void mass_storage_bulk_in(uint8_t ep,
 				 enum usb_dc_ep_cb_status_code ep_status)
 {
+	ARG_UNUSED(ep_status);
+	ARG_UNUSED(ep);
+
 	switch (stage) {
 	/*the device has to send data to the host*/
 	case PROCESS_CBW:
@@ -867,8 +872,8 @@ static struct usb_cfg_data mass_storage_config = {
 
 static void mass_thread_main(int arg1, int unused)
 {
-
 	ARG_UNUSED(unused);
+	ARG_UNUSED(arg1);
 
 	while (1) {
 		k_sem_take(&disk_wait_sem, K_FOREVER);
@@ -912,6 +917,8 @@ static int mass_storage_init(struct device *dev)
 {
 	int ret;
 	uint32_t block_size = 0;
+
+	ARG_UNUSED(dev);
 
 	if (disk_access_init() != 0) {
 		SYS_LOG_ERR("Storage init ERROR !!!! - Aborting USB init");

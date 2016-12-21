@@ -156,6 +156,9 @@ static void test_cb(void *a, void *dummy2, void *dummy)
 {
 	struct unit_test *test = (struct unit_test *)a;
 
+	ARG_UNUSED(dummy2);
+	ARG_UNUSED(dummy);
+
 	test_result = 1;
 	run_test_functions(test);
 	test_result = 0;

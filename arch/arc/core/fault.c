@@ -57,6 +57,8 @@
 void _FaultDump(const NANO_ESF *esf, int fault)
 {
 	ARG_UNUSED(esf);
+	ARG_UNUSED(fault);
+
 #ifdef CONFIG_PRINTK
 	uint32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
 	uint32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
