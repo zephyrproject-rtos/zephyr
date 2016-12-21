@@ -134,7 +134,7 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 	}
 
 success:
-	NET_BUF_DBG("allocated buf %p");
+	NET_BUF_DBG("allocated buf %p", buf);
 
 	buf->ref   = 1;
 	buf->len   = 0;
