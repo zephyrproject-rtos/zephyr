@@ -340,7 +340,11 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("session %p chan %p disconnected", session, chan);
 
-	ARG_UNUSED(session);
+	/*
+	 * Reset session excluding L2CAP channel member. Let's the channel
+	 * resets autonomous.
+	 */
+	memset(&session->reqs, 0, sizeof(*session) - sizeof(session->chan));
 }
 
 static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
