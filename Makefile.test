@@ -1,0 +1,4 @@
+
+OVERLAY_CONFIG += $(ZEPHYR_BASE)/tests/include/test.config
+
+include ${ZEPHYR_BASE}/Makefile.inc

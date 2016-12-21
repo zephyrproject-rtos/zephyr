@@ -30,4 +30,4 @@ QEMU_EXTRA_FLAGS += -serial pipe:/tmp/bt-stack-tester
 
 PRJ_INCPATH += ${ZEPHYR_BASE}/include/drivers
 
-include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.test

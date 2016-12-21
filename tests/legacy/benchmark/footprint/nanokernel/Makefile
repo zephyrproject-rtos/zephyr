@@ -10,7 +10,7 @@ else
 CFLAGS += -DTEST_$(TEST)
 endif
 
-include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.test
 
 ifeq ($(ARCH),ARM)
   ifneq ($(TEST),min)

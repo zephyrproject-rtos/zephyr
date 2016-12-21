@@ -10,4 +10,4 @@ ifeq ($(CONF_FILE),)
 CONF_FILE = prj_no_fp.conf
 endif
 
-include ${ZEPHYR_BASE}/Makefile.inc
+include ${ZEPHYR_BASE}/Makefile.test

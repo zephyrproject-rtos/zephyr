@@ -10,4 +10,4 @@ ifneq ($(valid_board_$(BOARD)),y)
 $(error not a supported board for this testcase)
 endif
 
-include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.test

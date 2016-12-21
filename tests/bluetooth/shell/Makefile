@@ -29,5 +29,5 @@ endif
 
 PRJ_INCPATH += ${ZEPHYR_BASE}/include/drivers
 
-include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.test
 # console handler

@@ -9,4 +9,4 @@ CONF_arduino_101    	= quark_se/quark_se_prj.conf
 BOARD ?= qemu_x86
 CONF_FILE = $(CONF_$(BOARD))
 
-include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.test

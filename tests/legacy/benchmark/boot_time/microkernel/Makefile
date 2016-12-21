@@ -10,4 +10,4 @@ MDEF_FILE = prj.mdef
 BOARD ?= qemu_x86
 CONF_FILE = ${CONF_${BOARD}}
 
-include ${ZEPHYR_BASE}/Makefile.inc
+include ${ZEPHYR_BASE}/Makefile.test

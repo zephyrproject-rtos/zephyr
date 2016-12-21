@@ -6,4 +6,4 @@ else
 CONF_FILE = prj.conf
 endif
 
-include ${ZEPHYR_BASE}/Makefile.inc
+include ${ZEPHYR_BASE}/Makefile.test
