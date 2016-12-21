@@ -36,35 +36,14 @@ struct bt_a2dp {
 /* Connections */
 static struct bt_a2dp connection[CONFIG_BLUETOOTH_MAX_CONN];
 
-/* Callback for incoming requests */
-static struct bt_avdtp_ind_cb cb_ind = {
-	/*TODO*/
-};
-
-/* The above callback structures need to be packed and passed to AVDTP */
-static struct bt_avdtp_event_cb avdtp_cb = {
-	.ind = &cb_ind,
-};
-
-int bt_a2dp_init(void)
+void a2d_reset(struct bt_a2dp *a2dp_conn)
 {
-	int err;
-
-	/* Register event handlers with AVDTP */
-	err = bt_avdtp_register(&avdtp_cb);
-	if (err < 0) {
-		BT_ERR("A2DP registration failed");
-		return err;
-	}
-
-	BT_DBG("A2DP Initialized successfully.");
-	return 0;
+	memset(a2dp_conn, 0, sizeof(struct bt_a2dp));
 }
 
-struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
+struct bt_a2dp *get_new_connection(struct bt_conn *conn)
 {
-	int i, err;
-	int8_t free;
+	int8_t i, free;
 
 	free = A2DP_NO_SPACE;
 
@@ -91,14 +70,72 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 		return NULL;
 	}
 
-	err = bt_avdtp_connect(conn, &connection[free].session);
+	/* Clean the memory area before returning */
+	a2d_reset(&connection[free]);
+
+	return &connection[free];
+}
+
+int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
+{
+	struct bt_a2dp *a2dp_conn;
+
+	a2dp_conn = get_new_connection(conn);
+	if (!a2dp_conn) {
+		return -ENOMEM;
+	}
+
+	*session = &(a2dp_conn->session);
+	BT_DBG("session: %p", &(a2dp_conn->session));
+
+	return 0;
+}
+
+/* Callback for incoming requests */
+static struct bt_avdtp_ind_cb cb_ind = {
+	/*TODO*/
+};
+
+/* The above callback structures need to be packed and passed to AVDTP */
+static struct bt_avdtp_event_cb avdtp_cb = {
+	.ind = &cb_ind,
+	.accept = a2dp_accept
+};
+
+int bt_a2dp_init(void)
+{
+	int err;
+
+	/* Register event handlers with AVDTP */
+	err = bt_avdtp_register(&avdtp_cb);
+	if (err < 0) {
+		BT_ERR("A2DP registration failed");
+		return err;
+	}
+
+	BT_DBG("A2DP Initialized successfully.");
+	return 0;
+}
+
+struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
+{
+	struct bt_a2dp *a2dp_conn;
+	int err;
+
+	a2dp_conn = get_new_connection(conn);
+	if (!a2dp_conn) {
+		BT_ERR("Cannot allocate memory");
+		return NULL;
+	}
+
+	err = bt_avdtp_connect(conn, &(a2dp_conn->session));
 	if (err < 0) {
 		/* If error occurs, undo the saving and return the error */
-		memset(&connection[free], 0, sizeof(struct bt_a2dp));
+		a2d_reset(a2dp_conn);
 		BT_DBG("AVDTP Connect failed");
 		return NULL;
 	}
 
 	BT_DBG("Connect request sent");
-	return &connection[free];
+	return a2dp_conn;
 }
