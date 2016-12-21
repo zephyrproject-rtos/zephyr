@@ -56,4 +56,13 @@ struct bt_sdp_hdr {
 /* Allowed attributes length in SSA Request PDU to be taken from server */
 #define BT_SDP_MAX_ATTR_LEN 0xffff
 
+/* Max allowed length of PDU Continuation State */
+#define BT_SDP_MAX_PDU_CSTATE_LEN 16
+
+/* Type mapping SDP PDU Continuation State */
+struct bt_sdp_pdu_cstate {
+	uint8_t length;
+	uint8_t data[BT_SDP_MAX_PDU_CSTATE_LEN];
+} __packed;
+
 void bt_sdp_init(void);

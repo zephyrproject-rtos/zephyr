@@ -69,6 +69,8 @@ struct bt_sdp_client {
 	uint16_t                             tid;
 	/* UUID params holder being now resolved */
 	const struct bt_sdp_discover_params *param;
+	/* PDU continuation state object */
+	struct bt_sdp_pdu_cstate             cstate;
 };
 
 static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -401,8 +403,19 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session)
 	net_buf_add_be16(buf, 0x0000);
 	net_buf_add_be16(buf, 0xffff);
 
-	/* Initial continuation state octet */
-	net_buf_add_u8(buf, 0x00);
+	/*
+	 * Update and validate PDU ContinuationState. Initial SSA Request has
+	 * zero length continuation state since no interaction has place with
+	 * server so far, otherwise use the original state taken from remote's
+	 * last response PDU that is cached by SDP client context.
+	 */
+	if (session->cstate.length == 0) {
+		net_buf_add_u8(buf, 0x00);
+	} else {
+		net_buf_add_u8(buf, session->cstate.length);
+		net_buf_add_mem(buf, session->cstate.data,
+				session->cstate.length);
+	}
 
 	/* set overall PDU length */
 	hdr->param_len = sys_cpu_to_be16(buf->len - sizeof(*hdr));
