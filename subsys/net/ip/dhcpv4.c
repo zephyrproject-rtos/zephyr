@@ -388,6 +388,8 @@ static void send_request(struct net_if *iface, bool renewal)
 {
 	struct net_buf *buf;
 
+	iface->dhcpv4.xid++;
+
 	buf = prepare_message(iface, DHCPV4_MSG_TYPE_REQUEST);
 	if (!buf) {
 		goto fail;
