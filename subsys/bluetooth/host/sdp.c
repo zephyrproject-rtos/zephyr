@@ -421,8 +421,6 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_sdp_hdr *hdr = (void *)buf->data;
 	uint16_t len, tid;
 
-	ARG_UNUSED(session);
-
 	BT_DBG("session %p buf %p", session, buf);
 
 	if (buf->len < sizeof(*hdr)) {
@@ -443,6 +441,11 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len != len) {
 		BT_ERR("SDP PDU length mismatch (%u != %u)", buf->len, len);
+		return;
+	}
+
+	if (tid != session->tid) {
+		BT_ERR("Mismatch transaction ID value in SDP PDU");
 		return;
 	}
 }
