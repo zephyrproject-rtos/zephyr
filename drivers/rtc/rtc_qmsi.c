@@ -182,7 +182,7 @@ static int rtc_qmsi_init(struct device *dev)
 	/* Unmask RTC interrupt */
 	irq_enable(IRQ_GET_NUMBER(QM_IRQ_RTC_0_INT));
 
-	/* Route watchdog interrupt to the current core */
+	/* Route RTC interrupt to the current core */
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->rtc_0_int_mask);
 
 	rtc_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
