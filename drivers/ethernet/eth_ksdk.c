@@ -43,7 +43,7 @@
 struct eth_context {
 	struct net_if *iface;
 	enet_handle_t enet_handle;
-	struct nano_sem tx_buf_sem;
+	struct k_sem tx_buf_sem;
 	uint8_t mac_addr[6];
 	/* TODO: FIXME. This Ethernet frame sized buffer is used for
 	 * interfacing with KSDK. How it works is that hardware uses
