@@ -73,6 +73,9 @@ extern "C" {
 	 ~((unsigned long)align - 1))
 #define ROUND_DOWN(x, align) ((unsigned long)(x) & ~((unsigned long)align - 1))
 
+#define ceiling_fraction(numerator, divider) \
+	(((numerator) + ((divider) - 1)) / (divider))
+
 #ifdef INLINED
 #define INLINE inline
 #else
