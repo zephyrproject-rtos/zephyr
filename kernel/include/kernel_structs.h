@@ -82,7 +82,7 @@ struct _thread_base {
 	int prio;
 
 	/* scheduler lock count */
-	atomic_t sched_locked;
+	volatile uint32_t sched_locked;
 
 	/* data returned by APIs */
 	void *swap_data;
@@ -136,7 +136,7 @@ typedef struct k_thread _thread_t;
 
 struct _ready_q {
 
-	/* next thread to run if known, NULL otherwise */
+	/* always contains next thread to run: cannot be NULL */
 	struct k_thread *cache;
 
 	/* bitmap of priorities that contain at least one ready thread */

@@ -146,7 +146,7 @@ static inline int _is_coop(struct k_thread *thread)
 static inline int _is_preempt(struct k_thread *thread)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	return !_is_coop(thread) && !atomic_get(&thread->base.sched_locked);
+	return !_is_coop(thread) && !thread->base.sched_locked;
 #else
 	return 0;
 #endif
@@ -245,7 +245,7 @@ static inline void _sched_lock(void)
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!_is_in_isr(), "");
 
-	atomic_inc(&_current->base.sched_locked);
+	++_current->base.sched_locked;
 
 	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
@@ -258,12 +258,12 @@ static inline void _sched_lock(void)
  * It is incumbent upon the caller to ensure that the reschedule occurs
  * sometime after the scheduler is unlocked.
  */
-static inline void _sched_unlock_no_reschedule(void)
+static ALWAYS_INLINE void _sched_unlock_no_reschedule(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!_is_in_isr(), "");
 
-	atomic_dec(&_current->base.sched_locked);
+	--_current->base.sched_locked;
 #endif
 }
 

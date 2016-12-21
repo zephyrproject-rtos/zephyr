@@ -149,7 +149,7 @@ void k_sched_lock(void)
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!_is_in_isr(), "");
 
-	atomic_inc(&_current->base.sched_locked);
+	++_current->base.sched_locked;
 
 	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
@@ -164,7 +164,7 @@ void k_sched_unlock(void)
 
 	int key = irq_lock();
 
-	atomic_dec(&_current->base.sched_locked);
+	--_current->base.sched_locked;
 
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
