@@ -328,7 +328,7 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 	uint32_t max_xfer_size, max_pkt_cnt, pkt_cnt, avail_space;
 	uint32_t ep_mps = usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;
 	unsigned int key;
-	int i;
+	uint32_t i;
 
 	/* Check if FIFO space available */
 	avail_space = USB_DW->in_ep_reg[ep_idx].dtxfsts &
