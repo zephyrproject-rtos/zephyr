@@ -683,8 +683,7 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 		buf = CONTAINER_OF(head, struct net_buf, sent_list);
 		tcphdr = NET_TCP_BUF(buf);
 
-		seq = sys_get_be32(tcphdr->seq)
-			+ net_buf_frags_len(buf) - 1;
+		seq = sys_get_be32(tcphdr->seq) + net_nbuf_appdatalen(buf) - 1;
 
 		if (seq_greater(ack, seq)) {
 			sys_slist_remove(list, NULL, head);
