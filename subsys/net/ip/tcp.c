@@ -594,10 +594,9 @@ const char * const net_tcp_state_str(enum net_tcp_state state)
 
 int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 {
-	int ret, data_len;
 	struct net_conn *conn = (struct net_conn *)context->conn_handler;
-
-	data_len = net_buf_frags_len(buf);
+	size_t data_len = net_buf_frags_len(buf);
+	int ret;
 
 	/* Set PSH on all packets, our window is so small that there's
 	 * no point in the remote side trying to finesse things and
