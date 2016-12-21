@@ -108,9 +108,6 @@ struct net_tcp {
 	/** TCP state. */
 	enum net_tcp_state state;
 
-	/** Retransmission timer. */
-	struct k_delayed_work retransmit_timer;
-
 	/** ACK message timer */
 	struct k_delayed_work ack_timer;
 
