@@ -237,9 +237,9 @@ static bool compare_data(struct net_buf *buf, struct net_6lo_data *data)
 		if (net_buf_frags_len(buf->frags) !=
 		    (NET_IPV6UDPH_LEN + remaining)) {
 
-			TC_PRINT("mismatch lengths, expected %d received %d\n",
-			       NET_IPV6UDPH_LEN + remaining,
-			net_buf_frags_len(buf->frags));
+			TC_PRINT("mismatch lengths, expected %d received %zu\n",
+				 NET_IPV6UDPH_LEN + remaining,
+				 net_buf_frags_len(buf->frags));
 
 			return false;
 		}
@@ -247,9 +247,9 @@ static bool compare_data(struct net_buf *buf, struct net_6lo_data *data)
 		if (net_buf_frags_len(buf->frags) !=
 		    (NET_IPV6ICMPH_LEN + remaining)) {
 
-			TC_PRINT("mismatch lengths, expected %d received %d\n",
-			       NET_IPV6ICMPH_LEN + remaining,
-			net_buf_frags_len(buf->frags));
+			TC_PRINT("mismatch lengths, expected %d received %zu\n",
+				 NET_IPV6ICMPH_LEN + remaining,
+				 net_buf_frags_len(buf->frags));
 
 			return false;
 		}
@@ -257,9 +257,9 @@ static bool compare_data(struct net_buf *buf, struct net_6lo_data *data)
 		if (net_buf_frags_len(buf->frags) !=
 		    (NET_IPV6H_LEN + remaining)) {
 
-			TC_PRINT("mismatch lengths, expected %d received %d\n",
-			       NET_IPV6H_LEN + remaining,
-			net_buf_frags_len(buf->frags));
+			TC_PRINT("mismatch lengths, expected %d received %zu\n",
+				 NET_IPV6H_LEN + remaining,
+				 net_buf_frags_len(buf->frags));
 
 			return false;
 		}
@@ -818,7 +818,7 @@ static int test_6lo(struct net_6lo_data *data)
 	}
 
 #if DEBUG > 0
-	TC_PRINT("length before compression %d\n",
+	TC_PRINT("length before compression %zu\n",
 		 net_buf_frags_len(buf->frags));
 	net_hexdump_frags("before-compression", buf);
 #endif
@@ -829,7 +829,7 @@ static int test_6lo(struct net_6lo_data *data)
 	}
 
 #if DEBUG > 0
-	TC_PRINT("length after compression %d\n",
+	TC_PRINT("length after compression %zu\n",
 		 net_buf_frags_len(buf->frags));
 	net_hexdump_frags("after-compression", buf);
 #endif
@@ -840,7 +840,7 @@ static int test_6lo(struct net_6lo_data *data)
 	}
 
 #if DEBUG > 0
-	TC_PRINT("length after uncompression %d\n",
+	TC_PRINT("length after uncompression %zu\n",
 	       net_buf_frags_len(buf->frags));
 	net_hexdump_frags("after-uncompression", buf);
 #endif
