@@ -71,6 +71,8 @@ struct bt_sdp_client {
 	const struct bt_sdp_discover_params *param;
 	/* PDU continuation state object */
 	struct bt_sdp_pdu_cstate             cstate;
+	/* buffer for collecting record data */
+	struct net_buf                      *rec_buf;
 };
 
 static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -532,7 +534,7 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			goto iterate;
 		}
 
-		/* TO DO: fillup user buffer with record's data */
+		net_buf_add_mem(session->rec_buf, buf->data, frame_len);
 
 		net_buf_pull(buf, frame_len);
 
@@ -556,6 +558,8 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		net_buf_pull(buf, sizeof(cstate->length));
 
 		BT_DBG("UUID 0x%s resolved", bt_uuid_str(session->param->uuid));
+
+		/* TODO: Call user UUID callback with gathered SDP data */
 iterate:
 		/* Get next UUID and start resolving it */
 		sdp_client_params_iterator(session);
@@ -572,11 +576,24 @@ static int sdp_client_chan_connect(struct bt_sdp_client *session)
 					&session->chan.chan, SDP_PSM);
 }
 
+static struct net_buf *sdp_client_alloc_buf(struct bt_l2cap_chan *chan)
+{
+	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+
+	BT_DBG("session %p chan %p", session, chan);
+
+	session->param = GET_PARAM(sys_slist_peek_head(&session->reqs));
+
+	return net_buf_alloc(session->param->pool, K_FOREVER);
+}
+
 static void sdp_client_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
 
 	BT_DBG("session %p chan %p connected", session, chan);
+
+	session->rec_buf = chan->ops->alloc_buf(chan);
 
 	sdp_client_ssa_search(session);
 }
@@ -586,6 +603,8 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
 
 	BT_DBG("session %p chan %p disconnected", session, chan);
+
+	net_buf_unref(session->rec_buf);
 
 	/*
 	 * Reset session excluding L2CAP channel member. Let's the channel
@@ -598,6 +617,7 @@ static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
 		.connected = sdp_client_connected,
 		.disconnected = sdp_client_disconnected,
 		.recv = sdp_client_receive,
+		.alloc_buf = sdp_client_alloc_buf,
 };
 
 static struct bt_sdp_client *sdp_client_new_session(struct bt_conn *conn)
