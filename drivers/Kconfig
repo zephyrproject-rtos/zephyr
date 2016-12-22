@@ -64,6 +64,8 @@ source "drivers/flash/Kconfig"
 
 source "drivers/sensor/Kconfig"
 
+source "drivers/touchscreen/Kconfig"
+
 source "drivers/counter/Kconfig"
 
 source "drivers/dma/Kconfig"
