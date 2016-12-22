@@ -334,6 +334,11 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return;
 	}
 
+	if (hdr->op_code == BT_SDP_ERROR_RSP) {
+		BT_INFO("Error SDP PDU response");
+		return;
+	}
+
 	len = sys_be16_to_cpu(hdr->param_len);
 	tid = sys_be16_to_cpu(hdr->tid);
 	net_buf_pull(buf, sizeof(*hdr));
