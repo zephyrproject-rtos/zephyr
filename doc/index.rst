@@ -32,13 +32,13 @@ Sections
    getting_started/getting_started.rst
    board/board.rst
    kernel/kernel.rst
+   application/application.rst
+   porting/porting.rst
    drivers/drivers.rst
    subsystems/subsystems.rst
    api/api.rst
-   application/application.rst
+   reference/kconfig/index.rst
    contribute/code.rst
-   porting/porting.rst
-   reference/kbuild/kbuild.rst
    LICENSING.rst
 
 You can find further information on the `Zephyr Project Wiki`_.

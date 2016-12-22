@@ -5,7 +5,7 @@ Zephyr Kernel Primer (version 2)
 
 This document provides a general introduction of the Zephyr kernel's
 key capabilties and services. Additional details can be found by consulting
-the :ref:`api` and :ref:`apps_kernel_conf` documentation, and by examining
+the :ref:`api` and :ref:`application` documentation, and by examining
 the code in the Zephyr source tree.
 
 .. toctree::
