@@ -1,7 +1,10 @@
+Zperf: Network Traffic Generator
+################################
+
 Description
 ===========
 
-zperf is a network traffic generator for Zephyr that may be used to
+Zperf is a network traffic generator for Zephyr that may be used to
 evaluate network bandwidth.
 
 Features

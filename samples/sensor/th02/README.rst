@@ -1,5 +1,5 @@
-Temperature and Humidity Monitor
-################################
+TH02: Temperature and Humidity Monitor
+######################################
 
 Overview
 ========
