@@ -113,6 +113,21 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
 void *net_buf_simple_add(struct net_buf_simple *buf, size_t len);
 
 /**
+ *  @brief Copy bytes from memory to the end of the buffer
+ *
+ *  Copies the given number of bytes to the end of the buffer. Increments the
+ *  data length of the  buffer to account for more data at the end.
+ *
+ *  @param buf Buffer to update.
+ *  @param mem Location of data to be added.
+ *  @param len Length of data to be added
+ *
+ *  @return The original tail of the buffer.
+ */
+void *net_buf_simple_add_mem(struct net_buf_simple *buf, const void *mem,
+			     size_t len);
+
+/**
  *  @brief Add (8-bit) byte at the end of the buffer
  *
  *  Adds a byte at the end of the buffer. Increments the data length of
@@ -644,6 +659,22 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @return The original tail of the buffer.
  */
 #define net_buf_add(buf, len) net_buf_simple_add(&(buf)->b, len)
+
+/**
+ *  @def net_buf_add_mem
+ *  @brief Copy bytes from memory to the end of the buffer
+ *
+ *  Copies the given number of bytes to the end of the buffer. Increments the
+ *  data length of the  buffer to account for more data at the end.
+ *
+ *  @param buf Buffer to update.
+ *  @param mem Location of data to be added.
+ *  @param len Length of data to be added
+ *
+ *  @return The original tail of the buffer.
+ */
+#define net_buf_add_mem(buf, mem, len) net_buf_simple_add_mem(&(buf)->b, \
+							      mem, len)
 
 /**
  *  @def net_buf_add_u8

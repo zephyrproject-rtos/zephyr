@@ -350,6 +350,14 @@ void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 	return tail;
 }
 
+void *net_buf_simple_add_mem(struct net_buf_simple *buf, const void *mem,
+			     size_t len)
+{
+	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
+
+	return memcpy(net_buf_simple_add(buf, len), mem, len);
+}
+
 uint8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, uint8_t val)
 {
 	uint8_t *u8;
