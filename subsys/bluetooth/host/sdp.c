@@ -463,6 +463,46 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 	}
 }
 
+static uint16_t sdp_client_get_total(struct bt_sdp_client *session,
+				     struct net_buf *buf, uint16_t *total)
+{
+	uint16_t pulled;
+	uint8_t seq;
+
+	/*
+	 * Pull value of total octets of all attributes available to be
+	 * collected when response gets completed for given UUID. Such info can
+	 * be get from the very first response frame after initial SSA request
+	 * was sent. For subsequent calls related to the same SSA request input
+	 * buf and in/out function parameters stays neutral.
+	 */
+	if (session->cstate.length == 0) {
+		seq = net_buf_pull_u8(buf);
+		pulled = 1;
+		switch (seq) {
+		case BT_SDP_SEQ8:
+			*total = net_buf_pull_u8(buf);
+			pulled += 1;
+			break;
+		case BT_SDP_SEQ16:
+			*total = net_buf_pull_be16(buf);
+			pulled += 2;
+			break;
+		default:
+			BT_WARN("Sequence type 0x%02x not handled", seq);
+			*total = 0;
+			break;
+		}
+
+		BT_DBG("Total %u octets of all attributes", *total);
+	} else {
+		pulled = 0;
+		*total = 0;
+	}
+
+	return pulled;
+}
+
 static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
@@ -470,6 +510,7 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_sdp_pdu_cstate *cstate;
 	struct bt_conn *conn = session->chan.chan.conn;
 	uint16_t len, tid, frame_len;
+	uint16_t total;
 
 	BT_DBG("session %p buf %p", session, buf);
 
@@ -534,8 +575,15 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			goto iterate;
 		}
 
-		net_buf_add_mem(session->rec_buf, buf->data, frame_len);
+		/* Get total value of all attributes to be collected */
+		frame_len -= sdp_client_get_total(session, buf, &total);
 
+		if (total > net_buf_tailroom(session->rec_buf)) {
+			BT_WARN("Not enough room for getting records data");
+			goto iterate;
+		}
+
+		net_buf_add_mem(session->rec_buf, buf->data, frame_len);
 		net_buf_pull(buf, frame_len);
 
 		/*
