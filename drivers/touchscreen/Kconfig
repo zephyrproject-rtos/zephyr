@@ -13,6 +13,13 @@ menuconfig TOUCHSCREEN
 
 if TOUCHSCREEN
 
+config TOUCHSCREEN_HELPERS
+	bool "Helper functions for using touchscreens"
+	default y
+	help
+	  Functions for setting up touchscreen calibration and converting
+	  samples to display coordinates.
+
 source "drivers/touchscreen/Kconfig.stmpe811"
 
 endif
