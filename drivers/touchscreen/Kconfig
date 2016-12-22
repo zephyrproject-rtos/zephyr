@@ -13,4 +13,6 @@ menuconfig TOUCHSCREEN
 
 if TOUCHSCREEN
 
+source "drivers/touchscreen/Kconfig.stmpe811"
+
 endif
