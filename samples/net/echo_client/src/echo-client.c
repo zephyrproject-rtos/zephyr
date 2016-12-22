@@ -414,7 +414,7 @@ static bool send_ipv4_data(struct net_context *udp)
 	len = net_buf_frags_len(send_buf);
 
 	NET_ASSERT_INFO(expecting_ipv4 == len,
-			"Data to send %d bytes, real len %d",
+			"Data to send %d bytes, real len %zu",
 			expecting_ipv4, len);
 
 	set_dst_addr(AF_INET, send_buf, &dst_addr);
