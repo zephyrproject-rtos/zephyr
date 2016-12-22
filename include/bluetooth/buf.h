@@ -47,23 +47,10 @@ enum bt_buf_type {
 /** Minimum amount of user data size for buffers passed to the stack. */
 #define BT_BUF_USER_DATA_MIN 4
 
-#if defined(CONFIG_BLUETOOTH_COMBINED_RX_BUF)
 /** Data size neeed for HCI RX buffers */
 #define BT_BUF_RX_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
 			sizeof(struct bt_hci_acl_hdr) + \
 			CONFIG_BLUETOOTH_RX_BUF_LEN)
-#else
-/** Data size neeed for HCI event buffers */
-#define BT_BUF_EVT_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
-			 sizeof(struct bt_hci_evt_hdr) + \
-			 CONFIG_BLUETOOTH_MAX_EVT_LEN)
-
-/** Data size needed for incoming ACL buffers */
-#define BT_BUF_ACL_IN_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
-			    sizeof(struct bt_hci_acl_hdr) + \
-			    4 /* L2CAP header size */ + \
-			    CONFIG_BLUETOOTH_L2CAP_IN_MTU)
-#endif
 
 /** Allocate a buffer for an HCI event
  *

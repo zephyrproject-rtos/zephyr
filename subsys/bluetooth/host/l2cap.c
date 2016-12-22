@@ -41,7 +41,7 @@
 #define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
 
 #define L2CAP_LE_MIN_MTU		23
-#define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
+#define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_RX_BUF_COUNT - 1)
 #define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
 
 #define L2CAP_LE_CID_DYN_START	0x0040
@@ -58,7 +58,7 @@
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
-#define BT_L2CAP_MAX_LE_MPS	CONFIG_BLUETOOTH_L2CAP_IN_MTU
+#define BT_L2CAP_MAX_LE_MPS	CONFIG_BLUETOOTH_RX_BUF_LEN
 /* For now use MPS - SDU length to disable segmentation */
 #define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
 

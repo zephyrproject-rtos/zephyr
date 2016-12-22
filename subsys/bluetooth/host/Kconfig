@@ -52,11 +52,6 @@ config BLUETOOTH_RECV_IS_RX_THREAD
 	# thing to make a call to bt_rx_thread_ready().
 	bool
 
-config BLUETOOTH_COMBINED_RX_BUF
-	# Virtual option usually set by the controller to request a
-	# combined pool for incoming buffers.
-	bool
-
 config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
@@ -73,40 +68,10 @@ config BLUETOOTH_MAX_CMD_LEN
 	help
 	  Maximum length of each HCI command.
 
-if !BLUETOOTH_COMBINED_RX_BUF
-config BLUETOOTH_HOST_FLOW_CONTROL
-	# Virtual option usually set by the HCI driver to state that ACL
-	# host flow control is needed.
-	bool
-	depends on BLUETOOTH_CONN
-
-config BLUETOOTH_HCI_EVT_COUNT
-	int "Number of HCI event buffers"
-	default 4
-	default 8 if BLUETOOTH_CONN
-	range 2 64
-	help
-	  Number of buffers available for HCI events. This number should
-	  ideally be at least as large as the available outgoing buffers
-	  to make sure we've got enough buffers to handle bursts of
-	  Number of Completed Packets HCI events.
-
-config BLUETOOTH_MAX_EVT_LEN
-	int "Maximum supported HCI event length"
-	default 68
-	default 255 if BLUETOOTH_BREDR
-	range 68 255
-	help
-	  Maximum size of each HCI event buffer. E.g. one big event
-	  for LE is the Command Complete for Read Local Supported
-	  Commands. It is a 3 byte Command Complete header + 65 byte
-	  return parameters = 68 bytes in total.
-endif # !BLUETOOTH_COMBINED_RX_BUF
-
-if BLUETOOTH_COMBINED_RX_BUF
 config BLUETOOTH_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
-	default 1
+	default 10
+	default 1 if BLUETOOTH_RECV_IS_RX_THREAD
 	range 1 255
 	help
 	  Number of buffers available for incoming ACL packets or HCI events
@@ -119,7 +84,6 @@ config BLUETOOTH_RX_BUF_LEN
 	range 70 2000
 	help
 	  Maximum data size for each HCI RX buffer.
-endif # BLUETOOTH_COMBINED_RX_BUF
 
 config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	string "Device Name of UART Device to an external Bluetooth Host"
@@ -129,26 +93,6 @@ config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	  This option specifies the name of UART device to be used
 	  to connect to an external Bluetooth Host when Zephyr is
 	  acting as a Bluetooth Controller.
-
-if !BLUETOOTH_COMBINED_RX_BUF && (BLUETOOTH_CONN || BLUETOOTH_HCI_RAW)
-config BLUETOOTH_ACL_IN_COUNT
-	int "Number of incoming ACL data buffers"
-	default 6
-	default BLUETOOTH_CONTROLLER_RX_BUFFERS if BLUETOOTH_CONTROLLER
-	range 2 64
-	help
-	  Number of buffers available for incoming ACL data.
-
-config BLUETOOTH_L2CAP_IN_MTU
-	int "Maximum supported L2CAP MTU for incoming data"
-	default 23
-	default 65 if BLUETOOTH_SMP
-	default 200 if BLUETOOTH_BREDR
-	range 23 1300
-	range 65 1300 if BLUETOOTH_SMP
-	help
-	  Maximum size of each incoming L2CAP PDU.
-endif # !BLUETOOTH_COMBINED_RX_BUF && (BLUETOOTH_CONN || BLUETOOTH_HCI_RAW)
 
 if BLUETOOTH_HCI_HOST
 config BLUETOOTH_INTERNAL_STORAGE
@@ -193,11 +137,10 @@ config BLUETOOTH_ATT_MTU
 	default 23
 	default 50 if BLUETOOTH_SMP # BLUETOOTH_L2CAP_IN_MTU is big enough
 				    # for two complete ACL packets
-	range 23 BLUETOOTH_L2CAP_IN_MTU if !BLUETOOTH_COMBINED_RX_BUF
-	range 23 BLUETOOTH_RX_BUF_LEN if BLUETOOTH_COMBINED_RX_BUF
+	range 23 BLUETOOTH_RX_BUF_LEN
 	help
 	  The MTU for the ATT channel. The minimum and default is 23,
-	  whereas the maximum is limited by CONFIG_BLUETOOTH_L2CAP_IN_MTU.
+	  whereas the maximum is limited by CONFIG_BLUETOOTH_RX_BUF_LEN.
 
 config BLUETOOTH_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
@@ -498,11 +441,9 @@ config BLUETOOTH_RFCOMM
 
 config BLUETOOTH_RFCOMM_L2CAP_MTU
 	int "L2CAP MTU for RFCOMM frames"
-	default BLUETOOTH_L2CAP_IN_MTU if !BLUETOOTH_COMBINED_RX_BUF
-	default BLUETOOTH_RX_BUF_LEN if BLUETOOTH_COMBINED_RX_BUF
+	default BLUETOOTH_RX_BUF_LEN
 	depends on BLUETOOTH_RFCOMM
-	range BLUETOOTH_L2CAP_IN_MTU 32767 if !BLUETOOTH_COMBINED_RX_BUF
-	range BLUETOOTH_RX_BUF_LEN 32767 if BLUETOOTH_COMBINED_RX_BUF
+	range BLUETOOTH_RX_BUF_LEN 32767
 	help
 	  Maximum size of L2CAP PDU for RFCOMM frames.
 
