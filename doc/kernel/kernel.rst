@@ -1,4 +1,4 @@
-.. _kernel_v2:
+.. _kernel:
 
 Zephyr Kernel Primer (version 2)
 ################################

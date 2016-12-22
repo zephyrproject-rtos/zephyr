@@ -4,7 +4,7 @@ Kernel APIs
 ###########
 
 This section contains APIs for the kernel's core services,
-as described in the :ref:`kernel_v2`.
+as described in the :ref:`kernel`.
 
 .. important::
     Unless otherwise noted these APIs can be used by threads, but not by ISRs.
