@@ -234,8 +234,8 @@ Related configuration options:
 * :option:`CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC`
 * :option:`CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
 
-APIs
-****
+Related Functions
+*******************
 
 The following kernel event logger APIs are provided by
 :file:`kernel_event_logger.h`:
@@ -250,3 +250,27 @@ The following kernel event logger APIs are provided by
 * :cpp:func:`sys_k_event_logger_get_mask()`
 * :cpp:func:`sys_k_event_logger_set_mask()`
 * :cpp:func:`sys_k_event_logger_set_timer()`
+
+APIs
+****
+
+Event Logger
+============
+
+An event logger is an object that can record the occurrence of significant
+events, which can be subsequently extracted and reviewed.
+
+.. doxygengroup:: event_logger
+   :project: Zephyr
+   :content-only:
+
+Kernel Event Logger
+===================
+
+The kernel event logger records the occurrence of significant kernel events,
+which can be subsequently extracted and reviewed.
+(See :ref:`kernel_event_logger_v2`.)
+
+.. doxygengroup:: kernel_event_logger
+   :project: Zephyr
+   :content-only:

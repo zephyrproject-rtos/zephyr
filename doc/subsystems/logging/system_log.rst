@@ -1,19 +1,7 @@
 .. _system_log:
 
-Logging
-########
-
-.. contents::
-   :depth: 1
-   :local:
-   :backlinks: top
-
-System Log
-************
-
-.. doxygengroup:: system_log
-   :project: Zephyr
-   :content-only:
+System Logging
+##############
 
 The system log API provides a common interface to process messages issued by
 developers. These messages are currently printed on the terminal but the API is
@@ -93,3 +81,12 @@ true:
   configuration is not set.
 - The module configuration is set to 2 or above.
 - The :option:`CONFIG_SYS_LOG_OVERRIDE_LEVEL` is set to 2 or above.
+
+
+APIs
+****
+
+.. doxygengroup:: system_log
+   :project: Zephyr
+   :content-only:
+
