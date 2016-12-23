@@ -16,9 +16,9 @@
 
 /**
  * @file
- * @brief ARCv2 public nanokernel find-first-set interface
+ * @brief ARCv2 public kernel find-first-set interface
  *
- * ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
+ * ARC-specific kernel ffs interface. Included by arc/arch.h.
  */
 
 #ifndef _ARCH_ARC_V2_FFS_H_

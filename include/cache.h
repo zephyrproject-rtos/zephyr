@@ -17,7 +17,7 @@
 #ifndef _cache__h_
 #define _cache__h_
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -30,7 +30,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <errno.h>
 #include <misc/ring_buffer.h>
 

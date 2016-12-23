@@ -33,6 +33,7 @@
 #include <misc/dlist.h>
 #include <misc/slist.h>
 #include <misc/util.h>
+#include <kernel_version.h>
 
 #ifdef __cplusplus
 extern "C" {

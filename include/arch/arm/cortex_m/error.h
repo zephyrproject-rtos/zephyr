@@ -18,7 +18,7 @@
  * @file
  * @brief Cortex-M public error handling
  *
- * ARM-specific nanokernel error handling interface. Included by ARM/arch.h.
+ * ARM-specific kernel error handling interface. Included by arm/arch.h.
  */
 
 #ifndef _ARCH_ARM_CORTEXM_ERROR_H_

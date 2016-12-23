@@ -16,11 +16,11 @@
 
 /**
  * @file
- * @brief ARC specific nanokernel interface header
+ * @brief ARC specific kernel interface header
  *
- * This header contains the ARC specific nanokernel interface.  It is
- * included by the nanokernel interface architecture-abstraction header
- * (nanokernel/cpu.h)
+ * This header contains the ARC specific kernel interface.  It is
+ * included by the kernel interface architecture-abstraction header
+ * include/arch/cpu.h)
  */
 
 #ifndef _ARC_ARCH__H_

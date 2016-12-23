@@ -18,7 +18,7 @@
  * @file
  * @brief ARCv2 public interrupt handling
  *
- * ARCv2 nanokernel interrupt handling interface. Included by ARC/v2/arch.h.
+ * ARCv2 kernel interrupt handling interface. Included by arc/arch.h.
  */
 
 #ifndef _ARCH_ARC_V2_IRQ__H_

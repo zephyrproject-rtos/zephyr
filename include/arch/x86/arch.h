@@ -16,9 +16,9 @@
 
 /**
  * @file
- * @brief IA-32 specific nanokernel interface header
- * This header contains the IA-32 specific nanokernel interface.  It is included
- * by the generic nanokernel interface header (nanokernel.h)
+ * @brief IA-32 specific kernel interface header
+ * This header contains the IA-32 specific kernel interface.  It is included
+ * by the generic kernel interface header (include/arch/cpu.h)
  */
 
 #ifndef _ARCH_IFACE_H

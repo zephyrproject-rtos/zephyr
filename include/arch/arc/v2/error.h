@@ -18,7 +18,7 @@
  * @file
  * @brief ARCv2 public error handling
  *
- * ARC-specific nanokernel error handling interface. Included by ARC/arch.h.
+ * ARC-specific kernel error handling interface. Included by arc/arch.h.
  */
 
 #ifndef _ARCH_ARC_V2_ERROR_H_

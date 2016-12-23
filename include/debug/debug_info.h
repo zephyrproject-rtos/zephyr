@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #ifndef _ASMLANGUAGE
 

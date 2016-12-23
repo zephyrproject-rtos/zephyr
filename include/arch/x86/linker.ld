@@ -43,7 +43,7 @@
  * the Zephyr Kernel image. If a symbol is used but not defined the linker will
  * emit an undefined symbol error.
  *
- * Please do not change the order of the section as the nanokernel expects this
+ * Please do not change the order of the section as the kernel expects this
  * order when programming the MMU.
  */
 

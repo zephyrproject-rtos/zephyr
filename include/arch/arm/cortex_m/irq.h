@@ -18,7 +18,7 @@
  * @file
  * @brief Cortex-M public interrupt handling
  *
- * ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
+ * ARM-specific kernel interrupt handling interface. Included by arm/arch.h.
  */
 
 #ifndef _ARCH_ARM_CORTEXM_IRQ_H_

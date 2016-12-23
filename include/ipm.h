@@ -30,7 +30,7 @@
  * @{
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 
 #ifdef __cplusplus

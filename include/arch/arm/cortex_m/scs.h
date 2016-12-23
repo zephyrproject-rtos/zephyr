@@ -67,7 +67,7 @@ extern "C" {
 
 #else /* _ASMLANGUAGE */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <stdint.h>
 

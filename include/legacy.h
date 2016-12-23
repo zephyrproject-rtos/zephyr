@@ -28,6 +28,7 @@
 #include <limits.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
+#include <drivers/rand32.h>
 
 /* nanokernel/microkernel execution context types */
 #define NANO_CTX_ISR (K_ISR)

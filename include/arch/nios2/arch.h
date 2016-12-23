@@ -16,9 +16,9 @@
 
 /**
  * @file
- * @brief Nios II specific nanokernel interface header
- * This header contains the Nios II specific nanokernel interface.  It is
- * included by the generic nanokernel interface header (nanokernel.h)
+ * @brief Nios II specific kernel interface header
+ * This header contains the Nios II specific kernel interface.  It is
+ * included by the generic kernel interface header (include/arch/cpu.h)
  */
 
 #ifndef _ARCH_IFACE_H

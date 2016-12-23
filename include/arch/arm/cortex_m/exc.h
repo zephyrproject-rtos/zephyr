@@ -18,7 +18,7 @@
  * @file
  * @brief Cortex-M public exception handling
  *
- * ARM-specific nanokernel exception handling interface. Included by ARM/arch.h.
+ * ARM-specific kernel exception handling interface. Included by arm/arch.h.
  */
 
 #ifndef _ARCH_ARM_CORTEXM_EXC_H_

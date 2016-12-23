@@ -16,9 +16,9 @@
 
 /**
  * @file
- * @brief ARCv2 public nanokernel miscellaneous
+ * @brief ARCv2 public kernel miscellaneous
  *
- * ARC-specific nanokernel miscellaneous interface. Included by arc/arch.h.
+ * ARC-specific kernel miscellaneous interface. Included by arc/arch.h.
  */
 
 #ifndef _ARCH_ARC_V2_MISC_H_
