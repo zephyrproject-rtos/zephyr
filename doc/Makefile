@@ -5,7 +5,7 @@
 SPHINXOPTS    ?= -q
 SPHINXBUILD   = sphinx-build
 PAPER         =
-BUILDDIR      = _build
+BUILDDIR     ?= _build
 DOC_TAG      ?= development
 
 # User-friendly check for sphinx-build
