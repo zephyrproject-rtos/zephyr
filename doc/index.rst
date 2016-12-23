@@ -14,7 +14,7 @@ Zephyr Project Documentation
 .. only:: (development or daily)
 
    Welcome to the Zephyr Project's documentation. This is the documentation of the
-   master tree under development.
+   master tree under development (version |version|).
 
    Documentation for released versions of Zephyr can be found at
    ``https://www.zephyrproject.org/doc/<version>``. The following documentation
