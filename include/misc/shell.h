@@ -46,8 +46,8 @@ struct shell_module {
 
 
 /**
- * @brief Kernel Shell Api
- * @defgroup _shell_api_functions Shell Api Functions
+ * @brief Kernel Shell API
+ * @defgroup _shell_api_functions Shell API Functions
  * @{
  */
 
