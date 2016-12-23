@@ -1,0 +1,18 @@
+DNS Client API for Zephyr
+=========================
+
+
+Known limitations:
+
+- Synchronous queries
+- Only IPv4 and IPv6 records can be handled
+- Minimal protocol validation. If you do not trust your DNS server,
+  it is time to change it :)
+
+
+Usage:
+
+Before calling the resolver, it must be initialized via the 'dns_init'
+routine.
+
+See samples/net/dns_client/src/main.c.

@@ -13,5 +13,3 @@ endif
 else
 ZEPHYRINCLUDE += -I$(srctree)/lib/libc/minimal/include
 endif
-
-include $(srctree)/lib/iot/Makefile

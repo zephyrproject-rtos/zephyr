@@ -14,9 +14,14 @@
 # limitations under the License.
 #
 
+menu "Network Protocols"
 
-menu "Cryptography"
-source "lib/crypto/tinycrypt/Kconfig"
+source "subsys/net/lib/zoap/Kconfig"
+
+source "subsys/net/lib/dns/Kconfig"
+
+source "subsys/net/lib/mqtt/Kconfig"
+
+source "subsys/net/lib/http/Kconfig"
+
 endmenu
-
-source "lib/libc/Kconfig"

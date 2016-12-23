@@ -25,7 +25,7 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 
-#include <zoap.h>
+#include <net/zoap.h>
 
 #define MY_COAP_PORT 5683
 

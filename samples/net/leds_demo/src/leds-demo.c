@@ -41,8 +41,8 @@
 #include <gatt/ipss.h>
 #endif
 
-#include <zoap.h>
-#include <link-format.h>
+#include <net/zoap.h>
+#include <net/zoap_link_format.h>
 
 #define MY_COAP_PORT 5683
 

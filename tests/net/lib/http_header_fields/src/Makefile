@@ -14,9 +14,6 @@
 # limitations under the License.
 #
 
+ccflags-y += -I$(ZEPHYR_BASE)/tests/include
 
-menu "Cryptography"
-source "lib/crypto/tinycrypt/Kconfig"
-endmenu
-
-source "lib/libc/Kconfig"
+obj-y += http_header_fields.o

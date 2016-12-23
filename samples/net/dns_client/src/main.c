@@ -15,7 +15,7 @@
  */
 
 #include <zephyr.h>
-#include <iot/dns_client.h>
+#include <net/dns_client.h>
 #include <net/net_core.h>
 #include <net/net_if.h>
 
