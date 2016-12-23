@@ -45,6 +45,14 @@ Install the current version of ``Sphinx``, type:
 
    $ sudo -E python setup.py install
 
+To install ReadTheDocs.org theme, use pip to install the python package:
+
+.. code-block:: bash
+
+   $ pip install sphinx_rtd_theme
+
+If the above theme is installed, it will be used instead of the default theme.
+
 .. note::
 
    Make sure that ``Doxygen`` is installed in your system.
