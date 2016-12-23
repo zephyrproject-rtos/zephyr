@@ -34,7 +34,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/kernel_event_logger.h>
+#include <logging/kernel_event_logger.h>
 #include <arch/cpu.h>
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT

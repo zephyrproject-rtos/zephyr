@@ -19,7 +19,7 @@
 #include <zephyr.h>
 
 #include "phil.h"
-#include <misc/kernel_event_logger.h>
+#include <logging/kernel_event_logger.h>
 #include <string.h>
 
 #ifdef NANO_APIS_ONLY

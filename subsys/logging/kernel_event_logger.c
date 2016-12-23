@@ -20,7 +20,7 @@
  */
 
 
-#include <misc/kernel_event_logger.h>
+#include <logging/kernel_event_logger.h>
 #include <misc/util.h>
 #include <init.h>
 #include <kernel_structs.h>

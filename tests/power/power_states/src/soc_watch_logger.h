@@ -17,7 +17,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <string.h>
-#include <misc/kernel_event_logger.h>
+#include <logging/kernel_event_logger.h>
 #include "soc_watch.h"
 
 #if defined(CONFIG_STDOUT_CONSOLE)

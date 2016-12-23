@@ -27,7 +27,7 @@
 #include <irq.h>
 #include <misc/printk.h>
 #include <sw_isr_table.h>
-#include <misc/kernel_event_logger.h>
+#include <logging/kernel_event_logger.h>
 
 void _irq_spurious(void *unused)
 {

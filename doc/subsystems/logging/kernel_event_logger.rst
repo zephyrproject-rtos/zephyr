@@ -179,7 +179,7 @@ Adding a Custom Event Type
 
 A custom event type must use an integer type ID that does not duplicate
 an existing type ID. The type IDs for the pre-defined events can be found
-in :file:`include/misc/kernel_event_logger.h`. If dynamic recording of
+in :file:`include/logging/kernel_event_logger.h`. If dynamic recording of
 events is enabled, the event type ID must not exceed 32.
 
 Custom events can be written to the kernel event logger using the following

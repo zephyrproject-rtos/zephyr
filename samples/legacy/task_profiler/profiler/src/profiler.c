@@ -17,7 +17,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/kernel_event_logger.h>
+#include <logging/kernel_event_logger.h>
 #include <uart.h>
 
 #define PROF_LOG_HEADER "*** [PROF] "

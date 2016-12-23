@@ -19,7 +19,7 @@
  * @brief Event logger support.
  */
 
-#include <misc/event_logger.h>
+#include <logging/event_logger.h>
 #include <misc/ring_buffer.h>
 
 void sys_event_logger_init(struct event_logger *logger,

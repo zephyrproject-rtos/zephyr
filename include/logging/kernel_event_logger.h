@@ -19,7 +19,7 @@
  * @brief Kernel event logger support.
  */
 
-#include <misc/event_logger.h>
+#include <logging/event_logger.h>
 
 #ifndef __KERNEL_EVENT_LOGGER_H__
 #define __KERNEL_EVENT_LOGGER_H__
