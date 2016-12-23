@@ -162,7 +162,11 @@ l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 		return ch;
 	}
 
-	for (cid = L2CAP_BR_CID_DYN_START; cid <= L2CAP_BR_CID_DYN_END; cid++) {
+	/*
+	 * L2CAP_BR_CID_DYN_END is 0xffff so we don't check against it since
+	 * cid is uint16_t, just check against uint16_t overflow
+	 */
+	for (cid = L2CAP_BR_CID_DYN_START; cid; cid++) {
 		if (!bt_l2cap_br_lookup_rx_cid(conn, cid)) {
 			ch->rx.cid = cid;
 			return ch;
