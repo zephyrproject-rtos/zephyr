@@ -79,6 +79,8 @@ static inline int vsnprintk(char *str, size_t size, const char *fmt,
 	ARG_UNUSED(str);
 	ARG_UNUSED(size);
 	ARG_UNUSED(fmt);
+	ARG_UNUSED(ap);
+
 	return 0;
 }
 #endif
