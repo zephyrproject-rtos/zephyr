@@ -503,12 +503,93 @@ static uint16_t sdp_client_get_total(struct bt_sdp_client *session,
 	return pulled;
 }
 
+static uint16_t get_record_len(struct net_buf *buf)
+{
+	uint16_t len;
+	uint8_t seq;
+
+	seq = net_buf_pull_u8(buf);
+
+	switch (seq) {
+	case BT_SDP_SEQ8:
+		len = net_buf_pull_u8(buf);
+		break;
+	case BT_SDP_SEQ16:
+		len = net_buf_pull_be16(buf);
+		break;
+	default:
+		BT_WARN("Sequence type 0x%02x not handled", seq);
+		len = 0;
+		break;
+	}
+
+	BT_DBG("Record len %u", len);
+
+	return len;
+}
+
+enum uuid_state {
+	UUID_NOT_RESOLVED,
+	UUID_RESOLVED,
+};
+
+static void sdp_client_notify_result(struct bt_sdp_client *session,
+				     enum uuid_state state)
+{
+	struct bt_conn *conn = session->chan.chan.conn;
+	struct bt_sdp_client_result result;
+	uint16_t rec_len;
+	uint8_t user_ret;
+
+	if (state == UUID_NOT_RESOLVED) {
+		result.resp_buf = NULL;
+		result.next_record_hint = false;
+		session->param->func(conn, &result);
+		return;
+	}
+
+	while (session->rec_buf->len) {
+		struct net_buf_simple_state buf_state;
+
+		rec_len = get_record_len(session->rec_buf);
+		/* tell the user about multi record resolution */
+		if (session->rec_buf->len > rec_len) {
+			result.next_record_hint = true;
+		} else {
+			result.next_record_hint = false;
+		}
+
+		/* save the original session buffer */
+		net_buf_simple_save(&session->rec_buf->b, &buf_state);
+		/* initialize internal result buffer instead of memcpy */
+		result.resp_buf = session->rec_buf;
+		/*
+		 * Set user internal result buffer length as same as record
+		 * length to fake user. User will see the individual record
+		 * length as rec_len insted of whole session rec_buf length.
+		 */
+		result.resp_buf->len = rec_len;
+
+		user_ret = session->param->func(conn, &result);
+
+		/* restore original session buffer */
+		net_buf_simple_restore(&session->rec_buf->b, &buf_state);
+		/*
+		 * sync session buffer data length with next record chunk not
+		 * send to user so far
+		 */
+		net_buf_pull(session->rec_buf, rec_len);
+		if (user_ret == BT_SDP_DISCOVER_UUID_STOP) {
+			break;
+		}
+	}
+}
+
 static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
 	struct bt_sdp_hdr *hdr = (void *)buf->data;
 	struct bt_sdp_pdu_cstate *cstate;
-	struct bt_conn *conn = session->chan.chan.conn;
 	uint16_t len, tid, frame_len;
 	uint16_t total;
 
@@ -570,7 +651,7 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			BT_DBG("record for UUID 0x%s not found",
 				bt_uuid_str(session->param->uuid));
 			/* Call user UUID handler */
-			session->param->func(conn, NULL);
+			sdp_client_notify_result(session, UUID_NOT_RESOLVED);
 			net_buf_pull(buf, frame_len + sizeof(cstate->length));
 			goto iterate;
 		}
@@ -606,8 +687,7 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		net_buf_pull(buf, sizeof(cstate->length));
 
 		BT_DBG("UUID 0x%s resolved", bt_uuid_str(session->param->uuid));
-
-		/* TODO: Call user UUID callback with gathered SDP data */
+		sdp_client_notify_result(session, UUID_RESOLVED);
 iterate:
 		/* Get next UUID and start resolving it */
 		sdp_client_params_iterator(session);
