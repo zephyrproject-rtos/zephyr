@@ -113,6 +113,24 @@ struct bt_avdtp_ind_cb {
 	 */
 };
 
+struct bt_avdtp_cap {
+	uint8_t cat;
+	uint8_t len;
+	uint8_t data[0];
+};
+
+struct bt_avdtp_sep {
+	uint8_t seid;
+	uint8_t len;
+	struct bt_avdtp_cap caps[0];
+};
+
+struct bt_avdtp_discover_params {
+	struct bt_avdtp_req *req;
+	uint8_t status;
+	struct bt_avdtp_sep *caps;
+};
+
 /** @brief Global AVDTP session structure. */
 struct bt_avdtp {
 	struct bt_l2cap_br_chan br_chan;
@@ -140,3 +158,7 @@ int bt_avdtp_disconnect(struct bt_avdtp *session);
 /* AVDTP SEP register function */
 int bt_avdtp_register_sep(uint8_t media_type, uint8_t role,
 				struct bt_avdtp_seid_lsep *sep);
+
+/* AVDTP Discover Request */
+int bt_avdtp_discover(struct bt_avdtp *session,
+		      struct bt_avdtp_discover_params *param);

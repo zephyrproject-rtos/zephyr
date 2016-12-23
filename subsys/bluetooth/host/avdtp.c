@@ -213,3 +213,14 @@ int bt_avdtp_init(void)
 
 	return err;
 }
+
+/* AVDTP Discover Request */
+int bt_avdtp_discover(struct bt_avdtp *session,
+		      struct bt_avdtp_discover_params *param)
+{
+	BT_DBG("");
+	if (!param || !session) {
+		BT_DBG("Error: Callback/Session not valid");
+	}
+	return 0;
+}
