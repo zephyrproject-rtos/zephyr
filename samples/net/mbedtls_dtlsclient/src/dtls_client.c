@@ -21,7 +21,6 @@
 
 #include <zephyr.h>
 #include <stdio.h>
-
 #include <errno.h>
 #include <misc/printk.h>
 
@@ -66,6 +65,10 @@ static unsigned char heap[20480];
 
 const char *pers = "mini_client";
 
+#if defined(CONFIG_NET_IPV6)
+static struct in6_addr mcast_addr = MCAST_IP_ADDR;
+#endif
+
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
 #define ECJPAKE_PW_SIZE 6
 const unsigned char ecjpake_pw[ECJPAKE_PW_SIZE] = "passwd";
@@ -101,6 +104,7 @@ static void my_debug(void *ctx, int level,
 			basename = p + 1;
 		}
 	}
+
 	mbedtls_printf("%s:%04d: |%d| %s", basename, line, level, str);
 }
 
@@ -154,6 +158,7 @@ static int entropy_source(void *data, unsigned char *output, size_t len,
 		seed ^= seed << 5;
 		*ptr++ = (char)seed;
 	}
+
 	*olen = len;
 	return 0;
 }
@@ -193,13 +198,14 @@ void dtls_client(void)
 		    (" failed\n  ! mbedtls_ctr_drbg_seed returned 0x%x\n", ret);
 		goto exit;
 	}
+
 	mbedtls_printf(" ok\n");
 
 	mbedtls_printf("  . Setting up the DTLS structure...");
 	ret = mbedtls_ssl_config_defaults(&conf,
-					MBEDTLS_SSL_IS_CLIENT,
-					MBEDTLS_SSL_TRANSPORT_DATAGRAM,
-					MBEDTLS_SSL_PRESET_DEFAULT);
+					  MBEDTLS_SSL_IS_CLIENT,
+					  MBEDTLS_SSL_TRANSPORT_DATAGRAM,
+					  MBEDTLS_SSL_PRESET_DEFAULT);
 	if (ret != 0) {
 		ret = ssl_config_defaults_failed;
 		mbedtls_printf(" failed! returned 0x%x\n\n", ret);
@@ -252,6 +258,7 @@ void dtls_client(void)
 		goto exit;
 	}
 #endif
+
 	mbedtls_printf(" ok\n");
 
 	mbedtls_ssl_set_timer_cb(&ssl, &timer, dtls_timing_set_delay,
@@ -267,6 +274,7 @@ void dtls_client(void)
 		    (" failed\n  ! mbedtls_ssl_handshake returned 0x%x\n", ret);
 		goto exit;
 	}
+
 	mbedtls_printf(" ok\n");
 
 	/*
@@ -280,6 +288,7 @@ void dtls_client(void)
 		    (" failed\n  ! mbedtls_ssl_write returned 0x%x\n\n", ret);
 		goto exit;
 	}
+
 	mbedtls_printf(" ok\n");
 
 	mbedtls_printf("  . Closing the connection...");
@@ -298,6 +307,22 @@ uint8_t stack[STACK_SIZE];
 
 static inline int init_app(void)
 {
+#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
+	if (net_addr_pton(AF_INET6,
+			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+			  (struct sockaddr *)&client_addr) < 0) {
+		mbedtls_printf("Invalid IPv6 address %s",
+			       CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+	}
+#endif
+	if (!net_if_ipv6_addr_add(net_if_get_default(), &client_addr,
+				  NET_ADDR_MANUAL, 0)) {
+		return -EIO;
+	}
+
+	net_if_ipv6_maddr_add(net_if_get_default(), &mcast_addr);
+#else
 #if defined(CONFIG_NET_SAMPLES_MY_IPV4_ADDR)
 	if (net_addr_pton(AF_INET, CONFIG_NET_SAMPLES_MY_IPV4_ADDR,
 			  (struct sockaddr *)&client_addr) < 0) {
@@ -310,6 +335,8 @@ static inline int init_app(void)
 				  NET_ADDR_MANUAL, 0)) {
 		return -EIO;
 	}
+#endif
+
 	return 0;
 }
 
@@ -321,6 +348,6 @@ void main(void)
 	}
 
 	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t) dtls_client,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 
 }
