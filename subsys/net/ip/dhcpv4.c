@@ -534,17 +534,25 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 		}
 
 		switch (type) {
-		case DHCPV4_OPTIONS_SUBNET_MASK:
+		case DHCPV4_OPTIONS_SUBNET_MASK: {
+			struct in_addr netmask;
+
 			if (length != 4) {
 				NET_ERR("options_subnet_mask, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read(frag, pos, &pos, length,
-					     iface->ipv4.netmask.s4_addr);
+					     netmask.s4_addr);
+			if (!frag && pos) {
+				NET_ERR("options_subnet_mask, short packet");
+				return NET_DROP;
+			}
+			net_if_ipv4_set_netmask(iface, &netmask);
 			NET_DBG("options_subnet_mask %s",
-				net_sprint_ipv4_addr(&iface->ipv4.netmask));
+				net_sprint_ipv4_addr(&netmask));
 			break;
+		}
 		case DHCPV4_OPTIONS_ROUTER: {
 			struct in_addr router;
 
