@@ -22,7 +22,7 @@
 
 #include <zephyr.h>
 #include <stdio.h>
-#include <misc/shell.h>
+#include <shell/shell.h>
 
 #include <net/net_stats.h>
 #include <net/net_if.h>

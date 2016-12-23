@@ -75,7 +75,7 @@ void prof_send_platform_info(void)
 	irq_unlock(key);
 }
 
-#if defined(CONFIG_CONSOLE_HANDLER_SHELL) && defined(CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC)
+#if defined(CONFIG_CONSOLE_SHELL) && defined(CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC)
 /* Profiler shell is only enabled if kernel event logger dynamic
  * enable/disable and console handler shell are enabled
  * Warning: if kernel event logger dynamic is enabled but no shell is available,
@@ -91,7 +91,7 @@ void prof_send_platform_info(void)
 #include "profiler.h"
 #include <stdlib.h>
 #include <string.h>
-#include <misc/shell.h>
+#include <shell/shell.h>
 
 /* kernel_event_logger flags. Bit N = enable event ID N, except for task monitor
  * by default all enabled events at build time are logged when profiler enabled

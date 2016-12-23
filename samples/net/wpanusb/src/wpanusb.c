@@ -27,7 +27,7 @@
 #include <uart.h>
 
 #include <misc/util.h>
-#include <misc/shell.h>
+#include <shell/shell.h>
 
 #include <net/buf.h>
 

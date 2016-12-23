@@ -28,7 +28,7 @@
 #include <misc/printk.h>
 #include <misc/util.h>
 
-#include <misc/shell.h>
+#include <shell/shell.h>
 
 #define ARGC_MAX 10
 #define COMMAND_MAX_LEN 50
@@ -46,7 +46,7 @@ static const char *prompt;
 static char default_module_prompt[PROMPT_MAX_LEN];
 static int default_module = -1;
 
-#define STACKSIZE CONFIG_CONSOLE_HANDLER_SHELL_STACKSIZE
+#define STACKSIZE CONFIG_CONSOLE_SHELL_STACKSIZE
 static char __stack stack[STACKSIZE];
 
 #define MAX_CMD_QUEUED 3

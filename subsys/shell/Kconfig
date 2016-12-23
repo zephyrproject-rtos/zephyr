@@ -1,5 +1,7 @@
-# Kconfig - Subsystem configuration options
+# Kconfig - Shell configuration options
+
 #
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +17,26 @@
 # limitations under the License.
 #
 
-source "subsys/fs/Kconfig"
 
-source "subsys/usb/Kconfig"
+config CONSOLE_SHELL
+	bool
+	prompt "Enable console input handler [ Experimental ]"
+	default n
+	select CONSOLE_HANDLER
+	help
+	  Shell implementation based on CONSOLE_HANDLER.
 
-source "subsys/bluetooth/Kconfig"
 
-source "subsys/net/Kconfig"
+if CONSOLE_SHELL
+config CONSOLE_SHELL_STACKSIZE
+	int
+	prompt "Console handler shell stack size"
+	default 2000
+	depends on CONSOLE_SHELL
+	help
+	  Stack size for the console handler shell.
 
-source "subsys/logging/Kconfig"
 
-source "subsys/debug/Kconfig"
+source "subsys/shell/modules/Kconfig"
 
-source "subsys/shell/Kconfig"
+endif

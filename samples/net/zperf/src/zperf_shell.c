@@ -22,7 +22,7 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
-#include <misc/shell.h>
+#include <shell/shell.h>
 
 #include <net/net_ip.h>
 #include <net/net_core.h>

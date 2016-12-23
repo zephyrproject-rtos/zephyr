@@ -21,7 +21,7 @@
 
 extern void prof_flush(void);
 
-#if defined(CONFIG_CONSOLE_HANDLER_SHELL) && defined(CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC)
+#if defined(CONFIG_CONSOLE_SHELL) && defined(CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC)
 extern int shell_cmd_prof(int argc, char *argv[]);
 #define PROF_CMD { "prof", shell_cmd_prof, "<start|stop|cfg> [cfg1] [cfg2]" }
 #else

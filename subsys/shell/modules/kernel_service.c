@@ -15,7 +15,7 @@
  */
 
 #include <misc/printk.h>
-#include <misc/shell.h>
+#include <shell/shell.h>
 #include <init.h>
 
 #define SHELL_KERNEL "kernel"

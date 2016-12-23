@@ -1,4 +1,5 @@
-# Kconfig - Subsystem configuration options
+# Kconfig - Shell configuration options
+
 #
 # Copyright (c) 2016 Intel Corporation
 #
@@ -15,16 +16,10 @@
 # limitations under the License.
 #
 
-source "subsys/fs/Kconfig"
 
-source "subsys/usb/Kconfig"
-
-source "subsys/bluetooth/Kconfig"
-
-source "subsys/net/Kconfig"
-
-source "subsys/logging/Kconfig"
-
-source "subsys/debug/Kconfig"
-
-source "subsys/shell/Kconfig"
+config KERNEL_SHELL
+	bool "Enable kernel shell"
+	default n
+	help
+	  This shell provides access to basic kernel data like version, uptime
+	  and other useful information.

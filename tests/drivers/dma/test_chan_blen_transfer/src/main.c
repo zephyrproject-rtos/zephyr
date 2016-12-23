@@ -29,7 +29,7 @@ extern void test_dma_m2m_chan1_burst8(void);
 extern void test_dma_m2m_chan0_burst16(void);
 extern void test_dma_m2m_chan1_burst16(void);
 
-#ifdef CONFIG_CONSOLE_HANDLER_SHELL
+#ifdef CONFIG_CONSOLE_SHELL
 TC_CMD_DEFINE(test_dma_m2m_chan0_burst8)
 TC_CMD_DEFINE(test_dma_m2m_chan1_burst8)
 TC_CMD_DEFINE(test_dma_m2m_chan0_burst16)
@@ -38,7 +38,7 @@ TC_CMD_DEFINE(test_dma_m2m_chan1_burst16)
 
 void test_main(void)
 {
-#ifdef CONFIG_CONSOLE_HANDLER_SHELL
+#ifdef CONFIG_CONSOLE_SHELL
 	/* initialize shell commands */
 	static const struct shell_cmd commands[] = {
 		TC_CMD_ITEM(test_dma_m2m_chan0_burst8),

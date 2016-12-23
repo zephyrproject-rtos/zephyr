@@ -31,9 +31,7 @@ if NET_LOG
 config NET_SHELL
 	bool "Enable network shell utilities"
 	default n
-	select ENABLE_SHELL
-	select CONSOLE_HANDLER
-	select CONSOLE_HANDLER_SHELL
+	select CONSOLE_SHELL
 	help
 	Activate shell module that provides network commands like
 	ping to the console.

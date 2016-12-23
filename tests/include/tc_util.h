@@ -22,7 +22,7 @@
 #include <zephyr.h>
 
 #include <string.h>
-#include <misc/shell.h>
+#include <shell/shell.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>

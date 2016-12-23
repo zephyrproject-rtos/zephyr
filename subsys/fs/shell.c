@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include <misc/printk.h>
-#include <misc/shell.h>
+#include <shell/shell.h>
 #include <init.h>
 #include <fs.h>
 

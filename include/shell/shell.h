@@ -64,7 +64,7 @@ struct shell_module {
  * @param shell_commands Array of commands to register.
  * Shell array entries must be packed to calculate array size correctly.
  */
-#ifdef CONFIG_ENABLE_SHELL
+#ifdef CONFIG_CONSOLE_SHELL
 #define SHELL_REGISTER(shell_name, shell_commands) \
 	\
 	static struct shell_module (__shell_shell_name) __used \
@@ -115,7 +115,7 @@ void shell_register_default_module(const char *name);
 */
 
 
-#ifdef CONFIG_ENABLE_SHELL
+#ifdef CONFIG_CONSOLE_SHELL
 int shell_run(struct device *dev);
 #else
 static inline int shell_run(struct device *dev)

@@ -39,7 +39,7 @@
 #include <bluetooth/storage.h>
 #include <bluetooth/sdp.h>
 
-#include <misc/shell.h>
+#include <shell/shell.h>
 
 #include <gatt/gap.h>
 #include <gatt/hrs.h>

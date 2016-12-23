@@ -230,7 +230,6 @@ For that purpose, following flags must be enabled in project configuration file
 <-- snippet
 CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC=y
 CONFIG_CONSOLE_HANDLER=y
-CONFIG_CONSOLE_HANDLER_SHELL=y
 -->
 
 command implementation.
