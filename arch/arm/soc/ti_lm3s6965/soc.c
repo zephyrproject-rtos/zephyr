@@ -22,7 +22,7 @@
  * for the ti_lm3s6965 platform.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <soc.h>

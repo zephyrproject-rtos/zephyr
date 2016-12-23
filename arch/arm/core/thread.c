@@ -21,7 +21,7 @@
  * Core thread related primitives for the ARM Cortex-M processor architecture.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <kernel_structs.h>
 #include <wait_q.h>

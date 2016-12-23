@@ -22,7 +22,7 @@
  * the current interrupt stack frame.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <kernel_structs.h>
 
 NANO_ISF *sys_debug_current_isf_get(void)

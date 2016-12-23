@@ -22,7 +22,7 @@
 #include <device.h>
 #include <init.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 
 #include "soc.h"
 #include <fsl_common.h>

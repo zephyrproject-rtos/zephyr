@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <kernel_structs.h>
 
 /**

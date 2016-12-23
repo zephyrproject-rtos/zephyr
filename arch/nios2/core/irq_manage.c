@@ -21,7 +21,7 @@
  */
 
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <kernel_structs.h>
 #include <arch/cpu.h>
 #include <irq.h>

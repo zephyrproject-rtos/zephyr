@@ -24,7 +24,7 @@
  * definitions and more complex routines, if needed.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/util.h>
 

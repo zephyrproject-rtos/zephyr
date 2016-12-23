@@ -25,7 +25,7 @@
  * Handlers for the secondary serial port have not been added.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <init.h>
 #include <device.h>
 #include <misc/printk.h>

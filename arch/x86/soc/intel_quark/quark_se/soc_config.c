@@ -20,7 +20,7 @@
 #include <init.h>
 
 #include "board.h"
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 
 #if CONFIG_IPM_QUARK_SE

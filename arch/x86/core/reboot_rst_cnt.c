@@ -20,7 +20,7 @@
  * @details Implements the required 'arch' sub-APIs.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <misc/reboot.h>
 
 static inline void cold_reboot(void)

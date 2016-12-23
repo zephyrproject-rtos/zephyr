@@ -21,7 +21,7 @@
  * Core thread related primitives for the ARCv2 processor architecture.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <kernel_structs.h>
 #include <offsets_short.h>

@@ -18,7 +18,7 @@
  * @file exception related routines
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <inttypes.h>
 

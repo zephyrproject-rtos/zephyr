@@ -24,7 +24,7 @@
 
 #include <errno.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <misc/printk.h>
 #include <misc/__assert.h>
 #include "soc.h"

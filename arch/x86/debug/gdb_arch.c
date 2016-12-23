@@ -19,7 +19,7 @@
  * x86 part of the GDB server
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <kernel_structs.h>
 #include <string.h>
 #include <debug/gdb_arch.h>

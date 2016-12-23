@@ -18,7 +18,7 @@
  * @file IRQ offload - x86 implementation
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <irq_offload.h>
 
 extern void (*_irq_sw_handler)(void);

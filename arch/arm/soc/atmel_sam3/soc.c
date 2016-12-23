@@ -23,7 +23,7 @@
  * for the Atmel SAM3 family processor.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <soc.h>

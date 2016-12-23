@@ -37,7 +37,7 @@ SECTION_FUNC(exception.other, _Swap)
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
 
-	/* Get the pointer to nanokernel->current */
+	/* Get the pointer to kernel->current */
 	ldw  r11, _kernel_offset_to_current(r10)
 
 	/* Store all the callee saved registers. We either got here via

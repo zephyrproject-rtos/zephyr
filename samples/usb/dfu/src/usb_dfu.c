@@ -37,7 +37,7 @@
  *
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <stdio.h>
 #include <errno.h>
 #include <flash.h>

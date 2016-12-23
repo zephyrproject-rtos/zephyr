@@ -252,7 +252,6 @@ S:	Supported
 F:	kernel/
 F:	include/nanokernel.h
 F:	include/microkernel.h
-F:	include/microkernel/
 F:	include/misc/
 F:	include/toolchain/
 F:	include/atomic.h
@@ -357,8 +356,8 @@ F:	arch/x86/core/crt0.S
 F:	include/device.h
 F:	include/init.h
 F:	include/power.h
-F:	kernel/microkernel/k_idle.c
-F:	kernel/nanokernel/device.c
+F:	kernel/k_idle.c
+F:	kernel/device.c
 F:	samples/power/
 
 QMSI

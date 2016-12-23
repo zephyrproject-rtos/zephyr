@@ -3,9 +3,7 @@ Title: Dining Philosophers
 Description:
 
 An implementation of a solution to the Dining Philosophers problem
-(a classic multi-thread synchronization problem).  This particular
-implementation demonstrates the usage of nanokernel semaphores and
-timers from multiple (6) fibers.
+(a classic multi-thread synchronization problem).
 
 The philosopher always tries to get the lowest fork first (f1 then f2).  When
 done, he will give back the forks in the reverse order (f2 then f1).  If he
@@ -20,7 +18,7 @@ Each Philosopher will randomly alternate between the EATING and THINKING state.
 
 Building and Running Project:
 
-This nanokernel project outputs to the console.  It can be built and executed
+This project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
     make qemu

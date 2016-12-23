@@ -21,7 +21,7 @@
  * for the Quark SE platform.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include "soc.h"
 #include <init.h>
 #include <quark_se/shared_mem.h>

@@ -22,7 +22,7 @@
  * supported platforms.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <kernel_structs.h>

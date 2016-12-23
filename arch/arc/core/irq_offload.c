@@ -18,7 +18,7 @@
  * @file Software interrupts utility code - ARC implementation
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <irq_offload.h>
 
 static irq_offload_routine_t offload_routine;

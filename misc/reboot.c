@@ -20,7 +20,7 @@
  * @details See misc/Kconfig and the reboot help for details.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <drivers/system_timer.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>

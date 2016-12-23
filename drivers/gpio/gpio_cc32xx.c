@@ -18,7 +18,7 @@
 #include <device.h>
 #include <gpio.h>
 #include <init.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <sys_io.h>
 
 /* Driverlib includes */

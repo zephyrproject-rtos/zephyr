@@ -21,7 +21,7 @@
  * @details See debug/Kconfig and the "Safe memory access" help for details.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <init.h>
 #include <errno.h>
 #include <toolchain.h>

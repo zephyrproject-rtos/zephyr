@@ -24,7 +24,7 @@
  * with the vector of the interrupt.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/x86/irq_controller.h>
 #include <sys_io.h>
 #include <interrupt_controller/ioapic_priv.h>

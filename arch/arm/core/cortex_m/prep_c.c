@@ -26,7 +26,7 @@
  * initialization is performed.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <stdint.h>
 #include <toolchain.h>
 #include <linker-defs.h>

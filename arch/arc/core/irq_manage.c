@@ -27,7 +27,7 @@
  * number from 16 to last IRQ number on the platform.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/__assert.h>
 #include <toolchain.h>

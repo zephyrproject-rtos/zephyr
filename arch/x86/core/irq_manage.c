@@ -24,7 +24,7 @@
  * global variable.)
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <kernel_structs.h>
 #include <misc/__assert.h>

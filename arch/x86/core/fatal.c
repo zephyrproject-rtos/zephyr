@@ -24,7 +24,7 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <kernel_structs.h>
 #include <misc/printk.h>
 #include <arch/x86/irq_controller.h>

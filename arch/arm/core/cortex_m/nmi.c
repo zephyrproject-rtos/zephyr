@@ -23,7 +23,7 @@
  * custom run time handler.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>

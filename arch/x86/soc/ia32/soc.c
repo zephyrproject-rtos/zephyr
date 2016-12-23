@@ -22,7 +22,7 @@
  * for the ia32 platform.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include "soc.h"
 #include <uart.h>
 #include <device.h>

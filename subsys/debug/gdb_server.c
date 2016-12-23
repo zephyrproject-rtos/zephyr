@@ -324,7 +324,7 @@
  *       %CONFIG_GDB_REMOTE_SERIAL_EXT_NOTIF_PREFIX_STR:<notificationData>#<checksum>
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

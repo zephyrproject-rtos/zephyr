@@ -25,7 +25,7 @@
 #include <sections.h>
 #include <inttypes.h>
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <kernel_structs.h>
 
 #ifdef CONFIG_PRINTK

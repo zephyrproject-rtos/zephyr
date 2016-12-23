@@ -21,7 +21,7 @@
  * This module provides the _SysFatalErrorHandler() routine for ARCv2 BSPs.
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <kernel_structs.h>

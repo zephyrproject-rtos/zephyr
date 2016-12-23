@@ -28,7 +28,7 @@
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel.h>
+#include <kernel.h>
 #include <arch/cpu.h>
 
 /**
