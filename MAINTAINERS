@@ -305,12 +305,16 @@ F:	tests/crypto/test_mbedtls/
 
 NETWORKING
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
+M:	Tomasz Bursztyka <tomasz.bursztyka@linux.intel.com>
 S:	Supported
 W:	https://www.zephyrproject.org/doc/subsystems/networking/networking.html
 F:	subsys/net/ip/
 F:	include/net/
 F:	samples/net/
 F:	tests/net/
+F:	drivers/ethernet/
+F:	drivers/ieee802154/
+F:	drivers/slip/
 
 NETWORK APPLICATIONS
 M:	Flavio Santes <flavio.santes@intel.com>
@@ -323,6 +327,7 @@ F:	samples/net/dns_client/
 NETWORK BUFFERS
 M:	Johan Hedberg <johan.hedberg@intel.com>
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
+M:	Tomasz Bursztyka <tomasz.bursztyka@linux.intel.com>
 S:	Supported
 W:	https://www.zephyrproject.org/doc/subsystems/networking/buffers.html
 F:	subsys/net/buf.c
@@ -422,6 +427,13 @@ M:	Flavio Santes <flavio.santes@intel.com>
 S:	Supported
 F:	ext/lib/crypto/tinycrypt/
 F:	tests/crypto/
+
+SPI
+M:	Tomasz Bursztyka <tomasz.bursztyka@linux.intel.com>
+S:	Supported
+F:	drivers/spi/
+F:	include/spi.h
+F:	tests/drivers/spi_test/
 
 USB
 M:	Jithu Joseph <jithu.joseph@intel.com>
