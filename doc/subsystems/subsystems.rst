@@ -9,11 +9,12 @@ to applications.
 .. toctree::
    :maxdepth: 1
 
-   networking/networking.rst
    bluetooth/bluetooth.rst
-   usb/usb.rst
-   sensor
-   power_management.rst
-   shell
+   c_library
    logging/index
+   networking/networking.rst
+   power_management.rst
+   sensor
+   shell
    test/ztest
+   usb/usb.rst

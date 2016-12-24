@@ -13,5 +13,4 @@ This section describes other services provided by the kernel.
    atomic.rst
    float.rst
    ring_buffers.rst
-   c_library.rst
    cxx_support.rst
