@@ -513,12 +513,12 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 	}
 
 	/* connection flags */
-	user_name_flag	= (buf[offset] & 0x80) ? 1 : 0;
-	password_flag	= (buf[offset] & 0x40) ? 1 : 0;
-	msg->will_retain	= (buf[offset] & 0x20) ? 1 : 0;
-	msg->will_qos	= (buf[offset] & 0x18) >> 3;
-	msg->will_flag	= (buf[offset] & 0x04) ? 1 : 0;
-	msg->clean_session	= (buf[offset] & 0x02) ? 1 : 0;
+	user_name_flag = (buf[offset] & 0x80) ? 1 : 0;
+	password_flag = (buf[offset] & 0x40) ? 1 : 0;
+	msg->will_retain = (buf[offset] & 0x20) ? 1 : 0;
+	msg->will_qos = (buf[offset] & 0x18) >> 3;
+	msg->will_flag = (buf[offset] & 0x04) ? 1 : 0;
+	msg->clean_session = (buf[offset] & 0x02) ? 1 : 0;
 
 	offset += FLAGS_SIZE;
 
