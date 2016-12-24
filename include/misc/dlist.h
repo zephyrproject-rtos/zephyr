@@ -187,6 +187,19 @@ static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
 }
 
 /**
+ * @brief get a reference to the tail item in the list
+ *
+ * @param list the doubly-linked list to operate on
+ *
+ * @return a pointer to the tail element, NULL if list is empty
+ */
+
+static inline sys_dnode_t *sys_dlist_peek_tail(sys_dlist_t *list)
+{
+	return sys_dlist_is_empty(list) ? NULL : list->tail;
+}
+
+/**
  * @brief add node to tail of list
  *
  * @param list the doubly-linked list to operate on
