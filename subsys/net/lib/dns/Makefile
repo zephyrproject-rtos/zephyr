@@ -1,5 +1,3 @@
-ZEPHYRINCLUDE += -I$(srctree)/subsys/net/lib/dns
-
 ccflags-y += -I$(srctree)/subsys/net/lib/dns
 
 obj-y := dns_pack.o
