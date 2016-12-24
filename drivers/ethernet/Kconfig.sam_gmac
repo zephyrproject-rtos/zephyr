@@ -1,0 +1,104 @@
+# Kconfig - Atmel SAM Ethernet (GMAC) driver configuration options
+#
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ETH_SAM_GMAC
+	bool
+	prompt "Atmel SAM Ethernet driver"
+	depends on SOC_FAMILY_SAM
+	default n
+	help
+	  Enable Atmel SAM MCU Family Ethernet driver.
+
+if ETH_SAM_GMAC
+config ETH_SAM_GMAC_NAME
+	string "Device name"
+	default "ETH_0"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config ETH_SAM_GMAC_NBUF_DATA_COUNT
+	int "Network data buffers pre-allocated by the SAM ETH driver"
+	default 12
+	help
+	  Number of network data buffers that will be permanently allocated by the
+	  Ethernet driver. These data buffers are used in receive path. They are
+	  pre-alocated by the driver and made available to the GMAC module to be
+	  filled in with incoming data. Their number has to be large enough to fit
+	  at least one complete Ethernet frame. SAM ETH driver will always allocate
+	  that amount of buffers for itself thus reducing the NET_NBUF_DATA_COUNT
+	  which is a total amount of data buffers used by the whole networking
+	  stack. One has to ensure that NET_NBUF_DATA_COUNT is large enough to fit
+	  at least two ethernet frames: one being received by the GMAC module and
+	  the other being processed by the higer layer networking stack.
+
+config ETH_SAM_GMAC_IRQ_PRI
+	int "Interrupt priority"
+	default 0
+	help
+	  IRQ priority of Ethernet device
+
+config ETH_SAM_GMAC_MAC0
+	hex "MAC Address Byte 0"
+	default 0
+	range 0 0xff
+	help
+	  Byte 0 of the MAC address.
+
+config ETH_SAM_GMAC_MAC1
+	hex "MAC Address Byte 1"
+	default 0
+	range 0 0xff
+	help
+	  Byte 1 of the MAC address.
+
+config ETH_SAM_GMAC_MAC2
+	hex "MAC Address Byte 2"
+	default 0
+	range 0 0xff
+	help
+	  Byte 2 of the MAC address.
+
+config ETH_SAM_GMAC_MAC3
+	hex "MAC Address Byte 3"
+	default 0
+	range 0 0xff
+	help
+	  Byte 3 of the MAC address.
+
+config ETH_SAM_GMAC_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 0xff
+	help
+	  Byte 4 of the MAC address.
+
+config ETH_SAM_GMAC_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 0xff
+	help
+	  Byte 5 of the MAC address.
+
+choice
+	prompt "MII/RMII Interface to the Physical Layer"
+
+	config ETH_SAM_GMAC_RMII
+		bool "RMII"
+
+	config ETH_SAM_GMAC_MII
+		bool "MII"
+endchoice
+
+config ETH_SAM_GMAC_PHY_ADDR
+	int "GMAC PHY Address"
+	default 0
+	help
+	  GMAC PHY Address as used by IEEE 802.3, Section 2 MII compatible PHY
+	  transceivers. If you have a single PHY on board it is safe to leave it
+	  at 0 which is the broadcast address.
+
+endif # ETH_SAM_GMAC
