@@ -1,11 +1,11 @@
 .. _testing:
 
-Zephyr testing framework
-########################
+Test Framework
+###############
 
-Ztest provides a simple testing framework intended to be used during
-development.
-It provides basic assertion macros and a generic test structure.
+The Zephyr Test Framework (Ztest) provides a simple testing framework intended
+to be used during development.  It provides basic assertion macros and a generic
+test structure.
 
 The framework can be used in two ways, either as a generic framework for
 integration testing, or for unit testing specific modules.
@@ -23,31 +23,31 @@ The sample contains the following files:
 
 Makefile
 
-.. literalinclude:: ../../samples/testing/integration/Makefile
+.. literalinclude:: ../../../samples/testing/integration/Makefile
    :language: Make
    :linenos:
 
 testcase.ini
 
-.. literalinclude:: ../../samples/testing/integration/testcase.ini
+.. literalinclude:: ../../../samples/testing/integration/testcase.ini
    :language: ini
    :linenos:
 
 prj.conf
 
-.. literalinclude:: ../../samples/testing/integration/prj.conf
+.. literalinclude:: ../../../samples/testing/integration/prj.conf
    :language: text
    :linenos:
 
 src/Makefile
 
-.. literalinclude:: ../../samples/testing/integration/src/Makefile
+.. literalinclude:: ../../../samples/testing/integration/src/Makefile
    :language: Make
    :linenos:
 
 src/main.c
 
-.. literalinclude:: ../../samples/testing/integration/src/main.c
+.. literalinclude:: ../../../samples/testing/integration/src/main.c
    :language: c
    :linenos:
 
@@ -79,19 +79,19 @@ the net-buf api of Zephyr.
 
 Makefile
 
-.. literalinclude:: ../../samples/testing/unit/Makefile
+.. literalinclude:: ../../../samples/testing/unit/Makefile
    :language: Make
    :linenos:
 
 testcase.ini
 
-.. literalinclude:: ../../samples/testing/unit/testcase.ini
+.. literalinclude:: ../../../samples/testing/unit/testcase.ini
    :language: ini
    :linenos:
 
 main.c
 
-.. literalinclude:: ../../samples/testing/unit/main.c
+.. literalinclude:: ../../../samples/testing/unit/main.c
    :language: c
    :linenos:
 

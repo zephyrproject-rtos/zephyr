@@ -16,3 +16,4 @@ to applications.
    power_management.rst
    shell
    logging/index
+   test/ztest
