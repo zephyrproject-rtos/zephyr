@@ -174,23 +174,6 @@ void k_sched_unlock(void)
 #endif
 }
 
-/*
- * Callback for sys_dlist_insert_at() to find the correct insert point in a
- * wait queue (priority-based).
- */
-#ifdef CONFIG_MULTITHREADING
-static int _is_wait_q_insert_point(sys_dnode_t *node, void *insert_prio)
-{
-	struct k_thread *waitq_node =
-		CONTAINER_OF(
-			CONTAINER_OF(node, struct _thread_base, k_q_node),
-			struct k_thread,
-			base);
-
-	return _is_prio_higher((int)insert_prio, waitq_node->base.prio);
-}
-#endif
-
 /* convert milliseconds to ticks */
 
 #ifdef _NON_OPTIMIZED_TICKS_PER_SEC
@@ -207,12 +190,22 @@ int32_t _ms_to_ticks(int32_t ms)
 void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
 {
 #ifdef CONFIG_MULTITHREADING
-	sys_dlist_t *dlist = (sys_dlist_t *)wait_q;
+	sys_dlist_t *wait_q_list = (sys_dlist_t *)wait_q;
+	sys_dnode_t *node;
 
-	sys_dlist_insert_at(dlist, &thread->base.k_q_node,
-			    _is_wait_q_insert_point,
-			    (void *)thread->base.prio);
+	SYS_DLIST_FOR_EACH_NODE(wait_q_list, node) {
+		struct k_thread *pending = (struct k_thread *)node;
 
+		if (_is_t1_higher_prio_than_t2(thread, pending)) {
+			sys_dlist_insert_before(wait_q_list, node,
+						&thread->base.k_q_node);
+			goto inserted;
+		}
+	}
+
+	sys_dlist_append(wait_q_list, &thread->base.k_q_node);
+
+inserted:
 	_mark_thread_as_pending(thread);
 
 	if (timeout != K_FOREVER) {
