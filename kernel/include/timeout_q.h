@@ -152,33 +152,6 @@ static inline int _abort_thread_timeout(struct k_thread *thread)
 }
 
 /*
- * callback for sys_dlist_insert_at():
- *
- * Returns 1 if the timeout to insert is lower or equal than the next timeout
- * in the queue, signifying that it should be inserted before the next.
- * Returns 0 if it is greater.
- *
- * If it is greater, the timeout to insert is decremented by the next timeout,
- * since the timeout queue is a delta queue.  If it lower or equal, decrement
- * the timeout of the insert point to update its delta queue value, since the
- * current timeout will be inserted before it.
- */
-
-static int _is_timeout_insert_point(sys_dnode_t *test, void *timeout)
-{
-	struct _timeout *t = (void *)test;
-	int32_t *timeout_to_insert = timeout;
-
-	if (*timeout_to_insert > t->delta_ticks_from_prev) {
-		*timeout_to_insert -= t->delta_ticks_from_prev;
-		return 0;
-	}
-
-	t->delta_ticks_from_prev -= *timeout_to_insert;
-	return 1;
-}
-
-/*
  * Add timeout to timeout queue. Record waiting thread and wait queue if any.
  *
  * Cannot handle timeout == 0 and timeout == K_FOREVER.
@@ -187,38 +160,33 @@ static int _is_timeout_insert_point(sys_dnode_t *test, void *timeout)
  */
 
 static inline void _add_timeout(struct k_thread *thread,
-				struct _timeout *timeout_obj,
-				_wait_q_t *wait_q, int32_t timeout)
+				struct _timeout *timeout,
+				_wait_q_t *wait_q,
+				int32_t timeout_in_ticks)
 {
-	__ASSERT(timeout > 0, "");
+	__ASSERT(timeout_in_ticks > 0, "");
 
-	K_DEBUG("thread %p on wait_q %p, for timeout: %d\n",
-		thread, wait_q, timeout);
+	timeout->delta_ticks_from_prev = timeout_in_ticks;
+	timeout->thread = thread;
+	timeout->wait_q = (sys_dlist_t *)wait_q;
 
-	sys_dlist_t *timeout_q = &_timeout_q;
+	int32_t *delta = &timeout->delta_ticks_from_prev;
+	sys_dnode_t *node;
 
-	K_DEBUG("timeout_q %p before: head: %p, tail: %p\n",
-		&_timeout_q,
-		sys_dlist_peek_head(&_timeout_q),
-		_timeout_q.tail);
+	SYS_DLIST_FOR_EACH_NODE(&_timeout_q, node) {
+		struct _timeout *in_q = (struct _timeout *)node;
 
-	K_DEBUG("timeout   %p before: next: %p, prev: %p\n",
-		timeout_obj, timeout_obj->node.next, timeout_obj->node.prev);
+		if (*delta <= in_q->delta_ticks_from_prev) {
+			in_q->delta_ticks_from_prev -= *delta;
+			sys_dlist_insert_before(&_timeout_q, node,
+						&timeout->node);
+			return;
+		}
 
-	timeout_obj->thread = thread;
-	timeout_obj->delta_ticks_from_prev = timeout;
-	timeout_obj->wait_q = (sys_dlist_t *)wait_q;
-	sys_dlist_insert_at(timeout_q, (void *)timeout_obj,
-			    _is_timeout_insert_point,
-			    &timeout_obj->delta_ticks_from_prev);
+		*delta -= in_q->delta_ticks_from_prev;
+	}
 
-	K_DEBUG("timeout_q %p after:  head: %p, tail: %p\n",
-		&_timeout_q,
-		sys_dlist_peek_head(&_timeout_q),
-		_timeout_q.tail);
-
-	K_DEBUG("timeout   %p after:  next: %p, prev: %p\n",
-		timeout_obj, timeout_obj->node.next, timeout_obj->node.prev);
+	sys_dlist_append(&_timeout_q, &timeout->node);
 }
 
 /*
@@ -230,9 +198,10 @@ static inline void _add_timeout(struct k_thread *thread,
  */
 
 static inline void _add_thread_timeout(struct k_thread *thread,
-				       _wait_q_t *wait_q, int32_t timeout)
+				       _wait_q_t *wait_q,
+				       int32_t timeout_in_ticks)
 {
-	_add_timeout(thread, &thread->base.timeout, wait_q, timeout);
+	_add_timeout(thread, &thread->base.timeout, wait_q, timeout_in_ticks);
 }
 
 /* find the closest deadline in the timeout queue */
