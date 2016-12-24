@@ -33,11 +33,11 @@ $ make qemu
 There is smoke test application in tests directory which gets run in sanity
 check script:
 
-$ scripts/sanity_chk/sanitycheck [-P <platform>]
+$ scripts/sanitycheck [-P <platform>]
 
 To only run Bluetooth tests use the -t bluetooth switch:
 
-$ scripts/sanity_chk/sanitycheck -t bluetooth
+$ scripts/sanitycheck -t bluetooth
 
 = Summary of available applications =
 
