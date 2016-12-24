@@ -166,6 +166,6 @@ static fork_t forks[NUM_PHIL] = {
 #endif
 };
 
-static char __stack stacks[NUM_PHIL][STACK_SIZE];
+static char __stack __noinit stacks[NUM_PHIL][STACK_SIZE];
 
 #endif /* phil_obj_abstract__h */
