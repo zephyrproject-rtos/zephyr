@@ -475,7 +475,7 @@ static void bt_uart_isr(struct device *unused)
 
 			switch (H5_HDR_PKT_TYPE(hdr)) {
 			case HCI_EVENT_PKT:
-				h5.rx_buf = bt_buf_get_evt(0x00);
+				h5.rx_buf = bt_buf_get_evt(0x00, K_NO_WAIT);
 				if (!h5.rx_buf) {
 					BT_WARN("No available event buffers");
 					h5_reset_rx();
@@ -485,7 +485,7 @@ static void bt_uart_isr(struct device *unused)
 				h5.rx_state = PAYLOAD;
 				break;
 			case HCI_ACLDATA_PKT:
-				h5.rx_buf = bt_buf_get_acl();
+				h5.rx_buf = bt_buf_get_acl(K_NO_WAIT);
 				if (!h5.rx_buf) {
 					BT_WARN("No available data buffers");
 					h5_reset_rx();

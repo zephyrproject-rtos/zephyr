@@ -90,12 +90,12 @@ int brsf_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t val;
-	int err;
+	int ret;
 
-	err = at_get_number(hf_at->buf, &val);
-	if (err < 0) {
+	ret = at_get_number(hf_at, &val);
+	if (ret < 0) {
 		BT_ERR("Error getting value");
-		return err;
+		return ret;
 	}
 
 	hf->ag_features = val;

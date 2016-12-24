@@ -144,10 +144,17 @@ struct bt_avdtp_event_cb {
 	struct bt_avdtp_cfm_cb *cfm;
 };
 
+struct bt_pending_req {
+	uint8_t signal_id;
+	uint8_t transaction_id;
+	struct k_delayed_work timeout_work;
+};
+
 /** @brief Global AVDTP session structure. */
 struct bt_avdtp {
 	struct bt_l2cap_br_chan br_chan;
 	struct bt_avdtp_stream *streams; /* List of AV streams */
+	struct bt_pending_req req;
 };
 
 /* Initialize AVDTP layer*/

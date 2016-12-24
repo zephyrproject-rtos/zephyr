@@ -31,6 +31,9 @@
 extern "C" {
 #endif
 
+#include <bluetooth/uuid.h>
+#include <bluetooth/conn.h>
+
 /*
  * All definitions are based on Bluetooth Assigned Numbers
  * of the Bluetooth Specification
@@ -433,6 +436,96 @@ struct bt_sdp_record {
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_sdp_register_service(struct bt_sdp_record *service);
+
+/* Client API */
+
+/** @brief Generic SDP Client Query Result data holder */
+struct bt_sdp_client_result {
+	/* buffer containing unparsed SDP record result for given UUID */
+	struct net_buf  *resp_buf;
+	/* flag pointing that there are more result chunks for given UUID */
+	bool             next_record_hint;
+};
+
+/** @brief Helper enum to be used as return value of bt_sdp_discover_func_t.
+ *  The value informs the caller to perform futher pending actions or stop them.
+ */
+enum {
+	BT_SDP_DISCOVER_UUID_STOP = 0,
+	BT_SDP_DISCOVER_UUID_CONTINUE,
+};
+
+/** @typedef bt_sdp_discover_func_t
+ *
+ *  @brief Callback type reporting to user that there is a resolved result
+ *  on remote for given UUID and the result record buffer can be used by user
+ *  for futher inspection.
+ *
+ *  A function of this type is given by the user to the bt_sdp_discover_params
+ *  object. It'll be called on each valid record discovery completion for given
+ *  UUID. When UUID resolution gives back no records then NULL is passed
+ *  to the user. Otherwise user can get valid record(s) and then the internal
+ *  hint 'next record' is set to false saying the UUID resolution is complete or
+ *  the hint can be set by caller to true meaning that next record is available
+ *  for given UUID.
+ *  The returned function value allows the user to control retrieving follow-up
+ *  resolved records if any. If the user doesn't want to read more resolved
+ *  records for given UUID since current record data fulfills its requirements
+ *  then should return BT_SDP_DISCOVER_UUID_STOP. Otherwise returned value means
+ *  more subcall iterations are allowable.
+ *
+ *  @param conn Connection object identifying connection to queried remote.
+ *  @param result Object pointing to logical unparsed SDP record collected on
+ *  base of response driven by given UUID.
+ *
+ *  @return BT_SDP_DISCOVER_UUID_STOP in case of no more need to read next
+ *  record data and continue discovery for given UUID. By returning
+ *  BT_SDP_DISCOVER_UUID_CONTINUE user allows this discovery continuation.
+ */
+typedef uint8_t (*bt_sdp_discover_func_t)
+		(struct bt_conn *conn, struct bt_sdp_client_result *result);
+
+/** @brief Main user structure used in SDP discovery of remote. */
+struct bt_sdp_discover_params {
+	sys_snode_t		_node;
+	/** UUID (service) to be discovered on remote SDP entity */
+	const struct bt_uuid   *uuid;
+	/** Discover callback to be called on resolved SDP record */
+	bt_sdp_discover_func_t  func;
+	/** Memory buffer enabled by user for SDP query results  */
+	struct net_buf_pool    *pool;
+};
+
+/** @brief Allows user to start SDP discovery session.
+ *
+ *  The function performs SDP service discovery on remote server driven by user
+ *  delivered discovery parameters. Discovery session is made as soon as
+ *  no SDP transaction is ongoing between peers and if any then this one
+ *  is queued to be processed at discovery completion of previous one.
+ *  On the service discovery completion the callback function will be
+ *  called to get feedback to user about findings.
+ *
+ * @param conn Object identifying connection to remote.
+ * @param params SDP discovery parameters.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+
+int bt_sdp_discover(struct bt_conn *conn,
+		    const struct bt_sdp_discover_params *params);
+
+/** @brief Release waiting SDP discovery request.
+ *
+ *  It can cancel valid waiting SDP client request identified by SDP discovery
+ *  parameters object.
+ *
+ * @param conn Object identifying connection to remote.
+ * @param params SDP discovery parameters.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_sdp_discover_cancel(struct bt_conn *conn,
+			   const struct bt_sdp_discover_params *params);
 
 #ifdef __cplusplus
 }

@@ -40,6 +40,9 @@ extern "C" {
 
 /* GATT attribute permission bit field values */
 enum {
+	/** No operations supported, e.g. for notify-only */
+	BT_GATT_PERM_NONE = 0,
+
 	/** Attribute read permission. */
 	BT_GATT_PERM_READ = BIT(0),
 

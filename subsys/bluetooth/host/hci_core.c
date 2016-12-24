@@ -130,10 +130,17 @@ NET_BUF_POOL_DEFINE(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
  * This priority pool is to handle HCI events that must not be dropped
  * (currently this is Command Status, Command Complete and Number of
  * Complete Packets) if running low on buffers. Buffers from this pool are not
- * allowed to be passed to RX thread and must be returned from bt_recv().
+ * allowed to be passed to RX thread and must be returned from bt_recv(). Since
+ * the HCI ECC emulation is able to also allocate command status events
+ * we need to reserve one extra buffer for it.
  */
+#if defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
+NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 2, BT_BUF_EVT_SIZE,
+		    BT_BUF_USER_DATA_MIN, NULL);
+#else
 NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 1, BT_BUF_EVT_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
+#endif
 
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
@@ -1648,10 +1655,11 @@ static void inquiry_complete(struct net_buf *buf)
 	report_discovery_results();
 }
 
-static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr)
+static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr,
+						      int8_t rssi)
 {
+	struct bt_br_discovery_result *result = NULL;
 	size_t i;
-	int err;
 
 	/* check if already present in results */
 	for (i = 0; i < discovery_results_count; i++) {
@@ -1667,17 +1675,33 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr)
 		return &discovery_results[discovery_results_count++];
 	}
 
-	BT_WARN("Got more Inquiry results than requested");
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
-	if (err) {
-		BT_ERR("Failed to cancel discovery (%d)", err);
+	/* ignore if invalid RSSI */
+	if (rssi == 0xff) {
 		return NULL;
 	}
 
-	report_discovery_results();
+	/*
+	 * Pick slot with smallest RSSI that is smaller then passed RSSI
+	 * TODO handle TX if present
+	 */
+	for (i = 0; i < discovery_results_size; i++) {
+		if (discovery_results[i].rssi > rssi) {
+			continue;
+		}
 
-	return NULL;
+		if (!result || result->rssi > discovery_results[i].rssi) {
+			result = &discovery_results[i];
+		}
+	}
+
+	if (result) {
+		BT_DBG("Reusing slot (old %s rssi %d dBm)",
+		       bt_addr_str(&result->addr), result->rssi);
+
+		bt_addr_copy(&result->addr, addr);
+	}
+
+	return result;
 }
 
 static void inquiry_result_with_rssi(struct net_buf *buf)
@@ -1698,7 +1722,7 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 
 		BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
-		result = get_result_slot(&evt->addr);
+		result = get_result_slot(&evt->addr, evt->rssi);
 		if (!result) {
 			return;
 		}
@@ -1709,6 +1733,9 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 
 		memcpy(result->cod, evt->cod, 3);
 		result->rssi = evt->rssi;
+
+		/* we could reuse slot so make sure EIR is cleared */
+		memset(result->eir, 0, sizeof(result->eir));
 
 		/*
 		 * Get next report iteration by moving pointer to right offset
@@ -1730,7 +1757,7 @@ static void extended_inquiry_result(struct net_buf *buf)
 
 	BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
-	result = get_result_slot(&evt->addr);
+	result = get_result_slot(&evt->addr, evt->rssi);
 	if (!result) {
 		return;
 	}
@@ -1753,7 +1780,7 @@ static void remote_name_request_complete(struct net_buf *buf)
 	uint8_t *eir;
 	int i;
 
-	result = get_result_slot(&evt->bdaddr);
+	result = get_result_slot(&evt->bdaddr, 0xff);
 	if (!result) {
 		return;
 	}
@@ -3997,7 +4024,7 @@ int bt_le_scan_stop(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-struct net_buf *bt_buf_get_evt(uint8_t opcode)
+struct net_buf *bt_buf_get_evt(uint8_t opcode, int32_t timeout)
 {
 	struct net_buf *buf;
 
@@ -4005,12 +4032,12 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode)
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		buf = net_buf_alloc(&hci_evt_prio_pool, K_NO_WAIT);
+		buf = net_buf_alloc(&hci_evt_prio_pool, timeout);
 		break;
 	default:
 		buf = net_buf_alloc(&hci_evt_pool, K_NO_WAIT);
 		if (!buf && opcode == 0x00) {
-			buf = net_buf_alloc(&hci_evt_prio_pool, K_NO_WAIT);
+			buf = net_buf_alloc(&hci_evt_prio_pool, timeout);
 		}
 		break;
 	}
@@ -4023,12 +4050,12 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode)
 	return buf;
 }
 
-struct net_buf *bt_buf_get_acl(void)
+struct net_buf *bt_buf_get_acl(int32_t timeout)
 {
 #if defined(CONFIG_BLUETOOTH_CONN)
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&acl_in_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&acl_in_pool, timeout);
 	if (buf) {
 		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);
@@ -4042,8 +4069,7 @@ struct net_buf *bt_buf_get_acl(void)
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static int br_start_inquiry(const struct bt_br_discovery_param *param,
-			    size_t num_rsp)
+static int br_start_inquiry(const struct bt_br_discovery_param *param)
 {
 	const uint8_t iac[3] = { 0x33, 0x8b, 0x9e };
 	struct bt_hci_op_inquiry *cp;
@@ -4057,7 +4083,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param,
 	cp = net_buf_add(buf, sizeof(*cp));
 
 	cp->length = param->length;
-	cp->num_rsp = num_rsp;
+	cp->num_rsp = 0xff; /* we limit discovery only by time */
 
 	memcpy(cp->lap, iac, 3);
 	if (param->limited) {
@@ -4097,7 +4123,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 		return -EALREADY;
 	}
 
-	err = br_start_inquiry(param, cnt);
+	err = br_start_inquiry(param);
 	if (err) {
 		return err;
 	}

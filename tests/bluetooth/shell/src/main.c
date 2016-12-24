@@ -1704,10 +1704,13 @@ static int cmd_bredr_discovery(int argc, char *argv[])
 		struct bt_br_discovery_param param;
 
 		param.limited = false;
-		/* FIXME: expose providing length on the command line */
 		param.length = 8;
 
-		if (argc > 2 && !strcmp(argv[2], "limited")) {
+		if (argc > 2) {
+			param.length = atoi(argv[2]);
+		}
+
+		if (argc > 3 && !strcmp(argv[3], "limited")) {
 			param.limited = true;
 		}
 
@@ -2291,7 +2294,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-pscan", cmd_bredr_connectable, "value: on, off" },
 	{ "br-connect", cmd_connect_bredr, "<address>" },
 	{ "br-discovery", cmd_bredr_discovery,
-	  "<value: on, off> [mode: limited]"  },
+	  "<value: on, off> [length: 1-48] [mode: limited]"  },
 	{ "br-l2cap-register", cmd_bredr_l2cap_register, "<psm>" },
 	{ "br-oob", cmd_bredr_oob },
 #if defined(CONFIG_BLUETOOTH_RFCOMM)

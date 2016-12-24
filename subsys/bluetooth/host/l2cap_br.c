@@ -162,7 +162,11 @@ l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 		return ch;
 	}
 
-	for (cid = L2CAP_BR_CID_DYN_START; cid <= L2CAP_BR_CID_DYN_END; cid++) {
+	/*
+	 * L2CAP_BR_CID_DYN_END is 0xffff so we don't check against it since
+	 * cid is uint16_t, just check against uint16_t overflow
+	 */
+	for (cid = L2CAP_BR_CID_DYN_START; cid; cid++) {
 		if (!bt_l2cap_br_lookup_rx_cid(conn, cid)) {
 			ch->rx.cid = cid;
 			return ch;
@@ -747,7 +751,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_server *server;
 	struct bt_l2cap_conn_req *req = (void *)buf->data;
-	uint16_t psm, scid, dcid, result;
+	uint16_t psm, scid, result;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small L2CAP conn req packet size");
@@ -756,7 +760,6 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	psm = sys_le16_to_cpu(req->psm);
 	scid = sys_le16_to_cpu(req->scid);
-	dcid = 0;
 
 	BT_DBG("psm 0x%02x scid 0x%04x", psm, scid);
 
@@ -764,7 +767,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	server = l2cap_br_server_lookup_psm(psm);
 	if (!server) {
 		result = BT_L2CAP_BR_ERR_PSM_NOT_SUPP;
-		goto done;
+		goto no_chan;
 	}
 
 	/*
@@ -774,18 +777,23 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	if (server->sec_level != BT_SECURITY_NONE &&
 	    BT_FEAT_HOST_SSP(conn->br.features) && !conn->encrypt) {
 		result = BT_L2CAP_BR_ERR_SEC_BLOCK;
-		goto done;
+		goto no_chan;
 	}
 
 	if (!L2CAP_BR_CID_IS_DYN(scid)) {
 		result = BT_L2CAP_BR_ERR_INVALID_SCID;
-		goto done;
+		goto no_chan;
 	}
 
 	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
 	if (chan) {
+		/*
+		 * we have a chan here but this is due to SCID being already in
+		 * use so it is not channel we are suppose to pass to
+		 * l2cap_br_conn_req_reply as wrong DCID would be used
+		 */
 		result = BT_L2CAP_BR_ERR_SCID_IN_USE;
-		goto done;
+		goto no_chan;
 	}
 
 	/*
@@ -794,16 +802,14 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	 * proper result and quit since chan pointer is uninitialized then.
 	 */
 	if (server->accept(conn, &chan) < 0) {
-		l2cap_br_send_conn_rsp(conn, scid, dcid, ident,
-				       BT_L2CAP_BR_ERR_NO_RESOURCES);
-		return;
+		result = BT_L2CAP_BR_ERR_NO_RESOURCES;
+		goto no_chan;
 	}
 
 	chan->required_sec_level = server->sec_level;
 
 	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
 	BR_CHAN(chan)->tx.cid = scid;
-	dcid = BR_CHAN(chan)->rx.cid;
 	chan->ident = ident;
 	bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR);
@@ -824,20 +830,25 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		result = BT_L2CAP_BR_ERR_SEC_BLOCK;
 		break;
 	}
-done:
 	/* Reply on connection request as acceptor */
 	l2cap_br_conn_req_reply(chan, result);
 
-	/* Disconnect link when security rules were violated */
-	if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+	if (result != BT_L2CAP_SUCCESS) {
+		/* Disconnect link when security rules were violated */
+		if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
+			bt_conn_disconnect(conn,
+					   BT_HCI_ERR_AUTHENTICATION_FAIL);
+		}
+
 		return;
 	}
 
-	if (result == BT_L2CAP_SUCCESS) {
-		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
-		l2cap_br_conf(chan);
-	}
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
+	l2cap_br_conf(chan);
+	return;
+
+no_chan:
+	l2cap_br_send_conn_rsp(conn, scid, 0, ident, result);
 }
 
 static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,

@@ -57,6 +57,18 @@ static struct bt_sdp bt_sdp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(SDP_MTU), BT_BUF_USER_DATA_MIN, NULL);
 
+#define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
+
+#define SDP_CLIENT_MTU 64
+
+struct bt_sdp_client {
+	struct bt_l2cap_br_chan chan;
+	/* list of waiting to be resolved UUID params */
+	sys_slist_t             reqs;
+};
+
+static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BLUETOOTH_MAX_CONN];
+
 /** @brief Callback for SDP connection
  *
  *  Gets called when an SDP connection is established
@@ -303,6 +315,142 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	db = service;
 
 	BT_DBG("Service registered at %u", handle);
+
+	return 0;
+}
+
+static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+	struct bt_sdp_hdr *hdr = (void *)buf->data;
+	uint16_t len, tid;
+
+	ARG_UNUSED(session);
+
+	BT_DBG("session %p buf %p", session, buf);
+
+	if (buf->len < sizeof(*hdr)) {
+		BT_ERR("Too small SDP PDU");
+		return;
+	}
+
+	if (hdr->op_code == BT_SDP_ERROR_RSP) {
+		BT_INFO("Error SDP PDU response");
+		return;
+	}
+
+	len = sys_be16_to_cpu(hdr->param_len);
+	tid = sys_be16_to_cpu(hdr->tid);
+	net_buf_pull(buf, sizeof(*hdr));
+
+	BT_DBG("SDP PDU tid %u len %u", tid, len);
+
+	if (buf->len != len) {
+		BT_ERR("SDP PDU length mismatch (%u != %u)", buf->len, len);
+		return;
+	}
+}
+
+static int sdp_client_chan_connect(struct bt_sdp_client *session)
+{
+	return bt_l2cap_br_chan_connect(session->chan.chan.conn,
+					&session->chan.chan, SDP_PSM);
+}
+
+static void sdp_client_connected(struct bt_l2cap_chan *chan)
+{
+	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+
+	BT_DBG("session %p chan %p connected", session, chan);
+
+	ARG_UNUSED(session);
+}
+
+static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
+{
+	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+
+	BT_DBG("session %p chan %p disconnected", session, chan);
+
+	/*
+	 * Reset session excluding L2CAP channel member. Let's the channel
+	 * resets autonomous.
+	 */
+	memset(&session->reqs, 0, sizeof(*session) - sizeof(session->chan));
+}
+
+static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
+		.connected = sdp_client_connected,
+		.disconnected = sdp_client_disconnected,
+		.recv = sdp_client_receive,
+};
+
+static struct bt_sdp_client *sdp_client_new_session(struct bt_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_sdp_client_pool); i++) {
+		struct bt_sdp_client *session = &bt_sdp_client_pool[i];
+		int err;
+
+		if (session->chan.chan.conn) {
+			continue;
+		}
+
+		sys_slist_init(&session->reqs);
+
+		session->chan.chan.ops = &sdp_client_chan_ops;
+		session->chan.chan.conn = conn;
+		session->chan.rx.mtu = SDP_CLIENT_MTU;
+
+		err = sdp_client_chan_connect(session);
+		if (err) {
+			memset(session, 0, sizeof(*session));
+			BT_ERR("Cannot connect %d", err);
+			return NULL;
+		}
+
+		return session;
+	}
+
+	BT_ERR("No available SDP client context");
+
+	return NULL;
+}
+
+static struct bt_sdp_client *sdp_client_get_session(struct bt_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_sdp_client_pool); i++) {
+		if (bt_sdp_client_pool[i].chan.chan.conn == conn) {
+			return &bt_sdp_client_pool[i];
+		}
+	}
+
+	/*
+	 * Try to allocate session context since not found in pool and attempt
+	 * connect to remote SDP endpoint.
+	 */
+	return sdp_client_new_session(conn);
+}
+
+int bt_sdp_discover(struct bt_conn *conn,
+		    const struct bt_sdp_discover_params *params)
+{
+	struct bt_sdp_client *session;
+
+	if (!params || !params->uuid || !params->func || !params->pool) {
+		BT_WARN("Invalid user params");
+		return -EINVAL;
+	}
+
+	session = sdp_client_get_session(conn);
+	if (!session) {
+		return -ENOMEM;
+	}
+
+	sys_slist_append(&session->reqs, (sys_snode_t *)&params->_node);
 
 	return 0;
 }

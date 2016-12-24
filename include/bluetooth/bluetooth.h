@@ -330,7 +330,9 @@ struct bt_br_discovery_param {
  *
  *  Start BR/EDR discovery (inquiry) and provide results through the specified
  *  callback. When bt_br_discovery_cb_t is called it indicates that discovery
- *  has completed.
+ *  has completed. If more inquiry results were received during session than
+ *  fits in provided result storage, only ones with highest RSSI will be
+ *  reported.
  *
  *  @param param Discovery parameters.
  *  @param results Storage for discovery results.

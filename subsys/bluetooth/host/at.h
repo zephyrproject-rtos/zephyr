@@ -62,7 +62,7 @@ typedef int (*handle_cmd_input_t)(struct at_client *at, struct net_buf *buf,
 
 struct at_client {
 	char *buf;
-	uint8_t buf_pos;
+	uint8_t pos;
 	uint8_t buf_max_len;
 	uint8_t state;
 	uint8_t cmd_state;
@@ -73,10 +73,15 @@ struct at_client {
 /* Register the callback functions */
 void at_register(struct at_client *at, at_resp_cb_t resp,
 		 at_finish_cb_t finish);
-int at_get_number(const char *buf, uint32_t *val);
+int at_get_number(struct at_client *at, uint32_t *val);
 /* This parsing will only works for non-fragmented net_buf */
 int at_parse_input(struct at_client *at, struct net_buf *buf);
 /* This command parsing will only works for non-fragmented net_buf */
 int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 		       const char *prefix, parse_val_t func);
 int at_check_byte(struct net_buf *buf, char check_byte);
+int at_stream_get_range(struct at_client *at, uint32_t *min, uint32_t *max);
+int at_stream_get_string(struct at_client *at, char *name, uint8_t len);
+int at_close_stream(struct at_client *at);
+int at_open_stream(struct at_client *at);
+int at_has_next_stream(struct at_client *at);

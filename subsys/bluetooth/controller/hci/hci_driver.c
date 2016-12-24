@@ -161,7 +161,8 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 		while ((num_cmplt = radio_rx_get(&node_rx, &handle))) {
 
-			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS);
+			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
+					     K_FOREVER);
 			if (buf) {
 				hci_num_cmplt_encode(buf, handle, num_cmplt);
 				BT_DBG("Num Complete: 0x%04x:%u", handle,
@@ -183,7 +184,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
 			    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
 				/* generate a (non-priority) HCI event */
-				buf = bt_buf_get_evt(0);
+				buf = bt_buf_get_evt(0, K_FOREVER);
 				if (buf) {
 					hci_evt_encode(node_rx, buf);
 				} else {
@@ -191,7 +192,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 				}
 			} else {
 				/* generate ACL data */
-				buf = bt_buf_get_acl();
+				buf = bt_buf_get_acl(K_FOREVER);
 				if (buf) {
 					hci_acl_encode(node_rx, buf);
 				} else {
@@ -235,7 +236,7 @@ static int cmd_handle(struct net_buf *buf)
 	 * actual point is to retrieve the event from the priority
 	 * queue
 	 */
-	evt = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE);
+	evt = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, K_FOREVER);
 	if (!evt) {
 		BT_ERR("No available event buffers");
 		return -ENOMEM;

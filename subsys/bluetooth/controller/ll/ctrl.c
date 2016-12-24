@@ -5700,6 +5700,14 @@ static struct radio_pdu_node_rx *packet_rx_reserve_get(uint8_t count)
 	return radio_pdu_node_rx;
 }
 
+static void event_callback(void)
+{
+	static struct work work_event_callback = { 0, 0, 0,
+		WORK_TICKER_JOB0_IRQ, (work_fp) radio_event_callback, 0 };
+
+	work_schedule(&work_event_callback, 1);
+}
+
 static void packet_rx_enqueue(void)
 {
 	void *link;
@@ -5731,7 +5739,7 @@ static void packet_rx_enqueue(void)
 	LL_ASSERT(link);
 
 	/* callback to trigger application action */
-	radio_event_callback();
+	event_callback();
 }
 
 static void packet_tx_enqueue(uint8_t max)
@@ -5883,7 +5891,8 @@ static void pdu_node_tx_release(uint16_t handle,
 	_radio.pkt_release[_radio.packet_release_last].node_tx = node_tx;
 	_radio.packet_release_last = last;
 
-	radio_event_callback();
+	/* callback to trigger application action */
+	event_callback();
 }
 
 static void connection_release(struct connection *conn)
@@ -6014,7 +6023,7 @@ static void terminate_ind_rx_enqueue(struct connection *conn, uint8_t reason)
 	LL_ASSERT(link);
 
 	/* callback to trigger application action */
-	radio_event_callback();
+	event_callback();
 }
 
 static uint32_t conn_update(struct connection *conn,

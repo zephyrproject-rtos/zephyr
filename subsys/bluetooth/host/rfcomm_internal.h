@@ -77,6 +77,39 @@ struct bt_rfcomm_msc {
 #define BT_RFCOMM_DISC  0x43
 #define BT_RFCOMM_DM    0x0f
 
+#define BT_RFCOMM_RLS   0x14
+struct bt_rfcomm_rls {
+	uint8_t  dlci;
+	uint8_t  line_status;
+} __packed;
+
+#define BT_RFCOMM_RPN   0x24
+struct bt_rfcomm_rpn {
+	uint8_t  dlci;
+	uint8_t  baud_rate;
+	uint8_t  line_settings;
+	uint8_t  flow_control;
+	uint8_t  xon_char;
+	uint8_t  xoff_char;
+	uint16_t param_mask;
+} __packed;
+
+/* Default RPN Settings */
+#define BT_RFCOMM_RPN_BAUD_RATE_9600    0x03
+#define BT_RFCOMM_RPN_DATA_BITS_8       0x03
+#define BT_RFCOMM_RPN_STOP_BITS_1       0x00
+#define BT_RFCOMM_RPN_PARITY_NONE       0x00
+#define BT_RFCOMM_RPN_FLOW_NONE         0x00
+#define BT_RFCOMM_RPN_XON_CHAR          0x11
+#define BT_RFCOMM_RPN_XOFF_CHAR         0x13
+
+/* Set 1 to all the param mask except reserved */
+#define BT_RFCOMM_RPN_PARAM_MASK_ALL    0x3f7f
+
+#define BT_RFCOMM_SET_LINE_SETTINGS(data, stop, parity) ((data & 0x3) | \
+							 ((stop & 0x1) << 2) | \
+							 ((parity & 0x7) << 3))
+
 /* DV = 1 IC = 0 RTR = 1 RTC = 1 FC = 0 EXT = 0 */
 #define BT_RFCOMM_DEFAULT_V24_SIG 0x8d
 

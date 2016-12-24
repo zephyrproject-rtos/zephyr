@@ -94,7 +94,7 @@ static struct net_buf *h4_evt_recv(int *remaining)
 
 	*remaining = hdr.len;
 
-	buf = bt_buf_get_evt(hdr.evt);
+	buf = bt_buf_get_evt(hdr.evt, K_NO_WAIT);
 	if (buf) {
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {
@@ -114,7 +114,7 @@ static struct net_buf *h4_acl_recv(int *remaining)
 	/* We can ignore the return value since we pass len == min */
 	h4_read(h4_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
-	buf = bt_buf_get_acl();
+	buf = bt_buf_get_acl(K_NO_WAIT);
 	if (buf) {
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {

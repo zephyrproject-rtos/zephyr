@@ -64,11 +64,11 @@ void bt_hci_driver_unregister(struct bt_hci_driver *drv)
 	bt_dev.drv = NULL;
 }
 
-struct net_buf *bt_buf_get_evt(uint8_t opcode)
+struct net_buf *bt_buf_get_evt(uint8_t opcode, int timeout)
 {
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&hci_evt_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&hci_evt_pool, timeout);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
 	}
@@ -76,11 +76,11 @@ struct net_buf *bt_buf_get_evt(uint8_t opcode)
 	return buf;
 }
 
-struct net_buf *bt_buf_get_acl(void)
+struct net_buf *bt_buf_get_acl(int32_t timeout)
 {
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&acl_in_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&acl_in_pool, timeout);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 	}
