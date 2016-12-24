@@ -142,17 +142,17 @@ static void print_phil_state(int id, const char *fmt, int32_t delay)
 	PRINTF("\n");
 }
 
-static int32_t get_random_delay(int id)
+static int32_t get_random_delay(int id, int period_in_ms)
 {
 	/*
-	 * The random delay is in tenth of seconds, and is based on the
-	 * philosopher's ID and the current uptime to create some
-	 * pseudo-randomness. It produces a value between 0 and 1500 ms.
+	 * The random delay is unit-less, and is based on the philosopher's ID
+	 * and the current uptime to create some pseudo-randomness. It produces
+	 * a value between 0 and 31.
 	 */
-	int32_t tenth_of_sec = (k_uptime_get_32()/100 * (id + 1)) & 0x1f;
+	int32_t delay = (k_uptime_get_32()/100 * (id + 1)) & 0x1f;
 
-	/* add 1 since we want a delay of at least 100ms */
-	int32_t ms = (tenth_of_sec + 1) * 100;
+	/* add 1 to not generate a delay of 0 */
+	int32_t ms = (delay + 1) * period_in_ms;
 
 	return ms;
 }
@@ -189,7 +189,7 @@ void philosopher(void *id, void *unused1, void *unused2)
 		print_phil_state(my_id, "   HOLDING ONE FORK   ", 0);
 		take(fork2);
 
-		delay = get_random_delay(my_id);
+		delay = get_random_delay(my_id, 25);
 		print_phil_state(my_id, "  EATING  [ %s%d ms ] ", delay);
 		k_sleep(delay);
 
@@ -197,7 +197,7 @@ void philosopher(void *id, void *unused1, void *unused2)
 		print_phil_state(my_id, "   DROPPED ONE FORK   ", 0);
 		drop(fork1);
 
-		delay = get_random_delay(my_id);
+		delay = get_random_delay(my_id, 25);
 		print_phil_state(my_id, " THINKING [ %s%d ms ] ", delay);
 		k_sleep(delay);
 	}
