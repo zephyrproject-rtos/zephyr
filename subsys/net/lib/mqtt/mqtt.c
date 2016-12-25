@@ -43,8 +43,8 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 
 int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 {
-	struct net_buf *data;
-	struct net_buf *tx;
+	struct net_buf *data = NULL;
+	struct net_buf *tx = NULL;
 	int rc;
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
@@ -57,7 +57,6 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 
 	rc = mqtt_pack_connect(data->data, &data->len, MSG_SIZE, msg);
 	if (rc != 0) {
-		net_nbuf_unref(data);
 		rc = -EINVAL;
 		goto exit_connect;
 	}
@@ -69,6 +68,7 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 	}
 
 	net_buf_frag_add(tx, data);
+	data = NULL;
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
@@ -76,15 +76,18 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 		goto exit_connect;
 	}
 
-	rc = 0;
+	tx = NULL;
 
 exit_connect:
+	net_nbuf_unref(data);
+	net_nbuf_unref(tx);
+
 	return rc;
 }
 
 int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 {
-	struct net_buf *tx;
+	struct net_buf *tx = NULL;
 	/* DISCONNECT is a zero length message: 2 bytes required, no payload */
 	uint8_t msg[2];
 	uint16_t len;
@@ -115,13 +118,15 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 	}
 
 	ctx->connected = 0;
-	rc = 0;
+	tx = NULL;
 
 	if (ctx->disconnect) {
 		ctx->disconnect(ctx->disconnect_data);
 	}
 
 exit_disconnect:
+	net_nbuf_unref(tx);
+
 	return rc;
 }
 
@@ -141,7 +146,7 @@ static
 int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
 		     enum mqtt_packet pkt_type)
 {
-	struct net_buf *tx;
+	struct net_buf *tx = NULL;
 	uint8_t msg[4];
 	uint16_t len;
 	int rc;
@@ -185,9 +190,11 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
 		goto exit_send;
 	}
 
-	rc = 0;
+	tx = NULL;
 
 exit_send:
+	net_nbuf_unref(tx);
+
 	return rc;
 }
 
@@ -213,8 +220,8 @@ int mqtt_tx_pubrel(struct mqtt_ctx *ctx, uint16_t id)
 
 int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 {
-	struct net_buf *data;
-	struct net_buf *tx;
+	struct net_buf *data = NULL;
+	struct net_buf *tx = NULL;
 	int rc;
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
@@ -237,6 +244,7 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 	}
 
 	net_buf_frag_add(tx, data);
+	data = NULL;
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
@@ -244,9 +252,12 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 		goto exit_publish;
 	}
 
-	rc = 0;
+	tx = NULL;
 
 exit_publish:
+	net_nbuf_unref(data);
+	net_nbuf_unref(tx);
+
 	return rc;
 }
 
@@ -277,17 +288,19 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		goto exit_pingreq;
 	}
 
-	rc = 0;
+	tx = NULL;
 
 exit_pingreq:
+	net_nbuf_unref(tx);
+
 	return rc;
 }
 
 int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		      const char *topics[], const enum mqtt_qos qos[])
 {
-	struct net_buf *data;
-	struct net_buf *tx;
+	struct net_buf *data = NULL;
+	struct net_buf *tx = NULL;
 	int rc;
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
@@ -311,6 +324,7 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 	}
 
 	net_buf_frag_add(tx, data);
+	data = NULL;
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
@@ -318,17 +332,20 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		goto exit_subs;
 	}
 
-	rc = 0;
+	tx = NULL;
 
 exit_subs:
+	net_nbuf_unref(data);
+	net_nbuf_unref(tx);
+
 	return rc;
 }
 
 int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 			const char *topics[])
 {
-	struct net_buf *data;
-	struct net_buf *tx;
+	struct net_buf *data = NULL;
+	struct net_buf *tx = NULL;
 	int rc;
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
@@ -340,7 +357,6 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 	rc = mqtt_pack_unsubscribe(data->data, &data->len, data->size, pkt_id,
 				   items, topics);
 	if (rc != 0) {
-		net_buf_unref(data);
 		rc = -EINVAL;
 		goto exit_unsub;
 	}
@@ -352,6 +368,7 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 	}
 
 	net_buf_frag_add(tx, data);
+	data = NULL;
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
@@ -359,9 +376,12 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		goto exit_unsub;
 	}
 
-	rc = 0;
+	tx = NULL;
 
 exit_unsub:
+	net_buf_unref(data);
+	net_buf_unref(tx);
+
 	return rc;
 }
 
