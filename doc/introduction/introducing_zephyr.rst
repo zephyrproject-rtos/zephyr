@@ -10,7 +10,7 @@ wireless gateways.
 
 It is designed to be supported by multiple architectures, including
 ARM Cortex-M, Intel x86, and ARC. The full list of supported boards
-can be found :ref:`here <board>`.
+can be found :ref:`here <boards>`.
 
 Licensing
 *********
@@ -102,7 +102,7 @@ This section outlines the basic terms used by the Zephyr kernel ecosystem.
    which can load and execute an application image. It may be an actual
    hardware system or a simulated system running under QEMU.
 
-   The Zephyr kernel supports a :ref:`variety of boards <board>`.
+   The Zephyr kernel supports a :ref:`variety of boards <boards>`.
 
 :dfn:`board configuration`
    A set of kernel configuration options that specify how the devices

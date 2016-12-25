@@ -249,7 +249,7 @@ kernel libraries.
 
       BOARD = board_configuration_name
 
-   The supported boards can be found in :ref:`board`.
+   The supported boards can be found in :ref:`boards`.
 
 #. Add the name of the default kernel configuration file for your
    application on a new line:

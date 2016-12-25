@@ -30,7 +30,7 @@ Sections
 
    doc/introduction/introducing_zephyr.rst
    doc/getting_started/getting_started.rst
-   doc/board/board.rst
+   boards/boards.rst
    doc/kernel/kernel.rst
    doc/application/application.rst
    doc/porting/porting.rst

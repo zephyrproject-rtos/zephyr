@@ -103,7 +103,7 @@ supported boards, for example:
    $ make BOARD=arduino_101
 
 For further information on the supported boards go see
-:ref:`here <board>`. Alternatively, run the following command to obtain a list
+:ref:`here <boards>`. Alternatively, run the following command to obtain a list
 of the supported boards:
 
 .. code-block:: console
