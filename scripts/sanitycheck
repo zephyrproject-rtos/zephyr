@@ -886,9 +886,6 @@ arch_valid_keys = {"name" : {"type" : "str", "required" : True},
                    "supported_toolchains" : {"type" : "list", "required" : True}}
 
 platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
-                        # FIXME remove
-                        "microkernel_support" : {"type" : "bool",
-                                                 "default" : True},
                        "supported_toolchains" : {"type" : "list", "default" : []}}
 
 testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
@@ -898,8 +895,6 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "skip" : {"type" : "bool", "default" : False},
                        "slow" : {"type" : "bool", "default" : False},
                        "timeout" : {"type" : "int", "default" : 60},
-                       # FIXME remove once all testcase.ini are updated
-                       "kernel" : {"type": "str", "required" : False},
                        "arch_whitelist" : {"type" : "set"},
                        "arch_exclude" : {"type" : "set"},
                        "extra_sections" : {"type" : "list", "default" : []},
