@@ -1725,8 +1725,22 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			 */
 			*rx_enqueue = 1;
 		} else {
-			/* enqueue the error and let HCI handle it */
-			*rx_enqueue = 1;
+			struct pdu_data_llctrl *llctrl;
+
+			llctrl = (struct pdu_data_llctrl *)
+				&pdu_data_rx->payload.llctrl;
+			switch (llctrl->ctrldata.unknown_rsp.type) {
+			case PDU_DATA_LLCTRL_TYPE_PING_REQ:
+				/* unknown rsp to LE Ping Req completes the
+				 * procedure; nothing to do here.
+				 */
+				break;
+			default:
+				/* enqueue the error and let HCI handle it */
+				*rx_enqueue = 1;
+				break;
+			}
+
 			/* Procedure complete */
 			_radio.conn_curr->procedure_expire = 0;
 		}
