@@ -1105,6 +1105,13 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 
 	case NODE_RX_TYPE_PROFILE:
 		/** @todo */
+		BT_INFO("l: %d, %d, %d; t: %d, %d, %d.",
+			pdu_data->payload.profile.lcur,
+			pdu_data->payload.profile.lmin,
+			pdu_data->payload.profile.lmax,
+			pdu_data->payload.profile.cur,
+			pdu_data->payload.profile.min,
+			pdu_data->payload.profile.max);
 		return;
 
 	default:
