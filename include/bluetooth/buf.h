@@ -52,6 +52,17 @@ enum bt_buf_type {
 			sizeof(struct bt_hci_acl_hdr) + \
 			CONFIG_BLUETOOTH_RX_BUF_LEN)
 
+/** Allocate a buffer for incoming data
+ *
+ *  This will not set the buffer type so bt_buf_set_type() needs to be called
+ *  before bt_recv().
+ *
+ *  @param timeout Timeout in milliseconds, or one of the special values
+ *                 K_NO_WAIT and K_FOREVER.
+ *  @return A new buffer.
+ */
+struct net_buf *bt_buf_get_rx(int32_t timeout);
+
 /** Allocate a buffer for an HCI event
  *
  *  This will set the BT_BUF_EVT buffer type so bt_buf_set_type()

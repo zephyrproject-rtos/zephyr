@@ -4018,6 +4018,18 @@ struct net_buf *bt_buf_get_acl(int32_t timeout)
 #endif /* CONFIG_BLUETOOTH_CONN */
 }
 
+struct net_buf *bt_buf_get_rx(int32_t timeout)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&hci_rx_pool, timeout);
+	if (buf) {
+		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+	}
+
+	return buf;
+}
+
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static int br_start_inquiry(const struct bt_br_discovery_param *param)
 {

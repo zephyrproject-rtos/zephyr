@@ -59,6 +59,11 @@ void bt_hci_driver_unregister(struct bt_hci_driver *drv)
 	bt_dev.drv = NULL;
 }
 
+struct net_buf *bt_buf_get_rx(int timeout)
+{
+	return net_buf_alloc(&hci_rx_pool, timeout);
+}
+
 struct net_buf *bt_buf_get_evt(uint8_t opcode, int timeout)
 {
 	struct net_buf *buf;
