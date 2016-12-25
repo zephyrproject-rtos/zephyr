@@ -518,8 +518,7 @@ static void bt_uart_isr(struct device *unused)
 				continue;
 			}
 
-			memcpy(net_buf_add(h5.rx_buf, sizeof(byte)), &byte,
-			       sizeof(byte));
+			net_buf_add_mem(h5.rx_buf, &byte, sizeof(byte));
 			remaining--;
 			if (!remaining) {
 				h5.rx_state = END;

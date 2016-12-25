@@ -838,7 +838,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 			return;
 		}
 
-		memcpy(net_buf_add(conn->rx, buf->len), buf->data, buf->len);
+		net_buf_add_mem(conn->rx, buf->data, buf->len);
 		conn->rx_len -= buf->len;
 		net_buf_unref(buf);
 
@@ -957,7 +957,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 
 	frag_len = min(conn_mtu(conn), net_buf_tailroom(frag));
 
-	memcpy(net_buf_add(frag, frag_len), buf->data, frag_len);
+	memcpy(frag, buf->data, frag_len);
 	net_buf_pull(buf, frag_len);
 
 	return frag;

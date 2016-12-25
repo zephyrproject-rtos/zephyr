@@ -967,7 +967,7 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident,
 	 * table 4.4]
 	 */
 	if (data) {
-		memcpy(net_buf_add(buf, data_len), data, data_len);
+		net_buf_add_mem(buf, data, data_len);
 	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);

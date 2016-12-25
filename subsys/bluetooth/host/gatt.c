@@ -909,8 +909,7 @@ static int gatt_find_type(struct bt_conn *conn,
 		net_buf_add_le16(buf, BT_UUID_16(params->uuid)->val);
 		break;
 	case BT_UUID_TYPE_128:
-		memcpy(net_buf_add(buf, 16),
-		       BT_UUID_128(params->uuid)->val, 16);
+		net_buf_add_mem(buf, BT_UUID_128(params->uuid)->val, 16);
 		break;
 	default:
 		BT_ERR("Unknown UUID type %u", params->uuid->type);

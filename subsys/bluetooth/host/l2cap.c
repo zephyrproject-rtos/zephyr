@@ -535,7 +535,7 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 	rej->reason = sys_cpu_to_le16(reason);
 
 	if (data) {
-		memcpy(net_buf_add(buf, data_len), data, data_len);
+		net_buf_add_mem(buf, data, data_len);
 	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
@@ -1225,7 +1225,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 		}
 
 		len = min(net_buf_tailroom(frag), buf->len);
-		memcpy(net_buf_add(frag, len), buf->data, len);
+		net_buf_add_mem(frag, buf->data, len);
 		net_buf_pull(buf, len);
 
 		BT_DBG("frag %p len %u", frag, frag->len);
@@ -1587,7 +1587,7 @@ segment:
 	len = min(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
 	/* Limit if original buffer is smaller than the segment */
 	len = min(buf->len, len);
-	memcpy(net_buf_add(seg, len), buf->data, len);
+	net_buf_add_mem(seg, buf->data, len);
 	net_buf_pull(buf, len);
 
 	BT_DBG("ch %p seg %p len %u", ch, seg, seg->len);

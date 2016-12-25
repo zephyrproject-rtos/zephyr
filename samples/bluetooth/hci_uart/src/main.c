@@ -126,7 +126,7 @@ static struct net_buf *h4_cmd_recv(int *remaining)
 	buf = net_buf_alloc(&cmd_tx_pool, K_NO_WAIT);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_CMD);
-		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
 		SYS_LOG_ERR("No available command buffers!");
 	}
@@ -147,7 +147,7 @@ static struct net_buf *h4_acl_recv(int *remaining)
 	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
-		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
 		SYS_LOG_ERR("No available ACL buffers!");
 	}

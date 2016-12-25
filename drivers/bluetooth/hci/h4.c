@@ -96,7 +96,7 @@ static struct net_buf *h4_evt_recv(int *remaining)
 
 	buf = bt_buf_get_evt(hdr.evt, K_NO_WAIT);
 	if (buf) {
-		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
 		BT_ERR("No available event buffers!");
 	}
@@ -116,7 +116,7 @@ static struct net_buf *h4_acl_recv(int *remaining)
 
 	buf = bt_buf_get_acl(K_NO_WAIT);
 	if (buf) {
-		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
 		BT_ERR("No available ACL buffers!");
 	}

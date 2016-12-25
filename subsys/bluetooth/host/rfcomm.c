@@ -610,7 +610,7 @@ static int rfcomm_send_rpn(struct bt_rfcomm_session *session, uint8_t cr,
 
 	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_RPN, sizeof(*rpn));
 
-	memcpy(net_buf_add(buf, sizeof(*rpn)), rpn, sizeof(*rpn));
+	net_buf_add_mem(buf, rpn, sizeof(*rpn));
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);

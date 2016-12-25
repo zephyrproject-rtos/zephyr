@@ -1929,7 +1929,7 @@ static int cmd_l2cap_send(int argc, char *argv[])
 		buf = net_buf_alloc(&data_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
 
-		memcpy(net_buf_add(buf, len), buf_data, len);
+		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_l2cap_chan_send(&l2cap_chan.chan, buf);
 		if (ret < 0) {
 			printk("Unable to send: %d\n", -ret);
@@ -2130,7 +2130,7 @@ static int cmd_rfcomm_send(int argc, char *argv[])
 		/* Should reserve one byte in tail for FCS */
 		len = min(rfcomm_dlc.mtu, net_buf_tailroom(buf) - 1);
 
-		memcpy(net_buf_add(buf, len), buf_data, len);
+		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_rfcomm_dlc_send(&rfcomm_dlc, buf);
 		if (ret < 0) {
 			printk("Unable to send: %d\n", -ret);

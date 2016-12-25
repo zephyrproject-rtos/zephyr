@@ -1243,7 +1243,7 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	attr_data->handle = attr->handle;
 	attr_data->offset = data->offset;
 
-	memcpy(net_buf_add(data->buf, data->len), data->value, data->len);
+	net_buf_add_mem(data->buf, data->value, data->len);
 
 	data->err = 0;
 
