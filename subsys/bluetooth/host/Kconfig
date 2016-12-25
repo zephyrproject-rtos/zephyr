@@ -71,8 +71,8 @@ config BLUETOOTH_MAX_CMD_LEN
 config BLUETOOTH_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
 	default 10
-	default 1 if BLUETOOTH_RECV_IS_RX_THREAD
-	range 1 255
+	default 3 if BLUETOOTH_RECV_IS_RX_THREAD
+	range 3 255
 	help
 	  Number of buffers available for incoming ACL packets or HCI events
 	  from the controller.
@@ -94,6 +94,21 @@ config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	  to connect to an external Bluetooth Host when Zephyr is
 	  acting as a Bluetooth Controller.
 
+config BLUETOOTH_RX_STACK_SIZE
+	int "Size of the receiving thread stack"
+	depends on BLUETOOTH_HCI_HOST || BLUETOOTH_RECV_IS_RX_THREAD
+	default 1024
+	default 512 if CONFIG_BLUETOOTH_HCI_RAW
+	range 1024 65536
+	range 512 65536 if CONFIG_BLUETOOTH_HCI_RAW
+	help
+	  Size of the receiving thread stack. This is the context from
+	  which all event callbacks to the application occur. The
+	  default value is sufficient for basic operation, but if the
+	  application needs to do advanced things in its callbacks that
+	  require extra stack space, this value can be increased to
+	  accommodate for that.
+
 if BLUETOOTH_HCI_HOST
 config BLUETOOTH_INTERNAL_STORAGE
 	bool "Use an internal persistent storage handler"
@@ -103,18 +118,6 @@ config BLUETOOTH_INTERNAL_STORAGE
 	  When selected the application doesn't need to register its own
 	  persistent storage handlers through the bt_storage API, rather
 	  an internal default handler is used for this.
-
-config BLUETOOTH_RX_STACK_SIZE
-	int "Size of the receiving thread stack"
-	default 1024
-	range 1024 65536
-	help
-	  Size of the receiving thread stack. This is the context from
-	  which all event callbacks to the application occur. The
-	  default value is sufficient for basic operation, but if the
-	  application needs to do advanced things in its callbacks that
-	  require extra stack space, this value can be increased to
-	  accommodate for that.
 
 config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
