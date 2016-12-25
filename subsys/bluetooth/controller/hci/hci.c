@@ -1169,7 +1169,8 @@ static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 		break;
 
 	default:
-		BT_ASSERT(0);
+		BT_WARN("type: 0x%02x",
+			pdu_data->payload.llctrl.ctrldata.unknown_rsp.type);
 		break;
 	}
 }
