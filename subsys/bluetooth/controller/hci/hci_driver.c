@@ -75,7 +75,7 @@ static uint8_t MALIGN(4) _radio[LL_MEM_TOTAL];
 
 static K_SEM_DEFINE(sem_recv, 0, UINT_MAX);
 static BT_STACK_NOINIT(recv_thread_stack,
-		       CONFIG_BLUETOOTH_CONTROLLER_RX_STACK_SIZE);
+		       CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 K_MUTEX_DEFINE(mutex_rand);
 

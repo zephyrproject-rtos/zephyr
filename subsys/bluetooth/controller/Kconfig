@@ -34,15 +34,6 @@ config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
 	  Maximum is set to 16384 due to implementation limitations (use of
 	  uint16_t for size/length variables).
 
-config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
-	int "Size of the receiving thread stack"
-	default 512
-	range 512 65536
-	help
-	  Size of the receiving thread stack. This is the context from
-	  which all radio messages are encoded into HCI events or data
-	  before passing it to Bluetooth receiving thread.
-
 comment "BLE Controller features"
 
 config BLUETOOTH_CONTROLLER_LE_PING
