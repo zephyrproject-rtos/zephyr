@@ -134,28 +134,6 @@ NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BLUETOOTH_RX_BUF_COUNT,
 		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
 
-/*
- * This priority pool is to handle HCI events that must not be dropped
- * (currently this is Command Status, Command Complete and Number of
- * Complete Packets) if running low on buffers. Buffers from this pool are not
- * allowed to be passed to RX thread and must be returned from bt_recv(). Since
- * the HCI ECC emulation is able to also allocate command status events
- * we need to reserve one extra buffer for it.
- */
-
-/* The worst case event length, Read Local Supported Commands Complete:
- * 2 (HCI evt hdr) + 3 (cmd complete hdr) + 65 (parameters) = 70.
- */
-#define PRIO_EVT_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + 70)
-
-#if defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
-NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 2, PRIO_EVT_SIZE,
-		    BT_BUF_USER_DATA_MIN, NULL);
-#else
-NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 1, PRIO_EVT_SIZE,
-		    BT_BUF_USER_DATA_MIN, NULL);
-#endif
-
 static struct tc_hmac_prng_struct prng;
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
@@ -3454,15 +3432,6 @@ static inline void handle_event(struct net_buf *buf)
 		break;
 #endif /* CONFIG_BLUETOOTH_CONN */
 	default:
-		/*
-		 * If buffer used is from priority pool we are running low on
-		 * buffers and those needs to be kept for 'critical' events
-		 * handled directly from bt_recv().
-		 */
-		if (buf->pool == &hci_evt_prio_pool) {
-			break;
-		}
-
 #if defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 		hci_event(net_buf_ref(buf));
 #else
@@ -3973,49 +3942,6 @@ int bt_le_scan_stop(void)
 	scan_dev_found_cb = NULL;
 
 	return bt_le_scan_update(false);
-}
-
-struct net_buf *bt_buf_get_evt(uint8_t opcode, int32_t timeout)
-{
-	struct net_buf *buf;
-
-	switch (opcode) {
-	case BT_HCI_EVT_CMD_COMPLETE:
-	case BT_HCI_EVT_CMD_STATUS:
-	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		buf = net_buf_alloc(&hci_evt_prio_pool, timeout);
-		break;
-	default:
-		buf = net_buf_alloc(&hci_rx_pool, K_NO_WAIT);
-		if (!buf && opcode == 0x00) {
-			buf = net_buf_alloc(&hci_evt_prio_pool, timeout);
-		}
-		break;
-	}
-
-	if (buf) {
-		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_EVT);
-	}
-
-	return buf;
-}
-
-struct net_buf *bt_buf_get_acl(int32_t timeout)
-{
-#if defined(CONFIG_BLUETOOTH_CONN)
-	struct net_buf *buf;
-
-	buf = net_buf_alloc(&hci_rx_pool, timeout);
-	if (buf) {
-		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
-	}
-
-	return buf;
-#else
-	return NULL;
-#endif /* CONFIG_BLUETOOTH_CONN */
 }
 
 struct net_buf *bt_buf_get_rx(int32_t timeout)
