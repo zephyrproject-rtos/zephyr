@@ -182,6 +182,18 @@ static int test_build_simple_pdu(void)
 		goto done;
 	}
 
+	if (buflen != (ZOAP_BUF_SIZE - 4 - strlen(token) - 2 - 1)) {
+		/*
+		 * The remaining length will be the buffer size less
+		 * 4: basic CoAP header
+		 * strlen(token): token length
+		 * 2: options (content-format)
+		 * 1: payload marker (added by zoap_packet_get_payload())
+		 */
+		TC_PRINT("Invalid packet length\n");
+		goto done;
+	}
+
 	memcpy(appdata, payload, sizeof(payload));
 
 	r = zoap_packet_set_used(&pkt, sizeof(payload));
