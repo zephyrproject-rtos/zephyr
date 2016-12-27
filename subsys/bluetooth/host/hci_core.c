@@ -408,7 +408,7 @@ static int set_random_address(const bt_addr_t *addr)
 		return -ENOBUFS;
 	}
 
-	memcpy(buf, addr, sizeof(*addr));
+	net_buf_add_mem(buf, addr, sizeof(*addr));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
 	if (err) {
