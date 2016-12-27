@@ -776,7 +776,7 @@ uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len)
 	}
 
 	if (len) {
-		*len = net_buf_tailroom(frag) - frag->len;
+		*len = net_buf_tailroom(frag);
 	}
 
 	return pkt->start;
