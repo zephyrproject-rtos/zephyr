@@ -547,11 +547,22 @@ static zoap_method_t method_from_code(const struct zoap_resource *resource,
 	}
 }
 
+static bool is_request(struct zoap_packet *pkt)
+{
+	uint8_t code = zoap_header_get_code(pkt);
+
+	return !(code & ~ZOAP_REQUEST_MASK);
+}
+
 int zoap_handle_request(struct zoap_packet *pkt,
 			struct zoap_resource *resources,
 			const struct sockaddr *from)
 {
 	struct zoap_resource *resource;
+
+	if (!is_request(pkt)) {
+		return 0;
+	}
 
 	for (resource = resources; resource && resource->path; resource++) {
 		zoap_method_t method;
@@ -1082,13 +1093,6 @@ int zoap_block_transfer_init(struct zoap_block_context *ctx,
 #define SET_BLOCK_SIZE(v, b) (v |= ((b) & 0x07))
 #define SET_MORE(v, m) ((v) |= (m) ? 0x08 : 0x00)
 #define SET_NUM(v, n) ((v) |= ((n) << 4))
-
-static bool is_request(struct zoap_packet *pkt)
-{
-	uint8_t code = zoap_header_get_code(pkt);
-
-	return !(code & ~ZOAP_REQUEST_MASK);
-}
 
 int zoap_add_block1_option(struct zoap_packet *pkt,
 			    struct zoap_block_context *ctx)
