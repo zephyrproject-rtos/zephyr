@@ -557,10 +557,12 @@ static inline void ScbCcrSet(uint32_t val)
  *
  * @brief Obtain priority of an exception
  *
- * Only works with exceptions 4 to 15; i.e. do not use this for interrupts, which
+ * Only works with exceptions; i.e. do not use this for interrupts, which
  * are exceptions 16+.
  *
- * Exceptions 1 to 3 priorities are fixed (-3, -2, -1).
+ * ARMv6-M: Exceptions 1 to 3 priorities are fixed (-3, -2, -1) and 4 to 9 are
+ * reserved exceptions.
+ * ARMv7-M: Exceptions 1 to 3 priorities are fixed (-3, -2, -1).
  *
  * @param exc exception number, 4 to 15
  * @return priority of exception @a exc
@@ -568,33 +570,47 @@ static inline void ScbCcrSet(uint32_t val)
 
 static inline uint8_t _ScbExcPrioGet(uint8_t exc)
 {
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+	__ASSERT((exc > 10) && (exc < 16), "");
+	return (__scs.scb.shpr[_PRIO_SHP_IDX(exc)] >> _PRIO_BIT_SHIFT(exc));
+#else
 	/* For priority exception handler 4-15 */
 	__ASSERT((exc > 3) && (exc < 16), "");
 	return __scs.scb.shpr[exc - 4];
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 }
 
 /**
  *
  * @brief Set priority of an exception
  *
- * Only works with exceptions 4 to 15; i.e. do not use this for interrupts, which
+ * Only works with exceptions; i.e. do not use this for interrupts, which
  * are exceptions 16+.
  *
  * Note that the processor might not implement all 8 bits, in which case the
  * lower N bits are ignored.
  *
- * Exceptions 1 to 3 priorities are fixed (-3, -2, -1).
+ * ARMv6-M: Exceptions 1 to 3 priorities are fixed (-3, -2, -1) and 4 to 9 are
+ * reserved exceptions.
+ * ARMv7-M: Exceptions 1 to 3 priorities are fixed (-3, -2, -1).
  *
- * @param exc  exception number, 4 to 15
+ * @param exc  exception number, 10 to 15 on ARMv6-M and 4 to 15 on ARMv7-M
  * @param pri  priority, 0 to 255
  * @return N/A
  */
 
 static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
 {
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+	volatile uint32_t * const shpr = &__scs.scb.shpr[_PRIO_SHP_IDX(exc)];
+	__ASSERT((exc > 10) && (exc < 16), "");
+	*shpr = ((*shpr & ~((uint32_t)0xff << _PRIO_BIT_SHIFT(exc))) |
+		 ((uint32_t)pri << _PRIO_BIT_SHIFT(exc)));
+#else
 	/* For priority exception handler 4-15 */
 	__ASSERT((exc > 3) && (exc < 16), "");
 	__scs.scb.shpr[exc - 4] = pri;
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 }
 
 #if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
