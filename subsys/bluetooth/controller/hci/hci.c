@@ -1103,6 +1103,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		/** @todo */
 		return;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
 		/** @todo */
 		BT_INFO("l: %d, %d, %d; t: %d, %d, %d.",
@@ -1113,6 +1114,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 			pdu_data->payload.profile.min,
 			pdu_data->payload.profile.max);
 		return;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 
 	default:
 		LL_ASSERT(0);

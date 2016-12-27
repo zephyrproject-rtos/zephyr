@@ -60,7 +60,6 @@
 
 #define XTAL_ADVANCED		1
 #define SCHED_ADVANCED		1
-#define PROFILE_ISR		0
 #define FAST_ENC_PROCEDURE	0
 #define SILENT_CONNECTION	0
 
@@ -1950,7 +1949,8 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 	struct pdu_data *pdu_data_rx;
 	struct pdu_data *pdu_data_tx;
 	uint8_t crc_close = 0;
-#if PROFILE_ISR
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	static uint8_t s_lmax;
 	static uint8_t s_lmin = (uint8_t) -1;
 	static uint8_t s_lprv;
@@ -1960,7 +1960,7 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 	uint32_t sample;
 	uint8_t latency, elapsed, prv;
 	uint8_t chg = 0;
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 
 	/* Collect RSSI for connection */
 	if (_radio.packet_counter == 0) {
@@ -2075,7 +2075,7 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 
 isr_rx_conn_exit:
 
-#if PROFILE_ISR
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	/* get the ISR latency sample */
 	sample = radio_tmr_sample_get();
 
@@ -2145,7 +2145,7 @@ isr_rx_conn_exit:
 			packet_rx_enqueue();
 		}
 	}
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 
 	return;
 }
@@ -2629,12 +2629,14 @@ static void isr(void)
 	/* Read radio status and events */
 	trx_done = radio_is_done();
 	if (trx_done) {
-#if PROFILE_ISR
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 		/* sample the packet timer here, use it to calculate ISR latency
 		 * and generate the profiling event at the end of the ISR.
 		 */
 		radio_tmr_sample();
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+
 		crc_ok = radio_crc_is_valid();
 		devmatch_ok = radio_filter_has_match();
 		irkmatch_ok = radio_ar_has_match();
@@ -7604,13 +7606,17 @@ void radio_rx_dequeue(void)
 
 	switch (radio_pdu_node_rx->hdr.type) {
 	case NODE_RX_TYPE_DC_PDU:
-	case NODE_RX_TYPE_PROFILE:
 	case NODE_RX_TYPE_REPORT:
 	case NODE_RX_TYPE_CONNECTION:
 	case NODE_RX_TYPE_CONN_UPDATE:
 	case NODE_RX_TYPE_ENC_REFRESH:
 	case NODE_RX_TYPE_APTO:
 	case NODE_RX_TYPE_RSSI:
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
+	case NODE_RX_TYPE_PROFILE:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+
 		/* release data link credit quota */
 		LL_ASSERT(_radio.link_rx_data_quota <
 			  (_radio.packet_rx_count - 1));
@@ -7642,13 +7648,17 @@ void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
 
 		switch (_radio_pdu_node_rx_free->hdr.type) {
 		case NODE_RX_TYPE_DC_PDU:
-		case NODE_RX_TYPE_PROFILE:
 		case NODE_RX_TYPE_REPORT:
 		case NODE_RX_TYPE_CONNECTION:
 		case NODE_RX_TYPE_CONN_UPDATE:
 		case NODE_RX_TYPE_ENC_REFRESH:
 		case NODE_RX_TYPE_APTO:
 		case NODE_RX_TYPE_RSSI:
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
+		case NODE_RX_TYPE_PROFILE:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+
 			mem_release(_radio_pdu_node_rx_free,
 				    &_radio.pkt_rx_data_free);
 			break;

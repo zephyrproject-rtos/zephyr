@@ -38,6 +38,8 @@ config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
 	  which all radio messages are encoded into HCI events or data
 	  before passing it to Bluetooth receiving thread.
 
+comment "BLE Controller debug configuration"
+
 config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
 	bool "Bluetooth Controller Assertion Handler"
 	depends on BLUETOOTH_HCI_RAW
@@ -48,5 +50,12 @@ config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
 
+config BLUETOOTH_CONTROLLER_PROFILE_ISR
+	bool "Profile radio ISR"
+	help
+	  Turn on measurement of radio ISR latency, CPU usage and generation of
+	  controller event with these profiling data. The controller event
+	  contains current, minimum and maximum ISR entry latencies; and
+	  current, minimum and maximum ISR CPU use in micro-seconds.
 
 endif # BLUETOOTH_CONTROLLER

@@ -180,7 +180,6 @@ struct radio_pdu_node_tx {
 enum radio_pdu_node_rx_type {
 	NODE_RX_TYPE_NONE,
 	NODE_RX_TYPE_DC_PDU,
-	NODE_RX_TYPE_PROFILE,
 	NODE_RX_TYPE_REPORT,
 	NODE_RX_TYPE_CONNECTION,
 	NODE_RX_TYPE_TERMINATE,
@@ -188,6 +187,9 @@ enum radio_pdu_node_rx_type {
 	NODE_RX_TYPE_ENC_REFRESH,
 	NODE_RX_TYPE_APTO,
 	NODE_RX_TYPE_RSSI,
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
+	NODE_RX_TYPE_PROFILE,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 };
 
 struct radio_pdu_node_rx_hdr {
