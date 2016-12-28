@@ -38,6 +38,14 @@ config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
 	  which all radio messages are encoded into HCI events or data
 	  before passing it to Bluetooth receiving thread.
 
+comment "BLE Controller features"
+
+config BLUETOOTH_CONTROLLER_LE_PING
+	bool "LE Ping"
+	default y
+	help
+	  Enable support for Bluetooth v4.1 LE Ping feature in the Controller.
+
 comment "BLE Controller debug configuration"
 
 config BLUETOOTH_CONTROLLER_ASSERT_HANDLER

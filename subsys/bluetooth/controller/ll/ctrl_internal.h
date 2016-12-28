@@ -28,7 +28,11 @@ enum llcp {
 	LLCP_FEATURE_EXCHANGE,
 	LLCP_VERSION_EXCHANGE,
 	/* LLCP_TERMINATE, */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	LLCP_PING,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 	/* LLCP_LENGTH, */
 };
 
@@ -62,10 +66,13 @@ struct connection {
 	uint16_t supervision_expire;
 	uint16_t procedure_reload;
 	uint16_t procedure_expire;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	uint16_t appto_reload;
 	uint16_t appto_expire;
 	uint16_t apto_reload;
 	uint16_t apto_expire;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 	union {
 		struct {

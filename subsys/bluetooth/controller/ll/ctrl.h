@@ -44,6 +44,12 @@
 		CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS
 #endif
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+#define RADIO_BLE_FEATURES_BIT_PING BIT(BT_LE_FEAT_BIT_PING)
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+#define RADIO_BLE_FEATURES_BIT_PING 0
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 /*****************************************************************************
  * Timer Resources (Controller defined)
  ****************************************************************************/
@@ -88,7 +94,7 @@
 					 BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ) | \
 					 BIT(BT_LE_FEAT_BIT_EXT_REJ_IND) | \
 					 BIT(BT_LE_FEAT_BIT_SLAVE_FEAT_REQ) | \
-					 BIT(BT_LE_FEAT_BIT_PING) | \
+					 RADIO_BLE_FEATURES_BIT_PING | \
 					 BIT(BT_LE_FEAT_BIT_DLE))
 
 /*****************************************************************************

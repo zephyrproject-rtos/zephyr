@@ -269,7 +269,11 @@ static void unknown_rsp_send(struct connection *conn, uint8_t type);
 static void feature_rsp_send(struct connection *conn);
 static void pause_enc_rsp_send(struct connection *conn);
 static void version_ind_send(struct connection *conn);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 static void ping_resp_send(struct connection *conn);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 static void reject_ind_ext_send(struct connection *conn,
 				uint8_t reject_opcode,
 				uint8_t error_code);
@@ -645,12 +649,15 @@ static inline uint32_t isr_rx_adv(uint8_t devmatch_ok, uint8_t irkmatch_ok,
 					   * 10 * 1000), conn_interval_us);
 		conn->procedure_reload = RADIO_CONN_EVENTS((40 * 1000 * 1000),
 							   conn_interval_us);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 		conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),
 						      conn_interval_us);
 		conn->appto_reload =
 			(conn->apto_reload > (conn->latency + 2)) ?
 			(conn->apto_reload - (conn->latency + 2)) :
 			conn->apto_reload;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 		/* Prepare the rx packet structure */
 		radio_pdu_node_rx->hdr.handle = conn->handle;
@@ -1715,6 +1722,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	case PDU_DATA_LLCTRL_TYPE_PING_REQ:
 		ping_resp_send(_radio.conn_curr);
 		break;
@@ -1723,6 +1731,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		/* Procedure complete */
 		_radio.conn_curr->procedure_expire = 0;
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		if (_radio.conn_curr->llcp_req != _radio.conn_curr->llcp_ack) {
@@ -1754,11 +1763,15 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			llctrl = (struct pdu_data_llctrl *)
 				&pdu_data_rx->payload.llctrl;
 			switch (llctrl->ctrldata.unknown_rsp.type) {
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 			case PDU_DATA_LLCTRL_TYPE_PING_REQ:
 				/* unknown rsp to LE Ping Req completes the
 				 * procedure; nothing to do here.
 				 */
 				break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 			default:
 				/* enqueue the error and let HCI handle it */
 				*rx_enqueue = 1;
@@ -1899,9 +1912,11 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				return 1; /* terminated */
 			}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 			/* stop authenticated payload (pre) timeout */
 			_radio.conn_curr->appto_expire = 0;
 			_radio.conn_curr->apto_expire = 0;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 			switch (pdu_data_rx->ll_id) {
 			case PDU_DATA_LLID_DATA_CONTINUE:
@@ -1919,6 +1934,8 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				LL_ASSERT(0);
 				break;
 			}
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 		} else if ((_radio.conn_curr->enc_rx) ||
 			   (_radio.conn_curr->pause_rx)) {
 			/* start authenticated payload (pre) timeout */
@@ -1928,6 +1945,8 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				_radio.conn_curr->apto_expire =
 					_radio.conn_curr->apto_reload;
 			}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 		}
 
 		if (!nack) {
@@ -2498,6 +2517,7 @@ static inline void isr_close_conn(void)
 		}
 	}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	/* check apto */
 	if (_radio.conn_curr->apto_expire != 0) {
 		if (_radio.conn_curr->apto_expire > elapsed_event) {
@@ -2534,6 +2554,7 @@ static inline void isr_close_conn(void)
 			}
 		}
 	}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 	/* generate RSSI event */
 	if (_radio.conn_curr->rssi_sample_count == 0) {
@@ -4661,12 +4682,16 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 					   * 10 * 1000), conn_interval_us);
 		conn->procedure_reload =
 			RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 		conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),
 						      conn_interval_us);
 		conn->appto_reload =
 			(conn->apto_reload > (conn->latency + 2)) ?
 			(conn->apto_reload - (conn->latency + 2)) :
 			conn->apto_reload;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 		if (!conn->llcp.connection_update.is_internal) {
 			conn->supervision_expire = 0;
 		}
@@ -5014,6 +5039,7 @@ static inline void event_vex_prep(struct connection *conn)
 
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 static inline void event_ping_prep(struct connection *conn)
 {
 	struct radio_pdu_node_tx *node_tx;
@@ -5041,6 +5067,7 @@ static inline void event_ping_prep(struct connection *conn)
 	}
 
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 static inline void event_len_prep(struct connection *conn)
 {
@@ -5306,9 +5333,11 @@ static void event_connection_prepare(uint32_t ticks_at_expire,
 			event_vex_prep(conn);
 			break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 		case LLCP_PING:
 			event_ping_prep(conn);
 			break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 		default:
 			LL_ASSERT(0);
@@ -6424,6 +6453,7 @@ static void version_ind_send(struct connection *conn)
 	empty_tx_enqueue(conn);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 static void ping_resp_send(struct connection *conn)
 {
 	struct radio_pdu_node_tx *node_tx;
@@ -6440,6 +6470,7 @@ static void ping_resp_send(struct connection *conn)
 
 	ctrl_tx_enqueue(conn, node_tx);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 static void reject_ind_ext_send(struct connection *conn,
 				uint8_t reject_opcode, uint8_t error_code)
@@ -6836,8 +6867,12 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 		conn->role.slave.ticks_to_offset = 0;
 		conn->supervision_expire = 6;
 		conn->procedure_expire = 0;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 		conn->apto_expire = 0;
 		conn->appto_expire = 0;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 		conn->llcp_req = 0;
 		conn->llcp_ack = 0;
 		conn->llcp_version.tx = 0;
@@ -7161,12 +7196,16 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	conn->procedure_reload =
 		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 	conn->procedure_expire = 0;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	conn->apto_reload =
 		RADIO_CONN_EVENTS((30 * 1000 * 1000), conn_interval_us);
 	conn->apto_expire = 0;
 	conn->appto_reload = (conn->apto_reload > (conn->latency + 2)) ?
 		(conn->apto_reload - (conn->latency + 2)) : conn->apto_reload;
 	conn->appto_expire = 0;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 	conn->llcp_req = 0;
 	conn->llcp_ack = 0;
 	conn->llcp_version.tx = 0;
