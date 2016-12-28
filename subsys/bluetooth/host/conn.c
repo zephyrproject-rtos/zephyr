@@ -957,7 +957,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 
 	frag_len = min(conn_mtu(conn), net_buf_tailroom(frag));
 
-	memcpy(frag, buf->data, frag_len);
+	net_buf_add_mem(frag, buf->data, frag_len);
 	net_buf_pull(buf, frag_len);
 
 	return frag;
