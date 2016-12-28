@@ -115,10 +115,17 @@ union __cpuid {
 union __icsr {
 	uint32_t val;
 	struct {
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 		uint32_t vectactive : 9 __packed;
-		uint32_t rsvd__9_10 : 2 __packed;
+		uint32_t rsvd__9_10_11 : 3 __packed;
+		uint32_t vectpending : 9 __packed;
+		uint32_t rsvd__21 : 1 __packed;
+#else
+		uint32_t vectactive : 10 __packed;
+		uint32_t rsvd__10 : 1 __packed;
 		uint32_t rettobase : 1 __packed;
 		uint32_t vectpending : 10 __packed;
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 		uint32_t isrpending : 1 __packed;
 		uint32_t rsvd__23 : 1 __packed;
 		uint32_t rsvd__24 : 1 __packed;
@@ -144,12 +151,20 @@ union __vtor {
 union __aircr {
 	uint32_t val;
 	struct {
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+		uint32_t rsvd__0 : 1 __packed;
+#else
 		uint32_t vecreset : 1 __packed;      /* WO */
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 		uint32_t vectclractive : 1 __packed; /* WO */
 		uint32_t sysresetreq : 1 __packed;   /* WO */
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+		uint32_t rsvd__3_14 : 12 __packed;
+#else
 		uint32_t rsvd__3_7 : 5 __packed;
 		uint32_t prigroup : 3 __packed;
 		uint32_t rsvd__11_14 : 4 __packed;
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 		uint32_t endianness : 1 __packed; /* RO */
 		uint32_t vectkey : 16 __packed;
 	} bit;
@@ -172,13 +187,21 @@ union __scr {
 union __ccr {
 	uint32_t val;
 	struct {
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+		uint32_t rsvd_0_2 : 3 __packed;
+#else
 		uint32_t nonbasethrdena : 1 __packed;
 		uint32_t usersetmpend : 1 __packed;
 		uint32_t rsvd__2 : 1 __packed;
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 		uint32_t unalign_trp : 1 __packed;
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+		uint32_t rsvd_4_8 : 5 __packed;
+#else
 		uint32_t div_0_trp : 1 __packed;
 		uint32_t rsvd__5_7 : 3 __packed;
 		uint32_t bfhfnmign : 1 __packed;
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 		uint32_t stkalign : 1 __packed;
 		uint32_t rsvd__10_31 : 22 __packed;
 	} bit;
@@ -469,7 +492,11 @@ struct __scs {
 	struct {
 		union __cpuid cpuid; /* 0xd00 CPUID register */
 		union __icsr icsr;   /* 0xd04 IRQ Control and Start Register */
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+		uint32_t rsvd_9_12;
+#else
 		union __vtor vtor;   /* 0xd08 Vector Table Offset Register */
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 		union __aircr
 			aircr;    /* 0xd0c App IRQ and Reset Control Register */
 		union __scr scr;  /* 0xd10 System Control Register */
@@ -485,6 +512,9 @@ struct __scs {
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 		union __shcsr
 			shcsr;     /* 0xd24 Sys Handler Control and State Reg */
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+		uint32_t rsvd_40_63[6];
+#else
 		union __cfsr cfsr; /* 0xd28 Configurable Fault Status Register
 				    */
 		union __hfsr hfsr; /* 0xd2C Hard Fault Status Register */
@@ -492,6 +522,7 @@ struct __scs {
 		uint32_t mmfar;    /* 0xd34 MemManage Fault Address Register */
 		uint32_t bfar;     /* 0xd38 BusFault Address Register */
 		uint32_t afsr;     /* 0xd3C Aux Fault Status Register */
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 	} scb;			   /* offset: 0xd00, size 0x040 */
 
 	/*
@@ -548,7 +579,7 @@ extern volatile struct __scs __scs;
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 /* API */
-
+#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 /**
  *
  * @brief Obtain the number of interrupt lines on the target
@@ -684,6 +715,7 @@ static inline void _scs_relocate_vector_table(void *new_addr)
 		"isb\n\t"
 		:::);
 }
+#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 #endif /* _ASMLANGUAGE */
 
