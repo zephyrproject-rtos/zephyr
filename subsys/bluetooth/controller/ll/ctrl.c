@@ -243,7 +243,11 @@ static void tx_packet_set(struct connection *conn,
 static void prepare_pdu_data_tx(struct connection *conn,
 				struct pdu_data **pdu_data_tx);
 static void packet_rx_allocate(uint8_t max);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static uint8_t packet_rx_acquired_count_get(void);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 static struct radio_pdu_node_rx *packet_rx_reserve_get(uint8_t count);
 static void packet_rx_enqueue(void);
 static void packet_tx_enqueue(uint8_t max);
@@ -277,9 +281,13 @@ static void ping_resp_send(struct connection *conn);
 static void reject_ind_ext_send(struct connection *conn,
 				uint8_t reject_opcode,
 				uint8_t error_code);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static void length_resp_send(struct connection *conn,
 				uint16_t eff_rx_octets,
 				uint16_t eff_tx_octets);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 static uint32_t role_disable(uint8_t ticker_id_primary,
 			     uint8_t ticker_id_stop);
 static void rx_fc_lock(uint16_t handle);
@@ -484,9 +492,11 @@ static void common_init(void)
 	_radio.data_channel_map[4] = 0x1F;
 	_radio.data_channel_count = 37;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	/* Initialize the DLE defaults */
 	_radio.default_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 	_radio.default_tx_time = RADIO_LL_LENGTH_TIME_RX_MIN;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	/* allocate the rx queue */
 	packet_rx_allocate(0xFF);
@@ -1134,6 +1144,7 @@ static inline uint8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		_radio.conn_curr->procedure_expire = 0;
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 		if ((_radio.conn_curr->llcp_length.req !=
 		     _radio.conn_curr->llcp_length.ack) &&
@@ -1147,6 +1158,7 @@ static inline uint8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 				LLCP_LENGTH_STATE_RSP_WAIT;
 		}
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	default:
 		/* Do nothing for other ctrl packet ack */
@@ -1249,6 +1261,7 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static inline uint8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		uint8_t *rx_enqueue)
 {
@@ -1367,6 +1380,7 @@ static inline uint8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 
 	return nack;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 static inline uint8_t
 isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
@@ -1743,6 +1757,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				LL_ASSERT(0);
 				break;
 			}
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 		} else if (_radio.conn_curr->llcp_length.req !=
 			   _radio.conn_curr->llcp_length.ack) {
 			/* Procedure complete */
@@ -1757,6 +1773,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			 * host
 			 */
 			*rx_enqueue = 1;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 		} else {
 			struct pdu_data_llctrl *llctrl;
 
@@ -1783,10 +1801,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 		nack = isr_rx_conn_pkt_ctrl_dle(pdu_data_rx, rx_enqueue);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	default:
 		unknown_rsp_send(_radio.conn_curr,
@@ -5069,6 +5089,7 @@ static inline void event_ping_prep(struct connection *conn)
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static inline void event_len_prep(struct connection *conn)
 {
 	switch (conn->llcp_length.state) {
@@ -5275,7 +5296,7 @@ static inline void event_len_prep(struct connection *conn)
 		break;
 	}
 }
-
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 static void event_connection_prepare(uint32_t ticks_at_expire,
 				     uint32_t remainder, uint16_t lazy,
@@ -5381,6 +5402,7 @@ static void event_connection_prepare(uint32_t ticks_at_expire,
 		}
 	}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	/* check if procedure is requested */
 	if (conn->llcp_length.ack != conn->llcp_length.req) {
 		/* Stop previous event, to avoid Radio DMA corrupting the
@@ -5391,6 +5413,7 @@ static void event_connection_prepare(uint32_t ticks_at_expire,
 		/* handle DLU state machine */
 		event_len_prep(conn);
 	}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	/* Setup XTAL startup and radio active events */
 	event_common_prepare(ticks_at_expire, remainder,
@@ -5671,15 +5694,22 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 static void rx_packet_set(struct connection *conn, struct pdu_data *pdu_data_rx)
 {
 	uint8_t phy;
+	uint16_t max_rx_octets;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+	max_rx_octets = conn->max_rx_octets;
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+	max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	phy = RADIO_PHY_CONN;
 	if (conn->enc_rx) {
-		radio_pkt_configure(phy, 8, (conn->max_rx_octets + 4));
+		radio_pkt_configure(phy, 8, (max_rx_octets + 4));
 
 		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&conn->ccm_rx,
 						      pdu_data_rx));
 	} else {
-		radio_pkt_configure(phy, 8, conn->max_rx_octets);
+		radio_pkt_configure(phy, 8, max_rx_octets);
 
 		radio_pkt_rx_set(pdu_data_rx);
 	}
@@ -5689,15 +5719,22 @@ static void tx_packet_set(struct connection *conn,
 			  struct pdu_data *pdu_data_tx)
 {
 	uint8_t phy;
+	uint16_t max_tx_octets;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+	max_tx_octets = conn->max_tx_octets;
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+	max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	phy = RADIO_PHY_CONN;
 	if (conn->enc_tx) {
-		radio_pkt_configure(phy, 8, (conn->max_tx_octets + 4));
+		radio_pkt_configure(phy, 8, (max_tx_octets + 4));
 
 		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&conn->ccm_tx,
 						      pdu_data_tx));
 	} else {
-		radio_pkt_configure(phy, 8, conn->max_tx_octets);
+		radio_pkt_configure(phy, 8, max_tx_octets);
 
 		radio_pkt_tx_set(pdu_data_tx);
 	}
@@ -5748,6 +5785,8 @@ static void prepare_pdu_data_tx(struct connection *conn,
 		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND_EXT))))))) {
 			_pdu_data_tx = empty_tx_enqueue(conn);
 	} else {
+		uint16_t max_tx_octets;
+
 		_pdu_data_tx =
 			(struct pdu_data *)(conn->pkt_tx_head->pdu_data +
 					    conn->packet_tx_head_offset);
@@ -5764,8 +5803,14 @@ static void prepare_pdu_data_tx(struct connection *conn,
 		    conn->packet_tx_head_offset;
 		_pdu_data_tx->md = 0;
 
-		if (_pdu_data_tx->len > conn->max_tx_octets) {
-			_pdu_data_tx->len = conn->max_tx_octets;
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+		max_tx_octets = conn->max_tx_octets;
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+		max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
+		if (_pdu_data_tx->len > max_tx_octets) {
+			_pdu_data_tx->len = max_tx_octets;
 			_pdu_data_tx->md = 1;
 		}
 
@@ -5822,6 +5867,7 @@ static void packet_rx_allocate(uint8_t max)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static uint8_t packet_rx_acquired_count_get(void)
 {
 	if (_radio.packet_rx_acquire >=
@@ -5834,6 +5880,7 @@ static uint8_t packet_rx_acquired_count_get(void)
 			_radio.packet_rx_acquire);
 	}
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 static struct radio_pdu_node_rx *packet_rx_reserve_get(uint8_t count)
 {
@@ -6496,6 +6543,7 @@ static void reject_ind_ext_send(struct connection *conn,
 	ctrl_tx_enqueue(conn, node_tx);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static void length_resp_send(struct connection *conn, uint16_t eff_rx_octets,
 			     uint16_t eff_tx_octets)
 {
@@ -6522,6 +6570,7 @@ static void length_resp_send(struct connection *conn, uint16_t eff_rx_octets,
 
 	ctrl_tx_enqueue(conn, node_tx);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 void radio_ticks_active_to_start_set(uint32_t ticks_active_to_start)
 {
@@ -6857,9 +6906,13 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 		conn->event_counter = 0;
 		conn->latency_prepare = 0;
 		conn->latency_event = 0;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 		conn->default_tx_octets = _radio.default_tx_octets;
 		conn->max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 		conn->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 		conn->role.slave.role = 1;
 		conn->role.slave.latency_cancel = 0;
 		conn->role.slave.window_widening_prepare_us = 0;
@@ -6881,8 +6934,12 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 		conn->llcp_terminate.ack = 0;
 		conn->llcp_terminate.reason_peer = 0;
 		conn->llcp_terminate.radio_pdu_node_rx.hdr.onion.link = link;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 		conn->llcp_length.req = 0;
 		conn->llcp_length.ack = 0;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 		conn->sn = 0;
 		conn->nesn = 0;
 		conn->pause_rx = 0;
@@ -7182,9 +7239,13 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	conn->latency_prepare = 0;
 	conn->latency_event = 0;
 	conn->latency = _radio.observer.conn_latency;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	conn->default_tx_octets = _radio.default_tx_octets;
 	conn->max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
 	conn->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 	conn->role.master.role = 0;
 	conn->role.master.connect_expire = 6;
 	conn_interval_us =
@@ -7214,8 +7275,12 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	conn->llcp_terminate.ack = 0;
 	conn->llcp_terminate.reason_peer = 0;
 	conn->llcp_terminate.radio_pdu_node_rx.hdr.onion.link = link;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	conn->llcp_length.req = 0;
 	conn->llcp_length.ack = 0;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 	conn->sn = 0;
 	conn->nesn = 0;
 	conn->pause_rx = 0;
@@ -7507,6 +7572,7 @@ uint32_t radio_terminate_ind_send(uint16_t handle, uint8_t reason)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets)
 {
 	struct connection *conn;
@@ -7552,6 +7618,7 @@ void radio_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
 	*max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
 	*max_rx_time = RADIO_LL_LENGTH_TIME_RX_MAX;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 {

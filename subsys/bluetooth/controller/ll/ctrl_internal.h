@@ -32,8 +32,6 @@ enum llcp {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	LLCP_PING,
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
-
-	/* LLCP_LENGTH, */
 };
 
 
@@ -59,9 +57,13 @@ struct connection {
 	uint16_t latency;
 	uint16_t latency_prepare;
 	uint16_t latency_event;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	uint16_t default_tx_octets;
 	uint16_t max_tx_octets;
 	uint16_t max_rx_octets;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 	uint16_t supervision_reload;
 	uint16_t supervision_expire;
 	uint16_t procedure_reload;
@@ -163,6 +165,7 @@ struct connection {
 		} radio_pdu_node_rx;
 	} llcp_terminate;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	struct {
 		uint8_t req;
 		uint8_t ack;
@@ -174,6 +177,7 @@ struct connection {
 		uint16_t rx_octets;
 		uint16_t tx_octets;
 	} llcp_length;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	uint8_t sn:1;
 	uint8_t nesn:1;

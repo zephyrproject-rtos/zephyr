@@ -2,14 +2,6 @@ if BLUETOOTH_CONTROLLER
 
 comment "BLE Controller configuration"
 
-config BLUETOOTH_CONTROLLER_DATA_LENGTH
-	prompt "Maximum data length supported"
-	int
-	default 27
-	range 27 251
-	help
-	  Set the maximum data length of PDU supported in the stack.
-
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
 	int
@@ -45,6 +37,22 @@ config BLUETOOTH_CONTROLLER_LE_PING
 	default y
 	help
 	  Enable support for Bluetooth v4.1 LE Ping feature in the Controller.
+
+config BLUETOOTH_CONTROLLER_DATA_LENGTH
+	bool "Data Length Update"
+	default y
+	help
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure in
+	  the Controller.
+
+config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
+	prompt "Maximum data length supported"
+	depends on BLUETOOTH_CONTROLLER_DATA_LENGTH
+	int
+	default 27
+	range 27 251
+	help
+	  Set the maximum data length of PDU supported in the Controller.
 
 comment "BLE Controller debug configuration"
 

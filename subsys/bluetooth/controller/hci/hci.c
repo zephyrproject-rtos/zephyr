@@ -212,18 +212,25 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf *evt)
 	 * LE Read Supported States.
 	 */
 	rp->commands[28] = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
-	/* LE Remote Conn Param Req and Neg Reply, LE Set Data Length,
-	 * and LE Read Suggested Data Length.
-	 */
-	rp->commands[33] = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7);
+	/* LE Remote Conn Param Req and Neg Reply */
+	rp->commands[33] = (1 << 4) | (1 << 5);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+	/* LE Set Data Length, and LE Read Suggested Data Length. */
+	rp->commands[33] |= (1 << 6) | (1 << 7);
 	/* LE Write Suggested Data Length. */
 	rp->commands[34] = (1 << 0);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 #if defined(CONFIG_BLUETOOTH_HCI_RAW) && defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
 	/* LE Read Local P256 Public Key and LE Generate DH Key*/
 	rp->commands[34] |= (1 << 1) | (1 << 2);
 #endif
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	/* LE Read Maximum Data Length. */
 	rp->commands[35] = (1 << 3);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 }
 
 static void read_local_features(struct net_buf *buf, struct net_buf *evt)
@@ -660,6 +667,7 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 	rp->handle = cmd->handle;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static void le_set_data_len(struct net_buf *buf, struct net_buf *evt)
 {
 	struct bt_hci_cp_le_set_data_len *cmd = (void *)buf->data;
@@ -710,6 +718,7 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf *evt)
 			     &rp->max_rx_octets, &rp->max_rx_time);
 	rp->status = 0x00;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 				 struct net_buf *evt)
@@ -827,6 +836,7 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 		le_conn_param_req_neg_reply(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	case BT_OCF(BT_HCI_OP_LE_SET_DATA_LEN):
 		le_set_data_len(cmd, evt);
 		break;
@@ -842,6 +852,7 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_READ_MAX_DATA_LEN):
 		le_read_max_data_len(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	default:
 		return -EINVAL;

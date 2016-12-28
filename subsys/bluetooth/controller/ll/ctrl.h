@@ -29,11 +29,6 @@
 #define RADIO_CONNECTION_CONTEXT_MAX 0
 #endif
 
-#ifdef CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH
-#define RADIO_LL_LENGTH_OCTETS_RX_MAX \
-		CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH
-#endif
-
 #ifdef CONFIG_BLUETOOTH_CONTROLLER_RX_BUFFERS
 #define RADIO_PACKET_COUNT_RX_MAX \
 		CONFIG_BLUETOOTH_CONTROLLER_RX_BUFFERS
@@ -49,6 +44,15 @@
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 #define RADIO_BLE_FEATURES_BIT_PING 0
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX)
+#define RADIO_BLE_FEATURES_BIT_DLE BIT(BT_LE_FEAT_BIT_DLE)
+#define RADIO_LL_LENGTH_OCTETS_RX_MAX \
+		CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
+#else
+#define RADIO_BLE_FEATURES_BIT_DLE 0
+#define RADIO_LL_LENGTH_OCTETS_RX_MAX 27
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX */
 
 /*****************************************************************************
  * Timer Resources (Controller defined)
@@ -95,7 +99,7 @@
 					 BIT(BT_LE_FEAT_BIT_EXT_REJ_IND) | \
 					 BIT(BT_LE_FEAT_BIT_SLAVE_FEAT_REQ) | \
 					 RADIO_BLE_FEATURES_BIT_PING | \
-					 BIT(BT_LE_FEAT_BIT_DLE))
+					 RADIO_BLE_FEATURES_BIT_DLE)
 
 /*****************************************************************************
  * Controller Reference Defines (compile time override-able)
@@ -257,11 +261,15 @@ uint32_t radio_start_enc_req_send(uint16_t handle, uint8_t err_code,
 uint32_t radio_feature_req_send(uint16_t handle);
 uint32_t radio_version_ind_send(uint16_t handle);
 uint32_t radio_terminate_ind_send(uint16_t handle, uint8_t reason);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets);
 void radio_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time);
 uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
 void radio_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
 			  uint16_t *max_rx_octets, uint16_t *max_rx_time);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 uint8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx,
 		uint16_t *handle);
 void radio_rx_dequeue(void);
