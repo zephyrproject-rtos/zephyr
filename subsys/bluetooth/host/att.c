@@ -1181,13 +1181,9 @@ static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 static uint8_t att_write_req(struct bt_att *att, struct net_buf *buf)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
-	struct bt_att_write_req *req;
 	uint16_t handle;
 
-	req = (void *)buf->data;
-
-	handle = sys_le16_to_cpu(req->handle);
-	net_buf_pull(buf, sizeof(*req));
+	handle = net_buf_pull_le16(buf);
 
 	BT_DBG("handle 0x%04x", handle);
 
@@ -1380,17 +1376,9 @@ static uint8_t att_exec_write_req(struct bt_att *att, struct net_buf *buf)
 static uint8_t att_write_cmd(struct bt_att *att, struct net_buf *buf)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
-	struct bt_att_write_cmd *req;
 	uint16_t handle;
 
-	if (buf->len < sizeof(*req)) {
-		/* Commands don't have any response */
-		return 0;
-	}
-
-	req = (void *)buf->data;
-
-	handle = sys_le16_to_cpu(req->handle);
+	handle = net_buf_pull_le16(buf);
 
 	BT_DBG("handle 0x%04x", handle);
 
