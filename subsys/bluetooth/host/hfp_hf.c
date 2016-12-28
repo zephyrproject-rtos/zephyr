@@ -319,8 +319,8 @@ int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
-int cind_status_finish(struct at_client *hf_at, struct net_buf *buf,
-		       enum at_result result)
+int cmer_finish(struct at_client *hf_at, struct net_buf *buf,
+		enum at_result result)
 {
 	if (result != AT_RESULT_OK) {
 		BT_ERR("SLC Connection ERROR in response");
@@ -328,7 +328,26 @@ int cind_status_finish(struct at_client *hf_at, struct net_buf *buf,
 		return -EINVAL;
 	}
 
-	/* Continue SLC creation */
+	return 0;
+}
+
+int cind_status_finish(struct at_client *hf_at, struct net_buf *buf,
+		       enum at_result result)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
+	if (result != AT_RESULT_OK) {
+		BT_ERR("SLC Connection ERROR in response");
+		hf_slc_error(hf_at);
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, cmer_finish, "AT+CMER=3,0,0,1");
+	if (err < 0) {
+		hf_slc_error(hf_at);
+		return err;
+	}
 
 	return 0;
 }
