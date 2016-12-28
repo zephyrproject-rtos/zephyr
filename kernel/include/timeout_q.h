@@ -151,6 +151,36 @@ static inline int _abort_thread_timeout(struct k_thread *thread)
 	return _abort_timeout(&thread->base.timeout);
 }
 
+static inline void _dump_timeout(struct _timeout *timeout, int extra_tab)
+{
+#ifdef CONFIG_KERNEL_DEBUG
+	char *tab = extra_tab ? "\t" : "";
+
+	K_DEBUG("%stimeout %p, prev: %p, next: %p\n"
+		"%s\tthread: %p, wait_q: %p\n"
+		"%s\tticks remaining: %d\n"
+		"%s\tfunction: %p\n",
+		tab, timeout, timeout->node.prev, timeout->node.next,
+		tab, timeout->thread, timeout->wait_q,
+		tab, timeout->delta_ticks_from_prev,
+		tab, timeout->func);
+#endif
+}
+
+static inline void _dump_timeout_q(void)
+{
+#ifdef CONFIG_KERNEL_DEBUG
+	sys_dnode_t *node;
+
+	K_DEBUG("_timeout_q: %p, head: %p, tail: %p\n",
+		&_timeout_q, _timeout_q.head, _timeout_q.tail);
+
+	SYS_DLIST_FOR_EACH_NODE(&_timeout_q, node) {
+		_dump_timeout((struct _timeout *)node, 1);
+	}
+#endif
+}
+
 /*
  * Add timeout to timeout queue. Record waiting thread and wait queue if any.
  *
@@ -170,6 +200,10 @@ static inline void _add_timeout(struct k_thread *thread,
 	timeout->thread = thread;
 	timeout->wait_q = (sys_dlist_t *)wait_q;
 
+	K_DEBUG("before adding timeout %p\n", timeout);
+	_dump_timeout(timeout, 0);
+	_dump_timeout_q();
+
 	int32_t *delta = &timeout->delta_ticks_from_prev;
 	sys_dnode_t *node;
 
@@ -180,13 +214,18 @@ static inline void _add_timeout(struct k_thread *thread,
 			in_q->delta_ticks_from_prev -= *delta;
 			sys_dlist_insert_before(&_timeout_q, node,
 						&timeout->node);
-			return;
+			goto inserted;
 		}
 
 		*delta -= in_q->delta_ticks_from_prev;
 	}
 
 	sys_dlist_append(&_timeout_q, &timeout->node);
+
+inserted:
+	K_DEBUG("after adding timeout %p\n", timeout);
+	_dump_timeout(timeout, 0);
+	_dump_timeout_q();
 }
 
 /*
