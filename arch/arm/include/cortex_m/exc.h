@@ -55,8 +55,14 @@ static ALWAYS_INLINE int _IsInIsr(void)
 	/*
 	 * IRQs + PendSV (14) + SVC (11) + SYSTICK (15) are interrupts.
 	 * Vectors 12 and 13 are reserved, we'll never be in there
+	 * On ARMv6-M there is no nested execution bit, so we check exception 3,
+	 * hard fault, to a detect a nested exception.
 	 */
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+	return (vector > 10) || (vector == 3);
+#else
 	return (vector > 10) || (vector && _ScbIsNestedExc());
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 }
 
 /**

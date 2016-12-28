@@ -376,5 +376,7 @@ void _Fault(const NANO_ESF *esf)
  */
 void _FaultInit(void)
 {
+#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 	_ScbDivByZeroFaultEnable();
+#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
 }
