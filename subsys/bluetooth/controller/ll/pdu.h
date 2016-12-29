@@ -257,7 +257,11 @@ struct pdu_data {
 	union {
 		uint8_t lldata[1];
 		struct pdu_data_llctrl llctrl;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 		uint8_t rssi;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 		struct profile profile;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */

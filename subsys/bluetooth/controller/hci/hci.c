@@ -1114,13 +1114,15 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	case NODE_RX_TYPE_RSSI:
-		/** @todo */
+		BT_INFO("handle: 0x%04x, rssi: -%d dB.", handle,
+			pdu_data->payload.rssi);
 		return;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
-		/** @todo */
 		BT_INFO("l: %d, %d, %d; t: %d, %d, %d.",
 			pdu_data->payload.profile.lcur,
 			pdu_data->payload.profile.lmin,

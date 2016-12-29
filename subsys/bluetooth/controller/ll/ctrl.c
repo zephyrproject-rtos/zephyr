@@ -53,8 +53,10 @@
 #define RADIO_TICKER_PREEMPT_PART_MIN_US	0
 #define RADIO_TICKER_PREEMPT_PART_MAX_US	RADIO_TICKER_XTAL_OFFSET_US
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 #define RADIO_RSSI_SAMPLE_COUNT	10
 #define RADIO_RSSI_THRESHOLD	4
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 #define RADIO_IRK_COUNT_MAX	8
 
@@ -537,9 +539,13 @@ static inline void isr_radio_state_tx(void)
 		break;
 
 	case ROLE_MASTER:
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 		if (_radio.packet_counter == 0) {
 			radio_rssi_measure();
 		}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+
 		/* fall thru */
 
 	case ROLE_SLAVE:
@@ -585,7 +591,7 @@ static inline uint32_t isr_rx_adv(uint8_t devmatch_ok, uint8_t irkmatch_ok,
 		radio_switch_complete_and_disable();
 
 		/* TODO use rssi_ready to generate proprietary scan_req event */
-		rssi_ready = rssi_ready; /* unused for now */
+		ARG_UNUSED(rssi_ready);
 
 		/* use the latest scan data, if any */
 		if (_radio.advertiser.scan_data.first != _radio.
@@ -2004,6 +2010,7 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 	uint8_t chg = 0;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	/* Collect RSSI for connection */
 	if (_radio.packet_counter == 0) {
 		if (rssi_ready) {
@@ -2022,6 +2029,7 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 			}
 		}
 	}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 	/* Increment packet counter for this connection event */
 	_radio.packet_counter++;
@@ -2576,6 +2584,7 @@ static inline void isr_close_conn(void)
 	}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	/* generate RSSI event */
 	if (_radio.conn_curr->rssi_sample_count == 0) {
 		struct radio_pdu_node_rx *radio_pdu_node_rx;
@@ -2603,6 +2612,7 @@ static inline void isr_close_conn(void)
 			packet_rx_enqueue();
 		}
 	}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 	/* break latency based on ctrl procedure pending */
 	if ((_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) &&
@@ -5489,7 +5499,10 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 		      _radio.packet_rx[_radio.packet_rx_last]->pdu_data);
 
 	radio_switch_complete_and_tx();
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	radio_rssi_measure();
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 	/* Setup Radio Channel */
 	data_channel_use = channel_calc(&conn->data_channel_use,
@@ -6954,9 +6967,12 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 		conn->pkt_tx_last = NULL;
 		conn->packet_tx_head_len = 0;
 		conn->packet_tx_head_offset = 0;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 		conn->rssi_latest = 0x7F;
 		conn->rssi_reported = 0x7F;
 		conn->rssi_sample_count = 0;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 		_radio.advertiser.conn = conn;
 	} else {
@@ -7295,9 +7311,12 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	conn->pkt_tx_last = NULL;
 	conn->packet_tx_head_len = 0;
 	conn->packet_tx_head_offset = 0;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	conn->rssi_latest = 0x7F;
 	conn->rssi_reported = 0x7F;
 	conn->rssi_sample_count = 0;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 	_radio.observer.conn = conn;
 
@@ -7740,7 +7759,9 @@ void radio_rx_dequeue(void)
 	case NODE_RX_TYPE_APTO:
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	case NODE_RX_TYPE_RSSI:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
@@ -7786,7 +7807,9 @@ void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
 		case NODE_RX_TYPE_APTO:
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 		case NODE_RX_TYPE_RSSI:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 		case NODE_RX_TYPE_PROFILE:

@@ -54,6 +54,11 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
+config BLUETOOTH_CONTROLLER_CONN_RSSI
+	bool "Connection RSSI"
+	help
+	  Enable connection RSSI measurement.
+
 comment "BLE Controller debug configuration"
 
 config BLUETOOTH_CONTROLLER_ASSERT_HANDLER

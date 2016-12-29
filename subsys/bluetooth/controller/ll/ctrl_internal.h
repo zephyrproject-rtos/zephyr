@@ -198,9 +198,11 @@ struct connection {
 	uint8_t packet_tx_head_len;
 	uint8_t packet_tx_head_offset;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	uint8_t rssi_latest;
 	uint8_t rssi_reported;
 	uint8_t rssi_sample_count;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 };
 #define CONNECTION_T_SIZE ALIGN4(sizeof(struct connection))
 
