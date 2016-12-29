@@ -130,7 +130,7 @@ struct net_buf *bt_sdp_create_pdu(void)
 {
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&sdp_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&sdp_pool, 0);
 	/* NULL is not a possible return due to K_FOREVER */
 	net_buf_reserve(buf, sizeof(struct bt_sdp_hdr));
 

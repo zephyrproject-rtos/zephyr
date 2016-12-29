@@ -322,7 +322,7 @@ static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 	struct net_buf *buf;
 	uint8_t cr, fcs;
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_CMD_CR(session->role);
@@ -345,7 +345,7 @@ static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_session *session,
 	struct net_buf *buf;
 	uint8_t hdr_cr;
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr_cr = BT_RFCOMM_UIH_CR(session->role);
@@ -442,7 +442,7 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 
 	BT_DBG("dlci %d", dlci);
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
@@ -464,7 +464,7 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 	BT_DBG("dlci %d", dlci);
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
@@ -547,7 +547,7 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	struct net_buf *buf;
 	uint8_t cr, fcs;
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
@@ -829,7 +829,7 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 
 	BT_DBG("Dlc %p credits %d", dlc, credits);
 
-	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_UIH_CR(dlc->session->role);
