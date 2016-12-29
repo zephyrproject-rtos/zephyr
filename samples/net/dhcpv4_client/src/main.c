@@ -79,5 +79,7 @@ void main(void)
 {
 	NET_INFO("In main");
 
+	init_app();
+
 	main_fiber();
 }
