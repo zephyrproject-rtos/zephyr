@@ -73,8 +73,8 @@ int dns_write(struct dns_context *ctx, struct net_buf *dns_data,
 	      uint16_t dns_id, struct net_buf *dns_qname);
 
 static
-int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
-	     uint16_t dns_id, uint8_t *cname, uint16_t *cname_len);
+int dns_read(struct dns_context *ctx, struct net_buf *dns_data, uint16_t dns_id,
+	     struct net_buf *cname);
 
 /* net_context_recv callback */
 static
@@ -128,8 +128,7 @@ int dns_resolve(struct dns_context *ctx)
 			goto exit_resolve;
 		}
 
-		rc = dns_read(ctx, dns_data, dns_id,
-			      dns_qname->data, &dns_qname->len);
+		rc = dns_read(ctx, dns_data, dns_id, dns_qname);
 		if (rc != 0) {
 			goto exit_resolve;
 		}
@@ -222,8 +221,8 @@ void cb_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
 }
 
 static
-int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
-	     uint16_t dns_id, uint8_t *cname, uint16_t *cname_len)
+int dns_read(struct dns_context *ctx, struct net_buf *dns_data, uint16_t dns_id,
+	     struct net_buf *cname)
 {
 	/* helper struct to track the dns msg received from the server */
 	struct dns_msg_t dns_msg;
@@ -358,10 +357,14 @@ int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
 	 */
 	if (ctx->items == 0) {
 		if (dns_msg.response_type == DNS_RESPONSE_CNAME_NO_IP) {
-			src = dns_msg.msg + dns_msg.response_position;
-			*cname_len = dns_msg.response_length;
+			uint16_t pos = dns_msg.response_position;
 
-			memcpy(cname, src, *cname_len);
+			rc = dns_copy_qname(cname->data, &cname->len,
+					    cname->size, &dns_msg, pos);
+			if (rc != 0) {
+				goto exit_error;
+			}
+
 		}
 	}
 
@@ -370,5 +373,6 @@ exit_ok:
 
 exit_error:
 	net_nbuf_unref(ctx->rx_buf);
+
 	return rc;
 }
