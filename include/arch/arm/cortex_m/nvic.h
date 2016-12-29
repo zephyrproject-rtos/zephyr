@@ -182,9 +182,8 @@ static inline void _NvicIrqUnpend(unsigned int irq)
  * @return N/A
  */
 
-static inline void _NvicIrqPrioSet(unsigned int irq, unsigned int prio)
+static inline void _NvicIrqPrioSet(unsigned int irq, uint8_t prio)
 {
-	__ASSERT(prio < 256, "invalid priority\n");
 	__scs.nvic.ipr[irq] = prio;
 }
 
@@ -199,7 +198,7 @@ static inline void _NvicIrqPrioSet(unsigned int irq, unsigned int prio)
  * @return the priority level of the IRQ
  */
 
-static inline uint32_t _NvicIrqPrioGet(unsigned int irq)
+static inline uint8_t _NvicIrqPrioGet(unsigned int irq)
 {
 	return __scs.nvic.ipr[irq];
 }
