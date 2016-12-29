@@ -38,7 +38,7 @@
 #include <bluetooth/hci_raw.h>
 
 static struct device *hci_uart_dev;
-static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_SEND_STACK);
+static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \

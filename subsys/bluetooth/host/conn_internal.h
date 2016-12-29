@@ -120,7 +120,7 @@ struct bt_conn {
 	 * Since these threads don't overlap, one stack can be used by
 	 * both of them.
 	 */
-	BT_STACK(stack, CONFIG_BLUETOOTH_HCI_SEND_STACK);
+	BT_STACK(stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 };
 
 /* Process incoming data for a connection */

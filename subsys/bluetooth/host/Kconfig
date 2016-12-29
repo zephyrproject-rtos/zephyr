@@ -19,7 +19,7 @@
 comment "Host Stack Configuration"
 
 # Stack size needed for executing bt_send with specified driver
-config BLUETOOTH_HCI_SEND_STACK
+config BLUETOOTH_HCI_TX_STACK_SIZE
 	int
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
