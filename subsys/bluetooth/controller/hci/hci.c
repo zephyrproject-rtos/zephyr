@@ -1055,6 +1055,7 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
 	ep->handle = sys_cpu_to_le16(handle);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
 				     struct net_buf *buf)
 {
@@ -1065,6 +1066,7 @@ static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
 
 	ep->handle = sys_cpu_to_le16(handle);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 static void encode_control(struct radio_pdu_node_rx *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
@@ -1095,9 +1097,11 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		enc_refresh_complete(pdu_data, handle, buf);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	case NODE_RX_TYPE_APTO:
 		auth_payload_timeout_exp(pdu_data, handle, buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 	case NODE_RX_TYPE_RSSI:
 		/** @todo */
