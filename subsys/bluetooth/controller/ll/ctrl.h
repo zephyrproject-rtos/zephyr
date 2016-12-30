@@ -39,6 +39,11 @@
 		CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS
 #endif
 
+#ifdef CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
+#define RADIO_PACKET_TX_DATA_SIZE \
+		CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
+#endif
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 #define RADIO_BLE_FEATURES_BIT_PING BIT(BT_LE_FEAT_BIT_PING)
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
@@ -152,6 +157,12 @@
 #define RADIO_PACKET_COUNT_APP_TX_MAX	(RADIO_PACKET_COUNT_TX_MAX)
 #endif
 
+/* Tx Data Size */
+#if !defined(RADIO_PACKET_TX_DATA_SIZE) || \
+	(RADIO_PACKET_TX_DATA_SIZE < RADIO_LL_LENGTH_OCTETS_RX_MIN)
+#define RADIO_PACKET_TX_DATA_SIZE RADIO_LL_LENGTH_OCTETS_RX_MIN
+#endif
+
 /*****************************************************************************
  * Controller Interface Structures
  ****************************************************************************/
@@ -229,7 +240,8 @@ struct radio_pdu_node_rx {
  ****************************************************************************/
 uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 		    uint8_t rx_count_max, uint8_t tx_count_max,
-		    uint16_t data_octets_max, uint8_t *mem_radio,
+		    uint16_t packet_data_octets_max,
+		    uint16_t packet_tx_data_size, uint8_t *mem_radio,
 		    uint16_t mem_size);
 void ctrl_reset(void);
 void radio_ticks_active_to_start_set(uint32_t ticks_active_to_start);

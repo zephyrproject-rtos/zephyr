@@ -300,7 +300,7 @@ static void le_read_buffer_size(struct net_buf *buf, struct net_buf *evt)
 
 	rp->status = 0x00;
 
-	rp->le_max_len = sys_cpu_to_le16(RADIO_LL_LENGTH_OCTETS_RX_MAX);
+	rp->le_max_len = sys_cpu_to_le16(RADIO_PACKET_TX_DATA_SIZE);
 	rp->le_max_num = RADIO_PACKET_COUNT_TX_MAX;
 }
 

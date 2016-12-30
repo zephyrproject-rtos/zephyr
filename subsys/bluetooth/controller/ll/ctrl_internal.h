@@ -250,7 +250,7 @@ struct pdu_data_q_tx {
 #define LL_MEM_TX_DATA_POOL ((ALIGN4(offsetof( \
 					struct radio_pdu_node_tx, pdu_data) + \
 		   offsetof(struct pdu_data, payload) + \
-				RADIO_LL_LENGTH_OCTETS_RX_MAX)) \
+				RADIO_PACKET_TX_DATA_SIZE)) \
 			* (RADIO_PACKET_COUNT_TX_MAX + 1))
 
 #define LL_MEM_TOTAL (LL_MEM_CONN + LL_MEM_RXQ + (LL_MEM_TXQ * 2) + \

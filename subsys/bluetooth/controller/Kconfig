@@ -21,6 +21,19 @@ config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	  Set the number of Tx PDUs to be queued for transmission
 	  in the controller.
 
+config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
+	prompt "Tx buffer size"
+	int
+	range 27 16384
+	default 27
+	help
+	  Size of the Tx buffers and the value returned in HCI LE Read Buffer
+	  Size command response. If this size if greater than effective PDU size
+	  then controller will perform fragmentation before transmitting on the
+	  the packet on air.
+	  Maximum is set to 16384 due to implementation limitations (use of
+	  uint16_t for size/length variables).
+
 config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	default 512

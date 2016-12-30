@@ -325,13 +325,12 @@ static int hci_driver_open(void)
 		return -ENODEV;
 	}
 
-	err = radio_init(clk_m16,
-			 CLOCK_CONTROL_NRF5_K32SRC_ACCURACY,
+	err = radio_init(clk_m16, CLOCK_CONTROL_NRF5_K32SRC_ACCURACY,
 			 RADIO_CONNECTION_CONTEXT_MAX,
 			 RADIO_PACKET_COUNT_RX_MAX,
 			 RADIO_PACKET_COUNT_TX_MAX,
-			 RADIO_LL_LENGTH_OCTETS_RX_MAX, &_radio[0],
-			 sizeof(_radio));
+			 RADIO_LL_LENGTH_OCTETS_RX_MAX,
+			 RADIO_PACKET_TX_DATA_SIZE, &_radio[0], sizeof(_radio));
 	if (err) {
 		BT_ERR("Required RAM size: %d, supplied: %u.", err,
 		       sizeof(_radio));

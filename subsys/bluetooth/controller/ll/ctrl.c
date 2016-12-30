@@ -195,7 +195,6 @@ static struct {
 	void *pkt_tx_ctrl_free;
 	void *pkt_tx_data_pool;
 	void *pkt_tx_data_free;
-	uint16_t packet_tx_data_pool_size;
 	uint16_t packet_tx_data_size;
 
 	/* Host to Controller Tx, and Controller to Host Num complete queue */
@@ -299,7 +298,8 @@ static void rx_fc_lock(uint16_t handle);
  ****************************************************************************/
 uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 		    uint8_t rx_count_max, uint8_t tx_count_max,
-		    uint16_t packet_data_octets_max, uint8_t *mem_radio,
+		    uint16_t packet_data_octets_max,
+		    uint16_t packet_tx_data_size, uint8_t *mem_radio,
 		    uint16_t mem_size)
 {
 	uint32_t retcode;
@@ -379,13 +379,11 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 	_radio.packet_tx_data_size =
 		ALIGN4(offsetof(struct radio_pdu_node_tx, pdu_data) +
 		       offsetof(struct pdu_data, payload) +
-		       _radio.packet_data_octets_max);
-	_radio.packet_tx_data_pool_size =
-		(_radio.packet_tx_data_size * tx_count_max);
+		       packet_tx_data_size);
 
 	/* initialise tx data pool memory */
 	_radio.pkt_tx_data_pool = mem_radio;
-	mem_radio += _radio.packet_tx_data_pool_size;
+	mem_radio += (_radio.packet_tx_data_size * tx_count_max);
 
 	/* check for sufficient memory allocation for stack
 	 * configuration.
@@ -7602,6 +7600,8 @@ uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets)
 		return 1;
 	}
 
+	/* TODO: parameter check tx_octets */
+
 	conn->llcp_length.state = LLCP_LENGTH_STATE_REQ;
 	conn->llcp_length.tx_octets = tx_octets;
 	conn->llcp_length.req++;
@@ -7617,11 +7617,7 @@ void radio_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
 
 uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
 {
-	if (max_tx_octets > RADIO_LL_LENGTH_OCTETS_RX_MAX ||
-	    max_tx_time > RADIO_LL_LENGTH_TIME_RX_MAX) {
-
-		return 1;
-	}
+	/* TODO: parameter check (for BT 5.0 compliance) */
 
 	_radio.default_tx_octets = max_tx_octets;
 	_radio.default_tx_time = max_tx_time;
@@ -7957,10 +7953,14 @@ uint32_t radio_tx_mem_enqueue(uint16_t handle,
 
 	pdu_data = (struct pdu_data *)node_tx->pdu_data;
 	conn = connection_get(handle);
-	if ((last == _radio.packet_tx_first) || (conn == 0) ||
-	    (pdu_data->len > _radio.packet_data_octets_max)) {
+	if (!conn || (last == _radio.packet_tx_first)) {
 		return 1;
 	}
+
+	LL_ASSERT(pdu_data->len <= (_radio.packet_tx_data_size -
+				    offsetof(struct radio_pdu_node_tx,
+					     pdu_data) -
+				    offsetof(struct pdu_data, payload)));
 
 	_radio.pkt_tx[_radio.packet_tx_last].handle = handle;
 	_radio.pkt_tx[_radio.packet_tx_last].  node_tx = node_tx;
