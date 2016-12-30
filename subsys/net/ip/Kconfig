@@ -39,6 +39,14 @@ source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
 
+config NET_SHELL
+	bool "Enable network shell utilities"
+	default n
+	select CONSOLE_SHELL
+	help
+	Activate shell module that provides network commands like
+	ping to the console.
+
 config NET_IP_ADDR_CHECK
 	bool "Check IP address validity before sending IP packet"
 	default y

@@ -71,14 +71,6 @@ config NET_LOG_GLOBAL
 	use this option. Beware logging takes a lot of ROM/RAM and kills
 	execution timing so it can affect your use case.
 
-config NET_SHELL
-	bool "Enable network shell utilities"
-	default n
-	select CONSOLE_SHELL
-	help
-	Activate shell module that provides network commands like
-	ping to the console.
-
 config NET_DEBUG_CORE
 	bool "Debug core IP stack"
 	default n
