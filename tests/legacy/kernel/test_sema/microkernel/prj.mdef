@@ -8,7 +8,7 @@
 % =====================================================
   TASK MONITORTASK   5 MonitorTaskEntry     768  [EXE]
   TASK tHigh         4 HighPriTaskEntry     768  [TESTGROUP]
-  TASK tStartTask    5 RegressionTaskEntry  768  [TESTGROUP]
+  TASK tStartTask    5 RegressionTaskEntry  800  [TESTGROUP]
   TASK tAlternate    6 AlternateTaskEntry   768  [TESTGROUP]
   TASK tLow          7 LowPriTaskEntry      768  [TESTGROUP]
 
