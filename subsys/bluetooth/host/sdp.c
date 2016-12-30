@@ -501,12 +501,23 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_SDP_SVC_SEARCH_ATTR_RSP:
 		/* Get number of attributes in this frame. */
 		frame_len = net_buf_pull_be16(buf);
+		/* Check valid range of attributes length */
+		if (frame_len < 2) {
+			BT_ERR("Invalid attributes data length");
+			return;
+		}
+
 		/* Get PDU continuation state */
 		cstate = (struct bt_sdp_pdu_cstate *)(buf->data + frame_len);
 
 		if (cstate->length > BT_SDP_MAX_PDU_CSTATE_LEN) {
 			BT_ERR("Invalid SDP PDU Continuation State length %u",
 			       cstate->length);
+			return;
+		}
+
+		if ((frame_len + cstate->length) > len) {
+			BT_ERR("Invalid frame payload length");
 			return;
 		}
 
