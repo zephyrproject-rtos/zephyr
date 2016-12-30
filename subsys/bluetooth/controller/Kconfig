@@ -67,6 +67,19 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
+config BLUETOOTH_CONTROLLER_FAST_ENC
+	bool "Fast Encryption Setup"
+	help
+	  Enable connection encryption setup in 3 connection intervals.
+	  Peripheral will respond to Encryption Request with Encryption Response
+	  in the same connection interval, and also, will respond with Start
+	  Encryption Response PDU in the 3rd connection interval, hence
+	  completing encryption setup in 3 connection intervals. Encrypted data
+	  would be transmitted as fast as in 3rd connection interval from the
+	  connection establishment.
+	  Maximum CPU time in Radio ISR will increase if this feature is
+	  selected.
+
 config BLUETOOTH_CONTROLLER_CONN_RSSI
 	bool "Connection RSSI"
 	help

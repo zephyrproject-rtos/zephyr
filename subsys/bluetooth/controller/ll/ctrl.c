@@ -62,7 +62,6 @@
 
 #define XTAL_ADVANCED		1
 #define SCHED_ADVANCED		1
-#define FAST_ENC_PROCEDURE	0
 #define SILENT_CONNECTION	0
 
 #define RADIO_PHY_ADV		0
@@ -1445,12 +1444,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 #endif
 
-#if !!FAST_ENC_PROCEDURE
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC)
 		/* TODO BT Spec. text: may finalize the sending of additional
 		 * data channel PDUs queued in the controller.
 		 */
 		enc_rsp_send(_radio.conn_curr);
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
 
 		/* enqueue the enc req */
 		*rx_enqueue = 1;
@@ -1480,14 +1479,15 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		if (_radio.role == ROLE_SLAVE) {
-#if !FAST_ENC_PROCEDURE
+
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC)
 			LL_ASSERT(_radio.conn_curr->llcp_req ==
 				  _radio.conn_curr->llcp_ack);
 
 			/* start enc rsp to be scheduled in slave  prepare */
 			_radio.conn_curr->llcp_type = LLCP_ENCRYPTION;
 			_radio.conn_curr->llcp_ack--;
-#else
+#else /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
 			/* enable transmit encryption */
 			_radio.conn_curr->enc_tx = 1;
 
@@ -1496,7 +1496,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			/* resume data packet rx and tx */
 			_radio.conn_curr->pause_rx = 0;
 			_radio.conn_curr->pause_tx = 0;
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
+
 		} else {
 			/* resume data packet rx and tx */
 			_radio.conn_curr->pause_rx = 0;
@@ -4884,13 +4885,14 @@ static inline void event_enc_prep(struct connection *conn)
 			}
 			/* place the start enc req packet as next in tx queue */
 			else {
-#if !FAST_ENC_PROCEDURE
+
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC)
 				/* TODO BT Spec. text: may finalize the sending
 				 * of additional data channel PDUs queued in the
 				 * controller.
 				 */
 				enc_rsp_send(conn);
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
 
 				/* calc the Session Key */
 				ecb_encrypt(&conn->llcp.encryption.ltk[0],
@@ -4930,7 +4932,8 @@ static inline void event_enc_prep(struct connection *conn)
 					PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 			}
 		} else {
-#if !FAST_ENC_PROCEDURE
+
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC)
 			/* enable transmit encryption */
 			_radio.conn_curr->enc_tx = 1;
 
@@ -4939,13 +4942,14 @@ static inline void event_enc_prep(struct connection *conn)
 			/* resume data packet rx and tx */
 			_radio.conn_curr->pause_rx = 0;
 			_radio.conn_curr->pause_tx = 0;
-#else
+#else /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
 			/* Fast Enc implementation shall have enqueued the
 			 * start enc rsp in the radio ISR itself, we should
 			 * not get here.
 			 */
 			LL_ASSERT(0);
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
+
 		}
 
 		ctrl_tx_enqueue(conn, node_tx);
