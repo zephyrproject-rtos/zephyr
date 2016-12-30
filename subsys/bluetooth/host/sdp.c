@@ -647,7 +647,11 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			return;
 		}
 
-		/* No record found for given UUID */
+		/*
+		 * No record found for given UUID. The check catches case when
+		 * current response frame has Continuation State shortest and
+		 * valid and this is the first response frame as well.
+		 */
 		if (frame_len == 2 && cstate->length == 0 &&
 		    session->cstate.length == 0) {
 			BT_DBG("record for UUID 0x%s not found",
