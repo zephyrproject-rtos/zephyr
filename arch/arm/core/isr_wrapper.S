@@ -88,12 +88,14 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	blx _sys_power_save_idle_exit
 _idle_state_cleared:
 
-#else
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	ittt ne
 	movne	r1, #0
 		/* clear kernel idle state */
 		strne	r1, [r2, #_kernel_offset_to_idle]
 		blxne	_sys_power_save_idle_exit
+#else
+#error Unknown ARM architecture
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
@@ -104,9 +106,11 @@ _idle_state_cleared:
 	ldr r1, =16
 	subs r0, r1	/* get IRQ number */
 	lsls r0, #3	/* table is 8-byte wide */
-#else
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	sub r0, r0, #16	/* get IRQ number */
 	lsl r0, r0, #3	/* table is 8-byte wide */
+#else
+#error Unknown ARM architecture
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
@@ -118,8 +122,10 @@ _idle_state_cleared:
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 	pop {r3}
 	mov lr, r3
-#else
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	pop {lr}
+#else
+#error Unknown ARM architecture
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 	/* exception return is done in _IntExit() */

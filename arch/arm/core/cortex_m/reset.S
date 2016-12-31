@@ -74,10 +74,12 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     /* lock interrupts: will get unlocked when switch to main task */
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
     cpsid i
-#else /* CONFIG_CPU_CORTEX_M3_M4 */
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 #ifdef CONFIG_WDOG_INIT
     /* board-specific watchdog initialization is necessary */

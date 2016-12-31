@@ -134,7 +134,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 		: "=r" (key)
 		:
 		: "memory");
-#else /* CONFIG_CPU_CORTEX_M3_M4 */
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	unsigned int tmp;
 
 	__asm__ volatile(
@@ -144,7 +144,9 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 		: "=r"(key), "=r"(tmp)
 		: "i"(_EXC_IRQ_DEFAULT_PRIO)
 		: "memory");
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 	return key;
 }
@@ -176,9 +178,11 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 		return;
 	}
 	__asm__ volatile("cpsie i" : : : "memory");
-#else /* CONFIG_CPU_CORTEX_M3_M4 */
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	__asm__ volatile("msr BASEPRI, %0" :  : "r"(key) : "memory");
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 }
 
 

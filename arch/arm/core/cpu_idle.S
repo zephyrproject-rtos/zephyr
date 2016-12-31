@@ -129,10 +129,12 @@ SECTION_FUNC(TEXT, k_cpu_idle)
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 	cpsie i
-#else /* CONFIG_CPU_CORTEX_M3_M4 */
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	/* clear BASEPRI so wfi is awakened by incoming interrupts */
 	eors.n r0, r0
 	msr BASEPRI, r0
+#else
+#error Unknown ARM architecture
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 	wfi
@@ -191,7 +193,7 @@ SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 	cpsie i
 _irq_disabled:
 
-#else /* CONFIG_CPU_CORTEX_M3_M4 */
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	/* r1: zero, for setting BASEPRI (needs a register) */
 	eors.n r1, r1
 
@@ -202,5 +204,7 @@ _irq_disabled:
 
 	msr BASEPRI, r0
 	cpsie i
+#else
+#error Unknown ARM architecture
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS  */
 	bx lr

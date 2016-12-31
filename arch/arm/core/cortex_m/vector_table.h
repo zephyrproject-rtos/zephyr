@@ -48,13 +48,16 @@ GTEXT(_vector_table)
 GTEXT(__reset)
 GTEXT(__nmi)
 GTEXT(__hard_fault)
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)
 GTEXT(__usage_fault)
 GTEXT(__svc)
 GTEXT(__debug_monitor)
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 GTEXT(__pendsv)
 GTEXT(__reserved)
 

@@ -60,8 +60,10 @@ static ALWAYS_INLINE int _IsInIsr(void)
 	 */
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 	return (vector > 10) || (vector == 3);
-#else
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	return (vector > 10) || (vector && _ScbIsNestedExc());
+#else
+#error Unknown ARM architecture
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 }
 

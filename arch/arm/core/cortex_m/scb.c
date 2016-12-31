@@ -90,7 +90,8 @@ void sys_arch_reboot(int type)
 	DO_REBOOT();
 }
 
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 /**
  *
  * @brief Set the number of priority groups based on the number of exception
@@ -135,4 +136,6 @@ void _ScbNumPriGroupSet(unsigned int n)
 
 	__scs.scb.aircr.val = reg.val;
 }
-#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */

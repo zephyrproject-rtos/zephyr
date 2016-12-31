@@ -69,7 +69,8 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	       k_current_get(),
 	       esf->pc);
 
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	int escalation = 0;
 
 	if (3 == fault) { /* hard fault */
@@ -100,7 +101,9 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 
 	/* clear USFR sticky bits */
 	_ScbUsageFaultAllFaultsReset();
-#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 }
 #endif
 
@@ -120,7 +123,8 @@ static void _FaultThreadShow(const NANO_ESF *esf)
 	       k_current_get(), esf->pc);
 }
 
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 
 /**
  *
@@ -244,7 +248,9 @@ static void _DebugMonitor(const NANO_ESF *esf)
 	PR_EXC("***** Debug monitor exception (not implemented) *****\n");
 }
 
-#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 /**
  *
@@ -260,7 +266,7 @@ static void _HardFault(const NANO_ESF *esf)
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
 	_FaultThreadShow(esf);
-#else /* CONFIG_CPU_CORTEX_M3_M4 */
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	if (_ScbHardFaultIsBusErrOnVectorRead()) {
 		PR_EXC("  Bus fault on vector table read\n");
 	} else if (_ScbHardFaultIsForced()) {
@@ -273,7 +279,9 @@ static void _HardFault(const NANO_ESF *esf)
 			_UsageFault(esf);
 		}
 	}
-#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 }
 
 /**
@@ -318,7 +326,8 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 	case 3:
 		_HardFault(esf);
 		break;
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	case 4:
 		_MpuFault(esf, 0);
 		break;
@@ -331,7 +340,9 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 	case 12:
 		_DebugMonitor(esf);
 		break;
-#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 	default:
 		_ReservedException(esf, fault);
 		break;
@@ -376,7 +387,10 @@ void _Fault(const NANO_ESF *esf)
  */
 void _FaultInit(void)
 {
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	_ScbDivByZeroFaultEnable();
-#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 }

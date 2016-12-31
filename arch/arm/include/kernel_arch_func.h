@@ -69,10 +69,12 @@ _arch_switch_to_main_thread(char *main_stack, size_t main_stack_size,
 		/* unlock interrupts */
 #ifdef CONFIG_CPU_CORTEX_M0_M0PLUS
 		"cpsie i \t\n"
-#else
+#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 		"movs %%r1, #0 \n\t"
 		"msr BASEPRI, %%r1 \n\t"
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
 		/* branch to _thread_entry(_main, 0, 0, 0) */
 		"mov %%r0, %1 \n\t"
