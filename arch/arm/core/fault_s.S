@@ -73,40 +73,44 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__debug_monitor)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__reserved)
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
-    /* force unlock interrupts */
-    cpsie i
+	/* force unlock interrupts */
+	cpsie i
 
-    /* Use EXC_RETURN state to find out if stack frame is on the MSP or PSP */
-    ldr r0, =0x4
-    mov r1, lr
-    tst r1, r0
-    beq _stack_frame_msp
-    mrs r0, PSP
-    bne _stack_frame_endif
+	/* Use EXC_RETURN state to find out if stack frame is on the
+	 * MSP or PSP
+	 */
+	ldr r0, =0x4
+	mov r1, lr
+	tst r1, r0
+	beq _stack_frame_msp
+	mrs r0, PSP
+	bne _stack_frame_endif
 _stack_frame_msp:
-    mrs r0, MSP
+	mrs r0, MSP
 _stack_frame_endif:
 
 #else /* CONFIG_CPU_CORTEX_M3_M4 */
-    /* force unlock interrupts */
-    eors.n r0, r0
-    msr BASEPRI, r0
+	/* force unlock interrupts */
+	eors.n r0, r0
+	msr BASEPRI, r0
 
 	/* this reimplements _ScbIsNestedExc() */
-    ldr ip, =_SCS_ICSR
-    ldr ip, [ip]
-    ands.w ip, #_SCS_ICSR_RETTOBASE
+	ldr ip, =_SCS_ICSR
+	ldr ip, [ip]
+	ands.w ip, #_SCS_ICSR_RETTOBASE
 
 	ite eq			/* is the RETTOBASE bit zero ? */
-	mrseq r0, MSP	/* if so, we're not returning to thread mode, thus this
-					 * is a nested exception: the stack frame is on the MSP */
-	mrsne r0, PSP	/* if not, we are returning to thread mode, thus this is
-					 * not a nested exception: the stack frame is on the PSP */
+		mrseq r0, MSP	/* if so, we're not returning to thread mode,
+				 * thus this is a nested exception: the stack
+				 * frame is on the MSP */
+		mrsne r0, PSP	/* if not, we are returning to thread mode, thus
+				 *  this is not a nested exception: the stack
+				 * frame is on the PSP */
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
-    push {lr}
-    bl _Fault
+	push {lr}
+	bl _Fault
 
-    pop {pc}
+	pop {pc}
 
-    .end
+	.end

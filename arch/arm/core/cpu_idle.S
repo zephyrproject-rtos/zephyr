@@ -57,10 +57,10 @@ GTEXT(k_cpu_atomic_idle)
  */
 
 SECTION_FUNC(TEXT, _CpuIdleInit)
-    ldr r1, =_SCB_SCR
-    movs.n r2, #_SCR_INIT_BITS
-    str r2, [r1]
-    bx lr
+	ldr r1, =_SCB_SCR
+	movs.n r2, #_SCR_INIT_BITS
+	str r2, [r1]
+	bx lr
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 
@@ -78,9 +78,9 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
  */
 
 SECTION_FUNC(TEXT, _NanoIdleValGet)
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_idle]
-    bx lr
+	ldr r0, =_kernel
+	ldr r0, [r0, #_kernel_offset_to_idle]
+	bx lr
 
 /**
  *
@@ -96,10 +96,10 @@ SECTION_FUNC(TEXT, _NanoIdleValGet)
  */
 
 SECTION_FUNC(TEXT, _NanoIdleValClear)
-    ldr r0, =_kernel
-    eors.n r1, r1
-    str r1, [r0, #_kernel_offset_to_idle]
-    bx lr
+	ldr r0, =_kernel
+	eors.n r1, r1
+	str r1, [r0, #_kernel_offset_to_idle]
+	bx lr
 
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
@@ -128,16 +128,16 @@ SECTION_FUNC(TEXT, k_cpu_idle)
 #endif
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
-    cpsie i
+	cpsie i
 #else /* CONFIG_CPU_CORTEX_M3_M4 */
-    /* clear BASEPRI so wfi is awakened by incoming interrupts */
-    eors.n r0, r0
-    msr BASEPRI, r0
+	/* clear BASEPRI so wfi is awakened by incoming interrupts */
+	eors.n r0, r0
+	msr BASEPRI, r0
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 
-    wfi
+	wfi
 
-    bx lr
+	bx lr
 
 /**
  *
@@ -169,38 +169,38 @@ SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 	mov lr, r1
 #endif
 
-    /*
-     * Lock PRIMASK while sleeping: wfe will still get interrupted by incoming
-     * interrupts but the CPU will not service them right away.
-     */
-    cpsid i
+	/*
+	 * Lock PRIMASK while sleeping: wfe will still get interrupted by
+	 * incoming interrupts but the CPU will not service them right away.
+	 */
+	cpsid i
 
-    /*
-     * No need to set SEVONPEND, it's set once in _CpuIdleInit() and never
-     * touched again.
-     */
+	/*
+	 * No need to set SEVONPEND, it's set once in _CpuIdleInit() and never
+	 * touched again.
+	 */
 
-     /* r0: interrupt mask from caller */
+	/* r0: interrupt mask from caller */
 
 #if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
-    /* No BASEPRI, call wfe directly (SEVONPEND set in _CpuIdleInit()) */
-    wfe
+	/* No BASEPRI, call wfe directly (SEVONPEND set in _CpuIdleInit()) */
+	wfe
 
-    cmp r0, #0
-    bne _irq_disabled
-    cpsie i
+	cmp r0, #0
+	bne _irq_disabled
+	cpsie i
 _irq_disabled:
 
 #else /* CONFIG_CPU_CORTEX_M3_M4 */
-    /* r1: zero, for setting BASEPRI (needs a register) */
-    eors.n r1, r1
+	/* r1: zero, for setting BASEPRI (needs a register) */
+	eors.n r1, r1
 
-    /* unlock BASEPRI so wfe gets interrupted by incoming interrupts */
-    msr BASEPRI, r1
+	/* unlock BASEPRI so wfe gets interrupted by incoming interrupts */
+	msr BASEPRI, r1
 
-    wfe
+	wfe
 
-    msr BASEPRI, r0
-    cpsie i
+	msr BASEPRI, r0
+	cpsie i
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS  */
-    bx lr
+	bx lr

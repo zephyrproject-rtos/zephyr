@@ -110,7 +110,7 @@ _idle_state_cleared:
 #endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
-			 *			  in thumb mode */
+			 * in thumb mode */
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 	blx r3		/* call ISR */
