@@ -93,7 +93,7 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 	bt_recv(buf);
 }
 
-static uint8_t generate_keys(uint8_t public_key[64], uint32_t private_key[32])
+static uint8_t generate_keys(uint8_t public_key[64], uint32_t private_key[8])
 {
 #if !defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
 	EccPoint pkey;
