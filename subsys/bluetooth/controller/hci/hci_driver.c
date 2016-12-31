@@ -236,9 +236,16 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
 			    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
 				/* generate a (non-priority) HCI event */
-				buf = bt_buf_get_rx(K_FOREVER);
-				bt_buf_set_type(buf, BT_BUF_EVT);
-				hci_evt_encode(node_rx, buf);
+				if (hci_evt_is_discardable(node_rx)) {
+					buf = bt_buf_get_rx(K_NO_WAIT);
+				} else {
+					buf = bt_buf_get_rx(K_FOREVER);
+				}
+
+				if (buf) {
+					bt_buf_set_type(buf, BT_BUF_EVT);
+					hci_evt_encode(node_rx, buf);
+				}
 			} else {
 				/* generate ACL data */
 				buf = bt_buf_get_rx(K_FOREVER);

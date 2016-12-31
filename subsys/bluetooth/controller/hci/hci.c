@@ -1367,3 +1367,13 @@ void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num)
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count = sys_cpu_to_le16(num);
 }
+
+bool hci_evt_is_discardable(struct radio_pdu_node_rx *node_rx)
+{
+	switch (node_rx->hdr.type) {
+	case NODE_RX_TYPE_REPORT:
+		return true;
+	default:
+		return false;
+	}
+}
