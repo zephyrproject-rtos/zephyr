@@ -91,7 +91,7 @@ void sys_arch_reboot(int type)
 }
 
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
 /**
  *
  * @brief Set the number of priority groups based on the number of exception

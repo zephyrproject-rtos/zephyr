@@ -134,7 +134,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 		: "=r" (key)
 		:
 		: "memory");
-#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
 	unsigned int tmp;
 
 	__asm__ volatile(
@@ -178,7 +178,7 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 		return;
 	}
 	__asm__ volatile("cpsie i" : : : "memory");
-#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
 	__asm__ volatile("msr BASEPRI, %0" :  : "r"(key) : "memory");
 #else
 #error Unknown ARM architecture

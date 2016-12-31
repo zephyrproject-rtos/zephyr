@@ -69,7 +69,7 @@ _arch_switch_to_main_thread(char *main_stack, size_t main_stack_size,
 		/* unlock interrupts */
 #ifdef CONFIG_ARMV6_M
 		"cpsie i \t\n"
-#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
 		"movs %%r1, #0 \n\t"
 		"msr BASEPRI, %%r1 \n\t"
 #else

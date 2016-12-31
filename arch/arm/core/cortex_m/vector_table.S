@@ -66,7 +66,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
     .word __reserved
     .word __reserved	/* SVC not used for now (PendSV used instead) */
     .word __reserved
-#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
     .word __mpu_fault
     .word __bus_fault
     .word __usage_fault

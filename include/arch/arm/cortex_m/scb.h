@@ -442,7 +442,7 @@ static inline uint8_t _ScbExcPrioGet(uint8_t exc)
 #if defined(CONFIG_ARMV6_M)
 	__ASSERT((exc > 10) && (exc < 16), "");
 	return (__scs.scb.shpr[_PRIO_SHP_IDX(exc)] >> _PRIO_BIT_SHIFT(exc));
-#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
 	/* For priority exception handler 4-15 */
 	__ASSERT((exc > 3) && (exc < 16), "");
 	return __scs.scb.shpr[exc - 4];
@@ -477,7 +477,7 @@ static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
 	__ASSERT((exc > 10) && (exc < 16), "");
 	*shpr = ((*shpr & ~((uint32_t)0xff << _PRIO_BIT_SHIFT(exc))) |
 		 ((uint32_t)pri << _PRIO_BIT_SHIFT(exc)));
-#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
 	/* For priority exception handler 4-15 */
 	__ASSERT((exc > 3) && (exc < 16), "");
 	__scs.scb.shpr[exc - 4] = pri;
@@ -487,7 +487,7 @@ static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
 }
 
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
 /**
  *
  * @brief Find out if the currently executing exception is nested
