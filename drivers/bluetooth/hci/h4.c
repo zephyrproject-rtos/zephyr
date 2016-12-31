@@ -70,6 +70,14 @@ static struct {
 	.fifo = K_FIFO_INITIALIZER(rx.fifo),
 };
 
+static struct {
+	uint8_t type;
+	struct net_buf *buf;
+	struct k_fifo   fifo;
+} tx = {
+	.fifo = K_FIFO_INITIALIZER(tx.fifo),
+};
+
 static struct device *h4_dev;
 
 static inline void h4_get_type(void)
@@ -189,8 +197,7 @@ static size_t h4_discard(struct device *uart, size_t len)
 	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
 }
 
-/* Returns false if RX IRQ was disabled and control given to the RX thread */
-static inline bool read_payload(void)
+static inline void read_payload(void)
 {
 	struct net_buf *buf;
 	bool prio;
@@ -201,7 +208,7 @@ static inline bool read_payload(void)
 		if (!rx.buf) {
 			BT_DBG("Failed to allocate, deferring to rx_thread");
 			uart_irq_rx_disable(h4_dev);
-			return false;
+			return;
 		}
 
 		BT_DBG("Allocated rx.buf %p", rx.buf);
@@ -211,7 +218,7 @@ static inline bool read_payload(void)
 			rx.discard = rx.remaining;
 			rx.remaining = 0;
 			rx.have_hdr = false;
-			return true;
+			return;
 		}
 
 		copy_hdr(rx.buf);
@@ -226,7 +233,7 @@ static inline bool read_payload(void)
 	       bt_hex(rx.buf->data, rx.buf->len));
 
 	if (rx.remaining) {
-		return true;
+		return;
 	}
 
 	prio = (rx.type == H4_EVT && bt_hci_evt_is_prio(rx.evt.evt));
@@ -250,8 +257,6 @@ static inline bool read_payload(void)
 		BT_DBG("Putting buf %p to rx fifo", buf);
 		net_buf_put(&rx.fifo, buf);
 	}
-
-	return true;
 }
 
 static inline void read_header(void)
@@ -283,38 +288,85 @@ static inline void read_header(void)
 	}
 }
 
+static inline void process_tx(void)
+{
+	int bytes;
+
+	if (!tx.buf) {
+		tx.buf = net_buf_get(&tx.fifo, K_NO_WAIT);
+		if (!tx.buf) {
+			BT_ERR("TX interrupt but no pending buffer!");
+			uart_irq_tx_disable(h4_dev);
+			return;
+		}
+	}
+
+	if (!tx.type) {
+		switch (bt_buf_get_type(tx.buf)) {
+		case BT_BUF_ACL_OUT:
+			tx.type = H4_ACL;
+			break;
+		case BT_BUF_CMD:
+			tx.type = H4_CMD;
+			break;
+		default:
+			BT_ERR("Unknown buffer type");
+			goto done;
+		}
+
+		bytes = uart_fifo_fill(h4_dev, &tx.type, 1);
+		if (bytes != 1) {
+			BT_WARN("Unable to send H:4 type");
+			tx.type = H4_NONE;
+			return;
+		}
+	}
+
+	bytes = uart_fifo_fill(h4_dev, tx.buf->data, tx.buf->len);
+	net_buf_pull(tx.buf, bytes);
+
+	if (tx.buf->len) {
+		return;
+	}
+
+done:
+	tx.type = H4_NONE;
+	net_buf_unref(tx.buf);
+	tx.buf = net_buf_get(&tx.fifo, K_NO_WAIT);
+	if (!tx.buf) {
+		uart_irq_tx_disable(h4_dev);
+	}
+}
+
+static inline void process_rx(void)
+{
+	BT_DBG("remaining %u discard %u have_hdr %u rx.buf %p len %u",
+	       rx.remaining, rx.discard, rx.have_hdr, rx.buf,
+	       rx.buf ? rx.buf->len : 0);
+
+	if (rx.discard) {
+		rx.discard -= h4_discard(h4_dev, rx.discard);
+		return;
+	}
+
+	if (rx.have_hdr) {
+		read_payload();
+	} else {
+		read_header();
+	}
+}
+
 static void bt_uart_isr(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
 	while (uart_irq_update(h4_dev) && uart_irq_is_pending(h4_dev)) {
-		if (!uart_irq_rx_ready(h4_dev)) {
-			if (uart_irq_tx_ready(h4_dev)) {
-				BT_DBG("transmit ready");
-			} else {
-				BT_DBG("spurious interrupt");
-			}
-			/* Only the UART RX path is interrupt-enabled */
-			break;
+		if (uart_irq_tx_ready(h4_dev)) {
+			process_tx();
 		}
 
-		BT_DBG("remaining %u discard %u have_hdr %u buf %p len %u",
-		       rx.remaining, rx.discard, rx.have_hdr, rx.buf,
-		       rx.buf->len);
-
-		if (rx.discard) {
-			rx.discard -= h4_discard(h4_dev, rx.discard);
-			continue;
-		}
-
-		if (!rx.have_hdr) {
-			read_header();
-			continue;
-		}
-
-		/* Returns false if RX interrupt was disabled */
-		if (!read_payload()) {
-			return;
+		if (uart_irq_rx_ready(h4_dev)) {
+			process_rx();
 		}
 	}
 }
@@ -323,22 +375,8 @@ static int h4_send(struct net_buf *buf)
 {
 	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		uart_poll_out(h4_dev, H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		uart_poll_out(h4_dev, H4_CMD);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	while (buf->len) {
-		uart_poll_out(h4_dev, net_buf_pull_u8(buf));
-	}
-
-	net_buf_unref(buf);
+	net_buf_put(&tx.fifo, buf);
+	uart_irq_tx_enable(h4_dev);
 
 	return 0;
 }
