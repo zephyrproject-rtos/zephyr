@@ -88,7 +88,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	blx _sys_power_save_idle_exit
 _idle_state_cleared:
 
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	ittt ne
 	movne	r1, #0
 		/* clear kernel idle state */
@@ -106,7 +106,7 @@ _idle_state_cleared:
 	ldr r1, =16
 	subs r0, r1	/* get IRQ number */
 	lsls r0, #3	/* table is 8-byte wide */
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	sub r0, r0, #16	/* get IRQ number */
 	lsl r0, r0, #3	/* table is 8-byte wide */
 #else
@@ -122,7 +122,7 @@ _idle_state_cleared:
 #if defined(CONFIG_ARMV6_M)
 	pop {r3}
 	mov lr, r3
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	pop {lr}
 #else
 #error Unknown ARM architecture

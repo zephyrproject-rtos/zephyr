@@ -111,11 +111,8 @@ config CPU_CORTEX_M4
 config CPU_CORTEX_M7
 	bool
 	# Omit prompt to signify "hidden" option
+	select ARMV7_M
 	default n
-	select ATOMIC_OPERATIONS_BUILTIN
-	select ISA_THUMB2
-	select CPU_CORTEX_M_HAS_BASEPRI
-	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	help
 	This option signifies the use of a Cortex-M7 CPU
 
@@ -211,7 +208,7 @@ config FLASH_BASE_ADDRESS
 endmenu
 
 menu "ARM Cortex-M0/M0+/M3/M4/M7 options"
-	depends on ARMV6_M || ARMV7_M || CPU_CORTEX_M7
+	depends on ARMV6_M || ARMV7_M
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"

@@ -74,7 +74,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     /* lock interrupts: will get unlocked when switch to main task */
 #if defined(CONFIG_ARMV6_M)
     cpsid i
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
 #else

@@ -33,7 +33,7 @@ GTEXT(_Fault)
 
 GTEXT(__hard_fault)
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)
 GTEXT(__usage_fault)
@@ -68,7 +68,7 @@ GTEXT(__reserved)
 
 SECTION_SUBSEC_FUNC(TEXT,__fault,__hard_fault)
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__mpu_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__bus_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__usage_fault)
@@ -95,7 +95,7 @@ _stack_frame_msp:
 	mrs r0, MSP
 _stack_frame_endif:
 
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	/* force unlock interrupts */
 	eors.n r0, r0
 	msr BASEPRI, r0

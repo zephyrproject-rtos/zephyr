@@ -33,7 +33,7 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(_Swap)
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 GTEXT(__svc)
 #else
 #error Unknown ARM architecture
@@ -88,7 +88,7 @@ SECTION_FUNC(TEXT, __pendsv)
     mov r7, ip
     /* store r8-12 */
     stmea r0!, {r3-r7}
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
     stmia r0, {v1-v8, ip}
 #ifdef CONFIG_FP_SHARING
     add r0, r2, #_thread_offset_to_preempt_float
@@ -111,7 +111,7 @@ SECTION_FUNC(TEXT, __pendsv)
     /* protect the kernel state while we play with the thread lists */
 #if defined(CONFIG_ARMV6_M)
     cpsid i
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
 #else
@@ -170,7 +170,7 @@ _thread_irq_disabled:
     /* restore r4-r7, go back 9*4 bytes to the start of the stored block */
     subs r0, #36
     ldmia r0!, {r4-r7}
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
     /* restore BASEPRI for the incoming thread */
     msr BASEPRI, r0
 
@@ -192,7 +192,7 @@ _thread_irq_disabled:
     bx lr
 
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 /**
  *
  * @brief Service call handler
@@ -316,7 +316,7 @@ SECTION_FUNC(TEXT, _Swap)
      * of a higher priority pending.
      */
     cpsie i
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
     svc #0
 #else
 #error Unknown ARM architecture

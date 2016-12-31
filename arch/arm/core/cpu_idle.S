@@ -129,7 +129,7 @@ SECTION_FUNC(TEXT, k_cpu_idle)
 
 #if defined(CONFIG_ARMV6_M)
 	cpsie i
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	/* clear BASEPRI so wfi is awakened by incoming interrupts */
 	eors.n r0, r0
 	msr BASEPRI, r0
@@ -193,7 +193,7 @@ SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 	cpsie i
 _irq_disabled:
 
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	/* r1: zero, for setting BASEPRI (needs a register) */
 	eors.n r1, r1
 

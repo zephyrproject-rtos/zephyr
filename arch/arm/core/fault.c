@@ -70,7 +70,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	       esf->pc);
 
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	int escalation = 0;
 
 	if (3 == fault) { /* hard fault */
@@ -124,7 +124,7 @@ static void _FaultThreadShow(const NANO_ESF *esf)
 }
 
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 
 /**
  *
@@ -266,7 +266,7 @@ static void _HardFault(const NANO_ESF *esf)
 
 #if defined(CONFIG_ARMV6_M)
 	_FaultThreadShow(esf);
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	if (_ScbHardFaultIsBusErrOnVectorRead()) {
 		PR_EXC("  Bus fault on vector table read\n");
 	} else if (_ScbHardFaultIsForced()) {
@@ -327,7 +327,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 		_HardFault(esf);
 		break;
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	case 4:
 		_MpuFault(esf, 0);
 		break;
@@ -388,7 +388,7 @@ void _Fault(const NANO_ESF *esf)
 void _FaultInit(void)
 {
 #if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M) || defined(CONFIG_CPU_CORTEX_M7)
+#elif defined(CONFIG_ARMV7_M)
 	_ScbDivByZeroFaultEnable();
 #else
 #error Unknown ARM architecture
