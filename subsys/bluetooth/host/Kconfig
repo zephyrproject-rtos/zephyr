@@ -72,7 +72,7 @@ config BLUETOOTH_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
 	default 10
 	default 3 if BLUETOOTH_RECV_IS_RX_THREAD
-	range 3 255
+	range 2 255
 	help
 	  Number of buffers available for incoming ACL packets or HCI events
 	  from the controller.
