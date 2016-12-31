@@ -69,7 +69,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	       k_current_get(),
 	       esf->pc);
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	int escalation = 0;
 
@@ -103,7 +103,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	_ScbUsageFaultAllFaultsReset();
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 }
 #endif
 
@@ -123,7 +123,7 @@ static void _FaultThreadShow(const NANO_ESF *esf)
 	       k_current_get(), esf->pc);
 }
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 
 /**
@@ -250,7 +250,7 @@ static void _DebugMonitor(const NANO_ESF *esf)
 
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
 /**
  *
@@ -264,7 +264,7 @@ static void _HardFault(const NANO_ESF *esf)
 {
 	PR_EXC("***** HARD FAULT *****\n");
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	_FaultThreadShow(esf);
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	if (_ScbHardFaultIsBusErrOnVectorRead()) {
@@ -281,7 +281,7 @@ static void _HardFault(const NANO_ESF *esf)
 	}
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 }
 
 /**
@@ -326,7 +326,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 	case 3:
 		_HardFault(esf);
 		break;
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	case 4:
 		_MpuFault(esf, 0);
@@ -342,7 +342,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 		break;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 	default:
 		_ReservedException(esf, fault);
 		break;
@@ -387,10 +387,10 @@ void _Fault(const NANO_ESF *esf)
  */
 void _FaultInit(void)
 {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	_ScbDivByZeroFaultEnable();
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 }

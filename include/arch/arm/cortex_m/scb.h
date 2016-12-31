@@ -439,7 +439,7 @@ static inline void ScbCcrSet(uint32_t val)
 
 static inline uint8_t _ScbExcPrioGet(uint8_t exc)
 {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	__ASSERT((exc > 10) && (exc < 16), "");
 	return (__scs.scb.shpr[_PRIO_SHP_IDX(exc)] >> _PRIO_BIT_SHIFT(exc));
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
@@ -448,7 +448,7 @@ static inline uint8_t _ScbExcPrioGet(uint8_t exc)
 	return __scs.scb.shpr[exc - 4];
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 }
 
 /**
@@ -472,7 +472,7 @@ static inline uint8_t _ScbExcPrioGet(uint8_t exc)
 
 static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
 {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	volatile uint32_t * const shpr = &__scs.scb.shpr[_PRIO_SHP_IDX(exc)];
 	__ASSERT((exc > 10) && (exc < 16), "");
 	*shpr = ((*shpr & ~((uint32_t)0xff << _PRIO_BIT_SHIFT(exc))) |
@@ -483,10 +483,10 @@ static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
 	__scs.scb.shpr[exc - 4] = pri;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 }
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 /**
  *
@@ -1229,7 +1229,7 @@ static inline void _ScbUsageFaultAllFaultsReset(void)
 
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
 #endif /* _ASMLANGUAGE */
 

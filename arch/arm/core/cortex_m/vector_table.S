@@ -56,7 +56,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
     .word __nmi
 
     .word __hard_fault
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
     .word __reserved
     .word __reserved
     .word __reserved
@@ -78,7 +78,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
     .word __debug_monitor
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
     .word __reserved
     .word __pendsv
 #if defined(CONFIG_CORTEX_M_SYSTICK)

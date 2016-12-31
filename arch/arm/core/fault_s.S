@@ -32,7 +32,7 @@ _ASM_FILE_PROLOGUE
 GTEXT(_Fault)
 
 GTEXT(__hard_fault)
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)
@@ -40,7 +40,7 @@ GTEXT(__usage_fault)
 GTEXT(__debug_monitor)
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 GTEXT(__reserved)
 
 /**
@@ -67,7 +67,7 @@ GTEXT(__reserved)
  */
 
 SECTION_SUBSEC_FUNC(TEXT,__fault,__hard_fault)
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__mpu_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__bus_fault)
@@ -75,10 +75,10 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__usage_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__debug_monitor)
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 SECTION_SUBSEC_FUNC(TEXT,__fault,__reserved)
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	/* force unlock interrupts */
 	cpsie i
 
@@ -114,7 +114,7 @@ _stack_frame_endif:
 				 * frame is on the PSP */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
 	push {lr}
 	bl _Fault

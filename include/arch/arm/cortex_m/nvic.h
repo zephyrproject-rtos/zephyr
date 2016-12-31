@@ -201,7 +201,7 @@ static inline void _NvicIrqUnpend(unsigned int irq)
 
 static inline void _NvicIrqPrioSet(unsigned int irq, uint8_t prio)
 {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	volatile uint32_t * const ipr = &__scs.nvic.ipr[_PRIO_IP_IDX(irq)];
 	*ipr = ((*ipr & ~((uint32_t)0xff << _PRIO_BIT_SHIFT(irq))) |
 		((uint32_t)prio << _PRIO_BIT_SHIFT(irq)));
@@ -209,7 +209,7 @@ static inline void _NvicIrqPrioSet(unsigned int irq, uint8_t prio)
 	__scs.nvic.ipr[irq] = prio;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 }
 
 /**
@@ -225,16 +225,16 @@ static inline void _NvicIrqPrioSet(unsigned int irq, uint8_t prio)
 
 static inline uint8_t _NvicIrqPrioGet(unsigned int irq)
 {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	return (__scs.nvic.ipr[_PRIO_IP_IDX(irq)] >> _PRIO_BIT_SHIFT(irq));
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 	return __scs.nvic.ipr[irq];
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 }
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 /**
  *
@@ -258,7 +258,7 @@ static inline void _NvicSwInterruptTrigger(unsigned int irq)
 }
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
 #endif /* !_ASMLANGUAGE */
 

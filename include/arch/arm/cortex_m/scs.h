@@ -115,7 +115,7 @@ union __cpuid {
 union __icsr {
 	uint32_t val;
 	struct {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t vectactive : 9 __packed;
 		uint32_t rsvd__9_10_11 : 3 __packed;
 		uint32_t vectpending : 9 __packed;
@@ -127,7 +127,7 @@ union __icsr {
 		uint32_t vectpending : 10 __packed;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 		uint32_t isrpending : 1 __packed;
 		uint32_t rsvd__23 : 1 __packed;
 		uint32_t rsvd__24 : 1 __packed;
@@ -153,16 +153,16 @@ union __vtor {
 union __aircr {
 	uint32_t val;
 	struct {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t rsvd__0 : 1 __packed;
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 		uint32_t vecreset : 1 __packed;      /* WO */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 		uint32_t vectclractive : 1 __packed; /* WO */
 		uint32_t sysresetreq : 1 __packed;   /* WO */
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t rsvd__3_14 : 12 __packed;
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 		uint32_t rsvd__3_7 : 5 __packed;
@@ -170,7 +170,7 @@ union __aircr {
 		uint32_t rsvd__11_14 : 4 __packed;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 		uint32_t endianness : 1 __packed; /* RO */
 		uint32_t vectkey : 16 __packed;
 	} bit;
@@ -193,7 +193,7 @@ union __scr {
 union __ccr {
 	uint32_t val;
 	struct {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t rsvd_0_2 : 3 __packed;
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 		uint32_t nonbasethrdena : 1 __packed;
@@ -201,9 +201,9 @@ union __ccr {
 		uint32_t rsvd__2 : 1 __packed;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 		uint32_t unalign_trp : 1 __packed;
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t rsvd_4_8 : 5 __packed;
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 		uint32_t div_0_trp : 1 __packed;
@@ -211,7 +211,7 @@ union __ccr {
 		uint32_t bfhfnmign : 1 __packed;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 		uint32_t stkalign : 1 __packed;
 		uint32_t rsvd__10_31 : 22 __packed;
 	} bit;
@@ -487,7 +487,7 @@ struct __scs {
 		uint32_t rsvd__320_37f[24];
 
 		uint32_t rsvd__380_3ff[32];
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t ipr[8];
 		uint32_t rsvd__420_4ff[56];
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
@@ -495,7 +495,7 @@ struct __scs {
 		uint32_t rsvd__4f0_4ff[4];
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 	} nvic; /* offset: 0x100, size 0x400 */
 
 	uint32_t rsvd__500_cff[(0xd00 - 0x500) / 4];
@@ -504,18 +504,18 @@ struct __scs {
 	struct {
 		union __cpuid cpuid; /* 0xd00 CPUID register */
 		union __icsr icsr;   /* 0xd04 IRQ Control and Start Register */
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t rsvd_9_12;
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 		union __vtor vtor;   /* 0xd08 Vector Table Offset Register */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 		union __aircr
 			aircr;    /* 0xd0c App IRQ and Reset Control Register */
 		union __scr scr;  /* 0xd10 System Control Register */
 		union __ccr ccr;  /* 0xd14 Configuration and Control Register */
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t rsvd_24_27;
 		uint32_t shpr[2];
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
@@ -525,10 +525,10 @@ struct __scs {
 				   */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 		union __shcsr
 			shcsr;     /* 0xd24 Sys Handler Control and State Reg */
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 		uint32_t rsvd_40_63[6];
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 		union __cfsr cfsr; /* 0xd28 Configurable Fault Status Register
@@ -540,7 +540,7 @@ struct __scs {
 		uint32_t afsr;     /* 0xd3C Aux Fault Status Register */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 	} scb;			   /* offset: 0xd00, size 0x040 */
 
 	/*
@@ -588,7 +588,7 @@ struct __scs {
 /* the linker always puts this object at 0xe000e000 */
 extern volatile struct __scs __scs;
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 /* Interrupt Priorities are WORD accessible only under ARMv6M */
 /* The following MACROS handle generation of the register offset and masks */
 #define _PRIO_BIT_SHIFT(IRQn) (((((uint32_t)(IRQn))) & 0x03UL) * 8UL)
@@ -597,10 +597,10 @@ extern volatile struct __scs __scs;
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
 /* API */
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 /**
  *
@@ -739,7 +739,7 @@ static inline void _scs_relocate_vector_table(void *new_addr)
 }
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
 #endif /* _ASMLANGUAGE */
 

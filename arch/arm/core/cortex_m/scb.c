@@ -90,7 +90,7 @@ void sys_arch_reboot(int type)
 	DO_REBOOT();
 }
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 /**
  *
@@ -138,4 +138,4 @@ void _ScbNumPriGroupSet(unsigned int n)
 }
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */

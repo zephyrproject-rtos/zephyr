@@ -32,12 +32,12 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(_Swap)
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 GTEXT(__svc)
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 GTEXT(__pendsv)
 GDATA(_k_neg_eagain)
 
@@ -77,7 +77,7 @@ SECTION_FUNC(TEXT, __pendsv)
     /* save callee-saved + psp in TCS */
     mrs ip, PSP
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
     /* Store current r4-r7 */
     stmea r0!, {r4-r7}
     /* copy r8-r12 into r3-r7 */
@@ -96,7 +96,7 @@ SECTION_FUNC(TEXT, __pendsv)
 #endif /* CONFIG_FP_SHARING */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
     /*
      * Prepare to clear PendSV with interrupts unlocked, but
@@ -109,14 +109,14 @@ SECTION_FUNC(TEXT, __pendsv)
     ldr v3, =_SCS_ICSR_UNPENDSV
 
     /* protect the kernel state while we play with the thread lists */
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
     cpsid i
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
     /* _kernel is still in r1 */
 
@@ -142,7 +142,7 @@ SECTION_FUNC(TEXT, __pendsv)
     movs.n r3, #0
     str r3, [r2, #_thread_offset_to_basepri]
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
     /* BASEPRI not available, previous interrupt disable state
      * maps to PRIMASK.
      *
@@ -184,14 +184,14 @@ _thread_irq_disabled:
     ldmia r0, {v1-v8, ip}
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
     msr PSP, ip
 
     /* exc return */
     bx lr
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_CPU_CORTEX_M3_M4) || defined(CONFIG_CPU_CORTEX_M7)
 /**
  *
@@ -249,7 +249,7 @@ _context_switch:
     bx lr
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
 /**
  *
@@ -302,7 +302,7 @@ SECTION_FUNC(TEXT, _Swap)
     ldr r1, [r1]
     str r1, [r2, #_thread_offset_to_swap_return_value]
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
     /* No priority-based interrupt masking on M0/M0+,
      * pending PendSV is used instead of svc
      */
@@ -320,7 +320,7 @@ SECTION_FUNC(TEXT, _Swap)
     svc #0
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
     /* coming back from exception, r2 still holds the pointer to _current */
     ldr r0, [r2, #_thread_offset_to_swap_return_value]

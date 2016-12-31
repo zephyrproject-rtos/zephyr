@@ -128,7 +128,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
 	unsigned int key;
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	__asm__ volatile("mrs %0, PRIMASK;"
 		"cpsid i"
 		: "=r" (key)
@@ -146,7 +146,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 		: "memory");
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 
 	return key;
 }
@@ -173,7 +173,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 
 static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	if (key) {
 		return;
 	}
@@ -182,7 +182,7 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 	__asm__ volatile("msr BASEPRI, %0" :  : "r"(key) : "memory");
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#endif /* CONFIG_ARMV6_M */
 }
 
 
