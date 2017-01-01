@@ -415,6 +415,7 @@ int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx, int clean_session)
 			rc = 0;
 		} else {
 			rc = -EINVAL;
+			goto exit_connect;
 		}
 		break;
 	/* previous session */
@@ -423,7 +424,7 @@ int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx, int clean_session)
 		/* FALLTHROUGH */
 	default:
 		rc = -EINVAL;
-		break;
+		goto exit_connect;
 	}
 
 	ctx->connected = 1;
