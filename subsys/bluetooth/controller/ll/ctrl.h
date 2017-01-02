@@ -222,13 +222,14 @@ enum radio_pdu_node_rx_type {
 };
 
 struct radio_pdu_node_rx_hdr {
-	enum radio_pdu_node_rx_type type;
-	uint16_t handle;
 	union {
-		void *next;
+		void *next; /* used also by k_fifo once pulled */
 		void *link;
 		uint8_t packet_release_last;
 	} onion;
+
+	enum radio_pdu_node_rx_type type;
+	uint16_t handle;
 };
 
 struct radio_pdu_node_rx {

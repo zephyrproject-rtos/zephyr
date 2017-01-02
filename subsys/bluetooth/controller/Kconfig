@@ -34,6 +34,10 @@ config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
 	  Maximum is set to 16384 due to implementation limitations (use of
 	  uint16_t for size/length variables).
 
+config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
+	int
+	default 320
+
 comment "BLE Controller features"
 
 config BLUETOOTH_CONTROLLER_LE_PING

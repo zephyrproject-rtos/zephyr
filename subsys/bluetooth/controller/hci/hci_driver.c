@@ -73,9 +73,12 @@ static uint8_t MALIGN(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 						[TICKER_USER_OP_T_SIZE];
 static uint8_t MALIGN(4) _radio[LL_MEM_TOTAL];
 
-static K_SEM_DEFINE(sem_recv, 0, UINT_MAX);
-static BT_STACK_NOINIT(recv_thread_stack,
-		       CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
+static K_FIFO_DEFINE(recv_fifo);
+
+static BT_STACK_NOINIT(prio_recv_thread_stack,
+		       CONFIG_BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE);
+static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 K_MUTEX_DEFINE(mutex_rand);
 
@@ -164,7 +167,7 @@ void radio_active_callback(uint8_t active)
 
 void radio_event_callback(void)
 {
-	k_sem_give(&sem_recv);
+	k_sem_give(&sem_prio_recv);
 }
 
 static void radio_nrf5_isr(void *arg)
@@ -207,11 +210,10 @@ static void swi4_nrf5_isr(void *arg)
 	mayfly_run(MAYFLY_CALL_ID_1);
 }
 
-static void recv_thread(void *p1, void *p2, void *p3)
+static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		struct radio_pdu_node_rx *node_rx;
-		struct pdu_data *pdu_data;
 		struct net_buf *buf;
 		uint8_t num_cmplt;
 		uint16_t handle;
@@ -229,49 +231,73 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 		if (node_rx) {
 
-			pdu_data = (void *)node_rx->pdu_data;
-			/* Check if we need to generate an HCI event or ACL
-			 * data
-			 */
-			if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
-			    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
-				/* generate a (non-priority) HCI event */
-				if (hci_evt_is_discardable(node_rx)) {
-					buf = bt_buf_get_rx(K_NO_WAIT);
-				} else {
-					buf = bt_buf_get_rx(K_FOREVER);
-				}
+			radio_rx_dequeue();
 
-				if (buf) {
-					bt_buf_set_type(buf, BT_BUF_EVT);
-					hci_evt_encode(node_rx, buf);
-				}
+			BT_DBG("RX node enqueue");
+			k_fifo_put(&recv_fifo, node_rx);
+
+			continue;
+		}
+
+		BT_DBG("sem take...");
+		k_sem_take(&sem_prio_recv, K_FOREVER);
+		BT_DBG("sem taken");
+
+		stack_analyze("prio recv thread stack", prio_recv_thread_stack,
+			      sizeof(prio_recv_thread_stack));
+	}
+}
+
+static void recv_thread(void *p1, void *p2, void *p3)
+{
+	while (1) {
+		struct radio_pdu_node_rx *node_rx;
+		struct pdu_data *pdu_data;
+		struct net_buf *buf;
+
+		BT_DBG("RX node get");
+		node_rx = k_fifo_get(&recv_fifo, K_FOREVER);
+		BT_DBG("RX node dequeued");
+
+		pdu_data = (void *)node_rx->pdu_data;
+		/* Check if we need to generate an HCI event or ACL
+		 * data
+		 */
+		if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
+		    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
+			/* generate a (non-priority) HCI event */
+			if (hci_evt_is_discardable(node_rx)) {
+				buf = bt_buf_get_rx(K_NO_WAIT);
 			} else {
-				/* generate ACL data */
 				buf = bt_buf_get_rx(K_FOREVER);
-				bt_buf_set_type(buf, BT_BUF_ACL_IN);
-				hci_acl_encode(node_rx, buf);
 			}
 
 			if (buf) {
-				if (buf->len) {
-					BT_DBG("Packet in: type:%u len:%u",
-						bt_buf_get_type(buf), buf->len);
-					bt_recv(buf);
-				} else {
-					net_buf_unref(buf);
-				}
+				bt_buf_set_type(buf, BT_BUF_EVT);
+				hci_evt_encode(node_rx, buf);
 			}
-
-			radio_rx_dequeue();
-			radio_rx_fc_set(node_rx->hdr.handle, 0);
-			node_rx->hdr.onion.next = 0;
-			radio_rx_mem_release(&node_rx);
-
-			k_yield();
 		} else {
-			k_sem_take(&sem_recv, K_FOREVER);
+			/* generate ACL data */
+			buf = bt_buf_get_rx(K_FOREVER);
+			bt_buf_set_type(buf, BT_BUF_ACL_IN);
+			hci_acl_encode(node_rx, buf);
 		}
+
+		radio_rx_fc_set(node_rx->hdr.handle, 0);
+		node_rx->hdr.onion.next = 0;
+		radio_rx_mem_release(&node_rx);
+
+		if (buf) {
+			if (buf->len) {
+				BT_DBG("Packet in: type:%u len:%u",
+					bt_buf_get_type(buf), buf->len);
+				bt_recv(buf);
+			} else {
+				net_buf_unref(buf);
+			}
+		}
+
+		k_yield();
 
 		stack_analyze("recv thread stack", recv_thread_stack,
 			      sizeof(recv_thread_stack));
@@ -393,6 +419,10 @@ static int hci_driver_open(void)
 	irq_enable(NRF5_IRQ_RTC0_IRQn);
 	irq_enable(NRF5_IRQ_RNG_IRQn);
 	irq_enable(NRF5_IRQ_SWI4_IRQn);
+
+	k_thread_spawn(prio_recv_thread_stack, sizeof(prio_recv_thread_stack),
+		       prio_recv_thread, NULL, NULL, NULL, K_PRIO_COOP(6), 0,
+		       K_NO_WAIT);
 
 	k_thread_spawn(recv_thread_stack, sizeof(recv_thread_stack),
 		       recv_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
