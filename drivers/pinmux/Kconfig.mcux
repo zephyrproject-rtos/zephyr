@@ -1,4 +1,4 @@
-# Kconfig - Kinetis SDK pinmux
+# Kconfig - MCUXpresso SDK pinmux
 #
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
 #
@@ -15,68 +15,68 @@
 # limitations under the License.
 #
 
-menuconfig PINMUX_KSDK
-	bool "KSDK pinmux driver"
-	depends on HAS_KSDK
+menuconfig PINMUX_MCUX
+	bool "MCUX pinmux driver"
+	depends on HAS_MCUX
 	default n
 	help
-	  Enable the KSDK pinmux driver.
+	  Enable the MCUX pinmux driver.
 
-if PINMUX_KSDK
+if PINMUX_MCUX
 
-config PINMUX_KSDK_PORTA
+config PINMUX_MCUX_PORTA
 	bool "Port A"
 	default n
 	help
 	  Enable Port A.
 
-config PINMUX_KSDK_PORTA_NAME
+config PINMUX_MCUX_PORTA_NAME
 	string "Pinmux Port A driver name"
-	depends on PINMUX_KSDK_PORTA
+	depends on PINMUX_MCUX_PORTA
 	default "porta"
 
-config PINMUX_KSDK_PORTB
+config PINMUX_MCUX_PORTB
 	bool "Port B"
 	default n
 	help
 	  Enable Port B.
 
-config PINMUX_KSDK_PORTB_NAME
+config PINMUX_MCUX_PORTB_NAME
 	string "Pinmux Port B driver name"
-	depends on PINMUX_KSDK_PORTB
+	depends on PINMUX_MCUX_PORTB
 	default "portb"
 
-config PINMUX_KSDK_PORTC
+config PINMUX_MCUX_PORTC
 	bool "Port C"
 	default n
 	help
 	  Enable Port C.
 
-config PINMUX_KSDK_PORTC_NAME
+config PINMUX_MCUX_PORTC_NAME
 	string "Pinmux Port C driver name"
-	depends on PINMUX_KSDK_PORTC
+	depends on PINMUX_MCUX_PORTC
 	default "portc"
 
-config PINMUX_KSDK_PORTD
+config PINMUX_MCUX_PORTD
 	bool "Port D"
 	default n
 	help
 	  Enable Port D.
 
-config PINMUX_KSDK_PORTD_NAME
+config PINMUX_MCUX_PORTD_NAME
 	string "Pinmux Port D driver name"
-	depends on PINMUX_KSDK_PORTD
+	depends on PINMUX_MCUX_PORTD
 	default "portd"
 
-config PINMUX_KSDK_PORTE
+config PINMUX_MCUX_PORTE
 	bool "Port E"
 	default n
 	help
 	  Enable Port E.
 
-config PINMUX_KSDK_PORTE_NAME
+config PINMUX_MCUX_PORTE_NAME
 	string "Pinmux Port E driver name"
-	depends on PINMUX_KSDK_PORTE
+	depends on PINMUX_MCUX_PORTE
 	default "porte"
 
-endif # PINMUX_KSDK
+endif # PINMUX_MCUX

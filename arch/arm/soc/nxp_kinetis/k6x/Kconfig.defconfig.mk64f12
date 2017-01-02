@@ -24,7 +24,7 @@ config SOC
 
 if PINMUX
 
-config PINMUX_KSDK
+config PINMUX_MCUX
 	def_bool y
 
 endif # PINMUX
