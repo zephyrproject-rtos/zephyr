@@ -80,8 +80,8 @@ int at_parse_input(struct at_client *at, struct net_buf *buf);
 int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 		       const char *prefix, parse_val_t func);
 int at_check_byte(struct net_buf *buf, char check_byte);
-int at_stream_get_range(struct at_client *at, uint32_t *min, uint32_t *max);
-int at_stream_get_string(struct at_client *at, char *name, uint8_t len);
-int at_close_stream(struct at_client *at);
-int at_open_stream(struct at_client *at);
-int at_has_next_stream(struct at_client *at);
+int at_list_get_range(struct at_client *at, uint32_t *min, uint32_t *max);
+int at_list_get_string(struct at_client *at, char *name, uint8_t len);
+int at_close_list(struct at_client *at);
+int at_open_list(struct at_client *at);
+int at_has_next_list(struct at_client *at);
