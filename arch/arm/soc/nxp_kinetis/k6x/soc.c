@@ -142,7 +142,7 @@ static ALWAYS_INLINE void clkInit(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if CONFIG_ETH_KSDK
+#if CONFIG_ETH_MCUX
 	CLOCK_SetEnetTime0Clock(TIMESRC_OSCERCLK);
 #endif
 }

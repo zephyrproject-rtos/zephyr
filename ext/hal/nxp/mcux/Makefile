@@ -21,7 +21,7 @@ MCUX_DEVICE = $(shell echo $(CONFIG_SOC) | tr '[:lower:]' '[:upper:]')
 MCUX_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))
 
 ifdef CONFIG_HAS_MCUX
-ifdef CONFIG_ETH_KSDK
+ifdef CONFIG_ETH_MCUX
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/components/phyksz8081
 endif
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/devices/$(MCUX_DEVICE)

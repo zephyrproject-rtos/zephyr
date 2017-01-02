@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-obj-$(CONFIG_ETH_KSDK) += phyksz8081/fsl_phy.o
+obj-$(CONFIG_ETH_MCUX) += phyksz8081/fsl_phy.o

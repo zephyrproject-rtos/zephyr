@@ -75,7 +75,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
-#if CONFIG_ETH_KSDK_0
+#if CONFIG_ETH_MCUX_0
 	pinmux_pin_set(porta,  5, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 12, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 13, PORT_PCR_MUX(kPORT_MuxAlt4));

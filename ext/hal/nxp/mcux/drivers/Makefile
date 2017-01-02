@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-obj-$(CONFIG_ETH_KSDK) += fsl_enet.o
+obj-$(CONFIG_ETH_MCUX) += fsl_enet.o
 obj-$(CONFIG_I2C_KSDK) += fsl_i2c.o
 obj-$(CONFIG_RANDOM_KSDK) += fsl_rnga.o
 obj-$(CONFIG_SOC_FLASH_KSDK) += fsl_flash.o

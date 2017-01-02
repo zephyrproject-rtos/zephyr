@@ -1,4 +1,4 @@
-# Kconfig - ETH_KSDK Ethernet driver configuration options
+# Kconfig - ETH_MCUX Ethernet driver configuration options
 
 # Copyright (c) 2016 ARM Ltd
 #
@@ -14,75 +14,75 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-menuconfig ETH_KSDK
+menuconfig ETH_MCUX
 	bool
-	prompt "KSDK Ethernet driver"
-	depends on NET_L2_ETHERNET && HAS_KSDK
+	prompt "MCUX Ethernet driver"
+	depends on NET_L2_ETHERNET && HAS_MCUX
 	default n
 	help
-	Enable KSDK Ethernet driver.  Note, this driver performs one shot PHY
+	Enable MCUX Ethernet driver.  Note, this driver performs one shot PHY
 	setup.  There is no support for PHY disconnect, reconnect or
 	configuration change.
 
-if ETH_KSDK
-config ETH_KSDK_RX_BUFFERS
-	int "Number of KSDK RX buffers"
-	depends on ETH_KSDK
+if ETH_MCUX
+config ETH_MCUX_RX_BUFFERS
+	int "Number of MCUX RX buffers"
+	depends on ETH_MCUX
 	default 2
 	range 1 16
 	help
-	Set the number of RX buffers provided to the KSDK driver.
+	Set the number of RX buffers provided to the MCUX driver.
 
-config ETH_KSDK_TX_BUFFERS
-	int "Number of KSDK TX buffers"
-	depends on ETH_KSDK
+config ETH_MCUX_TX_BUFFERS
+	int "Number of MCUX TX buffers"
+	depends on ETH_MCUX
 	default 2
 	range 1 16
 	help
-	Set the number of TX buffers provided to the KSDK driver.
+	Set the number of TX buffers provided to the MCUX driver.
 
-config ETH_KSDK_0
-	bool "KSDK Ethernet port 0"
+config ETH_MCUX_0
+	bool "MCUX Ethernet port 0"
 	default n
 	help
 	Include port 0 driver
 
-config ETH_KSDK_0_NAME
+config ETH_MCUX_0_NAME
 	string "Driver name"
-	depends on ETH_KSDK_0
+	depends on ETH_MCUX_0
 	default "ETH_0"
 
-config ETH_KSDK_0_IRQ_PRI
+config ETH_MCUX_0_IRQ_PRI
 	int "Controller interrupt priority"
-	depends on ETH_KSDK_0
+	depends on ETH_MCUX_0
 	default 0
 	help
 	IRQ priority
 
-config ETH_KSDK_0_RANDOM_MAC
+config ETH_MCUX_0_RANDOM_MAC
 	bool "Random MAC address"
-	depends on ETH_KSDK_0 && RANDOM_GENERATOR
+	depends on ETH_MCUX_0 && RANDOM_GENERATOR
 	default y
 	help
 	Generate a random MAC address dynamically.
 
-if ETH_KSDK_0 && ! ETH_KSDK_0_RANDOM_MAC
+if ETH_MCUX_0 && ! ETH_MCUX_0_RANDOM_MAC
 
-config ETH_KSDK_0_MAC3
+config ETH_MCUX_0_MAC3
 	hex "MAC Address Byte 3"
 	default 0
 	range 0 ff
 	help
 	This is the byte 3 of the MAC address.
 
-config ETH_KSDK_0_MAC4
+config ETH_MCUX_0_MAC4
 	hex "MAC Address Byte 4"
 	default 0
 	range 0 ff
 	help
 	This is the byte 4 of the MAC address.
 
-config ETH_KSDK_0_MAC5
+config ETH_MCUX_0_MAC5
 	hex "MAC Address Byte 5"
 	default 0
 	range 0 ff
