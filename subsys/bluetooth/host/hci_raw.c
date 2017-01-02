@@ -100,6 +100,11 @@ int bt_recv(struct net_buf *buf)
 	return 0;
 }
 
+int bt_recv_prio(struct net_buf *buf)
+{
+	return bt_recv(buf);
+}
+
 int bt_send(struct net_buf *buf)
 {
 	BT_DBG("buf %p len %u", buf, buf->len);

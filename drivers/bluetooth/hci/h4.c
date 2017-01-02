@@ -251,8 +251,8 @@ static inline void read_payload(void)
 	rx.have_hdr = false;
 
 	if (prio) {
-		BT_DBG("Calling bt_recv(%p)", buf);
-		bt_recv(buf);
+		BT_DBG("Calling bt_recv_prio(%p)", buf);
+		bt_recv_prio(buf);
 	} else {
 		BT_DBG("Putting buf %p to rx fifo", buf);
 		net_buf_put(&rx.fifo, buf);

@@ -2605,6 +2605,8 @@ static void hci_event(struct net_buf *buf)
 
 	BT_DBG("event 0x%02x", hdr->evt);
 
+	BT_ASSERT(!bt_hci_evt_is_prio(hdr->evt));
+
 	net_buf_pull(buf, sizeof(*hdr));
 
 	switch (hdr->evt) {
@@ -3412,37 +3414,6 @@ int bt_send(struct net_buf *buf)
 	return bt_dev.drv->send(buf);
 }
 
-static inline void handle_event(struct net_buf *buf)
-{
-	struct bt_hci_evt_hdr *hdr = (void *)buf->data;
-
-	switch (hdr->evt) {
-	case BT_HCI_EVT_CMD_COMPLETE:
-		net_buf_pull(buf, sizeof(*hdr));
-		hci_cmd_complete(buf);
-		break;
-	case BT_HCI_EVT_CMD_STATUS:
-		net_buf_pull(buf, sizeof(*hdr));
-		hci_cmd_status(buf);
-		break;
-#if defined(CONFIG_BLUETOOTH_CONN)
-	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		net_buf_pull(buf, sizeof(*hdr));
-		hci_num_completed_packets(buf);
-		break;
-#endif /* CONFIG_BLUETOOTH_CONN */
-	default:
-#if defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
-		hci_event(net_buf_ref(buf));
-#else
-		net_buf_put(&bt_dev.rx_queue, net_buf_ref(buf));
-#endif
-		break;
-	}
-
-	net_buf_unref(buf);
-}
-
 int bt_recv(struct net_buf *buf)
 {
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
@@ -3466,13 +3437,52 @@ int bt_recv(struct net_buf *buf)
 		return 0;
 #endif /* BLUETOOTH_CONN */
 	case BT_BUF_EVT:
-		handle_event(buf);
+#if defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+		hci_event(buf);
+#else
+		net_buf_put(&bt_dev.rx_queue, buf);
+#endif
 		return 0;
 	default:
 		BT_ERR("Invalid buf type %u", bt_buf_get_type(buf));
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
+}
+
+int bt_recv_prio(struct net_buf *buf)
+{
+	struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+
+	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+
+	BT_ASSERT(bt_buf_get_type(buf) == BT_BUF_EVT);
+	BT_ASSERT(buf->len >= sizeof(*hdr));
+	BT_ASSERT(bt_hci_evt_is_prio(hdr->evt));
+
+	net_buf_pull(buf, sizeof(*hdr));
+
+	switch (hdr->evt) {
+	case BT_HCI_EVT_CMD_COMPLETE:
+		hci_cmd_complete(buf);
+		break;
+	case BT_HCI_EVT_CMD_STATUS:
+		hci_cmd_status(buf);
+		break;
+#if defined(CONFIG_BLUETOOTH_CONN)
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+		hci_num_completed_packets(buf);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONN */
+	default:
+		net_buf_unref(buf);
+		BT_ASSERT(0);
+		return -EINVAL;
+	}
+
+	net_buf_unref(buf);
+
+	return 0;
 }
 
 int bt_hci_driver_register(struct bt_hci_driver *drv)

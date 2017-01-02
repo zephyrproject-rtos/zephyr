@@ -222,7 +222,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			bt_buf_set_type(buf, BT_BUF_EVT);
 			hci_num_cmplt_encode(buf, handle, num_cmplt);
 			BT_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
-			bt_recv(buf);
+			bt_recv_prio(buf);
 
 			k_yield();
 		}
@@ -294,7 +294,7 @@ static int cmd_handle(struct net_buf *buf)
 	err = hci_cmd_handle(buf, evt);
 	if (!err && evt->len) {
 		BT_DBG("Replying with event of %u bytes", evt->len);
-		bt_recv(evt);
+		bt_recv_prio(evt);
 	} else {
 		net_buf_unref(evt);
 	}

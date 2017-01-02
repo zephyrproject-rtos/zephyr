@@ -35,7 +35,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 /** Helper for the HCI driver to know which events are ok to be passed
   * through the RX thread and which must be given to bt_recv() from another
   * context. If this function returns true it's safe to pass the event
@@ -60,10 +59,12 @@ static inline bool bt_hci_evt_is_prio(uint8_t evt)
 		return false;
 	}
 }
-#endif
 
 /* Receive data from the controller/HCI driver */
 int bt_recv(struct net_buf *buf);
+
+/* Receive priority event from the controller/HCI driver */
+int bt_recv_prio(struct net_buf *buf);
 
 enum bt_hci_driver_bus {
 	BT_HCI_DRIVER_BUS_VIRTUAL       = 0,
