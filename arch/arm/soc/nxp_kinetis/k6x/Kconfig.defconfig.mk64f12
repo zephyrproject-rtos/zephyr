@@ -29,13 +29,6 @@ config PINMUX_KSDK
 
 endif # PINMUX
 
-if PINMUX_DEV
-
-config PINMUX_DEV_KSDK
-	def_bool y
-
-endif # PINMUX_DEV
-
 config GPIO
 	def_bool y
 
