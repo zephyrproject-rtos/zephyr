@@ -72,14 +72,30 @@ static inline void __setup_flash(void)
 
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 30000000) {
 		regs->acr.bit.latency = STM32F4X_FLASH_LATENCY_0;
-	} else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 60000000) {
+	}
+#ifdef CONFIG_SOC_STM32F401XE
+	else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 60000000) {
 		regs->acr.bit.latency = STM32F4X_FLASH_LATENCY_1;
 	} else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 84000000) {
 		regs->acr.bit.latency = STM32F4X_FLASH_LATENCY_2;
 	}
+#elif CONFIG_SOC_STM32F411XE
+	else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 64000000) {
+		regs->acr.bit.latency = STM32F4X_FLASH_LATENCY_1;
+	} else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 90000000) {
+		regs->acr.bit.latency = STM32F4X_FLASH_LATENCY_2;
+	} else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 100000000) {
+		regs->acr.bit.latency = STM32F4X_FLASH_LATENCY_3;
+	}
+#else
+	else {
+		__ASSERT(0, "Flash latency not set");
+	}
+#endif
 
 	/* Make sure latency was set */
 	tmpreg = regs->acr.bit.latency;
+
 }
 
 #endif	/* _STM32F4X_FLASHREGISTERS_H_ */
