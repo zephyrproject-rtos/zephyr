@@ -72,7 +72,7 @@ endif # NET_L2_ETHERNET
 
 if RANDOM_GENERATOR
 
-config RANDOM_KSDK
+config RANDOM_MCUX
 	def_bool y
 
 endif # RANDOM_GENERATOR

@@ -1,4 +1,4 @@
-# Kconfig.ksdk - ksdk random generator driver configuration
+# Kconfig.mcux - mcux random generator driver configuration
 #
 # Copyright (c) 2016 ARM Ltd.
 #
@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-menuconfig RANDOM_KSDK
-	bool "KSDK Random driver"
+menuconfig RANDOM_MCUX
+	bool "MCUX Random driver"
 	depends on RANDOM_GENERATOR && HAS_RNGA
 	default n
 	select RANDOM_HAS_DRIVER
 	help
 	  This option enables the random number generator accelerator (RNGA)
-	  driver based on the KSDK RNGA driver.
+	  driver based on the MCUX RNGA driver.
