@@ -79,7 +79,7 @@ endif # RANDOM_GENERATOR
 
 if FLASH
 
-config SOC_FLASH_KSDK
+config SOC_FLASH_MCUX
 	def_bool y
 
 endif # FLASH
