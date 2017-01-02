@@ -38,14 +38,6 @@ struct temp_nrf5_data {
 };
 
 
-static int temp_nrf5_attr_set(struct device *dev,
-			      enum sensor_channel chan,
-			      enum sensor_attribute attr,
-			      const struct sensor_value *val)
-{
-	return -ENOTSUP;
-}
-
 static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	volatile NRF_TEMP_Type *temp = NRF_TEMP;
@@ -110,7 +102,6 @@ static void temp_nrf5_isr(void *arg)
 }
 
 static const struct sensor_driver_api temp_nrf5_driver_api = {
-	.attr_set = temp_nrf5_attr_set,
 	.sample_fetch = temp_nrf5_sample_fetch,
 	.channel_get = temp_nrf5_channel_get,
 };
