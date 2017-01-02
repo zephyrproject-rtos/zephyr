@@ -41,7 +41,7 @@ endif # GPIO
 
 if I2C
 
-config I2C_KSDK
+config I2C_MCUX
 	def_bool y
 
 endif # I2C
