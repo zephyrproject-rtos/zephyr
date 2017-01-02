@@ -20,7 +20,7 @@
 
 #if defined(CONFIG_NET_DEBUG_DHCPV4)
 #define SYS_LOG_DOMAIN "net/dhcpv4"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -41,7 +41,7 @@ struct dhcp_msg {
 				 */
 	uint32_t xid;		/* Transaction ID, random number */
 	uint16_t secs;		/* Seconds elapsed since client began address
-				 * acqusition or renewal process
+				 * acquisition or renewal process
 				 */
 	uint16_t flags;		/* Broadcast or Unicast */
 	uint8_t ciaddr[4];	/* Client IP Address */
@@ -394,7 +394,7 @@ fail:
 	}
 }
 
-/* Prepare DHCPv4 Dicover message and braodcast it */
+/* Prepare DHCPv4 Discover message and broadcast it */
 static void send_discover(struct net_if *iface)
 {
 	struct net_buf *buf;
@@ -522,31 +522,74 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 		frag = net_nbuf_read_u8(frag, pos, &pos, &type);
 
 		if (type == DHCPV4_OPTIONS_END) {
+			NET_DBG("options_end");
 			end = true;
 			return NET_OK;
 		}
 
 		frag = net_nbuf_read_u8(frag, pos, &pos, &length);
 		if (!frag) {
+			NET_ERR("option parsing, bad length");
 			return NET_DROP;
 		}
 
 		switch (type) {
-		case DHCPV4_OPTIONS_SUBNET_MASK:
+		case DHCPV4_OPTIONS_SUBNET_MASK: {
+			struct in_addr netmask;
+
 			if (length != 4) {
+				NET_ERR("options_subnet_mask, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read(frag, pos, &pos, length,
-					     iface->ipv4.netmask.s4_addr);
+					     netmask.s4_addr);
+			if (!frag && pos) {
+				NET_ERR("options_subnet_mask, short packet");
+				return NET_DROP;
+			}
+			net_if_ipv4_set_netmask(iface, &netmask);
+			NET_DBG("options_subnet_mask %s",
+				net_sprint_ipv4_addr(&netmask));
 			break;
+		}
+		case DHCPV4_OPTIONS_ROUTER: {
+			struct in_addr router;
+
+			/* Router option may present 1 or more
+			 * addresses for routers on the clients
+			 * subnet.  Routers should be listed in order
+			 * of preference.  Hence we choose the first
+			 * and skip the rest.
+			 */
+			if (length % 4 != 0 || length < 4) {
+				NET_ERR("options_router, bad length");
+				return NET_DROP;
+			}
+
+			frag = net_nbuf_read(frag, pos, &pos, 4,
+					     router.s4_addr);
+			frag = net_nbuf_skip(frag, pos, &pos, length - 4);
+			if (!frag && pos) {
+				NET_ERR("options_router, short packet");
+				return NET_DROP;
+			}
+
+			NET_DBG("options_router: %s",
+				net_sprint_ipv4_addr(&router));
+			net_if_ipv4_set_gw(iface, &router);
+			break;
+		}
 		case DHCPV4_OPTIONS_LEASE_TIME:
 			if (length != 4) {
+				NET_ERR("options_lease_time, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read_be32(frag, pos, &pos,
 						  &iface->dhcpv4.lease_time);
+			NET_DBG("options_lease_time: %u",
+				iface->dhcpv4.lease_time);
 			if (!iface->dhcpv4.lease_time) {
 				return NET_DROP;
 			}
@@ -554,11 +597,14 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 			break;
 		case DHCPV4_OPTIONS_RENEWAL:
 			if (length != 4) {
+				NET_DBG("options_renewal, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read_be32(frag, pos, &pos,
 						  &iface->dhcpv4.renewal_time);
+			NET_DBG("options_renewal: %u",
+				iface->dhcpv4.renewal_time);
 			if (!iface->dhcpv4.renewal_time) {
 				return NET_DROP;
 			}
@@ -566,20 +612,25 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 			break;
 		case DHCPV4_OPTIONS_SERVER_ID:
 			if (length != 4) {
+				NET_DBG("options_server_id, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read(frag, pos, &pos, length,
 					     iface->dhcpv4.server_id.s4_addr);
+			NET_DBG("options_server_id: %s",
+				net_sprint_ipv4_addr(&iface->dhcpv4.server_id));
 			break;
 		case DHCPV4_OPTIONS_MSG_TYPE:
 			if (length != 1) {
+				NET_DBG("options_msg_type, bad length");
 				return NET_DROP;
 			}
 
 			frag = net_nbuf_read_u8(frag, pos, &pos, msg_type);
 			break;
 		default:
+			NET_DBG("option unknown: %d", type);
 			frag = net_nbuf_skip(frag, pos, &pos, length);
 			break;
 		}

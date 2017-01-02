@@ -29,7 +29,7 @@
 #include "zperf_session.h"
 
 /* To get net_sprint_ipv{4|6}_addr() */
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 #define TAG CMD_STR_UDP_DOWNLOAD" "

@@ -32,7 +32,7 @@
 
 #include <tc_util.h>
 
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 /* ICMPv6 frame (104 bytes) */

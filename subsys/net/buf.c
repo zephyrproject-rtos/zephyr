@@ -24,9 +24,9 @@
 
 #include <net/buf.h>
 
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG)
 #define SYS_LOG_DOMAIN "net/buf"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_NET_BUF_LEVEL
 #include <logging/sys_log.h>
 
 #define NET_BUF_DBG(fmt, ...) SYS_LOG_DBG("(%p) " fmt, k_current_get(), \
@@ -44,7 +44,7 @@
 #define NET_BUF_WARN(fmt, ...)
 #define NET_BUF_INFO(fmt, ...)
 #define NET_BUF_ASSERT(cond)
-#endif /* CONFIG_NET_BUF_DEBUG */
+#endif /* CONFIG_NET_BUF_LOG */
 
 /* Helpers to access the storage array, since we don't have access to its
  * type at this point anymore.
@@ -68,7 +68,7 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 	return buf;
 }
 
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_debug(struct net_buf_pool *pool, int32_t timeout,
 				    const char *func, int line)
 #else
@@ -80,7 +80,7 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 
 	NET_BUF_ASSERT(pool);
 
-	NET_BUF_DBG("pool %p timeout %d", pool, timeout);
+	NET_BUF_DBG("%s():%d: pool %p timeout %d", func, line, pool, timeout);
 
 	/* We need to lock interrupts temporarily to prevent race conditions
 	 * when accessing pool->uninit_count.
@@ -114,7 +114,7 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 
 	irq_unlock(key);
 
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG) && SYS_LOG_LEVEL >= SYS_LOG_LEVEL_WARNING
 	if (timeout == K_FOREVER) {
 		buf = k_lifo_get(&pool->free, K_NO_WAIT);
 		if (!buf) {
@@ -134,7 +134,7 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 	}
 
 success:
-	NET_BUF_DBG("allocated buf %p");
+	NET_BUF_DBG("allocated buf %p", buf);
 
 	buf->ref   = 1;
 	buf->len   = 0;
@@ -145,7 +145,7 @@ success:
 	return buf;
 }
 
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_get_debug(struct k_fifo *fifo, int32_t timeout,
 				  const char *func, int line)
 #else
@@ -154,7 +154,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout)
 {
 	struct net_buf *buf, *frag;
 
-	NET_BUF_DBG("fifo %p timeout %d", fifo, timeout);
+	NET_BUF_DBG("%s():%d: fifo %p timeout %d", func, line, fifo, timeout);
 
 	buf = k_fifo_get(fifo, timeout);
 	if (!buf) {
@@ -162,7 +162,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout)
 		return NULL;
 	}
 
-	NET_BUF_DBG("buf %p fifo %p", buf, fifo);
+	NET_BUF_DBG("%s():%d: buf %p fifo %p", func, line, buf, fifo);
 
 	/* Get any fragments belonging to this buffer */
 	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
@@ -202,7 +202,7 @@ void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 	k_fifo_put_list(fifo, buf, tail);
 }
 
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG)
 void net_buf_unref_debug(struct net_buf *buf, const char *func, int line)
 #else
 void net_buf_unref(struct net_buf *buf)
@@ -213,7 +213,7 @@ void net_buf_unref(struct net_buf *buf)
 	while (buf) {
 		struct net_buf *frags = buf->frags;
 
-#if defined(CONFIG_NET_BUF_DEBUG)
+#if defined(CONFIG_NET_BUF_LOG)
 		if (!buf->ref) {
 			NET_BUF_ERR("%s():%d: buf %p double free", func, line,
 				    buf);
@@ -324,7 +324,7 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 	return next_frag;
 }
 
-#if defined(CONFIG_NET_BUF_SIMPLE_DEBUG)
+#if defined(CONFIG_NET_BUF_SIMPLE_LOG)
 #define NET_BUF_SIMPLE_DBG(fmt, ...) NET_BUF_DBG(fmt, ##__VA_ARGS__)
 #define NET_BUF_SIMPLE_ERR(fmt, ...) NET_BUF_ERR(fmt, ##__VA_ARGS__)
 #define NET_BUF_SIMPLE_WARN(fmt, ...) NET_BUF_WARN(fmt, ##__VA_ARGS__)
@@ -336,7 +336,7 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 #define NET_BUF_SIMPLE_WARN(fmt, ...)
 #define NET_BUF_SIMPLE_INFO(fmt, ...)
 #define NET_BUF_SIMPLE_ASSERT(cond)
-#endif /* CONFIG_NET_BUF_SIMPLE_DEBUG */
+#endif /* CONFIG_NET_BUF_SIMPLE_LOG */
 
 void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 {

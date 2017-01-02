@@ -50,7 +50,7 @@
 
 #if defined(CONFIG_NET_DEBUG_RPL)
 #define SYS_LOG_DOMAIN "net/rpl"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -127,7 +127,7 @@ net_rpl_of0_best_parent(struct net_if *iface,
 		return dag->preferred_parent;
 	}
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 
@@ -147,7 +147,7 @@ net_rpl_of0_best_parent(struct net_if *iface,
 			net_ipv6_nbr_data(nbr2)->link_metric,
 			parent2->rank);
 	} while (0);
-#endif
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 	rank1 = NET_RPL_DAG_RANK(parent1->rank,
 				 parent1->dag->instance) *

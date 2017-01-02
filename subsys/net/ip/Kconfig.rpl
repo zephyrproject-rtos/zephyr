@@ -240,12 +240,4 @@ config NET_DEBUG_RPL
 	help
 	  Enables RPL output debug messages
 
-config	NET_RPL_STATS
-	bool "Enable RPL statistics"
-	depends on NET_RPL && NET_LOG
-	select NET_STATISTICS
-	default n
-	help
-	  Enable RPL statistics support.
-
 endif # NET_RPL

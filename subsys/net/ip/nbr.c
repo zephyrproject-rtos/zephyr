@@ -18,7 +18,7 @@
 
 #if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
 #define SYS_LOG_DOMAIN "net/nbr"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -215,7 +215,7 @@ void net_nbr_clear_table(struct net_nbr_table *table)
 	}
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
 void net_nbr_print(struct net_nbr_table *table)
 {
 	int i;
@@ -235,4 +235,4 @@ void net_nbr_print(struct net_nbr_table *table)
 				net_neighbor_lladdr[nbr->idx].lladdr.len));
 	}
 }
-#endif
+#endif /* CONFIG_NET_DEBUG_IPV6_NBR_CACHE */

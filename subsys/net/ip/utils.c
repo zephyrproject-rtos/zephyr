@@ -21,7 +21,7 @@
 
 #if defined(CONFIG_NET_DEBUG_UTILS)
 #define SYS_LOG_DOMAIN "net/utils"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <stdlib.h>

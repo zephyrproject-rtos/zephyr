@@ -33,9 +33,9 @@
 #include "zperf_session.h"
 
 /* Get some useful debug routings from net_private.h, requires
- * that NET_DEBUG is set.
+ * that NET_LOG_ENABLED is set.
  */
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 #include "ipv6.h" /* to get infinite lifetime */

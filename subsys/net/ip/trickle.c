@@ -22,7 +22,7 @@
 
 #if defined(CONFIG_NET_DEBUG_TRICKLE)
 #define SYS_LOG_DOMAIN "net/trickle"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -66,7 +66,7 @@ static void double_interval_timeout(struct k_work *work)
 						   timer);
 	uint32_t rand_time;
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_TRICKLE)
 	uint32_t last_end = get_end(trickle);
 #endif
 

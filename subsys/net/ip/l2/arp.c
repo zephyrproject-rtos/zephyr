@@ -18,9 +18,9 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_DEBUG_ARP
+#if defined(CONFIG_NET_DEBUG_ARP)
 #define SYS_LOG_DOMAIN "net/arp"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -108,6 +108,7 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 }
 
 static inline struct net_buf *prepare_arp(struct net_if *iface,
+					  struct in_addr *next_addr,
 					  struct arp_entry *entry,
 					  struct net_buf *pending)
 {
@@ -143,7 +144,7 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 		entry->pending = net_buf_ref(pending);
 		entry->iface = net_nbuf_iface(buf);
 
-		net_ipaddr_copy(&entry->ip, &NET_IPV4_BUF(pending)->dst);
+		net_ipaddr_copy(&entry->ip, next_addr);
 
 		memcpy(&eth->src.addr,
 		       net_if_get_link_addr(entry->iface)->addr,
@@ -165,12 +166,7 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 
 	memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
 
-	/* Is the destination in local network */
-	if (!net_if_ipv4_addr_mask_cmp(iface, &NET_IPV4_BUF(pending)->dst)) {
-		net_ipaddr_copy(&hdr->dst_ipaddr, &iface->ipv4.gw);
-	} else {
-		net_ipaddr_copy(&hdr->dst_ipaddr, &NET_IPV4_BUF(pending)->dst);
-	}
+	net_ipaddr_copy(&hdr->dst_ipaddr, next_addr);
 
 	memcpy(hdr->src_hwaddr.addr, eth->src.addr,
 	       sizeof(struct net_eth_addr));
@@ -203,6 +199,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 	struct arp_entry *entry, *free_entry = NULL, *non_pending = NULL;
 	struct net_linkaddr *ll;
 	struct net_eth_hdr *hdr;
+	struct in_addr *addr;
 
 	if (!buf || !buf->frags) {
 		return NULL;
@@ -239,12 +236,21 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 
 	hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
 
+	/* Is the destination in the local network, if not route via
+	 * the gateway address.
+	 */
+	if (!net_if_ipv4_addr_mask_cmp(net_nbuf_iface(buf),
+				       &NET_IPV4_BUF(buf)->dst)) {
+		addr = &net_nbuf_iface(buf)->ipv4.gw;
+	} else {
+		addr = &NET_IPV4_BUF(buf)->dst;
+	}
+
 	/* If the destination address is already known, we do not need
 	 * to send any ARP packet.
 	 */
 	entry = find_entry(net_nbuf_iface(buf),
-			   &NET_IPV4_BUF(buf)->dst,
-			   &free_entry, &non_pending);
+			   addr, &free_entry, &non_pending);
 	if (!entry) {
 		if (!free_entry) {
 			/* So all the slots are occupied, use the first
@@ -259,7 +265,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 				struct net_buf *req;
 
 				req = prepare_arp(net_nbuf_iface(buf),
-						  NULL, buf);
+						  addr, NULL, buf);
 				NET_DBG("Resending ARP %p", req);
 
 				net_nbuf_unref(buf);
@@ -270,7 +276,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 			free_entry = non_pending;
 		}
 
-		return prepare_arp(net_nbuf_iface(buf), free_entry, buf);
+		return prepare_arp(net_nbuf_iface(buf), addr, free_entry, buf);
 	}
 
 	ll = net_if_get_link_addr(entry->iface);
@@ -450,7 +456,7 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 			return NET_DROP;
 		}
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ARP)
 		do {
 			char out[sizeof("xxx.xxx.xxx.xxx")];
 			snprintf(out, sizeof(out),
@@ -462,7 +468,7 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 					arp_hdr->hwlen),
 				net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		} while (0);
-#endif
+#endif /* CONFIG_NET_DEBUG_ARP */
 
 		/* Send reply */
 		reply = prepare_arp_reply(net_nbuf_iface(buf), buf);

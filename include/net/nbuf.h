@@ -43,14 +43,6 @@ extern "C" {
 
 struct net_context;
 
-/** @cond ignore */
-enum net_nbuf_type {
-	NET_NBUF_RX = 0,
-	NET_NBUF_TX = 1,
-	NET_NBUF_DATA = 2,
-};
-/** @endcond */
-
 struct net_nbuf {
 	/** Network connection context */
 	struct net_context *context;
@@ -70,8 +62,6 @@ struct net_nbuf {
 	/* Filled by layer 2 when network packet is received. */
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
-
-	enum net_nbuf_type type;
 
 	uint16_t appdatalen;
 	uint16_t reserve;	/* length of the protocol headers */
@@ -130,16 +120,6 @@ static inline struct net_if *net_nbuf_iface(struct net_buf *buf)
 static inline void net_nbuf_set_iface(struct net_buf *buf, struct net_if *iface)
 {
 	((struct net_nbuf *)net_buf_user_data(buf))->iface = iface;
-}
-
-static inline enum net_nbuf_type net_nbuf_type(struct net_buf *buf)
-{
-	return ((struct net_nbuf *)net_buf_user_data(buf))->type;
-}
-
-static inline void net_nbuf_set_type(struct net_buf *buf, uint8_t type)
-{
-	((struct net_nbuf *)net_buf_user_data(buf))->type = type;
 }
 
 static inline uint8_t net_nbuf_family(struct net_buf *buf)

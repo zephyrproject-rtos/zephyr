@@ -18,9 +18,9 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_DEBUG_IPV6
+#if defined(CONFIG_NET_DEBUG_IPV6)
 #define SYS_LOG_DOMAIN "net/ipv6"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 
 /* By default this prints too much data, set the value to 1 to see
  * neighbor cache contents.
@@ -40,6 +40,7 @@
 #include "6lo.h"
 #include "route.h"
 #include "rpl.h"
+#include "net_stats.h"
 
 #if defined(CONFIG_NET_IPV6_ND)
 
@@ -422,7 +423,7 @@ static inline bool dad_failed(struct net_if *iface, struct in6_addr *addr)
 }
 #endif /* CONFIG_NET_IPV6_DAD */
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_IPV6)
 static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
 				struct net_linkaddr_storage *old_lladdr,
 				struct in6_addr *addr)
@@ -452,7 +453,7 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #else
 #define dbg_update_neighbor_lladdr(...)
 #define dbg_update_neighbor_lladdr_raw(...)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_IPV6 */
 
 #if defined(CONFIG_NET_IPV6_ND)
 #define NS_REPLY_TIMEOUT MSEC_PER_SEC
@@ -729,7 +730,7 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 	}
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_IPV6)
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
@@ -773,7 +774,7 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 #define dbg_addr_with_tgt(...)
 #define dbg_addr_recv_tgt(...)
 #define dbg_addr_sent_tgt(...)
-#endif
+#endif /* CONFIG_NET_DEBUG_IPV6 */
 
 int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 		     struct in6_addr *dst, struct in6_addr *tgt,
@@ -833,12 +834,14 @@ int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 		goto drop;
 	}
 
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.sent);
+	net_stats_update_ipv6_nd_sent();
+
 	return 0;
 
 drop:
 	net_nbuf_unref(buf);
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
+	net_stats_update_ipv6_nd_drop();
+
 	return -EINVAL;
 }
 
@@ -856,7 +859,7 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 			  &NET_IPV6_BUF(buf)->dst,
 			  &NET_ICMPV6_NS_BUF(buf)->tgt);
 
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.recv);
+	net_stats_update_ipv6_nd_recv();
 
 	if ((total_len < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
@@ -1011,7 +1014,8 @@ send_na:
 	return NET_DROP;
 
 drop:
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
+	net_stats_update_ipv6_nd_drop();
+
 	return NET_DROP;
 }
 
@@ -1278,7 +1282,7 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 			  &NET_IPV6_BUF(buf)->dst,
 			  &NET_ICMPV6_NS_BUF(buf)->tgt);
 
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.recv);
+	net_stats_update_ipv6_nd_recv();
 
 	if ((total_len < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
@@ -1357,11 +1361,13 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 		goto drop;
 	}
 
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.sent);
+	net_stats_update_ipv6_nd_sent();
+
 	return NET_OK;
 
 drop:
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
+	net_stats_update_ipv6_nd_drop();
+
 	return NET_DROP;
 }
 
@@ -1494,13 +1500,14 @@ int net_ipv6_send_ns(struct net_if *iface,
 		goto drop;
 	}
 
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.sent);
+	net_stats_update_ipv6_nd_sent();
 
 	return 0;
 
 drop:
 	net_nbuf_unref(buf);
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
+	net_stats_update_ipv6_nd_drop();
+
 	return -EINVAL;
 }
 
@@ -1566,13 +1573,14 @@ int net_ipv6_send_rs(struct net_if *iface)
 		goto drop;
 	}
 
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.sent);
+	net_stats_update_ipv6_nd_sent();
 
 	return 0;
 
 drop:
 	net_nbuf_unref(buf);
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
+	net_stats_update_ipv6_nd_drop();
+
 	return -EINVAL;
 }
 
@@ -1899,7 +1907,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 		      &NET_IPV6_BUF(buf)->src,
 		      &NET_IPV6_BUF(buf)->dst);
 
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.recv);
+	net_stats_update_ipv6_nd_recv();
 
 	if ((total_len < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
@@ -2074,7 +2082,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	return NET_OK;
 
 drop:
-	NET_STATS_IPV6_ND(++net_stats.ipv6_nd.drop);
+	net_stats_update_ipv6_nd_drop();
 
 	return NET_DROP;
 }
