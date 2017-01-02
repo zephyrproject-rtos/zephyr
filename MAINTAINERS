@@ -308,9 +308,11 @@ M:	Tomasz Bursztyka <tomasz.bursztyka@linux.intel.com>
 S:	Supported
 W:	https://www.zephyrproject.org/doc/subsystems/networking/networking.html
 F:	subsys/net/ip/
+F:	subsys/net/lib/
 F:	include/net/
 F:	samples/net/
 F:	tests/net/
+F:	tests/net/lib/
 F:	drivers/ethernet/
 F:	drivers/ieee802154/
 F:	drivers/slip/
@@ -318,10 +320,12 @@ F:	drivers/slip/
 NETWORK APPLICATIONS
 M:	Flavio Santes <flavio.santes@intel.com>
 S:	Supported
-F:	lib/iot/dns/
-F:	lib/iot/http/
-F:	lib/iot/mqtt/
+F:	subsys/net/lib/dns/
+F:	subsys/net/lib/http/
+F:	subsys/net/lib/mqtt/
 F:	samples/net/dns_client/
+F:	tests/net/lib/http_header_fields/
+F:	tests/net/lib/mqtt_packet/
 
 NETWORK BUFFERS
 M:	Johan Hedberg <johan.hedberg@intel.com>
@@ -452,10 +456,10 @@ F:	boards/x86/
 ZOAP
 M:	Vinicius Costa Gomes <vinicius.gomes@intel.com>
 S:	Supported
-F:	lib/iot/zoap/
+F:	subsys/net/lib/zoap/
 F:	samples/net/zoap_client/
 F:	samples/net/zoap_server/
-F:	tests/net/zoap/
+F:	tests/net/lib/zoap/
 
 THE REST
 M:	Anas Nashif <anas.nashif@intel.com>
