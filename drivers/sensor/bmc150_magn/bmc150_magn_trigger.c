@@ -34,7 +34,7 @@ int bmc150_magn_trigger_set(struct device *dev,
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		gpio_pin_disable_callback(data->gpio_drdy,
-					config->gpio_drdy_int_pin);
+					  config->gpio_drdy_int_pin);
 
 		state = 0;
 		if (handler) {
