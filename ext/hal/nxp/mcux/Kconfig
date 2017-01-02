@@ -15,11 +15,6 @@
 # limitations under the License.
 #
 
-config HAS_KSDK
-	bool
-	select HAS_MCUX
-	depends on SOC_FAMILY_KINETIS
-
 config HAS_MCUX
 	bool
 	select HAS_CMSIS
