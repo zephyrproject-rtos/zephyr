@@ -1,7 +1,6 @@
-# Kconfig - Kinetis SDK
-
+# Makefile - MCUXpresso SDK
 #
-# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright (c) 2016, ARM Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +15,4 @@
 # limitations under the License.
 #
 
-config HAS_KSDK
-	bool
-	select HAS_CMSIS
-	depends on SOC_FAMILY_KINETIS
+obj-$(CONFIG_ETH_KSDK) += phyksz8081/fsl_phy.o

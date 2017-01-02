@@ -1,0 +1,11 @@
+The NXP MCUXpresso Software Development Kit (MCUX) provides device header files
+and peripheral drivers for Kinetis, LPC, and i.MX SoCs.
+
+It was previously called the Kinetis Software Development Kit (KSDK), then
+renamed to include support for LPC and i.MX SoCs.
+
+The sources in this directory are imported from mcux.nxp.com.
+
+The current version supported in Zephyr is MCUX 2.0. It currently supports the
+following SoCs:
+- MK64F12 (aka K64F)

@@ -46,17 +46,17 @@ licensing in this document.
 
   *Licensing*: :download:`CMSIS_END_USER_LICENCE_AGREEMENT <../ext/hal/cmsis/CMSIS_END_USER_LICENCE_AGREEMENT.pdf>`
 
-- *ext/hal/ksdk/*
-
-  *Origin:* http://kex.nxp.com
-
-  *Licensing*: 3-clause BSD (see :download:`source <../ext/hal/ksdk/drivers/fsl_rtc.h>`)
-
 - *ext/hal/nordic/*
 
   *Origin:*
 
   *Licensing*: 3-clause BSD (see :download:`source <../ext/hal/nordic/mdk/nrf51.h>`)
+
+- *ext/hal/nxp/mcux/*
+
+  *Origin:* http://mcux.nxp.com
+
+  *Licensing*: 3-clause BSD (see :download:`source <../ext/hal/nxp/mcux/drivers/fsl_rtc.h>`)
 
 - *ext/hal/qmsi/*
 
