@@ -166,9 +166,11 @@ static struct {
 	uint8_t data_channel_count;
 	uint8_t sca;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	/* DLE global settings */
 	uint16_t default_tx_octets;
 	uint16_t default_tx_time;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	/** @todo below members to be made role specific and quota managed for
 	 * Rx-es.
