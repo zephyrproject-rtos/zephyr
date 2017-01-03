@@ -340,6 +340,37 @@ static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
+static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
+{
+	struct bt_rfcomm_hdr *hdr;
+	struct net_buf *buf;
+	uint8_t fcs, cr;
+
+	BT_DBG("dlci %d", dlci);
+
+	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, 0);
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	cr = BT_RFCOMM_RESP_CR(session->role);
+	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DISC, BT_RFCOMM_PF_NON_UIH);
+	hdr->length = BT_RFCOMM_SET_LEN_8(0);
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+}
+
+static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
+{
+	if (session->dlcs) {
+		return;
+	}
+
+	session->state = BT_RFCOMM_STATE_DISCONNECTING;
+	rfcomm_send_disc(session, 0);
+}
+
 static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_session *session,
 					   uint8_t cr, uint8_t type,
 					   uint8_t len)
@@ -453,27 +484,6 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
 	/* For DM PF bit is not relevant, we set it 1 */
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DM, BT_RFCOMM_PF_NON_UIH);
-	hdr->length = BT_RFCOMM_SET_LEN_8(0);
-	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
-	net_buf_add_u8(buf, fcs);
-
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
-}
-
-static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
-{
-	struct bt_rfcomm_hdr *hdr;
-	struct net_buf *buf;
-	uint8_t fcs, cr;
-
-	BT_DBG("dlci %d", dlci);
-
-	buf = bt_l2cap_create_pdu(&rfcomm_session_pool, 0);
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	cr = BT_RFCOMM_RESP_CR(session->role);
-	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
-	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DISC, BT_RFCOMM_PF_NON_UIH);
 	hdr->length = BT_RFCOMM_SET_LEN_8(0);
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
@@ -870,16 +880,6 @@ static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 	}
 
 	return 0;
-}
-
-static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
-{
-	if (session->dlcs) {
-		return;
-	}
-
-	session->state = BT_RFCOMM_STATE_DISCONNECTING;
-	rfcomm_send_disc(session, 0);
 }
 
 static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
