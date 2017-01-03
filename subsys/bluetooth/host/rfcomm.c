@@ -22,6 +22,7 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
+#include <misc/stack.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -244,6 +245,9 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
+
+	stack_analyze("dlc stack", dlc->stack, sizeof(dlc->stack));
+
 	if (dlc->ops && dlc->ops->disconnected) {
 		dlc->ops->disconnected(dlc);
 	}

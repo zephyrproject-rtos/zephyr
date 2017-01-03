@@ -103,7 +103,7 @@ struct bt_rfcomm_dlc {
 	uint8_t                    rx_credit;
 
 	/* Stack for TX fiber */
-	BT_STACK(stack, 128);
+	BT_STACK(stack, 256);
 };
 
 struct bt_rfcomm_server {
