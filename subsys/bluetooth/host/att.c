@@ -1279,8 +1279,10 @@ static uint8_t att_prep_write_rsp(struct bt_att *att, uint16_t handle,
 		return 0;
 	}
 
+	BT_DBG("buf %p handle 0x%04x offset %u", data.buf, handle, offset);
+
 	/* Store buffer in the outstanding queue */
-	k_fifo_put(&att->prep_queue, data.buf);
+	net_buf_put(&att->prep_queue, data.buf);
 
 	/* Generate response */
 	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_RSP, 0);
@@ -1327,8 +1329,11 @@ static uint8_t att_exec_write_rsp(struct bt_att *att, uint8_t flags)
 	struct net_buf *buf;
 	uint8_t err = 0;
 
-	while ((buf = k_fifo_get(&att->prep_queue, K_NO_WAIT))) {
+	while ((buf = net_buf_get_timeout(&att->prep_queue, 0, K_NO_WAIT))) {
 		struct bt_attr_data *data = net_buf_user_data(buf);
+
+		BT_DBG("buf %p handle 0x%04x offset %u", buf, data->handle,
+		       data->offset);
 
 		/* Just discard the data if an error was set */
 		if (!err && flags == BT_ATT_FLAG_EXEC) {
