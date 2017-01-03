@@ -26,38 +26,62 @@ $(error (The SDK version you are using is old, please update your SDK. You need 
 endif
 endif
 
+TOOLCHAIN_VENDOR := zephyr
+TOOLCHAIN_ARCH := x86_64
+
+# TODO remove once we retire 0.8.2 in favor of 0.9
+# See also conditional below near iamcu (pass1)
+ifeq ($(SDK_VERSION),0.8.2)
+	TOOLCHAIN_VENDOR := poky
+	TOOLCHAIN_ARCH := i686
+endif
+
 ifeq ($(HOST_OS),MINGW)
 	TOOLCHAIN_HOME = ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-mingw32
 else
-	TOOLCHAIN_HOME = ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux
+	TOOLCHAIN_HOME = ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(TOOLCHAIN_ARCH)-pokysdk-linux
 endif
 
 ifndef MAKEFILE_TOOLCHAIN_DO_PASS2
 
 # arm (pass1)
-CROSS_COMPILE_TARGET_arm = arm-poky-eabi
-SYSROOT_TARGET_arm = armv5-poky-eabi
+CROSS_COMPILE_TARGET_arm = arm-$(TOOLCHAIN_VENDOR)-eabi
+SYSROOT_TARGET_arm = armv5-$(TOOLCHAIN_VENDOR)-eabi
 CROSS_COMPILE_arm=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_TARGET_arm)-
 
 # arc (pass1)
-CROSS_COMPILE_TARGET_arc = arc-poky-elf
-SYSROOT_TARGET_arc = arc-poky-elf
+CROSS_COMPILE_TARGET_arc = arc-$(TOOLCHAIN_VENDOR)-elf
+SYSROOT_TARGET_arc = arc-$(TOOLCHAIN_VENDOR)-elf
 CROSS_COMPILE_arc=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_TARGET_arc)-
 
 # iamcu (pass1)
-CROSS_COMPILE_TARGET_iamcu = i586-poky-elfiamcu
-SYSROOT_TARGET_iamcu = iamcu-poky-elfiamcu
+CROSS_COMPILE_TARGET_iamcu = i586-$(TOOLCHAIN_VENDOR)-elfiamcu
+SYSROOT_TARGET_iamcu = iamcu-$(TOOLCHAIN_VENDOR)-elfiamcu
+ifeq ($(SDK_VERSION),0.8.2)
 CROSS_COMPILE_iamcu=$(TOOLCHAIN_HOME)/usr/bin/iamcu-poky-elfiamcu/$(CROSS_COMPILE_TARGET_iamcu)-
+else
+CROSS_COMPILE_iamcu=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_iamcu)/$(CROSS_COMPILE_TARGET_iamcu)-
+endif
 
 # x86 (pass1)
-CROSS_COMPILE_TARGET_x86 = i586-poky-elf
-SYSROOT_TARGET_x86 = i586-poky-elf
+CROSS_COMPILE_TARGET_x86 = i586-$(TOOLCHAIN_VENDOR)-elf
+SYSROOT_TARGET_x86 = i586-$(TOOLCHAIN_VENDOR)-elf
 CROSS_COMPILE_x86=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
 
 # nios2 (pass1)
-CROSS_COMPILE_TARGET_nios2 = nios2-poky-elf
-SYSROOT_TARGET_nios2 = nios2-poky-elf
+CROSS_COMPILE_TARGET_nios2 = nios2-$(TOOLCHAIN_VENDOR)-elf
+SYSROOT_TARGET_nios2 = nios2-$(TOOLCHAIN_VENDOR)-elf
 CROSS_COMPILE_nios2=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_nios2)/$(CROSS_COMPILE_TARGET_nios2)-
+
+# xtensa (pass1)
+CROSS_COMPILE_TARGET_xtensa = xtensa-$(TOOLCHAIN_VENDOR)-elf
+SYSROOT_TARGET_xtensa = xtensa-$(TOOLCHAIN_VENDOR)-elf
+CROSS_COMPILE_xtensa=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_xtensa)/$(CROSS_COMPILE_TARGET_xtensa)-
+
+# riscv32 (pass1)
+CROSS_COMPILE_TARGET_riscv32 = riscv32-$(TOOLCHAIN_VENDOR)-elf
+SYSROOT_TARGET_riscv32 = riscv32-$(TOOLCHAIN_VENDOR)-elf
+CROSS_COMPILE_riscv32=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_riscv32)/$(CROSS_COMPILE_TARGET_riscv32)-
 
 else
 
@@ -85,8 +109,8 @@ QEMU_BIOS=$(TOOLCHAIN_HOME)/usr/share/qemu
 
 TOOLCHAIN_LIBS = gcc
 
-OPENOCD ?= ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/openocd
-OPENOCD_DEFAULT_PATH ?= ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/share/openocd/scripts
+OPENOCD ?= ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(TOOLCHAIN_ARCH)-pokysdk-linux/usr/bin/openocd
+OPENOCD_DEFAULT_PATH ?= ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(TOOLCHAIN_ARCH)-pokysdk-linux/usr/share/openocd/scripts
 
 export LIB_INCLUDE_DIR CROSS_COMPILE TOOLCHAIN_LIBS QEMU_BIN_PATH QEMU TOOLCHAIN_CFLAGS OPENOCD OPENOCD_DEFAULT_PATH
 
