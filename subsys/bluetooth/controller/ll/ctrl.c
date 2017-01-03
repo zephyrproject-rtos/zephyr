@@ -7182,7 +7182,7 @@ uint32_t radio_scan_enable(uint8_t scan_type, uint8_t init_addr_type,
 			_radio.filter_addr_type_bitmask;
 		memcpy(&_radio.observer.filter_bdaddr[0][0],
 		       &_radio.filter_bdaddr[0][0],
-		       sizeof(_radio.advertiser.filter_bdaddr));
+		       sizeof(_radio.observer.filter_bdaddr));
 		_radio.observer.filter_enable_bitmask =
 			_radio.filter_enable_bitmask;
 	}
