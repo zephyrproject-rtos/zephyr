@@ -5964,12 +5964,20 @@ static struct radio_pdu_node_rx *packet_rx_reserve_get(uint8_t count)
 
 static void packet_rx_callback(void)
 {
+	/* Inline call of callback. If JOB configured as lower priority then
+	 * callback will tailchain at end of every radio ISR. If JOB configured
+	 * as same then call inline so as to have callback for every radio ISR.
+	 */
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+	radio_event_callback();
+#else
 	static void *s_link[2];
 	static struct mayfly s_mfy_callback = {0, 0, s_link, 0,
 		(void *)radio_event_callback};
 
 	mayfly_enqueue(RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_USER_ID_JOB, 1,
 		       &s_mfy_callback);
+#endif
 }
 
 static void packet_rx_enqueue(void)
