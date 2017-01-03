@@ -38,7 +38,7 @@ Ensures interrupt and exception stubs are installed correctly.
 
 /* externs */
 
- /* the _idt_base_address symbol is generated via a linker script */
+/* the _idt_base_address symbol is generated via a linker script */
 
 extern unsigned char _idt_base_address[];
 
@@ -50,7 +50,8 @@ static volatile int    intHandlerExecuted;
 /* Assume the spurious interrupt handler will execute and abort the fiber */
 static volatile int    spurHandlerAbortedThread = 1;
 
-static char __stack fiberStack[512];
+#define STACK_SIZE 1024
+static char __stack fiberStack[STACK_SIZE];
 
 
 /**
