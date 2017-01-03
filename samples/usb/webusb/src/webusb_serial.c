@@ -392,7 +392,7 @@ static void webusb_serial_bulk_in(uint8_t ep,
 		enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct webusb_serial_dev_data_t * const dev_data =
-	    DEV_DATA(webusb_serial_dev);
+		DEV_DATA(webusb_serial_dev);
 
 	ARG_UNUSED(ep_status);
 	ARG_UNUSED(ep);
@@ -416,7 +416,7 @@ static void webusb_serial_bulk_out(uint8_t ep,
 		enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct webusb_serial_dev_data_t * const dev_data =
-	    DEV_DATA(webusb_serial_dev);
+		DEV_DATA(webusb_serial_dev);
 	uint32_t bytes_to_read, i, j, buf_head;
 	uint8_t tmp_buf[4];
 
