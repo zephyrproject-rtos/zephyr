@@ -51,8 +51,6 @@
 
 static void thread_entry(void *p1, void *p2, void *p3);
 
-static const int stack_size = 500;
-
 K_THREAD_DEFINE(T_KDEFINE_COOP_THREAD, INIT_COOP_STACK_SIZE,
 	thread_entry, INIT_COOP_P1, INIT_COOP_P2, INIT_COOP_P3,
 	INIT_COOP_PRIO, INIT_COOP_OPTION, INIT_COOP_DELAY);
