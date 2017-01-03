@@ -30,7 +30,8 @@ import shlex
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc', 'breathe', 'sphinx.ext.todo'
+    'sphinx.ext.autodoc', 'breathe', 'sphinx.ext.todo',
+    'sphinx.ext.extlinks'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -320,3 +321,5 @@ breathe_default_project = "Zephyr"
 html_context = {
     'show_license': html_show_license,
 }
+
+extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', '')}
