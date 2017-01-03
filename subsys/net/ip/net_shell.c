@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <shell/shell.h>
 
-#include <net/net_stats.h>
 #include <net/net_if.h>
 
 #include "route.h"
@@ -36,12 +35,13 @@
 #endif
 
 #include "net_shell.h"
+#include "net_stats.h"
 
 /*
- * Set NET_DEBUG in order to activate address printing functions
+ * Set NET_LOG_ENABLED in order to activate address printing functions
  * in net_private.h
  */
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 #define NET_SHELL_MODULE "net"
@@ -376,9 +376,8 @@ static void iface_per_mcast_route_cb(struct net_if *iface, void *user_data)
 #endif /* CONFIG_NET_ROUTE_MCAST */
 
 #if defined(CONFIG_NET_STATISTICS)
-#define GET_STAT(s) net_stats.s
 
-static inline void net_print_statistics(void)
+static inline void net_shell_print_statistics(void)
 {
 #if defined(CONFIG_NET_IPV6)
 	printf("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
@@ -757,7 +756,7 @@ static int shell_cmd_stats(int argc, char *argv[])
 	ARG_UNUSED(argv);
 
 #if defined(CONFIG_NET_STATISTICS)
-	net_print_statistics();
+	net_shell_print_statistics();
 #else
 	printf("Network statistics not compiled in.\n");
 #endif

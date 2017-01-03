@@ -34,7 +34,7 @@
 
 #include "nbr.h"
 
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 static int remove_count, add_count, clear_called;

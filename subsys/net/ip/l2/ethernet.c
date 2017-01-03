@@ -16,7 +16,7 @@
 
 #if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
 #define SYS_LOG_DOMAIN "net/ethernet"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <net/net_core.h>
@@ -41,7 +41,7 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 	return &broadcast_eth_addr;
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
 #define print_ll_addrs(buf, type, len)					   \
 	do {								   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
@@ -57,7 +57,7 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 	} while (0)
 #else
 #define print_ll_addrs(...)
-#endif
+#endif /* CONFIG_NET_DEBUG_L2_ETHERNET */
 
 static inline void ethernet_update_length(struct net_if *iface,
 					  struct net_buf *buf)
@@ -75,7 +75,8 @@ static inline void ethernet_update_length(struct net_if *iface,
 		       NET_IPV4_BUF(buf)->len[1]);
 	} else {
 		len = ((NET_IPV6_BUF(buf)->len[0] << 8) +
-		       NET_IPV6_BUF(buf)->len[1]);
+		       NET_IPV6_BUF(buf)->len[1]) +
+			NET_IPV6H_LEN;
 	}
 
 	if (len < NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr)) {

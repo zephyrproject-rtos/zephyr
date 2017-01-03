@@ -10,7 +10,7 @@ The DNS API allows to recover IPv4 and IPv6 addresses.
 API Return Codes
 ================
 
-API return codes are documented in the API (see include/iot/dns_client.h).
+API return codes are documented in the API (see include/net/dns_client.h).
 
 Macro	|   Value   |	Description
 ------------------------------------------------------------------------

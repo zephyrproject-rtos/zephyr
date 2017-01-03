@@ -631,27 +631,6 @@ int net_context_recv(struct net_context *context,
 		     int32_t timeout,
 		     void *user_data);
 
-/**
- * @brief Internal function that is called when network packet is sent
- * successfully.
- *
- * @param context The network context to use.
- * @param token User supplied token tied to the net_buf that was sent.
- * @param err_code Error code
- */
-static inline void net_context_send_cb(struct net_context *context,
-				       void *token,
-				       int err_code)
-{
-	if (context->send_cb) {
-		context->send_cb(context, err_code, token, context->user_data);
-	}
-
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		NET_STATS_UDP(++net_stats.udp.sent);
-	}
-}
-
 typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
 
 /**

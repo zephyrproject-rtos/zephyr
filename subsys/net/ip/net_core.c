@@ -23,7 +23,7 @@
 
 #if defined(CONFIG_NET_DEBUG_CORE)
 #define SYS_LOG_DOMAIN "net/core"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <init.h>
@@ -38,7 +38,6 @@
 #include <net/arp.h>
 #include <net/nbuf.h>
 #include <net/net_core.h>
-#include <net/net_stats.h>
 
 #include "net_private.h"
 #include "net_shell.h"
@@ -57,6 +56,8 @@
 #include "udp.h"
 #include "tcp.h"
 
+#include "net_stats.h"
+
 /* Stack for the rx thread.
  */
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
@@ -68,120 +69,6 @@ NET_STACK_DEFINE(RX, rx_stack, CONFIG_NET_RX_STACK_SIZE,
 
 static struct k_fifo rx_queue;
 static k_tid_t rx_tid;
-
-#if defined(CONFIG_NET_STATISTICS)
-#define PRINT(fmt, ...) NET_INFO(fmt, ##__VA_ARGS__)
-struct net_stats net_stats;
-#define GET_STAT(s) net_stats.s
-#define PRINT_STATISTICS_INTERVAL (30 * MSEC_PER_SEC)
-#define net_print_statistics stats /* to make the debug print line shorter */
-
-static inline void stats(void)
-{
-	static int64_t next_print;
-	int64_t curr = k_uptime_get();
-
-	if (!next_print || (next_print < curr &&
-	    (!((curr - next_print) > PRINT_STATISTICS_INTERVAL)))) {
-		int64_t new_print;
-
-#if defined(CONFIG_NET_IPV6)
-		PRINT("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
-		      GET_STAT(ipv6.recv),
-		      GET_STAT(ipv6.sent),
-		      GET_STAT(ipv6.drop),
-		      GET_STAT(ipv6.forwarded));
-#if defined(CONFIG_NET_IPV6_ND)
-		PRINT("IPv6 ND recv   %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(ipv6_nd.recv),
-		      GET_STAT(ipv6_nd.sent),
-		      GET_STAT(ipv6_nd.drop));
-#endif /* CONFIG_NET_IPV6_ND */
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-		PRINT("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
-		      GET_STAT(ipv4.recv),
-		      GET_STAT(ipv4.sent),
-		      GET_STAT(ipv4.drop),
-		      GET_STAT(ipv4.forwarded));
-#endif /* CONFIG_NET_IPV4 */
-
-		PRINT("IP vhlerr      %d\thblener\t%d\tlblener\t%d",
-		      GET_STAT(ip_errors.vhlerr),
-		      GET_STAT(ip_errors.hblenerr),
-		      GET_STAT(ip_errors.lblenerr));
-		PRINT("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d",
-		      GET_STAT(ip_errors.fragerr),
-		      GET_STAT(ip_errors.chkerr),
-		      GET_STAT(ip_errors.protoerr));
-
-		PRINT("ICMP recv      %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(icmp.recv),
-		      GET_STAT(icmp.sent),
-		      GET_STAT(icmp.drop));
-		PRINT("ICMP typeer    %d\tchkerr\t%d",
-		      GET_STAT(icmp.typeerr),
-		      GET_STAT(icmp.chkerr));
-
-#if defined(CONFIG_NET_UDP)
-		PRINT("UDP recv       %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(udp.recv),
-		      GET_STAT(udp.sent),
-		      GET_STAT(udp.drop));
-		PRINT("UDP chkerr     %d",
-		      GET_STAT(udp.chkerr));
-#endif
-
-#if defined(CONFIG_NET_RPL_STATS)
-		PRINT("RPL DIS recv   %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(rpl.dis.recv),
-		      GET_STAT(rpl.dis.sent),
-		      GET_STAT(rpl.dis.drop));
-		PRINT("RPL DIO recv   %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(rpl.dio.recv),
-		      GET_STAT(rpl.dio.sent),
-		      GET_STAT(rpl.dio.drop));
-		PRINT("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
-		      GET_STAT(rpl.dao.recv),
-		      GET_STAT(rpl.dao.sent),
-		      GET_STAT(rpl.dao.drop),
-		      GET_STAT(rpl.dao.forwarded));
-		PRINT("RPL DAOACK rcv %d\tsent\t%d\tdrop\t%d",
-		      GET_STAT(rpl.dao_ack.recv),
-		      GET_STAT(rpl.dao_ack.sent),
-		      GET_STAT(rpl.dao_ack.drop));
-		PRINT("RPL overflows  %d\tl-repairs\t%d\tg-repairs\t%d",
-		      GET_STAT(rpl.mem_overflows),
-		      GET_STAT(rpl.local_repairs),
-		      GET_STAT(rpl.global_repairs));
-		PRINT("RPL malformed  %d\tresets   \t%d\tp-switch\t%d",
-		      GET_STAT(rpl.malformed_msgs),
-		      GET_STAT(rpl.resets),
-		      GET_STAT(rpl.parent_switch));
-		PRINT("RPL f-errors   %d\tl-errors\t%d\tl-warnings\t%d",
-		      GET_STAT(rpl.forward_errors),
-		      GET_STAT(rpl.loop_errors),
-		      GET_STAT(rpl.loop_warnings));
-		PRINT("RPL r-repairs  %d",
-		      GET_STAT(rpl.root_repairs));
-#endif
-
-		PRINT("Processing err %d", GET_STAT(processing_error));
-
-		new_print = curr + PRINT_STATISTICS_INTERVAL;
-		if (new_print > curr) {
-			next_print = new_print;
-		} else {
-			/* Overflow */
-			next_print = PRINT_STATISTICS_INTERVAL -
-				(LLONG_MAX - curr);
-		}
-	}
-}
-#else /* CONFIG_NET_STATISTICS */
-#define net_print_statistics()
-#endif /* CONFIG_NET_STATISTICS */
 
 #if defined(CONFIG_NET_IPV6)
 static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
@@ -320,22 +207,22 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 
 	if (real_len != pkt_len) {
 		NET_DBG("IPv6 packet size %d buf len %d", pkt_len, real_len);
-		NET_STATS_IPV6(++net_stats.ipv6.drop);
+		net_stats_update_ipv6_drop();
 		goto drop;
 	}
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_CORE)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 		snprintf(out, sizeof(out), net_sprint_ipv6_addr(&hdr->dst));
 		NET_DBG("IPv6 packet len %d received from %s to %s",
 			real_len, net_sprint_ipv6_addr(&hdr->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_CORE */
 
 	if (net_is_ipv6_addr_mcast(&hdr->src)) {
-		NET_STATS_IPV6(++net_stats.ipv6.drop);
 		NET_DBG("Dropping src multicast packet");
+		net_stats_update_ipv6_drop();
 		goto drop;
 	}
 
@@ -344,7 +231,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	    !net_is_ipv6_addr_mcast(&hdr->dst) &&
 	    !net_is_ipv6_addr_loopback(&hdr->dst)) {
 		NET_DBG("IPv6 packet in buf %p not for me", buf);
-		NET_STATS_IPV6(++net_stats.ipv6.drop);
+		net_stats_update_ipv6_drop();
 		goto drop;
 	}
 
@@ -392,7 +279,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		length = length * 8 + 8;
 		verdict = NET_OK;
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_CORE)
 		/* Print the length only for IPv6 extension */
 		if (next != IPPROTO_ICMPV6 && next != IPPROTO_UDP &&
 		    next != IPPROTO_TCP) {
@@ -401,7 +288,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		} else {
 			NET_DBG("IPv6 next header %d", next);
 		}
-#endif
+#endif /* CONFIG_NET_DEBUG_CORE */
 
 		switch (next) {
 		case NET_IPV6_NEXTHDR_NONE:
@@ -493,7 +380,7 @@ bad_hdr:
 			      offset - 1);
 
 	NET_DBG("Unknown next header type");
-	NET_STATS(++net_stats.ip_errors.protoerr);
+	net_stats_update_ip_errors_protoerr();
 
 	return NET_DROP;
 }
@@ -526,14 +413,14 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 		goto drop;
 	}
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_CORE)
 	do {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 		snprintf(out, sizeof(out), net_sprint_ipv4_addr(&hdr->dst));
 		NET_DBG("IPv4 packet received from %s to %s",
 			net_sprint_ipv4_addr(&hdr->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_CORE */
 
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
@@ -570,7 +457,7 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 	}
 
 drop:
-	NET_STATS(++net_stats.ipv4.drop);
+	net_stats_update_ipv4_drop();
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV4 */
@@ -589,7 +476,7 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	if (!buf->frags || !buf->pool->user_data_size) {
 		NET_DBG("Corrupted buffer (frags %p, data size %u)",
 			buf->frags, buf->pool->user_data_size);
-		NET_STATS(++net_stats.processing_error);
+		net_stats_update_processing_error();
 
 		return NET_DROP;
 	}
@@ -599,7 +486,7 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Buffer %p discarded by L2", buf);
-				NET_STATS(++net_stats.processing_error);
+				net_stats_update_processing_error();
 			}
 
 			return ret;
@@ -610,13 +497,13 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	switch (NET_IPV6_BUF(buf)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
-		NET_STATS_IPV6(++net_stats.ipv6.recv);
+		net_stats_update_ipv6_recv();
 		net_nbuf_set_family(buf, PF_INET6);
 		return process_ipv6_pkt(buf);
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
-		NET_STATS_IPV4(++net_stats.ipv4.recv);
+		net_stats_update_ipv4_recv();
 		net_nbuf_set_family(buf, PF_INET);
 		return process_ipv4_pkt(buf);
 #endif
@@ -624,8 +511,8 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 
 	NET_DBG("Unknown IP family packet (0x%x)",
 		NET_IPV6_BUF(buf)->vtc & 0xf0);
-	NET_STATS(++net_stats.ip_errors.protoerr);
-	NET_STATS(++net_stats.ip_errors.vhlerr);
+	net_stats_update_ip_errors_protoerr();
+	net_stats_update_ip_errors_vhlerr();
 
 	return NET_DROP;
 }
@@ -777,10 +664,10 @@ int net_send_data(struct net_buf *buf)
 #if defined(CONFIG_NET_STATISTICS)
 	switch (net_nbuf_family(buf)) {
 	case AF_INET:
-		NET_STATS_IPV4(++net_stats.ipv4.sent);
+		net_stats_update_ipv4_sent();
 		break;
 	case AF_INET6:
-		NET_STATS_IPV6(++net_stats.ipv6.sent);
+		net_stats_update_ipv6_sent();
 		break;
 	}
 #endif

@@ -28,7 +28,7 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 #define LL_RESERVE 28

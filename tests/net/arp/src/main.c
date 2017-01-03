@@ -34,7 +34,7 @@
 #include <net/net_ip.h>
 #include <net/arp.h>
 
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 static bool req_test;

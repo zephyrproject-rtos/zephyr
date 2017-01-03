@@ -50,7 +50,7 @@
 
 #if defined(CONFIG_NET_DEBUG_RPL)
 #define SYS_LOG_DOMAIN "net/rpl"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -199,7 +199,7 @@ static uint16_t calculate_path_metric(struct net_rpl_parent *parent)
 	return parent->mc.obj.etx + net_ipv6_nbr_data(nbr)->link_metric;
 
 #elif defined(CONFIG_NET_RPL_MC_ENERGY)
-	return parent->mc.obj.energy.energy_est +
+	return parent->mc.obj.energy.estimation +
 		net_ipv6_nbr_data(nbr)->link_metric;
 #else
 #error "Unsupported routing metric configured"
@@ -361,7 +361,7 @@ static int net_rpl_mrhof_update_mc(struct net_rpl_instance *instance)
 	}
 
 	instance->mc.obj.energy.flags = type << NET_RPL_MC_ENERGY_TYPE;
-	instance->mc.obj.energy.energy_est = path_metric;
+	instance->mc.obj.energy.estimation = path_metric;
 #endif
 
 	return 0;

@@ -20,7 +20,7 @@
 
 #if defined(CONFIG_NET_DEBUG_CONN)
 #define SYS_LOG_DOMAIN "net/conn"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -28,12 +28,12 @@
 
 #include <net/net_core.h>
 #include <net/nbuf.h>
-#include <net/net_stats.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
 #include "icmpv4.h"
 #include "connection.h"
+#include "net_stats.h"
 
 /** Is this connection used or not */
 #define NET_CONN_IN_USE BIT(0)
@@ -60,7 +60,7 @@ static struct net_conn conns[CONFIG_NET_MAX_CONN];
  */
 #define NET_CONN_BUF(buf) ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_CONN)
 static inline const char *proto2str(enum net_ip_protocol proto)
 {
 	switch (proto) {
@@ -78,7 +78,7 @@ static inline const char *proto2str(enum net_ip_protocol proto)
 
 	return "<unknown>";
 }
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_CONN */
 
 #if defined(CONFIG_NET_CONN_CACHE)
 
@@ -389,7 +389,7 @@ int net_conn_change_callback(struct net_conn_handle *handle,
 	return 0;
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_CONN)
 static inline
 void prepare_register_debug_print(char *dst, int dst_len,
 				  char *src, int src_len,
@@ -440,7 +440,7 @@ void prepare_register_debug_print(char *dst, int dst_len,
 		snprintf(src, src_len, "-");
 	}
 }
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_CONN */
 
 int net_conn_register(enum net_ip_protocol proto,
 		      const struct sockaddr *remote_addr,
@@ -558,7 +558,7 @@ int net_conn_register(enum net_ip_protocol proto,
 		/* Cache needs to be cleared if new entries are added. */
 		cache_clear();
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_CONN)
 		do {
 			char dst[NET_IPV6_ADDR_LEN];
 			char src[NET_IPV6_ADDR_LEN];
@@ -575,7 +575,7 @@ int net_conn_register(enum net_ip_protocol proto,
 				local_addr, src, local_port,
 				cb, user_data);
 		} while (0);
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_CONN */
 
 		if (handle) {
 			*handle = (struct net_conn_handle *)&conns[i];
@@ -754,7 +754,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 		}
 
 		if (proto == IPPROTO_UDP) {
-			NET_STATS_UDP(++net_stats.udp.recv);
+			net_stats_update_udp_recv();
 		}
 
 		return NET_OK;
@@ -785,7 +785,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 
 drop:
 	if (proto == IPPROTO_UDP) {
-		NET_STATS_UDP(++net_stats.udp.drop);
+		net_stats_update_udp_drop();
 	}
 
 	return NET_DROP;

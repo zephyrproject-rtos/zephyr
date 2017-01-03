@@ -25,18 +25,33 @@ config NET_BUF
 	This option enables support for generic network protocol
 	buffers.
 
-config NET_BUF_DEBUG
-	bool "Network buffer debugging"
+config NET_BUF_LOG
+	bool "Network buffer logging"
 	depends on NET_BUF
 	select STDOUT_CONSOLE
 	select SYS_LOG
 	default n
 	help
-	Enable debug logs and checks for the generic network buffers.
+	Enable logs and checks for the generic network buffers.
 
-config NET_BUF_SIMPLE_DEBUG
+config SYS_LOG_NET_BUF_LEVEL
+	int
+	prompt "Network buffer Logging level"
+	depends on NET_BUF_LOG
+	default 1
+	range 0 4
+	help
+	  Sets log level for network buffers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in adition to previous level
+	  3 INFO, write SYS_LOG_INF in adition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+
+config NET_BUF_SIMPLE_LOG
 	bool "Network buffer memory debugging"
-	depends on NET_BUF_DEBUG
+	depends on NET_BUF_LOG
 	select STDOUT_CONSOLE
 	select SYS_LOG
 	default n
@@ -56,6 +71,8 @@ config  NETWORKING
 if NETWORKING
 
 source "subsys/net/ip/Kconfig"
+
+source "subsys/net/lib/Kconfig"
 
 endif
 

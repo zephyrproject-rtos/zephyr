@@ -50,7 +50,7 @@
 
 #if defined(CONFIG_NET_DEBUG_RPL)
 #define SYS_LOG_DOMAIN "net/rpl"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -59,7 +59,6 @@
 
 #include <net/nbuf.h>
 #include <net/net_core.h>
-#include <net/net_stats.h>
 
 #include "net_private.h"
 #include "ipv6.h"
@@ -67,6 +66,7 @@
 #include "nbr.h"
 #include "route.h"
 #include "rpl.h"
+#include "net_stats.h"
 
 #define NET_RPL_DIO_GROUNDED         0x80
 #define NET_RPL_DIO_MOP_SHIFT        3
@@ -215,7 +215,7 @@ NET_NBR_POOL_INIT(net_rpl_neighbor_pool, CONFIG_NET_IPV6_MAX_NEIGHBORS,
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		   net_rpl_neighbor_table_clear);
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 #define net_rpl_info(buf, req)						     \
 	do {								     \
 		char out[NET_IPV6_ADDR_LEN];				     \
@@ -245,11 +245,11 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		NET_DBG("Send DAO-ACK (id %d, seq %d) from %s to %s",	\
 			id, seq, net_sprint_ipv6_addr(src), out);	\
 	} while (0)
-#else /* NET_DEBUG */
+#else /* CONFIG_NET_DEBUG_RPL */
 #define net_rpl_info(...)
 #define net_rpl_dao_info(...)
 #define net_rpl_dao_ack_info(...)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 static void new_dio_interval(struct net_rpl_instance *instance);
 
@@ -342,7 +342,7 @@ struct in6_addr *net_rpl_get_parent_addr(struct net_if *iface,
 	return net_ipv6_nbr_lookup_by_index(iface, nbr->idx);
 }
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 static void net_rpl_print_neighbors(void)
 {
 	if (rpl_default_instance && rpl_default_instance->current_dag) {
@@ -389,11 +389,7 @@ static void net_rpl_print_neighbors(void)
 		}
 	}
 }
-#else
-#define net_rpl_print_neighbors(...)
-#endif /* NET_DEBUG */
 
-#if NET_DEBUG
 #define net_route_info(str, route, addr, len, nexthop)			\
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
@@ -404,8 +400,9 @@ static void net_rpl_print_neighbors(void)
 			net_sprint_ipv6_addr(nexthop), route->iface);	\
 	} while (0)
 #else
+#define net_rpl_print_neighbors(...)
 #define net_route_info(...)
-#endif /* NET_DEBUG */
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
 					  struct net_if *iface,
@@ -574,8 +571,8 @@ int net_rpl_dio_send(struct net_if *iface,
 				net_sprint_ipv6_addr(dst));
 		}
 
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL(++net_stats.rpl.dio.sent);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dio_sent();
 
 		return 0;
 	}
@@ -705,7 +702,7 @@ static void net_rpl_dio_reset_timer(struct net_rpl_instance *instance)
 		new_dio_interval(instance);
 	}
 
-	NET_STATS_RPL(net_stats.rpl.resets++);
+	net_stats_update_rpl_resets();
 }
 
 static inline void send_dis_all_interfaces(struct net_if *iface,
@@ -765,8 +762,8 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 		NET_DBG("Sent a %s DIS to %s", dst ? "unicast" : "multicast",
 			net_sprint_ipv6_addr(dst_addr));
 
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL_DIS(++net_stats.rpl.dis.sent);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dis_sent();
 	} else {
 		net_nbuf_unref(buf);
 	}
@@ -994,7 +991,8 @@ static struct net_rpl_dag *alloc_dag(uint8_t instance_id,
 		instance = net_rpl_alloc_instance(instance_id);
 		if (!instance) {
 			NET_DBG("Cannot allocate instance id %d", instance_id);
-			NET_STATS_RPL(net_stats.rpl.mem_overflows++);
+			net_stats_update_rpl_mem_overflows();
+
 			return NULL;
 		}
 	}
@@ -1186,7 +1184,7 @@ static void net_rpl_reset_dio_timer(struct net_rpl_instance *instance)
 		new_dio_interval(instance);
 	}
 
-	NET_STATS_RPL(net_stats.rpl.resets++);
+	net_stats_update_rpl_resets();
 }
 
 static
@@ -1363,7 +1361,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 				   struct net_rpl_parent *parent)
 {
 	struct net_rpl_dag *dag = parent->dag;
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 	struct in6_addr *addr = net_rpl_get_parent_addr(iface, parent);
 #endif
 
@@ -1405,7 +1403,7 @@ static void net_rpl_remove_parent(struct net_if *iface,
 	NET_ASSERT(iface);
 
 	if (nbr) {
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 		struct in6_addr *addr;
 		struct net_linkaddr_storage *lladdr;
 
@@ -1415,7 +1413,7 @@ static void net_rpl_remove_parent(struct net_if *iface,
 		NET_DBG("Removing parent %s [%s]",
 			net_sprint_ipv6_addr(addr),
 			net_sprint_ll_addr(lladdr->addr, lladdr->len));
-#endif
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 		net_rpl_nullify_parent(iface, parent);
 
@@ -1840,7 +1838,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 		NET_DBG("Changed preferred parent, rank changed from %u to %u",
 			old_rank, best_dag->rank);
 
-		NET_STATS_RPL(net_stats.rpl.parent_switch++);
+		net_stats_update_rpl_parent_switch();
 
 		if (instance->mop != NET_RPL_MOP_NO_DOWNWARD_ROUTES) {
 			if (last_parent) {
@@ -1914,7 +1912,7 @@ static void net_rpl_local_repair(struct net_if *iface,
 
 	net_rpl_reset_dio_timer(instance);
 
-	NET_STATS_RPL(net_stats.rpl.local_repairs++);
+	net_stats_update_rpl_local_repairs();
 }
 
 /* Return true if parent is kept, false if it is dropped */
@@ -1924,7 +1922,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 {
 	bool ret = true;
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 	uint16_t old_rank = instance->current_dag->rank;
 #endif
 
@@ -1953,7 +1951,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 		return false;
 	}
 
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 	if (NET_RPL_DAG_RANK(old_rank, instance) !=
 	    NET_RPL_DAG_RANK(instance->current_dag->rank, instance)) {
 		NET_DBG("Moving in the instance from rank %u to %u",
@@ -1975,7 +1973,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 			NET_DBG("We don't have any parent");
 		}
 	}
-#endif
+#endif /* CONFIG_NET_DEBUG_RPL */
 
 	return ret;
 }
@@ -1991,7 +1989,7 @@ static bool net_rpl_repair_root(uint8_t instance_id)
 		return false;
 	}
 
-	NET_STATS_RPL(net_stats.rpl.root_repairs++);
+	net_stats_update_rpl_root_repairs();
 
 	net_rpl_lollipop_increment(&instance->current_dag->version);
 	net_rpl_lollipop_increment(&instance->dtsn);
@@ -2067,7 +2065,7 @@ static void global_repair(struct net_if *iface,
 	NET_DBG("Participating in a global repair version %d rank %d",
 		dag->version, dag->rank);
 
-	NET_STATS_RPL(net_stats.rpl.global_repairs++);
+	net_stats_update_rpl_global_repairs();
 }
 
 #define net_rpl_print_parent_info(parent, instance)			\
@@ -2757,7 +2755,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 
 		if (!frag && pos) {
 			NET_DBG("Invalid DIO packet");
-			NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+			net_stats_update_rpl_malformed_msgs();
 			goto out;
 		}
 
@@ -2767,7 +2765,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 		case NET_RPL_OPTION_DAG_METRIC_CONTAINER:
 			if (len < 6) {
 				NET_DBG("Invalid DAG MC len %d", len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -2808,7 +2806,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 			if (len < 9) {
 				NET_DBG("Invalid destination prefix "
 					"option len %d", len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -2832,7 +2830,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 			} else {
 				NET_DBG("Invalid route info option len %d",
 					len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -2841,7 +2839,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 			if (len != 16) {
 				NET_DBG("Invalid DAG configuration option "
 					"len %d", len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -2882,7 +2880,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 			if (len != 32) {
 				NET_DBG("Invalid DAG prefix info len %d != 32",
 					len);
-				NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+				net_stats_update_rpl_malformed_msgs();
 				goto out;
 			}
 
@@ -3027,8 +3025,8 @@ int net_rpl_dao_send(struct net_if *iface,
 	if (ret >= 0) {
 		net_rpl_dao_info(buf, src, dst, prefix);
 
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL(++net_stats.rpl.dao.sent);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dao_sent();
 	} else {
 		net_nbuf_unref(buf);
 	}
@@ -3076,8 +3074,8 @@ static inline int dao_forward(struct net_if *iface,
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL(++net_stats.rpl.dao.forwarded);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dao_forwarded();
 	} else {
 		net_nbuf_unref(buf);
 	}
@@ -3123,8 +3121,8 @@ static int dao_ack_send(struct net_buf *orig,
 		net_rpl_dao_ack_info(buf, src, dst, instance->instance_id,
 				     sequence);
 
-		NET_STATS_RPL(++net_stats.icmp.sent);
-		NET_STATS_RPL(++net_stats.rpl.dao_ack.sent);
+		net_stats_update_icmp_sent();
+		net_stats_update_rpl_dao_ack_sent();
 	} else {
 		net_nbuf_unref(buf);
 	}
@@ -3274,7 +3272,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 
 		if (!frag && pos) {
 			NET_DBG("Invalid DAO packet");
-			NET_STATS_RPL(net_stats.rpl.malformed_msgs++);
+			net_stats_update_rpl_malformed_msgs();
 			goto out;
 		}
 
@@ -3341,7 +3339,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 			if (dag->preferred_parent) {
 				forwarding_dao(instance, dag, dao_sender,
 					       buf, sequence, flags,
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 					       "Forwarding no-path DAO to "
 					       "parent"
 #else
@@ -3387,7 +3385,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	route = net_rpl_add_route(dag, net_nbuf_iface(buf),
 				  &addr, target_len, dao_sender);
 	if (!route) {
-		NET_STATS_RPL(net_stats.rpl.mem_overflows++);
+		net_stats_update_rpl_mem_overflows();
 
 		NET_DBG("Could not add a route after receiving a DAO");
 		return NET_DROP;
@@ -3408,7 +3406,7 @@ fwd_dao:
 			forwarding_dao(instance, dag,
 				       dao_sender, buf,
 				       sequence, flags,
-#if NET_DEBUG
+#if defined(CONFIG_NET_DEBUG_RPL)
 				       "Forwarding DAO to parent"
 #else
 				       ""
@@ -3425,7 +3423,7 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 {
 	net_rpl_info(buf, "Destination Advertisement Object Ack");
 
-	NET_STATS_RPL(++net_stats.rpl.dao_ack.recv);
+	net_stats_update_rpl_dao_ack_recv();
 
 	return NET_DROP;
 }
@@ -3584,7 +3582,7 @@ bool net_rpl_verify_header(struct net_buf *buf,
 			net_route_del(route);
 		}
 
-		NET_STATS_RPL(net_stats.rpl.forward_errors++);
+		net_stats_update_rpl_forward_errors();
 
 		/* Trigger DAO retransmission */
 		net_rpl_reset_dio_timer(instance);
@@ -3618,7 +3616,7 @@ bool net_rpl_verify_header(struct net_buf *buf,
 			sender_closer);
 
 		if (flags & NET_RPL_HDR_OPT_RANK_ERR) {
-			NET_STATS_RPL(net_stats.rpl.loop_errors++);
+			net_stats_update_rpl_loop_errors();
 
 			NET_DBG("Rank error signalled in RPL option!");
 
@@ -3631,7 +3629,7 @@ bool net_rpl_verify_header(struct net_buf *buf,
 		}
 
 		NET_DBG("Single error tolerated.");
-		NET_STATS_RPL(net_stats.rpl.loop_warnings++);
+		net_stats_update_rpl_loop_warnings();
 
 		net_nbuf_write_u8(buf, buf->frags, offset, pos,
 				  flags | NET_RPL_HDR_OPT_RANK_ERR);

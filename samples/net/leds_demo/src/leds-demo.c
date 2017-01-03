@@ -16,8 +16,8 @@
 
 #if 1
 #define SYS_LOG_DOMAIN "zoap-server"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_DEBUG 1
+#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -41,8 +41,8 @@
 #include <gatt/ipss.h>
 #endif
 
-#include <zoap.h>
-#include <link-format.h>
+#include <net/zoap.h>
+#include <net/zoap_link_format.h>
 
 #define MY_COAP_PORT 5683
 

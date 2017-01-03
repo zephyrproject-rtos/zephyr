@@ -22,7 +22,7 @@
 
 #if defined(CONFIG_NET_DEBUG_CONTEXT)
 #define SYS_LOG_DOMAIN "net/ctx"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <kernel.h>
@@ -551,7 +551,7 @@ int net_context_listen(struct net_context *context, int backlog)
 }
 
 #if defined(CONFIG_NET_TCP)
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_CONTEXT)
 #define net_tcp_print_recv_info(str, buf, port)		\
 	do {								\
 		if (net_context_get_family(context) == AF_INET6) {	\
@@ -564,11 +564,7 @@ int net_context_listen(struct net_context *context, int backlog)
 				ntohs(port));				\
 		}							\
 	} while (0)
-#else
-#define net_tcp_print_recv_info(...)
-#endif
 
-#if NET_DEBUG > 0
 #define net_tcp_print_send_info(str, buf, port)		\
 	do {								\
 		if (net_context_get_family(context) == AF_INET6) {	\
@@ -582,8 +578,9 @@ int net_context_listen(struct net_context *context, int backlog)
 		}							\
 	} while (0)
 #else
+#define net_tcp_print_recv_info(...)
 #define net_tcp_print_send_info(...)
-#endif
+#endif /* CONFIG_NET_DEBUG_CONTEXT */
 
 static inline int send_control_segment(struct net_context *context,
 				       const struct sockaddr *remote,

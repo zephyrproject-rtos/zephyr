@@ -18,9 +18,9 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_DEBUG_ICMPV6
+#if defined(CONFIG_NET_DEBUG_ICMPV6)
 #define SYS_LOG_DOMAIN "net/icmpv6"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -29,10 +29,10 @@
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
-#include <net/net_stats.h>
 #include "net_private.h"
 #include "icmpv6.h"
 #include "ipv6.h"
+#include "net_stats.h"
 
 static sys_slist_t handlers;
 
@@ -75,7 +75,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	uint32_t id, seq;
 	uint8_t *ptr;
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 
@@ -84,7 +84,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 		NET_DBG("Received Echo Request from %s to %s",
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(orig)->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_ICMPV6 */
 
 	iface = net_nbuf_iface(orig);
 
@@ -148,7 +148,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 
@@ -157,20 +157,20 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 		NET_DBG("Sending Echo Reply from %s to %s",
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_ICMPV6 */
 
 	if (net_send_data(buf) < 0) {
 		goto drop;
 	}
 
-	NET_STATS(++net_stats.icmp.sent);
+	net_stats_update_icmp_sent();
 
 	return NET_DROP;
 
 drop:
 	net_nbuf_unref(buf);
+	net_stats_update_icmp_drop();
 
-	NET_STATS(++net_stats.icmp.drop);
 	return NET_DROP;
 }
 
@@ -267,7 +267,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 		snprintf(out, sizeof(out),
@@ -276,16 +276,16 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 			" from %s to %s", type, code, param,
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_ICMPV6 */
 
 	if (net_send_data(buf) >= 0) {
-		NET_STATS(++net_stats.icmp.sent);
+		net_stats_update_icmp_sent();
 		return -EIO;
 	}
 
 drop:
 	net_nbuf_unref(buf);
-	NET_STATS(++net_stats.icmp.drop);
+	net_stats_update_icmp_drop();
 
 	/* Note that we always return < 0 so that the caller knows to
 	 * discard the original buffer.
@@ -329,7 +329,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 
@@ -339,15 +339,15 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 			" from %s to %s", NET_ICMPV6_ECHO_REQUEST,
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_ICMPV6 */
 
 	if (net_send_data(buf) >= 0) {
-		NET_STATS(++net_stats.icmp.sent);
+		net_stats_update_icmp_sent();
 		return 0;
 	}
 
 	net_nbuf_unref(buf);
-	NET_STATS(++net_stats.icmp.drop);
+	net_stats_update_icmp_drop();
 
 	return -EIO;
 }
@@ -368,7 +368,7 @@ enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
 		}
 
 		if (cb->type == type && (cb->code == code || cb->code == 0)) {
-			NET_STATS(++net_stats.icmp.recv);
+			net_stats_update_icmp_recv();
 			return cb->handler(buf);
 		}
 	}

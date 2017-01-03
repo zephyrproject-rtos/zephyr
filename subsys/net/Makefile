@@ -6,4 +6,8 @@ obj-y += ip/nbuf.o
 else
 obj-y += ip/
 endif
+
 endif
+
+include lib/Makefile
+obj-y += lib/

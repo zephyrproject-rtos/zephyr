@@ -63,8 +63,8 @@ The number of additional queries is controlled by the
 DNS_RESOLVER_ADDITIONAL_QUERIES Kconfig variable.
 
 For more information about DNS configuration variables, see:
-lib/iot/dns/Kconfig. The DNS resolver API can be found at
-include/iot/dns_client.h.
+subsys/net/lib/dns/Kconfig. The DNS resolver API can be found at
+include/net/dns_client.h.
 
 Building instructions and sample output can be found at the
 samples/net/dns_client/README_xxx files.

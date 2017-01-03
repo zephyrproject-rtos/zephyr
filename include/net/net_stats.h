@@ -30,13 +30,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_STATISTICS)
-#define NET_STATS(s) s
-extern struct net_stats net_stats;
-#else
-#define NET_STATS(s)
-#endif
-
 typedef uint32_t net_stats_t;
 
 struct net_stats_ip {
@@ -54,7 +47,9 @@ struct net_stats_ip {
 };
 
 struct net_stats_ip_errors {
-	/** Number of packets dropped due to wrong IP version or header length. */
+	/** Number of packets dropped due to wrong IP version
+	 * or header length.
+	 */
 	net_stats_t vhlerr;
 
 	 /** Number of packets dropped due to wrong IP length, high byte. */
@@ -69,7 +64,9 @@ struct net_stats_ip_errors {
 	/** Number of packets dropped due to IP checksum errors. */
 	net_stats_t chkerr;
 
-	/** Number of packets dropped because they were neither ICMP, UDP nor TCP. */
+	/** Number of packets dropped because they were neither ICMP,
+	 * UDP nor TCP.
+	 */
 	net_stats_t protoerr;
 };
 
@@ -112,7 +109,9 @@ struct net_stats_tcp {
 	/** Number of retransmitted TCP segments. */
 	net_stats_t rexmit;
 
-	/** Number of dropped SYNs because too few connections were available. */
+	/** Number of dropped SYNs because too few connections were
+	 * available.
+	 */
 	net_stats_t syndrop;
 
 	/** Number of SYNs for closed ports, triggering a RST. */
@@ -189,73 +188,146 @@ struct net_stats_rpl_dao_ack {
 	net_stats_t drop;
 };
 
+struct net_stats_rpl {
+	uint16_t mem_overflows;
+	uint16_t local_repairs;
+	uint16_t global_repairs;
+	uint16_t malformed_msgs;
+	uint16_t resets;
+	uint16_t parent_switch;
+	uint16_t forward_errors;
+	uint16_t loop_errors;
+	uint16_t loop_warnings;
+	uint16_t root_repairs;
+
+	struct net_stats_rpl_dis dis;
+	struct net_stats_rpl_dio dio;
+	struct net_stats_rpl_dao dao;
+	struct net_stats_rpl_dao_ack dao_ack;
+};
+
 struct net_stats {
 	net_stats_t processing_error;
 
 	struct net_stats_ip_errors ip_errors;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_STATISTICS_IPV6)
 	struct net_stats_ip ipv6;
-#define NET_STATS_IPV6(s) NET_STATS(s)
-#else
-#define NET_STATS_IPV6(s)
 #endif
 
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_STATISTICS_IPV4)
 	struct net_stats_ip ipv4;
-#define NET_STATS_IPV4(s) NET_STATS(s)
-#else
-#define NET_STATS_IPV4(s)
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_ICMP)
 	struct net_stats_icmp icmp;
+#endif
 
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_STATISTICS_TCP)
 	struct net_stats_tcp tcp;
-#define NET_STATS_TCP(s) NET_STATS(s)
-#else
-#define NET_STATS_TCP(s)
 #endif
 
-#if defined (CONFIG_NET_UDP)
+#if defined(CONFIG_NET_STATISTICS_UDP)
 	struct net_stats_udp udp;
-#define NET_STATS_UDP(s) NET_STATS(s)
-#else
-#define NET_STATS_UDP(s)
 #endif
 
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
 	struct net_stats_ipv6_nd ipv6_nd;
-#define NET_STATS_IPV6_ND(s) NET_STATS(s)
-#else
-#define NET_STATS_IPV6_ND(s)
 #endif
 
-#if defined(CONFIG_NET_RPL_STATS)
-	struct {
-		uint16_t mem_overflows;
-		uint16_t local_repairs;
-		uint16_t global_repairs;
-		uint16_t malformed_msgs;
-		uint16_t resets;
-		uint16_t parent_switch;
-		uint16_t forward_errors;
-		uint16_t loop_errors;
-		uint16_t loop_warnings;
-		uint16_t root_repairs;
-
-		struct net_stats_rpl_dis dis;
-		struct net_stats_rpl_dio dio;
-		struct net_stats_rpl_dao dao;
-		struct net_stats_rpl_dao_ack dao_ack;
-	} rpl;
-#define NET_STATS_RPL(s) NET_STATS(s)
-#define NET_STATS_RPL_DIS(s) NET_STATS(s)
-#else
-#define NET_STATS_RPL(s)
-#define NET_STATS_RPL_DIS(s)
-#endif /* CONFIG_NET_RPL_STATS */
+#if defined(CONFIG_NET_STATISTICS_RPL)
+	struct net_stats_rpl rpl;
+#endif
 };
+
+#if defined(CONFIG_NET_STATISTICS_USER_API)
+/* Management part definitions */
+
+#include <net/net_mgmt.h>
+
+#define _NET_STATS_LAYER	NET_MGMT_LAYER_L3
+#define _NET_STATS_CODE		0x101
+#define _NET_STATS_BASE		(NET_MGMT_LAYER(_NET_STATS_LAYER) |	\
+				 NET_MGMT_LAYER_CODE(_NET_STATS_CODE))
+
+enum net_request_stats_cmd {
+	NET_REQUEST_STATS_CMD_GET_ALL = 1,
+	NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR,
+	NET_REQUEST_STATS_CMD_GET_IP_ERRORS,
+	NET_REQUEST_STATS_CMD_GET_IPV4,
+	NET_REQUEST_STATS_CMD_GET_IPV6,
+	NET_REQUEST_STATS_CMD_GET_IPV6_ND,
+	NET_REQUEST_STATS_CMD_GET_ICMP,
+	NET_REQUEST_STATS_CMD_GET_UDP,
+	NET_REQUEST_STATS_CMD_GET_TCP,
+	NET_REQUEST_STATS_CMD_GET_RPL,
+};
+
+#define NET_REQUEST_STATS_GET_ALL				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ALL)
+
+//NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ALL);
+
+#define NET_REQUEST_STATS_GET_PROCESSING_ERROR				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR)
+
+//NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PROCESSING_ERROR);
+
+#define NET_REQUEST_STATS_GET_IP_ERRORS				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IP_ERRORS)
+
+//NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IP_ERRORS);
+
+#if defined(CONFIG_NET_STATISTICS_IPV4)
+#define NET_REQUEST_STATS_GET_IPV4				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV4)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4);
+#endif /* CONFIG_NET_STATISTICS_IPV4 */
+
+#if defined(CONFIG_NET_STATISTICS_IPV6)
+#define NET_REQUEST_STATS_GET_IPV6				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6);
+#endif /* CONFIG_NET_STATISTICS_IPV6 */
+
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
+#define NET_REQUEST_STATS_GET_IPV6_ND				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6_ND)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_ND);
+#endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+
+#if defined(CONFIG_NET_STATISTICS_ICMP)
+#define NET_REQUEST_STATS_GET_ICMP				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ICMP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP);
+#endif /* CONFIG_NET_STATISTICS_ICMP */
+
+#if defined(CONFIG_NET_STATISTICS_UDP)
+#define NET_REQUEST_STATS_GET_UDP				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_UDP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP);
+#endif /* CONFIG_NET_STATISTICS_UDP */
+
+#if defined(CONFIG_NET_STATISTICS_TCP)
+#define NET_REQUEST_STATS_GET_TCP				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_TCP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP);
+#endif /* CONFIG_NET_STATISTICS_TCP */
+
+#if defined(CONFIG_NET_STATISTICS_RPL)
+#define NET_REQUEST_STATS_GET_RPL				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_RPL)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_RPL);
+#endif /* CONFIG_NET_STATISTICS_RPL */
+
+#endif /* CONFIG_NET_STATISTICS_USER_API */
 
 #ifdef __cplusplus
 }

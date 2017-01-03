@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_DEBUG_L2_IEEE802154
+#if defined(CONFIG_NET_DEBUG_L2_IEEE802154)
 #define SYS_LOG_DOMAIN "net/ieee802154"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 
 #define dbg_print_fs(fs)						\
 	NET_DBG("fs: %u/%u/%u/%u/%u/%u/%u/%u/%u/%u/%u - %u",		\

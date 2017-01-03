@@ -33,7 +33,7 @@
 #include "icmpv6.h"
 #include "ipv6.h"
 
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 static struct in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,

@@ -18,9 +18,9 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_DEBUG_ICMPV4
+#if defined(CONFIG_NET_DEBUG_ICMPV4)
 #define SYS_LOG_DOMAIN "net/icmpv4"
-#define NET_DEBUG 1
+#define NET_LOG_ENABLED 1
 #endif
 
 #include <errno.h>
@@ -28,9 +28,9 @@
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
-#include <net/net_stats.h>
 #include "net_private.h"
 #include "icmpv4.h"
+#include "net_stats.h"
 
 static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 {
@@ -39,14 +39,14 @@ static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 	 */
 	struct in_addr addr;
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ICMPV4)
 	char out[sizeof("xxx.xxx.xxx.xxx")];
 
 	snprintf(out, sizeof(out),
 		 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
 	NET_DBG("Received Echo Request from %s to %s",
 		net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), out);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_ICMPV4 */
 
 	net_ipaddr_copy(&addr, &NET_IPV4_BUF(buf)->src);
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->src,
@@ -58,19 +58,19 @@ static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv4(buf);
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ICMPV4)
 	snprintf(out, sizeof(out),
 		 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
 	NET_DBG("Sending Echo Reply from %s to %s",
 		net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), out);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_ICMPV4 */
 
 	if (net_send_data(buf) < 0) {
-		NET_STATS(++net_stats.icmp.drop);
+		net_stats_update_icmp_drop();
 		return NET_DROP;
 	}
 
-	NET_STATS(++net_stats.icmp.sent);
+	net_stats_update_icmp_sent();
 
 	return NET_OK;
 }
@@ -141,7 +141,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv4(buf);
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {
 		char out[NET_IPV4_ADDR_LEN];
 
@@ -152,19 +152,19 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 			" from %s to %s", NET_ICMPV4_ECHO_REQUEST,
 			net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_ICMPV4 */
 
 	net_buf_add(buf->frags, sizeof(struct net_ipv4_hdr) +
 		    sizeof(struct net_icmp_hdr) +
 		    sizeof(struct net_icmpv4_echo_req));
 
 	if (net_send_data(buf) >= 0) {
-		NET_STATS(++net_stats.icmp.sent);
+		net_stats_update_icmp_sent();
 		return 0;
 	}
 
 	net_nbuf_unref(buf);
-	NET_STATS(++net_stats.icmp.drop);
+	net_stats_update_icmp_drop();
 
 	return -EIO;
 }
@@ -255,7 +255,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv4(buf);
 
-#if NET_DEBUG > 0
+#if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 
@@ -265,16 +265,16 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 			"from %s to %s", type, code,
 			net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), out);
 	} while (0);
-#endif /* NET_DEBUG > 0 */
+#endif /* CONFIG_NET_DEBUG_ICMPV4 */
 
 	if (net_send_data(buf) >= 0) {
-		NET_STATS(++net_stats.icmp.sent);
+		net_stats_update_icmp_sent();
 		return -EIO;
 	}
 
 drop:
 	net_nbuf_unref(buf);
-	NET_STATS(++net_stats.icmp.drop);
+	net_stats_update_icmp_drop();
 
 	/* Note that we always return < 0 so that the caller knows to
 	 * discard the original buffer.
