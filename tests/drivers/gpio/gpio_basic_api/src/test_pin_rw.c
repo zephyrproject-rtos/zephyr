@@ -23,6 +23,8 @@
  */
 
 #include <stdlib.h>
+#include <inttypes.h>
+
 #include "test_gpio.h"
 
 void test_gpio_pin_read_write(void)
@@ -43,11 +45,11 @@ void test_gpio_pin_read_write(void)
 		val_write = rand() % 2;
 		assert_true(gpio_pin_write(dev, PIN_OUT, val_write) == 0,
 			    "write data fail");
-		TC_PRINT("write: %lu\n", val_write);
+		TC_PRINT("write: %" PRIu32 "\n", val_write);
 		k_sleep(100);
 		assert_true(gpio_pin_read(dev, PIN_IN, &val_read) == 0,
 			    "read data fail");
-		TC_PRINT("read: %lu\n", val_read);
+		TC_PRINT("read: %" PRIu32 "\n", val_read);
 
 		/*= checkpoint: compare write and read value =*/
 		assert_true(val_write == val_read,
