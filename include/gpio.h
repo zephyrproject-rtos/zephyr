@@ -63,7 +63,7 @@ extern "C" {
 /** GPIO pin trigger on level high or rising edge. */
 #define GPIO_INT_ACTIVE_HIGH	(1 << 2)
 
-/** GPIO pin trggier to be synchronized to clock pulses. */
+/** GPIO pin trigger to be synchronized to clock pulses. */
 #define GPIO_INT_CLOCK_SYNC     (1 << 3)
 
 /** Enable GPIO pin debounce. */
