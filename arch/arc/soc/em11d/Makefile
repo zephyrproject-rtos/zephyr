@@ -1,2 +1,2 @@
-soc-cflags = $(call cc-option,-mARCv2EM) \
-                   $(call cc-option,-mav2em,) $(call cc-option,-mno-sdata)
+soc-cflags = $(call cc-option,-mcpu=arcem) \
+                   $(call cc-option,-mno-sdata)
