@@ -211,7 +211,7 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 }
 
 void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
-			       uint32_t value)
+				uint32_t value)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
@@ -308,8 +308,40 @@ int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
+int ciev_handle(struct at_client *hf_at)
+{
+	uint32_t index, value;
+	int ret;
+
+	ret = at_get_number(hf_at, &index);
+	if (ret < 0) {
+		BT_ERR("could not get the Index");
+		return ret;
+	}
+	/* The first element of the list shall have 1 */
+	if (!index) {
+		BT_ERR("Invalid index value '0'");
+		return 0;
+	}
+
+	ret = at_get_number(hf_at, &value);
+	if (ret < 0) {
+		BT_ERR("could not get the value");
+		return ret;
+	}
+
+	ag_indicator_handle_values(hf_at, (index - 1), value);
+
+	return 0;
+}
+
 int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 {
+	if (!at_parse_cmd_input(hf_at, buf, "CIEV", ciev_handle,
+				AT_CMD_TYPE_UNSOLICITED)) {
+		return 0;
+	}
+
 	return -EINVAL;
 }
 
