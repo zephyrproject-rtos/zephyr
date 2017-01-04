@@ -35,7 +35,10 @@ static void do_main(struct device *dev)
 		ret = sensor_channel_get(dev, SENSOR_CHAN_MAGN_X, &value_x);
 		ret = sensor_channel_get(dev, SENSOR_CHAN_MAGN_Y, &value_y);
 		ret = sensor_channel_get(dev, SENSOR_CHAN_MAGN_Z, &value_z);
-		printf("( x y z ) = ( %f  %f  %f )\n", value_x.dval, value_y.dval, value_z.dval);
+		printf("( x y z ) = ( %f  %f  %f )\n",
+		       sensor_value_to_double(&value_x),
+		       sensor_value_to_double(&value_y),
+		       sensor_value_to_double(&value_z));
 
 		k_sleep(500);
 	}

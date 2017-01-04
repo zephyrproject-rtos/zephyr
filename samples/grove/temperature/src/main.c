@@ -67,13 +67,14 @@ void main(void)
 
 		/* display temperature on LCD */
 		glcd_cursor_pos_set(glcd, 0, 0);
-		sprintf(row, "T:%.2f%cC", temp.dval, 223 /* degree symbol */);
+		sprintf(row, "T:%.2f%cC",
+			sensor_value_to_double(&temp),
+			223 /* degree symbol */);
 		glcd_print(glcd, row, strlen(row));
 
 #endif
-		printf("Temperature: %.2f C\n", temp.dval);
+		printf("Temperature: %.2f C\n", sensor_value_to_double(&temp));
 
 		k_sleep(SLEEP_TIME);
 	}
 }
-

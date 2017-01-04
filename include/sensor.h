@@ -459,6 +459,24 @@ static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
 }
 
 /**
+ * @brief Helper function for converting struct sensor_value to double.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline double sensor_value_to_double(struct sensor_value *val)
+{
+	switch (val->type) {
+	case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
+		return (double)val->val1 + (double)val->val2 / 1000000;
+	case SENSOR_VALUE_TYPE_DOUBLE:
+		return val->dval;
+	}
+
+	return 0.0;
+}
+
+/**
  * @brief configuration parameters for sensor triggers.
  */
 enum sensor_trigger_mode {

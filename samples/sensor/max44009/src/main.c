@@ -50,7 +50,7 @@ void main(void)
 			return;
 		}
 
-		lum = val.dval;
+		lum = val.val1;
 		printk("sensor: lum reading: %d\n", lum);
 
 		k_sleep(4000);

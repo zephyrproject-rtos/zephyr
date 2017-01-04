@@ -36,9 +36,8 @@ void main(void)
 		sensor_sample_fetch(dev);
 		sensor_channel_get(dev, SENSOR_CHAN_LIGHT, &lux);
 
-		printf("lux: %f\n", lux.dval);
+		printf("lux: %f\n", sensor_value_to_double(&lux));
 
 		k_sleep(SLEEP_TIME);
 	}
 }
-

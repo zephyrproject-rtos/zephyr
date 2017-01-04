@@ -99,12 +99,14 @@ void main(void)
 
 		/* display temperature on LCD */
 		glcd_cursor_pos_set(glcd, 0, 0);
-		sprintf(row, "T:%.1f%cC", val[0].dval, 223 /* degree symbol */);
+		sprintf(row, "T:%.1f%cC", sensor_value_to_double(val),
+			223 /* degree symbol */);
 		glcd_print(glcd, row, strlen(row));
 
 		/* display himidity on LCD */
 		glcd_cursor_pos_set(glcd, 17 - strlen(row), 0);
-		sprintf(row, "RH:%.0f%c", val[1].dval, 37 /* percent symbol */);
+		sprintf(row, "RH:%.0f%c", sensor_value_to_double(val + 1),
+			37 /* percent symbol */);
 		glcd_print(glcd, row, strlen(row));
 
 #endif
