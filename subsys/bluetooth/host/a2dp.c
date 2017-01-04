@@ -49,11 +49,6 @@ struct bt_a2dp {
 /* Connections */
 static struct bt_a2dp connection[CONFIG_BLUETOOTH_MAX_CONN];
 
-/* Callback for action confirmation */
-static struct bt_avdtp_cfm_cb cb_cfm = {
-	/*TODO*/
-};
-
 /* Callback for incoming requests */
 static struct bt_avdtp_ind_cb cb_ind = {
 	/*TODO*/
@@ -62,7 +57,6 @@ static struct bt_avdtp_ind_cb cb_ind = {
 /* The above callback structures need to be packed and passed to AVDTP */
 static struct bt_avdtp_event_cb avdtp_cb = {
 	.ind = &cb_ind,
-	.cfm = &cb_cfm
 };
 
 int bt_a2dp_init(void)
