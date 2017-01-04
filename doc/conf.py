@@ -121,6 +121,10 @@ else:
     html_theme = "sphinx_rtd_theme"
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
+if tags.has('daily') or tags.has('release'):
+    html_theme = 'zephyr-docs-theme'
+    html_theme_path = ['./themes']
+
 if tags.has('release'):
     docs_title = 'Docs / %s' %(version)
 else:
@@ -187,7 +191,7 @@ html_split_index = True
 html_show_sphinx = False
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-html_show_copyright = True
+html_show_copyright = tags.has('development')
 
 # If true, license is shown in the HTML footer. Default is True.
 html_show_license = True

@@ -11,7 +11,7 @@ Zephyr Project Documentation
    Documentation for the development branch of Zephyr can be found at
    https://www.zephyrproject.org/doc/
 
-.. only:: development
+.. only:: (development or daily)
 
    Welcome to the Zephyr Project's documentation. This is the documentation of the
    master tree under development.
