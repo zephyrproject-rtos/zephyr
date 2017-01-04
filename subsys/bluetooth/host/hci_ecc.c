@@ -171,10 +171,15 @@ static void emulate_le_generate_dhkey(struct net_buf *buf)
 		uint32_t dhkey[8];
 	} ecc;
 
-	cmd = (void *)buf->data  + sizeof(struct bt_hci_cmd_hdr);
+	if (buf->len < sizeof(*cmd)) {
+		send_cmd_status(BT_HCI_OP_LE_GENERATE_DHKEY,
+				BT_HCI_ERR_INVALID_PARAMS);
+		return;
+	}
 
-	/* TODO verify cmd parameters? */
 	send_cmd_status(BT_HCI_OP_LE_GENERATE_DHKEY, 0);
+
+	cmd = (void *)buf->data  + sizeof(struct bt_hci_cmd_hdr);
 
 	memcpy(ecc.pk.x, cmd->key, 32);
 	memcpy(ecc.pk.y, &cmd->key[32], 32);
