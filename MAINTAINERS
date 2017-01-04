@@ -282,12 +282,12 @@ F:	ext/hal/ksdk/
 KNOWN ISSUES
 M:	Anas Nashif <anas.nashif@intel.com>
 M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
-M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
+M:	Genaro Saucedo <genaro.saucedo.tejada@intel.com>
 F:	.known-issues/
 
 
 MAINTAINERS
-M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
+M:	Genaro Saucedo <genaro.saucedo.tejada@intel.com>
 M:	Anas Nashif <anas.nashif@intel.com>
 M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>
 S:	Supported
