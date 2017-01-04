@@ -232,7 +232,10 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 
 static int at_state_unsolicited_cmd(struct at_client *at, struct net_buf *buf)
 {
-	/* TODO return error temporarily*/
+	if (at->unsolicited) {
+		return at->unsolicited(at, buf);
+	}
+
 	return -ENODATA;
 }
 
@@ -266,10 +269,13 @@ int at_parse_input(struct at_client *at, struct net_buf *buf)
 }
 
 static int at_cmd_start(struct at_client *at, struct net_buf *buf,
-			const char *prefix, parse_val_t func)
+			const char *prefix, parse_val_t func,
+			enum at_cmd_type type)
 {
 	if (!str_has_prefix(at->buf, prefix)) {
-		at->state = AT_STATE_UNSOLICITED_CMD;
+		if (type == AT_CMD_TYPE_NORMAL) {
+			at->state = AT_STATE_UNSOLICITED_CMD;
+		}
 		return -ENODATA;
 	}
 
@@ -279,13 +285,15 @@ static int at_cmd_start(struct at_client *at, struct net_buf *buf,
 }
 
 static int at_cmd_get_value(struct at_client *at, struct net_buf *buf,
-			    const char *prefix, parse_val_t func)
+			    const char *prefix, parse_val_t func,
+			    enum at_cmd_type type)
 {
 	return get_cmd_value(at, buf, '\r', AT_CMD_PROCESS_VALUE);
 }
 
 static int at_cmd_process_value(struct at_client *at, struct net_buf *buf,
-				const char *prefix, parse_val_t func)
+				const char *prefix, parse_val_t func,
+				enum at_cmd_type type)
 {
 	int ret;
 
@@ -296,7 +304,8 @@ static int at_cmd_process_value(struct at_client *at, struct net_buf *buf,
 }
 
 static int at_cmd_state_end_lf(struct at_client *at, struct net_buf *buf,
-			       const char *prefix, parse_val_t func)
+			       const char *prefix, parse_val_t func,
+			       enum at_cmd_type type)
 {
 	int err;
 
@@ -319,7 +328,8 @@ static handle_cmd_input_t cmd_parser_cb[] = {
 };
 
 int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
-		       const char *prefix, parse_val_t func)
+		       const char *prefix, parse_val_t func,
+		       enum at_cmd_type type)
 {
 	int ret;
 
@@ -328,12 +338,14 @@ int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 		    at->cmd_state >= AT_CMD_STATE_END) {
 			return -EINVAL;
 		}
-		ret = cmd_parser_cb[at->cmd_state](at, buf, prefix, func);
+		ret = cmd_parser_cb[at->cmd_state](at, buf, prefix, func, type);
 		if (ret < 0) {
 			return ret;
 		}
 		/* Check for main state, the end of cmd parsing and return. */
-		if (at->state == AT_STATE_START) {
+		if (at->state == AT_STATE_START ||
+		    (at->state == AT_STATE_UNSOLICITED_CMD &&
+		     type == AT_CMD_TYPE_UNSOLICITED)) {
 			return 0;
 		}
 	}
@@ -438,6 +450,11 @@ out:
 	next_list(at);
 
 	return 0;
+}
+
+void at_register_unsolicited(struct at_client *at, at_resp_cb_t unsolicited)
+{
+	at->unsolicited = unsolicited;
 }
 
 void at_register(struct at_client *at, at_resp_cb_t resp, at_finish_cb_t finish)

@@ -112,7 +112,8 @@ int brsf_resp(struct at_client *hf_at, struct net_buf *buf)
 
 	BT_DBG("");
 
-	err = at_parse_cmd_input(hf_at, buf, "BRSF", brsf_handle);
+	err = at_parse_cmd_input(hf_at, buf, "BRSF", brsf_handle,
+				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
 		/* Returning negative value is avoided before SLC connection
 		 * established.
@@ -199,7 +200,8 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 {
 	int err;
 
-	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_handle);
+	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_handle,
+				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
 		BT_ERR("Error parsing CMD input");
 		hf_slc_error(hf_at);
@@ -296,13 +298,19 @@ int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
 {
 	int err;
 
-	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_status_handle);
+	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_status_handle,
+				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
 		BT_ERR("Error parsing CMD input");
 		hf_slc_error(hf_at);
 	}
 
 	return 0;
+}
+
+int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
+{
+	return -EINVAL;
 }
 
 int cmer_finish(struct at_client *hf_at, struct net_buf *buf,
@@ -329,6 +337,7 @@ int cind_status_finish(struct at_client *hf_at, struct net_buf *buf,
 		return -EINVAL;
 	}
 
+	at_register_unsolicited(hf_at, unsolicited_cb);
 	err = hfp_hf_send_cmd(hf, NULL, cmer_finish, "AT+CMER=3,0,0,1");
 	if (err < 0) {
 		hf_slc_error(hf_at);

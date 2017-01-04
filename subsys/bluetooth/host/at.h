@@ -33,6 +33,11 @@ enum at_cmd_state {
 	AT_CMD_STATE_END
 };
 
+enum at_cmd_type {
+	AT_CMD_TYPE_NORMAL,
+	AT_CMD_TYPE_UNSOLICITED
+};
+
 struct at_client;
 
 /* Callback at_resp_cb_t used to parse response value received for the
@@ -48,7 +53,8 @@ typedef int (*at_finish_cb_t)(struct at_client *at, struct net_buf *buf,
 typedef int (*parse_val_t)(struct at_client *at);
 typedef int (*handle_parse_input_t)(struct at_client *at, struct net_buf *buf);
 typedef int (*handle_cmd_input_t)(struct at_client *at, struct net_buf *buf,
-				  const char *prefix, parse_val_t func);
+				  const char *prefix, parse_val_t func,
+				  enum at_cmd_type type);
 
 struct at_client {
 	char *buf;
@@ -57,18 +63,21 @@ struct at_client {
 	uint8_t state;
 	uint8_t cmd_state;
 	at_resp_cb_t resp;
+	at_resp_cb_t unsolicited;
 	at_finish_cb_t finish;
 };
 
 /* Register the callback functions */
 void at_register(struct at_client *at, at_resp_cb_t resp,
 		 at_finish_cb_t finish);
+void at_register_unsolicited(struct at_client *at, at_resp_cb_t unsolicited);
 int at_get_number(struct at_client *at, uint32_t *val);
 /* This parsing will only works for non-fragmented net_buf */
 int at_parse_input(struct at_client *at, struct net_buf *buf);
 /* This command parsing will only works for non-fragmented net_buf */
 int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
-		       const char *prefix, parse_val_t func);
+		       const char *prefix, parse_val_t func,
+		       enum at_cmd_type type);
 int at_check_byte(struct net_buf *buf, char check_byte);
 int at_list_get_range(struct at_client *at, uint32_t *min, uint32_t *max);
 int at_list_get_string(struct at_client *at, char *name, uint8_t len);
