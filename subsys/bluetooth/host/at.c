@@ -233,6 +233,10 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 		}
 	}
 
+	/* Reset the state to process unsolicited response */
+	at->cmd_state = CMD_START;
+	at->state = AT_STATE_START;
+
 	return 0;
 }
 
