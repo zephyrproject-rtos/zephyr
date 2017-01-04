@@ -1375,6 +1375,8 @@ done:
 	net_if_start_rs(iface);
 #endif
 
+	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
+
 	return 0;
 }
 
@@ -1397,6 +1399,8 @@ int net_if_down(struct net_if *iface)
 
 done:
 	atomic_clear_bit(iface->flags, NET_IF_UP);
+
+	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 
 	return 0;
 }

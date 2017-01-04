@@ -22,6 +22,25 @@
 #ifndef __NET_EVENT_H__
 #define __NET_EVENT_H__
 
+/* Network Interface events */
+#define _NET_IF_LAYER		NET_MGMT_LAYER_L1
+#define _NET_IF_CORE_CODE	0x001
+#define _NET_EVENT_IF_BASE	(NET_MGMT_EVENT_BIT |			\
+				 NET_MGMT_IFACE_BIT |			\
+				 NET_MGMT_LAYER(_NET_IF_LAYER) |	\
+				 NET_MGMT_LAYER_CODE(_NET_IF_CORE_CODE))
+
+enum net_event_if_cmd {
+	NET_EVENT_IF_CMD_DOWN = 0,
+	NET_EVENT_IF_CMD_UP,
+};
+
+#define NET_EVENT_IF_DOWN				\
+	(_NET_EVENT_IF_BASE | NET_EVENT_IF_CMD_DOWN)
+
+#define NET_EVENT_IF_UP					\
+	(_NET_EVENT_IF_BASE | NET_EVENT_IF_CMD_UP)
+
 /* IPv6 Events */
 #define _NET_IPV6_LAYER		NET_MGMT_LAYER_L3
 #define _NET_IPV6_CORE_CODE	0x600
