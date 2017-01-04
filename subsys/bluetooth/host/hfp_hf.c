@@ -222,7 +222,7 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
-void cind_status_handle_values(struct at_client *hf_at, uint32_t index,
+void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 			       uint32_t value)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
@@ -298,7 +298,7 @@ int cind_status_handle(struct at_client *hf_at)
 			return ret;
 		}
 
-		cind_status_handle_values(hf_at, index, value);
+		ag_indicator_handle_values(hf_at, index, value);
 
 		index++;
 	}
