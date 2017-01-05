@@ -26,7 +26,8 @@ extern void _power_restore_cpu_context(void);
 extern void _power_soc_deep_sleep(void);
 
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
-static uint32_t  *__x86_restore_info = (uint32_t *)CONFIG_BSP_SHARED_RAM_ADDR;
+static uint32_t  *__x86_restore_info =
+	(uint32_t *)CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR;
 
 static void _deep_sleep(enum power_states state)
 {

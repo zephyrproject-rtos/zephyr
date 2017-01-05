@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, _power_soc_deep_sleep)
  * a supported feature in Quark SE boards and to be used at one's own risk.
  */
 SECTION_FUNC(TEXT, _sys_soc_resume_from_deep_sleep)
-	movl $CONFIG_BSP_SHARED_RAM_ADDR, %eax
+	movl $CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR, %eax
 	cmpl $_power_restore_cpu_context, (%eax)
 	je _power_restore_cpu_context
 	ret

@@ -23,10 +23,22 @@
   #define PHYS_LOAD_ADDR   CONFIG_PHYS_RAM_ADDR
 #endif /* CONFIG_XIP */
 
+/* total shared RAM size (restore info + gdt) */
+#define BSP_SHARED_RAM_SIZE \
+	CONFIG_BSP_SHARED_GDT_RAM_SIZE+CONFIG_BSP_SHARED_RESTORE_INFO_SIZE
+/*
+ * When DEEP_SLEEP is not enabled, the shared memory can be re-used after boot.
+ * Since the memory regions area are at fixed address locations, only the
+ * contiguous unused memory located at the end of RAM should be made available.
+ */
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
-#define PHYS_RAM_SIZE CONFIG_RAM_SIZE*1K - CONFIG_BSP_SHARED_RAM_SIZE
-#else /* !CONFIG_SYS_POWER_DEEP_SLEEP */
+#define PHYS_RAM_SIZE CONFIG_RAM_SIZE*1K - BSP_SHARED_RAM_SIZE
+#else
+#ifdef CONFIG_SET_GDT
 #define PHYS_RAM_SIZE CONFIG_RAM_SIZE*1K
+#else
+#define PHYS_RAM_SIZE CONFIG_RAM_SIZE*1K - CONFIG_BSP_SHARED_GDT_RAM_SIZE
+#endif
 #endif
 
 MEMORY
@@ -38,9 +50,13 @@ MEMORY
     RAM (wx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = PHYS_RAM_SIZE
 #endif /* CONFIG_XIP */
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
-    BSP_SHARED_RAM (rw) : ORIGIN = CONFIG_BSP_SHARED_RAM_ADDR,
-                          LENGTH = CONFIG_BSP_SHARED_RAM_SIZE
+    BSP_SHARED_RAM (rw) : ORIGIN = CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR,
+                          LENGTH = CONFIG_BSP_SHARED_RESTORE_INFO_SIZE
 #endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+#ifndef CONFIG_SET_GDT
+    BSP_SHARED_GDT_RAM (rw) : ORIGIN = CONFIG_BSP_SHARED_GDT_RAM_ADDR,
+                              LENGTH = CONFIG_BSP_SHARED_GDT_RAM_SIZE
+#endif /* !CONFIG_SET_GDT */
 
     /*
      * It doesn't matter where this region goes as it is stripped from the
