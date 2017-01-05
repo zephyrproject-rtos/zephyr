@@ -556,6 +556,18 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
  */
 int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
 			       uint16_t *version);
+
+/** @brief Get SupportedFeatures attribute value
+ *
+ *  Allows if exposed by remote retrieve SupportedFeature attribute.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param features On success object to be populated with SupportedFeature
+ *  mask.
+ *
+ *  @return 0 on success if feature found and valid, negative in case any error
+ */
+int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features);
 #ifdef __cplusplus
 }
 #endif
