@@ -48,7 +48,7 @@ static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 NET_BUF_POOL_DEFINE(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
 
-#define BT_L2CAP_MTU 64
+#define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
 /** Data size needed for ACL buffers */
 #define BT_BUF_ACL_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
 			 sizeof(struct bt_hci_acl_hdr) + \
