@@ -25,10 +25,10 @@
 #define BT_AVDTP_PACKET_TYPE_END      0x03
 
 /* AVDTP SIGNAL HEADER - MESSAGE TYPE */
-#define BT_AVDTP_MSG_TYPE_CMD        0x00
-#define BT_AVDTP_MSG_TYPE_GEN_REJECT 0x01
-#define BT_AVDTP_MSG_TYPE_ACCEPT     0x02
-#define BT_AVDTP_MSG_TYPE_REJECT     0x03
+#define BT_AVDTP_CMD        0x00
+#define BT_AVDTP_GEN_REJECT 0x01
+#define BT_AVDTP_ACCEPT     0x02
+#define BT_AVDTP_REJECT     0x03
 
 /* @brief AVDTP SIGNAL HEADER - Signal Identifier */
 #define BT_AVDTP_DISCOVER             0x01
