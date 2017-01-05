@@ -1319,3 +1319,26 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
 
 	return sdp_get_param_item(&pd, param);
 }
+
+int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
+			       uint16_t *version)
+{
+	struct bt_sdp_attr_item attr;
+	struct bt_sdp_uuid_desc pd;
+	int res;
+
+	res = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_PROFILE_DESC_LIST);
+	if (res < 0) {
+		BT_WARN("Attribute 0x%04x not found, err %d",
+			BT_SDP_ATTR_PROFILE_DESC_LIST, res);
+		return res;
+	}
+
+	res = sdp_get_uuid_data(&attr, &pd, profile);
+	if (res < 0) {
+		BT_WARN("Profile 0x%04x not found, err %d", profile, res);
+		return res;
+	}
+
+	return sdp_get_param_item(&pd, version);
+}

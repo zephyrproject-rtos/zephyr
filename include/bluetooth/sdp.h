@@ -541,6 +541,21 @@ enum bt_sdp_proto {
  */
 int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
 			   uint16_t *param);
+
+/** @brief Get profile version.
+ *
+ *  Helper API extracting remote profile version number. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Original buffered raw record data.
+ *  @param profile Profile family identifier the profile belongs.
+ *  @param version On success populated by found version number.
+ *
+ *  @return 0 on success, negative value if error occurred during processing.
+ */
+int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
+			       uint16_t *version);
 #ifdef __cplusplus
 }
 #endif
