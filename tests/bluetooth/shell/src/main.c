@@ -220,6 +220,7 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 {
 	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
+	uint16_t features;
 	int res;
 
 	conn_addr_str(conn, addr, sizeof(addr));
@@ -249,6 +250,17 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 			goto done;
 		}
 		printk("HFP version param 0x%04x\n", version);
+
+		/*
+		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
+		 * get profile Supported Features mask.
+		 */
+		res = bt_sdp_get_features(result->resp_buf, &features);
+		if (res < 0) {
+			printk("Error getting HFPAG Features, err %d\n", res);
+			goto done;
+		}
+		printk("HFPAG Supported Features param 0x%04x\n", features);
 	} else {
 		printk("No SDP HFPAG data from remote %s\n", addr);
 	}
