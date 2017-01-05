@@ -273,6 +273,7 @@ F:	include/toolchain.h
 F:	include/zephyr.h
 F:	include/kernel.h
 F:	include/legacy.h
+F:	tests/kernel/
 
 KINETIS SOFTWARE DEVELOPMENT KIT (KSDK)
 M:	Maureen Helm <maureen.helm@nxp.com>
