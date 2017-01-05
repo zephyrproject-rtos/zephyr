@@ -176,6 +176,12 @@ static int gpio_nrf5_config(struct device *dev,
 		}
 
 		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
+			/* Set initial output value */
+			if (pull == GPIO_PULL_UP) {
+				gpio->OUTSET = BIT(pin);
+			} else if (pull == GPIO_PULL_DOWN) {
+				gpio->OUTCLR = BIT(pin);
+			}
 			/* Config as output */
 			gpio->PIN_CNF[pin] = (GPIO_SENSE_DISABLE |
 					      drive_strength[ds_low][ds_high] |
