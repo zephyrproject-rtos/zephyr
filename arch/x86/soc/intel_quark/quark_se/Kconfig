@@ -78,7 +78,7 @@ endif
 config BSP_SHARED_RAM_ADDR
 	hex "Address of the shared RAM with the QMSI Bootloader"
 	depends on SYS_POWER_DEEP_SLEEP
-	default 0xA8013FFC
+	default 0xA8013FDC
 	help
 	Address of the memory shared between the BSP and the Bootloader in order
 	to store restore information.
