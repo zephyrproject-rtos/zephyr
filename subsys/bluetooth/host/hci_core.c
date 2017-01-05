@@ -4247,18 +4247,19 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	new_cb->_next = pub_key_cb;
 	pub_key_cb = new_cb;
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY)) {
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY)) {
 		return 0;
 	}
 
+	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_P256_PUBLIC_KEY, NULL, NULL);
 	if (err) {
+		BT_ERR("Sending LE P256 Public Key command failed");
+		atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 		pub_key_cb = NULL;
 		return err;
 	}
-
-	atomic_set_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
-	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 
 	for (cb = pub_key_cb; cb; cb = cb->_next) {
 		if (cb != new_cb) {
