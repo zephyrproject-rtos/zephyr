@@ -131,7 +131,7 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 			     ticker_op_func fp_op_func, void *op_context);
 uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 			    ticker_op_func fp_op_func, void *op_context);
-void ticker_job_sched(uint8_t instance_index);
+void ticker_job_sched(uint8_t instance_index, uint8_t user_id);
 uint32_t ticker_ticks_now_get(void);
 uint32_t ticker_ticks_diff_get(uint32_t ticks_now, uint32_t ticks_old);
 

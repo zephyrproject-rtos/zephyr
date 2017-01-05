@@ -226,7 +226,7 @@ static void serialize_struct(struct net_buf *buf, const uint8_t *struct_data,
 			     uint8_t struct_length)
 {
 	net_buf_add_u8(buf, struct_length);
-	memcpy(net_buf_add(buf, struct_length), struct_data, struct_length);
+	net_buf_add_mem(buf, struct_data, struct_length);
 }
 
 static uint16_t encoded_buflen(const uint8_t *buf, uint16_t buflen)
@@ -260,14 +260,14 @@ static void serialize_buf(struct net_buf *buf, const uint8_t *data,
 		net_buf_add_u8(buf, (varint >> 7));
 	}
 
-	memcpy(net_buf_add(buf, len), data, len);
+	net_buf_add_mem(buf, data, len);
 }
 
 static void serialize_p(struct net_buf *buf, void *ptr)
 {
 	uintptr_t val = (uintptr_t)ptr;
 
-	memcpy(net_buf_add(buf, sizeof(val)), &val, sizeof(val));
+	net_buf_add_mem(buf, &val, sizeof(val));
 }
 
 void rpc_serialize_none(uint8_t fn_index)

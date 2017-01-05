@@ -47,8 +47,6 @@ NET_BUF_POOL_DEFINE(avdtp_sig_pool, CONFIG_BLUETOOTH_AVDTP_CONN,
 		    BT_BUF_USER_DATA_MIN, NULL);
 */
 
-static struct bt_avdtp bt_avdtp_pool[CONFIG_BLUETOOTH_AVDTP_CONN];
-
 static struct bt_avdtp_event_cb *event_cb;
 
 static struct bt_avdtp_seid_lsep *lseps;
@@ -81,7 +79,6 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 
 	session = AVDTP_CHAN(chan);
 	BT_DBG("chan %p session %p", chan, session);
-
 	/* Init the timer */
 	k_delayed_work_init(&session->req.timeout_work, avdtp_timeout);
 
@@ -89,12 +86,11 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 
 void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
-	if (!chan) {
-		BT_ERR("Invalid AVDTP chan");
-		return;
-	}
+	struct bt_avdtp *session = AVDTP_CHAN(chan);
 
-	BT_DBG("chan %p session %p", chan, AVDTP_CHAN(chan));
+	BT_DBG("chan %p session %p", chan, session);
+	session->br_chan.chan.conn = NULL;
+	/* Clear the Pending req if set*/
 }
 
 void bt_avdtp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan, uint8_t status)
@@ -141,7 +137,8 @@ int bt_avdtp_disconnect(struct bt_avdtp *session)
 
 int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
-	int i;
+	struct bt_avdtp *session = NULL;
+	int result;
 	static struct bt_l2cap_chan_ops ops = {
 		.connected = bt_avdtp_l2cap_connected,
 		.disconnected = bt_avdtp_l2cap_disconnected,
@@ -149,21 +146,15 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	};
 
 	BT_DBG("conn %p", conn);
-
-	for (i = 0; i < ARRAY_SIZE(bt_avdtp_pool); i++) {
-		struct bt_avdtp *avdtp = &bt_avdtp_pool[i];
-
-		if (avdtp->br_chan.chan.conn) {
-			continue;
-		}
-
-		avdtp->br_chan.chan.ops = &ops;
-		avdtp->br_chan.rx.mtu = BT_AVDTP_MAX_MTU;
-		*chan = &avdtp->br_chan.chan;
-		return 0;
+	/* Get the AVDTP session from upper layer */
+	result = event_cb->accept(conn, &session);
+	if (result < 0) {
+		return result;
 	}
-
-	return -ENOMEM;
+	session->br_chan.chan.ops = &ops;
+	session->br_chan.rx.mtu = BT_AVDTP_MAX_MTU;
+	*chan = &session->br_chan.chan;
+	return 0;
 }
 
 /* Application will register its callback */

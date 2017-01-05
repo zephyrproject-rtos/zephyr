@@ -58,10 +58,15 @@
 #define RPA_TIMEOUT          K_SECONDS(CONFIG_BLUETOOTH_RPA_TIMEOUT)
 
 /* Stacks for the threads */
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
-static BT_STACK_NOINIT(cmd_tx_thread_stack, CONFIG_BLUETOOTH_HCI_SEND_STACK);
+#endif
+static BT_STACK_NOINIT(cmd_tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
+
+static void init_work(struct k_work *work);
 
 struct bt_dev bt_dev = {
+	.init          = K_WORK_INITIALIZER(init_work),
 	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
 	 * exception is if the controller requests to wait for an
 	 * initial Command Complete for NOP.
@@ -72,8 +77,12 @@ struct bt_dev bt_dev = {
 	.ncmd_sem      = K_SEM_INITIALIZER(bt_dev.ncmd_sem, 0, 1),
 #endif
 	.cmd_tx_queue  = K_FIFO_INITIALIZER(bt_dev.cmd_tx_queue),
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	.rx_queue      = K_FIFO_INITIALIZER(bt_dev.rx_queue),
+#endif
 };
+
+static bt_ready_cb_t ready_cb;
 
 const struct bt_storage *bt_storage;
 
@@ -122,68 +131,10 @@ struct acl_data {
 NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 		    CMD_BUF_SIZE, sizeof(struct cmd_data), NULL);
 
-#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-/* HCI event buffers */
-NET_BUF_POOL_DEFINE(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
-		    BT_BUF_EVT_SIZE, BT_BUF_USER_DATA_MIN, NULL);
-/*
- * This priority pool is to handle HCI events that must not be dropped
- * (currently this is Command Status, Command Complete and Number of
- * Complete Packets) if running low on buffers. Buffers from this pool are not
- * allowed to be passed to RX thread and must be returned from bt_recv(). Since
- * the HCI ECC emulation is able to also allocate command status events
- * we need to reserve one extra buffer for it.
- */
-#if defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
-NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 2, BT_BUF_EVT_SIZE,
-		    BT_BUF_USER_DATA_MIN, NULL);
-#else
-NET_BUF_POOL_DEFINE(hci_evt_prio_pool, 1, BT_BUF_EVT_SIZE,
-		    BT_BUF_USER_DATA_MIN, NULL);
-#endif
-
-#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
+NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BLUETOOTH_RX_BUF_COUNT,
+		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
 
 static struct tc_hmac_prng_struct prng;
-
-#if defined(CONFIG_BLUETOOTH_CONN) && defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-static void report_completed_packet(struct net_buf *buf)
-{
-
-	struct bt_hci_cp_host_num_completed_packets *cp;
-	uint16_t handle = acl(buf)->handle;
-	struct bt_hci_handle_count *hc;
-
-	net_buf_destroy(buf);
-
-	/* Do nothing if controller to host flow control is not supported */
-	if (!(bt_dev.supported_commands[10] & 0x20)) {
-		return;
-	}
-
-	BT_DBG("Reporting completed packet for handle %u", handle);
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
-				sizeof(*cp) + sizeof(*hc));
-	if (!buf) {
-		BT_ERR("Unable to allocate new HCI command");
-		return;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	cp->num_handles = sys_cpu_to_le16(1);
-
-	hc = net_buf_add(buf, sizeof(*hc));
-	hc->handle = sys_cpu_to_le16(handle);
-	hc->count  = sys_cpu_to_le16(1);
-
-	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
-}
-
-NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
-		    BT_BUF_ACL_IN_SIZE, sizeof(struct acl_data),
-		    report_completed_packet);
-#endif /* CONFIG_BLUETOOTH_CONN && CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
@@ -408,7 +359,7 @@ static int set_random_address(const bt_addr_t *addr)
 		return -ENOBUFS;
 	}
 
-	memcpy(net_buf_add(buf, sizeof(*addr)), addr, sizeof(*addr));
+	net_buf_add_mem(buf, addr, sizeof(*addr));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
 	if (err) {
@@ -615,7 +566,9 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn->err = evt->reason;
 
 	/* Check stacks usage (no-ops if not enabled) */
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	stack_analyze("rx stack", rx_thread_stack, sizeof(rx_thread_stack));
+#endif
 	stack_analyze("cmd tx stack", cmd_tx_thread_stack,
 		      sizeof(cmd_tx_thread_stack));
 	stack_analyze("conn tx stack", conn->stack, sizeof(conn->stack));
@@ -1011,44 +964,6 @@ failed:
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	bt_conn_unref(conn);
 	bt_le_scan_update(false);
-}
-
-static int set_flow_control(void)
-{
-	struct bt_hci_cp_host_buffer_size *hbs;
-	struct net_buf *buf;
-	int err;
-
-	/* Check if host flow control is actually supported */
-	if (!(bt_dev.supported_commands[10] & 0x20)) {
-		BT_WARN("Controller to host flow control not supported");
-		return 0;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE,
-				sizeof(*hbs));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	hbs = net_buf_add(buf, sizeof(*hbs));
-	memset(hbs, 0, sizeof(*hbs));
-	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BLUETOOTH_L2CAP_IN_MTU +
-				       sizeof(struct bt_l2cap_hdr));
-	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BLUETOOTH_ACL_IN_COUNT);
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
-	if (err) {
-		return err;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
-	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
 }
 #endif /* CONFIG_BLUETOOTH_CONN */
 
@@ -2690,6 +2605,8 @@ static void hci_event(struct net_buf *buf)
 
 	BT_DBG("event 0x%02x", hdr->evt);
 
+	BT_ASSERT(!bt_hci_evt_is_prio(hdr->evt));
+
 	net_buf_pull(buf, sizeof(*hdr));
 
 	switch (hdr->evt) {
@@ -2993,13 +2910,6 @@ static int common_init(void)
 	}
 	read_supported_commands_complete(rsp);
 	net_buf_unref(rsp);
-
-#if defined(CONFIG_BLUETOOTH_CONN)
-	err = set_flow_control();
-	if (err) {
-		return err;
-	}
-#endif /* CONFIG_BLUETOOTH_CONN */
 
 	return 0;
 }
@@ -3504,12 +3414,8 @@ int bt_send(struct net_buf *buf)
 	return bt_dev.drv->send(buf);
 }
 
-/* Interface to HCI driver layer */
-
 int bt_recv(struct net_buf *buf)
 {
-	struct bt_hci_evt_hdr *hdr;
-
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
@@ -3520,51 +3426,62 @@ int bt_recv(struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	if (bt_buf_get_type(buf) == BT_BUF_ACL_IN) {
+	switch (bt_buf_get_type(buf)) {
+#if defined(CONFIG_BLUETOOTH_CONN)
+	case BT_BUF_ACL_IN:
+#if defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+		hci_acl(buf);
+#else
 		net_buf_put(&bt_dev.rx_queue, buf);
+#endif
 		return 0;
-	}
-
-	if (bt_buf_get_type(buf) != BT_BUF_EVT) {
+#endif /* BLUETOOTH_CONN */
+	case BT_BUF_EVT:
+#if defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+		hci_event(buf);
+#else
+		net_buf_put(&bt_dev.rx_queue, buf);
+#endif
+		return 0;
+	default:
 		BT_ERR("Invalid buf type %u", bt_buf_get_type(buf));
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
+}
 
-	hdr = (void *)buf->data;
+int bt_recv_prio(struct net_buf *buf)
+{
+	struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+
+	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+
+	BT_ASSERT(bt_buf_get_type(buf) == BT_BUF_EVT);
+	BT_ASSERT(buf->len >= sizeof(*hdr));
+	BT_ASSERT(bt_hci_evt_is_prio(hdr->evt));
+
+	net_buf_pull(buf, sizeof(*hdr));
 
 	switch (hdr->evt) {
 	case BT_HCI_EVT_CMD_COMPLETE:
-		net_buf_pull(buf, sizeof(*hdr));
 		hci_cmd_complete(buf);
 		break;
 	case BT_HCI_EVT_CMD_STATUS:
-		net_buf_pull(buf, sizeof(*hdr));
 		hci_cmd_status(buf);
 		break;
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		net_buf_pull(buf, sizeof(*hdr));
 		hci_num_completed_packets(buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONN */
 	default:
-#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-		/*
-		 * If buffer used is from priority pool we are running low on
-		 * buffers and those needs to be kept for 'critical' events
-		 * handled directly from bt_recv().
-		 */
-		if (buf->pool == &hci_evt_prio_pool) {
-			break;
-		}
-#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
-
-		net_buf_put(&bt_dev.rx_queue, net_buf_ref(buf));
-		break;
+		net_buf_unref(buf);
+		BT_ASSERT(0);
+		return -EINVAL;
 	}
 
 	net_buf_unref(buf);
+
 	return 0;
 }
 
@@ -3629,16 +3546,7 @@ static int irk_init(void)
 
 static int bt_init(void)
 {
-	struct bt_hci_driver *drv = bt_dev.drv;
 	int err;
-
-	bt_hci_ecc_init();
-
-	err = drv->open();
-	if (err) {
-		BT_ERR("HCI driver open failed (%d)", err);
-		return err;
-	}
 
 	err = hci_init();
 	if (err) {
@@ -3668,15 +3576,22 @@ static int bt_init(void)
 	return 0;
 }
 
-static void hci_rx_thread(bt_ready_cb_t ready_cb)
+static void init_work(struct k_work *work)
+{
+	int err;
+
+	err = bt_init();
+	if (ready_cb) {
+		ready_cb(err);
+	}
+}
+
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+static void hci_rx_thread(void)
 {
 	struct net_buf *buf;
 
 	BT_DBG("started");
-
-	if (ready_cb) {
-		ready_cb(bt_init());
-	}
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait");
@@ -3706,9 +3621,12 @@ static void hci_rx_thread(bt_ready_cb_t ready_cb)
 		k_yield();
 	}
 }
+#endif /* !CONFIG_BLUETOOTH_RECV_IS_RX_THREAD */
 
 int bt_enable(bt_ready_cb_t cb)
 {
+	int err;
+
 	if (!bt_dev.drv) {
 		BT_ERR("No HCI driver registered");
 		return -ENODEV;
@@ -3718,20 +3636,33 @@ int bt_enable(bt_ready_cb_t cb)
 		return -EALREADY;
 	}
 
+	ready_cb = cb;
+
 	/* TX thread */
 	k_thread_spawn(cmd_tx_thread_stack, sizeof(cmd_tx_thread_stack),
 		       (k_thread_entry_t)hci_cmd_tx_thread, NULL, NULL, NULL,
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
+#if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	/* RX thread */
 	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
-		       (k_thread_entry_t)hci_rx_thread, cb, NULL, NULL,
+		       (k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+#endif
+
+	bt_hci_ecc_init();
+
+	err = bt_dev.drv->open();
+	if (err) {
+		BT_ERR("HCI driver open failed (%d)", err);
+		return err;
+	}
 
 	if (!cb) {
 		return bt_init();
 	}
 
+	k_work_submit(&bt_dev.init);
 	return 0;
 }
 
@@ -4023,50 +3954,17 @@ int bt_le_scan_stop(void)
 	return bt_le_scan_update(false);
 }
 
-#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-struct net_buf *bt_buf_get_evt(uint8_t opcode, int32_t timeout)
+struct net_buf *bt_buf_get_rx(int32_t timeout)
 {
 	struct net_buf *buf;
 
-	switch (opcode) {
-	case BT_HCI_EVT_CMD_COMPLETE:
-	case BT_HCI_EVT_CMD_STATUS:
-	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		buf = net_buf_alloc(&hci_evt_prio_pool, timeout);
-		break;
-	default:
-		buf = net_buf_alloc(&hci_evt_pool, K_NO_WAIT);
-		if (!buf && opcode == 0x00) {
-			buf = net_buf_alloc(&hci_evt_prio_pool, timeout);
-		}
-		break;
-	}
-
+	buf = net_buf_alloc(&hci_rx_pool, timeout);
 	if (buf) {
 		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_EVT);
 	}
 
 	return buf;
 }
-
-struct net_buf *bt_buf_get_acl(int32_t timeout)
-{
-#if defined(CONFIG_BLUETOOTH_CONN)
-	struct net_buf *buf;
-
-	buf = net_buf_alloc(&acl_in_pool, timeout);
-	if (buf) {
-		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
-	}
-
-	return buf;
-#else
-	return NULL;
-#endif /* CONFIG_BLUETOOTH_CONN */
-}
-#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static int br_start_inquiry(const struct bt_br_discovery_param *param)
@@ -4349,18 +4247,19 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	new_cb->_next = pub_key_cb;
 	pub_key_cb = new_cb;
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY)) {
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY)) {
 		return 0;
 	}
 
+	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_P256_PUBLIC_KEY, NULL, NULL);
 	if (err) {
+		BT_ERR("Sending LE P256 Public Key command failed");
+		atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 		pub_key_cb = NULL;
 		return err;
 	}
-
-	atomic_set_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
-	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 
 	for (cb = pub_key_cb; cb; cb = cb->_next) {
 		if (cb != new_cb) {

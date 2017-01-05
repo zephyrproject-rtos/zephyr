@@ -1429,7 +1429,7 @@ static int32_t prep_write_evt(const struct nble_gatts_write_evt *ev,
 
 	/* Copy data into the outstanding queue */
 	memcpy(net_buf_user_data(buf), ev, sizeof(*ev));
-	memcpy(net_buf_add(buf, len), data, len);
+	net_buf_add_mem(buf, data, len);
 
 	k_fifo_put(&queue, buf);
 

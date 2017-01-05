@@ -24,6 +24,8 @@
 struct bt_rfcomm_session {
 	/* L2CAP channel this context is associated with */
 	struct bt_l2cap_br_chan br_chan;
+	/* Response Timeout eXpired (RTX) timer */
+	struct k_delayed_work rtx_work;
 	struct bt_rfcomm_dlc *dlcs;
 	uint16_t mtu;
 	uint8_t state;
@@ -93,6 +95,9 @@ struct bt_rfcomm_rpn {
 	uint8_t  xoff_char;
 	uint16_t param_mask;
 } __packed;
+
+#define BT_RFCOMM_TEST  0x08
+#define BT_RFCOMM_NSC   0x04
 
 /* Default RPN Settings */
 #define BT_RFCOMM_RPN_BAUD_RATE_9600    0x03

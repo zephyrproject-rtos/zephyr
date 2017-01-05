@@ -17,26 +17,29 @@
 
 #include <stdint.h>
 
-#include "hal_rtc.h"
-#include "hal_work.h"
-#include "work.h"
-
+#include "cntr.h"
 #include "ticker.h"
 
+#include "config.h"
+
+#include <soc.h>
+#include <bluetooth/log.h>
 #include "debug.h"
 
 /*****************************************************************************
  * Defines
  ****************************************************************************/
-#define TICKER_DOUBLE_BUFFER_SIZE 2
-#define TICKER_RTC_CC_OFFSET_MIN  3
+#define DOUBLE_BUFFER_SIZE 2
+#define COUNTER_CMP_OFFSET_MIN 3
+
+#define CALL_ID_TRIGGER 0
+#define CALL_ID_WORKER 1
+#define CALL_ID_JOB 2
+#define CALL_ID_USER 3
 
 /*****************************************************************************
  * Types
  ****************************************************************************/
-typedef void (*ticker_fp_sched) (uint8_t chain);
-typedef void (*ticker_fp_compare_set) (uint32_t cc);
-
 struct ticker_node {
 	uint8_t next;
 
@@ -119,16 +122,16 @@ struct ticker_instance {
 	uint8_t count_user;
 	uint8_t ticks_elapsed_first;
 	uint8_t ticks_elapsed_last;
-	uint32_t ticks_elapsed[TICKER_DOUBLE_BUFFER_SIZE];
+	uint32_t ticks_elapsed[DOUBLE_BUFFER_SIZE];
 	uint32_t ticks_current;
 	uint8_t ticker_id_head;
 	uint8_t ticker_id_slot_previous;
 	uint16_t ticks_slot_previous;
 	uint8_t job_guard;
 	uint8_t worker_trigger;
-	ticker_fp_sched fp_worker_sched;
-	ticker_fp_sched fp_job_sched;
-	ticker_fp_compare_set fp_compare_set;
+	uint8_t (*fp_caller_id_get)(uint8_t user_id);
+	void (*fp_sched)(uint8_t caller_id, uint8_t callee_id, uint8_t chain);
+	void (*fp_cmp_set)(uint32_t value);
 };
 
 /*****************************************************************************
@@ -356,8 +359,8 @@ static inline void ticker_worker(struct ticker_instance *instance)
 	}
 
 	/* ticks_elapsed is collected here, job will use it */
-	ticks_elapsed =
-	    ticker_ticks_diff_get(rtc_tick_get(), instance->ticks_current);
+	ticks_elapsed = ticker_ticks_diff_get(cntr_cnt_get(),
+					      instance->ticks_current);
 
 	/* initialise actual elapsed ticks being consumed */
 	ticks_expired = 0;
@@ -413,7 +416,7 @@ static inline void ticker_worker(struct ticker_instance *instance)
 		uint8_t last;
 
 		last = instance->ticks_elapsed_last + 1;
-		if (last == TICKER_DOUBLE_BUFFER_SIZE) {
+		if (last == DOUBLE_BUFFER_SIZE) {
 			last = 0;
 		}
 		instance->ticks_elapsed_last = last;
@@ -423,7 +426,7 @@ static inline void ticker_worker(struct ticker_instance *instance)
 
 	instance->worker_trigger = 0;
 
-	instance->fp_job_sched(1);
+	instance->fp_sched(CALL_ID_WORKER, CALL_ID_JOB, 1);
 }
 
 static void prepare_ticks_to_expire(struct ticker_node *ticker,
@@ -498,7 +501,7 @@ static inline void ticker_job_node_update(struct ticker_node *ticker,
 	uint32_t ticks_now;
 	uint32_t ticks_to_expire = ticker->ticks_to_expire;
 
-	ticks_now = rtc_tick_get();
+	ticks_now = cntr_cnt_get();
 	ticks_elapsed += ticker_ticks_diff_get(ticks_now, ticks_current);
 	if (ticks_to_expire > ticks_elapsed) {
 		ticks_to_expire -= ticks_elapsed;
@@ -685,7 +688,8 @@ static inline uint8_t ticker_job_list_manage(
 				 */
 				/* sched job to run after worker bottom half.
 				 */
-				instance->fp_job_sched(1);
+				instance->fp_sched(CALL_ID_JOB,
+						   CALL_ID_JOB, 1);
 
 				/* Update the index upto which management is
 				 * complete.
@@ -1023,7 +1027,7 @@ static inline void ticker_job_compare_update(
 	uint32_t i;
 
 	if (instance->ticker_id_head == TICKER_NULL) {
-		if (rtc_stop() == 0) {
+		if (cntr_stop() == 0) {
 			instance->ticks_slot_previous = 0;
 		}
 
@@ -1033,9 +1037,9 @@ static inline void ticker_job_compare_update(
 	if (ticker_id_old_head == TICKER_NULL) {
 		uint32_t ticks_current;
 
-		ticks_current = rtc_tick_get();
+		ticks_current = cntr_cnt_get();
 
-		if (rtc_start() == 0) {
+		if (cntr_start() == 0) {
 			instance->ticks_current = ticks_current;
 		}
 	}
@@ -1056,19 +1060,19 @@ static inline void ticker_job_compare_update(
 		LL_ASSERT(i);
 		i--;
 
-		ctr = rtc_tick_get();
+		ctr = cntr_cnt_get();
 		cc = instance->ticks_current;
 		ticks_elapsed = ticker_ticks_diff_get(ctr, cc) +
-				TICKER_RTC_CC_OFFSET_MIN;
+				COUNTER_CMP_OFFSET_MIN;
 		cc += ((ticks_elapsed < ticks_to_expire) ?
 		       ticks_to_expire : ticks_elapsed);
 		cc &= 0x00FFFFFF;
 
-		instance->fp_compare_set(cc);
+		instance->fp_cmp_set(cc);
 
-		ctr_post = rtc_tick_get();
+		ctr_post = cntr_cnt_get();
 	} while ((ticker_ticks_diff_get(ctr_post, ctr) +
-		  TICKER_RTC_CC_OFFSET_MIN) > ticker_ticks_diff_get(cc, ctr));
+		  COUNTER_CMP_OFFSET_MIN) > ticker_ticks_diff_get(cc, ctr));
 }
 
 static inline void ticker_job(struct ticker_instance *instance)
@@ -1099,7 +1103,7 @@ static inline void ticker_job(struct ticker_instance *instance)
 		uint8_t first;
 
 		first = instance->ticks_elapsed_first + 1;
-		if (first == TICKER_DOUBLE_BUFFER_SIZE) {
+		if (first == DOUBLE_BUFFER_SIZE) {
 			first = 0;
 		}
 		instance->ticks_elapsed_first = first;
@@ -1172,79 +1176,341 @@ static inline void ticker_job(struct ticker_instance *instance)
 
 	/* trigger worker if deferred */
 	if (instance->worker_trigger) {
-		instance->fp_worker_sched(1);
+		instance->fp_sched(CALL_ID_JOB, CALL_ID_WORKER, 1);
 	}
 
 	DEBUG_TICKER_JOB(0);
 }
 
 /*****************************************************************************
- * Instances Work Helpers
+ * Instances Helpers
+ *
+ * TODO: decouple it from using work/mayfly in this file and dynamically
+ *       import it.
  ****************************************************************************/
-static void ticker_instance0_worker_sched(uint8_t chain)
-{
-	static struct work instance0_worker_irq = {
-		0, 0, 0, WORK_TICKER_WORKER0_IRQ, (work_fp) ticker_worker,
-		&_instance[0]
-	};
+#include "mayfly.h"
+#include "config.h"
 
+static uint8_t ticker_instance0_caller_id_get(uint8_t user_id)
+{
+	if (user_id == TICKER_MAYFLY_CALL_ID_PROGRAM) {
+		return CALL_ID_USER;
+	} else if (user_id == TICKER_MAYFLY_CALL_ID_JOB0) {
+		return CALL_ID_JOB;
+	} else if (user_id == TICKER_MAYFLY_CALL_ID_WORKER0) {
+		return CALL_ID_WORKER;
+	} else if (user_id == TICKER_MAYFLY_CALL_ID_TRIGGER) {
+		return CALL_ID_TRIGGER;
+	}
+
+	LL_ASSERT(0);
+
+	return 0;
+}
+
+static uint8_t ticker_instance1_caller_id_get(uint8_t user_id)
+{
+	if (user_id == TICKER_MAYFLY_CALL_ID_PROGRAM) {
+		return CALL_ID_USER;
+	} else if (user_id == TICKER_MAYFLY_CALL_ID_JOB1) {
+		return CALL_ID_JOB;
+	} else if (user_id == TICKER_MAYFLY_CALL_ID_WORKER1) {
+		return CALL_ID_WORKER;
+	} else if (user_id == TICKER_MAYFLY_CALL_ID_TRIGGER) {
+		return CALL_ID_TRIGGER;
+	}
+
+	LL_ASSERT(0);
+
+	return 0;
+}
+
+static void ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id,
+				   uint8_t chain)
+{
 	/* return value not checked as we allow multiple calls to schedule
 	 * before being actually needing the work to complete before new
 	 * schedule.
 	 */
-	work_schedule(&instance0_worker_irq, chain);
+	switch (caller_id) {
+	case CALL_ID_TRIGGER:
+		switch (callee_id) {
+		case CALL_ID_WORKER:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				&_instance[0],
+				(void *)ticker_worker
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_TRIGGER,
+				       TICKER_MAYFLY_CALL_ID_WORKER0,
+				       chain,
+				       &m);
+		}
+		break;
+
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[0],
+				(void *)ticker_job
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_TRIGGER,
+				       TICKER_MAYFLY_CALL_ID_JOB0,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+
+	case CALL_ID_WORKER:
+		switch (callee_id) {
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[0],
+				(void *)ticker_job
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_WORKER0,
+				       TICKER_MAYFLY_CALL_ID_JOB0,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+
+	case CALL_ID_JOB:
+		switch (callee_id) {
+		case CALL_ID_WORKER:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[0],
+				(void *)ticker_worker
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_JOB0,
+				       TICKER_MAYFLY_CALL_ID_WORKER0,
+				       chain,
+				       &m);
+		}
+		break;
+
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[0],
+				(void *)ticker_job
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_JOB0,
+				       TICKER_MAYFLY_CALL_ID_JOB0,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+
+	default:
+		switch (callee_id) {
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[0],
+				(void *)ticker_job
+			};
+
+			/* TODO: scheduler lock, if OS used */
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_PROGRAM,
+				       TICKER_MAYFLY_CALL_ID_JOB0,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+	}
 }
 
-static void ticker_instance0_job_sched(uint8_t chain)
+static void ticker_instance1_sched(uint8_t caller_id, uint8_t callee_id,
+				   uint8_t chain)
 {
-	static struct work instance0_job_irq = {
-		0, 0, 0, WORK_TICKER_JOB0_IRQ, (work_fp) ticker_job,
-		&_instance[0]
-	};
-
 	/* return value not checked as we allow multiple calls to schedule
 	 * before being actually needing the work to complete before new
 	 * schedule.
 	 */
-	work_schedule(&instance0_job_irq, chain);
+	switch (caller_id) {
+	case CALL_ID_TRIGGER:
+		switch (callee_id) {
+		case CALL_ID_WORKER:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				&_instance[1],
+				(void *)ticker_worker
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_TRIGGER,
+				       TICKER_MAYFLY_CALL_ID_WORKER1,
+				       chain,
+				       &m);
+		}
+		break;
+
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[1],
+				(void *)ticker_job
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_TRIGGER,
+				       TICKER_MAYFLY_CALL_ID_JOB1,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+
+	case CALL_ID_WORKER:
+		switch (callee_id) {
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[1],
+				(void *)ticker_job
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_WORKER1,
+				       TICKER_MAYFLY_CALL_ID_JOB1,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+
+	case CALL_ID_JOB:
+		switch (callee_id) {
+		case CALL_ID_WORKER:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[1],
+				(void *)ticker_worker
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_JOB1,
+				       TICKER_MAYFLY_CALL_ID_WORKER1,
+				       chain,
+				       &m);
+		}
+		break;
+
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[1],
+				(void *)ticker_job
+			};
+
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_JOB1,
+				       TICKER_MAYFLY_CALL_ID_JOB1,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+
+	default:
+		switch (callee_id) {
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[1],
+				(void *)ticker_job
+			};
+
+			/* TODO: scheduler lock, if OS used */
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_PROGRAM,
+				       TICKER_MAYFLY_CALL_ID_JOB1,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+	}
 }
 
-static void ticker_instance0_rtc_compare_set(uint32_t value)
+static void ticker_instance0_cmp_set(uint32_t value)
 {
-	rtc_compare_set(0, value);
+	cntr_cmp_set(0, value);
 }
 
-static void ticker_instance1_worker_sched(uint8_t chain)
+static void ticker_instance1_cmp_set(uint32_t value)
 {
-	static struct work instance1_worker_irq = {
-		0, 0, 0, WORK_TICKER_WORKER1_IRQ, (work_fp) ticker_worker,
-		&_instance[1]
-	};
-
-	/* return value not checked as we allow multiple calls to schedule
-	 * before being actually needing the work to complete before new
-	 * schedule.
-	 */
-	work_schedule(&instance1_worker_irq, chain);
-}
-
-static void ticker_instance1_job_sched(uint8_t chain)
-{
-	static struct work instance1_job_irq = {
-		0, 0, 0, WORK_TICKER_JOB1_IRQ, (work_fp) ticker_job,
-		&_instance[1]
-	};
-
-	/* return value not checked as we allow multiple calls to schedule
-	 * before being actually needing the work to complete before new
-	 * schedule.
-	 */
-	work_schedule(&instance1_job_irq, chain);
-}
-
-static void ticker_instance1_rtc_compare_set(uint32_t value)
-{
-	rtc_compare_set(1, value);
+	cntr_cmp_set(1, value);
 }
 
 /*****************************************************************************
@@ -1268,21 +1534,15 @@ uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 
 	switch (instance_index) {
 	case 0:
-		instance->fp_worker_sched =
-		    ticker_instance0_worker_sched;
-		instance->fp_job_sched =
-		    ticker_instance0_job_sched;
-		instance->fp_compare_set =
-		    ticker_instance0_rtc_compare_set;
+		instance->fp_caller_id_get = ticker_instance0_caller_id_get;
+		instance->fp_sched = ticker_instance0_sched;
+		instance->fp_cmp_set = ticker_instance0_cmp_set;
 		break;
 
 	case 1:
-		instance->fp_worker_sched =
-		    ticker_instance1_worker_sched;
-		instance->fp_job_sched =
-		    ticker_instance1_job_sched;
-		instance->fp_compare_set =
-		    ticker_instance1_rtc_compare_set;
+		instance->fp_caller_id_get = ticker_instance1_caller_id_get;
+		instance->fp_sched = ticker_instance1_sched;
+		instance->fp_cmp_set = ticker_instance1_cmp_set;
 		break;
 
 	default:
@@ -1320,9 +1580,14 @@ uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 
 void ticker_trigger(uint8_t instance_index)
 {
-	if (_instance[instance_index].fp_worker_sched) {
-		_instance[instance_index].fp_worker_sched(1);
+	DEBUG_TICKER_ISR(1);
+
+	if (_instance[instance_index].fp_sched) {
+		_instance[instance_index].fp_sched(CALL_ID_TRIGGER,
+						   CALL_ID_WORKER, 1);
 	}
+
+	DEBUG_TICKER_ISR(0);
 }
 
 uint32_t ticker_start(uint8_t instance_index, uint8_t user_id,
@@ -1341,7 +1606,7 @@ uint32_t ticker_start(uint8_t instance_index, uint8_t user_id,
 	user = &instance->user[user_id];
 
 	last = user->last + 1;
-	if (last == user->count_user_op) {
+	if (last >= user->count_user_op) {
 		last = 0;
 	}
 
@@ -1366,7 +1631,7 @@ uint32_t ticker_start(uint8_t instance_index, uint8_t user_id,
 
 	user->last = last;
 
-	instance->fp_job_sched(0);
+	instance->fp_sched(instance->fp_caller_id_get(user_id), CALL_ID_JOB, 0);
 
 	return user_op->status;
 }
@@ -1385,7 +1650,7 @@ uint32_t ticker_update(uint8_t instance_index, uint8_t user_id,
 	user = &instance->user[user_id];
 
 	last = user->last + 1;
-	if (last == user->count_user_op) {
+	if (last >= user->count_user_op) {
 		last = 0;
 	}
 
@@ -1408,7 +1673,7 @@ uint32_t ticker_update(uint8_t instance_index, uint8_t user_id,
 
 	user->last = last;
 
-	instance->fp_job_sched(0);
+	instance->fp_sched(instance->fp_caller_id_get(user_id), CALL_ID_JOB, 0);
 
 	return user_op->status;
 }
@@ -1425,7 +1690,7 @@ uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id,
 	user = &instance->user[user_id];
 
 	last = user->last + 1;
-	if (last == user->count_user_op) {
+	if (last >= user->count_user_op) {
 		last = 0;
 	}
 
@@ -1442,7 +1707,7 @@ uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id,
 
 	user->last = last;
 
-	instance->fp_job_sched(0);
+	instance->fp_sched(instance->fp_caller_id_get(user_id), CALL_ID_JOB, 0);
 
 	return user_op->status;
 }
@@ -1461,7 +1726,7 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 	user = &instance->user[user_id];
 
 	last = user->last + 1;
-	if (last == user->count_user_op) {
+	if (last >= user->count_user_op) {
 		last = 0;
 	}
 
@@ -1481,7 +1746,7 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 
 	user->last = last;
 
-	instance->fp_job_sched(0);
+	instance->fp_sched(instance->fp_caller_id_get(user_id), CALL_ID_JOB, 0);
 
 	return user_op->status;
 }
@@ -1497,7 +1762,7 @@ uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 	user = &instance->user[user_id];
 
 	last = user->last + 1;
-	if (last == user->count_user_op) {
+	if (last >= user->count_user_op) {
 		last = 0;
 	}
 
@@ -1514,21 +1779,21 @@ uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 
 	user->last = last;
 
-	instance->fp_job_sched(0);
+	instance->fp_sched(instance->fp_caller_id_get(user_id), CALL_ID_JOB, 0);
 
 	return user_op->status;
 }
 
-void ticker_job_sched(uint8_t instance_index)
+void ticker_job_sched(uint8_t instance_index, uint8_t user_id)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
 
-	instance->fp_job_sched(0);
+	instance->fp_sched(instance->fp_caller_id_get(user_id), CALL_ID_JOB, 0);
 }
 
 uint32_t ticker_ticks_now_get(void)
 {
-	return rtc_tick_get();
+	return cntr_cnt_get();
 }
 
 uint32_t ticker_ticks_diff_get(uint32_t ticks_now, uint32_t ticks_old)

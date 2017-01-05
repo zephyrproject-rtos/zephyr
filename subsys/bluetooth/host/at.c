@@ -27,7 +27,7 @@
 
 #include "at.h"
 
-static void next_stream(struct at_client *at)
+static void next_list(struct at_client *at)
 {
 	if (at->buf[at->pos] == ',') {
 		at->pos++;
@@ -46,7 +46,7 @@ int at_check_byte(struct net_buf *buf, char check_byte)
 	return 0;
 }
 
-static void skip_whitespace(struct at_client *at)
+static void skip_space(struct at_client *at)
 {
 	while (at->buf[at->pos] == ' ') {
 		at->pos++;
@@ -57,7 +57,7 @@ int at_get_number(struct at_client *at, uint32_t *val)
 {
 	uint32_t i;
 
-	skip_whitespace(at);
+	skip_space(at);
 
 	for (i = 0, *val = 0; isdigit(at->buf[at->pos]); at->pos++, i++) {
 		*val = *val * 10 + at->buf[at->pos] - '0';
@@ -67,7 +67,7 @@ int at_get_number(struct at_client *at, uint32_t *val)
 		return -ENODATA;
 	}
 
-	next_stream(at);
+	next_list(at);
 	return 0;
 }
 
@@ -233,6 +233,10 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 		}
 	}
 
+	/* Reset the state to process unsolicited response */
+	at->cmd_state = CMD_START;
+	at->state = AT_STATE_START;
+
 	return 0;
 }
 
@@ -347,16 +351,16 @@ int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 	return 0;
 }
 
-int at_has_next_stream(struct at_client *at)
+int at_has_next_list(struct at_client *at)
 {
 	return at->buf[at->pos] != '\0';
 }
 
-int at_open_stream(struct at_client *at)
+int at_open_list(struct at_client *at)
 {
-	skip_whitespace(at);
+	skip_space(at);
 
-	/* The stream shall start with '(' open parenthesis */
+	/* The list shall start with '(' open parenthesis */
 	if (at->buf[at->pos] != '(') {
 		return -ENODATA;
 	}
@@ -365,25 +369,25 @@ int at_open_stream(struct at_client *at)
 	return 0;
 }
 
-int at_close_stream(struct at_client *at)
+int at_close_list(struct at_client *at)
 {
-	skip_whitespace(at);
+	skip_space(at);
 
 	if (at->buf[at->pos] != ')') {
 		return -ENODATA;
 	}
 	at->pos++;
 
-	next_stream(at);
+	next_list(at);
 
 	return 0;
 }
 
-int at_stream_get_string(struct at_client *at, char *name, uint8_t len)
+int at_list_get_string(struct at_client *at, char *name, uint8_t len)
 {
 	int i = 0;
 
-	skip_whitespace(at);
+	skip_space(at);
 
 	if (at->buf[at->pos] != '"') {
 		return -ENODATA;
@@ -408,13 +412,13 @@ int at_stream_get_string(struct at_client *at, char *name, uint8_t len)
 	}
 	at->pos++;
 
-	skip_whitespace(at);
-	next_stream(at);
+	skip_space(at);
+	next_list(at);
 
 	return 0;
 }
 
-int at_stream_get_range(struct at_client *at, uint32_t *min, uint32_t *max)
+int at_list_get_range(struct at_client *at, uint32_t *min, uint32_t *max)
 {
 	uint32_t low, high;
 	int ret;
@@ -441,7 +445,7 @@ out:
 	*min = low;
 	*max = high;
 
-	next_stream(at);
+	next_list(at);
 
 	return 0;
 }

@@ -18,18 +18,20 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+
+#include <soc.h>
 #include <toolchain.h>
 #include <errno.h>
-#include <misc/byteorder.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
+#include <misc/byteorder.h>
 
-#include "defines.h"
-#include "ticker.h"
+#include "util.h"
 #include "mem.h"
-#include "rand.h"
+#include "ticker.h"
 #include "cpu.h"
+#include "rand.h"
 #include "ecb.h"
 #include "ccm.h"
 #include "radio.h"
@@ -38,6 +40,7 @@
 #include "ll.h"
 #include "hci_internal.h"
 
+#include <bluetooth/log.h>
 #include "debug.h"
 
 /* opcode of the HCI command currently being processed. The opcode is stored
@@ -212,18 +215,25 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf *evt)
 	 * LE Read Supported States.
 	 */
 	rp->commands[28] = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
-	/* LE Remote Conn Param Req and Neg Reply, LE Set Data Length,
-	 * and LE Read Suggested Data Length.
-	 */
-	rp->commands[33] = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7);
+	/* LE Remote Conn Param Req and Neg Reply */
+	rp->commands[33] = (1 << 4) | (1 << 5);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+	/* LE Set Data Length, and LE Read Suggested Data Length. */
+	rp->commands[33] |= (1 << 6) | (1 << 7);
 	/* LE Write Suggested Data Length. */
 	rp->commands[34] = (1 << 0);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 #if defined(CONFIG_BLUETOOTH_HCI_RAW) && defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
 	/* LE Read Local P256 Public Key and LE Generate DH Key*/
 	rp->commands[34] |= (1 << 1) | (1 << 2);
 #endif
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	/* LE Read Maximum Data Length. */
 	rp->commands[35] = (1 << 3);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 }
 
 static void read_local_features(struct net_buf *buf, struct net_buf *evt)
@@ -293,7 +303,7 @@ static void le_read_buffer_size(struct net_buf *buf, struct net_buf *evt)
 
 	rp->status = 0x00;
 
-	rp->le_max_len = sys_cpu_to_le16(RADIO_LL_LENGTH_OCTETS_RX_MAX);
+	rp->le_max_len = sys_cpu_to_le16(RADIO_PACKET_TX_DATA_SIZE);
 	rp->le_max_num = RADIO_PACKET_COUNT_TX_MAX;
 }
 
@@ -660,6 +670,7 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 	rp->handle = cmd->handle;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static void le_set_data_len(struct net_buf *buf, struct net_buf *evt)
 {
 	struct bt_hci_cp_le_set_data_len *cmd = (void *)buf->data;
@@ -710,6 +721,7 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf *evt)
 			     &rp->max_rx_octets, &rp->max_rx_time);
 	rp->status = 0x00;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 				 struct net_buf *evt)
@@ -827,6 +839,7 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 		le_conn_param_req_neg_reply(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	case BT_OCF(BT_HCI_OP_LE_SET_DATA_LEN):
 		le_set_data_len(cmd, evt);
 		break;
@@ -842,6 +855,7 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_READ_MAX_DATA_LEN):
 		le_read_max_data_len(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 	default:
 		return -EINVAL;
@@ -1055,6 +1069,7 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
 	ep->handle = sys_cpu_to_le16(handle);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
 				     struct net_buf *buf)
 {
@@ -1065,6 +1080,7 @@ static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
 
 	ep->handle = sys_cpu_to_le16(handle);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 static void encode_control(struct radio_pdu_node_rx *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
@@ -1095,17 +1111,30 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		enc_refresh_complete(pdu_data, handle, buf);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	case NODE_RX_TYPE_APTO:
 		auth_payload_timeout_exp(pdu_data, handle, buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	case NODE_RX_TYPE_RSSI:
-		/** @todo */
+		BT_INFO("handle: 0x%04x, rssi: -%d dB.", handle,
+			pdu_data->payload.rssi);
 		return;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
-		/** @todo */
+		BT_INFO("l: %d, %d, %d; t: %d, %d, %d.",
+			pdu_data->payload.profile.lcur,
+			pdu_data->payload.profile.lmin,
+			pdu_data->payload.profile.lmax,
+			pdu_data->payload.profile.cur,
+			pdu_data->payload.profile.min,
+			pdu_data->payload.profile.max);
 		return;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 
 	default:
 		LL_ASSERT(0);
@@ -1169,7 +1198,8 @@ static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 		break;
 
 	default:
-		BT_ASSERT(0);
+		BT_WARN("type: 0x%02x",
+			pdu_data->payload.llctrl.ctrldata.unknown_rsp.type);
 		break;
 	}
 }
@@ -1336,4 +1366,14 @@ void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num)
 	hc = &ep->h[0];
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count = sys_cpu_to_le16(num);
+}
+
+bool hci_evt_is_discardable(struct radio_pdu_node_rx *node_rx)
+{
+	switch (node_rx->hdr.type) {
+	case NODE_RX_TYPE_REPORT:
+		return true;
+	default:
+		return false;
+	}
 }

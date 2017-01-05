@@ -38,7 +38,7 @@ void ecb_encrypt(uint8_t const *const key_le,
 		 uint8_t * const cipher_text_le,
 		 uint8_t * const cipher_text_be);
 uint32_t ecb_encrypt_nonblocking(struct ecb *ecb);
-void ecb_isr(void);
+void isr_ecb(void *param);
 
 uint32_t ecb_ut(void);
 

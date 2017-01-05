@@ -37,7 +37,7 @@
 
 typedef void (*radio_isr_fp) (void);
 
-void radio_isr(void);
+void isr_radio(void *param);
 void radio_isr_set(radio_isr_fp fp_radio_isr);
 
 void radio_reset(void);

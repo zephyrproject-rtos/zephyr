@@ -19,8 +19,10 @@
 #include <soc.h>
 
 #include "mem.h"
+
 #include "ecb.h"
 
+#include <bluetooth/log.h>
 #include "debug.h"
 
 void ecb_encrypt(uint8_t const *const key_le,
@@ -102,8 +104,10 @@ static void ecb_cleanup(void)
 	irq_disable(ECB_IRQn);
 }
 
-void ecb_isr(void)
+void isr_ecb(void *param)
 {
+	ARG_UNUSED(param);
+
 	if (NRF_ECB->EVENTS_ERRORECB) {
 		struct ecb *ecb = (struct ecb *)NRF_ECB->ECBDATAPTR;
 

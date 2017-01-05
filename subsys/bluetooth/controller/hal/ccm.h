@@ -18,8 +18,6 @@
 #ifndef _CCM_H_
 #define _CCM_H_
 
-#include <toolchain.h>
-
 struct ccm {
 	uint8_t key[16];
 	uint64_t counter;

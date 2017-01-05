@@ -55,16 +55,12 @@
 #define BT_AVDTP_GET_ALL_CAPABILITIES 0x0c
 #define BT_AVDTP_DELAYREPORT          0x0d
 
-/* @brief AVDTP STATE */
-#define BT_AVDTP_STATE_IDLE             0x01
-#define BT_AVDTP_STATE_CONFIGURED       0x02
-#define BT_AVDTP_STATE_OPEN             0x03
-#define BT_AVDTP_STATE_STREAMING        0x04
-#define BT_AVDTP_STATE_CLOSING          0x05
-#define BT_AVDTP_STATE_ABORT            0x06
-#define BT_AVDTP_STATE_SIG_CONNECTED    0x07
-#define BT_AVDTP_STATE_SIG_DISCONNECTED 0x08
-#define BT_AVDTP_STATE_INVALID          0x00
+/* @brief AVDTP STREAM STATE */
+#define BT_AVDTP_STREAM_STATE_IDLE        0x01
+#define BT_AVDTP_STREAM_STATE_CONFIGURED  0x02
+#define BT_AVDTP_STREAM_STATE_OPEN        0x03
+#define BT_AVDTP_STREAM_STATE_STREAMING   0x04
+#define BT_AVDTP_STREAM_STATE_CLOSING     0x05
 
 /* @brief AVDTP Media TYPE */
 #define BT_AVDTP_SERVICE_CAT_MEDIA_TRANSPORT    0x01
@@ -97,7 +93,7 @@
 #define BT_AVDTP_ERR_BAD_STATE                  0x31
 
 #define BT_AVDTP_MIN_MTU 48
-#define BT_AVDTP_MAX_MTU CONFIG_BLUETOOTH_L2CAP_IN_MTU
+#define BT_AVDTP_MAX_MTU CONFIG_BLUETOOTH_RX_BUF_LEN
 
 #define BT_AVDTP_MIN_SEID 0x01
 #define BT_AVDTP_MAX_SEID 0x3E
@@ -115,18 +111,6 @@ struct bt_avdtp_single_sig_hdr {
 
 #define BT_AVDTP_SIG_HDR_LEN sizeof(struct bt_avdtp_single_sig_hdr)
 
-struct bt_avdtp_cfm_cb {
-	/*
-	 * Discovery_cfm;
-	 * get_capabilities_cfm;
-	 * set_configuration_cfm;
-	 * open_cfm;
-	 * start_cfm;
-	 * suspend_cfm;
-	 * close_cfm;
-	 */
-};
-
 struct bt_avdtp_ind_cb {
 	/*
 	 * discovery_ind;
@@ -137,11 +121,6 @@ struct bt_avdtp_ind_cb {
 	 * suspend_ind;
 	 * close_ind;
 	 */
-};
-
-struct bt_avdtp_event_cb {
-	struct bt_avdtp_ind_cb *ind;
-	struct bt_avdtp_cfm_cb *cfm;
 };
 
 struct bt_pending_req {
@@ -155,6 +134,11 @@ struct bt_avdtp {
 	struct bt_l2cap_br_chan br_chan;
 	struct bt_avdtp_stream *streams; /* List of AV streams */
 	struct bt_pending_req req;
+};
+
+struct bt_avdtp_event_cb {
+	struct bt_avdtp_ind_cb *ind;
+	int (*accept)(struct bt_conn *conn, struct bt_avdtp **session);
 };
 
 /* Initialize AVDTP layer*/

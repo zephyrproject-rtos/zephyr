@@ -29,13 +29,8 @@
 
 static struct k_fifo *raw_rx;
 
-/* ACL incoming buffers */
-NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
-		    BT_BUF_ACL_IN_SIZE, sizeof(uint8_t), NULL);
-
-/* HCI event buffers */
-NET_BUF_POOL_DEFINE(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
-		    BT_BUF_EVT_SIZE, sizeof(uint8_t), NULL);
+NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BLUETOOTH_RX_BUF_COUNT,
+		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
 
 struct bt_dev_raw bt_dev;
 
@@ -64,11 +59,16 @@ void bt_hci_driver_unregister(struct bt_hci_driver *drv)
 	bt_dev.drv = NULL;
 }
 
+struct net_buf *bt_buf_get_rx(int timeout)
+{
+	return net_buf_alloc(&hci_rx_pool, timeout);
+}
+
 struct net_buf *bt_buf_get_evt(uint8_t opcode, int timeout)
 {
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&hci_evt_pool, timeout);
+	buf = net_buf_alloc(&hci_rx_pool, timeout);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
 	}
@@ -80,7 +80,7 @@ struct net_buf *bt_buf_get_acl(int32_t timeout)
 {
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&acl_in_pool, timeout);
+	buf = net_buf_alloc(&hci_rx_pool, timeout);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 	}
@@ -98,6 +98,11 @@ int bt_recv(struct net_buf *buf)
 	net_buf_put(raw_rx, buf);
 
 	return 0;
+}
+
+int bt_recv_prio(struct net_buf *buf)
+{
+	return bt_recv(buf);
 }
 
 int bt_send(struct net_buf *buf)

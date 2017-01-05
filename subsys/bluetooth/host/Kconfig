@@ -19,14 +19,14 @@
 comment "Host Stack Configuration"
 
 # Stack size needed for executing bt_send with specified driver
-config BLUETOOTH_HCI_SEND_STACK
+config BLUETOOTH_HCI_TX_STACK_SIZE
 	int
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 256
 	default 256 if BLUETOOTH_H4
 	default 256 if BLUETOOTH_H5
-	default 512 if BLUETOOTH_CONTROLLER
+	default 640 if BLUETOOTH_CONTROLLER
 
 config BLUETOOTH_HCI_RAW
 	bool "RAW HCI access"
@@ -44,6 +44,14 @@ config BLUETOOTH_HCI_HOST
 	select TINYCRYPT_SHA256_HMAC
 	select TINYCRYPT_SHA256_HMAC_PRNG
 
+config BLUETOOTH_RECV_IS_RX_THREAD
+	# Virtual option set by the HCI driver to indicate that there's
+	# no need for the host to have its own RX thread, rather the
+	# context that bt_recv() gets called in is already good enough.
+	# If this is set, the driver RX thread is required as the first
+	# thing to make a call to bt_rx_thread_ready().
+	bool
+
 config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
@@ -60,27 +68,22 @@ config BLUETOOTH_MAX_CMD_LEN
 	help
 	  Maximum length of each HCI command.
 
-config BLUETOOTH_HCI_EVT_COUNT
-	int "Number of HCI event buffers"
-	default 4
-	default 8 if BLUETOOTH_CONN
-	range 2 64
+config BLUETOOTH_RX_BUF_COUNT
+	int "Number of HCI RX buffers"
+	default 10
+	default 3 if BLUETOOTH_RECV_IS_RX_THREAD
+	range 2 255
 	help
-	  Number of buffers available for HCI events. This number should
-	  ideally be at least as large as the available outgoing buffers
-	  to make sure we've got enough buffers to handle bursts of
-	  Number of Completed Packets HCI events.
+	  Number of buffers available for incoming ACL packets or HCI events
+	  from the controller.
 
-config BLUETOOTH_MAX_EVT_LEN
-	int "Maximum supported HCI event length"
-	default 68
-	default 255 if BLUETOOTH_BREDR
-	range 68 255
+config BLUETOOTH_RX_BUF_LEN
+	int "Maximum supported HCI RX buffer length"
+	default 70
+	default 253 if BLUETOOTH_BREDR
+	range 70 2000
 	help
-	  Maximum size of each HCI event buffer. E.g. one big event
-	  for LE is the Command Complete for Read Local Supported
-	  Commands. It is a 3 byte Command Complete header + 65 byte
-	  return parameters = 68 bytes in total.
+	  Maximum data size for each HCI RX buffer.
 
 config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	string "Device Name of UART Device to an external Bluetooth Host"
@@ -91,25 +94,20 @@ config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	  to connect to an external Bluetooth Host when Zephyr is
 	  acting as a Bluetooth Controller.
 
-if BLUETOOTH_CONN || BLUETOOTH_HCI_RAW
-config BLUETOOTH_ACL_IN_COUNT
-	int "Number of incoming ACL data buffers"
-	default 6
-	default BLUETOOTH_CONTROLLER_RX_BUFFERS if BLUETOOTH_CONTROLLER
-	range 2 64
+config BLUETOOTH_RX_STACK_SIZE
+	int "Size of the receiving thread stack"
+	depends on BLUETOOTH_HCI_HOST || BLUETOOTH_RECV_IS_RX_THREAD
+	default 1024
+	default 512 if CONFIG_BLUETOOTH_HCI_RAW
+	range 1024 65536
+	range 512 65536 if CONFIG_BLUETOOTH_HCI_RAW
 	help
-	  Number of buffers available for incoming ACL data.
-
-config BLUETOOTH_L2CAP_IN_MTU
-	int "Maximum supported L2CAP MTU for incoming data"
-	default 23
-	default 65 if BLUETOOTH_SMP
-	default 200 if BLUETOOTH_BREDR
-	range 23 1300
-	range 65 1300 if BLUETOOTH_SMP
-	help
-	  Maximum size of each incoming L2CAP PDU.
-endif # BLUETOOTH_CONN || BLUETOOTH_HCI_RAW
+	  Size of the receiving thread stack. This is the context from
+	  which all event callbacks to the application occur. The
+	  default value is sufficient for basic operation, but if the
+	  application needs to do advanced things in its callbacks that
+	  require extra stack space, this value can be increased to
+	  accommodate for that.
 
 if BLUETOOTH_HCI_HOST
 config BLUETOOTH_INTERNAL_STORAGE
@@ -120,18 +118,6 @@ config BLUETOOTH_INTERNAL_STORAGE
 	  When selected the application doesn't need to register its own
 	  persistent storage handlers through the bt_storage API, rather
 	  an internal default handler is used for this.
-
-config BLUETOOTH_RX_STACK_SIZE
-	int "Size of the receiving thread stack"
-	default 1024
-	range 1024 65536
-	help
-	  Size of the receiving thread stack. This is the context from
-	  which all event callbacks to the application occur. The
-	  default value is sufficient for basic operation, but if the
-	  application needs to do advanced things in its callbacks that
-	  require extra stack space, this value can be increased to
-	  accommodate for that.
 
 config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
@@ -154,10 +140,10 @@ config BLUETOOTH_ATT_MTU
 	default 23
 	default 50 if BLUETOOTH_SMP # BLUETOOTH_L2CAP_IN_MTU is big enough
 				    # for two complete ACL packets
-	range 23 BLUETOOTH_L2CAP_IN_MTU
+	range 23 BLUETOOTH_RX_BUF_LEN
 	help
 	  The MTU for the ATT channel. The minimum and default is 23,
-	  whereas the maximum is limited by CONFIG_BLUETOOTH_L2CAP_IN_MTU.
+	  whereas the maximum is limited by CONFIG_BLUETOOTH_RX_BUF_LEN.
 
 config BLUETOOTH_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
@@ -458,9 +444,9 @@ config BLUETOOTH_RFCOMM
 
 config BLUETOOTH_RFCOMM_L2CAP_MTU
 	int "L2CAP MTU for RFCOMM frames"
-	default BLUETOOTH_L2CAP_IN_MTU
+	default BLUETOOTH_RX_BUF_LEN
 	depends on BLUETOOTH_RFCOMM
-	range BLUETOOTH_L2CAP_IN_MTU 32767
+	range BLUETOOTH_RX_BUF_LEN 32767
 	help
 	  Maximum size of L2CAP PDU for RFCOMM frames.
 
