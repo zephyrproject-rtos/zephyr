@@ -173,7 +173,6 @@ static void aio_qmsi_cmp_isr(void *data)
 
 	for (i = 0; i < dev_data->num_cmp; i++) {
 		if (int_status & (1 << i)) {
-			aio_qmsi_cmp_disable(dev, i);
 			if (dev_data->cb[i].cb != NULL) {
 				dev_data->cb[i].cb(dev_data->cb[i].param);
 			}
