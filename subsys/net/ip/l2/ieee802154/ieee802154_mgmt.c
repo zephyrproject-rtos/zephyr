@@ -377,3 +377,57 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_ACK,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_UNSET_ACK,
 				  ieee802154_set_ack);
+
+static int ieee802154_set_parameters(uint32_t mgmt_request,
+				     struct net_if *iface,
+				     void *data, size_t len)
+{
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint16_t value;
+	int ret = 0;
+
+	if (ctx->associated) {
+		return -EBUSY;
+	}
+
+	if (len != sizeof(uint16_t)) {
+		return -EINVAL;
+	}
+
+	value = *((uint16_t *) data);
+
+	if (mgmt_request == NET_REQUEST_IEEE802154_SET_CHAN) {
+		if (ctx->channel != value) {
+			ret = radio->set_channel(iface->dev, value);
+			if (!ret) {
+				ctx->channel = value;
+			}
+		}
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_PAN_ID) {
+		if (ctx->pan_id != value) {
+			ret = radio->set_pan_id(iface->dev, value);
+			if (!ret) {
+				ctx->pan_id = value;
+			}
+		}
+	} else {
+		if (ctx->coord.short_addr != value) {
+			ret = radio->set_short_addr(iface->dev, value);
+			if (!ret) {
+				ctx->coord.short_addr = value;
+			}
+		}
+	}
+
+	return ret;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_CHAN,
+				  ieee802154_set_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_PAN_ID,
+				  ieee802154_set_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SHORT_ADDR,
+				  ieee802154_set_parameters);
