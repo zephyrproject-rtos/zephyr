@@ -30,9 +30,13 @@ extern void __stdout_hook_install(int (*fn)(int));
 
 static int rtt_console_out(int character)
 {
+	unsigned int key;
 	char c = (char)character;
 
+	key = irq_lock();
 	SEGGER_RTT_WriteNoLock(0, &c, 1);
+	irq_unlock(key);
+
 	return character;
 }
 
