@@ -265,7 +265,6 @@ extern "C" {
 #define BT_SDP_URL_STR16       0x46
 #define BT_SDP_URL_STR32       0x47
 
-
 /** @brief SDP Generic Data Element Value. */
 struct bt_sdp_data_elem {
 	uint8_t *header; /* Type and size descriptor */
@@ -519,6 +518,29 @@ int bt_sdp_discover(struct bt_conn *conn,
 int bt_sdp_discover_cancel(struct bt_conn *conn,
 			   const struct bt_sdp_discover_params *params);
 
+
+/* Helper types & functions for SDP client to get essential data from server */
+
+/** @brief Protocols to be asked about specific parameters */
+enum bt_sdp_proto {
+	BT_SDP_PROTO_RFCOMM = BT_UUID_RFCOMM_VAL,
+	BT_SDP_PROTO_L2CAP  = BT_UUID_L2CAP_VAL,
+};
+
+/** @brief Give to user parameter value related to given stacked protocol UUID.
+ *
+ *  API extracts specific parameter associated with given protocol UUID
+ *  available in Protocol Descriptor List attribute.
+ *
+ *  @param buf Original buffered raw record data.
+ *  @param proto Known protocol to be checked like RFCOMM or L2CAP.
+ *  @param param On success populated by found parameter value.
+ *
+ *  @return 0 on success when specific parameter associated with given protocol
+ *  value is found, or negative if error occurred during processing.
+ */
+int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
+			   uint16_t *param);
 #ifdef __cplusplus
 }
 #endif
