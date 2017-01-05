@@ -218,7 +218,7 @@ static void send_data(uint8_t *data, uint16_t len)
 	buf = net_buf_alloc(&data_pool, K_FOREVER);
 	net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
 
-	memcpy(net_buf_add(buf, data_len), cmd->data, data_len);
+	net_buf_add_mem(buf, cmd->data, data_len);
 	ret = bt_l2cap_chan_send(&chan->le.chan, buf);
 	if (ret < 0) {
 		SYS_LOG_ERR("Unable to send data: %d", -ret);

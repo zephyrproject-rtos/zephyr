@@ -18,8 +18,6 @@
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
-#include <bluetooth/log.h>
-
 #ifdef CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER
 void bt_controller_assert_handle(char *file, uint32_t line);
 #define LL_ASSERT(cond) if (!(cond)) { \

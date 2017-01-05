@@ -2,14 +2,6 @@ if BLUETOOTH_CONTROLLER
 
 comment "BLE Controller configuration"
 
-config BLUETOOTH_CONTROLLER_DATA_LENGTH
-	prompt "Maximum data length supported"
-	int
-	default 27
-	range 27 251
-	help
-	  Set the maximum data length of PDU supported in the stack.
-
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
 	int
@@ -29,14 +21,66 @@ config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	  Set the number of Tx PDUs to be queued for transmission
 	  in the controller.
 
-config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
-	int "Size of the receiving thread stack"
-	default 256
-	range 256 65536
+config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
+	prompt "Tx buffer size"
+	int
+	range 27 16384
+	default 27
 	help
-	  Size of the receiving thread stack. This is the context from
-	  which all radio messages are encoded into HCI events or data
-	  before passing it to Bluetooth receiving thread.
+	  Size of the Tx buffers and the value returned in HCI LE Read Buffer
+	  Size command response. If this size if greater than effective PDU size
+	  then controller will perform fragmentation before transmitting on the
+	  the packet on air.
+	  Maximum is set to 16384 due to implementation limitations (use of
+	  uint16_t for size/length variables).
+
+config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
+	int
+	default 320
+
+comment "BLE Controller features"
+
+config BLUETOOTH_CONTROLLER_LE_PING
+	bool "LE Ping"
+	default y
+	help
+	  Enable support for Bluetooth v4.1 LE Ping feature in the Controller.
+
+config BLUETOOTH_CONTROLLER_DATA_LENGTH
+	bool "Data Length Update"
+	default y
+	help
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure in
+	  the Controller.
+
+config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
+	prompt "Maximum data length supported"
+	depends on BLUETOOTH_CONTROLLER_DATA_LENGTH
+	int
+	default 27
+	range 27 251
+	help
+	  Set the maximum data length of PDU supported in the Controller.
+
+config BLUETOOTH_CONTROLLER_FAST_ENC
+	bool "Fast Encryption Setup"
+	help
+	  Enable connection encryption setup in 3 connection intervals.
+	  Peripheral will respond to Encryption Request with Encryption Response
+	  in the same connection interval, and also, will respond with Start
+	  Encryption Response PDU in the 3rd connection interval, hence
+	  completing encryption setup in 3 connection intervals. Encrypted data
+	  would be transmitted as fast as in 3rd connection interval from the
+	  connection establishment.
+	  Maximum CPU time in Radio ISR will increase if this feature is
+	  selected.
+
+config BLUETOOTH_CONTROLLER_CONN_RSSI
+	bool "Connection RSSI"
+	help
+	  Enable connection RSSI measurement.
+
+comment "BLE Controller debug configuration"
 
 config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
 	bool "Bluetooth Controller Assertion Handler"
@@ -48,5 +92,12 @@ config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
 
+config BLUETOOTH_CONTROLLER_PROFILE_ISR
+	bool "Profile radio ISR"
+	help
+	  Turn on measurement of radio ISR latency, CPU usage and generation of
+	  controller event with these profiling data. The controller event
+	  contains current, minimum and maximum ISR entry latencies; and
+	  current, minimum and maximum ISR CPU use in micro-seconds.
 
 endif # BLUETOOTH_CONTROLLER

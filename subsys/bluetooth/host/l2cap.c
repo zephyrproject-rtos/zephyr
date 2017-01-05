@@ -41,7 +41,7 @@
 #define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
 
 #define L2CAP_LE_MIN_MTU		23
-#define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
+#define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_RX_BUF_COUNT - 1)
 #define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
 
 #define L2CAP_LE_CID_DYN_START	0x0040
@@ -58,7 +58,7 @@
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
-#define BT_L2CAP_MAX_LE_MPS	CONFIG_BLUETOOTH_L2CAP_IN_MTU
+#define BT_L2CAP_MAX_LE_MPS	CONFIG_BLUETOOTH_RX_BUF_LEN
 /* For now use MPS - SDU length to disable segmentation */
 #define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
 
@@ -535,7 +535,7 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 	rej->reason = sys_cpu_to_le16(reason);
 
 	if (data) {
-		memcpy(net_buf_add(buf, data_len), data, data_len);
+		net_buf_add_mem(buf, data, data_len);
 	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
@@ -1225,7 +1225,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 		}
 
 		len = min(net_buf_tailroom(frag), buf->len);
-		memcpy(net_buf_add(frag, len), buf->data, len);
+		net_buf_add_mem(frag, buf->data, len);
 		net_buf_pull(buf, len);
 
 		BT_DBG("frag %p len %u", frag, frag->len);
@@ -1587,7 +1587,7 @@ segment:
 	len = min(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
 	/* Limit if original buffer is smaller than the segment */
 	len = min(buf->len, len);
-	memcpy(net_buf_add(seg, len), buf->data, len);
+	net_buf_add_mem(seg, buf->data, len);
 	net_buf_pull(buf, len);
 
 	BT_DBG("ch %p seg %p len %u", ch, seg, seg->len);

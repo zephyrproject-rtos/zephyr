@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-#ifndef _WORK_H_
-#define _WORK_H_
+#ifndef _MAYFLY_H_
+#define _MAYFLY_H_
 
-typedef void (*work_fp) (void *params);
-
-struct work {
-	void *next;
-	uint8_t req;
-	uint8_t ack;
-	uint8_t group;
-	work_fp fp;
-	void *params;
+struct mayfly {
+	uint8_t volatile _req;
+	uint8_t _ack;
+	void *_link;
+	void *param;
+	void (*fp)(void *);
 };
 
-void work_enable(uint8_t group);
-void work_disable(uint8_t group);
-uint32_t work_is_enabled(uint8_t group);
-uint32_t work_schedule(struct work *w, uint8_t chain);
-void work_run(uint8_t group);
+void mayfly_init(void);
+uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
+			struct mayfly *m);
+void mayfly_run(uint8_t callee_id);
 
-#endif /* _WORK_H_ */
+extern void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable);
+extern uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id);
+extern uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id);
+extern void mayfly_pend(uint8_t caller_id, uint8_t callee_id);
+
+#endif /* _MAYFLY_H_ */

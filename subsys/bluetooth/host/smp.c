@@ -336,7 +336,7 @@ static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&smp_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&smp_pool, 0);
 	/* NULL is not a possible return due to K_FOREVER */
 
 	hdr = net_buf_add(buf, sizeof(*hdr));

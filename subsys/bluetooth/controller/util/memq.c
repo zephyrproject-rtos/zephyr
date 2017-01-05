@@ -17,6 +17,8 @@
 
 #include <stdint.h>
 
+inline void *memq_peek(void *tail, void *head, void **mem);
+
 void *memq_init(void *link, void **head, void **tail)
 {
 	/* head and tail pointer to the initial link node */
@@ -39,22 +41,32 @@ void *memq_enqueue(void *mem, void *link, void **tail)
 	return link;
 }
 
-void *memq_dequeue(void *tail, void **head, void **mem)
+void *memq_peek(void *tail, void *head, void **mem)
 {
 	void *link;
 
 	/* if head and tail are equal, then queue empty */
-	if (*head == tail) {
+	if (head == tail) {
 		return 0;
 	}
 
 	/* pick the head link node */
-	link = *head;
+	link = head;
 
 	/* extract the element node */
 	if (mem) {
 		*mem = *((void **)link + 1);
 	}
+
+	return link;
+}
+
+void *memq_dequeue(void *tail, void **head, void **mem)
+{
+	void *link;
+
+	/* use memq peek to get the link and mem */
+	link = memq_peek(tail, *head, mem);
 
 	/* increment the head to next link node */
 	*head = *((void **)link);

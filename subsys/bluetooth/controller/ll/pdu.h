@@ -18,7 +18,7 @@
 #ifndef _PDU_H_
 #define _PDU_H_
 
-#include <toolchain.h>
+#define BDADDR_SIZE 6
 
 struct pdu_adv_payload_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
@@ -232,11 +232,16 @@ struct pdu_data_llctrl {
 	} __packed ctrldata;
 } __packed;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 struct profile {
-	uint32_t min;
-	uint32_t avg;
-	uint32_t max;
+	uint8_t lcur;
+	uint8_t lmin;
+	uint8_t lmax;
+	uint8_t cur;
+	uint8_t min;
+	uint8_t max;
 } __packed;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 
 struct pdu_data {
 	uint8_t ll_id:2;
@@ -252,8 +257,14 @@ struct pdu_data {
 	union {
 		uint8_t lldata[1];
 		struct pdu_data_llctrl llctrl;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 		uint8_t rssi;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 		struct profile profile;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 	} __packed payload;
 } __packed;
 

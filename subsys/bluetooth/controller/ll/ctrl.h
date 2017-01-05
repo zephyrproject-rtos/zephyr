@@ -18,8 +18,6 @@
 #ifndef _CTRL_H_
 #define _CTRL_H_
 
-#include <bluetooth/hci.h>
-
 /*****************************************************************************
  * Zephyr Kconfig defined
  ****************************************************************************/
@@ -27,11 +25,6 @@
 #define RADIO_CONNECTION_CONTEXT_MAX CONFIG_BLUETOOTH_MAX_CONN
 #else
 #define RADIO_CONNECTION_CONTEXT_MAX 0
-#endif
-
-#ifdef CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH
-#define RADIO_LL_LENGTH_OCTETS_RX_MAX \
-		CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH
 #endif
 
 #ifdef CONFIG_BLUETOOTH_CONTROLLER_RX_BUFFERS
@@ -43,6 +36,26 @@
 #define RADIO_PACKET_COUNT_TX_MAX \
 		CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS
 #endif
+
+#ifdef CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
+#define RADIO_PACKET_TX_DATA_SIZE \
+		CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
+#endif
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+#define RADIO_BLE_FEATURES_BIT_PING BIT(BT_LE_FEAT_BIT_PING)
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+#define RADIO_BLE_FEATURES_BIT_PING 0
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX)
+#define RADIO_BLE_FEATURES_BIT_DLE BIT(BT_LE_FEAT_BIT_DLE)
+#define RADIO_LL_LENGTH_OCTETS_RX_MAX \
+		CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
+#else
+#define RADIO_BLE_FEATURES_BIT_DLE 0
+#define RADIO_LL_LENGTH_OCTETS_RX_MAX 27
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX */
 
 /*****************************************************************************
  * Timer Resources (Controller defined)
@@ -61,9 +74,12 @@
 
 #define RADIO_TICKER_USERS		 3
 
-#define RADIO_TICKER_USER_ID_WORKER	 0
-#define RADIO_TICKER_USER_ID_JOB	 1
-#define RADIO_TICKER_USER_ID_APP	 2
+#define RADIO_TICKER_USER_ID_WORKER	 TICKER_MAYFLY_CALL_ID_WORKER0
+#define RADIO_TICKER_USER_ID_JOB	 TICKER_MAYFLY_CALL_ID_JOB0
+#define RADIO_TICKER_USER_ID_APP	 TICKER_MAYFLY_CALL_ID_PROGRAM
+
+#define RADIO_TICKER_USER_ID_WORKER_PRIO TICKER_MAYFLY_CALL_ID_WORKER0_PRIO
+#define RADIO_TICKER_USER_ID_JOB_PRIO    TICKER_MAYFLY_CALL_ID_JOB0_PRIO
 
 #define RADIO_TICKER_USER_WORKER_OPS	(7 + 1)
 #define RADIO_TICKER_USER_JOB_OPS	(2 + 1)
@@ -88,8 +104,8 @@
 					 BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ) | \
 					 BIT(BT_LE_FEAT_BIT_EXT_REJ_IND) | \
 					 BIT(BT_LE_FEAT_BIT_SLAVE_FEAT_REQ) | \
-					 BIT(BT_LE_FEAT_BIT_PING) | \
-					 BIT(BT_LE_FEAT_BIT_DLE))
+					 RADIO_BLE_FEATURES_BIT_PING | \
+					 RADIO_BLE_FEATURES_BIT_DLE)
 
 /*****************************************************************************
  * Controller Reference Defines (compile time override-able)
@@ -142,6 +158,12 @@
 #define RADIO_PACKET_COUNT_APP_TX_MAX	(RADIO_PACKET_COUNT_TX_MAX)
 #endif
 
+/* Tx Data Size */
+#if !defined(RADIO_PACKET_TX_DATA_SIZE) || \
+	(RADIO_PACKET_TX_DATA_SIZE < RADIO_LL_LENGTH_OCTETS_RX_MIN)
+#define RADIO_PACKET_TX_DATA_SIZE RADIO_LL_LENGTH_OCTETS_RX_MIN
+#endif
+
 /*****************************************************************************
  * Controller Interface Structures
  ****************************************************************************/
@@ -180,24 +202,34 @@ struct radio_pdu_node_tx {
 enum radio_pdu_node_rx_type {
 	NODE_RX_TYPE_NONE,
 	NODE_RX_TYPE_DC_PDU,
-	NODE_RX_TYPE_PROFILE,
 	NODE_RX_TYPE_REPORT,
 	NODE_RX_TYPE_CONNECTION,
 	NODE_RX_TYPE_TERMINATE,
 	NODE_RX_TYPE_CONN_UPDATE,
 	NODE_RX_TYPE_ENC_REFRESH,
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	NODE_RX_TYPE_APTO,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	NODE_RX_TYPE_RSSI,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
+	NODE_RX_TYPE_PROFILE,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 };
 
 struct radio_pdu_node_rx_hdr {
-	enum radio_pdu_node_rx_type type;
-	uint16_t handle;
 	union {
-		void *next;
+		void *next; /* used also by k_fifo once pulled */
 		void *link;
 		uint8_t packet_release_last;
 	} onion;
+
+	enum radio_pdu_node_rx_type type;
+	uint16_t handle;
 };
 
 struct radio_pdu_node_rx {
@@ -210,7 +242,8 @@ struct radio_pdu_node_rx {
  ****************************************************************************/
 uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 		    uint8_t rx_count_max, uint8_t tx_count_max,
-		    uint16_t data_octets_max, uint8_t *mem_radio,
+		    uint16_t packet_data_octets_max,
+		    uint16_t packet_tx_data_size, uint8_t *mem_radio,
 		    uint16_t mem_size);
 void ctrl_reset(void);
 void radio_ticks_active_to_start_set(uint32_t ticks_active_to_start);
@@ -244,16 +277,21 @@ uint32_t radio_start_enc_req_send(uint16_t handle, uint8_t err_code,
 uint32_t radio_feature_req_send(uint16_t handle);
 uint32_t radio_version_ind_send(uint16_t handle);
 uint32_t radio_terminate_ind_send(uint16_t handle, uint8_t reason);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets);
 void radio_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time);
 uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
 void radio_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
 			  uint16_t *max_rx_octets, uint16_t *max_rx_time);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 uint8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx,
 		uint16_t *handle);
 void radio_rx_dequeue(void);
 void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx);
 uint8_t radio_rx_fc_set(uint16_t handle, uint8_t fc);
+uint8_t radio_rx_fc_get(uint16_t *handle);
 struct radio_pdu_node_tx *radio_tx_mem_acquire(void);
 void radio_tx_mem_release(struct radio_pdu_node_tx *pdu_data_node_tx);
 uint32_t radio_tx_mem_enqueue(uint16_t handle,

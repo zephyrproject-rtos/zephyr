@@ -15,27 +15,30 @@
  * limitations under the License.
  */
 
-#include "nrf.h"
+#include <soc.h>
+#include "cntr.h"
 
+#include <bluetooth/log.h>
 #include "debug.h"
 
-/* RTC instance to use */
+#ifndef NRF_RTC
 #define NRF_RTC NRF_RTC0
+#endif
 
-static uint8_t _rtc_refcount;
+static uint8_t _refcount;
 
-void rtc_init(void)
+void cntr_init(void)
 {
 	NRF_RTC->PRESCALER = 0;
-	NRF_RTC->EVTENSET =
-	    (RTC_EVTENSET_COMPARE0_Msk | RTC_EVTENSET_COMPARE1_Msk);
-	NRF_RTC->INTENSET =
-	    (RTC_INTENSET_COMPARE0_Msk | RTC_INTENSET_COMPARE1_Msk);
+	NRF_RTC->EVTENSET = (RTC_EVTENSET_COMPARE0_Msk |
+			     RTC_EVTENSET_COMPARE1_Msk);
+	NRF_RTC->INTENSET = (RTC_INTENSET_COMPARE0_Msk |
+			     RTC_INTENSET_COMPARE1_Msk);
 }
 
-uint32_t rtc_start(void)
+uint32_t cntr_start(void)
 {
-	if (_rtc_refcount++) {
+	if (_refcount++) {
 		return 1;
 	}
 
@@ -44,11 +47,11 @@ uint32_t rtc_start(void)
 	return 0;
 }
 
-uint32_t rtc_stop(void)
+uint32_t cntr_stop(void)
 {
-	LL_ASSERT(_rtc_refcount);
+	LL_ASSERT(_refcount);
 
-	if (--_rtc_refcount) {
+	if (--_refcount) {
 		return 1;
 	}
 
@@ -57,12 +60,12 @@ uint32_t rtc_stop(void)
 	return 0;
 }
 
-uint32_t rtc_tick_get(void)
+uint32_t cntr_cnt_get(void)
 {
 	return NRF_RTC->COUNTER;
 }
 
-void rtc_compare_set(uint8_t instance, uint32_t value)
+void cntr_cmp_set(uint8_t cmp, uint32_t value)
 {
-	NRF_RTC->CC[instance] = value;
+	NRF_RTC->CC[cmp] = value;
 }

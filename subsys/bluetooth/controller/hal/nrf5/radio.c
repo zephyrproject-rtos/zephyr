@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 #include <soc.h>
-#include <misc/util.h>
 
-#include "hal_work.h"
-
-#include "defines.h"
+#include "util.h"
+#include "mem.h"
+#include "pdu.h"
 #include "ccm.h"
 #include "radio.h"
 
@@ -33,8 +32,10 @@
 
 static radio_isr_fp sfp_radio_isr;
 
-void radio_isr(void)
+void isr_radio(void *param)
 {
+	ARG_UNUSED(param);
+
 	if (sfp_radio_isr) {
 		sfp_radio_isr();
 	}
@@ -215,8 +216,8 @@ uint32_t radio_crc_is_valid(void)
 	return NRF_RADIO->CRCSTATUS;
 }
 
-static uint8_t ALIGNED(4) _pkt_empty[RADIO_EMPDU_SIZE_MAX];
-static uint8_t ALIGNED(4) _pkt_scratch[
+static uint8_t MALIGN(4) _pkt_empty[RADIO_EMPDU_SIZE_MAX];
+static uint8_t MALIGN(4) _pkt_scratch[
 			((RADIO_PDU_LEN_MAX + 3) > RADIO_ACPDU_SIZE_MAX) ?
 			(RADIO_PDU_LEN_MAX + 3) : RADIO_ACPDU_SIZE_MAX];
 
@@ -431,7 +432,7 @@ uint32_t radio_tmr_sample_get(void)
 	return NRF_TIMER0->CC[3];
 }
 
-static uint8_t ALIGNED(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
+static uint8_t MALIGN(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
 
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt)
 {
@@ -527,7 +528,7 @@ uint32_t radio_ccm_mic_is_valid(void)
 	return NRF_CCM->MICSTATUS;
 }
 
-static uint8_t ALIGNED(4) _aar_scratch[3];
+static uint8_t MALIGN(4) _aar_scratch[3];
 
 void radio_ar_configure(uint32_t nirk, void *irk)
 {

@@ -459,11 +459,11 @@ static void btusb_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		read += 4;
 
 		if (len > read) {
-			memcpy(net_buf_add(buf, 4), tmp, 4);
+			net_buf_add_mem(buf, tmp, 4);
 		} else {
 			uint8_t remains = 4 - (read - len);
 
-			memcpy(net_buf_add(buf, remains), tmp, remains);
+			net_buf_add_mem(buf, tmp, remains);
 		}
 	}
 
@@ -621,7 +621,7 @@ static int btusb_class_handler(struct usb_setup_packet *setup,
 
 	bt_buf_set_type(buf, BT_BUF_CMD);
 
-	memcpy(net_buf_add(buf, *len), *data, *len);
+	net_buf_add_mem(buf, *data, *len);
 
 	bt_send(buf);
 

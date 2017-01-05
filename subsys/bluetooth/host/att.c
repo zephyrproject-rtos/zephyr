@@ -1181,13 +1181,9 @@ static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 static uint8_t att_write_req(struct bt_att *att, struct net_buf *buf)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
-	struct bt_att_write_req *req;
 	uint16_t handle;
 
-	req = (void *)buf->data;
-
-	handle = sys_le16_to_cpu(req->handle);
-	net_buf_pull(buf, sizeof(*req));
+	handle = net_buf_pull_le16(buf);
 
 	BT_DBG("handle 0x%04x", handle);
 
@@ -1243,7 +1239,7 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	attr_data->handle = attr->handle;
 	attr_data->offset = data->offset;
 
-	memcpy(net_buf_add(data->buf, data->len), data->value, data->len);
+	net_buf_add_mem(data->buf, data->value, data->len);
 
 	data->err = 0;
 
@@ -1279,8 +1275,10 @@ static uint8_t att_prep_write_rsp(struct bt_att *att, uint16_t handle,
 		return 0;
 	}
 
+	BT_DBG("buf %p handle 0x%04x offset %u", data.buf, handle, offset);
+
 	/* Store buffer in the outstanding queue */
-	k_fifo_put(&att->prep_queue, data.buf);
+	net_buf_put(&att->prep_queue, data.buf);
 
 	/* Generate response */
 	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_RSP, 0);
@@ -1327,8 +1325,11 @@ static uint8_t att_exec_write_rsp(struct bt_att *att, uint8_t flags)
 	struct net_buf *buf;
 	uint8_t err = 0;
 
-	while ((buf = k_fifo_get(&att->prep_queue, K_NO_WAIT))) {
+	while ((buf = net_buf_get(&att->prep_queue, K_NO_WAIT))) {
 		struct bt_attr_data *data = net_buf_user_data(buf);
+
+		BT_DBG("buf %p handle 0x%04x offset %u", buf, data->handle,
+		       data->offset);
 
 		/* Just discard the data if an error was set */
 		if (!err && flags == BT_ATT_FLAG_EXEC) {
@@ -1380,17 +1381,9 @@ static uint8_t att_exec_write_req(struct bt_att *att, struct net_buf *buf)
 static uint8_t att_write_cmd(struct bt_att *att, struct net_buf *buf)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
-	struct bt_att_write_cmd *req;
 	uint16_t handle;
 
-	if (buf->len < sizeof(*req)) {
-		/* Commands don't have any response */
-		return 0;
-	}
-
-	req = (void *)buf->data;
-
-	handle = sys_le16_to_cpu(req->handle);
+	handle = net_buf_pull_le16(buf);
 
 	BT_DBG("handle 0x%04x", handle);
 

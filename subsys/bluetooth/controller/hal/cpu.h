@@ -18,8 +18,6 @@
 #ifndef _CPU_H_
 #define _CPU_H_
 
-#include "nrf.h"
-
 static inline void cpu_sleep(void)
 {
 	__WFE();

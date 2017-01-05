@@ -442,9 +442,11 @@ int bt_sdp_register_service(struct bt_sdp_record *service);
 /** @brief Generic SDP Client Query Result data holder */
 struct bt_sdp_client_result {
 	/* buffer containing unparsed SDP record result for given UUID */
-	struct net_buf  *resp_buf;
+	struct net_buf        *resp_buf;
 	/* flag pointing that there are more result chunks for given UUID */
-	bool             next_record_hint;
+	bool                   next_record_hint;
+	/* Reference to UUID object on behalf one discovery was started */
+	const struct bt_uuid  *uuid;
 };
 
 /** @brief Helper enum to be used as return value of bt_sdp_discover_func_t.

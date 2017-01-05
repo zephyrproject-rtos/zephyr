@@ -62,7 +62,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	 * Core Specification Vol. 3, Part H, 3.3
 	 */
 
-	buf = bt_l2cap_create_pdu(&smp_pool, K_FOREVER);
+	buf = bt_l2cap_create_pdu(&smp_pool, 0);
 	/* NULL is not a possible return due to K_FOREVER */
 
 	hdr = net_buf_add(buf, sizeof(*hdr));

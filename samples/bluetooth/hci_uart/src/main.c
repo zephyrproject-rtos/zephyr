@@ -38,7 +38,7 @@
 #include <bluetooth/hci_raw.h>
 
 static struct device *hci_uart_dev;
-static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_SEND_STACK);
+static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
@@ -48,7 +48,7 @@ static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_SEND_STACK);
 NET_BUF_POOL_DEFINE(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
 
-#define BT_L2CAP_MTU 64
+#define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
 /** Data size needed for ACL buffers */
 #define BT_BUF_ACL_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
 			 sizeof(struct bt_hci_acl_hdr) + \
@@ -126,7 +126,7 @@ static struct net_buf *h4_cmd_recv(int *remaining)
 	buf = net_buf_alloc(&cmd_tx_pool, K_NO_WAIT);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_CMD);
-		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
 		SYS_LOG_ERR("No available command buffers!");
 	}
@@ -147,7 +147,7 @@ static struct net_buf *h4_acl_recv(int *remaining)
 	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
-		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
 		SYS_LOG_ERR("No available ACL buffers!");
 	}

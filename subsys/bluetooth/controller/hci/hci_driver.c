@@ -38,14 +38,18 @@
 #include <drivers/clock_control/nrf5_clock_control.h>
 #endif
 
-#include "util/defines.h"
-#include "util/work.h"
+#include "util/config.h"
+#include "util/mayfly.h"
+#include "util/util.h"
+#include "util/mem.h"
 #include "hal/rand.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
-#include "hal/hal_rtc.h"
+#include "hal/cntr.h"
 #include "hal/cpu.h"
-#include "ll/ticker.h"
+#include "ticker/ticker.h"
+#include "ll/pdu.h"
+#include "ll/ctrl.h"
 #include "ll/ctrl_internal.h"
 #include "hci_internal.h"
 
@@ -61,16 +65,20 @@
 #define HCI_SCO		0x03
 #define HCI_EVT		0x04
 
-static uint8_t ALIGNED(4) _rand_context[3 + 4 + 1];
-static uint8_t ALIGNED(4) _ticker_nodes[RADIO_TICKER_NODES][TICKER_NODE_T_SIZE];
-static uint8_t ALIGNED(4) _ticker_users[RADIO_TICKER_USERS][TICKER_USER_T_SIZE];
-static uint8_t ALIGNED(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
+static uint8_t MALIGN(4) _rand_context[3 + 4 + 1];
+static uint8_t MALIGN(4) _ticker_nodes[RADIO_TICKER_NODES][TICKER_NODE_T_SIZE];
+static uint8_t MALIGN(4) _ticker_users[MAYFLY_CALLER_COUNT]
+						[TICKER_USER_T_SIZE];
+static uint8_t MALIGN(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 						[TICKER_USER_OP_T_SIZE];
-static uint8_t ALIGNED(4) _radio[LL_MEM_TOTAL];
+static uint8_t MALIGN(4) _radio[LL_MEM_TOTAL];
 
-static K_SEM_DEFINE(sem_recv, 0, UINT_MAX);
-static BT_STACK_NOINIT(recv_thread_stack,
-		       CONFIG_BLUETOOTH_CONTROLLER_RX_STACK_SIZE);
+static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
+static K_FIFO_DEFINE(recv_fifo);
+
+static BT_STACK_NOINIT(prio_recv_thread_stack,
+		       CONFIG_BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE);
+static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 K_MUTEX_DEFINE(mutex_rand);
 
@@ -96,18 +104,75 @@ int bt_rand(void *buf, size_t len)
 }
 #endif
 
+void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
+{
+	(void)caller_id;
+
+	LL_ASSERT(callee_id == MAYFLY_CALL_ID_1);
+
+	if (enable) {
+		irq_enable(SWI4_IRQn);
+	} else {
+		irq_disable(SWI4_IRQn);
+	}
+}
+
+uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id)
+{
+	(void)caller_id;
+
+	if (callee_id == MAYFLY_CALL_ID_0) {
+		return irq_is_enabled(RTC0_IRQn);
+	} else if (callee_id == MAYFLY_CALL_ID_1) {
+		return irq_is_enabled(SWI4_IRQn);
+	}
+
+	LL_ASSERT(0);
+
+	return 0;
+}
+
+uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id)
+{
+	return (caller_id == callee_id) ||
+	       ((caller_id == MAYFLY_CALL_ID_0) &&
+		(callee_id == MAYFLY_CALL_ID_1)) ||
+	       ((caller_id == MAYFLY_CALL_ID_1) &&
+		(callee_id == MAYFLY_CALL_ID_0));
+}
+
+void mayfly_pend(uint8_t caller_id, uint8_t callee_id)
+{
+	(void)caller_id;
+
+	switch (callee_id) {
+	case MAYFLY_CALL_ID_0:
+		_NvicIrqPend(RTC0_IRQn);
+		break;
+
+	case MAYFLY_CALL_ID_1:
+		_NvicIrqPend(SWI4_IRQn);
+		break;
+
+	case MAYFLY_CALL_ID_PROGRAM:
+	default:
+		LL_ASSERT(0);
+		break;
+	}
+}
+
 void radio_active_callback(uint8_t active)
 {
 }
 
 void radio_event_callback(void)
 {
-	k_sem_give(&sem_recv);
+	k_sem_give(&sem_prio_recv);
 }
 
 static void radio_nrf5_isr(void *arg)
 {
-	radio_isr();
+	isr_radio(arg);
 }
 
 static void rtc0_nrf5_isr(void *arg)
@@ -132,22 +197,55 @@ static void rtc0_nrf5_isr(void *arg)
 		ticker_trigger(1);
 	}
 
-	work_run(RTC0_IRQn);
+	mayfly_run(MAYFLY_CALL_ID_0);
 }
 
 static void rng_nrf5_isr(void *arg)
 {
-	rng_isr();
+	isr_rand(arg);
 }
 
 static void swi4_nrf5_isr(void *arg)
 {
-	work_run(NRF5_IRQ_SWI4_IRQn);
+	mayfly_run(MAYFLY_CALL_ID_1);
 }
 
-static void swi5_nrf5_isr(void *arg)
+static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
-	work_run(NRF5_IRQ_SWI5_IRQn);
+	while (1) {
+		struct radio_pdu_node_rx *node_rx;
+		struct net_buf *buf;
+		uint8_t num_cmplt;
+		uint16_t handle;
+
+		while ((num_cmplt = radio_rx_get(&node_rx, &handle))) {
+
+			buf = bt_buf_get_rx(K_FOREVER);
+			bt_buf_set_type(buf, BT_BUF_EVT);
+			hci_num_cmplt_encode(buf, handle, num_cmplt);
+			BT_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
+			bt_recv_prio(buf);
+
+			k_yield();
+		}
+
+		if (node_rx) {
+
+			radio_rx_dequeue();
+
+			BT_DBG("RX node enqueue");
+			k_fifo_put(&recv_fifo, node_rx);
+
+			continue;
+		}
+
+		BT_DBG("sem take...");
+		k_sem_take(&sem_prio_recv, K_FOREVER);
+		BT_DBG("sem taken");
+
+		stack_analyze("prio recv thread stack", prio_recv_thread_stack,
+			      sizeof(prio_recv_thread_stack));
+	}
 }
 
 static void recv_thread(void *p1, void *p2, void *p3)
@@ -156,69 +254,50 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		struct radio_pdu_node_rx *node_rx;
 		struct pdu_data *pdu_data;
 		struct net_buf *buf;
-		uint8_t num_cmplt;
-		uint16_t handle;
 
-		while ((num_cmplt = radio_rx_get(&node_rx, &handle))) {
+		BT_DBG("RX node get");
+		node_rx = k_fifo_get(&recv_fifo, K_FOREVER);
+		BT_DBG("RX node dequeued");
 
-			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
-					     K_FOREVER);
+		pdu_data = (void *)node_rx->pdu_data;
+		/* Check if we need to generate an HCI event or ACL
+		 * data
+		 */
+		if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
+		    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
+			/* generate a (non-priority) HCI event */
+			if (hci_evt_is_discardable(node_rx)) {
+				buf = bt_buf_get_rx(K_NO_WAIT);
+			} else {
+				buf = bt_buf_get_rx(K_FOREVER);
+			}
+
 			if (buf) {
-				hci_num_cmplt_encode(buf, handle, num_cmplt);
-				BT_DBG("Num Complete: 0x%04x:%u", handle,
-								  num_cmplt);
+				bt_buf_set_type(buf, BT_BUF_EVT);
+				hci_evt_encode(node_rx, buf);
+			}
+		} else {
+			/* generate ACL data */
+			buf = bt_buf_get_rx(K_FOREVER);
+			bt_buf_set_type(buf, BT_BUF_ACL_IN);
+			hci_acl_encode(node_rx, buf);
+		}
+
+		radio_rx_fc_set(node_rx->hdr.handle, 0);
+		node_rx->hdr.onion.next = 0;
+		radio_rx_mem_release(&node_rx);
+
+		if (buf) {
+			if (buf->len) {
+				BT_DBG("Packet in: type:%u len:%u",
+					bt_buf_get_type(buf), buf->len);
 				bt_recv(buf);
 			} else {
-				BT_ERR("Cannot allocate Num Complete");
+				net_buf_unref(buf);
 			}
-
-			k_yield();
 		}
 
-		if (node_rx) {
-
-			pdu_data = (void *)node_rx->pdu_data;
-			/* Check if we need to generate an HCI event or ACL
-			 * data
-			 */
-			if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
-			    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
-				/* generate a (non-priority) HCI event */
-				buf = bt_buf_get_evt(0, K_FOREVER);
-				if (buf) {
-					hci_evt_encode(node_rx, buf);
-				} else {
-					BT_ERR("Cannot allocate RX event");
-				}
-			} else {
-				/* generate ACL data */
-				buf = bt_buf_get_acl(K_FOREVER);
-				if (buf) {
-					hci_acl_encode(node_rx, buf);
-				} else {
-					BT_ERR("Cannot allocate RX ACL");
-				}
-			}
-
-			if (buf) {
-				if (buf->len) {
-					BT_DBG("Packet in: type:%u len:%u",
-						bt_buf_get_type(buf), buf->len);
-					bt_recv(buf);
-				} else {
-					net_buf_unref(buf);
-				}
-			}
-
-			radio_rx_dequeue();
-			radio_rx_fc_set(node_rx->hdr.handle, 0);
-			node_rx->hdr.onion.next = 0;
-			radio_rx_mem_release(&node_rx);
-
-			k_yield();
-		} else {
-			k_sem_take(&sem_recv, K_FOREVER);
-		}
+		k_yield();
 
 		stack_analyze("recv thread stack", recv_thread_stack,
 			      sizeof(recv_thread_stack));
@@ -236,15 +315,12 @@ static int cmd_handle(struct net_buf *buf)
 	 * actual point is to retrieve the event from the priority
 	 * queue
 	 */
-	evt = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, K_FOREVER);
-	if (!evt) {
-		BT_ERR("No available event buffers");
-		return -ENOMEM;
-	}
+	evt = bt_buf_get_rx(K_FOREVER);
+	bt_buf_set_type(evt, BT_BUF_EVT);
 	err = hci_cmd_handle(buf, evt);
 	if (!err && evt->len) {
 		BT_DBG("Replying with event of %u bytes", evt->len);
-		bt_recv(evt);
+		bt_recv_prio(evt);
 	} else {
 		net_buf_unref(evt);
 	}
@@ -305,33 +381,30 @@ static int hci_driver_open(void)
 	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF5_K32SRC);
 
 	/* TODO: bind and use counter driver */
-	rtc_init();
+	cntr_init();
 
-	_ticker_users[RADIO_TICKER_USER_ID_WORKER][0] =
-	    RADIO_TICKER_USER_WORKER_OPS;
-	_ticker_users[RADIO_TICKER_USER_ID_JOB][0] =
-		RADIO_TICKER_USER_JOB_OPS;
-	_ticker_users[RADIO_TICKER_USER_ID_APP][0] =
-		RADIO_TICKER_USER_APP_OPS;
+	mayfly_init();
+
+	_ticker_users[MAYFLY_CALL_ID_0][0] = RADIO_TICKER_USER_WORKER_OPS;
+	_ticker_users[MAYFLY_CALL_ID_1][0] = RADIO_TICKER_USER_JOB_OPS;
+	_ticker_users[MAYFLY_CALL_ID_2][0] = 0;
+	_ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = RADIO_TICKER_USER_APP_OPS;
 
 	ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO, RADIO_TICKER_NODES,
-		   &_ticker_nodes[0]
-		   , RADIO_TICKER_USERS, &_ticker_users[0]
-		   , RADIO_TICKER_USER_OPS, &_ticker_user_ops[0]
-	    );
+		    &_ticker_nodes[0], MAYFLY_CALLER_COUNT, &_ticker_users[0],
+		    RADIO_TICKER_USER_OPS, &_ticker_user_ops[0]);
 
 	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	if (!clk_m16) {
 		return -ENODEV;
 	}
 
-	err = radio_init(clk_m16,
-			 CLOCK_CONTROL_NRF5_K32SRC_ACCURACY,
+	err = radio_init(clk_m16, CLOCK_CONTROL_NRF5_K32SRC_ACCURACY,
 			 RADIO_CONNECTION_CONTEXT_MAX,
 			 RADIO_PACKET_COUNT_RX_MAX,
 			 RADIO_PACKET_COUNT_TX_MAX,
-			 RADIO_LL_LENGTH_OCTETS_RX_MAX, &_radio[0],
-			 sizeof(_radio));
+			 RADIO_LL_LENGTH_OCTETS_RX_MAX,
+			 RADIO_PACKET_TX_DATA_SIZE, &_radio[0], sizeof(_radio));
 	if (err) {
 		BT_ERR("Required RAM size: %d, supplied: %u.", err,
 		       sizeof(_radio));
@@ -342,12 +415,14 @@ static int hci_driver_open(void)
 	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, 0, swi4_nrf5_isr, 0, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI5_IRQn, 1, swi5_nrf5_isr, 0, 0);
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
 	irq_enable(NRF5_IRQ_RTC0_IRQn);
 	irq_enable(NRF5_IRQ_RNG_IRQn);
 	irq_enable(NRF5_IRQ_SWI4_IRQn);
-	irq_enable(NRF5_IRQ_SWI5_IRQn);
+
+	k_thread_spawn(prio_recv_thread_stack, sizeof(prio_recv_thread_stack),
+		       prio_recv_thread, NULL, NULL, NULL, K_PRIO_COOP(6), 0,
+		       K_NO_WAIT);
 
 	k_thread_spawn(recv_thread_stack, sizeof(recv_thread_stack),
 		       recv_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
