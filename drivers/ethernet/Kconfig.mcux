@@ -15,6 +15,13 @@ menuconfig ETH_MCUX
 	configuration change.
 
 if ETH_MCUX
+config ETH_MCUX_PHY_TICK_MS
+	int "PHY poll period (ms)"
+	default 1000
+	range 100 30000
+	help
+	  Set the PHY status polling period.
+
 config ETH_MCUX_RX_BUFFERS
 	int "Number of MCUX RX buffers"
 	depends on ETH_MCUX

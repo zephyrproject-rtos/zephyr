@@ -1,15 +1,12 @@
 /* MCUX Ethernet Driver
  *
- *  Copyright (c) 2016 ARM Ltd
+ *  Copyright (c) 2016-2017 ARM Ltd
  *  Copyright (c) 2016 Linaro Ltd
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* The driver performs one shot PHY setup.  There is no support for
- * PHY disconnect, reconnect or configuration change.  The PHY setup,
- * implemented via MCUX contains polled code that can block the
- * initialization thread for a few seconds.
+/* Driver Limitations:
  *
  * There is no statistics collection for either normal operation or
  * error behaviour.
@@ -30,11 +27,27 @@
 #include "fsl_phy.h"
 #include "fsl_port.h"
 
+enum eth_mcux_phy_state {
+	eth_mcux_phy_state_initial,
+	eth_mcux_phy_state_reset,
+	eth_mcux_phy_state_autoneg,
+	eth_mcux_phy_state_restart,
+	eth_mcux_phy_state_read_status,
+	eth_mcux_phy_state_read_duplex,
+	eth_mcux_phy_state_wait
+};
+
 struct eth_context {
 	struct net_if *iface;
 	enet_handle_t enet_handle;
 	struct k_sem tx_buf_sem;
+	enum eth_mcux_phy_state phy_state;
+	bool link_up;
+	phy_duplex_t phy_duplex;
+	phy_speed_t phy_speed;
 	uint8_t mac_addr[6];
+	struct k_work phy_work;
+	struct k_delayed_work delayed_phy_work;
 	/* TODO: FIXME. This Ethernet frame sized buffer is used for
 	 * interfacing with MCUX. How it works is that hardware uses
 	 * DMA scatter buffers to receive a frame, and then public
@@ -69,6 +82,137 @@ rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 
 static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
 tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
+
+static void eth_mcux_decode_duplex_and_speed(uint32_t status,
+					     phy_duplex_t *p_phy_duplex,
+					     phy_speed_t *p_phy_speed)
+{
+	switch (status & PHY_CTL1_SPEEDUPLX_MASK) {
+	case PHY_CTL1_10FULLDUPLEX_MASK:
+		*p_phy_duplex = kPHY_FullDuplex;
+		*p_phy_speed = kPHY_Speed10M;
+		break;
+	case PHY_CTL1_100FULLDUPLEX_MASK:
+		*p_phy_duplex = kPHY_FullDuplex;
+		*p_phy_speed = kPHY_Speed100M;
+		break;
+	case PHY_CTL1_100HALFDUPLEX_MASK:
+		*p_phy_duplex = kPHY_HalfDuplex;
+		*p_phy_speed = kPHY_Speed100M;
+		break;
+	case PHY_CTL1_10HALFDUPLEX_MASK:
+		*p_phy_duplex = kPHY_HalfDuplex;
+		*p_phy_speed = kPHY_Speed10M;
+		break;
+	}
+}
+
+static void eth_mcux_phy_event(struct eth_context *context)
+{
+	uint32_t status;
+	bool link_up;
+	phy_duplex_t phy_duplex = kPHY_FullDuplex;
+	phy_speed_t phy_speed = kPHY_Speed100M;
+	const uint32_t phy_addr = 0;
+
+	SYS_LOG_DBG("phy_state=%d", context->phy_state);
+
+	switch (context->phy_state) {
+	case eth_mcux_phy_state_initial:
+		/* Reset the PHY. */
+		ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
+				   kENET_MiiWriteValidFrame,
+				   PHY_BCTL_RESET_MASK);
+		context->phy_state = eth_mcux_phy_state_reset;
+		break;
+	case eth_mcux_phy_state_reset:
+		/* Setup PHY autonegotiation. */
+		ENET_StartSMIWrite(ENET, phy_addr, PHY_AUTONEG_ADVERTISE_REG,
+				   kENET_MiiWriteValidFrame,
+				   (PHY_100BASETX_FULLDUPLEX_MASK |
+				    PHY_100BASETX_HALFDUPLEX_MASK |
+				    PHY_10BASETX_FULLDUPLEX_MASK |
+				    PHY_10BASETX_HALFDUPLEX_MASK | 0x1U));
+		context->phy_state = eth_mcux_phy_state_autoneg;
+		break;
+	case eth_mcux_phy_state_autoneg:
+		/* Setup PHY autonegotiation. */
+		ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
+				   kENET_MiiWriteValidFrame,
+				   (PHY_BCTL_AUTONEG_MASK |
+				    PHY_BCTL_RESTART_AUTONEG_MASK));
+		context->phy_state = eth_mcux_phy_state_restart;
+		break;
+	case eth_mcux_phy_state_wait:
+	case eth_mcux_phy_state_restart:
+		/* Start reading the PHY basic status. */
+		ENET_StartSMIRead(ENET, phy_addr, PHY_BASICSTATUS_REG,
+				  kENET_MiiReadValidFrame);
+		context->phy_state = eth_mcux_phy_state_read_status;
+		break;
+	case eth_mcux_phy_state_read_status:
+		/* PHY Basic status is available. */
+		status = ENET_ReadSMIData(ENET);
+		link_up =  status & PHY_BSTATUS_LINKSTATUS_MASK;
+		if (link_up && !context->link_up) {
+			/* Start reading the PHY control register. */
+			ENET_StartSMIRead(ENET, phy_addr, PHY_CONTROL1_REG,
+					  kENET_MiiReadValidFrame);
+			context->link_up = link_up;
+			context->phy_state = eth_mcux_phy_state_read_duplex;
+		} else if (!link_up && context->link_up) {
+			SYS_LOG_INF("Link down");
+			context->link_up = link_up;
+			k_delayed_work_submit(&context->delayed_phy_work,
+					      CONFIG_ETH_MCUX_PHY_TICK_MS);
+			context->phy_state = eth_mcux_phy_state_wait;
+		} else {
+			k_delayed_work_submit(&context->delayed_phy_work,
+					      CONFIG_ETH_MCUX_PHY_TICK_MS);
+			context->phy_state = eth_mcux_phy_state_wait;
+		}
+
+		break;
+	case eth_mcux_phy_state_read_duplex:
+		/* PHY control register is available. */
+		status = ENET_ReadSMIData(ENET);
+		eth_mcux_decode_duplex_and_speed(status,
+						 &phy_duplex,
+						 &phy_speed);
+		if (phy_speed != context->phy_speed ||
+		    phy_duplex != context->phy_duplex) {
+			context->phy_speed = phy_speed;
+			context->phy_duplex = phy_duplex;
+			ENET_SetMII(ENET,
+				    (enet_mii_speed_t) phy_speed,
+				    (enet_mii_duplex_t) phy_duplex);
+		}
+
+		SYS_LOG_INF("Enabled %sM %s-duplex mode.",
+			    (phy_speed ? "100" : "10"),
+			    (phy_duplex ? "full" : "half"));
+		k_delayed_work_submit(&context->delayed_phy_work,
+				      CONFIG_ETH_MCUX_PHY_TICK_MS);
+		context->phy_state = eth_mcux_phy_state_wait;
+		break;
+	}
+}
+
+static void eth_mcux_phy_work(struct k_work *item)
+{
+	struct eth_context *context =
+		CONTAINER_OF(item, struct eth_context, phy_work);
+
+	eth_mcux_phy_event(context);
+}
+
+static void eth_mcux_delayed_phy_work(struct k_work *item)
+{
+	struct eth_context *context =
+		CONTAINER_OF(item, struct eth_context, delayed_phy_work);
+
+	eth_mcux_phy_event(context);
+}
 
 static int eth_tx(struct net_if *iface, struct net_buf *buf)
 {
@@ -265,9 +409,6 @@ static int eth_0_init(struct device *dev)
 	struct eth_context *context = dev->driver_data;
 	enet_config_t enet_config;
 	uint32_t sys_clock;
-	const uint32_t phy_addr = 0x0;
-	bool link;
-	status_t status;
 	enet_buffer_config_t buffer_config = {
 		.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
 		.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
@@ -281,34 +422,16 @@ static int eth_0_init(struct device *dev)
 
 	k_sem_init(&context->tx_buf_sem,
 		   CONFIG_ETH_MCUX_TX_BUFFERS, CONFIG_ETH_MCUX_TX_BUFFERS);
+	k_work_init(&context->phy_work, eth_mcux_phy_work);
+	k_delayed_work_init(&context->delayed_phy_work,
+			    eth_mcux_delayed_phy_work);
 
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 
 	ENET_GetDefaultConfig(&enet_config);
 	enet_config.interrupt |= kENET_RxFrameInterrupt;
 	enet_config.interrupt |= kENET_TxFrameInterrupt;
-
-	status = PHY_Init(ENET, phy_addr, sys_clock);
-	if (status) {
-		SYS_LOG_ERR("PHY_Init() failed: %d", status);
-		return 1;
-	}
-
-	PHY_GetLinkStatus(ENET, phy_addr, &link);
-	if (link) {
-		phy_speed_t phy_speed;
-		phy_duplex_t phy_duplex;
-
-		PHY_GetLinkSpeedDuplex(ENET, phy_addr, &phy_speed, &phy_duplex);
-		enet_config.miiSpeed = (enet_mii_speed_t) phy_speed;
-		enet_config.miiDuplex = (enet_mii_duplex_t) phy_duplex;
-
-		SYS_LOG_INF("Enabled %dM %s-duplex mode.",
-			    (phy_speed ? 100 : 10),
-			    (phy_duplex ? "full" : "half"));
-	} else {
-		SYS_LOG_INF("Link down.");
-	}
+	enet_config.interrupt |= kENET_MiiInterrupt;
 
 #if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 	generate_mac(context->mac_addr);
@@ -321,6 +444,8 @@ static int eth_0_init(struct device *dev)
 		  context->mac_addr,
 		  sys_clock);
 
+	ENET_SetSMI(ENET, sys_clock, false);
+
 	SYS_LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		    context->mac_addr[0], context->mac_addr[1],
 		    context->mac_addr[2], context->mac_addr[3],
@@ -329,6 +454,9 @@ static int eth_0_init(struct device *dev)
 	ENET_SetCallback(&context->enet_handle, eth_callback, dev);
 	eth_0_config_func();
 	ENET_ActiveRead(ENET);
+
+	k_work_submit(&context->phy_work);
+
 	return 0;
 }
 
@@ -367,11 +495,17 @@ static void eth_mcux_error_isr(void *p)
 {
 	struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
+	uint32_t pending = ENET_GetInterruptStatus(ENET);
 
-	ENET_ErrorIRQHandler(ENET, &context->enet_handle);
+	if (pending & ENET_EIR_MII_MASK) {
+		k_work_submit(&context->phy_work);
+		ENET_ClearInterruptStatus(ENET, kENET_MiiInterrupt);
+	}
 }
 
 static struct eth_context eth_0_context = {
+	.phy_duplex = kPHY_FullDuplex,
+	.phy_speed = kPHY_Speed100M,
 	.mac_addr = {
 		/* Freescale's OUI */
 		0x00,
