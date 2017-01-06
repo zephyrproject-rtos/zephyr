@@ -28,7 +28,7 @@ The following boards currently define the above variables:
 - nrf52840_pca10056
 - nrf52_pca10040
 - nucleo_f103rb
-- quark_d2000_crb
+- :ref:`quark_d2000_devboard`
 - quark_se_c1000_devboard
 - quark_se_c1000_ss_devboard
 
