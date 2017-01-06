@@ -156,6 +156,8 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 
 static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 {
+	struct bt_context *ctxt = CHAN_CTXT(chan);
+
 	NET_DBG("Channel %p disconnected", chan);
 
 	/* Set iface down */
