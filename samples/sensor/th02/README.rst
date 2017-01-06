@@ -7,16 +7,17 @@ This sample periodically reads temperature and humidity from the Grove
 Temperature & Humidity Sensor (TH02) and display the results on the Grove LCD
 display.
 
-More details about the sensor and the display can be found here:
 
-- http://wiki.seeed.cc/Grove-TemptureAndHumidity_Sensor-High-Accuracy_AndMini-v1.0/
-- http://wiki.seeed.cc/Grove-LCD_RGB_Backlight/
-
-Software
-========
+Requirements
+============
 
 This sample uses the TH02 sensor and the grove LCD display. Both devices are
 controlled using the I2C interface.
+
+More details about the sensor and the display can be found here:
+
+- `Grove Tempture And Humidity`_
+- `Grove LCD Module`_
 
 Wiring
 ======
@@ -28,9 +29,11 @@ The LCD display requires 5 volts, so the volatage switch on the shield needs to
 be on 5v.
 
 
-Datasheets
+References
 ==========
 
  - TH02: http://www.datasheetspdf.com/mobile/748107/TH02.html
 
 
+.. _Grove LCD Module: http://wiki.seeed.cc/Grove-LCD_RGB_Backlight/
+.. _Grove Tempture And Humidity: http://wiki.seeed.cc/Grove-TemptureAndHumidity_Sensor-High-Accuracy_AndMini-v1.0/
