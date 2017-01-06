@@ -22,38 +22,13 @@
 #include <net/net_mgmt.h>
 #include <net/ieee802154.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
 #include <misc/printk.h>
-#define PRINT           printk
-#endif
+#define PRINT	printk
+
+#ifndef CONFIG_NET_L2_IEEE802154_SHELL
 
 static struct ieee802154_req_params scan_ctx;
 static struct net_mgmt_event_callback scan_cb;
-
-static struct net_if *init_device(void)
-{
-	struct net_if *iface;
-	struct device *dev;
-
-	dev = device_get_binding(CONFIG_TI_CC2520_DRV_NAME);
-	if (!dev) {
-		PRINT("Cannot get CC250 device\n");
-		return NULL;
-	}
-
-	iface = net_if_lookup_by_dev(dev);
-	if (!iface) {
-		PRINT("Cannot get CC2520 network interface\n");
-		return NULL;
-	}
-
-	PRINT("802.15.4 device up and running\n");
-
-	return iface;
-}
 
 static void scan_result_cb(struct net_mgmt_event_callback *cb,
 			   uint32_t mgmt_event, struct net_if *iface)
@@ -82,6 +57,31 @@ static inline void scan(struct net_if *iface)
 	}
 }
 
+#else
+#define scan(...)
+#endif /* CONFIG_NET_L2_IEEE802154_SHELL */
+
+static struct net_if *init_device(void)
+{
+	struct net_if *iface;
+	struct device *dev;
+
+	dev = device_get_binding(CONFIG_TI_CC2520_DRV_NAME);
+	if (!dev) {
+		PRINT("Cannot get CC250 device\n");
+		return NULL;
+	}
+
+	iface = net_if_lookup_by_dev(dev);
+	if (!iface) {
+		PRINT("Cannot get CC2520 network interface\n");
+		return NULL;
+	}
+
+	PRINT("802.15.4 device up and running\n");
+
+	return iface;
+}
 void main(void)
 {
 	struct net_if *iface;
