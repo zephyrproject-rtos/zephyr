@@ -12,6 +12,12 @@
 #ifndef __NET_MGMT_H__
 #define __NET_MGMT_H__
 
+/**
+ * @brief Network Management
+ * @defgroup net_mgmt Network Management
+ * @{
+ */
+
 #include <misc/__assert.h>
 #include <net/net_core.h>
 
@@ -57,6 +63,7 @@ struct net_if;
 
 
 /**
+ * @typedef net_mgmt_request_handler_t
  * @brief Signature which all Net MGMT request handler need to follow
  * @param mgmt_request The exact request value the handler is being called
  *        through
@@ -170,5 +177,9 @@ void net_mgmt_event_init(void);
 #define net_mgmt_event_notify(...)
 #define net_mgmt_event_init(...)
 #endif /* CONFIG_NET_MGMT_EVENT */
+
+/**
+ * @}
+ */
 
 #endif /* __NET_MGMT_H__ */

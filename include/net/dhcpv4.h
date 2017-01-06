@@ -11,6 +11,12 @@
 #ifndef __DHCPV4_H
 #define __DHCPV4_H
 
+/**
+ * @brief DHCPv4
+ * @defgroup dhcpv4 DHCPv4
+ * @{
+ */
+
 #include <misc/slist.h>
 #include <stdint.h>
 
@@ -34,5 +40,9 @@ enum net_dhcpv4_state {
  *  @param iface A valid pointer on an interface
  */
 void net_dhcpv4_start(struct net_if *iface);
+
+/**
+ * @}
+ */
 
 #endif /* __DHCPV4_H */

@@ -13,6 +13,12 @@
 #ifndef __NET_CONTEXT_H
 #define __NET_CONTEXT_H
 
+/**
+ * @brief Application network context
+ * @defgroup net_context Application network context
+ * @{
+ */
+
 #include <kernel.h>
 #include <atomic.h>
 
@@ -57,6 +63,7 @@ enum net_context_state {
 struct net_context;
 
 /**
+ * @typedef net_context_recv_cb_t
  * @brief Network data receive callback.
  *
  * @details The recv callback is called after a network data is
@@ -77,6 +84,7 @@ typedef void (*net_context_recv_cb_t)(struct net_context *context,
 				      void *user_data);
 
 /**
+ * @typedef net_context_send_cb_t
  * @brief Network data send callback.
  *
  * @details The send callback is called after a network data is
@@ -95,6 +103,7 @@ typedef void (*net_context_send_cb_t)(struct net_context *context,
 				      void *user_data);
 
 /**
+ * @typedef net_tcp_accept_cb_t
  * @brief Accept callback
  *
  * @details The accept callback is called after a successful
@@ -114,6 +123,7 @@ typedef void (*net_tcp_accept_cb_t)(struct net_context *new_context,
 				    void *user_data);
 
 /**
+ * @typedef net_context_connect_cb_t
  * @brief Connection callback.
  *
  * @details The connect callback is called after a connection is being
@@ -663,6 +673,13 @@ int net_context_recv(struct net_context *context,
 		     int32_t timeout,
 		     void *user_data);
 
+/**
+ * @typedef net_context_cb_t
+ * @brief Callback used while iterating over network contexts
+ *
+ * @param context A valid pointer on current network context
+ * @param user_data A valid pointer on some user data or NULL
+ */
 typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
 
 /**
@@ -677,5 +694,9 @@ void net_context_foreach(net_context_cb_t cb, void *user_data);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __NET_CONTEXT_H */

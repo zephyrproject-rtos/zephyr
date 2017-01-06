@@ -13,6 +13,12 @@
 #ifndef __NET_IP_H
 #define __NET_IP_H
 
+/**
+ * @brief IPv4/IPv6 primitives and helpers
+ * @defgroup ip_4_6 IPv4/IPv6 primitives and helpers
+ * @{
+ */
+
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -812,5 +818,10 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
+
 
 #endif /* __NET_IP_H */
