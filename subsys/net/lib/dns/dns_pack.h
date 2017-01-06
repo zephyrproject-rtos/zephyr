@@ -361,4 +361,26 @@ int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
  */
 int dns_unpack_response_query(struct dns_msg_t *dns_msg);
 
+/**
+ * @brief dns_copy_qname	Copies the qname from dns_msg to buf
+ *
+ * @details			This routine applies the algorithm described in
+ *				RFC 1035, 4.1.4. Message compression to copy the
+ *				qname (perhaps containing pointers with offset)
+ *				to the linear buffer buf. Pointers are removed
+ *				and only the "true" labels are copied.
+ *
+ * @param [out] buf		Output buffer
+ * @param [out] len		Output buffer's length
+ * @param [in] size		Output buffer's size
+ * @param [in] dns_msg		Structure containing the message
+ * @param [in] pos		QNAME's position in dns_msg->msg
+ * @return			0 on success
+ * @return			-EINVAL if an invalid parameter was passed as
+ *				an argument
+ * @return			-ENOMEM if the label's size is corrupted
+ */
+int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
+		   struct dns_msg_t *dns_msg, uint16_t pos);
+
 #endif

@@ -87,6 +87,8 @@ static void net_if_tx_thread(struct net_if *iface)
 		sizeof(iface->tx_stack), api, &iface->tx_queue);
 
 	api->init(iface);
+	/* Attempt to bring the interface up */
+	net_if_up(iface);
 
 	while (1) {
 		struct net_linkaddr *dst;
@@ -104,7 +106,14 @@ static void net_if_tx_thread(struct net_if *iface)
 		context = net_nbuf_context(buf);
 		context_token = net_nbuf_token(buf);
 
-		status = api->send(iface, buf);
+		if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+			status = api->send(iface, buf);
+		} else {
+			/* Drop packet if interface is not up */
+			NET_WARN("iface %p is down", iface);
+			status = -ENETDOWN;
+		}
+
 		if (status < 0) {
 			net_nbuf_unref(buf);
 		}
@@ -143,8 +152,16 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 	struct net_linkaddr *dst = net_nbuf_ll_dst(buf);
 	void *token = net_nbuf_token(buf);
 	enum net_verdict verdict;
+	int status = -EIO;
 
-	verdict = iface->l2->send(iface, buf);
+	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+		verdict = iface->l2->send(iface, buf);
+	} else {
+		/* Drop packet if interface is not up */
+		NET_WARN("iface %p is down", iface);
+		verdict = NET_DROP;
+		status = -ENETDOWN;
+	}
 
 	/* The L2 send() function can return
 	 *   NET_OK in which case packet was sent successfully.
@@ -159,11 +176,11 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 		NET_DBG("Calling context send cb %p token %p verdict %d",
 			context, token, verdict);
 
-		net_context_send_cb(context, token, -EIO);
+		net_context_send_cb(context, token, status);
 	}
 
 	if (verdict == NET_DROP) {
-		net_if_call_link_cb(iface, dst, -EIO);
+		net_if_call_link_cb(iface, dst, status);
 	}
 
 	return verdict;
@@ -1322,6 +1339,70 @@ void net_if_foreach(net_if_cb_t cb, void *user_data)
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
 		cb(iface, user_data);
 	}
+}
+
+int net_if_up(struct net_if *iface)
+{
+	int status;
+
+	NET_DBG("iface %p", iface);
+
+	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+		return 0;
+	}
+
+	/* If the L2 does not support enable just set the flag */
+	if (!iface->l2->enable) {
+		goto done;
+	}
+
+	/* Notify L2 to enable the interface */
+	status = iface->l2->enable(iface, true);
+	if (status < 0) {
+		return status;
+	}
+
+done:
+	atomic_set_bit(iface->flags, NET_IF_UP);
+
+#if defined(CONFIG_NET_IPV6_DAD)
+	NET_DBG("Starting DAD for iface %p", iface);
+	net_if_start_dad(iface);
+#endif
+
+#if defined(CONFIG_NET_IPV6_ND)
+	NET_DBG("Starting ND/RS for iface %p", iface);
+	net_if_start_rs(iface);
+#endif
+
+	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
+
+	return 0;
+}
+
+int net_if_down(struct net_if *iface)
+{
+	int status;
+
+	NET_DBG("iface %p", iface);
+
+	/* If the L2 does not support enable just set the flag */
+	if (!iface->l2->enable) {
+		goto done;
+	}
+
+	/* Notify L2 to disable the interface */
+	status = iface->l2->enable(iface, false);
+	if (status < 0) {
+		return status;
+	}
+
+done:
+	atomic_clear_bit(iface->flags, NET_IF_UP);
+
+	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
+
+	return 0;
 }
 
 void net_if_init(void)

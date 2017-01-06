@@ -108,9 +108,6 @@ struct net_tcp {
 	/** TCP state. */
 	enum net_tcp_state state;
 
-	/** Retransmission timer. */
-	struct k_delayed_work retransmit_timer;
-
 	/** ACK message timer */
 	struct k_delayed_work ack_timer;
 
@@ -231,6 +228,8 @@ int net_tcp_release(struct net_tcp *tcp);
  * @param flags TCP flags
  * @param options Pointer TCP options, NULL if no options.
  * @param optlen Length of the options.
+ * @param local Source address, or NULL to use the local address of
+ *        the TCP context
  * @param remote Peer address
  * @param send_buf Full IP + TCP header that is to be sent.
  *
@@ -238,6 +237,7 @@ int net_tcp_release(struct net_tcp *tcp);
  */
 int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			    void *options, size_t optlen,
+			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
 			    struct net_buf **send_buf);
 
@@ -283,7 +283,7 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data);
  *
  * @return 0 if ok, < 0 if error
  */
-int tcp_send_data(struct net_context *context);
+int net_tcp_send_data(struct net_context *context);
 
 /**
  * @brief Enqueue a single packet for transmission
@@ -293,7 +293,7 @@ int tcp_send_data(struct net_context *context);
  *
  * @return 0 if ok, < 0 if error
  */
-int tcp_queue_data(struct net_context *context, struct net_buf *buf);
+int net_tcp_queue_data(struct net_context *context, struct net_buf *buf);
 
 /**
  * @brief Sends one TCP packet initialized with the _prepare_*()

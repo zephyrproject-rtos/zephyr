@@ -2,7 +2,7 @@ ifeq (${PROFILER}, 1)
 ccflags-y += -DPROFILER
 endif
 
-ccflags-y += -I${ZEPHYR_BASE}/net/yaip/
+ccflags-y += -I${ZEPHYR_BASE}/subsys/net/ip
 ccflags-y += -I${ZEPHYR_BASE}/samples/task_profiler/profiler/src
 
 obj-y += zperf_shell.o

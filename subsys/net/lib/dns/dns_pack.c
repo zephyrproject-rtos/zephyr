@@ -17,6 +17,8 @@
 #include "dns_pack.h"
 #include <string.h>
 
+/* This is the label's length octet, see 4.1.2. Question section format */
+#define DNS_LABEL_LEN_SIZE	1
 #define DNS_LABEL_MAX_SIZE	63
 #define DNS_ANSWER_MIN_SIZE	12
 #define DNS_COMMON_UINT_SIZE	2
@@ -349,4 +351,68 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 				 DNS_QTYPE_LEN + DNS_QCLASS_LEN;
 
 	return 0;
+}
+
+int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
+		   struct dns_msg_t *dns_msg, uint16_t pos)
+{
+	uint16_t msg_size = dns_msg->msg_size;
+	uint8_t *msg = dns_msg->msg;
+	uint16_t lb_size;
+	int rc = -EINVAL;
+	int i = 0;
+
+	*len = 0;
+
+	/* Iterate ANCOUNT + 1 to allow the Query's QNAME to be parsed.
+	 * This is required to avoid 'alias loops'
+	 */
+	while (i++ < dns_header_ancount(dns_msg->msg) + 1) {
+		if (pos >= msg_size) {
+			rc = -ENOMEM;
+			break;
+		}
+
+		lb_size = msg[pos];
+
+		/* pointer */
+		if (lb_size > DNS_LABEL_MAX_SIZE) {
+			uint8_t mask = DNS_LABEL_MAX_SIZE;
+
+			if (pos + 1 >= msg_size) {
+				rc = -ENOMEM;
+				break;
+			}
+
+			/* See: RFC 1035, 4.1.4. Message compression */
+			pos = ((msg[pos] & mask) << 8) + msg[pos + 1];
+
+			continue;
+		}
+
+		/* validate that the label (i.e. size + elements),
+		 * fits the current msg buffer
+		 */
+		if (DNS_LABEL_LEN_SIZE + lb_size > size - *len) {
+			rc = -ENOMEM;
+			break;
+		}
+
+		/* copy the lb_size value and label elements */
+		memcpy(buf + *len, msg + pos, DNS_LABEL_LEN_SIZE + lb_size);
+		/* update destination buffer len */
+		*len += DNS_LABEL_LEN_SIZE + lb_size;
+		/* update msg ptr position */
+		pos += DNS_LABEL_LEN_SIZE + lb_size;
+
+		/* The domain name terminates with the zero length octet
+		 * for the null label of the root
+		 */
+		if (lb_size == 0) {
+			rc = 0;
+			break;
+		}
+	}
+
+	return rc;
 }

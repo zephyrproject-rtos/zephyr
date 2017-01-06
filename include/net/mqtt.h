@@ -24,12 +24,12 @@
  * @brief mqtt_app	MQTT application type
  */
 enum mqtt_app {
+	/** Publisher and Subscriber application */
+	MQTT_APP_PUBLISHER_SUBSCRIBER,
 	/** Publisher only application */
 	MQTT_APP_PUBLISHER,
 	/** Subscriber only application */
 	MQTT_APP_SUBSCRIBER,
-	/** Publisher and Subscriber application */
-	MQTT_APP_PUBLISHER_SUBSCRIBER,
 	/** MQTT Server */
 	MQTT_APP_SERVER
 };
@@ -64,7 +64,7 @@ struct mqtt_ctx {
 	/** IP stack context structure */
 	struct net_context *net_ctx;
 	/** Network timeout for tx and rx routines */
-	uint32_t net_timeout;
+	int32_t net_timeout;
 
 	/** Callback executed when a MQTT CONNACK msg is received and validated.
 	 * If this function pointer is not used, must be set to NULL.
@@ -183,6 +183,12 @@ struct mqtt_ctx {
 	/** Data passed to the #unsubscribe callback */
 	void *unsubscribe_data;
 
+	/* Internal use only */
+	int (*rcv)(struct mqtt_ctx *, struct net_buf *);
+
+	/** Application type, see: enum mqtt_app */
+	uint8_t app_type;
+
 	/* Clean session is also part of the MQTT CONNECT msg, however app
 	 * behavior is influenced by this parameter, so we keep a copy here
 	 */
@@ -191,10 +197,15 @@ struct mqtt_ctx {
 
 	/** 1 if the MQTT application is connected and 0 otherwise */
 	uint8_t connected:1;
-
-	/** Application type */
-	enum mqtt_app app_type;
 };
+
+/**
+ * @brief mqtt_init		Initializes the MQTT context structure
+ * @param ctx			MQTT context structure
+ * @param app_type		See enum mqtt_app
+ * @return			0, always.
+ */
+int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type);
 
 /**
  * @brief mqtt_tx_connect	Sends the MQTT CONNECT message
@@ -314,8 +325,8 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx);
  * @return			-ENOMEM if a tx buffer is not available
  * @return			-EIO on network error
  */
-int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
-		      const char *topics[], enum mqtt_qos qos[]);
+int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
+		      const char *topics[], const enum mqtt_qos qos[]);
 
 /**
  * @brief mqtt_tx_unsubscribe	Sends the MQTT UNSUBSCRIBE message
@@ -325,7 +336,7 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
  * @param [in] topics		Array of 'items' elements containing C strings
  * @return
  */
-int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, int items,
+int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 			const char *topics[]);
 
 int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx,
@@ -334,7 +345,7 @@ int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx,
 /**
  * @brief mqtt_rx_puback	Parses and validates the MQTT PUBACK message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -343,7 +354,7 @@ int mqtt_rx_puback(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_pubcomp	Parses and validates the MQTT PUBCOMP message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -352,7 +363,7 @@ int mqtt_rx_pubcomp(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_pubrec	Parses and validates the MQTT PUBREC message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -362,7 +373,7 @@ int mqtt_rx_pubrec(struct mqtt_ctx *ctx, struct net_buf *rx);
  * @brief mqtt_rx_pubrel	Parses and validates the MQTT PUBREL message
  * @details			rx is an RX buffer from the IP stack
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -371,7 +382,7 @@ int mqtt_rx_pubrel(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_pingresp	Parses the MQTT PINGRESP message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
@@ -380,10 +391,29 @@ int mqtt_rx_pingresp(struct mqtt_ctx *ctx, struct net_buf *rx);
 /**
  * @brief mqtt_rx_suback	Parses the MQTT SUBACK message
  * @param [in] ctx		MQTT context structure
- * @param [in] rx		RX buffer from the IP stack
+ * @param [in] rx		Data buffer
  * @return			0 on success
  * @return			-EINVAL on error
  */
 int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx);
+
+/**
+ * @brief mqtt_rx_unsuback	Parses the MQTT UNSUBACK message
+ * @param [in] ctx		MQTT context structure
+ * @param [in] rx		Data buffer
+ * @return			0 on success
+ * @return			-EINVAL on error
+ */
+int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx);
+
+/**
+ * @brief mqtt_rx_publish	Parses the MQTT PUBLISH message
+ * @param [in] ctx		MQTT context structure
+ * @param [in] rx		Data buffer
+ * @return			0 on success
+ * @return			-EINVAL on error
+ * @return			-ENOMEM if no data buffer is available
+ */
+int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 #endif
