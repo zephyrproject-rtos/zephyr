@@ -56,6 +56,10 @@ enum net_verdict packet_received(struct net_conn *conn,
 				 struct net_buf *buf,
 				 void *user_data);
 
+static void set_appdata_values(struct net_buf *buf,
+			       enum net_ip_protocol proto,
+			       size_t total_len);
+
 #if defined(CONFIG_NET_TCP)
 static struct sockaddr *create_sockaddr(struct net_buf *buf,
 					struct sockaddr *addr)
@@ -583,14 +587,15 @@ int net_context_listen(struct net_context *context, int backlog)
 #endif /* CONFIG_NET_DEBUG_CONTEXT */
 
 static inline int send_control_segment(struct net_context *context,
+				       const struct sockaddr_ptr *local,
 				       const struct sockaddr *remote,
 				       int flags, const char *msg)
 {
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(context->tcp, flags,
-				      NULL, 0, remote, &buf);
+	ret = net_tcp_prepare_segment(context->tcp, flags, NULL, 0,
+				      local, remote, &buf);
 	if (ret) {
 		return ret;
 	}
@@ -610,13 +615,14 @@ static inline int send_syn(struct net_context *context,
 {
 	net_tcp_change_state(context->tcp, NET_TCP_SYN_SENT);
 
-	return send_control_segment(context, remote, NET_TCP_SYN, "SYN");
+	return send_control_segment(context, NULL, remote, NET_TCP_SYN, "SYN");
 }
 
 static inline int send_syn_ack(struct net_context *context,
+			       struct sockaddr_ptr *local,
 			       struct sockaddr *remote)
 {
-	return send_control_segment(context, remote,
+	return send_control_segment(context, local, remote,
 				    NET_TCP_SYN | NET_TCP_ACK,
 				    "SYN_ACK");
 }
@@ -624,13 +630,13 @@ static inline int send_syn_ack(struct net_context *context,
 static inline int send_fin(struct net_context *context,
 			   struct sockaddr *remote)
 {
-	return send_control_segment(context, remote, NET_TCP_FIN, "FIN");
+	return send_control_segment(context, NULL, remote, NET_TCP_FIN, "FIN");
 }
 
 static inline int send_fin_ack(struct net_context *context,
 			       struct sockaddr *remote)
 {
-	return send_control_segment(context, remote,
+	return send_control_segment(context, NULL, remote,
 				    NET_TCP_FIN | NET_TCP_ACK, "FIN_ACK");
 }
 
@@ -767,6 +773,7 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 			return NET_DROP;
 		}
 
+		set_appdata_values(buf, IPPROTO_TCP, net_buf_frags_len(buf));
 		context->tcp->send_ack += net_nbuf_appdatalen(buf);
 
 		ret = packet_received(conn, buf, user_data);
@@ -1098,6 +1105,32 @@ static void ack_timeout(struct k_work *work)
 	net_tcp_change_state(tcp, NET_TCP_LISTEN);
 }
 
+static void buf_get_sockaddr(sa_family_t family, struct net_buf *buf,
+			     struct sockaddr_ptr *addr)
+{
+	memset(addr, 0, sizeof(*addr));
+
+#if defined(CONFIG_NET_IPV4)
+	if (family == AF_INET) {
+		struct sockaddr_in_ptr *addr4 = net_sin_ptr(addr);
+
+		addr4->sin_family = AF_INET;
+		addr4->sin_port = NET_TCP_BUF(buf)->dst_port;
+		addr4->sin_addr = &NET_IPV4_BUF(buf)->dst;
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+	if (family == AF_INET6) {
+		struct sockaddr_in6_ptr *addr6 = net_sin6_ptr(addr);
+
+		addr6->sin6_family = AF_INET6;
+		addr6->sin6_port = NET_TCP_BUF(buf)->dst_port;
+		addr6->sin6_addr = &NET_IPV6_BUF(buf)->dst;
+	}
+#endif
+}
+
 /* This callback is called when we are waiting connections and we receive
  * a packet. We need to check if we are receiving proper msg (SYN) here.
  * The ACK could also be received, in which case we have an established
@@ -1109,6 +1142,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 {
 	struct net_context *context = (struct net_context *)user_data;
 	struct net_tcp *tcp;
+	struct sockaddr_ptr buf_src_addr;
 
 	NET_ASSERT(context && context->tcp);
 
@@ -1150,7 +1184,9 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
 		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 
-		send_syn_ack(context, remote);
+		buf_get_sockaddr(net_context_get_family(context),
+				 buf, &buf_src_addr);
+		send_syn_ack(context, &buf_src_addr, remote);
 
 		/* We might be entering this section multiple times
 		 * if the SYN is sent more than once. So we need to cancel
@@ -1302,6 +1338,8 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		tmp_tcp = new_context->tcp;
 		new_context->tcp = tcp;
 		context->tcp = tmp_tcp;
+		tcp->context = new_context;
+		tmp_tcp->context = context;
 
 		net_tcp_change_state(tmp_tcp, NET_TCP_LISTEN);
 
@@ -1446,7 +1484,7 @@ static int send_data(struct net_context *context,
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		int ret = tcp_send_data(context);
+		int ret = net_tcp_send_data(context);
 
 		/* Just make the callback synchronously even if it didn't
 		 * go over the wire.  In theory it would be nice to track
@@ -1546,7 +1584,7 @@ static int create_udp_packet(struct net_context *context,
 	if (net_nbuf_family(buf) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
-		buf = net_ipv6_create(context, buf, &addr6->sin6_addr);
+		buf = net_ipv6_create(context, buf, NULL, &addr6->sin6_addr);
 		buf = net_udp_append(context, buf, ntohs(addr6->sin6_port));
 		buf = net_ipv6_finalize(context, buf);
 	} else
@@ -1556,7 +1594,7 @@ static int create_udp_packet(struct net_context *context,
 	if (net_nbuf_family(buf) == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
-		buf = net_ipv4_create(context, buf, &addr4->sin_addr);
+		buf = net_ipv4_create(context, buf, NULL, &addr4->sin_addr);
 		buf = net_udp_append(context, buf, ntohs(addr4->sin_port));
 		buf = net_ipv4_finalize(context, buf);
 	} else
@@ -1654,7 +1692,7 @@ static int sendto(struct net_buf *buf,
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		ret = tcp_queue_data(context, buf);
+		ret = net_tcp_queue_data(context, buf);
 	} else
 #endif /* CONFIG_NET_TCP */
 	{
@@ -1789,12 +1827,17 @@ enum net_verdict packet_received(struct net_conn *conn,
 	if (context->recv_cb) {
 		size_t total_len = net_buf_frags_len(buf);
 
-		if (net_nbuf_family(buf) == AF_INET6) {
-			set_appdata_values(buf, NET_IPV6_BUF(buf)->nexthdr,
-					   total_len);
-		} else {
-			set_appdata_values(buf, NET_IPV4_BUF(buf)->proto,
-					   total_len);
+		/* TCP packets get appdata earlier in tcp_established() */
+		if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
+			if (net_nbuf_family(buf) == AF_INET6) {
+				set_appdata_values(buf,
+						   NET_IPV6_BUF(buf)->nexthdr,
+						   total_len);
+			} else {
+				set_appdata_values(buf,
+						   NET_IPV4_BUF(buf)->proto,
+						   total_len);
+			}
 		}
 
 		NET_DBG("Set appdata to %p len %u (total %zu)",

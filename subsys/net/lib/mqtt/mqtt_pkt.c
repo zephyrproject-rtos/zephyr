@@ -513,12 +513,12 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 	}
 
 	/* connection flags */
-	user_name_flag	= (buf[offset] & 0x80) ? 1 : 0;
-	password_flag	= (buf[offset] & 0x40) ? 1 : 0;
-	msg->will_retain	= (buf[offset] & 0x20) ? 1 : 0;
-	msg->will_qos	= (buf[offset] & 0x18) >> 3;
-	msg->will_flag	= (buf[offset] & 0x04) ? 1 : 0;
-	msg->clean_session	= (buf[offset] & 0x02) ? 1 : 0;
+	user_name_flag = (buf[offset] & 0x80) ? 1 : 0;
+	password_flag = (buf[offset] & 0x40) ? 1 : 0;
+	msg->will_retain = (buf[offset] & 0x20) ? 1 : 0;
+	msg->will_qos = (buf[offset] & 0x18) >> 3;
+	msg->will_flag = (buf[offset] & 0x04) ? 1 : 0;
+	msg->clean_session = (buf[offset] & 0x02) ? 1 : 0;
 
 	offset += FLAGS_SIZE;
 
@@ -634,7 +634,7 @@ int subscribe_size(uint16_t *rlen_size, uint16_t *payload_size, uint8_t items,
 static int mqtt_pack_subscribe_unsubscribe(uint8_t *buf, uint16_t *length,
 					   uint16_t size, uint16_t pkt_id,
 					   uint8_t items, const char *topics[],
-					   enum mqtt_qos qos[],
+					   const enum mqtt_qos qos[],
 					   enum mqtt_packet type)
 {
 	uint16_t rlen_size;
@@ -699,7 +699,7 @@ static int mqtt_pack_subscribe_unsubscribe(uint8_t *buf, uint16_t *length,
 
 int mqtt_pack_subscribe(uint8_t *buf, uint16_t *length, uint16_t size,
 			uint16_t pkt_id, uint8_t items, const char *topics[],
-			enum mqtt_qos qos[])
+			const enum mqtt_qos qos[])
 {
 
 	return mqtt_pack_subscribe_unsubscribe(buf, length, size, pkt_id,

@@ -636,6 +636,45 @@ struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
 	return first;
 }
 
+int net_nbuf_linear_copy(struct net_buf *dst, struct net_buf *src,
+			 uint16_t offset, uint16_t len)
+{
+	uint16_t to_copy;
+	uint16_t copied;
+
+	if (dst->size < len) {
+		return -ENOMEM;
+	}
+
+	/* find the right fragment to start copying from */
+	while (src && offset >= src->len) {
+		offset -= src->len;
+		src = src->frags;
+	}
+
+	/* traverse the fragment chain until len bytes are copied */
+	copied = 0;
+	while (src && len > 0) {
+		to_copy = min(len, src->len - offset);
+		memcpy(dst->data + copied, src->data + offset, to_copy);
+
+		copied += to_copy;
+		/* to_copy is always <= len */
+		len -= to_copy;
+		src = src->frags;
+		/* after the first iteration, this value will be 0 */
+		offset = 0;
+	}
+
+	if (len > 0) {
+		return -ENOMEM;
+	}
+
+	dst->len = copied;
+
+	return 0;
+}
+
 bool net_nbuf_is_compact(struct net_buf *buf)
 {
 	struct net_buf *last;

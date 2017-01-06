@@ -91,11 +91,10 @@ int dns_init(struct dns_context *ctx);
  *
  * @param ctx		DNS Client structure
  * @return		0 on success
- *
- *			Number of returned addresses (client->items)
+ *			The number of returned addresses (client->items)
  *			may be less than the one reported by the DNS
- *			server. So, this situation  considered a success
- *			because we are 'resolving' the 'name'.
+ *			server. However, this situation is considered a
+ *			success because we are 'resolving' the 'name'.
  *			Workaround: increase 'client->elements'.
  * @return		-EIO on network error.
  * @return		-EINVAL if an invalid parameter was passed as

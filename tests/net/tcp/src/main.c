@@ -129,9 +129,9 @@ static void v6_send_syn_ack(struct net_if *iface, struct net_buf *req)
 	int ret;
 
 	ret = net_tcp_prepare_segment(reply_v6_ctx->tcp,
-				      NET_TCP_SYN | NET_TCP_ACK,
-				      NULL, 0,
-				      (struct sockaddr *)&my_v6_addr, &rsp);
+				      NET_TCP_SYN | NET_TCP_ACK, NULL, 0,
+				      NULL, (struct sockaddr *)&my_v6_addr,
+				      &rsp);
 	if (ret) {
 		DBG("TCP packet creation failed\n");
 		return;
@@ -768,7 +768,7 @@ static bool test_create_v6_reset_packet(void)
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -799,7 +799,7 @@ static bool test_create_v4_reset_packet(void)
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -830,7 +830,7 @@ static bool test_create_v6_syn_packet(void)
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -861,7 +861,7 @@ static bool test_create_v4_syn_packet(void)
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -892,7 +892,7 @@ static bool test_create_v6_synack_packet(void)
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -924,7 +924,7 @@ static bool test_create_v4_synack_packet(void)
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -956,7 +956,7 @@ static bool test_create_v6_fin_packet(void)
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -987,7 +987,7 @@ static bool test_create_v4_fin_packet(void)
 	struct net_buf *buf = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -1019,7 +1019,7 @@ static bool test_v6_seq_check(void)
 	uint32_t seq;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);
@@ -1051,7 +1051,7 @@ static bool test_v4_seq_check(void)
 	uint32_t seq;
 	int ret;
 
-	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0,
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &buf);
 	if (ret) {
 		printk("Prepare segment failed (%d)\n", ret);

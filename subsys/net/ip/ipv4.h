@@ -56,13 +56,15 @@ struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
  *
  * @param context Network context for a connection
  * @param buf Network buffer
+ * @param src_addr Source address, or NULL to choose a default
  * @param dst_addr Destination IPv4 address
  *
  * @return Return network buffer that contains the IPv6 packet.
  */
 struct net_buf *net_ipv4_create(struct net_context *context,
 				struct net_buf *buf,
-				const struct in_addr *addr);
+				const struct in_addr *src_addr,
+				const struct in_addr *dst_addr);
 
 /**
  * @brief Finalize IPv4 packet. It should be called right before

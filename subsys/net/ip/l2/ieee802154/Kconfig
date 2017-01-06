@@ -69,6 +69,15 @@ config NET_L2_IEEE802154_RFD
 	  thus it is not set as the default level
 endchoice
 
+config NET_L2_IEEE802154_SHELL
+	bool "Enable IEEE 802.15.4 shell module"
+	default n
+	select CONSOLE_SHELL
+	depends on NET_L2_IEEE802154_RFD
+	help
+	This can be used for testing 15.4 through the console via exposing
+	a shell module named "ieee15_4".
+
 config NET_L2_IEEE802154_ACK_SET
 	bool "Expose ACK request setting"
 	default n

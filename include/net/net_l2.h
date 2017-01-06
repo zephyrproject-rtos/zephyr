@@ -55,6 +55,12 @@ struct net_l2 {
 	 */
 	uint16_t (*reserve)(struct net_if *iface, void *data);
 
+	/**
+	 * This function is used to enable/disable traffic over a network
+	 * interface.
+	 */
+	int (*enable)(struct net_if *iface, bool state);
+
 #if defined(CONFIG_NET_L2_OFFLOAD_IP)
 	struct net_l2_offload_ip *offload_ip;
 #endif /* CONFIG_NET_L2_OFFLOAD_IP */
@@ -98,12 +104,13 @@ NET_L2_DECLARE_PUBLIC(IEEE802154_L2);
 
 extern struct net_l2 __net_l2_end[];
 
-#define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn)		\
+#define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn, _enable_fn)	\
 	const struct net_l2 const (NET_L2_GET_NAME(_name)) __used	\
 	__attribute__((__section__(".net_l2.init"))) = {		\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.reserve = (_reserve_fn),				\
+		.enable = (_enable_fn),					\
 	}
 
 #define NET_L2_GET_DATA(name, sfx) (__net_l2_data_##name##sfx)

@@ -22,6 +22,25 @@
 #ifndef __NET_EVENT_H__
 #define __NET_EVENT_H__
 
+/* Network Interface events */
+#define _NET_IF_LAYER		NET_MGMT_LAYER_L1
+#define _NET_IF_CORE_CODE	0x001
+#define _NET_EVENT_IF_BASE	(NET_MGMT_EVENT_BIT |			\
+				 NET_MGMT_IFACE_BIT |			\
+				 NET_MGMT_LAYER(_NET_IF_LAYER) |	\
+				 NET_MGMT_LAYER_CODE(_NET_IF_CORE_CODE))
+
+enum net_event_if_cmd {
+	NET_EVENT_IF_CMD_DOWN = 0,
+	NET_EVENT_IF_CMD_UP,
+};
+
+#define NET_EVENT_IF_DOWN				\
+	(_NET_EVENT_IF_BASE | NET_EVENT_IF_CMD_DOWN)
+
+#define NET_EVENT_IF_UP					\
+	(_NET_EVENT_IF_BASE | NET_EVENT_IF_CMD_UP)
+
 /* IPv6 Events */
 #define _NET_IPV6_LAYER		NET_MGMT_LAYER_L3
 #define _NET_IPV6_CORE_CODE	0x600
@@ -57,6 +76,7 @@ enum net_event_ipv6_cmd {
 #define NET_EVENT_IPV6_PREFIX_DEL				\
 	(_NET_EVENT_IPV6_BASE |	NET_EVENT_IPV6_CMD_PREFIX_DEL)
 
+/* IPv4 Events*/
 #define _NET_IPV4_LAYER		NET_MGMT_LAYER_L3
 #define _NET_IPV4_CORE_CODE	0x400
 #define _NET_EVENT_IPV4_BASE	(NET_MGMT_EVENT_BIT |			\
@@ -64,7 +84,6 @@ enum net_event_ipv6_cmd {
 				 NET_MGMT_LAYER(_NET_IPV4_LAYER) |	\
 				 NET_MGMT_LAYER_CODE(_NET_IPV4_CORE_CODE))
 
-/* IPv4 Events*/
 enum net_event_ipv4_cmd {
 	NET_EVENT_IPV4_CMD_ADDR_ADD	= 0,
 	NET_EVENT_IPV4_CMD_ADDR_DEL,
