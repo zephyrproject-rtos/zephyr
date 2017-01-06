@@ -1,0 +1,36 @@
+# Kconfig - Quark D2000 configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if X86 && SOC_QUARK_D2000
+
+config BSP_SHARED_GDT_RAM_ADDR
+	hex "Address of the shared RAM with the QMSI Bootloader"
+	default 0x00281FE0
+	help
+	Address of the memory shared between the BSP and the Bootloader in order
+	to store the GDT.
+
+config BSP_SHARED_GDT_RAM_SIZE
+	hex "Size of the shared RAM with the QMSI Bootloader"
+	depends on !SET_GDT
+	default 0x20
+	help
+	Size of the memory shared between the BSP and the Bootloader in order
+	to store the GDT.
+
+endif #SOC_QUARK_D2000_X86
