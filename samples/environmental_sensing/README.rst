@@ -110,6 +110,8 @@ The sample provide a single :file:`Makefile` that builds both images, simple run
 make in the top level directory of the application and flash either using JTAG
 or using DFU. (DFU is preferred).
 
+The sample can be found here: :file:`samples/environmental_sensing` in the
+Zephyr project tree.
 
 .. code-block:: console
 

@@ -18,7 +18,8 @@ on QEMU as follows:
 
 .. code-block:: console
 
-    make qemu
+   $ cd samples/synchronization
+   $ make qemu
 
 Sample Output
 -------------

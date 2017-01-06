@@ -17,7 +17,8 @@ on QEMU as follows:
 
 .. code-block:: console
 
-    make qemu
+   $ cd samples/hello_world
+   $ make qemu
 
 
 To build the single thread version, use the supplied configuration file for
@@ -25,7 +26,7 @@ single thread: :file:`prj_single.conf`:
 
 .. code-block:: console
 
-   make CONF_FILE=prj_single.conf qemu
+   $ make CONF_FILE=prj_single.conf qemu
 
 Sample Output
 -------------

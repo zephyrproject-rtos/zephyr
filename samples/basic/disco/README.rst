@@ -47,16 +47,16 @@ Modify the src/main.c file and set:
 Building and Running
 =====================
 
-After startup, the program looks up a predefined GPIO device defined
-by 'PORT', and configures pins 'LED1' and 'LED2' in output mode.
-During each iteration of the main loop, the state of GPIO lines will
-be changed so that one of the lines is in high state, while the other
-is in low, thus switching the LEDs on and off in an alternating
-pattern.
+After startup, the program looks up a predefined GPIO device defined by 'PORT',
+and configures pins 'LED1' and 'LED2' in output mode.  During each iteration of
+the main loop, the state of GPIO lines will be changed so that one of the lines
+is in high state, while the other is in low, thus switching the LEDs on and off
+in an alternating pattern.
 
-This project does not output to the serial console, but instead
-causes two LEDs connected to the GPIO device to blink in an
-alternating pattern.
+This project does not output to the serial console, but instead causes two LEDs
+connected to the GPIO device to blink in an alternating pattern.
+
+The sample can be found here: :file:`samples/basic/disco`.
 
 Nucleo F103RB
 -------------
@@ -77,5 +77,5 @@ Arduino 101
 
 .. code-block:: console
 
-   make pristine && make BOARD=arduino_101
+   $ make pristine && make BOARD=arduino_101
 

@@ -41,7 +41,8 @@ for the nucleo_f103rb board:
 
 .. code-block:: console
 
-   make BOARD=nucleo_f103rb
+   $ cd samples/basic/button
+   $ make BOARD=nucleo_f103rb
 
 
 After startup, the program looks up a predefined GPIO device, and configures the
