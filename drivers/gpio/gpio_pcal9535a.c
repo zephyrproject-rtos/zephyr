@@ -557,8 +557,6 @@ static int gpio_pcal9535a_init(struct device *dev)
 	}
 	drv_data->i2c_master = i2c_master;
 
-	nano_timer_init(&drv_data->timer, (void *) 0);
-
 	dev->driver_api = &gpio_pcal9535a_drv_api_funcs;
 
 	return 0;

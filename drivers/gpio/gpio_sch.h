@@ -45,7 +45,7 @@ struct gpio_sch_config {
 struct gpio_sch_data {
 	char __stack polling_stack[GPIO_SCH_POLLING_STACK_SIZE];
 	sys_slist_t callbacks;
-	struct nano_timer poll_timer;
+	struct k_timer poll_timer;
 
 	struct {
 		uint32_t gtpe;

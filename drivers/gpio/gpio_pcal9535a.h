@@ -59,9 +59,6 @@ struct gpio_pcal9535a_drv_data {
 	 */
 	uint32_t out_pol_inv;
 
-	/** Use for delay between operations */
-	struct nano_timer timer;
-
 	struct {
 		union gpio_pcal9535a_port_data output;
 		union gpio_pcal9535a_port_data pol_inv;
