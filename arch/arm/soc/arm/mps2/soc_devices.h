@@ -65,6 +65,14 @@
 /* System Control Register (SYSCON) */
 #define __MPS2_SYSCON ((volatile struct mps2_syscon *)SYSCON_BASE_ADDR)
 
+/* FPGA system control block (FPGAIO) */
+#define __MPS2_FPGAIO ((volatile struct mps2_fpgaio *)FPGAIO_BASE_ADDR)
+
+/* Names of GPIO drivers used to provide access to some FPGAIO registers */
+#define FPGAIO_LED0_GPIO_NAME		"FPGAIO_LED0"
+#define FPGAIO_BUTTON_GPIO_NAME		"FPGAIO_BUTTON"
+#define FPGAIO_MISC_GPIO_NAME		"FPGAIO_MISC"
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC_DEVICES_H_ */

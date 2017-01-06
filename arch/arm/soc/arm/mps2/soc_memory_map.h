@@ -12,8 +12,9 @@
  */
 
 /* MPS2 Address space definition */
-#define MPS2_APB_BASE_ADDR    0x40000000
-#define MPS2_AHB_BASE_ADDR    0x40010000
+#define MPS2_APB_BASE_ADDR	0x40000000
+#define MPS2_AHB_BASE_ADDR	0x40010000
+#define MPS2_FPGA_APB_BASE_ADDR	0x40020000
 
 /* MPS2 AHB peripherals */
 #define GPIO_0_BASE_ADDR	(MPS2_AHB_BASE_ADDR + 0x0000)
@@ -32,5 +33,8 @@
 #define UART_3_BASE_ADDR	(MPS2_APB_BASE_ADDR + 0x7000)
 #define WDOG_BASE_ADDR		(MPS2_APB_BASE_ADDR + 0x8000)
 #define UART_4_BASE_ADDR	(MPS2_APB_BASE_ADDR + 0x9000)
+
+/* MPS2 peripherals in FPGA APB subsystem  */
+#define FPGAIO_BASE_ADDR	(MPS2_FPGA_APB_BASE_ADDR + 0x8000)
 
 #endif /* _SOC_MEMORY_MAP_H_ */
