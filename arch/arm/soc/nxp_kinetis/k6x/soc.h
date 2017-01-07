@@ -179,17 +179,6 @@ extern "C" {
 
 #endif /* CONFIG_UART_K20 */
 
-/* Uart console settings */
-#if defined(CONFIG_UART_CONSOLE)
-
-#define CONFIG_UART_CONSOLE_PORT PCR_PORT_B
-#define CONFIG_UART_CONSOLE_PORT_RX_PIN 16
-#define CONFIG_UART_CONSOLE_PORT_TX_PIN 17
-#define CONFIG_UART_CONSOLE_PORT_MUX_FUNC PCR_MUX_ALT3
-#define CONFIG_UART_CONSOLE_CLK_FREQ SYSCLK_DEFAULT_IOSC_HZ
-
-#endif /* CONFIG_UART_CONSOLE */
-
 /*
  * GPIO configuration settings
  */

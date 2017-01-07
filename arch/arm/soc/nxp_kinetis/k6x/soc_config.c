@@ -39,44 +39,6 @@
 
 #ifdef CONFIG_UART_K20
 
-#if defined(CONFIG_UART_CONSOLE) && \
-	(defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE))
-
-static PORT_Type *const ports[] = PORT_BASE_PTRS;
-
-/**
- * @brief Initialize K20 serial port as console
- *
- * Initialize the UART port for console I/O.
- *
- * @param dev The UART device struct
- *
- * @return 0 if successful, otherwise failed.
- */
-static ALWAYS_INLINE int uart_k20_console_init(void)
-{
-	PORT_Type *port;
-	uint32_t rxPin;
-	uint32_t txPin;
-
-	/* Port/pin ctrl module */
-	port = ports[CONFIG_UART_CONSOLE_PORT];
-
-	/* UART0 Rx and Tx pin assignments */
-	rxPin = CONFIG_UART_CONSOLE_PORT_RX_PIN;
-	txPin = CONFIG_UART_CONSOLE_PORT_TX_PIN;
-
-	/* Enable the UART Rx and Tx Pins */
-	port->PCR[rxPin] = PORT_PCR_MUX(CONFIG_UART_CONSOLE_PORT_MUX_FUNC);
-	port->PCR[txPin] = PORT_PCR_MUX(CONFIG_UART_CONSOLE_PORT_MUX_FUNC);
-
-	return 0;
-}
-
-#else
-#define uart_k20_console_init(...)
-#endif /* CONFIG_UART_CONSOLE && (CONFIG_PRINTK || CONFIG_STDOUT_CONSOLE) */
-
 static int uart_k20_init(struct device *dev)
 {
 	uint32_t scgc4;
@@ -110,9 +72,6 @@ static int uart_k20_init(struct device *dev)
 #ifdef CONFIG_UART_K20_PORT_4
 	SIM->SCGC1 |= SIM_SCGC1_UART4(1);
 #endif
-
-	/* Initialize UART port for console if needed */
-	uart_k20_console_init();
 
 	return 0;
 }

@@ -43,6 +43,12 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
+#ifdef CONFIG_UART_K20_PORT_0
+	/* UART0 RX, TX */
+	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+
 #ifdef CONFIG_UART_K20_PORT_3
 	/* UART3 RX, TX */
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt3));

@@ -99,7 +99,7 @@ config PINMUX_MCUX_PORTA
 	def_bool n
 
 config PINMUX_MCUX_PORTB
-	def_bool n
+	def_bool y if UART_K20_PORT_0
 
 config PINMUX_MCUX_PORTC
 	def_bool y
