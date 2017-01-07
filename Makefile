@@ -1138,6 +1138,7 @@ help:
 	@echo  '  qemugdb         - Same as 'qemu' but start a GDB server on port 1234'
 	@echo  '  flash		  - Build and flash an application'
 	@echo  '  debug		  - Build and debug an application using GDB'
+	@echo  '  debugserver	  - Build and start a GDB server (port 1234 for Qemu targets)'
 	@echo  '  ram_report	  - Build and create RAM usage report'
 	@echo  '  rom_report	  - Build and create ROM usage report'
 	@echo  ''
@@ -1256,22 +1257,25 @@ qemu: zephyr
 	$(if $(CONFIG_X86_IAMCU),python $(ZEPHYR_BASE)/scripts/qemu-machine-hack.py $(KERNEL_ELF_NAME))
 	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_ELF_NAME)
 
-qemugdb: QEMU_EXTRA_FLAGS += -s -S
-qemugdb: qemu
+# FIXME: Deprecated
+qemugdb: debugserver
 
 -include $(srctree)/boards/$(ARCH)/$(BOARD_NAME)/Makefile.board
 ifneq ($(FLASH_SCRIPT),)
 flash: zephyr
 	@echo "Flashing $(BOARD_NAME)"
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/support/$(FLASH_SCRIPT) flash
-
-debug: zephyr
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/support/$(FLASH_SCRIPT) debug
 else
 flash: FORCE
 	@echo Flashing not supported with this board.
 	@echo Please check the documentation for alternate instructions.
+endif
 
+ifneq ($(DEBUG_SCRIPT),)
+debug: zephyr
+	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/support/$(DEBUG_SCRIPT) debug
+
+else
 debug: FORCE
 	@echo Debugging not supported with this board.
 	@echo Please check the documentation for alternate instructions.

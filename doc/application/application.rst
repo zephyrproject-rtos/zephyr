@@ -678,55 +678,54 @@ application with QEMU. Most content in this section is already covered on
 
 .. _GNU_Debugger: http://www.gnu.org/software/gdb
 
-In this quick reference you find shortcuts, specific environmental variables
-and parameters that can help you to quickly set up your debugging
-environment.
+In this quick reference you find shortcuts, specific environmental variables and
+parameters that can help you to quickly set up your debugging environment.
 
 The simplest way to debug an application running in QEMU is using the GNU
-Debugger and setting a local GDB server in your development system
-through QEMU.
+Debugger and setting a local GDB server in your development system through QEMU.
 
-You will need an ELF binary image for debugging purposes.
-The build system generates the image in the output directory.
-By default, the kernel binary name is :file:`zephyr.elf`.  The name can be
-changed using a Kconfig option.
+You will need an ELF binary image for debugging purposes.  The build system
+generates the image in the output directory.  By default, the kernel binary name
+is :file:`zephyr.elf`. The name can be changed using a Kconfig option.
 
 We will use the standard 1234 TCP port to open a :abbr:`GDB (GNU Debugger)`
 server instance. This port number can be changed for a port that best suits the
-development system.
+development environment.
 
-QEMU is the supported emulation system of the kernel. QEMU must be invoked
-with the -s and -S options.
+You can run Qemu to listen for a "gdb connection" before it starts executing any
+code to debug it.
+
+.. code-block:: bash
+
+   qemu -s -S <image>
+
+will setup Qemu to listen on port 1234 and wait for a GDB connection to it.
+
+The options used above have the following meaning:
 
 * ``-S`` Do not start CPU at startup; rather, you must type 'c' in the
   monitor.
 * ``-s`` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
   TCP port 1234.
 
-The build system can build the elf binary and call the QEMU process with
-the :makevar:`qemu` target. The QEMU debug options can be set using the
-environment variable :envvar:`QEMU_EXTRA_FLAGS`. To set the ``-s`` and
-``-S`` options:
+To debug with QEMU and to start a GDB server and wait for a remote connect, run
+the following inside an application:
 
 .. code-block:: bash
 
-    export QEMU_EXTRA_FLAGS="-s -S"
-
-The build and emulation processes are called with the Makefile ``qemu``
-target:
-
-.. code-block:: bash
-
-   make qemu
+   make BOARD=qemu_x86 debugserver
 
 The build system will start a QEMU instance with the CPU halted at startup
 and with a GDB server instance listening at the TCP port 1234.
 
-The :file:`.gdbinit` will help initialize your GDB instance on every run.
+Using a local GDB configuration :file:`.gdbinit` can help initialize your GDB
+instance on every run.
 In this example, the initialization file points to the GDB server instance.
 It configures a connection to a remote target at the local host on the TCP
 port 1234. The initialization sets the kernel's root directory as a
-reference. The :file:`.gdbinit` file contains the following lines:
+reference.
+
+The :file:`.gdbinit` file contains the following lines:
 
 .. code-block:: bash
 
@@ -746,14 +745,21 @@ corresponds to :file:`zephyr.elf` file:
 
 .. code-block:: bash
 
-   gdb --tui zephyr.elf
+   $ gdb --tui zephyr.elf
 
 .. note::
 
    The GDB version on the development system might not support the --tui
    option.
 
-Finally, this command connects to the GDB server using the Data
+If you are not using a .gdbinit file, issue the following command inside GDB to
+connect to the remove GDB server on port 1234:
+
+.. code-block:: bash
+
+   (gdb) target remote localhost:1234
+
+Finally, The command below connects to the GDB server using the Data
 Displayer Debugger (:file:`ddd`). The command loads the symbol table from the
 elf binary file, in this instance, the :file:`zephyr.elf` file.
 

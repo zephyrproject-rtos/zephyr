@@ -1,4 +1,5 @@
 FLASH_SCRIPT = openocd.sh
+DEBUG_SCRIPT = openocd.sh
 
 OPENOCD_LOAD_CMD = "flash write_image erase ${O}/${KERNEL_BIN_NAME} ${CONFIG_FLASH_BASE_ADDRESS}"
 OPENOCD_VERIFY_CMD = "verify_image ${O}/${KERNEL_BIN_NAME} ${CONFIG_FLASH_BASE_ADDRESS}"

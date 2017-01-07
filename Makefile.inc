@@ -83,17 +83,18 @@ all: $(DOTCONFIG)
 
 ifeq ($(findstring qemu_,$(BOARD)),)
 qemu:
-	@echo "Emulation not available for this platform"
+	@echo "Emulation not available for this board."
 qemugdb: qemu
 else
 qemu: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
-qemugdb: $(DOTCONFIG)
-	$(Q)$(call zephyrmake,$(O),$@)
+qemugdb: debugserver
+	@echo "This target is deprecated, please use debugserver instead"
 endif
 
 debug:	$(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
+
 
 flash: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
@@ -105,8 +106,9 @@ ARCH = $(notdir $(subst /$(BOARD),,$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD)))
 BOARD_NAME = $(BOARD)
 export BOARD_NAME
 endif
+
 debugserver: FORCE
-	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/support/$(FLASH_SCRIPT) debugserver
+	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/support/$(DEBUG_SCRIPT) debugserver
 
 
 initconfig outputexports: $(DOTCONFIG)
