@@ -127,7 +127,7 @@ int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
 			      uint8_t *dropped_event_count, uint32_t *buffer,
 			      uint8_t *buffer_size);
 
-#ifdef CONFIG_NANO_TIMEOUTS
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 /**
  * @brief Retrieve an event message from the logger, wait with a timeout if
  * empty.
@@ -162,7 +162,7 @@ int sys_event_logger_get_wait_timeout(struct event_logger *logger,
  * @}
  */
 
-#endif  /* CONFIG_NANO_TIMEOUTS */
+#endif  /* CONFIG_SYS_CLOCK_EXISTS */
 
 #endif  /* _ASMLANGUAGE */
 

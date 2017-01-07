@@ -18,7 +18,7 @@ menuconfig TH02
 	bool
 	prompt "TH02 Temperature Sensor"
 	default n
-	depends on SENSOR && I2C && NANO_TIMERS && NANO_TIMEOUTS
+	depends on SENSOR && I2C
 	help
 	  Enable driver for the TH02 temperature sensor.
 

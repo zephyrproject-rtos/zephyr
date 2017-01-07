@@ -84,12 +84,10 @@
 
 struct hp206c_device_data {
 	struct device *i2c;
-#ifdef CONFIG_NANO_TIMERS
 #if CONFIG_SYS_CLOCK_TICKS_PER_SEC != 1000
 #error "driver needs millisecond tick granularity"
 #endif
 	struct k_timer tmr;
-#endif
 	uint8_t osr;
 };
 

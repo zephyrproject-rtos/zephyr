@@ -87,7 +87,7 @@ struct _thread_base {
 	/* data returned by APIs */
 	void *swap_data;
 
-#ifdef CONFIG_NANO_TIMEOUTS
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	/* this thread's entry in a timeout queue */
 	struct _timeout timeout;
 #endif

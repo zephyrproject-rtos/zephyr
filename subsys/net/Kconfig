@@ -60,8 +60,6 @@ config NET_BUF_SIMPLE_LOG
 
 config  NETWORKING
 	bool "Link layer and IP networking support"
-	select NANO_TIMEOUTS
-	select NANO_TIMERS
 	select NET_BUF
 	select RANDOM_GENERATOR
 	default n
