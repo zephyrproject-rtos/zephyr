@@ -51,25 +51,6 @@ server that is running in another qemu. This test scenario is
 described in echo_server chapter above.
 
 
-dns_client
-----------
-
-The dns_client sample application implements a basic DNS resolver
-according to RFC 1035. Supported DNS answers are: IPv4/IPv6 addresses
-and CNAME.
-
-If a CNAME is received, the DNS resolver can create another DNS query.
-The number of additional queries is controlled by the
-DNS_RESOLVER_ADDITIONAL_QUERIES Kconfig variable.
-
-For more information about DNS configuration variables, see:
-subsys/net/lib/dns/Kconfig. The DNS resolver API can be found at
-include/net/dns_client.h.
-
-Building instructions and sample output can be found at the
-samples/net/dns_client/README_xxx files.
-
-
 zoap_server
 -----------
 
