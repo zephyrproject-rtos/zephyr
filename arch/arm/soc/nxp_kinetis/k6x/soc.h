@@ -179,12 +179,6 @@ extern "C" {
 
 #endif /* CONFIG_UART_K20 */
 
-#define PORT_K64_A_BASE_ADDR	0x40049000
-#define PORT_K64_B_BASE_ADDR	0x4004A000
-#define PORT_K64_C_BASE_ADDR	0x4004B000
-#define PORT_K64_D_BASE_ADDR	0x4004C000
-#define PORT_K64_E_BASE_ADDR	0x4004D000
-
 /*
  * PWM/FTM configuration settings
  */
@@ -217,15 +211,6 @@ extern "C" {
 #define SPI_K64_2_CLK_GATE_REG_BIT	12
 
 #endif /* CONFIG_SPI_K64 */
-
-/*
- * PINMUX configuration settings
- */
-#if defined(CONFIG_PINMUX)
-
-#define PINMUX_NUM_PINS			160
-
-#endif /* CONFIG_PINMUX */
 
 #endif /* !_ASMLANGUAGE */
 
