@@ -50,9 +50,9 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 
 #if CONFIG_I2C_1
 	/* I2C1 SCL, SDA - accel/mag, gyro, pressure */
-	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt5)
+	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
-	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt5)
+	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
 #endif
 	/* FXOS8700 INT1 */
