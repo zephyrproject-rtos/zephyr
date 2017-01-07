@@ -78,11 +78,6 @@ static struct bt_l2cap_fixed_chan *le_channels;
 static struct bt_l2cap_server *servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-/* Pool for outgoing LE signaling packets, MTU is 23 */
-NET_BUF_POOL_DEFINE(le_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
-
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Pool for outgoing LE data packets, MTU is 23 */
 NET_BUF_POOL_DEFINE(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
@@ -401,7 +396,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 	struct net_buf *buf;
 	struct bt_l2cap_sig_hdr *hdr;
 
-	buf = bt_l2cap_create_pdu(&le_sig_pool, 0);
+	buf = bt_l2cap_create_pdu(NULL, 0);
 	if (!buf) {
 		return NULL;
 	}

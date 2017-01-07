@@ -785,7 +785,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 		return -ENOMEM;
 	}
 
-	mtu = CONFIG_BLUETOOTH_ATT_MTU;
+	mtu = BT_ATT_MTU;
 
 	BT_DBG("Client MTU %u", mtu);
 

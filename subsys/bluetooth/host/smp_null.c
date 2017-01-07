@@ -36,10 +36,6 @@
 
 static struct bt_l2cap_le_chan bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
-/* Pool for outgoing SMP signaling packets, MTU is 23 */
-NET_BUF_POOL_DEFINE(smp_pool, CONFIG_BLUETOOTH_MAX_CONN, BT_L2CAP_BUF_SIZE(23),
-		    BT_BUF_USER_DATA_MIN, NULL);
-
 int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 {
 	return -ENOTSUP;
@@ -62,7 +58,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	 * Core Specification Vol. 3, Part H, 3.3
 	 */
 
-	buf = bt_l2cap_create_pdu(&smp_pool, 0);
+	buf = bt_l2cap_create_pdu(NULL, 0);
 	/* NULL is not a possible return due to K_FOREVER */
 
 	hdr = net_buf_add(buf, sizeof(*hdr));

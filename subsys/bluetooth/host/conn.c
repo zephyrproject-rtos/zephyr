@@ -43,12 +43,9 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-/* Pool for outgoing ACL fragments */
-NET_BUF_POOL_DEFINE(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), BT_BUF_USER_DATA_MIN,
-		    NULL);
-
-/* Pool for dummy buffers to wake up the tx threads */
-NET_BUF_POOL_DEFINE(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, 0, NULL);
+NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BLUETOOTH_L2CAP_TX_BUF_COUNT,
+		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_TX_MTU),
+		    CONFIG_BLUETOOTH_L2CAP_TX_USER_DATA_SIZE, NULL);
 
 /* How long until we cancel HCI_LE_Create_Connection */
 #define CONN_TIMEOUT	K_SECONDS(3)
@@ -948,7 +945,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	struct net_buf *frag;
 	uint16_t frag_len;
 
-	frag = bt_conn_create_pdu(&frag_pool, 0);
+	frag = bt_conn_create_pdu(NULL, 0);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		net_buf_unref(frag);
@@ -1127,9 +1124,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		    old_state == BT_CONN_DISCONNECT) {
 			bt_l2cap_disconnected(conn);
 			notify_disconnected(conn);
-
 			net_buf_put(&conn->tx_queue,
-				    net_buf_alloc(&dummy_pool, K_NO_WAIT));
+				    bt_conn_create_pdu(NULL, 0));
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */
 			notify_connected(conn);
@@ -1575,13 +1571,18 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 
 struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 {
-	size_t head_reserve = reserve + sizeof(struct bt_hci_acl_hdr) +
-					CONFIG_BLUETOOTH_HCI_SEND_RESERVE;
 	struct net_buf *buf;
 
+	if (!pool) {
+		pool = &acl_tx_pool;
+	}
+
 	buf = net_buf_alloc(pool, K_FOREVER);
-	/* NULL return is not possible because of K_FOREVER */
-	net_buf_reserve(buf, head_reserve);
+	if (buf) {
+		reserve += sizeof(struct bt_hci_acl_hdr) +
+				CONFIG_BLUETOOTH_HCI_SEND_RESERVE;
+		net_buf_reserve(buf, reserve);
+	}
 
 	return buf;
 }

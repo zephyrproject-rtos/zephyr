@@ -247,10 +247,6 @@ struct bt_smp_br {
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-/* Pool for outgoing LE signaling packets, MTU is 65 */
-NET_BUF_POOL_DEFINE(smp_pool, CONFIG_BLUETOOTH_MAX_CONN, BT_L2CAP_BUF_SIZE(65),
-		    BT_BUF_USER_DATA_MIN, NULL);
-
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 static bool sc_supported;
 static bool sc_local_pkey_valid;
@@ -336,7 +332,7 @@ static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(&smp_pool, 0);
+	buf = bt_l2cap_create_pdu(NULL, 0);
 	/* NULL is not a possible return due to K_FOREVER */
 
 	hdr = net_buf_add(buf, sizeof(*hdr));

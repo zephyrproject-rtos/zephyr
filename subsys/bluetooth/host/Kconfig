@@ -135,15 +135,29 @@ config BLUETOOTH_CONN
 	bool
 
 if BLUETOOTH_CONN
-config BLUETOOTH_ATT_MTU
-	int "Attribute Protocol (ATT) channel MTU"
-	default 23
-	default 50 if BLUETOOTH_SMP # BLUETOOTH_L2CAP_IN_MTU is big enough
-				    # for two complete ACL packets
-	range 23 BLUETOOTH_RX_BUF_LEN
+config BLUETOOTH_L2CAP_TX_BUF_COUNT
+	int "Number of L2CAP TX buffers"
+	default 3
+	range 2 255
 	help
-	  The MTU for the ATT channel. The minimum and default is 23,
-	  whereas the maximum is limited by CONFIG_BLUETOOTH_RX_BUF_LEN.
+	  Number of buffers available for outgoing L2CAP packets.
+
+config BLUETOOTH_L2CAP_TX_MTU
+	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
+	default 23
+	default 65 if BLUETOOTH_SMP
+	default 253 if BLUETOOTH_BREDR
+	range 23 2000
+	range 65 2000 if BLUETOOTH_SMP
+	help
+	  Maximum L2CAP MTU for L2CAP TX buffers.
+
+config BLUETOOTH_L2CAP_TX_USER_DATA_SIZE
+	int "Maximum supported user data size for L2CAP TX buffers"
+	default 4
+	range 4 65535
+	help
+	  Maximum supported user data size for L2CAP TX buffers.
 
 config BLUETOOTH_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
@@ -152,14 +166,6 @@ config BLUETOOTH_ATT_PREPARE_COUNT
 	help
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
-
-config BLUETOOTH_ATT_REQ_COUNT
-	int "Number of ATT request buffers"
-	default BLUETOOTH_MAX_CONN
-	range 1 64
-	help
-	  Number of outgoing buffers available for ATT requests, this controls
-	  how many requests can be queued without blocking.
 
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
