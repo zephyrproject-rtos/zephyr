@@ -296,9 +296,10 @@ config TIMESLICE_PRIORITY
 endmenu
 
 menu "Other Kernel Object Options"
+
 config SEMAPHORE_GROUPS
 	bool "Enable semaphore groups"
-	default y
+	default y if LEGACY_KERNEL
 	help
 	This option enables support for semaphore groups. Threads that use
 	semaphore groups require more stack space. Disabling this option will
@@ -524,11 +525,18 @@ config STACK_CANARIES
 	option has no effect.
 endmenu
 
-menu "Legacy Options"
+menu "Legacy Kernel Options"
+
+config LEGACY_KERNEL
+	bool "Legacy Kernel Options"
+	default y
+	help
+	Enable legacy kernel features.
+
 config MDEF
 	bool
 	prompt "Use MDEF files for statically configured kernel objects"
-	default y
+	default y if LEGACY_KERNEL
 	help
 	Using an MDEF file can help the startup time of the application since
 	the objects it lists are statically allocated and initialized, and may
@@ -540,7 +548,7 @@ config MDEF
 
 config  NANO_TIMEOUTS
 	bool
-	default y
+	default y if LEGACY_KERNEL
 	depends on SYS_CLOCK_EXISTS
 	help
 	Only here for common (ie. non-unified kernel) code that rely on this.
@@ -548,11 +556,12 @@ config  NANO_TIMEOUTS
 
 config  NANO_TIMERS
 	bool
-	default y
+	default y if LEGACY_KERNEL
 	depends on SYS_CLOCK_EXISTS
 	help
 	Only here for common (ie. non-unified kernel) code that rely on this.
 	Unified kernel uses SYS_CLOCK_EXISTS everywhere instead.
+
 endmenu
 
 source "kernel/Kconfig.event_logger"
