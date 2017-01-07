@@ -56,6 +56,3 @@ KBUILD_AFLAGS += $(soc-aflags)
 zephyr: $(KERNEL_HEX_NAME)
 all: $(KERNEL_HEX_NAME)
 
-QEMU_CPU_TYPE_nios2 = nios2
-QEMU_FLAGS_nios2 = -machine altera_10m50_zephyr -nographic
-QEMU_nios2 = qemu-system-nios2
