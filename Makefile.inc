@@ -81,22 +81,19 @@ DOTCONFIG = $(O)/.config
 all: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
-ifeq ($(findstring qemu_,$(BOARD)),)
-qemu:
-	@echo "Emulation not available for this board."
-qemugdb: qemu
-else
-qemu: $(DOTCONFIG)
-	$(Q)$(call zephyrmake,$(O),$@)
-qemugdb: debugserver
-	@echo "This target is deprecated, please use debugserver instead"
-endif
-
 debug:	$(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
-
 flash: $(DOTCONFIG)
+	$(Q)$(call zephyrmake,$(O),$@)
+
+qemugdb: debugserver
+
+qemu: $(DOTCONFIG)
+	@echo This target is deprecated, use 'make run' instead
+	$(Q)$(call zephyrmake,$(O),$@)
+
+run: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
 ifeq ($(MAKECMDGOALS),debugserver)
@@ -110,13 +107,11 @@ endif
 debugserver: FORCE
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/support/$(DEBUG_SCRIPT) debugserver
 
-
 initconfig outputexports: $(DOTCONFIG)
 
 $(BOARDCONFIG):
 	@rm -f $(O)/.board_*
 	@touch $@
-
 
 ram_report: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)

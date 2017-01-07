@@ -61,7 +61,7 @@ QEMU gets terminated, due the Netwrok interface (tap) being restarted.
 
 g) From the app directory type
 
-	$make pristine && make qemu
+	$make pristine && make run
 
 The screen should display
 

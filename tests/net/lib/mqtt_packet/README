@@ -12,7 +12,7 @@ Build and Run
 * QEMU x86
 
   Build & run:
-  make && make qemu
+  make run
 
 * Arduino 101
 

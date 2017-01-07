@@ -41,7 +41,7 @@ The host OS's Bluetooth controller is connected to the second QEMU
 serial line using a UNIX socket. This socket employs the QEMU option
 :literal:`-serial unix:/tmp/bt-server-bredr`. This option is already
 added to QEMU through :makevar:`QEMU_EXTRA_FLAGS` in most Bluetooth
-sample Makefiles' and made available through the 'qemu' make target.
+sample Makefiles' and made available through the 'run' make target.
 
 On the host side, BlueZ allows to export its Bluetooth controller
 through a so-called user channel for QEMU to use:
@@ -62,7 +62,7 @@ through a so-called user channel for QEMU to use:
 
    .. code-block:: console
 
-      $ make qemu
+      $ make run
 
 Running QEMU now results in a connection with the second serial line to
 the :literal:`bt-server-bredr` UNIX socket, letting the application

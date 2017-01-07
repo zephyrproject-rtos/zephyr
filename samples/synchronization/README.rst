@@ -19,7 +19,7 @@ on QEMU as follows:
 .. code-block:: console
 
    $ cd samples/synchronization
-   $ make qemu
+   $ make run
 
 Sample Output
 -------------

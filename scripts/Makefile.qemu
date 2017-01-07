@@ -1,0 +1,37 @@
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Abstraction of 'run' goal with Qemu
+
+QEMU_FLAGS = $(QEMU_FLAGS_$(ARCH)) -pidfile qemu.pid
+
+ifneq ($(QEMU_PTY),)
+    QEMU_FLAGS += -serial pty
+else
+ifneq ($(QEMU_PIPE),)
+    # Send console output to a pipe, used for running automated sanity tests
+    QEMU_FLAGS += -serial pipe:$(QEMU_PIPE)
+else
+    QEMU_FLAGS += -serial mon:stdio
+endif
+endif
+
+qemu: run
+run: zephyr
+	$(if $(QEMU_PIPE),,@echo "To exit from QEMU enter: 'CTRL+a, x'")
+	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(ARCH))'
+	$(if $(CONFIG_X86_IAMCU),python $(ZEPHYR_BASE)/scripts/qemu-machine-hack.py $(KERNEL_ELF_NAME))
+	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_ELF_NAME)

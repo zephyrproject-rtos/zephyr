@@ -27,7 +27,7 @@ on QEMU as follows:
 .. code-block:: console
 
    $ cd samples/philosophers
-   $ make qemu
+   $ make run
 
 Sample Output
 -------------

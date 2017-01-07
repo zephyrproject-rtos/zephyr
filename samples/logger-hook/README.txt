@@ -14,7 +14,7 @@ Building and Running Project:
 This unified project outputs to the console.
 It can be built and executed on QEMU as follows:
 
-    make qemu
+    make run
 
 --------------------------------------------------------------------------------
 

@@ -1134,8 +1134,9 @@ help:
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* zephyr	  - Build a zephyr application'
-	@echo  '  qemu		  - Build a zephyr application and run it in qemu'
-	@echo  '  qemugdb         - Same as 'qemu' but start a GDB server on port 1234'
+	@echo  '  run		  - Build a zephyr application and run it if board supports emulation'
+	@echo  '  qemu		  - Build a zephyr application and run it in qemu [deprecated]'
+	@echo  '  qemugdb         - Same as 'qemu' but start a GDB server on port 1234 [deprecated]'
 	@echo  '  flash		  - Build and flash an application'
 	@echo  '  debug		  - Build and debug an application using GDB'
 	@echo  '  debugserver	  - Build and start a GDB server (port 1234 for Qemu targets)'
@@ -1238,29 +1239,17 @@ tools/%: FORCE
 	$(Q)mkdir -p $(objtree)/tools
 	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(filter --j% -j,$(MAKEFLAGS))" O=$(objtree) subdir=tools -C $(src)/tools/ $*
 
-QEMU_FLAGS = $(QEMU_FLAGS_$(ARCH)) -pidfile qemu.pid
-
-ifneq ($(QEMU_PTY),)
-    QEMU_FLAGS += -serial pty
-else
-ifneq ($(QEMU_PIPE),)
-    # Send console output to a pipe, used for running automated sanity tests
-    QEMU_FLAGS += -serial pipe:$(QEMU_PIPE)
-else
-    QEMU_FLAGS += -serial mon:stdio
-endif
-endif
-
-qemu: zephyr
-	$(if $(QEMU_PIPE),,@echo "To exit from QEMU enter: 'CTRL+a, x'")
-	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(ARCH))'
-	$(if $(CONFIG_X86_IAMCU),python $(ZEPHYR_BASE)/scripts/qemu-machine-hack.py $(KERNEL_ELF_NAME))
-	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_ELF_NAME)
-
-# FIXME: Deprecated
-qemugdb: debugserver
-
 -include $(srctree)/boards/$(ARCH)/$(BOARD_NAME)/Makefile.board
+
+ifneq ($(EMU_PLATFORM),)
+-include $(srctree)/scripts/Makefile.$(EMU_PLATFORM)
+else
+run:
+	@echo ===================================================
+	@echo Emulation/Simulation not supported with this board.
+	@echo ===================================================
+endif
+
 ifneq ($(FLASH_SCRIPT),)
 flash: zephyr
 	@echo "Flashing $(BOARD_NAME)"

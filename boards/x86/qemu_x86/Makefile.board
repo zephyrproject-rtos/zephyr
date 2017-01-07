@@ -1,4 +1,6 @@
 
+EMU_PLATFORM = qemu
+
 QEMU_BIOS ?= /usr/share/qemu
 QEMU_CPU_TYPE_x86 = qemu32
 QEMU_X86_NO_REBOOT_y =

@@ -24,7 +24,7 @@ See the net-tools[1] project for more details.
 
 It can be built and executed on QEMU as follows:
 
-    make qemu
+    make run
 
 [1] net-tools:
     https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=tree

@@ -28,7 +28,7 @@ Listening on /tmp/bt-server-bredr
 
 To build tester application for QEMU:
 
-$ make pristine && make BOARD=qemu_cortex_m3 CONF_FILE=qemu.conf qemu
+$ make pristine && make BOARD=qemu_cortex_m3 CONF_FILE=qemu.conf run
 
 Note: Target board have to support enough UARTs for BTP and controller.
       We recommend using qemu_cortex_m3.

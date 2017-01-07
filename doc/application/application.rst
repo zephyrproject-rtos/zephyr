@@ -656,7 +656,7 @@ hardware.
 
    .. code-block:: console
 
-       $ make [BOARD=<type> ...] qemu
+       $ make [BOARD=<type> ...] run
 
    The Zephyr build system generates a :file:`zephyr.elf` image file
    and then begins running it in the terminal console.

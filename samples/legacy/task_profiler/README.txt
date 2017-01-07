@@ -351,7 +351,7 @@ Term1: QEMU must be launched the following way
 
 <--snippet
 cd $APP_BASE
-make BOARD=... QEMU_PTY=1 qemu
+make BOARD=... QEMU_PTY=1 run
 -->
 
 QEMU will display virtually created TTY

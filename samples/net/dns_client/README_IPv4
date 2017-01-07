@@ -92,7 +92,7 @@ open a terminal window and type:
 
 Open a terminal where the project was build (i.e. samples/net/dns_client) and type:
 
-    make qemu
+    make run
 
 
 Usage FRDM K64F

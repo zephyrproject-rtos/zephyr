@@ -77,13 +77,13 @@ export QEMU_NUM
 export QEMU_EXTRA_FLAGS
 
 qemu1: setup_pipes_dual
-	$(Q)$(call zephyrmake,$(O),qemu)
+	$(Q)$(call zephyrmake,$(O),run)
 
 qemu2: setup_pipes_dual
-	$(Q)$(call zephyrmake,$(O),qemu)
+	$(Q)$(call zephyrmake,$(O),run)
 
 qemu1monitor: setup_pipes_dual_monitor
-	$(Q)$(call zephyrmake,$(O),qemu)
+	$(Q)$(call zephyrmake,$(O),run)
 
 qemu2monitor: setup_pipes_dual_monitor
-	$(Q)$(call zephyrmake,$(O),qemu)
+	$(Q)$(call zephyrmake,$(O),run)

@@ -15,10 +15,10 @@ To test the serial line routines, open a terminal window and type:
 Open another terminal window and type:
 
 For QEMU x86:
-	make pristine && make qemu
+	make pristine && make run
 
 For QEMU ARM:
-	make pristine && make BOARD=qemu_cortex_m3 qmeu
+	make pristine && make BOARD=qemu_cortex_m3 run
 
 
 Sample output
