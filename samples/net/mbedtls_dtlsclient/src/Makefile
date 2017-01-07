@@ -14,6 +14,4 @@
 # limitations under the License.
 #
 
-ccflags-$(CONFIG_NET_UIP) +=-I${ZEPHYR_BASE}/net/ip
-
 obj-y += dtls_client.o udp.o
