@@ -43,14 +43,14 @@ Help commands
 Select module commands
 ======================
 
-`set_module MODULE_NAME`
+`select MODULE_NAME`
  Use this command when using the shell only for one module. After entering this
  command, you will not need to enter module name in further commands. If
  the selected module has set a default shell prompt during its initialization,
  the prompt will be changed to that one. Otherwise, the prompt will be
  changed to the selected module’s name to reflect the current module in use.
 
-`set_module`
+`select`
  Clears selected module. Restores prompt as well.
 
 Shell configuration
@@ -108,8 +108,9 @@ use.
 
 
 .. note::
-        Even if a default module was set in code level, it can be overwritten by
-        “set_module” shell command.
+
+   Even if a default module was set in code level, it can be overwritten by
+   "select" shell command.
 
 You can use  :c:func:`shell_register_default_module` in the following cases:
 
@@ -125,7 +126,7 @@ More details on those optional functions can be found in
 
 .. _shell_api_functions:
 
-Shell Api Functions
+Shell API Functions
 *******************
 .. doxygengroup:: _shell_api_functions
    :project: Zephyr

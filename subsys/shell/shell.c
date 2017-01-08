@@ -240,7 +240,7 @@ static int show_help(int argc, char *argv[])
 		for (module = 0; module < NUM_OF_SHELL_ENTITIES; module++) {
 			printk("%s\n", __shell_cmd_start[module].module_name);
 		}
-		printk("\nTo select a module, enter 'set_module <module name>'.\n");
+		printk("\nTo select a module, enter 'select <module name>'.\n");
 	}
 
 	return 0;
@@ -271,7 +271,7 @@ static int set_default_module(const char *name)
 	return 0;
 }
 
-static int set_module(int argc, char *argv[])
+static int select_module(int argc, char *argv[])
 {
 	if (argc == 1) {
 		default_module = -1;
@@ -299,8 +299,8 @@ static shell_cmd_function_t get_cb(int argc, char *argv[])
 		return show_help;
 	}
 
-	if (!strcmp(first_string, "set_module")) {
-		return set_module;
+	if (!strcmp(first_string, "select")) {
+		return select_module;
 	}
 
 	if ((argc == 1) && (default_module == -1)) {
