@@ -882,7 +882,7 @@ int bmi160_init(struct device *dev)
 	/*
 	 * The next command will take around 100ms (contains some necessary busy
 	 * waits), but we cannot do it in a separate thread since we need to
-	 * guarantee the BMI is up and running, befoare the app's main() is
+	 * guarantee the BMI is up and running, before the app's main() is
 	 * called.
 	 */
 	if (bmi160_pmu_set(dev, &bmi160->pmu_sts) < 0) {
