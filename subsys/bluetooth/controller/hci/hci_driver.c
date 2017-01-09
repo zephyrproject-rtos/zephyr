@@ -94,7 +94,6 @@ void hci_le_rand(void *buf, uint8_t len)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_HCI_RAW) && defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
 int bt_rand(void *buf, size_t len)
 {
 	LL_ASSERT(len < UINT8_MAX);
@@ -102,7 +101,6 @@ int bt_rand(void *buf, size_t len)
 
 	return 0;
 }
-#endif
 
 void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {

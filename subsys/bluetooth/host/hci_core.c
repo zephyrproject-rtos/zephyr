@@ -32,10 +32,6 @@
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/storage.h>
 
-#include <tinycrypt/constants.h>
-#include <tinycrypt/hmac_prng.h>
-#include <tinycrypt/utils.h>
-
 #include "keys.h"
 #include "monitor.h"
 #include "hci_core.h"
@@ -133,8 +129,6 @@ NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 
 NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BLUETOOTH_RX_BUF_COUNT,
 		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
-
-static struct tc_hmac_prng_struct prng;
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
@@ -2310,6 +2304,13 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER)
+#include <tinycrypt/constants.h>
+#include <tinycrypt/hmac_prng.h>
+#include <tinycrypt/utils.h>
+
+static struct tc_hmac_prng_struct prng;
+
 static int prng_reseed(struct tc_hmac_prng_struct *h)
 {
 	uint8_t seed[32];
@@ -2389,6 +2390,7 @@ int bt_rand(void *buf, size_t len)
 
 	return -EIO;
 }
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER */
 
 static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 			 uint8_t filter_dup)
@@ -2872,10 +2874,12 @@ static int common_init(void)
 	 * initialize PRNG right after reset so that it is safe to use it later
 	 * on in initialization process
 	 */
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER)
 	err = prng_init(&prng);
 	if (err) {
 		return err;
 	}
+#endif
 
 	/* Read Local Supported Features */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
