@@ -8,4 +8,5 @@ obj-$(CONFIG_ETH_MCUX) += fsl_enet.o
 obj-$(CONFIG_I2C_MCUX) += fsl_i2c.o
 obj-$(CONFIG_RANDOM_MCUX) += fsl_rnga.o
 obj-$(CONFIG_SOC_FLASH_MCUX) += fsl_flash.o
+obj-$(CONFIG_UART_MCUX) += fsl_uart.o
 
