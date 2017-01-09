@@ -36,11 +36,11 @@ enum at_state {
 };
 
 enum at_cmd_state {
-	CMD_START,
-	CMD_GET_VALUE,
-	CMD_PROCESS_VALUE,
-	CMD_STATE_END_LF,
-	CMD_STATE_END
+	AT_CMD_START,
+	AT_CMD_GET_VALUE,
+	AT_CMD_PROCESS_VALUE,
+	AT_CMD_STATE_END_LF,
+	AT_CMD_STATE_END
 };
 
 struct at_client;
