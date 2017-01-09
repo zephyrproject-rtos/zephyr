@@ -21,8 +21,8 @@ Connect two LEDs to PB5 and PB8 pins. PB5 is mapped to the
 Arduino's D4 pin and PB8 to Arduino's D15. For more details about
 these boards see:
 
-https://developer.mbed.org/platforms/ST-Nucleo-F103RB/
-https://developer.mbed.org/platforms/ST-Nucleo-F401RE/
+- https://developer.mbed.org/platforms/ST-Nucleo-F103RB/
+- https://developer.mbed.org/platforms/ST-Nucleo-F401RE/
 
 Arduino 101 (x86)
 -----------------
