@@ -48,7 +48,7 @@ void rand_init(uint8_t *context, uint8_t context_len)
 	NRF_RNG->TASKS_START = 1;
 }
 
-uint32_t rand_get(uint8_t octets, uint8_t *rand)
+size_t rand_get(size_t octets, uint8_t *rand)
 {
 	uint8_t reserved;
 	uint8_t first;

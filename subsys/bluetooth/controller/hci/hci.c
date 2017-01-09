@@ -572,7 +572,7 @@ static void le_rand(struct net_buf *buf, struct net_buf *evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	hci_le_rand(rp->rand, count);
+	bt_rand(rp->rand, count);
 }
 
 static void le_start_encryption(struct net_buf *buf, struct net_buf *evt)

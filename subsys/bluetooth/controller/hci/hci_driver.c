@@ -82,7 +82,7 @@ static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 K_MUTEX_DEFINE(mutex_rand);
 
-void hci_le_rand(void *buf, uint8_t len)
+int bt_rand(void *buf, size_t len)
 {
 	while (len) {
 		k_mutex_lock(&mutex_rand, K_FOREVER);
@@ -92,12 +92,6 @@ void hci_le_rand(void *buf, uint8_t len)
 			cpu_sleep();
 		}
 	}
-}
-
-int bt_rand(void *buf, size_t len)
-{
-	LL_ASSERT(len < UINT8_MAX);
-	hci_le_rand(buf, (uint8_t) len);
 
 	return 0;
 }
