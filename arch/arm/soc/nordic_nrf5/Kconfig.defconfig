@@ -17,16 +17,6 @@
 
 if SOC_FAMILY_NRF5
 
-if BLUETOOTH_CONTROLLER
-
-config CLOCK_CONTROL
-	default y
-
-config CLOCK_CONTROL_NRF5
-	default y
-
-endif # BLUETOOTH_CONTROLLER
-
 if SERIAL
 
 config GPIO
