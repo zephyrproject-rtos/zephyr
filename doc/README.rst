@@ -62,21 +62,20 @@ Running the Documentation Generators
 ************************************
 
 Assuming that the Zephyr Project tree with the doc directory is in
-``DIRECTORY``, type:
+``<ZEPHYR_BASE>``, type:
 
 .. code-block:: bash
 
-   $ cd DIRECTORY/doc
+   $ cd <ZEPHYR_BASE>
+   $ make htmldocs
 
-   $ make doxy html
-
-Find the output in ``DIRECTORY/doc/_build/html/index.html``
+Find the output in ``<ZEPHYR_BASE>/doc/_build/html/index.html``
 
 Review the available formats with:
 
 .. code-block:: bash
 
-   $ make -C DIRECTORY/doc doxy html
+   $ make -C <ZEPHYR_BASE>/doc help
 
 If you want the LaTeX PDF output, you need to install all the Latex
 packages first. That installation is beyond the scope of this document.
