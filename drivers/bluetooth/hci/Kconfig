@@ -48,6 +48,16 @@ config BLUETOOTH_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
+config BLUETOOTH_SPI
+	bool "SPI HCI"
+	select SPI
+	help
+	  Supports Bluetooth ICs using SPI as the communication protocol.
+	  HCI packets are sent and received as single Byte transferrs,
+	  prepended after a known header.  Headers may vary per device, so
+	  additional platform specific knowlege may need to be added as
+	  devices are.  Current driver supports; ST X-NUCLEO BLE series.
+
 config BLUETOOTH_NO_DRIVER
 	bool "No default HCI driver"
 	help
@@ -73,6 +83,17 @@ config BLUETOOTH_UART_ON_DEV_NAME
 	  This option specifies the name of UART device to be used
 	  for Bluetooth.
 
+config BLUETOOTH_SPI_DEV_NAME
+	string "Device Name of SPI Device for Bluetooth"
+	default "SPI_0"
+	depends on BLUETOOTH_SPI
+	help
+	  This option specifies the name of SPI device to be used for Bluetooth.
+	  On the controller side, this SPI device is used to encapsulate the
+	  RAW HCI frames to send further up the stack. On the BLE stack side,
+	  this device is used to reply back with HCI frames that are sent over
+	  the air.
+
 # Headroom that the driver needs for sending and receiving buffers.
 # Add a new 'default' entry for each new driver.
 
@@ -84,6 +105,7 @@ config BLUETOOTH_HCI_SEND_RESERVE
 	default 0
 	default 0 if BLUETOOTH_H4
 	default 1 if BLUETOOTH_H5
+	default 1 if BLUETOOTH_SPI
 
 # Needed headroom for incoming buffers (from controller)
 config BLUETOOTH_HCI_RECV_RESERVE
@@ -93,3 +115,62 @@ config BLUETOOTH_HCI_RECV_RESERVE
 	default 0
 	default 0 if BLUETOOTH_H4
 	default 0 if BLUETOOTH_H5
+
+if BLUETOOTH_SPI
+
+config BLUETOOTH_SPI_CHIP_SELECT_DEV_NAME
+	string "Chip Select (CS) line driver name"
+	help
+	  This option specifies the name of GPIO driver controlling
+	  the Chip Select (CS) line.
+
+config BLUETOOTH_SPI_IRQ_DEV_NAME
+	string "IRQ line driver name"
+	help
+	  This option specifies the name of GPIO driver controlling
+	  the chip's IRQ line.
+
+config BLUETOOTH_SPI_RESET_DEV_NAME
+	string "Reset line driver name"
+	help
+	  This option specifies the name of GPIO driver controlling
+	  the chip's Reset line.
+
+config BLUETOOTH_SPI_CHIP_SELECT_PIN
+	int "SPI Chip Select (CS) line number"
+	help
+	  This option specifies the Chip Select (CS) line number on the SPI
+	  device
+
+config BLUETOOTH_SPI_IRQ_PIN
+	int "SPI IRQ line number"
+	help
+	  This option specifies the Reset line number on the SPI device
+
+config BLUETOOTH_SPI_RESET_PIN
+	int "SPI Reset line number"
+	help
+	  This option specifies the Reset line number on the SPI device
+
+config BLUETOOTH_SPI_RX_BUFFER_SIZE
+	int "Receive buffer length"
+	default 96
+	help
+	  This option specifies the size of the RX buffer.  Try to keep this
+	  as small as possible, since it's stored on the stack.
+
+config BLUETOOTH_SPI_TX_BUFFER_SIZE
+	int "Transmit buffer length"
+	default 64
+	help
+	  This option specifies the size of the TX buffer.  Try to keep this
+	  as small as possible, since it's stored on the stack.
+
+config BLUETOOTH_SPI_MAX_CLK_FREQ
+	int "Maximum clock frequency for the HCI SPI interface"
+	default 5000000
+	help
+	  This option specifies the maximum clock rate the HCI SPI
+	  interface is capable of running at.
+
+endif # BLUETOOTH_SPI
