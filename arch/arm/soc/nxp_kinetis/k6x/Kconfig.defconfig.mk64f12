@@ -74,4 +74,11 @@ config SOC_FLASH_MCUX
 
 endif # FLASH
 
+if SERIAL
+
+config UART_MCUX
+	def_bool y
+
+endif # SERIAL
+
 endif # SOC_MK64F12
