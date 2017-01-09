@@ -43,7 +43,6 @@ extern "C" {
 
 static ALWAYS_INLINE void nanoArchInit(void)
 {
-	_icache_setup();
 	_irq_setup();
 }
 

@@ -123,6 +123,7 @@ extern FUNC_NORETURN void _Cstart(void);
 
 void _PrepC(void)
 {
+	_icache_setup();
 	adjust_vector_table_base();
 	_bss_zero();
 	_data_copy();
