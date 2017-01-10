@@ -223,6 +223,7 @@ static inline void net_context_set_state(struct net_context *context,
 {
 	NET_ASSERT(context);
 
+	context->flags &= ~(NET_CONTEXT_STATE_MASK << NET_CONTEXT_STATE_SHIFT);
 	context->flags |= ((state & NET_CONTEXT_STATE_MASK) <<
 			   NET_CONTEXT_STATE_SHIFT);
 }
