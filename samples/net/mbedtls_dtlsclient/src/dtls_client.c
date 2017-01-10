@@ -66,8 +66,6 @@ static unsigned char heap[20480];
 
 const char *pers = "mini_client";
 
-static struct in_addr client_addr = CLIENT_IP_ADDR;
-
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
 #define ECJPAKE_PW_SIZE 6
 const unsigned char ecjpake_pw[ECJPAKE_PW_SIZE] = "passwd";
@@ -235,9 +233,7 @@ void dtls_client(void)
 	 * 1. Start the connection
 	 */
 
-	mbedtls_printf("  . Connecting to udp %d.%d.%d.%d:%d...",
-		       SERVER_IPADDR0, SERVER_IPADDR1, SERVER_IPADDR2,
-		       SERVER_IPADDR3, SERVER_PORT);
+	mbedtls_printf("  . Connecting to server ...");
 
 	if (udp_init(&ctx) != 0) {
 		ret = connect_failed;
@@ -302,6 +298,14 @@ uint8_t stack[STACK_SIZE];
 
 static inline int init_app(void)
 {
+#if defined(CONFIG_NET_SAMPLES_MY_IPV4_ADDR)
+	if (net_addr_pton(AF_INET, CONFIG_NET_SAMPLES_MY_IPV4_ADDR,
+			  (struct sockaddr *)&client_addr) < 0) {
+		mbedtls_printf("Invalid IPv4 address %s",
+			       CONFIG_NET_SAMPLES_MY_IPV4_ADDR);
+	}
+#endif
+
 	if (!net_if_ipv4_addr_add(net_if_get_default(), &client_addr,
 				  NET_ADDR_MANUAL, 0)) {
 		return -EIO;

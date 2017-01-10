@@ -26,8 +26,7 @@
 #include "udp_cfg.h"
 #include "udp.h"
 
-static struct in_addr client_addr = CLIENT_IP_ADDR;
-static struct in_addr server_addr = SERVER_IP_ADDR;
+static struct in_addr server_addr;
 
 static void udp_received(struct net_context *context,
 			 struct net_buf *buf, int status, void *user_data)
@@ -72,8 +71,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 
 	rc = net_context_sendto(send_buf, (struct sockaddr *)&dst_addr,
 				sizeof(struct sockaddr_in),
-				NULL, K_FOREVER,
-				NULL, NULL);
+				NULL, K_FOREVER, NULL, NULL);
 
 	if (rc < 0) {
 		printk("Cannot send IPv4 data to peer (%d)\n", rc);
@@ -160,7 +158,13 @@ int udp_init(struct udp_context *ctx)
 	ctx->rx_nbuf = NULL;
 	ctx->remaining = 0;
 	ctx->net_ctx = udp_ctx;
-
+#if defined(CONFIG_NET_SAMPLES_PEER_IPV4_ADDR)
+	if (net_addr_pton(AF_INET, CONFIG_NET_SAMPLES_PEER_IPV4_ADDR,
+			  (struct sockaddr *)&server_addr) < 0) {
+		printk("Invalid IPv4 address %s",
+		       CONFIG_NET_SAMPLES_PEER_IPV4_ADDR);
+	}
+#endif
 	rc = net_context_recv(ctx->net_ctx, udp_received, K_NO_WAIT, ctx);
 
 	if (rc != 0) {

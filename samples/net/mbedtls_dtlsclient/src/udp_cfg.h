@@ -17,30 +17,11 @@
 #ifndef UDP_CONFIG_H_
 #define UDP_CONFIG_H_
 
-#define NETMASK0		255
-#define NETMASK1		255
-#define NETMASK2		255
-#define NETMASK3		0
-
-#define CLIENT_IPADDR0		192
-#define CLIENT_IPADDR1		0
-#define CLIENT_IPADDR2		2
-#define CLIENT_IPADDR3		1
-
-#define SERVER_IPADDR0		192
-#define SERVER_IPADDR1		0
-#define SERVER_IPADDR2		2
-#define SERVER_IPADDR3		2
-
 #define SERVER_PORT	4433
 #define CLIENT_PORT	8484
 
 #define UDP_TX_TIMEOUT 100 /* Timeout in milliseconds */
 
-#define CLIENT_IP_ADDR          { { { CLIENT_IPADDR0, CLIENT_IPADDR1,   \
-				      CLIENT_IPADDR2, CLIENT_IPADDR3 } } }
-
-#define SERVER_IP_ADDR          { { { SERVER_IPADDR0, SERVER_IPADDR1,   \
-				      SERVER_IPADDR2, SERVER_IPADDR3 } } }
+static struct in_addr client_addr;
 
 #endif
