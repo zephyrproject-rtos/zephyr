@@ -868,12 +868,32 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 		if (net_nbuf_family(buf) == AF_INET6) {
 			laddr = (struct sockaddr *)&l6addr;
 			raddr = (struct sockaddr *)&r6addr;
+
+			r6addr.sin6_family = AF_INET6;
+			r6addr.sin6_port = NET_TCP_BUF(buf)->src_port;
+			net_ipaddr_copy(&r6addr.sin6_addr,
+					&NET_IPV6_BUF(buf)->src);
+
+			l6addr.sin6_family = AF_INET6;
+			l6addr.sin6_port = NET_TCP_BUF(buf)->dst_port;
+			net_ipaddr_copy(&l6addr.sin6_addr,
+					&NET_IPV6_BUF(buf)->dst);
 		} else
 #endif
 #if defined(CONFIG_NET_IPV4)
 		if (net_nbuf_family(buf) == AF_INET) {
 			laddr = (struct sockaddr *)&l4addr;
 			raddr = (struct sockaddr *)&r4addr;
+
+			r4addr.sin_family = AF_INET;
+			r4addr.sin_port = NET_TCP_BUF(buf)->src_port;
+			net_ipaddr_copy(&r4addr.sin_addr,
+					&NET_IPV4_BUF(buf)->src);
+
+			l4addr.sin_family = AF_INET;
+			l4addr.sin_port = NET_TCP_BUF(buf)->dst_port;
+			net_ipaddr_copy(&l4addr.sin_addr,
+					&NET_IPV4_BUF(buf)->dst);
 		} else
 #endif
 		{
