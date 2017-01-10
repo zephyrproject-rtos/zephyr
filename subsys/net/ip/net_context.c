@@ -848,6 +848,11 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 	NET_ASSERT(net_nbuf_iface(buf));
 
+	if (NET_TCP_FLAGS(buf) & NET_TCP_SYN) {
+		context->tcp->send_ack =
+			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
+		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
+	}
 	/*
 	 * If we receive SYN, we send SYN-ACK and go to SYN_RCVD state.
 	 */
