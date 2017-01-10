@@ -39,6 +39,9 @@
 	#endif
 #elif defined(CONFIG_NIOS2)
 	OUTPUT_FORMAT("elf32-littlenios2", "elf32-bignios2", "elf32-littlenios2")
+#elif defined(CONFIG_RISCV32)
+	OUTPUT_ARCH(riscv)
+	OUTPUT_FORMAT("elf32-littleriscv")
 #else
 	#error Arch not supported.
 #endif

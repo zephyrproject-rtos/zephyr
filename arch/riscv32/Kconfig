@@ -1,0 +1,80 @@
+#
+# Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+choice
+	prompt "RISCV32 configuration selection"
+	depends on RISCV32
+	source "arch/riscv32/soc/*/Kconfig.soc"
+endchoice
+
+menu "RISCV32 Options"
+	depends on RISCV32
+
+config ARCH
+	string
+	default "riscv32"
+
+config ARCH_DEFCONFIG
+	string
+	default "arch/riscv32/defconfig"
+
+menu "RISCV32 Processor Options"
+
+config INCLUDE_RESET_VECTOR
+	bool "Include Reset vector"
+	default n
+	help
+	Include the reset vector stub that inits CPU and then jumps to __start
+
+config IRQ_OFFLOAD
+	bool "Enable IRQ offload"
+	default n
+	help
+	Enable irq_offload() API which allows functions to be synchronously
+	run in interrupt context. Mainly useful for test cases.
+
+config RISCV_SOC_CONTEXT_SAVE
+	bool "Enable SOC-based context saving in IRQ handler"
+	default n
+	help
+	Enable SOC-based context saving, for SOCS which require saving of
+	extra registers when entering an interrupt/exception
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool "Enable SOC-based interrupt initialization"
+	default n
+	help
+	Enable SOC-based interrupt initialization
+	(call soc_interrupt_init, within _IntLibInit when enabled)
+
+config RISCV_GENERIC_TOOLCHAIN
+	bool "Compile using generic riscv32 toolchain"
+	default y
+	help
+	Compile using generic riscv32 toolchain.
+	Allow SOCs that have custom extended riscv ISA to still
+	compile with generic riscv32 toolchain.
+
+config RISCV_HAS_CPU_IDLE
+	bool "Does SOC has CPU IDLE instruction"
+	default n
+	help
+	Does SOC has CPU IDLE instruction
+endmenu
+
+source "arch/riscv32/soc/*/Kconfig"
+
+endmenu
