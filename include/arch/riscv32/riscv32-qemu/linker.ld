@@ -1,0 +1,160 @@
+/*
+ * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @file
+ * @brief Linker command/script file
+ *
+ * Linker script for the riscv32-qemu platform
+ */
+
+#define _LINKER
+#define _ASMLANGUAGE
+
+#include <autoconf.h>
+#include <sections.h>
+
+#include <linker-defs.h>
+#include <linker-tool.h>
+
+#define ROMABLE_REGION              RAM
+#define RAMABLE_REGION              RAM
+
+#define _VECTOR_SECTION_NAME        vector
+#define _EXCEPTION_SECTION_NAME     exceptions
+#define _RESET_SECTION_NAME         reset
+
+#define RAM_LENGTH                  (CONFIG_RAM_SIZE_MB * 1024 * 1024)
+
+ENTRY(__reset)
+
+MEMORY
+    {
+    VECTOR (rx)  : ORIGIN = CONFIG_VECTOR_BASE_ADDR, LENGTH = CONFIG_VECTOR_SIZE
+    RAM    (rwx) : ORIGIN = CONFIG_RAM_BASE_ADDR, LENGTH = RAM_LENGTH
+}
+
+SECTIONS
+    {
+
+    GROUP_START(VECTOR)
+
+    SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
+    {
+		. = ALIGN(4);
+		KEEP(*(.vectors.*))
+    } GROUP_LINK_IN(VECTOR)
+
+    GROUP_END(VECTOR)
+
+    GROUP_START(RAM)
+
+    SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
+    {
+		KEEP(*(.reset.*))
+    } GROUP_LINK_IN(RAM)
+
+    SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
+    {
+		 KEEP(*(".exception.entry.*"))
+		 *(".exception.other.*")
+    } GROUP_LINK_IN(RAM)
+
+    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
+	{
+		. = ALIGN(4);
+
+		_image_text_start = .;
+		*(.text)
+		*(".text.*")
+		*(.gnu.linkonce.t.*)
+	} GROUP_LINK_IN(RAM)
+
+    _image_text_end = .;
+
+    GROUP_END(RAM)
+
+    GROUP_START(RAMABLE_REGION)
+
+#include <linker/common-rom.ld>
+
+    SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
+	{
+		 . = ALIGN(4);
+		 *(.rodata)
+		 *(".rodata.*")
+		 *(.gnu.linkonce.r.*)
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+#include <linker/common-ram.ld>
+
+    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+	{
+
+		 . = ALIGN(4);
+		 KEEP(*(.isr_irq*))
+
+		 /* sections for IRQ0-9 */
+		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9])))
+
+		 /* sections for IRQ10-99 */
+		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9])))
+
+		 /* sections for IRQ100-999 */
+		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9][0-9])))
+
+		 *(.data)
+		 *(".data.*")
+
+		 *(.sdata .sdata.* .gnu.linkonce.s.*)
+		 *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+
+	}  GROUP_LINK_IN(RAMABLE_REGION)
+
+	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+	{
+		/*
+		 * For performance, BSS section is assumed to be 4 byte aligned and
+		 * a multiple of 4 bytes
+		 */
+		 . = ALIGN(4);
+		 __bss_start = .;
+		 *(.sbss)
+		 *(".sbss.*")
+		 *(.bss)
+		 *(".bss.*")
+		 COMMON_SYMBOLS
+		 /*
+		  * As memory is cleared in words only, it is simpler to ensure the BSS
+		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+		  */
+		  __bss_end = ALIGN(4);
+	}  GROUP_LINK_IN(RAMABLE_REGION)
+
+    SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
+	{
+		/*
+		 * This section is used for non-initialized objects that
+		 * will not be cleared during the boot process.
+		 */
+		 *(.noinit)
+		 *(".noinit.*")
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+     _end = .; /* end of image */
+
+     GROUP_END(RAMABLE_REGION)
+}

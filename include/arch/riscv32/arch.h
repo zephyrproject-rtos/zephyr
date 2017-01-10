@@ -140,6 +140,8 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 
 #if defined(CONFIG_SOC_RISCV32_PULPINO)
 #include <arch/riscv32/pulpino/asm_inline.h>
+#elif defined(CONFIG_SOC_RISCV32_QEMU)
+#include <arch/riscv32/riscv32-qemu/asm_inline.h>
 #endif
 
 #ifdef __cplusplus

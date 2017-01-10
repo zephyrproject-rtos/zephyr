@@ -1,0 +1,43 @@
+if SOC_RISCV32_QEMU
+
+config SOC
+	string
+	default "riscv32-qemu"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 10000000
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool
+	default y
+
+config INCLUDE_RESET_VECTOR
+	bool
+	default y
+
+config NUM_IRQS
+	int
+	default 32
+
+config ATOMIC_OPERATIONS_C
+	bool
+	default y
+
+config VECTOR_BASE_ADDR
+	hex
+	default 0x00001000
+
+config VECTOR_SIZE
+	hex
+	default 0x1000
+
+config RAM_BASE_ADDR
+	hex
+	default	0x80000000
+
+config RAM_SIZE_MB
+	int
+	default 32
+
+endif # SOC_RISCV32_QEMU
