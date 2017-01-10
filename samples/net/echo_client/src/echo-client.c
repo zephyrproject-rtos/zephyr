@@ -592,9 +592,9 @@ void main(void)
 
 	ipsum_len = strlen(lorem_ipsum);
 
-#if defined(CONFIG_NETWORKING_WITH_BT)
+#if defined(CONFIG_NET_L2_BLUETOOTH)
 	if (bt_enable(NULL)) {
-		PRINT("Bluetooth init failed\n");
+		NET_ERR("Bluetooth init failed\n");
 		return;
 	}
 	ipss_init();
