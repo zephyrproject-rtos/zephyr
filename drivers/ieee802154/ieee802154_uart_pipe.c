@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_UPIPE_15_4_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL
 #define SYS_LOG_DOMAIN "net/ieee802154/upipe/"
 #include <logging/sys_log.h>
 
