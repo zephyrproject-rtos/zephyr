@@ -1,0 +1,10 @@
+By default zedboard_pulpino will be built without accounting for
+pulpino-specific ISA. To account for them, edit
+zedboard_pulpino_defconfig and set CONFIG_RISCV_GENERIC_TOOLCHAIN=n.
+
+However, in this case, a pulpino-specific toolchain should be
+use, by setting the following env variables, prior to compiling
+an application.
+
+export RISCV32_TOOLCHAIN_PATH=~/path/to/pulpino/toolchain
+export ZEPHYR_GCC_VARIANT=riscv32
