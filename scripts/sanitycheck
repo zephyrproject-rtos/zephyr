@@ -1713,11 +1713,16 @@ def log_info(filename):
     filename = os.path.relpath(filename)
     if INLINE_LOGS:
         info("{:-^100}".format(filename))
-        with open(filename) as fp:
-            data = fp.read()
-            sys.stdout.write(data)
-            if log_file:
-                log_file.write(data)
+
+        try:
+            with open(filename) as fp:
+                data = fp.read()
+        except Exception as e:
+            data = "Unable to read log data (%s)\n" % (str(e))
+
+        sys.stdout.write(data)
+        if log_file:
+            log_file.write(data)
         info("{:-^100}".format(filename))
     else:
         info("\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
