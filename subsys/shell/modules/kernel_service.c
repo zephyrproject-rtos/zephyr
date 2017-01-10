@@ -78,12 +78,23 @@ static int shell_cmd_tasks(int argc, char *argv[])
 #endif
 
 
+#if defined(CONFIG_INIT_STACKS)
+static int shell_cmd_stack(int argc, char *argv[])
+{
+	k_call_stacks_analyze();
+	return 0;
+}
+#endif
+
 struct shell_cmd kernel_commands[] = {
 	{ "version", shell_cmd_version, "show kernel version" },
 	{ "uptime", shell_cmd_uptime, "show system uptime in milliseconds" },
 	{ "cycles", shell_cmd_cycles, "show system hardware cycles" },
 #if defined(CONFIG_OBJECT_TRACING) && defined(CONFIG_THREAD_MONITOR)
 	{ "tasks", shell_cmd_tasks, "show running tasks" },
+#endif
+#if defined(CONFIG_INIT_STACKS)
+	{ "stacks", shell_cmd_stack, "show system stacks" },
 #endif
 	{ NULL, NULL, NULL }
 };
