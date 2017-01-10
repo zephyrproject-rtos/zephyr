@@ -33,6 +33,7 @@
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/bt.h>
 #include <6lo.h>
 
 #include <bluetooth/bluetooth.h>
@@ -44,6 +45,10 @@
 #define L2CAP_IPSP_MTU 1280
 
 #define CHAN_CTXT(_ch) CONTAINER_OF(_ch, struct bt_context, ipsp_chan.chan)
+
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+static struct bt_conn *default_conn;
+#endif
 
 struct bt_context {
 	struct net_if *iface;
@@ -261,14 +266,97 @@ static struct bt_l2cap_server server = {
 	.accept		= ipsp_accept,
 };
 
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+
+static int bt_connect(uint32_t mgmt_request, struct net_if *iface, void *data,
+		      size_t len)
+{
+	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+	bt_addr_le_t *addr = data;
+
+	if (len != sizeof(*addr)) {
+		NET_ERR("Invalid address");
+		return -EINVAL;
+	}
+
+	if (ctxt->ipsp_chan.chan.conn) {
+		NET_ERR("No channels available");
+		return -ENOMEM;
+	}
+
+	if (default_conn) {
+		return bt_l2cap_chan_connect(default_conn,
+					     &ctxt->ipsp_chan.chan,
+					     L2CAP_IPSP_PSM);
+	}
+
+	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
+
+	return 0;
+}
+
+static void connected(struct bt_conn *conn, uint8_t err)
+{
+	if (err) {
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+		char addr[BT_ADDR_LE_STR_LEN];
+
+		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+		NET_ERR("Failed to connect to %s (%u)\n", addr, err);
+#endif
+		return;
+	}
+
+	if (conn != default_conn) {
+		return;
+	}
+
+	bt_l2cap_chan_connect(conn, &bt_context_data.ipsp_chan.chan,
+			      L2CAP_IPSP_PSM);
+}
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+	char addr[BT_ADDR_LE_STR_LEN];
+#endif
+
+	if (conn != default_conn) {
+		return;
+	}
+
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	NET_DBG("Disconnected: %s (reason %u)\n", addr, reason);
+#endif
+
+	bt_conn_unref(default_conn);
+	default_conn = NULL;
+}
+
+static struct bt_conn_cb conn_callbacks = {
+	.connected = connected,
+	.disconnected = disconnected,
+};
+#endif /* CONFIG_NET_L2_BLUETOOTH_MGMT */
+
 static int net_bt_init(struct device *dev)
 {
 	NET_DBG("dev %p driver_data %p", dev, dev->driver_data);
 
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+	bt_conn_cb_register(&conn_callbacks);
+#endif
 	bt_l2cap_server_register(&server);
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_CONNECT, bt_connect);
+#endif
 
 NET_DEVICE_INIT(net_bt, "net_bt", net_bt_init, &bt_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
