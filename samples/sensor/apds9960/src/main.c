@@ -14,31 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * @file Sample app to utilize APDS-9960 Sensor on Arduino 101 (ARC).
- *
- * The SparkFun RGB and Gesture Sensor was being used:
- *   https://www.sparkfun.com/products/12787
- *
- * This sample app is to read RGB value from the APDS-9960 sensor
- * and to display the color through the APA102C LED.
- *
- * For APA102C, on ARC side of Arduino 101:
- * 1. GPIO_SS_2 is on AD0 (for APA102C data)
- * 2. GPIO_SS_3 is on AD1 (for APA102C clock)
- *
- * The gpio_dw driver is being used for bit-banging to control
- * the APA102C LED..
- *
- * The APA102/C requires 5V data and clock signals, so logic
- * level shifter (preferred) or pull-up resistors are needed.
- * Make sure the pins are 5V tolerant if using pull-up
- * resistors.
- *
- * WARNING: the APA102C are very bright even at low settings.
- * Protect your eyes and do not look directly into those LEDs.
- */
-
 #include <zephyr.h>
 #include <stdio.h>
 #include <device.h>
