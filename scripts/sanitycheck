@@ -851,7 +851,14 @@ class MakeGenerator:
 
 
                 if error:
-                    goal.fail("build_error")
+                    # Sometimes QEMU will run an image and then crash out, which
+                    # will cause the 'make qemu' invocation to exit with
+                    # nonzero status.
+                    # Need to distinguish this case from a compilation failure.
+                    if goal.qemu:
+                        goal.fail("qemu_crash")
+                    else:
+                        goal.fail("build_error")
                 else:
                     if state == "finished":
                         if goal.qemu:
