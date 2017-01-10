@@ -110,9 +110,27 @@ static int shell_cmd_connect(int argc, char *argv[])
 	return 0;
 }
 
+static int shell_cmd_scan(int argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	if (net_mgmt(NET_REQUEST_BT_SCAN, iface, argv[1], strlen(argv[1]))) {
+		printk("Scan failed\n");
+	} else {
+		printk("Scan in progress\n");
+	}
+
+	return 0;
+}
+
 static struct shell_cmd bt_commands[] = {
 	{ "connect", shell_cmd_connect,
 		"<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>" },
+	{ "scan", shell_cmd_scan, "<on/off/active/passive>" },
 	{ NULL, NULL, NULL },
 };
 
