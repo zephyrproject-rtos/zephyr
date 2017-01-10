@@ -1863,7 +1863,7 @@ enum net_verdict packet_received(struct net_conn *conn,
 			}
 		}
 
-		NET_DBG("Set appdata to %p len %u (total %zu)",
+		NET_DBG("Set appdata %p to len %u (total %zu)",
 			net_nbuf_appdata(buf), net_nbuf_appdatalen(buf),
 			total_len);
 
