@@ -1,5 +1,5 @@
-DTLS Client for Arduino 101
-==========================
+[DTLS Client for Arduino 101]
+#############################
 
 The DTLS Client can be tested on top of the Arduino 101 board by
 adding an Ethernet daughter board.
@@ -13,8 +13,8 @@ Requirements
 - LAN for testing purposes
 
 
-Arduino 101 and ENC28J60 connection
-===================================
+Wiring
+======
 
 The ENC28J60 is an Ethernet device with SPI interface. The following
 pins must be connected from the ENC28J60 device to the Arduino 101
@@ -31,25 +31,18 @@ D04             INT
 GDN             GND
 
 
-Build
-=====
+Build and running
+=================
 
 By default, make will build the sample for the QEMU-x86 board.
 For the Arduino 101 board, type:
 
-make pristine && make BOARD=arduino_101
+.. code-block:: console
+
+	make pristine && make BOARD=arduino_101
 
 To load the binary in the development board follow the steps
 indicated here:
 
   https://www.zephyrproject.org/doc/board/arduino_101.html
 
-
-
-
-Known Issues
-============
-
-We are facing some issues [1]
-
-[1] https://jira.zephyrproject.org/browse/ZEP-1169
