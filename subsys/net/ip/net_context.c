@@ -920,6 +920,7 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 		}
 
 		net_tcp_change_state(context->tcp, NET_TCP_ESTABLISHED);
+		net_context_set_state(context, NET_CONTEXT_CONNECTED);
 
 		send_ack(context, raddr);
 
