@@ -19,24 +19,6 @@
 
 #include <soc.h>
 
-#ifdef CONFIG_GPIO_K64
-
-/* Red LED */
-#define RED_GPIO_NAME		CONFIG_GPIO_K64_C_DEV_NAME
-#define RED_GPIO_PIN		8
-
-/* Green LED */
-#define GREEN_GPIO_NAME		CONFIG_GPIO_K64_D_DEV_NAME
-#define GREEN_GPIO_PIN		0
-
-/* Blue LED */
-#define BLUE_GPIO_NAME		CONFIG_GPIO_K64_C_DEV_NAME
-#define BLUE_GPIO_PIN		9
-
-#endif /* CONFIG_GPIO_K64 */
-
-#ifdef CONFIG_GPIO_MCUX
-
 /* Red LED */
 #define RED_GPIO_NAME		CONFIG_GPIO_MCUX_PORTC_NAME
 #define RED_GPIO_PIN		8
@@ -48,8 +30,6 @@
 /* Blue LED */
 #define BLUE_GPIO_NAME		CONFIG_GPIO_MCUX_PORTC_NAME
 #define BLUE_GPIO_PIN		9
-
-#endif /* CONFIG_GPIO_MCUX */
 
 /* LED0. There is no physical LED on the board with this name, so create an
  * alias to the green LED to make the basic blinky sample work.

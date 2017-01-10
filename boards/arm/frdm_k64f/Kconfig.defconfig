@@ -112,25 +112,6 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-if GPIO_K64
-
-config GPIO_K64_A
-	def_bool y
-
-config GPIO_K64_B
-	def_bool y
-
-config GPIO_K64_C
-	def_bool y
-
-config GPIO_K64_D
-	def_bool y
-
-config GPIO_K64_E
-	def_bool y
-
-endif # GPIO_K64
-
 if GPIO_MCUX
 
 config GPIO_MCUX_PORTA
@@ -189,8 +170,7 @@ config FXOS8700_I2C_ADDRESS
 	default 0x1d
 
 config FXOS8700_GPIO_NAME
-	default GPIO_K64_C_DEV_NAME if GPIO_K64
-	default GPIO_MCUX_PORTC_NAME if GPIO_MCUX
+	default GPIO_MCUX_PORTC_NAME
 
 config FXOS8700_GPIO_PIN
 	default 13
