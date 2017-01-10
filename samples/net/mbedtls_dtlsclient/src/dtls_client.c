@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #include <errno.h>
+#include <misc/printk.h>
 
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
@@ -172,7 +173,7 @@ void dtls_client(void)
 
 	mbedtls_ctr_drbg_init(&ctr_drbg);
 
-	mbedtls_platform_set_printf(printf);
+	mbedtls_platform_set_printf(printk);
 
 	/*
 	 * 0. Initialize and setup stuff
