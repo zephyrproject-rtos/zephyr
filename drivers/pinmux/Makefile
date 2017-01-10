@@ -1,11 +1,6 @@
 ccflags-y +=-I$(srctree)/drivers
 
 # Board initialization
-ifdef CONFIG_PINMUX_K64
-obj-y += k64/pinmux.o
-obj-$(CONFIG_BOARD_FRDM_K64F) += k64/pinmux_board_frdm_k64f.o
-obj-$(CONFIG_BOARD_HEXIWEAR_K64) += k64/pinmux_board_hexiwear.o
-endif
 obj-$(CONFIG_PINMUX_MCUX) += pinmux_mcux.o
 obj-$(CONFIG_PINMUX_STM32) += stm32/pinmux_stm32.o
 obj-$(CONFIG_PINMUX_BEETLE) += beetle/pinmux_board_v2m_beetle.o
