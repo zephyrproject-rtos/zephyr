@@ -1008,6 +1008,7 @@ int net_context_connect(struct net_context *context,
 		rport = addr6->sin6_port;
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
+		net_sin6(&local_addr)->sin6_family = AF_INET6;
 		net_sin6(&local_addr)->sin6_port = lport =
 			net_sin6((struct sockaddr *)&context->local)->sin6_port;
 
@@ -1050,6 +1051,7 @@ int net_context_connect(struct net_context *context,
 		rport = addr4->sin_port;
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
+		net_sin(&local_addr)->sin_family = AF_INET;
 		net_sin(&local_addr)->sin_port = lport =
 			net_sin((struct sockaddr *)&context->local)->sin_port;
 
