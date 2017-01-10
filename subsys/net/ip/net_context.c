@@ -294,6 +294,10 @@ int net_context_put(struct net_context *context)
 	}
 #endif /* CONFIG_NET_TCP */
 
+	if (context->conn_handler) {
+		net_conn_unregister(context->conn_handler);
+	}
+
 	context->flags &= ~NET_CONTEXT_IN_USE;
 
 #if defined(CONFIG_NET_TCP)
