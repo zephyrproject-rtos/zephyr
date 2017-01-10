@@ -1,10 +1,14 @@
-/* adc.c - ADC test source file */
-
 /*
  * Copyright (c) 2015 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/*
+ * Copyright (c) 2016 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <ztest.h>
 
 #include <device.h>
