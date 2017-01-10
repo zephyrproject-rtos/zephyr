@@ -66,6 +66,10 @@
   #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)
   #define TICK_IRQ IRQ_TIMER0
+#elif defined(CONFIG_PULPINO_TIMER)
+  #define TICK_IRQ PULP_TIMER_A_CMP_IRQ
+#elif defined(CONFIG_RISCV_QEMU_TIMER)
+  #define TICK_IRQ RISCV_QEMU_TIMER_IRQ
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is
@@ -76,10 +80,12 @@
   #error Timer type is not defined for this platform
 #endif
 
-/* Nios II doesn't have a power saving instruction, so nano_cpu_idle()
+/* Nios II and RISCV32 without CONFIG_RISCV_HAS_CPU_IDLE
+ * do not have a power saving instruction, so nano_cpu_idle()
  * returns immediately
  */
-#if !defined(CONFIG_NIOS2)
+#if !defined(CONFIG_NIOS2) && \
+	(!defined(CONFIG_RISCV32) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
