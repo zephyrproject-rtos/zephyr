@@ -346,11 +346,17 @@ static void switch_to_main_thread(void)
 extern void *__stack_chk_guard;
 
 #if defined(CONFIG_X86)
-#define _MOVE_INSTR "movl "
+#define _MOVE_INSTR "movl %1, %0"
+#define _MOVE_MEM "=m"
 #elif defined(CONFIG_ARM)
-#define _MOVE_INSTR "str "
+#define _MOVE_INSTR "str %1, %0"
+#define _MOVE_MEM "=m"
 #elif defined(CONFIG_ARC)
-#define _MOVE_INSTR "st "
+#define _MOVE_INSTR "st %1, %0"
+#define _MOVE_MEM "=m"
+#elif defined(CONFIG_RISCV32)
+#define _MOVE_INSTR "sw %1, 0x00(%0)"
+#define _MOVE_MEM "=r"
 #else
 #error "Unknown Architecture type"
 #endif /* CONFIG_X86 */
@@ -359,8 +365,8 @@ extern void *__stack_chk_guard;
 	do {                                               \
 		register void *tmp;                        \
 		tmp = (void *)sys_rand32_get();            \
-		__asm__ volatile(_MOVE_INSTR "%1, %0;\n\t" \
-				 : "=m"(__stack_chk_guard) \
+		__asm__ volatile(_MOVE_INSTR ";\n\t" \
+				 : _MOVE_MEM(__stack_chk_guard) \
 				 : "r"(tmp));              \
 	} while (0)
 
