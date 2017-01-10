@@ -167,6 +167,14 @@ config PULPINO_TIMER
 	This module implements a kernel device driver for the pulpino processor
 	timer driver. It provides the standard "system clock driver" interfaces.
 
+config RISCV_QEMU_TIMER
+	bool "riscv-qemu Timer"
+	default y
+	depends on SOC_RISCV32_QEMU
+	help
+	This module implements a kernel device driver for the riscv32-qemu
+	timer driver. It provides the standard "system clock driver" interfaces.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	default n
