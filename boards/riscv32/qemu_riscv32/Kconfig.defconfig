@@ -1,0 +1,6 @@
+if BOARD_QEMU_RISCV32
+
+config BOARD
+	default "qemu_riscv32"
+
+endif
