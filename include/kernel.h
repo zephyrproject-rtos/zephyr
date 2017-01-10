@@ -103,6 +103,34 @@ enum execution_context_types {
 };
 
 /**
+ * @defgroup profiling_apis Profiling APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @brief Analyze the main, idle, interrupt and system workqueue call stacks
+ *
+ * This routine calls @ref stack_analyze on the 4 call stacks declared and
+ * maintained by the kernel. The sizes of those 4 call stacks are defined by:
+ *
+ * CONFIG_MAIN_STACK_SIZE
+ * CONFIG_IDLE_STACK_SIZE
+ * CONFIG_ISR_STACK_SIZE
+ * CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
+ *
+ * @note CONFIG_INIT_STACKS and CONFIG_PRINTK must be set for this function to
+ * produce output.
+ *
+ * @return N/A
+ */
+extern void k_call_stacks_analyze(void);
+
+/**
+ * @} end defgroup profiling_apis
+ */
+
+/**
  * @defgroup thread_apis Thread APIs
  * @ingroup kernel_apis
  * @{

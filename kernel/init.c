@@ -25,6 +25,7 @@
 #include <offsets_short.h>
 #include <kernel.h>
 #include <misc/printk.h>
+#include <misc/stack.h>
 #include <drivers/rand32.h>
 #include <sections.h>
 #include <toolchain.h>
@@ -117,6 +118,28 @@ char __noinit __stack _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 #endif
 
 extern void idle(void *unused1, void *unused2, void *unused3);
+
+void k_call_stacks_analyze(void)
+{
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
+	extern char sys_work_q_stack[CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE];
+#if defined(CONFIG_ARC)
+	extern char _firq_stack[CONFIG_FIRQ_STACK_SIZE];
+#endif /* CONFIG_ARC */
+
+	printk("Kernel stacks:\n");
+	stack_analyze("main     ", _main_stack, sizeof(_main_stack));
+	stack_analyze("idle     ", _idle_stack, sizeof(_idle_stack));
+#if defined(CONFIG_ARC)
+	stack_analyze("firq     ", _firq_stack, sizeof(_firq_stack));
+#endif /* CONFIG_ARC */
+	stack_analyze("interrupt", _interrupt_stack,
+		      sizeof(_interrupt_stack));
+	stack_analyze("workqueue", sys_work_q_stack,
+		      sizeof(sys_work_q_stack));
+
+#endif /* CONFIG_INIT_STACKS && CONFIG_PRINTK */
+}
 
 /**
  *

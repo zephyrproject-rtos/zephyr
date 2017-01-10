@@ -24,7 +24,7 @@
 #include <kernel.h>
 #include <init.h>
 
-static char __stack sys_work_q_stack[CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE];
+char __noinit __stack sys_work_q_stack[CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE];
 
 struct k_work_q k_sys_work_q;
 
