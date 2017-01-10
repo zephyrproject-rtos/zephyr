@@ -762,6 +762,11 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 
 		context->tcp->send_ack =
 			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
+
+		if (context->recv_cb) {
+			context->recv_cb(context, NULL, 0, user_data);
+		}
+
 	} else {
 		struct net_tcp_hdr *hdr = (void *)net_nbuf_tcp_data(buf);
 
