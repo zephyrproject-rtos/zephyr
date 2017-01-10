@@ -138,6 +138,10 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 
 #endif /*_ASMLANGUAGE */
 
+#if defined(CONFIG_SOC_RISCV32_PULPINO)
+#include <arch/riscv32/pulpino/asm_inline.h>
+#endif
+
 #ifdef __cplusplus
 }
 #endif

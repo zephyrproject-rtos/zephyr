@@ -1,0 +1,2 @@
+config SOC_RISCV32_PULPINO
+	bool "Pulpino SOC implementation"
