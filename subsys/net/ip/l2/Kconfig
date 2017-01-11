@@ -29,8 +29,8 @@ config NET_L2_ETHERNET
 	default n
 	help
 	Add support for Ethernet, enabling selecting relevant hardware drivers.
-	If NET_SLIP and SLIP_TAP are selected, NET_L2_ETHERNET will enable to
-	fully simulate ethernet through SLIP.
+	If SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully simulate
+	ethernet through SLIP.
 
 config NET_DEBUG_L2_ETHERNET
 	bool "Debug Ethernet L2 layer"
