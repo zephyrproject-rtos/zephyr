@@ -709,8 +709,8 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 						   cached_lladdr,
 						   &NET_IPV6_BUF(buf)->src);
 
-			cached_lladdr->len = lladdr.len;
-			memcpy(cached_lladdr->addr, lladdr.addr, lladdr.len);
+			net_linkaddr_set(cached_lladdr, lladdr.addr,
+					 lladdr.len);
 
 			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
 		} else {
@@ -1173,9 +1173,9 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 				cached_lladdr,
 				&NET_ICMPV6_NS_BUF(buf)->tgt);
 
-			memcpy(cached_lladdr->addr,
-			       &tllao[NET_ICMPV6_OPT_DATA_OFFSET],
-			       cached_lladdr->len);
+			net_linkaddr_set(cached_lladdr,
+					 &tllao[NET_ICMPV6_OPT_DATA_OFFSET],
+					 cached_lladdr->len);
 		}
 
 		if (net_is_solicited(buf)) {
@@ -1213,9 +1213,9 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 				cached_lladdr,
 				&NET_ICMPV6_NS_BUF(buf)->tgt);
 
-			memcpy(cached_lladdr->addr,
-			       &tllao[NET_ICMPV6_OPT_DATA_OFFSET],
-			       cached_lladdr->len);
+			net_linkaddr_set(cached_lladdr,
+					 &tllao[NET_ICMPV6_OPT_DATA_OFFSET],
+					 cached_lladdr->len);
 		}
 
 		if (net_is_solicited(buf)) {
@@ -1644,8 +1644,8 @@ static inline struct net_buf *handle_ra_neighbor(struct net_buf *buf,
 						   cached_lladdr,
 						   &NET_IPV6_BUF(buf)->src);
 
-			cached_lladdr->len = lladdr.len;
-			memcpy(cached_lladdr->addr, lladdr.addr, lladdr.len);
+			net_linkaddr_set(cached_lladdr, lladdr.addr,
+					 lladdr.len);
 
 			net_ipv6_nbr_data(*nbr)->state = NET_NBR_STALE;
 		} else {
