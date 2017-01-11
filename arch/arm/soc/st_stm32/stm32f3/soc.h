@@ -58,6 +58,10 @@ enum stm32f3x_pin_config_mode {
 
 #include "soc_irq.h"
 
+#ifdef CONFIG_SERIAL_HAS_DRIVER
+#include <stm32f3xx_ll_usart.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F3_SOC_H_ */
