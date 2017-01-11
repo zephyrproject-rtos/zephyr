@@ -20,6 +20,22 @@ extern "C" {
 
 #include <soc.h>
 
+/* CP10 Access Bits */
+#define CPACR_CP10_Pos          20U
+#define CPACR_CP10_Msk          (3UL << _SCS_CPACR_CP10_Pos)
+#define CPACR_CP10_NO_ACCESS    (0UL << _SCS_CPACR_CP10_Pos)
+#define CPACR_CP10_PRIV_ACCESS  (1UL << _SCS_CPACR_CP10_Pos)
+#define CPACR_CP10_RESERVED     (2UL << _SCS_CPACR_CP10_Pos)
+#define CPACR_CP10_FULL_ACCESS  (3UL << _SCS_CPACR_CP10_Pos)
+
+/* CP11 Access Bits */
+#define CPACR_CP11_Pos          22U
+#define CPACR_CP11_Msk          (3UL << _SCS_CPACR_CP11_Pos)
+#define CPACR_CP11_NO_ACCESS    (0UL << _SCS_CPACR_CP11_Pos)
+#define CPACR_CP11_PRIV_ACCESS  (1UL << _SCS_CPACR_CP11_Pos)
+#define CPACR_CP11_RESERVED     (2UL << _SCS_CPACR_CP11_Pos)
+#define CPACR_CP11_FULL_ACCESS  (3UL << _SCS_CPACR_CP11_Pos)
+
 /* Fill in CMSIS required values for non-CMSIS compliant SoCs.
  * Use __NVIC_PRIO_BITS as it is required and simple to check, but
  * ultimately all SoCs will define their own CMSIS types and constants.
