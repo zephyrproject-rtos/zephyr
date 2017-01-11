@@ -187,6 +187,7 @@ config BOOT_BANNER
 	bool
 	prompt "Boot banner"
 	default n
+	depends on CONSOLE_HAS_DRIVER
 	select PRINTK
 	select EARLY_CONSOLE
 	help
