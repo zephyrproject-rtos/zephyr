@@ -48,12 +48,12 @@ static struct in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 static struct net_linkaddr_storage lladdr_src_storage = {
-	.storage = { 0x00000102, 0x03040506 },
-	.len = 6
+	.addr = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 },
+	.len = NET_LINK_ADDR_MAX_LENGTH
 };
 static struct net_linkaddr lladdr_src = {
-	.addr = &lladdr_src_storage.addr[0],
-	.len = 6
+	.addr = lladdr_src_storage.addr,
+	.len = NET_LINK_ADDR_MAX_LENGTH
 };
 
 static bool test_failed;

@@ -148,7 +148,7 @@ int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr)
 
 	if (!net_neighbor_lladdr[nbr->idx].ref) {
 		memset(net_neighbor_lladdr[nbr->idx].lladdr.addr, 0,
-		       sizeof(net_neighbor_lladdr[nbr->idx].lladdr.storage));
+		       sizeof(net_neighbor_lladdr[nbr->idx].lladdr.addr));
 	}
 
 	nbr->idx = NET_NBR_LLADDR_UNKNOWN;

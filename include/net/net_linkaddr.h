@@ -19,6 +19,12 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_NET_L2_IEEE802154
+#define NET_LINK_ADDR_MAX_LENGTH 8
+#else
+#define NET_LINK_ADDR_MAX_LENGTH 6
+#endif
+
 /**
  *  @brief Hardware link address structure
  *
@@ -37,27 +43,17 @@ struct net_linkaddr {
  *
  *  Used to hold the link address information. This variant is needed
  *  when we have to store the link layer address.
- *  Note that you cannot cast this to net_linkaddr as they store
- *  different things.
+ *
+ *  Note that you cannot cast this to net_linkaddr as uint8_t * is
+ *  handled differently than uint8_t addr[] and the fields are purposely
+ *  in a different order.
  */
 struct net_linkaddr_storage {
 	/** The real length of the ll address. */
 	uint8_t len;
 
-	union {
-		/** The array of bytes representing the address */
-		uint8_t addr[0];
-
-		struct {
-			/* The integer array allocate total of 8 bytes
-			 * that can hold currently all the supported
-			 * link layer addresses. These int's can be
-			 * used when comparing lladdr instead of using
-			 * memcmp()
-			 */
-			uint32_t storage[2];
-		};
-	};
+	/** The array of bytes representing the address */
+	uint8_t addr[NET_LINK_ADDR_MAX_LENGTH];
 };
 
 /**
