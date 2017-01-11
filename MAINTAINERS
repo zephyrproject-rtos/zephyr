@@ -182,6 +182,7 @@ S:	Supported
 W:	https://www.zephyrproject.org/doc/subsystems/bluetooth/bluetooth.html
 F:	subsys/bluetooth/
 F:	include/bluetooth/
+F:	include/drivers/bluetooth/
 F:	drivers/bluetooth/
 F:	samples/bluetooth/
 F:	tests/bluetooth/
