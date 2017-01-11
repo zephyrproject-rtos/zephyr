@@ -266,29 +266,37 @@ static ALWAYS_INLINE
 }
 
 static ALWAYS_INLINE
-	void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
+	void sys_bitfield_set_bit(void *addr, unsigned int bit)
 {
+	mem_addr_t _addr = (unsigned long) addr;
+
 	/* Doing memory offsets in terms of 32-bit values to prevent
-	 * alignment issues
+	 * alignment issues. The 4 * is needed because void *
+	 * arithmethic is byte based and by dividing by 32, we have
+	 * the index of the four-byte block where the bit is.
 	 */
-	sys_set_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+	sys_set_bit(_addr + 4 * (bit / 32), bit & 0x1F);
 }
 
 static ALWAYS_INLINE
-	void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
+	void sys_bitfield_clear_bit(void *addr, unsigned int bit)
 {
-	sys_clear_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+	mem_addr_t _addr = (unsigned long) addr;
+
+	sys_clear_bit(_addr + 4 * (bit / 32), bit & 0x1F);
 }
 
 static ALWAYS_INLINE
-	int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
+	int sys_bitfield_test_bit(void *addr, unsigned int bit)
 {
-	return sys_test_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+	mem_addr_t _addr = (unsigned long) addr;
+
+	return sys_test_bit(_addr + 4 * (bit / 32), bit & 0x1F);
 }
 
 
 static ALWAYS_INLINE
-	int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
+	int sys_bitfield_test_and_set_bit(void *addr, unsigned int bit)
 {
 	int ret;
 
@@ -299,7 +307,7 @@ static ALWAYS_INLINE
 }
 
 static ALWAYS_INLINE
-	int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
+	int sys_bitfield_test_and_clear_bit(void *addr, unsigned int bit)
 {
 	int ret;
 
