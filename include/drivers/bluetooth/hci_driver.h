@@ -98,9 +98,6 @@ struct bt_hci_driver {
 /* Register a new HCI driver to the Bluetooth stack */
 int bt_hci_driver_register(struct bt_hci_driver *drv);
 
-/* Unregister a previously registered HCI driver */
-void bt_hci_driver_unregister(struct bt_hci_driver *drv);
-
 #ifdef __cplusplus
 }
 #endif

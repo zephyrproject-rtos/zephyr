@@ -3509,11 +3509,6 @@ int bt_hci_driver_register(struct bt_hci_driver *drv)
 	return 0;
 }
 
-void bt_hci_driver_unregister(struct bt_hci_driver *drv)
-{
-	bt_dev.drv = NULL;
-}
-
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 static int irk_init(void)
 {
