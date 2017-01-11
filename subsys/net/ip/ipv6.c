@@ -1589,12 +1589,16 @@ static inline struct net_buf *handle_ra_neighbor(struct net_buf *buf,
 
 {
 	struct net_linkaddr lladdr;
+	struct net_linkaddr_storage llstorage;
 	uint8_t padding;
 
 	if (!nbr) {
 		return NULL;
 	}
 
+	llstorage.len = NET_LINK_ADDR_MAX_LENGTH;
+	lladdr.len = NET_LINK_ADDR_MAX_LENGTH;
+	lladdr.addr = llstorage.addr;
 	if (net_nbuf_ll_src(buf)->len < lladdr.len) {
 		lladdr.len = net_nbuf_ll_src(buf)->len;
 	}
