@@ -1281,7 +1281,6 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			goto reset;
 		}
 
-		new_context->tcp->recv_ack = context->tcp->recv_ack;
 		new_context->tcp->recv_max_ack = context->tcp->recv_max_ack;
 		new_context->tcp->send_seq = context->tcp->send_seq;
 		new_context->tcp->send_ack = context->tcp->send_ack;

@@ -517,11 +517,11 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 {
 	int *count = user_data;
 
-	printf("%p\t%-12s\t%-10u%-10u%-11u%-11u%-11u%-5u\n",
+	printf("%p\t%-12s\t%-10u%-10u%-11u%-11u%-5u\n",
 	       tcp, net_tcp_state_str(tcp->state),
 	       ntohs(net_sin6_ptr(&tcp->context->local)->sin6_port),
 	       ntohs(net_sin6(&tcp->context->remote)->sin6_port),
-	       tcp->recv_ack, tcp->send_seq, tcp->send_ack, tcp->recv_mss);
+	       tcp->send_seq, tcp->send_ack, tcp->recv_mss);
 
 	(*count)++;
 }
@@ -546,7 +546,7 @@ static int shell_cmd_conn(int argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_TCP)
-	printf("\nTCP       \tState    \tSrc port  Dst port  Recv-Ack   "
+	printf("\nTCP       \tState    \tSrc port  Dst port  "
 	       "Send-Seq   Send-Ack   MSS\n");
 
 	count = 0;

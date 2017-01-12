@@ -521,16 +521,15 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 	    (tcp->state != NET_TCP_TIME_WAIT)) {
 		if (tcp->state == NET_TCP_SYN_RCVD) {
 			/* Send the reset segment with acknowledgment. */
-			segment.seq = 0;
 			segment.ack = tcp->send_ack;
 			segment.flags = NET_TCP_RST | NET_TCP_ACK;
 		} else {
 			/* Send the reset segment without acknowledgment. */
-			segment.seq = tcp->recv_ack;
 			segment.ack = 0;
 			segment.flags = NET_TCP_RST;
 		}
 
+		segment.seq = 0;
 		segment.src_addr = &tcp->context->local;
 		segment.dst_addr = remote;
 		segment.wnd = 0;

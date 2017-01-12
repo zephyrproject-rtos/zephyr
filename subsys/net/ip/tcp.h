@@ -113,9 +113,6 @@ struct net_tcp {
 	/** List pointer used for TCP retransmit buffering */
 	sys_slist_t sent_list;
 
-	/** Highest acknowledged number of sent segments. */
-	uint32_t recv_ack;
-
 	/** Max acknowledgment. */
 	uint32_t recv_max_ack;
 
