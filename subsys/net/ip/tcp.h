@@ -95,6 +95,9 @@ struct net_tcp {
 	/** Network context back pointer. */
 	struct net_context *context;
 
+	/** Cookie pointer passed to net_context_recv() */
+	void *recv_user_data;
+
 	/** TCP state. */
 	enum net_tcp_state state;
 
