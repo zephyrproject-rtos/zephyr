@@ -637,8 +637,10 @@ static int bmi160_attr_set(struct device *dev, enum sensor_channel chan,
 
 #if defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 #	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_ACC_X
+#	define BMI160_DATA_READY_BIT_MASK	(1 << 7)
 #else
 #	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_GYR_X
+#	define BMI160_DATA_READY_BIT_MASK	(1 << 6)
 #endif
 static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -646,9 +648,19 @@ static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 	uint8_t tx[BMI160_BUF_SIZE] = {0};
 	size_t i;
 
-	tx[0] = BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7);
-
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+
+	bmi160->sample.raw[1] = 0;
+
+	while ((bmi160->sample.raw[1] & BMI160_DATA_READY_BIT_MASK) == 0) {
+		tx[0] = BMI160_REG_STATUS | (1 << 7);
+
+		if (bmi160_transceive(dev, tx, 2, bmi160->sample.raw, 2) < 0) {
+			return -EIO;
+		}
+	}
+
+	tx[0] = BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7);
 
 	if (bmi160_transceive(dev, tx, BMI160_BUF_SIZE, bmi160->sample.raw,
 			      BMI160_BUF_SIZE) < 0) {
