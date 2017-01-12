@@ -31,15 +31,11 @@ Values
 ======
 
 Sensor devices return results as :c:type:`struct sensor_value`.  This
-representation avoids use of floating point operations on setups where they
-are not supported or desired.
+representation avoids use of floating point values as they may not be
+supported on certain setups.
 
-Most sensor values have a type of :c:macro:`SENSOR_TYPE_INT_PLUS_MICRO`.
-Other possible representations are listed below.  Applications are
-responsible for correctly interpreting the :c:data:`type` field of a
-returned value.
-
-.. doxygenenum:: sensor_value_type
+.. doxygenstruct:: sensor_value
+    :members:
 
 Fetching Values
 ===============

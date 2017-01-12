@@ -79,7 +79,6 @@ static inline void lps25hb_press_convert(struct sensor_value *val,
 					 int32_t raw_val)
 {
 	/* val = raw_val / 40960 */
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = raw_val / 40960;
 	val->val2 = ((int32_t)raw_val * 1000000 / 40960) % 1000000;
 }
@@ -90,7 +89,6 @@ static inline void lps25hb_temp_convert(struct sensor_value *val,
 	int32_t uval;
 
 	/* val = raw_val / 480 + 42.5 */
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	uval = (int32_t)raw_val * 1000000 / 480 + 42500000;
 	val->val1 = (raw_val * 10 / 480 + 425) / 10;
 	val->val2 = uval % 1000000;

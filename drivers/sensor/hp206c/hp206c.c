@@ -153,10 +153,6 @@ static int hp206c_attr_set(struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-		return -EINVAL;
-	}
-
 #ifdef CONFIG_HP206C_OSR_RUNTIME
 	if (attr == SENSOR_ATTR_OVERSAMPLING) {
 		return hp206c_osr_set(dev, val->val1);
@@ -237,8 +233,6 @@ static int hp206c_val_get(struct device *dev,
 	} else {
 		temp = hp206c_buf_convert(buf, false);
 	}
-
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 
 	if (cmd == HP206C_CMD_READ_P) {
 		val->val1 = temp / 1000;

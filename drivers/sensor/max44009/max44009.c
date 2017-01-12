@@ -87,10 +87,6 @@ static int max44009_attr_set(struct device *dev, enum sensor_channel chan,
 
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -ENOTSUP;
-		}
-
 		/* convert rate to mHz */
 		cr = val->val1 * 1000 + val->val2 / 1000;
 
@@ -165,7 +161,6 @@ static int max44009_channel_get(struct device *dev, enum sensor_channel chan,
 	uval = uval << (drv_data->sample >> MAX44009_SAMPLE_EXPONENT_SHIFT);
 
 	/* lux is the integer of sample output multiplied by 0.045. */
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = (uval * 45) / 1000;
 	val->val2 = ((uval * 45) % 1000) * 1000;
 

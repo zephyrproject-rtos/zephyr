@@ -49,7 +49,6 @@ void main(void)
 	struct sensor_value val;
 	struct sensor_trigger trig;
 
-	val.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val.val1 = 26;
 	val.val2 = 0;
 

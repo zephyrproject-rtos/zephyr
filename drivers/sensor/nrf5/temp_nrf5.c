@@ -84,7 +84,6 @@ static int temp_nrf5_channel_get(struct device *dev,
 	}
 
 	uval = data->sample * TEMP_NRF5_TEMP_SCALE;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = uval / 1000000;
 	val->val2 = uval % 1000000;
 

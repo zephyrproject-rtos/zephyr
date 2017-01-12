@@ -44,7 +44,6 @@ static int hts221_channel_get(struct device *dev,
 			   drv_data->t0_degc_x8;
 
 		/* convert temperature x8 to degrees Celsius */
-		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 		val->val1 = conv_val / 8;
 		val->val2 = (conv_val % 8) * (1000000 / 8);
 	} else { /* SENSOR_CHAN_HUMIDITY */
@@ -54,7 +53,6 @@ static int hts221_channel_get(struct device *dev,
 			   drv_data->h0_rh_x2;
 
 		/* convert humidity x2 to mili-percent */
-		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 		val->val1 = conv_val * 500;
 		val->val2 = 0;
 	}

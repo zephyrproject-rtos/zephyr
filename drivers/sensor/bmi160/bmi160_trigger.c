@@ -209,10 +209,6 @@ int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 	uint32_t slope_th_ums2;
 
 	if (attr == SENSOR_ATTR_SLOPE_TH) {
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -EINVAL;
-		}
-
 		if (bmi160_byte_read(dev, BMI160_REG_ACC_RANGE, &reg_val) < 0) {
 			return -EIO;
 		}
@@ -233,10 +229,6 @@ int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			return -EIO;
 		}
 	} else { /* SENSOR_ATTR_SLOPE_DUR */
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -EINVAL;
-		}
-
 		/* slope duration is measured in number of samples */
 		if (val->val1 < 1 || val->val1 > 4) {
 			return -ENOTSUP;

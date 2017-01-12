@@ -251,7 +251,6 @@ static inline void lsm6ds0_accel_convert(struct sensor_value *val, int raw_val,
 	double dval;
 
 	dval = (double)(raw_val) * scale / 32767.0;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
@@ -309,7 +308,6 @@ static inline void lsm6ds0_gyro_convert(struct sensor_value *val, int raw_val,
 	double dval;
 
 	dval = (double)(raw_val) * numerator / 1000.0 * SENSOR_DEG2RAD_DOUBLE;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
@@ -366,7 +364,6 @@ static void lsm6ds0_gyro_channel_get_temp(struct sensor_value *val,
 					  struct lsm6ds0_data *data)
 {
 	/* val = temp_sample / 16 + 25 */
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = data->temp_sample / 16 + 25;
 	val->val2 = (data->temp_sample % 16) * (1000000 / 16);
 }

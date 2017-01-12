@@ -59,7 +59,6 @@ static void ak8975_convert(struct sensor_value *val, int16_t sample,
 
 	conv_val = sample * AK8975_MICRO_GAUSS_PER_BIT *
 		   ((uint16_t)adjustment + 128) / 256;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = conv_val / 1000000;
 	val->val2 = conv_val % 1000000;
 }

@@ -37,32 +37,17 @@ extern "C" {
 #include <device.h>
 #include <errno.h>
 
-/** @brief Sensor value types. */
-enum sensor_value_type {
-	/**
-	 * val1 contains an integer value, val2 is the fractional value.
-	 * To obtain the final value, use the formula: val1 + val2 *
-	 * 10^(-6).
-	 */
-	SENSOR_VALUE_TYPE_INT_PLUS_MICRO,
-	/** @brief dval contains a floating point value. */
-	SENSOR_VALUE_TYPE_DOUBLE,
-};
-
 /**
  * @brief Representation of a sensor readout value.
  *
- * The meaning of the fields is dictated by the type field.
+ * The value is represented as having an integer and a fractional part,
+ * and can be obtained using the formula val1 + val2 * 10^(-6).
  */
 struct sensor_value {
-	enum sensor_value_type type;
-	union  {
-		struct {
-			int32_t val1;
-			int32_t val2;
-		};
-		double dval;
-	};
+	/** Integer part of the value. */
+	int32_t val1;
+	/** Fractional part of the value. */
+	int32_t val2;
 };
 
 /**
@@ -422,7 +407,6 @@ static inline int32_t sensor_ms2_to_g(const struct sensor_value *ms2)
  */
 static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
 {
-	ms2->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	ms2->val1 = ((int64_t)g * SENSOR_G) / 1000000LL;
 	ms2->val2 = ((int64_t)g * SENSOR_G) % 1000000LL;
 }
@@ -453,7 +437,6 @@ static inline int32_t sensor_rad_to_degrees(const struct sensor_value *rad)
  */
 static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
 {
-	rad->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	rad->val1 = ((int64_t)d * SENSOR_PI / 180LL) / 1000000LL;
 	rad->val2 = ((int64_t)d * SENSOR_PI / 180LL) % 1000000LL;
 }
@@ -466,14 +449,7 @@ static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
  */
 static inline double sensor_value_to_double(struct sensor_value *val)
 {
-	switch (val->type) {
-	case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
-		return (double)val->val1 + (double)val->val2 / 1000000;
-	case SENSOR_VALUE_TYPE_DOUBLE:
-		return val->dval;
-	}
-
-	return 0.0;
+	return (double)val->val1 + (double)val->val2 / 1000000;
 }
 
 /**

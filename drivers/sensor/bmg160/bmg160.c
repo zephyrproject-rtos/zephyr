@@ -149,10 +149,6 @@ static int bmg160_attr_set(struct device *dev, enum sensor_channel chan,
 
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -ENOTSUP;
-		}
-
 		range_dps = sensor_rad_to_degrees(val);
 
 		idx = bmg160_is_val_valid(range_dps,
@@ -171,10 +167,6 @@ static int bmg160_attr_set(struct device *dev, enum sensor_channel chan,
 		return 0;
 
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -ENOTSUP;
-		}
-
 		idx = bmg160_is_val_valid(val->val1,
 					  bmg160_sampling_freq_map,
 					  BMG160_SAMPLING_FREQ_MAP_SIZE);
@@ -233,8 +225,6 @@ static void bmg160_to_fixed_point(struct bmg160_device_data *bmg160,
 				  enum sensor_channel chan, int16_t raw,
 				  struct sensor_value *val)
 {
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
-
 	if (chan == SENSOR_CHAN_TEMP) {
 		val->val1 = 23 + (raw / 2);
 		val->val2 = (raw % 2) * 500000;

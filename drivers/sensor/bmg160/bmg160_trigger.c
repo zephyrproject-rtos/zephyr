@@ -87,10 +87,6 @@ int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
 		uint16_t any_th_dps, range_dps;
 		uint8_t any_th_reg_val;
 
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -EINVAL;
-		}
-
 		any_th_dps = sensor_rad_to_degrees(val);
 		range_dps = BMG160_SCALE_TO_RANGE(bmg160->scale);
 		any_th_reg_val = any_th_dps * 2000 / range_dps;
@@ -103,10 +99,6 @@ int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
 		return bmg160_write_byte(dev, BMG160_REG_THRES,
 					 any_th_dps & BMG160_THRES_MASK);
 	} else if (attr == SENSOR_ATTR_SLOPE_DUR) {
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -EINVAL;
-		}
-
 		/* slope duration can be 4, 8, 12 or 16 samples */
 		if (val->val1 != 4 && val->val1 != 8 &&
 		    val->val1 != 12 && val->val1 != 16) {

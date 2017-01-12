@@ -20,13 +20,7 @@
 
 static double convert_to_double(struct sensor_value *v)
 {
-	switch (v->type) {
-	case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
-		return v->val1 + ((double)v->val2 / 1000000);
-	case SENSOR_VALUE_TYPE_DOUBLE:
-		return v->dval;
-	}
-	return 0;
+	return v->val1 + ((double)v->val2 / 1000000);
 }
 
 void main(void)

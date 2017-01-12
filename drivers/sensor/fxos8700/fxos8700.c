@@ -95,7 +95,6 @@ static void fxos8700_accel_convert(struct sensor_value *val, int16_t raw,
 	 */
 	val->val1 = (int32_t) micro_ms2 / 1000000;
 	val->val2 = (int32_t) micro_ms2 % 1000000;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 }
 
 static void fxos8700_magn_convert(struct sensor_value *val, int16_t raw)
@@ -109,7 +108,6 @@ static void fxos8700_magn_convert(struct sensor_value *val, int16_t raw)
 
 	val->val1 = micro_g / 1000000;
 	val->val2 = micro_g % 1000000;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 }
 
 static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,

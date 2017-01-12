@@ -66,7 +66,6 @@ static int gts_channel_get(struct device *dev,
 	dval = 1 / (log(1023.0 / analog_val - 1.0) / B_CONST +
 		    1 / 298.15) - 273.15;
 
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 

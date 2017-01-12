@@ -27,7 +27,6 @@ static void lis3mdl_convert(struct sensor_value *val, int16_t raw_val,
 			    uint16_t divider)
 {
 	/* val = raw_val / divider */
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = raw_val / divider;
 	val->val2 = (((int64_t)raw_val % divider) * 1000000L) / divider;
 }

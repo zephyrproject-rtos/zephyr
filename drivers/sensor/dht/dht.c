@@ -174,8 +174,6 @@ static int dht_channel_get(struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_TEMP || chan == SENSOR_CHAN_HUMIDITY);
 
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
-
 	/* see data calculation example from datasheet */
 #if defined(CONFIG_DHT_CHIP_DHT11)
 	/* use only integral data byte */

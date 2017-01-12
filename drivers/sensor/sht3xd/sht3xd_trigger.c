@@ -47,10 +47,6 @@ int sht3xd_attr_set(struct device *dev,
 	struct sht3xd_data *drv_data = dev->driver_data;
 	uint16_t set_cmd, clear_cmd, reg_val, temp, rh;
 
-	if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-		return -ENOTSUP;
-	}
-
 	if (attr == SENSOR_ATTR_LOWER_THRESH) {
 		if (chan == SENSOR_CHAN_TEMP) {
 			drv_data->t_low = sht3xd_temp_processed_to_raw(val);

@@ -59,7 +59,6 @@ static int gls_channel_get(struct device *dev,
 	ldr_val = (1023.0 - analog_val) * 10.0 / analog_val;
 	dval = 10000.0 / pow(ldr_val * 15.0, 4.0/3.0);
 
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 

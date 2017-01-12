@@ -28,7 +28,6 @@ static void mpu6050_convert_accel(struct sensor_value *val, int16_t raw_val,
 	int64_t conv_val;
 
 	conv_val = ((int64_t)raw_val * SENSOR_G) >> sensitivity_shift;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = conv_val / 1000000;
 	val->val2 = conv_val % 1000000;
 }
@@ -41,7 +40,6 @@ static void mpu6050_convert_gyro(struct sensor_value *val, int16_t raw_val,
 
 	conv_val = ((int64_t)raw_val * SENSOR_PI * 10) /
 		   (180 * sensitivity_x10);
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = conv_val / 1000000;
 	val->val2 = conv_val % 1000000;
 }
@@ -50,7 +48,6 @@ static void mpu6050_convert_gyro(struct sensor_value *val, int16_t raw_val,
 static inline void mpu6050_convert_temp(struct sensor_value *val,
 					int16_t raw_val)
 {
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = raw_val / 340 + 36;
 	val->val2 = ((int64_t)(raw_val % 340) * 1000000) / 340 + 530000;
 

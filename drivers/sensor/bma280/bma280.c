@@ -65,7 +65,6 @@ static void bma280_channel_accel_convert(struct sensor_value *val,
 	 * accel_val = (sample * BMA280_PMU_FULL_RAGE) /
 	 *             (2^data_width * 10^6)
 	 */
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	raw_val = (raw_val * BMA280_PMU_FULL_RANGE) /
 		  (1 << (8 + BMA280_ACCEL_LSB_BITS));
 	val->val1 = raw_val / 1000000;
@@ -100,7 +99,6 @@ static int bma280_channel_get(struct device *dev,
 		bma280_channel_accel_convert(val + 2, drv_data->z_sample);
 	} else if (chan == SENSOR_CHAN_TEMP) {
 		/* temperature_val = 23 + sample / 2 */
-		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 		val->val1 = (drv_data->temp_sample >> 1) + 23;
 		val->val2 = 500000 * (drv_data->temp_sample & 1);
 		return 0;

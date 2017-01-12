@@ -69,8 +69,6 @@ static int mcp9808_channel_get(struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_TEMP);
 
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
-
 	val->val1 = (data->reg_val & MCP9808_TEMP_INT_MASK) >>
 		     MCP9808_TEMP_INT_SHIFT;
 	val->val2 = (data->reg_val & MCP9808_TEMP_FRAC_MASK) * 62500;

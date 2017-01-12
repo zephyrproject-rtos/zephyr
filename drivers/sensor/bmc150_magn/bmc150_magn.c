@@ -332,7 +332,6 @@ static int bmc150_magn_sample_fetch(struct device *dev,
 static void bmc150_magn_convert(struct sensor_value *val, int raw_val)
 {
 	/* val = raw_val / 1600 */
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = raw_val / 1600;
 	val->val2 = ((int32_t)raw_val * (1000000 / 1600)) % 1000000;
 }
@@ -446,11 +445,6 @@ static int bmc150_magn_attr_set(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			SYS_LOG_DBG("invalid parameter type");
-			return -ENOTSUP;
-		}
-
 		if (data->max_odr <= 0) {
 			if (bmc150_magn_compute_max_odr(dev, 0, 0,
 							&data->max_odr) < 0) {
@@ -470,13 +464,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 #endif
 #if defined(BMC150_MAGN_SET_ATTR_REP)
 	case SENSOR_ATTR_OVERSAMPLING:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			SYS_LOG_DBG("invalid parameter type");
-			return -ENOTSUP;
-		}
-
 		bmc150_magn_attr_set_rep(dev, chan, val);
-
 		break;
 #endif
 	default:

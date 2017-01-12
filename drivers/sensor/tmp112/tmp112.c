@@ -109,11 +109,6 @@ static int tmp112_attr_set(struct device *dev,
 
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -ENOTSUP;
-		}
-
 		/* the sensor supports two ranges -55 to 128 and -55 to 150 */
 		/* the value contains the upper limit */
 		if (val->val1 == 128) {
@@ -133,11 +128,6 @@ static int tmp112_attr_set(struct device *dev,
 		return 0;
 
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -ENOTSUP;
-		}
-
 		/* conversion rate in mHz */
 		cr = val->val1 * 1000 + val->val2 / 1000;
 
@@ -212,7 +202,6 @@ static int tmp112_channel_get(struct device *dev,
 	}
 
 	uval = (int32_t)drv_data->sample * TMP112_TEMP_SCALE;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = uval / 1000000;
 	val->val2 = uval % 1000000;
 

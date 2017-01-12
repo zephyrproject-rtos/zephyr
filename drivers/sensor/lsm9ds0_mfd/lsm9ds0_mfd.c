@@ -401,7 +401,6 @@ static inline void lsm9ds0_mfd_convert_accel(struct sensor_value *val,
 	double dval;
 
 	dval = (double)(raw_val) * scale;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
@@ -488,7 +487,6 @@ static inline void lsm9ds0_mfd_convert_magn(struct sensor_value *val,
 	double dval;
 
 	dval = (double)(raw_val) * scale;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
@@ -582,7 +580,6 @@ static int lsm9ds0_mfd_channel_get(struct device *dev,
 #endif
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
 	case SENSOR_CHAN_TEMP:
-		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 		val->val1 = data->sample_temp;
 		val->val2 = 0;
 		return 0;
@@ -600,18 +597,10 @@ static inline int lsm9ds0_mfd_attr_set_accel(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -EINVAL;
-		}
-
 		return lsm9ds0_mfd_accel_set_odr(dev, val);
 #endif
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -EINVAL;
-		}
-
 		return lsm9ds0_mfd_accel_set_fs(dev, sensor_ms2_to_g(val));
 #endif
 	default:
@@ -630,18 +619,10 @@ static inline int lsm9ds0_mfd_attr_set_magn(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -EINVAL;
-		}
-
 		return lsm9ds0_mfd_magn_set_odr(dev, val);
 #endif
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -EINVAL;
-		}
-
 		return lsm9ds0_mfd_magn_set_fs(dev, val);
 #endif
 	default:

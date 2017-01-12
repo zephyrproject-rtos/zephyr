@@ -165,7 +165,6 @@ static inline void lsm9ds0_gyro_convert(struct sensor_value *val, int raw_val,
 	double dval;
 
 	dval = (double)(raw_val) * numerator / 1000.0 * DEG2RAD;
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
@@ -231,10 +230,6 @@ static int lsm9ds0_gyro_attr_set(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -ENOTSUP;
-		}
-
 		if (lsm9ds0_gyro_set_fs(dev, sensor_rad_to_degrees(val)) < 0) {
 			SYS_LOG_DBG("full-scale value not supported");
 			return -EIO;
@@ -243,10 +238,6 @@ static int lsm9ds0_gyro_attr_set(struct device *dev,
 #endif
 #if defined(CONFIG_LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
-			return -ENOTSUP;
-		}
-
 		if (lsm9ds0_gyro_set_odr(dev, val->val1) < 0) {
 			SYS_LOG_DBG("sampling frequency value not supported");
 			return -EIO;

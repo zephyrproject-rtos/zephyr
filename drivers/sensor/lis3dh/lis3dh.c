@@ -24,7 +24,6 @@
 static void lis3dh_convert(struct sensor_value *val, int64_t raw_val)
 {
 	/* val = raw_val * LIS3DH_ACCEL_SCALE / (10^6 * (2^16 - 1)) */
-	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	raw_val = raw_val * LIS3DH_ACCEL_SCALE / 1000000;
 	val->val1 = raw_val / 0xFFFF;
 	val->val2 = (raw_val % 0xFFFF) * 1000000 / 0xFFFF;
