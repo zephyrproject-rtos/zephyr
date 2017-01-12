@@ -166,6 +166,15 @@ static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 
 	/* Set iface down */
 	net_if_down(ctxt->iface);
+
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+	if (chan->conn != default_conn) {
+		return;
+	}
+
+	bt_conn_unref(default_conn);
+	default_conn = NULL;
+#endif
 }
 
 static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -422,6 +431,25 @@ static int bt_scan(uint32_t mgmt_request, struct net_if *iface, void *data,
 	return 0;
 }
 
+static int bt_disconnect(uint32_t mgmt_request, struct net_if *iface,
+			 void *data, size_t len)
+{
+	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+
+	if (!ctxt->ipsp_chan.chan.conn) {
+		NET_ERR("Not connected");
+		return -ENOTCONN;
+	}
+
+	/* Release connect reference in case of central/router role */
+	if (default_conn) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
+	}
+
+	return bt_l2cap_chan_disconnect(&ctxt->ipsp_chan.chan);
+}
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
@@ -484,6 +512,7 @@ static int net_bt_init(struct device *dev)
 #if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_CONNECT, bt_connect);
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_SCAN, bt_scan);
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_DISCONNECT, bt_disconnect);
 #endif
 
 NET_DEVICE_INIT(net_bt, "net_bt", net_bt_init, &bt_context_data, NULL,
