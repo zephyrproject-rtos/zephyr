@@ -102,6 +102,11 @@ static inline uint32_t init_isn(void)
 	return sys_rand32_get();
 }
 
+static inline uint32_t retry_timeout(const struct net_tcp *tcp)
+{
+	return (1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
+}
+
 static void tcp_retry_expired(struct k_timer *timer)
 {
 	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
@@ -111,8 +116,8 @@ static void tcp_retry_expired(struct k_timer *timer)
 	 * the first (only the first!) unack'd packet.
 	 */
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
-		tcp->retry_timeout_ms *= 2;
-		k_timer_start(&tcp->retry_timer, tcp->retry_timeout_ms, 0);
+		tcp->retry_timeout_shift++;
+		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
 
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
@@ -623,8 +628,8 @@ static void restart_timer(struct net_tcp *tcp)
 {
 	if (sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->flags |= NET_TCP_RETRYING;
-		tcp->retry_timeout_ms = INIT_RETRY_MS;
-		k_timer_start(&tcp->retry_timer, INIT_RETRY_MS, 0);
+		tcp->retry_timeout_shift = 0;
+		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
 	} else {
 		k_timer_stop(&tcp->retry_timer);
 		tcp->flags &= ~NET_TCP_RETRYING;

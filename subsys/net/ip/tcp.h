@@ -110,9 +110,6 @@ struct net_tcp {
 	/** Retransmit timer */
 	struct k_timer retry_timer;
 
-	/** Current retransmit period */
-	uint32_t retry_timeout_ms;
-
 	/** List pointer used for TCP retransmit buffering */
 	sys_slist_t sent_list;
 
@@ -133,6 +130,9 @@ struct net_tcp {
 
 	/** Max RX segment size (MSS). */
 	uint16_t recv_mss;
+
+	/** Current retransmit period */
+	uint8_t retry_timeout_shift;
 
 	/** Flags for the TCP. */
 	uint8_t flags;
