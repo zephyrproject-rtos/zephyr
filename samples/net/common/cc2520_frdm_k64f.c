@@ -21,12 +21,12 @@
 #include <init.h>
 #include <pinmux.h>
 #include <pinmux/pinmux.h>
-#include <pinmux/k64/pinmux.h>
+#include <fsl_port.h>
 
 #include <ieee802154/cc2520.h>
 #include <gpio.h>
 
-#define CC2520_GPIO_DEV_NAME CONFIG_GPIO_K64_C_DEV_NAME
+#define CC2520_GPIO_DEV_NAME CONFIG_GPIO_MCUX_PORTC_NAME
 
 #define CC2520_GPIO_VREG_EN	12  /* PTC12 */
 #define CC2520_GPIO_RESET	3   /* PTC3 */
@@ -46,13 +46,6 @@ static struct cc2520_gpio_configuration cc2520_gpios[CC2520_GPIO_IDX_MAX] = {
 
 /* CONFIG_PINMUX_INIT_PRIORITY + 1 ! */
 #define CC2520_PINMUX_PRIORITY 46
-
-/* PTC<2/3/4> are by default set on GPIO function */
-static const struct pin_config cc2520_mux_config[] = {
-	{ K64_PIN_PTC12, K64_PINMUX_FUNC_GPIO },
-	{ K64_PIN_PTC16, K64_PINMUX_FUNC_GPIO },
-	{ K64_PIN_PTC17, K64_PINMUX_FUNC_GPIO },
-};
 
 struct cc2520_gpio_configuration *cc2520_configure_gpios(void)
 {
@@ -85,14 +78,17 @@ struct cc2520_gpio_configuration *cc2520_configure_gpios(void)
 
 static int fdrm_k64f_cc2520_pinmux_setup(struct device *dev)
 {
-	int i;
-
 	ARG_UNUSED(dev);
 
-	for (i = 0; i < ARRAY_SIZE(cc2520_mux_config); i++) {
-		_fsl_k64_set_pin(cc2520_mux_config[i].pin_num,
-				 cc2520_mux_config[i].mode);
-	}
+	struct device *portc =
+		device_get_binding(CONFIG_PINMUX_MCUX_PORTC_NAME);
+
+	pinmux_pin_set(portc,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  3, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 	return 0;
 }

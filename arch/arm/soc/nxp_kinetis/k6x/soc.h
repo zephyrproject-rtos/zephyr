@@ -179,45 +179,6 @@ extern "C" {
 
 #endif /* CONFIG_UART_K20 */
 
-/* Uart console settings */
-#if defined(CONFIG_UART_CONSOLE)
-
-#define CONFIG_UART_CONSOLE_PORT PCR_PORT_B
-#define CONFIG_UART_CONSOLE_PORT_RX_PIN 16
-#define CONFIG_UART_CONSOLE_PORT_TX_PIN 17
-#define CONFIG_UART_CONSOLE_PORT_MUX_FUNC PCR_MUX_ALT3
-#define CONFIG_UART_CONSOLE_CLK_FREQ SYSCLK_DEFAULT_IOSC_HZ
-
-#endif /* CONFIG_UART_CONSOLE */
-
-/*
- * GPIO configuration settings
- */
-#if defined(CONFIG_GPIO_K64)
-
-#define GPIO_K64_A_BASE_ADDR	0x400FF000
-#define GPIO_K64_A_IRQ		IRQ_GPIO_PORTA
-
-#define GPIO_K64_B_BASE_ADDR	0x400FF040
-#define GPIO_K64_B_IRQ		IRQ_GPIO_PORTB
-
-#define GPIO_K64_C_BASE_ADDR	0x400FF080
-#define GPIO_K64_C_IRQ		IRQ_GPIO_PORTC
-
-#define GPIO_K64_D_BASE_ADDR	0x400FF0C0
-#define GPIO_K64_D_IRQ		IRQ_GPIO_PORTD
-
-#define GPIO_K64_E_BASE_ADDR	0x400FF100
-#define GPIO_K64_E_IRQ		IRQ_GPIO_PORTE
-
-#endif /* CONFIG_GPIO_K64 */
-
-#define PORT_K64_A_BASE_ADDR	0x40049000
-#define PORT_K64_B_BASE_ADDR	0x4004A000
-#define PORT_K64_C_BASE_ADDR	0x4004B000
-#define PORT_K64_D_BASE_ADDR	0x4004C000
-#define PORT_K64_E_BASE_ADDR	0x4004D000
-
 /*
  * PWM/FTM configuration settings
  */
@@ -250,15 +211,6 @@ extern "C" {
 #define SPI_K64_2_CLK_GATE_REG_BIT	12
 
 #endif /* CONFIG_SPI_K64 */
-
-/*
- * PINMUX configuration settings
- */
-#if defined(CONFIG_PINMUX)
-
-#define PINMUX_NUM_PINS			160
-
-#endif /* CONFIG_PINMUX */
 
 #endif /* !_ASMLANGUAGE */
 

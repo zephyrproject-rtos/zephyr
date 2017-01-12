@@ -93,43 +93,43 @@ config BLUETOOTH_UART_ON_DEV_NAME
 config PINMUX
 	def_bool y
 
-if PINMUX_KSDK
+if PINMUX_MCUX
 
-config PINMUX_KSDK_PORTA
+config PINMUX_MCUX_PORTA
+	def_bool n
+
+config PINMUX_MCUX_PORTB
+	def_bool y if UART_K20_PORT_0
+
+config PINMUX_MCUX_PORTC
 	def_bool y
 
-config PINMUX_KSDK_PORTB
+config PINMUX_MCUX_PORTD
 	def_bool y
 
-config PINMUX_KSDK_PORTC
+config PINMUX_MCUX_PORTE
+	def_bool y if UART_K20_PORT_4
+
+endif # PINMUX_MCUX
+
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	def_bool n
+
+config GPIO_MCUX_PORTB
 	def_bool y
 
-config PINMUX_KSDK_PORTD
+config GPIO_MCUX_PORTC
 	def_bool y
 
-config PINMUX_KSDK_PORTE
+config GPIO_MCUX_PORTD
 	def_bool y
 
-endif # PINMUX_KSDK
-
-if GPIO_K64
-
-config GPIO_K64_A
+config GPIO_MCUX_PORTE
 	def_bool y
 
-config GPIO_K64_B
-	def_bool y
-
-config GPIO_K64_C
-	def_bool y
-
-config GPIO_K64_D
-	def_bool y
-
-config GPIO_K64_E
-	def_bool y
-
-endif # GPIO_K64
+endif # GPIO_MCUX
 
 if I2C
 
@@ -170,7 +170,7 @@ config FXOS8700_I2C_ADDRESS
 	default 0x1e
 
 config FXOS8700_GPIO_NAME
-	default GPIO_K64_D_DEV_NAME
+	default GPIO_MCUX_PORTD_NAME
 
 config FXOS8700_GPIO_PIN
 	default 13
@@ -208,7 +208,7 @@ endif # SPI
 
 if ETHERNET
 
-config ETH_KSDK_0
+config ETH_MCUX_0
 	def_bool y
 
 endif # ETHERNET

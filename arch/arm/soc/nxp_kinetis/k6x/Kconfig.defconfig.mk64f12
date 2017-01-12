@@ -24,31 +24,24 @@ config SOC
 
 if PINMUX
 
-config PINMUX_KSDK
+config PINMUX_MCUX
 	def_bool y
 
 endif # PINMUX
-
-if PINMUX_DEV
-
-config PINMUX_DEV_KSDK
-	def_bool y
-
-endif # PINMUX_DEV
 
 config GPIO
 	def_bool y
 
 if GPIO
 
-config GPIO_K64
+config GPIO_MCUX
 	def_bool y
 
 endif # GPIO
 
 if I2C
 
-config I2C_KSDK
+config I2C_MCUX
 	def_bool y
 
 endif # I2C
@@ -72,21 +65,21 @@ endif # SPI
 
 if NET_L2_ETHERNET
 
-config ETH_KSDK
+config ETH_MCUX
 	def_bool y
 
 endif # NET_L2_ETHERNET
 
 if RANDOM_GENERATOR
 
-config RANDOM_KSDK
+config RANDOM_MCUX
 	def_bool y
 
 endif # RANDOM_GENERATOR
 
 if FLASH
 
-config SOC_FLASH_KSDK
+config SOC_FLASH_MCUX
 	def_bool y
 
 endif # FLASH

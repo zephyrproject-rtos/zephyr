@@ -1,4 +1,4 @@
-# Makefile - Kinetis SDK
+# Makefile - MCUXpresso SDK
 #
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
 #
@@ -15,30 +15,30 @@
 # limitations under the License.
 #
 
-# Translate the SOC name and part number into the ksdk device and CPU name
+# Translate the SoC name and part number into the mcux device and cpu name
 # respectively.
-KSDK_DEVICE = $(shell echo $(CONFIG_SOC) | tr '[:lower:]' '[:upper:]')
-KSDK_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))
+MCUX_DEVICE = $(shell echo $(CONFIG_SOC) | tr '[:lower:]' '[:upper:]')
+MCUX_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))
 
-ifdef CONFIG_HAS_KSDK
-ifdef CONFIG_ETH_KSDK
-ZEPHYRINCLUDE += -I$(srctree)/ext/hal/ksdk/components/phyksz8081
+ifdef CONFIG_HAS_MCUX
+ifdef CONFIG_ETH_MCUX
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/components/phyksz8081
 endif
-ZEPHYRINCLUDE += -I$(srctree)/ext/hal/ksdk/devices/$(KSDK_DEVICE)
-ZEPHYRINCLUDE += -I$(srctree)/ext/hal/ksdk/drivers
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/devices/$(MCUX_DEVICE)
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/drivers
 
-# The ksdk uses the CPU name to expose SOC-specific features of a given
+# The mcux uses the cpu name to expose SoC-specific features of a given
 # peripheral. For example, the UART peripheral may be instantiated with/without
 # a hardware FIFO, and the size of that FIFO may be different for each instance
-# in a given SOC. See fsl_device_registers.h and $(KSDK_DEVICE)_features.h
-KBUILD_CFLAGS += -D$(KSDK_CPU)
+# in a given SoC. See fsl_device_registers.h and $(MCUX_DEVICE)_features.h
+KBUILD_CFLAGS += -D$(MCUX_CPU)
 
-# Build ksdk device-specific objects. Although it is not normal Kbuild
+# Build mcux device-specific objects. Although it is not normal Kbuild
 # practice, drilling down like this avoids the need for repetitive Makefiles
-# for every ksdk device.
-obj-y += devices/$(KSDK_DEVICE)/fsl_clock.o
+# for every mcux device.
+obj-y += devices/$(MCUX_DEVICE)/fsl_clock.o
 
-# Build ksdk drivers that can be used for multiple SoC's.
+# Build mcux drivers that can be used for multiple SoC's.
 obj-y += components/
 obj-y += drivers/
 

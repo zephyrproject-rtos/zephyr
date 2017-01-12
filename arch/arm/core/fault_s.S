@@ -32,12 +32,15 @@ _ASM_FILE_PROLOGUE
 GTEXT(_Fault)
 
 GTEXT(__hard_fault)
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
+#elif defined(CONFIG_ARMV7_M)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)
 GTEXT(__usage_fault)
 GTEXT(__debug_monitor)
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 GTEXT(__reserved)
 
 /**
@@ -64,49 +67,58 @@ GTEXT(__reserved)
  */
 
 SECTION_SUBSEC_FUNC(TEXT,__fault,__hard_fault)
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
+#elif defined(CONFIG_ARMV7_M)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__mpu_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__bus_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__usage_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__debug_monitor)
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 SECTION_SUBSEC_FUNC(TEXT,__fault,__reserved)
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
-    /* force unlock interrupts */
-    cpsie i
+#if defined(CONFIG_ARMV6_M)
+	/* force unlock interrupts */
+	cpsie i
 
-    /* Use EXC_RETURN state to find out if stack frame is on the MSP or PSP */
-    ldr r0, =0x4
-    mov r1, lr
-    tst r1, r0
-    beq _stack_frame_msp
-    mrs r0, PSP
-    bne _stack_frame_endif
+	/* Use EXC_RETURN state to find out if stack frame is on the
+	 * MSP or PSP
+	 */
+	ldr r0, =0x4
+	mov r1, lr
+	tst r1, r0
+	beq _stack_frame_msp
+	mrs r0, PSP
+	bne _stack_frame_endif
 _stack_frame_msp:
-    mrs r0, MSP
+	mrs r0, MSP
 _stack_frame_endif:
 
-#else /* CONFIG_CPU_CORTEX_M3_M4 */
-    /* force unlock interrupts */
-    eors.n r0, r0
-    msr BASEPRI, r0
+#elif defined(CONFIG_ARMV7_M)
+	/* force unlock interrupts */
+	eors.n r0, r0
+	msr BASEPRI, r0
 
 	/* this reimplements _ScbIsNestedExc() */
-    ldr ip, =_SCS_ICSR
-    ldr ip, [ip]
-    ands.w ip, #_SCS_ICSR_RETTOBASE
+	ldr ip, =_SCS_ICSR
+	ldr ip, [ip]
+	ands.w ip, #_SCS_ICSR_RETTOBASE
 
 	ite eq			/* is the RETTOBASE bit zero ? */
-	mrseq r0, MSP	/* if so, we're not returning to thread mode, thus this
-					 * is a nested exception: the stack frame is on the MSP */
-	mrsne r0, PSP	/* if not, we are returning to thread mode, thus this is
-					 * not a nested exception: the stack frame is on the PSP */
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+		mrseq r0, MSP	/* if so, we're not returning to thread mode,
+				 * thus this is a nested exception: the stack
+				 * frame is on the MSP */
+		mrsne r0, PSP	/* if not, we are returning to thread mode, thus
+				 *  this is not a nested exception: the stack
+				 * frame is on the PSP */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 
-    push {lr}
-    bl _Fault
+	push {lr}
+	bl _Fault
 
-    pop {pc}
+	pop {pc}
 
-    .end
+	.end

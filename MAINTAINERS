@@ -276,11 +276,6 @@ F:	include/kernel.h
 F:	include/legacy.h
 F:	tests/kernel/
 
-KINETIS SOFTWARE DEVELOPMENT KIT (KSDK)
-M:	Maureen Helm <maureen.helm@nxp.com>
-S:	Supported
-F:	ext/hal/ksdk/
-
 KNOWN ISSUES
 M:	Anas Nashif <anas.nashif@intel.com>
 M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
@@ -303,6 +298,11 @@ S:	Supported
 F:	ext/lib/crypto/mbedtls/
 F:	samples/net/mbedtls_sslclient/
 F:	tests/crypto/test_mbedtls/
+
+MCUXPRESSO SOFTWARE DEVELOPMENT KIT (MCUX)
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	ext/hal/nxp/mcux/
 
 NETWORKING
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>

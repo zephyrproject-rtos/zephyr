@@ -20,15 +20,15 @@
 #include <soc.h>
 
 /* Red LED */
-#define RED_GPIO_NAME		CONFIG_GPIO_K64_C_DEV_NAME
+#define RED_GPIO_NAME		CONFIG_GPIO_MCUX_PORTC_NAME
 #define RED_GPIO_PIN		8
 
 /* Green LED */
-#define GREEN_GPIO_NAME		CONFIG_GPIO_K64_D_DEV_NAME
+#define GREEN_GPIO_NAME		CONFIG_GPIO_MCUX_PORTD_NAME
 #define GREEN_GPIO_PIN		0
 
 /* Blue LED */
-#define BLUE_GPIO_NAME		CONFIG_GPIO_K64_C_DEV_NAME
+#define BLUE_GPIO_NAME		CONFIG_GPIO_MCUX_PORTC_NAME
 #define BLUE_GPIO_PIN		9
 
 /* LED0. There is no physical LED on the board with this name, so create an

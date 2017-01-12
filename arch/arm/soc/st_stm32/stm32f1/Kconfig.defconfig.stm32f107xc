@@ -1,7 +1,6 @@
-# Kconfig - Kinetis SDK
-
+# Kconfig - ST Microelectronics STM32F107XC MCU
 #
-# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright (c) 2016 RnDity Sp. z o.o.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +15,20 @@
 # limitations under the License.
 #
 
-config HAS_KSDK
-	bool
-	select HAS_CMSIS
-	depends on SOC_FAMILY_KINETIS
+if SOC_STM32F107XC
+
+config SOC
+	string
+	default stm32f107xc
+
+config SRAM_SIZE
+	default 64
+
+config FLASH_SIZE
+	default 256
+
+config NUM_IRQS
+	int
+	default 68
+
+endif # SOC_STM32F107XC

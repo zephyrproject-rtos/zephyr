@@ -58,11 +58,13 @@ static ALWAYS_INLINE int _IsInIsr(void)
 	 * On ARMv6-M there is no nested execution bit, so we check exception 3,
 	 * hard fault, to a detect a nested exception.
 	 */
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	return (vector > 10) || (vector == 3);
-#else
+#elif defined(CONFIG_ARMV7_M)
 	return (vector > 10) || (vector && _ScbIsNestedExc());
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 }
 
 /**

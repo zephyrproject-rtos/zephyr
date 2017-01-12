@@ -19,18 +19,11 @@ config CC3200SDK_BUILTIN
         help
         Link with local CC3200 SDK driverlib sources.
 
-config CC3200SDK_LIBRARY
-	bool "Link with CC3200 SDK static driver library"
-	default n
-	select CC3200SDK
-	help
-	The CC3200 SDK provides a static library (libdriver.a)
-	which implements peripheral APIs for the CC3200.
-
-config CC3200SDK_INSTALL_PATH
-	depends on CC3200SDK_LIBRARY
-	string "CC3200 SDK install path"
-	help
-	This option holds the path where the CC3200 SDK is installed.
+config CC3200SDK_ROM_DRIVERLIB
+        bool "Use the Peripheral Driver library functions in ROM"
+        default n
+        select CC3200SDK
+        help
+        Vector to CC3200 SDK driverlib APIs in ROM.
 
 endif

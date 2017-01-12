@@ -1,4 +1,4 @@
-/* KSDK Ethernet Driver
+/* MCUX Ethernet Driver
  *
  *  Copyright (c) 2016 ARM Ltd
  *  Copyright (c) 2016 Linaro Ltd
@@ -18,14 +18,14 @@
 
 /* The driver performs one shot PHY setup.  There is no support for
  * PHY disconnect, reconnect or configuration change.  The PHY setup,
- * implemented via KSDK contains polled code that can block the
+ * implemented via MCUX contains polled code that can block the
  * initialization thread for a few seconds.
  *
  * There is no statistics collection for either normal operation or
  * error behaviour.
  */
 
-#define SYS_LOG_DOMAIN "dev/eth_ksdk"
+#define SYS_LOG_DOMAIN "dev/eth_mcux"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #include <logging/sys_log.h>
 
@@ -46,14 +46,14 @@ struct eth_context {
 	struct k_sem tx_buf_sem;
 	uint8_t mac_addr[6];
 	/* TODO: FIXME. This Ethernet frame sized buffer is used for
-	 * interfacing with KSDK. How it works is that hardware uses
+	 * interfacing with MCUX. How it works is that hardware uses
 	 * DMA scatter buffers to receive a frame, and then public
-	 * KSDK call gathers them into this buffer (there's no other
+	 * MCUX call gathers them into this buffer (there's no other
 	 * public interface). All this happens only for this driver
 	 * to scatter this buffer again into Zephyr fragment buffers.
 	 * This is not efficient, but proper resolution of this issue
 	 * depends on introduction of zero-copy networking support
-	 * in Zephyr, and adding needed interface to KSDK (or
+	 * in Zephyr, and adding needed interface to MCUX (or
 	 * bypassing it and writing a more complex driver working
 	 * directly with hardware).
 	 */
@@ -63,22 +63,22 @@ struct eth_context {
 static void eth_0_config_func(void);
 
 static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-rx_buffer_desc[CONFIG_ETH_KSDK_TX_BUFFERS];
+rx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
 
 static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-tx_buffer_desc[CONFIG_ETH_KSDK_TX_BUFFERS];
+tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
 
 /* Use ENET_FRAME_MAX_VALNFRAMELEN for VLAN frame size
  * Use ENET_FRAME_MAX_FRAMELEN for ethernet frame size
  */
-#define ETH_KSDK_BUFFER_SIZE \
+#define ETH_MCUX_BUFFER_SIZE \
 	ROUND_UP(ENET_FRAME_MAX_VALNFRAMELEN, ENET_BUFF_ALIGNMENT)
 
 static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
-rx_buffer[CONFIG_ETH_KSDK_RX_BUFFERS][ETH_KSDK_BUFFER_SIZE];
+rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 
 static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
-tx_buffer[CONFIG_ETH_KSDK_TX_BUFFERS][ETH_KSDK_BUFFER_SIZE];
+tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 
 static int eth_tx(struct net_if *iface, struct net_buf *buf)
 {
@@ -98,7 +98,7 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	imask = irq_lock();
 
 	/* Gather fragment buffers into flat Ethernet frame buffer
-	 * which can be fed to KSDK Ethernet functions. First
+	 * which can be fed to MCUX Ethernet functions. First
 	 * fragment is special - it contains link layer (Ethernet
 	 * in our case) headers and must be treated specially.
 	 */
@@ -256,7 +256,7 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	}
 }
 
-#if defined(CONFIG_ETH_KSDK_0_RANDOM_MAC)
+#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 static void generate_mac(uint8_t *mac_addr)
 {
 	uint32_t entropy;
@@ -279,10 +279,10 @@ static int eth_0_init(struct device *dev)
 	bool link;
 	status_t status;
 	enet_buffer_config_t buffer_config = {
-		.rxBdNumber = CONFIG_ETH_KSDK_RX_BUFFERS,
-		.txBdNumber = CONFIG_ETH_KSDK_TX_BUFFERS,
-		.rxBuffSizeAlign = ETH_KSDK_BUFFER_SIZE,
-		.txBuffSizeAlign = ETH_KSDK_BUFFER_SIZE,
+		.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
+		.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
+		.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
+		.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
 		.rxBdStartAddrAlign = rx_buffer_desc,
 		.txBdStartAddrAlign = tx_buffer_desc,
 		.rxBufferAlign = rx_buffer[0],
@@ -290,7 +290,7 @@ static int eth_0_init(struct device *dev)
 	};
 
 	k_sem_init(&context->tx_buf_sem,
-		   CONFIG_ETH_KSDK_TX_BUFFERS, CONFIG_ETH_KSDK_TX_BUFFERS);
+		   CONFIG_ETH_MCUX_TX_BUFFERS, CONFIG_ETH_MCUX_TX_BUFFERS);
 
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 
@@ -320,7 +320,7 @@ static int eth_0_init(struct device *dev)
 		SYS_LOG_INF("Link down.");
 	}
 
-#if defined(CONFIG_ETH_KSDK_0_RANDOM_MAC)
+#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 	generate_mac(context->mac_addr);
 #endif
 
@@ -357,7 +357,7 @@ static struct net_if_api api_funcs_0 = {
 	.send	= eth_tx,
 };
 
-static void eth_ksdk_rx_isr(void *p)
+static void eth_mcux_rx_isr(void *p)
 {
 	struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
@@ -365,7 +365,7 @@ static void eth_ksdk_rx_isr(void *p)
 	ENET_ReceiveIRQHandler(ENET, &context->enet_handle);
 }
 
-static void eth_ksdk_tx_isr(void *p)
+static void eth_mcux_tx_isr(void *p)
 {
 	struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
@@ -373,7 +373,7 @@ static void eth_ksdk_tx_isr(void *p)
 	ENET_TransmitIRQHandler(ENET, &context->enet_handle);
 }
 
-static void eth_ksdk_error_isr(void *p)
+static void eth_mcux_error_isr(void *p)
 {
 	struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
@@ -387,30 +387,30 @@ static struct eth_context eth_0_context = {
 		0x00,
 		0x04,
 		0x9f,
-#if !defined(CONFIG_ETH_KSDK_0_RANDOM_MAC)
-		CONFIG_ETH_KSDK_0_MAC3,
-		CONFIG_ETH_KSDK_0_MAC4,
-		CONFIG_ETH_KSDK_0_MAC5
+#if !defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
+		CONFIG_ETH_MCUX_0_MAC3,
+		CONFIG_ETH_MCUX_0_MAC4,
+		CONFIG_ETH_MCUX_0_MAC5
 #endif
 	}
 };
 
-NET_DEVICE_INIT(eth_ksdk_0, CONFIG_ETH_KSDK_0_NAME,
+NET_DEVICE_INIT(eth_mcux_0, CONFIG_ETH_MCUX_0_NAME,
 		eth_0_init, &eth_0_context,
 		NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs_0,
 		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
 
 static void eth_0_config_func(void)
 {
-	IRQ_CONNECT(IRQ_ETH_RX, CONFIG_ETH_KSDK_0_IRQ_PRI,
-		    eth_ksdk_rx_isr, DEVICE_GET(eth_ksdk_0), 0);
+	IRQ_CONNECT(IRQ_ETH_RX, CONFIG_ETH_MCUX_0_IRQ_PRI,
+		    eth_mcux_rx_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(IRQ_ETH_RX);
 
-	IRQ_CONNECT(IRQ_ETH_TX, CONFIG_ETH_KSDK_0_IRQ_PRI,
-		    eth_ksdk_tx_isr, DEVICE_GET(eth_ksdk_0), 0);
+	IRQ_CONNECT(IRQ_ETH_TX, CONFIG_ETH_MCUX_0_IRQ_PRI,
+		    eth_mcux_tx_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(IRQ_ETH_TX);
 
-	IRQ_CONNECT(IRQ_ETH_ERR_MISC, CONFIG_ETH_KSDK_0_IRQ_PRI,
-		    eth_ksdk_error_isr, DEVICE_GET(eth_ksdk_0), 0);
+	IRQ_CONNECT(IRQ_ETH_ERR_MISC, CONFIG_ETH_MCUX_0_IRQ_PRI,
+		    eth_mcux_error_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(IRQ_ETH_ERR_MISC);
 }

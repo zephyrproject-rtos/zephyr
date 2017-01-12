@@ -22,9 +22,9 @@ menu "HALs"
 
 source "ext/hal/cmsis/Kconfig"
 
-source "ext/hal/ksdk/Kconfig"
-
 source "ext/hal/nordic/mdk/Kconfig"
+
+source "ext/hal/nxp/mcux/Kconfig"
 
 source "ext/hal/qmsi/Kconfig"
 

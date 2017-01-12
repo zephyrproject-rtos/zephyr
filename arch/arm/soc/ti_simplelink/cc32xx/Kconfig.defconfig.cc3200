@@ -20,9 +20,6 @@ config FLASH_SIZE
 config CC3200SDK_LIBRARY
 	def_bool n
 
-config CC3200SDK_INSTALL_PATH
-	default ""
-
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used

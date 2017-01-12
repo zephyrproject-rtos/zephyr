@@ -50,13 +50,15 @@ config SYS_LOG_CLOCK_CONTROL_LEVEL
 
 	  - 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
+source "drivers/clock_control/Kconfig.nrf5"
+
 source "drivers/clock_control/Kconfig.quark_se"
 
 source "drivers/clock_control/Kconfig.stm32f10x"
 
-source "drivers/clock_control/Kconfig.stm32f4x"
+source "drivers/clock_control/Kconfig.stm32f107xx"
 
-source "drivers/clock_control/Kconfig.nrf5"
+source "drivers/clock_control/Kconfig.stm32f4x"
 
 source "drivers/clock_control/Kconfig.stm32l4x"
 

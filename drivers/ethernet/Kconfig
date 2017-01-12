@@ -44,7 +44,7 @@ config ETH_INIT_PRIORITY
 	  so that it can start before the networking sub-system.
 
 source "drivers/ethernet/Kconfig.enc28j60"
-source "drivers/ethernet/Kconfig.ksdk"
+source "drivers/ethernet/Kconfig.mcux"
 source "drivers/ethernet/Kconfig.dw"
 
 endmenu
