@@ -38,6 +38,7 @@ GTEXT(_isr_demux)
 #if CONFIG_RGF_NUM_BANKS == 1
 GDATA(saved_r0)
 
+	.balign 4
 SECTION_VAR(BSS, saved_r0)
         .word 0
 #endif

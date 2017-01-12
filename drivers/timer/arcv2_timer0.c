@@ -82,7 +82,7 @@ static uint32_t accumulated_cycle_count;
 static uint32_t __noinit max_system_ticks;
 static uint32_t __noinit programmed_limit;
 static uint32_t __noinit programmed_ticks;
-static bool     straddled_tick_on_idle_enter = false;
+static int straddled_tick_on_idle_enter;
 extern int32_t _sys_idle_elapsed_ticks;
 #endif
 
@@ -251,7 +251,7 @@ void _timer_idle_enter(int32_t ticks)
 
 	status = timer0_control_register_get();
 	if (status & _ARC_V2_TMR_CTRL_IP) {
-		straddled_tick_on_idle_enter = true;
+		straddled_tick_on_idle_enter = 1;
 	}
 	__ASSERT_EVAL({},
 		      uint32_t timer_count = timer0_count_register_get(),
@@ -273,7 +273,7 @@ void _timer_idle_exit(void)
 {
 	if (straddled_tick_on_idle_enter) {
 		/* Aborting the tickless idle due to a straddled tick. */
-		straddled_tick_on_idle_enter = false;
+		straddled_tick_on_idle_enter = 0;
 		__ASSERT_EVAL({},
 			      uint32_t timer_count = timer0_count_register_get(),
 			      timer_count <= programmed_limit,

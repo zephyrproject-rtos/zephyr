@@ -33,6 +33,7 @@ GTEXT(k_cpu_idle)
 GTEXT(k_cpu_atomic_idle)
 GDATA(k_cpu_sleep_mode)
 
+	.balign 4
 SECTION_VAR(BSS, k_cpu_sleep_mode)
 	.word 0
 
