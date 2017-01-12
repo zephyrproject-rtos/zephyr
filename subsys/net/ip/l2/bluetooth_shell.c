@@ -127,10 +127,24 @@ static int shell_cmd_scan(int argc, char *argv[])
 	return 0;
 }
 
+static int shell_cmd_disconnect(int argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+
+	if (net_mgmt(NET_REQUEST_BT_DISCONNECT, iface, NULL, 0)) {
+		printk("Disconnect failed\n");
+	} else {
+		printk("Disconnected\n");
+	}
+
+	return 0;
+}
+
 static struct shell_cmd bt_commands[] = {
 	{ "connect", shell_cmd_connect,
 		"<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>" },
 	{ "scan", shell_cmd_scan, "<on/off/active/passive>" },
+	{ "disconnect", shell_cmd_disconnect, "" },
 	{ NULL, NULL, NULL },
 };
 
