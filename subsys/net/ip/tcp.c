@@ -172,7 +172,7 @@ int net_tcp_release(struct net_tcp *tcp)
 	tcp->context = NULL;
 
 	key = irq_lock();
-	tcp->flags &= ~NET_TCP_IN_USE;
+	tcp->flags &= ~(NET_TCP_IN_USE | NET_TCP_RECV_MSS_SET);
 	irq_unlock(key);
 
 	NET_DBG("Disposed of TCP connection state");
@@ -431,44 +431,50 @@ static inline size_t ip_max_packet_len(struct in_addr *dest_ip)
 #define ip_max_packet_len(...) 0
 #endif /* CONFIG_NET_IPV4 */
 
+uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
+{
+	sa_family_t family = net_context_get_family(tcp->context);
+
+	if (family == AF_INET) {
+#if defined(CONFIG_NET_IPV4)
+		struct net_if *iface = net_context_get_iface(tcp->context);
+
+		if (iface && iface->mtu >= NET_IPV4TCPH_LEN) {
+			/* Detect MSS based on interface MTU minus "TCP,IP
+			 * header size"
+			 */
+			return iface->mtu - NET_IPV4TCPH_LEN;
+		}
+#else
+		return 0;
+#endif /* CONFIG_NET_IPV4 */
+	}
+#if defined(CONFIG_NET_IPV6)
+	else if (family == AF_INET6) {
+		return 1280;
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+	return 0;
+}
+
 static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
 				uint8_t *optionlen)
 {
+	uint16_t recv_mss;
+
 	*optionlen = 0;
 
-	/* If 0, detect MSS based on interface MTU minus "TCP,IP header size"
-	 */
-	if (tcp->recv_mss == 0) {
-		sa_family_t family = net_context_get_family(tcp->context);
-
-		if (family == AF_INET) {
-#if defined(CONFIG_NET_IPV4)
-			struct net_if *iface =
-				net_context_get_iface(tcp->context);
-
-			if (iface) {
-				/* MTU - [TCP,IP header size]. */
-				tcp->recv_mss = iface->mtu - 40;
-			}
-#else
-			tcp->recv_mss = 0;
-#endif /* CONFIG_NET_IPV4 */
-		}
-#if defined(CONFIG_NET_IPV6)
-		else if (family == AF_INET6) {
-			tcp->recv_mss = 1280;
-		}
-#endif /* CONFIG_NET_IPV6 */
-		else {
-			tcp->recv_mss = 0;
-		}
+	if (!(tcp->flags & NET_TCP_RECV_MSS_SET)) {
+		recv_mss = net_tcp_get_recv_mss(tcp);
+		tcp->flags |= NET_TCP_RECV_MSS_SET;
+	} else {
+		recv_mss = 0;
 	}
 
 	*((uint32_t *)(options + *optionlen)) =
-		htonl((uint32_t)(tcp->recv_mss | NET_TCP_MSS_HEADER));
+		htonl((uint32_t)(recv_mss | NET_TCP_MSS_HEADER));
 	*optionlen += NET_TCP_MSS_SIZE;
-
-	return;
 }
 
 int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,

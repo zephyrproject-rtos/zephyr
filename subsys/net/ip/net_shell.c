@@ -516,12 +516,13 @@ static void context_cb(struct net_context *context, void *user_data)
 static void tcp_cb(struct net_tcp *tcp, void *user_data)
 {
 	int *count = user_data;
+	uint16_t recv_mss = net_tcp_get_recv_mss(tcp);
 
 	printf("%p\t%-12s\t%-10u%-10u%-11u%-11u%-5u\n",
 	       tcp, net_tcp_state_str(tcp->state),
 	       ntohs(net_sin6_ptr(&tcp->context->local)->sin6_port),
 	       ntohs(net_sin6(&tcp->context->remote)->sin6_port),
-	       tcp->send_seq, tcp->send_ack, tcp->recv_mss);
+	       tcp->send_seq, tcp->send_ack, recv_mss);
 
 	(*count)++;
 }

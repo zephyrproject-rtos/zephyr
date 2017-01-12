@@ -41,6 +41,9 @@ extern "C" {
 /** A retransmitted packet has been sent and not yet ack'd */
 #define NET_TCP_RETRYING BIT(4)
 
+/** MSS option has been set already */
+#define NET_TCP_RECV_MSS_SET BIT(5)
+
 /*
  * TCP connection states
  */
@@ -124,9 +127,6 @@ struct net_tcp {
 
 	/** Last ACK value sent */
 	uint32_t sent_ack;
-
-	/** Max RX segment size (MSS). */
-	uint16_t recv_mss;
 
 	/** Current retransmit period */
 	uint8_t retry_timeout_shift;
@@ -300,6 +300,15 @@ int net_tcp_send_buf(struct net_buf *buf);
  * @param seq Received ACK sequence number
  */
 void net_tcp_ack_received(struct net_context *ctx, uint32_t ack);
+
+/**
+ * @brief Calculates and returns the MSS for a given TCP context
+ *
+ * @param tcp TCP context
+ *
+ * @return Maximum Segment Size
+ */
+uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);
