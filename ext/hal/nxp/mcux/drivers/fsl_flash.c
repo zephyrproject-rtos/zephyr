@@ -196,7 +196,7 @@
  */
 enum _flash_access_segment_property
 {
-    kFLASH_accessSegmentBase = 256UL,
+    kFLASH_AccessSegmentBase = 256UL,
 };
 
 /*!
@@ -204,7 +204,7 @@ enum _flash_access_segment_property
  */
 enum _flash_acceleration_ram_property
 {
-    kFLASH_accelerationRamSize = 0x400U
+    kFLASH_AccelerationRamSize = 0x400U
 };
 
 /*!
@@ -212,8 +212,8 @@ enum _flash_acceleration_ram_property
  */
 enum _flash_config_area_range
 {
-    kFLASH_configAreaStart = 0x400U,
-    kFLASH_configAreaEnd = 0x40FU
+    kFLASH_ConfigAreaStart = 0x400U,
+    kFLASH_ConfigAreaEnd = 0x40FU
 };
 
 /*! @brief program Flash block base address*/
@@ -326,9 +326,9 @@ static void (*callFlashCacheClearCommand)(FTFx_REG32_ACCESS_TYPE ftfx_reg);
 
 #if (FLASH_DRIVER_IS_FLASH_RESIDENT && !FLASH_DRIVER_IS_EXPORTED)
 /*! @brief A static buffer used to hold flash_run_command() */
-static uint8_t s_flashRunCommand[kFLASH_executeInRamFunctionMaxSize];
+static uint8_t s_flashRunCommand[kFLASH_ExecuteInRamFunctionMaxSize];
 /*! @brief A static buffer used to hold flash_cache_clear_command() */
-static uint8_t s_flashCacheClearCommand[kFLASH_executeInRamFunctionMaxSize];
+static uint8_t s_flashCacheClearCommand[kFLASH_ExecuteInRamFunctionMaxSize];
 /*! @brief Flash execute-in-ram function information */
 static flash_execute_in_ram_function_config_t s_flashExecuteInRamFunctionInfo;
 #endif
@@ -403,7 +403,7 @@ status_t FLASH_Init(flash_config_t *config)
     config->PFlashSectorSize = FSL_FEATURE_FLASH_PFLASH_BLOCK_SECTOR_SIZE;
 
 #if defined(FSL_FEATURE_FLASH_HAS_ACCESS_CONTROL) && FSL_FEATURE_FLASH_HAS_ACCESS_CONTROL
-    config->PFlashAccessSegmentSize = kFLASH_accessSegmentBase << FTFx->FACSS;
+    config->PFlashAccessSegmentSize = kFLASH_AccessSegmentBase << FTFx->FACSS;
     config->PFlashAccessSegmentCount = FTFx->FACSN;
 #else
     config->PFlashAccessSegmentSize = 0;
@@ -468,7 +468,7 @@ status_t FLASH_PrepareExecuteInRamFunctions(flash_config_t *config)
 
     copy_flash_run_command(flashExecuteInRamFunctionInfo->flashRunCommand);
     copy_flash_cache_clear_command(flashExecuteInRamFunctionInfo->flashCacheClearCommand);
-    flashExecuteInRamFunctionInfo->activeFunctionCount = kFLASH_executeInRamFunctionTotalNum;
+    flashExecuteInRamFunctionInfo->activeFunctionCount = kFLASH_ExecuteInRamFunctionTotalNum;
 
     return kStatus_FLASH_Success;
 }
@@ -783,7 +783,7 @@ status_t FLASH_ProgramSection(flash_config_t *config, uint32_t start, uint32_t *
     {
         needSwitchFlexRamMode = true;
 
-        returnCode = FLASH_SetFlexramFunction(config, kFLASH_flexramFunctionOptionAvailableAsRam);
+        returnCode = FLASH_SetFlexramFunction(config, kFLASH_FlexramFunctionOptionAvailableAsRam);
         if (returnCode != kStatus_FLASH_Success)
         {
             return kStatus_FLASH_SetFlexramAsRamError;
@@ -819,9 +819,9 @@ status_t FLASH_ProgramSection(flash_config_t *config, uint32_t start, uint32_t *
             uint32_t programSizeOfCurrentPass;
             uint32_t numberOfPhases;
 
-            if (lengthTobeProgrammedOfCurrentSector > kFLASH_accelerationRamSize)
+            if (lengthTobeProgrammedOfCurrentSector > kFLASH_AccelerationRamSize)
             {
-                programSizeOfCurrentPass = kFLASH_accelerationRamSize;
+                programSizeOfCurrentPass = kFLASH_AccelerationRamSize;
             }
             else
             {
@@ -867,7 +867,7 @@ status_t FLASH_ProgramSection(flash_config_t *config, uint32_t start, uint32_t *
     /* Restore function of FlexRAM if needed. */
     if (needSwitchFlexRamMode)
     {
-        returnCode = FLASH_SetFlexramFunction(config, kFLASH_flexramFunctionOptionAvailableForEeprom);
+        returnCode = FLASH_SetFlexramFunction(config, kFLASH_FlexramFunctionOptionAvailableForEeprom);
         if (returnCode != kStatus_FLASH_Success)
         {
             return kStatus_FLASH_RecoverFlexramAsEepromError;
@@ -904,7 +904,7 @@ status_t FLASH_EepromWrite(flash_config_t *config, uint32_t start, uint8_t *src,
     {
         needSwitchFlexRamMode = true;
 
-        returnCode = FLASH_SetFlexramFunction(config, kFLASH_flexramFunctionOptionAvailableForEeprom);
+        returnCode = FLASH_SetFlexramFunction(config, kFLASH_FlexramFunctionOptionAvailableForEeprom);
         if (returnCode != kStatus_FLASH_Success)
         {
             return kStatus_FLASH_SetFlexramAsEepromError;
@@ -950,7 +950,7 @@ status_t FLASH_EepromWrite(flash_config_t *config, uint32_t start, uint8_t *src,
     /* Switch function of FlexRAM if needed */
     if (needSwitchFlexRamMode)
     {
-        returnCode = FLASH_SetFlexramFunction(config, kFLASH_flexramFunctionOptionAvailableAsRam);
+        returnCode = FLASH_SetFlexramFunction(config, kFLASH_FlexramFunctionOptionAvailableAsRam);
         if (returnCode != kStatus_FLASH_Success)
         {
             return kStatus_FLASH_RecoverFlexramAsRamError;
@@ -1075,7 +1075,7 @@ status_t FLASH_GetSecurityState(flash_config_t *config, flash_security_state_t *
     if (FLASH_SECURITY_STATE_UNSECURED == (registerValue & FTFx_FSEC_SEC_MASK))
     {
         /* Flash in unsecured state */
-        *state = kFLASH_securityStateNotSecure;
+        *state = kFLASH_SecurityStateNotSecure;
     }
     else
     {
@@ -1084,12 +1084,12 @@ status_t FLASH_GetSecurityState(flash_config_t *config, flash_security_state_t *
         if (FLASH_SECURITY_STATE_KEYEN == (registerValue & FTFx_FSEC_KEYEN_MASK))
         {
             /* Backdoor key security enabled */
-            *state = kFLASH_securityStateBackdoorEnabled;
+            *state = kFLASH_SecurityStateBackdoorEnabled;
         }
         else
         {
             /* Backdoor key security disabled */
-            *state = kFLASH_securityStateBackdoorDisabled;
+            *state = kFLASH_SecurityStateBackdoorDisabled;
         }
     }
 
@@ -1394,18 +1394,18 @@ status_t FLASH_IsProtected(flash_config_t *config,
     /* if protectStatusCounter == 0, then no region of the desired flash region is protected */
     if (protectStatusCounter == 0)
     {
-        *protection_state = kFLASH_protectionStateUnprotected;
+        *protection_state = kFLASH_ProtectionStateUnprotected;
     }
     /* if protectStatusCounter == regionCheckedCounter, then each region checked was protected */
     else if (protectStatusCounter == regionCheckedCounter)
     {
-        *protection_state = kFLASH_protectionStateProtected;
+        *protection_state = kFLASH_ProtectionStateProtected;
     }
     /* if protectStatusCounter != regionCheckedCounter, then protection status is mixed
      * In other words, some regions are protected while others are unprotected */
     else
     {
-        *protection_state = kFLASH_protectionStateMixed;
+        *protection_state = kFLASH_ProtectionStateMixed;
     }
 
     return (returnCode);
@@ -1476,19 +1476,19 @@ status_t FLASH_IsExecuteOnly(flash_config_t *config,
 
         if (executeOnlySegmentCounter < 1u)
         {
-            *access_state = kFLASH_accessStateUnLimited;
+            *access_state = kFLASH_AccessStateUnLimited;
         }
         else if (executeOnlySegmentCounter < maxSupportedExecuteOnlySegmentCount)
         {
-            *access_state = kFLASH_accessStateMixed;
+            *access_state = kFLASH_AccessStateMixed;
         }
         else
         {
-            *access_state = kFLASH_accessStateExecuteOnly;
+            *access_state = kFLASH_AccessStateExecuteOnly;
         }
     }
 #else
-    *access_state = kFLASH_accessStateUnLimited;
+    *access_state = kFLASH_AccessStateUnLimited;
 #endif /* FSL_FEATURE_FLASH_HAS_ACCESS_CONTROL */
 
     return (returnCode);
@@ -1503,27 +1503,27 @@ status_t FLASH_GetProperty(flash_config_t *config, flash_property_tag_t whichPro
 
     switch (whichProperty)
     {
-        case kFLASH_propertyPflashSectorSize:
+        case kFLASH_PropertyPflashSectorSize:
             *value = config->PFlashSectorSize;
             break;
 
-        case kFLASH_propertyPflashTotalSize:
+        case kFLASH_PropertyPflashTotalSize:
             *value = config->PFlashTotalSize;
             break;
 
-        case kFLASH_propertyPflashBlockSize:
+        case kFLASH_PropertyPflashBlockSize:
             *value = config->PFlashTotalSize / FSL_FEATURE_FLASH_PFLASH_BLOCK_COUNT;
             break;
 
-        case kFLASH_propertyPflashBlockCount:
+        case kFLASH_PropertyPflashBlockCount:
             *value = config->PFlashBlockCount;
             break;
 
-        case kFLASH_propertyPflashBlockBaseAddr:
+        case kFLASH_PropertyPflashBlockBaseAddr:
             *value = config->PFlashBlockBase;
             break;
 
-        case kFLASH_propertyPflashFacSupport:
+        case kFLASH_PropertyPflashFacSupport:
 #if defined(FSL_FEATURE_FLASH_HAS_ACCESS_CONTROL)
             *value = FSL_FEATURE_FLASH_HAS_ACCESS_CONTROL;
 #else
@@ -1531,31 +1531,31 @@ status_t FLASH_GetProperty(flash_config_t *config, flash_property_tag_t whichPro
 #endif /* FSL_FEATURE_FLASH_HAS_ACCESS_CONTROL */
             break;
 
-        case kFLASH_propertyPflashAccessSegmentSize:
+        case kFLASH_PropertyPflashAccessSegmentSize:
             *value = config->PFlashAccessSegmentSize;
             break;
 
-        case kFLASH_propertyPflashAccessSegmentCount:
+        case kFLASH_PropertyPflashAccessSegmentCount:
             *value = config->PFlashAccessSegmentCount;
             break;
 
 #if FLASH_SSD_IS_FLEXNVM_ENABLED
-        case kFLASH_propertyDflashSectorSize:
+        case kFLASH_PropertyDflashSectorSize:
             *value = FSL_FEATURE_FLASH_FLEX_NVM_BLOCK_SECTOR_SIZE;
             break;
-        case kFLASH_propertyDflashTotalSize:
+        case kFLASH_PropertyDflashTotalSize:
             *value = config->DFlashTotalSize;
             break;
-        case kFLASH_propertyDflashBlockSize:
+        case kFLASH_PropertyDflashBlockSize:
             *value = FSL_FEATURE_FLASH_FLEX_NVM_BLOCK_SIZE;
             break;
-        case kFLASH_propertyDflashBlockCount:
+        case kFLASH_PropertyDflashBlockCount:
             *value = FSL_FEATURE_FLASH_FLEX_NVM_BLOCK_COUNT;
             break;
-        case kFLASH_propertyDflashBlockBaseAddr:
+        case kFLASH_PropertyDflashBlockBaseAddr:
             *value = config->DFlashBlockBase;
             break;
-        case kFLASH_propertyEepromTotalSize:
+        case kFLASH_PropertyEepromTotalSize:
             *value = config->EEpromTotalSize;
             break;
 #endif /* FLASH_SSD_IS_FLEXNVM_ENABLED */
@@ -1611,7 +1611,7 @@ status_t FLASH_SwapControl(flash_config_t *config,
 
     /* Make sure address provided is in the lower half of Program flash but not in the Flash Configuration Field */
     if ((address >= (config->PFlashTotalSize / 2)) ||
-        ((address >= kFLASH_configAreaStart) && (address <= kFLASH_configAreaEnd)))
+        ((address >= kFLASH_ConfigAreaStart) && (address <= kFLASH_ConfigAreaEnd)))
     {
         return kStatus_FLASH_SwapIndicatorAddressError;
     }
@@ -1646,23 +1646,23 @@ status_t FLASH_Swap(flash_config_t *config, uint32_t address, flash_swap_functio
 
     do
     {
-        returnCode = FLASH_SwapControl(config, address, kFLASH_swapControlOptionReportStatus, &returnInfo);
+        returnCode = FLASH_SwapControl(config, address, kFLASH_SwapControlOptionReportStatus, &returnInfo);
         if (returnCode != kStatus_FLASH_Success)
         {
             return returnCode;
         }
 
-        if (kFLASH_swapFunctionOptionDisable == option)
+        if (kFLASH_SwapFunctionOptionDisable == option)
         {
-            if (returnInfo.flashSwapState == kFLASH_swapStateDisabled)
+            if (returnInfo.flashSwapState == kFLASH_SwapStateDisabled)
             {
                 return kStatus_FLASH_Success;
             }
-            else if (returnInfo.flashSwapState == kFLASH_swapStateUninitialized)
+            else if (returnInfo.flashSwapState == kFLASH_SwapStateUninitialized)
             {
                 /* The swap system changed to the DISABLED state with Program flash block 0
                  * located at relative flash address 0x0_0000 */
-                returnCode = FLASH_SwapControl(config, address, kFLASH_swapControlOptionDisableSystem, &returnInfo);
+                returnCode = FLASH_SwapControl(config, address, kFLASH_SwapControlOptionDisableSystem, &returnInfo);
             }
             else
             {
@@ -1679,12 +1679,12 @@ status_t FLASH_Swap(flash_config_t *config, uint32_t address, flash_swap_functio
              *    Complete. */
             switch (returnInfo.flashSwapState)
             {
-                case kFLASH_swapStateUninitialized:
+                case kFLASH_SwapStateUninitialized:
                     /* If current swap mode is Uninitialized, Initialize Swap to Initialized/READY state. */
                     returnCode =
-                        FLASH_SwapControl(config, address, kFLASH_swapControlOptionIntializeSystem, &returnInfo);
+                        FLASH_SwapControl(config, address, kFLASH_SwapControlOptionIntializeSystem, &returnInfo);
                     break;
-                case kFLASH_swapStateReady:
+                case kFLASH_SwapStateReady:
                     /* Validate whether the address provided to the swap system is matched to
                      * swap indicator address in the IFR */
                     returnCode = flash_validate_swap_indicator_address(config, address);
@@ -1692,23 +1692,23 @@ status_t FLASH_Swap(flash_config_t *config, uint32_t address, flash_swap_functio
                     {
                         /* If current swap mode is Initialized/Ready, Initialize Swap to UPDATE state. */
                         returnCode =
-                            FLASH_SwapControl(config, address, kFLASH_swapControlOptionSetInUpdateState, &returnInfo);
+                            FLASH_SwapControl(config, address, kFLASH_SwapControlOptionSetInUpdateState, &returnInfo);
                     }
                     break;
-                case kFLASH_swapStateUpdate:
+                case kFLASH_SwapStateUpdate:
                     /* If current swap mode is Update, Erase indicator sector in non active block
                      * to proceed swap system to update-erased state */
                     returnCode = FLASH_Erase(config, address + (config->PFlashTotalSize >> 1),
-                                             FSL_FEATURE_FLASH_PFLASH_SECTOR_CMD_ADDRESS_ALIGMENT, kFLASH_apiEraseKey);
+                                             FSL_FEATURE_FLASH_PFLASH_SECTOR_CMD_ADDRESS_ALIGMENT, kFLASH_ApiEraseKey);
                     break;
-                case kFLASH_swapStateUpdateErased:
+                case kFLASH_SwapStateUpdateErased:
                     /* If current swap mode is Update or Update-Erased, progress Swap to COMPLETE State */
                     returnCode =
-                        FLASH_SwapControl(config, address, kFLASH_swapControlOptionSetInCompleteState, &returnInfo);
+                        FLASH_SwapControl(config, address, kFLASH_SwapControlOptionSetInCompleteState, &returnInfo);
                     break;
-                case kFLASH_swapStateComplete:
+                case kFLASH_SwapStateComplete:
                     break;
-                case kFLASH_swapStateDisabled:
+                case kFLASH_SwapStateDisabled:
                     /* When swap system is in disabled state, We need to clear swap system back to uninitialized
                      * by issuing EraseAllBlocks command */
                     returnCode = kStatus_FLASH_SwapSystemNotInUninitialized;
@@ -1722,7 +1722,7 @@ status_t FLASH_Swap(flash_config_t *config, uint32_t address, flash_swap_functio
         {
             break;
         }
-    } while (!((kFLASH_swapStateComplete == returnInfo.flashSwapState) && (kFLASH_swapFunctionOptionEnable == option)));
+    } while (!((kFLASH_SwapStateComplete == returnInfo.flashSwapState) && (kFLASH_SwapFunctionOptionEnable == option)));
 
     return returnCode;
 }
@@ -1924,20 +1924,20 @@ static void copy_flash_run_command(uint8_t *flashRunCommand)
     /* Calculate the valid length of flash_run_command() memory.
      * Set max size(64 bytes) as default function size, in case some compiler allocates
      * flash_run_command_end ahead of flash_run_command. */
-    uint32_t funcLength = kFLASH_executeInRamFunctionMaxSize;
+    uint32_t funcLength = kFLASH_ExecuteInRamFunctionMaxSize;
     uint32_t flash_run_command_start_addr = (uint32_t)flash_run_command & (~1U);
     uint32_t flash_run_command_end_addr = (uint32_t)flash_run_command_end & (~1U);
     if (flash_run_command_end_addr > flash_run_command_start_addr)
     {
         funcLength = flash_run_command_end_addr - flash_run_command_start_addr;
 
-        assert(funcLength <= kFLASH_executeInRamFunctionMaxSize);
+        assert(funcLength <= kFLASH_ExecuteInRamFunctionMaxSize);
 
         /* In case some compiler allocates other function in the middle of flash_run_command
          * and flash_run_command_end. */
-        if (funcLength > kFLASH_executeInRamFunctionMaxSize)
+        if (funcLength > kFLASH_ExecuteInRamFunctionMaxSize)
         {
-            funcLength = kFLASH_executeInRamFunctionMaxSize;
+            funcLength = kFLASH_ExecuteInRamFunctionMaxSize;
         }
     }
 
@@ -2066,20 +2066,20 @@ static void copy_flash_cache_clear_command(uint8_t *flashCacheClearCommand)
     /* Calculate the valid length of flash_cache_clear_command() memory.
      * Set max size(64 bytes) as default function size, in case some compiler allocates
      * flash_cache_clear_command_end ahead of flash_cache_clear_command. */
-    uint32_t funcLength = kFLASH_executeInRamFunctionMaxSize;
+    uint32_t funcLength = kFLASH_ExecuteInRamFunctionMaxSize;
     uint32_t flash_cache_clear_command_start_addr = (uint32_t)flash_cache_clear_command & (~1U);
     uint32_t flash_cache_clear_command_end_addr = (uint32_t)flash_cache_clear_command_end & (~1U);
     if (flash_cache_clear_command_end_addr > flash_cache_clear_command_start_addr)
     {
         funcLength = flash_cache_clear_command_end_addr - flash_cache_clear_command_start_addr;
 
-        assert(funcLength <= kFLASH_executeInRamFunctionMaxSize);
+        assert(funcLength <= kFLASH_ExecuteInRamFunctionMaxSize);
 
         /* In case some compiler allocates other function in the middle of flash_cache_clear_command
          * and flash_cache_clear_command_end. */
-        if (funcLength > kFLASH_executeInRamFunctionMaxSize)
+        if (funcLength > kFLASH_ExecuteInRamFunctionMaxSize)
         {
-            funcLength = kFLASH_executeInRamFunctionMaxSize;
+            funcLength = kFLASH_ExecuteInRamFunctionMaxSize;
         }
     }
 
@@ -2191,7 +2191,7 @@ static status_t flash_check_execute_in_ram_function_info(flash_config_t *config)
     flashExecuteInRamFunctionInfo = (flash_execute_in_ram_function_config_t *)config->flashExecuteInRamFunctionInfo;
 
     if ((config->flashExecuteInRamFunctionInfo) &&
-        (kFLASH_executeInRamFunctionTotalNum == flashExecuteInRamFunctionInfo->activeFunctionCount))
+        (kFLASH_ExecuteInRamFunctionTotalNum == flashExecuteInRamFunctionInfo->activeFunctionCount))
     {
         return kStatus_FLASH_Success;
     }
@@ -2281,7 +2281,7 @@ static status_t flash_get_matched_operation_info(flash_config_t *config,
 static status_t flash_check_user_key(uint32_t key)
 {
     /* Validate the user key */
-    if (key != kFLASH_apiEraseKey)
+    if (key != kFLASH_ApiEraseKey)
     {
         return kStatus_FLASH_EraseKeyError;
     }
@@ -2309,7 +2309,7 @@ static status_t flash_update_flexnvm_memory_partition_status(flash_config_t *con
 
     /* Get FlexNVM memory partition info from data flash IFR */
     returnCode = FLASH_ReadResource(config, DFLASH_IFR_READRESOURCE_START_ADDRESS, (uint32_t *)&dataIFRReadOut,
-                                    sizeof(dataIFRReadOut), kFLASH_resourceOptionFlashIfr);
+                                    sizeof(dataIFRReadOut), kFLASH_ResourceOptionFlashIfr);
     if (returnCode != kStatus_FLASH_Success)
     {
         return kStatus_FLASH_PartitionStatusUpdateFailure;
@@ -2515,27 +2515,27 @@ static status_t flash_check_resource_range(uint32_t start,
     status = kStatus_FLASH_Success;
 
     maxReadbleAddress = start + lengthInBytes - 1;
-    if (option == kFLASH_resourceOptionVersionId)
+    if (option == kFLASH_ResourceOptionVersionId)
     {
-        if ((start != kFLASH_resourceRangeVersionIdStart) ||
-            ((start + lengthInBytes - 1) != kFLASH_resourceRangeVersionIdEnd))
+        if ((start != kFLASH_ResourceRangeVersionIdStart) ||
+            ((start + lengthInBytes - 1) != kFLASH_ResourceRangeVersionIdEnd))
         {
             status = kStatus_FLASH_InvalidArgument;
         }
     }
-    else if (option == kFLASH_resourceOptionFlashIfr)
+    else if (option == kFLASH_ResourceOptionFlashIfr)
     {
-        if (maxReadbleAddress < kFLASH_resourceRangePflashIfrSizeInBytes)
+        if (maxReadbleAddress < kFLASH_ResourceRangePflashIfrSizeInBytes)
         {
         }
 #if defined(FSL_FEATURE_FLASH_HAS_PFLASH_BLOCK_SWAP) && FSL_FEATURE_FLASH_HAS_PFLASH_BLOCK_SWAP
-        else if ((start >= kFLASH_resourceRangePflashSwapIfrStart) &&
-                 (maxReadbleAddress <= kFLASH_resourceRangePflashSwapIfrEnd))
+        else if ((start >= kFLASH_ResourceRangePflashSwapIfrStart) &&
+                 (maxReadbleAddress <= kFLASH_ResourceRangePflashSwapIfrEnd))
         {
         }
 #endif /* FSL_FEATURE_FLASH_HAS_PFLASH_BLOCK_SWAP */
-        else if ((start >= kFLASH_resourceRangeDflashIfrStart) &&
-                 (maxReadbleAddress <= kFLASH_resourceRangeDflashIfrEnd))
+        else if ((start >= kFLASH_ResourceRangeDflashIfrStart) &&
+                 (maxReadbleAddress <= kFLASH_ResourceRangeDflashIfrEnd))
         {
         }
         else
@@ -2556,9 +2556,9 @@ static status_t flash_check_resource_range(uint32_t start,
 /*! @brief Validates the gived swap control option.*/
 static status_t flash_check_swap_control_option(flash_swap_control_option_t option)
 {
-    if ((option == kFLASH_swapControlOptionIntializeSystem) || (option == kFLASH_swapControlOptionSetInUpdateState) ||
-        (option == kFLASH_swapControlOptionSetInCompleteState) || (option == kFLASH_swapControlOptionReportStatus) ||
-        (option == kFLASH_swapControlOptionDisableSystem))
+    if ((option == kFLASH_SwapControlOptionIntializeSystem) || (option == kFLASH_SwapControlOptionSetInUpdateState) ||
+        (option == kFLASH_SwapControlOptionSetInCompleteState) || (option == kFLASH_SwapControlOptionReportStatus) ||
+        (option == kFLASH_SwapControlOptionDisableSystem))
     {
         return kStatus_FLASH_Success;
     }
@@ -2575,8 +2575,8 @@ static status_t flash_validate_swap_indicator_address(flash_config_t *config, ui
     uint32_t swapIndicatorAddress;
 
     status_t returnCode;
-    returnCode = FLASH_ReadResource(config, kFLASH_resourceRangePflashSwapIfrStart, (uint32_t *)&flashSwapIfrField,
-                                    sizeof(flash_swap_ifr_field_config_t), kFLASH_resourceOptionFlashIfr);
+    returnCode = FLASH_ReadResource(config, kFLASH_ResourceRangePflashSwapIfrStart, (uint32_t *)&flashSwapIfrField,
+                                    sizeof(flash_swap_ifr_field_config_t), kFLASH_ResourceOptionFlashIfr);
     if (returnCode != kStatus_FLASH_Success)
     {
         return returnCode;
@@ -2599,8 +2599,8 @@ static status_t flash_validate_swap_indicator_address(flash_config_t *config, ui
 /*! @brief Validates the gived flexram function option.*/
 static inline status_t flasn_check_flexram_function_option_range(flash_flexram_function_option_t option)
 {
-    if ((option != kFLASH_flexramFunctionOptionAvailableAsRam) &&
-        (option != kFLASH_flexramFunctionOptionAvailableForEeprom))
+    if ((option != kFLASH_FlexramFunctionOptionAvailableAsRam) &&
+        (option != kFLASH_FlexramFunctionOptionAvailableForEeprom))
     {
         return kStatus_FLASH_InvalidArgument;
     }

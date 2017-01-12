@@ -47,7 +47,7 @@ static uint32_t ADC16_GetInstance(ADC_Type *base);
 static ADC_Type *const s_adc16Bases[] = ADC_BASE_PTRS;
 
 /*! @brief Pointers to ADC16 clocks for each instance. */
-const clock_ip_name_t s_adc16Clocks[] = ADC16_CLOCKS;
+static const clock_ip_name_t s_adc16Clocks[] = ADC16_CLOCKS;
 
 /*******************************************************************************
  * Code
@@ -149,7 +149,7 @@ void ADC16_GetDefaultConfig(adc16_config_t *config)
 status_t ADC16_DoAutoCalibration(ADC_Type *base)
 {
     bool bHWTrigger = false;
-    uint32_t tmp32;
+    volatile uint32_t tmp32; /* 'volatile' here is for the dummy read of ADCx_R[0] register. */
     status_t status = kStatus_Success;
 
     /* The calibration would be failed when in hardwar mode.
@@ -171,6 +171,7 @@ status_t ADC16_DoAutoCalibration(ADC_Type *base)
             break;
         }
     }
+    tmp32 = base->R[0]; /* Dummy read to clear COCO caused by calibration. */
 
     /* Restore the hardware trigger setting if it was enabled before. */
     if (bHWTrigger)

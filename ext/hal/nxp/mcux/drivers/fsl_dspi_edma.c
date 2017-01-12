@@ -143,7 +143,7 @@ status_t DSPI_MasterTransferEDMA(SPI_Type *base, dspi_master_edma_handle_t *hand
 
     uint32_t instance = DSPI_GetInstance(base);
     uint16_t wordToSend = 0;
-    uint8_t dummyData = DSPI_MASTER_DUMMY_DATA;
+    uint8_t dummyData = DSPI_DUMMY_DATA;
     uint8_t dataAlreadyFed = 0;
     uint8_t dataFedMax = 2;
 
@@ -156,7 +156,7 @@ status_t DSPI_MasterTransferEDMA(SPI_Type *base, dspi_master_edma_handle_t *hand
     edma_transfer_config_t transferConfigB;
     edma_transfer_config_t transferConfigC;
 
-    handle->txBuffIfNull = ((uint32_t)DSPI_MASTER_DUMMY_DATA << 8) | DSPI_MASTER_DUMMY_DATA;
+    handle->txBuffIfNull = ((uint32_t)DSPI_DUMMY_DATA << 8) | DSPI_DUMMY_DATA;
 
     handle->state = kDSPI_Busy;
 
@@ -893,7 +893,7 @@ status_t DSPI_SlaveTransferEDMA(SPI_Type *base, dspi_slave_edma_handle_t *handle
     }
 
     uint16_t wordToSend = 0;
-    uint8_t dummyData = DSPI_SLAVE_DUMMY_DATA;
+    uint8_t dummyData = DSPI_DUMMY_DATA;
     uint8_t dataAlreadyFed = 0;
     uint8_t dataFedMax = 2;
 
@@ -1042,11 +1042,11 @@ status_t DSPI_SlaveTransferEDMA(SPI_Type *base, dspi_slave_edma_handle_t *handle
             if (handle->txData)
             {
                 handle->txLastData =
-                    handle->txData[handle->remainingSendByteCount - 2] | ((uint32_t)DSPI_SLAVE_DUMMY_DATA << 8);
+                    handle->txData[handle->remainingSendByteCount - 2] | ((uint32_t)DSPI_DUMMY_DATA << 8);
             }
             else
             {
-                handle->txLastData = DSPI_SLAVE_DUMMY_DATA | ((uint32_t)DSPI_SLAVE_DUMMY_DATA << 8);
+                handle->txLastData = DSPI_DUMMY_DATA | ((uint32_t)DSPI_DUMMY_DATA << 8);
             }
             transferConfigC.srcAddr = (uint32_t)(&(handle->txLastData));
             transferConfigC.destAddr = (uint32_t)txAddr;
@@ -1083,11 +1083,11 @@ status_t DSPI_SlaveTransferEDMA(SPI_Type *base, dspi_slave_edma_handle_t *handle
                 transferConfigC.srcOffset = 0;
                 if (handle->bitsPerFrame <= 8)
                 {
-                    handle->txBuffIfNull = DSPI_SLAVE_DUMMY_DATA;
+                    handle->txBuffIfNull = DSPI_DUMMY_DATA;
                 }
                 else
                 {
-                    handle->txBuffIfNull = (DSPI_SLAVE_DUMMY_DATA << 8) | DSPI_SLAVE_DUMMY_DATA;
+                    handle->txBuffIfNull = (DSPI_DUMMY_DATA << 8) | DSPI_DUMMY_DATA;
                 }
             }
 

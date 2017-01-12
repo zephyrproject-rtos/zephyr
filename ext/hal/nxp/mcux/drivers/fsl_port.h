@@ -266,8 +266,8 @@ static inline void PORT_SetMultiplePinsConfig(PORT_Type *base, uint32_t mask, co
  *        - #kPORT_MuxAlt7            : chip-specific.
  * @Note : This function is NOT recommended to use together with the PORT_SetPinsConfig, because
  *         the PORT_SetPinsConfig need to configure the pin mux anyway (Otherwise the pin mux will
- *         be reset to zero : kPORT_PinDisabledOrAnalog).
- *         This function is recommended to use in the case you just need to reset the pin mux
+ *        be reset to zero : kPORT_PinDisabledOrAnalog).
+ *        This function is recommended to use in the case you just need to reset the pin mux
  *
  */
 static inline void PORT_SetPinMux(PORT_Type *base, uint32_t pin, port_mux_t mux)
@@ -351,7 +351,7 @@ static inline void PORT_SetPinInterruptConfig(PORT_Type *base, uint32_t pin, por
  * If configured for a level sensitive interrupt that remains asserted, the flag
  * is set again immediately.
  *
- * @param  base PORT peripheral base pointer.
+ * @param base PORT peripheral base pointer.
  * @return Current port interrupt status flags, for example, 0x00010001 means the
  *         pin 0 and 17 have the interrupt.
  */

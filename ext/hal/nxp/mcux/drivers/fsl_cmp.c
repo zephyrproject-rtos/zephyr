@@ -46,7 +46,7 @@ static uint32_t CMP_GetInstance(CMP_Type *base);
 /*! @brief Pointers to CMP bases for each instance. */
 static CMP_Type *const s_cmpBases[] = CMP_BASE_PTRS;
 /*! @brief Pointers to CMP clocks for each instance. */
-const clock_ip_name_t s_cmpClocks[] = CMP_CLOCKS;
+static const clock_ip_name_t s_cmpClocks[] = CMP_CLOCKS;
 
 /*******************************************************************************
  * Codes

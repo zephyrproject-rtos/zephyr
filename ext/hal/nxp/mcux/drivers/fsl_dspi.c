@@ -562,7 +562,7 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
     uint16_t wordToSend = 0;
     uint16_t wordReceived = 0;
-    uint8_t dummyData = DSPI_MASTER_DUMMY_DATA;
+    uint8_t dummyData = DSPI_DUMMY_DATA;
     uint8_t bitsPerFrame;
 
     uint32_t command;
@@ -968,7 +968,7 @@ static void DSPI_MasterTransferComplete(SPI_Type *base, dspi_master_handle_t *ha
 static void DSPI_MasterTransferFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle)
 {
     uint16_t wordToSend = 0;
-    uint8_t dummyData = DSPI_MASTER_DUMMY_DATA;
+    uint8_t dummyData = DSPI_DUMMY_DATA;
 
     /* If bits/frame is greater than one byte */
     if (handle->bitsPerFrame > 8)
@@ -1301,7 +1301,7 @@ status_t DSPI_SlaveTransferGetCount(SPI_Type *base, dspi_slave_handle_t *handle,
 static void DSPI_SlaveTransferFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle)
 {
     uint16_t transmitData = 0;
-    uint8_t dummyPattern = DSPI_SLAVE_DUMMY_DATA;
+    uint8_t dummyPattern = DSPI_DUMMY_DATA;
 
     /* Service the transmitter, if transmit buffer provided, transmit the data,
     * else transmit dummy pattern
@@ -1429,7 +1429,7 @@ void DSPI_SlaveTransferAbort(SPI_Type *base, dspi_slave_handle_t *handle)
 
 void DSPI_SlaveTransferHandleIRQ(SPI_Type *base, dspi_slave_handle_t *handle)
 {
-    uint8_t dummyPattern = DSPI_SLAVE_DUMMY_DATA;
+    uint8_t dummyPattern = DSPI_DUMMY_DATA;
     uint32_t dataReceived;
     uint32_t dataSend = 0;
 
