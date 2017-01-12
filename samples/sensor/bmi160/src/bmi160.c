@@ -207,8 +207,8 @@ static void test_polling_mode(struct device *bmi160)
 	struct sensor_value attr;
 
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
-	/* set sampling frequency to 800Hz for accel */
-	attr.val1 = 800;
+	/* set sampling frequency to 100Hz for accel */
+	attr.val1 = 100;
 	attr.val2 = 0;
 
 	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_XYZ,
@@ -229,6 +229,8 @@ static void test_polling_mode(struct device *bmi160)
 		return;
 	}
 #endif
+	/* wait for the change to take effect */
+	k_sleep(SLEEPTIME);
 
 	/* poll the data and print it */
 	do {
