@@ -159,12 +159,9 @@ int net_tcp_release(struct net_tcp *tcp)
 		return -EINVAL;
 	}
 
-	if (tcp->state == NET_TCP_FIN_WAIT_1 ||
-	    tcp->state == NET_TCP_FIN_WAIT_2 ||
-	    tcp->state == NET_TCP_CLOSING ||
-	    tcp->state == NET_TCP_TIME_WAIT) {
-		k_delayed_work_cancel(&tcp->fin_timer);
-	}
+	k_delayed_work_cancel(&tcp->fin_timer);
+	k_delayed_work_cancel(&tcp->ack_timer);
+	k_timer_stop(&tcp->retry_timer);
 
 	tcp->state = NET_TCP_CLOSED;
 	tcp->context = NULL;
