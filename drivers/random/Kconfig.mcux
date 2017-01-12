@@ -1,6 +1,6 @@
-# Makefile - Kinetis SDK
+# Kconfig.mcux - mcux random generator driver configuration
 #
-# Copyright (c) 2016, ARM Ltd.
+# Copyright (c) 2016 ARM Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-obj-$(CONFIG_ETH_KSDK) += phyksz8081/fsl_phy.o
+menuconfig RANDOM_MCUX
+	bool "MCUX Random driver"
+	depends on RANDOM_GENERATOR && HAS_RNGA
+	default n
+	select RANDOM_HAS_DRIVER
+	help
+	  This option enables the random number generator accelerator (RNGA)
+	  driver based on the MCUX RNGA driver.

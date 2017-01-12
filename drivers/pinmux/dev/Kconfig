@@ -75,5 +75,3 @@ config PINMUX_DEV_ARM_V2M_BEETLE
 	Enables the pinmux dev driver for boards based on the
 	ARM Beetle SoC MCUs.
 	default n
-
-source "drivers/pinmux/dev/Kconfig.ksdk"

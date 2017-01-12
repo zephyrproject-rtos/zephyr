@@ -32,14 +32,14 @@ struct flash_priv {
 
 /*
  * Interrupt vectors could be executed from flash hence the need for locking.
- * The underlying KDSK driver takes care of copying the functions to SRAM.
+ * The underlying MCUX driver takes care of copying the functions to SRAM.
  *
  * For more information, see the application note below on Read-While-Write
  * http://cache.freescale.com/files/32bit/doc/app_note/AN4695.pdf
  *
  */
 
-static int flash_ksdk_erase(struct device *dev, off_t offset, size_t len)
+static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
 	uint32_t addr;
@@ -55,14 +55,14 @@ static int flash_ksdk_erase(struct device *dev, off_t offset, size_t len)
 	return (rc == kStatus_Success) ? 0 : -EINVAL;
 }
 
-static int flash_ksdk_read(struct device *dev, off_t offset,
+static int flash_mcux_read(struct device *dev, off_t offset,
 				void *data, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
 	uint32_t addr;
 
 	/*
-	 * The KSDK supports different flash chips whose valid ranges are
+	 * The MCUX supports different flash chips whose valid ranges are
 	 * hidden below the API: until the API export these ranges, we can not
 	 * do any generic validation
 	 */
@@ -73,7 +73,7 @@ static int flash_ksdk_read(struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_ksdk_write(struct device *dev, off_t offset,
+static int flash_mcux_write(struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
@@ -90,21 +90,21 @@ static int flash_ksdk_write(struct device *dev, off_t offset,
 	return (rc == kStatus_Success) ? 0 : -EINVAL;
 }
 
-static int flash_ksdk_write_protection(struct device *dev, bool enable)
+static int flash_mcux_write_protection(struct device *dev, bool enable)
 {
 	return -EIO;
 }
 
 static struct flash_priv flash_data;
 
-static const struct flash_driver_api flash_ksdk_api = {
-	.write_protection = flash_ksdk_write_protection,
-	.erase = flash_ksdk_erase,
-	.write = flash_ksdk_write,
-	.read = flash_ksdk_read,
+static const struct flash_driver_api flash_mcux_api = {
+	.write_protection = flash_mcux_write_protection,
+	.erase = flash_mcux_erase,
+	.write = flash_mcux_write,
+	.read = flash_mcux_read,
 };
 
-static int flash_ksdk_init(struct device *dev)
+static int flash_mcux_init(struct device *dev)
 {
 	struct flash_priv *priv = dev->driver_data;
 	status_t rc;
@@ -114,7 +114,7 @@ static int flash_ksdk_init(struct device *dev)
 	return (rc == kStatus_Success) ? 0 : -EIO;
 }
 
-DEVICE_AND_API_INIT(flash_ksdk, CONFIG_SOC_FLASH_KSDK_DEV_NAME,
-			flash_ksdk_init, &flash_data, NULL, POST_KERNEL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_ksdk_api);
+DEVICE_AND_API_INIT(flash_mcux, CONFIG_SOC_FLASH_MCUX_DEV_NAME,
+			flash_mcux_init, &flash_data, NULL, POST_KERNEL,
+			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_mcux_api);
 

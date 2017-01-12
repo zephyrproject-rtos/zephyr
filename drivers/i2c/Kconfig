@@ -65,12 +65,12 @@ config I2C_ATMEL_SAM3
 	Says y to enable additional options to enable support
 	for individual controllers.
 
-config I2C_KSDK
-	bool "KSDK I2C driver"
-	depends on I2C && HAS_KSDK
+config I2C_MCUX
+	bool "MCUX I2C driver"
+	depends on I2C && HAS_MCUX
 	default n
 	help
-	Enable the ksdk I2C driver.
+	Enable the mcux I2C driver.
 
 config I2C_STM32LX
 	bool "STM32Lx MCU I2C Driver"

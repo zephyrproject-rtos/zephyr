@@ -67,12 +67,14 @@ _arch_switch_to_main_thread(char *main_stack, size_t main_stack_size,
 		"msr PSP, %0 \t\n"
 
 		/* unlock interrupts */
-#ifdef CONFIG_CPU_CORTEX_M0_M0PLUS
+#ifdef CONFIG_ARMV6_M
 		"cpsie i \t\n"
-#else
+#elif defined(CONFIG_ARMV7_M)
 		"movs %%r1, #0 \n\t"
 		"msr BASEPRI, %%r1 \n\t"
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 
 		/* branch to _thread_entry(_main, 0, 0, 0) */
 		"mov %%r0, %1 \n\t"

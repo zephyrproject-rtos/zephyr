@@ -80,7 +80,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	ldr r0, [r2, #_kernel_offset_to_idle]
 	cmp r0, #0
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	beq _idle_state_cleared
 	movs.n r1, #0
 	/* clear kernel idle state */
@@ -88,39 +88,45 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	blx _sys_power_save_idle_exit
 _idle_state_cleared:
 
-#else
+#elif defined(CONFIG_ARMV7_M)
 	ittt ne
 	movne	r1, #0
 		/* clear kernel idle state */
 		strne	r1, [r2, #_kernel_offset_to_idle]
 		blxne	_sys_power_save_idle_exit
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 
 	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
 #endif
 
 	mrs r0, IPSR	/* get exception number */
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	ldr r1, =16
 	subs r0, r1	/* get IRQ number */
 	lsls r0, #3	/* table is 8-byte wide */
-#else
+#elif defined(CONFIG_ARMV7_M)
 	sub r0, r0, #16	/* get IRQ number */
 	lsl r0, r0, #3	/* table is 8-byte wide */
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
-			 *			  in thumb mode */
+			 * in thumb mode */
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 	blx r3		/* call ISR */
 
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	pop {r3}
 	mov lr, r3
-#else
+#elif defined(CONFIG_ARMV7_M)
 	pop {lr}
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 
 	/* exception return is done in _IntExit() */
 	b _IntExit

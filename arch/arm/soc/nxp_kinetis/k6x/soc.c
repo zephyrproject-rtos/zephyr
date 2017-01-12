@@ -142,7 +142,7 @@ static ALWAYS_INLINE void clkInit(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if CONFIG_ETH_KSDK
+#if CONFIG_ETH_MCUX
 	CLOCK_SetEnetTime0Clock(TIMESRC_OSCERCLK);
 #endif
 }
@@ -167,11 +167,6 @@ static int fsl_frdm_k64f_init(struct device *arg)
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
-
-	/* enable the port clocks */
-	SIM->SCGC5 |= (SIM_SCGC5_PORTA(1) | SIM_SCGC5_PORTB(1) |
-			       SIM_SCGC5_PORTC(1) | SIM_SCGC5_PORTD(1) |
-			       SIM_SCGC5_PORTE(1));
 
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;

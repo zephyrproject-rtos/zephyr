@@ -60,16 +60,16 @@ config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	This option signifies the CPU faults other than the hard fault, and
 	needs to reserve a priority for them.
 
-config CPU_CORTEX_M0_M0PLUS
+config ARMV6_M
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
 	select ATOMIC_OPERATIONS_C
 	select ISA_THUMB2
 	help
-	This option signifies the use of either a Cortex-M0 or Cortex-M0+ CPU.
+	This option signifies the use of an ARMv6-M processor implementation.
 
-config CPU_CORTEX_M3_M4
+config ARMV7_M
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
@@ -78,44 +78,41 @@ config CPU_CORTEX_M3_M4
 	select CPU_CORTEX_M_HAS_BASEPRI
 	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	help
-	This option signifies the use of either a Cortex-M3 or Cortex-M4 CPU.
+	This option signifies the use of an ARMv7-M processor implementation.
 
 config CPU_CORTEX_M0
 	bool
 	# Omit prompt to signify "hidden" option
-	select CPU_CORTEX_M0_M0PLUS
+	select ARMV6_M
 	help
 	This option signifies the use of a Cortex-M0 CPU
 
 config CPU_CORTEX_M0PLUS
 	bool
 	# Omit prompt to signify "hidden" option
-	select CPU_CORTEX_M0_M0PLUS
+	select ARMV6_M
 	help
 	This option signifies the use of a Cortex-M0+ CPU
 
 config CPU_CORTEX_M3
 	bool
 	# Omit prompt to signify "hidden" option
-	select CPU_CORTEX_M3_M4
+	select ARMV7_M
 	help
 	This option signifies the use of a Cortex-M3 CPU
 
 config CPU_CORTEX_M4
 	bool
 	# Omit prompt to signify "hidden" option
-	select CPU_CORTEX_M3_M4
+	select ARMV7_M
 	help
 	This option signifies the use of a Cortex-M4 CPU
 
 config CPU_CORTEX_M7
 	bool
 	# Omit prompt to signify "hidden" option
+	select ARMV7_M
 	default n
-	select ATOMIC_OPERATIONS_BUILTIN
-	select ISA_THUMB2
-	select CPU_CORTEX_M_HAS_BASEPRI
-	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	help
 	This option signifies the use of a Cortex-M7 CPU
 
@@ -211,7 +208,7 @@ config FLASH_BASE_ADDRESS
 endmenu
 
 menu "ARM Cortex-M0/M0+/M3/M4/M7 options"
-	depends on CPU_CORTEX_M0_M0PLUS || CPU_CORTEX_M3_M4 || CPU_CORTEX_M7
+	depends on ARMV6_M || ARMV7_M
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"

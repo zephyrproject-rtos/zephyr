@@ -20,23 +20,23 @@
 #include <soc.h>
 
 /* Push button switch 2 */
-#define SW2_GPIO_NAME	CONFIG_GPIO_K64_C_DEV_NAME
+#define SW2_GPIO_NAME	CONFIG_GPIO_MCUX_PORTC_NAME
 #define SW2_GPIO_PIN	6
 
 /* Push button switch 3 */
-#define SW3_GPIO_NAME	CONFIG_GPIO_K64_A_DEV_NAME
+#define SW3_GPIO_NAME	CONFIG_GPIO_MCUX_PORTA_NAME
 #define SW3_GPIO_PIN	4
 
 /* Red LED */
-#define RED_GPIO_NAME	CONFIG_GPIO_K64_B_DEV_NAME
+#define RED_GPIO_NAME	CONFIG_GPIO_MCUX_PORTB_NAME
 #define RED_GPIO_PIN	22
 
 /* Green LED */
-#define GREEN_GPIO_NAME	CONFIG_GPIO_K64_E_DEV_NAME
+#define GREEN_GPIO_NAME	CONFIG_GPIO_MCUX_PORTE_NAME
 #define GREEN_GPIO_PIN	26
 
 /* Blue LED */
-#define BLUE_GPIO_NAME	CONFIG_GPIO_K64_B_DEV_NAME
+#define BLUE_GPIO_NAME	CONFIG_GPIO_MCUX_PORTB_NAME
 #define BLUE_GPIO_PIN	21
 
 /* LED0. There is no physical LED on the board with this name, so create an

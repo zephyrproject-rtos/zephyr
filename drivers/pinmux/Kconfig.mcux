@@ -1,0 +1,82 @@
+# Kconfig - MCUXpresso SDK pinmux
+#
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig PINMUX_MCUX
+	bool "MCUX pinmux driver"
+	depends on HAS_MCUX
+	default n
+	help
+	  Enable the MCUX pinmux driver.
+
+if PINMUX_MCUX
+
+config PINMUX_MCUX_PORTA
+	bool "Port A"
+	default n
+	help
+	  Enable Port A.
+
+config PINMUX_MCUX_PORTA_NAME
+	string "Pinmux Port A driver name"
+	depends on PINMUX_MCUX_PORTA
+	default "porta"
+
+config PINMUX_MCUX_PORTB
+	bool "Port B"
+	default n
+	help
+	  Enable Port B.
+
+config PINMUX_MCUX_PORTB_NAME
+	string "Pinmux Port B driver name"
+	depends on PINMUX_MCUX_PORTB
+	default "portb"
+
+config PINMUX_MCUX_PORTC
+	bool "Port C"
+	default n
+	help
+	  Enable Port C.
+
+config PINMUX_MCUX_PORTC_NAME
+	string "Pinmux Port C driver name"
+	depends on PINMUX_MCUX_PORTC
+	default "portc"
+
+config PINMUX_MCUX_PORTD
+	bool "Port D"
+	default n
+	help
+	  Enable Port D.
+
+config PINMUX_MCUX_PORTD_NAME
+	string "Pinmux Port D driver name"
+	depends on PINMUX_MCUX_PORTD
+	default "portd"
+
+config PINMUX_MCUX_PORTE
+	bool "Port E"
+	default n
+	help
+	  Enable Port E.
+
+config PINMUX_MCUX_PORTE_NAME
+	string "Pinmux Port E driver name"
+	depends on PINMUX_MCUX_PORTE
+	default "porte"
+
+endif # PINMUX_MCUX

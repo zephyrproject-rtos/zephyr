@@ -201,13 +201,15 @@ static inline void _NvicIrqUnpend(unsigned int irq)
 
 static inline void _NvicIrqPrioSet(unsigned int irq, uint8_t prio)
 {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	volatile uint32_t * const ipr = &__scs.nvic.ipr[_PRIO_IP_IDX(irq)];
 	*ipr = ((*ipr & ~((uint32_t)0xff << _PRIO_BIT_SHIFT(irq))) |
 		((uint32_t)prio << _PRIO_BIT_SHIFT(irq)));
-#else
+#elif defined(CONFIG_ARMV7_M)
 	__scs.nvic.ipr[irq] = prio;
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 }
 
 /**
@@ -223,14 +225,17 @@ static inline void _NvicIrqPrioSet(unsigned int irq, uint8_t prio)
 
 static inline uint8_t _NvicIrqPrioGet(unsigned int irq)
 {
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
 	return (__scs.nvic.ipr[_PRIO_IP_IDX(irq)] >> _PRIO_BIT_SHIFT(irq));
-#else
+#elif defined(CONFIG_ARMV7_M)
 	return __scs.nvic.ipr[irq];
-#endif /* CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 }
 
-#if !defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
+#elif defined(CONFIG_ARMV7_M)
 /**
  *
  * @brief Trigger an interrupt via software
@@ -251,7 +256,9 @@ static inline void _NvicSwInterruptTrigger(unsigned int irq)
 	__scs.stir = irq;
 #endif
 }
-#endif /* !CONFIG_CPU_CORTEX_M0_M0PLUS */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 
 #endif /* !_ASMLANGUAGE */
 

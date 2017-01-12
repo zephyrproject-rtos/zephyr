@@ -56,7 +56,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
     .word __nmi
 
     .word __hard_fault
-#if defined(CONFIG_CPU_CORTEX_M0_M0PLUS)
+#if defined(CONFIG_ARMV6_M)
     .word __reserved
     .word __reserved
     .word __reserved
@@ -66,7 +66,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
     .word __reserved
     .word __reserved	/* SVC not used for now (PendSV used instead) */
     .word __reserved
-#else /* CONFIG_CPU_CORTEX_M3_M4 */
+#elif defined(CONFIG_ARMV7_M)
     .word __mpu_fault
     .word __bus_fault
     .word __usage_fault
@@ -76,7 +76,9 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
     .word __reserved
     .word __svc
     .word __debug_monitor
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
     .word __reserved
     .word __pendsv
 #if defined(CONFIG_CORTEX_M_SYSTICK)

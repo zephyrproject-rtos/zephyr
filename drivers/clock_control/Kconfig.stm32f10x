@@ -15,12 +15,12 @@
 # limitations under the License.
 #
 
-if SOC_SERIES_STM32F1X
+if SOC_STM32F10X_DENSITY_DEVICE
 
 menuconfig CLOCK_CONTROL_STM32F10X
 	bool
 	prompt "STM32F10x Reset & Clock Control"
-	default y if SOC_SERIES_STM32F1X
+	default y if SOC_STM32F10X_DENSITY_DEVICE
 	help
 	 Enable driver for Reset & Clock Control subsystem found
 	 in STM32F1 family of MCUs

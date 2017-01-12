@@ -1,4 +1,4 @@
-# Kconfig - Kinetis SDK pinmux
+# Kconfig - MCUXpresso SDK
 #
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
 #
@@ -15,43 +15,7 @@
 # limitations under the License.
 #
 
-menuconfig PINMUX_KSDK
-	bool "KSDK pinmux driver"
-	depends on HAS_KSDK
-	default n
-	help
-	  Enable the KSDK pinmux driver.
-
-if PINMUX_KSDK
-
-config PINMUX_KSDK_PORTA
-	bool "Port A"
-	default n
-	help
-	  Enable Port A.
-
-config PINMUX_KSDK_PORTB
-	bool "Port B"
-	default n
-	help
-	  Enable Port B.
-
-config PINMUX_KSDK_PORTC
-	bool "Port C"
-	default n
-	help
-	  Enable Port C.
-
-config PINMUX_KSDK_PORTD
-	bool "Port D"
-	default n
-	help
-	  Enable Port D.
-
-config PINMUX_KSDK_PORTE
-	bool "Port E"
-	default n
-	help
-	  Enable Port E.
-
-endif # PINMUX_KSDK
+config HAS_MCUX
+	bool
+	select HAS_CMSIS
+	depends on SOC_FAMILY_KINETIS
