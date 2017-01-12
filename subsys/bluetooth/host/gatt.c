@@ -716,6 +716,10 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
 	for (params = subscriptions; params; params = params->_next) {
+		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
+			continue;
+		}
+
 		if (handle != params->value_handle) {
 			continue;
 		}
