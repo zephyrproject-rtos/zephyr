@@ -239,7 +239,7 @@ static bool send_fin_if_active_close(struct net_context *context)
 {
 	NET_ASSERT(context->tcp);
 
-	switch (context->tcp->state) {
+	switch (net_tcp_get_state(context->tcp)) {
 	case NET_TCP_SYN_RCVD:
 	case NET_TCP_ESTABLISHED:
 		/* Sending a packet with the FIN flag automatically
@@ -702,19 +702,19 @@ static enum net_verdict tcp_passive_close(struct net_conn *conn,
 
 	NET_ASSERT(context && context->tcp);
 
-	switch (context->tcp->state) {
+	switch (net_tcp_get_state(context->tcp)) {
 	case NET_TCP_CLOSE_WAIT:
 	case NET_TCP_LAST_ACK:
 		break;
 	default:
 		NET_DBG("Context %p in wrong state %d",
-			context, context->tcp->state);
+			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}
 
 	net_tcp_print_recv_info("PASSCLOSE", buf, NET_TCP_BUF(buf)->src_port);
 
-	if (context->tcp->state == NET_TCP_LAST_ACK &&
+	if (net_tcp_get_state(context->tcp) == NET_TCP_LAST_ACK &&
 	    NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
 		NET_DBG("ACK received in LAST_ACK, disposing of connection");
 		net_context_put(context);
@@ -735,9 +735,9 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 
 	NET_ASSERT(context && context->tcp);
 
-	if (context->tcp->state != NET_TCP_ESTABLISHED) {
+	if (net_tcp_get_state(context->tcp) != NET_TCP_ESTABLISHED) {
 		NET_DBG("Context %p in wrong state %d",
-			context, context->tcp->state);
+			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}
 
@@ -799,8 +799,8 @@ static enum net_verdict tcp_active_close(struct net_conn *conn,
 	tcp = context->tcp;
 
 	if (NET_TCP_FLAGS(buf) == NET_TCP_FIN) {
-		if (tcp->state == NET_TCP_FIN_WAIT_1 ||
-		    tcp->state == NET_TCP_FIN_WAIT_2) {
+		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1 ||
+		    net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_2) {
 			/* Sending an ACK in FIN_WAIT_1 will transition
 			 * to CLOSING, and to TIME_WAIT if on FIN_WAIT_2
 			 */
@@ -808,17 +808,17 @@ static enum net_verdict tcp_active_close(struct net_conn *conn,
 			return NET_DROP;
 		}
 	} else if (NET_TCP_FLAGS(buf) == NET_TCP_ACK) {
-		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 			net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_2);
 			return NET_DROP;
 		}
 
-		if (tcp->state == NET_TCP_CLOSING) {
+		if (net_tcp_get_state(tcp) == NET_TCP_CLOSING) {
 			net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
 			return NET_DROP;
 		}
 	} else if (NET_TCP_FLAGS(buf) == (NET_TCP_FIN | NET_TCP_ACK)) {
-		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 			send_fin_ack(context, &context->remote);
 			return NET_DROP;
 		}
@@ -837,13 +837,13 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 	NET_ASSERT(context && context->tcp);
 
-	switch (context->tcp->state) {
+	switch (net_tcp_get_state(context->tcp)) {
 	case NET_TCP_SYN_SENT:
 		net_context_set_iface(context, net_nbuf_iface(buf));
 		break;
 	default:
 		NET_DBG("Context %p in wrong state %d",
-			context, context->tcp->state);
+			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}
 
@@ -1179,7 +1179,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 	tcp = context->tcp;
 
-	switch (tcp->state) {
+	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_LISTEN:
 		net_context_set_iface(context, net_nbuf_iface(buf));
 		break;
@@ -1257,7 +1257,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		/* We can only receive ACK if we have already received SYN.
 		 * So if we are not in SYN_RCVD state, then it is an error.
 		 */
-		if (tcp->state != NET_TCP_SYN_RCVD) {
+		if (net_tcp_get_state(tcp) != NET_TCP_SYN_RCVD) {
 			k_delayed_work_cancel(&tcp->ack_timer);
 			NET_DBG("Not in SYN_RCVD state, sending RST");
 			goto reset;
@@ -1442,7 +1442,7 @@ int net_context_accept(struct net_context *context,
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		NET_ASSERT(context->tcp);
 
-		if (context->tcp->state != NET_TCP_LISTEN) {
+		if (net_tcp_get_state(context->tcp) != NET_TCP_LISTEN) {
 			NET_DBG("Context %p in wrong state %d, should be %d",
 				context, context->tcp->state, NET_TCP_LISTEN);
 			return -EINVAL;

@@ -104,7 +104,7 @@ static inline uint32_t init_isn(void)
 
 static inline uint32_t retry_timeout(const struct net_tcp *tcp)
 {
-	return (1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
+	return ((uint32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
 }
 
 static void tcp_retry_expired(struct k_timer *timer)
@@ -145,7 +145,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	memset(&tcp_context[i], 0, sizeof(struct net_tcp));
 
 	tcp_context[i].flags = NET_TCP_IN_USE;
-	tcp_context[i].state = NET_TCP_CLOSED;
+	net_tcp_set_state(&tcp_context[i], NET_TCP_CLOSED);
 	tcp_context[i].context = context;
 
 	tcp_context[i].send_seq = init_isn();
@@ -168,7 +168,7 @@ int net_tcp_release(struct net_tcp *tcp)
 	k_delayed_work_cancel(&tcp->ack_timer);
 	k_timer_stop(&tcp->retry_timer);
 
-	tcp->state = NET_TCP_CLOSED;
+	net_tcp_set_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;
 
 	key = irq_lock();
@@ -344,7 +344,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	seq = tcp->send_seq;
 
 	if (flags & NET_TCP_ACK) {
-		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 			if (flags & NET_TCP_FIN) {
 				/* FIN is used here only to determine which
 				 * state to go to next; it's not to be used
@@ -355,9 +355,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			} else {
 				net_tcp_change_state(tcp, NET_TCP_CLOSING);
 			}
-		} else if (tcp->state == NET_TCP_FIN_WAIT_2) {
+		} else if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_2) {
 			net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
-		} else if (tcp->state == NET_TCP_CLOSE_WAIT) {
+		} else if (net_tcp_get_state(tcp) == NET_TCP_CLOSE_WAIT) {
 			tcp->flags |= NET_TCP_IS_SHUTDOWN;
 			flags |= NET_TCP_FIN;
 			net_tcp_change_state(tcp, NET_TCP_LAST_ACK);
@@ -368,8 +368,8 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 		tcp->flags |= NET_TCP_FINAL_SENT;
 		seq++;
 
-		if (tcp->state == NET_TCP_ESTABLISHED ||
-		    tcp->state == NET_TCP_SYN_RCVD) {
+		if (net_tcp_get_state(tcp) == NET_TCP_ESTABLISHED ||
+		    net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
 			net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_1);
 		}
 	}
@@ -483,7 +483,7 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 	uint8_t options[NET_TCP_MAX_OPT_SIZE];
 	uint8_t optionlen;
 
-	switch (tcp->state) {
+	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_SYN_RCVD:
 		/* In the SYN_RCVD state acknowledgment must be with the
 		 * SYN flag.
@@ -523,9 +523,9 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 	struct tcp_segment segment = { 0 };
 
 	if ((net_context_get_state(tcp->context) != NET_CONTEXT_UNCONNECTED) &&
-	    (tcp->state != NET_TCP_SYN_SENT) &&
-	    (tcp->state != NET_TCP_TIME_WAIT)) {
-		if (tcp->state == NET_TCP_SYN_RCVD) {
+	    (net_tcp_get_state(tcp) != NET_TCP_SYN_SENT) &&
+	    (net_tcp_get_state(tcp) != NET_TCP_TIME_WAIT)) {
+		if (net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
 			/* Send the reset segment with acknowledgment. */
 			segment.ack = tcp->send_ack;
 			segment.flags = NET_TCP_RST | NET_TCP_ACK;
@@ -775,7 +775,7 @@ void net_tcp_change_state(struct net_tcp *tcp,
 {
 	NET_ASSERT(tcp);
 
-	if (tcp->state == new_state) {
+	if (net_tcp_get_state(tcp) == new_state) {
 		return;
 	}
 
@@ -790,16 +790,16 @@ void net_tcp_change_state(struct net_tcp *tcp,
 	validate_state_transition(tcp->state, new_state);
 #endif /* CONFIG_NET_DEBUG_TCP */
 
-	tcp->state = new_state;
+	net_tcp_set_state(tcp, new_state);
 
-	if (tcp->state == NET_TCP_FIN_WAIT_1) {
+	if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 		/* Wait up to 2 * MSL before destroying this socket. */
 		k_delayed_work_cancel(&tcp->fin_timer);
 		k_delayed_work_init(&tcp->fin_timer, fin_timeout);
 		k_delayed_work_submit(&tcp->fin_timer, FIN_TIMEOUT);
 	}
 
-	if (tcp->state != NET_TCP_CLOSED) {
+	if (net_tcp_get_state(tcp) != NET_TCP_CLOSED) {
 		return;
 	}
 

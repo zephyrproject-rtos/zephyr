@@ -101,9 +101,6 @@ struct net_tcp {
 	/** Cookie pointer passed to net_context_recv() */
 	void *recv_user_data;
 
-	/** TCP state. */
-	enum net_tcp_state state;
-
 	/** ACK message timer */
 	struct k_delayed_work ack_timer;
 
@@ -129,10 +126,13 @@ struct net_tcp {
 	uint32_t sent_ack;
 
 	/** Current retransmit period */
-	uint8_t retry_timeout_shift;
-
-	/** Flags for the TCP. */
-	uint8_t flags;
+	uint32_t retry_timeout_shift : 5;
+	/** Flags for the TCP */
+	uint32_t flags : 8;
+	/** Current TCP state */
+	uint32_t state : 4;
+	/** Remaining bits in this uint32_t */
+	uint32_t _padding : 15;
 };
 
 static inline bool net_tcp_is_used(struct net_tcp *tcp)
@@ -309,6 +309,28 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack);
  * @return Maximum Segment Size
  */
 uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
+
+/**
+ * @brief Obtains the state for a TCP context
+ *
+ * @param tcp TCP context
+ */
+static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
+{
+	return (enum net_tcp_state)tcp->state;
+}
+
+/**
+ * @brief Sets the state for a TCP context
+ *
+ * @param tcp TCP context
+ * @param state TCP state
+ */
+static inline void net_tcp_set_state(struct net_tcp *tcp,
+				     enum net_tcp_state state)
+{
+	tcp->state = state;
+}
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);
