@@ -250,7 +250,6 @@ static bool send_fin_if_active_close(struct net_context *context)
 					 tcp_active_close, context);
 		return true;
 	default:
-		net_tcp_release(context->tcp);
 		return false;
 	}
 }
@@ -280,6 +279,10 @@ int net_context_put(struct net_context *context)
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet");
 			goto still_in_use;
+		}
+
+		if (context->tcp) {
+			net_tcp_release(context->tcp);
 		}
 	}
 #endif /* CONFIG_NET_TCP */
