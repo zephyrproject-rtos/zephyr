@@ -17,8 +17,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/util.h>
-
-#define SCB_AIRCR_VECTKEY_EN_W 0x05FA
+#include <arch/arm/cortex_m/cmsis.h>
 
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 /*
@@ -48,21 +47,7 @@ static void software_reboot(void)
 }
 #define DO_REBOOT() software_reboot()
 #else
-static void reboot_through_sysresetreq(void)
-{
-	union __aircr reg;
-
-	reg.val = __scs.scb.aircr.val;
-	reg.bit.vectkey = SCB_AIRCR_VECTKEY_EN_W;
-	reg.bit.sysresetreq = 1;
-	__scs.scb.aircr.val = reg.val;
-
-	/* the reboot is not immediate, so wait here until it takes effect */
-	for (;;) {
-		;
-	}
-}
-#define DO_REBOOT() reboot_through_sysresetreq()
+#define DO_REBOOT() NVIC_SystemReset()
 #endif
 
 /**
