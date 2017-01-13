@@ -1,0 +1,91 @@
+XTENSA_ISS_CYCLES_LIMIT=1000000000 # Simulate 10^9 cycles.
+ifndef XTENSA_TOOLS_PATH
+$(error Please set XTENSA_TOOLS_PATH first)
+endif
+ifndef XTENSA_BUILDS_PATH
+$(error Please set XTENSA_BUILDS_PATH first)
+endif
+XTENSA_BUILD_DIR=$(patsubst "%",%,${XTENSA_BUILD_DIR})
+ifeq (${XTENSA_BUILD_DIR},)
+XTENSA_BUILD=$(shell echo ${XTENSA_BUILDS_PATH}/${XTENSA_CORE})
+else
+ifeq ($(patsubst /%,/,${XTENSA_BUILD_DIR}),/)
+XTENSA_BUILD=${XTENSA_BUILD_DIR}
+else
+XTENSA_BUILD=$(shell echo ${CONFIG_XTENSA_BUILDS_PATH}/${XTENSA_BUILD_DIR})
+endif
+endif
+# Strip quotes from cross compiler anme prefix
+CROSS_COMPILE_xtensa=$(patsubst "%",%,${CONFIG_CROSS_COMPILE})
+ifeq (${CROSS_COMPILE_xtensa},)
+# Use default name prefix if no cross compiler name prefix is set
+CROSS_COMPILE_xtensa=xt-
+endif
+
+ifeq (${CONFIG_XTENSA},y)
+CROSS_COMPILE=${XTENSA_TOOLS_PATH}/bin/$(CROSS_COMPILE_$(ARCH))
+CC=${CROSS_COMPILE}xcc --xtensa-core=$(XTENSA_CORE)
+CROSS_COMPILE_TARGET = ${CROSS_COMPILE_TARGET_${ARCH}}
+
+#CORES
+XTENSA_CORES_LIST=$(shell sed -ne 's/^config \(.*\)/\1 /p' \
+						${ZEPHYR_BASE}/arch/xtensa/soc/Kconfig.cores)
+define XTENSA_CORE_CHECK
+
+ifeq ($$(CONFIG_$(strip $1)),y)
+XTENSA_CORE=$(strip $1)
+endif
+
+endef
+define XTENSA_CORES_CHECK
+$(foreach core,${XTENSA_CORES_LIST}, $(call XTENSA_CORE_CHECK, ${core}))
+endef
+
+$(eval ${XTENSA_CORES_CHECK})
+
+ifeq (${XTENSA_CORE},)
+$(error Failed to parse "arch/xtensa/soc/Kconfig.cores" for getting cores list)
+endif
+
+XTENSA_SYSTEM=$(XTENSA_BUILD)/config
+
+XTSC_INC=$(realpath $(patsubst "%",%,${CONFIG_XTENSA_XTSC_INC}))
+ifeq (${XTSC_INC},)
+XTSC_INC=$(realpath ../$(patsubst "%",%,${CONFIG_XTENSA_XTSC_INC}))
+endif
+XTSC_WORK_DIR=$(dir ${XTSC_INC})
+XTSC_INC_FILE=$(notdir ${XTSC_INC})
+
+export CROSS_COMPILE XTENSA_CORE XTENSA_SYSTEM
+endif
+
+prepare2:
+	${Q}test -d ${XTENSA_BUILD} || ( \
+		echo '*** Error: Invalid Xtensa core configuration path \
+			"${XTENSA_BUILD}"' && \
+		exit 1 \
+	)
+
+xt-run:all xt-core
+	${Q}${CROSS_COMPILE}run --cycle_limit=${XTENSA_ISS_CYCLES_LIMIT} zephyr.elf
+
+xtsc-run:all xt-core
+	${Q}test -f ${XTSC_INC} || ( \
+		echo '*** Error: $@ requires valid XTSC include file in \
+			"$${CONFIG_XTENSA_XTSC_INC}"' && \
+		exit 1 \
+	)
+	${Q}sed -e 's@\(-core_program=\).*@\1${CURDIR}/zephyr.elf@' \
+		< ${XTSC_INC} > ${XTSC_INC_FILE}
+	${Q}cd ${XTSC_WORK_DIR} && \
+		$(dir ${CROSS_COMPILE})xtsc-run \
+			$(if ${XTSC_TRACE},-set_core_parm=SimClients="trace \
+			${CURDIR}/${XTSC_TRACE}") \
+			-include=${CURDIR}/${XTSC_INC_FILE} \
+			$(if ${XTSC_DEBUG},-xxdebug \
+		)
+
+xt-core:
+	${Q}echo "***** Running simulation for Xtensa core \"${XTENSA_CORE}\" *****"
+
+.PHONY: xt-run, xtsc-run, xt-core
