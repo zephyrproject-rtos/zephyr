@@ -29,6 +29,8 @@
 #include <drivers/clock_control/nrf5_clock_control.h>
 #endif
 
+#include <arch/arm/cortex_m/cmsis.h>
+
 #include "util/config.h"
 #include "util/mayfly.h"
 #include "util/util.h"
@@ -125,11 +127,11 @@ void mayfly_pend(uint8_t caller_id, uint8_t callee_id)
 
 	switch (callee_id) {
 	case MAYFLY_CALL_ID_0:
-		_NvicIrqPend(RTC0_IRQn);
+		NVIC_SetPendingIRQ(RTC0_IRQn);
 		break;
 
 	case MAYFLY_CALL_ID_1:
-		_NvicIrqPend(SWI4_IRQn);
+		NVIC_SetPendingIRQ(SWI4_IRQn);
 		break;
 
 	case MAYFLY_CALL_ID_PROGRAM:
