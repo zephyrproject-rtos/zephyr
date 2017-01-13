@@ -1,0 +1,94 @@
+# Kconfig - XTENSA architecture configuration options
+
+#
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+choice
+	prompt "XTENSA core Selection"
+	default hifi3_bd5
+	depends on XTENSA
+
+source "arch/xtensa/soc/Kconfig.cores"
+endchoice
+
+menu "XTENSA Options"
+	depends on XTENSA
+
+config ARCH
+	default "xtensa"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	prompt "Hardware clock cycles per second, 2000000 for ISS"
+	default 2000000
+	range 1000000 1000000000
+	help
+	This option specifies hardware clock.
+
+config XTENSA_NO_IPC
+	bool "Core has no IPC support"
+	select ATOMIC_OPERATIONS_C
+	default n
+	help
+	Uncheck this if you core does not implment "SCOMPARE1" register and "s32c1i"
+	isntruction.
+
+config SW_ISR_TABLE
+	bool
+	prompt "Enable software interrupt handler table"
+	default y
+	help
+	Enable an interrupt handler table implemented in software. This
+	table, unlike ISRs connected directly in the vector table, allow
+	a parameter to be passed to the interrupt handlers. Also, invoking
+	the exeception/interrupt exit stub is automatically done.
+	This has to be enabled for dynamically connecting interrupt handlers
+	at runtime (SW_ISR_TABLE_DYNAMIC).
+
+config IRQ_OFFLOAD
+	bool "Enable IRQ offload"
+	default n
+	help
+	Enable irq_offload() API which allows functions to be synchronously
+	run in interrupt context. Uses one entry in the IDT.  Mainly useful
+	for test cases.
+
+config SW_ISR_TABLE_DYNAMIC
+	bool
+	prompt "Allow installing interrupt handlers at runtime"
+	depends on SW_ISR_TABLE
+	default n
+	help
+	This option enables irq_connect_dynamic(). It moves the ISR table to
+	SRAM so that it is writable. This has the side-effect of removing
+	write-protection on the ISR table.
+
+menu "Specific core configuration"
+
+config IRQ_OFFLOAD_INTNUM
+	int
+	prompt "IRQ offload SW interrupt index"
+	help
+	 The index of the software interrupt to be used for IRQ offload.
+
+	 Please note that in order for IRQ offload to work correctly the selected
+	 interrupt shall have its priority shall not exceed XCHAL_EXCM_LEVEL.
+
+source "arch/xtensa/soc/*/Kconfig"
+
+endmenu
+
+endmenu

@@ -3,6 +3,7 @@
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2016 Cadence Design Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -28,6 +29,9 @@ config NIOS2
 
 config RISCV32
 	bool "RISCV32 architecture"
+
+config XTENSA
+	bool "Xtensa architecture"
 
 endchoice
 
