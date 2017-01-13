@@ -3076,7 +3076,7 @@ static inline __deprecated void
 nano_timer_init(struct k_timer *timer, void *data)
 {
 	k_timer_init(timer, NULL, NULL);
-	timer->_legacy_data = data;
+	timer->user_data = data;
 }
 
 /**

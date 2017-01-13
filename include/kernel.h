@@ -757,8 +757,8 @@ struct k_timer {
 	/* timer status */
 	uint32_t status;
 
-	/* used to support legacy timer APIs */
-	void *_legacy_data;
+	/* user-specific data, also used to support legacy features */
+	void *user_data;
 
 	_OBJECT_TRACING_NEXT_PTR(k_timer);
 };
@@ -773,7 +773,7 @@ struct k_timer {
 	.expiry_fn = expiry, \
 	.stop_fn = stop, \
 	.status = 0, \
-	._legacy_data = NULL, \
+	.user_data = 0, \
 	_OBJECT_TRACING_INIT \
 	}
 
@@ -927,6 +927,38 @@ extern uint32_t k_timer_status_sync(struct k_timer *timer);
 static inline int32_t k_timer_remaining_get(struct k_timer *timer)
 {
 	return _timeout_remaining_get(&timer->timeout);
+}
+
+/**
+ * @brief Associate user-specific data with a timer.
+ *
+ * This routine records the @a user_data with the @a timer, to be retrieved
+ * later.
+ *
+ * It can be used e.g. in a timer handler shared across multiple subsystems to
+ * retrieve data specific to the subsystem this timer is associated with.
+ *
+ * @param timer     Address of timer.
+ * @param user_data User data to associate with the timer.
+ *
+ * @return N/A
+ */
+static inline void k_timer_user_data_set(struct k_timer *timer,
+					 void *user_data)
+{
+	timer->user_data = user_data;
+}
+
+/**
+ * @brief Retrieve the user-specific data from a timer.
+ *
+ * @param timer     Address of timer.
+ *
+ * @return The user data.
+ */
+static inline void *k_timer_user_data_get(struct k_timer *timer)
+{
+	return timer->user_data;
 }
 
 /**

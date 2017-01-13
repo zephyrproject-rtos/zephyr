@@ -46,7 +46,7 @@ static sys_dlist_t timer_pool;
 
 static void timer_sem_give(struct k_timer *timer)
 {
-	k_sem_give((ksem_t)timer->_legacy_data);
+	k_sem_give((ksem_t)timer->user_data);
 }
 
 static int init_dyamic_timers(struct device *dev)
@@ -97,7 +97,7 @@ void task_timer_start(ktimer_t timer, int32_t duration,
 		return;
 	}
 
-	timer->_legacy_data = (void *)sema;
+	timer->user_data = (void *)sema;
 
 	k_timer_start(timer, _ticks_to_ms(duration), _ticks_to_ms(period));
 }
@@ -123,5 +123,5 @@ void *nano_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
 	} else {
 		test_fn = k_timer_status_sync;
 	}
-	return test_fn(timer) ? timer->_legacy_data : NULL;
+	return test_fn(timer) ? (void *)timer->user_data : NULL;
 }
