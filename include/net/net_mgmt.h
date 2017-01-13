@@ -49,10 +49,10 @@ struct net_if;
 	(mgmt_request & NET_MGMT_ON_IFACE_MASK)
 
 #define NET_MGMT_GET_LAYER(mgmt_request)	\
-	(mgmt_request & NET_MGMT_LAYER_MASK)
+	((mgmt_request & NET_MGMT_LAYER_MASK) >> 28)
 
 #define NET_MGMT_GET_LAYER_CODE(mgmt_request)	\
-	(mgmt_request & NET_MGMT_LAYER_CODE_MASK)
+	((mgmt_request & NET_MGMT_LAYER_CODE_MASK) >> 16)
 
 #define NET_MGMT_GET_COMMAND(mgmt_request)	\
 	(mgmt_request & NET_MGMT_COMMAND_MASK)
