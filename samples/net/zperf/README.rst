@@ -1,10 +1,10 @@
-Zperf: Network Traffic Generator
+zperf: Network Traffic Generator
 ################################
 
 Description
 ===========
 
-Zperf is a network traffic generator for Zephyr that may be used to
+zperf is a network traffic generator for Zephyr that may be used to
 evaluate network bandwidth.
 
 Features
@@ -17,45 +17,64 @@ Features
 Supported Boards
 ================
 
-zperf is board-agnostic. However, zperf requires a network interface.
-So far, zperf has been tested only on the Intel Galileo Development Board.
+zperf is board-agnostic. However, to run the zperf sample application,
+the target platform must provide a network interface supported by Zephyr.
+
+This sample application has been tested on the following platforms:
+
+- Freedom Board (FRDM K64F)
+- Quark SE C1000 Development Board
+- QEMU x86
+
+Requirements
+============
+
+- iPerf 2.0.5 installed on the host machine
+- Supported board
+
+Depending on the network technology chosen, extra steps may be required
+to setup the network environment.
 
 Usage
 =====
 
-If the zephyr is a client, then you can start the iperf in host with these
-command line options if you want to test UDP:
+If Zephyr acts as a client, iPerf must be executed in server mode.
+For example, the following command line must be used for UDP testing:
 
 .. code-block:: console
 
    $ iperf -s -l 1K -u -V -B 2001:db8::2
 
-In zephyr start zperf like this
+
+In the Zephyr console, zperf can be executed as follows:
 
 .. code-block:: console
 
    zperf> udp.upload 2001:db8::2 5001 10 1K 1M
 
-or if you have set the zephyr and peer host IP addresses in config file,
-then you can simply say
+
+If the IP addresses of Zephyr and the host machine are specified in the
+config file, zperf can be started as follows:
 
 .. code-block:: console
 
    zperf> udp.upload2 v6 10 1K 1M
 
 
-If the zephyr is acting as a server, then first start zephyr in download
-mode like this:
+If Zephyr is acting as a server, set the download mode as follows:
 
 .. code-block:: console
 
    zperf> udp.download 5001
 
-and in host side start iperf like this
+
+and in the host side, iPerf must be executed with the following
+command line:
 
 .. code-block:: console
 
    $ iperf -l 1K -u -V -c 2001:db8::1 -p 5001
 
-Note the you might need to rate limit the output using -b option
-if zephyr is not able to receive all the packets in orderly manner.
+
+iPerf output can be limited by using the -b option if Zephyr is not
+able to receive all the packets in orderly manner.

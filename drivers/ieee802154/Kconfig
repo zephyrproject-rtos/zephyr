@@ -35,6 +35,25 @@
 #
 menu "IEEE 802.15.4 drivers options"
 
+config SYS_LOG_IEEE802154_DRIVER_LEVEL
+	int
+	prompt "IEEE802154 driver log level"
+	default 0
+	help
+	Sets log level for 802.15.4 drivers.
+
+	Levels are:
+
+	- 0 OFF, do not write
+
+	- 1 ERROR, only write SYS_LOG_ERR
+
+	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+
+	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+
+	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+
 config  TI_CC2520
 	bool "TI CC2520 Driver support"
 	depends on NETWORKING
@@ -52,25 +71,6 @@ config	TI_CC2520_RAW
 	over USB making an USB 802.15.4 dongle.
 
 if TI_CC2520 || TI_CC2520_RAW
-
-config SYS_LOG_TI_CC2520_LEVEL
-	int
-	prompt "CC2520 driver log level"
-	default 0
-	help
-	Sets log level for 802.15.4 CC2520 driver.
-
-	Levels are:
-
-	- 0 OFF, do not write
-
-	- 1 ERROR, only write SYS_LOG_ERR
-
-	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
-
-	- 3 INFO, write SYS_LOG_INF in adition to previous levels
-
-	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 config TI_CC2520_DRV_NAME
 	string "TI CC2520 Driver's name"
@@ -138,24 +138,5 @@ config UPIPE_15_4_DRV_NAME
 	string "UART PIPE Driver name"
 	default "upipe_15_4"
 	depends on UPIPE_15_4
-
-config SYS_LOG_UPIPE_15_4_LEVEL
-	int "UART PIPE driver log level"
-	default 0
-	depends on UPIPE_15_4
-	help
-	Sets log level for fake 802.15.4 UPIPE driver.
-
-	Levels are:
-
-	- 0 OFF, do not write
-
-	- 1 ERROR, only write SYS_LOG_ERR
-
-	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
-
-	- 3 INFO, write SYS_LOG_INF in adition to previous levels
-
-	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 endmenu

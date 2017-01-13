@@ -438,6 +438,11 @@ static void tcp_received(struct net_context *context,
 	struct net_buf *reply_buf;
 	int ret;
 
+	if (!buf) {
+		/* EOF condition */
+		return;
+	}
+
 	snprintf(dbg, MAX_DBG_PRINT, "TCP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
 

@@ -1,7 +1,7 @@
-# Makefile - coap server test application
+# Makefile - DTLS server test application
 
 #
-# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2015 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,13 +16,9 @@
 # limitations under the License.
 #
 
-BOARD = qemu_x86
-CONF_FILE ?= prj.conf
+BOARD ?= qemu_x86
+CONF_FILE ?= prj_$(BOARD).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
 
-ifeq ($(CONFIG_NET_L2_BLUETOOTH), y)
-	QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
-else
-	include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
-endif
+include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack

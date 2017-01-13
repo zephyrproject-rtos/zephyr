@@ -29,8 +29,8 @@ config NET_L2_ETHERNET
 	default n
 	help
 	Add support for Ethernet, enabling selecting relevant hardware drivers.
-	If NET_SLIP and SLIP_TAP are selected, NET_L2_ETHERNET will enable to
-	fully simulate ethernet through SLIP.
+	If SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully simulate
+	ethernet through SLIP.
 
 config NET_DEBUG_L2_ETHERNET
 	bool "Debug Ethernet L2 layer"
@@ -57,6 +57,7 @@ config NET_L2_BLUETOOTH
 	bool "Enable Bluetooth support"
 	select BLUETOOTH
 	select BLUETOOTH_PERIPHERAL
+	select BLUETOOTH_CENTRAL
 	select BLUETOOTH_SMP
 	select BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	select NET_6LO
@@ -85,6 +86,22 @@ config NET_DEBUG_L2_BLUETOOTH
 	depends on NET_L2_BLUETOOTH
 	help
 	Enables Bluetooth L2 output debug messages
+
+config NET_L2_BLUETOOTH_MGMT
+	bool "Enable Blueooth Network Management support"
+	depends on NET_L2_BLUETOOTH
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	default n
+
+config NET_L2_BLUETOOTH_SHELL
+	bool "Enable Bluetooth shell module"
+	default n
+	select CONSOLE_SHELL
+	select NET_L2_BLUETOOTH_MGMT
+	help
+	This can be used for testing Bluetooth management commands through the
+	console via a shell module named "net_bt".
 
 source "subsys/net/ip/l2/ieee802154/Kconfig"
 

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_TI_CC2520_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL
 #define SYS_LOG_DOMAIN "dev/cc2520"
 #include <logging/sys_log.h>
 
@@ -61,7 +61,7 @@
 /*********
  * DEBUG *
  ********/
-#if CONFIG_SYS_LOG_TI_CC2520_LEVEL == 4
+#if CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL == 4
 static inline void _cc2520_print_gpio_config(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
@@ -198,7 +198,7 @@ static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
 #define _cc2520_print_gpio_config(...)
 #define _cc2520_print_exceptions(...)
 #define _cc2520_print_errors(...)
-#endif /* CONFIG_SYS_LOG_TI_CC2520_LEVEL == 4 */
+#endif /* CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL == 4 */
 
 
 /*********************

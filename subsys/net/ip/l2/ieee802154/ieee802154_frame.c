@@ -158,8 +158,8 @@ validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
 		return false;
 	}
 
-	if (!(mhr->fs->fc.src_addr_mode & src) ||
-	    !(mhr->fs->fc.dst_addr_mode & dst)) {
+	if ((mhr->fs->fc.src_addr_mode != src) ||
+	    (mhr->fs->fc.dst_addr_mode != dst)) {
 		return false;
 	}
 

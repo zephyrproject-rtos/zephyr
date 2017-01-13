@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef UDP_CONFIG_H_
-#define UDP_CONFIG_H_
+#ifndef _UDP_H_
+#define _UDP_H_
 
-#if defined(CONFIG_NET_IPV6)
-/* admin-local, dynamically allocated multicast address */
-#define MCAST_IP_ADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, \
-			    0, 0, 0, 0, 0, 0, 0, 0x2 } } }
+#include <net/net_core.h>
 
-static struct in6_addr client_addr;
+struct udp_context {
+	struct net_context *net_ctx;
+	struct net_buf *rx_nbuf;
+	struct k_sem rx_sem;
+	int remaining;
+	char client_id;
+};
 
-#else
-
-static struct in_addr client_addr;
-
-#endif
-
-#define SERVER_PORT	4433
-#define CLIENT_PORT	8484
-
-#define UDP_TX_TIMEOUT 100	/* Timeout in milliseconds */
+int udp_init(struct udp_context *ctx);
+int udp_tx(void *ctx, const unsigned char *buf, size_t size);
+int udp_rx(void *ctx, unsigned char *buf, size_t size);
 
 #endif

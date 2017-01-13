@@ -162,7 +162,7 @@ config NET_CONTEXT_CHECK
 	If you know that the options passed to net_context...() functions
 	are ok, then you can disable the checks to save some memory.
 
-choice NET_SLIP
+choice
 	prompt "Use SLIP connectivity with QEMU"
 	optional
 	default NET_SLIP_TUN

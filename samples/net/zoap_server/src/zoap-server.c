@@ -14,18 +14,28 @@
  * limitations under the License.
  */
 
+#if 1
+#define SYS_LOG_DOMAIN "zoap-server"
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define NET_LOG_ENABLED 1
+#endif
+
 #include <errno.h>
 #include <stdio.h>
 
 #include <zephyr.h>
 
-#include <misc/printk.h>
 #include <misc/byteorder.h>
 #include <net/buf.h>
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 
 #include <net/zoap.h>
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <gatt/ipss.h>
+#endif
 
 #define MY_COAP_PORT 5683
 
@@ -438,6 +448,16 @@ void main(void)
 		.sin6_addr = ALL_NODES_LOCAL_COAP_MCAST,
 		.sin6_port = htons(MY_COAP_PORT) };
 	int r;
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+	if (bt_enable(NULL)) {
+		NET_ERR("Bluetooth init failed");
+		return;
+	}
+	ipss_init();
+
+	ipss_advertise();
+#endif
 
 	if (!join_coap_multicast_group()) {
 		NET_ERR("Could not join CoAP multicast group\n");

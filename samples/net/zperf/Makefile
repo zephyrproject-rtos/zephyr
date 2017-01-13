@@ -1,5 +1,4 @@
 BOARD ?= qemu_x86
-#BOARD ?= frdm_k64f
 
 ifeq (${PROFILER}, 1)
 PROF="_prof"

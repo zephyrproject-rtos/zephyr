@@ -228,6 +228,9 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 		}
 	}
 
+	NET_DBG("Drop MAC command, unsupported CFI: 0x%x",
+		mpdu->command->cfi);
+
 	return NET_DROP;
 }
 
