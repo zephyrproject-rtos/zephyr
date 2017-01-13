@@ -8,6 +8,7 @@
 #include <clock_control.h>
 #include <system_timer.h>
 #include <drivers/clock_control/nrf5_clock_control.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #define RTC_TICKS ((uint32_t)(((((uint64_t)1000000UL / \
 				 CONFIG_SYS_CLOCK_TICKS_PER_SEC) * \
@@ -62,7 +63,7 @@ static uint32_t rtc_compare_set(uint32_t rtc_ticks)
 			isr_req = req;
 		}
 
-		_NvicIrqPend(NRF5_IRQ_RTC1_IRQn);
+		NVIC_SetPendingIRQ(NRF5_IRQ_RTC1_IRQn);
 	}
 #endif /* CONFIG_TICKLESS_IDLE */
 
