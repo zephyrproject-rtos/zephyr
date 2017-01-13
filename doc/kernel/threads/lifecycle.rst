@@ -36,6 +36,8 @@ A thread has the following key properties:
 * A **start delay**, which specifies how long the kernel should wait before
   starting the thread.
 
+.. _spawning_thread:
+
 Thread Spawning
 ===============
 

@@ -55,6 +55,8 @@ switch back to the invoking thread.)
 The MDEF has been eliminated. Consequently, all kernel objects are now defined
 directly in code.
 
+.. _kernel_api_changes:
+
 Kernel APIs
 ***********
 

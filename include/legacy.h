@@ -100,6 +100,10 @@ typedef int nano_context_type_t;
 				    abort, groups)
 
 /**
+ * @defgroup legacy_apis Legacy APIs
+ * @ingroup kernel_apis
+ */
+/**
  * @brief Define a private microkernel task.
  *
  * <b> Legacy API </b>
@@ -3402,4 +3406,10 @@ static inline __deprecated void fiber_float_disable(struct tcs *tcs)
 
 #endif /* CONFIG_FP_SHARING */
 #endif /* CONFIG_X86 */
+
+/**
+ * @} end legacy_apis
+ */
+
+
 #endif /* _legacy__h_ */

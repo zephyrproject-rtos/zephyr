@@ -1,8 +1,10 @@
 Release Notes
 #############
 
-Zephyr Kernel 1.6.0 Release Notes
-*********************************
+.. _zephyr_1.6:
+
+Zephyr Kernel 1.6.0
+********************
 
 We are pleased to announce the release of Zephyr kernel version 1.6.0. This
 release introduces a the unified Kernel replacing the separate nano- and

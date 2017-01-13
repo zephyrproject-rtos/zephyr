@@ -10,3 +10,4 @@ architectures, SoCs and boards.
    :maxdepth: 1
 
    arch.rst
+   application.rst
