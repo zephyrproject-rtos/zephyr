@@ -31,5 +31,6 @@ void test_timer_status_get(void);
 void test_timer_status_get_anytime(void);
 void test_timer_status_sync(void);
 void test_timer_k_define(void);
+void test_timer_user_data(void);
 
 #endif /* __TEST_TIMER_H__ */
