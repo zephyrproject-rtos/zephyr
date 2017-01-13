@@ -19,6 +19,7 @@ config CPU_CORTEX_M
 	default n
 	select CPU_CORTEX
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select HAS_CMSIS
 	help
 	This option signifies the use of a CPU of the Cortex-M family.
 
