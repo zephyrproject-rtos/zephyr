@@ -1449,8 +1449,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 {
 	struct bt_conn *conn;
 
-	if (!bt_le_conn_params_valid(param->interval_min, param->interval_max,
-				     param->latency, param->timeout)) {
+	if (!bt_le_conn_params_valid(param)) {
 		return NULL;
 	}
 
@@ -1492,10 +1491,7 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 {
 	struct bt_conn *conn;
 
-	if (param && !bt_le_conn_params_valid(param->interval_min,
-					      param->interval_max,
-					      param->latency,
-					      param->timeout)) {
+	if (param && !bt_le_conn_params_valid(param)) {
 		return -EINVAL;
 	}
 

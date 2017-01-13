@@ -28,6 +28,7 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>

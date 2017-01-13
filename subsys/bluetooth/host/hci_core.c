@@ -784,21 +784,24 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
-			     uint16_t latency, uint16_t timeout)
+bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 {
-	if (min > max || min < 6 || max > 3200) {
+	if (param->interval_min > param->interval_max ||
+	    param->interval_min < 6 || param->interval_max > 3200) {
 		return false;
 	}
 
 	/* Limits according to BT Core spec 4.2 [Vol 2, Part E, 7.8.12] */
-	if (timeout < 10 || timeout > 3200 ||
-	    (2 * timeout) < ((1 + latency) * max * 5)) {
+	if (param->timeout < 10 || param->timeout > 3200 ||
+	    ((2 * param->timeout) <
+	    ((1 + param->latency) * param->interval_max * 5))) {
 		return false;
 	}
 
 	/* Limits according to BT Core spec 4.2 [Vol 6, Part B, 4.5.1] */
-	if (latency > 499 || ((latency + 1) * max) > (timeout * 4)) {
+	if (param->latency > 499 ||
+	    (((param->latency + 1) * param->interval_max) >
+	    (param->timeout * 4))) {
 		return false;
 	}
 
@@ -823,8 +826,8 @@ static int le_conn_param_neg_reply(uint16_t handle, uint8_t reason)
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY, buf);
 }
 
-static int le_conn_param_req_reply(uint16_t handle, uint16_t min, uint16_t max,
-				   uint16_t latency, uint16_t timeout)
+static int le_conn_param_req_reply(uint16_t handle,
+				   const struct bt_le_conn_param *param)
 {
 	struct bt_hci_cp_le_conn_param_req_reply *cp;
 	struct net_buf *buf;
@@ -838,10 +841,10 @@ static int le_conn_param_req_reply(uint16_t handle, uint16_t min, uint16_t max,
 	memset(cp, 0, sizeof(*cp));
 
 	cp->handle = sys_cpu_to_le16(handle);
-	cp->interval_min = sys_cpu_to_le16(min);
-	cp->interval_max = sys_cpu_to_le16(max);
-	cp->latency = sys_cpu_to_le16(latency);
-	cp->timeout = sys_cpu_to_le16(timeout);
+	cp->interval_min = sys_cpu_to_le16(param->interval_min);
+	cp->interval_max = sys_cpu_to_le16(param->interval_max);
+	cp->latency = sys_cpu_to_le16(param->latency);
+	cp->timeout = sys_cpu_to_le16(param->timeout);
 
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY, buf);
 }
@@ -849,14 +852,15 @@ static int le_conn_param_req_reply(uint16_t handle, uint16_t min, uint16_t max,
 static int le_conn_param_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_conn_param_req *evt = (void *)buf->data;
+	struct bt_le_conn_param param;
 	struct bt_conn *conn;
-	uint16_t handle, min, max, latency, timeout;
+	uint16_t handle;
 
 	handle = sys_le16_to_cpu(evt->handle);
-	min = sys_le16_to_cpu(evt->interval_min);
-	max = sys_le16_to_cpu(evt->interval_max);
-	latency = sys_le16_to_cpu(evt->latency);
-	timeout = sys_le16_to_cpu(evt->timeout);
+	param.interval_min = sys_le16_to_cpu(evt->interval_min);
+	param.interval_max = sys_le16_to_cpu(evt->interval_max);
+	param.latency = sys_le16_to_cpu(evt->latency);
+	param.timeout = sys_le16_to_cpu(evt->timeout);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
@@ -867,12 +871,12 @@ static int le_conn_param_req(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 
-	if (!bt_le_conn_params_valid(min, max, latency, timeout)) {
+	if (!bt_le_conn_params_valid(&param)) {
 		return le_conn_param_neg_reply(handle,
 					       BT_HCI_ERR_INVALID_LL_PARAMS);
 	}
 
-	return le_conn_param_req_reply(handle, min, max, latency, timeout);
+	return le_conn_param_req_reply(handle, &param);
 }
 
 static void le_conn_update_complete(struct net_buf *buf)
