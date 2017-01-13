@@ -163,16 +163,6 @@ typedef union {
 	} field;
 } SIM_SCGC5_t; /* 0x1038 */
 
-#define SIM_CLKDIV1_OUTDIV1_MASK 0xF0000000
-#define SIM_CLKDIV1_OUTDIV1_SHIFT 28
-#define SIM_CLKDIV1_OUTDIV2_MASK 0x0F000000
-#define SIM_CLKDIV1_OUTDIV2_SHIFT 24
-#define SIM_CLKDIV1_OUTDIV3_MASK 0x00F00000
-#define SIM_CLKDIV1_OUTDIV3_SHIFT 20
-#define SIM_CLKDIV1_OUTDIV4_MASK 0x000F0000
-#define SIM_CLKDIV1_OUTDIV4_SHIFT 16
-#define SIM_CLKDIV(value) ((value) - 1)
-
 typedef union {
 	uint32_t value; /* reset 0x0001 0000 */
 	struct {
