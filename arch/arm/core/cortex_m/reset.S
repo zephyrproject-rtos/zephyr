@@ -50,14 +50,12 @@ GDATA(_interrupt_stack)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
 
 /*
- * In non-XIP kernels, the entry point is located at the __reset symbol, which
+ * The entry point is located at the __reset symbol, which
  * is fetched by a XIP image playing the role of a bootloader, which jumps to
  * it, not through the reset vector mechanism. Such bootloaders might want to
  * search for a __start symbol instead, so create that alias here.
  */
-#if !defined(CONFIG_XIP)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
-#endif
 
     /* lock interrupts: will get unlocked when switch to main task */
 #if defined(CONFIG_ARMV6_M)

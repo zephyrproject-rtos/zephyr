@@ -28,11 +28,6 @@ GDATA(_main_stack)
 
 SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
-/* in XIP kernels. the entry point is also the start of the vector table */
-#if defined(CONFIG_XIP)
-SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
-#endif
-
     /*
      * setting the _very_ early boot on the main stack allows to use memset
      * on the interrupt stack when CONFIG_INIT_STACKS is enabled before
