@@ -927,6 +927,10 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 		net_tcp_change_state(context->tcp, NET_TCP_ESTABLISHED);
 		net_context_set_state(context, NET_CONTEXT_CONNECTED);
 
+		if (context->connect_cb) {
+			context->connect_cb(context, 0, context->user_data);
+		}
+
 		send_ack(context, raddr);
 
 		k_sem_give(&context->tcp->connect_wait);
@@ -1111,9 +1115,8 @@ int net_context_connect(struct net_context *context,
 
 	send_syn(context, addr);
 
-	if (cb) {
-		cb(context, 0, user_data);
-	}
+	context->connect_cb = cb;
+	context->user_data = user_data;
 
 	/* in tcp_synack_received() we give back this semaphore */
 	if (k_sem_take(&context->tcp->connect_wait, timeout)) {
