@@ -848,6 +848,15 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 	NET_ASSERT(net_nbuf_iface(buf));
 
+	if (NET_TCP_FLAGS(buf) & NET_TCP_RST) {
+		if (context->connect_cb) {
+			context->connect_cb(context, -ECONNREFUSED,
+					    context->user_data);
+		}
+
+		return NET_DROP;
+	}
+
 	if (NET_TCP_FLAGS(buf) & NET_TCP_SYN) {
 		context->tcp->send_ack =
 			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
@@ -1998,6 +2007,9 @@ int net_context_recv(struct net_context *context,
 
 		if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
 			return -ESHUTDOWN;
+		} else if (net_context_get_state(context)
+			   != NET_CONTEXT_CONNECTED) {
+			return -ENOTCONN;
 		}
 
 		context->recv_cb = cb;
