@@ -43,9 +43,9 @@ enum mqtt_app {
  * Internally, the #publish_rx callback must store the #mqtt_publish_msg message
  * when a MQTT PUBLISH msg is received. When a MQTT PUBREL message is received,
  * the application must evaluate if the PUBREL's Packet Identifier matches a
- * previous received MQTT PUBLISH message. In this case, the #publish_rx_data
- * may be used to refer to a collection of #mqtt_publish_msg structs (array of
- * structs).
+ * previous received MQTT PUBLISH message. In this case, the user may provide a
+ * collection of #mqtt_publish_msg structs (array of structs) to store those
+ * messages.
  *
  * <b>NOTE: The application (and not the API) is in charge of keeping track of
  * the state of the received and sent messages.</b>
@@ -58,31 +58,20 @@ struct mqtt_ctx {
 
 	/** Callback executed when a MQTT CONNACK msg is received and validated.
 	 * If this function pointer is not used, must be set to NULL.
-	 * The argument for the routine pointed to by this pointer
-	 * is represented by #connect_data.
 	 */
-	void (*connect)(void *data);
-
-	/** Data passed to the #connect callback. */
-	void *connect_data;
+	void (*connect)(struct mqtt_ctx *ctx);
 
 	/** Callback executed when a MQTT DISCONNECT msg is sent.
 	 * If this function pointer is not used, must be set to NULL.
-	 * The argument for the routine pointed to by this pointer
-	 * is represented by #disconnect_data.
 	 */
-	void (*disconnect)(void *data);
-
-	/** Data passed to the #disconnect callback. */
-	void *disconnect_data;
+	void (*disconnect)(struct mqtt_ctx *ctx);
 
 	/** Callback executed when a #MQTT_APP_PUBLISHER application receives
 	 * a MQTT PUBxxxx msg.
 	 *
 	 * <b>Note: this callback must be not NULL</b>
 	 *
-	 * @param [in] data	User provided data, represented by
-	 *			#publish_tx_data
+	 * @param [in] ctx	MQTT context
 	 * @param [in] pkt_id	Packet Identifier for the input MQTT msg
 	 * @param [in] type	Packet type
 	 * @return		If this callback returns 0, the caller will
@@ -99,10 +88,8 @@ struct mqtt_ctx {
 	 * @return		Any other value will stop the QoS handshake
 	 *			and the caller will return -EINVAL
 	 */
-	int (*publish_tx)(void *data, uint16_t pkt_id, enum mqtt_packet type);
-
-	/** Data passed to the #publish_tx callback */
-	void *publish_tx_data;
+	int (*publish_tx)(struct mqtt_ctx *ctx, uint16_t pkt_id,
+			  enum mqtt_packet type);
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER,
 	 * MQTT_APP_PUBLISHER_SUBSCRIBER or MQTT_APP_SERVER application receive
@@ -110,8 +97,7 @@ struct mqtt_ctx {
 	 *
 	 * <b>Note: this callback must be not NULL</b>
 	 *
-	 * @param [in] data	User provided data, represented by
-	 *			#publish_rx_data
+	 * @param [in] ctx	MQTT context
 	 * @param [in] msg	Publish message, this parameter is only used
 	 *			when the type is MQTT_PUBLISH
 	 * @param [in] pkt_id	Packet Identifier for the input msg
@@ -129,19 +115,15 @@ struct mqtt_ctx {
 	 * @return		Any other value will stop the QoS handshake
 	 *			and the caller will return -EINVAL
 	 */
-	int (*publish_rx)(void *data, struct mqtt_publish_msg *msg,
+	int (*publish_rx)(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg,
 			  uint16_t pkt_id, enum mqtt_packet type);
-
-	/** Data passed to the #publish_rx callback */
-	void *publish_rx_data;
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER or
 	 * MQTT_APP_PUBLISHER_SUBSCRIBER receives the MQTT SUBACK message
 	 *
 	 * <b>Note: this callback must be not NULL</b>
 	 *
-	 * @param [in] data	User provided data, represented by
-	 *			#subscribe_data
+	 * @param [in] ctx	MQTT context
 	 * @param [in] pkt_id	Packet Identifier for the MQTT SUBACK msg
 	 * @param [in] items	Number of elements in the qos array
 	 * @param [in] qos	Array of QoS values
@@ -150,31 +132,24 @@ struct mqtt_ctx {
 	 * @return		Any other value will make the caller return
 	 *			-EINVAL
 	 */
-	int (*subscribe)(void *data, uint16_t pkt_id,
+	int (*subscribe)(struct mqtt_ctx *ctx, uint16_t pkt_id,
 			 uint8_t items, enum mqtt_qos qos[]);
-
-	/** Data passed to the #subscribe callback */
-	void *subscribe_data;
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER or
 	 * MQTT_APP_PUBLISHER_SUBSCRIBER receives the MQTT UNSUBACK message
 	 *
 	 * <b>Note: this callback must be not NULL</b>
-	 * @param [in] data	User provided data, represented by
-	 *			#unsubscribe_data
+	 * @param [in] ctx	MQTT context
 	 * @param [in] pkt_id	Packet Identifier for the MQTT SUBACK msg
 	 * @return		If this callback returns 0, the caller will
 	 *			continue
 	 * @return		Any other value will make the caller return
 	 *			-EINVAL
 	 */
-	int (*unsubscribe)(void *data, uint16_t pkt_id);
-
-	/** Data passed to the #unsubscribe callback */
-	void *unsubscribe_data;
+	int (*unsubscribe)(struct mqtt_ctx *ctx, uint16_t pkt_id);
 
 	/* Internal use only */
-	int (*rcv)(struct mqtt_ctx *, struct net_buf *);
+	int (*rcv)(struct mqtt_ctx *ctx, struct net_buf *);
 
 	/** Application type, see: enum mqtt_app */
 	uint8_t app_type;

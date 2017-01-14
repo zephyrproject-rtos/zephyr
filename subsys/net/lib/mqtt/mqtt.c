@@ -103,7 +103,7 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 	tx = NULL;
 
 	if (ctx->disconnect) {
-		ctx->disconnect(ctx->disconnect_data);
+		ctx->disconnect(ctx);
 	}
 
 exit_disconnect:
@@ -414,7 +414,7 @@ int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx, int clean_session)
 	ctx->connected = 1;
 
 	if (ctx->connect) {
-		ctx->connect(ctx->connect_data);
+		ctx->connect(ctx);
 	}
 
 exit_connect:
@@ -477,13 +477,12 @@ int mqtt_rx_pub_msgs(struct mqtt_ctx *ctx, struct net_buf *rx,
 	 */
 	if (type == MQTT_PUBREL) {
 		if (ctx->app_type != MQTT_APP_PUBLISHER) {
-			rc = ctx->publish_rx(ctx->publish_rx_data, NULL, pkt_id,
-					     MQTT_PUBREL);
+			rc = ctx->publish_rx(ctx, NULL, pkt_id, MQTT_PUBREL);
 		} else {
 			rc = -EINVAL;
 		}
 	} else {
-		rc = ctx->publish_tx(ctx->publish_tx_data, pkt_id, type);
+		rc = ctx->publish_tx(ctx, pkt_id, type);
 	}
 
 	if (rc != 0) {
@@ -560,7 +559,7 @@ int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx)
 		return -EINVAL;
 	}
 
-	rc = ctx->subscribe(ctx->subscribe_data, pkt_id, items, suback_qos);
+	rc = ctx->subscribe(ctx, pkt_id, items, suback_qos);
 	if (rc != 0) {
 		return -EINVAL;
 	}
@@ -588,7 +587,7 @@ int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx)
 		return -EINVAL;
 	}
 
-	rc = ctx->unsubscribe(ctx->subscribe_data, pkt_id);
+	rc = ctx->unsubscribe(ctx, pkt_id);
 	if (rc != 0) {
 		return -EINVAL;
 	}
@@ -606,8 +605,7 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx)
 		return -EINVAL;
 	}
 
-	rc = ctx->publish_rx(ctx->publish_rx_data, &msg, msg.pkt_id,
-			     MQTT_PUBLISH);
+	rc = ctx->publish_rx(ctx, &msg, msg.pkt_id, MQTT_PUBLISH);
 	if (rc != 0) {
 		return -EINVAL;
 	}
