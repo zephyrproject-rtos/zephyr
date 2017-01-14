@@ -89,7 +89,7 @@ config MAIN_THREAD_PRIORITY
 	int
 	prompt "Priority of initialization/main thread"
 	default 0
-	default -1 if NUM_PREEMPT_PRIORITIES = 0
+	default -2 if !PREEMPT_ENABLED
 	help
 	Priority at which the initialization thread runs, including the start
 	of the main() function. main() can then change its priority if desired.
@@ -231,6 +231,8 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"
 	default -1
+	default  0 if !COOP_ENABLED
+	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
 
 config OFFLOAD_WORKQUEUE_STACK_SIZE
 	int "Workqueue stack size for thread offload requests"
