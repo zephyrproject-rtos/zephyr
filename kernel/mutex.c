@@ -173,7 +173,9 @@ int k_mutex_lock(struct k_mutex *mutex, int32_t timeout)
 
 	K_DEBUG("adjusting prio up on mutex %p\n", mutex);
 
-	adjust_owner_prio(mutex, new_prio);
+	if (_is_prio_higher(new_prio, mutex->owner->base.prio)) {
+		adjust_owner_prio(mutex, new_prio);
+	}
 
 	_pend_current_thread(&mutex->wait_q, timeout);
 
