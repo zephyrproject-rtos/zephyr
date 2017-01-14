@@ -676,6 +676,8 @@ exit_error:
 /**
  * @brief mqtt_publisher_parser	Calls the appropriate rx routine for the MQTT
  *				message contained in rx
+ * @details			On error, this routine will execute the
+ *				'ctx->malformed' callback (if defined)
  * @param ctx			MQTT context
  * @param rx			RX buffer
  * @return			0 on success
@@ -726,7 +728,9 @@ int mqtt_publisher_parser(struct mqtt_ctx *ctx, struct net_buf *rx)
 	}
 
 exit_parser:
-	/* TODO: add error handling via a user provided callback */
+	if (rc != 0 && ctx->malformed) {
+		ctx->malformed(ctx, pkt_type);
+	}
 
 	net_nbuf_unref(data);
 
@@ -790,7 +794,9 @@ int mqtt_subscriber_parser(struct mqtt_ctx *ctx, struct net_buf *rx)
 	}
 
 exit_parser:
-	/* TODO: add error handling via a user provided callback */
+	if (rc != 0 && ctx->malformed) {
+		ctx->malformed(ctx, pkt_type);
+	}
 
 	net_nbuf_unref(data);
 

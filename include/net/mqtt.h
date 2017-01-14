@@ -139,6 +139,7 @@ struct mqtt_ctx {
 	 * MQTT_APP_PUBLISHER_SUBSCRIBER receives the MQTT UNSUBACK message
 	 *
 	 * <b>Note: this callback must be not NULL</b>
+	 *
 	 * @param [in] ctx	MQTT context
 	 * @param [in] pkt_id	Packet Identifier for the MQTT SUBACK msg
 	 * @return		If this callback returns 0, the caller will
@@ -147,6 +148,16 @@ struct mqtt_ctx {
 	 *			-EINVAL
 	 */
 	int (*unsubscribe)(struct mqtt_ctx *ctx, uint16_t pkt_id);
+
+	/** Callback executed when an incoming message doesn't pass the
+	 * validation stage. This callback may be NULL.
+	 * The pkt_type variable may be set to MQTT_INVALID, if the parsing
+	 * stage is aborted before determining the MQTT msg packet type.
+	 *
+	 * @param [in] ctx	MQTT context
+	 * @param [in] pkt_type	MQTT Packet type
+	 */
+	void (*malformed)(struct mqtt_ctx *ctx, uint16_t pkt_type);
 
 	/* Internal use only */
 	int (*rcv)(struct mqtt_ctx *ctx, struct net_buf *);
