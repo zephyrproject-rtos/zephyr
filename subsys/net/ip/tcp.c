@@ -286,17 +286,10 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 
 	tcphdr->src_port = src_port;
 	tcphdr->dst_port = dst_port;
-	tcphdr->seq[0] = segment->seq >> 24;
-	tcphdr->seq[1] = segment->seq >> 16;
-	tcphdr->seq[2] = segment->seq >> 8;
-	tcphdr->seq[3] = segment->seq;
-	tcphdr->ack[0] = segment->ack >> 24;
-	tcphdr->ack[1] = segment->ack >> 16;
-	tcphdr->ack[2] = segment->ack >> 8;
-	tcphdr->ack[3] = segment->ack;
+	sys_put_be32(segment->seq, tcphdr->seq);
+	sys_put_be32(segment->ack, tcphdr->ack);
 	tcphdr->flags = segment->flags;
-	tcphdr->wnd[0] = segment->wnd >> 8;
-	tcphdr->wnd[1] = segment->wnd;
+	sys_put_be16(segment->wnd, tcphdr->wnd);
 	tcphdr->urg[0] = 0;
 	tcphdr->urg[1] = 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2017 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,31 +27,25 @@
 #include "udp.h"
 
 #if defined(CONFIG_NET_IPV6)
-static struct in6_addr server_addr;
-static struct in6_addr mcast_addr = MCAST_IP_ADDR;
 static const socklen_t addrlen = sizeof(struct sockaddr_in6);
 
-static void set_destination(struct sockaddr *addr)
+static void set_client_address(struct sockaddr *addr, struct net_buf *rx_buf)
 {
-	struct sockaddr_in6 *dst_addr = (struct sockaddr_in6 *)addr;
-
-	net_ipaddr_copy(&dst_addr->sin6_addr, &server_addr);
-	dst_addr->sin6_family = AF_INET6;
-	dst_addr->sin6_port = htons(SERVER_PORT);
+	net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &NET_IPV6_BUF(rx_buf)->src);
+	net_sin6(addr)->sin6_family = AF_INET6;
+	net_sin6(addr)->sin6_port = NET_UDP_BUF(rx_buf)->src_port;
 }
 
 #else
-static struct in_addr server_addr;
 static const socklen_t addrlen = sizeof(struct sockaddr_in);
 
-static void set_destination(struct sockaddr *addr)
+static void set_client_address(struct sockaddr *addr, struct net_buf *rx_buf)
 {
-	struct sockaddr_in *dst_addr = (struct sockaddr_in *)addr;
-
-	net_ipaddr_copy(&dst_addr->sin_addr, &server_addr);
-	dst_addr->sin_family = AF_INET;
-	dst_addr->sin_port = htons(SERVER_PORT);
+	net_ipaddr_copy(&net_sin(addr)->sin_addr, &NET_IPV4_BUF(rx_buf)->src);
+	net_sin(addr)->sin_family = AF_INET;
+	net_sin(addr)->sin_port = NET_UDP_BUF(rx_buf)->src_port;
 }
+
 #endif
 
 static void udp_received(struct net_context *context,
@@ -69,14 +63,14 @@ static void udp_received(struct net_context *context,
 int udp_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
-	struct net_context *udp_ctx;
+	struct net_context *net_ctx;
 	struct net_buf *send_buf;
-	struct sockaddr dst_addr;
+
 	int rc, len;
 
-	udp_ctx = ctx->net_ctx;
+	net_ctx = ctx->net_ctx;
 
-	send_buf = net_nbuf_get_tx(udp_ctx);
+	send_buf = net_nbuf_get_tx(net_ctx);
 	if (!send_buf) {
 		printk("cannot create buf\n");
 		return -EIO;
@@ -88,12 +82,11 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 		return -EIO;
 	}
 
-	set_destination(&dst_addr);
 	len = net_buf_frags_len(send_buf);
-	k_sleep(UDP_TX_TIMEOUT);
 
-	rc = net_context_sendto(send_buf, &dst_addr,
+	rc = net_context_sendto(send_buf, &net_ctx->remote,
 				addrlen, NULL, K_FOREVER, NULL, NULL);
+
 	if (rc < 0) {
 		printk("Cannot send data to peer (%d)\n", rc);
 		net_nbuf_unref(send_buf);
@@ -106,6 +99,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 int udp_rx(void *context, unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
+	struct net_context *net_ctx = ctx->net_ctx;
 	struct net_buf *rx_buf = NULL;
 	uint16_t read_bytes;
 	uint8_t *ptr;
@@ -120,8 +114,12 @@ int udp_rx(void *context, unsigned char *buf, size_t size)
 		return -ENOMEM;
 	}
 
-	ptr = net_nbuf_appdata(ctx->rx_nbuf);
-	rx_buf = ctx->rx_nbuf->frags;
+	rx_buf = ctx->rx_nbuf;
+
+	set_client_address(&net_ctx->remote, rx_buf);
+
+	ptr = net_nbuf_appdata(rx_buf);
+	rx_buf = rx_buf->frags;
 	len = rx_buf->len - (ptr - rx_buf->data);
 	pos = 0;
 
@@ -165,9 +163,9 @@ int udp_init(struct udp_context *ctx)
 	net_ipaddr_copy(&my_mcast_addr.sin6_addr, &mcast_addr);
 	my_mcast_addr.sin6_family = AF_INET6;
 
-	net_ipaddr_copy(&my_addr.sin6_addr, &client_addr);
+	net_ipaddr_copy(&my_addr.sin6_addr, &server_addr);
 	my_addr.sin6_family = AF_INET6;
-	my_addr.sin6_port = htons(CLIENT_PORT);
+	my_addr.sin6_port = htons(SERVER_PORT);
 
 	rc = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &udp_ctx);
 	if (rc < 0) {
@@ -178,7 +176,7 @@ int udp_init(struct udp_context *ctx)
 	rc = net_context_bind(udp_ctx, (struct sockaddr *)&my_addr,
 			      sizeof(struct sockaddr_in6));
 	if (rc < 0) {
-		printk("Cannot bind IPv6 UDP port %d (%d)", CLIENT_PORT, rc);
+		printk("Cannot bind IPv6 UDP port %d (%d)", SERVER_PORT, rc);
 		goto error;
 	}
 
@@ -199,15 +197,6 @@ int udp_init(struct udp_context *ctx)
 	ctx->remaining = 0;
 	ctx->net_ctx = udp_ctx;
 
-#if defined(CONFIG_NET_SAMPLES_PEER_IPV6_ADDR)
-	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_SAMPLES_PEER_IPV6_ADDR,
-			  (struct sockaddr *)&server_addr) < 0) {
-		printk("Invalid peer IPv6 address %s",
-		       CONFIG_NET_SAMPLES_PEER_IPV6_ADDR);
-	}
-#endif
-
 	rc = net_context_recv(ctx->net_ctx, udp_received, K_NO_WAIT, ctx);
 	if (rc != 0) {
 		return -EIO;
@@ -227,11 +216,11 @@ int udp_init(struct udp_context *ctx)
 	struct sockaddr_in my_addr4 = { 0 };
 	int rc;
 
-	net_ipaddr_copy(&my_addr4.sin_addr, &client_addr);
-	my_addr4.sin_family = AF_INET;
-	my_addr4.sin_port = htons(CLIENT_PORT);
-
 	k_sem_init(&ctx->rx_sem, 0, UINT_MAX);
+
+	net_ipaddr_copy(&my_addr4.sin_addr, &server_addr);
+	my_addr4.sin_family = AF_INET;
+	my_addr4.sin_port = htons(SERVER_PORT);
 
 	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &udp_ctx);
 	if (rc < 0) {
@@ -242,21 +231,13 @@ int udp_init(struct udp_context *ctx)
 	rc = net_context_bind(udp_ctx, (struct sockaddr *)&my_addr4,
 			      sizeof(struct sockaddr_in));
 	if (rc < 0) {
-		printk("Cannot bind IPv4 UDP port %d (%d)", CLIENT_PORT, rc);
+		printk("Cannot bind IPv4 UDP port %d (%d)", SERVER_PORT, rc);
 		goto error;
 	}
 
 	ctx->rx_nbuf = NULL;
 	ctx->remaining = 0;
 	ctx->net_ctx = udp_ctx;
-
-#if defined(CONFIG_NET_SAMPLES_PEER_IPV4_ADDR)
-	if (net_addr_pton(AF_INET, CONFIG_NET_SAMPLES_PEER_IPV4_ADDR,
-			  (struct sockaddr *)&server_addr) < 0) {
-		printk("Invalid IPv4 address %s",
-		       CONFIG_NET_SAMPLES_PEER_IPV4_ADDR);
-	}
-#endif
 
 	rc = net_context_recv(ctx->net_ctx, udp_received, K_NO_WAIT, ctx);
 	if (rc != 0) {

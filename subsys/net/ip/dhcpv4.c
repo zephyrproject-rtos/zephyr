@@ -327,7 +327,12 @@ static struct net_buf *prepare_message(struct net_if *iface, uint8_t type)
 	msg->xid = htonl(iface->dhcpv4.xid);
 	msg->flags = htons(DHCPV4_MSG_BROADCAST);
 
-	if (iface->dhcpv4.state == NET_DHCPV4_INIT) {
+	/*
+	 * send DHCPV4_MSG_TYPE_REQUEST,
+	 * ciaddr must 0.0.0.0, or router will return NAK
+	 */
+	if ((iface->dhcpv4.state == NET_DHCPV4_INIT) ||
+	    (type == DHCPV4_MSG_TYPE_REQUEST)) {
 		memset(msg->ciaddr, 0, sizeof(msg->ciaddr));
 	} else {
 		memcpy(msg->ciaddr, iface->dhcpv4.requested_ip.s4_addr, 4);

@@ -139,7 +139,7 @@ void run_dns(void)
 
 	for (d = 0; domains[d] != NULL; d++) {
 
-		printk("\n -------------------------------------------\n"
+		printk("\n-------------------------------------------\n"
 		       "[%s:%d] name: %s\n", __func__, __LINE__, domains[d]);
 
 		ctx.name = domains[d];

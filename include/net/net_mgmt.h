@@ -49,10 +49,10 @@ struct net_if;
 	(mgmt_request & NET_MGMT_ON_IFACE_MASK)
 
 #define NET_MGMT_GET_LAYER(mgmt_request)	\
-	(mgmt_request & NET_MGMT_LAYER_MASK)
+	((mgmt_request & NET_MGMT_LAYER_MASK) >> 28)
 
 #define NET_MGMT_GET_LAYER_CODE(mgmt_request)	\
-	(mgmt_request & NET_MGMT_LAYER_CODE_MASK)
+	((mgmt_request & NET_MGMT_LAYER_CODE_MASK) >> 16)
 
 #define NET_MGMT_GET_COMMAND(mgmt_request)	\
 	(mgmt_request & NET_MGMT_COMMAND_MASK)
@@ -130,6 +130,7 @@ struct net_mgmt_event_callback {
 	uint32_t event_mask;
 };
 
+#ifdef CONFIG_NET_MGMT_EVENT
 /**
  * @brief Helper to initialize a struct net_mgmt_event_callback properly
  * @param cb A valid application's callback structure pointer.
@@ -160,7 +161,6 @@ void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb);
  */
 void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
 
-#ifdef CONFIG_NET_MGMT_EVENT
 /**
  * @brief Used by the system to notify an event.
  * @param mgmt_event The actual network event code to notify
@@ -175,6 +175,8 @@ void net_mgmt_event_notify(uint32_t mgmt_event, struct net_if *iface);
  */
 void net_mgmt_event_init(void);
 #else
+#define net_mgmt_init_event_callback(...)
+#define net_mgmt_add_event_callback(...)
 #define net_mgmt_event_notify(...)
 #define net_mgmt_event_init(...)
 #endif /* CONFIG_NET_MGMT_EVENT */

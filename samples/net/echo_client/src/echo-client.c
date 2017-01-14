@@ -38,6 +38,7 @@
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
+#include <net/net_mgmt.h>
 
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
@@ -119,6 +120,10 @@ static char __noinit __stack ipv4_stack[STACKSIZE];
 #define PEER_PORT 4242
 
 #define WAIT_TIME  (2 * MSEC_PER_SEC)
+
+#if defined(CONFIG_NET_MGMT_EVENT)
+static struct net_mgmt_event_callback cb;
+#endif
 
 static inline void init_app(void)
 {
@@ -577,29 +582,19 @@ static void send_ipv6(struct net_context *udp)
 }
 #endif
 
-void main(void)
+static void event_iface_up(struct net_mgmt_event_callback *cb,
+			   uint32_t mgmt_event, struct net_if *iface)
 {
 	struct net_context *udp_send4 = { 0 };
 	struct net_context *udp_send6 = { 0 };
 	struct net_context *mcast_send6 = { 0 };
 
-	init_app();
+	ipsum_len = strlen(lorem_ipsum);
 
 	if (!get_context(&udp_send4, &udp_send6, &mcast_send6)) {
 		NET_ERR("Cannot get network contexts");
 		return;
 	}
-
-	ipsum_len = strlen(lorem_ipsum);
-
-#if defined(CONFIG_NETWORKING_WITH_BT)
-	if (bt_enable(NULL)) {
-		PRINT("Bluetooth init failed\n");
-		return;
-	}
-	ipss_init();
-	ipss_advertise();
-#endif
 
 #if defined(CONFIG_NET_IPV4)
 	k_thread_spawn(ipv4_stack, STACKSIZE,
@@ -612,4 +607,30 @@ void main(void)
 		       (k_thread_entry_t)send_ipv6,
 		       udp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
+}
+
+void main(void)
+{
+	struct net_if *iface = net_if_get_default();
+
+	init_app();
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+	if (bt_enable(NULL)) {
+		NET_ERR("Bluetooth init failed\n");
+		return;
+	}
+#endif
+
+#if defined(CONFIG_NET_MGMT_EVENT)
+	/* Subscribe to NET_IF_UP if interface is not ready */
+	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+		net_mgmt_init_event_callback(&cb, event_iface_up,
+					     NET_EVENT_IF_UP);
+		net_mgmt_add_event_callback(&cb);
+		return;
+	}
+#endif
+
+	event_iface_up(NULL, NET_EVENT_IF_UP, iface);
 }

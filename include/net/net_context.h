@@ -74,10 +74,10 @@ struct net_context;
  * @param context The context to use.
  * @param buf Network buffer that is received. If the buf is not NULL,
  * then the callback will own the buffer and it needs to to unref the buf
- * as soon as it has finished working with it.
- * @param status Value is set to 0 if some data is received, <0 if
- * there was an error receiving data, in this case the buf parameter is
- * set to NULL.
+ * as soon as it has finished working with it.  On EOF, buf will be NULL.
+ * @param status Value is set to 0 if some data or the connection is
+ * at EOF, <0 if there was an error receiving data, in this case the
+ * buf parameter is set to NULL.
  * @param user_data The user data given in net_recv() call.
  */
 typedef void (*net_context_recv_cb_t)(struct net_context *context,
@@ -223,6 +223,7 @@ static inline void net_context_set_state(struct net_context *context,
 {
 	NET_ASSERT(context);
 
+	context->flags &= ~(NET_CONTEXT_STATE_MASK << NET_CONTEXT_STATE_SHIFT);
 	context->flags |= ((state & NET_CONTEXT_STATE_MASK) <<
 			   NET_CONTEXT_STATE_SHIFT);
 }

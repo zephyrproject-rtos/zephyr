@@ -117,7 +117,10 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 {
 	sys_snode_t *sn, *sns;
 
-	NET_DBG("Event 0x%08X", mgmt_event->event);
+	NET_DBG("Event layer %u code %u type %u",
+		NET_MGMT_GET_LAYER(mgmt_event->event),
+		NET_MGMT_GET_LAYER_CODE(mgmt_event->event),
+		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&event_callbacks, sn, sns) {
 		struct net_mgmt_event_callback *cb =
@@ -189,7 +192,10 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 void net_mgmt_event_notify(uint32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
-		NET_DBG("Notifying event 0x%08X", mgmt_event);
+		NET_DBG("Notifying Event layer %u code %u type %u",
+			NET_MGMT_GET_LAYER(mgmt_event),
+			NET_MGMT_GET_LAYER_CODE(mgmt_event),
+			NET_MGMT_GET_COMMAND(mgmt_event));
 
 		mgmt_push_event(mgmt_event, iface);
 		k_sem_give(&network_event);

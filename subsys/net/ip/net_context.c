@@ -294,6 +294,10 @@ int net_context_put(struct net_context *context)
 	}
 #endif /* CONFIG_NET_TCP */
 
+	if (context->conn_handler) {
+		net_conn_unregister(context->conn_handler);
+	}
+
 	context->flags &= ~NET_CONTEXT_IN_USE;
 
 #if defined(CONFIG_NET_TCP)
@@ -762,6 +766,11 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 
 		context->tcp->send_ack =
 			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
+
+		if (context->recv_cb) {
+			context->recv_cb(context, NULL, 0, user_data);
+		}
+
 	} else {
 		struct net_tcp_hdr *hdr = (void *)net_nbuf_tcp_data(buf);
 
@@ -848,6 +857,11 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 	NET_ASSERT(net_nbuf_iface(buf));
 
+	if (NET_TCP_FLAGS(buf) & NET_TCP_SYN) {
+		context->tcp->send_ack =
+			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
+		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
+	}
 	/*
 	 * If we receive SYN, we send SYN-ACK and go to SYN_RCVD state.
 	 */
@@ -868,12 +882,32 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 		if (net_nbuf_family(buf) == AF_INET6) {
 			laddr = (struct sockaddr *)&l6addr;
 			raddr = (struct sockaddr *)&r6addr;
+
+			r6addr.sin6_family = AF_INET6;
+			r6addr.sin6_port = NET_TCP_BUF(buf)->src_port;
+			net_ipaddr_copy(&r6addr.sin6_addr,
+					&NET_IPV6_BUF(buf)->src);
+
+			l6addr.sin6_family = AF_INET6;
+			l6addr.sin6_port = NET_TCP_BUF(buf)->dst_port;
+			net_ipaddr_copy(&l6addr.sin6_addr,
+					&NET_IPV6_BUF(buf)->dst);
 		} else
 #endif
 #if defined(CONFIG_NET_IPV4)
 		if (net_nbuf_family(buf) == AF_INET) {
 			laddr = (struct sockaddr *)&l4addr;
 			raddr = (struct sockaddr *)&r4addr;
+
+			r4addr.sin_family = AF_INET;
+			r4addr.sin_port = NET_TCP_BUF(buf)->src_port;
+			net_ipaddr_copy(&r4addr.sin_addr,
+					&NET_IPV4_BUF(buf)->src);
+
+			l4addr.sin_family = AF_INET;
+			l4addr.sin_port = NET_TCP_BUF(buf)->dst_port;
+			net_ipaddr_copy(&l4addr.sin_addr,
+					&NET_IPV4_BUF(buf)->dst);
 		} else
 #endif
 		{
@@ -900,6 +934,7 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 		}
 
 		net_tcp_change_state(context->tcp, NET_TCP_ESTABLISHED);
+		net_context_set_state(context, NET_CONTEXT_CONNECTED);
 
 		send_ack(context, raddr);
 
@@ -988,6 +1023,7 @@ int net_context_connect(struct net_context *context,
 		rport = addr6->sin6_port;
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
+		net_sin6(&local_addr)->sin6_family = AF_INET6;
 		net_sin6(&local_addr)->sin6_port = lport =
 			net_sin6((struct sockaddr *)&context->local)->sin6_port;
 
@@ -1030,6 +1066,7 @@ int net_context_connect(struct net_context *context,
 		rport = addr4->sin_port;
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
+		net_sin(&local_addr)->sin_family = AF_INET;
 		net_sin(&local_addr)->sin_port = lport =
 			net_sin((struct sockaddr *)&context->local)->sin_port;
 
@@ -1840,7 +1877,7 @@ enum net_verdict packet_received(struct net_conn *conn,
 			}
 		}
 
-		NET_DBG("Set appdata to %p len %u (total %zu)",
+		NET_DBG("Set appdata %p to len %u (total %zu)",
 			net_nbuf_appdata(buf), net_nbuf_appdatalen(buf),
 			total_len);
 

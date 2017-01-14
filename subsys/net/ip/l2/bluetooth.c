@@ -25,8 +25,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include <logging/sys_log.h>
-
 #include <board.h>
 #include <device.h>
 #include <init.h>
@@ -35,10 +33,12 @@
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/bt.h>
 #include <6lo.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/l2cap.h>
 
@@ -46,6 +46,10 @@
 #define L2CAP_IPSP_MTU 1280
 
 #define CHAN_CTXT(_ch) CONTAINER_OF(_ch, struct bt_context, ipsp_chan.chan)
+
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+static struct bt_conn *default_conn;
+#endif
 
 struct bt_context {
 	struct net_if *iface;
@@ -162,6 +166,15 @@ static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 
 	/* Set iface down */
 	net_if_down(ctxt->iface);
+
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+	if (chan->conn != default_conn) {
+		return;
+	}
+
+	bt_conn_unref(default_conn);
+	default_conn = NULL;
+#endif
 }
 
 static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -263,14 +276,244 @@ static struct bt_l2cap_server server = {
 	.accept		= ipsp_accept,
 };
 
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+
+static int bt_connect(uint32_t mgmt_request, struct net_if *iface, void *data,
+		      size_t len)
+{
+	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+	bt_addr_le_t *addr = data;
+
+	if (len != sizeof(*addr)) {
+		NET_ERR("Invalid address");
+		return -EINVAL;
+	}
+
+	if (ctxt->ipsp_chan.chan.conn) {
+		NET_ERR("No channels available");
+		return -ENOMEM;
+	}
+
+	if (default_conn) {
+		return bt_l2cap_chan_connect(default_conn,
+					     &ctxt->ipsp_chan.chan,
+					     L2CAP_IPSP_PSM);
+	}
+
+	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
+
+	return 0;
+}
+
+static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
+		      void *user_data)
+{
+	bt_addr_le_t *addr = user_data;
+	int i;
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+	char dev[BT_ADDR_LE_STR_LEN];
+#endif
+	if (type != BT_DATA_UUID16_SOME && type != BT_DATA_UUID16_ALL) {
+		return false;
+	}
+
+	if (data_len % sizeof(uint16_t) != 0) {
+		NET_ERR("AD malformed\n");
+		return false;
+	}
+
+	for (i = 0; i < data_len; i += sizeof(uint16_t)) {
+		uint16_t u16;
+
+		memcpy(&u16, &data[i], sizeof(u16));
+		if (sys_le16_to_cpu(u16) != BT_UUID_IPSS_VAL) {
+			continue;
+		}
+
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+		bt_addr_le_to_str(addr, dev, sizeof(dev));
+		NET_DBG("[DEVICE]: %s", dev);
+#endif
+
+		/* TODO: Notify device address found */
+		net_mgmt_event_notify(NET_EVENT_BT_SCAN_RESULT,
+				      bt_context_data.iface);
+
+		return true;
+	}
+
+	return false;
+}
+
+static bool ad_parse(struct net_buf_simple *ad,
+		     bool (*func)(uint8_t type, const uint8_t *data,
+				  uint8_t data_len, void *user_data),
+		     void *user_data)
+{
+	while (ad->len > 1) {
+		uint8_t len = net_buf_simple_pull_u8(ad);
+		uint8_t type;
+
+		/* Check for early termination */
+		if (len == 0) {
+			return false;
+		}
+
+		if (len > ad->len || ad->len < 1) {
+			NET_ERR("AD malformed\n");
+			return false;
+		}
+
+		type = net_buf_simple_pull_u8(ad);
+
+		if (func(type, ad->data, len - 1, user_data)) {
+			return true;
+		}
+
+		net_buf_simple_pull(ad, len - 1);
+	}
+
+	return false;
+}
+
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
+			 struct net_buf_simple *ad)
+{
+	/* We're only interested in connectable events */
+	if (type == BT_LE_ADV_IND || type == BT_LE_ADV_DIRECT_IND) {
+		ad_parse(ad, eir_found, (void *)addr);
+	}
+}
+
+static void bt_active_scan(void)
+{
+	int err;
+
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	if (err) {
+		NET_ERR("Bluetooth set active scan failed (err %d)\n", err);
+	}
+}
+
+static void bt_passive_scan(void)
+{
+	int err;
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	if (err) {
+		NET_ERR("Bluetooth set passive scan failed (err %d)\n", err);
+	}
+}
+
+static void bt_scan_off(void)
+{
+	int err;
+
+	err = bt_le_scan_stop();
+	if (err) {
+		NET_ERR("Stopping scanning failed (err %d)\n", err);
+	}
+}
+
+static int bt_scan(uint32_t mgmt_request, struct net_if *iface, void *data,
+		   size_t len)
+{
+	if (!strcmp(data, "on") || !strcmp(data, "active")) {
+		bt_active_scan();
+	} else if (!strcmp(data, "passive")) {
+		bt_passive_scan();
+	} else if (!strcmp("off", data)) {
+		bt_scan_off();
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int bt_disconnect(uint32_t mgmt_request, struct net_if *iface,
+			 void *data, size_t len)
+{
+	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+
+	if (!ctxt->ipsp_chan.chan.conn) {
+		NET_ERR("Not connected");
+		return -ENOTCONN;
+	}
+
+	/* Release connect reference in case of central/router role */
+	if (default_conn) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
+	}
+
+	return bt_l2cap_chan_disconnect(&ctxt->ipsp_chan.chan);
+}
+
+static void connected(struct bt_conn *conn, uint8_t err)
+{
+	if (err) {
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+		char addr[BT_ADDR_LE_STR_LEN];
+
+		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+		NET_ERR("Failed to connect to %s (%u)\n", addr, err);
+#endif
+		return;
+	}
+
+	if (conn != default_conn) {
+		return;
+	}
+
+	bt_l2cap_chan_connect(conn, &bt_context_data.ipsp_chan.chan,
+			      L2CAP_IPSP_PSM);
+}
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+	char addr[BT_ADDR_LE_STR_LEN];
+#endif
+
+	if (conn != default_conn) {
+		return;
+	}
+
+#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	NET_DBG("Disconnected: %s (reason %u)\n", addr, reason);
+#endif
+
+	bt_conn_unref(default_conn);
+	default_conn = NULL;
+}
+
+static struct bt_conn_cb conn_callbacks = {
+	.connected = connected,
+	.disconnected = disconnected,
+};
+#endif /* CONFIG_NET_L2_BLUETOOTH_MGMT */
+
 static int net_bt_init(struct device *dev)
 {
 	NET_DBG("dev %p driver_data %p", dev, dev->driver_data);
 
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+	bt_conn_cb_register(&conn_callbacks);
+#endif
 	bt_l2cap_server_register(&server);
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_CONNECT, bt_connect);
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_SCAN, bt_scan);
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_DISCONNECT, bt_disconnect);
+#endif
 
 NET_DEVICE_INIT(net_bt, "net_bt", net_bt_init, &bt_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

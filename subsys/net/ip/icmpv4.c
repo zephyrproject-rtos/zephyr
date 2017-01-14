@@ -94,6 +94,9 @@ static inline void setup_ipv4_header(struct net_buf *buf, uint8_t extra_len,
 
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
+	NET_IPV4_BUF(buf)->chksum = 0;
+	NET_IPV4_BUF(buf)->chksum = ~net_calc_chksum_ipv4(buf);
+
 	NET_ICMP_BUF(buf)->type = icmp_type;
 	NET_ICMP_BUF(buf)->code = icmp_code;
 

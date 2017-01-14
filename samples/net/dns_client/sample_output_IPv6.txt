@@ -1,0 +1,39 @@
+To exit from QEMU enter: 'CTRL+a, x'
+[QEMU] CPU: qemu32
+
+-------------------------------------------
+[run_dns:142] name: not_a_real_domain_name
+rc: -22
+
+-------------------------------------------
+[run_dns:142] name: zephyrproject.org
+[run_dns:159] ff02::3
+
+-------------------------------------------
+[run_dns:142] name: www.zephyrproject.org
+[run_dns:159] ff02::4
+
+-------------------------------------------
+[run_dns:142] name: gerrit.zephyrproject.org
+[run_dns:159] ff02::5
+
+-------------------------------------------
+[run_dns:142] name: jira.zephyrproject.org
+[run_dns:159] ff02::6
+
+-------------------------------------------
+[run_dns:142] name: jenkins.zephyrproject.org
+[run_dns:159] ff02::7
+
+-------------------------------------------
+[run_dns:142] name: linuxfoundation.org
+[run_dns:159] ff02::8
+
+-------------------------------------------
+[run_dns:142] name: www.linuxfoundation.org
+[run_dns:159] ff02::9
+
+-------------------------------------------
+[run_dns:142] name: collabprojects.linuxfoundation.org
+[run_dns:159] ff02::a
+
