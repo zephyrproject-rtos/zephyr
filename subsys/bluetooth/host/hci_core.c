@@ -786,22 +786,20 @@ static void le_remote_feat_complete(struct net_buf *buf)
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 {
+	/* All limits according to BT Core spec 5.0 [Vol 2, Part E, 7.8.12] */
+
 	if (param->interval_min > param->interval_max ||
 	    param->interval_min < 6 || param->interval_max > 3200) {
 		return false;
 	}
 
-	/* Limits according to BT Core spec 4.2 [Vol 2, Part E, 7.8.12] */
-	if (param->timeout < 10 || param->timeout > 3200 ||
-	    ((2 * param->timeout) <
-	    ((1 + param->latency) * param->interval_max * 5))) {
+	if (param->latency > 499) {
 		return false;
 	}
 
-	/* Limits according to BT Core spec 4.2 [Vol 6, Part B, 4.5.1] */
-	if (param->latency > 499 ||
-	    (((param->latency + 1) * param->interval_max) >
-	    (param->timeout * 4))) {
+	if (param->timeout < 10 || param->timeout > 3200 ||
+	    ((4 * param->timeout) <=
+	     ((1 + param->latency) * param->interval_max))) {
 		return false;
 	}
 
