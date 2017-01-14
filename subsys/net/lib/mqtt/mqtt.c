@@ -647,18 +647,18 @@ struct net_buf *mqtt_linearize_buffer(struct mqtt_ctx *ctx, struct net_buf *rx,
 	uint16_t offset;
 	int rc;
 
-	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
-	if (data == NULL) {
-		return NULL;
-	}
-
 	/* CONFIG_MQTT_MSG_MAX_SIZE is defined via Kconfig. So here it's
 	 * determined if the input buffer could fit our data buffer or if
 	 * it has the expected size.
 	 */
 	data_len = net_nbuf_appdatalen(rx);
 	if (data_len < min_size || data_len > CONFIG_MQTT_MSG_MAX_SIZE) {
-		goto exit_error;
+		return NULL;
+	}
+
+	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
+	if (data == NULL) {
+		return NULL;
 	}
 
 	offset = net_buf_frags_len(rx) - data_len;
