@@ -69,7 +69,7 @@ extern "C" {
 #error "invalid configuration"
 #endif
 
-#if CONFIG_NUM_PREEMPT_PRIORITIES > 0
+#ifdef CONFIG_PREEMPT_ENABLED
 #define K_LOWEST_THREAD_PRIO CONFIG_NUM_PREEMPT_PRIORITIES
 #else
 #define K_LOWEST_THREAD_PRIO -1
