@@ -28,20 +28,20 @@ Sections
 .. toctree::
    :maxdepth: 1
 
-   doc/introduction/introducing_zephyr.rst
-   doc/getting_started/getting_started.rst
+   introduction/introducing_zephyr.rst
+   getting_started/getting_started.rst
    boards/boards.rst
-   doc/kernel/kernel.rst
-   doc/application/application.rst
-   doc/porting/porting.rst
-   doc/drivers/drivers.rst
-   doc/subsystems/subsystems.rst
-   doc/api/api.rst
+   kernel/kernel.rst
+   application/application.rst
+   porting/porting.rst
+   drivers/drivers.rst
+   subsystems/subsystems.rst
+   api/api.rst
    samples/samples.rst
-   doc/reference/kconfig/index.rst
-   doc/contribute/code.rst
-   doc/release-notes.rst
-   doc/LICENSING.rst
+   reference/kconfig/index.rst
+   contribute/code.rst
+   release-notes.rst
+   LICENSING.rst
 
 You can find further information on the `Zephyr Project Wiki`_.
 

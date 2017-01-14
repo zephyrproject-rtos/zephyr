@@ -22,6 +22,8 @@ scripts/kconfig/zconf.tab.c
 doc/_build
 doc/xml
 doc/html
+doc/boards
+doc/samples
 doc/latex
 sanity-out/
 scripts/grub

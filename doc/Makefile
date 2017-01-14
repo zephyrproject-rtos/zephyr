@@ -1,6 +1,9 @@
 # Makefile for Sphinx documentation
 #
 
+CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
+	          else if [ -x /bin/bash ]; then echo /bin/bash; \
+		            else echo sh; fi ; fi)
 # You can set these variables from the command line.
 SPHINXOPTS    ?= -q
 SPHINXBUILD   = sphinx-build
@@ -16,7 +19,7 @@ endif
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -c $(ZEPHYR_BASE)/doc -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) $(ZEPHYR_BASE)
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
@@ -63,10 +66,13 @@ clean:
 
 htmldocs: doxy html
 
+content: scripts/extract_content.py
+	$(Q)$<
+
 kconfig: scripts/genrest/genrest.py
 	srctree=../ SRCARCH=x86 python $< ../Kconfig reference/kconfig/
 
-html: kconfig
+html: content kconfig
 	$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
 dirhtml:
