@@ -1,4 +1,4 @@
-/*  Minimal DTSL server.
+/*  Minimal DTLS server.
  *  (Meant to be used with config-threadnet.h)
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
@@ -212,7 +212,7 @@ void dtls_server(void)
 		goto exit;
 	}
 
-/* Modify this to change the default timeouts for the DTSL handshake */
+/* Modify this to change the default timeouts for the DTLS handshake */
 /*        mbedtls_ssl_conf_handshake_timeout( &conf, min, max ); */
 
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);

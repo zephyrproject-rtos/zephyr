@@ -1,84 +1,57 @@
-[mbedTLS DTSL client]
-#####################
+mbedTLS DTLS client
+####################
 
 Overview
 ========
-This sample code shows a simple DTSL client using mbed TLS on top of Zephyr
+This sample code shows a simple DTLS client using mbed TLS on top of Zephyr
 
 Requirements
 ============
-* PC with Linux.
-* Screen command and gcc compiler
-
 
 Building and running
 ====================
-Follow the prerequisites described in
-https://wiki.zephyrproject.org/view/Networking-with-Qemu
 
-.. code-block:: console
+Follow the steps for testing :ref:`networking with Qemu <networking_with_qemu>`.
 
-	git clone https://gerrit.zephyrproject.org/r/net-tools
-	cd net-tools
-	make
-
-From a terminal window, type:
-
-.. code-block:: console
-
-	./loop-socat.sh
-
-Open another terminal window, change directory to the one where net-tools
-are
-
-.. code-block:: console
-
-	cd net-tools
-	sudo ./loop-slip-tap.sh
-
-In other terminal window, obtain the mbed TLS code from:
+Obtain the mbed TLS code from:
 
 https://tls.mbed.org/download/start/mbedtls-2.3.0-apache.tgz
 
-and put it in a well know directory, in your Linux machine, this will be your
+and put it in a well known directory on your Linux machine, this will be your
 server.
 
-cd to that directory and compile the mbedTLS on your host machine
+change to that directory and compile the mbedTLS on your host machine:
 
 .. code-block:: console
 
-	tar -xvzf mbedtls-2.3.0-apache.tgz
-	cd mbedtls-2.3.0
-	CFLAGS="-I$PWD/configs -DMBEDTLS_CONFIG_FILE='<config-thread.h>'" make
+   $ tar -xvzf mbedtls-2.3.0-apache.tgz
+   $ cd mbedtls-2.3.0
+   $ CFLAGS="-I$PWD/configs -DMBEDTLS_CONFIG_FILE='<config-thread.h>'" make
 
-Assign the server IP address and start the DTSL server.
-
-.. code-block:: console
-
-	sudo ip addr add 192.0.2.2/24 dev tap0
-	./programs/ssl/ssl_server2 dtls=1 ecjpake_pw=passwd
-
-Sample Output
--------------
+Assign the server IP address and start the DTLS server.
 
 .. code-block:: console
 
-	. Seeding the random number generator... ok
-	. Bind on udp://*:4433/ ... ok
-	. Setting up the SSL/TLS structure... ok
-	. Waiting for a remote connection ...
+   $ sudo ip addr add 192.0.2.2/24 dev tap0
+   $ ./programs/ssl/ssl_server2 dtls=1 ecjpake_pw=passwd
+
+.. code-block:: console
+
+   . Seeding the random number generator... ok
+   . Bind on udp://*:4433/ ... ok
+   . Setting up the SSL/TLS structure... ok
+   . Waiting for a remote connection ...
 
 To stop the server use Ctrl-C and repeat steps described in f) every time
 QEMU gets terminated, due the Netwrok interface (tap) being restarted.
 
-From the app directory type
+From the application directory type
 
 .. code-block:: console
 
-	make pristine && make qemu
+   $ make run
 
-Sample Output
--------------
+This will result in Qemu running with the following output:
 
 .. code-block:: console
 
@@ -90,7 +63,7 @@ Sample Output
 	> Write to server: ok
 	. Closing the connection... done
 
-In the server side you should see this
+On the server side you should see this
 
 .. code-block:: console
 
@@ -121,16 +94,15 @@ In the server side you should see this
 
 	. Waiting for a remote connection ...
 
-Disregard the last handshake failed message, due the closing connection
+Disregard the last handshake failed message, due the closing connection.
 
-If the server does not receive the  messages, use a network
-traffic analyzer, like Wireshark.
+If the server does not receive the  messages, use a network traffic analyzer,
+like Wireshark.
 
-Reset the board
+Reset the board.
 
 References
 ==========
 
-[https://www.zephyrproject.org/doc/getting_started/getting_started.html]
-[https://wiki.zephyrproject.org/view/Networking-with-Qemu]
-[https://tls.mbed.org/]
+- https://wiki.zephyrproject.org/view/Networking-with-Qemu
+- https://tls.mbed.org/
