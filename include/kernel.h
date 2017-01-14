@@ -59,10 +59,14 @@ extern "C" {
 #define K_ANY NULL
 #define K_END NULL
 
-#if CONFIG_NUM_COOP_PRIORITIES > 0
+#if defined(CONFIG_COOP_ENABLED) && defined(CONFIG_PREEMPT_ENABLED)
 #define K_HIGHEST_THREAD_PRIO (-CONFIG_NUM_COOP_PRIORITIES)
-#else
+#elif defined(CONFIG_COOP_ENABLED)
+#define K_HIGHEST_THREAD_PRIO (-CONFIG_NUM_COOP_PRIORITIES - 1)
+#elif defined(CONFIG_PREEMPT_ENABLED)
 #define K_HIGHEST_THREAD_PRIO 0
+#else
+#error "invalid configuration"
 #endif
 
 #if CONFIG_NUM_PREEMPT_PRIORITIES > 0
