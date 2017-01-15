@@ -18,6 +18,23 @@ for the second fork to be available.
 
 Each Philosopher will randomly alternate between the EATING and THINKING state.
 
+It is possible to run the demo in coop-only or preempt-only mode. To achieve
+this, set these values for CONFIG_NUM_COOP_PRIORITIES and
+CONFIG_NUM_PREEMPT_PRIORITIES in prj.conf:
+
+preempt-only:
+
+  CONFIG_NUM_PREEMPT_PRIORITIES 6
+  CONFIG_NUM_COOP_PRIORITIES 0
+
+coop-only:
+
+  CONFIG_NUM_PREEMPT_PRIORITIES 0
+  CONFIG_NUM_COOP_PRIORITIES 6
+
+In these cases, the philosopher threads will run with priorities 0 to 5
+(preempt-only) and -7 to -2 (coop-only).
+
 Building and Running
 ====================
 

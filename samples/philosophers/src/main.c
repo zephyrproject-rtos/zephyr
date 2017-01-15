@@ -206,10 +206,20 @@ void philosopher(void *id, void *unused1, void *unused2)
 
 static int new_prio(int phil)
 {
+#if defined(CONFIG_COOP_ENABLED) && defined(CONFIG_PREEMPT_ENABLED)
 #if SAME_PRIO
 	return 0;
 #else
 	return -(phil - (NUM_PHIL/2));
+#endif
+#else
+#if defined(CONFIG_COOP_ENABLED)
+	return -phil - 2;
+#elif defined(CONFIG_PREEMPT_ENABLED)
+	return phil;
+#else
+	#error unpossible
+#endif
 #endif
 }
 
