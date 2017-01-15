@@ -125,7 +125,7 @@ Try to launch the dnsmasq application again.
 QEMU x86
 --------
 
-    In a terminal window, type:
+Open a terminal window and type:
 
 .. code-block:: console
 
@@ -150,6 +150,8 @@ Open a terminal where the project was build (i.e. :file:`samples/net/dns_client`
 
 FRDM K64F
 ---------
+
+Open a terminal window and type:
 
 .. code-block:: console
 
@@ -180,6 +182,8 @@ Once the binary is loaded into the FRDM board, press the RESET button.
 
 Arduino 101
 -----------
+
+Open a terminal window and type:
 
 .. code-block:: console
 
