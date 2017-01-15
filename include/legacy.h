@@ -100,13 +100,16 @@ typedef int nano_context_type_t;
 				    abort, groups)
 
 /**
- * @defgroup legacy_apis Legacy APIs
+ * @defgroup legacy_apis Legacy API
  * @ingroup kernel_apis
+ * @{
  */
+
 /**
  * @brief Define a private microkernel task.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This declares and initializes a private task. The new task
  * can be passed to the microkernel task functions.
@@ -131,7 +134,8 @@ typedef int nano_context_type_t;
 /**
  * @brief Return the ID of the currently executing thread.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine returns a pointer to the thread control block of the currently
  * executing thread. It is cast to a nano_thread_id_t for public use.
@@ -146,7 +150,8 @@ static inline __deprecated nano_thread_id_t sys_thread_self_get(void)
 /**
  * @brief Cause the currently executing thread to busy wait.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine causes the current task or fiber to execute a "do nothing"
  * loop for a specified period of time.
@@ -167,7 +172,8 @@ static inline __deprecated void sys_thread_busy_wait(uint32_t usec_to_wait)
 /**
  * @brief Return the type of the current execution context.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine returns the type of execution context currently executing.
  *
@@ -181,7 +187,8 @@ extern __deprecated int sys_execution_context_type_get(void);
 /**
  * @brief Initialize and start a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine initializes and starts a fiber. It can be called from
  * either a fiber or a task. When this routine is called from a
@@ -220,7 +227,8 @@ fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
 /**
  * @brief Initialize and start a fiber from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_start(), but may only be called from a fiber.
  *
@@ -231,7 +239,8 @@ fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
 /**
  * @brief Initialize and start a fiber from a task.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_start(), but may only be called from a task.
  *
@@ -242,7 +251,8 @@ fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
 /**
  * @brief Fiber configuration structure.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Parameters such as stack size and fiber priority are often
  * user configurable. This structure makes it simple to specify such a
@@ -257,7 +267,8 @@ struct fiber_config {
 /**
  * @brief Start a fiber based on a @ref fiber_config.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine can be called from either a fiber or a task.
  *
@@ -277,7 +288,8 @@ struct fiber_config {
 /**
  * @brief Start a fiber based on a @ref fiber_config, from fiber context.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_start_config(), but may only be called from a fiber.
  *
@@ -288,7 +300,8 @@ struct fiber_config {
 /**
  * @brief Start a fiber based on a @ref fiber_config, from task context.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_start_config(), but may only be called from a task.
  *
@@ -299,7 +312,8 @@ struct fiber_config {
 /**
  * @brief Start a fiber while delaying its execution.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param stack Pointer to the stack space.
  * @param stack_size_in_bytes Stack size in bytes.
@@ -329,7 +343,8 @@ fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 /**
  * @brief Start a fiber while delaying its execution.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_delayed_start(), but may only be called from a fiber.
  *
@@ -340,7 +355,8 @@ fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 /**
  * @brief Start a fiber while delaying its execution.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_delayed_start(), but may only be called from a task.
  *
@@ -351,7 +367,8 @@ fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 /**
  * @brief Cancel a delayed fiber start.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param handle The handle returned when starting the delayed fiber.
  *
@@ -366,7 +383,8 @@ fiber_delayed_start_cancel(nano_thread_id_t handle)
 /**
  * @brief Cancel a delayed fiber start from a fiber
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_delayed_start_cancel(), but may only be called from a fiber.
  *
@@ -377,7 +395,8 @@ fiber_delayed_start_cancel(nano_thread_id_t handle)
 /**
  * @brief Cancel a delayed fiber start from a task
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_delayed_start_cancel(), but may only be called from a fiber.
  *
@@ -388,7 +407,8 @@ fiber_delayed_start_cancel(nano_thread_id_t handle)
 /**
  * @brief Yield the current fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Calling this routine results in the current fiber yielding to
  * another fiber of the same or higher priority. If there are no
@@ -407,7 +427,8 @@ static inline __deprecated void fiber_yield(void)
 /**
  * @brief Abort the currently executing fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine aborts the currently executing fiber. An abort can occur
  * because of one of three reasons:
@@ -429,7 +450,8 @@ extern void __deprecated _legacy_sleep(int32_t ticks);
 /**
  * @brief Put the current fiber to sleep.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine puts the currently running fiber to sleep
  * for the number of system ticks passed in the
@@ -444,7 +466,8 @@ extern void __deprecated _legacy_sleep(int32_t ticks);
 /**
  * @brief Put the task to sleep.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine puts the currently running task to sleep for the number
  * of system ticks passed in the @a timeout_in_ticks parameter.
@@ -463,7 +486,8 @@ extern void __deprecated _legacy_sleep(int32_t ticks);
 /**
  * @brief Wake the specified fiber from sleep
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine is a convenience wrapper for the execution of context-specific
  * APIs. It is helpful when the exact execution context is not known. However,
@@ -482,7 +506,8 @@ static inline __deprecated void fiber_wakeup(nano_thread_id_t fiber)
 /**
  * @brief Wake the specified fiber from sleep
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_wakeup(), but may only be called from an ISR.
  *
@@ -493,7 +518,8 @@ static inline __deprecated void fiber_wakeup(nano_thread_id_t fiber)
 /**
  * @brief Wake the specified fiber from sleep
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_wakeup, but may only be called from a fiber.
  *
@@ -504,7 +530,8 @@ static inline __deprecated void fiber_wakeup(nano_thread_id_t fiber)
 /**
  * @brief Wake the specified fiber from sleep
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like fiber_wakeup, but may only be called from a task.
  *
@@ -515,7 +542,8 @@ static inline __deprecated void fiber_wakeup(nano_thread_id_t fiber)
 /**
  * @brief Yield the CPU to another task.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine yields the processor to the next-equal priority runnable
  * task. With task_yield(), the effect of round-robin scheduling is
@@ -529,7 +557,8 @@ static inline __deprecated void fiber_wakeup(nano_thread_id_t fiber)
 /**
  * @brief Set the priority of a task.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine changes the priority of the specified task.
  *
@@ -553,7 +582,8 @@ static inline __deprecated void task_priority_set(ktask_t task,
 /**
  * @brief Set the entry point of a task.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine sets the entry point of a task to a given routine. It is
  * needed only when an entry point differs from what is set in the project
@@ -586,7 +616,8 @@ task_entry_set(ktask_t task, void (*entry)(void))
 /**
  * @brief Install an abort handler.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine installs an abort handler for the calling task.
  *
@@ -608,7 +639,8 @@ extern void __deprecated task_abort_handler_set(void (*handler)(void));
 /**
  * @brief Process an "offload" request
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * The routine places the @a func into the work queue. This allows
  * the task to execute a routine uninterrupted by other tasks.
@@ -626,7 +658,8 @@ extern int __deprecated task_offload_to_fiber(int (*func)(), void *argp);
 /**
  * @brief Gets task identifier
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return identifier for current task
  */
@@ -638,7 +671,8 @@ static inline __deprecated ktask_t task_id_get(void)
 /**
  * @brief Gets task priority
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return priority of current task
  */
@@ -650,7 +684,8 @@ static inline __deprecated kpriority_t task_priority_get(void)
 /**
  * @brief Abort a task
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param task Task to abort
  *
@@ -664,7 +699,8 @@ static inline __deprecated void task_abort(ktask_t task)
 /**
  * @brief Suspend a task
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param task Task to suspend
  *
@@ -678,7 +714,8 @@ static inline __deprecated void task_suspend(ktask_t task)
 /**
  * @brief Resume a task
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param task Task to resume
  *
@@ -692,7 +729,8 @@ static inline __deprecated void task_resume(ktask_t task)
 /**
  * @brief Start a task
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param task Task to start
  *
@@ -703,7 +741,8 @@ extern void __deprecated task_start(ktask_t task);
 /**
  * @brief Set time-slicing period and scope
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine controls how task time slicing is performed by the task
  * scheduler; it specifes the maximum time slice length (in ticks) and
@@ -744,7 +783,8 @@ extern void _k_thread_group_op(uint32_t groups, void (*func)(struct tcs *));
 /**
  * @brief Get task groups for task
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return task groups associated with current task
  */
@@ -758,7 +798,8 @@ static inline __deprecated uint32_t task_group_mask_get(void)
 /**
  * @brief Get task groups for task
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return task groups associated with current task
  */
@@ -767,7 +808,8 @@ static inline __deprecated uint32_t task_group_mask_get(void)
 /**
  * @brief Add task to task group(s)
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param groups Task Groups
  *
@@ -783,7 +825,8 @@ static inline __deprecated void task_group_join(uint32_t groups)
 /**
  * @brief Remove task from task group(s)
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param groups Task Groups
  *
@@ -799,7 +842,8 @@ static inline __deprecated void task_group_leave(uint32_t groups)
 /**
  * @brief Start one or more task groups
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param groups Task groups to start
  *
@@ -815,7 +859,8 @@ static inline __deprecated void task_group_start(uint32_t groups)
 /**
  * @brief Suspend one or more task groups
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param groups Task groups to suspend
  *
@@ -831,7 +876,8 @@ static inline __deprecated void task_group_suspend(uint32_t groups)
 /**
  * @brief Resume one or more task groups
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param groups Task groups to resume
  *
@@ -847,7 +893,8 @@ static inline __deprecated void task_group_resume(uint32_t groups)
 /**
  * @brief Abort one or more task groups
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param groups Task groups to abort
  *
@@ -863,7 +910,8 @@ static inline __deprecated void task_group_abort(uint32_t groups)
 /**
  * @brief Get task identifier
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return identifier for current task
  */
@@ -872,7 +920,8 @@ static inline __deprecated void task_group_abort(uint32_t groups)
 /**
  * @brief Get task priority
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return priority of current task
  */
@@ -885,7 +934,8 @@ static inline __deprecated void task_group_abort(uint32_t groups)
 /**
  * @brief Lock mutex.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine locks mutex @a mutex. When the mutex is locked by another task,
  * the routine will either wait until it becomes available, or until a specified
@@ -915,7 +965,8 @@ static inline __deprecated int task_mutex_lock(kmutex_t mutex, int32_t timeout)
 /**
  * @brief Unlock mutex.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine unlocks mutex @a mutex. The mutex must already be locked by the
  * requesting task.
@@ -935,7 +986,8 @@ static inline __deprecated void task_mutex_unlock(kmutex_t mutex)
 /**
  * @brief Define a private mutex.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param name Mutex name.
  */
@@ -951,7 +1003,8 @@ static inline __deprecated void task_mutex_unlock(kmutex_t mutex)
 /**
  * @brief Initialize a nanokernel semaphore object.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This function initializes a nanokernel semaphore object structure. After
  * initialization, the semaphore count is 0.
@@ -970,7 +1023,8 @@ static inline __deprecated void nano_sem_init(struct nano_sem *sem)
 /**
  * @brief Give a nanokernel semaphore.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine performs a "give" operation on a nanokernel sempahore object.
  *
@@ -992,7 +1046,8 @@ static inline __deprecated void nano_sem_give(struct nano_sem *sem)
 /**
  * @brief Give a nanokernel semaphore (no context switch).
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_sem_give(), but may only be called from an ISR. A fiber
  * pending on the semaphore object will be made ready, but will NOT be
@@ -1008,7 +1063,8 @@ static inline __deprecated void nano_sem_give(struct nano_sem *sem)
 /**
  * @brief Give a nanokernel semaphore (no context switch).
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_sem_give(), but may only be called from a fiber.
  *
@@ -1022,7 +1078,8 @@ static inline __deprecated void nano_sem_give(struct nano_sem *sem)
 /**
  * @brief Give a nanokernel semaphore.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_sem_give(), but may only be called from a task. A fiber pending
  * on the semaphore object will be made ready, and will preempt the running
@@ -1038,7 +1095,8 @@ static inline __deprecated void nano_sem_give(struct nano_sem *sem)
 /**
  * @brief Take a nanokernel semaphore, poll/pend if not available.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine performs a "give" operation on a nanokernel sempahore object.
  *
@@ -1074,7 +1132,8 @@ static inline __deprecated int nano_sem_take(struct nano_sem *sem,
 /**
  * @brief Take a nanokernel semaphore, fail if unavailable.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_sem_take(), but must only be called from an ISR with a timeout
  * of TICKS_NONE.
@@ -1086,7 +1145,8 @@ static inline __deprecated int nano_sem_take(struct nano_sem *sem,
 /**
  * @brief Take a nanokernel semaphore, wait or fail if unavailable.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_sem_take(), but may only be called from a fiber.
  *
@@ -1097,7 +1157,8 @@ static inline __deprecated int nano_sem_take(struct nano_sem *sem,
 /**
  * @brief Take a nanokernel semaphore, fail if unavailable.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_sem_take(), but may only be called from a task.
  *
@@ -1108,7 +1169,8 @@ static inline __deprecated int nano_sem_take(struct nano_sem *sem,
 /**
  * @brief Give semaphore from an ISR.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine gives semaphore @a sem from an ISR, rather than a task.
  *
@@ -1121,7 +1183,8 @@ static inline __deprecated int nano_sem_take(struct nano_sem *sem,
 /**
  * @brief Give semaphore from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine gives semaphore @a sem from a fiber, rather than a task.
  *
@@ -1134,7 +1197,8 @@ static inline __deprecated int nano_sem_take(struct nano_sem *sem,
 /**
  * @brief Give semaphore.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine gives semaphore @a sem.
  *
@@ -1148,7 +1212,8 @@ static inline __deprecated int nano_sem_take(struct nano_sem *sem,
  *
  * @brief Take a semaphore or fail.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine takes the semaphore @a sem. If the semaphore's count is
  * zero the routine immediately returns a failure indication.
@@ -1175,7 +1240,8 @@ static inline __deprecated int task_sem_take(ksem_t sem, int32_t timeout)
 /**
  * @brief Reset the semaphore's count.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine resets the count of the semaphore @a sem to zero.
  *
@@ -1191,7 +1257,8 @@ static inline __deprecated void task_sem_reset(ksem_t sem)
 /**
  * @brief Read a semaphore's count.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine reads the current count of the semaphore @a sem.
  *
@@ -1207,7 +1274,8 @@ static inline __deprecated int task_sem_count_get(ksem_t sem)
 /**
  * @brief Read a nanokernel semaphore's count.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine reads the current count of the semaphore @a sem.
  *
@@ -1273,7 +1341,8 @@ typedef ksem_t *ksemg_t;
 /**
  * @brief Wait for a semaphore from the semaphore group.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine waits for the @a timeout ticks to take a semaphore from the
  * semaphore group @a group.
@@ -1303,7 +1372,8 @@ static inline __deprecated ksem_t task_sem_group_take(ksemg_t group,
 /**
  * @brief Give a group of semaphores.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine gives each semaphore in a semaphore group @a semagroup.
  * This method is faster than giving the semaphores individually, and
@@ -1321,7 +1391,8 @@ static inline __deprecated void task_sem_group_give(ksemg_t group)
 /**
  * @brief Reset a group of semaphores.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine resets the count for each semaphore in the sempahore group
  * @a semagroup to zero. This method is faster than resetting the semaphores
@@ -1340,7 +1411,8 @@ static inline __deprecated void task_sem_group_reset(ksemg_t group)
 /**
  * @brief Define a private microkernel semaphore
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param name Semaphore name.
  */
@@ -1365,14 +1437,16 @@ static inline __deprecated void task_sem_group_reset(ksemg_t group)
 /**
  * @brief An item which can be scheduled on a @ref nano_workqueue with a delay
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  */
 #define nano_delayed_work k_delayed_work
 
 /**
  * @brief Initialize work item
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param work  Work item to initialize
  * @param handler Handler to process work item
@@ -1388,7 +1462,8 @@ static inline void nano_work_init(struct nano_work *work,
 /**
  * @brief Submit a work item to a workqueue.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This procedure schedules a work item to be processed.
  * In the case where the work item has already been submitted and is pending
@@ -1411,7 +1486,8 @@ nano_work_submit_to_queue(struct nano_workqueue *wq, struct nano_work *work)
 /**
  * @brief Start a new workqueue.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine can be called from either fiber or task context.
  *
@@ -1430,7 +1506,8 @@ nano_workqueue_start(struct nano_workqueue *wq,
 /**
  * @brief Start a new workqueue.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Call this from task context.
  *
@@ -1441,7 +1518,8 @@ nano_workqueue_start(struct nano_workqueue *wq,
 /**
  * @brief Start a new workqueue.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Call this from fiber context.
  *
@@ -1453,7 +1531,8 @@ nano_workqueue_start(struct nano_workqueue *wq,
 /**
  * @brief Initialize delayed work
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param work Work item
  * @param handler Handler to process work item
@@ -1469,7 +1548,8 @@ nano_delayed_work_init(struct nano_delayed_work *work, work_handler_t handler)
 /**
  * @brief Submit a delayed work item to a workqueue.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This procedure schedules a work item to be processed after a delay.
  * Once the delay has passed, the work item is submitted to the work queue:
@@ -1497,7 +1577,8 @@ nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
 /**
  * @brief Cancel a delayed work item
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This procedure cancels a scheduled work item. If the work has been completed
  * or is idle, this will do nothing. The only case where this can fail is when
@@ -1518,7 +1599,8 @@ nano_delayed_work_cancel(struct nano_delayed_work *work)
 /**
  * @brief Submit a work item to the system workqueue.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @ref nano_work_submit_to_queue
  *
@@ -1535,7 +1617,8 @@ static inline __deprecated void nano_work_submit(struct nano_work *work)
 /**
  * @brief Submit a delayed work item to the system workqueue.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @ref nano_delayed_work_submit_to_queue
  *
@@ -1546,15 +1629,19 @@ static inline __deprecated void nano_work_submit(struct nano_work *work)
 #define nano_delayed_work_submit(work, ticks) \
 	nano_delayed_work_submit_to_queue(&k_sys_work_q, work, ticks)
 #endif
+/** @cond INTERNAL_HIDDEN */
 /* events */
 
 #define kevent_t const struct k_alert *
 typedef int (*kevent_handler_t)(int event);
 
+/** @endcond */
+
 /**
  * @brief Signal an event from an ISR.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine does @em not validate the specified event number.
  *
@@ -1567,7 +1654,8 @@ typedef int (*kevent_handler_t)(int event);
 /**
  * @brief Signal an event from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine does @em not validate the specified event number.
  *
@@ -1580,7 +1668,8 @@ typedef int (*kevent_handler_t)(int event);
 /**
  * @brief Set event handler request.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine specifies the event handler that runs in the context of the
  * microkernel server fiber when the associated event is signaled. Specifying
@@ -1614,7 +1703,8 @@ task_event_handler_set(kevent_t legacy_event, kevent_handler_t handler)
 /**
  * @brief Signal an event request.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine signals the specified event from a task. If an event handler
  * is installed for that event, it will run. If no event handler is installed,
@@ -1634,7 +1724,8 @@ static inline __deprecated int task_event_send(kevent_t legacy_event)
 /**
  * @brief Test for an event request with timeout.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine tests an event to see if it has been signaled.
  *
@@ -1661,7 +1752,8 @@ static inline __deprecated int task_event_recv(kevent_t legacy_event,
 /**
  * @brief Define a private microkernel event
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This declares and initializes a private event. The new event
  * can be passed to the microkernel event functions.
@@ -1680,7 +1772,8 @@ static inline __deprecated int task_event_recv(kevent_t legacy_event,
 /**
  * @brief Allocate memory map block.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine allocates a block from memory map @a map, and saves the
  * block's address in the area indicated by @a mptr. When no block is available,
@@ -1712,7 +1805,8 @@ task_mem_map_alloc(kmemory_map_t map, void **mptr, int32_t timeout)
 /**
  * @brief Return memory slab block.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine returns a block to the specified memory slab.
  *
@@ -1731,7 +1825,8 @@ task_mem_map_free(kmemory_map_t m, void **p)
 /**
  * @brief Read the number of used blocks in a memory map.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine returns the number of blocks in use for the memory map.
  *
@@ -1747,7 +1842,8 @@ static inline __deprecated int task_mem_map_used_get(kmemory_map_t map)
 /**
  * @brief Define a private microkernel memory map.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param name Memory map name.
  * @param map_num_blocks Number of blocks.
@@ -1768,7 +1864,8 @@ static inline __deprecated int task_mem_map_used_get(kmemory_map_t map)
 /**
  * @brief Allocate memory pool block.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine allocates a block of at least @a reqsize bytes from memory pool
  * @a pool_id, and saves its information in block descriptor @a blockptr. When
@@ -1802,7 +1899,8 @@ task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
 /**
  * @brief Return memory pool block.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine returns a block to the memory pool from which it was allocated.
  *
@@ -1818,7 +1916,8 @@ static inline __deprecated void task_mem_pool_free(struct k_block *block)
 /**
  * @brief Defragment memory pool.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine concatenates unused blocks that can be merged in memory pool
  * @a p.
@@ -1839,7 +1938,8 @@ static inline __deprecated void task_mem_pool_defragment(kmemory_pool_t pool)
 /**
  * @brief Allocate memory
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine  provides traditional malloc semantics and is a wrapper on top
  * of microkernel pool alloc API. It returns an aligned memory address which
@@ -1861,7 +1961,8 @@ static inline __deprecated void *task_malloc(uint32_t size)
 /**
  * @brief Free memory allocated through task_malloc
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine provides traditional free semantics and is intended to free
  * memory allocated using task_malloc API.
@@ -1881,7 +1982,8 @@ static inline __deprecated void task_free(void *ptr)
 /**
  * @brief FIFO enqueue request.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine adds an item to the FIFO queue. When the FIFO is full,
  * the routine will wait either for space to become available, or until the
@@ -1910,7 +2012,8 @@ static inline __deprecated int task_fifo_put(kfifo_t queue, void *data,
 /**
  * @brief FIFO dequeue request.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine fetches the oldest item from the FIFO queue. When the FIFO is
  * found empty, the routine will wait either until an item is added to the FIFO
@@ -1939,7 +2042,8 @@ static inline __deprecated int task_fifo_get(kfifo_t queue, void *data,
 /**
  * @brief Purge the FIFO of all its entries.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param queue FIFO queue.
  *
@@ -1954,7 +2058,8 @@ static inline __deprecated int task_fifo_purge(kfifo_t queue)
 /**
  * @brief Query the number of FIFO entries.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param queue FIFO queue.
  *
@@ -1968,7 +2073,8 @@ static inline __deprecated int task_fifo_size_get(kfifo_t queue)
 /**
  * @brief Define a private microkernel FIFO.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This declares and initializes a private FIFO. The new FIFO
  * can be passed to the microkernel FIFO functions.
@@ -2014,7 +2120,8 @@ struct k_msg {
 /**
  * @brief Send a message to a mailbox.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine sends a message to a mailbox and looks for a matching receiver.
  *
@@ -2040,7 +2147,8 @@ __deprecated int task_mbox_put(kmbox_t mbox, kpriority_t prio,
 /**
  * @brief Send a message asynchronously to a mailbox.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine sends a message to a mailbox and does not wait for a matching
  * receiver. No exchange header is returned to the sender. When the data
@@ -2059,7 +2167,8 @@ __deprecated void task_mbox_block_put(kmbox_t mbox, kpriority_t prio,
 /**
  * @brief Get @b struct @b k_msg message header structure information from
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  * a mailbox and wait with timeout.
  *
  * @param mbox Mailbox.
@@ -2083,7 +2192,8 @@ __deprecated int task_mbox_get(kmbox_t mbox, struct k_msg *msg,
 /**
  * @brief Get message data.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Call this routine for one of two reasons:
  * 1. To transfer data when the call to @b task_mbox_get() yields an existing
@@ -2100,7 +2210,8 @@ __deprecated void task_mbox_data_get(struct k_msg *msg);
 /**
  * @brief Retrieve message data into a block, with time-limited waiting.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param msg Message from which to get data.
  * @param block Block.
@@ -2124,7 +2235,8 @@ task_mbox_data_block_get(struct k_msg *msg, struct k_block *block,
 /**
  * @brief Define a private microkernel mailbox.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine declares and initializes a private mailbox. The new mailbox
  * can be passed to the microkernel mailbox functions.
@@ -2142,7 +2254,8 @@ task_mbox_data_block_get(struct k_msg *msg, struct k_block *block,
 /**
  * @brief Pipe write request.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Attempt to write data from a memory-buffer area to the
  * specified pipe with a timeout option.
@@ -2199,7 +2312,8 @@ task_pipe_put(kpipe_t id, void *buffer, int bytes_to_write, int *bytes_written,
 /**
  * @brief Pipe read request.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Attempt to read data into a memory buffer area from the
  * specified pipe with a timeout option.
@@ -2257,7 +2371,8 @@ task_pipe_get(kpipe_t id, void *buffer, int bytes_to_read, int *bytes_read,
 /**
  * @brief Send a block of data asynchronously to a pipe
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine asynchronously sends a message from the pipe specified by
  * @a id. Once all @a size bytes have been accepted by the pipe, it will
@@ -2287,7 +2402,8 @@ task_pipe_block_put(kpipe_t id, struct k_block block, int size, ksem_t sem)
 /**
  * @brief Define a private microkernel pipe.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param name Name of the pipe.
  * @param pipe_buffer_size Size of the pipe buffer (in bytes)
@@ -2301,7 +2417,8 @@ task_pipe_block_put(kpipe_t id, struct k_block block, int size, ksem_t sem)
 /**
  * @brief Initialize a nanokernel FIFO (fifo) object.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This function initializes a nanokernel FIFO (fifo) object
  * structure.
@@ -2322,7 +2439,8 @@ static inline __deprecated void nano_fifo_init(struct nano_fifo *fifo)
 /**
  * @brief Add an element to the end of a FIFO.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine is a convenience wrapper for the execution of context-specific
  * APIs. It is helpful when the exact execution context is not known. However,
@@ -2348,7 +2466,8 @@ static inline __deprecated void nano_fifo_put(struct nano_fifo *fifo,
 /**
  * @brief Add an element to the end of a FIFO from an ISR context.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_put(), but may only be called from an ISR.
  *
@@ -2359,7 +2478,8 @@ static inline __deprecated void nano_fifo_put(struct nano_fifo *fifo,
 /**
  * @brief Add an element to the end of a FIFO from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_put(), but may only be called from a fiber.
  *
@@ -2370,7 +2490,8 @@ static inline __deprecated void nano_fifo_put(struct nano_fifo *fifo,
 /**
  * @brief Add an element to the end of a FIFO.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_put(), but may only be called from a task.
  *
@@ -2382,7 +2503,8 @@ static inline __deprecated void nano_fifo_put(struct nano_fifo *fifo,
 /**
  * @brief Atomically add a list of elements to the end of a FIFO.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine adds a list of elements in one shot to the end of a FIFO
  * object. If fibers are pending on the FIFO object, they become ready to run.
@@ -2428,7 +2550,8 @@ void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail);
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from an ISR.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_put_list(), but may only be called from an ISR.
  *
@@ -2440,7 +2563,8 @@ void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail);
  *
  * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_put_list(), but may only be called from a fiber.
  *
@@ -2451,7 +2575,8 @@ void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail);
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_put_list(), but may only be called from a task.
  *
@@ -2462,7 +2587,8 @@ void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail);
 /**
  * @brief Atomically add a list of elements to the end of a FIFO.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * See nano_fifo_put_list for the description of the behaviour.
  *
@@ -2492,7 +2618,8 @@ nano_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list)
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from an ISR.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_put_slist(), but may only be called from an ISR.
  *
@@ -2503,7 +2630,8 @@ nano_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list)
 /**
  * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_put_slist(), but may only be called from a fiber.
  *
@@ -2524,7 +2652,8 @@ nano_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list)
 /**
  * @brief Get an element from the head a FIFO.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine is a convenience wrapper for the execution of context-specific
  * APIs. It is helpful when the exact execution context is not known. However,
@@ -2563,7 +2692,8 @@ void __deprecated *nano_fifo_get(struct nano_fifo *fifo,
 /**
  * @brief Get an element from the head of a FIFO from an ISR context.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_get(), but may only be called from an ISR with a timeout
  * of TICKS_NONE.
@@ -2575,7 +2705,8 @@ void __deprecated *nano_fifo_get(struct nano_fifo *fifo,
 /**
  * @brief Get an element from the head of a FIFO from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_get(), but may only be called from a fiber.
  *
@@ -2587,7 +2718,8 @@ void __deprecated *nano_fifo_get(struct nano_fifo *fifo,
  * @brief Get an element from a FIFO's head that comes from a task, poll if
  * empty.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_fifo_get(), but may only be called from a task.
  *
@@ -2602,7 +2734,8 @@ void __deprecated *nano_fifo_get(struct nano_fifo *fifo,
 /**
  * @brief Initialize a nanokernel linked list LIFO (lifo) object.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This function initializes a nanokernel system-level linked list LIFO
  * (lifo) object structure.
@@ -2621,7 +2754,8 @@ static inline __deprecated void nano_lifo_init(struct nano_lifo *lifo)
 /**
  * @brief Prepend an element to a LIFO.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine adds an element to the LIFOs' object head
  *
@@ -2644,7 +2778,8 @@ nano_lifo_put(struct nano_lifo *lifo, void *data)
 /**
  * @brief Prepend an element to a LIFO without a context switch.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_lifo_put(), but may only be called from an ISR. A fiber
  * pending on the LIFO object will be made ready, but will NOT be scheduled
@@ -2657,7 +2792,8 @@ nano_lifo_put(struct nano_lifo *lifo, void *data)
 /**
  * @brief Prepend an element to a LIFO without a context switch.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_lifo_put(), but may only be called from a fiber. A fiber
  * pending on the LIFO object will be made ready, but will NOT be scheduled
@@ -2670,7 +2806,8 @@ nano_lifo_put(struct nano_lifo *lifo, void *data)
 /**
  * @brief Add an element to the LIFO's linked list head.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_lifo_put(), but may only be called from a task. A fiber
  * pending on the LIFO object will be made ready, and will preempty the
@@ -2683,7 +2820,8 @@ nano_lifo_put(struct nano_lifo *lifo, void *data)
 /**
  * @brief Get the first element from a LIFO.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine is a convenience wrapper for the execution of context-specific
  * APIs. It is helpful when the exact execution context is not known. However,
@@ -2714,7 +2852,8 @@ static inline __deprecated void *nano_lifo_get(struct nano_lifo *lifo,
 /**
  * @brief Remove the first element from a LIFO linked list.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_lifo_get(), but may only be called from an ISR with a timeout
  * of TICKS_NONE.
@@ -2726,7 +2865,8 @@ static inline __deprecated void *nano_lifo_get(struct nano_lifo *lifo,
 /**
  * @brief Prepend an element to a LIFO without a context switch.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_lifo_get(), but may only be called from a fiber.
  *
@@ -2737,7 +2877,8 @@ static inline __deprecated void *nano_lifo_get(struct nano_lifo *lifo,
 /**
  * @brief Remove the first element from a LIFO linked list.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_lifo_get(), but may only be called from a task.
  *
@@ -2752,7 +2893,8 @@ static inline __deprecated void *nano_lifo_get(struct nano_lifo *lifo,
 /**
  * @brief Initialize a nanokernel stack object.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This function initializes a nanokernel stack object structure.
  *
@@ -2774,7 +2916,8 @@ static inline __deprecated void nano_stack_init(struct nano_stack *stack,
 /**
  * @brief Push data onto a stack.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine pushes a data item onto a stack object. It is a convenience
  * wrapper for the execution of context-specific APIs and is helpful when
@@ -2795,7 +2938,8 @@ nano_stack_push(struct nano_stack *stack, uint32_t data)
 /**
  * @brief Push data onto a stack (no context switch).
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_stack_push(), but may only be called from an ISR. A fiber that
  * pends on the stack object becomes ready but will NOT be scheduled to execute.
@@ -2807,7 +2951,8 @@ nano_stack_push(struct nano_stack *stack, uint32_t data)
 /**
  * @brief Push data onto a stack (no context switch).
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_stack_push(), but may only be called from a fiber. A fiber that
  * pends on the stack object becomes ready but will NOT be scheduled to execute.
@@ -2819,7 +2964,8 @@ nano_stack_push(struct nano_stack *stack, uint32_t data)
 /**
  * @brief Push data onto a nanokernel stack.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_stack_push(), but may only be called from a task. A fiber that
  * pends on the stack object becomes ready and preempts the running task
@@ -2832,7 +2978,8 @@ nano_stack_push(struct nano_stack *stack, uint32_t data)
 /**
  * @brief Pop data off a stack.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine pops the first data word from a nanokernel stack object.
  * It is a convenience wrapper for the execution of context-specific APIs
@@ -2867,7 +3014,8 @@ nano_stack_pop(struct nano_stack *stack, uint32_t *data,
 /**
  * @brief Pop data from a nanokernel stack.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_stack_pop(), but may only be called from an ISR.
  *
@@ -2878,7 +3026,8 @@ nano_stack_pop(struct nano_stack *stack, uint32_t *data,
 /**
  * @brief Pop data from a nanokernel stack.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_stack_pop(), but may only be called from a fiber.
  *
@@ -2889,7 +3038,8 @@ nano_stack_pop(struct nano_stack *stack, uint32_t *data,
 /**
  * @brief Pop data from a nanokernel stack.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_stack_pop(), but may only be called from a task.
  *
@@ -2900,7 +3050,8 @@ nano_stack_pop(struct nano_stack *stack, uint32_t *data,
 /**
  * @brief Return the current system tick count.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return The current system tick count.
  */
@@ -2909,7 +3060,8 @@ extern __deprecated int64_t sys_tick_get(void);
 /**
  * @brief Return the lower part of the current system tick count.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return The current system tick count.
  */
@@ -2918,7 +3070,8 @@ extern __deprecated uint32_t sys_tick_get_32(void);
 /**
  * @brief Return number of ticks elapsed since a reference time.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param reftime Reference time.
  *
@@ -2930,7 +3083,8 @@ extern __deprecated int64_t sys_tick_delta(int64_t *reftime);
  *
  * @brief Return 32-bit number of ticks since a reference time.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @param reftime Reference time.
  *
@@ -2942,7 +3096,8 @@ extern __deprecated uint32_t sys_tick_delta_32(int64_t *reftime);
 /**
  * @brief Return a time stamp in high-resolution format.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine reads the counter register on the processor's high precision
  * timer device. This counter register increments at a relatively high rate
@@ -2965,7 +3120,8 @@ extern __deprecated uint32_t sys_tick_delta_32(int64_t *reftime);
 /**
  * @brief Allocate a timer and return its object identifier.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * @return timer identifier
  */
@@ -2974,7 +3130,8 @@ extern __deprecated ktimer_t task_timer_alloc(void);
 /**
  * @brief Deallocate a timer
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine frees the resources associated with the timer.  If a timer was
  * started, it has to be stopped using task_timer_stop() before it can be freed.
@@ -2988,7 +3145,8 @@ extern __deprecated void task_timer_free(ktimer_t timer);
 /**
  * @brief Start or restart the specified low-resolution timer
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine starts or restarts the specified low-resolution timer.
  *
@@ -3016,7 +3174,8 @@ task_timer_start(ktimer_t timer, int32_t duration, int32_t period, ksem_t sema);
 /**
  * @brief Restart a timer
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine restarts the timer specified by @a timer. The timer must
  * have previously been started by a call to task_timer_start().
@@ -3036,7 +3195,8 @@ task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
 /**
  * @brief Stop a timer
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine stops the specified timer. If the timer period has already
  * elapsed, the call has no effect.
@@ -3059,7 +3219,8 @@ static inline __deprecated void task_timer_stop(ktimer_t timer)
 /**
  * @brief Initialize a nanokernel timer object.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This function initializes a nanokernel timer object structure.
  *
@@ -3086,7 +3247,8 @@ nano_timer_init(struct k_timer *timer, void *data)
 /**
  * @brief Start a nanokernel timer.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine starts a previously initialized nanokernel timer object. The
  * timer will expire in @a ticks system clock ticks. It is also a convenience
@@ -3108,7 +3270,8 @@ nano_timer_start(struct nano_timer *timer, int ticks)
 /**
  * @brief Start a nanokernel timer from an ISR.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_start(), but may only be called from an ISR with a
  * timeout of TICKS_NONE.
@@ -3120,7 +3283,8 @@ nano_timer_start(struct nano_timer *timer, int ticks)
 /**
  * @brief Start a nanokernel timer from a fiber.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_start(), but may only be called from a fiber.
  *
@@ -3131,7 +3295,8 @@ nano_timer_start(struct nano_timer *timer, int ticks)
 /**
  * @brief Start a nanokernel timer from a task.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_start(), but may only be called from a task.
  *
@@ -3142,7 +3307,8 @@ nano_timer_start(struct nano_timer *timer, int ticks)
 /**
  * @brief Wait for a nanokernel timer to expire.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine checks if a previously started nanokernel timer object has
  * expired. It is also a convenience wrapper for the execution of context-
@@ -3169,7 +3335,8 @@ extern __deprecated void *nano_timer_test(struct nano_timer *timer,
 /**
  * @brief Make the current ISR check for a timer expiry.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_test(), but may only be called from an ISR with a timeout
  * of TICKS_NONE.
@@ -3181,7 +3348,8 @@ extern __deprecated void *nano_timer_test(struct nano_timer *timer,
 /**
  * @brief Make the current fiber check for a timer expiry.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_test(), but may only be called from a fiber.
  *
@@ -3192,7 +3360,8 @@ extern __deprecated void *nano_timer_test(struct nano_timer *timer,
 /**
  * @brief Make the current task check for a timer expiry.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_test(), but may only be called from a task.
  *
@@ -3203,7 +3372,8 @@ extern __deprecated void *nano_timer_test(struct nano_timer *timer,
 /**
  * @brief Stop a nanokernel timer
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine stops a previously started nanokernel timer object. It is also
  * a convenience wrapper for the execution of context-specific APIs. It is
@@ -3223,7 +3393,8 @@ static inline __deprecated void nano_timer_stop(struct nano_timer *timer)
 /**
  * @brief Stop a timer.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine stops the specified timer. If the timer period has already
  * elapsed, the call has no effect.
@@ -3238,7 +3409,8 @@ static inline __deprecated void nano_timer_stop(struct nano_timer *timer)
 /**
  * @brief Stop a nanokernel timer from an ISR.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_stop(), but may only be called from an ISR.
  *
@@ -3250,7 +3422,8 @@ static inline __deprecated void nano_timer_stop(struct nano_timer *timer)
 /**
  * @brief Stop a nanokernel timer.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_stop(), but may only be called from a fiber.
  *
@@ -3262,7 +3435,8 @@ static inline __deprecated void nano_timer_stop(struct nano_timer *timer)
 /**
  * @brief Stop a nanokernel timer from a task.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Like nano_timer_stop(), but may only be called from a task.
  *
@@ -3274,7 +3448,8 @@ static inline __deprecated void nano_timer_stop(struct nano_timer *timer)
 /**
  * @brief Get nanokernel timer remaining ticks.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This function returns the remaining ticks of the previously
  * started nanokernel timer object.
@@ -3292,7 +3467,8 @@ nano_timer_ticks_remain(struct nano_timer *timer)
 /**
  * @brief Make the CPU idle.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This function makes the CPU idle until an event wakes it up.
  *
@@ -3306,7 +3482,8 @@ static inline __deprecated void nano_cpu_idle(void)
 /**
  * @brief Make the CPU idle in an atomic fashion.
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * Similar to k_cpu_idle(), but called with interrupts locked if operations
  * must be done atomically before making the CPU idle.
@@ -3333,7 +3510,8 @@ static inline __deprecated void nano_cpu_atomic_idle(unsigned int key)
 /**
  * @brief Enable floating point hardware resources sharing
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine dynamically enables the capability of a thread to share floating
  * point hardware resources. The same "floating point" options accepted by
@@ -3353,7 +3531,8 @@ fiber_float_enable(struct tcs *tcs, unsigned int options)
 /**
  * @brief Enable floating point hardware resources sharing
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine dynamically enables the capability of a thread to share
  * floating point hardware resources. The same "floating point" options
@@ -3371,7 +3550,8 @@ fiber_float_enable(struct tcs *tcs, unsigned int options)
 /**
  * @brief Disable floating point hardware resources sharing
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine dynamically disables the capability of a thread to share
  * floating point hardware resources. The same "floating point" options
@@ -3390,7 +3570,8 @@ static inline __deprecated void fiber_float_disable(struct tcs *tcs)
 /**
  * @brief Enable floating point hardware resources sharing
  *
- * <b> Legacy API </b>
+ * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
+ * @deprecated This API will be deprecated.
  *
  * This routine dynamically disables the capability of a thread to share
  * floating point hardware resources. The same "floating point" options
