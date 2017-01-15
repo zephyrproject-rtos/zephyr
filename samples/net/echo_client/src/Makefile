@@ -1,5 +1,7 @@
 obj-y = echo-client.o
 
+ifeq ($(CONFIG_TI_CC2520),y)
+
 ifeq ($(CONFIG_BOARD_ARDUINO_101),y)
 ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/
 obj-y += ../../common/cc2520_a101.o
@@ -9,6 +11,8 @@ ifeq ($(CONFIG_BOARD_FRDM_K64F),y)
 ccflags-y +=-I${ZEPHYR_BASE}/drivers/
 ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/
 obj-y += ../../common/cc2520_frdm_k64f.o
+endif
+
 endif
 
 ifeq ($(CONFIG_NET_TESTING), y)
