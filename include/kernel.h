@@ -39,6 +39,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Kernel APIs
+ * @defgroup kernel_apis Kernel APIs
+ * @{
+ * @}
+ */
+
 #ifdef CONFIG_KERNEL_DEBUG
 #include <misc/printk.h>
 #define K_DEBUG(fmt, ...) printk("[%s]  " fmt, __func__, ##__VA_ARGS__)
