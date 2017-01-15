@@ -602,8 +602,10 @@ export ARCH
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 else
+ifneq ($(MAKECMDGOALS),htmldocs)
 $(if $(CROSS_COMPILE),, \
      $(error ZEPHYR_GCC_VARIANT is not set. ))
+endif
 endif
 
 -include $(srctree)/ext/Makefile
