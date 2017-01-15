@@ -374,7 +374,7 @@ void _dump_ready_q(void)
 	K_DEBUG("\n");
 	for (int prio = 0; prio < K_NUM_PRIORITIES; prio++) {
 		K_DEBUG("prio: %d, head: %p\n",
-			prio - CONFIG_NUM_COOP_PRIORITIES,
+			prio - _NUM_COOP_PRIO,
 			sys_dlist_peek_head(&_ready_q.q[prio]));
 	}
 }

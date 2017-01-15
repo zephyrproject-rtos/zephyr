@@ -181,19 +181,19 @@ static inline int _get_new_prio_with_ceiling(int prio)
 /* find out the prio bitmap index for a given prio */
 static inline int _get_ready_q_prio_bmap_index(int prio)
 {
-	return (prio + CONFIG_NUM_COOP_PRIORITIES) >> 5;
+	return (prio + _NUM_COOP_PRIO) >> 5;
 }
 
 /* find out the prio bit for a given prio */
 static inline int _get_ready_q_prio_bit(int prio)
 {
-	return (1 << ((prio + CONFIG_NUM_COOP_PRIORITIES) & 0x1f));
+	return (1 << ((prio + _NUM_COOP_PRIO) & 0x1f));
 }
 
 /* find out the ready queue array index for a given prio */
 static inline int _get_ready_q_q_index(int prio)
 {
-	return prio + CONFIG_NUM_COOP_PRIORITIES;
+	return prio + _NUM_COOP_PRIO;
 }
 
 /* find out the currently highest priority where a thread is ready to run */
@@ -221,7 +221,7 @@ static inline int _get_highest_ready_prio(void)
 
 	__ASSERT(abs_prio < K_NUM_PRIORITIES, "prio out-of-range\n");
 
-	return abs_prio - CONFIG_NUM_COOP_PRIORITIES;
+	return abs_prio - _NUM_COOP_PRIO;
 }
 
 /*

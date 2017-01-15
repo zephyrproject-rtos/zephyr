@@ -53,7 +53,20 @@ extern "C" {
 #define K_DEBUG(fmt, ...)
 #endif
 
-#define K_PRIO_COOP(x) (-(CONFIG_NUM_COOP_PRIORITIES - (x)))
+#if defined(CONFIG_COOP_ENABLED) && defined(CONFIG_PREEMPT_ENABLED)
+#define _NUM_COOP_PRIO (CONFIG_NUM_COOP_PRIORITIES)
+#define _NUM_PREEMPT_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + 1)
+#elif defined(CONFIG_COOP_ENABLED)
+#define _NUM_COOP_PRIO (CONFIG_NUM_COOP_PRIORITIES + 1)
+#define _NUM_PREEMPT_PRIO (0)
+#elif defined(CONFIG_PREEMPT_ENABLED)
+#define _NUM_COOP_PRIO (0)
+#define _NUM_PREEMPT_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + 1)
+#else
+#error "invalid configuration"
+#endif
+
+#define K_PRIO_COOP(x) (-(_NUM_COOP_PRIO - (x)))
 #define K_PRIO_PREEMPT(x) (x)
 
 #define K_ANY NULL
