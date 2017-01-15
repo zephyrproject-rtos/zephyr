@@ -16,68 +16,98 @@ designed to walk you through generating the Zephyr Project's documentation.
 Documentation Notes
 *******************
 
+Zephyr Project content is written using the reStructuredText markup language
+(.rst file extension) with Sphinx extensions, and processed using sphinx to
+create a formatted standalone website. Developers can view this content either
+in its raw form as .rst markup files, or you can generate the HTML content and view it
+with a web browser directly on your workstations drive. This same .rst
+content is also fed into the Zephyr Project'ns public website documentation area
+(with a different theme applied).
+
+You can read details about reStructuredText and about Sphinx extensions from
+their respective websites.
+
 The project's documentation currently comprises the following items:
 
-* An Installation Guide for Linux host systems
+* ReStructuredText source files used to generate documentation found at
+  https://zephyrproject.org/doc website. Most of the reStructuredText sources
+  are found in the ``/doc`` directory, but there are others stored within the
+  code source tree near their specific component (such as ``/samples`` and
+  ``/boards``)
 
-* A set of Collaboration Guidelines for the project.
+* Doxygen-generated material used to create all API-specific documents
+  also found at https://zephyrproject.org/doc
 
-* Doxygen output from the code base for all APIs.
+* Script-generated material for kernel configuration options based on kconfig
+  files found in the source code tree
+
+* Additional material on https://wiki.zephyrproject.org
+
+The reStructuredText files are processed by the Sphinx documentation system,
+and make use of the breathe extension for including the doxygen-generated API
+material.  Additional tools are required to generate the
+documentation locally, as described in the following sections.
 
 Installing the documentation processors
 ***************************************
 
-Install the current version of ``Sphinx``, type:
+Our documentation processing has been tested to run with:
+
+* Doxygen version 1.8.10 (and 1.8.11)
+* Sphinx version 1.4.4 (but not with 1.5.1)
+* Breathe version 4.4.0
+* docutils version 0.12 (0.13 has issues with Sphinx 1.4.4)
+
+Begin by cloning a copy of the git repository for the zephyr project and
+setting up your development environment as described in :ref:`getting_started`
+or specifically for Ubuntu in :ref:`installation_linux`.  (Be sure to
+export the environment variables ``ZEPHYR_GCC_VARIANT`` and
+``ZEPHYR_SDK_INSTALL_DIR`` as documented there.)
+
+Here are a set of commands to install the documentation generations tools on
+Ubuntu:
+
 
 .. code-block:: bash
 
-   $ git clone https://github.com/sphinx-doc/sphinx.git sphinx
+   $ sudo apt-get install python-pip
+   $ pip install --upgrade pip
+   $ sudo apt-get install doxygen
+   $ pip install sphinx==1.4.4
+   $ sudo -H pip install breathe
+   $ sudo -H pip install sphinx-rtd-theme
 
-   $ cd sphinx
-
-   $ sudo -E python setup.py install
-
-   $ cd ..
-
-   $ git clone https://github.com/michaeljones/breathe.git breathe
-
-   $ cd breathe
-
-   $ sudo -E python setup.py install
-
-To install ReadTheDocs.org theme, use pip to install the python package:
+There is a known issue that causes docutils version 0.13 to fail with sphinx
+1.4.4.  Verify the version of docutils using:
 
 .. code-block:: bash
 
-   $ pip install sphinx_rtd_theme
+   $ pip show docutils
 
-If the above theme is installed, it will be used instead of the default theme.
+If this shows you've got version 0.13 of docutils installed, you can install
+the working version of docutils with:
 
-.. note::
+.. code-block:: bash
 
-   Make sure that ``Doxygen`` is installed in your system.
-   The installation of Doxygen is beyond the scope of this document.
+   $ sudo -H pip install docutils==0.12
+
 
 Running the Documentation Generators
 ************************************
 
-Assuming that the Zephyr Project tree with the doc directory is in
-``<ZEPHYR_BASE>``, type:
+The ``/doc`` directory in your cloned copy of zephyr project git repo has all the
+.rst source files, extra tools, and Makefile for generating a local copy of
+the Zephyr project's technical documentation.  Assuming the local Zephyr
+project copy is ``~/zephyr``, here are the commands to generate the html
+content locally:
 
 .. code-block:: bash
 
-   $ cd <ZEPHYR_BASE>
+   $ cd ~/zephyr
+   $ source zephyr-env.sh
    $ make htmldocs
 
-Find the output in ``<ZEPHYR_BASE>/doc/_build/html/index.html``
+The html output will be in ``~/zephyr/doc/_build/html/index.html``
 
-Review the available formats with:
-
-.. code-block:: bash
-
-   $ make -C <ZEPHYR_BASE>/doc help
-
-If you want the LaTeX PDF output, you need to install all the Latex
-packages first. That installation is beyond the scope of this document.
 
 .. _ReST documentation: http://sphinx-doc.org/rest.html
