@@ -32,6 +32,8 @@
 #define CONFIG_ZTEST_ASSERT_VERBOSE 1
 #define CONFIG_ZTEST_MOCKING
 #define CONFIG_NUM_COOP_PRIORITIES 16
+#define CONFIG_COOP_ENABLED 1
+#define CONFIG_PREEMPT_ENABLED 1
 /* FIXME: Properly integrate with Zephyr's arch specific code */
 #define CONFIG_X86 1
 #define PRINT printf
