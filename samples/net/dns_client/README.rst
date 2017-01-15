@@ -129,7 +129,7 @@ QEMU x86
 
 .. code-block:: console
 
-    $ make pristine && make
+    $ make
 
 
 Run 'loop_socat.sh' and 'loop-slip-tap.sh' as indicated at:
@@ -146,14 +146,14 @@ Open a terminal where the project was build (i.e. :file:`samples/net/dns_client`
 
 .. code-block:: console
 
-    $ make qemu
+    $ make run
 
 FRDM K64F
 ---------
 
 .. code-block:: console
 
-    $ make pristine && make BOARD=frdm_k64f
+    $ make BOARD=frdm_k64f
 
 
 The FRDM K64F board is detected as a USB storage device. The board
@@ -183,7 +183,7 @@ Arduino 101
 
 .. code-block:: console
 
-	$ make pristine && make BOARD=arduino_101
+	$ make BOARD=arduino_101
 
 To load the binary in the development board follow the steps
 indicated here:

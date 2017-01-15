@@ -77,5 +77,5 @@ Arduino 101
 
 .. code-block:: console
 
-   $ make pristine && make BOARD=arduino_101
+   $ make BOARD=arduino_101
 
