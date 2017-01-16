@@ -760,6 +760,12 @@ static int test_timeout(void)
 					break;
 				}
 			}
+
+			if (j == NUM_TIMEOUT_FIBERS) {
+				TC_ERROR(" *** array overrun: all timeout order values should have been between the boundaries\n");
+				return TC_FAIL;
+			}
+
 			task_fiber_delayed_start_cancel(delayed_fibers[j]);
 			++next_cancellation;
 			continue;
