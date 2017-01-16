@@ -68,7 +68,7 @@
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
-#define L2CAP_BR_MAX_MTU	CONFIG_BLUETOOTH_RX_BUF_LEN
+#define L2CAP_BR_MAX_MTU	BT_L2CAP_RX_MTU
 
 /*
  * L2CAP extended feature mask:
