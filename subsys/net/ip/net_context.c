@@ -771,8 +771,7 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 		net_conn_change_callback(context->conn_handler,
 					 tcp_passive_close, context);
 
-		context->tcp->send_ack =
-			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
+		context->tcp->send_ack += 1;
 
 		if (context->recv_cb) {
 			context->recv_cb(context, NULL, 0,
