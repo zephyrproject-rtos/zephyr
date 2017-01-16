@@ -79,11 +79,17 @@ config BLUETOOTH_RX_BUF_COUNT
 
 config BLUETOOTH_RX_BUF_LEN
 	int "Maximum supported HCI RX buffer length"
-	default 70
-	default 253 if BLUETOOTH_BREDR
-	range 70 2000
+	default 76
+	default 264 if BLUETOOTH_BREDR
+	range 73 2000
 	help
-	  Maximum data size for each HCI RX buffer.
+	  Maximum data size for each HCI RX buffer. This size includes
+	  everything starting with the ACL or HCI event headers. Note that
+	  buffer sizes are always rounded up to the nearest multiple of 4,
+	  so if this Kconfig value is something else then there will be some
+	  wasted space. The minimum of 73 has been taken for LE SC which has
+	  an L2CAP MTU of 65 bytes. On top of this there's the L2CAP header
+	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
 config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	string "Device Name of UART Device to an external Bluetooth Host"
