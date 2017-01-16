@@ -286,18 +286,73 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
  */
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
 
-/** Connection callback structure */
+/** @brief Connection callback structure.
+ *
+ *  This structure is used for tracking the state of a connection.
+ *  It is registered with the help of the bt_conn_cb_register() API.
+ *  It's premissible to register multiple instances of this @ref bt_conn_cb
+ *  type, in case different modules of an application are interested in
+ *  tracking the connection state. If a callback is not of interest for
+ *  an instance, it may be set to NULL and will as a consequence not be
+ *  used for that instance.
+ */
 struct bt_conn_cb {
+	/** @brief A new connection has been established.
+	 *
+	 *  This callback notifies the application of a new connection.
+	 *  In case the err parameter is non-zero it means that the
+	 *  connection establishment failed.
+	 *
+	 *  @param conn New connection object.
+	 *  @param err HCI error. Zero for success, non-zero otherwise.
+	 */
 	void (*connected)(struct bt_conn *conn, uint8_t err);
+
+	/** @brief A connection has been disconnected.
+	 *
+	 *  This callback notifies the application that a connection
+	 *  has been disconnected.
+	 *
+	 *  @param conn Connection object.
+	 *  @param reason HCI reason for the disconnection.
+	 */
 	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
+
+	/** @brief The parameters for an LE connection have been updated.
+	 *
+	 *  This callback notifies the application that the connection
+	 *  parameters for an LE connection have been updated.
+	 *
+	 *  @param conn Connection object.
+	 *  @param interval Connection interval.
+	 *  @param latency Connection latency.
+	 *  @param timeout Connection supervision timeout.
+	 */
 	void (*le_param_updated)(struct bt_conn *conn, uint16_t interval,
 				 uint16_t latency, uint16_t timeout);
 #if defined(CONFIG_BLUETOOTH_SMP)
+	/** @brief Remote Identity Address has been resolved.
+	 *
+	 *  This callback notifies the application that a remote
+	 *  Identity Address has been resolved
+	 *
+	 *  @param conn Connection object.
+	 *  @param rpa Resolvable Private Address.
+	 *  @param identity Identity Address.
+	 */
 	void (*identity_resolved)(struct bt_conn *conn,
 				  const bt_addr_le_t *rpa,
 				  const bt_addr_le_t *identity);
 #endif /* CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+	/** @brief The security level of a connection has changed.
+	 *
+	 *  This callback notifies the application that the security level
+	 *  of a connection has changed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param level New security level of the connection.
+	 */
 	void (*security_changed)(struct bt_conn *conn, bt_security_t level);
 #endif /* defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR) */
 	struct bt_conn_cb *_next;
