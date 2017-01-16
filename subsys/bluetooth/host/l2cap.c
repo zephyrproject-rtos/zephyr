@@ -554,9 +554,9 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_le_conn_param param;
-	bool params_valid;
 	struct bt_l2cap_conn_param_rsp *rsp;
 	struct bt_l2cap_conn_param_req *req = (void *)buf->data;
+	bool accepted;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small LE conn update param req");
@@ -584,10 +584,10 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	params_valid = bt_le_conn_params_valid(&param);
+	accepted = le_param_req(conn, &param);
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
-	if (params_valid) {
+	if (accepted) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_CONN_PARAM_ACCEPTED);
 	} else {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_CONN_PARAM_REJECTED);
@@ -595,7 +595,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 
-	if (params_valid) {
+	if (accepted) {
 		bt_conn_le_conn_update(conn, &param);
 	}
 }

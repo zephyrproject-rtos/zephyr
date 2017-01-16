@@ -853,6 +853,7 @@ static int le_conn_param_req(struct net_buf *buf)
 	struct bt_le_conn_param param;
 	struct bt_conn *conn;
 	uint16_t handle;
+	int err;
 
 	handle = sys_le16_to_cpu(evt->handle);
 	param.interval_min = sys_le16_to_cpu(evt->interval_min);
@@ -867,14 +868,15 @@ static int le_conn_param_req(struct net_buf *buf)
 					       BT_HCI_ERR_UNKNOWN_CONN_ID);
 	}
 
-	bt_conn_unref(conn);
-
-	if (!bt_le_conn_params_valid(&param)) {
-		return le_conn_param_neg_reply(handle,
-					       BT_HCI_ERR_INVALID_LL_PARAMS);
+	if (!le_param_req(conn, &param)) {
+		err = le_conn_param_neg_reply(handle,
+					      BT_HCI_ERR_INVALID_LL_PARAMS);
+	} else {
+		err = le_conn_param_req_reply(handle, &param);
 	}
 
-	return le_conn_param_req_reply(handle, &param);
+	bt_conn_unref(conn);
+	return err;
 }
 
 static void le_conn_update_complete(struct net_buf *buf)

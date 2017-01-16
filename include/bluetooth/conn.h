@@ -318,6 +318,30 @@ struct bt_conn_cb {
 	 */
 	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
 
+	/** @brief LE connection parameter update request.
+	 *
+	 *  This callback notifies the application that a remote device
+	 *  is requesting to update the connection parameters. The
+	 *  application accepts the parameters by returning true, or
+	 *  rejects them by returning false. Before accepting, the
+	 *  application may also adjust the parameters to better suit
+	 *  its needs.
+	 *
+	 *  It is recommended for an application to have just one of these
+	 *  callbacks for simplicity. However, if an application registers
+	 *  multiple it needs to manage the potentially different
+	 *  requirements for each callback. Each callback gets the
+	 *  parameters as returned by previous callbacks, i.e. they are not
+	 *  necessarily the same ones as the remote originally sent.
+	 *
+	 *  @param conn Connection object.
+	 *  @param param Proposed connection parameters.
+	 *
+	 *  @return true to accept the parameters, or false to reject them.
+	 */
+	bool (*le_param_req)(struct bt_conn *conn,
+			     struct bt_le_conn_param *param);
+
 	/** @brief The parameters for an LE connection have been updated.
 	 *
 	 *  This callback notifies the application that the connection

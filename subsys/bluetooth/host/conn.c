@@ -130,6 +130,35 @@ void notify_le_param_updated(struct bt_conn *conn)
 	}
 }
 
+bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+{
+	struct bt_conn_cb *cb;
+
+	if (!bt_le_conn_params_valid(param)) {
+		return false;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (!cb->le_param_req) {
+			continue;
+		}
+
+		if (!cb->le_param_req(conn, param)) {
+			return false;
+		}
+
+		/* The callback may modify the parameters so we need to
+		 * double-check that it returned valid parameters.
+		 */
+		if (!bt_le_conn_params_valid(param)) {
+			return false;
+		}
+	}
+
+	/* Default to accepting if there's no app callback */
+	return true;
+}
+
 static void le_conn_update(struct k_work *work)
 {
 	struct bt_conn_le *le = CONTAINER_OF(work, struct bt_conn_le,

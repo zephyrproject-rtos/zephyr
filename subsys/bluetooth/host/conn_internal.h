@@ -167,6 +167,8 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 
 void notify_le_param_updated(struct bt_conn *conn);
 
+bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
+
 #if defined(CONFIG_BLUETOOTH_SMP)
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
