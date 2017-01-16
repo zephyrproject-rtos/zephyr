@@ -208,7 +208,6 @@ struct bt_l2cap_le_credits {
 				sizeof(struct bt_l2cap_hdr) + (mtu))
 
 #define BT_L2CAP_RX_MTU (CONFIG_BLUETOOTH_RX_BUF_LEN - \
-			 CONFIG_BLUETOOTH_HCI_RECV_RESERVE - \
 			 4 /* HCI ACL header */ - 4 /* L2CAP header */)
 
 struct bt_l2cap_fixed_chan {
