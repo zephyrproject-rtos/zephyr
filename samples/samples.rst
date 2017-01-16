@@ -8,7 +8,7 @@ Samples and Demos
 
    kernel
    basic/*
-   net/*
+   net/net.rst
    sensor/*
    grove/*
    advanced
