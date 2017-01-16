@@ -403,7 +403,7 @@ F:	scripts/sanity_chk/
 
 SENSOR DRIVERS
 M:	Bogdan Davidoaia <bogdan.davidoaia@linaro.org>
-M:	Murtaza Alexandru <multaza.alexandru1995@gmail.com>
+M:	Murtaza Alexandru <murtaza.alexandru1995@gmail.com>
 S:	Supported
 W:	https://www.zephyrproject.org/doc/subsystems/sensor.html
 F:	include/sensor.h
