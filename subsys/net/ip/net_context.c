@@ -750,6 +750,19 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 				     sys_get_be32(NET_TCP_BUF(buf)->ack));
 	}
 
+	if (sys_get_be32(NET_TCP_BUF(buf)->seq) - context->tcp->send_ack) {
+		/* Don't try to reorder packets.  If it doesn't
+		 * match the next segment exactly, drop and wait for
+		 * retransmit
+		 */
+		return NET_DROP;
+	}
+
+	set_appdata_values(buf, IPPROTO_TCP, net_buf_frags_len(buf));
+	context->tcp->send_ack += net_nbuf_appdatalen(buf);
+
+	ret = packet_received(conn, buf, context->tcp->recv_user_data);
+
 	if (tcp_flags & NET_TCP_FIN) {
 		/* Sending an ACK in the CLOSE_WAIT state will transition to
 		 * LAST_ACK state
@@ -767,22 +780,6 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 			context->recv_cb(context, NULL, 0,
 					 context->tcp->recv_user_data);
 		}
-
-	} else {
-		struct net_tcp_hdr *hdr = (void *)net_nbuf_tcp_data(buf);
-
-		if (sys_get_be32(hdr->seq) - context->tcp->send_ack) {
-			/* Don't try to reorder packets.  If it doesn't
-			 * match the next segment exactly, drop and wait for
-			 * retransmit
-			 */
-			return NET_DROP;
-		}
-
-		set_appdata_values(buf, IPPROTO_TCP, net_buf_frags_len(buf));
-		context->tcp->send_ack += net_nbuf_appdatalen(buf);
-
-		ret = packet_received(conn, buf, context->tcp->recv_user_data);
 	}
 
 	send_ack(context, &conn->remote_addr);
