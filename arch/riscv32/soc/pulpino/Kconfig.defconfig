@@ -28,10 +28,6 @@ config NUM_IRQS
 	int
 	default 32
 
-config ATOMIC_OPERATIONS_C
-	bool
-	default y
-
 config ITCM_BASE_ADDRESS
 	hex
 	default	0x00000000

@@ -20,10 +20,6 @@ config NUM_IRQS
 	int
 	default 32
 
-config ATOMIC_OPERATIONS_C
-	bool
-	default y
-
 config VECTOR_BASE_ADDR
 	hex
 	default 0x00001000
