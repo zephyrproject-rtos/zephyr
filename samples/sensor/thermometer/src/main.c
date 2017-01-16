@@ -18,11 +18,6 @@
 #include <sensor.h>
 #include <stdio.h>
 
-static double convert_to_double(struct sensor_value *v)
-{
-	return v->val1 + ((double)v->val2 / 1000000);
-}
-
 void main(void)
 {
 	struct device *temp_dev;
@@ -55,7 +50,8 @@ void main(void)
 			break;
 		}
 
-		printf("Temperature is %gC\n", convert_to_double(&temp_value));
+		printf("Temperature is %gC\n",
+		       sensor_value_to_double(&temp_value));
 
 		k_sleep(1000);
 	}
