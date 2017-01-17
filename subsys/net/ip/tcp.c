@@ -44,8 +44,6 @@ static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 
 #define INIT_RETRY_MS 200
 
-static struct k_sem tcp_lock;
-
 struct tcp_segment {
 	uint32_t seq;
 	uint32_t ack;
@@ -716,8 +714,6 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 
 void net_tcp_init(void)
 {
-	k_sem_init(&tcp_lock, 0, UINT_MAX);
-	k_sem_give(&tcp_lock);
 }
 
 #define FIN_TIMEOUT (2 * NET_TCP_MAX_SEG_LIFETIME * MSEC_PER_SEC)
