@@ -226,6 +226,7 @@ void zoap_observer_init(struct zoap_observer *observer,
 
 /**
  * After the observer is initialized, associate the observer with an resource.
+ * Returns whether this is the first observer added to this resource.
  */
 bool zoap_register_observer(struct zoap_resource *resource,
 			    struct zoap_observer *observer);
