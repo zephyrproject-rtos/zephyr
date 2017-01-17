@@ -594,13 +594,13 @@ unsigned int zoap_option_value_to_int(const struct zoap_option *option)
 	case 1:
 		return option->value[0];
 	case 2:
-		return (option->value[0] << 0) | (option->value[1] << 8);
+		return (option->value[1] << 0) | (option->value[0] << 8);
 	case 3:
-		return (option->value[0] << 0) | (option->value[1] << 8) |
-			(option->value[2] << 16);
+		return (option->value[2] << 0) | (option->value[1] << 8) |
+			(option->value[0] << 16);
 	case 4:
-		return (option->value[0] << 0) | (option->value[1] << 8) |
-			(option->value[2] << 16) | (option->value[3] << 24);
+		return (option->value[2] << 0) | (option->value[2] << 8) |
+			(option->value[1] << 16) | (option->value[0] << 24);
 	default:
 		return 0;
 	}
