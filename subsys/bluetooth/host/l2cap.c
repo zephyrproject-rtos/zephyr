@@ -326,6 +326,10 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
+	if (IS_ENABLED(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)) {
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
+	}
+
 	return true;
 }
 
@@ -1451,7 +1455,6 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	}
 
 	ch->chan.psm = psm;
-	bt_l2cap_chan_set_state(&ch->chan, BT_L2CAP_CONNECT);
 
 	return l2cap_le_conn_req(ch);
 }
