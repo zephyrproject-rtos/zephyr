@@ -266,7 +266,8 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		goto proto_err;
 	}
 
-	header = buf->frags;
+	header = net_nbuf_get_data(context);
+	net_buf_frag_add(buf, header);
 
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
 
