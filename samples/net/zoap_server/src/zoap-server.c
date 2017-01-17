@@ -80,9 +80,15 @@ static int test_del(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
+	if (type == ZOAP_TYPE_CON) {
+		type = ZOAP_TYPE_ACK;
+	} else {
+		type = ZOAP_TYPE_NON_CON;
+	}
+
 	/* FIXME: Could be that zoap_packet_init() sets some defaults */
 	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_DELETED);
 	zoap_header_set_id(&response, id);
 
@@ -130,9 +136,15 @@ static int test_put(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
+	if (type == ZOAP_TYPE_CON) {
+		type = ZOAP_TYPE_ACK;
+	} else {
+		type = ZOAP_TYPE_NON_CON;
+	}
+
 	/* FIXME: Could be that zoap_packet_init() sets some defaults */
 	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CHANGED);
 	zoap_header_set_id(&response, id);
 
@@ -181,9 +193,15 @@ static int test_post(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
+	if (type == ZOAP_TYPE_CON) {
+		type = ZOAP_TYPE_ACK;
+	} else {
+		type = ZOAP_TYPE_NON_CON;
+	}
+
 	/* FIXME: Could be that zoap_packet_init() sets some defaults */
 	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CREATED);
 	zoap_header_set_id(&response, id);
 
@@ -234,7 +252,14 @@ static int piggyback_get(struct zoap_resource *resource,
 
 	/* FIXME: Could be that zoap_packet_init() sets some defaults */
 	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+
+	if (type == ZOAP_TYPE_CON) {
+		type = ZOAP_TYPE_ACK;
+	} else {
+		type = ZOAP_TYPE_NON_CON;
+	}
+
+	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
 	zoap_header_set_id(&response, id);
 
@@ -375,6 +400,10 @@ static int separate_get(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
+	if (type == ZOAP_TYPE_NON_CON) {
+		goto done;
+	}
+
 	buf = net_nbuf_get_tx(context);
 	if (!buf) {
 		return -ENOMEM;
@@ -404,6 +433,7 @@ static int separate_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
+done:
 	buf = net_nbuf_get_tx(context);
 	if (!buf) {
 		return -ENOMEM;
@@ -421,9 +451,15 @@ static int separate_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
+	if (type == ZOAP_TYPE_CON) {
+		type = ZOAP_TYPE_CON;
+	} else {
+		type = ZOAP_TYPE_NON_CON;
+	}
+
 	/* FIXME: Could be that zoap_packet_init() sets some defaults */
 	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_CON);
+	zoap_header_set_type(&response, type);
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
 	zoap_header_set_id(&response, id);
 
