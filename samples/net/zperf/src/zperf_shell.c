@@ -59,6 +59,7 @@ static const char *CONFIG =
 
 #define MY_SRC_PORT 50000
 #define DEF_PORT 5001
+#define WAIT_CONNECT (2 * 1000) /* in ms */
 
 #if defined(CONFIG_NET_IPV6)
 static struct in6_addr ipv6;
@@ -328,7 +329,7 @@ static void shell_udp_upload2_usage(void)
 	printk("\t<baud rate>:\tBaudrate in kilobyte or megabyte\n");
 	printk("\nExample %s v6 1 1K 1M\n",
 	       CMD_STR_UDP_UPLOAD2);
-#if defined(CONFIG_NET_IPV6) && defined(MY_IPV6ADDR)
+#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR)
 	printk("\nDefault IPv6 address is %s, destination [%s]:%d\n",
 	       MY_IP6ADDR, DST_IP6ADDR, DEF_PORT);
 #endif
@@ -353,6 +354,29 @@ static void shell_tcp_upload_usage(void)
 	       "(with suffix K)\n");
 	printk("\nExample %s 10.237.164.178 1111 1 1K 1M\n",
 	       CMD_STR_TCP_UPLOAD);
+}
+
+static void shell_tcp_upload2_usage(void)
+{
+	/* Print usage */
+	printk("\n%s:\n", CMD_STR_TCP_UPLOAD2);
+	printk("Usage:\t%s v6|v4 <duration> <packet "
+	       "size>[K] <baud rate>[K|M]\n", CMD_STR_TCP_UPLOAD2);
+	printk("\t<v6|v4>:\tUse either IPv6 or IPv4\n");
+	printk("\t<duration>:\tDuration of the test in seconds\n");
+	printk("\t<packet size>:\tSize of the packet in byte or kilobyte "
+	       "(with suffix K)\n");
+	printk("\t<baud rate>:\tBaudrate in kilobyte or megabyte\n");
+	printk("\nExample %s v6 1 1K 1M\n",
+	       CMD_STR_TCP_UPLOAD2);
+#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR)
+	printk("\nDefault IPv6 address is %s, destination [%s]:%d\n",
+	       MY_IP6ADDR, DST_IP6ADDR, DEF_PORT);
+#endif
+#if defined(CONFIG_NET_IPV4) && defined(MY_IP4ADDR)
+	printk("\nDefault IPv4 address is %s, destination %s:%d\n",
+	       MY_IP4ADDR, DST_IP4ADDR, DEF_PORT);
+#endif
 }
 #endif
 
@@ -435,11 +459,11 @@ static void shell_tcp_upload_print_stats(struct zperf_results *results)
 	printk("[%s] duration:\t", CMD_STR_TCP_UPLOAD);
 	print_number(results->client_time_in_us, TIME_US, TIME_US_UNIT);
 	printk("\n");
-	printk("[%s] nb packets:\t%u\n", CMD_STR_UDP_UPLOAD,
+	printk("[%s] nb packets:\t%u\n", CMD_STR_TCP_UPLOAD,
 	       results->nb_packets_sent);
 	printk("[%s] nb sending errors (retry or fail):\t%u\n",
-	       CMD_STR_UDP_UPLOAD, results->nb_packets_errors);
-	printk("[%s] rate:\t", CMD_STR_UDP_UPLOAD);
+	       CMD_STR_TCP_UPLOAD, results->nb_packets_errors);
+	printk("[%s] rate:\t", CMD_STR_TCP_UPLOAD);
 	print_number(client_rate_in_kbps, KBPS, KBPS_UNIT);
 	printk("\n");
 }
@@ -596,38 +620,53 @@ static int execute_upload(struct net_context *context6,
 #endif
 	} else {
 #if defined(CONFIG_NET_TCP)
-		if (context6) {
+		if (family == AF_INET6 && context6) {
 			ret = net_context_connect(context6,
 						  (struct sockaddr *)ipv6,
 						  sizeof(*ipv6),
 						  NULL,
-						  K_NO_WAIT,
+						  WAIT_CONNECT,
 						  NULL);
 			if (ret < 0) {
-				printk("[%s] IPv6 connect failed\n", argv0);
+				printk("[%s] IPv6 connect failed (%d)\n",
+				       argv0, ret);
 				goto out;
 			}
 
+			/* We either upload using IPv4 or IPv6, not both at
+			 * the same time.
+			 */
+			net_context_put(context4);
+
 			zperf_tcp_upload(context6, duration_in_ms,
 					 packet_size, &results);
+
 			shell_tcp_upload_print_stats(&results);
+
+			return 0;
 		}
 
-		if (context4) {
+		if (family == AF_INET && context4) {
 			ret = net_context_connect(context4,
 						  (struct sockaddr *)ipv4,
 						  sizeof(*ipv4),
 						  NULL,
-						  K_NO_WAIT,
+						  WAIT_CONNECT,
 						  NULL);
 			if (ret < 0) {
-				printk("[%s] IPv4 connect failed\n", argv0);
+				printk("[%s] IPv4 connect failed (%d)\n",
+				       argv0, ret);
 				goto out;
 			}
 
+			net_context_put(context6);
+
 			zperf_tcp_upload(context4, duration_in_ms,
 					 packet_size, &results);
+
 			shell_tcp_upload_print_stats(&results);
+
+			return 0;
 		}
 #else
 		printk("[%s] TCP not supported\n", argv0);
@@ -983,6 +1022,8 @@ struct shell_cmd commands[] = {
 	{ CMD_STR_UDP_DOWNLOAD, shell_cmd_udp_download },
 #endif
 #if defined(CONFIG_NET_TCP)
+	{ CMD_STR_TCP_UPLOAD, shell_cmd_upload },
+	{ CMD_STR_TCP_UPLOAD2, shell_cmd_upload2 },
 	{ CMD_STR_TCP_DOWNLOAD, shell_cmd_tcp_download },
 #endif
 #if defined(PROFILER)
