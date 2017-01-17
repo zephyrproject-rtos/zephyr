@@ -188,7 +188,7 @@ int testSlabGetAllBlocks(void **p)
 
 		/* Get memory block */
 		retValue = k_mem_slab_alloc(&MAP_LgBlks, &p[i], K_NO_WAIT);
-		if (verifyRetValue(RC_OK, retValue)) {
+		if (verifyRetValue(0, retValue)) {
 			TC_PRINT("  k_mem_slab_alloc OK, p[%d] = %p\n",
 				 i, p[i]);
 		} else {
@@ -388,7 +388,7 @@ void RegressionTask(void)
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow HelperTask to run part 4 */
 	retValue = k_mem_slab_alloc(&MAP_LgBlks, &b, 50);
-	if (verifyRetValue(RC_OK, retValue)) {
+	if (verifyRetValue(0, retValue)) {
 		TC_PRINT("%s: k_mem_slab_alloc OK, block allocated at %p\n",
 			 __func__, b);
 	} else {
@@ -403,7 +403,7 @@ void RegressionTask(void)
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow HelperTask to run part 5 */
 	retValue = k_mem_slab_alloc(&MAP_LgBlks, &b, K_FOREVER);
-	if (verifyRetValue(RC_OK, retValue)) {
+	if (verifyRetValue(0, retValue)) {
 		TC_PRINT("%s: k_mem_slab_alloc OK, block allocated at %p\n",
 			 __func__, b);
 	} else {
