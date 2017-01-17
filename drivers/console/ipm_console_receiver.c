@@ -44,7 +44,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	pos = 0;
 
 	while (1) {
-		k_sem_take(&driver_data->sem, TICKS_UNLIMITED);
+		k_sem_take(&driver_data->sem, K_FOREVER);
 
 		ret = sys_ring_buf_get(&driver_data->rb, &type,
 				       (uint8_t *)&config_info->line_buf[pos],

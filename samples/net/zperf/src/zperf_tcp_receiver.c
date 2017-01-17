@@ -68,7 +68,7 @@ static void zperf_tcp_rx_fiber(int port)
 	}
 
 	while (1) {
-		struct net_buf *buf = net_receive(net_context, TICKS_UNLIMITED);
+		struct net_buf *buf = net_receive(net_context, K_FOREVER);
 		struct session *session = NULL;
 		uint32_t time = k_cycle_get_32();
 

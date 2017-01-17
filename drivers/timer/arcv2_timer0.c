@@ -230,7 +230,7 @@ void _timer_idle_enter(int32_t ticks)
 {
 	uint32_t  status;
 
-	if ((ticks == TICKS_UNLIMITED) || (ticks > max_system_ticks)) {
+	if ((ticks == K_FOREVER) || (ticks > max_system_ticks)) {
 		/*
 		 * The number of cycles until the timer must fire next might not fit
 		 * in the 32-bit counter register. To work around this, program
