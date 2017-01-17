@@ -118,34 +118,6 @@
 		_k_task_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(_k_task_ptr, (OPTIONAL),)
-	{
-		_k_task_ptr_start = .;
-		*(._k_task_ptr.public.*)
-		*(._k_task_ptr.private.*)
-		*(._k_task_ptr.idle.*)
-		KEEP(*(SORT_BY_NAME("._k_task_ptr*")))
-		_k_task_ptr_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_pipe_ptr, (OPTIONAL),)
-	{
-		_k_pipe_ptr_start = .;
-		*(._k_pipe_ptr.public.*)
-		*(._k_pipe_ptr.private.*)
-		KEEP(*(SORT_BY_NAME("._k_pipe_ptr*")))
-		_k_pipe_ptr_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_mem_map_ptr, (OPTIONAL),)
-	{
-		_k_mem_map_ptr_start = .;
-		*(._k_mem_map_ptr.public.*)
-		*(._k_mem_map_ptr.private.*)
-		KEEP(*(SORT_BY_NAME("._k_mem_map_ptr*")))
-		_k_mem_map_ptr_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
 	SECTION_DATA_PROLOGUE(_k_event_list, (OPTIONAL),)
 	{
 		_k_event_list_start = .;

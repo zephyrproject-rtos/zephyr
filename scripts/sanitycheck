@@ -464,8 +464,7 @@ class QEMUHandler(Handler):
 class SizeCalculator:
 
     alloc_sections = ["bss", "noinit"]
-    rw_sections = ["datas", "initlevel", "_k_mem_map_ptr", "_k_pipe_ptr",
-                   "_k_task_ptr", "_k_task_list", "_k_event_list",
+    rw_sections = ["datas", "initlevel", "_k_task_list", "_k_event_list",
                    "_k_memory_pool", "exceptions", "initshell",
 		   "_static_thread_area", "_k_timer_area",
 		   "_k_mem_slab_area", "_k_mem_pool_area",
