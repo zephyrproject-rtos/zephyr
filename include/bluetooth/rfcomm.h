@@ -80,7 +80,7 @@ struct bt_rfcomm_dlc {
 	/* Queue for outgoing data */
 	struct k_fifo              tx_queue;
 
-	/** TX credits */
+	/* TX credits, Reuse as a binary sem for MSC FC if CFC is not enabled */
 	struct k_sem               tx_credits;
 
 	struct bt_rfcomm_session  *session;
