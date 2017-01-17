@@ -2,6 +2,9 @@
 TEST ?= min
 BOARD ?= qemu_x86
 
+
+ARCH = $(notdir $(subst /$(BOARD),,$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD))))
+
 MDEF_FILE = micro_${TEST}.mdef
 CONF_FILE = $(or $(wildcard $(TEST)/$(BOARD).conf), \
                  $(wildcard $(TEST)/$(ARCH).conf))
