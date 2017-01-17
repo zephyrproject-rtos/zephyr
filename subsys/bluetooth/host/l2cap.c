@@ -334,12 +334,11 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_connected(conn);
 		return;
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	fchan = le_channels;
 
@@ -476,12 +475,11 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan;
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		l2cap_br_encrypt_change(conn, hci_status);
 		return;
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	for (chan = conn->channels; chan; chan = chan->_next) {
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -1300,12 +1298,11 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 	struct bt_l2cap_chan *chan;
 	uint16_t cid;
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_recv(conn, buf);
 		return;
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small L2CAP PDU received");
@@ -1402,9 +1399,9 @@ void bt_l2cap_init(void)
 
 	bt_l2cap_le_fixed_chan_register(&chan);
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	bt_l2cap_br_init();
-#endif /* CONFIG_BLUETOOTH_BREDR */
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR)) {
+		bt_l2cap_br_init();
+	}
 }
 
 struct bt_l2cap_chan *bt_l2cap_le_lookup_tx_cid(struct bt_conn *conn,
@@ -1472,11 +1469,10 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	if (chan->required_sec_level > BT_SECURITY_FIPS) {
 		return -EINVAL;
@@ -1498,11 +1494,10 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 		return -ENOTCONN;
 	}
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_disconnect(chan);
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	ch = BT_L2CAP_LE_CHAN(chan);
 
@@ -1671,11 +1666,10 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (chan->conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    chan->conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), buf);
 	if (err < 0) {

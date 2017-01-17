@@ -35,9 +35,7 @@
 #include "l2cap_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
-#if defined(CONFIG_BLUETOOTH_RFCOMM)
 #include "rfcomm_internal.h"
-#endif
 #include "sdp_internal.h"
 
 #define BR_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_br_chan, chan)
@@ -1666,14 +1664,18 @@ void bt_l2cap_br_init(void)
 			};
 
 	bt_l2cap_br_fixed_chan_register(&chan_br);
-#if defined(CONFIG_BLUETOOTH_RFCOMM)
-	bt_rfcomm_init();
-#endif /* CONFIG_BLUETOOTH_RFCOMM */
-#if defined(CONFIG_BLUETOOTH_AVDTP)
-	bt_avdtp_init();
-#endif /* CONFIG_BLUETOOTH_AVDTP */
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_RFCOMM)) {
+		bt_rfcomm_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_AVDTP)) {
+		bt_avdtp_init();
+	}
+
 	bt_sdp_init();
-#if defined(CONFIG_BLUETOOTH_A2DP)
-	bt_a2dp_init();
-#endif /* CONFIG_BLUETOOTH_A2DP */
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_A2DP)) {
+		bt_a2dp_init();
+	}
 }
