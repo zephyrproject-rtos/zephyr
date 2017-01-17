@@ -38,7 +38,7 @@
 
 #define L2CAP_LE_MIN_MTU		23
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_RX_BUF_COUNT - 1)
-#define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
+#define L2CAP_LE_CREDITS_THRESHOLD(_creds) (_creds / 2)
 
 #define L2CAP_LE_CID_DYN_START	0x0040
 #define L2CAP_LE_CID_DYN_END	0x007f
@@ -450,7 +450,7 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
-	req->credits = sys_cpu_to_le16(L2CAP_LE_MAX_CREDITS);
+	req->credits = sys_cpu_to_le16(ch->rx.init_credits);
 
 	l2cap_chan_send_req(ch, buf, L2CAP_CONN_TIMEOUT);
 
@@ -650,6 +650,17 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 		chan->rx.mtu = BT_L2CAP_MAX_LE_MTU;
 	}
 
+	/* Use existing credits if defined */
+	if (!chan->rx.init_credits) {
+		if (chan->chan.ops->alloc_buf) {
+			/* Auto tune credits to receive a full packet */
+			chan->rx.init_credits = chan->rx.mtu /
+						BT_L2CAP_MAX_LE_MPS;
+		} else {
+			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;
+		}
+	}
+
 	chan->rx.mps = BT_L2CAP_MAX_LE_MPS;
 	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
 }
@@ -786,11 +797,12 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		ch->tx.cid = scid;
 		ch->tx.mps = mps;
 		ch->tx.mtu = mtu;
+		ch->tx.init_credits = credits;
 		l2cap_chan_tx_give_credits(ch, credits);
 
 		/* Init RX parameters */
 		l2cap_chan_rx_init(ch);
-		l2cap_chan_rx_give_credits(ch, L2CAP_LE_MAX_CREDITS);
+		l2cap_chan_rx_give_credits(ch, ch->rx.init_credits);
 
 		/* Set channel PSM */
 		chan->psm = server->psm;
@@ -806,7 +818,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		rsp->dcid = sys_cpu_to_le16(ch->rx.cid);
 		rsp->mps = sys_cpu_to_le16(ch->rx.mps);
 		rsp->mtu = sys_cpu_to_le16(ch->rx.mtu);
-		rsp->credits = sys_cpu_to_le16(L2CAP_LE_MAX_CREDITS);
+		rsp->credits = sys_cpu_to_le16(ch->rx.init_credits);
 		rsp->result = BT_L2CAP_SUCCESS;
 	} else {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_NO_RESOURCES);
@@ -975,7 +987,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 		/* Give credits */
 		l2cap_chan_tx_give_credits(chan, credits);
-		l2cap_chan_rx_give_credits(chan, L2CAP_LE_MAX_CREDITS);
+		l2cap_chan_rx_give_credits(chan, chan->rx.init_credits);
 
 		break;
 	case BT_L2CAP_ERR_AUTHENTICATION:
@@ -1146,12 +1158,13 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	uint16_t credits;
 
 	/* Only give more credits if it went bellow the defined threshold */
-	if (k_sem_count_get(&chan->rx.credits) > L2CAP_LE_CREDITS_THRESHOLD) {
+	if (k_sem_count_get(&chan->rx.credits) >
+	    L2CAP_LE_CREDITS_THRESHOLD(chan->rx.init_credits)) {
 		goto done;
 	}
 
 	/* Restore credits */
-	credits = L2CAP_LE_MAX_CREDITS - k_sem_count_get(&chan->rx.credits);
+	credits = chan->rx.init_credits - k_sem_count_get(&chan->rx.credits);
 	l2cap_chan_rx_give_credits(chan, credits);
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CREDITS, get_ident(),
