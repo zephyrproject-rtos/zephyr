@@ -19,20 +19,16 @@
 #include <atomic.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_NBLE_DEBUG_CONN)
+#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
-#include <bluetooth/log.h>
 
 #include "gap_internal.h"
 #include "gatt_internal.h"
 #include "conn_internal.h"
 #include "smp.h"
-
-#if !defined(CONFIG_NBLE_DEBUG_CONN)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT	K_SECONDS(5)

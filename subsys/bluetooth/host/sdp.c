@@ -21,16 +21,12 @@
 #include <errno.h>
 #include <misc/byteorder.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_SDP)
 #include <bluetooth/log.h>
 #include <bluetooth/sdp.h>
 
 #include "l2cap_internal.h"
 #include "sdp_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_SDP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define SDP_PSM 0x0001
 

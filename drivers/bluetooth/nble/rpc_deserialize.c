@@ -18,10 +18,11 @@
 #include <string.h>
 #include <atomic.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_NBLE_DEBUG_RPC)
+#include <bluetooth/log.h>
 #include <bluetooth/gatt.h>
 /* for bt_security_t */
 #include <bluetooth/conn.h>
-#include <bluetooth/log.h>
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
@@ -35,11 +36,6 @@
 #include "gatt_internal.h"
 
 #include "rpc_functions_to_quark.h"
-
-#if !defined(CONFIG_NBLE_DEBUG_RPC)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 /* Build the list of prototypes and check that list are made only of matching
  * signatures
@@ -217,6 +213,9 @@ static char *debug_func_s_p[] = { LIST_FN_SIG_S_P };
 static char *debug_func_s_b_p[] = { LIST_FN_SIG_S_B_P };
 static char *debug_func_s_b_b_p[] = { LIST_FN_SIG_S_B_B_P};
 
+#define DBG_FUNC(name) BT_DBG("%s", name)
+#else
+#define DBG_FUNC(name)
 #endif
 
 #undef FN_SIG_NONE
@@ -587,49 +586,49 @@ void rpc_deserialize(struct net_buf *buf)
 	switch (sig_type) {
 	case SIG_TYPE_NONE:
 		if (fn_index < ARRAY_SIZE(m_fct_none)) {
-			BT_DBG("%s", debug_func_none[fn_index]);
+			DBG_FUNC(debug_func_none[fn_index]);
 			deserialize_none(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S:
 		if (fn_index < ARRAY_SIZE(m_fct_s)) {
-			BT_DBG("%s", debug_func_s[fn_index]);
+			DBG_FUNC(debug_func_s[fn_index]);
 			deserialize_s(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_P:
 		if (fn_index < ARRAY_SIZE(m_fct_p)) {
-			BT_DBG("%s", debug_func_p[fn_index]);
+			DBG_FUNC(debug_func_p[fn_index]);
 			deserialize_p(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S_B:
 		if (fn_index < ARRAY_SIZE(m_fct_s_b)) {
-			BT_DBG("%s", debug_func_s_b[fn_index]);
+			DBG_FUNC(debug_func_s_b[fn_index]);
 			deserialize_s_b(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_B_B_P:
 		if (fn_index < ARRAY_SIZE(m_fct_b_b_p)) {
-			BT_DBG("%s", debug_func_b_b_p[fn_index]);
+			DBG_FUNC(debug_func_b_b_p[fn_index]);
 			deserialize_b_b_p(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S_P:
 		if (fn_index < ARRAY_SIZE(m_fct_s_p)) {
-			BT_DBG("%s", debug_func_s_p[fn_index]);
+			DBG_FUNC(debug_func_s_p[fn_index]);
 			deserialize_s_p(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S_B_P:
 		if (fn_index < ARRAY_SIZE(m_fct_s_b_p)) {
-			BT_DBG("%s", debug_func_s_b_p[fn_index]);
+			DBG_FUNC(debug_func_s_b_p[fn_index]);
 			deserialize_s_b_p(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S_B_B_P:
 		if (fn_index < ARRAY_SIZE(m_fct_s_b_b_p)) {
-			BT_DBG("%s", debug_func_s_b_b_p[fn_index]);
+			DBG_FUNC(debug_func_s_b_b_p[fn_index]);
 			deserialize_s_b_b_p(fn_index, buf);
 		}
 		break;

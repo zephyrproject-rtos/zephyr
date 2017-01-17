@@ -28,8 +28,9 @@
 #include <misc/byteorder.h>
 #include <misc/stack.h>
 
-#include <net/buf.h>
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_SMP)
 #include <bluetooth/log.h>
+#include <net/buf.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -46,11 +47,6 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "smp.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_SMP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define SMP_TIMEOUT K_SECONDS(30)
 

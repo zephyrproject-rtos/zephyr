@@ -26,6 +26,7 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <misc/byteorder.h>
+#include <misc/util.h>
 
 #include "util.h"
 #include "mem.h"
@@ -40,6 +41,7 @@
 #include "ll.h"
 #include "hci_internal.h"
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
 #include "debug.h"
 

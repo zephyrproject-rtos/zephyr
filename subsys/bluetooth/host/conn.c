@@ -24,6 +24,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -37,11 +38,6 @@
 #include "keys.h"
 #include "smp.h"
 #include "att_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_CONN)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BLUETOOTH_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_TX_MTU),
@@ -75,8 +71,7 @@ static const uint8_t ssp_method[4 /* remote */][4 /* local */] = {
 };
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_CONN)
-static const char *state2str(bt_conn_state_t state)
+static inline const char *state2str(bt_conn_state_t state)
 {
 	switch (state) {
 	case BT_CONN_DISCONNECTED:
@@ -93,7 +88,6 @@ static const char *state2str(bt_conn_state_t state)
 		return "(unknown)";
 	}
 }
-#endif
 
 static void notify_connected(struct bt_conn *conn)
 {

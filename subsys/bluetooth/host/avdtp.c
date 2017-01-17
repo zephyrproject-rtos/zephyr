@@ -23,6 +23,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_AVDTP)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -31,11 +32,6 @@
 
 #include "l2cap_internal.h"
 #include "avdtp_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_AVDTP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 /* TODO add config file*/
 #define CONFIG_BLUETOOTH_AVDTP_CONN CONFIG_BLUETOOTH_MAX_CONN

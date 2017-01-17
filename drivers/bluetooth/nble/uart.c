@@ -29,6 +29,7 @@
 
 #include <net/buf.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
 
 #include "../util.h"
@@ -36,11 +37,6 @@
 
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
 #include "../nrf51_pm.h"
-#endif
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
 #endif
 
 /**

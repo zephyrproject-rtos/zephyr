@@ -24,6 +24,7 @@
 #include <misc/util.h>
 #include <misc/stack.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -36,11 +37,6 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "rfcomm_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define RFCOMM_CHANNEL_START	0x01
 #define RFCOMM_CHANNEL_END	0x1e

@@ -24,6 +24,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_ATT)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -37,11 +38,6 @@
 #include "smp.h"
 #include "att_internal.h"
 #include "gatt_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_ATT)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define ATT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_att, chan.chan)
 #define ATT_REQ(_node) CONTAINER_OF(_node, struct bt_att_req, node)

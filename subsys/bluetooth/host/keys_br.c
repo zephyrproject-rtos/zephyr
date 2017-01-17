@@ -21,6 +21,7 @@
 #include <atomic.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_KEYS)
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -28,11 +29,6 @@
 
 #include "hci_core.h"
 #include "keys.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_KEYS)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 static struct bt_keys_link_key key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
 

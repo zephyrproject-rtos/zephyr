@@ -338,7 +338,6 @@ config BLUETOOTH_MONITOR_ON_DEV_NAME
 if BLUETOOTH_DEBUG
 config BLUETOOTH_DEBUG_HCI_CORE
 	bool "Bluetooth HCI core debug"
-	depends on BLUETOOTH_HCI_HOST
 	help
 	  This option enables debug support for Bluetooth HCI
 	  core.

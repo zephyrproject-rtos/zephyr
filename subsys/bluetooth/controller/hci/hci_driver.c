@@ -29,8 +29,9 @@
 #include <misc/stack.h>
 #include <misc/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 
@@ -54,11 +55,6 @@
 #include "hci_internal.h"
 
 #include "hal/debug.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define HCI_CMD		0x01
 #define HCI_ACL		0x02

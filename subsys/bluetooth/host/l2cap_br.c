@@ -23,6 +23,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -38,11 +39,6 @@
 #include "rfcomm_internal.h"
 #endif
 #include "sdp_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define BR_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_br_chan, chan)
 #define BR_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_br_chan, chan.rtx_work)

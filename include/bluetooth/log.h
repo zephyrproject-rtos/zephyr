@@ -28,6 +28,10 @@
 extern "C" {
 #endif
 
+#if !defined(BT_DBG_ENABLED)
+#define BT_DBG_ENABLED 1
+#endif
+
 #if defined(CONFIG_BLUETOOTH_DEBUG_MONITOR)
 #include <stdio.h>
 
@@ -39,8 +43,12 @@ extern "C" {
 
 void bt_log(int prio, const char *fmt, ...);
 
-#define BT_DBG(fmt, ...) bt_log(BT_LOG_DBG, "%s (%p): " fmt, \
-				__func__, k_current_get(), ##__VA_ARGS__)
+#define BT_DBG(fmt, ...) \
+	if (BT_DBG_ENABLED) { \
+		bt_log(BT_LOG_DBG, "%s (%p): " fmt, \
+		       __func__, k_current_get(), ##__VA_ARGS__); \
+	}
+
 #define BT_ERR(fmt, ...) bt_log(BT_LOG_ERR, "%s: " fmt, \
 				__func__, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) bt_log(BT_LOG_WARN, "%s: " fmt, \
@@ -56,8 +64,12 @@ void bt_log(int prio, const char *fmt, ...);
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #include <logging/sys_log.h>
 
-#define BT_DBG(fmt, ...) SYS_LOG_DBG("(%p) " fmt, k_current_get(), \
-				##__VA_ARGS__)
+#define BT_DBG(fmt, ...) \
+	if (BT_DBG_ENABLED) { \
+		SYS_LOG_DBG("(%p) " fmt, k_current_get(), \
+			    ##__VA_ARGS__); \
+	}
+
 #define BT_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) SYS_LOG_INF(fmt, ##__VA_ARGS__)
@@ -67,10 +79,15 @@ void bt_log(int prio, const char *fmt, ...);
 
 #else
 
-#define BT_DBG(fmt, ...)
-#define BT_ERR(fmt, ...)
-#define BT_WARN(fmt, ...)
-#define BT_INFO(fmt, ...)
+static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
+
+#define BT_DBG(fmt, ...) \
+		if (0) { \
+			_bt_log_dummy(fmt, ##__VA_ARGS__); \
+		}
+#define BT_ERR BT_DBG
+#define BT_WARN BT_DBG
+#define BT_INFO BT_DBG
 
 #define BT_STACK_DEBUG_EXTRA	0
 
@@ -88,11 +105,8 @@ void bt_log(int prio, const char *fmt, ...);
 		char __noinit __stack name[(size) + K_THREAD_SIZEOF + \
 					   BT_STACK_DEBUG_EXTRA]
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
+/* This helper is only available when BLUETOOTH_DEBUG is enabled */
 const char *bt_hex(const void *buf, size_t len);
-#else
-#define bt_hex(buf, len)
-#endif
 
 #ifdef __cplusplus
 }

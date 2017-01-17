@@ -233,8 +233,9 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 /* Delete channel */
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state);
+
+#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 				   bt_l2cap_chan_state_t state,
 				   const char *func, int line);

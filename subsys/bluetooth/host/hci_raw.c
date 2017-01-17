@@ -19,9 +19,10 @@
 #include <errno.h>
 #include <atomic.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#include <bluetooth/log.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/hci_raw.h>
-#include <bluetooth/log.h>
 
 #include "hci_ecc.h"
 #include "monitor.h"

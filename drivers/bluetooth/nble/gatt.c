@@ -18,19 +18,15 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_GATT)
+#include <bluetooth/log.h>
 #include <net/buf.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/att.h>
-#include <bluetooth/log.h>
 
 #include "conn.h"
 #include "conn_internal.h"
 #include "gatt_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_GATT)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define NBLE_BUF_SIZE	384
 

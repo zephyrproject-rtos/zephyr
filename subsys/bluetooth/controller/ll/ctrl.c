@@ -43,6 +43,7 @@
 
 #include "config.h"
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
 #include "debug.h"
 
