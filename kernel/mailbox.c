@@ -487,8 +487,8 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	return result;
 }
 
-
-
+/* Legacy APIs */
+#if defined(CONFIG_LEGACY_KERNEL)
 int task_mbox_put(kmbox_t mbox, kpriority_t prio, struct k_msg *msg,
 		  int32_t timeout)
 {
@@ -577,3 +577,5 @@ int task_mbox_data_block_get(struct k_msg *msg, struct k_block *block,
 	return _error_to_rc(k_mbox_data_block_get(rx_msg, pool_id, block,
 						  _ticks_to_ms(timeout)));
 }
+
+#endif
