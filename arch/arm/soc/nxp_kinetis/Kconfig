@@ -21,6 +21,7 @@ source "arch/arm/soc/nxp_kinetis/*/Kconfig.soc"
 config SOC_PART_NUMBER
 	string
 	default SOC_PART_NUMBER_KINETIS_K6X if SOC_SERIES_KINETIS_K6X
+	default SOC_PART_NUMBER_KINETIS_KWX if SOC_SERIES_KINETIS_KWX
 	help
 	This string holds the full part number of the SoC. It is a hidden option
 	that you should not set directly. The part number selection choice defines
@@ -107,5 +108,14 @@ config MCG_FCRDIV
 	help
 	Selects the amount to divide down the fast internal reference clock. The
 	resulting frequency must be in the range 31.25 kHz to 4 MHz.
+
+config MCG_FRDIV
+	int "FLL external reference divider"
+	range 0 7
+	default 0
+	help
+	Selects the amount to divide down the external reference clock for the
+	FLL. The resulting frequency must be in the range 31.25 kHz to 39.0625
+	kHz.
 
 endif # HAS_MCG

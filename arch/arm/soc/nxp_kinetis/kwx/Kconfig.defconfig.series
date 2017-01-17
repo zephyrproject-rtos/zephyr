@@ -1,0 +1,21 @@
+# Kconfig - Kinetis KWx series configuration options
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_KINETIS_KWX
+
+config SOC_SERIES
+	default kwx
+
+config SRAM_BASE_ADDRESS
+	default 0x20000000
+
+config FLASH_BASE_ADDRESS
+	default 0x00000000
+
+source "arch/arm/soc/nxp_kinetis/kwx/Kconfig.defconfig.mk*"
+
+endif # SOC_SERIES_KINETIS_KWX
