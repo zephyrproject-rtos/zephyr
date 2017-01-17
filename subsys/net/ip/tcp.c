@@ -121,7 +121,7 @@ static void tcp_retry_expired(struct k_timer *timer)
 
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
-		net_tcp_send_buf(buf);
+		net_tcp_send_buf(net_buf_ref(buf));
 	}
 }
 
