@@ -22,8 +22,15 @@
 #include <linker-defs.h>
 #include <nano_internal.h>
 
-#ifdef CONFIG_XIP
+#ifdef CONFIG_ARMV6_M
 static inline void relocate_vector_table(void) { /* do nothing */ }
+#elif defined(CONFIG_ARMV7_M)
+#ifdef CONFIG_XIP
+static inline void relocate_vector_table(void)
+{
+	/* vector table is located at the the beginning of the flash */
+	_scs_relocate_vector_table((void *)CONFIG_FLASH_BASE_ADDRESS);
+}
 #else
 static inline void relocate_vector_table(void)
 {
@@ -31,6 +38,9 @@ static inline void relocate_vector_table(void)
 	_scs_relocate_vector_table((void *)CONFIG_SRAM_BASE_ADDRESS);
 }
 #endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMv6_M */
 
 #ifdef CONFIG_FLOAT
 static inline void enable_floating_point(void)
