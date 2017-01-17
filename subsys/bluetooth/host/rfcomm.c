@@ -616,7 +616,8 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
-static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
+static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr,
+			   uint8_t v24_signal)
 {
 	struct bt_rfcomm_msc *msc;
 	struct net_buf *buf;
@@ -628,7 +629,7 @@ static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	msc = net_buf_add(buf, sizeof(*msc));
 	/* cr bit should be always 1 in MSC */
 	msc->dlci = BT_RFCOMM_SET_ADDR(dlc->dlci, 1);
-	msc->v24_signal = BT_RFCOMM_DEFAULT_V24_SIG;
+	msc->v24_signal = v24_signal;
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
@@ -735,7 +736,7 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
 
-	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR);
+	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR, BT_RFCOMM_DEFAULT_V24_SIG);
 
 	if (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 		/* This means PN negotiation is not done for this session and
@@ -1058,7 +1059,7 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 	}
 
 	if (cr == BT_RFCOMM_MSG_CMD_CR) {
-		rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP_CR);
+		rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP_CR, msc->v24_signal);
 	}
 }
 
