@@ -1751,8 +1751,9 @@ def terse_test_cb(instances, goals, goal):
         log_info(goal.get_error_log())
         info("")
 
-    sys.stdout.write("\rtotal complete: %s%3d/%3d%s  failed: %s%3d%s" % (
+    sys.stdout.write("\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" % (
                      COLOR_GREEN, total_done, total_tests, COLOR_NORMAL,
+                     int((float(total_done) / total_tests) * 100),
                      COLOR_RED if total_failed > 0 else COLOR_NORMAL,
                      total_failed, COLOR_NORMAL))
     sys.stdout.flush()
