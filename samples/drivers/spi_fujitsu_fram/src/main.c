@@ -192,7 +192,7 @@ void main(void)
 	/* Do multi-byte read/write */
 	/* get some random data, and clear out data[] */
 	for (uint32_t i = 0; i < sizeof(cmp_data); i++) {
-		cmp_data[i] = sys_cycle_get_32() & 0xFF;
+		cmp_data[i] = k_cycle_get_32() & 0xFF;
 		data[i] = 0x00;
 	}
 

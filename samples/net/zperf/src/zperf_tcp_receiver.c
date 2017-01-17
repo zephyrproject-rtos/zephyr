@@ -70,7 +70,7 @@ static void zperf_tcp_rx_fiber(int port)
 	while (1) {
 		struct net_buf *buf = net_receive(net_context, TICKS_UNLIMITED);
 		struct session *session = NULL;
-		uint32_t time = sys_cycle_get_32();
+		uint32_t time = k_cycle_get_32();
 
 		if (buf == NULL) {
 			printk(TAG "buf is null\n");
@@ -90,7 +90,7 @@ static void zperf_tcp_rx_fiber(int port)
 		case STATE_COMPLETED:
 			printk(TAG "New session started\n");
 			zperf_reset_session_stats(session);
-			session->start_time =  sys_cycle_get_32();
+			session->start_time =  k_cycle_get_32();
 			session->state = STATE_ONGOING;
 		case STATE_ONGOING:
 			session->counter++;

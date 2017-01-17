@@ -44,7 +44,7 @@ void zperf_tcp_upload(struct net_context *net_context,
 	}
 
 	/* Start the loop */
-	start_time = sys_cycle_get_32();
+	start_time = k_cycle_get_32();
 	last_print_time = start_time;
 	last_loop_time = start_time;
 	printk(TAG "New session started\n");
@@ -54,7 +54,7 @@ void zperf_tcp_upload(struct net_context *net_context,
 		int ret = 0;
 
 		/* Timestamps */
-		loop_time = sys_cycle_get_32();
+		loop_time = k_cycle_get_32();
 		last_loop_time = loop_time;
 
 		/* Get a new TX buffer */
@@ -105,7 +105,7 @@ again:
 		fiber_yield();
 	} while (!finished);
 
-	end_time = sys_cycle_get_32();
+	end_time = k_cycle_get_32();
 
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;

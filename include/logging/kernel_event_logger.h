@@ -75,7 +75,7 @@ typedef uint32_t (*sys_k_timer_func_t)(void);
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
 extern sys_k_timer_func_t _sys_k_get_time;
 #else
-#define _sys_k_get_time sys_cycle_get_32
+#define _sys_k_get_time k_cycle_get_32
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
 /**

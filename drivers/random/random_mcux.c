@@ -74,7 +74,7 @@ DEVICE_AND_API_INIT(random_mcux, CONFIG_RANDOM_NAME,
 
 static int random_mcux_init(struct device *dev)
 {
-	uint32_t seed = sys_cycle_get_32();
+	uint32_t seed = k_cycle_get_32();
 
 	ARG_UNUSED(dev);
 

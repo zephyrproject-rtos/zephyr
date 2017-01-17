@@ -43,11 +43,11 @@ static int8_t dht_measure_signal_duration(struct dht_data *drv_data,
 		(uint64_t)sys_clock_hw_cycles_per_sec /
 		(uint64_t)USEC_PER_SEC
 	);
-	uint32_t start_cycles = sys_cycle_get_32();
+	uint32_t start_cycles = k_cycle_get_32();
 
 	do {
 		gpio_pin_read(drv_data->gpio, CONFIG_DHT_GPIO_PIN_NUM, &val);
-		elapsed_cycles = sys_cycle_get_32() - start_cycles;
+		elapsed_cycles = k_cycle_get_32() - start_cycles;
 
 		if (elapsed_cycles >= max_wait_cycles) {
 			return -1;

@@ -151,7 +151,7 @@ static void udp_received(struct net_context *context,
 		return;
 	}
 
-	time = sys_cycle_get_32();
+	time = k_cycle_get_32();
 
 	session = get_session(buf, SESSION_UDP);
 	if (!session) {

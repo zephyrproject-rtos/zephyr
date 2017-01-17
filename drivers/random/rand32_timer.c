@@ -52,7 +52,7 @@ static atomic_val_t _rand32_counter;
 
 uint32_t sys_rand32_get(void)
 {
-	return sys_cycle_get_32() + atomic_add(&_rand32_counter, _RAND32_INC);
+	return k_cycle_get_32() + atomic_add(&_rand32_counter, _RAND32_INC);
 }
 
 #endif /* __GNUC__ */
