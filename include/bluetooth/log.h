@@ -41,7 +41,7 @@ extern "C" {
 #define BT_LOG_INFO     6
 #define BT_LOG_DBG      7
 
-void bt_log(int prio, const char *fmt, ...);
+__printf_like(2, 3) void bt_log(int prio, const char *fmt, ...);
 
 #define BT_DBG(fmt, ...) \
 	if (BT_DBG_ENABLED) { \
