@@ -23,12 +23,8 @@
 #include <net/net_context.h>
 #include <net/net_mgmt.h>
 
-static struct k_sem quit_lock;
-
-static inline void quit(void)
-{
-	k_sem_give(&quit_lock);
-}
+#define STACKSIZE 2000
+char __noinit __stack thread_stack[STACKSIZE];
 
 static struct net_mgmt_event_callback mgmt_cb;
 
@@ -38,38 +34,29 @@ static void handler(struct net_mgmt_event_callback *cb,
 {
 	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
 		NET_INFO("NET_EVENT_IPV4_ADDR_ADD");
-		quit();
 	}
 }
 
-static inline void init_app(void)
+static void main_thread(void)
 {
 	struct net_if *iface;
 
 	NET_INFO("Run dhcpv4 client");
 
-	iface = net_if_get_default();
-
-	net_dhcpv4_start(iface);
-
-	k_sem_init(&quit_lock, 0, UINT_MAX);
-
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
 	net_mgmt_add_event_callback(&mgmt_cb);
-}
 
-void main_fiber(void)
-{
-	k_sem_take(&quit_lock, K_FOREVER);
-}
+	iface = net_if_get_default();
 
+	net_dhcpv4_start(iface);
+}
 
 void main(void)
 {
 	NET_INFO("In main");
 
-	init_app();
-
-	main_fiber();
+	k_thread_spawn(&thread_stack[0], STACKSIZE,
+		       (k_thread_entry_t)main_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
