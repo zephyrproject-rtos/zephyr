@@ -66,6 +66,11 @@ validate_fc_seq(uint8_t *buf, uint8_t **p_buf)
 		return NULL;
 	}
 
+#ifndef CONFIG_NET_L2_IEEE802154_SECURITY
+	if (fs->fc.security_enabled) {
+		return NULL;
+	}
+#endif
 	*p_buf = buf + 3;
 
 	return fs;
@@ -98,6 +103,58 @@ validate_addr(uint8_t *buf, uint8_t **p_buf,
 
 	return (struct ieee802154_address_field *)buf;
 }
+
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+static inline struct ieee802154_aux_security_hdr *
+validate_auxiliary_security_header(uint8_t *buf, uint8_t **p_buf)
+{
+	struct ieee802154_aux_security_hdr *ash =
+		(struct ieee802154_aux_security_hdr *)buf;
+
+	*p_buf = buf;
+
+	/* Only implicit key mode is supported for now */
+	if (ash->control.key_id_mode != IEEE802154_KEY_ID_MODE_IMPLICIT) {
+		return NULL;
+	}
+
+	/* At least the asf is sized of: control field + frame counter */
+	*p_buf += sizeof(struct ieee802154_security_control_field) +
+		sizeof(uint32_t);
+
+	/* Explicit key must have a key index != 0x00, see Section 7.4.3.2 */
+	switch (ash->control.key_id_mode) {
+	case IEEE802154_KEY_ID_MODE_IMPLICIT:
+		break;
+	case IEEE802154_KEY_ID_MODE_INDEX:
+		*p_buf += IEEE8021254_KEY_ID_FIELD_INDEX_LENGTH;
+
+		if (!ash->kif.mode_1.key_index) {
+			return NULL;
+		}
+
+		break;
+	case IEEE802154_KEY_ID_MODE_SRC_4_INDEX:
+		*p_buf += IEEE8021254_KEY_ID_FIELD_SRC_4_INDEX_LENGTH;
+
+		if (!ash->kif.mode_2.key_index) {
+			return NULL;
+		}
+
+		break;
+	case IEEE802154_KEY_ID_MODE_SRC_8_INDEX:
+		*p_buf += IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
+
+		if (!ash->kif.mode_3.key_index) {
+			return NULL;
+		}
+
+		break;
+	}
+
+	return ash;
+}
+#endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
 static inline bool
 validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
@@ -304,7 +361,7 @@ validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 			       struct ieee802154_mpdu *mpdu)
 {
-	uint8_t *p_buf;
+	uint8_t *p_buf = NULL;
 
 	if (length > IEEE802154_MTU || length < IEEE802154_MIN_LENGTH) {
 		NET_DBG("Wrong packet length: %d", length);
@@ -328,6 +385,16 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 	mpdu->mhr.src_addr = validate_addr(p_buf, &p_buf,
 					   mpdu->mhr.fs->fc.src_addr_mode,
 					   (mpdu->mhr.fs->fc.pan_id_comp));
+
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	if (mpdu->mhr.fs->fc.security_enabled) {
+		mpdu->mhr.aux_sec =
+			validate_auxiliary_security_header(p_buf, &p_buf);
+		if (!mpdu->mhr.aux_sec) {
+			return false;
+		}
+	}
+#endif
 
 	return validate_payload_and_mfr(mpdu, buf, p_buf, length);
 }

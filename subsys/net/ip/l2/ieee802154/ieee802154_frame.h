@@ -213,7 +213,9 @@ struct ieee802154_mhr {
 	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_address_field *dst_addr;
 	struct ieee802154_address_field *src_addr;
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_aux_security_hdr *aux_sec;
+#endif
 };
 
 struct ieee802154_mfr {

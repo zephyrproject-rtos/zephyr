@@ -125,6 +125,13 @@ config  NET_DEBUG_L2_IEEE802154_FRAGMENT
 	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
 	default n
 
+config NET_L2_IEEE802154_SECURITY
+	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"
+	default n
+	help
+	Enable 802.15.4 frame security handling, in order to bring data
+	confidentiality and authenticity.
+
 source "subsys/net/ip/l2/ieee802154/Kconfig.radio"
 
 endif
