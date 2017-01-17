@@ -25,6 +25,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <limits.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <atomic.h>
