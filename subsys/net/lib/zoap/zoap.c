@@ -755,6 +755,64 @@ void zoap_remove_observer(struct zoap_resource *resource,
 	sys_slist_find_and_remove(&resource->observers, &observer->list);
 }
 
+static bool sockaddr_equal(const struct sockaddr *a,
+			   const struct sockaddr *b)
+{
+	/*
+	 * FIXME: Should we consider ipv6-mapped ipv4 addresses as equal to
+	 * ipv4 addresses?
+	 */
+	if (a->family != b->family) {
+		return false;
+	}
+
+	if (a->family == AF_INET) {
+		const struct sockaddr_in *a4 = net_sin(a);
+		const struct sockaddr_in *b4 = net_sin(b);
+
+		if (a4->sin_port != b4->sin_port) {
+			return false;
+		}
+
+		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
+	}
+
+	if (b->family == AF_INET6) {
+		const struct sockaddr_in6 *a6 = net_sin6(a);
+		const struct sockaddr_in6 *b6 = net_sin6(b);
+
+		if (a6->sin6_scope_id != b6->sin6_scope_id) {
+			return false;
+		}
+
+		if (a6->sin6_port != b6->sin6_port) {
+			return false;
+		}
+
+		return net_ipv6_addr_cmp(&a6->sin6_addr, &b6->sin6_addr);
+	}
+
+	/* Invalid address family */
+	return false;
+}
+
+struct zoap_observer *zoap_find_observer_by_addr(
+	struct zoap_observer *observers, size_t len,
+	const struct sockaddr *addr)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		struct zoap_observer *o = &observers[i];
+
+		if (sockaddr_equal(&o->addr, addr)) {
+			return o;
+		}
+	}
+
+	return NULL;
+}
+
 uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len)
 {
 	struct net_buf *frag = pkt->buf->frags;

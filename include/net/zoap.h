@@ -239,6 +239,13 @@ void zoap_remove_observer(struct zoap_resource *resource,
 			  struct zoap_observer *observer);
 
 /**
+ * Returns the observer that matches address @a addr.
+ */
+struct zoap_observer *zoap_find_observer_by_addr(
+	struct zoap_observer *observers, size_t len,
+	const struct sockaddr *addr);
+
+/**
  * Returns the next available observer representation.
  */
 struct zoap_observer *zoap_observer_next_unused(
