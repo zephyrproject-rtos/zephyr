@@ -36,5 +36,6 @@ lib-y += $(strip \
 
 lib-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
 lib-$(CONFIG_STACK_CANARIES) += compiler_stack_protect.o
-lib-$(CONFIG_SYS_CLOCK_EXISTS) += timer.o legacy_timer.o
+lib-$(CONFIG_SYS_CLOCK_EXISTS) += timer.o
+lib-$(CONFIG_LEGACY_KERNEL) += legacy_timer.o
 lib-$(CONFIG_ATOMIC_OPERATIONS_C) += atomic_c.o
