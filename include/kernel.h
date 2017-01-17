@@ -35,6 +35,7 @@
 #include <misc/slist.h>
 #include <misc/util.h>
 #include <kernel_version.h>
+#include <drivers/rand32.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -3074,12 +3075,10 @@ extern void k_cpu_idle(void);
  */
 extern void k_cpu_atomic_idle(unsigned int key);
 
-/*
- * legacy.h must be before arch/cpu.h to allow the ioapic/loapic drivers to
- * hook into the device subsystem, which itself uses nanokernel semaphores,
- * and thus currently requires the definition of nano_sem.
- */
+/* Include legacy APIs */
+#if defined(CONFIG_LEGACY_KERNEL)
 #include <legacy.h>
+#endif
 #include <arch/cpu.h>
 
 /*
