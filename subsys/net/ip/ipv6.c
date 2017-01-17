@@ -459,7 +459,7 @@ static void ns_reply_timeout(struct k_work *work)
 
 	struct net_nbr *nbr = get_nbr_from_data(data);
 
-	if (!data) {
+	if (!nbr) {
 		NET_DBG("NS timeout but no nbr data");
 		return;
 	}
