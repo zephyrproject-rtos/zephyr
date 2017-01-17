@@ -63,7 +63,7 @@ static inline void _task_group_adjust(struct _static_thread_data *thread_data)
 #endif /* CONFIG_FP_SHARING */
 
 /* Legacy API */
-
+#if defined(CONFIG_LEGACY_KERNEL)
 int sys_execution_context_type_get(void)
 {
 	if (k_is_in_isr())
@@ -74,6 +74,7 @@ int sys_execution_context_type_get(void)
 
 	return NANO_CTX_TASK;
 }
+#endif
 
 int k_is_in_isr(void)
 {
@@ -408,8 +409,10 @@ void _init_static_threads(void)
 	}
 
 	_sched_lock();
+#if defined(CONFIG_LEGACY_KERNEL)
 	/* Start all (legacy) threads that are part of the EXE task group */
 	_k_thread_group_op(K_TASK_GROUP_EXE, _k_thread_single_start);
+#endif
 
 	/*
 	 * Non-legacy static threads may be started immediately or after a
@@ -471,7 +474,7 @@ void _k_thread_group_leave(uint32_t groups, struct k_thread *thread)
 }
 
 /* legacy API */
-
+#if defined(CONFIG_LEGACY_KERNEL)
 void task_start(ktask_t task)
 {
 	int key = irq_lock();
@@ -479,3 +482,4 @@ void task_start(ktask_t task)
 	_k_thread_single_start(task);
 	_reschedule_threads(key);
 }
+#endif
