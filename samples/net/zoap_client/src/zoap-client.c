@@ -42,7 +42,7 @@ static struct net_context *context;
 
 struct zoap_pending pendings[NUM_PENDINGS];
 struct zoap_reply replies[NUM_REPLIES];
-struct nano_delayed_work retransmit_work;
+struct k_delayed_work retransmit_work;
 
 static const char * const test_path[] = { "test", NULL };
 
@@ -109,7 +109,7 @@ static void udp_receive(struct net_context *context,
 	}
 }
 
-static void retransmit_request(struct nano_work *work)
+static void retransmit_request(struct k_work *work)
 {
 	struct zoap_pending *pending;
 	struct zoap_packet *request;
