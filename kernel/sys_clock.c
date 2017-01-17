@@ -281,7 +281,7 @@ static void handle_time_slicing(int32_t ticks)
 		return;
 	}
 
-	_time_slice_elapsed += _ticks_to_ms(ticks);
+	_time_slice_elapsed += __ticks_to_ms(ticks);
 	if (_time_slice_elapsed >= _time_slice_duration) {
 
 		unsigned int key;

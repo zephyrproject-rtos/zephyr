@@ -236,5 +236,5 @@ int32_t _timeout_remaining_get(struct _timeout *timeout)
 	}
 
 	irq_unlock(key);
-	return _ticks_to_ms(remaining_ticks);
+	return __ticks_to_ms(remaining_ticks);
 }
