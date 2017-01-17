@@ -130,11 +130,90 @@ struct ieee802154_address_field {
 	};
 } __packed;
 
+/* See Section 7.4.1.1 */
+enum ieee802154_security_level {
+	IEEE802154_SECURITY_LEVEL_NONE			= 0x0,
+	IEEE802154_SECURITY_LEVEL_MIC_32		= 0x1,
+	IEEE802154_SECURITY_LEVEL_MIC_64		= 0x2,
+	IEEE802154_SECURITY_LEVEL_MIC_128		= 0x3,
+	IEEE802154_SECURITY_LEVEL_ENC			= 0x4,
+	IEEE802154_SECURITY_LEVEL_ENC_MIC_32		= 0x5,
+	IEEE802154_SECURITY_LEVEL_ENC_MIC_64		= 0x6,
+	IEEE802154_SECURITY_LEVEL_ENC_MIC_128		= 0x7,
+};
+
+/* This will match above *_MIC_<32/64/128> */
+#define IEEE8021254_AUTH_TAG_LENGTH_32			4
+#define IEEE8021254_AUTH_TAG_LENGTH_64			8
+#define IEEE8021254_AUTH_TAG_LENGTH_128			16
+
+/* See Section 7.4.1.2 */
+enum ieee802154_key_id_mode {
+	IEEE802154_KEY_ID_MODE_IMPLICIT			= 0x0,
+	IEEE802154_KEY_ID_MODE_INDEX			= 0x1,
+	IEEE802154_KEY_ID_MODE_SRC_4_INDEX		= 0x2,
+	IEEE802154_KEY_ID_MODE_SRC_8_INDEX		= 0x3,
+};
+
+#define IEEE8021254_KEY_ID_FIELD_INDEX_LENGTH		1
+#define IEEE8021254_KEY_ID_FIELD_SRC_4_INDEX_LENGTH	5
+#define IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH	9
+
+#define IEEE802154_KEY_MAX_LEN				16
+
+/* See Section 7.4.1 */
+struct ieee802154_security_control_field {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t security_level	:3;
+	uint8_t key_id_mode	:2;
+	uint8_t reserved	:3;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t reserved	:3;
+	uint8_t key_id_mode	:2;
+	uint8_t security_level	:3;
+#endif
+} __packed;
+
+#define IEEE802154_SECURITY_CF_LENGTH	1
+
+/* See Section 7.4.3 */
+struct ieee802154_key_identifier_field {
+	union {
+		/* mode_0 being implicit, it holds no info here */
+		struct {
+			uint8_t key_index;
+		} mode_1;
+
+		struct {
+			uint8_t key_src[4];
+			uint8_t key_index;
+		} mode_2;
+
+		struct {
+			uint8_t key_src[8];
+			uint8_t key_index;
+		} mode_3;
+	};
+} __packed;
+
+/*
+ * Auxiliary Security Header
+ * See Section 7.4
+ */
+struct ieee802154_aux_security_hdr {
+	struct ieee802154_security_control_field control;
+	uint32_t frame_counter;
+	struct ieee802154_key_identifier_field kif;
+} __packed;
+
+#define IEEE802154_SECURITY_FRAME_COUNTER_LENGTH 4
+
 /** MAC header */
 struct ieee802154_mhr {
 	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_address_field *dst_addr;
 	struct ieee802154_address_field *src_addr;
+	struct ieee802154_aux_security_hdr *aux_sec;
 };
 
 struct ieee802154_mfr {
