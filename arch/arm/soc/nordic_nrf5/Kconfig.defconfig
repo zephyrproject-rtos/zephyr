@@ -21,6 +21,13 @@ config GPIO_NRF5
 
 endif # GPIO
 
+if FLASH
+
+config SOC_FLASH_NRF5
+	def_bool y
+
+endif # FLASH
+
 source "arch/arm/soc/nordic_nrf5/*/Kconfig.defconfig.series"
 
 endif # SOC_FAMILY_NRF5
