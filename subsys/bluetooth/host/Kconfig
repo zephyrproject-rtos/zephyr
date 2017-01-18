@@ -40,10 +40,10 @@ config BLUETOOTH_HCI_HOST
 	bool
 	default y
 	depends on !BLUETOOTH_HCI_RAW
-	select TINYCRYPT
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
-	select TINYCRYPT_SHA256_HMAC_PRNG
+	select TINYCRYPT if !BLUETOOTH_CONTROLLER
+	select TINYCRYPT_SHA256 if !BLUETOOTH_CONTROLLER
+	select TINYCRYPT_SHA256_HMAC if !BLUETOOTH_CONTROLLER
+	select TINYCRYPT_SHA256_HMAC_PRNG if !BLUETOOTH_CONTROLLER
 
 config BLUETOOTH_RECV_IS_RX_THREAD
 	# Virtual option set by the HCI driver to indicate that there's
@@ -176,6 +176,7 @@ config BLUETOOTH_ATT_PREPARE_COUNT
 
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
+	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	help
