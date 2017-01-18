@@ -1366,12 +1366,12 @@ end:
 	ipv6->len[0] = len >> 8;
 	ipv6->len[1] = (uint8_t)len;
 
-	if (ipv6->nexthdr == IPPROTO_UDP) {
+	if (ipv6->nexthdr == IPPROTO_UDP && udp) {
 		udp->len = htons(len);
-	}
 
-	if (chksum) {
-		udp->chksum = ~net_calc_chksum_udp(buf);
+		if (chksum) {
+			udp->chksum = ~net_calc_chksum_udp(buf);
+		}
 	}
 
 	return true;
