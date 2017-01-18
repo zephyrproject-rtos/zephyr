@@ -13,6 +13,7 @@
 #include <rtc.h>
 #include <power.h>
 #include <soc.h>
+#include <misc/util.h>
 
 #include "qm_isr.h"
 #include "qm_rtc.h"
@@ -37,10 +38,8 @@ static struct rtc_data rtc_context;
 #endif /* RTC_HAS_CONTEXT_DATA */
 
 #ifdef CONFIG_RTC_QMSI_API_REENTRANCY
-static const int reentrancy_protection = 1;
 #define RP_GET(dev) (&((struct rtc_data *)(dev->driver_data))->sem)
 #else
-static const int reentrancy_protection;
 #define RP_GET(dev) (NULL)
 #endif
 
@@ -62,34 +61,6 @@ static uint32_t rtc_qmsi_get_power_state(struct device *dev)
 #else
 #define rtc_qmsi_set_power_state(...)
 #endif
-
-static void rtc_reentrancy_init(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_init(RP_GET(dev), 0, UINT_MAX);
-	k_sem_give(RP_GET(dev));
-}
-
-static void rtc_critical_region_start(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_take(RP_GET(dev), K_FOREVER);
-}
-
-static void rtc_critical_region_end(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_give(RP_GET(dev));
-}
 
 static void rtc_qmsi_enable(struct device *dev)
 {
@@ -124,13 +95,17 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	 */
 	qm_cfg.prescaler = (clk_rtc_div_t)RTC_DIVIDER;
 
-	rtc_critical_region_start(dev);
+	if (IS_ENABLED(CONFIG_RTC_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(dev), K_FOREVER);
+	}
 
 	if (qm_rtc_set_config(QM_RTC_0, &qm_cfg)) {
 		result = -EIO;
 	}
 
-	rtc_critical_region_end(dev);
+	if (IS_ENABLED(CONFIG_RTC_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(dev));
+	}
 
 	k_busy_wait(60);
 
@@ -163,7 +138,10 @@ static const struct rtc_driver_api api = {
 
 static int rtc_qmsi_init(struct device *dev)
 {
-	rtc_reentrancy_init(dev);
+	if (IS_ENABLED(CONFIG_RTC_QMSI_API_REENTRANCY)) {
+		k_sem_init(RP_GET(dev), 0, UINT_MAX);
+		k_sem_give(RP_GET(dev));
+	}
 
 	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_RTC_0_INT), CONFIG_RTC_0_IRQ_PRI,
 		    qm_rtc_0_isr, NULL,
