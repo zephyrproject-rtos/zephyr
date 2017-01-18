@@ -44,6 +44,12 @@ config HAS_RNGA
 	help
 	Set if the random number generator accelerator (RNGA) module is present in the SoC.
 
+config HAS_LPUART
+	bool
+	default n
+	help
+	Set if the low power uart (LPUART) module is present in the SoC.
+
 if HAS_OSC
 
 choice
