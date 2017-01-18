@@ -19,6 +19,7 @@
 
 #include <ztest.h>
 #include <arch/cpu.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include <sections.h>
 
 
@@ -83,9 +84,9 @@ void test_irq_vector_table(void)
 	for (int ii = 0; ii < 3; ii++) {
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 		/* the QEMU does not simulate the STIR register: this is a workaround */
-		_NvicIrqPend(ii);
+		NVIC_SetPendingIRQ(ii);
 #else
-		__scs.stir = ii;
+		NVIC->STIR = ii;
 #endif
 	}
 
