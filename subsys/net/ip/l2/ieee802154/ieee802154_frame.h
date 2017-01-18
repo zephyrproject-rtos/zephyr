@@ -456,8 +456,8 @@ uint16_t ieee802154_compute_header_size(struct net_if *iface,
 
 bool ieee802154_create_data_frame(struct net_if *iface,
 				  struct net_linkaddr *dst,
-				  uint8_t *p_buf,
-				  uint8_t len);
+				  struct net_buf *frag,
+				  uint8_t reserved_len);
 
 struct net_buf *
 ieee802154_create_mac_cmd_frame(struct net_if *iface,

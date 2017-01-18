@@ -283,8 +283,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 		}
 
 		if (!ieee802154_create_data_frame(iface, net_nbuf_ll_dst(buf),
-						  frag->data - reserved_space,
-						  reserved_space)) {
+						  frag, reserved_space)) {
 			return NET_DROP;
 		}
 

@@ -563,12 +563,13 @@ uint8_t *generate_addressing_fields(struct net_if *iface,
 
 bool ieee802154_create_data_frame(struct net_if *iface,
 				  struct net_linkaddr *dst,
-				  uint8_t *p_buf,
-				  uint8_t len)
+				  struct net_buf *frag,
+				  uint8_t reserved_len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
+	uint8_t *p_buf = frag->data - reserved_len;
 	uint8_t *frag_start = p_buf;
 
 	fs = generate_fcf_grounds(&p_buf, ctx->ack_requested);
@@ -582,12 +583,12 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 
 	p_buf = generate_addressing_fields(iface, fs, &params, p_buf);
 
-	if ((p_buf - frag_start) != len) {
+	if ((p_buf - frag_start) != reserved_len) {
 		/* ll reserve was too small? We probably overwrote
 		 * payload bytes
 		 */
 		NET_ERR("Could not generate data frame %zu vs %u",
-			(p_buf - frag_start), len);
+			(p_buf - frag_start), reserved_len);
 		return false;
 	}
 
