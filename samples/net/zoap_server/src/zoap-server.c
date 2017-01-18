@@ -230,6 +230,75 @@ static int test_post(struct zoap_resource *resource,
 				  NULL, 0, NULL, NULL);
 }
 
+static int location_query_post(struct zoap_resource *resource,
+			       struct zoap_packet *request,
+			       const struct sockaddr *from)
+{
+	static const char *const location_query[] = { "first=1",
+						      "second=2",
+						      NULL };
+	const char * const *p;
+	struct net_buf *buf, *frag;
+	struct zoap_packet response;
+	uint8_t *payload, code, type, tkl;
+	const uint8_t *token;
+	uint16_t len, id;
+	int r;
+
+	payload = zoap_packet_get_payload(request, &len);
+	if (!payload) {
+		NET_ERR("Packet without payload\n");
+		return -EINVAL;
+	}
+
+	code = zoap_header_get_code(request);
+	type = zoap_header_get_type(request);
+	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
+
+	NET_INFO("*******\n");
+	NET_INFO("type: %u code %u id %u\n", type, code, id);
+	NET_INFO("*******\n");
+
+	buf = net_nbuf_get_tx(context);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	frag = net_nbuf_get_data(context);
+	if (!frag) {
+		return -ENOMEM;
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	r = zoap_packet_init(&response, buf);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	if (type == ZOAP_TYPE_CON) {
+		type = ZOAP_TYPE_ACK;
+	} else {
+		type = ZOAP_TYPE_NON_CON;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, type);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CREATED);
+	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
+
+	for (p = location_query; *p; p++) {
+		zoap_add_option(&response, ZOAP_OPTION_LOCATION_QUERY,
+				*p, strlen(*p));
+	}
+
+	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+				  NULL, 0, NULL, NULL);
+}
+
 static int piggyback_get(struct zoap_resource *resource,
 			 struct zoap_packet *request,
 			 const struct sockaddr *from)
@@ -721,6 +790,8 @@ static const char * const separate_path[] = { "separate", NULL };
 
 static const char * const large_path[] = { "large", NULL };
 
+static const char * const location_query_path[] = { "location-query", NULL };
+
 static const char * const large_update_path[] = { "large-update", NULL };
 
 static struct zoap_resource resources[] = {
@@ -740,6 +811,9 @@ static struct zoap_resource resources[] = {
 	},
 	{ .path = large_path,
 	  .get = large_get,
+	},
+	{ .path = location_query_path,
+	  .post = location_query_post,
 	},
 	{ .path = large_update_path,
 	  .put = large_update_put,
