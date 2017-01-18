@@ -55,26 +55,6 @@ extern "C" {
 
 #define _EXC_IRQ_DEFAULT_PRIO _EXC_PRIO(_IRQ_PRIO_OFFSET)
 
-#define _EXC_SVC_PRIO 0
-#define _EXC_FAULT_PRIO 0
-
-/* no exc #0 */
-#define _EXC_RESET 1
-#define _EXC_NMI 2
-#define _EXC_HARD_FAULT 3
-#define _EXC_MPU_FAULT 4
-#define _EXC_BUS_FAULT 5
-#define _EXC_USAGE_FAULT 6
-/* 7-10 reserved */
-#define _EXC_SVC 11
-#define _EXC_DEBUG 12
-/* 13 reserved */
-#define _EXC_PENDSV 14
-#define _EXC_SYSTICK 15
-/* 16+ IRQs */
-
-#define _NUM_EXC 16
-
 #define NUM_IRQS_PER_REG 32
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)

@@ -110,41 +110,6 @@ static inline uint32_t _ScbActiveVectorGet(void)
 	return __scs.scb.icsr.bit.vectactive;
 }
 
-/**
- *
- * @brief Set priority of an exception
- *
- * Only works with exceptions; i.e. do not use this for interrupts, which
- * are exceptions 16+.
- *
- * Note that the processor might not implement all 8 bits, in which case the
- * lower N bits are ignored.
- *
- * ARMv6-M: Exceptions 1 to 3 priorities are fixed (-3, -2, -1) and 4 to 9 are
- * reserved exceptions.
- * ARMv7-M: Exceptions 1 to 3 priorities are fixed (-3, -2, -1).
- *
- * @param exc  exception number, 10 to 15 on ARMv6-M and 4 to 15 on ARMv7-M
- * @param pri  priority, 0 to 255
- * @return N/A
- */
-
-static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
-{
-#if defined(CONFIG_ARMV6_M)
-	volatile uint32_t * const shpr = &__scs.scb.shpr[_PRIO_SHP_IDX(exc)];
-	__ASSERT((exc > 10) && (exc < 16), "");
-	*shpr = ((*shpr & ~((uint32_t)0xff << _PRIO_BIT_SHIFT(exc))) |
-		 ((uint32_t)pri << _PRIO_BIT_SHIFT(exc)));
-#elif defined(CONFIG_ARMV7_M)
-	/* For priority exception handler 4-15 */
-	__ASSERT((exc > 3) && (exc < 16), "");
-	__scs.scb.shpr[exc - 4] = pri;
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
-}
-
 #if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_ARMV7_M)
 /**

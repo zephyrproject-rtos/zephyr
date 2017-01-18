@@ -27,6 +27,8 @@ extern "C" {
 
 #else
 
+#include <arch/arm/cortex_m/cmsis.h>
+
 /**
  *
  * @brief Find out if running in an ISR context
@@ -57,6 +59,8 @@ static ALWAYS_INLINE int _IsInIsr(void)
 #endif /* CONFIG_ARMV6_M */
 }
 
+#define _EXC_SVC_PRIO 0
+#define _EXC_FAULT_PRIO 0
 /**
  * @brief Setup system exceptions
  *
@@ -69,16 +73,16 @@ static ALWAYS_INLINE int _IsInIsr(void)
  */
 static ALWAYS_INLINE void _ExcSetup(void)
 {
-	_ScbExcPrioSet(_EXC_PENDSV, _EXC_PRIO(0xff));
+	NVIC_SetPriority(PendSV_IRQn, 0xff);
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_BASEPRI
-	_ScbExcPrioSet(_EXC_SVC, _EXC_PRIO(_EXC_SVC_PRIO));
+	NVIC_SetPriority(SVCall_IRQn, _EXC_SVC_PRIO);
 #endif
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
-	_ScbExcPrioSet(_EXC_MPU_FAULT, _EXC_PRIO(_EXC_FAULT_PRIO));
-	_ScbExcPrioSet(_EXC_BUS_FAULT, _EXC_PRIO(_EXC_FAULT_PRIO));
-	_ScbExcPrioSet(_EXC_USAGE_FAULT, _EXC_PRIO(_EXC_FAULT_PRIO));
+	NVIC_SetPriority(MemoryManagement_IRQn, _EXC_FAULT_PRIO);
+	NVIC_SetPriority(BusFault_IRQn, _EXC_FAULT_PRIO);
+	NVIC_SetPriority(UsageFault_IRQn, _EXC_FAULT_PRIO);
 
 	_ScbUsageFaultEnable();
 	_ScbBusFaultEnable();
