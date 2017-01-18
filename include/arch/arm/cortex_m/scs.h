@@ -589,37 +589,6 @@ extern volatile struct __scs __scs;
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */
 
-/* API */
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
-/**
- *
- * @brief Relocate the vector table
- *
- * Set the address of the vector table to the new address @a new_addr provided.
- *
- * It must be aligned on a 128-byte boundary.
- *
- * This routine must be called with interrupts locked and all sources of
- * interrupts disabled.
- *
- * @param new_addr The new address of the vector table.
- *
- * @return N/A
- */
-
-static inline void _scs_relocate_vector_table(void *new_addr)
-{
-	__scs.scb.vtor.val = ((uint32_t)new_addr & 0xffffff80);
-	__asm__ volatile(
-		"dsb\n\t"
-		"isb\n\t"
-		:::);
-}
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
-
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

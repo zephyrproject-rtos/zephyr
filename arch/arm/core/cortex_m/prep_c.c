@@ -27,19 +27,16 @@
 static inline void relocate_vector_table(void) { /* do nothing */ }
 #elif defined(CONFIG_ARMV7_M)
 #ifdef CONFIG_XIP
-static inline void relocate_vector_table(void)
-{
-	/* vector table is located at the the beginning of the flash */
-	_scs_relocate_vector_table((void *)(CONFIG_FLASH_BASE_ADDRESS +
-					    CONFIG_TEXT_SECTION_OFFSET));
-}
+#define VECTOR_ADDRESS (CONFIG_FLASH_BASE_ADDRESS + CONFIG_TEXT_SECTION_OFFSET)
 #else
+#define VECTOR_ADDRESS CONFIG_SRAM_BASE_ADDRESS
+#endif
 static inline void relocate_vector_table(void)
 {
-	/* vector table is already in SRAM, just point to it */
-	_scs_relocate_vector_table((void *)CONFIG_SRAM_BASE_ADDRESS);
+	SCB->VTOR = VECTOR_ADDRESS & SCB_VTOR_TBLOFF_Msk;
+	__DSB();
+	__ISB();
 }
-#endif
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMv6_M */
