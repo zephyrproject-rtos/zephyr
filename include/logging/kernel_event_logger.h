@@ -31,8 +31,10 @@ extern int _sys_k_event_logger_mask;
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 extern void _sys_k_event_logger_enter_sleep(void);
+extern void _sys_k_event_logger_exit_sleep(void);
 #else
 static inline void _sys_k_event_logger_enter_sleep(void) {};
+static inline void  _sys_k_event_logger_exit_sleep(void) {};
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
