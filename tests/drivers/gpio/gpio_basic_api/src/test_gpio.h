@@ -24,6 +24,14 @@
 #define DEV_NAME CONFIG_GPIO_QMSI_0_NAME
 #define PIN_OUT 16  /* IO8 */
 #define PIN_IN 19  /* IO4 */
+#elif defined(CONFIG_BOARD_ARDUINO_101_SSS)
+#define DEV_NAME CONFIG_GPIO_QMSI_SS_0_NAME
+#define PIN_OUT 2  /* AD0 */
+#define PIN_IN 3  /* AD1 */
+#elif defined(CONFIG_BOARD_QUARK_D2000_CRB)
+#define DEV_NAME CONFIG_GPIO_QMSI_0_NAME
+#define PIN_OUT 8  /* DIO7 */
+#define PIN_IN 9  /* DIO8 */
 #endif
 
 #define MAX_INT_CNT 3

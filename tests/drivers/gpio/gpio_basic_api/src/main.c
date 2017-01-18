@@ -21,14 +21,26 @@
  * quark_se_c1000_ss_devboard - arc
  * --------------------
  *
- * 1. PIN_OUT is GPIO_SS_12
- * 2. PIN_IN is GPIO_SS_13
+ * 1. PIN_OUT is GPIO_SS_4/GPIO_SS_AIN_12
+ * 2. PIN_IN is GPIO_SS_5/GPIO_SS_AIN_13
  *
  * arduino_101 - x86
  * --------------------
  *
  * 1. PIN_OUT is GPIO_16
  * 2. PIN_IN is GPIO_19
+ *
+ * arduino_101_sss - arc
+ * --------------------
+ *
+ * 1. PIN_OUT is GPIO_SS_2
+ * 2. PIN_IN is GPIO_SS_3
+ *
+ * quark_d2000_crb - x86
+ * --------------------
+ *
+ * 1. PIN_OUT is GPIO_8
+ * 2. PIN_IN is GPIO_9
  */
 
 #include "test_gpio.h"
