@@ -24,6 +24,7 @@
 #include <misc/util.h>
 #include <misc/stack.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -36,11 +37,6 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "rfcomm_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define RFCOMM_CHANNEL_START	0x01
 #define RFCOMM_CHANNEL_END	0x1e
@@ -294,6 +290,7 @@ static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		 * dummy credit to wake it up.
 		 */
 		rfcomm_dlc_tx_give_credits(dlc, 1);
+		k_sem_give(&dlc->session->fc);
 		break;
 	default:
 		rfcomm_dlc_destroy(dlc);
@@ -526,6 +523,26 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
+static void rfcomm_check_fc(struct bt_rfcomm_dlc *dlc)
+{
+	BT_DBG("%p", dlc);
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
+		BT_DBG("Wait for credits %p", dlc);
+		/* Wait for credits */
+		k_sem_take(&dlc->tx_credits, K_FOREVER);
+		return;
+	}
+
+	k_sem_take(&dlc->session->fc, K_FOREVER);
+
+	/* Give the sem immediately so that sem will be available for all
+	 * the bufs in the queue. It will be blocked only once all the bufs
+	 * are sent (which will preempt this thread) and FCOFF is received.
+	 */
+	k_sem_give(&dlc->session->fc);
+}
+
 static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 {
 	struct bt_rfcomm_dlc *dlc = p1;
@@ -549,9 +566,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 
-		BT_DBG("Wait for credits %p", dlc);
-		/* Wait for credits */
-		k_sem_take(&dlc->tx_credits, K_FOREVER);
+		rfcomm_check_fc(dlc);
 		if (dlc->state != BT_RFCOMM_STATE_CONNECTED &&
 		    dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) {
 			net_buf_unref(buf);
@@ -700,11 +715,49 @@ static int rfcomm_send_nsc(struct bt_rfcomm_session *session, uint8_t cmd_type)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
+static int rfcomm_send_fcon(struct bt_rfcomm_session *session, uint8_t cr)
+{
+	struct net_buf *buf;
+	uint8_t fcs;
+
+	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_FCON, 0);
+
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+}
+
+static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
+{
+	struct net_buf *buf;
+	uint8_t fcs;
+
+	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_FCOFF, 0);
+
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+}
+
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
 
 	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR);
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
+		/* This means PN negotiation is not done for this session and
+		 * can happen only for 1.0b device.
+		 */
+		dlc->session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
+	}
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
+		BT_DBG("CFC not supported %p", dlc);
+		rfcomm_send_fcon(dlc->session, BT_RFCOMM_MSG_CMD_CR);
+	}
 
 	/* Cancel conn timer */
 	k_delayed_work_cancel(&dlc->rtx_work);
@@ -859,11 +912,19 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	pn = net_buf_add(buf, sizeof(*pn));
 	pn->dlci = dlc->dlci;
 	pn->mtu = sys_cpu_to_le16(dlc->mtu);
-	if (dlc->state == BT_RFCOMM_STATE_CONFIG) {
+	if (dlc->state == BT_RFCOMM_STATE_CONFIG &&
+	    (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN ||
+	     dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED)) {
 		pn->credits = dlc->rx_credit;
-		pn->flow_ctrl = cr ? 0xf0 : 0xe0;
+		if (cr) {
+			pn->flow_ctrl = BT_RFCOMM_PN_CFC_CMD;
+		} else {
+			pn->flow_ctrl = BT_RFCOMM_PN_CFC_RESP;
+		}
 	} else {
-		/* If PN comes in already opened dlc these should be 0*/
+		/* If PN comes in already opened dlc or cfc not supported
+		 * these should be 0
+		 */
 		pn->credits = 0;
 		pn->flow_ctrl = 0;
 	}
@@ -1108,7 +1169,16 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		BT_DBG("Incoming connection accepted dlc %p", dlc);
 
 		dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
-		rfcomm_dlc_tx_give_credits(dlc, pn->credits);
+
+		if (pn->flow_ctrl == BT_RFCOMM_PN_CFC_CMD) {
+			if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
+				session->cfc = BT_RFCOMM_CFC_SUPPORTED;
+			}
+			rfcomm_dlc_tx_give_credits(dlc, pn->credits);
+		} else {
+			session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
+		}
+
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
 		rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
 		/* Cancel idle timer if any */
@@ -1129,7 +1199,15 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 			}
 
 			dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
-			rfcomm_dlc_tx_give_credits(dlc, pn->credits);
+			if (pn->flow_ctrl == BT_RFCOMM_PN_CFC_RESP) {
+				if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
+					session->cfc = BT_RFCOMM_CFC_SUPPORTED;
+				}
+				rfcomm_dlc_tx_give_credits(dlc, pn->credits);
+			} else {
+				session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
+			}
+
 			dlc->state = BT_RFCOMM_STATE_CONNECTING;
 			rfcomm_send_sabm(session, dlc->dlci);
 		}
@@ -1193,6 +1271,41 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		rfcomm_send_test(session, BT_RFCOMM_MSG_RESP_CR, buf->data,
 				 buf->len - 1);
 		break;
+	case BT_RFCOMM_FCON:
+		if (session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
+			BT_ERR("FCON received when CFC is supported ");
+			return;
+		}
+
+		if (!cr) {
+			break;
+		}
+
+		/* Give the sem so that it will unblock the waiting dlc threads
+		 * of this session in sem_take().
+		 */
+		k_sem_give(&session->fc);
+		rfcomm_send_fcon(session, BT_RFCOMM_MSG_RESP_CR);
+		break;
+	case BT_RFCOMM_FCOFF:
+		if (session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
+			BT_ERR("FCOFF received when CFC is supported ");
+			return;
+		}
+
+		if (!cr) {
+			break;
+		}
+
+		/* Take the semaphore with timeout K_NO_WAIT so that all the
+		 * dlc threads in this session will be blocked when it tries
+		 * sem_take before sending the data. K_NO_WAIT timeout will
+		 * make sure that RX thread will not be blocked while taking
+		 * the semaphore.
+		 */
+		k_sem_take(&session->fc, K_NO_WAIT);
+		rfcomm_send_fcoff(session, BT_RFCOMM_MSG_RESP_CR);
+		break;
 	default:
 		BT_WARN("Unknown/Unsupported RFCOMM Msg type 0x%02x", msg_type);
 		rfcomm_send_nsc(session, hdr->type);
@@ -1203,6 +1316,10 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
 {
 	uint8_t credits;
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
+		return;
+	}
 
 	BT_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
 
@@ -1244,7 +1361,8 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 	}
 
 	if (buf->len > BT_RFCOMM_FCS_SIZE) {
-		if (!dlc->rx_credit) {
+		if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED &&
+		    !dlc->rx_credit) {
 			BT_ERR("Data recvd when rx credit is 0");
 			rfcomm_dlc_close(dlc);
 			return;
@@ -1441,8 +1559,10 @@ static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 		session->br_chan.rx.mtu	= CONFIG_BLUETOOTH_RFCOMM_L2CAP_MTU;
 		session->state = BT_RFCOMM_STATE_INIT;
 		session->role = role;
+		session->cfc = BT_RFCOMM_CFC_UNKNOWN;
 		k_delayed_work_init(&session->rtx_work,
 				    rfcomm_session_rtx_timeout);
+		k_sem_init(&session->fc, 0, 1);
 
 		return session;
 	}

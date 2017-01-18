@@ -110,7 +110,7 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 		memcpy(&tmp4, &BT_UUID_128(uuid)->val[10], sizeof(tmp4));
 		memcpy(&tmp5, &BT_UUID_128(uuid)->val[12], sizeof(tmp5));
 
-		snprintk(str, len, "%08x-%04x-%04x-%04x-%.8x%04x",
+		snprintk(str, len, "%08x-%04x-%04x-%04x-%08x%04x",
 			 tmp5, tmp4, tmp3, tmp2, tmp1, tmp0);
 		break;
 	default:

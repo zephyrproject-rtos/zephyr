@@ -46,6 +46,7 @@ extern "C" {
 #define BT_ATT_ERR_INSUFFICIENT_RESOURCES	0x11
 
 /* Common Profile Error Codes (from CSS) */
+#define BT_ATT_ERR_WRITE_REQ_REJECTED		0xfc
 #define BT_ATT_ERR_CCC_IMPROPER_CONF		0xfd
 #define BT_ATT_ERR_PROCEDURE_IN_PROGRESS	0xfe
 #define BT_ATT_ERR_OUT_OF_RANGE			0xff

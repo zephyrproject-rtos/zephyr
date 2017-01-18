@@ -20,11 +20,12 @@
 #include <zephyr.h>
 #include <device.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_NBLE_DEBUG_GAP)
+#include <bluetooth/log.h>
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
-#include <bluetooth/log.h>
 
 #include "gap_internal.h"
 #include "conn_internal.h"
@@ -44,11 +45,6 @@
 /* Set the firmware compatible with Nordic BLE RPC */
 static const uint32_t compatible_firmware = NBLE_VERSION(4, 0, 31);
 
-#if !defined(CONFIG_NBLE_DEBUG_GAP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
-
 static bt_ready_cb_t bt_ready_cb;
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
@@ -64,6 +60,11 @@ static const char *bt_addr_le_str(const bt_addr_le_t *addr)
 	bt_addr_le_to_str(addr, str, sizeof(str));
 
 	return str;
+}
+#else
+static inline const char *bt_addr_le_str(const bt_addr_le_t *addr)
+{
+	return NULL;
 }
 #endif /* CONFIG_BLUETOOTH_DEBUG */
 

@@ -27,21 +27,20 @@
 #include <tinycrypt/utils.h>
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
-#include <bluetooth/bluetooth.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #include <bluetooth/log.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+
 #include "hci_ecc.h"
 #ifdef CONFIG_BLUETOOTH_HCI_RAW
 #include <bluetooth/hci_raw.h>
 #include "hci_raw_internal.h"
 #else
 #include "hci_core.h"
-#endif
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
 #endif
 
 static BT_STACK_NOINIT(ecc_thread_stack, 1280);

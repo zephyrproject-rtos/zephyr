@@ -22,6 +22,7 @@
 #include <misc/util.h>
 #include <misc/printk.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HFP_HF)
 #include <bluetooth/log.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/rfcomm.h>
@@ -31,11 +32,6 @@
 #include "rfcomm_internal.h"
 #include "at.h"
 #include "hfp_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_HFP_HF)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define MAX_IND_STR_LEN 17
 

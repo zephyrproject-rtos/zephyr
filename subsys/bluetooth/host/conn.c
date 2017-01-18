@@ -24,6 +24,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -38,17 +39,9 @@
 #include "smp.h"
 #include "att_internal.h"
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_CONN)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
-
-/* Pool for outgoing ACL fragments */
-NET_BUF_POOL_DEFINE(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), BT_BUF_USER_DATA_MIN,
-		    NULL);
-
-/* Pool for dummy buffers to wake up the tx threads */
-NET_BUF_POOL_DEFINE(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, 0, NULL);
+NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BLUETOOTH_L2CAP_TX_BUF_COUNT,
+		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_TX_MTU),
+		    CONFIG_BLUETOOTH_L2CAP_TX_USER_DATA_SIZE, NULL);
 
 /* How long until we cancel HCI_LE_Create_Connection */
 #define CONN_TIMEOUT	K_SECONDS(3)
@@ -78,8 +71,7 @@ static const uint8_t ssp_method[4 /* remote */][4 /* local */] = {
 };
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_CONN)
-static const char *state2str(bt_conn_state_t state)
+static inline const char *state2str(bt_conn_state_t state)
 {
 	switch (state) {
 	case BT_CONN_DISCONNECTED:
@@ -96,7 +88,6 @@ static const char *state2str(bt_conn_state_t state)
 		return "(unknown)";
 	}
 }
-#endif
 
 static void notify_connected(struct bt_conn *conn)
 {
@@ -131,6 +122,35 @@ void notify_le_param_updated(struct bt_conn *conn)
 					     conn->le.timeout);
 		}
 	}
+}
+
+bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+{
+	struct bt_conn_cb *cb;
+
+	if (!bt_le_conn_params_valid(param)) {
+		return false;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (!cb->le_param_req) {
+			continue;
+		}
+
+		if (!cb->le_param_req(conn, param)) {
+			return false;
+		}
+
+		/* The callback may modify the parameters so we need to
+		 * double-check that it returned valid parameters.
+		 */
+		if (!bt_le_conn_params_valid(param)) {
+			return false;
+		}
+	}
+
+	/* Default to accepting if there's no app callback */
+	return true;
 }
 
 static void le_conn_update(struct k_work *work)
@@ -618,8 +638,8 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 		return 0;
 	}
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		struct bt_hci_cp_read_encryption_key_size *cp;
 		struct bt_hci_rp_read_encryption_key_size *rp;
 		struct net_buf *buf;
@@ -648,13 +668,12 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 
 		return key_size;
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
-#if defined(CONFIG_BLUETOOTH_SMP)
-	return conn->le.keys ? conn->le.keys->enc_size : 0;
-#else
+	if (IS_ENABLED(CONFIG_BLUETOOTH_SMP)) {
+		return conn->le.keys ? conn->le.keys->enc_size : 0;
+	}
+
 	return 0;
-#endif /* CONFIG_BLUETOOTH_SMP */
 }
 
 void bt_conn_security_changed(struct bt_conn *conn)
@@ -745,11 +764,10 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 		return -ENOTCONN;
 	}
 
-#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (sec < BT_SECURITY_FIPS) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_SMP_SC_ONLY) &&
+	    sec < BT_SECURITY_FIPS) {
 		return -EOPNOTSUPP;
 	}
-#endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 	/* nothing to do */
 	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
@@ -948,7 +966,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	struct net_buf *frag;
 	uint16_t frag_len;
 
-	frag = bt_conn_create_pdu(&frag_pool, 0);
+	frag = bt_conn_create_pdu(NULL, 0);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		net_buf_unref(frag);
@@ -1127,9 +1145,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		    old_state == BT_CONN_DISCONNECT) {
 			bt_l2cap_disconnected(conn);
 			notify_disconnected(conn);
-
 			net_buf_put(&conn->tx_queue,
-				    net_buf_alloc(&dummy_pool, K_NO_WAIT));
+				    bt_conn_create_pdu(NULL, 0));
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */
 			notify_connected(conn);
@@ -1405,16 +1422,15 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	/* Disconnection is initiated by us, so auto connection shall
 	 * be disabled. Otherwise the passive scan would be enabled
 	 * and we could send LE Create Connection as soon as the remote
 	 * starts advertising.
 	 */
-	if (conn->type == BT_CONN_TYPE_LE) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL) &&
+	    conn->type == BT_CONN_TYPE_LE) {
 		bt_le_set_auto_conn(&conn->le.dst, NULL);
 	}
-#endif
 
 	switch (conn->state) {
 	case BT_CONN_CONNECT_SCAN:
@@ -1453,8 +1469,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 {
 	struct bt_conn *conn;
 
-	if (!bt_le_conn_params_valid(param->interval_min, param->interval_max,
-				     param->latency, param->timeout)) {
+	if (!bt_le_conn_params_valid(param)) {
 		return NULL;
 	}
 
@@ -1496,10 +1511,7 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 {
 	struct bt_conn *conn;
 
-	if (param && !bt_le_conn_params_valid(param->interval_min,
-					      param->interval_max,
-					      param->latency,
-					      param->timeout)) {
+	if (param && !bt_le_conn_params_valid(param)) {
 		return -EINVAL;
 	}
 
@@ -1575,13 +1587,18 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 
 struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 {
-	size_t head_reserve = reserve + sizeof(struct bt_hci_acl_hdr) +
-					CONFIG_BLUETOOTH_HCI_SEND_RESERVE;
 	struct net_buf *buf;
 
+	if (!pool) {
+		pool = &acl_tx_pool;
+	}
+
 	buf = net_buf_alloc(pool, K_FOREVER);
-	/* NULL return is not possible because of K_FOREVER */
-	net_buf_reserve(buf, head_reserve);
+	if (buf) {
+		reserve += sizeof(struct bt_hci_acl_hdr) +
+				CONFIG_BLUETOOTH_HCI_SEND_RESERVE;
+		net_buf_reserve(buf, reserve);
+	}
 
 	return buf;
 }
@@ -1612,12 +1629,13 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	if (!bt_auth) {
 		return -EINVAL;
 	}
-#if defined(CONFIG_BLUETOOTH_SMP)
-	if (conn->type == BT_CONN_TYPE_LE) {
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_SMP) &&
+	    conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_auth_passkey_entry(conn, passkey);
 		return 0;
 	}
-#endif /* CONFIG_BLUETOOTH_SMP */
+
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		/* User entered passkey, reset user state. */
@@ -1638,12 +1656,13 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 {
 	if (!bt_auth) {
 		return -EINVAL;
-	};
-#if defined(CONFIG_BLUETOOTH_SMP)
-	if (conn->type == BT_CONN_TYPE_LE) {
+	}
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_SMP) &&
+	    conn->type == BT_CONN_TYPE_LE) {
 		return bt_smp_auth_passkey_confirm(conn);
 	}
-#endif /* CONFIG_BLUETOOTH_SMP */
+
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		/* Allow user confirm passkey value, then reset user state. */
@@ -1663,11 +1682,12 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 	if (!bt_auth) {
 		return -EINVAL;
 	}
-#if defined(CONFIG_BLUETOOTH_SMP)
-	if (conn->type == BT_CONN_TYPE_LE) {
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_SMP) &&
+	    conn->type == BT_CONN_TYPE_LE) {
 		return bt_smp_auth_cancel(conn);
 	}
-#endif /* CONFIG_BLUETOOTH_SMP */
+
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		/* Allow user cancel authentication, then reset user state. */
@@ -1716,25 +1736,6 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 }
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-static void background_scan_init(void)
-{
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		struct bt_conn *conn = &conns[i];
-
-		if (!atomic_get(&conn->ref)) {
-			continue;
-		}
-
-		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
-		}
-	}
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-}
-
 int bt_conn_init(void)
 {
 	int err;
@@ -1748,7 +1749,23 @@ int bt_conn_init(void)
 
 	bt_l2cap_init();
 
-	background_scan_init();
+	/* Initialize background scan */
+	if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL)) {
+		int i;
+
+		for (i = 0; i < ARRAY_SIZE(conns); i++) {
+			struct bt_conn *conn = &conns[i];
+
+			if (!atomic_get(&conn->ref)) {
+				continue;
+			}
+
+			if (atomic_test_bit(conn->flags,
+					    BT_CONN_AUTO_CONNECT)) {
+				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+			}
+		}
+	}
 
 	return 0;
 }

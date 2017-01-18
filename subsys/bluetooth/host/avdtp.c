@@ -23,6 +23,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_AVDTP)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -31,11 +32,6 @@
 
 #include "l2cap_internal.h"
 #include "avdtp_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_AVDTP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 /* TODO add config file*/
 #define CONFIG_BLUETOOTH_AVDTP_CONN CONFIG_BLUETOOTH_MAX_CONN
@@ -47,21 +43,31 @@ NET_BUF_POOL_DEFINE(avdtp_sig_pool, CONFIG_BLUETOOTH_AVDTP_CONN,
 		    BT_BUF_USER_DATA_MIN, NULL);
 */
 
+typedef int (*bt_avdtp_func_t)(struct bt_avdtp *session,
+			       struct bt_avdtp_req *req);
+
 static struct bt_avdtp_event_cb *event_cb;
 
 static struct bt_avdtp_seid_lsep *lseps;
 
+struct bt_avdtp_req {
+	uint8_t signal_id;
+	uint8_t transaction_id;
+	bt_avdtp_func_t func;
+	struct k_delayed_work timeout_work;
+};
+
 #define AVDTP_CHAN(_ch) CONTAINER_OF(_ch, struct bt_avdtp, br_chan.chan)
 
-#define AVDTP_KWORK(_work) CONTAINER_OF(_work, struct bt_avdtp,\
-					req.timeout_work)
+#define AVDTP_KWORK(_work) CONTAINER_OF(_work, struct bt_avdtp_req,\
+					timeout_work)
 
 #define AVDTP_TIMEOUT K_SECONDS(6)
 
 /* Timeout handler */
 static void avdtp_timeout(struct k_work *work)
 {
-	BT_DBG("Failed Signal_id = %d", (AVDTP_KWORK(work))->req.signal_id);
+	BT_DBG("Failed Signal_id = %d", (AVDTP_KWORK(work))->signal_id);
 
 	/* Gracefully Disconnect the Signalling and streaming L2cap chann*/
 
@@ -80,7 +86,7 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 	session = AVDTP_CHAN(chan);
 	BT_DBG("chan %p session %p", chan, session);
 	/* Init the timer */
-	k_delayed_work_init(&session->req.timeout_work, avdtp_timeout);
+	k_delayed_work_init(&session->req->timeout_work, avdtp_timeout);
 
 }
 

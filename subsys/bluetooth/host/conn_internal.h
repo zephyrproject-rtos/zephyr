@@ -132,7 +132,6 @@ int bt_conn_send(struct bt_conn *conn, struct net_buf *buf);
 /* Add a new LE connection */
 struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer);
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 
@@ -143,7 +142,6 @@ void bt_conn_pin_code_req(struct bt_conn *conn);
 uint8_t bt_conn_get_io_capa(void);
 uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
 void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey);
-#endif
 
 void bt_conn_disconnect_all(void);
 
@@ -166,6 +164,8 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 			   const struct bt_le_conn_param *param);
 
 void notify_le_param_updated(struct bt_conn *conn);
+
+bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
 #if defined(CONFIG_BLUETOOTH_SMP)
 /* rand and ediv should be in BT order */

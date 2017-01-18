@@ -26,8 +26,6 @@
 #include <zephyr.h>
 #include <misc/util.h>
 
-#include <bluetooth/log.h>
-
 const char *bt_hex(const void *buf, size_t len)
 {
 	static const char hex[] = "0123456789abcdef";

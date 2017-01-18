@@ -23,6 +23,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -34,15 +35,8 @@
 #include "l2cap_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
-#if defined(CONFIG_BLUETOOTH_RFCOMM)
 #include "rfcomm_internal.h"
-#endif
 #include "sdp_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define BR_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_br_chan, chan)
 #define BR_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_br_chan, chan.rtx_work)
@@ -68,7 +62,7 @@
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
-#define L2CAP_BR_MAX_MTU	CONFIG_BLUETOOTH_RX_BUF_LEN
+#define L2CAP_BR_MAX_MTU	BT_L2CAP_RX_MTU
 
 /*
  * L2CAP extended feature mask:
@@ -1670,14 +1664,18 @@ void bt_l2cap_br_init(void)
 			};
 
 	bt_l2cap_br_fixed_chan_register(&chan_br);
-#if defined(CONFIG_BLUETOOTH_RFCOMM)
-	bt_rfcomm_init();
-#endif /* CONFIG_BLUETOOTH_RFCOMM */
-#if defined(CONFIG_BLUETOOTH_AVDTP)
-	bt_avdtp_init();
-#endif /* CONFIG_BLUETOOTH_AVDTP */
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_RFCOMM)) {
+		bt_rfcomm_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_AVDTP)) {
+		bt_avdtp_init();
+	}
+
 	bt_sdp_init();
-#if defined(CONFIG_BLUETOOTH_A2DP)
-	bt_a2dp_init();
-#endif /* CONFIG_BLUETOOTH_A2DP */
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_A2DP)) {
+		bt_a2dp_init();
+	}
 }

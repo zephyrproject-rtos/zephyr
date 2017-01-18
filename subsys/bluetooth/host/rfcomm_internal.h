@@ -20,16 +20,25 @@
 
 #include <bluetooth/rfcomm.h>
 
+typedef enum {
+	BT_RFCOMM_CFC_UNKNOWN,
+	BT_RFCOMM_CFC_NOT_SUPPORTED,
+	BT_RFCOMM_CFC_SUPPORTED,
+} __packed bt_rfcomm_cfc_t;
+
 /* RFCOMM signalling connection specific context */
 struct bt_rfcomm_session {
 	/* L2CAP channel this context is associated with */
 	struct bt_l2cap_br_chan br_chan;
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_delayed_work rtx_work;
+	/* Binary sem for aggregate fc */
+	struct k_sem fc;
 	struct bt_rfcomm_dlc *dlcs;
 	uint16_t mtu;
 	uint8_t state;
 	bt_rfcomm_role_t role;
+	bt_rfcomm_cfc_t cfc;
 };
 
 enum {
@@ -98,6 +107,9 @@ struct bt_rfcomm_rpn {
 
 #define BT_RFCOMM_TEST  0x08
 #define BT_RFCOMM_NSC   0x04
+
+#define BT_RFCOMM_FCON  0x28
+#define BT_RFCOMM_FCOFF 0x18
 
 /* Default RPN Settings */
 #define BT_RFCOMM_RPN_BAUD_RATE_9600    0x03
@@ -202,6 +214,9 @@ struct bt_rfcomm_rpn {
 #define BT_RFCOMM_PF_UIH             0
 #define BT_RFCOMM_PF_UIH_CREDIT      1
 #define BT_RFCOMM_PF_UIH_NO_CREDIT   0
+
+#define BT_RFCOMM_PN_CFC_CMD   0xf0
+#define BT_RFCOMM_PN_CFC_RESP  0xe0
 
 /* Initialize RFCOMM signal layer */
 void bt_rfcomm_init(void);

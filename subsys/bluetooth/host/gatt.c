@@ -24,6 +24,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_GATT)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -38,11 +39,6 @@
 #include "att_internal.h"
 #include "smp.h"
 #include "gatt_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_GATT)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 static struct bt_gatt_attr *db;
 
@@ -716,6 +712,10 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
 	for (params = subscriptions; params; params = params->_next) {
+		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
+			continue;
+		}
+
 		if (handle != params->value_handle) {
 			continue;
 		}
@@ -785,7 +785,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 		return -ENOMEM;
 	}
 
-	mtu = CONFIG_BLUETOOTH_ATT_MTU;
+	mtu = BT_ATT_MTU;
 
 	BT_DBG("Client MTU %u", mtu);
 

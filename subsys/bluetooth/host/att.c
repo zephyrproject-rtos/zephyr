@@ -24,6 +24,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_ATT)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -37,11 +38,6 @@
 #include "smp.h"
 #include "att_internal.h"
 #include "gatt_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_ATT)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define ATT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_att, chan.chan)
 #define ATT_REQ(_node) CONTAINER_OF(_node, struct bt_att_req, node)
@@ -66,10 +62,9 @@ struct bt_attr_data {
 	uint16_t offset;
 };
 
-/* Pool for incoming ATT packets, MTU is 23 */
-NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
-		    CONFIG_BLUETOOTH_ATT_MTU, sizeof(struct bt_attr_data),
-		    NULL);
+/* Pool for incoming ATT packets */
+NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT, BT_ATT_MTU,
+		    sizeof(struct bt_attr_data), NULL);
 #endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
 
 /* ATT channel specific context */
@@ -85,22 +80,6 @@ struct bt_att {
 };
 
 static struct bt_att bt_req_pool[CONFIG_BLUETOOTH_MAX_CONN];
-
-/*
- * Pool for outgoing ATT requests packets.
- */
-NET_BUF_POOL_DEFINE(req_pool, CONFIG_BLUETOOTH_ATT_REQ_COUNT,
-		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
-
-/*
- * Pool for ougoing ATT responses packets. This is necessary in order not to
- * block the RX thread since otherwise req_pool would have be used but buffers
- * may only be freed after a response is received which would never happen if
- * the RX thread is waiting a buffer causing a deadlock.
- */
-NET_BUF_POOL_DEFINE(rsp_pool, 1, BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
 
 static void att_req_destroy(struct bt_att_req *req)
 {
@@ -163,7 +142,7 @@ static uint8_t att_mtu_req(struct bt_att *att, struct net_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	mtu_server = CONFIG_BLUETOOTH_ATT_MTU;
+	mtu_server = BT_ATT_MTU;
 
 	BT_DBG("Server MTU %u", mtu_server);
 
@@ -209,13 +188,12 @@ static void att_process(struct bt_att *att)
 
 	BT_DBG("");
 
-	/* Peek next request from the list */
-	node = sys_slist_peek_head(&att->reqs);
+	/* Pull next request from the list */
+	node = sys_slist_get(&att->reqs);
 	if (!node) {
 		return;
 	}
 
-	sys_slist_remove(&att->reqs, NULL, node);
 	att_send_req(att, ATT_REQ(node));
 }
 
@@ -277,7 +255,7 @@ static uint8_t att_mtu_rsp(struct bt_att *att, struct net_buf *buf)
 		return att_handle_rsp(att, NULL, 0, BT_ATT_ERR_INVALID_PDU);
 	}
 
-	att->chan.rx.mtu = min(mtu, CONFIG_BLUETOOTH_ATT_MTU);
+	att->chan.rx.mtu = min(mtu, BT_ATT_MTU);
 
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
 	 *
@@ -1764,32 +1742,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 		return NULL;
 	}
 
-	switch (op) {
-	case BT_ATT_OP_CONFIRM:
-	case BT_ATT_OP_ERROR_RSP:
-	case BT_ATT_OP_MTU_RSP:
-	case BT_ATT_OP_FIND_INFO_RSP:
-	case BT_ATT_OP_FIND_TYPE_RSP:
-	case BT_ATT_OP_READ_TYPE_RSP:
-	case BT_ATT_OP_READ_RSP:
-	case BT_ATT_OP_READ_BLOB_RSP:
-	case BT_ATT_OP_READ_MULT_RSP:
-	case BT_ATT_OP_READ_GROUP_RSP:
-	case BT_ATT_OP_WRITE_RSP:
-	case BT_ATT_OP_PREPARE_WRITE_RSP:
-	case BT_ATT_OP_EXEC_WRITE_RSP:
-		/* Use a different buffer pool for responses as this is
-		 * usually sent from RX thread it shall never block.
-		 */
-		buf = bt_l2cap_create_pdu(&rsp_pool, 0);
-		break;
-	default:
-		buf = bt_l2cap_create_pdu(&req_pool, 0);
-	}
-
-	if (!buf) {
-		return NULL;
-	}
+	buf = bt_l2cap_create_pdu(NULL, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = op;

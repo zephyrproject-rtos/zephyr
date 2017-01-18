@@ -207,6 +207,9 @@ struct bt_l2cap_le_credits {
 				sizeof(struct bt_hci_acl_hdr) + \
 				sizeof(struct bt_l2cap_hdr) + (mtu))
 
+#define BT_L2CAP_RX_MTU (CONFIG_BLUETOOTH_RX_BUF_LEN - \
+			 4 /* HCI ACL header */ - 4 /* L2CAP header */)
+
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
@@ -230,8 +233,9 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 /* Delete channel */
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state);
+
+#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 				   bt_l2cap_chan_state_t state,
 				   const char *func, int line);
@@ -272,7 +276,6 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_tx_cid(struct bt_conn *conn,
 struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 						uint16_t cid);
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
 /* Initialize BR/EDR L2CAP signal layer */
 void bt_l2cap_br_init(void);
 
@@ -304,4 +307,3 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status);
 
 /* Handle received data */
 void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf);
-#endif /* CONFIG_BLUETOOTH_BREDR */

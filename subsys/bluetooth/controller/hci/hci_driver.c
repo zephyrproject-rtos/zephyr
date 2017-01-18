@@ -29,8 +29,9 @@
 #include <misc/stack.h>
 #include <misc/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 
@@ -55,11 +56,6 @@
 
 #include "hal/debug.h"
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
-
 #define HCI_CMD		0x01
 #define HCI_ACL		0x02
 #define HCI_SCO		0x03
@@ -82,7 +78,7 @@ static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 K_MUTEX_DEFINE(mutex_rand);
 
-void hci_le_rand(void *buf, uint8_t len)
+int bt_rand(void *buf, size_t len)
 {
 	while (len) {
 		k_mutex_lock(&mutex_rand, K_FOREVER);
@@ -92,17 +88,9 @@ void hci_le_rand(void *buf, uint8_t len)
 			cpu_sleep();
 		}
 	}
-}
-
-#if defined(CONFIG_BLUETOOTH_HCI_RAW) && defined(CONFIG_BLUETOOTH_TINYCRYPT_ECC)
-int bt_rand(void *buf, size_t len)
-{
-	LL_ASSERT(len < UINT8_MAX);
-	hci_le_rand(buf, (uint8_t) len);
 
 	return 0;
 }
-#endif
 
 void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {

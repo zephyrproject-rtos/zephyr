@@ -19,7 +19,7 @@
 #define _RAND_H_
 
 void rand_init(uint8_t *context, uint8_t context_len);
-uint32_t rand_get(uint8_t octets, uint8_t *rand);
+size_t rand_get(size_t octets, uint8_t *rand);
 void isr_rand(void *param);
 
 #endif /* _RAND_H_ */
