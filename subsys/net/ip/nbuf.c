@@ -391,15 +391,20 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 				    struct net_context *context)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
-	struct net_if *iface = net_context_get_iface(context);
 	struct in6_addr *addr6 = NULL;
+	struct net_if *iface;
 	struct net_buf *buf;
 	uint16_t reserve;
 
-	NET_ASSERT_INFO(context && iface, "context %p iface %p",
-			context, iface);
+	if (!context) {
+		return NULL;
+	}
 
-	if (context && net_context_get_family(context) == AF_INET6) {
+	iface = net_context_get_iface(context);
+
+	NET_ASSERT(iface);
+
+	if (net_context_get_family(context) == AF_INET6) {
 		addr6 = &((struct sockaddr_in6 *) &context->remote)->sin6_addr;
 	}
 
