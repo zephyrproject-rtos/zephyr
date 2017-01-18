@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_MPS2_AN385
+
+config BOARD
+	default mps2_an385
+
+if SERIAL
+
+config UART_CMSDK_APB
+	def_bool y
+
+config UART_INTERRUPT_DRIVEN
+	def_bool y
+
+config UART_CMSDK_APB_PORT0
+	def_bool y
+
+config UART_CMSDK_APB_PORT1
+	def_bool y
+
+config UART_CMSDK_APB_PORT2
+	def_bool y
+
+config UART_CMSDK_APB_PORT3
+	def_bool y
+
+config UART_CMSDK_APB_PORT4
+	def_bool y
+
+endif # SERIAL
+
+
+
+endif
