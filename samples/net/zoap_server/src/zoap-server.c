@@ -39,6 +39,8 @@
 
 static struct net_context *context;
 
+static const uint8_t plain_text_format;
+
 static int test_del(struct zoap_resource *resource,
 		    struct zoap_packet *request,
 		    const struct sockaddr *from)
@@ -276,6 +278,12 @@ static int piggyback_get(struct zoap_resource *resource,
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
 
+	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
+			    &plain_text_format, sizeof(plain_text_format));
+	if (r < 0) {
+		return -EINVAL;
+	}
+
 	payload = zoap_packet_get_payload(&response, &len);
 	if (!payload) {
 		return -EINVAL;
@@ -370,6 +378,12 @@ static int query_get(struct zoap_resource *resource,
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
+
+	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
+			    &plain_text_format, sizeof(plain_text_format));
+	if (r < 0) {
+		return -EINVAL;
+	}
 
 	payload = zoap_packet_get_payload(&response, &len);
 	if (!payload) {
@@ -483,6 +497,12 @@ done:
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
 
+	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
+			    &plain_text_format, sizeof(plain_text_format));
+	if (r < 0) {
+		return -EINVAL;
+	}
+
 	payload = zoap_packet_get_payload(&response, &len);
 	if (!payload) {
 		return -EINVAL;
@@ -565,6 +585,12 @@ static int large_get(struct zoap_resource *resource,
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
+
+	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
+			    &plain_text_format, sizeof(plain_text_format));
+	if (r < 0) {
+		return -EINVAL;
+	}
 
 	r = zoap_add_block2_option(&response, &ctx);
 	if (r < 0) {
@@ -657,6 +683,12 @@ static int large_update_put(struct zoap_resource *resource,
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTINUE);
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
+
+	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
+			    &plain_text_format, sizeof(plain_text_format));
+	if (r < 0) {
+		return -EINVAL;
+	}
 
 	r = zoap_add_block2_option(&response, &ctx);
 	if (r < 0) {
