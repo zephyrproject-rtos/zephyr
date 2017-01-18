@@ -543,6 +543,9 @@ static void generate_interrupt_vector_bitmap(void)
 		interrupt_vector_bitmap[index] &= ~(1 << bit);
 		map_irq_to_vector_id[supplied_entry[i].irq] = (index * 32) + bit;
 		supplied_entry[i].vector_id = (index * 32) + bit;
+		debug("Assigned IRQ %3d (priority %2d) vector %3d\n",
+		      supplied_entry[i].irq, supplied_entry[i].priority,
+		      supplied_entry[i].vector_id);
 	}
 
 	bytes_to_write = num_irq_lines;
