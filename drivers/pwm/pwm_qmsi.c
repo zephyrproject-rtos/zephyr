@@ -11,6 +11,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <power.h>
+#include <misc/util.h>
 
 #include "qm_pwm.h"
 #include "clk.h"
@@ -51,40 +52,10 @@ struct pwm_data {
 static struct pwm_data pwm_context;
 
 #ifdef CONFIG_PWM_QMSI_API_REENTRANCY
-static const int reentrancy_protection = 1;
 #define RP_GET(dev) (&((struct pwm_data *)(dev->driver_data))->sem)
 #else
-static const int reentrancy_protection;
 #define RP_GET(dev) (NULL)
 #endif
-
-static void pwm_reentrancy_init(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_init(RP_GET(dev), 0, UINT_MAX);
-	k_sem_give(RP_GET(dev));
-}
-
-static void pwm_critical_region_start(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_take(RP_GET(dev), K_FOREVER);
-}
-
-static void pwm_critical_region_end(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_give(RP_GET(dev));
-}
 
 static int pwm_qmsi_configure(struct device *dev, int access_op,
 				 uint32_t pwm, int flags)
@@ -103,7 +74,9 @@ static int __set_one_port(struct device *dev, qm_pwm_t id, uint32_t pwm,
 	qm_pwm_config_t cfg;
 	int ret_val = 0;
 
-	pwm_critical_region_start(dev);
+	if (IS_ENABLED(CONFIG_PWM_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(dev), K_FOREVER);
+	}
 
 	/* Disable timer to prevent any output */
 	qm_pwm_stop(id, pwm);
@@ -142,7 +115,9 @@ static int __set_one_port(struct device *dev, qm_pwm_t id, uint32_t pwm,
 	qm_pwm_start(id, pwm);
 
 pwm_set_port_return:
-	pwm_critical_region_end(dev);
+	if (IS_ENABLED(CONFIG_PWM_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(dev));
+	}
 
 	return ret_val;
 }
@@ -245,7 +220,9 @@ static int pwm_qmsi_set_period(struct device *dev, int access_op,
 		return -ENOTSUP;
 	}
 
-	pwm_critical_region_start(dev);
+	if (IS_ENABLED(CONFIG_PWM_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(dev), K_FOREVER);
+	}
 
 	switch (access_op) {
 	case PWM_ACCESS_BY_PIN:
@@ -267,7 +244,9 @@ static int pwm_qmsi_set_period(struct device *dev, int access_op,
 	}
 
 pwm_set_period_return:
-	pwm_critical_region_end(dev);
+	if (IS_ENABLED(CONFIG_PWM_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(dev));
+	}
 
 	return ret_val;
 }
@@ -430,7 +409,10 @@ static int pwm_qmsi_init(struct device *dev)
 
 	clk_periph_enable(CLK_PERIPH_PWM_REGISTER | CLK_PERIPH_CLK);
 
-	pwm_reentrancy_init(dev);
+	if (IS_ENABLED(CONFIG_PWM_QMSI_API_REENTRANCY)) {
+		k_sem_init(RP_GET(dev), 0, UINT_MAX);
+		k_sem_give(RP_GET(dev));
+	}
 
 	pwm_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
