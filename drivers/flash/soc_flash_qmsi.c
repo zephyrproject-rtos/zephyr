@@ -10,6 +10,7 @@
 #include <init.h>
 
 #include <flash.h>
+#include <misc/util.h>
 
 #include "qm_flash.h"
 #include "qm_soc_regs.h"
@@ -37,40 +38,10 @@ static struct soc_flash_data soc_flash_context;
 #endif /* FLASH_HAS_CONTEXT_DATA */
 
 #ifdef CONFIG_SOC_FLASH_QMSI_API_REENTRANCY
-static const int reentrancy_protection = 1;
 #define RP_GET(dev) (&((struct soc_flash_data *)(dev->driver_data))->sem)
 #else
-static const int reentrancy_protection;
 #define RP_GET(dev) (NULL)
 #endif
-
-static void flash_reentrancy_init(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_init(RP_GET(dev), 0, UINT_MAX);
-	k_sem_give(RP_GET(dev));
-}
-
-static void flash_critical_region_start(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_take(RP_GET(dev), K_FOREVER);
-}
-
-static void flash_critical_region_end(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_give(RP_GET(dev));
-}
 
 static inline bool is_aligned_32(uint32_t data)
 {
@@ -185,9 +156,15 @@ static int flash_qmsi_write(struct device *dev, off_t addr,
 		}
 #endif
 
-		flash_critical_region_start(dev);
+		if (IS_ENABLED(CONFIG_SOC_FLASH_QMSI_API_REENTRANCY)) {
+			k_sem_take(RP_GET(dev), K_FOREVER);
+		}
+
 		qm_flash_word_write(flash, reg, offset, data_word);
-		flash_critical_region_end(dev);
+
+		if (IS_ENABLED(CONFIG_SOC_FLASH_QMSI_API_REENTRANCY)) {
+			k_sem_give(RP_GET(dev));
+		}
 	}
 
 	return 0;
@@ -229,9 +206,15 @@ static int flash_qmsi_erase(struct device *dev, off_t addr, size_t size)
 				     (QM_FLASH_PAGE_SIZE_BITS + 1));
 		}
 #endif
-		flash_critical_region_start(dev);
+		if (IS_ENABLED(CONFIG_SOC_FLASH_QMSI_API_REENTRANCY)) {
+			k_sem_take(RP_GET(dev), K_FOREVER);
+		}
+
 		qm_flash_page_erase(flash, reg, page);
-		flash_critical_region_end(dev);
+
+		if (IS_ENABLED(CONFIG_SOC_FLASH_QMSI_API_REENTRANCY)) {
+			k_sem_give(RP_GET(dev));
+		}
 	}
 
 	return 0;
@@ -250,14 +233,19 @@ static int flash_qmsi_write_protection(struct device *dev, bool enable)
 		qm_cfg.write_disable = QM_FLASH_WRITE_ENABLE;
 	}
 
-	flash_critical_region_start(dev);
+	if (IS_ENABLED(CONFIG_SOC_FLASH_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(dev), K_FOREVER);
+	}
+
 	qm_flash_set_config(QM_FLASH_0, &qm_cfg);
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000)
 	qm_flash_set_config(QM_FLASH_1, &qm_cfg);
 #endif
 
-	flash_critical_region_end(dev);
+	if (IS_ENABLED(CONFIG_SOC_FLASH_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(dev));
+	}
 
 	return 0;
 }
@@ -347,7 +335,10 @@ static int quark_flash_init(struct device *dev)
 	qm_flash_set_config(QM_FLASH_1, &qm_cfg);
 #endif
 
-	flash_reentrancy_init(dev);
+	if (IS_ENABLED(CONFIG_SOC_FLASH_QMSI_API_REENTRANCY)) {
+		k_sem_init(RP_GET(dev), 0, UINT_MAX);
+		k_sem_give(RP_GET(dev));
+	}
 
 	flash_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
