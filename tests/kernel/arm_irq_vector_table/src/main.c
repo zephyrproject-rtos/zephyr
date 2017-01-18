@@ -81,7 +81,12 @@ void test_irq_vector_table(void)
 				k_sem_take(&sem[2], K_NO_WAIT)), NULL);
 
 	for (int ii = 0; ii < 3; ii++) {
-		_NvicSwInterruptTrigger(ii);
+#if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+		/* the QEMU does not simulate the STIR register: this is a workaround */
+		_NvicIrqPend(ii);
+#else
+		__scs.stir = ii;
+#endif
 	}
 
 	assert_false((k_sem_take(&sem[0], K_NO_WAIT) ||

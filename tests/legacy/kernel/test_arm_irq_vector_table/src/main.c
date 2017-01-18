@@ -94,7 +94,12 @@ void main(void)
 	}
 
 	for (int ii = 0; ii < 3; ii++) {
-		_NvicSwInterruptTrigger(ii);
+#if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+		/* the QEMU does not simulate the STIR register: this is a workaround */
+		_NvicIrqPend(ii);
+#else
+		__scs.stir = ii;
+#endif
 	}
 
 	rv = nano_task_sem_take(&sem[0], TICKS_NONE) &&
