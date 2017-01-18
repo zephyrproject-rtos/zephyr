@@ -84,7 +84,7 @@ struct cdc_acm_notification {
 
 #define CDC_ENDP_INT	0x81
 #define CDC_ENDP_OUT	0x03
-#define CDC_ENDP_IN		0x84
+#define CDC_ENDP_IN		0x82
 
 /* Decriptor size in bytes */
 #define USB_HFUNC_DESC_SIZE		5 /* Header Functional Descriptor */
