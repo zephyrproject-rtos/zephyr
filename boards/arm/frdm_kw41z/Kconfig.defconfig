@@ -1,0 +1,100 @@
+# Kconfig - FRDM-KW41Z board
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_FRDM_KW41Z
+
+config BOARD
+	default frdm_kw41z
+
+config FLASH_SIZE
+	default 512
+
+config SRAM_SIZE
+	default 128
+
+config OSC_XTAL0_FREQ
+	default 32000000
+
+config MCG_FRDIV
+	default 5
+
+config MCG_FCRDIV
+	default 0
+
+config PINMUX
+	def_bool y
+
+if PINMUX_MCUX
+
+config PINMUX_MCUX_PORTA
+	def_bool y
+
+config PINMUX_MCUX_PORTB
+	def_bool n
+
+config PINMUX_MCUX_PORTC
+	def_bool y
+
+endif # PINMUX_MCUX
+
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	def_bool y
+
+config GPIO_MCUX_PORTB
+	def_bool n
+
+config GPIO_MCUX_PORTC
+	def_bool y
+
+endif # GPIO_MCUX
+
+if UART_MCUX_LPUART
+
+config UART_MCUX_LPUART_0
+	def_bool y if UART_CONSOLE
+
+endif # UART_MCUX
+
+if I2C
+
+config I2C_1
+	def_bool y
+
+if I2C_1
+
+config I2C_1_DEFAULT_CFG
+	default 0x12
+
+config I2C_1_IRQ_PRI
+	default 0
+
+endif # I2C_1
+
+endif # I2C
+
+if FXOS8700
+
+config FXOS8700_I2C_NAME
+	default I2C_1_NAME
+
+config FXOS8700_I2C_ADDRESS
+	default 0x1f
+
+config FXOS8700_GPIO_NAME
+	default GPIO_MCUX_PORTC_NAME
+
+config FXOS8700_GPIO_PIN
+	default 1
+
+config FXOS8700_DRDY_INT1
+	def_bool y
+
+endif # FXOS8700
+
+endif # BOARD_FRDM_KW41Z
