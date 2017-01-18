@@ -396,19 +396,13 @@ static int query_get(struct zoap_resource *resource,
 	uint16_t len, id;
 	int i, r;
 
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		NET_ERR("packet without payload\n");
-		return -EINVAL;
-	}
-
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
 	token = zoap_header_get_token(request, &tkl);
 
 	r = zoap_find_options(request, ZOAP_OPTION_URI_QUERY, options, 4);
-	if (r <= 0) {
+	if (r < 0) {
 		return -EINVAL;
 	}
 
