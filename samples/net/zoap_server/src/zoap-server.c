@@ -164,6 +164,11 @@ static int test_post(struct zoap_resource *resource,
 		     struct zoap_packet *request,
 		     const struct sockaddr *from)
 {
+	static const char * const location_path[] = { "location1",
+						      "location2",
+						      "location3",
+						      NULL };
+	const char * const *p;
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
 	uint8_t *payload, code, type, tkl;
@@ -215,6 +220,11 @@ static int test_post(struct zoap_resource *resource,
 	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CREATED);
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
+
+	for (p = location_path; *p; p++) {
+		zoap_add_option(&response, ZOAP_OPTION_LOCATION_PATH,
+				*p, strlen(*p));
+	}
 
 	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
