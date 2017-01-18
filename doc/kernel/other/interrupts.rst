@@ -124,8 +124,8 @@ may execute before the thread handling the offload is scheduled.
 Implementation
 **************
 
-Defining an ISR
-===============
+Defining a regular ISR
+======================
 
 An ISR is defined at run-time by calling :c:macro:`IRQ_CONNECT`. It must
 then be enabled by calling :cpp:func:`irq_enable()`.
@@ -159,11 +159,58 @@ The following code defines and enables an ISR.
        ...
     }
 
+Defining a 'direct' ISR
+=======================
+
+Regular Zephyr interrupts introduce some overhead which may be unacceptable
+for some low-latency use-cases. Specifically:
+
+* The argument to the ISR is retrieved and passed to the ISR
+
+* If power management is enabled and the system was idle, all the hardware
+  will be resumed from low-power state before the ISR is executed, which can be
+  very time-consuming
+
+* Although some architectures will do this in hardware, other architectures
+  need to switch to the interrupt stack in code
+
+* After the interrupt is serviced, the OS then performs some logic to
+  potentially make a scheduling decision.
+
+Zephyr supports so-called 'direct' interrupts, which are installed via
+:c:macro:`IRQ_DIRECT_CONNECT`. These direct interrupts have some special
+implementation requirements and a reduced feature set; see the definition
+of :c:macro:`IRQ_DIRECT_CONNECT` for details.
+
+The following code demonstrates a direct ISR:
+
+.. code-block:: c
+
+    #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
+    #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
+    /* argument passed to my_isr(), in this case a pointer to the device */
+    #define MY_IRQ_FLAGS 0       /* IRQ flags. Unused on non-x86 */
+
+    ISR_DIRECT_DECLARE(my_isr)
+    {
+       do_stuff();
+       ISR_DIRECT_PM(); /* PM done after servicing interrupt for best latency */
+       return 1; /* We should check if scheduling decision should be made */
+    }
+
+    void my_isr_installer(void)
+    {
+       ...
+       IRQ_DIRECT_CONNECT(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_IRQ_FLAGS);
+       irq_enable(MY_DEV_IRQ);
+       ...
+    }
+
 Suggested Uses
 **************
 
-Use an ISR to perform interrupt processing that requires a very rapid
-response, and can be done quickly without blocking.
+Use a regular or direct ISR to perform interrupt processing that requires a
+very rapid response, and can be done quickly without blocking.
 
 .. note::
     Interrupt processing that is time consuming, or involves blocking,
@@ -186,6 +233,11 @@ APIs
 The following interrupt-related APIs are provided by :file:`irq.h`:
 
 * :c:macro:`IRQ_CONNECT`
+* :c:macro:`IRQ_DIRECT_CONNECT`
+* :c:macro:`ISR_DIRECT_HEADER`
+* :c:macro:`ISR_DIRECT_FOOTER`
+* :c:macro:`ISR_DIRECT_PM`
+* :c:macro:`ISR_DIRECT_DECLARE`
 * :cpp:func:`irq_lock()`
 * :cpp:func:`irq_unlock()`
 * :cpp:func:`irq_enable()`
