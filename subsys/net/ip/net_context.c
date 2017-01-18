@@ -928,6 +928,8 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 		net_context_set_state(context, NET_CONTEXT_CONNECTED);
 
 		send_ack(context, raddr);
+
+		k_sem_give(&context->tcp->connect_wait);
 	}
 
 	return NET_DROP;
@@ -950,6 +952,9 @@ int net_context_connect(struct net_context *context,
 
 	NET_ASSERT(addr);
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
+#if defined(CONFIG_NET_TCP)
+	NET_ASSERT(context->tcp);
+#endif
 
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
@@ -1104,11 +1109,15 @@ int net_context_connect(struct net_context *context,
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
-	/* FIXME - set timer to wait for SYN-ACK */
 	send_syn(context, addr);
 
 	if (cb) {
 		cb(context, user_data);
+	}
+
+	/* in tcp_synack_received() we give back this semaphore */
+	if (k_sem_take(&context->tcp->connect_wait, timeout)) {
+		return -ETIMEDOUT;
 	}
 #endif
 

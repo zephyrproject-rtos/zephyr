@@ -477,6 +477,7 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
  * @return           0 on success.
  * @return           -EINVAL if an invalid parameter is passed as an argument.
  * @return           -ENOTSUP if the operation is not supported or implemented.
+ * @return           -ETIMEDOUT if the connect operation times out.
  */
 int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,

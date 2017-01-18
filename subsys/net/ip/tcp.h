@@ -138,6 +138,11 @@ struct net_tcp {
 	 * established.
 	 */
 	net_tcp_accept_cb_t accept_cb;
+
+	/**
+	 * Semaphore to signal TCP connection completion
+	 */
+	struct k_sem connect_wait;
 };
 
 static inline bool net_tcp_is_used(struct net_tcp *tcp)

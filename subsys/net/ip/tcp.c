@@ -152,6 +152,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	tcp_context[i].accept_cb = NULL;
 
 	k_timer_init(&tcp_context[i].retry_timer, tcp_retry_expired, NULL);
+	k_sem_init(&tcp_context[i].connect_wait, 0, UINT_MAX);
 
 	return &tcp_context[i];
 }
@@ -167,6 +168,7 @@ int net_tcp_release(struct net_tcp *tcp)
 	k_delayed_work_cancel(&tcp->fin_timer);
 	k_delayed_work_cancel(&tcp->ack_timer);
 	k_timer_stop(&tcp->retry_timer);
+	k_sem_reset(&tcp->connect_wait);
 
 	net_tcp_set_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;
