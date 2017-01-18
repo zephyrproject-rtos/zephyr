@@ -928,8 +928,6 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 		net_context_set_state(context, NET_CONTEXT_CONNECTED);
 
 		send_ack(context, raddr);
-
-		return NET_OK;
 	}
 
 	return NET_DROP;
