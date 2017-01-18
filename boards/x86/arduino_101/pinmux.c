@@ -96,7 +96,7 @@
 /* Note:
  * 1. I2C pins on the shield are connected to i2c0_ss_sda and i2c_0_ss_scl,
  *    which are on the sensor subsystem. They are also tied to AD4 and AD5.
- *    Therefore, to use I2C, pin 9 (ain_9) and (ain_14) both need to be set
+ *    Therefore, to use I2C, pin 9 (ain_9) and pin 14 (ain_14) both need to be set
  *    to PINMUX_FUNC_B, so they will not interfere with I2C operations.
  *    Also, there is no internal pull-up on I2c bus, and thus external
  *    pull-up resistors are needed.
