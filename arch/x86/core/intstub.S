@@ -257,7 +257,7 @@ alreadyOnIntStack:
 #endif
 
 	/* irq_controller.h interface */
-	_irq_controller_eoi
+	_irq_controller_eoi_macro
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_start

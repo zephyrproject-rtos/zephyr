@@ -57,9 +57,14 @@ void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
 
 int __irq_controller_isr_vector_get(void);
 
+static inline void __irq_controller_eoi(void)
+{
+	*(volatile int *)(MVIC_EOI) = 0;
+}
+
 #else /* _ASMLANGUAGE */
 
-.macro __irq_controller_eoi
+.macro __irq_controller_eoi_macro
 	xorl %eax, %eax			/* zeroes eax */
 	movl %eax, MVIC_EOI		/* tell MVIC the IRQ is handled */
 .endm

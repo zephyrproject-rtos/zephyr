@@ -39,6 +39,14 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#ifdef CONFIG_INT_LATENCY_BENCHMARK
+void _int_latency_start(void);
+void _int_latency_stop(void);
+#else
+#define _int_latency_start()  do { } while (0)
+#define _int_latency_stop()   do { } while (0)
+#endif
+
 /* interrupt/exception/error related definitions */
 
 /**
@@ -108,7 +116,8 @@ typedef struct s_isrList {
  */
 
 #define NANO_CPU_INT_REGISTER(r, n, p, v, d) \
-	 ISR_LIST __attribute__((section(".intList"))) MK_ISR_NAME(r) = \
+	 static ISR_LIST __attribute__((section(".intList"))) \
+			 __attribute__((used)) MK_ISR_NAME(r) = \
 			{&r, n, p, v, d}
 
 
@@ -194,6 +203,20 @@ typedef struct s_isrList {
 	_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
+/** Configure a 'direct' static interrupt
+ *
+ * All arguments must be computable by the compiler at build time
+ *
+ */
+#define _ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+({ \
+	NANO_CPU_INT_REGISTER(isr_p, irq_p, priority_p, -1, 0); \
+	_irq_controller_irq_config(_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
+				   (flags_p)); \
+	_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
+})
+
+
 #ifdef CONFIG_X86_FIXED_IRQ_MAPPING
 /* Fixed vector-to-irq association mapping.
  * No need for the table at all.
@@ -210,6 +233,31 @@ extern unsigned char _irq_to_interrupt_vector[];
 			((unsigned int) _irq_to_interrupt_vector[irq])
 #endif
 
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+extern void _arch_irq_direct_pm(void);
+#define _ARCH_ISR_DIRECT_PM() _arch_irq_direct_pm()
+#else
+#define _ARCH_ISR_DIRECT_PM() do { } while (0)
+#endif
+
+#define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
+#define _ARCH_ISR_DIRECT_FOOTER(swap) _arch_isr_direct_footer(swap)
+
+/* FIXME prefer these inline, but see ZEP-1595 */
+extern void _arch_isr_direct_header(void);
+extern void _arch_isr_direct_footer(int maybe_swap);
+
+#define _ARCH_ISR_DIRECT_DECLARE(name) \
+	static inline int name##_body(void); \
+	__attribute__ ((interrupt)) void name(void *stack_frame) \
+	{ \
+		ARG_UNUSED(stack_frame); \
+		int check_reschedule; \
+		ISR_DIRECT_HEADER(); \
+		check_reschedule = name##_body(); \
+		ISR_DIRECT_FOOTER(check_reschedule); \
+	} \
+	static inline int name##_body(void)
 
 /**
  * @brief Nanokernel Exception Stack Frame
@@ -293,14 +341,6 @@ typedef struct nanoIsf {
 #define _NANO_ERR_CPU_EXCEPTION		(6)
 
 #ifndef _ASMLANGUAGE
-
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-void _int_latency_start(void);
-void _int_latency_stop(void);
-#else
-#define _int_latency_start()  do { } while (0)
-#define _int_latency_stop()   do { } while (0)
-#endif
 
 /**
  * @brief Disable all interrupts on the CPU (inline)

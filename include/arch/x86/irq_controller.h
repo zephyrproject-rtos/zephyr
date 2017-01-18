@@ -84,6 +84,11 @@ static inline int _irq_controller_isr_vector_get(void)
 }
 
 
+static inline void _irq_controller_eoi(void)
+{
+	__irq_controller_eoi();
+}
+
 #else /* _ASMLANGUAGE */
 
 /**
@@ -98,8 +103,8 @@ static inline int _irq_controller_isr_vector_get(void)
  * saved registers eax, edx, ecx for their own purposes with impunity but
  * need to preserve all callee-saved registers.
  */
-.macro _irq_controller_eoi
-	__irq_controller_eoi
+.macro _irq_controller_eoi_macro
+	__irq_controller_eoi_macro
 .endm
 
 #endif /* _ASMLANGUAGE */

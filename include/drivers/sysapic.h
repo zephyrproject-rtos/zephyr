@@ -27,14 +27,23 @@ void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
 
 int __irq_controller_isr_vector_get(void);
 
+static inline void __irq_controller_eoi(void)
+{
+#if CONFIG_EOI_FORWARDING_BUG
+	_lakemont_eoi();
+#else
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
+#endif
+}
+
 #else /* _ASMLANGUAGE */
 
 #if CONFIG_EOI_FORWARDING_BUG
-.macro __irq_controller_eoi
+.macro __irq_controller_eoi_macro
 	call	_lakemont_eoi
 .endm
 #else
-.macro __irq_controller_eoi
+.macro __irq_controller_eoi_macro
 	xorl %eax, %eax			/* zeroes eax */
 	loapic_eoi_reg = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 	movl %eax, loapic_eoi_reg	/* tell LOAPIC the IRQ is handled */
