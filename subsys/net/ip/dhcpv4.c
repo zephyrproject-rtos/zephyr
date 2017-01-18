@@ -503,7 +503,6 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 	uint8_t length;
 	uint8_t type;
 	uint16_t pos;
-	bool end = false;
 
 	frag = net_nbuf_read(buf, offset, &pos, sizeof(magic_cookie),
 			     (uint8_t *)cookie);
@@ -518,7 +517,6 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 
 		if (type == DHCPV4_OPTIONS_END) {
 			NET_DBG("options_end");
-			end = true;
 			return NET_OK;
 		}
 
@@ -635,11 +633,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 		}
 	}
 
-	if (!end) {
-		return NET_DROP;
-	}
-
-	return NET_OK;
+	/* Invalid case: Options without DHCPV4_OPTIONS_END. */
+	return NET_DROP;
 }
 
 /* TODO: Handles only DHCPv4 OFFER and ACK messages */
