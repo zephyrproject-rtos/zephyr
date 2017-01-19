@@ -11,6 +11,7 @@
 #include <gpio.h>
 #include <init.h>
 #include <sys_io.h>
+#include <misc/util.h>
 
 #include "qm_gpio.h"
 #include "gpio_utils.h"
@@ -37,39 +38,9 @@ struct gpio_qmsi_runtime {
 
 #ifdef CONFIG_GPIO_QMSI_API_REENTRANCY
 #define RP_GET(dev) (&((struct gpio_qmsi_runtime *)(dev->driver_data))->sem)
-static const int reentrancy_protection = 1;
 #else
 #define RP_GET(context) (NULL)
-static const int reentrancy_protection;
 #endif /* CONFIG_GPIO_QMSI_API_REENTRANCY */
-
-static void gpio_reentrancy_init(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_init(RP_GET(dev), 0, UINT_MAX);
-	k_sem_give(RP_GET(dev));
-}
-
-static void gpio_critical_region_start(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_take(RP_GET(dev), K_FOREVER);
-}
-
-static void gpio_critical_region_end(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_give(RP_GET(dev));
-}
 
 static int gpio_qmsi_init(struct device *dev);
 
@@ -243,9 +214,15 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 		qmsi_write_bit(&cfg.int_en, pin, 1);
 	}
 
-	gpio_critical_region_start(port);
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(port), K_FOREVER);
+	}
+
 	qm_gpio_set_config(gpio, &cfg);
-	gpio_critical_region_end(port);
+
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(port));
+	}
 }
 
 static inline void qmsi_port_config(struct device *port, int flags)
@@ -282,7 +259,9 @@ static inline int gpio_qmsi_write(struct device *port,
 	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	qm_gpio_t gpio = gpio_config->gpio;
 
-	gpio_critical_region_start(port);
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(port), K_FOREVER);
+	}
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (value) {
@@ -294,7 +273,9 @@ static inline int gpio_qmsi_write(struct device *port,
 		qm_gpio_write_port(gpio, value);
 	}
 
-	gpio_critical_region_end(port);
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(port));
+	}
 	return 0;
 }
 
@@ -331,7 +312,9 @@ static inline int gpio_qmsi_enable_callback(struct device *port,
 {
 	struct gpio_qmsi_runtime *context = port->driver_data;
 
-	gpio_critical_region_start(port);
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(port), K_FOREVER);
+	}
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		context->pin_callbacks |= BIT(pin);
@@ -339,7 +322,9 @@ static inline int gpio_qmsi_enable_callback(struct device *port,
 		context->pin_callbacks = 0xffffffff;
 	}
 
-	gpio_critical_region_end(port);
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(port));
+	}
 	return 0;
 }
 
@@ -348,7 +333,9 @@ static inline int gpio_qmsi_disable_callback(struct device *port,
 {
 	struct gpio_qmsi_runtime *context = port->driver_data;
 
-	gpio_critical_region_start(port);
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(port), K_FOREVER);
+	}
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		context->pin_callbacks &= ~BIT(pin);
@@ -356,7 +343,10 @@ static inline int gpio_qmsi_disable_callback(struct device *port,
 		context->pin_callbacks = 0;
 	}
 
-	gpio_critical_region_end(port);
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(port));
+	}
+
 	return 0;
 }
 
@@ -382,7 +372,10 @@ static int gpio_qmsi_init(struct device *port)
 {
 	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 
-	gpio_reentrancy_init(port);
+	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
+		k_sem_init(RP_GET(port), 0, UINT_MAX);
+		k_sem_give(RP_GET(port));
+	}
 
 	switch (gpio_config->gpio) {
 	case QM_GPIO_0:
