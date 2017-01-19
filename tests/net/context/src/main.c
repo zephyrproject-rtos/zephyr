@@ -349,7 +349,8 @@ static bool net_ctx_listen_v4(void)
 	return true;
 }
 
-static void connect_cb(struct net_context *context, void *user_data)
+static void connect_cb(struct net_context *context, int status,
+		       void *user_data)
 {
 	sa_family_t family = POINTER_TO_INT(user_data);
 

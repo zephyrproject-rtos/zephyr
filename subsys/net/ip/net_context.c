@@ -1081,7 +1081,7 @@ int net_context_connect(struct net_context *context,
 #if defined(CONFIG_NET_UDP)
 	if (net_context_get_type(context) == SOCK_DGRAM) {
 		if (cb) {
-			cb(context, user_data);
+			cb(context, 0, user_data);
 		}
 
 		return 0;
@@ -1112,7 +1112,7 @@ int net_context_connect(struct net_context *context,
 	send_syn(context, addr);
 
 	if (cb) {
-		cb(context, user_data);
+		cb(context, 0, user_data);
 	}
 
 	/* in tcp_synack_received() we give back this semaphore */

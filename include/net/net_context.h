@@ -446,9 +446,13 @@ int net_context_listen(struct net_context *context,
  * established.
  *
  * @param context The context to use.
+ * @param status Status of the connection establishment. This is 0
+ * if the connection was established successfully, <0 if there was an
+ * error.
  * @param user_data The user data given in net_context_connect() call.
  */
 typedef void (*net_context_connect_cb_t)(struct net_context *context,
+					 int status,
 					 void *user_data);
 
 /**
