@@ -112,6 +112,8 @@ config FXOS8700_DRDY_INT1
 	Say Y to route data ready interrupt to INT1 pin. Say N to route to INT2
 	pin.
 
+if FXOS8700_TRIGGER
+
 config FXOS8700_THREAD_PRIORITY
 	int "Own thread priority"
 	depends on FXOS8700_TRIGGER_OWN_THREAD
@@ -121,6 +123,8 @@ config FXOS8700_THREAD_STACK_SIZE
 	int "Own thread stack size"
 	depends on FXOS8700_TRIGGER_OWN_THREAD
 	default 1024
+
+endif # FXOS8700_TRIGGER
 
 menuconfig FXOS8700_PULSE
 	bool "Pulse detection"
