@@ -24,15 +24,14 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 	sensor_channel_get(dev, SENSOR_CHAN_MAGN_ANY, magn);
 
 	/* Print accel x,y,z and mag x,y,z data */
-	printf("AX=%3d.%06d AY=%3d.%06d AZ=%3d.%06d "
-	       "MX=%3d.%06d MY=%3d.%06d MZ=%3d.%06d\n",
-		accel[0].val1, accel[0].val2,
-		accel[1].val1, accel[1].val2,
-		accel[2].val1, accel[2].val2,
-		magn[0].val1, magn[0].val2,
-		magn[1].val1, magn[1].val2,
-		magn[2].val1, magn[2].val2
-	      );
+	printf("AX=%10.6f AY=%10.6f AZ=%10.6f "
+	       "MX=%10.6f MY=%10.6f MZ=%10.6f\n",
+	       sensor_value_to_double(&accel[0]),
+	       sensor_value_to_double(&accel[1]),
+	       sensor_value_to_double(&accel[2]),
+	       sensor_value_to_double(&magn[0]),
+	       sensor_value_to_double(&magn[1]),
+	       sensor_value_to_double(&magn[2]));
 }
 
 void main(void)
