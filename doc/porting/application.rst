@@ -82,7 +82,7 @@ The code has been ported to the new kernel and is shown below:
 .. literalinclude:: sync_v2.c
    :linenos:
    :language: c
-   :lines: 19-
+   :lines: 9-
 
 Porting a Nanokernel Application
 ---------------------------------
@@ -92,7 +92,7 @@ Below is the code for the application using the legacy kernel:
 .. literalinclude:: sync_v1_nano.c
    :linenos:
    :language: c
-   :lines: 19-
+   :lines: 9-
 
 Porting a Microkernel Application
 ---------------------------------
@@ -105,7 +105,7 @@ Below is the code for the application using the legacy kernel:
 .. literalinclude:: sync_v1.c
    :linenos:
    :language: c
-   :lines: 19-
+   :lines: 9-
 
 
 A microkernel application defines the used objects in an MDEF file, for this
@@ -119,7 +119,7 @@ In the unified kernel the semaphore will be defined in the code as follows:
 .. literalinclude:: sync_v2.c
    :linenos:
    :language: c
-   :lines: 61-65
+   :lines: 51-54
 
 The threads (previously named tasks) are defined in the code as follows, for
 thread A:
@@ -127,7 +127,7 @@ thread A:
 .. literalinclude:: sync_v2.c
    :linenos:
    :language: c
-   :lines: 98-99
+   :lines: 88-89
 
 Thread B (taskB in the microkernel) will be spawned dynamically from thread A
 (See :ref:`spawning_thread` section):
@@ -135,4 +135,4 @@ Thread B (taskB in the microkernel) will be spawned dynamically from thread A
 .. literalinclude:: sync_v2.c
    :linenos:
    :language: c
-   :lines: 90-92
+   :lines: 80-82
