@@ -149,6 +149,8 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	tcp_context[i].send_seq = init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
 
+	tcp_context[i].accept_cb = NULL;
+
 	k_timer_init(&tcp_context[i].retry_timer, tcp_retry_expired, NULL);
 
 	return &tcp_context[i];
@@ -810,12 +812,12 @@ void net_tcp_change_state(struct net_tcp *tcp,
 		tcp->context->conn_handler = NULL;
 	}
 
-	if (tcp->context->accept_cb) {
-		tcp->context->accept_cb(tcp->context,
-					&tcp->context->remote,
-					sizeof(struct sockaddr),
-					-ENETRESET,
-					tcp->context->user_data);
+	if (tcp->accept_cb) {
+		tcp->accept_cb(tcp->context,
+			       &tcp->context->remote,
+			       sizeof(struct sockaddr),
+			       -ENETRESET,
+			       tcp->context->user_data);
 	}
 }
 

@@ -133,6 +133,11 @@ struct net_tcp {
 	uint32_t state : 4;
 	/** Remaining bits in this uint32_t */
 	uint32_t _padding : 15;
+
+	/** Accept callback to be called when the connection has been
+	 * established.
+	 */
+	net_tcp_accept_cb_t accept_cb;
 };
 
 static inline bool net_tcp_is_used(struct net_tcp *tcp)

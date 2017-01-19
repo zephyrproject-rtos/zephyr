@@ -1260,7 +1260,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 		net_tcp_print_recv_info("ACK", buf, NET_TCP_BUF(buf)->src_port);
 
-		if (!context->accept_cb) {
+		if (!context->tcp->accept_cb) {
 			NET_DBG("No accept callback, connection reset.");
 			goto reset;
 		}
@@ -1376,11 +1376,11 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		new_context->user_data = context->user_data;
 		context->user_data = NULL;
 
-		context->accept_cb(new_context,
-				   &new_context->remote,
-				   addrlen,
-				   0,
-				   new_context->user_data);
+		context->tcp->accept_cb(new_context,
+					&new_context->remote,
+					addrlen,
+					0,
+					new_context->user_data);
 	}
 
 	return NET_DROP;
@@ -1397,7 +1397,7 @@ reset:
 #endif /* CONFIG_NET_TCP */
 
 int net_context_accept(struct net_context *context,
-		       net_context_accept_cb_t cb,
+		       net_tcp_accept_cb_t cb,
 		       int32_t timeout,
 		       void *user_data)
 {
@@ -1486,7 +1486,11 @@ int net_context_accept(struct net_context *context,
 	}
 
 	context->user_data = user_data;
-	context->accept_cb = cb;
+
+	/* accept callback is only valid for TCP contexts */
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		context->tcp->accept_cb = cb;
+	}
 #endif /* CONFIG_NET_TCP */
 
 	return 0;
