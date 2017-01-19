@@ -26,6 +26,7 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <misc/byteorder.h>
+#include <misc/util.h>
 
 #include "util.h"
 #include "mem.h"
@@ -40,6 +41,7 @@
 #include "ll.h"
 #include "hci_internal.h"
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
 #include "debug.h"
 
@@ -572,7 +574,7 @@ static void le_rand(struct net_buf *buf, struct net_buf *evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	hci_le_rand(rp->rand, count);
+	bt_rand(rp->rand, count);
 }
 
 static void le_start_encryption(struct net_buf *buf, struct net_buf *evt)

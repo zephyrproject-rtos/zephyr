@@ -28,17 +28,13 @@
 #include <misc/byteorder.h>
 #include <string.h>
 
-#include <bluetooth/bluetooth.h>
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
 
 #include "../util.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
 #include "../nrf51_pm.h"

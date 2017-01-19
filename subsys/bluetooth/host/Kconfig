@@ -26,6 +26,7 @@ config BLUETOOTH_HCI_TX_STACK_SIZE
 	default 256
 	default 256 if BLUETOOTH_H4
 	default 256 if BLUETOOTH_H5
+	default 256 if BLUETOOTH_SPI
 	default 640 if BLUETOOTH_CONTROLLER
 
 config BLUETOOTH_HCI_RAW
@@ -39,10 +40,10 @@ config BLUETOOTH_HCI_HOST
 	bool
 	default y
 	depends on !BLUETOOTH_HCI_RAW
-	select TINYCRYPT
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
-	select TINYCRYPT_SHA256_HMAC_PRNG
+	select TINYCRYPT if !BLUETOOTH_CONTROLLER
+	select TINYCRYPT_SHA256 if !BLUETOOTH_CONTROLLER
+	select TINYCRYPT_SHA256_HMAC if !BLUETOOTH_CONTROLLER
+	select TINYCRYPT_SHA256_HMAC_PRNG if !BLUETOOTH_CONTROLLER
 
 config BLUETOOTH_RECV_IS_RX_THREAD
 	# Virtual option set by the HCI driver to indicate that there's
@@ -79,11 +80,17 @@ config BLUETOOTH_RX_BUF_COUNT
 
 config BLUETOOTH_RX_BUF_LEN
 	int "Maximum supported HCI RX buffer length"
-	default 70
-	default 253 if BLUETOOTH_BREDR
-	range 70 2000
+	default 76
+	default 264 if BLUETOOTH_BREDR
+	range 73 2000
 	help
-	  Maximum data size for each HCI RX buffer.
+	  Maximum data size for each HCI RX buffer. This size includes
+	  everything starting with the ACL or HCI event headers. Note that
+	  buffer sizes are always rounded up to the nearest multiple of 4,
+	  so if this Kconfig value is something else then there will be some
+	  wasted space. The minimum of 73 has been taken for LE SC which has
+	  an L2CAP MTU of 65 bytes. On top of this there's the L2CAP header
+	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
 config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	string "Device Name of UART Device to an external Bluetooth Host"
@@ -135,15 +142,29 @@ config BLUETOOTH_CONN
 	bool
 
 if BLUETOOTH_CONN
-config BLUETOOTH_ATT_MTU
-	int "Attribute Protocol (ATT) channel MTU"
-	default 23
-	default 50 if BLUETOOTH_SMP # BLUETOOTH_L2CAP_IN_MTU is big enough
-				    # for two complete ACL packets
-	range 23 BLUETOOTH_RX_BUF_LEN
+config BLUETOOTH_L2CAP_TX_BUF_COUNT
+	int "Number of L2CAP TX buffers"
+	default 3
+	range 2 255
 	help
-	  The MTU for the ATT channel. The minimum and default is 23,
-	  whereas the maximum is limited by CONFIG_BLUETOOTH_RX_BUF_LEN.
+	  Number of buffers available for outgoing L2CAP packets.
+
+config BLUETOOTH_L2CAP_TX_MTU
+	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
+	default 23
+	default 65 if BLUETOOTH_SMP
+	default 253 if BLUETOOTH_BREDR
+	range 23 2000
+	range 65 2000 if BLUETOOTH_SMP
+	help
+	  Maximum L2CAP MTU for L2CAP TX buffers.
+
+config BLUETOOTH_L2CAP_TX_USER_DATA_SIZE
+	int "Maximum supported user data size for L2CAP TX buffers"
+	default 4
+	range 4 65535
+	help
+	  Maximum supported user data size for L2CAP TX buffers.
 
 config BLUETOOTH_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
@@ -153,16 +174,9 @@ config BLUETOOTH_ATT_PREPARE_COUNT
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
 
-config BLUETOOTH_ATT_REQ_COUNT
-	int "Number of ATT request buffers"
-	default BLUETOOTH_MAX_CONN
-	range 1 64
-	help
-	  Number of outgoing buffers available for ATT requests, this controls
-	  how many requests can be queued without blocking.
-
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
+	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	help
@@ -326,7 +340,6 @@ config BLUETOOTH_MONITOR_ON_DEV_NAME
 if BLUETOOTH_DEBUG
 config BLUETOOTH_DEBUG_HCI_CORE
 	bool "Bluetooth HCI core debug"
-	depends on BLUETOOTH_HCI_HOST
 	help
 	  This option enables debug support for Bluetooth HCI
 	  core.

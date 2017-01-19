@@ -25,6 +25,8 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 #include <misc/printk.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_A2DP)
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
@@ -34,11 +36,6 @@
 #include "conn_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
-
-#if !defined(CONFIG_BLUETOOTH_DEBUG_A2DP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
 
 #define A2DP_NO_SPACE (-1)
 

@@ -30,7 +30,6 @@
 #include <uart.h>
 
 #include <bluetooth/buf.h>
-#include <bluetooth/log.h>
 
 #include "monitor.h"
 

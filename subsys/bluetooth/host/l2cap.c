@@ -23,6 +23,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -33,16 +34,11 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
-
 #define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
 
 #define L2CAP_LE_MIN_MTU		23
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_RX_BUF_COUNT - 1)
-#define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
+#define L2CAP_LE_CREDITS_THRESHOLD(_creds) (_creds / 2)
 
 #define L2CAP_LE_CID_DYN_START	0x0040
 #define L2CAP_LE_CID_DYN_END	0x007f
@@ -58,7 +54,7 @@
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
-#define BT_L2CAP_MAX_LE_MPS	CONFIG_BLUETOOTH_RX_BUF_LEN
+#define BT_L2CAP_MAX_LE_MPS	BT_L2CAP_RX_MTU
 /* For now use MPS - SDU length to disable segmentation */
 #define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
 
@@ -77,11 +73,6 @@ static struct bt_l2cap_fixed_chan *le_channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_server *servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
-
-/* Pool for outgoing LE signaling packets, MTU is 23 */
-NET_BUF_POOL_DEFINE(le_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Pool for outgoing LE data packets, MTU is 23 */
@@ -335,6 +326,10 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
+	if (IS_ENABLED(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)) {
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
+	}
+
 	return true;
 }
 
@@ -343,12 +338,11 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_connected(conn);
 		return;
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	fchan = le_channels;
 
@@ -401,7 +395,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 	struct net_buf *buf;
 	struct bt_l2cap_sig_hdr *hdr;
 
-	buf = bt_l2cap_create_pdu(&le_sig_pool, 0);
+	buf = bt_l2cap_create_pdu(NULL, 0);
 	if (!buf) {
 		return NULL;
 	}
@@ -456,7 +450,7 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
-	req->credits = sys_cpu_to_le16(L2CAP_LE_MAX_CREDITS);
+	req->credits = sys_cpu_to_le16(ch->rx.init_credits);
 
 	l2cap_chan_send_req(ch, buf, L2CAP_CONN_TIMEOUT);
 
@@ -485,12 +479,11 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan;
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		l2cap_br_encrypt_change(conn, hci_status);
 		return;
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	for (chan = conn->channels; chan; chan = chan->_next) {
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -558,11 +551,10 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 				     struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
-	const struct bt_le_conn_param *param;
-	uint16_t min, max, latency, timeout;
-	bool params_valid;
+	struct bt_le_conn_param param;
 	struct bt_l2cap_conn_param_rsp *rsp;
 	struct bt_l2cap_conn_param_req *req = (void *)buf->data;
+	bool accepted;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small LE conn update param req");
@@ -575,14 +567,14 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	min = sys_le16_to_cpu(req->min_interval);
-	max = sys_le16_to_cpu(req->max_interval);
-	latency = sys_le16_to_cpu(req->latency);
-	timeout = sys_le16_to_cpu(req->timeout);
-	param = BT_LE_CONN_PARAM(min, max, latency, timeout);
+	param.interval_min = sys_le16_to_cpu(req->min_interval);
+	param.interval_max = sys_le16_to_cpu(req->max_interval);
+	param.latency = sys_le16_to_cpu(req->latency);
+	param.timeout = sys_le16_to_cpu(req->timeout);
 
 	BT_DBG("min 0x%04x max 0x%04x latency: 0x%04x timeout: 0x%04x",
-	       min, max, latency, timeout);
+	       param.interval_min, param.interval_max, param.latency,
+	       param.timeout);
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_CONN_PARAM_RSP, ident,
 				      sizeof(*rsp));
@@ -590,10 +582,10 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	params_valid = bt_le_conn_params_valid(min, max, latency, timeout);
+	accepted = le_param_req(conn, &param);
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
-	if (params_valid) {
+	if (accepted) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_CONN_PARAM_ACCEPTED);
 	} else {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_CONN_PARAM_REJECTED);
@@ -601,8 +593,8 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 
-	if (params_valid) {
-		bt_conn_le_conn_update(conn, param);
+	if (accepted) {
+		bt_conn_le_conn_update(conn, &param);
 	}
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
@@ -656,6 +648,17 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	/* Use existing MTU if defined */
 	if (!chan->rx.mtu) {
 		chan->rx.mtu = BT_L2CAP_MAX_LE_MTU;
+	}
+
+	/* Use existing credits if defined */
+	if (!chan->rx.init_credits) {
+		if (chan->chan.ops->alloc_buf) {
+			/* Auto tune credits to receive a full packet */
+			chan->rx.init_credits = chan->rx.mtu /
+						BT_L2CAP_MAX_LE_MPS;
+		} else {
+			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;
+		}
 	}
 
 	chan->rx.mps = BT_L2CAP_MAX_LE_MPS;
@@ -794,11 +797,12 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		ch->tx.cid = scid;
 		ch->tx.mps = mps;
 		ch->tx.mtu = mtu;
+		ch->tx.init_credits = credits;
 		l2cap_chan_tx_give_credits(ch, credits);
 
 		/* Init RX parameters */
 		l2cap_chan_rx_init(ch);
-		l2cap_chan_rx_give_credits(ch, L2CAP_LE_MAX_CREDITS);
+		l2cap_chan_rx_give_credits(ch, ch->rx.init_credits);
 
 		/* Set channel PSM */
 		chan->psm = server->psm;
@@ -814,7 +818,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		rsp->dcid = sys_cpu_to_le16(ch->rx.cid);
 		rsp->mps = sys_cpu_to_le16(ch->rx.mps);
 		rsp->mtu = sys_cpu_to_le16(ch->rx.mtu);
-		rsp->credits = sys_cpu_to_le16(L2CAP_LE_MAX_CREDITS);
+		rsp->credits = sys_cpu_to_le16(ch->rx.init_credits);
 		rsp->result = BT_L2CAP_SUCCESS;
 	} else {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_ERR_NO_RESOURCES);
@@ -983,7 +987,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 		/* Give credits */
 		l2cap_chan_tx_give_credits(chan, credits);
-		l2cap_chan_rx_give_credits(chan, L2CAP_LE_MAX_CREDITS);
+		l2cap_chan_rx_give_credits(chan, chan->rx.init_credits);
 
 		break;
 	case BT_L2CAP_ERR_AUTHENTICATION:
@@ -1154,12 +1158,13 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 	uint16_t credits;
 
 	/* Only give more credits if it went bellow the defined threshold */
-	if (k_sem_count_get(&chan->rx.credits) > L2CAP_LE_CREDITS_THRESHOLD) {
+	if (k_sem_count_get(&chan->rx.credits) >
+	    L2CAP_LE_CREDITS_THRESHOLD(chan->rx.init_credits)) {
 		goto done;
 	}
 
 	/* Restore credits */
-	credits = L2CAP_LE_MAX_CREDITS - k_sem_count_get(&chan->rx.credits);
+	credits = chan->rx.init_credits - k_sem_count_get(&chan->rx.credits);
 	l2cap_chan_rx_give_credits(chan, credits);
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CREDITS, get_ident(),
@@ -1310,12 +1315,11 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 	struct bt_l2cap_chan *chan;
 	uint16_t cid;
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_recv(conn, buf);
 		return;
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small L2CAP PDU received");
@@ -1412,9 +1416,9 @@ void bt_l2cap_init(void)
 
 	bt_l2cap_le_fixed_chan_register(&chan);
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	bt_l2cap_br_init();
-#endif /* CONFIG_BLUETOOTH_BREDR */
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR)) {
+		bt_l2cap_br_init();
+	}
 }
 
 struct bt_l2cap_chan *bt_l2cap_le_lookup_tx_cid(struct bt_conn *conn,
@@ -1464,7 +1468,6 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	}
 
 	ch->chan.psm = psm;
-	bt_l2cap_chan_set_state(&ch->chan, BT_L2CAP_CONNECT);
 
 	return l2cap_le_conn_req(ch);
 }
@@ -1482,11 +1485,10 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	if (chan->required_sec_level > BT_SECURITY_FIPS) {
 		return -EINVAL;
@@ -1508,11 +1510,10 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 		return -ENOTCONN;
 	}
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_disconnect(chan);
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	ch = BT_L2CAP_LE_CHAN(chan);
 
@@ -1681,11 +1682,10 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (chan->conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	    chan->conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), buf);
 	if (err < 0) {

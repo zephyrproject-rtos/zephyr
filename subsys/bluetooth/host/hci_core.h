@@ -142,8 +142,7 @@ extern const struct bt_storage *bt_storage;
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
-			     uint16_t latency, uint16_t timeout);
+bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 
 struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
@@ -153,10 +152,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 /* The helper is only safe to be called from internal threads as it's
  * not multi-threading safe
  */
-#if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr);
 const char *bt_addr_le_str(const bt_addr_le_t *addr);
-#endif
 
 int bt_le_scan_update(bool fast_scan);
 

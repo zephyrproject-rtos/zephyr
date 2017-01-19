@@ -74,6 +74,8 @@ void main(void)
 {
 	int err;
 
+	printk("Starting Beacon Demo\n");
+
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
 	if (err) {

@@ -49,7 +49,6 @@ enum bt_buf_type {
 
 /** Data size neeed for HCI RX buffers */
 #define BT_BUF_RX_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
-			sizeof(struct bt_hci_acl_hdr) + \
 			CONFIG_BLUETOOTH_RX_BUF_LEN)
 
 /** Allocate a buffer for incoming data

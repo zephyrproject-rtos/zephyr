@@ -149,7 +149,7 @@ static struct net_buf *build_reply_buf(const char *name,
 				       struct net_context *context,
 				       struct net_buf *buf)
 {
-	struct net_buf *reply_buf, *frag, *tmp;
+	struct net_buf *reply_buf, *tmp;
 	int header_len, recv_len, reply_len;
 
 	printk("%s received %d bytes", name,
@@ -160,6 +160,8 @@ static struct net_buf *build_reply_buf(const char *name,
 	recv_len = net_buf_frags_len(buf->frags);
 
 	tmp = buf->frags;
+	/* Remove frag link so original buf can be unrefed */
+	buf->frags = NULL;
 
 	/* First fragment will contain IP header so move the data
 	 * down in order to get rid of it.
@@ -171,34 +173,9 @@ static struct net_buf *build_reply_buf(const char *name,
 	 */
 	net_buf_pull(tmp, header_len);
 
-	while (tmp) {
-		frag = net_nbuf_get_data(context);
-
-		if (!net_buf_headroom(tmp)) {
-			/* If there is no link layer headers in the
-			 * received fragment, then get rid of that also
-			 * in the sending fragment. We end up here
-			 * if MTU is larger than fragment size, this
-			 * is typical for ethernet.
-			 */
-			net_buf_push(frag, net_buf_headroom(frag));
-
-			frag->len = 0; /* to make fragment empty */
-
-			/* Make sure to set the reserve so that
-			 * in sending side we add the link layer
-			 * header if needed.
-			 */
-			net_nbuf_set_ll_reserve(reply_buf, 0);
-		}
-
-		net_buf_add_mem(frag, tmp->data, tmp->len);
-
-		net_buf_frag_add(reply_buf, frag);
-
-		net_buf_frag_del(buf, tmp);
-
-		tmp = buf->frags;
+	if (tmp) {
+		/* Add the entire chain into reply */
+		net_buf_frag_add(reply_buf, tmp);
 	}
 
 	reply_len = net_buf_frags_len(reply_buf->frags);
