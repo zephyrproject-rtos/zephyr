@@ -23,6 +23,8 @@
 #include <net/net_context.h>
 #include <net/net_mgmt.h>
 
+#include "net_private.h"
+
 #define STACKSIZE 2000
 char __noinit __stack thread_stack[STACKSIZE];
 
@@ -32,8 +34,25 @@ static void handler(struct net_mgmt_event_callback *cb,
 		    uint32_t mgmt_event,
 		    struct net_if *iface)
 {
-	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
-		NET_INFO("NET_EVENT_IPV4_ADDR_ADD");
+	int i = 0;
+
+	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+		return;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (iface->ipv4.unicast[i].addr_type != NET_ADDR_DHCP) {
+			continue;
+		}
+
+		NET_INFO("Your address: %s",
+			 net_sprint_ipv4_addr(
+				&iface->ipv4.unicast[i].address.in_addr));
+		NET_INFO("Lease time: %u seconds", iface->dhcpv4.lease_time);
+		NET_INFO("Subnet: %s",
+			 net_sprint_ipv4_addr(&iface->ipv4.netmask));
+		NET_INFO("Router: %s",
+			 net_sprint_ipv4_addr(&iface->ipv4.gw));
 	}
 }
 
