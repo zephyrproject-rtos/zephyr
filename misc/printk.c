@@ -57,6 +57,19 @@ void __printk_hook_install(int (*fn)(int))
 }
 
 /**
+ * @brief Get the current character output routine for printk
+ *
+ * To be called by any console driver that would like to save
+ * current hook - if any - for later re-installation.
+ *
+ * @return a function pointer or NULL if no hook is set
+ */
+void *__printk_get_hook(void)
+{
+	return _char_out;
+}
+
+/**
  * @brief Printk internals
  *
  * See printk() for description.
