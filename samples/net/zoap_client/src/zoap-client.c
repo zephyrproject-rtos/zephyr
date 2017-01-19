@@ -12,8 +12,14 @@
 #include <misc/byteorder.h>
 #include <net/buf.h>
 #include <net/nbuf.h>
+#include <net/net_mgmt.h>
 #include <net/net_ip.h>
 #include <net/zoap.h>
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <gatt/ipss.h>
+#endif
 
 #define MY_COAP_PORT 5683
 
@@ -33,6 +39,10 @@ static struct net_context *context;
 struct zoap_pending pendings[NUM_PENDINGS];
 struct zoap_reply replies[NUM_REPLIES];
 struct k_delayed_work retransmit_work;
+
+#if defined(CONFIG_NET_MGMT_EVENT)
+static struct net_mgmt_event_callback cb;
+#endif
 
 static const char * const test_path[] = { "test", NULL };
 
@@ -129,7 +139,8 @@ static void retransmit_request(struct k_work *work)
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 }
 
-void main(void)
+static void event_iface_up(struct net_mgmt_event_callback *cb,
+			   uint32_t mgmt_event, struct net_if *iface)
 {
 	static struct sockaddr_in6 any_addr = { .sin6_addr = IN6ADDR_ANY_INIT,
 						.sin6_family = AF_INET6 };
@@ -239,4 +250,29 @@ void main(void)
 	timeout = pending->timeout * (sys_clock_ticks_per_sec / MSEC_PER_SEC);
 
 	k_delayed_work_submit(&retransmit_work, timeout);
+
+}
+
+void main(void)
+{
+	struct net_if *iface = net_if_get_default();
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+	if (bt_enable(NULL)) {
+		NET_ERR("Bluetooth init failed\n");
+		return;
+	}
+#endif
+
+#if defined(CONFIG_NET_MGMT_EVENT)
+	/* Subscribe to NET_IF_UP if interface is not ready */
+	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+		net_mgmt_init_event_callback(&cb, event_iface_up,
+					     NET_EVENT_IF_UP);
+		net_mgmt_add_event_callback(&cb);
+		return;
+	}
+#endif
+
+	event_iface_up(NULL, NET_EVENT_IF_UP, iface);
 }
