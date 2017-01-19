@@ -150,7 +150,7 @@ struct net_context {
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	/**
-	 * Mutex for synchronous recv API call.
+	 * Semaphore to signal synchronous recv call completion.
 	 */
 	struct k_sem recv_data_wait;
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
