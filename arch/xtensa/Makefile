@@ -41,3 +41,10 @@ cflags-$(CONFIG_LTO) += $(call cc-option,-flto,)
 
 KBUILD_CFLAGS += $(cflags-y)
 KBUILD_CXXFLAGS += $(cflags-y)
+
+QEMU_CPU_TYPE_xtensa ?= unsupported
+QEMU_FLAGS_xtensa = -cpu $(QEMU_CPU_TYPE_xtensa) \
+                    -machine sim -semihosting -nographic
+QEMU_xtensa = qemu-system-xtensa
+
+export QEMU_FLAGS_xtensa QEMU_xtensa
