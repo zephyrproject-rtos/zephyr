@@ -1,3 +1,23 @@
+
+Zephyr Kernel 1.6.1 Release Notes
+#################################
+
+Zephyr 1.6.1 fixes the following issues:
+
+* Makefile (arc/soc/quark_se): New compiler options
+* Makefile (arc/soc/em*): New compiler options
+* arc: add -fno-delete-null-pointer-checks
+* Makefile.toolchain.zephyr: Modifications for SDK 0.9 [Juro
+* Bluetooth: ATT: Fix using k_fifo API with net_buf
+* Bluetooth: fix write cmd handling
+* Bluetooth: GATT: Fix missing connection address comparison [Johan
+* arm: Cortex-M0: Adapt core register code to M0 [Carles Cufi/Kumar Gala]
+* arm: nvic: Fix exception priority access on Cortex-M0(+)
+* arm: nvic: Use uint8_t for priority level
+* [ZEP-1497] arm: nvic: Use uint8_t for priority level
+* [ZEP-2053] Update to tinycrypt 0.2.5
+* Update to mbedTLS 2.4.2
+
 Zephyr Kernel 1.6.0 Release Notes
 #################################
 
