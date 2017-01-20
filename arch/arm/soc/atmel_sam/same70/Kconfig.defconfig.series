@@ -34,4 +34,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 300000000
 
+# Configure default device drivers. If a feature is supported by more than one
+# device driver the default configuration will be placed in the board defconfig
+# file.
+
+if DMA
+config DMA_SAM_XDMAC
+	default y
+endif # DMA
+
 endif # SOC_SERIES_SAME70

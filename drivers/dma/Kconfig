@@ -70,4 +70,6 @@ source "drivers/dma/Kconfig.qmsi"
 
 source "drivers/dma/Kconfig.stm32f4x"
 
+source "drivers/dma/Kconfig.sam_xdmac"
+
 endif # DMA
