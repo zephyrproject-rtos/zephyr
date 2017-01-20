@@ -239,7 +239,7 @@ static bool send_fin_if_active_close(struct net_context *context)
 {
 	NET_ASSERT(context->tcp);
 
-	switch (context->tcp->state) {
+	switch (net_tcp_get_state(context->tcp)) {
 	case NET_TCP_SYN_RCVD:
 	case NET_TCP_ESTABLISHED:
 		/* Sending a packet with the FIN flag automatically
@@ -250,7 +250,6 @@ static bool send_fin_if_active_close(struct net_context *context)
 					 tcp_active_close, context);
 		return true;
 	default:
-		net_tcp_release(context->tcp);
 		return false;
 	}
 }
@@ -280,6 +279,10 @@ int net_context_put(struct net_context *context)
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet");
 			goto still_in_use;
+		}
+
+		if (context->tcp) {
+			net_tcp_release(context->tcp);
 		}
 	}
 #endif /* CONFIG_NET_TCP */
@@ -699,19 +702,19 @@ static enum net_verdict tcp_passive_close(struct net_conn *conn,
 
 	NET_ASSERT(context && context->tcp);
 
-	switch (context->tcp->state) {
+	switch (net_tcp_get_state(context->tcp)) {
 	case NET_TCP_CLOSE_WAIT:
 	case NET_TCP_LAST_ACK:
 		break;
 	default:
 		NET_DBG("Context %p in wrong state %d",
-			context, context->tcp->state);
+			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}
 
 	net_tcp_print_recv_info("PASSCLOSE", buf, NET_TCP_BUF(buf)->src_port);
 
-	if (context->tcp->state == NET_TCP_LAST_ACK &&
+	if (net_tcp_get_state(context->tcp) == NET_TCP_LAST_ACK &&
 	    NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
 		NET_DBG("ACK received in LAST_ACK, disposing of connection");
 		net_context_put(context);
@@ -729,22 +732,38 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 {
 	struct net_context *context = (struct net_context *)user_data;
 	enum net_verdict ret;
+	uint8_t tcp_flags;
 
 	NET_ASSERT(context && context->tcp);
 
-	if (context->tcp->state != NET_TCP_ESTABLISHED) {
+	if (net_tcp_get_state(context->tcp) != NET_TCP_ESTABLISHED) {
 		NET_DBG("Context %p in wrong state %d",
-			context, context->tcp->state);
+			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}
 
 	net_tcp_print_recv_info("DATA", buf, NET_TCP_BUF(buf)->src_port);
 
-	if (NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
+	tcp_flags = NET_TCP_FLAGS(buf);
+	if (tcp_flags & NET_TCP_ACK) {
 		net_tcp_ack_received(context,
 				     sys_get_be32(NET_TCP_BUF(buf)->ack));
 	}
-	if (NET_TCP_FLAGS(buf) & NET_TCP_FIN) {
+
+	if (sys_get_be32(NET_TCP_BUF(buf)->seq) - context->tcp->send_ack) {
+		/* Don't try to reorder packets.  If it doesn't
+		 * match the next segment exactly, drop and wait for
+		 * retransmit
+		 */
+		return NET_DROP;
+	}
+
+	set_appdata_values(buf, IPPROTO_TCP, net_buf_frags_len(buf));
+	context->tcp->send_ack += net_nbuf_appdatalen(buf);
+
+	ret = packet_received(conn, buf, context->tcp->recv_user_data);
+
+	if (tcp_flags & NET_TCP_FIN) {
 		/* Sending an ACK in the CLOSE_WAIT state will transition to
 		 * LAST_ACK state
 		 */
@@ -752,30 +771,12 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 		net_conn_change_callback(context->conn_handler,
 					 tcp_passive_close, context);
 
-		ret = NET_DROP;
-
-		context->tcp->send_ack =
-			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
+		context->tcp->send_ack += 1;
 
 		if (context->recv_cb) {
-			context->recv_cb(context, NULL, 0, user_data);
+			context->recv_cb(context, NULL, 0,
+					 context->tcp->recv_user_data);
 		}
-
-	} else {
-		struct net_tcp_hdr *hdr = (void *)net_nbuf_tcp_data(buf);
-
-		if (sys_get_be32(hdr->seq) - context->tcp->send_ack) {
-			/* Don't try to reorder packets.  If it doesn't
-			 * match the next segment exactly, drop and wait for
-			 * retransmit
-			 */
-			return NET_DROP;
-		}
-
-		set_appdata_values(buf, IPPROTO_TCP, net_buf_frags_len(buf));
-		context->tcp->send_ack += net_nbuf_appdatalen(buf);
-
-		ret = packet_received(conn, buf, user_data);
 	}
 
 	send_ack(context, &conn->remote_addr);
@@ -795,8 +796,8 @@ static enum net_verdict tcp_active_close(struct net_conn *conn,
 	tcp = context->tcp;
 
 	if (NET_TCP_FLAGS(buf) == NET_TCP_FIN) {
-		if (tcp->state == NET_TCP_FIN_WAIT_1 ||
-		    tcp->state == NET_TCP_FIN_WAIT_2) {
+		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1 ||
+		    net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_2) {
 			/* Sending an ACK in FIN_WAIT_1 will transition
 			 * to CLOSING, and to TIME_WAIT if on FIN_WAIT_2
 			 */
@@ -804,17 +805,17 @@ static enum net_verdict tcp_active_close(struct net_conn *conn,
 			return NET_DROP;
 		}
 	} else if (NET_TCP_FLAGS(buf) == NET_TCP_ACK) {
-		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 			net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_2);
 			return NET_DROP;
 		}
 
-		if (tcp->state == NET_TCP_CLOSING) {
+		if (net_tcp_get_state(tcp) == NET_TCP_CLOSING) {
 			net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
 			return NET_DROP;
 		}
 	} else if (NET_TCP_FLAGS(buf) == (NET_TCP_FIN | NET_TCP_ACK)) {
-		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 			send_fin_ack(context, &context->remote);
 			return NET_DROP;
 		}
@@ -833,13 +834,13 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 	NET_ASSERT(context && context->tcp);
 
-	switch (context->tcp->state) {
+	switch (net_tcp_get_state(context->tcp)) {
 	case NET_TCP_SYN_SENT:
 		net_context_set_iface(context, net_nbuf_iface(buf));
 		break;
 	default:
 		NET_DBG("Context %p in wrong state %d",
-			context, context->tcp->state);
+			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}
 
@@ -928,7 +929,7 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 		send_ack(context, raddr);
 
-		return NET_OK;
+		k_sem_give(&context->tcp->connect_wait);
 	}
 
 	return NET_DROP;
@@ -951,6 +952,9 @@ int net_context_connect(struct net_context *context,
 
 	NET_ASSERT(addr);
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
+#if defined(CONFIG_NET_TCP)
+	NET_ASSERT(context->tcp);
+#endif
 
 	if (!net_context_is_used(context)) {
 		return -ENOENT;
@@ -1077,7 +1081,7 @@ int net_context_connect(struct net_context *context,
 #if defined(CONFIG_NET_UDP)
 	if (net_context_get_type(context) == SOCK_DGRAM) {
 		if (cb) {
-			cb(context, user_data);
+			cb(context, 0, user_data);
 		}
 
 		return 0;
@@ -1105,11 +1109,15 @@ int net_context_connect(struct net_context *context,
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
-	/* FIXME - set timer to wait for SYN-ACK */
 	send_syn(context, addr);
 
 	if (cb) {
-		cb(context, user_data);
+		cb(context, 0, user_data);
+	}
+
+	/* in tcp_synack_received() we give back this semaphore */
+	if (k_sem_take(&context->tcp->connect_wait, timeout)) {
+		return -ETIMEDOUT;
 	}
 #endif
 
@@ -1175,7 +1183,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 	tcp = context->tcp;
 
-	switch (tcp->state) {
+	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_LISTEN:
 		net_context_set_iface(context, net_nbuf_iface(buf));
 		break;
@@ -1253,7 +1261,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		/* We can only receive ACK if we have already received SYN.
 		 * So if we are not in SYN_RCVD state, then it is an error.
 		 */
-		if (tcp->state != NET_TCP_SYN_RCVD) {
+		if (net_tcp_get_state(tcp) != NET_TCP_SYN_RCVD) {
 			k_delayed_work_cancel(&tcp->ack_timer);
 			NET_DBG("Not in SYN_RCVD state, sending RST");
 			goto reset;
@@ -1261,7 +1269,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 		net_tcp_print_recv_info("ACK", buf, NET_TCP_BUF(buf)->src_port);
 
-		if (!context->accept_cb) {
+		if (!context->tcp->accept_cb) {
 			NET_DBG("No accept callback, connection reset.");
 			goto reset;
 		}
@@ -1277,7 +1285,6 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 			goto reset;
 		}
 
-		new_context->tcp->recv_ack = context->tcp->recv_ack;
 		new_context->tcp->recv_max_ack = context->tcp->recv_max_ack;
 		new_context->tcp->send_seq = context->tcp->send_seq;
 		new_context->tcp->send_ack = context->tcp->send_ack;
@@ -1359,12 +1366,15 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		}
 
 		/* Swap the newly-created TCP states with the one that
-		 * was used to establish this connection.  The new connection
+		 * was used to establish this connection. The new TCP
 		 * must be listening to accept other connections.
 		 */
 		tmp_tcp = new_context->tcp;
+		tmp_tcp->accept_cb = tcp->accept_cb;
+		tcp->accept_cb = NULL;
 		new_context->tcp = tcp;
 		context->tcp = tmp_tcp;
+
 		tcp->context = new_context;
 		tmp_tcp->context = context;
 
@@ -1375,14 +1385,11 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 		k_delayed_work_cancel(&tcp->ack_timer);
 
-		new_context->user_data = context->user_data;
-		context->user_data = NULL;
-
-		context->accept_cb(new_context,
-				   &new_context->remote,
-				   addrlen,
-				   0,
-				   new_context->user_data);
+		context->tcp->accept_cb(new_context,
+					&new_context->remote,
+					addrlen,
+					0,
+					context->user_data);
 	}
 
 	return NET_DROP;
@@ -1399,7 +1406,7 @@ reset:
 #endif /* CONFIG_NET_TCP */
 
 int net_context_accept(struct net_context *context,
-		       net_context_accept_cb_t cb,
+		       net_tcp_accept_cb_t cb,
 		       int32_t timeout,
 		       void *user_data)
 {
@@ -1439,7 +1446,7 @@ int net_context_accept(struct net_context *context,
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		NET_ASSERT(context->tcp);
 
-		if (context->tcp->state != NET_TCP_LISTEN) {
+		if (net_tcp_get_state(context->tcp) != NET_TCP_LISTEN) {
 			NET_DBG("Context %p in wrong state %d, should be %d",
 				context, context->tcp->state, NET_TCP_LISTEN);
 			return -EINVAL;
@@ -1488,7 +1495,11 @@ int net_context_accept(struct net_context *context,
 	}
 
 	context->user_data = user_data;
-	context->accept_cb = cb;
+
+	/* accept callback is only valid for TCP contexts */
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		context->tcp->accept_cb = cb;
+	}
 #endif /* CONFIG_NET_TCP */
 
 	return 0;
@@ -1987,6 +1998,7 @@ int net_context_recv(struct net_context *context,
 		}
 
 		context->recv_cb = cb;
+		context->tcp->recv_user_data = user_data;
 	} else
 #endif /* CONFIG_NET_TCP */
 	{

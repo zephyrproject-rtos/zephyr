@@ -124,8 +124,8 @@ int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
 	net_neighbor_lladdr[avail].ref++;
 	nbr->idx = avail;
 
-	memcpy(net_neighbor_lladdr[avail].lladdr.addr,
-	       lladdr->addr, lladdr->len);
+	net_linkaddr_set(&net_neighbor_lladdr[avail].lladdr, lladdr->addr,
+			 lladdr->len);
 	net_neighbor_lladdr[avail].lladdr.len = lladdr->len;
 
 	nbr->iface = iface;
@@ -148,7 +148,7 @@ int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr)
 
 	if (!net_neighbor_lladdr[nbr->idx].ref) {
 		memset(net_neighbor_lladdr[nbr->idx].lladdr.addr, 0,
-		       sizeof(net_neighbor_lladdr[nbr->idx].lladdr.storage));
+		       sizeof(net_neighbor_lladdr[nbr->idx].lladdr.addr));
 	}
 
 	nbr->idx = NET_NBR_LLADDR_UNKNOWN;

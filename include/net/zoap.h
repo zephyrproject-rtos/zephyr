@@ -112,6 +112,7 @@ enum zoap_response_code {
 	ZOAP_RESPONSE_CODE_VALID = zoap_make_response_code(2, 3),
 	ZOAP_RESPONSE_CODE_CHANGED = zoap_make_response_code(2, 4),
 	ZOAP_RESPONSE_CODE_CONTENT = zoap_make_response_code(2, 5),
+	ZOAP_RESPONSE_CODE_CONTINUE = zoap_make_response_code(2, 31),
 	ZOAP_RESPONSE_CODE_BAD_REQUEST = zoap_make_response_code(4, 0),
 	ZOAP_RESPONSE_CODE_UNAUTHORIZED = zoap_make_response_code(4, 1),
 	ZOAP_RESPONSE_CODE_BAD_OPTION = zoap_make_response_code(4, 2),
@@ -225,6 +226,7 @@ void zoap_observer_init(struct zoap_observer *observer,
 
 /**
  * After the observer is initialized, associate the observer with an resource.
+ * Returns whether this is the first observer added to this resource.
  */
 bool zoap_register_observer(struct zoap_resource *resource,
 			    struct zoap_observer *observer);
@@ -235,6 +237,13 @@ bool zoap_register_observer(struct zoap_resource *resource,
  */
 void zoap_remove_observer(struct zoap_resource *resource,
 			  struct zoap_observer *observer);
+
+/**
+ * Returns the observer that matches address @a addr.
+ */
+struct zoap_observer *zoap_find_observer_by_addr(
+	struct zoap_observer *observers, size_t len,
+	const struct sockaddr *addr);
 
 /**
  * Returns the next available observer representation.

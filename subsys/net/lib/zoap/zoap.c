@@ -547,11 +547,22 @@ static zoap_method_t method_from_code(const struct zoap_resource *resource,
 	}
 }
 
+static bool is_request(struct zoap_packet *pkt)
+{
+	uint8_t code = zoap_header_get_code(pkt);
+
+	return !(code & ~ZOAP_REQUEST_MASK);
+}
+
 int zoap_handle_request(struct zoap_packet *pkt,
 			struct zoap_resource *resources,
 			const struct sockaddr *from)
 {
 	struct zoap_resource *resource;
+
+	if (!is_request(pkt)) {
+		return 0;
+	}
 
 	for (resource = resources; resource && resource->path; resource++) {
 		zoap_method_t method;
@@ -583,13 +594,13 @@ unsigned int zoap_option_value_to_int(const struct zoap_option *option)
 	case 1:
 		return option->value[0];
 	case 2:
-		return (option->value[0] << 0) | (option->value[1] << 8);
+		return (option->value[1] << 0) | (option->value[0] << 8);
 	case 3:
-		return (option->value[0] << 0) | (option->value[1] << 8) |
-			(option->value[2] << 16);
+		return (option->value[2] << 0) | (option->value[1] << 8) |
+			(option->value[0] << 16);
 	case 4:
-		return (option->value[0] << 0) | (option->value[1] << 8) |
-			(option->value[2] << 16) | (option->value[3] << 24);
+		return (option->value[2] << 0) | (option->value[2] << 8) |
+			(option->value[1] << 16) | (option->value[0] << 24);
 	default:
 		return 0;
 	}
@@ -742,6 +753,64 @@ void zoap_remove_observer(struct zoap_resource *resource,
 			  struct zoap_observer *observer)
 {
 	sys_slist_find_and_remove(&resource->observers, &observer->list);
+}
+
+static bool sockaddr_equal(const struct sockaddr *a,
+			   const struct sockaddr *b)
+{
+	/*
+	 * FIXME: Should we consider ipv6-mapped ipv4 addresses as equal to
+	 * ipv4 addresses?
+	 */
+	if (a->family != b->family) {
+		return false;
+	}
+
+	if (a->family == AF_INET) {
+		const struct sockaddr_in *a4 = net_sin(a);
+		const struct sockaddr_in *b4 = net_sin(b);
+
+		if (a4->sin_port != b4->sin_port) {
+			return false;
+		}
+
+		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
+	}
+
+	if (b->family == AF_INET6) {
+		const struct sockaddr_in6 *a6 = net_sin6(a);
+		const struct sockaddr_in6 *b6 = net_sin6(b);
+
+		if (a6->sin6_scope_id != b6->sin6_scope_id) {
+			return false;
+		}
+
+		if (a6->sin6_port != b6->sin6_port) {
+			return false;
+		}
+
+		return net_ipv6_addr_cmp(&a6->sin6_addr, &b6->sin6_addr);
+	}
+
+	/* Invalid address family */
+	return false;
+}
+
+struct zoap_observer *zoap_find_observer_by_addr(
+	struct zoap_observer *observers, size_t len,
+	const struct sockaddr *addr)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		struct zoap_observer *o = &observers[i];
+
+		if (sockaddr_equal(&o->addr, addr)) {
+			return o;
+		}
+	}
+
+	return NULL;
 }
 
 uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len)
@@ -1082,13 +1151,6 @@ int zoap_block_transfer_init(struct zoap_block_context *ctx,
 #define SET_BLOCK_SIZE(v, b) (v |= ((b) & 0x07))
 #define SET_MORE(v, m) ((v) |= (m) ? 0x08 : 0x00)
 #define SET_NUM(v, n) ((v) |= ((n) << 4))
-
-static bool is_request(struct zoap_packet *pkt)
-{
-	uint8_t code = zoap_header_get_code(pkt);
-
-	return !(code & ~ZOAP_REQUEST_MASK);
-}
 
 int zoap_add_block1_option(struct zoap_packet *pkt,
 			    struct zoap_block_context *ctx)

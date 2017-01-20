@@ -58,7 +58,7 @@ config ETH_ENC28J60_0_GPIO_PORT_NAME
 
 config ETH_ENC28J60_0_GPIO_PIN
 	int "ENC28J60C INT GPIO PIN"
-	default 24
+	default 19
 	help
 	GPIO pin number used to conect INT
 

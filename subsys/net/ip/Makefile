@@ -1,3 +1,4 @@
+ccflags-$(CONFIG_NEWLIB_LIBC) += -D__LINUX_ERRNO_EXTENSIONS__
 obj-y = net_core.o \
 	net_if.o \
 	net_context.o \

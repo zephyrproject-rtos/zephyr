@@ -972,6 +972,7 @@ static inline uint8_t uncompress_da_mcast(struct net_buf *buf,
 	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
 		/* TODO: DAM00 Unicast-Prefix-based IPv6 Multicast Addresses */
 		/* Reserved DAM_01, DAM_10, DAM_11 */
+		NET_DBG("Unsupported DAM options");
 		return 0;
 	}
 
@@ -1028,7 +1029,8 @@ static inline uint8_t uncompress_da(struct net_buf *buf,
 		return uncompress_da_mcast(buf, ipv6, offset);
 	}
 
-	if (!((CIPHC[1] & NET_6LO_IPHC_DAC_0) == 0)) {
+	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
+		/* Invalid case: ctx doesn't exists , but DAC is 1*/
 		return 0;
 	}
 
@@ -1086,6 +1088,7 @@ static inline uint8_t uncompress_da_ctx(struct net_buf *buf,
 	}
 
 	if (!(CIPHC[1] & NET_6LO_IPHC_DAC_1)) {
+		/* Invalid case: ctx exists but DAC is 0. */
 		return 0;
 	}
 
@@ -1309,6 +1312,9 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	}
 #else
 	offset = uncompress_da(buf, ipv6, offset);
+	if (!offset) {
+		goto fail;
+	}
 #endif
 
 	net_buf_add(frag, NET_IPV6H_LEN);
@@ -1360,12 +1366,12 @@ end:
 	ipv6->len[0] = len >> 8;
 	ipv6->len[1] = (uint8_t)len;
 
-	if (ipv6->nexthdr == IPPROTO_UDP) {
+	if (ipv6->nexthdr == IPPROTO_UDP && udp) {
 		udp->len = htons(len);
-	}
 
-	if (chksum) {
-		udp->chksum = ~net_calc_chksum_udp(buf);
+		if (chksum) {
+			udp->chksum = ~net_calc_chksum_udp(buf);
+		}
 	}
 
 	return true;

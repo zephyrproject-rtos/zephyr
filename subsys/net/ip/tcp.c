@@ -44,8 +44,6 @@ static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 
 #define INIT_RETRY_MS 200
 
-static struct k_sem tcp_lock;
-
 struct tcp_segment {
 	uint32_t seq;
 	uint32_t ack;
@@ -102,6 +100,11 @@ static inline uint32_t init_isn(void)
 	return sys_rand32_get();
 }
 
+static inline uint32_t retry_timeout(const struct net_tcp *tcp)
+{
+	return ((uint32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
+}
+
 static void tcp_retry_expired(struct k_timer *timer)
 {
 	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
@@ -111,12 +114,12 @@ static void tcp_retry_expired(struct k_timer *timer)
 	 * the first (only the first!) unack'd packet.
 	 */
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
-		tcp->retry_timeout_ms *= 2;
-		k_timer_start(&tcp->retry_timer, tcp->retry_timeout_ms, 0);
+		tcp->retry_timeout_shift++;
+		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
 
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
-		net_tcp_send_buf(buf);
+		net_tcp_send_buf(net_buf_ref(buf));
 	}
 }
 
@@ -140,13 +143,16 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	memset(&tcp_context[i], 0, sizeof(struct net_tcp));
 
 	tcp_context[i].flags = NET_TCP_IN_USE;
-	tcp_context[i].state = NET_TCP_CLOSED;
+	net_tcp_set_state(&tcp_context[i], NET_TCP_CLOSED);
 	tcp_context[i].context = context;
 
 	tcp_context[i].send_seq = init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
 
+	tcp_context[i].accept_cb = NULL;
+
 	k_timer_init(&tcp_context[i].retry_timer, tcp_retry_expired, NULL);
+	k_sem_init(&tcp_context[i].connect_wait, 0, UINT_MAX);
 
 	return &tcp_context[i];
 }
@@ -159,18 +165,16 @@ int net_tcp_release(struct net_tcp *tcp)
 		return -EINVAL;
 	}
 
-	if (tcp->state == NET_TCP_FIN_WAIT_1 ||
-	    tcp->state == NET_TCP_FIN_WAIT_2 ||
-	    tcp->state == NET_TCP_CLOSING ||
-	    tcp->state == NET_TCP_TIME_WAIT) {
-		k_delayed_work_cancel(&tcp->fin_timer);
-	}
+	k_delayed_work_cancel(&tcp->fin_timer);
+	k_delayed_work_cancel(&tcp->ack_timer);
+	k_timer_stop(&tcp->retry_timer);
+	k_sem_reset(&tcp->connect_wait);
 
-	tcp->state = NET_TCP_CLOSED;
+	net_tcp_set_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;
 
 	key = irq_lock();
-	tcp->flags &= ~NET_TCP_IN_USE;
+	tcp->flags &= ~(NET_TCP_IN_USE | NET_TCP_RECV_MSS_SET);
 	irq_unlock(key);
 
 	NET_DBG("Disposed of TCP connection state");
@@ -264,7 +268,8 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		goto proto_err;
 	}
 
-	header = buf->frags;
+	header = net_nbuf_get_data(context);
+	net_buf_frag_add(buf, header);
 
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
 
@@ -342,7 +347,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	seq = tcp->send_seq;
 
 	if (flags & NET_TCP_ACK) {
-		if (tcp->state == NET_TCP_FIN_WAIT_1) {
+		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 			if (flags & NET_TCP_FIN) {
 				/* FIN is used here only to determine which
 				 * state to go to next; it's not to be used
@@ -353,9 +358,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			} else {
 				net_tcp_change_state(tcp, NET_TCP_CLOSING);
 			}
-		} else if (tcp->state == NET_TCP_FIN_WAIT_2) {
+		} else if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_2) {
 			net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
-		} else if (tcp->state == NET_TCP_CLOSE_WAIT) {
+		} else if (net_tcp_get_state(tcp) == NET_TCP_CLOSE_WAIT) {
 			tcp->flags |= NET_TCP_IS_SHUTDOWN;
 			flags |= NET_TCP_FIN;
 			net_tcp_change_state(tcp, NET_TCP_LAST_ACK);
@@ -366,8 +371,8 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 		tcp->flags |= NET_TCP_FINAL_SENT;
 		seq++;
 
-		if (tcp->state == NET_TCP_ESTABLISHED ||
-		    tcp->state == NET_TCP_SYN_RCVD) {
+		if (net_tcp_get_state(tcp) == NET_TCP_ESTABLISHED ||
+		    net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
 			net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_1);
 		}
 	}
@@ -429,44 +434,50 @@ static inline size_t ip_max_packet_len(struct in_addr *dest_ip)
 #define ip_max_packet_len(...) 0
 #endif /* CONFIG_NET_IPV4 */
 
+uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
+{
+	sa_family_t family = net_context_get_family(tcp->context);
+
+	if (family == AF_INET) {
+#if defined(CONFIG_NET_IPV4)
+		struct net_if *iface = net_context_get_iface(tcp->context);
+
+		if (iface && iface->mtu >= NET_IPV4TCPH_LEN) {
+			/* Detect MSS based on interface MTU minus "TCP,IP
+			 * header size"
+			 */
+			return iface->mtu - NET_IPV4TCPH_LEN;
+		}
+#else
+		return 0;
+#endif /* CONFIG_NET_IPV4 */
+	}
+#if defined(CONFIG_NET_IPV6)
+	else if (family == AF_INET6) {
+		return 1280;
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+	return 0;
+}
+
 static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
 				uint8_t *optionlen)
 {
+	uint16_t recv_mss;
+
 	*optionlen = 0;
 
-	/* If 0, detect MSS based on interface MTU minus "TCP,IP header size"
-	 */
-	if (tcp->recv_mss == 0) {
-		sa_family_t family = net_context_get_family(tcp->context);
-
-		if (family == AF_INET) {
-#if defined(CONFIG_NET_IPV4)
-			struct net_if *iface =
-				net_context_get_iface(tcp->context);
-
-			if (iface) {
-				/* MTU - [TCP,IP header size]. */
-				tcp->recv_mss = iface->mtu - 40;
-			}
-#else
-			tcp->recv_mss = 0;
-#endif /* CONFIG_NET_IPV4 */
-		}
-#if defined(CONFIG_NET_IPV6)
-		else if (family == AF_INET6) {
-			tcp->recv_mss = 1280;
-		}
-#endif /* CONFIG_NET_IPV6 */
-		else {
-			tcp->recv_mss = 0;
-		}
+	if (!(tcp->flags & NET_TCP_RECV_MSS_SET)) {
+		recv_mss = net_tcp_get_recv_mss(tcp);
+		tcp->flags |= NET_TCP_RECV_MSS_SET;
+	} else {
+		recv_mss = 0;
 	}
 
 	*((uint32_t *)(options + *optionlen)) =
-		htonl((uint32_t)(tcp->recv_mss | NET_TCP_MSS_HEADER));
+		htonl((uint32_t)(recv_mss | NET_TCP_MSS_HEADER));
 	*optionlen += NET_TCP_MSS_SIZE;
-
-	return;
 }
 
 int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
@@ -475,7 +486,7 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 	uint8_t options[NET_TCP_MAX_OPT_SIZE];
 	uint8_t optionlen;
 
-	switch (tcp->state) {
+	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_SYN_RCVD:
 		/* In the SYN_RCVD state acknowledgment must be with the
 		 * SYN flag.
@@ -515,20 +526,19 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 	struct tcp_segment segment = { 0 };
 
 	if ((net_context_get_state(tcp->context) != NET_CONTEXT_UNCONNECTED) &&
-	    (tcp->state != NET_TCP_SYN_SENT) &&
-	    (tcp->state != NET_TCP_TIME_WAIT)) {
-		if (tcp->state == NET_TCP_SYN_RCVD) {
+	    (net_tcp_get_state(tcp) != NET_TCP_SYN_SENT) &&
+	    (net_tcp_get_state(tcp) != NET_TCP_TIME_WAIT)) {
+		if (net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
 			/* Send the reset segment with acknowledgment. */
-			segment.seq = 0;
 			segment.ack = tcp->send_ack;
 			segment.flags = NET_TCP_RST | NET_TCP_ACK;
 		} else {
 			/* Send the reset segment without acknowledgment. */
-			segment.seq = tcp->recv_ack;
 			segment.ack = 0;
 			segment.flags = NET_TCP_RST;
 		}
 
+		segment.seq = 0;
 		segment.src_addr = &tcp->context->local;
 		segment.dst_addr = remote;
 		segment.wnd = 0;
@@ -626,8 +636,8 @@ static void restart_timer(struct net_tcp *tcp)
 {
 	if (sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->flags |= NET_TCP_RETRYING;
-		tcp->retry_timeout_ms = INIT_RETRY_MS;
-		k_timer_start(&tcp->retry_timer, INIT_RETRY_MS, 0);
+		tcp->retry_timeout_shift = 0;
+		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
 	} else {
 		k_timer_stop(&tcp->retry_timer);
 		tcp->flags &= ~NET_TCP_RETRYING;
@@ -708,8 +718,6 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 
 void net_tcp_init(void)
 {
-	k_sem_init(&tcp_lock, 0, UINT_MAX);
-	k_sem_give(&tcp_lock);
 }
 
 #define FIN_TIMEOUT (2 * NET_TCP_MAX_SEG_LIFETIME * MSEC_PER_SEC)
@@ -768,7 +776,7 @@ void net_tcp_change_state(struct net_tcp *tcp,
 {
 	NET_ASSERT(tcp);
 
-	if (tcp->state == new_state) {
+	if (net_tcp_get_state(tcp) == new_state) {
 		return;
 	}
 
@@ -783,16 +791,16 @@ void net_tcp_change_state(struct net_tcp *tcp,
 	validate_state_transition(tcp->state, new_state);
 #endif /* CONFIG_NET_DEBUG_TCP */
 
-	tcp->state = new_state;
+	net_tcp_set_state(tcp, new_state);
 
-	if (tcp->state == NET_TCP_FIN_WAIT_1) {
+	if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 		/* Wait up to 2 * MSL before destroying this socket. */
 		k_delayed_work_cancel(&tcp->fin_timer);
 		k_delayed_work_init(&tcp->fin_timer, fin_timeout);
 		k_delayed_work_submit(&tcp->fin_timer, FIN_TIMEOUT);
 	}
 
-	if (tcp->state != NET_TCP_CLOSED) {
+	if (net_tcp_get_state(tcp) != NET_TCP_CLOSED) {
 		return;
 	}
 
@@ -806,12 +814,12 @@ void net_tcp_change_state(struct net_tcp *tcp,
 		tcp->context->conn_handler = NULL;
 	}
 
-	if (tcp->context->accept_cb) {
-		tcp->context->accept_cb(tcp->context,
-					&tcp->context->remote,
-					sizeof(struct sockaddr),
-					-ENETRESET,
-					tcp->context->user_data);
+	if (tcp->accept_cb) {
+		tcp->accept_cb(tcp->context,
+			       &tcp->context->remote,
+			       sizeof(struct sockaddr),
+			       -ENETRESET,
+			       tcp->context->user_data);
 	}
 }
 

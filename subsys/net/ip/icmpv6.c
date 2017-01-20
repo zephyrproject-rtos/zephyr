@@ -353,10 +353,6 @@ enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
 	SYS_SLIST_FOR_EACH_NODE(&handlers, node) {
 		cb = (struct net_icmpv6_handler *)node;
 
-		if (!cb) {
-			continue;
-		}
-
 		if (cb->type == type && (cb->code == code || cb->code == 0)) {
 			net_stats_update_icmp_recv();
 			return cb->handler(buf);

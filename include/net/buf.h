@@ -401,8 +401,10 @@ struct net_buf {
 		struct net_buf *frags;
 	};
 
+#if defined(CONFIG_NET_TCP)
 	/** List pointer used for TCP retransmit buffering */
 	sys_snode_t sent_list;
+#endif /* CONFIG_NET_TCP */
 
 	/** Reference count. */
 	uint8_t ref;
