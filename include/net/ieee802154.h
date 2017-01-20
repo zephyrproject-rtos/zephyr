@@ -13,8 +13,20 @@
 #define __IEEE802154_H__
 
 #include <net/net_mgmt.h>
+#include <crypto/cipher_structs.h>
 
 #define IEEE802154_MAX_ADDR_LENGTH	8
+
+struct ieee802154_security_ctx {
+	uint32_t frame_counter;
+	struct cipher_ctx enc;
+	struct cipher_ctx dec;
+	uint8_t key[16];
+	uint8_t key_len;
+	uint8_t level		: 3;
+	uint8_t key_mode	: 2;
+	uint8_t _unused		: 3;
+};
 
 /* This not meant to be used by any code but 802.15.4 L2 stack */
 struct ieee802154_context {
