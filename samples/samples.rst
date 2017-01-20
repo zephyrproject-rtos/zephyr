@@ -9,6 +9,7 @@ Samples and Demos
    kernel
    basic/*
    net/net.rst
+   bluetooth/bluetooth.rst
    sensor/*
    grove/*
    advanced
