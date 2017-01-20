@@ -215,7 +215,7 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
 		    &gpio_stm32_driver);
 
-#elif /* CONFIG_SOC_SERIES_STM32F4X */
+#else /* CONFIG_SOC_SERIES_STM32F4X */
 
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr)	\
 static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {		\
