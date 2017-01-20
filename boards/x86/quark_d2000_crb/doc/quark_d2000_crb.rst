@@ -4,7 +4,7 @@ Quark D2000 Development Board
 #############################
 
 Overview
-========
+********
 
 The Intel® Quark ™ microcontroller D2000 package is shipped as a 40-pin QFN
 component.
@@ -33,7 +33,7 @@ Intel™ Quark® microcontroller D2000 contains the following items:
   - EEMBC power input header
 
 Hardware
-========
+********
 
 General information for the board can be found at the `Intel Website`_,
 which includes both `schematics`_ and BRD files.
@@ -45,7 +45,7 @@ Header.
 
 
 Supported Features
--------------------
+===================
 
 +-----------+------------+-----------------------+
 | Interface | Controller | Driver/Component      |
@@ -66,7 +66,7 @@ Supported Features
 
 
 Programming and Debugging
-=========================
+*************************
 
 The D2000 board configuration details are found in the project's tree at
 :file:`boards/x86/quark_d2000_crb`.
@@ -78,7 +78,7 @@ To build an application for this board, the following call is needed:
    $ make BOARD=quark_d2000_crb <make target>
 
 Flashing
---------
+========
 
 #. Since the board has a built-in JTAG; it is possible to flash the device
    through the USB only.  Set the following jumpers to enable the built-in JTAG:
@@ -106,7 +106,7 @@ Flashing
       $ make BOARD=quark_d2000_crb flash
 
 Debugging
----------
+=========
 
 To debug an application on the Quark D2000 board, follow these steps.  As an
 example, we are using the hello_world application.

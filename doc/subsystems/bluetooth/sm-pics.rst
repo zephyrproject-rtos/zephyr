@@ -13,7 +13,7 @@ O - optional
 
 
 Connection Roles
-================
+****************
 
 ===============	===========	=======================================
 Parameter Name	Selected	Description
@@ -24,7 +24,7 @@ TSPC_SM_1_2	True		Slave Role (Responder) (C.2)
 
 
 Security Properties
-===================
+*******************
 
 ===============	===========	=======================================
 Parameter Name	Selected	Description
@@ -38,7 +38,7 @@ TSPC_SM_2_5	(^)		LE Secure Connections (C.2)
 
 
 Encryption Key Size
-===================
+*******************
 
 ===============	===========	=======================================
 Parameter Name	Selected	Description
@@ -48,7 +48,7 @@ TSPC_SM_3_1	True		Encryption Key Size Negotiation (M)
 
 
 Pairing Method
-==============
+**************
 
 ===============	===========	=======================================
 Parameter Name	Selected	Description
@@ -60,7 +60,7 @@ TSPC_SM_4_3	False (*)	Out of Band (C.1)
 
 
 Security Initiation
-===================
+*******************
 
 ===============	===========	=======================================
 Parameter Name	Selected	Description
@@ -73,7 +73,7 @@ TSPC_SM_5_4	True		Slave Initiated Security – Master response(C.2)
 
 
 Signing Algorithm
-=================
+*****************
 
 ===============	===========	=======================================
 Parameter Name	Selected	Description
@@ -84,7 +84,7 @@ TSPC_SM_6_2	True		Signing Algorithm - Resolving (O)
 
 
 Key Distribution
-================
+****************
 
 ===============	===========	=======================================
 Parameter Name	Selected	Description

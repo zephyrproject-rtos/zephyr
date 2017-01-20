@@ -2,7 +2,7 @@ RGB and Gesture Sensor
 ######################
 
 Overview
-========
+********
 
 This sample utilizes APDS-9960 Sensor and reads RGB values from the sensor
 then displays the color through the APA102C LED.
@@ -12,7 +12,7 @@ then displays the color through the APA102C LED.
    This sample does not use the Zephyr sensor APIs
 
 Wiring
-======
+******
 
 The SparkFun RGB and Gesture Sensor was being used:
 
@@ -36,7 +36,7 @@ tolerant if using pull-up resistors.
    and do not look directly into those LEDs.
 
 Building and Running
-====================
+********************
 
 This sample can be built for multiple boards, in this example we will build it
 for the Arduino 101 board:

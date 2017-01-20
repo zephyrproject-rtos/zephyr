@@ -5,7 +5,7 @@ Application Development Primer
 
 
 Overview
-========
+********
 The Zephyr Kernel's build system is based on the Kbuild system used in the
 Linux kernel.
 
@@ -54,7 +54,7 @@ process, the most notable of which are listed below.
 
 
 Application Structure
-=====================
+*********************
 
 
 Create one directory for your application and a sub-directory for the
@@ -94,7 +94,7 @@ files in the structure that the kernel expects.
 
 
 Application Definition
-======================
+**********************
 
 An application is integrated into the build system by including the Makefile.inc
 file provided.
@@ -133,10 +133,10 @@ The following predefined variables configure the development project:
 
 
 Makefiles
-=========
+*********
 
 Overview
---------
+========
 
 The build system defines a set of conventions for the correct use of Makefiles
 in the kernel source directories. The correct use of Makefiles is driven by the
@@ -151,7 +151,7 @@ following the recursive model.
 .. _makefile_conventions:
 
 Makefile Conventions
---------------------
+====================
 
 The following conventions restrict how to add modules and Makefiles to the
 build system. These conventions ensure the correct implementation of the
@@ -174,7 +174,7 @@ recursive model.
   recursion model.
 
 Adding Source Files
--------------------
+===================
 
 The Makefile must refer the source build indirectly, specifying the object file
 that results from the source file using the :literal:`obj-y` variable. For
@@ -199,7 +199,7 @@ source code conditionally:
    obj-$(CONFIG_VAR) += <file>.o
 
 Adding Directories
-------------------
+==================
 
 Add a subdirectory to the build system by editing the Makefile in its
 directory.  The subdirectory is added using the :literal:`obj-y` variable. The
@@ -228,7 +228,7 @@ The subdirectory must contain its own Makefile following the rules described in
 
 
 Application Makefile
-====================
+********************
 
 Create an application Makefile to define basic information, such as the board
 configuration used by the application. The build system uses the Makefile to
@@ -277,7 +277,7 @@ Below is an example Makefile:
    include ${ZEPHYR_BASE}/Makefile.inc
 
 Application Configuration
-=========================
+*************************
 
 The application's kernel is configured using a set of configuration options
 that can be customized for application-specific purposes.
@@ -300,7 +300,7 @@ For information on available kernel configuration options, including
 inter-dependencies between options, see the :ref:`configuration`.
 
 Default Board Configuration
----------------------------
+===========================
 
 An application's :file:`.conf` file defines its default kernel configuration.
 The settings in this file override or augment the board configuration settings.
@@ -348,7 +348,7 @@ in :file:`\$ZEPHYR_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
 .. _override_kernel_conf:
 
 Overriding Default Configuration
---------------------------------
+================================
 
 Override the default board and kernel configuration to temporarily alter the
 application's configuration, perhaps to test the effect of a change.
@@ -486,7 +486,7 @@ entries manually, using the configuration menu is a preferred method.
    command line.
 
 Application-Specific Code
-=========================
+*************************
 
 Application-specific source code files are normally added to the application's
 :file:`src` directory. If the application adds a large number of files the
@@ -558,7 +558,7 @@ context, navigate to: :file:`\$ZEPHYR_BASE/samples/philosophers/src`.
 
 
 Build an Application
-====================
+********************
 
 The Zephyr build system compiles and links all components of an application
 into a single application image that can be run on simulated hardware or real
@@ -596,7 +596,7 @@ hardware.
    when building the application.
 
 Rebuilding an Application
-=========================
+*************************
 
 Application development is usually fastest when changes are continually tested.
 Frequently rebuilding your application makes debugging less painful
@@ -640,7 +640,7 @@ following procedure:
 
 
 Run an Application
-==================
+******************
 
 An application image can be run on real or emulated hardware. The kernel has
 built-in emulator support for QEMU. It allows you to run and test an application
@@ -668,7 +668,7 @@ hardware.
    redisplays.
 
 Application Debugging
-=====================
+*********************
 
 This section is a quick hands-on reference to start debugging your
 application with QEMU. Most content in this section is already covered on

@@ -2,20 +2,20 @@ Disco demo
 ##########
 
 Overview
-========
+********
 
 A simple 'disco' demo. The demo assumes that 2 LEDs are connected to
 GPIO outputs of the MCU/board.
 
 
 Wiring
-======
+******
 
 The code may need some work before running on another board: set PORT,
 LED1 and LED2 according to the board's GPIO configuration.
 
 Nucleo-64 F103RB/F401RE boards
-------------------------------
+==============================
 
 Connect two LEDs to PB5 and PB8 pins. PB5 is mapped to the
 Arduino's D4 pin and PB8 to Arduino's D15. For more details about
@@ -25,7 +25,7 @@ these boards see:
 - https://developer.mbed.org/platforms/ST-Nucleo-F401RE/
 
 Arduino 101 (x86)
------------------
+=================
 
 Connect two LEDs to D4 (IO4) and D7 (IO7) pins. The schematics for the Arduino
 101 board is available at:
@@ -45,7 +45,7 @@ Modify the src/main.c file and set:
    #define LED2	20
 
 Building and Running
-=====================
+*********************
 
 After startup, the program looks up a predefined GPIO device defined by 'PORT',
 and configures pins 'LED1' and 'LED2' in output mode.  During each iteration of
@@ -59,21 +59,21 @@ connected to the GPIO device to blink in an alternating pattern.
 The sample can be found here: :file:`samples/basic/disco`.
 
 Nucleo F103RB
--------------
+=============
 
 .. code-block:: console
 
    $ make BOARD=nucleo_f103rb
 
 Nucleo F401RE
--------------
+=============
 
 .. code-block:: console
 
    $ make BOARD=nucleo_f401re
 
 Arduino 101
-------------
+============
 
 .. code-block:: console
 

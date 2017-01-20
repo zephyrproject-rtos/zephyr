@@ -17,7 +17,7 @@ the section :ref:`changes_v2`.
 
 
 API Changes
-===========
+***********
 
 As described in the section :ref:`kernel_api_changes` the kernel now has one
 unified and consistent API with new naming.
@@ -28,7 +28,7 @@ that translates old APIs to the new APIs. This legacy interface maintained in
 application to the new kernel.
 
 Same Arguments
---------------
+==============
 
 In many cases, a simple search and replace is enough to move from the legacy to
 the new APIs, for example:
@@ -37,7 +37,7 @@ the new APIs, for example:
 * :cpp:func:`task_sem_count_get()` -> :cpp:func:`k_sem_count_get()`
 
 Additional Arguments
---------------------
+====================
 The number of arguments to some APIs have changed,
 
 * :cpp:func:`nano_sem_init()` -> :cpp:func:`k_sem_init()`
@@ -61,7 +61,7 @@ The number of arguments to some APIs have changed,
      k_sem_init(sem, 0, UINT_MAX);
 
 Return Codes
-------------
+============
 
 Many kernel APIs now return 0 to indicate success and a non-zero error code
 to indicate the reason for failure. You should pay special attention to this
@@ -72,7 +72,7 @@ change when checking for return codes from kernel APIs, for example:
 
 
 Application Porting
-===================
+*******************
 
 The existing :ref:`synchronization_sample` from the Zephyr tree will be used to
 guide you with porting a legacy application to the new kernel.
@@ -85,7 +85,7 @@ The code has been ported to the new kernel and is shown below:
    :lines: 9-
 
 Porting a Nanokernel Application
----------------------------------
+=================================
 
 Below is the code for the application using the legacy kernel:
 
@@ -95,7 +95,7 @@ Below is the code for the application using the legacy kernel:
    :lines: 9-
 
 Porting a Microkernel Application
----------------------------------
+=================================
 
 The MDEF feature of the legacy kernel has been eliminated. Consequently, all
 kernel objects are now defined directly in code.

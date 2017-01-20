@@ -4,7 +4,7 @@ X86 Emulation (QEMU)
 ####################
 
 Overview
-========
+********
 
 The Zephyr Kernel uses the qemu_x86 board configuration to emulate pentium-class
 systems running on QEMU.
@@ -17,10 +17,10 @@ following devices:
 
 
 Hardware
-========
+********
 
 Supported Features
-------------------
+==================
 
 The qemu_x86 board configuration supports the following hardware features:
 
@@ -36,15 +36,15 @@ The qemu_x86 board configuration supports the following hardware features:
 +--------------+------------+-----------------------+
 
 Devices
--------
+=======
 
 HPET System Clock Support
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 The qemu_x86 board configuration uses an HPET clock frequency of 25 MHz.
 
 Serial Port
-~~~~~~~~~~~
+-----------
 
 The qemu_x86 board configuration uses a single serial communication channel that
 uses the NS16550 serial driver operating in polling mode. To override, enable
@@ -52,7 +52,7 @@ the UART_INTERRUPT_DRIVEN Kconfig option, which allows the system to be
 interrupt-driven.
 
 Known Problems or Limitations
------------------------------
+=============================
 
 The following platform features are unsupported:
 

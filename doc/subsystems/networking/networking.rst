@@ -39,7 +39,7 @@ Additionally these network technologies are supported:
 * SLIP (for testing with Qemu)
 
 Source tree layout
-==================
+******************
 
 The IP stack source code tree is organized as follows:
 

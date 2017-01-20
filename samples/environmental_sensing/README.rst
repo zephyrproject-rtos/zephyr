@@ -2,7 +2,7 @@ Environmental Sensing Sample
 ############################
 
 Overview
-========
+********
 
 This sample implementes a simple environmental sensing service using the Arduino
 101 board.
@@ -16,7 +16,7 @@ The application processor exposes the received sensor data as a simple Bluetooth
 Environmental Sensing Service.
 
 Requirements
-============
+************
 
 To use this sample, the following hardware is required:
 
@@ -28,10 +28,10 @@ To use this sample, the following hardware is required:
 
 
 Wiring
-======
+******
 
 External Wiring
----------------
+===============
 
 The sample uses the HDC1008 sensor for temperature and humidity measurement, and
 the BMP280 sensor for pressure measurement. This section describes how to wire
@@ -60,7 +60,7 @@ sensor needs to be setup to use I2C, and not SPI.
     :alt: Wiring with Arduino 101
 
 Using board sensors
--------------------
+===================
 
 If you do not want to use any external sensors, you can use the Arduino 101's
 internal BMI160 sensor to do just temperature readings. To do this, you need to
@@ -74,7 +74,7 @@ also need to modify the sensor subsystem application to only display temperature
 on the LCD, as humidity and pressure values will not be available.
 
 Grove LCD
----------
+=========
 
 Using the Grove LCD is optional and it can be disabled by removing the Grove
 configuration options from the arc/proj.conf file.
@@ -91,10 +91,10 @@ characters will not be displayed on the LCD (3.3V is enough to power just the
 backlight).
 
 Building and Running
-====================
+********************
 
 Building
---------
+========
 
 This sample builds two applications for both the sensor subsystem (arc) and the
 application processor (x86). The resulting images need to be flashed to the
@@ -119,7 +119,7 @@ Zephyr project tree.
    $ make flash # for flashing with JTAG
 
 Running
---------
+========
 The ARC (Sensor Subsystem) program collects temperature, humidity and pressure
 data using the sensors API and sends it to the x86 core through an outbound
 IPM. The collected data is also displayed on a Grove LCD.

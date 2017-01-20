@@ -4,7 +4,7 @@ Hello World
 ###########
 
 Overview
-========
+********
 A simple Hello World example that can be used with any supported board and
 prints 'Hello World' to the console. This application can be built into modes:
 
@@ -12,7 +12,7 @@ prints 'Hello World' to the console. This application can be built into modes:
 * multi threading
 
 Building and Running
-====================
+********************
 
 This project outputs 'Hello World' to the console.  It can be built and executed
 on QEMU as follows:
@@ -31,7 +31,7 @@ single thread: :file:`prj_single.conf`:
    $ make CONF_FILE=prj_single.conf run
 
 Sample Output
--------------
+=============
 
 .. code-block:: console
 

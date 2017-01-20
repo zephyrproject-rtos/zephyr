@@ -4,7 +4,7 @@ ARM Cortex-M3 Emulation (QEMU)
 ##############################
 
 Overview
-========
+********
 
 The Zephyr kernel uses the qemu_cortex_m3 board configuration to emulate the TI
 LM3S6965 platform running on QEMU. It provides support for an ARM Cortex-M3 CPU
@@ -19,9 +19,9 @@ and the following devices:
    with an actual ti_lm3s6965 hardware system, or any other hardware system.
 
 Hardware
-========
+********
 Supported Features
-------------------
+==================
 
 The qemu_cortex_m3 board configuration supports the following hardware features:
 
@@ -40,20 +40,20 @@ The qemu_cortex_m3 board configuration supports the following hardware features:
 The kernel currently does not support other hardware features on this platform.
 
 Devices
---------
+========
 System Clock
-~~~~~~~~~~~~
+------------
 
 The qemu_cortex_m3 board configuration uses a system clock frequency of 12 MHz.
 
 Serial Port
-~~~~~~~~~~~
+-----------
 
 The qemu_cortex_m3 board configuration uses a single serial communication
 channel with the CPU's UART0.
 
 Known Problems or Limitations
-------------------------------
+==============================
 
 The following platform features are unsupported:
 
@@ -63,7 +63,7 @@ The following platform features are unsupported:
 * Writing to the hardware's flash memory
 
 References
-==========
+**********
 
 1. The Definitive Guide to the ARM Cortex-M3, Second Edition by Joseph Yiu (ISBN
    978-0-12-382090-7)

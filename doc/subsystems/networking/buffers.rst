@@ -6,7 +6,7 @@ Network buffers are a core concept of how the networking stack
 defined in ``include/net/buf.h``.
 
 Creating buffers
-================
+****************
 
 Network buffers are created by first defining a pool of them:
 
@@ -48,7 +48,7 @@ and :c:func:`k_fifo_get` APIs, special :c:func:`net_buf_put` and
 FIFOs. These APIs ensure that the buffer chains stay intact.
 
 Common Operations
-=================
+*****************
 
 The network buffer API provides some useful helpers for encoding and
 decoding data in the buffers. To fully understand these helpers it's
@@ -92,7 +92,7 @@ The Add and Push operations are used when encoding data into the buffer,
 whereas Pull is used when decoding data from a buffer.
 
 Reference Counting
-==================
+******************
 
 Each network buffer is reference counted. The buffer is initially
 acquired from a free buffers pool by calling :c:func:`net_buf_alloc()`,

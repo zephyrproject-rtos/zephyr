@@ -4,7 +4,7 @@ ARM V2M Beetle
 ##############
 
 Overview
-========
+********
 
 The v2m_beetle board configuration is used by Zephyr applications that run on
 the V2M Beetle board. It provides support for the Beetle ARM Cortex-M3 CPU and
@@ -24,7 +24,7 @@ the following devices:
 More information about the board can be found at the `V2M Beetle Website`_.
 
 Hardware
-========
+********
 
 ARM V2M BEETLE provides the following hardware components:
 
@@ -49,7 +49,7 @@ ARM V2M BEETLE provides the following hardware components:
 
 
 Supported Features
--------------------
+===================
 
 The v2m_beetle board configuration supports the following hardware features:
 
@@ -83,7 +83,7 @@ The default configuration can be found in the defconfig file:
    boards/arm/v2m_beetle/v2m_beetle_defconfig
 
 Interrupt Controller
---------------------
+====================
 
 Beetle is a Cortex-M3 based SoC and has 15 fixed exceptions and 45 IRQs.
 
@@ -124,7 +124,7 @@ identifies the handlers used for each exception.
 +------+------------+----------------+--------------------------+
 
 Pin Mapping
------------
+===========
 
 The ARM V2M Beetle Board has 4 GPIO controllers. These controllers are responsible for pin muxing, input/output, pull-up, etc.
 
@@ -190,27 +190,27 @@ Peripheral Mapping:
 For mode details please refer to `Beetle Technical Reference Manual (TRM)`_.
 
 System Clock
-------------
+============
 
 V2M Beetle has one external and two on-chip oscillators. The slow clock is
 32.768 kHz, and the main clock is 24 MHz. The processor can set up PLL to drive
 the master clock.
 
 Serial Port
------------
+===========
 
 The ARM Beetle processor has two UARTs. Both the UARTs have only two wires for
 RX/TX and no flow control (CTS/RTS) or FIFO. The Zephyr console output, by
 default, is utilizing UART1.
 
 Programming and Debugging
-=========================
+*************************
 
 Flashing
---------
+========
 
 CMSIS DAP
-^^^^^^^^^
+---------
 
 V2M Beetle provides:
 
@@ -223,7 +223,7 @@ This interfaces are exposed via CMSIS DAP. For more details please refer
 to `CMSIS-DAP Website`_.
 
 Flashing an application to V2M Beetle
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------
 
 The sample application hello_world is being used in this tutorial:
 

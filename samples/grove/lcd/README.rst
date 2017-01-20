@@ -2,13 +2,13 @@ Grove LCD
 #########
 
 Overview
-========
+********
 
 This sample displays an incrementing counter through the Grove LCD, with
 changing backlight.
 
 Requirements
-============
+************
 
 To use this sample, the following hardware is required:
 
@@ -17,7 +17,7 @@ To use this sample, the following hardware is required:
 * `Grove Base Shield`_ [Optional]
 
 Wiring
-======
+******
 
 You will need to connect the Grove LCD via the Grove shield onto a board that
 supports Arduino shields.
@@ -37,7 +37,7 @@ backlight).
 
 
 Building and Running
-====================
+********************
 
 This sample should work on any board that has I2C enabled and has an Arduino
 shield interface. For example, it can be run on the Quark D2000 DevBoard as

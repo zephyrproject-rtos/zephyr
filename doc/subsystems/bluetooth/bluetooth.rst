@@ -46,7 +46,7 @@ Bluetooth stack:
   * Features, buffer sizes/counts, stack sizes, etc.
 
 Source tree layout
-==================
+******************
 
 The stack is split up as follows in the source tree:
 
@@ -81,7 +81,7 @@ The stack is split up as follows in the source tree:
   Extra documentation, such as PICS documents.
 
 Further reading
-===============
+***************
 
 More information on the stack and its usage can be found in the
 `wiki <http://wiki.zephyrproject.org/view/Arduino_101#Bluetooth_firmware_for_the_Arduino_101>`_ and the following subsections:

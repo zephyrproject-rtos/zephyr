@@ -2,13 +2,13 @@ MCP9808 Temperature Sensor
 ##########################
 
 Overview
-========
+********
 
 Sample application that periodically reads temperature from the MCP9808 sensor.
 
 
 Requirements
-============
+************
 
 The MCP9808 digital temperature sensor converts temperatures between -20°C and
 +100°C to a digital word with ±0.5°C (max.) accuracy. It is I2C compatible and
@@ -23,7 +23,7 @@ use it mounted on a breakout board. We used the Adafruit breakout board.
 This sample uses the sensor APIs and the provided driver for the MCP9808 sensor.
 
 Wiring
-=======
+*******
 
 The MCP9808 requires 2 wires for the I2C bus plus power and ground. The power
 can be either 5V or 3.3V.
@@ -36,7 +36,7 @@ It reads the temperature and displays it on the console.
 
 
 References
-===========
+***********
 
 - http://www.microchip.com/wwwproducts/en/en556182
 

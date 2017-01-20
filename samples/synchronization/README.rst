@@ -4,7 +4,7 @@ Synchronization Sample
 ######################
 
 Overview
-========
+********
 
 A simple application that demonstates basic sanity of the kernel.
 Two threads (A and B) take turns printing a greeting message to the console,
@@ -13,7 +13,7 @@ are generated. This demonstrates that kernel scheduling, communication,
 and timing are operating correctly.
 
 Building and Running
-====================
+********************
 
 This project outputs to the console.  It can be built and executed
 on QEMU as follows:
@@ -24,7 +24,7 @@ on QEMU as follows:
    $ make run
 
 Sample Output
--------------
+=============
 
 .. code-block:: console
 

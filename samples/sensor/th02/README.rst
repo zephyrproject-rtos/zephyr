@@ -2,14 +2,14 @@ TH02: Temperature and Humidity Monitor
 ######################################
 
 Overview
-========
+********
 This sample periodically reads temperature and humidity from the Grove
 Temperature & Humidity Sensor (TH02) and display the results on the Grove LCD
 display.
 
 
 Requirements
-============
+************
 
 This sample uses the TH02 sensor and the grove LCD display. Both devices are
 controlled using the I2C interface.
@@ -20,7 +20,7 @@ More details about the sensor and the display can be found here:
 - `Grove LCD Module`_
 
 Wiring
-======
+******
 
 The easiest way to get this wired is to use the Grove shield and connect both
 devices to I2C. No additional wiring is required. Depending on the board you are
@@ -30,7 +30,7 @@ be on 5v.
 
 
 References
-==========
+**********
 
  - TH02: http://www.datasheetspdf.com/mobile/748107/TH02.html
 

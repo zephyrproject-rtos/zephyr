@@ -2,12 +2,12 @@ Button demo
 ###########
 
 Overview
-========
+********
 
 A simple button demo showcasing the use of GPIO input with interrupts.
 
 Requirements
-============
+************
 
 The demo assumes that a push button is connected to one of GPIO lines. The
 sample code is configured to work on boards with user defined buttons and that
@@ -34,7 +34,7 @@ The following boards currently define the above variables:
 
 
 Building and Running
-====================
+********************
 
 This sample can be built for multiple boards, in this example we will build it
 for the nucleo_f103rb board:

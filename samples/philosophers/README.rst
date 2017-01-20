@@ -2,7 +2,7 @@ Dining Philosophers
 ###################
 
 Overview
-========
+********
 
 An implementation of a solution to the Dining Philosophers problem (a classic
 multi-thread synchronization problem).  This particular implementation
@@ -36,7 +36,7 @@ In these cases, the philosopher threads will run with priorities 0 to 5
 (preempt-only) and -7 to -2 (coop-only).
 
 Building and Running
-====================
+********************
 
 This project outputs to the console.  It can be built and executed
 on QEMU as follows:
@@ -47,7 +47,7 @@ on QEMU as follows:
    $ make run
 
 Sample Output
--------------
+=============
 
 .. code-block:: console
 

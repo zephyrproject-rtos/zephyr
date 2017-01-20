@@ -99,14 +99,14 @@ API reference
 *************
 
 Running tests
--------------
+=============
 
 .. doxygengroup:: ztest_test
    :project: Zephyr
    :content-only:
 
 Assertions
-----------
+==========
 
 These macros will instantly fail the test if the related assertion fails.
 When an assertion fails, it will print the current file, line and function,
@@ -127,7 +127,7 @@ Example output for a failed macro from
    :content-only:
 
 Mocking
--------
+=======
 
 These functions allow abstracting callbacks and related functions and
 controlling them from specific tests. You can enable the mocking framework by
