@@ -212,13 +212,15 @@ static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 
 	pkt = net_nbuf_get_reserve_rx(0);
 	if (!pkt) {
-		SYS_LOG_DBG("No ctrl buf available");
+		SYS_LOG_DBG("No buf available");
 		return;
 	}
 
 	buf = net_nbuf_get_reserve_data(0);
 	if (!buf) {
-		SYS_LOG_DBG("No buf available");
+		SYS_LOG_DBG("No fragment available");
+		net_nbuf_unref(pkt);
+		return;
 	}
 
 	net_buf_frag_insert(pkt, buf);

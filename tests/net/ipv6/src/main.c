@@ -273,6 +273,71 @@ static bool test_init(void)
 	return true;
 }
 
+static bool net_test_cmp_prefix(void)
+{
+	bool st;
+
+	struct in6_addr prefix1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct in6_addr prefix2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+
+	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 64);
+	if (!st) {
+		TC_ERROR("Prefix /64  compare failed\n");
+		return false;
+	}
+
+	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
+	if (!st) {
+		TC_ERROR("Prefix /65 compare failed\n");
+		return false;
+	}
+
+	/* Set one extra bit in the other prefix for testing /65 */
+	prefix1.s6_addr[8] = 0x80;
+
+	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
+	if (st) {
+		TC_ERROR("Prefix /65 compare should have failed\n");
+		return false;
+	}
+
+	/* Set two bits in prefix2, it is now /66 */
+	prefix2.s6_addr[8] = 0xc0;
+
+	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
+	if (!st) {
+		TC_ERROR("Prefix /65 compare failed\n");
+		return false;
+	}
+
+	/* Set all remaining bits in prefix2, it is now /128 */
+	memset(&prefix2.s6_addr[8], 0xff, 8);
+
+	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
+	if (!st) {
+		TC_ERROR("Prefix /65 compare failed\n");
+		return false;
+	}
+
+	/* Comparing /64 should be still ok */
+	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 64);
+	if (!st) {
+		TC_ERROR("Prefix /64 compare failed\n");
+		return false;
+	}
+
+	/* But comparing /66 should should fail */
+	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 66);
+	if (st) {
+		TC_ERROR("Prefix /66 compare should have failed\n");
+		return false;
+	}
+
+	return true;
+}
+
 static bool net_test_send_ns_mcast(void)
 {
 	int ret;
@@ -614,6 +679,7 @@ static const struct {
 	bool (*func)(void);
 } tests[] = {
 	{ "test init", test_init },
+	{ "IPv6 compare prefix", net_test_cmp_prefix },
 	{ "IPv6 send NS mcast", net_test_send_ns_mcast },
 	{ "IPv6 neighbor lookup fail", net_test_nbr_lookup_fail },
 	{ "IPv6 send NS", net_test_send_ns },

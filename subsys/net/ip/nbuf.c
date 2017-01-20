@@ -93,6 +93,13 @@ NET_BUF_POOL_DEFINE(tx_buffers, NBUF_TX_COUNT, 0, sizeof(struct net_nbuf),
 NET_BUF_POOL_DEFINE(data_buffers, NBUF_DATA_COUNT, NBUF_DATA_LEN,
 		    NBUF_USER_DATA_LEN, free_data_bufs_func);
 
+/* We need to know the name of the pool in order to figure out
+ * how much data it is consuming.
+ */
+#define rx_buffers_pool _net_buf_pool_rx_buffers
+#define tx_buffers_pool _net_buf_pool_tx_buffers
+#define data_buffers_pool _net_buf_pool_data_buffers
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 
 #define NET_BUF_CHECK_IF_IN_USE(buf, ref)				\
@@ -391,15 +398,20 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 				    struct net_context *context)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
-	struct net_if *iface = net_context_get_iface(context);
 	struct in6_addr *addr6 = NULL;
+	struct net_if *iface;
 	struct net_buf *buf;
 	uint16_t reserve;
 
-	NET_ASSERT_INFO(context && iface, "context %p iface %p",
-			context, iface);
+	if (!context) {
+		return NULL;
+	}
 
-	if (context && net_context_get_family(context) == AF_INET6) {
+	iface = net_context_get_iface(context);
+
+	NET_ASSERT(iface);
+
+	if (net_context_get_family(context) == AF_INET6) {
 		addr6 = &((struct sockaddr_in6 *) &context->remote)->sin6_addr;
 	}
 
@@ -417,8 +429,12 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 	if (pool != &data_buffers) {
 		net_nbuf_set_context(buf, context);
 		net_nbuf_set_ll_reserve(buf, reserve);
-		net_nbuf_set_family(buf, net_context_get_family(context));
 		net_nbuf_set_iface(buf, iface);
+
+		if (context) {
+			net_nbuf_set_family(buf,
+					    net_context_get_family(context));
+		}
 	}
 
 	return buf;
@@ -504,7 +520,7 @@ void net_nbuf_unref(struct net_buf *buf)
 	frag = buf->frags;
 	while (frag) {
 		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
-			pool2str(buf->pool), get_frees(buf->pool),
+			pool2str(frag->pool), get_frees(frag->pool),
 			frag, frag->ref - 1, frag->frags, caller, line);
 
 		if (!frag->ref) {
@@ -1338,15 +1354,15 @@ void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
 		       int *tx, int *rx, int *data)
 {
 	if (tx_size) {
-		*tx_size = sizeof(tx_buffers);
+		*tx_size = sizeof(tx_buffers_pool);
 	}
 
 	if (rx_size) {
-		*rx_size = sizeof(rx_buffers);
+		*rx_size = sizeof(rx_buffers_pool);
 	}
 
 	if (data_size) {
-		*data_size = sizeof(data_buffers);
+		*data_size = sizeof(data_buffers_pool);
 	}
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
@@ -1375,7 +1391,7 @@ void net_nbuf_init(void)
 {
 	NET_DBG("Allocating %u RX (%zu bytes), %u TX (%zu bytes) "
 		"and %u data (%zu bytes) buffers",
-		NBUF_RX_COUNT, sizeof(rx_buffers),
-		NBUF_TX_COUNT, sizeof(tx_buffers),
-		NBUF_DATA_COUNT, sizeof(data_buffers));
+		NBUF_RX_COUNT, sizeof(rx_buffers_pool),
+		NBUF_TX_COUNT, sizeof(tx_buffers_pool),
+		NBUF_DATA_COUNT, sizeof(data_buffers_pool));
 }

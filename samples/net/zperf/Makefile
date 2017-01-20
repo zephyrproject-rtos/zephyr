@@ -7,4 +7,9 @@ endif
 CONF_FILE ?= prj_${BOARD}${PROF}.conf
 
 include ${ZEPHYR_BASE}/Makefile.inc
-include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
+
+ifeq ($(CONFIG_NET_L2_BLUETOOTH), y)
+	QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
+else
+	include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
+endif

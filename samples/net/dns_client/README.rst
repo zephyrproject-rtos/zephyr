@@ -54,17 +54,17 @@ The ENC28J60 module is an Ethernet device with SPI interface.
 The following pins must be connected from the ENC28J60 device to the
 Arduino 101 board:
 
-===========	========
-Arduino 101	ENC28J60
------------	--------
-D13		SCK
-D12		SO
-D11		SI
-D10		CS
-D04		INT
-3.3V		VCC
-GDN		GND
-===========	========
+===========	===================================
+Arduino 101	ENC28J60 (pin numbers on the board)
+-----------	-----------------------------------
+D13		SCK  (1)
+D12		SO   (3)
+D11		SI   (2)
+D10		CS   (7)
+D04		INT  (5)
+3.3V		VCC  (10)
+GDN		GND  (9)
+===========	===================================
 
 
 Building and Running

@@ -30,6 +30,11 @@
 
 #include "ipv6.h" /* to get infinite lifetime */
 
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <gatt/ipss.h>
+#endif
+
 #define DEVICE_NAME "zperf shell"
 
 static const char *CONFIG =
@@ -988,6 +993,13 @@ struct shell_cmd commands[] = {
 
 void main(void)
 {
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+	if (bt_enable(NULL)) {
+		NET_ERR("Bluetooth init failed\n");
+		return;
+	}
+#endif
+
 	shell_cmd_version(0, NULL);
 	SHELL_REGISTER(MY_SHELL_MODULE, commands);
 	shell_register_default_module(MY_SHELL_MODULE);
