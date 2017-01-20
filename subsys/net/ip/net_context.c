@@ -1366,12 +1366,15 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		}
 
 		/* Swap the newly-created TCP states with the one that
-		 * was used to establish this connection.  The new connection
+		 * was used to establish this connection. The new TCP
 		 * must be listening to accept other connections.
 		 */
 		tmp_tcp = new_context->tcp;
+		tmp_tcp->accept_cb = tcp->accept_cb;
+		tcp->accept_cb = NULL;
 		new_context->tcp = tcp;
 		context->tcp = tmp_tcp;
+
 		tcp->context = new_context;
 		tmp_tcp->context = context;
 
@@ -1382,14 +1385,11 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 
 		k_delayed_work_cancel(&tcp->ack_timer);
 
-		new_context->user_data = context->user_data;
-		context->user_data = NULL;
-
 		context->tcp->accept_cb(new_context,
 					&new_context->remote,
 					addrlen,
 					0,
-					new_context->user_data);
+					context->user_data);
 	}
 
 	return NET_DROP;
