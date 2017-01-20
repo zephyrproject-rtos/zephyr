@@ -124,11 +124,8 @@ config FXOS8700_THREAD_STACK_SIZE
 	depends on FXOS8700_TRIGGER_OWN_THREAD
 	default 1024
 
-endif # FXOS8700_TRIGGER
-
 menuconfig FXOS8700_PULSE
 	bool "Pulse detection"
-	depends on FXOS8700_TRIGGER
 	default n
 	help
 	Enable pulse detection
@@ -215,3 +212,5 @@ config FXOS8700_PULSE_WIND
 	For ODR=800 Hz and pls_hpf_en=0, the resolution is 1.25 ms/LSB.
 
 endif # FXOS8700_PULSE
+
+endif # FXOS8700_TRIGGER
