@@ -160,6 +160,7 @@ struct net_addr {
 #define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
 #define INADDR_ANY 0
+#define INADDR_ANY_INIT { { { INADDR_ANY } } }
 
 #define NET_IPV6_MTU 1280
 
