@@ -14,3 +14,4 @@ the following documents:
    gatt-pics.rst
    l2cap-pics.rst
    sm-pics.rst
+   rfcomm-pics.rst
