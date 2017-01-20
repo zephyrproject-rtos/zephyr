@@ -157,4 +157,6 @@ config UART_PIPE_ON_DEV_NAME
 	This option specifies the name of UART device to be used
 	for pipe UART.
 
+source "drivers/console/Kconfig.telnet"
+
 endif
