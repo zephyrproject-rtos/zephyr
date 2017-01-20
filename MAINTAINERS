@@ -469,6 +469,13 @@ F:	arch/x86/
 F:	include/arch/x86/
 F:	boards/x86/
 
+XTENSA ARCH
+M:	Andrew Boie <andrew.p.boie@intel.com>
+S:	Supported
+F:	arch/xtensa
+F:	include/arch/xtensa/
+F:	boards/xtensa/
+
 ZOAP
 M:	Vinicius Costa Gomes <vinicius.gomes@intel.com>
 S:	Supported
