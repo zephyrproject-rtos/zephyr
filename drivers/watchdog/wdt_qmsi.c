@@ -36,40 +36,10 @@ static struct wdt_data wdt_context;
 #endif /* WDT_HAS_CONTEXT_DATA */
 
 #ifdef CONFIG_WDT_QMSI_API_REENTRANCY
-static const int reentrancy_protection = 1;
 #define RP_GET(dev) (&((struct wdt_data *)(dev->driver_data))->sem)
 #else
-static const int reentrancy_protection;
 #define RP_GET(dev) (NULL)
 #endif
-
-static void wdt_reentrancy_init(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_init(RP_GET(dev), 0, UINT_MAX);
-	k_sem_give(RP_GET(dev));
-}
-
-static void wdt_critical_region_start(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_take(RP_GET(dev), K_FOREVER);
-}
-
-static void wdt_critical_region_end(struct device *dev)
-{
-	if (!reentrancy_protection) {
-		return;
-	}
-
-	k_sem_give(RP_GET(dev));
-}
 
 static void (*user_cb)(struct device *dev);
 
@@ -93,7 +63,9 @@ static int set_config(struct device *dev, struct wdt_config *cfg)
 	qm_cfg.callback = (void *)user_cb;
 	qm_cfg.callback_data = dev;
 
-	wdt_critical_region_start(dev);
+	if (IS_ENABLED(CONFIG_WDT_QMSI_API_REENTRANCY)) {
+		k_sem_take(RP_GET(dev), K_FOREVER);
+	}
 
 	if (qm_wdt_set_config(QM_WDT_0, &qm_cfg)) {
 		ret_val = -EIO;
@@ -105,7 +77,9 @@ static int set_config(struct device *dev, struct wdt_config *cfg)
 	}
 
 wdt_config_return:
-	wdt_critical_region_end(dev);
+	if (IS_ENABLED(CONFIG_WDT_QMSI_API_REENTRANCY)) {
+		k_sem_give(RP_GET(dev));
+	}
 
 	return ret_val;
 }
@@ -198,7 +172,10 @@ static int wdt_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 
 static int init(struct device *dev)
 {
-	wdt_reentrancy_init(dev);
+	if (IS_ENABLED(CONFIG_WDT_QMSI_API_REENTRANCY)) {
+		k_sem_init(RP_GET(dev), 0, UINT_MAX);
+		k_sem_give(RP_GET(dev));
+	}
 
 	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_WDT_0_INT), CONFIG_WDT_0_IRQ_PRI,
 		    qm_wdt_0_isr, 0, IOAPIC_EDGE | IOAPIC_HIGH);
