@@ -194,10 +194,19 @@ static void interrupt_handler(struct device *dev)
 
 			while (uart_fifo_read(dev, &byte, sizeof(byte))) {
 				if (slip_process_byte(byte)) {
+					/**
+					 * slip_process_byte() returns 1 on
+					 * SLIP_END, even after receiving full
+					 * packet
+					 */
+					if (!pkt_curr) {
+						SYS_LOG_DBG("Skip SLIP_END");
+						continue;
+					}
+
 					SYS_LOG_DBG("Full packet %p", pkt_curr);
 
 					net_buf_put(&rx_queue, pkt_curr);
-
 					pkt_curr = NULL;
 				}
 			}
