@@ -123,6 +123,11 @@ M:	Maureen Helm <maureen.helm@nxp.com>
 S:	Supported
 F:	boards/arm/frdm_k64f/
 
+BOARDS/ARM - NXP FRDM-KW41Z
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	boards/arm/frdm_kw41z/
+
 BOARDS/ARM - NXP Hexiwear
 M:	Maureen Helm <maureen.helm@nxp.com>
 S:	Supported
