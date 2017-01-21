@@ -209,7 +209,7 @@ endif # NET_L2_RAW_CHANNEL
 
 config NET_NBUF_RX_COUNT
 	int "How many network receives can be pending at the same time"
-	default 2
+	default 4
 	help
 	Each RX buffer will occupy smallish amount of memory.
 	See include/net/nbuf.h and the sizeof(struct nbuf)
