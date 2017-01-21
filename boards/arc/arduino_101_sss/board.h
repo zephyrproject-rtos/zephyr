@@ -9,7 +9,7 @@
 
 #include <soc.h>
 
-#define LED0_GPIO_PORT  CONFIG_GPIO_QMSI_1_NAME
-#define LED0_GPIO_PIN   5
+#define LED0_GPIO_PORT  CONFIG_GPIO_QMSI_0_NAME
+#define LED0_GPIO_PIN   8
 
 #endif /* __INC_BOARD_H */
