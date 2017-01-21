@@ -5,7 +5,11 @@
  */
 
 #define TIMEOUT 2000
+#ifdef CONFIG_RISCV32
+#define STACK_SIZE 1024
+#else
 #define STACK_SIZE 512
+#endif
 #define BLK_SIZE_MIN 4
 #define BLK_SIZE_MAX 16
 #define BLK_NUM_MIN 8
