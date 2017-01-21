@@ -25,7 +25,7 @@
  * security feature resides in ROM.
  */
 #if defined(CONFIG_XIP)
-	#define SKIP_TO_SECURITY_FRDM_K64F . = 0x400;
+	#define SKIP_TO_KINETIS_FLASH_CONFIG . = 0x400;
 #endif
 
 #include <arch/arm/cortex_m/scripts/linker.ld>

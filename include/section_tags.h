@@ -25,7 +25,7 @@
 #define __irq_vector_table  __in_section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, \
 				      __COUNTER__)
 
-#define __security_frdm_k64f_section   __in_section(SECURITY_FRDM_K64F,	\
+#define __kinetis_flash_config_section   __in_section(KINETIS_FLASH_CONFIG, \
 						 _FILE_PATH_HASH, __COUNTER__)
 #elif defined(CONFIG_ARC)
 	#define __irq_vector_table \
