@@ -7,7 +7,12 @@
 #include <ztest.h>
 
 /*macro definition*/
+
+#ifdef CONFIG_RISCV32
+#define STACK_SIZE 512
+#else
 #define STACK_SIZE 256
+#endif
 
 /*local variables*/
 static char __stack tstack[STACK_SIZE];
