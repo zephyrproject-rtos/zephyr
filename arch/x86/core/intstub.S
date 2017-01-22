@@ -290,14 +290,14 @@ alreadyOnIntStack:
 	je	noReschedule
 
 	/*
-	 * Set the INT_ACTIVE bit in the k_thread to allow the upcoming call to
+	 * Set the _INT_ACTIVE bit in the k_thread to allow the upcoming call to
 	 * _Swap() to determine whether non-floating registers need to be
 	 * preserved using the lazy save/restore algorithm, or to indicate to
 	 * debug tools that a preemptive context switch has occurred.
 	 */
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
-	orb	$INT_ACTIVE, _thread_offset_to_execution_flags(%edx)
+	orb	$_INT_ACTIVE, _thread_offset_to_thread_state(%edx)
 #endif
 
 	/*
@@ -340,12 +340,12 @@ alreadyOnIntStack:
       defined(CONFIG_GDB_INFO) )
 	/*
 	 * _Swap() has restored the floating point registers, if needed.
-	 * Clear the INT_ACTIVE bit of the interrupted thread's TCS
+	 * Clear the _INT_ACTIVE bit in the interrupted thread's state
 	 * since it has served its purpose.
 	 */
 
 	movl	_kernel + _kernel_offset_to_current, %eax
-	andb	$~INT_ACTIVE, _thread_offset_to_execution_flags(%eax)
+	andb	$~_INT_ACTIVE, _thread_offset_to_thread_state(%eax)
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
 	/* Restore volatile registers and return to the interrupted thread */

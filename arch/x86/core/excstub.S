@@ -125,7 +125,7 @@ SECTION_FUNC(TEXT, _exception_enter)
      * registers and the stack of the preempted thread.
      */
 
-	testb	$EXC_ACTIVE, _thread_offset_to_execution_flags(%edx)
+	testb	$_EXC_ACTIVE, _thread_offset_to_thread_state(%edx)
 	jne	alreadyInException
 	movl	%esp, _thread_offset_to_esf(%edx)
 
@@ -134,14 +134,14 @@ alreadyInException:
 #endif /* CONFIG_GDB_INFO */
 
 	/*
-	 * Set the EXC_ACTIVE bit in the TCS of the current thread.
+	 * Set the _EXC_ACTIVE state bit of the current thread.
 	 * This enables _Swap() to preserve the thread's FP registers
 	 * (where needed) if the exception handler causes a context switch.
 	 * It also indicates to debug tools that an exception is being
 	 * handled in the event of a context switch.
 	 */
 
-	orb	$EXC_ACTIVE, _thread_offset_to_execution_flags(%edx)
+	orb	$_EXC_ACTIVE, _thread_offset_to_thread_state(%edx)
 
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
@@ -195,12 +195,12 @@ allDone:
 	jne	nestedException
 
 	/*
-	 * Clear the EXC_ACTIVE bit in the k_thread of the current execution
+	 * Clear the _EXC_ACTIVE bit in the k_thread of the current execution
 	 * context if we are not in a nested exception (ie, when we exit the
 	 * outermost exception).
 	 */
 
-	andb	$~EXC_ACTIVE, _thread_offset_to_execution_flags (%ecx)
+	andb	$~_EXC_ACTIVE, _thread_offset_to_thread_state(%ecx)
 
 nestedException:
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */

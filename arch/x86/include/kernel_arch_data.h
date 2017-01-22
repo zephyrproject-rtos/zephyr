@@ -42,20 +42,26 @@
 
 #define STACK_ALIGN_SIZE 4
 
-/* x86 Bitmask definitions for struct k_thread->execution_flags */
+/* x86 Bitmask definitions for struct k_thread->thread_state */
 
 /* executing context is interrupt handler */
-#define INT_ACTIVE (1 << 7)
+#define _INT_ACTIVE (1 << 7)
 
 /* executing context is exception handler */
-#define EXC_ACTIVE (1 << 6)
+#define _EXC_ACTIVE (1 << 6)
 
-#define INT_OR_EXC_MASK (INT_ACTIVE | EXC_ACTIVE)
+#define _INT_OR_EXC_MASK (_INT_ACTIVE | _EXC_ACTIVE)
+
+/* end - states */
+
+/* x86 Bitmask definitions for struct k_thread->execution_flags */
 
 #if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
 /* thread uses SSEx (and also FP) registers */
-#define K_SSE_REGS (1 << 5)
+#define K_SSE_REGS (1 << 7)
 #endif
+
+/* end - execution flags */
 
 #if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
 #define _FP_USER_MASK (K_FP_REGS | K_SSE_REGS)

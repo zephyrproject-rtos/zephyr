@@ -122,7 +122,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 
 	fp_owner = _kernel.current_fp;
 	if (fp_owner) {
-		if (fp_owner->base.execution_flags & INT_OR_EXC_MASK) {
+		if (fp_owner->base.thread_state & _INT_OR_EXC_MASK) {
 			_FpCtxSave(fp_owner);
 		}
 	}
