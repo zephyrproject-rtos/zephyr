@@ -25,6 +25,8 @@ endif
 ifeq (${CONFIG_XTENSA},y)
 CROSS_COMPILE=${XTENSA_TOOLS_PATH}/bin/$(CROSS_COMPILE_$(ARCH))
 CC=${CROSS_COMPILE}xcc --xtensa-core=$(XTENSA_CORE)
+AS=${CROSS_COMPILE}xcc --xtensa-core=$(XTENSA_CORE)
+LD=${CROSS_COMPILE}xcc --xtensa-core=$(XTENSA_CORE)
 CROSS_COMPILE_TARGET = ${CROSS_COMPILE_TARGET_${ARCH}}
 
 #CORES
@@ -56,7 +58,19 @@ endif
 XTSC_WORK_DIR=$(dir ${XTSC_INC})
 XTSC_INC_FILE=$(notdir ${XTSC_INC})
 
-export CROSS_COMPILE XTENSA_CORE XTENSA_SYSTEM
+# Include XCC standard libraries so that users used to Xplorer IDE can port
+# their code easily
+TOOLCHAIN_LIBS += gcc c sim hal
+LIB_INCLUDE_DIR += -L${XTENSA_BUILD}/xtensa-elf/lib/xcc \
+                   -L${XTENSA_BUILD}/xtensa-elf/lib \
+                   -L${XTENSA_BUILD}/xtensa-elf/arch/lib
+
+KBUILD_CPPFLAGS +=-I$(XTENSA_TOOLS_PATH)/lib/xcc/include \
+                  -I$(XTENSA_TOOLS_PATH)/xtensa-elf/include \
+                  -I${XTENSA_BUILD}/xtensa-elf/arch/include \
+                  -I${XTENSA_BUILD}/xtensa-elf/include
+
+export CROSS_COMPILE XTENSA_CORE XTENSA_SYSTEM LIB_INCLUDE_DIR
 endif
 
 prepare2:
