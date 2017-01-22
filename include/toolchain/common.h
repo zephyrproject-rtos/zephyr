@@ -72,7 +72,7 @@
 
     #define PERFOPT_ALIGN .balign  4
 
-  #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV32)
+  #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV32) || defined(CONFIG_XTENSA)
 
     #define PERFOPT_ALIGN .balign 4
 
