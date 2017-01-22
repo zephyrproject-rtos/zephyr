@@ -24,8 +24,8 @@
 
 /* states: common uses low bits, arch-specific use high bits */
 
-/* system thread that must not abort */
-#define K_ESSENTIAL (1 << 0)
+/* Not a real thread */
+#define _THREAD_DUMMY (1 << 0)
 
 /* Thread is waiting on an object */
 #define _THREAD_PENDING (1 << 1)
@@ -39,17 +39,17 @@
 /* Thread is suspended */
 #define _THREAD_SUSPENDED (1 << 4)
 
-/* Not a real thread */
-#define _THREAD_DUMMY (1 << 5)
-
 /* end - states */
 
 
 /* execution flags: common uses low bits, arch-specific use high bits */
 
+/* system thread that must not abort */
+#define K_ESSENTIAL (1 << 0)
+
 #if defined(CONFIG_FP_SHARING)
 /* thread uses floating point registers */
-#define K_FP_REGS (1 << 0)
+#define K_FP_REGS (1 << 1)
 #endif
 /* end - execution flags */
 
