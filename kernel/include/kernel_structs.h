@@ -47,12 +47,9 @@
 
 /* execution flags: common uses low bits, arch-specific use high bits */
 
-/* thread is defined statically */
-#define K_STATIC (1 << 0)
-
 #if defined(CONFIG_FP_SHARING)
 /* thread uses floating point registers */
-#define K_FP_REGS (1 << 1)
+#define K_FP_REGS (1 << 0)
 #endif
 /* end - execution flags */
 
