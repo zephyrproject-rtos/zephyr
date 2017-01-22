@@ -7,8 +7,9 @@
 #ifndef _kernel_structs__h_
 #define _kernel_structs__h_
 
-#if !defined(_ASMLANGUAGE)
 #include <kernel.h>
+
+#if !defined(_ASMLANGUAGE)
 #include <atomic.h>
 #include <misc/dlist.h>
 #endif

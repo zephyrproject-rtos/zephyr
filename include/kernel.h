@@ -13,6 +13,7 @@
 #ifndef _kernel__h_
 #define _kernel__h_
 
+#if !defined(_ASMLANGUAGE)
 #include <stddef.h>
 #include <stdint.h>
 #include <limits.h>
@@ -3144,5 +3145,7 @@ inline void *operator new[](size_t size, void *ptr)
 }
 
 #endif /* defined(CONFIG_CPLUSPLUS) && defined(__cplusplus) */
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* _kernel__h_ */
