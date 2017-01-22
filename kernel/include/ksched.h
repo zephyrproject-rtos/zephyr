@@ -274,13 +274,13 @@ static inline void _reset_thread_states(struct k_thread *thread,
 /* mark a thread as being suspended */
 static inline void _mark_thread_as_suspended(struct k_thread *thread)
 {
-	thread->base.thread_state |= K_SUSPENDED;
+	thread->base.thread_state |= _THREAD_SUSPENDED;
 }
 
 /* mark a thread as not being suspended */
 static inline void _mark_thread_as_not_suspended(struct k_thread *thread)
 {
-	thread->base.thread_state &= ~K_SUSPENDED;
+	thread->base.thread_state &= ~_THREAD_SUSPENDED;
 }
 
 static ALWAYS_INLINE int _is_thread_timeout_expired(struct k_thread *thread)
@@ -304,14 +304,15 @@ static inline int _is_thread_timeout_active(struct k_thread *thread)
 
 static inline int _has_thread_started(struct k_thread *thread)
 {
-	return !(thread->base.thread_state & K_PRESTART);
+	return !(thread->base.thread_state & _THREAD_PRESTART);
 }
 
 static inline int _is_thread_prevented_from_running(struct k_thread *thread)
 {
-	return thread->base.thread_state & (K_PENDING   | K_PRESTART |
-					    K_DEAD      | K_DUMMY    |
-					    K_SUSPENDED);
+	uint8_t state = thread->base.thread_state;
+
+	return state & (_THREAD_PENDING | _THREAD_PRESTART | _THREAD_DEAD |
+			_THREAD_DUMMY | _THREAD_SUSPENDED);
 
 }
 
@@ -325,19 +326,19 @@ static inline int _is_thread_ready(struct k_thread *thread)
 /* mark a thread as pending in its TCS */
 static inline void _mark_thread_as_pending(struct k_thread *thread)
 {
-	thread->base.thread_state |= K_PENDING;
+	thread->base.thread_state |= _THREAD_PENDING;
 }
 
 /* mark a thread as not pending in its TCS */
 static inline void _mark_thread_as_not_pending(struct k_thread *thread)
 {
-	thread->base.thread_state &= ~K_PENDING;
+	thread->base.thread_state &= ~_THREAD_PENDING;
 }
 
 /* check if a thread is pending */
 static inline int _is_thread_pending(struct k_thread *thread)
 {
-	return !!(thread->base.thread_state & K_PENDING);
+	return !!(thread->base.thread_state & _THREAD_PENDING);
 }
 
 /**
@@ -347,7 +348,7 @@ static inline int _is_thread_pending(struct k_thread *thread)
  */
 static inline void _mark_thread_as_started(struct k_thread *thread)
 {
-	thread->base.thread_state &= ~K_PRESTART;
+	thread->base.thread_state &= ~_THREAD_PRESTART;
 }
 
 /*
@@ -385,7 +386,7 @@ static inline void _ready_thread(struct k_thread *thread)
  */
 static inline void _mark_thread_as_dead(struct k_thread *thread)
 {
-	thread->base.thread_state |= K_DEAD;
+	thread->base.thread_state |= _THREAD_DEAD;
 }
 
 /*
@@ -454,7 +455,7 @@ static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 /* must be called with interrupts locked */
 static inline void _unpend_thread(struct k_thread *thread)
 {
-	__ASSERT(thread->base.thread_state & K_PENDING, "");
+	__ASSERT(thread->base.thread_state & _THREAD_PENDING, "");
 
 	sys_dlist_remove(&thread->base.k_q_node);
 	_mark_thread_as_not_pending(thread);

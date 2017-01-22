@@ -92,16 +92,16 @@ static int init_pipes_module(struct device *dev)
 	 * Create pool of asynchronous pipe message descriptors.
 	 *
 	 * A dummy thread requires minimal initialization, since it never gets
-	 * to execute. The K_DUMMY flag is sufficient to distinguish a dummy
-	 * thread from a real one. The threads are *not* added to the kernel's
-	 * list of known threads.
+	 * to execute. The _THREAD_DUMMY flag is sufficient to distinguish a
+	 * dummy thread from a real one. The threads are *not* added to the
+	 * kernel's list of known threads.
 	 *
 	 * Once initialized, the address of each descriptor is added to a stack
 	 * that governs access to them.
 	 */
 
 	for (int i = 0; i < CONFIG_NUM_PIPE_ASYNC_MSGS; i++) {
-		async_msg[i].thread.thread_state = K_DUMMY;
+		async_msg[i].thread.thread_state = _THREAD_DUMMY;
 		async_msg[i].thread.swap_data = &async_msg[i].desc;
 		k_stack_push(&pipe_async_msgs, (uint32_t)&async_msg[i]);
 	}
@@ -367,7 +367,7 @@ static void _pipe_thread_ready(struct k_thread *thread)
 	unsigned int  key;
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	if (thread->base.thread_state & K_DUMMY) {
+	if (thread->base.thread_state & _THREAD_DUMMY) {
 		_pipe_async_finish((struct k_pipe_async *)thread);
 		return;
 	}

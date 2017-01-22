@@ -100,7 +100,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	pInitCtx->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
-	_init_thread_base(&tcs->base, priority, K_PRESTART, options);
+	_init_thread_base(&tcs->base, priority, _THREAD_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
 	tcs->init_data = NULL;

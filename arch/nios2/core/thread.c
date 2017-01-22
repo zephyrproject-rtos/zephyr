@@ -76,7 +76,7 @@ void _new_thread(char *stack_memory, size_t stack_size,
 	/* Initialize various struct k_thread members */
 	thread = (struct k_thread *)stack_memory;
 
-	_init_thread_base(&thread->base, priority, K_PRESTART, options);
+	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
 	thread->init_data = NULL;

@@ -77,7 +77,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	thread->arch.excNestCount = 0;
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
-	_init_thread_base(&thread->base, priority, K_PRESTART, options);
+	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
 	thread->init_data = NULL;

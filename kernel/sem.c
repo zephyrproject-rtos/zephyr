@@ -114,7 +114,8 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 
 	for (int i = 0; i < num; i++) {
 
-		_init_thread_base(&wait_objects[i].dummy, priority, K_DUMMY, 0);
+		_init_thread_base(&wait_objects[i].dummy, priority,
+				  _THREAD_DUMMY, 0);
 
 		sys_dlist_append(&list, &wait_objects[i].desc.semg_node);
 		wait_objects[i].desc.thread = _current;
@@ -160,7 +161,7 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 	sys_dnode_t  *node;
 	sys_dnode_t  *next;
 
-	if (!(thread->base.thread_state & K_DUMMY)) {
+	if (!(thread->base.thread_state & _THREAD_DUMMY)) {
 		/*
 		 * The awakened thread is a real thread and thus was not
 		 * involved in a semaphore group operation.

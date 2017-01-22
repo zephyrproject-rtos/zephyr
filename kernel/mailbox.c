@@ -67,9 +67,9 @@ static int init_mbox_module(struct device *dev)
 	 * Create pool of asynchronous message descriptors.
 	 *
 	 * A dummy thread requires minimal initialization, since it never gets
-	 * to execute. The K_DUMMY flag is sufficient to distinguish a dummy
-	 * thread from a real one. The threads are *not* added to the kernel's
-	 * list of known threads.
+	 * to execute. The _THREAD_DUMMY flag is sufficient to distinguish a
+	 * dummy thread from a real one. The threads are *not* added to the
+	 * kernel's list of known threads.
 	 *
 	 * Once initialized, the address of each descriptor is added to a stack
 	 * that governs access to them.
@@ -78,7 +78,7 @@ static int init_mbox_module(struct device *dev)
 	int i;
 
 	for (i = 0; i < CONFIG_NUM_MBOX_ASYNC_MSGS; i++) {
-		_init_thread_base(&async_msg[i].thread, 0, K_DUMMY, 0);
+		_init_thread_base(&async_msg[i].thread, 0, _THREAD_DUMMY, 0);
 		k_stack_push(&async_msg_free, (uint32_t)&async_msg[i]);
 	}
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
@@ -201,7 +201,7 @@ static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	 * asynchronous send: free asynchronous message descriptor +
 	 * dummy thread pair, then give semaphore (if needed)
 	 */
-	if (sending_thread->base.thread_state & K_DUMMY) {
+	if (sending_thread->base.thread_state & _THREAD_DUMMY) {
 		struct k_sem *async_sem = tx_msg->_async_sem;
 
 		_mbox_async_free((struct k_mbox_async *)sending_thread);
@@ -276,7 +276,7 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			 * note: dummy sending thread sits (unqueued)
 			 * until the receiver consumes the message
 			 */
-			if (sending_thread->base.thread_state & K_DUMMY) {
+			if (sending_thread->base.thread_state & _THREAD_DUMMY) {
 				_reschedule_threads(key);
 				return 0;
 			}
@@ -300,7 +300,7 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 	/* asynchronous send: dummy thread waits on tx queue for receiver */
-	if (sending_thread->base.thread_state & K_DUMMY) {
+	if (sending_thread->base.thread_state & _THREAD_DUMMY) {
 		_pend_thread(sending_thread, &mbox->tx_msg_queue, K_FOREVER);
 		irq_unlock(key);
 		return 0;

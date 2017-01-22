@@ -113,7 +113,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif
 
-	_init_thread_base(&thread->base, priority, K_PRESTART, options);
+	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
 
 	/* static threads overwrite them afterwards with real values */
 	thread->init_data = NULL;

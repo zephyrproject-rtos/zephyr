@@ -28,19 +28,19 @@
 #define K_ESSENTIAL (1 << 0)
 
 /* Thread is waiting on an object */
-#define K_PENDING (1 << 1)
+#define _THREAD_PENDING (1 << 1)
 
 /* Thread has not yet started */
-#define K_PRESTART (1 << 2)
+#define _THREAD_PRESTART (1 << 2)
 
 /* Thread has terminated */
-#define K_DEAD (1 << 3)
+#define _THREAD_DEAD (1 << 3)
 
 /* Thread is suspended */
-#define K_SUSPENDED (1 << 4)
+#define _THREAD_SUSPENDED (1 << 4)
 
 /* Not a real thread */
-#define K_DUMMY (1 << 5)
+#define _THREAD_DUMMY (1 << 5)
 
 /* end - states */
 
