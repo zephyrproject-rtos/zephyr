@@ -94,7 +94,8 @@ void test_mpool_alloc_size(void)
 		assert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 			K_NO_WAIT) == 0, NULL);
 		assert_not_null(block[i].data, NULL);
-		assert_true((uint32_t)(block[i++].data) % BLK_ALIGN == 0, NULL);
+		assert_true((uint32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		i++;
 		size = size >> 2;
 	}
 	while (i--) {
@@ -111,7 +112,8 @@ void test_mpool_alloc_size(void)
 		assert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 			K_NO_WAIT) == 0, NULL);
 		assert_not_null(block[i].data, NULL);
-		assert_true((uint32_t)(block[i++].data) % BLK_ALIGN == 0, NULL);
+		assert_true((uint32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		i++;
 		size = size << 2;
 	}
 	while (i--) {
