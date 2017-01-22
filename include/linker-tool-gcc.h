@@ -32,6 +32,8 @@
 #elif defined(CONFIG_RISCV32)
 	OUTPUT_ARCH(riscv)
 	OUTPUT_FORMAT("elf32-littleriscv")
+#elif defined(CONFIG_XTENSA)
+	/* Not needed */
 #else
 	#error Arch not supported.
 #endif
