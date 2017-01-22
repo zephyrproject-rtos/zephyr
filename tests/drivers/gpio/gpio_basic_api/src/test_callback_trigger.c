@@ -85,14 +85,14 @@ static int test_callback(int mode)
 
 	/*= checkpoint: check callback is triggered =*/
 	TC_PRINT("check enabled callback\n");
-	if (mode & GPIO_INT_EDGE) {
+	if ((mode & GPIO_INT_EDGE) == GPIO_INT_EDGE) {
 		if (cb_cnt != 1) {
 			TC_ERROR("not trigger callback correctly\n");
 			goto err_exit;
 		}
 	}
 
-	if (mode & GPIO_INT_LEVEL) {
+	if ((mode & GPIO_INT_LEVEL) == GPIO_INT_LEVEL) {
 		if (cb_cnt != MAX_INT_CNT) {
 			TC_ERROR("not trigger callback correctly\n");
 			goto err_exit;

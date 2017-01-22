@@ -42,6 +42,6 @@ void test_main(void)
 			 ztest_unit_test(test_gpio_callback_level_high),
 			 ztest_unit_test(test_gpio_callback_add_remove),
 			 ztest_unit_test(test_gpio_callback_enable_disable),
-			 ztest_unit_test(test_gpio_callback_level_high));
+			 ztest_unit_test(test_gpio_callback_level_low));
 	ztest_run_test_suite(gpio_basic_test);
 }
