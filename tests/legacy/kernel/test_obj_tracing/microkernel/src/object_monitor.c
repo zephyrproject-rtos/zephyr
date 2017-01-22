@@ -54,14 +54,14 @@ static inline int test_thread_monitor(void)
 	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
 	while (thread_list != NULL) {
 		if (thread_list->base.prio == -1) {
-			TC_PRINT("TASK: %p FLAGS: 0x%02x, STATE: 0x%02x\n",
+			TC_PRINT("TASK: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
 			thread_list,
-			thread_list->base.execution_flags,
+			thread_list->base.user_options,
 			thread_list->base.thread_state);
 		} else {
-			TC_PRINT("FIBER: %p FLAGS: 0x%02x, STATE: 0x%02x\n",
+			TC_PRINT("FIBER: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
 			thread_list,
-			thread_list->base.execution_flags,
+			thread_list->base.user_options,
 			thread_list->base.thread_state);
 		}
 		thread_list =

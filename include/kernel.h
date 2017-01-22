@@ -173,6 +173,35 @@ extern void k_call_stacks_analyze(void);
  */
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
+#endif /* !_ASMLANGUAGE */
+
+
+/*
+ * Thread user options. May be needed by assembly code. Common part uses low
+ * bits, arch-specific use high bits.
+ */
+
+/* system thread that must not abort */
+#define K_ESSENTIAL (1 << 0)
+
+#if defined(CONFIG_FP_SHARING)
+/* thread uses floating point registers */
+#define K_FP_REGS (1 << 1)
+#endif
+
+#ifdef CONFIG_X86
+/* x86 Bitmask definitions for threads user options */
+
+#if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
+/* thread uses SSEx (and also FP) registers */
+#define K_SSE_REGS (1 << 7)
+#endif
+#endif
+
+/* end - thread options */
+
+#if !defined(_ASMLANGUAGE)
+
 /**
  * @brief Spawn a thread.
  *

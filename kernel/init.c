@@ -216,7 +216,7 @@ static void _main(void *unused1, void *unused2, void *unused3)
 	main();
 
 	/* Terminate thread normally since it has no more work to do */
-	_main_thread->base.execution_flags &= ~K_ESSENTIAL;
+	_main_thread->base.user_options &= ~K_ESSENTIAL;
 }
 
 void __weak main(void)
@@ -251,7 +251,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	_current = dummy_thread;
 
-	dummy_thread->base.execution_flags = K_ESSENTIAL;
+	dummy_thread->base.user_options = K_ESSENTIAL;
 #endif
 
 	/* _kernel.ready_q is all zeroes */

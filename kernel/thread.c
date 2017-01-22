@@ -77,7 +77,7 @@ int k_is_in_isr(void)
  */
 void _thread_essential_set(void)
 {
-	_current->base.execution_flags |= K_ESSENTIAL;
+	_current->base.user_options |= K_ESSENTIAL;
 }
 
 /*
@@ -87,7 +87,7 @@ void _thread_essential_set(void)
  */
 void _thread_essential_clear(void)
 {
-	_current->base.execution_flags &= ~K_ESSENTIAL;
+	_current->base.user_options &= ~K_ESSENTIAL;
 }
 
 /*
@@ -97,7 +97,7 @@ void _thread_essential_clear(void)
  */
 int _is_thread_essential(void)
 {
-	return _current->base.execution_flags & K_ESSENTIAL;
+	return _current->base.user_options & K_ESSENTIAL;
 }
 
 void k_busy_wait(uint32_t usec_to_wait)
@@ -430,7 +430,7 @@ void _init_thread_base(struct _thread_base *thread_base, int priority,
 {
 	/* k_q_node is initialized upon first insertion in a list */
 
-	thread_base->execution_flags = (uint8_t)options;
+	thread_base->user_options = (uint8_t)options;
 	thread_base->thread_state = (uint8_t)initial_state;
 
 	thread_base->prio = priority;

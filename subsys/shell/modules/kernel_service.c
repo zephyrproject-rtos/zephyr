@@ -56,10 +56,10 @@ static int shell_cmd_tasks(int argc, char *argv[])
 
 	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
 	while (thread_list != NULL) {
-		printk("%s%p:   flags: 0x%x priority: %d\n",
+		printk("%s%p:   options: 0x%x priority: %d\n",
 		       (thread_list == k_current_get()) ? "*" : " ",
 		       thread_list,
-		       thread_list->base.execution_flags,
+		       thread_list->base.user_options,
 		       k_thread_priority_get(thread_list));
 		thread_list = (struct k_thread *)SYS_THREAD_MONITOR_NEXT(thread_list);
 	}

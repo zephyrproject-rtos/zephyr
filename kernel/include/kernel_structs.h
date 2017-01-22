@@ -15,7 +15,7 @@
 #endif
 
 /*
- * bitmask definitions for the execution_flags and state
+ * Bitmask definitions for the struct k_thread.thread_state field.
  *
  * Must be before kerneL_arch_data.h because it might need them to be already
  * defined.
@@ -42,17 +42,6 @@
 /* end - states */
 
 
-/* execution flags: common uses low bits, arch-specific use high bits */
-
-/* system thread that must not abort */
-#define K_ESSENTIAL (1 << 0)
-
-#if defined(CONFIG_FP_SHARING)
-/* thread uses floating point registers */
-#define K_FP_REGS (1 << 1)
-#endif
-/* end - execution flags */
-
 /* lowest value of _thread_base.preempt at which a thread is non-preemptible */
 #define _NON_PREEMPT_THRESHOLD 0x0080
 
@@ -78,8 +67,8 @@ struct _thread_base {
 	/* this thread's entry in a ready/wait queue */
 	sys_dnode_t k_q_node;
 
-	/* execution flags */
-	uint8_t execution_flags;
+	/* user facing 'thread options'; values defined in include/kernel.h */
+	uint8_t user_options;
 
 	/* thread state */
 	uint8_t thread_state;
