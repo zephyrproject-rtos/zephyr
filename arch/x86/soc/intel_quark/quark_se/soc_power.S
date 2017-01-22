@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define _ASMLANGUAGE
-
 #include <arch/x86/asm.h>
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP

@@ -11,8 +11,6 @@
  * Fault handlers for ARM Cortex-M processors.
  */
 
-#define _ASMLANGUAGE
-
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>

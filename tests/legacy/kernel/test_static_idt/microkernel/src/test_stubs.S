@@ -12,8 +12,6 @@ This module implements assembler exception and interrupt stubs for regression
 testing.
  */
 
-#define _ASMLANGUAGE
-
 #ifdef CONFIG_ISA_IA32
 
 /* IA-32 specific */

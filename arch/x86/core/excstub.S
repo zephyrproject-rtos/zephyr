@@ -14,8 +14,6 @@
  * and exiting a C exception handler.
  */
 
-#define _ASMLANGUAGE
-
 #include <kernel_structs.h>
 #include <arch/x86/asm.h>
 #include <arch/x86/arch.h> /* For MK_ISR_NAME */

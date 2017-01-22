@@ -11,8 +11,6 @@
  * Wrapper for _thread_entry routine when called from the initial context.
  */
 
-#define _ASMLANGUAGE
-
 #include <toolchain.h>
 #include <sections.h>
 

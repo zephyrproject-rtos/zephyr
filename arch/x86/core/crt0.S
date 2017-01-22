@@ -11,8 +11,6 @@
  * after having been loaded into RAM.
  */
 
-#define _ASMLANGUAGE
-
 #include <arch/x86/asm.h>
 
 	/* exports (private APIs) */

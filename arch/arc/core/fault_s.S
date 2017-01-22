@@ -11,8 +11,6 @@
  * Fault handlers for ARCv2 processors.
  */
 
-#define _ASMLANGUAGE
-
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>

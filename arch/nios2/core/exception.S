@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define _ASMLANGUAGE
 #include <arch/nios2/asm.h>
 #include <kernel_structs.h>
 #include <offsets_short.h>

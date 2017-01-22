@@ -13,8 +13,6 @@
  * See isr_wrapper.S for details.
  */
 
-#define _ASMLANGUAGE
-
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>

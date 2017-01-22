@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define _ASMLANGUAGE
 #include <kernel_structs.h>
 
 /* exports */

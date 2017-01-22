@@ -14,8 +14,6 @@
  * entering and exiting a C interrupt handler.
  */
 
-#define _ASMLANGUAGE
-
 #include <kernel_structs.h>
 #include <arch/x86/asm.h>
 #include <offsets_short.h>

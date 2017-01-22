@@ -16,8 +16,6 @@
  * where they are not supported on ARC EM family processors.
  */
 
-#define _ASMLANGUAGE
-
 #include <toolchain.h>
 #include <sections.h>
 

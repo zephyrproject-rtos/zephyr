@@ -399,7 +399,7 @@ KBUILD_CXXFLAGS   := -c -g -std=c++11 \
 		-ffunction-sections -fdata-sections \
 		-fno-rtti -fno-exceptions
 
-KBUILD_AFLAGS   := -c -g -xassembler-with-cpp
+KBUILD_AFLAGS   := -c -g -xassembler-with-cpp -D_ASMLANGUAGE
 
 LDFLAGS += $(call ld-option,-nostartfiles)
 LDFLAGS += $(call ld-option,-nodefaultlibs)

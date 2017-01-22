@@ -17,8 +17,6 @@
  * save frame on the stack.
  */
 
-#define _ASMLANGUAGE
-
 #include <kernel_structs.h>
 #include <arch/x86/asm.h>
 #include <offsets_short.h>

@@ -12,8 +12,6 @@
  * on ARM Cortex-M3/M4 CPUs.
  */
 
-#define _ASMLANGUAGE
-
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>

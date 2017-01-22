@@ -11,8 +11,6 @@
  * This module initializes the watchdog for the fsl_frdm_k64f platform.
  */
 
-#define _ASMLANGUAGE
-
 #include <soc.h>
 #include <toolchain.h>
 #include <sections.h>

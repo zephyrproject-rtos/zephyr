@@ -6,8 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define _ASMLANGUAGE
-
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>

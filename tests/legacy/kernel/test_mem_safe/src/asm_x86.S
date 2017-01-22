@@ -9,7 +9,6 @@
  * @ brief architecture specific support for the mem_probe tests
  */
 
-#define _ASMLANGUAGE
 #include <arch/x86/asm.h>
 
 	GDATA(foo)

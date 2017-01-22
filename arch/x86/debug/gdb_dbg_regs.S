@@ -11,8 +11,6 @@
  * utilities.
  */
 
-#define _ASMLANGUAGE
-
 #include <arch/x86/asm.h>
 
 	/* exports (internal APIs) */

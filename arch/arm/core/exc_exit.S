@@ -14,8 +14,6 @@
  * wrapped around by _isr_wrapper()).
  */
 
-#define _ASMLANGUAGE
-
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>

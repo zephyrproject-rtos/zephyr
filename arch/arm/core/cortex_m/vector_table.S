@@ -16,8 +16,6 @@
  * rest should not be triggered until the kernel is ready to handle them.
  */
 
-#define _ASMLANGUAGE
-
 #include <board.h>
 #include <toolchain.h>
 #include <sections.h>

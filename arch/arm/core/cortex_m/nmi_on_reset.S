@@ -15,8 +15,6 @@
  * rebooting might trigger the exact same problem over and over.
  */
 
-#define _ASMLANGUAGE
-
 #include <toolchain.h>
 #include <sections.h>
 

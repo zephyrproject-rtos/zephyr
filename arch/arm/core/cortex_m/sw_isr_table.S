@@ -11,8 +11,6 @@
  * Software ISR table for ARM
  */
 
-#define _ASMLANGUAGE
-
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>

@@ -10,7 +10,6 @@
  * This module contains functions for manipulating caches.
  */
 
-#define _ASMLANGUAGE
 #include <arch/x86/asm.h>
 
 #ifndef CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED

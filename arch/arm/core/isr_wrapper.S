@@ -12,8 +12,6 @@
  * a parameter.
  */
 
-#define _ASMLANGUAGE
-
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <sections.h>

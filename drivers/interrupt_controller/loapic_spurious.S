@@ -9,8 +9,6 @@
  * @brief LOAPIC spurioys interrupt handler
  */
 
-#define _ASMLANGUAGE
-
 #include <kernel_structs.h>
 #include <arch/x86/asm.h>
 
