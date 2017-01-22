@@ -63,6 +63,8 @@ static void tmbox_put(struct k_mbox *pmbox)
 {
 	struct k_mbox_msg mmsg;
 
+	memset(&mmsg, 0, sizeof(mmsg));
+
 	switch (info_type) {
 	case PUT_GET_NULL:
 		/**TESTPOINT: mbox sync put empty message*/
@@ -104,7 +106,8 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.info = ASYNC_PUT_GET_BLOCK;
 		mmsg.size = MAIL_LEN;
 		mmsg.tx_data = NULL;
-		k_mem_pool_alloc(&mpooltx, &mmsg.tx_block, MAIL_LEN, K_NO_WAIT);
+		assert_equal(k_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
+			MAIL_LEN, K_NO_WAIT), 0, NULL);
 		memcpy(mmsg.tx_block.data, data[info_type], MAIL_LEN);
 		if (info_type == TARGET_SOURCE_THREAD_BLOCK) {
 			mmsg.tx_target_thread = receiver_tid;
