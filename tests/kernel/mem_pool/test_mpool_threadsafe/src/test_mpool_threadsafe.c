@@ -55,18 +55,19 @@ static atomic_t pool_id;
 static void tmpool_api(void *p1, void *p2, void *p3)
 {
 	struct k_mem_block block[BLK_NUM_MIN];
+	int ret[BLK_NUM_MIN];
 	struct k_mem_pool *pool = pools[atomic_inc(&pool_id) % POOL_NUM];
 
 	memset(block, 0, sizeof(block));
 
 	for (int i = 0; i < 4; i++) {
-		k_mem_pool_alloc(pool, &block[i], BLK_SIZE_MIN, TIMEOUT);
+		ret[i] = k_mem_pool_alloc(pool, &block[i], BLK_SIZE_MIN,
+			TIMEOUT);
 	}
-	k_mem_pool_alloc(pool, &block[4], BLK_SIZE_MAX, TIMEOUT);
+	ret[4] = k_mem_pool_alloc(pool, &block[4], BLK_SIZE_MAX, TIMEOUT);
 	for (int i = 0; i < 5; i++) {
-		if (block[i].data) {
+		if (ret[i] == 0) {
 			k_mem_pool_free(&block[i]);
-			block[i].data = NULL;
 		}
 	}
 	k_mem_pool_defrag(pool);
