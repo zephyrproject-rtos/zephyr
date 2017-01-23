@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2016 BayLibre, SAS
  * Copyright (c) 2016 RnDity Sp. z o.o.
+ * Copyright (c) 2017 Linaro Limited.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,5 +23,21 @@
 #elif CONFIG_SOC_SERIES_STM32L4X
 #include "stm32l4x_clock_control.h"
 #endif
+
+/* Bus */
+enum {
+	STM32_CLOCK_BUS_AHB1,
+	STM32_CLOCK_BUS_AHB2,
+	STM32_CLOCK_BUS_APB1,
+#ifdef CONFIG_SOC_SERIES_STM32L4X
+	STM32_CLOCK_BUS_APB1_2,
+#endif
+	STM32_CLOCK_BUS_APB2,
+};
+
+struct stm32_pclken {
+	uint32_t bus;
+	uint32_t enr;
+};
 
 #endif /* _STM32_CLOCK_CONTROL_H_ */

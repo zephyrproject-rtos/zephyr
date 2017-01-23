@@ -44,6 +44,8 @@ source "drivers/clock_control/Kconfig.nrf5"
 
 source "drivers/clock_control/Kconfig.quark_se"
 
+source "drivers/clock_control/Kconfig.stm32"
+
 source "drivers/clock_control/Kconfig.stm32f10x"
 
 source "drivers/clock_control/Kconfig.stm32f107xx"
