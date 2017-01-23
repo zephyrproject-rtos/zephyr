@@ -63,6 +63,9 @@ static struct sockaddr ircd_sockaddr = { .family = AF_INET6 };
 
 struct zirc_chan;
 
+typedef void (*on_privmsg_rcvd_cb_t)(void *data, struct zirc_chan *chan,
+				  char *umask, char *msg);
+
 struct zirc {
 	struct net_context *conn;
 	struct zirc_chan *chans;
@@ -77,8 +80,7 @@ struct zirc_chan {
 
 	const char *chan;
 
-	void (*on_privmsg_rcvd)(void *data, struct zirc_chan *chan,
-				char *umask, char *msg);
+	on_privmsg_rcvd_cb_t on_privmsg_rcvd;
 	void *data;
 };
 
@@ -368,8 +370,7 @@ zirc_user_set(struct zirc *irc, const char *user, const char *realname)
 static int
 zirc_chan_join(struct zirc *irc, struct zirc_chan *chan,
 	       const char *channel,
-	       void (*on_privmsg_rcvd)(void *data, struct zirc_chan *chan,
-				       char *umask, char *msg),
+	       on_privmsg_rcvd_cb_t on_privmsg_rcvd,
 	       void *data)
 {
 	char buffer[32];
