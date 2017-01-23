@@ -16,7 +16,6 @@
 
 #if 1
 #define SYS_LOG_DOMAIN "irc"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #define NET_LOG_ENABLED 1
 #endif
 
