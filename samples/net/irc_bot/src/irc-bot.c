@@ -364,7 +364,7 @@ zirc_chan_part(struct zirc_chan *chan)
 		return ret;
 	}
 
-	for (cc = &chan->irc->chans, c = c->irc->chans;
+	for (cc = &chan->irc->chans, c = chan->irc->chans;
 	     c; cc = &c->next, c = c->next) {
 		if (c == chan) {
 			*cc = c->next;
