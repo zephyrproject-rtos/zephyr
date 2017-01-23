@@ -69,7 +69,6 @@ struct zirc {
 	struct net_context *conn;
 	struct zirc_chan *chans;
 
-	void (*on_connect)(void *data, struct zirc *irc);
 	void *data;
 };
 
@@ -413,30 +412,15 @@ static int in_addr_set(sa_family_t family,
 	return rc;
 }
 
-static void
-on_context_connect(struct net_context *ctx, void *data)
-{
-	struct zirc *irc = data;
-
-	irc->conn = ctx;
-	net_context_recv(ctx, on_context_recv, K_NO_WAIT, data);
-	irc->on_connect(irc->data, irc);
-}
-
 static int
-zirc_connect(struct zirc *irc, const char *host, int port,
-	void (*on_connect)(void *data, struct zirc *irc), void *data)
+zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 {
 	/* TODO: DNS lookup for host */
 	struct sockaddr dst_addr, src_addr;
+	struct zirc_chan *chan;
 	int ret;
 
 	NET_INFO("Connecting to %s:%d...", host, port);
-
-	if (!on_connect) {
-		NET_DBG("Connection callback not set");
-		return -EINVAL;
-	}
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
 			      &irc->conn);
@@ -465,14 +449,29 @@ zirc_connect(struct zirc *irc, const char *host, int port,
 	}
 
 	irc->data = data;
-	irc->on_connect = on_connect;
 
 	ret = net_context_connect(irc->conn, &dst_addr,
 				  sizeof(struct sockaddr_in6),
-				  on_context_connect, K_FOREVER, irc);
+				  NULL, K_FOREVER, irc);
 	if (ret < 0) {
 		NET_DBG("Could not connect, errno %d", -ret);
 		goto connect_exit;
+	}
+
+	net_context_recv(irc->conn, on_context_recv, K_NO_WAIT, irc);
+
+	chan = irc->data;
+
+	if (zirc_nick_set(irc, "zephyrbot") < 0) {
+		panic("Could not set nick");
+	}
+
+	if (zirc_user_set(irc, "zephyrbot", "Zephyr IRC Bot") < 0) {
+		panic("Could not set nick");
+	}
+
+	if (zirc_chan_join(irc, chan, DEFAULT_CHANNEL, on_msg_rcvd, NULL) < 0) {
+		panic("Could not join channel");
 	}
 	return ret;
 
@@ -709,24 +708,6 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 #undef CMD
 
 static void
-on_connect(void *data, struct zirc *irc)
-{
-	struct zirc_chan *chan = data;
-
-	if (zirc_nick_set(irc, "zephyrbot") < 0) {
-		panic("Could not set nick");
-	}
-
-	if (zirc_user_set(irc, "zephyrbot", "Zephyr IRC Bot") < 0) {
-		panic("Could not set nick");
-	}
-
-	if (zirc_chan_join(irc, chan, DEFAULT_CHANNEL, on_msg_rcvd, NULL) < 0) {
-		panic("Could not join channel");
-	}
-}
-
-static void
 initialize_network(void)
 {
 	struct sockaddr addr;
@@ -771,8 +752,7 @@ static void irc_bot(void)
 	initialize_network();
 	initialize_hardware();
 
-	if (zirc_connect(&irc, DEFAULT_SERVER, DEFAULT_PORT,
-			 on_connect, &chan) < 0) {
+	if (zirc_connect(&irc, DEFAULT_SERVER, DEFAULT_PORT, &chan) < 0) {
 		panic("Could not connect");
 	}
 }
