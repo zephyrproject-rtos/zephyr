@@ -55,9 +55,6 @@ static bool fake_led;
 #define CONFIG_NET_SAMPLES_PEER_IPV6_ADDR "2001:db8::2"
 #endif /* CONFIG_NET_SAMPLES_PEER_IPV6_ADDR */
 
-static struct sockaddr my_sockaddr = { .family = AF_INET6 };
-static struct sockaddr ircd_sockaddr = { .family = AF_INET6 };
-
 /* IRC API */
 #define DEFAULT_CHANNEL "#zephyrbot"
 
@@ -335,13 +332,17 @@ zirc_connect(struct zirc *irc, const char *host, int port,
 		return ret;
 	}
 
-	dst_addr = ircd_sockaddr;
-	net_sin6_ptr(&dst_addr)->sin6_family = AF_INET6;
-	net_sin6_ptr(&dst_addr)->sin6_port = htons(port);
+	ret = in_addr_set(AF_INET6, CONFIG_NET_SAMPLES_PEER_IPV6_ADDR,
+			  port, &dst_addr);
+	if (ret < 0) {
+		goto connect_exit;
+	}
 
-	src_addr = my_sockaddr;
-	net_sin6_ptr(&src_addr)->sin6_family = AF_INET6;
-	net_sin6_ptr(&src_addr)->sin6_port = 0;
+	ret = in_addr_set(AF_INET6, CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+			  0, &src_addr);
+	if (ret < 0) {
+		goto connect_exit;
+	}
 
 	ret = net_context_bind(irc->conn, &src_addr,
 			       sizeof(struct sockaddr_in6));
@@ -726,6 +727,8 @@ on_connect(void *data, struct zirc *irc)
 static void
 initialize_network(void)
 {
+	struct sockaddr addr;
+
 	/* TODO: use DHCP here, watch NET_EVENT_IF_UP, zirc_connect() when
 	 * available, etc
 	 */
@@ -733,23 +736,15 @@ initialize_network(void)
 	 NET_INFO("Initializing network");
 
 #if defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
-	if (net_addr_pton(AF_INET6, CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
-			  &my_sockaddr) < 0) {
+	if (in_addr_set(AF_INET6, CONFIG_NET_SAMPLES_MY_IPV6_ADDR, 0,
+			  &addr) < 0) {
 		NET_ERR("Invalid IPv6 address: %s",
 			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
 	}
 #endif /* CONFIG_NET_SAMPLES_MY_IPV6_ADDR */
-#if defined(CONFIG_NET_SAMPLES_PEER_IPV6_ADDR)
-	if (net_addr_pton(AF_INET6, CONFIG_NET_SAMPLES_PEER_IPV6_ADDR,
-			  &ircd_sockaddr) < 0) {
-		NET_ERR("Invalid IPv6 address: %s",
-			CONFIG_NET_SAMPLES_PEER_IPV6_ADDR);
-	}
-#endif /* CONFIG_NET_SAMPLES_PEER_IPV6_ADDR */
 
 	net_if_ipv6_addr_add(net_if_get_default(),
-			     net_sin6_ptr((const struct sockaddr_ptr *)
-					  &my_sockaddr)->sin6_addr,
+			     &net_sin6(&addr)->sin6_addr,
 			     NET_ADDR_MANUAL, 0);
 }
 
