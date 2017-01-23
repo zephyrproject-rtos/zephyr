@@ -56,7 +56,7 @@ compensates data for both channels.
 
 .. literalinclude:: ../../samples/sensor/bme280/src/main.c
    :language: c
-   :lines: 31-
+   :lines: 12-
    :linenos:
 
 The example assumes that the returned values have type :c:type:`struct
@@ -116,5 +116,5 @@ by the driver's configuration.
 
 .. literalinclude:: ../../samples/sensor/mcp9808/src/main.c
    :language: c
-   :lines: 31-
+   :lines: 12-
    :linenos:
