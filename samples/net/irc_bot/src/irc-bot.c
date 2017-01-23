@@ -31,6 +31,9 @@
 #include <stdio.h>
 #include <zephyr.h>
 
+#define STACK_SIZE	2048
+uint8_t stack[STACK_SIZE];
+
 /* LED */
 #if defined(LED0_GPIO_PORT)
 #define LED_GPIO_NAME LED0_GPIO_PORT
@@ -718,7 +721,7 @@ initialize_hardware(void)
 	}
 }
 
-void main(void)
+static void irc_bot(void)
 {
 	struct zirc irc = { };
 	struct zirc_chan chan = { };
@@ -732,4 +735,10 @@ void main(void)
 			 0) {
 		panic("Could not connect");
 	}
+}
+
+void main(void)
+{
+	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t)irc_bot,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
