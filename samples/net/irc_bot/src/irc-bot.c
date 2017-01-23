@@ -311,7 +311,7 @@ zirc_connect(struct zirc *irc, const char *host, int port,
 			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
 		NET_DBG("Could not bind to local address: %d", -ret);
-		return ret;
+		goto connect_exit;
 	}
 
 	irc->data = data;
@@ -321,7 +321,12 @@ zirc_connect(struct zirc *irc, const char *host, int port,
 				  len, on_context_connect, K_FOREVER, irc);
 	if (ret < 0) {
 		NET_DBG("Could not connect, errno %d", -ret);
+		goto connect_exit;
 	}
+	return ret;
+
+connect_exit:
+	net_context_put(irc->conn);
 	return ret;
 }
 
