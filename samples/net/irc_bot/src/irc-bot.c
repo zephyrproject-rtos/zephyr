@@ -266,6 +266,43 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 	}
 }
 
+static int in_addr_set(sa_family_t family,
+		       const char *ip_addr,
+		       int port,
+		       struct sockaddr *_sockaddr)
+{
+	int rc = 0;
+
+	_sockaddr->family = family;
+
+	if (ip_addr) {
+		if (family == AF_INET6) {
+			rc = net_addr_pton(family,
+					   ip_addr,
+					   &net_sin6(_sockaddr)->sin6_addr);
+		} else {
+			rc = net_addr_pton(family,
+					   ip_addr,
+					   &net_sin(_sockaddr)->sin_addr);
+		}
+
+		if (rc < 0) {
+			NET_ERR("Invalid IP address: %s", ip_addr);
+			return -EINVAL;
+		}
+	}
+
+	if (port >= 0) {
+		if (family == AF_INET6) {
+			net_sin6(_sockaddr)->sin6_port = htons(port);
+		} else {
+			net_sin(_sockaddr)->sin_port = htons(port);
+		}
+	}
+
+	return rc;
+}
+
 static void
 on_context_connect(struct net_context *ctx, void *data)
 {
