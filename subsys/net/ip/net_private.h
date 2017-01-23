@@ -106,7 +106,8 @@ static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 	return NULL;
 }
 
-static inline void net_hexdump(const char *str, const uint8_t *packet, size_t length)
+static inline void net_hexdump(const char *str, const uint8_t *packet,
+			       size_t length)
 {
 	int n = 0;
 
