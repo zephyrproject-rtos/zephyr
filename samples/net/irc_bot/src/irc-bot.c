@@ -33,6 +33,9 @@
 #define STACK_SIZE	2048
 uint8_t stack[STACK_SIZE];
 
+#define CMD_BUFFER_SIZE 256
+static uint8_t cmd_buf[CMD_BUFFER_SIZE];
+
 /* LED */
 #if defined(LED0_GPIO_PORT)
 #define LED_GPIO_NAME LED0_GPIO_PORT
@@ -232,6 +235,9 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 {
 	struct zirc *irc = data;
 	struct net_buf *tmp;
+	uint8_t *end_of_line;
+	size_t len;
+	uint16_t pos = 0, cmd_len = 0;
 
 	if (!buf) {
 		/* TODO: notify of disconnection, maybe reconnect? */
@@ -242,38 +248,49 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 	if (status) {
 		/* TODO: handle connection error */
 		NET_ERR("Connection error: %d\n", -status);
+		net_buf_unref(buf);
 		return;
 	}
 
 	/* tmp points to fragment containing IP header */
 	tmp = buf->frags;
-	/* Adavance tmp fragment to appdata (TCP payload) */
-	net_buf_pull(tmp, net_nbuf_appdata(buf) - tmp->data);
+	/* skip pos to the first TCP payload */
+	pos = net_nbuf_appdata(buf) - tmp->data;
 
 	while (tmp) {
-		while (true) {
-			char *end_of_line = memchr(tmp->data, '\r',
-						      tmp->len);
-			size_t cmd_len;
+		len = tmp->len - pos;
 
-			if (!end_of_line) {
-				break;
-			}
-
-			*end_of_line = '\0';
-			cmd_len = end_of_line - (char *)tmp->data - 1;
-			process_command(irc, tmp->data, cmd_len);
-
-			cmd_len++; /* Account for \n also */
-			tmp->len -= cmd_len;
-			tmp->data += cmd_len;
+		end_of_line = memchr(tmp->data + pos, '\r', len);
+		if (end_of_line) {
+			len = end_of_line - (tmp->data + pos);
 		}
 
-		net_buf_frag_del(buf, tmp);
-		tmp = buf->frags;
+		if (cmd_len + len > sizeof(cmd_buf)) {
+			/* overrun cmd_buf - bail out */
+			NET_ERR("CMD BUFFER OVERRUN!! %lu > %lu",
+				cmd_len + len,
+				sizeof(cmd_buf));
+			break;
+		}
 
-		/* TODO: handle messages that spans multiple fragments */
+		tmp = net_nbuf_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
+		cmd_len += len;
+
+		if (end_of_line) {
+			/* skip the /n char after /r */
+			if (tmp) {
+				tmp = net_nbuf_read(tmp, pos, &pos, 1, NULL);
+			}
+
+			cmd_buf[cmd_len] = '\0';
+			process_command(irc, cmd_buf, cmd_len);
+			cmd_len = 0;
+		}
 	}
+
+	net_buf_unref(buf);
+
+	/* TODO: handle messages that spans multiple packets? */
 }
 
 static int
