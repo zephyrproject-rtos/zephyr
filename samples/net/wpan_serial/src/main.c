@@ -12,12 +12,13 @@
  * with popular Contiki-based native border routers.
  */
 
-#include <stdio.h>
 #include <string.h>
 #include <device.h>
 #include <uart.h>
 #include <zephyr.h>
 #include <stdio.h>
+
+#include <misc/printk.h>
 
 #include <net/buf.h>
 
@@ -72,29 +73,29 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 	int n = 0;
 
 	if (!length) {
-		printf("%s zero-length signal packet\n", str);
+		printk("%s zero-length signal packet\n", str);
 		return;
 	}
 
 	while (length--) {
 		if (n % 16 == 0) {
-			printf("%s %08X ", str, n);
+			printk("%s %08X ", str, n);
 		}
 
-		printf("%02X ", *packet++);
+		printk("%02X ", *packet++);
 
 		n++;
 		if (n % 8 == 0) {
 			if (n % 16 == 0) {
-				printf("\n");
+				printk("\n");
 			} else {
-				printf(" ");
+				printk(" ");
 			}
 		}
 	}
 
 	if (n % 16) {
-		printf("\n");
+		printk("\n");
 	}
 }
 #else
@@ -569,20 +570,20 @@ void main(void)
 	/* They are optional, we use them to test the interrupt endpoint */
 	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
 	if (ret)
-		printf("Failed to set DCD, ret code %d\n", ret);
+		printk("Failed to set DCD, ret code %d\n", ret);
 
 	ret = uart_line_ctrl_set(dev, LINE_CTRL_DSR, 1);
 	if (ret)
-		printf("Failed to set DSR, ret code %d\n", ret);
+		printk("Failed to set DSR, ret code %d\n", ret);
 
 	/* Wait 1 sec for the host to do all settings */
 	sys_thread_busy_wait(1000000);
 #endif
 	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret)
-		printf("Failed to get baudrate, ret code %d\n", ret);
+		printk("Failed to get baudrate, ret code %d\n", ret);
 	else
-		printf("Baudrate detected: %d\n", baudrate);
+		printk("Baudrate detected: %d\n", baudrate);
 
 	SYS_LOG_INF("USB serial initialized");
 

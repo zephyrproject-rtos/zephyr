@@ -11,7 +11,7 @@
 #endif
 
 #include <errno.h>
-#include <stdio.h>
+#include <misc/printk.h>
 
 #include <zephyr.h>
 
@@ -372,8 +372,8 @@ static int piggyback_get(struct zoap_resource *resource,
 	}
 
 	/* The response that coap-client expects */
-	r = snprintf((char *) payload, len, "Type: %u\nCode: %u\nMID: %u\n",
-		     type, code, id);
+	r = snprintk((char *) payload, len,
+		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
 	if (r < 0 || r > len) {
 		return -EINVAL;
 	}
@@ -467,8 +467,8 @@ static int query_get(struct zoap_resource *resource,
 	}
 
 	/* The response that coap-client expects */
-	r = snprintf((char *) payload, len, "Type: %u\nCode: %u\nMID: %u\n",
-		     type, code, id);
+	r = snprintk((char *) payload, len,
+		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
 	if (r < 0 || r > len) {
 		return -EINVAL;
 	}
@@ -585,8 +585,8 @@ done:
 	}
 
 	/* The response that coap-client expects */
-	r = snprintf((char *) payload, len, "Type: %u\nCode: %u\nMID: %u\n",
-		     type, code, id);
+	r = snprintk((char *) payload, len,
+		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
 	if (r < 0 || r > len) {
 		return -EINVAL;
 	}

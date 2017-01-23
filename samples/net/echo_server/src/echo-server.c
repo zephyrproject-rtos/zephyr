@@ -15,7 +15,6 @@
 #include <zephyr.h>
 #include <sections.h>
 #include <errno.h>
-#include <stdio.h>
 
 #include <net/nbuf.h>
 #include <net/net_if.h>
@@ -376,7 +375,7 @@ static void udp_received(struct net_context *context,
 	static char dbg[MAX_DBG_PRINT + 1];
 	int ret;
 
-	snprintf(dbg, MAX_DBG_PRINT, "UDP IPv%c",
+	snprintk(dbg, MAX_DBG_PRINT, "UDP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
 
 	set_dst_addr(family, buf, &dst_addr);
@@ -439,7 +438,7 @@ static void tcp_received(struct net_context *context,
 		return;
 	}
 
-	snprintf(dbg, MAX_DBG_PRINT, "TCP IPv%c",
+	snprintk(dbg, MAX_DBG_PRINT, "TCP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
 
 	reply_buf = build_reply_buf(dbg, context, buf);
