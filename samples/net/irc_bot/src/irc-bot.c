@@ -295,7 +295,7 @@ zirc_nick_set(struct zirc *irc, const char *nick)
 static int
 zirc_user_set(struct zirc *irc, const char *user, const char *realname)
 {
-	char buffer[32];
+	char buffer[64];
 	int ret;
 
 	NET_INFO("Setting user to: %s, real name to: %s", user, realname);
@@ -492,7 +492,7 @@ zirc_disconnect(struct zirc *irc)
 static int
 zirc_chan_send_msg(const struct zirc_chan *chan, const char *msg)
 {
-	char buffer[80];
+	char buffer[128];
 
 	NET_INFO("Sending to channel %s: %s", chan->chan, msg);
 
@@ -540,7 +540,7 @@ on_cmd_hello(struct zirc_chan *chan, const char *nick, const char *msg)
 static void
 on_cmd_random(struct zirc_chan *chan, const char *nick, const char *msg)
 {
-	char buf[3 * sizeof(int) + 40];
+	char buf[128];
 	int32_t num = sys_rand32_get();
 	int ret;
 
