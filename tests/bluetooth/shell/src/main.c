@@ -219,7 +219,7 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 			       struct bt_sdp_client_result *result)
 {
 	char addr[BT_ADDR_STR_LEN];
-	uint16_t param;
+	uint16_t param, version;
 	int res;
 
 	conn_addr_str(conn, addr, sizeof(addr));
@@ -240,6 +240,15 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 			goto done;
 		}
 		printk("HFPAG Server CN param 0x%04x\n", param);
+
+		res = bt_sdp_get_profile_version(result->resp_buf,
+						 BT_SDP_HANDSFREE_SVCLASS,
+						 &version);
+		if (res < 0) {
+			printk("Error getting profile version, err %d\n", res);
+			goto done;
+		}
+		printk("HFP version param 0x%04x\n", version);
 	} else {
 		printk("No SDP HFPAG data from remote %s\n", addr);
 	}
