@@ -81,6 +81,15 @@ struct zirc_chan {
 	void *data;
 };
 
+static void
+panic(const char *msg)
+{
+	NET_ERR("Panic: %s", msg);
+	for (;;) {
+		k_sleep(K_FOREVER);
+	}
+}
+
 static int
 transmit(struct net_context *ctx, char buffer[], size_t len)
 {
@@ -696,15 +705,6 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 	}
 }
 #undef CMD
-
-static void
-panic(const char *msg)
-{
-	NET_ERR("Panic: %s", msg);
-	for (;;) {
-		k_sleep(K_FOREVER);
-	}
-}
 
 static void
 on_connect(void *data, struct zirc *irc)
