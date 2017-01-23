@@ -12,7 +12,6 @@
  * @}
  */
 
-#include <stdlib.h>
 #include <inttypes.h>
 
 #include "test_gpio.h"
@@ -32,7 +31,7 @@ void test_gpio_pin_read_write(void)
 	int i = 0;
 
 	while (i++ < 32) {
-		val_write = rand() % 2;
+		val_write = sys_rand32_get() / 3 % 2;
 		assert_true(gpio_pin_write(dev, PIN_OUT, val_write) == 0,
 			    "write data fail");
 		TC_PRINT("write: %" PRIu32 "\n", val_write);
