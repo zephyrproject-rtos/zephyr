@@ -233,14 +233,15 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 	struct zirc *irc = data;
 	struct net_buf *tmp;
 
-	if (!buf && !status) {
+	if (!buf) {
 		/* TODO: notify of disconnection, maybe reconnect? */
-		NET_INFO("Disconnected\n");
+		NET_ERR("Disconnected\n");
 		return;
 	}
-	if (status < 0) {
+
+	if (status) {
 		/* TODO: handle connection error */
-		NET_INFO("Connection error: %d\n", -status);
+		NET_ERR("Connection error: %d\n", -status);
 		return;
 	}
 
