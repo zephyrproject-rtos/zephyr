@@ -329,7 +329,7 @@ zirc_chan_join(struct zirc *irc, struct zirc_chan *chan,
 		return -EINVAL;
 	}
 
-	ret = transmit(chan->irc->conn, buffer, ret);
+	ret = transmit(irc->conn, buffer, ret);
 	if (ret < 0) {
 		return ret;
 	}
