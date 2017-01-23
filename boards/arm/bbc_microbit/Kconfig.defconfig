@@ -26,4 +26,31 @@ config UART_NRF5_GPIO_RX_PIN
 
 endif # UART_NRF5
 
+if I2C
+
+config I2C_NRF5
+	def_bool y
+
+config I2C_0
+	default y
+
+config I2C_0_IRQ_PRI
+	default 1
+
+endif # I2C
+
+if I2C_NRF5
+
+config I2C_NRF5_GPIO_SCL_PIN
+	default 0
+
+config I2C_NRF5_GPIO_SCA_PIN
+	default 30
+
+config I2C_0_DEFAULT_CFG
+	# Standard speed, master
+	default 0x11
+
+endif
+
 endif # BOARD_BBC_MICROBIT
