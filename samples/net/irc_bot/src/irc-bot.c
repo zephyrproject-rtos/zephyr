@@ -282,7 +282,6 @@ zirc_connect(struct zirc *irc, const char *host, int port,
 {
 	/* TODO: DNS lookup for host */
 	struct sockaddr dst_addr, src_addr;
-	socklen_t len = sizeof(struct sockaddr_in6);
 	int ret;
 
 	NET_INFO("Connecting to %s:%d...", host, port);
@@ -307,7 +306,7 @@ zirc_connect(struct zirc *irc, const char *host, int port,
 	net_sin6_ptr(&src_addr)->sin6_family = AF_INET6;
 	net_sin6_ptr(&src_addr)->sin6_port = 0;
 
-	ret = net_context_bind(irc->conn, (struct sockaddr *)&src_addr,
+	ret = net_context_bind(irc->conn, &src_addr,
 			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
 		NET_DBG("Could not bind to local address: %d", -ret);
@@ -317,8 +316,9 @@ zirc_connect(struct zirc *irc, const char *host, int port,
 	irc->data = data;
 	irc->on_connect = on_connect;
 
-	ret = net_context_connect(irc->conn, (struct sockaddr *)&dst_addr,
-				  len, on_context_connect, K_FOREVER, irc);
+	ret = net_context_connect(irc->conn, &dst_addr,
+				  sizeof(struct sockaddr_in6),
+				  on_context_connect, K_FOREVER, irc);
 	if (ret < 0) {
 		NET_DBG("Could not connect, errno %d", -ret);
 		goto connect_exit;
