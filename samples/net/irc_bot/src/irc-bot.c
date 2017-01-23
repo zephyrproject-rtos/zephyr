@@ -419,6 +419,7 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 	struct sockaddr dst_addr, src_addr;
 	struct zirc_chan *chan;
 	int ret;
+	char name_buf[32];
 
 	NET_INFO("Connecting to %s:%d...", host, port);
 
@@ -462,12 +463,18 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 
 	chan = irc->data;
 
-	if (zirc_nick_set(irc, "zephyrbot") < 0) {
+	ret = snprintk(name_buf, sizeof(name_buf), "zephyrbot%u",
+		       sys_rand32_get());
+	if (ret < 0 || ret >= sizeof(name_buf)) {
+		panic("Can't fill name buffer");
+	}
+
+	if (zirc_nick_set(irc, name_buf) < 0) {
 		panic("Could not set nick");
 	}
 
-	if (zirc_user_set(irc, "zephyrbot", "Zephyr IRC Bot") < 0) {
-		panic("Could not set nick");
+	if (zirc_user_set(irc, name_buf, "Zephyr IRC Bot") < 0) {
+		panic("Could not set user");
 	}
 
 	if (zirc_chan_join(irc, chan, DEFAULT_CHANNEL, on_msg_rcvd, NULL) < 0) {
