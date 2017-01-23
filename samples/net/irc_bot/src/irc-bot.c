@@ -56,7 +56,9 @@ static bool fake_led;
 #endif /* CONFIG_NET_SAMPLES_PEER_IPV6_ADDR */
 
 /* IRC API */
-#define DEFAULT_CHANNEL "#zephyrbot"
+#define DEFAULT_SERVER	"irc.freenode.net"
+#define DEFAULT_PORT	6667
+#define DEFAULT_CHANNEL	"#zephyrbot"
 
 struct zirc_chan;
 
@@ -769,8 +771,8 @@ static void irc_bot(void)
 	initialize_network();
 	initialize_hardware();
 
-	if (zirc_connect(&irc, "irc.freenode.net", 6667, on_connect, &chan) <
-			 0) {
+	if (zirc_connect(&irc, DEFAULT_SERVER, DEFAULT_PORT,
+			 on_connect, &chan) < 0) {
 		panic("Could not connect");
 	}
 }
