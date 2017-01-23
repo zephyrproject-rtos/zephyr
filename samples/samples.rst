@@ -12,6 +12,7 @@ Samples and Demos
    sensor/*
    grove/*
    advanced
+   power/power.rst
 
 
 
