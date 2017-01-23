@@ -1,0 +1,25 @@
+# Kconfig - ST Microelectronics STM32F3x MCUs Flash driver config
+#
+# Copyright (c) 2016 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if FLASH && SOC_SERIES_STM32F3X
+
+menuconfig SOC_FLASH_STM32
+	bool
+	prompt "STM32 flash driver"
+	depends on SOC_SERIES_STM32F3X && FLASH
+	default n
+	help
+	 Enable STM32F3X series MCUs flash driver.
+
+config SOC_FLASH_STM32_DEV_NAME
+	string "STM32 flash device name"
+	depends on SOC_FLASH_STM32
+	default "FLASH_STM32"
+	help
+	 Specify the device name for the flash driver.
+
+endif

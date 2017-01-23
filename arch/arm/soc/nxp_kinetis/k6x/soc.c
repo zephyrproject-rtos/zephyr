@@ -141,8 +141,7 @@ static ALWAYS_INLINE void clkInit(void)
  *
  * @brief Perform basic hardware initialization
  *
- * Initialize the interrupt controller device drivers and the
- * Kinetis UART device driver.
+ * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
  *
  * @return 0

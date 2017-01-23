@@ -1,0 +1,28 @@
+# Kconfig - ST Microelectronics STM32F303XC MCU
+#
+# Copyright (c) 2016 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F303XC
+
+config SOC
+	string
+	default stm32f303xc
+
+config SRAM_SIZE
+	default 40
+
+config FLASH_SIZE
+	default 256
+
+config FLASH_PAGE_SIZE
+	hex
+	default 0x800
+
+config NUM_IRQS
+	int
+	default 82
+
+endif # SOC_STM32F303XC

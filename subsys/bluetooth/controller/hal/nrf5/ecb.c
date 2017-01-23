@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <soc.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #include "mem.h"
 
@@ -76,7 +77,7 @@ uint32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 	NRF_ECB->INTENSET = ECB_INTENSET_ERRORECB_Msk | ECB_INTENSET_ENDECB_Msk;
 
 	/* enable interrupt */
-	_NvicIrqUnpend(ECB_IRQn);
+	NVIC_ClearPendingIRQ(ECB_IRQn);
 	irq_enable(ECB_IRQn);
 
 	/* start the encryption h/w */

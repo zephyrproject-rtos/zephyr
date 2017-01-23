@@ -11,7 +11,6 @@
  * @file header for STM32 GPIO
  */
 
-
 #include <clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
 #include <gpio.h>
@@ -24,11 +23,11 @@ struct gpio_stm32_config {
 	uint32_t *base;
 	/* IO port */
 	enum stm32_pin_port port;
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32L4X)
+#ifdef CONFIG_SOC_SERIES_STM32F4X
+	struct stm32f4x_pclken pclken;
+#else /* SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X */
 	/* clock subsystem */
 	clock_control_subsys_t clock_subsys;
-#elif CONFIG_SOC_SERIES_STM32F4X
-	struct stm32f4x_pclken pclken;
 #endif
 };
 

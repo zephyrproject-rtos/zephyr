@@ -21,16 +21,25 @@
 #include <toolchain.h>
 #include <linker-defs.h>
 #include <nano_internal.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
-#ifdef CONFIG_XIP
+#ifdef CONFIG_ARMV6_M
 static inline void relocate_vector_table(void) { /* do nothing */ }
+#elif defined(CONFIG_ARMV7_M)
+#ifdef CONFIG_XIP
+#define VECTOR_ADDRESS (CONFIG_FLASH_BASE_ADDRESS + CONFIG_TEXT_SECTION_OFFSET)
 #else
+#define VECTOR_ADDRESS CONFIG_SRAM_BASE_ADDRESS
+#endif
 static inline void relocate_vector_table(void)
 {
-	/* vector table is already in SRAM, just point to it */
-	_scs_relocate_vector_table((void *)CONFIG_SRAM_BASE_ADDRESS);
+	SCB->VTOR = VECTOR_ADDRESS & SCB_VTOR_TBLOFF_Msk;
+	__DSB();
+	__ISB();
 }
-#endif
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMv6_M */
 
 #ifdef CONFIG_FLOAT
 static inline void enable_floating_point(void)
@@ -39,17 +48,14 @@ static inline void enable_floating_point(void)
 	 * Upon reset, the Co-Processor Access Control Register is 0x00000000.
 	 * Enable CP10 and CP11 coprocessors to enable floating point.
 	 */
-	__scs.cpacr.val = (_SCS_CPACR_CP10_FULL_ACCESS |
-				_SCS_CPACR_CP11_FULL_ACCESS);
-
+	SCB->CPACR |= CPACR_CP10_FULL_ACCESS | CPACR_CP11_FULL_ACCESS;
 	/*
 	 * Upon reset, the FPU Context Control Register is 0xC0000000
 	 * (both Automatic and Lazy state preservation is enabled).
 	 * Disable lazy state preservation so the volatile FP registers are
 	 * always saved on exception.
 	 */
-	__scs.fpu.ccr.val = (_SCS_FPU_CCR_ASPEN_ENABLE |
-				_SCS_FPU_CCR_LSPEN_DISABLE);
+	FPU->FPCCR = FPU_FPCCR_ASPEN_Msk; /* FPU_FPCCR_LSPEN = 0 */
 
 	/*
 	 * Although automatic state preservation is enabled, the processor

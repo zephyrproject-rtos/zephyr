@@ -10,6 +10,8 @@ endif
 
 ifdef CONFIG_SOC_SERIES_STM32F3X
 obj-y += stm32f3xx/drivers/src/stm32f3xx_hal.o
+obj-y += stm32f3xx/drivers/src/stm32f3xx_hal_rcc.o
+obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32f3xx/drivers/src/stm32f3xx_hal_uart.o
 obj-y += stm32f3xx/soc/system_stm32f3xx.o
 endif
 

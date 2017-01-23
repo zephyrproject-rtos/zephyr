@@ -33,14 +33,6 @@ config SPI_QMSI_SS
 	  SPI driver implementation using QMSI library. This instance is
 	  for the Sensor Subsystem.
 
-config SPI_K64
-	bool
-	prompt "Freescale K64-based SPI controller driver"
-	depends on SPI && SOC_MK64F12
-	default n
-	help
-	  Enable support for Freescale K64-based SPI controllers.
-
 config SPI_INTEL
 	bool
 	prompt "Intel SPI controller driver"
@@ -97,6 +89,16 @@ config SPI_0_IRQ_PRI
 	prompt "Port 0 interrupt priority"
 	depends on SPI_0
 
+config SPI_0_DEFAULT_CFG
+	hex "Port 0 default configuration"
+	depends on SPI_0
+	default 0x80
+
+config SPI_0_DEFAULT_BAUD_RATE
+	int "Port 0 default baud rate"
+	depends on SPI_0
+	default 500000
+
 config SPI_0_CS_GPIO_PORT
 	string
 	prompt "The GPIO port which is used to control CS"
@@ -126,6 +128,16 @@ config SPI_1_IRQ_PRI
 	prompt "Port 0 interrupt priority"
 	depends on SPI_1
 
+config SPI_1_DEFAULT_CFG
+	hex "Port 1 default configuration"
+	depends on SPI_1
+	default 0x80
+
+config SPI_1_DEFAULT_BAUD_RATE
+	int "Port 1 default baud rate"
+	depends on SPI_1
+	default 500000
+
 config SPI_1_CS_GPIO_PORT
 	string
 	prompt "The GPIO port which is used to control CS"
@@ -154,6 +166,16 @@ config SPI_2_IRQ_PRI
 	int
 	prompt "Port 2 interrupt priority"
 	depends on SPI_2
+
+config SPI_2_DEFAULT_CFG
+	hex "Port 2 default configuration"
+	depends on SPI_2
+	default 0x80
+
+config SPI_2_DEFAULT_BAUD_RATE
+	int "Port 2 default baud rate"
+	depends on SPI_2
+	default 500000
 
 config SPI_2_CS_GPIO_PORT
 	string
@@ -239,5 +261,7 @@ config SPI_SS_1_CS_GPIO_PIN
 	default 0
 
 source "drivers/spi/Kconfig.dw"
+
+source "drivers/spi/Kconfig.mcux"
 
 endif # SPI

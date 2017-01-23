@@ -51,12 +51,7 @@ static int enable_port(uint32_t port, struct device *clk)
 	}
 
 	/* TODO: Merge this and move the port clock to the soc file */
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32L4X)
-	clock_control_subsys_t subsys = stm32_get_port_clock(port);
-
-	return clock_control_on(clk, subsys);
-
-#elif CONFIG_SOC_SERIES_STM32F4X
+#ifdef	CONFIG_SOC_SERIES_STM32F4X
 	struct stm32f4x_pclken pclken;
 
 	/* AHB1 bus for all the GPIO ports */
@@ -64,6 +59,11 @@ static int enable_port(uint32_t port, struct device *clk)
 	pclken.enr = ports_enable[port];
 
 	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+
+#else /* SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X */
+	clock_control_subsys_t subsys = stm32_get_port_clock(port);
+
+	return clock_control_on(clk, subsys);
 #endif
 }
 

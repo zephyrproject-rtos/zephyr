@@ -1,0 +1,32 @@
+# Kconfig - ST Microelectronics STM32F3 MCU line
+#
+# Copyright (c) 2016 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32F3X
+
+source "arch/arm/soc/st_stm32/stm32f3/Kconfig.defconfig.stm32f3*"
+
+config SOC_SERIES
+	default stm32f3
+
+config SRAM_BASE_ADDRESS
+	default 0x20000000
+
+config FLASH_BASE_ADDRESS
+	default 0x08000000
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 4
+
+if WATCHDOG
+
+config IWDG_STM32
+	def_bool y
+
+endif # WATCHDOG
+
+endif # SOC_SERIES_STM32F3X

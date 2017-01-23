@@ -1,0 +1,115 @@
+# Kconfig - STM32F3 MCU clock control driver config
+#
+# Copyright (c) 2016 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32F3X
+
+menuconfig CLOCK_CONTROL_STM32F3X
+	bool
+	prompt "STM32F3x Reset & Clock Control"
+	depends on CLOCK_CONTROL && SOC_SERIES_STM32F3X
+	default y if SOC_SERIES_STM32F3X
+	help
+	 Enable driver for Reset & Clock Control subsystem found
+	 in STM32F3 family of MCUs
+
+config CLOCK_CONTROL_STM32F3X_DEVICE_INIT_PRIORITY
+	int "Clock Control Device Priority"
+	default 1
+	depends on CLOCK_CONTROL_STM32F3X
+	help
+	 This option controls the priority of clock control
+	 device initialization. Higher priority ensures that the device
+	 is initialized earlier in the startup cycle. If unsure, leave
+	 at default value 1
+
+choice
+prompt "STM32F3x System Clock Source"
+depends on CLOCK_CONTROL_STM32F3X
+
+config CLOCK_STM32F3X_SYSCLK_SRC_HSI
+	bool "HSI"
+	help
+	 Use HSI as source of SYSCLK
+
+config CLOCK_STM32F3X_SYSCLK_SRC_HSE
+	bool "HSE"
+	help
+	 Use HSE as source of SYSCLK
+
+config CLOCK_STM32F3X_SYSCLK_SRC_PLL
+	bool "PLL"
+	help
+	 Use PLL as source of SYSCLK
+
+endchoice
+
+choice
+prompt "STM32F3x PLL Clock Source"
+depends on CLOCK_CONTROL_STM32F3X && CLOCK_STM32F3X_SYSCLK_SRC_PLL
+
+config CLOCK_STM32F3X_PLL_SRC_HSI
+	bool "HSI"
+	help
+	 Use HSI/2 as source of PLL
+
+config CLOCK_STM32F3X_PLL_SRC_HSE
+	bool "HSE"
+	help
+	 Use HSE as source of PLL
+
+endchoice
+
+config CLOCK_STM32F3X_HSE_BYPASS
+	bool "HSE bypass"
+	depends on CLOCK_CONTROL_STM32F3X && (CLOCK_STM32F3X_PLL_SRC_HSE || CLOCK_STM32F3X_SYSCLK_SRC_HSE)
+	help
+	 Enable this option to bypass external high-speed clock (HSE).
+
+config CLOCK_STM32F3X_PLL_PREDIV
+	int "PREDIV1 Prescler"
+	depends on CLOCK_CONTROL_STM32F3X && CLOCK_STM32F3X_PLL_SRC_HSE
+	default 0
+	range 0 16
+	help
+	 PREDIV is PLLSCR clock signal prescaler, allowed values: 0 - 16.
+
+config CLOCK_STM32F3X_PLL_MULTIPLIER
+	int "PLL multiplier"
+	depends on CLOCK_CONTROL_STM32F3X && CLOCK_STM32F3X_SYSCLK_SRC_PLL
+	default 9
+	range 2 16
+	help
+	 PLL multiplier, allowed values: 2-16. PLL output must not exceed 72MHz.
+
+config CLOCK_STM32F3X_AHB_PRESCALER
+	int "AHB prescaler"
+	depends on CLOCK_CONTROL_STM32F3X
+	default 0
+	range 0 512
+	help
+	 AHB prescaler, allowed values: 0, 2, 4, 8, 16, 64, 128,
+	 256, 512.
+
+config CLOCK_STM32F3X_APB1_PRESCALER
+	int "APB1 prescaler"
+	depends on CLOCK_CONTROL_STM32F3X
+	default 0
+	range 0 16
+	help
+	 APB1 Low speed clock (PCLK1) prescaler, allowed values:
+	 0, 2, 4, 8, 16. The APB1 clock must not exceed 36MHz.
+
+config CLOCK_STM32F3X_APB2_PRESCALER
+	int "APB2 prescaler"
+	depends on CLOCK_CONTROL_STM32F3X
+	default 0
+	range 0 16
+	help
+	 APB2 High speed clock (PCLK2) prescaler, allowed values:
+	 0, 2, 4, 8, 16
+
+endif

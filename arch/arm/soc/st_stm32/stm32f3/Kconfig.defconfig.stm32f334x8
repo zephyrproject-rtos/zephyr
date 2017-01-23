@@ -1,0 +1,28 @@
+# Kconfig - ST Microelectronics STM32F334X8 MCU
+#
+# Copyright (c) 2016 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F334X8
+
+config SOC
+	string
+	default stm32f334x8
+
+config SRAM_SIZE
+	default 12
+
+config FLASH_SIZE
+	default 64
+
+config FLASH_PAGE_SIZE
+	hex
+	default 0x800
+
+config NUM_IRQS
+	int
+	default 82
+
+endif # SOC_STM32F334X8

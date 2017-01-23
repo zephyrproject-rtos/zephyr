@@ -60,6 +60,7 @@ enum stm32_pin_alt_func {
 	STM32_PINMUX_FUNC_ALT_13,
 	STM32_PINMUX_FUNC_ALT_14,
 	STM32_PINMUX_FUNC_ALT_15,
+	STM32_PINMUX_FUNC_ALT_16,
 	STM32_PINMUX_FUNC_ALT_MAX
 };
 
@@ -227,6 +228,39 @@ struct stm32_pinmux_conf {
 #define STM32_PIN_CONF(__pin, __funcs) \
 	{__pin, __funcs, ARRAY_SIZE(__funcs)}
 
+#define STM32_AF_SHIFT 16
+/**
+ * @brief helper for encoding alternate function with pin config mode
+ * on stm32_pin_func_t
+ */
+#define STM32_AS_AF(__af)			\
+	(__af << STM32_AF_SHIFT)
+
+/**
+ * @brief helper for extracting alternate function from stm32_pin_func_t
+ */
+#define STM32_AF(__pinconf)			\
+	(__pinconf >> STM32_AF_SHIFT)
+
+/**
+ * @brief helper for encoding pin mode on stm32_pin_func_t
+ */
+#define STM32_AS_MODE(__mode)			\
+	(__mode)
+
+/**
+ * @brief helper for extracting pin mode encoded on stm32_pin_func_t
+ */
+#define STM32_MODE(__pinconf)				\
+	(__pinconf & ((1 << STM32_AF_SHIFT) - 1))
+
+/**
+ * @brief helper for encoding pin mode and alternate function on
+ * stm32_pin_func_t
+ */
+#define STM32_PINFUNC(__af, __mode)			\
+	(STM32_AS_AF(__af) | STM32_AS_MODE(__mode))
+
 /**
  * @brief helper to extract IO port number from STM32PIN() encoded
  * value
@@ -300,11 +334,11 @@ void stm32_setup_pins(const struct pin_config *pinconf,
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #include "pinmux_stm32f1.h"
+#elif CONFIG_SOC_SERIES_STM32F3X
+#include "pinmux_stm32f3.h"
 #elif CONFIG_SOC_SERIES_STM32F4X
 #include "pinmux_stm32f4.h"
-#endif
-
-#ifdef CONFIG_SOC_SERIES_STM32L4X
+#elif CONFIG_SOC_SERIES_STM32L4X
 #include "pinmux_stm32l4x.h"
 #endif
 

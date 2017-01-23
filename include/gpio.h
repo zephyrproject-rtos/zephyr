@@ -120,6 +120,20 @@ extern "C" {
 /** Disable GPIO pin. */
 #define GPIO_PIN_DISABLE	(1 << 11)
 
+/** @cond INTERNAL_HIDDEN */
+#define GPIO_PP_OD_POS		12
+/** @endcond */
+
+/** Enable GPIO pin push-pull. */
+#define GPIO_PUSH_PULL		(0 << GPIO_PP_OD_POS)
+
+/** Enable GPIO pin open drain. */
+#define GPIO_OPEN_DRAIN		(1 << GPIO_PP_OD_POS)
+
+/** @cond INTERNAL_HIDDEN */
+#define GPIO_PP_OD_MASK		(1 << GPIO_PP_OD_POS)
+/** @endcond */
+
 struct gpio_callback;
 
 /**

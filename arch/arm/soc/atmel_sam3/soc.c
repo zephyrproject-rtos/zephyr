@@ -152,11 +152,6 @@ static int atmel_sam3_init(struct device *arg)
 
 	key = irq_lock();
 
-	/* Setup the vector table offset register (VTOR),
-	 * which is located at the beginning of flash area.
-	 */
-	_scs_relocate_vector_table((void *)CONFIG_FLASH_BASE_ADDRESS);
-
 	/* Setup the flash controller.
 	 * The bootloader is running @ 48 MHz with
 	 * FWS == 2.

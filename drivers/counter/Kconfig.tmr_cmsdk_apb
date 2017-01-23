@@ -1,4 +1,4 @@
-# Kconfig - counter configuration options
+# Kconfig - counter and timer configuration options
 #
 #
 # Copyright (c) 2016 Linaro Limited
@@ -7,6 +7,64 @@
 #
 
 if SOC_FAMILY_ARM
+
+config TIMER_TMR_CMSDK_APB
+	bool
+	prompt "ARM CMSDK (Cortex-M System Design Kit) Timer driver"
+	default n
+	help
+	  The timers (TMR) present in the platform are used as timers.
+	  This option enables the support for the timers.
+
+if TIMER_TMR_CMSDK_APB
+
+# ---------- Timer 0 ----------
+
+config TIMER_TMR_CMSDK_APB_0
+	bool
+	prompt "Timer 0 driver"
+	default n
+	help
+	  Enable support for Timer 0.
+
+config TIMER_TMR_CMSDK_APB_0_DEV_NAME
+	string "Timer 0 Device Name"
+	depends on TIMER_TMR_CMSDK_APB_0
+	default "TIMER_0"
+	help
+	  Specify the device name for Timer 0 driver.
+
+config TIMER_TMR_CMSDK_APB_0_IRQ_PRI
+	int "Interrupt Priority for Timer 0"
+	depends on TIMER_TMR_CMSDK_APB_0
+	default 3
+	help
+	  Interrupt priority for Timer 0.
+
+# ---------- Timer 1 ----------
+
+config TIMER_TMR_CMSDK_APB_1
+	bool
+	prompt "Timer 1 driver"
+	default n
+	help
+	  Enable support for Timer 1.
+
+config TIMER_TMR_CMSDK_APB_1_DEV_NAME
+	string "Timer 1 Device Name"
+	depends on TIMER_TMR_CMSDK_APB_1
+	default "TIMER_1"
+	help
+	  Specify the device name for Timer 1 driver.
+
+config TIMER_TMR_CMSDK_APB_1_IRQ_PRI
+	int "Interrupt Priority for Timer 1"
+	depends on TIMER_TMR_CMSDK_APB_1
+	default 3
+	help
+	  Interrupt priority for Timer 1.
+
+endif # TIMER_TMR_CMSDK_APB
 
 config COUNTER_TMR_CMSDK_APB
 	bool
@@ -23,6 +81,7 @@ if COUNTER_TMR_CMSDK_APB
 config COUNTER_TMR_CMSDK_APB_0
 	bool
 	prompt "Counter 0 driver"
+	depends on !TIMER_TMR_CMSDK_APB_0
 	default n
 	help
 	  Enable support for Counter 0.
@@ -39,6 +98,7 @@ config COUNTER_TMR_CMSDK_APB_0_DEV_NAME
 config COUNTER_TMR_CMSDK_APB_1
 	bool
 	prompt "Counter 1 driver"
+	depends on !TIMER_TMR_CMSDK_APB_1
 	default n
 	help
 	  Enable support for Counter 1.

@@ -28,54 +28,15 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if UART_K20
+if UART_MCUX
 
-config UART_K20_PORT_0
-	def_bool y
-if UART_K20_PORT_0
-config UART_K20_PORT_0_IRQ_PRI
-	default 3
-config UART_K20_PORT_0_BAUD_RATE
-	default 115200
-endif
+config UART_MCUX_0
+	def_bool y if UART_CONSOLE
 
-config UART_K20_PORT_1
-	def_bool y
-if UART_K20_PORT_1
-config UART_K20_PORT_1_IRQ_PRI
-	default 3
-config UART_K20_PORT_1_BAUD_RATE
-	default 115200
-endif
+config UART_MCUX_4
+	def_bool y if BLUETOOTH_UART
 
-config UART_K20_PORT_2
-	def_bool y
-if UART_K20_PORT_2
-config UART_K20_PORT_2_IRQ_PRI
-	default 3
-config UART_K20_PORT_2_BAUD_RATE
-	default 115200
-endif
-
-config UART_K20_PORT_3
-	def_bool y
-if UART_K20_PORT_3
-config UART_K20_PORT_3_IRQ_PRI
-	default 3
-config UART_K20_PORT_3_BAUD_RATE
-	default 115200
-endif
-
-config UART_K20_PORT_4
-	def_bool y
-if UART_K20_PORT_4
-config UART_K20_PORT_4_IRQ_PRI
-	default 3
-config UART_K20_PORT_4_BAUD_RATE
-	default 115200
-endif
-
-endif # UART_K20
+endif # UART_MCUX
 
 config BLUETOOTH_UART_ON_DEV_NAME
 	default "UART_4" if BLUETOOTH_UART
@@ -89,7 +50,7 @@ config PINMUX_MCUX_PORTA
 	def_bool n
 
 config PINMUX_MCUX_PORTB
-	def_bool y if UART_K20_PORT_0
+	def_bool y if UART_MCUX_0
 
 config PINMUX_MCUX_PORTC
 	def_bool y
@@ -98,7 +59,7 @@ config PINMUX_MCUX_PORTD
 	def_bool y
 
 config PINMUX_MCUX_PORTE
-	def_bool y if UART_K20_PORT_4
+	def_bool y if UART_MCUX_4
 
 endif # PINMUX_MCUX
 

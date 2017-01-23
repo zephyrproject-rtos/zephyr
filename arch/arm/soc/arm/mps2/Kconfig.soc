@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "ARM MPS2 SoCs"
+depends on SOC_SERIES_MPS2
+
+config SOC_MPS2_AN385
+	bool "ARM Cortex-M3 SMM on V2M-MPS2 (Application Note AN385)"
+	select CPU_CORTEX_M3
+
+endchoice

@@ -48,7 +48,7 @@ config SPI
 
 if SPI
 
-config SPI_K64
+config SPI_MCUX
 	def_bool y
 
 endif # SPI
@@ -73,5 +73,12 @@ config SOC_FLASH_MCUX
 	def_bool y
 
 endif # FLASH
+
+if SERIAL
+
+config UART_MCUX
+	def_bool y
+
+endif # SERIAL
 
 endif # SOC_MK64F12

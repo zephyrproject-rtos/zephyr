@@ -17,8 +17,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/util.h>
-
-#define SCB_AIRCR_VECTKEY_EN_W 0x05FA
+#include <arch/arm/cortex_m/cmsis.h>
 
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 /*
@@ -48,21 +47,7 @@ static void software_reboot(void)
 }
 #define DO_REBOOT() software_reboot()
 #else
-static void reboot_through_sysresetreq(void)
-{
-	union __aircr reg;
-
-	reg.val = __scs.scb.aircr.val;
-	reg.bit.vectkey = SCB_AIRCR_VECTKEY_EN_W;
-	reg.bit.sysresetreq = 1;
-	__scs.scb.aircr.val = reg.val;
-
-	/* the reboot is not immediate, so wait here until it takes effect */
-	for (;;) {
-		;
-	}
-}
-#define DO_REBOOT() reboot_through_sysresetreq()
+#define DO_REBOOT() NVIC_SystemReset()
 #endif
 
 /**
@@ -79,53 +64,3 @@ void sys_arch_reboot(int type)
 	ARG_UNUSED(type);
 	DO_REBOOT();
 }
-
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
-/**
- *
- * @brief Set the number of priority groups based on the number of exception
- * priorities desired
- *
- * Exception priorities can be divided in priority groups, inside which there is
- * no preemption. The priorities inside a group are only used to decide which
- * exception will run when more than one is ready to be handled.
- *
- * The number of priorities has to be a power of two, from 1 to 128.
- *
- * @param n the number of priorities
- *
- * @return N/A
- */
-void _ScbNumPriGroupSet(unsigned int n)
-{
-	unsigned int set;
-	union __aircr reg;
-
-	__ASSERT(is_power_of_two(n) && (n <= 128),
-		 "invalid number of priorities");
-
-	set = find_lsb_set(n);
-
-	reg.val = __scs.scb.aircr.val;
-
-	/* num pri    bit set   prigroup
-	 * ---------------------------------
-	 *      1        1          7
-	 *      2        2          6
-	 *      4        3          5
-	 *      8        4          4
-	 *     16        5          3
-	 *     32        6          2
-	 *     64        7          1
-	 *    128        8          0
-	 */
-
-	reg.bit.prigroup = 8 - set;
-	reg.bit.vectkey = SCB_AIRCR_VECTKEY_EN_W;
-
-	__scs.scb.aircr.val = reg.val;
-}
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
