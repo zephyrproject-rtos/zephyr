@@ -16,6 +16,9 @@
 struct uart_stm32_config {
 	struct uart_device_config uconf;
 	/* clock subsystem driving this peripheral */
+#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+	struct stm32_pclken pclken;
+#else
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || \
     defined(CONFIG_SOC_SERIES_STM32F3X) || \
     defined(CONFIG_SOC_SERIES_STM32L4X)
@@ -23,6 +26,7 @@ struct uart_stm32_config {
 #elif defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_pclken pclken;
 #endif
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 };
 
 /* driver data */

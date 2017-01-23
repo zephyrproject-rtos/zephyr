@@ -291,11 +291,13 @@ static int uart_stm32_init(struct device *dev)
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-    defined(CONFIG_SOC_SERIES_STM32F3X) || \
-    defined(CONFIG_SOC_SERIES_STM32L4X)
+#if (defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	 defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	 defined(CONFIG_SOC_SERIES_STM32L4X)) && \
+	!defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 	clock_control_on(data->clock, config->clock_subsys);
-#elif defined(CONFIG_SOC_SERIES_STM32F4X)
+#elif defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	  defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 	clock_control_on(data->clock,
 			(clock_control_subsys_t *)&config->pclken);
 #endif
@@ -330,6 +332,10 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_1 = {
 		.irq_config_func = uart_stm32_irq_config_func_1,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 	},
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	.pclken = { .bus = STM32_CLOCK_BUS_APB2,
+		    .enr = LL_APB2_GRP1_PERIPH_USART1 },
+#else
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART1),
 #elif CONFIG_SOC_SERIES_STM32F3X
@@ -340,6 +346,7 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_1 = {
 #elif CONFIG_SOC_SERIES_STM32L4X
 	.clock_subsys = UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_USART1),
 #endif	/* CONFIG_SOC_SERIES_STM32FX */
+#endif /* CLOCK_CONTROL_STM32_CUBE */
 };
 
 static struct uart_stm32_data uart_stm32_dev_data_1 = {
@@ -393,6 +400,10 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_2 = {
 		.irq_config_func = uart_stm32_irq_config_func_2,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 	},
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
+		    .enr = LL_APB1_GRP1_PERIPH_USART2 },
+#else
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART2),
 #elif CONFIG_SOC_SERIES_STM32F3X
@@ -403,6 +414,7 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_2 = {
 #elif CONFIG_SOC_SERIES_STM32L4X
 	.clock_subsys = UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_USART2),
 #endif	/* CONFIG_SOC_SERIES_STM32FX */
+#endif /* CLOCK_CONTROL_STM32_CUBE */
 };
 
 static struct uart_stm32_data uart_stm32_dev_data_2 = {
@@ -456,6 +468,10 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_3 = {
 		.irq_config_func = uart_stm32_irq_config_func_3,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 	},
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
+		    .enr = LL_APB1_GRP1_PERIPH_USART3 },
+#else
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART3),
 #elif CONFIG_SOC_SERIES_STM32F3X
@@ -465,6 +481,7 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_3 = {
 #elif CONFIG_SOC_SERIES_STM32L4X
 	.clock_subsys = UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_USART3),
 #endif	/* CONFIG_SOC_SERIES_STM32F4X */
+#endif /* CLOCK_CONTROL_STM32_CUBE */
 };
 
 static struct uart_stm32_data uart_stm32_dev_data_3 = {
