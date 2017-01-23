@@ -243,7 +243,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 									\
 		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
 									\
-		snprintf(out, sizeof(out),				\
+		snprintk(out, sizeof(out), "%s",			\
 			 net_sprint_ipv6_addr(dst));			\
 		NET_DBG("%s route to %s via %s (iface %p)", str, out,	\
 			net_sprint_ipv6_addr(naddr), route->iface);	\
@@ -363,7 +363,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 			struct in6_addr *tmp;
 			struct net_linkaddr_storage *llstorage;
 
-			snprintf(out, sizeof(out),
+			snprintk(out, sizeof(out), "%s",
 				 net_sprint_ipv6_addr(&route->addr));
 
 			tmp = net_route_get_nexthop(route);

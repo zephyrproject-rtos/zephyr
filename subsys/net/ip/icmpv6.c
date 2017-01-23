@@ -69,7 +69,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv6_addr(&NET_IPV6_BUF(orig)->dst));
 		NET_DBG("Received Echo Request from %s to %s",
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(orig)->src), out);
@@ -142,7 +142,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
 		NET_DBG("Sending Echo Reply from %s to %s",
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
@@ -260,7 +260,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 #if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
 		NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
 			" from %s to %s", type, code, param,
@@ -323,7 +323,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
 		NET_DBG("Sending ICMPv6 Echo Request type %d"
 			" from %s to %s", NET_ICMPV6_ECHO_REQUEST,

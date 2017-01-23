@@ -388,46 +388,46 @@ void prepare_register_debug_print(char *dst, int dst_len,
 {
 	if (remote_addr && remote_addr->family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
-		snprintf(dst, dst_len,
+		snprintk(dst, dst_len, "%s",
 			 net_sprint_ipv6_addr(&net_sin6(remote_addr)->
 							sin6_addr));
 #else
-		snprintf(dst, dst_len, "?");
+		snprintk(dst, dst_len, "%s", "?");
 #endif
 
 	} else if (remote_addr && remote_addr->family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		snprintf(dst, dst_len,
+		snprintk(dst, dst_len, "%s",
 			 net_sprint_ipv4_addr(&net_sin(remote_addr)->
 							sin_addr));
 #else
-		snprintf(dst, dst_len, "?");
+		snprintk(dst, dst_len, "%s", "?");
 #endif
 
 	} else {
-		snprintf(dst, dst_len, "-");
+		snprintk(dst, dst_len, "%s", "-");
 	}
 
 	if (local_addr && local_addr->family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
-		snprintf(src, src_len,
+		snprintk(src, src_len, "%s",
 			 net_sprint_ipv6_addr(&net_sin6(local_addr)->
 							sin6_addr));
 #else
-		snprintf(src, src_len, "?");
+		snprintk(src, src_len, "%s", "?");
 #endif
 
 	} else if (local_addr && local_addr->family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		snprintf(src, src_len,
+		snprintk(src, src_len, "%s",
 			 net_sprint_ipv4_addr(&net_sin(local_addr)->
 							sin_addr));
 #else
-		snprintf(src, src_len, "?");
+		snprintk(src, src_len, "%s", "?");
 #endif
 
 	} else {
-		snprintf(src, src_len, "-");
+		snprintk(src, src_len, "%s", "-");
 	}
 }
 #endif /* CONFIG_NET_DEBUG_CONN */

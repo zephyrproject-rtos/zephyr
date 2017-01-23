@@ -210,7 +210,7 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 	do {								     \
 		char out[NET_IPV6_ADDR_LEN];				     \
 									     \
-		snprintf(out, sizeof(out),				     \
+		snprintk(out, sizeof(out), "%s",			     \
 			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));     \
 		NET_DBG("Received %s from %s to %s", req,		     \
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out); \
@@ -221,8 +221,10 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		char out[NET_IPV6_ADDR_LEN];				  \
 		char prf[NET_IPV6_ADDR_LEN];				  \
 									  \
-		snprintf(out, sizeof(out), net_sprint_ipv6_addr(dst));	  \
-		snprintf(prf, sizeof(prf), net_sprint_ipv6_addr(prefix)); \
+		snprintk(out, sizeof(out), "%s",			  \
+			 net_sprint_ipv6_addr(dst));			  \
+		snprintk(prf, sizeof(prf), "%s",			  \
+			 net_sprint_ipv6_addr(prefix));			  \
 		NET_DBG("Send DAO with prefix %s from %s to %s",	  \
 			prf, net_sprint_ipv6_addr(src), out);		  \
 	} while (0)
@@ -231,7 +233,8 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
 									\
-		snprintf(out, sizeof(out), net_sprint_ipv6_addr(dst));	\
+		snprintk(out, sizeof(out), "%s",			\
+			 net_sprint_ipv6_addr(dst));			\
 		NET_DBG("Send DAO-ACK (id %d, seq %d) from %s to %s",	\
 			id, seq, net_sprint_ipv6_addr(src), out);	\
 	} while (0)
@@ -384,7 +387,7 @@ static void net_rpl_print_neighbors(void)
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
 									\
-		snprintf(out, sizeof(out),				\
+		snprintk(out, sizeof(out), "%s",			\
 			 net_sprint_ipv6_addr(addr));			\
 		NET_DBG("%s route to %s via %s (iface %p)", str, out,	\
 			net_sprint_ipv6_addr(nexthop), route->iface);	\
