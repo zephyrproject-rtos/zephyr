@@ -83,6 +83,9 @@ struct zirc_chan {
 	void *data;
 };
 
+static void on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask,
+			char *msg);
+
 static void
 panic(const char *msg)
 {
@@ -274,6 +277,105 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 	}
 }
 
+static int
+zirc_nick_set(struct zirc *irc, const char *nick)
+{
+	char buffer[32];
+	int ret;
+
+	NET_INFO("Setting nickname to: %s", nick);
+
+	ret = snprintk(buffer, sizeof(buffer), "NICK %s\r\n", nick);
+	if (ret < 0 || ret >= sizeof(buffer)) {
+		return -EINVAL;
+	}
+
+	return transmit(irc->conn, buffer, ret);
+}
+
+static int
+zirc_user_set(struct zirc *irc, const char *user, const char *realname)
+{
+	char buffer[32];
+	int ret;
+
+	NET_INFO("Setting user to: %s, real name to: %s", user, realname);
+
+	ret = snprintk(buffer, sizeof(buffer), "USER %s * * :%s\r\n",
+				   user, realname);
+	if (ret < 0 || ret >= sizeof(buffer)) {
+		return -EINVAL;
+	}
+
+	return transmit(irc->conn, buffer, ret);
+}
+
+static int
+zirc_chan_join(struct zirc *irc, struct zirc_chan *chan,
+	       const char *channel,
+	       on_privmsg_rcvd_cb_t on_privmsg_rcvd,
+	       void *data)
+{
+	char buffer[32];
+	int ret;
+
+	NET_INFO("Joining channel: %s", channel);
+
+	if (!on_privmsg_rcvd) {
+		return -EINVAL;
+	}
+
+	ret = snprintk(buffer, sizeof(buffer), "JOIN %s\r\n", channel);
+	if (ret < 0 || ret >= sizeof(buffer)) {
+		return -EINVAL;
+	}
+
+	ret = transmit(chan->irc->conn, buffer, ret);
+	if (ret < 0) {
+		return ret;
+	}
+
+	chan->irc = irc;
+	chan->chan = channel;
+	chan->on_privmsg_rcvd = on_privmsg_rcvd;
+	chan->data = data;
+
+	chan->next = irc->chans;
+	irc->chans = chan;
+
+	return 0;
+}
+
+static int
+zirc_chan_part(struct zirc_chan *chan)
+{
+	struct zirc_chan **cc, *c;
+	char buffer[32];
+	int ret;
+
+	NET_INFO("Leaving channel: %s", chan->chan);
+
+	ret = snprintk(buffer, sizeof(buffer), "PART %s\r\n", chan->chan);
+	if (ret < 0 || ret >= sizeof(buffer)) {
+		return -EINVAL;
+	}
+
+	ret = transmit(chan->irc->conn, buffer, ret);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (cc = &chan->irc->chans, c = c->irc->chans;
+	     c; cc = &c->next, c = c->next) {
+		if (c == chan) {
+			*cc = c->next;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
 static int in_addr_set(sa_family_t family,
 		       const char *ip_addr,
 		       int port,
@@ -386,105 +488,6 @@ zirc_disconnect(struct zirc *irc)
 
 	irc->chans = NULL;
 	return net_context_put(irc->conn);
-}
-
-static int
-zirc_nick_set(struct zirc *irc, const char *nick)
-{
-	char buffer[32];
-	int ret;
-
-	NET_INFO("Setting nickname to: %s", nick);
-
-	ret = snprintk(buffer, sizeof(buffer), "NICK %s\r\n", nick);
-	if (ret < 0 || ret >= sizeof(buffer)) {
-		return -EINVAL;
-	}
-
-	return transmit(irc->conn, buffer, ret);
-}
-
-static int
-zirc_user_set(struct zirc *irc, const char *user, const char *realname)
-{
-	char buffer[32];
-	int ret;
-
-	NET_INFO("Setting user to: %s, real name to: %s", user, realname);
-
-	ret = snprintk(buffer, sizeof(buffer), "USER %s * * :%s\r\n",
-				   user, realname);
-	if (ret < 0 || ret >= sizeof(buffer)) {
-		return -EINVAL;
-	}
-
-	return transmit(irc->conn, buffer, ret);
-}
-
-static int
-zirc_chan_join(struct zirc *irc, struct zirc_chan *chan,
-	       const char *channel,
-	       on_privmsg_rcvd_cb_t on_privmsg_rcvd,
-	       void *data)
-{
-	char buffer[32];
-	int ret;
-
-	NET_INFO("Joining channel: %s", channel);
-
-	if (!on_privmsg_rcvd) {
-		return -EINVAL;
-	}
-
-	ret = snprintk(buffer, sizeof(buffer), "JOIN %s\r\n", channel);
-	if (ret < 0 || ret >= sizeof(buffer)) {
-		return -EINVAL;
-	}
-
-	ret = transmit(chan->irc->conn, buffer, ret);
-	if (ret < 0) {
-		return ret;
-	}
-
-	chan->irc = irc;
-	chan->chan = channel;
-	chan->on_privmsg_rcvd = on_privmsg_rcvd;
-	chan->data = data;
-
-	chan->next = irc->chans;
-	irc->chans = chan;
-
-	return 0;
-}
-
-static int
-zirc_chan_part(struct zirc_chan *chan)
-{
-	struct zirc_chan **cc, *c;
-	char buffer[32];
-	int ret;
-
-	NET_INFO("Leaving channel: %s", chan->chan);
-
-	ret = snprintk(buffer, sizeof(buffer), "PART %s\r\n", chan->chan);
-	if (ret < 0 || ret >= sizeof(buffer)) {
-		return -EINVAL;
-	}
-
-	ret = transmit(chan->irc->conn, buffer, ret);
-	if (ret < 0) {
-		return ret;
-	}
-
-	for (cc = &chan->irc->chans, c = c->irc->chans;
-	     c; cc = &c->next, c = c->next) {
-		if (c == chan) {
-			*cc = c->next;
-			return 0;
-		}
-	}
-
-	return -ENOENT;
 }
 
 static int
@@ -623,9 +626,6 @@ on_cmd_led_toggle(struct zirc_chan *chan, const char *nick, const char *msg)
 		on_cmd_led_on(chan, nick, msg);
 	}
 }
-
-static void on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask,
-			char *msg);
 
 static void
 on_cmd_rejoin(struct zirc_chan *chan, const char *nick, const char *msg)
