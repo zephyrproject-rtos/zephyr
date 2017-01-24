@@ -2,6 +2,7 @@
 
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -164,6 +165,22 @@ config UART_PIPE_ON_DEV_NAME
 	This option specifies the name of UART device to be used
 	for pipe UART.
 
-source "drivers/console/Kconfig.telnet"
+config XTENSA_SIM_CONSOLE
+	bool
+	prompt "Use Xtensa simulator console"
+	depends on SIMULATOR_XTENSA
+	select CONSOLE_HAS_DRIVER
+	default y
+	help
+	Use simulator console to print messages.
 
+config XTENSA_CONSOLE_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	default 60
+	depends on XTENSA_SIM_CONSOLE
+	help
+	  Device driver initialization priority.
+
+source "drivers/console/Kconfig.telnet"
 endif
