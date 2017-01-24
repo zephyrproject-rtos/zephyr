@@ -88,16 +88,7 @@ define rule_cc_o_c_1
 	$(call echo-cmd,cc_o_c_1) $(cmd_cc_o_c_1);
 endef
 
-OFFSETS_INCLUDE = $(strip \
-		-include $(CURDIR)/include/generated/autoconf.h \
-		-I $(srctree)/include \
-		-I $(CURDIR)/include/generated \
-		-I $(srctree)/kernel/include \
-		$(OFFSETS_INCLUDE_KERNEL_LOCATION) \
-		-I $(srctree)/lib/libc/minimal/include \
-		-I $(srctree)/arch/${ARCH}/include )
-
-cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) -c -o $@ $<
+cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(ZEPHYRINCLUDE) -c -o $@ $<
 
 arch/$(ARCH)/core/offsets/offsets.o: arch/$(ARCH)/core/offsets/offsets.c $(KCONFIG_CONFIG)
 	$(Q)mkdir -p $(dir $@)
