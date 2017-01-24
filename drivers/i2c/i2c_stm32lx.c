@@ -40,7 +40,12 @@ static int i2c_stm32lx_runtime_configure(struct device *dev, uint32_t config)
 
 	data->dev_config.raw = config;
 
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	clock_control_get_rate(data->clock,
+			(clock_control_subsys_t *)&cfg->pclken, &clock);
+#else
 	clock_control_get_rate(data->clock, cfg->clock_subsys, &clock);
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 	if (data->dev_config.bits.is_slave_read)
 		return -EINVAL;
@@ -408,7 +413,12 @@ static int i2c_stm32lx_init(struct device *dev)
 	__i2c_stm32lx_get_clock(dev);
 
 	/* enable clock */
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	clock_control_on(data->clock,
+		(clock_control_subsys_t *)&cfg->pclken);
+#else
 	clock_control_on(data->clock, cfg->clock_subsys);
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 	/* Reset config */
 	i2c->cr1.val = 0;
@@ -438,9 +448,14 @@ static void i2c_stm32lx_irq_config_func_0(struct device *port);
 
 static const struct i2c_stm32lx_config i2c_stm32lx_cfg_0 = {
 	.base = (uint8_t *)I2C1_BASE,
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
+		    .enr = LL_APB1_GRP1_PERIPH_I2C1 },
+#else
 #ifdef CONFIG_SOC_SERIES_STM32L4X
 	.clock_subsys = UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_I2C1),
 #endif
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 #ifdef CONFIG_I2C_STM32LX_INTERRUPT
 	.irq_config_func = i2c_stm32lx_irq_config_func_0,
 #endif
