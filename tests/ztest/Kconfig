@@ -14,7 +14,7 @@ config ZTEST
 config ZTEST_STACKSIZE
 	int "Test function thread stack size"
 	depends on ZTEST
-	default 1000
+	default 1024
 
 config ZTEST_FAIL_FAST
 	bool "Abort on first failing test"

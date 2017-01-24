@@ -125,7 +125,10 @@ out:
 #define FAIL_FAST 0
 #endif
 
-static char thread_stack[CONFIG_ZTEST_STACKSIZE];
+#if CONFIG_ZTEST_STACKSIZE & (STACK_ALIGN - 1)
+    #error "CONFIG_ZTEST_STACKSIZE must be a multiple of the stack alignment"
+#endif
+static char __stack thread_stack[CONFIG_ZTEST_STACKSIZE];
 
 static int test_result;
 static struct k_sem mutex;
