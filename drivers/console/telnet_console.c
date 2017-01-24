@@ -24,6 +24,7 @@
 #include <init.h>
 #include <misc/printk.h>
 
+#include <console/console.h>
 #include <net/buf.h>
 #include <net/nbuf.h>
 #include <net/net_ip.h>
@@ -37,6 +38,8 @@
 #define TELNET_LINE_SIZE	CONFIG_TELNET_CONSOLE_LINE_BUF_SIZE
 #define TELNET_TIMEOUT		K_MSEC(CONFIG_TELNET_CONSOLE_SEND_TIMEOUT)
 #define TELNET_THRESHOLD	CONFIG_TELNET_CONSOLE_SEND_THRESHOLD
+
+#define TELNET_MIN_MSG		2
 
 /* These 2 structures below are used to store the console output
  * before sending it to the client. This is done to keep some
@@ -77,6 +80,9 @@ static K_TIMER_DEFINE(send_timer, telnet_send_prematurely, NULL);
 static struct net_context *client_cnx;
 static struct net_buf *out_buf;
 static int (*orig_printk_hook)(int);
+
+static struct k_fifo *avail_queue;
+static struct k_fifo *input_queue;
 
 extern void __printk_hook_install(int (*fn)(int));
 extern void *__printk_get_hook(void);
@@ -236,6 +242,52 @@ static inline bool telnet_send(void)
 	return true;
 }
 
+static inline void telnet_handle_input(struct net_buf *buf)
+{
+	struct console_input *input;
+	uint16_t len, offset, pos;
+	uint8_t *l_start;
+
+	len = net_nbuf_appdatalen(buf);
+	if (len > CONSOLE_MAX_LINE_LEN || len < TELNET_MIN_MSG) {
+		return;
+	}
+
+	/* Telnet commands are ignored for now
+	 * These are recognized by matching the IAC byte
+	 * (IAC: Intepret As Command) which value is 255
+	 */
+	l_start = net_nbuf_appdata(buf);
+	if (*l_start == 255) {
+		return;
+	}
+
+	if (!avail_queue || !input_queue) {
+		return;
+	}
+
+	input = k_fifo_get(avail_queue, K_NO_WAIT);
+	if (!input) {
+		return;
+	}
+
+	offset = net_buf_frags_len(buf) - len;
+	net_nbuf_read(buf->frags, offset, &pos, len, input->line);
+
+	/* LF/CR will be removed if only the line is not NUL terminated */
+	if (input->line[len-1] != '\0') {
+		if (input->line[len-1] == '\n') {
+			input->line[len-1] = '\0';
+		}
+
+		if (input->line[len-2] == '\r') {
+			input->line[len-2] = '\0';
+		}
+	}
+
+	k_fifo_put(input_queue, input);
+}
+
 static void telnet_recv(struct net_context *client,
 			struct net_buf *buf,
 			int status,
@@ -249,6 +301,8 @@ static void telnet_recv(struct net_context *client,
 			    "" : "6", status);
 		return;
 	}
+
+	telnet_handle_input(buf);
 
 	net_buf_unref(buf);
 }
@@ -341,6 +395,15 @@ error:
 		net_context_put(*ctx);
 		*ctx = NULL;
 	}
+}
+
+void telnet_register_input(struct k_fifo *avail, struct k_fifo *lines,
+			   uint8_t (*completion)(char *str, uint8_t len))
+{
+	ARG_UNUSED(completion);
+
+	avail_queue = avail;
+	input_queue = lines;
 }
 
 static int telnet_console_init(struct device *arg)
