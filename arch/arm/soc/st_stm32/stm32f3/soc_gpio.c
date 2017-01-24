@@ -58,21 +58,25 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 	int pud = flags & GPIO_PUD_MASK;
 
 	if (direction == GPIO_DIR_OUT) {
-		int type = flags & GPIO_PP_OD_MASK;
+		int type = flags & GPIO_DS_HIGH_MASK;
 
-		if (type == GPIO_PUSH_PULL) {
-			*pincfg = STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL;
-			if (pud == GPIO_PUD_PULL_UP) {
-				*pincfg = STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PU;
-			} else if (pud == GPIO_PUD_PULL_DOWN) {
-				*pincfg = STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PD;
-			}
-		} else if (type == GPIO_OPEN_DRAIN) {
+		if (type == GPIO_DS_DISCONNECT_HIGH) {
 			*pincfg = STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN;
 			if (pud == GPIO_PUD_PULL_UP) {
-				*pincfg = STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PU;
+				*pincfg =
+					STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PU;
 			} else if (pud == GPIO_PUD_PULL_DOWN) {
-				*pincfg = STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PD;
+				*pincfg =
+					STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PD;
+			}
+		} else {
+			*pincfg = STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL;
+			if (pud == GPIO_PUD_PULL_UP) {
+				*pincfg =
+					STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PU;
+			} else if (pud == GPIO_PUD_PULL_DOWN) {
+				*pincfg =
+					STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PD;
 			}
 		}
 	} else if (direction == GPIO_DIR_IN) {
