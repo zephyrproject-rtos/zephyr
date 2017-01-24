@@ -30,6 +30,8 @@
 #include <net/net_ip.h>
 #include <net/net_context.h>
 
+#include "telnet_protocol.h"
+
 /* Various definitions mapping the telnet service configuration options */
 #define TELNET_PORT		CONFIG_TELNET_CONSOLE_PORT
 #define TELNET_STACK_SIZE	CONFIG_TELNET_CONSOLE_THREAD_STACK
@@ -83,6 +85,11 @@ static int (*orig_printk_hook)(int);
 
 static struct k_fifo *avail_queue;
 static struct k_fifo *input_queue;
+
+#ifdef CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND
+static K_SEM_DEFINE(cmd_lock, 1, 1);
+static struct telnet_simple_command telnet_cmd;
+#endif /* CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND */
 
 extern void __printk_hook_install(int (*fn)(int));
 extern void *__printk_get_hook(void);
@@ -182,8 +189,8 @@ static int telnet_console_out(int c)
 	lb->buf[lb->len++] = (char)c;
 
 	if (c == '\n' || lb->len == TELNET_LINE_SIZE - 1) {
-		lb->buf[lb->len-1] = '\r';
-		lb->buf[lb->len++] = '\n';
+		lb->buf[lb->len-1] = NVT_CR;
+		lb->buf[lb->len++] = NVT_LF;
 		telnet_rb_switch();
 		yield = true;
 	}
@@ -242,23 +249,119 @@ static inline bool telnet_send(void)
 	return true;
 }
 
+#ifdef CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND
+
+static int telnet_console_out_nothing(int c)
+{
+	return c;
+}
+
+static inline void telnet_command_send_reply(uint8_t *msg, uint16_t len)
+{
+	net_nbuf_append(out_buf, len, msg);
+
+	net_context_send(out_buf, telnet_sent_cb,
+			 K_NO_WAIT, NULL, NULL);
+
+	telnet_setup_out_buf(client_cnx);
+}
+
+static inline void telnet_reply_ay_command(void)
+{
+	static const char alive[24] = "Zephyr at your service\r\n";
+
+	telnet_command_send_reply((uint8_t *)alive, 24);
+}
+
+static inline void telnet_reply_do_command(void)
+{
+	switch (telnet_cmd.opt) {
+	case NVT_OPT_SUPR_GA:
+		telnet_cmd.op = NVT_CMD_WILL;
+		break;
+	default:
+		telnet_cmd.op = NVT_CMD_WONT;
+		break;
+	}
+
+	telnet_command_send_reply((uint8_t *)&telnet_cmd,
+				  sizeof(struct telnet_simple_command));
+}
+
+static inline void telnet_reply_command(void)
+{
+	if (k_sem_take(&cmd_lock, K_NO_WAIT)) {
+		return;
+	}
+
+	if (!telnet_cmd.iac) {
+		goto out;
+	}
+
+	switch (telnet_cmd.op) {
+	case NVT_CMD_AO:
+		/* OK, no output then */
+		__printk_hook_install(telnet_console_out_nothing);
+		telnet_rb_init();
+		break;
+	case NVT_CMD_AYT:
+		telnet_reply_ay_command();
+		break;
+	case NVT_CMD_DO:
+		telnet_reply_do_command();
+		break;
+	default:
+		SYS_LOG_DBG("Operation %u not handled",
+			    telnet_cmd.op);
+		break;
+	}
+
+	telnet_cmd.iac = NVT_NUL;
+	telnet_cmd.op  = NVT_NUL;
+	telnet_cmd.opt = NVT_NUL;
+out:
+	k_sem_give(&cmd_lock);
+}
+#else
+#define telnet_reply_command()
+#endif /* CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND */
+
+static inline bool telnet_handle_command(struct net_buf *buf)
+{
+	struct telnet_simple_command *cmd =
+		(struct telnet_simple_command *)net_nbuf_appdata(buf);
+
+	if (cmd->iac != NVT_CMD_IAC) {
+		return false;
+	}
+
+#ifdef CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND
+	cmd = (struct telnet_simple_command *)l_start;
+
+	SYS_LOG_DBG("Got a command %u/%u/%u", cmd->iac, cmd->op, cmd->opt);
+
+	if (!k_sem_take(&cmd_lock, K_NO_WAIT)) {
+		telnet_command_cpy(&telnet_cmd, cmd);
+
+		k_sem_give(&cmd_lock);
+		k_sem_give(&send_lock);
+	}
+#endif /* CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND */
+
+	return true;
+}
+
 static inline void telnet_handle_input(struct net_buf *buf)
 {
 	struct console_input *input;
 	uint16_t len, offset, pos;
-	uint8_t *l_start;
 
 	len = net_nbuf_appdatalen(buf);
 	if (len > CONSOLE_MAX_LINE_LEN || len < TELNET_MIN_MSG) {
 		return;
 	}
 
-	/* Telnet commands are ignored for now
-	 * These are recognized by matching the IAC byte
-	 * (IAC: Intepret As Command) which value is 255
-	 */
-	l_start = net_nbuf_appdata(buf);
-	if (*l_start == 255) {
+	if (telnet_handle_command(buf)) {
 		return;
 	}
 
@@ -275,13 +378,13 @@ static inline void telnet_handle_input(struct net_buf *buf)
 	net_nbuf_read(buf->frags, offset, &pos, len, input->line);
 
 	/* LF/CR will be removed if only the line is not NUL terminated */
-	if (input->line[len-1] != '\0') {
-		if (input->line[len-1] == '\n') {
-			input->line[len-1] = '\0';
+	if (input->line[len-1] != NVT_NUL) {
+		if (input->line[len-1] == NVT_LF) {
+			input->line[len-1] = NVT_NUL;
 		}
 
-		if (input->line[len-2] == '\r') {
-			input->line[len-2] = '\0';
+		if (input->line[len-2] == NVT_CR) {
+			input->line[len-2] = NVT_NUL;
 		}
 	}
 
@@ -316,6 +419,8 @@ static void telnet_run(void)
 		if (!telnet_send()) {
 			telnet_end_client_connection();
 		}
+
+		telnet_reply_command();
 	}
 }
 

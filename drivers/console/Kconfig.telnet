@@ -65,6 +65,14 @@ config TELNET_CONSOLE_SEND_THRESHOLD
 	a little while (see TELNET_CONSOLE_SEND_TIMEOUT) and when the line
 	buffer did not meet the line feed yet.
 
+config TELNET_CONSOLE_SUPPORT_COMMAND
+	bool "Add support for telnet commands (IAC) [Experimental]"
+	default n
+	help
+	Current support is so limited it's not interesting to enable it.
+	However, if proven to be needed at some point, it will be possible
+	to extend such support.
+
 config TELNET_CONSOLE_THREAD_STACK
 	int "Telnet console inner thread stack size"
 	default 1024
