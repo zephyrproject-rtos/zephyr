@@ -49,7 +49,7 @@ Network data flow
 
     Network data flow
 
-The application typically consists of one or more tasks or fibers
+The application typically consists of one or more tasks or threads
 that execute the application logic. When using the network
 connectivity APIs, following things will happen.
 
@@ -63,17 +63,17 @@ connectivity APIs, following things will happen.
    the data processing pipeline (bottom-half) as the device driver is
    running in interrupt context and it must do its processing very fast.
 
-3) The RX fiber reads the RX FIFO and passes the data to the correct
+3) The RX thread reads the RX FIFO and passes the data to the correct
    L2 driver. After the L2 driver has checked the packet, the packet is
    passed to L3 processing. The L3 layer checks if the packet is a proper
    IPv6 or IPv4 packet. If the packet contains UDP or TCP data, it
    is then sent to correct application via a function callback.
    This also means that the application data processing in that callback
-   is run in fiber context even if the actual application is running
+   is run in thread context even if the actual application is running
    in task context. The data processing in the application callback should
    be done fast in order not to block the system too long.
-   There is only one RX fiber in the system. The stack size of the RX
-   fiber can be tweaked via Kconfig option but it should be kept as
+   There is only one RX thread in the system. The stack size of the RX
+   thread can be tweaked via Kconfig option but it should be kept as
    small as possible. This also means that stack utilization in the
    data processing callback should be minimized in order to avoid stack
    overflow.
@@ -96,7 +96,7 @@ connectivity APIs, following things will happen.
    to the application, that means the packet was not sent correctly and the
    application needs to free the packet.
 
-2) Each network interface has a TX fiber associated with it and the TX fiber
+2) Each network interface has a TX thread associated with it and the TX thread
    will send the packet to the correct device driver.
 
 3) If the device driver is able to inject the network packet into the
