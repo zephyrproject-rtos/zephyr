@@ -21,6 +21,9 @@
 #ifdef CONFIG_UART_CONSOLE
 #include <console/uart_console.h>
 #endif
+#ifdef CONFIG_TELNET_CONSOLE
+#include <console/telnet_console.h>
+#endif
 
 #include <shell/shell.h>
 
@@ -525,6 +528,9 @@ void shell_init(const char *str)
 	/* Register serial console handler */
 #ifdef CONFIG_UART_CONSOLE
 	uart_register_input(&avail_queue, &cmds_queue, completion);
+#endif
+#ifdef CONFIG_TELNET_CONSOLE
+	telnet_register_input(&avail_queue, &cmds_queue, completion);
 #endif
 }
 
