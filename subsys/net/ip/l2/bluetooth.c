@@ -298,9 +298,9 @@ static int bt_connect(uint32_t mgmt_request, struct net_if *iface, void *data,
 static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
 		      void *user_data)
 {
-	bt_addr_le_t *addr = user_data;
 	int i;
 #if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+	bt_addr_le_t *addr = user_data;
 	char dev[BT_ADDR_LE_STR_LEN];
 #endif
 	if (type != BT_DATA_UUID16_SOME && type != BT_DATA_UUID16_ALL) {
