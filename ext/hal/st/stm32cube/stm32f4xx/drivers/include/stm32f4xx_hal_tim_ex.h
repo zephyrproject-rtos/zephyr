@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_tim_ex.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of TIM HAL Extension module.
   ******************************************************************************
   * @attention
@@ -133,14 +133,23 @@ typedef struct
 #define TIM_TIM11_GPIO                         (0x00000000U)
 #define TIM_TIM11_HSE                          (0x00000002U)
 
+#if defined(STM32F413xx) || defined(STM32F423xx)
+#define TIM_TIM9_TIM3_TRGO                     (0x10000000U)
+#define TIM_TIM9_LPTIM                         (0x10000010U)
+#define TIM_TIM5_TIM3_TRGO                     (0x10000000U)
+#define TIM_TIM5_LPTIM                         (0x10000008U)
+#define TIM_TIM1_TIM3_TRGO                     (0x10000000U)
+#define TIM_TIM1_LPTIM                         (0x10000004U)
+#endif /* STM32F413xx | STM32F423xx */
+
 #if defined (STM32F446xx) 
-#define TIM_TIM11_SPDIFRX                        (0x00000001U)
+#define TIM_TIM11_SPDIFRX                      (0x00000001U)
 #endif /* STM32F446xx */
 /**
   * @}
   */
 
-#if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx) 
+#if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx) || defined(STM32F413xx) || defined(STM32F423xx)
 /** @defgroup TIMEx_SystemBreakInput  TIM System Break Input
   * @{
   */
@@ -150,7 +159,7 @@ typedef struct
 /**
   * @}
   */
-#endif /* STM32F410Tx || STM32F410Cx || STM32F410Rx */
+#endif /* STM32F410Tx || STM32F410Cx || STM32F410Rx || STM32F413xx || STM32F423xx */
 
 /**
   * @}
@@ -293,6 +302,23 @@ HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef* htim);
                                   ((TIM_REMAP) == TIM_TIM11_GPIO)||\
                                   ((TIM_REMAP) == TIM_TIM11_SPDIFRX)||\
                                   ((TIM_REMAP) == TIM_TIM11_HSE))
+#elif defined(STM32F413xx) || defined(STM32F423xx)
+#define IS_TIM_REMAP(TIM_REMAP)   (((TIM_REMAP) == TIM_TIM2_TIM8_TRGO)||\
+                                  ((TIM_REMAP) == TIM_TIM2_ETH_PTP)||\
+                                  ((TIM_REMAP) == TIM_TIM2_USBFS_SOF)||\
+                                  ((TIM_REMAP) == TIM_TIM2_USBHS_SOF)||\
+                                  ((TIM_REMAP) == TIM_TIM5_GPIO)||\
+                                  ((TIM_REMAP) == TIM_TIM5_LSI)||\
+                                  ((TIM_REMAP) == TIM_TIM5_LSE)||\
+                                  ((TIM_REMAP) == TIM_TIM5_RTC)||\
+                                  ((TIM_REMAP) == TIM_TIM11_GPIO)||\
+                                  ((TIM_REMAP) == TIM_TIM11_HSE)||\
+                                  ((TIM_REMAP) == TIM_TIM9_TIM3_TRGO)||\
+                                  ((TIM_REMAP) == TIM_TIM9_LPTIM)||\
+                                  ((TIM_REMAP) == TIM_TIM5_TIM3_TRGO)||\
+                                  ((TIM_REMAP) == TIM_TIM5_LPTIM)||\
+                                  ((TIM_REMAP) == TIM_TIM1_TIM3_TRGO)||\
+                                  ((TIM_REMAP) == TIM_TIM1_LPTIM))
 #else
 #define IS_TIM_REMAP(TIM_REMAP)   (((TIM_REMAP) == TIM_TIM2_TIM8_TRGO)||\
                                   ((TIM_REMAP) == TIM_TIM2_ETH_PTP)||\
@@ -306,12 +332,12 @@ HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef* htim);
                                   ((TIM_REMAP) == TIM_TIM11_HSE))
 #endif /* STM32F446xx */
 
-#if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx)
+#if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx) || defined(STM32F413xx) || defined(STM32F423xx)
 #define IS_TIM_SYSTEMBREAKINPUT(BREAKINPUT)   (((BREAKINPUT) == TIM_SYSTEMBREAKINPUT_HARDFAULT)||\
                                                ((BREAKINPUT) == TIM_SYSTEMBREAKINPUT_PVD)||\
                                                ((BREAKINPUT) == TIM_SYSTEMBREAKINPUT_HARDFAULT_PVD))
 
-#endif /* STM32F410Tx || STM32F410Cx || STM32F410Rx */ 
+#endif /* STM32F410Tx || STM32F410Cx || STM32F410Rx || STM32F413xx || STM32F423xx */ 
 
 #define IS_TIM_DEADTIME(DEADTIME)      ((DEADTIME) <= 0xFFU) 
 /**

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_cryp_ex.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of CRYP HAL Extension module.
   ******************************************************************************
   * @attention
@@ -43,9 +43,11 @@
  extern "C" {
 #endif
 
-#if defined(STM32F437xx) || defined(STM32F439xx) || defined(STM32F479xx)
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal_def.h"
+
+
+#if defined(CRYP)
 
 /** @addtogroup STM32F4xx_HAL_Driver
   * @{
@@ -203,7 +205,79 @@ void HAL_CRYPEx_GCMCCM_IRQHandler(CRYP_HandleTypeDef *hcryp);
   * @}
   */
    
-#endif /* STM32F437xx || STM32F439xx || STM32F479xx */
+#endif /* CRYP */
+
+#if defined (AES)
+
+/** @addtogroup CRYPEx_Exported_Functions
+  * @{
+  */
+
+/** @addtogroup CRYPEx_Exported_Functions_Group1
+  * @{
+  */
+
+/* CallBack functions  ********************************************************/
+void HAL_CRYPEx_ComputationCpltCallback(CRYP_HandleTypeDef *hcryp);
+
+/**
+  * @}
+  */ 
+
+/** @addtogroup CRYPEx_Exported_Functions_Group2
+  * @{
+  */
+
+/* AES encryption/decryption processing functions  ****************************/
+HAL_StatusTypeDef HAL_CRYPEx_AES(CRYP_HandleTypeDef *hcryp, uint8_t *pInputData, uint16_t Size, uint8_t *pOutputData, uint32_t Timeout);
+HAL_StatusTypeDef HAL_CRYPEx_AES_IT(CRYP_HandleTypeDef *hcryp,  uint8_t *pInputData, uint16_t Size, uint8_t *pOutputData);
+HAL_StatusTypeDef HAL_CRYPEx_AES_DMA(CRYP_HandleTypeDef *hcryp,  uint8_t *pInputData, uint16_t Size, uint8_t *pOutputData);
+
+/* AES encryption/decryption/authentication processing functions  *************/
+HAL_StatusTypeDef HAL_CRYPEx_AES_Auth(CRYP_HandleTypeDef *hcryp, uint8_t *pInputData, uint64_t Size, uint8_t *pOutputData, uint32_t Timeout);
+HAL_StatusTypeDef HAL_CRYPEx_AES_Auth_IT(CRYP_HandleTypeDef *hcryp, uint8_t *pInputData, uint64_t Size, uint8_t *pOutputData);
+HAL_StatusTypeDef HAL_CRYPEx_AES_Auth_DMA(CRYP_HandleTypeDef *hcryp, uint8_t *pInputData, uint64_t Size, uint8_t *pOutputData);
+
+/**
+  * @}
+  */ 
+
+/** @addtogroup CRYPEx_Exported_Functions_Group3
+  * @{
+  */
+
+/* AES suspension/resumption functions  ***************************************/
+void HAL_CRYPEx_Read_IVRegisters(CRYP_HandleTypeDef *hcryp, uint8_t* Output);
+void HAL_CRYPEx_Write_IVRegisters(CRYP_HandleTypeDef *hcryp, uint8_t* Input);
+void HAL_CRYPEx_Read_SuspendRegisters(CRYP_HandleTypeDef *hcryp, uint8_t* Output);
+void HAL_CRYPEx_Write_SuspendRegisters(CRYP_HandleTypeDef *hcryp, uint8_t* Input);
+void HAL_CRYPEx_Read_KeyRegisters(CRYP_HandleTypeDef *hcryp, uint8_t* Output, uint32_t KeySize);
+void HAL_CRYPEx_Write_KeyRegisters(CRYP_HandleTypeDef *hcryp, uint8_t* Input, uint32_t KeySize);
+void HAL_CRYPEx_Read_ControlRegister(CRYP_HandleTypeDef *hcryp, uint8_t* Output);
+void HAL_CRYPEx_Write_ControlRegister(CRYP_HandleTypeDef *hcryp, uint8_t* Input);
+void HAL_CRYPEx_ProcessSuspend(CRYP_HandleTypeDef *hcryp);
+
+/**
+  * @}
+  */  
+  
+
+/**
+  * @}
+  */ 
+  
+/* Private functions -----------------------------------------------------------*/
+/** @addtogroup CRYPEx_Private_Functions CRYPEx Private Functions
+  * @{
+  */
+HAL_StatusTypeDef CRYP_AES_Auth_IT(CRYP_HandleTypeDef *hcryp);
+
+/**
+  * @}
+  */
+
+#endif /* AES */
+
 /**
   * @}
   */ 

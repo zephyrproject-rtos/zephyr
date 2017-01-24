@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_tim_ex.c
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Timer extension peripheral:
@@ -1708,6 +1708,12 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
   *            @arg TIM_TIM11_GPIO:     TIM11 CH4 input is connected to dedicated Timer pin(default) 
   *            @arg TIM_TIM11_HSE:      TIM11 CH4 input is connected to HSE_RTC clock
   *                                     (HSE divided by a programmable prescaler)  
+  *            @arg TIM_TIM9_TIM3_TRGO: TIM9 ITR1 input is connected to TIM3 Trigger output(default)
+  *            @arg TIM_TIM9_LPTIM:     TIM9 ITR1 input is connected to LPTIM.
+  *            @arg TIM_TIM5_TIM3_TRGO: TIM5 ITR1 input is connected to TIM3 Trigger output(default)
+  *            @arg TIM_TIM5_LPTIM:     TIM5 ITR1 input is connected to LPTIM.
+  *            @arg TIM_TIM1_TIM3_TRGO: TIM1 ITR2 input is connected to TIM3 Trigger output(default)
+  *            @arg TIM_TIM1_LPTIM:     TIM1 ITR2 input is connected to LPTIM.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap)
@@ -1717,10 +1723,24 @@ HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap)
   /* Check parameters */
   assert_param(IS_TIM_REMAP_INSTANCE(htim->Instance));
   assert_param(IS_TIM_REMAP(Remap));
-  
+
+#if defined(LPTIM_OR_TIM1_ITR2_RMP)
+  if ((Remap == TIM_TIM9_TIM3_TRGO)|| (Remap == TIM_TIM9_LPTIM)||(Remap ==TIM_TIM5_TIM3_TRGO)||\
+     (Remap == TIM_TIM5_LPTIM)||(Remap == TIM_TIM1_TIM3_TRGO)|| (Remap == TIM_TIM1_LPTIM))
+  {
+    __HAL_RCC_LPTIM1_CLK_ENABLE();
+
+    LPTIM1->OR = (Remap& 0xEFFFFFFF);
+  }
+  else
+  {
+    /* Set the Timer remapping configuration */
+    htim->Instance->OR = Remap;
+  }
+#else
   /* Set the Timer remapping configuration */
   htim->Instance->OR = Remap;
-  
+#endif
   htim->State = HAL_TIM_STATE_READY;
   
   __HAL_UNLOCK(htim);  
