@@ -34,6 +34,28 @@
 
 #define CHANNEL_LENGTH 4
 
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+static uint32_t __get_tim_clk(uint32_t bus_clk,
+			      clock_control_subsys_t *sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	uint32_t tim_clk, apb_psc;
+
+	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
+		apb_psc = CONFIG_CLOCK_STM32_APB1_PRESCALER;
+	} else {
+		apb_psc = CONFIG_CLOCK_STM32_APB2_PRESCALER;
+	}
+
+	if (apb_psc == RCC_HCLK_DIV1) {
+		tim_clk = bus_clk;
+	} else	{
+		tim_clk = 2 * bus_clk;
+	}
+
+	return tim_clk;
+}
+#else
 #ifdef CONFIG_SOC_SERIES_STM32F4X
 static uint32_t __get_tim_clk(uint32_t bus_clk,
 			      clock_control_subsys_t *sub_system)
@@ -87,6 +109,7 @@ static uint32_t __get_tim_clk(uint32_t bus_clk,
 	return tim_clk;
 }
 #endif /* CONFIG_SOC_SERIES_STM32F4X */
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 /*
  * Set the period and pulse width for a PWM pin.
@@ -188,7 +211,8 @@ static int pwm_stm32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 	}
 
 	/* Timer clock depends on APB prescaler */
-#ifdef CONFIG_SOC_SERIES_STM32F4X
+#if defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 	clock_control_get_rate(data->clock,
 			(clock_control_subsys_t *)&cfg->pclken, &bus_clk);
 
@@ -230,7 +254,8 @@ static int pwm_stm32_init(struct device *dev)
 	__pwm_stm32_get_clock(dev);
 
 	/* enable clock */
-#ifdef CONFIG_SOC_SERIES_STM32F4X
+#if defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 	clock_control_on(data->clock,
 			(clock_control_subsys_t *)&config->pclken);
 #else
@@ -249,12 +274,17 @@ static struct pwm_stm32_data pwm_stm32_dev_data_1 = {
 
 static const struct pwm_stm32_config pwm_stm32_dev_cfg_1 = {
 	.pwm_base = TIM1_BASE,
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	.pclken = { .bus = STM32_CLOCK_BUS_APB2,
+		    .enr = LL_APB2_GRP1_PERIPH_TIM1 },
+#else
 #ifdef CONFIG_SOC_SERIES_STM32F4X
 	.pclken = { .bus = STM32F4X_CLOCK_BUS_APB2,
 		    .enr = STM32F4X_CLOCK_ENABLE_TIM1 },
 #else
 	.clock_subsys = UINT_TO_POINTER(CLOCK_SUBSYS_TIM1),
 #endif	/* CONFIG_SOC_SERIES_STM32F4X */
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 };
 
 DEVICE_AND_API_INIT(pwm_stm32_1, CONFIG_PWM_STM32_1_DEV_NAME,
@@ -273,12 +303,17 @@ static struct pwm_stm32_data pwm_stm32_dev_data_2 = {
 
 static const struct pwm_stm32_config pwm_stm32_dev_cfg_2 = {
 	.pwm_base = TIM2_BASE,
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
+		    .enr = LL_APB1_GRP1_PERIPH_TIM2 },
+#else
 #ifdef CONFIG_SOC_SERIES_STM32F4X
 	.pclken = { .bus = STM32F4X_CLOCK_BUS_APB1,
 		    .enr = STM32F4X_CLOCK_ENABLE_TIM2 },
 #else
 	.clock_subsys = UINT_TO_POINTER(CLOCK_SUBSYS_TIM2),
 #endif	/* CONFIG_SOC_SERIES_STM32F4X */
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 };
 
 DEVICE_AND_API_INIT(pwm_stm32_2, CONFIG_PWM_STM32_2_DEV_NAME,
