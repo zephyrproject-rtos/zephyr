@@ -1,0 +1,150 @@
+# Kconfig - MCUXpresso SDK UART
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_MCUX
+	bool "MCUX uart driver"
+	depends on HAS_MCUX
+	default n
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable the MCUX uart driver.
+
+if UART_MCUX
+
+menuconfig UART_MCUX_0
+	bool "UART 0"
+	default n
+	help
+	  Enable UART 0.
+
+if UART_MCUX_0
+
+config UART_MCUX_0_NAME
+	string "UART 0 driver name"
+	default "UART_0"
+
+config UART_MCUX_0_IRQ_PRI
+	int "UART 0 interrupt priority"
+	default 0
+
+config UART_MCUX_0_BAUD_RATE
+	int "UART 0 baud rate"
+	default 115200
+
+endif # UART_MCUX_0
+
+menuconfig UART_MCUX_1
+	bool "UART 1"
+	default n
+	help
+	  Enable UART 1.
+
+if UART_MCUX_1
+
+config UART_MCUX_1_NAME
+	string "UART 1 driver name"
+	default "UART_1"
+
+config UART_MCUX_1_IRQ_PRI
+	int "UART 1 interrupt priority"
+	default 0
+
+config UART_MCUX_1_BAUD_RATE
+	int "UART 1 baud rate"
+	default 115200
+
+endif # UART_MCUX_1
+
+menuconfig UART_MCUX_2
+	bool "UART 2"
+	default n
+	help
+	  Enable UART 2.
+
+if UART_MCUX_2
+
+config UART_MCUX_2_NAME
+	string "UART 2 driver name"
+	default "UART_2"
+
+config UART_MCUX_2_IRQ_PRI
+	int "UART 2 interrupt priority"
+	default 0
+
+config UART_MCUX_2_BAUD_RATE
+	int "UART 2 baud rate"
+	default 115200
+
+endif # UART_MCUX_2
+
+menuconfig UART_MCUX_3
+	bool "UART 3"
+	default n
+	help
+	  Enable UART 3.
+
+if UART_MCUX_3
+
+config UART_MCUX_3_NAME
+	string "UART 3 driver name"
+	default "UART_3"
+
+config UART_MCUX_3_IRQ_PRI
+	int "UART 3 interrupt priority"
+	default 0
+
+config UART_MCUX_3_BAUD_RATE
+	int "UART 3 baud rate"
+	default 115200
+
+endif # UART_MCUX_3
+
+menuconfig UART_MCUX_4
+	bool "UART 4"
+	default n
+	help
+	  Enable UART 4.
+
+if UART_MCUX_4
+
+config UART_MCUX_4_NAME
+	string "UART 4 driver name"
+	default "UART_4"
+
+config UART_MCUX_4_IRQ_PRI
+	int "UART 4 interrupt priority"
+	default 0
+
+config UART_MCUX_4_BAUD_RATE
+	int "UART 4 baud rate"
+	default 115200
+
+endif # UART_MCUX_4
+
+menuconfig UART_MCUX_5
+	bool "UART 5"
+	default n
+	help
+	  Enable UART 5.
+
+if UART_MCUX_5
+
+config UART_MCUX_5_NAME
+	string "UART 5 driver name"
+	default "UART_5"
+
+config UART_MCUX_5_IRQ_PRI
+	int "UART 5 interrupt priority"
+	default 0
+
+config UART_MCUX_5_BAUD_RATE
+	int "UART 5 baud rate"
+	default 115200
+
+endif # UART_MCUX_5
+
+endif # UART_MCUX

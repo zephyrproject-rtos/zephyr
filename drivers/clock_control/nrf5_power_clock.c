@@ -11,6 +11,7 @@
 #include <device.h>
 #include <clock_control.h>
 #include <misc/__assert.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 static uint8_t m16src_ref;
 static uint8_t m16src_grd;
@@ -70,7 +71,7 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 			NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_HFCLKSTARTED_Msk;
 		}
 
-		_NvicIrqUnpend(POWER_CLOCK_IRQn);
+		NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
 
 		irq_enable(POWER_CLOCK_IRQn);
 	} else {
@@ -175,7 +176,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 		NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_LFCLKSTARTED_Msk;
 	}
 
-	_NvicIrqUnpend(POWER_CLOCK_IRQn);
+	NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
 
 	irq_enable(POWER_CLOCK_IRQn);
 
@@ -205,7 +206,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 
 		err = _m16src_start(dev, false);
 		if (!err) {
-			_NvicIrqPend(POWER_CLOCK_IRQn);
+			NVIC_SetPendingIRQ(POWER_CLOCK_IRQn);
 		} else {
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
@@ -283,7 +284,7 @@ static void _power_clock_isr(void *arg)
 
 		err = _m16src_start(dev, false);
 		if (!err) {
-			_NvicIrqPend(POWER_CLOCK_IRQn);
+			NVIC_SetPendingIRQ(POWER_CLOCK_IRQn);
 		} else {
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}

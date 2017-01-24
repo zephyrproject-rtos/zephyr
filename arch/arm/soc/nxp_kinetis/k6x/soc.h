@@ -134,40 +134,10 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#include <fsl_common.h>
 #include <device.h>
 #include <misc/util.h>
 #include <drivers/rand32.h>
-
-/*
- * UART configuration settings
- */
-#if defined(CONFIG_UART_K20)
-
-#include <drivers/k20_pcr.h>
-
-#define UART_IRQ_FLAGS 0
-
-#define UART_K20_PORT_0_CLK_FREQ	SYSCLK_DEFAULT_IOSC_HZ
-#define UART_K20_PORT_0_BASE_ADDR	0x4006A000
-#define UART_K20_PORT_0_IRQ		IRQ_UART0_STATUS
-
-#define UART_K20_PORT_1_CLK_FREQ	SYSCLK_DEFAULT_IOSC_HZ
-#define UART_K20_PORT_1_BASE_ADDR	0x4006B000
-#define UART_K20_PORT_1_IRQ		IRQ_UART1_STATUS
-
-#define UART_K20_PORT_2_CLK_FREQ	BUSCLK_DEFAULT_IOSC_HZ
-#define UART_K20_PORT_2_BASE_ADDR	0x4006C000
-#define UART_K20_PORT_2_IRQ		IRQ_UART2_STATUS
-
-#define UART_K20_PORT_3_CLK_FREQ	BUSCLK_DEFAULT_IOSC_HZ
-#define UART_K20_PORT_3_BASE_ADDR	0x4006D000
-#define UART_K20_PORT_3_IRQ		IRQ_UART3_STATUS
-
-#define UART_K20_PORT_4_CLK_FREQ	BUSCLK_DEFAULT_IOSC_HZ
-#define UART_K20_PORT_4_BASE_ADDR	0x400EA000
-#define UART_K20_PORT_4_IRQ		IRQ_UART4_STATUS
-
-#endif /* CONFIG_UART_K20 */
 
 /*
  * PWM/FTM configuration settings
@@ -176,31 +146,6 @@ extern "C" {
 #define PWM_K64_FTM_1_REG_BASE	0x40039000
 #define PWM_K64_FTM_2_REG_BASE	0x4003A000
 #define PWM_K64_FTM_3_REG_BASE	0x400B9000
-
-/*
- * SPI configuration settings
- */
-#if defined(CONFIG_SPI_K64)
-
-#define SPI_K64_0_BASE_ADDR		0x4002C000
-#define SPI_K64_0_IRQ			IRQ_SPI0
-#define SPI_K64_0_PCS_NUM		6
-#define SPI_K64_0_CLK_GATE_REG_ADDR	0x4004803C
-#define SPI_K64_0_CLK_GATE_REG_BIT	12
-
-#define SPI_K64_1_BASE_ADDR		0x4002D000
-#define SPI_K64_1_IRQ			IRQ_SPI1
-#define SPI_K64_1_PCS_NUM		4
-#define SPI_K64_1_CLK_GATE_REG_ADDR	0x4004803C
-#define SPI_K64_1_CLK_GATE_REG_BIT	13
-
-#define SPI_K64_2_BASE_ADDR		0x400AC000
-#define SPI_K64_2_IRQ			IRQ_SPI2
-#define SPI_K64_2_PCS_NUM		2
-#define SPI_K64_2_CLK_GATE_REG_ADDR	0x40048030
-#define SPI_K64_2_CLK_GATE_REG_BIT	12
-
-#endif /* CONFIG_SPI_K64 */
 
 #endif /* !_ASMLANGUAGE */
 

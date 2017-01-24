@@ -224,32 +224,6 @@ static inline uint8_t _NvicIrqPrioGet(unsigned int irq)
 #endif /* CONFIG_ARMV6_M */
 }
 
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
-/**
- *
- * @brief Trigger an interrupt via software
- *
- * Trigger interrupt #@a irq. The CPU will handle the IRQ when interrupts are
- * enabled and/or returning from a higher priority interrupt.
- *
- * @param irq IRQ number
- * @return N/A
- */
-
-static inline void _NvicSwInterruptTrigger(unsigned int irq)
-{
-#if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
-	/* the QEMU does not simulate the STIR register: this is a workaround */
-	_NvicIrqPend(irq);
-#else
-	__scs.stir = irq;
-#endif
-}
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
-
 #endif /* !_ASMLANGUAGE */
 
 #ifdef __cplusplus

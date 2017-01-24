@@ -20,6 +20,7 @@ The ISRs are installed at build time, directly in the vector table.
 #endif
 
 #include <arch/cpu.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include <tc_util.h>
 #include <sections.h>
 
@@ -94,7 +95,12 @@ void main(void)
 	}
 
 	for (int ii = 0; ii < 3; ii++) {
-		_NvicSwInterruptTrigger(ii);
+#if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+		/* the QEMU does not simulate the STIR register: this is a workaround */
+		NVIC_SetPendingIRQ(ii);
+#else
+		NVIC->STIR = ii;
+#endif
 	}
 
 	rv = nano_task_sem_take(&sem[0], TICKS_NONE) &&

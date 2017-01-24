@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_MPS2
+	bool "ARM MPS2 MCU Series"
+	depends on ARM
+	select SOC_FAMILY_ARM
+	select CPU_CORTEX_M
+	select CPU_HAS_SYSTICK
+	help
+	Enable support for ARM MPS2 MCU Series

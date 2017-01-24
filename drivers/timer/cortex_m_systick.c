@@ -25,6 +25,7 @@
 #include <misc/__assert.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 /* running total of timer count */
 static uint32_t clock_accumulated_count;
@@ -82,16 +83,15 @@ static unsigned char idle_mode = IDLE_NOT_TICKLESS;
  */
 static ALWAYS_INLINE void sysTickStop(void)
 {
-	union __stcsr reg;
+	uint32_t reg;
 
 	/*
 	 * Disable the counter and its interrupt while preserving the
 	 * remaining bits.
 	 */
-	reg.val = __scs.systick.stcsr.val;
-	reg.bit.enable = 0;
-	reg.bit.tickint = 0;
-	__scs.systick.stcsr.val = reg.val;
+	reg = SysTick->CTRL;
+	reg &= ~(SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk);
+	SysTick->CTRL = reg;
 }
 
 #endif /* CONFIG_TICKLESS_IDLE || CONFIG_SYSTEM_CLOCK_DISABLE */
@@ -108,18 +108,17 @@ static ALWAYS_INLINE void sysTickStop(void)
  */
 static ALWAYS_INLINE void sysTickStart(void)
 {
-	union __stcsr reg;
+	uint32_t reg;
 
 	/*
 	 * Enable the counter, its interrupt and set the clock source to be
 	 * the system clock while preserving the remaining bits.
 	 */
-	reg.val =
-		__scs.systick.stcsr.val; /* countflag is cleared by this read */
-	reg.bit.enable = 1;
-	reg.bit.tickint = 1;
-	reg.bit.clksource = 1;
-	__scs.systick.stcsr.val = reg.val;
+	reg = SysTick->CTRL; /* countflag is cleared by this read */
+
+	reg |= SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk |
+	       SysTick_CTRL_CLKSOURCE_Msk;
+	SysTick->CTRL = reg;
 }
 
 /**
@@ -134,7 +133,7 @@ static ALWAYS_INLINE void sysTickStart(void)
  */
 static ALWAYS_INLINE uint32_t sysTickCurrentGet(void)
 {
-	return __scs.systick.stcvr;
+	return SysTick->VAL;
 }
 
 /**
@@ -147,7 +146,7 @@ static ALWAYS_INLINE uint32_t sysTickCurrentGet(void)
  */
 static ALWAYS_INLINE uint32_t sysTickReloadGet(void)
 {
-	return __scs.systick.strvr;
+	return SysTick->LOAD;
 }
 
 #endif /* CONFIG_TICKLESS_IDLE */
@@ -172,8 +171,8 @@ static ALWAYS_INLINE void sysTickReloadSet(
 	 * The countflag in the control/status register is also cleared by
 	 * this operation.
 	 */
-	__scs.systick.strvr = count;
-	__scs.systick.stcvr = 0; /* also clears the countflag */
+	SysTick->LOAD = count;
+	SysTick->VAL = 0; /* also clears the countflag */
 }
 
 /**
@@ -302,7 +301,7 @@ static void sysTickTicklessIdleInit(void)
 {
 	/* enable counter, disable interrupt and set clock src to system clock
 	 */
-	union __stcsr stcsr = {.bit = {1, 0, 1, 0, 0, 0} };
+	uint32_t ctrl = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk;
 
 	volatile uint32_t dummy; /* used to help determine the 'skew time' */
 
@@ -331,12 +330,12 @@ static void sysTickTicklessIdleInit(void)
 	 * Note that the reload value has already been set by the caller.
 	 */
 
-	__scs.systick.stcsr.val |= stcsr.val;
-	__asm__(" isb"); /* ensure the timer is started before reading */
+	SysTick->CTRL |= ctrl;
+	__ISB();
 
 	timer_idle_skew = sysTickCurrentGet(); /* start of skew time */
 
-	__scs.systick.stcsr.val |= stcsr.val; /* normally sysTickStop() */
+	SysTick->CTRL |= ctrl; /* normally sysTickStop() */
 
 	dummy = sysTickCurrentGet(); /* emulate sysTickReloadSet() */
 
@@ -350,7 +349,7 @@ static void sysTickTicklessIdleInit(void)
 	}
 
 	/* _sysTickStart() without interrupts */
-	__scs.systick.stcsr.val |= stcsr.val;
+	SysTick->CTRL |= ctrl;
 
 	timer_mode = TIMER_MODE_PERIODIC;
 
@@ -449,7 +448,7 @@ void _timer_idle_exit(void)
 
 	count = sysTickCurrentGet();
 
-	if ((count == 0) || (__scs.systick.stcsr.bit.countflag)) {
+	if ((count == 0) || (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)) {
 		/*
 		 * The timer expired and/or wrapped around. Re-set the timer to
 		 * its default value and mode.
@@ -516,7 +515,8 @@ void _timer_idle_exit(void)
 int _sys_clock_driver_init(struct device *device)
 {
 	/* enable counter, interrupt and set clock src to system clock */
-	union __stcsr stcsr = {.bit = {1, 1, 1, 0, 0, 0} };
+	uint32_t ctrl = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk |
+			SysTick_CTRL_CLKSOURCE_Msk;
 
 	ARG_UNUSED(device);
 
@@ -539,7 +539,7 @@ int _sys_clock_driver_init(struct device *device)
 
 	_ScbExcPrioSet(_EXC_SYSTICK, _EXC_IRQ_DEFAULT_PRIO);
 
-	__scs.systick.stcsr.val = stcsr.val;
+	SysTick->CTRL = ctrl;
 
 	return 0;
 }
@@ -559,7 +559,7 @@ int _sys_clock_driver_init(struct device *device)
  */
 uint32_t k_cycle_get_32(void)
 {
-	return clock_accumulated_count + (__scs.systick.strvr - __scs.systick.stcvr);
+	return clock_accumulated_count + (SysTick->LOAD - SysTick->VAL);
 }
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE

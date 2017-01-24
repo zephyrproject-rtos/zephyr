@@ -1,0 +1,36 @@
+# Kconfig - MCUXpresso SDK SPI
+#
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SPI_MCUX
+	bool
+	prompt "MCUX SPI driver"
+	depends on SPI && HAS_MCUX
+	default n
+	help
+	Enable support for mcux spi driver.
+
+if SPI_MCUX
+
+config SPI_MCUX_BUF_SIZE
+	int "Number of bytes in the local buffer"
+	default 16
+	help
+	The mcux driver requires that the rx and tx buffers are the same
+	length, however the Zephyr spi interface allows them to be different.
+	When they are different, the mcux shim driver uses a local buffer. This
+	option defines the size of the local buffer.
+
+config SPI_MCUX_DUMMY_CHAR
+	hex "Dummy character"
+	default 0x00
+	range 0x00 0xff
+	help
+	This option configures what value to send when the tx buffer length is
+	less than the rx buffer length.
+
+endif # SPI_MCUX

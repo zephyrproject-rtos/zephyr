@@ -48,13 +48,13 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	/* FXOS8700 INT2 */
 	pinmux_pin_set(portd, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#ifdef CONFIG_UART_K20_PORT_0
+#ifdef CONFIG_UART_MCUX_0
 	/* UART0 RX, TX */
 	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#ifdef CONFIG_UART_K20_PORT_4
+#ifdef CONFIG_UART_MCUX_4
 	/* UART4 RX, TX - BLE */
 	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt3));

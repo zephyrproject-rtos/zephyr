@@ -57,7 +57,7 @@ comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.ns16550"
 
-source "drivers/serial/Kconfig.k20"
+source "drivers/serial/Kconfig.mcux"
 
 source "drivers/serial/Kconfig.stellaris"
 
