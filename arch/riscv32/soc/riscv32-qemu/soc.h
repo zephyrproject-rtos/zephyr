@@ -15,7 +15,7 @@
 #define RISCV_QEMU_MSTATUS               mstatus /* Machine Status Register */
 
 /* IRQ numbers */
-#define RISCV_QEMU_TIMER_IRQ             7  /* Timer Interrupt */
+#define RISCV_MACHINE_TIMER_IRQ          7  /* Machine Timer Interrupt */
 
 /* Exception numbers */
 #define RISCV_QEMU_ECALL_EXP             11 /* ECALL Instruction */
@@ -53,7 +53,8 @@
 #define RISCV_QEMU_UART_BASE         0x40002000
 
 /* Timer configuration */
-#define RISCV_QEMU_TIMER_BASE        0x40000000
+#define RISCV_MTIME_BASE             0x40000000
+#define RISCV_MTIMECMP_BASE          0x40000008
 
 #ifndef _ASMLANGUAGE
 #include <irq.h>

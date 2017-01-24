@@ -39,8 +39,8 @@ SECTION_FUNC(exception.other, __soc_is_irq)
 	li t1, SOC_MCAUSE_IRQ_MASK
 	and t0, t0, t1
 
-	/* if IRQ number != RISCV_QEMU_TIMER_IRQ, not interrupt */
-	li t1, RISCV_QEMU_TIMER_IRQ
+	/* if IRQ number != RISCV_MACHINE_TIMER_IRQ, not interrupt */
+	li t1, RISCV_MACHINE_TIMER_IRQ
 	addi a0, x0, 0
 	bne t0, t1, not_interrupt
 	addi a0, a0, 1
