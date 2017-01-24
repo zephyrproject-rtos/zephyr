@@ -70,10 +70,11 @@ static int console_in(void)
 {
 	unsigned char c;
 
-	if (uart_poll_in(uart_console_dev, &c) < 0)
+	if (uart_poll_in(uart_console_dev, &c) < 0) {
 		return EOF;
-	else
+	} else {
 		return (int)c;
+	}
 }
 #endif
 
@@ -366,8 +367,9 @@ void uart_console_isr(struct device *unused)
 
 		if (!cmd) {
 			cmd = k_fifo_get(avail_queue, K_NO_WAIT);
-			if (!cmd)
+			if (!cmd) {
 				return;
+			}
 		}
 
 		/* Handle ANSI escape mode */
@@ -378,13 +380,9 @@ void uart_console_isr(struct device *unused)
 
 		/* Handle escape mode */
 		if (atomic_test_and_clear_bit(&esc_state, ESC_ESC)) {
-			switch (byte) {
-			case ANSI_ESC:
+			if (byte == ANSI_ESC) {
 				atomic_set_bit(&esc_state, ESC_ANSI);
 				atomic_set_bit(&esc_state, ESC_ANSI_FIRST);
-				break;
-			default:
-				break;
 			}
 
 			continue;
