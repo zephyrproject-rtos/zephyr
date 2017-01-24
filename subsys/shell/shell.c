@@ -124,8 +124,8 @@ static int get_destination_module(const char *module_str)
 
 	for (i = 0; i < NUM_OF_SHELL_ENTITIES; i++) {
 		if (!strncmp(module_str,
-				__shell_cmd_start[i].module_name,
-				MODULE_NAME_MAX_LEN)) {
+			     __shell_cmd_start[i].module_name,
+			     MODULE_NAME_MAX_LEN)) {
 			return i;
 		}
 	}
@@ -180,9 +180,9 @@ static int show_cmd_help(char *argv[])
 	for (i = 0; shell_module->commands[i].cmd_name; i++) {
 		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
 			printk("%s %s\n",
-				shell_module->commands[i].cmd_name,
-				shell_module->commands[i].help ?
-				shell_module->commands[i].help : "");
+			       shell_module->commands[i].cmd_name,
+			       shell_module->commands[i].help ?
+			       shell_module->commands[i].help : "");
 			return 0;
 		}
 	}
@@ -313,6 +313,12 @@ static shell_cmd_function_t get_cb(int argc, char *argv[])
 	return NULL;
 }
 
+static inline void print_cmd_unknown(char *argv)
+{
+	printk("Unrecognized command: %s\n", argv);
+	printk("Type 'help' for list of available commands\n");
+}
+
 static void shell(void *p1, void *p2, void *p3)
 {
 	char *argv[ARGC_MAX + 1];
@@ -341,8 +347,7 @@ static void shell(void *p1, void *p2, void *p3)
 			if (app_cmd_handler != NULL) {
 				cb = app_cmd_handler;
 			} else {
-				printk("Unrecognized command: %s\n", argv[0]);
-				printk("Type 'help' for list of available commands\n");
+				print_cmd_unknown(argv[0]);
 				k_fifo_put(&avail_queue, cmd);
 				continue;
 			}
@@ -539,4 +544,3 @@ void shell_register_default_module(const char *name)
 		printk("\n%s", default_module_prompt);
 	}
 }
-
