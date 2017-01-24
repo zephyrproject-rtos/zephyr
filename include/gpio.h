@@ -120,20 +120,6 @@ extern "C" {
 /** Disable GPIO pin. */
 #define GPIO_PIN_DISABLE	(1 << 11)
 
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_PP_OD_POS		12
-/** @endcond */
-
-/** Enable GPIO pin push-pull. */
-#define GPIO_PUSH_PULL		(0 << GPIO_PP_OD_POS)
-
-/** Enable GPIO pin open drain. */
-#define GPIO_OPEN_DRAIN		(1 << GPIO_PP_OD_POS)
-
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_PP_OD_MASK		(1 << GPIO_PP_OD_POS)
-/** @endcond */
-
 /* GPIO_DS_* are for pin drive strength configuration.
  *
  * The drive strength of individual pins can be configured
@@ -161,7 +147,7 @@ extern "C" {
  */
 
 /** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_LOW_POS 13
+#define GPIO_DS_LOW_POS 12
 #define GPIO_DS_LOW_MASK (0x3 << GPIO_DS_LOW_POS)
 /** @endcond */
 
@@ -182,7 +168,7 @@ extern "C" {
 #define GPIO_DS_DISCONNECT_LOW (0x3 << GPIO_DS_LOW_POS)
 
 /** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_HIGH_POS 15
+#define GPIO_DS_HIGH_POS 14
 #define GPIO_DS_HIGH_MASK (0x3 << GPIO_DS_HIGH_POS)
 /** @endcond */
 
