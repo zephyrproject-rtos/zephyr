@@ -38,8 +38,41 @@ extern "C" {
 
 #include <arch/xtensa/exc.h>
 
-#define find_lsb_set __builtin_ffs
-#define find_msb_set __builtin_clz
+/**
+ *
+ * @brief find most significant bit set in a 32-bit word
+ *
+ * This routine finds the first bit set starting from the most significant bit
+ * in the argument passed in and returns the index of that bit.  Bits are
+ * numbered starting at 1 from the least significant bit.  A return value of
+ * zero indicates that the value passed is zero.
+ *
+ * @return most significant bit set, 0 if @a op is 0
+ */
+
+static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
+{
+	if (!op)
+		return 0;
+	return 32 - __builtin_clz(op);
+}
+
+/**
+ *
+ * @brief find least significant bit set in a 32-bit word
+ *
+ * This routine finds the first bit set starting from the least significant bit
+ * in the argument passed in and returns the index of that bit.  Bits are
+ * numbered starting at 1 from the least significant bit.  A return value of
+ * zero indicates that the value passed is zero.
+ *
+ * @return least significant bit set, 0 if @a op is 0
+ */
+
+static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
+{
+	return __builtin_ffs(op);
+}
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void _irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
