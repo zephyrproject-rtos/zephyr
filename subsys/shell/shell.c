@@ -14,9 +14,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <console/uart_console.h>
+#include <console/console.h>
 #include <misc/printk.h>
 #include <misc/util.h>
+
+#ifdef CONFIG_UART_CONSOLE
+#include <console/uart_console.h>
+#endif
 
 #include <shell/shell.h>
 
@@ -40,7 +44,7 @@ static int default_module = -1;
 static char __stack stack[STACKSIZE];
 
 #define MAX_CMD_QUEUED 3
-static struct uart_console_input buf[MAX_CMD_QUEUED];
+static struct console_input buf[MAX_CMD_QUEUED];
 
 static struct k_fifo avail_queue;
 static struct k_fifo cmds_queue;
@@ -329,7 +333,7 @@ static void shell(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	while (1) {
-		struct uart_console_input *cmd;
+		struct console_input *cmd;
 		shell_cmd_function_t cb;
 
 		printk("%s", get_prompt());
@@ -505,6 +509,7 @@ static uint8_t completion(char *line, uint8_t len)
 	return common_chars - command_len + space;
 }
 
+
 void shell_init(const char *str)
 {
 	k_fifo_init(&cmds_queue);
@@ -518,7 +523,9 @@ void shell_init(const char *str)
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Register serial console handler */
+#ifdef CONFIG_UART_CONSOLE
 	uart_register_input(&avail_queue, &cmds_queue, completion);
+#endif
 }
 
 /** @brief Optionally register an app default cmd handler.

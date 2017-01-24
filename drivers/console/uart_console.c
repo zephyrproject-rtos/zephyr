@@ -26,6 +26,7 @@
 
 #include <board.h>
 #include <uart.h>
+#include <console/console.h>
 #include <console/uart_console.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -340,7 +341,7 @@ void uart_console_isr(struct device *unused)
 
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {
-		static struct uart_console_input *cmd;
+		static struct console_input *cmd;
 		uint8_t byte;
 		int rx;
 
