@@ -683,7 +683,9 @@ else
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 KBUILD_CFLAGS += $(call cc-option,-fno-reorder-functions)
+ifneq (${ZEPHYR_GCC_VARIANT},xcc)
 KBUILD_CFLAGS += $(call cc-option,-fno-defer-pop)
+endif
 endif
 
 # We trigger additional mismatches with less inlining
