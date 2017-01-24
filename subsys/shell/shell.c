@@ -43,7 +43,7 @@ static int default_module = -1;
 #define STACKSIZE CONFIG_CONSOLE_SHELL_STACKSIZE
 static char __stack stack[STACKSIZE];
 
-#define MAX_CMD_QUEUED 3
+#define MAX_CMD_QUEUED CONFIG_CONSOLE_SHELL_MAX_CMD_QUEUED
 static struct console_input buf[MAX_CMD_QUEUED];
 
 static struct k_fifo avail_queue;
