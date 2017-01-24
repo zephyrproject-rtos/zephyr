@@ -452,7 +452,7 @@ static struct i2c_stm32lx_data i2c_stm32lx_dev_data_0 = {
 
 DEVICE_AND_API_INIT(i2c_stm32lx_0, CONFIG_I2C_0_NAME, &i2c_stm32lx_init,
 		    &i2c_stm32lx_dev_data_0, &i2c_stm32lx_cfg_0,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);
 
 #ifdef CONFIG_I2C_STM32LX_INTERRUPT
