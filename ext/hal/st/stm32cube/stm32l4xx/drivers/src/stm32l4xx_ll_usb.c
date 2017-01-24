@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_usb.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   USB Low Layer HAL module driver.
   *   
   *          This file provides firmware functions to manage the following 
@@ -64,10 +64,9 @@
   */
 #if defined (HAL_PCD_MODULE_ENABLED) || defined (HAL_HCD_MODULE_ENABLED)
 
-#if defined(STM32L475xx) || defined(STM32L476xx) || \
-    defined(STM32L485xx) || defined(STM32L486xx) || \
-    defined(STM32L432xx) || defined(STM32L433xx) || \
-    defined(STM32L442xx) || defined(STM32L443xx)
+#if defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || defined(STM32L443xx) || \
+    defined(STM32L452xx) || defined(STM32L462xx) || \
+    defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
       
 /** @addtogroup STM32L4xx_LL_USB_DRIVER
   * @{
@@ -646,8 +645,9 @@ HAL_StatusTypeDef USB_EPStartXfer(USB_OTG_GlobalTypeDef *USBx , USB_OTG_EPTypeDe
 HAL_StatusTypeDef USB_EP0StartXfer(USB_OTG_GlobalTypeDef *USBx , USB_OTG_EPTypeDef *ep, uint8_t dma)
 {
   /* Prevent unused argument(s) compilation warning */
+  UNUSED(USBx);
   UNUSED(dma);
-
+  
   /* IN endpoint */
   if (ep->is_in == 1)
   {
@@ -725,8 +725,9 @@ HAL_StatusTypeDef USB_EP0StartXfer(USB_OTG_GlobalTypeDef *USBx , USB_OTG_EPTypeD
 HAL_StatusTypeDef USB_WritePacket(USB_OTG_GlobalTypeDef *USBx, uint8_t *src, uint8_t ch_ep_num, uint16_t len, uint8_t dma)
 {
   /* Prevent unused argument(s) compilation warning */
+  UNUSED(USBx);
   UNUSED(dma);
-
+  
   uint32_t count32b= 0 , index= 0;
   count32b =  (len + 3) / 4;
   for (index = 0; index < count32b; index++, src += 4)
@@ -1018,7 +1019,6 @@ HAL_StatusTypeDef  USB_ActivateSetup (USB_OTG_GlobalTypeDef *USBx)
 HAL_StatusTypeDef USB_EP0_OutStart(USB_OTG_GlobalTypeDef *USBx, uint8_t dma, uint8_t *psetup)
 {
   /* Prevent unused argument(s) compilation warning */
-  UNUSED(dma);
   UNUSED(psetup);
 
   USBx_OUTEP(0)->DOEPTSIZ = 0;
@@ -1897,9 +1897,6 @@ HAL_StatusTypeDef USB_EPStartXfer(USB_TypeDef *USBx , USB_EPTypeDef *ep, uint8_t
   uint16_t pmabuffer = 0;
   uint32_t len = ep->xfer_len;
   
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(dma);
-
   /* IN endpoint */
   if (ep->is_in == 1)
   {
@@ -2114,9 +2111,6 @@ HAL_StatusTypeDef  USB_SetDevAddress (USB_TypeDef *USBx, uint8_t address)
   */
 HAL_StatusTypeDef  USB_DevConnect (USB_TypeDef *USBx)
 {
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(USBx);
-
   /* Enabling DP Pull-Down bit to Connect internal pull-up on USB DP line */
   USB->BCDR |= USB_BCDR_DPPU;
   
@@ -2130,9 +2124,6 @@ HAL_StatusTypeDef  USB_DevConnect (USB_TypeDef *USBx)
   */
 HAL_StatusTypeDef  USB_DevDisconnect (USB_TypeDef *USBx)
 {
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(USBx);
-
   /* Disable DP Pull-Down bit*/
   USB->BCDR &= ~(USB_BCDR_DPPU);
    
@@ -2263,9 +2254,9 @@ HAL_StatusTypeDef USB_EP0_OutStart(USB_TypeDef *USBx, uint8_t dma ,uint8_t *pset
 
   /* Prevent unused argument(s) compilation warning */
   UNUSED(USBx);
-  UNUSED(dma);
   UNUSED(psetup);
-
+  UNUSED(dma);
+  
   return HAL_OK;
 }
 
@@ -2389,10 +2380,9 @@ static HAL_StatusTypeDef USB_CoreReset(USB_OTG_GlobalTypeDef *USBx)
   */
 #endif /* USB_OTG_FS */
 
-#endif /* STM32L475xx || STM32L476xx || */
-       /* STM32L485xx || STM32L486xx || */
-       /* STM32L432xx || STM32L433xx || */
-       /* STM32L442xx || STM32L443xx    */
+#endif /* STM32L432xx || STM32L433xx || STM32L442xx || STM32L443xx || */
+       /* STM32L452xx || STM32L462xx || */
+       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
 
 #endif /* defined (HAL_PCD_MODULE_ENABLED) || defined (HAL_HCD_MODULE_ENABLED) */
 /**

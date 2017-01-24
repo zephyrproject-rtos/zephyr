@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_uart.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of UART HAL module.
   ******************************************************************************
   * @attention
@@ -650,22 +650,10 @@ typedef struct
 #define UART_IT_CTS                         ((uint32_t)0x096A)                  /*!< UART CTS interruption                          */
 #define UART_IT_CM                          ((uint32_t)0x112E)                  /*!< UART character match interruption              */
 #define UART_IT_WUF                         ((uint32_t)0x1476)                  /*!< UART wake-up from stop mode interruption       */
-
-/**       Elements values convention: 000000000XXYYYYYb
-  *           - YYYYY  : Interrupt source position in the XX register (5bits)
-  *           - XX  : Interrupt source register (2bits)
-  *                 - 01: CR1 register
-  *                 - 10: CR2 register
-  *                 - 11: CR3 register
-  */
-#define UART_IT_ERR                         ((uint32_t)0x0060)                  /*!< UART error interruption         */   
-
-/**       Elements values convention: 0000ZZZZ00000000b
-  *           - ZZZZ  : Flag position in the ISR register(4bits)
-  */
-#define UART_IT_ORE                         ((uint32_t)0x0300)                  /*!< UART overrun error interruption */ 
-#define UART_IT_NE                          ((uint32_t)0x0200)                  /*!< UART noise error interruption   */ 
-#define UART_IT_FE                          ((uint32_t)0x0100)                  /*!< UART frame error interruption   */ 
+#define UART_IT_ERR                         ((uint32_t)0x0060)                  /*!< UART error interruption                        */
+#define UART_IT_ORE                         ((uint32_t)0x0300)                  /*!< UART overrun error interruption                */
+#define UART_IT_NE                          ((uint32_t)0x0200)                  /*!< UART noise error interruption                  */
+#define UART_IT_FE                          ((uint32_t)0x0100)                  /*!< UART frame error interruption                  */
 /**
   * @}
   */

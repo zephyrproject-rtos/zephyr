@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_adc.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of ADC LL module.
   ******************************************************************************
   * @attention
@@ -733,7 +733,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_LP_MODE  ADC instance - Low power mode
   * @{
   */
-#define LL_ADC_LP_MODE_NONE                ((uint32_t)0x00000000U)              /*!< No ADC low power mode activated */
+#define LL_ADC_LP_MODE_NONE                ((uint32_t)0x00000000U)             /*!< No ADC low power mode activated */
 #define LL_ADC_LP_AUTOWAIT                 (ADC_CFGR_AUTDLY)                   /*!< ADC low power mode auto delay: Dynamic low power mode, ADC conversions are performed only when necessary (when previous ADC conversion data is read). See description with function @ref LL_ADC_SetLowPowerMode(). */
 /**
   * @}
@@ -861,6 +861,28 @@ typedef struct
 /**
   * @}
   */
+
+#if defined(ADC_CFGR_DFSDMCFG)
+/** @defgroup ADC_LL_EC_REG_DFSDM_TRANSFER ADC group regular - DFSDM transfer of ADC conversion data
+  * @{
+  */
+#define LL_ADC_REG_DFSDM_TRANSFER_NONE     ((uint32_t)0x00000000U) /*!< ADC conversions are not transferred by DFSDM. */
+#define LL_ADC_REG_DFSDM_TRANSFER_ENABLE   (ADC_CFGR_DFSDMCFG)     /*!< ADC conversion data are transfered to DFSDM for post processing. The ADC conversion data format must be 16-bit signed and right aligned, refer to reference manual. DFSDM transfer cannot be used if DMA transfer is enabled. */
+/**
+  * @}
+  */
+#endif /* ADC_CFGR_DFSDMCFG */
+
+#if defined(ADC_SMPR1_SMPPLUS)
+/** @defgroup ADC_LL_EC_SAMPLINGTIME_COMMON_CONFIG ADC instance - ADC sampling time common configuration
+  * @{
+  */
+#define LL_ADC_SAMPLINGTIME_COMMON_DEFAULT      ((uint32_t)0x00000000U)       /*!< ADC sampling time let to default settings. */
+#define LL_ADC_SAMPLINGTIME_COMMON_3C5_REPL_2C5 ((uint32_t)ADC_SMPR1_SMPPLUS) /*!< ADC additional sampling time 3.5 ADC clock cycles replacing 2.5 ADC clock cycles (this applies to all channels mapped with selection sampling time 2.5 ADC clock cycles, whatever channels mapped on ADC groups regular or injected). */
+/**
+  * @}
+  */
+#endif /* ADC_SMPR1_SMPPLUS */
 
 /** @defgroup ADC_LL_EC_REG_OVR_DATA_BEHAVIOR  ADC group regular - Overrun behavior on conversion data
 * @{
@@ -2994,6 +3016,41 @@ __STATIC_INLINE uint32_t LL_ADC_GetOffsetState(ADC_TypeDef *ADCx, uint32_t Offse
   return (uint32_t) READ_BIT(*preg, ADC_OFR1_OFFSET1_EN);
 }
 
+#if defined(ADC_SMPR1_SMPPLUS)
+/**
+  * @brief  Set ADC sampling time common configuration impacting
+  *         settings of sampling time channel wise.
+  * @note   On this STM32 serie, setting of this feature is conditioned to
+  *         ADC state:
+  *         ADC must be disabled or enabled without conversion on going
+  *         on either groups regular or injected.
+  * @rmtoll SMPR1    SMPPLUS        LL_ADC_SetSamplingTimeCommonConfig
+  * @param  ADCx ADC instance
+  * @param  SamplingTimeCommonConfig This parameter can be one of the following values:
+  *         @arg @ref LL_ADC_SAMPLINGTIME_COMMON_DEFAULT
+  *         @arg @ref LL_ADC_SAMPLINGTIME_COMMON_3C5_REPL_2C5
+  * @retval None
+  */
+__STATIC_INLINE void LL_ADC_SetSamplingTimeCommonConfig(ADC_TypeDef *ADCx, uint32_t SamplingTimeCommonConfig)
+{
+  MODIFY_REG(ADCx->SMPR1, ADC_SMPR1_SMPPLUS, SamplingTimeCommonConfig);
+}
+
+/**
+  * @brief  Get ADC sampling time common configuration impacting
+  *         settings of sampling time channel wise.
+  * @rmtoll SMPR1    SMPPLUS        LL_ADC_GetSamplingTimeCommonConfig
+  * @param  ADCx ADC instance
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref LL_ADC_SAMPLINGTIME_COMMON_DEFAULT
+  *         @arg @ref LL_ADC_SAMPLINGTIME_COMMON_3C5_REPL_2C5
+  */
+__STATIC_INLINE uint32_t LL_ADC_GetSamplingTimeCommonConfig(ADC_TypeDef *ADCx)
+{
+  return (uint32_t)(READ_BIT(ADCx->SMPR1, ADC_SMPR1_SMPPLUS));
+}
+#endif /* ADC_SMPR1_SMPPLUS */
+
 /**
   * @}
   */
@@ -3645,6 +3702,42 @@ __STATIC_INLINE uint32_t LL_ADC_REG_GetDMATransfer(ADC_TypeDef *ADCx)
   return (uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_DMAEN | ADC_CFGR_DMACFG));
 }
 
+#if defined(ADC_CFGR_DFSDMCFG)
+/**
+  * @brief  Set ADC group regular conversion data transfer to DFSDM.
+  * @note   DFSDM transfer cannot be used if DMA transfer is enabled.
+  * @note   To configure DFSDM source address (peripheral address),
+  *         use the same function as for DMA transfer:
+  *         function @ref LL_ADC_DMA_GetRegAddr().
+  * @note   On this STM32 serie, setting of this feature is conditioned to
+  *         ADC state:
+  *         ADC must be disabled or enabled without conversion on going
+  *         on either groups regular or injected.
+  * @rmtoll CFGR     DFSDMCFG       LL_ADC_REG_GetDFSDMTransfer
+  * @param  ADCx ADC instance
+  * @param  DFSDMTransfer This parameter can be one of the following values:
+  *         @arg @ref LL_ADC_REG_DFSDM_TRANSFER_NONE
+  *         @arg @ref LL_ADC_REG_DFSDM_TRANSFER_ENABLE
+  * @retval None
+  */
+__STATIC_INLINE void LL_ADC_REG_SetDFSDMTransfer(ADC_TypeDef *ADCx, uint32_t DFSDMTransfer)
+{
+  MODIFY_REG(ADCx->CFGR, ADC_CFGR_DFSDMCFG, DFSDMTransfer);
+}
+
+/**
+  * @brief  Get ADC group regular conversion data transfer to DFSDM.
+  * @rmtoll CFGR     DFSDMCFG       LL_ADC_REG_GetDFSDMTransfer
+  * @param  ADCx ADC instance
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref LL_ADC_REG_DFSDM_TRANSFER_NONE
+  *         @arg @ref LL_ADC_REG_DFSDM_TRANSFER_ENABLE
+  */
+__STATIC_INLINE uint32_t LL_ADC_REG_GetDFSDMTransfer(ADC_TypeDef *ADCx)
+{
+  return (uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_DFSDMCFG));
+}
+#endif /* ADC_CFGR_DFSDMCFG */
 
 /**
   * @brief  Set ADC group regular behavior in case of overrun:
@@ -4525,7 +4618,7 @@ __STATIC_INLINE void LL_ADC_INJ_ConfigQueueContext(ADC_TypeDef *ADCx,
   *         (7) On STM32L4, fast channel (0.188 us for 12-bit resolution (ADC conversion rate up to 5.33 Ms/s)).
   *             Other channels are slow channels (0.238 us for 12-bit resolution (ADC conversion rate up to 4.21 Ms/s)).
   * @param  SamplingTime This parameter can be one of the following values:
-  *         @arg @ref LL_ADC_SAMPLINGTIME_2CYCLES_5
+  *         @arg @ref LL_ADC_SAMPLINGTIME_2CYCLES_5   (1)
   *         @arg @ref LL_ADC_SAMPLINGTIME_6CYCLES_5
   *         @arg @ref LL_ADC_SAMPLINGTIME_12CYCLES_5
   *         @arg @ref LL_ADC_SAMPLINGTIME_24CYCLES_5
@@ -4533,6 +4626,10 @@ __STATIC_INLINE void LL_ADC_INJ_ConfigQueueContext(ADC_TypeDef *ADCx,
   *         @arg @ref LL_ADC_SAMPLINGTIME_92CYCLES_5
   *         @arg @ref LL_ADC_SAMPLINGTIME_247CYCLES_5
   *         @arg @ref LL_ADC_SAMPLINGTIME_640CYCLES_5
+  *
+  *         (1) On some devices, ADC sampling time 2.5 ADC clock cycles
+  *             can be replaced by 3.5 ADC clock cycles.
+  *             Refer to function @ref LL_ADC_SetSamplingTimeCommonConfig().
   * @retval None
   */
 __STATIC_INLINE void LL_ADC_SetChannelSamplingTime(ADC_TypeDef *ADCx, uint32_t Channel, uint32_t SamplingTime)
@@ -4618,7 +4715,7 @@ __STATIC_INLINE void LL_ADC_SetChannelSamplingTime(ADC_TypeDef *ADCx, uint32_t C
   *         (7) On STM32L4, fast channel (0.188 us for 12-bit resolution (ADC conversion rate up to 5.33 Ms/s)).
   *             Other channels are slow channels (0.238 us for 12-bit resolution (ADC conversion rate up to 4.21 Ms/s)).
   * @retval Returned value can be one of the following values:
-  *         @arg @ref LL_ADC_SAMPLINGTIME_2CYCLES_5
+  *         @arg @ref LL_ADC_SAMPLINGTIME_2CYCLES_5   (1)
   *         @arg @ref LL_ADC_SAMPLINGTIME_6CYCLES_5
   *         @arg @ref LL_ADC_SAMPLINGTIME_12CYCLES_5
   *         @arg @ref LL_ADC_SAMPLINGTIME_24CYCLES_5
@@ -4626,6 +4723,10 @@ __STATIC_INLINE void LL_ADC_SetChannelSamplingTime(ADC_TypeDef *ADCx, uint32_t C
   *         @arg @ref LL_ADC_SAMPLINGTIME_92CYCLES_5
   *         @arg @ref LL_ADC_SAMPLINGTIME_247CYCLES_5
   *         @arg @ref LL_ADC_SAMPLINGTIME_640CYCLES_5
+  *
+  *         (1) On some devices, ADC sampling time 2.5 ADC clock cycles
+  *             can be replaced by 3.5 ADC clock cycles.
+  *             Refer to function @ref LL_ADC_SetSamplingTimeCommonConfig().
   */
 __STATIC_INLINE uint32_t LL_ADC_GetChannelSamplingTime(ADC_TypeDef *ADCx, uint32_t Channel)
 {

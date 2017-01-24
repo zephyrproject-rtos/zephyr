@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_lptim.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of LPTIM LL module.
   ******************************************************************************
   * @attention
@@ -282,6 +282,7 @@ typedef struct
 /** @defgroup LPTIM_EC_INPUT1_SRC Input1 Source
   * @{
   */
+
 #define LL_LPTIM_INPUT1_SRC_GPIO         ((uint32_t)0x00000000U) /*!< For LPTIM1 and LPTIM2 */
 #define LL_LPTIM_INPUT1_SRC_COMP1        LPTIM_OR_OR_0           /*!< For LPTIM1 and LPTIM2 */
 #define LL_LPTIM_INPUT1_SRC_COMP2        LPTIM_OR_OR_1           /*!< For LPTIM2 */
@@ -293,6 +294,7 @@ typedef struct
 /** @defgroup LPTIM_EC_INPUT2_SRC Input2 Source
   * @{
   */
+
 #define LL_LPTIM_INPUT2_SRC_GPIO         ((uint32_t)0x00000000U) /*!< For LPTIM1 */
 #define LL_LPTIM_INPUT2_SRC_COMP2        LPTIM_OR_OR_1           /*!< For LPTIM1 */
 /**

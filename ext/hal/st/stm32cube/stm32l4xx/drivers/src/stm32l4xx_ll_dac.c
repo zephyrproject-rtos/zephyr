@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_dac.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   DAC LL module driver
   ******************************************************************************
   * @attention
@@ -65,11 +65,18 @@
   * @{
   */
 
+#if defined(DAC_CHANNEL2_SUPPORT)
 #define IS_LL_DAC_CHANNEL(__DACX__, __DAC_CHANNEL__)                           \
   (                                                                            \
       ((__DAC_CHANNEL__) == LL_DAC_CHANNEL_1)                                  \
    || ((__DAC_CHANNEL__) == LL_DAC_CHANNEL_2)                                  \
   )
+#else
+#define IS_LL_DAC_CHANNEL(__DACX__, __DAC_CHANNEL__)                           \
+  (                                                                            \
+   ((__DAC_CHANNEL__) == LL_DAC_CHANNEL_1)                                     \
+  )
+#endif /* DAC_CHANNEL2_SUPPORT */
 
 #define IS_LL_DAC_TRIGGER_SOURCE(__TRIGGER_SOURCE__)                           \
   (   ((__TRIGGER_SOURCE__) == LL_DAC_TRIG_SOFTWARE)                           \
@@ -176,7 +183,10 @@ ErrorStatus LL_DAC_DeInit(DAC_TypeDef *DACx)
   * @param  DACx DAC instance
   * @param  DAC_Channel This parameter can be one of the following values:
   *         @arg @ref LL_DAC_CHANNEL_1
-  *         @arg @ref LL_DAC_CHANNEL_2
+  *         @arg @ref LL_DAC_CHANNEL_2 (1)
+  *         
+  *         (1) On this STM32 serie, parameter not available on all devices.
+  *             Refer to device datasheet for channels availability.
   * @param  DAC_InitStruct Pointer to a @ref LL_DAC_InitTypeDef structure
   * @retval An ErrorStatus enumeration value:
   *          - SUCCESS: DAC registers are initialized

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_adc.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0 
+  * @date    28-October-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Analog to Digital Convertor (ADC)
   *          peripheral:
@@ -191,6 +191,12 @@
              using macro __ADCx_FORCE_RESET(), __ADCx_RELEASE_RESET().
         (++) ADC clock disable
              using the equivalent macro/functions as configuration step.
+             (+++) Example:
+                   Into HAL_ADC_MspDeInit() (recommended code location) or with
+                   other device clock parameters configuration:
+               (+++) RCC_OscInitStructure.OscillatorType = RCC_OSCILLATORTYPE_HSI14;
+               (+++) RCC_OscInitStructure.HSI14State = RCC_HSI14_OFF; (if not used for system clock)
+               (+++) HAL_RCC_OscConfig(&RCC_OscInitStructure);
 
     (#) ADC pins configuration
          (++) Disable the clock for the ADC GPIOs
@@ -384,6 +390,7 @@ HAL_StatusTypeDef HAL_ADC_Init(ADC_HandleTypeDef* hadc)
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
   assert_param(IS_ADC_CLOCKPRESCALER(hadc->Init.ClockPrescaler));
   assert_param(IS_ADC_RESOLUTION(hadc->Init.Resolution));
+  assert_param(IS_ADC_DFSDMCFG_MODE(hadc));
   assert_param(IS_ADC_DATA_ALIGN(hadc->Init.DataAlign)); 
   assert_param(IS_ADC_SCAN_MODE(hadc->Init.ScanConvMode));
   assert_param(IS_FUNCTIONAL_STATE(hadc->Init.ContinuousConvMode));
@@ -555,7 +562,8 @@ HAL_StatusTypeDef HAL_ADC_Init(ADC_HandleTypeDef* hadc)
     /*  - Oversampling parameters         Init.Oversampling                   */
     if (ADC_IS_CONVERSION_ONGOING_REGULAR_INJECTED(hadc) == RESET)
     {
-      tmpCFGR = ( ADC_CFGR_AUTOWAIT(hadc->Init.LowPowerAutoWait)       |
+      tmpCFGR = ( ADC_CFGR_DFSDM(hadc)                                 |
+                  ADC_CFGR_AUTOWAIT(hadc->Init.LowPowerAutoWait)       |
                   ADC_CFGR_DMACONTREQ(hadc->Init.DMAContinuousRequests) );
                
       MODIFY_REG(hadc->Instance->CFGR, ADC_CFGR_FIELDS_2, tmpCFGR);                    

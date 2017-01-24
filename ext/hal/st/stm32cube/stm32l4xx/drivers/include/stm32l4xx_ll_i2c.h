@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_i2c.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of I2C LL module.
   ******************************************************************************
   * @attention
@@ -50,7 +50,7 @@ extern "C" {
   * @{
   */
 
-#if defined (I2C1) || defined (I2C2) || defined (I2C3)
+#if defined (I2C1) || defined (I2C2) || defined (I2C3) || defined (I2C4)
 
 /** @defgroup I2C_LL I2C
   * @{
@@ -2241,7 +2241,7 @@ void LL_I2C_StructInit(LL_I2C_InitTypeDef *I2C_InitStruct);
   * @}
   */
 
-#endif /* I2C1 || I2C2 || I2C3 */
+#endif /* I2C1 || I2C2 || I2C3 || I2C4 */
 
 /**
   * @}

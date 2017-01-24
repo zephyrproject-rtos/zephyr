@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_cryp.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of CRYP HAL module.
   ******************************************************************************
   * @attention
@@ -43,7 +43,7 @@
  extern "C" {
 #endif
 
-#if defined (STM32L442xx) || defined (STM32L443xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
@@ -82,15 +82,17 @@ typedef struct
                              This parameter can be a value of @ref CRYP_Key_Write */                             
                              
   uint32_t GCMCMACPhase;   /*!< Indicates the processing phase of the Galois Counter Mode (GCM), 
-                             Galois Message Authentication Code (GMAC) or Cipher Message 
-                             Authentication Code (CMAC) mode. 
+                             Galois Message Authentication Code (GMAC), Cipher Message 
+                             Authentication Code (CMAC) (when applicable) or Counter with Cipher 
+                             Mode (CCM) (when applicable).
                              This parameter can be a value of @ref CRYP_GCM_CMAC_Phase */                                                                                          
 
   uint8_t* pKey;           /*!< Encryption/Decryption Key */
 
-  uint8_t* pInitVect;      /*!< Initialization Vector used for CTR, CBC, GCM/GMAC and CMAC modes */
+  uint8_t* pInitVect;      /*!< Initialization Vector used for CTR, CBC, GCM/GMAC, CMAC (when applicable) 
+                                and CCM (when applicable) modes */
 
-  uint8_t* Header;         /*!< Header used in GCM/GMAC and CMAC modes */
+  uint8_t* Header;         /*!< Header used in GCM/GMAC, CMAC (when applicable) and CCM (when applicable) modes */
 
   uint64_t HeaderSize;     /*!< Header size in bytes */
                                                      
@@ -114,17 +116,17 @@ typedef enum
   */
 typedef enum
 {
-  HAL_CRYP_PHASE_READY             = 0x01,    /*!< CRYP peripheral is ready for initialization.     */
-  HAL_CRYP_PHASE_PROCESS           = 0x02,    /*!< CRYP peripheral is in processing phase           */
-  HAL_CRYP_PHASE_START             = 0x03,    /*!< CRYP peripheral has been initialized but GCM/GMAC/CMAC
-                                                   initialization phase has not started             */
-  HAL_CRYP_PHASE_INIT_OVER         = 0x04,    /*!< GCM/GMAC/CMAC init phase has been carried out    */ 
-  HAL_CRYP_PHASE_HEADER_OVER       = 0x05,    /*!< GCM/GMAC/CMAC header phase has been carried out  */ 
-  HAL_CRYP_PHASE_PAYLOAD_OVER      = 0x06,    /*!< GCM/GMAC/CMAC payload phase has been carried out */ 
-  HAL_CRYP_PHASE_FINAL_OVER        = 0x07,    /*!< GCM/GMAC/CMAC final phase has been carried out   */
-  HAL_CRYP_PHASE_HEADER_SUSPENDED  = 0x08,    /*!< GCM/GMAC/CMAC header phase has been suspended    */
-  HAL_CRYP_PHASE_PAYLOAD_SUSPENDED = 0x09,    /*!< GCM/GMAC payload phase has been suspended        */  
-  HAL_CRYP_PHASE_NOT_USED          = 0x0a     /*!< Phase is irrelevant to the current chaining mode */                                                                                                                                                                                                                                                                   
+  HAL_CRYP_PHASE_READY             = 0x01,    /*!< CRYP peripheral is ready for initialization.             */
+  HAL_CRYP_PHASE_PROCESS           = 0x02,    /*!< CRYP peripheral is in processing phase                   */
+  HAL_CRYP_PHASE_START             = 0x03,    /*!< CRYP peripheral has been initialized but 
+                                                 GCM/GMAC(/CMAC)(/CCM) initialization phase has not started */
+  HAL_CRYP_PHASE_INIT_OVER         = 0x04,    /*!< GCM/GMAC(/CMAC)(/CCM) init phase has been carried out    */ 
+  HAL_CRYP_PHASE_HEADER_OVER       = 0x05,    /*!< GCM/GMAC(/CMAC)(/CCM) header phase has been carried out  */ 
+  HAL_CRYP_PHASE_PAYLOAD_OVER      = 0x06,    /*!< GCM(/CCM) payload phase has been carried out             */ 
+  HAL_CRYP_PHASE_FINAL_OVER        = 0x07,    /*!< GCM/GMAC(/CMAC)(/CCM) final phase has been carried out   */
+  HAL_CRYP_PHASE_HEADER_SUSPENDED  = 0x08,    /*!< GCM/GMAC(/CMAC)(/CCM) header phase has been suspended    */
+  HAL_CRYP_PHASE_PAYLOAD_SUSPENDED = 0x09,    /*!< GCM(/CCM) payload phase has been suspended               */  
+  HAL_CRYP_PHASE_NOT_USED          = 0x0a     /*!< Phase is irrelevant to the current chaining mode         */                                                                                                                                                                                                                                                                   
 }HAL_PhaseTypeDef;
 
 /** 
@@ -164,9 +166,10 @@ typedef struct
 
       uint32_t                 CrypOutCount;     /*!< Output data size in bytes */
 
-      HAL_PhaseTypeDef         Phase;            /*!< CRYP peripheral processing phase for GCM, GMAC or CMAC modes.
-                                                     Indicates the last phase carried out to ease
-                                                     phase transitions  */
+      HAL_PhaseTypeDef         Phase;            /*!< CRYP peripheral processing phase for GCM, GMAC, CMAC (when applicable)
+                                                      or CCM (when applicable) modes.
+                                                      Indicates the last phase carried out to ease
+                                                      phase transitions  */
 
       DMA_HandleTypeDef        *hdmain;          /*!< CRYP peripheral Input DMA handle parameters */
 
@@ -223,24 +226,28 @@ typedef struct
 /** @defgroup CRYP_AES_OperatingMode AES operating mode
   * @{
   */ 
-#define CRYP_ALGOMODE_ENCRYPT                   ((uint32_t)0x00000000)  /*!< Encryption mode                            */
-#define CRYP_ALGOMODE_KEYDERIVATION             AES_CR_MODE_0           /*!< Key derivation mode                        */
-#define CRYP_ALGOMODE_DECRYPT                   AES_CR_MODE_1           /*!< Decryption                                 */
-#define CRYP_ALGOMODE_KEYDERIVATION_DECRYPT     AES_CR_MODE             /*!< Key derivation and decryption              */
-#define CRYP_ALGOMODE_TAG_GENERATION            ((uint32_t)0x00000000)  /*!< GMAC or CMAC authentication tag generation */
+#define CRYP_ALGOMODE_ENCRYPT                   ((uint32_t)0x00000000)  /*!< Encryption mode                                              */
+#define CRYP_ALGOMODE_KEYDERIVATION             AES_CR_MODE_0           /*!< Key derivation mode                                          */
+#define CRYP_ALGOMODE_DECRYPT                   AES_CR_MODE_1           /*!< Decryption                                                   */
+#define CRYP_ALGOMODE_KEYDERIVATION_DECRYPT     AES_CR_MODE             /*!< Key derivation and decryption                                */
+#define CRYP_ALGOMODE_TAG_GENERATION            ((uint32_t)0x00000000)  /*!< GMAC or CMAC (when applicable) authentication tag generation */
 /**
   * @}
   */                   
 
 /** @defgroup CRYP_AES_ChainingMode AES chaining mode
   * @{
-  */                                                                        
+  */                                                                
 #define CRYP_CHAINMODE_AES_ECB            ((uint32_t)0x00000000)            /*!< Electronic codebook chaining algorithm                   */
 #define CRYP_CHAINMODE_AES_CBC            AES_CR_CHMOD_0                    /*!< Cipher block chaining algorithm                          */
 #define CRYP_CHAINMODE_AES_CTR            AES_CR_CHMOD_1                    /*!< Counter mode chaining algorithm                          */
 #define CRYP_CHAINMODE_AES_GCM_GMAC       (AES_CR_CHMOD_0 | AES_CR_CHMOD_1) /*!< Galois counter mode - Galois message authentication code */
+#if defined(AES_CR_NPBLB)
+#define CRYP_CHAINMODE_AES_CCM            AES_CR_CHMOD_2                    /*!< Counter with Cipher Mode                                 */
+#else
 #define CRYP_CHAINMODE_AES_CMAC           AES_CR_CHMOD_2                    /*!< Cipher message authentication code                       */
-/**
+#endif
+/**         
   * @}
   */
   
@@ -272,13 +279,19 @@ typedef struct
   */  
   
   
-/** @defgroup CRYP_GCM_CMAC_Phase GCM/GMAC and CMAC processing phase selection
+/** @defgroup CRYP_GCM_CMAC_Phase GCM/GMAC and CCM/CMAC (when applicable) processing phase selection
   * @{
   */
-#define CRYP_GCM_INIT_PHASE             ((uint32_t)0x00000000)  /*!< GCM/GMAC init phase           */ 
-#define CRYP_GCMCMAC_HEADER_PHASE       AES_CR_GCMPH_0          /*!< GCM/GMAC or CMAC header phase */ 
-#define CRYP_GCM_PAYLOAD_PHASE          AES_CR_GCMPH_1          /*!< GCM payload phaset            */ 
-#define CRYP_GCMCMAC_FINAL_PHASE        AES_CR_GCMPH            /*!< GCM/GMAC or CMAC final phase  */ 
+#define CRYP_GCM_INIT_PHASE             ((uint32_t)0x00000000)  /*!< GCM/GMAC (or CCM) init phase   */ 
+#define CRYP_GCMCMAC_HEADER_PHASE       AES_CR_GCMPH_0          /*!< GCM/GMAC/CCM/CMAC header phase */ 
+#define CRYP_GCM_PAYLOAD_PHASE          AES_CR_GCMPH_1          /*!< GCM/CCM payload phase          */ 
+#define CRYP_GCMCMAC_FINAL_PHASE        AES_CR_GCMPH            /*!< GCM/GMAC/CCM/CMAC final phase  */ 
+/* Definitions duplication for code readibility's sake: 
+   supported or not supported chain modes are not specified for each phase */
+#define CRYP_INIT_PHASE                 ((uint32_t)0x00000000)  /*!< Init phase    */ 
+#define CRYP_HEADER_PHASE               AES_CR_GCMPH_0          /*!< Header phase  */ 
+#define CRYP_PAYLOAD_PHASE              AES_CR_GCMPH_1          /*!< Payload phase */ 
+#define CRYP_FINAL_PHASE                AES_CR_GCMPH            /*!< Final phase   */ 
 /**
   * @}
   */
@@ -341,18 +354,21 @@ typedef struct
 
 /**
   * @brief  Enable the CRYP AES peripheral.
+  * @param  __HANDLE__: specifies the CRYP handle.  
   * @retval None
   */
-#define __HAL_CRYP_ENABLE()  (AES->CR |=  AES_CR_EN)
+#define __HAL_CRYP_ENABLE(__HANDLE__)  ((__HANDLE__)->Instance->CR |=  AES_CR_EN)
 
 /**
   * @brief  Disable the CRYP AES peripheral.
+  * @param  __HANDLE__: specifies the CRYP handle.  
   * @retval None
   */
-#define __HAL_CRYP_DISABLE() (AES->CR &=  ~AES_CR_EN)
+#define __HAL_CRYP_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR &=  ~AES_CR_EN)
 
 /**
   * @brief  Set the algorithm operating mode.
+  * @param  __HANDLE__: specifies the CRYP handle.  
   * @param  __OPERATING_MODE__: specifies the operating mode
   *          This parameter can be one of the following values:
   *            @arg @ref CRYP_ALGOMODE_ENCRYPT encryption     
@@ -361,25 +377,27 @@ typedef struct
   *            @arg @ref CRYP_ALGOMODE_KEYDERIVATION_DECRYPT key derivation and decryption  
   * @retval None
   */
-#define __HAL_CRYP_SET_OPERATINGMODE(__OPERATING_MODE__) MODIFY_REG(AES->CR, AES_CR_MODE, (__OPERATING_MODE__))  
+#define __HAL_CRYP_SET_OPERATINGMODE(__HANDLE__, __OPERATING_MODE__) MODIFY_REG((__HANDLE__)->Instance->CR, AES_CR_MODE, (__OPERATING_MODE__))  
 
 
 /**
   * @brief  Set the algorithm chaining mode.
+  * @param  __HANDLE__: specifies the CRYP handle.  
   * @param  __CHAINING_MODE__: specifies the chaining mode
   *          This parameter can be one of the following values:
   *            @arg @ref CRYP_CHAINMODE_AES_ECB Electronic CodeBook     
   *            @arg @ref CRYP_CHAINMODE_AES_CBC Cipher Block Chaining        
   *            @arg @ref CRYP_CHAINMODE_AES_CTR CounTeR mode
   *            @arg @ref CRYP_CHAINMODE_AES_GCM_GMAC Galois Counter Mode or Galois Message Authentication Code     
-  *            @arg @ref CRYP_CHAINMODE_AES_CMAC Cipher Message Authentication Code
+  *            @arg @ref CRYP_CHAINMODE_AES_CMAC Cipher Message Authentication Code (or Counter with Cipher Mode when applicable)
   * @retval None
   */
-#define __HAL_CRYP_SET_CHAININGMODE(__CHAINING_MODE__) MODIFY_REG(AES->CR, AES_CR_CHMOD, (__CHAINING_MODE__))  
+#define __HAL_CRYP_SET_CHAININGMODE(__HANDLE__, __CHAINING_MODE__) MODIFY_REG((__HANDLE__)->Instance->CR, AES_CR_CHMOD, (__CHAINING_MODE__))  
 
 
 
 /** @brief  Check whether the specified CRYP status flag is set or not.
+  * @param  __HANDLE__: specifies the CRYP handle.
   * @param  __FLAG__: specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_FLAG_BUSY GCM process suspension forbidden  
@@ -388,31 +406,34 @@ typedef struct
   *            @arg @ref CRYP_IT_CCF Computation Complete                 
   * @retval The state of __FLAG__ (TRUE or FALSE).
   */
-#define __HAL_CRYP_GET_FLAG(__FLAG__) ((AES->SR & (__FLAG__)) == (__FLAG__))
+#define __HAL_CRYP_GET_FLAG(__HANDLE__, __FLAG__) (((__HANDLE__)->Instance->SR & (__FLAG__)) == (__FLAG__))
 
 
 /** @brief  Clear the CRYP pending status flag.
+  * @param  __HANDLE__: specifies the CRYP handle.
   * @param  __FLAG__: specifies the flag to clear.
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_ERR_CLEAR Read (RDERR) or Write Error (WRERR) Flag Clear
   *            @arg @ref CRYP_CCF_CLEAR Computation Complete Flag (CCF) Clear  
   * @retval None
   */
-#define __HAL_CRYP_CLEAR_FLAG(__FLAG__) SET_BIT(AES->CR, (__FLAG__))
+#define __HAL_CRYP_CLEAR_FLAG(__HANDLE__, __FLAG__) SET_BIT((__HANDLE__)->Instance->CR, (__FLAG__))
 
 
 
 /** @brief  Check whether the specified CRYP interrupt source is enabled or not.
+  * @param  __HANDLE__: specifies the CRYP handle.
   * @param __INTERRUPT__: CRYP interrupt source to check
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_IT_ERRIE Error interrupt (used for RDERR and WRERR)
   *            @arg @ref CRYP_IT_CCFIE Computation Complete interrupt  
   * @retval State of interruption (TRUE or FALSE).
   */
-#define __HAL_CRYP_GET_IT_SOURCE(__INTERRUPT__) ((AES->CR & (__INTERRUPT__)) == (__INTERRUPT__))
+#define __HAL_CRYP_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->CR & (__INTERRUPT__)) == (__INTERRUPT__))
 
 
 /** @brief  Check whether the specified CRYP interrupt is set or not.
+  * @param  __HANDLE__: specifies the CRYP handle.
   * @param  __INTERRUPT__: specifies the interrupt to check.
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_IT_WRERR Write Error 
@@ -420,40 +441,43 @@ typedef struct
   *            @arg @ref CRYP_IT_CCF  Computation Complete                 
   * @retval The state of __INTERRUPT__ (TRUE or FALSE).
   */
-#define __HAL_CRYP_GET_IT(__INTERRUPT__) ((AES->SR & (__INTERRUPT__)) == (__INTERRUPT__))
+#define __HAL_CRYP_GET_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->SR & (__INTERRUPT__)) == (__INTERRUPT__))
 
 
 
 /** @brief  Clear the CRYP pending interrupt.
+  * @param  __HANDLE__: specifies the CRYP handle.
   * @param  __INTERRUPT__: specifies the IT to clear.
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_ERR_CLEAR Read (RDERR) or Write Error (WRERR) Flag Clear
   *            @arg @ref CRYP_CCF_CLEAR Computation Complete Flag (CCF) Clear    
   * @retval None
   */
-#define __HAL_CRYP_CLEAR_IT(__INTERRUPT__) SET_BIT(AES->CR, (__INTERRUPT__))
+#define __HAL_CRYP_CLEAR_IT(__HANDLE__, __INTERRUPT__) SET_BIT((__HANDLE__)->Instance->CR, (__INTERRUPT__))
 
 
 /**
-  * @brief  Enable the CRYP interrupt.  
+  * @brief  Enable the CRYP interrupt. 
+  * @param  __HANDLE__: specifies the CRYP handle.   
   * @param  __INTERRUPT__: CRYP Interrupt.
   *         This parameter can be one of the following values:  
   *            @arg @ref CRYP_IT_ERRIE Error interrupt (used for RDERR and WRERR)
   *            @arg @ref CRYP_IT_CCFIE Computation Complete interrupt    
   * @retval None
   */
-#define __HAL_CRYP_ENABLE_IT(__INTERRUPT__) ((AES->CR) |= (__INTERRUPT__))
+#define __HAL_CRYP_ENABLE_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->CR) |= (__INTERRUPT__))
 
 
 /**
   * @brief  Disable the CRYP interrupt.
+  * @param  __HANDLE__: specifies the CRYP handle.  
   * @param  __INTERRUPT__: CRYP Interrupt.
   *         This parameter can be one of the following values:  
   *            @arg @ref CRYP_IT_ERRIE Error interrupt (used for RDERR and WRERR)
   *            @arg @ref CRYP_IT_CCFIE Computation Complete interrupt    
   * @retval None
   */
-#define __HAL_CRYP_DISABLE_IT(__INTERRUPT__) ((AES->CR) &= ~(__INTERRUPT__))
+#define __HAL_CRYP_DISABLE_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->CR) &= ~(__INTERRUPT__))
 
 /**
   * @}
@@ -505,12 +529,20 @@ typedef struct
   * @brief Verify the selected CRYP chaining algorithm.
   * @param __CHAINMODE__: Selected CRYP chaining algorithm.
   * @retval SET (__CHAINMODE__ is valid) or RESET (__CHAINMODE__ is invalid)
-  */                                 
+  */   
+#if defined(AES_CR_NPBLB)
 #define IS_CRYP_CHAINMODE(__CHAINMODE__) (((__CHAINMODE__) == CRYP_CHAINMODE_AES_ECB)     || \
                                          ((__CHAINMODE__) == CRYP_CHAINMODE_AES_CBC)      || \
                                          ((__CHAINMODE__) == CRYP_CHAINMODE_AES_CTR)      || \
                                          ((__CHAINMODE__) == CRYP_CHAINMODE_AES_GCM_GMAC) || \
-                                         ((__CHAINMODE__) == CRYP_CHAINMODE_AES_CMAC))  
+                                         ((__CHAINMODE__) == CRYP_CHAINMODE_AES_CCM))   
+#else
+#define IS_CRYP_CHAINMODE(__CHAINMODE__) (((__CHAINMODE__) == CRYP_CHAINMODE_AES_ECB)     || \
+                                         ((__CHAINMODE__) == CRYP_CHAINMODE_AES_CBC)      || \
+                                         ((__CHAINMODE__) == CRYP_CHAINMODE_AES_CTR)      || \
+                                         ((__CHAINMODE__) == CRYP_CHAINMODE_AES_GCM_GMAC) || \
+                                         ((__CHAINMODE__) == CRYP_CHAINMODE_AES_CMAC))    
+#endif                                
 
 /**
   * @brief Verify the deciphering key write option.
@@ -541,10 +573,10 @@ typedef struct
   * @param __PHASE__: CRYP AES ciphering/deciphering/authentication algorithm phase.
   * @retval SET (__PHASE__ is valid) or RESET (__PHASE__ is invalid)
   */                               
-#define IS_CRYP_GCMCMAC_PHASE(__PHASE__) (((__PHASE__) == CRYP_GCM_INIT_PHASE)       || \
-                                          ((__PHASE__) == CRYP_GCMCMAC_HEADER_PHASE) || \
-                                          ((__PHASE__) == CRYP_GCM_PAYLOAD_PHASE)    || \
-                                          ((__PHASE__) == CRYP_GCMCMAC_FINAL_PHASE))
+#define IS_CRYP_GCMCMAC_PHASE(__PHASE__) (((__PHASE__) == CRYP_INIT_PHASE)    || \
+                                          ((__PHASE__) == CRYP_HEADER_PHASE)  || \
+                                          ((__PHASE__) == CRYP_PAYLOAD_PHASE) || \
+                                          ((__PHASE__) == CRYP_FINAL_PHASE))
                                       
 /**
   * @}
@@ -655,7 +687,7 @@ uint32_t              HAL_CRYP_GetError(CRYP_HandleTypeDef *hcryp);
   * @}
   */ 
   
-#endif /* defined (STM32L442xx) || defined (STM32L443xx) || defined(STM32L485xx) || defined(STM32L486xx) */  
+#endif /* defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx) */  
   
 #ifdef __cplusplus
 }

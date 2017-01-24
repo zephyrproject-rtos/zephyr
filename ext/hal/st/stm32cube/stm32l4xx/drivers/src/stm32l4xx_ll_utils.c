@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_utils.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   UTILS LL module driver.
   ******************************************************************************
   * @attention
@@ -59,7 +59,7 @@
 /** @addtogroup UTILS_LL_Private_Constants
   * @{
   */
-#define UTILS_MAX_FREQUENCY_SCALE1  ((uint32_t)80000000)        /*!< Maximum frequency for system clock at power scale1, in Hz */
+#define UTILS_MAX_FREQUENCY_SCALE1  ((uint32_t)80000000) /*!< Maximum frequency for system clock at power scale1, in Hz */
 #define UTILS_MAX_FREQUENCY_SCALE2  ((uint32_t)26000000)        /*!< Maximum frequency for system clock at power scale2, in Hz */
 
 /* Defines used for PLL range */
@@ -267,7 +267,7 @@ void LL_SetSystemCoreClock(uint32_t HCLKFrequency)
   *         - PLL output frequency = (((MSI frequency / PLLM) * PLLN) / PLLR)
   *         - PLLM: ensure that the VCO input frequency ranges from 4 to 16 MHz (PLLVCO_input = MSI frequency / PLLM)
   *         - PLLN: ensure that the VCO output frequency is between 64 and 344 MHz (PLLVCO_output = PLLVCO_input * PLLN)
-  *         - PLLR: ensure that max frequency at 80 MHz is reach (PLLVCO_output / PLLR)
+  *         - PLLR: ensure that max frequency at 80000000 Hz is reached (PLLVCO_output / PLLR)
   * @param  UTILS_PLLInitStruct pointer to a @ref LL_UTILS_PLLInitTypeDef structure that contains
   *                             the configuration information for the PLL.
   * @param  UTILS_ClkInitStruct pointer to a @ref LL_UTILS_ClkInitTypeDef structure that contains
@@ -370,7 +370,7 @@ ErrorStatus LL_PLL_ConfigSystemClock_MSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
   *         - PLL output frequency = (((HSI frequency / PLLM) * PLLN) / PLLR)
   *         - PLLM: ensure that the VCO input frequency ranges from 4 to 16 MHz (PLLVCO_input = HSI frequency / PLLM)
   *         - PLLN: ensure that the VCO output frequency is between 64 and 344 MHz (PLLVCO_output = PLLVCO_input * PLLN)
-  *         - PLLR: ensure that max frequency at 80 MHz is reach (PLLVCO_output / PLLR)
+  *         - PLLR: ensure that max frequency at 80000000 Hz is reach (PLLVCO_output / PLLR)
   * @param  UTILS_PLLInitStruct pointer to a @ref LL_UTILS_PLLInitTypeDef structure that contains
   *                             the configuration information for the PLL.
   * @param  UTILS_ClkInitStruct pointer to a @ref LL_UTILS_ClkInitTypeDef structure that contains
@@ -424,7 +424,7 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
   *         - PLL output frequency = (((HSE frequency / PLLM) * PLLN) / PLLR)
   *         - PLLM: ensure that the VCO input frequency ranges from 4 to 16 MHz (PLLVCO_input = HSE frequency / PLLM)
   *         - PLLN: ensure that the VCO output frequency is between 64 and 344 MHz (PLLVCO_output = PLLVCO_input * PLLN)
-  *         - PLLR: ensure that max frequency at 80 MHz is reach (PLLVCO_output / PLLR)
+  *         - PLLR: ensure that max frequency at 80000000 Hz is reached (PLLVCO_output / PLLR)
   * @param  HSEFrequency Value between Min_Data = 4000000 and Max_Data = 48000000
   * @param  HSEBypass This parameter can be one of the following values:
   *         @arg @ref LL_UTILS_HSEBYPASS_ON
@@ -475,7 +475,7 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSE(uint32_t HSEFrequency, uint32_t HSEBypa
     }
 
     /* Configure PLL */
-    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, UTILS_PLLInitStruct->PLLM, UTILS_PLLInitStruct->PLLN,
+    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE, UTILS_PLLInitStruct->PLLM, UTILS_PLLInitStruct->PLLN,
                                 UTILS_PLLInitStruct->PLLR);
 
     /* Enable PLL and switch system clock to PLL */
@@ -609,7 +609,7 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, LL_UTIL
   pllfreq = pllfreq * (UTILS_PLLInitStruct->PLLN & (RCC_PLLCFGR_PLLN >> RCC_POSITION_PLLN));
   assert_param(IS_LL_UTILS_PLLVCO_OUTPUT(pllfreq));
 
-  /*  - PLLR: ensure that max frequency at 80 MHz is reach                   */
+  /*  - PLLR: ensure that max frequency at 80000000 Hz is reached                   */
   pllfreq = pllfreq / (((UTILS_PLLInitStruct->PLLR >> RCC_POSITION_PLLR) + 1) * 2);
   assert_param(IS_LL_UTILS_PLL_FREQUENCY(pllfreq));
 

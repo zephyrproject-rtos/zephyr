@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_spi.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of SPI HAL module.
   ******************************************************************************
   * @attention
@@ -151,9 +151,9 @@ typedef struct __SPI_HandleTypeDef
 
   uint32_t                   CRCSize;        /*!< SPI CRC size used for the transfer       */
 
-  void (*RxISR)(struct __SPI_HandleTypeDef *hspi);   /*!< function pointer on Rx ISR       */
+  void (*RxISR)(struct __SPI_HandleTypeDef *hspi);                       /*!< function pointer on Rx ISR */
 
-  void (*TxISR)(struct __SPI_HandleTypeDef *hspi);   /*!< function pointer on Tx ISR       */
+  void (*TxISR)(struct __SPI_HandleTypeDef *hspi);                       /*!< function pointer on Tx ISR */
 
   DMA_HandleTypeDef          *hdmatx;        /*!< SPI Tx DMA Handle parameters             */
 
@@ -387,10 +387,10 @@ typedef struct __SPI_HandleTypeDef
 /**
   * @}
   */
-
+  
 /**
   * @}
-  */
+  */  
 
 /* Exported macros -----------------------------------------------------------*/
 /** @defgroup SPI_Exported_Macros SPI Exported Macros
@@ -540,9 +540,9 @@ typedef struct __SPI_HandleTypeDef
 #define IS_SPI_MODE(MODE) (((MODE) == SPI_MODE_SLAVE) || \
                            ((MODE) == SPI_MODE_MASTER))
 
-#define IS_SPI_DIRECTION(MODE) (((MODE) == SPI_DIRECTION_2LINES)        || \
-                                ((MODE) == SPI_DIRECTION_2LINES_RXONLY) || \
-                                ((MODE) == SPI_DIRECTION_1LINE))
+#define IS_SPI_DIRECTION(MODE)   (((MODE) == SPI_DIRECTION_2LINES)        || \
+                                  ((MODE) == SPI_DIRECTION_2LINES_RXONLY) || \
+                                  ((MODE) == SPI_DIRECTION_1LINE))
 
 #define IS_SPI_DIRECTION_2LINES(MODE) ((MODE) == SPI_DIRECTION_2LINES)
 

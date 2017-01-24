@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_rcc_ex.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of RCC HAL Extended module.
   ******************************************************************************
   * @attention
@@ -177,6 +177,13 @@ typedef struct
 
   uint32_t I2c3ClockSelection;     /*!< Specifies I2C3 clock source.
                                         This parameter can be a value of @ref RCCEx_I2C3_Clock_Source */
+                                        
+#if defined(I2C4)
+
+  uint32_t I2c4ClockSelection;     /*!< Specifies I2C4 clock source.
+                                        This parameter can be a value of @ref RCCEx_I2C4_Clock_Source */
+
+#endif /* I2C4 */
 
   uint32_t Lptim1ClockSelection;   /*!< Specifies LPTIM1 clock source.
                                         This parameter can be a value of @ref RCCEx_LPTIM1_Clock_Source */
@@ -331,7 +338,9 @@ typedef struct
 #define RCC_PERIPHCLK_USB              ((uint32_t)0x00002000U)
 #endif
 #define RCC_PERIPHCLK_ADC              ((uint32_t)0x00004000U)
+#if defined(SWPMI1)
 #define RCC_PERIPHCLK_SWPMI1           ((uint32_t)0x00008000U)
+#endif
 #if defined(DFSDM1_Filter0)
 #define RCC_PERIPHCLK_DFSDM1           ((uint32_t)0x00010000U)
 #endif
@@ -339,6 +348,9 @@ typedef struct
 #define RCC_PERIPHCLK_RNG              ((uint32_t)0x00040000U)
 #if defined(SDMMC1)
 #define RCC_PERIPHCLK_SDMMC1           ((uint32_t)0x00080000U)
+#endif
+#if defined(I2C4)
+#define RCC_PERIPHCLK_I2C4             ((uint32_t)0x00100000U)
 #endif
 /**
   * @}
@@ -448,6 +460,18 @@ typedef struct
 /**
   * @}
   */
+  
+#if defined(I2C4)
+/** @defgroup RCCEx_I2C4_Clock_Source I2C4 Clock Source
+  * @{
+  */
+#define RCC_I2C4CLKSOURCE_PCLK1        ((uint32_t)0x00000000U)
+#define RCC_I2C4CLKSOURCE_SYSCLK       RCC_CCIPR2_I2C4SEL_0
+#define RCC_I2C4CLKSOURCE_HSI          RCC_CCIPR2_I2C4SEL_1
+/**
+  * @}
+  */
+#endif /* I2C4 */  
 
 /** @defgroup RCCEx_SAI1_Clock_Source SAI1 Clock Source
   * @{
@@ -1021,6 +1045,9 @@ typedef struct
   @if STM32L443xx
   * @note  HSI16 is automatically set as SAI1 clock source when PLL are disabled for devices without PLLSAI2.
   @endif
+  @if STM32L462xx
+  * @note  HSI16 is automatically set as SAI1 clock source when PLL are disabled for devices without PLLSAI2.
+  @endif
   *
   * @retval None
   */
@@ -1133,6 +1160,31 @@ typedef struct
   *            @arg @ref RCC_I2C3CLKSOURCE_SYSCLK  System Clock selected as I2C3 clock
   */
 #define __HAL_RCC_GET_I2C3_SOURCE() ((uint32_t)(READ_BIT(RCC->CCIPR, RCC_CCIPR_I2C3SEL)))
+
+#if defined(I2C4)
+
+/** @brief  Macro to configure the I2C4 clock (I2C4CLK).
+  *
+  * @param  __I2C4_CLKSOURCE__ specifies the I2C4 clock source.
+  *          This parameter can be one of the following values:
+  *            @arg @ref RCC_I2C4CLKSOURCE_PCLK1  PCLK1 selected as I2C4 clock
+  *            @arg @ref RCC_I2C4CLKSOURCE_HSI  HSI selected as I2C4 clock
+  *            @arg @ref RCC_I2C4CLKSOURCE_SYSCLK  System Clock selected as I2C4 clock
+  * @retval None
+  */
+#define __HAL_RCC_I2C4_CONFIG(__I2C4_CLKSOURCE__) \
+                  MODIFY_REG(RCC->CCIPR2, RCC_CCIPR2_I2C4SEL, (uint32_t)(__I2C4_CLKSOURCE__))
+
+/** @brief  Macro to get the I2C4 clock source.
+  * @retval The clock source can be one of the following values:
+  *            @arg @ref RCC_I2C4CLKSOURCE_PCLK1  PCLK1 selected as I2C4 clock
+  *            @arg @ref RCC_I2C4CLKSOURCE_HSI  HSI selected as I2C4 clock
+  *            @arg @ref RCC_I2C4CLKSOURCE_SYSCLK  System Clock selected as I2C4 clock
+  */
+#define __HAL_RCC_GET_I2C4_SOURCE() ((uint32_t)(READ_BIT(RCC->CCIPR2, RCC_CCIPR2_I2C4SEL)))
+
+#endif /* I2C4 */
+
 
 /** @brief  Macro to configure the USART1 clock (USART1CLK).
   *
@@ -1326,27 +1378,36 @@ typedef struct
 
 /** @brief  Macro to configure the SDMMC1 clock.
   *
-  @if STM32L486xx
+  @if STM32L443xx
   * @note  USB, RNG and SDMMC1 peripherals share the same 48MHz clock source.
   @endif
-  *
-  @if STM32L443xx
+  @if STM32L462xx
+  * @note  USB, RNG and SDMMC1 peripherals share the same 48MHz clock source.
+  @endif
+  @if STM32L486xx
   * @note  USB, RNG and SDMMC1 peripherals share the same 48MHz clock source.
   @endif
   *
   * @param  __SDMMC1_CLKSOURCE__ specifies the SDMMC1 clock source.
   *         This parameter can be one of the following values:
-  @if STM32L486xx
-  *            @arg @ref RCC_SDMMC1CLKSOURCE_NONE  No clock selected as SDMMC1 clock for devices without HSI48
-  *            @arg @ref RCC_SDMMC1CLKSOURCE_MSI  MSI selected as SDMMC1 clock
-  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLLSAI1  PLLSAI1 Clock selected as SDMMC1 clock
-  @endif
   @if STM32L443xx
   *            @arg @ref RCC_SDMMC1CLKSOURCE_HSI48  HSI48 selected as SDMMC1 clock for devices with HSI48
   *            @arg @ref RCC_SDMMC1CLKSOURCE_MSI  MSI selected as SDMMC1 clock
   *            @arg @ref RCC_SDMMC1CLKSOURCE_PLLSAI1  PLLSAI1 Clock selected as SDMMC1 clock
-  @endif
   *            @arg @ref RCC_SDMMC1CLKSOURCE_PLL  PLL Clock selected as SDMMC1 clock
+  @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_HSI48  HSI48 selected as SDMMC1 clock for devices with HSI48
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_MSI  MSI selected as SDMMC1 clock
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLLSAI1  PLLSAI1 Clock selected as SDMMC1 clock
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLL  PLL Clock selected as SDMMC1 clock
+  @endif
+  @if STM32L486xx
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_NONE  No clock selected as SDMMC1 clock for devices without HSI48
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_MSI  MSI selected as SDMMC1 clock
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLLSAI1  PLLSAI1 Clock selected as SDMMC1 clock
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLL  PLL Clock selected as SDMMC1 clock
+  @endif
   * @retval None
   */
 #define __HAL_RCC_SDMMC1_CONFIG(__SDMMC1_CLKSOURCE__) \
@@ -1354,17 +1415,24 @@ typedef struct
 
 /** @brief  Macro to get the SDMMC1 clock.
   * @retval The clock source can be one of the following values:
-  @if STM32L486xx
-  *            @arg @ref RCC_SDMMC1CLKSOURCE_NONE  No clock selected as SDMMC1 clock for devices without HSI48
-  *            @arg @ref RCC_SDMMC1CLKSOURCE_MSI  MSI selected as SDMMC1 clock
-  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLLSAI1  PLLSAI1 "Q" clock (PLL48M2CLK) selected as SDMMC1 clock
-  @endif
   @if STM32L443xx
   *            @arg @ref RCC_SDMMC1CLKSOURCE_HSI48  HSI48 selected as SDMMC1 clock for devices with HSI48
   *            @arg @ref RCC_SDMMC1CLKSOURCE_MSI  MSI selected as SDMMC1 clock
   *            @arg @ref RCC_SDMMC1CLKSOURCE_PLLSAI1  PLLSAI1 "Q" clock (PLL48M2CLK) selected as SDMMC1 clock
-  @endif
   *            @arg @ref RCC_SDMMC1CLKSOURCE_PLL  PLL "Q" clock (PLL48M1CLK) selected as SDMMC1 clock
+  @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_HSI48  HSI48 selected as SDMMC1 clock for devices with HSI48
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_MSI  MSI selected as SDMMC1 clock
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLLSAI1  PLLSAI1 "Q" clock (PLL48M2CLK) selected as SDMMC1 clock
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLL  PLL "Q" clock (PLL48M1CLK) selected as SDMMC1 clock
+  @endif
+  @if STM32L486xx
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_NONE  No clock selected as SDMMC1 clock for devices without HSI48
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_MSI  MSI selected as SDMMC1 clock
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLLSAI1  PLLSAI1 "Q" clock (PLL48M2CLK) selected as SDMMC1 clock
+  *            @arg @ref RCC_SDMMC1CLKSOURCE_PLL  PLL "Q" clock (PLL48M1CLK) selected as SDMMC1 clock
+  @endif
   */
 #define __HAL_RCC_GET_SDMMC1_SOURCE() ((uint32_t)(READ_BIT(RCC->CCIPR, RCC_CCIPR_CLK48SEL)))
 
@@ -1376,11 +1444,14 @@ typedef struct
   *
   * @param  __RNG_CLKSOURCE__ specifies the RNG clock source.
   *         This parameter can be one of the following values:
-  @if STM32L486xx
-  *            @arg @ref RCC_RNGCLKSOURCE_NONE  No clock selected as RNG clock for devices without HSI48
-  @endif
   @if STM32L443xx
   *            @arg @ref RCC_RNGCLKSOURCE_HSI48  HSI48 selected as RNG clock clock for devices with HSI48
+  @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_RNGCLKSOURCE_HSI48  HSI48 selected as RNG clock clock for devices with HSI48
+  @endif
+  @if STM32L486xx
+  *            @arg @ref RCC_RNGCLKSOURCE_NONE  No clock selected as RNG clock for devices without HSI48
   @endif
   *            @arg @ref RCC_RNGCLKSOURCE_MSI  MSI selected as RNG clock
   *            @arg @ref RCC_RNGCLKSOURCE_PLLSAI1  PLLSAI1 Clock selected as RNG clock
@@ -1392,11 +1463,14 @@ typedef struct
 
 /** @brief  Macro to get the RNG clock.
   * @retval The clock source can be one of the following values:
-  @if STM32L486xx
-  *            @arg @ref RCC_RNGCLKSOURCE_NONE  No clock selected as RNG clock for devices without HSI48
-  @endif
   @if STM32L443xx
   *            @arg @ref RCC_RNGCLKSOURCE_HSI48  HSI48 selected as RNG clock clock for devices with HSI48
+  @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_RNGCLKSOURCE_HSI48  HSI48 selected as RNG clock clock for devices with HSI48
+  @endif
+  @if STM32L486xx
+  *            @arg @ref RCC_RNGCLKSOURCE_NONE  No clock selected as RNG clock for devices without HSI48
   @endif
   *            @arg @ref RCC_RNGCLKSOURCE_MSI  MSI selected as RNG clock
   *            @arg @ref RCC_RNGCLKSOURCE_PLLSAI1  PLLSAI1 "Q" clock (PLL48M2CLK) selected as RNG clock
@@ -1412,11 +1486,14 @@ typedef struct
   *
   * @param  __USB_CLKSOURCE__ specifies the USB clock source.
   *         This parameter can be one of the following values:
-  @if STM32L486xx
-  *            @arg @ref RCC_USBCLKSOURCE_NONE  No clock selected as 48MHz clock for devices without HSI48
-  @endif
   @if STM32L443xx
   *            @arg @ref RCC_USBCLKSOURCE_HSI48  HSI48 selected as 48MHz clock for devices with HSI48
+  @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_USBCLKSOURCE_HSI48  HSI48 selected as 48MHz clock for devices with HSI48
+  @endif
+  @if STM32L486xx
+  *            @arg @ref RCC_USBCLKSOURCE_NONE  No clock selected as 48MHz clock for devices without HSI48
   @endif
   *            @arg @ref RCC_USBCLKSOURCE_MSI  MSI selected as USB clock
   *            @arg @ref RCC_USBCLKSOURCE_PLLSAI1  PLLSAI1 "Q" clock (PLL48M2CLK) selected as USB clock
@@ -1428,11 +1505,14 @@ typedef struct
 
 /** @brief  Macro to get the USB clock source.
   * @retval The clock source can be one of the following values:
-  @if STM32L486xx
-  *            @arg @ref RCC_USBCLKSOURCE_NONE  No clock selected as 48MHz clock for devices without HSI48
-  @endif
   @if STM32L443xx
   *            @arg @ref RCC_USBCLKSOURCE_HSI48  HSI48 selected as 48MHz clock for devices with HSI48
+  @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_USBCLKSOURCE_HSI48  HSI48 selected as 48MHz clock for devices with HSI48
+  @endif
+  @if STM32L486xx
+  *            @arg @ref RCC_USBCLKSOURCE_NONE  No clock selected as 48MHz clock for devices without HSI48
   @endif
   *            @arg @ref RCC_USBCLKSOURCE_MSI  MSI selected as USB clock
   *            @arg @ref RCC_USBCLKSOURCE_PLLSAI1  PLLSAI1 "Q" clock (PLL48M2CLK) selected as USB clock
@@ -1448,7 +1528,7 @@ typedef struct
   *            @arg @ref RCC_ADCCLKSOURCE_NONE  No clock selected as ADC clock
   *            @arg @ref RCC_ADCCLKSOURCE_PLLSAI1  PLLSAI1 Clock selected as ADC clock
   @if STM32L486xx
-  *            @arg @ref RCC_ADCCLKSOURCE_PLLSAI2  PLLSAI2 Clock selected as ADC clock for STM32L47x/STM32L48x/STM32L49x/STM32L4Ax devices
+  *            @arg @ref RCC_ADCCLKSOURCE_PLLSAI2  PLLSAI2 Clock selected as ADC clock for STM32L47x/STM32L48x devices
   @endif
   *            @arg @ref RCC_ADCCLKSOURCE_SYSCLK  System Clock selected as ADC clock
   * @retval None
@@ -1461,7 +1541,7 @@ typedef struct
   *            @arg @ref RCC_ADCCLKSOURCE_NONE  No clock selected as ADC clock
   *            @arg @ref RCC_ADCCLKSOURCE_PLLSAI1  PLLSAI1 Clock selected as ADC clock
   @if STM32L486xx
-  *            @arg @ref RCC_ADCCLKSOURCE_PLLSAI2  PLLSAI2 Clock selected as ADC clock for STM32L47x/STM32L48x/STM32L49x/STM32L4Ax devices
+  *            @arg @ref RCC_ADCCLKSOURCE_PLLSAI2  PLLSAI2 Clock selected as ADC clock for STM32L47x/STM32L48x devices
   @endif
   *            @arg @ref RCC_ADCCLKSOURCE_SYSCLK  System Clock selected as ADC clock
   */
@@ -1507,7 +1587,6 @@ typedef struct
 #define __HAL_RCC_GET_DFSDM1_SOURCE() ((uint32_t)(READ_BIT(RCC->CCIPR, RCC_CCIPR_DFSDM1SEL)))
 
 #endif /* DFSDM1_Filter0 */
-
 
 /** @defgroup RCCEx_Flags_Interrupts_Management Flags Interrupts Management
   * @brief macros to manage the specified RCC Flags and interrupts.
@@ -1961,6 +2040,49 @@ void              HAL_RCCEx_CRS_ErrorCallback(uint32_t Error);
                 (((__SELECTION__) & RCC_PERIPHCLK_RNG)     == RCC_PERIPHCLK_RNG)     || \
                 (((__SELECTION__) & RCC_PERIPHCLK_SDMMC1)  == RCC_PERIPHCLK_SDMMC1))
 
+#elif defined(STM32L451xx)
+
+#define IS_RCC_PERIPHCLOCK(__SELECTION__)  \
+               ((((__SELECTION__) & RCC_PERIPHCLK_USART1)  == RCC_PERIPHCLK_USART1)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_USART2)  == RCC_PERIPHCLK_USART2)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_USART3)  == RCC_PERIPHCLK_USART3)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_UART4)   == RCC_PERIPHCLK_UART4)   || \
+                (((__SELECTION__) & RCC_PERIPHCLK_LPUART1) == RCC_PERIPHCLK_LPUART1) || \
+                (((__SELECTION__) & RCC_PERIPHCLK_I2C1)    == RCC_PERIPHCLK_I2C1)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_I2C2)    == RCC_PERIPHCLK_I2C2)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_I2C3)    == RCC_PERIPHCLK_I2C3)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_I2C4)    == RCC_PERIPHCLK_I2C4)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_LPTIM1)  == RCC_PERIPHCLK_LPTIM1)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_LPTIM2)  == RCC_PERIPHCLK_LPTIM2)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_SAI1)    == RCC_PERIPHCLK_SAI1)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_ADC)     == RCC_PERIPHCLK_ADC)     || \
+                (((__SELECTION__) & RCC_PERIPHCLK_DFSDM1)  == RCC_PERIPHCLK_DFSDM1)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_RTC)     == RCC_PERIPHCLK_RTC)     || \
+                (((__SELECTION__) & RCC_PERIPHCLK_RNG)     == RCC_PERIPHCLK_RNG)     || \
+                (((__SELECTION__) & RCC_PERIPHCLK_SDMMC1)  == RCC_PERIPHCLK_SDMMC1))
+
+#elif defined(STM32L452xx) || defined(STM32L462xx)
+
+#define IS_RCC_PERIPHCLOCK(__SELECTION__)  \
+               ((((__SELECTION__) & RCC_PERIPHCLK_USART1)  == RCC_PERIPHCLK_USART1)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_USART2)  == RCC_PERIPHCLK_USART2)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_USART3)  == RCC_PERIPHCLK_USART3)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_UART4)   == RCC_PERIPHCLK_UART4)   || \
+                (((__SELECTION__) & RCC_PERIPHCLK_LPUART1) == RCC_PERIPHCLK_LPUART1) || \
+                (((__SELECTION__) & RCC_PERIPHCLK_I2C1)    == RCC_PERIPHCLK_I2C1)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_I2C2)    == RCC_PERIPHCLK_I2C2)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_I2C3)    == RCC_PERIPHCLK_I2C3)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_I2C4)    == RCC_PERIPHCLK_I2C4)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_LPTIM1)  == RCC_PERIPHCLK_LPTIM1)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_LPTIM2)  == RCC_PERIPHCLK_LPTIM2)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_SAI1)    == RCC_PERIPHCLK_SAI1)    || \
+                (((__SELECTION__) & RCC_PERIPHCLK_USB)     == RCC_PERIPHCLK_USB)     || \
+                (((__SELECTION__) & RCC_PERIPHCLK_ADC)     == RCC_PERIPHCLK_ADC)     || \
+                (((__SELECTION__) & RCC_PERIPHCLK_DFSDM1)  == RCC_PERIPHCLK_DFSDM1)  || \
+                (((__SELECTION__) & RCC_PERIPHCLK_RTC)     == RCC_PERIPHCLK_RTC)     || \
+                (((__SELECTION__) & RCC_PERIPHCLK_RNG)     == RCC_PERIPHCLK_RNG)     || \
+                (((__SELECTION__) & RCC_PERIPHCLK_SDMMC1)  == RCC_PERIPHCLK_SDMMC1))
+
 #elif defined(STM32L471xx)
 
 #define IS_RCC_PERIPHCLOCK(__SELECTION__)  \
@@ -2076,6 +2198,15 @@ void              HAL_RCCEx_CRS_ErrorCallback(uint32_t Error);
                (((__SOURCE__) == RCC_I2C3CLKSOURCE_PCLK1) || \
                 ((__SOURCE__) == RCC_I2C3CLKSOURCE_SYSCLK)|| \
                 ((__SOURCE__) == RCC_I2C3CLKSOURCE_HSI))
+                
+#if defined(I2C4)
+
+#define IS_RCC_I2C4CLKSOURCE(__SOURCE__)   \
+               (((__SOURCE__) == RCC_I2C4CLKSOURCE_PCLK1) || \
+                ((__SOURCE__) == RCC_I2C4CLKSOURCE_SYSCLK)|| \
+                ((__SOURCE__) == RCC_I2C4CLKSOURCE_HSI))
+
+#endif /* I2C4 */
 
 #if defined(RCC_PLLSAI2_SUPPORT)
 

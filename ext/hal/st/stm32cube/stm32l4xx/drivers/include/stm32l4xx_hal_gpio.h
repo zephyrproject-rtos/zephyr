@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_gpio.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of GPIO HAL module.
   ******************************************************************************
   * @attention
@@ -231,7 +231,8 @@ typedef enum
   */
 #define IS_GPIO_PIN_ACTION(ACTION)  (((ACTION) == GPIO_PIN_RESET) || ((ACTION) == GPIO_PIN_SET))
 
-#define IS_GPIO_PIN(__PIN__)        (((__PIN__) & GPIO_PIN_MASK) != (uint32_t)0x00)
+#define IS_GPIO_PIN(__PIN__)        ((((__PIN__) & GPIO_PIN_MASK) != (uint32_t)0x00) &&\
+                                     (((__PIN__) & ~GPIO_PIN_MASK) == (uint32_t)0x00))
 
 #define IS_GPIO_MODE(__MODE__)      (((__MODE__) == GPIO_MODE_INPUT)              ||\
                                      ((__MODE__) == GPIO_MODE_OUTPUT_PP)          ||\

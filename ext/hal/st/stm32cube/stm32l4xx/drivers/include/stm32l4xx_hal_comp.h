@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_comp.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of COMP HAL module.
   ******************************************************************************
   * @attention
@@ -172,7 +172,9 @@ typedef struct
 #define COMP_INPUT_MINUS_3_4VREFINT    (                    COMP_CSR_INMSEL_1                     | COMP_CSR_SCALEN | COMP_CSR_BRGEN)        /*!< Comparator input minus connected to 3/4 VrefInt */
 #define COMP_INPUT_MINUS_VREFINT       (                    COMP_CSR_INMSEL_1 | COMP_CSR_INMSEL_0 | COMP_CSR_SCALEN                 )        /*!< Comparator input minus connected to VrefInt */
 #define COMP_INPUT_MINUS_DAC1_CH1      (COMP_CSR_INMSEL_2                                        )                                           /*!< Comparator input minus connected to DAC1 channel 1 (DAC_OUT1) */
+#if defined(DAC_CHANNEL2_SUPPORT)
 #define COMP_INPUT_MINUS_DAC1_CH2      (COMP_CSR_INMSEL_2                     | COMP_CSR_INMSEL_0)                                           /*!< Comparator input minus connected to DAC1 channel 2 (DAC_OUT2) */
+#endif
 #define COMP_INPUT_MINUS_IO1           (COMP_CSR_INMSEL_2 | COMP_CSR_INMSEL_1                    )                                           /*!< Comparator input minus connected to IO1 (pin PB1 for COMP1, pin PB3 for COMP2) */
 #define COMP_INPUT_MINUS_IO2           (COMP_CSR_INMSEL_2 | COMP_CSR_INMSEL_1 | COMP_CSR_INMSEL_0)                                           /*!< Comparator input minus connected to IO2 (pin PC4 for COMP1, pin PB7 for COMP2) */
 #if defined(COMP_CSR_INMESEL_1)
@@ -207,14 +209,28 @@ typedef struct
 /** @defgroup COMP_BlankingSrce  COMP blanking source
   * @{
   */
+/* Note: Some blanking sources are not available depending on timer           */
+/*       availability or devices specificities                                */
+/*       (STM32L43xx, STM32L44xx, STM32L45xx, STM32L46xx)                     */
 #define COMP_BLANKINGSRC_NONE                    ((uint32_t)0x00000000) /*!< No blanking source */
 /* Blanking sources for COMP instance: COMP1 */
 #define COMP_BLANKINGSRC_TIM1_OC5_COMP1          (COMP_CSR_BLANKING_0)  /*!< Blanking source for COMP1: TIM1 OC5 selected as blanking source for comparator */
 #define COMP_BLANKINGSRC_TIM2_OC3_COMP1          (COMP_CSR_BLANKING_1)  /*!< Blanking source for COMP1: TIM2 OC3 selected as blanking source for comparator */
+#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
+    defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
 #define COMP_BLANKINGSRC_TIM3_OC3_COMP1          (COMP_CSR_BLANKING_2)  /*!< Blanking source for COMP1: TIM3 OC3 selected as blanking source for comparator */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+
 /* Blanking sources for COMP instance: COMP2 */
+#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
+    defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
 #define COMP_BLANKINGSRC_TIM3_OC4_COMP2          (COMP_CSR_BLANKING_0)  /*!< Blanking source for COMP2: TIM3 OC4 selected as blanking source for comparator */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
 #define COMP_BLANKINGSRC_TIM8_OC5_COMP2          (COMP_CSR_BLANKING_1)  /*!< Blanking source for COMP2: TIM8 OC5 selected as blanking source for comparator */
+#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
 #define COMP_BLANKINGSRC_TIM15_OC1_COMP2         (COMP_CSR_BLANKING_2)  /*!< Blanking source for COMP2: TIM15 OC1 selected as blanking source for comparator */
 /**
   * @}
@@ -558,7 +574,7 @@ typedef struct
 /*       the same on all COMP instances.                                      */
 /*       However, comparator instance kept as macro parameter for             */
 /*       compatibility with other STM32 families.                             */
-#if defined(COMP_CSR_INMESEL_1)
+#if defined(COMP_CSR_INMESEL_1) && defined(DAC_CHANNEL2_SUPPORT)
 #define IS_COMP_INPUT_MINUS(__COMP_INSTANCE__, __INPUT_MINUS__) (((__INPUT_MINUS__) == COMP_INPUT_MINUS_1_4VREFINT)  || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_1_2VREFINT)  || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_3_4VREFINT)  || \
@@ -570,13 +586,32 @@ typedef struct
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO3)         || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO4)         || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO5))
-#else
+#elif defined(COMP_CSR_INMESEL_1)
+#define IS_COMP_INPUT_MINUS(__COMP_INSTANCE__, __INPUT_MINUS__) (((__INPUT_MINUS__) == COMP_INPUT_MINUS_1_4VREFINT)  || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_1_2VREFINT)  || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_3_4VREFINT)  || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_VREFINT)     || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_DAC1_CH1)    || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO1)         || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO2)         || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO3)         || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO4)         || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO5))
+#elif defined(DAC_CHANNEL2_SUPPORT)
 #define IS_COMP_INPUT_MINUS(__COMP_INSTANCE__, __INPUT_MINUS__) (((__INPUT_MINUS__) == COMP_INPUT_MINUS_1_4VREFINT)  || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_1_2VREFINT)  || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_3_4VREFINT)  || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_VREFINT)     || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_DAC1_CH1)    || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_DAC1_CH2)    || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO1)         || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO2))
+#else
+#define IS_COMP_INPUT_MINUS(__COMP_INSTANCE__, __INPUT_MINUS__) (((__INPUT_MINUS__) == COMP_INPUT_MINUS_1_4VREFINT)  || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_1_2VREFINT)  || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_3_4VREFINT)  || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_VREFINT)     || \
+                                                                 ((__INPUT_MINUS__) == COMP_INPUT_MINUS_DAC1_CH1)    || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO1)         || \
                                                                  ((__INPUT_MINUS__) == COMP_INPUT_MINUS_IO2))
 #endif
@@ -588,6 +623,50 @@ typedef struct
 
 #define IS_COMP_OUTPUTPOL(__POL__)          (((__POL__) == COMP_OUTPUTPOL_NONINVERTED) || \
                                              ((__POL__) == COMP_OUTPUTPOL_INVERTED))
+
+#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || defined(STM32L443xx)
+
+#define IS_COMP_BLANKINGSRCE(__SOURCE__)    (((__SOURCE__) == COMP_BLANKINGSRC_NONE)            || \
+                                             ((__SOURCE__) == COMP_BLANKINGSRC_TIM1_OC5_COMP1)  || \
+                                             ((__SOURCE__) == COMP_BLANKINGSRC_TIM2_OC3_COMP1)  || \
+                                             ((__SOURCE__) == COMP_BLANKINGSRC_TIM15_OC1_COMP2))
+
+#define IS_COMP_BLANKINGSRC_INSTANCE(__INSTANCE__, __BLANKINGSRCE__)  \
+   ((((__INSTANCE__) == COMP1) &&                                     \
+    (((__BLANKINGSRCE__) == COMP_BLANKINGSRC_NONE)            ||      \
+     ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM1_OC5_COMP1)  ||      \
+     ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM2_OC3_COMP1)))        \
+    ||                                                                \
+    (((__INSTANCE__) == COMP2) &&                                     \
+     (((__BLANKINGSRCE__) == COMP_BLANKINGSRC_NONE)           ||      \
+      ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM15_OC1_COMP2))))
+
+#endif /* STM32L431xx || STM32L432xx || STM32L433xx || STM32L442xx || STM32L443xx */
+
+#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx)
+
+#define IS_COMP_BLANKINGSRCE(__SOURCE__)    (((__SOURCE__) == COMP_BLANKINGSRC_NONE)            || \
+                                             ((__SOURCE__) == COMP_BLANKINGSRC_TIM1_OC5_COMP1)  || \
+                                             ((__SOURCE__) == COMP_BLANKINGSRC_TIM2_OC3_COMP1)  || \
+                                             ((__SOURCE__) == COMP_BLANKINGSRC_TIM3_OC3_COMP1)  || \
+                                             ((__SOURCE__) == COMP_BLANKINGSRC_TIM3_OC4_COMP2)  || \
+                                             ((__SOURCE__) == COMP_BLANKINGSRC_TIM15_OC1_COMP2))
+
+#define IS_COMP_BLANKINGSRC_INSTANCE(__INSTANCE__, __BLANKINGSRCE__)  \
+   ((((__INSTANCE__) == COMP1) &&                                     \
+    (((__BLANKINGSRCE__) == COMP_BLANKINGSRC_NONE)            ||      \
+     ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM1_OC5_COMP1)  ||      \
+     ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM2_OC3_COMP1)  ||      \
+     ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM3_OC3_COMP1)))        \
+    ||                                                                \
+    (((__INSTANCE__) == COMP2) &&                                     \
+     (((__BLANKINGSRCE__) == COMP_BLANKINGSRC_NONE)           ||      \
+      ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM3_OC4_COMP2) ||      \
+      ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM15_OC1_COMP2))))
+
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+
+#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
 
 #define IS_COMP_BLANKINGSRCE(__SOURCE__)    (((__SOURCE__) == COMP_BLANKINGSRC_NONE)            || \
                                              ((__SOURCE__) == COMP_BLANKINGSRC_TIM1_OC5_COMP1)  || \
@@ -609,6 +688,8 @@ typedef struct
       ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM3_OC4_COMP2) ||      \
       ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM8_OC5_COMP2) ||      \
       ((__BLANKINGSRCE__) == COMP_BLANKINGSRC_TIM15_OC1_COMP2))))
+
+#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
 
 #define IS_COMP_TRIGGERMODE(__MODE__)       (((__MODE__) == COMP_TRIGGERMODE_NONE)                 || \
                                              ((__MODE__) == COMP_TRIGGERMODE_IT_RISING)            || \
