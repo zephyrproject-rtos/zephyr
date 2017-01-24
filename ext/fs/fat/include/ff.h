@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------/
-/  FatFs - Generic FAT file system module  R0.12a                             /
+/  FatFs - Generic FAT file system module  R0.12b                             /
 /-----------------------------------------------------------------------------/
 /
 / Copyright (C) 2016, ChaN, all right reserved.
@@ -19,7 +19,7 @@
 
 
 #ifndef _FATFS
-#define _FATFS	80186	/* Revision ID */
+#define _FATFS	68020	/* Revision ID */
 
 #ifdef __cplusplus
 extern "C" {
@@ -159,7 +159,7 @@ typedef struct {
 /* File object structure (FIL) */
 
 typedef struct {
-	_FDID	obj;			/* Object identifier */
+	_FDID	obj;			/* Object identifier (must be the 1st member to detect invalid object pointer) */
 	BYTE	flag;			/* File status flags */
 	BYTE	err;			/* Abort flag (error code) */
 	FSIZE_t	fptr;			/* File read/write pointer (Zeroed on file open) */

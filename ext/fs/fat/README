@@ -6,4 +6,12 @@ an interface to physical storage management through its disk io
 API in diskio.c. The disk io interfaces are updated to interface
 with Zephyr flash memory management.
 
-Current revision in the tree is 0.12a
+Current revision in the tree is 0.12b
+
+The file system provides options to configure the source. The configurations
+are stored in include/ffconf.h. Following configurations are updated.
+
+_USE_MKFS	1
+_CODE_PAGE	1
+_FS_TINY	1
+_FS_NORTC	1

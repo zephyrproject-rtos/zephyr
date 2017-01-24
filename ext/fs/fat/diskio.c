@@ -6,24 +6,6 @@
 /* This is an example of glue functions to attach various exsisting      */
 /* storage control modules to the FatFs module with a defined API.       */
 /*-----------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------/
-/  FatFs - Generic FAT file system module  R0.12a                             /
-/-----------------------------------------------------------------------------/
-/
-/ Copyright (C) 2016, ChaN, all right reserved.
-/
-/ FatFs module is an open source software. Redistribution and use of FatFs in
-/ source and binary forms, with or without modification, are permitted provided
-/ that the following condition is met:
-
-/ 1. Redistributions of source code must retain the above copyright notice,
-/    this condition and the following disclaimer.
-/
-/ This software is provided by the copyright holder and contributors "AS IS"
-/ and any warranties related to this software are DISCLAIMED.
-/ The copyright owner or contributors be NOT LIABLE for any damages caused
-/ by use of this software.
-/----------------------------------------------------------------------------*/
 
 #include "diskio.h"		/* FatFs lower layer API */
 
@@ -59,7 +41,7 @@ DSTATUS disk_status (
 
 		return stat;
 
-	case DEB_USB :
+	case DEV_USB :
 		result = USB_disk_status();
 
 		// translate the reslut code here
