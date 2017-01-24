@@ -14,7 +14,11 @@
 
 struct flash_stm32_dev_config {
 	uint32_t *base;
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	struct stm32_pclken pclken;
+#else
 	clock_control_subsys_t clock_subsys;
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 };
 
 struct flash_stm32_dev_data {
