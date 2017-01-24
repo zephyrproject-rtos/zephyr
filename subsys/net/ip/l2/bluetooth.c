@@ -109,7 +109,7 @@ static int net_bt_enable(struct net_if *iface, bool state)
 
 	NET_DBG("iface %p %s", iface, state ? "up" : "down");
 
-	if (state && !ctxt->ipsp_chan.chan.conn) {
+	if (state && ctxt->ipsp_chan.chan.state != BT_L2CAP_CONNECTED) {
 		return -ENETDOWN;
 	}
 
