@@ -231,7 +231,7 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 }
 
 int net_addr_pton(sa_family_t family, const char *src,
-		  struct sockaddr *dst)
+		  void *dst)
 {
 	if (family == AF_INET) {
 		struct in_addr *addr = (struct in_addr *)dst;

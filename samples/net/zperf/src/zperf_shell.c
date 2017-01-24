@@ -111,7 +111,7 @@ int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr,
 		return -EINVAL;
 	}
 
-	ret = net_addr_pton(AF_INET6, host, (struct sockaddr *)addr);
+	ret = net_addr_pton(AF_INET6, host, addr);
 	if (ret < 0) {
 		return -EINVAL;
 	}
@@ -147,7 +147,7 @@ int zperf_get_ipv4_addr(char *host, struct in_addr *addr, const char *str)
 		return -EINVAL;
 	}
 
-	ret = net_addr_pton(AF_INET, host, (struct sockaddr *)addr);
+	ret = net_addr_pton(AF_INET, host, addr);
 	if (ret < 0) {
 		return -EINVAL;
 	}
@@ -211,7 +211,7 @@ static int shell_cmd_setip(int argc, char *argv[])
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
 	if (net_addr_pton(AF_INET6, argv[start + 1],
-			  (struct sockaddr *)&ipv6) < 0) {
+			  &ipv6) < 0) {
 		if (argc != 2) {
 			/* Print usage */
 			printk("\n%s:\n", CMD_STR_SETIP);
@@ -937,7 +937,7 @@ static void zperf_init(void)
 	}
 
 	ret = net_addr_pton(AF_INET6, DST_IP6ADDR,
-			    (struct sockaddr *)&in6_addr_dst.sin6_addr);
+			    &in6_addr_dst.sin6_addr);
 	if (ret < 0) {
 		printk("[%s] ERROR! Unable to set IP %s\n", __func__,
 			DST_IP6ADDR);
@@ -958,7 +958,7 @@ static void zperf_init(void)
 	}
 
 	ret = net_addr_pton(AF_INET, DST_IP4ADDR,
-			    (struct sockaddr *)&in4_addr_dst.sin_addr);
+			    &in4_addr_dst.sin_addr);
 	if (ret < 0) {
 		printk("[%s] ERROR! Unable to set IP %s\n", __func__,
 			DST_IP4ADDR);

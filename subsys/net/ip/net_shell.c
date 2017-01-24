@@ -630,7 +630,7 @@ static int shell_cmd_ping(int argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
-	ret = net_addr_pton(AF_INET6, host, (struct sockaddr *)&ipv6_target);
+	ret = net_addr_pton(AF_INET6, host, &ipv6_target);
 	if (ret < 0) {
 		printk("Invalid IPv6 address\n");
 		return 0;
@@ -646,7 +646,7 @@ static int shell_cmd_ping(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
-	ret = net_addr_pton(AF_INET, host, (struct sockaddr *)&ipv4_target);
+	ret = net_addr_pton(AF_INET, host, &ipv4_target);
 	if (ret < 0) {
 		printk("Invalid IPv4 address\n");
 		return 0;
@@ -662,10 +662,9 @@ static int shell_cmd_ping(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
-	ret = net_addr_pton(AF_INET6, host, (struct sockaddr *)&ipv6_target);
+	ret = net_addr_pton(AF_INET6, host, &ipv6_target);
 	if (ret < 0) {
-		ret = net_addr_pton(AF_INET, host,
-				    (struct sockaddr *)&ipv4_target);
+		ret = net_addr_pton(AF_INET, host, &ipv4_target);
 		if (ret < 0) {
 			printk("Invalid IP address\n");
 			return 0;

@@ -793,8 +793,7 @@ struct sockaddr_in_ptr *net_sin_ptr(const struct sockaddr_ptr *addr)
  *
  * @return 0 if ok, < 0 if error
  */
-int net_addr_pton(sa_family_t family, const char *src,
-		  struct sockaddr *dst);
+int net_addr_pton(sa_family_t family, const char *src, void *dst);
 
 #ifdef __cplusplus
 }

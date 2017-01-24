@@ -876,7 +876,7 @@ static bool join_coap_multicast_group(void)
 #if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
-			  (struct sockaddr *)&my_addr) < 0) {
+			  &my_addr) < 0) {
 		NET_ERR("Invalid IPv6 address %s",
 			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
 	}

@@ -169,7 +169,7 @@ static inline void init_app(void)
 #if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
-			  (struct sockaddr *)&my_addr6.sin6_addr) < 0) {
+			  &my_addr6.sin6_addr) < 0) {
 		NET_ERR("Invalid IPv6 address %s",
 			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
 
@@ -180,7 +180,7 @@ static inline void init_app(void)
 #if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_SAMPLES_PEER_IPV6_ADDR,
-			  (struct sockaddr *)&peer_addr6.sin6_addr) < 0) {
+			  &peer_addr6.sin6_addr) < 0) {
 		NET_ERR("Invalid peer IPv6 address %s",
 			CONFIG_NET_SAMPLES_PEER_IPV6_ADDR);
 
@@ -211,7 +211,7 @@ static inline void init_app(void)
 #if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 	if (net_addr_pton(AF_INET,
 			  CONFIG_NET_SAMPLES_MY_IPV4_ADDR,
-			  (struct sockaddr *)&my_addr4.sin_addr) < 0) {
+			  &my_addr4.sin_addr) < 0) {
 		NET_ERR("Invalid IPv4 address %s",
 			CONFIG_NET_SAMPLES_MY_IPV4_ADDR);
 
@@ -222,7 +222,7 @@ static inline void init_app(void)
 #if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 	if (net_addr_pton(AF_INET,
 			  CONFIG_NET_SAMPLES_PEER_IPV4_ADDR,
-			  (struct sockaddr *)&peer_addr4.sin_addr) < 0) {
+			  &peer_addr4.sin_addr) < 0) {
 		NET_ERR("Invalid peer IPv4 address %s",
 			CONFIG_NET_SAMPLES_PEER_IPV4_ADDR);
 
