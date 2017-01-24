@@ -9,6 +9,25 @@ if BOARD_MPS2_AN385
 config BOARD
 	default mps2_an385
 
+if GPIO
+
+config GPIO_CMSDK_AHB
+	def_bool y
+
+config GPIO_CMSDK_AHB_PORT0
+	def_bool y
+
+config GPIO_CMSDK_AHB_PORT1
+	def_bool y
+
+config GPIO_CMSDK_AHB_PORT2
+	def_bool y
+
+config GPIO_CMSDK_AHB_PORT3
+	def_bool y
+
+endif # GPIO
+
 if SERIAL
 
 config UART_CMSDK_APB
@@ -34,6 +53,49 @@ config UART_CMSDK_APB_PORT4
 
 endif # SERIAL
 
+if WATCHDOG
 
+config WDOG_CMSDK_APB
+	def_bool y
+
+endif # WATCHDOG
+
+if COUNTER
+
+if COUNTER_TMR_CMSDK_APB
+
+config COUNTER_TMR_CMSDK_APB_0
+	def_bool y
+
+config COUNTER_TMR_CMSDK_APB_1
+	def_bool y
+
+endif # COUNTER_TMR_CMSDK_APB
+
+if TIMER_TMR_CMSDK_APB
+
+config TIMER_TMR_CMSDK_APB_0
+	def_bool y
+
+config TIMER_TMR_CMSDK_APB_1
+	def_bool y
+
+endif # TIMER_TMR_CMSDK_APB
+
+if COUNTER_DTMR_CMSDK_APB
+
+config COUNTER_DTMR_CMSDK_APB_0
+	def_bool y
+
+endif # COUNTER_DTMR_CMSDK_APB
+
+if TIMER_DTMR_CMSDK_APB
+
+config TIMER_DTMR_CMSDK_APB_0
+	def_bool y
+
+endif # TIMER_DTMR_CMSDK_APB
+
+endif # COUNTER
 
 endif
