@@ -64,6 +64,14 @@ The mps2_an385 board configuration supports the following hardware features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| TIMER     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| DUALTIMER | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 See the `V2M MPS2 Website`_ for a complete list of V2M MPS2 board hardware
