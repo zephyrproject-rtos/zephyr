@@ -33,28 +33,6 @@
 extern "C" {
 #endif
 
-/* for assembler, only works with constants */
-#define _EXC_PRIO(pri) (((pri) << (8 - CONFIG_NUM_IRQ_PRIO_BITS)) & 0xff)
-
-#ifdef CONFIG_ZERO_LATENCY_IRQS
-#define _ZERO_LATENCY_IRQS_RESERVED_PRIO 1
-#else
-#define _ZERO_LATENCY_IRQS_RESERVED_PRIO 0
-#endif
-
-#if defined(CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS) || \
-	defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
-#define _EXCEPTION_RESERVED_PRIO 1
-#else
-#define _EXCEPTION_RESERVED_PRIO 0
-#endif
-
-#define _IRQ_PRIO_OFFSET \
-	(_ZERO_LATENCY_IRQS_RESERVED_PRIO + \
-	 _EXCEPTION_RESERVED_PRIO)
-
-#define _EXC_IRQ_DEFAULT_PRIO _EXC_PRIO(_IRQ_PRIO_OFFSET)
-
 #define NUM_IRQS_PER_REG 32
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
