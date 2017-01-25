@@ -549,11 +549,19 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 		return -EIO;
 	}
 
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_DHCPV6)
+	/* TODO: IPV6 DHCP */
+#elif defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
+	net_ipaddr_copy(&net_sin(&src_addr)->sin_addr,
+			&iface->dhcpv4.requested_ip);
+	ret = in_addr_set(ZIRC_AF_INET, NULL, 0, &src_addr);
+#else
 	ret = in_addr_set(ZIRC_AF_INET, ZIRC_LOCAL_IP_ADDR,
 			  0, &src_addr);
 	if (ret < 0) {
 		goto connect_exit;
 	}
+#endif
 
 #if defined(CONFIG_DNS_RESOLVER)
 	in_addr_set(ZIRC_AF_INET, NULL, port, &dst_addr);
@@ -849,11 +857,6 @@ static void
 initialize_network(void)
 {
 	struct net_if *iface;
-	struct sockaddr addr;
-
-	/* TODO: use DHCP here, watch NET_EVENT_IF_UP, zirc_connect() when
-	 * available, etc
-	 */
 
 	 NET_INFO("Initializing network");
 
@@ -861,6 +864,30 @@ initialize_network(void)
 	if (!iface) {
 		panic("No default network interface");
 	}
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_DHCPV6)
+	/* TODO: IPV6 DHCP */
+#elif defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
+	net_dhcpv4_start(iface);
+
+	/* delay so DHCPv4 can assign IP */
+	/* TODO: add a timeout/retry */
+	NET_INFO("Waiting for DHCP ...");
+	do {
+		k_sleep(K_SECONDS(1));
+	} while (net_is_ipv4_addr_unspecified(&iface->dhcpv4.requested_ip));
+
+	NET_INFO("Done!");
+
+	/* TODO: add a timeout */
+	NET_INFO("Waiting for IP assginment ...");
+	do {
+		k_sleep(K_SECONDS(1));
+	} while (!net_is_my_ipv4_addr(&iface->dhcpv4.requested_ip));
+
+	NET_INFO("Done!");
+#else
+	struct sockaddr addr;
 
 	if (in_addr_set(ZIRC_AF_INET, ZIRC_LOCAL_IP_ADDR, 0,
 			  &addr) < 0) {
@@ -877,6 +904,7 @@ initialize_network(void)
 			     &net_sin(&addr)->sin_addr,
 			     NET_ADDR_MANUAL, 0);
 #endif
+#endif /* CONFIG_NET_IPV6 && CONFIG_NET_DHCPV6 */
 }
 
 static void
