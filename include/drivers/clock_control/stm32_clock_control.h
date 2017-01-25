@@ -16,12 +16,8 @@
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #include "stm32f1_clock_control.h"
-#elif CONFIG_SOC_SERIES_STM32F3X
-#include "stm32f3_clock_control.h"
 #elif CONFIG_SOC_SERIES_STM32F4X
 #include "stm32f4_clock_control.h"
-#elif CONFIG_SOC_SERIES_STM32L4X
-#include "stm32l4x_clock_control.h"
 #endif
 
 /* Bus */
