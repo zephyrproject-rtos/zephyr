@@ -69,10 +69,10 @@ int _arch_irq_is_enabled(unsigned int irq);
  * accept constant values for the irq_p parameter, very important as the
  * numerical IRQ line is used to create a named section.
  *
- * 2. An instance of _IsrTableEntry is created containing the ISR and its
- * parameter. If you look at how _sw_isr_table is created, each entry in the
- * array is in its own section named by the IRQ line number. What we are doing
- * here is to override one of the default entries (which points to the
+ * 2. An instance of struct _isr_table_entry is created containing the ISR and
+ * its parameter. If you look at how _sw_isr_table is created, each entry in
+ * the array is in its own section named by the IRQ line number. What we are
+ * doing here is to override one of the default entries (which points to the
  * spurious IRQ handler) with what was supplied here.
  *
  * 3. interrupt priority is not supported by pulpino core
@@ -88,7 +88,7 @@ int _arch_irq_is_enabled(unsigned int irq);
 #define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	enum { IRQ = irq_p }; \
-	static struct _IsrTableEntry _CONCAT(_isr_irq, irq_p) \
+	static struct _isr_table_entry _CONCAT(_isr_irq, irq_p) \
 		__attribute__ ((used)) \
 		__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, irq_p))))) = \
 			{isr_param_p, isr_p}; \

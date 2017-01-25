@@ -77,7 +77,7 @@ void _enter_irq(uint32_t ipending)
 #endif
 
 	while (ipending) {
-		_IsrTableEntry_t *ite;
+		struct _isr_table_entry *ite;
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 		_sys_k_event_logger_interrupt();

@@ -26,20 +26,15 @@ extern "C" {
  * loaded arg -> r0, isr -> r3 in _isr_wrapper with one ldmia instruction,
  * on ARM Cortex-M (Thumb2).
  */
-struct _IsrTableEntry {
+struct _isr_table_entry {
 	void *arg;
 	void (*isr)(void *);
 };
 
-typedef struct _IsrTableEntry _IsrTableEntry_t;
-
-#ifdef CONFIG_ARC
-extern _IsrTableEntry_t _sw_isr_table[CONFIG_NUM_IRQS - 16];
-#elif CONFIG_NIOS2
-extern _IsrTableEntry_t _sw_isr_table[NIOS2_NIRQ];
-#else
-extern _IsrTableEntry_t _sw_isr_table[CONFIG_NUM_IRQS];
-#endif
+/* The software ISR table itself, an array of these structures indexed by the
+ * irq line
+ */
+extern struct _isr_table_entry _sw_isr_table[];
 
 #endif /* _ASMLANGUAGE */
 
