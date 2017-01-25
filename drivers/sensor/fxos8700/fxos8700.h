@@ -114,6 +114,7 @@ struct fxos8700_data {
 	struct k_sem sem;
 #ifdef CONFIG_FXOS8700_TRIGGER
 	struct device *gpio;
+	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
 #endif

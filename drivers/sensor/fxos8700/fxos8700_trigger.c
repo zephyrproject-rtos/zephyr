@@ -8,12 +8,16 @@
 
 static void fxos8700_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,
-				   uint32_t pin)
+				   uint32_t pin_mask)
 {
 	struct fxos8700_data *data =
 		CONTAINER_OF(cb, struct fxos8700_data, gpio_cb);
 
-	gpio_pin_disable_callback(dev, pin);
+	if ((pin_mask & BIT(data->gpio_pin)) == 0) {
+		return;
+	}
+
+	gpio_pin_disable_callback(dev, data->gpio_pin);
 
 #if defined(CONFIG_FXOS8700_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -294,6 +298,8 @@ int fxos8700_trigger_init(struct device *dev)
 		SYS_LOG_DBG("Could not find GPIO device");
 		return -EINVAL;
 	}
+
+	data->gpio_pin = config->gpio_pin;
 
 	gpio_pin_configure(data->gpio, config->gpio_pin,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
