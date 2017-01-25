@@ -464,6 +464,7 @@ F:	samples/usb
 X86 ARCH
 M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 M:	Allan Stephens <allan.stephens@windriver.com>
+M:	Andrew Boie <andrew.p.boie@intel.com>
 S:	Supported
 F:	arch/x86/
 F:	include/arch/x86/
