@@ -324,6 +324,11 @@ static inline uint8_t compress_sa(struct net_ipv6_hdr *ipv6,
 			memcpy(&IPHC[offset], &ipv6->src.s6_addr[14], 2);
 			offset += 2;
 		} else {
+			if (!net_nbuf_ll_src(buf)) {
+				NET_DBG("Invalid src ll address");
+				return 0;
+			}
+
 			if (net_ipv6_addr_based_on_ll(&ipv6->src,
 						      net_nbuf_ll_src(buf))) {
 				NET_DBG("SAM_11 src address is fully elided");
@@ -471,6 +476,11 @@ static inline uint8_t compress_da(struct net_ipv6_hdr *ipv6,
 			memcpy(&IPHC[offset], &ipv6->dst.s6_addr[14], 2);
 			offset += 2;
 		} else {
+			if (!net_nbuf_ll_dst(buf)) {
+				NET_DBG("Invalid dst ll address");
+				return 0;
+			}
+
 			if (net_ipv6_addr_based_on_ll(&ipv6->dst,
 						      net_nbuf_ll_dst(buf))) {
 				NET_DBG("DAM_11 dst addr fully elided");
@@ -731,6 +741,10 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 #else
 	offset = compress_sa(ipv6, buf, frag, offset);
 #endif
+	if (!offset) {
+		net_nbuf_unref(frag);
+		return false;
+	}
 
 	/* Destination Address Compression */
 #if defined(CONFIG_NET_6LO_CONTEXT)
@@ -738,6 +752,11 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 #else
 	offset = compress_da(ipv6, buf, frag, offset);
 #endif
+
+	if (!offset) {
+		net_nbuf_unref(frag);
+		return false;
+	}
 
 	compressed = NET_IPV6H_LEN;
 
