@@ -78,51 +78,6 @@ static inline void _ScbDivByZeroFaultEnable(void)
 
 /**
  *
- * @brief Enable usage fault exceptions
- *
- * This routine enables usage faults.
- * By default, the CPU does not raise usage fault exceptions.
- *
- * @return N/A
- */
-
-static inline void _ScbUsageFaultEnable(void)
-{
-	__scs.scb.shcsr.bit.usgfaultena = 1;
-}
-
-/**
- *
- * @brief Enable bus fault exceptions
- *
- * This routine enables bus faults.
- * By default, the CPU does not raise bus fault exceptions.
- *
- * @return N/A
- */
-
-static inline void _ScbBusFaultEnable(void)
-{
-	__scs.scb.shcsr.bit.busfaultena = 1;
-}
-
-/**
- *
- * @brief Enable MPU faults exceptions
- *
- * This routine enables the MPU faults.
- * By default, the CPU does not raise MPU fault exceptions.
- *
- * @return N/A
- */
-
-static inline void _ScbMemFaultEnable(void)
-{
-	__scs.scb.shcsr.bit.memfaultena = 1;
-}
-
-/**
- *
  * @brief Find out if a hard fault is caused by a bus error on vector read
  *
  * This routine determines if a hard fault is caused by a bus error during

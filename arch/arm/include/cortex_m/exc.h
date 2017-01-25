@@ -85,9 +85,9 @@ static ALWAYS_INLINE void _ExcSetup(void)
 	NVIC_SetPriority(BusFault_IRQn, _EXC_FAULT_PRIO);
 	NVIC_SetPriority(UsageFault_IRQn, _EXC_FAULT_PRIO);
 
-	_ScbUsageFaultEnable();
-	_ScbBusFaultEnable();
-	_ScbMemFaultEnable();
+	/* Enable Usage, Mem, & Bus Faults */
+	SCB->SHCSR |= SCB_SHCSR_USGFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk |
+		      SCB_SHCSR_BUSFAULTENA_Msk;
 #endif
 }
 
