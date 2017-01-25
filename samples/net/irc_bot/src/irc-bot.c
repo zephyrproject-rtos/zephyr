@@ -31,6 +31,10 @@
 #include <stdio.h>
 #include <zephyr.h>
 
+#if !defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+#error "CONFIG_NET_IPV6 or CONFIG_NET_IPV4 must be enabled for irc_bot"
+#endif
+
 #define STACK_SIZE	2048
 uint8_t stack[STACK_SIZE];
 
@@ -49,14 +53,43 @@ static uint8_t cmd_buf[CMD_BUFFER_SIZE];
 static struct device *led0;
 static bool fake_led;
 
-/* Network */
-#if !defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
-#define CONFIG_NET_SAMPLES_MY_IPV6_ADDR "2001:db8::1"
+/* Network Config */
+
+#if defined(CONFIG_NET_IPV6)
+
+#define ZIRC_AF_INET		AF_INET6
+#define ZIRC_SOCKADDR_IN	sockaddr_in6
+
+#if defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
+#define ZIRC_LOCAL_IP_ADDR	CONFIG_NET_SAMPLES_MY_IPV6_ADDR
+#else
+#define ZIRC_LOCAL_IP_ADDR	"2001:db8::1"
 #endif /* CONFIG_NET_SAMPLES_MY_IPV6_ADDR */
 
-#if !defined(CONFIG_NET_SAMPLES_PEER_IPV6_ADDR)
-#define CONFIG_NET_SAMPLES_PEER_IPV6_ADDR "2001:db8::2"
+#if defined(CONFIG_NET_SAMPLES_PEER_IPV6_ADDR)
+#define ZIRC_PEER_IP_ADDR	CONFIG_NET_SAMPLES_PEER_IPV6_ADDR
+#else
+#define ZIRC_PEER_IP_ADDR	"2001:db8::2"
 #endif /* CONFIG_NET_SAMPLES_PEER_IPV6_ADDR */
+
+#else /* CONFIG_NET_IPV4 */
+
+#define ZIRC_AF_INET		AF_INET
+#define ZIRC_SOCKADDR_IN	sockaddr_in
+
+#if defined(CONFIG_NET_SAMPLES_MY_IPV4_ADDR)
+#define ZIRC_LOCAL_IP_ADDR	CONFIG_NET_SAMPLES_MY_IPV4_ADDR
+#else
+#define ZIRC_LOCAL_IP_ADDR	"192.168.0.1"
+#endif /* CONFIG_NET_SAMPLES_MY_IPV4_ADDR */
+
+#if defined(CONFIG_NET_SAMPLES_PEER_IPV4_ADDR)
+#define ZIRC_PEER_IP_ADDR	CONFIG_NET_SAMPLES_PEER_IPV4_ADDR
+#else
+#define ZIRC_PEER_IP_ADDR	"192.168.0.2"
+#endif /* CONFIG_NET_SAMPLES_PEER_IPV4_ADDR */
+
+#endif
 
 /* IRC API */
 #define DEFAULT_SERVER	"irc.freenode.net"
@@ -434,6 +467,7 @@ static int
 zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 {
 	/* TODO: DNS lookup for host */
+	struct net_if *iface;
 	struct sockaddr dst_addr, src_addr;
 	struct zirc_chan *chan;
 	int ret;
@@ -441,27 +475,33 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 
 	NET_INFO("Connecting to %s:%d...", host, port);
 
-	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
+	ret = net_context_get(ZIRC_AF_INET, SOCK_STREAM, IPPROTO_TCP,
 			      &irc->conn);
 	if (ret < 0) {
 		NET_DBG("Could not get new context: %d", -ret);
 		return ret;
 	}
 
-	ret = in_addr_set(AF_INET6, CONFIG_NET_SAMPLES_PEER_IPV6_ADDR,
-			  port, &dst_addr);
-	if (ret < 0) {
-		goto connect_exit;
+	iface = net_if_get_default();
+	if (!iface) {
+		NET_DBG("Could not get new context: %d", -ret);
+		return -EIO;
 	}
 
-	ret = in_addr_set(AF_INET6, CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+	ret = in_addr_set(ZIRC_AF_INET, ZIRC_LOCAL_IP_ADDR,
 			  0, &src_addr);
 	if (ret < 0) {
 		goto connect_exit;
 	}
 
+	ret = in_addr_set(ZIRC_AF_INET, ZIRC_PEER_IP_ADDR,
+			  port, &dst_addr);
+	if (ret < 0) {
+		goto connect_exit;
+	}
+
 	ret = net_context_bind(irc->conn, &src_addr,
-			       sizeof(struct sockaddr_in6));
+			       sizeof(struct ZIRC_SOCKADDR_IN));
 	if (ret < 0) {
 		NET_DBG("Could not bind to local address: %d", -ret);
 		goto connect_exit;
@@ -470,7 +510,7 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 	irc->data = data;
 
 	ret = net_context_connect(irc->conn, &dst_addr,
-				  sizeof(struct sockaddr_in6),
+				  sizeof(struct ZIRC_SOCKADDR_IN),
 				  NULL, K_FOREVER, irc);
 	if (ret < 0) {
 		NET_DBG("Could not connect, errno %d", -ret);
@@ -735,6 +775,7 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 static void
 initialize_network(void)
 {
+	struct net_if *iface;
 	struct sockaddr addr;
 
 	/* TODO: use DHCP here, watch NET_EVENT_IF_UP, zirc_connect() when
@@ -743,17 +784,26 @@ initialize_network(void)
 
 	 NET_INFO("Initializing network");
 
-#if defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
-	if (in_addr_set(AF_INET6, CONFIG_NET_SAMPLES_MY_IPV6_ADDR, 0,
-			  &addr) < 0) {
-		NET_ERR("Invalid IPv6 address: %s",
-			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+	iface = net_if_get_default();
+	if (!iface) {
+		panic("No default network interface");
 	}
-#endif /* CONFIG_NET_SAMPLES_MY_IPV6_ADDR */
 
-	net_if_ipv6_addr_add(net_if_get_default(),
+	if (in_addr_set(ZIRC_AF_INET, ZIRC_LOCAL_IP_ADDR, 0,
+			  &addr) < 0) {
+		NET_ERR("Invalid IP address: %s",
+			ZIRC_LOCAL_IP_ADDR);
+	}
+
+#if defined(CONFIG_NET_IPV6)
+	net_if_ipv6_addr_add(iface,
 			     &net_sin6(&addr)->sin6_addr,
 			     NET_ADDR_MANUAL, 0);
+#else
+	net_if_ipv4_addr_add(iface,
+			     &net_sin(&addr)->sin_addr,
+			     NET_ADDR_MANUAL, 0);
+#endif
 }
 
 static void
