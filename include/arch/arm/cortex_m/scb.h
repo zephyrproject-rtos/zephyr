@@ -53,20 +53,6 @@ extern "C" {
 
 /**
  *
- * @brief Pend the NMI exception
- *
- * Pend the NMI exception: it should fire immediately.
- *
- * @return N/A
- */
-
-static inline void _ScbNmiPend(void)
-{
-	__scs.scb.icsr.bit.nmipendset = 1;
-}
-
-/**
- *
  * @brief Set the PendSV exception
  *
  * Set the PendSV exception: it will be handled when the last nested exception
