@@ -395,6 +395,9 @@
 #define PIO_PD9C_AFEC1_ADTRG                       (1UL << 9)  
 
 /* ========== PIO definition for DACC peripheral ========== */
+#define PIO_PB13X1_DACC_DAC0                       (1u << 13)   /**< DACC signal: DAC0 */
+#define PIO_PD0X1_DACC_DAC1                        (1u << 0)    /**< DACC signal: DAC1 */
+
 #define PIN_PA2C_DACC_DATRG                        2L           /**< DACC signal: DATRG on PA2 mux C*/
 #define MUX_PA2C_DACC_DATRG                        2L          
 #define PINMUX_PA2C_DACC_DATRG                     ((PIN_PA2C_DACC_DATRG << 16) | MUX_PA2C_DACC_DATRG)
