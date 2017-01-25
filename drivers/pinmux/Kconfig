@@ -39,6 +39,13 @@ config PINMUX_INIT_PRIORITY
 	  rule for particular boards. Don't change this value unless you
 	  know what you are doing.
 
+config PINMUX_QMSI
+	bool "Enable QMSI pinmux dev driver"
+	depends on PINMUX && QMSI
+	default n
+	help
+	  Enables the pinmux dev driver for QMSI supported boards.
+
 source "drivers/pinmux/Kconfig.mcux"
 
 source "drivers/pinmux/Kconfig.stm32"

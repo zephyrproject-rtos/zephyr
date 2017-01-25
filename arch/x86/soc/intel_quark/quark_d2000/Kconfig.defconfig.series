@@ -52,6 +52,11 @@ config QMSI
 config QMSI_BUILTIN
 	def_bool y
 
+if PINMUX
+config PINMUX_QMSI
+	def_bool y
+endif
+
 if UART_QMSI
 config UART_QMSI_0
 	def_bool y

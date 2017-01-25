@@ -1,4 +1,4 @@
-/* pinmux_dev_qmsi.c -  QMSI pinmux dev driver */
+/* pinmux_qmsi.c -  QMSI pinmux dev driver */
 
 /*
  * Copyright (c) 2016 Intel Corporation
@@ -13,7 +13,7 @@
 
 #define MASK_2_BITS	0x3
 
-static int pinmux_dev_set(struct device *dev, uint32_t pin,
+static int pinmux_set(struct device *dev, uint32_t pin,
 			  uint32_t func)
 {
 	ARG_UNUSED(dev);
@@ -21,7 +21,7 @@ static int pinmux_dev_set(struct device *dev, uint32_t pin,
 	return qm_pmux_select(pin, func) == 0 ? 0 : -EIO;
 }
 
-static int pinmux_dev_get(struct device *dev, uint32_t pin,
+static int pinmux_get(struct device *dev, uint32_t pin,
 			  uint32_t *func)
 {
 	ARG_UNUSED(dev);
@@ -55,7 +55,7 @@ static int pinmux_dev_get(struct device *dev, uint32_t pin,
 	return 0;
 }
 
-static int pinmux_dev_pullup(struct device *dev, uint32_t pin,
+static int pinmux_pullup(struct device *dev, uint32_t pin,
 			     uint8_t func)
 {
 	ARG_UNUSED(dev);
@@ -63,7 +63,7 @@ static int pinmux_dev_pullup(struct device *dev, uint32_t pin,
 	return qm_pmux_pullup_en(pin, func) == 0 ? 0 : -EIO;
 }
 
-static int pinmux_dev_input(struct device *dev, uint32_t pin,
+static int pinmux_input(struct device *dev, uint32_t pin,
 			    uint8_t func)
 {
 	ARG_UNUSED(dev);
@@ -72,18 +72,18 @@ static int pinmux_dev_input(struct device *dev, uint32_t pin,
 }
 
 static struct pinmux_driver_api api_funcs = {
-	.set = pinmux_dev_set,
-	.get = pinmux_dev_get,
-	.pullup = pinmux_dev_pullup,
-	.input = pinmux_dev_input
+	.set = pinmux_set,
+	.get = pinmux_get,
+	.pullup = pinmux_pullup,
+	.input = pinmux_input
 };
 
-static int pinmux_dev_initialize(struct device *port)
+static int pinmux_initialize(struct device *port)
 {
 	return 0;
 }
 
-DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME,
-		    &pinmux_dev_initialize, NULL, NULL,
+DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_NAME,
+		    &pinmux_initialize, NULL, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);
