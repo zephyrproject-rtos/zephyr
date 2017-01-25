@@ -188,16 +188,12 @@ int stm32_gpio_enable_int(int port, int pin)
 	struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	struct stm32_pclken pclken = {
 		.bus = STM32_CLOCK_BUS_APB2,
 		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
 	};
 
 	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
-#else
-	clock_control_on(clk, UINT_TO_POINTER(STM32F3X_CLOCK_SUBSYS_SYSCFG));
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 	int shift = 0;
 
