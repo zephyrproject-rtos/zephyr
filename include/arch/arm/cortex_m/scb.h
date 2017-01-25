@@ -53,21 +53,6 @@ extern "C" {
 
 /**
  *
- * @brief Set the PendSV exception
- *
- * Set the PendSV exception: it will be handled when the last nested exception
- * returns, or immediately if running in thread mode.
- *
- * @return N/A
- */
-
-static inline void _ScbPendsvSet(void)
-{
-	__scs.scb.icsr.bit.pendsvset = 1;
-}
-
-/**
- *
  * @brief Find out if running in thread mode
  *
  * This routine determines if the current mode is thread mode.

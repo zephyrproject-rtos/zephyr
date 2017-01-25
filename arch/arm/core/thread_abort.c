@@ -39,7 +39,7 @@ void k_thread_abort(k_tid_t thread)
 			_Swap(key);
 			CODE_UNREACHABLE;
 		} else {
-			_ScbPendsvSet();
+			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 		}
 	}
 
