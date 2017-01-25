@@ -345,6 +345,16 @@ int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 	return -EINVAL;
 }
 
+static void slc_completed(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
+
+	if (bt_hf->connected) {
+		bt_hf->connected(conn);
+	}
+}
+
 int cmer_finish(struct at_client *hf_at, struct net_buf *buf,
 		enum at_result result)
 {
@@ -353,6 +363,8 @@ int cmer_finish(struct at_client *hf_at, struct net_buf *buf,
 		hf_slc_error(hf_at);
 		return -EINVAL;
 	}
+
+	slc_completed(hf_at);
 
 	return 0;
 }
