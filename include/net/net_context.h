@@ -14,6 +14,7 @@
 #define __NET_CONTEXT_H
 
 #include <kernel.h>
+#include <atomic.h>
 
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -139,6 +140,10 @@ struct net_conn_handle;
  * anyway. This saves 12 bytes / context in IPv6.
  */
 struct net_context {
+	/** Reference count
+	 */
+	atomic_t refcount;
+
 	/** Local IP address. Note that the values are in network byte order.
 	 */
 	struct sockaddr_ptr local;
@@ -402,10 +407,10 @@ static inline void net_context_set_iface(struct net_context *context,
 /**
  * @brief Get network context.
  *
- * @details Network context is used to define the connection
- * 5-tuple (protocol, remote address, remote port, source
- * address and source port). This is similar as BSD socket()
- * function.
+ * @details Network context is used to define the connection 5-tuple
+ * (protocol, remote address, remote port, source address and source
+ * port). This is similar as BSD socket() function.  The context will
+ * be created with a reference count of 1.
  *
  * @param family IP address family (AF_INET or AF_INET6)
  * @param type Type of the socket, SOCK_STREAM or SOCK_DGRAM
@@ -420,17 +425,48 @@ int net_context_get(sa_family_t family,
 		    struct net_context **context);
 
 /**
- * @brief Free/close a network context.
+ * @brief Close and unref a network context.
  *
- * @details This releases the context. It is not possible to
- * send or receive data via this context after this call.
- * This is similar as BSD shutdown() function.
+ * @details This releases the context. It is not possible to send or
+ * receive data via this context after this call.  This is similar as
+ * BSD shutdown() function.  For legacy compatibility, this function
+ * will implicitly decrement the reference count and possibly destroy
+ * the context either now or when it reaches a final state.
  *
  * @param context The context to be closed.
  *
  * @return 0 if ok, < 0 if error
  */
 int net_context_put(struct net_context *context);
+
+/**
+ * @brief Take a reference count to a net_context, preventing destruction
+ *
+ * @details Network contexts are not recycled until their reference
+ * count reaches zero.  Note that this does not prevent any "close"
+ * behavior that results from errors or net_context_put.  It simply
+ * prevents the context from being recycled for further use.
+ *
+ * @param context The context on which to increment the reference count
+ *
+ * @return The new reference count
+ */
+int net_context_ref(struct net_context *context);
+
+/**
+ * @brief Decrement the reference count to a network context
+ *
+ * @details Decrements the refcount.  If it reaches zero, the context
+ * will be recycled.  Note that this does not cause any
+ * network-visible "close" behavior (i.e. future packets to this
+ * connection may see TCP RST or ICMP port unreachable responses).  See
+ * net_context_put() for that.
+ *
+ * @param context The context on which to decrement the reference count
+ *
+ * @return The new reference count, zero if the context was destroyed
+ */
+int net_context_unref(struct net_context *context);
 
 /**
  * @brief Assign a socket a local address.

@@ -35,6 +35,32 @@
 
 #define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
 
+/* Declares a wrapper function for a net_conn callback that refs the
+ * context around the invocation (to protect it from premature
+ * deletion).  Long term would be nice to see this feature be part of
+ * the connection type itself, but right now it has opaque "user_data"
+ * pointers and doesn't understand what a net_context is.
+ */
+#define NET_CONN_CB(name) \
+	static enum net_verdict _##name(struct net_conn *conn,	  \
+					struct net_buf *buf,	  \
+					void *user_data);	  \
+	static enum net_verdict name(struct net_conn *conn,	  \
+				     struct net_buf *buf,	  \
+				     void *user_data)		  \
+	{							  \
+		enum net_verdict result;			  \
+								  \
+		net_context_ref(user_data);			  \
+		result = _##name(conn, buf, user_data);		  \
+		net_context_unref(user_data);			  \
+		return result;					  \
+	}							  \
+	static enum net_verdict _##name(struct net_conn *conn,    \
+					struct net_buf *buf,      \
+					void *user_data)	  \
+
+
 static struct net_context contexts[NET_MAX_CONTEXT];
 
 /* We need to lock the contexts array as these APIs are typically called
@@ -182,6 +208,7 @@ int net_context_get(sa_family_t family,
 #endif /* CONFIG_NET_TCP */
 
 		contexts[i].flags = 0;
+		atomic_set(&contexts[i].refcount, 1);
 
 		net_context_set_family(&contexts[i], family);
 		net_context_set_type(&contexts[i], type);
@@ -255,6 +282,40 @@ static bool send_fin_if_active_close(struct net_context *context)
 }
 #endif /* CONFIG_NET_TCP */
 
+int net_context_ref(struct net_context *context)
+{
+	int old_rc = atomic_inc(&context->refcount);
+
+	return old_rc + 1;
+}
+
+int net_context_unref(struct net_context *context)
+{
+	int old_rc = atomic_dec(&context->refcount);
+
+	if (old_rc != 1) {
+		return old_rc - 1;
+	}
+
+	k_sem_take(&contexts_lock, K_FOREVER);
+
+#if defined(CONFIG_NET_TCP)
+	if (context->tcp) {
+		net_tcp_release(context->tcp);
+	}
+#endif /* CONFIG_NET_TCP */
+
+	if (context->conn_handler) {
+		net_conn_unregister(context->conn_handler);
+	}
+
+	context->flags &= ~NET_CONTEXT_IN_USE;
+
+	k_sem_give(&contexts_lock);
+
+	return 0;
+}
+
 int net_context_put(struct net_context *context)
 {
 	NET_ASSERT(context);
@@ -263,10 +324,9 @@ int net_context_put(struct net_context *context)
 		return -EINVAL;
 	}
 
-	k_sem_take(&contexts_lock, K_FOREVER);
-
 #if defined(CONFIG_NET_L2_OFFLOAD_IP)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		k_sem_take(&contexts_lock, K_FOREVER);
 		context->flags &= ~NET_CONTEXT_IN_USE;
 		return net_l2_offload_ip_put(
 			net_context_get_iface(context), context);
@@ -278,27 +338,12 @@ int net_context_put(struct net_context *context)
 		if (send_fin_if_active_close(context)) {
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet");
-			goto still_in_use;
-		}
-
-		if (context->tcp) {
-			net_tcp_release(context->tcp);
+			return 0;
 		}
 	}
 #endif /* CONFIG_NET_TCP */
 
-	if (context->conn_handler) {
-		net_conn_unregister(context->conn_handler);
-	}
-
-	context->flags &= ~NET_CONTEXT_IN_USE;
-
-#if defined(CONFIG_NET_TCP)
-still_in_use:
-#endif /* CONFIG_NET_TCP */
-
-	k_sem_give(&contexts_lock);
-
+	net_context_unref(context);
 	return 0;
 }
 
@@ -694,9 +739,7 @@ static int tcp_hdr_len(struct net_buf *buf)
 	return 4 * (hdr->offset >> 4);
 }
 
-static enum net_verdict tcp_passive_close(struct net_conn *conn,
-					  struct net_buf *buf,
-					  void *user_data)
+NET_CONN_CB(tcp_passive_close)
 {
 	struct net_context *context = (struct net_context *)user_data;
 
@@ -717,7 +760,7 @@ static enum net_verdict tcp_passive_close(struct net_conn *conn,
 	if (net_tcp_get_state(context->tcp) == NET_TCP_LAST_ACK &&
 	    NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
 		NET_DBG("ACK received in LAST_ACK, disposing of connection");
-		net_context_put(context);
+		net_context_unref(context);
 	}
 
 	return NET_DROP;
@@ -726,9 +769,7 @@ static enum net_verdict tcp_passive_close(struct net_conn *conn,
 /* This is called when we receive data after the connection has been
  * established. The core TCP logic is located here.
  */
-static enum net_verdict tcp_established(struct net_conn *conn,
-					struct net_buf *buf,
-					void *user_data)
+NET_CONN_CB(tcp_established)
 {
 	struct net_context *context = (struct net_context *)user_data;
 	enum net_verdict ret;
@@ -784,9 +825,7 @@ static enum net_verdict tcp_established(struct net_conn *conn,
 	return ret;
 }
 
-static enum net_verdict tcp_active_close(struct net_conn *conn,
-					 struct net_buf *buf,
-					 void *user_data)
+NET_CONN_CB(tcp_active_close)
 {
 	struct net_context *context = (struct net_context *)user_data;
 	struct net_tcp *tcp;
@@ -825,9 +864,7 @@ static enum net_verdict tcp_active_close(struct net_conn *conn,
 	return NET_DROP;
 }
 
-static enum net_verdict tcp_synack_received(struct net_conn *conn,
-					    struct net_buf *buf,
-					    void *user_data)
+NET_CONN_CB(tcp_synack_received)
 {
 	struct net_context *context = (struct net_context *)user_data;
 	int ret;
@@ -947,6 +984,7 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 	return NET_DROP;
 }
+
 #endif /* CONFIG_NET_TCP */
 
 int net_context_connect(struct net_context *context,
@@ -1183,9 +1221,7 @@ static void buf_get_sockaddr(sa_family_t family, struct net_buf *buf,
  * The ACK could also be received, in which case we have an established
  * connection.
  */
-static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
-				     struct net_buf *buf,
-				     void *user_data)
+NET_CONN_CB(tcp_syn_rcvd)
 {
 	struct net_context *context = (struct net_context *)user_data;
 	struct net_tcp *tcp;
@@ -1345,7 +1381,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		{
 			NET_ASSERT_INFO(false, "Invalid protocol family %d",
 					net_context_get_family(context));
-			net_context_put(new_context);
+			net_context_unref(new_context);
 			return NET_DROP;
 		}
 
@@ -1354,7 +1390,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		if (ret < 0) {
 			NET_DBG("Cannot bind accepted context, "
 				"connection reset");
-			net_context_put(new_context);
+			net_context_unref(new_context);
 			goto reset;
 		}
 
@@ -1373,7 +1409,7 @@ static enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
 		if (ret < 0) {
 			NET_DBG("Cannot register accepted TCP handler (%d)",
 				ret);
-			net_context_put(new_context);
+			net_context_unref(new_context);
 			goto reset;
 		}
 
@@ -1415,6 +1451,7 @@ reset:
 
 	return NET_DROP;
 }
+
 #endif /* CONFIG_NET_TCP */
 
 int net_context_accept(struct net_context *context,

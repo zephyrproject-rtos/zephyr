@@ -729,7 +729,7 @@ static void fin_timeout(struct k_work *work)
 
 	NET_DBG("Remote peer didn't confirm connection close");
 
-	rc = net_context_put(tcp->context);
+	rc = net_context_unref(tcp->context);
 	if (rc < 0) {
 		NET_DBG("Cannot close TCP context");
 	}
