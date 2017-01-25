@@ -28,6 +28,13 @@ config GPIO_CMSDK_AHB_PORT3
 
 endif # GPIO
 
+if PINMUX
+
+config PINMUX_MPS2
+	def_bool y
+
+endif # PINMUX
+
 if SERIAL
 
 config UART_CMSDK_APB
