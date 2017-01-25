@@ -345,6 +345,17 @@ int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 	return -EINVAL;
 }
 
+int cmee_finish(struct at_client *hf_at, struct net_buf *buf,
+		enum at_result result)
+{
+	if (result != AT_RESULT_OK) {
+		BT_ERR("SLC Connection ERROR in response");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static void slc_completed(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
@@ -352,6 +363,10 @@ static void slc_completed(struct at_client *hf_at)
 
 	if (bt_hf->connected) {
 		bt_hf->connected(conn);
+	}
+
+	if (hfp_hf_send_cmd(hf, NULL, cmee_finish, "AT+CMEE=1") < 0) {
+		BT_ERR("Error Sending AT+CMEE");
 	}
 }
 
