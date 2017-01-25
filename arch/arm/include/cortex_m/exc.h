@@ -90,6 +90,28 @@ static ALWAYS_INLINE void _ExcSetup(void)
 #endif
 }
 
+/**
+ * @brief Clear Fault exceptions
+ *
+ * Clear out exceptions for Mem, Bus, Usage and Hard Faults
+ *
+ * @return N/A
+ */
+static ALWAYS_INLINE void _ClearFaults(void)
+{
+#if defined(CONFIG_ARMV6_M)
+#elif defined(CONFIG_ARMV7_M)
+	/* Reset all faults */
+	_ScbMemFaultAllFaultsReset();
+	_ScbBusFaultAllFaultsReset();
+	_ScbUsageFaultAllFaultsReset();
+
+	_ScbHardFaultAllFaultsReset();
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
+}
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

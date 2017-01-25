@@ -22,6 +22,7 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
+#include <cortex_m/exc.h>
 
 #define PLLFLLSEL_MCGFLLCLK	(0)
 #define PLLFLLSEL_MCGPLLCLK	(1)
@@ -171,13 +172,7 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	temp_reg |= MPU_CESR_SPERR_MASK;
 	MPU->CESR = temp_reg;
 
-	/* clear all faults */
-
-	_ScbMemFaultAllFaultsReset();
-	_ScbBusFaultAllFaultsReset();
-	_ScbUsageFaultAllFaultsReset();
-
-	_ScbHardFaultAllFaultsReset();
+	_ClearFaults();
 
 	/* Initialize PLL/system clock to 120 MHz */
 	clkInit();

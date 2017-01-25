@@ -16,6 +16,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
+#include <cortex_m/exc.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void _NmiInit(void);
@@ -377,12 +378,7 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	}
 #endif
 
-	/* Reset all faults */
-	_ScbMemFaultAllFaultsReset();
-	_ScbBusFaultAllFaultsReset();
-	_ScbUsageFaultAllFaultsReset();
-
-	_ScbHardFaultAllFaultsReset();
+	_ClearFaults();
 
 	/* Setup master clock */
 	clock_init();
