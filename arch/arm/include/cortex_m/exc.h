@@ -103,11 +103,12 @@ static ALWAYS_INLINE void _ClearFaults(void)
 #if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_ARMV7_M)
 	/* Reset all faults */
-	_ScbMemFaultAllFaultsReset();
-	_ScbBusFaultAllFaultsReset();
-	_ScbUsageFaultAllFaultsReset();
+	SCB->CFSR = SCB_CFSR_USGFAULTSR_Msk |
+		    SCB_CFSR_MEMFAULTSR_Msk |
+		    SCB_CFSR_BUSFAULTSR_Msk;
 
-	_ScbHardFaultAllFaultsReset();
+	/* Clear all Hard Faults - HFSR is write-one-to-clear */
+	SCB->HFSR = 0xffffffff;
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */

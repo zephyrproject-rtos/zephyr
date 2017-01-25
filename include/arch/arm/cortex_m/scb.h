@@ -48,20 +48,6 @@ extern "C" {
 #elif defined(CONFIG_ARMV7_M)
 /**
  *
- * @brief Clear all hard faults (HFSR register)
- *
- * HFSR register is a 'write-one-to-clear' (W1C) register.
- *
- * @return 1 if so, 0 otherwise
- */
-
-static inline int _ScbHardFaultAllFaultsReset(void)
-{
-	return __scs.scb.hfsr.val = 0xffff;
-}
-
-/**
- *
  * @brief Invalid the value in MMFAR
  *
  * This routine invalidates the MMFAR value. This should be done after
@@ -77,20 +63,6 @@ static inline void _ScbMemFaultMmfarReset(void)
 
 /**
  *
- * @brief Clear all MPU faults (MMFSR register)
- *
- * CFSR/MMFSR register is a 'write-one-to-clear' (W1C) register.
- *
- * @return 1 if so, 0 otherwise
- */
-
-static inline void _ScbMemFaultAllFaultsReset(void)
-{
-	__scs.scb.cfsr.byte.mmfsr.val = 0xfe;
-}
-
-/**
- *
  * @brief Invalid the value in BFAR
  *
  * This routine clears/invalidates the Bus Fault Address Register.
@@ -102,20 +74,6 @@ static inline void _ScbMemFaultAllFaultsReset(void)
 static inline void _ScbBusFaultBfarReset(void)
 {
 	__scs.scb.cfsr.byte.bfsr.bit.bfarvalid = 0;
-}
-
-/**
- *
- * @brief Clear all bus faults (BFSR register)
- *
- * CFSR/BFSR register is a 'write-one-to-clear' (W1C) register.
- *
- * @return N/A
- */
-
-static inline void _ScbBusFaultAllFaultsReset(void)
-{
-	__scs.scb.cfsr.byte.bfsr.val = 0xfe;
 }
 
 /**
