@@ -1,3 +1,3 @@
-obj-y = soc.o
+obj- = soc.o
 
 QEMU_CPU_TYPE_xtensa = dc233c
