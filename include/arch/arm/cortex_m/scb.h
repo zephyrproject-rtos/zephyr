@@ -53,21 +53,6 @@ extern "C" {
 
 /**
  *
- * @brief Find out if running in thread mode
- *
- * This routine determines if the current mode is thread mode.
- *
- * @return 1 if in thread mode, 0 otherwise
- */
-
-static inline int _ScbIsInThreadMode(void)
-{
-	/* 0 == thread mode */
-	return !__scs.scb.icsr.bit.vectactive;
-}
-
-/**
- *
  * @brief Obtain the currently executing vector
  *
  * If currently handling an exception/interrupt, return the executing vector

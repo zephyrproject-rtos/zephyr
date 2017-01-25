@@ -36,7 +36,7 @@ static void software_reboot(void)
 	 */
 	__asm__ volatile("cpsie i" :::);
 
-	if (_ScbIsInThreadMode()) {
+	if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) == 0) {
 		_do_software_reboot();
 	} else {
 		__asm__ volatile(
