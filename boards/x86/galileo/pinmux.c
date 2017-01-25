@@ -620,6 +620,67 @@ static struct pin_config mux_config[PINMUX_NUM_PINS] = {
 	{ 19, PINMUX_FUNC_C }, /* EXP2.P1_2 (out), ADC.IN5, I2C_SCL, NA */
 };
 
+static int pinmux_pullup(struct device *dev,
+				   uint32_t pin,
+				   uint8_t func)
+{
+	/*
+	 * Nothing to do.
+	 * On Galileo the pullup operation is handled through the selection
+	 * of an actual pin
+	 */
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pin);
+	ARG_UNUSED(func);
+
+	return 0;
+}
+
+static int pinmux_input_enable(struct device *dev,
+					 uint32_t pin,
+					 uint8_t func)
+{
+	/*
+	 * Nothing to do.
+	 * On Galileo select a pin for input enabling is handled through the
+	 * selection of an actual pin user configuration.
+	 */
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pin);
+	ARG_UNUSED(func);
+
+	return 0;
+}
+
+static int pinmux_set(struct device *dev,
+				uint32_t pin,
+				uint32_t func)
+{
+	if (pin > PINMUX_NUM_PINS) {
+		return -EINVAL;
+	}
+
+	return _galileo_pinmux_set_pin(dev, pin, func);
+}
+
+static int pinmux_get(struct device *dev,
+				uint32_t pin,
+				uint32_t *func)
+{
+	if (pin > PINMUX_NUM_PINS) {
+		return -EINVAL;
+	}
+
+	return _galileo_pinmux_get_pin(dev, pin, func);
+}
+
+static struct pinmux_driver_api api_funcs = {
+	.set = pinmux_set,
+	.get = pinmux_get,
+	.pullup = pinmux_pullup,
+	.input = pinmux_input_enable
+};
+
 struct galileo_data galileo_pinmux_driver = {
 	.exp0 = NULL,
 	.exp1 = NULL,
@@ -685,6 +746,6 @@ static int pinmux_galileo_initialize(struct device *port)
  * 1 - PCA9535 and PCAL9685
  * 2 - pinmux
  */
-DEVICE_INIT(pmux, CONFIG_PINMUX_NAME, &pinmux_galileo_initialize,
+DEVICE_AND_API_INIT(pmux, CONFIG_PINMUX_NAME, &pinmux_galileo_initialize,
 			&galileo_pinmux_driver, NULL,
-			POST_KERNEL, CONFIG_PINMUX_INIT_PRIORITY);
+			POST_KERNEL, CONFIG_PINMUX_INIT_PRIORITY, &api_funcs);
