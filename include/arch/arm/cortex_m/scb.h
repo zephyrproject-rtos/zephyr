@@ -35,13 +35,6 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 
-/* needed by k_cpu_atomic_idle() written in asm */
-#define _SCB_SCR 0xE000ED10
-
-#define _SCB_SCR_SEVONPEND (1 << 4)
-#define _SCB_SCR_SLEEPDEEP (1 << 2)
-#define _SCB_SCR_SLEEPONEXIT (1 << 1)
-
 #else
 
 #include <kernel.h>
