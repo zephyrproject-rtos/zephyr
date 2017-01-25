@@ -63,21 +63,6 @@ static inline uint32_t _ScbActiveVectorGet(void)
 #elif defined(CONFIG_ARMV7_M)
 /**
  *
- * @brief Find out if the currently executing exception is nested
- *
- * This routine determines if the currently executing exception is nested.
- *
- * @return 1 if nested, 0 otherwise
- */
-
-static inline int _ScbIsNestedExc(void)
-{
-	/* !bit == preempted exceptions */
-	return !__scs.scb.icsr.bit.rettobase;
-}
-
-/**
- *
  * @brief Enable faulting on division by zero
  *
  * This routine enables the divide by zero fault.

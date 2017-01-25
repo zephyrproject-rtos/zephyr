@@ -53,7 +53,8 @@ static ALWAYS_INLINE int _IsInIsr(void)
 #if defined(CONFIG_ARMV6_M)
 	return (vector > 10) || (vector == 3);
 #elif defined(CONFIG_ARMV7_M)
-	return (vector > 10) || (vector && _ScbIsNestedExc());
+	return (vector > 10) ||
+	       (vector && !(SCB->ICSR & SCB_ICSR_RETTOBASE_Msk));
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */
