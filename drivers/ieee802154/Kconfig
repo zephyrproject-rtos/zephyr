@@ -108,14 +108,6 @@ config TI_CC2520_RX_STACK_SIZE
 	The default value should be sufficient, but in case it prooves to be
 	a too little one, this option makes it easy to play with the size.
 
-config TI_CC2520_CHANNEL
-	int "TI CC2520 Channel"
-	default 26
-	range 11 26
-	help
-	All the 802.15.4 devices that want to connect to each other need
-	to have same channel. Default channel is 26.
-
 config TI_CC2520_INIT_PRIO
 	int "CC2520 intialization priority"
 	default 80
