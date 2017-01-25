@@ -103,6 +103,115 @@ struct dma_transfer_config {
 };
 
 /**
+ * @brief DMA block configuration structure.
+ *
+ * source_address is block starting address at source
+ * source_gather_interval is the address adjustment at gather boundary
+ * dest_address is block starting address at destination
+ * dest_scatter_interval is the address adjustment at scatter boundary
+ * dest_scatter_count is the continuous transfer count between scatter
+ *                    boundaries
+ * source_gather_count is the continuous transfer count between gather
+ *                     boundaries
+ * block_size is the number of bytes to be transferred for this block.
+ *
+ * config is a bit field with the following parts:
+ *     source_gather_en   [ 0 ]       - 0-disable, 1-enable
+ *     dest_scatter_en    [ 1 ]       - 0-disable, 1-enable
+ *     source_addr_adj    [ 2 : 3 ]   - 00-increment, 01-decrement,
+ *                                      10-no change
+ *     dest_addr_adj      [ 4 : 5 ]   - 00-increment, 01-decrement,
+ *                                      10-no change
+ *     source_reload_en   [ 6 ]       - reload source address at the end of
+ *                                      block transfer
+ *                                      0-disable, 1-enable
+ *     dest_reload_en     [ 7 ]       - reload destination address at the end
+ *                                      of block transfer
+ *                                      0-disable, 1-enable
+ *     fifo_mode_control  [ 8 : 11 ]  - How full  of the fifo before transfer
+ *                                      start. HW specific.
+ *     flow_control_mode  [ 12 ]      - 0-source request served upon data
+ *                                        availability
+ *                                      1-source request postphoned until
+ *                                        destination request happens
+ *     reserved           [ 13 : 15 ]
+ */
+struct dma_block_config {
+	uint32_t source_address;
+	uint32_t source_gather_interval;
+	uint32_t dest_address;
+	uint32_t dest_scatter_interval;
+	uint16_t dest_scatter_count;
+	uint16_t source_gather_count;
+	uint32_t block_size;
+	struct dma_block_config *next_block;
+	uint16_t  source_gather_en :  1;
+	uint16_t  dest_scatter_en :   1;
+	uint16_t  source_addr_adj :   2;
+	uint16_t  dest_addr_adj :     2;
+	uint16_t  source_reload_en :  1;
+	uint16_t  dest_reload_en :    1;
+	uint16_t  fifo_mode_control : 4;
+	uint16_t  flow_control_mode : 1;
+	uint16_t  reserved :          3;
+};
+
+/**
+ * @brief DMA configuration structure.
+ *
+ * config is a bit field with the following parts:
+ *     dma_slot             [ 0 : 5 ]   - which peripheral and direction
+ *                                        (HW specific)
+ *     channel_direction    [ 6 : 8 ]   - 000-memory to memory, 001-memory to
+ *                                        peripheral, 010-peripheral to memory,
+ *                                        ...
+ *     complete_callback_en [ 9 ]       - 0-callback invoked at completion only
+ *                                        1-callback invoked at completion of
+ *                                          each block
+ *     error_callback_en    [ 10 ]      - 0-error callback enabled
+ *                                        1-error callback disabled
+ *     source_handshake     [ 11 ]      - 0-HW, 1-SW
+ *     dest_handshake       [ 12 ]      - 0-HW, 1-SW
+ *     channel_priority     [ 13 : 16 ] - DMA channel priority
+ *     source_chaining_en   [ 17 ]      - enable/disable source block chaining
+ *                                        0-disable, 1-enable
+ *     dest_chaining_en     [ 18 ]      - enable/disable destination block
+ *                                        chaining.
+ *                                        0-disable, 1-enable
+ *     reserved             [ 19 : 31 ]
+ *
+ * config_size is a bit field with the following parts:
+ *     source_data_size    [ 0 : 7 ]    - number of bytes
+ *     dest_data_size      [ 8 : 15 ]   - number of bytes
+ *     source_burst_length [ 16 : 23 ]  - number of source data units
+ *     dest_burst_length   [ 24 : 31 ]  - number of destination data units
+ *
+ * dma_callback is the callback function pointer. If enabled, callback function
+ *              will be invoked at transfer completion or when error happens
+ *              (error_code: zero-transfer success, non zero-error happens).
+ */
+struct dma_config {
+	uint32_t  dma_slot :             6;
+	uint32_t  channel_direction :    3;
+	uint32_t  complete_callback_en : 1;
+	uint32_t  error_callback_en :    1;
+	uint32_t  source_handshake :     1;
+	uint32_t  dest_handshake :       1;
+	uint32_t  channel_priority :     4;
+	uint32_t  source_chaining_en :   1;
+	uint32_t  dest_chaining_en :     1;
+	uint32_t  reserved :            13;
+	uint32_t  source_data_size :     8;
+	uint32_t  dest_data_size :       8;
+	uint32_t  source_burst_length :  8;
+	uint32_t  dest_burst_length :    8;
+	uint32_t block_count;
+	struct dma_block_config *head_block;
+	void (*dma_callback)(struct device *dev, uint32_t channel,
+			     int error_code);
+};
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * These are for internal use only, so skip these in
@@ -119,15 +228,79 @@ typedef int (*dma_api_transfer_start)(struct device *dev, uint32_t channel);
 
 typedef int (*dma_api_transfer_stop)(struct device *dev, uint32_t channel);
 
+typedef int (*dma_api_config)(struct device *dev, uint32_t channel,
+			      struct dma_config *config);
+
+typedef int (*dma_api_start)(struct device *dev, uint32_t channel);
+
+typedef int (*dma_api_stop)(struct device *dev, uint32_t channel);
+
 struct dma_driver_api {
 	dma_api_channel_config channel_config;
 	dma_api_transfer_config transfer_config;
 	dma_api_transfer_start transfer_start;
 	dma_api_transfer_stop transfer_stop;
+	dma_api_config config;
+	dma_api_start start;
+	dma_api_stop stop;
 };
 /**
  * @endcond
  */
+
+/**
+ * @brief Configure individual channel for DMA transfer.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel to configure
+ * @param config  Data structure containing the intended configuration for the
+ *                selected channel
+ *
+ * @retval 0 if successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int dma_config(struct device *dev, uint32_t channel,
+			     struct dma_config *config)
+{
+	const struct dma_driver_api *api = dev->driver_api;
+
+	return api->config(dev, channel, config);
+}
+
+/**
+ * @brief Enables DMA channel and starts the transfer, the channel must be
+ *        configured beforehand.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel where the transfer will
+ *                be processed
+ *
+ * @retval 0 if successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int dma_start(struct device *dev, uint32_t channel)
+{
+	const struct dma_driver_api *api = dev->driver_api;
+
+	return api->start(dev, channel);
+}
+
+/**
+ * @brief Stops the DMA transfer and disables the channel.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel where the transfer was
+ *                being processed
+ *
+ * @retval 0 if successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int dma_stop(struct device *dev, uint32_t channel)
+{
+	const struct dma_driver_api *api = dev->driver_api;
+
+	return api->stop(dev, channel);
+}
 
 /**
  * @brief Configure individual channel for DMA transfer.
@@ -140,8 +313,8 @@ struct dma_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_channel_config(struct device *dev, uint32_t channel,
-				     struct dma_channel_config *config)
+static inline int __deprecated dma_channel_config(struct device *dev,
+			uint32_t channel, struct dma_channel_config *config)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -160,8 +333,8 @@ static inline int dma_channel_config(struct device *dev, uint32_t channel,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_transfer_config(struct device *dev, uint32_t channel,
-				      struct dma_transfer_config *config)
+static inline int __deprecated dma_transfer_config(struct device *dev,
+			uint32_t channel, struct dma_transfer_config *config)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -179,7 +352,8 @@ static inline int dma_transfer_config(struct device *dev, uint32_t channel,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_transfer_start(struct device *dev, uint32_t channel)
+static inline int __deprecated dma_transfer_start(struct device *dev,
+						  uint32_t channel)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -196,7 +370,8 @@ static inline int dma_transfer_start(struct device *dev, uint32_t channel)
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_transfer_stop(struct device *dev, uint32_t channel)
+static inline int __deprecated dma_transfer_stop(struct device *dev,
+						 uint32_t channel)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
