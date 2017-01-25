@@ -99,23 +99,3 @@ int stm32_get_pin_config(int pin, int func)
 	}
 	return -EINVAL;
 }
-
-clock_control_subsys_t stm32_get_port_clock(int port)
-{
-	const clock_control_subsys_t ports_to_clock[STM32_PORTS_MAX] = {
-		UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_GPIOA),
-		UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_GPIOB),
-		UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_GPIOC),
-		UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_GPIOD),
-		UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_GPIOE),
-		UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_GPIOF),
-		UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_GPIOG),
-		UINT_TO_POINTER(STM32L4X_CLOCK_SUBSYS_GPIOH),
-	};
-
-	if (port > STM32_PORTH) {
-		return NULL;
-	}
-
-	return ports_to_clock[port];
-}
