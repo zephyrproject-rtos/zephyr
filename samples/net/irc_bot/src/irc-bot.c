@@ -30,6 +30,7 @@
 #include <net/net_if.h>
 #include <stdio.h>
 #include <zephyr.h>
+#include <net/dns_client.h>
 
 #if !defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
 #error "CONFIG_NET_IPV6 or CONFIG_NET_IPV4 must be enabled for irc_bot"
@@ -72,6 +73,9 @@ static bool fake_led;
 #define ZIRC_PEER_IP_ADDR	"2001:db8::2"
 #endif /* CONFIG_NET_SAMPLES_PEER_IPV6_ADDR */
 
+/* Google DNS server for IPv6 */
+#define DNS_SERVER		"2001:4860:4860::8888"
+
 #else /* CONFIG_NET_IPV4 */
 
 #define ZIRC_AF_INET		AF_INET
@@ -89,7 +93,14 @@ static bool fake_led;
 #define ZIRC_PEER_IP_ADDR	"192.168.0.2"
 #endif /* CONFIG_NET_SAMPLES_PEER_IPV4_ADDR */
 
+/* Google DNS server for IPv4 */
+#define DNS_SERVER		"8.8.8.8"
+
 #endif
+
+/* DNS API */
+#define DNS_PORT		53
+#define DNS_SLEEP_MSECS		400
 
 /* IRC API */
 #define DEFAULT_SERVER	"irc.freenode.net"
@@ -464,9 +475,59 @@ static int in_addr_set(sa_family_t family,
 }
 
 static int
+zirc_dns_lookup(const char *host,
+		struct sockaddr *src_addr,
+		struct sockaddr *dst_addr)
+{
+	struct net_context *net_ctx;
+	struct dns_context dns_ctx;
+	struct sockaddr dns_addr = { 0 };
+	int ret;
+
+	/* query DNS for server IP */
+	dns_init(&dns_ctx);
+
+	ret = net_context_get(ZIRC_AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
+	if (ret < 0) {
+		NET_ERR("Cannot get network context for IP UDP: %d\n", -ret);
+		return ret;
+	}
+
+	ret = net_context_bind(net_ctx, src_addr,
+			       sizeof(struct ZIRC_SOCKADDR_IN));
+	if (ret < 0) {
+		NET_ERR("Cannot bind: %d\n", -ret);
+		goto dns_exit;
+	}
+
+	in_addr_set(ZIRC_AF_INET, DNS_SERVER, DNS_PORT, &dns_addr);
+
+	dns_ctx.net_ctx = net_ctx;
+	dns_ctx.timeout = DNS_SLEEP_MSECS;
+	dns_ctx.dns_server = &dns_addr;
+	dns_ctx.elements = 1;
+#ifdef CONFIG_NET_IPV6
+	dns_ctx.query_type = DNS_QUERY_TYPE_AAAA;
+	dns_ctx.address.ipv6 = &net_sin6(dst_addr)->sin6_addr;
+#else
+	dns_ctx.query_type = DNS_QUERY_TYPE_A;
+	dns_ctx.address.ipv4 = &net_sin(dst_addr)->sin_addr;
+#endif
+	dns_ctx.name = DEFAULT_SERVER;
+	ret = dns_resolve(&dns_ctx);
+	if (ret != 0) {
+		NET_ERR("dns_resolve ERROR %d\n", -ret);
+	}
+
+dns_exit:
+	net_context_put(net_ctx);
+
+	return ret;
+}
+
+static int
 zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 {
-	/* TODO: DNS lookup for host */
 	struct net_if *iface;
 	struct sockaddr dst_addr, src_addr;
 	struct zirc_chan *chan;
@@ -494,11 +555,23 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 		goto connect_exit;
 	}
 
+#if defined(CONFIG_DNS_RESOLVER)
+	in_addr_set(ZIRC_AF_INET, NULL, port, &dst_addr);
+
+	/* set the IP address for the dst_addr via DNS */
+	ret = zirc_dns_lookup(host, &src_addr, &dst_addr);
+	if (ret < 0) {
+		NET_ERR("Could not peform DNS lookup on host %s: %d",
+			host, -ret);
+		goto connect_exit;
+	}
+#else
 	ret = in_addr_set(ZIRC_AF_INET, ZIRC_PEER_IP_ADDR,
 			  port, &dst_addr);
 	if (ret < 0) {
 		goto connect_exit;
 	}
+#endif
 
 	ret = net_context_bind(irc->conn, &src_addr,
 			       sizeof(struct ZIRC_SOCKADDR_IN));
