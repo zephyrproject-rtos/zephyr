@@ -237,14 +237,6 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 {
 	BT_DBG("dlc %p", dlc);
 
-	if (!dlc->session->dlcs) {
-		/* Start an idle timer. Incase we initiate session disconnect
-		 * then this will be restarted as DISC timer
-		 */
-		k_delayed_work_submit(&dlc->session->rtx_work,
-				      RFCOMM_IDLE_TIMEOUT);
-	}
-
 	k_delayed_work_cancel(&dlc->rtx_work);
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
@@ -1247,6 +1239,12 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 		rfcomm_send_ua(session, dlci);
 		rfcomm_dlc_disconnect(dlc);
+
+		if (!session->dlcs) {
+			/* Start a session idle timer */
+			k_delayed_work_submit(&dlc->session->rtx_work,
+					      RFCOMM_IDLE_TIMEOUT);
+		}
 	} else {
 		/* Cancel idle timer */
 		k_delayed_work_cancel(&session->rtx_work);
