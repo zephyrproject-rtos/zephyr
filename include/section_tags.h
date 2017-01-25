@@ -17,7 +17,6 @@
 #define __irq_vector_table	_GENERIC_SECTION(IRQ_VECTOR_TABLE)
 
 #if defined(CONFIG_ARM)
-#define __scs_section		__in_section_unique(SCS_SECTION)
 #define __scp_section		__in_section_unique(SCP_SECTION)
 #define __security_frdm_k64f_section   __in_section_unique(SECURITY_FRDM_K64F)
 #define __kinetis_flash_config_section __in_section_unique(KINETIS_FLASH_CONFIG)
