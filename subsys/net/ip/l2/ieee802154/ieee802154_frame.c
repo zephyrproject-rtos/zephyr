@@ -528,6 +528,7 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 		/* ll reserve was too small? We probably overwrote
 		 * payload bytes
 		 */
+		NET_ERR("Could not generate data frame");
 		return false;
 	}
 
