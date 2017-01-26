@@ -9,7 +9,8 @@
 menuconfig TELNET_CONSOLE
 	bool "Enable a super basic telnet console service"
 	default n
-	depends on NET_TCP
+	select NETWORKING
+	select NET_TCP
 	help
 	This option enables telnet as a network console service. It is for
 	now a very basic implementation of the telnet protocol. Currently,
