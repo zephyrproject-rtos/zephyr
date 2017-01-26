@@ -155,7 +155,9 @@ static void bt_spi_rx_thread(void)
 			 header_slave[STATUS_HEADER_TOREAD] == 0xFF);
 
 		size = header_slave[STATUS_HEADER_TOREAD];
-		spi_transceive(spi_dev, &txmsg, size, &rxmsg, size);
+		do {
+			spi_transceive(spi_dev, &txmsg, size, &rxmsg, size);
+		} while (rxmsg[0] == 0);
 
 #if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 		gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
@@ -251,7 +253,9 @@ static int bt_spi_send(struct net_buf *buf)
 		 (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0);
 
 	/* Transmit the message */
-	spi_transceive(spi_dev, buf->data, buf->len, rxmsg, buf->len);
+	do {
+		spi_transceive(spi_dev, buf->data, buf->len, rxmsg, buf->len);
+	} while (rxmsg[0] == 0);
 
 #if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 	/* Deselect chip */
