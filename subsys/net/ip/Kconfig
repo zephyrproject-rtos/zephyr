@@ -56,7 +56,6 @@ config NET_MAX_ROUTERS
 config NET_ROUTE
 	bool
 	depends on NET_IPV6
-	select NET_IPV6_ND
 	default n
 	default y if NET_IPV6
 
