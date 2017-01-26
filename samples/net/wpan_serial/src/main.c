@@ -314,7 +314,7 @@ static void process_data(struct net_buf *pkt)
 	}
 
 	/* Transmit data through radio */
-	ret = radio_api->tx(ieee802154_dev, pkt);
+	ret = radio_api->tx(ieee802154_dev, pkt, buf);
 	if (ret) {
 		SYS_LOG_ERR("Error transmit data");
 	}

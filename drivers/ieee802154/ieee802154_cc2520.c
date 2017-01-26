@@ -414,11 +414,10 @@ static inline void setup_gpio_callbacks(struct device *dev)
  * TX functions *
  ***************/
 static inline bool write_txfifo_length(struct cc2520_spi *spi,
-				       struct net_buf *buf)
+				       uint8_t len)
 {
 	spi->cmd_buf[0] = CC2520_INS_TXBUF;
-	spi->cmd_buf[1] = net_nbuf_ll_reserve(buf) +
-		buf->frags->len + CC2520_FCS_LENGTH;
+	spi->cmd_buf[1] = len + CC2520_FCS_LENGTH;
 
 	spi_slave_select(spi->dev, spi->slave);
 
@@ -426,25 +425,22 @@ static inline bool write_txfifo_length(struct cc2520_spi *spi,
 }
 
 static inline bool write_txfifo_content(struct cc2520_spi *spi,
-					struct net_buf *buf)
+					uint8_t *frame, uint8_t len)
 {
 	uint8_t cmd[128];
 
 	cmd[0] = CC2520_INS_TXBUF;
-	memcpy(&cmd[1], net_nbuf_ll(buf),
-	       net_nbuf_ll_reserve(buf) + buf->frags->len);
+	memcpy(&cmd[1], frame, len);
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, cmd, net_nbuf_ll_reserve(buf) +
-			  buf->frags->len + 1) == 0);
+	return (spi_write(spi->dev, cmd, len + 1) == 0);
 }
 
 static inline bool verify_txfifo_status(struct cc2520_context *cc2520,
-					struct net_buf *buf)
+					uint8_t len)
 {
-	if (read_reg_txfifocnt(&cc2520->spi) < (net_nbuf_ll_reserve(buf) +
-						buf->frags->len) ||
+	if (read_reg_txfifocnt(&cc2520->spi) < len ||
 	    (read_reg_excflag0(&cc2520->spi) & EXCFLAG0_TX_UNDERFLOW)) {
 		return false;
 	}
@@ -816,22 +812,26 @@ error:
 	return -EIO;
 }
 
-static int cc2520_tx(struct device *dev, struct net_buf *buf)
+static int cc2520_tx(struct device *dev,
+		     struct net_buf *buf,
+		     struct net_buf *frag)
 {
+	uint8_t *frame = frag->data - net_nbuf_ll_reserve(buf);
+	uint8_t len = net_nbuf_ll_reserve(buf) + frag->len;
 	struct cc2520_context *cc2520 = dev->driver_data;
 	uint8_t retry = 2;
 	bool status;
 
-	SYS_LOG_DBG("%p (%u)", buf, net_nbuf_ll_reserve(buf) + buf->frags->len);
+	SYS_LOG_DBG("%p (%u)", frag, len);
 
 	if (!write_reg_excflag0(&cc2520->spi, EXCFLAG0_RESET_TX_FLAGS) ||
-	    !write_txfifo_length(&cc2520->spi, buf) ||
-	    !write_txfifo_content(&cc2520->spi, buf)) {
+	    !write_txfifo_length(&cc2520->spi, len) ||
+	    !write_txfifo_content(&cc2520->spi, frame, len)) {
 		SYS_LOG_ERR("Cannot feed in TX fifo");
 		goto error;
 	}
 
-	if (!verify_txfifo_status(cc2520, buf)) {
+	if (!verify_txfifo_status(cc2520, len)) {
 		SYS_LOG_ERR("Did not write properly into TX FIFO");
 		goto error;
 	}

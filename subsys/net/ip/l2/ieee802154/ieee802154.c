@@ -108,7 +108,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 
 		net_buf_add(frag, IEEE802154_ACK_PKT_LENGTH);
 
-		radio->tx(iface->dev, buf);
+		radio->tx(iface->dev, buf, frag);
 	}
 
 	net_nbuf_unref(buf);

@@ -42,8 +42,10 @@ struct ieee802154_radio_api {
 	/** Set TX power level in dbm */
 	int (*set_txpower)(struct device *dev, int16_t dbm);
 
-	/** Transmit a buffer */
-	int (*tx)(struct device *dev, struct net_buf *buf);
+	/** Transmit a buffer fragment */
+	int (*tx)(struct device *dev,
+		  struct net_buf *buf,
+		  struct net_buf *frag);
 
 	/** Start the device */
 	int (*start)(struct device *dev);

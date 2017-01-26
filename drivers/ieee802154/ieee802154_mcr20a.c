@@ -1072,11 +1072,12 @@ error:
 }
 
 static inline bool write_txfifo_content(struct mcr20a_spi *spi,
-					struct net_buf *buf)
+					struct net_buf *buf,
+					struct net_buf *frag)
 {
 	uint8_t cmd[2 + MCR20A_PSDU_LENGTH];
-	uint8_t payload_len = net_nbuf_ll_reserve(buf) +
-			      buf->frags->len;
+	uint8_t payload_len = net_nbuf_ll_reserve(buf) + frag->len;
+	uint8_t *payload = frag->data - net_nbuf_ll_reserve(buf);
 
 	cmd[0] = MCR20A_BUF_WRITE;
 	/**
@@ -1090,14 +1091,16 @@ static inline bool write_txfifo_content(struct mcr20a_spi *spi,
 		SYS_LOG_ERR("Payload too long");
 		return 0;
 	}
-	memcpy(&cmd[2], net_nbuf_ll(buf), payload_len);
+	memcpy(&cmd[2], payload, payload_len);
 
 	spi_slave_select(spi->dev, spi->slave);
 
 	return (spi_write(spi->dev, cmd, (2 + payload_len)) == 0);
 }
 
-static int mcr20a_tx(struct device *dev, struct net_buf *buf)
+static int mcr20a_tx(struct device *dev,
+		     struct net_buf *buf,
+		     struct net_buf *frag)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 	uint8_t ctrl1;
@@ -1105,7 +1108,7 @@ static int mcr20a_tx(struct device *dev, struct net_buf *buf)
 					       MCR20A_XCVSEQ_TX;
 
 	SYS_LOG_DBG("%p (%u)",
-		    buf, net_nbuf_ll_reserve(buf) + buf->frags->len);
+		    frag, net_nbuf_ll_reserve(buf) + frag->len);
 
 	if (!mcr20a_mask_irqb(mcr20a, true)) {
 		goto error;
@@ -1131,7 +1134,7 @@ static int mcr20a_tx(struct device *dev, struct net_buf *buf)
 		goto error;
 	}
 
-	if (!write_txfifo_content(&mcr20a->spi, buf)) {
+	if (!write_txfifo_content(&mcr20a->spi, buf, frag)) {
 		SYS_LOG_ERR("Did not write properly into TX FIFO");
 		goto error;
 	}

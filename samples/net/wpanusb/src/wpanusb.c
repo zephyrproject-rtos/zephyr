@@ -359,7 +359,7 @@ static int tx(struct net_buf *pkt)
 	SYS_LOG_DBG("len %d seq %u", buf->len, seq);
 
 	do {
-		ret = radio_api->tx(ieee802154_dev, pkt);
+		ret = radio_api->tx(ieee802154_dev, pkt, buf);
 	} while (ret && retries--);
 
 	if (ret) {
