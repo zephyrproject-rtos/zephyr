@@ -58,6 +58,7 @@
 #define SPI_MAX_MSG_LEN		255 /* As defined by X-NUCLEO-IDB04A1 BSP */
 
 static uint8_t rxmsg[SPI_MAX_MSG_LEN];
+static uint8_t txmsg[SPI_MAX_MSG_LEN];
 
 static struct device		*spi_dev;
 #if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
@@ -134,8 +135,10 @@ static void bt_spi_rx_thread(void)
 	struct net_buf *buf;
 	uint8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
 	uint8_t header_slave[5];
-	uint8_t dummy = 0xFF, size, i;
 	struct bt_hci_acl_hdr acl_hdr;
+	uint8_t size;
+
+	memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
 	while (true) {
 		k_sem_take(&sem_request, K_FOREVER);
@@ -152,10 +155,7 @@ static void bt_spi_rx_thread(void)
 			 header_slave[STATUS_HEADER_TOREAD] == 0xFF);
 
 		size = header_slave[STATUS_HEADER_TOREAD];
-
-		for (i = 0; i < size; i++) {
-			spi_transceive(spi_dev, &dummy, 1, &rxmsg[i], 1);
-		}
+		spi_transceive(spi_dev, &txmsg, size, &rxmsg, size);
 
 #if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 		gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
