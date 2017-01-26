@@ -190,10 +190,7 @@ Open a terminal window and type:
 	$ make BOARD=arduino_101
 
 To load the binary in the development board follow the steps
-indicated here:
-
-  https://www.zephyrproject.org/doc/board/arduino_101.html
-
+in :ref:`arduino_101`.
 
 Open a terminal window and type:
 
