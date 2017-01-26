@@ -256,8 +256,23 @@ int net_context_get(sa_family_t family,
 }
 
 #if defined(CONFIG_NET_TCP)
-static inline int send_fin(struct net_context *context,
-			   struct sockaddr *remote);
+static void queue_fin(struct net_context *ctx)
+{
+	struct net_buf *buf = NULL;
+	int ret;
+
+	ret = net_tcp_prepare_segment(ctx->tcp, NET_TCP_FIN, NULL, 0,
+				      NULL, &ctx->remote, &buf);
+	if (ret || !buf) {
+		return;
+	}
+
+	ret = net_tcp_send_buf(buf);
+	if (ret < 0) {
+		net_nbuf_unref(buf);
+	}
+}
+
 static enum net_verdict tcp_active_close(struct net_conn *conn,
 					 struct net_buf *buf,
 					 void *user_data);
@@ -272,7 +287,7 @@ static bool send_fin_if_active_close(struct net_context *context)
 		/* Sending a packet with the FIN flag automatically
 		 * transitions to FIN_WAIT_1
 		 */
-		send_fin(context, &context->remote);
+		queue_fin(context);
 		net_conn_change_callback(context->conn_handler,
 					 tcp_active_close, context);
 		return true;
@@ -667,12 +682,6 @@ static inline int send_syn_ack(struct net_context *context,
 	return send_control_segment(context, local, remote,
 				    NET_TCP_SYN | NET_TCP_ACK,
 				    "SYN_ACK");
-}
-
-static inline int send_fin(struct net_context *context,
-			   struct sockaddr *remote)
-{
-	return send_control_segment(context, NULL, remote, NET_TCP_FIN, "FIN");
 }
 
 static inline int send_fin_ack(struct net_context *context,
