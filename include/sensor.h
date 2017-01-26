@@ -50,24 +50,45 @@ enum sensor_channel {
 	SENSOR_CHAN_ACCEL_Y,
 	/** Acceleration on the Z axis, in m/s^2. */
 	SENSOR_CHAN_ACCEL_Z,
-	/** Acceleration on any axis. */
-	SENSOR_CHAN_ACCEL_ANY,
+	/** Acceleration on the X, Y and Z axes. */
+	SENSOR_CHAN_ACCEL_XYZ,
+	/**
+	 * This enum value will be deprecated.
+	 * Please use SENSOR_CHAN_ACCEL_XYZ instead.
+	 *
+	 * Acceleration on any axis.
+	 */
+	SENSOR_CHAN_ACCEL_ANY = SENSOR_CHAN_ACCEL_XYZ,
 	/** Angular velocity around the X axis, in radians/s. */
 	SENSOR_CHAN_GYRO_X,
 	/** Angular velocity around the Y axis, in radians/s. */
 	SENSOR_CHAN_GYRO_Y,
 	/** Angular velocity around the Z axis, in radians/s. */
 	SENSOR_CHAN_GYRO_Z,
-	/** Angular velocity on any axis. */
-	SENSOR_CHAN_GYRO_ANY,
+	/** Angular velocity around the X, Y and Z axes. */
+	SENSOR_CHAN_GYRO_XYZ,
+	/**
+	 * This enum value will be deprecated.
+	 * Please use SENSOR_CHAN_GYRO_XYZ instead.
+	 *
+	 * Angular velocity on any axis.
+	 */
+	SENSOR_CHAN_GYRO_ANY = SENSOR_CHAN_GYRO_XYZ,
 	/** Magnetic field on the X axis, in Gauss. */
 	SENSOR_CHAN_MAGN_X,
 	/** Magnetic field on the Y axis, in Gauss. */
 	SENSOR_CHAN_MAGN_Y,
 	/** Magnetic field on the Z axis, in Gauss. */
 	SENSOR_CHAN_MAGN_Z,
-	/** Magnetic field on any axis. */
-	SENSOR_CHAN_MAGN_ANY,
+	/** Magnetic field on the X, Y and Z axes. */
+	SENSOR_CHAN_MAGN_XYZ,
+	/**
+	 * This enum value will be deprecated.
+	 * Please use SENSOR_CHAN_MAGN_XYZ instead.
+	 *
+	 * Magnetic field on any axis.
+	 */
+	SENSOR_CHAN_MAGN_ANY = SENSOR_CHAN_MAGN_XYZ,
 	/** Temperature in degrees Celsius. */
 	SENSOR_CHAN_TEMP,
 	/** Pressure in kilopascal. */
@@ -342,7 +363,7 @@ static inline int sensor_sample_fetch_chan(struct device *dev,
  * has not been called in the meantime.
  *
  * For vectorial data samples you can request all axes in just one call
- * by passing the specific channel with _ANY suffix. The sample will be
+ * by passing the specific channel with _XYZ suffix. The sample will be
  * returned at val[0], val[1] and val[2] (X, Y and Z in that order).
  *
  * @param dev Pointer to the sensor device

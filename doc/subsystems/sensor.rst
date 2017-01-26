@@ -43,8 +43,8 @@ Fetching Values
 Getting a reading from a sensor requires two operations.  First, an
 application instructs the driver to fetch a sample of all its channels.
 Then, individual channels may be read.  In the case of channels with
-multiple axes, all the axes can be read in a single operation by supplying
-the corresponding :literal:`_ANY` channel type and a buffer of 3
+multiple axes, they can be read in a single operation by supplying
+the corresponding :literal:`_XYZ` channel type and a buffer of 3
 :c:type:`struct sensor_value` objects.  This approach ensures consistency
 of channels between reads and efficiency of communication by issuing a
 single transaction on the underlying bus.
