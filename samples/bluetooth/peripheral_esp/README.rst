@@ -19,4 +19,12 @@ Requirements
 Building and Running
 ********************
 
+This sample can be found under :file:`samples/bluetooth/peripheral_esp` in the
+Zephyr tree.
+
 See :ref:`bluetooth setup section <bluetooth_setup>` for details.
+
+References
+**********
+
+* :ref:`env_sensing_sample`

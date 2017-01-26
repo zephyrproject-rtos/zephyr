@@ -20,5 +20,7 @@ Requirements
 
 Building and Running
 ********************
+This sample can be found under :file:`samples/bluetooth/central` in the
+Zephyr tree.
 
 See :ref:`bluetooth setup section <bluetooth_setup>` for details.

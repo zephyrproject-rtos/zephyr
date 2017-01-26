@@ -16,6 +16,9 @@ requires L2CAP channels support.
 Building and Running
 ********************
 
+This sample can be found under :file:`samples/bluetooth/ipsp` in the
+Zephyr tree.
+
 Testing with a Linux host
 =========================
 

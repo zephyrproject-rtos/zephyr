@@ -1,3 +1,5 @@
+.. _env_sensing_sample:
+
 Environmental Sensing Sample
 ############################
 
