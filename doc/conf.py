@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Zephyr Project'
-copyright = u'2015, Intel Corporation, Wind River Systems, Inc'
+copyright = u'2015-2017 Zephyr Project members and individual contributors.'
 author = u'many'
 
 
