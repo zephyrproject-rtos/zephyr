@@ -43,14 +43,18 @@
 #define CMD_OCF			2
 
 #define GPIO_IRQ_PIN		CONFIG_BLUETOOTH_SPI_IRQ_PIN
-#define GPIO_CS_PIN		CONFIG_BLUETOOTH_SPI_CHIP_SELECT_PIN
 #define GPIO_RESET_PIN		CONFIG_BLUETOOTH_SPI_RESET_PIN
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
+#define GPIO_CS_PIN		CONFIG_BLUETOOTH_SPI_CHIP_SELECT_PIN
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 
 #define MAX_RX_MSG_LEN		CONFIG_BLUETOOTH_SPI_RX_BUFFER_SIZE
 #define MAX_TX_MSG_LEN		CONFIG_BLUETOOTH_SPI_TX_BUFFER_SIZE
 
 static struct device		*spi_dev;
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 static struct device		*cs_dev;
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 static struct device		*irq_dev;
 static struct device		*rst_dev;
 
@@ -131,8 +135,10 @@ static void bt_spi_rx_thread(void)
 		k_sem_take(&sem_busy, K_FOREVER);
 
 		do {
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 			gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
 			gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 			spi_transceive(spi_dev,
 				       header_master, 5, header_slave, 5);
 		} while (header_slave[STATUS_HEADER_TOREAD] == 0 ||
@@ -144,7 +150,9 @@ static void bt_spi_rx_thread(void)
 			spi_transceive(spi_dev, &dummy, 1, &rxmsg[i], 1);
 		}
 
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 		gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 		k_sem_give(&sem_busy);
 
 		spi_dump_message("RX:ed", rxmsg, size);
@@ -221,8 +229,10 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Poll sanity values until device has woken-up */
 	do {
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 		gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
 		gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 		spi_transceive(spi_dev, header, 5, rxmsg, 5);
 
 		/*
@@ -236,12 +246,15 @@ static int bt_spi_send(struct net_buf *buf)
 	/* Transmit the message */
 	spi_transceive(spi_dev, buf->data, buf->len, rxmsg, buf->len);
 
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 	/* Deselect chip */
 	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 	k_sem_give(&sem_busy);
 
 	spi_dump_message("TX:ed", buf->data, buf->len);
 
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 	/*
 	 * Since a RESET has been requested, the chip will now restart.
 	 * Unfortunately the BlueNRG will reply with "reset received" but
@@ -252,6 +265,7 @@ static int bt_spi_send(struct net_buf *buf)
 	if (bt_spi_get_cmd(buf->data) == BT_HCI_OP_RESET) {
 		k_sem_take(&sem_initialised, K_FOREVER);
 	}
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 
 	net_buf_unref(buf);
 
@@ -267,10 +281,12 @@ static int bt_spi_open(void)
 
 	spi_configure(spi_dev, &spi_conf);
 
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 	/* Configure the CS (Chip Select) pin */
 	gpio_pin_configure(cs_dev, GPIO_CS_PIN,
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 
 	/* Configure IRQ pin and the IRQ call-back/handler */
 	gpio_pin_configure(irq_dev, GPIO_IRQ_PIN,
@@ -319,12 +335,14 @@ static int _bt_spi_init(struct device *unused)
 		return -EIO;
 	}
 
+#if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 	cs_dev = device_get_binding(CONFIG_BLUETOOTH_SPI_CHIP_SELECT_DEV_NAME);
 	if (!cs_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
 		       CONFIG_BLUETOOTH_SPI_CHIP_SELECT_DEV_NAME);
 		return -EIO;
 	}
+#endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 
 	irq_dev = device_get_binding(CONFIG_BLUETOOTH_SPI_IRQ_DEV_NAME);
 	if (!irq_dev) {
