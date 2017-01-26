@@ -21,13 +21,6 @@ ifeq ($(CONFIG_SIMULATOR_XTENSA),y)
 flagBoardType= -DXT_SIMULATOR
 endif
 
-flagLongCall=
-flagALongCall=
-ifeq ($(CONFIG_LONG_CALL),y)
-flagLongCall=-mlongcalls
-flagALongCall=--longcalls
-endif
-
 # Remove compilation flags added by top makefile and which are not supported by xcc and enable.
 KBUILD_CFLAGS := $(filter-out -fno-asynchronous-unwind-tables -fno-omit-frame-pointer,${KBUILD_CFLAGS})
 # Add Xtensa pecific flags
