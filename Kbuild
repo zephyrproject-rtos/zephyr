@@ -90,7 +90,7 @@ define rule_cc_o_c_1
 	$(call echo-cmd,cc_o_c_1) $(cmd_cc_o_c_1);
 endef
 
-cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(ZEPHYRINCLUDE) -c -o $@ $<
+cmd_cc_o_c_1 = $(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(ZEPHYRINCLUDE) -c -o $@ $<
 
 arch/$(ARCH)/core/offsets/offsets.o: arch/$(ARCH)/core/offsets/offsets.c $(KCONFIG_CONFIG) \
 				include/generated/generated_dts_board.h
