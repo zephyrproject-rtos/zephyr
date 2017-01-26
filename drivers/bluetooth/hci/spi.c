@@ -142,6 +142,8 @@ static void bt_spi_rx_thread(void)
 
 	while (true) {
 		k_sem_take(&sem_request, K_FOREVER);
+		/* Disable IRQ pin callback to avoid spurious IRQs */
+		gpio_pin_disable_callback(irq_dev, GPIO_IRQ_PIN);
 		k_sem_take(&sem_busy, K_FOREVER);
 
 		do {
@@ -159,6 +161,7 @@ static void bt_spi_rx_thread(void)
 			spi_transceive(spi_dev, &txmsg, size, &rxmsg, size);
 		} while (rxmsg[0] == 0);
 
+		gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN);
 #if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
 		gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
 #endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
