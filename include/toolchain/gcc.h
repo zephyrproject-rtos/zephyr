@@ -47,7 +47,11 @@ do {                                                                    \
 	__p->__v = (v);                                               \
 } while (0)
 
-#define _GENERIC_SECTION(segment) __attribute__((section(#segment)))
+/* Double indirection to ensure section names are expanded before
+ * stringification
+ */
+#define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
+#define _GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
 
 #define ___in_section(a, b, c) \
 	__attribute__((section("." _STRINGIFY(a)			\
