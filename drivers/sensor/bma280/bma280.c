@@ -83,7 +83,7 @@ static int bma280_channel_get(struct device *dev,
 		bma280_channel_accel_convert(val, drv_data->y_sample);
 	} else if (chan == SENSOR_CHAN_ACCEL_Z) {
 		bma280_channel_accel_convert(val, drv_data->z_sample);
-	} else if (chan == SENSOR_CHAN_ACCEL_ANY) {
+	} else if (chan == SENSOR_CHAN_ACCEL_XYZ) {
 		bma280_channel_accel_convert(val, drv_data->x_sample);
 		bma280_channel_accel_convert(val + 1, drv_data->y_sample);
 		bma280_channel_accel_convert(val + 2, drv_data->z_sample);

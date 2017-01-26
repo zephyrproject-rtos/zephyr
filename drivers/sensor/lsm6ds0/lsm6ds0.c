@@ -206,14 +206,14 @@ static int lsm6ds0_sample_fetch_temp(struct device *dev)
 
 static int lsm6ds0_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GYRO_ANY ||
-		 chan == SENSOR_CHAN_GYRO_ANY);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
+			chan == SENSOR_CHAN_GYRO_XYZ);
 
 	switch (chan) {
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		lsm6ds0_sample_fetch_accel(dev);
 		break;
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		lsm6ds0_sample_fetch_gyro(dev);
 		break;
 #if defined(CONFIG_LSM6DS0_ENABLE_TEMP)
@@ -266,7 +266,7 @@ static inline int lsm6ds0_accel_get_channel(enum sensor_channel chan,
 		lsm6ds0_accel_convert(val, data->accel_sample_z, scale);
 		break;
 #endif
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 #if defined(CONFIG_LSM6DS0_ACCEL_ENABLE_X_AXIS)
 		lsm6ds0_accel_convert(val, data->accel_sample_x, scale);
 #endif
@@ -323,7 +323,7 @@ static inline int lsm6ds0_gyro_get_channel(enum sensor_channel chan,
 		lsm6ds0_gyro_convert(val, data->gyro_sample_z, numerator);
 		break;
 #endif
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 #if defined(CONFIG_LSM6DS0_GYRO_ENABLE_X_AXIS)
 		lsm6ds0_gyro_convert(val, data->gyro_sample_x, numerator);
 #endif
@@ -369,13 +369,13 @@ static int lsm6ds0_channel_get(struct device *dev,
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		lsm6ds0_accel_channel_get(chan, val, data);
 		break;
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		lsm6ds0_gyro_channel_get(chan, val, data);
 		break;
 #if defined(CONFIG_LSM6DS0_ENABLE_TEMP)

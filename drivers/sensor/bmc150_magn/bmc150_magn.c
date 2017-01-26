@@ -292,7 +292,8 @@ static int bmc150_magn_sample_fetch(struct device *dev,
 	int16_t raw_x, raw_y, raw_z;
 	uint16_t rhall;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_MAGN_ANY);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
+			chan == SENSOR_CHAN_MAGN_XYZ);
 
 	if (i2c_burst_read(data->i2c_master, config->i2c_slave_addr,
 			   BMC150_MAGN_REG_X_L, (uint8_t *)values,
@@ -342,7 +343,7 @@ static int bmc150_magn_channel_get(struct device *dev,
 	case SENSOR_CHAN_MAGN_Z:
 		bmc150_magn_convert(val, data->sample_z);
 		break;
-	case SENSOR_CHAN_MAGN_ANY:
+	case SENSOR_CHAN_MAGN_XYZ:
 		bmc150_magn_convert(val, data->sample_x);
 		bmc150_magn_convert(val + 1, data->sample_y);
 		bmc150_magn_convert(val + 2, data->sample_z);

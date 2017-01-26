@@ -133,7 +133,7 @@ static int bmg160_attr_set(struct device *dev, enum sensor_channel chan,
 	int idx;
 	uint16_t range_dps;
 
-	if (chan != SENSOR_CHAN_GYRO_ANY) {
+	if (chan != SENSOR_CHAN_GYRO_XYZ) {
 		return -ENOTSUP;
 	}
 
@@ -241,7 +241,7 @@ static int bmg160_channel_get(struct device *dev, enum sensor_channel chan,
 		bmg160_to_fixed_point(bmg160, chan, raw_val, val);
 		return 0;
 
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		/* return all channel values, in one read */
 		for (i = 0; i < 3; i++, val++) {
 			raw_val = bmg160->raw_gyro_xyz[i];

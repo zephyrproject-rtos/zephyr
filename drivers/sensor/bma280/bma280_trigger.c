@@ -20,7 +20,7 @@ int bma280_attr_set(struct device *dev,
 	struct bma280_data *drv_data = dev->driver_data;
 	uint64_t slope_th;
 
-	if (chan != SENSOR_CHAN_ACCEL_ANY) {
+	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
 		return -ENOTSUP;
 	}
 

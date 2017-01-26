@@ -21,7 +21,7 @@ static void print_gyro_data(struct device *bmg160)
 {
 	struct sensor_value val[3];
 
-	if (sensor_channel_get(bmg160, SENSOR_CHAN_GYRO_ANY, val) < 0) {
+	if (sensor_channel_get(bmg160, SENSOR_CHAN_GYRO_XYZ, val) < 0) {
 		printf("Cannot read bmg160 gyro channels.\n");
 		return;
 	}
@@ -87,7 +87,7 @@ static void test_trigger_mode(struct device *bmg160)
 	struct sensor_value attr;
 
 	trig.type = SENSOR_TRIG_DELTA;
-	trig.chan = SENSOR_CHAN_GYRO_ANY;
+	trig.chan = SENSOR_CHAN_GYRO_XYZ;
 
 	printf("Gyro: Testing anymotion trigger.\n");
 
@@ -97,7 +97,7 @@ static void test_trigger_mode(struct device *bmg160)
 
 	sensor_degrees_to_rad(10, &attr); /* convert to rad/s */
 
-	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
 		printf("Gyro: cannot set slope threshold.\n");
 		return;
@@ -107,7 +107,7 @@ static void test_trigger_mode(struct device *bmg160)
 	attr.val1 = 4;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
 		printf("Gyro: cannot set slope duration.\n");
 		return;
@@ -136,14 +136,14 @@ static void test_trigger_mode(struct device *bmg160)
 	attr.val1 = 100;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
 		printf("Gyro: cannot set sampling frequency.\n");
 		return;
 	}
 
 	trig.type = SENSOR_TRIG_DATA_READY;
-	trig.chan = SENSOR_CHAN_GYRO_ANY;
+	trig.chan = SENSOR_CHAN_GYRO_XYZ;
 
 	if (sensor_trigger_set(bmg160, &trig, trigger_handler) < 0) {
 		printf("Gyro: cannot set trigger.\n");
@@ -185,7 +185,7 @@ void main(void)
 	 */
 	sensor_degrees_to_rad(250, &attr);
 
-	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
 		printf("Cannot set gyro range.\n");
 		return;

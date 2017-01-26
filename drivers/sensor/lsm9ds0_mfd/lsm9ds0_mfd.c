@@ -363,11 +363,11 @@ static int lsm9ds0_mfd_sample_fetch(struct device *dev,
 {
 	switch (chan) {
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm9ds0_mfd_sample_fetch_accel(dev);
 #endif
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
-	case SENSOR_CHAN_MAGN_ANY:
+	case SENSOR_CHAN_MAGN_XYZ:
 		return lsm9ds0_mfd_sample_fetch_magn(dev);
 #endif
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
@@ -410,7 +410,7 @@ static inline int lsm9ds0_mfd_get_accel_channel(enum sensor_channel chan,
 	case SENSOR_CHAN_GYRO_Z:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_z, scale);
 		break;
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_x, scale);
 		lsm9ds0_mfd_convert_accel(val + 1, data->sample_accel_y, scale);
 		lsm9ds0_mfd_convert_accel(val + 2, data->sample_accel_z, scale);
@@ -496,7 +496,7 @@ static inline int lsm9ds0_mfd_get_magn_channel(enum sensor_channel chan,
 	case SENSOR_CHAN_GYRO_Z:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_z, scale);
 		break;
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_x, scale);
 		lsm9ds0_mfd_convert_magn(val + 1, data->sample_magn_y, scale);
 		lsm9ds0_mfd_convert_magn(val + 2, data->sample_magn_z, scale);
@@ -558,14 +558,14 @@ static int lsm9ds0_mfd_channel_get(struct device *dev,
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm9ds0_mfd_get_accel(dev, chan, val);
 #endif
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
-	case SENSOR_CHAN_MAGN_ANY:
+	case SENSOR_CHAN_MAGN_XYZ:
 		return lsm9ds0_mfd_get_magn(dev, chan, val);
 #endif
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
@@ -635,14 +635,14 @@ static int lsm9ds0_mfd_attr_set(struct device *dev,
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm9ds0_mfd_attr_set_accel(dev, attr, val);
 #endif
 #if defined(LSM9DS0_MFD_ATTR_SET_MAGN)
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
-	case SENSOR_CHAN_MAGN_ANY:
+	case SENSOR_CHAN_MAGN_XYZ:
 		return lsm9ds0_mfd_attr_set_magn(dev, attr, val);
 #endif
 	default:

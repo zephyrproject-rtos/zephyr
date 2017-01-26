@@ -51,7 +51,7 @@ void main(void)
 
 	struct sensor_trigger trig = {
 		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ACCEL_ANY,
+		.chan = SENSOR_CHAN_ACCEL_XYZ,
 	};
 
 	if (sensor_trigger_set(dev, &trig, trigger_handler)) {
@@ -62,8 +62,8 @@ void main(void)
 	while (1) {
 		k_sem_take(&sem, K_FOREVER);
 
-		sensor_channel_get(dev, SENSOR_CHAN_ACCEL_ANY, accel);
-		sensor_channel_get(dev, SENSOR_CHAN_MAGN_ANY, magn);
+		sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, accel);
+		sensor_channel_get(dev, SENSOR_CHAN_MAGN_XYZ, magn);
 
 		/* Print accel x,y,z and mag x,y,z data */
 		printf("AX=%10.6f AY=%10.6f AZ=%10.6f "

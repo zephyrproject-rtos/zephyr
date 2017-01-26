@@ -136,7 +136,7 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 			start_channel = FXOS8700_CHANNEL_ACCEL_Z;
 			num_channels = 1;
 			break;
-		case SENSOR_CHAN_ACCEL_ANY:
+		case SENSOR_CHAN_ACCEL_XYZ:
 			start_channel = FXOS8700_CHANNEL_ACCEL_X;
 			num_channels = 3;
 			break;
@@ -173,7 +173,7 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 			start_channel = FXOS8700_CHANNEL_MAGN_Z;
 			num_channels = 1;
 			break;
-		case SENSOR_CHAN_MAGN_ANY:
+		case SENSOR_CHAN_MAGN_XYZ:
 			start_channel = FXOS8700_CHANNEL_MAGN_X;
 			num_channels = 3;
 			break;

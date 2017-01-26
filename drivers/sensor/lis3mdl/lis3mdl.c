@@ -27,7 +27,7 @@ static int lis3mdl_channel_get(struct device *dev,
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
 
-	if (chan == SENSOR_CHAN_MAGN_ANY) {
+	if (chan == SENSOR_CHAN_MAGN_XYZ) {
 		/* magn_val = sample / mang_gain */
 		lis3mdl_convert(val, drv_data->x_sample,
 				lis3mdl_magn_gain[LIS3MDL_FS_IDX]);

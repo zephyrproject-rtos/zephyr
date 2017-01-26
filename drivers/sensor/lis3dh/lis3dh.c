@@ -37,7 +37,7 @@ static int lis3dh_channel_get(struct device *dev,
 		lis3dh_convert(val, drv_data->y_sample);
 	} else if (chan == SENSOR_CHAN_ACCEL_Z) {
 		lis3dh_convert(val, drv_data->z_sample);
-	} else if (chan == SENSOR_CHAN_ACCEL_ANY) {
+	} else if (chan == SENSOR_CHAN_ACCEL_XYZ) {
 		lis3dh_convert(val, drv_data->x_sample);
 		lis3dh_convert(val + 1, drv_data->y_sample);
 		lis3dh_convert(val + 2, drv_data->z_sample);
@@ -53,7 +53,8 @@ int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct lis3dh_data *drv_data = dev->driver_data;
 	uint8_t buf[6];
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_ACCEL_ANY);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
+			chan == SENSOR_CHAN_ACCEL_XYZ);
 
 	/*
 	 * since all accel data register addresses are consecutive,

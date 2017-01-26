@@ -57,7 +57,7 @@ static int mpu6050_channel_get(struct device *dev,
 	struct mpu6050_data *drv_data = dev->driver_data;
 
 	switch (chan) {
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		mpu6050_convert_accel(val, drv_data->accel_x,
 				      drv_data->accel_sensitivity_shift);
 		mpu6050_convert_accel(val + 1, drv_data->accel_y,
@@ -77,7 +77,7 @@ static int mpu6050_channel_get(struct device *dev,
 		mpu6050_convert_accel(val, drv_data->accel_z,
 				      drv_data->accel_sensitivity_shift);
 		break;
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		mpu6050_convert_gyro(val, drv_data->gyro_x,
 				     drv_data->gyro_sensitivity_x10);
 		mpu6050_convert_gyro(val + 1, drv_data->gyro_y,

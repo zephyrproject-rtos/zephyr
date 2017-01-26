@@ -121,7 +121,7 @@ static int bmg160_handle_anymotion_int(struct device *dev)
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 	struct sensor_trigger any_trig = {
 		.type = SENSOR_TRIG_DELTA,
-		.chan = SENSOR_CHAN_GYRO_ANY,
+		.chan = SENSOR_CHAN_GYRO_XYZ,
 	};
 
 	if (bmg160->anymotion_handler) {
@@ -136,7 +136,7 @@ static int bmg160_handle_dataready_int(struct device *dev)
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 	struct sensor_trigger drdy_trig = {
 		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_GYRO_ANY,
+		.chan = SENSOR_CHAN_GYRO_XYZ,
 	};
 
 	if (bmg160->drdy_handler) {

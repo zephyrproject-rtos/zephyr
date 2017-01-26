@@ -59,10 +59,12 @@ static int ak8975_channel_get(struct device *dev,
 {
 	struct ak8975_data *drv_data = dev->driver_data;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_MAGN_ANY || chan == SENSOR_CHAN_MAGN_X ||
-		 chan == SENSOR_CHAN_MAGN_Y || chan == SENSOR_CHAN_MAGN_Z);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_MAGN_XYZ ||
+			chan == SENSOR_CHAN_MAGN_X ||
+			chan == SENSOR_CHAN_MAGN_Y ||
+			chan == SENSOR_CHAN_MAGN_Z);
 
-	if (chan == SENSOR_CHAN_MAGN_ANY) {
+	if (chan == SENSOR_CHAN_MAGN_XYZ) {
 		ak8975_convert(val, drv_data->x_sample, drv_data->x_adj);
 		ak8975_convert(val + 1, drv_data->y_sample, drv_data->y_adj);
 		ak8975_convert(val + 2, drv_data->z_sample, drv_data->z_adj);

@@ -54,7 +54,7 @@ static int manual_calibration(struct device *bmi160)
 {
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 	/* set accelerometer offsets */
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_OFFSET, accel_offsets) < 0) {
 		return -EIO;
 	}
@@ -62,7 +62,7 @@ static int manual_calibration(struct device *bmi160)
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 	/* set gyroscope offsets */
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_OFFSET, gyro_offsets) < 0) {
 		return -EIO;
 	}
@@ -87,7 +87,7 @@ static int auto_calibration(struct device *bmi160)
 {
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 	/* calibrate accelerometer */
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_XYZ,
 			      SENSOR_ATTR_CALIB_TARGET, acc_calib) < 0) {
 		return -EIO;
 	}
@@ -99,7 +99,7 @@ static int auto_calibration(struct device *bmi160)
 	 * the target on all axis is set internally to 0. This is used just to
 	 * trigger a gyro calibration.
 	 */
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_XYZ,
 			      SENSOR_ATTR_CALIB_TARGET, NULL) < 0) {
 		return -EIO;
 	}
@@ -153,7 +153,7 @@ static void print_gyro_data(struct device *bmi160)
 	struct sensor_value val[3];
 	char buf_x[18], buf_y[18], buf_z[18];
 
-	if (sensor_channel_get(bmi160, SENSOR_CHAN_GYRO_ANY, val) < 0) {
+	if (sensor_channel_get(bmi160, SENSOR_CHAN_GYRO_XYZ, val) < 0) {
 		printk("Cannot read bmi160 gyro channels.\n");
 		return;
 	}
@@ -173,7 +173,7 @@ static void print_accel_data(struct device *bmi160)
 	char buf_x[18], buf_y[18], buf_z[18];
 
 	if (sensor_channel_get(bmi160,
-			       SENSOR_CHAN_ACCEL_ANY, val) < 0) {
+			       SENSOR_CHAN_ACCEL_XYZ, val) < 0) {
 		printk("Cannot read bmi160 accel channels.\n");
 		return;
 	}
@@ -211,7 +211,7 @@ static void test_polling_mode(struct device *bmi160)
 	attr.val1 = 800;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
 		return;
@@ -223,7 +223,7 @@ static void test_polling_mode(struct device *bmi160)
 	attr.val1 = 3200;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
 		printk("Cannot set sampling frequency for gyroscope.\n");
 		return;
@@ -267,13 +267,13 @@ static void trigger_hdlr(struct device *bmi160,
 	}
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-	if (trigger->chan == SENSOR_CHAN_GYRO_ANY) {
+	if (trigger->chan == SENSOR_CHAN_GYRO_XYZ) {
 		print_gyro_data(bmi160);
 	}
 #endif
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-	if (trigger->chan == SENSOR_CHAN_ACCEL_ANY) {
+	if (trigger->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		print_accel_data(bmi160);
 	}
 #endif
@@ -295,7 +295,7 @@ static void test_anymotion_trigger(struct device *bmi160)
 	 */
 	attr.val1 = 0;
 	attr.val2 = 980665;
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
 		printk("Cannot set anymotion slope threshold.\n");
 		return;
@@ -309,7 +309,7 @@ static void test_anymotion_trigger(struct device *bmi160)
 	 */
 	attr.val1 = 2;
 	attr.val2 = 0;
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
 		printk("Cannot set anymotion slope duration.\n");
 		return;
@@ -317,7 +317,7 @@ static void test_anymotion_trigger(struct device *bmi160)
 
 	/* enable anymotion trigger */
 	trig.type = SENSOR_TRIG_DELTA;
-	trig.chan = SENSOR_CHAN_ACCEL_ANY;
+	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
 	if (sensor_trigger_set(bmi160, &trig, trigger_hdlr) < 0) {
 		printk("Cannot enable anymotion trigger.\n");
@@ -347,7 +347,7 @@ static void test_data_ready_trigger(struct device *bmi160)
 
 	/* enable data ready trigger */
 	trig.type = SENSOR_TRIG_DATA_READY;
-	trig.chan = SENSOR_CHAN_ACCEL_ANY;
+	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
 	if (sensor_trigger_set(bmi160, &trig, trigger_hdlr) < 0) {
 		printk("Cannot enable data ready trigger.\n");
@@ -379,7 +379,7 @@ static void test_trigger_mode(struct device *bmi160)
 	attr.val1 = 100;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
 		return;
@@ -391,7 +391,7 @@ static void test_trigger_mode(struct device *bmi160)
 	attr.val1 = 100;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
 		printk("Cannot set sampling frequency for gyroscope.\n");
 		return;
@@ -428,7 +428,7 @@ void main(void)
 	 */
 	sensor_g_to_ms2(16, &attr);
 
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
 		printk("Cannot set accelerometer range.\n");
 		return;
@@ -442,7 +442,7 @@ void main(void)
 	 */
 	sensor_degrees_to_rad(250, &attr);
 
-	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
 		printk("Cannot set gyro range.\n");
 		return;

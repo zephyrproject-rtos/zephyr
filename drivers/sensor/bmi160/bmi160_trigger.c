@@ -16,7 +16,7 @@ static void bmi160_handle_anymotion(struct device *dev)
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 	struct sensor_trigger anym_trigger = {
 		.type = SENSOR_TRIG_DELTA,
-		.chan = SENSOR_CHAN_ACCEL_ANY,
+		.chan = SENSOR_CHAN_ACCEL_XYZ,
 	};
 
 	if (bmi160->handler_anymotion) {
@@ -33,14 +33,14 @@ static void bmi160_handle_drdy(struct device *dev, uint8_t status)
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 	if (bmi160->handler_drdy_acc && (status & BMI160_STATUS_ACC_DRDY)) {
-		drdy_trigger.chan = SENSOR_CHAN_ACCEL_ANY;
+		drdy_trigger.chan = SENSOR_CHAN_ACCEL_XYZ;
 		bmi160->handler_drdy_acc(dev, &drdy_trigger);
 	}
 #endif
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 	if (bmi160->handler_drdy_gyr && (status & BMI160_STATUS_GYR_DRDY)) {
-		drdy_trigger.chan = SENSOR_CHAN_GYRO_ANY;
+		drdy_trigger.chan = SENSOR_CHAN_GYRO_XYZ;
 		bmi160->handler_drdy_gyr(dev, &drdy_trigger);
 	}
 #endif
@@ -129,7 +129,7 @@ static int bmi160_trigger_drdy_set(struct device *dev,
 	uint8_t drdy_en = 0;
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-	if (chan == SENSOR_CHAN_ACCEL_ANY) {
+	if (chan == SENSOR_CHAN_ACCEL_XYZ) {
 		bmi160->handler_drdy_acc = handler;
 	}
 
@@ -139,7 +139,7 @@ static int bmi160_trigger_drdy_set(struct device *dev,
 #endif
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-	if (chan == SENSOR_CHAN_GYRO_ANY) {
+	if (chan == SENSOR_CHAN_GYRO_XYZ) {
 		bmi160->handler_drdy_gyr = handler;
 	}
 
@@ -254,12 +254,12 @@ int bmi160_trigger_set(struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-	if (trig->chan == SENSOR_CHAN_ACCEL_ANY) {
+	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		return bmi160_trigger_set_acc(dev, trig, handler);
 	}
 #endif
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-	if (trig->chan == SENSOR_CHAN_GYRO_ANY) {
+	if (trig->chan == SENSOR_CHAN_GYRO_XYZ) {
 		return bmi160_trigger_set_gyr(dev, trig, handler);
 	}
 #endif

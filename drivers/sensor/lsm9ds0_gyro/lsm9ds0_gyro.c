@@ -120,7 +120,8 @@ static int lsm9ds0_gyro_sample_fetch(struct device *dev,
 	const struct lsm9ds0_gyro_config *config = dev->config->config_info;
 	uint8_t x_l, x_h, y_l, y_h, z_l, z_h;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GYRO_ANY);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
+			chan == SENSOR_CHAN_GYRO_XYZ);
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_GYRO_REG_OUT_X_L_G, &x_l) < 0 ||
@@ -174,7 +175,7 @@ static inline int lsm9ds0_gyro_get_channel(enum sensor_channel chan,
 	case SENSOR_CHAN_GYRO_Z:
 		lsm9ds0_gyro_convert(val, data->sample_z, numerator);
 		break;
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		lsm9ds0_gyro_convert(val, data->sample_x, numerator);
 		lsm9ds0_gyro_convert(val + 1, data->sample_y, numerator);
 		lsm9ds0_gyro_convert(val + 2, data->sample_z, numerator);

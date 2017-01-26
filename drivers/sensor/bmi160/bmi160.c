@@ -354,7 +354,7 @@ static int bmi160_acc_ofs_set(struct device *dev, enum sensor_channel chan,
 	int8_t reg_val;
 
 	/* we need the offsets for all axis */
-	if (chan != SENSOR_CHAN_ACCEL_ANY) {
+	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
 		return -ENOTSUP;
 	}
 
@@ -394,7 +394,7 @@ static int  bmi160_acc_calibrate(struct device *dev, enum sensor_channel chan,
 	/*
 	 * Hardware calibration is done knowing the expected values on all axis.
 	 */
-	if (chan != SENSOR_CHAN_ACCEL_ANY) {
+	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
 		return -ENOTSUP;
 	}
 
@@ -521,7 +521,7 @@ static int bmi160_gyr_ofs_set(struct device *dev, enum sensor_channel chan,
 	int16_t val;
 
 	/* we need the offsets for all axis */
-	if (chan != SENSOR_CHAN_GYRO_ANY) {
+	if (chan != SENSOR_CHAN_GYRO_XYZ) {
 		return -ENOTSUP;
 	}
 
@@ -617,14 +617,14 @@ static int bmi160_attr_set(struct device *dev, enum sensor_channel chan,
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		return bmi160_gyr_config(dev, chan, attr, val);
 #endif
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		return bmi160_acc_config(dev, chan, attr, val);
 #endif
 	default:
@@ -769,7 +769,7 @@ static int bmi160_channel_get(struct device *dev,
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-	case SENSOR_CHAN_GYRO_ANY:
+	case SENSOR_CHAN_GYRO_XYZ:
 		bmi160_gyr_channel_get(dev, chan, val);
 		return 0;
 #endif
@@ -777,7 +777,7 @@ static int bmi160_channel_get(struct device *dev,
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-	case SENSOR_CHAN_ACCEL_ANY:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		bmi160_acc_channel_get(dev, chan, val);
 		return 0;
 #endif
