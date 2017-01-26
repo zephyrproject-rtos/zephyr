@@ -49,6 +49,15 @@ do {                                                                    \
 
 #define _GENERIC_SECTION(segment) __attribute__((section(#segment)))
 
+#define ___in_section(a, b, c) \
+	__attribute__((section("." _STRINGIFY(a)			\
+				"." _STRINGIFY(b)			\
+				"." _STRINGIFY(c))))
+#define __in_section(a, b, c) ___in_section(a, b, c)
+
+#define __in_section_unique(seg) ___in_section(seg, _FILE_PATH_HASH, \
+						      __COUNTER__)
+
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
 #endif
