@@ -325,7 +325,7 @@ static inline uint8_t compress_sa(struct net_ipv6_hdr *ipv6,
 			offset += 2;
 		} else {
 			if (!net_nbuf_ll_src(buf)) {
-				NET_DBG("Invalid src ll address");
+				NET_ERR("Invalid src ll address");
 				return 0;
 			}
 
@@ -477,7 +477,7 @@ static inline uint8_t compress_da(struct net_ipv6_hdr *ipv6,
 			offset += 2;
 		} else {
 			if (!net_nbuf_ll_dst(buf)) {
-				NET_DBG("Invalid dst ll address");
+				NET_ERR("Invalid dst ll address");
 				return 0;
 			}
 
@@ -700,14 +700,14 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	uint8_t compressed;
 
 	if (buf->frags->len < NET_IPV6H_LEN) {
-		NET_DBG("Invalid length %d, min %d",
+		NET_ERR("Invalid length %d, min %d",
 			buf->frags->len, NET_IPV6H_LEN);
 		return false;
 	}
 
 	if (ipv6->nexthdr == IPPROTO_UDP &&
 	    buf->frags->len < NET_IPV6UDPH_LEN) {
-		NET_DBG("Invalid length %d, min %d",
+		NET_ERR("Invalid length %d, min %d",
 			buf->frags->len, NET_IPV6UDPH_LEN);
 		return false;
 	}
@@ -991,7 +991,7 @@ static inline uint8_t uncompress_da_mcast(struct net_buf *buf,
 	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
 		/* TODO: DAM00 Unicast-Prefix-based IPv6 Multicast Addresses */
 		/* Reserved DAM_01, DAM_10, DAM_11 */
-		NET_DBG("Unsupported DAM options");
+		NET_WARN("Unsupported DAM options");
 		return 0;
 	}
 
@@ -1236,7 +1236,7 @@ static inline bool uncompress_cid(struct net_buf *buf,
 	if (cid) {
 		*src = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
 		if (!(*src)) {
-			NET_DBG("Unknown src cid %d", cid);
+			NET_ERR("Unknown src cid %d", cid);
 			return false;
 		}
 	}
@@ -1245,7 +1245,7 @@ static inline bool uncompress_cid(struct net_buf *buf,
 	if (cid) {
 		*dst = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
 		if (!(*dst)) {
-			NET_DBG("Unknown dst cid %d", cid);
+			NET_ERR("Unknown dst cid %d", cid);
 			return false;
 		}
 	}
@@ -1282,7 +1282,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 
 		offset++;
 #else
-		NET_DBG("Context based uncompression not enabled");
+		NET_WARN("Context based uncompression not enabled");
 		return false;
 #endif
 	}
@@ -1345,7 +1345,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 
 	if ((CIPHC[offset] & 0xF0) != NET_6LO_NHC_UDP_BARE) {
 		/* Unsupported NH */
-		NET_DBG("Unsupported next header");
+		NET_ERR("Unsupported next header");
 		goto fail;
 	}
 
