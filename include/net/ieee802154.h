@@ -47,6 +47,9 @@ struct ieee802154_context {
 	} coord;
 	uint8_t coord_addr_len;
 #endif
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	struct ieee802154_security_ctx sec_ctx;
+#endif
 	uint8_t sequence;
 	uint8_t ack_received	: 1;
 	uint8_t ack_requested	: 1;
