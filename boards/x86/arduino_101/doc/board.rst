@@ -259,6 +259,8 @@ Once the image has been built, flash it with:
    $ dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
 
 
+.. _bluetooth_firmware_arduino_101:
+
 Flashing the Bluetooth Core
 ---------------------------
 

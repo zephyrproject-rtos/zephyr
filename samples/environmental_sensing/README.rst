@@ -104,9 +104,7 @@ device either using JTAG (openocd) or DFU util (USB).
 
 Before using the environmental sensing sample, the Arduino 101 board needs to be
 flashed with the firmware for its nRF51 Bluetooth LE controller. To do this,
-follow the steps from:
-
-https://wiki.zephyrproject.org/view/Arduino_101#Bluetooth_firmware_for_the_Arduino_101
+follow the steps in :ref:`bluetooth_firmware_arduino_101`.
 
 The sample provide a single :file:`Makefile` that builds both images, simple run
 make in the top level directory of the application and flash either using JTAG
