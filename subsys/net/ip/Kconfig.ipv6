@@ -49,8 +49,8 @@ config NET_IPV6_ND
 
 config NET_IPV6_DAD
 	bool "Activate duplicate address detection"
+	depends on NET_IPV6_ND
 	default y
-	default n if !NET_IPV6_ND
 	help
 	The value depends on your network needs. DAD should normally
 	be active.
