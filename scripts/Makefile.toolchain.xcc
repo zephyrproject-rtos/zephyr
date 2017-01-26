@@ -65,10 +65,11 @@ LIB_INCLUDE_DIR += -L${XTENSA_BUILD}/xtensa-elf/lib/xcc \
                    -L${XTENSA_BUILD}/xtensa-elf/lib \
                    -L${XTENSA_BUILD}/xtensa-elf/arch/lib
 
-KBUILD_CPPFLAGS +=-I$(XTENSA_TOOLS_PATH)/lib/xcc/include \
-                  -I$(XTENSA_TOOLS_PATH)/xtensa-elf/include \
-                  -I${XTENSA_BUILD}/xtensa-elf/arch/include \
-                  -I${XTENSA_BUILD}/xtensa-elf/include
+KBUILD_CPPFLAGS += -I$(XTENSA_TOOLS_PATH)/lib/xcc/include \
+                   -I$(XTENSA_TOOLS_PATH)/xtensa-elf/include \
+                   -I${XTENSA_BUILD}/xtensa-elf/arch/include \
+                   -I${XTENSA_BUILD}/xtensa-elf/include \
+                   -D'__builtin_unreachable()=while(1);'
 
 export CROSS_COMPILE XTENSA_CORE XTENSA_SYSTEM LIB_INCLUDE_DIR
 endif
