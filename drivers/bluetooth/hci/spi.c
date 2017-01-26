@@ -9,6 +9,7 @@
 #include <gpio.h>
 #include <init.h>
 #include <spi.h>
+#include <misc/byteorder.h>
 #include <misc/util.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
@@ -31,6 +32,7 @@
 #define STATUS_HEADER_READY	0
 #define STATUS_HEADER_TOREAD	3
 
+#define PACKET_TYPE		0
 #define EVT_HEADER_TYPE		0
 #define EVT_HEADER_EVENT	1
 #define EVT_HEADER_SIZE		2
@@ -122,6 +124,7 @@ static void bt_spi_rx_thread(void)
 	uint8_t header_slave[5];
 	uint8_t rxmsg[MAX_RX_MSG_LEN];
 	uint8_t dummy = 0xFF, size, i;
+	struct bt_hci_acl_hdr acl_hdr;
 
 	while (true) {
 		k_sem_take(&sem_request, K_FOREVER);
@@ -146,29 +149,33 @@ static void bt_spi_rx_thread(void)
 
 		spi_dump_message("RX:ed", rxmsg, size);
 
-		/* Vendor events are currently unsupported */
-		if (rxmsg[EVT_HEADER_EVENT] == BT_HCI_EVT_VENDOR) {
-			bt_spi_handle_vendor_evt(rxmsg);
-			continue;
-		}
-
-		switch (rxmsg[EVT_HEADER_TYPE]) {
+		switch (rxmsg[PACKET_TYPE]) {
 		case HCI_EVT:
+			/* Vendor events are currently unsupported */
+			if (rxmsg[EVT_HEADER_EVENT] == BT_HCI_EVT_VENDOR) {
+				bt_spi_handle_vendor_evt(rxmsg);
+				continue;
+			}
+
 			buf = bt_buf_get_rx(K_FOREVER);
 			bt_buf_set_type(buf, BT_BUF_EVT);
+			net_buf_add_mem(buf, &rxmsg[1],
+					rxmsg[EVT_HEADER_SIZE] + 2);
 			break;
 		case HCI_ACL:
 			buf = bt_buf_get_rx(K_FOREVER);
 			bt_buf_set_type(buf, BT_BUF_ACL_IN);
+			memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
+			net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
+			net_buf_add_mem(buf, &rxmsg[5],
+					sys_le16_to_cpu(acl_hdr.len));
 			break;
 		default:
 			BT_ERR("Unknown BT buf type %d", rxmsg[0]);
 			continue;
 		}
 
-		net_buf_add_mem(buf, &rxmsg[1], rxmsg[EVT_HEADER_SIZE] + 2);
-
-		if (rxmsg[EVT_HEADER_TYPE] == HCI_EVT &&
+		if (rxmsg[PACKET_TYPE] == HCI_EVT &&
 		    bt_hci_evt_is_prio(rxmsg[EVT_HEADER_EVENT])) {
 			bt_recv_prio(buf);
 		} else {
