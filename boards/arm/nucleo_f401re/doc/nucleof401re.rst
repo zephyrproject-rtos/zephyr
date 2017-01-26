@@ -4,7 +4,7 @@ ST Nucleo F401RE
 ################
 
 Overview
-========
+********
 
 The Nucleo F401RE board features an ARM Cortex-M4 based STM32F401RE MCU
 with a wide range of connnectivity support and configurations Here are
@@ -31,7 +31,7 @@ some highlights of the Nucleo F401RE board:
 More information about the board can be found at the `Nucleo F401RE website`_.
 
 Hardware
-========
+********
 
 Nucleo F401RE provides the following hardware components:
 
@@ -59,7 +59,7 @@ More information about STM32F401RE can be found here:
        - `STM32F401 reference manual`_
 
 Supported Features
--------------------
+===================
 
 The Zephyr nucleo_401re board configuration supports the following hardware features:
 
@@ -86,13 +86,13 @@ The default configuration can be found in the defconfig file:
 
 
 Pin Mapping
------------
+===========
 
 Nucleo F401RE Board has 6 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
 Available pins:
-^^^^^^^^^^^^^^^
+---------------
 .. image:: img/nucleo_f401re_arduino.png
      :width: 720px
      :align: center
@@ -107,7 +107,7 @@ Available pins:
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------
 - UART_1_TX : PB6
 - UART_1_RX : PB7
 - UART_2_TX : PA2
@@ -118,7 +118,7 @@ Default Zephyr Peripheral Mapping:
 
 
 System Clock
-------------
+============
 
 Nucleo F401RE System Clock could be driven by internal or external oscilator,
 as well as main PLL clock. By default System clock is driven by PLL clock at 84MHz,
@@ -126,21 +126,21 @@ driven by 8MHz high speed external clock.
 
 
 Serial Port
------------
+===========
 
 Nucleo F401RE board has 3 UARTs. The Zephyr console output is assigned to UART2.
 
 Programming and Debugging
-=========================
+*************************
 
 Flashing
---------
+========
 
 Nucleo F401RE board includes an ST-LINK/V2-1 embedded debug tool interface.
 This interface is supported by the openocd version included in Zephyr SDK.
 
 Flashing an application to Nucleo F401RE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------------
 
 The sample application hello_world is being used in this tutorial:
 

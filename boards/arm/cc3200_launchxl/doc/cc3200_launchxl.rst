@@ -4,13 +4,13 @@ CC3200 LaunchXL
 ###############
 
 Overview
-========
+********
 The SimpleLink CC3200 LaunchXL is a development board for the CC3200
 wireless microcontroller (MCU), the industry’s first single-chip
 programmable MCU with built-in Wi-Fi connectivity.
 
 Features:
----------
+=========
 
 * SimpleLink Wi-Fi, internet-on-a-chip solution with integrated MCU
 * 40-pin LaunchPad standard that leverages the BoosterPack ecosystem
@@ -25,7 +25,7 @@ Details on the CC3200 LaunchXL development board can be found in the
 `CC3200 LaunchXL User's Guide`_.
 
 Hardware
-========
+********
 
 The CC3200 SoC has two MCUs:
 
@@ -39,7 +39,7 @@ offloads Wi-Fi and internet protocols from the application MCU.
 Complete details of the CC3200 SoC can be found in the `CC3200 TRM`_.
 
 Supported Features
-------------------
+==================
 
 Zephyr has been ported to the Applications MCU, with basic peripheral
 driver support.
@@ -57,7 +57,7 @@ accessible through the BoosterPack, are not currently supported by
 this Zephyr port.
 
 Connections and IOs
---------------------
+====================
 
 Peripherals on the CC3200 LaunchXL are mapped to the following pins in
 the file :file:`boards/arm/cc3200_launchxl/pinmux.c`.
@@ -85,10 +85,10 @@ The default configuration can be found in the Kconfig file at
 
 
 Programming and Debugging
-=========================
+*************************
 
 Build
------
+=====
 
 Follow the :ref:`getting_started` instructions for Zephyr application
 development.
@@ -104,7 +104,7 @@ zephyr.bin file (for flashing) in the outdir/cc3200_launchxl/
 subdirectory.
 
 FTDI USB Setup
---------------
+==============
 
 The CC3200 LaunchXL has onboard FTDI based JTAG emulation with serial
 port for Flash programming.
@@ -162,7 +162,7 @@ should see something like:
 
 
 Flashing
---------
+========
 
 The CC3200 has no integrated internal flash, but has 1Mb external serial
 flash for storing program images and other files.  Upon reset, the TI
@@ -174,14 +174,14 @@ using the `CC3200 SDK`_ with Windows platforms, including how to flash
 the zephyr.bin binary onto the board.
 
 For Windows:
-^^^^^^^^^^^^
+------------
 
 See Section 5.4 of the `CC3200 Programmer's Guide`_; or, follow the
 directions per the `UniFlash Quick Start Guide`_. Please be sure to use
 UniFlash version 3.4.1.
 
 For Linux:
-^^^^^^^^^^
+----------
 
 An option for flashing the CC3200 LaunchXL on Linux is the
 `cc3200tool`_.  See the README there for build/install/usage.
@@ -197,7 +197,7 @@ The following command has been known to work:
    flashing and remove the jumper for execution.
 
 Debugging
----------
+=========
 
 The `CC3200 SDK`_ supports debugging using GDB (for ARM) over OpenOCD,
 and includes the necessary OpenOCD CFG and sample gdbinit scripts.
@@ -217,7 +217,7 @@ window:
 
 
 References
-==========
+**********
 
 CC32xx Wiki:
     http://processors.wiki.ti.com/index.php/CC31xx_%26_CC32xx
