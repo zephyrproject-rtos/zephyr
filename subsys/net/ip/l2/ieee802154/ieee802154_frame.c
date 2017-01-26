@@ -896,3 +896,47 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 	return true;
 }
 #endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
+
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
+				    struct ieee802154_mpdu *mpdu)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint8_t level;
+
+	if (!mpdu->mhr.fs->fc.security_enabled) {
+		return true;
+	}
+
+	/* Section 7.2.3 (i) talks about "security level policy" conformance
+	 * but such policy does not seem to be detailed. So let's assume both
+	 * ends should have same security level.
+	 */
+	if (mpdu->mhr.aux_sec->control.security_level != ctx->sec_ctx.level) {
+		return false;
+	}
+
+	/* ToDo: handle src short address
+	 * This will require to look up in nbr cache with short addr
+	 * in order to get the extended address related to it
+	 */
+	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_nbuf_ll(buf),
+				     net_nbuf_ll_reserve(buf),
+				     net_buf_frags_len(buf),
+				     net_nbuf_ll_src(buf)->addr,
+				     mpdu->mhr.aux_sec->frame_counter)) {
+		NET_ERR("Could not decipher the frame");
+		return false;
+	}
+
+	level = ctx->sec_ctx.level;
+	if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
+		level -= 4;
+	}
+
+	/* We remove tag size from frag's length, it is now useless */
+	buf->frags->len -= level_2_tag_size[level];
+
+	return true;
+}
+#endif /* CONFIG_NET_L2_IEEE802154_SECURITY */

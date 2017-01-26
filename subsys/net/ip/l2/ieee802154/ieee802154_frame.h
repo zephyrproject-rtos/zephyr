@@ -483,4 +483,11 @@ static inline bool ieee802154_ack_required(struct net_buf *buf)
 	return fs->fc.ar;
 }
 
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
+				    struct ieee802154_mpdu *mpdu);
+#else
+#define ieee802154_decipher_data_frame(...) true
+#endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
+
 #endif /* __IEEE802154_FRAME_H__ */
