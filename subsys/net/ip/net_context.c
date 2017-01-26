@@ -267,34 +267,14 @@ static void queue_fin(struct net_context *ctx)
 		return;
 	}
 
+	ctx->tcp->fin_queued = 1;
+
 	ret = net_tcp_send_buf(buf);
 	if (ret < 0) {
 		net_nbuf_unref(buf);
 	}
 }
 
-static enum net_verdict tcp_active_close(struct net_conn *conn,
-					 struct net_buf *buf,
-					 void *user_data);
-
-static bool send_fin_if_active_close(struct net_context *context)
-{
-	NET_ASSERT(context->tcp);
-
-	switch (net_tcp_get_state(context->tcp)) {
-	case NET_TCP_SYN_RCVD:
-	case NET_TCP_ESTABLISHED:
-		/* Sending a packet with the FIN flag automatically
-		 * transitions to FIN_WAIT_1
-		 */
-		queue_fin(context);
-		net_conn_change_callback(context->conn_handler,
-					 tcp_active_close, context);
-		return true;
-	default:
-		return false;
-	}
-}
 #endif /* CONFIG_NET_TCP */
 
 int net_context_ref(struct net_context *context)
@@ -350,9 +330,10 @@ int net_context_put(struct net_context *context)
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		if (send_fin_if_active_close(context)) {
+		if (!context->tcp->fin_rcvd) {
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet");
+			queue_fin(context);
 			return 0;
 		}
 	}
@@ -684,13 +665,6 @@ static inline int send_syn_ack(struct net_context *context,
 				    "SYN_ACK");
 }
 
-static inline int send_fin_ack(struct net_context *context,
-			       struct sockaddr *remote)
-{
-	return send_control_segment(context, NULL, remote,
-				    NET_TCP_FIN | NET_TCP_ACK, "FIN_ACK");
-}
-
 static inline int send_ack(struct net_context *context,
 			   struct sockaddr *remote)
 {
@@ -748,33 +722,6 @@ static int tcp_hdr_len(struct net_buf *buf)
 	return 4 * (hdr->offset >> 4);
 }
 
-NET_CONN_CB(tcp_passive_close)
-{
-	struct net_context *context = (struct net_context *)user_data;
-
-	NET_ASSERT(context && context->tcp);
-
-	switch (net_tcp_get_state(context->tcp)) {
-	case NET_TCP_CLOSE_WAIT:
-	case NET_TCP_LAST_ACK:
-		break;
-	default:
-		NET_DBG("Context %p in wrong state %d",
-			context, net_tcp_get_state(context->tcp));
-		return NET_DROP;
-	}
-
-	net_tcp_print_recv_info("PASSCLOSE", buf, NET_TCP_BUF(buf)->src_port);
-
-	if (net_tcp_get_state(context->tcp) == NET_TCP_LAST_ACK &&
-	    NET_TCP_FLAGS(buf) & NET_TCP_ACK) {
-		NET_DBG("ACK received in LAST_ACK, disposing of connection");
-		net_context_unref(context);
-	}
-
-	return NET_DROP;
-}
-
 /* This is called when we receive data after the connection has been
  * established. The core TCP logic is located here.
  */
@@ -817,9 +764,8 @@ NET_CONN_CB(tcp_established)
 		/* Sending an ACK in the CLOSE_WAIT state will transition to
 		 * LAST_ACK state
 		 */
+		context->tcp->fin_rcvd = 1;
 		net_tcp_change_state(context->tcp, NET_TCP_CLOSE_WAIT);
-		net_conn_change_callback(context->conn_handler,
-					 tcp_passive_close, context);
 
 		context->tcp->send_ack += 1;
 
@@ -831,47 +777,15 @@ NET_CONN_CB(tcp_established)
 
 	send_ack(context, &conn->remote_addr);
 
+	if (sys_slist_is_empty(&context->tcp->sent_list)
+	    && context->tcp->fin_rcvd
+	    && context->tcp->fin_sent) {
+		net_context_unref(context);
+	}
+
 	return ret;
 }
 
-NET_CONN_CB(tcp_active_close)
-{
-	struct net_context *context = (struct net_context *)user_data;
-	struct net_tcp *tcp;
-
-	NET_ASSERT(context && context->tcp);
-
-	tcp = context->tcp;
-
-	if (NET_TCP_FLAGS(buf) == NET_TCP_FIN) {
-		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1 ||
-		    net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_2) {
-			/* Sending an ACK in FIN_WAIT_1 will transition
-			 * to CLOSING, and to TIME_WAIT if on FIN_WAIT_2
-			 */
-			send_ack(context, &context->remote);
-			return NET_DROP;
-		}
-	} else if (NET_TCP_FLAGS(buf) == NET_TCP_ACK) {
-		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
-			net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_2);
-			return NET_DROP;
-		}
-
-		if (net_tcp_get_state(tcp) == NET_TCP_CLOSING) {
-			net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
-			return NET_DROP;
-		}
-	} else if (NET_TCP_FLAGS(buf) == (NET_TCP_FIN | NET_TCP_ACK)) {
-		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
-			send_fin_ack(context, &context->remote);
-			return NET_DROP;
-		}
-	}
-
-	NET_DBG("Context %p in wrong state %d", context, tcp->state);
-	return NET_DROP;
-}
 
 NET_CONN_CB(tcp_synack_received)
 {
