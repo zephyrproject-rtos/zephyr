@@ -784,9 +784,12 @@ static int test_timeout(void)
 					break;
 				}
 			}
-			k_thread_cancel(delayed_threads[j]);
-			++next_cancellation;
-			continue;
+
+			if (j < NUM_TIMEOUT_THREADS) {
+				k_thread_cancel(delayed_threads[j]);
+				++next_cancellation;
+				continue;
+			}
 		}
 
 		data = k_fifo_get(&timeout_order_fifo, 2750);
