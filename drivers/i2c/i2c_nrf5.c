@@ -292,9 +292,6 @@ static int i2c_nrf5_init(struct device *dev)
 
 	twi->ENABLE = TWI_ENABLE_ENABLE_Disabled;
 
-	twi->POWER = 0;
-	twi->POWER = 1;
-
 	status = gpio_pin_configure(data->gpio, CONFIG_I2C_NRF5_GPIO_SCL_PIN,
 				    GPIO_DIR_IN
 				    | GPIO_PUD_PULL_UP
