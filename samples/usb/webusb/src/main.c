@@ -176,8 +176,8 @@ static struct webusb_req_handlers req_handlers = {
 void main(void)
 {
 	struct device *dev;
-	uint32_t baudrate, bytes_read, dtr = 0;
-	int ret;
+	uint32_t baudrate, dtr = 0;
+	int ret, bytes_read;
 
 	dev = device_get_binding(WEBUSB_SERIAL_PORT_NAME);
 	if (!dev) {
