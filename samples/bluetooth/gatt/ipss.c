@@ -22,7 +22,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#define DEVICE_NAME		"Test IPSP node"
+#define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define UNKNOWN_APPEARANCE	0x0000
 

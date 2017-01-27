@@ -25,7 +25,7 @@
 #include <gatt/dis.h>
 #include <gatt/bas.h>
 
-#define DEVICE_NAME				"ESP peripheral"
+#define DEVICE_NAME				CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN				(sizeof(DEVICE_NAME) - 1)
 #define SENSOR_1_NAME				"Temperature Sensor 1"
 #define SENSOR_2_NAME				"Temperature Sensor 2"

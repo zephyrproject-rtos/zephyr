@@ -14,7 +14,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
-#define DEVICE_NAME "Test beacon"
+#define DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 /*

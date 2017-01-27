@@ -21,7 +21,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#define DEVICE_NAME "Zephyr Eddystone"
+#define DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define NUMBER_OF_SLOTS 1
 #define EDS_VERSION 0x00

@@ -23,7 +23,7 @@
 #include <gatt/gap.h>
 #include <gatt/dis.h>
 
-#define DEVICE_NAME	"DIS peripheral"
+#define DEVICE_NAME	CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN	(sizeof(DEVICE_NAME) - 1)
 #define APPEARANCE	0x0000
 

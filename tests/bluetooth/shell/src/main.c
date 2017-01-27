@@ -34,7 +34,7 @@
 #include <gatt/gap.h>
 #include <gatt/hrs.h>
 
-#define DEVICE_NAME		"test shell"
+#define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
