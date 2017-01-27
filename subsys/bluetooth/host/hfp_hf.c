@@ -50,7 +50,14 @@ static const struct {
 
 void hf_slc_error(struct at_client *hf_at)
 {
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
 	BT_ERR("SLC error: disconnecting");
+	err = bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
+	if (err) {
+		BT_ERR("Rfcomm: Unable to disconnect :%d", -err);
+	}
 }
 
 int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
