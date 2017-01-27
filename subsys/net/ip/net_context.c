@@ -936,13 +936,13 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 		net_tcp_change_state(context->tcp, NET_TCP_ESTABLISHED);
 		net_context_set_state(context, NET_CONTEXT_CONNECTED);
 
-		if (context->connect_cb) {
-			context->connect_cb(context, 0, context->user_data);
-		}
-
 		send_ack(context, raddr);
 
 		k_sem_give(&context->tcp->connect_wait);
+
+		if (context->connect_cb) {
+			context->connect_cb(context, 0, context->user_data);
+		}
 	}
 
 	return NET_DROP;
