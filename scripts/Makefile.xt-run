@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+# Abstraction of 'run' goal with xt-run
+
+ifneq (${QEMU_PTY},)
+    # By default xt-sim uses pty, do nothing
+else
+# We use QEMU_PIPE in order to avoid unnecessary changes in other scripts
+# We are anyway emulating a QEMU behavior
+ifneq (${QEMU_PIPE},)
+    # Send console output to a pipe, used for running automated sanity tests
+    XTRUN_FLAGS += > ${QEMU_PIPE}
+endif
+endif
+
+xt-run:run
+run:zephyr
+	${Q}echo "***** Running simulation for Xtensa core \"${XTENSA_CORE}\" *****"
+	$(if ${QEMU_PIPE},,@echo "To exit from XT-RUN enter: 'CTRL+c'")
+	@echo '[XT-RUN] CPU: ${XTENSA_CORE}'
+ifneq (${QEMU_PIPE},)
+# Create a named pipe
+	mkfifo ${QEMU_PIPE}
+endif
+# Run cycle accurate simulation
+# Ignore errors in order to be able to remove the named pipe at simulation end
+	-${Q}${XTRUN} ${KERNEL_ELF_NAME} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS}
+ifneq (${QEMU_PIPE},)
+# Remove the named pipe
+	${RM} ${QEMU_PIPE}
+endif
+
+.PHONY: run xt-run

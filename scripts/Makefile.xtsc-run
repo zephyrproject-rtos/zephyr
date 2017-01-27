@@ -1,0 +1,51 @@
+#
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+# Abstraction of 'run' goal with xtsc-run
+
+ifneq (${QEMU_PTY},)
+    # By default xt-sim uses pty, do nothing
+else
+# We use QEMU_PIPE in order to avoid unnecessary changes in other scripts
+# We are anyway emulating a QEMU behavior
+ifneq (${QEMU_PIPE},)
+    # Send console output to a pipe, used for running automated sanity tests
+    XTRUN_FLAGS += > ${QEMU_PIPE}
+endif
+endif
+
+xtsc-run:run
+run:zephyr
+	${Q}echo "***** Running simulation for Xtensa core \"${XTENSA_CORE}\" *****"
+	$(if ${QEMU_PIPE},,@echo "To exit from XTSC-RUN enter: 'CTRL+c'")
+	@echo '[XTSC-RUN] CPU: ${XTENSA_CORE}'
+	${Q}test -f ${XTSC_INC} || ( \
+		echo '*** Error: $@ requires valid XTSC include file in \
+			"$${CONFIG_XTENSA_XTSC_INC}"' && \
+		exit 1 \
+	)
+	${Q}sed -e 's@\(-core_program=\).*@\1${CURDIR}/zephyr.elf@' \
+		< ${XTSC_INC} > ${XTSC_INC_FILE}
+ifneq (${QEMU_PIPE},)
+# Create a named pipe
+	mkfifo ${QEMU_PIPE}
+endif
+# Run cycle accurate simulation with SystemC extension
+# Ignore errors in order to be able to remove the named pipe at simulation end
+	-${Q}cd ${XTSC_WORK_DIR} && \
+		$(dir ${CROSS_COMPILE})xtsc-run \
+			$(if ${XTSC_TRACE},-set_core_parm=SimClients="trace \
+			${CURDIR}/${XTSC_TRACE}") \
+			-include=${CURDIR}/${XTSC_INC_FILE} \
+			$(if ${XTSC_DEBUG},-xxdebug \
+		)
+ifneq (${QEMU_PIPE},)
+# Remove the named pipe
+	${RM} ${QEMU_PIPE}
+endif
+
+.PHONY: run xtsc-run
