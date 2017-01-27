@@ -63,6 +63,8 @@ clean:
 	@rm -rf xml
 	@rm -rf latex
 	@rm -rf reference/kconfig/*.rst
+	@rm -rf samples
+	@rm -rf boards
 
 htmldocs: doxy html
 
@@ -74,6 +76,8 @@ kconfig: scripts/genrest/genrest.py
 
 html: content kconfig
 	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@rm -rf samples
+	@rm -rf boards
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
