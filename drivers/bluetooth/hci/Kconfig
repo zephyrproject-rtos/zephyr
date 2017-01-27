@@ -135,7 +135,7 @@ config BLUETOOTH_SPI_CHIP_SELECT_PIN
 config BLUETOOTH_SPI_IRQ_PIN
 	int "SPI IRQ line number"
 	help
-	  This option specifies the Reset line number on the SPI device
+	  This option specifies the IRQ line number on the SPI device
 
 config BLUETOOTH_SPI_RESET_PIN
 	int "SPI Reset line number"
