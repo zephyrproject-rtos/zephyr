@@ -48,8 +48,16 @@
 #define GPIO_CS_PIN		CONFIG_BLUETOOTH_SPI_CHIP_SELECT_PIN
 #endif /* CONFIG_BLUETOOTH_SPI_BLUENRG */
 
-#define MAX_RX_MSG_LEN		CONFIG_BLUETOOTH_SPI_RX_BUFFER_SIZE
-#define MAX_TX_MSG_LEN		CONFIG_BLUETOOTH_SPI_TX_BUFFER_SIZE
+/* Max SPI buffer length for transceive operations.
+ *
+ * Buffer size needs to be at least the size of the larger RX/TX buffer
+ * required by the SPI slave, as spi_transceive requires both RX/TX
+ * to be the same length. Size also needs to be compatible with the
+ * slave device used (e.g. nRF5X max buffer length for SPIS is 255).
+ */
+#define SPI_MAX_MSG_LEN		255 /* As defined by X-NUCLEO-IDB04A1 BSP */
+
+static uint8_t rxmsg[SPI_MAX_MSG_LEN];
 
 static struct device		*spi_dev;
 #if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
@@ -126,7 +134,6 @@ static void bt_spi_rx_thread(void)
 	struct net_buf *buf;
 	uint8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
 	uint8_t header_slave[5];
-	uint8_t rxmsg[MAX_RX_MSG_LEN];
 	uint8_t dummy = 0xFF, size, i;
 	struct bt_hci_acl_hdr acl_hdr;
 
@@ -195,10 +202,10 @@ static void bt_spi_rx_thread(void)
 static int bt_spi_send(struct net_buf *buf)
 {
 	uint8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
-	uint8_t rxmsg[MAX_TX_MSG_LEN + 1]; /* Extra Byte to account for TYPE */
 	uint32_t pending;
 
-	if (buf->len > MAX_TX_MSG_LEN) {
+	/* Buffer needs an additional byte for type */
+	if (buf->len >= SPI_MAX_MSG_LEN) {
 		BT_ERR("Message too long");
 		return -EINVAL;
 	}

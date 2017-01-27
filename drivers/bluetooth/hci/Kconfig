@@ -151,20 +151,6 @@ config BLUETOOTH_SPI_RESET_PIN
 	help
 	  This option specifies the Reset line number on the SPI device
 
-config BLUETOOTH_SPI_RX_BUFFER_SIZE
-	int "Receive buffer length"
-	default 96
-	help
-	  This option specifies the size of the RX buffer.  Try to keep this
-	  as small as possible, since it's stored on the stack.
-
-config BLUETOOTH_SPI_TX_BUFFER_SIZE
-	int "Transmit buffer length"
-	default 64
-	help
-	  This option specifies the size of the TX buffer.  Try to keep this
-	  as small as possible, since it's stored on the stack.
-
 config BLUETOOTH_SPI_MAX_CLK_FREQ
 	int "Maximum clock frequency for the HCI SPI interface"
 	default 5000000
