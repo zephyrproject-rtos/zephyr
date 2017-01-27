@@ -71,6 +71,9 @@ KBUILD_CPPFLAGS += -I$(XTENSA_TOOLS_PATH)/lib/xcc/include \
                    -I${XTENSA_BUILD}/xtensa-elf/include \
                    -D'__builtin_unreachable()=while(1);'
 
+# xt-xcc does not support -Og, replace with -O0
+KBUILD_CFLAGS:=$(patsubst -Og,-O0,${KBUILD_CFLAGS})
+
 # Support for Xtensa simulator from Cadence Design Systems, Inc.
 XTRUN=${CROSS_COMPILE}run
 XTRUN_FLAGS += --cycle_limit=${XTENSA_ISS_CYCLES_LIMIT}

@@ -595,6 +595,12 @@ drivers-y := drivers/
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
 
+ifeq ($(CONFIG_DEBUG),y)
+KBUILD_CFLAGS += -Og
+else
+KBUILD_CFLAGS += -Os
+endif
+
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 else
@@ -630,12 +636,6 @@ ifdef CONFIG_READABLE_ASM
 KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
                  $(call cc-option,-fno-ipa-cp-clone,) \
                  $(call cc-option,-fno-partial-inlining)
-endif
-
-ifeq ($(CONFIG_DEBUG),y)
-KBUILD_CFLAGS  += -Og
-else
-KBUILD_CFLAGS  += -Os
 endif
 
 ifeq ($(CONFIG_STACK_CANARIES),y)
