@@ -170,7 +170,7 @@ int fs_truncate(fs_file_t *zfp, off_t length)
 		 * using additional code and memory for doing any
 		 * optimization.
 		 */
-		uint32_t bw;
+		unsigned int bw;
 		uint8_t c = 0;
 
 		for (int i = cur_length; i < length; i++) {
