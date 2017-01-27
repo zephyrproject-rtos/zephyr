@@ -132,7 +132,7 @@ using this conf file:
 
     $ sudo dhcpd -d -4 -cf /etc/dhcp/dhcpd.conf -lf /var/lib/dhcp/dhcpd.leases eth1
 
-Run Zephyr samples/net/dhcpv4_client application in QEMU:
+Build Zephyr samples/net/dhcpv4_client application:
 
 .. code-block:: console
 
