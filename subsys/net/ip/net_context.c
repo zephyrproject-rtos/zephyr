@@ -328,6 +328,10 @@ int net_context_put(struct net_context *context)
 	}
 #endif /* CONFIG_NET_L2_OFFLOAD_IP */
 
+	context->connect_cb = NULL;
+	context->recv_cb = NULL;
+	context->send_cb = NULL;
+
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		if (!context->tcp->fin_rcvd) {
