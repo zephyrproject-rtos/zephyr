@@ -477,7 +477,12 @@ static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 
 static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 {
+	struct bt_conn *conn = dlc->session->br_chan.chan.conn;
+
 	BT_DBG("hf disconnected!");
+	if (bt_hf->disconnected) {
+		bt_hf->disconnected(conn);
+	}
 }
 
 static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
