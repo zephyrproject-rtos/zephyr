@@ -11,7 +11,7 @@
 #endif
 
 #include <errno.h>
-#include <stdio.h>
+#include <misc/printk.h>
 
 #include <zephyr.h>
 
@@ -36,6 +36,9 @@
 
 #define ALL_NODES_LOCAL_COAP_MCAST \
 	{ { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xfd } } }
+
+#define MY_IP6ADDR \
+	{ { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 
 static struct net_context *context;
 
@@ -369,8 +372,8 @@ static int piggyback_get(struct zoap_resource *resource,
 	}
 
 	/* The response that coap-client expects */
-	r = snprintf((char *) payload, len, "Type: %u\nCode: %u\nMID: %u\n",
-		     type, code, id);
+	r = snprintk((char *) payload, len,
+		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
 	if (r < 0 || r > len) {
 		return -EINVAL;
 	}
@@ -464,8 +467,8 @@ static int query_get(struct zoap_resource *resource,
 	}
 
 	/* The response that coap-client expects */
-	r = snprintf((char *) payload, len, "Type: %u\nCode: %u\nMID: %u\n",
-		     type, code, id);
+	r = snprintk((char *) payload, len,
+		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
 	if (r < 0 || r > len) {
 		return -EINVAL;
 	}
@@ -582,8 +585,8 @@ done:
 	}
 
 	/* The response that coap-client expects */
-	r = snprintf((char *) payload, len, "Type: %u\nCode: %u\nMID: %u\n",
-		     type, code, id);
+	r = snprintk((char *) payload, len,
+		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
 	if (r < 0 || r > len) {
 		return -EINVAL;
 	}
@@ -855,11 +858,13 @@ static void udp_receive(struct net_context *context,
 
 static bool join_coap_multicast_group(void)
 {
+	static struct in6_addr my_addr = MY_IP6ADDR;
 	static struct sockaddr_in6 mcast_addr = {
 		.sin6_family = AF_INET6,
 		.sin6_addr = ALL_NODES_LOCAL_COAP_MCAST,
 		.sin6_port = htons(MY_COAP_PORT) };
 	struct net_if_mcast_addr *mcast;
+	struct net_if_addr *ifaddr;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
@@ -867,6 +872,18 @@ static bool join_coap_multicast_group(void)
 		NET_ERR("Could not get te default interface\n");
 		return false;
 	}
+
+#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+	if (net_addr_pton(AF_INET6,
+			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+			  (struct sockaddr *)&my_addr) < 0) {
+		NET_ERR("Invalid IPv6 address %s",
+			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+	}
+#endif
+
+	ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
 	if (!mcast) {
@@ -881,7 +898,7 @@ void main(void)
 {
 	static struct sockaddr_in6 any_addr = {
 		.sin6_family = AF_INET6,
-		.sin6_addr = ALL_NODES_LOCAL_COAP_MCAST,
+		.sin6_addr = IN6ADDR_ANY_INIT,
 		.sin6_port = htons(MY_COAP_PORT) };
 	int r;
 

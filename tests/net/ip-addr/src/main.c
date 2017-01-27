@@ -9,11 +9,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
 #include <errno.h>
 #include <device.h>
 #include <init.h>
-#include <misc/printk.h>
 #include <sections.h>
 
 #include <tc_util.h>
@@ -70,10 +68,11 @@
 		uint8_t ll1[] = { a, b, c, d, e, f };			\
 		uint8_t ll2[] = { f, e, d, c, b, a };			\
 		char out[2 * sizeof("xx:xx:xx:xx:xx:xx") + 1 + 1];	\
-		sprintf(out, "%s ",					\
-			net_sprint_ll_addr(ll1, sizeof(ll1)));		\
-		sprintf(out + sizeof("xx:xx:xx:xx:xx:xx"), "%s",	\
-			net_sprint_ll_addr(ll2, sizeof(ll2)));		\
+		snprintk(out, sizeof(out), "%s ",			\
+			 net_sprint_ll_addr(ll1, sizeof(ll1)));		\
+		snprintk(out + sizeof("xx:xx:xx:xx:xx:xx"),		\
+			 sizeof(out), "%s",				\
+			 net_sprint_ll_addr(ll2, sizeof(ll2)));		\
 		if (strcmp(out, expected)) {				\
 			printk("Test %s failed, got %s\n", expected, out); \
 			return false;					\

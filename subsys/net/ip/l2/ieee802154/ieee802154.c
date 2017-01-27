@@ -31,7 +31,7 @@
 
 #if 0
 
-#include <stdio.h>
+#include <misc/printk.h>
 
 static inline void hexdump(uint8_t *pkt, uint16_t length, uint8_t reserve)
 {
@@ -40,25 +40,25 @@ static inline void hexdump(uint8_t *pkt, uint16_t length, uint8_t reserve)
 	for (i = 0; i < length;) {
 		int j;
 
-		printf("\t");
+		printk("\t");
 
 		for (j = 0; j < 10 && i < length; j++, i++) {
 #if defined(CONFIG_SYS_LOG_SHOW_COLOR)
 			if (i < reserve && reserve) {
-				printf(SYS_LOG_COLOR_YELLOW);
+				printk(SYS_LOG_COLOR_YELLOW);
 			} else {
-				printf(SYS_LOG_COLOR_OFF);
+				printk(SYS_LOG_COLOR_OFF);
 			}
 #endif
-			printf("%02x ", *pkt++);
+			printk("%02x ", *pkt++);
 		}
 
 #if defined(CONFIG_SYS_LOG_SHOW_COLOR)
 		if (i < reserve) {
-			printf(SYS_LOG_COLOR_OFF);
+			printk(SYS_LOG_COLOR_OFF);
 		}
 #endif
-		printf("\n");
+		printk("\n");
 	}
 }
 
@@ -67,7 +67,7 @@ static void pkt_hexdump(struct net_buf *buf, bool each_frag_reserve)
 	uint16_t reserve = each_frag_reserve ? net_nbuf_ll_reserve(buf) : 0;
 	struct net_buf *frag;
 
-	printf("IEEE 802.15.4 packet content:\n");
+	printk("IEEE 802.15.4 packet content:\n");
 
 	frag = buf->frags;
 	while (frag) {
@@ -108,7 +108,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 
 		net_buf_add(frag, IEEE802154_ACK_PKT_LENGTH);
 
-		radio->tx(iface->dev, buf);
+		radio->tx(iface->dev, buf, frag);
 	}
 
 	net_nbuf_unref(buf);

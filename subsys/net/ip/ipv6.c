@@ -422,8 +422,8 @@ static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
 {
 	char out[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
-	snprintf(out, sizeof(out), net_sprint_ll_addr(old_lladdr->addr,
-						      old_lladdr->len));
+	snprintk(out, sizeof(out), "%s",
+		 net_sprint_ll_addr(old_lladdr->addr, old_lladdr->len));
 
 	NET_DBG("Updating neighbor %s lladdr %s (was %s)",
 		net_sprint_ipv6_addr(addr),
@@ -727,7 +727,8 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
 									\
-		snprintf(out, sizeof(out), net_sprint_ipv6_addr(dst));	\
+		snprintk(out, sizeof(out), "%s",			\
+			 net_sprint_ipv6_addr(dst));			\
 									\
 		NET_DBG("%s %s from %s to %s", action,			\
 			pkt_str, net_sprint_ipv6_addr(src), out);	\
@@ -745,8 +746,10 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 		char out[NET_IPV6_ADDR_LEN];				\
 		char tgt[NET_IPV6_ADDR_LEN];				\
 									\
-		snprintf(out, sizeof(out), net_sprint_ipv6_addr(dst));	\
-		snprintf(tgt, sizeof(tgt), net_sprint_ipv6_addr(target)); \
+		snprintk(out, sizeof(out), "%s",			\
+			 net_sprint_ipv6_addr(dst));			\
+		snprintk(tgt, sizeof(tgt), "%s",			\
+			 net_sprint_ipv6_addr(target));			\
 									\
 		NET_DBG("%s %s from %s to %s, target %s", action,	\
 			pkt_str, net_sprint_ipv6_addr(src), out, tgt);	\

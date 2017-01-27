@@ -23,7 +23,8 @@
 #include "ieee802154_radio_utils.h"
 
 static inline int csma_ca_tx_fragment(struct net_if *iface,
-				      struct net_buf *buf)
+				      struct net_buf *buf,
+				      struct net_buf *frag)
 {
 	const uint8_t max_bo = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO;
 	const uint8_t max_be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE;
@@ -35,7 +36,7 @@ static inline int csma_ca_tx_fragment(struct net_if *iface,
 	uint8_t nb = 0;
 	int ret = -EIO;
 
-	NET_DBG("frag %p", buf->frags);
+	NET_DBG("frag %p", frag);
 
 loop:
 	while (retries) {
@@ -60,7 +61,7 @@ loop:
 			}
 		}
 
-		ret = radio->tx(iface->dev, buf);
+		ret = radio->tx(iface->dev, buf, frag);
 		if (ret) {
 			continue;
 		}

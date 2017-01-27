@@ -78,15 +78,13 @@ struct dhcp_msg {
 #define DHCPV4_OPTIONS_RENEWAL		58
 #define DHCPV4_OPTIONS_END		255
 
-/*
- * TODO:
+/* TODO:
  * 1) Support for UNICAST flag (some dhcpv4 servers will not reply if
  *    DISCOVER message contains BROADCAST FLAG).
  * 2) Support T2(Rebind) timer.
  */
 
-/*
- * In the process of REQUEST and RENEWAL requests, if server fails to respond
+/* In the process of REQUEST and RENEWAL requests, if server fails to respond
  * with ACK, client will try below number of maximum attempts, if it fails to
  * get reply from server, client starts from beginning (broadcasting DISCOVER
  * message).
@@ -98,8 +96,7 @@ static uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 }; /* RFC 1497 [17] */
 
 static void dhcpv4_timeout(struct k_work *work);
 
-/*
- * Timeout for Initialization and allocation of network address.
+/* Timeout for Initialization and allocation of network address.
  * Timeout value is from random number between 1-10 seconds.
  * RFC 2131, Chapter 4.4.1.
  */
@@ -146,8 +143,7 @@ static inline bool add_msg_type(struct net_buf *buf, uint8_t type)
 	return net_nbuf_append(buf, sizeof(data), data);
 }
 
-/*
- * Add DHCPv5 minimum required options for server to reply.
+/* Add DHCPv4 minimum required options for server to reply.
  * Can be added more if needed.
  */
 static inline bool add_req_options(struct net_buf *buf)
@@ -317,8 +313,7 @@ static struct net_buf *prepare_message(struct net_if *iface, uint8_t type)
 	msg->xid = htonl(iface->dhcpv4.xid);
 	msg->flags = htons(DHCPV4_MSG_BROADCAST);
 
-	/*
-	 * send DHCPV4_MSG_TYPE_REQUEST,
+	/* Send DHCPV4_MSG_TYPE_REQUEST,
 	 * ciaddr must 0.0.0.0, or router will return NAK
 	 */
 	if ((iface->dhcpv4.state == NET_DHCPV4_INIT) ||
@@ -444,8 +439,7 @@ static void dhcpv4_timeout(struct k_work *work)
 		send_discover(iface);
 		break;
 	case NET_DHCPV4_REQUEST:
-		/*
-		 * Maximum number of renewal attempts failed, so start
+		/* Maximum number of renewal attempts failed, so start
 		 * from the beginning.
 		 */
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
@@ -462,8 +456,7 @@ static void dhcpv4_timeout(struct k_work *work)
 				NET_DBG("Failed to remove addr from iface");
 			}
 
-			/*
-			 * Maximum number of renewal attempts failed, so start
+			/* Maximum number of renewal attempts failed, so start
 			 * from the beginning.
 			 */
 			send_discover(iface);
@@ -491,8 +484,7 @@ static void dhcpv4_t1_timeout(struct k_work *work)
 	send_request(iface, true);
 }
 
-/*
- * Parse DHCPv4 options and retrieve relavant information
+/* Parse DHCPv4 options and retrieve relavant information
  * as per RFC 2132.
  */
 static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
@@ -640,8 +632,7 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 /* TODO: Handles only DHCPv4 OFFER and ACK messages */
 static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 {
-	/*
-	 * Check for previous state, reason behind this check is, if client
+	/* Check for previous state, reason behind this check is, if client
 	 * receives multiple OFFER messages, first one will be handled.
 	 * Rest of the replies are discarded.
 	 */
@@ -681,8 +672,8 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 
 			break;
 		case NET_DHCPV4_RENEWAL:
-			/* TODO: if the renewal is success, update only
-			 * vlifetime on iface
+			/* TODO: If the renewal is success, update only
+			 * vlifetime on iface.
 			 */
 			break;
 		default:
@@ -730,8 +721,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	frag = buf->frags;
 	min = NET_IPV4UDPH_LEN + sizeof(struct dhcp_msg);
 
-	/*
-	 * If the message is not DHCP then continue passing to
+	/* If the message is not DHCP then continue passing to
 	 * related handlers.
 	 */
 	if (net_buf_frags_len(frag) < min) {
@@ -742,7 +732,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 
 	msg = (struct dhcp_msg *)(frag->data + NET_IPV4UDPH_LEN);
 
-	NET_DBG("received dhcp msg [op=0x%x htype=0x%x hlen=%u xid=0x%x "
+	NET_DBG("Received dhcp msg [op=0x%x htype=0x%x hlen=%u xid=0x%x "
 		"secs=%u flags=0x%x ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d "
 		"siaddr=%d.%d.%d.%d giaddr=%d.%d.%d.%d chaddr=%s]",
 		msg->op, msg->htype, msg->hlen, ntohl(msg->xid),
@@ -766,7 +756,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	memcpy(iface->dhcpv4.requested_ip.s4_addr, msg->yiaddr,
 	       sizeof(msg->yiaddr));
 
-	/* sname, file are not used at the moment, skip it */
+	/* SNAME, FILE are not used at the moment, skip it */
 	frag = net_nbuf_skip(frag, min, &pos, SIZE_OF_SNAME + SIZE_OF_FILE);
 	if (!frag && pos) {
 		goto drop;
@@ -802,8 +792,7 @@ void net_dhcpv4_start(struct net_if *iface)
 	 */
 	iface->dhcpv4.xid = sys_rand32_get();
 
-	/*
-	 * Register UDP input callback on
+	/* Register UDP input callback on
 	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for
 	 * all dhcpv4 related incoming packets.
 	 */

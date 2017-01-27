@@ -58,6 +58,13 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 26, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portb, 21, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
+#ifdef CONFIG_NXP_MCR20A
+	/* FRDM-MCR20A Reset (D5) */
+	pinmux_pin_set(porta,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* FRDM-MCR20A IRQ_B (D2) */
+	pinmux_pin_set(portb,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
 #ifdef CONFIG_SPI_0
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAlt2));

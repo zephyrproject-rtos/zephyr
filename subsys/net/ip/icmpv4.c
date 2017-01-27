@@ -32,7 +32,7 @@ static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	char out[sizeof("xxx.xxx.xxx.xxx")];
 
-	snprintf(out, sizeof(out),
+	snprintk(out, sizeof(out), "%s",
 		 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
 	NET_DBG("Received Echo Request from %s to %s",
 		net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), out);
@@ -49,7 +49,7 @@ static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv4(buf);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
-	snprintf(out, sizeof(out),
+	snprintk(out, sizeof(out), "%s",
 		 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
 	NET_DBG("Sending Echo Reply from %s to %s",
 		net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), out);
@@ -138,7 +138,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	do {
 		char out[NET_IPV4_ADDR_LEN];
 
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
 
 		NET_DBG("Sending ICMPv4 Echo Request type %d"
@@ -252,7 +252,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	do {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
 		NET_DBG("Sending ICMPv4 Error Message type %d code %d "
 			"from %s to %s", type, code,

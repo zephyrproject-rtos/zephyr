@@ -15,12 +15,6 @@ extern "C" {
 
 #include <kernel.h>
 
-#define MAX_LINE_LEN 256
-struct uart_console_input {
-	int _unused;
-	char line[MAX_LINE_LEN];
-};
-
 /** @brief Register uart input processing
  *
  *  Input processing is started when string is typed in the console.

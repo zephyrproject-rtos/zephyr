@@ -121,7 +121,7 @@ net_rpl_of0_best_parent(struct net_if *iface,
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv6_addr(
 				 net_rpl_get_parent_addr(iface,
 							 parent2)));

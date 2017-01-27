@@ -14,9 +14,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <console/uart_console.h>
+#include <console/console.h>
 #include <misc/printk.h>
 #include <misc/util.h>
+
+#ifdef CONFIG_UART_CONSOLE
+#include <console/uart_console.h>
+#endif
+#ifdef CONFIG_TELNET_CONSOLE
+#include <console/telnet_console.h>
+#endif
 
 #include <shell/shell.h>
 
@@ -39,8 +46,8 @@ static int default_module = -1;
 #define STACKSIZE CONFIG_CONSOLE_SHELL_STACKSIZE
 static char __stack stack[STACKSIZE];
 
-#define MAX_CMD_QUEUED 3
-static struct uart_console_input buf[MAX_CMD_QUEUED];
+#define MAX_CMD_QUEUED CONFIG_CONSOLE_SHELL_MAX_CMD_QUEUED
+static struct console_input buf[MAX_CMD_QUEUED];
 
 static struct k_fifo avail_queue;
 static struct k_fifo cmds_queue;
@@ -124,8 +131,8 @@ static int get_destination_module(const char *module_str)
 
 	for (i = 0; i < NUM_OF_SHELL_ENTITIES; i++) {
 		if (!strncmp(module_str,
-				__shell_cmd_start[i].module_name,
-				MODULE_NAME_MAX_LEN)) {
+			     __shell_cmd_start[i].module_name,
+			     MODULE_NAME_MAX_LEN)) {
 			return i;
 		}
 	}
@@ -180,9 +187,9 @@ static int show_cmd_help(char *argv[])
 	for (i = 0; shell_module->commands[i].cmd_name; i++) {
 		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
 			printk("%s %s\n",
-				shell_module->commands[i].cmd_name,
-				shell_module->commands[i].help ?
-				shell_module->commands[i].help : "");
+			       shell_module->commands[i].cmd_name,
+			       shell_module->commands[i].help ?
+			       shell_module->commands[i].help : "");
 			return 0;
 		}
 	}
@@ -313,6 +320,12 @@ static shell_cmd_function_t get_cb(int argc, char *argv[])
 	return NULL;
 }
 
+static inline void print_cmd_unknown(char *argv)
+{
+	printk("Unrecognized command: %s\n", argv);
+	printk("Type 'help' for list of available commands\n");
+}
+
 static void shell(void *p1, void *p2, void *p3)
 {
 	char *argv[ARGC_MAX + 1];
@@ -323,7 +336,7 @@ static void shell(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	while (1) {
-		struct uart_console_input *cmd;
+		struct console_input *cmd;
 		shell_cmd_function_t cb;
 
 		printk("%s", get_prompt());
@@ -341,8 +354,7 @@ static void shell(void *p1, void *p2, void *p3)
 			if (app_cmd_handler != NULL) {
 				cb = app_cmd_handler;
 			} else {
-				printk("Unrecognized command: %s\n", argv[0]);
-				printk("Type 'help' for list of available commands\n");
+				print_cmd_unknown(argv[0]);
 				k_fifo_put(&avail_queue, cmd);
 				continue;
 			}
@@ -500,6 +512,7 @@ static uint8_t completion(char *line, uint8_t len)
 	return common_chars - command_len + space;
 }
 
+
 void shell_init(const char *str)
 {
 	k_fifo_init(&cmds_queue);
@@ -513,7 +526,12 @@ void shell_init(const char *str)
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Register serial console handler */
+#ifdef CONFIG_UART_CONSOLE
 	uart_register_input(&avail_queue, &cmds_queue, completion);
+#endif
+#ifdef CONFIG_TELNET_CONSOLE
+	telnet_register_input(&avail_queue, &cmds_queue, completion);
+#endif
 }
 
 /** @brief Optionally register an app default cmd handler.
@@ -539,4 +557,3 @@ void shell_register_default_module(const char *name)
 		printk("\n%s", default_module_prompt);
 	}
 }
-

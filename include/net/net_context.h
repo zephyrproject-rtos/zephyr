@@ -112,6 +112,22 @@ typedef void (*net_tcp_accept_cb_t)(struct net_context *new_context,
 				    int status,
 				    void *user_data);
 
+/**
+ * @brief Connection callback.
+ *
+ * @details The connect callback is called after a connection is being
+ * established.
+ *
+ * @param context The context to use.
+ * @param status Status of the connection establishment. This is 0
+ * if the connection was established successfully, <0 if there was an
+ * error.
+ * @param user_data The user data given in net_context_connect() call.
+ */
+typedef void (*net_context_connect_cb_t)(struct net_context *context,
+					 int status,
+					 void *user_data);
+
 struct net_tcp;
 
 struct net_conn_handle;
@@ -143,6 +159,11 @@ struct net_context {
 	 * successfully.
 	 */
 	net_context_send_cb_t send_cb;
+
+	/** Connect callback to be called when a connection has been
+	 *  established.
+	 */
+	net_context_connect_cb_t connect_cb;
 
 	/** User data.
 	 */
@@ -438,22 +459,6 @@ int net_context_bind(struct net_context *context,
  */
 int net_context_listen(struct net_context *context,
 		       int backlog);
-
-/**
- * @brief Connection callback.
- *
- * @details The connect callback is called after a connection is being
- * established.
- *
- * @param context The context to use.
- * @param status Status of the connection establishment. This is 0
- * if the connection was established successfully, <0 if there was an
- * error.
- * @param user_data The user data given in net_context_connect() call.
- */
-typedef void (*net_context_connect_cb_t)(struct net_context *context,
-					 int status,
-					 void *user_data);
 
 /**
  * @brief            Create a network connection.

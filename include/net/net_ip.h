@@ -160,6 +160,7 @@ struct net_addr {
 #define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
 #define INADDR_ANY 0
+#define INADDR_ANY_INIT { { { INADDR_ANY } } }
 
 #define NET_IPV6_MTU 1280
 
@@ -688,6 +689,10 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 					     const struct net_linkaddr *lladdr)
 {
+	if (!addr || !lladdr) {
+		return false;
+	}
+
 	switch (lladdr->len) {
 	case 2:
 		if (!memcmp(&addr->s6_addr[14], lladdr->addr, lladdr->len) &&
