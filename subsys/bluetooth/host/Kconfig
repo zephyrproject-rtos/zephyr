@@ -244,6 +244,13 @@ config BLUETOOTH_MAX_PAIRED
 
 endif # BLUETOOTH_CONN
 
+config BLUETOOTH_DEVICE_NAME
+	string "Bluetooth device name"
+	default "Zephyr"
+	help
+	  Bluetooth device name. Name can be up to 248 bytes long (excluding
+	  NULL termination). Can be empty string.
+
 endif # BLUETOOTH_HCI_HOST
 
 config BLUETOOTH_TINYCRYPT_ECC
@@ -479,10 +486,4 @@ config BLUETOOTH_PAGE_TIMEOUT
 	  This option sets the page timeout value. Value is selected as
 	  (N * 0.625) ms.
 
-config BLUETOOTH_BREDR_NAME
-	string "Bluetooth BR/EDR device name"
-	default "Zephyr"
-	help
-	  Bluetooth BR/EDR name. Name can be up to 248 bytes long (excluding
-	  NULL termination). Can be empty string.
 endif # BLUETOOTH_BREDR

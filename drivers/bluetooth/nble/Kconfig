@@ -71,6 +71,13 @@ config BLUETOOTH_RX_STACK_SIZE
 	  require extra stack space, this value can be increased to
 	  accomodate for that.
 
+config BLUETOOTH_DEVICE_NAME
+	string "Bluetooth device name"
+	default "Zephyr"
+	help
+	  Bluetooth device name. Name can be up to 248 bytes long (excluding
+	  NULL termination). Can be empty string.
+
 if BLUETOOTH_DEBUG
 
 config	BLUETOOTH_DEBUG_HCI_DRIVER
