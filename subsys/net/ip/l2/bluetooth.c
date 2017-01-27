@@ -146,6 +146,9 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_context *ctxt = CHAN_CTXT(chan);
 	struct bt_conn_info info;
+	struct net_linkaddr ll;
+	struct in6_addr in6;
+
 #if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
 	char src[BT_ADDR_LE_STR_LEN];
 	char dst[BT_ADDR_LE_STR_LEN];
@@ -166,6 +169,16 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	sys_memcpy_swap(ctxt->dst.val, info.le.dst->a.val, sizeof(ctxt->dst));
 
 	net_if_set_link_addr(ctxt->iface, ctxt->src.val, sizeof(ctxt->src.val));
+
+	ll.addr = ctxt->dst.val;
+	ll.len = sizeof(ctxt->dst.val);
+
+	/* Add remote link-local address to the nbr cache to avoid sending ns:
+	 * https://tools.ietf.org/html/rfc7668#section-3.2.3
+	 * A Bluetooth LE 6LN MUST NOT register its link-local address.
+	 */
+	net_ipv6_addr_create_iid(&in6, &ll);
+	net_ipv6_nbr_add(ctxt->iface, &in6, &ll, false, NET_NBR_REACHABLE);
 
 	/* Set iface up */
 	net_if_up(ctxt->iface);
