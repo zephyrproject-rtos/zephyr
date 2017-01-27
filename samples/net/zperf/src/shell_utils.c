@@ -14,11 +14,11 @@
 
 #include "shell_utils.h"
 
-const int TIME_US[] = { 60 * 1000 * 1000, 1000 * 1000, 1000, 0 };
+const uint32_t TIME_US[] = { 60 * 1000 * 1000, 1000 * 1000, 1000, 0 };
 const char *TIME_US_UNIT[] = { "m", "s", "ms", "us" };
-const int KBPS[] = { 1024, 0 };
+const uint32_t KBPS[] = { 1024, 0 };
 const char *KBPS_UNIT[] = { "Mbps", "Kbps" };
-const int K[] = { 1024 * 1024, 1024, 0 };
+const uint32_t K[] = { 1024 * 1024, 1024, 0 };
 const char *K_UNIT[] = { "M", "K", "" };
 
 void print_number(uint32_t value, const uint32_t *divisor,
