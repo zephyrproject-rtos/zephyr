@@ -19,6 +19,7 @@
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt.h"
+#include "ieee802154_security.h"
 
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu)
@@ -477,3 +478,63 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_EXT_ADDR,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SHORT_ADDR,
 				  ieee802154_get_parameters);
+
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+
+static int ieee802154_set_security_settings(uint32_t mgmt_request,
+					    struct net_if *iface,
+					    void *data, size_t len)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_security_params *params;
+
+	if (ctx->associated) {
+		return -EBUSY;
+	}
+
+	if (len != sizeof(struct ieee802154_security_params) ||
+	    !data) {
+		return -EINVAL;
+	}
+
+	params = (struct ieee802154_security_params *)data;
+
+	if (ieee802154_security_setup_session(&ctx->sec_ctx, params->level,
+					      params->key_mode, params->key,
+					      params->key_len)) {
+		NET_ERR("Could not set the security parameters");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS,
+				  ieee802154_set_security_settings);
+
+static int ieee802154_get_security_settings(uint32_t mgmt_request,
+					    struct net_if *iface,
+					    void *data, size_t len)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_security_params *params;
+
+	if (len != sizeof(struct ieee802154_security_params) ||
+	    !data) {
+		return -EINVAL;
+	}
+
+	params = (struct ieee802154_security_params *)data;
+
+	memcpy(params->key, ctx->sec_ctx.key, ctx->sec_ctx.key_len);
+	params->key_len = ctx->sec_ctx.key_len;
+	params->key_mode = ctx->sec_ctx.key_mode;
+	params->level = ctx->sec_ctx.level;
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SECURITY_SETTINGS,
+				  ieee802154_get_security_settings);
+
+#endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
