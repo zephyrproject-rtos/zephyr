@@ -12,7 +12,7 @@ menu "HALs"
 
 source "ext/hal/cmsis/Kconfig"
 
-source "ext/hal/nordic/mdk/Kconfig"
+source "ext/hal/nordic/Kconfig"
 
 source "ext/hal/nxp/mcux/Kconfig"
 

@@ -2,7 +2,7 @@
 
 include $(srctree)/ext/hal/cmsis/Makefile
 
-include $(srctree)/ext/hal/nordic/mdk/Makefile
+include $(srctree)/ext/hal/nordic/Makefile
 
 include $(srctree)/ext/hal/nxp/mcux/Makefile
 

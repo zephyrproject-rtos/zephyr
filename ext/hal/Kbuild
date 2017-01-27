@@ -2,3 +2,4 @@ obj-$(CONFIG_HAS_MCUX) += nxp/mcux/
 obj-$(CONFIG_QMSI_BUILTIN) += qmsi/
 obj-$(CONFIG_HAS_STM32CUBE) += st/stm32cube/
 obj-$(CONFIG_HAS_CC3200SDK) += ti/cc3200sdk/
+obj-$(CONFIG_HAS_NORDIC_HAL) += nordic/

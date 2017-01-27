@@ -6,3 +6,6 @@
 
 config HAS_NORDIC_MDK
 	bool
+
+config HAS_NORDIC_HAL
+	bool
