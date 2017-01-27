@@ -87,7 +87,7 @@ void net_print_statistics(void)
 			 GET_STAT(rpl.dis.drop));
 		NET_INFO("RPL DIO recv   %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(rpl.dio.recv),
-			 GET_STAT(rpl.dio..sent),
+			 GET_STAT(rpl.dio.sent),
 			 GET_STAT(rpl.dio.drop));
 		NET_INFO("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
 			 GET_STAT(rpl.dao.recv),
