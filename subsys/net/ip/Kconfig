@@ -99,6 +99,18 @@ config NET_DEBUG_TCP
 	help
 	Enables TCP handler output debug messages
 
+config NET_TCP_TIME_WAIT
+	bool "Enable TCP TIME_WAIT timeouts"
+	default n
+	help
+	Officially, the TCP standard requires a 4 minute timeout on
+	connection close before that particular port pair can be used
+	again.  This requires that the net_context and net_tcp structs
+	persist for the full duration, so has non-trivial memory costs
+	and is optional.  Modern systems with well-randomized sequence
+	numbers don't need this, but it is present for specification
+	compliance where needed.
+
 config NET_UDP
 	bool "Enable UDP"
 	default y

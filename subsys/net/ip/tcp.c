@@ -44,6 +44,9 @@ static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 
 #define INIT_RETRY_MS 200
 
+/* 2MSL timeout, where "MSL" is arbitrarily 2 minutes in the RFC */
+#define TIME_WAIT_MS (2 * 2 * 60 * 1000)
+
 struct tcp_segment {
 	uint32_t seq;
 	uint32_t ack;
@@ -120,6 +123,10 @@ static void tcp_retry_expired(struct k_timer *timer)
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
 		net_tcp_send_buf(net_buf_ref(buf));
+	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
+		if (tcp->fin_sent && tcp->fin_rcvd) {
+			net_context_unref(tcp->context);
+		}
 	}
 }
 
@@ -637,10 +644,18 @@ int net_tcp_send_buf(struct net_buf *buf)
 
 static void restart_timer(struct net_tcp *tcp)
 {
-	if (sys_slist_is_empty(&tcp->sent_list)) {
+	if (!sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->flags |= NET_TCP_RETRYING;
 		tcp->retry_timeout_shift = 0;
 		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
+	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
+		if (tcp->fin_sent && tcp->fin_rcvd) {
+			/* We know sent_list is empty, which means if
+			 * fin_sent is true it must have been ACKd
+			 */
+			k_timer_start(&tcp->retry_timer, TIME_WAIT_MS, 0);
+			net_context_ref(tcp->context);
+		}
 	} else {
 		k_timer_stop(&tcp->retry_timer);
 		tcp->flags &= ~NET_TCP_RETRYING;
