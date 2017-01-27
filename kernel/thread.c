@@ -32,7 +32,7 @@ extern struct _static_thread_data _static_thread_data_list_end[];
 	     thread_data < _static_thread_data_list_end; \
 	     thread_data++)
 
-#ifdef CONFIG_FP_SHARING
+#if defined(CONFIG_LEGACY_KERNEL) && defined(CONFIG_FP_SHARING)
 static inline void _task_group_adjust(struct _static_thread_data *thread_data)
 {
 	/*
@@ -50,7 +50,7 @@ static inline void _task_group_adjust(struct _static_thread_data *thread_data)
 }
 #else
 #define _task_group_adjust(thread_data) do { } while (0)
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LEGACY_KERNEL && CONFIG_FP_SHARING */
 
 /* Legacy API */
 #if defined(CONFIG_LEGACY_KERNEL)
