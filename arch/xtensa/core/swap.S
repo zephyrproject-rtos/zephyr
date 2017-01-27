@@ -58,7 +58,7 @@ _Swap:
 	l32i a4, a2, KERNEL_OFFSET(current) /* a4 := _kernel->current */
 
 	s32i a3,  sp, XT_SOL_exit       	/* 0 to flag as solicited frame */
-	s32i sp,  a4, THREAD_OFFSET(sp) /* sp := current->arch.topOfStack */
+	s32i sp,  a4, THREAD_OFFSET(sp) /* current->arch.topOfStack := sp */
 
 #if XCHAL_CP_NUM > 0
 	/* Clear CPENABLE, also in task's co-processor state save area. */

@@ -23,8 +23,8 @@
 	.type   _zxt_dispatch,@function
 	.align  4
 _zxt_dispatch:
-	mov a3, a2	/* a3 := _thread = _kernel.current */
-	l32i sp, a3, THREAD_OFFSET(sp) /* SP := current->topOfStack; */
+	mov a3, a2	/* a3 := _thread = _kernel.ready_q.cache */
+	l32i sp, a3, THREAD_OFFSET(sp) /* sp := _thread->topOfStack; */
 
 	/* Determine the type of stack frame. */
 	l32i a2, sp, XT_STK_exit       /* exit dispatcher or solicited flag */
