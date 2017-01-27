@@ -181,10 +181,13 @@ struct dma_block_config {
  *     reserved             [ 19 : 31 ]
  *
  * config_size is a bit field with the following parts:
- *     source_data_size    [ 0 : 7 ]    - number of bytes
- *     dest_data_size      [ 8 : 15 ]   - number of bytes
- *     source_burst_length [ 16 : 23 ]  - number of source data units
- *     dest_burst_length   [ 24 : 31 ]  - number of destination data units
+ *     source_data_size    [ 0 : 15 ]    - number of bytes
+ *     dest_data_size      [ 16 : 31 ]   - number of bytes
+ *     source_burst_length [ 0 : 15 ]  - number of source data units
+ *     dest_burst_length   [ 16 : 31 ]  - number of destination data units
+ *
+ *     block_count  is the number of blocks used for block chaining, this
+ *     depends on availability of the DMA controller.
  *
  * dma_callback is the callback function pointer. If enabled, callback function
  *              will be invoked at transfer completion or when error happens
@@ -201,10 +204,10 @@ struct dma_config {
 	uint32_t  source_chaining_en :   1;
 	uint32_t  dest_chaining_en :     1;
 	uint32_t  reserved :            13;
-	uint32_t  source_data_size :     8;
-	uint32_t  dest_data_size :       8;
-	uint32_t  source_burst_length :  8;
-	uint32_t  dest_burst_length :    8;
+	uint32_t  source_data_size :    16;
+	uint32_t  dest_data_size :      16;
+	uint32_t  source_burst_length : 16;
+	uint32_t  dest_burst_length :   16;
 	uint32_t block_count;
 	struct dma_block_config *head_block;
 	void (*dma_callback)(struct device *dev, uint32_t channel,

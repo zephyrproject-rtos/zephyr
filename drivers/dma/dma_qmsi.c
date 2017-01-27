@@ -36,6 +36,9 @@ struct dma_qmsi_driver_data {
 	qm_dma_context_t saved_ctx;
 #endif
 #endif
+	void (*dma_user_callback[QM_DMA_CHANNEL_NUM])(struct device *dev,
+						      uint32_t channel_id,
+						      int error_code);
 };
 
 
@@ -58,6 +61,19 @@ static void dma_callback(void *callback_context, uint32_t len,
 	}
 
 	data->transfer[channel](context->dev, data->callback_data[channel]);
+}
+
+static void dma_drv_callback(void *callback_context, uint32_t len,
+			     int error_code)
+{
+	struct dma_qmsi_context *context = callback_context;
+	struct dma_qmsi_driver_data *data;
+	uint32_t channel;
+
+	channel = context->index;
+	data = context->dev->driver_data;
+
+	data->dma_user_callback[channel](context->dev, channel, error_code);
 }
 
 static int dma_qmsi_channel_config(struct device *dev, uint32_t channel,
@@ -107,7 +123,145 @@ static int dma_qmsi_transfer_config(struct device *dev, uint32_t channel,
 					 (qm_dma_transfer_t *)config);
 }
 
+static int width_index(uint32_t num_bytes, uint32_t *index)
+{
+	switch (num_bytes) {
+	case 1:
+		*index = QM_DMA_TRANS_WIDTH_8;
+		break;
+	case 2:
+		*index = QM_DMA_TRANS_WIDTH_16;
+		break;
+	case 4:
+		*index = QM_DMA_TRANS_WIDTH_32;
+		break;
+	case 8:
+		*index = QM_DMA_TRANS_WIDTH_64;
+		break;
+	case 16:
+		*index = QM_DMA_TRANS_WIDTH_128;
+		break;
+	case 32:
+		*index = QM_DMA_TRANS_WIDTH_256;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int bst_index(uint32_t num_units, uint32_t *index)
+{
+	switch (num_units) {
+	case 1:
+		*index = QM_DMA_BURST_TRANS_LENGTH_1;
+		break;
+	case 4:
+		*index = QM_DMA_BURST_TRANS_LENGTH_4;
+		break;
+	case 8:
+		*index = QM_DMA_BURST_TRANS_LENGTH_8;
+		break;
+	case 16:
+		*index = QM_DMA_BURST_TRANS_LENGTH_16;
+		break;
+	case 32:
+		*index = QM_DMA_BURST_TRANS_LENGTH_32;
+		break;
+	case 64:
+		*index = QM_DMA_BURST_TRANS_LENGTH_64;
+		break;
+	case 128:
+		*index = QM_DMA_BURST_TRANS_LENGTH_128;
+		break;
+	case 256:
+		*index = QM_DMA_BURST_TRANS_LENGTH_256;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int dma_qmsi_chan_config(struct device *dev, uint32_t channel,
+				struct dma_config *config)
+{
+	const struct dma_qmsi_config_info *info = dev->config->config_info;
+	struct dma_qmsi_driver_data *data = dev->driver_data;
+	qm_dma_transfer_t qmsi_transfer_cfg = { 0 };
+	qm_dma_channel_config_t qmsi_cfg = { 0 };
+	uint32_t temp = 0;
+	int ret = 0;
+
+	if (config->block_count != 1) {
+		return -ENOTSUP;
+	}
+
+	qmsi_cfg.handshake_interface = (qm_dma_handshake_interface_t)
+					config->dma_slot;
+	qmsi_cfg.channel_direction = (qm_dma_channel_direction_t)
+				      config->channel_direction;
+
+	ret = width_index(config->source_data_size, &temp);
+	if (ret != 0) {
+		return ret;
+	}
+	qmsi_cfg.source_transfer_width = (qm_dma_transfer_width_t) temp;
+
+	ret = width_index(config->dest_data_size, &temp);
+	if (ret != 0) {
+		return ret;
+	}
+	qmsi_cfg.destination_transfer_width = (qm_dma_transfer_width_t) temp;
+
+	ret = bst_index(config->dest_burst_length, &temp);
+	if (ret != 0) {
+		return ret;
+	}
+	qmsi_cfg.destination_burst_length = (qm_dma_burst_length_t) temp;
+
+	ret = bst_index(config->source_burst_length, &temp);
+	if (ret != 0) {
+		return ret;
+	}
+	qmsi_cfg.source_burst_length = (qm_dma_burst_length_t) temp;
+
+	/* TODO: add support for using other DMA transfer types. */
+	qmsi_cfg.transfer_type = QM_DMA_TYPE_SINGLE;
+
+	data->dma_user_callback[channel] = config->dma_callback;
+
+	dma_context[channel].index = channel;
+	dma_context[channel].dev = dev;
+
+	qmsi_cfg.callback_context = &dma_context[channel];
+	qmsi_cfg.client_callback = dma_drv_callback;
+
+	ret = qm_dma_channel_set_config(info->instance, channel, &qmsi_cfg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	qmsi_transfer_cfg.block_size = config->head_block->block_size;
+	qmsi_transfer_cfg.source_address = (uint32_t *)
+					   config->head_block->source_address;
+	qmsi_transfer_cfg.destination_address = (uint32_t *)
+					      config->head_block->dest_address;
+
+	return qm_dma_transfer_set_config(info->instance, channel,
+					  &qmsi_transfer_cfg);
+}
+
 static int dma_qmsi_transfer_start(struct device *dev, uint32_t channel)
+{
+	const struct dma_qmsi_config_info *info = dev->config->config_info;
+
+	return qm_dma_transfer_start(info->instance, channel);
+}
+
+static int dma_qmsi_start(struct device *dev, uint32_t channel)
 {
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
@@ -121,11 +275,21 @@ static int dma_qmsi_transfer_stop(struct device *dev, uint32_t channel)
 	return qm_dma_transfer_terminate(info->instance, channel);
 }
 
+static int dma_qmsi_stop(struct device *dev, uint32_t channel)
+{
+	const struct dma_qmsi_config_info *info = dev->config->config_info;
+
+	return qm_dma_transfer_terminate(info->instance, channel);
+}
+
 static const struct dma_driver_api dma_funcs = {
 	.channel_config = dma_qmsi_channel_config,
 	.transfer_config = dma_qmsi_transfer_config,
 	.transfer_start = dma_qmsi_transfer_start,
-	.transfer_stop = dma_qmsi_transfer_stop
+	.transfer_stop = dma_qmsi_transfer_stop,
+	.config = dma_qmsi_chan_config,
+	.start = dma_qmsi_start,
+	.stop = dma_qmsi_stop
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
