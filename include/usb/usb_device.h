@@ -74,7 +74,7 @@ typedef void (*usb_ep_callback)(uint8_t ep,
  * interface number specified in the device descriptor table
  */
 typedef int (*usb_request_handler) (struct usb_setup_packet *detup,
-		int *transfer_len, uint8_t **payload_data);
+		int32_t *transfer_len, uint8_t **payload_data);
 
 /*
  * USB Endpoint Configuration
