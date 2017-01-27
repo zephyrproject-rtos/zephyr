@@ -126,12 +126,12 @@ void _new_thread(char *pStack, size_t stackSize,
 	pInitCtx->a5 = (uint32_t)p3;
 	pInitCtx->ps = PS_UM | PS_EXCM;
 #else
-	/* For windowed ABI set also WOE and CALLINC (pretend task is 'call8'). */
+	/* For windowed ABI set also WOE and CALLINC (pretend task is 'call4'). */
 	pInitCtx->a6 = (uint32_t)pEntry;
 	pInitCtx->a7 = (uint32_t)p1;
 	pInitCtx->a8 = (uint32_t)p2;
 	pInitCtx->a9 = (uint32_t)p3;
-	pInitCtx->ps = PS_UM | PS_EXCM | PS_WOE | PS_CALLINC(2);
+	pInitCtx->ps = PS_UM | PS_EXCM | PS_WOE | PS_CALLINC(1);
 #endif
 	tcs->callee_saved.topOfStack = pInitCtx;
 	tcs->arch.flags = 0;
