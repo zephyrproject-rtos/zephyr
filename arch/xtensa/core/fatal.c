@@ -56,7 +56,7 @@ void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 	}
 	PR_EXC("Current thread ID = 0x%x\n"
 	       "Faulting instruction address = 0x%x\n",
-	       sys_thread_self_get(),
+	       k_current_get(),
 	       pEsf->pc);
 	/*
 	 * Now that the error has been reported, call the user implemented
