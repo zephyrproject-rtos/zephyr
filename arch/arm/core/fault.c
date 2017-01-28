@@ -76,13 +76,13 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	       __scs.scb.cfsr.byte.bfsr.val,
 	       __scs.scb.cfsr.byte.ufsr.val);
 
-	if (_ScbMemFaultIsMmfarValid()) {
+	if (SCB->CFSR & CFSR_MMARVALID_Msk) {
 		PR_EXC("MMFAR: 0x%" PRIx32 "\n", _ScbMemFaultAddrGet());
 		if (escalation) {
 			_ScbMemFaultMmfarReset();
 		}
 	}
-	if (_ScbBusFaultIsBfarValid()) {
+	if (SCB->CFSR & CFSR_BFARVALID_Msk) {
 		PR_EXC("BFAR: 0x%" PRIx32 "\n", _ScbBusFaultAddrGet());
 		if (escalation) {
 			_ScbBusFaultBfarReset();
@@ -130,20 +130,20 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 
 	_FaultThreadShow(esf);
 
-	if (_ScbMemFaultIsStacking()) {
+	if (SCB->CFSR & CFSR_MSTKERR_Msk) {
 		PR_EXC("  Stacking error\n");
-	} else if (_ScbMemFaultIsUnstacking()) {
+	} else if (SCB->CFSR & CFSR_MUNSTKERR_Msk) {
 		PR_EXC("  Unstacking error\n");
-	} else if (_ScbMemFaultIsDataAccessViolation()) {
+	} else if (SCB->CFSR & CFSR_DACCVIOL_Msk) {
 		PR_EXC("  Data Access Violation\n");
-		if (_ScbMemFaultIsMmfarValid()) {
+		if (SCB->CFSR & CFSR_MMARVALID_Msk) {
 			PR_EXC("  Address: 0x%" PRIx32 "\n",
 			       _ScbMemFaultAddrGet());
 			if (fromHardFault) {
 				_ScbMemFaultMmfarReset();
 			}
 		}
-	} else if (_ScbMemFaultIsInstrAccessViolation()) {
+	} else if (SCB->CFSR & CFSR_IACCVIOL_Msk) {
 		PR_EXC("  Instruction Access Violation\n");
 	}
 }
@@ -162,13 +162,13 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 
 	_FaultThreadShow(esf);
 
-	if (_ScbBusFaultIsStacking()) {
+	if (SCB->CFSR & CFSR_STKERR_Msk) {
 		PR_EXC("  Stacking error\n");
-	} else if (_ScbBusFaultIsUnstacking()) {
+	} else if (SCB->CFSR & CFSR_UNSTKERR_Msk) {
 		PR_EXC("  Unstacking error\n");
-	} else if (_ScbBusFaultIsPrecise()) {
+	} else if (SCB->CFSR & CFSR_PRECISERR_Msk) {
 		PR_EXC("  Precise data bus error\n");
-		if (_ScbBusFaultIsBfarValid()) {
+		if (SCB->CFSR & CFSR_BFARVALID_Msk) {
 			PR_EXC("  Address: 0x%" PRIx32 "\n",
 			       _ScbBusFaultAddrGet());
 			if (fromHardFault) {
@@ -176,12 +176,12 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 			}
 		}
 		/* it's possible to have both a precise and imprecise fault */
-		if (_ScbBusFaultIsImprecise()) {
+		if (SCB->CFSR & CFSR_IMPRECISERR_Msk) {
 			PR_EXC("  Imprecise data bus error\n");
 		}
-	} else if (_ScbBusFaultIsImprecise()) {
+	} else if (SCB->CFSR & CFSR_IMPRECISERR_Msk) {
 		PR_EXC("  Imprecise data bus error\n");
-	} else if (_ScbBusFaultIsInstrBusErr()) {
+	} else if (SCB->CFSR & CFSR_IBUSERR_Msk) {
 		PR_EXC("  Instruction bus error\n");
 	}
 }
@@ -201,22 +201,22 @@ static void _UsageFault(const NANO_ESF *esf)
 	_FaultThreadShow(esf);
 
 	/* bits are sticky: they stack and must be reset */
-	if (_ScbUsageFaultIsDivByZero()) {
+	if (SCB->CFSR & CFSR_DIVBYZERO_Msk) {
 		PR_EXC("  Division by zero\n");
 	}
-	if (_ScbUsageFaultIsUnaligned()) {
+	if (SCB->CFSR & CFSR_UNALIGNED_Msk) {
 		PR_EXC("  Unaligned memory access\n");
 	}
-	if (_ScbUsageFaultIsNoCp()) {
+	if (SCB->CFSR & CFSR_NOCP_Msk) {
 		PR_EXC("  No coprocessor instructions\n");
 	}
-	if (_ScbUsageFaultIsInvalidPcLoad()) {
+	if (SCB->CFSR & CFSR_INVPC_Msk) {
 		PR_EXC("  Illegal load of EXC_RETURN into PC\n");
 	}
-	if (_ScbUsageFaultIsInvalidState()) {
+	if (SCB->CFSR & CFSR_INVSTATE_Msk) {
 		PR_EXC("  Illegal use of the EPSR\n");
 	}
-	if (_ScbUsageFaultIsUndefinedInstr()) {
+	if (SCB->CFSR & CFSR_UNDEFINSTR_Msk) {
 		PR_EXC("  Attempt to execute undefined instruction\n");
 	}
 
@@ -257,15 +257,15 @@ static void _HardFault(const NANO_ESF *esf)
 #if defined(CONFIG_ARMV6_M)
 	_FaultThreadShow(esf);
 #elif defined(CONFIG_ARMV7_M)
-	if (_ScbHardFaultIsBusErrOnVectorRead()) {
+	if (SCB->HFSR & SCB_HFSR_VECTTBL_Msk) {
 		PR_EXC("  Bus fault on vector table read\n");
 	} else if (SCB->HFSR & SCB_HFSR_FORCED_Msk) {
 		PR_EXC("  Fault escalation (see below)\n");
-		if (_ScbIsMemFault()) {
+		if (SCB_MMFSR) {
 			_MpuFault(esf, 1);
-		} else if (_ScbIsBusFault()) {
+		} else if (SCB_BFSR) {
 			_BusFault(esf, 1);
-		} else if (_ScbIsUsageFault()) {
+		} else if (SCB_UFSR) {
 			_UsageFault(esf);
 		}
 	}
