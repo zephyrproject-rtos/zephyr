@@ -379,7 +379,7 @@ void _FaultInit(void)
 {
 #if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_ARMV7_M)
-	_ScbDivByZeroFaultEnable();
+	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */

@@ -48,21 +48,6 @@ extern "C" {
 #elif defined(CONFIG_ARMV7_M)
 /**
  *
- * @brief Enable faulting on division by zero
- *
- * This routine enables the divide by zero fault.
- * By default, the CPU ignores the error.
- *
- * @return N/A
- */
-
-static inline void _ScbDivByZeroFaultEnable(void)
-{
-	__scs.scb.ccr.bit.div_0_trp = 1;
-}
-
-/**
- *
  * @brief Find out if a hard fault is caused by a bus error on vector read
  *
  * This routine determines if a hard fault is caused by a bus error during
