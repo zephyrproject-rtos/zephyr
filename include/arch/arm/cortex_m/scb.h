@@ -44,21 +44,6 @@ extern "C" {
 #include <misc/util.h>
 #include <stdint.h>
 
-/**
- *
- * @brief Obtain the currently executing vector
- *
- * If currently handling an exception/interrupt, return the executing vector
- * number. If not, return 0.
- *
- * @return the currently executing vector number, 0 if in thread mode.
- */
-
-static inline uint32_t _ScbActiveVectorGet(void)
-{
-	return __scs.scb.icsr.bit.vectactive;
-}
-
 #if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_ARMV7_M)
 /**

@@ -360,7 +360,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  */
 void _Fault(const NANO_ESF *esf)
 {
-	int fault = _ScbActiveVectorGet();
+	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 
 	FAULT_DUMP(esf, fault);
 
