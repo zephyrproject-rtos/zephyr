@@ -77,13 +77,13 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	       __scs.scb.cfsr.byte.ufsr.val);
 
 	if (SCB->CFSR & CFSR_MMARVALID_Msk) {
-		PR_EXC("MMFAR: 0x%" PRIx32 "\n", _ScbMemFaultAddrGet());
+		PR_EXC("MMFAR: 0x%" PRIx32 "\n", SCB->MMFAR);
 		if (escalation) {
 			_ScbMemFaultMmfarReset();
 		}
 	}
 	if (SCB->CFSR & CFSR_BFARVALID_Msk) {
-		PR_EXC("BFAR: 0x%" PRIx32 "\n", _ScbBusFaultAddrGet());
+		PR_EXC("BFAR: 0x%" PRIx32 "\n", SCB->BFAR);
 		if (escalation) {
 			_ScbBusFaultBfarReset();
 		}
@@ -137,8 +137,7 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 	} else if (SCB->CFSR & CFSR_DACCVIOL_Msk) {
 		PR_EXC("  Data Access Violation\n");
 		if (SCB->CFSR & CFSR_MMARVALID_Msk) {
-			PR_EXC("  Address: 0x%" PRIx32 "\n",
-			       _ScbMemFaultAddrGet());
+			PR_EXC("  Address: 0x%" PRIx32 "\n", SCB->MMFAR);
 			if (fromHardFault) {
 				_ScbMemFaultMmfarReset();
 			}
@@ -169,8 +168,7 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 	} else if (SCB->CFSR & CFSR_PRECISERR_Msk) {
 		PR_EXC("  Precise data bus error\n");
 		if (SCB->CFSR & CFSR_BFARVALID_Msk) {
-			PR_EXC("  Address: 0x%" PRIx32 "\n",
-			       _ScbBusFaultAddrGet());
+			PR_EXC("  Address: 0x%" PRIx32 "\n", SCB->BFAR);
 			if (fromHardFault) {
 				_ScbBusFaultBfarReset();
 			}

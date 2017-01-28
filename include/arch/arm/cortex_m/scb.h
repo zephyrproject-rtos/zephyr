@@ -91,18 +91,6 @@ static inline void _ScbMemFaultAllFaultsReset(void)
 
 /**
  *
- * @brief Find out the faulting address on an MPU fault
- *
- * @return the faulting address
- */
-
-static inline uint32_t _ScbMemFaultAddrGet(void)
-{
-	return __scs.scb.mmfar;
-}
-
-/**
- *
  * @brief Invalid the value in BFAR
  *
  * This routine clears/invalidates the Bus Fault Address Register.
@@ -128,20 +116,6 @@ static inline void _ScbBusFaultBfarReset(void)
 static inline void _ScbBusFaultAllFaultsReset(void)
 {
 	__scs.scb.cfsr.byte.bfsr.val = 0xfe;
-}
-
-/**
- *
- * @brief Get the faulting address on a precise bus fault
- *
- * This routine returns the faulting address for a precise bus fault.
- *
- * @return the faulting address
- */
-
-static inline uint32_t _ScbBusFaultAddrGet(void)
-{
-	return __scs.scb.bfar;
 }
 
 /**
