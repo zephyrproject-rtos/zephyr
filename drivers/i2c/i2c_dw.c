@@ -737,11 +737,9 @@ DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 static void i2c_config_0(struct device *port)
 {
 #if defined(CONFIG_I2C_0_IRQ_DIRECT)
-	struct i2c_dw_rom_config * const rom = port->driver_data;
-
 	IRQ_CONNECT(I2C_DW_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_0), I2C_DW_IRQ_FLAGS);
-	irq_enable(rom->irq_num);
+	irq_enable(I2C_DW_0_IRQ);
 #elif defined(CONFIG_I2C_0_IRQ_SHARED)
 	const struct i2c_dw_rom_config * const config =
 		port->config->config_info;
@@ -788,11 +786,9 @@ DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_1_NAME, &i2c_dw_initialize,
 
 static void i2c_config_1(struct device *port)
 {
-	struct i2c_dw_rom_config * const rom = port->driver_data;
-
 	IRQ_CONNECT(I2C_DW_1_IRQ, CONFIG_I2C_1_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_1), I2C_DW_IRQ_FLAGS);
-	irq_enable(rom->irq_num);
+	irq_enable(I2C_DW_1_IRQ);
 }
 
 #endif /* CONFIG_I2C_1 */
