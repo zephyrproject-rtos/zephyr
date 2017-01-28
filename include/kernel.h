@@ -1194,6 +1194,24 @@ extern void k_fifo_put_slist(struct k_fifo *fifo, sys_slist_t *list);
 extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
 
 /**
+ * @brief Query a fifo to see if it has data available.
+ *
+ * Note that the data might be already gone by the time this function returns
+ * if other threads is also trying to read from the fifo.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param fifo Address of the fifo.
+ *
+ * @return Non-zero if the fifo is empty.
+ * @return 0 if data is available.
+ */
+static inline int k_fifo_is_empty(struct k_fifo *fifo)
+{
+	return (int)sys_slist_is_empty(&fifo->data_q);
+}
+
+/**
  * @brief Statically define and initialize a fifo.
  *
  * The fifo can be accessed outside the module where it is defined using:
