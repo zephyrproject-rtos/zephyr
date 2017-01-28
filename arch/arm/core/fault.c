@@ -76,18 +76,20 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	if (SCB->CFSR & CFSR_MMARVALID_Msk) {
 		PR_EXC("MMFAR: 0x%" PRIx32 "\n", SCB->MMFAR);
 		if (escalation) {
-			_ScbMemFaultMmfarReset();
+			/* clear MMAR[VALID] to reset */
+			SCB->CFSR &= ~CFSR_MMARVALID_Msk;
 		}
 	}
 	if (SCB->CFSR & CFSR_BFARVALID_Msk) {
 		PR_EXC("BFAR: 0x%" PRIx32 "\n", SCB->BFAR);
 		if (escalation) {
-			_ScbBusFaultBfarReset();
+			/* clear CFSR_BFAR[VALID] to reset */
+			SCB->CFSR &= ~CFSR_BFARVALID_Msk;
 		}
 	}
 
 	/* clear USFR sticky bits */
-	_ScbUsageFaultAllFaultsReset();
+	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */
@@ -136,7 +138,8 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 		if (SCB->CFSR & CFSR_MMARVALID_Msk) {
 			PR_EXC("  Address: 0x%" PRIx32 "\n", SCB->MMFAR);
 			if (fromHardFault) {
-				_ScbMemFaultMmfarReset();
+				/* clear MMAR[VALID] to reset */
+				SCB->CFSR &= ~CFSR_MMARVALID_Msk;
 			}
 		}
 	} else if (SCB->CFSR & CFSR_IACCVIOL_Msk) {
@@ -167,7 +170,8 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 		if (SCB->CFSR & CFSR_BFARVALID_Msk) {
 			PR_EXC("  Address: 0x%" PRIx32 "\n", SCB->BFAR);
 			if (fromHardFault) {
-				_ScbBusFaultBfarReset();
+				/* clear CFSR_BFAR[VALID] to reset */
+				SCB->CFSR &= ~CFSR_BFARVALID_Msk;
 			}
 		}
 		/* it's possible to have both a precise and imprecise fault */
@@ -215,7 +219,8 @@ static void _UsageFault(const NANO_ESF *esf)
 		PR_EXC("  Attempt to execute undefined instruction\n");
 	}
 
-	_ScbUsageFaultAllFaultsReset();
+	/* clear USFR sticky bits */
+	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
 }
 
 /**
