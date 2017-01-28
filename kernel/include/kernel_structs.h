@@ -39,6 +39,9 @@
 /* Thread is suspended */
 #define _THREAD_SUSPENDED (1 << 4)
 
+/* Thread is actively looking at events to see if they are ready */
+#define _THREAD_POLLING (1 << 5)
+
 /* end - states */
 
 

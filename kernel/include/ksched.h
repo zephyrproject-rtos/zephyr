@@ -346,6 +346,21 @@ static inline int _is_thread_pending(struct k_thread *thread)
 	return !!(thread->base.thread_state & _THREAD_PENDING);
 }
 
+static inline void _mark_thread_as_polling(struct k_thread *thread)
+{
+	_set_thread_states(thread, _THREAD_POLLING);
+}
+
+static inline void _mark_thread_as_not_polling(struct k_thread *thread)
+{
+	_reset_thread_states(thread, _THREAD_POLLING);
+}
+
+static inline int _is_thread_polling(struct k_thread *thread)
+{
+	return _is_thread_state_set(thread, _THREAD_POLLING);
+}
+
 /**
  * @brief Mark a thread as started
  *
