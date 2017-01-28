@@ -64,7 +64,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	int escalation = 0;
 
 	if (3 == fault) { /* hard fault */
-		escalation = _ScbHardFaultIsForced();
+		escalation = SCB->HFSR & SCB_HFSR_FORCED_Msk;
 		PR_EXC("HARD FAULT: %s\n",
 		       escalation ? "Escalation (see below)!"
 				  : "Bus fault on vector table read\n");
@@ -259,7 +259,7 @@ static void _HardFault(const NANO_ESF *esf)
 #elif defined(CONFIG_ARMV7_M)
 	if (_ScbHardFaultIsBusErrOnVectorRead()) {
 		PR_EXC("  Bus fault on vector table read\n");
-	} else if (_ScbHardFaultIsForced()) {
+	} else if (SCB->HFSR & SCB_HFSR_FORCED_Msk) {
 		PR_EXC("  Fault escalation (see below)\n");
 		if (_ScbIsMemFault()) {
 			_MpuFault(esf, 1);

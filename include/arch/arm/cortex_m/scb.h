@@ -78,21 +78,6 @@ static inline int _ScbHardFaultIsBusErrOnVectorRead(void)
 
 /**
  *
- * @brief Find out if a fault was escalated to hard fault
- *
- * Happens if a fault cannot be triggered because of priority or because it was
- * disabled.
- *
- * @return 1 if so, 0 otherwise
- */
-
-static inline int _ScbHardFaultIsForced(void)
-{
-	return __scs.scb.hfsr.bit.forced;
-}
-
-/**
- *
  * @brief Clear all hard faults (HFSR register)
  *
  * HFSR register is a 'write-one-to-clear' (W1C) register.
