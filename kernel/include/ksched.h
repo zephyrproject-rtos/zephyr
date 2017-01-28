@@ -271,6 +271,11 @@ static inline void _reset_thread_states(struct k_thread *thread,
 	thread->base.thread_state &= ~states;
 }
 
+static inline int _is_thread_state_set(struct k_thread *thread, uint32_t state)
+{
+	return !!(thread->base.thread_state & state);
+}
+
 /* mark a thread as being suspended */
 static inline void _mark_thread_as_suspended(struct k_thread *thread)
 {
