@@ -25,7 +25,7 @@
 #include <gatt/bas.h>
 #include <gatt/hog.h>
 
-#define DEVICE_NAME		"Test HoG mouse"
+#define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HOG_APPEARANCE		0x03c2
 

@@ -46,7 +46,7 @@ config BLUETOOTH_SPI
 	  HCI packets are sent and received as single Byte transferrs,
 	  prepended after a known header.  Headers may vary per device, so
 	  additional platform specific knowlege may need to be added as
-	  devices are.  Current driver supports; ST X-NUCLEO BLE series.
+	  devices are.
 
 config BLUETOOTH_NO_DRIVER
 	bool "No default HCI driver"
@@ -108,8 +108,16 @@ config BLUETOOTH_HCI_RECV_RESERVE
 
 if BLUETOOTH_SPI
 
+config BLUETOOTH_SPI_BLUENRG
+	bool "Enable compatibility with BlueNRG-based devices"
+	default n
+	help
+	  Enable support for devices compatible with the BlueNRG Bluetooth
+	  Stack. Current driver supports: ST X-NUCLEO BLE series.
+
 config BLUETOOTH_SPI_CHIP_SELECT_DEV_NAME
 	string "Chip Select (CS) line driver name"
+	depends on BLUETOOTH_SPI_BLUENRG
 	help
 	  This option specifies the name of GPIO driver controlling
 	  the Chip Select (CS) line.
@@ -128,6 +136,7 @@ config BLUETOOTH_SPI_RESET_DEV_NAME
 
 config BLUETOOTH_SPI_CHIP_SELECT_PIN
 	int "SPI Chip Select (CS) line number"
+	depends on BLUETOOTH_SPI_BLUENRG
 	help
 	  This option specifies the Chip Select (CS) line number on the SPI
 	  device
@@ -135,26 +144,12 @@ config BLUETOOTH_SPI_CHIP_SELECT_PIN
 config BLUETOOTH_SPI_IRQ_PIN
 	int "SPI IRQ line number"
 	help
-	  This option specifies the Reset line number on the SPI device
+	  This option specifies the IRQ line number on the SPI device
 
 config BLUETOOTH_SPI_RESET_PIN
 	int "SPI Reset line number"
 	help
 	  This option specifies the Reset line number on the SPI device
-
-config BLUETOOTH_SPI_RX_BUFFER_SIZE
-	int "Receive buffer length"
-	default 96
-	help
-	  This option specifies the size of the RX buffer.  Try to keep this
-	  as small as possible, since it's stored on the stack.
-
-config BLUETOOTH_SPI_TX_BUFFER_SIZE
-	int "Transmit buffer length"
-	default 64
-	help
-	  This option specifies the size of the TX buffer.  Try to keep this
-	  as small as possible, since it's stored on the stack.
 
 config BLUETOOTH_SPI_MAX_CLK_FREQ
 	int "Maximum clock frequency for the HCI SPI interface"

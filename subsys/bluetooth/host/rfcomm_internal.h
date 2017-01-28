@@ -120,6 +120,8 @@ struct bt_rfcomm_rpn {
 /* DV = 1 IC = 0 RTR = 1 RTC = 1 FC = 0 EXT = 0 */
 #define BT_RFCOMM_DEFAULT_V24_SIG 0x8d
 
+#define BT_RFCOMM_GET_FC(v24_signal) (((v24_signal) & 0x02) >> 1)
+
 #define BT_RFCOMM_SIG_MIN_MTU   23
 #define BT_RFCOMM_SIG_MAX_MTU   32767
 

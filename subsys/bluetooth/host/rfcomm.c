@@ -451,7 +451,6 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->role = role;
-	k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
 	k_delayed_work_init(&dlc->rtx_work, rfcomm_dlc_rtx_timeout);
 
 	/* Start a conn timer which includes auth as well */
@@ -517,20 +516,23 @@ static void rfcomm_check_fc(struct bt_rfcomm_dlc *dlc)
 {
 	BT_DBG("%p", dlc);
 
+	BT_DBG("Wait for credits or MSC FC %p", dlc);
+	/* Wait for credits or MSC FC */
+	k_sem_take(&dlc->tx_credits, K_FOREVER);
+
 	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
-		BT_DBG("Wait for credits %p", dlc);
-		/* Wait for credits */
-		k_sem_take(&dlc->tx_credits, K_FOREVER);
 		return;
 	}
 
 	k_sem_take(&dlc->session->fc, K_FOREVER);
 
-	/* Give the sem immediately so that sem will be available for all
+	/* Give the sems immediately so that sem will be available for all
 	 * the bufs in the queue. It will be blocked only once all the bufs
-	 * are sent (which will preempt this thread) and FCOFF is received.
+	 * are sent (which will preempt this thread) and FCOFF / FC bit
+	 * with 1, is received.
 	 */
 	k_sem_give(&dlc->session->fc);
+	k_sem_give(&dlc->tx_credits);
 }
 
 static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
@@ -616,7 +618,8 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
-static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
+static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr,
+			   uint8_t v24_signal)
 {
 	struct bt_rfcomm_msc *msc;
 	struct net_buf *buf;
@@ -628,7 +631,7 @@ static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	msc = net_buf_add(buf, sizeof(*msc));
 	/* cr bit should be always 1 in MSC */
 	msc->dlci = BT_RFCOMM_SET_ADDR(dlc->dlci, 1);
-	msc->v24_signal = BT_RFCOMM_DEFAULT_V24_SIG;
+	msc->v24_signal = v24_signal;
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
@@ -735,7 +738,7 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
 
-	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR);
+	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR, BT_RFCOMM_DEFAULT_V24_SIG);
 
 	if (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 		/* This means PN negotiation is not done for this session and
@@ -747,6 +750,8 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
 		BT_DBG("CFC not supported %p", dlc);
 		rfcomm_send_fcon(dlc->session, BT_RFCOMM_MSG_CMD_CR);
+		/* Use tx_credits as binary sem for MSC FC */
+		k_sem_init(&dlc->tx_credits, 0, 1);
 	}
 
 	/* Cancel conn timer */
@@ -1057,9 +1062,30 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 		return;
 	}
 
-	if (cr == BT_RFCOMM_MSG_CMD_CR) {
-		rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP_CR);
+	if (cr == BT_RFCOMM_MSG_RESP_CR) {
+		return;
 	}
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
+		/* Only FC bit affects the flow on RFCOMM level */
+		if (BT_RFCOMM_GET_FC(msc->v24_signal)) {
+			/* If FC bit is 1 the device is unable to accept frames.
+			 * Take the semaphore with timeout K_NO_WAIT so that
+			 * dlc thread will be blocked when it tries sem_take
+			 * before sending the data. K_NO_WAIT timeout will make
+			 * sure that RX thread will not be blocked while taking
+			 * the semaphore.
+			 */
+			k_sem_take(&dlc->tx_credits, K_NO_WAIT);
+		} else {
+			/* Give the sem so that it will unblock the waiting dlc
+			 * thread in sem_take().
+			 */
+			k_sem_give(&dlc->tx_credits);
+		}
+	}
+
+	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP_CR, msc->v24_signal);
 }
 
 static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
@@ -1164,6 +1190,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 			if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 				session->cfc = BT_RFCOMM_CFC_SUPPORTED;
 			}
+			k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
 			rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 		} else {
 			session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
@@ -1193,6 +1220,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 				if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 					session->cfc = BT_RFCOMM_CFC_SUPPORTED;
 				}
+				k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
 				rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 			} else {
 				session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;

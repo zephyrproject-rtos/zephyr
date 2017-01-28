@@ -68,6 +68,9 @@ enum {
 enum {
 	/* Key has been generated with MITM protection */
 	BT_STORAGE_LTK_AUTHENTICATED   = BIT(0),
+
+	/* Key has been generated using the LE Secure Connection pairing */
+	BT_STORAGE_LTK_SC              = BIT(1),
 };
 
 struct bt_storage_ltk {

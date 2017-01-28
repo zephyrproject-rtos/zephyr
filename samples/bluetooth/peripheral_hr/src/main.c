@@ -25,7 +25,7 @@
 #include <gatt/dis.h>
 #include <gatt/bas.h>
 
-#define DEVICE_NAME		"Zephyr Heartrate Sensor"
+#define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HEART_RATE_APPEARANCE	0x0341
 

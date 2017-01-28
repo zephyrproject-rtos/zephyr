@@ -316,7 +316,8 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL) &&
+	    L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
 		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
 	}
 
