@@ -42,6 +42,8 @@ static ALWAYS_INLINE int _abort_thread_timeout(struct k_thread *thread)
 #define _get_next_timeout_expiry() (K_FOREVER)
 #endif
 
+#define _WAIT_Q_INIT(wait_q) SYS_DLIST_STATIC_INIT(wait_q)
+
 #ifdef __cplusplus
 }
 #endif
