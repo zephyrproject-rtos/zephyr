@@ -71,10 +71,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	}
 
 	PR_EXC("MMFSR: 0x%" PRIx32 ", BFSR: 0x%" PRIx32 ", UFSR: 0x%"
-	       PRIx32 "\n",
-	       __scs.scb.cfsr.byte.mmfsr.val,
-	       __scs.scb.cfsr.byte.bfsr.val,
-	       __scs.scb.cfsr.byte.ufsr.val);
+	       PRIx32 "\n", SCB_MMFSR, SCB_BFSR, SCB_MMFSR);
 
 	if (SCB->CFSR & CFSR_MMARVALID_Msk) {
 		PR_EXC("MMFAR: 0x%" PRIx32 "\n", SCB->MMFAR);
