@@ -1,0 +1,6 @@
+/* -- Extra CSS styles for Zephyr content ----------------------------------- */
+
+/*  make .. hlist:: tables fill the page */
+table.hlist {
+    width: 95% !important;
+}
