@@ -376,11 +376,10 @@ entries manually, using the configuration menu is a preferred method.
       A question-based menu opens that allows you to set individual configuration
       options.
 
-       .. image:: figures/app_kernel_conf_1.png
-            :width: 400px
-            :align: center
-            :height: 375px
-            :alt: Main Configuration Menu
+      .. image:: figures/app_kernel_conf_1.png
+           :width: 600px
+           :align: center
+           :alt: Main Configuration Menu
 
 #. Set kernel configuration values using the following
    key commands:
