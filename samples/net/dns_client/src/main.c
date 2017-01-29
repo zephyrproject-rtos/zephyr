@@ -18,32 +18,13 @@
 #define STACK_SIZE	2048
 uint8_t stack[STACK_SIZE];
 
-static struct net_context *net_ctx;
-
-#ifdef CONFIG_NET_IPV6
-	struct in6_addr local_addr = LOCAL_ADDR;
-	struct sockaddr_in6 local_sock = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(MY_PORT),
-		.sin6_addr = LOCAL_ADDR };
-	struct sockaddr_in6 remote_sock = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(PEER_PORT),
-		.sin6_addr = REMOTE_ADDR };
-	struct in6_addr addresses[MAX_ADDRESSES];
+#if CONFIG_NET_IPV6
+	static struct in6_addr addresses[MAX_ADDRESSES];
 #else
-	struct in_addr local_addr = LOCAL_ADDR;
-	struct sockaddr_in local_sock = {
-		.sin_family = AF_INET,
-		.sin_port = htons(MY_PORT),
-		.sin_addr = LOCAL_ADDR };
-	struct sockaddr_in remote_sock = {
-		.sin_family = AF_INET,
-		.sin_port = htons(PEER_PORT),
-		.sin_addr = REMOTE_ADDR };
-	struct in_addr addresses[MAX_ADDRESSES];
+	static struct in_addr addresses[MAX_ADDRESSES];
 #endif
-
+static struct net_context *net_ctx;
+static struct sockaddr remote_sock;
 static char str[128];
 
 static
@@ -62,56 +43,34 @@ char *domains[] = {"not_a_real_domain_name",
 		   "www.google.com",
 		   NULL};
 
+static
+int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port);
+
+static
+int set_local_addr(struct net_context **net_ctx, const char *local_addr);
+
 void run_dns(void)
 {
 	struct dns_context ctx;
-	void *p;
 	int rc;
 	int d;
 	int i;
 
-	dns_init(&ctx);
-
-#ifdef CONFIG_NET_IPV6
-	p = net_if_ipv6_addr_add(net_if_get_default(), &local_addr,
-				 NET_ADDR_MANUAL, 0);
-#else
-	p = net_if_ipv4_addr_add(net_if_get_default(), &local_addr,
-				 NET_ADDR_MANUAL, 0);
-#endif
-	if (p == NULL) {
-		printk("[%s:%d] Unable to add address to network interface\n",
-		       __func__, __LINE__);
+	rc = set_local_addr(&net_ctx, LOCAL_ADDR);
+	if (rc) {
 		return;
 	}
 
-#ifdef CONFIG_NET_IPV6
-	rc = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-#else
-	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-#endif
-	if (rc != 0) {
-		printk("[%s:%d] Cannot get network context for IPv4 UDP: %d\n",
-		       __func__, __LINE__, rc);
-		return;
-	}
-
-#ifdef CONFIG_NET_IPV6
-	rc = net_context_bind(net_ctx, (struct sockaddr *)&local_sock,
-			      sizeof(struct sockaddr_in6));
-#else
-	rc = net_context_bind(net_ctx, (struct sockaddr *)&local_sock,
-			      sizeof(struct sockaddr_in));
-#endif
-	if (rc != 0) {
-		printk("[%s:%d] Cannot bind: %d\n",
-		       __func__, __LINE__, rc);
+	rc = set_addr(&remote_sock, REMOTE_ADDR, REMOTE_PORT);
+	if (rc) {
 		goto lb_exit;
 	}
 
+	dns_init(&ctx);
+
 	ctx.net_ctx = net_ctx;
 	ctx.timeout = APP_SLEEP_MSECS;
-	ctx.dns_server = (struct sockaddr *)&remote_sock;
+	ctx.dns_server = &remote_sock;
 	ctx.elements = MAX_ADDRESSES;
 #ifdef CONFIG_NET_IPV6
 	ctx.query_type = DNS_QUERY_TYPE_AAAA;
@@ -152,9 +111,88 @@ lb_exit:
 	printk("\nBye!\n");
 }
 
-
 void main(void)
 {
 	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t)run_dns,
 		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+}
+
+static
+int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port)
+{
+	void *ptr;
+	int rc;
+
+#ifdef CONFIG_NET_IPV6
+	net_sin6(sock_addr)->sin6_port = htons(port);
+	sock_addr->family = AF_INET6;
+	ptr = &(net_sin6(sock_addr)->sin6_addr);
+	rc = net_addr_pton(AF_INET6, addr, ptr);
+#else
+	net_sin(sock_addr)->sin_port = htons(port);
+	sock_addr->family = AF_INET;
+	ptr = &(net_sin(sock_addr)->sin_addr);
+	rc = net_addr_pton(AF_INET, addr, ptr);
+#endif
+
+	if (rc) {
+		printk("Invalid IP address: %s\n", addr);
+	}
+
+	return rc;
+}
+
+static
+int set_local_addr(struct net_context **net_ctx, const char *local_addr)
+{
+#ifdef CONFIG_NET_IPV6
+	socklen_t addr_len = sizeof(struct sockaddr_in6);
+	sa_family_t family = AF_INET6;
+
+#else
+	socklen_t addr_len = sizeof(struct sockaddr_in);
+	sa_family_t family = AF_INET;
+#endif
+	struct sockaddr local_sock;
+	void *p;
+	int rc;
+
+	rc = set_addr(&local_sock, local_addr, 0);
+	if (rc) {
+		printk("set_addr (local) error\n");
+		return rc;
+	}
+
+#ifdef CONFIG_NET_IPV6
+	p = net_if_ipv6_addr_add(net_if_get_default(),
+				 &net_sin6(&local_sock)->sin6_addr,
+				 NET_ADDR_MANUAL, 0);
+#else
+	p = net_if_ipv4_addr_add(net_if_get_default(),
+				 &net_sin(&local_sock)->sin_addr,
+				 NET_ADDR_MANUAL, 0);
+#endif
+
+	if (!p) {
+		return -EINVAL;
+	}
+
+	rc = net_context_get(family, SOCK_DGRAM, IPPROTO_UDP, net_ctx);
+	if (rc) {
+		printk("net_context_get error\n");
+		return rc;
+	}
+
+	rc = net_context_bind(*net_ctx, &local_sock, addr_len);
+	if (rc) {
+		printk("net_context_bind error\n");
+		goto lb_exit;
+	}
+
+	return 0;
+
+lb_exit:
+	net_context_put(*net_ctx);
+
+	return rc;
 }
