@@ -5,15 +5,15 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if FLASH && SOC_SERIES_STM32F3X
+if FLASH && SOC_FAMILY_STM32
 
 menuconfig SOC_FLASH_STM32
 	bool
 	prompt "STM32 flash driver"
-	depends on SOC_SERIES_STM32F3X && FLASH
-	default n
+	depends on (SOC_SERIES_STM32F3X || SOC_SERIES_STM32F4X)
+	default y
 	help
-	 Enable STM32F3X series MCUs flash driver.
+	 Enable STM32F3x OR STM32F4x series flash driver.
 
 config SOC_FLASH_STM32_DEV_NAME
 	string "STM32 flash device name"
