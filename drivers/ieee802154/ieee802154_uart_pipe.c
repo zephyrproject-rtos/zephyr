@@ -162,14 +162,16 @@ static int upipe_set_txpower(struct device *dev, int16_t dbm)
 	return 0;
 }
 
-static int upipe_tx(struct device *dev, struct net_buf *buf)
+static int upipe_tx(struct device *dev,
+		    struct net_buf *buf,
+		    struct net_buf *frag)
 {
-	uint8_t len = net_nbuf_ll_reserve(buf) + buf->frags->len;
+	uint8_t *pkt_buf = frag->data - net_nbuf_ll_reserve(buf);
+	uint8_t len = net_nbuf_ll_reserve(buf) + frag->len;
 	struct upipe_context *upipe = dev->driver_data;
-	uint8_t *pkt_buf = net_nbuf_ll(buf);
 	uint8_t i, data;
 
-	SYS_LOG_DBG("%p (%u)", buf, len);
+	SYS_LOG_DBG("%p (%u)", frag, len);
 
 	if (upipe->stopped) {
 		return -EIO;

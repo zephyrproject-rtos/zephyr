@@ -11,7 +11,6 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
-#include <stdio.h>
 
 #include <tc_util.h>
 
@@ -285,23 +284,23 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 
 	while (length--) {
 		if (n % 16 == 0) {
-			printf("%s %08X ", str, n);
+			printk("%s %08X ", str, n);
 		}
 
-		printf("%02X ", *packet++);
+		printk("%02X ", *packet++);
 
 		n++;
 		if (n % 8 == 0) {
 			if (n % 16 == 0) {
-				printf("\n");
+				printk("\n");
 			} else {
-				printf(" ");
+				printk(" ");
 			}
 		}
 	}
 
 	if (n % 16) {
-		printf("\n");
+		printk("\n");
 	}
 }
 

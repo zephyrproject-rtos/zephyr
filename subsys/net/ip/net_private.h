@@ -11,7 +11,7 @@
  */
 
 #include <errno.h>
-#include <stdio.h>
+#include <misc/printk.h>
 #include <net/net_context.h>
 #include <net/nbuf.h>
 
@@ -106,7 +106,8 @@ static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 	return NULL;
 }
 
-static inline void net_hexdump(const char *str, const uint8_t *packet, size_t length)
+static inline void net_hexdump(const char *str, const uint8_t *packet,
+			       size_t length)
 {
 	int n = 0;
 
@@ -117,23 +118,23 @@ static inline void net_hexdump(const char *str, const uint8_t *packet, size_t le
 
 	while (length--) {
 		if (n % 16 == 0) {
-			printf("%s %08X ", str, n);
+			printk("%s %08X ", str, n);
 		}
 
-		printf("%02X ", *packet++);
+		printk("%02X ", *packet++);
 
 		n++;
 		if (n % 8 == 0) {
 			if (n % 16 == 0) {
-				printf("\n");
+				printk("\n");
 			} else {
-				printf(" ");
+				printk(" ");
 			}
 		}
 	}
 
 	if (n % 16) {
-		printf("\n");
+		printk("\n");
 	}
 }
 

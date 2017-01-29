@@ -108,14 +108,6 @@ config TI_CC2520_RX_STACK_SIZE
 	The default value should be sufficient, but in case it prooves to be
 	a too little one, this option makes it easy to play with the size.
 
-config TI_CC2520_CHANNEL
-	int "TI CC2520 Channel"
-	default 26
-	range 11 26
-	help
-	All the 802.15.4 devices that want to connect to each other need
-	to have same channel. Default channel is 26.
-
 config TI_CC2520_INIT_PRIO
 	int "CC2520 intialization priority"
 	default 80
@@ -138,5 +130,122 @@ config UPIPE_15_4_DRV_NAME
 	string "UART PIPE Driver name"
 	default "upipe_15_4"
 	depends on UPIPE_15_4
+
+config  NXP_MCR20A
+	bool "NXP MCR20A Driver support"
+	depends on NETWORKING && SPI
+	select NET_L2_IEEE802154
+	default n
+
+config	NXP_MCR20A_RAW
+	bool "NXP MCR20A Driver RAW channel"
+	depends on SPI
+	select NET_L2_RAW_CHANNEL
+	default n
+	help
+	Enable NXP_MCR20A driver with RAW channel
+
+	The MCR20A driver with RAW channel allows to export radio interface
+	over USB making an USB 802.15.4 dongle.
+
+if NXP_MCR20A || NXP_MCR20A_RAW
+
+config NXP_MCR20A_DRV_NAME
+	string "NXP MCR20A Driver's name"
+	default "mcr20a"
+	help
+	This option sets the driver name
+
+config NXP_MCR20A_SPI_DRV_NAME
+	string "SPI driver's name to use to access MCR20A"
+	default SPI_0_NAME
+	help
+	This option is mandatory to set which SPI controller to use in order
+	to actually control the MCR20A chip.
+
+config NXP_MCR20A_SPI_FREQ
+	int "SPI system frequency"
+	default 4000000
+	help
+	This option sets the SPI controller's frequency. Beware this value
+	depends on the SPI controller being used and also on the system
+	clock.
+
+config NXP_MCR20A_SPI_SLAVE
+	int "SPI slave linked to MCR20A"
+	default 0
+	help
+	This option sets the SPI slave number SPI controller has to switch
+	to when dealing with MCR20A chip.
+
+config MCR20A_GPIO_IRQ_B_NAME
+	string "GPIO device used for IRQ_B output of MCR20A"
+	default GPIO_MCUX_PORTB_NAME
+
+config MCR20A_GPIO_IRQ_B_PIN
+	int "GPIO pin connected to IRQ_B output of MCR20A"
+	default 9
+
+config MCR20A_GPIO_RESET_NAME
+	string "GPIO device used for RESET input of MCR20A"
+	default GPIO_MCUX_PORTA_NAME
+
+config MCR20A_GPIO_RESET_PIN
+	int "GPIO pin connected to RESET input of MCR20A"
+	default 2
+
+choice
+	prompt "CLK_OUT frequency"
+	default MCR20A_CLK_OUT_DISABLED
+	help
+	Configuration of the MCR20A clock output pin.
+
+config MCR20A_CLK_OUT_DISABLED
+	bool "Disabled"
+
+config MCR20A_CLK_OUT_32MHZ
+	bool "32 MHz"
+
+config MCR20A_CLK_OUT_16MHZ
+	bool "16 MHz"
+
+config MCR20A_CLK_OUT_8MHZ
+	bool "8 MHz"
+
+config MCR20A_CLK_OUT_4MHZ
+	bool "4 MHz"
+
+config MCR20A_CLK_OUT_1MHZ
+	bool "1 MHz"
+
+config MCR20A_CLK_OUT_250KHZ
+	bool "250 kHz"
+
+config MCR20A_CLK_OUT_62500HZ
+	bool "62500 Hz"
+
+config MCR20A_CLK_OUT_32768HZ
+	bool "32768 Hz"
+
+endchoice
+
+config NXP_MCR20A_RX_STACK_SIZE
+	int "Driver's internal rx thread stack size"
+	default 800
+	help
+	This option sets the driver's stack size for its internal rx thread.
+	The default value should be sufficient, but in case it proves to be
+	a too little one, this option makes it easy to play with the size.
+
+config NXP_MCR20A_INIT_PRIO
+	int "MCR20A intialization priority"
+	default 80
+	help
+	Set the initialization priority number. Do not mess with it unless
+	you know what you are doing. Beware mcr20a requires gpio and spi to
+	be ready first (and sometime gpio should be the very first as spi
+	might need it too). And of course it has to start before the net stack.
+
+endif
 
 endmenu

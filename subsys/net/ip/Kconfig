@@ -56,7 +56,6 @@ config NET_MAX_ROUTERS
 config NET_ROUTE
 	bool
 	depends on NET_IPV6
-	select NET_IPV6_ND
 	default n
 	default y if NET_IPV6
 
@@ -209,7 +208,7 @@ endif # NET_L2_RAW_CHANNEL
 
 config NET_NBUF_RX_COUNT
 	int "How many network receives can be pending at the same time"
-	default 2
+	default 4
 	help
 	Each RX buffer will occupy smallish amount of memory.
 	See include/net/nbuf.h and the sizeof(struct nbuf)

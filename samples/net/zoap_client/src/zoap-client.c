@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <stdio.h>
+#include <misc/printk.h>
 
 #include <zephyr.h>
 
@@ -50,10 +50,10 @@ static void msg_dump(const char *s, uint8_t *data, unsigned len)
 {
 	unsigned i;
 
-	printf("%s: ", s);
+	printk("%s: ", s);
 	for (i = 0; i < len; i++)
-		printf("%02x ", data[i]);
-	printf("(%u bytes)\n", len);
+		printk("%02x ", data[i]);
+	printk("(%u bytes)\n", len);
 }
 
 static int resource_reply_cb(const struct zoap_packet *response,
@@ -87,7 +87,7 @@ static void udp_receive(struct net_context *context,
 
 	r = zoap_packet_parse(&response, buf);
 	if (r < 0) {
-		printf("Invalid data received (%d)\n", r);
+		printk("Invalid data received (%d)\n", r);
 		return;
 	}
 
@@ -104,7 +104,7 @@ static void udp_receive(struct net_context *context,
 				       (const struct sockaddr *) &from,
 				       replies, NUM_REPLIES);
 	if (!reply) {
-		printf("No handler for response (%d)\n", r);
+		printk("No handler for response (%d)\n", r);
 		return;
 	}
 }
@@ -154,20 +154,20 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {
-		printf("Could not get an UDP context\n");
+		printk("Could not get an UDP context\n");
 		return;
 	}
 
 	r = net_context_bind(context, (struct sockaddr *) &any_addr,
 			     sizeof(any_addr));
 	if (r) {
-		printf("Could not bind the context\n");
+		printk("Could not bind the context\n");
 		return;
 	}
 
 	r = net_context_recv(context, udp_receive, 0, NULL);
 	if (r) {
-		printf("Could not receive in the context\n");
+		printk("Could not receive in the context\n");
 		return;
 	}
 
@@ -175,13 +175,13 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 
 	buf = net_nbuf_get_tx(context);
 	if (!buf) {
-		printf("Unable to get TX buffer, not enough memory.\n");
+		printk("Unable to get TX buffer, not enough memory.\n");
 		return;
 	}
 
 	frag = net_nbuf_get_data(context);
 	if (!frag) {
-		printf("Unable to get DATA buffer, not enough memory.\n");
+		printk("Unable to get DATA buffer, not enough memory.\n");
 		return;
 	}
 
@@ -203,7 +203,7 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	r = zoap_add_option(&request, ZOAP_OPTION_OBSERVE,
 			    &observe, sizeof(observe));
 	if (r < 0) {
-		printf("Unable add option to request.\n");
+		printk("Unable add option to request.\n");
 		return;
 	}
 
@@ -211,27 +211,27 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 		r = zoap_add_option(&request, ZOAP_OPTION_URI_PATH,
 				     *p, strlen(*p));
 		if (r < 0) {
-			printf("Unable add option to request.\n");
+			printk("Unable add option to request.\n");
 			return;
 		}
 	}
 
 	pending = zoap_pending_next_unused(pendings, NUM_PENDINGS);
 	if (!pending) {
-		printf("Unable to find a free pending to track "
+		printk("Unable to find a free pending to track "
 		       "retransmissions.\n");
 		return;
 	}
 
 	r = zoap_pending_init(pending, &request);
 	if (r < 0) {
-		printf("Unable to initialize a pending retransmission.\n");
+		printk("Unable to initialize a pending retransmission.\n");
 		return;
 	}
 
 	reply = zoap_reply_next_unused(replies, NUM_REPLIES);
 	if (!reply) {
-		printf("No resources for waiting for replies.\n");
+		printk("No resources for waiting for replies.\n");
 		return;
 	}
 
@@ -242,7 +242,7 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 			       sizeof(mcast_addr),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		printf("Error sending the packet (%d).\n", r);
+		printk("Error sending the packet (%d).\n", r);
 		return;
 	}
 

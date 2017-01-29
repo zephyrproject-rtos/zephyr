@@ -449,7 +449,7 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 #if defined(CONFIG_NET_DEBUG_ARP)
 		do {
 			char out[sizeof("xxx.xxx.xxx.xxx")];
-			snprintf(out, sizeof(out),
+			snprintk(out, sizeof(out), "%s",
 				 net_sprint_ipv4_addr(&arp_hdr->src_ipaddr));
 			NET_DBG("ARP request from %s [%s] for %s",
 				out,

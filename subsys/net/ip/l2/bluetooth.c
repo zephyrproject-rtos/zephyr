@@ -32,6 +32,8 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/l2cap.h>
 
+#include "ipv6.h"
+
 #define L2CAP_IPSP_PSM 0x0023
 #define L2CAP_IPSP_MTU 1280
 
@@ -85,6 +87,27 @@ static enum net_verdict net_bt_send(struct net_if *iface, struct net_buf *buf)
 		return NET_DROP;
 	}
 
+	/* TODO: Move ll address check to the stack */
+
+	/* If the ll address is not set at all, then we must set
+	 * it here.
+	 */
+	if (!net_nbuf_ll_src(buf)->addr) {
+		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
+		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+	}
+
+	/* If the ll dst address is not set check if it is present in the nbr
+	 * cache.
+	 */
+	if (!net_nbuf_ll_dst(buf)->addr &&
+	    !net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+		buf = net_ipv6_prepare_for_send(buf);
+		if (!buf) {
+			return NET_CONTINUE;
+		}
+	}
+
 	if (!net_6lo_compress(buf, true, NULL)) {
 		NET_DBG("Packet compression failed");
 		return NET_DROP;
@@ -109,7 +132,7 @@ static int net_bt_enable(struct net_if *iface, bool state)
 
 	NET_DBG("iface %p %s", iface, state ? "up" : "down");
 
-	if (state && !ctxt->ipsp_chan.chan.conn) {
+	if (state && ctxt->ipsp_chan.chan.state != BT_L2CAP_CONNECTED) {
 		return -ENETDOWN;
 	}
 
@@ -298,9 +321,9 @@ static int bt_connect(uint32_t mgmt_request, struct net_if *iface, void *data,
 static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
 		      void *user_data)
 {
-	bt_addr_le_t *addr = user_data;
 	int i;
 #if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+	bt_addr_le_t *addr = user_data;
 	char dev[BT_ADDR_LE_STR_LEN];
 #endif
 	if (type != BT_DATA_UUID16_SOME && type != BT_DATA_UUID16_ALL) {

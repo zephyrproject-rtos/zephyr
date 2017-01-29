@@ -36,7 +36,7 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 	do {								   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
-		snprintf(out, sizeof(out),				   \
+		snprintk(out, sizeof(out), "%s",			   \
 			 net_sprint_ll_addr(net_nbuf_ll_src(buf)->addr,    \
 					    sizeof(struct net_eth_addr))); \
 									   \

@@ -20,7 +20,8 @@
 #include "ieee802154_radio_utils.h"
 
 static inline int aloha_tx_fragment(struct net_if *iface,
-				    struct net_buf *buf)
+				    struct net_buf *buf,
+				    struct net_buf *frag)
 {
 	uint8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -28,12 +29,12 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	int ret = -EIO;
 
-	NET_DBG("frag %p", buf->frags);
+	NET_DBG("frag %p", frag);
 
 	while (retries) {
 		retries--;
 
-		ret = radio->tx(iface->dev, buf);
+		ret = radio->tx(iface->dev, buf, frag);
 		if (ret) {
 			continue;
 		}

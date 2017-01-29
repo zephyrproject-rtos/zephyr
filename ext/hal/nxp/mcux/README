@@ -9,3 +9,11 @@ The sources in this directory are imported from mcux.nxp.com.
 The current version supported in Zephyr is MCUX 2.0. It currently supports the
 following SoCs:
 - MK64F12 (aka K64F)
+
+
+Additionally, it provides the following components:
+- overwrites header file for MCR20 Register values
+  MCR20Overwrites.h (components/mcr20a/MCR20Overwrites.h)
+  Origin: Kinetis MKW2xD and MCR20A Connectivity Software
+  URL: https://www.nxp.com/webapp/Download?colCode=MKW2XD-MRC20A-CONNECTIVITY-SW&appType=license&Parent_nodeId=1425322332576706617013&Parent_pageType=productI
+  Revision: (REV 1.0.0)

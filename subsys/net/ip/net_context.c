@@ -848,6 +848,15 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 	NET_ASSERT(net_nbuf_iface(buf));
 
+	if (NET_TCP_FLAGS(buf) & NET_TCP_RST) {
+		if (context->connect_cb) {
+			context->connect_cb(context, -ECONNREFUSED,
+					    context->user_data);
+		}
+
+		return NET_DROP;
+	}
+
 	if (NET_TCP_FLAGS(buf) & NET_TCP_SYN) {
 		context->tcp->send_ack =
 			sys_get_be32(NET_TCP_BUF(buf)->seq) + 1;
@@ -926,6 +935,10 @@ static enum net_verdict tcp_synack_received(struct net_conn *conn,
 
 		net_tcp_change_state(context->tcp, NET_TCP_ESTABLISHED);
 		net_context_set_state(context, NET_CONTEXT_CONNECTED);
+
+		if (context->connect_cb) {
+			context->connect_cb(context, 0, context->user_data);
+		}
 
 		send_ack(context, raddr);
 
@@ -1111,12 +1124,11 @@ int net_context_connect(struct net_context *context,
 
 	send_syn(context, addr);
 
-	if (cb) {
-		cb(context, 0, user_data);
-	}
+	context->connect_cb = cb;
+	context->user_data = user_data;
 
 	/* in tcp_synack_received() we give back this semaphore */
-	if (k_sem_take(&context->tcp->connect_wait, timeout)) {
+	if (timeout > 0 && k_sem_take(&context->tcp->connect_wait, timeout)) {
 		return -ETIMEDOUT;
 	}
 #endif
@@ -1995,6 +2007,9 @@ int net_context_recv(struct net_context *context,
 
 		if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
 			return -ESHUTDOWN;
+		} else if (net_context_get_state(context)
+			   != NET_CONTEXT_CONNECTED) {
+			return -ENOTCONN;
 		}
 
 		context->recv_cb = cb;

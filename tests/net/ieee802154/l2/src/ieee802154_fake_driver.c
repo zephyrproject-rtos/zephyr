@@ -75,7 +75,9 @@ static inline void insert_frag_dummy_way(struct net_buf *buf)
 	}
 }
 
-static int fake_tx(struct device *dev, struct net_buf *buf)
+static int fake_tx(struct device *dev,
+		   struct net_buf *buf,
+		   struct net_buf *frag)
 {
 	TC_PRINT("Sending buffer %p - length %zu\n",
 		 buf, net_buf_frags_len(buf));

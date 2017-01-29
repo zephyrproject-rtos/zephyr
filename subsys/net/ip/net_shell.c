@@ -268,8 +268,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_DHCPV4)
-	printk("DHCPv4 lease time : %lu\n", iface->dhcpv4.lease_time);
-	printk("DHCPv4 renew time : %lu\n", iface->dhcpv4.renewal_time);
+	printk("DHCPv4 lease time : %u\n", iface->dhcpv4.lease_time);
+	printk("DHCPv4 renew time : %u\n", iface->dhcpv4.renewal_time);
 	printk("DHCPv4 server     : %s\n",
 	       net_sprint_ipv4_addr(&iface->dhcpv4.server_id));
 	printk("DHCPv4 requested  : %s\n",

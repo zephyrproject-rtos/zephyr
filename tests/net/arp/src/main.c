@@ -14,11 +14,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
 #include <errno.h>
 #include <device.h>
 #include <init.h>
-#include <misc/printk.h>
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_ip.h>
@@ -107,7 +105,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 			if (!req_test && memcmp(&hdr->dst, &hwaddr,
 						sizeof(struct net_eth_addr))) {
 				char out[sizeof("xx:xx:xx:xx:xx:xx")];
-				snprintf(out, sizeof(out),
+				snprintk(out, sizeof(out), "%s",
 					 net_sprint_ll_addr(
 						 (uint8_t *)&hdr->dst,
 						 sizeof(struct net_eth_addr)));
@@ -124,7 +122,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 			if (memcmp(&hdr->src, &hwaddr,
 				   sizeof(struct net_eth_addr))) {
 				char out[sizeof("xx:xx:xx:xx:xx:xx")];
-				snprintf(out, sizeof(out),
+				snprintk(out, sizeof(out), "%s",
 					 net_sprint_ll_addr(
 						 (uint8_t *)&hdr->src,
 						 sizeof(struct net_eth_addr)));
@@ -464,7 +462,7 @@ static bool run_tests(void)
 	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
 			       &NET_IPV4_BUF(buf)->dst)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		printk("ARP IP dest invalid %s, should be %s", out,
 		       net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
@@ -474,7 +472,7 @@ static bool run_tests(void)
 	if (!net_ipv4_addr_cmp(&arp_hdr->src_ipaddr,
 			       &NET_IPV4_BUF(buf)->src)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&arp_hdr->src_ipaddr));
 		printk("ARP IP src invalid %s, should be %s", out,
 		       net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src));
@@ -510,7 +508,7 @@ static bool run_tests(void)
 
 	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr, &iface->ipv4.gw)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
-		snprintf(out, sizeof(out),
+		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		printk("ARP IP dst invalid %s, should be %s\n", out,
 			 net_sprint_ipv4_addr(&iface->ipv4.gw));

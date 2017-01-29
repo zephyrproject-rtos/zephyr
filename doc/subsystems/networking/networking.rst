@@ -16,10 +16,9 @@ The networking stack supports the following features:
 * UDP
 * IPv4
 
-  * In this version of the IP stack, IPv6 and IPv4 cannot be utilized at the
-    same time.
   * DHCP client support for IPv4
 
+* IPv6 and IPv4 are supported at the same time.
 * TCP
 
   * Both client and server roles are supported

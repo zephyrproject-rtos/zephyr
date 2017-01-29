@@ -204,7 +204,8 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 #if defined(CONFIG_NET_DEBUG_CORE)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
-		snprintf(out, sizeof(out), net_sprint_ipv6_addr(&hdr->dst));
+		snprintk(out, sizeof(out), "%s",
+			 net_sprint_ipv6_addr(&hdr->dst));
 		NET_DBG("IPv6 packet len %d received from %s to %s",
 			real_len, net_sprint_ipv6_addr(&hdr->src), out);
 	} while (0);
@@ -406,7 +407,8 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 #if defined(CONFIG_NET_DEBUG_CORE)
 	do {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
-		snprintf(out, sizeof(out), net_sprint_ipv4_addr(&hdr->dst));
+		snprintk(out, sizeof(out), "%s",
+			 net_sprint_ipv4_addr(&hdr->dst));
 		NET_DBG("IPv4 packet received from %s to %s",
 			net_sprint_ipv4_addr(&hdr->src), out);
 	} while (0);

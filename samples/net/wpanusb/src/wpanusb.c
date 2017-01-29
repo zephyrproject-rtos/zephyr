@@ -10,8 +10,8 @@
 
 #include <sections.h>
 #include <toolchain.h>
-#include <stdio.h>
 #include <string.h>
+#include <misc/printk.h>
 
 #include <device.h>
 #include <uart.h>
@@ -181,29 +181,29 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 	int n = 0;
 
 	if (!length) {
-		printf("%s zero-length signal packet\n", str);
+		printk("%s zero-length signal packet\n", str);
 		return;
 	}
 
 	while (length--) {
 		if (n % 16 == 0) {
-			printf("%s %08X ", str, n);
+			printk("%s %08X ", str, n);
 		}
 
-		printf("%02X ", *packet++);
+		printk("%02X ", *packet++);
 
 		n++;
 		if (n % 8 == 0) {
 			if (n % 16 == 0) {
-				printf("\n");
+				printk("\n");
 			} else {
-				printf(" ");
+				printk(" ");
 			}
 		}
 	}
 
 	if (n % 16) {
-		printf("\n");
+		printk("\n");
 	}
 }
 #else
@@ -359,7 +359,7 @@ static int tx(struct net_buf *pkt)
 	SYS_LOG_DBG("len %d seq %u", buf->len, seq);
 
 	do {
-		ret = radio_api->tx(ieee802154_dev, pkt);
+		ret = radio_api->tx(ieee802154_dev, pkt, buf);
 	} while (ret && retries--);
 
 	if (ret) {
@@ -568,7 +568,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 static int shell_cmd_help(int argc, char *argv[])
 {
 	/* Keep the commands in alphabetical order */
-	printf("wpanusb help\n");
+	printk("wpanusb help\n");
 
 	return 0;
 }

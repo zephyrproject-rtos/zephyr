@@ -49,15 +49,15 @@ config NET_IPV6_ND
 
 config NET_IPV6_DAD
 	bool "Activate duplicate address detection"
+	depends on NET_IPV6_ND
 	default y
-	default n if !NET_IPV6_ND
 	help
 	The value depends on your network needs. DAD should normally
 	be active.
 
 config NET_IPV6_RA_RDNSS
 	bool "Support RA RDNSS option"
-	depends on !NET_IPV6_NO_ND
+	depends on NET_IPV6_ND
 	default y
 	help
 	Support Router Advertisement Recursive DNS Server option.
@@ -78,7 +78,8 @@ config NET_6LO_CONTEXT
 
 config NET_MAX_6LO_CONTEXTS
 	int "Number of supported 6CO (6lowpan contexts options)"
-	default 1 if NET_6LO_CONTEXT
+	depends on NET_6LO_CONTEXT
+	default 1
 	range 1 16
 	help
 	6lowpan context options table size. The value depends on your

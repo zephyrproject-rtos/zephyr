@@ -12,6 +12,13 @@ menuconfig CONSOLE
 
 if CONSOLE
 
+config CONSOLE_INPUT_MAX_LINE_LEN
+	int "Console maximum input line length"
+	default 128
+	help
+	This option can be used to modify the maximum length a console input
+	can be.
+
 config CONSOLE_HAS_DRIVER
 	bool
 	default n
@@ -157,7 +164,6 @@ config UART_PIPE_ON_DEV_NAME
 	This option specifies the name of UART device to be used
 	for pipe UART.
 
-source "drivers/console/shells/Kconfig"
-
+source "drivers/console/Kconfig.telnet"
 
 endif

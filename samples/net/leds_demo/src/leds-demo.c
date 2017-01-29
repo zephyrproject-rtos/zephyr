@@ -11,7 +11,6 @@
 #endif
 
 #include <errno.h>
-#include <stdio.h>
 
 #include <zephyr.h>
 #include <board.h>
@@ -162,7 +161,7 @@ static int led_post(struct zoap_resource *resource,
 
 	payload = zoap_packet_get_payload(request, &len);
 	if (!payload) {
-		printf("packet without payload");
+		printk("packet without payload");
 		return -EINVAL;
 	}
 
@@ -235,7 +234,7 @@ static int led_put(struct zoap_resource *resource,
 
 	payload = zoap_packet_get_payload(request, &len);
 	if (!payload) {
-		printf("packet without payload");
+		printk("packet without payload");
 		return -EINVAL;
 	}
 

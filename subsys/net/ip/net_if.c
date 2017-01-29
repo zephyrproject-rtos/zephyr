@@ -1376,7 +1376,7 @@ int net_if_down(struct net_if *iface)
 
 	NET_DBG("iface %p", iface);
 
-	/* If the L2 does not support enable just set the flag */
+	/* If the L2 does not support enable just clear the flag */
 	if (!iface->l2->enable) {
 		goto done;
 	}
