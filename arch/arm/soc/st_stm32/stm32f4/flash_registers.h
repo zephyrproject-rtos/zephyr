@@ -90,9 +90,7 @@ static inline void __setup_flash(void)
 		regs->acr.bit.latency = STM32F4X_FLASH_LATENCY_5;
 	}
 #else
-	else {
-		__ASSERT(0, "Flash latency not set");
-	}
+#error Flash latency configuration for MCU model is missing
 #endif
 
 	/* Make sure latency was set */
