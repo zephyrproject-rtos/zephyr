@@ -231,6 +231,19 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 #define handle_sem_group(sem, thread) 0
 #endif
 
+/* returns 1 if a reschedule must take place, 0 otherwise */
+static inline int handle_poll_event(struct k_sem *sem)
+{
+#ifdef CONFIG_POLL
+	uint32_t state = K_POLL_STATE_SEM_AVAILABLE;
+
+	return sem->poll_event ?
+	       _handle_obj_poll_event(&sem->poll_event, state) : 0;
+#else
+	return 0;
+#endif
+}
+
 /**
  * @brief Common semaphore give code
  *
@@ -248,7 +261,8 @@ static bool sem_give_common(struct k_sem *sem)
 		 * its limit has already been reached.
 		 */
 		sem->count += (sem->count != sem->limit);
-		return false;
+
+		return handle_poll_event(sem);
 	}
 
 	_abort_thread_timeout(thread);

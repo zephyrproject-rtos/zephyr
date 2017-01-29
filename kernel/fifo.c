@@ -62,6 +62,19 @@ static void prepare_thread_to_run(struct k_thread *thread, void *data)
 	_set_thread_return_value_with_data(thread, 0, data);
 }
 
+/* returns 1 if a reschedule must take place, 0 otherwise */
+static inline int handle_poll_event(struct k_fifo *fifo)
+{
+#ifdef CONFIG_POLL
+	uint32_t state = K_POLL_STATE_FIFO_DATA_AVAILABLE;
+
+	return fifo->poll_event ?
+	       _handle_obj_poll_event(&fifo->poll_event, state) : 0;
+#else
+	return 0;
+#endif
+}
+
 void k_fifo_put(struct k_fifo *fifo, void *data)
 {
 	struct k_thread *first_pending_thread;
@@ -79,6 +92,10 @@ void k_fifo_put(struct k_fifo *fifo, void *data)
 		}
 	} else {
 		sys_slist_append(&fifo->data_q, data);
+		if (handle_poll_event(fifo)) {
+			(void)_Swap(key);
+			return;
+		}
 	}
 
 	irq_unlock(key);

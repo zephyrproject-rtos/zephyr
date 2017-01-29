@@ -96,6 +96,15 @@ typedef sys_dlist_t _wait_q_t;
 #define _OBJECT_TRACING_NEXT_PTR(type)
 #endif
 
+#ifdef CONFIG_POLL
+#define _POLL_EVENT_OBJ_INIT \
+	.poll_event = NULL,
+#define _POLL_EVENT struct k_poll_event *poll_event
+#else
+#define _POLL_EVENT_OBJ_INIT
+#define _POLL_EVENT
+#endif
+
 #define tcs k_thread
 struct k_thread;
 struct k_mutex;
@@ -110,6 +119,8 @@ struct k_stack;
 struct k_mem_slab;
 struct k_mem_pool;
 struct k_timer;
+struct k_poll_event;
+struct k_poll_signal;
 
 typedef struct k_thread *k_tid_t;
 
@@ -1093,6 +1104,7 @@ extern uint32_t k_cycle_get_32(void);
 struct k_fifo {
 	_wait_q_t wait_q;
 	sys_slist_t data_q;
+	_POLL_EVENT;
 
 	_OBJECT_TRACING_NEXT_PTR(k_fifo);
 };
@@ -1101,6 +1113,7 @@ struct k_fifo {
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
+	_POLL_EVENT_OBJ_INIT \
 	_OBJECT_TRACING_INIT \
 	}
 
@@ -1834,6 +1847,7 @@ struct k_sem {
 	_wait_q_t wait_q;
 	unsigned int count;
 	unsigned int limit;
+	_POLL_EVENT;
 
 	_OBJECT_TRACING_NEXT_PTR(k_sem);
 };
@@ -1843,6 +1857,7 @@ struct k_sem {
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.count = initial_count, \
 	.limit = count_limit, \
+	_POLL_EVENT_OBJ_INIT \
 	_OBJECT_TRACING_INIT \
 	}
 
@@ -3085,6 +3100,245 @@ extern void k_free(void *ptr);
 
 /**
  * @} end defgroup heap_apis
+ */
+
+/* polling API - PRIVATE */
+
+/* private - implementation data created as needed, per-type */
+struct _poller {
+	struct k_thread *thread;
+};
+
+/* private - types bit positions */
+enum _poll_types_bits {
+	/* can be used to ignore an event */
+	_POLL_TYPE_IGNORE,
+
+	/* to be signaled by k_poll_signal() */
+	_POLL_TYPE_SIGNAL,
+
+	/* semaphore availability */
+	_POLL_TYPE_SEM_AVAILABLE,
+
+	/* fifo data availability */
+	_POLL_TYPE_FIFO_DATA_AVAILABLE,
+
+	_POLL_NUM_TYPES
+};
+
+#define _POLL_TYPE_BIT(type) (1 << ((type) - 1))
+
+/* private - states bit positions */
+enum _poll_states_bits {
+	/* default state when creating event */
+	_POLL_STATE_NOT_READY,
+
+	/* there was another poller already on the object */
+	_POLL_STATE_EADDRINUSE,
+
+	/* signaled by k_poll_signal() */
+	_POLL_STATE_SIGNALED,
+
+	/* semaphore is available */
+	_POLL_STATE_SEM_AVAILABLE,
+
+	/* data is available to read on fifo */
+	_POLL_STATE_FIFO_DATA_AVAILABLE,
+
+	_POLL_NUM_STATES
+};
+
+#define _POLL_STATE_BIT(state) (1 << ((state) - 1))
+
+#define _POLL_EVENT_NUM_UNUSED_BITS \
+	(32 - (_POLL_NUM_TYPES + _POLL_NUM_STATES + 1 /* modes */))
+
+#if _POLL_EVENT_NUM_UNUSED_BITS < 0
+#error overflow of 32-bit word in struct k_poll_event
+#endif
+
+/* end of polling API - PRIVATE */
+
+
+/**
+ * @defgroup poll_apis Async polling APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/* Public polling API */
+
+/* public - values for k_poll_event.type bitfield */
+#define K_POLL_TYPE_IGNORE 0
+#define K_POLL_TYPE_SIGNAL _POLL_TYPE_BIT(_POLL_TYPE_SIGNAL)
+#define K_POLL_TYPE_SEM_AVAILABLE _POLL_TYPE_BIT(_POLL_TYPE_SEM_AVAILABLE)
+#define K_POLL_TYPE_FIFO_DATA_AVAILABLE \
+	_POLL_TYPE_BIT(_POLL_TYPE_FIFO_DATA_AVAILABLE)
+
+/* public - polling modes */
+enum k_poll_modes {
+	/* polling thread does not take ownership of objects when available */
+	K_POLL_MODE_NOTIFY_ONLY = 0,
+
+	K_POLL_NUM_MODES
+};
+
+/* public - values for k_poll_event.state bitfield */
+#define K_POLL_STATE_NOT_READY 0
+#define K_POLL_STATE_EADDRINUSE _POLL_STATE_BIT(_POLL_STATE_EADDRINUSE)
+#define K_POLL_STATE_SIGNALED _POLL_STATE_BIT(_POLL_STATE_SIGNALED)
+#define K_POLL_STATE_SEM_AVAILABLE _POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
+#define K_POLL_STATE_FIFO_DATA_AVAILABLE \
+	_POLL_STATE_BIT(_POLL_STATE_FIFO_DATA_AVAILABLE)
+
+/* public - poll signal object */
+struct k_poll_signal {
+	/* PRIVATE - DO NOT TOUCH */
+	struct k_poll_event *poll_event;
+
+	/*
+	 * 1 if the event has been signaled, 0 otherwise. Stays set to 1 until
+	 * user resets it to 0.
+	 */
+	unsigned int signaled;
+
+	/* custom result value passed to k_poll_signal() if needed */
+	int result;
+};
+
+#define K_POLL_SIGNAL_INITIALIZER() \
+	{ \
+	.poll_event = NULL, \
+	.signaled = 0, \
+	.result = 0, \
+	}
+
+struct k_poll_event {
+	/* PRIVATE - DO NOT TOUCH */
+	struct _poller *poller;
+
+	/* bitfield of event types (bitwise-ORed K_POLL_TYPE_xxx values) */
+	uint32_t type:_POLL_NUM_TYPES;
+
+	/* bitfield of event states (bitwise-ORed K_POLL_STATE_xxx values) */
+	uint32_t state:_POLL_NUM_STATES;
+
+	/* mode of operation, from enum k_poll_modes */
+	uint32_t mode:1;
+
+	/* unused bits in 32-bit word */
+	uint32_t unused:_POLL_EVENT_NUM_UNUSED_BITS;
+
+	/* per-type data */
+	union {
+		void *obj;
+		struct k_poll_signal *signal;
+		struct k_sem *sem;
+		struct k_fifo *fifo;
+	};
+};
+
+#define K_POLL_EVENT_INITIALIZER(event_type, event_mode, event_data) \
+	{ \
+	.poller = NULL, \
+	.type = event_type, \
+	.state = K_POLL_STATE_NOT_READY, \
+	.mode = event_mode, \
+	.unused = 0, \
+	{ .obj = event_data }, \
+	}
+
+/**
+ * @brief Initialize one struct k_poll_event instance
+ *
+ * After this routine is called on a poll event, the event it ready to be
+ * placed in an event array to be passed to k_poll().
+ *
+ * @param event The event to initialize.
+ * @param type A bitfield of the types of event, from the K_POLL_TYPE_xxx
+ *             values. Only values that apply to the same object being polled
+ *             can be used together. Choosing K_POLL_TYPE_IGNORE disables the
+ *             event.
+ * @param mode Future. Use K_POLL_MODE_INFORM_ONLY.
+ * @param obj Kernel object or poll signal.
+ *
+ * @return N/A
+ */
+
+extern void k_poll_event_init(struct k_poll_event *event, uint32_t type,
+			      int mode, void *obj);
+
+/**
+ * @brief Wait for one or many of multiple poll events to occur
+ *
+ * This routine allows a thread to wait concurrently for one or many of
+ * multiple poll events to have occurred. Such events can be a kernel object
+ * being available, like a semaphore, or a poll signal event.
+ *
+ * When an event notifies that a kernel object is available, the kernel object
+ * is not "given" to the thread calling k_poll(): it merely signals the fact
+ * that the object was available when the k_poll() call was in effect. Also,
+ * all threads trying to acquire an object the regular way, i.e. by pending on
+ * the object, have precedence over the thread polling on the object. This
+ * means that the polling thread will never get the poll event on an object
+ * until the object becomes available and its pend queue is empty. For this
+ * reason, the k_poll() call is more effective when the objects being polled
+ * only have one thread, the polling thread, trying to acquire them.
+ *
+ * Only one thread can be polling for a particular object at a given time. If
+ * another thread tries to poll on it, the k_poll() call returns -EADDRINUSE
+ * and returns as soon as it has finished handling the other events. This means
+ * that k_poll() can return -EADDRINUSE and have the state value of some events
+ * be non-K_POLL_STATE_NOT_READY. When this condition occurs, the @a timeout
+ * parameter is ignored.
+ *
+ * When k_poll() returns 0 or -EADDRINUSE, the caller should loop on all the
+ * events that were passed to k_poll() and check the state field for the values
+ * that were expected and take the associated actions.
+ *
+ * Before being reused for another call to k_poll(), the user has to reset the
+ * state field to K_POLL_STATE_NOT_READY.
+ *
+ * @param events An array of pointers to events to be polled for.
+ * @param num_events The number of events in the array.
+ * @param timeout Waiting period for an event to be ready (in milliseconds),
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 One or more events are ready.
+ * @retval -EADDRINUSE One or more objects already had a poller.
+ * @retval -EAGAIN Waiting period timed out.
+ */
+
+extern int k_poll(struct k_poll_event *events, int num_events,
+		  int32_t timeout);
+
+/**
+ * @brief Signal a poll signal object.
+ *
+ * This routine makes ready a poll signal, which is basically a poll event of
+ * type K_POLL_TYPE_SIGNAL. If a thread was polling on that event, it will be
+ * made ready to run. A @a result value can be specified.
+ *
+ * The poll signal contains a 'signaled' field that, when set by
+ * k_poll_signal(), stays set until the user sets it back to 0. It thus has to
+ * be reset by the user before being passed again to k_poll() or k_poll() will
+ * consider it being signaled, and will return immediately.
+ *
+ * @param signal A poll signal.
+ * @param result The value to store in the result field of the signal.
+ *
+ * @retval 0 The signal was delivered successfully.
+ * @retval -EAGAIN The polling thread's timeout is in the process of expiring.
+ */
+
+extern int k_poll_signal(struct k_poll_signal *signal, int result);
+
+/* private internal function */
+extern int _handle_obj_poll_event(struct k_poll_event **obj_poll_event,
+				  uint32_t state);
+
+/**
+ * @} end defgroup poll_apis
  */
 
 /**
