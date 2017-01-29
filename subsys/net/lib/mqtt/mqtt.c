@@ -812,11 +812,17 @@ void mqtt_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
 	/* net_ctx is already referenced to by the mqtt_ctx struct */
 	ARG_UNUSED(net_ctx);
 
-	if (status != 0) {
+	if (status || !buf) {
 		return;
 	}
 
+	if (net_nbuf_appdatalen(buf) == 0) {
+		goto lb_exit;
+	}
+
 	mqtt->rcv(mqtt, buf);
+
+lb_exit:
 	net_nbuf_unref(buf);
 }
 
