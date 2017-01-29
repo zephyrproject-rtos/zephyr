@@ -51,7 +51,55 @@ struct stm32f4x_flash {
 /**
  * @brief setup embedded flash controller
  *
- * Configure flash access time latency depending on SYSCLK.
+ * Configure flash access time latency (wait states) depending on
+ * SYSCLK.  This code assumes that we're using a supply voltage of
+ * 2.7V or higher, for lower voltages this code must be changed.
+ *
+ * The following tables show the required latency value required for a
+ * certain CPU frequency (HCLK) and supply voltage.  See the section
+ * "Relation between CPU clock frequency and Flash memory read time"
+ * in the reference manual for more information.
+ *
+ * Note that the highest frequency might be limited for other reaasons
+ * than wait states, for example the STM32F405xx is limited to 168MHz
+ * even with 5 wait states and the highest supply voltage.
+ *
+ * STM32F401xx:
+ *
+ * LATENCY | 2.7V - 3.6V | 2.4V - 2.7V | 2.1V - 2.4V | 1.8V - 2.1V
+ * ------- | ----------- | ----------- | ----------- | -----------
+ *    0    |    30 MHz   |    24 MHz   |    18 MHz   |    16 MHz
+ *    1    |    60 MHz   |    48 MHz   |    36 MHz   |    32 MHz
+ *    2    |    84 MHz   |    72 MHz   |    54 MHz   |    48 MHz
+ *    3    |             |    84 MHz   |    72 MHz   |    64 MHz
+ *    4    |             |             |    84 MHz   |    80 MHz
+ *    5    |             |             |             |    84 MHz
+ *
+ * STM32F405xx/407xx/415xx/417xx/42xxx/43xxx:
+ *
+ * LATENCY | 2.7V - 3.6V | 2.4V - 2.7V | 2.1V - 2.4V | 1.8V - 2.1V
+ * ------- | ----------- | ----------- | ----------- | -----------
+ *    0    |    30 MHz   |    24 MHz   |    22 MHz   |    20 MHz
+ *    1    |    60 MHz   |    48 MHz   |    44 MHz   |    40 MHz
+ *    2    |    90 MHz   |    72 MHz   |    66 MHz   |    60 MHz
+ *    3    |   120 MHz   |    96 MHz   |    88 MHz   |    80 MHz
+ *    4    |   150 MHz   |   120 MHz   |   110 MHz   |   100 MHz
+ *    5    |   180 MHz   |   144 MHz   |   132 MHz   |   120 MHz
+ *    6    |             |   168 MHz   |   154 MHz   |   140 MHz
+ *    7    |             |   180 MHz   |   176 MHz   |   160 MHz
+ *    8    |             |             |   180 MHz   |   168 MHz
+ *
+ * STM32F411x:
+ *
+ * LATENCY | 2.7V - 3.6V | 2.4V - 2.7V | 2.1V - 2.4V | 1.7V - 2.1V
+ * ------- | ----------- | ----------- | ----------- | -----------
+ *    0    |    30 MHz   |    24 MHz   |    18 MHz   |    16 MHz
+ *    1    |    64 MHz   |    48 MHz   |    36 MHz   |    32 MHz
+ *    2    |    90 MHz   |    72 MHz   |    54 MHz   |    48 MHz
+ *    3    |   100 MHz   |    96 MHz   |    72 MHz   |    64 MHz
+ *    4    |             |   100 MHz   |    90 MHz   |    80 MHz
+ *    5    |             |             |   100 MHz   |    96 MHz
+ *    6    |             |             |             |   100 MHz
  */
 static inline void __setup_flash(void)
 {
