@@ -73,10 +73,12 @@ misc/generated/configs.c: include/config/auto.conf FORCE
 	$(call filechk,configs.c)
 
 targets := misc/generated/configs.c
+targets += include/generated/generated_dts_board.h
 targets += include/generated/offsets.h
 
 
 always := misc/generated/configs.c
+always += include/generated/generated_dts_board.h
 always += include/generated/offsets.h
 
 ifeq ($(CONFIG_MDEF),y)
@@ -90,7 +92,8 @@ endef
 
 cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(ZEPHYRINCLUDE) -c -o $@ $<
 
-arch/$(ARCH)/core/offsets/offsets.o: arch/$(ARCH)/core/offsets/offsets.c $(KCONFIG_CONFIG)
+arch/$(ARCH)/core/offsets/offsets.o: arch/$(ARCH)/core/offsets/offsets.c $(KCONFIG_CONFIG) \
+				include/generated/generated_dts_board.h
 	$(Q)mkdir -p $(dir $@)
 	$(call if_changed,cc_o_c_1)
 
@@ -109,6 +112,31 @@ define offsetchk
 endef
 
 include/generated/offsets.h: arch/$(ARCH)/core/offsets/offsets.o \
-					include/config/auto.conf FORCE
+			     include/config/auto.conf FORCE
 	$(call offsetchk,arch/$(ARCH)/core/offsets/offsets.o)
+
+ifeq ($(CONFIG_HAS_DTS),y)
+define filechk_generated_dts_board.h
+	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */"; \
+		extract_dts_includes.py dts/$(ARCH)/$(BOARD_NAME).dts_compiled $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
+		if test -e $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; then \
+			echo; echo; \
+			echo "/* Following definitions fixup the generated include */"; \
+			echo; \
+			cat $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
+		fi; \
+		)
+endef
+else
+define filechk_generated_dts_board.h
+	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */";)
+endef
+endif
+
+
+include/generated/generated_dts_board.h: include/config/auto.conf FORCE
+ifeq ($(CONFIG_HAS_DTS),y)
+	$(Q)$(MAKE) $(build)=dts/$(ARCH)
+endif
+	$(call filechk,generated_dts_board.h)
 

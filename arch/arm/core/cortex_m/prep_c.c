@@ -22,6 +22,7 @@
 #include <linker-defs.h>
 #include <nano_internal.h>
 #include <arch/arm/cortex_m/cmsis.h>
+#include <generated_dts_board.h>
 
 #ifdef CONFIG_ARMV6_M
 static inline void relocate_vector_table(void) { /* do nothing */ }

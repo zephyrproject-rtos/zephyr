@@ -16,6 +16,7 @@
 
 #include <autoconf.h>
 #include <sections.h>
+#include <generated_dts_board.h>
 
 #include <linker-defs.h>
 #include <linker-tool.h>
