@@ -35,13 +35,6 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 
-/* needed by k_cpu_atomic_idle() written in asm */
-#define _SCB_SCR 0xE000ED10
-
-#define _SCB_SCR_SEVONPEND (1 << 4)
-#define _SCB_SCR_SLEEPDEEP (1 << 2)
-#define _SCB_SCR_SLEEPONEXIT (1 << 1)
-
 #else
 
 #include <kernel.h>
@@ -50,50 +43,6 @@ extern "C" {
 #include <arch/arm/cortex_m/scs.h>
 #include <misc/util.h>
 #include <stdint.h>
-
-/**
- *
- * @brief Pend the NMI exception
- *
- * Pend the NMI exception: it should fire immediately.
- *
- * @return N/A
- */
-
-static inline void _ScbNmiPend(void)
-{
-	__scs.scb.icsr.bit.nmipendset = 1;
-}
-
-/**
- *
- * @brief Set the PendSV exception
- *
- * Set the PendSV exception: it will be handled when the last nested exception
- * returns, or immediately if running in thread mode.
- *
- * @return N/A
- */
-
-static inline void _ScbPendsvSet(void)
-{
-	__scs.scb.icsr.bit.pendsvset = 1;
-}
-
-/**
- *
- * @brief Find out if running in thread mode
- *
- * This routine determines if the current mode is thread mode.
- *
- * @return 1 if in thread mode, 0 otherwise
- */
-
-static inline int _ScbIsInThreadMode(void)
-{
-	/* 0 == thread mode */
-	return !__scs.scb.icsr.bit.vectactive;
-}
 
 /**
  *
@@ -108,41 +57,6 @@ static inline int _ScbIsInThreadMode(void)
 static inline uint32_t _ScbActiveVectorGet(void)
 {
 	return __scs.scb.icsr.bit.vectactive;
-}
-
-/**
- *
- * @brief Set priority of an exception
- *
- * Only works with exceptions; i.e. do not use this for interrupts, which
- * are exceptions 16+.
- *
- * Note that the processor might not implement all 8 bits, in which case the
- * lower N bits are ignored.
- *
- * ARMv6-M: Exceptions 1 to 3 priorities are fixed (-3, -2, -1) and 4 to 9 are
- * reserved exceptions.
- * ARMv7-M: Exceptions 1 to 3 priorities are fixed (-3, -2, -1).
- *
- * @param exc  exception number, 10 to 15 on ARMv6-M and 4 to 15 on ARMv7-M
- * @param pri  priority, 0 to 255
- * @return N/A
- */
-
-static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
-{
-#if defined(CONFIG_ARMV6_M)
-	volatile uint32_t * const shpr = &__scs.scb.shpr[_PRIO_SHP_IDX(exc)];
-	__ASSERT((exc > 10) && (exc < 16), "");
-	*shpr = ((*shpr & ~((uint32_t)0xff << _PRIO_BIT_SHIFT(exc))) |
-		 ((uint32_t)pri << _PRIO_BIT_SHIFT(exc)));
-#elif defined(CONFIG_ARMV7_M)
-	/* For priority exception handler 4-15 */
-	__ASSERT((exc > 3) && (exc < 16), "");
-	__scs.scb.shpr[exc - 4] = pri;
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
 }
 
 #if defined(CONFIG_ARMV6_M)

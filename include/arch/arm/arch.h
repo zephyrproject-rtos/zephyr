@@ -35,7 +35,6 @@ extern "C" {
 #include <arch/arm/cortex_m/misc.h>
 #include <arch/arm/cortex_m/scs.h>
 #include <arch/arm/cortex_m/scb.h>
-#include <arch/arm/cortex_m/nvic.h>
 #include <arch/arm/cortex_m/memory_map.h>
 #include <arch/arm/cortex_m/asm_inline.h>
 #include <arch/arm/cortex_m/addr_types.h>

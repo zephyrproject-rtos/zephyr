@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_tim_ex.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Timer Extended peripheral:
@@ -1672,7 +1672,7 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
                                                 TIM_BreakDeadTimeConfigTypeDef * sBreakDeadTimeConfig)
 {
   uint32_t tmpbdtr = 0;
-
+  
   /* Check the parameters */
   assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
   assert_param(IS_TIM_OSSR_STATE(sBreakDeadTimeConfig->OffStateRunMode));
@@ -1683,58 +1683,39 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
   assert_param(IS_TIM_BREAK_POLARITY(sBreakDeadTimeConfig->BreakPolarity));
   assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->BreakFilter));
   assert_param(IS_TIM_AUTOMATIC_OUTPUT_STATE(sBreakDeadTimeConfig->AutomaticOutput));
-
+  
   /* Check input state */
   __HAL_LOCK(htim);
-
+  
   /* Set the Lock level, the Break enable Bit and the Polarity, the OSSR State,
-     the OSSI State, the dead time value and the Automatic Output Enable Bit */
+  the OSSI State, the dead time value and the Automatic Output Enable Bit */
+  
+  /* Set the BDTR bits */
+  MODIFY_REG(tmpbdtr, TIM_BDTR_DTG, sBreakDeadTimeConfig->DeadTime);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_LOCK, sBreakDeadTimeConfig->LockLevel);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSI, sBreakDeadTimeConfig->OffStateIDLEMode);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSR, sBreakDeadTimeConfig->OffStateRunMode);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKE, sBreakDeadTimeConfig->BreakState);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKP, sBreakDeadTimeConfig->BreakPolarity);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_AOE, sBreakDeadTimeConfig->AutomaticOutput);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_MOE, sBreakDeadTimeConfig->AutomaticOutput);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKF, (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT));
+  
   if (IS_TIM_BKIN2_INSTANCE(htim->Instance))
   {
     assert_param(IS_TIM_BREAK2_STATE(sBreakDeadTimeConfig->Break2State));
     assert_param(IS_TIM_BREAK2_POLARITY(sBreakDeadTimeConfig->Break2Polarity));
     assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->Break2Filter));
-
-    /* Clear the BDTR bits */
-    tmpbdtr &= ~(TIM_BDTR_DTG | TIM_BDTR_LOCK |  TIM_BDTR_OSSI |
-                 TIM_BDTR_OSSR | TIM_BDTR_BKE | TIM_BDTR_BKP |
-                 TIM_BDTR_AOE | TIM_BDTR_MOE | TIM_BDTR_BKF |
-                 TIM_BDTR_BK2F | TIM_BDTR_BK2E | TIM_BDTR_BK2P);
-
-    /* Set the BDTR bits */
-    tmpbdtr |= sBreakDeadTimeConfig->DeadTime;
-    tmpbdtr |= sBreakDeadTimeConfig->LockLevel;
-    tmpbdtr |= sBreakDeadTimeConfig->OffStateIDLEMode;
-    tmpbdtr |= sBreakDeadTimeConfig->OffStateRunMode;
-    tmpbdtr |= sBreakDeadTimeConfig->BreakState;
-    tmpbdtr |= sBreakDeadTimeConfig->BreakPolarity;
-    tmpbdtr |= sBreakDeadTimeConfig->AutomaticOutput;
-    tmpbdtr |= (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT);
-    tmpbdtr |= (sBreakDeadTimeConfig->Break2Filter << BDTR_BK2F_SHIFT);
-    tmpbdtr |= sBreakDeadTimeConfig->Break2State;
-    tmpbdtr |= sBreakDeadTimeConfig->Break2Polarity;
+    
+    /* Set the BREAK2 input related BDTR bits */
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2F, (sBreakDeadTimeConfig->Break2Filter << BDTR_BK2F_SHIFT));
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2E, sBreakDeadTimeConfig->Break2State);
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2P, sBreakDeadTimeConfig->Break2Polarity);
   }
-  else
-  {
-    /* Clear the BDTR bits */
-    tmpbdtr &= ~(TIM_BDTR_DTG | TIM_BDTR_LOCK |  TIM_BDTR_OSSI |
-                 TIM_BDTR_OSSR | TIM_BDTR_BKE | TIM_BDTR_BKP |
-                 TIM_BDTR_AOE | TIM_BDTR_MOE | TIM_BDTR_BKF);
-
-    /* Set the BDTR bits */
-    tmpbdtr |= sBreakDeadTimeConfig->DeadTime;
-    tmpbdtr |= sBreakDeadTimeConfig->LockLevel;
-    tmpbdtr |= sBreakDeadTimeConfig->OffStateIDLEMode;
-    tmpbdtr |= sBreakDeadTimeConfig->OffStateRunMode;
-    tmpbdtr |= sBreakDeadTimeConfig->BreakState;
-    tmpbdtr |= sBreakDeadTimeConfig->BreakPolarity;
-    tmpbdtr |= sBreakDeadTimeConfig->AutomaticOutput;
-    tmpbdtr |= (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT);
-  }
-
+  
   /* Set TIMx_BDTR */
   htim->Instance->BDTR = tmpbdtr;
-
+  
   __HAL_UNLOCK(htim);
 
   return HAL_OK;
@@ -1767,14 +1748,16 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   assert_param(IS_TIM_BREAKINPUTSOURCE(sBreakInputConfig->Source));
   assert_param(IS_TIM_BREAKINPUTSOURCE_STATE(sBreakInputConfig->Enable));
 
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L471xx) || \
+    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
   if (sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
   {
     assert_param(IS_TIM_BREAKINPUTSOURCE_POLARITY(sBreakInputConfig->Polarity));
   }
 #else
    assert_param(IS_TIM_BREAKINPUTSOURCE_POLARITY(sBreakInputConfig->Polarity));
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx */
+       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
   
   /* Check input state */
   __HAL_LOCK(htim);
@@ -1806,14 +1789,16 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
     }
     break;
 
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L471xx) || \
+    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
   case TIM_BREAKINPUTSOURCE_DFSDM1:
     {
       bkin_enable_mask = TIM1_OR2_BKDF1BK0E;
       bkin_enable_bitpos = 8;
     }
     break;    
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx */
+       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
 
   default:
     break;
@@ -1831,9 +1816,11 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
         tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
         
         /* Set the break input polarity */
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L471xx) || \
+    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
         if (sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx */
+       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
         {
           tmporx &= ~bkin_polarity_mask;
           tmporx |= (sBreakInputConfig->Polarity << bkin_polarity_bitpos) & bkin_polarity_mask;
@@ -1853,9 +1840,11 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
         tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
         
         /* Set the break input polarity */
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L471xx) || \
+    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
         if (sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx */
+       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
         {
           tmporx &= ~bkin_polarity_mask;
           tmporx |= (sBreakInputConfig->Polarity << bkin_polarity_bitpos) & bkin_polarity_mask;

@@ -16,6 +16,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include <misc/__assert.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -24,6 +25,9 @@
 
 extern void __reserved(void);
 
+#define NUM_IRQS_PER_REG 32
+#define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
+#define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
 
 /**
  *
@@ -36,7 +40,7 @@ extern void __reserved(void);
  */
 void _arch_irq_enable(unsigned int irq)
 {
-	_NvicIrqEnable(irq);
+	NVIC_EnableIRQ((IRQn_Type)irq);
 }
 
 /**
@@ -50,7 +54,7 @@ void _arch_irq_enable(unsigned int irq)
  */
 void _arch_irq_disable(unsigned int irq)
 {
-	_NvicIrqDisable(irq);
+	NVIC_DisableIRQ((IRQn_Type)irq);
 }
 
 /**
@@ -61,7 +65,7 @@ void _arch_irq_disable(unsigned int irq)
  */
 int _arch_irq_is_enabled(unsigned int irq)
 {
-	return _NvicIsIrqEnabled(irq);
+	return NVIC->ISER[REG_FROM_IRQ(irq)] & (1 << BIT_FROM_IRQ(irq));
 }
 
 /**
@@ -107,7 +111,7 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 		 "invalid priority %d! values must be less than %d\n",
 		 prio - _IRQ_PRIO_OFFSET,
 		 (1 << CONFIG_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
-	_NvicIrqPrioSet(irq, _EXC_PRIO(prio));
+	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
 /**

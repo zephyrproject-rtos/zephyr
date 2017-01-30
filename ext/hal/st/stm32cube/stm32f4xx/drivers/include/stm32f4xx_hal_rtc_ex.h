@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_rtc_ex.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of RTC HAL Extension module.
   ******************************************************************************
   * @attention
@@ -135,18 +135,25 @@ typedef struct
   
 /** @defgroup RTCEx_Tamper_Pins_Definitions RTC Tamper Pins Definitions
   * @{
-  */ 
+  */
 #define RTC_TAMPER_1                    RTC_TAFCR_TAMP1E
+
+#if !defined(STM32F412Zx) && !defined(STM32F412Vx) && !defined(STM32F412Rx) && !defined(STM32F412Cx) && !defined(STM32F413xx) && !defined(STM32F423xx)
 #define RTC_TAMPER_2                    RTC_TAFCR_TAMP2E
+#endif
 /**
   * @}
   */
 
 /** @defgroup RTCEx_Tamper_Pins_Selection RTC tamper Pins Selection
   * @{
-  */ 
+  */
+
 #define RTC_TAMPERPIN_DEFAULT               ((uint32_t)0x00000000U)
+
+#if !defined(STM32F412Zx) && !defined(STM32F412Vx) && !defined(STM32F412Rx) && !defined(STM32F412Cx) && !defined(STM32F413xx) && !defined(STM32F423xx)
 #define RTC_TAMPERPIN_POS1                  ((uint32_t)0x00010000U)
+#endif
 /**
   * @}
   */ 
@@ -155,7 +162,10 @@ typedef struct
   * @{
   */ 
 #define RTC_TIMESTAMPPIN_DEFAULT            ((uint32_t)0x00000000U)
+
+#if !defined(STM32F412Zx) && !defined(STM32F412Vx) && !defined(STM32F412Rx) && !defined(STM32F412Cx) && !defined(STM32F413xx) && !defined(STM32F423xx)
 #define RTC_TIMESTAMPPIN_POS1               ((uint32_t)0x00020000U)
+#endif
 /**
   * @}
   */ 
@@ -586,7 +596,8 @@ typedef struct
   * @retval None
   */
 #define __HAL_RTC_TAMPER1_DISABLE(__HANDLE__)                        ((__HANDLE__)->Instance->TAFCR &= ~(RTC_TAFCR_TAMP1E))
-
+                                                                      
+#if !defined(STM32F412Zx) && !defined(STM32F412Vx) && !defined(STM32F412Rx) && !defined(STM32F412Cx) && !defined(STM32F413xx) && !defined(STM32F423xx)
 /**
   * @brief  Enable the RTC Tamper2 input detection.
   * @param  __HANDLE__: specifies the RTC handle.
@@ -600,7 +611,8 @@ typedef struct
   * @retval None
   */
 #define __HAL_RTC_TAMPER2_DISABLE(__HANDLE__)                        ((__HANDLE__)->Instance->TAFCR &= ~(RTC_TAFCR_TAMP2E))
-
+#endif
+                                                                      
 /**
   * @brief  Check whether the specified RTC Tamper interrupt has occurred or not.
   * @param  __HANDLE__: specifies the RTC handle.
@@ -923,14 +935,26 @@ HAL_StatusTypeDef HAL_RTCEx_PollForAlarmBEvent(RTC_HandleTypeDef *hrtc, uint32_t
                                            ((BKP) == RTC_BKP_DR19))
 #define IS_TIMESTAMP_EDGE(EDGE) (((EDGE) == RTC_TIMESTAMPEDGE_RISING) || \
                                  ((EDGE) == RTC_TIMESTAMPEDGE_FALLING))
-#define IS_RTC_TAMPER(TAMPER) ((((TAMPER) & ((uint32_t)!(RTC_TAFCR_TAMP1E | RTC_TAFCR_TAMP2E))) == 0x00U) && ((TAMPER) != (uint32_t)RESET))
 
+#if defined(STM32F412Zx) || defined(STM32F412Vx) || defined(STM32F412Rx) || defined(STM32F412Cx) || defined(STM32F413xx) || defined(STM32F423xx)
+#define IS_RTC_TAMPER(TAMPER) ((((TAMPER) & ((uint32_t)!(RTC_TAFCR_TAMP1E ))) == 0x00U) && ((TAMPER) != (uint32_t)RESET))
+#else
+#define IS_RTC_TAMPER(TAMPER) ((((TAMPER) & ((uint32_t)!(RTC_TAFCR_TAMP1E | RTC_TAFCR_TAMP2E))) == 0x00U) && ((TAMPER) != (uint32_t)RESET))
+#endif
+
+#if defined(STM32F412Zx) || defined(STM32F412Vx) || defined(STM32F412Rx) || defined(STM32F412Cx) || defined(STM32F413xx) || defined(STM32F423xx)
+#define IS_RTC_TAMPER_PIN(PIN) ((PIN) == RTC_TAMPERPIN_DEFAULT)
+#else
 #define IS_RTC_TAMPER_PIN(PIN) (((PIN) == RTC_TAMPERPIN_DEFAULT) || \
                                 ((PIN) == RTC_TAMPERPIN_POS1))
+#endif 
 
+#if defined(STM32F412Zx) || defined(STM32F412Vx) || defined(STM32F412Rx) || defined(STM32F412Cx) || defined(STM32F413xx) || defined(STM32F423xx)
+#define IS_RTC_TIMESTAMP_PIN(PIN) ((PIN) == RTC_TIMESTAMPPIN_DEFAULT)
+#else
 #define IS_RTC_TIMESTAMP_PIN(PIN) (((PIN) == RTC_TIMESTAMPPIN_DEFAULT) || \
                                    ((PIN) == RTC_TIMESTAMPPIN_POS1))
-
+#endif
 #define IS_RTC_TAMPER_TRIGGER(TRIGGER) (((TRIGGER) == RTC_TAMPERTRIGGER_RISINGEDGE) || \
                                         ((TRIGGER) == RTC_TAMPERTRIGGER_FALLINGEDGE) || \
                                         ((TRIGGER) == RTC_TAMPERTRIGGER_LOWLEVEL) || \

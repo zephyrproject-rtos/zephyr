@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_uart.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of UART HAL module.
   ******************************************************************************
   * @attention
@@ -167,13 +167,13 @@ typedef struct
   
   uint16_t                      TxXferSize;       /*!< UART Tx Transfer size              */
   
-  uint16_t                      TxXferCount;      /*!< UART Tx Transfer Counter           */
+  __IO uint16_t                 TxXferCount;      /*!< UART Tx Transfer Counter           */
   
   uint8_t                       *pRxBuffPtr;      /*!< Pointer to UART Rx transfer Buffer */
   
   uint16_t                      RxXferSize;       /*!< UART Rx Transfer size              */
   
-  uint16_t                      RxXferCount;      /*!< UART Rx Transfer Counter           */  
+  __IO uint16_t                 RxXferCount;      /*!< UART Rx Transfer Counter           */  
   
   DMA_HandleTypeDef             *hdmatx;          /*!< UART Tx DMA Handle parameters      */
     
@@ -653,6 +653,13 @@ HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData
 HAL_StatusTypeDef HAL_UART_DMAPause(UART_HandleTypeDef *huart);
 HAL_StatusTypeDef HAL_UART_DMAResume(UART_HandleTypeDef *huart);
 HAL_StatusTypeDef HAL_UART_DMAStop(UART_HandleTypeDef *huart);
+/* Transfer Abort functions */
+HAL_StatusTypeDef HAL_UART_Abort(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UART_AbortTransmit(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UART_AbortReceive(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UART_Abort_IT(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UART_AbortTransmit_IT(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UART_AbortReceive_IT(UART_HandleTypeDef *huart);
 
 void HAL_UART_IRQHandler(UART_HandleTypeDef *huart);
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
@@ -660,6 +667,9 @@ void HAL_UART_TxHalfCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
+void HAL_UART_AbortCpltCallback (UART_HandleTypeDef *huart);
+void HAL_UART_AbortTransmitCpltCallback (UART_HandleTypeDef *huart);
+void HAL_UART_AbortReceiveCpltCallback (UART_HandleTypeDef *huart);
 /**
   * @}
   */

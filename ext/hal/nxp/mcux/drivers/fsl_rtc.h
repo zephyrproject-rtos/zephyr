@@ -65,6 +65,8 @@ typedef enum _rtc_status_flags
     kRTC_AlarmFlag = RTC_SR_TAF_MASK         /*!< Alarm flag*/
 } rtc_status_flags_t;
 
+#if (defined(FSL_FEATURE_RTC_HAS_OSC_SCXP) && FSL_FEATURE_RTC_HAS_OSC_SCXP)
+
 /*! @brief List of RTC Oscillator capacitor load settings */
 typedef enum _rtc_osc_cap_load
 {
@@ -73,6 +75,8 @@ typedef enum _rtc_osc_cap_load
     kRTC_Capacitor_8p = RTC_CR_SC8P_MASK,  /*!< 8pF capacitor load */
     kRTC_Capacitor_16p = RTC_CR_SC16P_MASK /*!< 16pF capacitor load */
 } rtc_osc_cap_load_t;
+
+#endif /* FSL_FEATURE_SCG_HAS_OSC_SCXP */
 
 /*! @brief Structure is used to hold the date and time */
 typedef struct _rtc_datetime
@@ -319,6 +323,8 @@ static inline void RTC_StopTimer(RTC_Type *base)
 
 /*! @}*/
 
+#if (defined(FSL_FEATURE_RTC_HAS_OSC_SCXP) && FSL_FEATURE_RTC_HAS_OSC_SCXP)
+
 /*!
  * @brief This function sets the specified capacitor configuration for the RTC oscillator.
  *
@@ -335,6 +341,8 @@ static inline void RTC_SetOscCapLoad(RTC_Type *base, uint32_t capLoad)
 
     base->CR = reg;
 }
+
+#endif /* FSL_FEATURE_SCG_HAS_OSC_SCXP */
 
 /*!
  * @brief Performs a software reset on the RTC module.

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_system.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of SYSTEM LL module.
   @verbatim
   ==============================================================================
@@ -142,6 +142,9 @@ extern "C" {
 #define LL_SYSCFG_I2C_FASTMODEPLUS_I2C2    SYSCFG_CFGR1_I2C2_FMP     /*!< Enable Fast Mode Plus on I2C2 pins */
 #endif /* I2C2 */
 #define LL_SYSCFG_I2C_FASTMODEPLUS_I2C3    SYSCFG_CFGR1_I2C3_FMP     /*!< Enable Fast Mode Plus on I2C3 pins */
+#if defined(I2C4)
+#define LL_SYSCFG_I2C_FASTMODEPLUS_I2C4    SYSCFG_CFGR1_I2C4_FMP     /*!< Enable Fast Mode Plus on I2C4 pins */
+#endif /* I2C4 */
 /**
   * @}
   */
@@ -291,6 +294,9 @@ extern "C" {
 /** @defgroup SYSTEM_LL_EC_APB1_GRP2_STOP_IP DBGMCU APB1 GRP2 STOP IP
   * @{
   */
+#if defined(I2C4)
+#define LL_DBGMCU_APB1_GRP2_I2C4_STOP      DBGMCU_APB1FZR2_DBG_I2C4_STOP   /*!< The I2C4 SMBus timeout is frozen*/
+#endif /* I2C4 */
 #define LL_DBGMCU_APB1_GRP2_LPTIM2_STOP    DBGMCU_APB1FZR2_DBG_LPTIM2_STOP /*!< The counter clock of LPTIM2 is stopped when the core is halted*/
 /**
   * @}
@@ -777,16 +783,13 @@ __STATIC_INLINE uint32_t LL_SYSCFG_GetEXTISource(uint32_t Line)
   * @brief  Enable SRAM2 Erase (starts a hardware SRAM2 erase operation. This bit is
   * automatically cleared at the end of the SRAM2 erase operation.)
   * @note This bit is write-protected: setting this bit is possible only after the
-  *       correct key sequence is written in the SYSCFG_SKR register.
+  *       correct key sequence is written in the SYSCFG_SKR register as described in 
+  *       the Reference Manual.
   * @rmtoll SYSCFG_SCSR  SRAM2ER       LL_SYSCFG_EnableSRAM2Erase
   * @retval None
   */
 __STATIC_INLINE void LL_SYSCFG_EnableSRAM2Erase(void)
 {
-  /* unlock the write protection of the SRAM2ER bit */
-  WRITE_REG(SYSCFG->SKR, 0xCA);
-  WRITE_REG(SYSCFG->SKR, 0x53);
-
   /* Starts a hardware SRAM2 erase operation*/
   SET_BIT(SYSCFG->SCSR, SYSCFG_SCSR_SRAM2ER);
 }
@@ -1079,7 +1082,10 @@ __STATIC_INLINE void LL_DBGMCU_APB1_GRP1_FreezePeriph(uint32_t Periphs)
   * @brief  Freeze APB1 peripherals (group2 peripherals)
   * @rmtoll DBGMCU_APB1FZR2 DBG_xxxx_STOP  LL_DBGMCU_APB1_GRP2_FreezePeriph
   * @param  Periphs This parameter can be a combination of the following values:
+  *         @arg @ref LL_DBGMCU_APB1_GRP2_I2C4_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP2_LPTIM2_STOP
+  *
+  *         (*) value not defined in all devices.
   * @retval None
   */
 __STATIC_INLINE void LL_DBGMCU_APB1_GRP2_FreezePeriph(uint32_t Periphs)
@@ -1118,7 +1124,10 @@ __STATIC_INLINE void LL_DBGMCU_APB1_GRP1_UnFreezePeriph(uint32_t Periphs)
   * @brief  Unfreeze APB1 peripherals (group2 peripherals)
   * @rmtoll DBGMCU_APB1FZR2 DBG_xxxx_STOP  LL_DBGMCU_APB1_GRP2_UnFreezePeriph
   * @param  Periphs This parameter can be a combination of the following values:
+  *         @arg @ref LL_DBGMCU_APB1_GRP2_I2C4_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP2_LPTIM2_STOP
+  *
+  *         (*) value not defined in all devices.
   * @retval None
   */
 __STATIC_INLINE void LL_DBGMCU_APB1_GRP2_UnFreezePeriph(uint32_t Periphs)

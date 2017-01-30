@@ -14,6 +14,7 @@
 #include <init.h>
 #include <soc.h>
 #include <arch/cpu.h>
+#include <cortex_m/exc.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -31,12 +32,7 @@ static int stm32f3_init(struct device *arg)
 
 	key = irq_lock();
 
-	/* Clear all faults */
-	_ScbMemFaultAllFaultsReset();
-	_ScbBusFaultAllFaultsReset();
-	_ScbUsageFaultAllFaultsReset();
-
-	_ScbHardFaultAllFaultsReset();
+	_ClearFaults();
 
 	/* Install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise

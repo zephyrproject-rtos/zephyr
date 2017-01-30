@@ -46,7 +46,7 @@ static uint32_t DAC_GetInstance(DAC_Type *base);
 /*! @brief Pointers to DAC bases for each instance. */
 static DAC_Type *const s_dacBases[] = DAC_BASE_PTRS;
 /*! @brief Pointers to DAC clocks for each instance. */
-const clock_ip_name_t s_dacClocks[] = DAC_CLOCKS;
+static const clock_ip_name_t s_dacClocks[] = DAC_CLOCKS;
 
 /*******************************************************************************
  * Codes

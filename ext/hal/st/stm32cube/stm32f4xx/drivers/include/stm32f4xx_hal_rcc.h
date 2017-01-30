@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_rcc.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of RCC HAL module.
   ******************************************************************************
   * @attention
@@ -135,9 +135,9 @@ typedef struct
 /** @defgroup RCC_HSE_Config HSE Config
   * @{
   */
-#define RCC_HSE_OFF                      ((uint8_t)0x00U)
-#define RCC_HSE_ON                       ((uint8_t)0x01U)
-#define RCC_HSE_BYPASS                   ((uint8_t)0x05U)
+#define RCC_HSE_OFF                      ((uint32_t)0x00000000U)
+#define RCC_HSE_ON                       RCC_CR_HSEON
+#define RCC_HSE_BYPASS                   ((uint32_t)(RCC_CR_HSEBYP | RCC_CR_HSEON))
 /**
   * @}
   */
@@ -145,9 +145,9 @@ typedef struct
 /** @defgroup RCC_LSE_Config LSE Config
   * @{
   */
-#define RCC_LSE_OFF                      ((uint8_t)0x00U)
-#define RCC_LSE_ON                       ((uint8_t)0x01U)
-#define RCC_LSE_BYPASS                   ((uint8_t)0x05U)
+#define RCC_LSE_OFF                    ((uint32_t)0x00000000U)
+#define RCC_LSE_ON                     RCC_BDCR_LSEON
+#define RCC_LSE_BYPASS                 ((uint32_t)(RCC_BDCR_LSEBYP | RCC_BDCR_LSEON))
 /**
   * @}
   */
@@ -214,6 +214,8 @@ typedef struct
   */
   
 /** @defgroup RCC_System_Clock_Source System Clock Source 
+  * @note     The RCC_SYSCLKSOURCE_PLLRCLK parameter is available only for
+  *           STM32F446xx devices.
   * @{
   */
 #define RCC_SYSCLKSOURCE_HSI             RCC_CFGR_SW_HSI
@@ -225,6 +227,8 @@ typedef struct
   */
 
 /** @defgroup RCC_System_Clock_Source_Status System Clock Source Status
+  * @note     The RCC_SYSCLKSOURCE_STATUS_PLLRCLK parameter is available only for
+  *           STM32F446xx devices.
   * @{
   */
 #define RCC_SYSCLKSOURCE_STATUS_HSI     RCC_CFGR_SWS_HSI   /*!< HSI used as system clock */
@@ -904,7 +908,23 @@ typedef struct
   *            @arg RCC_HSE_ON: turn ON the HSE oscillator.
   *            @arg RCC_HSE_BYPASS: HSE oscillator bypassed with external clock.
   */
-#define __HAL_RCC_HSE_CONFIG(__STATE__) (*(__IO uint8_t *) RCC_CR_BYTE2_ADDRESS = (__STATE__))
+#define __HAL_RCC_HSE_CONFIG(__STATE__)                         \
+                    do {                                        \
+                      if ((__STATE__) == RCC_HSE_ON)            \
+                      {                                         \
+                        SET_BIT(RCC->CR, RCC_CR_HSEON);         \
+                      }                                         \
+                      else if ((__STATE__) == RCC_HSE_BYPASS)   \
+                      {                                         \
+                        SET_BIT(RCC->CR, RCC_CR_HSEBYP);        \
+                        SET_BIT(RCC->CR, RCC_CR_HSEON);         \
+                      }                                         \
+                      else                                      \
+                      {                                         \
+                        CLEAR_BIT(RCC->CR, RCC_CR_HSEON);       \
+                        CLEAR_BIT(RCC->CR, RCC_CR_HSEBYP);      \
+                      }                                         \
+                    } while(0)
 /**
   * @}
   */
@@ -931,8 +951,23 @@ typedef struct
   *            @arg RCC_LSE_ON: turn ON the LSE oscillator.
   *            @arg RCC_LSE_BYPASS: LSE oscillator bypassed with external clock.
   */
-#define __HAL_RCC_LSE_CONFIG(__STATE__)  (*(__IO uint8_t *) RCC_BDCR_BYTE0_ADDRESS = (__STATE__))
-
+#define __HAL_RCC_LSE_CONFIG(__STATE__) \
+                    do {                                       \
+                      if((__STATE__) == RCC_LSE_ON)            \
+                      {                                        \
+                        SET_BIT(RCC->BDCR, RCC_BDCR_LSEON);    \
+                      }                                        \
+                      else if((__STATE__) == RCC_LSE_BYPASS)   \
+                      {                                        \
+                        SET_BIT(RCC->BDCR, RCC_BDCR_LSEBYP);   \
+                        SET_BIT(RCC->BDCR, RCC_BDCR_LSEON);    \
+                      }                                        \
+                      else                                     \
+                      {                                        \
+                        CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSEON);  \
+                        CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSEBYP); \
+                      }                                        \
+                    } while(0)
 /**
   * @}
   */
@@ -1034,7 +1069,8 @@ typedef struct
   *              - RCC_SYSCLKSOURCE_HSI: HSI oscillator is used as system clock source.
   *              - RCC_SYSCLKSOURCE_HSE: HSE oscillator is used as system clock source.
   *              - RCC_SYSCLKSOURCE_PLLCLK: PLL output is used as system clock source.
-  *              - RCC_SYSCLKSOURCE_PLLRCLK: PLLR output is used as system clock source.
+  *              - RCC_SYSCLKSOURCE_PLLRCLK: PLLR output is used as system clock source. This 
+  *                parameter is available only for STM32F446xx devices.
   */
 #define __HAL_RCC_SYSCLK_CONFIG(__RCC_SYSCLKSOURCE__) MODIFY_REG(RCC->CFGR, RCC_CFGR_SW, (__RCC_SYSCLKSOURCE__))
 
@@ -1044,7 +1080,8 @@ typedef struct
   *              - RCC_SYSCLKSOURCE_STATUS_HSI: HSI used as system clock.
   *              - RCC_SYSCLKSOURCE_STATUS_HSE: HSE used as system clock.
   *              - RCC_SYSCLKSOURCE_STATUS_PLLCLK: PLL used as system clock.
-  *              - RCC_SYSCLKSOURCE_STATUS_PLLRCLK: PLLR used as system clock.
+  *              - RCC_SYSCLKSOURCE_STATUS_PLLRCLK: PLLR used as system clock. This parameter
+  *                is available only for STM32F446xx devices.
   */     
 #define __HAL_RCC_GET_SYSCLK_SOURCE() ((uint32_t)(RCC->CFGR & RCC_CFGR_SWS))
 

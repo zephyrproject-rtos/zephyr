@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_rtc_ex.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Extended RTC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Real Time Clock (RTC) Extended peripheral:
@@ -700,69 +700,68 @@ HAL_StatusTypeDef HAL_RTCEx_DeactivateTamper(RTC_HandleTypeDef *hrtc, uint32_t T
   */
 void HAL_RTCEx_TamperTimeStampIRQHandler(RTC_HandleTypeDef *hrtc)
 { 
-  /* Get the TimeStamp interrupt source enable status */
-  if(__HAL_RTC_TIMESTAMP_GET_IT_SOURCE(hrtc, RTC_IT_TS) != RESET)
-  {
-    /* Get the pending status of the TIMESTAMP Interrupt */
-    if(__HAL_RTC_TIMESTAMP_GET_FLAG(hrtc, RTC_FLAG_TSF) != RESET)
-    {
-      /* TIMESTAMP callback */ 
-      HAL_RTCEx_TimeStampEventCallback(hrtc);
-      
-      /* Clear the TIMESTAMP interrupt pending bit */
-      __HAL_RTC_TIMESTAMP_CLEAR_FLAG(hrtc, RTC_FLAG_TSF);
-    }
-  }
-
-#if defined(RTC_TAMPER1_SUPPORT)
-  /* Get the Tamper1 interrupts source enable status */
-  if(__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP1) != RESET)
-  {
-    /* Get the pending status of the Tamper1 Interrupt */
-    if(__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP1F) != RESET)
-    {
-      /* Tamper1 callback */
-      HAL_RTCEx_Tamper1EventCallback(hrtc);
-
-      /* Clear the Tamper1 interrupt pending bit */
-      __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP1F);
-    }
-  }
-#endif /* RTC_TAMPER1_SUPPORT */
-    
-  /* Get the Tamper2 interrupts source enable status */
-  if(__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP2) != RESET)
-  {
-    /* Get the pending status of the Tamper2 Interrupt */
-    if(__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP2F) != RESET)
-    {
-      /* Tamper2 callback */
-      HAL_RTCEx_Tamper2EventCallback(hrtc);
-
-      /* Clear the Tamper2 interrupt pending bit */
-      __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP2F);
-    }
-  }
-
-#if defined(RTC_TAMPER3_SUPPORT)
-  /* Get the Tamper3 interrupts source enable status */
-  if(__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP3) != RESET)
-  {
-    /* Get the pending status of the Tamper3 Interrupt */
-    if(__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP3F) != RESET)
-    {
-      /* Tamper3 callback */
-      HAL_RTCEx_Tamper3EventCallback(hrtc);
-
-      /* Clear the Tamper3 interrupt pending bit */
-      __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP3F);
-    }
-  }
-#endif /* RTC_TAMPER3_SUPPORT */
-  
   /* Clear the EXTI's Flag for RTC TimeStamp and Tamper */
   __HAL_RTC_TAMPER_TIMESTAMP_EXTI_CLEAR_FLAG();
 
+  /* As Tampers and TimeStamp are sharing the same EXTI line, exit when no more pending event */
+  while(
+        ((__HAL_RTC_TIMESTAMP_GET_IT_SOURCE(hrtc, RTC_IT_TS) != RESET) && (__HAL_RTC_TIMESTAMP_GET_FLAG(hrtc, RTC_FLAG_TSF) != RESET))
+#if defined(RTC_TAMPER1_SUPPORT)
+        || ((__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP1) != RESET) && (__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP1F) != RESET))
+#endif /* RTC_TAMPER1_SUPPORT */
+        || ((__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP2) != RESET) && (__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP2F) != RESET))
+#if defined(RTC_TAMPER3_SUPPORT)
+        || ((__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP3) != RESET) && (__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP3F) != RESET))
+#endif /* RTC_TAMPER3_SUPPORT */
+       )
+  {
+        
+    /* Get the TimeStamp interrupt source enable status and pending flag status */
+    if((__HAL_RTC_TIMESTAMP_GET_IT_SOURCE(hrtc, RTC_IT_TS) != RESET) && (__HAL_RTC_TIMESTAMP_GET_FLAG(hrtc, RTC_FLAG_TSF) != RESET))
+    {
+      /* Clear the TIMESTAMP interrupt pending bit */
+      __HAL_RTC_TIMESTAMP_CLEAR_FLAG(hrtc, RTC_FLAG_TSF);
+      
+      /* TIMESTAMP callback */ 
+      HAL_RTCEx_TimeStampEventCallback(hrtc);
+    }
+
+#if defined(RTC_TAMPER1_SUPPORT)
+    /* Get the Tamper1 interrupt source enable status and pending flag status */
+    if((__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP1) != RESET) && (__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP1F) != RESET))
+    {
+      /* Clear the Tamper1 interrupt pending bit */
+      __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP1F);
+      
+      /* Tamper1 callback */
+      HAL_RTCEx_Tamper1EventCallback(hrtc);
+    }
+#endif /* RTC_TAMPER1_SUPPORT */
+    
+    /* Get the Tamper2 interrupt source enable status and pending flag status */
+    if((__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP2) != RESET) && (__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP2F) != RESET))
+    {
+      /* Clear the Tamper2 interrupt pending bit */
+      __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP2F);
+      
+      /* Tamper2 callback */
+      HAL_RTCEx_Tamper2EventCallback(hrtc);
+    }
+
+#if defined(RTC_TAMPER3_SUPPORT)
+    /* Get the Tamper3 interrupts source enable status and pending flag status */
+    if((__HAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP | RTC_IT_TAMP3) != RESET) && (__HAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP3F) != RESET))
+    {
+      /* Clear the Tamper3 interrupt pending bit */
+      __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP3F);
+      
+      /* Tamper3 callback */
+      HAL_RTCEx_Tamper3EventCallback(hrtc);
+    }
+#endif /* RTC_TAMPER3_SUPPORT */
+  
+  }
+  
   /* Change RTC state */
   hrtc->State = HAL_RTC_STATE_READY;
 }
@@ -1123,11 +1122,8 @@ HAL_StatusTypeDef HAL_RTCEx_SetWakeUpTimer_IT(RTC_HandleTypeDef *hrtc, uint32_t 
       }
     }
   }
-  /* Disable the Wake-Up timer */
-  __HAL_RTC_WAKEUPTIMER_DISABLE(hrtc);
 
-  /* Clear flag Wake-Up */
-  __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(hrtc, RTC_FLAG_WUTF);
+  __HAL_RTC_WAKEUPTIMER_DISABLE(hrtc);
 
   tickstart = HAL_GetTick();
 
@@ -1249,20 +1245,19 @@ uint32_t HAL_RTCEx_GetWakeUpTimer(RTC_HandleTypeDef *hrtc)
   */
 void HAL_RTCEx_WakeUpTimerIRQHandler(RTC_HandleTypeDef *hrtc)
 {
-  /* Get the pending status of the WAKEUPTIMER Interrupt */
-  if(__HAL_RTC_WAKEUPTIMER_GET_FLAG(hrtc, RTC_FLAG_WUTF) != RESET)
-  {
-    /* WAKEUPTIMER callback */ 
-    HAL_RTCEx_WakeUpTimerEventCallback(hrtc);
-      
-    /* Clear the WAKEUPTIMER interrupt pending bit */
-    __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(hrtc, RTC_FLAG_WUTF);
-  }
-
-
   /* Clear the EXTI's line Flag for RTC WakeUpTimer */
   __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
   
+  /* Get the pending status of the WAKEUPTIMER Interrupt */
+  if(__HAL_RTC_WAKEUPTIMER_GET_FLAG(hrtc, RTC_FLAG_WUTF) != RESET)
+  {   
+    /* Clear the WAKEUPTIMER interrupt pending bit */
+    __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(hrtc, RTC_FLAG_WUTF);
+
+    /* WAKEUPTIMER callback */ 
+    HAL_RTCEx_WakeUpTimerEventCallback(hrtc);
+  }
+
   /* Change RTC state */
   hrtc->State = HAL_RTC_STATE_READY;
 }

@@ -221,23 +221,23 @@ static inline void LLWU_EnableInternalModuleInterruptWakup(LLWU_Type *base, uint
  */
 static inline bool LLWU_GetInternalWakeupModuleFlag(LLWU_Type *base, uint32_t moduleIndex)
 {
+#if (defined(FSL_FEATURE_LLWU_HAS_MF) && FSL_FEATURE_LLWU_HAS_MF)
 #if (defined(FSL_FEATURE_LLWU_REG_BITWIDTH) && (FSL_FEATURE_LLWU_REG_BITWIDTH == 32))
     return (bool)(base->MF & (1U << moduleIndex));
 #else
-#if (defined(FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN) && (FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN > 16))
-#if (defined(FSL_FEATURE_LLWU_HAS_PF) && FSL_FEATURE_LLWU_HAS_PF)
     return (bool)(base->MF5 & (1U << moduleIndex));
+#endif /* FSL_FEATURE_LLWU_REG_BITWIDTH */
 #else
+#if (defined(FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN) && (FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN > 16))
     return (bool)(base->F5 & (1U << moduleIndex));
-#endif /* FSL_FEATURE_LLWU_HAS_PF */
 #else
 #if (defined(FSL_FEATURE_LLWU_HAS_PF) && FSL_FEATURE_LLWU_HAS_PF)
     return (bool)(base->PF3 & (1U << moduleIndex));
 #else
     return (bool)(base->F3 & (1U << moduleIndex));
-#endif
+#endif /* FSL_FEATURE_LLWU_HAS_PF */
 #endif /* FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN */
-#endif /* FSL_FEATURE_LLWU_REG_BITWIDTH */
+#endif /* FSL_FEATURE_LLWU_HAS_MF */
 }
 #endif /* FSL_FEATURE_LLWU_HAS_INTERNAL_MODULE */
 

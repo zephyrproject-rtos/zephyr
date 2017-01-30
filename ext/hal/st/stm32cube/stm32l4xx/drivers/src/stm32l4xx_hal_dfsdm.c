@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dfsdm.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Digital Filter for Sigma-Delta Modulators
   *          (DFSDM) peripherals:
@@ -195,7 +195,8 @@
   * @{
   */
 #ifdef HAL_DFSDM_MODULE_ENABLED
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
+    defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
 /** @defgroup DFSDM DFSDM
   * @brief DFSDM HAL driver module
   * @{
@@ -230,7 +231,11 @@
 #define DFSDM_MSB_MASK               0xFFFF0000U
 #define DFSDM_LSB_MASK               0x0000FFFFU
 #define DFSDM_CKAB_TIMEOUT           5000U
+#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx)
+#define DFSDM1_CHANNEL_NUMBER           4U
+#else /* STM32L451xx || STM32L452xx || STM32L462xx */
 #define DFSDM1_CHANNEL_NUMBER           8U
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
 /**
   * @}
   */
@@ -2820,6 +2825,7 @@ static uint32_t DFSDM_GetChannelFromInstance(DFSDM_Channel_TypeDef* Instance)
   {
     channel = 3;
   }
+#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
   else if(Instance == DFSDM1_Channel4)
   {
     channel = 4;
@@ -2836,6 +2842,7 @@ static uint32_t DFSDM_GetChannelFromInstance(DFSDM_Channel_TypeDef* Instance)
   {
     channel = 7;
   }
+#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
 
   return channel;
 }
@@ -3009,7 +3016,7 @@ static void DFSDM_InjConvStop(DFSDM_Filter_HandleTypeDef* hdfsdm_filter)
 /**
   * @}
   */
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
 #endif /* HAL_DFSDM_MODULE_ENABLED */
 /**
   * @}

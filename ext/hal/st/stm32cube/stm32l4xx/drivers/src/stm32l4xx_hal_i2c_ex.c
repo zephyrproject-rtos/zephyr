@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_i2c_ex.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   I2C Extended HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of I2C Extended peripheral:
@@ -290,6 +290,8 @@ HAL_StatusTypeDef HAL_I2CEx_DisableWakeUp (I2C_HandleTypeDef *hi2c)
   *        only by using I2C_FASTMODEPLUS_I2C2 parameter.
   * @note  For all I2C3 pins fast mode plus driving capability can be enabled
   *        only by using I2C_FASTMODEPLUS_I2C3 parameter.
+  * @note  For all I2C4 pins fast mode plus driving capability can be enabled
+  *        only by using I2C_FASTMODEPLUS_I2C4 parameter.
   * @retval None
   */
 void HAL_I2CEx_EnableFastModePlus(uint32_t ConfigFastModePlus)
@@ -317,6 +319,8 @@ void HAL_I2CEx_EnableFastModePlus(uint32_t ConfigFastModePlus)
   *        only by using I2C_FASTMODEPLUS_I2C2 parameter.
   * @note  For all I2C3 pins fast mode plus driving capability can be disabled
   *        only by using I2C_FASTMODEPLUS_I2C3 parameter.
+  * @note  For all I2C4 pins fast mode plus driving capability can be disabled
+  *        only by using I2C_FASTMODEPLUS_I2C4 parameter.
   * @retval None
   */
 void HAL_I2CEx_DisableFastModePlus(uint32_t ConfigFastModePlus)

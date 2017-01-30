@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_sai.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of SAI HAL module.
   ******************************************************************************
   * @attention
@@ -102,11 +102,11 @@ typedef struct
   uint32_t NoDivider;           /*!< Specifies whether master clock will be divided or not.
                                      This parameter can be a value of @ref SAI_Block_NoDivider
                                      @note: If bit NODIV in the SAI_xCR1 register is cleared, the frame length
-                                            should be aligned to a number equal to a power of 2, from 8 to 256.
-                                            If bit NODIV in the SAI_xCR1 register is set, the frame length can
-                                            take any of the values without constraint since the input clock of
-                                            the audio block should be equal to the bit clock.
-                                            There is no MCLK_x clock which can be output. */
+                                              should be aligned to a number equal to a power of 2, from 8 to 256.
+                                              If bit NODIV in the SAI_xCR1 register is set, the frame length can
+                                              take any of the values without constraint since the input clock of
+                                              the audio block should be equal to the bit clock.
+                                              There is no MCLK_x clock which can be output. */
 
   uint32_t FIFOThreshold;       /*!< Specifies SAI Block FIFO threshold.
                                      This parameter can be a value of @ref SAI_Block_Fifo_Threshold */

@@ -7,7 +7,7 @@ Overview
 ********
 
 The Nucleo F401RE board features an ARM Cortex-M4 based STM32F401RE MCU
-with a wide range of connnectivity support and configurations Here are
+with a wide range of connectivity support and configurations Here are
 some highlights of the Nucleo F401RE board:
 
 
@@ -59,7 +59,7 @@ More information about STM32F401RE can be found here:
        - `STM32F401 reference manual`_
 
 Supported Features
-===================
+==================
 
 The Zephyr nucleo_401re board configuration supports the following hardware features:
 
@@ -116,19 +116,19 @@ Default Zephyr Peripheral Mapping:
 - USER_PB : PC13
 - LD2 : PA5
 
-
 System Clock
 ============
 
-Nucleo F401RE System Clock could be driven by internal or external oscilator,
+Nucleo F401RE System Clock could be driven by internal or external oscillator,
 as well as main PLL clock. By default System clock is driven by PLL clock at 84MHz,
 driven by 8MHz high speed external clock.
-
 
 Serial Port
 ===========
 
 Nucleo F401RE board has 3 UARTs. The Zephyr console output is assigned to UART2.
+Default settings are 115200 8N1.
+
 
 Programming and Debugging
 *************************
@@ -164,17 +164,27 @@ Then, enter the following command:
 
    $ make BOARD=nucleo_f401re flash
 
-Run a serial host program in order to connect with your Nucleo board:
+Run a serial host program to connect with your Nucleo board:
 
 .. code-block:: console
 
    $ minicom -D /dev/ttyACM0
 
-You should be able to see the following message:
+You should see the following message:
 
 .. code-block:: console
 
    Hello World! arm
+
+
+Debugging
+=========
+
+Access gdb with the following make command:
+
+.. code-block:: console
+
+   $ make BOARD=nucleo_f411re debug
 
 
 .. _Nucleo F401RE website:

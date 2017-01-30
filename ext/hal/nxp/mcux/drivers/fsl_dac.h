@@ -104,15 +104,15 @@ typedef enum _dac_buffer_watermark
 #if defined(FSL_FEATURE_DAC_HAS_WATERMARK_1_WORD) && FSL_FEATURE_DAC_HAS_WATERMARK_1_WORD
     kDAC_BufferWatermark1Word = 0U, /*!< 1 word  away from the upper limit. */
 #endif                              /* FSL_FEATURE_DAC_HAS_WATERMARK_1_WORD */
-#if defined(FSL_FEATURE_DAC_HAS_WATERMARK_2_WORD) && FSL_FEATURE_DAC_HAS_WATERMARK_2_WORD
+#if defined(FSL_FEATURE_DAC_HAS_WATERMARK_2_WORDS) && FSL_FEATURE_DAC_HAS_WATERMARK_2_WORDS
     kDAC_BufferWatermark2Word = 1U, /*!< 2 words away from the upper limit. */
-#endif                              /* FSL_FEATURE_DAC_HAS_WATERMARK_2_WORD */
-#if defined(FSL_FEATURE_DAC_HAS_WATERMARK_3_WORD) && FSL_FEATURE_DAC_HAS_WATERMARK_3_WORD
+#endif                              /* FSL_FEATURE_DAC_HAS_WATERMARK_2_WORDS */
+#if defined(FSL_FEATURE_DAC_HAS_WATERMARK_3_WORDS) && FSL_FEATURE_DAC_HAS_WATERMARK_3_WORDS
     kDAC_BufferWatermark3Word = 2U, /*!< 3 words away from the upper limit. */
-#endif                              /* FSL_FEATURE_DAC_HAS_WATERMARK_3_WORD */
-#if defined(FSL_FEATURE_DAC_HAS_WATERMARK_4_WORD) && FSL_FEATURE_DAC_HAS_WATERMARK_4_WORD
+#endif                              /* FSL_FEATURE_DAC_HAS_WATERMARK_3_WORDS */
+#if defined(FSL_FEATURE_DAC_HAS_WATERMARK_4_WORDS) && FSL_FEATURE_DAC_HAS_WATERMARK_4_WORDS
     kDAC_BufferWatermark4Word = 3U, /*!< 4 words away from the upper limit. */
-#endif                              /* FSL_FEATURE_DAC_HAS_WATERMARK_4_WORD */
+#endif                              /* FSL_FEATURE_DAC_HAS_WATERMARK_4_WORDS */
 } dac_buffer_watermark_t;
 #endif /* FSL_FEATURE_DAC_HAS_WATERMARK_SELECTION */
 

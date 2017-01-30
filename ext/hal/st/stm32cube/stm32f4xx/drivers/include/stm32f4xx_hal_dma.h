@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dma.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of DMA HAL module.
   ******************************************************************************
   * @attention
@@ -225,6 +225,16 @@ typedef struct __DMA_HandleTypeDef
 #define DMA_CHANNEL_5        ((uint32_t)0x0A000000U)  /*!< DMA Channel 5 */
 #define DMA_CHANNEL_6        ((uint32_t)0x0C000000U)  /*!< DMA Channel 6 */
 #define DMA_CHANNEL_7        ((uint32_t)0x0E000000U)  /*!< DMA Channel 7 */
+#if defined (DMA_SxCR_CHSEL_3)
+#define DMA_CHANNEL_8        ((uint32_t)0x10000000U)  /*!< DMA Channel 8 */
+#define DMA_CHANNEL_9        ((uint32_t)0x12000000U)  /*!< DMA Channel 9 */
+#define DMA_CHANNEL_10       ((uint32_t)0x14000000U)  /*!< DMA Channel 10 */
+#define DMA_CHANNEL_11       ((uint32_t)0x16000000U)  /*!< DMA Channel 11 */
+#define DMA_CHANNEL_12       ((uint32_t)0x18000000U)  /*!< DMA Channel 12 */
+#define DMA_CHANNEL_13       ((uint32_t)0x1A000000U)  /*!< DMA Channel 13 */
+#define DMA_CHANNEL_14       ((uint32_t)0x1C000000U)  /*!< DMA Channel 14 */
+#define DMA_CHANNEL_15       ((uint32_t)0x1E000000U)  /*!< DMA Channel 15 */
+#endif /* DMA_SxCR_CHSEL_3 */
 /**
   * @}
   */
@@ -708,6 +718,24 @@ uint32_t             HAL_DMA_GetError(DMA_HandleTypeDef *hdma);
   * @brief    DMA private macros 
   * @{
   */
+#if defined (DMA_SxCR_CHSEL_3)
+#define IS_DMA_CHANNEL(CHANNEL) (((CHANNEL) == DMA_CHANNEL_0) || \
+                                 ((CHANNEL) == DMA_CHANNEL_1) || \
+                                 ((CHANNEL) == DMA_CHANNEL_2) || \
+                                 ((CHANNEL) == DMA_CHANNEL_3) || \
+                                 ((CHANNEL) == DMA_CHANNEL_4) || \
+                                 ((CHANNEL) == DMA_CHANNEL_5) || \
+                                 ((CHANNEL) == DMA_CHANNEL_6) || \
+                                 ((CHANNEL) == DMA_CHANNEL_7) || \
+                                 ((CHANNEL) == DMA_CHANNEL_8) || \
+                                 ((CHANNEL) == DMA_CHANNEL_9) || \
+                                 ((CHANNEL) == DMA_CHANNEL_10)|| \
+                                 ((CHANNEL) == DMA_CHANNEL_11)|| \
+                                 ((CHANNEL) == DMA_CHANNEL_12)|| \
+                                 ((CHANNEL) == DMA_CHANNEL_13)|| \
+                                 ((CHANNEL) == DMA_CHANNEL_14)|| \
+                                 ((CHANNEL) == DMA_CHANNEL_15))
+#else
 #define IS_DMA_CHANNEL(CHANNEL) (((CHANNEL) == DMA_CHANNEL_0) || \
                                  ((CHANNEL) == DMA_CHANNEL_1) || \
                                  ((CHANNEL) == DMA_CHANNEL_2) || \
@@ -716,6 +744,7 @@ uint32_t             HAL_DMA_GetError(DMA_HandleTypeDef *hdma);
                                  ((CHANNEL) == DMA_CHANNEL_5) || \
                                  ((CHANNEL) == DMA_CHANNEL_6) || \
                                  ((CHANNEL) == DMA_CHANNEL_7))
+#endif /* DMA_SxCR_CHSEL_3 */
 
 #define IS_DMA_DIRECTION(DIRECTION) (((DIRECTION) == DMA_PERIPH_TO_MEMORY ) || \
                                      ((DIRECTION) == DMA_MEMORY_TO_PERIPH)  || \

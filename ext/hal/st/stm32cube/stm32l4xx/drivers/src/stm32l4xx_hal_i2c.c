@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_i2c.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   I2C HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Inter Integrated Circuit (I2C) peripheral:
@@ -2605,13 +2605,13 @@ HAL_StatusTypeDef HAL_I2C_Master_Sequential_Transmit_IT(I2C_HandleTypeDef *hi2c,
       hi2c->XferSize = hi2c->XferCount;
       xfermode = hi2c->XferOptions;
     }
-
-    /* If transfer direction not change, do not generate Restart Condition */
-    /* Mean Previous state is same as current state */
+      
+      /* If transfer direction not change, do not generate Restart Condition */
+      /* Mean Previous state is same as current state */
     if(hi2c->PreviousState == I2C_STATE_MASTER_BUSY_TX)
-    {
-      xferrequest = I2C_NO_STARTSTOP;
-    }
+      {
+        xferrequest = I2C_NO_STARTSTOP;
+      }
 
     /* Send Slave Address and set NBYTES to write */
     I2C_TransferConfig(hi2c, DevAddress, hi2c->XferSize, xfermode, xferrequest);
@@ -2679,11 +2679,11 @@ HAL_StatusTypeDef HAL_I2C_Master_Sequential_Receive_IT(I2C_HandleTypeDef *hi2c, 
       xfermode = hi2c->XferOptions;
     }
 
-    /* If transfer direction not change, do not generate Restart Condition */
-    /* Mean Previous state is same as current state */
-    if(hi2c->PreviousState == I2C_STATE_MASTER_BUSY_RX)
-    {
-      xferrequest = I2C_NO_STARTSTOP;
+      /* If transfer direction not change, do not generate Restart Condition */
+      /* Mean Previous state is same as current state */
+      if(hi2c->PreviousState == I2C_STATE_MASTER_BUSY_RX)
+      {
+        xferrequest = I2C_NO_STARTSTOP;
     }
 
     /* Send Slave Address and set NBYTES to read */
@@ -2720,7 +2720,7 @@ HAL_StatusTypeDef HAL_I2C_Slave_Sequential_Transmit_IT(I2C_HandleTypeDef *hi2c, 
   /* Check the parameters */
   assert_param(IS_I2C_TRANSFER_OPTIONS_REQUEST(XferOptions));
 
-  if(hi2c->State == HAL_I2C_STATE_LISTEN)
+  if((hi2c->State & HAL_I2C_STATE_LISTEN) == HAL_I2C_STATE_LISTEN)
   {
     if((pData == NULL) || (Size == 0U))
     {
@@ -2732,6 +2732,14 @@ HAL_StatusTypeDef HAL_I2C_Slave_Sequential_Transmit_IT(I2C_HandleTypeDef *hi2c, 
 
     /* Process Locked */
     __HAL_LOCK(hi2c);
+    
+    /* I2C cannot manage full duplex exchange so disable previous IT enabled if any */
+    /* and then toggle the HAL slave RX state to TX state */
+    if(hi2c->State == HAL_I2C_STATE_BUSY_RX_LISTEN)
+    {
+      /* Disable associated Interrupts */
+      I2C_Disable_IRQ(hi2c, I2C_XFER_RX_IT);
+    }
 
     hi2c->State     = HAL_I2C_STATE_BUSY_TX_LISTEN;
     hi2c->Mode      = HAL_I2C_MODE_SLAVE;
@@ -2786,7 +2794,7 @@ HAL_StatusTypeDef HAL_I2C_Slave_Sequential_Receive_IT(I2C_HandleTypeDef *hi2c, u
   /* Check the parameters */
   assert_param(IS_I2C_TRANSFER_OPTIONS_REQUEST(XferOptions));
 
-  if(hi2c->State == HAL_I2C_STATE_LISTEN)
+  if((hi2c->State & HAL_I2C_STATE_LISTEN) == HAL_I2C_STATE_LISTEN)
   {
     if((pData == NULL) || (Size == 0U))
     {
@@ -2798,7 +2806,15 @@ HAL_StatusTypeDef HAL_I2C_Slave_Sequential_Receive_IT(I2C_HandleTypeDef *hi2c, u
 
     /* Process Locked */
     __HAL_LOCK(hi2c);
-
+    
+    /* I2C cannot manage full duplex exchange so disable previous IT enabled if any */
+    /* and then toggle the HAL slave TX state to RX state */
+    if(hi2c->State == HAL_I2C_STATE_BUSY_TX_LISTEN)
+    {
+      /* Disable associated Interrupts */
+      I2C_Disable_IRQ(hi2c, I2C_XFER_TX_IT);
+    }
+    
     hi2c->State     = HAL_I2C_STATE_BUSY_RX_LISTEN;
     hi2c->Mode      = HAL_I2C_MODE_SLAVE;
     hi2c->ErrorCode = HAL_I2C_ERROR_NONE;
@@ -4331,12 +4347,12 @@ static void I2C_DMAMasterTransmitCplt(DMA_HandleTypeDef *hdma)
   */
 static void I2C_DMASlaveTransmitCplt(DMA_HandleTypeDef *hdma)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hdma);
+
   /* No specific action, Master fully manage the generation of STOP condition */
   /* Mean that this generation can arrive at any time, at the end or during DMA process */
   /* So STOP condition should be manage through Interrupt treatment */
-
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(hdma);
 }
 
 /**
@@ -4388,12 +4404,12 @@ static void I2C_DMAMasterReceiveCplt(DMA_HandleTypeDef *hdma)
   */
 static void I2C_DMASlaveReceiveCplt(DMA_HandleTypeDef *hdma)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hdma);
+
   /* No specific action, Master fully manage the generation of STOP condition */
   /* Mean that this generation can arrive at any time, at the end or during DMA process */
   /* So STOP condition should be manage through Interrupt treatment */
-
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(hdma);
 }
 
 /**

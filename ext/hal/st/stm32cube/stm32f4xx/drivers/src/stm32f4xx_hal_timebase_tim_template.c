@@ -2,11 +2,11 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_timebase_tim_template.c 
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   HAL time base based on the hardware TIM Template.
   *    
-  *          This file override the native HAL time base functions (defined as weak)
+  *          This file overrides the native HAL time base functions (defined as weak)
   *          the TIM time base:
   *           + Intializes the TIM peripheral generate a Period elapsed Event each 1ms
   *           + HAL_IncTick is called inside HAL_TIM_PeriodElapsedCallback ie each 1ms
@@ -48,7 +48,7 @@
   * @{
   */
 
-/** @addtogroup HAL_TimeBase
+/** @addtogroup HAL_TimeBase_TIM
   * @{
   */ 
 
@@ -63,7 +63,7 @@ void TIM6_DAC_IRQHandler(void);
 
 /**
   * @brief  This function configures the TIM6 as a time base source. 
-  *         The time source is configured  to have 1ms time base with a dedicated 
+  *         The time source is configured to have 1ms time base with a dedicated 
   *         Tick interrupt priority. 
   * @note   This function is called  automatically at the beginning of program after
   *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig(). 
@@ -131,7 +131,6 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
 /**
   * @brief  Suspend Tick increment.
   * @note   Disable the tick increment by disabling TIM6 update interrupt.
-  * @param  None
   * @retval None
   */
 void HAL_SuspendTick(void)
@@ -143,7 +142,6 @@ void HAL_SuspendTick(void)
 /**
   * @brief  Resume Tick increment.
   * @note   Enable the tick increment by Enabling TIM6 update interrupt.
-  * @param  None
   * @retval None
   */
 void HAL_ResumeTick(void)
@@ -167,7 +165,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 /**
   * @brief  This function handles TIM interrupt request.
-  * @param  None
   * @retval None
   */
 void TIM6_DAC_IRQHandler(void)

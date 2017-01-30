@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Force build system to create built-in.o even though we do not (yet)
-# have any C files to compile
-obj- += dummy.o
+ccflags-y +=-I$(srctree)/drivers
+
+obj-$(CONFIG_PINMUX_MPS2) += pinmux.o

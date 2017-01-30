@@ -35,11 +35,11 @@ void k_thread_abort(k_tid_t thread)
 	_thread_monitor_exit(thread);
 
 	if (_current == thread) {
-		if (_ScbIsInThreadMode()) {
+		if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) == 0) {
 			_Swap(key);
 			CODE_UNREACHABLE;
 		} else {
-			_ScbPendsvSet();
+			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 		}
 	}
 

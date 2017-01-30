@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_rcc.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of RCC LL module.
   ******************************************************************************
   * @attention
@@ -105,6 +105,18 @@ static const uint8_t aRCC_APBAHBPrescTable[8] = {0, 0, 0, 0, 1, 2, 3, 4};
 #define RCC_POSITION_PLLSAI2P   (uint32_t)POSITION_VAL(RCC_PLLSAI2CFGR_PLLSAI2P)
 #define RCC_POSITION_PLLSAI2R   (uint32_t)POSITION_VAL(RCC_PLLSAI2CFGR_PLLSAI2R)
 #endif /* RCC_PLLSAI2_SUPPORT */
+#define RCC_POSITION_I2C1SEL    12U
+#if defined(I2C2)
+#define RCC_POSITION_I2C2SEL    14U
+#endif
+#define RCC_POSITION_I2C3SEL    16U
+#if defined(I2C4)
+#define RCC_POSITION_I2C4SEL    0U
+#endif
+
+/* Offset used to access to RCC_CCIPR and RCC_CCIPR2 registers */
+#define RCC_OFFSET_CCIPR        0U
+#define RCC_OFFSET_CCIPR2       0x14U
 
 /**
   * @}
@@ -415,7 +427,7 @@ typedef struct
   * @{
   */
 #define LL_RCC_PERIPH_FREQUENCY_NO         (uint32_t)0x00000000       /*!< No clock enabled for the peripheral            */
-#define LL_RCC_PERIPH_FREQUENCY_NA    (uint32_t)0xFFFFFFFFU       /*!< Frequency cannot be provided as external clock */
+#define LL_RCC_PERIPH_FREQUENCY_NA         (uint32_t)0xFFFFFFFFU       /*!< Frequency cannot be provided as external clock */
 /**
   * @}
   */
@@ -477,17 +489,22 @@ typedef struct
 /** @defgroup RCC_LL_EC_I2C1_CLKSOURCE  Peripheral I2C clock source selection
   * @{
   */
-#define LL_RCC_I2C1_CLKSOURCE_PCLK1        (uint32_t)((RCC_CCIPR_I2C1SEL << 4) | (0x00000000 >> 4))          /*!< PCLK1 clock used as I2C1 clock source */
-#define LL_RCC_I2C1_CLKSOURCE_SYSCLK       (uint32_t)((RCC_CCIPR_I2C1SEL << 4) | (RCC_CCIPR_I2C1SEL_0 >> 4)) /*!< SYSCLK clock used as I2C1 clock source */
-#define LL_RCC_I2C1_CLKSOURCE_HSI          (uint32_t)((RCC_CCIPR_I2C1SEL << 4) | (RCC_CCIPR_I2C1SEL_1 >> 4)) /*!< HSI clock used as I2C1 clock source */
+#define LL_RCC_I2C1_CLKSOURCE_PCLK1        (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C1SEL << 16U))                                                 /*!< PCLK1 clock used as I2C1 clock source */
+#define LL_RCC_I2C1_CLKSOURCE_SYSCLK       (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C1SEL << 16U) | (RCC_CCIPR_I2C1SEL_0 >> RCC_POSITION_I2C1SEL)) /*!< SYSCLK clock used as I2C1 clock source */
+#define LL_RCC_I2C1_CLKSOURCE_HSI          (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C1SEL << 16U) | (RCC_CCIPR_I2C1SEL_1 >> RCC_POSITION_I2C1SEL)) /*!< HSI clock used as I2C1 clock source */
 #if defined(RCC_CCIPR_I2C2SEL)
-#define LL_RCC_I2C2_CLKSOURCE_PCLK1        (uint32_t)((RCC_CCIPR_I2C2SEL << 4) | (0x00000000 >> 4))          /*!< PCLK1 clock used as I2C2 clock source */
-#define LL_RCC_I2C2_CLKSOURCE_SYSCLK       (uint32_t)((RCC_CCIPR_I2C2SEL << 4) | (RCC_CCIPR_I2C2SEL_0 >> 4)) /*!< SYSCLK clock used as I2C2 clock source */
-#define LL_RCC_I2C2_CLKSOURCE_HSI          (uint32_t)((RCC_CCIPR_I2C2SEL << 4) | (RCC_CCIPR_I2C2SEL_1 >> 4)) /*!< HSI clock used as I2C2 clock source */
+#define LL_RCC_I2C2_CLKSOURCE_PCLK1        (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C2SEL << 16U))                                                 /*!< PCLK1 clock used as I2C2 clock source */
+#define LL_RCC_I2C2_CLKSOURCE_SYSCLK       (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C2SEL << 16U) | (RCC_CCIPR_I2C2SEL_0 >> RCC_POSITION_I2C2SEL)) /*!< SYSCLK clock used as I2C2 clock source */
+#define LL_RCC_I2C2_CLKSOURCE_HSI          (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C2SEL << 16U) | (RCC_CCIPR_I2C2SEL_1 >> RCC_POSITION_I2C2SEL)) /*!< HSI clock used as I2C2 clock source */
 #endif /* RCC_CCIPR_I2C2SEL */
-#define LL_RCC_I2C3_CLKSOURCE_PCLK1        (uint32_t)((RCC_CCIPR_I2C3SEL << 4) | (0x00000000 >> 4))          /*!< PCLK1 clock used as I2C3 clock source */
-#define LL_RCC_I2C3_CLKSOURCE_SYSCLK       (uint32_t)((RCC_CCIPR_I2C3SEL << 4) | (RCC_CCIPR_I2C3SEL_0 >> 4)) /*!< SYSCLK clock used as I2C3 clock source */
-#define LL_RCC_I2C3_CLKSOURCE_HSI          (uint32_t)((RCC_CCIPR_I2C3SEL << 4) | (RCC_CCIPR_I2C3SEL_1 >> 4)) /*!< HSI clock used as I2C3 clock source */
+#define LL_RCC_I2C3_CLKSOURCE_PCLK1        (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C3SEL << 16U))                                                 /*!< PCLK1 clock used as I2C3 clock source */
+#define LL_RCC_I2C3_CLKSOURCE_SYSCLK       (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C3SEL << 16U) | (RCC_CCIPR_I2C3SEL_0 >> RCC_POSITION_I2C3SEL)) /*!< SYSCLK clock used as I2C3 clock source */
+#define LL_RCC_I2C3_CLKSOURCE_HSI          (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C3SEL << 16U) | (RCC_CCIPR_I2C3SEL_1 >> RCC_POSITION_I2C3SEL)) /*!< HSI clock used as I2C3 clock source */
+#if defined(RCC_CCIPR2_I2C4SEL)
+#define LL_RCC_I2C4_CLKSOURCE_PCLK1        (uint32_t)((RCC_OFFSET_CCIPR2 << 24U) | (RCC_POSITION_I2C4SEL << 16U))                                                  /*!< PCLK1 clock used as I2C4 clock source */
+#define LL_RCC_I2C4_CLKSOURCE_SYSCLK       (uint32_t)((RCC_OFFSET_CCIPR2 << 24U) | (RCC_POSITION_I2C4SEL << 16U) | (RCC_CCIPR2_I2C4SEL_0 >> RCC_POSITION_I2C4SEL)) /*!< SYSCLK clock used as I2C4 clock source */
+#define LL_RCC_I2C4_CLKSOURCE_HSI          (uint32_t)((RCC_OFFSET_CCIPR2 << 24U) | (RCC_POSITION_I2C4SEL << 16U) | (RCC_CCIPR2_I2C4SEL_1 >> RCC_POSITION_I2C4SEL)) /*!< HSI clock used as I2C4 clock source */
+#endif /* RCC_CCIPR2_I2C4SEL */
 /**
   * @}
   */
@@ -577,6 +594,7 @@ typedef struct
   * @}
   */
 
+#if defined(SWPMI1)
 /** @defgroup RCC_LL_EC_SWPMI1_CLKSOURCE  Peripheral SWPMI clock source selection
   * @{
   */
@@ -585,6 +603,7 @@ typedef struct
 /**
   * @}
   */
+#endif /* SWPMI1 */
 
 #if defined(DFSDM1_Channel0)
 /** @defgroup RCC_LL_EC_DFSDM_CLKSOURCE  Peripheral DFSDM clock source selection
@@ -635,11 +654,14 @@ typedef struct
 /** @defgroup RCC_LL_EC_I2C1 Peripheral I2C get clock source
   * @{
   */
-#define LL_RCC_I2C1_CLKSOURCE              RCC_CCIPR_I2C1SEL /*!< I2C1 Clock source selection */
+#define LL_RCC_I2C1_CLKSOURCE              (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C1SEL << 16U) | (RCC_CCIPR_I2C1SEL >> RCC_POSITION_I2C1SEL)) /*!< I2C1 Clock source selection */
 #if defined(RCC_CCIPR_I2C2SEL)
-#define LL_RCC_I2C2_CLKSOURCE              RCC_CCIPR_I2C2SEL /*!< I2C2 Clock source selection */
+#define LL_RCC_I2C2_CLKSOURCE              (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C2SEL << 16U) | (RCC_CCIPR_I2C2SEL >> RCC_POSITION_I2C2SEL)) /*!< I2C2 Clock source selection */
 #endif /* RCC_CCIPR_I2C2SEL */
-#define LL_RCC_I2C3_CLKSOURCE              RCC_CCIPR_I2C3SEL /*!< I2C3 Clock source selection */
+#define LL_RCC_I2C3_CLKSOURCE              (uint32_t)((RCC_OFFSET_CCIPR << 24U) | (RCC_POSITION_I2C3SEL << 16U) | (RCC_CCIPR_I2C3SEL >> RCC_POSITION_I2C3SEL)) /*!< I2C3 Clock source selection */
+#if defined(RCC_CCIPR2_I2C4SEL)
+#define LL_RCC_I2C4_CLKSOURCE              (uint32_t)((RCC_OFFSET_CCIPR2 << 24U) | (RCC_POSITION_I2C4SEL << 16U) | (RCC_CCIPR2_I2C4SEL >> RCC_POSITION_I2C4SEL)) /*!< I2C4 Clock source selection */
+#endif /* RCC_CCIPR2_I2C4SEL */
 /**
   * @}
   */
@@ -699,6 +721,7 @@ typedef struct
   * @}
   */
 
+#if defined(SWPMI1)
 /** @defgroup RCC_LL_EC_SWPMI1  Peripheral SWPMI get clock source
   * @{
   */
@@ -706,6 +729,7 @@ typedef struct
 /**
   * @}
   */
+#endif /* SWPMI1 */
 
 #if defined(DFSDM1_Channel0)
 /** @defgroup RCC_LL_EC_DFSDM  Peripheral DFSDM get clock source
@@ -2270,13 +2294,17 @@ __STATIC_INLINE void LL_RCC_SetLPUARTClockSource(uint32_t LPUARTxSource)
   *         @arg @ref LL_RCC_I2C3_CLKSOURCE_PCLK1
   *         @arg @ref LL_RCC_I2C3_CLKSOURCE_SYSCLK
   *         @arg @ref LL_RCC_I2C3_CLKSOURCE_HSI
+  *         @arg @ref LL_RCC_I2C4_CLKSOURCE_PCLK1 (*)
+  *         @arg @ref LL_RCC_I2C4_CLKSOURCE_SYSCLK (*)
+  *         @arg @ref LL_RCC_I2C4_CLKSOURCE_HSI (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
   */
 __STATIC_INLINE void LL_RCC_SetI2CClockSource(uint32_t I2CxSource)
 {
-  MODIFY_REG(RCC->CCIPR, ((I2CxSource >> 4) & 0x000FF000), ((I2CxSource << 4) & 0x000FF000));
+  __IO uint32_t *reg = (__IO uint32_t *)(uint32_t)(RCC_BASE + 0x88U + (I2CxSource >> 24U)); 
+  MODIFY_REG(*reg, 3U << ((I2CxSource & 0x00FF0000U) >> 16U), ((I2CxSource & 0x000000FFU) << ((I2CxSource & 0x00FF0000U) >> 16U)));
 }
 
 /**
@@ -2383,6 +2411,7 @@ __STATIC_INLINE void LL_RCC_SetADCClockSource(uint32_t ADCxSource)
   MODIFY_REG(RCC->CCIPR, RCC_CCIPR_ADCSEL, ADCxSource);
 }
 
+#if defined(SWPMI1)
 /**
   * @brief  Configure SWPMI clock source
   * @rmtoll CCIPR        SWPMI1SEL     LL_RCC_SetSWPMIClockSource
@@ -2395,6 +2424,7 @@ __STATIC_INLINE void LL_RCC_SetSWPMIClockSource(uint32_t SWPMIxSource)
 {
   MODIFY_REG(RCC->CCIPR, RCC_CCIPR_SWPMI1SEL, SWPMIxSource);
 }
+#endif /* SWPMI1 */
 
 #if defined(DFSDM1_Channel0)
 /**
@@ -2487,6 +2517,7 @@ __STATIC_INLINE uint32_t LL_RCC_GetLPUARTClockSource(uint32_t LPUARTx)
   *         @arg @ref LL_RCC_I2C1_CLKSOURCE
   *         @arg @ref LL_RCC_I2C2_CLKSOURCE (*)
   *         @arg @ref LL_RCC_I2C3_CLKSOURCE
+  *         @arg @ref LL_RCC_I2C4_CLKSOURCE (*)
   *
   *         (*) value not defined in all devices.
   * @retval Returned value can be one of the following values:
@@ -2499,12 +2530,16 @@ __STATIC_INLINE uint32_t LL_RCC_GetLPUARTClockSource(uint32_t LPUARTx)
   *         @arg @ref LL_RCC_I2C3_CLKSOURCE_PCLK1
   *         @arg @ref LL_RCC_I2C3_CLKSOURCE_SYSCLK
   *         @arg @ref LL_RCC_I2C3_CLKSOURCE_HSI
+  *         @arg @ref LL_RCC_I2C4_CLKSOURCE_PCLK1 (*)
+  *         @arg @ref LL_RCC_I2C4_CLKSOURCE_SYSCLK (*)
+  *         @arg @ref LL_RCC_I2C4_CLKSOURCE_HSI (*)
   *
   *         (*) value not defined in all devices.
  */
 __STATIC_INLINE uint32_t LL_RCC_GetI2CClockSource(uint32_t I2Cx)
 {
-  return (uint32_t)((READ_BIT(RCC->CCIPR, I2Cx) >> 4) | (I2Cx << 4));
+  __IO uint32_t *reg = (__IO uint32_t *)(uint32_t)(RCC_BASE + 0x88U + (I2Cx >> 24U)); 
+  return (uint32_t)((READ_BIT(*reg, 3U << ((I2Cx & 0x0000FF0000U) >> 16U)) >> ((I2Cx & 0x0000FF0000U) >> 16U)) | (I2Cx & 0xFFFF0000U));
 }
 
 /**
@@ -2621,6 +2656,7 @@ __STATIC_INLINE uint32_t LL_RCC_GetADCClockSource(uint32_t ADCx)
   return (uint32_t)(READ_BIT(RCC->CCIPR, ADCx));
 }
 
+#if defined(SWPMI1)
 /**
   * @brief  Get SWPMIx clock source
   * @rmtoll CCIPR        SWPMI1SEL     LL_RCC_GetSWPMIClockSource
@@ -2634,6 +2670,7 @@ __STATIC_INLINE uint32_t LL_RCC_GetSWPMIClockSource(uint32_t SPWMIx)
 {
   return (uint32_t)(READ_BIT(RCC->CCIPR, SPWMIx));
 }
+#endif /* SWPMI1 */
 
 #if defined(DFSDM1_Channel0)
 /**
@@ -4409,7 +4446,9 @@ uint32_t    LL_RCC_GetRNGClockFreq(uint32_t RNGxSource);
 uint32_t    LL_RCC_GetUSBClockFreq(uint32_t USBxSource);
 #endif /* USB_OTG_FS || USB */
 uint32_t    LL_RCC_GetADCClockFreq(uint32_t ADCxSource);
+#if defined(SWPMI1)
 uint32_t    LL_RCC_GetSWPMIClockFreq(uint32_t SWPMIxSource);
+#endif /* SWPMI1 */
 #if defined(DFSDM1_Channel0)
 uint32_t    LL_RCC_GetDFSDMClockFreq(uint32_t DFSDMxSource);
 #endif /* DFSDM1_Channel0 */

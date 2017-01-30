@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dac.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   DAC HAL module driver.
   *         This file provides firmware functions to manage the following 
   *         functionalities of the Digital to Analog Converter (DAC) peripheral:
@@ -21,14 +21,18 @@
       *** DAC Channels ***
       ====================  
     [..]  
-    STM32L4 devices integrate two 12-bit Digital Analog Converters
+    STM32L4 devices integrate one or two 12-bit Digital Analog Converters 
+    (i.e. one or 2 channel(s))
+    1 channel : STM32L451xx STM32L452xx STM32L462xx
+    2 channels: STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx
+                STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx
 
-    The 2 converters (i.e. channel1 & channel2)
+    When 2 channels are available, the 2 converters (i.e. channel1 & channel2)
     can be used independently or simultaneously (dual mode):
       (#) DAC channel1 with DAC_OUT1 (PA4) as output or connected to on-chip 
           peripherals (ex. OPAMPs, comparators).
-      (#) DAC channel2 with DAC_OUT2 (PA5) as output or connected to on-chip 
-          peripherals (ex. OPAMPs, comparators).
+      (#) Whenever present, DAC channel2 with DAC_OUT2 (PA5) as output 
+          or connected to on-chip peripherals (ex. OPAMPs, comparators).
       
       *** DAC Triggers ***
       ====================
@@ -82,7 +86,7 @@
       "sample and hold" mode (i.e. low power mode).
       In the sample and hold mode, the DAC core converts data, then holds the 
       converted voltage on a capacitor. When not converting, the DAC cores and 
-      buffer are completely turned off between samples and the DAC output is 
+      buffer are completely turned  off between samples and the DAC output is 
       tri-stated, therefore  reducing the overall power consumption. A new 
       stabilization period is needed before each new conversion.
 
@@ -162,7 +166,7 @@
       (#) DAC channel1: mapped either on
       (++) DMA1 request 6 channel3 
       (++) or DMA2 request channel4 which must be already configured
-      (#) DAC channel2: mapped either on
+      (#) DAC channel2 (whenever present): mapped either on
       (++) DMA1 request 5 channel4 
       (++) or DMA2 request 3 channel5 which must be already configured 
      [..]
@@ -277,7 +281,8 @@
 /** @addtogroup DAC_Private_Constants DAC Private Constants
   * @{
   */
-#define TIMEOUT_DAC_CALIBCONFIG    ((uint32_t)1)  /* 1ms                  */
+#define TIMEOUT_DAC_CALIBCONFIG        ((uint32_t)1)         /* 1   ms        */
+#define HFSEL_ENABLE_THRESHOLD_80MHZ   ((uint32_t)80000000)  /* 80 mHz        */
 /**
   * @}
   */ 
@@ -452,7 +457,7 @@ __weak void HAL_DAC_MspDeInit(DAC_HandleTypeDef* hdac)
   * @param  Channel: The selected DAC channel. 
   *          This parameter can be one of the following values:
   *            @arg DAC_CHANNEL_1: DAC Channel1 selected
-  *            @arg DAC_CHANNEL_2: DAC Channel2 selected
+  *            @arg DAC_CHANNEL_2: DAC Channel2 selected (when supported)
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel)
@@ -469,6 +474,8 @@ HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel)
   /* Enable the Peripheral */
   __HAL_DAC_ENABLE(hdac, Channel);
 
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
   if(Channel == DAC_CHANNEL_1)
   {
     /* Check if software trigger enabled */
@@ -487,7 +494,18 @@ HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel)
       SET_BIT(hdac->Instance->SWTRIGR, DAC_SWTRIGR_SWTRIG2);
     }
   }
-  
+#endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */    
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */ 
+        
+
+#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx)
+  /* Check if software trigger enabled */
+  if((hdac->Instance->CR & (DAC_CR_TEN1 | DAC_CR_TSEL1)) == (DAC_CR_TEN1 | DAC_CR_TSEL1))
+  {
+    /* Enable the selected DAC software conversion */
+    SET_BIT(hdac->Instance->SWTRIGR, DAC_SWTRIGR_SWTRIG1);
+  }
+#endif /* STM32L451xx STM32L452xx STM32L462xx */
   /* Change DAC state */
   hdac->State = HAL_DAC_STATE_READY;
   
@@ -523,6 +541,89 @@ HAL_StatusTypeDef HAL_DAC_Stop(DAC_HandleTypeDef* hdac, uint32_t Channel)
   return HAL_OK;
 }
 
+#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx) 
+/**
+  * @brief  Enables DAC and starts conversion of channel.
+  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  *         the configuration information for the specified DAC.
+  * @param  Channel: The selected DAC channel. 
+  *          This parameter can be one of the following values:
+  *            @arg DAC_CHANNEL_1: DAC Channel1 selected
+  * @param  pData: The destination peripheral Buffer address.
+  * @param  Length: The length of data to be transferred from memory to DAC peripheral
+  * @param  Alignment: Specifies the data alignment for DAC channel.
+  *          This parameter can be one of the following values:
+  *            @arg DAC_ALIGN_8B_R: 8bit right data alignment selected
+  *            @arg DAC_ALIGN_12B_L: 12bit left data alignment selected
+  *            @arg DAC_ALIGN_12B_R: 12bit right data alignment selected
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, uint32_t* pData, uint32_t Length, uint32_t Alignment)
+{
+  uint32_t tmpreg = 0;
+    
+  /* Check the parameters */
+  assert_param(IS_DAC_CHANNEL(Channel));
+  assert_param(IS_DAC_ALIGN(Alignment));
+  
+  /* Process locked */
+  __HAL_LOCK(hdac);
+  
+  /* Change DAC state */
+  hdac->State = HAL_DAC_STATE_BUSY;
+  
+  /* Set the DMA transfer complete callback for channel1 */
+  hdac->DMA_Handle1->XferCpltCallback = DAC_DMAConvCpltCh1;
+  
+  /* Set the DMA half transfer complete callback for channel1 */
+  hdac->DMA_Handle1->XferHalfCpltCallback = DAC_DMAHalfConvCpltCh1;
+     
+  /* Set the DMA error callback for channel1 */
+  hdac->DMA_Handle1->XferErrorCallback = DAC_DMAErrorCh1;
+  
+  /* Enable the selected DAC channel1 DMA request */
+  SET_BIT(hdac->Instance->CR, DAC_CR_DMAEN1);
+  
+  /* Case of use of channel 1 */
+  switch(Alignment)
+  {
+    case DAC_ALIGN_12B_R:
+      /* Get DHR12R1 address */
+      tmpreg = (uint32_t)&hdac->Instance->DHR12R1;
+      break;
+    case DAC_ALIGN_12B_L:
+      /* Get DHR12L1 address */
+      tmpreg = (uint32_t)&hdac->Instance->DHR12L1;
+      break;
+    case DAC_ALIGN_8B_R:
+      /* Get DHR8R1 address */
+      tmpreg = (uint32_t)&hdac->Instance->DHR8R1;
+      break;
+    default:
+      break;
+  }  
+  
+  /* Enable the DMA channel */
+  /* Enable the DAC DMA underrun interrupt */
+  __HAL_DAC_ENABLE_IT(hdac, DAC_IT_DMAUDR1);
+    
+  /* Enable the DMA channel */
+  HAL_DMA_Start_IT(hdac->DMA_Handle1, (uint32_t)pData, tmpreg, Length);
+  
+  /* Process Unlocked */
+  __HAL_UNLOCK(hdac);
+
+  /* Enable the Peripheral */
+  __HAL_DAC_ENABLE(hdac, Channel);
+  
+  /* Return function status */
+  return HAL_OK;
+}
+#endif /* STM32L451xx STM32L452xx STM32L462xx */   
+
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+      
 /**
   * @brief  Enables DAC and starts conversion of channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -648,7 +749,9 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
   /* Return function status */
   return HAL_OK;
 }
- 
+#endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+
 /**
   * @brief  Disables DAC and stop conversion of channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -673,6 +776,8 @@ HAL_StatusTypeDef HAL_DAC_Stop_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel)
   __HAL_DAC_DISABLE(hdac, Channel);
   
   /* Disable the DMA channel */
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
   /* Channel1 is used */
   if (Channel == DAC_CHANNEL_1)
   {
@@ -690,6 +795,16 @@ HAL_StatusTypeDef HAL_DAC_Stop_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel)
     /* Disable the DAC DMA underrun interrupt */
     __HAL_DAC_DISABLE_IT(hdac, DAC_IT_DMAUDR2);
   }
+#endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+
+#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx) 
+  /* Disable the DMA channel */
+  status = HAL_DMA_Abort(hdac->DMA_Handle1);
+    
+  /* Disable the DAC DMA underrun interrupt */
+  __HAL_DAC_DISABLE_IT(hdac, DAC_IT_DMAUDR1);
+#endif /* STM32L451xx STM32L452xx STM32L462xx */  
   
   /* Check if DMA Channel effectively disabled */
   if (status != HAL_OK)
@@ -707,7 +822,9 @@ HAL_StatusTypeDef HAL_DAC_Stop_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel)
   return status;
 }
 
-/* DAC channel 2 is available on top of DAC channel 1 */
+/* DAC channel 2 is available on top of DAC channel 1 in */
+/* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */    
+/* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
 
 /**
   * @brief  Handles DAC interrupt request
@@ -740,6 +857,8 @@ void HAL_DAC_IRQHandler(DAC_HandleTypeDef* hdac)
       HAL_DAC_DMAUnderrunCallbackCh1(hdac);
     }
   }
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
   if(__HAL_DAC_GET_IT_SOURCE(hdac, DAC_IT_DMAUDR2))
   {
     /* Check underrun flag of DAC channel 1 */
@@ -761,6 +880,8 @@ void HAL_DAC_IRQHandler(DAC_HandleTypeDef* hdac)
       HAL_DACEx_DMAUnderrunCallbackCh2(hdac);
     }
   }
+#endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
 }
 
 /**
@@ -904,6 +1025,12 @@ uint32_t HAL_DAC_GetValue(DAC_HandleTypeDef* hdac, uint32_t Channel)
   assert_param(IS_DAC_CHANNEL(Channel));
   
   /* Returns the DAC channel data output register value */
+#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx) 
+  return hdac->Instance->DOR1;
+#endif /* STM32L451xx STM32L452xx STM32L462xx */   
+
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
   if(Channel == DAC_CHANNEL_1)
   {
     return hdac->Instance->DOR1;
@@ -912,6 +1039,8 @@ uint32_t HAL_DAC_GetValue(DAC_HandleTypeDef* hdac, uint32_t Channel)
   {
     return hdac->Instance->DOR2;
   }
+#endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
 }
 
 /**
@@ -922,15 +1051,16 @@ uint32_t HAL_DAC_GetValue(DAC_HandleTypeDef* hdac, uint32_t Channel)
   * @param  Channel: The selected DAC channel. 
   *          This parameter can be one of the following values:
   *            @arg DAC_CHANNEL_1: DAC Channel1 selected
-  *            @arg DAC_CHANNEL_2: DAC Channel2 selected
+  *            @arg DAC_CHANNEL_2: DAC Channel2 selected (Whenever present)
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_DAC_ConfigChannel(DAC_HandleTypeDef* hdac, DAC_ChannelConfTypeDef* sConfig, uint32_t Channel)
 {
   uint32_t tmpreg1 = 0, tmpreg2 = 0;
   uint32_t tickstart = 0;
-   
+  
   /* Check the DAC parameters */
+  
   assert_param(IS_DAC_TRIGGER(sConfig->DAC_Trigger));
   assert_param(IS_DAC_OUTPUT_BUFFER_STATE(sConfig->DAC_OutputBuffer));
   assert_param(IS_DAC_CHIP_CONNECTION(sConfig->DAC_ConnectOnChipPeripheral));
@@ -1048,6 +1178,7 @@ HAL_StatusTypeDef HAL_DAC_ConfigChannel(DAC_HandleTypeDef* hdac, DAC_ChannelConf
   tmpreg2 = (sConfig->DAC_Trigger);
   /* Calculate CR register value depending on DAC_Channel */
   tmpreg1 |= tmpreg2 << Channel;
+
   /* Write to DAC CR */
   hdac->Instance->CR = tmpreg1;
       
