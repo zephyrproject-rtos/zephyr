@@ -219,7 +219,7 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 
 	if (at_parse_result(at->buf, buf, &result) == 0) {
 		if (at->finish) {
-			at->finish(at, buf, result);
+			at->finish(at, result);
 		}
 	}
 

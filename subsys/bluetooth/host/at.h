@@ -48,8 +48,7 @@ typedef int (*at_resp_cb_t)(struct at_client *at, struct net_buf *buf);
 /* Callback at_finish_cb used to monitor the success or failure of the AT
  * command received from server
  */
-typedef int (*at_finish_cb_t)(struct at_client *at, struct net_buf *buf,
-			       enum at_result result);
+typedef int (*at_finish_cb_t)(struct at_client *at, enum at_result result);
 typedef int (*parse_val_t)(struct at_client *at);
 typedef int (*handle_parse_input_t)(struct at_client *at, struct net_buf *buf);
 typedef int (*handle_cmd_input_t)(struct at_client *at, struct net_buf *buf,
