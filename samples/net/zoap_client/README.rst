@@ -32,7 +32,7 @@ It can be built and executed on QEMU as follows:
     make run
 
 Sample output
--------------
+=============
 
 .. code-block:: console
 

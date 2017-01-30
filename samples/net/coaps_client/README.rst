@@ -2,11 +2,11 @@ CoAP over DTLS sample client
 ############################
 
 Overview
-========
+********
 This sample code shows a CoAP over DTLS client using mbedTLS on top of Zephyr.
 
 Building and Running
-====================
+********************
 
 Follow the steps for testing :ref:`networking with Qemu <networking_with_qemu>`.
 
@@ -48,6 +48,6 @@ If the server does not receive the  messages, restart the app and try to connect
 the client again.
 
 References
-==========
+**********
 
 * https://wiki.zephyrproject.org/view/Networking-with-Qemu
