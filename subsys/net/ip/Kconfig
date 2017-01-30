@@ -131,7 +131,7 @@ config NET_CONN_CACHE
 
 config NET_MAX_CONTEXTS
 	int "Number of network contexts to allocate"
-	default 2
+	default 6
 	help
 	Each network context is used to describe a network 5-tuple that
 	is used when listening or sending network traffic. This is very
