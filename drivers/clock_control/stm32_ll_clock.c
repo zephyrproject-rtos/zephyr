@@ -12,71 +12,15 @@
 #include <clock_control/stm32_clock_control.h>
 #include "stm32_ll_clock.h"
 
-/**
- * @brief helper for mapping a setting to register value
- */
-uint32_t map_reg_val(const struct regval_map *map, size_t cnt, int val)
-{
-	for (int i = 0; i < cnt; i++) {
-		if (map[i].val == val) {
-			return map[i].reg;
-		}
-	}
+/* Macros to fill up prescaler values */
+#define _ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
+#define ahb_prescaler(v) _ahb_prescaler(v)
 
-	return 0;
-}
+#define _apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
+#define apb1_prescaler(v) _apb1_prescaler(v)
 
-/**
- * @brief map AHB prescaler setting to register value
- */
-static uint32_t ahb_prescaler(int prescaler)
-{
-	const struct regval_map ahb_map[] = {
-		{1,   LL_RCC_SYSCLK_DIV_1},
-		{2,   LL_RCC_SYSCLK_DIV_2},
-		{4,   LL_RCC_SYSCLK_DIV_4},
-		{8,   LL_RCC_SYSCLK_DIV_8},
-		{16,  LL_RCC_SYSCLK_DIV_16},
-		{64,  LL_RCC_SYSCLK_DIV_64},
-		{128, LL_RCC_SYSCLK_DIV_128},
-		{256, LL_RCC_SYSCLK_DIV_256},
-		{512, LL_RCC_SYSCLK_DIV_512},
-	};
-
-	return map_reg_val(ahb_map, ARRAY_SIZE(ahb_map), prescaler);
-}
-
-/**
- * @brief map APB1 prescaler setting to register value
- */
-static uint32_t apb1_prescaler(int prescaler)
-{
-	const struct regval_map apb1_map[] = {
-		{1,  LL_RCC_APB1_DIV_1},
-		{2,  LL_RCC_APB1_DIV_2},
-		{4,  LL_RCC_APB1_DIV_4},
-		{8,  LL_RCC_APB1_DIV_8},
-		{16, LL_RCC_APB1_DIV_16},
-	};
-
-	return map_reg_val(apb1_map, ARRAY_SIZE(apb1_map), prescaler);
-}
-
-/**
- * @brief map APB2 prescaler setting to register value
- */
-static uint32_t apb2_prescaler(int prescaler)
-{
-	const struct regval_map apb2_map[] = {
-		{1,  LL_RCC_APB2_DIV_1},
-		{2,  LL_RCC_APB2_DIV_2},
-		{4,  LL_RCC_APB2_DIV_4},
-		{8,  LL_RCC_APB2_DIV_8},
-		{16, LL_RCC_APB2_DIV_16},
-	};
-
-	return map_reg_val(apb2_map, ARRAY_SIZE(apb2_map), prescaler);
-}
+#define _apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
+#define apb2_prescaler(v) _apb2_prescaler(v)
 
 /**
  * @brief fill in AHB/APB buses configuration structure

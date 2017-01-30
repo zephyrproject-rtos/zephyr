@@ -16,39 +16,12 @@
 
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
 
-/**
- * @brief map PLLM setting to register value
- */
-static uint32_t pllm(int prescaler)
-{
-	const struct regval_map map[] = {
-		{1, LL_RCC_PLLM_DIV_1},
-		{2, LL_RCC_PLLM_DIV_2},
-		{3, LL_RCC_PLLM_DIV_3},
-		{4, LL_RCC_PLLM_DIV_4},
-		{5, LL_RCC_PLLM_DIV_5},
-		{6, LL_RCC_PLLM_DIV_6},
-		{7, LL_RCC_PLLM_DIV_7},
-		{8, LL_RCC_PLLM_DIV_8},
-	};
+/* Macros to fill up division factors values */
+#define _pllm(v) LL_RCC_PLLM_DIV_ ## v
+#define pllm(v) _pllm(v)
 
-	return map_reg_val(map, ARRAY_SIZE(map), prescaler);
-}
-
-/**
- * @brief map PLLR setting to register value
- */
-static uint32_t pllr(int prescaler)
-{
-	const struct regval_map map[] = {
-		{2, LL_RCC_PLLR_DIV_2},
-		{4, LL_RCC_PLLR_DIV_4},
-		{6, LL_RCC_PLLR_DIV_6},
-		{8, LL_RCC_PLLR_DIV_8},
-	};
-
-	return map_reg_val(map, ARRAY_SIZE(map), prescaler);
-}
+#define _pllr(v) LL_RCC_PLLR_DIV_ ## v
+#define pllr(v) _pllr(v)
 
 /**
  * @brief fill in pll configuration structure
