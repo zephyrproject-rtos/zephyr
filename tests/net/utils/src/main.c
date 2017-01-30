@@ -487,6 +487,110 @@ static struct net_addr_test_data ipv6_pton_6 = {
 				   htons(0xaabb), htons(0xccdd) },
 };
 
+/* net_addr_ntop test cases */
+static struct net_addr_test_data ipv4_ntop_1 = {
+	.family = AF_INET,
+	.pton = false,
+	.ipv4.c_verify = "192.0.0.1",
+	.ipv4.addr.s4_addr = { 192, 0, 0, 1 },
+};
+
+static struct net_addr_test_data ipv4_ntop_2 = {
+	.family = AF_INET,
+	.pton = false,
+	.ipv4.c_verify = "192.1.0.0",
+	.ipv4.addr.s4_addr = { 192, 1, 0, 0 },
+};
+
+static struct net_addr_test_data ipv4_ntop_3 = {
+	.family = AF_INET,
+	.pton = false,
+	.ipv4.c_verify = "192.0.0.0",
+	.ipv4.addr.s4_addr = { 192, 0, 0, 0 },
+};
+
+static struct net_addr_test_data ipv4_ntop_4 = {
+	.family = AF_INET,
+	.pton = false,
+	.ipv4.c_verify = "255.255.255.255",
+	.ipv4.addr.s4_addr = { 255, 255, 255, 255 },
+};
+
+static struct net_addr_test_data ipv4_ntop_5 = {
+	.family = AF_INET,
+	.pton = false,
+	.ipv4.c_verify = "0.0.0.0",
+	.ipv4.addr.s4_addr = { 0, 0, 0, 0 },
+};
+
+static struct net_addr_test_data ipv4_ntop_6 = {
+	.family = AF_INET,
+	.pton = false,
+	.ipv4.c_verify = "0.0.0.1",
+	.ipv4.addr.s4_addr = { 0, 0, 0, 1 },
+};
+
+static struct net_addr_test_data ipv4_ntop_7 = {
+	.family = AF_INET,
+	.pton = false,
+	.ipv4.c_verify = "0.0.1.0",
+	.ipv4.addr.s4_addr = { 0, 0, 1, 0 },
+};
+
+static struct net_addr_test_data ipv4_ntop_8 = {
+	.family = AF_INET,
+	.pton = false,
+	.ipv4.c_verify = "0.1.0.0",
+	.ipv4.addr.s4_addr = { 0, 1, 0, 0 },
+};
+
+static struct net_addr_test_data ipv6_ntop_1 = {
+	.family = AF_INET6,
+	.pton = false,
+	.ipv6.c_verify = "ff08::",
+	.ipv6.addr.s6_addr32 = { htons(0xff08), 0, 0, 0 },
+};
+
+static struct net_addr_test_data ipv6_ntop_2 = {
+	.family = AF_INET6,
+	.pton = false,
+	.ipv6.c_verify = "::",
+	.ipv6.addr.s6_addr32 = { 0, 0, 0, 0 },
+};
+
+static struct net_addr_test_data ipv6_ntop_3 = {
+	.family = AF_INET6,
+	.pton = false,
+	.ipv6.c_verify = "ff08::1",
+	.ipv6.addr.s6_addr16 = { htons(0xff08), 0, 0, 0, 0, 0, 0, htons(1) },
+};
+
+static struct net_addr_test_data ipv6_ntop_4 = {
+	.family = AF_INET6,
+	.pton = false,
+	.ipv6.c_verify = "2001:db8::1",
+	.ipv6.addr.s6_addr16 = { htons(0x2001), htons(0xdb8),
+				 0, 0, 0, 0, 0, htons(1) },
+};
+
+static struct net_addr_test_data ipv6_ntop_5 = {
+	.family = AF_INET6,
+	.pton = false,
+	.ipv6.c_verify = "2001:db8::2:1",
+	.ipv6.addr.s6_addr16 = { htons(0x2001), htons(0xdb8),
+				 0, 0, 0, 0, htons(2), htons(1) },
+};
+
+static struct net_addr_test_data ipv6_ntop_6 = {
+	.family = AF_INET6,
+	.pton = false,
+	.ipv6.c_verify = "ff08:1122:3344:5566:7788:9900:aabb:ccdd",
+	.ipv6.addr.s6_addr16 = { htons(0xff08), htons(0x1122),
+				 htons(0x3344), htons(0x5566),
+				 htons(0x7788), htons(0x9900),
+				 htons(0xaabb), htons(0xccdd) },
+};
+
 static const struct {
 	const char *name;
 	struct net_addr_test_data *data;
@@ -508,6 +612,24 @@ static const struct {
 	{ "test_ipv6_pton_4", &ipv6_pton_4},
 	{ "test_ipv6_pton_5", &ipv6_pton_5},
 	{ "test_ipv6_pton_6", &ipv6_pton_6},
+
+	/* IPv4 net_addr_ntop */
+	{ "test_ipv4_ntop_1", &ipv4_ntop_1},
+	{ "test_ipv4_ntop_2", &ipv4_ntop_2},
+	{ "test_ipv4_ntop_3", &ipv4_ntop_3},
+	{ "test_ipv4_ntop_4", &ipv4_ntop_4},
+	{ "test_ipv4_ntop_5", &ipv4_ntop_5},
+	{ "test_ipv4_ntop_6", &ipv4_ntop_6},
+	{ "test_ipv4_ntop_7", &ipv4_ntop_7},
+	{ "test_ipv4_ntop_8", &ipv4_ntop_8},
+
+	/* IPv6 net_addr_ntop */
+	{ "test_ipv6_ntop_1", &ipv6_ntop_1},
+	{ "test_ipv6_ntop_2", &ipv6_ntop_2},
+	{ "test_ipv6_ntop_3", &ipv6_ntop_3},
+	{ "test_ipv6_ntop_4", &ipv6_ntop_4},
+	{ "test_ipv6_ntop_5", &ipv6_ntop_5},
+	{ "test_ipv6_ntop_6", &ipv6_ntop_6},
 };
 
 static bool test_net_addr(struct net_addr_test_data *data)
@@ -527,6 +649,24 @@ static bool test_net_addr(struct net_addr_test_data *data)
 					       &data->ipv4.verify)) {
 				printk("Failed to verify %s\n",
 				       data->ipv4.c_addr);
+
+				return false;
+			}
+		} else {
+			if (!net_addr_ntop(AF_INET, &data->ipv4.addr,
+					   data->ipv4.c_addr,
+					   sizeof(data->ipv4.c_addr))) {
+				printk("Failed to convert %s\n",
+				       net_sprint_ipv4_addr(&data->ipv4.addr));
+
+				return false;
+			}
+
+			if (strcmp(data->ipv4.c_addr, data->ipv4.c_verify)) {
+				printk("Failed to verify %s\n",
+				       data->ipv4.c_addr);
+				printk("against %s\n",
+				       data->ipv4.c_verify);
 
 				return false;
 			}
@@ -554,6 +694,25 @@ static bool test_net_addr(struct net_addr_test_data *data)
 
 				return false;
 			}
+		} else {
+			if (!net_addr_ntop(AF_INET6, &data->ipv6.addr,
+					   data->ipv6.c_addr,
+					   sizeof(data->ipv6.c_addr))) {
+				printk("Failed to convert %s\n",
+				       net_sprint_ipv6_addr(&data->ipv6.addr));
+
+				return false;
+			}
+
+			if (strcmp(data->ipv6.c_addr, data->ipv6.c_verify)) {
+				printk("Failed to verify %s\n",
+				       data->ipv6.c_addr);
+				printk("against %s\n",
+				       data->ipv6.c_verify);
+
+				return false;
+			}
+
 		}
 
 		break;
