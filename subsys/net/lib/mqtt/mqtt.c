@@ -214,7 +214,6 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 
 	rc = mqtt_pack_publish(data->data, &data->len, data->size, msg);
 	if (rc != 0) {
-		net_nbuf_unref(data);
 		rc = -EINVAL;
 		goto exit_publish;
 	}
