@@ -78,8 +78,9 @@ _Swap:
 	call4 _sys_k_event_logger_context_switch
 #endif
 #endif
-
-	l32i a2, a2, KERNEL_OFFSET(ready_q_cache)
+	/* Updated current thread: _kernel.current := _kernel.ready_q.cache */
+	l32i a3, a2, KERNEL_OFFSET(ready_q_cache)
+	s32i a3, a2, KERNEL_OFFSET(current) /* _kernel.current := a3 */
 	/*
 	 * At this point, the a2 register contains the 'k_thread *' of the
 	 * thread to be swapped in.

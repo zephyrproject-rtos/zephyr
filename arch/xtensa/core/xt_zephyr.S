@@ -16,14 +16,14 @@
 	.set _interrupt_stack_top,  _interrupt_stack + CONFIG_ISR_STACK_SIZE
 
 /*
- *	_zxt_dispatch(k_thread_t *_thread)
+ * _zxt_dispatch(k_thread_t *_thread)
+ * parameter _thread should be passed in a3, not in a2 as ABI is expecting!!!
  */
 	.text
 	.globl  _zxt_dispatch
 	.type   _zxt_dispatch,@function
 	.align  4
 _zxt_dispatch:
-	mov a3, a2	/* a3 := _thread = _kernel.ready_q.cache */
 	l32i sp, a3, THREAD_OFFSET(sp) /* sp := _thread->topOfStack; */
 
 	/* Determine the type of stack frame. */
@@ -190,7 +190,7 @@ _zxt_int_exit:
 	wsr a3, CPENABLE                /* disable all co-processors */
 #endif
 
-	l32i a2, a2, KERNEL_OFFSET(ready_q_cache)
+	l32i a3, a2, KERNEL_OFFSET(ready_q_cache)
 	/*
 	 * At this point, the a2 register contains the 'k_thread *' of the
 	 * thread to be swapped in.
