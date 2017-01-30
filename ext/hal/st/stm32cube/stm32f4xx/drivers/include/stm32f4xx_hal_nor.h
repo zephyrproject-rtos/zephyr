@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_nor.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of NOR HAL module.
   ******************************************************************************
   * @attention
@@ -45,9 +45,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx) || defined(STM32F412Zx) ||\
-    defined(STM32F412Vx)
+    defined(STM32F412Vx) || defined(STM32F413xx) || defined(STM32F423xx)
   #include "stm32f4xx_ll_fsmc.h"
-#endif /* STM32F405xx || STM32F415xx || STM32F407xx || STM32F417xx || STM32F412Zx || STM32F412Vx */
+#endif /* STM32F405xx || STM32F415xx || STM32F407xx || STM32F417xx || STM32F412Zx || STM32F412Vx || STM32F413xx || STM32F423xx */
 
 #if defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) ||\
     defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx)
@@ -65,7 +65,7 @@
 #if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx) ||\
     defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) ||\
     defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx) || defined(STM32F412Zx) ||\
-    defined(STM32F412Vx)
+    defined(STM32F412Vx) || defined(STM32F413xx) || defined(STM32F423xx)
 
 /* Exported typedef ----------------------------------------------------------*/
 /** @defgroup NOR_Exported_Types NOR Exported Types
@@ -287,7 +287,7 @@ HAL_NOR_StatusTypeDef HAL_NOR_GetStatus(NOR_HandleTypeDef *hnor, uint32_t Addres
 #endif /* STM32F405xx || STM32F415xx || STM32F407xx || STM32F417xx ||\
           STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx ||\
           STM32F446xx || STM32F469xx || STM32F479xx || STM32F412Zx ||\
-          STM32F412Vx */
+          STM32F412Vx || STM32F413xx || STM32F423xx */
 /**
   * @}
   */ 

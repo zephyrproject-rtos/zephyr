@@ -173,6 +173,10 @@ typedef struct _i2c_master_config
 #if defined(FSL_FEATURE_I2C_HAS_STOP_HOLD_OFF) && FSL_FEATURE_I2C_HAS_STOP_HOLD_OFF
     bool enableStopHold; /*!< Controls the stop hold enable. */
 #endif
+#if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
+    bool enableDoubleBuffering; /*!< Controls double buffer enable, notice that
+                                     enable double buffer will disable clock stretch. */
+#endif
     uint32_t baudRate_Bps;     /*!< Baud rate configuration of I2C peripheral. */
     uint8_t glitchFilterWidth; /*!< Controls the width of the glitch. */
 } i2c_master_config_t;
@@ -185,6 +189,10 @@ typedef struct _i2c_slave_config
     bool enableWakeUp;      /*!< Enables/disables waking up MCU from low power mode. */
 #if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
     bool enableHighDrive; /*!< Controls the drive capability of the I2C pads. */
+#endif
+#if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
+    bool enableDoubleBuffering; /*!< Controls double buffer enable, notice that
+                                     enable double buffer will disable clock stretch. */
 #endif
     bool enableBaudRateCtl; /*!< Enables/disables independent slave baud rate on SCL in very fast I2C modes. */
     uint16_t slaveAddress;  /*!< Slave address configuration. */

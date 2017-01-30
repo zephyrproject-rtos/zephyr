@@ -11,6 +11,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #include <tc_util.h>
 
@@ -37,5 +38,5 @@ void main(void)
 	}
 
 	/* Trigger NMI: Should fire immediately */
-	_ScbNmiPend();
+	SCB->ICSR |= SCB_ICSR_NMIPENDSET_Msk;
 }

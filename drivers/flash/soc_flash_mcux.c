@@ -39,7 +39,7 @@ static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 	addr = offset + priv->config.PFlashBlockBase;
 
 	key = irq_lock();
-	rc = FLASH_Erase(&priv->config, addr, len, kFLASH_apiEraseKey);
+	rc = FLASH_Erase(&priv->config, addr, len, kFLASH_ApiEraseKey);
 	irq_unlock(key);
 
 	return (rc == kStatus_Success) ? 0 : -EINVAL;

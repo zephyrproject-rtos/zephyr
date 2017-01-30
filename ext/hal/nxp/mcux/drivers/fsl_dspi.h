@@ -49,11 +49,8 @@
 #define FSL_DSPI_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
 /*@}*/
 
-/*! @name Dummy data */
-/*@{*/
-#define DSPI_MASTER_DUMMY_DATA (0x00U) /*!< Master dummy data used for tx if there is not txData. */
-#define DSPI_SLAVE_DUMMY_DATA (0x00U)  /*!< Slave dummy data used for tx if there is not txData. */
-/*@}*/
+/*! @brief DSPI dummy data if no Tx data.*/
+#define DSPI_DUMMY_DATA (0x00U) /*!< Dummy data used for tx if there is not txData. */
 
 /*! @brief Status for the DSPI driver.*/
 enum _dspi_status

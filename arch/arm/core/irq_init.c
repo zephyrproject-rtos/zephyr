@@ -20,6 +20,7 @@
 #include <sections.h>
 #include <kernel.h>
 #include <arch/cpu.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 /**
  *
@@ -37,6 +38,6 @@ void _IntLibInit(void)
 	int irq = 0;
 
 	for (; irq < CONFIG_NUM_IRQS; irq++) {
-		_NvicIrqPrioSet(irq, _EXC_IRQ_DEFAULT_PRIO);
+		NVIC_SetPriority((IRQn_Type)irq, _IRQ_PRIO_OFFSET);
 	}
 }

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_flash.h
   * @author  MCD Application Team
-  * @version V1.5.2 
-  * @date    12-September-2016
+  * @version V1.6.0 
+  * @date    28-October-2016
   * @brief   Header file of FLASH HAL module.
   ******************************************************************************
   * @attention
@@ -125,6 +125,17 @@ typedef enum
   FLASH_PROC_PROGRAM_LAST
 } FLASH_ProcedureTypeDef;
 
+/**
+  * @brief  FLASH Cache structure definition
+  */
+typedef enum 
+{
+  FLASH_CACHE_DISABLED = 0,
+  FLASH_CACHE_ICACHE_ENABLED,
+  FLASH_CACHE_DCACHE_ENABLED,
+  FLASH_CACHE_ICACHE_DCACHE_ENABLED
+} FLASH_CacheTypeDef;
+
 /** 
   * @brief  FLASH handle Structure definition  
   */
@@ -137,6 +148,7 @@ typedef struct
   __IO uint32_t               Bank;              /* Internal variable to save current bank selected during erase in IT context */
   __IO uint32_t               Page;              /* Internal variable to define the current page which is erasing in IT context */
   __IO uint32_t               NbPagesToErase;    /* Internal variable to save the remaining pages to erase in IT context */
+  __IO FLASH_CacheTypeDef     CacheToReactivate; /* Internal variable to indicate which caches should be reactivated */
 }FLASH_ProcessTypeDef;
 
 /**
@@ -163,7 +175,8 @@ typedef struct
 #define HAL_FLASH_ERROR_RD        ((uint32_t)0x00000100)
 #define HAL_FLASH_ERROR_OPTV      ((uint32_t)0x00000200)
 #define HAL_FLASH_ERROR_ECCD      ((uint32_t)0x00000400)
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define HAL_FLASH_ERROR_PEMPTY    ((uint32_t)0x00000800)
 #endif 
 /**
@@ -259,7 +272,8 @@ typedef struct
 #define OB_USER_SRAM2_PE          ((uint32_t)0x0400)                   /*!< SRAM2 parity check enable */
 #define OB_USER_SRAM2_RST         ((uint32_t)0x0800)                   /*!< SRAM2 Erase when system reset */
 #define OB_USER_nRST_SHDW         ((uint32_t)0x1000)                   /*!< Reset generated when entering the shutdown mode */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || \
+    defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define OB_USER_nSWBOOT0          ((uint32_t)0x2000)                   /*!< Software BOOT0 */
 #define OB_USER_nBOOT0            ((uint32_t)0x4000)                   /*!< nBOOT0 option bit */
 #endif
@@ -351,7 +365,6 @@ typedef struct
 /**
   * @}
   */ 
-
 /** @defgroup FLASH_OB_USER_DUALBANK FLASH Option Bytes User Dual-bank Type
   * @{
   */
@@ -389,7 +402,8 @@ typedef struct
   * @}
   */ 
 
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || \
+    defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 /** @defgroup OB_USER_nSWBOOT0 FLASH Option Bytes User Software BOOT0
   * @{
   */
@@ -465,7 +479,8 @@ typedef struct
 #define FLASH_FLAG_RDERR          FLASH_SR_RDERR                       /*!< FLASH PCROP read error flag */
 #define FLASH_FLAG_OPTVERR        FLASH_SR_OPTVERR                     /*!< FLASH Option validity error flag  */
 #define FLASH_FLAG_BSY            FLASH_SR_BSY                         /*!< FLASH Busy flag */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define FLASH_FLAG_PEMPTY         FLASH_SR_PEMPTY                      /*!< FLASH Program empty */
 #endif
 #define FLASH_FLAG_ECCC           FLASH_ECCR_ECCC                      /*!< FLASH ECC correction */
@@ -758,10 +773,15 @@ uint32_t HAL_FLASH_GetError(void);
   */
 #define FLASH_SIZE_DATA_REGISTER           ((uint32_t)0x1FFF75E0)
     
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define FLASH_SIZE                         ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFF)) ? (0x200 << 10) : \
+                                            (((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) << 10))
+#else
 #define FLASH_SIZE                         ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFF)) ? (0x400 << 10) : \
                                             (((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) << 10))
+#endif
 
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define FLASH_BANK_SIZE                    (FLASH_SIZE >> 1)
 #else
 #define FLASH_BANK_SIZE                    (FLASH_SIZE)
@@ -782,7 +802,7 @@ uint32_t HAL_FLASH_GetError(void);
 #define IS_FLASH_TYPEERASE(VALUE)          (((VALUE) == FLASH_TYPEERASE_PAGES) || \
                                             ((VALUE) == FLASH_TYPEERASE_MASSERASE))  
 
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define IS_FLASH_BANK(BANK)                (((BANK) == FLASH_BANK_1)  || \
                                             ((BANK) == FLASH_BANK_2)  || \
                                             ((BANK) == FLASH_BANK_BOTH))
@@ -814,6 +834,10 @@ uint32_t HAL_FLASH_GetError(void);
                                             ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x200) ? ((PAGE) < 128) : \
                                             ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x100) ? ((PAGE) < 64) : \
                                             ((PAGE) < 256)))))
+#elif defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define IS_FLASH_PAGE(PAGE)                (((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x200) ? ((PAGE) < 256) : \
+                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x100) ? ((PAGE) < 128) : \
+                                            ((PAGE) < 256))))
 #else
 #define IS_FLASH_PAGE(PAGE)                (((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x100) ? ((PAGE) < 128) : \
                                             ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x80)  ? ((PAGE) < 64) : \
@@ -822,7 +846,7 @@ uint32_t HAL_FLASH_GetError(void);
 
 #define IS_OPTIONBYTE(VALUE)               (((VALUE) <= (OPTIONBYTE_WRP | OPTIONBYTE_RDP | OPTIONBYTE_USER | OPTIONBYTE_PCROP)))
 
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define IS_OB_WRPAREA(VALUE)               (((VALUE) == OB_WRPAREA_BANK1_AREAA) || ((VALUE) == OB_WRPAREA_BANK1_AREAB) || \
                                             ((VALUE) == OB_WRPAREA_BANK2_AREAA) || ((VALUE) == OB_WRPAREA_BANK2_AREAB))
 #else
@@ -857,7 +881,7 @@ uint32_t HAL_FLASH_GetError(void);
 
 #define IS_OB_USER_WWDG(VALUE)             (((VALUE) == OB_WWDG_HW) || ((VALUE) == OB_WWDG_SW))
 
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define IS_OB_USER_BFB2(VALUE)             (((VALUE) == OB_BFB2_DISABLE) || ((VALUE) == OB_BFB2_ENABLE))
 
 #define IS_OB_USER_DUALBANK(VALUE)         (((VALUE) == OB_DUALBANK_SINGLE) || ((VALUE) == OB_DUALBANK_DUAL))
@@ -869,7 +893,8 @@ uint32_t HAL_FLASH_GetError(void);
 
 #define IS_OB_USER_SRAM2_RST(VALUE)        (((VALUE) == OB_SRAM2_RST_ERASE) || ((VALUE) == OB_SRAM2_RST_NOT_ERASE))
 
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || \
+    defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_OB_USER_SWBOOT0(VALUE)          (((VALUE) == OB_BOOT0_FROM_OB) || ((VALUE) == OB_BOOT0_FROM_PIN))
 
 #define IS_OB_USER_BOOT0(VALUE)            (((VALUE) == OB_BOOT0_RESET) || ((VALUE) == OB_BOOT0_SET))

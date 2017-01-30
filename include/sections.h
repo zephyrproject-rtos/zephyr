@@ -43,7 +43,7 @@
 #define SCS_SECTION scs
 #define SCP_SECTION scp
 
-#define SECURITY_FRDM_K64F  security_frdm_k64f
+#define KINETIS_FLASH_CONFIG  kinetis_flash_config
 #define IRQ_VECTOR_TABLE    irq_vector_table
 
 #elif defined(CONFIG_ARC)

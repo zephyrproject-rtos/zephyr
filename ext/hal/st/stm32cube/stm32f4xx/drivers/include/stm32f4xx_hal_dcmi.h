@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dcmi.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of DCMI HAL module.
   ******************************************************************************
   * @attention
@@ -333,8 +333,8 @@ typedef struct
   * @retval The state of FLAG.
   */
 #define __HAL_DCMI_GET_FLAG(__HANDLE__, __FLAG__)\
-((((__FLAG__) & (DCMI_SR_INDEX|DCMI_MIS_INDEX)) == 0x0U)? ((__HANDLE__)->Instance->RIS & (__FLAG__)) :\
- (((__FLAG__) & DCMI_SR_INDEX) == 0x0U)? ((__HANDLE__)->Instance->MIS & (__FLAG__)) : ((__HANDLE__)->Instance->SR & (__FLAG__)))
+((((__FLAG__) & (DCMI_SR_INDEX|DCMI_MIS_INDEX)) == 0x0U)? ((__HANDLE__)->Instance->RISR & (__FLAG__)) :\
+ (((__FLAG__) & DCMI_SR_INDEX) == 0x0U)? ((__HANDLE__)->Instance->MISR & (__FLAG__)) : ((__HANDLE__)->Instance->SR & (__FLAG__)))
 
 /**
   * @brief  Clear the DCMI pending flags.

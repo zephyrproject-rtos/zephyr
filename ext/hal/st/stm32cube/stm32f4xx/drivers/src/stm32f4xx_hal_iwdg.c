@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_iwdg.c
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   IWDG HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Independent Watchdog (IWDG) peripheral:
@@ -50,13 +50,13 @@
   ==============================================================================
   [..]
     (#) Use IWDG using HAL_IWDG_Init() function to :
-      (+) Enable instance by writing Start keyword in IWDG_KEY register. LSI
+      (++) Enable instance by writing Start keyword in IWDG_KEY register. LSI
            clock is forced ON and IWDG counter starts downcounting.
-      (+) Enable write access to configuration register: IWDG_PR & IWDG_RLR.
-      (+) Configure the IWDG prescaler and counter reload value. This reload
+      (++) Enable write access to configuration register: IWDG_PR & IWDG_RLR.
+      (++) Configure the IWDG prescaler and counter reload value. This reload
            value will be loaded in the IWDG counter each time the watchdog is
            reloaded, then the IWDG will start counting down from this value.
-      (+) wait for status flags to be reset"
+      (++) wait for status flags to be reset"
 
     (#) Then the application program must refresh the IWDG counter at regular
         intervals during normal operation to prevent an MCU reset, using

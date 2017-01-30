@@ -19,6 +19,7 @@
 #include <soc.h>
 
 #include <arch/cpu.h>
+#include <cortex_m/exc.h>
 
 /**
  * @brief Setup various clock on SoC.
@@ -162,12 +163,7 @@ static int atmel_sam3_init(struct device *arg)
 	__EEFC0->fmr = 0x00000400;
 	__EEFC1->fmr = 0x00000400;
 
-	/* Clear all faults */
-	_ScbMemFaultAllFaultsReset();
-	_ScbBusFaultAllFaultsReset();
-	_ScbUsageFaultAllFaultsReset();
-
-	_ScbHardFaultAllFaultsReset();
+	_ClearFaults();
 
 	/* Setup master clock */
 	clock_init();

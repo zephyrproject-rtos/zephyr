@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_tim.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   TIM LL module driver.
   ******************************************************************************
   * @attention
@@ -133,6 +133,68 @@
 
 #define IS_LL_TIM_IC_POLARITY_ENCODER(__VALUE__) (((__VALUE__) == LL_TIM_IC_POLARITY_RISING) \
                                                || ((__VALUE__) == LL_TIM_IC_POLARITY_FALLING))
+
+#define IS_LL_TIM_OSSR_STATE(__VALUE__) (((__VALUE__) == LL_TIM_OSSR_DISABLE) \
+                                     || ((__VALUE__) == LL_TIM_OSSR_ENABLE))
+
+#define IS_LL_TIM_OSSI_STATE(__VALUE__) (((__VALUE__) == LL_TIM_OSSI_DISABLE) \
+                                      || ((__VALUE__) == LL_TIM_OSSI_ENABLE))
+
+#define IS_LL_TIM_LOCK_LEVEL(__VALUE__) (((__VALUE__) == LL_TIM_LOCKLEVEL_OFF) \
+                                      || ((__VALUE__) == LL_TIM_LOCKLEVEL_1)   \
+                                      || ((__VALUE__) == LL_TIM_LOCKLEVEL_2)   \
+                                      || ((__VALUE__) == LL_TIM_LOCKLEVEL_3))
+
+#define IS_LL_TIM_BREAK_STATE(__VALUE__) (((__VALUE__) == LL_TIM_BREAK_DISABLE) \
+                                       || ((__VALUE__) == LL_TIM_BREAK_ENABLE))
+
+#define IS_LL_TIM_BREAK_POLARITY(__VALUE__) (((__VALUE__) == LL_TIM_BREAK_POLARITY_LOW) \
+                                          || ((__VALUE__) == LL_TIM_BREAK_POLARITY_HIGH))
+
+#define IS_LL_TIM_BREAK_FILTER(__VALUE__) (((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV1)     \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV1_N2)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV1_N4)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV1_N8)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV2_N6)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV2_N8)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV4_N6)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV4_N8)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV8_N6)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV8_N8)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV16_N5) \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV16_N6) \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV16_N8) \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV32_N5) \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV32_N6) \
+                                        || ((__VALUE__) == LL_TIM_BREAK_FILTER_FDIV32_N8))
+
+#define IS_LL_TIM_BREAK2_STATE(__VALUE__) (((__VALUE__) == LL_TIM_BREAK2_DISABLE) \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_ENABLE))
+
+#define IS_LL_TIM_BREAK2_POLARITY(__VALUE__) (((__VALUE__) == LL_TIM_BREAK2_POLARITY_LOW) \
+                                          || ((__VALUE__) == LL_TIM_BREAK2_POLARITY_HIGH))
+
+#define IS_LL_TIM_BREAK2_FILTER(__VALUE__) (((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV1)    \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV1_N2)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV1_N4)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV1_N8)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV2_N6)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV2_N8)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV4_N6)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV4_N8)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV8_N6)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV8_N8)  \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV16_N5) \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV16_N6) \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV16_N8) \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV32_N5) \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV32_N6) \
+                                        || ((__VALUE__) == LL_TIM_BREAK2_FILTER_FDIV32_N8))
+
+#define IS_LL_TIM_AUTOMATIC_OUTPUT_STATE(__VALUE__) (((__VALUE__) == LL_TIM_AUTOMATICOUTPUT_DISABLE) \
+                                                  || ((__VALUE__) == LL_TIM_AUTOMATICOUTPUT_ENABLE))
+
+
 /**
   * @}
   */
@@ -628,6 +690,93 @@ ErrorStatus LL_TIM_HALLSENSOR_Init(TIM_TypeDef *TIMx, LL_TIM_HALLSENSOR_InitType
   /* Write to TIMx CCR2 */
   LL_TIM_OC_SetCompareCH2(TIMx, TIM_HallSensorInitStruct->CommutationDelay);
 
+  return SUCCESS;
+}
+
+/**
+  * @brief  Set the fields of the Break and Dead Time configuration data structure
+  *         to their default values.
+  * @param  TIM_BDTRInitStruct pointer to a @ref LL_TIM_BDTR_InitTypeDef structure (Break and Dead Time configuration data structure)
+  * @retval None
+  */
+void LL_TIM_BDTR_StructInit(LL_TIM_BDTR_InitTypeDef *TIM_BDTRInitStruct)
+{
+  /* Set the default configuration */
+  TIM_BDTRInitStruct->OSSRState       = LL_TIM_OSSR_DISABLE;
+  TIM_BDTRInitStruct->OSSIState       = LL_TIM_OSSI_DISABLE;
+  TIM_BDTRInitStruct->LockLevel       = LL_TIM_LOCKLEVEL_OFF;
+  TIM_BDTRInitStruct->DeadTime        = (uint8_t)0x00U;
+  TIM_BDTRInitStruct->BreakState      = LL_TIM_BREAK_DISABLE;
+  TIM_BDTRInitStruct->BreakPolarity   = LL_TIM_BREAK_POLARITY_LOW;
+  TIM_BDTRInitStruct->BreakFilter     = LL_TIM_BREAK_FILTER_FDIV1;
+  TIM_BDTRInitStruct->Break2State     = LL_TIM_BREAK2_DISABLE;
+  TIM_BDTRInitStruct->Break2Polarity  = LL_TIM_BREAK2_POLARITY_LOW;
+  TIM_BDTRInitStruct->Break2Filter    = LL_TIM_BREAK2_FILTER_FDIV1;
+  TIM_BDTRInitStruct->AutomaticOutput = LL_TIM_AUTOMATICOUTPUT_DISABLE;
+}
+
+/**
+  * @brief  Configure the Break and Dead Time feature of the timer instance.
+  * @note As the bits BK2P, BK2E, BK2F[3:0], BKF[3:0], AOE, BKP, BKE, OSSI, OSSR
+  *  and DTG[7:0] can be write-locked depending on the LOCK configuration, it 
+  *  can be necessary to configure all of them during the first write access to
+  *  the TIMx_BDTR register.
+  * @note Macro @ref IS_TIM_BREAK_INSTANCE(TIMx) can be used to check whether or not
+  *       a timer instance provides a break input.
+  * @note Macro @ref IS_TIM_BKIN2_INSTANCE(TIMx) can be used to check whether or not
+  *       a timer instance provides a second break input.
+  * @param  TIMx Timer Instance
+  * @param  TIM_BDTRInitStruct pointer to a @ref LL_TIM_BDTR_InitTypeDef structure (Break and Dead Time configuration data structure)
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: Break and Dead Time is initialized
+  *          - ERROR: not applicable
+  */
+ErrorStatus LL_TIM_BDTR_Init(TIM_TypeDef *TIMx, LL_TIM_BDTR_InitTypeDef *TIM_BDTRInitStruct)
+{
+  uint32_t tmpbdtr = 0;
+  
+  /* Check the parameters */
+  assert_param(IS_TIM_BREAK_INSTANCE(TIMx));
+  assert_param(IS_LL_TIM_OSSR_STATE(TIM_BDTRInitStruct->OSSRState));
+  assert_param(IS_LL_TIM_OSSI_STATE(TIM_BDTRInitStruct->OSSIState));
+  assert_param(IS_LL_TIM_LOCK_LEVEL(TIM_BDTRInitStruct->LockLevel));
+  assert_param(IS_LL_TIM_BREAK_STATE(TIM_BDTRInitStruct->BreakState));
+  assert_param(IS_LL_TIM_BREAK_POLARITY(TIM_BDTRInitStruct->BreakPolarity));
+  assert_param(IS_LL_TIM_AUTOMATIC_OUTPUT_STATE(TIM_BDTRInitStruct->AutomaticOutput));
+  
+  /* Set the Lock level, the Break enable Bit and the Polarity, the OSSR State,
+  the OSSI State, the dead time value and the Automatic Output Enable Bit */
+  
+  /* Set the BDTR bits */
+  MODIFY_REG(tmpbdtr, TIM_BDTR_DTG, TIM_BDTRInitStruct->DeadTime);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_LOCK, TIM_BDTRInitStruct->LockLevel);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSI, TIM_BDTRInitStruct->OSSIState);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSR, TIM_BDTRInitStruct->OSSRState);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKE, TIM_BDTRInitStruct->BreakState);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKP, TIM_BDTRInitStruct->BreakPolarity);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_AOE, TIM_BDTRInitStruct->AutomaticOutput);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_MOE, TIM_BDTRInitStruct->AutomaticOutput);
+  if (IS_TIM_ADVANCED_INSTANCE(TIMx))
+  {
+    assert_param(IS_LL_TIM_BREAK_FILTER(TIM_BDTRInitStruct->BreakFilter));
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BKF, TIM_BDTRInitStruct->BreakFilter);
+  }
+  
+  if (IS_TIM_BKIN2_INSTANCE(TIMx))
+  {
+    assert_param(IS_LL_TIM_BREAK2_STATE(TIM_BDTRInitStruct->Break2State));
+    assert_param(IS_LL_TIM_BREAK2_POLARITY(TIM_BDTRInitStruct->Break2Polarity));
+    assert_param(IS_LL_TIM_BREAK2_FILTER(TIM_BDTRInitStruct->Break2Filter));
+    
+    /* Set the BREAK2 input related BDTR bit-fields */
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2F, (TIM_BDTRInitStruct->Break2Filter));
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2E, TIM_BDTRInitStruct->Break2State);
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2P, TIM_BDTRInitStruct->Break2Polarity);
+  }
+  
+  /* Set TIMx_BDTR */
+  LL_TIM_WriteReg(TIMx, BDTR, tmpbdtr);
+  
   return SUCCESS;
 }
 

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dcmi_ex.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of DCMI Extension HAL module.
   ******************************************************************************
   * @attention

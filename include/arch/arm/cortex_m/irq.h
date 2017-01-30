@@ -15,7 +15,6 @@
 #define _ARCH_ARM_CORTEXM_IRQ_H_
 
 #include <irq.h>
-#include <arch/arm/cortex_m/nvic.h>
 #include <sw_isr_table.h>
 
 #ifdef __cplusplus

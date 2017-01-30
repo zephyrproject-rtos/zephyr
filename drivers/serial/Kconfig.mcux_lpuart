@@ -1,0 +1,40 @@
+# Kconfig - MCUXpresso SDK LPUART
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_MCUX_LPUART
+	bool "MCUX LPUART driver"
+	depends on HAS_MCUX && HAS_LPUART
+	default n
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable the MCUX LPUART driver.
+
+if UART_MCUX_LPUART
+
+menuconfig UART_MCUX_LPUART_0
+	bool "UART 0"
+	default n
+	help
+	  Enable UART 0.
+
+if UART_MCUX_LPUART_0
+
+config UART_MCUX_LPUART_0_NAME
+	string "UART 0 driver name"
+	default "UART_0"
+
+config UART_MCUX_LPUART_0_IRQ_PRI
+	int "UART 0 interrupt priority"
+	default 0
+
+config UART_MCUX_LPUART_0_BAUD_RATE
+	int "UART 0 baud rate"
+	default 115200
+
+endif # UART_MCUX_LPUART_0
+
+endif # UART_MCUX_LPUART

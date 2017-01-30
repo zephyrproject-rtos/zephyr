@@ -200,7 +200,12 @@ void LPTMR_GetDefaultConfig(lptmr_config_t *config);
  */
 static inline void LPTMR_EnableInterrupts(LPTMR_Type *base, uint32_t mask)
 {
-    base->CSR |= mask;
+    uint32_t reg = base->CSR;
+
+    /* Clear the TCF bit so that we don't clear this w1c bit when writing back */
+    reg &= ~(LPTMR_CSR_TCF_MASK);
+    reg |= mask;
+    base->CSR = reg;
 }
 
 /*!
@@ -212,7 +217,12 @@ static inline void LPTMR_EnableInterrupts(LPTMR_Type *base, uint32_t mask)
  */
 static inline void LPTMR_DisableInterrupts(LPTMR_Type *base, uint32_t mask)
 {
-    base->CSR &= ~mask;
+    uint32_t reg = base->CSR;
+
+    /* Clear the TCF bit so that we don't clear this w1c bit when writing back */
+    reg &= ~(LPTMR_CSR_TCF_MASK);
+    reg &= ~mask;
+    base->CSR = reg;
 }
 
 /*!
@@ -325,7 +335,12 @@ static inline uint16_t LPTMR_GetCurrentTimerCount(LPTMR_Type *base)
  */
 static inline void LPTMR_StartTimer(LPTMR_Type *base)
 {
-    base->CSR |= LPTMR_CSR_TEN_MASK;
+    uint32_t reg = base->CSR;
+
+    /* Clear the TCF bit so that we don't clear this w1c bit when writing back */
+    reg &= ~(LPTMR_CSR_TCF_MASK);
+    reg |= LPTMR_CSR_TEN_MASK;
+    base->CSR = reg;
 }
 
 /*!
@@ -337,7 +352,12 @@ static inline void LPTMR_StartTimer(LPTMR_Type *base)
  */
 static inline void LPTMR_StopTimer(LPTMR_Type *base)
 {
-    base->CSR &= ~LPTMR_CSR_TEN_MASK;
+    uint32_t reg = base->CSR;
+
+    /* Clear the TCF bit so that we don't clear this w1c bit when writing back */
+    reg &= ~(LPTMR_CSR_TCF_MASK);
+    reg &= ~LPTMR_CSR_TEN_MASK;
+    base->CSR = reg;
 }
 
 /*! @}*/

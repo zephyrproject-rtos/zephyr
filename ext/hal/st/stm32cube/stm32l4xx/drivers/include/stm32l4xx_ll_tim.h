@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_tim.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of TIM LL module.
   ******************************************************************************
   * @attention
@@ -142,6 +142,9 @@ static const uint8_t SHIFT_TAB_OISx[] =
 /**
   * @}
   */
+
+/* Defines used for the bit position in the register and perform offsets */
+#define TIM_POSITION_BRK_SOURCE            POSITION_VAL(Source)
 
 /* Generic bit definitions for TIMx_OR2 register */
 #define TIMx_OR2_BKINE     TIM1_OR2_BKINE     /*!< BRK BKIN input enable */
@@ -455,6 +458,90 @@ typedef struct
                                     This feature can be modified afterwards using unitary function @ref LL_TIM_OC_SetCompareCH2().*/
 } LL_TIM_HALLSENSOR_InitTypeDef;
 
+/** 
+  * @brief  BDTR (Break and Dead Time) structure definition 
+  */
+
+typedef struct
+{
+  uint32_t OSSRState;            /*!< Specifies the Off-State selection used in Run mode.
+                                      This parameter can be a value of @ref TIM_LL_EC_OSSR
+
+                                      This feature can be modified afterwards using unitary function @ref LL_TIM_SetOffStates()
+  
+                                      @note This bit-field cannot be modified as long as LOCK level 2 has been programmed. */
+
+  uint32_t OSSIState;            /*!< Specifies the Off-State used in Idle state.
+                                      This parameter can be a value of @ref TIM_LL_EC_OSSI
+
+                                      This feature can be modified afterwards using unitary function @ref LL_TIM_SetOffStates()
+  
+                                      @note This bit-field cannot be modified as long as LOCK level 2 has been programmed. */
+
+  uint32_t LockLevel;            /*!< Specifies the LOCK level parameters.
+                                      This parameter can be a value of @ref TIM_LL_EC_LOCKLEVEL
+  
+                                      @note The LOCK bits can be written only once after the reset. Once the TIMx_BDTR register
+                                            has been written, their content is frozen until the next reset.*/ 
+
+  uint8_t DeadTime;              /*!< Specifies the delay time between the switching-off and the
+                                      switching-on of the outputs.
+                                      This parameter can be a number between Min_Data = 0x00 and Max_Data = 0xFF.
+
+                                      This feature can be modified afterwards using unitary function @ref LL_TIM_OC_SetDeadTime()
+  
+                                      @note This bit-field can not be modified as long as LOCK level 1, 2 or 3 has been programmed. */
+
+  uint16_t BreakState;           /*!< Specifies whether the TIM Break input is enabled or not. 
+                                      This parameter can be a value of @ref TIM_LL_EC_BREAK_ENABLE
+
+                                      This feature can be modified afterwards using unitary functions @ref LL_TIM_EnableBRK() or @ref LL_TIM_DisableBRK()
+
+                                      @note This bit-field can not be modified as long as LOCK level 1 has been programmed. */
+
+  uint32_t BreakPolarity;        /*!< Specifies the TIM Break Input pin polarity.
+                                      This parameter can be a value of @ref TIM_LL_EC_BREAK_POLARITY
+
+                                      This feature can be modified afterwards using unitary function @ref LL_TIM_ConfigBRK()
+  
+                                      @note This bit-field can not be modified as long as LOCK level 1 has been programmed. */
+
+  uint32_t BreakFilter;          /*!< Specifies the TIM Break Filter.
+                                      This parameter can be a value of @ref TIM_LL_EC_BREAK_FILTER
+
+                                      This feature can be modified afterwards using unitary function @ref LL_TIM_ConfigBRK()
+  
+                                      @note This bit-field can not be modified as long as LOCK level 1 has been programmed. */
+
+  uint32_t Break2State;          /*!< Specifies whether the TIM Break2 input is enabled or not. 
+                                      This parameter can be a value of @ref TIM_LL_EC_BREAK2_ENABLE
+
+                                      This feature can be modified afterwards using unitary functions @ref LL_TIM_EnableBRK2() or @ref LL_TIM_DisableBRK2()
+
+                                      @note This bit-field can not be modified as long as LOCK level 1 has been programmed. */
+
+  uint32_t Break2Polarity;        /*!< Specifies the TIM Break2 Input pin polarity.
+                                      This parameter can be a value of @ref TIM_LL_EC_BREAK2_POLARITY
+
+                                      This feature can be modified afterwards using unitary function @ref LL_TIM_ConfigBRK2()
+  
+                                      @note This bit-field can not be modified as long as LOCK level 1 has been programmed. */
+
+  uint32_t Break2Filter;          /*!< Specifies the TIM Break2 Filter.
+                                      This parameter can be a value of @ref TIM_LL_EC_BREAK2_FILTER
+
+                                      This feature can be modified afterwards using unitary function @ref LL_TIM_ConfigBRK2()
+  
+                                      @note This bit-field can not be modified as long as LOCK level 1 has been programmed. */
+
+  uint32_t AutomaticOutput;      /*!< Specifies whether the TIM Automatic Output feature is enabled or not. 
+                                      This parameter can be a value of @ref TIM_LL_EC_AUTOMATICOUTPUT_ENABLE
+
+                                      This feature can be modified afterwards using unitary functions @ref LL_TIM_EnableAutomaticOutput() or @ref LL_TIM_DisableAutomaticOutput()
+  
+                                      @note This bit-field can not be modified as long as LOCK level 1 has been programmed. */
+} LL_TIM_BDTR_InitTypeDef;
+
 /**
   * @}
   */
@@ -488,6 +575,36 @@ typedef struct
 /**
   * @}
   */
+
+#if defined(USE_FULL_LL_DRIVER)
+/** @defgroup TIM_LL_EC_BREAK_ENABLE Break Enable
+  * @{
+  */
+#define LL_TIM_BREAK_DISABLE            ((uint32_t)0x00000000U) /*!< Break function disabled */
+#define LL_TIM_BREAK_ENABLE             TIM_BDTR_BKE            /*!< Break function enabled */
+/**
+  * @}
+  */
+
+/** @defgroup TIM_LL_EC_BREAK2_ENABLE Break2 Enable
+  * @{
+  */
+#define LL_TIM_BREAK2_DISABLE            ((uint32_t)0x00000000U) /*!< Break2 function disabled */
+#define LL_TIM_BREAK2_ENABLE             TIM_BDTR_BK2E            /*!< Break2 function enabled */
+/**
+  * @}
+  */
+
+/** @defgroup TIM_LL_EC_AUTOMATICOUTPUT_ENABLE Automatic output enable
+  * @{
+  */
+#define LL_TIM_AUTOMATICOUTPUT_DISABLE         ((uint32_t)0x00000000U) /*!< MOE can be set only by software */
+#define LL_TIM_AUTOMATICOUTPUT_ENABLE          TIM_BDTR_AOE            /*!< MOE can be set by software or automatically at the next update event */
+/**
+  * @}
+  */ 
+#endif /* USE_FULL_LL_DRIVER */
+
 
 /** @defgroup TIM_LL_EC_IT IT Defines
   * @brief    IT defines which can be used with LL_TIM_ReadReg and  LL_TIM_WriteReg functions.
@@ -787,14 +904,14 @@ typedef struct
 /** @defgroup TIM_LL_EC_TS Trigger Selection
   * @{
   */
-#define LL_TIM_TS_ITR0                         ((uint32_t)0x00000000U)                          /*!< Internal Trigger 0 (ITR0) is used as trigger input */
-#define LL_TIM_TS_ITR1                         TIM_SMCR_TS_0                                    /*!< Internal Trigger 1 (ITR1) is used as trigger input */
-#define LL_TIM_TS_ITR2                         TIM_SMCR_TS_1                                    /*!< Internal Trigger 2 (ITR2) is used as trigger input */
-#define LL_TIM_TS_ITR3                         (TIM_SMCR_TS_0 | TIM_SMCR_TS_1)                  /*!< Internal Trigger 3 (ITR3) is used as trigger input */
-#define LL_TIM_TS_TI1F_ED                      TIM_SMCR_TS_2                                    /*!< TI1 Edge Detector (TI1F_ED) is used as trigger input */
-#define LL_TIM_TS_TI1FP1                       (TIM_SMCR_TS_2 | TIM_SMCR_TS_0)                  /*!< Filtered Timer Input 1 (TI1FP1) is used as trigger input */
-#define LL_TIM_TS_TI2FP2                       (TIM_SMCR_TS_2 | TIM_SMCR_TS_1)                  /*!< Filtered Timer Input 2 (TI12P2) is used as trigger input */
-#define LL_TIM_TS_ETRF                         (TIM_SMCR_TS_2 | TIM_SMCR_TS_1 | TIM_SMCR_TS_0) /*!< Filtered external Trigger (ETRF) is used as trigger input */
+#define LL_TIM_TS_ITR0                         ((uint32_t)0x00000000U)         /*!< Internal Trigger 0 (ITR0) is used as trigger input */
+#define LL_TIM_TS_ITR1                         TIM_SMCR_TS_0                   /*!< Internal Trigger 1 (ITR1) is used as trigger input */
+#define LL_TIM_TS_ITR2                         TIM_SMCR_TS_1                   /*!< Internal Trigger 2 (ITR2) is used as trigger input */
+#define LL_TIM_TS_ITR3                         (TIM_SMCR_TS_0 | TIM_SMCR_TS_1) /*!< Internal Trigger 3 (ITR3) is used as trigger input */
+#define LL_TIM_TS_TI1F_ED                      TIM_SMCR_TS_2                   /*!< TI1 Edge Detector (TI1F_ED) is used as trigger input */
+#define LL_TIM_TS_TI1FP1                       (TIM_SMCR_TS_2 | TIM_SMCR_TS_0) /*!< Filtered Timer Input 1 (TI1FP1) is used as trigger input */
+#define LL_TIM_TS_TI2FP2                       (TIM_SMCR_TS_2 | TIM_SMCR_TS_1) /*!< Filtered Timer Input 2 (TI12P2) is used as trigger input */
+#define LL_TIM_TS_ETRF                         TIM_SMCR_TS                     /*!< Filtered external Trigger (ETRF) is used as trigger input */
 /**
   * @}
   */
@@ -845,9 +962,9 @@ typedef struct
 /** @defgroup TIM_LL_EC_ETRSOURCE External Trigger Source
   * @{
   */
-#define LL_TIM_ETRSOURCE_LEGACY                ((uint32_t)(0x00000000U))               /*!< ETR legacy mode */
-#define LL_TIM_ETRSOURCE_COMP1                 TIM1_OR2_ETRSEL_0                       /*!< COMP1 output connected to ETR input */
-#define LL_TIM_ETRSOURCE_COMP2                 TIM1_OR2_ETRSEL_1                       /*!< COMP2 output connected to ETR input */
+#define LL_TIM_ETRSOURCE_LEGACY                ((uint32_t)(0x00000000U)) /*!< ETR legacy mode */
+#define LL_TIM_ETRSOURCE_COMP1                 TIM1_OR2_ETRSEL_0         /*!< COMP1 output connected to ETR input */
+#define LL_TIM_ETRSOURCE_COMP2                 TIM1_OR2_ETRSEL_1         /*!< COMP2 output connected to ETR input */
 /**
   * @}
   */
@@ -1177,7 +1294,6 @@ typedef struct
 /**
 @endcond
   */
-
 /**
   * @}
   */
@@ -3602,8 +3718,9 @@ __STATIC_INLINE void LL_TIM_SetBreakInputSourcePolarity(TIM_TypeDef *TIMx, uint3
                                                         uint32_t Polarity)
 {
   register uint32_t *pReg = (uint32_t *)((uint32_t)((uint32_t)(&TIMx->OR2) + BreakInput));
-  MODIFY_REG(*pReg, (TIMx_OR2_BKINP << (POSITION_VAL(Source))) , (Polarity << (POSITION_VAL(Source))));
+  MODIFY_REG(*pReg, (TIMx_OR2_BKINP << (TIM_POSITION_BRK_SOURCE)) , (Polarity << (TIM_POSITION_BRK_SOURCE)));
 }
+
 /**
   * @}
   */
@@ -3694,7 +3811,7 @@ __STATIC_INLINE void LL_TIM_ConfigDMABurst(TIM_TypeDef *TIMx, uint32_t DMABurstB
   *         TIM15_OR1   ENCODER_MODE      LL_TIM_SetRemap\n
   *         TIM16_OR1   TI1_RMP           LL_TIM_SetRemap\n
   *         TIM17_OR1   TI1_RMP           LL_TIM_SetRemap
-  * @param  TIMx Timer instance
+ * @param  TIMx Timer instance
   * @param  Remap Remap param depends on the TIMx. Description available only
   *         in CHM version of the User Manual (not in .pdf).
   *         Otherwise see Reference Manual description of OR registers.
@@ -3801,7 +3918,6 @@ __STATIC_INLINE void LL_TIM_SetRemap(TIM_TypeDef *TIMx, uint32_t Remap)
   * @}
   */
 
-#if defined(TIM_SMCR_OCCS)
 /** @defgroup TIM_LL_EF_OCREF_Clear OCREF_Clear_Management
   * @{
   */
@@ -3809,7 +3925,7 @@ __STATIC_INLINE void LL_TIM_SetRemap(TIM_TypeDef *TIMx, uint32_t Remap)
   * @brief  Set the OCREF clear input source
   * @note The OCxREF signal of a given channel can be cleared when a high level is applied on the OCREF_CLR_INPUT
   * @note This function can only be used in Output compare and PWM modes.
-  * @rmtoll SMCR          OCCS                LL_TIM_SetOCRefClearInputSource
+  * @rmtoll SMCR          OCCS           LL_TIM_SetOCRefClearInputSource
   * @param  TIMx Timer instance
   * @param  OCRefClearInputSource This parameter can be one of the following values:
   *         @arg @ref LL_TIM_OCREF_CLR_INT_NC
@@ -3824,7 +3940,6 @@ __STATIC_INLINE void LL_TIM_SetOCRefClearInputSource(TIM_TypeDef *TIMx, uint32_t
   * @}
   */
 
-#endif /* TIM_SMCR_OCCS */
 /** @defgroup TIM_LL_EF_FLAG_Management FLAG-Management
   * @{
   */
@@ -4815,6 +4930,8 @@ void LL_TIM_ENCODER_StructInit(LL_TIM_ENCODER_InitTypeDef *TIM_EncoderInitStruct
 ErrorStatus LL_TIM_ENCODER_Init(TIM_TypeDef *TIMx, LL_TIM_ENCODER_InitTypeDef *TIM_EncoderInitStruct);
 void LL_TIM_HALLSENSOR_StructInit(LL_TIM_HALLSENSOR_InitTypeDef *TIM_HallSensorInitStruct);
 ErrorStatus LL_TIM_HALLSENSOR_Init(TIM_TypeDef *TIMx, LL_TIM_HALLSENSOR_InitTypeDef *TIM_HallSensorInitStruct);
+void LL_TIM_BDTR_StructInit(LL_TIM_BDTR_InitTypeDef *TIM_BDTRInitStruct);
+ErrorStatus LL_TIM_BDTR_Init(TIM_TypeDef *TIMx, LL_TIM_BDTR_InitTypeDef *TIM_BDTRInitStruct);
 /**
   * @}
   */

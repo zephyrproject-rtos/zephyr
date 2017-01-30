@@ -125,20 +125,20 @@ static void I2C_TransferCommonIRQHandler(I2C_Type *base, void *handle);
 static void *s_i2cHandle[FSL_FEATURE_SOC_I2C_COUNT] = {NULL};
 
 /*! @brief SCL clock divider used to calculate baudrate. */
-const uint16_t s_i2cDividerTable[] = {20,   22,   24,   26,   28,   30,   34,   40,   28,   32,   36,   40,  44,
-                                      48,   56,   68,   48,   56,   64,   72,   80,   88,   104,  128,  80,  96,
-                                      112,  128,  144,  160,  192,  240,  160,  192,  224,  256,  288,  320, 384,
-                                      480,  320,  384,  448,  512,  576,  640,  768,  960,  640,  768,  896, 1024,
-                                      1152, 1280, 1536, 1920, 1280, 1536, 1792, 2048, 2304, 2560, 3072, 3840};
+static const uint16_t s_i2cDividerTable[] = {
+    20,  22,  24,  26,   28,   30,   34,   40,   28,   32,   36,   40,   44,   48,   56,   68,
+    48,  56,  64,  72,   80,   88,   104,  128,  80,   96,   112,  128,  144,  160,  192,  240,
+    160, 192, 224, 256,  288,  320,  384,  480,  320,  384,  448,  512,  576,  640,  768,  960,
+    640, 768, 896, 1024, 1152, 1280, 1536, 1920, 1280, 1536, 1792, 2048, 2304, 2560, 3072, 3840};
 
 /*! @brief Pointers to i2c bases for each instance. */
 static I2C_Type *const s_i2cBases[] = I2C_BASE_PTRS;
 
 /*! @brief Pointers to i2c IRQ number for each instance. */
-const IRQn_Type s_i2cIrqs[] = I2C_IRQS;
+static const IRQn_Type s_i2cIrqs[] = I2C_IRQS;
 
 /*! @brief Pointers to i2c clocks for each instance. */
-const clock_ip_name_t s_i2cClocks[] = I2C_CLOCKS;
+static const clock_ip_name_t s_i2cClocks[] = I2C_CLOCKS;
 
 /*! @brief Pointer to master IRQ handler for each instance. */
 static i2c_isr_t s_i2cMasterIsr;
@@ -418,7 +418,9 @@ void I2C_MasterInit(I2C_Type *base, const i2c_master_config_t *masterConfig, uin
 #if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
     uint8_t c2Reg;
 #endif
-
+#if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
+    uint8_t s2Reg;
+#endif
     /* Enable I2C clock. */
     CLOCK_EnableClock(s_i2cClocks[I2C_GetInstance(base)]);
 
@@ -455,6 +457,12 @@ void I2C_MasterInit(I2C_Type *base, const i2c_master_config_t *masterConfig, uin
     /* Write the register value back to the filter register. */
     base->FLT = fltReg;
 
+/* Enable/Disable double buffering. */
+#if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
+    s2Reg = base->S2 & (~I2C_S2_DFEN_MASK);
+    base->S2 = s2Reg | I2C_S2_DFEN(masterConfig->enableDoubleBuffering);
+#endif
+
     /* Enable the I2C peripheral based on the configuration. */
     base->C1 = I2C_C1_IICEN(masterConfig->enableMaster);
 }
@@ -488,12 +496,21 @@ void I2C_MasterGetDefaultConfig(i2c_master_config_t *masterConfig)
     /* Default glitch filter value is no filter. */
     masterConfig->glitchFilterWidth = 0U;
 
+/* Default enable double buffering. */
+#if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
+    masterConfig->enableDoubleBuffering = true;
+#endif
+
     /* Enable the I2C peripheral. */
     masterConfig->enableMaster = true;
 }
 
 void I2C_EnableInterrupts(I2C_Type *base, uint32_t mask)
 {
+#ifdef I2C_HAS_STOP_DETECT
+    uint8_t fltReg;
+#endif
+
     if (mask & kI2C_GlobalInterruptEnable)
     {
         base->C1 |= I2C_C1_IICIE_MASK;
@@ -502,14 +519,28 @@ void I2C_EnableInterrupts(I2C_Type *base, uint32_t mask)
 #if defined(FSL_FEATURE_I2C_HAS_STOP_DETECT) && FSL_FEATURE_I2C_HAS_STOP_DETECT
     if (mask & kI2C_StopDetectInterruptEnable)
     {
-        base->FLT |= I2C_FLT_STOPIE_MASK;
+        fltReg = base->FLT;
+
+        /* Keep STOPF flag. */
+        fltReg &= ~I2C_FLT_STOPF_MASK;
+
+        /* Stop detect enable. */
+        fltReg |= I2C_FLT_STOPIE_MASK;
+        base->FLT = fltReg;
     }
 #endif /* FSL_FEATURE_I2C_HAS_STOP_DETECT */
 
 #if defined(FSL_FEATURE_I2C_HAS_START_STOP_DETECT) && FSL_FEATURE_I2C_HAS_START_STOP_DETECT
     if (mask & kI2C_StartStopDetectInterruptEnable)
     {
-        base->FLT |= I2C_FLT_SSIE_MASK;
+        fltReg = base->FLT;
+
+        /* Keep STARTF and STOPF flags. */
+        fltReg &= ~(I2C_FLT_STOPF_MASK | I2C_FLT_STARTF_MASK);
+
+        /* Start and stop detect enable. */
+        fltReg |= I2C_FLT_SSIE_MASK;
+        base->FLT = fltReg;
     }
 #endif /* FSL_FEATURE_I2C_HAS_START_STOP_DETECT */
 }
@@ -524,14 +555,14 @@ void I2C_DisableInterrupts(I2C_Type *base, uint32_t mask)
 #if defined(FSL_FEATURE_I2C_HAS_STOP_DETECT) && FSL_FEATURE_I2C_HAS_STOP_DETECT
     if (mask & kI2C_StopDetectInterruptEnable)
     {
-        base->FLT &= ~I2C_FLT_STOPIE_MASK;
+        base->FLT &= ~(I2C_FLT_STOPIE_MASK | I2C_FLT_STOPF_MASK);
     }
 #endif /* FSL_FEATURE_I2C_HAS_STOP_DETECT */
 
 #if defined(FSL_FEATURE_I2C_HAS_START_STOP_DETECT) && FSL_FEATURE_I2C_HAS_START_STOP_DETECT
     if (mask & kI2C_StartStopDetectInterruptEnable)
     {
-        base->FLT &= ~I2C_FLT_SSIE_MASK;
+        base->FLT &= ~(I2C_FLT_SSIE_MASK | I2C_FLT_STOPF_MASK | I2C_FLT_STARTF_MASK);
     }
 #endif /* FSL_FEATURE_I2C_HAS_START_STOP_DETECT */
 }
@@ -1110,6 +1141,12 @@ void I2C_SlaveInit(I2C_Type *base, const i2c_slave_config_t *slaveConfig)
     tmpReg |= I2C_C2_HDRS(slaveConfig->enableHighDrive);
 #endif
     base->C2 = tmpReg;
+
+/* Enable/Disable double buffering. */
+#if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
+    tmpReg = base->S2 & (~I2C_S2_DFEN_MASK);
+    base->S2 = tmpReg | I2C_S2_DFEN(slaveConfig->enableDoubleBuffering);
+#endif
 }
 
 void I2C_SlaveDeinit(I2C_Type *base)
@@ -1141,6 +1178,11 @@ void I2C_SlaveGetDefaultConfig(i2c_slave_config_t *slaveConfig)
 
     /* Independent slave mode baud rate at maximum frequency is disabled. */
     slaveConfig->enableBaudRateCtl = false;
+
+/* Default enable double buffering. */
+#if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
+    slaveConfig->enableDoubleBuffering = true;
+#endif
 
     /* Enable the I2C peripheral. */
     slaveConfig->enableSlave = true;

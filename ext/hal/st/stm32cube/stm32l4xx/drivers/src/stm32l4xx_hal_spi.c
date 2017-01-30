@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_spi.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   SPI HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Serial Peripheral Interface (SPI) peripheral:
@@ -1054,8 +1054,8 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
       else
       {
         *(__IO uint8_t *)&hspi->Instance->DR = (*pTxData++);
-        hspi->TxXferCount--;
-      }
+      hspi->TxXferCount--;
+    }
     }
     while ((hspi->TxXferCount > 0U) || (hspi->RxXferCount > 0U))
     {

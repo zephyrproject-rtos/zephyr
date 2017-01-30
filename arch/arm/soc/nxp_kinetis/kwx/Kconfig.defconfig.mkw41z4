@@ -1,0 +1,57 @@
+# Kconfig - Kinetis KWx SoC configuration options
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MKW41Z4
+
+config SOC
+	string
+	default mkw41z4
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 2
+
+config NUM_IRQS
+	int
+	default 32
+
+if PINMUX
+
+config PINMUX_MCUX
+	def_bool y
+
+endif # PINMUX
+
+if GPIO
+
+config GPIO_MCUX
+	def_bool y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_MCUX_LPUART
+	def_bool y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_MCUX
+	def_bool y
+
+endif # I2C
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	def_bool y
+
+endif # FLASH
+
+endif # SOC_MKW41Z4

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_tim_ex.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of TIM HAL Extended module.
   ******************************************************************************
   * @attention
@@ -33,7 +33,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32L4xx_HAL_TIM_EX_H
@@ -52,9 +52,9 @@
 
 /** @addtogroup TIMEx
   * @{
-  */ 
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /** @defgroup TIMEx_Exported_Types TIM Extended Exported Types
   * @{
   */
@@ -73,10 +73,10 @@ typedef struct
                                      This parameter can be a value of @ref TIM_Input_Capture_Prescaler */
                                   
   uint32_t IC1Filter;           /*!< Specifies the input capture filter.
-                                     This parameter can be a number between Min_Data = 0x0 and Max_Data = 0xF */  
+                                     This parameter can be a number between Min_Data = 0x0 and Max_Data = 0xF */
 
   uint32_t Commutation_Delay;   /*!< Specifies the pulse value to be loaded into the Capture Compare Register. 
-                                     This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF */                              
+                                     This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF */
 } TIM_HallSensor_InitTypeDef;
 
 /** 
@@ -95,7 +95,7 @@ typedef struct {
 /**
   * @}
   */
-/* End of exported types -----------------------------------------------------*/ 
+/* End of exported types -----------------------------------------------------*/
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup TIMEx_Exported_Constants TIM Extended Exported Constants
@@ -119,14 +119,17 @@ typedef struct {
 #define TIM_TIM1_TI1_COMP1          (TIM1_OR1_TI1_RMP)                                    /* !< TIM1 TI1 is connected to COMP1 */
 #define TIM_TIM1_ETR_COMP1          (TIM1_OR2_ETRSEL_0)                                   /* !< TIM1_ETR is connected to COMP1 output */
 #define TIM_TIM1_ETR_COMP2          (TIM1_OR2_ETRSEL_1)                                   /* !< TIM1_ETR is connected to COMP2 output */
+
 #if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define TIM_TIM2_ITR1_TIM8_TRGO     ((uint32_t)(0x00000000))                              /* !< TIM2_ITR1 is connected to TIM8_TRGO */
 #define TIM_TIM2_ITR1_OTG_FS_SOF    (TIM2_OR1_ITR1_RMP)                                   /* !< TIM2_ITR1 is connected to OTG_FS SOF */
 #endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define TIM_TIM2_ITR1_NONE          ((uint32_t)(0x00000000))                              /* !< No internal trigger on TIM2_ITR1 */
 #define TIM_TIM2_ITR1_USB_SOF       (TIM2_OR1_ITR1_RMP)                                   /* !< TIM2_ITR1 is connected to USB SOF */
-#endif /* STM32L431xx || STM32L432xx || STM32L442xx || STM32L433xx || STM32L443xx */  
+#endif /* STM32L431xx || STM32L432xx || STM32L442xx || STM32L433xx || STM32L443xx || */
+       /* STM32L451xx || STM32L452xx || STM32L462xx */
 #define TIM_TIM2_ETR_GPIO           ((uint32_t)(0x00000000))                              /* !< TIM2_ETR is connected to GPIO */
 #define TIM_TIM2_ETR_LSE            (TIM2_OR1_ETR1_RMP)                                   /* !< TIM2_ETR is connected to LSE */
 #define TIM_TIM2_ETR_COMP1          (TIM2_OR2_ETRSEL_0)                                   /* !< TIM2_ETR is connected to COMP1 output */
@@ -135,14 +138,18 @@ typedef struct {
 #define TIM_TIM2_TI4_COMP1          (TIM2_OR1_TI4_RMP_0)                                  /* !< TIM2 TI4 is connected to COMP1 output */
 #define TIM_TIM2_TI4_COMP2          (TIM2_OR1_TI4_RMP_1)                                  /* !< TIM2 TI4 is connected to COMP2 output */
 #define TIM_TIM2_TI4_COMP1_COMP2    (TIM2_OR1_TI4_RMP_1| TIM2_OR1_TI4_RMP_0)              /* !< TIM2 TI4 is connected to logical OR between COMP1 and COMP2 output2 */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define TIM_TIM3_TI1_GPIO           ((uint32_t)(0x00000000))                              /* !< TIM3 TI1 is connected to GPIO */
 #define TIM_TIM3_TI1_COMP1          (TIM3_OR1_TI1_RMP_0)                                  /* !< TIM3 TI1 is connected to COMP1 output */
 #define TIM_TIM3_TI1_COMP2          (TIM3_OR1_TI1_RMP_1)                                  /* !< TIM3 TI1 is connected to COMP2 output */
 #define TIM_TIM3_TI1_COMP1_COMP2    (TIM3_OR1_TI1_RMP_1 | TIM3_OR1_TI1_RMP_0)             /* !< TIM3 TI1 is connected to logical OR between COMP1 and COMP2 output2 */
 #define TIM_TIM3_ETR_GPIO           ((uint32_t)(0x00000000))                              /* !< TIM3_ETR is connected to GPIO */
 #define TIM_TIM3_ETR_COMP1          (TIM3_OR2_ETRSEL_0)                                   /* !< TIM3_ETR is connected to COMP1 output */
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+
 #if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define TIM_TIM8_ETR_ADC2_NONE      ((uint32_t)(0x00000000))                              /* !< TIM8_ETR is not connected to any AWD (analog watchdog)*/
 #define TIM_TIM8_ETR_ADC2_AWD1      (TIM8_OR1_ETR_ADC2_RMP_0)                             /* !< TIM8_ETR is connected to ADC2 AWD1 */
@@ -152,28 +159,37 @@ typedef struct {
 #define TIM_TIM8_ETR_ADC3_AWD1      (TIM8_OR1_ETR_ADC3_RMP_0)                             /* !< TIM8_ETR is connected to ADC3 AWD1 */
 #define TIM_TIM8_ETR_ADC3_AWD2      (TIM8_OR1_ETR_ADC3_RMP_1)                             /* !< TIM8_ETR is connected to ADC3 AWD2 */
 #define TIM_TIM8_ETR_ADC3_AWD3      (TIM8_OR1_ETR_ADC3_RMP_1 | TIM8_OR1_ETR_ADC3_RMP_0)   /* !< TIM8_ETR is connected to ADC3 AWD3 */
-#define TIM_TIM8_TI1_GPIO           ((uint32_t)(0x00000000))                              /* !< TIM8 TI1 is connected to GPIO */
-#define TIM_TIM8_TI1_COMP2          (TIM8_OR1_TI1_RMP)                                    /* !< TIM8 TI1 is connected to COMP1 */
 #define TIM_TIM8_ETR_COMP1          (TIM8_OR2_ETRSEL_0)                                   /* !< TIM8_ETR is connected to COMP1 output */
 #define TIM_TIM8_ETR_COMP2          (TIM8_OR2_ETRSEL_1)                                   /* !< TIM8_ETR is connected to COMP2 output */
+#define TIM_TIM8_TI1_GPIO           ((uint32_t)(0x00000000))                              /* !< TIM8 TI1 is connected to GPIO */
+#define TIM_TIM8_TI1_COMP2          (TIM8_OR1_TI1_RMP)                                    /* !< TIM8 TI1 is connected to COMP1 */
 #endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+
 #define TIM_TIM15_TI1_GPIO          ((uint32_t)(0x00000000))                              /* !< TIM15 TI1 is connected to GPIO */
 #define TIM_TIM15_TI1_LSE           (TIM15_OR1_TI1_RMP)                                   /* !< TIM15 TI1 is connected to LSE */
 #define TIM_TIM15_ENCODERMODE_NONE  ((uint32_t)(0x00000000))                              /* !< No redirection */
 #define TIM_TIM15_ENCODERMODE_TIM2  (TIM15_OR1_ENCODER_MODE_0)                            /* !< TIM2 IC1 and TIM2 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define TIM_TIM15_ENCODERMODE_TIM3  (TIM15_OR1_ENCODER_MODE_1)                            /* !< TIM3 IC1 and TIM3 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define TIM_TIM15_ENCODERMODE_TIM4  (TIM15_OR1_ENCODER_MODE_1 | TIM15_OR1_ENCODER_MODE_0) /* !< TIM4 IC1 and TIM4 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively */
 #endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+
 #define TIM_TIM16_TI1_GPIO          ((uint32_t)(0x00000000))                              /* !< TIM16 TI1 is connected to GPIO */
 #define TIM_TIM16_TI1_LSI           (TIM16_OR1_TI1_RMP_0)                                 /* !< TIM16 TI1 is connected to LSI */
 #define TIM_TIM16_TI1_LSE           (TIM16_OR1_TI1_RMP_1)                                 /* !< TIM16 TI1 is connected to LSE */
 #define TIM_TIM16_TI1_RTC           (TIM16_OR1_TI1_RMP_1 | TIM16_OR1_TI1_RMP_0)           /* !< TIM16 TI1 is connected to RTC wakeup interrupt */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+    defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define TIM_TIM16_TI1_MSI           (TIM16_OR1_TI1_RMP_2)                                 /* !< TIM16 TI1 is connected to MSI */
 #define TIM_TIM16_TI1_HSE_32        (TIM16_OR1_TI1_RMP_2 | TIM16_OR1_TI1_RMP_0)           /* !< TIM16 TI1 is connected to HSE div 32 */
 #define TIM_TIM16_TI1_MCO           (TIM16_OR1_TI1_RMP_2 | TIM16_OR1_TI1_RMP_1)           /* !< TIM16 TI1 is connected to MCO */
-#endif /* STM32L431xx || STM32L432xx || STM32L442xx || STM32L433xx || STM32L443xx */  
+#endif /* STM32L431xx || STM32L432xx || STM32L442xx || STM32L433xx || STM32L443xx || */
+       /* STM32L451xx || STM32L452xx || STM32L462xx */
+
 #if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define TIM_TIM17_TI1_GPIO          ((uint32_t)(0x00000000))                              /* !< TIM17 TI1 is connected to GPIO */
 #define TIM_TIM17_TI1_MSI           (TIM17_OR1_TI1_RMP_0)                                 /* !< TIM17 TI1 is connected to MSI */
@@ -182,7 +198,7 @@ typedef struct {
 #endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup TIMEx_Break_Input TIM  Extended Break input
   * @{
@@ -191,7 +207,7 @@ typedef struct {
 #define TIM_BREAKINPUT_BRK2    ((uint32_t)(0x00000002)) /* !< Timer break2 input */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup TIMEx_Break_Input_Source TIM  Extended Break input source
   * @{
@@ -199,12 +215,14 @@ typedef struct {
 #define TIM_BREAKINPUTSOURCE_BKIN     ((uint32_t)(0x00000001)) /* !< An external source (GPIO) is connected to the BKIN pin  */
 #define TIM_BREAKINPUTSOURCE_COMP1    ((uint32_t)(0x00000002)) /* !< The COMP1 output is connected to the break input */
 #define TIM_BREAKINPUTSOURCE_COMP2    ((uint32_t)(0x00000004)) /* !< The COMP2 output is connected to the break input */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define TIM_BREAKINPUTSOURCE_DFSDM1   ((uint32_t)(0x00000008)) /* !< The analog watchdog output of the DFSDM1 peripheral is connected to the break input */
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup TIMEx_Break_Input_Source_Enable TIM Extended Break input source enabling
   * @{
@@ -213,7 +231,7 @@ typedef struct {
 #define TIM_BREAKINPUTSOURCE_ENABLE      ((uint32_t)(0x00000001)) /* !< Break input source is enabled */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup TIMEx_Break_Input_Source_Polarity TIM  Extended Break input polarity
   * @{
@@ -222,33 +240,34 @@ typedef struct {
 #define TIM_BREAKINPUTSOURCE_POLARITY_HIGH    ((uint32_t)(0x00000000)) /* !< Break input source is active_high */
 /**
   * @}
-  */ 
+  */
    
 /**
   * @}
-  */ 
+  */
 /* End of exported constants -------------------------------------------------*/
 
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup TIMEx_Exported_Macros TIM Extended Exported Macros
   * @{
-  */  
+  */
 
 /**
   * @}
-  */ 
+  */
 /* End of exported macro -----------------------------------------------------*/
 
 /* Private macro -------------------------------------------------------------*/
 /** @defgroup TIMEx_Private_Macros TIM Extended Private Macros
   * @{
-  */  
+  */
 #define IS_TIM_REMAP(__REMAP__)    (((__REMAP__) <= (uint32_t)0x0001C01F))
 
 #define IS_TIM_BREAKINPUT(__BREAKINPUT__)  (((__BREAKINPUT__) == TIM_BREAKINPUT_BRK)  || \
                                             ((__BREAKINPUT__) == TIM_BREAKINPUT_BRK2))
 
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define IS_TIM_BREAKINPUTSOURCE(__SOURCE__)  (((__SOURCE__) == TIM_BREAKINPUTSOURCE_BKIN)  || \
                                               ((__SOURCE__) == TIM_BREAKINPUTSOURCE_COMP1) || \
                                               ((__SOURCE__) == TIM_BREAKINPUTSOURCE_COMP2) || \
@@ -266,7 +285,7 @@ typedef struct {
                                                          ((__POLARITY__) == TIM_BREAKINPUTSOURCE_POLARITY_HIGH))
 /**
   * @}
-  */ 
+  */
 /* End of private macro ------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
@@ -394,7 +413,7 @@ HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef *htim);
 
 /**
   * @}
-  */ 
+  */
 /* End of exported functions -------------------------------------------------*/
 
 /* Private functions----------------------------------------------------------*/
@@ -404,12 +423,12 @@ HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef *htim);
 void TIMEx_DMACommutationCplt(DMA_HandleTypeDef *hdma);
 /**
 * @}
-*/ 
+*/
 /* End of private functions --------------------------------------------------*/
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

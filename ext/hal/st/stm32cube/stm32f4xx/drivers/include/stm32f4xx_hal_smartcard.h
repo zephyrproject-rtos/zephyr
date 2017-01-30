@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_smartcard.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of SMARTCARD HAL module.
   ******************************************************************************
   * @attention
@@ -179,13 +179,13 @@ typedef struct
 
   uint16_t                         TxXferSize;       /* SmartCard Tx Transfer size */
 
-  uint16_t                         TxXferCount;      /* SmartCard Tx Transfer Counter */
+  __IO uint16_t                    TxXferCount;      /* SmartCard Tx Transfer Counter */
 
   uint8_t                          *pRxBuffPtr;      /* Pointer to SmartCard Rx transfer Buffer */
 
   uint16_t                         RxXferSize;       /* SmartCard Rx Transfer size */
 
-  uint16_t                         RxXferCount;      /* SmartCard Rx Transfer Counter */
+  __IO uint16_t                    RxXferCount;      /* SmartCard Rx Transfer Counter */
 
   DMA_HandleTypeDef                *hdmatx;          /* SmartCard Tx DMA Handle parameters */
 
@@ -580,11 +580,21 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_IT(SMARTCARD_HandleTypeDef *hsc, uint8_
 HAL_StatusTypeDef HAL_SMARTCARD_Receive_IT(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size);
 HAL_StatusTypeDef HAL_SMARTCARD_Transmit_DMA(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size);
 HAL_StatusTypeDef HAL_SMARTCARD_Receive_DMA(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size);
+/* Transfer Abort functions */
+HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsc);
+HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit(SMARTCARD_HandleTypeDef *hsc);
+HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive(SMARTCARD_HandleTypeDef *hsc);
+HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsc);
+HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit_IT(SMARTCARD_HandleTypeDef *hsc);
+HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive_IT(SMARTCARD_HandleTypeDef *hsc);
 
 void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsc);
 void HAL_SMARTCARD_TxCpltCallback(SMARTCARD_HandleTypeDef *hsc);
 void HAL_SMARTCARD_RxCpltCallback(SMARTCARD_HandleTypeDef *hsc);
 void HAL_SMARTCARD_ErrorCallback(SMARTCARD_HandleTypeDef *hsc);
+void HAL_SMARTCARD_AbortCpltCallback(SMARTCARD_HandleTypeDef *hsc);
+void HAL_SMARTCARD_AbortTransmitCpltCallback(SMARTCARD_HandleTypeDef *hsc);
+void HAL_SMARTCARD_AbortReceiveCpltCallback(SMARTCARD_HandleTypeDef *hsc);
 /**
   * @}
   */

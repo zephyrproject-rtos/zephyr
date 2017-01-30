@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_pwr_ex.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of PWR HAL Extended module.
   ******************************************************************************
   * @attention
@@ -124,13 +124,12 @@ typedef struct
 /** @defgroup PWREx_PVM_Type Peripheral Voltage Monitoring type
   * @{
   */
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(PWR_CR2_PVME1)    
 #define PWR_PVM_1                  PWR_CR2_PVME1  /*!< Peripheral Voltage Monitoring 1 enable: VDDUSB versus 1.2 V (applicable when USB feature is supported) */
-#endif /* STM32L432xx || STM32L433xx || STM32L442xx || STM32L443xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#endif /* PWR_CR2_PVME1 */
+#if defined(PWR_CR2_PVME2)  
 #define PWR_PVM_2                  PWR_CR2_PVME2  /*!< Peripheral Voltage Monitoring 2 enable: VDDIO2 versus 0.9 V (applicable when VDDIO2 is present on device) */
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* PWR_CR2_PVME2 */
 #define PWR_PVM_3                  PWR_CR2_PVME3  /*!< Peripheral Voltage Monitoring 3 enable: VDDA versus 1.62 V */
 #define PWR_PVM_4                  PWR_CR2_PVME4  /*!< Peripheral Voltage Monitoring 4 enable: VDDA versus 2.2 V  */
 /**
@@ -210,13 +209,16 @@ typedef struct
 #define PWR_GPIO_A   0x00000000      /*!< GPIO port A */
 #define PWR_GPIO_B   0x00000001      /*!< GPIO port B */
 #define PWR_GPIO_C   0x00000002      /*!< GPIO port C */
-#if defined (STM32L431xx) || defined (STM32L433xx) || defined (STM32L443xx) ||                                                   \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(GPIOD_BASE)    
 #define PWR_GPIO_D   0x00000003      /*!< GPIO port D */
+#endif
+#if defined(GPIOE_BASE) 
 #define PWR_GPIO_E   0x00000004      /*!< GPIO port E */
 #endif
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(GPIOF_BASE)   
 #define PWR_GPIO_F   0x00000005      /*!< GPIO port F */
+#endif
+#if defined(GPIOG_BASE)  
 #define PWR_GPIO_G   0x00000006      /*!< GPIO port G */
 #endif
 #define PWR_GPIO_H   0x00000007      /*!< GPIO port H */
@@ -227,12 +229,12 @@ typedef struct
 /** @defgroup PWREx_PVM_EXTI_LINE PWR PVM external interrupts lines
   * @{
   */    
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(PWR_CR2_PVME1) 
 #define PWR_EXTI_LINE_PVM1  ((uint32_t)0x00000008)  /*!< External interrupt line 35 Connected to the PVM1 EXTI Line   */
-#endif /* defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#endif /* PWR_CR2_PVME1 */
+#if defined(PWR_CR2_PVME2)
 #define PWR_EXTI_LINE_PVM2  ((uint32_t)0x00000010)  /*!< External interrupt line 36 Connected to the PVM2 EXTI Line   */
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* PWR_CR2_PVME2 */
 #define PWR_EXTI_LINE_PVM3  ((uint32_t)0x00000020)  /*!< External interrupt line 37 Connected to the PVM3 EXTI Line   */
 #define PWR_EXTI_LINE_PVM4  ((uint32_t)0x00000040)  /*!< External interrupt line 38 Connected to the PVM4 EXTI Line   */ 
 /**
@@ -242,12 +244,12 @@ typedef struct
 /** @defgroup PWREx_PVM_EVENT_LINE PWR PVM event lines
   * @{
   */    
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(PWR_CR2_PVME1) 
 #define PWR_EVENT_LINE_PVM1 ((uint32_t)0x00000008)  /*!< Event line 35 Connected to the PVM1 EXTI Line */
-#endif /* defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#endif /* PWR_CR2_PVME1 */
+#if defined(PWR_CR2_PVME2)
 #define PWR_EVENT_LINE_PVM2 ((uint32_t)0x00000010)  /*!< Event line 36 Connected to the PVM2 EXTI Line */
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* PWR_CR2_PVME2 */
 #define PWR_EVENT_LINE_PVM3 ((uint32_t)0x00000020)  /*!< Event line 37 Connected to the PVM3 EXTI Line */
 #define PWR_EVENT_LINE_PVM4 ((uint32_t)0x00000040)  /*!< Event line 38 Connected to the PVM4 EXTI Line */ 
 /**
@@ -277,12 +279,12 @@ typedef struct
 #define PWR_FLAG_REGLPF                     ((uint32_t)0x0049)   /*!< Low-power regulator flag */
 #define PWR_FLAG_VOSF                       ((uint32_t)0x004A)   /*!< Voltage scaling flag */
 #define PWR_FLAG_PVDO                       ((uint32_t)0x004B)   /*!< Power Voltage Detector output flag */
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(PWR_CR2_PVME1)
 #define PWR_FLAG_PVMO1                      ((uint32_t)0x004C)   /*!< Power Voltage Monitoring 1 output flag */
-#endif /* defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#endif /* PWR_CR2_PVME1 */
+#if defined(PWR_CR2_PVME2)
 #define PWR_FLAG_PVMO2                      ((uint32_t)0x004D)   /*!< Power Voltage Monitoring 2 output flag */
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* PWR_CR2_PVME2 */
 #define PWR_FLAG_PVMO3                      ((uint32_t)0x004E)   /*!< Power Voltage Monitoring 3 output flag */
 #define PWR_FLAG_PVMO4                      ((uint32_t)0x004F)   /*!< Power Voltage Monitoring 4 output flag */
 /**
@@ -298,7 +300,7 @@ typedef struct
  * @{
  */
 
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(PWR_CR2_PVME1)
 /**
   * @brief Enable the PVM1 Extended Interrupt Line.
   * @retval None
@@ -387,10 +389,10 @@ typedef struct
   */
 #define __HAL_PWR_PVM1_EXTI_CLEAR_FLAG()  WRITE_REG(EXTI->PR2, PWR_EXTI_LINE_PVM1)
 
-#endif /* defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* PWR_CR2_PVME1 */
 
 
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(PWR_CR2_PVME2)
 /**
   * @brief Enable the PVM2 Extended Interrupt Line.
   * @retval None
@@ -479,7 +481,7 @@ typedef struct
   */
 #define __HAL_PWR_PVM2_EXTI_CLEAR_FLAG()  WRITE_REG(EXTI->PR2, PWR_EXTI_LINE_PVM2)
 
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* PWR_CR2_PVME2 */
 
 
 /**
@@ -722,11 +724,11 @@ typedef struct
                                ((TYPE) == PWR_PVM_4))
 #endif
 
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L433xx) || defined (STM32L443xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_PWR_PVM_TYPE(TYPE) (((TYPE) == PWR_PVM_1) ||\
                                ((TYPE) == PWR_PVM_3) ||\
                                ((TYPE) == PWR_PVM_4))
-#elif defined (STM32L431xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L442xx) || defined (STM32L451xx)
 #define IS_PWR_PVM_TYPE(TYPE) (((TYPE) == PWR_PVM_3) ||\
                                ((TYPE) == PWR_PVM_4))
 #endif                                  
@@ -751,17 +753,8 @@ typedef struct
 #define IS_PWR_GPIO_BIT_NUMBER(BIT_NUMBER) (((BIT_NUMBER) & GPIO_PIN_MASK) != (uint32_t)0x00)
                                            
                              
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
-#define IS_PWR_GPIO(GPIO) (((GPIO) == PWR_GPIO_A) ||\
-                           ((GPIO) == PWR_GPIO_B) ||\
-                           ((GPIO) == PWR_GPIO_C) ||\
-                           ((GPIO) == PWR_GPIO_D) ||\
-                           ((GPIO) == PWR_GPIO_E) ||\
-                           ((GPIO) == PWR_GPIO_F) ||\
-                           ((GPIO) == PWR_GPIO_G) ||\
-                           ((GPIO) == PWR_GPIO_H))
-#endif
-#if defined (STM32L431xx) || defined (STM32L433xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L433xx) || defined (STM32L443xx) || \
+    defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_PWR_GPIO(GPIO) (((GPIO) == PWR_GPIO_A) ||\
                            ((GPIO) == PWR_GPIO_B) ||\
                            ((GPIO) == PWR_GPIO_C) ||\
@@ -772,6 +765,15 @@ typedef struct
 #define IS_PWR_GPIO(GPIO) (((GPIO) == PWR_GPIO_A) ||\
                            ((GPIO) == PWR_GPIO_B) ||\
                            ((GPIO) == PWR_GPIO_C) ||\
+                           ((GPIO) == PWR_GPIO_H))
+#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#define IS_PWR_GPIO(GPIO) (((GPIO) == PWR_GPIO_A) ||\
+                           ((GPIO) == PWR_GPIO_B) ||\
+                           ((GPIO) == PWR_GPIO_C) ||\
+                           ((GPIO) == PWR_GPIO_D) ||\
+                           ((GPIO) == PWR_GPIO_E) ||\
+                           ((GPIO) == PWR_GPIO_F) ||\
+                           ((GPIO) == PWR_GPIO_G) ||\
                            ((GPIO) == PWR_GPIO_H))
 #endif
 
@@ -794,15 +796,15 @@ typedef struct
 uint32_t HAL_PWREx_GetVoltageRange(void);
 HAL_StatusTypeDef HAL_PWREx_ControlVoltageScaling(uint32_t VoltageScaling);
 void HAL_PWREx_EnableBatteryCharging(uint32_t ResistorSelection);
-void HAL_PWREx_DisableBatteryCharging(void);
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+void HAL_PWREx_DisableBatteryCharging(void);          
+#if defined(PWR_CR2_USV)
 void HAL_PWREx_EnableVddUSB(void);
 void HAL_PWREx_DisableVddUSB(void);
-#endif /* defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#endif /* PWR_CR2_USV */
+#if defined(PWR_CR2_IOSV)
 void HAL_PWREx_EnableVddIO2(void);
 void HAL_PWREx_DisableVddIO2(void);
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* PWR_CR2_IOSV */
 void HAL_PWREx_EnableInternalWakeUpLine(void);
 void HAL_PWREx_DisableInternalWakeUpLine(void);
 HAL_StatusTypeDef HAL_PWREx_EnableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber);
@@ -813,14 +815,14 @@ void HAL_PWREx_EnablePullUpPullDownConfig(void);
 void HAL_PWREx_DisablePullUpPullDownConfig(void);
 void HAL_PWREx_EnableSRAM2ContentRetention(void);
 void HAL_PWREx_DisableSRAM2ContentRetention(void);
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(PWR_CR2_PVME1)
 void HAL_PWREx_EnablePVM1(void);
 void HAL_PWREx_DisablePVM1(void);
-#endif /* defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#endif /* PWR_CR2_PVME1 */
+#if defined(PWR_CR2_PVME2)
 void HAL_PWREx_EnablePVM2(void);
 void HAL_PWREx_DisablePVM2(void);
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* PWR_CR2_PVME2 */
 void HAL_PWREx_EnablePVM3(void);
 void HAL_PWREx_DisablePVM3(void);
 void HAL_PWREx_EnablePVM4(void);
@@ -837,15 +839,14 @@ void HAL_PWREx_EnterSTOP2Mode(uint8_t STOPEntry);
 void HAL_PWREx_EnterSHUTDOWNMode(void);
 
 void HAL_PWREx_PVD_PVM_IRQHandler(void);
-#if defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined(PWR_CR2_PVME1) 
 void HAL_PWREx_PVM1Callback(void);
-#endif /* defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#endif /* PWR_CR2_PVME1 */
+#if defined(PWR_CR2_PVME2)
 void HAL_PWREx_PVM2Callback(void);
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* PWR_CR2_PVME2 */
 void HAL_PWREx_PVM3Callback(void);
 void HAL_PWREx_PVM4Callback(void);
-
 
 /**
   * @}

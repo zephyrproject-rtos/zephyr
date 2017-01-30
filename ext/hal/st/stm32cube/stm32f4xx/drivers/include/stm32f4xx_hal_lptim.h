@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_lptim.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of LPTIM HAL module.
   ******************************************************************************
   * @attention
@@ -43,7 +43,7 @@
  extern "C" {
 #endif
 
-#if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx)
+#if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx) || defined(STM32F413xx) || defined(STM32F423xx)
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal_def.h"
 
@@ -324,9 +324,9 @@ typedef struct
   * @{
   */
 #define LPTIM_OP_PAD_AF                          ((uint32_t)0x00000000U)
-#define LPTIM_OP_PAD_PA4                         LPTIM_OR_OR_0
-#define LPTIM_OP_PAD_PB9                         LPTIM_OR_OR_1
-#define LPTIM_OP_TIM_DAC                         LPTIM_OR_OR
+#define LPTIM_OP_PAD_PA4                         LPTIM_OR_LPT_IN1_RMP_0
+#define LPTIM_OP_PAD_PB9                         LPTIM_OR_LPT_IN1_RMP_1
+#define LPTIM_OP_TIM_DAC                         LPTIM_OR_LPT_IN1_RMP
 
 /**
   * @}
@@ -753,7 +753,7 @@ HAL_LPTIM_StateTypeDef HAL_LPTIM_GetState(LPTIM_HandleTypeDef *hlptim);
   * @}
   */
 
-#endif /* STM32F410Tx || STM32F410Cx || STM32F410Rx */
+#endif /* STM32F410Tx || STM32F410Cx || STM32F410Rx || STM32F413xx || STM32F423xx */
 #ifdef __cplusplus
 }
 #endif

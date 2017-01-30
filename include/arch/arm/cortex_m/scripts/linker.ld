@@ -35,8 +35,8 @@
   #define _DATA_IN_ROM
 #endif
 
-#if !defined(SKIP_TO_SECURITY_FRDM_K64F)
-  #define SKIP_TO_SECURITY_FRDM_K64F
+#if !defined(SKIP_TO_KINETIS_FLASH_CONFIG)
+  #define SKIP_TO_KINETIS_FLASH_CONFIG
 #endif
 
 #define ROM_ADDR CONFIG_FLASH_BASE_ADDRESS
@@ -79,10 +79,10 @@ SECTIONS
 	KEEP(*(.irq_vector_table))
 	KEEP(*(".irq_vector_table.*"))
 
-	/* FRDM_K64F has to write 16 bytes at 0x400 */
-	SKIP_TO_SECURITY_FRDM_K64F
-	KEEP(*(.security_frdm_k64f))
-	KEEP(*(".security_frdm_k64f.*"))
+	/* Kinetis has to write 16 bytes at 0x400 */
+	SKIP_TO_KINETIS_FLASH_CONFIG
+	KEEP(*(.kinetis_flash_config))
+	KEEP(*(".kinetis_flash_config.*"))
 
 	KEEP(*(.isr_irq*))
 

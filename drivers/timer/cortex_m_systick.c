@@ -537,7 +537,7 @@ int _sys_clock_driver_init(struct device *device)
 
 #endif /* CONFIG_TICKLESS_IDLE */
 
-	_ScbExcPrioSet(_EXC_SYSTICK, _EXC_IRQ_DEFAULT_PRIO);
+	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 
 	SysTick->CTRL = ctrl;
 

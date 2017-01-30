@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dma.c
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   DMA HAL module driver.
   *    
   *          This file provides firmware functions to manage the following 
@@ -76,9 +76,6 @@
        
       (+) __HAL_DMA_ENABLE: Enable the specified DMA Stream.
       (+) __HAL_DMA_DISABLE: Disable the specified DMA Stream.
-      (+) __HAL_DMA_GET_FS: Return the current DMA Stream FIFO filled level.
-      (+) __HAL_DMA_ENABLE_IT: Enable the specified DMA Stream interrupts.
-      (+) __HAL_DMA_DISABLE_IT: Disable the specified DMA Stream interrupts.
       (+) __HAL_DMA_GET_IT_SOURCE: Check whether the specified DMA Stream interrupt has occurred or not. 
 
      [..]
@@ -339,6 +336,9 @@ HAL_StatusTypeDef HAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
     /* Return error status */
     return HAL_BUSY;
   }
+
+  /* Check the parameters */
+  assert_param(IS_DMA_STREAM_ALL_INSTANCE(hdma->Instance));
 
   /* Disable the selected DMA Streamx */
   __HAL_DMA_DISABLE(hdma);
@@ -722,9 +722,8 @@ HAL_StatusTypeDef HAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, HAL_DMA_Level
 
       return HAL_ERROR;
    }
-
   }
-
+  
   /* Get the level transfer complete flag */
   if(CompleteLevel == HAL_DMA_FULL_TRANSFER)
   {

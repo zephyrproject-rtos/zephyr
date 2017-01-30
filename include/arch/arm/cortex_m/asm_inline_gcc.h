@@ -30,7 +30,7 @@ extern "C" {
 
 #else /* !_ASMLANGUAGE */
 #include <stdint.h>
-#include <arch/arm/cortex_m/nvic.h>
+#include <arch/arm/cortex_m/exc.h>
 #include <irq.h>
 
 /**

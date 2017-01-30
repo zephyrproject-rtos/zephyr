@@ -123,6 +123,11 @@ M:	Maureen Helm <maureen.helm@nxp.com>
 S:	Supported
 F:	boards/arm/frdm_k64f/
 
+BOARDS/ARM - NXP FRDM-KW41Z
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	boards/arm/frdm_kw41z/
+
 BOARDS/ARM - NXP Hexiwear
 M:	Maureen Helm <maureen.helm@nxp.com>
 S:	Supported
@@ -314,7 +319,6 @@ S:	Supported
 F:	ext/hal/nxp/mcux/
 
 MPS2 - ARM LTD CORTEX-M PROTOTYPING SYSTEM
-M:	Jon Medhurst (Tixy) <tixy@linaro.org>
 M:	Vincenzo Frascino <vincenzo.frascino@linaro.org>
 S:	Supported
 F:	arch/arm/soc/arm/mps2/

@@ -65,13 +65,13 @@ static uint32_t CMT_GetInstance(CMT_Type *base);
  ******************************************************************************/
 
 /*! @brief Pointers to cmt clocks for each instance. */
-const clock_ip_name_t s_cmtClock[FSL_FEATURE_SOC_CMT_COUNT] = CMT_CLOCKS;
+static const clock_ip_name_t s_cmtClock[FSL_FEATURE_SOC_CMT_COUNT] = CMT_CLOCKS;
 
 /*! @brief Pointers to cmt bases for each instance. */
 static CMT_Type *const s_cmtBases[] = CMT_BASE_PTRS;
 
 /*! @brief Pointers to cmt IRQ number for each instance. */
-const IRQn_Type s_cmtIrqs[] = CMT_IRQS;
+static const IRQn_Type s_cmtIrqs[] = CMT_IRQS;
 
 /*******************************************************************************
  * Codes

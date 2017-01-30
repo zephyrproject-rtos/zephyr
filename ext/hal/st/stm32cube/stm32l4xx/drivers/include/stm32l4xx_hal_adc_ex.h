@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_adc_ex.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0 
+  * @date    28-October-2016
   * @brief   Header file of ADC HAL extended module.
   ******************************************************************************
   * @attention
@@ -367,7 +367,7 @@ typedef struct
 /**
   * @}
   */
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 /** @defgroup ADCEx_Common_mode ADC Extended Independent ADC Mode
   * @{
   */
@@ -545,6 +545,11 @@ typedef struct
   * @{
   */
 #define ADC_SAMPLETIME_2CYCLES_5       ((uint32_t)0x00000000)                             /*!< Sampling time 2.5 ADC clock cycle    */
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define ADC_SAMPLETIME_3CYCLES_5      ((uint32_t)ADC_SMPR1_SMPPLUS)                       /*!< Sampling time 3.5 ADC clock cycles. If selected, this sampling time 
+                                                                                               replaces all sampling time 2.5 ADC clock cycles. These 2 sampling  
+                                                                                               times cannot be used simultaneously. */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
 #define ADC_SAMPLETIME_6CYCLES_5      ((uint32_t)ADC_SMPR2_SMP10_0)                       /*!< Sampling time 6.5 ADC clock cycles   */
 #define ADC_SAMPLETIME_12CYCLES_5     ((uint32_t)ADC_SMPR2_SMP10_1)                       /*!< Sampling time 12.5 ADC clock cycles  */
 #define ADC_SAMPLETIME_24CYCLES_5     ((uint32_t)(ADC_SMPR2_SMP10_1 | ADC_SMPR2_SMP10_0)) /*!< Sampling time 24.5 ADC clock cycles  */
@@ -559,12 +564,21 @@ typedef struct
 /** @defgroup ADC_CFGR_fields ADCx CFGR fields
   * @{
   */
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define ADC_CFGR_FIELDS    (ADC_CFGR_AWD1CH  | ADC_CFGR_JAUTO    | ADC_CFGR_JAWD1EN |\
+                            ADC_CFGR_AWD1EN  | ADC_CFGR_AWD1SGL  | ADC_CFGR_JQM     |\
+                            ADC_CFGR_JDISCEN | ADC_CFGR_DISCNUM  | ADC_CFGR_DISCEN  |\
+                            ADC_CFGR_AUTDLY  | ADC_CFGR_CONT     | ADC_CFGR_OVRMOD  |\
+                            ADC_CFGR_EXTEN   | ADC_CFGR_EXTSEL   | ADC_CFGR_ALIGN   |\
+                            ADC_CFGR_RES     | ADC_CFGR_DFSDMCFG | ADC_CFGR_DMACFG  | ADC_CFGR_DMAEN)
+#else
 #define ADC_CFGR_FIELDS    (ADC_CFGR_AWD1CH  | ADC_CFGR_JAUTO   | ADC_CFGR_JAWD1EN |\
                             ADC_CFGR_AWD1EN  | ADC_CFGR_AWD1SGL | ADC_CFGR_JQM     |\
                             ADC_CFGR_JDISCEN | ADC_CFGR_DISCNUM | ADC_CFGR_DISCEN  |\
                             ADC_CFGR_AUTDLY  | ADC_CFGR_CONT    | ADC_CFGR_OVRMOD  |\
                             ADC_CFGR_EXTEN   | ADC_CFGR_EXTSEL  | ADC_CFGR_ALIGN   |\
                             ADC_CFGR_RES     | ADC_CFGR_DMACFG  | ADC_CFGR_DMAEN   )
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
 /**
   * @}
   */
@@ -572,10 +586,17 @@ typedef struct
 /** @defgroup ADC_SMPR1_fields ADCx SMPR1 fields
   * @{
   */
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define ADC_SMPR1_FIELDS    (ADC_SMPR1_SMP9 | ADC_SMPR1_SMP8 | ADC_SMPR1_SMP7 |\
+                             ADC_SMPR1_SMP6 | ADC_SMPR1_SMP5 | ADC_SMPR1_SMP4 |\
+                             ADC_SMPR1_SMP3 | ADC_SMPR1_SMP2 | ADC_SMPR1_SMP1 |\
+                             ADC_SMPR1_SMP0 | ADC_SMPR1_SMPPLUS) 
+#else
 #define ADC_SMPR1_FIELDS    (ADC_SMPR1_SMP9 | ADC_SMPR1_SMP8 | ADC_SMPR1_SMP7 |\
                              ADC_SMPR1_SMP6 | ADC_SMPR1_SMP5 | ADC_SMPR1_SMP4 |\
                              ADC_SMPR1_SMP3 | ADC_SMPR1_SMP2 | ADC_SMPR1_SMP1 |\
                              ADC_SMPR1_SMP0) 
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
 /**
   * @}
   */
@@ -585,11 +606,26 @@ typedef struct
   */
 /* ADC_CFGR fields of parameters that can be updated when no conversion
    (neither regular nor injected) is on-going  */
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define ADC_CFGR_FIELDS_2  ((uint32_t)(ADC_CFGR_DMACFG | ADC_CFGR_AUTDLY | ADC_CFGR_DFSDMCFG))
+#else
 #define ADC_CFGR_FIELDS_2  ((uint32_t)(ADC_CFGR_DMACFG | ADC_CFGR_AUTDLY))
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
 /**
   * @}
   */ 
 
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+/** @defgroup ADCEx_DFSDM_Mode_Configuration   ADC Extended DFSDM mode configuration
+  * @{
+  */
+#define ADC_DFSDM_MODE_DISABLE    ((uint32_t)0x00000000)        /*!< DFSDM mode configuration disabled */
+#define ADC_DFSDM_MODE_ENABLE     ((uint32_t)ADC_CFGR_DFSDMCFG) /*!< DFSDM mode configuration enabled */
+/**
+  * @}
+  */ 
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+  
 /**
   * @}
   */
@@ -635,7 +671,7 @@ typedef struct
   * @note  When multimode feature is not available, the macro always returns SET.   
   * @retval SET (ADC is independent) or RESET (ADC is not).
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
 #define ADC_IS_INDEPENDENT(__HANDLE__)    \
   ( ( ( ((__HANDLE__)->Instance) == ADC3) \
     )?                                    \
@@ -643,7 +679,7 @@ typedef struct
      :                                    \
      RESET                                \
   ) 
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_IS_INDEPENDENT(__HANDLE__)   (SET)
 #endif
 
@@ -670,11 +706,27 @@ typedef struct
   * @param __CHANNELNB__ : Channel number.  
   * @retval None
   */
-
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define ADC_SMPR1_SETTING(__HANDLE__, __SAMPLETIME__, __CHANNELNB__)           \
+  do {                                                                         \
+    if((__SAMPLETIME__) == ADC_SAMPLETIME_3CYCLES_5)                           \
+    {                                                                          \
+       SET_BIT((__HANDLE__)->Instance->SMPR1, ADC_SMPR1_SMPPLUS);              \
+    }                                                                          \
+    else if ((__SAMPLETIME__) == ADC_SAMPLETIME_2CYCLES_5)                     \
+    {                                                                          \
+       CLEAR_BIT((__HANDLE__)->Instance->SMPR1, ADC_SMPR1_SMPPLUS);            \
+    }                                                                          \
+    MODIFY_REG((__HANDLE__)->Instance->SMPR1,                                  \
+               ADC_SMPR1(ADC_SMPR1_SMP0, (__CHANNELNB__)),                     \
+               ADC_SMPR1((__SAMPLETIME__) & 0x7FFFFFFF, (__CHANNELNB__)));     \
+  } while(0)
+#else
 #define ADC_SMPR1_SETTING(__HANDLE__, __SAMPLETIME__, __CHANNELNB__)           \
                     MODIFY_REG((__HANDLE__)->Instance->SMPR1,                  \
                                ADC_SMPR1(ADC_SMPR1_SMP0, (__CHANNELNB__)),     \
                                ADC_SMPR1((__SAMPLETIME__), (__CHANNELNB__)))
+#endif
 
 /**
   * @brief Write SMPR2 register.
@@ -683,10 +735,27 @@ typedef struct
   * @param __CHANNELNB__ : Channel number.  
   * @retval None
   */
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define ADC_SMPR2_SETTING(__HANDLE__, __SAMPLETIME__, __CHANNELNB__)           \
+  do {                                                                         \
+    if((__SAMPLETIME__) == ADC_SAMPLETIME_3CYCLES_5)                           \
+    {                                                                          \
+       SET_BIT((__HANDLE__)->Instance->SMPR1, ADC_SMPR1_SMPPLUS);              \
+    }                                                                          \
+    else if ((__SAMPLETIME__) == ADC_SAMPLETIME_2CYCLES_5)                     \
+    {                                                                          \
+      CLEAR_BIT((__HANDLE__)->Instance->SMPR1, ADC_SMPR1_SMPPLUS);             \
+    }                                                                          \
+    MODIFY_REG((__HANDLE__)->Instance->SMPR2,                                  \
+               ADC_SMPR2(ADC_SMPR2_SMP10, (__CHANNELNB__)),                    \
+               ADC_SMPR2((__SAMPLETIME__) & 0x7FFFFFFF, (__CHANNELNB__)));     \
+  } while(0)
+#else
 #define ADC_SMPR2_SETTING(__HANDLE__, __SAMPLETIME__, __CHANNELNB__)           \
                     MODIFY_REG((__HANDLE__)->Instance->SMPR2,                  \
                                ADC_SMPR2(ADC_SMPR2_SMP10, (__CHANNELNB__)),    \
                                ADC_SMPR2((__SAMPLETIME__), (__CHANNELNB__)))
+#endif
 
 
 /**
@@ -930,7 +999,7 @@ typedef struct
   */
 #if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
 #define ADC_COMMON_REGISTER(__HANDLE__)   (ADC123_COMMON)       
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_COMMON_REGISTER(__HANDLE__)   (ADC1_COMMON)  
 #endif
 
@@ -941,7 +1010,7 @@ typedef struct
   *       multimode feature is not available.     
   * @retval Master Instance
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) 
 #define ADC_MASTER_REGISTER(__HANDLE__)                                          \
   ( ( ((((__HANDLE__)->Instance) == ADC1) || (((__HANDLE__)->Instance) == ADC3)) \
     )?                                                                           \
@@ -949,7 +1018,7 @@ typedef struct
      :                                                                           \
      (ADC1)                                                                      \
   )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_MASTER_REGISTER(__HANDLE__)   ((__HANDLE__)->Instance) 
 #endif
 
@@ -958,7 +1027,7 @@ typedef struct
   * @param __HANDLE__: ADC handle.
   * @retval None
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) 
 #define ADC_CLEAR_COMMON_CONTROL_REGISTER(__HANDLE__) CLEAR_BIT(ADC_COMMON_REGISTER(__HANDLE__)->CCR, ADC_CCR_CKMODE | \
                                                                                                       ADC_CCR_PRESC  | \
                                                                                                       ADC_CCR_VBATEN | \
@@ -968,7 +1037,7 @@ typedef struct
                                                                                                       ADC_CCR_DMACFG | \
                                                                                                       ADC_CCR_DELAY  | \
                                                                                                       ADC_CCR_DUAL  )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_CLEAR_COMMON_CONTROL_REGISTER(__HANDLE__) CLEAR_BIT(ADC_COMMON_REGISTER(__HANDLE__)->CCR, ADC_CCR_CKMODE | \
                                                                                                       ADC_CCR_PRESC  | \
                                                                                                       ADC_CCR_VBATEN | \
@@ -983,7 +1052,7 @@ typedef struct
   * @note Return RESET if ADC of input handle is independent ADC or if multimode feature is not available.   
   * @retval SET (dual regular conversions are enabled) or RESET (ADC is independent or no dual regular conversions are enabled)
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
 #define ADC_IS_DUAL_CONVERSION_ENABLE(__HANDLE__)                                \
   ( ( ((((__HANDLE__)->Instance) == ADC1) || (((__HANDLE__)->Instance) == ADC2)) \
     )?                                                                           \
@@ -991,7 +1060,7 @@ typedef struct
      :                                                                           \
      RESET                                                                       \
   )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_IS_DUAL_CONVERSION_ENABLE(__HANDLE__)    (RESET) 
 #endif
 
@@ -1001,7 +1070,7 @@ typedef struct
   * @note Return RESET if ADC of input handle is independent ADC or if multimode feature is not available.   
   * @retval SET (dual regular conversions are enabled) or RESET (ADC is independent or no dual regular conversions are enabled)
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
 #define ADC_IS_DUAL_REGULAR_CONVERSION_ENABLE(__HANDLE__)                        \
   ( ( ((((__HANDLE__)->Instance) == ADC1) || (((__HANDLE__)->Instance) == ADC2)) \
     )?                                                                           \
@@ -1011,7 +1080,7 @@ typedef struct
      :                                                                           \
      RESET                                                                       \
   )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_IS_DUAL_REGULAR_CONVERSION_ENABLE(__HANDLE__)    (RESET) 
 #endif
                         
@@ -1022,7 +1091,7 @@ typedef struct
   * @note Return SET if multimode feature is not available.     
   * @retval SET (non-multimode or Master handle) or RESET (handle of Slave ADC in multimode)
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
 #define ADC_NONMULTIMODE_OR_MULTIMODEMASTER(__HANDLE__)                        \
   ( ( ((__HANDLE__)->Instance == ADC1) || ((__HANDLE__)->Instance == ADC3)     \
     )?                                                                         \
@@ -1030,7 +1099,7 @@ typedef struct
      :                                                                         \
      ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == RESET)                            \
   )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_NONMULTIMODE_OR_MULTIMODEMASTER(__HANDLE__)    (SET) 
 #endif
 
@@ -1040,7 +1109,7 @@ typedef struct
   * @note Return SET if multimode feature is not available.  
   * @retval SET (Independent or Master, or Slave without dual regular conversions enabled) or RESET (Slave ADC with dual regular conversions enabled)
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
 #define ADC_INDEPENDENT_OR_NONMULTIMODEREGULAR_SLAVE(__HANDLE__)            \
   ( ( ((__HANDLE__)->Instance == ADC1) || ((__HANDLE__)->Instance == ADC3)  \
     )?                                                                      \
@@ -1049,7 +1118,7 @@ typedef struct
      ( ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_MODE_INDEPENDENT)     || \
        ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_DUALMODE_INJECSIMULT) || \
        ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_DUALMODE_ALTERTRIG) ))  
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_INDEPENDENT_OR_NONMULTIMODEREGULAR_SLAVE(__HANDLE__)    (SET) 
 #endif
 
@@ -1059,7 +1128,7 @@ typedef struct
   * @note Return SET if multimode feature is not available.  
   * @retval SET (non-multimode or Master, or Slave without dual injected conversions enabled) or RESET (Slave ADC with dual injected conversions enabled)
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
 #define ADC_INDEPENDENT_OR_NONMULTIMODEINJECTED_SLAVE(__HANDLE__)          \
   ( ( ((__HANDLE__)->Instance == ADC1) || ((__HANDLE__)->Instance == ADC3) \
     )?                                                                     \
@@ -1068,7 +1137,7 @@ typedef struct
      ( ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_MODE_INDEPENDENT)    || \
        ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_DUALMODE_REGSIMULT)  || \
        ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_DUALMODE_INTERL) ))
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_INDEPENDENT_OR_NONMULTIMODEINJECTED_SLAVE(__HANDLE__)    (SET) 
 #endif
 
@@ -1087,7 +1156,7 @@ typedef struct
   * @param __HANDLE__: ADC handle.
   * @retval SET (at least one other ADC is enabled) or RESET (no other ADC is enabled, all other ADCs are disabled)
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)   
 #define ADC_ANY_OTHER_ENABLED(__HANDLE__)                                   \
   ( ( ((__HANDLE__)->Instance == ADC1)                                      \
     )?                                                                      \
@@ -1099,7 +1168,7 @@ typedef struct
         :                                                                   \
           ADC_INSTANCE_IS_ENABLED(ADC1)) || (ADC_INSTANCE_IS_ENABLED(ADC2)) \
      )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_ANY_OTHER_ENABLED(__HANDLE__)    (RESET) 
 #endif  
 
@@ -1122,11 +1191,11 @@ typedef struct
   * @note  Return RESET if multimode feature is not available.  
   * @retval SET (multimode is configured in DMA mode) or RESET (DMA multimode is disabled)
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)   
 #define ADC_MULTIMODE_DMA_ENABLED()                                     \
     ((READ_BIT(ADC123_COMMON->CCR, ADC_CCR_MDMA) == ADC_DMAACCESSMODE_12_10_BITS) \
   || (READ_BIT(ADC123_COMMON->CCR, ADC_CCR_MDMA) == ADC_DMAACCESSMODE_8_6_BITS))  
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define ADC_MULTIMODE_DMA_ENABLED()    (RESET) 
 #endif
 
@@ -1136,10 +1205,10 @@ typedef struct
   * @param __HANDLE__: ADC handle.
   * @retval SET (ADC instance is valid) or RESET (ADC instance is invalid)
   */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 /*  The temperature sensor measurement path (channel 17) is available on ADC1 */
 #define ADC_TEMPERATURE_SENSOR_INSTANCE(__HANDLE__)  (((__HANDLE__)->Instance) == ADC1)
-#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
 /*  The temperature sensor measurement path (channel 17) is available on ADC1 and ADC3 */
 #define ADC_TEMPERATURE_SENSOR_INSTANCE(__HANDLE__)  ((((__HANDLE__)->Instance) == ADC1) || (((__HANDLE__)->Instance) == ADC3))
 #endif
@@ -1149,10 +1218,10 @@ typedef struct
   * @param __HANDLE__: ADC handle.
   * @retval SET (ADC instance is valid) or RESET (ADC instance is invalid)
   */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 /*  The battery voltage measurement path (channel 18) is available on ADC1 */
 #define ADC_BATTERY_VOLTAGE_INSTANCE(__HANDLE__)  (((__HANDLE__)->Instance) == ADC1)
-#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
 /*  The battery voltage measurement path (channel 18) is available on ADC1 and ADC3 */
 #define ADC_BATTERY_VOLTAGE_INSTANCE(__HANDLE__)  ((((__HANDLE__)->Instance) == ADC1) || (((__HANDLE__)->Instance) == ADC3))
 #endif
@@ -1188,7 +1257,7 @@ typedef struct
   * @param __CHANNEL__: programmed ADC channel. 
   * @retval SET (__CHANNEL__ is valid) or RESET (__CHANNEL__ is invalid)
   */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_ADC_CHANNEL(__HANDLE__, __CHANNEL__) ((((__HANDLE__)->Instance) == ADC1)  && \
                                                          (((__CHANNEL__) == ADC_CHANNEL_VREFINT)     || \
                                                           ((__CHANNEL__) == ADC_CHANNEL_1)           || \
@@ -1211,7 +1280,7 @@ typedef struct
                                                           ((__CHANNEL__) == ADC_CHANNEL_18)          || \
                                                           ((__CHANNEL__) == ADC_CHANNEL_TEMPSENSOR)  || \
                                                           ((__CHANNEL__) == ADC_CHANNEL_VBAT)))
-#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) 
 #define IS_ADC_CHANNEL(__HANDLE__, __CHANNEL__)  (((((__HANDLE__)->Instance) == ADC1)  && \
                                                          (((__CHANNEL__) == ADC_CHANNEL_VREFINT)     || \
                                                           ((__CHANNEL__) == ADC_CHANNEL_1)           || \
@@ -1276,7 +1345,7 @@ typedef struct
   * @param __CHANNEL__: programmed ADC channel. 
   * @retval SET (__CHANNEL__ is valid) or RESET (__CHANNEL__ is invalid)
   */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_ADC_DIFF_CHANNEL(__HANDLE__, __CHANNEL__) (((__CHANNEL__) == ADC_CHANNEL_1)      || \
                                                       ((__CHANNEL__) == ADC_CHANNEL_2)      || \
                                                       ((__CHANNEL__) == ADC_CHANNEL_3)      || \
@@ -1292,7 +1361,7 @@ typedef struct
                                                       ((__CHANNEL__) == ADC_CHANNEL_13)     || \
                                                       ((__CHANNEL__) == ADC_CHANNEL_14)     || \
                                                       ((__CHANNEL__) == ADC_CHANNEL_15)       )
-#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)   
     /* For ADC1 and ADC2, channels 1 to 15 are available in differential mode, 
                           channels 0, 16 to 18 can be only used in single-ended mode.
        For ADC3, channels 1 to 3 and 6 to 12 are available in differential mode,
@@ -1390,7 +1459,7 @@ typedef struct
                                            ((__EDGE__) == ADC_EXTERNALTRIGINJECCONV_EDGE_FALLING)      || \
                                            ((__EDGE__) == ADC_EXTERNALTRIGINJECCONV_EDGE_RISINGFALLING) ) 
 
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)   
 /**
   * @brief Verify the ADC multimode setting.
   * @param __MODE__: programmed ADC multimode setting.
@@ -1523,6 +1592,35 @@ typedef struct
 
 
 /**
+  * @brief Verify the DFSDM mode configuration. 
+  * @param __HANDLE__: ADC handle. 
+  * @note When DMSDFM configuration is not supported, the macro systematically reports SET. For
+  *      this reason, the input parameter is the ADC handle and not the configuration parameter
+  *      directly.      
+  * @retval SET (DFSDM mode configuration is valid) or RESET (DFSDM mode configuration is invalid)
+  */
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define IS_ADC_DFSDMCFG_MODE(__HANDLE__) (((__HANDLE__)->Init.DFSDMConfig == ADC_DFSDM_MODE_DISABLE) || \
+                                          ((__HANDLE__)->Init.DFSDMConfig == ADC_DFSDM_MODE_ENABLE) )
+#else                                               
+#define IS_ADC_DFSDMCFG_MODE(__HANDLE__) (SET)
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+
+/**
+  * @brief Return the DFSDM configuration mode.
+  * @param __HANDLE__: ADC handle. 
+  * @note When DMSDFM configuration is not supported, the macro systematically reports 0x0 (i.e disabled). 
+  *       For this reason, the input parameter is the ADC handle and not the configuration parameter
+  *       directly.      
+  * @retval DFSDM configuration mode
+  */
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#define ADC_CFGR_DFSDM(__HANDLE__) ((__HANDLE__)->Init.DFSDMConfig)
+#else                                               
+#define ADC_CFGR_DFSDM(__HANDLE__) (0x0)
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+
+/**
   * @}
   */
 
@@ -1551,7 +1649,7 @@ HAL_StatusTypeDef       HAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef* h
 HAL_StatusTypeDef       HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc);
 HAL_StatusTypeDef       HAL_ADCEx_InjectedStop_IT(ADC_HandleTypeDef* hadc);
 
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)   
 /* ADC multimode */
 HAL_StatusTypeDef       HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef *hadc, uint32_t *pData, uint32_t Length);
 HAL_StatusTypeDef       HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef *hadc); 
@@ -1572,7 +1670,7 @@ void                    HAL_ADCEx_EndOfSamplingCallback(ADC_HandleTypeDef* hadc)
 HAL_StatusTypeDef HAL_ADCEx_RegularStop(ADC_HandleTypeDef* hadc);
 HAL_StatusTypeDef HAL_ADCEx_RegularStop_IT(ADC_HandleTypeDef* hadc);
 HAL_StatusTypeDef HAL_ADCEx_RegularStop_DMA(ADC_HandleTypeDef* hadc);
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) 
 HAL_StatusTypeDef HAL_ADCEx_RegularMultiModeStop_DMA(ADC_HandleTypeDef* hadc);
 #endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
 
@@ -1585,7 +1683,7 @@ HAL_StatusTypeDef HAL_ADCEx_RegularMultiModeStop_DMA(ADC_HandleTypeDef* hadc);
   */
 /* Peripheral Control functions ***********************************************/
 HAL_StatusTypeDef       HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc,ADC_InjectionConfTypeDef* sConfigInjected);
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) 
 HAL_StatusTypeDef       HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef *hadc, ADC_MultiModeTypeDef *multimode);
 #endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
 HAL_StatusTypeDef       HAL_ADCEx_EnableInjectedQueue(ADC_HandleTypeDef* hadc);

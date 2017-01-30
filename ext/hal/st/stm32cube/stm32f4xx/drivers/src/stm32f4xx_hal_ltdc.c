@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_ltdc.c
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   LTDC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the LTDC peripheral:
@@ -44,15 +44,15 @@
          functions: HAL_LTDC_SetPixelFormat(), HAL_LTDC_SetAlpha(), HAL_LTDC_SetWindowSize(),
          HAL_LTDC_SetWindowPosition(), HAL_LTDC_SetAddress.
 
-     (#) Variant functions with “_NoReload” post fix allows to set the LTDC configuration/settings without immediate reload.
+     (#) Variant functions with "_NoReload" post fix allows to set the LTDC configuration/settings without immediate reload.
          This is useful in case when the program requires to modify serval LTDC settings (on one or both layers) 
-         then applying(reload) these settings in one shot by calling the function “HAL_LTDC_Relaod”
+         then applying(reload) these settings in one shot by calling the function "HAL_LTDC_Relaod"
 
-         After calling the “_NoReload” functions to set different color/format/layer settings, 
-         the program can call the function  “HAL_LTDC_Relaod” To apply(Reload) these settings. 
-         Function “HAL_LTDC_Relaod” can be called with the parameter  “ReloadType” 
+         After calling the "_NoReload" functions to set different color/format/layer settings, 
+         the program can call the function "HAL_LTDC_Relaod" To apply(Reload) these settings. 
+         Function "HAL_LTDC_Relaod" can be called with the parameter "ReloadType" 
          set to LTDC_RELOAD_IMMEDIATE if an immediate reload is required.
-         Function “HAL_LTDC_Relaod” can be called with the parameter  “ReloadType” 
+         Function "HAL_LTDC_Relaod" can be called with the parameter "ReloadType" 
          set to LTDC_RELOAD_VERTICAL_BLANKING if the reload should be done in the next vertical blanking period, 
          this option allows to avoid display flicker by applying the new settings during the vertical blanking period.
            

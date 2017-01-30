@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dma.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   DMA HAL module driver.
   *         This file provides firmware functions to manage the following
   *         functionalities of the Direct Memory Access (DMA) peripheral:
@@ -164,7 +164,7 @@ static void DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t
 HAL_StatusTypeDef HAL_DMA_Init(DMA_HandleTypeDef *hdma)
 {
   uint32_t tmp = 0;
-  
+
   /* Check the DMA handle allocation */
   if(hdma == NULL)
   {
@@ -180,6 +180,7 @@ HAL_StatusTypeDef HAL_DMA_Init(DMA_HandleTypeDef *hdma)
   assert_param(IS_DMA_MEMORY_DATA_SIZE(hdma->Init.MemDataAlignment));
   assert_param(IS_DMA_MODE(hdma->Init.Mode));
   assert_param(IS_DMA_PRIORITY(hdma->Init.Priority));
+
   if(hdma->Init.Direction != DMA_MEMORY_TO_MEMORY)
   {
     assert_param(IS_DMA_ALL_REQUEST(hdma->Init.Request));
@@ -198,7 +199,7 @@ HAL_StatusTypeDef HAL_DMA_Init(DMA_HandleTypeDef *hdma)
     hdma->ChannelIndex = (((uint32_t)hdma->Instance - (uint32_t)DMA2_Channel1) / ((uint32_t)DMA2_Channel2 - (uint32_t)DMA2_Channel1)) << 2;
     hdma->DmaBaseAddress = DMA2;
   }
-    
+
   /* Change DMA peripheral state */
   hdma->State = HAL_DMA_STATE_BUSY;
 
@@ -295,11 +296,11 @@ HAL_StatusTypeDef HAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
     hdma->ChannelIndex = (((uint32_t)hdma->Instance - (uint32_t)DMA2_Channel1) / ((uint32_t)DMA2_Channel2 - (uint32_t)DMA2_Channel1)) << 2;
     hdma->DmaBaseAddress = DMA2;
   }
-
+  
 
   /* Clear all flags */
   hdma->DmaBaseAddress->IFCR = (DMA_ISR_GIF1 << hdma->ChannelIndex);
-  
+
   /* Reset DMA channel selection register */
   if (DMA1 == hdma->DmaBaseAddress)
   {
@@ -456,7 +457,7 @@ HAL_StatusTypeDef HAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress,
 HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  
+
   if(HAL_DMA_STATE_BUSY != hdma->State)
   {
     /* no transfer ongoing */
@@ -755,7 +756,7 @@ HAL_StatusTypeDef HAL_DMA_RegisterCallback(DMA_HandleTypeDef *hdma, HAL_DMA_Call
            
      default:
            status = HAL_ERROR;
-           break;
+           break;                                                            
     }
   }
   else
@@ -813,7 +814,7 @@ HAL_StatusTypeDef HAL_DMA_UnRegisterCallback(DMA_HandleTypeDef *hdma, HAL_DMA_Ca
      
     default:
            status = HAL_ERROR;
-           break;
+           break;                                                            
     }
   }
   else
@@ -826,7 +827,7 @@ HAL_StatusTypeDef HAL_DMA_UnRegisterCallback(DMA_HandleTypeDef *hdma, HAL_DMA_Ca
   
   return status;
 }
-
+  
 /**
   * @}
   */

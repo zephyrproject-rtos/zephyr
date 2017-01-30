@@ -3,6 +3,7 @@ ccflags-y +=-I$(srctree)/drivers
 
 obj-$(CONFIG_UART_NS16550)	+= uart_ns16550.o
 obj-$(CONFIG_UART_MCUX)		+= uart_mcux.o
+obj-$(CONFIG_UART_MCUX_LPUART)	+= uart_mcux_lpuart.o
 obj-$(CONFIG_UART_STELLARIS)	+= uart_stellaris.o
 obj-$(CONFIG_UART_NSIM)		+= uart_nsim.o
 obj-$(CONFIG_UART_ATMEL_SAM3)	+= uart_atmel_sam3.o

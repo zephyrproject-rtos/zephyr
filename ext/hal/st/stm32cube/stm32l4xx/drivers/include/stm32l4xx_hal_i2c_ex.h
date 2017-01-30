@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_i2c_ex.h
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Header file of I2C HAL Extended module.
   ******************************************************************************
   * @attention
@@ -90,6 +90,11 @@
 #define I2C_FASTMODEPLUS_I2C2           I2C_FMP_NOT_SUPPORTED     /*!< Fast Mode Plus I2C2 not supported  */
 #endif
 #define I2C_FASTMODEPLUS_I2C3           SYSCFG_CFGR1_I2C3_FMP     /*!< Enable Fast Mode Plus on I2C3 pins */
+#if defined(SYSCFG_CFGR1_I2C4_FMP)
+#define I2C_FASTMODEPLUS_I2C4           SYSCFG_CFGR1_I2C4_FMP     /*!< Enable Fast Mode Plus on I2C4 pins */
+#else
+#define I2C_FASTMODEPLUS_I2C4           I2C_FMP_NOT_SUPPORTED     /*!< Fast Mode Plus I2C4 not supported  */
+#endif
 /**
   * @}
   */
@@ -143,7 +148,8 @@ void HAL_I2CEx_DisableFastModePlus(uint32_t ConfigFastModePlus);
                                           (((__CONFIG__) & (I2C_FASTMODEPLUS_PB9))  == I2C_FASTMODEPLUS_PB9)     || \
                                           (((__CONFIG__) & (I2C_FASTMODEPLUS_I2C1)) == I2C_FASTMODEPLUS_I2C1)    || \
                                           (((__CONFIG__) & (I2C_FASTMODEPLUS_I2C2)) == I2C_FASTMODEPLUS_I2C2)    || \
-                                          (((__CONFIG__) & (I2C_FASTMODEPLUS_I2C3)) == I2C_FASTMODEPLUS_I2C3)))
+                                          (((__CONFIG__) & (I2C_FASTMODEPLUS_I2C3)) == I2C_FASTMODEPLUS_I2C3)    || \
+                                          (((__CONFIG__) & (I2C_FASTMODEPLUS_I2C4)) == I2C_FASTMODEPLUS_I2C4)))
 /**
   * @}
   */ 

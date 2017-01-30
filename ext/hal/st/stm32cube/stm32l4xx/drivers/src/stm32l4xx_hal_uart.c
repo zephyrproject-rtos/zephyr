@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_uart.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   UART HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Universal Asynchronous Receiver Transmitter Peripheral (UART).
@@ -2116,20 +2116,20 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
         switch (clocksource)
         {
         case UART_CLOCKSOURCE_PCLK1:
-          tmpreg = (uint32_t)(UART_DIV_LPUART(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate));
+            tmpreg = (uint32_t)(UART_DIV_LPUART(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate));
           break;
         case UART_CLOCKSOURCE_HSI:
-          tmpreg = (uint32_t)(UART_DIV_LPUART(HSI_VALUE, huart->Init.BaudRate));
+            tmpreg = (uint32_t)(UART_DIV_LPUART(HSI_VALUE, huart->Init.BaudRate));
           break;
         case UART_CLOCKSOURCE_SYSCLK:
-          tmpreg = (uint32_t)(UART_DIV_LPUART(HAL_RCC_GetSysClockFreq(), huart->Init.BaudRate));
+            tmpreg = (uint32_t)(UART_DIV_LPUART(HAL_RCC_GetSysClockFreq(), huart->Init.BaudRate));
           break;
         case UART_CLOCKSOURCE_LSE:
-          tmpreg = (uint32_t)(UART_DIV_LPUART(LSE_VALUE, huart->Init.BaudRate));
+            tmpreg = (uint32_t)(UART_DIV_LPUART(LSE_VALUE, huart->Init.BaudRate));
           break;
         case UART_CLOCKSOURCE_UNDEFINED:
         default:
-          ret = HAL_ERROR;
+            ret = HAL_ERROR;
           break;
         }
    
@@ -2150,19 +2150,19 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
     switch (clocksource)
     {
     case UART_CLOCKSOURCE_PCLK1:
-      usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate));
+        usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_PCLK2:
-      usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate));
+        usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_HSI:
-      usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HSI_VALUE, huart->Init.BaudRate));
+        usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HSI_VALUE, huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_SYSCLK:
-      usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HAL_RCC_GetSysClockFreq(), huart->Init.BaudRate));
+        usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HAL_RCC_GetSysClockFreq(), huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_LSE:
-      usartdiv = (uint16_t)(UART_DIV_SAMPLING8(LSE_VALUE, huart->Init.BaudRate));
+        usartdiv = (uint16_t)(UART_DIV_SAMPLING8(LSE_VALUE, huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_UNDEFINED:
     default:
@@ -2179,19 +2179,19 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
     switch (clocksource)
     {
     case UART_CLOCKSOURCE_PCLK1:
-      huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate));
+        huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_PCLK2:
-      huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate));
+        huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_HSI:
-      huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HSI_VALUE, huart->Init.BaudRate));
+        huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HSI_VALUE, huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_SYSCLK:
-      huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HAL_RCC_GetSysClockFreq(), huart->Init.BaudRate));
+        huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HAL_RCC_GetSysClockFreq(), huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_LSE:
-      huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(LSE_VALUE, huart->Init.BaudRate));
+        huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(LSE_VALUE, huart->Init.BaudRate));
       break;
     case UART_CLOCKSOURCE_UNDEFINED:
     default:

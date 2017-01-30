@@ -10,7 +10,20 @@
 #include <soc_memory_map.h>
 #include <soc_irq.h>
 
+#if defined(CONFIG_GPIO)
+/* CMSDK AHB General Purpose Input/Output (GPIO) */
+#define CMSDK_AHB_GPIO0	GPIO_0_BASE_ADDR
+#define IRQ_PORT0_ALL	IRQ_GPIO_0_COMBINED
+#define CMSDK_AHB_GPIO1	GPIO_1_BASE_ADDR
+#define IRQ_PORT1_ALL	IRQ_GPIO_1_COMBINED
+#define CMSDK_AHB_GPIO2	GPIO_2_BASE_ADDR
+#define IRQ_PORT2_ALL	IRQ_GPIO_2_COMBINED
+#define CMSDK_AHB_GPIO3	GPIO_3_BASE_ADDR
+#define IRQ_PORT3_ALL	IRQ_GPIO_3_COMBINED
+#endif /* CONFIG_GPIO */
+
 #if defined(CONFIG_UART_CMSDK_APB)
+/* CMSDK APB Universal Asynchronous Receiver-Transmitter (UART) */
 #define CMSDK_APB_UART0		UART_0_BASE_ADDR
 #define CMSDK_APB_UART_0_IRQ_TX	IRQ_UART_0_TX
 #define CMSDK_APB_UART_0_IRQ_RX	IRQ_UART_0_RX
@@ -26,6 +39,32 @@
 #define CMSDK_APB_UART4		UART_4_BASE_ADDR
 #define CMSDK_APB_UART_4_IRQ_TX	IRQ_UART_4_TX
 #define CMSDK_APB_UART_4_IRQ_RX	IRQ_UART_4_RX
-#endif
+#endif /* CONFIG_UART_CMSDK_APB */
+
+#if defined(CONFIG_WATCHDOG)
+/* CMSDK APB Watchdog */
+#define CMSDK_APB_WDOG	WDOG_BASE_ADDR
+#endif /* CONFIG_WATCHDOG */
+
+#if defined(CONFIG_COUNTER)
+/* CMSDK APB Timers */
+#define CMSDK_APB_TIMER0	TIMER_0_BASE_ADDR
+#define CMSDK_APB_TIMER_0_IRQ	IRQ_TIMER_0
+#define CMSDK_APB_TIMER1	TIMER_1_BASE_ADDR
+#define CMSDK_APB_TIMER_1_IRQ	IRQ_TIMER_1
+
+/* CMSDK APB Dual Timer */
+#define CMSDK_APB_DTIMER	DTIMER_BASE_ADDR
+#define CMSDK_APB_DUALTIMER_IRQ	IRQ_DUAL_TIMER
+#endif /* CONFIG_COUNTER */
+
+#ifndef _ASMLANGUAGE
+
+#include "soc_registers.h"
+
+/* System Control Register (SYSCON) */
+#define __MPS2_SYSCON ((volatile struct mps2_syscon *)SYSCON_BASE_ADDR)
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC_DEVICES_H_ */

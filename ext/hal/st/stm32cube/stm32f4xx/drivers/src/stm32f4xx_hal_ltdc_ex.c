@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_ltdc_ex.c
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   LTDC Extension HAL module driver.
   ******************************************************************************
   * @attention
@@ -87,15 +87,13 @@ HAL_StatusTypeDef HAL_LTDC_StructInitFromVideoConfig(LTDC_HandleTypeDef* hltdc, 
 {
   /* Retrieve signal polarities from DSI */
   
-  /* The following polarities are inverted:
-                     LTDC_DEPOLARITY_AL <-> LTDC_DEPOLARITY_AH
-	                   LTDC_VSPOLARITY_AL <-> LTDC_VSPOLARITY_AH
-	                   LTDC_HSPOLARITY_AL <-> LTDC_HSPOLARITY_AH)*/
+  /* The following polarity is inverted:
+                     LTDC_DEPOLARITY_AL <-> LTDC_DEPOLARITY_AH */
   
   /* Note 1 : Code in line w/ Current LTDC specification */
   hltdc->Init.DEPolarity = (VidCfg->DEPolarity == DSI_DATA_ENABLE_ACTIVE_HIGH) ? LTDC_DEPOLARITY_AL : LTDC_DEPOLARITY_AH;
-  hltdc->Init.VSPolarity = (VidCfg->VSPolarity == DSI_VSYNC_ACTIVE_HIGH) ? LTDC_VSPOLARITY_AL : LTDC_VSPOLARITY_AH;
-  hltdc->Init.HSPolarity = (VidCfg->HSPolarity == DSI_HSYNC_ACTIVE_HIGH) ? LTDC_HSPOLARITY_AL : LTDC_HSPOLARITY_AH;
+  hltdc->Init.VSPolarity = (VidCfg->VSPolarity == DSI_VSYNC_ACTIVE_HIGH) ? LTDC_VSPOLARITY_AH : LTDC_VSPOLARITY_AL;
+  hltdc->Init.HSPolarity = (VidCfg->HSPolarity == DSI_HSYNC_ACTIVE_HIGH) ? LTDC_HSPOLARITY_AH : LTDC_HSPOLARITY_AL;
 
   /* Note 2: Code to be used in case LTDC polarities inversion updated in the specification */
   /* hltdc->Init.DEPolarity = VidCfg->DEPolarity << 29;

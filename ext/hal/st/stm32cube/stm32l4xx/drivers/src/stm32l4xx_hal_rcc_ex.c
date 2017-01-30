@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_rcc_ex.c
   * @author  MCD Application Team
-  * @version V1.5.2
-  * @date    12-September-2016
+  * @version V1.6.0
+  * @date    28-October-2016
   * @brief   Extended RCC HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities RCC extended peripheral:
@@ -128,9 +128,15 @@ static HAL_StatusTypeDef RCCEx_PLLSAI2_Config(RCC_PLLSAI2InitTypeDef *PllSai2, u
   @if STM32L486xx
   *            @arg @ref RCC_PERIPHCLK_DFSDM1  DFSDM1 peripheral clock (only for devices with DFSDM1)
   @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_PERIPHCLK_DFSDM1  DFSDM1 peripheral clock (only for devices with DFSDM1)
+  @endif
   *            @arg @ref RCC_PERIPHCLK_I2C1  I2C1 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_I2C2  I2C2 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_I2C3  I2C3 peripheral clock
+  @if STM32L462xx
+  *            @arg @ref RCC_PERIPHCLK_I2C4  I2C4 peripheral clock (only for devices with I2C4)
+  @endif
   *            @arg @ref RCC_PERIPHCLK_LPTIM1  LPTIM1 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_LPTIM2  LPTIM2 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_LPUART1  LPUART1 peripheral clock
@@ -149,6 +155,9 @@ static HAL_StatusTypeDef RCCEx_PLLSAI2_Config(RCC_PLLSAI2InitTypeDef *PllSai2, u
   *            @arg @ref RCC_PERIPHCLK_USART1  USART1 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_USART2  USART1 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_USART3  USART1 peripheral clock
+  @if STM32L462xx
+  *            @arg @ref RCC_PERIPHCLK_UART4  USART1 peripheral clock (only for devices with UART4)
+  @endif
   @if STM32L486xx
   *            @arg @ref RCC_PERIPHCLK_UART4  USART1 peripheral clock (only for devices with UART4)
   *            @arg @ref RCC_PERIPHCLK_UART5  USART1 peripheral clock (only for devices with UART5)
@@ -482,6 +491,20 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
     __HAL_RCC_I2C3_CONFIG(PeriphClkInit->I2c3ClockSelection);
   }
 
+#if defined(I2C4)  
+
+  /*-------------------------- I2C4 clock source configuration ---------------------*/
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_I2C4) == RCC_PERIPHCLK_I2C4)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_I2C4CLKSOURCE(PeriphClkInit->I2c4ClockSelection));
+
+    /* Configure the I2C4 clock source */
+    __HAL_RCC_I2C4_CONFIG(PeriphClkInit->I2c4ClockSelection);
+  }
+
+#endif /* I2C4 */
+
 #if defined(USB_OTG_FS) || defined(USB)
 
   /*-------------------------- USB clock source configuration ----------------------*/
@@ -495,15 +518,18 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
       /* Enable PLL48M1CLK output */
       __HAL_RCC_PLLCLKOUT_ENABLE(RCC_PLL_48M1CLK);
     }
-    else if(PeriphClkInit->UsbClockSelection == RCC_USBCLKSOURCE_PLLSAI1)
+    else
     {
-      /* PLLSAI1 input clock, parameters M, N & Q configuration and clock output (PLLSAI1ClockOut) */
-      ret = RCCEx_PLLSAI1_Config(&(PeriphClkInit->PLLSAI1), DIVIDER_Q_UPDATE);
-      
-      if(ret != HAL_OK)
+      if(PeriphClkInit->UsbClockSelection == RCC_USBCLKSOURCE_PLLSAI1)
       {
-        /* set overall return value */
-        status = ret;
+        /* PLLSAI1 input clock, parameters M, N & Q configuration and clock output (PLLSAI1ClockOut) */
+        ret = RCCEx_PLLSAI1_Config(&(PeriphClkInit->PLLSAI1), DIVIDER_Q_UPDATE);
+      
+        if(ret != HAL_OK)
+        {
+          /* set overall return value */
+          status = ret;
+        }
       }
     }
   }
@@ -636,7 +662,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
   * @brief  Get the RCC_ClkInitStruct according to the internal RCC configuration registers.
   * @param  PeriphClkInit  pointer to an RCC_PeriphCLKInitTypeDef structure that
   *         returns the configuration information for the Extended Peripherals
-  *         clocks(SAI1, SAI2, LPTIM1, LPTIM2, I2C1, I2C2, I2C3, LPUART,
+  *         clocks(SAI1, SAI2, LPTIM1, LPTIM2, I2C1, I2C2, I2C3, I2C4, LPUART,
   *         USART1, USART2, USART3, UART4, UART5, RTC, ADCx, DFSDMx, SWPMI1, USB, SDMMC1 and RNG).
   * @retval None
   */
@@ -667,6 +693,23 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
                                         RCC_PERIPHCLK_LPTIM1  | RCC_PERIPHCLK_LPTIM2 | RCC_PERIPHCLK_SAI1   |                        RCC_PERIPHCLK_USB    | \
                                         RCC_PERIPHCLK_SDMMC1  | RCC_PERIPHCLK_RNG    | RCC_PERIPHCLK_ADC    | RCC_PERIPHCLK_SWPMI1 |                        \
                                         RCC_PERIPHCLK_RTC ;
+
+#elif defined(STM32L451xx)
+
+  PeriphClkInit->PeriphClockSelection = RCC_PERIPHCLK_USART1  | RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_USART3 | RCC_PERIPHCLK_UART4  |                        \
+                                        RCC_PERIPHCLK_LPUART1 | RCC_PERIPHCLK_I2C1   | RCC_PERIPHCLK_I2C2   | RCC_PERIPHCLK_I2C3   | RCC_PERIPHCLK_I2C4   | \
+                                        RCC_PERIPHCLK_LPTIM1  | RCC_PERIPHCLK_LPTIM2 | RCC_PERIPHCLK_SAI1   |                                               \
+                                        RCC_PERIPHCLK_SDMMC1  | RCC_PERIPHCLK_RNG    | RCC_PERIPHCLK_ADC    |                        RCC_PERIPHCLK_DFSDM1 | \
+                                        RCC_PERIPHCLK_RTC ;
+
+#elif defined(STM32L452xx) || defined(STM32L462xx)
+
+  PeriphClkInit->PeriphClockSelection = RCC_PERIPHCLK_USART1  | RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_USART3 | RCC_PERIPHCLK_UART4  |                        \
+                                        RCC_PERIPHCLK_LPUART1 | RCC_PERIPHCLK_I2C1   | RCC_PERIPHCLK_I2C2   | RCC_PERIPHCLK_I2C3   | RCC_PERIPHCLK_I2C4   | \
+                                        RCC_PERIPHCLK_LPTIM1  | RCC_PERIPHCLK_LPTIM2 | RCC_PERIPHCLK_SAI1   |                        RCC_PERIPHCLK_USB    | \
+                                        RCC_PERIPHCLK_SDMMC1  | RCC_PERIPHCLK_RNG    | RCC_PERIPHCLK_ADC    |                        RCC_PERIPHCLK_DFSDM1 | \
+                                        RCC_PERIPHCLK_RTC ;
+
 #elif defined(STM32L471xx)
 
   PeriphClkInit->PeriphClockSelection = RCC_PERIPHCLK_USART1  | RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_USART3 | RCC_PERIPHCLK_UART4  | RCC_PERIPHCLK_UART5  | \
@@ -740,6 +783,11 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
   /* Get the I2C3 clock source -----------------------------------------------*/
   PeriphClkInit->I2c3ClockSelection    = __HAL_RCC_GET_I2C3_SOURCE();
 
+#if defined(I2C4)
+  /* Get the I2C4 clock source -----------------------------------------------*/
+  PeriphClkInit->I2c4ClockSelection    = __HAL_RCC_GET_I2C4_SOURCE();
+#endif /* I2C4 */
+
   /* Get the LPTIM1 clock source ---------------------------------------------*/
   PeriphClkInit->Lptim1ClockSelection  = __HAL_RCC_GET_LPTIM1_SOURCE();
 
@@ -794,9 +842,15 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
   @if STM32L486xx
   *            @arg @ref RCC_PERIPHCLK_DFSDM1  DFSDM1 peripheral clock (only for devices with DFSDM)
   @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_PERIPHCLK_DFSDM1  DFSDM1 peripheral clock (only for devices with DFSDM)
+  @endif
   *            @arg @ref RCC_PERIPHCLK_I2C1  I2C1 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_I2C2  I2C2 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_I2C3  I2C3 peripheral clock
+  @if STM32L462xx
+  *            @arg @ref RCC_PERIPHCLK_I2C4  I2C4 peripheral clock (only for devices with I2C4)
+  @endif
   *            @arg @ref RCC_PERIPHCLK_LPTIM1  LPTIM1 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_LPTIM2  LPTIM2 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_LPUART1  LPUART1 peripheral clock
@@ -806,13 +860,22 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
   *            @arg @ref RCC_PERIPHCLK_SAI2  SAI2 peripheral clock (only for devices with SAI2)
   @endif
   *            @arg @ref RCC_PERIPHCLK_SDMMC1  SDMMC1 peripheral clock
-  *            @arg @ref RCC_PERIPHCLK_SWPMI1  SWPMI1 peripheral clock
+  @if STM32L443xx
+  *            @arg @ref RCC_PERIPHCLK_SWPMI1  SWPMI1 peripheral clock (only for devices with SWPMI1)
+  @endif
+  @if STM32L486xx
+  *            @arg @ref RCC_PERIPHCLK_SWPMI1  SWPMI1 peripheral clock (only for devices with SWPMI1)
+  @endif
   *            @arg @ref RCC_PERIPHCLK_USART1  USART1 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_USART2  USART1 peripheral clock
   *            @arg @ref RCC_PERIPHCLK_USART3  USART1 peripheral clock
   @if STM32L486xx
   *            @arg @ref RCC_PERIPHCLK_UART4  UART4 peripheral clock (only for devices with UART4)
   *            @arg @ref RCC_PERIPHCLK_UART5  UART5 peripheral clock (only for devices with UART5)
+  *            @arg @ref RCC_PERIPHCLK_USB  USB peripheral clock (only for devices with USB)
+  @endif
+  @if STM32L462xx
+  *            @arg @ref RCC_PERIPHCLK_UART4  UART4 peripheral clock (only for devices with UART4)
   *            @arg @ref RCC_PERIPHCLK_USB  USB peripheral clock (only for devices with USB)
   @endif
   * @retval Frequency in Hz
@@ -1071,9 +1134,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
           {
             /* f(PLLSAI2CLK) = f(VCOSAI2 input) * PLLSAI2N / PLLSAI2P */
             plln = READ_BIT(RCC->PLLSAI2CFGR, RCC_PLLSAI2CFGR_PLLSAI2N) >> POSITION_VAL(RCC_PLLSAI2CFGR_PLLSAI2N);
-#if defined(RCC_PLLSAI2P_DIV_2_31_SUPPORT)
-            pllp = READ_BIT(RCC->PLLSAI2CFGR, RCC_PLLSAI2CFGR_PLLSAI2PDIV) >> POSITION_VAL(RCC_PLLSAI2CFGR_PLLSAI2PDIV);
-#endif             
             if(pllp == 0U)
             {
               if(READ_BIT(RCC->PLLSAI2CFGR, RCC_PLLSAI2CFGR_PLLSAI2P) != RESET)
@@ -1468,6 +1528,33 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
         frequency = 0U;
       }
       break;
+
+#if defined(I2C4)
+
+    case RCC_PERIPHCLK_I2C4:
+      /* Get the current I2C4 source */
+      srcclk = __HAL_RCC_GET_I2C4_SOURCE();
+      
+      if(srcclk == RCC_I2C4CLKSOURCE_PCLK1)
+      {
+        frequency = HAL_RCC_GetPCLK1Freq();
+      }
+      else if(srcclk == RCC_I2C4CLKSOURCE_SYSCLK)
+      {
+        frequency = HAL_RCC_GetSysClockFreq();
+      }
+      else if((srcclk == RCC_I2C4CLKSOURCE_HSI) && (HAL_IS_BIT_SET(RCC->CR, RCC_CR_HSIRDY)))
+      {
+        frequency = HSI_VALUE;
+      }
+      /* Clock not enabled for I2C4 */
+      else
+      {
+        frequency = 0U;
+      }
+      break;
+
+#endif /* I2C4 */
 
     case RCC_PERIPHCLK_LPTIM1:
       /* Get the current LPTIM1 source */
@@ -2620,17 +2707,10 @@ static HAL_StatusTypeDef RCCEx_PLLSAI2_Config(RCC_PLLSAI2InitTypeDef *PllSai2, u
       {
         assert_param(IS_RCC_PLLSAI2P_VALUE(PllSai2->PLLSAI2P));
         /* Configure the PLLSAI2 Division factor P and Multiplication factor N*/
-#if defined(RCC_PLLSAI2P_DIV_2_31_SUPPORT)
-        MODIFY_REG(RCC->PLLSAI2CFGR, 
-                   RCC_PLLSAI2CFGR_PLLSAI2N | RCC_PLLSAI2CFGR_PLLSAI2PDIV, 
-                   (PllSai2->PLLSAI2N << POSITION_VAL(RCC_PLLSAI2CFGR_PLLSAI2N)) | 
-                   (PllSai2->PLLSAI2P << POSITION_VAL(RCC_PLLSAI2CFGR_PLLSAI2PDIV)));
-#else
         MODIFY_REG(RCC->PLLSAI2CFGR, 
                    RCC_PLLSAI2CFGR_PLLSAI2N | RCC_PLLSAI2CFGR_PLLSAI2P, 
                    (PllSai2->PLLSAI2N << POSITION_VAL(RCC_PLLSAI2CFGR_PLLSAI2N)) | 
                    ((PllSai2->PLLSAI2P >> 4U) << POSITION_VAL(RCC_PLLSAI2CFGR_PLLSAI2P)));
-#endif /* RCC_PLLSAI2P_DIV_2_31_SUPPORT */
       }
       else
       {

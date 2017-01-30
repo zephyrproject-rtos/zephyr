@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_sai.h
   * @author  MCD Application Team
-  * @version V1.5.1
-  * @date    01-July-2016
+  * @version V1.6.0
+  * @date    04-November-2016
   * @brief   Header file of SAI HAL module.
   ******************************************************************************
   * @attention
@@ -50,7 +50,8 @@
   * @{
   */
 #if defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) || \
-    defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx)
+    defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx) || defined(STM32F413xx) || \
+    defined(STM32F423xx)
 
 /** @addtogroup SAI
   * @{
@@ -244,6 +245,10 @@ typedef struct __SAI_HandleTypeDef
   * @}
   */
 
+/**
+  * @}
+  */
+
 /* Exported constants --------------------------------------------------------*/
 
 /** @defgroup SAI_Exported_Constants SAI Exported Constants
@@ -295,17 +300,6 @@ typedef struct __SAI_HandleTypeDef
 #define SAI_PROTOCOL_DATASIZE_16BITEXTENDED 1U
 #define SAI_PROTOCOL_DATASIZE_24BIT         2U
 #define SAI_PROTOCOL_DATASIZE_32BIT         3U
-/**
-  * @}
-  */
-
-/** @defgroup SAI_Clock_Source  SAI Clock Source
-  * @{
-  */
-#define SAI_CLKSOURCE_PLLSAI             ((uint32_t)0x00000000U)
-#define SAI_CLKSOURCE_PLLI2S             ((uint32_t)0x00100000U)
-#define SAI_CLKSOURCE_EXT                ((uint32_t)0x00200000U)
-#define SAI_CLKSOURCE_NA                 ((uint32_t)0x00400000U) /*!< No applicable for STM32F446xx  */
 /**
   * @}
   */
@@ -752,10 +746,6 @@ uint32_t HAL_SAI_GetError(SAI_HandleTypeDef *hsai);
                                               ((DATASIZE) == SAI_PROTOCOL_DATASIZE_24BIT)         ||\
                                               ((DATASIZE) == SAI_PROTOCOL_DATASIZE_32BIT))
 
-#define IS_SAI_CLK_SOURCE(SOURCE) (((SOURCE) == SAI_CLKSOURCE_PLLSAI) ||\
-                                   ((SOURCE) == SAI_CLKSOURCE_PLLI2S) ||\
-                                   ((SOURCE) == SAI_CLKSOURCE_EXT))
-
 #define IS_SAI_AUDIO_FREQUENCY(AUDIO) (((AUDIO) == SAI_AUDIO_FREQUENCY_192K) || ((AUDIO) == SAI_AUDIO_FREQUENCY_96K) || \
                                        ((AUDIO) == SAI_AUDIO_FREQUENCY_48K)  || ((AUDIO) == SAI_AUDIO_FREQUENCY_44K) || \
                                        ((AUDIO) == SAI_AUDIO_FREQUENCY_32K)  || ((AUDIO) == SAI_AUDIO_FREQUENCY_22K) || \
@@ -857,10 +847,11 @@ uint32_t HAL_SAI_GetError(SAI_HandleTypeDef *hsai);
   * @}
   */
 
-#endif /* STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx || STM32F446xx || STM32F469xx || STM32F479xx */
 /**
   * @}
-  */ 
+  */
+
+#endif /* STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx || STM32F446xx || STM32F469xx || STM32F479xx || STM32F413xx || STM32F423xx  */
 
 /**
   * @}

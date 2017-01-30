@@ -28,6 +28,11 @@ GTEXT(_NanoIdleValClear)
 GTEXT(k_cpu_idle)
 GTEXT(k_cpu_atomic_idle)
 
+#define _SCB_SCR 0xE000ED10
+
+#define _SCB_SCR_SEVONPEND (1 << 4)
+#define _SCB_SCR_SLEEPDEEP (1 << 2)
+#define _SCB_SCR_SLEEPONEXIT (1 << 1)
 #define _SCR_INIT_BITS _SCB_SCR_SEVONPEND
 
 /**

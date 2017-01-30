@@ -216,7 +216,7 @@ void RTC_Init(RTC_Type *base, const rtc_config_t *config)
     /* Setup the update mode and supervisor access mode */
     reg &= ~(RTC_CR_UM_MASK | RTC_CR_SUP_MASK);
     reg |= RTC_CR_UM(config->updateMode) | RTC_CR_SUP(config->supervisorAccess);
-#if defined(FSL_FEATURE_RTC_HAS_WAKEUP_PIN) && FSL_FEATURE_RTC_HAS_WAKEUP_PIN
+#if defined(FSL_FEATURE_RTC_HAS_WAKEUP_PIN_SELECTION) && FSL_FEATURE_RTC_HAS_WAKEUP_PIN_SELECTION
     /* Setup the wakeup pin select */
     reg &= ~(RTC_CR_WPS_MASK);
     reg |= RTC_CR_WPS(config->wakeupSelect);
