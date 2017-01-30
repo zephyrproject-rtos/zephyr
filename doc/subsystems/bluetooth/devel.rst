@@ -4,10 +4,10 @@ Developing Bluetooth Applications
 Initialization
 **************
 
-The Bluetooth subsystem is initialized using the :c:func:`bt_init()`
+The Bluetooth subsystem is initialized using the :c:func:`bt_enable()`
 function. The caller should ensure that function succeeds by checking
 the return code for errors. If a function pointer is passed to
-:c:func:`bt_init()` the initialization happens synchronously and the
+:c:func:`bt_enable()`, the initialization happens asynchronously, and the
 completion is notified through the given function.
 
 Bluetooth Application Example
