@@ -1,0 +1,14 @@
+---
+title: Zephyr Device Specific Properties
+version: 0.1
+
+description: >
+    This binding describes Zephyr device specific properties
+
+properties:
+  - zephyr,irq-prio:
+      category: optional
+      type: int
+      description: priority setting
+      generation: define
+...

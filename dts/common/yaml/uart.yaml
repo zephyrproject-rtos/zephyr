@@ -1,0 +1,25 @@
+---
+title: Uart Base Structure
+id: uart
+version: 0.1
+
+description: >
+    This binding gives the base structures for all UART devices
+
+properties:
+  - clock-frequency:
+      type: int
+      category: optional
+      description: Clock frequency information for UART operation
+      generation: define
+  - baud-rate:
+      type: int
+      category: required
+      description: Initial baud rate setting for UART
+      generation: define
+  - clocks:
+      type: array
+      category: required
+      description: Clock gate information
+      generation: define
+...
