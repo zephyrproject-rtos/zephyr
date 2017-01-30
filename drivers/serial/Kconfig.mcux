@@ -27,6 +27,8 @@ config UART_MCUX_0_NAME
 	string "UART 0 driver name"
 	default "UART_0"
 
+if !HAS_DTS
+
 config UART_MCUX_0_IRQ_PRI
 	int "UART 0 interrupt priority"
 	default 0
@@ -34,6 +36,8 @@ config UART_MCUX_0_IRQ_PRI
 config UART_MCUX_0_BAUD_RATE
 	int "UART 0 baud rate"
 	default 115200
+
+endif # !HAS_DTS
 
 endif # UART_MCUX_0
 
@@ -49,6 +53,8 @@ config UART_MCUX_1_NAME
 	string "UART 1 driver name"
 	default "UART_1"
 
+if !HAS_DTS
+
 config UART_MCUX_1_IRQ_PRI
 	int "UART 1 interrupt priority"
 	default 0
@@ -56,6 +62,8 @@ config UART_MCUX_1_IRQ_PRI
 config UART_MCUX_1_BAUD_RATE
 	int "UART 1 baud rate"
 	default 115200
+
+endif # !HAS_DTS
 
 endif # UART_MCUX_1
 
@@ -71,6 +79,8 @@ config UART_MCUX_2_NAME
 	string "UART 2 driver name"
 	default "UART_2"
 
+if !HAS_DTS
+
 config UART_MCUX_2_IRQ_PRI
 	int "UART 2 interrupt priority"
 	default 0
@@ -78,6 +88,8 @@ config UART_MCUX_2_IRQ_PRI
 config UART_MCUX_2_BAUD_RATE
 	int "UART 2 baud rate"
 	default 115200
+
+endif # !HAS_DTS
 
 endif # UART_MCUX_2
 
@@ -93,6 +105,8 @@ config UART_MCUX_3_NAME
 	string "UART 3 driver name"
 	default "UART_3"
 
+if !HAS_DTS
+
 config UART_MCUX_3_IRQ_PRI
 	int "UART 3 interrupt priority"
 	default 0
@@ -100,6 +114,8 @@ config UART_MCUX_3_IRQ_PRI
 config UART_MCUX_3_BAUD_RATE
 	int "UART 3 baud rate"
 	default 115200
+
+endif # !HAS_DTS
 
 endif # UART_MCUX_3
 
@@ -115,6 +131,8 @@ config UART_MCUX_4_NAME
 	string "UART 4 driver name"
 	default "UART_4"
 
+if !HAS_DTS
+
 config UART_MCUX_4_IRQ_PRI
 	int "UART 4 interrupt priority"
 	default 0
@@ -122,6 +140,8 @@ config UART_MCUX_4_IRQ_PRI
 config UART_MCUX_4_BAUD_RATE
 	int "UART 4 baud rate"
 	default 115200
+
+endif # !HAS_DTS
 
 endif # UART_MCUX_4
 
@@ -137,6 +157,8 @@ config UART_MCUX_5_NAME
 	string "UART 5 driver name"
 	default "UART_5"
 
+if !HAS_DTS
+
 config UART_MCUX_5_IRQ_PRI
 	int "UART 5 interrupt priority"
 	default 0
@@ -144,6 +166,8 @@ config UART_MCUX_5_IRQ_PRI
 config UART_MCUX_5_BAUD_RATE
 	int "UART 5 baud rate"
 	default 115200
+
+endif # !HAS_DTS
 
 endif # UART_MCUX_5
 
