@@ -99,21 +99,24 @@ static int net_value_to_udec(char *buf, uint32_t value, int precision)
 	return buf - start;
 }
 
-char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
-			     char *buf, int buflen)
+char *net_addr_ntop(sa_family_t family, const void *src,
+		    char *dst, size_t size)
 {
-	uint16_t *w = (uint16_t *)ip;
+	struct in_addr *addr;
+	struct in6_addr *addr6;
+	uint16_t *w;
 	uint8_t i, bl, bh, longest = 1;
 	int8_t pos = -1;
 	char delim = ':';
 	unsigned char zeros[8] = { 0 };
-	char *ptr = buf;
+	char *ptr = dst;
 	int len = -1;
 	uint16_t value;
 	bool needcolon = false;
 
-	switch (ip_len) {
-	case 16:
+	if (family == AF_INET6) {
+		addr6 = (struct in6_addr *)src;
+		w = (uint16_t *)addr6->s6_addr16;
 		len = 8;
 
 		for (i = 0; i < 8; i++) {
@@ -123,6 +126,7 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 				if (w[j] != 0) {
 					break;
 				}
+
 				zeros[i]++;
 			}
 		}
@@ -137,28 +141,21 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 		if (longest == 1) {
 			pos = -1;
 		}
-		break;
 
-	case 4:
+	} else if (family == AF_INET) {
+		addr = (struct in_addr *)src;
 		len = 4;
 		delim = '.';
-		break;
-	default:
-		break;
-	}
-
-	/* Invalid len, bail out */
-	if (len < 0) {
+	} else {
 		return NULL;
 	}
 
 	for (i = 0; i < len; i++) {
-
 		/* IPv4 address a.b.c.d */
 		if (len == 4) {
 			uint8_t l;
 
-			value = (uint32_t)ip[i];
+			value = (uint32_t)addr->s4_addr[i];
 
 			/* net_byte_to_udec() eats 0 */
 			if (value == 0) {
@@ -171,6 +168,7 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 
 			ptr += l;
 			*ptr++ = delim;
+
 			continue;
 		}
 
@@ -179,9 +177,11 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 			if (needcolon || i == 0) {
 				*ptr++ = ':';
 			}
+
 			*ptr++ = ':';
 			needcolon = false;
 			i += longest - 1;
+
 			continue;
 		}
 
@@ -204,6 +204,7 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 					*ptr++ = (char) (bh - 10 + 'a');
 				}
 			}
+
 			ptr = net_byte_to_hex(ptr, bl, 'a', true);
 		} else if (bl > 0x0f) {
 			ptr = net_byte_to_hex(ptr, bl, 'a', false);
@@ -214,20 +215,21 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 				*ptr++ = (char) (bl - 10 + 'a');
 			}
 		}
+
 		needcolon = true;
 	}
 
-	if (!(ptr - buf)) {
+	if (!(ptr - dst)) {
 		return NULL;
 	}
 
-	if (ip_len == 4) {
+	if (family == AF_INET) {
 		*(ptr - 1) = '\0';
 	} else {
 		*ptr = '\0';
 	}
 
-	return buf;
+	return dst;
 }
 
 int net_addr_pton(sa_family_t family, const char *src,

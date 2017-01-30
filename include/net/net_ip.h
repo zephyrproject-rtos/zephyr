@@ -795,6 +795,20 @@ struct sockaddr_in_ptr *net_sin_ptr(const struct sockaddr_ptr *addr)
  */
 int net_addr_pton(sa_family_t family, const char *src, void *dst);
 
+/**
+ * @brief Convert IP address to string form.
+ *
+ * @param family IP address family (AF_INET or AF_INET6)
+ * @param src Pointer to struct in_addr if family is AF_INET or
+ *        pointer to struct in6_addr if family is AF_INET6
+ * @param dst IP address in a non-null terminated string
+ * @param size Number of bytes available in the buffer
+ *
+ * @return dst pointer if ok, NULL if error
+ */
+char *net_addr_ntop(sa_family_t family, const void *src,
+		    char *dst, size_t size);
+
 #ifdef __cplusplus
 }
 #endif

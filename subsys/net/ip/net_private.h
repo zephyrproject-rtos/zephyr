@@ -23,8 +23,6 @@ extern void net_ipv6_init(void);
 extern char *net_byte_to_hex(uint8_t *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 				    char *buf, int buflen);
-extern char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
-				    char *buf, int buflen);
 extern uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto);
 
 #if defined(CONFIG_NET_IPV4)
@@ -59,17 +57,12 @@ static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 	return net_sprint_ll_addr_buf(ll, ll_len, (char *)buf, sizeof(buf));
 }
 
-static inline char *net_sprint_ip_addr_ptr(const uint8_t *ptr, uint8_t len)
-{
-	static char buf[NET_IPV6_ADDR_LEN];
-
-	return net_sprint_ip_addr_buf(ptr, len, (char *)buf, sizeof(buf));
-}
-
 static inline char *net_sprint_ipv6_addr(const struct in6_addr *addr)
 {
 #if defined(CONFIG_NET_IPV6)
-	return net_sprint_ip_addr_ptr(addr->s6_addr, 16);
+	static char buf[NET_IPV6_ADDR_LEN];
+
+	return net_addr_ntop(AF_INET6, addr, (char *)buf, sizeof(buf));
 #else
 	return NULL;
 #endif
@@ -78,7 +71,9 @@ static inline char *net_sprint_ipv6_addr(const struct in6_addr *addr)
 static inline char *net_sprint_ipv4_addr(const struct in_addr *addr)
 {
 #if defined(CONFIG_NET_IPV4)
-	return net_sprint_ip_addr_ptr(addr->s4_addr, 4);
+	static char buf[NET_IPV4_ADDR_LEN];
+
+	return net_addr_ntop(AF_INET, addr, (char *)buf, sizeof(buf));
 #else
 	return NULL;
 #endif
@@ -155,14 +150,6 @@ static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 {
 	ARG_UNUSED(ll);
 	ARG_UNUSED(ll_len);
-
-	return NULL;
-}
-
-static inline char *net_sprint_ip_addr_ptr(const uint8_t *ptr, uint8_t len)
-{
-	ARG_UNUSED(ptr);
-	ARG_UNUSED(len);
 
 	return NULL;
 }

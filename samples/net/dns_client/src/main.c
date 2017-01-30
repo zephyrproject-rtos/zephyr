@@ -64,10 +64,6 @@ char *domains[] = {"not_a_real_domain_name",
 		   "www.google.com",
 		   NULL};
 
-/* from subsys/net/ip/utils.c */
-char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
-			     char *buf, int buflen);
-
 void run_dns(void)
 {
 	struct dns_context ctx;
@@ -141,11 +137,11 @@ void run_dns(void)
 
 		for (i = 0; i < ctx.items; i++) {
 #ifdef CONFIG_NET_IPV6
-			net_sprint_ip_addr_buf(addresses[i].in6_u.u6_addr8,
-					       16, str, sizeof(str));
+			net_addr_ntop(AF_INET6, &addresses[i],
+				      str, sizeof(str));
 #else
-			net_sprint_ip_addr_buf(addresses[i].in4_u.u4_addr8,
-					       4, str, sizeof(str));
+			net_addr_ntop(AF_INET, &addresses[i],
+				      str, sizeof(str));
 #endif
 			printk("[%s:%d] %s\n", __func__, __LINE__, str);
 		}
