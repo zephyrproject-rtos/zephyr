@@ -183,12 +183,8 @@ typedef void (*irq_config_func_t)(struct device *port);
 struct i2c_stm32lx_config {
 	void *base;
 	irq_config_func_t irq_config_func;
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-	struct stm32_pclken pclken;
-#else
 	/* clock subsystem driving this peripheral */
-	clock_control_subsys_t clock_subsys;
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
+	struct stm32_pclken pclken;
 };
 
 /* driver data */

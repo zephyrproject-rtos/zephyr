@@ -118,13 +118,8 @@ static int flash_stm32_init(struct device *dev)
 
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken) != 0)
 		return -ENODEV;
-#else
-	if (clock_control_on(clk, cfg->clock_subsys) != 0)
-		return -ENODEV;
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 	return 0;
 }
@@ -138,12 +133,8 @@ static const struct flash_driver_api flash_stm32_api = {
 
 static const struct flash_stm32_dev_config flash_device_config = {
 	.base = (uint32_t *)FLASH_R_BASE,
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
 		    .enr =  LL_AHB1_GRP1_PERIPH_FLASH},
-#else
-	.clock_subsys = UINT_TO_POINTER(STM32F3X_CLOCK_SUBSYS_FLITF),
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 };
 
 static struct flash_stm32_dev_data flash_device_data = {

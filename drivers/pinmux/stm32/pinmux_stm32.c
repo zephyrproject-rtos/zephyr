@@ -79,9 +79,7 @@ static int enable_port(uint32_t port, struct device *clk)
 
 	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 #else
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
 	clock_control_subsys_t subsys = stm32_get_port_clock(port);
 
 	return clock_control_on(clk, subsys);
