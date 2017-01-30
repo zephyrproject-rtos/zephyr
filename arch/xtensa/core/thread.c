@@ -105,7 +105,7 @@ void _new_thread(char *pStack, size_t stackSize,
 		(uint32_t)stackEnd - XT_CP_SA_SIZE;
 #ifdef CONFIG_DEBUG
 	printk("cpStack  = %p\n", tcs->arch.preempCoprocReg.cpStack);
-	printk("cpAsa    = %p\n", *(uint32_t *)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA));
+	printk("cpAsa    = %p\n", *(void **)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA));
 #endif
 #endif
 	/* Thread's first frame alignment is granted as both operands are aligned */

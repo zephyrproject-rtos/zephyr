@@ -54,7 +54,7 @@ void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 		PR_EXC("**** Unknown Fatal Error %d! ****\n", reason);
 		break;
 	}
-	PR_EXC("Current thread ID = 0x%x\n"
+	PR_EXC("Current thread ID = %p\n"
 	       "Faulting instruction address = 0x%x\n",
 	       k_current_get(),
 	       pEsf->pc);
