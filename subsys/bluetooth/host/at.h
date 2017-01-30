@@ -10,7 +10,35 @@
 
 enum at_result {
 	AT_RESULT_OK,
-	AT_RESULT_ERROR
+	AT_RESULT_ERROR,
+	AT_RESULT_CME_ERROR
+};
+
+enum at_cme {
+	CME_ERROR_AG_FAILURE                    = 0,
+	CME_ERROR_NO_CONNECTION_TO_PHONE        = 1,
+	CME_ERROR_OPERATION_NOT_ALLOWED         = 3,
+	CME_ERROR_OPERATION_NOT_SUPPORTED       = 4,
+	CME_ERROR_PH_SIM_PIN_REQUIRED           = 5,
+	CME_ERROR_SIM_NOT_INSERTED              = 10,
+	CME_ERROR_SIM_PIN_REQUIRED              = 11,
+	CME_ERROR_SIM_PUK_REQUIRED              = 12,
+	CME_ERROR_SIM_FAILURE                   = 13,
+	CME_ERROR_SIM_BUSY                      = 14,
+	CME_ERROR_INCORRECT_PASSWORD            = 16,
+	CME_ERROR_SIM_PIN2_REQUIRED             = 17,
+	CME_ERROR_SIM_PUK2_REQUIRED             = 18,
+	CME_ERROR_MEMORY_FULL                   = 20,
+	CME_ERROR_INVALID_INDEX                 = 21,
+	CME_ERROR_MEMORY_FAILURE                = 23,
+	CME_ERROR_TEXT_STRING_TOO_LONG          = 24,
+	CME_ERROR_INVALID_CHARS_IN_TEXT_STRING  = 25,
+	CME_ERROR_DIAL_STRING_TO_LONG           = 26,
+	CME_ERROR_INVALID_CHARS_IN_DIAL_STRING  = 27,
+	CME_ERROR_NO_NETWORK_SERVICE            = 30,
+	CME_ERROR_NETWORK_TIMEOUT               = 31,
+	CME_ERROR_NETWORK_NOT_ALLOWED           = 32,
+	CME_ERROR_UNKNOWN                       = 33,
 };
 
 enum at_state {
@@ -21,6 +49,7 @@ enum at_state {
 	AT_STATE_PROCESS_CMD,
 	AT_STATE_GET_RESULT_STRING,
 	AT_STATE_PROCESS_RESULT,
+	AT_STATE_PROCESS_AG_NW_ERR,
 	AT_STATE_UNSOLICITED_CMD,
 	AT_STATE_END
 };
@@ -46,9 +75,12 @@ struct at_client;
 typedef int (*at_resp_cb_t)(struct at_client *at, struct net_buf *buf);
 
 /* Callback at_finish_cb used to monitor the success or failure of the AT
- * command received from server
+ * command received from server.
+ * Argument 'cme_err' is valid only when argument 'result' is equal to
+ * AT_RESULT_CME_ERROR
  */
-typedef int (*at_finish_cb_t)(struct at_client *at, enum at_result result);
+typedef int (*at_finish_cb_t)(struct at_client *at, enum at_result result,
+			      enum at_cme cme_err);
 typedef int (*parse_val_t)(struct at_client *at);
 typedef int (*handle_parse_input_t)(struct at_client *at, struct net_buf *buf);
 typedef int (*handle_cmd_input_t)(struct at_client *at, struct net_buf *buf,
