@@ -16,7 +16,7 @@ const NANO_ESF _default_esf = {
 	0xdeaddead, /* pc */
 };
 
-extern void exit(int exit_code);
+FUNC_NORETURN void exit(int exit_code);
 
 /**
  *
@@ -36,7 +36,8 @@ extern void exit(int exit_code);
  *
  * @return This function does not return.
  */
-void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+					  const NANO_ESF *pEsf)
 {
 	switch (reason) {
 	case _NANO_ERR_INVALID_TASK_EXIT:
