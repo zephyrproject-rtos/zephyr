@@ -135,8 +135,21 @@ void _new_thread(char *pStack, size_t stackSize,
 #endif
 	tcs->callee_saved.topOfStack = pInitCtx;
 	tcs->arch.flags = 0;
-	tcs->arch.prio = prio;
-
+	_init_thread_base(&tcs->base, prio, _THREAD_PRESTART, options);
+	/* static threads overwrite it afterwards with real value */
+	tcs->init_data = NULL;
+	tcs->fn_abort = NULL;
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+	/* Initialize custom data field (value is opaque to kernel) */
+	tcs->custom_data = NULL;
+#endif
+#ifdef CONFIG_THREAD_MONITOR
+	/*
+	 * In debug mode tcs->entry give direct access to the thread entry
+	 * and the corresponding parameters.
+	 */
+	tcs->entry = (struct __thread_entry *)(pInitCtx);
+#endif
 	/* initial values in all other registers/TCS entries are irrelevant */
 
 	THREAD_MONITOR_INIT(tcs);

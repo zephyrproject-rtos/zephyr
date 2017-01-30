@@ -134,7 +134,6 @@ struct _thread_arch {
 	 * offset to read the 'flags' field.
 	 */
 	uint32_t flags;
-	int prio;     /* thread priority used to sort linked list */
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	void *custom_data;     /* available for custom use */
 #endif
