@@ -61,6 +61,7 @@ The IP stack source code tree is organized as follows:
 .. toctree::
    :maxdepth: 1
 
+   ip-stack-migrate.rst
    ip-stack-architecture.rst
    networking-api-usage.rst
    network-management-api.rst
