@@ -1,0 +1,33 @@
+/dts-v1/;
+
+#include "nxp_k6x.dtsi"
+
+/ {
+	model = "NXP Freedom MK64F board";
+	compatible = "nxp,mk64f12", "nxp,k64f", "nxp,k6x";
+
+	aliases {
+		uart_0 = &uart0;
+		uart_3 = &uart3;
+		pinmux_a = &pinmux_a;
+		pinmux_b = &pinmux_b;
+		pinmux_c = &pinmux_c;
+		pinmux_d = &pinmux_d;
+		pinmux_e = &pinmux_e;
+		gpio_a = &gpioa;
+		gpio_b = &gpiob;
+		gpio_c = &gpioc;
+		gpio_d = &gpiod;
+		gpio_e = &gpioe;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+};
