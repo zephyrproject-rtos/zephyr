@@ -1152,8 +1152,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		}
 
 		/* Cancel Connection Update if it is pending */
-		if (conn->type == BT_CONN_TYPE_LE)
+		if (conn->type == BT_CONN_TYPE_LE) {
 			k_delayed_work_cancel(&conn->le.update_work);
+		}
 
 		/* Release the reference we took for the very first
 		 * state transition.
