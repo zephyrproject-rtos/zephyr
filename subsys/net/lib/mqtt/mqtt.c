@@ -262,7 +262,11 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		goto exit_pingreq;
 	}
 
-	net_nbuf_append(tx, len, msg);
+	rc = net_nbuf_append(tx, len, msg);
+	if (rc != true) {
+		rc = -ENOMEM;
+		goto exit_pingreq;
+	}
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
