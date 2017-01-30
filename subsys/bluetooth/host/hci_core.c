@@ -14,6 +14,7 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
+#include <soc.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #include <bluetooth/log.h>
@@ -3284,6 +3285,29 @@ static int set_static_addr(void)
 			goto set_addr;
 		}
 	}
+
+#if defined(CONFIG_SOC_FAMILY_NRF5)
+	/* Read address from nRF5-specific storage
+	 * Non-initialized FICR values default to 0xFF, skip if no address
+	 * present. Also if a public address lives in FICR, do not use in this
+	 * function.
+	 */
+	if (((NRF_FICR->DEVICEADDR[0] != UINT32_MAX) ||
+	    ((NRF_FICR->DEVICEADDR[1] & UINT16_MAX) != UINT16_MAX)) &&
+	      (NRF_FICR->DEVICEADDRTYPE & 0x01)) {
+
+		bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
+		sys_put_le32(NRF_FICR->DEVICEADDR[0], &bt_dev.id_addr.a.val[0]);
+		sys_put_le16(NRF_FICR->DEVICEADDR[1], &bt_dev.id_addr.a.val[4]);
+		/* The FICR value is a just a random number, with no knowledge
+		 * of the Bluetooth Specification requirements for random
+		 * static addresses.
+		 */
+		BT_ADDR_SET_STATIC(&bt_dev.id_addr.a);
+
+		goto set_addr;
+	}
+#endif /* CONFIG_SOC_FAMILY_NRF5 */
 
 	BT_DBG("Generating new static random address");
 
