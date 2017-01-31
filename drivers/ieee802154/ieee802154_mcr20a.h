@@ -36,13 +36,13 @@ struct mcr20a_context {
 	struct gpio_callback irqb_cb;
 	struct mcr20a_spi spi;
 	uint8_t mac_addr[8];
+	struct k_mutex phy_mutex;
+	struct k_sem isr_sem;
 	/*********TX + CCA*********/
 	struct k_sem seq_sync;
-	atomic_t busy;
 	atomic_t seq_retval;
 	/************RX************/
 	char __stack mcr20a_rx_stack[CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE];
-	struct k_sem trig_sem;
 	uint8_t lqi;
 };
 
@@ -174,6 +174,8 @@ DEFINE_BURST_WRITE(t3cmp, MCR20A_T3CMP_LSB, 3, true)
 DEFINE_BURST_WRITE(t4cmp, MCR20A_T4CMP_LSB, 3, true)
 DEFINE_BURST_WRITE(t2primecmp, MCR20A_T2PRIMECMP_LSB, 2, true)
 DEFINE_BURST_WRITE(pll_int0, MCR20A_PLL_INT0, 3, true)
+DEFINE_BURST_WRITE(irqsts1_irqsts3, MCR20A_IRQSTS1, 3, true)
+DEFINE_BURST_WRITE(irqsts1_ctrl1, MCR20A_IRQSTS1, 4, true)
 
 DEFINE_BURST_WRITE(pan_id, MCR20A_MACPANID0_LSB, 2, false)
 DEFINE_BURST_WRITE(short_addr, MCR20A_MACSHORTADDRS0_LSB, 2, false)
