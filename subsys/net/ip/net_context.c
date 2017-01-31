@@ -1093,7 +1093,7 @@ int net_context_connect(struct net_context *context,
 	context->user_data = user_data;
 
 	/* in tcp_synack_received() we give back this semaphore */
-	if (timeout > 0 && k_sem_take(&context->tcp->connect_wait, timeout)) {
+	if (timeout != 0 && k_sem_take(&context->tcp->connect_wait, timeout)) {
 		return -ETIMEDOUT;
 	}
 #endif
