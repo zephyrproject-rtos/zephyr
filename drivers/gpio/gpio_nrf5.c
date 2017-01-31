@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017 ARM Ltd
  * Copyright (c) 2016 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -240,7 +241,7 @@ static int gpio_nrf5_read(struct device *dev,
 	volatile struct _gpio *gpio = GPIO_STRUCT(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = gpio->IN & BIT(pin);
+		*value = (gpio->IN >> pin) & 0x1;
 	} else { /* GPIO_ACCESS_BY_PORT */
 		return -ENOTSUP;
 	}
