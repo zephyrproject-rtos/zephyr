@@ -192,6 +192,7 @@ struct zoap_observer {
 struct zoap_packet {
 	struct net_buf *buf;
 	uint8_t *start; /* Start of the payload */
+	uint16_t total_size;
 };
 
 /**
@@ -371,7 +372,9 @@ bool zoap_request_is_observe(const struct zoap_packet *request);
 /**
  * Returns a pointer to the start of the payload, and how much memory
  * is available (to the payload), it will also insert the
- * COAP_MARKER (0xFF).
+ * COAP_MARKER (0xFF). When the payload is already set, for example,
+ * for incoming packets, it will return how many bytes the payload
+ * occupies.
  */
 uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len);
 
