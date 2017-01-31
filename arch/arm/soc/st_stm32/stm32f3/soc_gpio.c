@@ -117,7 +117,7 @@ int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf, int altf)
 
 		if (crpin > 7) {
 			afr = &gpio->afrh;
-			crpin -= 7;
+			crpin -= 8;
 		}
 
 		/* clear AF bits */
