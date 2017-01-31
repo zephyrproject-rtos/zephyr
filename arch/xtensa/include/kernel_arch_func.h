@@ -61,9 +61,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
 static ALWAYS_INLINE void
 _set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
-	/* write into 'eax' slot created in _Swap() entry */
-
-	*(unsigned int *)(thread->callee_saved.retval) = value;
+	thread->callee_saved.retval = value;
 }
 
 extern void nano_cpu_atomic_idle(unsigned int imask);
