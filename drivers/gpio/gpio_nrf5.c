@@ -242,8 +242,8 @@ static int gpio_nrf5_read(struct device *dev,
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		*value = (gpio->IN >> pin) & 0x1;
-	} else { /* GPIO_ACCESS_BY_PORT */
-		return -ENOTSUP;
+	} else {
+		*value = gpio->IN;
 	}
 	return 0;
 }
@@ -259,8 +259,8 @@ static int gpio_nrf5_write(struct device *dev,
 		} else { /* 0 */
 			gpio->OUTCLR = BIT(pin);
 		}
-	} else { /* GPIO_ACCESS_BY_PORT */
-		return -ENOTSUP;
+	} else {
+		gpio->OUT = value;
 	}
 	return 0;
 }
