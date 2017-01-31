@@ -45,7 +45,7 @@ struct bt_conn_le {
 
 	struct bt_keys		*keys;
 
-	/* Delayed work for connection update handling */
+	/* Delayed work for connection update and timeout handling */
 	struct k_delayed_work	update_work;
 };
 
@@ -95,9 +95,6 @@ struct bt_conn {
 	uint8_t			err;
 
 	bt_conn_state_t		state;
-
-	/* Handle allowing to cancel timeout thread */
-	k_tid_t			timeout;
 
 	union {
 		struct bt_conn_le	le;

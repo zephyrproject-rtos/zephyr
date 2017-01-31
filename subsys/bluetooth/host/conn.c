@@ -150,6 +150,12 @@ static void le_conn_update(struct k_work *work)
 	struct bt_conn *conn = CONTAINER_OF(le, struct bt_conn, le);
 	const struct bt_le_conn_param *param;
 
+	if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL) &&
+	    conn->state == BT_CONN_CONNECT) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		return;
+	}
+
 	param = BT_LE_CONN_PARAM(conn->le.interval_min,
 				 conn->le.interval_max,
 				 conn->le.latency,
@@ -1066,19 +1072,6 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	return conn;
 }
 
-static void timeout_thread(void *p1, void *p2, void *p3)
-{
-	struct bt_conn *conn = p1;
-
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	conn->timeout = NULL;
-
-	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	bt_conn_unref(conn);
-}
-
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
 	bt_conn_state_t old_state;
@@ -1103,12 +1096,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		bt_conn_ref(conn);
 		break;
 	case BT_CONN_CONNECT:
-		if (conn->timeout) {
-			k_thread_cancel(conn->timeout);
-			conn->timeout = NULL;
-
-			/* Drop the reference taken by timeout thread */
-			bt_conn_unref(conn);
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL) &&
+		    conn->type == BT_CONN_TYPE_LE) {
+			k_delayed_work_cancel(&conn->le.update_work);
 		}
 		break;
 	default:
@@ -1169,15 +1159,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * Timer is needed only for LE. For other link types controller
 		 * will handle connection timeout.
 		 */
-		if (conn->type != BT_CONN_TYPE_LE) {
-			break;
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL) &&
+		    conn->type == BT_CONN_TYPE_LE) {
+			k_delayed_work_submit(&conn->le.update_work,
+					      CONN_TIMEOUT);
 		}
 
-		/* Add LE Create Connection timeout */
-		conn->timeout = k_thread_spawn(conn->stack, sizeof(conn->stack),
-					       timeout_thread,
-					       bt_conn_ref(conn), NULL, NULL,
-					       K_PRIO_COOP(7), 0, CONN_TIMEOUT);
 		break;
 	case BT_CONN_DISCONNECT:
 		break;
@@ -1365,19 +1352,6 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 	return 0;
 }
 
-static int bt_hci_connect_le_cancel(struct bt_conn *conn)
-{
-	if (conn->timeout) {
-		k_thread_cancel(conn->timeout);
-		conn->timeout = NULL;
-
-		/* Drop the reference took by timeout thread */
-		bt_conn_unref(conn);
-	}
-
-	return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
-}
-
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
@@ -1435,7 +1409,13 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 		}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-		return bt_hci_connect_le_cancel(conn);
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL)) {
+			k_delayed_work_cancel(&conn->le.update_work);
+			return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL,
+					       NULL);
+		}
+
+		return 0;
 	case BT_CONN_CONNECTED:
 		return bt_hci_disconnect(conn, reason);
 	case BT_CONN_DISCONNECT:
