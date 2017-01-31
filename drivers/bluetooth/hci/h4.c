@@ -46,11 +46,15 @@ static struct {
 	uint16_t discard;
 
 	bool     have_hdr;
+	bool     discardable;
+
+	uint8_t  hdr_len;
 
 	uint8_t  type;
 	union {
 		struct bt_hci_evt_hdr evt;
 		struct bt_hci_acl_hdr acl;
+		uint8_t hdr[4];
 	};
 } rx = {
 	.fifo = K_FIFO_INITIALIZER(rx.fifo),
@@ -78,9 +82,11 @@ static inline void h4_get_type(void)
 	switch (rx.type) {
 	case H4_EVT:
 		rx.remaining = sizeof(rx.evt);
+		rx.hdr_len = rx.remaining;
 		break;
 	case H4_ACL:
 		rx.remaining = sizeof(rx.acl);
+		rx.hdr_len = rx.remaining;
 		break;
 	default:
 		BT_ERR("Unknown H:4 type 0x%02x", rx.type);
@@ -105,13 +111,34 @@ static inline void get_acl_hdr(void)
 static inline void get_evt_hdr(void)
 {
 	struct bt_hci_evt_hdr *hdr = &rx.evt;
-	int to_read = sizeof(*hdr) - rx.remaining;
+	int to_read = rx.hdr_len - rx.remaining;
 
 	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
 				       rx.remaining);
+	if (rx.hdr_len == sizeof(*hdr) && rx.remaining < sizeof(*hdr)) {
+		switch (rx.evt.evt) {
+		case BT_HCI_EVT_LE_META_EVENT:
+			rx.remaining++;
+			rx.hdr_len++;
+			break;
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+		case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
+			rx.discardable = true;
+			break;
+#endif
+		}
+	}
+
 	if (!rx.remaining) {
-		rx.remaining = hdr->len;
-		BT_DBG("Got event header. Payload %u bytes", rx.remaining);
+		if (rx.evt.evt == BT_HCI_EVT_LE_META_EVENT &&
+		    rx.hdr[sizeof(*hdr)] == BT_HCI_EVT_LE_ADVERTISING_REPORT) {
+			BT_DBG("Marking adv report as discardable");
+			rx.discardable = true;
+		}
+
+		rx.remaining = hdr->len - (rx.hdr_len - sizeof(*hdr));
+		BT_DBG("Got event header. Payload %u bytes", hdr->len);
 		rx.have_hdr = true;
 	}
 }
@@ -119,13 +146,7 @@ static inline void get_evt_hdr(void)
 
 static inline void copy_hdr(struct net_buf *buf)
 {
-	if (rx.type == H4_EVT) {
-		net_buf_add_mem(buf, &rx.evt, sizeof(rx.evt));
-		BT_DBG("buf %p EVT len %u", buf, sys_le16_to_cpu(rx.evt.len));
-	} else {
-		net_buf_add_mem(buf, &rx.acl, sizeof(rx.acl));
-		BT_DBG("buf %p ACL len %u", buf, sys_le16_to_cpu(rx.acl.len));
-	}
+	net_buf_add_mem(buf, rx.hdr, rx.hdr_len);
 }
 
 static void rx_thread(void *p1, void *p2, void *p3)
@@ -183,6 +204,15 @@ static size_t h4_discard(struct device *uart, size_t len)
 	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
 }
 
+static void reset_rx(void)
+{
+	rx.type = H4_NONE;
+	rx.remaining = 0;
+	rx.have_hdr = false;
+	rx.hdr_len = 0;
+	rx.discardable = false;
+}
+
 static inline void read_payload(void)
 {
 	struct net_buf *buf;
@@ -192,7 +222,14 @@ static inline void read_payload(void)
 	if (!rx.buf) {
 		rx.buf = bt_buf_get_rx(K_NO_WAIT);
 		if (!rx.buf) {
-			BT_DBG("Failed to allocate, deferring to rx_thread");
+			if (rx.discardable) {
+				BT_WARN("Discarding event 0x%02x", rx.evt.evt);
+				rx.discard = rx.remaining;
+				reset_rx();
+				return;
+			}
+
+			BT_WARN("Failed to allocate, deferring to rx_thread");
 			uart_irq_rx_disable(h4_dev);
 			return;
 		}
@@ -202,8 +239,7 @@ static inline void read_payload(void)
 		if (rx.remaining > net_buf_tailroom(rx.buf)) {
 			BT_ERR("Not enough space in buffer");
 			rx.discard = rx.remaining;
-			rx.remaining = 0;
-			rx.have_hdr = false;
+			reset_rx();
 			return;
 		}
 
@@ -233,8 +269,7 @@ static inline void read_payload(void)
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 	}
 
-	rx.type = H4_NONE;
-	rx.have_hdr = false;
+	reset_rx();
 
 	if (prio) {
 		BT_DBG("Calling bt_recv_prio(%p)", buf);
