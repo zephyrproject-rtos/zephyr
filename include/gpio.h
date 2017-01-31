@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017 ARM Ltd
  * Copyright (c) 2015-2016 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -304,6 +305,9 @@ static inline int gpio_pin_write(struct device *port, uint32_t pin,
 
 /**
  * @brief Read the data value of a single pin.
+ *
+ * Read the input state of a pin, returning the value 0 or 1.
+ *
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where data is read.
  * @param value Integer pointer to receive the data values from the pin.
@@ -418,6 +422,13 @@ static inline int gpio_port_configure(struct device *port, int flags)
 
 /**
  * @brief Write a data value to the port.
+ *
+ * Write the output state of a port. The state of each pin is
+ * represented by one bit in the value.  Pin 0 corresponds to the
+ * least signficiant bit, pin 31 corresponds to the most significant
+ * bit.  For ports with less that 32 physical pins the most signficant
+ * bits which do not correspond to a physical pin are ignored.
+ *
  * @param port Pointer to the device structure for the driver instance.
  * @param value Value to set on the port.
  * @return 0 if successful, negative errno code on failure.
@@ -431,6 +442,13 @@ static inline int gpio_port_write(struct device *port, uint32_t value)
 
 /**
  * @brief Read data value from the port.
+ *
+ * Read the input state of a port.  The state of each pin is
+ * represented by one bit in the returned value.  Pin 0 corresponds to
+ * the least signficiant bit, pin 31 corresponds to the most
+ * significant bit. Unused bits for ports with less that 32 physical
+ * pins are returned as 0.
+ *
  * @param port Pointer to the device structure for the driver instance.
  * @param value Integer pointer to receive the data value from the port.
  * @return 0 if successful, negative errno code on failure.
