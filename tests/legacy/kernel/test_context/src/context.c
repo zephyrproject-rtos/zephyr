@@ -31,7 +31,7 @@
   #include <board.h>
 #endif
 
-#define FIBER_STACKSIZE    384
+#define FIBER_STACKSIZE    (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define FIBER_PRIORITY     4
 
 #define THREAD_SELF_CMD    0

@@ -19,7 +19,7 @@
 
 #include "test_lifo.h"
 
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define LIST_LEN 2
 /**TESTPOINT: init via K_LIFO_DEFINE*/
 K_LIFO_DEFINE(klifo);

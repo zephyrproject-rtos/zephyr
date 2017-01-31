@@ -30,7 +30,7 @@
 #include <board.h>
 #endif
 
-#define THREAD_STACKSIZE    384
+#define THREAD_STACKSIZE    (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_PRIORITY     4
 
 #define THREAD_SELF_CMD    0

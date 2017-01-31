@@ -35,7 +35,7 @@
 #include <ztest.h>
 #include <atomic.h>
 #define THREAD_NUM 4
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define POOL_NUM 2
 #define TIMEOUT 200
 #define BLK_SIZE_MIN 4

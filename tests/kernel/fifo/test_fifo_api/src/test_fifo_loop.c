@@ -28,7 +28,7 @@
 
 #include "test_fifo.h"
 
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define LIST_LEN 4
 #define LOOPS 32
 
