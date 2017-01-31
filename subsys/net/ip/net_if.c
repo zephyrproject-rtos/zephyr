@@ -1307,7 +1307,7 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 
 struct net_if *net_if_get_by_index(uint8_t index)
 {
-	if (&__net_if_start[index] > __net_if_end) {
+	if (&__net_if_start[index] >= __net_if_end) {
 		NET_DBG("Index %d is too large", index);
 		return NULL;
 	}
@@ -1317,7 +1317,7 @@ struct net_if *net_if_get_by_index(uint8_t index)
 
 uint8_t net_if_get_by_iface(struct net_if *iface)
 {
-	NET_ASSERT(iface >= __net_if_start && iface <= __net_if_end);
+	NET_ASSERT(iface >= __net_if_start && iface < __net_if_end);
 
 	return iface - __net_if_start;
 }
