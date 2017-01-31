@@ -491,6 +491,11 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 	struct net_if *iface = NULL;
 	struct net_nbr *nbr;
 
+	if (net_nbuf_ll_dst(buf)->addr ||
+	    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+		return buf;
+	}
+
 	if (net_if_ipv6_addr_onlink(&iface,
 				    &NET_IPV6_BUF(buf)->dst)) {
 		nexthop = &NET_IPV6_BUF(buf)->dst;

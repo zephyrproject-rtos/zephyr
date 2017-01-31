@@ -270,14 +270,6 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	if (!net_nbuf_ll_dst(buf)->addr &&
-	    !net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
-		buf = net_ipv6_prepare_for_send(buf);
-		if (!buf) {
-			return NET_CONTINUE;
-		}
-	}
-
 	/* 6lo is going to compress the ipv6 header, and thus accessing
 	 * packet's ipv6 address won't be possible anymore when creating
 	 * the frame */

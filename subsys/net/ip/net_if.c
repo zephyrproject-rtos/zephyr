@@ -144,15 +144,38 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 	enum net_verdict verdict;
 	int status = -EIO;
 
-	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
-		verdict = iface->l2->send(iface, buf);
-	} else {
+	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
 		verdict = NET_DROP;
 		status = -ENETDOWN;
+		goto done;
 	}
 
+	/* If the ll address is not set at all, then we must set
+	 * it here.
+	 */
+	if (!net_nbuf_ll_src(buf)->addr) {
+		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
+		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+	}
+
+#if defined(CONFIG_NET_IPV6)
+	/* If the ll dst address is not set check if it is present in the nbr
+	 * cache.
+	 */
+	if (net_nbuf_family(buf) == AF_INET6) {
+		buf = net_ipv6_prepare_for_send(buf);
+		if (!buf) {
+			verdict = NET_CONTINUE;
+			goto done;
+		}
+	}
+#endif
+
+	verdict = iface->l2->send(iface, buf);
+
+done:
 	/* The L2 send() function can return
 	 *   NET_OK in which case packet was sent successfully.
 	 *   In that case we need to check if any user callbacks need

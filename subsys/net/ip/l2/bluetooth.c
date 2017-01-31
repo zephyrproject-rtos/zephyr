@@ -87,27 +87,6 @@ static enum net_verdict net_bt_send(struct net_if *iface, struct net_buf *buf)
 		return NET_DROP;
 	}
 
-	/* TODO: Move ll address check to the stack */
-
-	/* If the ll address is not set at all, then we must set
-	 * it here.
-	 */
-	if (!net_nbuf_ll_src(buf)->addr) {
-		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
-		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
-	}
-
-	/* If the ll dst address is not set check if it is present in the nbr
-	 * cache.
-	 */
-	if (!net_nbuf_ll_dst(buf)->addr &&
-	    !net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
-		buf = net_ipv6_prepare_for_send(buf);
-		if (!buf) {
-			return NET_CONTINUE;
-		}
-	}
-
 	if (!net_6lo_compress(buf, true, NULL)) {
 		NET_DBG("Packet compression failed");
 		return NET_DROP;
