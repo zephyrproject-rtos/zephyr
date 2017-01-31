@@ -20,6 +20,7 @@
 struct mcr20a_spi {
 	struct device *dev;
 	uint32_t slave;
+	struct k_sem spi_sem;
 	/**
 	 * cmd_buf will use at most 9 bytes:
 	 * dummy bytes + 8 ieee address bytes
