@@ -123,6 +123,7 @@ config IDLE_STACK_SIZE
 	default 256
 	default 320 if ARC
 	default 512 if RISCV32
+	default 1024 if XTENSA
 	help
 	Depending on the work that the idle task must do, most likely due to
 	power management but possibly to other features like system event
