@@ -791,16 +791,6 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 		buf = buf->frags;
 	}
 
-	/* If the buf exists, then it is the last fragment and can be removed.
-	 */
-	if (buf) {
-		net_nbuf_unref(buf);
-
-		if (prev) {
-			prev->frags = NULL;
-		}
-	}
-
 	return first;
 }
 
