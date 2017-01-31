@@ -43,6 +43,7 @@ static ALWAYS_INLINE void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	int temp = *(volatile int *)addr;
+
 	return (int)(temp & (1 << bit));
 }
 
@@ -53,7 +54,8 @@ static ALWAYS_INLINE int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 	return retval;
 }
 
-static ALWAYS_INLINE int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
+static ALWAYS_INLINE
+	int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int retval = (*(volatile int *)addr) & (1 << bit);
 	*(volatile int *)addr = (*(volatile int *)addr) & ~(1 << bit);
