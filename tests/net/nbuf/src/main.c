@@ -1160,6 +1160,174 @@ static int test_nbuf_read_write_insert(void)
 	return 0;
 }
 
+static int calc_fragments(struct net_buf *buf)
+{
+	int count = 0;
+
+	while (buf) {
+		buf = buf->frags;
+		count++;
+	}
+
+	return count;
+}
+
+static int test_fragment_compact(void)
+{
+	struct net_buf *buf, *frags[FRAG_COUNT], *frag;
+	int i, bytes, total, count;
+
+	buf = net_nbuf_get_reserve_rx(0);
+	frag = NULL;
+
+	for (i = 0, total = 0; i < FRAG_COUNT; i++) {
+		frags[i] = net_nbuf_get_reserve_data(12);
+
+		if (frag) {
+			net_buf_frag_add(frag, frags[i]);
+		}
+
+		frag = frags[i];
+
+		/* Copy character test data in front of the fragment */
+		memcpy(net_buf_add(frags[i], sizeof(test_data)),
+		       test_data, sizeof(test_data));
+
+		/* Followed by bytes of zeroes */
+		memset(net_buf_add(frags[i], sizeof(test_data)), 0,
+		       sizeof(test_data));
+
+		total++;
+	}
+
+	if (total != FRAG_COUNT) {
+		printk("There should be %d fragments but was %d\n",
+		       FRAG_COUNT, total);
+		return -1;
+	}
+
+	net_buf_frag_add(buf, frags[0]);
+
+	bytes = net_buf_frags_len(buf);
+	if (bytes != FRAG_COUNT * sizeof(test_data) * 2) {
+		printk("Compact test failed, fragments had %d bytes but "
+		       "should have had %zd\n", bytes,
+		       FRAG_COUNT * sizeof(test_data) * 2);
+		return -1;
+	}
+
+	if (net_nbuf_is_compact(buf->frags)) {
+		printk("The buf->frags is not compact. Test fails\n");
+		return -1;
+	}
+
+	if (net_nbuf_is_compact(buf)) {
+		printk("The buf is definitely not compact. Test fails\n");
+		return -1;
+	}
+
+	buf = net_nbuf_compact(buf);
+
+	if (!net_nbuf_is_compact(buf)) {
+		printk("The buf should be in compact form. Test fails\n");
+		return -1;
+	}
+
+	/* Try compacting again, nothing should happen */
+	buf = net_nbuf_compact(buf);
+
+	if (!net_nbuf_is_compact(buf)) {
+		printk("The buf should be compacted now. Test fails\n");
+		return -1;
+	}
+
+	total = calc_fragments(buf);
+
+	/* Add empty fragment at the end and compact, the last fragment
+	 * should be removed.
+	 */
+	frag = net_nbuf_get_reserve_data(0);
+
+	net_buf_frag_add(buf, frag);
+
+	count = calc_fragments(buf);
+
+	buf = net_nbuf_compact(buf);
+
+	i = calc_fragments(buf);
+
+	if (count != (i + 1)) {
+		printk("Last fragment removal failed, chain should have %d "
+		       "fragments but had %d\n", i-1, i);
+		return -1;
+	}
+
+	if (i != total) {
+		printk("Fragments missing, expecting %d but got %d\n",
+		       total, i);
+		return -1;
+	}
+
+	/* Add two empty fragments at the end and compact, the last two
+	 * fragment should be removed.
+	 */
+	frag = net_nbuf_get_reserve_data(0);
+
+	net_buf_frag_add(buf, frag);
+
+	frag = net_nbuf_get_reserve_data(0);
+
+	net_buf_frag_add(buf, frag);
+
+	count = calc_fragments(buf);
+
+	buf = net_nbuf_compact(buf);
+
+	i = calc_fragments(buf);
+
+	if (count != (i + 2)) {
+		printk("Last two fragment removal failed, chain should have "
+		       "%d fragments but had %d\n", i-2, i);
+		return -1;
+	}
+
+	if (i != total) {
+		printk("Fragments missing, expecting %d but got %d\n",
+		       total, i);
+		return -1;
+	}
+
+	/* Add empty fragment at the beginning and at the end, and then
+	 * compact, the two fragment should be removed.
+	 */
+	frag = net_nbuf_get_reserve_data(0);
+
+	net_buf_frag_insert(buf, frag);
+
+	frag = net_nbuf_get_reserve_data(0);
+
+	net_buf_frag_add(buf, frag);
+
+	count = calc_fragments(buf);
+
+	buf = net_nbuf_compact(buf);
+
+	i = calc_fragments(buf);
+
+	if (count != (i + 2)) {
+		printk("Two fragment removal failed, chain should have "
+		       "%d fragments but had %d\n", i-2, i);
+		return -1;
+	}
+
+	if (i != total) {
+		printk("Fragments missing, expecting %d but got %d\n",
+		       total, i);
+		return -1;
+	}
+
+	return 0;
+}
 
 void main(void)
 {
@@ -1184,6 +1352,10 @@ void main(void)
 	}
 
 	if (test_nbuf_read_write_insert() < 0) {
+		goto fail;
+	}
+
+	if (test_fragment_compact() < 0) {
 		goto fail;
 	}
 
