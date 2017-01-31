@@ -79,13 +79,13 @@ static int write_test(fs_file_t *fp, off_t ofs, const char *str)
 
 	brw = fs_write(fp, (char *)str, strlen(str));
 	if (brw < 0) {
-		printk("Failed writing to file [%ld]\n", brw);
+		printk("Failed writing to file [%zd]\n", brw);
 		fs_close(fp);
 		return brw;
 	}
 	if (brw < strlen(str)) {
 		printk("Unable to complete write. Volume full.\n");
-		printk("Number of bytes written: [%ld]\n", brw);
+		printk("Number of bytes written: [%zd]\n", brw);
 		fs_close(fp);
 		return -1;
 	}
@@ -110,7 +110,7 @@ static int read_test(fs_file_t *fp, off_t ofs, size_t sz, char *read_buff)
 
 	brw = fs_read(fp, read_buff, sz);
 	if (brw < 0) {
-		printk("Failed reading file [%ld]\n", brw);
+		printk("Failed reading file [%zd]\n", brw);
 		fs_close(fp);
 		return brw;
 	}
