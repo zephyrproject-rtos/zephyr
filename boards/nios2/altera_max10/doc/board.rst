@@ -43,7 +43,7 @@ Necessary Software
 ==================
 
 You will need the Altera Quartus SDK in order to work with this device. The
-`Lite version <Altera Lite Distribution>`_ of Quartus may be obtained without
+`Altera Lite Distribution`_ of Quartus may be obtained without
 charge.
 
 For convenience, once installed you should put the binaries provided by the SDK

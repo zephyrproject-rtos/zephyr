@@ -40,7 +40,8 @@ Board Layout
 ============
 
 General information for the board can be found at the
-`Arduino website <Arduino 101>`_, which also includes schematics and BRD files
+`Arduino 101 website <https://www.arduino.cc/en/Main/ArduinoBoard101>`_,
+which also includes schematics and BRD files
 for the board.
 
 Arduino 101 Pinout
@@ -479,7 +480,5 @@ References
 **********
 
 .. _QMSI Bootloader: https://github.com/quark-mcu/qm-bootloader
-
-.. _Arduino 101: https://www.arduino.cc/en/Main/ArduinoBoard101
 
 .. _Flashpack Utility: https://downloadcenter.intel.com/downloads/eula/25470/Arduino-101-software-package?httpDown=https%3A%2F%2Fdownloadmirror.intel.com%2F25470%2Feng%2Farduino101-factory_recovery-flashpack.tar.bz2
