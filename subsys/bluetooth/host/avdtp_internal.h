@@ -89,9 +89,8 @@
 #define BT_AVDTP_MAX_SEID 0x3E
 
 /* Helper to calculate needed outgoing buffer size. */
-#define BT_AVDTP_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
-				sizeof(struct bt_hci_acl_hdr) + \
-				sizeof(struct bt_l2cap_hdr) + \
+#define BT_AVDTP_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_RESERVE + \
+				BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
 				BT_AVDTP_SIG_HDR_LEN + (mtu))
 
 struct bt_avdtp_single_sig_hdr {

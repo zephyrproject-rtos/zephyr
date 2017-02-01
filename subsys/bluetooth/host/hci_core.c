@@ -106,8 +106,8 @@ struct acl_data {
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
 /* HCI command buffers */
-#define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
-		      sizeof(struct bt_hci_cmd_hdr) + \
+#define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RESERVE + \
+		      BT_HCI_CMD_HDR_SIZE + \
 		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
 NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 		    CMD_BUF_SIZE, sizeof(struct cmd_data), NULL);
@@ -154,7 +154,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("buf %p", buf);
 
-	net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_SEND_RESERVE);
+	net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
 
 	cmd(buf)->type = BT_BUF_CMD;
 	cmd(buf)->opcode = opcode;
@@ -3975,7 +3975,7 @@ struct net_buf *bt_buf_get_rx(int32_t timeout)
 
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
 	if (buf) {
-		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
 	}
 
 	return buf;

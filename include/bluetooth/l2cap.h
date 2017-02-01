@@ -38,7 +38,7 @@ extern "C" {
  *
  *   @return Needed buffer size to match the requested L2CAP MTU.
  */
-#define BT_L2CAP_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
+#define BT_L2CAP_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_RESERVE + \
 				BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
 				(mtu))
 
@@ -206,8 +206,7 @@ struct bt_l2cap_chan_ops {
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
  *  @brief Headroom needed for outgoing buffers
  */
-#define BT_L2CAP_CHAN_SEND_RESERVE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + 4 + 4 \
-				    + 2)
+#define BT_L2CAP_CHAN_SEND_RESERVE (CONFIG_BLUETOOTH_HCI_RESERVE + 4 + 4 + 2)
 
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {
