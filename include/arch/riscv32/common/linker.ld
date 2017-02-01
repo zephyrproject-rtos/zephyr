@@ -81,6 +81,9 @@ SECTIONS
 		 /* sections for IRQ100-999 */
 		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9][0-9])))
 
+		 KEEP(*(.openocd_debug))
+		 KEEP(*(".openocd_debug.*"))
+
 		_image_text_start = .;
 		*(.text)
 		*(".text.*")

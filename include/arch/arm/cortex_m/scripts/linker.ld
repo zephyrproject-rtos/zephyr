@@ -82,6 +82,9 @@ SECTIONS
 
 	KEEP(*(IRQ_VECTOR_TABLE))
 
+	KEEP(*(.openocd_dbg))
+	KEEP(*(".openocd_dbg.*"))
+
 	/* Kinetis has to write 16 bytes at 0x400 */
 	SKIP_TO_KINETIS_FLASH_CONFIG
 	KEEP(*(.kinetis_flash_config))

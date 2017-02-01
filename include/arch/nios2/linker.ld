@@ -107,6 +107,8 @@ SECTIONS
         *(.text)
         *(".text.*")
         *(.gnu.linkonce.t.*)
+        KEEP(*(.openocd_dbg))
+        KEEP(*(".openocd_dbg.*"))
         } GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_text_end = .;

@@ -60,6 +60,9 @@ SECTIONS
 	{
 		. = ALIGN(4);
 
+		KEEP(*(.openocd_dbg))
+		KEEP(*(".openocd_dbg.*"))
+
 		_image_text_start = .;
 		*(.text)
 		*(".text.*")

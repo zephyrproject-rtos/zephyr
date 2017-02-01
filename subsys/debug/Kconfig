@@ -115,3 +115,17 @@ config GDB_SERVER_BOOTLOADER
 	depends on GDB_SERVER
 	help
 	This option enables the bootloader mode of the GDB Server.
+
+#
+# Miscellaneous debugging options
+#
+
+config OPENOCD_SUPPORT
+	bool
+	prompt "OpenOCD support [EXPERIMENTAL]"
+	default n
+	select THREAD_MONITOR
+	help
+	  This option exports an array of offsets to kernel structs, used by
+	  OpenOCD to determine the state of running threads.  (This option
+	  selects CONFIG_THREAD_MONITOR, so all of its caveats are implied.)

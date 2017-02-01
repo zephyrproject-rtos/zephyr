@@ -76,6 +76,8 @@ SECTIONS
 	*(.init)
 	*(.fini)
 	*(.eini)
+	KEEP(*(.openocd_dbg))
+	KEEP(*(".openocd_dbg.*"))
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 

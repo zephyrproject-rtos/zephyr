@@ -71,6 +71,8 @@ SECTIONS {
 		KEEP(*(.exc_vector_table))
 		KEEP(*(".exc_vector_table.*"))
 
+		KEEP(*(.openocd_dbg))
+		KEEP(*(".openocd_dbg.*"))
 
 		KEEP(*(IRQ_VECTOR_TABLE))
 
