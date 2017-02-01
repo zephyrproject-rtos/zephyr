@@ -3408,7 +3408,8 @@ static int hci_init(void)
 		return err;
 	}
 
-	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY)) {
+	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY) ||
+	    !bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_NONE)) {
 		BT_DBG("No public address. Trying to set static random.");
 		err = set_static_addr();
 		if (err) {
