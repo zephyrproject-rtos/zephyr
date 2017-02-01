@@ -24,6 +24,23 @@ extern "C" {
 #include <atomic.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/hci.h>
+
+/* L2CAP header size, used for buffer size calculations */
+#define BT_L2CAP_HDR_SIZE               4
+
+/** @def BT_L2CAP_BUF_SIZE
+ *
+ *   Helper to calculate needed outgoing buffer size, useful e.g. for
+ *   creating buffer pools.
+ *
+ *   @param mtu Needed L2CAP MTU.
+ *
+ *   @return Needed buffer size to match the requested L2CAP MTU.
+ */
+#define BT_L2CAP_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
+				BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
+				(mtu))
 
 struct bt_l2cap_chan;
 

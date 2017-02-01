@@ -133,6 +133,7 @@ struct bt_hci_evt_hdr {
 	uint8_t  evt;
 	uint8_t  len;
 } __packed;
+#define BT_HCI_EVT_HDR_SIZE             2
 
 #define BT_ACL_START_NO_FLUSH           0x00
 #define BT_ACL_CONT                     0x01
@@ -146,11 +147,13 @@ struct bt_hci_acl_hdr {
 	uint16_t handle;
 	uint16_t len;
 } __packed;
+#define BT_HCI_ACL_HDR_SIZE             4
 
 struct bt_hci_cmd_hdr {
 	uint16_t opcode;
 	uint8_t  param_len;
 } __packed;
+#define BT_HCI_CMD_HDR_SIZE             3
 
 /* Supported Commands */
 #define BT_CMD_TEST(cmd, octet, bit)            (cmd[octet] & BIT(bit))
