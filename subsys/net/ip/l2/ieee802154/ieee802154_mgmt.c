@@ -405,10 +405,10 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 			}
 		}
 	} else {
-		if (ctx->coord.short_addr != value) {
+		if (ctx->short_addr != value) {
 			ret = radio->set_short_addr(iface->dev, value);
 			if (!ret) {
-				ctx->coord.short_addr = value;
+				ctx->short_addr = value;
 			}
 		}
 	}
