@@ -325,7 +325,14 @@ static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 	 * the size of the link layer headers if there are any.
 	 */
 
-	buf = net_buf_alloc(pool, K_FOREVER);
+	if (k_is_in_isr()) {
+		buf = net_buf_alloc(pool, K_NO_WAIT);
+		if (!buf) {
+			return NULL;
+		}
+	} else {
+		buf = net_buf_alloc(pool, K_FOREVER);
+	}
 
 	if (pool == &data_buffers) {
 		/* The buf->data will point to the start of the L3
