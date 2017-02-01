@@ -464,7 +464,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	for (i = 0; i < num_handles; i++) {
 		uint16_t handle, count;
 		struct bt_conn *conn;
-		int key;
+		unsigned int key;
 
 		handle = sys_le16_to_cpu(evt->h[i].handle);
 		count = sys_le16_to_cpu(evt->h[i].count);
