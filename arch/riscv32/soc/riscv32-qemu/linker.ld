@@ -8,4 +8,4 @@
  * @brief Linker script for riscv32-qemu
  */
 
-#include <arch/riscv32/riscv32-qemu/linker.ld>
+#include <arch/riscv32/common/linker.ld>

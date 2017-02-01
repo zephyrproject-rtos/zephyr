@@ -20,19 +20,19 @@ config NUM_IRQS
 	int
 	default 32
 
-config VECTOR_BASE_ADDR
+config RISCV_ROM_BASE_ADDR
 	hex
 	default 0x00001000
 
-config VECTOR_SIZE
+config RISCV_ROM_SIZE
 	hex
-	default 0x1000
+	default 0x100000
 
-config RAM_BASE_ADDR
+config RISCV_RAM_BASE_ADDR
 	hex
 	default	0x80000000
 
-config RAM_SIZE_MB
+config RISCV_RAM_SIZE_MB
 	int
 	default 32
 

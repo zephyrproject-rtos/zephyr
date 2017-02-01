@@ -11,6 +11,8 @@
 #ifndef __RISCV32_QEMU_SOC_H_
 #define __RISCV32_QEMU_SOC_H_
 
+#include <misc/util.h>
+
 /* CSR Registers */
 #define RISCV_QEMU_MSTATUS               mstatus /* Machine Status Register */
 
@@ -56,17 +58,16 @@
 #define RISCV_MTIME_BASE             0x40000000
 #define RISCV_MTIMECMP_BASE          0x40000008
 
+/* lib-c hooks required RAM defined variables */
+#define RISCV_RAM_BASE             CONFIG_RISCV_RAM_BASE_ADDR
+#define RISCV_RAM_SIZE             MB(CONFIG_RISCV_RAM_SIZE_MB)
+
 #ifndef _ASMLANGUAGE
 #include <irq.h>
-#include <misc/util.h>
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 void soc_interrupt_init(void);
 #endif
-
-/* lib-c hooks required RAM defined variables */
-#define RISCV_RAM_BASE             CONFIG_RAM_BASE_ADDR
-#define RISCV_RAM_SIZE             MB(CONFIG_RAM_SIZE_MB)
 
 #endif /* !_ASMLANGUAGE */
 

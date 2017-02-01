@@ -14,3 +14,6 @@ soc-aflags ?= $(soc-cflags)
 KBUILD_CFLAGS += $(soc-cflags)
 KBUILD_CXXFLAGS += $(soc-cxxflags)
 KBUILD_AFLAGS += $(soc-aflags)
+
+soc_ld_include := -I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/
+EXTRA_LINKER_CMD_OPT += $(soc_ld_include)

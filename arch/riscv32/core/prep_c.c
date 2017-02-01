@@ -31,6 +31,9 @@
 void _PrepC(void)
 {
 	_bss_zero();
+#ifdef CONFIG_XIP
+	_data_copy();
+#endif
 	_Cstart();
 	CODE_UNREACHABLE;
 }
