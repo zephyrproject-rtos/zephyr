@@ -11,6 +11,12 @@
 #include <net/net_context.h>
 
 /**
+ * @brief MQTT library
+ * @defgroup mqtt MQTT library
+ * @{
+ */
+
+/**
  * @brief mqtt_app	MQTT application type
  */
 enum mqtt_app {
@@ -391,5 +397,9 @@ int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx);
  * @return			-ENOMEM if no data buffer is available
  */
 int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx);
+
+/**
+ * @}
+ */
 
 #endif

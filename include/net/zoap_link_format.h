@@ -13,6 +13,12 @@
 #ifndef __LINK_FORMAT_H__
 #define __LINK_FORMAT_H__
 
+/**
+ * @brief COAP library
+ * @defgroup zoap COAP Library
+ * @{
+ */
+
 #define _ZOAP_WELL_KNOWN_CORE_PATH \
 	((const char * const[]) { ".well-known", "core", NULL })
 
@@ -38,5 +44,9 @@ struct zoap_core_metadata {
 	const char * const *attributes;
 	void *user_data;
 };
+
+/**
+ * @}
+ */
 
 #endif /* __LINK_FORMAT_H__ */

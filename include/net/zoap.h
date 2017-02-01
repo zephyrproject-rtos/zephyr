@@ -20,6 +20,12 @@
 #include <misc/slist.h>
 
 /**
+ * @brief COAP library
+ * @defgroup zoap COAP Library
+ * @{
+ */
+
+/**
  * @brief Set of CoAP packet options we are aware of.
  *
  * Users may add options other than these to their packets, provided
@@ -553,5 +559,9 @@ static inline uint16_t zoap_next_id(void)
  * message's token.
  */
 uint8_t *zoap_next_token(void);
+
+/**
+ * @}
+ */
 
 #endif /* __ZOAP_H__ */
