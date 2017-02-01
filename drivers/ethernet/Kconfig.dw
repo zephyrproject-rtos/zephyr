@@ -9,7 +9,7 @@
 menuconfig ETH_DW
 	bool
 	prompt "Synopsys DesignWare Ethernet driver"
-	depends on ETHERNET
+	depends on NET_L2_ETHERNET
 	default n
 	help
 	  Enable Synopsys DesignWare Ethernet driver.

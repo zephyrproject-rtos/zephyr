@@ -26,6 +26,7 @@ config SYS_LOG_ETHERNET_LEVEL
 config ETH_INIT_PRIORITY
 	int
 	prompt "Ethernet driver init priority"
+	depends on NET_L2_ETHERNET
 	default 80
 	help
 	  Ethernet device driver initialization priority.
