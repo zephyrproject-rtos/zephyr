@@ -64,7 +64,7 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 
 	BT_DBG("opcode %x status %x", opcode, status);
 
-	buf = bt_buf_get_rx(K_FOREVER);
+	buf = bt_buf_get_cmd_complete(K_FOREVER);
 	bt_buf_set_type(buf, BT_BUF_EVT);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
@@ -166,12 +166,12 @@ static void emulate_le_generate_dhkey(struct net_buf *buf)
 		return;
 	}
 
-	send_cmd_status(BT_HCI_OP_LE_GENERATE_DHKEY, 0);
-
 	cmd = (void *)buf->data  + sizeof(struct bt_hci_cmd_hdr);
 
 	memcpy(ecc.pk.x, cmd->key, 32);
 	memcpy(ecc.pk.y, &cmd->key[32], 32);
+
+	send_cmd_status(BT_HCI_OP_LE_GENERATE_DHKEY, 0);
 
 	net_buf_unref(buf);
 

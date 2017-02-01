@@ -149,6 +149,27 @@ static inline void copy_hdr(struct net_buf *buf)
 	net_buf_add_mem(buf, rx.hdr, rx.hdr_len);
 }
 
+static void reset_rx(void)
+{
+	rx.type = H4_NONE;
+	rx.remaining = 0;
+	rx.have_hdr = false;
+	rx.hdr_len = 0;
+	rx.discardable = false;
+}
+
+static struct net_buf *get_rx(int timeout)
+{
+	BT_DBG("type 0x%02x, evt 0x%02x", rx.type, rx.evt.evt);
+
+	if (rx.type == H4_EVT && (rx.evt.evt == BT_HCI_EVT_CMD_COMPLETE ||
+				  rx.evt.evt == BT_HCI_EVT_CMD_STATUS)) {
+		return bt_buf_get_cmd_complete(timeout);
+	}
+
+	return bt_buf_get_rx(timeout);
+}
+
 static void rx_thread(void *p1, void *p2, void *p3)
 {
 	struct net_buf *buf;
@@ -162,15 +183,18 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		BT_DBG("rx.buf %p", rx.buf);
 
-		if (!rx.buf) {
-			rx.buf = bt_buf_get_rx(K_FOREVER);
+		/* We can only do the allocation if we know the initial
+		 * header, since Command Complete/Status events must use the
+		 * original command buffer (if available).
+		 */
+		if (rx.have_hdr && !rx.buf) {
+			rx.buf = get_rx(K_FOREVER);
 			BT_DBG("Got rx.buf %p", rx.buf);
 			if (rx.remaining > net_buf_tailroom(rx.buf)) {
 				BT_ERR("Not enough space in buffer");
 				rx.discard = rx.remaining;
-				rx.remaining = 0;
-				rx.have_hdr = false;
-			} else if (rx.have_hdr) {
+				reset_rx();
+			} else {
 				copy_hdr(rx.buf);
 			}
 		}
@@ -204,15 +228,6 @@ static size_t h4_discard(struct device *uart, size_t len)
 	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
 }
 
-static void reset_rx(void)
-{
-	rx.type = H4_NONE;
-	rx.remaining = 0;
-	rx.have_hdr = false;
-	rx.hdr_len = 0;
-	rx.discardable = false;
-}
-
 static inline void read_payload(void)
 {
 	struct net_buf *buf;
@@ -220,7 +235,7 @@ static inline void read_payload(void)
 	int read;
 
 	if (!rx.buf) {
-		rx.buf = bt_buf_get_rx(K_NO_WAIT);
+		rx.buf = get_rx(K_NO_WAIT);
 		if (!rx.buf) {
 			if (rx.discardable) {
 				BT_WARN("Discarding event 0x%02x", rx.evt.evt);
@@ -301,8 +316,7 @@ static inline void read_header(void)
 		if (rx.remaining > net_buf_tailroom(rx.buf)) {
 			BT_ERR("Not enough space in buffer");
 			rx.discard = rx.remaining;
-			rx.remaining = 0;
-			rx.have_hdr = false;
+			reset_rx();
 		} else {
 			copy_hdr(rx.buf);
 		}

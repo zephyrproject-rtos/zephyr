@@ -50,15 +50,6 @@ config BLUETOOTH_HCI_CMD_COUNT
 	help
 	  Number of buffers available for HCI commands.
 
-config BLUETOOTH_MAX_CMD_LEN
-	int "Maximum supported HCI command length"
-	default 64
-	default 255 if BLUETOOTH_BREDR
-	range 64 255
-	range 255 255 if BLUETOOTH_BREDR
-	help
-	  Maximum length of each HCI command.
-
 config BLUETOOTH_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
 	default 10

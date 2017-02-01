@@ -402,6 +402,28 @@ static void h5_process_complete_packet(uint8_t *hdr)
 	}
 }
 
+static inline struct net_buf *get_evt_buf(uint8_t evt)
+{
+	struct net_buf *buf;
+
+	switch (evt) {
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+		buf = bt_buf_get_cmd_complete(K_NO_WAIT);
+		break;
+	default:
+		buf = bt_buf_get_rx(K_NO_WAIT);
+		break;
+	}
+
+	if (buf) {
+		bt_buf_set_type(h5.rx_buf, BT_BUF_EVT);
+		net_buf_add_u8(h5.rx_buf, evt);
+	}
+
+	return buf;
+}
+
 static void bt_uart_isr(struct device *unused)
 {
 	static int remaining;
@@ -461,14 +483,9 @@ static void bt_uart_isr(struct device *unused)
 
 			switch (H5_HDR_PKT_TYPE(hdr)) {
 			case HCI_EVENT_PKT:
-				h5.rx_buf = bt_buf_get_rx(K_NO_WAIT);
-				if (!h5.rx_buf) {
-					BT_WARN("No available event buffers");
-					h5_reset_rx();
-					continue;
-				}
-
-				bt_buf_set_type(h5.rx_buf, BT_BUF_EVT);
+				/* The buffer is allocated only once we know
+				 * the exact event type.
+				 */
 				h5.rx_state = PAYLOAD;
 				break;
 			case HCI_ACLDATA_PKT:
@@ -504,6 +521,18 @@ static void bt_uart_isr(struct device *unused)
 			if (h5_unslip_byte(&byte) < 0) {
 				h5_reset_rx();
 				continue;
+			}
+
+			/* Allocate HCI event buffer now that we know the
+			 * exact event type.
+			 */
+			if (!h5.rx_buf) {
+				h5.rx_buf = get_evt_buf(byte);
+				if (!h5.rx_buf) {
+					BT_WARN("No available event buffers");
+					h5_reset_rx();
+					continue;
+				}
 			}
 
 			net_buf_add_mem(h5.rx_buf, &byte, sizeof(byte));

@@ -75,16 +75,13 @@ static struct device *btusb_dev;
 static K_FIFO_DEFINE(rx_queue);
 
 /* HCI command buffers */
-#define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RESERVE + BT_HCI_CMD_HDR_SIZE + \
-		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
-
+#define CMD_BUF_SIZE BT_BUF_RX_SIZE
 NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    sizeof(uint8_t), NULL);
 
 #define BT_L2CAP_MTU 64
 /** Data size needed for ACL buffers */
-#define BT_BUF_ACL_SIZE (CONFIG_BLUETOOTH_HCI_RESERVE + BT_HCI_ACL_HDR_SIZE + \
-			 BT_L2CAP_HDR_SIZE + BT_L2CAP_MTU)
+#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
 
 NET_BUF_POOL_DEFINE(acl_tx_pool, 2, BT_BUF_ACL_SIZE, sizeof(uint8_t), NULL);
 

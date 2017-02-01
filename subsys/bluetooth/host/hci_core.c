@@ -84,14 +84,14 @@ struct cmd_data {
 	/** BT_BUF_CMD */
 	uint8_t  type;
 
+	/** HCI status of the command completion */
+	uint8_t  status;
+
 	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
 
-	/** Used by bt_hci_cmd_send_sync. Initially contains the waiting
-	 *  semaphore, as the semaphore is given back contains the bt_buf
-	 *  for the return parameters.
-	 */
-	void *sync;
+	/** Used by bt_hci_cmd_send_sync. */
+	struct k_sem *sync;
 };
 
 struct acl_data {
@@ -105,10 +105,10 @@ struct acl_data {
 #define cmd(buf) ((struct cmd_data *)net_buf_user_data(buf))
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
-/* HCI command buffers */
-#define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RESERVE + \
-		      BT_HCI_CMD_HDR_SIZE + \
-		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
+/* HCI command buffers. Derive the needed size from BT_BUF_RX_SIZE since
+ * the same buffer is also used for the response.
+ */
+#define CMD_BUF_SIZE BT_BUF_RX_SIZE
 NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 		    CMD_BUF_SIZE, sizeof(struct cmd_data), NULL);
 
@@ -211,29 +211,31 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	BT_DBG("opcode 0x%04x len %u", opcode, buf->len);
+	BT_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
 
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
+
+	/* Make sure the buffer stays around until the command completes */
+	net_buf_ref(buf);
 
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
 	k_sem_take(&sync_sem, K_FOREVER);
 
-	/* Indicate failure if we failed to get the return parameters */
-	if (!cmd(buf)->sync) {
+	BT_DBG("opcode 0x%04x status 0x%02x", opcode, cmd(buf)->status);
+
+	if (cmd(buf)->status) {
 		err = -EIO;
+		net_buf_unref(buf);
 	} else {
 		err = 0;
+		if (rsp) {
+			*rsp = buf;
+		} else {
+			net_buf_unref(buf);
+		}
 	}
-
-	if (rsp) {
-		*rsp = cmd(buf)->sync;
-	} else if (cmd(buf)->sync) {
-		net_buf_unref(cmd(buf)->sync);
-	}
-
-	net_buf_unref(buf);
 
 	return err;
 }
@@ -2222,39 +2224,17 @@ static void hci_reset_complete(struct net_buf *buf)
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 {
-	struct net_buf *sent;
-	int key = irq_lock();
+	BT_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, buf);
 
-	sent = bt_dev.sent_cmd;
-	if (!sent) {
-		irq_unlock(key);
-		return;
+	if (cmd(buf)->opcode != opcode) {
+		BT_WARN("OpCode 0x%04x completed instead of expected 0x%04x",
+			opcode, cmd(buf)->opcode);
 	}
-
-	if (cmd(sent)->opcode != opcode) {
-		BT_ERR("Unexpected completion of opcode 0x%04x expected 0x%04x",
-		       opcode, cmd(sent)->opcode);
-		irq_unlock(key);
-		return;
-	}
-
-	bt_dev.sent_cmd = NULL;
-
-	irq_unlock(key);
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	if (cmd(sent)->sync) {
-		struct k_sem *sem = cmd(sent)->sync;
-
-		if (status) {
-			cmd(sent)->sync = NULL;
-		} else {
-			cmd(sent)->sync = net_buf_ref(buf);
-		}
-
-		k_sem_give(sem);
-	} else {
-		net_buf_unref(sent);
+	if (buf->pool == &hci_cmd_pool && cmd(buf)->sync) {
+		cmd(buf)->status = status;
+		k_sem_give(cmd(buf)->sync);
 	}
 }
 
@@ -2262,7 +2242,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
-	uint8_t status;
+	uint8_t status, ncmd = evt->ncmd;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2276,7 +2256,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	hci_cmd_done(opcode, status, buf);
 
 	/* Allow next command to be sent */
-	if (evt->ncmd) {
+	if (ncmd) {
 		k_sem_give(&bt_dev.ncmd_sem);
 	}
 }
@@ -2285,6 +2265,7 @@ static void hci_cmd_status(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_status *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
+	uint8_t ncmd = evt->ncmd;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2293,7 +2274,7 @@ static void hci_cmd_status(struct net_buf *buf)
 	hci_cmd_done(opcode, evt->status, buf);
 
 	/* Allow next command to be sent */
-	if (evt->ncmd) {
+	if (ncmd) {
 		k_sem_give(&bt_dev.ncmd_sem);
 	}
 }
@@ -3976,6 +3957,34 @@ struct net_buf *bt_buf_get_rx(int32_t timeout)
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
 	if (buf) {
 		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
+	}
+
+	return buf;
+}
+
+struct net_buf *bt_buf_get_cmd_complete(int32_t timeout)
+{
+	struct net_buf *buf;
+	unsigned int key;
+
+	key = irq_lock();
+	buf = bt_dev.sent_cmd;
+	bt_dev.sent_cmd = NULL;
+	irq_unlock(key);
+
+	BT_DBG("sent_cmd %p", buf);
+
+	if (buf) {
+		bt_buf_set_type(buf, BT_BUF_EVT);
+		buf->len = 0;
+		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
+
+		return buf;
+	}
+
+	buf = bt_buf_get_rx(timeout);
+	if (buf) {
+		bt_buf_set_type(buf, BT_BUF_EVT);
 	}
 
 	return buf;
