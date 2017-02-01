@@ -135,57 +135,63 @@ All GPIO controller pins are exposed via the following sequence of pin numbers:
 
 Mapping from the ARM V2M Beetle Board pins to GPIO controllers:
 
-- D0 : P0_0
-- D1 : P0_1
-- D2 : P0_2
-- D3 : P0_3
-- D4 : P0_4
-- D5 : P0_5
-- D6 : P0_6
-- D7 : P0_7
-- D8 : P0_8
-- D9 : P0_9
-- D10 : P0_10
-- D11 : P0_11
-- D12 : P0_12
-- D13 : P0_13
-- D14 : P0_14
-- D15 : P0_15
-- D16 : P1_0
-- D17 : P1_1
-- D18 : P1_2
-- D19 : P1_3
-- D20 : P1_4
-- D21 : P1_5
-- D22 : P1_6
-- D23 : P1_7
-- D24 : P1_8
-- D25 : P1_9
-- D26 : P1_10
-- D27 : P1_11
-- D28 : P1_12
-- D29 : P1_13
-- D30 : P1_14
-- D31 : P1_15
+.. hlist::
+   :columns: 3
+
+   - D0 : P0_0
+   - D1 : P0_1
+   - D2 : P0_2
+   - D3 : P0_3
+   - D4 : P0_4
+   - D5 : P0_5
+   - D6 : P0_6
+   - D7 : P0_7
+   - D8 : P0_8
+   - D9 : P0_9
+   - D10 : P0_10
+   - D11 : P0_11
+   - D12 : P0_12
+   - D13 : P0_13
+   - D14 : P0_14
+   - D15 : P0_15
+   - D16 : P1_0
+   - D17 : P1_1
+   - D18 : P1_2
+   - D19 : P1_3
+   - D20 : P1_4
+   - D21 : P1_5
+   - D22 : P1_6
+   - D23 : P1_7
+   - D24 : P1_8
+   - D25 : P1_9
+   - D26 : P1_10
+   - D27 : P1_11
+   - D28 : P1_12
+   - D29 : P1_13
+   - D30 : P1_14
+   - D31 : P1_15
 
 Peripheral Mapping:
 
-- UART_0_RX : D0
-- UART_0_TX : D1
-- SPI_0_CS : D10
-- SPI_0_MOSI : D11
-- SPI_0_MISO : D12
-- SPI_0_SCLK : D13
-- I2C_0_SCL : D14
-- I2C_0_SDA : D15
-- UART_1_RX : D16
-- UART_1_TX : D17
-- SPI_1_CS : D18
-- SPI_1_MOSI : D19
-- SPI_1_MISO : D20
-- SPI_1_SCK : D21
-- I2C_1_SDA : D22
-- I2C_1_SCL : D23
+.. hlist::
+   :columns: 3
+
+   - UART_0_RX : D0
+   - UART_0_TX : D1
+   - SPI_0_CS : D10
+   - SPI_0_MOSI : D11
+   - SPI_0_MISO : D12
+   - SPI_0_SCLK : D13
+   - I2C_0_SCL : D14
+   - I2C_0_SDA : D15
+   - UART_1_RX : D16
+   - UART_1_TX : D17
+   - SPI_1_CS : D18
+   - SPI_1_MOSI : D19
+   - SPI_1_MISO : D20
+   - SPI_1_SCK : D21
+   - I2C_1_SDA : D22
+   - I2C_1_SCL : D23
 
 For mode details please refer to `Beetle Technical Reference Manual (TRM)`_.
 
