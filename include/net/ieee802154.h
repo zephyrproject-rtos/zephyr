@@ -21,6 +21,8 @@ struct ieee802154_context {
 	uint16_t pan_id;
 	uint16_t channel;
 	struct k_sem ack_lock;
+	uint16_t short_addr;
+	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
 #ifdef CONFIG_NET_L2_IEEE802154_MGMT
 	struct ieee802154_req_params *scan_ctx;
 	union {
