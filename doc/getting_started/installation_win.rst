@@ -93,7 +93,7 @@ GNU Regex C library
 
 The Zephyr build process has a dependency with the GNU regex library.
 Msys provides its own GNU library implementation that can be downloaded from the
-MinGW and Msys official repository:`MinGW Repository`_.
+MinGW and Msys official repository: `MinGW Repository`_.
 Install the library from the Msys console interface with the following commands:
 
 .. code-block:: console
@@ -135,5 +135,5 @@ For example, using the default installation path for ISSM:
 .. _GIT Download: https://git-scm.com/download/win
 .. _Python Download: https://www.python.org/downloads/
 .. _MinGW Home: http://www.mingw.org/
-.. _MinGW Repository: http:sourceforge.net/projects/mingw/files/
+.. _MinGW Repository: http://sourceforge.net/projects/mingw/files/
 .. _ISSM 2016 Download: https://software.intel.com/en-us/intel-system-studio-microcontrollers
