@@ -29,21 +29,19 @@
 static const char tx_data[] = "It is harder to be kind than to be wise";
 static char rx_data[RX_BUFF_SIZE] = { 0 };
 
-static void test_done(struct device *dev, void *data)
+static void test_done(struct device *dev, uint32_t id, int error_code)
 {
-	TC_PRINT("DMA transfer done\n");
-}
-
-static void test_error(struct device *dev, void *data)
-{
-	TC_PRINT("DMA transfer met an error\n");
+	if (error_code == 0) {
+		TC_PRINT("DMA transfer done\n");
+	} else {
+		TC_PRINT("DMA transfer met an error\n");
+	}
 }
 
 static int test_task(uint32_t chan_id, uint32_t blen)
 {
-	enum dma_burst_length burst_len = BURST_TRANS_LENGTH_1;
-	struct dma_channel_config dma_chan_cfg = {0};
-	struct dma_transfer_config dma_trans = {0};
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_block_cfg = {0};
 	struct device *dma = device_get_binding(DMA_DEVICE_NAME);
 
 	if (!dma) {
@@ -51,44 +49,29 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 		return TC_FAIL;
 	}
 
-	switch (blen) {
-	case 8:
-		burst_len = BURST_TRANS_LENGTH_8;
-		break;
-	case 16:
-		burst_len = BURST_TRANS_LENGTH_16;
-		break;
-	default:
-		burst_len = BURST_TRANS_LENGTH_1;
-	}
-
-	dma_chan_cfg.channel_direction = MEMORY_TO_MEMORY;
-	dma_chan_cfg.source_transfer_width = TRANS_WIDTH_8;
-	dma_chan_cfg.destination_transfer_width = TRANS_WIDTH_8;
-	dma_chan_cfg.source_burst_length = burst_len;
-	dma_chan_cfg.destination_burst_length = burst_len;
-	dma_chan_cfg.dma_transfer = test_done;
-	dma_chan_cfg.dma_error = test_error;
-	dma_chan_cfg.callback_data = (void *)&chan_id;
+	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
+	dma_cfg.source_data_size = 1;
+	dma_cfg.dest_data_size = 1;
+	dma_cfg.source_burst_length = blen;
+	dma_cfg.dest_burst_length = blen;
+	dma_cfg.dma_callback = test_done;
+	dma_cfg.block_count = 1;
+	dma_cfg.head_block = &dma_block_cfg;
 
 	TC_PRINT("Preparing DMA Controller: Chan_ID=%u, BURST_LEN=%u\n",
-			chan_id, burst_len);
-	if (dma_channel_config(dma, chan_id, &dma_chan_cfg)) {
-		TC_PRINT("Error: configuration\n");
-		return TC_FAIL;
-	}
+			chan_id, blen >> 3);
 
 	TC_PRINT("Starting the transfer\n");
-	dma_trans.block_size = strlen(tx_data);
-	dma_trans.source_address = (uint32_t *)tx_data;
-	dma_trans.destination_address = (uint32_t *)rx_data;
+	dma_block_cfg.block_size = strlen(tx_data);
+	dma_block_cfg.source_address = (uint32_t)tx_data;
+	dma_block_cfg.dest_address = (uint32_t)rx_data;
 
-	if (dma_transfer_config(dma, chan_id, &dma_trans)) {
+	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer\n");
 		return TC_FAIL;
 	}
 
-	if (dma_transfer_start(dma, chan_id)) {
+	if (dma_start(dma, chan_id)) {
 		TC_PRINT("ERROR: transfer\n");
 		return TC_FAIL;
 	}
