@@ -2723,6 +2723,8 @@ static void hci_cmd_tx_thread(void)
 			k_sem_give(&bt_dev.ncmd_sem);
 			hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED,
 				     NULL);
+			net_buf_unref(bt_dev.sent_cmd);
+			bt_dev.sent_cmd = NULL;
 			net_buf_unref(buf);
 		}
 	}
