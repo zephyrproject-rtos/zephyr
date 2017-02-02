@@ -43,6 +43,10 @@ static int flash_nrf5_read(struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
+	if (!len) {
+		return 0;
+	}
+
 	memcpy(data, (void *)addr, len);
 
 	return 0;
@@ -59,6 +63,10 @@ static int flash_nrf5_write(struct device *dev, off_t addr,
 
 	if (!is_addr_valid(addr, len)) {
 		return -EINVAL;
+	}
+
+	if (!len) {
+		return 0;
 	}
 
 	/* Start with a word-aligned address and handle the offset */
@@ -107,13 +115,16 @@ static int flash_nrf5_erase(struct device *dev, off_t addr, size_t size)
 	uint32_t n_pages = size / pg_size;
 
 	/* Erase can only be done per page */
-	if (((addr % pg_size) != 0) || ((size % pg_size) != 0) ||
-			(n_pages == 0)) {
+	if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
 		return -EINVAL;
 	}
 
 	if (!is_addr_valid(addr, size)) {
 		return -EINVAL;
+	}
+
+	if (!n_pages) {
+		return 0;
 	}
 
 	/* Erase uses a specific configuration register */
