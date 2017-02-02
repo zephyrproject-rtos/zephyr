@@ -932,6 +932,9 @@ extern void k_timer_start(struct k_timer *timer,
  * Attempting to stop a timer that is not running is permitted, but has no
  * effect on the timer.
  *
+ * @note Can be called by ISRs.  The stop handler has to be callable from ISRs
+ * if @a k_timer_stop is to be called from ISRs.
+ *
  * @param timer     Address of timer.
  *
  * @return N/A

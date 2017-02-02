@@ -131,8 +131,6 @@ void k_timer_start(struct k_timer *timer, int32_t duration, int32_t period)
 
 void k_timer_stop(struct k_timer *timer)
 {
-	__ASSERT(!_is_in_isr(), "");
-
 	int key = irq_lock();
 	int inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
 
