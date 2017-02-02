@@ -125,6 +125,11 @@ void k_fifo_put_list(struct k_fifo *fifo, void *head, void *tail)
 			(void)_Swap(key);
 			return;
 		}
+	} else {
+		if (handle_poll_event(fifo)) {
+			(void)_Swap(key);
+			return;
+		}
 	}
 
 	irq_unlock(key);
