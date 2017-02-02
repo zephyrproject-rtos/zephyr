@@ -62,11 +62,22 @@ QM_ISR_DECLARE(qm_ss_gpio_1_isr)
 int qm_ss_gpio_set_config(const qm_ss_gpio_t gpio,
 			  const qm_ss_gpio_port_config_t *const cfg)
 {
-	uint32_t controller;
+	uint32_t controller, reg_ls_sync_;
+
 	QM_CHECK(gpio < QM_SS_GPIO_NUM, -EINVAL);
 	QM_CHECK(cfg != NULL, -EINVAL);
 
 	controller = gpio_base[gpio];
+
+#if (HAS_SS_GPIO_CLK_ENABLE)
+	/*
+	 * SS GPIO Clock gate (CLKEN) is enabled here, because it is local to
+	 * the peripheral block and not a part of the SoC power management clock
+	 * gating.
+	 */
+	__builtin_arc_sr(BIT(0), controller + QM_SS_GPIO_CLKEN);
+#endif /* HAS_SS_GPIO_CLK_ENABLE */
+
 	__builtin_arc_sr(0xFFFFFFFF, controller + QM_SS_GPIO_INTMASK);
 
 	__builtin_arc_sr(cfg->direction, controller + QM_SS_GPIO_SWPORTA_DDR);
@@ -75,8 +86,19 @@ int qm_ss_gpio_set_config(const qm_ss_gpio_t gpio,
 			 controller + QM_SS_GPIO_INT_POLARITY);
 	__builtin_arc_sr(cfg->int_debounce, controller + QM_SS_GPIO_DEBOUNCE);
 
+#if (HAS_SS_GPIO_INTERRUPT_BOTHEDGE)
+	__builtin_arc_sr(cfg->int_bothedge,
+			 controller + QM_SS_GPIO_INT_BOTHEDGE);
+#endif /* HAS_SS_GPIO_INTERRUPT_BOTHEDGE */
+
 	callback[gpio] = cfg->callback;
 	callback_data[gpio] = cfg->callback_data;
+
+	/* Synchronize the level-sensitive interrupts to pclk_intr. */
+	reg_ls_sync_ = __builtin_arc_lr(gpio_base[gpio] + QM_SS_GPIO_LS_SYNC);
+	__builtin_arc_sr(reg_ls_sync_ | BIT(0),
+			 controller + QM_SS_GPIO_LS_SYNC);
+
 	__builtin_arc_sr(cfg->int_en, controller + QM_SS_GPIO_INTEN);
 
 	__builtin_arc_sr(~cfg->int_en, controller + QM_SS_GPIO_INTMASK);
@@ -207,6 +229,24 @@ int qm_ss_gpio_restore_context(const qm_ss_gpio_t gpio,
 	__builtin_arc_sr(ctx->gpio_debounce, controller + QM_SS_GPIO_DEBOUNCE);
 	__builtin_arc_sr(ctx->gpio_ls_sync, controller + QM_SS_GPIO_LS_SYNC);
 	__builtin_arc_sr(ctx->gpio_intmask, controller + QM_SS_GPIO_INTMASK);
+
+	return 0;
+}
+#else
+int qm_ss_gpio_save_context(const qm_ss_gpio_t gpio,
+			    qm_ss_gpio_context_t *const ctx)
+{
+	(void)gpio;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_ss_gpio_restore_context(const qm_ss_gpio_t gpio,
+			       const qm_ss_gpio_context_t *const ctx)
+{
+	(void)gpio;
+	(void)ctx;
 
 	return 0;
 }

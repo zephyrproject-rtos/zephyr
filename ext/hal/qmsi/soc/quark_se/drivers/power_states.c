@@ -35,7 +35,7 @@
 #endif
 #include "soc_watch.h"
 
-void power_soc_sleep()
+void qm_power_soc_sleep()
 {
 	/* Go to sleep */
 	QM_SCSS_PMU->slp_cfg &= ~QM_SCSS_SLP_CFG_LPMODE_EN;
@@ -45,7 +45,7 @@ void power_soc_sleep()
 	QM_SCSS_PMU->pm1c |= QM_SCSS_PM1C_SLPEN;
 }
 
-void power_soc_deep_sleep()
+void qm_power_soc_deep_sleep()
 {
 	/* Switch to linear regulators.
 	 * For low power deep sleep mode, it is a requirement that the platform
@@ -74,7 +74,7 @@ extern uint32_t *__x86_restore_info;
  * qm_x86_restore_context() after wake up.
  */
 uint32_t sp_restore_storage;
-void power_soc_sleep_restore()
+void qm_power_soc_sleep_restore()
 {
 	/*
 	 * Save x86 restore trap address.
@@ -88,10 +88,10 @@ void power_soc_sleep_restore()
 	qm_x86_save_context(sp_restore_storage);
 
 	/* Set restore flags. */
-	power_soc_set_x86_restore_flag();
+	qm_power_soc_set_x86_restore_flag();
 
 	/* Enter sleep. */
-	power_soc_sleep();
+	qm_power_soc_sleep();
 
 	/*
 	 * Restore x86 execution context.
@@ -102,7 +102,7 @@ void power_soc_sleep_restore()
 	qm_x86_restore_context(sleep_restore_trap, sp_restore_storage);
 }
 
-void power_soc_deep_sleep_restore()
+void qm_power_soc_deep_sleep_restore()
 {
 	/*
 	 * Save x86 restore trap address.
@@ -116,10 +116,10 @@ void power_soc_deep_sleep_restore()
 	qm_x86_save_context(sp_restore_storage);
 
 	/* Set restore flags. */
-	power_soc_set_x86_restore_flag();
+	qm_power_soc_set_x86_restore_flag();
 
 	/* Enter sleep. */
-	power_soc_deep_sleep();
+	qm_power_soc_deep_sleep();
 
 	/*
 	 * Restore x86 execution context.
@@ -130,7 +130,7 @@ void power_soc_deep_sleep_restore()
 	qm_x86_restore_context(deep_sleep_restore_trap, sp_restore_storage);
 }
 
-void power_sleep_wait()
+void qm_power_sleep_wait()
 {
 	/*
 	 * Save x86 restore trap address.
@@ -144,11 +144,11 @@ void power_sleep_wait()
 	qm_x86_save_context(sp_restore_storage);
 
 	/* Set restore flags. */
-	power_soc_set_x86_restore_flag();
+	qm_power_soc_set_x86_restore_flag();
 
 	/* Enter C2 and stay in it until sleep and wake-up. */
 	while (1) {
-		power_cpu_c2();
+		qm_power_cpu_c2();
 	}
 
 	/*
@@ -160,14 +160,14 @@ void power_sleep_wait()
 	qm_x86_restore_context(sleep_restore_trap, sp_restore_storage);
 }
 
-void power_soc_set_x86_restore_flag(void)
+void qm_power_soc_set_x86_restore_flag(void)
 {
 	QM_SCSS_GP->gps0 |= BIT(QM_GPS0_BIT_X86_WAKEUP);
 }
 #endif /* ENABLE_RESTORE_CONTEXT */
 
 #if (!QM_SENSOR)
-void power_cpu_c1()
+void qm_power_cpu_c1()
 {
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_HALT, 0);
 	/*
@@ -182,7 +182,7 @@ void power_cpu_c1()
 			     "hlt\n\t");
 }
 
-void power_cpu_c2()
+void qm_power_cpu_c2()
 {
 	QM_SCSS_CCU->ccu_lp_clk_ctl &= ~QM_SCSS_CCU_C2_LP_EN;
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_CCU_LP_CLK_CTL);
@@ -192,7 +192,7 @@ void power_cpu_c2()
 	QM_SCSS_PMU->p_lvl2;
 }
 
-void power_cpu_c2lp()
+void qm_power_cpu_c2lp()
 {
 	QM_SCSS_CCU->ccu_lp_clk_ctl |= QM_SCSS_CCU_C2_LP_EN;
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_CCU_LP_CLK_CTL);

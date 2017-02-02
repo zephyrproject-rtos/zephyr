@@ -113,7 +113,6 @@ int qm_ss_timer_set(const qm_ss_timer_t timer, const uint32_t count);
  */
 int qm_ss_timer_get(const qm_ss_timer_t timer, uint32_t *const count);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /*
  * Save SS TIMER context.
  *
@@ -145,7 +144,6 @@ int qm_ss_timer_save_context(const qm_ss_timer_t timer,
  */
 int qm_ss_timer_restore_context(const qm_ss_timer_t timer,
 				const qm_ss_timer_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

@@ -75,6 +75,7 @@ extern intr_gate_desc_t __idt_start[];
 static __inline__ void idt_set_intr_gate_desc(uint32_t vector, uint32_t isr)
 {
 	intr_gate_desc_t *desc;
+	idtr_t idtr;
 
 	desc = __idt_start + vector;
 
@@ -88,6 +89,13 @@ static __inline__ void idt_set_intr_gate_desc(uint32_t vector, uint32_t isr)
 				p: 1
 			     */
 	desc->isr_high = (isr >> 16) & 0xFFFF;
+
+	/* The following reloads the IDTR register. If a lookaside buffer is
+	 * being used this will invalidate it. This is required as it's possible
+	 * for an application to change the registered ISR. */
+	idtr.limit = IDT_SIZE - 1;
+	idtr.base = (uint32_t)__idt_start;
+	__asm__ __volatile__("lidt %0\n\t" ::"m"(idtr));
 }
 
 /*

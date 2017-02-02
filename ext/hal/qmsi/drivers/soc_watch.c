@@ -31,13 +31,27 @@
  * SoC Watch - QMSI power profiler
  */
 
-#if (SOC_WATCH_ENABLE) && (!QM_SENSOR)
+#if (SOC_WATCH_ENABLE)
 
-#include <x86intrin.h>
+/*
+ * Header files common to LMT and ARC Sensor.
+ */
+#include "soc_watch.h"
 #include "qm_common.h"
 #include "qm_soc_regs.h"
-#include "soc_watch.h"
 
+/*
+ * Header files and macro defines specific to LMT and ARC Sensor.
+ */
+#if (!QM_SENSOR)
+#include <x86intrin.h>
+/* 64bit Timestamp counter. */
+#define get_ticks() _rdtsc()
+#else
+#include "qm_sensor_regs.h"
+/* Timestamp counter for sensor subsystem is 32bit. */
+#define get_ticks() __builtin_arc_lr(QM_SS_TSC_BASE + QM_SS_TIMER_COUNT)
+#endif
 /*
  * Define a macro for exposing some functions and other definitions
  * only when unit testing.  If we're not unit testing, then declare
@@ -73,6 +87,7 @@ NONUTSTATIC const char *ev_strs[] = {
     "STtL", /* Sleep event */
     "RT1R", /* Register read event: Timestamp, reg enum, reg value*/
     "UTs4", /* User event: timestamp, subtype, data value. */
+    "FTf",  /* Frequency change event */
 };
 
 /*
@@ -154,6 +169,12 @@ void mlog_byte(uint8_t byte)
 #endif /* !MLOG_ENABLE */
 
 /*
+ * Defines for frequency related platform registers.
+ */
+#define SW_OSC0_CFG1 (0)
+#define SW_SYS_CLK_CTL (2)
+
+/*
  * CONFIGURABLE: Set this to control the number of bytes of RAM you
  *     want to dedicate to event buffering.  The larger the buffer,
  *     the fewer (expensive) flushes we will have to do.  The smaller,
@@ -230,13 +251,52 @@ static void eb_write_char(uint8_t data)
 /* Store a word in the event buffer. */
 static void eb_write_uint32(uint32_t *data)
 {
-	uint32_t *uip = (uint32_t *)&soc_watch_event_buffer
-			    .event_data[soc_watch_event_buffer.eb_idx];
-	*uip = *data;
+	uint32_t dst_data = *data;
+	uint8_t byte_count = 0;
 	SOC_WATCH_TRACE("I%d:0x%x\n", soc_watch_event_buffer.eb_idx, *data);
-	soc_watch_event_buffer.eb_idx += sizeof(uint32_t);
+	while (byte_count < sizeof(uint32_t)) {
+		soc_watch_event_buffer
+		    .event_data[soc_watch_event_buffer.eb_idx++] =
+		    ((dst_data & 0xFF));
+		dst_data = dst_data >> 8;
+		byte_count++;
+	}
 }
 
+/*
+ * soc_watch is duplicating the implementation of qm_irq_lock/unlock APIs
+ * for both sensor and x86. This is required to remove the dependency on
+ * qm_interrupt.h
+ * Reason: soc_watch driver is common to both zephyr and QMSI based applications
+ * and zephyr
+ * has it's own interrupt handling implementation.
+ * Both the functions are added as static inline and hence no side-effects.
+ */
+
+#if (QM_SENSOR)
+static inline unsigned int soc_watch_irq_lock(void)
+{
+	unsigned int key = 0;
+
+	/*
+	 * Store the ARC STATUS32 register fields relating to interrupts into
+	 * the variable `key' and disable interrupt delivery to the core.
+	 */
+	__asm__ __volatile__("clri %0" : "=r"(key));
+
+	return key;
+}
+
+static inline void soc_watch_irq_unlock(unsigned int key)
+{
+	/*
+	 * Restore the ARC STATUS32 register fields relating to interrupts based
+	 * on the variable `key' populated by qm_irq_lock().
+	 */
+	__asm__ __volatile__("seti %0" : : "ir"(key));
+}
+
+#else /* x86 */
 /* x86 CPU FLAGS.IF register field (Interrupt enable Flag, bit 9), indicating
  * whether or not CPU interrupts are enabled.
  */
@@ -283,7 +343,8 @@ static inline void soc_watch_irq_unlock(unsigned int key)
 	 */
 	if (!(key & X86_FLAGS_IF)) {
 		/*
-		 * Interrupts were disabled when soc_watch_irq_lock() was invoked:
+		 * Interrupts were disabled when soc_watch_irq_lock() was
+		 * invoked:
 		 * do not re-enable interrupts.
 		 */
 		return;
@@ -292,6 +353,7 @@ static inline void soc_watch_irq_unlock(unsigned int key)
 	/* Enable interrupts */
 	__asm__ __volatile__("sti;\n\t" : :);
 }
+#endif
 
 /* Log an event with one parameter. */
 void soc_watch_log_event(soc_watch_event_t event_id, uintptr_t ev_data)
@@ -308,10 +370,14 @@ void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 			     uintptr_t ev_data)
 {
 	static uint8_t record_rtc = 0;
-	const uint32_t *rtc_ctr = (uint32_t *)&QM_RTC->rtc_ccvr;
+	const uint32_t *rtc_ctr = (uint32_t *)&QM_RTC[QM_RTC_0]->rtc_ccvr;
 	const char *cp;
 	unsigned int irq_flag = 0;
-	uint64_t tsc = __builtin_ia32_rdtsc(); /* Grab hi-res timestamp */
+#if (!QM_SENSOR)
+	uint64_t tsc = 0; /* hi-res timestamp */
+#else
+	uint32_t tsc = 0;
+#endif
 	uint32_t rtc_val = *rtc_ctr;
 
 #define AVG_EVENT_SIZE 8 /* Size of a typical message in bytes. */
@@ -355,6 +421,7 @@ void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 		while (*++cp) {
 			switch (*cp) {
 			case 'T':
+				tsc = get_ticks();
 				eb_write_uint32((uint32_t *)(&tsc)); /* Hi-res
 						Timestamp */
 				break;
@@ -380,6 +447,12 @@ void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 			case 's':
 				/* Event subtype */
 				eb_write_char(((uint32_t)ev_subtype) & 0xff);
+				break;
+			case 'f':
+				eb_write_uint32(
+				    (uint32_t *)platform_regs[SW_OSC0_CFG1]);
+				eb_write_uint32(
+				    (uint32_t *)platform_regs[SW_SYS_CLK_CTL]);
 				break;
 			default:
 				SOC_WATCH_TRACE(
@@ -408,4 +481,16 @@ void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 	MLOG(']');
 }
 
+/*
+ * Trigger the Watchpoint to flush the data.
+ * Application can use this API to trigger the transfer of
+ * profiler information to the host whenever it requires.
+ * The static function soc_watch_event_buffer_flush() is also used internally
+ * when the soc_watch_buffer_full flag is set and is  not exposed to the
+ * application.
+ */
+void soc_watch_trigger_flush()
+{
+	soc_watch_event_buffer_flush();
+}
 #endif /* !(defined(SOC_WATCH) && (!QM_SENSOR)) */

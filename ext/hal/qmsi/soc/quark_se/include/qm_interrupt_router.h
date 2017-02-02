@@ -27,58 +27,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __QM_COMPARATOR_H__
-#define __QM_COMPARATOR_H__
-
-#include "qm_common.h"
-#include "qm_soc_regs.h"
+#ifndef __QM_INTERRUPT_ROUTER_H__
+#define __QM_INTERRUPT_ROUTER_H__
 
 /**
- * Analog Comparator.
+ * Quark SE SoC Interrupt Router registers.
  *
- * @defgroup groupAC Analog Comparator
+ * @defgroup groupQUARKSEINTERRUPTROUTER SoC Interrupt Router (SE)
  * @{
  */
 
-/**
- * Analog Comparator configuration type.
+void _qm_ir_mask_int(uint32_t irq, uint32_t register_offset);
+void _qm_ir_unmask_int(uint32_t irq, uint32_t register_offset);
+
+/*
+ * Unmask a given IRQ in the Interrupt Router.
  *
- * Each bit in the registers controls a single Analog Comparator pin.
+ * @note Not for use with sensor sub-system peripheral IRQs.
+ * For sensor peripherals use the macros defined in qm_interrupt_router_regs.h.
  *
- * @note There is no way to control comparator interrupts using this
- * configuration struct: when a comparator is enabled and powered-up, it starts
- * generating interrupts when proper input conditions are met; however,
- * comparator interrupts can be masked at interrupt routing level.
+ * @param[in] irq IRQ number. Must be of type QM_IRQ_XXX.
  */
-typedef struct {
-	uint32_t cmp_en;    /**< Comparator enable. */
-	uint32_t reference; /**< Reference voltage, 1b: VREF; 0b: AR_PIN. */
-	uint32_t polarity;  /**< 0b: input>ref; 1b: input<ref */
-	uint32_t power;     /**< 1b: Normal mode; 0b:Power-down/Shutdown mode */
+#define QM_IR_UNMASK_INT(irq)                                                  \
+	do {                                                                   \
+		_qm_ir_unmask_int(irq, irq##_MASK_OFFSET);                     \
+	} while (0);
 
-	/**
-	 * Transfer callback.
-	 *
-	 * @param[in] data Callback user data.
-	 * @param[in] status Comparator interrupt status.
-	 */
-	void (*callback)(void *data, uint32_t int_status);
-	void *callback_data; /**< Callback user data. */
-} qm_ac_config_t;
-
-/**
- * Set Analog Comparator configuration.
+/*
+ * Mask a given IRQ in the Interrupt Router.
  *
- * @param[in] config Analog Comparator configuration. This must not be NULL.
+ * @note Not for use with sensor sub-system peripheral IRQs.
+ * For sensor peripherals use the macros defined in qm_interrupt_router_regs.h.
  *
- * @return Standard errno return type for QMSI.
- * @retval 0 on success.
- * @retval Negative @ref errno for possible error codes.
+ * @param[in] irq IRQ number. Must be of type QM_IRQ_XXX.
  */
-int qm_ac_set_config(const qm_ac_config_t *const config);
+#define QM_IR_MASK_INT(irq)                                                    \
+	do {                                                                   \
+		_qm_ir_mask_int(irq, irq##_MASK_OFFSET);                       \
+	} while (0);
 
-/**
- * @}
- */
+/** @} */
 
-#endif /* __QM_COMPARATOR_H__ */
+#endif /* __QM_INTERRUPT_ROUTER_H__ */

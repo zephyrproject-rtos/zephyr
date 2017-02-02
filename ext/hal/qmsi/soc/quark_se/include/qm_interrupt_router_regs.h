@@ -31,25 +31,38 @@
 #define __QM_INTERRUPT_ROUTER_REGS_H__
 
 /**
- * Quark SE SoC Event Router registers.
+ * Quark SE SoC Interrupt Router registers.
  *
- * @defgroup groupQUARKSESEEVENTROUTER SoC Event Router (SE)
+ * @defgroup groupQUARKSEINTERRUPTROUTER SoC Interrupt Router (SE)
  * @{
  */
 
 /**
- * Masks for single source interrupts in the Event Router.
+ * Masks for single source interrupts in the Interrupt Router.
  * To enable:  reg &= ~(MASK)
  * To disable: reg |= MASK;
  */
 #define QM_IR_INT_LMT_MASK BIT(0)
 #define QM_IR_INT_SS_MASK BIT(8)
 
-/* Masks for single source halts in the Event Router. */
+/* Masks for single source halts in the Interrupt Router. */
 #define QM_IR_INT_LMT_HALT_MASK BIT(16)
 #define QM_IR_INT_SS_HALT_MASK BIT(24)
 
-/* Event Router Unmask interrupts for a peripheral. */
+/**
+ * Interrupt Router macros to determine if the specified peripheral interrupt
+ * mask has been locked.
+ */
+#define QM_IR_SS_INT_LOCK_HALT_MASK(_peripheral_)                              \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(3))
+#define QM_IR_LMT_INT_LOCK_HALT_MASK(_peripheral_)                             \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(2))
+#define QM_IR_SS_INT_LOCK_MASK(_peripheral_)                                   \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(1))
+#define QM_IR_LMT_INT_LOCK_MASK(_peripheral_)                                  \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(0))
+
+/* Interrupt Router Unmask interrupts for a peripheral. */
 #define QM_IR_UNMASK_LMT_INTERRUPTS(_peripheral_)                              \
 	(_peripheral_ &= ~(QM_IR_INT_LMT_MASK))
 #define QM_IR_UNMASK_SS_INTERRUPTS(_peripheral_)                               \
@@ -81,6 +94,103 @@
 #define QM_IR_GET_SS_HALT_MASK(_peripheral_)                                   \
 	(_peripheral_ & QM_IR_INT_SS_HALT_MASK)
 
+/**
+ * Mailbox Interrupt Mask enable/disable definitions
+ *
+ * \#defines use the channel number to determine the register and bit shift to
+ * use.
+ * The interrupt destination adds an offset to the bit shift.
+ */
+#define QM_IR_MBOX_ENABLE_LMT_INT_MASK(N)                                      \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask &=                             \
+	    ~(BIT(N + QM_MBOX_HOST_MASK_OFFSET))
+#define QM_IR_MBOX_DISABLE_LMT_INT_MASK(N)                                     \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask |=                             \
+	    (BIT(N + QM_MBOX_HOST_MASK_OFFSET))
+#define QM_IR_MBOX_ENABLE_SS_INT_MASK(N)                                       \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask &=                             \
+	    ~(BIT(N + QM_MBOX_SS_MASK_OFFSET))
+#define QM_IR_MBOX_DISABLE_SS_INT_MASK(N)                                      \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask |=                             \
+	    (BIT(N + QM_MBOX_SS_MASK_OFFSET))
+
+/**
+ * Mailbox Interrupt Halt Mask enable/disable definitions
+ *
+ * \#defines use the channel number to determine the register and bit shift to
+ * use.
+ * The interrupt destination adds an offset to the bit shift,
+ * see above for the bit position layout
+ */
+#define QM_IR_MBOX_ENABLE_LMT_INT_HALT_MASK(N)                                 \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask &=                             \
+	    ~(BIT(N + QM_MBOX_HOST_HALT_MASK_OFFSET))
+#define QM_IR_MBOX_DISABLE_LMT_INT_HALT_MASK(N)                                \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask |=                             \
+	    (BIT(N + QM_MBOX_HOST_HALT_MASK_OFFSET))
+#define QM_IR_MBOX_ENABLE_SS_INT_HALT_MASK(N)                                  \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask &=                             \
+	    ~(BIT(N + QM_MBOX_SS_HALT_MASK_OFFSET))
+#define QM_IR_MBOX_DISABLE_SS_INT_HALT_MASK(N)                                 \
+	QM_INTERRUPT_ROUTER->mailbox_0_int_mask |=                             \
+	    (BIT(N + QM_MBOX_SS_HALT_MASK_OFFSET))
+
+/**
+ * Mailbox interrupt mask definitions to return the current mask values
+ */
+#define QM_IR_MBOX_SS_INT_HALT_MASK                                            \
+	((QM_MBOX_SS_HALT_MASK_MASK &                                          \
+	  QM_INTERRUPT_ROUTER->mailbox_0_int_mask) >>                          \
+	 QM_MBOX_SS_HALT_MASK_OFFSET)
+#define QM_IR_MBOX_LMT_INT_HALT_MASK                                           \
+	((QM_MBOX_HOST_HALT_MASK_MASK &                                        \
+	  QM_INTERRUPT_ROUTER->mailbox_0_int_mask) >>                          \
+	 QM_MBOX_SS_HALT_MASK_OFFSET)
+#define QM_IR_MBOX_SS_ALL_INT_MASK                                             \
+	((QM_MBOX_SS_MASK_MASK & QM_INTERRUPT_ROUTER->mailbox_0_int_mask) >>   \
+	 QM_MBOX_SS_MASK_OFFSET)
+#define QM_IR_MBOX_LMT_ALL_INT_MASK                                            \
+	(QM_MBOX_HOST_MASK_MASK & QM_INTERRUPT_ROUTER->mailbox_0_int_mask)
+
+/**
+ * Mailbox interrupt macros to determine if the specified mailbox interrupt mask
+ * has been locked.
+ */
+#define QM_IR_MBOX_SS_INT_LOCK_HALT_MASK(N)                                    \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(3))
+#define QM_IR_MBOX_LMT_INT_LOCK_HALT_MASK(N)                                   \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(2))
+#define QM_IR_MBOX_SS_INT_LOCK_MASK(N)                                         \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(1))
+#define QM_IR_MBOX_LMT_INT_LOCK_MASK(N)                                        \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(0))
+
+/**
+ * Mailbox macros to check if a particular mailbox has been routed to a core.
+ */
+#define QM_IR_MBOX_IS_LMT_INT_MASK_EN(N)                                       \
+	~(QM_IR_MBOX_LMT_ALL_INT_MASK & ((1 << (N))))
+#define QM_IR_MBOX_IS_SS_INT_MASK_EN(N)                                        \
+	~(QM_IR_MBOX_SS_ALL_INT_MASK & ((1 << (QM_MBOX_SS_MASK_OFFSET + (N)))))
+
+#define QM_IR_UNMASK_COMPARATOR_LMT_INTERRUPTS(n)                              \
+	(QM_INTERRUPT_ROUTER->comparator_0_host_int_mask &= ~(BIT(n)))
+#define QM_IR_MASK_COMPARATOR_LMT_INTERRUPTS(n)                                \
+	(QM_INTERRUPT_ROUTER->comparator_0_host_int_mask |= BIT(n))
+#define QM_IR_UNMASK_COMPARATOR_LMT_HALTS(n)                                   \
+	(QM_INTERRUPT_ROUTER->comparator_0_host_halt_int_mask &= ~(BIT(n)))
+#define QM_IR_MASK_COMPARATOR_LMT_HALTS(n)                                     \
+	(QM_INTERRUPT_ROUTER->comparator_0_host_halt_int_mask |= BIT(n))
+
+#define QM_IR_UNMASK_COMPARATOR_SS_INTERRUPTS(n)                               \
+	(QM_INTERRUPT_ROUTER->comparator_0_ss_int_mask &= ~(BIT(n)))
+#define QM_IR_MASK_COMPARATOR_SS_INTERRUPTS(n)                                 \
+	(QM_INTERRUPT_ROUTER->comparator_0_ss_int_mask |= BIT(n))
+#define QM_IR_UNMASK_COMPARATOR_SS_HALTS(n)                                    \
+	(QM_INTERRUPT_ROUTER->comparator_0_ss_halt_int_mask &= ~(BIT(n)))
+#define QM_IR_MASK_COMPARATOR_SS_HALTS(n)                                      \
+	(QM_INTERRUPT_ROUTER->comparator_0_ss_halt_int_mask |= BIT(n))
+
 /* Define macros for use by the active core. */
 #if (QM_LAKEMONT)
 #define QM_IR_UNMASK_INTERRUPTS(_peripheral_)                                  \
@@ -90,10 +200,21 @@
 #define QM_IR_UNMASK_HALTS(_peripheral_) QM_IR_UNMASK_LMT_HALTS(_peripheral_)
 #define QM_IR_MASK_HALTS(_peripheral_) QM_IR_MASK_LMT_HALTS(_peripheral_)
 
+#define QM_IR_INT_LOCK_MASK(_peripheral_) QM_IR_LMT_INT_LOCK_MASK(_peripheral_)
+#define QM_IR_INT_LOCK_HALT_MASK(_peripheral_)                                 \
+	QM_IR_LMT_INT_LOCK_MASK(_peripheral_)
+
 #define QM_IR_INT_MASK QM_IR_INT_LMT_MASK
 #define QM_IR_INT_HALT_MASK QM_IR_INT_LMT_HALT_MASK
 #define QM_IR_GET_MASK(_peripheral_) QM_IR_GET_LMT_MASK(_peripheral_)
 #define QM_IR_GET_HALT_MASK(_peripheral_) QM_IR_GET_LMT_HALT_MASK(_peripheral_)
+
+#define QM_IR_UNMASK_COMPARATOR_INTERRUPTS(n)                                  \
+	QM_IR_UNMASK_COMPARATOR_LMT_INTERRUPTS(n)
+#define QM_IR_MASK_COMPARATOR_INTERRUPTS(n)                                    \
+	QM_IR_MASK_COMPARATOR_LMT_INTERRUPTS(n)
+#define QM_IR_UNMASK_COMPARATOR_HALTS(n) QM_IR_UNMASK_COMPARATOR_LMT_HALTS(n)
+#define QM_IR_MASK_COMPARATOR_HALTS(n) QM_IR_MASK_COMPARATOR_LMT_HALTS(n)
 
 #elif(QM_SENSOR)
 #define QM_IR_UNMASK_INTERRUPTS(_peripheral_)                                  \
@@ -103,10 +224,22 @@
 #define QM_IR_UNMASK_HALTS(_peripheral_) QM_IR_UNMASK_SS_HALTS(_peripheral_)
 #define QM_IR_MASK_HALTS(_peripheral_) QM_IR_MASK_SS_HALTS(_peripheral_)
 
+#define QM_IR_INT_LOCK_MASK(_peripheral_) QM_IR_SS_INT_LOCK_MASK(_peripheral_)
+#define QM_IR_INT_LOCK_HALT_MASK(_peripheral_)                                 \
+	QM_IR_SS_INT_LOCK_MASK(_peripheral_)
+
 #define QM_IR_INT_MASK QM_IR_INT_SS_MASK
 #define QM_IR_INT_HALT_MASK QM_IR_INT_SS_HALT_MASK
 #define QM_IR_GET_MASK(_peripheral_) QM_IR_GET_SS_MASK(_peripheral_)
 #define QM_IR_GET_HALT_MASK(_peripheral_) QM_IR_GET_SS_HALT_MASK(_peripheral_)
+
+#define QM_IR_UNMASK_COMPARATOR_INTERRUPTS(n)                                  \
+	QM_IR_UNMASK_COMPARATOR_SS_INTERRUPTS(n)
+#define QM_IR_MASK_COMPARATOR_INTERRUPTS(n)                                    \
+	QM_IR_MASK_COMPARATOR_SS_INTERRUPTS(n)
+#define QM_IR_UNMASK_COMPARATOR_HALTS(n) QM_IR_UNMASK_COMPARATOR_SS_HALTS(n)
+#define QM_IR_MASK_COMPARATOR_HALTS(n) QM_IR_MASK_COMPARATOR_SS_HALTS(n)
+
 #else
 #error "No active core selected."
 #endif
@@ -201,6 +334,12 @@ qm_interrupt_router_reg_t test_interrupt_router;
 
 #define QM_IR_DMA_ERROR_HOST_MASK (0x000000FF)
 #define QM_IR_DMA_ERROR_SS_MASK (0x0000FF00)
+
+#if (QM_LAKEMONT)
+#define QM_IR_DMA_ERROR_MASK QM_IR_DMA_ERROR_HOST_MASK
+#elif(QM_SENSOR)
+#define QM_IR_DMA_ERROR_MASK QM_IR_DMA_ERROR_SS_MASK
+#endif
 
 /** @} */
 

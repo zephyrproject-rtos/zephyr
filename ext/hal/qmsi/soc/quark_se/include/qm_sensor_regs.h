@@ -87,6 +87,11 @@ uint32_t test_sensor_aux[QM_SS_AUX_REGS_SIZE];
 /* Bitwise NAND operation macro for registers in the auxiliary memory space. */
 #define QM_SS_REG_AUX_NAND(reg, mask)                                          \
 	(__builtin_arc_sr(__builtin_arc_lr(reg) & (~(mask)), reg))
+/* Bitwise MASK and OR operation macro for registers in the auxiliary memory
+ * space.
+ */
+#define QM_SS_REG_AUX_MASK_OR(reg, mask, value)                                \
+	(__builtin_arc_sr(((__builtin_arc_lr(reg) & (~(mask))) | value), reg))
 
 /* Sensor Subsystem status32 register. */
 #define QM_SS_AUX_STATUS32 (0xA)
@@ -124,7 +129,7 @@ typedef struct {
 	 * - IRQ Trigger:BIT(1)
 	 * - IRQ Enable:BIT(0)
 	 */
-	uint8_t irq_config[QM_SS_INT_VECTOR_NUM - 1];
+	uint8_t irq_config[QM_SS_INT_VECTOR_NUM - QM_SS_EXCEPTION_NUM];
 } qm_irq_context_t;
 
 /** @} */
@@ -260,19 +265,24 @@ typedef struct {
 
 #define QM_SS_I2C_CON_ENABLE BIT(0)
 #define QM_SS_I2C_CON_ABORT BIT(1)
+#define QM_SS_I2C_CON_ABORT_OFFSET (1)
 #define QM_SS_I2C_CON_SPEED_SS BIT(3)
 #define QM_SS_I2C_CON_SPEED_FS BIT(4)
+#define QM_SS_I2C_CON_SPEED_FSP BIT(4)
 #define QM_SS_I2C_CON_SPEED_MASK (0x18)
+#define QM_SS_I2C_CON_SPEED_OFFSET (3)
 #define QM_SS_I2C_CON_IC_10BITADDR BIT(5)
 #define QM_SS_I2C_CON_IC_10BITADDR_OFFSET (5)
-#define QM_SS_I2C_CON_IC_10BITADDR_MASK (5)
+#define QM_SS_I2C_CON_IC_10BITADDR_MASK BIT(5)
 #define QM_SS_I2C_CON_RESTART_EN BIT(7)
+#define QM_SS_I2C_CON_RESTART_EN_OFFSET (7)
 #define QM_SS_I2C_CON_TAR_SAR_OFFSET (9)
 #define QM_SS_I2C_CON_TAR_SAR_MASK (0x7FE00)
 #define QM_SS_I2C_CON_TAR_SAR_10_BIT_MASK (0x3FF)
 #define QM_SS_I2C_CON_SPKLEN_OFFSET (22)
 #define QM_SS_I2C_CON_SPKLEN_MASK (0x3FC00000)
 #define QM_SS_I2C_CON_CLK_ENA BIT(31)
+#define QM_SS_I2C_CON_ENABLE_ABORT_MASK (0x3)
 
 #define QM_SS_I2C_DATA_CMD_CMD BIT(8)
 #define QM_SS_I2C_DATA_CMD_STOP BIT(9)
@@ -288,6 +298,8 @@ typedef struct {
 #define QM_SS_I2C_INTR_STAT_TX_OVER BIT(3)
 #define QM_SS_I2C_INTR_STAT_TX_EMPTY BIT(4)
 #define QM_SS_I2C_INTR_STAT_TX_ABRT BIT(6)
+#define QM_SS_I2C_INTR_STAT_STOP BIT(9)
+#define QM_SS_I2C_INTR_STAT_START BIT(10)
 
 #define QM_SS_I2C_INTR_MASK_ALL (0x0)
 #define QM_SS_I2C_INTR_MASK_RX_UNDER BIT(0)
@@ -296,13 +308,20 @@ typedef struct {
 #define QM_SS_I2C_INTR_MASK_TX_OVER BIT(3)
 #define QM_SS_I2C_INTR_MASK_TX_EMPTY BIT(4)
 #define QM_SS_I2C_INTR_MASK_TX_ABRT BIT(6)
+#define QM_SS_I2C_INTR_MASK_STOP BIT(9)
+#define QM_SS_I2C_INTR_MASK_START BIT(10)
 
 #define QM_SS_I2C_TL_TX_TL_OFFSET (16)
+#define QM_SS_I2C_TL_MASK (0xFF)
 #define QM_SS_I2C_TL_RX_TL_MASK (0xFF)
 #define QM_SS_I2C_TL_TX_TL_MASK (0xFF0000)
 
 #define QM_SS_I2C_INTR_CLR_ALL (0xFF)
+#define QM_SS_I2C_INTR_CLR_RX_UNDER BIT(0)
+#define QM_SS_I2C_INTR_CLR_RX_OVER BIT(1)
+#define QM_SS_I2C_INTR_CLR_TX_OVER BIT(3)
 #define QM_SS_I2C_INTR_CLR_TX_ABRT BIT(6)
+#define QM_SS_I2C_INTR_CLR_STOP_DET BIT(9)
 
 #define QM_SS_I2C_TX_ABRT_SOURCE_NAK_MASK (0x09)
 #define QM_SS_I2C_TX_ABRT_SOURCE_ALL_MASK (0x1FFFF)
@@ -323,6 +342,216 @@ typedef struct {
 #define QM_SS_I2C_IC_HCNT_MIN (6)
 
 #define QM_SS_I2C_FIFO_SIZE (8)
+
+#define QM_SS_I2C_SPK_LEN_SS (1)
+#define QM_SS_I2C_SPK_LEN_FS (2)
+#define QM_SS_I2C_SPK_LEN_FSP (2)
+
+#define QM_SS_I2C_WRITE_CLKEN(controller)                                      \
+	__builtin_arc_sr((__builtin_arc_lr(controller + QM_SS_I2C_CON) &       \
+			  QM_SS_I2C_CON_CLK_ENA),                              \
+			 controller + QM_SS_I2C_CON)
+#define QM_SS_I2C_WRITE_SPKLEN(controller, value)                              \
+	QM_SS_REG_AUX_OR((controller + QM_SS_I2C_CON),                         \
+			 value << QM_SS_I2C_CON_SPKLEN_OFFSET)
+#define QM_SS_I2C_WRITE_TAR(controller, value)                                 \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_CON,                           \
+			 (value & QM_SS_I2C_CON_TAR_SAR_10_BIT_MASK)           \
+			     << QM_SS_I2C_CON_TAR_SAR_OFFSET)
+#define QM_SS_I2C_WRITE_RESTART_EN(controller)                                 \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_CON, QM_SS_I2C_CON_RESTART_EN)
+#define QM_SS_I2C_WRITE_ADDRESS_MODE(contoller, value)                         \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_CON,                           \
+			 value << QM_SS_I2C_CON_IC_10BITADDR_OFFSET)
+#define QM_SS_I2C_WRITE_SPEED(controller, value)                               \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_CON, value)
+#define QM_SS_I2C_WRITE_DATA_CMD(controller, value)                            \
+	__builtin_arc_sr(value, controller + QM_SS_I2C_DATA_CMD)
+#define QM_SS_I2C_WRITE_SS_SCL_HCNT(controller, value)                         \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_SS_SCL_CNT,                    \
+			 (value & QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK)          \
+			     << QM_SS_I2C_SS_FS_SCL_CNT_HCNT_OFFSET)
+#define QM_SS_I2C_WRITE_SS_SCL_LCNT(controller, value)                         \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_SS_SCL_CNT,                    \
+			 value & QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK)
+#define QM_SS_I2C_WRITE_FS_SCL_HCNT(controller, value)                         \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_FS_SCL_CNT,                    \
+			 (value & QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK)          \
+			     << QM_SS_I2C_SS_FS_SCL_CNT_HCNT_OFFSET)
+#define QM_SS_I2C_WRITE_FS_SCL_LCNT(controller, value)                         \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_FS_SCL_CNT,                    \
+			 value & QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK)
+#define QM_SS_I2C_WRITE_RAW_INTR_STAT(controller, value)                       \
+	__builtin_arc_sr(value, controller + QM_SS_I2C_INTR_STAT)
+#define QM_SS_I2C_WRITE_TX_TL(controller, value)                               \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_TL,                            \
+			 (value & QM_SS_I2C_TL_MASK)                           \
+			     << QM_SS_I2C_TL_TX_TL_OFFSET)
+#define QM_SS_I2C_WRITE_RX_TL(controller, value)                               \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_TL,                            \
+			 value & QM_SS_I2C_TL_RX_TL_MASK)
+#define QM_SS_I2C_WRITE_STATUS(controller, value)                              \
+	__builtin_arc_sr(value, controller + QM_SS_I2C_STATUS)
+#define QM_SS_I2C_WRITE_TXFLR(controller, value)                               \
+	__builtin_arc_sr(value, controller + QM_SS_I2C_TXFLR)
+#define QM_SS_I2C_WRITE_RXFLR(controller, value)                               \
+	__builtin_arc_sr(value, controller + QM_SS_I2C_RXFLR)
+#define QM_SS_I2C_WRITE_TX_ABRT_SOURCE(controller, value)                      \
+	__builtin_arc_sr(value, controller + QM_SS_I2C_TX_ABRT_SOURCE)
+
+#define QM_SS_I2C_CLEAR_ENABLE(controller)                                     \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_CON,                         \
+			   QM_SS_I2C_CON_ENABLE_ABORT_MASK)
+#define QM_SS_I2C_CLEAR_CON(controller)                                        \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_CON)
+#define QM_SS_I2C_CLEAR_SPKLEN(controller)                                     \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_CON,                         \
+			   QM_SS_I2C_CON_SPKLEN_MASK)
+#define QM_SS_I2C_CLEAR_TAR(controller)                                        \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_CON,                         \
+			   QM_SS_I2C_CON_TAR_SAR_MASK)
+#define QM_SS_I2C_CLEAR_SPEED(controller)                                      \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_CON, QM_SS_I2C_CON_SPEED_MASK)
+#define QM_SS_I2C_CLEAR_DATA_CMD(controller)                                   \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_DATA_CMD)
+#define QM_SS_I2C_CLEAR_SS_SCL_HCNT(controller)                                \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_SS_SCL_CNT,                  \
+			   QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK                  \
+			       << QM_SS_I2C_SS_FS_SCL_CNT_HCNT_OFFSET)
+#define QM_SS_I2C_CLEAR_SS_SCL_LCNT(controller)                                \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_SS_SCL_CNT,                  \
+			   QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK)
+#define QM_SS_I2C_CLEAR_FS_SCL_HCNT(controller)                                \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_FS_SCL_CNT,                  \
+			   QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK                  \
+			       << QM_SS_I2C_SS_FS_SCL_CNT_HCNT_OFFSET)
+#define QM_SS_I2C_CLEAR_FS_SCL_LCNT(controller)                                \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_FS_SCL_CNT,                  \
+			   QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK)
+#define QM_SS_I2C_CLEAR_INTR_STAT(controller)                                  \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_INTR_STAT)
+#define QM_SS_I2C_CLEAR_INTR_MASK(controller)                                  \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_INTR_MASK)
+#define QM_SS_I2C_CLEAR_TX_TL(controller)                                      \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_TL, QM_SS_I2C_TL_TX_TL_MASK)
+#define QM_SS_I2C_CLEAR_RX_TL(controller)                                      \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_TL, QM_SS_I2C_TL_RX_TL_MASK)
+#define QM_SS_I2C_CLEAR_STATUS(controller)                                     \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_STATUS)
+#define QM_SS_I2C_CLEAR_TXFLR(controller)                                      \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_TXFLR)
+#define QM_SS_I2C_CLEAR_RXFLR(controller)                                      \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_RXFLR)
+#define QM_SS_I2C_CLEAR_SDA_CONFIG(controller)                                 \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_SDA_CONFIG)
+#define QM_SS_I2C_CLEAR_TX_ABRT_SOURCE(controller)                             \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_TX_ABRT_SOURCE)
+#define QM_SS_I2C_CLEAR_ENABLE_STATUS(controller)                              \
+	__builtin_arc_sr(0, controller + QM_SS_I2C_ENABLE_STATUS)
+
+#define QM_SS_I2C_READ_CON(controller)                                         \
+	__builtin_arc_lr(controller + QM_SS_I2C_CON)
+#define QM_SS_I2C_READ_ENABLE(controller)                                      \
+	__builtin_arc_lr(controller + QM_SS_I2C_CON) & QM_SS_I2C_CON_ENABLE
+#define QM_SS_I2C_READ_ABORT(controller)                                       \
+	(__builtin_arc_lr(controller + QM_SS_I2C_CON) &                        \
+	 QM_SS_I2C_CON_ABORT) >>                                               \
+	    QM_SS_I2C_CON_ABORT_OFFSET
+#define QM_SS_I2C_READ_SPEED(controller)                                       \
+	(__builtin_arc_lr(controller + QM_SS_I2C_CON) &                        \
+	 QM_SS_I2C_CON_SPEED_MASK) >>                                          \
+	    QM_SS_I2C_CON_SPEED_OFFSET
+#define QM_SS_I2C_READ_ADDR_MODE(controller)                                   \
+	(__builtin_arc_lr(controller + QM_SS_I2C_CON) &                        \
+	 QM_SS_I2C_CON_IC_10BITADDR_MASK) >>                                   \
+	    QM_SS_I2C_CON_IC_10BITADDR_OFFSET
+#define QM_SS_I2C_READ_RESTART_EN(controller)                                  \
+	(__builtin_arc_lr(controller + QM_SS_I2C_CON) &                        \
+	 QM_SS_I2C_CON_RESTART_EN) >>                                          \
+	    QM_SS_I2C_CON_RESTART_EN_OFFSET
+#define QM_SS_I2C_READ_TAR(controller)                                         \
+	(__builtin_arc_lr(controller + QM_SS_I2C_CON) &                        \
+	 QM_SS_I2C_CON_TAR_SAR_MASK) >>                                        \
+	    QM_SS_I2C_CON_TAR_SAR_OFFSET
+#define QM_SS_I2C_READ_SPKLEN(controller)                                      \
+	(__builtin_arc_lr(controller + QM_SS_I2C_CON) &                        \
+	 QM_SS_I2C_CON_SPKLEN_MASK) >>                                         \
+	    QM_SS_I2C_CON_SPKLEN_OFFSET
+#define QM_SS_I2C_READ_DATA_CMD(controller)                                    \
+	__builtin_arc_lr(controller + QM_SS_I2C_DATA_CMD)
+#define QM_SS_I2C_READ_RX_FIFO(controller)                                     \
+	__builtin_arc_sr(QM_SS_I2C_DATA_CMD_POP,                               \
+			 controller + QM_SS_I2C_DATA_CMD)
+#define QM_SS_I2C_READ_SS_SCL_HCNT(controller)                                 \
+	__builtin_arc_lr(controller + QM_SS_I2C_SS_SCL_CNT) >>                 \
+	    QM_SS_I2C_SS_FS_SCL_CNT_HCNT_OFFSET
+#define QM_SS_I2C_READ_SS_SCL_LCNT(controller)                                 \
+	__builtin_arc_lr(controller + QM_SS_I2C_SS_SCL_CNT) &                  \
+	    QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK
+#define QM_SS_I2C_READ_FS_SCL_HCNT(controller)                                 \
+	__builtin_arc_lr(controller + QM_SS_I2C_FS_SCL_CNT) >>                 \
+	    QM_SS_I2C_SS_FS_SCL_CNT_HCNT_OFFSET
+#define QM_SS_I2C_READ_FS_SCL_LCNT(controller)                                 \
+	__builtin_arc_lr(controller + QM_SS_I2C_FS_SCL_CNT) &                  \
+	    QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK
+#define QM_SS_I2C_READ_INTR_STAT(controller)                                   \
+	__builtin_arc_lr(controller + QM_SS_I2C_INTR_STAT)
+#define QM_SS_I2C_READ_INTR_MASK(controller)                                   \
+	__builtin_arc_lr(controller + QM_SS_I2C_INTR_MASK)
+#define QM_SS_I2C_READ_RX_TL(controller)                                       \
+	__builtin_arc_lr(controller + QM_SS_I2C_TL) & QM_SS_I2C_TL_RX_TL_MASK
+#define QM_SS_I2C_READ_TX_TL(controller)                                       \
+	(__builtin_arc_lr(controller + QM_SS_I2C_TL) &                         \
+	 QM_SS_I2C_TL_TX_TL_MASK) >>                                           \
+	    QM_SS_I2C_TL_TX_TL_OFFSET
+#define QM_SS_I2C_READ_STATUS(controller)                                      \
+	__builtin_arc_lr(controller + QM_SS_I2C_STATUS)
+#define QM_SS_I2C_READ_TXFLR(controller)                                       \
+	__builtin_arc_lr(controller + QM_SS_I2C_TXFLR)
+#define QM_SS_I2C_READ_RXFLR(controller)                                       \
+	__builtin_arc_lr(controller + QM_SS_I2C_RXFLR)
+#define QM_SS_I2C_READ_TX_ABRT_SOURCE(controller)                              \
+	__builtin_arc_lr(controller + QM_SS_I2C_TX_ABRT_SOURCE)
+#define QM_SS_I2C_READ_ENABLE_STATUS(controller)                               \
+	__builtin_arc_lr(controller + QM_SS_I2C_ENABLE_STATUS)
+
+#define QM_SS_I2C_ABORT(controller)                                            \
+	QM_SS_REG_AUX_OR((controller + QM_SS_I2C_CON), QM_SS_I2C_CON_ABORT)
+#define QM_SS_I2C_ENABLE(controller)                                           \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_CON, QM_SS_I2C_CON_ENABLE)
+#define QM_SS_I2C_DISABLE(controller)                                          \
+	QM_SS_REG_AUX_NAND((controller + QM_SS_I2C_CON), QM_SS_I2C_CON_ENABLE)
+
+#define QM_SS_I2C_MASK_ALL_INTERRUPTS(controller)                              \
+	__builtin_arc_sr(QM_SS_I2C_INTR_MASK_ALL,                              \
+			 controller + QM_SS_I2C_INTR_MASK)
+#define QM_SS_I2C_UNMASK_INTERRUPTS(controller)                                \
+	__builtin_arc_sr(                                                      \
+	    (QM_SS_I2C_INTR_MASK_TX_ABRT | QM_SS_I2C_INTR_MASK_TX_EMPTY |      \
+	     QM_SS_I2C_INTR_MASK_TX_OVER | QM_SS_I2C_INTR_MASK_RX_FULL |       \
+	     QM_SS_I2C_INTR_MASK_RX_OVER | QM_SS_I2C_INTR_MASK_RX_UNDER),      \
+	    controller + QM_SS_I2C_INTR_MASK)
+#define QM_SS_I2C_MASK_INTERRUPT(controller, value)                            \
+	QM_SS_REG_AUX_NAND(controller + QM_SS_I2C_INTR_MASK, value)
+
+#define QM_SS_I2C_CLEAR_RX_UNDER_INTR(controller)                              \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_INTR_CLR,                      \
+			 QM_SS_I2C_INTR_CLR_RX_UNDER)
+#define QM_SS_I2C_CLEAR_RX_OVER_INTR(controller)                               \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_INTR_CLR,                      \
+			 QM_SS_I2C_INTR_CLR_RX_OVER)
+#define QM_SS_I2C_CLEAR_TX_OVER_INTR(controller)                               \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_INTR_CLR,                      \
+			 QM_SS_I2C_INTR_CLR_TX_OVER)
+#define QM_SS_I2C_CLEAR_TX_ABRT_INTR(controller)                               \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_INTR_CLR,                      \
+			 QM_SS_I2C_INTR_CLR_TX_ABRT)
+#define QM_SS_I2C_CLEAR_STOP_DET_INTR(controller)                              \
+	QM_SS_REG_AUX_OR(controller + QM_SS_I2C_INTR_CLR,                      \
+			 QM_SS_I2C_INTR_CLR_STOP_DET)
+#define QM_SS_I2C_CLEAR_ALL_INTR(controller)                                   \
+	__builtin_arc_sr(QM_SS_I2C_INTR_CLR_ALL,                               \
+			 controller + QM_SS_I2C_INTR_CLR)
 
 /** Sensor Subsystem I2C */
 typedef enum { QM_SS_I2C_0 = 0, QM_SS_I2C_1, QM_SS_I2C_NUM } qm_ss_i2c_t;
@@ -459,11 +688,14 @@ typedef enum {
 /** @} */
 
 /**
- * I2C registers and definitions.
+ * SPI registers and definitions.
  *
  * @name SS SPI
  * @{
  */
+
+/* SS SPI FIFO depth */
+#define QM_SS_SPI_FIFO_DEPTH (8)
 
 /** Sensor Subsystem SPI register map. */
 typedef enum {
@@ -567,6 +799,54 @@ typedef enum {
 #define QM_SS_SPI_DR_STROBE BIT(31)
 #define QM_SS_SPI_DR_W_MASK (0xc0000000)
 #define QM_SS_SPI_DR_R_MASK (0x80000000)
+
+#define QM_SS_SPI_ENABLE_REG_WRITES(spi)                                       \
+	QM_SS_REG_AUX_OR(spi + QM_SS_SPI_CTRL, QM_SS_SPI_CTRL_CLK_ENA)
+
+#define QM_SS_SPI_CTRL_READ(spi) __builtin_arc_lr(spi + QM_SS_SPI_CTRL)
+
+#define QM_SS_SPI_CTRL_WRITE(value, spi)                                       \
+	__builtin_arc_sr(value, spi + QM_SS_SPI_CTRL)
+
+#define QM_SS_SPI_BAUD_RATE_WRITE(value, spi)                                  \
+	__builtin_arc_sr(value, spi + QM_SS_SPI_TIMING)
+
+#define QM_SS_SPI_SER_WRITE(value, spi)                                        \
+	QM_SS_REG_AUX_MASK_OR(spi + QM_SS_SPI_SPIEN, QM_SS_SPI_SPIEN_SER_MASK, \
+			      value << QM_SS_SPI_SPIEN_SER_OFFS)
+
+#define QM_SS_SPI_INTERRUPT_MASK_WRITE(value, spi)                             \
+	__builtin_arc_sr(value, spi + QM_SS_SPI_INTR_MASK)
+
+#define QM_SS_SPI_INTERRUPT_MASK_NAND(value, spi)                              \
+	QM_SS_REG_AUX_NAND(spi + QM_SS_SPI_INTR_MASK, value)
+
+#define QM_SS_SPI_NDF_WRITE(value, spi)                                        \
+	QM_SS_REG_AUX_MASK_OR(spi + QM_SS_SPI_CTRL, QM_SS_SPI_CTRL_NDF_MASK,   \
+			      value << QM_SS_SPI_CTRL_NDF_OFFS)
+
+#define QM_SS_SPI_INTERRUPT_STATUS_READ(spi)                                   \
+	__builtin_arc_lr(spi + QM_SS_SPI_INTR_STAT)
+
+#define QM_SS_SPI_INTERRUPT_CLEAR_WRITE(value, spi)                            \
+	__builtin_arc_sr(value, spi + QM_SS_SPI_CLR_INTR)
+
+#define QM_SS_SPI_RFTLR_WRITE(value, spi)                                      \
+	__builtin_arc_sr((value << QM_SS_SPI_FTLR_RFT_OFFS) &                  \
+			     QM_SS_SPI_FTLR_RFT_MASK,                          \
+			 spi + QM_SS_SPI_FTLR)
+
+#define QM_SS_SPI_TFTLR_WRITE(value, spi)                                      \
+	__builtin_arc_sr((value << QM_SS_SPI_FTLR_TFT_OFFS) &                  \
+			     QM_SS_SPI_FTLR_TFT_MASK,                          \
+			 spi + QM_SS_SPI_FTLR)
+
+#define QM_SS_SPI_RFTLR_READ(spi) __builtin_arc_lr(spi + QM_SS_SPI_FTLR)
+
+#define QM_SS_SPI_TFTLR_READ(spi) __builtin_arc_lr(spi + QM_SS_SPI_FTLR)
+
+#define QM_SS_SPI_DUMMY_WRITE(spi)                                             \
+	__builtin_arc_sr(QM_SS_SPI_DR_R_MASK, spi + QM_SS_SPI_DR)
 
 /** @} */
 /** @} */

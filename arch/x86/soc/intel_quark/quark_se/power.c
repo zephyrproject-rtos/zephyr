@@ -41,7 +41,7 @@ static void _deep_sleep(enum power_states state)
 	qm_x86_set_resume_vector(_power_restore_cpu_context,
 				 *__x86_restore_info);
 
-	power_soc_set_x86_restore_flag();
+	qm_power_soc_set_x86_restore_flag();
 
 	switch (state) {
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
@@ -61,13 +61,13 @@ void _sys_soc_set_power_state(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
-		power_cpu_c2lp();
+		qm_power_cpu_c2lp();
 		break;
 	case SYS_POWER_STATE_CPU_LPS_1:
-		power_cpu_c2();
+		qm_power_cpu_c2();
 		break;
 	case SYS_POWER_STATE_CPU_LPS_2:
-		power_cpu_c1();
+		qm_power_cpu_c1();
 		break;
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 	case SYS_POWER_STATE_DEEP_SLEEP:

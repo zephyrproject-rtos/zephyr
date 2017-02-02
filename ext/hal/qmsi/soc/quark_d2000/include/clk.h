@@ -296,6 +296,37 @@ uint32_t clk_sys_get_ticks_per_us(void);
 void clk_sys_udelay(uint32_t microseconds);
 
 /**
+ * Enable the DMA clock.
+ *
+ * Enable the DMA clock by setting the corresponding bit in the AHB Control
+ * register. By default the DMA clock is disabled.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int clk_dma_enable(void);
+
+/**
+ * Disable the DMA clock.
+ *
+ * Disable the DMA clock by clearing the corresponding bit in the AHB Control
+ * register.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int clk_dma_disable(void);
+
+/**
+ * Get I2C clock frequency in MHz.
+ *
+ * @return [uint32_t] I2C freq_in_mhz.
+ */
+uint32_t get_i2c_clk_freq_in_mhz(void);
+
+/**
  * @}
  */
 

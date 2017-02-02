@@ -115,9 +115,11 @@ typedef enum {
  * SPI status
  */
 typedef enum {
-	QM_SPI_IDLE,       /**< SPI device is not in use. */
-	QM_SPI_BUSY,       /**< SPI device is busy. */
-	QM_SPI_RX_OVERFLOW /**< RX transfer has overflown. */
+	QM_SPI_IDLE,	/**< SPI device is not in use. */
+	QM_SPI_BUSY,	/**< SPI device is busy. */
+	QM_SPI_RX_OVERFLOW, /**< RX transfer has overflown. */
+	QM_SPI_RX_FULL,     /**< Appl. Rx buffer full (slave only). */
+	QM_SPI_TX_EMPTY     /**< Appl. Tx buffer empty (slave only) . */
 } qm_spi_status_t;
 
 /**
@@ -126,96 +128,20 @@ typedef enum {
 typedef enum {
 	/**< Standard SPI mode */
 	QM_SPI_FRAME_FORMAT_STANDARD = 0x0,
-#if HAS_QSPI
-	/**< Quad SPI mode */
-	QM_SPI_FRAME_FORMAT_QUAD = 0x2
-#endif /* HAS_QSPI */
 } qm_spi_frame_format_t;
 
-#if HAS_QSPI
-/**
- * QM QSPI number of wait cycles
+/*
+ * SPI update type
+ *
+ * Used by qm_spi_irq_update to know what to update, RX or TX.
+ * Logical OR can be used in order to update both RX and TX.
  */
 typedef enum {
-	QM_SPI_QUAD_0_WAIT_CYCLES = 0x0,  /**< No wait cycles */
-	QM_SPI_QUAD_1_WAIT_CYCLES = 0x1,  /**< 1 wait cycle */
-	QM_SPI_QUAD_2_WAIT_CYCLES = 0x2,  /**< 2 wait cycles */
-	QM_SPI_QUAD_3_WAIT_CYCLES = 0x3,  /**< 3 wait cycles */
-	QM_SPI_QUAD_4_WAIT_CYCLES = 0x4,  /**< 4 wait cycles */
-	QM_SPI_QUAD_5_WAIT_CYCLES = 0x5,  /**< 5 wait cycles */
-	QM_SPI_QUAD_6_WAIT_CYCLES = 0x6,  /**< 6 wait cycles */
-	QM_SPI_QUAD_7_WAIT_CYCLES = 0x7,  /**< 7 wait cycles */
-	QM_SPI_QUAD_8_WAIT_CYCLES = 0x8,  /**< 8 wait cycles */
-	QM_SPI_QUAD_9_WAIT_CYCLES = 0x9,  /**< 9 wait cycles */
-	QM_SPI_QUAD_10_WAIT_CYCLES = 0xA, /**< 10 wait cycles */
-	QM_SPI_QUAD_11_WAIT_CYCLES = 0xB, /**< 11 wait cycles */
-	QM_SPI_QUAD_12_WAIT_CYCLES = 0xC, /**< 12 wait cycles */
-	QM_SPI_QUAD_13_WAIT_CYCLES = 0xD, /**< 13 wait cycles */
-	QM_SPI_QUAD_14_WAIT_CYCLES = 0xE, /**< 14 wait cycles */
-	QM_SPI_QUAD_15_WAIT_CYCLES = 0xF, /**< 15 wait cycles */
-} qm_spi_quad_wait_cycles_t;
+	QM_SPI_UPDATE_RX = BIT(0), /* Update RX. */
+	QM_SPI_UPDATE_TX = BIT(1), /* Update TX. */
+} qm_spi_update_t;
 
-/**
- * QM QSPI Instruction length
- */
-typedef enum {
-	QM_SPI_QUAD_INST_LENGTH_0_BITS = 0x0, /**< No instruction */
-	QM_SPI_QUAD_INST_LENGTH_4_BITS = 0x1, /**< 4 bit instruction */
-	QM_SPI_QUAD_INST_LENGTH_8_BITS = 0x2, /**< 8 bit instruction */
-	QM_SPI_QUAD_INST_LENGTH_16_BITS = 0x3 /**< 16 bit instruction */
-} qm_spi_quad_inst_length_t;
-
-/**
- * QM QSPI Address length
- */
-typedef enum {
-	QM_SPI_QUAD_ADDR_LENGTH_0_BITS = 0x0,  /**< No address */
-	QM_SPI_QUAD_ADDR_LENGTH_4_BITS = 0x1,  /**< 4 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_8_BITS = 0x2,  /**< 8 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_12_BITS = 0x3, /**< 12 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_16_BITS = 0x4, /**< 16 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_20_BITS = 0x5, /**< 20 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_24_BITS = 0x6, /**< 24 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_28_BITS = 0x7, /**< 28 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_32_BITS = 0x8, /**< 32 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_36_BITS = 0x9, /**< 36 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_40_BITS = 0xA, /**< 40 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_44_BITS = 0xB, /**< 44 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_48_BITS = 0xC, /**< 48 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_52_BITS = 0xD, /**< 52 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_56_BITS = 0xE, /**< 56 bit address */
-	QM_SPI_QUAD_ADDR_LENGTH_60_BITS = 0xF  /**< 60 bit address */
-} qm_spi_quad_addr_length_t;
-
-/**
- * QM QSPI Transfer type
- */
-typedef enum {
-	/**< Both instruction and address sent in standard SPI mode */
-	QM_SPI_QUAD_INST_STD_ADDR_STD = 0x0,
-	/**
-	 * Instruction sent in standard SPI mode
-	 * and address sent in Quad SPI mode
-	 */
-	QM_SPI_QUAD_INST_STD_ADDR_QUAD = 0x1,
-	/**< Both instruction and address sent in Quad SPI mode */
-	QM_SPI_QUAD_INST_QUAD_ADDR_QUAD = 0x2
-} qm_spi_quad_transfer_type_t;
-
-/**
- * QM QSPI Transfer Configuration
- */
-typedef struct {
-	qm_spi_quad_wait_cycles_t
-	    wait_cycles; /**< Wait cycles for QSPI reads */
-	qm_spi_quad_inst_length_t inst_length;  /**< Instruction length */
-	qm_spi_quad_addr_length_t addr_length;  /**< Address length */
-	qm_spi_quad_transfer_type_t trans_type; /**< QSPI Transfer type */
-} qm_spi_quad_config_t;
-
-#endif /* HAS_QSPI */
-
-/**
+/*
  * SPI configuration type.
  */
 typedef struct {
@@ -242,19 +168,19 @@ typedef struct {
  * frame are sent first.
  */
 typedef struct {
-	void *tx;	/**< Write data. */
-	void *rx;	/**< Read data. */
-	uint16_t tx_len; /**< Number of data frames to write. */
-	uint16_t rx_len; /**< Number of data frames to read. */
-#if HAS_QSPI
-	qm_spi_quad_config_t qspi_cfg; /**< QSPI transfer parameters */
-#endif				       /* HAS_QSPI */
+	void *tx;	  /**< Write data. */
+	void *rx;	  /**< Read data. */
+	uint16_t tx_len;   /**< Number of data frames to write. */
+	uint16_t rx_len;   /**< Number of data frames to read. */
+	bool keep_enabled; /**< Keep device on once transfer is done. */
 
 	/**
 	 * Transfer callback.
 	 *
 	 * Called after all data is transmitted/received or if the driver
 	 * detects an error during the SPI transfer.
+	 * For slave device it also allows the application to update
+	 * transfer information by calling the qm_spi_irq_update function.
 	 *
 	 * @param[in] data The callback user data.
 	 * @param[in] error 0 on success.
@@ -282,9 +208,6 @@ typedef struct {
 	void *rx;	/**< Read data. */
 	uint16_t tx_len; /**< Number of data frames to write. */
 	uint16_t rx_len; /**< Number of data frames to read. */
-#if HAS_QSPI
-	qm_spi_quad_config_t qspi_cfg; /* QSPI transfer parameters */
-#endif				       /* HAS_QSPI */
 } qm_spi_transfer_t;
 
 /**
@@ -387,7 +310,35 @@ int qm_spi_transfer(const qm_spi_t spi, const qm_spi_transfer_t *const xfer,
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_spi_irq_transfer(const qm_spi_t spi,
-			const qm_spi_async_transfer_t *const xfer);
+			volatile const qm_spi_async_transfer_t *const xfer);
+
+/**
+ * Update parameters of Interrupt based transfer on SPI.
+ *
+ * Allow the application to transmit and/or receive more data over the current
+ * SPI communication.
+ * The application is supposed to call this function only inside the registered
+ * callback, once notified from the driver.
+ * It is strongly recommended to use this function for slave-based applications
+ * only, as slave controllers usually do not know how many frames an external
+ * master will send or request before starting the communication.
+ * Master controllers should not use this function as it will most likely
+ * corrupt the transaction.
+ *
+ * @param[in] spi Which SPI to transfer to / from.
+ * @param[in] xfer Transfer structure includes write / read buffers, length,
+ *                 user callback function and the callback context data.
+ *                 The structure must not be NULL and must be kept valid until
+ *                 the transfer is complete.
+ * @param[in] update Specify if only RX has to be updated, or only TX or both.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_spi_irq_update(const qm_spi_t spi,
+		      volatile const qm_spi_async_transfer_t *const xfer,
+		      const qm_spi_update_t update);
 
 /**
  * Configure a DMA channel with a specific transfer direction.
@@ -488,45 +439,6 @@ int qm_spi_irq_transfer_terminate(const qm_spi_t spi);
  */
 int qm_spi_dma_transfer_terminate(const qm_spi_t spi);
 
-#if HAS_QSPI
-/**
- * Configure a QSPI enabled controller for use in XIP mode.
- * Execute-In-Place (XIP) mode allows the processor to access
- * external flash memory, via QSPI interface, as if it were
- * memory-mapped.
- * While in XIP mode, standard SPI register interface will be disabled.
- * The user needs to call qm_spi_exit_xip_mode to resume normal SPI operation.
- *
- * @note 'inst_length' member of qm_spi_quad_config_t parameter is not
- *       needed for this function as XIP transfers do not require an
- *       instruction phase.
- *
- * @param[in] spi SPI controller identifier
- * @param[in] wait_cycles No of wait cycles for QSPI transfer
- * @param[in] addr_length Length of address for QSPI transfers
- * @param[in] trans_type QSPI transfer type
- *
- * @return Standard errno return type for QMSI.
- * @retval 0 on success.
- * @retval Negative @ref errno for possible error codes.
- */
-int qm_spi_enter_xip_mode(const qm_spi_t spi,
-			  const qm_spi_quad_config_t qspi_cfg);
-
-/**
- * Clear xip_mode flag and allow for normal operation
- * of the SPI controller.
- *
- * @param[in] spi SPI controller identifier
- *
- * @return Standard errno return type for QMSI.
- * @retval 0 on success.
- * @retval Negative @ref errno for possible error codes.
- */
-int qm_spi_exit_xip_mode(const qm_spi_t spi);
-#endif /* HAS_QSPI */
-
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save SPI context.
  *
@@ -557,7 +469,6 @@ int qm_spi_save_context(const qm_spi_t spi, qm_spi_context_t *const ctx);
  */
 int qm_spi_restore_context(const qm_spi_t spi,
 			   const qm_spi_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

@@ -750,4 +750,22 @@ int qm_ss_adc_restore_context(const qm_ss_adc_t adc,
 
 	return 0;
 }
+#else
+int qm_ss_adc_save_context(const qm_ss_adc_t adc,
+			   qm_ss_adc_context_t *const ctx)
+{
+	(void)adc;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_ss_adc_restore_context(const qm_ss_adc_t adc,
+			      const qm_ss_adc_context_t *const ctx)
+{
+	(void)adc;
+	(void)ctx;
+
+	return 0;
+}
 #endif /* ENABLE_RESTORE_CONTEXT */

@@ -178,7 +178,6 @@ int qm_ss_gpio_read_port(const qm_ss_gpio_t gpio, uint32_t *const port);
  */
 int qm_ss_gpio_write_port(const qm_ss_gpio_t gpio, const uint32_t val);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save SS GPIO context.
  *
@@ -210,7 +209,6 @@ int qm_ss_gpio_save_context(const qm_ss_gpio_t gpio,
  */
 int qm_ss_gpio_restore_context(const qm_ss_gpio_t gpio,
 			       const qm_ss_gpio_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

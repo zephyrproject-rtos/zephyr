@@ -139,13 +139,10 @@ typedef struct {
 
 static usb_priv_t usb_ctrl[QM_USB_NUM];
 
-/* This helper is only used by QM_CHECKs, thus on Debug mode. */
-#if DEBUG || UNIT_TEST
 static bool usb_dc_ep_is_valid(const qm_usb_ep_idx_t ep)
 {
 	return (ep < QM_USB_IN_EP_NUM + QM_USB_OUT_EP_NUM);
 }
-#endif
 
 static int usb_dc_reset(const qm_usb_t usb)
 {
@@ -526,7 +523,9 @@ int qm_usb_ep_set_config(const qm_usb_t usb,
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
 	QM_CHECK(ep_cfg, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep_cfg->ep), -EINVAL);
+	if (!usb_dc_ep_is_valid(ep_cfg->ep)) {
+		return -EINVAL;
+	}
 
 	volatile uint32_t *p_depctl;
 	const uint8_t ep_idx = ep_cfg->ep < QM_USB_IN_EP_NUM
@@ -606,7 +605,9 @@ int qm_usb_ep_set_stall_state(const qm_usb_t usb, const qm_usb_ep_idx_t ep,
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
 
 	const uint8_t ep_idx = IS_IN_EP(ep) ? ep : ep - QM_USB_IN_EP_NUM;
 
@@ -634,7 +635,9 @@ int qm_usb_ep_halt(const qm_usb_t usb, const qm_usb_ep_idx_t ep)
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
 
 	const uint8_t ep_idx = IS_IN_EP(ep) ? ep : ep - QM_USB_IN_EP_NUM;
 	volatile uint32_t *p_depctl;
@@ -664,8 +667,10 @@ int qm_usb_ep_is_stalled(const qm_usb_t usb, const qm_usb_ep_idx_t ep,
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
 	QM_CHECK(stalled, -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
 
 	volatile uint32_t *p_depctl;
 
@@ -685,7 +690,9 @@ int qm_usb_ep_enable(const qm_usb_t usb, const qm_usb_ep_idx_t ep)
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
 
 	usb_ctrl[usb].ep_ctrl[ep].enabled = true;
 
@@ -715,7 +722,9 @@ int qm_usb_ep_enable(const qm_usb_t usb, const qm_usb_ep_idx_t ep)
 int qm_usb_ep_disable(const qm_usb_t usb, const qm_usb_ep_idx_t ep)
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
 
 	/* Disable EP intr then de-activate, disable and set NAK. */
 	if (!IS_IN_EP(ep)) {
@@ -744,15 +753,20 @@ int qm_usb_ep_flush(const qm_usb_t usb, const qm_usb_ep_idx_t ep)
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
 	/*
+	 *
 	 * RX FIFO is global and cannot be flushed per EP, but it can
 	 * be through bit 4 from GRSTCTL. For now we don't flush it
 	 * here since both FIFOs are always flushed during the Core
 	 * Soft Reset done at usb_dc_reset(), which is called on both
 	 * qm_usb_attach() and qm_usb_reset().
 	 */
-	QM_CHECK(IS_IN_EP(ep), -EINVAL);
+	if (!IS_IN_EP(ep)) {
+		return -EINVAL;
+	}
 
 	/* Each IN endpoint has dedicated Tx FIFO. */
 	QM_USB[usb].grstctl |= ep << QM_USB_GRSTCTL_TX_FNUM_OFFSET;
@@ -775,8 +789,12 @@ int qm_usb_ep_write(const qm_usb_t usb, const qm_usb_ep_idx_t ep,
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
-	QM_CHECK(IS_IN_EP(ep), -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
+	if (!IS_IN_EP(ep)) {
+		return -EINVAL;
+	}
 
 	/* Check if IN EP is enabled */
 	if (!usb_ctrl[usb].ep_ctrl[ep].enabled) {
@@ -801,9 +819,13 @@ int qm_usb_ep_read(const qm_usb_t usb, const qm_usb_ep_idx_t ep,
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
-	QM_CHECK(!IS_IN_EP(ep), -EINVAL);
 	QM_CHECK(data, -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
+	if (IS_IN_EP(ep)) {
+		return -EINVAL;
+	}
 
 	uint32_t i, j, data_len, bytes_to_copy;
 
@@ -862,9 +884,13 @@ int qm_usb_ep_get_bytes_read(const qm_usb_t usb, const qm_usb_ep_idx_t ep,
 {
 	QM_CHECK(usb < QM_USB_NUM, -EINVAL);
 	QM_CHECK(usb_ctrl[usb].attached, -EINVAL);
-	QM_CHECK(usb_dc_ep_is_valid(ep), -EINVAL);
-	QM_CHECK(!IS_IN_EP(ep), -EINVAL);
 	QM_CHECK(read_bytes, -EINVAL);
+	if (!usb_dc_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
+	if (IS_IN_EP(ep)) {
+		return -EINVAL;
+	}
 
 	/* Check if OUT EP enabled. */
 	if (!usb_ctrl[usb].ep_ctrl[ep].enabled) {

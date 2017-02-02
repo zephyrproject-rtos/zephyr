@@ -90,7 +90,6 @@ int qm_mpr_set_config(const qm_mpr_id_t id, const qm_mpr_config_t *const cfg);
 int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 				qm_mpr_callback_t callback_fn, void *data);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save MPR context.
  *
@@ -128,7 +127,6 @@ int qm_mpr_save_context(qm_mpr_context_t *const ctx);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_mpr_restore_context(const qm_mpr_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

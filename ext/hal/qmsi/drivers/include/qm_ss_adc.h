@@ -300,7 +300,6 @@ int qm_ss_adc_convert(const qm_ss_adc_t adc, qm_ss_adc_xfer_t *const xfer,
  */
 int qm_ss_adc_irq_convert(const qm_ss_adc_t adc, qm_ss_adc_xfer_t *const xfer);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save SS ADC context.
  *
@@ -338,7 +337,6 @@ int qm_ss_adc_save_context(const qm_ss_adc_t adc,
  */
 int qm_ss_adc_restore_context(const qm_ss_adc_t adc,
 			      const qm_ss_adc_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

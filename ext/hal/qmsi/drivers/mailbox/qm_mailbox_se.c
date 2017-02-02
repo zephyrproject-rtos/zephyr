@@ -30,6 +30,7 @@
 #include "qm_common.h"
 #include "qm_mailbox.h"
 #include "qm_interrupt.h"
+#include "qm_interrupt_router.h"
 
 /**
  * The Active core can be either Lakemont or the Sensor Sub-System.
@@ -39,27 +40,35 @@
  * Core specific mailbox #defines are grouped here to prevent
  * duplication below.
  */
-#if (HAS_MAILBOX_LAKEMONT_DEST)
-#ifdef QM_LAKEMONT
+
+#if HAS_MAILBOX_LAKEMONT_DEST
+#if QM_LAKEMONT
 #define ACTIVE_CORE_DEST QM_MBOX_TO_LMT
-#define MBOX_INT_MASK QM_MBOX_LMT_INT_MASK
-#define MBOX_INT_LOCK_MASK(N) QM_MBOX_LMT_INT_LOCK_MASK(N)
-#define MBOX_INT_LOCK_HALT_MASK(N) QM_MBOX_LMT_INT_LOCK_HALT_MASK(N)
-#define MBOX_ENABLE_INT_MASK(N) QM_MBOX_ENABLE_LMT_INT_MASK(N)
-#define MBOX_DISABLE_INT_MASK(N) QM_MBOX_DISABLE_LMT_INT_MASK(N)
+#define MBOX_ACTIVE_CORE_ALL_INT_MASK QM_IR_MBOX_LMT_ALL_INT_MASK
+#define MBOX_INT_LOCK_MASK(N) QM_IR_MBOX_LMT_INT_LOCK_MASK(N)
+#define MBOX_INT_LOCK_HALT_MASK(N) QM_IR_MBOX_LMT_INT_LOCK_HALT_MASK(N)
+#define MBOX_IS_INT_MASK_EN(N) QM_IR_MBOX_IS_LMT_INT_MASK_EN(N)
+#define MBOX_ENABLE_INT_MASK(N) QM_IR_MBOX_ENABLE_LMT_INT_MASK(N)
+#define MBOX_DISABLE_INT_MASK(N) QM_IR_MBOX_DISABLE_LMT_INT_MASK(N)
 #endif /* QM_LAKEMONT */
 #endif /* HAS_MAILBOX_LAKEMONT_DEST */
 
-#if (HAS_MAILBOX_SENSOR_SUB_SYSTEM_DEST)
-#ifdef QM_SENSOR
+#if HAS_MAILBOX_SENSOR_SUB_SYSTEM_DEST
+#if QM_SENSOR
 #define ACTIVE_CORE_DEST QM_MBOX_TO_SS
-#define MBOX_INT_MASK QM_MBOX_SS_INT_MASK
-#define MBOX_INT_LOCK_MASK(N) QM_MBOX_SS_INT_LOCK_HALT_MASK(N)
-#define MBOX_INT_LOCK_HALT_MASK(N) QM_MBOX_SS_INT_LOCK_MASK(N)
-#define MBOX_ENABLE_INT_MASK(N) QM_MBOX_ENABLE_SS_INT_MASK(N)
-#define MBOX_DISABLE_INT_MASK(N) QM_MBOX_DISABLE_SS_INT_MASK(N)
+#define MBOX_ACTIVE_CORE_ALL_INT_MASK QM_IR_MBOX_SS_ALL_INT_MASK
+#define MBOX_INT_LOCK_MASK(N) QM_IR_MBOX_SS_INT_LOCK_HALT_MASK(N)
+#define MBOX_INT_LOCK_HALT_MASK(N) QM_IR_MBOX_SS_INT_LOCK_MASK(N)
+#define MBOX_IS_INT_MASK_EN(N) QM_IR_MBOX_IS_SS_INT_MASK_EN(N)
+#define MBOX_ENABLE_INT_MASK(N) QM_IR_MBOX_ENABLE_SS_INT_MASK(N)
+#define MBOX_DISABLE_INT_MASK(N) QM_IR_MBOX_DISABLE_SS_INT_MASK(N)
 #endif /* QM_SENSOR */
 #endif /* HAS_MAILBOX_SENSOR_SUB_SYSTEM_DEST */
+
+#define MBOX_CHECK_DESTINATION(_dest) (ACTIVE_CORE_DEST == (_dest))
+#define MBOX_CHECK_POLLING_MODE(_mode) (QM_MBOX_POLLING_MODE == (_mode))
+
+static void mailbox_isr_handler(void);
 
 /**
  * Private data structure maintained by the driver
@@ -77,17 +86,22 @@ typedef struct {
 } qm_mailbox_info_t;
 
 /* Mailbox channels private data structures */
-static qm_mailbox_info_t mailbox_devs[QM_MBOX_CH_NUM];
+static qm_mailbox_info_t mailbox_devs[NUM_MAILBOXES];
 
 QM_ISR_DECLARE(qm_mailbox_0_isr)
+{
+	mailbox_isr_handler();
+	QM_ISR_EOI(QM_IRQ_MAILBOX_0_INT_VECTOR);
+}
+
+static void mailbox_isr_handler(void)
 {
 	qm_mailbox_t *const mbox_reg = (qm_mailbox_t *)QM_MAILBOX;
 	uint8_t i = 0;
 	uint8_t mask;
 	uint16_t chall_sts = QM_MAILBOX->mbox_chall_sts;
 
-	mask = MBOX_INT_MASK;
-
+	mask = MBOX_ACTIVE_CORE_ALL_INT_MASK;
 	for (i = 0; chall_sts; i++, chall_sts >>= 2) {
 		if ((chall_sts & QM_MBOX_CH_STS_CTRL_INT) == 0) {
 			continue;
@@ -105,20 +119,18 @@ QM_ISR_DECLARE(qm_mailbox_0_isr)
 			mbox_reg[i].ch_sts = QM_MBOX_CH_STS_CTRL_INT;
 		}
 	}
-
-	QM_ISR_EOI(QM_IRQ_MAILBOX_0_INT_VECTOR);
 }
 
 int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch,
 			  const qm_mbox_config_t *const config)
 {
 
-	QM_CHECK((QM_MBOX_CH_0 <= mbox_ch) && (mbox_ch < QM_MBOX_CH_NUM),
+	QM_CHECK((QM_MBOX_CH_0 <= mbox_ch) && (mbox_ch < NUM_MAILBOXES),
 		 -EINVAL);
 	qm_mailbox_info_t *device = &mailbox_devs[mbox_ch];
 
 	/* Block interrupts while configuring MBOX */
-	qm_irq_mask(QM_IRQ_MAILBOX_0_INT);
+	QM_IR_MASK_INT(QM_IRQ_MAILBOX_0_INT);
 
 	/* Store the device destination */
 	device->dest = config->dest;
@@ -143,6 +155,10 @@ int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch,
 				/* Note: Routing is done now, cannot be done in
 				 * irq_request! */
 				MBOX_ENABLE_INT_MASK(mbox_ch);
+			} else {
+				/* The lock is set, but we need to check if the
+				 * interrupt is routed */
+				QM_CHECK(MBOX_IS_INT_MASK_EN(mbox_ch), -EIO);
 			}
 		} else {
 			device->mode = QM_MBOX_POLLING_MODE;
@@ -153,6 +169,7 @@ int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch,
 				 * irq_request! */
 				MBOX_DISABLE_INT_MASK(mbox_ch);
 			}
+
 			device->callback = NULL;
 			device->callback_data = 0;
 		}
@@ -165,19 +182,20 @@ int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch,
 		}
 
 		/* Set the mailbox channel to its default configuration. */
+		device->dest = QM_MBOX_UNUSED;
 		device->mode = QM_MBOX_INTERRUPT_MODE;
 		device->callback = NULL;
 		device->callback_data = 0;
 	}
 
 	/* UnBlock MBOX interrupts. */
-	qm_irq_unmask(QM_IRQ_MAILBOX_0_INT);
+	QM_IR_UNMASK_INT(QM_IRQ_MAILBOX_0_INT);
 	return 0;
 }
 
 int qm_mbox_ch_write(const qm_mbox_ch_t mbox_ch, const qm_mbox_msg_t *const msg)
 {
-	QM_CHECK((QM_MBOX_CH_0 <= mbox_ch) && (mbox_ch < QM_MBOX_CH_NUM),
+	QM_CHECK((QM_MBOX_CH_0 <= mbox_ch) && (mbox_ch < NUM_MAILBOXES),
 		 -EINVAL);
 	QM_CHECK(NULL != msg, -EINVAL);
 	qm_mailbox_t *const mbox_reg = (qm_mailbox_t *)QM_MAILBOX + mbox_ch;
@@ -204,7 +222,7 @@ int qm_mbox_ch_write(const qm_mbox_ch_t mbox_ch, const qm_mbox_msg_t *const msg)
 
 int qm_mbox_ch_read(const qm_mbox_ch_t mbox_ch, qm_mbox_msg_t *const msg)
 {
-	QM_CHECK((QM_MBOX_CH_0 <= mbox_ch) && (mbox_ch < QM_MBOX_CH_NUM),
+	QM_CHECK((QM_MBOX_CH_0 <= mbox_ch) && (mbox_ch < NUM_MAILBOXES),
 		 -EINVAL);
 	QM_CHECK(NULL != msg, -EINVAL);
 
@@ -212,9 +230,8 @@ int qm_mbox_ch_read(const qm_mbox_ch_t mbox_ch, qm_mbox_msg_t *const msg)
 	uint32_t status = 0;
 
 	qm_mailbox_t *mbox_reg = &QM_MAILBOX->mbox[mbox_ch];
-	qm_mailbox_info_t *device = &mailbox_devs[mbox_ch];
 
-	if (ACTIVE_CORE_DEST == device->dest) {
+	if (MBOX_CHECK_DESTINATION(mailbox_devs[mbox_ch].dest)) {
 		status = mbox_reg->ch_sts;
 
 		/* If there is data pending consume it */
@@ -227,7 +244,8 @@ int qm_mbox_ch_read(const qm_mbox_ch_t mbox_ch, qm_mbox_msg_t *const msg)
 			msg->data[2] = mbox_reg->ch_data[2];
 			msg->data[3] = mbox_reg->ch_data[3];
 
-			if (QM_MBOX_POLLING_MODE == device->mode) {
+			if (MBOX_CHECK_POLLING_MODE(
+				mailbox_devs[mbox_ch].mode)) {
 				/* In polling mode the interrupt status still
 				 * needs to be cleared since we are not using
 				 * the ISR. Note we write 1 to clear the bit.
@@ -255,33 +273,11 @@ int qm_mbox_ch_read(const qm_mbox_ch_t mbox_ch, qm_mbox_msg_t *const msg)
 int qm_mbox_ch_get_status(const qm_mbox_ch_t mbox_ch,
 			  qm_mbox_ch_status_t *const status)
 {
-	QM_CHECK((QM_MBOX_CH_0 <= mbox_ch) && (mbox_ch < QM_MBOX_CH_NUM),
+	QM_CHECK((QM_MBOX_CH_0 <= mbox_ch) && (mbox_ch < NUM_MAILBOXES),
 		 -EINVAL);
 	QM_CHECK(NULL != status, -EINVAL);
 
-	uint32_t mbox_status = QM_MAILBOX->mbox[mbox_ch].ch_sts;
-	qm_mbox_ch_status_t rc = QM_MBOX_CH_IDLE;
+	*status = QM_MAILBOX->mbox[mbox_ch].ch_sts;
 
-	/* Check if the mailbox is in polling mode or not */
-	if (QM_MBOX_POLLING_MODE == mailbox_devs[mbox_ch].mode) {
-		/* Polling Mode
-		 * Check if there is pending data to be consumed
-		 */
-		if (QM_MBOX_CH_STS & mbox_status) {
-			rc = QM_MBOX_CH_POLLING_DATA_PEND;
-		}
-	} else {
-		/* Interrupt Mode
-		 * Check if there is a pending interrupt & data,
-		 * otherwise check if there is pending data to be consumed
-		 */
-		if (QM_MBOX_STATUS_MASK == mbox_status) {
-			rc = QM_MBOX_CH_INT_NACK_DATA_PEND;
-		} else if (QM_MBOX_CH_STS == mbox_status) {
-			rc = QM_MBOX_CH_INT_ACK_DATA_PEND;
-		}
-	}
-
-	*status = rc;
 	return 0;
 }

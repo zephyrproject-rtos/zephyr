@@ -151,7 +151,6 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 				const qm_flash_t flash,
 				qm_fpr_callback_t fpr_cb, void *data);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save FPR context.
  *
@@ -196,7 +195,6 @@ int qm_fpr_save_context(const qm_flash_t flash, qm_fpr_context_t *const ctx);
  */
 int qm_fpr_restore_context(const qm_flash_t flash,
 			   const qm_fpr_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

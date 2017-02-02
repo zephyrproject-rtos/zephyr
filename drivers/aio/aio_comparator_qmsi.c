@@ -50,7 +50,7 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 	CMP_INTR_ROUTER |= (1 << index);
 
 	/* Disable comparator according to index */
-	config.int_en &= ~(1 << index);
+	config.cmp_en &= ~(1 << index);
 	config.power &= ~(1 << index);
 	config.reference &= ~(1 << index);
 	config.polarity &= ~(1 << index);
@@ -93,7 +93,7 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 	/* The driver will not use QMSI callback mechanism */
 	config.callback = NULL;
 	/* Enable comparator */
-	config.int_en |= (1 << index);
+	config.cmp_en |= (1 << index);
 	config.power |= (1 << index);
 
 	if (qm_ac_set_config(&config) != 0) {
@@ -139,7 +139,7 @@ static int aio_qmsi_cmp_init(struct device *dev)
 	config.reference = QM_SCSS_CMP->cmp_ref_sel;
 	config.polarity = QM_SCSS_CMP->cmp_ref_pol;
 	config.power = QM_SCSS_CMP->cmp_pwr;
-	config.int_en = QM_SCSS_CMP->cmp_en;
+	config.cmp_en = QM_SCSS_CMP->cmp_en;
 
 	/* Clear callback pointers */
 	for (i = 0; i < dev_data->num_cmp; i++) {

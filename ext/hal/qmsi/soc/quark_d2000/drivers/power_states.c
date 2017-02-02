@@ -51,7 +51,7 @@ typedef struct {
 
 static power_context_t power_context;
 
-void power_cpu_halt(void)
+void qm_power_cpu_halt(void)
 {
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_HALT, 0);
 	/*
@@ -72,16 +72,16 @@ static void clear_all_pending_interrupts(void)
 	QM_SCSS_CMP->cmp_stat_clr = -1;
 
 	/* Clear RTC interrupts. */
-	QM_RTC->rtc_eoi;
+	QM_RTC[QM_RTC_0]->rtc_eoi;
 
 	/* Clear timers interrupt flag. */
-	QM_PWM->timerseoi;
+	QM_PWM[QM_PWM_0]->timerseoi;
 
 	/* Clear GPIO interrupts. */
 	QM_GPIO[QM_GPIO_0]->gpio_porta_eoi = -1;
 }
 
-void power_soc_sleep(void)
+void qm_power_soc_sleep(void)
 {
 	/* Save register values. */
 	power_context.ac_power_save = QM_SCSS_CMP->cmp_pwr;
@@ -147,21 +147,21 @@ void power_soc_sleep(void)
 	clk_sys_set_mode(CLK_SYS_HYB_OSC_4MHZ, CLK_SYS_DIV_8);
 
 	/* Set the RAR to retention mode. */
-	rar_set_mode(RAR_RETENTION);
+	qm_rar_set_mode(QM_RAR_RETENTION);
 
 	/*
 	 * If wake source is any of AON Timer, RTC, GPIO interrupt, program
 	 * CCU_SYS_CLK_CTL.CCU_SYS_CLK_SEL to RTC Oscillator.
 	 */
 	/* Enter SoC sleep mode. */
-	power_cpu_halt();
+	qm_power_cpu_halt();
 }
 
-void power_soc_sleep_restore(void)
+void qm_power_soc_sleep_restore(void)
 {
 	/* From here on, restore the SoC to an active state. */
 	/* Set the RAR to normal mode. */
-	rar_set_mode(RAR_NORMAL);
+	qm_rar_set_mode(QM_RAR_NORMAL);
 
 	/*
 	 * Since we are running below 4MHz, 0 wait states are configured.
@@ -202,7 +202,7 @@ void power_soc_sleep_restore(void)
 	QM_SCSS_GP->gps0 &= ~QM_GPS0_POWER_STATE_SLEEP;
 }
 
-void power_soc_deep_sleep(const power_wake_event_t wake_event)
+void qm_power_soc_deep_sleep(const qm_power_wake_event_t wake_event)
 {
 	/* Save register values. */
 	power_context.ac_power_save = QM_SCSS_CMP->cmp_pwr;
@@ -227,11 +227,11 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	 * comparator.
 	 */
 	switch (wake_event) {
-	case POWER_WAKE_FROM_RTC:
+	case QM_POWER_WAKE_FROM_RTC:
 		QM_SCSS_CCU->wake_mask =
 		    SET_ALL_BITS & ~QM_CCU_WAKE_MASK_RTC_BIT;
 		break;
-	case POWER_WAKE_FROM_GPIO_COMP:
+	case QM_POWER_WAKE_FROM_GPIO_COMP:
 	default:
 		QM_SCSS_CCU->wake_mask = SET_ALL_BITS &
 					 ~(QM_CCU_WAKE_MASK_COMPARATOR_BIT |
@@ -255,7 +255,7 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	QM_SCSS_PMUX->pmux_slew[0] = 0;
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_PMUX_SLEW);
 
-	if (wake_event != POWER_WAKE_FROM_RTC) {
+	if (wake_event != QM_POWER_WAKE_FROM_RTC) {
 		/* Disable RTC. */
 		QM_SCSS_CCU->osc1_cfg0 &= ~QM_OSC1_PD;
 
@@ -312,9 +312,9 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	__asm__ __volatile__("nop");
 
 	/* Set the RAR to retention mode. */
-	rar_set_mode(RAR_RETENTION);
+	qm_rar_set_mode(QM_RAR_RETENTION);
 
-	if (wake_event == POWER_WAKE_FROM_RTC) {
+	if (wake_event == QM_POWER_WAKE_FROM_RTC) {
 		/* Start running on the rtc clock */
 		clk_sys_set_mode(CLK_SYS_RTC_OSC, CLK_SYS_DIV_1);
 	}
@@ -323,14 +323,14 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	clk_periph_disable(CLK_PERIPH_REGISTER | CLK_PERIPH_CLK);
 
 	/* Enter SoC deep sleep mode. */
-	power_cpu_halt();
+	qm_power_cpu_halt();
 }
 
-void power_soc_deep_sleep_restore(void)
+void qm_power_soc_deep_sleep_restore(void)
 {
 	/* We are now exiting from deep sleep mode. */
 	/* Set the RAR to normal mode. */
-	rar_set_mode(RAR_NORMAL);
+	qm_rar_set_mode(QM_RAR_NORMAL);
 
 	/*
 	 * Since we are running below 4MHz, 0 wait states are configured.
@@ -424,34 +424,34 @@ void power_soc_deep_sleep_restore(void)
 	QM_SCSS_GP->gps0 &= ~QM_GPS0_POWER_STATE_DEEP_SLEEP;
 }
 
-void power_soc_restore(void)
+void qm_power_soc_restore(void)
 {
 	/*
 	 * If the SoC is waking from sleep or deep sleep mode then the full
 	 * system state must be restored.
 	 */
 	if (QM_SCSS_GP->gps0 & QM_GPS0_POWER_STATE_SLEEP) {
-		power_soc_sleep_restore();
+		qm_power_soc_sleep_restore();
 	} else if (QM_SCSS_GP->gps0 & QM_GPS0_POWER_STATE_DEEP_SLEEP) {
-		power_soc_deep_sleep_restore();
+		qm_power_soc_deep_sleep_restore();
 	}
 }
 
-int rar_set_mode(const rar_state_t mode)
+int qm_rar_set_mode(const qm_rar_state_t mode)
 {
-	QM_CHECK(mode <= RAR_RETENTION, -EINVAL);
+	QM_CHECK(mode <= QM_RAR_RETENTION, -EINVAL);
 	volatile uint32_t i = 32;
 	volatile uint32_t reg;
 
 	switch (mode) {
-	case RAR_RETENTION:
+	case QM_RAR_RETENTION:
 		QM_SCSS_PMU->aon_vr |=
 		    (QM_AON_VR_PASS_CODE | QM_AON_VR_ROK_BUF_VREG_MASK);
 		QM_SCSS_PMU->aon_vr |=
 		    (QM_AON_VR_PASS_CODE | QM_AON_VR_VREG_SEL);
 		break;
 
-	case RAR_NORMAL:
+	case QM_RAR_NORMAL:
 		reg = QM_SCSS_PMU->aon_vr & ~QM_AON_VR_VREG_SEL;
 		QM_SCSS_PMU->aon_vr = QM_AON_VR_PASS_CODE | reg;
 		/* Wait for >= 2usec, at most 64 clock cycles. */

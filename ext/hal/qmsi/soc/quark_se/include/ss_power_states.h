@@ -44,9 +44,9 @@
  * Sensor Subsystem SS1 Timers mode type.
  */
 typedef enum {
-	SS_POWER_CPU_SS1_TIMER_OFF = 0, /**< Disable SS Timers in SS1. */
-	SS_POWER_CPU_SS1_TIMER_ON       /**< Keep SS Timers enabled in SS1. */
-} ss_power_cpu_ss1_mode_t;
+	QM_SS_POWER_CPU_SS1_TIMER_OFF = 0, /**< Disable SS Timers in SS1. */
+	QM_SS_POWER_CPU_SS1_TIMER_ON /**< Keep SS Timers enabled in SS1. */
+} qm_ss_power_cpu_ss1_mode_t;
 
 /**
  * Enable LPSS state entry.
@@ -55,7 +55,7 @@ typedef enum {
  * This function needs to be called on the Sensor Core to
  * Clock Gate ADC, I2C0, I2C1, SPI0 and SPI1 sensor peripherals.<BR>
  * Clock Gating sensor peripherals is a requirement to enter LPSS state.<BR>
- * After LPSS, ss_power_soc_lpss_disable needs to be called to
+ * After LPSS, qm_ss_power_soc_lpss_disable needs to be called to
  * restore clock gating.<BR>
  *
  * This needs to be called before any transition to C2/C2LP and SS2
@@ -70,7 +70,7 @@ typedef enum {
  * 	- AON Timer Interrupt
  * 	- RTC Interrupt
  */
-void ss_power_soc_lpss_enable(void);
+void qm_ss_power_soc_lpss_enable(void);
 
 #if (ENABLE_RESTORE_CONTEXT)
 /**
@@ -86,9 +86,9 @@ void ss_power_soc_lpss_enable(void);
  *
  * This function calls qm_ss_save_context and qm_ss_restore_context
  * in order to restore execution where it stopped.
- * All power management transitions are done by power_soc_sleep().
+ * All power management transitions are done by qm_power_soc_sleep().
  */
-void ss_power_soc_sleep_restore(void);
+void qm_ss_power_soc_sleep_restore(void);
 /**
  * Enter SoC sleep state and restore after wake up.
  *
@@ -102,25 +102,25 @@ void ss_power_soc_sleep_restore(void);
  *
  * This function calls qm_ss_save_context and qm_ss_restore_context
  * in order to restore execution where it stopped.
- * All power management transitions are done by power_soc_deep_sleep().
+ * All power management transitions are done by power_qm_soc_deep_sleep().
  */
-void ss_power_soc_deep_sleep_restore(void);
+void qm_ss_power_soc_deep_sleep_restore(void);
 
 /**
  * Save context, enter ARC SS1 power save state and restore after wake up.
  *
- * This routine is same as ss_power_soc_sleep_restore(), just instead of
+ * This routine is same as qm_ss_power_soc_sleep_restore(), just instead of
  * going to sleep it will go to SS1 power save state.
  * Note: this function has a while(1) which will spin until we enter
  * (and exit) sleep and the power state change will be managed by the other
  * core.
  */
-void ss_power_sleep_wait(void);
+void qm_ss_power_sleep_wait(void);
 
 /**
  * Enable the SENSOR startup restore flag.
  */
-void power_soc_set_ss_restore_flag(void);
+void qm_power_soc_set_ss_restore_flag(void);
 
 #endif /* ENABLE_RESTORE_CONTEXT */
 
@@ -132,7 +132,7 @@ void power_soc_set_ss_restore_flag(void);
  * peripherals.<BR>
  * This will prevent entry in LPSS when cores are in C2/C2LP and SS2 states.
  */
-void ss_power_soc_lpss_disable(void);
+void qm_ss_power_soc_lpss_disable(void);
 
 /**
  * Enter Sensor SS1 state.
@@ -147,7 +147,7 @@ void ss_power_soc_lpss_disable(void);
  *
  * @param[in] mode Mode selection for SS1 state.
  */
-void ss_power_cpu_ss1(const ss_power_cpu_ss1_mode_t mode);
+void qm_ss_power_cpu_ss1(const qm_ss_power_cpu_ss1_mode_t mode);
 
 /**
  * Enter Sensor SS2 state or SoC LPSS state.
@@ -171,7 +171,7 @@ void ss_power_cpu_ss1(const ss_power_cpu_ss1_mode_t mode);
  * If Host wakes the SoC from LPSS,
  * Sensor also transitions back to SS0.
  */
-void ss_power_cpu_ss2(void);
+void qm_ss_power_cpu_ss2(void);
 
 #if (ENABLE_RESTORE_CONTEXT) && (!UNIT_TEST)
 /**

@@ -136,7 +136,6 @@ int qm_wdt_set_config(const qm_wdt_t wdt, const qm_wdt_config_t *const cfg);
  */
 int qm_wdt_reload(const qm_wdt_t wdt);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save watchdog context.
  *
@@ -165,7 +164,6 @@ int qm_wdt_save_context(const qm_wdt_t wdt, qm_wdt_context_t *const ctx);
  */
 int qm_wdt_restore_context(const qm_wdt_t wdt,
 			   const qm_wdt_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

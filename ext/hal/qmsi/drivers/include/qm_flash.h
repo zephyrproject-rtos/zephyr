@@ -71,7 +71,13 @@ typedef struct {
 	 * operations.
 	 */
 	uint8_t us_count;
-	qm_flash_disable_t write_disable; /**< Write disable. */
+
+	/**
+	 * Write Disable.
+	 *
+	 * When this is set, only a reset will enable writes to Flash again.
+	 */
+	qm_flash_disable_t write_disable;
 } qm_flash_config_t;
 
 /**
@@ -196,7 +202,6 @@ int qm_flash_page_erase(const qm_flash_t flash, const qm_flash_region_t region,
  */
 int qm_flash_mass_erase(const qm_flash_t flash, const uint8_t include_rom);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save flash context.
  *
@@ -229,7 +234,6 @@ int qm_flash_save_context(const qm_flash_t flash,
  */
 int qm_flash_restore_context(const qm_flash_t flash,
 			     const qm_flash_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

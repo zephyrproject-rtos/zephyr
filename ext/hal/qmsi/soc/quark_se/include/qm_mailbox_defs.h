@@ -27,58 +27,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __QM_COMPARATOR_H__
-#define __QM_COMPARATOR_H__
-
-#include "qm_common.h"
-#include "qm_soc_regs.h"
+#ifndef __QM_MAILBOX_DEFS_H__
+#define __QM_MAILBOX_DEFS_H__
 
 /**
- * Analog Comparator.
+ * Mailbox definitions.
  *
- * @defgroup groupAC Analog Comparator
+ * @defgroup groupMBOX_DEFS Mailbox Definitions
  * @{
  */
 
 /**
- * Analog Comparator configuration type.
- *
- * Each bit in the registers controls a single Analog Comparator pin.
- *
- * @note There is no way to control comparator interrupts using this
- * configuration struct: when a comparator is enabled and powered-up, it starts
- * generating interrupts when proper input conditions are met; however,
- * comparator interrupts can be masked at interrupt routing level.
+ * Mailbox channel identifiers
  */
-typedef struct {
-	uint32_t cmp_en;    /**< Comparator enable. */
-	uint32_t reference; /**< Reference voltage, 1b: VREF; 0b: AR_PIN. */
-	uint32_t polarity;  /**< 0b: input>ref; 1b: input<ref */
-	uint32_t power;     /**< 1b: Normal mode; 0b:Power-down/Shutdown mode */
-
-	/**
-	 * Transfer callback.
-	 *
-	 * @param[in] data Callback user data.
-	 * @param[in] status Comparator interrupt status.
-	 */
-	void (*callback)(void *data, uint32_t int_status);
-	void *callback_data; /**< Callback user data. */
-} qm_ac_config_t;
+typedef enum {
+	QM_MBOX_CH_0 = 0, /**< Channel 0. */
+	QM_MBOX_CH_1,     /**< Channel 1. */
+	QM_MBOX_CH_2,     /**< Channel 2. */
+	QM_MBOX_CH_3,     /**< Channel 3. */
+	QM_MBOX_CH_4,     /**< Channel 4. */
+	QM_MBOX_CH_5,     /**< Channel 5. */
+	QM_MBOX_CH_6,     /**< Channel 6. */
+	QM_MBOX_CH_7,     /**< Channel 7. */
+} qm_mbox_ch_t;
 
 /**
- * Set Analog Comparator configuration.
- *
- * @param[in] config Analog Comparator configuration. This must not be NULL.
- *
- * @return Standard errno return type for QMSI.
- * @retval 0 on success.
- * @retval Negative @ref errno for possible error codes.
+ * Definition of the mailbox direction of operation
+ * The direction of communication for each channel is configurable by the user.
+ * The list below describes the possible communication directions for each
+ * channel.
  */
-int qm_ac_set_config(const qm_ac_config_t *const config);
+typedef enum {
+	QM_MBOX_UNUSED = 0,
+	QM_MBOX_TO_LMT, /**< Lakemont core as destination */
+	QM_MBOX_TO_SS,  /**< Sensor Sub-System core as destination */
+} qm_mbox_destination_t;
 
 /**
  * @}
  */
 
-#endif /* __QM_COMPARATOR_H__ */
+#endif /* __QM_MAILBOX_DEFS_H__ */

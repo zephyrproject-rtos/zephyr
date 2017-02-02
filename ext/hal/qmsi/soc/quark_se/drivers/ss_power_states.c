@@ -31,6 +31,8 @@
 #include "ss_power_states.h"
 #include "qm_isr.h"
 #include "qm_sensor_regs.h"
+#include "soc_watch.h"
+#include "qm_common.h"
 
 /* Sensor Subsystem sleep operand definition.
  * Only a subset applies as internal sensor RTC
@@ -51,11 +53,17 @@
  *  - [4]   : Interrupt enable
  *  - [3:0] : Interrupt threshold value
  */
-#define QM_SS_SLEEP_MODE_CORE_OFF (0x0)
-#define QM_SS_SLEEP_MODE_CORE_OFF_TIMER_OFF (0x20)
-#define QM_SS_SLEEP_MODE_CORE_TIMERS_RTC_OFF (0x60)
 
-void ss_power_soc_lpss_enable()
+#define SLEEP_INT_EN BIT(4)
+#define SLEEP_TIMER_ON (0x0)
+#define SLEEP_TIMER_OFF (0x20)
+#define SLEEP_TIMER_RTC_OFF (0x60)
+
+#define SS_STATE_1_TIMER_ON (SLEEP_TIMER_ON | SLEEP_INT_EN)
+#define SS_STATE_1_TIMER_OFF (SLEEP_TIMER_OFF | SLEEP_INT_EN)
+#define SS_STATE_2 (SLEEP_TIMER_RTC_OFF | SLEEP_INT_EN)
+
+void qm_ss_power_soc_lpss_enable()
 {
 	uint32_t creg_mst0_ctrl = 0;
 
@@ -78,7 +86,7 @@ void ss_power_soc_lpss_enable()
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_CCU_LP_CLK_CTL);
 }
 
-void ss_power_soc_lpss_disable()
+void qm_ss_power_soc_lpss_disable()
 {
 	uint32_t creg_mst0_ctrl = 0;
 
@@ -105,77 +113,57 @@ void ss_power_soc_lpss_disable()
  * SLEEP + sleep operand
  * __builtin_arc_sleep is not used here as it does not propagate sleep operand.
  */
-void ss_power_cpu_ss1(const ss_power_cpu_ss1_mode_t mode)
+void qm_ss_power_cpu_ss1(const qm_ss_power_cpu_ss1_mode_t mode)
 {
-	/* The sensor cannot be woken up with an edge triggered
-	 * interrupt from the RTC and the AON Counter.
-	 * Switch to Level triggered interrupts and restore
-	 * the setting when waking up.
-	 */
-	__builtin_arc_sr(QM_IRQ_RTC_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
+	uint32_t priority;
 
-	__builtin_arc_sr(QM_IRQ_AONPT_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
+	priority =
+	    (__builtin_arc_lr(QM_SS_AUX_STATUS32) & QM_SS_STATUS32_E_MASK) >> 1;
+
+	SOC_WATCH_LOG_EVENT(SOCW_ARC_EVENT_SS1, 0);
 
 	/* Enter SS1 */
 	switch (mode) {
-	case SS_POWER_CPU_SS1_TIMER_OFF:
-		__asm__ __volatile__(
-		    "sleep %0"
-		    :
-		    : "i"(QM_SS_SLEEP_MODE_CORE_OFF_TIMER_OFF));
+	case QM_SS_POWER_CPU_SS1_TIMER_OFF:
+		__asm__ __volatile__("sleep %0"
+				     :
+				     : "r"(SS_STATE_1_TIMER_OFF | priority)
+				     : "memory", "cc");
 		break;
-	case SS_POWER_CPU_SS1_TIMER_ON:
+	case QM_SS_POWER_CPU_SS1_TIMER_ON:
 	default:
 		__asm__ __volatile__("sleep %0"
 				     :
-				     : "i"(QM_SS_SLEEP_MODE_CORE_OFF));
+				     : "r"(SS_STATE_1_TIMER_ON | priority)
+				     : "memory", "cc");
 		break;
 	}
-
-	/* Restore the RTC and AONC to edge interrupt after when waking up. */
-	__builtin_arc_sr(QM_IRQ_RTC_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
-
-	__builtin_arc_sr(QM_IRQ_AONPT_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 }
 
 /* Enter SS2 :
  * SLEEP + sleep operand
  * __builtin_arc_sleep is not used here as it does not propagate sleep operand.
  */
-void ss_power_cpu_ss2(void)
+void qm_ss_power_cpu_ss2(void)
 {
-	/* The sensor cannot be woken up with an edge triggered
-	 * interrupt from the RTC and the AON Counter.
-	 * Switch to Level triggered interrupts and restore
-	 * the setting when waking up.
-	 */
-	__builtin_arc_sr(QM_IRQ_RTC_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
+	uint32_t priority;
 
-	__builtin_arc_sr(QM_IRQ_AONPT_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
+	priority =
+	    (__builtin_arc_lr(QM_SS_AUX_STATUS32) & QM_SS_STATUS32_E_MASK) >> 1;
+
+	SOC_WATCH_LOG_EVENT(SOCW_ARC_EVENT_SS2, 0);
 
 	/* Enter SS2 */
 	__asm__ __volatile__("sleep %0"
 			     :
-			     : "i"(QM_SS_SLEEP_MODE_CORE_TIMERS_RTC_OFF));
-
-	/* Restore the RTC and AONC to edge interrupt after when waking up. */
-	__builtin_arc_sr(QM_IRQ_RTC_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
-
-	__builtin_arc_sr(QM_IRQ_AONPT_0_INT_VECTOR, QM_SS_AUX_IRQ_SELECT);
-	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
+			     : "r"(SS_STATE_2 | priority)
+			     : "memory", "cc");
 }
 
 #if (ENABLE_RESTORE_CONTEXT)
 extern uint32_t arc_restore_addr;
 uint32_t cpu_context[33];
-void ss_power_soc_sleep_restore(void)
+void qm_ss_power_soc_sleep_restore(void)
 {
 	/*
 	 * Save sensor restore trap address.
@@ -189,10 +177,10 @@ void ss_power_soc_sleep_restore(void)
 	qm_ss_save_context(cpu_context);
 
 	/* Set restore flags. */
-	power_soc_set_ss_restore_flag();
+	qm_power_soc_set_ss_restore_flag();
 
 	/* Enter sleep. */
-	power_soc_sleep();
+	qm_power_soc_sleep();
 
 	/*
 	 * Restore sensor execution context.
@@ -202,7 +190,7 @@ void ss_power_soc_sleep_restore(void)
 	 */
 	qm_ss_restore_context(sleep_restore_trap, cpu_context);
 }
-void ss_power_soc_deep_sleep_restore(void)
+void qm_ss_power_soc_deep_sleep_restore(void)
 {
 	/*
 	 * Save sensor restore trap address.
@@ -216,10 +204,10 @@ void ss_power_soc_deep_sleep_restore(void)
 	qm_ss_save_context(cpu_context);
 
 	/* Set restore flags. */
-	power_soc_set_ss_restore_flag();
+	qm_power_soc_set_ss_restore_flag();
 
 	/* Enter sleep. */
-	power_soc_deep_sleep();
+	qm_power_soc_deep_sleep();
 
 	/*
 	 * Restore sensor execution context.
@@ -230,7 +218,7 @@ void ss_power_soc_deep_sleep_restore(void)
 	qm_ss_restore_context(deep_sleep_restore_trap, cpu_context);
 }
 
-void ss_power_sleep_wait(void)
+void qm_ss_power_sleep_wait(void)
 {
 	/*
 	 * Save sensor restore trap address.
@@ -244,11 +232,11 @@ void ss_power_sleep_wait(void)
 	qm_ss_save_context(cpu_context);
 
 	/* Set restore flags. */
-	power_soc_set_ss_restore_flag();
+	qm_power_soc_set_ss_restore_flag();
 
 	/* Enter SS1 and stay in it until sleep and wake-up. */
 	while (1) {
-		ss_power_cpu_ss1(SS_POWER_CPU_SS1_TIMER_ON);
+		qm_ss_power_cpu_ss1(QM_SS_POWER_CPU_SS1_TIMER_ON);
 	}
 
 	/*
@@ -260,7 +248,7 @@ void ss_power_sleep_wait(void)
 	qm_ss_restore_context(sleep_restore_trap, cpu_context);
 }
 
-void power_soc_set_ss_restore_flag(void)
+void qm_power_soc_set_ss_restore_flag(void)
 {
 	QM_SCSS_GP->gps0 |= BIT(QM_GPS0_BIT_SENSOR_WAKEUP);
 }

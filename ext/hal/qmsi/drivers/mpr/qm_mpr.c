@@ -29,6 +29,7 @@
 
 #include "qm_mpr.h"
 #include "qm_interrupt.h"
+#include "qm_interrupt_router.h"
 
 #define ADDRESS_MASK_7_BIT (0x7F)
 
@@ -120,7 +121,7 @@ int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 		callback_data = cb_data;
 
 		/* unmask interrupt */
-		qm_irq_unmask(QM_IRQ_SRAM_MPR_0_INT);
+		QM_IR_UNMASK_INT(QM_IRQ_SRAM_MPR_0_INT);
 
 		QM_IR_MASK_HALTS(QM_INTERRUPT_ROUTER->sram_mpr_0_int_mask);
 	}
@@ -128,7 +129,7 @@ int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 	/* probe or reset mode */
 	else {
 		/* mask interrupt */
-		qm_irq_mask(QM_IRQ_SRAM_MPR_0_INT);
+		QM_IR_MASK_INT(QM_IRQ_SRAM_MPR_0_INT);
 
 		QM_IR_UNMASK_HALTS(QM_INTERRUPT_ROUTER->sram_mpr_0_int_mask);
 
@@ -177,6 +178,20 @@ int qm_mpr_restore_context(const qm_mpr_context_t *const ctx)
 	for (i = 0; i < QM_MPR_NUM; i++) {
 		controller->mpr_cfg[i] = ctx->mpr_cfg[i];
 	}
+
+	return 0;
+}
+#else
+int qm_mpr_save_context(qm_mpr_context_t *const ctx)
+{
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_mpr_restore_context(const qm_mpr_context_t *const ctx)
+{
+	(void)ctx;
 
 	return 0;
 }

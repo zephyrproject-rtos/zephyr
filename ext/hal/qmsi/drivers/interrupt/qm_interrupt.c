@@ -48,10 +48,6 @@ static void ss_register_irq(unsigned int vector);
 #error "Unsupported / unspecified processor detected."
 #endif
 
-/* Event router base addr for LMT interrupt routing, for linear IRQ mapping */
-#define INTERRUPT_ROUTER_LMT_INT_MASK_BASE                                     \
-	(&QM_INTERRUPT_ROUTER->i2c_master_0_int_mask)
-
 /* x86 CPU FLAGS.IF register field (Interrupt enable Flag, bit 9), indicating
  * whether or not CPU interrupts are enabled.
  */
@@ -206,15 +202,18 @@ int qm_irq_save_context(qm_irq_context_t *const ctx)
 
 	QM_CHECK(ctx != NULL, -EINVAL);
 
-	/* Start from i=1, skip reset vector. */
-	for (i = 1; i < QM_SS_INT_VECTOR_NUM; i++) {
-		__builtin_arc_sr(i, QM_SS_AUX_IRQ_SELECT);
-		ctx->irq_config[i - 1] =
-		    __builtin_arc_lr(QM_SS_AUX_IRQ_PRIORITY) << 2;
-		ctx->irq_config[i - 1] |=
-		    __builtin_arc_lr(QM_SS_AUX_IRQ_TRIGGER) << 1;
-		ctx->irq_config[i - 1] |=
-		    __builtin_arc_lr(QM_SS_AUX_IRQ_ENABLE);
+	/* Interrupts from 0 to 15 are exceptions and they are ignored
+	 * by IRQ auxiliary registers. For that reason we skip those
+	 * values in this loop.
+	 */
+	for (i = 0; i < (QM_SS_INT_VECTOR_NUM - QM_SS_EXCEPTION_NUM); i++) {
+		__builtin_arc_sr(i + QM_SS_EXCEPTION_NUM, QM_SS_AUX_IRQ_SELECT);
+
+		ctx->irq_config[i] = __builtin_arc_lr(QM_SS_AUX_IRQ_PRIORITY)
+				     << 2;
+		ctx->irq_config[i] |= __builtin_arc_lr(QM_SS_AUX_IRQ_TRIGGER)
+				      << 1;
+		ctx->irq_config[i] |= __builtin_arc_lr(QM_SS_AUX_IRQ_ENABLE);
 	}
 
 	status32 = __builtin_arc_lr(QM_SS_AUX_STATUS32);
@@ -233,14 +232,14 @@ int qm_irq_restore_context(const qm_irq_context_t *const ctx)
 
 	QM_CHECK(ctx != NULL, -EINVAL);
 
-	/* Start from i=1, skip reset vector. */
-	for (i = 1; i < QM_SS_INT_VECTOR_NUM; i++) {
-		__builtin_arc_sr(i, QM_SS_AUX_IRQ_SELECT);
-		__builtin_arc_sr(ctx->irq_config[i - 1] >> 2,
+	for (i = 0; i < (QM_SS_INT_VECTOR_NUM - QM_SS_EXCEPTION_NUM); i++) {
+		__builtin_arc_sr(i + QM_SS_EXCEPTION_NUM, QM_SS_AUX_IRQ_SELECT);
+
+		__builtin_arc_sr(ctx->irq_config[i] >> 2,
 				 QM_SS_AUX_IRQ_PRIORITY);
-		__builtin_arc_sr((ctx->irq_config[i - 1] >> 1) & BIT(0),
+		__builtin_arc_sr((ctx->irq_config[i] >> 1) & BIT(0),
 				 QM_SS_AUX_IRQ_TRIGGER);
-		__builtin_arc_sr(ctx->irq_config[i - 1] & BIT(0),
+		__builtin_arc_sr(ctx->irq_config[i] & BIT(0),
 				 QM_SS_AUX_IRQ_ENABLE);
 	}
 
@@ -257,56 +256,36 @@ int qm_irq_restore_context(const qm_irq_context_t *const ctx)
 	return 0;
 }
 #endif		 /* QM_SENSOR */
+#else		 /* !ENABLE_RESTORE_CONTEXT */
+int qm_irq_save_context(qm_irq_context_t *const ctx)
+{
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_irq_restore_context(const qm_irq_context_t *const ctx)
+{
+	(void)ctx;
+
+	return 0;
+}
 #endif		 /* ENABLE_RESTORE_CONTEXT */
 
-void _qm_irq_setup(uint32_t irq, uint16_t register_offset)
+void _qm_irq_setup(uint32_t irq)
 {
-	uint32_t *event_router_intmask;
-
 #if (HAS_APIC)
 	/*
 	 * Quark SE SOC has an APIC. Other SoCs uses a simple, fixed-vector
 	 * non-8259 PIC that requires no configuration.
 	 */
 	ioapic_register_irq(irq, QM_IRQ_TO_VECTOR(irq));
-#elif(HAS_MVIC)
-	mvic_register_irq(irq);
-#elif(QM_SENSOR)
-	ss_register_irq(QM_IRQ_TO_VECTOR(irq));
-#endif
-
-	/* Route peripheral interrupt to Lakemont/Sensor Subsystem */
-	event_router_intmask =
-	    (uint32_t *)INTERRUPT_ROUTER_LMT_INT_MASK_BASE + register_offset;
-
-	/* On Quark D2000 and Quark SE the register for the analog comparator
-	 * host mask has a different bit field than the other host mask
-	 * registers. */
-	if (QM_IRQ_COMPARATOR_0_INT_MASK_OFFSET == register_offset) {
-		*event_router_intmask &= ~0x0007ffff;
-#if !defined(QUARK_D2000)
-	} else if (QM_IRQ_MAILBOX_0_INT_MASK_OFFSET == register_offset) {
-/* Masking MAILBOX irq id done inside mbox driver */
-#endif
-		/*
-		 * DMA error mask uses 1 bit per DMA channel rather than the
-		 * generic host mask.
-		 */
-	} else if (QM_IRQ_DMA_0_ERROR_INT_MASK_OFFSET == register_offset) {
-#if (QM_SENSOR)
-		*event_router_intmask &= ~QM_IR_DMA_ERROR_SS_MASK;
-#else
-		*event_router_intmask &= ~QM_IR_DMA_ERROR_HOST_MASK;
-#endif
-	} else {
-		QM_IR_UNMASK_INTERRUPTS(*event_router_intmask);
-	}
-
-#if (HAS_APIC)
 	ioapic_unmask_irq(irq);
 #elif(HAS_MVIC)
+	mvic_register_irq(irq);
 	mvic_unmask_irq(irq);
 #elif(QM_SENSOR)
+	ss_register_irq(QM_IRQ_TO_VECTOR(irq));
 	qm_ss_irq_unmask(QM_IRQ_TO_VECTOR(irq));
 #endif
 }
@@ -316,7 +295,7 @@ void _qm_irq_setup(uint32_t irq, uint16_t register_offset)
  *
  * @param[in] vector Interrupt Vector number.
  * @param[in] isr ISR to register to given vector. Must be a valid x86 ISR.
- *            If this can't be provided, qm_irq_request() or
+ *            If this can't be provided, QM_IRQ_REQUEST() or
  *            qm_int_vector_request() should be used instead.
  */
 void _qm_register_isr(uint32_t vector, qm_isr_t isr)

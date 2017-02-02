@@ -125,4 +125,22 @@ int qm_ss_timer_restore_context(const qm_ss_timer_t timer,
 
 	return 0;
 }
+#else
+int qm_ss_timer_save_context(const qm_ss_timer_t timer,
+			     qm_ss_timer_context_t *const ctx)
+{
+	(void)timer;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_ss_timer_restore_context(const qm_ss_timer_t timer,
+				const qm_ss_timer_context_t *const ctx)
+{
+	(void)timer;
+	(void)ctx;
+
+	return 0;
+}
 #endif /* ENABLE_RESTORE_CONTEXT */

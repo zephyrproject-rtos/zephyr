@@ -28,10 +28,16 @@
  */
 
 #include "qm_comparator.h"
+
+#if (HAS_SOC_CONTEXT_RETENTION)
 #include "power_states.h"
+#endif /* HAS_SOC_CONTEXT_RETENTION */
 
 static void (*callback)(void *, uint32_t) = NULL;
 static void *callback_data;
+
+#define cmp_en cmp_en
+#define cmp_ref_pol cmp_ref_pol
 
 QM_ISR_DECLARE(qm_comparator_0_isr)
 {
@@ -39,14 +45,14 @@ QM_ISR_DECLARE(qm_comparator_0_isr)
 
 #if (HAS_SOC_CONTEXT_RETENTION)
 	if (QM_SCSS_GP->gps0 & QM_GPS0_POWER_STATES_MASK) {
-		power_soc_restore();
+		qm_power_soc_restore();
 	}
 #endif
 	if (callback) {
 		(*callback)(callback_data, int_status);
 	}
 
-	/* Clear all pending interrupts */
+	/* Clear all pending interrupts. */
 	QM_SCSS_CMP->cmp_stat_clr = int_status;
 
 	QM_ISR_EOI(QM_IRQ_COMPARATOR_0_INT_VECTOR);
@@ -56,20 +62,26 @@ int qm_ac_set_config(const qm_ac_config_t *const config)
 {
 	QM_CHECK(config != NULL, -EINVAL);
 
-	/* Avoid interrupts while configuring the comparators.
+	uint32_t reference = 0;
+
+	reference = config->reference;
+
+	/*
+	 * Avoid interrupts while configuring the comparators.
 	 * This can happen when the polarity is changed
-	 * compared to a previously configured interrupt. */
+	 * compared to a previously configured interrupt.
+	 */
 	QM_SCSS_CMP->cmp_en = 0;
 
 	callback = config->callback;
 	callback_data = config->callback_data;
-	QM_SCSS_CMP->cmp_ref_sel = config->reference;
+	QM_SCSS_CMP->cmp_ref_sel = reference;
 	QM_SCSS_CMP->cmp_ref_pol = config->polarity;
 	QM_SCSS_CMP->cmp_pwr = config->power;
 
-	/* Clear all pending interrupts before we enable */
+	/* Clear all pending interrupts before we enable. */
 	QM_SCSS_CMP->cmp_stat_clr = 0x7FFFF;
-	QM_SCSS_CMP->cmp_en = config->int_en;
+	QM_SCSS_CMP->cmp_en = config->cmp_en;
 
 	return 0;
 }

@@ -29,12 +29,13 @@
 
 #include "qm_ss_spi.h"
 
-#define FIFO_SIZE (8)      /* Maximum size of RX or TX FIFO */
 #define FIFO_RX_W_MARK (6) /* Interrupt mark to read RX FIFO */
 #define FIFO_TX_W_MARK (3) /* Interrupt mark to write TX FIFO */
 
 #define BYTES_PER_FRAME(reg_data)                                              \
-	(((reg_data & QM_SS_SPI_CTRL_DFS_MASK) >> 3) + 1)
+	((((reg_data & QM_SS_SPI_CTRL_DFS_MASK) >> QM_SS_SPI_CTRL_DFS_OFFS) >> \
+	  3) +                                                                 \
+	 1)
 
 static uint32_t base[QM_SS_SPI_NUM] = {QM_SS_SPI_0_BASE, QM_SS_SPI_1_BASE};
 
@@ -50,9 +51,9 @@ static void spi_disable(const qm_ss_spi_t spi)
 	/* Disable SPI device */
 	QM_SS_REG_AUX_NAND(base[spi] + QM_SS_SPI_SPIEN, QM_SS_SPI_SPIEN_EN);
 	/* MASK all interrupts. */
-	__builtin_arc_sr(0, base[spi] + QM_SS_SPI_INTR_MASK);
+	QM_SS_SPI_INTERRUPT_MASK_WRITE(0, base[spi]);
 	/* Clear all interrupts */
-	__builtin_arc_sr(QM_SS_SPI_INTR_ALL, base[spi] + QM_SS_SPI_CLR_INTR);
+	QM_SS_SPI_INTERRUPT_CLEAR_WRITE(QM_SS_SPI_INTR_ALL, base[spi]);
 }
 
 static __inline__ void fifo_write(const qm_ss_spi_t spi, const void *data,
@@ -62,8 +63,10 @@ static __inline__ void fifo_write(const qm_ss_spi_t spi, const void *data,
 
 	if (size == 1) {
 		dr = *(uint8_t *)data;
-	} else {
+	} else if (size == 2) {
 		dr = *(uint16_t *)data;
+	} else {
+		dr = *(uint32_t *)data;
 	}
 	dr |= QM_SS_SPI_DR_W_MASK;
 
@@ -73,11 +76,13 @@ static __inline__ void fifo_write(const qm_ss_spi_t spi, const void *data,
 static __inline__ void fifo_read(const qm_ss_spi_t spi, void *data,
 				 uint8_t size)
 {
-	__builtin_arc_sr(QM_SS_SPI_DR_R_MASK, base[spi] + QM_SS_SPI_DR);
+	QM_SS_SPI_DUMMY_WRITE(base[spi]);
 	if (size == 1) {
 		*(uint8_t *)data = __builtin_arc_lr(base[spi] + QM_SS_SPI_DR);
-	} else {
+	} else if (size == 2) {
 		*(uint16_t *)data = __builtin_arc_lr(base[spi] + QM_SS_SPI_DR);
+	} else {
+		*(uint32_t *)data = __builtin_arc_lr(base[spi] + QM_SS_SPI_DR);
 	}
 }
 
@@ -87,20 +92,28 @@ int qm_ss_spi_set_config(const qm_ss_spi_t spi,
 {
 	QM_CHECK(spi < QM_SS_SPI_NUM, -EINVAL);
 	QM_CHECK(cfg, -EINVAL);
+
+	uint32_t ctrl = 0;
+
 	/* Configuration can be changed only when SPI is disabled */
 	if (0 != (__builtin_arc_lr(base[spi] + QM_SS_SPI_SPIEN) &
 		  QM_SS_SPI_SPIEN_EN)) {
 		return -EBUSY;
 	}
 
-	uint32_t ctrl = __builtin_arc_lr(QM_SS_SPI_0_BASE + QM_SS_SPI_CTRL);
-	ctrl &= QM_SS_SPI_CTRL_CLK_ENA;
+	/* Enable clock to peripheral to allow register writes */
+	QM_SS_SPI_ENABLE_REG_WRITES(base[spi]);
+
+	ctrl = QM_SS_SPI_CTRL_READ(base[spi]);
+	ctrl &= ~(QM_SS_SPI_CTRL_DFS_MASK | QM_SS_SPI_CTRL_TMOD_MASK |
+		  QM_SS_SPI_CTRL_BMOD_MASK);
 	ctrl |= cfg->frame_size << QM_SS_SPI_CTRL_DFS_OFFS;
 	ctrl |= cfg->transfer_mode << QM_SS_SPI_CTRL_TMOD_OFFS;
 	ctrl |= cfg->bus_mode << QM_SS_SPI_CTRL_BMOD_OFFS;
-	__builtin_arc_sr(ctrl, base[spi] + QM_SS_SPI_CTRL);
 
-	__builtin_arc_sr(cfg->clk_divider, base[spi] + QM_SS_SPI_TIMING);
+	QM_SS_SPI_CTRL_WRITE(ctrl, base[spi]);
+
+	QM_SS_SPI_BAUD_RATE_WRITE(cfg->clk_divider, base[spi]);
 
 	return 0;
 }
@@ -115,10 +128,7 @@ int qm_ss_spi_slave_select(const qm_ss_spi_t spi,
 		return -EBUSY;
 	}
 
-	uint32_t spien = __builtin_arc_lr(base[spi] + QM_SS_SPI_SPIEN);
-	spien &= ~QM_SS_SPI_SPIEN_SER_MASK;
-	spien |= (ss << QM_SS_SPI_SPIEN_SER_OFFS);
-	__builtin_arc_sr(spien, base[spi] + QM_SS_SPI_SPIEN);
+	QM_SS_SPI_SER_WRITE(ss, base[spi]);
 
 	return 0;
 }
@@ -145,7 +155,7 @@ int qm_ss_spi_transfer(const qm_ss_spi_t spi,
 	QM_CHECK(spi < QM_SS_SPI_NUM, -EINVAL);
 	QM_CHECK(xfer, -EINVAL);
 
-	uint32_t ctrl = __builtin_arc_lr(base[spi] + QM_SS_SPI_CTRL);
+	uint32_t ctrl = QM_SS_SPI_CTRL_READ(base[spi]);
 	uint8_t tmode = (uint8_t)((ctrl & QM_SS_SPI_CTRL_TMOD_MASK) >>
 				  QM_SS_SPI_CTRL_TMOD_OFFS);
 
@@ -163,16 +173,16 @@ int qm_ss_spi_transfer(const qm_ss_spi_t spi,
 	uint8_t *rx_buffer = xfer->rx;
 	uint8_t *tx_buffer = xfer->tx;
 	int ret = 0;
+	uint32_t sr = 0;
+	/* Calculate number of bytes per frame */
+	uint8_t bytes = BYTES_PER_FRAME(ctrl);
 
 	/* Disable all SPI interrupts */
-	__builtin_arc_sr(0, base[spi] + QM_SS_SPI_INTR_MASK);
+	QM_SS_SPI_INTERRUPT_MASK_WRITE(0, base[spi]);
 
 	/* Set NDF (Number of Data Frames) in RX or EEPROM Read mode. (-1) */
 	if (tmode == QM_SS_SPI_TMOD_RX || tmode == QM_SS_SPI_TMOD_EEPROM_READ) {
-		ctrl &= ~QM_SS_SPI_CTRL_NDF_MASK;
-		ctrl |= ((xfer->rx_len - 1) << QM_SS_SPI_CTRL_NDF_OFFS) &
-			QM_SS_SPI_CTRL_NDF_MASK;
-		__builtin_arc_sr(ctrl, base[spi] + QM_SS_SPI_CTRL);
+		QM_SS_SPI_NDF_WRITE((xfer->rx_len - 1), base[spi]);
 	}
 
 	/* RX only transfers need a dummy frame to be sent. */
@@ -181,15 +191,13 @@ int qm_ss_spi_transfer(const qm_ss_spi_t spi,
 		tx_cnt = 1;
 	}
 
-	/* Calculate number of bytes per frame (1 or 2)*/
-	uint8_t bytes = BYTES_PER_FRAME(ctrl);
 	/* Enable SPI device */
 	QM_SS_REG_AUX_OR(base[spi] + QM_SS_SPI_SPIEN, QM_SS_SPI_SPIEN_EN);
 
 	while (tx_cnt || rx_cnt) {
-		uint32_t sr = __builtin_arc_lr(base[spi] + QM_SS_SPI_SR);
+		sr = __builtin_arc_lr(base[spi] + QM_SS_SPI_SR);
 		/* Break and report error if RX FIFO has overflown */
-		if (__builtin_arc_lr(base[spi] + QM_SS_SPI_INTR_STAT) &
+		if (QM_SS_SPI_INTERRUPT_STATUS_READ(base[spi]) &
 		    QM_SS_SPI_INTR_RXOI) {
 			ret = -EIO;
 			if (status) {
@@ -227,7 +235,7 @@ int qm_ss_spi_irq_transfer(const qm_ss_spi_t spi,
 	QM_CHECK(xfer, -EINVAL);
 
 	/* Load and save initial control register */
-	uint32_t ctrl = __builtin_arc_lr(base[spi] + QM_SS_SPI_CTRL);
+	uint32_t ctrl = QM_SS_SPI_CTRL_READ(base[spi]);
 	uint8_t tmode = (uint8_t)((ctrl & QM_SS_SPI_CTRL_TMOD_MASK) >>
 				  QM_SS_SPI_CTRL_TMOD_OFFS);
 	uint8_t bytes = BYTES_PER_FRAME(ctrl);
@@ -236,27 +244,29 @@ int qm_ss_spi_irq_transfer(const qm_ss_spi_t spi,
 					       : 1,
 		 -EINVAL);
 
+	uint32_t rftlr = 0;
+	uint32_t tftlr = 0;
+
 	spi_async_transfer[spi] = xfer;
 	tx_c[spi] = xfer->tx_len;
 	rx_c[spi] = xfer->rx_len;
 
 	/* Set NDF (Number of Data Frames) in RX or EEPROM Read mode. (-1) */
 	if (tmode == QM_SS_SPI_TMOD_RX || tmode == QM_SS_SPI_TMOD_EEPROM_READ) {
-		ctrl &= ~QM_SS_SPI_CTRL_NDF_MASK;
-		ctrl |= ((xfer->rx_len - 1) << QM_SS_SPI_CTRL_NDF_OFFS) &
-			QM_SS_SPI_CTRL_NDF_MASK;
-		__builtin_arc_sr(ctrl, base[spi] + QM_SS_SPI_CTRL);
+		QM_SS_SPI_NDF_WRITE((xfer->rx_len - 1), base[spi]);
 	}
 
-	uint32_t ftlr =
+	rftlr =
 	    (((FIFO_RX_W_MARK < xfer->rx_len ? FIFO_RX_W_MARK : xfer->rx_len) -
-	      1)
-	     << QM_SS_SPI_FTLR_RFT_OFFS) &
-	    QM_SS_SPI_FTLR_RFT_MASK;
-	__builtin_arc_sr(ftlr, base[spi] + QM_SS_SPI_FTLR);
+	      1));
+	tftlr = FIFO_TX_W_MARK;
+
+	/* Set FIFO threshold levels */
+	QM_SS_SPI_RFTLR_WRITE(rftlr, base[spi]);
+	QM_SS_SPI_TFTLR_WRITE(tftlr, base[spi]);
 
 	/* Unmask all interrupts */
-	__builtin_arc_sr(QM_SS_SPI_INTR_ALL, base[spi] + QM_SS_SPI_INTR_MASK);
+	QM_SS_SPI_INTERRUPT_MASK_WRITE(QM_SS_SPI_INTR_ALL, base[spi]);
 
 	/* Enable SPI device */
 	QM_SS_REG_AUX_OR(base[spi] + QM_SS_SPI_SPIEN, QM_SS_SPI_SPIEN_EN);
@@ -269,19 +279,21 @@ int qm_ss_spi_irq_transfer(const qm_ss_spi_t spi,
 	return 0;
 }
 
-int qm_ss_spi_transfer_terminate(const qm_ss_spi_t spi)
+int qm_ss_spi_irq_transfer_terminate(const qm_ss_spi_t spi)
 {
 	QM_CHECK(spi < QM_SS_SPI_NUM, -EINVAL);
 	const qm_ss_spi_async_transfer_t *const transfer =
 	    spi_async_transfer[spi];
+	uint32_t len = 0;
+	uint32_t ctrl = 0;
+	uint8_t tmode = 0;
 
 	spi_disable(spi);
 
 	if (transfer->callback) {
-		uint32_t len = 0;
-		uint32_t ctrl = __builtin_arc_lr(base[spi] + QM_SS_SPI_CTRL);
-		uint8_t tmode = (uint8_t)((ctrl & QM_SS_SPI_CTRL_TMOD_MASK) >>
-					  QM_SS_SPI_CTRL_TMOD_OFFS);
+		ctrl = QM_SS_SPI_CTRL_READ(base[spi]);
+		tmode = (uint8_t)((ctrl & QM_SS_SPI_CTRL_TMOD_MASK) >>
+				  QM_SS_SPI_CTRL_TMOD_OFFS);
 		if (tmode == QM_SS_SPI_TMOD_TX ||
 		    tmode == QM_SS_SPI_TMOD_TX_RX) {
 			len = transfer->tx_len - tx_c[spi];
@@ -302,13 +314,28 @@ int qm_ss_spi_transfer_terminate(const qm_ss_spi_t spi)
 
 static void handle_spi_err_interrupt(const qm_ss_spi_t spi)
 {
-	uint32_t intr_stat = __builtin_arc_lr(base[spi] + QM_SS_SPI_INTR_STAT);
+	uint32_t intr_stat = QM_SS_SPI_INTERRUPT_STATUS_READ(base[spi]);
 	const qm_ss_spi_async_transfer_t *const transfer =
 	    spi_async_transfer[spi];
 
 	spi_disable(spi);
+
+#if HAS_SS_SPI_VERBOSE_ERROR
+	if ((intr_stat & QM_SS_SPI_INTR_TXOI) && transfer->callback) {
+		transfer->callback(transfer->callback_data, -EIO,
+				   QM_SS_SPI_TX_OVERFLOW,
+				   transfer->tx_len - tx_c[spi]);
+	}
+
+	if ((intr_stat & QM_SS_SPI_INTR_RXUI) && transfer->callback) {
+		transfer->callback(transfer->callback_data, -EIO,
+				   QM_SS_SPI_RX_UNDERFLOW,
+				   transfer->rx_len - rx_c[spi]);
+	}
+#else  /* HAS_SS_SPI_VERBOSE_ERROR */
 	QM_ASSERT((intr_stat & QM_SS_SPI_INTR_STAT_TXOI) == 0);
 	QM_ASSERT((intr_stat & QM_SS_SPI_INTR_STAT_RXUI) == 0);
+#endif /* HAS_SS_SPI_VERBOSE_ERROR */
 
 	if ((intr_stat & QM_SS_SPI_INTR_RXOI) && transfer->callback) {
 		transfer->callback(transfer->callback_data, -EIO,
@@ -319,16 +346,19 @@ static void handle_spi_err_interrupt(const qm_ss_spi_t spi)
 
 static void handle_spi_tx_interrupt(const qm_ss_spi_t spi)
 {
-	/* Clear Transmit Fifo Emtpy interrupt */
-	__builtin_arc_sr(QM_SS_SPI_INTR_TXEI, base[spi] + QM_SS_SPI_CLR_INTR);
-
-	uint32_t ctrl = __builtin_arc_lr(base[spi] + QM_SS_SPI_CTRL);
-	/* Calculate number of bytes per frame (1 or 2)*/
+	uint32_t ctrl = QM_SS_SPI_CTRL_READ(base[spi]);
+	/* Calculate number of bytes per frame */
 	uint8_t bytes = BYTES_PER_FRAME(ctrl);
 	uint8_t tmode = (uint8_t)((ctrl & QM_SS_SPI_CTRL_TMOD_MASK) >>
 				  QM_SS_SPI_CTRL_TMOD_OFFS);
+	uint32_t rxflr = 0;
+	uint32_t txflr = 0;
+	int32_t cnt = 0;
 	const qm_ss_spi_async_transfer_t *const transfer =
 	    spi_async_transfer[spi];
+
+	/* Clear Transmit Fifo Emtpy interrupt */
+	QM_SS_SPI_INTERRUPT_CLEAR_WRITE(QM_SS_SPI_INTR_TXEI, base[spi]);
 
 	/* Jump to the right position of TX buffer.
 	 * If no bytes were transmitted before, we start from the beginning,
@@ -347,15 +377,15 @@ static void handle_spi_tx_interrupt(const qm_ss_spi_t spi)
 						   transfer->tx_len);
 			}
 		} else {
-			QM_SS_REG_AUX_NAND(base[spi] + QM_SS_SPI_INTR_MASK,
-					   QM_SS_SPI_INTR_TXEI);
+			QM_SS_SPI_INTERRUPT_MASK_NAND(QM_SS_SPI_INTR_TXEI,
+						      base[spi]);
 		}
 		return;
 	}
 	/* Make sure RX fifo does not overflow */
-	uint32_t rxflr = __builtin_arc_lr(base[spi] + QM_SS_SPI_RXFLR);
-	uint32_t txflr = __builtin_arc_lr(base[spi] + QM_SS_SPI_TXFLR);
-	int32_t cnt = FIFO_SIZE - rxflr - txflr - 1;
+	rxflr = __builtin_arc_lr(base[spi] + QM_SS_SPI_RXFLR);
+	txflr = __builtin_arc_lr(base[spi] + QM_SS_SPI_TXFLR);
+	cnt = QM_SS_SPI_FIFO_DEPTH - rxflr - txflr - 1;
 	while (tx_c[spi] && cnt > 0) {
 		fifo_write(spi, tx_buffer, bytes);
 		tx_buffer += bytes;
@@ -366,14 +396,15 @@ static void handle_spi_tx_interrupt(const qm_ss_spi_t spi)
 
 static void handle_spi_rx_interrupt(const qm_ss_spi_t spi)
 {
-	/* Clear RX-FIFO FULL interrupt */
-	__builtin_arc_sr(QM_SS_SPI_INTR_RXFI, base[spi] + QM_SS_SPI_CLR_INTR);
-
-	uint32_t ctrl = __builtin_arc_lr(base[spi] + QM_SS_SPI_CTRL);
-	/* Calculate number of bytes per frame (1 or 2)*/
+	uint32_t ctrl = QM_SS_SPI_CTRL_READ(base[spi]);
+	/* Calculate number of bytes per frame */
 	uint8_t bytes = BYTES_PER_FRAME(ctrl);
 	const qm_ss_spi_async_transfer_t *const transfer =
 	    spi_async_transfer[spi];
+	uint32_t new_irq_level = 0;
+
+	/* Clear RX-FIFO FULL interrupt */
+	QM_SS_SPI_INTERRUPT_CLEAR_WRITE(QM_SS_SPI_INTR_RXFI, base[spi]);
 
 	/*
 	 * Jump to the right position of RX buffer.
@@ -390,14 +421,11 @@ static void handle_spi_rx_interrupt(const qm_ss_spi_t spi)
 		rx_c[spi]--;
 	}
 	/* Set new FIFO threshold or complete transfer */
-	uint32_t new_irq_level =
+	new_irq_level =
 	    (FIFO_RX_W_MARK < rx_c[spi] ? FIFO_RX_W_MARK : rx_c[spi]);
 	if (rx_c[spi]) {
 		new_irq_level--;
-		uint32_t ftlr = __builtin_arc_lr(base[spi] + QM_SS_SPI_FTLR);
-		ftlr &= ~QM_SS_SPI_FTLR_RFT_MASK;
-		ftlr |= (new_irq_level << QM_SS_SPI_FTLR_RFT_OFFS);
-		__builtin_arc_sr(ftlr, base[spi] + QM_SS_SPI_FTLR);
+		QM_SS_SPI_RFTLR_WRITE(new_irq_level, base[spi]);
 	} else {
 		spi_disable(spi);
 		if (transfer->callback) {
@@ -459,6 +487,24 @@ int qm_ss_spi_restore_context(const qm_ss_spi_t spi,
 	__builtin_arc_sr(ctx->spi_timing, controller + QM_SS_SPI_TIMING);
 	__builtin_arc_sr(ctx->spi_spien, controller + QM_SS_SPI_SPIEN);
 	__builtin_arc_sr(ctx->spi_ctrl, controller + QM_SS_SPI_CTRL);
+
+	return 0;
+}
+#else
+int qm_ss_spi_save_context(const qm_ss_spi_t spi,
+			   qm_ss_spi_context_t *const ctx)
+{
+	(void)spi;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_ss_spi_restore_context(const qm_ss_spi_t spi,
+			      const qm_ss_spi_context_t *const ctx)
+{
+	(void)spi;
+	(void)ctx;
 
 	return 0;
 }

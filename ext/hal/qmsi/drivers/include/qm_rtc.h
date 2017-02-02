@@ -141,6 +141,37 @@ int qm_rtc_set_alarm(const qm_rtc_t rtc, const uint32_t alarm_val);
 int qm_rtc_read(const qm_rtc_t rtc, uint32_t *const value);
 
 /**
+ * Save RTC context.
+ *
+ * Save the configuration of the specified RTC peripheral
+ * before entering sleep.
+ *
+ * @param[in] rtc RTC index.
+ * @param[out] ctx RTC context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_rtc_save_context(const qm_rtc_t rtc, qm_rtc_context_t *const ctx);
+
+/**
+ * Restore RTC context.
+ *
+ * Restore the configuration of the specified RTC peripheral
+ * after exiting sleep.
+ *
+ * @param[in] rtc RTC index.
+ * @param[in] ctx RTC context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_rtc_restore_context(const qm_rtc_t rtc,
+			   const qm_rtc_context_t *const ctx);
+
+/**
  * @}
  */
 

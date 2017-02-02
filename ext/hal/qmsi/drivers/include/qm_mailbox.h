@@ -32,6 +32,7 @@
 
 #include "qm_common.h"
 #include "qm_soc_regs.h"
+#include "qm_mailbox_defs.h"
 
 #if (HAS_MAILBOX)
 /**
@@ -47,31 +48,19 @@
 typedef enum {
 	/** No interrupt pending nor any data to consume. */
 	QM_MBOX_CH_IDLE = 0,
-	/** Receiver has serviced the interrupt and data
+
+	/**
+	 * Receiver has serviced the interrupt and data
 	 * has not been consumed. */
-	QM_MBOX_CH_INT_ACK_DATA_PEND,
-	/** Receiver in polling mode and data has not been consumed. */
-	QM_MBOX_CH_POLLING_DATA_PEND,
-	/** Receiver hasn't serviced the interrupt and data
+	QM_MBOX_CH_DATA_PEND = QM_MBOX_CH_STS,
+
+	/**
+	 * Receiver hasn't serviced the interrupt and data
 	 * has not been consumed.
 	 */
-	QM_MBOX_CH_INT_NACK_DATA_PEND,
+	QM_MBOX_CH_INT_AND_DATA_PEND =
+	    (QM_MBOX_CH_STS | QM_MBOX_CH_STS_CTRL_INT),
 } qm_mbox_ch_status_t;
-
-/**
- * Mailbox channel identifiers
- */
-typedef enum {
-	QM_MBOX_CH_0 = 0, /**< Channel 0. */
-	QM_MBOX_CH_1,     /**< Channel 1. */
-	QM_MBOX_CH_2,     /**< Channel 2. */
-	QM_MBOX_CH_3,     /**< Channel 3. */
-	QM_MBOX_CH_4,     /**< Channel 4. */
-	QM_MBOX_CH_5,     /**< Channel 5. */
-	QM_MBOX_CH_6,     /**< Channel 6. */
-	QM_MBOX_CH_7,     /**< Channel 7. */
-	QM_MBOX_CH_NUM    /**< Mailbox number of channels. */
-} qm_mbox_ch_t;
 
 /**
  * Mailbox message payload index values.
@@ -83,18 +72,6 @@ typedef enum {
 	QM_MBOX_PAYLOAD_3,     /**< Payload index value 3. */
 	QM_MBOX_PAYLOAD_NUM,   /**< Number of payloads. */
 } qm_mbox_payload_t;
-
-/**
- * Definition of the mailbox direction of operation
- * The direction of communication for each channel is configurable by the user.
- * The list below describes the possible communication directions for each
- * channel.
- */
-typedef enum {
-	QM_MBOX_TO_LMT = 0, /**< Lakemont core as destination */
-	QM_MBOX_TO_SS,      /**< Sensor Sub-System core as destination */
-	QM_MBOX_UNUSED
-} qm_mbox_destination_t;
 
 /**
  * Definition of the mailbox mode of operation, interrupt mode or polling mode.

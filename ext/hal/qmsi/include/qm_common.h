@@ -31,7 +31,7 @@
 #define __QM_COMMON_H__
 
 #if (UNIT_TEST)
-#define __volatile__(x)
+#define __volatile__(...)
 #define __asm__
 #endif /* UNIT_TEST */
 
@@ -272,7 +272,7 @@ int pico_printf(const char *format, ...);
 #define QM_VER_STRINGIFY(major, minor, patch)                                  \
 	QM_STRINGIFY(major) "." QM_STRINGIFY(minor) "." QM_STRINGIFY(patch)
 
-#if (SOC_WATCH_ENABLE) && (!QM_SENSOR)
+#if (SOC_WATCH_ENABLE)
 /**
  * Front-end macro for logging a SoC Watch event.  When SOC_WATCH_ENABLE
  * is not set to 1, the macro expands to nothing, there is no overhead.
@@ -302,9 +302,22 @@ int pico_printf(const char *format, ...);
 	do {                                                                   \
 		soc_watch_log_app_event(event, subtype, param);                \
 	} while (0)
+/**
+ * Front-end macro for triggering a buffer flush via soc_watch.
+ *
+ * This allows applications layered on top of QMSI to trigger the transfer of
+ * profiler information to the host whenever it requires.
+ * When SOC_WATCH_ENABLE is not set to 1,
+ * the macro expands to nothing, there is no overhead.
+ */
+#define SOC_WATCH_TRIGGER_FLUSH()                                              \
+	do {                                                                   \
+		soc_watch_trigger_flush();                                     \
+	} while (0)
 #else
 #define SOC_WATCH_LOG_EVENT(event, param)
 #define SOC_WATCH_LOG_APP_EVENT(event, subtype, param)
+#define SOC_WATCH_TRIGGER_FLUSH()
 #endif
 
 #endif /* __QM_COMMON_H__ */

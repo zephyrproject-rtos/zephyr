@@ -105,7 +105,6 @@ int qm_pic_timer_set(const uint32_t count);
  */
 int qm_pic_timer_get(uint32_t *const count);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save PIC Timer peripheral's context.
  *
@@ -134,7 +133,7 @@ int qm_pic_timer_save_context(qm_pic_timer_context_t *const ctx);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_pic_timer_restore_context(const qm_pic_timer_context_t *const ctx);
-#endif
+
 /**
  * @}
  */

@@ -53,13 +53,13 @@ SECTION_FUNC(TEXT, _power_restore_cpu_context)
 SECTION_FUNC(TEXT, _power_soc_sleep)
 	call save_cpu_context
 	wbinvd
-	call power_soc_sleep
+	call qm_power_soc_sleep
 	/* Does not return */
 
 SECTION_FUNC(TEXT, _power_soc_deep_sleep)
 	call save_cpu_context
 	wbinvd
-	call power_soc_deep_sleep
+	call qm_power_soc_deep_sleep
 	/* Does not return */
 
 /*

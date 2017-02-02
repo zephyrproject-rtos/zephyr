@@ -144,12 +144,12 @@ static int rtc_qmsi_set_alarm(struct device *dev, const uint32_t alarm_val)
 
 static uint32_t rtc_qmsi_read(struct device *dev)
 {
-	return QM_RTC[QM_RTC_0].rtc_ccvr;
+	return QM_RTC[QM_RTC_0]->rtc_ccvr;
 }
 
 static uint32_t rtc_qmsi_get_pending_int(struct device *dev)
 {
-	return QM_RTC[QM_RTC_0].rtc_stat;
+	return QM_RTC[QM_RTC_0]->rtc_stat;
 }
 
 static const struct rtc_driver_api api = {

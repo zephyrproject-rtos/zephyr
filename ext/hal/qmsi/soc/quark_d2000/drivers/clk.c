@@ -232,8 +232,7 @@ int clk_sys_set_mode(const clk_sys_mode_t mode, const clk_sys_div_t div)
 	apply_flash_timings(sys_ticks_per_us);
 
 	/* Log any clock changes. */
-	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_OSC0_CFG1);
-	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_CCU_SYS_CLK_CTL);
+	SOC_WATCH_LOG_EVENT(SOCW_EVENT_FREQ, 0);
 	return 0;
 }
 
@@ -348,8 +347,10 @@ int clk_periph_enable(const clk_periph_t clocks)
 
 	QM_SCSS_CCU->ccu_periph_clk_gate_ctl |= clocks;
 
+#if (HAS_SW_SOCWATCH)
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER,
 			    SOCW_REG_CCU_PERIPH_CLK_GATE_CTL);
+#endif /* HAS_SW_SOCWATCH */
 
 	return 0;
 }
@@ -360,8 +361,10 @@ int clk_periph_disable(const clk_periph_t clocks)
 
 	QM_SCSS_CCU->ccu_periph_clk_gate_ctl &= ~clocks;
 
+#if (HAS_SW_SOCWATCH)
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER,
 			    SOCW_REG_CCU_PERIPH_CLK_GATE_CTL);
+#endif /* HAS_SW_SOCWATCH */
 
 	return 0;
 }
@@ -379,4 +382,31 @@ void clk_sys_udelay(uint32_t microseconds)
 	/* We need to wait until timeout system clock ticks has occurred. */
 	while (get_ticks() - tsc_start < timeout) {
 	}
+}
+
+int clk_dma_enable(void)
+{
+	QM_SCSS_CCU->ccu_mlayer_ahb_ctl |= QM_CCU_DMA_CLK_EN;
+
+	return 0;
+}
+
+int clk_dma_disable(void)
+{
+	QM_SCSS_CCU->ccu_mlayer_ahb_ctl &= ~QM_CCU_DMA_CLK_EN;
+
+	return 0;
+}
+
+/**
+ * Get I2C clock frequency in MHz.
+ *
+ * @return [uint32_t] I2C freq_in_mhz.
+ */
+uint32_t get_i2c_clk_freq_in_mhz(void)
+{
+	return clk_sys_get_ticks_per_us() >>
+	       ((QM_SCSS_CCU->ccu_periph_clk_div_ctl0 &
+		 CLK_PERIPH_DIV_DEF_MASK) >>
+		QM_CCU_PERIPH_PCLK_DIV_OFFSET);
 }

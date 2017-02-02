@@ -357,8 +357,8 @@ typedef enum {
 
 /** System and Power Management Single Interrupt. */
 #define QM_IRQ_PMU_0_INT 23
-#define QM_IRQ_PMU_0_INT_MASK_OFFSET 26
-#define QM_IRQ_PMU_0_INT_VECTOR 58
+#define QM_IRQ_PMU_0_INT_MASK_OFFSET 27
+#define QM_IRQ_PMU_0_INT_VECTOR 59
 
 /**
  * 8 DMA Channel Error Interrupts Routed to Single Interrupt with 8bit Mask

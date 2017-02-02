@@ -48,8 +48,6 @@
 
 #endif
 
-#if (ENABLE_RESTORE_CONTEXT)
-#if (HAS_APIC) || (QM_SENSOR)
 /**
  * Save IRQ context.
  *
@@ -84,8 +82,6 @@ int qm_irq_save_context(qm_irq_context_t *const ctx);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_irq_restore_context(const qm_irq_context_t *const ctx);
-#endif /* HAS_APIC || QM_SENSOR */
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * Interrupt driver.
@@ -151,7 +147,7 @@ void qm_irq_mask(uint32_t irq);
 
 void _qm_register_isr(uint32_t vector, qm_isr_t isr);
 
-void _qm_irq_setup(uint32_t irq, uint16_t register_offset);
+void _qm_irq_setup(uint32_t irq);
 
 /*
  * Request a given IRQ and register Interrupt Service Routine to interrupt
@@ -161,17 +157,17 @@ void _qm_irq_setup(uint32_t irq, uint16_t register_offset);
  * @param[in] isr ISR to register to given IRQ.
  */
 #if (QM_SENSOR)
-#define qm_irq_request(irq, isr)                                               \
+#define QM_IRQ_REQUEST(irq, isr)                                               \
 	do {                                                                   \
 		_qm_register_isr(irq##_VECTOR, isr);                           \
-		_qm_irq_setup(irq, irq##_MASK_OFFSET);                         \
+		_qm_irq_setup(irq);                                            \
 	} while (0);
 #else
-#define qm_irq_request(irq, isr)                                               \
+#define QM_IRQ_REQUEST(irq, isr)                                               \
 	do {                                                                   \
 		qm_int_vector_request(irq##_VECTOR, isr);                      \
                                                                                \
-		_qm_irq_setup(irq, irq##_MASK_OFFSET);                         \
+		_qm_irq_setup(irq);                                            \
 	} while (0)
 #endif /* QM_SENSOR */
 

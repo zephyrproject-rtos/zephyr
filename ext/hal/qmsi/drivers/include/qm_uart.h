@@ -71,30 +71,6 @@ typedef enum {
 	QM_UART_LC_8O2 = 0x0f    /**< 8 data bits, odd parity, 2 stop bits. */
 } qm_uart_lc_t;
 
-#if HAS_ADVANCED_UART_CONFIGURATION
-/**
- * UART Transmit Water Mark
- * Empty trigger level in the transmit FIFO.
- */
-typedef enum {
-	QM_UART_TX_WM_EMPTY = 0, /* FIFO empty */
-	QM_UART_TX_WM_TWOCHAR,   /* 2 characters in the FIFO */
-	QM_UART_TX_WM_QUARTER,   /* FIFO 1/4 full */
-	QM_UART_TX_WM_HALF,      /* FIFO 1/2 full */
-} qm_uart_tx_water_mark_t;
-
-/**
- * UART Receive Water Mark
- * Trigger level in the receiver FIFO.
- */
-typedef enum {
-	QM_UART_RX_WM_ONEBYTE = 0, /* 1 character in the FIFO */
-	QM_UART_RX_WM_QUARTER,     /* FIFO 1/4 full */
-	QM_UART_RX_WM_HALF,	/* FIFO 1/2 full */
-	QM_UART_RX_WM_TWOLESS,     /* FIFO 2 less than full */
-} qm_uart_rx_water_mark_t;
-#endif /* HAS_ADVANCED_UART_CONFIGURATION */
-
 /**
  * UART Status type.
  */
@@ -117,10 +93,6 @@ typedef struct {
 	qm_uart_lc_t line_control; /**< Line control (enum). */
 	uint32_t baud_divisor;     /**< Baud Divisor. */
 	bool hw_fc;		   /**< Hardware Automatic Flow Control. */
-#if HAS_ADVANCED_UART_CONFIGURATION
-	qm_uart_tx_water_mark_t tx_water_mark; /* UART Tx FIFO Water Mark */
-	qm_uart_rx_water_mark_t rx_water_mark; /* UART Rx FIFO Water Mark */
-#endif /* HAS_ADVANCED_UART_CONFIGURATION */
 } qm_uart_config_t;
 
 /**
@@ -424,7 +396,6 @@ int qm_uart_dma_write_terminate(const qm_uart_t uart);
  */
 int qm_uart_dma_read_terminate(const qm_uart_t uart);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save UART context.
  *
@@ -459,7 +430,6 @@ int qm_uart_save_context(const qm_uart_t uart, qm_uart_context_t *const ctx);
  */
 int qm_uart_restore_context(const qm_uart_t uart,
 			    const qm_uart_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

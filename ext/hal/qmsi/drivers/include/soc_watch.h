@@ -64,8 +64,18 @@ typedef enum {
 	SOCW_EVENT_SLEEP = 2,     /**< Sleep mode entered. */
 	SOCW_EVENT_REGISTER = 3,  /**< SOC register altered. */
 	SOCW_EVENT_APP = 4,       /**< Application-defined event. */
-	SOCW_EVENT_MAX = 5	/**< End of events sentinel. */
+	SOCW_EVENT_FREQ = 5,      /**< Frequency altered. */
+	SOCW_EVENT_MAX = 6	/**< End of events sentinel. */
 } soc_watch_event_t;
+
+/*
+ * Power profiling events for ARC Sensor states.
+ *
+ * Internally socwatch process the SS1 and SS2 as Halt
+ * Sleep events encoding respectively.
+ */
+#define SOCW_ARC_EVENT_SS1 SOCW_EVENT_HALT
+#define SOCW_ARC_EVENT_SS2 SOCW_EVENT_SLEEP
 
 /**
  * Register ID enumeration.
@@ -155,6 +165,13 @@ void soc_watch_log_event(soc_watch_event_t event_id, uintptr_t ev_data);
  */
 void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 			     uintptr_t ev_data);
+
+/**
+ * Trigger a buffer flush via watchpoint.
+ * This allows applications layered on top of QMSI to trigger the transfer of
+ * profiler information to the host whenever it requires.
+ */
+void soc_watch_trigger_flush();
 
 /**
  * @}

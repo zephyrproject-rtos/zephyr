@@ -29,6 +29,7 @@
 
 #include "qm_fpr.h"
 #include "qm_interrupt.h"
+#include "qm_interrupt_router.h"
 
 static void (*callback[QM_FLASH_NUM])(void *);
 static void *callback_data[QM_FLASH_NUM];
@@ -153,10 +154,10 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 
 		/* unmask interrupt */
 		if (flash == QM_FLASH_0) {
-			qm_irq_unmask(QM_IRQ_FLASH_MPR_0_INT);
+			QM_IR_UNMASK_INT(QM_IRQ_FLASH_MPR_0_INT);
 #if (QUARK_SE)
 		} else {
-			qm_irq_unmask(QM_IRQ_FLASH_MPR_1_INT);
+			QM_IR_UNMASK_INT(QM_IRQ_FLASH_MPR_1_INT);
 #endif
 		}
 
@@ -169,10 +170,10 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 	else {
 		/* mask interrupt */
 		if (flash == QM_FLASH_0) {
-			qm_irq_mask(QM_IRQ_FLASH_MPR_0_INT);
+			QM_IR_MASK_INT(QM_IRQ_FLASH_MPR_0_INT);
 #if (QUARK_SE)
 		} else {
-			qm_irq_mask(QM_IRQ_FLASH_MPR_1_INT);
+			QM_IR_MASK_INT(QM_IRQ_FLASH_MPR_1_INT);
 #endif
 		}
 
@@ -226,6 +227,23 @@ int qm_fpr_restore_context(const qm_flash_t flash,
 	for (i = 0; i < QM_FPR_NUM; i++) {
 		controller->fpr_rd_cfg[i] = ctx->fpr_rd_cfg[i];
 	}
+
+	return 0;
+}
+#else
+int qm_fpr_save_context(const qm_flash_t flash, qm_fpr_context_t *const ctx)
+{
+	(void)flash;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_fpr_restore_context(const qm_flash_t flash,
+			   const qm_fpr_context_t *const ctx)
+{
+	(void)flash;
+	(void)ctx;
 
 	return 0;
 }

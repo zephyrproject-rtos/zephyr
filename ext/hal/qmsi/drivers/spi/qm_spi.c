@@ -30,8 +30,10 @@
 #include "qm_spi.h"
 
 /* SPI FIFO size defaults */
-#define SPI_DEFAULT_TX_THRESHOLD (0x05)
-#define SPI_DEFAULT_RX_THRESHOLD (0x05)
+#define SPI_MST_DEFAULT_TX_THRESHOLD (0x05)
+#define SPI_MST_DEFAULT_RX_THRESHOLD (0x05)
+#define SPI_SLV_DEFAULT_TX_THRESHOLD (0x04)
+#define SPI_SLV_DEFAULT_RX_THRESHOLD (0x03)
 #define SPI_FIFOS_DEPTH (8)
 
 /* SPI DMA transmit watermark level. When the number of valid data entries in
@@ -87,18 +89,21 @@ typedef struct {
 #ifndef UNIT_TEST
 #if (QUARK_SE)
 qm_spi_reg_t *qm_spi_controllers[QM_SPI_NUM] = {
-    (qm_spi_reg_t *)QM_SPI_MST_0_BASE, (qm_spi_reg_t *)QM_SPI_MST_1_BASE};
+    (qm_spi_reg_t *)QM_SPI_MST_0_BASE, (qm_spi_reg_t *)QM_SPI_MST_1_BASE,
+    (qm_spi_reg_t *)QM_SPI_SLV_BASE};
 #elif(QUARK_D2000)
 qm_spi_reg_t *qm_spi_controllers[QM_SPI_NUM] = {
-    (qm_spi_reg_t *)QM_SPI_MST_0_BASE};
+    (qm_spi_reg_t *)QM_SPI_MST_0_BASE, (qm_spi_reg_t *)QM_SPI_SLV_BASE};
 #endif
 #endif
 
-static const qm_spi_async_transfer_t *spi_async_transfer[QM_SPI_NUM];
-static volatile uint16_t tx_counter[QM_SPI_NUM], rx_counter[QM_SPI_NUM];
+static const volatile qm_spi_async_transfer_t *spi_async_transfer[QM_SPI_NUM];
+static volatile uint16_t tx_counter[QM_SPI_NUM];
+static volatile uint16_t rx_counter[QM_SPI_NUM];
 static uint8_t dfs[QM_SPI_NUM];
 static const uint32_t tx_dummy_frame = 0;
 static qm_spi_tmode_t tmode[QM_SPI_NUM];
+static qm_spi_frame_format_t frf[QM_SPI_NUM];
 /* DMA (memory to SPI controller) callback information. */
 static dma_context_t dma_context_tx[QM_SPI_NUM];
 /* DMA (SPI controller to memory) callback information. */
@@ -146,16 +151,14 @@ static void wait_for_controller(const qm_spi_reg_t *const controller)
 		;
 }
 
-/**
- * Service an RX FIFO Full interrupt
- *
- * @brief Interrupt based transfer on SPI.
- * @param [in] spi Which SPI to transfer from.
+/*
+ * Service a RX FIFO Full interrupt on master side.
  */
-static __inline__ void handle_rx_interrupt(const qm_spi_t spi)
+static __inline__ void handle_mst_rx_interrupt(const qm_spi_t spi)
 {
 	qm_spi_reg_t *const controller = QM_SPI[spi];
-	const qm_spi_async_transfer_t *const transfer = spi_async_transfer[spi];
+	const volatile qm_spi_async_transfer_t *const transfer =
+	    spi_async_transfer[spi];
 
 	/* Jump to the right position of RX buffer.
 	 * If no bytes were received before, we start from the beginning,
@@ -172,14 +175,18 @@ static __inline__ void handle_rx_interrupt(const qm_spi_t spi)
 		 * requested.
 		 */
 		if (transfer->rx_len == rx_counter[spi]) {
-			controller->imr &=
-			    ~(QM_SPI_IMR_RXUIM | QM_SPI_IMR_RXOIM |
-			      QM_SPI_IMR_RXFIM);
-			if (transfer->callback &&
-			    tmode[spi] == QM_SPI_TMOD_RX) {
-				transfer->callback(transfer->callback_data, 0,
-						   QM_SPI_IDLE,
-						   transfer->rx_len);
+			if (tmode[spi] == QM_SPI_TMOD_RX) {
+				controller->imr = QM_SPI_IMR_MASK_ALL;
+				controller->ssienr = 0;
+				if (transfer->callback) {
+					transfer->callback(
+					    transfer->callback_data, 0,
+					    QM_SPI_IDLE, transfer->rx_len);
+				}
+			} else {
+				controller->imr &=
+				    ~(QM_SPI_IMR_RXUIM | QM_SPI_IMR_RXOIM |
+				      QM_SPI_IMR_RXFIM);
 			}
 			break;
 		}
@@ -195,15 +202,16 @@ static __inline__ void handle_rx_interrupt(const qm_spi_t spi)
 }
 
 /**
- * Service an Tx FIFO Empty interrupt
+ * Service a TX FIFO Empty interrupt on master side.
  *
  * @brief Interrupt based transfer on SPI.
  * @param [in] spi Which SPI to transfer to.
  */
-static __inline__ void handle_tx_interrupt(const qm_spi_t spi)
+static __inline__ void handle_mst_tx_interrupt(const qm_spi_t spi)
 {
 	qm_spi_reg_t *const controller = QM_SPI[spi];
-	const qm_spi_async_transfer_t *const transfer = spi_async_transfer[spi];
+	const volatile qm_spi_async_transfer_t *const transfer =
+	    spi_async_transfer[spi];
 
 	/* Jump to the right position of TX buffer.
 	 * If no bytes were transmitted before, we start from the beginning,
@@ -227,27 +235,149 @@ static __inline__ void handle_tx_interrupt(const qm_spi_t spi)
 	}
 }
 
-static void handle_spi_interrupt(const qm_spi_t spi)
+/*
+ * Service a RX FIFO Full interrupt on slave side.
+ */
+static __inline__ void handle_slv_rx_interrupt(const qm_spi_t spi)
 {
 	qm_spi_reg_t *const controller = QM_SPI[spi];
-	const qm_spi_async_transfer_t *transfer = spi_async_transfer[spi];
+	const volatile qm_spi_async_transfer_t *const transfer =
+	    spi_async_transfer[spi];
+
+	uint8_t *rx_buffer = transfer->rx + (rx_counter[spi] * dfs[spi]);
+	uint16_t len = transfer->rx_len;
+	int32_t frames_left = 0;
+
+	while (controller->rxflr) {
+
+		if (rx_counter[spi] < len) {
+
+			read_frame(spi, rx_buffer);
+			rx_buffer += dfs[spi];
+			rx_counter[spi]++;
+
+			if (rx_counter[spi] == len) {
+				/* Application notification. */
+				if (transfer->callback) {
+					/*
+					 * Application can now read received
+					 * data. In order to receive more
+					 * data, the application needs to
+					 * call the update function.
+					 */
+					transfer->callback(
+					    transfer->callback_data, 0,
+					    QM_SPI_RX_FULL, len);
+					/*
+					 * RX counter is zero if the application
+					 * has called the update function.
+					 */
+					if (!rx_counter[spi]) {
+						/*
+						 * Update transfer information.
+						 */
+						rx_buffer = transfer->rx;
+						len = transfer->rx_len;
+					} else {
+						break;
+					}
+				}
+			}
+		} else {
+			break;
+		}
+	}
+
+	frames_left = len - rx_counter[spi];
+	if (frames_left > 0 && (uint32_t)frames_left <= controller->rxftlr) {
+		controller->rxftlr = frames_left - 1;
+	}
+}
+
+/*
+ * Service a TX FIFO Empty interrupt on slave side.
+ */
+static __inline__ void handle_slv_tx_interrupt(const qm_spi_t spi)
+{
+	qm_spi_reg_t *const controller = QM_SPI[spi];
+	const volatile qm_spi_async_transfer_t *const transfer =
+	    spi_async_transfer[spi];
+	const uint8_t *tx_buffer = transfer->tx + (tx_counter[spi] * dfs[spi]);
+	uint16_t len = transfer->tx_len;
+	int entries_free =
+	    SPI_FIFOS_DEPTH - controller->txflr - controller->rxflr - 1;
+
+	while (entries_free > 0 && tx_counter[spi] < len) {
+
+		write_frame(spi, tx_buffer);
+		tx_buffer += dfs[spi];
+
+		entries_free--;
+		tx_counter[spi]++;
+
+		if (tx_counter[spi] == len) {
+			/* Application notification. */
+			if (transfer->callback) {
+				/*
+				 * In order to transmit more data, the
+				 * application needs to call the update
+				 * function.
+				 */
+				transfer->callback(transfer->callback_data, 0,
+						   QM_SPI_TX_EMPTY, len);
+
+				/*
+				 * RX counter is zero if the application
+				 * has called the update function.
+				 */
+				if (!tx_counter[spi]) {
+					/* Update transfer information. */
+					tx_buffer = transfer->tx;
+					len = transfer->tx_len;
+				}
+			}
+		}
+	}
+
+	if (tx_counter[spi] >= len) {
+		controller->txftlr = 0;
+	}
+}
+
+static void handle_spi_overflow_interrupt(const qm_spi_t spi)
+{
+	qm_spi_reg_t *const controller = QM_SPI[spi];
+	const volatile qm_spi_async_transfer_t *transfer =
+	    spi_async_transfer[spi];
+
+	if (transfer->callback) {
+		transfer->callback(transfer->callback_data, -EIO,
+				   QM_SPI_RX_OVERFLOW, rx_counter[spi]);
+	}
+
+	/* Clear RX FIFO Overflow interrupt. */
+	controller->rxoicr;
+	controller->imr = QM_SPI_IMR_MASK_ALL;
+	controller->ssienr = 0;
+}
+
+static void handle_spi_mst_interrupt(const qm_spi_t spi)
+{
+	qm_spi_reg_t *const controller = QM_SPI[spi];
+	const volatile qm_spi_async_transfer_t *transfer =
+	    spi_async_transfer[spi];
 	const uint32_t int_status = controller->isr;
 
 	QM_ASSERT((int_status & (QM_SPI_ISR_TXOIS | QM_SPI_ISR_RXUIS)) == 0);
-	if (int_status & QM_SPI_ISR_RXOIS) {
-		if (transfer->callback) {
-			transfer->callback(transfer->callback_data, -EIO,
-					   QM_SPI_RX_OVERFLOW, rx_counter[spi]);
-		}
 
-		controller->rxoicr;
-		controller->imr = QM_SPI_IMR_MASK_ALL;
-		controller->ssienr = 0;
+	/* RX FIFO Overflow interrupt. */
+	if (int_status & QM_SPI_ISR_RXOIS) {
+		handle_spi_overflow_interrupt(spi);
 		return;
 	}
 
 	if (int_status & QM_SPI_ISR_RXFIS) {
-		handle_rx_interrupt(spi);
+		handle_mst_rx_interrupt(spi);
 	}
 
 	if (transfer->rx_len == rx_counter[spi] &&
@@ -267,7 +397,51 @@ static void handle_spi_interrupt(const qm_spi_t spi)
 
 	if (int_status & QM_SPI_ISR_TXEIS &&
 	    transfer->tx_len > tx_counter[spi]) {
-		handle_tx_interrupt(spi);
+		handle_mst_tx_interrupt(spi);
+	}
+}
+
+static void handle_spi_slv_interrupt(const qm_spi_t spi)
+{
+	qm_spi_reg_t *const controller = QM_SPI[spi];
+	const volatile qm_spi_async_transfer_t *transfer =
+	    spi_async_transfer[spi];
+	const uint32_t int_status = controller->isr;
+
+	QM_ASSERT((int_status & (QM_SPI_ISR_TXOIS | QM_SPI_ISR_RXUIS)) == 0);
+
+	if (int_status & QM_SPI_ISR_RXOIS) {
+		/* RX FIFO Overflow interrupt. */
+		handle_spi_overflow_interrupt(spi);
+		return;
+	}
+
+	if (int_status & QM_SPI_ISR_RXFIS) {
+		/* RX FIFO Full interrupt. */
+		handle_slv_rx_interrupt(spi);
+	}
+
+	if (transfer->rx_len == rx_counter[spi] &&
+	    transfer->tx_len == tx_counter[spi] &&
+	    (controller->sr & QM_SPI_SR_TFE) &&
+	    (!(controller->sr & QM_SPI_SR_BUSY) ||
+	     tmode[spi] == QM_SPI_TMOD_RX)) {
+		/* End of communication. */
+		if (!transfer->keep_enabled) {
+			controller->ssienr = 0;
+		}
+		controller->imr = QM_SPI_IMR_MASK_ALL;
+		/* Application notification. */
+		if (transfer->callback) {
+			transfer->callback(transfer->callback_data, 0,
+					   QM_SPI_IDLE, 0);
+		}
+		return;
+	}
+
+	if (int_status & QM_SPI_ISR_TXEIS) {
+		/* TX FIFO Empty interrupt. */
+		handle_slv_tx_interrupt(spi);
 	}
 }
 
@@ -275,6 +449,10 @@ int qm_spi_set_config(const qm_spi_t spi, const qm_spi_config_t *cfg)
 {
 	QM_CHECK(spi < QM_SPI_NUM, -EINVAL);
 	QM_CHECK(cfg, -EINVAL);
+	QM_CHECK(QM_SPI_SLV_0 == spi
+		     ? cfg->transfer_mode != QM_SPI_TMOD_EEPROM_READ
+		     : 1,
+		 -EINVAL);
 
 	if (0 != QM_SPI[spi]->ssienr) {
 		return -EBUSY;
@@ -282,12 +460,18 @@ int qm_spi_set_config(const qm_spi_t spi, const qm_spi_config_t *cfg)
 
 	qm_spi_reg_t *const controller = QM_SPI[spi];
 
-	/* Apply the selected cfg options */
+	/* Apply the selected cfg options. */
 	controller->ctrlr0 = (cfg->frame_size << QM_SPI_CTRLR0_DFS_32_OFFSET) |
 			     (cfg->transfer_mode << QM_SPI_CTRLR0_TMOD_OFFSET) |
 			     (cfg->bus_mode << QM_SPI_CTRLR0_SCPOL_SCPH_OFFSET);
 
-	controller->baudr = cfg->clk_divider;
+	/*
+	 * If the device is configured as a slave, an external master will
+	 * set the baud rate.
+	 */
+	if (QM_SPI_SLV_0 != spi) {
+		controller->baudr = cfg->clk_divider;
+	}
 
 	/* Keep the current data frame size in bytes, being:
 	 * - 1 byte for DFS set from 4 to 8 bits;
@@ -298,13 +482,14 @@ int qm_spi_set_config(const qm_spi_t spi, const qm_spi_config_t *cfg)
 	dfs[spi] = (cfg->frame_size / 8) + 1;
 
 	tmode[spi] = cfg->transfer_mode;
+	frf[spi] = cfg->frame_format;
 
 	return 0;
 }
 
 int qm_spi_slave_select(const qm_spi_t spi, const qm_spi_slave_select_t ss)
 {
-	QM_CHECK(spi < QM_SPI_NUM, -EINVAL);
+	QM_CHECK((spi < QM_SPI_NUM) && (spi != QM_SPI_SLV_0), -EINVAL);
 
 	/* Check if the device reports as busy. */
 	if (QM_SPI[spi]->sr & QM_SPI_SR_BUSY) {
@@ -347,7 +532,9 @@ int qm_spi_transfer(const qm_spi_t spi, const qm_spi_transfer_t *const xfer,
 		 -EINVAL);
 	QM_CHECK(tmode[spi] == QM_SPI_TMOD_TX ? (xfer->rx_len == 0) : 1,
 		 -EINVAL);
-	QM_CHECK(tmode[spi] == QM_SPI_TMOD_RX ? (xfer->tx_len == 0) : 1,
+	QM_CHECK(((tmode[spi] == QM_SPI_TMOD_RX ? (xfer->tx_len == 0) : 1) ||
+		  (((tmode[spi] == QM_SPI_TMOD_RX) &&
+		    (QM_SPI_FRAME_FORMAT_STANDARD != frf[spi])))),
 		 -EINVAL);
 	QM_CHECK(tmode[spi] == QM_SPI_TMOD_EEPROM_READ
 		     ? (xfer->tx_len && xfer->rx_len)
@@ -367,12 +554,13 @@ int qm_spi_transfer(const qm_spi_t spi, const qm_spi_transfer_t *const xfer,
 	controller->imr = QM_SPI_IMR_MASK_ALL;
 
 	/* If we are in RX only or EEPROM Read mode, the ctrlr1 reg holds how
-	 * many bytes the controller solicits, minus 1. */
+	 * many bytes the controller solicits, minus 1.
+	 */
 	if (xfer->rx_len) {
 		controller->ctrlr1 = xfer->rx_len - 1;
 	}
 
-	/* Enable SPI device */
+	/* Enable SPI device. */
 	controller->ssienr = QM_SPI_SSIENR_SSIENR;
 
 	/* Transfer is only complete when all the tx data is sent and all
@@ -381,8 +569,9 @@ int qm_spi_transfer(const qm_spi_t spi, const qm_spi_transfer_t *const xfer,
 	uint8_t *rx_buffer = xfer->rx;
 	const uint8_t *tx_buffer = xfer->tx;
 
-	/* RX Only transfers need a dummy byte to be sent for starting. */
-	if (tmode[spi] == QM_SPI_TMOD_RX) {
+	/* RX Only transfers need a dummy frame to be sent for starting. */
+	if ((tmode[spi] == QM_SPI_TMOD_RX) &&
+	    (QM_SPI_FRAME_FORMAT_STANDARD == frf[spi])) {
 		tx_buffer = (uint8_t *)&tx_dummy_frame;
 		i_tx = 1;
 	}
@@ -411,98 +600,187 @@ int qm_spi_transfer(const qm_spi_t spi, const qm_spi_transfer_t *const xfer,
 	}
 	wait_for_controller(controller);
 
-	controller->ssienr = 0; /* Disable SPI Device */
+	/* Disable SPI Device. */
+	controller->ssienr = 0;
 
 	return rc;
 }
 
-int qm_spi_irq_transfer(const qm_spi_t spi,
-			const qm_spi_async_transfer_t *const xfer)
+int qm_spi_irq_update(const qm_spi_t spi,
+		      const volatile qm_spi_async_transfer_t *const xfer,
+		      const qm_spi_update_t update)
 {
+	QM_CHECK(spi < QM_SPI_NUM, -EINVAL);
+	QM_CHECK(xfer, -EINVAL);
+	QM_CHECK(tmode[spi] == QM_SPI_TMOD_TX ? (xfer->rx_len == 0) : 1,
+		 -EINVAL);
+	QM_CHECK(((tmode[spi] == QM_SPI_TMOD_RX ? (xfer->tx_len == 0) : 1) ||
+		  (((tmode[spi] == QM_SPI_TMOD_RX) &&
+		    (QM_SPI_FRAME_FORMAT_STANDARD != frf[spi])))),
+		 -EINVAL);
+	QM_CHECK(tmode[spi] == QM_SPI_TMOD_EEPROM_READ
+		     ? (xfer->tx_len && xfer->rx_len)
+		     : 1,
+		 -EINVAL);
+	QM_CHECK((spi != QM_SPI_SLV_0) ||
+		     (tmode[spi] != QM_SPI_TMOD_EEPROM_READ),
+		 -EINVAL);
+	QM_CHECK(update == QM_SPI_UPDATE_TX || update == QM_SPI_UPDATE_RX ||
+		     update == (QM_SPI_UPDATE_TX | QM_SPI_UPDATE_RX),
+		 -EINVAL);
+	/* If updating only TX, then the mode shall not be RX. */
+	QM_CHECK((update & QM_SPI_UPDATE_TX) ? (tmode[spi] != QM_SPI_TMOD_RX)
+					     : 1,
+		 -EINVAL);
+	/* If updating only RX, then the mode shall not be TX. */
+	QM_CHECK((update & QM_SPI_UPDATE_RX) ? (tmode[spi] != QM_SPI_TMOD_TX)
+					     : 1,
+		 -EINVAL);
+
+	qm_spi_reg_t *const controller = QM_SPI[spi];
+	spi_async_transfer[spi] = xfer;
+
+	if (update == QM_SPI_UPDATE_RX) {
+		rx_counter[spi] = 0;
+		/* Unmask RX interrupt sources. */
+		controller->imr =
+		    QM_SPI_IMR_RXUIM | QM_SPI_IMR_RXOIM | QM_SPI_IMR_RXFIM;
+	} else if (update == QM_SPI_UPDATE_TX) {
+		tx_counter[spi] = 0;
+		/* Unmask TX interrupt sources. */
+		controller->imr = QM_SPI_IMR_TXEIM | QM_SPI_IMR_TXOIM;
+	} else {
+		rx_counter[spi] = 0;
+		tx_counter[spi] = 0;
+		/* Unmask both TX and RX interrupt sources. */
+		controller->imr = QM_SPI_IMR_TXEIM | QM_SPI_IMR_TXOIM |
+				  QM_SPI_IMR_RXUIM | QM_SPI_IMR_RXOIM |
+				  QM_SPI_IMR_RXFIM;
+	}
+
+	return 0;
+}
+
+int qm_spi_irq_transfer(const qm_spi_t spi,
+			const volatile qm_spi_async_transfer_t *const xfer)
+{
+	qm_spi_update_t update = 0;
 	QM_CHECK(spi < QM_SPI_NUM, -EINVAL);
 	QM_CHECK(xfer, -EINVAL);
 	QM_CHECK(tmode[spi] == QM_SPI_TMOD_TX_RX
 		     ? (xfer->tx_len == xfer->rx_len)
 		     : 1,
 		 -EINVAL);
-	QM_CHECK(tmode[spi] == QM_SPI_TMOD_TX ? (xfer->rx_len == 0) : 1,
-		 -EINVAL);
-	QM_CHECK(tmode[spi] == QM_SPI_TMOD_RX ? (xfer->tx_len == 0) : 1,
-		 -EINVAL);
-	QM_CHECK(tmode[spi] == QM_SPI_TMOD_EEPROM_READ
-		     ? (xfer->tx_len && xfer->rx_len)
-		     : 1,
-		 -EINVAL);
 
 	qm_spi_reg_t *const controller = QM_SPI[spi];
 
-	/* If we are in RX only or EEPROM Read mode, the ctrlr1 reg holds how
-	 * many bytes the controller solicits, minus 1. We also set the same
-	 * into rxftlr, so the controller only triggers a RX_FIFO_FULL
-	 * interrupt when all frames are available at the FIFO for consumption.
-	 */
-	if (xfer->rx_len) {
-		controller->ctrlr1 = xfer->rx_len - 1;
-		controller->rxftlr = (xfer->rx_len < SPI_FIFOS_DEPTH)
-					 ? xfer->rx_len - 1
-					 : SPI_DEFAULT_RX_THRESHOLD;
+	if ((tmode[spi] == QM_SPI_TMOD_RX) ||
+	    (tmode[spi] == QM_SPI_TMOD_TX_RX) ||
+	    (tmode[spi] == QM_SPI_TMOD_EEPROM_READ)) {
+		update |= QM_SPI_UPDATE_RX;
 	}
-	controller->txftlr = SPI_DEFAULT_TX_THRESHOLD;
+	if ((tmode[spi] == QM_SPI_TMOD_TX) ||
+	    (tmode[spi] == QM_SPI_TMOD_TX_RX) ||
+	    (tmode[spi] == QM_SPI_TMOD_EEPROM_READ)) {
+		update |= QM_SPI_UPDATE_TX;
+	}
 
-	spi_async_transfer[spi] = xfer;
-	tx_counter[spi] = 0;
 	rx_counter[spi] = 0;
+	tx_counter[spi] = 0;
+	qm_spi_irq_update(spi, xfer, update);
 
-	/* Unmask interrupts */
-	if (tmode[spi] == QM_SPI_TMOD_TX) {
-		controller->imr = QM_SPI_IMR_TXEIM | QM_SPI_IMR_TXOIM;
-	} else if (tmode[spi] == QM_SPI_TMOD_RX) {
-		controller->imr =
-		    QM_SPI_IMR_RXUIM | QM_SPI_IMR_RXOIM | QM_SPI_IMR_RXFIM;
-		controller->ssienr = QM_SPI_SSIENR_SSIENR;
-		write_frame(spi, (uint8_t *)&tx_dummy_frame);
+	if (QM_SPI_SLV_0 != spi) {
+		/*
+		 * If we are in RX only or EEPROM Read mode, the ctrlr1 reg
+		 * holds how many bytes the controller solicits, minus 1.
+		 * We also set the same into rxftlr, so the controller only
+		 * triggers a RX_FIFO_FULL interrupt when all frames are
+		 * available at the FIFO for consumption.
+		 */
+		if (xfer->rx_len) {
+			controller->ctrlr1 = xfer->rx_len - 1;
+			controller->rxftlr = (xfer->rx_len < SPI_FIFOS_DEPTH)
+						 ? xfer->rx_len - 1
+						 : SPI_MST_DEFAULT_RX_THRESHOLD;
+		}
+		controller->txftlr = SPI_MST_DEFAULT_TX_THRESHOLD;
 	} else {
-		controller->imr = QM_SPI_IMR_TXEIM | QM_SPI_IMR_TXOIM |
-				  QM_SPI_IMR_RXUIM | QM_SPI_IMR_RXOIM |
-				  QM_SPI_IMR_RXFIM;
+		if (xfer->rx_len) {
+			controller->rxftlr =
+			    (xfer->rx_len < SPI_SLV_DEFAULT_RX_THRESHOLD)
+				? xfer->rx_len - 1
+				: SPI_SLV_DEFAULT_RX_THRESHOLD;
+		}
+		controller->txftlr = SPI_SLV_DEFAULT_TX_THRESHOLD;
+
+		if (QM_SPI_TMOD_RX != tmode[spi]) {
+			/* Enable MISO line. */
+			controller->ctrlr0 &= ~QM_SPI_CTRLR0_SLV_OE;
+		} else {
+			/* Disable MISO line. */
+			controller->ctrlr0 |= QM_SPI_CTRLR0_SLV_OE;
+		}
 	}
 
-	controller->ssienr = QM_SPI_SSIENR_SSIENR; /** Enable SPI Device */
+	/* Enable SPI controller. */
+	controller->ssienr = QM_SPI_SSIENR_SSIENR;
+
+	if ((QM_SPI_SLV_0 != spi && QM_SPI_TMOD_RX == tmode[spi]) &&
+	    (QM_SPI_FRAME_FORMAT_STANDARD == frf[spi])) {
+		/*
+		 * In RX only, master is required to send
+		 * a dummy frame in order to start the
+		 * communication.
+		 */
+		write_frame(spi, (uint8_t *)&tx_dummy_frame);
+	}
 
 	return 0;
 }
 
 QM_ISR_DECLARE(qm_spi_master_0_isr)
 {
-	handle_spi_interrupt(QM_SPI_MST_0);
+	handle_spi_mst_interrupt(QM_SPI_MST_0);
 	QM_ISR_EOI(QM_IRQ_SPI_MASTER_0_INT_VECTOR);
 }
 
 #if (QUARK_SE)
 QM_ISR_DECLARE(qm_spi_master_1_isr)
 {
-	handle_spi_interrupt(QM_SPI_MST_1);
+	handle_spi_mst_interrupt(QM_SPI_MST_1);
 	QM_ISR_EOI(QM_IRQ_SPI_MASTER_1_INT_VECTOR);
 }
 #endif
+
+QM_ISR_DECLARE(qm_spi_slave_0_isr)
+{
+	handle_spi_slv_interrupt(QM_SPI_SLV_0);
+	QM_ISR_EOI(QM_IRQ_SPI_SLAVE_0_INT_VECTOR);
+}
 
 int qm_spi_irq_transfer_terminate(const qm_spi_t spi)
 {
 	QM_CHECK(spi < QM_SPI_NUM, -EINVAL);
 
 	qm_spi_reg_t *const controller = QM_SPI[spi];
-	const qm_spi_async_transfer_t *const transfer = spi_async_transfer[spi];
+	const volatile qm_spi_async_transfer_t *const transfer =
+	    spi_async_transfer[spi];
 
-	/* Mask the interrupts */
+	/* Mask the interrupts. */
 	controller->imr = QM_SPI_IMR_MASK_ALL;
-	controller->ssienr = 0; /** Disable SPI device */
+	/* Read how many frames are still on TX queue. */
+	uint16_t tx_fifo_frames = controller->txflr;
+	/* Disable SPI device. */
+	controller->ssienr = 0;
 
 	if (transfer->callback) {
 		uint16_t len = 0;
-		if (tmode[spi] == QM_SPI_TMOD_TX ||
-		    tmode[spi] == QM_SPI_TMOD_TX_RX) {
-			len = tx_counter[spi];
-
+		if (tmode[spi] == QM_SPI_TMOD_TX) {
+			if (tx_counter[spi] > tx_fifo_frames) {
+				len = tx_counter[spi] - tx_fifo_frames;
+			} else {
+				len = 0;
+			}
 		} else {
 			len = rx_counter[spi];
 		}
@@ -531,12 +809,14 @@ static void spi_dma_callback(void *callback_context, uint32_t len,
 	volatile bool *cb_pending_alternate_p;
 
 	/* The DMA driver returns a pointer to a dma_context struct from which
-	 * we find out the corresponding SPI device and transfer direction. */
+	 * we find out the corresponding SPI device and transfer direction.
+	 */
 	dma_context_t *const dma_context_p = callback_context;
 	const qm_spi_t spi = dma_context_p->spi_id;
 	QM_ASSERT(spi < QM_SPI_NUM);
 	qm_spi_reg_t *const controller = QM_SPI[spi];
-	const qm_spi_async_transfer_t *const transfer = spi_async_transfer[spi];
+	const volatile qm_spi_async_transfer_t *const transfer =
+	    spi_async_transfer[spi];
 	QM_ASSERT(transfer);
 	const uint8_t frame_size = dfs[spi];
 	QM_ASSERT((frame_size == 1) || (frame_size == 2) || (frame_size == 4));
@@ -564,11 +844,13 @@ static void spi_dma_callback(void *callback_context, uint32_t len,
 
 	if (error_code) {
 		/* Transfer failed, pass to client the error code returned by
-		 * the DMA driver. */
+		 * the DMA driver.
+		 */
 		client_error = error_code;
 	} else if (false == *cb_pending_alternate_p) {
 		/* TX transfers invoke the callback before the TX data has been
-		 * transmitted, we need to wait here. */
+		 * transmitted, we need to wait here.
+		 */
 		wait_for_controller(controller);
 
 		if (frames_transfered != frames_expected) {
@@ -609,7 +891,8 @@ int qm_spi_dma_channel_config(
 
 	/* Every data transfer performed by the DMA core corresponds to an SPI
 	 * data frame, the SPI uses the number of bits determined by a previous
-	 * qm_spi_set_config call where the frame size was specified. */
+	 * qm_spi_set_config call where the frame size was specified.
+	 */
 	switch (dfs[spi]) {
 	case 1:
 		dma_chan_cfg.source_transfer_width = QM_DMA_TRANS_WIDTH_8;
@@ -642,7 +925,8 @@ int qm_spi_dma_channel_config(
 #endif
 
 		/* The DMA burst length has to fit in the space remaining in the
-		 * TX FIFO after the watermark level, DMATDLR. */
+		 * TX FIFO after the watermark level, DMATDLR.
+		 */
 		dma_chan_cfg.source_burst_length = SPI_DMA_WRITE_BURST_LENGTH;
 		dma_chan_cfg.destination_burst_length =
 		    SPI_DMA_WRITE_BURST_LENGTH;
@@ -660,7 +944,8 @@ int qm_spi_dma_channel_config(
 		dma_chan_cfg.handshake_interface = DMA_HW_IF_SPI_MASTER_0_RX;
 #endif
 		/* The DMA burst length has to match the value of the receive
-		 * watermark level, DMARDLR + 1. */
+		 * watermark level, DMARDLR + 1.
+		 */
 		dma_chan_cfg.source_burst_length = SPI_DMA_READ_BURST_LENGTH;
 		dma_chan_cfg.destination_burst_length =
 		    SPI_DMA_READ_BURST_LENGTH;
@@ -676,7 +961,8 @@ int qm_spi_dma_channel_config(
 	/* The DMA driver needs a pointer to the client callback function so
 	 * that later we can identify to which SPI controller the DMA callback
 	 * corresponds to as well as whether we are dealing with a TX or RX
-	 * dma_context struct. */
+	 * dma_context struct.
+	 */
 	QM_ASSERT(dma_context_p);
 	dma_chan_cfg.callback_context = dma_context_p;
 
@@ -746,7 +1032,8 @@ int qm_spi_dma_transfer(const qm_spi_t spi,
 		}
 
 		/* In RX-only or EEPROM mode, the ctrlr1 register holds how
-		 * many data frames the controller solicits, minus 1. */
+		 * many data frames the controller solicits, minus 1.
+		 */
 		controller->ctrlr1 = xfer->rx_len - 1;
 	}
 
@@ -763,7 +1050,8 @@ int qm_spi_dma_transfer(const qm_spi_t spi,
 	}
 
 	/* Transfer pointer kept to extract user callback address and transfer
-	 * client id when DMA completes. */
+	 * client id when DMA completes.
+	 */
 	spi_async_transfer[spi] = xfer;
 
 	/* Enable the SPI device. */
@@ -791,7 +1079,8 @@ int qm_spi_dma_transfer(const qm_spi_t spi,
 
 		if (!xfer->tx_len) {
 			/* In RX-only mode we need to transfer an initial dummy
-			 * byte. */
+			 * byte.
+			 */
 			write_frame(spi, (uint8_t *)&tx_dummy_frame);
 		}
 	}
@@ -812,10 +1101,11 @@ int qm_spi_dma_transfer(const qm_spi_t spi,
 			if (xfer->rx_len) {
 				/* If a RX transfer was previously started, we
 				 * need to stop it - the SPI device will be
-				 * disabled when handling the DMA callback. */
+				 * disabled when handling the DMA callback.
+				 */
 				qm_spi_dma_transfer_terminate(spi);
 			} else {
-				/* Disable DMA setting and SPI controller. */
+				/* Disable DMA setting and SPI controller.*/
 				controller->dmacr = 0;
 				controller->ssienr = 0;
 			}
@@ -885,6 +1175,23 @@ int qm_spi_restore_context(const qm_spi_t spi,
 	regs->ctrlr0 = ctx->ctrlr0;
 	regs->ser = ctx->ser;
 	regs->baudr = ctx->baudr;
+
+	return 0;
+}
+#else
+int qm_spi_save_context(const qm_spi_t spi, qm_spi_context_t *const ctx)
+{
+	(void)spi;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_spi_restore_context(const qm_spi_t spi,
+			   const qm_spi_context_t *const ctx)
+{
+	(void)spi;
+	(void)ctx;
 
 	return 0;
 }

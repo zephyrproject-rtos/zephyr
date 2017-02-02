@@ -38,6 +38,12 @@ qm_flash_reg_t *qm_flash[QM_FLASH_NUM] = {(qm_flash_reg_t *)QM_FLASH_BASE_0};
 #endif
 #endif
 
+static __inline__ bool qm_flash_check_otp_locked(const uint32_t flash_stts)
+{
+	return (
+	    (QM_FLASH_STTS_ROM_PROG == (flash_stts & QM_FLASH_STTS_ROM_PROG)));
+}
+
 int qm_flash_set_config(const qm_flash_t flash, const qm_flash_config_t *cfg)
 {
 	QM_CHECK(flash < QM_FLASH_NUM, -EINVAL);
@@ -52,10 +58,8 @@ int qm_flash_set_config(const qm_flash_t flash, const qm_flash_config_t *cfg)
 	    (controller->tmg_ctrl & QM_FLASH_TMG_DEF_MASK) |
 	    (cfg->us_count | (cfg->wait_states << QM_FLASH_WAIT_STATE_OFFSET));
 
-	if (QM_FLASH_WRITE_DISABLE == cfg->write_disable) {
+	if (cfg->write_disable == QM_FLASH_WRITE_DISABLE) {
 		controller->ctrl |= QM_FLASH_WRITE_DISABLE_VAL;
-	} else {
-		controller->ctrl &= ~QM_FLASH_WRITE_DISABLE_VAL;
 	}
 
 	return 0;
@@ -94,6 +98,11 @@ int qm_flash_word_write(const qm_flash_t flash, const qm_flash_region_t region,
 #endif
 
 	case QM_FLASH_REGION_OTP:
+
+		if (qm_flash_check_otp_locked(controller->flash_stts)) {
+			return -EACCES;
+		}
+
 		p_wr_data = &controller->rom_wr_data;
 		p_wr_ctrl = &controller->rom_wr_ctrl;
 		break;
@@ -144,6 +153,12 @@ int qm_flash_page_write(const qm_flash_t flash, const qm_flash_region_t region,
 		break;
 
 	case QM_FLASH_REGION_OTP:
+
+		/* Check if OTP locked. */
+		if (qm_flash_check_otp_locked(controller->flash_stts)) {
+			return -EACCES;
+		}
+
 		p_wr_data = &controller->rom_wr_data;
 		p_wr_ctrl = &controller->rom_wr_ctrl;
 		break;
@@ -227,6 +242,12 @@ int qm_flash_page_update(const qm_flash_t flash, const qm_flash_region_t region,
 #endif
 
 	case QM_FLASH_REGION_OTP:
+
+		/* Check if OTP locked. */
+		if (qm_flash_check_otp_locked(controller->flash_stts)) {
+			return -EACCES;
+		}
+
 		p_wr_data = &controller->rom_wr_data;
 		p_wr_ctrl = &controller->rom_wr_ctrl;
 		p_flash = (uint32_t *)(QM_FLASH_REGION_OTP_0_BASE +
@@ -295,6 +316,12 @@ int qm_flash_page_erase(const qm_flash_t flash, const qm_flash_region_t region,
 		break;
 
 	case QM_FLASH_REGION_OTP:
+
+		/* Check if OTP locked. */
+		if (qm_flash_check_otp_locked(controller->flash_stts)) {
+			return -EACCES;
+		}
+
 		controller->rom_wr_ctrl =
 		    (page_num << (QM_FLASH_PAGE_SIZE_BITS + WR_ADDR_OFFSET)) |
 		    ER_REQ;
@@ -317,6 +344,12 @@ int qm_flash_mass_erase(const qm_flash_t flash, const uint8_t include_rom)
 
 	/* Erase all the Flash pages */
 	if (include_rom) {
+
+		/* Check if OTP locked. */
+		if (qm_flash_check_otp_locked(controller->flash_stts)) {
+			return -EACCES;
+		}
+
 		controller->ctrl |= MASS_ERASE_INFO;
 	}
 	controller->ctrl |= MASS_ERASE;
@@ -349,6 +382,23 @@ int qm_flash_restore_context(const qm_flash_t flash,
 
 	controller->tmg_ctrl = ctx->tmg_ctrl;
 	controller->ctrl = ctx->ctrl;
+
+	return 0;
+}
+#else
+int qm_flash_save_context(const qm_flash_t flash, qm_flash_context_t *const ctx)
+{
+	(void)flash;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_flash_restore_context(const qm_flash_t flash,
+			     const qm_flash_context_t *const ctx)
+{
+	(void)flash;
+	(void)ctx;
 
 	return 0;
 }

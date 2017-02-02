@@ -449,7 +449,6 @@ int qm_i2c_slave_dma_transfer(const qm_i2c_t i2c,
  */
 int qm_i2c_dma_transfer_terminate(const qm_i2c_t i2c);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save I2C context.
  *
@@ -482,7 +481,6 @@ int qm_i2c_save_context(const qm_i2c_t i2c, qm_i2c_context_t *const ctx);
  */
 int qm_i2c_restore_context(const qm_i2c_t i2c,
 			   const qm_i2c_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

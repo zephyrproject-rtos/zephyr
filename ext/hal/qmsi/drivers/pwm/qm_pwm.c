@@ -29,29 +29,89 @@
 
 #include "qm_pwm.h"
 
-static void (*callback[QM_PWM_NUM])(void *data, uint32_t int_status);
+/* Store callback information for each PWM channel. */
+static void (*callback[QM_PWM_NUM][QM_PWM_ID_NUM])(void *data,
+						   uint32_t int_status);
+static void *callback_data[QM_PWM_NUM][QM_PWM_ID_NUM];
 
-static void *callback_data[QM_PWM_NUM];
+#if (NUM_PWM_CONTROLLER_INTERRUPTS > 1)
+const uint32_t pwm_isr_vectors[QM_PWM_ID_NUM] = {
+    QM_IRQ_PWM_0_INT_0_PRIORITY, QM_IRQ_PWM_0_INT_1_PRIORITY,
+    QM_IRQ_PWM_0_INT_2_PRIORITY, QM_IRQ_PWM_0_INT_3_PRIORITY};
+#endif /* NUM_PWM_CONTROLLER_INTERRUPTS > 1 */
 
-QM_ISR_DECLARE(qm_pwm_0_isr)
+#ifndef UNIT_TEST
+qm_pwm_reg_t *qm_pwm[QM_PWM_NUM] = {(qm_pwm_reg_t *)(QM_PWM_BASE)};
+#endif /* UNIT_TEST */
+
+#if (NUM_PWM_CONTROLLER_INTERRUPTS > 1)
+/*
+ * If there is more than one interrupt line for PWM, use a common handler
+ * and only clear the corresponding interrupt IRQ.
+ */
+/* Interrupt service routine handler for PWM channels. */
+static void pwm_isr_handler(const qm_pwm_t pwm, const qm_pwm_id_t id)
 {
-	/*  Which timers fired. */
-	uint32_t int_status = QM_PWM[QM_PWM_0].timersintstatus;
-	/* Clear timers interrupt flag. */
-	QM_PWM[QM_PWM_0].timerseoi;
+	qm_pwm_reg_t *const controller = QM_PWM[pwm];
+	/* Check for callback function. */
+	if (callback[pwm][id]) {
+		(callback[pwm][id])(callback_data[pwm][id], BIT(id));
+	}
 
-	if (callback[QM_PWM_0]) {
-		(*callback[QM_PWM_0])(callback_data[QM_PWM_0], int_status);
+	/* Clear interrupt on read. */
+	controller->timer[id].eoi;
+	QM_ISR_EOI(pwm_isr_vectors[id]);
+}
+
+QM_ISR_DECLARE(qm_pwm_0_isr_0)
+{
+	pwm_isr_handler(QM_PWM_0, QM_PWM_ID_0);
+}
+
+QM_ISR_DECLARE(qm_pwm_0_isr_1)
+{
+	pwm_isr_handler(QM_PWM_0, QM_PWM_ID_1);
+}
+
+QM_ISR_DECLARE(qm_pwm_0_isr_2)
+{
+	pwm_isr_handler(QM_PWM_0, QM_PWM_ID_2);
+}
+
+QM_ISR_DECLARE(qm_pwm_0_isr_3)
+{
+	pwm_isr_handler(QM_PWM_0, QM_PWM_ID_3);
+}
+
+#else /* NUM_PWM_CONTROLLER_INTERRUPTS > 1 */
+QM_ISR_DECLARE(qm_pwm_0_isr_0)
+{
+	qm_pwm_reg_t *const controller = QM_PWM[QM_PWM_0];
+	uint32_t int_status = controller->timersintstatus;
+	uint8_t pwm_id = 0;
+
+	for (; pwm_id < QM_PWM_ID_NUM; pwm_id++) {
+		if (int_status & BIT(pwm_id)) {
+			if (callback[QM_PWM_0][pwm_id]) {
+				(*callback[QM_PWM_0][pwm_id])(
+				    callback_data[QM_PWM_0][pwm_id],
+				    BIT(pwm_id));
+				controller->timer[pwm_id].eoi;
+			}
+		}
 	}
 	QM_ISR_EOI(QM_IRQ_PWM_0_INT_VECTOR);
 }
+
+#endif /* NUM_PWM_CONTROLLER_INTERRUPTS > 1 */
 
 int qm_pwm_start(const qm_pwm_t pwm, const qm_pwm_id_t id)
 {
 	QM_CHECK(pwm < QM_PWM_NUM, -EINVAL);
 	QM_CHECK(id < QM_PWM_ID_NUM, -EINVAL);
 
-	QM_PWM[pwm].timer[id].controlreg |= PWM_START;
+	qm_pwm_reg_t *const controller = QM_PWM[pwm];
+	controller->timer[id].controlreg |= PWM_START;
 
 	return 0;
 }
@@ -61,7 +121,9 @@ int qm_pwm_stop(const qm_pwm_t pwm, const qm_pwm_id_t id)
 	QM_CHECK(pwm < QM_PWM_NUM, -EINVAL);
 	QM_CHECK(id < QM_PWM_ID_NUM, -EINVAL);
 
-	QM_PWM[pwm].timer[id].controlreg &= ~PWM_START;
+	qm_pwm_reg_t *const controller = QM_PWM[pwm];
+
+	controller->timer[id].controlreg &= ~PWM_START;
 
 	return 0;
 }
@@ -78,14 +140,15 @@ int qm_pwm_set_config(const qm_pwm_t pwm, const qm_pwm_id_t id,
 	QM_CHECK(cfg->mode == QM_PWM_MODE_PWM ? 0 != cfg->hi_count : 1,
 		 -EINVAL);
 
-	QM_PWM[pwm].timer[id].loadcount = cfg->lo_count - 1;
-	QM_PWM[pwm].timer[id].controlreg =
+	qm_pwm_reg_t *const controller = QM_PWM[pwm];
+	controller->timer[id].loadcount = cfg->lo_count - 1;
+	controller->timer[id].controlreg =
 	    (cfg->mode | (cfg->mask_interrupt << QM_PWM_INTERRUPT_MASK_OFFSET));
-	QM_PWM[pwm].timer_loadcount2[id] = cfg->hi_count - 1;
+	controller->timer_loadcount2[id] = cfg->hi_count - 1;
 
 	/* Assign user callback function. */
-	callback[pwm] = cfg->callback;
-	callback_data[pwm] = cfg->callback_data;
+	callback[pwm][id] = cfg->callback;
+	callback_data[pwm][id] = cfg->callback_data;
 
 	return 0;
 }
@@ -97,14 +160,15 @@ int qm_pwm_set(const qm_pwm_t pwm, const qm_pwm_id_t id,
 	QM_CHECK(id < QM_PWM_ID_NUM, -EINVAL);
 	QM_CHECK(0 < lo_count, -EINVAL);
 	/* If mode is PWM, hi_count must be > 0, otherwise don't care. */
-	QM_CHECK(((QM_PWM[pwm].timer[id].controlreg & QM_PWM_CONF_MODE_MASK) ==
+	QM_CHECK(((QM_PWM[pwm]->timer[id].controlreg & QM_PWM_CONF_MODE_MASK) ==
 			  QM_PWM_MODE_PWM
 		      ? 0 < hi_count
 		      : 1),
 		 -EINVAL);
 
-	QM_PWM[pwm].timer[id].loadcount = lo_count - 1;
-	QM_PWM[pwm].timer_loadcount2[id] = hi_count - 1;
+	qm_pwm_reg_t *const controller = QM_PWM[pwm];
+	controller->timer[id].loadcount = lo_count - 1;
+	controller->timer_loadcount2[id] = hi_count - 1;
 
 	return 0;
 }
@@ -117,8 +181,9 @@ int qm_pwm_get(const qm_pwm_t pwm, const qm_pwm_id_t id,
 	QM_CHECK(lo_count != NULL, -EINVAL);
 	QM_CHECK(hi_count != NULL, -EINVAL);
 
-	*lo_count = QM_PWM[pwm].timer[id].loadcount;
-	*hi_count = QM_PWM[pwm].timer_loadcount2[id];
+	qm_pwm_reg_t *const controller = QM_PWM[pwm];
+	*lo_count = controller->timer[id].loadcount;
+	*hi_count = controller->timer_loadcount2[id];
 
 	return 0;
 }
@@ -129,7 +194,7 @@ int qm_pwm_save_context(const qm_pwm_t pwm, qm_pwm_context_t *const ctx)
 	QM_CHECK(pwm < QM_PWM_NUM, -EINVAL);
 	QM_CHECK(ctx != NULL, -EINVAL);
 
-	qm_pwm_reg_t *const controller = &QM_PWM[pwm];
+	qm_pwm_reg_t *const controller = QM_PWM[pwm];
 	uint8_t i;
 
 	for (i = 0; i < QM_PWM_ID_NUM; i++) {
@@ -147,7 +212,7 @@ int qm_pwm_restore_context(const qm_pwm_t pwm,
 	QM_CHECK(pwm < QM_PWM_NUM, -EINVAL);
 	QM_CHECK(ctx != NULL, -EINVAL);
 
-	qm_pwm_reg_t *const controller = &QM_PWM[pwm];
+	qm_pwm_reg_t *const controller = QM_PWM[pwm];
 	uint8_t i;
 
 	for (i = 0; i < QM_PWM_ID_NUM; i++) {
@@ -155,6 +220,23 @@ int qm_pwm_restore_context(const qm_pwm_t pwm,
 		controller->timer[i].controlreg = ctx->channel[i].controlreg;
 		controller->timer_loadcount2[i] = ctx->channel[i].loadcount2;
 	}
+
+	return 0;
+}
+#else
+int qm_pwm_save_context(const qm_pwm_t pwm, qm_pwm_context_t *const ctx)
+{
+	(void)pwm;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_pwm_restore_context(const qm_pwm_t pwm,
+			   const qm_pwm_context_t *const ctx)
+{
+	(void)pwm;
+	(void)ctx;
 
 	return 0;
 }

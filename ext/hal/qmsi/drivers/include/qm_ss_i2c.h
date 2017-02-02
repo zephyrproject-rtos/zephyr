@@ -266,7 +266,6 @@ int qm_ss_i2c_master_irq_transfer(const qm_ss_i2c_t i2c,
  */
 int qm_ss_i2c_irq_transfer_terminate(const qm_ss_i2c_t i2c);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save SS I2C context.
  *
@@ -300,7 +299,6 @@ int qm_ss_i2c_save_context(const qm_ss_i2c_t i2c,
  */
 int qm_ss_i2c_restore_context(const qm_ss_i2c_t i2c,
 			      const qm_ss_i2c_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

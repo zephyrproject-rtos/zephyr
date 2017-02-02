@@ -44,9 +44,10 @@
 * Wake source for deep sleep mode type.
 */
 typedef enum {
-	POWER_WAKE_FROM_GPIO_COMP, /**< Use GPIO / Comparator as wake source. */
-	POWER_WAKE_FROM_RTC,       /**< Use RTC as wake source. */
-} power_wake_event_t;
+	/** Use GPIO/Comparator as wake source. */
+	QM_POWER_WAKE_FROM_GPIO_COMP,
+	QM_POWER_WAKE_FROM_RTC, /**< Use RTC as wake source. */
+} qm_power_wake_event_t;
 
 /**
  * Put CPU in halt state.
@@ -56,7 +57,7 @@ typedef enum {
  * This function can be called with interrupts disabled.
  * Interrupts will be enabled before triggering the transition.
  */
-void power_cpu_halt(void);
+void qm_power_cpu_halt(void);
 
 /**
  * Put SoC to sleep.
@@ -79,27 +80,27 @@ void power_cpu_halt(void);
  *  - RTC
  *  - Low power comparators
  */
-void power_soc_sleep();
+void qm_power_soc_sleep();
 
 /**
  * Put SoC to deep sleep.
  *
  * Enter into deep sleep mode. All clocks are gated. The Wake source for this
- * function depends on the input parameter, POWER_WAKE_FROM_GPIO_COMP will
- * enable waking from GPIO or comparator pins and POWER_WAKE_FROM_RTC will
+ * function depends on the input parameter, QM_POWER_WAKE_FROM_GPIO_COMP will
+ * enable waking from GPIO or comparator pins and QM_POWER_WAKE_FROM_RTC will
  * enable waking from the RTC.
  *
  * @param[in] wake_event Select wake source for deep sleep mode.
  */
-void power_soc_deep_sleep(const power_wake_event_t wake_event);
+void qm_power_soc_deep_sleep(const qm_power_wake_event_t wake_event);
 
 /**
  * Restore system state after sleep or deep sleep.
  *
  * On wakeup, the system is restored to the previous state before
- * power_soc_sleep() or power_soc_deep_sleep() was called.
+ * qm_power_soc_sleep() or qm_power_soc_deep_sleep() was called.
  */
-void power_soc_restore(void);
+void qm_power_soc_restore(void);
 
 /**
  * Retention alternator regulator for Quark D2000.
@@ -112,9 +113,9 @@ void power_soc_restore(void);
  * RAR modes type.
  */
 typedef enum {
-	RAR_NORMAL,   /**< Normal mode = 50 mA. */
-	RAR_RETENTION /**< Retention mode = 300 uA. */
-} rar_state_t;
+	QM_RAR_NORMAL,   /**< Normal mode = 50 mA. */
+	QM_RAR_RETENTION /**< Retention mode = 300 uA. */
+} qm_rar_state_t;
 
 /**
  * Change operating mode of RAR.
@@ -130,7 +131,7 @@ typedef enum {
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
  */
-int rar_set_mode(const rar_state_t mode);
+int qm_rar_set_mode(const qm_rar_state_t mode);
 
 /**
  * @}

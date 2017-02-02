@@ -130,4 +130,18 @@ int qm_pic_timer_restore_context(const qm_pic_timer_context_t *const ctx)
 
 	return 0;
 }
+#else
+int qm_pic_timer_save_context(qm_pic_timer_context_t *const ctx)
+{
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_pic_timer_restore_context(const qm_pic_timer_context_t *const ctx)
+{
+	(void)ctx;
+
+	return 0;
+}
 #endif

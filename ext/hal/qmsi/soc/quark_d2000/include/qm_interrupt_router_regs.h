@@ -47,6 +47,15 @@
 /* Masks for single source halts in the Interrupt Router. */
 #define QM_IR_INT_LMT_HALT_MASK BIT(16)
 
+/**
+ * Interrupt Router macros to determine if the specified peripheral interrupt
+ * mask has been locked.
+ */
+#define QM_IR_LMT_INT_LOCK_HALT_MASK(_peripheral_)                             \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(2))
+#define QM_IR_LMT_INT_LOCK_MASK(_peripheral_)                                  \
+	(QM_INTERRUPT_ROUTER->lock_int_mask_reg & BIT(0))
+
 /* Interrupt Router Unmask interrupts for a peripheral. */
 #define QM_IR_UNMASK_LMT_INTERRUPTS(_peripheral_)                              \
 	(_peripheral_ &= ~(QM_IR_INT_LMT_MASK))
@@ -75,6 +84,10 @@
 	QM_IR_MASK_LMT_INTERRUPTS(_peripheral_)
 #define QM_IR_UNMASK_HALTS(_peripheral_) QM_IR_UNMASK_LMT_HALTS(_peripheral_)
 #define QM_IR_MASK_HALTS(_peripheral_) QM_IR_MASK_LMT_HALTS(_peripheral_)
+
+#define QM_IR_INT_LOCK_MASK(_peripheral_) QM_IR_LMT_INT_LOCK_MASK(_peripheral_)
+#define QM_IR_INT_LOCK_HALT_MASK(_peripheral_)                                 \
+	QM_IR_LMT_INT_LOCK_MASK(_peripheral_)
 
 #define QM_IR_INT_MASK QM_IR_INT_LMT_MASK
 #define QM_IR_INT_HALT_MASK QM_IR_INT_LMT_HALT_MASK

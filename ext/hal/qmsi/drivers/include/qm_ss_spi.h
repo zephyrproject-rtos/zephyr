@@ -32,9 +32,6 @@
 
 #include "qm_common.h"
 #include "qm_sensor_regs.h"
-#if HAS_SS_DMA
-#include "qm_ss_dma.h"
-#endif
 /**
  * SPI peripheral driver for Sensor Subsystem.
  *
@@ -313,58 +310,6 @@ int qm_ss_spi_transfer(const qm_ss_spi_t spi,
 int qm_ss_spi_irq_transfer(const qm_ss_spi_t spi,
 			   const qm_ss_spi_async_transfer_t *const xfer);
 
-#if HAS_SS_DMA
-/**
- * Configure a DMA channel with a specific transfer direction.
- *
- * The user is responsible for managing the allocation of the pool of DMA
- * channels provided by each DMA core to the different peripheral drivers
- * that require them.
- *
- * Note that a SPI controller cannot use different DMA cores to manage
- * transfers in different directions.
- *
- * This function configures DMA channel parameters that are unlikely to change
- * between transfers, like transaction width, burst size, and handshake
- * interface parameters. The user will likely only call this function once for
- * the lifetime of an application unless the channel needs to be repurposed.
- *
- * Note that qm_dma_init() must first be called before configuring a channel.
- *
- * @param[in] spi SPI controller identifier.
- * @param[in] dma_channel_direction DMA channel direction, either
- * QM_DMA_MEMORY_TO_PERIPHERAL (TX transfer) or QM_DMA_PERIPHERAL_TO_MEMORY
- * (RX transfer).
- *
- * @return Standard errno return type for QMSI.
- * @retval 0 on success.
- * @retval Negative @ref errno for possible error codes.
- */
-/* TODO - DR AP[2756] Revisit when DMA is added the sensor SPI QMSI 1.1 */
-int qm_ss_spi_dma_channel_config(
-    const qm_ss_spi_t spi,
-    const qm_ss_dma_destination_target_type_t dma_channel_direction);
-
-/**
- * Perform a DMA based transfer on the SPI bus. The function will
- * replenish/empty TX/RX FIFOs on DMA empty/full interrupts.
- *
- * @brief DMA based transfer on SPI.
- *
- * @param [in] spi SPI controller id
- * @param [in] xfer Transfer structure includes write / read data
- *                  and length; write, read and error callback
- *                  functions and a callback identifier.
- *
- * @return Standard errno return type for QMSI.
- * @retval 0 on success.
- * @retval Negative @ref errno for possible error codes
- */
-/* TODO - DR AP[2756] Revisit when DMA is added the sensor SPI QMSI 1.1 */
-int qm_ss_spi_dma_transfer(const qm_ss_spi_t spi,
-			   const qm_ss_spi_async_transfer_t *const xfer);
-#endif /* HAS_SS_QMSI_DMA */
-
 /**
  * Terminate SPI IRQ transfer.
  *
@@ -378,27 +323,8 @@ int qm_ss_spi_dma_transfer(const qm_ss_spi_t spi,
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
  */
-int qm_ss_spi_transfer_terminate(const qm_ss_spi_t spi);
+int qm_ss_spi_irq_transfer_terminate(const qm_ss_spi_t spi);
 
-#if HAS_SS_QMSI_DMA
-/**
- * Terminate SPI DMA transfer.
- *
- * Terminate the current DMA SPI transfer.
- * This function will trigger complete callbacks even
- * if the transfer is not completed.
- *
- * @param[in] spi SPI module identifier.
- *
- * @return Standard errno return type for QMSI.
- * @retval 0 on success.
- * @retval Negative @ref errno for possible error codes.
- */
-/* TODO - DR AP[2756] Revisit when DMA is added the sensor SPI QMSI 1.1 */
-int qm_ss_spi_dma_transfer_terminate(const qm_ss_spi_t spi);
-#endif /* HAS_SS_QMSI_DMA */
-
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save SS SPI context.
  *
@@ -430,7 +356,6 @@ int qm_ss_spi_save_context(const qm_ss_spi_t spi,
  */
 int qm_ss_spi_restore_context(const qm_ss_spi_t spi,
 			      const qm_ss_spi_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

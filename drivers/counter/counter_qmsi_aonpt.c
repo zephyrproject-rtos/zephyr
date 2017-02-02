@@ -115,7 +115,7 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 	int result = 0;
 
 	/* Check if timer has been started */
-	if (QM_AONC[QM_AONC_0].aonpt_cfg == 0) {
+	if (QM_AONC[QM_AONC_0]->aonpt_cfg == 0) {
 		return -ENOTSUP;
 	}
 
@@ -144,7 +144,7 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 
 static uint32_t aon_timer_qmsi_get_pending_int(struct device *dev)
 {
-	return QM_AONC[QM_AONC_0].aonpt_stat;
+	return QM_AONC[QM_AONC_0]->aonpt_stat;
 }
 
 static const struct counter_driver_api aon_timer_qmsi_api = {

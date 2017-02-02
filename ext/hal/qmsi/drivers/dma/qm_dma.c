@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "clk.h"
 #include "dma.h"
 
 #ifndef UNIT_TEST
@@ -92,10 +93,10 @@ static void qm_dma_isr_handler(const qm_dma_t dma,
 		/* Block completed, clear interrupt. */
 		int_reg->clear_block_low = BIT(channel_id);
 
-		prv_cfg->num_blocks_remaining--;
+		prv_cfg->num_blocks_int_pending--;
 
 		if (NULL != prv_cfg->lli_tail &&
-		    0 == prv_cfg->num_blocks_remaining) {
+		    0 == prv_cfg->num_blocks_int_pending) {
 			/*
 			 * Linked list mode, invoke callback if this is last
 			 * block of buffer.
@@ -107,13 +108,13 @@ static void qm_dma_isr_handler(const qm_dma_t dma,
 			}
 
 			/* Buffer done, set for next buffer. */
-			prv_cfg->num_blocks_remaining =
+			prv_cfg->num_blocks_int_pending =
 			    prv_cfg->num_blocks_per_buffer;
 
 		} else if (NULL == prv_cfg->lli_tail) {
-			QM_ASSERT(prv_cfg->num_blocks_remaining <
+			QM_ASSERT(prv_cfg->num_blocks_int_pending <
 				  prv_cfg->num_blocks_per_buffer);
-			if (1 == prv_cfg->num_blocks_remaining) {
+			if (1 == prv_cfg->num_blocks_int_pending) {
 				/*
 				 * Contiguous mode. We have just processed the
 				 * next to last block, clear CFG.RELOAD so
@@ -238,7 +239,7 @@ int qm_dma_init(const qm_dma_t dma)
 	int return_code;
 
 	/* Enable the DMA Clock */
-	QM_SCSS_CCU->ccu_mlayer_ahb_ctl |= QM_CCU_DMA_CLK_EN;
+	clk_dma_enable();
 
 	/* Disable the controller */
 	return_code = dma_controller_disable(dma);
@@ -408,22 +409,34 @@ dma_linked_list_init(const qm_dma_multi_transfer_t *multi_transfer,
 	    (ctrl_low & QM_DMA_CTL_L_SINC_MASK) >> QM_DMA_CTL_L_SINC_OFFSET;
 	qm_dma_address_increment_t destination_address_inc_type =
 	    (ctrl_low & QM_DMA_CTL_L_DINC_MASK) >> QM_DMA_CTL_L_DINC_OFFSET;
+	/* Linked list node iteration variable. */
+	qm_dma_linked_list_item_t *lli = multi_transfer->linked_list_first;
+	uint32_t source_inc = 0;
+	uint32_t destination_inc = 0;
+	uint32_t i;
+
 	QM_ASSERT(source_address_inc_type == QM_DMA_ADDRESS_INCREMENT ||
 		  source_address_inc_type == QM_DMA_ADDRESS_NO_CHANGE);
 	QM_ASSERT(destination_address_inc_type == QM_DMA_ADDRESS_INCREMENT ||
 		  destination_address_inc_type == QM_DMA_ADDRESS_NO_CHANGE);
-	/* Source/destination address increment between consecutive blocks. */
-	uint32_t source_inc =
-	    (source_address_inc_type == QM_DMA_ADDRESS_INCREMENT)
-		? multi_transfer->block_size
-		: 0;
-	uint32_t destination_inc =
-	    (destination_address_inc_type == QM_DMA_ADDRESS_INCREMENT)
-		? multi_transfer->block_size
-		: 0;
-	/* Linked list node iteration variable. */
-	qm_dma_linked_list_item_t *lli = multi_transfer->linked_list_first;
-	uint32_t i;
+
+	/*
+	 * Memory endpoints increment the source/destination address between
+	 * consecutive LLIs by the block size times the transfer width in
+	 * bytes.
+	 */
+	if (source_address_inc_type == QM_DMA_ADDRESS_INCREMENT) {
+		source_inc = multi_transfer->block_size *
+			     BIT((ctrl_low & QM_DMA_CTL_L_SRC_TR_WIDTH_MASK) >>
+				 QM_DMA_CTL_L_SRC_TR_WIDTH_OFFSET);
+	}
+
+	if (destination_address_inc_type == QM_DMA_ADDRESS_INCREMENT) {
+		destination_inc =
+		    multi_transfer->block_size *
+		    BIT((ctrl_low & QM_DMA_CTL_L_DST_TR_WIDTH_MASK) >>
+			QM_DMA_CTL_L_DST_TR_WIDTH_OFFSET);
+	}
 
 	for (i = 0; i < multi_transfer->num_blocks; i++) {
 		lli->source_address = source_address;
@@ -479,9 +492,8 @@ int qm_dma_multi_transfer_set_config(
 	if (0 == chan_reg->llp_low) {
 		prv_cfg->num_blocks_per_buffer =
 		    multi_transfer_config->num_blocks;
-		prv_cfg->num_blocks_remaining =
-		    multi_transfer_config->num_blocks;
 	}
+	prv_cfg->num_blocks_int_pending = multi_transfer_config->num_blocks;
 
 	switch (transfer_type) {
 	case QM_DMA_TYPE_MULTI_CONT:
@@ -496,8 +508,18 @@ int qm_dma_multi_transfer_set_config(
 				   multi_transfer_config->block_size);
 		break;
 
-	case QM_DMA_TYPE_MULTI_LL_CIRCULAR:
 	case QM_DMA_TYPE_MULTI_LL:
+		/*
+		 * Block interrupts are not enabled in linear linked list with
+		 * single buffer as only one client callback invocation is
+		 * needed, which takes place on transfer callback interrupt.
+		 */
+		if (0 == chan_reg->llp_low) {
+			prv_cfg->num_blocks_int_pending = 0;
+		}
+	/* FALLTHROUGH - continue to common circular/linear LL code */
+
+	case QM_DMA_TYPE_MULTI_LL_CIRCULAR:
 		if (multi_transfer_config->linked_list_first == NULL ||
 		    ((uint32_t)multi_transfer_config->linked_list_first &
 		     0x3) != 0) {
@@ -601,8 +623,12 @@ int qm_dma_transfer_start(const qm_dma_t dma,
 	int_reg->mask_tfr_low = ((BIT(channel_id) << 8) | BIT(channel_id));
 	int_reg->mask_err_low = ((BIT(channel_id) << 8) | BIT(channel_id));
 
-	if (prv_cfg->num_blocks_per_buffer > 1) {
-		/* Block interrupts are only unmasked in multiblock mode. */
+	if (prv_cfg->num_blocks_int_pending > 0) {
+		/*
+		 * Block interrupts are only unmasked in multiblock mode
+		 * (contiguous, circular linked list or multibuffer linear
+		 * linked list).
+		 */
 		int_reg->mask_block_low =
 		    ((BIT(channel_id) << 8) | BIT(channel_id));
 	}
@@ -719,6 +745,23 @@ int qm_dma_restore_context(const qm_dma_t dma,
 		chan_reg->cfg_high = ctx->channel[i].cfg_high;
 		chan_reg->llp_low = ctx->channel[i].llp_low;
 	}
+	return 0;
+}
+#else
+int qm_dma_save_context(const qm_dma_t dma, qm_dma_context_t *const ctx)
+{
+	(void)dma;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_dma_restore_context(const qm_dma_t dma,
+			   const qm_dma_context_t *const ctx)
+{
+	(void)dma;
+	(void)ctx;
+
 	return 0;
 }
 #endif /* ENABLE_RESTORE_CONTEXT */

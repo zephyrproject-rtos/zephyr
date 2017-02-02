@@ -41,7 +41,7 @@
  *     - Sleep
  *
  * LPSS can only be enabled from the Sensor core,
- * refer to @ref ss_power_soc_lpss_enable for further details.
+ * refer to @ref qm_ss_power_soc_lpss_enable for further details.
  *
  * @defgroup groupSoCPower Quark SE SoC Power states
  * @{
@@ -63,7 +63,7 @@
  * 	- AON Timer Interrupt
  * 	- RTC Interrupt
  */
-void power_soc_sleep(void);
+void qm_power_soc_sleep(void);
 
 /**
  * Enter SoC deep sleep state.
@@ -83,7 +83,7 @@ void power_soc_sleep(void);
  *
  * This function puts 1P8V regulators and 3P3V into Linear Mode.
  */
-void power_soc_deep_sleep(void);
+void qm_power_soc_deep_sleep(void);
 
 #if (ENABLE_RESTORE_CONTEXT) && (!QM_SENSOR)
 /**
@@ -99,9 +99,9 @@ void power_soc_deep_sleep(void);
  *
  * This function calls qm_x86_save_context and qm_x86_restore_context
  * in order to restore execution where it stopped.
- * All power management transitions are done by power_soc_sleep().
+ * All power management transitions are done by qm_power_soc_sleep().
  */
-void power_soc_sleep_restore(void);
+void qm_power_soc_sleep_restore(void);
 
 /**
  * Enter SoC deep sleep state and restore after wake up.
@@ -116,25 +116,25 @@ void power_soc_sleep_restore(void);
  *
  * This function calls qm_x86_save_context and qm_x86_restore_context
  * in order to restore execution where it stopped.
- * All power management transitions are done by power_soc_deep_sleep().
+ * All power management transitions are done by qm_power_soc_deep_sleep().
  */
-void power_soc_deep_sleep_restore(void);
+void qm_power_soc_deep_sleep_restore(void);
 
 /**
  * Save context, enter x86 C2 power save state and restore after wake up.
  *
- * This routine is same as power_soc_sleep_restore(), just instead of
+ * This routine is same as qm_power_soc_sleep_restore(), just instead of
  * going to sleep it will go to C2 power save state.
  * Note: this function has a while(1) which will spin until we enter
  * (and exit) sleep while the power state change will be managed by
  * the other core.
  */
-void power_sleep_wait(void);
+void qm_power_sleep_wait(void);
 
 /**
  * Enable the x86 startup restore flag, see GPS0 #define in qm_soc_regs.h
  */
-void power_soc_set_x86_restore_flag(void);
+void qm_power_soc_set_x86_restore_flag(void);
 
 #endif /* ENABLE_RESTORE_CONTEXT */
 
@@ -164,7 +164,7 @@ void power_soc_set_x86_restore_flag(void);
  * A wake event causes the Host to transition to C0.<BR>
  * A wake event is a host interrupt.
  */
-void power_cpu_c1(void);
+void qm_power_cpu_c1(void);
 
 /**
  * Enter Host C2 state or SoC LPSS state.
@@ -185,7 +185,7 @@ void power_cpu_c1(void);
  *  - LPSS wake events applies.
  *  - If the Sensor Subsystem wakes the SoC from LPSS, Host is back in C2.
  */
-void power_cpu_c2(void);
+void qm_power_cpu_c2(void);
 
 /**
  * Enter Host C2LP state or SoC LPSS state.
@@ -207,7 +207,7 @@ void power_cpu_c2(void);
  *  - If the Sensor Subsystem wakes the SoC from LPSS,
  *    Host transitions back to C2LP.
  */
-void power_cpu_c2lp(void);
+void qm_power_cpu_c2lp(void);
 #endif
 
 #if (ENABLE_RESTORE_CONTEXT) && (!QM_SENSOR) && (!UNIT_TEST)
@@ -240,12 +240,24 @@ void power_cpu_c2lp(void);
 			     "lea %[stackpointer], %%eax\n\t"                  \
 			     "pushfl\n\t"                                      \
 			     "pushal\n\t"                                      \
+			     "movl %%dr0, %%edx\n\t"                           \
+			     "pushl %%edx\n\t"                                 \
+			     "movl %%dr1, %%edx\n\t"                           \
+			     "pushl %%edx\n\t"                                 \
+			     "movl %%dr2, %%edx\n\t"                           \
+			     "pushl %%edx\n\t"                                 \
+			     "movl %%dr3, %%edx\n\t"                           \
+			     "pushl %%edx\n\t"                                 \
+			     "movl %%dr6, %%edx\n\t"                           \
+			     "pushl %%edx\n\t"                                 \
+			     "movl %%dr7, %%edx\n\t"                           \
+			     "pushl %%edx\n\t"                                 \
 			     "movl %%esp, (%%eax)\n\t"                         \
 			     : /* Output operands. */                          \
 			     : /* Input operands. */                           \
 			     [stackpointer] "m"(stack_pointer)                 \
 			     : /* Clobbered registers list. */                 \
-			     "eax")
+			     "eax", "edx")
 
 /* Restore trap. This routine recovers the stack pointer into esp and retrieves
  * 'idtr', EFLAGS and general purpose registers from stack.
@@ -257,6 +269,18 @@ void power_cpu_c2lp(void);
 	__asm__ __volatile__(#_restore_label ":\n\t"                           \
 					     "lea %[stackpointer], %%eax\n\t"  \
 					     "movl (%%eax), %%esp\n\t"         \
+					     "popl %%edx\n\t"                  \
+					     "movl %%edx, %%dr7\n\t"           \
+					     "popl %%edx\n\t"                  \
+					     "movl %%edx, %%dr6\n\t"           \
+					     "popl %%edx\n\t"                  \
+					     "movl %%edx, %%dr3\n\t"           \
+					     "popl %%edx\n\t"                  \
+					     "movl %%edx, %%dr2\n\t"           \
+					     "popl %%edx\n\t"                  \
+					     "movl %%edx, %%dr1\n\t"           \
+					     "popl %%edx\n\t"                  \
+					     "movl %%edx, %%dr0\n\t"           \
 					     "popal\n\t"                       \
 					     "popfl\n\t"                       \
 					     "lidt (%%esp)\n\t"                \
@@ -265,7 +289,8 @@ void power_cpu_c2lp(void);
 			     : /* Input operands. */                           \
 			     [stackpointer] "m"(stack_pointer)                 \
 			     : /* Clobbered registers list. */                 \
-			     "eax")
+			     "eax", "edx")
+
 #else
 #define qm_x86_set_resume_vector(_restore_label, shared_mem)
 #define qm_x86_save_context(stack_pointer)

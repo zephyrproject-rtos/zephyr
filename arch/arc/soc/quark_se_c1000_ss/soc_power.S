@@ -57,7 +57,7 @@ SECTION_FUNC(TEXT, _power_soc_sleep)
 
 	/* Do not link to preserve blink */
 	jl @save_cpu_context
-	j @power_soc_sleep
+	j @qm_power_soc_sleep
 	/* Does not return */
 
 SECTION_FUNC(TEXT, _power_soc_deep_sleep)
@@ -70,7 +70,7 @@ SECTION_FUNC(TEXT, _power_soc_deep_sleep)
 
 	/* Do not link to preserve blink */
 	jl @save_cpu_context
-	j @power_soc_deep_sleep
+	j @qm_power_soc_deep_sleep
 	/* Does not return */
 
 SECTION_FUNC(TEXT, _power_soc_deep_sleep_2)

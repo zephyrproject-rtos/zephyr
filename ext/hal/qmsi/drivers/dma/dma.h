@@ -83,10 +83,12 @@ typedef struct dma_cfg_prv_t {
 	uint16_t num_blocks_per_buffer;
 
 	/*
-	 * Number of blocks from buffer that need to be transfered (multiblock
-	 * mode), decremented on each single block transfer callback.
+	 * Number of block interrupts pending on the buffer currently being
+	 * transfered. Used in multiblock continuous mode as well as multiblock
+	 * link list mode when more than one buffer is set up. This counter is
+	 * decremented on each block interrupt.
 	 */
-	uint16_t num_blocks_remaining;
+	uint16_t num_blocks_int_pending;
 
 	/*
 	 * In multiblock linked list mode, indicates whether transfer is linear

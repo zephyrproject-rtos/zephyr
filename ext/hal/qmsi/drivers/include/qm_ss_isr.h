@@ -62,7 +62,7 @@ QM_ISR_DECLARE(qm_ss_adc_0_error_isr);
  * ISR for SS ADC 0 calibration interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_SS_IRQ_ADC_0_CAL_INT, qm_ss_adc_0_cal_isr);
+ * @code QM_IRQ_REQUEST(QM_SS_IRQ_ADC_0_CAL_INT, qm_ss_adc_0_cal_isr);
  * @endcode if IRQ based calibration is used.
  */
 QM_ISR_DECLARE(qm_ss_adc_0_cal_isr);
@@ -71,7 +71,7 @@ QM_ISR_DECLARE(qm_ss_adc_0_cal_isr);
  * ISR for SS ADC 0 mode change interrupt.
  *
  * This function needs to be registered with
- * @code qm_irq_request(QM_SS_IRQ_ADC_0_PWR_INT, qm_ss_adc_0_pwr_isr);
+ * @code QM_IRQ_REQUEST(QM_SS_IRQ_ADC_0_PWR_INT, qm_ss_adc_0_pwr_isr);
  * @endcode if IRQ based mode change is used.
  */
 QM_ISR_DECLARE(qm_ss_adc_0_pwr_isr);
@@ -98,25 +98,70 @@ QM_ISR_DECLARE(qm_ss_gpio_1_isr);
  * ISR for I2C 0 error interrupt.
  *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_ERROR_INT, qm_ss_i2c_0_isr);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_RX_AVAIL_INT, qm_ss_i2c_0_isr);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_TX_REQ_INT, qm_ss_i2c_0_isr);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_STOP_DET_INT, qm_ss_i2c_0_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_ERROR_INT, qm_ss_i2c_0_error_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_i2c_0_isr);
+QM_ISR_DECLARE(qm_ss_i2c_0_error_isr);
+
+/**
+ * ISR for I2C 0 RX data available interrupt.
+ * This function needs to be registered with
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_RX_AVAIL_INT,
+ * qm_ss_i2c_0_rx_avail_isr);
+ * @endcode if IRQ based transfers are used.
+ */
+QM_ISR_DECLARE(qm_ss_i2c_0_rx_avail_isr);
+
+/**
+ * ISR for I2C 0 TX data requested interrupt.
+ * This function needs to be registered with
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_TX_REQ_INT, qm_ss_i2c_0_tx_req_isr);
+ * @endcode if IRQ based transfers are used.
+ */
+QM_ISR_DECLARE(qm_ss_i2c_0_tx_req_isr);
+
+/**
+ * ISR for I2C 0 STOP detected interrupt.
+ * This function needs to be registered with
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_0_STOP_DET_INT,
+ * qm_ss_i2c_0_stop_det_isr);
+ * @endcode if IRQ based transfers are used.
+ */
+QM_ISR_DECLARE(qm_ss_i2c_0_stop_det_isr);
 
 /**
  * ISR for I2C 1 error interrupt.
- *
  * This function needs to be registered with
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_ERROR_INT, qm_ss_i2c_1_isr);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_RX_AVAIL_INT, qm_ss_i2c_1_isr);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_TX_REQ_INT, qm_ss_i2c_1_isr);
- * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_STOP_DET_INT, qm_ss_i2c_1_isr);
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_ERROR_INT, qm_ss_i2c_1_error_isr);
  * @endcode if IRQ based transfers are used.
  */
-QM_ISR_DECLARE(qm_ss_i2c_1_isr);
+QM_ISR_DECLARE(qm_ss_i2c_1_error_isr);
+
+/**
+ * ISR for I2C 1 RX data available interrupt.
+ * This function needs to be registered with
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_RX_AVAIL_INT,
+ * qm_ss_i2c_1_rx_avail_isr);
+ * @endcode if IRQ based transfers are used.
+ */
+QM_ISR_DECLARE(qm_ss_i2c_1_rx_avail_isr);
+
+/**
+ * ISR for I2C 1 TX data requested interrupt.
+ * This function needs to be registered with
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_TX_REQ_INT, qm_ss_i2c_1_tx_req_isr);
+ * @endcode if IRQ based transfers are used.
+ */
+QM_ISR_DECLARE(qm_ss_i2c_1_tx_req_isr);
+
+/**
+ * ISR for I2C 1 STOP detected interrupt.
+ * This function needs to be registered with
+ * @code qm_ss_irq_request(QM_SS_IRQ_I2C_1_STOP_DET_INT,
+ * qm_ss_i2c_1_stop_det_isr);
+ * @endcode if IRQ based transfers are used.
+ */
+QM_ISR_DECLARE(qm_ss_i2c_1_stop_det_isr);
 
 /**
  * ISR for SPI 0 error interrupt.

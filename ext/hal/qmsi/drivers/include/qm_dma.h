@@ -341,7 +341,6 @@ int qm_dma_transfer_mem_to_mem(const qm_dma_t dma,
 			       const qm_dma_channel_id_t channel_id,
 			       qm_dma_transfer_t *const transfer_config);
 
-#if (ENABLE_RESTORE_CONTEXT)
 /**
  * Save DMA peripheral's context.
  *
@@ -372,7 +371,6 @@ int qm_dma_save_context(const qm_dma_t dma, qm_dma_context_t *const ctx);
  */
 int qm_dma_restore_context(const qm_dma_t dma,
 			   const qm_dma_context_t *const ctx);
-#endif /* ENABLE_RESTORE_CONTEXT */
 
 /**
  * @}

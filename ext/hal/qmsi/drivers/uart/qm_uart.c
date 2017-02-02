@@ -755,4 +755,21 @@ int qm_uart_restore_context(const qm_uart_t uart,
 
 	return 0;
 }
+#else
+int qm_uart_save_context(const qm_uart_t uart, qm_uart_context_t *const ctx)
+{
+	(void)uart;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_uart_restore_context(const qm_uart_t uart,
+			    const qm_uart_context_t *const ctx)
+{
+	(void)uart;
+	(void)ctx;
+
+	return 0;
+}
 #endif /* ENABLE_RESTORE_CONTEXT */

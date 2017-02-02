@@ -81,17 +81,12 @@ void qm_ss_int_vector_request(uint32_t vector, qm_ss_isr_t isr)
 
 void qm_ss_irq_request(uint32_t irq, qm_ss_isr_t isr)
 {
-	uint32_t *scss_intmask;
 	uint32_t vector = irq + (QM_SS_EXCEPTION_NUM + QM_SS_INT_TIMER_NUM);
 
 	/* Guarding the IRQ set-up */
 	qm_ss_irq_mask(vector);
 
 	qm_ss_int_vector_request(vector, isr);
-
-	/* Route peripheral interrupt to Sensor Subsystem */
-	scss_intmask = (uint32_t *)INTERRUPT_ROUTER_SS_INT_MASK_BASE + irq;
-	QM_IR_UNMASK_SS_INTERRUPTS(*scss_intmask);
 
 	qm_ss_irq_unmask(vector);
 }

@@ -31,8 +31,6 @@
 #include "clk.h"
 #include <string.h>
 
-#if (QUARK_D2000)
-
 /* FIFO_INTERRUPT_THRESHOLD is used by qm_adc_irq_convert to set the threshold
  * at which the FIFO will trigger an interrupt. */
 #define FIFO_INTERRUPT_THRESHOLD (16)
@@ -455,5 +453,3 @@ int qm_adc_irq_convert(const qm_adc_t adc, qm_adc_xfer_t *xfer)
 
 	return 0;
 }
-
-#endif /* QUARK_D2000 */

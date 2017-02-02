@@ -28,16 +28,20 @@
  */
 
 #include "qm_gpio.h"
+
+#if (HAS_SOC_CONTEXT_RETENTION)
 #include "power_states.h"
+#endif /* HAS_SOC_CONTEXT_RETENTION */
+
+#define ENABLE_PCLK (0x1)
 
 #ifndef UNIT_TEST
-#if (QUARK_SE)
 qm_gpio_reg_t *qm_gpio[QM_GPIO_NUM] = {(qm_gpio_reg_t *)QM_GPIO_BASE,
-				       (qm_gpio_reg_t *)QM_AON_GPIO_BASE};
-#elif(QUARK_D2000)
-qm_gpio_reg_t *qm_gpio[QM_GPIO_NUM] = {(qm_gpio_reg_t *)QM_GPIO_BASE};
-#endif
-#endif
+#if (HAS_AON_GPIO)
+				       (qm_gpio_reg_t *)QM_AON_GPIO_BASE
+#endif /* HAS_AON_GPIO */
+};
+#endif /* UNIT_TEST */
 
 static void (*callback[QM_GPIO_NUM])(void *, uint32_t);
 static void *callback_data[QM_GPIO_NUM];
@@ -48,7 +52,7 @@ static void gpio_isr(const qm_gpio_t gpio)
 
 #if (HAS_SOC_CONTEXT_RETENTION)
 	if (QM_SCSS_GP->gps0 & QM_GPS0_POWER_STATES_MASK) {
-		power_soc_restore();
+		qm_power_soc_restore();
 	}
 #endif
 
@@ -94,6 +98,7 @@ int qm_gpio_set_config(const qm_gpio_t gpio,
 	controller->gpio_int_polarity = cfg->int_polarity;
 	controller->gpio_debounce = cfg->int_debounce;
 	controller->gpio_int_bothedge = cfg->int_bothedge;
+	controller->gpio_ls_sync |= ENABLE_PCLK;
 	callback[gpio] = cfg->callback;
 	callback_data[gpio] = cfg->callback_data;
 
@@ -212,6 +217,23 @@ int qm_gpio_restore_context(const qm_gpio_t gpio,
 		controller->gpio_int_bothedge = ctx->gpio_int_bothedge;
 		controller->gpio_intmask = ctx->gpio_intmask;
 	}
+
+	return 0;
+}
+#else
+int qm_gpio_save_context(const qm_gpio_t gpio, qm_gpio_context_t *const ctx)
+{
+	(void)gpio;
+	(void)ctx;
+
+	return 0;
+}
+
+int qm_gpio_restore_context(const qm_gpio_t gpio,
+			    const qm_gpio_context_t *const ctx)
+{
+	(void)gpio;
+	(void)ctx;
 
 	return 0;
 }

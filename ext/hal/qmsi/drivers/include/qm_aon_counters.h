@@ -37,7 +37,9 @@
  * Always-on Counters.
  *
  * @note The always on counters are in the 32kHz clock domain. Some register
- * operations take a minimum of a 32kHz clock cycle to complete.
+ * operations take a minimum of a 32kHz clock cycle to complete. If the Always
+ * on timer interrupt is not configured to be edge triggered, multiple
+ * interrupts will occur.
  *
  * @defgroup groupAONC Always-on Counters
  * @{
@@ -55,16 +57,6 @@ typedef enum {
 	 * Timer expired. Status must be cleared with qm_aonpt_clear().
 	 */
 	QM_AONPT_EXPIRED,
-#if (HAS_AONPT_BUSY_BIT)
-	/**
-	 * Timer is busy. Status after an alarm clear or timer reset has
-	 * been initiated. Status must change back to ready before any further
-	 * timer configuration to prevent timer lockup.
-	 * This is due to the always on counter being in the 32kHz clock
-	 * domain.
-	 */
-	QM_AONPT_BUSY,
-#endif
 } qm_aonpt_status_t;
 
 /**
@@ -194,6 +186,37 @@ int qm_aonpt_clear(const qm_aonc_t aonc);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_aonpt_reset(const qm_aonc_t aonc);
+
+/**
+ * Save the Always-on Periodic Timer context.
+ *
+ * Save the configuration of the specified AONC peripheral
+ * before entering sleep.
+ *
+ * @param[in] aonc AONC index.
+ * @param[out] ctx AONC context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_aonpt_save_context(const qm_aonc_t aonc, qm_aonc_context_t *const ctx);
+
+/**
+ * Restore the Always-on Periodic Timer context.
+ *
+ * Restore the configuration of the specified AONC peripheral
+ * after exiting sleep.
+ *
+ * @param[in] aonc AONC index.
+ * @param[in] ctx AONC context structure. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ */
+int qm_aonpt_restore_context(const qm_aonc_t aonc,
+			     const qm_aonc_context_t *const ctx);
 
 /**
  * @}
