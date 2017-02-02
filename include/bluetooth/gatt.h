@@ -960,6 +960,20 @@ typedef uint8_t (*bt_gatt_notify_func_t)(struct bt_conn *conn,
 					 struct bt_gatt_subscribe_params *params,
 					 const void *data, uint16_t length);
 
+/* Subscription flags */
+enum {
+	/** Persistence flag
+	 *
+	 * If set, indicates that the subscription is not saved
+	 * on the GATT server side. Therefore, upon disconnection,
+	 * the subscription will be automatically removed
+	 * from the client's subscriptions list and
+	 * when the client reconnects, it will have to
+	 * issue a new subscription.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_VOLATILE = BIT(0),
+};
+
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {
 	struct bt_att_req _req;
@@ -972,6 +986,8 @@ struct bt_gatt_subscribe_params {
 	uint16_t ccc_handle;
 	/** Subscribe value */
 	uint16_t value;
+	/** Subscription flags */
+	uint8_t flags;
 	sys_snode_t node;
 };
 

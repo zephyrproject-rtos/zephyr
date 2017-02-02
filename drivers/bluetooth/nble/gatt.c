@@ -1218,8 +1218,10 @@ static void remove_subscriptions(struct bt_conn *conn)
 			continue;
 		}
 
-		/* Remove subscription */
-		gatt_subscription_remove(conn, prev, params);
+		if (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE) {
+			/* Remove subscription */
+			gatt_subscription_remove(conn, prev, params);
+		}
 	}
 }
 
