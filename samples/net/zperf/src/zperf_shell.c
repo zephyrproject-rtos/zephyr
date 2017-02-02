@@ -100,6 +100,31 @@ struct sockaddr_in *zperf_get_sin(void)
 }
 
 #if defined(CONFIG_NET_IPV6)
+static int parse_ipv6_addr(char *host, char *port,
+			   struct sockaddr_in6 *addr,
+			   const char *str)
+{
+	int ret;
+
+	if (!host) {
+		return -EINVAL;
+	}
+
+	ret = net_addr_pton(AF_INET6, host, &addr->sin6_addr);
+	if (ret < 0) {
+		printk("[%s] Error! Invalid IPv6 address %s\n", str, host);
+		return -EINVAL;
+	}
+
+	addr->sin6_port = htons(strtoul(port, NULL, 10));
+	if (!addr->sin6_port) {
+		printk("[%s] Error! Invalid port %s\n", str, port);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr,
 			const char *str)
 {
@@ -139,6 +164,31 @@ int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr,
 #endif
 
 #if defined(CONFIG_NET_IPV4)
+static int parse_ipv4_addr(char *host, char *port,
+			   struct sockaddr_in *addr,
+			   const char *str)
+{
+	int ret;
+
+	if (!host) {
+		return -EINVAL;
+	}
+
+	ret = net_addr_pton(AF_INET, host, &addr->sin_addr);
+	if (ret < 0) {
+		printk("[%s] Error! Invalid IPv4 address %s\n", str, host);
+		return -EINVAL;
+	}
+
+	addr->sin_port = htons(strtoul(port, NULL, 10));
+	if (!addr->sin_port) {
+		printk("[%s] Error! Invalid port %s\n", str, port);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int zperf_get_ipv4_addr(char *host, struct in_addr *addr, const char *str)
 {
 	struct net_if_addr *ifaddr;
@@ -713,8 +763,8 @@ static int shell_cmd_upload(int argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
-	if (zperf_get_ipv6_addr(argv[start + 1], argv[start + 2],
-				&ipv6.sin6_addr, argv[start]) < 0) {
+	if (parse_ipv6_addr(argv[start + 1], argv[start + 2],
+			    &ipv6, argv[start]) < 0) {
 		printk("[%s] ERROR! Please specify the IP address of the "
 			"remote server\n",  argv[start]);
 		return -1;
@@ -727,8 +777,8 @@ static int shell_cmd_upload(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
-	if (zperf_get_ipv4_addr(argv[start + 1], &ipv4.sin_addr,
-				argv[start]) < 0) {
+	if (parse_ipv4_addr(argv[start + 1], argv[start + 2],
+			    &ipv4, argv[start]) < 0) {
 		printk("[%s] ERROR! Please specify the IP address of the "
 		       "remote server\n",  argv[start]);
 		return -1;
@@ -741,10 +791,10 @@ static int shell_cmd_upload(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
-	if (zperf_get_ipv6_addr(argv[start + 1], argv[start + 2],
-				&ipv6.sin6_addr, argv[start]) < 0) {
-		if (zperf_get_ipv4_addr(argv[start + 1], &ipv4.sin_addr,
-					argv[start]) < 0) {
+	if (parse_ipv6_addr(argv[start + 1], argv[start + 2],
+			    &ipv6, argv[start]) < 0) {
+		if (parse_ipv4_addr(argv[start + 1], argv[start + 2],
+				    &ipv4, argv[start]) < 0) {
 			printk("[%s] ERROR! Please specify the IP address "
 			       "of the remote server\n",  argv[start]);
 			return -1;
