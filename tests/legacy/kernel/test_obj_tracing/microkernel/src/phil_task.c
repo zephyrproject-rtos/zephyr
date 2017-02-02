@@ -17,6 +17,7 @@
 
 void phil_demo(void)
 {
-	task_group_start(PHI);
-	task_group_start(MON);
+	task_group_start(DP_PHI);
+	task_group_start(DP_MON);
+
 }
