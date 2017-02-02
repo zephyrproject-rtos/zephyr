@@ -92,16 +92,20 @@ struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
 
 static __stack __noinit char poll_wait_helper_stack[KB(1)];
 
+#define TAG_0 10
+#define TAG_1 11
+#define TAG_2 12
+
 struct k_poll_event wait_events[] = {
-	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
-				 K_POLL_MODE_NOTIFY_ONLY,
-				 &wait_sem),
-	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-				 K_POLL_MODE_NOTIFY_ONLY,
-				 &wait_fifo),
-	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-				 K_POLL_MODE_NOTIFY_ONLY,
-				 &wait_signal),
+	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&wait_sem, TAG_0),
+	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&wait_fifo, TAG_1),
+	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&wait_signal, TAG_2),
 };
 
 static void poll_wait_helper(void *use_fifo, void *p2, void *p3)
@@ -145,6 +149,7 @@ void test_poll_wait(void)
 
 	assert_equal(wait_events[0].state, K_POLL_STATE_SEM_AVAILABLE, "");
 	assert_equal(k_sem_take(&wait_sem, 0), 0, "");
+	assert_equal(wait_events[0].tag, TAG_0, "");
 
 	assert_equal(wait_events[1].state,
 		     K_POLL_STATE_FIFO_DATA_AVAILABLE, "");
@@ -152,9 +157,11 @@ void test_poll_wait(void)
 	assert_not_null(msg_ptr, "");
 	assert_equal(msg_ptr, &wait_msg, "");
 	assert_equal(msg_ptr->msg, FIFO_MSG_VALUE, "");
+	assert_equal(wait_events[1].tag, TAG_1, "");
 
 	assert_equal(wait_events[2].state, K_POLL_STATE_SIGNALED, "");
 	assert_equal(wait_signal.result, SIGNAL_RESULT, "");
+	assert_equal(wait_events[2].tag, TAG_2, "");
 
 	/* verify events are not ready anymore */
 	wait_events[0].state = K_POLL_STATE_NOT_READY;
@@ -168,6 +175,11 @@ void test_poll_wait(void)
 	assert_equal(wait_events[0].state, K_POLL_STATE_NOT_READY, "");
 	assert_equal(wait_events[1].state, K_POLL_STATE_NOT_READY, "");
 	assert_equal(wait_events[2].state, K_POLL_STATE_NOT_READY, "");
+
+	/* tags should not have been touched */
+	assert_equal(wait_events[0].tag, TAG_0, "");
+	assert_equal(wait_events[1].tag, TAG_1, "");
+	assert_equal(wait_events[2].tag, TAG_2, "");
 
 	/*
 	 * Wait for 2 out of 3 non-ready events to become ready from a higher
@@ -186,13 +198,16 @@ void test_poll_wait(void)
 
 	assert_equal(wait_events[0].state, K_POLL_STATE_SEM_AVAILABLE, "");
 	assert_equal(k_sem_take(&wait_sem, 0), 0, "");
+	assert_equal(wait_events[0].tag, TAG_0, "");
 
 	assert_equal(wait_events[1].state, K_POLL_STATE_NOT_READY, "");
 	msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
 	assert_is_null(msg_ptr, "");
+	assert_equal(wait_events[1].tag, TAG_1, "");
 
 	assert_equal(wait_events[2].state, K_POLL_STATE_SIGNALED, "");
 	assert_equal(wait_signal.result, SIGNAL_RESULT, "");
+	assert_equal(wait_events[2].tag, TAG_2, "");
 
 	/*
 	 * Wait for each event to be ready from a lower priority thread, one at
@@ -214,12 +229,15 @@ void test_poll_wait(void)
 
 	assert_equal(wait_events[0].state, K_POLL_STATE_SEM_AVAILABLE, "");
 	assert_equal(k_sem_take(&wait_sem, 0), 0, "");
+	assert_equal(wait_events[0].tag, TAG_0, "");
 
 	assert_equal(wait_events[1].state, K_POLL_STATE_NOT_READY, "");
 	msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
 	assert_is_null(msg_ptr, "");
+	assert_equal(wait_events[1].tag, TAG_1, "");
 
 	assert_equal(wait_events[2].state, K_POLL_STATE_NOT_READY, "");
+	assert_equal(wait_events[2].tag, TAG_2, "");
 
 	wait_events[0].state = K_POLL_STATE_NOT_READY;
 
@@ -230,13 +248,16 @@ void test_poll_wait(void)
 
 	assert_equal(wait_events[0].state, K_POLL_STATE_NOT_READY, "");
 	assert_equal(k_sem_take(&wait_sem, 0), -EBUSY, "");
+	assert_equal(wait_events[0].tag, TAG_0, "");
 
 	assert_equal(wait_events[1].state,
 		     K_POLL_STATE_FIFO_DATA_AVAILABLE, "");
 	msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
 	assert_not_null(msg_ptr, "");
+	assert_equal(wait_events[1].tag, TAG_1, "");
 
 	assert_equal(wait_events[2].state, K_POLL_STATE_NOT_READY, "");
+	assert_equal(wait_events[2].tag, TAG_2, "");
 
 	wait_events[1].state = K_POLL_STATE_NOT_READY;
 
@@ -247,13 +268,16 @@ void test_poll_wait(void)
 
 	assert_equal(wait_events[0].state, K_POLL_STATE_NOT_READY, "");
 	assert_equal(k_sem_take(&wait_sem, 0), -EBUSY, "");
+	assert_equal(wait_events[0].tag, TAG_0, "");
 
 	assert_equal(wait_events[1].state, K_POLL_STATE_NOT_READY, "");
 	msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
 	assert_is_null(msg_ptr, "");
+	assert_equal(wait_events[1].tag, TAG_1, "");
 
 	assert_equal(wait_events[2].state, K_POLL_STATE_SIGNALED, "");
 	assert_equal(wait_signal.result, SIGNAL_RESULT, "");
+	assert_equal(wait_events[2].tag, TAG_2, "");
 
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
 	no_wait_signal.signaled = 0;
