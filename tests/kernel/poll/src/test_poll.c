@@ -29,13 +29,17 @@ struct fifo_msg {
 #define FIFO_MSG_VALUE 0xdeadbeef
 
 /* verify k_poll() without waiting */
-static struct k_sem no_wait_sem = K_SEM_INITIALIZER(no_wait_sem, 1, 1);
-static struct k_fifo no_wait_fifo = K_FIFO_INITIALIZER(no_wait_fifo);
-static struct k_poll_signal no_wait_signal = K_POLL_SIGNAL_INITIALIZER();
+static struct k_sem no_wait_sem;
+static struct k_fifo no_wait_fifo;
+static struct k_poll_signal no_wait_signal;
 
 void test_poll_no_wait(void)
 {
 	struct fifo_msg msg = { NULL, FIFO_MSG_VALUE }, *msg_ptr;
+
+	k_sem_init(&no_wait_sem, 1, 1);
+	k_fifo_init(&no_wait_fifo);
+	k_poll_signal_init(&no_wait_signal);
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
