@@ -30,8 +30,12 @@
 
 static char __noinit __stack zperf_tcp_rx_stack[TCP_RX_FIBER_STACK_SIZE];
 
+#if defined(CONFIG_NET_IPV6)
 static struct sockaddr_in6 *in6_addr_my;
+#endif
+#if defined(CONFIG_NET_IPV4)
 static struct sockaddr_in *in4_addr_my;
+#endif
 
 static void tcp_received(struct net_context *context,
 			 struct net_buf *buf,
@@ -123,7 +127,12 @@ static void tcp_accepted(struct net_context *context,
 
 static void zperf_tcp_rx_thread(int port)
 {
-	struct net_context *context4 = NULL, *context6 = NULL;
+#if defined(CONFIG_NET_IPV4)
+	struct net_context *context4 = NULL;
+#endif
+#if defined(CONFIG_NET_IPV6)
+	struct net_context *context6 = NULL;
+#endif
 	int ret, fail = 0;
 
 #if defined(CONFIG_NET_IPV4) && defined(MY_IP4ADDR)
