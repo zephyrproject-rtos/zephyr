@@ -22,4 +22,10 @@
 
 #define APP_SLEEP_MSECS		400
 
+/* The DNS server may return more than 1 IP address.
+ * This value controls the max number of IP addresses
+ * that the client will store per query.
+ */
+#define MAX_ADDRESSES		4
+
 #endif

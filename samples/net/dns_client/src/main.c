@@ -15,8 +15,6 @@
 
 #include "config.h"
 
-#define RC_STR(rc)	(rc == 0 ? "OK" : "ERROR")
-#define MAX_ADDRESSES	4
 #define STACK_SIZE	2048
 uint8_t stack[STACK_SIZE];
 
