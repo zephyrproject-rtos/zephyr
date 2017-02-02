@@ -682,11 +682,11 @@ out:
 
 static int shell_cmd_upload(int argc, char *argv[])
 {
+	struct sockaddr_in6 ipv6 = { .sin6_family = AF_INET6 };
+	struct sockaddr_in ipv4 = { .sin_family = AF_INET };
 	struct net_context *context6 = NULL, *context4 = NULL;
 	sa_family_t family = AF_UNSPEC;
 	unsigned int duration_in_ms, packet_size, rate_in_kbps;
-	struct sockaddr_in6 ipv6;
-	struct sockaddr_in ipv4;
 	uint16_t port;
 	bool is_udp;
 	int start = 0;
