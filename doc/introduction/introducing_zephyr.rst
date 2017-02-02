@@ -3,14 +3,13 @@
 Introducing Zephyr
 ##################
 
-The Zephyr kernel is a small-footprint kernel designed for use on
-resource-constrained systems: from simple embedded environmental
-sensors and LED wearables to sophisticated smart watches and IoT
-wireless gateways.
+The Zephyr OS is based on a small-footprint kernel designed for use on
+resource-constrained systems: from simple embedded environmental sensors and LED
+wearables to sophisticated smart watches and IoT wireless gateways.
 
-It is designed to be supported by multiple architectures, including
-ARM Cortex-M, Intel x86, and ARC. The full list of supported boards
-can be found :ref:`here <boards>`.
+The Zephyr kernel supports multiple architectures, including ARM Cortex-M, Intel
+x86, ARC, NIOS II and RISC V. The full list of supported boards can be found
+:ref:`here <boards>`.
 
 Licensing
 *********
