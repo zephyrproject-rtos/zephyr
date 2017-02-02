@@ -32,9 +32,7 @@ A return code of 0 must be interpreted as success.
 Requirements
 ************
 
-- net_tools:
-
-    https://wiki.zephyrproject.org/view/Networking-with-Qemu
+- :ref:`networking with Qemu <networking_with_qemu>`
 
 - screen terminal emulator or equivalent.
 
@@ -166,7 +164,7 @@ must be mounted (i.e. to /mnt) to 'flash' the binary:
     $ cp outdir/frdm_k64f/zephyr.bin /mnt
 
 
-See https://developer.mbed.org/platforms/frdm-k64f/ for more information
+See :ref:`Freedom-K64F board documentation <frdm_k64f>` for more information
 about this board.
 
 Open a terminal window and type:

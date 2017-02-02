@@ -5,9 +5,6 @@ Overview
 ********
 This sample code shows a simple DTLS client using mbed TLS on top of Zephyr
 
-Requirements
-************
-
 Building and running
 ********************
 
@@ -104,5 +101,4 @@ Reset the board.
 References
 **********
 
-- https://wiki.zephyrproject.org/view/Networking-with-Qemu
 - https://tls.mbed.org/

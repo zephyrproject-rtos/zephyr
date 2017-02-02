@@ -13,9 +13,8 @@ using a telnet client.
 Requirements
 ************
 
-- net_tools:
+- :ref:`Networking with Qemu <networking_with_qemu>`
 
-    https://wiki.zephyrproject.org/view/Networking-with-Qemu
 
 Building and Running
 ********************
@@ -26,11 +25,10 @@ QEMU x86
 These are instructions for how to use this sample application using
 QEMU on a Linux host connected to a network with DHCP service.
 
-Follow the net-tools readme from:
+To use QEMU for testing, follow the :ref:`Networking with Qemu
+<networking_with_qemu>` guide.
 
-    Run 'loop_socat' and 'loop-slip-tap' scripts from net-tools.
-
-    https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=blob;f=README
+Run 'loop_socat' and 'loop-slip-tap' scripts from net-tools.
 
 .. code-block:: console
 
@@ -72,21 +70,20 @@ Now type enter, the shell prompt will appear and you can enter commands,
 for example ``help``.
 
 
-FRDM_K64F
-=========
+Freedom-K64F Board
+===================
 
 These are instructions for how to use this sample application running on a
-FRDM_K64F board. Unlike running it on QEMU, FRDM_K64F network configuration
-for IPv4 will rely on DHCPv4. You cad modify the prj_frdm_k64f.conf to set
-static IPv4 addresses if it is really needed.
+Freedom-K64F board. Unlike running it on QEMU, :ref:`Freedom-K64F board
+<frdm_k64f>` network configuration for IPv4 will rely on DHCPv4. You cad modify
+the :file:`prj_frdm_k64f.conf` to set static IPv4 addresses if it is really needed.
 
-Instructions to follow building, flashing and observe serial console logs:
+For detailed instructions about building, flashing and using the serial console
+logs, follow the  :ref:`Freedom-K64F board <frdm_k64f>` documentation section.
 
-    https://wiki.zephyrproject.org/view/NXP_FRDM-K64F#Quick_Start
-
-Connect ethernet cable from FRDM_K64F board to a local network providing
-IPv4 address configuration via DHCPv4. Creating your own dhcp server
-on a local network is not in the scope of this README.
+Connect ethernet cable from :ref:`Freedom-K64F <frdm_k64f>` board to a
+local network providing IPv4 address configuration via DHCPv4. Creating your own
+dhcp server on a local network is not in the scope of this README.
 
 Build Zephyr samples/net/telnet application:
 
@@ -95,8 +92,8 @@ Build Zephyr samples/net/telnet application:
     $ cd $ZEPHYR_BASE/samples/net/dhcpv4_client
     $ make pristine && make BOARD=frdm_k64f
 
-Flash the resulting Zephyr binary following the FRDM-K64 board documentation
-noted above.
+Flash the resulting Zephyr binary following the :ref:`Freedom-K64F <frdm_k64f>`
+board documentation noted above.
 
 From your host computer, open a serial console to your board:
 
@@ -104,7 +101,7 @@ From your host computer, open a serial console to your board:
 
     $ sudo screen /dev/ttyACM0 115200
 
-Plug the Ethernet cable to the FRDM_K64F board.
+Plug the Ethernet cable to the :ref:`Freedom-K64F <frdm_k64f>` board.
 Reset the board, you should see first on the console:
 
 .. code-block:: console

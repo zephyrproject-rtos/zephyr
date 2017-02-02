@@ -71,6 +71,5 @@ the client again.
 References
 **********
 
-* https://wiki.zephyrproject.org/view/Networking-with-Qemu
 * https://tls.mbed.org/
 * https://libcoap.net/
