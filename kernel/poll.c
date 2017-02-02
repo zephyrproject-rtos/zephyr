@@ -317,6 +317,13 @@ int _handle_obj_poll_event(struct k_poll_event **obj_poll_event, uint32_t state)
 	return must_reschedule;
 }
 
+void k_poll_signal_init(struct k_poll_signal *signal)
+{
+	signal->poll_event = NULL;
+	signal->signaled = 0;
+	/* signal->result is left unitialized */
+}
+
 int k_poll_signal(struct k_poll_signal *signal, int result)
 {
 	unsigned int key = irq_lock();

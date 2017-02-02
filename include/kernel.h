@@ -3338,6 +3338,18 @@ extern int k_poll(struct k_poll_event *events, int num_events,
 		  int32_t timeout);
 
 /**
+ * @brief Initialize a poll signal object.
+ *
+ * Ready a poll signal object to be signaled via k_poll_signal().
+ *
+ * @param signal A poll signal.
+ *
+ * @return N/A
+ */
+
+extern void k_poll_signal_init(struct k_poll_signal *signal);
+
+/**
  * @brief Signal a poll signal object.
  *
  * This routine makes ready a poll signal, which is basically a poll event of
