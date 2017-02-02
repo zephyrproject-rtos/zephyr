@@ -81,7 +81,7 @@
 /* end - control behaviour of the demo */
 /***************************************/
 
-#define STACK_SIZE 1024
+#define STACK_SIZE 768
 
 /*
  * There are multiple tasks doing printfs and they may conflict.
