@@ -656,7 +656,7 @@ class MakeGenerator:
 """
 
     MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
-\t$(MAKE) -C {directory} USE_CCACHE={use_ccache} O={outdir} V={verb} EXTRA_CFLAGS="-Werror {cflags}" EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
+\t$(MAKE) -C {directory} O={outdir} V={verb} EXTRA_CFLAGS="-Werror {cflags}" EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
 """
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
@@ -695,7 +695,11 @@ class MakeGenerator:
 
         if self.deprecations:
             cflags = cflags + "  -Wno-deprecated-declarations"
-        return MakeGenerator.MAKE_RULE_TMPL.format(phase=phase, goal=name, use_ccache=self.ccache,
+
+        if self.ccache:
+            args = args + " USE_CCACHE=1"
+
+        return MakeGenerator.MAKE_RULE_TMPL.format(phase=phase, goal=name,
                                                    outdir=outdir, cflags=cflags,
                                                    directory=workdir, verb=verb,
                                                    args=args, logfile=logfile)
