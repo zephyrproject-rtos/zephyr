@@ -150,6 +150,9 @@ enum {
 	/* interface is up/ready to receive and transmit */
 	NET_IF_UP,
 
+	/* interface is pointopoint */
+	NET_IF_POINTOPOINT,
+
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
 };

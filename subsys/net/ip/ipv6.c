@@ -491,6 +491,13 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 	struct net_if *iface = NULL;
 	struct net_nbr *nbr;
 
+	/* Workaround Linux bug, see:
+	 * https://jira.zephyrproject.org/browse/ZEP-1656
+	 */
+	if (atomic_test_bit(net_nbuf_iface(buf)->flags, NET_IF_POINTOPOINT)) {
+		return buf;
+	}
+
 	if (net_nbuf_ll_dst(buf)->addr ||
 	    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
 		return buf;

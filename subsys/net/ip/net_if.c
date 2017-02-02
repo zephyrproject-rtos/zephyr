@@ -154,8 +154,11 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 
 	/* If the ll address is not set at all, then we must set
 	 * it here.
+	 * Workaround Linux bug, see:
+	 * https://jira.zephyrproject.org/browse/ZEP-1656
 	 */
-	if (!net_nbuf_ll_src(buf)->addr) {
+	if (!atomic_test_bit(iface->flags, NET_IF_POINTOPOINT) &&
+	    !net_nbuf_ll_src(buf)->addr) {
 		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
 		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
 	}
