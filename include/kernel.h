@@ -375,7 +375,7 @@ struct _static_thread_data {
 			    entry, p1, p2, p3,                   \
 			    prio, options, delay, abort, groups) \
 	{                                                        \
-	.init_stack = (stack),                                   \
+	{.init_stack = (stack)},                                 \
 	.init_stack_size = (stack_size),                         \
 	.init_entry = (void (*)(void *, void *, void *))entry,   \
 	.init_p1 = (void *)p1,                                   \
