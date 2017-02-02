@@ -66,3 +66,4 @@ The IP stack source code tree is organized as follows:
    networking-api-usage.rst
    network-management-api.rst
    buffers.rst
+   qemu_setup.rst
