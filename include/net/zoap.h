@@ -147,16 +147,18 @@ struct zoap_reply;
 struct zoap_resource;
 
 /**
- * Type of the callback being called when a resource's method is invoked by
- * remote entity.
+ * @typedef zoap_method_t
+ * @brief Type of the callback being called when a resource's method is
+ * invoked by the remote entity.
  */
 typedef int (*zoap_method_t)(struct zoap_resource *resource,
 			     struct zoap_packet *request,
 			     const struct sockaddr *from);
 
 /**
- * Type of the callback being called when a resource's has observers to be
- * informed when an update happens.
+ * @typedef zoap_notify_t
+ * @brief Type of the callback being called when a resource's has observers
+ * to be informed when an update happens.
  */
 typedef void (*zoap_notify_t)(struct zoap_resource *resource,
 			      struct zoap_observer *observer);
@@ -168,6 +170,7 @@ typedef void (*zoap_notify_t)(struct zoap_resource *resource,
  * them, by fetching their state or requesting updates to them.
  */
 struct zoap_resource {
+	/** Which function to be called for each CoAP method */
 	zoap_method_t get, post, put, del;
 	zoap_notify_t notify;
 	const char * const *path;
@@ -177,7 +180,7 @@ struct zoap_resource {
 };
 
 /**
- * Represents a remote device that is observing a local resource.
+ * @brief Represents a remote device that is observing a local resource.
  */
 struct zoap_observer {
 	sys_snode_t list;
@@ -187,7 +190,7 @@ struct zoap_observer {
 };
 
 /**
- * Representation of a CoAP packet.
+ * @brief Representation of a CoAP packet.
  */
 struct zoap_packet {
 	struct net_buf *buf;
@@ -196,7 +199,8 @@ struct zoap_packet {
 };
 
 /**
- * Helper function to be called when a response matches the
+ * @typedef zoap_reply_t
+ * @brief Helper function to be called when a response matches the
  * a pending request.
  */
 typedef int (*zoap_reply_t)(const struct zoap_packet *response,
@@ -204,7 +208,7 @@ typedef int (*zoap_reply_t)(const struct zoap_packet *response,
 			    const struct sockaddr *from);
 
 /**
- * Represents a request awaiting for an acknowledgment (ACK).
+ * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct zoap_pending {
 	struct zoap_packet request;
@@ -212,8 +216,8 @@ struct zoap_pending {
 };
 
 /**
- * Represents the handler for the reply of a request, it is also used when
- * observing resources.
+ * @brief Represents the handler for the reply of a request, it is
+ * also used when observing resources.
  */
 struct zoap_reply {
 	zoap_reply_t reply;
@@ -224,48 +228,76 @@ struct zoap_reply {
 };
 
 /**
- * Indicates that the remote device referenced by @a addr, with @a request,
- * wants to observe a resource.
+ * @brief Indicates that the remote device referenced by @a addr, with
+ * @a request, wants to observe a resource.
+ *
+ * @param observer Observer to be initialized
+ * @param request Request on which the observer will be based
+ * @param addr Address of the remote device
  */
 void zoap_observer_init(struct zoap_observer *observer,
 			const struct zoap_packet *request,
 			const struct sockaddr *addr);
 
 /**
- * After the observer is initialized, associate the observer with an resource.
- * Returns whether this is the first observer added to this resource.
+ * @brief After the observer is initialized, associate the observer
+ * with an resource.
+ *
+ * @param resource Resource to add an observer
+ * @param observer Observer to be added
+ *
+ * @return true if this is the first observer added to this resource.
  */
 bool zoap_register_observer(struct zoap_resource *resource,
 			    struct zoap_observer *observer);
 
 /**
- * Remove this observer from the list of registered observers of
- * that resource.
+ * @brief Remove this observer from the list of registered observers
+ * of that resource.
+ *
+ * @param resource Resource in which to remove the observer
+ * @param observer Observer to be removed
  */
 void zoap_remove_observer(struct zoap_resource *resource,
 			  struct zoap_observer *observer);
 
 /**
- * Returns the observer that matches address @a addr.
+ * @brief Returns the observer that matches address @a addr.
+ *
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ * @param addr Address of the endpoint observing a resource
+ *
+ * @return A pointer to a observer if a match is found, NULL
+ * otherwise.
  */
 struct zoap_observer *zoap_find_observer_by_addr(
 	struct zoap_observer *observers, size_t len,
 	const struct sockaddr *addr);
 
 /**
- * Returns the next available observer representation.
+ * @brief Returns the next available observer representation.
+ *
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ *
+ * @return A pointer to a observer if there's an available observer,
+ * NULL otherwise.
  */
 struct zoap_observer *zoap_observer_next_unused(
 	struct zoap_observer *observers, size_t len);
 
 /**
- * Indicates that a reply is expected for @a request.
+ * @brief Indicates that a reply is expected for @a request.
+ *
+ * @param reply Reply structure to be initialized
+ * @param request Request from which @a reply will be based
  */
 void zoap_reply_init(struct zoap_reply *reply,
 		     const struct zoap_packet *request);
 
 /**
- * Represents the value of a CoAP option.
+ * @brief Represents the value of a CoAP option.
  *
  * To be used with zoap_find_options().
  */
@@ -275,51 +307,97 @@ struct zoap_option {
 };
 
 /**
- * Parses the CoAP packet in @a buf, validating it and initializing @a pkt.
- * @a buf must remain valid while @a pkt is used. Used when receiving packets.
+ * @brief Parses the CoAP packet in @a buf, validating it and
+ * initializing @a pkt. @a buf must remain valid while @a pkt is used.
+ *
+ * @param pkt Packet to be initialized from received @a buf.
+ * @param buf Buffer containing a CoAP packet, its @a data pointer is
+ * positioned on the start of the CoAP packet.
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_packet_parse(struct zoap_packet *pkt, struct net_buf *buf);
 
 /**
- * Creates a new CoAP packet from a net_buf. @a buf must remain valid while
- * @a pkt is used. Used when creating packets to be sent.
+ * @brief Creates a new CoAP packet from a net_buf. @a buf must remain
+ * valid while @a pkt is used.
+ *
+ * @param pkt New packet to be initialized using the storage from @a
+ * buf.
+ * @param buf Buffer that will contain a CoAP packet
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_packet_init(struct zoap_packet *pkt, struct net_buf *buf);
 
 /**
- * Initialize a pending request with a request. The request's fields are
- * copied into the pending struct, so @a request doesn't have to live for as
- * long as the pending struct lives, but net_buf needs to live for at least
- * that long.
+ * @brief Initialize a pending request with a request.
+ *
+ * The request's fields are copied into the pending struct, so @a
+ * request doesn't have to live for as long as the pending struct
+ * lives, but net_buf needs to live for at least that long.
+ *
+ * @param pending Structure representing the waiting for a
+ * confirmation message, initialized with data from @a request
+ * @param request Message waiting for confirmation
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_pending_init(struct zoap_pending *pending,
 		      const struct zoap_packet *request);
 
 /**
- * Returns the next available pending struct, that can be used to track
- * the retransmission status of a request.
+ * @brief Returns the next available pending struct, that can be used
+ * to track the retransmission status of a request.
+ *
+ * @param pendings Pointer to the array of #zoap_pending structures
+ * @param len Size of the array of #zoap_pending structures
+ *
+ * @return pointer to a free #zoap_pending structure, NULL in case
+ * none could be found.
  */
 struct zoap_pending *zoap_pending_next_unused(
 	struct zoap_pending *pendings, size_t len);
 
 /**
- * Returns the next available reply struct, so it can be used to track replies
- * and notifications received.
+ * @brief Returns the next available reply struct, so it can be used
+ * to track replies and notifications received.
+ *
+ * @param replies Pointer to the array of #zoap_reply structures
+ * @param len Size of the array of #zoap_reply structures
+ *
+ * @return pointer to a free #zoap_reply structure, NULL in case
+ * none could be found.
  */
 struct zoap_reply *zoap_reply_next_unused(
 	struct zoap_reply *replies, size_t len);
 
 /**
- * After a response is received, clear all pending retransmissions related to
- * that response.
+ * @brief After a response is received, clear all pending
+ * retransmissions related to that response.
+ *
+ * @param response The received response
+ * @param pendings Pointer to the array of #zoap_reply structures
+ * @param len Size of the array of #zoap_reply structures
+ *
+ * @return pointer to the associated #zoap_pending structure, NULL in
+ * case none could be found.
  */
 struct zoap_pending *zoap_pending_received(
 	const struct zoap_packet *response,
 	struct zoap_pending *pendings, size_t len);
 
 /**
- * After a response is received, clear all pending retransmissions related to
- * that response.
+ * @brief After a response is received, clear all pending
+ * retransmissions related to that response.
+ *
+ * @param response A response received
+ * @param from Address from which the response was received
+ * @param replies Pointer to the array of #zoap_reply structures
+ * @param len Size of the array of #zoap_reply structures
+ *
+ * @return Pointer to the reply matching the packet received, NULL if
+ * none could be found.
  */
 struct zoap_reply *zoap_response_received(
 	const struct zoap_packet *response,
@@ -327,91 +405,170 @@ struct zoap_reply *zoap_response_received(
 	struct zoap_reply *replies, size_t len);
 
 /**
- * Returns the next pending about to expire, pending->timeout informs how many
- * ms to next expiration.
+ * @brief Returns the next pending about to expire, pending->timeout
+ * informs how many ms to next expiration.
+ *
+ * @param pendings Pointer to the array of #zoap_pending structures
+ * @param len Size of the array of #zoap_pending structures
+ *
+ * @return The next #zoap_pending to expire, NULL if none is about to
+ * expire.
  */
 struct zoap_pending *zoap_pending_next_to_expire(
 	struct zoap_pending *pendings, size_t len);
 
 /**
- * After a request is sent, user may want to cycle the pending retransmission
- * so the timeout is updated. Returns false if this is the last
- * retransmission.
+ * @brief After a request is sent, user may want to cycle the pending
+ * retransmission so the timeout is updated.
+ *
+ * @param pending Pending representation to have its timeout updated
+ *
+ * @return false if this is the last retransmission.
  */
 bool zoap_pending_cycle(struct zoap_pending *pending);
 
 /**
- * Cancels the pending retransmission, so it again becomes available.
+ * @brief Cancels the pending retransmission, so it again becomes
+ * available.
+ *
+ * @param pending Pending representation to be canceled
  */
 void zoap_pending_clear(struct zoap_pending *pending);
 
 /**
- * Cancels awaiting for this reply, so it becomes available again.
+ * @brief Cancels awaiting for this reply, so it becomes available
+ * again.
+ *
+ * @param reply The reply to be cancelled
  */
 void zoap_reply_clear(struct zoap_reply *reply);
 
 /**
- * When a request is received, call the appropriate methods of the
- * matching resources.
+ * @brief When a request is received, call the appropriate methods of
+ * the matching resources.
+ *
+ * @param pkt Packet received
+ * @param resources Array of known resources
+ * @param from Address from which the packet was received
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_handle_request(struct zoap_packet *pkt,
 			struct zoap_resource *resources,
 			const struct sockaddr *from);
 
 /**
- * Indicates that this resource was updated and that the @a notify callback
- * should be called for every registered observer.
+ * @brief Indicates that this resource was updated and that the @a
+ * notify callback should be called for every registered observer.
+ *
+ * @param resource Resource that was updated
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_resource_notify(struct zoap_resource *resource);
 
 /**
- * Returns if this request is enabling observing a resource.
+ * @brief Returns if this request is enabling observing a resource.
+ *
+ * @param request Request to be checked
+ *
+ * @return True if the request is enabling observing a resource, False
+ * otherwise
  */
 bool zoap_request_is_observe(const struct zoap_packet *request);
 
 /**
- * Returns a pointer to the start of the payload, and how much memory
- * is available (to the payload), it will also insert the
- * COAP_MARKER (0xFF). When the payload is already set, for example,
- * for incoming packets, it will return how many bytes the payload
- * occupies.
+ * @brief Returns a pointer to the start of the payload and its size
+ *
+ * It will insert the COAP_MARKER (0xFF), if its not set, and return the
+ * available size for the payload.
+ *
+ * @param pkt Packet to get (or insert) the payload
+ * @param len Amount of space for the payload
+ *
+ * @return pointer to the start of the payload, NULL in case of error.
  */
 uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len);
 
 /**
- * Returns the internal buffer of the CoAP packet, appending the
- * COAP_MARKER to the buffer if necessary.
+ * @brief Returns the internal buffer of the CoAP packet, appending
+ * the COAP_MARKER to the buffer if necessary.
+ *
+ * @param pkt Packet to get (or insert) the payload
+ *
+ * @return pointer to the net_buf storing the payload.
  */
 struct net_buf *zoap_packet_get_buf(struct zoap_packet *pkt);
 
 /**
- * Sets how much space was used by the payload.
+ * @brief Sets how much space was used by the payload.
+ *
+ * Used for outgoing packets, after zoap_packet_get_payload(), to
+ * update the internal representation with the amount of data that was
+ * added to the packet.
+ *
+ * @param pkt Packet to be updated
+ * @param len Amount of data that was added to the payload
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_packet_set_used(struct zoap_packet *pkt, uint16_t len);
 
 /**
- * Adds an option to the packet. Note that options must be added
- * in numeric order of their codes.
+ * @brief Adds an option to the packet.
+ *
+ * Note: ptions must be added in numeric order of their codes.
+ *
+ * @param pkt Packet to be updated
+ * @param code Option code to add to the packet, see #zoap_option_num
+ * @param value Pointer to the value of the option, will be copied to the packet
+ * @param len Size of the data to be added
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_add_option(struct zoap_packet *pkt, uint16_t code,
 		    const void *value, uint16_t len);
 
 /**
- * Converts an option to its integer representation. It assumes that
- * the number is encoded in the network byte order in the option.
+ * @brief Converts an option to its integer representation.
+ *
+ * Assumes that the number is encoded in the network byte order in the
+ * option.
+ *
+ * @param option Pointer to the option value, retrieved by
+ * zoap_find_options()
+ *
+ * @return The integer representation of the option
  */
 unsigned int zoap_option_value_to_int(const struct zoap_option *option);
 
 /**
- * Adds an integer value option to the packet. The option must be
- * added in numeric order of their codes, and the least amount of
- * bytes will be used to encode the value.
+ * @brief Adds an integer value option to the packet.
+ *
+ * The option must be added in numeric order of their codes, and the
+ * least amount of bytes will be used to encode the value.
+ *
+ * @param pkt Packet to be updated
+ * @param code Option code to add to the packet, see #zoap_option_num
+ * @param val Integer value to be added
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_add_option_int(struct zoap_packet *pkt, uint16_t code,
 			unsigned int val);
 
 /**
- * Return the values associated with the option of value @a code.
+ * @brief Return the values associated with the option of value @a
+ * code.
+ *
+ * @param pkt CoAP packet representation
+ * @param code Option number to look for
+ * @param options Array of #zoap_option where to store the value
+ * of the options found
+ * @param veclen Number of elements in the options array
+ *
+ * @return The number of options found in packet matching code,
+ * negative on error.
  */
 int zoap_find_options(const struct zoap_packet *pkt, uint16_t code,
 		      struct zoap_option *options, uint16_t veclen);
@@ -435,7 +592,12 @@ enum zoap_block_size {
 };
 
 /**
- * Helper for converting the enumeration to the size expressed in bytes.
+ * @brief Helper for converting the enumeration to the size expressed
+ * in bytes.
+ *
+ * @param block_size The block size to be converted
+ *
+ * @return The size in bytes that the block_size represents
  */
 static inline uint16_t zoap_block_size_to_bytes(
 	enum zoap_block_size block_size)
@@ -444,7 +606,7 @@ static inline uint16_t zoap_block_size_to_bytes(
 }
 
 /**
- * Represents the current state of a block-wise transaction.
+ * @brief Represents the current state of a block-wise transaction.
  */
 struct zoap_block_context {
 	size_t total_size;
@@ -453,103 +615,186 @@ struct zoap_block_context {
 };
 
 /**
- * Initializes the context of a block-wise transfer.
+ * @brief Initializes the context of a block-wise transfer.
+ *
+ * @param ctx The context to be initialized
+ * @param block_size The size of the block
+ * @param total_size The total size of the transfer, if known
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_block_transfer_init(struct zoap_block_context *ctx,
 			      enum zoap_block_size block_size,
 			      size_t total_size);
 
 /**
- * Add BLOCK1 option to the packet.
+ * @brief Add BLOCK1 option to the packet.
+ *
+ * @param pkt Packet to be updated
+ * @param ctx Block context from which to retrieve the
+ * information for the Block1 option
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_add_block1_option(struct zoap_packet *pkt,
 			   struct zoap_block_context *ctx);
 
 /**
- * Add BLOCK2 option to the packet.
+ * @brief Add BLOCK2 option to the packet.
+ *
+ * @param pkt Packet to be updated
+ * @param ctx Block context from which to retrieve the
+ * information for the Block2 option
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_add_block2_option(struct zoap_packet *pkt,
 			   struct zoap_block_context *ctx);
 
 /**
- * Add SIZE1 option to the packet.
+ * @brief Add SIZE1 option to the packet.
+ *
+ * @param pkt Packet to be updated
+ * @param ctx Block context from which to retrieve the
+ * information for the Size1 option
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_add_size1_option(struct zoap_packet *pkt,
 			 struct zoap_block_context *ctx);
 
 /**
- * Add SIZE2 option to the packet.
+ * @brief Add SIZE2 option to the packet.
+ *
+ * @param pkt Packet to be updated
+ * @param ctx Block context from which to retrieve the
+ * information for the Size2 option
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_add_size2_option(struct zoap_packet *pkt,
 			 struct zoap_block_context *ctx);
 
 /**
- * Retrieves BLOCK{1,2} and SIZE{1,2} from @a pkt and updates
+ * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a pkt and updates
  * @a ctx accordingly.
  *
- * Returns an error if the packet contains invalid options.
+ * @param pkt Packet in which to look for block-wise transfers options
+ * @param ctx Block context to be updated
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_update_from_block(struct zoap_packet *pkt,
 			   struct zoap_block_context *ctx);
+
 /**
- * Updates @a ctx so after this is called the current entry
+ * @brief Updates @a ctx so after this is called the current entry
  * indicates the correct offset in the body of data being
  * transferred.
+ *
+ * @param ctx Block context to be updated
+ *
+ * @return The offset in the block-wise transfer, 0 if the transfer
+ * has finished.
  */
 size_t zoap_next_block(struct zoap_block_context *ctx);
 
 /**
- * Returns the version present in a CoAP packet.
+ * @brief Returns the version present in a CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ *
+ * @return the CoAP version in packet
  */
 uint8_t zoap_header_get_version(const struct zoap_packet *pkt);
 
 /**
- * Returns the type of the packet present in the CoAP packet.
+ * @brief Returns the type of the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ *
+ * @return the type of the packet
  */
 uint8_t zoap_header_get_type(const struct zoap_packet *pkt);
 
 /**
- * Returns the token associated with a CoAP packet.
+ * @brief Returns the token (if any) in the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ * @param len Where to store the length of the token
+ *
+ * @return pointer to the start of the token in the CoAP packet.
  */
 const uint8_t *zoap_header_get_token(const struct zoap_packet *pkt,
 				     uint8_t *len);
 
 /**
- * Returns the code present in the header of a CoAP packet.
+ * @brief Returns the code of the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ *
+ * @return the code present in the packet
  */
 uint8_t zoap_header_get_code(const struct zoap_packet *pkt);
 
 /**
- * Returns the message id associated with a CoAP packet.
+ * @brief Returns the message id associated with the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ *
+ * @return the message id present in the packet
  */
 uint16_t zoap_header_get_id(const struct zoap_packet *pkt);
 
 /**
- * Sets the CoAP version present in the CoAP header of a packet.
+ * @brief Sets the version of the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ * @param ver The CoAP version to set in the packet
  */
 void zoap_header_set_version(struct zoap_packet *pkt, uint8_t ver);
 
 /**
- * Sets the type of a CoAP message.
+ * @brief Sets the type of the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ * @param type The packet type to set
  */
 void zoap_header_set_type(struct zoap_packet *pkt, uint8_t type);
 
 /**
- * Sets the token present in the CoAP header of a packet.
+ * @brief Sets the token in the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ * @param token Token to set in the packet, will be copied
+ * @param tokenlen Size of the token to be set, 8 bytes maximum
+ *
+ * @return 0 in case of success or negative in case of error.
  */
 int zoap_header_set_token(struct zoap_packet *pkt, const uint8_t *token,
 			  uint8_t tokenlen);
 
 /**
- * Sets the code present in the header of a CoAP packet.
+ * @brief Sets the code present in the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ * @param code The code set in the packet
  */
 void zoap_header_set_code(struct zoap_packet *pkt, uint8_t code);
 
 /**
- * Sets the message id associated with a CoAP packet.
+ * @brief Sets the message id present in the CoAP packet.
+ *
+ * @param pkt CoAP packet representation
+ * @param id The message id to set in the packet
  */
 void zoap_header_set_id(struct zoap_packet *pkt, uint16_t id);
 
+/**
+ * @brief Helper to generate message ids
+ *
+ * @return a new message id
+ */
 static inline uint16_t zoap_next_id(void)
 {
 	static uint16_t message_id;
@@ -558,8 +803,10 @@ static inline uint16_t zoap_next_id(void)
 }
 
 /**
- * Returns a randomly generated array of 8 bytes, that can be used as a
- * message's token.
+ * @brief Returns a randomly generated array of 8 bytes, that can be
+ * used as a message's token.
+ *
+ * @return a 8-byte pseudo-random token.
  */
 uint8_t *zoap_next_token(void);
 
