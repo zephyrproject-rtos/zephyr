@@ -3104,6 +3104,12 @@ extern void k_free(void *ptr);
 
 /* polling API - PRIVATE */
 
+#ifdef CONFIG_POLL
+#define _INIT_OBJ_POLL_EVENT(obj) do { (obj)->poll_event = NULL; } while ((0))
+#else
+#define _INIT_OBJ_POLL_EVENT(obj) do { } while ((0))
+#endif
+
 /* private - implementation data created as needed, per-type */
 struct _poller {
 	struct k_thread *thread;

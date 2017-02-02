@@ -52,6 +52,8 @@ void k_fifo_init(struct k_fifo *fifo)
 	sys_slist_init(&fifo->data_q);
 	sys_dlist_init(&fifo->wait_q);
 
+	_INIT_OBJ_POLL_EVENT(fifo);
+
 	SYS_TRACING_OBJ_INIT(k_fifo, fifo);
 }
 

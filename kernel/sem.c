@@ -73,6 +73,9 @@ void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	sem->count = initial_count;
 	sem->limit = limit;
 	sys_dlist_init(&sem->wait_q);
+
+	_INIT_OBJ_POLL_EVENT(sem);
+
 	SYS_TRACING_OBJ_INIT(k_sem, sem);
 }
 
