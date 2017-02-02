@@ -3151,7 +3151,12 @@ enum _poll_states_bits {
 #define _POLL_STATE_BIT(state) (1 << ((state) - 1))
 
 #define _POLL_EVENT_NUM_UNUSED_BITS \
-	(32 - (_POLL_NUM_TYPES + _POLL_NUM_STATES + 1 /* modes */))
+	(32 - (0 \
+	       + 8 /* tag */ \
+	       + _POLL_NUM_TYPES \
+	       + _POLL_NUM_STATES \
+	       + 1 /* modes */ \
+	      ))
 
 #if _POLL_EVENT_NUM_UNUSED_BITS < 0
 #error overflow of 32-bit word in struct k_poll_event
@@ -3217,6 +3222,9 @@ struct k_poll_event {
 	/* PRIVATE - DO NOT TOUCH */
 	struct _poller *poller;
 
+	/* optional user-specified tag, opaque, untouched by the API */
+	uint32_t tag:8;
+
 	/* bitfield of event types (bitwise-ORed K_POLL_TYPE_xxx values) */
 	uint32_t type:_POLL_NUM_TYPES;
 
@@ -3238,14 +3246,25 @@ struct k_poll_event {
 	};
 };
 
-#define K_POLL_EVENT_INITIALIZER(event_type, event_mode, event_data) \
+#define K_POLL_EVENT_INITIALIZER(event_type, event_mode, event_obj) \
 	{ \
 	.poller = NULL, \
 	.type = event_type, \
 	.state = K_POLL_STATE_NOT_READY, \
 	.mode = event_mode, \
 	.unused = 0, \
-	{ .obj = event_data }, \
+	{ .obj = event_obj }, \
+	}
+
+#define K_POLL_EVENT_STATIC_INITIALIZER(event_type, event_mode, event_obj, \
+					event_tag) \
+	{ \
+	.type = event_type, \
+	.tag = event_tag, \
+	.state = K_POLL_STATE_NOT_READY, \
+	.mode = event_mode, \
+	.unused = 0, \
+	{ .obj = event_obj }, \
 	}
 
 /**

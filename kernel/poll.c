@@ -31,6 +31,7 @@ void k_poll_event_init(struct k_poll_event *event, uint32_t type,
 	__ASSERT(obj, "must provide an object\n");
 
 	event->poller = NULL;
+	/* event->tag is left uninitialized: the user will set it if needed */
 	event->type = type;
 	event->state = K_POLL_STATE_NOT_READY;
 	event->mode = mode;
