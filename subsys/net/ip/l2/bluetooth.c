@@ -254,6 +254,13 @@ static void bt_iface_init(struct net_if *iface)
 	NET_DBG("iface %p", iface);
 
 	ctxt->iface = iface;
+
+#if defined(CONFIG_NET_L2_BLUETOOTH_ZEP1656)
+	/* Workaround Linux bug, see:
+	 * https://jira.zephyrproject.org/browse/ZEP-1656
+	 */
+	atomic_set_bit(iface->flags, NET_IF_POINTOPOINT);
+#endif
 }
 
 static struct net_if_api bt_if_api = {
