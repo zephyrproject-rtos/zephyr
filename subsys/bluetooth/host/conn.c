@@ -44,8 +44,6 @@ const struct bt_conn_auth_cb *bt_auth;
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
-static BT_STACK_NOINIT(conn_tx_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
-
 #if defined(CONFIG_BLUETOOTH_BREDR)
 enum pairing_method {
 	LEGACY,			/* Legacy (pre-SSP) pairing */
@@ -1021,7 +1019,7 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 
 static struct k_poll_signal conn_change = K_POLL_SIGNAL_INITIALIZER();
 
-static int prepare_events(struct k_poll_event events[])
+int bt_conn_prepare_events(struct k_poll_event events[])
 {
 	int i, ev_count = 0;
 
@@ -1043,19 +1041,18 @@ static int prepare_events(struct k_poll_event events[])
 
 		BT_DBG("Adding conn %p to poll list", conn);
 
-		k_poll_event_init(&events[ev_count++],
+		k_poll_event_init(&events[ev_count],
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
 				  &conn->tx_queue);
+		events[ev_count++].tag = BT_EVENT_CONN_TX;
 	}
 
 	return ev_count;
 }
 
-static void process_fifo(struct k_fifo *fifo)
+void bt_conn_process_tx(struct bt_conn *conn)
 {
-	struct bt_conn *conn = CONTAINER_OF(fifo, struct bt_conn,
-					    tx_queue);
 	struct net_buf *buf;
 
 	BT_DBG("conn %p", conn);
@@ -1077,9 +1074,6 @@ static void process_fifo(struct k_fifo *fifo)
 		 */
 		bt_conn_unref(conn);
 
-		stack_analyze("conn tx stack", conn_tx_stack,
-			      sizeof(conn_tx_stack));
-
 		return;
 	}
 
@@ -1088,53 +1082,6 @@ static void process_fifo(struct k_fifo *fifo)
 	BT_ASSERT(buf);
 	if (!send_buf(conn, buf)) {
 		net_buf_unref(buf);
-	}
-}
-
-static void process_events(struct k_poll_event *ev, int count)
-{
-	BT_DBG("count %d", count);
-
-	for (; count; ev++, count--) {
-		BT_DBG("ev->state %u", ev->state);
-
-		switch (ev->state) {
-		case K_POLL_STATE_SIGNALED:
-			/* prepare_events() will do the right thing */
-			break;
-		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
-			process_fifo(ev->fifo);
-			break;
-		case K_POLL_STATE_NOT_READY:
-			break;
-		default:
-			BT_WARN("Unexpected k_poll event state %u", ev->state);
-			break;
-		}
-	}
-}
-
-static void conn_tx_thread(void *p1, void *p2, void *p3)
-{
-	/* conn change signal + MAX_CONN */
-	static struct k_poll_event events[1 + CONFIG_BLUETOOTH_MAX_CONN];
-
-	BT_DBG("Started");
-
-	while (1) {
-		int ev_count, err;
-
-		ev_count = prepare_events(events);
-
-		BT_DBG("Calling k_poll with %d events", ev_count);
-
-		err = k_poll(events, ev_count, K_FOREVER);
-		if (err && err != -EADDRINUSE) {
-			BT_ERR("k_poll failed with err %d", err);
-			continue;
-		}
-
-		process_events(events, ev_count);
 	}
 }
 
@@ -1803,9 +1750,6 @@ int bt_conn_init(void)
 	}
 
 	bt_l2cap_init();
-
-	k_thread_spawn(conn_tx_stack, sizeof(conn_tx_stack), conn_tx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Initialize background scan */
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL)) {

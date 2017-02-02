@@ -42,7 +42,7 @@
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 #endif
-static BT_STACK_NOINIT(cmd_tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
+static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 
 static void init_work(struct k_work *work);
 
@@ -552,8 +552,8 @@ static void hci_disconn_complete(struct net_buf *buf)
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	stack_analyze("rx stack", rx_thread_stack, sizeof(rx_thread_stack));
 #endif
-	stack_analyze("cmd tx stack", cmd_tx_thread_stack,
-		      sizeof(cmd_tx_thread_stack));
+	stack_analyze("tx stack", tx_thread_stack,
+		      sizeof(tx_thread_stack));
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0;
@@ -2669,46 +2669,118 @@ static void hci_event(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static void hci_cmd_tx_thread(void)
+static void send_cmd(void)
 {
-	BT_DBG("started");
+	struct net_buf *buf;
+	int err;
 
-	while (1) {
-		struct net_buf *buf;
-		int err;
+	/* Get next command */
+	BT_DBG("calling net_buf_get");
+	buf = net_buf_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+	BT_ASSERT(buf);
 
-		/* Wait until ncmd > 0 */
-		BT_DBG("calling sem_take_wait");
-		k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
+	/* Wait until ncmd > 0 */
+	BT_DBG("calling sem_take_wait");
+	k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
 
-		/* Get next command - wait if necessary */
-		BT_DBG("calling net_buf_get");
-		buf = net_buf_get(&bt_dev.cmd_tx_queue, K_FOREVER);
+	/* Clear out any existing sent command */
+	if (bt_dev.sent_cmd) {
+		BT_ERR("Uncleared pending sent_cmd");
+		net_buf_unref(bt_dev.sent_cmd);
+		bt_dev.sent_cmd = NULL;
+	}
 
-		/* Clear out any existing sent command */
-		if (bt_dev.sent_cmd) {
-			BT_ERR("Uncleared pending sent_cmd");
-			net_buf_unref(bt_dev.sent_cmd);
-			bt_dev.sent_cmd = NULL;
-		}
+	bt_dev.sent_cmd = net_buf_ref(buf);
 
-		bt_dev.sent_cmd = net_buf_ref(buf);
+	BT_DBG("Sending command 0x%04x (buf %p) to driver",
+	       cmd(buf)->opcode, buf);
 
-		BT_DBG("Sending command 0x%04x (buf %p) to driver",
-		       cmd(buf)->opcode, buf);
+	err = bt_send(buf);
+	if (err) {
+		BT_ERR("Unable to send to driver (err %d)", err);
+		k_sem_give(&bt_dev.ncmd_sem);
+		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED,
+			     NULL);
+		net_buf_unref(bt_dev.sent_cmd);
+		bt_dev.sent_cmd = NULL;
+		net_buf_unref(buf);
+	}
+}
 
-		err = bt_send(buf);
-		if (err) {
-			BT_ERR("Unable to send to driver (err %d)", err);
-			k_sem_give(&bt_dev.ncmd_sem);
-			hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED,
-				     NULL);
-			net_buf_unref(bt_dev.sent_cmd);
-			bt_dev.sent_cmd = NULL;
-			net_buf_unref(buf);
+static void process_events(struct k_poll_event *ev, int count)
+{
+	BT_DBG("count %d", count);
+
+	for (; count; ev++, count--) {
+		BT_DBG("ev->state %u", ev->state);
+
+		switch (ev->state) {
+		case K_POLL_STATE_SIGNALED:
+			break;
+		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
+			if (ev->tag == BT_EVENT_CMD_TX) {
+				send_cmd();
+			} else if (IS_ENABLED(CONFIG_BLUETOOTH_CONN) &&
+				   ev->tag == BT_EVENT_CONN_TX) {
+				struct bt_conn *conn;
+
+				conn = CONTAINER_OF(ev->fifo, struct bt_conn,
+						    tx_queue);
+				bt_conn_process_tx(conn);
+			}
+			break;
+		case K_POLL_STATE_NOT_READY:
+			break;
+		default:
+			BT_WARN("Unexpected k_poll event state %u", ev->state);
+			break;
 		}
 	}
 }
+
+#if defined(CONFIG_BLUETOOTH_CONN)
+/* command FIFO + conn_change signal + MAX_CONN */
+#define EV_COUNT (2 + CONFIG_BLUETOOTH_MAX_CONN)
+#else
+/* command FIFO */
+#define EV_COUNT 1
+#endif
+
+static void hci_tx_thread(void *p1, void *p2, void *p3)
+{
+	static struct k_poll_event events[EV_COUNT] = {
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&bt_dev.cmd_tx_queue,
+						BT_EVENT_CMD_TX),
+	};
+
+	BT_DBG("Started");
+
+	while (1) {
+		int ev_count, err;
+
+		events[0].state = K_POLL_STATE_NOT_READY;
+		ev_count = 1;
+
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CONN)) {
+			ev_count += bt_conn_prepare_events(&events[1]);
+		}
+
+		BT_DBG("Calling k_poll with %d events", ev_count);
+
+		err = k_poll(events, ev_count, K_FOREVER);
+		BT_ASSERT(err == 0);
+
+		process_events(events, ev_count);
+
+		/* Make sure we don't hog the CPU if there's all the time
+		 * some ready events.
+		 */
+		k_yield();
+	}
+}
+
 
 static void read_local_ver_complete(struct net_buf *buf)
 {
@@ -3634,9 +3706,9 @@ int bt_enable(bt_ready_cb_t cb)
 	ready_cb = cb;
 
 	/* TX thread */
-	k_thread_spawn(cmd_tx_thread_stack, sizeof(cmd_tx_thread_stack),
-		       (k_thread_entry_t)hci_cmd_tx_thread, NULL, NULL, NULL,
-		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_spawn(tx_thread_stack, sizeof(tx_thread_stack),
+		       hci_tx_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
+		       K_NO_WAIT);
 
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	/* RX thread */

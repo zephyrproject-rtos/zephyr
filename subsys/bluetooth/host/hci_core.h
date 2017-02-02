@@ -16,6 +16,12 @@
 #define LMP_FEAT_PAGES_COUNT	1
 #endif
 
+/* k_poll event tags */
+enum {
+	BT_EVENT_CMD_TX,
+	BT_EVENT_CONN_TX,
+};
+
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ENABLE,
