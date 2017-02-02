@@ -35,22 +35,28 @@ typedef int  FILE;
  * declared below.
  */
 
-int printf(const char *_Restrict fmt, ...);
-int snprintf(char *_Restrict s, size_t len, const char *_Restrict fmt, ...);
-int sprintf(char *_Restrict s, const char *_Restrict fmt, ...);
-int fprintf(FILE *_Restrict stream, const char *_Restrict format, ...);
+int printf(const char *_MLIBC_RESTRICT fmt, ...);
+int snprintf(char *_MLIBC_RESTRICT s, size_t len,
+	     const char *_MLIBC_RESTRICT fmt, ...);
+int sprintf(char *_MLIBC_RESTRICT s, const char *_MLIBC_RESTRICT fmt, ...);
+int fprintf(FILE *_MLIBC_RESTRICT stream,
+	    const char *_MLIBC_RESTRICT format, ...);
 
 
-int vprintf(const char *_Restrict fmt, va_list list);
-int vsnprintf(char *_Restrict s, size_t len, const char *_Restrict fmt, va_list list);
-int vsprintf(char *_Restrict s, const char *_Restrict fmt, va_list list);
-int vfprintf(FILE *_Restrict stream, const char *_Restrict format, va_list ap);
+int vprintf(const char *_MLIBC_RESTRICT fmt, va_list list);
+int vsnprintf(char *_MLIBC_RESTRICT s, size_t len,
+	      const char *_MLIBC_RESTRICT fmt, va_list list);
+int vsprintf(char *_MLIBC_RESTRICT s,
+	     const char *_MLIBC_RESTRICT fmt, va_list list);
+int vfprintf(FILE *_MLIBC_RESTRICT stream, const char *_MLIBC_RESTRICT format,
+	     va_list ap);
 
 int puts(const char *s);
 
 int fputc(int c, FILE *stream);
-int fputs(const char *_Restrict s, FILE *_Restrict stream);
-size_t fwrite(const void *_Restrict ptr, size_t size, size_t nitems, FILE *_Restrict stream);
+int fputs(const char *_MLIBC_RESTRICT s, FILE *_MLIBC_RESTRICT stream);
+size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
+	      FILE *_MLIBC_RESTRICT stream);
 
 #ifdef __cplusplus
 }

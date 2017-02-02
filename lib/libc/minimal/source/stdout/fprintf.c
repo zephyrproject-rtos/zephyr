@@ -14,7 +14,7 @@
 extern int _prf(int (*func)(), void *dest,
 				const char *format, va_list vargs);
 
-int fprintf(FILE *_Restrict F, const char *_Restrict format, ...)
+int fprintf(FILE *_MLIBC_RESTRICT F, const char *_MLIBC_RESTRICT format, ...)
 {
 	va_list vargs;
 	int     r;
@@ -26,7 +26,8 @@ int fprintf(FILE *_Restrict F, const char *_Restrict format, ...)
 	return r;
 }
 
-int vfprintf(FILE *_Restrict F, const char *_Restrict format, va_list vargs)
+int vfprintf(FILE *_MLIBC_RESTRICT F, const char *_MLIBC_RESTRICT format,
+	     va_list vargs)
 {
 	int r;
 
@@ -35,7 +36,7 @@ int vfprintf(FILE *_Restrict F, const char *_Restrict format, va_list vargs)
 	return r;
 }
 
-int printf(const char *_Restrict format, ...)
+int printf(const char *_MLIBC_RESTRICT format, ...)
 {
 	va_list vargs;
 	int     r;
@@ -47,7 +48,7 @@ int printf(const char *_Restrict format, ...)
 	return r;
 }
 
-int vprintf(const char *_Restrict format, va_list vargs)
+int vprintf(const char *_MLIBC_RESTRICT format, va_list vargs)
 {
 	int r;
 
