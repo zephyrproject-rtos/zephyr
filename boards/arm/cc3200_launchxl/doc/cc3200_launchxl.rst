@@ -30,11 +30,11 @@ Hardware
 The CC3200 SoC has two MCUs:
 
 #. Applications MCU - an ARM® Cortex®-M4 Core at 80 MHz, with 256Kb RAM,
-and access to external serial 1Mb flash with bootloader and peripheral
-drivers in ROM.
+   and access to external serial 1Mb flash with bootloader and peripheral
+   drivers in ROM.
 
 #. Network Coprocessor (NWP) - a dedicated ARM MCU, which completely
-offloads Wi-Fi and internet protocols from the application MCU.
+   offloads Wi-Fi and internet protocols from the application MCU.
 
 Complete details of the CC3200 SoC can be found in the `CC3200 TRM`_.
 
