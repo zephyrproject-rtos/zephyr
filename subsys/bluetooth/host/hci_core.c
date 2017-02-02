@@ -554,7 +554,6 @@ static void hci_disconn_complete(struct net_buf *buf)
 #endif
 	stack_analyze("cmd tx stack", cmd_tx_thread_stack,
 		      sizeof(cmd_tx_thread_stack));
-	stack_analyze("conn tx stack", conn->stack, sizeof(conn->stack));
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0;

@@ -102,12 +102,6 @@ struct bt_conn {
 		struct bt_conn_br	br;
 #endif
 	};
-
-	/* Stack for TX thread and timeout thread.
-	 * Since these threads don't overlap, one stack can be used by
-	 * both of them.
-	 */
-	BT_STACK(stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 };
 
 /* Process incoming data for a connection */

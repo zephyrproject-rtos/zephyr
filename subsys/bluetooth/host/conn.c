@@ -13,6 +13,7 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
+#include <misc/stack.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
 #include <bluetooth/log.h>
@@ -42,6 +43,8 @@ const struct bt_conn_auth_cb *bt_auth;
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
+
+static BT_STACK_NOINIT(conn_tx_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 enum pairing_method {
@@ -1016,39 +1019,123 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	return send_frag(conn, buf, BT_ACL_CONT, false);
 }
 
-static void conn_tx_thread(void *p1, void *p2, void *p3)
+static struct k_poll_signal conn_change = K_POLL_SIGNAL_INITIALIZER();
+
+static int prepare_events(struct k_poll_event events[])
 {
-	struct bt_conn *conn = p1;
+	int i, ev_count = 0;
+
+	BT_DBG("");
+
+	k_poll_event_init(&events[ev_count++], K_POLL_TYPE_SIGNAL,
+			  K_POLL_MODE_NOTIFY_ONLY, &conn_change);
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		struct bt_conn *conn = &conns[i];
+
+		if (!atomic_get(&conn->ref)) {
+			continue;
+		}
+
+		if (conn->state != BT_CONN_CONNECTED) {
+			continue;
+		}
+
+		BT_DBG("Adding conn %p to poll list", conn);
+
+		k_poll_event_init(&events[ev_count++],
+				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &conn->tx_queue);
+	}
+
+	return ev_count;
+}
+
+static void process_fifo(struct k_fifo *fifo)
+{
+	struct bt_conn *conn = CONTAINER_OF(fifo, struct bt_conn,
+					    tx_queue);
 	struct net_buf *buf;
 
-	BT_DBG("Started for handle %u", conn->handle);
+	BT_DBG("conn %p", conn);
 
-	while (conn->state == BT_CONN_CONNECTED) {
-		/* Get next ACL packet for connection */
-		buf = net_buf_get(&conn->tx_queue, K_FOREVER);
-		if (conn->state != BT_CONN_CONNECTED) {
-			net_buf_unref(buf);
-			break;
-		}
+	if (conn->state != BT_CONN_CONNECTED) {
+		BT_DBG("handle %u disconnected - cleaning up", conn->handle);
 
-		if (!send_buf(conn, buf)) {
+		/* Give back any allocated buffers */
+		while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
 			net_buf_unref(buf);
 		}
+
+		BT_ASSERT(!conn->pending_pkts);
+
+		bt_conn_reset_rx_state(conn);
+
+		/* Release the reference we took for the very first
+		 * state transition.
+		 */
+		bt_conn_unref(conn);
+
+		stack_analyze("conn tx stack", conn_tx_stack,
+			      sizeof(conn_tx_stack));
+
+		return;
 	}
 
-	BT_DBG("handle %u disconnected - cleaning up", conn->handle);
-
-	/* Give back any allocated buffers */
-	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
+	/* Get next ACL packet for connection */
+	buf = net_buf_get(&conn->tx_queue, K_NO_WAIT);
+	BT_ASSERT(buf);
+	if (!send_buf(conn, buf)) {
 		net_buf_unref(buf);
 	}
+}
 
-	BT_ASSERT(!conn->pending_pkts);
+static void process_events(struct k_poll_event *ev, int count)
+{
+	BT_DBG("count %d", count);
 
-	bt_conn_reset_rx_state(conn);
+	for (; count; ev++, count--) {
+		BT_DBG("ev->state %u", ev->state);
 
-	BT_DBG("handle %u exiting", conn->handle);
-	bt_conn_unref(conn);
+		switch (ev->state) {
+		case K_POLL_STATE_SIGNALED:
+			/* prepare_events() will do the right thing */
+			break;
+		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
+			process_fifo(ev->fifo);
+			break;
+		case K_POLL_STATE_NOT_READY:
+			break;
+		default:
+			BT_WARN("Unexpected k_poll event state %u", ev->state);
+			break;
+		}
+	}
+}
+
+static void conn_tx_thread(void *p1, void *p2, void *p3)
+{
+	/* conn change signal + MAX_CONN */
+	static struct k_poll_event events[1 + CONFIG_BLUETOOTH_MAX_CONN];
+
+	BT_DBG("Started");
+
+	while (1) {
+		int ev_count, err;
+
+		ev_count = prepare_events(events);
+
+		BT_DBG("Calling k_poll with %d events", ev_count);
+
+		err = k_poll(events, ev_count, K_FOREVER);
+		if (err && err != -EADDRINUSE) {
+			BT_ERR("k_poll failed with err %d", err);
+			continue;
+		}
+
+		process_events(events, ev_count);
+	}
 }
 
 struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
@@ -1109,9 +1196,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
 		k_fifo_init(&conn->tx_queue);
-		k_thread_spawn(conn->stack, sizeof(conn->stack), conn_tx_thread,
-			    bt_conn_ref(conn), NULL, NULL, K_PRIO_COOP(7),
-			    0, K_NO_WAIT);
+		k_poll_signal(&conn_change, 0);
 
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
@@ -1125,31 +1210,30 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		    old_state == BT_CONN_DISCONNECT) {
 			bt_l2cap_disconnected(conn);
 			notify_disconnected(conn);
+
+			/* Return any unacknowledged packets */
+			while (conn->pending_pkts) {
+				k_sem_give(bt_conn_get_pkts(conn));
+				conn->pending_pkts--;
+			}
+
+			/* Cancel Connection Update if it is pending */
+			if (conn->type == BT_CONN_TYPE_LE) {
+				k_delayed_work_cancel(&conn->le.update_work);
+			}
+
 			net_buf_put(&conn->tx_queue,
 				    bt_conn_create_pdu(NULL, 0));
+			/* The last ref will be dropped by the tx_thread */
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */
 			notify_connected(conn);
+			bt_conn_unref(conn);
 		} else if (old_state == BT_CONN_CONNECT_SCAN && conn->err) {
 			/* this indicate LE Create Connection failed */
 			notify_connected(conn);
+			bt_conn_unref(conn);
 		}
-
-		/* Return any unacknowledged packets */
-		while (conn->pending_pkts) {
-			k_sem_give(bt_conn_get_pkts(conn));
-			conn->pending_pkts--;
-		}
-
-		/* Cancel Connection Update if it is pending */
-		if (conn->type == BT_CONN_TYPE_LE) {
-			k_delayed_work_cancel(&conn->le.update_work);
-		}
-
-		/* Release the reference we took for the very first
-		 * state transition.
-		 */
-		bt_conn_unref(conn);
 
 		break;
 	case BT_CONN_CONNECT_SCAN:
@@ -1719,6 +1803,9 @@ int bt_conn_init(void)
 	}
 
 	bt_l2cap_init();
+
+	k_thread_spawn(conn_tx_stack, sizeof(conn_tx_stack), conn_tx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Initialize background scan */
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL)) {
