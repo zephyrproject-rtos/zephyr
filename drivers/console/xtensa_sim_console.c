@@ -75,9 +75,9 @@ static int xt_sim_console_init(struct device *arg)
 /* UART consloe initializes after the UART device itself */
 SYS_INIT(xt_sim_console_init,
 #if defined(CONFIG_EARLY_CONSOLE)
-			PRIMARY,
+			PRE_KERNEL_1,
 #else
-			SECONDARY,
+			POST_KERNEL,
 #endif
 			CONFIG_XTENSA_CONSOLE_INIT_PRIORITY);
 
