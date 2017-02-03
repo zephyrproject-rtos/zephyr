@@ -71,23 +71,6 @@ typedef volatile       uint32_t WoReg8;  /**< Write only  8-bit register (volati
 typedef volatile       uint32_t RwReg;   /**< Read-Write 32-bit register (volatile unsigned int) */
 typedef volatile       uint16_t RwReg16; /**< Read-Write 16-bit register (volatile unsigned int) */
 typedef volatile       uint8_t  RwReg8;  /**< Read-Write  8-bit register (volatile unsigned int) */
-#define CAST(type, value) ((type *)(value)) /**< Pointer Type Conversion Macro for C/C++ */
-#define REG_ACCESS(type, address) (*(type*)(address)) /**< C code: Register value */
-
-#if !defined(_UL)
-/* Macros that deal with adding suffixes to integer literal constants for C/C++ */
-#define _U(x) x ## U    /**< C code: Unsigned integer literal constant value */
-#define _L(x) x ## L    /**< C code: Long integer literal constant value */
-#define _UL(x) x ## UL  /**< C code: Unsigned Long integer literal constant value */
-#endif /* !defined(UL) */
-#else /* Assembler */
-#define CAST(type, value) (value) /**< Pointer Type Conversion Macro for Assembler */
-#define REG_ACCESS(type, address) (address) /**< Assembly code: Register address */
-#if !defined(_UL)
-#define _U(x) x    /**< Assembler: Unsigned integer literal constant value */
-#define _L(x) x    /**< Assembler: Long integer literal constant value */
-#define _UL(x) x   /**< Assembler: Unsigned Long integer literal constant value */
-#endif /* !defined(UL) */
 
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
