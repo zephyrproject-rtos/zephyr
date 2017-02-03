@@ -196,8 +196,19 @@ struct net_stats_rpl {
 	struct net_stats_rpl_dao_ack dao_ack;
 };
 
+struct net_stats_bytes {
+	uint32_t sent;
+	uint32_t received;
+};
+
 struct net_stats {
 	net_stats_t processing_error;
+
+	/*
+	 * This calculates amount of data transferred through all the
+	 * network interfaces.
+	 */
+	struct net_stats_bytes bytes;
 
 	struct net_stats_ip_errors ip_errors;
 
@@ -243,6 +254,7 @@ struct net_stats {
 enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_ALL = 1,
 	NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR,
+	NET_REQUEST_STATS_CMD_GET_BYTES,
 	NET_REQUEST_STATS_CMD_GET_IP_ERRORS,
 	NET_REQUEST_STATS_CMD_GET_IPV4,
 	NET_REQUEST_STATS_CMD_GET_IPV6,
@@ -262,6 +274,11 @@ enum net_request_stats_cmd {
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR)
 
 //NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PROCESSING_ERROR);
+
+#define NET_REQUEST_STATS_GET_BYTES				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_BYTES)
+
+//NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_BYTES);
 
 #define NET_REQUEST_STATS_GET_IP_ERRORS				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IP_ERRORS)

@@ -86,7 +86,9 @@ static void net_if_tx_thread(struct net_if *iface)
 		void *context_token;
 		struct net_buf *buf;
 		int status;
-
+#if defined(CONFIG_NET_STATISTICS)
+		size_t pkt_len;
+#endif
 		/* Get next packet from application - wait if necessary */
 		buf = net_buf_get(&iface->tx_queue, K_FOREVER);
 
@@ -97,6 +99,9 @@ static void net_if_tx_thread(struct net_if *iface)
 		context_token = net_nbuf_token(buf);
 
 		if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+#if defined(CONFIG_NET_STATISTICS)
+			pkt_len = net_buf_frags_len(buf);
+#endif
 			status = api->send(iface, buf);
 		} else {
 			/* Drop packet if interface is not up */
@@ -106,6 +111,8 @@ static void net_if_tx_thread(struct net_if *iface)
 
 		if (status < 0) {
 			net_nbuf_unref(buf);
+		} else {
+			net_stats_update_bytes_sent(pkt_len);
 		}
 
 		if (context) {

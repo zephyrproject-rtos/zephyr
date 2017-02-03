@@ -451,6 +451,8 @@ static inline void net_shell_print_statistics(void)
 	       GET_STAT(rpl.root_repairs));
 #endif
 
+	printk("Bytes received %u\n", GET_STAT(bytes.received));
+	printk("Bytes sent     %u\n", GET_STAT(bytes.sent));
 	printk("Processing err %d\n", GET_STAT(processing_error));
 }
 #endif /* CONFIG_NET_STATISTICS */

@@ -31,10 +31,22 @@ static inline void net_stats_update_ip_errors_vhlerr(void)
 {
 	net_stats.ip_errors.vhlerr++;
 }
+
+static inline void net_stats_update_bytes_recv(uint32_t bytes)
+{
+	net_stats.bytes.received += bytes;
+}
+
+static inline void net_stats_update_bytes_sent(uint32_t bytes)
+{
+	net_stats.bytes.sent += bytes;
+}
 #else
 #define net_stats_update_processing_error()
 #define net_stats_update_ip_errors_protoerr()
 #define net_stats_update_ip_errors_vhlerr()
+#define net_stats_update_bytes_recv(...)
+#define net_stats_update_bytes_sent(...)
 #endif /* CONFIG_NET_STATISTICS */
 
 #if defined(CONFIG_NET_STATISTICS_IPV6)
