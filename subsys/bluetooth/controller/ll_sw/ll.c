@@ -252,24 +252,3 @@ void ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 		memcpy(_ll_context.pub_addr, bdaddr, BDADDR_SIZE);
 	}
 }
-
-u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
-			   u8_t filter_policy, u8_t peer_addr_type,
-			   u8_t *peer_addr, u8_t own_addr_type,
-			   u16_t interval, u16_t latency,
-			   u16_t timeout)
-{
-	u32_t status;
-
-	status = radio_connect_enable(peer_addr_type, peer_addr, interval,
-				      latency, timeout);
-
-	if (status) {
-		return status;
-	}
-
-	return radio_scan_enable(0, own_addr_type, (own_addr_type) ?
-				 &_ll_context.rnd_addr[0] :
-				 &_ll_context.pub_addr[0],
-				 scan_interval, scan_window, filter_policy);
-}
