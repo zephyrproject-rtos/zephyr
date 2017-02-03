@@ -538,6 +538,7 @@ static void le_rem_dev_from_wl(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_STATE_CONN)
 static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 {
 	struct hci_cp_le_conn_update *cmd = (void *)buf->data;
@@ -586,6 +587,7 @@ static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_CONN */
 
 static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 {
@@ -672,6 +674,7 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt)
 	sys_put_le64(0x000003ffffffffff, rp->le_states);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_STATE_CONN)
 static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_conn_param_req_reply *cmd = (void *)buf->data;
@@ -764,6 +767,7 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_CONN */
 
 static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 				 struct net_buf **evt)
@@ -843,6 +847,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_rem_dev_from_wl(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_STATE_CONN)
 	case BT_OCF(BT_HCI_OP_LE_CONN_UPDATE):
 		le_conn_update(cmd, evt);
 		break;
@@ -856,6 +861,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
 		le_read_remote_features(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_CONN */
 
 	case BT_OCF(BT_HCI_OP_LE_ENCRYPT):
 		le_encrypt(cmd, evt);
@@ -885,6 +891,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_read_supp_states(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_STATE_CONN)
 	case BT_OCF(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY):
 		le_conn_param_req_reply(cmd, evt);
 		break;
@@ -910,6 +917,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_read_max_data_len(cmd, evt);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_CONN */
 
 	default:
 		return -EINVAL;
