@@ -356,8 +356,8 @@ SECTIONS
 #include <linker-defs.h>
 #include <linker-tool.h>
 
-#define RAMABLE_REGION sram0_0_seg :sram0_0_phdr
-#define ROMABLE_REGION srom1_seg :srom1_phdr
+#define RAMABLE_REGION dram0_0_seg :dram0_0_phdr
+#define ROMABLE_REGION iram0_7_seg :iram0_7_phdr
 
 #include <linker/common-rom.ld>
 #include <linker/common-ram.ld>
