@@ -351,6 +351,7 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = 0x00;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_STATE_ADV)
 static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_adv_param *cmd = (void *)buf->data;
@@ -412,6 +413,7 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_ADV */
 
 static void le_set_scan_param(struct net_buf *buf, struct net_buf **evt)
 {
@@ -773,6 +775,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_set_random_address(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_STATE_ADV)
 	case BT_OCF(BT_HCI_OP_LE_SET_ADV_PARAM):
 		le_set_adv_param(cmd, evt);
 		break;
@@ -792,6 +795,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_SET_ADV_ENABLE):
 		le_set_adv_enable(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_ADV */
 
 	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_PARAM):
 		le_set_scan_param(cmd, evt);
