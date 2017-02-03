@@ -38,7 +38,7 @@ def get_rst_files(dir):
 
         shutil.copyfile(file, os.path.join(ZEPHYR_BASE, "doc", frel))
 
-        with open(file) as f:
+        with open(file, encoding="utf-8") as f:
             content = f.readlines()
         content = [x.strip() for x in content]
         directives = "|".join(DIRECTIVES)
