@@ -52,14 +52,6 @@ static struct {
 	u8_t rnd_addr[BDADDR_SIZE];
 } _ll_context;
 
-static struct {
-	u16_t interval;
-	u16_t window;
-	u8_t  scan_type:1;
-	u8_t  tx_addr:1;
-	u8_t  filter_policy:1;
-} _ll_scan_params;
-
 void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
 {
 	(void)caller_id;
@@ -259,36 +251,6 @@ void ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 	} else {
 		memcpy(_ll_context.pub_addr, bdaddr, BDADDR_SIZE);
 	}
-}
-
-void ll_scan_params_set(u8_t scan_type, u16_t interval, u16_t window,
-			u8_t own_addr_type, u8_t filter_policy)
-{
-	_ll_scan_params.scan_type = scan_type;
-	_ll_scan_params.interval = interval;
-	_ll_scan_params.window = window;
-	_ll_scan_params.tx_addr = own_addr_type;
-	_ll_scan_params.filter_policy = filter_policy;
-}
-
-u32_t ll_scan_enable(u8_t enable)
-{
-	u32_t status;
-
-	if (enable) {
-		status = radio_scan_enable(_ll_scan_params.scan_type,
-					   _ll_scan_params.tx_addr,
-					   (_ll_scan_params.tx_addr) ?
-					   &_ll_context.rnd_addr[0] :
-					   &_ll_context.pub_addr[0],
-					   _ll_scan_params.interval,
-					   _ll_scan_params.window,
-					   _ll_scan_params.filter_policy);
-	} else {
-		status = radio_scan_disable();
-	}
-
-	return status;
 }
 
 u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
