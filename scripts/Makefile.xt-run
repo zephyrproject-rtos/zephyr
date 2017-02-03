@@ -24,7 +24,8 @@ run:zephyr
 	$(if ${QEMU_PIPE},,@echo "To exit from XT-RUN enter: 'CTRL+c'")
 	@echo '[XT-RUN] CPU: ${XTENSA_CORE}'
 ifneq (${QEMU_PIPE},)
-# Create a named pipe
+# Create a named pipe, removing any stale ones
+	rm -f $(QEMU_PIPE)
 	mkfifo ${QEMU_PIPE}
 endif
 # Run cycle accurate simulation
