@@ -83,8 +83,8 @@ The stack is split up as follows in the source tree:
 Further reading
 ***************
 
-More information on the stack and its usage can be found in the
-`wiki <http://wiki.zephyrproject.org/view/Arduino_101#Bluetooth_firmware_for_the_Arduino_101>`_ and the following subsections:
+More information on the stack and its usage can be found
+:ref:`here <bluetooth_firmware_arduino_101>` and in the following subsections:
 
 .. toctree::
    :maxdepth: 1
