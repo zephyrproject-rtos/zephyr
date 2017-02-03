@@ -1537,77 +1537,6 @@ static int send_data(struct net_context *context,
 	return -EPROTONOSUPPORT;
 }
 
-/* If the reserve has changed, we need to adjust it accordingly in the
- * fragment chain. This can only happen in IEEE 802.15.4 where the link
- * layer header size can change if the destination address changes.
- * Thus we need to check it here. Note that this cannot happen for IPv4
- * as 802.15.4 supports IPv6 only.
- */
-static inline struct net_buf *update_ll_reserve(struct net_buf *buf,
-						struct in6_addr *addr)
-{
-	/* We need to go through all the fragments and adjust the
-	 * fragment data size.
-	 */
-	uint16_t reserve, room_len, copy_len, pos;
-	struct net_buf *orig_frag, *frag;
-
-	reserve = net_if_get_ll_reserve(net_nbuf_iface(buf), addr);
-	if (reserve == net_nbuf_ll_reserve(buf)) {
-		return buf;
-	}
-
-	NET_DBG("Adjust reserve old %d new %d",
-		net_nbuf_ll_reserve(buf), reserve);
-
-	net_nbuf_set_ll_reserve(buf, reserve);
-
-	orig_frag = buf->frags;
-	copy_len = orig_frag->len;
-	pos = 0;
-
-	buf->frags = NULL;
-	room_len = 0;
-	frag = NULL;
-
-	while (orig_frag) {
-		if (!room_len) {
-			frag = net_nbuf_get_reserve_data(reserve);
-
-			net_buf_frag_add(buf, frag);
-
-			room_len = net_buf_tailroom(frag);
-		}
-
-		if (room_len >= copy_len) {
-			memcpy(net_buf_add(frag, copy_len),
-			       orig_frag->data + pos, copy_len);
-
-			room_len -= copy_len;
-			copy_len = 0;
-		} else {
-			memcpy(net_buf_add(frag, room_len),
-			       orig_frag->data + pos, room_len);
-
-			copy_len -= room_len;
-			pos += room_len;
-			room_len = 0;
-		}
-
-		if (!copy_len) {
-			orig_frag = net_buf_frag_del(NULL, orig_frag);
-			if (!orig_frag) {
-				break;
-			}
-
-			copy_len = orig_frag->len;
-			pos = 0;
-		}
-	}
-
-	return buf;
-}
-
 #if defined(CONFIG_NET_UDP)
 static int create_udp_packet(struct net_context *context,
 			     struct net_buf *buf,
@@ -1695,8 +1624,6 @@ static int sendto(struct net_buf *buf,
 		if (net_is_ipv6_addr_unspecified(&addr6->sin6_addr)) {
 			return -EDESTADDRREQ;
 		}
-
-		buf = update_ll_reserve(buf, &addr6->sin6_addr);
 	} else
 #endif /* CONFIG_NET_IPV6 */
 
