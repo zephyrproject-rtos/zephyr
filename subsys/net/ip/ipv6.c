@@ -541,6 +541,7 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 						&NET_IPV6_BUF(buf)->dst));
 
 				/* Try to send the packet anyway */
+				nexthop = &NET_IPV6_BUF(buf)->dst;
 				goto try_send;
 			}
 
@@ -553,14 +554,26 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 		return NULL;
 	}
 
+	if (!iface) {
+		/* This means that the dst was not onlink, so try to
+		 * figure out the interface using nexthop instead.
+		 */
+		if (net_if_ipv6_addr_onlink(&iface, nexthop)) {
+			net_nbuf_set_iface(buf, iface);
+		}
+
+		/* If the above check returns null, we try to send
+		 * the packet and hope for the best.
+		 */
+	}
+
 try_send:
-	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
-			 &NET_IPV6_BUF(buf)->dst);
+	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf), nexthop);
 
 	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s", nbr,
 		nbr ? nbr->idx : NET_NBR_LLADDR_UNKNOWN,
 		net_nbuf_iface(buf),
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+		net_sprint_ipv6_addr(nexthop));
 
 	if (nbr && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr_storage *lladdr;
@@ -581,7 +594,7 @@ try_send:
 			     buf,
 			     &NET_IPV6_BUF(buf)->src,
 			     NULL,
-			     &NET_IPV6_BUF(buf)->dst,
+			     nexthop,
 			     false) < 0) {
 		/* In case of an error, the NS send function will unref
 		 * the buf.
