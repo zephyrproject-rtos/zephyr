@@ -86,7 +86,6 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_req_params *scan =
 		(struct ieee802154_req_params *)data;
-	struct net_buf *frag = NULL;
 	struct net_buf *buf = NULL;
 	uint8_t channel;
 	int ret;
@@ -111,9 +110,6 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 			NET_DBG("Could not create Beacon Request");
 			return -ENOBUFS;
 		}
-
-		frag = buf->frags;
-		buf->frags = NULL;
 	}
 
 	ctx->scan_ctx = scan;
@@ -141,13 +137,14 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		/* Active scan sends a beacon request */
 		if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
 			net_nbuf_ref(buf);
-			net_nbuf_ref(frag);
-			net_buf_frag_insert(buf, frag);
+			net_buf_ref(buf->frags);
 
 			ret = ieee802154_radio_send(iface, buf);
 			if (ret) {
 				NET_DBG("Could not send Beacon Request (%d)",
 					ret);
+				net_nbuf_unref(buf);
+
 				break;
 			}
 		}
@@ -170,10 +167,6 @@ out:
 	ctx->scan_ctx = NULL;
 
 	if (buf) {
-		if (!buf->frags) {
-			net_nbuf_unref(frag);
-		}
-
 		net_nbuf_unref(buf);
 	}
 
