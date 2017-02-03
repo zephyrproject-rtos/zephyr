@@ -514,7 +514,7 @@ struct net_buf_pool {
  *  @param timeout Affects the action taken should the pool be empty.
  *         If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *         wait as long as necessary. Otherwise, wait up to the specified
- *         number of ticks before timing out.
+ *         number of milliseconds before timing out.
  *
  *  @return New buffer or NULL if out of buffers.
  */
@@ -536,7 +536,7 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout);
  *  @param timeout Affects the action taken should the FIFO be empty.
  *         If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as
  *         long as necessary. Otherwise, wait up to the specified number of
- *         miliseconds before timing out.
+ *         milliseconds before timing out.
  *
  *  @return New buffer or NULL if the FIFO is empty.
  */
@@ -620,7 +620,7 @@ struct net_buf *net_buf_ref(struct net_buf *buf);
  *  @param timeout Affects the action taken should the pool be empty.
  *         If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *         wait as long as necessary. Otherwise, wait up to the specified
- *         number of ticks before timing out.
+ *         number of milliseconds before timing out.
  *
  *  @return Duplicated buffer or NULL if out of buffers.
  */
