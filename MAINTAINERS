@@ -346,6 +346,8 @@ F:	subsys/net/lib/dns/
 F:	subsys/net/lib/http/
 F:	subsys/net/lib/mqtt/
 F:	samples/net/dns_client/
+F:	samples/net/http_server/
+F:	samples/net/mqtt_publisher/
 F:	tests/net/lib/http_header_fields/
 F:	tests/net/lib/mqtt_packet/
 
