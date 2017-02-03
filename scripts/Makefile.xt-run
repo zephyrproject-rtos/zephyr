@@ -4,36 +4,30 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-
 # Abstraction of 'run' goal with xt-run
-
 ifneq (${QEMU_PTY},)
     # By default xt-sim uses pty, do nothing
 else
-# We use QEMU_PIPE in order to avoid unnecessary changes in other scripts
-# We are anyway emulating a QEMU behavior
+
+# Use the existing interface that we set up for QEMU:
+# 1) A pair of pipe for console input and output, named
+#    $(QEMU_PIPE).in and $(QEMU_PIPE).out. The extensions are implicit
+#    in QEMU's -seral pipe:.... argument.
+# 2) A PID file so that sanitycheck can kill the emulator
 ifneq (${QEMU_PIPE},)
-    # Send console output to a pipe, used for running automated sanity tests
-    XTRUN_FLAGS += > ${QEMU_PIPE}
+    XTRUN_FLAGS += < ${QEMU_PIPE}.in > ${QEMU_PIPE}.out
 endif
 endif
 
-xt-run:run
-run:zephyr
-	${Q}echo "***** Running simulation for Xtensa core \"${XTENSA_CORE}\" *****"
+run: zephyr
+	@echo "**** Running simulation for Xtensa core \"${XTENSA_CORE}\" ****"
 	$(if ${QEMU_PIPE},,@echo "To exit from XT-RUN enter: 'CTRL+c'")
 	@echo '[XT-RUN] CPU: ${XTENSA_CORE}'
-ifneq (${QEMU_PIPE},)
-# Create a named pipe, removing any stale ones
-	rm -f $(QEMU_PIPE)
-	mkfifo ${QEMU_PIPE}
-endif
-# Run cycle accurate simulation
-# Ignore errors in order to be able to remove the named pipe at simulation end
-	-${Q}${XTRUN} ${KERNEL_ELF_NAME} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS}
-ifneq (${QEMU_PIPE},)
-# Remove the named pipe
-	${RM} ${QEMU_PIPE}
-endif
+	# Run the emulator in the background and leave a PID file for
+	# sanitycheck
+	${Q} ${XTRUN} ${KERNEL_ELF_NAME} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS} \
+		& echo $$! > qemu.pid
+	# Wait until the emulator terminates (for any reason)
+	$(Q) cat qemu.pid | xargs $(srctree)/scripts/waitpid
 
-.PHONY: run xt-run
+.PHONY: run
