@@ -165,18 +165,6 @@ _zxt_int_exit:
 	s32i a3, a2, KERNEL_OFFSET(nested) /* save nesting count */
 	bnez a3, .Lnesting					/* !=0 after decr so still nested  */
 
-	l32i a3, a2, KERNEL_OFFSET(current) /* a3 := _kernel->current */
-	beqz a3, .Lnoswitch
-	l32i a1, a3, THREAD_OFFSET(sp) /* SP - stack, a3 = current TCB */
-
-	l32i a4, a3, ___thread_arch_t_flags_OFFSET
-	movi a5, 0
-	and a4, a4, a5
-	beqz a4, .Lnoswitch
-	movi a4, 0
-	s32i a4, a3, 0                  /* zero out the flag for next time */
-
-1:
 	/*
 	 * When using call0 ABI callee-saved registers a12-15 need to be saved
 	 * before enabling preemption. They were already saved by _zxt_int_enter().
@@ -199,11 +187,6 @@ _zxt_int_exit:
 	call0   _zxt_dispatch				/* tail-call dispatcher */
 	/* Never returns here. */
 
-.Lnoswitch:
-	/*
-	If we came here then about to resume the interrupted task.
-	*/
-
 .Lnesting:
 	/*
 	 * We come here only if there was no context switch, that is if this
@@ -219,7 +202,7 @@ _zxt_int_exit:
 	 * from which this was called. Interruptee's A0, A1, PS, PC are restored
 	 * and the interrupt stack frame is deallocated in the exit dispatcher.
 	 */
-	l32i a0, a1, XT_STK_exit
+	l32i a0, sp, XT_STK_exit
 	ret
 
 /*
