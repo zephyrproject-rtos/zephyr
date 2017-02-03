@@ -40,7 +40,7 @@ struct nble_gatt_service {
 static struct nble_gatt_service svc_db[BLE_GATTS_MAX_SERVICES];
 static uint8_t svc_count;
 
-static struct bt_gatt_subscribe_params *subscriptions;
+static sys_slist_t subscriptions;
 
 /**
  * Copy a UUID in a buffer using the smallest memory length
@@ -1190,32 +1190,31 @@ static void gatt_subscription_add(struct bt_conn *conn,
 	bt_addr_le_copy(&params->_peer, &conn->dst);
 
 	/* Prepend subscription */
-	params->_next = subscriptions;
-	subscriptions = params;
+	sys_slist_prepend(&subscriptions, &params->node);
 }
 
-static void gatt_subscription_remove(struct bt_conn *conn,
-				     struct bt_gatt_subscribe_params *prev,
+static void gatt_subscription_remove(struct bt_conn *conn, sys_snode_t *prev,
 				     struct bt_gatt_subscribe_params *params)
 {
 	/* Remove subscription from the list*/
-	if (!prev) {
-		subscriptions = params->_next;
-	} else {
-		prev->_next = params->_next;
-	}
+	sys_slist_remove(&subscriptions, prev, &params->node);
 
 	params->notify(conn, params, NULL, 0);
 }
 
 static void remove_subscriptions(struct bt_conn *conn)
 {
-	struct bt_gatt_subscribe_params *params, *prev;
+	sys_snode_t *node, *tmp, *prev = NULL;
 
 	/* Lookup existing subscriptions */
-	for (params = subscriptions, prev = NULL; params;
-	     prev = params, params = params->_next) {
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
+		struct bt_gatt_subscribe_params *params;
+
+		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				      node);
+
 		if (bt_addr_le_cmp(&params->_peer, &conn->dst)) {
+			prev = node;
 			continue;
 		}
 
@@ -1247,7 +1246,7 @@ static int gatt_write_ccc(struct bt_conn *conn,
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params)
 {
-	struct bt_gatt_subscribe_params *tmp;
+	sys_snode_t *node;
 	bool has_subscription = false;
 
 	if (!conn || !params || !params->notify ||
@@ -1263,7 +1262,12 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	       conn, params->value_handle, params->ccc_handle, params->value);
 
 	/* Lookup existing subscriptions */
-	for (tmp = subscriptions; tmp; tmp = tmp->_next) {
+	SYS_SLIST_FOR_EACH_NODE(&subscriptions, node) {
+		struct bt_gatt_subscribe_params *tmp;
+
+		tmp = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				   node);
+
 		/* Fail if entry already exists */
 		if (tmp == params) {
 			return -EALREADY;
@@ -1299,7 +1303,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 void on_nble_gattc_value_evt(const struct nble_gattc_value_evt *ev,
 			     uint8_t *data, uint8_t length)
 {
-	struct bt_gatt_subscribe_params *params;
+	sys_snode_t *node, *tmp, *prev = NULL;
 	struct bt_conn *conn;
 
 	conn = bt_conn_lookup_handle(ev->conn_handle);
@@ -1311,14 +1315,22 @@ void on_nble_gattc_value_evt(const struct nble_gattc_value_evt *ev,
 	BT_DBG("conn %p value handle 0x%04x status %d data len %u",
 	       conn, ev->handle, ev->status, length);
 
-	for (params = subscriptions; params; params = params->_next) {
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
+		struct bt_gatt_subscribe_params *params;
+
+		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				      node);
+
 		if (ev->handle != params->value_handle) {
+			prev = node;
 			continue;
 		}
 
 		if (params->notify(conn, params, data, length) ==
 		    BT_GATT_ITER_STOP) {
 			bt_gatt_unsubscribe(conn, params);
+		} else {
+			prev = node;
 		}
 	}
 
@@ -1328,7 +1340,8 @@ void on_nble_gattc_value_evt(const struct nble_gattc_value_evt *ev,
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
-	struct bt_gatt_subscribe_params *tmp, *found = NULL;
+	sys_snode_t *node, *next, *prev = NULL;
+	struct bt_gatt_subscribe_params *found = NULL;
 	bool has_subscription = false;
 
 	if (!conn || !params) {
@@ -1342,18 +1355,19 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	BT_DBG("conn %p value_handle 0x%04x ccc_handle 0x%04x value 0x%04x",
 	       conn, params->value_handle, params->ccc_handle, params->value);
 
-	/* Check head */
-	if (subscriptions == params) {
-		subscriptions = params->_next;
-		found = params;
-	}
-
 	/* Lookup existing subscriptions */
-	for (tmp = subscriptions; tmp; tmp = tmp->_next) {
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, next) {
+		struct bt_gatt_subscribe_params *tmp;
+
+		tmp = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				   node);
+
 		/* Remove subscription */
-		if (tmp->_next == params) {
-			tmp->_next = params->_next;
+		if (params == tmp) {
 			found = params;
+			sys_slist_remove(&subscriptions, prev, node);
+		} else {
+			prev = node;
 		}
 
 		/* Check if there still remains any other subscription */

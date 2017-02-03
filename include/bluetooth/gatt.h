@@ -972,7 +972,7 @@ struct bt_gatt_subscribe_params {
 	uint16_t ccc_handle;
 	/** Subscribe value */
 	uint16_t value;
-	struct bt_gatt_subscribe_params *_next;
+	sys_snode_t node;
 };
 
 /** @brief Subscribe Attribute Value Notification
