@@ -105,6 +105,68 @@ static struct sockaddr *create_sockaddr(struct net_buf *buf,
 }
 #endif
 
+static int check_used_port(enum net_ip_protocol ip_proto,
+			   uint16_t local_port,
+			   const struct sockaddr *local_addr)
+
+{
+	int i;
+
+	for (i = 0; i < NET_MAX_CONTEXT; i++) {
+		if (!net_context_is_used(&contexts[i])) {
+			continue;
+		}
+
+		if (!(net_context_get_ip_proto(&contexts[i]) == ip_proto &&
+		      net_sin((struct sockaddr *)&
+			      contexts[i].local)->sin_port == local_port)) {
+			continue;
+		}
+
+		if (local_addr->family == AF_INET6) {
+			if (net_ipv6_addr_cmp(
+				    net_sin6_ptr(&contexts[i].local)->
+							     sin6_addr,
+				    &((struct sockaddr_in6 *)
+				      local_addr)->sin6_addr)) {
+				return -EEXIST;
+			}
+		} else {
+			if (net_ipv4_addr_cmp(
+				    net_sin_ptr(&contexts[i].local)->
+							      sin_addr,
+				    &((struct sockaddr_in *)
+				      local_addr)->sin_addr)) {
+				return -EEXIST;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static uint16_t find_available_port(struct net_context *context,
+				    const struct sockaddr *addr)
+{
+	if (!net_sin(addr)->sin_port) {
+		uint16_t local_port;
+
+		do {
+			local_port = sys_rand32_get() | 0x8000;
+			if (local_port <= 1023) {
+				/* 0 - 1023 ports are reserved */
+				continue;
+			}
+		} while (check_used_port(
+				 net_context_get_ip_proto(context),
+				 htons(local_port), addr) == -EEXIST);
+
+		return htons(local_port);
+	}
+
+	return net_sin(addr)->sin_port;
+}
+
 int net_context_get(sa_family_t family,
 		    enum net_sock_type type,
 		    enum net_ip_protocol ip_proto,
@@ -219,6 +281,32 @@ int net_context_get(sa_family_t family,
 
 		memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
 		memset(&contexts[i].local, 0, sizeof(struct sockaddr_ptr));
+
+#if defined(CONFIG_NET_IPV6)
+		if (family == AF_INET6) {
+			struct sockaddr_in6 *addr6 = (struct sockaddr_in6
+						      *)&contexts[i].local;
+			addr6->sin6_port = find_available_port(&contexts[i],
+						    (struct sockaddr *)addr6);
+
+			if (!addr6->sin6_port) {
+				return -EADDRINUSE;
+			}
+		}
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+		if (family == AF_INET) {
+			struct sockaddr_in *addr = (struct sockaddr_in
+						      *)&contexts[i].local;
+			addr->sin_port = find_available_port(&contexts[i],
+						    (struct sockaddr *)addr);
+
+			if (!addr->sin_port) {
+				return -EADDRINUSE;
+			}
+		}
+#endif
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 		k_sem_init(&contexts[i].recv_data_wait, 0, UINT_MAX);
@@ -347,66 +435,6 @@ int net_context_put(struct net_context *context)
 	return 0;
 }
 
-static int check_used_port(enum net_ip_protocol ip_proto,
-			   uint16_t local_port,
-			   const struct sockaddr *local_addr)
-
-{
-	int i;
-
-	for (i = 0; i < NET_MAX_CONTEXT; i++) {
-		if (!net_context_is_used(&contexts[i])) {
-			continue;
-		}
-
-		if (net_context_get_ip_proto(&contexts[i]) == ip_proto &&
-		    net_sin((struct sockaddr *)&contexts[i].local)->sin_port ==
-							    local_port) {
-			if (local_addr->family == AF_INET6) {
-				if (net_ipv6_addr_cmp(
-					    net_sin6_ptr(&contexts[i].local)->
-								     sin6_addr,
-					    &((struct sockaddr_in6 *)
-					      local_addr)->sin6_addr)) {
-					return -EEXIST;
-				}
-			} else {
-				if (net_ipv4_addr_cmp(
-					    net_sin_ptr(&contexts[i].local)->
-								      sin_addr,
-					    &((struct sockaddr_in *)
-					      local_addr)->sin_addr)) {
-					return -EEXIST;
-				}
-			}
-		}
-	}
-
-	return 0;
-}
-
-static uint16_t find_available_port(struct net_context *context,
-				    const struct sockaddr *addr)
-{
-	if (!net_sin(addr)->sin_port) {
-		uint16_t local_port;
-
-		do {
-			local_port = sys_rand32_get() | 0x8000;
-			if (local_port <= 1023) {
-				/* 0 - 1023 ports are reserved */
-				continue;
-			}
-		} while (check_used_port(
-				 net_context_get_ip_proto(context),
-				 htons(local_port), addr) == -EEXIST);
-
-		return htons(local_port);
-	}
-
-	return net_sin(addr)->sin_port;
-}
-
 int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		     socklen_t addrlen)
 {
@@ -468,12 +496,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		}
 #endif /* CONFIG_NET_L2_OFFLOAD_IP */
 
-		addr6->sin6_port = find_available_port(context,
-						     (struct sockaddr *)addr6);
-		if (!addr6->sin6_port) {
-			return -EADDRINUSE;
-		}
-
 		net_context_set_iface(context, iface);
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
@@ -530,12 +552,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						      addrlen);
 		}
 #endif /* CONFIG_NET_L2_OFFLOAD_IP */
-
-		addr4->sin_port = find_available_port(context,
-						     (struct sockaddr *)addr4);
-		if (!addr4->sin_port) {
-			return -EADDRINUSE;
-		}
 
 		net_context_set_iface(context, iface);
 

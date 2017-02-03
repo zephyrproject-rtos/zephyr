@@ -419,8 +419,9 @@ static inline void net_context_set_iface(struct net_context *context,
  *
  * @details Network context is used to define the connection 5-tuple
  * (protocol, remote address, remote port, source address and source
- * port). This is similar as BSD socket() function.  The context will
- * be created with a reference count of 1.
+ * port). Random free port number will be assigned to source port when
+ * context is created. This is similar as BSD socket() function.
+ * The context will be created with a reference count of 1.
  *
  * @param family IP address family (AF_INET or AF_INET6)
  * @param type Type of the socket, SOCK_STREAM or SOCK_DGRAM
@@ -659,6 +660,11 @@ int net_context_sendto(struct net_buf *buf,
  * used. If CONFIG_NET_CONTEXT_SYNC_RECV is not set, then the timeout parameter
  * value is ignored.
  * This is similar as BSD recv() function.
+ * Note that net_context_bind() should be called before net_context_recv().
+ * Default random port number is assigned to local port. Only bind() will
+ * updates connection information from context. If recv() is called before
+ * bind() call, it may refuse to bind to a context which already has
+ * a connection associated.
  *
  * @param context The network context to use.
  * @param cb Caller supplied callback function.
