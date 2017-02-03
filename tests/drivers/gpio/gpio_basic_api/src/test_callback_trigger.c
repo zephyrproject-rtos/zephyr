@@ -90,6 +90,7 @@ static int test_callback(int mode)
 			TC_ERROR("not trigger callback correctly\n");
 			goto err_exit;
 		}
+		goto pass_exit;
 	}
 
 	if ((mode & GPIO_INT_LEVEL) == GPIO_INT_LEVEL) {
@@ -98,6 +99,8 @@ static int test_callback(int mode)
 			goto err_exit;
 		}
 	}
+
+pass_exit:
 	gpio_remove_callback(dev, &drv_data->gpio_cb);
 	return TC_PASS;
 
