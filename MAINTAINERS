@@ -483,6 +483,17 @@ F:	arch/xtensa
 F:	include/arch/xtensa/
 F:	boards/xtensa/
 
+RISCV32 ARCH
+M:	Jean-Paul Etienne <fractalclone@gmail.com>
+S:	Supported
+F:	arch/riscv32
+F:	include/arch/riscv32
+F:	boards/riscv32
+F:	drivers/serial/uart_riscv_qemu.c
+F:	drivers/timer/pulpino_timer.c
+F:	drivers/timer/riscv_machine_timer.c
+F:	drivers/gpio/gpio_pulpino.c
+
 ZOAP
 M:	Vinicius Costa Gomes <vinicius.gomes@intel.com>
 S:	Supported
