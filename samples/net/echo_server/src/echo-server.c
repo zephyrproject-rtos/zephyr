@@ -271,7 +271,7 @@ static struct net_buf *build_reply_buf(const char *name,
 		return NULL;
 	}
 
-	reply_buf = net_nbuf_get_tx(context);
+	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
 
 	NET_ASSERT(reply_buf);
 
@@ -292,7 +292,7 @@ static struct net_buf *build_reply_buf(const char *name,
 	net_buf_pull(tmp, header_len);
 
 	while (tmp) {
-		frag = net_nbuf_get_data(context);
+		frag = net_nbuf_get_data(context, K_FOREVER);
 
 		if (!net_buf_headroom(tmp)) {
 			/* If there is no link layer headers in the

@@ -125,7 +125,7 @@ static void telnet_end_client_connection(void)
 
 static int telnet_setup_out_buf(struct net_context *client)
 {
-	out_buf = net_nbuf_get_tx(client);
+	out_buf = net_nbuf_get_tx(client, K_FOREVER);
 	if (!out_buf) {
 		/* Cannot happen atm, nbuf waits indefinitely */
 		return -ENOBUFS;
@@ -234,7 +234,7 @@ static inline bool telnet_send(void)
 	struct line_buf *lb = telnet_rb_get_line_out();
 
 	if (lb) {
-		net_nbuf_append(out_buf, lb->len, lb->buf);
+		net_nbuf_append(out_buf, lb->len, lb->buf, K_FOREVER);
 
 		/* We reinitialize the line buffer */
 		lb->len = 0;
@@ -258,7 +258,7 @@ static int telnet_console_out_nothing(int c)
 
 static inline void telnet_command_send_reply(uint8_t *msg, uint16_t len)
 {
-	net_nbuf_append(out_buf, len, msg);
+	net_nbuf_append(out_buf, len, msg, K_FOREVER);
 
 	net_context_send(out_buf, telnet_sent_cb,
 			 K_NO_WAIT, NULL, NULL);

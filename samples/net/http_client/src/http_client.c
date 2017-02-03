@@ -54,25 +54,27 @@ int http_send_request(struct http_client_ctx *http_ctx, const char *method,
 	struct net_buf *tx;
 	int rc;
 
-	tx = net_nbuf_get_tx(http_ctx->tcp_ctx.net_ctx);
+	tx = net_nbuf_get_tx(http_ctx->tcp_ctx.net_ctx, K_FOREVER);
 	if (tx == NULL) {
 		return -ENOMEM;
 	}
 
-	if (!net_nbuf_append(tx, strlen(method), (uint8_t *)method)) {
+	if (!net_nbuf_append(tx, strlen(method), (uint8_t *)method,
+			     K_FOREVER)) {
 		goto lb_exit;
 	}
 
-	if (!net_nbuf_append(tx, strlen(url), (uint8_t *)url)) {
+	if (!net_nbuf_append(tx, strlen(url), (uint8_t *)url, K_FOREVER)) {
 		goto lb_exit;
 	}
 
-	if (!net_nbuf_append(tx, strlen(protocol), (uint8_t *)protocol)) {
+	if (!net_nbuf_append(tx, strlen(protocol), (uint8_t *)protocol,
+			     K_FOREVER)) {
 		goto lb_exit;
 	}
 
 	if (!net_nbuf_append(tx, strlen(HEADER_FIELDS),
-			     (uint8_t *)HEADER_FIELDS)) {
+			     (uint8_t *)HEADER_FIELDS, K_FOREVER)) {
 		goto lb_exit;
 	}
 
@@ -80,13 +82,14 @@ int http_send_request(struct http_client_ctx *http_ctx, const char *method,
 		char content_len_str[CON_LEN_SIZE];
 
 		if (!net_nbuf_append(tx, strlen(content_type),
-				     (uint8_t *)content_type)) {
+				     (uint8_t *)content_type, K_FOREVER)) {
 			rc = -ENOMEM;
 			goto lb_exit;
 		}
 
 		if (!net_nbuf_append(tx, strlen(content_type_value),
-				     (uint8_t *)content_type_value)) {
+				     (uint8_t *)content_type_value,
+				     K_FOREVER)) {
 			rc = -ENOMEM;
 			goto lb_exit;
 		}
@@ -100,18 +103,20 @@ int http_send_request(struct http_client_ctx *http_ctx, const char *method,
 		}
 
 		if (!net_nbuf_append(tx, strlen(content_len_str),
-				     (uint8_t *)content_len_str)) {
+				     (uint8_t *)content_len_str, K_FOREVER)) {
 			rc = -ENOMEM;
 			goto lb_exit;
 		}
 
-		if (!net_nbuf_append(tx, strlen(payload), (uint8_t *)payload)) {
+		if (!net_nbuf_append(tx, strlen(payload), (uint8_t *)payload,
+				     K_FOREVER)) {
 			rc = -ENOMEM;
 			goto lb_exit;
 		}
 
 	} else {
-		if (!net_nbuf_append(tx, strlen(sep), (uint8_t *)sep)) {
+		if (!net_nbuf_append(tx, strlen(sep), (uint8_t *)sep,
+				     K_FOREVER)) {
 			rc = -ENOMEM;
 			goto lb_exit;
 		}

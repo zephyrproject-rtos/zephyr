@@ -311,11 +311,13 @@ void net_nbuf_print_frags(struct net_buf *buf)
 
 static struct net_buf *net_nbuf_get_reserve_debug(struct net_buf_pool *pool,
 						  uint16_t reserve_head,
+						  int32_t timeout,
 						  const char *caller,
 						  int line)
 #else /* CONFIG_NET_DEBUG_NET_BUF */
 static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
-					    uint16_t reserve_head)
+					    uint16_t reserve_head,
+					    int32_t timeout)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
 	struct net_buf *buf = NULL;
@@ -327,11 +329,12 @@ static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 
 	if (k_is_in_isr()) {
 		buf = net_buf_alloc(pool, K_NO_WAIT);
-		if (!buf) {
-			return NULL;
-		}
 	} else {
-		buf = net_buf_alloc(pool, K_FOREVER);
+		buf = net_buf_alloc(pool, timeout);
+	}
+
+	if (!buf) {
+		return NULL;
 	}
 
 	if (pool == &data_buffers) {
@@ -356,41 +359,47 @@ static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 struct net_buf *net_nbuf_get_reserve_rx_debug(uint16_t reserve_head,
+					      int32_t timeout,
 					      const char *caller, int line)
 {
-	return net_nbuf_get_reserve_debug(&rx_buffers, reserve_head,
+	return net_nbuf_get_reserve_debug(&rx_buffers, reserve_head, timeout,
 					  caller, line);
 }
 
 struct net_buf *net_nbuf_get_reserve_tx_debug(uint16_t reserve_head,
+					      int32_t timeout,
 					      const char *caller, int line)
 {
-	return net_nbuf_get_reserve_debug(&tx_buffers, reserve_head,
+	return net_nbuf_get_reserve_debug(&tx_buffers, reserve_head, timeout,
 					  caller, line);
 }
 
 struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
+						int32_t timeout,
 						const char *caller, int line)
 {
 	return net_nbuf_get_reserve_debug(&data_buffers, reserve_head,
-					  caller, line);
+					  timeout, caller, line);
 }
 
 #else /* CONFIG_NET_DEBUG_NET_BUF */
 
-struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head)
+struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head,
+					int32_t timeout)
 {
-	return net_nbuf_get_reserve(&rx_buffers, reserve_head);
+	return net_nbuf_get_reserve(&rx_buffers, reserve_head, timeout);
 }
 
-struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head)
+struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head,
+					int32_t timeout)
 {
-	return net_nbuf_get_reserve(&tx_buffers, reserve_head);
+	return net_nbuf_get_reserve(&tx_buffers, reserve_head, timeout);
 }
 
-struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head)
+struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head,
+					  int32_t timeout)
 {
-	return net_nbuf_get_reserve(&data_buffers, reserve_head);
+	return net_nbuf_get_reserve(&data_buffers, reserve_head, timeout);
 }
 
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
@@ -399,10 +408,12 @@ struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head)
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 static struct net_buf *net_nbuf_get_debug(struct net_buf_pool *pool,
 					  struct net_context *context,
+					  int32_t timeout,
 					  const char *caller, int line)
 #else
 static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
-				    struct net_context *context)
+				    struct net_context *context,
+				    int32_t timeout)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
 	struct in6_addr *addr6 = NULL;
@@ -425,9 +436,9 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 	reserve = net_if_get_ll_reserve(iface, addr6);
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
-	buf = net_nbuf_get_reserve_debug(pool, reserve, caller, line);
+	buf = net_nbuf_get_reserve_debug(pool, reserve, timeout, caller, line);
 #else
-	buf = net_nbuf_get_reserve(pool, reserve);
+	buf = net_nbuf_get_reserve(pool, reserve, timeout);
 #endif
 	if (!buf) {
 		return buf;
@@ -449,44 +460,48 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
+				      int32_t timeout,
 				      const char *caller, int line)
 {
-	return net_nbuf_get_debug(&rx_buffers, context, caller, line);
+	return net_nbuf_get_debug(&rx_buffers, context, timeout, caller, line);
 }
 
 struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
+				      int32_t timeout,
 				      const char *caller, int line)
 {
-	return net_nbuf_get_debug(&tx_buffers, context, caller, line);
+	return net_nbuf_get_debug(&tx_buffers, context, timeout, caller, line);
 }
 
 struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
+					int32_t timeout,
 					const char *caller, int line)
 {
-	return net_nbuf_get_debug(&data_buffers, context, caller, line);
+	return net_nbuf_get_debug(&data_buffers, context, timeout,
+				  caller, line);
 }
 
 #else /* CONFIG_NET_DEBUG_NET_BUF */
 
-struct net_buf *net_nbuf_get_rx(struct net_context *context)
+struct net_buf *net_nbuf_get_rx(struct net_context *context, int32_t timeout)
 {
 	NET_ASSERT_INFO(context, "RX context not set");
 
-	return net_nbuf_get(&rx_buffers, context);
+	return net_nbuf_get(&rx_buffers, context, timeout);
 }
 
-struct net_buf *net_nbuf_get_tx(struct net_context *context)
+struct net_buf *net_nbuf_get_tx(struct net_context *context, int32_t timeout)
 {
 	NET_ASSERT_INFO(context, "TX context not set");
 
-	return net_nbuf_get(&tx_buffers, context);
+	return net_nbuf_get(&tx_buffers, context, timeout);
 }
 
-struct net_buf *net_nbuf_get_data(struct net_context *context)
+struct net_buf *net_nbuf_get_data(struct net_context *context, int32_t timeout)
 {
 	NET_ASSERT_INFO(context, "Data context not set");
 
-	return net_nbuf_get(&data_buffers, context);
+	return net_nbuf_get(&data_buffers, context, timeout);
 }
 
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
@@ -564,7 +579,7 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf)
 }
 
 struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
-			      size_t reserve)
+			      size_t reserve, int32_t timeout)
 {
 	uint16_t ll_reserve = net_buf_headroom(orig);
 	struct net_buf *frag, *first;
@@ -574,7 +589,10 @@ struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
 		return NULL;
 	}
 
-	frag = net_nbuf_get_reserve_data(ll_reserve);
+	frag = net_nbuf_get_reserve_data(ll_reserve, timeout);
+	if (!frag) {
+		return NULL;
+	}
 
 	if (reserve > net_buf_tailroom(frag)) {
 		NET_ERR("Reserve %zu is too long, max is %zu",
@@ -622,7 +640,12 @@ struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
 				 * We must allocate a new one.
 				 */
 				struct net_buf *new_frag =
-					net_nbuf_get_reserve_data(ll_reserve);
+					net_nbuf_get_reserve_data(ll_reserve,
+								  timeout);
+				if (!new_frag) {
+					net_nbuf_unref(first);
+					return NULL;
+				}
 
 				net_buf_frag_add(frag, new_frag);
 
@@ -803,7 +826,8 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 
 struct net_buf *net_nbuf_push(struct net_buf *parent,
 			      struct net_buf *buf,
-			      size_t amount)
+			      size_t amount,
+			      int32_t timeout)
 {
 	struct net_buf *frag;
 
@@ -816,7 +840,10 @@ struct net_buf *net_nbuf_push(struct net_buf *parent,
 		return NULL;
 	}
 
-	frag = net_nbuf_get_reserve_data(net_buf_headroom(buf));
+	frag = net_nbuf_get_reserve_data(net_buf_headroom(buf), timeout);
+	if (!frag) {
+		return NULL;
+	}
 
 	net_buf_add(frag, amount);
 
@@ -898,7 +925,7 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
  * the buffer. It assumes that the buffer has at least one fragment.
  */
 static inline bool net_nbuf_append_bytes(struct net_buf *buf, uint8_t *value,
-					 uint16_t len)
+					 uint16_t len, int32_t timeout)
 {
 	struct net_buf *frag = net_buf_frag_last(buf);
 	uint16_t ll_reserve = net_nbuf_ll_reserve(buf);
@@ -915,7 +942,7 @@ static inline bool net_nbuf_append_bytes(struct net_buf *buf, uint8_t *value,
 			return true;
 		}
 
-		frag = net_nbuf_get_reserve_data(ll_reserve);
+		frag = net_nbuf_get_reserve_data(ll_reserve, timeout);
 		if (!frag) {
 			return false;
 		}
@@ -926,7 +953,8 @@ static inline bool net_nbuf_append_bytes(struct net_buf *buf, uint8_t *value,
 	return false;
 }
 
-bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data)
+bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data,
+		     int32_t timeout)
 {
 	struct net_buf *frag;
 
@@ -944,7 +972,8 @@ bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data)
 	}
 
 	if (!buf->frags) {
-		frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+		frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf),
+						 timeout);
 		if (!frag) {
 			return false;
 		}
@@ -952,7 +981,7 @@ bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data)
 		net_buf_frag_add(buf, frag);
 	}
 
-	return net_nbuf_append_bytes(buf, data, len);
+	return net_nbuf_append_bytes(buf, data, len, timeout);
 }
 
 /* Helper routine to retrieve single byte from fragment and move
@@ -1069,7 +1098,8 @@ struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
 }
 
 static inline struct net_buf *check_and_create_data(struct net_buf *buf,
-						    struct net_buf *data)
+						    struct net_buf *data,
+						    int32_t timeout)
 {
 	struct net_buf *frag;
 
@@ -1077,7 +1107,8 @@ static inline struct net_buf *check_and_create_data(struct net_buf *buf,
 		return data;
 	}
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf),
+					 timeout);
 	if (!frag) {
 		return NULL;
 	}
@@ -1090,12 +1121,13 @@ static inline struct net_buf *check_and_create_data(struct net_buf *buf,
 static inline struct net_buf *adjust_write_offset(struct net_buf *buf,
 						  struct net_buf *frag,
 						  uint16_t offset,
-						  uint16_t *pos)
+						  uint16_t *pos,
+						  int32_t timeout)
 {
 	uint16_t tailroom;
 
 	do {
-		frag = check_and_create_data(buf, frag);
+		frag = check_and_create_data(buf, frag, timeout);
 		if (!frag) {
 			return NULL;
 		}
@@ -1122,7 +1154,8 @@ static inline struct net_buf *adjust_write_offset(struct net_buf *buf,
 
 			*pos = 0;
 
-			return check_and_create_data(buf, frag->frags);
+			return check_and_create_data(buf, frag->frags,
+						     timeout);
 		}
 
 		/* If the offset is more than current fragment length, remove
@@ -1150,7 +1183,9 @@ static inline struct net_buf *adjust_write_offset(struct net_buf *buf,
 
 				*pos = 0;
 
-				return check_and_create_data(buf, frag->frags);
+				return check_and_create_data(buf,
+							     frag->frags,
+							     timeout);
 			}
 
 			if (offset > tailroom) {
@@ -1158,7 +1193,9 @@ static inline struct net_buf *adjust_write_offset(struct net_buf *buf,
 				net_buf_add(frag, tailroom);
 				offset -= tailroom;
 
-				frag = check_and_create_data(buf, frag->frags);
+				frag = check_and_create_data(buf,
+							     frag->frags,
+							     timeout);
 			}
 		}
 
@@ -1169,7 +1206,8 @@ static inline struct net_buf *adjust_write_offset(struct net_buf *buf,
 
 struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
 			       uint16_t offset, uint16_t *pos,
-			       uint16_t len, uint8_t *data)
+			       uint16_t len, uint8_t *data,
+			       int32_t timeout)
 {
 	uint16_t ll_reserve;
 
@@ -1180,7 +1218,7 @@ struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
 
 	ll_reserve = net_nbuf_ll_reserve(buf);
 
-	frag = adjust_write_offset(buf, frag, offset, &offset);
+	frag = adjust_write_offset(buf, frag, offset, &offset, timeout);
 	if (!frag) {
 		NET_DBG("Failed to adjust offset");
 		goto error;
@@ -1213,7 +1251,7 @@ struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
 		frag = frag->frags;
 
 		if (!frag) {
-			frag = net_nbuf_get_reserve_data(ll_reserve);
+			frag = net_nbuf_get_reserve_data(ll_reserve, timeout);
 			if (!frag) {
 				goto error;
 			}
@@ -1230,7 +1268,8 @@ error:
 
 static inline bool insert_data(struct net_buf *buf, struct net_buf *frag,
 			       struct net_buf *temp, uint16_t offset,
-			       uint16_t len, uint8_t *data)
+			       uint16_t len, uint8_t *data,
+			       int32_t timeout)
 {
 	struct net_buf *insert;
 
@@ -1262,7 +1301,8 @@ static inline bool insert_data(struct net_buf *buf, struct net_buf *frag,
 		data += count;
 		offset = 0;
 
-		insert = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+		insert = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf),
+						   timeout);
 		if (!insert) {
 			return false;
 		}
@@ -1314,7 +1354,8 @@ static inline struct net_buf *adjust_insert_offset(struct net_buf *buf,
 }
 
 bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
-		     uint16_t offset, uint16_t len, uint8_t *data)
+		     uint16_t offset, uint16_t len, uint8_t *data,
+		     int32_t timeout)
 {
 	struct net_buf *temp = NULL;
 	uint16_t bytes;
@@ -1333,7 +1374,8 @@ bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
 	 */
 	bytes = frag->len - offset;
 	if (bytes) {
-		temp = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+		temp = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf),
+						 timeout);
 		if (!temp) {
 			return false;
 		}
@@ -1344,7 +1386,7 @@ bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
 	}
 
 	/* Insert data into current(frag) fragment from "offset". */
-	return insert_data(buf, frag, temp, offset, len, data);
+	return insert_data(buf, frag, temp, offset, len, data, timeout);
 }
 
 void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,

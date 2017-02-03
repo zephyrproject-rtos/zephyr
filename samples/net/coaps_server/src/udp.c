@@ -47,13 +47,13 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 
 	net_ctx = ctx->net_ctx;
 
-	send_buf = net_nbuf_get_tx(net_ctx);
+	send_buf = net_nbuf_get_tx(net_ctx, K_FOREVER);
 	if (!send_buf) {
 		printk("cannot create buf\n");
 		return -EIO;
 	}
 
-	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf);
+	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf, K_FOREVER);
 	if (!rc) {
 		printk("cannot write buf\n");
 		return -EIO;

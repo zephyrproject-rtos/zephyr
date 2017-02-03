@@ -78,7 +78,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 
 	iface = net_nbuf_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	/* We need to remember the original location of source and destination
 	 * addresses as the net_nbuf_copy() will mangle the original buffer.
@@ -96,7 +96,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	payload_len = sys_get_be16(NET_IPV6_BUF(orig)->len) -
 		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
 
-	frag = net_nbuf_copy_all(orig->frags, 0);
+	frag = net_nbuf_copy_all(orig->frags, 0, K_FOREVER);
 	if (!frag) {
 		goto drop;
 	}
@@ -181,7 +181,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 
 	iface = net_nbuf_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	/* We need to remember the original location of source and destination
 	 * addresses as the net_nbuf_copy() will mangle the original buffer.
@@ -215,7 +215,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	/* We only copy minimal IPv6 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig->frags, extra_len, reserve);
+	frag = net_nbuf_copy(orig->frags, extra_len, reserve, K_FOREVER);
 	if (!frag) {
 		goto drop;
 	}
@@ -294,7 +294,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	reserve = net_if_get_ll_reserve(iface, dst);
 

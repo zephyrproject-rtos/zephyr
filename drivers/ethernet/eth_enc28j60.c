@@ -551,7 +551,7 @@ static int eth_enc28j60_rx(struct device *dev)
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
-		buf = net_nbuf_get_reserve_rx(0);
+		buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 		if (!buf) {
 			SYS_LOG_ERR("Could not allocate rx buffer");
 			goto done;
@@ -565,7 +565,7 @@ static int eth_enc28j60_rx(struct device *dev)
 			size_t spi_frame_len;
 
 			/* Reserve a data frag to receive the frame */
-			pkt_buf = net_nbuf_get_reserve_data(0);
+			pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 			if (!pkt_buf) {
 				SYS_LOG_ERR("Could not allocate data buffer");
 				net_buf_unref(buf);

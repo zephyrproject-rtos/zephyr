@@ -22,7 +22,7 @@ uint16_t http_strlen(const char *str)
 
 int http_add_header(struct net_buf *tx, const char *str)
 {
-	net_nbuf_append(tx, strlen(str), (uint8_t *)str);
+	net_nbuf_append(tx, strlen(str), (uint8_t *)str, K_FOREVER);
 
 	return 0;
 }
@@ -36,13 +36,13 @@ int http_add_chunk(struct net_buf *tx, const char *str)
 	str_len = http_strlen(str);
 
 	snprintf(chunk_header, sizeof(chunk_header), "%x\r\n", str_len);
-	net_nbuf_append(tx, strlen(chunk_header), chunk_header);
+	net_nbuf_append(tx, strlen(chunk_header), chunk_header, K_FOREVER);
 
 	if (str_len) {
-		net_nbuf_append(tx, str_len, (uint8_t *)str);
+		net_nbuf_append(tx, str_len, (uint8_t *)str, K_FOREVER);
 	}
 
-	net_nbuf_append(tx, strlen(rn), rn);
+	net_nbuf_append(tx, strlen(rn), rn, K_FOREVER);
 
 	return 0;
 }
@@ -54,7 +54,7 @@ int http_write(struct http_server_ctx *ctx, const char *http_header,
 	struct net_buf *tx;
 	int rc = -EINVAL;
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, K_FOREVER);
 	printf("[%s:%d] net_nbuf_get_tx, rc: %d <%s>\n",
 	       __func__, __LINE__, !tx, RC_STR(!tx));
 	if (tx == NULL) {

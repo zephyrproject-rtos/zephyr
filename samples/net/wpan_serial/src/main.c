@@ -143,12 +143,12 @@ static int slip_process_byte(unsigned char c)
 #endif
 
 	if (!pkt_curr) {
-		pkt_curr = net_nbuf_get_reserve_rx(0);
+		pkt_curr = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 		if (!pkt_curr) {
 			SYS_LOG_ERR("No more buffers");
 			return 0;
 		}
-		buf = net_nbuf_get_reserve_data(0);
+		buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 		if (!buf) {
 			SYS_LOG_ERR("No more buffers");
 			net_nbuf_unref(pkt_curr);
@@ -220,13 +220,13 @@ static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 {
 	struct net_buf *buf, *pkt;
 
-	pkt = net_nbuf_get_reserve_rx(0);
+	pkt = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
 		SYS_LOG_DBG("No buf available");
 		return;
 	}
 
-	buf = net_nbuf_get_reserve_data(0);
+	buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 	if (!buf) {
 		SYS_LOG_DBG("No fragment available");
 		net_nbuf_unref(pkt);

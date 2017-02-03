@@ -445,7 +445,7 @@ int net_rpl_dio_send(struct net_if *iface,
 	uint16_t value;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -482,7 +482,8 @@ int net_rpl_dio_send(struct net_if *iface,
 	/* Flags and reserved are set to 0 */
 	net_nbuf_append_be16(buf, 0);
 
-	net_nbuf_append(buf, sizeof(struct in6_addr), dag->dag_id.s6_addr);
+	net_nbuf_append(buf, sizeof(struct in6_addr), dag->dag_id.s6_addr,
+			K_FOREVER);
 
 	if (instance->mc.type != NET_RPL_MC_NONE) {
 		net_rpl_of_update_mc(instance);
@@ -542,7 +543,8 @@ int net_rpl_dio_send(struct net_if *iface,
 
 		net_nbuf_append_be32(buf, 0); /* reserved */
 		net_nbuf_append(buf, sizeof(struct in6_addr),
-			       dag->prefix_info.prefix.s6_addr);
+				dag->prefix_info.prefix.s6_addr,
+				K_FOREVER);
 
 		NET_DBG("Sending prefix info in DIO for %s",
 			net_sprint_ipv6_addr(&dag->prefix_info.prefix));
@@ -719,7 +721,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 		return 0;
 	}
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -2964,7 +2966,7 @@ int net_rpl_dao_send(struct net_if *iface,
 		return -EINVAL;
 	}
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -2993,7 +2995,8 @@ int net_rpl_dao_send(struct net_if *iface,
 	net_nbuf_append_u8(buf, rpl_dao_sequence);
 
 #if defined(CONFIG_NET_RPL_DAO_SPECIFY_DAG)
-	net_nbuf_append(buf, sizeof(dag->dag_id), dag->dag_id.s6_addr);
+	net_nbuf_append(buf, sizeof(dag->dag_id), dag->dag_id.s6_addr,
+			K_FOREVER);
 #endif
 
 	prefixlen = sizeof(*prefix) * CHAR_BIT;
@@ -3003,7 +3006,7 @@ int net_rpl_dao_send(struct net_if *iface,
 	net_nbuf_append_u8(buf, 2 + prefix_bytes);
 	net_nbuf_append_u8(buf, 0); /* reserved */
 	net_nbuf_append_u8(buf, prefixlen);
-	net_nbuf_append(buf, prefix_bytes, prefix->s6_addr);
+	net_nbuf_append(buf, prefix_bytes, prefix->s6_addr, K_FOREVER);
 
 	net_nbuf_append_u8(buf, NET_RPL_OPTION_TRANSIT);
 	net_nbuf_append_u8(buf, 4); /* length */
@@ -3051,7 +3054,7 @@ static inline int dao_forward(struct net_if *iface,
 	struct net_buf *buf;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -3089,7 +3092,7 @@ static int dao_ack_send(struct net_buf *orig,
 	NET_DBG("Sending a DAO ACK with sequence number %d to %s",
 		sequence, net_sprint_ipv6_addr(dst));
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}

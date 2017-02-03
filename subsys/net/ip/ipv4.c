@@ -30,7 +30,7 @@ struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
 {
 	struct net_buf *header;
 
-	header = net_nbuf_get_reserve_data(reserve);
+	header = net_nbuf_get_reserve_data(reserve, K_FOREVER);
 
 	net_buf_frag_insert(buf, header);
 

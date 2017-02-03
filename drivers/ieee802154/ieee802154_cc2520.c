@@ -594,7 +594,7 @@ static void cc2520_rx(int arg)
 			goto flush;
 		}
 
-		buf = net_nbuf_get_reserve_rx(0);
+		buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 		if (!buf) {
 			SYS_LOG_ERR("No buf available");
 			goto flush;
@@ -604,9 +604,9 @@ static void cc2520_rx(int arg)
 		/**
 		 * Reserve 1 byte for length
 		 */
-		pkt_buf = net_nbuf_get_reserve_data(1);
+		pkt_buf = net_nbuf_get_reserve_data(1, K_NO_WAIT);
 #else
-		pkt_buf = net_nbuf_get_reserve_data(0);
+		pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 #endif
 		if (!pkt_buf) {
 			SYS_LOG_ERR("No pkt_buf available");

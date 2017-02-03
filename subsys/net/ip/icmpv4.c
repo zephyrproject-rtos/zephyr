@@ -106,7 +106,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	/* Take the first address of the network interface */
 	src = &iface->ipv4.unicast[0].address.in_addr;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	/* We cast to IPv6 address but that should be ok in this case
 	 * as IPv4 cannot be used in 802.15.4 where it is the reserve
@@ -115,7 +115,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	reserve = net_if_get_ll_reserve(iface,
 					(const struct in6_addr *)dst);
 
-	frag = net_nbuf_get_reserve_data(reserve);
+	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 	net_nbuf_set_family(buf, AF_INET);
@@ -192,7 +192,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 
 	iface = net_nbuf_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	reserve = sizeof(struct net_ipv4_hdr) + sizeof(struct net_icmp_hdr) +
 		NET_ICMPV4_UNUSED_LEN;
@@ -223,7 +223,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	/* We only copy minimal IPv4 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig->frags, extra_len, reserve);
+	frag = net_nbuf_copy(orig->frags, extra_len, reserve, K_FOREVER);
 	if (!frag) {
 		goto drop;
 	}

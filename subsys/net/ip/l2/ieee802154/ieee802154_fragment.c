@@ -212,7 +212,7 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 	/* Datagram_size: total length before compression */
 	size = net_buf_frags_len(buf) + hdr_diff;
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
 	if (!frag) {
 		return false;
 	}
@@ -397,7 +397,7 @@ static inline bool copy_frag(struct net_buf *buf,
 
 	while (input) {
 		write = net_nbuf_write(buf, write, pos, &pos, input->len,
-				       input->data);
+				       input->data, K_FOREVER);
 		if (!write && pos == 0xffff) {
 			return false;
 		}

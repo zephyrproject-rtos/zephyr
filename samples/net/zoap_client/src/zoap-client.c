@@ -173,13 +173,13 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 
 	k_delayed_work_init(&retransmit_work, retransmit_request);
 
-	buf = net_nbuf_get_tx(context);
+	buf = net_nbuf_get_tx(context, K_FOREVER);
 	if (!buf) {
 		printk("Unable to get TX buffer, not enough memory.\n");
 		return;
 	}
 
-	frag = net_nbuf_get_data(context);
+	frag = net_nbuf_get_data(context, K_FOREVER);
 	if (!frag) {
 		printk("Unable to get DATA buffer, not enough memory.\n");
 		return;

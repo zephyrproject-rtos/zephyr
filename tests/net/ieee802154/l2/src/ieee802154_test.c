@@ -192,8 +192,8 @@ static inline int test_ack_reply(struct ieee802154_pkt_test *t)
 
 	TC_PRINT("- Sending ACK reply to a data packet\n");
 
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_rx(0, K_FOREVER);
 
 	memcpy(frag->data, data_pkt, sizeof(data_pkt));
 	frag->len = sizeof(data_pkt);
@@ -236,7 +236,7 @@ static inline int initialize_test_environment(void)
 
 	k_sem_init(&driver_lock, 0, UINT_MAX);
 
-	current_buf = net_nbuf_get_reserve_rx(0);
+	current_buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	if (!current_buf) {
 		TC_ERROR("*** No buffer to allocate\n");
 		return TC_FAIL;

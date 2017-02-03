@@ -145,7 +145,7 @@ static struct net_buf *build_reply_buf(const char *name,
 	printk("%s received %d bytes", name,
 	      net_nbuf_appdatalen(buf));
 
-	reply_buf = net_nbuf_get_tx(context);
+	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
 
 	recv_len = net_buf_frags_len(buf->frags);
 

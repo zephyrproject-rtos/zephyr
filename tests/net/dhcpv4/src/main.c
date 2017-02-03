@@ -206,7 +206,8 @@ static struct net_buf *nbuf_get_data(struct net_if *iface)
 	struct net_buf *buf;
 	struct net_eth_hdr *hdr;
 
-	buf = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface, NULL));
+	buf = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface, NULL),
+					K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}
@@ -265,7 +266,7 @@ struct net_buf *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 	int bytes, remaining = sizeof(offer), pos = 0;
 	uint16_t offset;
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}
@@ -334,7 +335,7 @@ struct net_buf *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 	int bytes, remaining = sizeof(ack), pos = 0;
 	uint16_t offset;
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}

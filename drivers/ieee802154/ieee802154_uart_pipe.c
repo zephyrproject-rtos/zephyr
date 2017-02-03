@@ -54,13 +54,13 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 	upipe->rx_buf[upipe->rx_off++] = *buf;
 
 	if (upipe->rx_len == upipe->rx_off) {
-		nbuf = net_nbuf_get_reserve_rx(0);
+		nbuf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 		if (!nbuf) {
 			SYS_LOG_DBG("No buf available");
 			goto flush;
 		}
 
-		pkt_buf = net_nbuf_get_reserve_data(0);
+		pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_DBG("No fragment available");
 			goto out;

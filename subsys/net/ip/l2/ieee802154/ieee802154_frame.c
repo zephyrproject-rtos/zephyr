@@ -635,12 +635,12 @@ ieee802154_create_mac_cmd_frame(struct net_if *iface,
 	struct net_buf *buf, *frag;
 	uint8_t *p_buf;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}
 
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 	if (!frag) {
 		goto error;
 	}

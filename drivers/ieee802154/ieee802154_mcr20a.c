@@ -524,7 +524,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a)
 	pkt_len = read_reg_rx_frm_len(&mcr20a->spi);
 	pkt_len -= MCR20A_FCS_LENGTH;
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 	if (!buf) {
 		SYS_LOG_ERR("No buf available");
 		goto out;
@@ -535,9 +535,9 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a)
 	/**
 	 * Reserve 1 byte for length
 	 */
-	pkt_buf = net_nbuf_get_reserve_data(1);
+	pkt_buf = net_nbuf_get_reserve_data(1, K_NO_WAIT);
 #else
-	pkt_buf = net_nbuf_get_reserve_data(0);
+	pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 #endif
 	if (!pkt_buf) {
 		SYS_LOG_ERR("No pkt_buf available");

@@ -221,7 +221,7 @@ static struct net_buf *create_buf(struct net_fragment_data *data)
 	uint16_t len;
 	int remaining;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}
@@ -230,7 +230,7 @@ static struct net_buf *create_buf(struct net_fragment_data *data)
 	net_nbuf_set_iface(buf, net_if_get_default());
 	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
 
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 	if (!frag) {
 		net_nbuf_unref(buf);
 		return NULL;
@@ -271,7 +271,7 @@ static struct net_buf *create_buf(struct net_fragment_data *data)
 		net_buf_frag_add(buf, frag);
 
 		if (remaining > 0) {
-			frag = net_nbuf_get_reserve_data(0);
+			frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 		}
 	}
 
@@ -446,14 +446,14 @@ static int test_fragment(struct net_fragment_data *data)
 	frag = buf->frags;
 
 	while (frag) {
-		rxbuf = net_nbuf_get_reserve_rx(0);
+		rxbuf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 		if (!rxbuf) {
 			goto end;
 		}
 
 		net_nbuf_set_ll_reserve(rxbuf, 0);
 
-		dfrag = net_nbuf_get_reserve_data(0);
+		dfrag = net_nbuf_get_reserve_data(0, K_FOREVER);
 		if (!dfrag) {
 			goto end;
 		}

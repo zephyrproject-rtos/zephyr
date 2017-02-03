@@ -382,8 +382,17 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 {
 	struct net_buf *pkt, *buf;
 
-	pkt = net_nbuf_get_reserve_tx(0);
-	buf = net_nbuf_get_reserve_data(0);
+	pkt = net_nbuf_get_reserve_tx(0, K_NO_WAIT);
+	if (!pkt) {
+		return -ENOMEM;
+	}
+
+	buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+	if (!buf) {
+		net_nbuf_unref(pkt);
+		return -ENOMEM;
+	}
+
 	net_buf_frag_insert(pkt, buf);
 
 	net_buf_add_u8(buf, setup->bRequest);
