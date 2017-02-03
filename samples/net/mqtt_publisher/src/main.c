@@ -14,6 +14,12 @@
 #include <string.h>
 #include <errno.h>
 
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
+#include <gatt/ipss.h>
+#endif
+
 #include "config.h"
 
 /**
@@ -334,6 +340,29 @@ int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port)
 	return rc;
 }
 
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+static bool bt_connected;
+
+static
+void bt_connect_cb(struct bt_conn *conn, uint8_t err)
+{
+	bt_connected = true;
+}
+
+static
+void bt_disconnect_cb(struct bt_conn *conn, uint8_t reason)
+{
+	bt_connected = false;
+	printk("bt disconnected (reason %u)\n", reason);
+}
+
+static
+struct bt_conn_cb bt_conn_cb = {
+	.connected = bt_connect_cb,
+	.disconnected = bt_disconnect_cb,
+};
+#endif
+
 int network_setup(struct net_context **net_ctx, const char *local_addr,
 		  const char *server_addr, uint16_t server_port)
 {
@@ -345,10 +374,36 @@ int network_setup(struct net_context **net_ctx, const char *local_addr,
 	socklen_t addr_len = sizeof(struct sockaddr_in);
 	sa_family_t family = AF_INET;
 #endif
-	struct sockaddr local_sock;
-	struct sockaddr server_sock;
+	struct sockaddr server_sock, local_sock;
 	void *p;
 	int rc;
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+	const char *progress_mark = "/-\\|";
+	int i = 0;
+
+	rc = bt_enable(NULL);
+	if (rc) {
+		printk("bluetooth init failed\n");
+		return rc;
+	}
+
+	ipss_init();
+	bt_conn_cb_register(&bt_conn_cb);
+	rc = ipss_advertise();
+	if (rc) {
+		printk("advertising failed to start\n");
+		return rc;
+	}
+
+	printk("\nwaiting for bt connection: ");
+	while (bt_connected == false) {
+		k_sleep(250);
+		printk("%c\b", progress_mark[i]);
+		i = (i + 1) % (sizeof(progress_mark) - 1);
+	}
+	printk("\n");
+#endif
 
 	rc = set_addr(&local_sock, local_addr, 0);
 	if (rc) {
