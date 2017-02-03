@@ -25,7 +25,7 @@ run: zephyr
 	@echo '[XT-RUN] CPU: ${XTENSA_CORE}'
 	# Run the emulator in the background and leave a PID file for
 	# sanitycheck
-	${Q} ${XTRUN} ${KERNEL_ELF_NAME} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS} \
+	${Q} ${XTRUN} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS} ${KERNEL_ELF_NAME} \
 		& echo $$! > qemu.pid
 	# Wait until the emulator terminates (for any reason)
 	$(Q) cat qemu.pid | xargs $(srctree)/scripts/waitpid

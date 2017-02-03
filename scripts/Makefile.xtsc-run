@@ -38,11 +38,11 @@ endif
 # Ignore errors in order to be able to remove the named pipe at simulation end
 	-${Q}cd ${XTSC_WORK_DIR} && \
 		$(dir ${CROSS_COMPILE})xtsc-run \
-			$(if ${XTSC_TRACE},-set_core_parm=SimClients="trace \
+		$(if ${XTSC_TRACE},-set_core_parm=SimClients="trace \
 			${CURDIR}/${XTSC_TRACE}") \
-			-include=${CURDIR}/${XTSC_INC_FILE} \
-			$(if ${XTSC_DEBUG},-xxdebug \
-		)
+		-include=${CURDIR}/${XTSC_INC_FILE} \
+		$(if ${XTSC_DEBUG},-xxdebug) \
+		${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS}
 ifneq (${QEMU_PIPE},)
 # Remove the named pipe
 	${RM} ${QEMU_PIPE}
