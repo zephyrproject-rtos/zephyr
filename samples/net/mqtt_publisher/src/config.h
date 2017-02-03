@@ -34,4 +34,6 @@
 
 #define APP_MAX_ITERATIONS	100
 
+#define ENABLE_BLUEMIX_TOPIC	0
+
 #endif
