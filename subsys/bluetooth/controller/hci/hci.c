@@ -668,6 +668,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_SCAN */
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 static void le_create_connection(struct net_buf *buf, struct net_buf **evt)
 {
@@ -894,6 +895,7 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 				 struct net_buf **evt)
@@ -975,6 +977,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_SCAN */
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN):
 		le_create_connection(cmd, evt);
@@ -1036,6 +1039,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_read_max_data_len(cmd, evt);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 	default:
 		return -EINVAL;
