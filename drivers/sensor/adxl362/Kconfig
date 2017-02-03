@@ -1,0 +1,81 @@
+# Kconfig.adxl362 - ADXL362 Three-Axis Digital Accelerometers
+
+#
+# Copyright (c) 2017 IpTronix S.r.l.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+menuconfig ADXL362
+	bool "ADXL362 sensor"
+	depends on SENSOR && SPI
+	default n
+	help
+	  Enable driver for ADXL362 Three-Axis Digital Accelerometers.
+
+config ADXL362_DEV_NAME
+	string "ADXL362 device name"
+	depends on ADXL362
+	default "ADXL362"
+
+config ADXL362_SPI_DEV_NAME
+	string "SPI device where ADXL362 is connected"
+	depends on ADXL362
+	default "SPI_0"
+	help
+	  Specify the device name of the SPI device to which ADXL362 is
+	  connected.
+
+config ADXL362_SPI_DEV_SLAVE
+	int "SPI Slave Select where ADXL362 is connected"
+	depends on ADXL362
+	default 2
+	help
+	  Specify the slave select pin of the SPI to which ADXL362 is
+	  connected.
+
+choice
+	prompt "Accelerometer range setting"
+	depends on ADXL362
+	default BMI160_ACCEL_RANGE_RUNTIME
+
+config ADXL362_ACCEL_RANGE_RUNTIME
+	bool "Set at runtime."
+
+config ADXL362_ACCEL_RANGE_2G
+	bool "2G"
+
+config ADXL362_ACCEL_RANGE_4G
+	bool "4G"
+
+config ADXL362_ACCEL_RANGE_8G
+	bool "8G"
+
+endchoice
+
+choice
+	prompt "Accelerometer sampling frequency."
+	depends on ADXL362
+	default ADXL362_ACCEL_ODR_RUNTIME
+
+config ADXL362_ACCEL_ODR_RUNTIME
+	bool "Set at runtime."
+
+config ADXL362_ACCEL_ODR_12_5
+	bool "12.5 Hz"
+
+config ADXL362_ACCEL_ODR_25
+	bool "25 Hz"
+
+config ADXL362_ACCEL_ODR_50
+	bool "50 Hz"
+
+config ADXL362_ACCEL_ODR_100
+	bool "100 Hz"
+
+config ADXL362_ACCEL_ODR_200
+	bool "200 Hz"
+
+config ADXL362_ACCEL_ODR_400
+	bool "400 Hz"
+
+endchoice
