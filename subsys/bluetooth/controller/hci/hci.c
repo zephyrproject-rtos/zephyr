@@ -455,6 +455,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_SCAN */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER)
 static void le_create_connection(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_create_conn *cmd = (void *)buf->data;
@@ -491,6 +492,7 @@ static void le_create_conn_cancel(struct net_buf *buf, struct net_buf **evt)
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER */
 
 static void le_read_wl_size(struct net_buf *buf, struct net_buf **evt)
 {
@@ -559,6 +561,7 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER)
 static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_host_chan_classif *cmd = (void *)buf->data;
@@ -570,6 +573,7 @@ static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER */
 
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 {
@@ -608,6 +612,7 @@ static void le_rand(struct net_buf *buf, struct net_buf **evt)
 	bt_rand(rp->rand, count);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER)
 static void le_start_encryption(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_start_encryption *cmd = (void *)buf->data;
@@ -622,6 +627,7 @@ static void le_start_encryption(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER */
 
 static void le_ltk_req_reply(struct net_buf *buf, struct net_buf **evt)
 {
@@ -809,6 +815,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_STATE_SCAN */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER)
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN):
 		le_create_connection(cmd, evt);
 		break;
@@ -816,6 +823,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN_CANCEL):
 		le_create_conn_cancel(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER */
 
 	case BT_OCF(BT_HCI_OP_LE_READ_WL_SIZE):
 		le_read_wl_size(cmd, evt);
@@ -837,9 +845,11 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_conn_update(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER)
 	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF):
 		le_set_host_chan_classif(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER */
 
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
 		le_read_remote_features(cmd, evt);
@@ -853,9 +863,11 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_rand(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER)
 	case BT_OCF(BT_HCI_OP_LE_START_ENCRYPTION):
 		le_start_encryption(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ROLE_MASTER */
 
 	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_REPLY):
 		le_ltk_req_reply(cmd, evt);
