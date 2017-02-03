@@ -91,25 +91,29 @@ void _new_thread(char *pStack, size_t stackSize,
 		(XCHAL_TOTAL_SA_ALIGN < 16 ? 16 : XCHAL_TOTAL_SA_ALIGN));
 	/* TCS is located at top of stack while frames are located at end of it */
 	struct tcs *tcs = (struct tcs *)(pStack);
+	uint32_t *cpSA;
+
 #ifdef CONFIG_DEBUG
-	printk("\nstackEnd = %p\n", stackEnd);
+	printk("\nstackPtr = %p, stackSize = %d\n", pStack, stackSize);
+	printk("stackEnd = %p\n", stackEnd);
 #endif
 #ifdef CONFIG_INIT_STACKS
 	memset(pStack, 0xaa, stackSize);
 #endif
 #if XCHAL_CP_NUM > 0
-	/* Coprocessor's stack alignment is granted as both operands are aligned */
-	tcs->arch.preempCoprocReg.cpStack = stackEnd - XT_CP_SIZE;
-	/* Coprocessor's save area alignment is granted as both operands are aligned */
-	*(uint32_t *)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA) =
-		(uint32_t)stackEnd - XT_CP_SA_SIZE;
+	/* Coprocessor's stack is allocated just after the TCS */
+	tcs->arch.preempCoprocReg.cpStack = pStack + sizeof(struct k_thread);
+	cpSA = (uint32_t *)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA);
+	/* Coprocessor's save area alignment is at leat 16 bytes */
+	*cpSA = ROUND_UP(cpSA + 1,
+		(XCHAL_TOTAL_SA_ALIGN < 16 ? 16 : XCHAL_TOTAL_SA_ALIGN));
 #ifdef CONFIG_DEBUG
 	printk("cpStack  = %p\n", tcs->arch.preempCoprocReg.cpStack);
 	printk("cpAsa    = %p\n", *(void **)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA));
 #endif
 #endif
 	/* Thread's first frame alignment is granted as both operands are aligned */
-	XtExcFrame *pInitCtx = (XtExcFrame *)(stackEnd - XT_XTRA_SIZE);
+	XtExcFrame *pInitCtx = (XtExcFrame *)(stackEnd - (XT_XTRA_SIZE - XT_CP_SIZE));
 #ifdef CONFIG_DEBUG
 	printk("pInitCtx = %p\n", pInitCtx);
 #endif
