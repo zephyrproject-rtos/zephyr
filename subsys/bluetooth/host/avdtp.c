@@ -26,13 +26,6 @@
 /* TODO add config file*/
 #define CONFIG_BLUETOOTH_AVDTP_CONN CONFIG_BLUETOOTH_MAX_CONN
 
-/* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-/*
-NET_BUF_POOL_DEFINE(avdtp_sig_pool, CONFIG_BLUETOOTH_AVDTP_CONN,
-		    BT_AVDTP_BUF_SIZE(BT_AVDTP_MIN_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
-*/
-
 typedef int (*bt_avdtp_func_t)(struct bt_avdtp *session,
 			       struct bt_avdtp_req *req);
 

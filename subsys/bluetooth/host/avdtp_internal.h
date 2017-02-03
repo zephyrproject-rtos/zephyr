@@ -82,16 +82,10 @@
 #define BT_AVDTP_ERR_UNSUPPORTED_CONFIGURAION   0x29
 #define BT_AVDTP_ERR_BAD_STATE                  0x31
 
-#define BT_AVDTP_MIN_MTU 48
 #define BT_AVDTP_MAX_MTU BT_L2CAP_RX_MTU
 
 #define BT_AVDTP_MIN_SEID 0x01
 #define BT_AVDTP_MAX_SEID 0x3E
-
-/* Helper to calculate needed outgoing buffer size. */
-#define BT_AVDTP_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_RESERVE + \
-				BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
-				BT_AVDTP_SIG_HDR_LEN + (mtu))
 
 struct bt_avdtp_single_sig_hdr {
 	uint8_t hdr;
