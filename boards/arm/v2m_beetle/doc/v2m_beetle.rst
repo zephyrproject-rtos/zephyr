@@ -231,7 +231,7 @@ to `CMSIS-DAP Website`_.
 Flashing an application to V2M Beetle
 -------------------------------------
 
-The sample application hello_world is being used in this tutorial:
+The sample application :ref:`hello_world` is being used in this tutorial:
 
 .. code-block:: console
 

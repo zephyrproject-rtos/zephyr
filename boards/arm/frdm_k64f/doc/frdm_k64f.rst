@@ -195,6 +195,7 @@ board. The adaptor provides:
 Flashing an application to FRDM-K64F
 -------------------------------------
 
+The sample application :ref:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. code-block:: console

@@ -142,7 +142,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to Nucleo F401RE
 ----------------------------------------
 
-The sample application hello_world is being used in this tutorial:
+The sample application :ref:`hello_world` is being used in this tutorial:
 
 .. code-block:: console
 

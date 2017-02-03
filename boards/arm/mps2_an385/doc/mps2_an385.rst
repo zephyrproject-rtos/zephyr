@@ -247,7 +247,7 @@ V2M MPS2 provides:
 Flashing an application to V2M MPS2
 -----------------------------------
 
-The sample application hello_world is being used in this tutorial:
+The sample application :ref:`hello_world` is being used in this tutorial:
 
 .. code-block:: console
 

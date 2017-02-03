@@ -109,7 +109,7 @@ Debugging
 =========
 
 To debug an application on the Quark D2000 board, follow these steps.  As an
-example, we are using the hello_world application.
+example, we are using the :ref:`hello_world` application.
 
 #. Go to the application's folder:.
 

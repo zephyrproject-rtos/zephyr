@@ -224,6 +224,7 @@ Flashing the Sensor Subsystem Core
 When building for the ARC processor, the board type is listed as
 ``arduino_101_sss``.
 
+The sample application :ref:`hello_world` is used for this tutorial.
 Change directories to your local checkout copy of Zephyr, and run:
 
 .. code-block:: console

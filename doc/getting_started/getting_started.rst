@@ -85,7 +85,7 @@ To build an example application follow these steps:
 
       $ source zephyr-env.sh
 
-#. Build the example project, enter:
+#. Build the :ref:`hello_world` example project, enter:
 
    .. code-block:: console
 
@@ -93,7 +93,7 @@ To build an example application follow these steps:
 
       $ make
 
-The above invocation of make will build the hello_world sample application
+The above invocation of make will build the :ref:`hello_world` sample application
 using the default settings defined in the application's Makefile. You can
 build for a different board by defining the variable BOARD with one of the
 supported boards, for example:
@@ -159,7 +159,8 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
 
       $ source zephyr-env.sh
 
-#. Build the example project and make sure you supply the CROSS_COMPILE on the command line, enter:
+#. Build the example :ref:`hello_world` project and make sure you supply the
+   CROSS_COMPILE on the command line, enter:
 
    .. code-block:: console
 
