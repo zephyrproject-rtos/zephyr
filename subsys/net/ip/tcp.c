@@ -44,6 +44,9 @@ static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 
 #define INIT_RETRY_MS 200
 
+/* 2MSL timeout, where "MSL" is arbitrarily 2 minutes in the RFC */
+#define TIME_WAIT_MS (2 * 2 * 60 * 1000)
+
 struct tcp_segment {
 	uint32_t seq;
 	uint32_t ack;
@@ -120,6 +123,10 @@ static void tcp_retry_expired(struct k_timer *timer)
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
 		net_tcp_send_buf(net_buf_ref(buf));
+	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
+		if (tcp->fin_sent && tcp->fin_rcvd) {
+			net_context_unref(tcp->context);
+		}
 	}
 }
 
@@ -165,7 +172,6 @@ int net_tcp_release(struct net_tcp *tcp)
 		return -EINVAL;
 	}
 
-	k_delayed_work_cancel(&tcp->fin_timer);
 	k_delayed_work_cancel(&tcp->ack_timer);
 	k_timer_stop(&tcp->retry_timer);
 	k_sem_reset(&tcp->connect_wait);
@@ -625,6 +631,10 @@ int net_tcp_send_buf(struct net_buf *buf)
 		tcphdr->flags |= NET_TCP_ACK;
 	}
 
+	if (tcphdr->flags & NET_TCP_FIN) {
+		ctx->tcp->fin_sent = 1;
+	}
+
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
 	net_nbuf_set_buf_sent(buf, true);
@@ -634,10 +644,18 @@ int net_tcp_send_buf(struct net_buf *buf)
 
 static void restart_timer(struct net_tcp *tcp)
 {
-	if (sys_slist_is_empty(&tcp->sent_list)) {
+	if (!sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->flags |= NET_TCP_RETRYING;
 		tcp->retry_timeout_shift = 0;
 		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
+	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
+		if (tcp->fin_sent && tcp->fin_rcvd) {
+			/* We know sent_list is empty, which means if
+			 * fin_sent is true it must have been ACKd
+			 */
+			k_timer_start(&tcp->retry_timer, TIME_WAIT_MS, 0);
+			net_context_ref(tcp->context);
+		}
 	} else {
 		k_timer_stop(&tcp->retry_timer);
 		tcp->flags &= ~NET_TCP_RETRYING;
@@ -664,6 +682,7 @@ int net_tcp_send_data(struct net_context *context)
 
 void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 {
+	struct net_tcp *tcp = ctx->tcp;
 	sys_slist_t *list = &ctx->tcp->sent_list;
 	sys_snode_t *head;
 	struct net_buf *buf;
@@ -678,13 +697,23 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 
 		seq = sys_get_be32(tcphdr->seq) + net_nbuf_appdatalen(buf) - 1;
 
-		if (seq_greater(ack, seq)) {
-			sys_slist_remove(list, NULL, head);
-			net_nbuf_unref(buf);
-			valid_ack = true;
-		} else {
+		if (!seq_greater(ack, seq)) {
 			break;
 		}
+
+		if (tcphdr->flags & NET_TCP_FIN) {
+			enum net_tcp_state s = net_tcp_get_state(tcp);
+
+			if (s == NET_TCP_FIN_WAIT_1) {
+				net_tcp_change_state(tcp, NET_TCP_FIN_WAIT_2);
+			} else if (s == NET_TCP_CLOSING) {
+				net_tcp_change_state(tcp, NET_TCP_TIME_WAIT);
+			}
+		}
+
+		sys_slist_remove(list, NULL, head);
+		net_nbuf_unref(buf);
+		valid_ack = true;
 	}
 
 	if (valid_ack) {
@@ -718,21 +747,6 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 
 void net_tcp_init(void)
 {
-}
-
-#define FIN_TIMEOUT (2 * NET_TCP_MAX_SEG_LIFETIME * MSEC_PER_SEC)
-
-static void fin_timeout(struct k_work *work)
-{
-	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, fin_timer);
-	int rc;
-
-	NET_DBG("Remote peer didn't confirm connection close");
-
-	rc = net_context_put(tcp->context);
-	if (rc < 0) {
-		NET_DBG("Cannot close TCP context");
-	}
 }
 
 #if defined(CONFIG_NET_DEBUG_TCP)
@@ -792,13 +806,6 @@ void net_tcp_change_state(struct net_tcp *tcp,
 #endif /* CONFIG_NET_DEBUG_TCP */
 
 	net_tcp_set_state(tcp, new_state);
-
-	if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
-		/* Wait up to 2 * MSL before destroying this socket. */
-		k_delayed_work_cancel(&tcp->fin_timer);
-		k_delayed_work_init(&tcp->fin_timer, fin_timeout);
-		k_delayed_work_submit(&tcp->fin_timer, FIN_TIMEOUT);
-	}
 
 	if (net_tcp_get_state(tcp) != NET_TCP_CLOSED) {
 		return;

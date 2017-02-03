@@ -218,25 +218,17 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	NET_DBG("Sending buf %p to iface %p", buf, iface);
 #endif
 
-	/* If the ll address is not set at all, then we must set
-	 * it here.
+	/* If the src ll address is multicast or broadcast, then
+	 * what probably happened is that the RX buffer is used
+	 * for sending data back to recipient. We must
+	 * substitute the src address using the real ll address.
 	 */
-	if (!net_nbuf_ll_src(buf)->addr) {
+	if (net_eth_is_addr_broadcast((struct net_eth_addr *)
+					net_nbuf_ll_src(buf)->addr) ||
+	    net_eth_is_addr_multicast((struct net_eth_addr *)
+					net_nbuf_ll_src(buf)->addr)) {
 		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
 		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
-	} else {
-		/* If the src ll address is multicast or broadcast, then
-		 * what probably happened is that the RX buffer is used
-		 * for sending data back to recipient. We must
-		 * substitute the src address using the real ll address.
-		 */
-		if (net_eth_is_addr_broadcast((struct net_eth_addr *)
-					      net_nbuf_ll_src(buf)->addr) ||
-		    net_eth_is_addr_multicast((struct net_eth_addr *)
-					      net_nbuf_ll_src(buf)->addr)) {
-			net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
-			net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
-		}
 	}
 
 	/* If the destination address is not set, then use broadcast
@@ -244,34 +236,17 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	 */
 	if (!net_nbuf_ll_dst(buf)->addr) {
 #if defined(CONFIG_NET_IPV6)
-		if (net_nbuf_family(buf) == AF_INET6) {
-			if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
-				struct net_eth_addr *dst =
-					&NET_ETH_BUF(buf)->dst;
+		if (net_nbuf_family(buf) == AF_INET6 &&
+		    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+			struct net_eth_addr *dst = &NET_ETH_BUF(buf)->dst;
 
-				memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
-				       sizeof(struct net_eth_addr) - 4);
-				memcpy((uint8_t *)dst + 2,
-				       (uint8_t *)(&NET_IPV6_BUF(buf)->dst) +
-									12,
-				       sizeof(struct net_eth_addr) - 2);
+			memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
+			       sizeof(struct net_eth_addr) - 4);
+			memcpy((uint8_t *)dst + 2,
+			       (uint8_t *)(&NET_IPV6_BUF(buf)->dst) + 12,
+				sizeof(struct net_eth_addr) - 2);
 
-				net_nbuf_ll_dst(buf)->addr =
-					(uint8_t *)dst->addr;
-			} else {
-				/* Check neighbor cache if it has the
-				 * destination address.
-				 */
-				net_nbuf_set_ll_reserve(buf,
-						sizeof(struct net_eth_hdr));
-
-				buf = net_ipv6_prepare_for_send(buf);
-				if (!buf) {
-					/* The actual packet will be send later
-					 */
-					return NET_CONTINUE;
-				}
-			}
+			net_nbuf_ll_dst(buf)->addr = (uint8_t *)dst->addr;
 		} else
 #endif
 		{

@@ -86,7 +86,9 @@ static void net_if_tx_thread(struct net_if *iface)
 		void *context_token;
 		struct net_buf *buf;
 		int status;
-
+#if defined(CONFIG_NET_STATISTICS)
+		size_t pkt_len;
+#endif
 		/* Get next packet from application - wait if necessary */
 		buf = net_buf_get(&iface->tx_queue, K_FOREVER);
 
@@ -97,6 +99,9 @@ static void net_if_tx_thread(struct net_if *iface)
 		context_token = net_nbuf_token(buf);
 
 		if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+#if defined(CONFIG_NET_STATISTICS)
+			pkt_len = net_buf_frags_len(buf);
+#endif
 			status = api->send(iface, buf);
 		} else {
 			/* Drop packet if interface is not up */
@@ -106,6 +111,8 @@ static void net_if_tx_thread(struct net_if *iface)
 
 		if (status < 0) {
 			net_nbuf_unref(buf);
+		} else {
+			net_stats_update_bytes_sent(pkt_len);
 		}
 
 		if (context) {
@@ -144,15 +151,41 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 	enum net_verdict verdict;
 	int status = -EIO;
 
-	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
-		verdict = iface->l2->send(iface, buf);
-	} else {
+	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
 		verdict = NET_DROP;
 		status = -ENETDOWN;
+		goto done;
 	}
 
+	/* If the ll address is not set at all, then we must set
+	 * it here.
+	 * Workaround Linux bug, see:
+	 * https://jira.zephyrproject.org/browse/ZEP-1656
+	 */
+	if (!atomic_test_bit(iface->flags, NET_IF_POINTOPOINT) &&
+	    !net_nbuf_ll_src(buf)->addr) {
+		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
+		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+	}
+
+#if defined(CONFIG_NET_IPV6)
+	/* If the ll dst address is not set check if it is present in the nbr
+	 * cache.
+	 */
+	if (net_nbuf_family(buf) == AF_INET6) {
+		buf = net_ipv6_prepare_for_send(buf);
+		if (!buf) {
+			verdict = NET_CONTINUE;
+			goto done;
+		}
+	}
+#endif
+
+	verdict = iface->l2->send(iface, buf);
+
+done:
 	/* The L2 send() function can return
 	 *   NET_OK in which case packet was sent successfully.
 	 *   In that case we need to check if any user callbacks need
@@ -1307,7 +1340,7 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 
 struct net_if *net_if_get_by_index(uint8_t index)
 {
-	if (&__net_if_start[index] > __net_if_end) {
+	if (&__net_if_start[index] >= __net_if_end) {
 		NET_DBG("Index %d is too large", index);
 		return NULL;
 	}
@@ -1317,7 +1350,7 @@ struct net_if *net_if_get_by_index(uint8_t index)
 
 uint8_t net_if_get_by_iface(struct net_if *iface)
 {
-	NET_ASSERT(iface >= __net_if_start && iface <= __net_if_end);
+	NET_ASSERT(iface >= __net_if_start && iface < __net_if_end);
 
 	return iface - __net_if_start;
 }

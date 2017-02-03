@@ -86,7 +86,6 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_req_params *scan =
 		(struct ieee802154_req_params *)data;
-	struct net_buf *frag = NULL;
 	struct net_buf *buf = NULL;
 	uint8_t channel;
 	int ret;
@@ -111,9 +110,6 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 			NET_DBG("Could not create Beacon Request");
 			return -ENOBUFS;
 		}
-
-		frag = buf->frags;
-		buf->frags = NULL;
 	}
 
 	ctx->scan_ctx = scan;
@@ -141,13 +137,14 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		/* Active scan sends a beacon request */
 		if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
 			net_nbuf_ref(buf);
-			net_nbuf_ref(frag);
-			net_buf_frag_insert(buf, frag);
+			net_buf_ref(buf->frags);
 
 			ret = ieee802154_radio_send(iface, buf);
 			if (ret) {
 				NET_DBG("Could not send Beacon Request (%d)",
 					ret);
+				net_nbuf_unref(buf);
+
 				break;
 			}
 		}
@@ -170,10 +167,6 @@ out:
 	ctx->scan_ctx = NULL;
 
 	if (buf) {
-		if (!buf->frags) {
-			net_nbuf_unref(frag);
-		}
-
 		net_nbuf_unref(buf);
 	}
 
@@ -384,7 +377,8 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 		return -EBUSY;
 	}
 
-	if (len != sizeof(uint16_t)) {
+	if (mgmt_request != NET_REQUEST_IEEE802154_SET_EXT_ADDR &&
+	    (len != sizeof(uint16_t) || !data)) {
 		return -EINVAL;
 	}
 
@@ -404,11 +398,23 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 				ctx->pan_id = value;
 			}
 		}
-	} else {
-		if (ctx->coord.short_addr != value) {
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
+		if (len != IEEE802154_EXT_ADDR_LENGTH) {
+			return -EINVAL;
+		}
+
+		if (memcmp(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH)) {
+			ret = radio->set_ieee_addr(iface->dev, (uint8_t *)data);
+			if (!ret) {
+				memcpy(ctx->ext_addr, data,
+				       IEEE802154_EXT_ADDR_LENGTH);
+			}
+		}
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
+		if (ctx->short_addr != value) {
 			ret = radio->set_short_addr(iface->dev, value);
 			if (!ret) {
-				ctx->coord.short_addr = value;
+				ctx->short_addr = value;
 			}
 		}
 	}
@@ -422,5 +428,51 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_CHAN,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_PAN_ID,
 				  ieee802154_set_parameters);
 
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_EXT_ADDR,
+				  ieee802154_set_parameters);
+
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SHORT_ADDR,
 				  ieee802154_set_parameters);
+
+static int ieee802154_get_parameters(uint32_t mgmt_request,
+				     struct net_if *iface,
+				     void *data, size_t len)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint16_t *value;
+
+	if (mgmt_request != NET_REQUEST_IEEE802154_SET_EXT_ADDR &&
+	    (len != sizeof(uint16_t) || !data)) {
+		return -EINVAL;
+	}
+
+	value = (uint16_t *)data;
+
+	if (mgmt_request == NET_REQUEST_IEEE802154_GET_CHAN) {
+		*value = ctx->channel;
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_PAN_ID) {
+		*value = ctx->pan_id;
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_EXT_ADDR) {
+		if (len != IEEE802154_EXT_ADDR_LENGTH) {
+			return -EINVAL;
+		}
+
+		memcpy(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
+		*value = ctx->short_addr;
+	}
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_CHAN,
+				  ieee802154_get_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_PAN_ID,
+				  ieee802154_get_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_EXT_ADDR,
+				  ieee802154_get_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SHORT_ADDR,
+				  ieee802154_get_parameters);

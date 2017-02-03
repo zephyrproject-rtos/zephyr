@@ -10,6 +10,12 @@
 #include <net/net_context.h>
 #include <net/net_ip.h>
 
+/**
+ * @brief DNS Client library
+ * @defgroup dns_client DNS Client Library
+ * @{
+ */
+
 enum dns_query_type {
 	DNS_QUERY_TYPE_A = 1,	 /* IPv4 */
 	DNS_QUERY_TYPE_AAAA = 28 /* IPv6 */
@@ -94,5 +100,9 @@ int dns_init(struct dns_context *ctx);
  * @return		-ENOMEM if there are no buffers available.
  */
 int dns_resolve(struct dns_context *ctx);
+
+/**
+ * @}
+ */
 
 #endif

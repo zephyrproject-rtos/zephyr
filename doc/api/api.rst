@@ -19,6 +19,7 @@ The Zephyr APIs are used the same way on all SoCs and boards.
    kernel_api.rst
    device.rst
    bluetooth.rst
+   networking.rst
    io_interfaces.rst
    power_management_api
    file_system

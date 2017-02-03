@@ -87,27 +87,6 @@ static enum net_verdict net_bt_send(struct net_if *iface, struct net_buf *buf)
 		return NET_DROP;
 	}
 
-	/* TODO: Move ll address check to the stack */
-
-	/* If the ll address is not set at all, then we must set
-	 * it here.
-	 */
-	if (!net_nbuf_ll_src(buf)->addr) {
-		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
-		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
-	}
-
-	/* If the ll dst address is not set check if it is present in the nbr
-	 * cache.
-	 */
-	if (!net_nbuf_ll_dst(buf)->addr &&
-	    !net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
-		buf = net_ipv6_prepare_for_send(buf);
-		if (!buf) {
-			return NET_CONTINUE;
-		}
-	}
-
 	if (!net_6lo_compress(buf, true, NULL)) {
 		NET_DBG("Packet compression failed");
 		return NET_DROP;
@@ -146,6 +125,9 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_context *ctxt = CHAN_CTXT(chan);
 	struct bt_conn_info info;
+	struct net_linkaddr ll;
+	struct in6_addr in6;
+
 #if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
 	char src[BT_ADDR_LE_STR_LEN];
 	char dst[BT_ADDR_LE_STR_LEN];
@@ -166,6 +148,16 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	sys_memcpy_swap(ctxt->dst.val, info.le.dst->a.val, sizeof(ctxt->dst));
 
 	net_if_set_link_addr(ctxt->iface, ctxt->src.val, sizeof(ctxt->src.val));
+
+	ll.addr = ctxt->dst.val;
+	ll.len = sizeof(ctxt->dst.val);
+
+	/* Add remote link-local address to the nbr cache to avoid sending ns:
+	 * https://tools.ietf.org/html/rfc7668#section-3.2.3
+	 * A Bluetooth LE 6LN MUST NOT register its link-local address.
+	 */
+	net_ipv6_addr_create_iid(&in6, &ll);
+	net_ipv6_nbr_add(ctxt->iface, &in6, &ll, false, NET_NBR_REACHABLE);
 
 	/* Set iface up */
 	net_if_up(ctxt->iface);
@@ -262,6 +254,13 @@ static void bt_iface_init(struct net_if *iface)
 	NET_DBG("iface %p", iface);
 
 	ctxt->iface = iface;
+
+#if defined(CONFIG_NET_L2_BLUETOOTH_ZEP1656)
+	/* Workaround Linux bug, see:
+	 * https://jira.zephyrproject.org/browse/ZEP-1656
+	 */
+	atomic_set_bit(iface->flags, NET_IF_POINTOPOINT);
+#endif
 }
 
 static struct net_if_api bt_if_api = {

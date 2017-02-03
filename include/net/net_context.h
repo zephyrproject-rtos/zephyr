@@ -13,7 +13,14 @@
 #ifndef __NET_CONTEXT_H
 #define __NET_CONTEXT_H
 
+/**
+ * @brief Application network context
+ * @defgroup net_context Application network context
+ * @{
+ */
+
 #include <kernel.h>
+#include <atomic.h>
 
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -56,6 +63,7 @@ enum net_context_state {
 struct net_context;
 
 /**
+ * @typedef net_context_recv_cb_t
  * @brief Network data receive callback.
  *
  * @details The recv callback is called after a network data is
@@ -76,6 +84,7 @@ typedef void (*net_context_recv_cb_t)(struct net_context *context,
 				      void *user_data);
 
 /**
+ * @typedef net_context_send_cb_t
  * @brief Network data send callback.
  *
  * @details The send callback is called after a network data is
@@ -94,6 +103,7 @@ typedef void (*net_context_send_cb_t)(struct net_context *context,
 				      void *user_data);
 
 /**
+ * @typedef net_tcp_accept_cb_t
  * @brief Accept callback
  *
  * @details The accept callback is called after a successful
@@ -113,6 +123,7 @@ typedef void (*net_tcp_accept_cb_t)(struct net_context *new_context,
 				    void *user_data);
 
 /**
+ * @typedef net_context_connect_cb_t
  * @brief Connection callback.
  *
  * @details The connect callback is called after a connection is being
@@ -139,6 +150,10 @@ struct net_conn_handle;
  * anyway. This saves 12 bytes / context in IPv6.
  */
 struct net_context {
+	/** Reference count
+	 */
+	atomic_t refcount;
+
 	/** Local IP address. Note that the values are in network byte order.
 	 */
 	struct sockaddr_ptr local;
@@ -402,10 +417,11 @@ static inline void net_context_set_iface(struct net_context *context,
 /**
  * @brief Get network context.
  *
- * @details Network context is used to define the connection
- * 5-tuple (protocol, remote address, remote port, source
- * address and source port). This is similar as BSD socket()
- * function.
+ * @details Network context is used to define the connection 5-tuple
+ * (protocol, remote address, remote port, source address and source
+ * port). Random free port number will be assigned to source port when
+ * context is created. This is similar as BSD socket() function.
+ * The context will be created with a reference count of 1.
  *
  * @param family IP address family (AF_INET or AF_INET6)
  * @param type Type of the socket, SOCK_STREAM or SOCK_DGRAM
@@ -420,17 +436,48 @@ int net_context_get(sa_family_t family,
 		    struct net_context **context);
 
 /**
- * @brief Free/close a network context.
+ * @brief Close and unref a network context.
  *
- * @details This releases the context. It is not possible to
- * send or receive data via this context after this call.
- * This is similar as BSD shutdown() function.
+ * @details This releases the context. It is not possible to send or
+ * receive data via this context after this call.  This is similar as
+ * BSD shutdown() function.  For legacy compatibility, this function
+ * will implicitly decrement the reference count and possibly destroy
+ * the context either now or when it reaches a final state.
  *
  * @param context The context to be closed.
  *
  * @return 0 if ok, < 0 if error
  */
 int net_context_put(struct net_context *context);
+
+/**
+ * @brief Take a reference count to a net_context, preventing destruction
+ *
+ * @details Network contexts are not recycled until their reference
+ * count reaches zero.  Note that this does not prevent any "close"
+ * behavior that results from errors or net_context_put.  It simply
+ * prevents the context from being recycled for further use.
+ *
+ * @param context The context on which to increment the reference count
+ *
+ * @return The new reference count
+ */
+int net_context_ref(struct net_context *context);
+
+/**
+ * @brief Decrement the reference count to a network context
+ *
+ * @details Decrements the refcount.  If it reaches zero, the context
+ * will be recycled.  Note that this does not cause any
+ * network-visible "close" behavior (i.e. future packets to this
+ * connection may see TCP RST or ICMP port unreachable responses).  See
+ * net_context_put() for that.
+ *
+ * @param context The context on which to decrement the reference count
+ *
+ * @return The new reference count, zero if the context was destroyed
+ */
+int net_context_unref(struct net_context *context);
 
 /**
  * @brief Assign a socket a local address.
@@ -613,6 +660,11 @@ int net_context_sendto(struct net_buf *buf,
  * used. If CONFIG_NET_CONTEXT_SYNC_RECV is not set, then the timeout parameter
  * value is ignored.
  * This is similar as BSD recv() function.
+ * Note that net_context_bind() should be called before net_context_recv().
+ * Default random port number is assigned to local port. Only bind() will
+ * updates connection information from context. If recv() is called before
+ * bind() call, it may refuse to bind to a context which already has
+ * a connection associated.
  *
  * @param context The network context to use.
  * @param cb Caller supplied callback function.
@@ -627,6 +679,13 @@ int net_context_recv(struct net_context *context,
 		     int32_t timeout,
 		     void *user_data);
 
+/**
+ * @typedef net_context_cb_t
+ * @brief Callback used while iterating over network contexts
+ *
+ * @param context A valid pointer on current network context
+ * @param user_data A valid pointer on some user data or NULL
+ */
 typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
 
 /**
@@ -641,5 +700,9 @@ void net_context_foreach(net_context_cb_t cb, void *user_data);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __NET_CONTEXT_H */

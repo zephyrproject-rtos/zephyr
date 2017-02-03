@@ -11,9 +11,7 @@ information to a serial console.
 Requirements
 ************
 
-- net_tools:
-
-    https://wiki.zephyrproject.org/view/Networking-with-Qemu
+- :ref:`networking with Qemu <networking_with_qemu>`
 
 Building and Running
 ********************
@@ -91,15 +89,12 @@ an ip address by typing:
 FRDM_K64F
 =========
 
-These are instructions for how to use this sample application running in FRDM_K64F
-board to negotiate IP address from DHCPv4 server running on Linux host.
+These are instructions for how to use this sample application running on
+:ref:`frdm_k64f` board to negotiate IP address from DHCPv4 server running on
+Linux host.
 
-Instructions to follow building, flashing and observe serial console logs:
-
-    https://wiki.zephyrproject.org/view/NXP_FRDM-K64F#Quick_Start
-
-Connect ethernet cable from frdm board to Linux host machine and check
-for new interfaces:
+Connect ethernet cable from :ref:`Freedom-K64F board <frdm_k64f>` to Linux host
+machine and check for new interfaces:
 
 .. code-block:: console
 
@@ -132,7 +127,7 @@ using this conf file:
 
     $ sudo dhcpd -d -4 -cf /etc/dhcp/dhcpd.conf -lf /var/lib/dhcp/dhcpd.leases eth1
 
-Run Zephyr samples/net/dhcpv4_client application in QEMU:
+Build Zephyr samples/net/dhcpv4_client application:
 
 .. code-block:: console
 

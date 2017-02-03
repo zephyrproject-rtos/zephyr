@@ -32,9 +32,7 @@ A return code of 0 must be interpreted as success.
 Requirements
 ************
 
-- net_tools:
-
-    https://wiki.zephyrproject.org/view/Networking-with-Qemu
+- :ref:`networking with Qemu <networking_with_qemu>`
 
 - screen terminal emulator or equivalent.
 
@@ -70,28 +68,42 @@ GDN		GND  (9)
 Building and Running
 ********************
 
-Read the :file:`samples/net/dns_client/src/config.h` file.
-Change the IP addresses and DNS server port according to the
-LAN environment.
-
 Network Configuration
 =====================
 
-For example, if your LAN is 192.168.0.0/16, the IPv4 addresses must be
-similar to:
+Open the project configuration file for your platform, for example:
+:file:`prj_frdm_k64f.conf` is the configuration file for the
+:ref:`frdm_k64f` board. For IPv4 networks, set the following variables:
+
+.. code-block:: console
+
+	CONFIG_NET_IPV4=y
+	CONFIG_NET_IPV6=n
+
+IPv6 is the preferred routing technology for this sample application,
+if CONFIG_NET_IPV6=y is set, the value of CONFIG_NET_IPV4 is ignored.
+
+In this sample application, only static IP addresses are supported,
+those addresses are specified in the project configuration file,
+for example:
+
+.. code-block:: console
+
+	CONFIG_NET_SAMPLES_MY_IPV6_ADDR="2001:db8::1"
+	CONFIG_NET_SAMPLES_PEER_IPV6_ADDR="2001:db8::2"
+
+are the IPv6 addresses for the DNS client running Zephyr and the
+DNS server, respectively.
+
+Alternatively, the IP addresses may be specified in the
+:file:`samples/net/dns_client/src/config.h` file.
+
+Open the :file:`samples/net/dns_client/src/config.h` file and set the
+server port to match the DNS server setup, for example:
 
 .. code-block:: c
 
-    #define LOCAL_ADDR		{ { { 192, 168, 1, 101 } } }
-    #define REMOTE_ADDR		{ { { 192, 168, 1, 1 } } }
-
-where REMOTE_ADDR is the address of the DNS server.
-
-The DNS server port must be specified also, for example:
-
-.. code-block:: c
-
-   #define PEER_PORT		5353
+   #define REMOTE_PORT		5353
 
 assumes that the DNS server is listening at UDP port 5353.
 
@@ -166,7 +178,7 @@ must be mounted (i.e. to /mnt) to 'flash' the binary:
     $ cp outdir/frdm_k64f/zephyr.bin /mnt
 
 
-See https://developer.mbed.org/platforms/frdm-k64f/ for more information
+See :ref:`Freedom-K64F board documentation <frdm_k64f>` for more information
 about this board.
 
 Open a terminal window and type:

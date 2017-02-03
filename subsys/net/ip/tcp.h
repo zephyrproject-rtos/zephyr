@@ -104,9 +104,6 @@ struct net_tcp {
 	/** ACK message timer */
 	struct k_delayed_work ack_timer;
 
-	/** Active close timer */
-	struct k_delayed_work fin_timer;
-
 	/** Retransmit timer */
 	struct k_timer retry_timer;
 
@@ -131,8 +128,14 @@ struct net_tcp {
 	uint32_t flags : 8;
 	/** Current TCP state */
 	uint32_t state : 4;
+	/* A FIN packet has been queued for transmission */
+	uint32_t fin_queued : 1;
+	/* An outbound FIN packet has been sent */
+	uint32_t fin_sent : 1;
+	/* An inbound FIN packet has been received */
+	uint32_t fin_rcvd : 1;
 	/** Remaining bits in this uint32_t */
-	uint32_t _padding : 15;
+	uint32_t _padding : 12;
 
 	/** Accept callback to be called when the connection has been
 	 * established.

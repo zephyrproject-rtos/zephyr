@@ -54,7 +54,7 @@ static inline void init_app(void)
 
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
-			  (struct sockaddr *)&in6addr_my) < 0) {
+			  &in6addr_my) < 0) {
 		printk("Invalid IPv6 address %s",
 			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
 	}

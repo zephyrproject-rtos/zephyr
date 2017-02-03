@@ -60,7 +60,7 @@ config ETH_ENC28J60_0_GPIO_PIN
 	int "ENC28J60C INT GPIO PIN"
 	default 19
 	help
-	GPIO pin number used to conect INT
+	GPIO pin number used to connect INT
 
 config ETH_ENC28J60_0_SPI_PORT_NAME
 	string "SPI master controller port name"

@@ -270,14 +270,6 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	if (!net_nbuf_ll_dst(buf)->addr &&
-	    !net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
-		buf = net_ipv6_prepare_for_send(buf);
-		if (!buf) {
-			return NET_CONTINUE;
-		}
-	}
-
 	/* 6lo is going to compress the ipv6 header, and thus accessing
 	 * packet's ipv6 address won't be possible anymore when creating
 	 * the frame */
@@ -321,26 +313,28 @@ NET_L2_INIT(IEEE802154_L2,
 
 void ieee802154_init(struct net_if *iface)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	const struct ieee802154_radio_api *radio =
 		iface->dev->driver_api;
+	const uint8_t *mac = iface->link_addr.addr;
+	uint8_t long_addr[8];
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
 	ieee802154_mgmt_init(iface);
 
-#ifdef CONFIG_NET_L2_IEEE802154_ORFD
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const uint8_t *mac = iface->link_addr.addr;
-	uint8_t long_addr[8];
-	uint16_t short_addr;
-
 	sys_memcpy_swap(long_addr, mac, 8);
 
-	short_addr = (mac[0] << 8) + mac[1];
-
-	radio->set_short_addr(iface->dev, short_addr);
 	radio->set_ieee_addr(iface->dev, long_addr);
+	memcpy(ctx->ext_addr, long_addr, 8);
 
+#ifdef CONFIG_NET_L2_IEEE802154_ORFD
+	uint16_t short_addr;
+
+	short_addr = (mac[0] << 8) + mac[1];
+	radio->set_short_addr(iface->dev, short_addr);
+
+	ctx->short_addr = short_addr;
 	ctx->pan_id = CONFIG_NET_L2_IEEE802154_ORFD_PAN_ID;
 	ctx->channel = CONFIG_NET_L2_IEEE802154_ORFD_CHANNEL;
 

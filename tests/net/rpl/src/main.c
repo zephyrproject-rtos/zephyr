@@ -428,9 +428,25 @@ static bool test_dao_sending_fail(void)
 
 static bool net_test_send_ns(void)
 {
+	struct net_if *iface = net_if_get_default();
+	struct net_nbr *nbr;
 	int ret;
 
-	ret = net_ipv6_send_ns(net_if_get_default(),
+	/* As we are sending a node reachability NS (RFC 4861 ch 4.3),
+	 * we need to add the neighbor to the cache, otherwise we cannot
+	 * send a NS with unicast destination address.
+	 */
+	nbr = net_ipv6_nbr_add(iface,
+			       &in6addr_my,
+			       &iface->link_addr,
+			       false,
+			       NET_NBR_REACHABLE);
+	if (!nbr) {
+		TC_ERROR("Cannot add to neighbor cache\n");
+		return false;
+	}
+
+	ret = net_ipv6_send_ns(iface,
 			       NULL,
 			       &peer_addr,
 			       &in6addr_my,

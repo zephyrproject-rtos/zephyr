@@ -12,6 +12,12 @@
 #ifndef __NET_IF_H__
 #define __NET_IF_H__
 
+/**
+ * @brief Network Interface abstraction layer
+ * @defgroup net_if Network Interface abstraction layer
+ * @{
+ */
+
 #include <device.h>
 #include <misc/slist.h>
 
@@ -143,6 +149,9 @@ struct net_if_router {
 enum {
 	/* interface is up/ready to receive and transmit */
 	NET_IF_UP,
+
+	/* interface is pointopoint */
+	NET_IF_POINTOPOINT,
 
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -1076,6 +1085,13 @@ struct net_if *net_if_get_by_index(uint8_t index);
  */
 uint8_t net_if_get_by_iface(struct net_if *iface);
 
+/**
+ * @typedef net_if_cb_t
+ * @brief Callback used while iterating over network interfaces
+ *
+ * @param iface Pointer to current network interface
+ * @param user_data A valid pointer on some user data or NULL
+ */
 typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
 
 /**
@@ -1156,5 +1172,9 @@ struct net_if_api {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __NET_IF_H__ */

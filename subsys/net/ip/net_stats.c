@@ -87,7 +87,7 @@ void net_print_statistics(void)
 			 GET_STAT(rpl.dis.drop));
 		NET_INFO("RPL DIO recv   %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(rpl.dio.recv),
-			 GET_STAT(rpl.dio..sent),
+			 GET_STAT(rpl.dio.sent),
 			 GET_STAT(rpl.dio.drop));
 		NET_INFO("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
 			 GET_STAT(rpl.dao.recv),
@@ -114,6 +114,8 @@ void net_print_statistics(void)
 			 GET_STAT(rpl.root_repairs));
 #endif
 
+		NET_INFO("Bytes received %u", GET_STAT(bytes.received));
+		NET_INFO("Bytes sent     %u", GET_STAT(bytes.sent));
 		NET_INFO("Processing err %d", GET_STAT(processing_error));
 
 		new_print = curr + PRINT_STATISTICS_INTERVAL;
@@ -147,6 +149,10 @@ static int net_stats_get(uint32_t mgmt_request, struct net_if *iface,
 	case NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR:
 		len_chk = sizeof(net_stats_t);
 		src = &net_stats.processing_error;
+		break;
+	case NET_REQUEST_STATS_CMD_GET_BYTES:
+		len_chk = sizeof(struct net_stats_bytes);
+		src = &net_stats.bytes;
 		break;
 	case NET_REQUEST_STATS_CMD_GET_IP_ERRORS:
 		len_chk = sizeof(struct net_stats_ip_errors);
@@ -209,6 +215,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ALL,
 				  net_stats_get);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PROCESSING_ERROR,
+				  net_stats_get);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_BYTES,
 				  net_stats_get);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IP_ERRORS,

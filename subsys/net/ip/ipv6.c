@@ -485,11 +485,94 @@ static void ns_reply_timeout(struct k_work *work)
 	net_nbr_unref(nbr);
 }
 
+/* If the reserve has changed, we need to adjust it accordingly in the
+ * fragment chain. This can only happen in IEEE 802.15.4 where the link
+ * layer header size can change if the destination address changes.
+ * Thus we need to check it here. Note that this cannot happen for IPv4
+ * as 802.15.4 supports IPv6 only.
+ */
+static struct net_buf *update_ll_reserve(struct net_buf *buf,
+					 struct in6_addr *addr)
+{
+	/* We need to go through all the fragments and adjust the
+	 * fragment data size.
+	 */
+	uint16_t reserve, room_len, copy_len, pos;
+	struct net_buf *orig_frag, *frag;
+
+	reserve = net_if_get_ll_reserve(net_nbuf_iface(buf), addr);
+	if (reserve == net_nbuf_ll_reserve(buf)) {
+		return buf;
+	}
+
+	NET_DBG("Adjust reserve old %d new %d",
+		net_nbuf_ll_reserve(buf), reserve);
+
+	net_nbuf_set_ll_reserve(buf, reserve);
+
+	orig_frag = buf->frags;
+	copy_len = orig_frag->len;
+	pos = 0;
+
+	buf->frags = NULL;
+	room_len = 0;
+	frag = NULL;
+
+	while (orig_frag) {
+		if (!room_len) {
+			frag = net_nbuf_get_reserve_data(reserve);
+
+			net_buf_frag_add(buf, frag);
+
+			room_len = net_buf_tailroom(frag);
+		}
+
+		if (room_len >= copy_len) {
+			memcpy(net_buf_add(frag, copy_len),
+			       orig_frag->data + pos, copy_len);
+
+			room_len -= copy_len;
+			copy_len = 0;
+		} else {
+			memcpy(net_buf_add(frag, room_len),
+			       orig_frag->data + pos, room_len);
+
+			copy_len -= room_len;
+			pos += room_len;
+			room_len = 0;
+		}
+
+		if (!copy_len) {
+			orig_frag = net_buf_frag_del(NULL, orig_frag);
+			if (!orig_frag) {
+				break;
+			}
+
+			copy_len = orig_frag->len;
+			pos = 0;
+		}
+	}
+
+	return buf;
+}
+
 struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 {
 	struct in6_addr *nexthop = NULL;
 	struct net_if *iface = NULL;
 	struct net_nbr *nbr;
+
+	/* Workaround Linux bug, see:
+	 * https://jira.zephyrproject.org/browse/ZEP-1656
+	 */
+	if (atomic_test_bit(net_nbuf_iface(buf)->flags, NET_IF_POINTOPOINT)) {
+		return buf;
+	}
+
+	if (net_nbuf_ll_dst(buf)->addr ||
+	    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+		return update_ll_reserve(buf, &NET_IPV6_BUF(buf)->dst);
+	}
 
 	if (net_if_ipv6_addr_onlink(&iface,
 				    &NET_IPV6_BUF(buf)->dst)) {
@@ -529,6 +612,7 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 						&NET_IPV6_BUF(buf)->dst));
 
 				/* Try to send the packet anyway */
+				nexthop = &NET_IPV6_BUF(buf)->dst;
 				goto try_send;
 			}
 
@@ -541,14 +625,26 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 		return NULL;
 	}
 
+	if (!iface) {
+		/* This means that the dst was not onlink, so try to
+		 * figure out the interface using nexthop instead.
+		 */
+		if (net_if_ipv6_addr_onlink(&iface, nexthop)) {
+			net_nbuf_set_iface(buf, iface);
+		}
+
+		/* If the above check returns null, we try to send
+		 * the packet and hope for the best.
+		 */
+	}
+
 try_send:
-	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
-			 &NET_IPV6_BUF(buf)->dst);
+	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf), nexthop);
 
 	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s", nbr,
 		nbr ? nbr->idx : NET_NBR_LLADDR_UNKNOWN,
 		net_nbuf_iface(buf),
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+		net_sprint_ipv6_addr(nexthop));
 
 	if (nbr && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr_storage *lladdr;
@@ -561,7 +657,7 @@ try_send:
 		NET_DBG("Neighbor %p addr %s", nbr,
 			net_sprint_ll_addr(lladdr->addr, lladdr->len));
 
-		return buf;
+		return update_ll_reserve(buf, nexthop);
 	}
 
 	/* We need to send NS and wait for NA before sending the packet. */
@@ -569,7 +665,7 @@ try_send:
 			     buf,
 			     &NET_IPV6_BUF(buf)->src,
 			     NULL,
-			     &NET_IPV6_BUF(buf)->dst,
+			     nexthop,
 			     false) < 0) {
 		/* In case of an error, the NS send function will unref
 		 * the buf.

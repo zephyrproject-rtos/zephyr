@@ -16,6 +16,7 @@
 #define CMD_STR_UDP_UPLOAD2 "udp.upload2"
 #define CMD_STR_UDP_DOWNLOAD "udp.download"
 #define CMD_STR_TCP_UPLOAD "tcp.upload"
+#define CMD_STR_TCP_UPLOAD2 "tcp.upload2"
 #define CMD_STR_TCP_DOWNLOAD "tcp.download"
 
 struct zperf_results {

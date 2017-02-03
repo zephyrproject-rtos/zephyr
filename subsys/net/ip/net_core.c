@@ -535,12 +535,20 @@ static void net_rx_thread(void)
 	net_if_init();
 
 	while (1) {
+#if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
+		size_t pkt_len;
+#endif
+
 		buf = net_buf_get(&rx_queue, K_FOREVER);
 
 		net_analyze_stack("RX thread", rx_stack, sizeof(rx_stack));
 
-		NET_DBG("Received buf %p len %zu", buf,
-			net_buf_frags_len(buf));
+#if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
+		pkt_len = net_buf_frags_len(buf);
+#endif
+		NET_DBG("Received buf %p len %zu", buf, pkt_len);
+
+		net_stats_update_bytes_recv(pkt_len);
 
 		processing_data(buf, false);
 

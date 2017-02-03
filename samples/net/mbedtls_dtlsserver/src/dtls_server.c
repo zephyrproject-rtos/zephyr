@@ -375,7 +375,7 @@ static inline int init_app(void)
 #if defined(CONFIG_NET_IPV6)
 #if defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
 	if (net_addr_pton(AF_INET6, CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
-			  (struct sockaddr *)&server_addr) < 0) {
+			  &server_addr) < 0) {
 		mbedtls_printf("Invalid IPv6 address %s",
 			       CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
 	}
@@ -390,7 +390,7 @@ static inline int init_app(void)
 #else
 #if defined(CONFIG_NET_SAMPLES_MY_IPV4_ADDR)
 	if (net_addr_pton(AF_INET, CONFIG_NET_SAMPLES_MY_IPV4_ADDR,
-			  (struct sockaddr *)&server_addr) < 0) {
+			  &server_addr) < 0) {
 		mbedtls_printf("Invalid IPv4 address %s",
 			       CONFIG_NET_SAMPLES_MY_IPV4_ADDR);
 	}

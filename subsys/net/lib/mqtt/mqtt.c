@@ -103,7 +103,7 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 	tx = NULL;
 
 	if (ctx->disconnect) {
-		ctx->disconnect(ctx->disconnect_data);
+		ctx->disconnect(ctx);
 	}
 
 exit_disconnect:
@@ -214,7 +214,6 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 
 	rc = mqtt_pack_publish(data->data, &data->len, data->size, msg);
 	if (rc != 0) {
-		net_nbuf_unref(data);
 		rc = -EINVAL;
 		goto exit_publish;
 	}
@@ -262,7 +261,11 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		goto exit_pingreq;
 	}
 
-	net_nbuf_append(tx, len, msg);
+	rc = net_nbuf_append(tx, len, msg);
+	if (rc != true) {
+		rc = -ENOMEM;
+		goto exit_pingreq;
+	}
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
@@ -410,7 +413,7 @@ int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx, int clean_session)
 	ctx->connected = 1;
 
 	if (ctx->connect) {
-		ctx->connect(ctx->connect_data);
+		ctx->connect(ctx);
 	}
 
 exit_connect:
@@ -473,13 +476,12 @@ int mqtt_rx_pub_msgs(struct mqtt_ctx *ctx, struct net_buf *rx,
 	 */
 	if (type == MQTT_PUBREL) {
 		if (ctx->app_type != MQTT_APP_PUBLISHER) {
-			rc = ctx->publish_rx(ctx->publish_rx_data, NULL, pkt_id,
-					     MQTT_PUBREL);
+			rc = ctx->publish_rx(ctx, NULL, pkt_id, MQTT_PUBREL);
 		} else {
 			rc = -EINVAL;
 		}
 	} else {
-		rc = ctx->publish_tx(ctx->publish_tx_data, pkt_id, type);
+		rc = ctx->publish_tx(ctx, pkt_id, type);
 	}
 
 	if (rc != 0) {
@@ -556,7 +558,7 @@ int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx)
 		return -EINVAL;
 	}
 
-	rc = ctx->subscribe(ctx->subscribe_data, pkt_id, items, suback_qos);
+	rc = ctx->subscribe(ctx, pkt_id, items, suback_qos);
 	if (rc != 0) {
 		return -EINVAL;
 	}
@@ -584,7 +586,7 @@ int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx)
 		return -EINVAL;
 	}
 
-	rc = ctx->unsubscribe(ctx->subscribe_data, pkt_id);
+	rc = ctx->unsubscribe(ctx, pkt_id);
 	if (rc != 0) {
 		return -EINVAL;
 	}
@@ -602,8 +604,7 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx)
 		return -EINVAL;
 	}
 
-	rc = ctx->publish_rx(ctx->publish_rx_data, &msg, msg.pkt_id,
-			     MQTT_PUBLISH);
+	rc = ctx->publish_rx(ctx, &msg, msg.pkt_id, MQTT_PUBLISH);
 	if (rc != 0) {
 		return -EINVAL;
 	}
@@ -643,18 +644,18 @@ struct net_buf *mqtt_linearize_buffer(struct mqtt_ctx *ctx, struct net_buf *rx,
 	uint16_t offset;
 	int rc;
 
-	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
-	if (data == NULL) {
-		return NULL;
-	}
-
 	/* CONFIG_MQTT_MSG_MAX_SIZE is defined via Kconfig. So here it's
 	 * determined if the input buffer could fit our data buffer or if
 	 * it has the expected size.
 	 */
 	data_len = net_nbuf_appdatalen(rx);
 	if (data_len < min_size || data_len > CONFIG_MQTT_MSG_MAX_SIZE) {
-		goto exit_error;
+		return NULL;
+	}
+
+	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
+	if (data == NULL) {
+		return NULL;
 	}
 
 	offset = net_buf_frags_len(rx) - data_len;
@@ -674,6 +675,8 @@ exit_error:
 /**
  * @brief mqtt_publisher_parser	Calls the appropriate rx routine for the MQTT
  *				message contained in rx
+ * @details			On error, this routine will execute the
+ *				'ctx->malformed' callback (if defined)
  * @param ctx			MQTT context
  * @param rx			RX buffer
  * @return			0 on success
@@ -724,7 +727,9 @@ int mqtt_publisher_parser(struct mqtt_ctx *ctx, struct net_buf *rx)
 	}
 
 exit_parser:
-	/* TODO: add error handling via a user provided callback */
+	if (rc != 0 && ctx->malformed) {
+		ctx->malformed(ctx, pkt_type);
+	}
 
 	net_nbuf_unref(data);
 
@@ -788,7 +793,9 @@ int mqtt_subscriber_parser(struct mqtt_ctx *ctx, struct net_buf *rx)
 	}
 
 exit_parser:
-	/* TODO: add error handling via a user provided callback */
+	if (rc != 0 && ctx->malformed) {
+		ctx->malformed(ctx, pkt_type);
+	}
 
 	net_nbuf_unref(data);
 
@@ -804,11 +811,17 @@ void mqtt_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
 	/* net_ctx is already referenced to by the mqtt_ctx struct */
 	ARG_UNUSED(net_ctx);
 
-	if (status != 0) {
+	if (status || !buf) {
 		return;
 	}
 
+	if (net_nbuf_appdatalen(buf) == 0) {
+		goto lb_exit;
+	}
+
 	mqtt->rcv(mqtt, buf);
+
+lb_exit:
 	net_nbuf_unref(buf);
 }
 

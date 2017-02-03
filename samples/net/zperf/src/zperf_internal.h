@@ -99,6 +99,7 @@ extern void zperf_receiver_init(int port);
 
 #if defined(CONFIG_NET_TCP)
 extern void zperf_tcp_receiver_init(int port);
+extern void zperf_tcp_uploader_init(struct k_fifo *tx_queue);
 extern void zperf_tcp_upload(struct net_context *net_context,
 			     unsigned int duration_in_ms,
 			     unsigned int packet_size,

@@ -37,4 +37,11 @@ It can be built and executed on QEMU as follows:
 
     make run
 
+To build the version supporting the TI CC2520 radio, use the supplied
+configuration file enabling IEEE 802.15.4:
+
+.. code-block:: console
+
+    make CONF_FILE=prj_cc2520.conf run
+
 .. _`net-tools`: https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=tree

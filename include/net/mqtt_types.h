@@ -10,6 +10,12 @@
 #include <stdint.h>
 
 /**
+ * @brief MQTT library
+ * @defgroup mqtt MQTT library
+ * @{
+ */
+
+/**
  * @brief	MQTT Packet Type enum
  * @details	See MQTT 2.2.1: MQTT Control Packet type
  */
@@ -75,5 +81,9 @@ struct mqtt_publish_msg {
 	uint8_t *msg;
 	uint16_t msg_len;
 };
+
+/**
+ * @}
+ */
 
 #endif

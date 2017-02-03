@@ -5,5 +5,4 @@ Networking Samples
    :maxdepth: 1
    :glob:
 
-   qemu_setup.rst
    **/*

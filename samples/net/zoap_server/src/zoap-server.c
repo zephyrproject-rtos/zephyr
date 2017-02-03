@@ -50,16 +50,10 @@ static int test_del(struct zoap_resource *resource,
 {
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
-	uint8_t tkl, code, type, *payload;
+	uint8_t tkl, code, type;
 	const uint8_t *token;
-	uint16_t id, len;
+	uint16_t id;
 	int r;
-
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		NET_ERR("Packet without payload\n");
-		return -EINVAL;
-	}
 
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
@@ -314,12 +308,6 @@ static int piggyback_get(struct zoap_resource *resource,
 	uint8_t tkl;
 	int r;
 
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		NET_ERR("Packet without payload\n");
-		return -EINVAL;
-	}
-
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
@@ -493,12 +481,6 @@ static int separate_get(struct zoap_resource *resource,
 	uint16_t len, id;
 	int r;
 
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		NET_ERR("Packet without payload\n");
-		return -EINVAL;
-	}
-
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
 	id = zoap_header_get_id(request);
@@ -620,12 +602,6 @@ static int large_get(struct zoap_resource *resource,
 
 	r = zoap_update_from_block(request, &ctx);
 	if (r < 0) {
-		return -EINVAL;
-	}
-
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		NET_ERR("Packet without payload\n");
 		return -EINVAL;
 	}
 
@@ -876,7 +852,7 @@ static bool join_coap_multicast_group(void)
 #if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
-			  (struct sockaddr *)&my_addr) < 0) {
+			  &my_addr) < 0) {
 		NET_ERR("Invalid IPv6 address %s",
 			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
 	}

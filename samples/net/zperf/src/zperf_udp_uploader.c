@@ -17,6 +17,8 @@
 
 #define TAG CMD_STR_UDP_UPLOAD" "
 
+static char sample_packet[PACKET_SIZE_MAX];
+
 static inline void zperf_upload_decode_stat(struct net_buf *buf,
 					    struct zperf_results *results)
 {
@@ -117,17 +119,9 @@ static inline void zperf_upload_fin(struct net_context *context,
 				sizeof(struct zperf_udp_datagram);
 			uint16_t pos;
 
-			/* We just need some pointer from where to read
-			 * data that is placed into the packet that is
-			 * sent. Other option would be to allocate an
-			 * array, fill some data into it and send that.
-			 * Using some pointer here saves memory (currently 1K).
-			 */
-			uint8_t *ptr = (uint8_t *)0;
-
 			frag = net_nbuf_write(buf, net_buf_frag_last(buf),
-					      sizeof(struct zperf_udp_datagram),
-					      &pos, size, ptr);
+					     sizeof(struct zperf_udp_datagram),
+					      &pos, size, sample_packet);
 		}
 
 		/* Send the packet */
@@ -204,6 +198,8 @@ void zperf_udp_upload(struct net_context *context,
 	last_print_time = start_time;
 	last_loop_time = start_time;
 
+	memset(sample_packet, 'z', sizeof(sample_packet));
+
 	do {
 		struct zperf_udp_datagram datagram;
 		struct net_buf *buf, *frag;
@@ -266,17 +262,9 @@ void zperf_udp_upload(struct net_context *context,
 				sizeof(struct zperf_udp_datagram);
 			uint16_t pos;
 
-			/* We just need some pointer from where to read
-			 * data that is placed into the packet that is
-			 * sent. Other option would be to allocate an
-			 * array, fill some data into it and send that.
-			 * Using some pointer here saves memory (currently 1K).
-			 */
-			uint8_t *ptr = (uint8_t *)0;
-
 			frag = net_nbuf_write(buf, net_buf_frag_last(buf),
-					      sizeof(struct zperf_udp_datagram),
-					      &pos, size, ptr);
+					     sizeof(struct zperf_udp_datagram),
+					      &pos, size, sample_packet);
 		}
 
 		/* Send the packet */

@@ -59,6 +59,7 @@ static const char *CONFIG =
 
 #define MY_SRC_PORT 50000
 #define DEF_PORT 5001
+#define WAIT_CONNECT (2 * 1000) /* in ms */
 
 #if defined(CONFIG_NET_IPV6)
 static struct in6_addr ipv6;
@@ -99,6 +100,31 @@ struct sockaddr_in *zperf_get_sin(void)
 }
 
 #if defined(CONFIG_NET_IPV6)
+static int parse_ipv6_addr(char *host, char *port,
+			   struct sockaddr_in6 *addr,
+			   const char *str)
+{
+	int ret;
+
+	if (!host) {
+		return -EINVAL;
+	}
+
+	ret = net_addr_pton(AF_INET6, host, &addr->sin6_addr);
+	if (ret < 0) {
+		printk("[%s] Error! Invalid IPv6 address %s\n", str, host);
+		return -EINVAL;
+	}
+
+	addr->sin6_port = htons(strtoul(port, NULL, 10));
+	if (!addr->sin6_port) {
+		printk("[%s] Error! Invalid port %s\n", str, port);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr,
 			const char *str)
 {
@@ -111,7 +137,7 @@ int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr,
 		return -EINVAL;
 	}
 
-	ret = net_addr_pton(AF_INET6, host, (struct sockaddr *)addr);
+	ret = net_addr_pton(AF_INET6, host, addr);
 	if (ret < 0) {
 		return -EINVAL;
 	}
@@ -138,6 +164,31 @@ int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr,
 #endif
 
 #if defined(CONFIG_NET_IPV4)
+static int parse_ipv4_addr(char *host, char *port,
+			   struct sockaddr_in *addr,
+			   const char *str)
+{
+	int ret;
+
+	if (!host) {
+		return -EINVAL;
+	}
+
+	ret = net_addr_pton(AF_INET, host, &addr->sin_addr);
+	if (ret < 0) {
+		printk("[%s] Error! Invalid IPv4 address %s\n", str, host);
+		return -EINVAL;
+	}
+
+	addr->sin_port = htons(strtoul(port, NULL, 10));
+	if (!addr->sin_port) {
+		printk("[%s] Error! Invalid port %s\n", str, port);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int zperf_get_ipv4_addr(char *host, struct in_addr *addr, const char *str)
 {
 	struct net_if_addr *ifaddr;
@@ -147,7 +198,7 @@ int zperf_get_ipv4_addr(char *host, struct in_addr *addr, const char *str)
 		return -EINVAL;
 	}
 
-	ret = net_addr_pton(AF_INET, host, (struct sockaddr *)addr);
+	ret = net_addr_pton(AF_INET, host, addr);
 	if (ret < 0) {
 		return -EINVAL;
 	}
@@ -211,7 +262,7 @@ static int shell_cmd_setip(int argc, char *argv[])
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
 	if (net_addr_pton(AF_INET6, argv[start + 1],
-			  (struct sockaddr *)&ipv6) < 0) {
+			  &ipv6) < 0) {
 		if (argc != 2) {
 			/* Print usage */
 			printk("\n%s:\n", CMD_STR_SETIP);
@@ -328,7 +379,7 @@ static void shell_udp_upload2_usage(void)
 	printk("\t<baud rate>:\tBaudrate in kilobyte or megabyte\n");
 	printk("\nExample %s v6 1 1K 1M\n",
 	       CMD_STR_UDP_UPLOAD2);
-#if defined(CONFIG_NET_IPV6) && defined(MY_IPV6ADDR)
+#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR)
 	printk("\nDefault IPv6 address is %s, destination [%s]:%d\n",
 	       MY_IP6ADDR, DST_IP6ADDR, DEF_PORT);
 #endif
@@ -353,6 +404,29 @@ static void shell_tcp_upload_usage(void)
 	       "(with suffix K)\n");
 	printk("\nExample %s 10.237.164.178 1111 1 1K 1M\n",
 	       CMD_STR_TCP_UPLOAD);
+}
+
+static void shell_tcp_upload2_usage(void)
+{
+	/* Print usage */
+	printk("\n%s:\n", CMD_STR_TCP_UPLOAD2);
+	printk("Usage:\t%s v6|v4 <duration> <packet "
+	       "size>[K] <baud rate>[K|M]\n", CMD_STR_TCP_UPLOAD2);
+	printk("\t<v6|v4>:\tUse either IPv6 or IPv4\n");
+	printk("\t<duration>:\tDuration of the test in seconds\n");
+	printk("\t<packet size>:\tSize of the packet in byte or kilobyte "
+	       "(with suffix K)\n");
+	printk("\t<baud rate>:\tBaudrate in kilobyte or megabyte\n");
+	printk("\nExample %s v6 1 1K 1M\n",
+	       CMD_STR_TCP_UPLOAD2);
+#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR)
+	printk("\nDefault IPv6 address is %s, destination [%s]:%d\n",
+	       MY_IP6ADDR, DST_IP6ADDR, DEF_PORT);
+#endif
+#if defined(CONFIG_NET_IPV4) && defined(MY_IP4ADDR)
+	printk("\nDefault IPv4 address is %s, destination %s:%d\n",
+	       MY_IP4ADDR, DST_IP4ADDR, DEF_PORT);
+#endif
 }
 #endif
 
@@ -435,11 +509,11 @@ static void shell_tcp_upload_print_stats(struct zperf_results *results)
 	printk("[%s] duration:\t", CMD_STR_TCP_UPLOAD);
 	print_number(results->client_time_in_us, TIME_US, TIME_US_UNIT);
 	printk("\n");
-	printk("[%s] nb packets:\t%u\n", CMD_STR_UDP_UPLOAD,
+	printk("[%s] nb packets:\t%u\n", CMD_STR_TCP_UPLOAD,
 	       results->nb_packets_sent);
 	printk("[%s] nb sending errors (retry or fail):\t%u\n",
-	       CMD_STR_UDP_UPLOAD, results->nb_packets_errors);
-	printk("[%s] rate:\t", CMD_STR_UDP_UPLOAD);
+	       CMD_STR_TCP_UPLOAD, results->nb_packets_errors);
+	printk("[%s] rate:\t", CMD_STR_TCP_UPLOAD);
 	print_number(client_rate_in_kbps, KBPS, KBPS_UNIT);
 	printk("\n");
 }
@@ -596,38 +670,53 @@ static int execute_upload(struct net_context *context6,
 #endif
 	} else {
 #if defined(CONFIG_NET_TCP)
-		if (context6) {
+		if (family == AF_INET6 && context6) {
 			ret = net_context_connect(context6,
 						  (struct sockaddr *)ipv6,
 						  sizeof(*ipv6),
 						  NULL,
-						  K_NO_WAIT,
+						  WAIT_CONNECT,
 						  NULL);
 			if (ret < 0) {
-				printk("[%s] IPv6 connect failed\n", argv0);
+				printk("[%s] IPv6 connect failed (%d)\n",
+				       argv0, ret);
 				goto out;
 			}
 
+			/* We either upload using IPv4 or IPv6, not both at
+			 * the same time.
+			 */
+			net_context_put(context4);
+
 			zperf_tcp_upload(context6, duration_in_ms,
 					 packet_size, &results);
+
 			shell_tcp_upload_print_stats(&results);
+
+			return 0;
 		}
 
-		if (context4) {
+		if (family == AF_INET && context4) {
 			ret = net_context_connect(context4,
 						  (struct sockaddr *)ipv4,
 						  sizeof(*ipv4),
 						  NULL,
-						  K_NO_WAIT,
+						  WAIT_CONNECT,
 						  NULL);
 			if (ret < 0) {
-				printk("[%s] IPv4 connect failed\n", argv0);
+				printk("[%s] IPv4 connect failed (%d)\n",
+				       argv0, ret);
 				goto out;
 			}
 
+			net_context_put(context6);
+
 			zperf_tcp_upload(context4, duration_in_ms,
 					 packet_size, &results);
+
 			shell_tcp_upload_print_stats(&results);
+
+			return 0;
 		}
 #else
 		printk("[%s] TCP not supported\n", argv0);
@@ -643,11 +732,11 @@ out:
 
 static int shell_cmd_upload(int argc, char *argv[])
 {
+	struct sockaddr_in6 ipv6 = { .sin6_family = AF_INET6 };
+	struct sockaddr_in ipv4 = { .sin_family = AF_INET };
 	struct net_context *context6 = NULL, *context4 = NULL;
 	sa_family_t family = AF_UNSPEC;
 	unsigned int duration_in_ms, packet_size, rate_in_kbps;
-	struct sockaddr_in6 ipv6;
-	struct sockaddr_in ipv4;
 	uint16_t port;
 	bool is_udp;
 	int start = 0;
@@ -674,8 +763,8 @@ static int shell_cmd_upload(int argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
-	if (zperf_get_ipv6_addr(argv[start + 1], argv[start + 2],
-				&ipv6.sin6_addr, argv[start]) < 0) {
+	if (parse_ipv6_addr(argv[start + 1], argv[start + 2],
+			    &ipv6, argv[start]) < 0) {
 		printk("[%s] ERROR! Please specify the IP address of the "
 			"remote server\n",  argv[start]);
 		return -1;
@@ -688,8 +777,8 @@ static int shell_cmd_upload(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
-	if (zperf_get_ipv4_addr(argv[start + 1], &ipv4.sin_addr,
-				argv[start]) < 0) {
+	if (parse_ipv4_addr(argv[start + 1], argv[start + 2],
+			    &ipv4, argv[start]) < 0) {
 		printk("[%s] ERROR! Please specify the IP address of the "
 		       "remote server\n",  argv[start]);
 		return -1;
@@ -702,10 +791,10 @@ static int shell_cmd_upload(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
-	if (zperf_get_ipv6_addr(argv[start + 1], argv[start + 2],
-				&ipv6.sin6_addr, argv[start]) < 0) {
-		if (zperf_get_ipv4_addr(argv[start + 1], &ipv4.sin_addr,
-					argv[start]) < 0) {
+	if (parse_ipv6_addr(argv[start + 1], argv[start + 2],
+			    &ipv6, argv[start]) < 0) {
+		if (parse_ipv4_addr(argv[start + 1], argv[start + 2],
+				    &ipv4, argv[start]) < 0) {
 			printk("[%s] ERROR! Please specify the IP address "
 			       "of the remote server\n",  argv[start]);
 			return -1;
@@ -937,7 +1026,7 @@ static void zperf_init(void)
 	}
 
 	ret = net_addr_pton(AF_INET6, DST_IP6ADDR,
-			    (struct sockaddr *)&in6_addr_dst.sin6_addr);
+			    &in6_addr_dst.sin6_addr);
 	if (ret < 0) {
 		printk("[%s] ERROR! Unable to set IP %s\n", __func__,
 			DST_IP6ADDR);
@@ -958,7 +1047,7 @@ static void zperf_init(void)
 	}
 
 	ret = net_addr_pton(AF_INET, DST_IP4ADDR,
-			    (struct sockaddr *)&in4_addr_dst.sin_addr);
+			    &in4_addr_dst.sin_addr);
 	if (ret < 0) {
 		printk("[%s] ERROR! Unable to set IP %s\n", __func__,
 			DST_IP4ADDR);
@@ -983,6 +1072,8 @@ struct shell_cmd commands[] = {
 	{ CMD_STR_UDP_DOWNLOAD, shell_cmd_udp_download },
 #endif
 #if defined(CONFIG_NET_TCP)
+	{ CMD_STR_TCP_UPLOAD, shell_cmd_upload },
+	{ CMD_STR_TCP_UPLOAD2, shell_cmd_upload2 },
 	{ CMD_STR_TCP_DOWNLOAD, shell_cmd_tcp_download },
 #endif
 #if defined(PROFILER)

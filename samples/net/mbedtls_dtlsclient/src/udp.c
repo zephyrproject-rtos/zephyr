@@ -192,7 +192,7 @@ int udp_init(struct udp_context *ctx)
 #if defined(CONFIG_NET_SAMPLES_PEER_IPV6_ADDR)
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_SAMPLES_PEER_IPV6_ADDR,
-			  (struct sockaddr *)&server_addr) < 0) {
+			  &server_addr) < 0) {
 		printk("Invalid peer IPv6 address %s",
 		       CONFIG_NET_SAMPLES_PEER_IPV6_ADDR);
 	}
@@ -242,7 +242,7 @@ int udp_init(struct udp_context *ctx)
 
 #if defined(CONFIG_NET_SAMPLES_PEER_IPV4_ADDR)
 	if (net_addr_pton(AF_INET, CONFIG_NET_SAMPLES_PEER_IPV4_ADDR,
-			  (struct sockaddr *)&server_addr) < 0) {
+			  &server_addr) < 0) {
 		printk("Invalid IPv4 address %s",
 		       CONFIG_NET_SAMPLES_PEER_IPV4_ADDR);
 	}

@@ -231,6 +231,7 @@ int zoap_packet_parse(struct zoap_packet *pkt, struct net_buf *buf)
 	}
 
 	pkt->start = frag->data + hdrlen + optlen + 1;
+	pkt->total_size = frag->len;
 
 	return 0;
 }
@@ -319,6 +320,7 @@ int zoap_packet_init(struct zoap_packet *pkt,
 	}
 
 	memset(pkt, 0, sizeof(*pkt));
+	pkt->total_size = net_buf_tailroom(frag);
 
 	data = net_buf_add(frag, BASIC_HEADER_SIZE);
 
@@ -327,7 +329,6 @@ int zoap_packet_init(struct zoap_packet *pkt,
 	 * the header to be sure.
 	 */
 	memset(data, 0, BASIC_HEADER_SIZE);
-
 	pkt->buf = buf;
 
 	return 0;
@@ -824,7 +825,7 @@ uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len)
 	}
 
 	if (!pkt->start) {
-		if (appdatalen + 1 > net_buf_tailroom(frag)) {
+		if (appdatalen + 1 >= pkt->total_size) {
 			return NULL;
 		}
 
@@ -835,7 +836,7 @@ uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len)
 	}
 
 	if (len) {
-		*len = net_buf_tailroom(frag);
+		*len = appdata + pkt->total_size - pkt->start;
 	}
 
 	return pkt->start;
