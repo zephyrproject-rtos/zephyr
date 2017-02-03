@@ -173,7 +173,6 @@ import glob
 import concurrent
 import concurrent.futures
 
-os.environ["DISABLE_TRYRUN"] = "1"
 if "ZEPHYR_BASE" not in os.environ:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
