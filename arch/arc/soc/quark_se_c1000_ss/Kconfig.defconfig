@@ -75,6 +75,11 @@ config PWM_QMSI
 	def_bool y
 endif # PWM
 
+if PINMUX
+config PINMUX_QMSI
+	def_bool y
+endif
+
 if GPIO
 
 config GPIO_QMSI
