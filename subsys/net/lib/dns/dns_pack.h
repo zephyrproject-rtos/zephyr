@@ -19,30 +19,20 @@
 #define DNS_MSG_HEADER_SIZE	12
 
 /**
- * @brief dns_msg_t
+ * DNS message structure for DNS responses
  *
- * @details		Structure that points to the buffer containing the
- *			DNS message. It also contains some decodified
- *			message's properties that can not be recovered easily:
- *
- *			- cname_offset
- *
- *			- query_offset
- *
- *			- answer_offset:
- *
- *			- response_type
- *			  It indicates the response's content type. It could be
- *			  an IP address, a CNAME with IP (two answers), a CNAME
- *			  with no IP address. See enum dns_response_type for
- *			  more details.
- *
- *			- response_position: this is an offset. It holds the
- *			  starting byte of the field containing the desired
- *			  info. For example an IPv4 address.
- *
- *			- response_length: this is an offset. It holds the
- *			  response's length.
+ * Structure that points to the buffer containing the DNS message. It also
+ * contains some decodified message's properties that can not be recovered
+ * easily:
+ * - cname_offset
+ * - query_offset
+ * - answer_offset:
+ *     + response_type: It indicates the response's content type. It could be
+ *       an IP address, a CNAME with IP (two answers), a CNAME with no IP
+ *       address. See enum dns_response_type for more details.
+ *     + response_position: this is an offset. It holds the starting byte of
+ *       the field containing the desired info. For example an IPv4 address.
+ *     + response_length: this is an offset. It holds the response's length.
  */
 struct dns_msg_t {
 	uint8_t *msg;
@@ -245,130 +235,100 @@ int dns_unpack_answer_rdlength(uint16_t dname_size, uint8_t *answer)
 }
 
 /**
- * @brief dns_msg_pack_qname	Packs a QNAME
- * @param len			Bytes used by this function
- * @param buf			Buffer
- * @param sizeof		Buffer's size
- * @param domain_name		Something like www.example.com
- * @return			0 on success
- * @return			-ENOMEM if there is no enough space to store
- *				the resultant QNAME
- * @return			-EINVAL if an invalid parameter was passed as
- *				an argument
+ * Packs a QNAME
+ *
+ * @param len Bytes used by this function
+ * @param buf Buffer
+ * @param sizeof Buffer's size
+ * @param domain_name Something like www.example.com
+ * @retval 0 on success
+ * @retval -ENOMEM if there is no enough space to store the resultant QNAME
+ * @retval -EINVAL if an invalid parameter was passed as an argument
  */
 int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 		       const char *domain_name);
 
 /**
- * @brief dns_unpack_answer	Unpacks an answer message
- * @param dns_msg		Structure
- * @param dname_ptr		An index to the previous CNAME. For example
- *				for the first answer, ptr must be 0x0c, the
- *				DNAME at the question.
- * @param ttl			TTL answer parameter.
- * @return			0 on success
- * @return			-ENOMEM on error
+ * Unpacks an answer message
+ *
+ * @param dns_msg Structure
+ * @param dname_ptr An index to the previous CNAME. For example for the
+ * first answer, ptr must be 0x0c, the DNAME at the question.
+ * @param ttl TTL answer parameter.
+ * @retval 0 on success
+ * @retval -ENOMEM on error
  */
 int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl);
 
 /**
- * @brief dns_unpack_response_header
+ * Unpacks the header's response.
  *
- * @details		Unpacks the header's response.
- *
- * @param msg		Structure containing the response.
- *
- * @param src_id	Transaction id, it must match the id
- *			used in the query datagram sent to the
- *			DNS server.
- * @return		0 on success
- *
- * @return		-ENOMEM if the buffer in msg has no
- *			enough space to store the header.
- *			The header is always 12 bytes length.
- *
- * @return		-EINVAL:
- *			  * if the src_id does not match the
- *			  header's id.
- *			  * if the header's QR value is
- *			  not DNS_RESPONSE.
- *			  * if the header's OPCODE value is not
- *			  DNS_QUERY.
- *			  * if the header's Z value is not 0.
- *			  * if the question counter is not 1 or
- *			  the answer counter is less than 1.
- *
- *			RFC 1035 RCODEs (> 0):
- *
- *			  1 Format error
- *			  2 Server failure
- *			  3 Name Error
- *			  4 Not Implemented
- *			  5 Refused
- *
+ * @param msg Structure containing the response.
+ * @param src_id Transaction id, it must match the id used in the query
+ * datagram sent to the DNS server.
+ * @retval 0 on success
+ * @retval -ENOMEM if the buffer in msg has no enough space to store the header.
+ * The header is always 12 bytes length.
+ * @retval -EINVAL if the src_id does not match the header's id, or if the
+ * eader's QR value is not DNS_RESPONSE or if the header's OPCODE value is not
+ * DNS_QUERY, or if the header's Z value is not 0 or if the question counter
+ * is not 1 or the answer counter is less than 1.
+ * @retval RFC 1035 RCODEs (> 0) 1 Format error, 2 Server failure, 3 Name Error,
+ * 4 Not Implemented and 5 Refused.
  */
 int dns_unpack_response_header(struct dns_msg_t *msg, int src_id);
 
 /**
- * @brief dns_msg_pack_query	Packs the query message
- * @param [out] buf		Buffer that will contain the resultant query
- * @param [out] len		Number of bytes used to encode the query
- * @param [in] size		Buffer size
- * @param [in] qname		Domain name represented as a sequence of labels.
- *				See RFC 1035, 4.1.2. Question section format.
- * @param [in] qname_len	Number of octects in qname.
- * @param [in] id		Transaction Identifier
- * @param [in] qtype		Query type: AA, AAAA. See enum dns_rr_type
- * @return			0 on success
- * @return			On error, a negative value is returned. See:
- *				- dns_msg_pack_query_header
- *				- dns_msg_pack_qname
+ * Packs the query message
+ *
+ * @param buf Buffer that will contain the resultant query
+ * @param len Number of bytes used to encode the query
+ * @param size Buffer size
+ * @param qname Domain name represented as a sequence of labels.
+ * See RFC 1035, 4.1.2. Question section format.
+ * @param qname_len Number of octects in qname.
+ * @param id Transaction Identifier
+ * @param qtype Query type: AA, AAAA. See enum dns_rr_type
+ * @retval 0 on success
+ * @retval On error, a negative value is returned.
+ * See: dns_msg_pack_query_header and  dns_msg_pack_qname.
  */
 int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
 		       uint8_t *qname, uint16_t qname_len, uint16_t id,
 		       enum dns_rr_type qtype);
 
 /**
- * @brief dns_unpack_response_query
+ * Unpacks the response's query.
  *
- * @details		Unpacks the response's query. RFC 1035 states that the
- *			response's query comes after the first 12 bytes,
- *			i.e. afther the message's header.
+ * RFC 1035 states that the response's query comes after the first 12 bytes,
+ * i.e. after the message's header. This function computes the answer_offset
+ * field.
  *
- *			This function computes the answer_offset field.
- *
- * @param dns_msg	Structure containing the message.
- *
- * @return		0 on success
- * @return		-ENOMEM:
- *			  * if the null label is not found after
- *			  traversing the buffer.
- *			  * if QCLASS and QTYPE are not found.
- * @return		-EINVAL:
- *			  * if QTYPE is not "A" (IPv4) or "AAAA" (IPv6).
- *			  * if QCLASS is not "IN".
- *
+ * @param dns_msg Structure containing the message.
+ * @retval 0 on success
+ * @retval -ENOMEM if the null label is not found after traversing the buffer
+ * or if QCLASS and QTYPE are not found.
+ * @retval -EINVAL if QTYPE is not "A" (IPv4) or "AAAA" (IPv6) or if QCLASS
+ * is not "IN".
  */
 int dns_unpack_response_query(struct dns_msg_t *dns_msg);
 
 /**
- * @brief dns_copy_qname	Copies the qname from dns_msg to buf
+ * Copies the qname from dns_msg to buf
  *
- * @details			This routine applies the algorithm described in
- *				RFC 1035, 4.1.4. Message compression to copy the
- *				qname (perhaps containing pointers with offset)
- *				to the linear buffer buf. Pointers are removed
- *				and only the "true" labels are copied.
+ * This routine implements the algorithm described in RFC 1035, 4.1.4. Message
+ * compression to copy the qname (perhaps containing pointers with offset)
+ * to the linear buffer buf. Pointers are removed and only the "true" labels
+ * are copied.
  *
- * @param [out] buf		Output buffer
- * @param [out] len		Output buffer's length
- * @param [in] size		Output buffer's size
- * @param [in] dns_msg		Structure containing the message
- * @param [in] pos		QNAME's position in dns_msg->msg
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed as
- *				an argument
- * @return			-ENOMEM if the label's size is corrupted
+ * @param buf Output buffer
+ * @param len Output buffer's length
+ * @param size Output buffer's size
+ * @param dns_msg Structure containing the message
+ * @param pos QNAME's position in dns_msg->msg
+ * @retval 0 on success
+ * @retval -EINVAL if an invalid parameter was passed as an argument
+ * @retval -ENOMEM if the label's size is corrupted
  */
 int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
 		   struct dns_msg_t *dns_msg, uint16_t pos);

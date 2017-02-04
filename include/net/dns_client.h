@@ -16,11 +16,17 @@
  * @{
  */
 
+/**
+ * DNS query type enum
+ */
 enum dns_query_type {
 	DNS_QUERY_TYPE_A = 1,	 /* IPv4 */
 	DNS_QUERY_TYPE_AAAA = 28 /* IPv6 */
 };
 
+/**
+ * DNS client context structure
+ */
 struct dns_context {
 	/* rx_sem and rx buffer, for internal use only */
 	struct k_sem rx_sem;
@@ -60,44 +66,37 @@ struct dns_context {
 };
 
 /**
- * @brief dns_init	DNS resolver initialization routine
- * @details		This routine must be called before any other
- *			dns routine.
- * @param ctx		DNS Client structure
- * @return		0, always.
- *			Note: new versions may return error codes.
+ * DNS resolver initialization routine
+ *
+ * This routine must be called before any other dns routine.
+ *
+ * @param ctx DNS Client structure
+ * @retval 0, new versions may return error codes.
  */
 int dns_init(struct dns_context *ctx);
 
 /**
- * @brief dns_resolve	Retrieves the IP addresses associated to the
- *			domain name 'client->name'.
- * @details		This routine obtains the IP addresses
- *			associated to the domain name 'client->name'.
- *			The DNS server is specified by the sockaddr
- *			structure inside 'client'.
- *			Depending on the DNS server used, one or more
- *			IP addresses may be recovered by this routine.
+ * Retrieves the IP addresses associated to the domain name 'client->name'.
  *
- *			NOTE: You can use an IPv6 DNS server to look-up
- *			for IPv4 addresses or an IPv4 server to look-up
- *			for IPv6 address. Domain name services are not
- *			tied to any specific routing or transport
- *			technology.
+ * This routine obtains the IP addresses associated to the domain name
+ * 'client->name'. The DNS server is specified by the sockaddr structure
+ * inside 'client'. Depending on the DNS server used, one or more IP
+ * addresses may be recovered by this routine.
  *
- * @param ctx		DNS Client structure
- * @return		0 on success
- *			The number of returned addresses (client->items)
- *			may be less than the one reported by the DNS
- *			server. However, this situation is considered a
- *			success because we are 'resolving' the 'name'.
- *			Workaround: increase 'client->elements'.
- * @return		-EIO on network error.
- * @return		-EINVAL if an invalid parameter was passed as
- *			an argument to this routine. This value is also
- *			returned if the application received a malformed
- *			packet from the DNS server.
- * @return		-ENOMEM if there are no buffers available.
+ * NOTE: You can use an IPv6 DNS server to look-up for IPv4 addresses or
+ * an IPv4 server to look-up for IPv6 address. Domain name services are not
+ * tied to any specific routing or transport technology.
+ *
+ * @param ctx DNS Client structure
+ * @retval 0 on success. The number of returned addresses (client->items)
+ * may be less than the one reported by the DNS server. However, this situation
+ * is considered a success because we are 'resolving' the 'name'.
+ * Workaround: increase 'client->elements'.
+ * @retval -EIO on network error.
+ * @retval -EINVAL if an invalid parameter was passed as an argument to
+ * this routine. This value is also returned if the application received
+ * a malformed packet from the DNS server.
+ * @retval -ENOMEM if there are no buffers available.
  */
 int dns_resolve(struct dns_context *ctx);
 
