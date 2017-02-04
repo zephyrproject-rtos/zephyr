@@ -446,6 +446,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		struct net_if *iface;
 		struct in6_addr *ptr;
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
+		int ret;
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
 			return -EINVAL;
@@ -500,7 +501,18 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
 		net_sin6_ptr(&context->local)->sin6_addr = ptr;
-		net_sin6_ptr(&context->local)->sin6_port = addr6->sin6_port;
+		if (addr6->sin6_port) {
+			ret = check_used_port(AF_INET6, addr6->sin6_port,
+					      addr);
+			if (!ret) {
+				net_sin6_ptr(&context->local)->sin6_port =
+					addr6->sin6_port;
+			} else {
+				NET_ERR("Port %d is in use!",
+					ntohs(addr6->sin6_port));
+				return ret;
+			}
+		}
 
 		NET_DBG("Context %p binding to [%s]:%d iface %p", context,
 			net_sprint_ipv6_addr(ptr), ntohs(addr6->sin6_port),
@@ -516,6 +528,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		struct net_if_addr *ifaddr;
 		struct net_if *iface;
 		struct in_addr *ptr;
+		int ret;
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
 			return -EINVAL;
@@ -557,7 +570,18 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
 		net_sin_ptr(&context->local)->sin_addr = ptr;
-		net_sin_ptr(&context->local)->sin_port = addr4->sin_port;
+		if (addr4->sin_port) {
+			ret = check_used_port(AF_INET, addr4->sin_port,
+					      addr);
+			if (!ret) {
+				net_sin_ptr(&context->local)->sin_port =
+					addr4->sin_port;
+			} else {
+				NET_ERR("Port %d is in use!",
+					ntohs(addr4->sin_port));
+				return ret;
+			}
+		}
 
 		NET_DBG("Context %p binding to %s:%d iface %p", context,
 			net_sprint_ipv4_addr(ptr),
