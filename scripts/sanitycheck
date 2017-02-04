@@ -1719,7 +1719,7 @@ def parse_arguments():
     return parser.parse_args()
 
 def log_info(filename):
-    filename = os.path.relpath(filename)
+    filename = os.path.relpath(os.path.realpath(filename))
     if INLINE_LOGS:
         info("{:-^100}".format(filename))
 
