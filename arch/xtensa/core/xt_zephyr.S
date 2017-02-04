@@ -175,6 +175,7 @@ _zxt_int_exit:
 #endif
 
 #if XCHAL_CP_NUM > 0
+	l32i a3, a2, KERNEL_OFFSET(current) /* _thread := _kernel->current */
 	l32i a4, a3, THREAD_OFFSET(cpStack)
 	rsr a5, CPENABLE
 	s16i a5, a4, XT_CPENABLE         /* cp_state->cpenable = CPENABLE; */
