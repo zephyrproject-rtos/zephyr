@@ -112,7 +112,7 @@ int compute_rlen_size(uint16_t *size, uint32_t len)
  *
  * @retval 0 always
  */
-static int rlen_encode(uint8_t *buf, int len)
+static int rlen_encode(uint8_t *buf, uint32_t len)
 {
 	uint8_t encoded;
 	uint8_t i;
@@ -144,11 +144,11 @@ static int rlen_encode(uint8_t *buf, int len)
  * @retval 0 on success
  * @retval -ENOMEM if size < 4
  */
-static int rlen_decode(uint16_t *rlen, uint16_t *rlen_size,
+static int rlen_decode(uint32_t *rlen, uint16_t *rlen_size,
 		       uint8_t *buf, uint16_t size)
 {
-	uint16_t value = 0;
-	uint16_t mult = 1;
+	uint32_t value = 0;
+	uint32_t mult = 1;
 	uint16_t i = 0;
 	uint8_t encoded;
 
@@ -452,9 +452,9 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 {
 	uint8_t user_name_flag;
 	uint8_t password_flag;
-	uint16_t payload_len;
 	uint16_t rlen_size;
 	uint16_t val_u16;
+	uint32_t rlen;
 	uint8_t offset;
 	int rc;
 
@@ -472,7 +472,7 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 		return -EINVAL;
 	}
 
-	rc = rlen_decode(&payload_len, &rlen_size, buf + PACKET_TYPE_SIZE,
+	rc = rlen_decode(&rlen, &rlen_size, buf + PACKET_TYPE_SIZE,
 			 length - PACKET_TYPE_SIZE);
 	if (rc != 0) {
 		return rc;
@@ -711,7 +711,7 @@ int mqtt_unpack_subscribe(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
 {
 	uint16_t rmlen_size;
 	uint16_t val_u16;
-	uint16_t rmlen;
+	uint32_t rmlen;
 	uint16_t offset;
 	uint8_t i;
 	int rc;
@@ -780,7 +780,7 @@ int mqtt_unpack_suback(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
 	uint16_t rlen_size;
 	enum mqtt_qos qos;
 	uint16_t val_u16;
-	uint16_t rlen;
+	uint32_t rlen;
 	uint16_t offset;
 	uint8_t i;
 	int rc;
@@ -899,8 +899,8 @@ int mqtt_unpack_publish(uint8_t *buf, uint16_t length,
 {
 	uint16_t rmlen_size;
 	uint16_t val_u16;
-	uint16_t rmlen;
 	uint16_t offset;
+	uint32_t rmlen;
 	int rc;
 
 	if (buf[0] >> 4 != MQTT_PUBLISH) {
