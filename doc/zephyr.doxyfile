@@ -8,7 +8,7 @@ PROJECT_NAME           = "Zephyr Project"
 PROJECT_NUMBER         =
 PROJECT_BRIEF          =
 PROJECT_LOGO           =
-OUTPUT_DIRECTORY       = doc/
+OUTPUT_DIRECTORY       = doxygen/
 CREATE_SUBDIRS         = YES
 OUTPUT_LANGUAGE        = English
 BRIEF_MEMBER_DESC      = YES
@@ -98,17 +98,19 @@ WARN_LOGFILE           =
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
 INPUT                  = \
-                        include/ \
-                        include/misc/ \
-                        include/arch/x86/ \
-                        include/arch/arc/ include/arch/arc/v2 \
-                        include/arch/arm/ include/arch/arm/cortex_m \
-                        include/arch/nios2/ \
-                        lib/libc/minimal/include/ \
-                        ext/lib/crypto/tinycrypt/include/ \
-                        include/net/zoap.h \
-                        include/net/dns_client.h \
-                        tests/ztest/include/
+                        ../include/ \
+                        ../include/misc/ \
+                        ../include/arch/x86/ \
+                        ../include/arch/arc/ \
+			../include/arch/arc/v2 \
+                        ../include/arch/arm/ \
+			../include/arch/arm/cortex_m \
+                        ../include/arch/nios2/ \
+                        ../lib/libc/minimal/include/ \
+                        ../ext/lib/crypto/tinycrypt/include/ \
+                        ../include/net/zoap.h \
+                        ../include/net/dns_client.h \
+                        ../tests/ztest/include/
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = "*.c" "*.h" "*.S"
 RECURSIVE              = YES

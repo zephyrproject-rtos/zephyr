@@ -318,8 +318,8 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 breathe_projects = {
-    "Zephyr": "xml",
-    "doc-examples": "xml"
+    "Zephyr": "doxygen/xml",
+    "doc-examples": "doxygen/xml"
 }
 breathe_default_project = "Zephyr"
 

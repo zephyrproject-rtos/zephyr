@@ -26,7 +26,7 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 .PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
 
 doxy-code:
-	$(Q)cd .. && doxygen doc/doxygen.config
+	$(Q)doxygen zephyr.doxyfile
 
 doxy: doxy-code
 
