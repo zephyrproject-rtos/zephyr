@@ -414,9 +414,9 @@ static int i2c_dw_transfer(struct device *dev,
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)dw->base_address;
 
-	/* Why bother processing no messages */
-	if (!msgs || !num_msgs) {
-		return -ENOTSUP;
+	__ASSERT_NO_MSG(msgs);
+	if (!num_msgs) {
+		return 0;
 	}
 
 	/* First step, check if there is current activity */

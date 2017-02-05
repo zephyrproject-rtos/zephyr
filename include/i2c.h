@@ -205,6 +205,9 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
  * to another I2C device synchronously. Use i2c_read()/i2c_write()
  * for simple read or write.
  *
+ * The array of message @a msgs must not be NULL.  The number of
+ * message @a num_msgs may be zero,in which case no transfer occurs.
+ *
  * @param dev Pointer to the device structure for the driver instance.
  * @param msgs Array of messages to transfer.
  * @param num_msgs Number of messages to transfer.

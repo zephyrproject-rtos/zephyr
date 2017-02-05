@@ -305,8 +305,9 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	int rc;
 
-	if  (msgs == NULL || num_msgs == 0) {
-		return -ENOTSUP;
+	__ASSERT_NO_MSG(msgs);
+	if (!num_msgs) {
+		return 0;
 	}
 
 	device_busy_set(dev);

@@ -460,9 +460,9 @@ static int i2c_sam3_transfer(struct device *dev,
 	int ret = 0;
 	int xfr_ret;
 
-	/* Why bother processing no messages */
-	if (!msgs || !num_msgs) {
-		return -ENOTSUP;
+	__ASSERT_NO_MSG(msgs);
+	if (!num_msgs) {
+		return 0;
 	}
 
 	/* Device is busy servicing another transfer */
