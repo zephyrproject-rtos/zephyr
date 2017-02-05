@@ -135,7 +135,7 @@ struct i2c_driver_api {
  * for the I2C controller.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error, failed to configure device.
  */
 static inline int i2c_configure(struct device *dev, uint32_t dev_config)
 {
@@ -155,7 +155,7 @@ static inline int i2c_configure(struct device *dev, uint32_t dev_config)
  * @param addr Address to the target I2C device for writing.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error.
  */
 static inline int i2c_write(struct device *dev, uint8_t *buf,
 			    uint32_t num_bytes, uint16_t addr)
@@ -181,7 +181,7 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
  * @param addr Address of the I2C device being read.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error.
  */
 static inline int i2c_read(struct device *dev, uint8_t *buf,
 			   uint32_t num_bytes, uint16_t addr)
@@ -212,7 +212,7 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
  * @param addr Address of the I2C target device.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error.
  */
 static inline int i2c_transfer(struct device *dev,
 			       struct i2c_msg *msgs, uint8_t num_msgs,
@@ -236,7 +236,7 @@ static inline int i2c_transfer(struct device *dev,
  * @param num_bytes Number of bytes being read.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error.
  */
 static inline int i2c_burst_read(struct device *dev, uint16_t dev_addr,
 				 uint8_t start_addr, uint8_t *buf,
@@ -269,7 +269,7 @@ static inline int i2c_burst_read(struct device *dev, uint16_t dev_addr,
  * @param num_bytes Number of bytes being written.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error.
  */
 static inline int i2c_burst_write(struct device *dev, uint16_t dev_addr,
 				  uint8_t start_addr, uint8_t *buf,
@@ -301,7 +301,7 @@ static inline int i2c_burst_write(struct device *dev, uint16_t dev_addr,
  * @param value Memory pool that stores the retrieved register value.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error.
  */
 static inline int i2c_reg_read_byte(struct device *dev, uint16_t dev_addr,
 				    uint8_t reg_addr, uint8_t *value)
@@ -321,7 +321,7 @@ static inline int i2c_reg_read_byte(struct device *dev, uint16_t dev_addr,
  * @param value Value to be written to internal register.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error.
  */
 static inline int i2c_reg_write_byte(struct device *dev, uint16_t dev_addr,
 				     uint8_t reg_addr, uint8_t value)
@@ -344,7 +344,7 @@ static inline int i2c_reg_write_byte(struct device *dev, uint16_t dev_addr,
  * @param value Value for updating internal register.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EIO General input / output error.
  */
 static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
 				      uint8_t reg_addr, uint8_t mask,
