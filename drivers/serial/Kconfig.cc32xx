@@ -14,6 +14,7 @@ config UART_CC32XX_NAME
 	help
 	  This is the UART's device name binding.
 
+if !HAS_DTS
 config UART_CC32XX_IRQ_PRI
 	depends on UART_CC32XX
 	int "IRQ priority from UART controller"
@@ -24,3 +25,5 @@ config UART_CC32XX_BAUDRATE
 	default 115200
 	help
 	  This option sets the baud rate for the CC32XX UART.
+
+endif # !HAS_DTS

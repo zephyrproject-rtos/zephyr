@@ -12,15 +12,10 @@
 
 /* Driverlib includes */
 #include <inc/hw_types.h>
-#include <inc/hw_memmap.h>
-#include <inc/hw_ints.h>
 #include <driverlib/rom.h>
 #include <driverlib/rom_map.h>
 #include <driverlib/prcm.h>
 #include <driverlib/uart.h>
-
-/* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC3200 SDK */
-#define EXCEPTION_UARTA0 5 /* (INT_UARTA0 - 16) = (21-16) */
 
 struct uart_cc32xx_dev_data_t {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -41,7 +36,7 @@ static void uart_cc32xx_isr(void *arg);
 #endif
 
 static const struct uart_device_config uart_cc32xx_dev_cfg_0 = {
-	.base = (void *)UARTA0_BASE,
+	.base = (void *)UART_CC32XX_BASE_ADDRESS,
 	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 };
 
