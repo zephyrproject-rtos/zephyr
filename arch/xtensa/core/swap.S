@@ -59,6 +59,12 @@ _Swap:
 
 	s32i a3,  sp, XT_SOL_exit       	/* 0 to flag as solicited frame */
 	s32i sp,  a4, THREAD_OFFSET(sp) /* current->arch.topOfStack := sp */
+	/*
+	 * Set _Swap()'s default return code to -EAGAIN. This eliminates the
+	 * need for the timeout code to set it itself.
+	 */
+	movi a3, -11 /* a3 := -EAGAIN. TODO: Use a macro here insted of 11 */
+	s32i a3, a4, THREAD_OFFSET(retval) /* current->arch.retval := -EAGAIN */
 
 #if XCHAL_CP_NUM > 0
 	/* Clear CPENABLE, also in task's co-processor state save area. */
