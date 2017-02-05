@@ -1,0 +1,22 @@
+/dts-v1/;
+
+#include "cc32xx_launchxl.dtsi"
+
+/ {
+	model = "TI CC3200 LaunchXL";
+	compatible = "ti,cc32xx";
+
+	aliases {
+		uart_0 = &uart0;
+		uart_1 = &uart1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+};

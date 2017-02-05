@@ -1,0 +1,52 @@
+#include "armv7-m.dtsi"
+#include <inc/hw_memmap.h>
+#include <inc/hw_ints.h>
+
+/* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC3200 SDK */
+/* which are offset by 16: */
+#define EXP_UARTA0 (INT_UARTA0 - 16)
+#define EXP_UARTA1 (INT_UARTA1 - 16)
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m4";
+		};
+	};
+
+	sram0: memory {
+		compatible = "sram";
+		reg = <0x20004000 0x3C000>;
+	};
+
+	flash0: serial-flash {
+		compatible = "serial-flash";
+		reg = <0x0 0x80000>;
+	};
+
+	soc {
+		uart0: uart@UARTA0_BASE {
+			compatible = "ti,cc32xx-uart";
+			reg = <UARTA0_BASE 0x4c>;
+			interrupts = <EXP_UARTA0>;
+			zephyr,irq-prio = <3>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		uart1: uart@UARTA1_BASE {
+			compatible = "ti,cc32xx-uart";
+			reg = <UARTA1_BASE 0x4c>;
+			interrupts = <EXP_UARTA1>;
+			zephyr,irq-prio = <3>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+	};
+};
+
+&nvic {
+	num-irq-prio-bits = <3>;
+	num-irqs = <179>;
+};
