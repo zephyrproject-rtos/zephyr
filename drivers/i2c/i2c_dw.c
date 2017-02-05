@@ -659,7 +659,7 @@ static int i2c_dw_initialize(struct device *port)
 
 	if (!i2c_dw_pci_setup(port)) {
 		port->driver_api = NULL;
-		return -EPERM;
+		return -EIO;
 	}
 
 	k_sem_init(&dev->device_sync_sem, 0, UINT_MAX);
@@ -671,7 +671,7 @@ static int i2c_dw_initialize(struct device *port)
 		port->driver_api = NULL;
 		SYS_LOG_DBG("I2C: DesignWare magic key not found, check base "
 			    "address. Stopping initialization");
-		return -EPERM;
+		return -EIO;
 	}
 
 	/*
@@ -692,7 +692,7 @@ static int i2c_dw_initialize(struct device *port)
 	if (i2c_dw_runtime_configure(port, dev->app_config.raw) != 0) {
 		SYS_LOG_DBG("I2C: Cannot set default configuration 0x%x",
 		    dev->app_config.raw);
-		return -EPERM;
+		return -EIO;
 	}
 
 	dev->state = I2C_DW_STATE_READY;
