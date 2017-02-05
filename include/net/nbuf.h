@@ -502,17 +502,17 @@ static inline struct net_buf *net_nbuf_copy_all(struct net_buf *buf,
 }
 
 /**
- * @brief net_nbuf_linear_copy	Copy len bytes from src starting from
- *				offset to dst
- * @details			This routine assumes that dst is conformed by
- *				one fragment with enough space to store len
- *				bytes starting from offset at src.
- * @param dst			Destination buffer
- * @param src			Source buffer that may be fragmented
- * @param offset		Starting point to copy from
- * @param len			Number of bytes to copy
- * @return			0 on success
- * @return			-ENOMEM on error
+ * @brief Copy len bytes from src starting from	offset to dst
+ *
+ * This routine assumes that dst is conformed by one fragment with enough space
+ * to store @a len bytes starting from offset at src.
+ *
+ * @param dst Destination buffer
+ * @param src Source buffer that may be fragmented
+ * @param offset Starting point to copy from
+ * @param len Number of bytes to copy
+ * @return 0 on success
+ * @return -ENOMEM on error
  */
 int net_nbuf_linear_copy(struct net_buf *dst, struct net_buf *src,
 			 uint16_t offset, uint16_t len);
