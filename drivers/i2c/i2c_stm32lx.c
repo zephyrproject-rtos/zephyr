@@ -335,8 +335,8 @@ static inline int msg_read(struct device *dev, struct i2c_msg *msg,
 }
 
 static int i2c_stm32lx_transfer(struct device *dev,
-			     struct i2c_msg *msgs, uint8_t num_msgs,
-			     uint16_t slave_address)
+				struct i2c_msg *msgs, uint8_t num_msgs,
+				uint16_t slave_address)
 {
 	volatile struct i2c_stm32lx *i2c = I2C_STRUCT(dev);
 	struct i2c_msg *cur_msg = msgs;
