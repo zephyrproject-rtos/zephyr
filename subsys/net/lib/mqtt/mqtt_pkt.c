@@ -478,6 +478,11 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 		return rc;
 	}
 
+	/* header size + remaining length value + rm length size */
+	if (PACKET_TYPE_SIZE + rlen + rlen_size > length) {
+		return -EINVAL;
+	}
+
 	/* offset points to the protocol name length */
 	offset = PACKET_TYPE_SIZE + rlen_size;
 
