@@ -1,0 +1,37 @@
+---
+title: STM32 USART
+id: st,stm32-usart
+version: 0.1
+
+description: >
+    This binding gives a base representation of the STM32 USART
+
+inherits:
+  - !include uart.yaml
+  - !include zephyr_devices.yaml
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "st,stm32-usart"
+
+  - reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+  - interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+  - clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: define
+...
