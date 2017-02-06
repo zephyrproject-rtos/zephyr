@@ -299,3 +299,19 @@ Here are some generic guidelines for network testing.
    for details.
    This entry should be split more to include various
    network testing frameworks.
+
+
+CAN
+===
+
+CAN (Controller Area Network) is a networking technology
+which is used in automation, embedded devices, and
+automotive fields.
+
+- Implement CAN support
+
+  Priority: Medium
+  Complexity: C8
+
+  This is a placeholder for CAN support and should be
+  split into smaller pieces.
