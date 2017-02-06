@@ -74,6 +74,14 @@ KBUILD_CPPFLAGS += -I$(XTENSA_TOOLS_PATH)/lib/xcc/include \
 
 # xt-xcc does not support -Og, replace with -O0
 KBUILD_CFLAGS:=$(patsubst -Og,-O0,${KBUILD_CFLAGS})
+KBUILD_CXXFLAGS:=$(filter-out \
+			-std=c++11 \
+			-fno-reorder-functions \
+			-fno-asynchronous-unwind-tables \
+			-fno-defer-pop \
+			-Wno-unused-but-set-variable \
+			-fno-omit-frame-pointer \
+			,${KBUILD_CXXFLAGS})
 
 # Support for Xtensa simulator from Cadence Design Systems, Inc.
 XTRUN=${CROSS_COMPILE}run
