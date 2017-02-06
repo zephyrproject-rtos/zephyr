@@ -103,11 +103,9 @@ endif
 ifeq ($(KBUILD_VERBOSE),1)
   quiet =
   Q =
-  GENIDT_EXTRA_ARGS = -d
 else
   quiet=quiet_
   Q = @
-  GENIDT_EXTRA_ARGS =
 endif
 
 # If the user is running make -s (silent mode), suppress echoing of
@@ -317,11 +315,9 @@ GDB		= $(CROSS_COMPILE)gdb
 READELF		= $(CROSS_COMPILE)readelf
 AWK		= awk
 ifeq ($(PREBUILT_HOST_TOOLS),)
-GENIDT		= scripts/gen_idt/gen_idt
 GENOFFSET_H	= scripts/gen_offset_header/gen_offset_header
 FIXDEP		= scripts/basic/fixdep
 else
-GENIDT		= $(PREBUILT_HOST_TOOLS)/gen_idt
 GENOFFSET_H	= $(PREBUILT_HOST_TOOLS)/gen_offset_header
 FIXDEP		= $(PREBUILT_HOST_TOOLS)/fixdep
 endif
@@ -412,7 +408,7 @@ exports += VERSION_MAJOR VERSION_MINOR PATCHLEVEL VERSION_RESERVED EXTRAVERSION
 exports += KERNELRELEASE KERNELVERSION
 exports += ARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC CXX
 exports += CPP AR NM STRIP OBJCOPY OBJDUMP GDB
-exports += MAKE AWK INSTALLKERNEL PERL PYTHON GENIDT GENOFFSET_H
+exports += MAKE AWK INSTALLKERNEL PERL PYTHON GENOFFSET_H
 exports += HOSTCXX HOSTCXXFLAGS CHECK CHECKFLAGS
 
 exports += KBUILD_CPPFLAGS NOSTDINC_FLAGS ZEPHYRINCLUDE OBJCOPYFLAGS LDFLAGS
@@ -810,9 +806,6 @@ export ALL_LIBS
 
 LINK_LIBS := $(foreach l,$(ALL_LIBS), -l$(l))
 
-OUTPUT_FORMAT ?= elf32-i386
-OUTPUT_ARCH ?= i386
-
 quiet_cmd_ar_target = AR      $@
 # Do not put lib.a into libzephyr.a. lib.a files are to be linked separately to
 # the final image
@@ -855,34 +848,6 @@ PREBUILT_KERNEL = $(KERNEL_NAME)_prebuilt.elf
 $(PREBUILT_KERNEL): $(zephyr-deps) libzephyr.a $(KBUILD_ZEPHYR_APP) $(app-y) linker.cmd $(KERNEL_NAME).lnk
 	$(Q)$(CC) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
 
-quiet_cmd_gen_idt = SIDT    $@
-      cmd_gen_idt =								\
-(										\
-	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin &&	\
-	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 	\
-		-m irq_int_vector_map.bin					\
-		-l $(CONFIG_MAX_IRQ_LINES) $(GENIDT_EXTRA_ARGS) &&		\
-	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
-		--rename-section .data=staticIdt staticIdt.bin staticIdt.o &&	\
-	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
-	--rename-section .data=irq_int_vector_map irq_int_vector_map.bin 	\
-		irq_int_vector_map.o &&						\
-	rm staticIdt.bin irq_int_vector_map.bin isrList.bin			\
-)
-
-staticIdt.o: $(PREBUILT_KERNEL)
-	$(call cmd,gen_idt)
-
-quiet_cmd_lnk_elf = LINK    $@
-      cmd_lnk_elf =									\
-(											\
-	$(CC) -T linker.cmd @$(KERNEL_NAME).lnk staticIdt.o				\
-		irq_int_vector_map.o -o $@;						\
-	${OBJCOPY} --change-section-address intList=${CONFIG_PHYS_LOAD_ADDR} $@ elf.tmp;\
-	$(OBJCOPY) -R intList elf.tmp $@;						\
-	rm elf.tmp									\
-)
-
 ASSERT_WARNING_STR := \
     "\n      ------------------------------------------------------------" \
     "\n      --- WARNING:  __ASSERT() statements are globally ENABLED ---" \
@@ -900,12 +865,10 @@ WARN_ABOUT_DEPRECATION := $(if $(CONFIG_BOARD_DEPRECATED),echo -e \
 				-n $(DEPRECATION_WARNING_STR),true)
 
 ifeq ($(ARCH),x86)
-$(KERNEL_ELF_NAME): staticIdt.o linker.cmd
-	$(call cmd,lnk_elf)
-	@$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
-	@$(WARN_ABOUT_ASSERT)
-	@$(WARN_ABOUT_DEPRECATION)
+# X86 with its IDT has very special handling for interrupt tables
+include $(srctree)/arch/x86/Makefile.idt
 else
+# Otherwise, nothing to do, prebuilt kernel is the real one
 $(KERNEL_ELF_NAME): $(PREBUILT_KERNEL)
 	@cp $(PREBUILT_KERNEL) $(KERNEL_ELF_NAME)
 	@$(WARN_ABOUT_ASSERT)
