@@ -1453,6 +1453,8 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 		goto drop;
 	}
 
+	net_nbuf_unref(buf);
+
 	net_stats_update_ipv6_nd_sent();
 
 	return NET_OK;
