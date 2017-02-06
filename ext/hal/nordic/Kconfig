@@ -9,3 +9,7 @@ config HAS_NORDIC_MDK
 
 config HAS_NORDIC_HAL
 	bool
+
+config HAS_NORDIC_DRIVERS
+	bool
+	select HAS_NORDIC_HAL
