@@ -1220,6 +1220,7 @@ static void remove_subscriptions(struct bt_conn *conn)
 
 		if (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE) {
 			/* Remove subscription */
+			params->value = 0;
 			gatt_subscription_remove(conn, prev, params);
 		}
 	}

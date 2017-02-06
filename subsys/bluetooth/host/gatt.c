@@ -761,6 +761,7 @@ static void remove_subscriptions(struct bt_conn *conn)
 		if (!bt_addr_le_is_bonded(&conn->le.dst) ||
 		    (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE)) {
 			/* Remove subscription */
+			params->value = 0;
 			gatt_subscription_remove(conn, prev, params);
 		} else {
 			update_subscription(conn, params);
