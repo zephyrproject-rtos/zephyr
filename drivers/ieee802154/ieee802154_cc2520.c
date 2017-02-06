@@ -600,7 +600,7 @@ static void cc2520_rx(int arg)
 			goto flush;
 		}
 
-#if defined(CONFIG_TI_CC2520_RAW)
+#if defined(CONFIG_IEEE802154_CC2520_RAW)
 		/**
 		 * Reserve 1 byte for length
 		 */
@@ -615,7 +615,7 @@ static void cc2520_rx(int arg)
 
 		net_buf_frag_insert(buf, pkt_buf);
 
-#if defined(CONFIG_TI_CC2520_RAW)
+#if defined(CONFIG_IEEE802154_CC2520_RAW)
 		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len)) {
 			SYS_LOG_ERR("No content read");
 			goto flush;
@@ -651,7 +651,7 @@ static void cc2520_rx(int arg)
 			goto out;
 		}
 
-#if defined(CONFIG_TI_CC2520_RAW)
+#if defined(CONFIG_IEEE802154_CC2520_RAW)
 		net_buf_add_u8(pkt_buf, cc2520->lqi);
 #endif
 
@@ -665,7 +665,7 @@ static void cc2520_rx(int arg)
 
 		net_analyze_stack("CC2520 Rx Fiber stack",
 				  (unsigned char *)cc2520->cc2520_rx_stack,
-				  CONFIG_TI_CC2520_RX_STACK_SIZE);
+				  CONFIG_IEEE802154_CC2520_RX_STACK_SIZE);
 		continue;
 flush:
 		_cc2520_print_exceptions(cc2520);
@@ -990,16 +990,17 @@ static inline int configure_spi(struct device *dev)
 	struct cc2520_context *cc2520 = dev->driver_data;
 	struct spi_config spi_conf = {
 		.config = SPI_WORD(8),
-		.max_sys_freq = CONFIG_TI_CC2520_SPI_FREQ,
+		.max_sys_freq = CONFIG_IEEE802154_CC2520_SPI_FREQ,
 	};
 
-	cc2520->spi.dev = device_get_binding(CONFIG_TI_CC2520_SPI_DRV_NAME);
+	cc2520->spi.dev = device_get_binding(
+			CONFIG_IEEE802154_CC2520_SPI_DRV_NAME);
 	if (!cc2520->spi.dev) {
 		SYS_LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
-	cc2520->spi.slave = CONFIG_TI_CC2520_SPI_SLAVE;
+	cc2520->spi.slave = CONFIG_IEEE802154_CC2520_SPI_SLAVE;
 
 	if (spi_configure(cc2520->spi.dev, &spi_conf) != 0 ||
 	    spi_slave_select(cc2520->spi.dev,
@@ -1037,7 +1038,7 @@ static int cc2520_init(struct device *dev)
 	}
 
 	k_thread_spawn(cc2520->cc2520_rx_stack,
-		       CONFIG_TI_CC2520_RX_STACK_SIZE,
+		       CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
 		       (k_thread_entry_t)cc2520_rx,
 		       dev, NULL, NULL,
 		       K_PRIO_COOP(2), 0, 0);
@@ -1080,21 +1081,21 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.get_lqi	= cc2520_get_lqi,
 };
 
-#if defined(CONFIG_TI_CC2520_RAW)
-DEVICE_AND_API_INIT(cc2520, CONFIG_TI_CC2520_DRV_NAME,
+#if defined(CONFIG_IEEE802154_CC2520_RAW)
+DEVICE_AND_API_INIT(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
 		    cc2520_init, &cc2520_context_data, NULL,
-		    POST_KERNEL, CONFIG_TI_CC2520_INIT_PRIO,
+		    POST_KERNEL, CONFIG_IEEE802154_CC2520_INIT_PRIO,
 		    &cc2520_radio_api);
 #else
-NET_DEVICE_INIT(cc2520, CONFIG_TI_CC2520_DRV_NAME,
+NET_DEVICE_INIT(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
 		cc2520_init, &cc2520_context_data, NULL,
-		CONFIG_TI_CC2520_INIT_PRIO,
+		CONFIG_IEEE802154_CC2520_INIT_PRIO,
 		&cc2520_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
 
 NET_STACK_INFO_ADDR(RX, cc2520,
-		    CONFIG_TI_CC2520_RX_STACK_SIZE,
-		    CONFIG_TI_CC2520_RX_STACK_SIZE,
+		    CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
+		    CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
 		    ((struct cc2520_context *)(&__device_cc2520))->
 							cc2520_rx_stack,
 		    0);

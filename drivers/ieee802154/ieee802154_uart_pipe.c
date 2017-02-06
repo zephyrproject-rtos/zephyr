@@ -282,7 +282,7 @@ static struct ieee802154_radio_api upipe_radio_api = {
 	.stop			= upipe_stop,
 };
 
-NET_DEVICE_INIT(upipe_15_4, CONFIG_UPIPE_15_4_DRV_NAME,
+NET_DEVICE_INIT(upipe_15_4, CONFIG_IEEE802154_UPIPE_DRV_NAME,
 		upipe_init, &upipe_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&upipe_radio_api, IEEE802154_L2,

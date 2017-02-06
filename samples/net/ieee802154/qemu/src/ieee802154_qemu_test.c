@@ -26,7 +26,7 @@ static struct net_if *init_device(void)
 	struct net_if *iface;
 	struct device *dev;
 
-	dev = device_get_binding(CONFIG_UPIPE_15_4_DRV_NAME);
+	dev = device_get_binding(CONFIG_IEEE802154_UPIPE_DRV_NAME);
 	if (!dev) {
 		PRINT("Cannot get UPIPE device\n");
 		return NULL;

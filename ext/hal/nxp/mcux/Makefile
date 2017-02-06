@@ -10,7 +10,7 @@
 MCUX_DEVICE = $(shell echo $(CONFIG_SOC) | tr '[:lower:]' '[:upper:]')
 MCUX_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))
 
-ifdef CONFIG_NXP_MCR20A
+ifdef CONFIG_IEEE802154_MCR20A
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/components/mcr20a
 endif
 

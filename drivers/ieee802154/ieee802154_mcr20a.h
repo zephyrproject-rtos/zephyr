@@ -41,7 +41,7 @@ struct mcr20a_context {
 	atomic_t busy;
 	atomic_t seq_retval;
 	/************RX************/
-	char __stack mcr20a_rx_stack[CONFIG_NXP_MCR20A_RX_STACK_SIZE];
+	char __stack mcr20a_rx_stack[CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE];
 	struct k_sem trig_sem;
 	uint8_t lqi;
 };

@@ -505,7 +505,7 @@ static bool init_ieee802154(void)
 
 	SYS_LOG_INF("Initialize ieee802.15.4");
 
-	ieee802154_dev = device_get_binding(CONFIG_TI_CC2520_DRV_NAME);
+	ieee802154_dev = device_get_binding(CONFIG_IEEE802154_CC2520_DRV_NAME);
 	if (!ieee802154_dev) {
 		SYS_LOG_ERR("Cannot get CC250 device");
 		return false;

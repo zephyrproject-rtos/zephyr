@@ -10,9 +10,9 @@
 #include <device.h>
 #include <init.h>
 
-#if defined(CONFIG_TI_CC2520_LEGACY) || \
-	defined(CONFIG_TI_CC2520) || \
-	defined(CONFIG_TI_CC2520_RAW)
+#if defined(CONFIG_IEEE802154_CC2520_LEGACY) || \
+	defined(CONFIG_IEEE802154_CC2520) || \
+	defined(CONFIG_IEEE802154_CC2520_RAW)
 
 #include <ieee802154/cc2520.h>
 #include <gpio.h>
@@ -34,7 +34,7 @@ struct cc2520_gpio_configuration *cc2520_configure_gpios(void)
 				  GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 	struct device *gpio;
 
-	gpio = device_get_binding(CONFIG_TI_CC2520_GPIO_1_NAME);
+	gpio = device_get_binding(CONFIG_IEEE802154_CC2520_GPIO_1_NAME);
 	gpio_pin_configure(gpio, cc2520_gpios[CC2520_GPIO_IDX_VREG_EN].pin,
 			   flags_noint_out);
 	gpio_pin_configure(gpio, cc2520_gpios[CC2520_GPIO_IDX_RESET].pin,
@@ -43,7 +43,7 @@ struct cc2520_gpio_configuration *cc2520_configure_gpios(void)
 	cc2520_gpios[CC2520_GPIO_IDX_VREG_EN].dev = gpio;
 	cc2520_gpios[CC2520_GPIO_IDX_RESET].dev = gpio;
 
-	gpio = device_get_binding(CONFIG_TI_CC2520_GPIO_0_NAME);
+	gpio = device_get_binding(CONFIG_IEEE802154_CC2520_GPIO_0_NAME);
 	gpio_pin_configure(gpio, cc2520_gpios[CC2520_GPIO_IDX_SFD].pin,
 			   flags_int_in);
 	gpio_pin_configure(gpio, cc2520_gpios[CC2520_GPIO_IDX_FIFOP].pin,
@@ -61,4 +61,6 @@ struct cc2520_gpio_configuration *cc2520_configure_gpios(void)
 	return cc2520_gpios;
 }
 
-#endif /* CONFIG_TI_CC2520_LEGACY || CONFIG_TI_CC2520 || CONFIG_TI_CC2520_RAW */
+#endif /* CONFIG_IEEE802154_CC2520_LEGACY || CONFIG_IEEE802154_CC2520 ||
+	* CONFIG_IEEE802154_CC2520_RAW
+	*/

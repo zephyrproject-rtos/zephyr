@@ -58,16 +58,16 @@ source "drivers/ieee802154/Kconfig.cc2520"
 
 source "drivers/ieee802154/Kconfig.mcr20a"
 
-menuconfig UPIPE_15_4
+menuconfig IEEE802154_UPIPE
 	bool "UART PIPE fake radio driver support for QEMU"
 	depends on BOARD_QEMU_X86
 	select NETWORKING
 	select UART_PIPE
 	default n
 
-config UPIPE_15_4_DRV_NAME
+config IEEE802154_UPIPE_DRV_NAME
 	string "UART PIPE Driver name"
-	default "upipe_15_4"
-	depends on UPIPE_15_4
+	default "IEEE802154_UPIPE"
+	depends on IEEE802154_UPIPE
 
 endmenu

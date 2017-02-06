@@ -1,38 +1,38 @@
 # Kconfig.cc2520 - TI CC2520 configuration options
 #
 
-menuconfig TI_CC2520
+menuconfig IEEE802154_CC2520
 	bool "TI CC2520 Driver support"
 	depends on NETWORKING
 	select NET_L2_IEEE802154
 	default n
 
-menuconfig TI_CC2520_RAW
+menuconfig IEEE802154_CC2520_RAW
 	bool "TI CC2520 Driver RAW channel"
 	select NET_L2_RAW_CHANNEL
 	default n
 	help
-	Enable TI_CC2520 driver with RAW channel
+	Enable IEEE802154_CC2520 driver with RAW channel
 
 	The CC2520 driver with RAW channel allows to export radio interface
 	over USB making an USB 802.15.4 dongle.
 
-if TI_CC2520 || TI_CC2520_RAW
+if IEEE802154_CC2520 || IEEE802154_CC2520_RAW
 
-config TI_CC2520_DRV_NAME
+config IEEE802154_CC2520_DRV_NAME
 	string "TI CC2520 Driver's name"
 	default "cc2520"
 	help
 	This option sets the driver name
 
-config TI_CC2520_SPI_DRV_NAME
+config IEEE802154_CC2520_SPI_DRV_NAME
 	string "SPI driver's name to use to access CC2520"
 	default ""
 	help
 	This option is mandatory to set which SPI controller to use in order
 	to actually control the CC2520 chip.
 
-config TI_CC2520_SPI_FREQ
+config IEEE802154_CC2520_SPI_FREQ
 	int "SPI system frequency"
 	default 0
 	help
@@ -40,14 +40,14 @@ config TI_CC2520_SPI_FREQ
 	depends on the SPI controller being used and also on the system
 	clock.
 
-config TI_CC2520_SPI_SLAVE
+config IEEE802154_CC2520_SPI_SLAVE
 	int "SPI slave linked to CC2520"
 	default 0
 	help
 	This option sets the SPI slave number SPI controller has to switch
 	to when dealing with CC2520 chip.
 
-config TI_CC2520_RX_STACK_SIZE
+config IEEE802154_CC2520_RX_STACK_SIZE
 	int "Driver's internal rx thread stack size"
 	default 800
 	help
@@ -55,7 +55,7 @@ config TI_CC2520_RX_STACK_SIZE
 	The default value should be sufficient, but in case it prooves to be
 	a too little one, this option makes it easy to play with the size.
 
-config TI_CC2520_INIT_PRIO
+config IEEE802154_CC2520_INIT_PRIO
 	int "CC2520 intialization priority"
 	default 80
 	help
