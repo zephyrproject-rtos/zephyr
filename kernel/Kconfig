@@ -147,12 +147,6 @@ config NUM_DYNAMIC_TIMERS
 	Number of timers available for dynamic allocation via the
 	k_timer_alloc()/k_timer_free() API.
 
-config TICKLESS_IDLE_SUPPORTED
-	bool
-	default n
-	help
-	To be selected by an architecture if it does support tickless idle.
-
 config ERRNO
 	bool
 	prompt "Enable errno support"

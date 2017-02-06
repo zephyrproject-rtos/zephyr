@@ -58,7 +58,7 @@ config DEVICE_POWER_MANAGEMENT
 config TICKLESS_IDLE
 	bool
 	prompt "Tickless idle"
-	default y if TICKLESS_IDLE_SUPPORTED
+	default y
 	help
 	This option suppresses periodic system clock interrupts whenever the
 	kernel becomes idle. This permits the system to remain in a power
