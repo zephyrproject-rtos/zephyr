@@ -27,7 +27,7 @@
  * Include board.h from platform to get IRQ number.
  * NOTE: Cortex-M does not need IRQ numbers
  */
-#if !defined(CONFIG_CPU_CORTEX_M)
+#if !defined(CONFIG_CPU_CORTEX_M) && !defined(CONFIG_XTENSA)
   #include <board.h>
 #endif
 
@@ -52,6 +52,9 @@
     /* MVIC case */
     #define TICK_IRQ CONFIG_MVIC_TIMER_IRQ
   #endif
+#elif defined(CONFIG_XTENSA)
+  #include <xtensa_timer.h>
+  #define TICK_IRQ XT_TIMER_INTNUM
 #elif defined(CONFIG_ALTERA_AVALON_TIMER)
   #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)
