@@ -1,0 +1,1 @@
+obj-$(CONFIG_IEEE154_NRF5) += nrf_drv_radio802154.o
