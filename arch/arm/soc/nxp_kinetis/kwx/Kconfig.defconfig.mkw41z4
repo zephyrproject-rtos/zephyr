@@ -11,6 +11,8 @@ config SOC
 	string
 	default mkw41z4
 
+if !HAS_DTS
+
 config NUM_IRQ_PRIO_BITS
 	int
 	default 2
@@ -18,6 +20,8 @@ config NUM_IRQ_PRIO_BITS
 config NUM_IRQS
 	int
 	default 32
+
+endif # !HAS_DTS
 
 if PINMUX
 

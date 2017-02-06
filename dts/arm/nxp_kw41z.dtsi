@@ -1,0 +1,191 @@
+#include "armv6-m.dtsi"
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m0+";
+		};
+	};
+
+	sram0: memory {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x20000>;
+	};
+
+	soc {
+		mcg: clock-controller@40064000 {
+			compatible = "nxp,kw41z-mcg";
+			reg = <0x40064000 0x13>;
+			system-clock-frequency = <48000000>;
+			clock-controller;
+		};
+
+		clock-controller@40065000 {
+			compatible = "nxp,kw41z-osc";
+			reg = <0x40065000 0x4>;
+			enable-external-reference;
+		};
+
+		rtc@4003d000 {
+			compatible = "nxp,kw41z-rtc";
+			reg = <0x4003d000 0x20>;
+			clock-frequency = <32768>;
+		};
+
+		sim: sim@40047000 {
+			compatible = "nxp,kw41z-sim";
+			reg = <0x40047000 0x1060>;
+
+			clock-controller;
+			#clock-cells = <2>;
+		};
+
+		flash0: flash@0 {
+			reg = <0 0x80000>;
+		};
+
+		lpuart0: lpuart@40054000 {
+			compatible = "nxp,kw41z-lpuart";
+			reg = <0x40054000 0x18>;
+			interrupts = <12>;
+			zephyr,irq-prio = <0>;
+
+			baud-rate = <115200>;
+			pinctrl-0 = <&lpuart0_default>;
+			pinctrl-names = "default";
+
+			status = "disabled";
+		};
+
+		pinmux_a: pinmux@40049000 {
+			compatible = "nxp,kw41z-pinmux";
+			reg = <0x40049000 0xa4>;
+			clocks = <&sim 0x1038 9>;
+
+			spi1_default: spi1_default {
+				mosi-miso-sck-pcs0 {
+					pins = <16>, <17>, <18>, <19>;
+					function = <2>;
+				};
+			};
+		};
+
+		pinmux_b: pinmux@4004a000 {
+			compatible = "nxp,kw41z-pinmux";
+			reg = <0x4004a000 0xa4>;
+			clocks = <&sim 0x1038 10>;
+		};
+
+		pinmux_c: pinmux@4004b000 {
+			compatible = "nxp,kw41z-pinmux";
+			reg = <0x4004b000 0xa4>;
+			clocks = <&sim 0x1038 11>;
+
+			lpuart0_default: lpuart0_default {
+				rx-tx {
+					pins = <6>, <7>;
+					function = <4>;
+				};
+			};
+
+			lpuart0_alt1: lpuart0_alt1 {
+				rx-tx {
+					pins = <17>, <18>;
+					function = <4>;
+				};
+			};
+
+			lpuart0_alt2: lpuart0_alt2 {
+				rx-tx-cts-rts {
+					pins = <2>, <3>, <0>, <1>;
+					function = <4>;
+				};
+			};
+
+			spi0_default: spi0_default {
+				mosi-miso-clk-pcs0 {
+					pins = <18>, <17>, <16>, <19>;
+					function = <2>;
+				};
+			};
+		};
+
+		gpioa: gpio@400ff000 {
+			compatible = "nxp,kw41z-gpio";
+			reg = <0x400ff000 0x40>;
+			interrupts = <30>;
+			zephyr,irq-prio = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpiob: gpio@400ff040 {
+			compatible = "nxp,kw41z-gpio";
+			reg = <0x400ff040 0x40>;
+			interrupts = <31>;
+			zephyr,irq-prio = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioc: gpio@400ff080 {
+			compatible = "nxp,kw41z-gpio";
+			reg = <0x400ff080 0x40>;
+			interrupts = <31>;
+			zephyr,irq-prio = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		spi0: spi@4002c000 {
+			compatible = "nxp,kw41z-spi";
+			reg = <0x4002c000 0x9C>;
+			interrupts = <10>;
+			clocks = <&sim 0x103C 12>;		/* clk gate */
+
+			cs = <&gpiob 18 0>, <&gpiob 17 0>;
+			pinctrl-0 = <&spi0_default>;
+			pinctrl-names = "default";
+		};
+
+		spi1: spi@4002d000 {
+			compatible = "nxp,kw41z-spi";
+			reg = <0x4002d000 0x9C>;
+			interrupts = <29>;
+			clocks = <&sim 0x103C 13>;		/* clk gate */
+			status = "disabled";
+		};
+
+		pwm0: pwm@40038000 {
+			compatible = "nxp,kw41z-pwm";
+			reg = <0x40038000 0x88>;
+			prescaler = <2>;
+			period = <1000>;
+			clock-source = <0>;
+			/* channel information needed - fixme */
+		};
+
+		pwm1: pwm@40039000 {
+			compatible = "nxp,kw41z-pwm";
+			reg = <0x40039000 0x88>;
+			prescaler = <2>;
+			period = <1000>;
+			clock-source = <0>;
+			/* channel information needed - fixme */
+		};
+
+		pwm2: pwm@4003a000 {
+			compatible = "nxp,kw41z-pwm";
+			reg = <0x4003a000 0x88>;
+			prescaler = <2>;
+			period = <1000>;
+			clock-source = <0>;
+			/* channel information needed - fixme */
+		};
+	};
+};
+
+&nvic {
+	num-irqs = <32>;
+	num-irq-prio-bits = <2>;
+};

@@ -1,0 +1,26 @@
+---
+title: KW41Z System Integration Module (SIM)
+version: 0.1
+
+description: >
+    This is a representation of the KW41Z SIM IP node
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nxp,kw41z-sim"
+
+  - reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+cell_string: SIM_CLK
+
+"#cells":
+  - offset
+  - bits
+...

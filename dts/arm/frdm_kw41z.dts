@@ -1,0 +1,28 @@
+/dts-v1/;
+
+#include "nxp_kw41z.dtsi"
+
+/ {
+	model = "NXP Freedom KW41Z board";
+	compatible = "nxp,kw41z", "nxp,mkw41z4";
+
+	aliases {
+		lpuart_0 = &lpuart0;
+		pinmux_a = &pinmux_a;
+		pinmux_b = &pinmux_b;
+		pinmux_c = &pinmux_c;
+		gpio_a = &gpioa;
+		gpio_b = &gpiob;
+		gpio_c = &gpioc;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &lpuart0;
+	};
+};
+
+&lpuart0 {
+	status = "ok";
+};
