@@ -36,6 +36,11 @@
 #define UART_STRUCT(dev)					\
 	((USART_TypeDef *)(DEV_CFG(dev))->uconf.base)
 
+#ifndef CONFIG_HAS_DTS
+#define CONFIG_UART_STM32_PORT_1_BASE_ADDRESS	USART1_BASE
+#define CONFIG_UART_STM32_PORT_2_BASE_ADDRESS	USART2_BASE
+#define CONFIG_UART_STM32_PORT_3_BASE_ADDRESS	USART3_BASE
+#endif
 
 #define TIMEOUT 1000
 
@@ -320,7 +325,7 @@ static void uart_stm32_irq_config_func_1(struct device *dev);
 
 static const struct uart_stm32_config uart_stm32_dev_cfg_1 = {
 	.uconf = {
-		.base = (uint8_t *)USART1_BASE,
+		.base = (uint8_t *)CONFIG_UART_STM32_PORT_1_BASE_ADDRESS,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		.irq_config_func = uart_stm32_irq_config_func_1,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -352,6 +357,8 @@ DEVICE_AND_API_INIT(uart_stm32_1, CONFIG_UART_STM32_PORT_1_NAME,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_stm32_irq_config_func_1(struct device *dev)
 {
+
+#ifndef CONFIG_HAS_DTS
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define PORT_1_IRQ STM32F1_IRQ_USART1
 #elif CONFIG_SOC_SERIES_STM32F3X
@@ -360,6 +367,7 @@ static void uart_stm32_irq_config_func_1(struct device *dev)
 #define PORT_1_IRQ STM32F4_IRQ_USART1
 #elif CONFIG_SOC_SERIES_STM32L4X
 #define PORT_1_IRQ STM32L4_IRQ_USART1
+#endif
 #endif
 	IRQ_CONNECT(PORT_1_IRQ,
 		CONFIG_UART_STM32_PORT_1_IRQ_PRI,
@@ -380,7 +388,7 @@ static void uart_stm32_irq_config_func_2(struct device *dev);
 
 static const struct uart_stm32_config uart_stm32_dev_cfg_2 = {
 	.uconf = {
-		.base = (uint8_t *)USART2_BASE,
+		.base = (uint8_t *)CONFIG_UART_STM32_PORT_2_BASE_ADDRESS,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		.irq_config_func = uart_stm32_irq_config_func_2,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -412,6 +420,8 @@ DEVICE_AND_API_INIT(uart_stm32_2, CONFIG_UART_STM32_PORT_2_NAME,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_stm32_irq_config_func_2(struct device *dev)
 {
+
+#ifndef CONFIG_HAS_DTS
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define PORT_2_IRQ STM32F1_IRQ_USART2
 #elif CONFIG_SOC_SERIES_STM32F3X
@@ -420,6 +430,7 @@ static void uart_stm32_irq_config_func_2(struct device *dev)
 #define PORT_2_IRQ STM32F4_IRQ_USART2
 #elif CONFIG_SOC_SERIES_STM32L4X
 #define PORT_2_IRQ STM32L4_IRQ_USART2
+#endif
 #endif
 	IRQ_CONNECT(PORT_2_IRQ,
 		CONFIG_UART_STM32_PORT_2_IRQ_PRI,
@@ -440,7 +451,7 @@ static void uart_stm32_irq_config_func_3(struct device *dev);
 
 static const struct uart_stm32_config uart_stm32_dev_cfg_3 = {
 	.uconf = {
-		.base = (uint8_t *)USART3_BASE,
+		.base = (uint8_t *)CONFIG_UART_STM32_PORT_3_BASE_ADDRESS,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		.irq_config_func = uart_stm32_irq_config_func_3,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -471,6 +482,7 @@ DEVICE_AND_API_INIT(uart_stm32_3, CONFIG_UART_STM32_PORT_3_NAME,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_stm32_irq_config_func_3(struct device *dev)
 {
+#ifndef CONFIG_HAS_DTS
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define PORT_3_IRQ STM32F1_IRQ_USART3
 #elif CONFIG_SOC_SERIES_STM32F3X
@@ -479,6 +491,7 @@ static void uart_stm32_irq_config_func_3(struct device *dev)
 #define PORT_3_IRQ STM32F4_IRQ_USART3
 #elif CONFIG_SOC_SERIES_STM32L4X
 #define PORT_3_IRQ STM32L4_IRQ_USART3
+#endif
 #endif
 	IRQ_CONNECT(PORT_3_IRQ,
 		CONFIG_UART_STM32_PORT_3_IRQ_PRI,

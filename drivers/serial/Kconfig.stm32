@@ -33,6 +33,7 @@ config UART_STM32_PORT_1_NAME
 	  This is the device name for USART1 port, and is
 	  included in the device struct.
 
+if !HAS_DTS
 config UART_STM32_PORT_1_BAUD_RATE
 	int "STM32 USART1 Baud Rate"
 	default 9600
@@ -47,6 +48,7 @@ config UART_STM32_PORT_1_IRQ_PRI
 	help
 	  The interrupt priority for USART1 port.
 
+endif # !HAS_DTS
 # --- port 2 ---
 
 config UART_STM32_PORT_2
@@ -65,6 +67,7 @@ config UART_STM32_PORT_2_NAME
 	  This is the device name for USART2 port, and is
 	  included in the device struct.
 
+if !HAS_DTS
 config UART_STM32_PORT_2_BAUD_RATE
 	int "STM32 USART2 Baud Rate"
 	default 9600
@@ -78,6 +81,8 @@ config UART_STM32_PORT_2_IRQ_PRI
 	depends on UART_STM32_PORT_2 && UART_INTERRUPT_DRIVEN
 	help
 	  The interrupt priority for USART2 port.
+
+endif # !HAS_DTS
 
 # --- port 3 ---
 
@@ -97,6 +102,7 @@ config UART_STM32_PORT_3_NAME
 	  This is the device name for USART3 port, and is
 	  included in the device struct.
 
+if !HAS_DTS
 config UART_STM32_PORT_3_BAUD_RATE
 	int "STM32 USART3 Baud Rate"
 	default 9600
@@ -110,3 +116,5 @@ config UART_STM32_PORT_3_IRQ_PRI
 	depends on UART_STM32_PORT_3 && UART_INTERRUPT_DRIVEN
 	help
 	  The interrupt priority for USART3 port.
+
+endif # !HAS_DTS
