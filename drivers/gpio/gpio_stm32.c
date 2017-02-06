@@ -48,7 +48,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	int map_res;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENODEV;
+		return -ENOTSUP;
 	}
 
 	/* figure out if we can map the requested GPIO
