@@ -156,6 +156,8 @@ static const struct counter_driver_api aon_timer_qmsi_api = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static qm_aonc_context_t aonc_ctx;
+
 static void aonpt_qmsi_set_power_state(struct device *dev, uint32_t power_state)
 {
 	struct aon_data *context = dev->driver_data;
@@ -169,9 +171,6 @@ static uint32_t aonpt_qmsi_get_power_state(struct device *dev)
 
 	return context->device_power_state;
 }
-
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
-static qm_aonc_context_t aonc_ctx;
 
 static int aonpt_suspend_device(struct device *dev)
 {
@@ -190,7 +189,6 @@ static int aonpt_resume_device_from_suspend(struct device *dev)
 
 	return 0;
 }
-#endif
 
 /*
 * Implements the driver control management functionality
@@ -200,13 +198,11 @@ static int aonpt_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				  void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return aonpt_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return aonpt_resume_device_from_suspend(dev);
 		}
-#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = aonpt_qmsi_get_power_state(dev);
 		return 0;

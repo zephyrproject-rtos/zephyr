@@ -32,9 +32,7 @@ struct dma_qmsi_driver_data {
 	void *callback_data[QM_DMA_CHANNEL_NUM];
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	qm_dma_context_t saved_ctx;
-#endif
 #endif
 	void (*dma_user_callback[QM_DMA_CHANNEL_NUM])(struct device *dev,
 						      uint32_t channel_id,
@@ -327,7 +325,6 @@ static const struct dma_qmsi_config_info dma_qmsi_config_data = {
 static struct dma_qmsi_driver_data dma_qmsi_dev_data;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 static int dma_suspend_device(struct device *dev)
 {
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
@@ -349,19 +346,16 @@ static int dma_resume_device(struct device *dev)
 
 	return 0;
 }
-#endif
 
 static int dma_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return dma_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return dma_resume_device(dev);
 		}
-#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = dma_qmsi_get_power_state(dev);
 	}

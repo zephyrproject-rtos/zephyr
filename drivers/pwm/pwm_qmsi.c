@@ -420,15 +420,14 @@ static int pwm_qmsi_init(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static qm_pwm_context_t pwm_ctx;
+
 static uint32_t pwm_qmsi_get_power_state(struct device *dev)
 {
 	struct pwm_data *context = dev->driver_data;
 
 	return context->device_power_state;
 }
-
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
-static qm_pwm_context_t pwm_ctx;
 
 static int pwm_qmsi_suspend(struct device *dev)
 {
@@ -447,7 +446,6 @@ static int pwm_qmsi_resume_from_suspend(struct device *dev)
 
 	return 0;
 }
-#endif
 
 /*
 * Implements the driver control management functionality
@@ -457,13 +455,11 @@ static int pwm_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return pwm_qmsi_suspend(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return pwm_qmsi_resume_from_suspend(dev);
 		}
-#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = pwm_qmsi_get_power_state(dev);
 		return 0;

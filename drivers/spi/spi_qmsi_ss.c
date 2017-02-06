@@ -41,9 +41,7 @@ struct ss_spi_qmsi_runtime {
 	bool loopback;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	qm_ss_spi_context_t spi_ctx;
-#endif
 #endif
 };
 
@@ -265,7 +263,6 @@ static uint32_t ss_spi_master_get_power_state(struct device *dev)
 	return context->device_power_state;
 }
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 static int ss_spi_master_suspend_device(struct device *dev)
 {
 	if (device_busy_check(dev)) {
@@ -293,7 +290,6 @@ static int ss_spi_master_resume_device_from_suspend(struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 
 /*
 * Implements the driver control management functionality
@@ -303,13 +299,11 @@ static int ss_spi_master_qmsi_device_ctrl(struct device *port,
 				       uint32_t ctrl_command, void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return ss_spi_master_suspend_device(port);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return ss_spi_master_resume_device_from_suspend(port);
 		}
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = ss_spi_master_get_power_state(port);
 	}

@@ -159,8 +159,6 @@ static int rtc_qmsi_init(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 static qm_rtc_context_t rtc_ctx;
 
 static int rtc_suspend_device(struct device *dev)
@@ -180,7 +178,6 @@ static int rtc_resume_device(struct device *dev)
 
 	return 0;
 }
-#endif
 
 /*
 * Implements the driver control management functionality
@@ -190,13 +187,11 @@ static int rtc_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return rtc_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return rtc_resume_device(dev);
 		}
-#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = rtc_qmsi_get_power_state(dev);
 		return 0;

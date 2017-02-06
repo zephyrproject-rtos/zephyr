@@ -56,9 +56,7 @@ struct uart_qmsi_drv_data {
 	uart_irq_callback_t user_cb;
 	uint8_t iir_cache;
 	uint32_t device_power_state;
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	qm_uart_context_t ctx;
-#endif
 };
 
 static void uart_qmsi_set_power_state(struct device *dev, uint32_t power_state)
@@ -75,7 +73,6 @@ static uint32_t uart_qmsi_get_power_state(struct device *dev)
 	return context->device_power_state;
 }
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 static int uart_suspend_device(struct device *dev)
 {
 	const struct uart_qmsi_config_info *config = dev->config->config_info;
@@ -105,7 +102,6 @@ static int uart_resume_device_from_suspend(struct device *dev)
 
 	return 0;
 }
-#endif
 
 /*
 * Implements the driver control management functionality
@@ -115,13 +111,11 @@ static int uart_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				 void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return uart_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return uart_resume_device_from_suspend(dev);
 		}
-#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = uart_qmsi_get_power_state(dev);
 		return 0;

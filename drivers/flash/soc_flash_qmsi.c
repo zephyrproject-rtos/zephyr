@@ -21,9 +21,7 @@ struct soc_flash_data {
 #endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	qm_flash_context_t saved_ctx[QM_FLASH_NUM];
-#endif
 #endif
 };
 
@@ -272,7 +270,6 @@ static uint32_t flash_qmsi_get_power_state(struct device *dev)
 	return ctx->device_power_state;
 }
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 static int flash_qmsi_suspend_device(struct device *dev)
 {
 	struct soc_flash_data *ctx = dev->driver_data;
@@ -298,19 +295,16 @@ static int flash_qmsi_resume_device(struct device *dev)
 
 	return 0;
 }
-#endif
 
 static int flash_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				  void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return flash_qmsi_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return flash_qmsi_resume_device(dev);
 		}
-#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = flash_qmsi_get_power_state(dev);
 	}

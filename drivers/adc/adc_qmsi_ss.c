@@ -32,9 +32,7 @@ struct adc_info  {
 	struct k_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	qm_ss_adc_context_t adc_ctx;
-#endif
 #endif
 };
 
@@ -255,7 +253,6 @@ static uint32_t adc_qmsi_ss_get_power_state(struct device *dev)
 	return context->device_power_state;
 }
 
-#if CONFIG_SYS_POWER_DEEP_SLEEP
 static int adc_qmsi_ss_suspend_device(struct device *dev)
 {
 	struct adc_info *context = dev->driver_data;
@@ -277,19 +274,16 @@ static int adc_qmsi_ss_resume_device_from_suspend(struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 
 static int adc_qmsi_ss_device_ctrl(struct device *dev, uint32_t ctrl_command,
 				   void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return adc_qmsi_ss_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return adc_qmsi_ss_resume_device_from_suspend(dev);
 		}
-#endif
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = adc_qmsi_ss_get_power_state(dev);
 	}

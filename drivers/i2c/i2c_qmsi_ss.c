@@ -32,9 +32,7 @@ struct i2c_qmsi_ss_driver_data {
 	struct k_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uint32_t device_power_state;
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	qm_ss_i2c_context_t i2c_ctx;
-#endif
 #endif
 };
 
@@ -54,7 +52,6 @@ static uint32_t ss_i2c_qmsi_get_power_state(struct device *dev)
 	return drv_data->device_power_state;
 }
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 static int ss_i2c_suspend_device(struct device *dev)
 {
 	if (device_busy_check(dev)) {
@@ -82,7 +79,6 @@ static int ss_i2c_resume_device_from_suspend(struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 
 /*
 * Implements the driver control management functionality
@@ -92,13 +88,11 @@ static int ss_i2c_device_ctrl(struct device *dev, uint32_t ctrl_command,
 			      void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return ss_i2c_suspend_device(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return ss_i2c_resume_device_from_suspend(dev);
 		}
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = ss_i2c_qmsi_get_power_state(dev);
 	}
