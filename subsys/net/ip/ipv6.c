@@ -1349,11 +1349,12 @@ send_pending:
 					   cached_lladdr->len));
 
 		if (net_send_data(pending) < 0) {
-			net_nbuf_unref(pending);
 			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 		} else {
 			net_ipv6_nbr_data(nbr)->pending = NULL;
 		}
+
+		net_nbuf_unref(pending);
 	}
 
 	return true;
