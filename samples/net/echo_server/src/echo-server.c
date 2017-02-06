@@ -429,14 +429,16 @@ static void tcp_received(struct net_context *context,
 			 void *user_data)
 {
 	static char dbg[MAX_DBG_PRINT + 1];
-	sa_family_t family = net_nbuf_family(buf);
 	struct net_buf *reply_buf;
+	sa_family_t family;
 	int ret;
 
 	if (!buf) {
 		/* EOF condition */
 		return;
 	}
+
+	family = net_nbuf_family(buf);
 
 	snprintk(dbg, MAX_DBG_PRINT, "TCP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
