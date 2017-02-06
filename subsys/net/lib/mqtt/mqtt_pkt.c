@@ -299,14 +299,12 @@ int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
 
 	/* client_id				*/
 	pkt_size = INT_SIZE;
-	msg->client_id_len = mqtt_strlen(msg->client_id);
 	pkt_size += msg->client_id_len;
 
 	/* will flag - optional			*/
 	if (msg->will_flag) {
 		/* will topic			*/
 		pkt_size += INT_SIZE;
-		msg->will_topic_len = mqtt_strlen(msg->will_topic);
 		pkt_size += msg->will_topic_len;
 		/* will message - binary	*/
 		pkt_size += INT_SIZE;
@@ -316,7 +314,6 @@ int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
 	/* user_name - UTF-8 - optional		*/
 	if (msg->user_name) {
 		pkt_size += INT_SIZE;
-		msg->user_name_len = mqtt_strlen(msg->user_name);
 		pkt_size += msg->user_name_len;
 	}
 
@@ -850,7 +847,6 @@ int mqtt_pack_publish(uint8_t *buf, uint16_t *length, uint16_t size,
 		return -EINVAL;
 	}
 
-	msg->topic_len = mqtt_strlen(msg->topic);
 	/* Packet Identifier is only included if QoS > QoS0. See MQTT 3.3.2.2
 	 * So, payload size is:
 	 * topic length size + topic length + packet id + msg's size
