@@ -223,7 +223,7 @@ static inline int gpio_dw_config(struct device *port, int access_op,
 				 uint32_t pin, int flags)
 {
 	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
-		return -1;
+		return -EINVAL;
 	}
 
 	if (GPIO_ACCESS_BY_PIN == access_op) {

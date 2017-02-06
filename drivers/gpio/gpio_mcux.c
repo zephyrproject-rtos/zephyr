@@ -39,7 +39,7 @@ static int gpio_mcux_configure(struct device *dev,
 
 	/* Check for an invalid pin configuration */
 	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 
 	/* The flags contain options that require touching registers in the
