@@ -28,7 +28,14 @@ extern "C" {
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
 #endif
 
+#ifdef CONFIG_TICKLESS_KERNEL
+#define sys_clock_ticks_per_sec \
+		(1000000 / (CONFIG_TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS))
+extern int _sys_clock_always_on;
+extern void _enable_sys_clock(void);
+#else
 #define sys_clock_ticks_per_sec CONFIG_SYS_CLOCK_TICKS_PER_SEC
+#endif
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 extern int sys_clock_hw_cycles_per_sec;
@@ -100,7 +107,7 @@ extern int sys_clock_hw_cycles_per_tick;
  * @} end defgroup clock_apis
  */
 
-extern s64_t _sys_clock_tick_count;
+extern volatile u64_t _sys_clock_tick_count;
 
 /*
  * Number of ticks for x seconds. NOTE: With MSEC() or USEC(),

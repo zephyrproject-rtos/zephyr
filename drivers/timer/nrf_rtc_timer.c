@@ -9,6 +9,7 @@
 #include <system_timer.h>
 #include <drivers/clock_control/nrf5_clock_control.h>
 #include <arch/arm/cortex_m/cmsis.h>
+#include <sys_clock.h>
 
 /*
  * Convenience defines.
@@ -32,7 +33,6 @@
 				 CONFIG_SYS_CLOCK_TICKS_PER_SEC) * \
 				1000000000UL) / 30517578125UL) & RTC_MASK)
 
-extern s64_t _sys_clock_tick_count;
 extern s32_t _sys_idle_elapsed_ticks;
 
 /*

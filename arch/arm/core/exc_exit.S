@@ -24,6 +24,9 @@ _ASM_FILE_PROLOGUE
 GTEXT(_ExcExit)
 GTEXT(_IntExit)
 GDATA(_kernel)
+#ifdef CONFIG_TICKLESS_KERNEL
+GTEXT(_update_time_slice_before_swap)
+#endif
 
 /**
  *
@@ -55,6 +58,11 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 
 /* _IntExit falls through to _ExcExit (they are aliases of each other) */
 
+#ifdef CONFIG_TICKLESS_KERNEL
+    push {lr}
+    bl _update_time_slice_before_swap
+    pop {lr}
+#endif
 
 /**
  *

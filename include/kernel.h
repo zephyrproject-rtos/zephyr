@@ -864,7 +864,11 @@ static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 #endif
 
 /* added tick needed to account for tick in progress */
+#ifdef CONFIG_TICKLESS_KERNEL
+#define _TICK_ALIGN 0
+#else
 #define _TICK_ALIGN 1
+#endif
 
 static inline s64_t __ticks_to_ms(s64_t ticks)
 {
@@ -1130,6 +1134,44 @@ static inline void *k_timer_user_data_get(struct k_timer *timer)
  * @return Current uptime.
  */
 extern s64_t k_uptime_get(void);
+
+#ifdef CONFIG_TICKLESS_KERNEL
+/**
+ * @brief Enable clock always on in tickless kernel
+ *
+ * This routine enables keepng the clock running when
+ * there are no timer events programmed in tickless kernel
+ * scheduling. This is necessary if the clock is used to track
+ * passage of time.
+ *
+ * @retval prev_status Previous status of always on flag
+ */
+static inline int k_enable_sys_clock_always_on(void)
+{
+	int prev_status = _sys_clock_always_on;
+
+	_sys_clock_always_on = 1;
+	_enable_sys_clock();
+
+	return prev_status;
+}
+
+/**
+ * @brief Disable clock always on in tickless kernel
+ *
+ * This routine disables keepng the clock running when
+ * there are no timer events programmed in tickless kernel
+ * scheduling. To save power, this routine should be called
+ * immediately when clock is not used to track time.
+ */
+static inline void k_disable_sys_clock_always_on(void)
+{
+	_sys_clock_always_on = 0;
+}
+#else
+#define k_enable_sys_clock_always_on() do { } while ((0))
+#define k_disable_sys_clock_always_on() do { } while ((0))
+#endif
 
 /**
  * @brief Get system uptime (32-bit version).

@@ -390,6 +390,49 @@ void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
 	_time_slice_elapsed = 0;
 	_time_slice_prio_ceiling = prio;
 }
+
+#ifdef CONFIG_TICKLESS_KERNEL
+int _is_thread_time_slicing(struct k_thread *thread)
+{
+	/*
+	 * Time slicing is done on the thread if following conditions are met
+	 *
+	 * Time slice duration should be set > 0
+	 * Should not be the idle thread
+	 * Priority should be higher than time slice priority ceiling
+	 * There should be multiple threads active with same priority
+	 */
+
+	if (!(_time_slice_duration > 0) || (_is_idle_thread_ptr(thread))
+	    || _is_prio_higher(thread->base.prio, _time_slice_prio_ceiling)) {
+		return 0;
+	}
+
+	int q_index = _get_ready_q_q_index(thread->base.prio);
+	sys_dlist_t *q = &_ready_q.q[q_index];
+
+	return sys_dlist_has_multiple_nodes(q);
+}
+
+/* Must be called with interrupts locked */
+/* Should be called only immediately before a thread switch */
+void _update_time_slice_before_swap(void)
+{
+	if (!_is_thread_time_slicing(_get_next_ready_thread())) {
+		return;
+	}
+
+	/* Restart time slice count at new thread switch */
+	_time_slice_elapsed = 0;
+
+	u32_t remaining = _get_remaining_program_time();
+
+	if (!remaining || (_time_slice_duration < remaining)) {
+		_set_time(_time_slice_duration);
+	}
+}
+#endif
+
 #endif /* CONFIG_TIMESLICING */
 
 int k_is_preempt_thread(void)

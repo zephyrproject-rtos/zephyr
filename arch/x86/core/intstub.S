@@ -30,6 +30,9 @@
 	/* externs */
 
 	GTEXT(__swap)
+#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+	GTEXT(_update_time_slice_before_swap)
+#endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	GTEXT(_sys_power_save_idle_exit)
@@ -315,6 +318,9 @@ alreadyOnIntStack:
 	popl	%esi
 #endif
 
+#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+	call	_update_time_slice_before_swap
+#endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
 #ifdef CONFIG_X86_IAMCU
 	/* IAMCU first argument goes into a register, not the stack.
