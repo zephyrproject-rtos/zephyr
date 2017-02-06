@@ -151,7 +151,7 @@ html_title = "Zephyr Project Documentation"
 
 # This value determines the text for the permalink; it defaults to "¶".
 # Set it to None or the empty string to disable permalinks.
-html_add_permalinks = ""
+#html_add_permalinks = ""
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
