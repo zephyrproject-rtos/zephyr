@@ -78,7 +78,7 @@ static int gpio_pulpino_config(struct device *dev,
 		return -ENOTSUP;
 
 	if (pin > 31)
-		return -ENODEV;
+		return -EINVAL;
 
 	/* Configure pin as gpio */
 	PULP_PADMUX |= (PULP_PAD_GPIO << pin);
