@@ -32,6 +32,8 @@ config UART_CMSDK_APB_PORT0_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
+if !HAS_DTS
+
 config UART_CMSDK_APB_PORT0_IRQ_PRI
 	int "UART Interrupt Priority (Interrupt support)"
 	default 2
@@ -48,6 +50,7 @@ config UART_CMSDK_APB_PORT0_BAUD_RATE
 	help
 	  The baud rate for UART port to be set to at boot.
 
+endif # !HAS_DTS
 # ---------- Port 1 ----------
 
 config UART_CMSDK_APB_PORT1
@@ -63,6 +66,8 @@ config UART_CMSDK_APB_PORT1_NAME
 	help
 	  This is the device name for UART, and is included in the device
 	  struct.
+
+if !HAS_DTS
 
 config UART_CMSDK_APB_PORT1_IRQ_PRI
 	int "UART Interrupt Priority (Interrupt support)"
@@ -80,6 +85,7 @@ config UART_CMSDK_APB_PORT1_BAUD_RATE
 	help
 	  The baud rate for UART port to be set to at boot.
 
+endif # !HAS_DTS
 # ---------- Port 2 ----------
 
 config UART_CMSDK_APB_PORT2
@@ -95,6 +101,8 @@ config UART_CMSDK_APB_PORT2_NAME
 	help
 	  This is the device name for UART, and is included in the device
 	  struct.
+
+if !HAS_DTS
 
 config UART_CMSDK_APB_PORT2_IRQ_PRI
 	int "UART Interrupt Priority (Interrupt support)"
@@ -112,6 +120,7 @@ config UART_CMSDK_APB_PORT2_BAUD_RATE
 	help
 	  The baud rate for UART port to be set to at boot.
 
+endif # !HAS_DTS
 # ---------- Port 3 ----------
 
 config UART_CMSDK_APB_PORT3
@@ -127,6 +136,8 @@ config UART_CMSDK_APB_PORT3_NAME
 	help
 	  This is the device name for UART, and is included in the device
 	  struct.
+
+if !HAS_DTS
 
 config UART_CMSDK_APB_PORT3_IRQ_PRI
 	int "UART Interrupt Priority (Interrupt support)"
@@ -144,6 +155,7 @@ config UART_CMSDK_APB_PORT3_BAUD_RATE
 	help
 	  The baud rate for UART port to be set to at boot.
 
+endif # !HAS_DTS
 # ---------- Port 4 ----------
 
 config UART_CMSDK_APB_PORT4
@@ -159,6 +171,8 @@ config UART_CMSDK_APB_PORT4_NAME
 	help
 	  This is the device name for UART, and is included in the device
 	  struct.
+
+if !HAS_DTS
 
 config UART_CMSDK_APB_PORT4_IRQ_PRI
 	int "UART Interrupt Priority (Interrupt support)"
@@ -176,4 +190,5 @@ config UART_CMSDK_APB_PORT4_BAUD_RATE
 	help
 	  The baud rate for UART port to be set to at boot.
 
+endif # !HAS_DTS
 endif # UART_CMSDK_APB
