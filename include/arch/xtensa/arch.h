@@ -33,6 +33,7 @@ extern "C" {
 #define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
 #define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
 #define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
+#define _NANO_ERR_RESERVED_IRQ (4)	/* Reserved interrupt */
 
 /* Xtensa GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
@@ -120,6 +121,11 @@ extern void _irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 	_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
+
+
+FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
+					 const NANO_ESF *esf);
+
 #endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
 #ifdef __cplusplus
 }

@@ -3,20 +3,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <kernel.h>
+#include <arch/cpu.h>
+#include <kernel_structs.h>
+#include <inttypes.h>
 #include <kernel_arch_data.h>
-#ifdef CONFIG_PRINTK
 #include <misc/printk.h>
-#define PR_EXC(...) printk(__VA_ARGS__)
-#else
-#define PR_EXC(...)
-#endif /* CONFIG_PRINTK */
+#include <xtensa/specreg.h>
 
 const NANO_ESF _default_esf = {
 	{0xdeaddead}, /* sp */
 	0xdeaddead, /* pc */
 };
 
-FUNC_NORETURN void exit(int exit_code);
+/* Need to do this as a macro since regnum must be an immediate value */
+#define get_sreg(regnum_p) ({ \
+	unsigned int retval; \
+	__asm__ volatile( \
+	    "rsr %[retval], %[regnum]\n\t" \
+	    : [retval] "=r" (retval) \
+	    : [regnum] "i" (regnum_p)); \
+	retval; \
+	})
 
 /**
  *
@@ -40,25 +48,30 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
 	switch (reason) {
+	case _NANO_ERR_HW_EXCEPTION:
+	case _NANO_ERR_RESERVED_IRQ:
+		break;
+
 	case _NANO_ERR_INVALID_TASK_EXIT:
-		PR_EXC("***** Invalid Exit Software Error! *****\n");
+		printk("***** Invalid Exit Software Error! *****\n");
 		break;
 #if defined(CONFIG_STACK_CANARIES)
 	case _NANO_ERR_STACK_CHK_FAIL:
-		PR_EXC("***** Stack Check Fail! *****\n");
+		printk("***** Stack Check Fail! *****\n");
 		break;
 #endif /* CONFIG_STACK_CANARIES */
 	case _NANO_ERR_ALLOCATION_FAIL:
-		PR_EXC("**** Kernel Allocation Failure! ****\n");
+		printk("**** Kernel Allocation Failure! ****\n");
 		break;
 	default:
-		PR_EXC("**** Unknown Fatal Error %d! ****\n", reason);
+		printk("**** Unknown Fatal Error %d! ****\n", reason);
 		break;
 	}
-	PR_EXC("Current thread ID = %p\n"
+	printk("Current thread ID = %p\n"
 	       "Faulting instruction address = 0x%x\n",
 	       k_current_get(),
 	       pEsf->pc);
+
 	/*
 	 * Now that the error has been reported, call the user implemented
 	 * policy
@@ -66,57 +79,164 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	 * appropriate to the various errors are something the customer must
 	 * decide.
 	 */
-	/* TODO: call _SysFatalErrorHandler(reason, pEsf); */
-	exit(253);
+	_SysFatalErrorHandler(reason, pEsf);
 }
 
-void FatalErrorHandler(void)
+#ifdef CONFIG_PRINTK
+static char *cause_str(unsigned int cause_code)
 {
-	unsigned int tmpReg = 0;
-	unsigned int Esf[5];
+	switch (cause_code) {
+	case 0:
+		return "illegal instruction";
+	case 1:
+		return "syscall";
+	case 2:
+		return "instr fetch error";
+	case 3:
+		return "load/store error";
+	case 4:
+		return "level-1 interrupt";
+	case 5:
+		return "alloca";
+	case 6:
+		return "divide by zero";
+	case 8:
+		return "privileged";
+	case 9:
+		return "load/store alignment";
+	case 12:
+		return "instr PIF data error";
+	case 13:
+		return "load/store PIF data error";
+	case 14:
+		return "instr PIF addr error";
+	case 15:
+		return "load/store PIF addr error";
+	case 16:
+		return "instr TLB miss";
+	case 17:
+		return "instr TLB multi hit";
+	case 18:
+		return "instr fetch privilege";
+	case 20:
+		return "inst fetch prohibited";
+	case 24:
+		return "load/store TLB miss";
+	case 25:
+		return "load/store TLB multi hit";
+	case 26:
+		return "load/store privilege";
+	case 28:
+		return "load prohibited";
+	case 29:
+		return "store prohibited";
+	case 32: case 33: case 34: case 35: case 36: case 37: case 38: case 39:
+		return "coprocessor disabled";
+	default:
+		return "unknown/reserved";
+	}
+}
+#endif
 
-	__asm__ volatile("rsr %0, 177\n\t" : "=r"(tmpReg)); /* epc */
-	Esf[0] = tmpReg;
-	__asm__ volatile("rsr %0, 232\n\t" : "=r"(tmpReg)); /* exccause */
-	Esf[1] = tmpReg;
-	__asm__ volatile("rsr %0, 209\n\t" : "=r"(tmpReg)); /* excsave */
-	Esf[2] = tmpReg;
-	__asm__ volatile("rsr %0, 230\n\t" : "=r"(tmpReg)); /* ps */
-	Esf[3] = tmpReg;
-	__asm__ volatile("rsr %0, 238\n\t" : "=r"(tmpReg)); /* excvaddr */
-	Esf[4] = tmpReg;
-	PR_EXC("Error\nEPC      = 0x%x\n"
-	       "EXCCAUSE = 0x%x\n"
-	       "EXCSAVE  = 0x%x\n"
-	       "PS       = 0x%x\n"
-	       "EXCVADDR = 0x%x\n",
-		   Esf[0], Esf[1], Esf[2], Esf[3], Esf[4]);
-	exit(255);
+static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
+{
+	int mask;
+
+	mask = (1 << num_bits) - 1;
+	val = val >> offset;
+	return val & mask;
 }
 
-void ReservedInterruptHandler(unsigned int intNo)
+static void dump_exc_state(void)
 {
-	unsigned int tmpReg = 0;
-	unsigned int Esf[5];
+#ifdef CONFIG_PRINTK
+	unsigned int cause, ps;
 
-	__asm__ volatile("rsr %0, 177\n\t" : "=r"(tmpReg)); /* epc */
-	Esf[0] = tmpReg;
-	__asm__ volatile("rsr %0, 232\n\t" : "=r"(tmpReg)); /* exccause */
-	Esf[1] = tmpReg;
-	__asm__ volatile("rsr %0, 209\n\t" : "=r"(tmpReg)); /* excsave */
-	Esf[2] = tmpReg;
-	__asm__ volatile("rsr %0, 230\n\t" : "=r"(tmpReg)); /* ps */
-	Esf[3] = tmpReg;
-	__asm__ volatile("rsr %0, 228\n\t" : "=r"(tmpReg)); /* intenable */
-	Esf[4] = tmpReg;
-	PR_EXC("Error, unhandled interrupt\n"
-	       "EPC       = 0x%x\n"
-	       "EXCCAUSE  = 0x%x\n"
-	       "EXCSAVE   = 0x%x\n"
-	       "PS        = 0x%x\n"
-	       "INTENABLE = 0x%x\n"
-	       "INTERRUPT = 0x%x\n",
-	       Esf[0], Esf[1], Esf[2], Esf[3], Esf[4], (1 << intNo));
-	exit(254);
+	cause = get_sreg(EXCCAUSE);
+	ps = get_sreg(PS);
+
+	printk("Exception cause %d (%s):\n"
+	       "  EPC1     : 0x%08x EXCSAVE1 : 0x%08x EXCVADDR : 0x%08x\n",
+	       cause, cause_str(cause), get_sreg(EPC_1),
+	       get_sreg(EXCSAVE_1), get_sreg(EXCVADDR));
+
+	printk("Program state (PS):\n"
+	       "  INTLEVEL : %02d EXCM    : %d UM  : %d RING : %d WOE : %d\n",
+	       get_bits(0, 4, ps), get_bits(4, 1, ps), get_bits(5, 1, ps),
+	       get_bits(6, 2, ps), get_bits(18, 1, ps));
+#ifndef __XTENSA_CALL0_ABI__
+	printk("  OWB      : %02d CALLINC : %d\n",
+	       get_bits(8, 4, ps), get_bits(16, 2, ps));
+#endif
+#endif /* CONFIG_PRINTK */
+}
+
+
+FUNC_NORETURN void FatalErrorHandler(void)
+{
+	printk("*** Unhandled exception ****\n");
+	dump_exc_state();
+	_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
+}
+
+FUNC_NORETURN void ReservedInterruptHandler(unsigned int intNo)
+{
+	printk("*** Reserved Interrupt ***\n");
+	dump_exc_state();
+	printk("INTENABLE = 0x%x\n"
+	       "INTERRUPT = 0x%x (%d)\n",
+	       get_sreg(INTENABLE), (1 << intNo), intNo);
+	_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
+}
+
+/* Implemented in Xtensa HAL */
+extern FUNC_NORETURN void exit(int exit_code);
+
+/**
+ *
+ * @brief Fatal error handler
+ *
+ * This routine implements the corrective action to be taken when the system
+ * detects a fatal error.
+ *
+ * This sample implementation attempts to abort the current thread and allow
+ * the system to continue executing, which may permit the system to continue
+ * functioning with degraded capabilities.
+ *
+ * System designers may wish to enhance or substitute this sample
+ * implementation to take other actions, such as logging error (or debug)
+ * information to a persistent repository and/or rebooting the system.
+ *
+ * @param reason the fatal error reason
+ * @param pEsf pointer to exception stack frame
+ *
+ * @return N/A
+ */
+FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
+					 const NANO_ESF *pEsf)
+{
+	ARG_UNUSED(reason);
+	ARG_UNUSED(pEsf);
+
+#if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
+	if (k_is_in_isr() || _is_thread_essential()) {
+		printk("Fatal fault in %s! Spinning...\n",
+		       k_is_in_isr() ? "ISR" : "essential thread");
+#ifdef XT_SIMULATOR
+		exit(255 - reason);
+#else
+		for (;;)
+			; /* spin forever */
+#endif
+	}
+	printk("Fatal fault in thread %p! Aborting.\n", _current);
+	k_thread_abort(_current);
+#else
+	for (;;) {
+		k_cpu_idle();
+	}
+#endif
+
+	CODE_UNREACHABLE;
 }
 
