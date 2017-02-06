@@ -154,6 +154,7 @@ ld_flags       = $(LDFLAGS) $(ldflags-y)
 
 dtc_cpp_flags  = -Wp,-MD,$(depfile).pre.tmp -nostdinc                    \
 		 $(ZEPHYRINCLUDE)                                        \
+		 -I$(srctree)/arch/$(ARCH)/soc				 \
 		 -I$(srctree)/dts/common				 \
 		 -I$(srctree)/drivers/of/testcase-data                   \
 		 -undef -D__DTS__

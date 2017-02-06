@@ -1,0 +1,54 @@
+/dts-v1/;
+
+#include "armv7-m.dtsi"
+#include "arm/beetle/soc_irq.h"
+
+/ {
+	compatible = "arm,beetle";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m3";
+		};
+	};
+
+	sram0: memory {
+		compatible = "sram";
+		reg = <0x20000000 0x20000>;
+	};
+
+	flash0: flash {
+		reg = <0 0x40000>;
+	};
+
+	soc {
+		uart0: uart@40004000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40004000 0x14>;
+			interrupts = <IRQ_UART0>;
+			zephyr,irq-prio = <3>;
+			baud-rate = <115200>;
+		};
+
+		uart1: uart@40005000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40005000 0x14>;
+			interrupts = <IRQ_UART1>;
+			zephyr,irq-prio = <3>;
+			baud-rate = <115200>;
+		};
+	};
+};
+
+&nvic {
+	num-irq-prio-bits = <3>;
+	num-irqs = <45>;
+};

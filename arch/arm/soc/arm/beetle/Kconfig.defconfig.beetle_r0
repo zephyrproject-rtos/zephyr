@@ -11,6 +11,7 @@ if SOC_BEETLE_R0
 config SOC
 	default beetle_r0
 
+if !HAS_DTS
 #
 # Beetle R0 has one SRAM bank:
 #   128K @ 0x20000000
@@ -23,5 +24,7 @@ config SRAM_SIZE
 #
 config FLASH_SIZE
 	default 256
+
+endif # !HAS_DTS
 
 endif # SOC_BEETLE_R0
