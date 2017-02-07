@@ -44,7 +44,7 @@ typedef struct _slist sys_slist_t;
  *         <user code>
  *     }
  *
- * @param __sl A pointer on a sys_list_t to iterate on
+ * @param __sl A pointer on a sys_slist_t to iterate on
  * @param __sn A sys_snode_t pointer to peek each node of the list
  */
 #define SYS_SLIST_FOR_EACH_NODE(__sl, __sn)				\
@@ -61,7 +61,7 @@ typedef struct _slist sys_slist_t;
  *         <user code>
  *     }
  *
- * @param __sl A pointer on a sys_list_t to iterate on
+ * @param __sl A pointer on a sys_slist_t to iterate on
  * @param __sn A sys_snode_t pointer to peek each node of the list
  * @param __sns A sys_snode_t pointer for the loop to run safely
  */
@@ -70,6 +70,74 @@ typedef struct _slist sys_slist_t;
 		     __sns = sys_slist_peek_next(__sn);			\
 	     __sn; __sn = __sns,					\
 		     __sns = sys_slist_peek_next(__sn))
+
+/*
+ * @brief Provide the primitive to resolve the container of a list node
+ * Note: it is safe to use with NULL pointer nodes
+ *
+ * @param __ln A pointer on a sys_node_t to get its container
+ * @param __cn Container struct type pointer
+ * @param __n The field name of sys_node_t within the container struct
+ */
+#define SYS_SLIST_CONTAINER(__ln, __cn, __n) \
+	(__ln ? CONTAINER_OF(__ln, __typeof__(*__cn), __n) : NULL)
+/*
+ * @brief Provide the primitive to peek container of the list head
+ *
+ * @param __sl A pointer on a sys_slist_t to peek
+ * @param __cn Container struct type pointer
+ * @param __n The field name of sys_node_t within the container struct
+ */
+#define SYS_SLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n) \
+	SYS_SLIST_CONTAINER(sys_slist_peek_head(__sl), __cn, __n)
+
+/*
+ * @brief Provide the primitive to peek the next container
+ *
+ * @param __cn Container struct type pointer
+ * @param __n The field name of sys_node_t within the container struct
+ */
+
+#define SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n) \
+	SYS_SLIST_CONTAINER(sys_slist_peek_next(&(__cn->__n)), __cn, __n)
+
+/**
+ * @brief Provide the primitive to iterate on a list under a container
+ * Note: the loop is unsafe and thus __cn should not be dettached
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     SYS_SLIST_FOR_EACH_CONTAINER(l, c, n) {
+ *         <user code>
+ *     }
+ *
+ * @param __sl A pointer on a sys_slist_t to iterate on
+ * @param __cn A pointer to peek each entry of the list
+ * @param __n The field name of sys_node_t within the container struct
+ */
+#define SYS_SLIST_FOR_EACH_CONTAINER(__sl, __cn, __n)			\
+	for (__cn = SYS_SLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n); __cn; \
+	     __cn = SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n))
+
+/**
+ * @brief Provide the primitive to safely iterate on a list under a container
+ * Note: __cn can be dettached, it will not break the loop.
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     SYS_SLIST_FOR_EACH_NODE_SAFE(l, c, cn, n) {
+ *         <user code>
+ *     }
+ *
+ * @param __sl A pointer on a sys_slist_t to iterate on
+ * @param __cn A pointer to peek each entry of the list
+ * @param __cns A pointer for the loop to run safely
+ * @param __n The field name of sys_node_t within the container struct
+ */
+#define SYS_SLIST_FOR_EACH_CONTAINER_SAFE(__sl, __cn, __cns, __n)	\
+	for (__cn = SYS_SLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n),	\
+	     __cns = SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n); __cn;	\
+	     __cn = __cns, __cns = SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n))
 
 /**
  * @brief Initialize a list
