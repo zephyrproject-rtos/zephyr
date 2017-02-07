@@ -39,38 +39,18 @@ static void _deep_sleep(enum power_states state)
 }
 #endif
 
-#define SLEEP_MODE_CORE_OFF (0x0)
-#define SLEEP_MODE_CORE_TIMERS_RTC_OFF (0x60)
-#define ENABLE_INTERRUPTS (BIT(4) | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL))
-
-#define ARC_SS1 (SLEEP_MODE_CORE_OFF | ENABLE_INTERRUPTS)
-#define ARC_SS2 (SLEEP_MODE_CORE_TIMERS_RTC_OFF | ENABLE_INTERRUPTS)
-
-/* QMSI does not set the interrupt enable bit in the sleep operand.
- * For the time being, implement this in Zephyr.
- * This will be removed once QMSI is fixed.
- */
-static void enter_arc_state(int mode)
-{
-	/* Enter SSx */
-	__asm__ volatile("sleep %0"
-			: /* No output operands. */
-			: /* Input operands. */
-			"r"(mode) : "memory", "cc");
-}
-
 void _sys_soc_set_power_state(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
 		qm_ss_power_soc_lpss_enable();
-		enter_arc_state(ARC_SS2);
+		qm_ss_power_cpu_ss2();
 		break;
 	case SYS_POWER_STATE_CPU_LPS_1:
-		enter_arc_state(ARC_SS2);
+		qm_ss_power_cpu_ss2();
 		break;
 	case SYS_POWER_STATE_CPU_LPS_2:
-		enter_arc_state(ARC_SS1);
+		qm_ss_power_cpu_ss1(QM_SS_POWER_CPU_SS1_TIMER_ON);
 		break;
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 	case SYS_POWER_STATE_DEEP_SLEEP:
