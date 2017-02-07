@@ -321,48 +321,8 @@ static void switch_to_main_thread(void)
 }
 
 #ifdef CONFIG_STACK_CANARIES
-/**
- *
- * @brief Initialize the kernel's stack canary
- *
- * This macro initializes the kernel's stack canary global variable,
- * __stack_chk_guard, with a random value.
- *
- * INTERNAL
- * Depending upon the compiler, modifying __stack_chk_guard directly at runtime
- * may generate a build error.  In-line assembly is used as a workaround.
- */
-
 extern void *__stack_chk_guard;
-
-#if defined(CONFIG_X86)
-#define _MOVE_INSTR "movl %1, %0"
-#define _MOVE_MEM "=m"
-#elif defined(CONFIG_ARM)
-#define _MOVE_INSTR "str %1, %0"
-#define _MOVE_MEM "=m"
-#elif defined(CONFIG_ARC)
-#define _MOVE_INSTR "st %1, %0"
-#define _MOVE_MEM "=m"
-#elif defined(CONFIG_RISCV32)
-#define _MOVE_INSTR "sw %1, 0x00(%0)"
-#define _MOVE_MEM "=r"
-#else
-#error "Unknown Architecture type"
-#endif /* CONFIG_X86 */
-
-#define STACK_CANARY_INIT()                                \
-	do {                                               \
-		register void *tmp;                        \
-		tmp = (void *)sys_rand32_get();            \
-		__asm__ volatile(_MOVE_INSTR ";\n\t" \
-				 : _MOVE_MEM(__stack_chk_guard) \
-				 : "r"(tmp));              \
-	} while (0)
-
-#else /* !CONFIG_STACK_CANARIES */
-#define STACK_CANARY_INIT()
-#endif /* CONFIG_STACK_CANARIES */
+#endif
 
 /**
  *
@@ -401,8 +361,9 @@ FUNC_NORETURN void _Cstart(void)
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
 	/* initialize stack canaries */
-
-	STACK_CANARY_INIT();
+#ifdef CONFIG_STACK_CANARIES
+	__stack_chk_guard = (void *)sys_rand32_get();
+#endif
 
 	/* display boot banner */
 
