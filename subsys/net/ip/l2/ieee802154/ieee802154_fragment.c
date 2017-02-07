@@ -78,6 +78,28 @@ static struct frag_cache cache[REASS_CACHE_SIZE];
  *  +-+-+-+-+-+-+-+-+
  */
 
+static inline struct net_buf *prepare_new_fragment(struct net_buf *buf,
+						   uint8_t offset)
+{
+	struct net_buf *frag;
+
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
+	if (!frag) {
+		return NULL;
+	}
+
+	/* Reserve space for fragmentation header */
+	if (!offset) {
+		net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
+	} else {
+		net_buf_add(frag, NET_6LO_FRAGN_HDR_LEN);
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	return frag;
+}
+
 static inline void set_datagram_size(uint8_t *ptr, uint16_t size)
 {
 	ptr[0] |= ((size & 0x7FF) >> 8);
@@ -126,28 +148,43 @@ static inline uint8_t calc_max_payload(struct net_buf *buf,
 
 static inline uint8_t move_frag_data(struct net_buf *frag,
 				     struct net_buf *next,
-				     uint8_t max, uint8_t moved,
-				     uint8_t offset,
-				     int hdr_diff)
+				     uint8_t max,
+				     bool first,
+				     int hdr_diff,
+				     uint8_t *room_left)
 {
-	uint8_t remaining = max - moved;
+	uint8_t room;
 	uint8_t move;
+	uint8_t occupied;
 
-	if (!offset) {
-		remaining -= hdr_diff;
+	/* First fragment */
+	if (first) {
+		occupied = frag->len - NET_6LO_FRAG1_HDR_LEN;
+	} else {
+		occupied = frag->len - NET_6LO_FRAGN_HDR_LEN;
 	}
 
-	/* Calculate remaining space for data to move */
-	move = next->len > remaining ? remaining : next->len;
+	/* Remaining room for data */
+	room = max - occupied;
+
+	if (first) {
+		room -= hdr_diff;
+	}
+
+	/* Calculate remaining room space for data to move */
+	move = next->len > room ? room : next->len;
 
 	memmove(frag->data + frag->len, next->data, move);
 
 	net_buf_add(frag, move);
 
+	/* Room left in current fragment */
+	*room_left = room - move;
+
 	return move;
 }
 
-static inline uint8_t compact_frag(struct net_buf *frag, uint8_t moved)
+static inline void compact_frag(struct net_buf *frag, uint8_t moved)
 {
 	uint8_t remaining = frag->len - moved;
 
@@ -155,13 +192,10 @@ static inline uint8_t compact_frag(struct net_buf *frag, uint8_t moved)
 	 * (leave space for header).
 	 */
 	if (remaining) {
-		memmove(frag->data + NET_6LO_FRAGN_HDR_LEN,
-			frag->data + moved, remaining);
+		memmove(frag->data, frag->data + moved, remaining);
 	}
 
-	frag->len = NET_6LO_FRAGN_HDR_LEN + remaining;
-
-	return remaining;
+	frag->len = remaining;
 }
 
 /**
@@ -194,9 +228,10 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 	uint16_t processed;
 	uint16_t offset;
 	uint16_t size;
-	uint8_t moved;
+	uint8_t room;
 	uint8_t move;
 	uint8_t max;
+	bool first;
 
 	if (!buf || !buf->frags) {
 		return false;
@@ -207,65 +242,55 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 		return true;
 	}
 
-	datagram_tag++;
-
 	/* Datagram_size: total length before compression */
 	size = net_buf_frags_len(buf) + hdr_diff;
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
-	if (!frag) {
-		return false;
-	}
-
-	/* Reserve space for fragmentation header */
-	net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
-	net_buf_frag_insert(buf, frag);
-
+	room = 0;
 	offset = 0;
-	moved = 0;
 	processed = 0;
-	next = frag->frags;
+	first = true;
+	datagram_tag++;
+
+	next = buf->frags;
+	buf->frags = NULL;
 
 	/* First fragment has compressed header, but SIZE and OFFSET
 	 * values in fragmentation header are based on uncompressed
 	 * IP packet.
 	 */
 	while (1) {
-		/* Set fragmentation header in the beginning */
-		set_up_frag_hdr(frag, size, offset);
-
-		/* Calculate max payload in multiples of 8 bytes */
-		max = calc_max_payload(buf, frag, offset);
-
-		/* Move data from next fragment to current fragment */
-		move = move_frag_data(frag, next, max, moved, offset,
-				      hdr_diff);
-
-		/* Compact the next fragment, returns how much data moved */
-		moved = compact_frag(next, move);
-
-		/* Calculate how much data is processed */
-		processed += max;
-
-		offset = processed >> 3;
-
-		/** If next fragment is last and data already moved to previous
-		 *  fragment, then delete this fragment, if data is left insert
-		 *  header.
-		 */
-		if (!next->frags) {
-			if (next->len == NET_6LO_FRAGN_HDR_LEN) {
-				net_buf_frag_del(frag, next);
-			} else {
-				set_up_frag_hdr(next, size, offset);
+		if (!room) {
+			/* Prepare new fragment based on offset */
+			frag = prepare_new_fragment(buf, offset);
+			if (!frag) {
+				return false;
 			}
 
-			break;
+			/* Set fragmentation header in the beginning */
+			set_up_frag_hdr(frag, size, offset);
+
+			/* Calculate max payload in multiples of 8 bytes */
+			max = calc_max_payload(buf, frag, offset);
+
+			/* Calculate how much data is processed */
+			processed += max;
+
+			offset = processed >> 3;
 		}
 
-		/* Repeat the steps */
-		frag = next;
-		next = next->frags;
+		/* Move data from next fragment to current fragment */
+		move = move_frag_data(frag, next, max, first, hdr_diff, &room);
+		first = false;
+
+		/* Compact the next fragment */
+		compact_frag(next, move);
+
+		if (!next->len) {
+			next = net_buf_frag_del(NULL, next);
+			if (!next) {
+				break;
+			}
+		}
 	}
 
 	return true;
