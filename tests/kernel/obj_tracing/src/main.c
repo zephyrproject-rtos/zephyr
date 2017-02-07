@@ -1,0 +1,49 @@
+/* phil_task.c - dining philosophers */
+
+/*
+ * Copyright (c) 2011-2016 Wind River Systems, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr.h>
+#include "phil.h"
+
+#define STSIZE 1024
+
+extern void phil_entry(void);
+extern void object_monitor(void);
+
+char __stack phil_stack[N_PHILOSOPHERS][STSIZE];
+char __stack mon_stack[STSIZE];
+struct k_sem forks[N_PHILOSOPHERS];
+
+/**
+ *
+ * @brief Nanokernel entry point
+ *
+ */
+
+int main(void)
+{
+	int i;
+
+	for (i = 0; i < N_PHILOSOPHERS; i++) {
+		k_sem_init(&forks[i], 0, 1);
+		k_sem_give(&forks[i]);
+	}
+
+	/* create philosopher threads */
+	for (i = 0; i < N_PHILOSOPHERS; i++) {
+		k_thread_spawn(&phil_stack[i][0], STSIZE,
+		       (k_thread_entry_t)phil_entry, NULL, NULL, NULL,
+		       K_PRIO_COOP(6), 0, K_NO_WAIT);
+	}
+
+	/* create object counter monitor thread */
+	k_thread_spawn(mon_stack, STSIZE,
+		       (k_thread_entry_t)object_monitor, NULL, NULL, NULL,
+		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+
+	return 0;
+}
