@@ -118,7 +118,7 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
  *
  *  @return Pointer to the net_buf buffer
  */
-struct net_buf *bt_sdp_create_pdu(void)
+static struct net_buf *bt_sdp_create_pdu(void)
 {
 	struct net_buf *buf;
 
