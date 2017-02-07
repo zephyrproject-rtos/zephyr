@@ -789,16 +789,10 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 
 			/* Is there any more space in this fragment */
 			if (net_buf_tailroom(buf)) {
-				struct net_buf *frag;
-
 				/* There is. This also means that the next
 				 * fragment is empty as otherwise we could
-				 * not have copied all data.
-				 */
-				frag = buf->frags;
-
-				/* Remove next fragment as there is no
-				 * data in it any more.
+				 * not have copied all data. Remove next
+				 * fragment as there is no data in it any more.
 				 */
 				net_buf_frag_del(buf, buf->frags);
 
