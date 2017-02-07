@@ -48,7 +48,7 @@ typedef struct _dnode sys_dnode_t;
  *         <user code>
  *     }
  *
- * @param __dl A pointer on a sys_list_t to iterate on
+ * @param __dl A pointer on a sys_dlist_t to iterate on
  * @param __dn A sys_dnode_t pointer to peek each node of the list
  */
 #define SYS_DLIST_FOR_EACH_NODE(__dl, __dn)				\
@@ -65,7 +65,7 @@ typedef struct _dnode sys_dnode_t;
  *         <user code>
  *     }
  *
- * @param __dl A pointer on a sys_list_t to iterate on
+ * @param __dl A pointer on a sys_dlist_t to iterate on
  * @param __dn A sys_dnode_t pointer to peek each node of the list
  * @param __dns A sys_dnode_t pointer for the loop to run safely
  */
@@ -74,6 +74,75 @@ typedef struct _dnode sys_dnode_t;
 		     __dns = sys_dlist_peek_next(__dl, __dn);  		\
 	     __dn; __dn = __dns,					\
 		     __dns = sys_dlist_peek_next(__dl, __dn))
+
+/*
+ * @brief Provide the primitive to resolve the container of a list node
+ * Note: it is safe to use with NULL pointer nodes
+ *
+ * @param __dn A pointer on a sys_dnode_t to get its container
+ * @param __cn Container struct type pointer
+ * @param __n The field name of sys_dnode_t within the container struct
+ */
+#define SYS_DLIST_CONTAINER(__dn, __cn, __n) \
+	(__dn ? CONTAINER_OF(__dn, __typeof__(*__cn), __n) : NULL)
+/*
+ * @brief Provide the primitive to peek container of the list head
+ *
+ * @param __dl A pointer on a sys_dlist_t to peek
+ * @param __cn Container struct type pointer
+ * @param __n The field name of sys_dnode_t within the container struct
+ */
+#define SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n) \
+	SYS_DLIST_CONTAINER(sys_dlist_peek_head(__dl), __cn, __n)
+
+/*
+ * @brief Provide the primitive to peek the next container
+ *
+ * @param __dl A pointer on a sys_dlist_t to peek
+ * @param __cn Container struct type pointer
+ * @param __n The field name of sys_dnode_t within the container struct
+ */
+#define SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n) \
+	SYS_DLIST_CONTAINER(sys_dlist_peek_next(__dl, &(__cn->__n)), __cn, __n)
+
+/**
+ * @brief Provide the primitive to iterate on a list under a container
+ * Note: the loop is unsafe and thus __cn should not be dettached
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     SYS_DLIST_FOR_EACH_CONTAINER(l, c, n) {
+ *         <user code>
+ *     }
+ *
+ * @param __dl A pointer on a sys_dlist_t to iterate on
+ * @param __cn A pointer to peek each entry of the list
+ * @param __n The field name of sys_dnode_t within the container struct
+ */
+#define SYS_DLIST_FOR_EACH_CONTAINER(__dl, __cn, __n)			\
+	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n); __cn; \
+	     __cn = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n))
+
+/**
+ * @brief Provide the primitive to safely iterate on a list under a container
+ * Note: __cn can be dettached, it will not break the loop.
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     SYS_DLIST_FOR_EACH_CONTAINER_SAFE(l, c, cn, n) {
+ *         <user code>
+ *     }
+ *
+ * @param __dl A pointer on a sys_dlist_t to iterate on
+ * @param __cn A pointer to peek each entry of the list
+ * @param __cns A pointer for the loop to run safely
+ * @param __n The field name of sys_dnode_t within the container struct
+ */
+#define SYS_DLIST_FOR_EACH_CONTAINER_SAFE(__dl, __cn, __cns, __n)	\
+	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n),	\
+	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n); __cn; \
+	     __cn = __cns,						\
+	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n))
 
 /**
  * @brief initialize list
