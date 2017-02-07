@@ -666,7 +666,7 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	return L2CAP_CONN_SECURITY_REJECT;
 }
 
-static int l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
+static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 				  uint16_t dcid, uint8_t ident, uint16_t result)
 {
 	struct net_buf *buf;
@@ -692,25 +692,20 @@ static int l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
-
-	return 0;
 }
 
 static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 {
-	int err;
-
 	/* Send response to connection request only when in acceptor role */
 	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
 		return -ESRCH;
 	}
 
-	err = l2cap_br_send_conn_rsp(chan->conn, BR_CHAN(chan)->tx.cid,
-				     BR_CHAN(chan)->rx.cid, chan->ident,
-				     result);
+	l2cap_br_send_conn_rsp(chan->conn, BR_CHAN(chan)->tx.cid,
+			       BR_CHAN(chan)->rx.cid, chan->ident, result);
 	chan->ident = 0;
 
-	return err;
+	return 0;
 }
 
 static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
