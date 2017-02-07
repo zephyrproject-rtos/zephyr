@@ -171,8 +171,12 @@ static uint32_t aonpt_qmsi_get_power_state(struct device *dev)
 }
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static qm_aonc_context_t aonc_ctx;
+
 static int aonpt_suspend_device(struct device *dev)
 {
+	qm_aonpt_save_context(QM_AONC_0, &aonc_ctx);
+
 	aonpt_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 
 	return 0;
@@ -180,20 +184,7 @@ static int aonpt_suspend_device(struct device *dev)
 
 static int aonpt_resume_device_from_suspend(struct device *dev)
 {
-	uint32_t int_aonpt_mask;
-
-	/* The interrupt router registers are sticky and retain their
-	 * values across warm resets, so we don't need to save them.
-	 * But for wake capable peripherals, if their interrupts are
-	 * configured to be edge sensitive, the wake event will be lost
-	 * by the time the interrupt controller is reconfigured, while
-	 * the interrupt is still pending. By masking and unmasking again
-	 * the corresponding routing register, the interrupt is forwared
-	 * to the core and the ISR will be serviced as expected.
-	 */
-	int_aonpt_mask = QM_INTERRUPT_ROUTER->aonpt_0_int_mask;
-	QM_INTERRUPT_ROUTER->aonpt_0_int_mask = 0xFFFFFFFF;
-	QM_INTERRUPT_ROUTER->aonpt_0_int_mask = int_aonpt_mask;
+	qm_aonpt_restore_context(QM_AONC_0, &aonc_ctx);
 
 	aonpt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
