@@ -1,7 +1,7 @@
 /*  Minimal DTLS client.
  *  (Meant to be used with config-threadnet.h)
  *
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
+ *  Copyright (C) 2006-2017, ARM Limited, All Rights Reserved
  *
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -132,20 +132,13 @@ static int entropy_source(void *data, unsigned char *output, size_t len,
 			  size_t *olen)
 {
 	uint32_t seed;
-	char *ptr = data;
 
 	seed = sys_rand32_get();
-
-	if (!seed) {
-		seed = 7;
+	if (len > sizeof(seed)) {
+		len = sizeof(seed);
 	}
 
-	for (int i = 0; i < len; i++) {
-		seed ^= seed << 13;
-		seed ^= seed >> 17;
-		seed ^= seed << 5;
-		*ptr++ = (char)seed;
-	}
+	memcpy(output, &seed, len);
 
 	*olen = len;
 	return 0;
