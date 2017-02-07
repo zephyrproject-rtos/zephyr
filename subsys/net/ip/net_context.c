@@ -422,7 +422,9 @@ int net_context_put(struct net_context *context)
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		if (!context->tcp->fin_rcvd) {
+		if ((net_context_get_state(context) == NET_CONTEXT_CONNECTED ||
+		     net_context_get_state(context) == NET_CONTEXT_LISTENING)
+		    && !context->tcp->fin_rcvd) {
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet");
 			queue_fin(context);
