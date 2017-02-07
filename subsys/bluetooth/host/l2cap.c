@@ -427,11 +427,6 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CONN_REQ, ch->chan.ident,
 				      sizeof(*req));
-	if (!buf) {
-		ch->chan.ident = 0;
-		BT_ERR("Unable to send L2CAP connection request");
-		return -ENOMEM;
-	}
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->psm = sys_cpu_to_le16(ch->chan.psm);
@@ -508,9 +503,6 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_CMD_REJECT, ident,
 				      sizeof(*rej) + data_len);
-	if (!buf) {
-		return;
-	}
 
 	rej = net_buf_add(buf, sizeof(*rej));
 	rej->reason = sys_cpu_to_le16(reason);
@@ -566,9 +558,6 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_CONN_PARAM_RSP, ident,
 				      sizeof(*rsp));
-	if (!buf) {
-		return;
-	}
 
 	accepted = le_param_req(conn, &param);
 
@@ -734,9 +723,6 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CONN_RSP, ident,
 				      sizeof(*rsp));
-	if (!buf) {
-		return;
-	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	memset(rsp, 0, sizeof(*rsp));
@@ -878,9 +864,6 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_RSP, ident,
 				      sizeof(*rsp));
-	if (!buf) {
-		return;
-	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
@@ -1157,10 +1140,6 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan)
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CREDITS, get_ident(),
 				      sizeof(*ev));
-	if (!buf) {
-		BT_ERR("Unable to send credits");
-		return;
-	}
 
 	ev = net_buf_add(buf, sizeof(*ev));
 	ev->cid = sys_cpu_to_le16(chan->rx.cid);
@@ -1339,9 +1318,6 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn,
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_CONN_PARAM_REQ, get_ident(),
 				      sizeof(*req));
-	if (!buf) {
-		return -ENOBUFS;
-	}
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->min_interval = sys_cpu_to_le16(param->interval_min);
@@ -1512,11 +1488,6 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_REQ, ch->chan.ident,
 				      sizeof(*req));
-	if (!buf) {
-		ch->chan.ident = 0;
-		BT_ERR("Unable to send L2CP disconnect request");
-		return -ENOMEM;
-	}
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->dcid = sys_cpu_to_le16(ch->tx.cid);
