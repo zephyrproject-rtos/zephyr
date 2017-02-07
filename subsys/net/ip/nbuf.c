@@ -808,6 +808,8 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 					"First element cannot be deleted!");
 
 				net_buf_frag_del(prev, buf);
+
+				break;
 			}
 		}
 
