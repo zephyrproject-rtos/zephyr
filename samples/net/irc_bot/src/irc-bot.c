@@ -312,7 +312,7 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 
 		if (cmd_len + len > sizeof(cmd_buf)) {
 			/* overrun cmd_buf - bail out */
-			NET_ERR("CMD BUFFER OVERRUN!! %lu > %lu",
+			NET_ERR("CMD BUFFER OVERRUN!! %zu > %zu",
 				cmd_len + len,
 				sizeof(cmd_buf));
 			break;
