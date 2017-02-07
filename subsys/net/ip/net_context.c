@@ -480,7 +480,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		}
 
 		if (!iface) {
-			NET_DBG("Cannot bind to %s",
+			NET_ERR("Cannot bind to %s",
 				net_sprint_ipv6_addr(&addr6->sin6_addr));
 
 			return -EADDRNOTAVAIL;
@@ -549,7 +549,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		}
 
 		if (!iface) {
-			NET_DBG("Cannot bind to %s",
+			NET_ERR("Cannot bind to %s",
 				net_sprint_ipv4_addr(&addr4->sin_addr));
 
 			return -EADDRNOTAVAIL;
@@ -782,7 +782,7 @@ NET_CONN_CB(tcp_established)
 	NET_ASSERT(context && context->tcp);
 
 	if (net_tcp_get_state(context->tcp) != NET_TCP_ESTABLISHED) {
-		NET_DBG("Context %p in wrong state %d",
+		NET_ERR("Context %p in wrong state %d",
 			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}
