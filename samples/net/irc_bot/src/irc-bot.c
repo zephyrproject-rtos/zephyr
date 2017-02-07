@@ -151,7 +151,7 @@ transmit(struct net_context *ctx, char buffer[], size_t len)
 		return -ENOMEM;
 	}
 
-	if (!net_nbuf_append(send_buf, len, buffer), K_FOREVER) {
+	if (!net_nbuf_append(send_buf, len, buffer, K_FOREVER)) {
 		return -EINVAL;
 	}
 
