@@ -24,8 +24,14 @@ endif
 
 ifeq (${CONFIG_XTENSA},y)
 CROSS_COMPILE=${XTENSA_TOOLS_PATH}/bin/$(CROSS_COMPILE_$(ARCH))
+
+ifeq ($(USE_CCACHE),1)
+CC=$(CCACHE) ${CROSS_COMPILE}xcc --xtensa-core=$(XTENSA_CORE)
+CXX=$(CCACHE) ${CROSS_COMPILE}xc++ --xtensa-core=$(XTENSA_CORE)
+else
 CC=${CROSS_COMPILE}xcc --xtensa-core=$(XTENSA_CORE)
 CXX=${CROSS_COMPILE}xc++ --xtensa-core=$(XTENSA_CORE)
+endif
 AS=${CROSS_COMPILE}as --xtensa-core=$(XTENSA_CORE)
 LD=${CROSS_COMPILE}ld --xtensa-core=$(XTENSA_CORE)
 CROSS_COMPILE_TARGET = ${CROSS_COMPILE_TARGET_${ARCH}}
