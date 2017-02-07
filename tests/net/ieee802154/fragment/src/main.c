@@ -376,7 +376,7 @@ static struct net_fragment_data test_data_6 = {
 	.udp.dst_port = htons(udp_dst_port_8bit),
 	.udp.len = 0x00,
 	.udp.chksum = 0x00,
-	.len = 900,
+	.len = 1200,
 	.iphc = true
 };
 
@@ -410,7 +410,7 @@ static struct net_fragment_data test_data_8 = {
 	.udp.dst_port = htons(udp_dst_port_16bit),
 	.udp.len = 0x00,
 	.udp.chksum = 0x00,
-	.len = 800,
+	.len = 1200,
 	.iphc = false
 };
 
