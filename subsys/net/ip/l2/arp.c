@@ -206,7 +206,9 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 		header = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
 						   K_FOREVER);
 
-		hdr = (struct net_eth_hdr *)net_nbuf_ll(header);
+		hdr = (struct net_eth_hdr *)(header->data -
+					     net_nbuf_ll_reserve(buf));
+
 		hdr->type = htons(NET_ETH_PTYPE_IP);
 
 		ll = net_nbuf_ll_dst(buf);
