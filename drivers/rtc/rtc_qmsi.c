@@ -183,8 +183,12 @@ static int rtc_qmsi_init(struct device *dev)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+static qm_rtc_context_t rtc_ctx;
+
 static int rtc_suspend_device(struct device *dev)
 {
+	qm_rtc_save_context(QM_RTC_0, &rtc_ctx);
+
 	rtc_qmsi_set_power_state(dev, DEVICE_PM_SUSPEND_STATE);
 
 	return 0;
@@ -192,20 +196,7 @@ static int rtc_suspend_device(struct device *dev)
 
 static int rtc_resume_device(struct device *dev)
 {
-	uint32_t int_rtc_mask;
-
-	/* The interrupt router registers are sticky and retain their
-	 * values across warm resets, so we don't need to save them.
-	 * But for wake capable peripherals, if their interrupts are
-	 * configured to be edge sensitive, the wake event will be lost
-	 * by the time the interrupt controller is reconfigured, while
-	 * the interrupt is still pending. By masking and unmasking again
-	 * the corresponding routing register, the interrupt is forwared
-	 * to the core and the ISR will be serviced as expected.
-	 */
-	int_rtc_mask = QM_INTERRUPT_ROUTER->rtc_0_int_mask;
-	QM_INTERRUPT_ROUTER->rtc_0_int_mask = 0xFFFFFFFF;
-	QM_INTERRUPT_ROUTER->rtc_0_int_mask = int_rtc_mask;
+	qm_rtc_restore_context(QM_RTC_0, &rtc_ctx);
 
 	rtc_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
