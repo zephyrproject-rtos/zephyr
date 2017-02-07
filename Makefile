@@ -648,10 +648,12 @@ else
 KBUILD_CFLAGS += $(call cc-option,-fno-stack-protector,)
 endif
 
+ifeq ($(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT),y)
 ifeq ($(CONFIG_OMIT_FRAME_POINTER),y)
 fp_arg := $(call cc-option,-fomit-frame-pointer,)
 else
 fp_arg := $(call cc-option,-fno-omit-frame-pointer,)
+endif
 endif
 KBUILD_CFLAGS += $(fp_arg)
 KBUILD_CXXFLAGS += $(fp_arg)

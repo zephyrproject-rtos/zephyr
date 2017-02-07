@@ -206,19 +206,39 @@ config OBJECT_TRACING
 	This option enable the feature for tracing kernel objects. This option
 	is for debug purposes and increases the memory footprint of the kernel.
 
+config OVERRIDE_FRAME_POINTER_DEFAULT
+	bool
+	prompt "Override compiler defaults for -fomit-frame-pointer"
+	default n
+	help
+	Omitting the frame pointer prevents the compiler from putting the stack
+	frame pointer into a register. Saves a few instructions in function
+	prologues/epilogues and frees up a register for general-purpose use,
+	which can provide good performance improvements on register-constrained
+	architectures like x86. On some architectures (including x86) omitting
+	frame pointers impedes debugging as local variables are harder to
+	locate. At -O1 and above gcc will enable -fomit-frame-pointer
+	automatically but only if the architecture does not require if for
+	effective debugging.
+
+	Choose Y is you want to override the default frame pointer behaviour
+	of your compiler, otherwise choose N.
+
 config OMIT_FRAME_POINTER
 	bool
 	prompt "Omit frame pointer"
 	default n
+	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
-	Prevent the compiler from putting the stack frame pointer into a
-	register. Saves a few instructions in function prologues/epilogues and
-	frees up a register for general-purpose use, which can provide good
-	performance improvements on register-constrained architectures like
-	x86. Omitting frame pointers impedes debugging as local variables are
-	harder to locate and it is much more difficult to produce a stack
-	trace. Recommended only for production builds which do not need to be
-	debugged.
+	Choose Y for best performance. On some architectures (including x86)
+	this will favour code size and performance over debugability.
+
+	Choose N in you wish to retain the frame pointer. This option may
+	be useful if your application uses runtime backtracing and does not
+	support parsing unwind tables.
+
+	If unsure, disable OVERRIDE_FRAME_POINTER_DEFAULT to allow the compiler
+	to adopt sensible defaults for your architecture.
 
 endmenu
 
