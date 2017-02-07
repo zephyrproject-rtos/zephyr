@@ -6904,7 +6904,7 @@ static uint32_t role_disable(uint8_t ticker_id_primary,
 			ticks_active_to_start =
 				conn->hdr.ticks_active_to_start;
 		} else {
-			BT_ASSERT(0);
+			LL_ASSERT(0);
 		}
 		break;
 	}
