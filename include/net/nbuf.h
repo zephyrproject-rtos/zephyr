@@ -588,28 +588,6 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf);
 bool net_nbuf_is_compact(struct net_buf *buf);
 
 /**
- * @brief Create some more space in front of the fragment list.
- *
- * @details After this there is more space available before the first
- * fragment. The existing data needs to be moved "down" which will
- * cause a cascading effect on fragment list because fragments are fixed
- * size.
- *
- * @param parent Pointer to parent of the network buffer. If there is
- * no parent, then set this parameter NULL.
- * @param buf Network buffer
- * @param amount Amount of data that is needed in front of the fragment list.
- * @param timeout Affects the action taken should the net buf pool be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return Pointer to the start of the fragment list if ok, NULL otherwise.
- */
-struct net_buf *net_nbuf_push(struct net_buf *parent, struct net_buf *buf,
-			      size_t amount, int32_t timeout);
-
-/**
  * @brief Remove given amount of data from the beginning of fragment list.
  * This is similar thing to do as in net_buf_pull() but this function changes
  * the fragment list instead of one fragment.

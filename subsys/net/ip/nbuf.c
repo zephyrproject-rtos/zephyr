@@ -820,39 +820,6 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 	return first;
 }
 
-struct net_buf *net_nbuf_push(struct net_buf *parent,
-			      struct net_buf *buf,
-			      size_t amount,
-			      int32_t timeout)
-{
-	struct net_buf *frag;
-
-	NET_ASSERT_INFO(amount > 3,
-			"Amount %zu very small and not recommended", amount);
-
-	if (amount > buf->len) {
-		NET_DBG("Cannot move amount %zu because the buf "
-			"length is only %u bytes", amount, buf->len);
-		return NULL;
-	}
-
-	frag = net_nbuf_get_reserve_data(net_buf_headroom(buf), timeout);
-	if (!frag) {
-		return NULL;
-	}
-
-	net_buf_add(frag, amount);
-
-	if (parent) {
-		net_buf_frag_insert(parent, frag);
-	} else {
-		net_buf_frag_insert(frag, buf);
-		parent = frag;
-	}
-
-	return net_nbuf_compact(parent);
-}
-
 struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
 {
 	struct net_buf *first;
