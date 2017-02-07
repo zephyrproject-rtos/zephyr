@@ -751,20 +751,19 @@ bool net_nbuf_is_compact(struct net_buf *buf)
 	return false;
 }
 
-struct net_buf *net_nbuf_compact(struct net_buf *buf)
+bool net_nbuf_compact(struct net_buf *buf)
 {
-	struct net_buf *first, *prev;
+	struct net_buf *prev;
 
-	first = buf;
-
-	if (!is_from_data_pool(buf)) {
-		NET_DBG("Buffer %p is not a data fragment", buf);
-		buf = buf->frags;
+	if (is_from_data_pool(buf)) {
+		NET_DBG("Buffer %p is a data fragment", buf);
+		return false;
 	}
 
-	prev = NULL;
+	NET_DBG("Compacting data to buf %p", buf);
 
-	NET_DBG("Compacting data to buf %p", first);
+	buf = buf->frags;
+	prev = NULL;
 
 	while (buf) {
 		if (buf->frags) {
@@ -804,9 +803,6 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 				/* Remove the last fragment because there is no
 				 * data in it.
 				 */
-				NET_ASSERT_INFO(prev,
-					"First element cannot be deleted!");
-
 				net_buf_frag_del(prev, buf);
 
 				break;
@@ -817,7 +813,7 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 		buf = buf->frags;
 	}
 
-	return first;
+	return true;
 }
 
 struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)

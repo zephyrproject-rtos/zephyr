@@ -784,7 +784,7 @@ end:
 	net_buf_frag_insert(buf, frag);
 
 	/* Compact the fragments, so that gaps will be filled */
-	net_nbuf_compact(buf->frags);
+	net_nbuf_compact(buf);
 
 	if (fragment) {
 		return fragment(buf, compressed - offset);
@@ -1372,7 +1372,7 @@ end:
 
 	/* Insert the fragment (this one holds uncompressed headers) */
 	net_buf_frag_insert(buf, frag);
-	net_nbuf_compact(buf->frags);
+	net_nbuf_compact(buf);
 
 	/* Set IPv6 header and UDP (if next header is) length */
 	len = net_buf_frags_len(buf) - NET_IPV6H_LEN;
@@ -1408,7 +1408,7 @@ static inline bool compress_ipv6_header(struct net_buf *buf,
 	net_buf_frag_insert(buf, frag);
 
 	/* Compact the fragments, so that gaps will be filled */
-	buf->frags = net_nbuf_compact(buf->frags);
+	net_nbuf_compact(buf);
 
 	if (fragment) {
 		return fragment(buf, -1);

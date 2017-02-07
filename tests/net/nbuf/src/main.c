@@ -1083,7 +1083,7 @@ static int test_fragment_compact(void)
 		return -1;
 	}
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	if (!net_nbuf_is_compact(buf)) {
 		printk("The buf should be in compact form. Test fails\n");
@@ -1091,7 +1091,7 @@ static int test_fragment_compact(void)
 	}
 
 	/* Try compacting again, nothing should happen */
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	if (!net_nbuf_is_compact(buf)) {
 		printk("The buf should be compacted now. Test fails\n");
@@ -1109,7 +1109,7 @@ static int test_fragment_compact(void)
 
 	count = calc_fragments(buf);
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	i = calc_fragments(buf);
 
@@ -1138,7 +1138,7 @@ static int test_fragment_compact(void)
 
 	count = calc_fragments(buf);
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	i = calc_fragments(buf);
 
@@ -1167,7 +1167,7 @@ static int test_fragment_compact(void)
 
 	count = calc_fragments(buf);
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	i = calc_fragments(buf);
 

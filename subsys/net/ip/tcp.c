@@ -307,7 +307,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		return NULL;
 	}
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	net_tcp_trace("", buf);
 

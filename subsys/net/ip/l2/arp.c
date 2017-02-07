@@ -225,7 +225,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 
 		net_buf_frag_insert(buf, header);
 
-		buf = net_nbuf_compact(buf);
+		net_nbuf_compact(buf);
 	}
 
 	hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
