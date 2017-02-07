@@ -783,7 +783,7 @@ NET_CONN_CB(tcp_established)
 
 	NET_ASSERT(context && context->tcp);
 
-	if (net_tcp_get_state(context->tcp) != NET_TCP_ESTABLISHED) {
+	if (net_tcp_get_state(context->tcp) < NET_TCP_ESTABLISHED) {
 		NET_ERR("Context %p in wrong state %d",
 			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
