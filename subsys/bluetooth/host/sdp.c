@@ -343,10 +343,6 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session)
 	}
 
 	buf = bt_l2cap_create_pdu(&sdp_pool, 0);
-	if (!buf) {
-		BT_ERR("No bufs for PDU");
-		return -ENOMEM;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 

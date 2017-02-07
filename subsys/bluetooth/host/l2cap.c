@@ -387,9 +387,6 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 	struct bt_l2cap_sig_hdr *hdr;
 
 	buf = bt_l2cap_create_pdu(NULL, 0);
-	if (!buf) {
-		return NULL;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = code;
@@ -1567,9 +1564,6 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 
 segment:
 	seg = bt_l2cap_create_pdu(&le_data_pool, 0);
-	if (!seg) {
-		return NULL;
-	}
 
 	if (sdu_hdr_len) {
 		net_buf_add_le16(seg, net_buf_frags_len(buf));

@@ -308,10 +308,6 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	}
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!buf) {
-		BT_ERR("No buffers");
-		return;
-	}
 
 	atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_SIG_INFO_PENDING);
 	l2cap->info_ident = l2cap_br_get_ident();
@@ -453,10 +449,6 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	rsp_buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!rsp_buf) {
-		BT_ERR("No buffers");
-		return -ENOMEM;
-	}
 
 	type = sys_le16_to_cpu(req->type);
 	BT_DBG("type 0x%04x", type);
@@ -562,9 +554,6 @@ static void l2cap_br_conf(struct bt_l2cap_chan *chan)
 	struct net_buf *buf;
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!buf) {
-		return;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONF_REQ;
@@ -685,10 +674,6 @@ static int l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 	struct bt_l2cap_sig_hdr *hdr;
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!buf) {
-		BT_ERR("No buffers for PDU");
-		return -ENOMEM;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONN_RSP;
@@ -933,9 +918,6 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident,
 	struct net_buf *buf;
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!buf) {
-		return;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CMD_REJECT;
@@ -1068,9 +1050,6 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 send_rsp:
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!buf) {
-		return;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONF_RSP;
@@ -1176,9 +1155,6 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!buf) {
-		return;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_DISCONN_RSP;
@@ -1232,10 +1208,6 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	       ch->tx.cid);
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!buf) {
-		BT_ERR("Unable to send L2CAP disconnect request");
-		return -ENOMEM;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_DISCONN_REQ;
@@ -1344,10 +1316,6 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	}
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-	if (!buf) {
-		BT_ERR("Unable to send L2CAP connection request");
-		return -ENOMEM;
-	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONN_REQ;
@@ -1536,10 +1504,6 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 	} else if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
 					     L2CAP_FLAG_CONN_PENDING)) {
 		buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
-		if (!buf) {
-			BT_ERR("Unable to send L2CAP connection request");
-			return;
-		}
 
 		hdr = net_buf_add(buf, sizeof(*hdr));
 		hdr->code = BT_L2CAP_CONN_REQ;
