@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <misc/byteorder.h>
+#include <misc/__assert.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_SDP)
 #include <bluetooth/log.h>
@@ -700,12 +701,16 @@ static int sdp_client_chan_connect(struct bt_sdp_client *session)
 static struct net_buf *sdp_client_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+	struct net_buf *buf;
 
 	BT_DBG("session %p chan %p", session, chan);
 
 	session->param = GET_PARAM(sys_slist_peek_head(&session->reqs));
 
-	return net_buf_alloc(session->param->pool, K_FOREVER);
+	buf = net_buf_alloc(session->param->pool, K_FOREVER);
+	__ASSERT_NO_MSG(buf);
+
+	return buf;
 }
 
 static void sdp_client_connected(struct bt_l2cap_chan *chan)

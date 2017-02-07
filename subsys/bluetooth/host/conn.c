@@ -14,6 +14,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 #include <misc/stack.h>
+#include <misc/__assert.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
 #include <bluetooth/log.h>
@@ -1596,11 +1597,10 @@ struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 	}
 
 	buf = net_buf_alloc(pool, K_FOREVER);
-	if (buf) {
-		reserve += sizeof(struct bt_hci_acl_hdr) +
-				CONFIG_BLUETOOTH_HCI_RESERVE;
-		net_buf_reserve(buf, reserve);
-	}
+	__ASSERT_NO_MSG(buf);
+
+	reserve += sizeof(struct bt_hci_acl_hdr) + CONFIG_BLUETOOTH_HCI_RESERVE;
+	net_buf_reserve(buf, reserve);
 
 	return buf;
 }

@@ -14,6 +14,7 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
+#include <misc/__assert.h>
 #include <soc.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
@@ -151,6 +152,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	BT_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
 	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
+	__ASSERT_NO_MSG(buf);
 
 	BT_DBG("buf %p", buf);
 
