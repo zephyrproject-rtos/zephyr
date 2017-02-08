@@ -154,8 +154,8 @@ static bool run_tests(void)
 	int hdr_len, i, chunk, datalen, total = 0;
 
 	/* Packet fits to one fragment */
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(10);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(10, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	memcpy(net_buf_add(frag, sizeof(pkt1)), pkt1, sizeof(pkt1));
@@ -184,8 +184,8 @@ static bool run_tests(void)
 	net_nbuf_unref(buf);
 
 	/* Then a case where there will be two fragments */
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(10);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(10, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt2) / 2), pkt2, sizeof(pkt2) / 2);
 
@@ -198,7 +198,7 @@ static bool run_tests(void)
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	frag = net_nbuf_get_reserve_data(10);
+	frag = net_nbuf_get_reserve_data(10, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt2) - sizeof(pkt2) / 2),
 	       pkt2 + sizeof(pkt2) / 2, sizeof(pkt2) - sizeof(pkt2) / 2);
@@ -212,8 +212,8 @@ static bool run_tests(void)
 	net_nbuf_unref(buf);
 
 	/* Then a case where there will be two fragments but odd data size */
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(10);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(10, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt3) / 2), pkt3, sizeof(pkt3) / 2);
 	printk("First fragment will have %zd bytes\n", sizeof(pkt3) / 2);
@@ -227,7 +227,7 @@ static bool run_tests(void)
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	frag = net_nbuf_get_reserve_data(10);
+	frag = net_nbuf_get_reserve_data(10, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt3) - sizeof(pkt3) / 2),
 	       pkt3 + sizeof(pkt3) / 2, sizeof(pkt3) - sizeof(pkt3) / 2);
@@ -243,8 +243,8 @@ static bool run_tests(void)
 	net_nbuf_unref(buf);
 
 	/* Then a case where there will be several fragments */
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(10);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(10, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 	memcpy(net_buf_add(frag, sizeof(struct net_ipv6_hdr)), pkt3,
 	       sizeof(struct net_ipv6_hdr));
@@ -259,7 +259,7 @@ static bool run_tests(void)
 
 	for (i = 0; i < datalen/chunk; i++) {
 		/* Next fragments will contain the data in odd sizes */
-		frag = net_nbuf_get_reserve_data(10);
+		frag = net_nbuf_get_reserve_data(10, K_FOREVER);
 		net_buf_frag_add(buf, frag);
 		memcpy(net_buf_add(frag, chunk),
 		       pkt3 + sizeof(struct net_ipv6_hdr) + i * chunk, chunk);
@@ -278,7 +278,7 @@ static bool run_tests(void)
 		}
 	}
 	if ((datalen - total) > 0) {
-		frag = net_nbuf_get_reserve_data(10);
+		frag = net_nbuf_get_reserve_data(10, K_FOREVER);
 		net_buf_frag_add(buf, frag);
 		memcpy(net_buf_add(frag, datalen - total),
 		       pkt3 + sizeof(struct net_ipv6_hdr) + i * chunk,
@@ -309,8 +309,9 @@ static bool run_tests(void)
 	/* Another packet that fits to one fragment.
 	 * This one has ethernet header before IPv4 data.
 	 */
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
+					 K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
@@ -337,8 +338,9 @@ static bool run_tests(void)
 	/* Another packet that fits to one fragment and which has correct
 	 * checksum. This one has ethernet header before IPv4 data.
 	 */
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
+					 K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));

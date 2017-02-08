@@ -422,7 +422,9 @@ int net_context_put(struct net_context *context)
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		if (!context->tcp->fin_rcvd) {
+		if ((net_context_get_state(context) == NET_CONTEXT_CONNECTED ||
+		     net_context_get_state(context) == NET_CONTEXT_LISTENING)
+		    && !context->tcp->fin_rcvd) {
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet");
 			queue_fin(context);
@@ -446,6 +448,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		struct net_if *iface;
 		struct in6_addr *ptr;
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
+		int ret;
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
 			return -EINVAL;
@@ -479,7 +482,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		}
 
 		if (!iface) {
-			NET_DBG("Cannot bind to %s",
+			NET_ERR("Cannot bind to %s",
 				net_sprint_ipv6_addr(&addr6->sin6_addr));
 
 			return -EADDRNOTAVAIL;
@@ -500,7 +503,18 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
 		net_sin6_ptr(&context->local)->sin6_addr = ptr;
-		net_sin6_ptr(&context->local)->sin6_port = addr6->sin6_port;
+		if (addr6->sin6_port) {
+			ret = check_used_port(AF_INET6, addr6->sin6_port,
+					      addr);
+			if (!ret) {
+				net_sin6_ptr(&context->local)->sin6_port =
+					addr6->sin6_port;
+			} else {
+				NET_ERR("Port %d is in use!",
+					ntohs(addr6->sin6_port));
+				return ret;
+			}
+		}
 
 		NET_DBG("Context %p binding to [%s]:%d iface %p", context,
 			net_sprint_ipv6_addr(ptr), ntohs(addr6->sin6_port),
@@ -516,6 +530,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		struct net_if_addr *ifaddr;
 		struct net_if *iface;
 		struct in_addr *ptr;
+		int ret;
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
 			return -EINVAL;
@@ -536,7 +551,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		}
 
 		if (!iface) {
-			NET_DBG("Cannot bind to %s",
+			NET_ERR("Cannot bind to %s",
 				net_sprint_ipv4_addr(&addr4->sin_addr));
 
 			return -EADDRNOTAVAIL;
@@ -557,7 +572,18 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
 		net_sin_ptr(&context->local)->sin_addr = ptr;
-		net_sin_ptr(&context->local)->sin_port = addr4->sin_port;
+		if (addr4->sin_port) {
+			ret = check_used_port(AF_INET, addr4->sin_port,
+					      addr);
+			if (!ret) {
+				net_sin_ptr(&context->local)->sin_port =
+					addr4->sin_port;
+			} else {
+				NET_ERR("Port %d is in use!",
+					ntohs(addr4->sin_port));
+				return ret;
+			}
+		}
 
 		NET_DBG("Context %p binding to %s:%d iface %p", context,
 			net_sprint_ipv4_addr(ptr),
@@ -758,7 +784,7 @@ NET_CONN_CB(tcp_established)
 	NET_ASSERT(context && context->tcp);
 
 	if (net_tcp_get_state(context->tcp) != NET_TCP_ESTABLISHED) {
-		NET_DBG("Context %p in wrong state %d",
+		NET_ERR("Context %p in wrong state %d",
 			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}

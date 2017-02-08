@@ -311,34 +311,40 @@ static inline void net_nbuf_set_src_ipv6_addr(struct net_buf *buf)
  */
 
 struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
+				      int32_t timeout,
 				      const char *caller, int line);
-#define net_nbuf_get_rx(context) \
-	net_nbuf_get_rx_debug(context, __func__, __LINE__)
+#define net_nbuf_get_rx(context, timeout)				\
+	net_nbuf_get_rx_debug(context, timeout, __func__, __LINE__)
 
 struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
+				      int32_t timeout,
 				      const char *caller, int line);
-#define net_nbuf_get_tx(context) \
-	net_nbuf_get_tx_debug(context, __func__, __LINE__)
+#define net_nbuf_get_tx(context, timeout)				\
+	net_nbuf_get_tx_debug(context, timeout, __func__, __LINE__)
 
 struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
+					int32_t timeout,
 					const char *caller, int line);
-#define net_nbuf_get_data(context) \
-	net_nbuf_get_data_debug(context, __func__, __LINE__)
+#define net_nbuf_get_data(context, timeout)				\
+	net_nbuf_get_data_debug(context, timeout, __func__, __LINE__)
 
 struct net_buf *net_nbuf_get_reserve_rx_debug(uint16_t reserve_head,
+					      int32_t timeout,
 					      const char *caller, int line);
-#define net_nbuf_get_reserve_rx(res) \
-	net_nbuf_get_reserve_rx_debug(res, __func__, __LINE__)
+#define net_nbuf_get_reserve_rx(res, timeout)				\
+	net_nbuf_get_reserve_rx_debug(res, timeout, __func__, __LINE__)
 
 struct net_buf *net_nbuf_get_reserve_tx_debug(uint16_t reserve_head,
+					      int32_t timeout,
 					      const char *caller, int line);
-#define net_nbuf_get_reserve_tx(res) \
-	net_nbuf_get_reserve_tx_debug(res, __func__, __LINE__)
+#define net_nbuf_get_reserve_tx(res, timeout)				\
+	net_nbuf_get_reserve_tx_debug(res, timeout, __func__, __LINE__)
 
 struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
+						int32_t timeout,
 						const char *caller, int line);
-#define net_nbuf_get_reserve_data(res) \
-	net_nbuf_get_reserve_data_debug(res, __func__, __LINE__)
+#define net_nbuf_get_reserve_data(res, timeout)				\
+	net_nbuf_get_reserve_data_debug(res, timeout, __func__, __LINE__)
 
 void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line);
 #define net_nbuf_unref(buf) net_nbuf_unref_debug(buf, __func__, __LINE__)
@@ -369,10 +375,15 @@ void net_nbuf_print_frags(struct net_buf *buf);
  *
  * @param context Network context that will be related to
  * this buffer.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_rx(struct net_context *context);
+struct net_buf *net_nbuf_get_rx(struct net_context *context,
+				int32_t timeout);
 
 /**
  * @brief Get buffer from the TX buffers pool.
@@ -382,10 +393,15 @@ struct net_buf *net_nbuf_get_rx(struct net_context *context);
  *
  * @param context Network context that will be related to
  * this buffer.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_tx(struct net_context *context);
+struct net_buf *net_nbuf_get_tx(struct net_context *context,
+				int32_t timeout);
 
 /**
  * @brief Get buffer from the DATA buffers pool.
@@ -395,10 +411,15 @@ struct net_buf *net_nbuf_get_tx(struct net_context *context);
  *
  * @param context Network context that will be related to
  * this buffer.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_data(struct net_context *context);
+struct net_buf *net_nbuf_get_data(struct net_context *context,
+				  int32_t timeout);
 
 /**
  * @brief Get RX buffer from pool but also reserve headroom for
@@ -408,10 +429,15 @@ struct net_buf *net_nbuf_get_data(struct net_context *context);
  * but is mainly used by network fragmentation code.
  *
  * @param reserve_head How many bytes to reserve for headroom.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head);
+struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head,
+					int32_t timeout);
 
 /**
  * @brief Get TX buffer from pool but also reserve headroom for
@@ -421,10 +447,15 @@ struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head);
  * but is mainly used by network fragmentation code.
  *
  * @param reserve_head How many bytes to reserve for headroom.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head);
+struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head,
+					int32_t timeout);
 
 /**
  * @brief Get DATA buffer from pool but also reserve headroom for
@@ -434,10 +465,15 @@ struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head);
  * but is mainly used by network fragmentation code.
  *
  * @param reserve_head How many bytes to reserve for headroom.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head);
+struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head,
+					  int32_t timeout);
 
 /**
  * @brief Place buffer back into the available buffers pool.
@@ -477,11 +513,15 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf);
  * @param reserve Amount of extra data (this is not link layer header) in the
  * first data fragment that is returned. The function will copy the original
  * buffer right after the reserved bytes in the first destination fragment.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return New fragment list if successful, NULL otherwise.
  */
 struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
-			      size_t reserve);
+			      size_t reserve, int32_t timeout);
 
 /**
  * @brief Copy a buffer with fragments while reserving some extra space
@@ -492,27 +532,32 @@ struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
  * @param reserve Amount of extra data (this is not link layer header) in the
  * first data fragment that is returned. The function will copy the original
  * buffer right after the reserved bytes in the first destination fragment.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return New fragment list if successful, NULL otherwise.
  */
 static inline struct net_buf *net_nbuf_copy_all(struct net_buf *buf,
-						size_t reserve)
+						size_t reserve,
+						int32_t timeout)
 {
-	return net_nbuf_copy(buf, net_buf_frags_len(buf), reserve);
+	return net_nbuf_copy(buf, net_buf_frags_len(buf), reserve, timeout);
 }
 
 /**
- * @brief net_nbuf_linear_copy	Copy len bytes from src starting from
- *				offset to dst
- * @details			This routine assumes that dst is conformed by
- *				one fragment with enough space to store len
- *				bytes starting from offset at src.
- * @param dst			Destination buffer
- * @param src			Source buffer that may be fragmented
- * @param offset		Starting point to copy from
- * @param len			Number of bytes to copy
- * @return			0 on success
- * @return			-ENOMEM on error
+ * @brief Copy len bytes from src starting from	offset to dst
+ *
+ * This routine assumes that dst is conformed by one fragment with enough space
+ * to store @a len bytes starting from offset at src.
+ *
+ * @param dst Destination buffer
+ * @param src Source buffer that may be fragmented
+ * @param offset Starting point to copy from
+ * @param len Number of bytes to copy
+ * @return 0 on success
+ * @return -ENOMEM on error
  */
 int net_nbuf_linear_copy(struct net_buf *dst, struct net_buf *src,
 			 uint16_t offset, uint16_t len);
@@ -521,12 +566,13 @@ int net_nbuf_linear_copy(struct net_buf *dst, struct net_buf *src,
  * @brief Compact the fragment list.
  *
  * @details After this there is no more any free space in individual fragments.
- * @param buf Network buffer fragment. This should be the first fragment (data)
- * in the fragment list.
+ * @param buf Network buffer fragment. This should be the Tx/Rx buffer.
  *
- * @return Pointer to the start of the fragment list if ok, NULL otherwise.
+ * @return True if compact success, False otherwise. (Note that it fails only
+ *         when input is data fragment)
+ *
  */
-struct net_buf *net_nbuf_compact(struct net_buf *buf);
+bool net_nbuf_compact(struct net_buf *buf);
 
 /**
  * @brief Check if the buffer chain is compact or not.
@@ -541,24 +587,6 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf);
  * false otherwise.
  */
 bool net_nbuf_is_compact(struct net_buf *buf);
-
-/**
- * @brief Create some more space in front of the fragment list.
- *
- * @details After this there is more space available before the first
- * fragment. The existing data needs to be moved "down" which will
- * cause a cascading effect on fragment list because fragments are fixed
- * size.
- *
- * @param parent Pointer to parent of the network buffer. If there is
- * no parent, then set this parameter NULL.
- * @param buf Network buffer
- * @param amount Amount of data that is needed in front of the fragment list.
- *
- * @return Pointer to the start of the fragment list if ok, NULL otherwise.
- */
-struct net_buf *net_nbuf_push(struct net_buf *parent, struct net_buf *buf,
-			      size_t amount);
 
 /**
  * @brief Remove given amount of data from the beginning of fragment list.
@@ -583,12 +611,17 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
  * @param buf Network buffer fragment list.
  * @param len Total length of input data
  * @param data Data to be added
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return True if all the data is placed at end of fragment list,
  *         False otherwise (In-case of false buf might contain input
  *         data in the process of placing into fragments).
  */
-bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data);
+bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data,
+		     int32_t timeout);
 
 /**
  * @brief Append uint8_t data to last fragment in fragment list
@@ -606,7 +639,7 @@ bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data);
  */
 static inline bool net_nbuf_append_u8(struct net_buf *buf, uint8_t data)
 {
-	return net_nbuf_append(buf, 1, &data);
+	return net_nbuf_append(buf, 1, &data, K_FOREVER);
 }
 
 /**
@@ -627,7 +660,8 @@ static inline bool net_nbuf_append_be16(struct net_buf *buf, uint16_t data)
 {
 	uint16_t value = sys_cpu_to_be16(data);
 
-	return net_nbuf_append(buf, sizeof(uint16_t), (uint8_t *)&value);
+	return net_nbuf_append(buf, sizeof(uint16_t), (uint8_t *)&value,
+			       K_FOREVER);
 }
 
 /**
@@ -648,7 +682,8 @@ static inline bool net_nbuf_append_be32(struct net_buf *buf, uint32_t data)
 {
 	uint32_t value = sys_cpu_to_be32(data);
 
-	return net_nbuf_append(buf, sizeof(uint32_t), (uint8_t *)&value);
+	return net_nbuf_append(buf, sizeof(uint32_t), (uint8_t *)&value,
+			       K_FOREVER);
 }
 
 /**
@@ -770,23 +805,23 @@ struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
  * e.g. Buf(Tx/Rx) - Frag1 - Frag2 - Frag3 - Frag4
  *      (Assume FRAG DATA SIZE is 100 bytes after link layer header)
  *
- *      1) net_nbuf_write(buf, frag2, 20, &pos, 20, data)
+ *      1) net_nbuf_write(buf, frag2, 20, &pos, 20, data, K_FOREVER)
  *         In this case write starts from "frag2->data + 20",
  *         returns frag2, pos = 40
  *
- *      2) net_nbuf_write(buf, frag1, 150, &pos, 60, data)
+ *      2) net_nbuf_write(buf, frag1, 150, &pos, 60, data, K_FOREVER)
  *         In this case write starts from "frag2->data + 50"
  *         returns frag3, pos = 10
  *
- *      3) net_nbuf_write(buf, frag1, 350, &pos, 30, data)
+ *      3) net_nbuf_write(buf, frag1, 350, &pos, 30, data, K_FOREVER)
  *         In this case write starts from "frag4->data + 50"
  *         returns frag4, pos = 80
  *
- *      4) net_nbuf_write(buf, frag2, 110, &pos, 90, data)
+ *      4) net_nbuf_write(buf, frag2, 110, &pos, 90, data, K_FOREVER)
  *         In this case write starts from "frag3->data + 10"
  *         returns frag4, pos = 0
  *
- *      5) net_nbuf_write(buf, frag4, 110, &pos, 20, data)
+ *      5) net_nbuf_write(buf, frag4, 110, &pos, 20, data, K_FOREVER)
  *         In this case write creates new data fragment and starts from
  *         "frag5->data + 10"
  *         returns frag5, pos = 30
@@ -801,13 +836,17 @@ struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
  *               relative to return fragment)
  * @param len    Length of the data to be written.
  * @param data   Data to be written
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return Pointer to the fragment and position (*pos) where write ended,
  *         NULL and pos is 0xffff otherwise.
  */
 struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
 			       uint16_t offset, uint16_t *pos, uint16_t len,
-			       uint8_t *data);
+			       uint8_t *data, int32_t timeout);
 
 /* Write uint8_t data to an arbitrary offset in fragment. */
 static inline struct net_buf *net_nbuf_write_u8(struct net_buf *buf,
@@ -816,7 +855,8 @@ static inline struct net_buf *net_nbuf_write_u8(struct net_buf *buf,
 						uint16_t *pos,
 						uint8_t data)
 {
-	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint8_t), &data);
+	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint8_t),
+			      &data, K_FOREVER);
 }
 
 /* Write uint16_t big endian value to an arbitrary offset in fragment. */
@@ -829,7 +869,7 @@ static inline struct net_buf *net_nbuf_write_be16(struct net_buf *buf,
 	uint16_t value = htons(data);
 
 	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint16_t),
-			      (uint8_t *)&value);
+			      (uint8_t *)&value, K_FOREVER);
 }
 
 /* Write uint32_t big endian value to an arbitrary offset in fragment. */
@@ -842,7 +882,7 @@ static inline struct net_buf *net_nbuf_write_be32(struct net_buf *buf,
 	uint32_t value = htonl(data);
 
 	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint32_t),
-			      (uint8_t *)&value);
+			      (uint8_t *)&value, K_FOREVER);
 }
 
 /**
@@ -862,18 +902,26 @@ static inline struct net_buf *net_nbuf_write_be32(struct net_buf *buf,
  * @param offset Offset of fragment where insertion will start.
  * @param len    Length of the data to be inserted.
  * @param data   Data to be inserted
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
  *
  * @return True on success,
  *         False otherwise.
  */
 bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
-		     uint16_t offset, uint16_t len, uint8_t *data);
+		     uint16_t offset, uint16_t len, uint8_t *data,
+		     int32_t timeout);
 
 /* Insert uint8_t data at an arbitrary offset in a series of fragments. */
-static inline bool net_nbuf_insert_u8(struct net_buf *buf, struct net_buf *frag,
-				      uint16_t offset, uint8_t data)
+static inline bool net_nbuf_insert_u8(struct net_buf *buf,
+				      struct net_buf *frag,
+				      uint16_t offset,
+				      uint8_t data)
 {
-	return net_nbuf_insert(buf, frag, offset, sizeof(uint8_t), &data);
+	return net_nbuf_insert(buf, frag, offset, sizeof(uint8_t), &data,
+			       K_FOREVER);
 }
 
 /* Insert uint16_t big endian value at an arbitrary offset in a series of
@@ -881,12 +929,13 @@ static inline bool net_nbuf_insert_u8(struct net_buf *buf, struct net_buf *frag,
  */
 static inline bool net_nbuf_insert_be16(struct net_buf *buf,
 					struct net_buf *frag,
-					uint16_t offset, uint16_t data)
+					uint16_t offset,
+					uint16_t data)
 {
 	uint16_t value = htons(data);
 
 	return net_nbuf_insert(buf, frag, offset, sizeof(uint16_t),
-			       (uint8_t *)&value);
+			       (uint8_t *)&value, K_FOREVER);
 }
 
 /* Insert uint32_t big endian value at an arbitrary offset in a series of
@@ -894,12 +943,13 @@ static inline bool net_nbuf_insert_be16(struct net_buf *buf,
  */
 static inline bool net_nbuf_insert_be32(struct net_buf *buf,
 					struct net_buf *frag,
-					uint16_t offset, uint32_t data)
+					uint16_t offset,
+					uint32_t data)
 {
 	uint32_t value = htonl(data);
 
 	return net_nbuf_insert(buf, frag, offset, sizeof(uint32_t),
-			       (uint8_t *)&value);
+			       (uint8_t *)&value, K_FOREVER);
 }
 
 /**

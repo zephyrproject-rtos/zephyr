@@ -325,8 +325,8 @@ static bool send_ipv6_tcp_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0);
-	frag = net_nbuf_get_reserve_data(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	net_nbuf_set_iface(buf, iface);
@@ -373,8 +373,8 @@ static bool send_ipv4_tcp_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0);
-	frag = net_nbuf_get_reserve_data(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	net_nbuf_set_iface(buf, iface);

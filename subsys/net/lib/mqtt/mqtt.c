@@ -43,7 +43,7 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 		goto exit_connect;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_connect;
@@ -81,13 +81,13 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 		goto exit_disconnect;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_disconnect;
 	}
 
-	rc = net_nbuf_append(tx, len, msg);
+	rc = net_nbuf_append(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_disconnect;
@@ -154,13 +154,13 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
 		return -EINVAL;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_send;
 	}
 
-	rc = net_nbuf_append(tx, len, msg);
+	rc = net_nbuf_append(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_send;
@@ -218,7 +218,7 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 		goto exit_publish;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_publish;
@@ -255,13 +255,13 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		goto exit_pingreq;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_pingreq;
 	}
 
-	rc = net_nbuf_append(tx, len, msg);
+	rc = net_nbuf_append(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_pingreq;
@@ -302,7 +302,7 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		goto exit_subs;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_subs;
@@ -346,7 +346,7 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		goto exit_unsub;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_unsub;

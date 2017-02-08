@@ -452,7 +452,7 @@ int net_conn_register(enum net_ip_protocol proto,
 		if (remote_addr) {
 			if (remote_addr->family != AF_INET &&
 			    remote_addr->family != AF_INET6) {
-				NET_DBG("Remote address family not set.");
+				NET_ERR("Remote address family not set.");
 				return -EINVAL;
 			}
 
@@ -488,7 +488,7 @@ int net_conn_register(enum net_ip_protocol proto,
 		if (local_addr) {
 			if (local_addr->family != AF_INET &&
 			    local_addr->family != AF_INET6) {
-				NET_DBG("Local address family not set.");
+				NET_ERR("Local address family not set.");
 				return -EINVAL;
 			}
 
@@ -522,7 +522,7 @@ int net_conn_register(enum net_ip_protocol proto,
 
 		if (remote_addr && local_addr) {
 			if (remote_addr->family != local_addr->family) {
-				NET_DBG("Address families different.");
+				NET_ERR("Address families different.");
 				return -EINVAL;
 			}
 		}

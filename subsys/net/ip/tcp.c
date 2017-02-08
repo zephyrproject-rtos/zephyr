@@ -245,7 +245,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		tail = buf->frags;
 		buf->frags = NULL;
 	} else {
-		buf = net_nbuf_get_tx(context);
+		buf = net_nbuf_get_tx(context, K_FOREVER);
 	}
 
 #if defined(CONFIG_NET_IPV4)
@@ -274,7 +274,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		goto proto_err;
 	}
 
-	header = net_nbuf_get_data(context);
+	header = net_nbuf_get_data(context, K_FOREVER);
 	net_buf_frag_add(buf, header);
 
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
@@ -307,7 +307,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		return NULL;
 	}
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	net_tcp_trace("", buf);
 

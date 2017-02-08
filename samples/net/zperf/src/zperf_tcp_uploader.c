@@ -54,23 +54,24 @@ void zperf_tcp_upload(struct net_context *ctx,
 		loop_time = k_cycle_get_32();
 		last_loop_time = loop_time;
 
-		buf = net_nbuf_get_tx(ctx);
+		buf = net_nbuf_get_tx(ctx, K_FOREVER);
 		if (!buf) {
 			printk(TAG "ERROR! Failed to retrieve a buffer\n");
-			continue;
+			break;
 		}
 
-		frag = net_nbuf_get_data(ctx);
+		frag = net_nbuf_get_data(ctx, K_FOREVER);
 		if (!frag) {
+			net_nbuf_unref(buf);
 			printk(TAG "ERROR! Failed to retrieve a fragment\n");
-			continue;
+			break;
 		}
 
 		net_buf_frag_add(buf, frag);
 
 		/* Fill in the TCP payload */
 		st = net_nbuf_append(buf, sizeof(sample_packet),
-				     sample_packet);
+				     sample_packet, K_FOREVER);
 		if (!st) {
 			printk(TAG "ERROR! Failed to fill packet\n");
 

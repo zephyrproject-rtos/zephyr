@@ -499,8 +499,8 @@ static bool net_ctx_send_v6(void)
 	int ret, len;
 	struct net_buf *buf, *frag;
 
-	buf = net_nbuf_get_tx(udp_v6_ctx);
-	frag = net_nbuf_get_data(udp_v6_ctx);
+	buf = net_nbuf_get_tx(udp_v6_ctx, K_FOREVER);
+	frag = net_nbuf_get_data(udp_v6_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -527,8 +527,8 @@ static bool net_ctx_send_v4(void)
 	int ret, len;
 	struct net_buf *buf, *frag;
 
-	buf = net_nbuf_get_tx(udp_v4_ctx);
-	frag = net_nbuf_get_data(udp_v4_ctx);
+	buf = net_nbuf_get_tx(udp_v4_ctx, K_FOREVER);
+	frag = net_nbuf_get_data(udp_v4_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -561,8 +561,8 @@ static bool net_ctx_sendto_v6(void)
 				   0, 0, 0, 0, 0, 0, 0, 0x2 } } },
 	};
 
-	buf = net_nbuf_get_tx(udp_v6_ctx);
-	frag = net_nbuf_get_data(udp_v6_ctx);
+	buf = net_nbuf_get_tx(udp_v6_ctx, K_FOREVER);
+	frag = net_nbuf_get_data(udp_v6_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -597,8 +597,8 @@ static bool net_ctx_sendto_v4(void)
 		.sin_addr = { { { 192, 0, 2, 2 } } },
 	};
 
-	buf = net_nbuf_get_tx(udp_v4_ctx);
-	frag = net_nbuf_get_data(udp_v4_ctx);
+	buf = net_nbuf_get_tx(udp_v4_ctx, K_FOREVER);
+	frag = net_nbuf_get_data(udp_v4_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -695,8 +695,8 @@ static bool net_ctx_sendto_v6_wrong_src(void)
 				   0, 0, 0, 0, 0, 0, 0, 0x3 } } },
 	};
 
-	buf = net_nbuf_get_tx(udp_v6_ctx);
-	frag = net_nbuf_get_data(udp_v6_ctx);
+	buf = net_nbuf_get_tx(udp_v6_ctx, K_FOREVER);
+	frag = net_nbuf_get_data(udp_v6_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -752,8 +752,8 @@ static bool net_ctx_sendto_v4_wrong_src(void)
 		.sin_addr = { { { 192, 0, 2, 3 } } },
 	};
 
-	buf = net_nbuf_get_tx(udp_v4_ctx);
-	frag = net_nbuf_get_data(udp_v4_ctx);
+	buf = net_nbuf_get_tx(udp_v4_ctx, K_FOREVER);
+	frag = net_nbuf_get_data(udp_v4_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 

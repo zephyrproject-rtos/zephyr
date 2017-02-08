@@ -14,7 +14,7 @@ operation of the stacks and how they were implemented.
    ip-stack-migrate.rst
    ip-stack-architecture.rst
    networking-api-usage.rst
+   l2-and-drivers.rst
    network-management-api.rst
    buffers.rst
    qemu_setup.rst
-

@@ -162,7 +162,7 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	rx_nbuf_list->tail = 0;
 
 	for (int i = 0; i < rx_desc_list->len; i++) {
-		rx_buf = net_nbuf_get_reserve_data(0);
+		rx_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 		if (rx_buf == NULL) {
 			free_rx_bufs(rx_nbuf_list);
 			SYS_LOG_ERR("Failed to reserve data net buffers");
@@ -470,7 +470,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 		return NULL;
 	}
 
-	rx_frame = net_nbuf_get_reserve_rx(0);
+	rx_frame = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 
 	/* Process a frame */
 	prev_frag = rx_frame;
@@ -509,7 +509,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 			DCACHE_INVALIDATE(frag_data, frag_len);
 
 			/* Get a new data net buffer from the buffer pool */
-			new_frag = net_nbuf_get_reserve_data(0);
+			new_frag = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 			if (new_frag == NULL) {
 				queue->err_rx_frames_dropped++;
 				net_buf_unref(rx_frame);

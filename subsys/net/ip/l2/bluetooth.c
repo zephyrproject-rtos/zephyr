@@ -191,7 +191,7 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		net_buf_frags_len(buf));
 
 	/* Get buffer for bearer / protocol related data */
-	nbuf = net_nbuf_get_reserve_rx(0);
+	nbuf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 
 	/* Set destination address */
 	net_nbuf_ll_dst(nbuf)->addr = ctxt->src.val;
@@ -216,7 +216,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_nbuf_get_reserve_data(0);
+	return net_nbuf_get_reserve_data(0, K_FOREVER);
 }
 
 static struct bt_l2cap_chan_ops ipsp_ops = {

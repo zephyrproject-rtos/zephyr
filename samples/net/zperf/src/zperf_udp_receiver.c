@@ -67,8 +67,8 @@ static inline struct net_buf *build_reply_buf(struct net_context *context,
 
 	printk(TAG "received %d bytes\n",  net_nbuf_appdatalen(buf));
 
-	reply_buf = net_nbuf_get_tx(context);
-	frag = net_nbuf_get_data(context);
+	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
+	frag = net_nbuf_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(reply_buf, frag);
 

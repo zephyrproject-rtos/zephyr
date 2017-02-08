@@ -316,8 +316,8 @@ static bool test_dio_dummy_input(void)
 	struct net_buf *buf, *frag;
 	int ret;
 
-	buf = net_nbuf_get_tx(udp_ctx);
-	frag = net_nbuf_get_data(udp_ctx);
+	buf = net_nbuf_get_tx(udp_ctx, K_FOREVER);
+	frag = net_nbuf_get_data(udp_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 

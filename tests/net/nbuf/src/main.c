@@ -62,8 +62,8 @@ static int test_ipv6_multi_frags(void)
 	int bytes, remaining = strlen(example_data), pos = 0;
 
 	/* Example of multi fragment scenario with IPv6 */
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(LL_RESERVE);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(LL_RESERVE, K_FOREVER);
 
 	/* Place the IP + UDP header in the first fragment */
 	if (!net_buf_tailroom(frag)) {
@@ -91,7 +91,7 @@ static int test_ipv6_multi_frags(void)
 	net_buf_frag_add(buf, frag);
 
 	/* Put some data to rest of the fragments */
-	frag = net_nbuf_get_reserve_data(LL_RESERVE);
+	frag = net_nbuf_get_reserve_data(LL_RESERVE, K_FOREVER);
 	if (net_buf_tailroom(frag) -
 	      (CONFIG_NET_NBUF_DATA_SIZE - LL_RESERVE)) {
 		printk("Invalid number of bytes available in the buf, "
@@ -130,7 +130,8 @@ static int test_ipv6_multi_frags(void)
 
 		net_buf_frag_add(buf, frag);
 		if (remaining > 0) {
-			frag = net_nbuf_get_reserve_data(LL_RESERVE);
+			frag = net_nbuf_get_reserve_data(LL_RESERVE,
+							 K_FOREVER);
 		}
 	}
 
@@ -184,8 +185,8 @@ static int test_fragment_copy(void)
 	size_t orig_len;
 	int pos;
 
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(LL_RESERVE);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(LL_RESERVE, K_FOREVER);
 
 	/* Place the IP + UDP header in the first fragment */
 	if (net_buf_tailroom(frag)) {
@@ -224,13 +225,13 @@ static int test_fragment_copy(void)
 
 	/* Then copy a fragment list to a new fragment list */
 	new_frag = net_nbuf_copy_all(buf->frags, sizeof(struct ipv6_hdr) +
-				     sizeof(struct icmp_hdr));
+				     sizeof(struct icmp_hdr), K_FOREVER);
 	if (!new_frag) {
 		printk("Cannot copy fragment list.\n");
 		return -EINVAL;
 	}
 
-	new_buf = net_nbuf_get_reserve_tx(0);
+	new_buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	net_buf_frag_add(new_buf, new_frag);
 
 	printk("Total new data len %zd\n", net_buf_frags_len(new_buf));
@@ -270,9 +271,8 @@ static int test_fragment_copy(void)
 /* Empty data and test data must be the same size in order the test to work */
 static const char test_data[] = { '0', '1', '2', '3', '4',
 				  '5', '6', '7' };
-static const char empty_data[] = { 0x00, 0x00, 0x00, 0x00, 0x00,
-				   0x00, 0x00, 0x00 };
 
+#if HEXDUMP
 static void hexdump(const char *str, const uint8_t *packet, size_t length)
 {
 	int n = 0;
@@ -303,170 +303,19 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 		printk("\n");
 	}
 }
-
-static int test_fragment_push(void)
-{
-#define FRAG_COUNT 7
-	struct net_buf *buf, *frags[FRAG_COUNT], *frag;
-	uint8_t *ptr;
-	int i, bytes;
-
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = NULL;
-
-	for (i = 0; i < FRAG_COUNT; i++) {
-		frags[i] = net_nbuf_get_reserve_data(12);
-
-		if (frag) {
-			net_buf_frag_add(frag, frags[i]);
-		}
-
-		frag = frags[i];
-
-		/* Copy character test data in front of the fragment */
-		memcpy(net_buf_add(frags[i], sizeof(test_data)),
-		       test_data, sizeof(test_data));
-
-		/* Followed by bytes of zeroes */
-		memset(net_buf_add(frags[i], sizeof(test_data)), 0,
-		       sizeof(test_data));
-	}
-
-	net_buf_frag_add(buf, frags[0]);
-
-	bytes = net_buf_frags_len(buf);
-	if (bytes != FRAG_COUNT * sizeof(test_data) * 2) {
-		printk("Push test failed, fragments had %d bytes but "
-		       "should have had %zd\n", bytes,
-		       FRAG_COUNT * sizeof(test_data) * 2);
-		return -1;
-	}
-
-	if (net_nbuf_is_compact(buf->frags)) {
-		printk("The buf->frags is not compact. Test fails\n");
-		return -1;
-	}
-
-	if (net_nbuf_is_compact(buf)) {
-		printk("The buf is definitely not compact. Test fails\n");
-		return -1;
-	}
-
-	buf = net_nbuf_compact(buf);
-
-	if (!net_nbuf_is_compact(buf)) {
-		printk("The buf should be in compact form. Test fails\n");
-		return -1;
-	}
-
-	/* Try compacting again, nothing should happen */
-	buf = net_nbuf_compact(buf);
-
-	if (!net_nbuf_is_compact(buf)) {
-		printk("The buf should be compacted now. Test fails\n");
-		return -1;
-	}
-
-	buf = net_nbuf_push(buf, buf->frags, sizeof(empty_data));
-	if (!buf) {
-		printk("push test failed, even with fragment pointer\n");
-		return -1;
-	}
-
-	/* Clear the just allocated area */
-	memcpy(buf->frags->data, empty_data, sizeof(empty_data));
-
-	/* The data should look now something like this (frag->data will point
-	 * into this part).
-	 *     empty
-	 *     test data
-	 *     empty
-	 *     test data
-	 *     empty
-	 *     test data
-	 *     empty
-	 *     test data
-	 *     empty
-	 *     test data
-	 *     empty
-	 *
-	 * Then the second fragment:
-	 *     test data
-	 *     empty
-	 *     test data
-	 *     empty
-	 */
-
-	frag = buf->frags;
-
-	hexdump("frag 1", frag->data, frag->len);
-
-	ptr = frag->data;
-
-	for (i = 0; i < frag->len / (sizeof(empty_data) * 2); i++) {
-		if (memcmp(ptr, empty_data, sizeof(empty_data))) {
-			printk("%d: No empty data at pos %p\n",
-			       __LINE__, ptr);
-			return -1;
-		}
-
-		ptr += sizeof(empty_data);
-
-		if (memcmp(ptr, test_data, sizeof(test_data))) {
-			printk("%d: No test data at pos %p\n",
-			       __LINE__, ptr);
-			return -1;
-		}
-
-		ptr += sizeof(empty_data);
-	}
-
-	/* One empty data at the end of first fragment */
-	if (memcmp(ptr, empty_data, sizeof(empty_data))) {
-		printk("%d: No empty data at pos %p\n",
-		       __LINE__, ptr);
-		return -1;
-	}
-
-	frag = frag->frags;
-
-	hexdump("frag 2", frag->data, frag->len);
-
-	ptr = frag->data;
-
-	for (i = 0; i < frag->len / (sizeof(empty_data) * 2); i++) {
-		if (memcmp(ptr, test_data, sizeof(test_data))) {
-			printk("%d: No test data at pos %p\n",
-			       __LINE__, ptr);
-			return -1;
-		}
-
-		ptr += sizeof(test_data);
-
-		if (memcmp(ptr, empty_data, sizeof(empty_data))) {
-			printk("%d: No empty data at pos %p\n",
-			       __LINE__, ptr);
-			return -1;
-		}
-
-		ptr += sizeof(empty_data);
-	}
-
-	net_nbuf_unref(buf);
-
-	return 0;
-}
+#endif
 
 static int test_fragment_pull(void)
 {
+#define FRAG_COUNT	7
 	struct net_buf *buf, *newbuf, *frags[FRAG_COUNT], *frag;
 	int i, bytes_before, bytes_after, amount = 10, bytes_before2;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	frag = NULL;
 
 	for (i = 0; i < FRAG_COUNT; i++) {
-		frags[i] = net_nbuf_get_reserve_data(12);
+		frags[i] = net_nbuf_get_reserve_data(12, K_FOREVER);
 
 		if (frag) {
 			net_buf_frag_add(frag, frags[i]);
@@ -518,13 +367,13 @@ static int test_fragment_pull(void)
 	net_nbuf_unref(buf);
 
 	/* Trying without TX or RX buf as a first element */
-	frags[0] = net_nbuf_get_reserve_data(12);
+	frags[0] = net_nbuf_get_reserve_data(12, K_FOREVER);
 	frag = frags[0];
 	memcpy(net_buf_add(frags[0], sizeof(test_data)),
 	       test_data, sizeof(test_data));
 
 	for (i = 1; i < FRAG_COUNT; i++) {
-		frags[i] = net_nbuf_get_reserve_data(12);
+		frags[i] = net_nbuf_get_reserve_data(12, K_FOREVER);
 
 		if (frag) {
 			net_buf_frag_add(frag, frags[i]);
@@ -621,8 +470,8 @@ static int test_nbuf_read_append(void)
 	uint16_t fail_pos;
 
 	/* Example of multi fragment read, append and skip APS's */
-	buf = net_nbuf_get_reserve_rx(0);
-	frag = net_nbuf_get_reserve_data(LL_RESERVE);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_data(LL_RESERVE, K_FOREVER);
 
 	/* Place the IP + UDP header in the first fragment */
 	if (!net_buf_tailroom(frag)) {
@@ -650,7 +499,7 @@ static int test_nbuf_read_append(void)
 	net_buf_frag_add(buf, frag);
 
 	/* Put some data to rest of the fragments */
-	frag = net_nbuf_get_reserve_data(LL_RESERVE);
+	frag = net_nbuf_get_reserve_data(LL_RESERVE, K_FOREVER);
 	if (net_buf_tailroom(frag) -
 	      (CONFIG_NET_NBUF_DATA_SIZE - LL_RESERVE)) {
 		printk("Invalid number of bytes available in the buf, "
@@ -689,7 +538,8 @@ static int test_nbuf_read_append(void)
 
 		net_buf_frag_add(buf, frag);
 		if (remaining > 0) {
-			frag = net_nbuf_get_reserve_data(LL_RESERVE);
+			frag = net_nbuf_get_reserve_data(LL_RESERVE,
+							 K_FOREVER);
 		}
 	}
 
@@ -765,12 +615,14 @@ static int test_nbuf_read_append(void)
 	tfrag = net_buf_frag_last(buf->frags);
 	off = tfrag->len;
 
-	if (!net_nbuf_append(buf, sizeof(test_rw_short), test_rw_short)) {
+	if (!net_nbuf_append(buf, sizeof(test_rw_short), test_rw_short,
+			     K_FOREVER)) {
 		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_nbuf_append(buf, sizeof(test_rw_short), test_rw_short)) {
+	if (!net_nbuf_append(buf, sizeof(test_rw_short), test_rw_short,
+			     K_FOREVER)) {
 		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
@@ -799,12 +651,14 @@ static int test_nbuf_read_append(void)
 	tfrag = net_buf_frag_last(buf->frags);
 	off = tfrag->len;
 
-	if (!net_nbuf_append(buf, sizeof(test_rw_long), test_rw_long)) {
+	if (!net_nbuf_append(buf, sizeof(test_rw_long), test_rw_long,
+			     K_FOREVER)) {
 		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_nbuf_append(buf, sizeof(test_rw_long), test_rw_long)) {
+	if (!net_nbuf_append(buf, sizeof(test_rw_long), test_rw_long,
+			     K_FOREVER)) {
 		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
@@ -812,7 +666,8 @@ static int test_nbuf_read_append(void)
 	/* Try to pass fragment to net_nbuf_append(), this should fail
 	 * as we always need to pass the first buf into it.
 	 */
-	if (net_nbuf_append(buf->frags, sizeof(test_rw_short), test_rw_short)) {
+	if (net_nbuf_append(buf->frags, sizeof(test_rw_short), test_rw_short,
+			    K_FOREVER)) {
 		printk("net_nbuf_append succeed but should have failed\n");
 		return -EINVAL;
 	}
@@ -847,10 +702,10 @@ static int test_nbuf_read_write_insert(void)
 	uint16_t pos;
 
 	/* Example of multi fragment read, append and skip APS's */
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	/* 1) Offset is with in input fragment.
@@ -859,7 +714,7 @@ static int test_nbuf_read_write_insert(void)
 	 * and write data).
 	 */
 	frag = net_nbuf_write(buf, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			      (uint8_t *)sample_data);
+			      (uint8_t *)sample_data, K_FOREVER);
 	if (!frag || pos != 58) {
 		printk("Usecase 1: Write failed\n");
 		return -EINVAL;
@@ -882,7 +737,7 @@ static int test_nbuf_read_write_insert(void)
 	 * there shouldn't be any length change).
 	 */
 	frag = net_nbuf_write(buf, frag, 0, &pos, NET_IPV6UDPH_LEN,
-			      (uint8_t *)sample_data);
+			      (uint8_t *)sample_data, K_FOREVER);
 	if (!frag || pos != 48) {
 		printk("Usecase 2: Write failed\n");
 		return -EINVAL;
@@ -903,7 +758,7 @@ static int test_nbuf_read_write_insert(void)
 	/* Unref */
 	net_nbuf_unref(buf);
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
 
 	/* 3) Offset is in next to next fragment.
@@ -911,7 +766,7 @@ static int test_nbuf_read_write_insert(void)
 	 * create empty fragments(space) till offset and write data).
 	 */
 	frag = net_nbuf_write(buf, buf->frags, 200, &pos, 10,
-			      (uint8_t *)sample_data + 10);
+			      (uint8_t *)sample_data + 10, K_FOREVER);
 	if (!frag) {
 		printk("Usecase 3: Write failed");
 	}
@@ -934,7 +789,7 @@ static int test_nbuf_read_write_insert(void)
 	 * the existing data.
 	 */
 	frag = net_nbuf_write(buf, buf->frags, 190, &pos, 10,
-			      (uint8_t *)sample_data);
+			      (uint8_t *)sample_data, K_FOREVER);
 	if (!frag) {
 		printk("Usecase 4: Write failed\n");
 		return -EINVAL;
@@ -959,16 +814,17 @@ static int test_nbuf_read_write_insert(void)
 	 *    API should overwrite on first 10 bytes and create extra 10 bytes
 	 *    and write there.
 	 */
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	/* Create 10 bytes space. */
 	net_buf_add(frag, 10);
 
-	frag = net_nbuf_write(buf, frag, 0, &pos, 20, (uint8_t *)sample_data);
+	frag = net_nbuf_write(buf, frag, 0, &pos, 20, (uint8_t *)sample_data,
+			      K_FOREVER);
 	if (!frag && pos != 20) {
 		printk("Usecase 5: Write failed\n");
 		return -EINVAL;
@@ -996,18 +852,18 @@ static int test_nbuf_read_write_insert(void)
 	 *    bytes and write data. Third fragment 5 bytes overwritten and space
 	 *    for 5 bytes created.
 	 */
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
 
 	/* First fragment make it fully occupied. */
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	len = net_buf_tailroom(frag);
 	net_buf_add(frag, len);
 
 	/* 2nd fragment last 10 bytes tailroom, rest occupied */
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	len = net_buf_tailroom(frag);
@@ -1017,12 +873,12 @@ static int test_nbuf_read_write_insert(void)
 	read_pos = frag->len - 10;
 
 	/* 3rd fragment, only 5 bytes occupied */
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
 	net_buf_frag_add(buf, frag);
 	net_buf_add(frag, 5);
 
 	temp_frag = net_nbuf_write(buf, temp_frag, temp_frag->len - 10, &pos,
-				   30, (uint8_t *) sample_data);
+				   30, (uint8_t *) sample_data, K_FOREVER);
 	if (!temp_frag) {
 		printk("Use case 6: Write failed\n");
 		return -EINVAL;
@@ -1050,15 +906,15 @@ static int test_nbuf_read_write_insert(void)
 	 * before first set of app data.
 	 */
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
 
 	/* First fragment make it fully occupied. */
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	frag = net_nbuf_write(buf, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			      (uint8_t *)sample_data + 10);
+			      (uint8_t *)sample_data + 10, K_FOREVER);
 	if (!frag || pos != 58) {
 		printk("Usecase 7: Write failed\n");
 		return -EINVAL;
@@ -1077,7 +933,7 @@ static int test_nbuf_read_write_insert(void)
 	}
 
 	if (!net_nbuf_insert(buf, frag, NET_IPV6UDPH_LEN, 10,
-			     (uint8_t *)sample_data)) {
+			     (uint8_t *)sample_data, K_FOREVER)) {
 		printk("Usecase 7: Insert failed\n");
 		return -EINVAL;
 	}
@@ -1095,7 +951,8 @@ static int test_nbuf_read_write_insert(void)
 	}
 
 	/* Insert data outside input fragment length, error case. */
-	if (net_nbuf_insert(buf, frag, 70, 10, (uint8_t *)sample_data)) {
+	if (net_nbuf_insert(buf, frag, 70, 10, (uint8_t *)sample_data,
+			    K_FOREVER)) {
 		printk("Usecase 7: False insert failed\n");
 		return -EINVAL;
 	}
@@ -1110,15 +967,15 @@ static int test_nbuf_read_write_insert(void)
 	 * before first set of app data. Insertion data is long which will
 	 * take two fragments.
 	 */
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	net_nbuf_set_ll_reserve(buf, LL_RESERVE);
 
 	/* First fragment make it fully occupied. */
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
 	frag = net_nbuf_write(buf, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			      (uint8_t *)sample_data + 60);
+			      (uint8_t *)sample_data + 60, K_FOREVER);
 	if (!frag || pos != 58) {
 		printk("Usecase 8: Write failed\n");
 		return -EINVAL;
@@ -1137,7 +994,7 @@ static int test_nbuf_read_write_insert(void)
 	}
 
 	if (!net_nbuf_insert(buf, frag, NET_IPV6UDPH_LEN, 60,
-			     (uint8_t *)sample_data)) {
+			     (uint8_t *)sample_data, K_FOREVER)) {
 		printk("Usecase 8: Insert failed\n");
 		return -EINVAL;
 	}
@@ -1177,11 +1034,11 @@ static int test_fragment_compact(void)
 	struct net_buf *buf, *frags[FRAG_COUNT], *frag;
 	int i, bytes, total, count;
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 	frag = NULL;
 
 	for (i = 0, total = 0; i < FRAG_COUNT; i++) {
-		frags[i] = net_nbuf_get_reserve_data(12);
+		frags[i] = net_nbuf_get_reserve_data(12, K_FOREVER);
 
 		if (frag) {
 			net_buf_frag_add(frag, frags[i]);
@@ -1226,7 +1083,7 @@ static int test_fragment_compact(void)
 		return -1;
 	}
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	if (!net_nbuf_is_compact(buf)) {
 		printk("The buf should be in compact form. Test fails\n");
@@ -1234,7 +1091,7 @@ static int test_fragment_compact(void)
 	}
 
 	/* Try compacting again, nothing should happen */
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	if (!net_nbuf_is_compact(buf)) {
 		printk("The buf should be compacted now. Test fails\n");
@@ -1246,13 +1103,13 @@ static int test_fragment_compact(void)
 	/* Add empty fragment at the end and compact, the last fragment
 	 * should be removed.
 	 */
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
 	count = calc_fragments(buf);
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	i = calc_fragments(buf);
 
@@ -1271,17 +1128,17 @@ static int test_fragment_compact(void)
 	/* Add two empty fragments at the end and compact, the last two
 	 * fragment should be removed.
 	 */
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
 	count = calc_fragments(buf);
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	i = calc_fragments(buf);
 
@@ -1300,17 +1157,17 @@ static int test_fragment_compact(void)
 	/* Add empty fragment at the beginning and at the end, and then
 	 * compact, the two fragment should be removed.
 	 */
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 
 	net_buf_frag_insert(buf, frag);
 
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
 	count = calc_fragments(buf);
 
-	buf = net_nbuf_compact(buf);
+	net_nbuf_compact(buf);
 
 	i = calc_fragments(buf);
 
@@ -1336,10 +1193,6 @@ void main(void)
 	}
 
 	if (test_fragment_copy() < 0) {
-		goto fail;
-	}
-
-	if (test_fragment_push() < 0) {
 		goto fail;
 	}
 

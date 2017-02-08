@@ -1,6 +1,6 @@
 obj-y = echo-client.o
 
-ifeq ($(CONFIG_TI_CC2520),y)
+ifeq ($(CONFIG_IEEE802154_CC2520),y)
 
 ifeq ($(CONFIG_BOARD_ARDUINO_101),y)
 ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/

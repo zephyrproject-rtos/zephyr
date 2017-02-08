@@ -144,6 +144,33 @@ static inline void net_hexdump_frags(const char *str, struct net_buf *buf)
 	}
 }
 
+/* Print fragment chain */
+static inline void net_print_frags(const char *str, struct net_buf *buf)
+{
+	struct net_buf *frag = buf->frags;
+
+	if (str) {
+		printk("%s", str);
+	}
+
+	printk("%p[%d]", buf, buf->ref);
+
+	if (frag) {
+		printk("->");
+	}
+
+	while (frag) {
+		printk("%p[%d/%d]", frag, frag->ref, frag->len);
+
+		frag = frag->frags;
+		if (frag) {
+			printk("->");
+		}
+	}
+
+	printk("\n");
+}
+
 #else /* NET_LOG_ENABLED */
 
 static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
@@ -177,5 +204,7 @@ static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 
 #define net_hexdump(str, packet, length)
 #define net_hexdump_frags(...)
+
+#define net_print_frags(...)
 
 #endif /* NET_LOG_ENABLED */

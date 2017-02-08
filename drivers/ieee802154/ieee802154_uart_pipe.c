@@ -54,13 +54,13 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 	upipe->rx_buf[upipe->rx_off++] = *buf;
 
 	if (upipe->rx_len == upipe->rx_off) {
-		nbuf = net_nbuf_get_reserve_rx(0);
+		nbuf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 		if (!nbuf) {
 			SYS_LOG_DBG("No buf available");
 			goto flush;
 		}
 
-		pkt_buf = net_nbuf_get_reserve_data(0);
+		pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_DBG("No fragment available");
 			goto out;
@@ -282,7 +282,7 @@ static struct ieee802154_radio_api upipe_radio_api = {
 	.stop			= upipe_stop,
 };
 
-NET_DEVICE_INIT(upipe_15_4, CONFIG_UPIPE_15_4_DRV_NAME,
+NET_DEVICE_INIT(upipe_15_4, CONFIG_IEEE802154_UPIPE_DRV_NAME,
 		upipe_init, &upipe_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&upipe_radio_api, IEEE802154_L2,
