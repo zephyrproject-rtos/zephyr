@@ -1,0 +1,268 @@
+/*
+ * Copyright (c) 2017 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ztest.h>
+#include <misc/dlist.h>
+
+static sys_dlist_t test_list;
+
+struct container_node {
+	sys_dnode_t node;
+	int unused;
+};
+
+static struct container_node test_node_1;
+static struct container_node test_node_2;
+static struct container_node test_node_3;
+static struct container_node test_node_4;
+
+static inline bool verify_emptyness(sys_dlist_t *list)
+{
+	sys_dnode_t *node;
+	sys_dnode_t *s_node;
+	struct container_node *cnode;
+	struct container_node *s_cnode;
+	int count;
+
+	if (!sys_dlist_is_empty(list)) {
+		return false;
+	}
+
+	if (sys_dlist_peek_head(list)) {
+		return false;
+	}
+
+	if (sys_dlist_peek_tail(list)) {
+		return false;
+	}
+
+	count = 0;
+	SYS_DLIST_FOR_EACH_NODE(list, node) {
+		count++;
+	}
+
+	if (count) {
+		return false;
+	}
+
+	SYS_DLIST_FOR_EACH_NODE_SAFE(list, node, s_node) {
+		count++;
+	}
+
+	if (count) {
+		return false;
+	}
+
+	count = 0;
+	SYS_DLIST_FOR_EACH_CONTAINER(list, cnode, node) {
+		count++;
+	}
+
+	if (count) {
+		return false;
+	}
+
+	count = 0;
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(list, cnode, s_cnode, node) {
+		count++;
+	}
+
+	if (count) {
+		return false;
+	}
+
+	return true;
+}
+
+static inline bool verify_content_amount(sys_dlist_t *list, int amount)
+{
+	sys_dnode_t *node;
+	sys_dnode_t *s_node;
+	struct container_node *cnode;
+	struct container_node *s_cnode;
+	int count;
+
+	if (sys_dlist_is_empty(list)) {
+		return false;
+	}
+
+	if (!sys_dlist_peek_head(list)) {
+		return false;
+	}
+
+	if (!sys_dlist_peek_tail(list)) {
+		return false;
+	}
+
+	count = 0;
+	SYS_DLIST_FOR_EACH_NODE(list, node) {
+		count++;
+	}
+
+	if (count != amount) {
+		return false;
+	}
+
+	count = 0;
+	SYS_DLIST_FOR_EACH_NODE_SAFE(list, node, s_node) {
+		count++;
+	}
+
+	if (count != amount) {
+		return false;
+	}
+
+	count = 0;
+	SYS_DLIST_FOR_EACH_CONTAINER(list, cnode, node) {
+		count++;
+	}
+
+	if (count != amount) {
+		return false;
+	}
+
+	count = 0;
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(list, cnode, s_cnode, node) {
+		count++;
+	}
+
+	if (count != amount) {
+		return false;
+	}
+
+	return true;
+}
+
+static inline bool verify_tail_head(sys_dlist_t *list,
+				    sys_dnode_t *head,
+				    sys_dnode_t *tail,
+				    bool same)
+{
+	if (sys_dlist_peek_head(list) != head) {
+		return false;
+	}
+
+	if (sys_dlist_peek_tail(list) != tail) {
+		return false;
+	}
+
+	if (same) {
+		if (sys_dlist_peek_head(list) != sys_dlist_peek_tail(list)) {
+			return false;
+		}
+	} else {
+		if (sys_dlist_peek_head(list) == sys_dlist_peek_tail(list)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void dlist_test(void)
+{
+	sys_dlist_init(&test_list);
+
+	assert_true((verify_emptyness(&test_list)), "test_list should be empty");
+
+	/* Appending node 1 */
+	sys_dlist_append(&test_list, &test_node_1.node);
+	assert_true((verify_content_amount(&test_list, 1)),
+		    "test_list has wrong content");
+
+	assert_true((verify_tail_head(&test_list, &test_node_1.node,
+				      &test_node_1.node, true)),
+		     "test_list head/tail are wrong");
+
+	/* Finding and removing node 1 */
+	sys_dlist_remove(&test_node_1.node);
+	assert_true((verify_emptyness(&test_list)),
+		    "test_list should be empty");
+
+	/* Prepending node 1 */
+	sys_dlist_prepend(&test_list, &test_node_1.node);
+	assert_true((verify_content_amount(&test_list, 1)),
+		    "test_list has wrong content");
+
+	assert_true((verify_tail_head(&test_list, &test_node_1.node,
+				      &test_node_1.node, true)),
+		    "test_list head/tail are wrong");
+
+	/* Removing node 1 */
+	sys_dlist_remove(&test_node_1.node);
+	assert_true((verify_emptyness(&test_list)),
+		    "test_list should be empty");
+
+	/* Appending node 1 */
+	sys_dlist_append(&test_list, &test_node_1.node);
+	/* Prepending node 2 */
+	sys_dlist_prepend(&test_list, &test_node_2.node);
+
+	assert_true((verify_content_amount(&test_list, 2)),
+		    "test_list has wrong content");
+
+	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+				      &test_node_1.node, false)),
+		    "test_list head/tail are wrong");
+
+	/* Appending node 3 */
+	sys_dlist_append(&test_list, &test_node_3.node);
+
+	assert_true((verify_content_amount(&test_list, 3)),
+		    "test_list has wrong content");
+
+	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+				      &test_node_3.node, false)),
+		    "test_list head/tail are wrong");
+
+	assert_true((sys_dlist_peek_next(&test_list, &test_node_2.node) ==
+					 &test_node_1.node),
+		    "test_list node links are wrong");
+
+	/* Inserting node 4 after node 2 */
+	sys_dlist_insert_after(&test_list, &test_node_2.node,
+			       &test_node_4.node);
+
+	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+				      &test_node_3.node, false)),
+		    "test_list head/tail are wrong");
+
+	assert_true((sys_dlist_peek_next(&test_list, &test_node_2.node) ==
+					 &test_node_4.node),
+		    "test_list node links are wrong");
+
+	/* Finding and removing node 1 */
+	sys_dlist_remove(&test_node_1.node);
+	assert_true((verify_content_amount(&test_list, 3)),
+		    "test_list has wrong content");
+
+	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+				      &test_node_3.node, false)),
+		    "test_list head/tail are wrong");
+
+	/* Removing node 3 */
+	sys_dlist_remove(&test_node_3.node);
+	assert_true((verify_content_amount(&test_list, 2)),
+		    "test_list has wrong content");
+
+	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+				      &test_node_4.node, false)),
+		    "test_list head/tail are wrong");
+
+	/* Removing node 4 */
+	sys_dlist_remove(&test_node_4.node);
+	assert_true((verify_content_amount(&test_list, 1)),
+		    "test_list has wrong content");
+
+	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+				      &test_node_2.node, true)),
+		    "test_list head/tail are wrong");
+
+	/* Removing node 2 */
+	sys_dlist_remove(&test_node_2.node);
+	assert_true((verify_emptyness(&test_list)),
+		    "test_list should be empty");
+}
