@@ -24,6 +24,16 @@ extern "C" {
 #include <stdint.h>
 #include <sw_isr_table.h>
 #include <arch/xtensa/xtensa_irq.h>
+#include <xtensa/config/core.h>
+
+/*
+ * XCC does not define the following macros with the expected names, but the
+ * file machine/endian.h from XT_LIB defines similar ones. Thus we include it
+ * and define the missing macros ourselves.
+ */
+#define __BYTE_ORDER__ XCHAL_MEMORY_ORDER
+#define __ORDER_BIG_ENDIAN__ XTHAL_BIGENDIAN
+#define __ORDER_LITTLE_ENDIAN__ XTHAL_LITTLEENDIAN
 
 #define STACK_ALIGN 16
 #define OCTET_TO_SIZEOFUNIT(X) (X)
