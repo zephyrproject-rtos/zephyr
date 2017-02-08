@@ -22,6 +22,13 @@ config ETH_MCUX_PHY_TICK_MS
 	help
 	  Set the PHY status polling period.
 
+config ETH_MCUX_PHY_EXTRA_DEBUG
+	bool "Enable additional detailed PHY debug"
+	default n
+	help
+	  Enable additional PHY related debug information related to
+	  PHY status polling.
+
 config ETH_MCUX_RX_BUFFERS
 	int "Number of MCUX RX buffers"
 	depends on ETH_MCUX

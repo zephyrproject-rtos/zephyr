@@ -142,7 +142,9 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context)
 
 static void eth_mcux_phy_start(struct eth_context *context)
 {
+#ifdef CONFIG_ETH_MCUX_PHY_DETAILED_DEBUG
 	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+#endif
 
 	context->enabled = true;
 
@@ -164,7 +166,9 @@ static void eth_mcux_phy_start(struct eth_context *context)
 
 void eth_mcux_phy_stop(struct eth_context *context)
 {
+#ifdef CONFIG_ETH_MCUX_PHY_DETAILED_DEBUG
 	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+#endif
 
 	context->enabled = false;
 
@@ -199,8 +203,9 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	phy_speed_t phy_speed = kPHY_Speed100M;
 	const uint32_t phy_addr = 0;
 
+#ifdef CONFIG_ETH_MCUX_PHY_DETAILED_DEBUG
 	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
-
+#endif
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
 		break;
