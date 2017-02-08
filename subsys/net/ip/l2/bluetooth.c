@@ -204,7 +204,7 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* Add data buffer as fragment of RX buffer, take a reference while
 	 * doing so since L2CAP will unref the buffer after return.
 	 */
-	net_buf_frag_add(nbuf, net_buf_ref(buf));
+	net_buf_frag_add(nbuf, net_nbuf_ref(buf));
 
 	if (net_recv_data(ctxt->iface, nbuf) < 0) {
 		NET_DBG("Packet dropped by NET stack");

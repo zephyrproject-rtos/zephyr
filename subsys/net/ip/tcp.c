@@ -122,7 +122,7 @@ static void tcp_retry_expired(struct k_timer *timer)
 
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
-		net_tcp_send_buf(net_buf_ref(buf));
+		net_tcp_send_buf(net_nbuf_ref(buf));
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
 			net_context_unref(tcp->context);
@@ -610,7 +610,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 	context->tcp->send_seq += data_len;
 
 	sys_slist_append(&context->tcp->sent_list, &buf->sent_list);
-	net_buf_ref(buf);
+	net_nbuf_ref(buf);
 
 	return 0;
 }
