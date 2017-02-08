@@ -271,7 +271,7 @@ static struct net_buf *build_reply_buf(const char *name,
 		return NULL;
 	}
 
-	reply_buf = net_nbuf_get_tx(context);
+	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
 
 	NET_ASSERT(reply_buf);
 
@@ -292,7 +292,7 @@ static struct net_buf *build_reply_buf(const char *name,
 	net_buf_pull(tmp, header_len);
 
 	while (tmp) {
-		frag = net_nbuf_get_data(context);
+		frag = net_nbuf_get_data(context, K_FOREVER);
 
 		if (!net_buf_headroom(tmp)) {
 			/* If there is no link layer headers in the
@@ -429,14 +429,16 @@ static void tcp_received(struct net_context *context,
 			 void *user_data)
 {
 	static char dbg[MAX_DBG_PRINT + 1];
-	sa_family_t family = net_nbuf_family(buf);
 	struct net_buf *reply_buf;
+	sa_family_t family;
 	int ret;
 
 	if (!buf) {
 		/* EOF condition */
 		return;
 	}
+
+	family = net_nbuf_family(buf);
 
 	snprintk(dbg, MAX_DBG_PRINT, "TCP IPv%c",
 		 family == AF_INET6 ? '6' : '4');

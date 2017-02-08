@@ -95,7 +95,7 @@ static struct net_buf *udp_recv(const char *name,
 	NET_INFO("%s received %u bytes", name,
 	      net_nbuf_appdatalen(buf));
 
-	reply_buf = net_nbuf_get_tx(context);
+	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
 
 	NET_ASSERT(reply_buf);
 
@@ -113,7 +113,7 @@ static struct net_buf *udp_recv(const char *name,
 	net_buf_pull(tmp, header_len);
 
 	while (tmp) {
-		frag = net_nbuf_get_data(context);
+		frag = net_nbuf_get_data(context, K_FOREVER);
 
 		memcpy(net_buf_add(frag, tmp->len), tmp->data, tmp->len);
 

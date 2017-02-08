@@ -137,6 +137,8 @@ uint8_t _mcr20a_read_reg(struct mcr20a_spi *spi, bool dreg, uint8_t addr)
 {
 	uint8_t len = dreg ? 2 : 3;
 
+	k_sem_take(&spi->spi_sem, K_FOREVER);
+
 	spi->cmd_buf[0] = dreg ? (MCR20A_REG_READ | addr) :
 				 (MCR20A_IAR_INDEX | MCR20A_REG_WRITE);
 	spi->cmd_buf[1] = dreg ? 0 : (addr | MCR20A_REG_READ);
@@ -146,8 +148,11 @@ uint8_t _mcr20a_read_reg(struct mcr20a_spi *spi, bool dreg, uint8_t addr)
 
 	if (spi_transceive(spi->dev, spi->cmd_buf, len,
 			   spi->cmd_buf, len) == 0) {
+		k_sem_give(&spi->spi_sem);
 		return spi->cmd_buf[len - 1];
 	}
+
+	k_sem_give(&spi->spi_sem);
 
 	return 0;
 }
@@ -157,6 +162,9 @@ bool _mcr20a_write_reg(struct mcr20a_spi *spi, bool dreg, uint8_t addr,
 		       uint8_t value)
 {
 	uint8_t len = dreg ? 2 : 3;
+	bool retval;
+
+	k_sem_take(&spi->spi_sem, K_FOREVER);
 
 	spi->cmd_buf[0] = dreg ? (MCR20A_REG_WRITE | addr) :
 				 (MCR20A_IAR_INDEX | MCR20A_REG_WRITE);
@@ -164,14 +172,21 @@ bool _mcr20a_write_reg(struct mcr20a_spi *spi, bool dreg, uint8_t addr,
 	spi->cmd_buf[2] = dreg ? 0 : value;
 
 	spi_slave_select(spi->dev, spi->slave);
+	retval = (spi_write(spi->dev, spi->cmd_buf, len) == 0);
 
-	return (spi_write(spi->dev, spi->cmd_buf, len) == 0);
+	k_sem_give(&spi->spi_sem);
+
+	return retval;
 }
 
 /* Write multiple bytes to direct or indirect register */
 bool _mcr20a_write_burst(struct mcr20a_spi *spi, bool dreg, uint16_t addr,
 			 uint8_t *data_buf, uint8_t len)
 {
+	bool retval;
+
+	k_sem_take(&spi->spi_sem, K_FOREVER);
+
 	if ((len + 2) > sizeof(spi->cmd_buf)) {
 		SYS_LOG_ERR("Buffer length too large");
 	}
@@ -188,14 +203,19 @@ bool _mcr20a_write_burst(struct mcr20a_spi *spi, bool dreg, uint16_t addr,
 	}
 
 	spi_slave_select(spi->dev, spi->slave);
+	retval = (spi_write(spi->dev, spi->cmd_buf, len) == 0);
 
-	return (spi_write(spi->dev, spi->cmd_buf, len) == 0);
+	k_sem_give(&spi->spi_sem);
+
+	return retval;
 }
 
 /* Read multiple bytes from direct or indirect register */
 bool _mcr20a_read_burst(struct mcr20a_spi *spi, bool dreg, uint16_t addr,
 			uint8_t *data_buf, uint8_t len)
 {
+	k_sem_take(&spi->spi_sem, K_FOREVER);
+
 	if ((len + 2) > sizeof(spi->cmd_buf)) {
 		SYS_LOG_ERR("Buffer length too large");
 	}
@@ -213,6 +233,7 @@ bool _mcr20a_read_burst(struct mcr20a_spi *spi, bool dreg, uint16_t addr,
 
 	if (spi_transceive(spi->dev, spi->cmd_buf, len,
 			   spi->cmd_buf, len) != 0) {
+		k_sem_give(&spi->spi_sem);
 		return 0;
 	}
 
@@ -221,6 +242,8 @@ bool _mcr20a_read_burst(struct mcr20a_spi *spi, bool dreg, uint16_t addr,
 	} else {
 		memcpy(data_buf, &spi->cmd_buf[2], len - 2);
 	}
+
+	k_sem_give(&spi->spi_sem);
 
 	return 1;
 }
@@ -472,16 +495,20 @@ static inline bool read_rxfifo_content(struct mcr20a_spi *spi,
 		return false;
 	}
 
-	data[0] = MCR20A_BUF_READ;
+	k_sem_take(&spi->spi_sem, K_FOREVER);
 
+	data[0] = MCR20A_BUF_READ;
 	spi_slave_select(spi->dev, spi->slave);
 
 	if (spi_transceive(spi->dev, data, len+1, data, len+1) != 0) {
+		k_sem_give(&spi->spi_sem);
 		return false;
 	}
 
 	memcpy(buf->data, &data[1], len);
 	net_buf_add(buf, len);
+
+	k_sem_give(&spi->spi_sem);
 
 	return true;
 }
@@ -497,20 +524,20 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a)
 	pkt_len = read_reg_rx_frm_len(&mcr20a->spi);
 	pkt_len -= MCR20A_FCS_LENGTH;
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
 	if (!buf) {
 		SYS_LOG_ERR("No buf available");
 		goto out;
 	}
 
-#if defined(CONFIG_NXP_MCR20A_RAW)
+#if defined(CONFIG_IEEE802154_MCR20A_RAW)
 	/* TODO: Test raw mode */
 	/**
 	 * Reserve 1 byte for length
 	 */
-	pkt_buf = net_nbuf_get_reserve_data(1);
+	pkt_buf = net_nbuf_get_reserve_data(1, K_NO_WAIT);
 #else
-	pkt_buf = net_nbuf_get_reserve_data(0);
+	pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
 #endif
 	if (!pkt_buf) {
 		SYS_LOG_ERR("No pkt_buf available");
@@ -534,7 +561,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a)
 		    pkt_len, mcr20a->lqi,
 		    mcr20a_get_rssi(mcr20a->lqi));
 
-#if defined(CONFIG_NXP_MCR20A_RAW)
+#if defined(CONFIG_IEEE802154_MCR20A_RAW)
 	net_buf_add_u8(pkt_buf, mcr20a->lqi);
 #endif
 
@@ -545,7 +572,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a)
 
 	net_analyze_stack("MCR20A Rx Fiber stack",
 			  mcr20a->mcr20a_rx_stack,
-			  CONFIG_NXP_MCR20A_RX_STACK_SIZE);
+			  CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE);
 	return;
 out:
 	if (buf) {
@@ -1078,6 +1105,9 @@ static inline bool write_txfifo_content(struct mcr20a_spi *spi,
 	uint8_t cmd[2 + MCR20A_PSDU_LENGTH];
 	uint8_t payload_len = net_nbuf_ll_reserve(buf) + frag->len;
 	uint8_t *payload = frag->data - net_nbuf_ll_reserve(buf);
+	bool retval;
+
+	k_sem_take(&spi->spi_sem, K_FOREVER);
 
 	cmd[0] = MCR20A_BUF_WRITE;
 	/**
@@ -1095,7 +1125,13 @@ static inline bool write_txfifo_content(struct mcr20a_spi *spi,
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, cmd, (2 + payload_len)) == 0);
+	retval = (spi_transceive(spi->dev,
+		  cmd, (2 + payload_len),
+		  cmd, (2 + payload_len)) == 0);
+
+	k_sem_give(&spi->spi_sem);
+
+	return retval;
 }
 
 static int mcr20a_tx(struct device *dev,
@@ -1233,6 +1269,8 @@ static int mcr20a_update_overwrites(struct mcr20a_context *dev)
 		goto error;
 	}
 
+	k_sem_take(&spi->spi_sem, K_FOREVER);
+
 	for (uint8_t i = 0;
 	     i < sizeof(overwrites_indirect) / sizeof(overwrites_t);
 	     i++) {
@@ -1244,9 +1282,12 @@ static int mcr20a_update_overwrites(struct mcr20a_context *dev)
 		spi_slave_select(spi->dev, spi->slave);
 
 		if (spi_write(spi->dev, spi->cmd_buf, 3)) {
+			k_sem_give(&spi->spi_sem);
 			goto error;
 		}
 	}
+
+	k_sem_give(&spi->spi_sem);
 
 	return 0;
 
@@ -1356,16 +1397,17 @@ static inline int configure_spi(struct device *dev)
 	struct mcr20a_context *mcr20a = dev->driver_data;
 	struct spi_config spi_conf = {
 		.config = SPI_WORD(8),
-		.max_sys_freq = CONFIG_NXP_MCR20A_SPI_FREQ,
+		.max_sys_freq = CONFIG_IEEE802154_MCR20A_SPI_FREQ,
 	};
 
-	mcr20a->spi.dev = device_get_binding(CONFIG_NXP_MCR20A_SPI_DRV_NAME);
+	mcr20a->spi.dev = device_get_binding(
+			CONFIG_IEEE802154_MCR20A_SPI_DRV_NAME);
 	if (!mcr20a->spi.dev) {
 		SYS_LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
-	mcr20a->spi.slave = CONFIG_NXP_MCR20A_SPI_SLAVE;
+	mcr20a->spi.slave = CONFIG_IEEE802154_MCR20A_SPI_SLAVE;
 
 	if (spi_configure(mcr20a->spi.dev, &spi_conf) != 0 ||
 	    spi_slave_select(mcr20a->spi.dev,
@@ -1374,8 +1416,9 @@ static inline int configure_spi(struct device *dev)
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("SPI configured %s, %d", CONFIG_NXP_MCR20A_SPI_DRV_NAME,
-		    CONFIG_NXP_MCR20A_SPI_SLAVE);
+	SYS_LOG_DBG("SPI configured %s, %d",
+				CONFIG_IEEE802154_MCR20A_SPI_DRV_NAME,
+				CONFIG_IEEE802154_MCR20A_SPI_SLAVE);
 
 	return 0;
 }
@@ -1383,6 +1426,9 @@ static inline int configure_spi(struct device *dev)
 static int mcr20a_init(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
+
+	k_sem_init(&mcr20a->spi.spi_sem, 0, UINT_MAX);
+	k_sem_give(&mcr20a->spi.spi_sem);
 
 	atomic_set(&mcr20a->busy, 0);
 	k_sem_init(&mcr20a->trig_sem, 0, UINT_MAX);
@@ -1407,7 +1453,7 @@ static int mcr20a_init(struct device *dev)
 	}
 
 	k_thread_spawn(mcr20a->mcr20a_rx_stack,
-		       CONFIG_NXP_MCR20A_RX_STACK_SIZE,
+		       CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE,
 		       (k_thread_entry_t)mcr20a_thread_main,
 		       dev, NULL, NULL,
 		       K_PRIO_COOP(2), 0, 0);
@@ -1448,15 +1494,15 @@ static struct ieee802154_radio_api mcr20a_radio_api = {
 	.get_lqi	= mcr20a_get_lqi,
 };
 
-#if defined(CONFIG_NXP_MCR20A_RAW)
-DEVICE_AND_API_INIT(mcr20a, CONFIG_NXP_MCR20A_DRV_NAME,
+#if defined(CONFIG_IEEE802154_MCR20A_RAW)
+DEVICE_AND_API_INIT(mcr20a, CONFIG_IEEE802154_MCR20A_DRV_NAME,
 		    mcr20a_init, &mcr20a_context_data, NULL,
-		    POST_KERNEL, CONFIG_NXP_MCR20A_INIT_PRIO,
+		    POST_KERNEL, CONFIG_IEEE802154_MCR20A_INIT_PRIO,
 		    &mcr20a_radio_api);
 #else
-NET_DEVICE_INIT(mcr20a, CONFIG_NXP_MCR20A_DRV_NAME,
+NET_DEVICE_INIT(mcr20a, CONFIG_IEEE802154_MCR20A_DRV_NAME,
 		mcr20a_init, &mcr20a_context_data, NULL,
-		CONFIG_NXP_MCR20A_INIT_PRIO,
+		CONFIG_IEEE802154_MCR20A_INIT_PRIO,
 		&mcr20a_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
 #endif

@@ -168,7 +168,7 @@ static struct net_buf *prepare_ra_message(void)
 	struct net_if *iface;
 	uint16_t reserve;
 
-	buf = net_nbuf_get_reserve_rx(0);
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of RX buffers");
 
@@ -176,7 +176,7 @@ static struct net_buf *prepare_ra_message(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve);
+	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -413,7 +413,7 @@ static bool net_test_send_ns_extra_options(void)
 	struct net_if *iface;
 	uint16_t reserve;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
@@ -421,7 +421,7 @@ static bool net_test_send_ns_extra_options(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve);
+	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -449,7 +449,7 @@ static bool net_test_send_ns_no_options(void)
 	struct net_if *iface;
 	uint16_t reserve;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
@@ -457,7 +457,7 @@ static bool net_test_send_ns_no_options(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve);
+	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -569,7 +569,7 @@ static bool net_test_hbho_message(void)
 	struct net_if *iface;
 	uint16_t reserve;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
@@ -577,7 +577,7 @@ static bool net_test_hbho_message(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve);
+	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -614,7 +614,7 @@ static bool net_test_change_ll_addr(void)
 
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 1);
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
@@ -622,7 +622,7 @@ static bool net_test_change_ll_addr(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve);
+	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 

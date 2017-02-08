@@ -162,13 +162,13 @@ int dns_write(struct dns_context *ctx, struct net_buf *dns_data,
 		goto exit_write;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx);
+	tx = net_nbuf_get_tx(ctx->net_ctx, K_FOREVER);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_write;
 	}
 
-	rc = net_nbuf_append(tx, dns_data->len, dns_data->data);
+	rc = net_nbuf_append(tx, dns_data->len, dns_data->data, K_FOREVER);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_write;

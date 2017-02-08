@@ -246,12 +246,12 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 
 	context = net_nbuf_context(request->buf);
 
-	buf = net_nbuf_get_tx(context);
+	buf = net_nbuf_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context);
+	frag = net_nbuf_get_data(context, K_FOREVER);
 	if (!frag) {
 		net_nbuf_unref(buf);
 		return -ENOMEM;

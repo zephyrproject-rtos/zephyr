@@ -283,10 +283,10 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 	struct net_buf *buf;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0);
+	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 	net_nbuf_set_iface(buf, iface);
 
-	net_nbuf_append(buf, sizeof(data), data);
+	net_nbuf_append(buf, sizeof(data), data, K_FOREVER);
 
 	ret = net_send_data(buf);
 	if (!expect_fail && ret < 0) {

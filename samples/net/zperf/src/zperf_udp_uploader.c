@@ -86,13 +86,13 @@ static inline void zperf_upload_fin(struct net_context *context,
 		struct net_buf *buf, *frag;
 		bool status;
 
-		buf = net_nbuf_get_tx(context);
+		buf = net_nbuf_get_tx(context, K_FOREVER);
 		if (!buf) {
 			printk(TAG "ERROR! Failed to retrieve a buffer\n");
 			continue;
 		}
 
-		frag = net_nbuf_get_data(context);
+		frag = net_nbuf_get_data(context, K_FOREVER);
 		if (!frag) {
 			printk(TAG "ERROR! Failed to retrieve a fragment\n");
 			continue;
@@ -107,7 +107,7 @@ static inline void zperf_upload_fin(struct net_context *context,
 					    USEC_PER_SEC);
 
 		status = net_nbuf_append(buf, sizeof(datagram),
-					 (uint8_t *)&datagram);
+					 (uint8_t *)&datagram, K_FOREVER);
 		if (!status) {
 			printk(TAG "ERROR! Cannot append datagram data\n");
 			break;
@@ -121,7 +121,8 @@ static inline void zperf_upload_fin(struct net_context *context,
 
 			frag = net_nbuf_write(buf, net_buf_frag_last(buf),
 					     sizeof(struct zperf_udp_datagram),
-					      &pos, size, sample_packet);
+					      &pos, size, sample_packet,
+					      K_FOREVER);
 		}
 
 		/* Send the packet */
@@ -229,13 +230,13 @@ void zperf_udp_upload(struct net_context *context,
 
 		last_loop_time = loop_time;
 
-		buf = net_nbuf_get_tx(context);
+		buf = net_nbuf_get_tx(context, K_FOREVER);
 		if (!buf) {
 			printk(TAG "ERROR! Failed to retrieve a buffer\n");
 			continue;
 		}
 
-		frag = net_nbuf_get_data(context);
+		frag = net_nbuf_get_data(context, K_FOREVER);
 		if (!frag) {
 			printk(TAG "ERROR! Failed to retrieve a frag\n");
 			continue;
@@ -250,7 +251,7 @@ void zperf_udp_upload(struct net_context *context,
 			htonl(HW_CYCLES_TO_USEC(loop_time) % USEC_PER_SEC);
 
 		status = net_nbuf_append(buf, sizeof(datagram),
-					 (uint8_t *)&datagram);
+					 (uint8_t *)&datagram, K_FOREVER);
 		if (!status) {
 			printk(TAG "ERROR! Cannot append datagram data\n");
 			break;
@@ -264,7 +265,8 @@ void zperf_udp_upload(struct net_context *context,
 
 			frag = net_nbuf_write(buf, net_buf_frag_last(buf),
 					     sizeof(struct zperf_udp_datagram),
-					      &pos, size, sample_packet);
+					      &pos, size, sample_packet,
+					      K_FOREVER);
 		}
 
 		/* Send the packet */

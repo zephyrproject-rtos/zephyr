@@ -170,10 +170,11 @@
 
 /*  Receive filters enabled:
  *  - Unicast
+ *  - Multicast
  *  - Broadcast
  *  - CRC Check
  */
-#define ENC28J60_RECEIVE_FILTERS 0xA1
+#define ENC28J60_RECEIVE_FILTERS 0xA3
 
 /*  MAC configuration:
  *  - Automatic Padding

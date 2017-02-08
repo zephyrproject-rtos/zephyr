@@ -364,11 +364,12 @@ static struct net_buf *prepare_send_buf(const char *name,
 	struct net_buf *send_buf;
 	bool status;
 
-	send_buf = net_nbuf_get_tx(context);
+	send_buf = net_nbuf_get_tx(context, K_FOREVER);
 
 	NET_ASSERT(send_buf);
 
-	status = net_nbuf_append(send_buf, expecting_len, lorem_ipsum);
+	status = net_nbuf_append(send_buf, expecting_len, lorem_ipsum,
+				 K_FOREVER);
 	if (!status) {
 		NET_ERR("%s: cannot create send buf", name);
 		return NULL;

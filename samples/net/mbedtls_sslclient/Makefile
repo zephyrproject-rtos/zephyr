@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-BOARD = galileo
-CONF_FILE = prj_galileo.conf
+BOARD ?= galileo
+CONF_FILE ?= prj_$(BOARD).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc

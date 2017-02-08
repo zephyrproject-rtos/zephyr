@@ -100,12 +100,12 @@ static int led_get(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context);
+	buf = net_nbuf_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context);
+	frag = net_nbuf_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
@@ -167,12 +167,12 @@ static int led_post(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context);
+	buf = net_nbuf_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context);
+	frag = net_nbuf_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
@@ -245,12 +245,12 @@ static int led_put(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context);
+	buf = net_nbuf_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context);
+	frag = net_nbuf_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
@@ -307,12 +307,12 @@ static int dummy_get(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context);
+	buf = net_nbuf_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context);
+	frag = net_nbuf_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
