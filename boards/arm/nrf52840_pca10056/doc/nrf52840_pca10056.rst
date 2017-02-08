@@ -1,0 +1,169 @@
+.. _nrf52840_pca10056:
+
+nRF52840-PCA10056
+#################
+
+Overview
+********
+
+Zephyr applications use the nrf52840_pca10056 board configuration
+to run on the nRF52840 Preview Development Kit (PCA10056) hardware. It provides
+support for the Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and
+the following devices:
+
+* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
+* :abbr:`RTC (nRF RTC System Clock)`
+* UART
+* GPIO
+* FLASH
+* RADIO (Bluetooth Low Energy)
+* Segger RTT (RTT Console)
+
+.. figure:: img/nrf52840_pca10056.jpg
+     :width: 442px
+     :align: center
+     :alt: nRF52840 PCA10056 Preview DK
+
+     nRF52840 PCA10056 Preview DK (Credit: Nordic Semi)
+
+More information about the board can be found at the
+`nRF52840 PDK website`_. The `Nordic Semiconductor Infocenter`_
+contains the processor's information and the datasheet.
+
+Hardware
+********
+
+nRF52840 PDK has two external oscillators. The frequency of
+the slow clock is 32.768 kHz. The frequency of the main clock
+is 32 MHz.
+
+Supported Features
+==================
+
+The nrf52840_pca10056 board configuration supports the following
+hardware features:
+
++-----------+------------+----------------------+
+| Interface | Controller | Driver/Component     |
++===========+============+======================+
+| NVIC      | on-chip    | nested vectored      |
+|           |            | interrupt controller |
++-----------+------------+----------------------+
+| RTC       | on-chip    | system clock         |
++-----------+------------+----------------------+
+| UART      | on-chip    | serial port          |
++-----------+------------+----------------------+
+| GPIO      | on-chip    | gpio                 |
++-----------+------------+----------------------+
+| FLASH     | on-chip    | flash                |
++-----------+------------+----------------------+
+| RADIO     | on-chip    | bluetooth            |
++-----------+------------+----------------------+
+| RTT       | on-chip    | console              |
++-----------+------------+----------------------+
+
+Other hardware features are not supported by the Zephyr kernel.
+See `nRF52840 PDK website`_ and `Nordic Semiconductor Infocenter`_
+for a complete list of nRF52840 Development Kit board hardware features.
+
+Connections and IOs
+===================
+
+LED
+---
+
+* LED1 (green) = P0.13
+* LED2 (green) = P0.14
+* LED3 (green) = P0.15
+* LED4 (green) = P0.16
+
+Push buttons
+------------
+
+* BUTTON1 = SW1 = P0.11
+* BUTTON2 = SW2 = P0.12
+* BUTTON3 = SW3 = P0.24
+* BUTTON4 = SW4 = P0.25
+* BOOT = SW5 = boot/reset
+
+Programming and Debugging
+*************************
+
+Flashing
+========
+
+Follow the instructions in the :ref:`nordic_segger` page to install and configure
+all the necessary software.
+
+This tutorial uses the sample application
+shell :file:`$ZEPHYR_BASE/samples/shell`, and uses the information that can be found in
+:ref:`nordic_segger_flashing`.
+
+#. To build the Zephyr kernel, enter:
+
+   .. code-block:: console
+
+      $ cd $ZEPHYR_BASE
+      $ make -C samples/shell BOARD=nrf52840_pca10056
+
+#. Connect the micro-USB cable to the nRF52840 PDK and to your computer.
+
+#. Erase the flash memory in the nRF52840:
+
+   .. code-block:: console
+
+      $ nrfjprog --eraseall -f nrf52
+
+#. Flash the application using the nrfjprog tool:
+
+   .. code-block:: console
+
+      $ nrfjprog --program outdir/zephyr.hex -f nrf52
+
+#. Run your favorite terminal program to listen for output.
+
+   .. code-block:: console
+
+      $ minicom -D <tty_device> -b 115200
+
+   Replace :code:`<tty_device>` with the port where the board
+   nRF52840 PDK can be found. For example, under Linux,
+   :code:`/dev/ttyACM0`.
+
+   The ``-b`` option sets baudrate ignoring the value
+   from config.
+
+#. Press the Reset button and you should see the output of
+   shell application in your terminal.
+
+Debugging
+=========
+
+Refer to the :ref:`nordic_segger` page to learn about debugging Nordic boards with a
+Segger IC.
+
+
+Testing the LEDs and buttons in the nRF52840 PDK
+************************************************
+
+There are 2 samples that allow you to test that the buttons (switches) and LEDs on
+the board are working properly with Zephyr:
+
+.. code-block:: console
+
+   samples/basic/blinky
+   samples/basic/button
+
+You can build and flash the examples to make sure Zephyr is running correctly on
+your board. The button and LED definitions can be found in :file:`boards/arm/nrf52840_pca10056/board.h`.
+
+
+References
+**********
+
+.. target-notes::
+
+.. _nRF52840 PDK website: http://www.nordicsemi.com/eng/Products/nRF52840-Preview-DK
+.. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
+.. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
+
