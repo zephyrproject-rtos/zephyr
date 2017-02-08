@@ -1,0 +1,27 @@
+if(NOT ZEPHYR_GCC_VARIANT)
+  set(ZEPHYR_GCC_VARIANT $ENV{ZEPHYR_GCC_VARIANT})
+endif()
+set(ZEPHYR_GCC_VARIANT ${ZEPHYR_GCC_VARIANT} CACHE STRING "Zephyr GCC variant")
+if(NOT ZEPHYR_GCC_VARIANT)
+  message(FATAL_ERROR "ZEPHYR_GCC_VARIANT not set")
+endif()
+
+set(ZEPHYR_BASE $ENV{ZEPHYR_BASE})
+
+if(NOT BOARD)
+  set(BOARD $ENV{BOARD})
+endif()
+set(BOARD ${BOARD} CACHE STRING "Board")
+if(NOT BOARD)
+  message(FATAL_ERROR "BOARD not set")
+endif()
+
+find_path(BOARD_DIR NAMES ${BOARD} PATHS ${ZEPHYR_BASE}/boards/* NO_DEFAULT_PATH)
+if(NOT BOARD_DIR)
+  message(FATAL_ERROR "No board named '${BOARD}' found")
+endif()
+
+get_filename_component(ARCH ${BOARD_DIR} NAME)
+
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+include(${ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_GCC_VARIANT}.cmake)
