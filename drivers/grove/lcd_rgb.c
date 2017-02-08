@@ -112,7 +112,7 @@ static inline void _sleep(uint32_t sleep_in_ms)
 /********************************************
  *  PUBLIC FUNCTIONS
  *******************************************/
-void glcd_print(struct device *port, unsigned char *data, uint32_t size)
+void glcd_print(struct device *port, char *data, uint32_t size)
 {
 	const struct glcd_driver * const rom = (struct glcd_driver *)
 						port->config->config_info;
