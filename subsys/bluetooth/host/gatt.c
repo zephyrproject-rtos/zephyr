@@ -1779,6 +1779,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		if (params == tmp) {
 			found = true;
 			sys_slist_remove(&subscriptions, prev, node);
+			continue;
 		} else {
 			prev = node;
 		}
