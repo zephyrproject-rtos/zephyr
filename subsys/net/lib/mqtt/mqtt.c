@@ -113,16 +113,16 @@ exit_disconnect:
 }
 
 /**
- * @brief mqtt_tx_pub_msgs	Writes the MQTT PUBxxx msg indicated by pkt_type
- *				with identifier 'id'
- * @param [in] ctx		MQTT context
- * @param [in] id		MQTT packet identifier
- * @param [in] pkt_type		MQTT packet type
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed to
- *				this routine
- * @return			-ENOMEM if a tx buffer is not available
- * @return			-EIO on network error
+ * Writes the MQTT PUBxxx msg indicated by pkt_type with identifier 'id'
+ *
+ * @param [in] ctx MQTT context
+ * @param [in] id MQTT packet identifier
+ * @param [in] pkt_type MQTT packet type
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM if a tx buffer is not available
+ * @retval -EIO on network error
  */
 static
 int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
@@ -421,16 +421,19 @@ exit_connect:
 }
 
 /**
- * @brief mqtt_rx_pub_msgs	Parses and validates the MQTT PUBxxxx message
- *				contained in the rx buffer. It validates against
- *				message structure and Packet Identifier.
- * @details			For the MQTT PUBREC and PUBREL messages, this
- *				function writes the corresponding MQTT PUB msg.
- * @param ctx			MQTT context
- * @param rx			RX buffer
- * @param type			MQTT Packet type
- * @return			0 on success
- * @return			-EINVAL on error
+ * Parses and validates the MQTT PUBxxxx message contained in the rx buffer.
+ *
+ *
+ * @details It validates against message structure and Packet Identifier.
+ * For the MQTT PUBREC and PUBREL messages, this function writes the
+ * corresponding MQTT PUB msg.
+ *
+ * @param ctx MQTT context
+ * @param rx RX buffer
+ * @param type MQTT Packet type
+ *
+ * @retval 0 on success
+ * @retval -EINVAL on error
  */
 static
 int mqtt_rx_pub_msgs(struct mqtt_ctx *ctx, struct net_buf *rx,
@@ -626,14 +629,15 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx)
 }
 
 /**
- * @brief mqtt_linearize_buffer		Linearize an IP fragmented buffer
- * @param [in] ctx			MQTT context structure
- * @param [in] rx			RX IP stack buffer
- * @param [in] min_size			Min message size allowed. This allows us
- *					to exit if the rx buffer is shorter
- *					than the expected msg size
- * @return				Data buffer
- * @return				NULL on error
+ * Linearizes an IP fragmented buffer
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx RX IP stack buffer
+ * @param [in] min_size Min message size allowed. This allows us to exit if the
+ * rx buffer is shorter than the expected msg size
+ *
+ * @retval Data buffer
+ * @retval NULL on error
  */
 static
 struct net_buf *mqtt_linearize_buffer(struct mqtt_ctx *ctx, struct net_buf *rx,
@@ -673,18 +677,19 @@ exit_error:
 }
 
 /**
- * @brief mqtt_publisher_parser	Calls the appropriate rx routine for the MQTT
- *				message contained in rx
- * @details			On error, this routine will execute the
- *				'ctx->malformed' callback (if defined)
- * @param ctx			MQTT context
- * @param rx			RX buffer
- * @return			0 on success
- * @return			-EINVAL if an unknown message is received
- * @return			-ENOMEM if no data buffer is available
- * @return			mqtt_rx_connack, mqtt_rx_puback, mqtt_rx_pubrec,
- *				mqtt_rx_pubcomp, and mqtt_rx_pingresp
- *				return codes
+ * Calls the appropriate rx routine for the MQTT message contained in rx
+ *
+ * @details On error, this routine will execute the 'ctx->malformed' callback
+ * (if defined)
+ *
+ * @param ctx MQTT context
+ * @param rx RX buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if an unknown message is received
+ * @retval -ENOMEM if no data buffer is available
+ * @retval mqtt_rx_connack, mqtt_rx_puback, mqtt_rx_pubrec, mqtt_rx_pubcomp
+ *         and mqtt_rx_pingresp return codes
  */
 static
 int mqtt_publisher_parser(struct mqtt_ctx *ctx, struct net_buf *rx)
@@ -738,18 +743,19 @@ exit_parser:
 
 
 /**
- * @brief mqtt_subscriber_parser Calls the appropriate rx routine for the MQTT
- *				message contained in rx
- * @details			On error, this routine will execute the
- *				'ctx->malformed' callback (if defined)
- * @param ctx			MQTT context
- * @param rx			RX buffer
- * @return			0 on success
- * @return			-EINVAL if an unknown message is received
- * @return			-ENOMEM if no data buffer is available
- * @return			mqtt_rx_publish, mqtt_rx_pubrel, mqtt_rx_pubrel,
- *				mqtt_rx_suback
- *				return codes
+ * Calls the appropriate rx routine for the MQTT message contained in rx
+ *
+ * @details On error, this routine will execute the 'ctx->malformed' callback
+ * (if defined)
+ *
+ * @param ctx MQTT context
+ * @param rx RX buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if an unknown message is received
+ * @retval -ENOMEM if no data buffer is available
+ * @retval mqtt_rx_publish, mqtt_rx_pubrel, mqtt_rx_pubrel and mqtt_rx_suback
+ *         return codes
  */
 static
 int mqtt_subscriber_parser(struct mqtt_ctx *ctx, struct net_buf *rx)
