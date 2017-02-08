@@ -50,6 +50,18 @@ struct net_buf *bt_buf_get_rx(int32_t timeout)
 	return net_buf_alloc(&hci_rx_pool, timeout);
 }
 
+struct net_buf *bt_buf_get_cmd_complete(int32_t timeout)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&hci_rx_pool, timeout);
+	if (buf) {
+		bt_buf_set_type(buf, BT_BUF_EVT);
+	}
+
+	return buf;
+}
+
 struct net_buf *bt_buf_get_evt(uint8_t opcode, int timeout)
 {
 	struct net_buf *buf;

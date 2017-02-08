@@ -192,13 +192,8 @@ struct bt_l2cap_le_credits {
 
 #define BT_L2CAP_SDU_HDR_LEN		2
 
-/* Helper to calculate needed outgoing buffer size */
-#define BT_L2CAP_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
-				sizeof(struct bt_hci_acl_hdr) + \
-				sizeof(struct bt_l2cap_hdr) + (mtu))
-
 #define BT_L2CAP_RX_MTU (CONFIG_BLUETOOTH_RX_BUF_LEN - \
-			 4 /* HCI ACL header */ - 4 /* L2CAP header */)
+			 BT_HCI_ACL_HDR_SIZE - BT_L2CAP_HDR_SIZE)
 
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;

@@ -287,25 +287,16 @@ static void recv_thread(void *p1, void *p2, void *p3)
 static int cmd_handle(struct net_buf *buf)
 {
 	struct net_buf *evt;
-	int err;
 
-	/* Preallocate the response event so that there is no need for
-	 * memory checking in hci_cmd_handle().
-	 * this might actually be CMD_COMPLETE or CMD_STATUS, but the
-	 * actual point is to retrieve the event from the priority
-	 * queue
-	 */
-	evt = bt_buf_get_rx(K_FOREVER);
-	bt_buf_set_type(evt, BT_BUF_EVT);
-	err = hci_cmd_handle(buf, evt);
-	if (!err && evt->len) {
-		BT_DBG("Replying with event of %u bytes", evt->len);
-		bt_recv_prio(evt);
-	} else {
-		net_buf_unref(evt);
+	evt = hci_cmd_handle(buf);
+	if (!evt) {
+		return -EINVAL;
 	}
 
-	return err;
+	BT_DBG("Replying with event of %u bytes", evt->len);
+	bt_recv_prio(evt);
+
+	return 0;
 }
 
 static int hci_driver_send(struct net_buf *buf)

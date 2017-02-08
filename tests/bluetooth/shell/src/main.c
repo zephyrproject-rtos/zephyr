@@ -55,6 +55,9 @@ NET_BUF_POOL_DEFINE(data_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
 NET_BUF_POOL_DEFINE(data_bredr_pool, 1, DATA_BREDR_MTU, BT_BUF_USER_DATA_MIN,
 		    NULL);
 
+#define SDP_CLIENT_USER_BUF_LEN		512
+NET_BUF_POOL_DEFINE(sdp_client_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    SDP_CLIENT_USER_BUF_LEN, BT_BUF_USER_DATA_MIN, NULL);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
@@ -210,6 +213,132 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 		break;
 	}
 }
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
+			       struct bt_sdp_client_result *result)
+{
+	char addr[BT_ADDR_STR_LEN];
+	uint16_t param, version;
+	uint16_t features;
+	int res;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+
+	if (result) {
+		printk("SDP HFPAG data@%p (len %u) hint %u from remote %s\n",
+			result->resp_buf, result->resp_buf->len,
+			result->next_record_hint, addr);
+
+		/*
+		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
+		 * get HFPAG Server Channel Number operating on RFCOMM protocol.
+		 */
+		res = bt_sdp_get_proto_param(result->resp_buf,
+					     BT_SDP_PROTO_RFCOMM, &param);
+		if (res < 0) {
+			printk("Error getting Server CN, err %d\n", res);
+			goto done;
+		}
+		printk("HFPAG Server CN param 0x%04x\n", param);
+
+		res = bt_sdp_get_profile_version(result->resp_buf,
+						 BT_SDP_HANDSFREE_SVCLASS,
+						 &version);
+		if (res < 0) {
+			printk("Error getting profile version, err %d\n", res);
+			goto done;
+		}
+		printk("HFP version param 0x%04x\n", version);
+
+		/*
+		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
+		 * get profile Supported Features mask.
+		 */
+		res = bt_sdp_get_features(result->resp_buf, &features);
+		if (res < 0) {
+			printk("Error getting HFPAG Features, err %d\n", res);
+			goto done;
+		}
+		printk("HFPAG Supported Features param 0x%04x\n", features);
+	} else {
+		printk("No SDP HFPAG data from remote %s\n", addr);
+	}
+done:
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+static uint8_t sdp_a2src_user(struct bt_conn *conn,
+			      struct bt_sdp_client_result *result)
+{
+	char addr[BT_ADDR_STR_LEN];
+	uint16_t param, version;
+	uint16_t features;
+	int res;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+
+	if (result) {
+		printk("SDP A2SRC data@%p (len %u) hint %u from remote %s\n",
+			result->resp_buf, result->resp_buf->len,
+			result->next_record_hint, addr);
+
+		/*
+		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
+		 * get A2SRC Server PSM Number.
+		 */
+		res = bt_sdp_get_proto_param(result->resp_buf,
+					     BT_SDP_PROTO_L2CAP, &param);
+		if (res < 0) {
+			printk("A2SRC PSM Number not found, err %d\n", res);
+			goto done;
+		}
+		printk("A2SRC Server PSM Number param 0x%04x\n", param);
+
+		/*
+		 * Focus to get BT_SDP_ATTR_PROFILE_DESC_LIST attribute item to
+		 * get profile version number.
+		 */
+		res = bt_sdp_get_profile_version(result->resp_buf,
+						 BT_SDP_ADVANCED_AUDIO_SVCLASS,
+						 &version);
+		if (res < 0) {
+			printk("A2SRC version not found, err %d\n", res);
+			goto done;
+		}
+		printk("A2SRC version param 0x%04x\n", version);
+
+		/*
+		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
+		 * get profile supported features mask.
+		 */
+		res = bt_sdp_get_features(result->resp_buf, &features);
+		if (res < 0) {
+			printk("A2SRC Features not found, err %d\n", res);
+			goto done;
+		}
+		printk("A2SRC Supported Features param 0x%04x\n", features);
+	} else {
+		printk("No SDP A2SRC data from remote %s\n", addr);
+	}
+done:
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+static struct bt_sdp_discover_params discov_hfpag = {
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_HANDSFREE_AGW_SVCLASS),
+	.func = sdp_hfp_ag_user,
+	.pool = &sdp_client_pool,
+};
+
+static struct bt_sdp_discover_params discov_a2src = {
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_AUDIO_SOURCE_SVCLASS),
+	.func = sdp_a2src_user,
+	.pool = &sdp_client_pool,
+};
+
+static struct bt_sdp_discover_params discov;
+#endif
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -2221,6 +2350,48 @@ static int cmd_bredr_oob(int argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_bredr_sdp_find_record(int argc, char *argv[])
+{
+	int err = 0, res;
+	const char *action;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return 0;
+	}
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	action = argv[1];
+
+	if (!strcmp(action, "HFPAG")) {
+		discov = discov_hfpag;
+	} else if (!strcmp(action, "A2SRC")) {
+		discov = discov_a2src;
+	} else {
+		err = -EINVAL;
+	}
+
+	if (err) {
+		printk("SDP UUID to resolve not valid (err %d)\n", err);
+		printk("Supported UUID are \'HFPAG\' \'A2SRC\' only\n");
+		return err;
+	}
+
+	printk("SDP UUID \'%s\' gets applied\n", action);
+
+	res = bt_sdp_discover(default_conn, &discov);
+	if (res) {
+		printk("SDP discovery failed: result %d\n", res);
+	} else {
+		printk("SDP discovery started\n");
+	}
+
+	return 0;
+}
 #endif
 
 #define HELP_NONE "[none]"
@@ -2287,6 +2458,7 @@ static const struct shell_cmd commands[] = {
 	  "<value: on, off> [length: 1-48] [mode: limited]"  },
 	{ "br-l2cap-register", cmd_bredr_l2cap_register, "<psm>" },
 	{ "br-oob", cmd_bredr_oob },
+	{ "br-sdp-find", cmd_bredr_sdp_find_record, "<HFPAG>" },
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 	{ "br-rfcomm-register", cmd_bredr_rfcomm_register },
 	{ "br-rfcomm-connect", cmd_rfcomm_connect, "<channel>" },

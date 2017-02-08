@@ -20,18 +20,23 @@
 #include <bluetooth/l2cap.h>
 #include <bluetooth/avdtp.h>
 
+#include "hci_core.h"
+#include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "avdtp_internal.h"
 
 /* TODO add config file*/
 #define CONFIG_BLUETOOTH_AVDTP_CONN CONFIG_BLUETOOTH_MAX_CONN
 
-/* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-/*
-NET_BUF_POOL_DEFINE(avdtp_sig_pool, CONFIG_BLUETOOTH_AVDTP_CONN,
-		    BT_AVDTP_BUF_SIZE(BT_AVDTP_MIN_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
-*/
+#define AVDTP_MSG_POISTION 0x00
+#define AVDTP_PKT_POSITION 0x02
+#define AVDTP_TID_POSITION 0x04
+#define AVDTP_SIGID_MASK 0x3f
+
+#define AVDTP_GET_TR_ID(hdr) ((hdr & 0xf0) >> AVDTP_TID_POSITION)
+#define AVDTP_GET_MSG_TYPE(hdr) (hdr & 0x03)
+#define AVDTP_GET_PKT_TYPE(hdr) ((hdr & 0x0c) >> AVDTP_PKT_POSITION)
+#define AVDTP_GET_SIG_ID(s) (s & AVDTP_SIGID_MASK)
 
 typedef int (*bt_avdtp_func_t)(struct bt_avdtp *session,
 			       struct bt_avdtp_req *req);
@@ -53,6 +58,54 @@ struct bt_avdtp_req {
 					timeout_work)
 
 #define AVDTP_TIMEOUT K_SECONDS(6)
+
+static int avdtp_send(struct bt_avdtp *session,
+		      struct net_buf *buf, struct bt_avdtp_req *req)
+{
+	int result;
+	struct bt_avdtp_single_sig_hdr *hdr;
+
+	hdr = (struct bt_avdtp_single_sig_hdr *)buf->data;
+
+	result = bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	if (result < 0) {
+		BT_ERR("Error:L2CAP send fail - result = %d", result);
+		return result;
+	}
+
+	/*Save the sent request*/
+	req->signal_id = AVDTP_GET_SIG_ID(hdr->signal_id);
+	req->transaction_id = AVDTP_GET_TR_ID(hdr->hdr);
+	BT_DBG("sig 0x%02X, tid 0x%02X", req->signal_id, req->transaction_id);
+
+	session->req = req;
+	/* Start timeout work */
+	k_delayed_work_submit(&session->req->timeout_work, AVDTP_TIMEOUT);
+	return result;
+}
+
+static struct net_buf *avdtp_create_pdu(uint8_t msg_type,
+					uint8_t pkt_type,
+					uint8_t sig_id)
+{
+	struct net_buf *buf;
+	static uint8_t tid;
+	struct bt_avdtp_single_sig_hdr *hdr;
+
+	BT_DBG("");
+
+	buf = bt_l2cap_create_pdu(NULL, 0);
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+
+	hdr->hdr = (msg_type | pkt_type << AVDTP_PKT_POSITION |
+		    tid++ << AVDTP_TID_POSITION);
+	tid %= 16; /* Loop for 16*/
+	hdr->signal_id = sig_id & AVDTP_SIGID_MASK;
+
+	BT_DBG("hdr = 0x%02X, Signal_ID = 0x%02X", hdr->hdr, hdr->signal_id);
+	return buf;
+}
 
 /* Timeout handler */
 static void avdtp_timeout(struct k_work *work)
@@ -218,9 +271,23 @@ int bt_avdtp_init(void)
 int bt_avdtp_discover(struct bt_avdtp *session,
 		      struct bt_avdtp_discover_params *param)
 {
+	struct net_buf *buf;
+
 	BT_DBG("");
 	if (!param || !session) {
 		BT_DBG("Error: Callback/Session not valid");
+		return -EINVAL;
 	}
-	return 0;
+
+	buf = avdtp_create_pdu(BT_AVDTP_MSG_TYPE_CMD,
+			       BT_AVDTP_PACKET_TYPE_SINGLE,
+			       BT_AVDTP_DISCOVER);
+	if (!buf) {
+		BT_ERR("Error: No Buff available");
+		return -ENOMEM;
+	}
+
+	/* Body of the message */
+
+	return avdtp_send(session, buf, param->req);
 }

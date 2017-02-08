@@ -8,7 +8,7 @@
 #ifndef _HCI_CONTROLLER_H_
 #define _HCI_CONTROLLER_H_
 
-int hci_cmd_handle(struct net_buf *cmd, struct net_buf *evt);
+struct net_buf *hci_cmd_handle(struct net_buf *cmd);
 int hci_acl_handle(struct net_buf *acl);
 void hci_evt_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);
 void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);

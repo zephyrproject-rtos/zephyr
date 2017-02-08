@@ -45,7 +45,7 @@ struct bt_conn_le {
 
 	struct bt_keys		*keys;
 
-	/* Delayed work for connection update handling */
+	/* Delayed work for connection update and timeout handling */
 	struct k_delayed_work	update_work;
 };
 
@@ -96,21 +96,12 @@ struct bt_conn {
 
 	bt_conn_state_t		state;
 
-	/* Handle allowing to cancel timeout thread */
-	k_tid_t			timeout;
-
 	union {
 		struct bt_conn_le	le;
 #if defined(CONFIG_BLUETOOTH_BREDR)
 		struct bt_conn_br	br;
 #endif
 	};
-
-	/* Stack for TX thread and timeout thread.
-	 * Since these threads don't overlap, one stack can be used by
-	 * both of them.
-	 */
-	BT_STACK(stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 };
 
 /* Process incoming data for a connection */
@@ -188,3 +179,7 @@ static inline struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 
 	return &bt_dev.le.pkts;
 }
+
+/* k_poll related helpers for the TX thread */
+int bt_conn_prepare_events(struct k_poll_event events[]);
+void bt_conn_process_tx(struct bt_conn *conn);

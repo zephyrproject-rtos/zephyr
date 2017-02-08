@@ -86,9 +86,7 @@ config BLUETOOTH_SPI_DEV_NAME
 
 # Headroom that the driver needs for sending and receiving buffers.
 # Add a new 'default' entry for each new driver.
-
-# Needed headroom for outgoing buffers (to controller)
-config BLUETOOTH_HCI_SEND_RESERVE
+config BLUETOOTH_HCI_RESERVE
 	int
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
@@ -96,15 +94,6 @@ config BLUETOOTH_HCI_SEND_RESERVE
 	default 0 if BLUETOOTH_H4
 	default 1 if BLUETOOTH_H5
 	default 1 if BLUETOOTH_SPI
-
-# Needed headroom for incoming buffers (from controller)
-config BLUETOOTH_HCI_RECV_RESERVE
-	int
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 0
-	default 0 if BLUETOOTH_H4
-	default 0 if BLUETOOTH_H5
 
 if BLUETOOTH_SPI
 

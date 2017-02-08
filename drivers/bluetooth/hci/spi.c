@@ -171,13 +171,20 @@ static void bt_spi_rx_thread(void)
 
 		switch (rxmsg[PACKET_TYPE]) {
 		case HCI_EVT:
-			/* Vendor events are currently unsupported */
-			if (rxmsg[EVT_HEADER_EVENT] == BT_HCI_EVT_VENDOR) {
+			switch (rxmsg[EVT_HEADER_EVENT]) {
+			case BT_HCI_EVT_VENDOR:
+				/* Vendor events are currently unsupported */
 				bt_spi_handle_vendor_evt(rxmsg);
 				continue;
+			case BT_HCI_EVT_CMD_COMPLETE:
+			case BT_HCI_EVT_CMD_STATUS:
+				buf = bt_buf_get_cmd_complete(K_FOREVER);
+				break;
+			default:
+				buf = bt_buf_get_rx(K_FOREVER);
+				break;
 			}
 
-			buf = bt_buf_get_rx(K_FOREVER);
 			bt_buf_set_type(buf, BT_BUF_EVT);
 			net_buf_add_mem(buf, &rxmsg[1],
 					rxmsg[EVT_HEADER_SIZE] + 2);

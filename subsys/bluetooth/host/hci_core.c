@@ -14,6 +14,8 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
+#include <misc/__assert.h>
+#include <soc.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #include <bluetooth/log.h>
@@ -41,7 +43,7 @@
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 #endif
-static BT_STACK_NOINIT(cmd_tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
+static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 
 static void init_work(struct k_work *work);
 
@@ -83,14 +85,14 @@ struct cmd_data {
 	/** BT_BUF_CMD */
 	uint8_t  type;
 
+	/** HCI status of the command completion */
+	uint8_t  status;
+
 	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
 
-	/** Used by bt_hci_cmd_send_sync. Initially contains the waiting
-	 *  semaphore, as the semaphore is given back contains the bt_buf
-	 *  for the return parameters.
-	 */
-	void *sync;
+	/** Used by bt_hci_cmd_send_sync. */
+	struct k_sem *sync;
 };
 
 struct acl_data {
@@ -104,10 +106,10 @@ struct acl_data {
 #define cmd(buf) ((struct cmd_data *)net_buf_user_data(buf))
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
-/* HCI command buffers */
-#define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
-		      sizeof(struct bt_hci_cmd_hdr) + \
-		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
+/* HCI command buffers. Derive the needed size from BT_BUF_RX_SIZE since
+ * the same buffer is also used for the response.
+ */
+#define CMD_BUF_SIZE BT_BUF_RX_SIZE
 NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 		    CMD_BUF_SIZE, sizeof(struct cmd_data), NULL);
 
@@ -150,10 +152,11 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	BT_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
 	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
+	__ASSERT_NO_MSG(buf);
 
 	BT_DBG("buf %p", buf);
 
-	net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_SEND_RESERVE);
+	net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
 
 	cmd(buf)->type = BT_BUF_CMD;
 	cmd(buf)->opcode = opcode;
@@ -210,29 +213,31 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	BT_DBG("opcode 0x%04x len %u", opcode, buf->len);
+	BT_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
 
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
+
+	/* Make sure the buffer stays around until the command completes */
+	net_buf_ref(buf);
 
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
 	k_sem_take(&sync_sem, K_FOREVER);
 
-	/* Indicate failure if we failed to get the return parameters */
-	if (!cmd(buf)->sync) {
+	BT_DBG("opcode 0x%04x status 0x%02x", opcode, cmd(buf)->status);
+
+	if (cmd(buf)->status) {
 		err = -EIO;
+		net_buf_unref(buf);
 	} else {
 		err = 0;
+		if (rsp) {
+			*rsp = buf;
+		} else {
+			net_buf_unref(buf);
+		}
 	}
-
-	if (rsp) {
-		*rsp = cmd(buf)->sync;
-	} else if (cmd(buf)->sync) {
-		net_buf_unref(cmd(buf)->sync);
-	}
-
-	net_buf_unref(buf);
 
 	return err;
 }
@@ -463,7 +468,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	for (i = 0; i < num_handles; i++) {
 		uint16_t handle, count;
 		struct bt_conn *conn;
-		int key;
+		unsigned int key;
 
 		handle = sys_le16_to_cpu(evt->h[i].handle);
 		count = sys_le16_to_cpu(evt->h[i].count);
@@ -549,9 +554,8 @@ static void hci_disconn_complete(struct net_buf *buf)
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	stack_analyze("rx stack", rx_thread_stack, sizeof(rx_thread_stack));
 #endif
-	stack_analyze("cmd tx stack", cmd_tx_thread_stack,
-		      sizeof(cmd_tx_thread_stack));
-	stack_analyze("conn tx stack", conn->stack, sizeof(conn->stack));
+	stack_analyze("tx stack", tx_thread_stack,
+		      sizeof(tx_thread_stack));
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0;
@@ -2221,39 +2225,21 @@ static void hci_reset_complete(struct net_buf *buf)
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 {
-	struct net_buf *sent;
-	int key = irq_lock();
+	BT_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, buf);
 
-	sent = bt_dev.sent_cmd;
-	if (!sent) {
-		irq_unlock(key);
+	if (buf->pool != &hci_cmd_pool) {
 		return;
 	}
 
-	if (cmd(sent)->opcode != opcode) {
-		BT_ERR("Unexpected completion of opcode 0x%04x expected 0x%04x",
-		       opcode, cmd(sent)->opcode);
-		irq_unlock(key);
-		return;
+	if (cmd(buf)->opcode != opcode) {
+		BT_WARN("OpCode 0x%04x completed instead of expected 0x%04x",
+			opcode, cmd(buf)->opcode);
 	}
-
-	bt_dev.sent_cmd = NULL;
-
-	irq_unlock(key);
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	if (cmd(sent)->sync) {
-		struct k_sem *sem = cmd(sent)->sync;
-
-		if (status) {
-			cmd(sent)->sync = NULL;
-		} else {
-			cmd(sent)->sync = net_buf_ref(buf);
-		}
-
-		k_sem_give(sem);
-	} else {
-		net_buf_unref(sent);
+	if (cmd(buf)->sync) {
+		cmd(buf)->status = status;
+		k_sem_give(cmd(buf)->sync);
 	}
 }
 
@@ -2261,7 +2247,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
-	uint8_t status;
+	uint8_t status, ncmd = evt->ncmd;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2275,7 +2261,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	hci_cmd_done(opcode, status, buf);
 
 	/* Allow next command to be sent */
-	if (evt->ncmd) {
+	if (ncmd) {
 		k_sem_give(&bt_dev.ncmd_sem);
 	}
 }
@@ -2284,6 +2270,7 @@ static void hci_cmd_status(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_status *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
+	uint8_t ncmd = evt->ncmd;
 
 	BT_DBG("opcode 0x%04x", opcode);
 
@@ -2292,7 +2279,7 @@ static void hci_cmd_status(struct net_buf *buf)
 	hci_cmd_done(opcode, evt->status, buf);
 
 	/* Allow next command to be sent */
-	if (evt->ncmd) {
+	if (ncmd) {
 		k_sem_give(&bt_dev.ncmd_sem);
 	}
 }
@@ -2688,44 +2675,118 @@ static void hci_event(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static void hci_cmd_tx_thread(void)
+static void send_cmd(void)
 {
-	BT_DBG("started");
+	struct net_buf *buf;
+	int err;
 
-	while (1) {
-		struct net_buf *buf;
-		int err;
+	/* Get next command */
+	BT_DBG("calling net_buf_get");
+	buf = net_buf_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+	BT_ASSERT(buf);
 
-		/* Wait until ncmd > 0 */
-		BT_DBG("calling sem_take_wait");
-		k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
+	/* Wait until ncmd > 0 */
+	BT_DBG("calling sem_take_wait");
+	k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
 
-		/* Get next command - wait if necessary */
-		BT_DBG("calling net_buf_get");
-		buf = net_buf_get(&bt_dev.cmd_tx_queue, K_FOREVER);
+	/* Clear out any existing sent command */
+	if (bt_dev.sent_cmd) {
+		BT_ERR("Uncleared pending sent_cmd");
+		net_buf_unref(bt_dev.sent_cmd);
+		bt_dev.sent_cmd = NULL;
+	}
 
-		/* Clear out any existing sent command */
-		if (bt_dev.sent_cmd) {
-			BT_ERR("Uncleared pending sent_cmd");
-			net_buf_unref(bt_dev.sent_cmd);
-			bt_dev.sent_cmd = NULL;
-		}
+	bt_dev.sent_cmd = net_buf_ref(buf);
 
-		bt_dev.sent_cmd = net_buf_ref(buf);
+	BT_DBG("Sending command 0x%04x (buf %p) to driver",
+	       cmd(buf)->opcode, buf);
 
-		BT_DBG("Sending command 0x%04x (buf %p) to driver",
-		       cmd(buf)->opcode, buf);
+	err = bt_send(buf);
+	if (err) {
+		BT_ERR("Unable to send to driver (err %d)", err);
+		k_sem_give(&bt_dev.ncmd_sem);
+		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED,
+			     NULL);
+		net_buf_unref(bt_dev.sent_cmd);
+		bt_dev.sent_cmd = NULL;
+		net_buf_unref(buf);
+	}
+}
 
-		err = bt_send(buf);
-		if (err) {
-			BT_ERR("Unable to send to driver (err %d)", err);
-			k_sem_give(&bt_dev.ncmd_sem);
-			hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED,
-				     NULL);
-			net_buf_unref(buf);
+static void process_events(struct k_poll_event *ev, int count)
+{
+	BT_DBG("count %d", count);
+
+	for (; count; ev++, count--) {
+		BT_DBG("ev->state %u", ev->state);
+
+		switch (ev->state) {
+		case K_POLL_STATE_SIGNALED:
+			break;
+		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
+			if (ev->tag == BT_EVENT_CMD_TX) {
+				send_cmd();
+			} else if (IS_ENABLED(CONFIG_BLUETOOTH_CONN) &&
+				   ev->tag == BT_EVENT_CONN_TX) {
+				struct bt_conn *conn;
+
+				conn = CONTAINER_OF(ev->fifo, struct bt_conn,
+						    tx_queue);
+				bt_conn_process_tx(conn);
+			}
+			break;
+		case K_POLL_STATE_NOT_READY:
+			break;
+		default:
+			BT_WARN("Unexpected k_poll event state %u", ev->state);
+			break;
 		}
 	}
 }
+
+#if defined(CONFIG_BLUETOOTH_CONN)
+/* command FIFO + conn_change signal + MAX_CONN */
+#define EV_COUNT (2 + CONFIG_BLUETOOTH_MAX_CONN)
+#else
+/* command FIFO */
+#define EV_COUNT 1
+#endif
+
+static void hci_tx_thread(void *p1, void *p2, void *p3)
+{
+	static struct k_poll_event events[EV_COUNT] = {
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&bt_dev.cmd_tx_queue,
+						BT_EVENT_CMD_TX),
+	};
+
+	BT_DBG("Started");
+
+	while (1) {
+		int ev_count, err;
+
+		events[0].state = K_POLL_STATE_NOT_READY;
+		ev_count = 1;
+
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CONN)) {
+			ev_count += bt_conn_prepare_events(&events[1]);
+		}
+
+		BT_DBG("Calling k_poll with %d events", ev_count);
+
+		err = k_poll(events, ev_count, K_FOREVER);
+		BT_ASSERT(err == 0);
+
+		process_events(events, ev_count);
+
+		/* Make sure we don't hog the CPU if there's all the time
+		 * some ready events.
+		 */
+		k_yield();
+	}
+}
+
 
 static void read_local_ver_complete(struct net_buf *buf)
 {
@@ -3285,6 +3346,29 @@ static int set_static_addr(void)
 		}
 	}
 
+#if defined(CONFIG_SOC_FAMILY_NRF5)
+	/* Read address from nRF5-specific storage
+	 * Non-initialized FICR values default to 0xFF, skip if no address
+	 * present. Also if a public address lives in FICR, do not use in this
+	 * function.
+	 */
+	if (((NRF_FICR->DEVICEADDR[0] != UINT32_MAX) ||
+	    ((NRF_FICR->DEVICEADDR[1] & UINT16_MAX) != UINT16_MAX)) &&
+	      (NRF_FICR->DEVICEADDRTYPE & 0x01)) {
+
+		bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
+		sys_put_le32(NRF_FICR->DEVICEADDR[0], &bt_dev.id_addr.a.val[0]);
+		sys_put_le16(NRF_FICR->DEVICEADDR[1], &bt_dev.id_addr.a.val[4]);
+		/* The FICR value is a just a random number, with no knowledge
+		 * of the Bluetooth Specification requirements for random
+		 * static addresses.
+		 */
+		BT_ADDR_SET_STATIC(&bt_dev.id_addr.a);
+
+		goto set_addr;
+	}
+#endif /* CONFIG_SOC_FAMILY_NRF5 */
+
 	BT_DBG("Generating new static random address");
 
 	err = bt_addr_le_create_static(&bt_dev.id_addr);
@@ -3384,7 +3468,8 @@ static int hci_init(void)
 		return err;
 	}
 
-	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY)) {
+	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY) ||
+	    !bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_NONE)) {
 		BT_DBG("No public address. Trying to set static random.");
 		err = set_static_addr();
 		if (err) {
@@ -3627,9 +3712,9 @@ int bt_enable(bt_ready_cb_t cb)
 	ready_cb = cb;
 
 	/* TX thread */
-	k_thread_spawn(cmd_tx_thread_stack, sizeof(cmd_tx_thread_stack),
-		       (k_thread_entry_t)hci_cmd_tx_thread, NULL, NULL, NULL,
-		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_spawn(tx_thread_stack, sizeof(tx_thread_stack),
+		       hci_tx_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
+		       K_NO_WAIT);
 
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	/* RX thread */
@@ -3948,7 +4033,35 @@ struct net_buf *bt_buf_get_rx(int32_t timeout)
 
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
 	if (buf) {
-		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
+	}
+
+	return buf;
+}
+
+struct net_buf *bt_buf_get_cmd_complete(int32_t timeout)
+{
+	struct net_buf *buf;
+	unsigned int key;
+
+	key = irq_lock();
+	buf = bt_dev.sent_cmd;
+	bt_dev.sent_cmd = NULL;
+	irq_unlock(key);
+
+	BT_DBG("sent_cmd %p", buf);
+
+	if (buf) {
+		bt_buf_set_type(buf, BT_BUF_EVT);
+		buf->len = 0;
+		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
+
+		return buf;
+	}
+
+	buf = bt_buf_get_rx(timeout);
+	if (buf) {
+		bt_buf_set_type(buf, BT_BUF_EVT);
 	}
 
 	return buf;

@@ -15,6 +15,7 @@
 #include <net/buf.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
+#include <bluetooth/l2cap.h>
 
 #include "usb_device.h"
 #include "usb_common.h"
@@ -74,19 +75,13 @@ static struct device *btusb_dev;
 static K_FIFO_DEFINE(rx_queue);
 
 /* HCI command buffers */
-#define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
-		      sizeof(struct bt_hci_cmd_hdr) + \
-		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
-
+#define CMD_BUF_SIZE BT_BUF_RX_SIZE
 NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    sizeof(uint8_t), NULL);
 
 #define BT_L2CAP_MTU 64
 /** Data size needed for ACL buffers */
-#define BT_BUF_ACL_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
-			 sizeof(struct bt_hci_acl_hdr) + \
-			 4 /* L2CAP header size */ + \
-			 BT_L2CAP_MTU)
+#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
 
 NET_BUF_POOL_DEFINE(acl_tx_pool, 2, BT_BUF_ACL_SIZE, sizeof(uint8_t), NULL);
 

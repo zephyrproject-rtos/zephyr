@@ -50,7 +50,14 @@ static const struct {
 
 void hf_slc_error(struct at_client *hf_at)
 {
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
 	BT_ERR("SLC error: disconnecting");
+	err = bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
+	if (err) {
+		BT_ERR("Rfcomm: Unable to disconnect :%d", -err);
+	}
 }
 
 int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
@@ -345,8 +352,31 @@ int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 	return -EINVAL;
 }
 
-int cmer_finish(struct at_client *hf_at, struct net_buf *buf,
-		enum at_result result)
+int cmee_finish(struct at_client *hf_at, enum at_result result)
+{
+	if (result != AT_RESULT_OK) {
+		BT_ERR("SLC Connection ERROR in response");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void slc_completed(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
+
+	if (bt_hf->connected) {
+		bt_hf->connected(conn);
+	}
+
+	if (hfp_hf_send_cmd(hf, NULL, cmee_finish, "AT+CMEE=1") < 0) {
+		BT_ERR("Error Sending AT+CMEE");
+	}
+}
+
+int cmer_finish(struct at_client *hf_at, enum at_result result)
 {
 	if (result != AT_RESULT_OK) {
 		BT_ERR("SLC Connection ERROR in response");
@@ -354,11 +384,12 @@ int cmer_finish(struct at_client *hf_at, struct net_buf *buf,
 		return -EINVAL;
 	}
 
+	slc_completed(hf_at);
+
 	return 0;
 }
 
-int cind_status_finish(struct at_client *hf_at, struct net_buf *buf,
-		       enum at_result result)
+int cind_status_finish(struct at_client *hf_at, enum at_result result)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
@@ -379,8 +410,7 @@ int cind_status_finish(struct at_client *hf_at, struct net_buf *buf,
 	return 0;
 }
 
-int cind_finish(struct at_client *hf_at, struct net_buf *buf,
-		enum at_result result)
+int cind_finish(struct at_client *hf_at, enum at_result result)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
@@ -401,8 +431,7 @@ int cind_finish(struct at_client *hf_at, struct net_buf *buf,
 	return 0;
 }
 
-int brsf_finish(struct at_client *hf_at, struct net_buf *buf,
-		enum at_result result)
+int brsf_finish(struct at_client *hf_at, enum at_result result)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
@@ -450,7 +479,12 @@ static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 
 static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 {
+	struct bt_conn *conn = dlc->session->br_chan.chan.conn;
+
 	BT_DBG("hf disconnected!");
+	if (bt_hf->disconnected) {
+		bt_hf->disconnected(conn);
+	}
 }
 
 static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)

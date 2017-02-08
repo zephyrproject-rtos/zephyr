@@ -33,7 +33,7 @@
 static struct bt_gatt_attr *db;
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
-static struct bt_gatt_subscribe_params *subscriptions;
+static sys_slist_t subscriptions;
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
 #if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
@@ -697,53 +697,75 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			  const void *data, uint16_t length)
 {
-	struct bt_gatt_subscribe_params *params;
+	sys_snode_t *node, *tmp, *prev = NULL;
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
-	for (params = subscriptions; params; params = params->_next) {
-		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
-			continue;
-		}
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
+		struct bt_gatt_subscribe_params *params;
 
-		if (handle != params->value_handle) {
+		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				      node);
+
+		if (bt_conn_addr_le_cmp(conn, &params->_peer) ||
+		    handle != params->value_handle) {
+			prev = node;
 			continue;
 		}
 
 		if (params->notify(conn, params, data, length) ==
 		    BT_GATT_ITER_STOP) {
 			bt_gatt_unsubscribe(conn, params);
+		} else {
+			prev = node;
 		}
 	}
 }
 
-static void gatt_subscription_remove(struct bt_conn *conn,
-				     struct bt_gatt_subscribe_params *prev,
+static void update_subscription(struct bt_conn *conn,
+				 struct bt_gatt_subscribe_params *params)
+{
+	if (params->_peer.type == BT_ADDR_LE_PUBLIC) {
+		return;
+	}
+
+	/* Update address */
+	bt_addr_le_copy(&params->_peer, &conn->le.dst);
+}
+
+static void gatt_subscription_remove(struct bt_conn *conn, sys_snode_t *prev,
 				     struct bt_gatt_subscribe_params *params)
 {
 	/* Remove subscription from the list*/
-	if (!prev) {
-		subscriptions = params->_next;
-	} else {
-		prev->_next = params->_next;
-	}
+	sys_slist_remove(&subscriptions, prev, &params->node);
 
 	params->notify(conn, params, NULL, 0);
 }
 
 static void remove_subscriptions(struct bt_conn *conn)
 {
-	struct bt_gatt_subscribe_params *params, *prev;
+	sys_snode_t *node, *tmp, *prev = NULL;
 
 	/* Lookup existing subscriptions */
-	for (params = subscriptions, prev = NULL; params;
-	     prev = params, params = params->_next) {
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
+		struct bt_gatt_subscribe_params *params;
+
+		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				      node);
+
 		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
+			prev = node;
 			continue;
 		}
 
-		/* Remove subscription */
-		gatt_subscription_remove(conn, prev, params);
+		if (!bt_addr_le_is_bonded(&conn->le.dst) ||
+		    (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE)) {
+			/* Remove subscription */
+			params->value = 0;
+			gatt_subscription_remove(conn, prev, params);
+		} else {
+			update_subscription(conn, params);
+		}
 	}
 }
 
@@ -1629,8 +1651,7 @@ static void gatt_subscription_add(struct bt_conn *conn,
 	bt_addr_le_copy(&params->_peer, &conn->le.dst);
 
 	/* Prepend subscription */
-	params->_next = subscriptions;
-	subscriptions = params;
+	sys_slist_prepend(&subscriptions, &params->node);
 }
 
 static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
@@ -1643,15 +1664,15 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
 
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
-		struct bt_gatt_subscribe_params *cur, *prev;
+		sys_snode_t *node, *tmp, *prev = NULL;
 
-		for (cur = subscriptions, prev = NULL; cur;
-		     prev = cur, cur = cur->_next) {
-
-			if (cur == params) {
-				gatt_subscription_remove(conn, prev, params);
+		SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
+			if (node == &params->node) {
+				gatt_subscription_remove(conn, tmp, params);
 				break;
 			}
+
+			prev = node;
 		}
 	}
 }
@@ -1681,7 +1702,7 @@ static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params)
 {
-	struct bt_gatt_subscribe_params *tmp;
+	sys_snode_t *node;
 	bool has_subscription = false;
 
 	if (!conn || !params || !params->notify ||
@@ -1694,7 +1715,12 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	}
 
 	/* Lookup existing subscriptions */
-	for (tmp = subscriptions; tmp; tmp = tmp->_next) {
+	SYS_SLIST_FOR_EACH_NODE(&subscriptions, node) {
+		struct bt_gatt_subscribe_params *tmp;
+
+		tmp = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				   node);
+
 		/* Fail if entry already exists */
 		if (tmp == params) {
 			return -EALREADY;
@@ -1731,7 +1757,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
-	struct bt_gatt_subscribe_params *tmp;
+	sys_snode_t *node, *next, *prev = NULL;
 	bool has_subscription = false, found = false;
 
 	if (!conn || !params) {
@@ -1742,18 +1768,20 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
-	/* Check head */
-	if (subscriptions == params) {
-		subscriptions = params->_next;
-		found = true;
-	}
-
 	/* Lookup existing subscriptions */
-	for (tmp = subscriptions; tmp; tmp = tmp->_next) {
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, next) {
+		struct bt_gatt_subscribe_params *tmp;
+
+		tmp = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				   node);
+
 		/* Remove subscription */
-		if (tmp->_next == params) {
-			tmp->_next = params->_next;
+		if (params == tmp) {
 			found = true;
+			sys_slist_remove(&subscriptions, prev, node);
+			continue;
+		} else {
+			prev = node;
 		}
 
 		/* Check if there still remains any other subscription */
@@ -1781,11 +1809,15 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params)
 
 static void add_subscriptions(struct bt_conn *conn)
 {
-	struct bt_gatt_subscribe_params *params, *prev;
+	sys_snode_t *node;
 
 	/* Lookup existing subscriptions */
-	for (params = subscriptions, prev = NULL; params;
-	     prev = params, params = params->_next) {
+	SYS_SLIST_FOR_EACH_NODE(&subscriptions, node) {
+		struct bt_gatt_subscribe_params *params;
+
+		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
+				      node);
+
 		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
 			continue;
 		}
@@ -1795,26 +1827,6 @@ static void add_subscriptions(struct bt_conn *conn)
 		 */
 		gatt_write_ccc(conn, params->ccc_handle, params->value,
 			       NULL, NULL);
-	}
-}
-
-static void update_subscriptions(struct bt_conn *conn)
-{
-	struct bt_gatt_subscribe_params *params, *prev;
-
-	/* Update existing subscriptions */
-	for (params = subscriptions, prev = NULL; params;
-	     prev = params, params = params->_next) {
-		if (params->_peer.type == BT_ADDR_LE_PUBLIC) {
-			continue;
-		}
-
-		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
-			continue;
-		}
-
-		/* Update address */
-		bt_addr_le_copy(&params->_peer, &conn->le.dst);
 	}
 }
 
@@ -1835,12 +1847,6 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
-	/* If bonded don't remove subscriptions */
-	if (bt_addr_le_is_bonded(&conn->le.dst)) {
-		update_subscriptions(conn);
-		return;
-	}
-
 	remove_subscriptions(conn);
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 }

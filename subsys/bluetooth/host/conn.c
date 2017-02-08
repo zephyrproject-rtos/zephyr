@@ -13,6 +13,8 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
+#include <misc/stack.h>
+#include <misc/__assert.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
 #include <bluetooth/log.h>
@@ -149,6 +151,12 @@ static void le_conn_update(struct k_work *work)
 					     update_work);
 	struct bt_conn *conn = CONTAINER_OF(le, struct bt_conn, le);
 	const struct bt_le_conn_param *param;
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL) &&
+	    conn->state == BT_CONN_CONNECT) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		return;
+	}
 
 	param = BT_LE_CONN_PARAM(conn->le.interval_min,
 				 conn->le.interval_max,
@@ -1010,39 +1018,72 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	return send_frag(conn, buf, BT_ACL_CONT, false);
 }
 
-static void conn_tx_thread(void *p1, void *p2, void *p3)
+static struct k_poll_signal conn_change = K_POLL_SIGNAL_INITIALIZER();
+
+int bt_conn_prepare_events(struct k_poll_event events[])
 {
-	struct bt_conn *conn = p1;
+	int i, ev_count = 0;
+
+	BT_DBG("");
+
+	k_poll_event_init(&events[ev_count++], K_POLL_TYPE_SIGNAL,
+			  K_POLL_MODE_NOTIFY_ONLY, &conn_change);
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		struct bt_conn *conn = &conns[i];
+
+		if (!atomic_get(&conn->ref)) {
+			continue;
+		}
+
+		if (conn->state != BT_CONN_CONNECTED) {
+			continue;
+		}
+
+		BT_DBG("Adding conn %p to poll list", conn);
+
+		k_poll_event_init(&events[ev_count],
+				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &conn->tx_queue);
+		events[ev_count++].tag = BT_EVENT_CONN_TX;
+	}
+
+	return ev_count;
+}
+
+void bt_conn_process_tx(struct bt_conn *conn)
+{
 	struct net_buf *buf;
 
-	BT_DBG("Started for handle %u", conn->handle);
+	BT_DBG("conn %p", conn);
 
-	while (conn->state == BT_CONN_CONNECTED) {
-		/* Get next ACL packet for connection */
-		buf = net_buf_get(&conn->tx_queue, K_FOREVER);
-		if (conn->state != BT_CONN_CONNECTED) {
-			net_buf_unref(buf);
-			break;
-		}
+	if (conn->state != BT_CONN_CONNECTED) {
+		BT_DBG("handle %u disconnected - cleaning up", conn->handle);
 
-		if (!send_buf(conn, buf)) {
+		/* Give back any allocated buffers */
+		while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
 			net_buf_unref(buf);
 		}
+
+		BT_ASSERT(!conn->pending_pkts);
+
+		bt_conn_reset_rx_state(conn);
+
+		/* Release the reference we took for the very first
+		 * state transition.
+		 */
+		bt_conn_unref(conn);
+
+		return;
 	}
 
-	BT_DBG("handle %u disconnected - cleaning up", conn->handle);
-
-	/* Give back any allocated buffers */
-	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
+	/* Get next ACL packet for connection */
+	buf = net_buf_get(&conn->tx_queue, K_NO_WAIT);
+	BT_ASSERT(buf);
+	if (!send_buf(conn, buf)) {
 		net_buf_unref(buf);
 	}
-
-	BT_ASSERT(!conn->pending_pkts);
-
-	bt_conn_reset_rx_state(conn);
-
-	BT_DBG("handle %u exiting", conn->handle);
-	bt_conn_unref(conn);
 }
 
 struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
@@ -1064,19 +1105,6 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	k_delayed_work_init(&conn->le.update_work, le_conn_update);
 
 	return conn;
-}
-
-static void timeout_thread(void *p1, void *p2, void *p3)
-{
-	struct bt_conn *conn = p1;
-
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	conn->timeout = NULL;
-
-	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	bt_conn_unref(conn);
 }
 
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
@@ -1103,12 +1131,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		bt_conn_ref(conn);
 		break;
 	case BT_CONN_CONNECT:
-		if (conn->timeout) {
-			k_thread_cancel(conn->timeout);
-			conn->timeout = NULL;
-
-			/* Drop the reference taken by timeout thread */
-			bt_conn_unref(conn);
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL) &&
+		    conn->type == BT_CONN_TYPE_LE) {
+			k_delayed_work_cancel(&conn->le.update_work);
 		}
 		break;
 	default:
@@ -1119,9 +1144,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
 		k_fifo_init(&conn->tx_queue);
-		k_thread_spawn(conn->stack, sizeof(conn->stack), conn_tx_thread,
-			    bt_conn_ref(conn), NULL, NULL, K_PRIO_COOP(7),
-			    0, K_NO_WAIT);
+		k_poll_signal(&conn_change, 0);
 
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
@@ -1135,30 +1158,30 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		    old_state == BT_CONN_DISCONNECT) {
 			bt_l2cap_disconnected(conn);
 			notify_disconnected(conn);
+
+			/* Return any unacknowledged packets */
+			while (conn->pending_pkts) {
+				k_sem_give(bt_conn_get_pkts(conn));
+				conn->pending_pkts--;
+			}
+
+			/* Cancel Connection Update if it is pending */
+			if (conn->type == BT_CONN_TYPE_LE) {
+				k_delayed_work_cancel(&conn->le.update_work);
+			}
+
 			net_buf_put(&conn->tx_queue,
 				    bt_conn_create_pdu(NULL, 0));
+			/* The last ref will be dropped by the tx_thread */
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */
 			notify_connected(conn);
+			bt_conn_unref(conn);
 		} else if (old_state == BT_CONN_CONNECT_SCAN && conn->err) {
 			/* this indicate LE Create Connection failed */
 			notify_connected(conn);
+			bt_conn_unref(conn);
 		}
-
-		/* Return any unacknowledged packets */
-		while (conn->pending_pkts) {
-			k_sem_give(bt_conn_get_pkts(conn));
-			conn->pending_pkts--;
-		}
-
-		/* Cancel Connection Update if it is pending */
-		if (conn->type == BT_CONN_TYPE_LE)
-			k_delayed_work_cancel(&conn->le.update_work);
-
-		/* Release the reference we took for the very first
-		 * state transition.
-		 */
-		bt_conn_unref(conn);
 
 		break;
 	case BT_CONN_CONNECT_SCAN:
@@ -1168,15 +1191,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * Timer is needed only for LE. For other link types controller
 		 * will handle connection timeout.
 		 */
-		if (conn->type != BT_CONN_TYPE_LE) {
-			break;
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL) &&
+		    conn->type == BT_CONN_TYPE_LE) {
+			k_delayed_work_submit(&conn->le.update_work,
+					      CONN_TIMEOUT);
 		}
 
-		/* Add LE Create Connection timeout */
-		conn->timeout = k_thread_spawn(conn->stack, sizeof(conn->stack),
-					       timeout_thread,
-					       bt_conn_ref(conn), NULL, NULL,
-					       K_PRIO_COOP(7), 0, CONN_TIMEOUT);
 		break;
 	case BT_CONN_DISCONNECT:
 		break;
@@ -1364,19 +1384,6 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 	return 0;
 }
 
-static int bt_hci_connect_le_cancel(struct bt_conn *conn)
-{
-	if (conn->timeout) {
-		k_thread_cancel(conn->timeout);
-		conn->timeout = NULL;
-
-		/* Drop the reference took by timeout thread */
-		bt_conn_unref(conn);
-	}
-
-	return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
-}
-
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
@@ -1434,7 +1441,13 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 		}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-		return bt_hci_connect_le_cancel(conn);
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL)) {
+			k_delayed_work_cancel(&conn->le.update_work);
+			return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL,
+					       NULL);
+		}
+
+		return 0;
 	case BT_CONN_CONNECTED:
 		return bt_hci_disconnect(conn, reason);
 	case BT_CONN_DISCONNECT:
@@ -1584,11 +1597,10 @@ struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 	}
 
 	buf = net_buf_alloc(pool, K_FOREVER);
-	if (buf) {
-		reserve += sizeof(struct bt_hci_acl_hdr) +
-				CONFIG_BLUETOOTH_HCI_SEND_RESERVE;
-		net_buf_reserve(buf, reserve);
-	}
+	__ASSERT_NO_MSG(buf);
+
+	reserve += sizeof(struct bt_hci_acl_hdr) + CONFIG_BLUETOOTH_HCI_RESERVE;
+	net_buf_reserve(buf, reserve);
 
 	return buf;
 }
