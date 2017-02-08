@@ -2227,13 +2227,17 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 {
 	BT_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, buf);
 
+	if (buf->pool != &hci_cmd_pool) {
+		return;
+	}
+
 	if (cmd(buf)->opcode != opcode) {
 		BT_WARN("OpCode 0x%04x completed instead of expected 0x%04x",
 			opcode, cmd(buf)->opcode);
 	}
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	if (buf->pool == &hci_cmd_pool && cmd(buf)->sync) {
+	if (cmd(buf)->sync) {
 		cmd(buf)->status = status;
 		k_sem_give(cmd(buf)->sync);
 	}
