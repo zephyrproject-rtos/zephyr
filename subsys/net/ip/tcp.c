@@ -299,8 +299,6 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 
 	finalize_segment(context, buf);
 
-	net_nbuf_compact(buf);
-
 	net_tcp_trace("", buf);
 
 	return buf;
