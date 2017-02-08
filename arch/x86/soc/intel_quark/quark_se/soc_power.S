@@ -21,6 +21,21 @@ SECTION_FUNC(TEXT, save_cpu_context)
 
 	pushf				/* save flags */
 	pusha				/* save GPRs */
+#if defined (CONFIG_DEBUG) || defined (CONFIG_SOC_WATCH)
+	/* save the debug registers */
+	movl %dr0, %edx
+	pushl %edx
+	movl %dr1, %edx
+	pushl %edx
+	movl %dr2, %edx
+	pushl %edx
+	movl %dr3, %edx
+	pushl %edx
+	movl %dr6, %edx
+	pushl %edx
+	movl %dr7, %edx
+	pushl %edx
+#endif
 	movl %esp, _pm_save_esp		/* save stack ptr */
 	sidtl _pm_save_idtr		/* save idtr */
 	sgdtl _pm_save_gdtr		/* save gdtr */
@@ -32,6 +47,21 @@ SECTION_FUNC(TEXT, _power_restore_cpu_context)
 	lgdtl _pm_save_gdtr		/* restore gdtr */
 	lidtl _pm_save_idtr		/* restore idtr */
 	movl _pm_save_esp, %esp		/* restore saved stack ptr */
+#if defined (CONFIG_DEBUG) || defined (CONFIG_SOC_WATCH)
+	/* restore the debug registers */
+	popl %edx
+	movl %edx, %dr7
+	popl %edx
+	movl %edx, %dr6
+	popl %edx
+	movl %edx, %dr3
+	popl %edx
+	movl %edx, %dr2
+	popl %edx
+	movl %edx, %dr1
+	popl %edx
+	movl %edx, %dr0
+#endif
 	popa				/* restore saved GPRs */
 	popf				/* restore saved flags */
 
