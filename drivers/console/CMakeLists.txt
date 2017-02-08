@@ -1,0 +1,12 @@
+add_library(drivers__console STATIC "")
+zephyr_library(drivers__console)
+
+target_sources_if_kconfig(drivers__console PRIVATE uart_console.c)
+target_sources_if_kconfig(drivers__console PRIVATE ram_console.c)
+target_sources_if_kconfig(drivers__console PRIVATE rtt_console.c)
+target_sources_if_kconfig(drivers__console PRIVATE ipm_console_receiver.c)
+target_sources_if_kconfig(drivers__console PRIVATE ipm_console_sender.c)
+target_sources_if_kconfig(drivers__console PRIVATE uart_pipe.c)
+target_sources_if_kconfig(drivers__console PRIVATE telnet_console.c)
+
+target_link_libraries(drivers__console drivers)
