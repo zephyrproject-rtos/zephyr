@@ -28,8 +28,8 @@ the board.
 .. note::
 
   PM support on Intel Quark SE Microcontroller C1000 board requires
-  `boot loader version 1.3
-  <https://github.com/quark-mcu/qm-bootloader/releases>`_ or greater.
+  the latest version of the `boot loader
+  <https://github.com/quark-mcu/qm-bootloader/releases>`_.
 
 
 Building and Running
