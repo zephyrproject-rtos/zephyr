@@ -87,6 +87,19 @@
 #define BT_AVDTP_MIN_SEID 0x01
 #define BT_AVDTP_MAX_SEID 0x3E
 
+struct bt_avdtp;
+struct bt_avdtp_req;
+
+typedef int (*bt_avdtp_func_t)(struct bt_avdtp *session,
+			       struct bt_avdtp_req *req);
+
+struct bt_avdtp_req {
+	uint8_t signal_id;
+	uint8_t transaction_id;
+	bt_avdtp_func_t func;
+	struct k_delayed_work timeout_work;
+};
+
 struct bt_avdtp_single_sig_hdr {
 	uint8_t hdr;
 	uint8_t signal_id;

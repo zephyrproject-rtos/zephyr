@@ -38,19 +38,9 @@
 #define AVDTP_GET_PKT_TYPE(hdr) ((hdr & 0x0c) >> AVDTP_PKT_POSITION)
 #define AVDTP_GET_SIG_ID(s) (s & AVDTP_SIGID_MASK)
 
-typedef int (*bt_avdtp_func_t)(struct bt_avdtp *session,
-			       struct bt_avdtp_req *req);
-
 static struct bt_avdtp_event_cb *event_cb;
 
 static struct bt_avdtp_seid_lsep *lseps;
-
-struct bt_avdtp_req {
-	uint8_t signal_id;
-	uint8_t transaction_id;
-	bt_avdtp_func_t func;
-	struct k_delayed_work timeout_work;
-};
 
 #define AVDTP_CHAN(_ch) CONTAINER_OF(_ch, struct bt_avdtp, br_chan.chan)
 
