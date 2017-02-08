@@ -697,19 +697,14 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			  const void *data, uint16_t length)
 {
-	sys_snode_t *node, *tmp, *prev = NULL;
+	struct bt_gatt_subscribe_params *params, *tmp, *prev = NULL;
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
-		struct bt_gatt_subscribe_params *params;
-
-		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
-				      node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, params, tmp, node) {
 		if (bt_conn_addr_le_cmp(conn, &params->_peer) ||
 		    handle != params->value_handle) {
-			prev = node;
+			prev = params;
 			continue;
 		}
 
@@ -717,7 +712,7 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 		    BT_GATT_ITER_STOP) {
 			bt_gatt_unsubscribe(conn, params);
 		} else {
-			prev = node;
+			prev = params;
 		}
 	}
 }
@@ -744,17 +739,12 @@ static void gatt_subscription_remove(struct bt_conn *conn, sys_snode_t *prev,
 
 static void remove_subscriptions(struct bt_conn *conn)
 {
-	sys_snode_t *node, *tmp, *prev = NULL;
+	struct bt_gatt_subscribe_params *params, *tmp, *prev = NULL;
 
 	/* Lookup existing subscriptions */
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
-		struct bt_gatt_subscribe_params *params;
-
-		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
-				      node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, params, tmp, node) {
 		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
-			prev = node;
+			prev = params;
 			continue;
 		}
 
@@ -762,7 +752,7 @@ static void remove_subscriptions(struct bt_conn *conn)
 		    (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE)) {
 			/* Remove subscription */
 			params->value = 0;
-			gatt_subscription_remove(conn, prev, params);
+			gatt_subscription_remove(conn, &prev->node, params);
 		} else {
 			update_subscription(conn, params);
 		}
@@ -1702,7 +1692,7 @@ static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params)
 {
-	sys_snode_t *node;
+	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false;
 
 	if (!conn || !params || !params->notify ||
@@ -1715,12 +1705,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	}
 
 	/* Lookup existing subscriptions */
-	SYS_SLIST_FOR_EACH_NODE(&subscriptions, node) {
-		struct bt_gatt_subscribe_params *tmp;
-
-		tmp = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
-				   node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER(&subscriptions, tmp, node) {
 		/* Fail if entry already exists */
 		if (tmp == params) {
 			return -EALREADY;
@@ -1757,7 +1742,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
-	sys_snode_t *node, *next, *prev = NULL;
+	struct bt_gatt_subscribe_params *tmp, *next, *prev = NULL;
 	bool has_subscription = false, found = false;
 
 	if (!conn || !params) {
@@ -1769,19 +1754,15 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	}
 
 	/* Lookup existing subscriptions */
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, next) {
-		struct bt_gatt_subscribe_params *tmp;
-
-		tmp = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
-				   node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, tmp, next, node) {
 		/* Remove subscription */
 		if (params == tmp) {
 			found = true;
-			sys_slist_remove(&subscriptions, prev, node);
+			sys_slist_remove(&subscriptions, &prev->node,
+					 &tmp->node);
 			continue;
 		} else {
-			prev = node;
+			prev = tmp;
 		}
 
 		/* Check if there still remains any other subscription */
@@ -1809,15 +1790,10 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params)
 
 static void add_subscriptions(struct bt_conn *conn)
 {
-	sys_snode_t *node;
+	struct bt_gatt_subscribe_params *params;
 
 	/* Lookup existing subscriptions */
-	SYS_SLIST_FOR_EACH_NODE(&subscriptions, node) {
-		struct bt_gatt_subscribe_params *params;
-
-		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params,
-				      node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER(&subscriptions, params, node) {
 		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
 			continue;
 		}

@@ -1742,7 +1742,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 static void att_reset(struct bt_att *att)
 {
-	sys_snode_t *node, *tmp;
+	struct bt_att_req *req, *tmp;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct net_buf *buf;
 
@@ -1753,9 +1753,7 @@ static void att_reset(struct bt_att *att)
 #endif
 
 	/* Notify pending requests */
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&att->reqs, node, tmp) {
-		struct bt_att_req *req = ATT_REQ(node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->reqs, req, tmp, node) {
 		if (req->func) {
 			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0, req);
 		}

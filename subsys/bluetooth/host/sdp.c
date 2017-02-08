@@ -417,11 +417,9 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session)
 static void sdp_client_params_iterator(struct bt_sdp_client *session)
 {
 	struct bt_l2cap_chan *chan = &session->chan.chan;
-	const struct bt_sdp_discover_params *param;
-	sys_snode_t *node, *node_s;
+	struct bt_sdp_discover_params *param, *tmp;
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&session->reqs, node, node_s) {
-		param = GET_PARAM(node);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
 		if (param != session->param) {
 			continue;
 		}
@@ -429,7 +427,7 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		BT_DBG("");
 
 		/* Remove already checked UUID node */
-		sys_slist_remove(&session->reqs, NULL, node);
+		sys_slist_remove(&session->reqs, NULL, &param->_node);
 		/* Invalidate cached param in context */
 		session->param = NULL;
 		/* Reset continuation state in current context */
