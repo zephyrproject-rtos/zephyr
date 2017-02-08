@@ -20,7 +20,7 @@ extern "C" {
  *  @param data the ASCII text to display
  *  @param size the length of the text in bytes
  */
-void glcd_print(struct device *port, unsigned char *data, uint32_t size);
+void glcd_print(struct device *port, char *data, uint32_t size);
 
 
 /**
