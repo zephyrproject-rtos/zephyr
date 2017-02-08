@@ -195,14 +195,12 @@ static inline void _add_timeout(struct k_thread *thread,
 	_dump_timeout_q();
 
 	int32_t *delta = &timeout->delta_ticks_from_prev;
-	sys_dnode_t *node;
+	struct _timeout *in_q;
 
-	SYS_DLIST_FOR_EACH_NODE(&_timeout_q, node) {
-		struct _timeout *in_q = (struct _timeout *)node;
-
+	SYS_DLIST_FOR_EACH_CONTAINER(&_timeout_q, in_q, node) {
 		if (*delta <= in_q->delta_ticks_from_prev) {
 			in_q->delta_ticks_from_prev -= *delta;
-			sys_dlist_insert_before(&_timeout_q, node,
+			sys_dlist_insert_before(&_timeout_q, &in_q->node,
 						&timeout->node);
 			goto inserted;
 		}
