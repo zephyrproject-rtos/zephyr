@@ -655,13 +655,11 @@ static void restart_timer(struct net_tcp *tcp)
 int net_tcp_send_data(struct net_context *context)
 {
 	struct net_buf *buf;
-	sys_snode_t *node;
 
 	/* For now, just send all queued data synchronously.  Need to
 	 * add window handling and retry/ACK logic.
 	 */
-	SYS_SLIST_FOR_EACH_NODE(&context->tcp->sent_list, node) {
-		buf = CONTAINER_OF(node, struct net_buf, sent_list);
+	SYS_SLIST_FOR_EACH_CONTAINER(&context->tcp->sent_list, buf, sent_list) {
 		if (!net_nbuf_buf_sent(buf)) {
 			net_tcp_send_buf(buf);
 		}
@@ -722,11 +720,9 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 		 */
 		if (ctx->tcp->flags & NET_TCP_RETRYING) {
 			struct net_buf *buf;
-			sys_snode_t *node;
 
-			SYS_SLIST_FOR_EACH_NODE(&ctx->tcp->sent_list, node) {
-				buf = CONTAINER_OF(node, struct net_buf,
-						   sent_list);
+			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, buf,
+						     sent_list) {
 				net_nbuf_set_buf_sent(buf, false);
 			}
 

@@ -284,7 +284,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 static void route_cb(struct net_route_entry *entry, void *user_data)
 {
 	struct net_if *iface = user_data;
-	sys_snode_t *test;
+	struct net_route_nexthop *nexthop_route;
 	int count;
 
 	if (entry->iface != iface) {
@@ -302,13 +302,8 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 
 	printk("Next hops   :\n");
 
-	SYS_SLIST_FOR_EACH_NODE(&entry->nexthop, test) {
-		struct net_route_nexthop *nexthop_route;
+	SYS_SLIST_FOR_EACH_CONTAINER(&entry->nexthop, nexthop_route, node) {
 		struct net_linkaddr_storage *lladdr;
-
-		nexthop_route = CONTAINER_OF(test,
-					     struct net_route_nexthop,
-					     node);
 
 		if (!nexthop_route->nbr) {
 			continue;

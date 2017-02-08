@@ -418,7 +418,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 int net_route_del(struct net_route_entry *route)
 {
 	struct net_nbr *nbr;
-	sys_snode_t *test;
+	struct net_route_nexthop *nexthop_route;
 
 	if (!route) {
 		return -EINVAL;
@@ -433,13 +433,7 @@ int net_route_del(struct net_route_entry *route)
 
 	net_route_info("Deleted", route, &route->addr);
 
-	SYS_SLIST_FOR_EACH_NODE(&route->nexthop, test) {
-		struct net_route_nexthop *nexthop_route;
-
-		nexthop_route = CONTAINER_OF(test,
-					     struct net_route_nexthop,
-					     node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		if (!nexthop_route->nbr) {
 			continue;
 		}
@@ -458,7 +452,7 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 {
 	int count = 0, status = 0;
 	struct net_nbr *nbr_nexthop;
-	sys_snode_t *test;
+	struct net_route_nexthop *nexthop_route;
 	int i, ret;
 
 	NET_ASSERT(iface);
@@ -470,13 +464,8 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 		struct net_nbr *nbr = get_nbr(i);
 		struct net_route_entry *route = net_route_data(nbr);
 
-		SYS_SLIST_FOR_EACH_NODE(&route->nexthop, test) {
-			struct net_route_nexthop *nexthop_route;
-
-			nexthop_route = CONTAINER_OF(test,
-						     struct net_route_nexthop,
-						     node);
-
+		SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route,
+					     node) {
 			if (nexthop_route->nbr == nbr_nexthop) {
 				/* This route contains this nexthop */
 				ret = net_route_del(route);
@@ -505,7 +494,7 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 {
 	int count = 0, status = 0;
 	struct net_nbr *nbr_nexthop;
-	sys_snode_t *test;
+	struct net_route_nexthop *nexthop_route;
 	int i, ret;
 
 	NET_ASSERT(iface);
@@ -517,13 +506,9 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 		struct net_nbr *nbr = get_nbr(i);
 		struct net_route_entry *route = net_route_data(nbr);
 
-		SYS_SLIST_FOR_EACH_NODE(&route->nexthop, test) {
-			struct net_route_nexthop *nexthop_route;
+		SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route,
+					     node) {
 			void *extra_data;
-
-			nexthop_route = CONTAINER_OF(test,
-						     struct net_route_nexthop,
-						     node);
 
 			if (nexthop_route->nbr != nbr_nexthop) {
 				continue;
@@ -561,17 +546,12 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 
 struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 {
-	sys_snode_t *test;
+	struct net_route_nexthop *nexthop_route;
 
 	NET_ASSERT(route);
 
-	SYS_SLIST_FOR_EACH_NODE(&route->nexthop, test) {
-		struct net_route_nexthop *nexthop_route;
+	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		struct in6_addr *addr;
-
-		nexthop_route = CONTAINER_OF(test,
-					     struct net_route_nexthop,
-					     node);
 
 		NET_ASSERT(nexthop_route->nbr->idx != NET_NBR_LLADDR_UNKNOWN);
 

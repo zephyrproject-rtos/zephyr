@@ -86,14 +86,11 @@ static inline void mgmt_add_event_mask(uint32_t event_mask)
 
 static inline void mgmt_rebuild_global_event_mask(void)
 {
-	sys_snode_t *sn, *sns;
+	struct net_mgmt_event_callback *cb, *tmp;
 
 	global_event_mask = 0;
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&event_callbacks, sn, sns) {
-		struct net_mgmt_event_callback *cb =
-			CONTAINER_OF(sn, struct net_mgmt_event_callback, node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
 		mgmt_add_event_mask(cb->event_mask);
 	}
 }
@@ -105,17 +102,14 @@ static inline bool mgmt_is_event_handled(uint32_t mgmt_event)
 
 static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 {
-	sys_snode_t *sn, *sns;
+	struct net_mgmt_event_callback *cb, *tmp;
 
 	NET_DBG("Event layer %u code %u type %u",
 		NET_MGMT_GET_LAYER(mgmt_event->event),
 		NET_MGMT_GET_LAYER_CODE(mgmt_event->event),
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&event_callbacks, sn, sns) {
-		struct net_mgmt_event_callback *cb =
-			CONTAINER_OF(sn, struct net_mgmt_event_callback, node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
 		NET_DBG("Running callback %p : %p", cb, cb->handler);
 
 		if ((mgmt_event->event & cb->event_mask) == mgmt_event->event) {

@@ -345,14 +345,11 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
 				  uint8_t type, uint8_t code)
 {
-	sys_snode_t *node;
 	struct net_icmpv6_handler *cb;
 
 	ARG_UNUSED(len);
 
-	SYS_SLIST_FOR_EACH_NODE(&handlers, node) {
-		cb = (struct net_icmpv6_handler *)node;
-
+	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == type && (cb->code == code || cb->code == 0)) {
 			net_stats_update_icmp_recv();
 			return cb->handler(buf);

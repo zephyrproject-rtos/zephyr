@@ -695,7 +695,7 @@ void zoap_reply_clear(struct zoap_reply *reply)
 
 int zoap_resource_notify(struct zoap_resource *resource)
 {
-	sys_snode_t *node;
+	struct zoap_observer *o;
 
 	resource->age++;
 
@@ -703,9 +703,7 @@ int zoap_resource_notify(struct zoap_resource *resource)
 		return -ENOENT;
 	}
 
-	SYS_SLIST_FOR_EACH_NODE(&resource->observers, node) {
-		struct zoap_observer *o = (struct zoap_observer *) node;
-
+	SYS_SLIST_FOR_EACH_CONTAINER(&resource->observers, o, list) {
 		resource->notify(resource, o);
 	}
 

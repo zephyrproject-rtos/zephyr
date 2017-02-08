@@ -1332,12 +1332,9 @@ void net_if_unregister_link_cb(struct net_if_link_cb *link)
 void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 			 int status)
 {
-	sys_snode_t *sn, *sns;
+	struct net_if_link_cb *link, *tmp;
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&link_callbacks, sn, sns) {
-		struct net_if_link_cb *link =
-			CONTAINER_OF(sn, struct net_if_link_cb, node);
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&link_callbacks, link, tmp, node) {
 		link->cb(iface, lladdr, status);
 	}
 }
