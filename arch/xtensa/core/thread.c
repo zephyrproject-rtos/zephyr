@@ -91,7 +91,9 @@ void _new_thread(char *pStack, size_t stackSize,
 		(XCHAL_TOTAL_SA_ALIGN < 16 ? 16 : XCHAL_TOTAL_SA_ALIGN));
 	/* TCS is located at top of stack while frames are located at end of it */
 	struct tcs *tcs = (struct tcs *)(pStack);
+#if XCHAL_CP_NUM > 0
 	uint32_t *cpSA;
+#endif
 
 #ifdef CONFIG_DEBUG
 	printk("\nstackPtr = %p, stackSize = %d\n", pStack, stackSize);
