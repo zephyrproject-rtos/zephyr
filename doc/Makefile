@@ -61,6 +61,7 @@ clean:
 	@rm -rf $(BUILDDIR)/*
 	@rm -rf html
 	@rm -rf xml
+	@rm -rf doxygen
 	@rm -rf latex
 	@rm -rf reference/kconfig/*.rst
 	@rm -rf samples
