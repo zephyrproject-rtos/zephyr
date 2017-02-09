@@ -445,7 +445,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 #if defined(CONFIG_NET_IPV6)
 	if (addr->family == AF_INET6) {
-		struct net_if *iface;
+		struct net_if *iface = NULL;
 		struct in6_addr *ptr;
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
 		int ret;
