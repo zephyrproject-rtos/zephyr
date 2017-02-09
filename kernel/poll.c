@@ -52,9 +52,9 @@ static inline void clear_polling_state(struct k_thread *thread)
 }
 
 /* must be called with interrupts locked */
-static inline int is_polling(struct k_thread *thread)
+static inline int is_polling(void)
 {
-	return _is_thread_polling(thread);
+	return _is_thread_polling(_current);
 }
 
 /* must be called with interrupts locked */
@@ -230,7 +230,7 @@ int k_poll(struct k_poll_event *events, int num_events, int32_t timeout)
 	 * valid for the caller to consider them available, as if this function
 	 * returned success.
 	 */
-	if (!is_polling(_current)) {
+	if (!is_polling()) {
 		clear_event_registrations(events, last_registered, key);
 		irq_unlock(key);
 		return in_use;
