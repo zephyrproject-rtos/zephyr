@@ -25,7 +25,7 @@
 
 /* total shared RAM size (restore info + gdt) */
 #define BSP_SHARED_RAM_SIZE \
-	CONFIG_BSP_SHARED_GDT_RAM_SIZE+CONFIG_BSP_SHARED_RESTORE_INFO_SIZE
+	(CONFIG_BSP_SHARED_GDT_RAM_SIZE+CONFIG_BSP_SHARED_RESTORE_INFO_SIZE)
 /*
  * When DEEP_SLEEP is not enabled, the shared memory can be re-used after boot.
  * Since the memory regions area are at fixed address locations, only the
