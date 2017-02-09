@@ -554,6 +554,10 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
 		int i;
 
+		if (ret && *ret && iface != *ret) {
+			continue;
+		}
+
 		for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
 			if (!iface->ipv6.mcast[i].is_used ||
 			    iface->ipv6.mcast[i].address.family != AF_INET6) {
