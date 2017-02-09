@@ -39,17 +39,13 @@
 #define DATA data
 #define NOINIT noinit
 
+/* Interrupts */
+#define IRQ_VECTOR_TABLE	.irq_vector_table
+
 #if defined(CONFIG_ARM)
 #define SCS_SECTION scs
 #define SCP_SECTION scp
-
 #define KINETIS_FLASH_CONFIG  kinetis_flash_config
-#define IRQ_VECTOR_TABLE    irq_vector_table
-
-#elif defined(CONFIG_ARC)
-
-	#define IRQ_VECTOR_TABLE irq_vector_table
-
 #endif
 
 #include <section_tags.h>

@@ -76,8 +76,7 @@ SECTIONS
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))
 
-	KEEP(*(.irq_vector_table))
-	KEEP(*(".irq_vector_table.*"))
+	KEEP(*(IRQ_VECTOR_TABLE))
 
 	/* Kinetis has to write 16 bytes at 0x400 */
 	SKIP_TO_KINETIS_FLASH_CONFIG

@@ -72,8 +72,7 @@ SECTIONS {
 		KEEP(*(".exc_vector_table.*"))
 
 
-		KEEP(*(.irq_vector_table))
-		KEEP(*(".irq_vector_table.*"))
+		KEEP(*(IRQ_VECTOR_TABLE))
 
 		KEEP(*(.isr_irq*))
 
