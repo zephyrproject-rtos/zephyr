@@ -74,7 +74,7 @@
 
 *******************************************************************************/
 
-#include <kernel_structs.h>
+#include <offsets_short.h>
 #include "xtensa_rtos.h"
 
 /*
