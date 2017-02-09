@@ -52,6 +52,13 @@ enum stm32f3x_pin_config_mode {
 #include <stm32f3xx_ll_usart.h>
 #endif
 
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+#include <stm32f3xx_ll_utils.h>
+#include <stm32f3xx_ll_bus.h>
+#include <stm32f3xx_ll_rcc.h>
+#include <stm32f3xx_ll_system.h>
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F3_SOC_H_ */
