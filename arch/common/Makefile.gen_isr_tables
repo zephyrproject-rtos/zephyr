@@ -5,6 +5,9 @@ OUTPUT_OBJ := isr_tables.o
 ifeq ($(ARCH),arm)
 OUTPUT_FORMAT := elf32-littlearm
 OUTPUT_ARCH := arm
+else ifeq ($(ARCH),nios2)
+OUTPUT_FORMAT := elf32-littlenios2
+OUTPUT_ARCH := nios2
 else
 $(error Output formats not defined for this architecture)
 endif

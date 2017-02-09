@@ -37,6 +37,16 @@ config XIP
 	bool
 	default y
 
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config NUM_IRQS
+	int
+	default 32
+
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
 	default n

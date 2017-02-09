@@ -61,6 +61,9 @@ MEMORY
     RESET (rx) : ORIGIN = _RESET_VECTOR, LENGTH = 0x20
     FLASH (rx) : ORIGIN = _RESET_VECTOR + 0x20 , LENGTH = (_ROM_SIZE - 0x20)
     SRAM  (wx) : ORIGIN = _EXC_VECTOR, LENGTH = _RAM_SIZE - (_EXC_VECTOR - _RAM_ADDR)
+    /* Used by and documented in include/linker/intlist.ld */
+    IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
+
     }
 
 #else
@@ -69,6 +72,9 @@ MEMORY
     {
     RESET (wx) : ORIGIN = _RESET_VECTOR, LENGTH = 0x20
     SRAM  (wx) : ORIGIN = _EXC_VECTOR, LENGTH = _RAM_SIZE - (_EXC_VECTOR - _RAM_ADDR)
+
+    /* Used by and documented in include/linker/intlist.ld */
+    IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 #endif
 
@@ -158,18 +164,9 @@ SECTIONS
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
         {
-
-        KEEP(*(.isr_irq*))
-
-        /* sections for IRQ0-9 */
-        KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9])))
-
-        /* sections for IRQ10-99 */
-        KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9])))
-
-        /* sections for IRQ100-999 */
-        KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9][0-9])))
-
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+	KEEP(*(SW_ISR_TABLE))
+#endif
         *(.data)
         *(".data.*")
 
@@ -241,6 +238,10 @@ SECTIONS
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
 #include <custom-sections.ld>
+#endif
+
+#ifdef CONFIG_GEN_ISR_TABLES
+#include <linker/intlist.ld>
 #endif
 
     }
