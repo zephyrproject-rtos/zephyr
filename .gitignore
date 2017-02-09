@@ -20,6 +20,7 @@ scripts/kconfig/zconf.hash.c
 scripts/kconfig/zconf.lex.c
 scripts/kconfig/zconf.tab.c
 doc/_build
+doc/doxygen
 doc/xml
 doc/html
 doc/boards
