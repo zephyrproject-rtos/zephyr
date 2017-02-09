@@ -122,7 +122,7 @@ static void tcp_retry_expired(struct k_timer *timer)
 
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
-		net_tcp_send_buf(net_buf_ref(buf));
+		net_tcp_send_buf(net_nbuf_ref(buf));
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
 			net_context_unref(tcp->context);
@@ -205,9 +205,8 @@ static inline int net_tcp_add_options(struct net_buf *header, size_t len,
 	return 0;
 }
 
-static int finalize_segment(struct net_context *context, struct net_buf *buf)
+static void finalize_segment(struct net_context *context, struct net_buf *buf)
 {
-	int ret = 0;
 #if defined(CONFIG_NET_IPV4)
 	if (net_nbuf_family(buf) == AF_INET) {
 		net_ipv4_finalize(context, buf);
@@ -216,19 +215,16 @@ static int finalize_segment(struct net_context *context, struct net_buf *buf)
 #if defined(CONFIG_NET_IPV6)
 	if (net_nbuf_family(buf) == AF_INET6) {
 		net_ipv6_finalize(context, buf);
-	} else
+	}
 #endif
 	{
-		ret = -EPROTOTYPE;
 	}
-	return ret;
 }
 
 static struct net_buf *prepare_segment(struct net_tcp *tcp,
 				       struct tcp_segment *segment,
 				       struct net_buf *buf)
 {
-	int err;
 	struct net_buf *header, *tail = NULL;
 	struct net_tcp_hdr *tcphdr;
 	struct net_context *context = tcp->context;
@@ -271,7 +267,10 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	} else
 #endif
 	{
-		goto proto_err;
+		NET_DBG("Protocol family %d not supported",
+			net_nbuf_family(buf));
+		net_nbuf_unref(buf);
+		return NULL;
 	}
 
 	header = net_nbuf_get_data(context, K_FOREVER);
@@ -298,16 +297,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		net_buf_frag_add(buf, tail);
 	}
 
-	err = finalize_segment(context, buf);
-	if (err) {
-	proto_err:
-		NET_DBG("Protocol family %d not supported",
-			net_nbuf_family(buf));
-		net_nbuf_unref(buf);
-		return NULL;
-	}
-
-	net_nbuf_compact(buf);
+	finalize_segment(context, buf);
 
 	net_tcp_trace("", buf);
 
@@ -610,7 +600,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 	context->tcp->send_seq += data_len;
 
 	sys_slist_append(&context->tcp->sent_list, &buf->sent_list);
-	net_buf_ref(buf);
+	net_nbuf_ref(buf);
 
 	return 0;
 }

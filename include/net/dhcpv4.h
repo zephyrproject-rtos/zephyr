@@ -20,7 +20,11 @@
 #include <misc/slist.h>
 #include <stdint.h>
 
-/** Current state of DHCPv4 client address negotiation */
+/** Current state of DHCPv4 client address negotiation.
+ *
+ * Additions removals and reorders in this definition must be
+ * reflected within corresponding changes to net_dhcpv4_state_name.
+ */
 enum net_dhcpv4_state {
 	NET_DHCPV4_INIT,
 	NET_DHCPV4_DISCOVER,

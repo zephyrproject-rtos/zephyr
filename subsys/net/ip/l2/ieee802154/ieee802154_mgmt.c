@@ -137,7 +137,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		/* Active scan sends a beacon request */
 		if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
 			net_nbuf_ref(buf);
-			net_buf_ref(buf->frags);
+			net_nbuf_ref(buf->frags);
 
 			ret = ieee802154_radio_send(iface, buf);
 			if (ret) {

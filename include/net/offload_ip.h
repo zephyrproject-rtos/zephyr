@@ -63,7 +63,7 @@ struct net_l2_offload_ip {
 	 * being established.
 	 */
 	int (*accept)(struct net_context *context,
-		      net_context_accept_cb_t cb,
+		      net_tcp_accept_cb_t cb,
 		      int32_t timeout,
 		      void *user_data);
 
@@ -258,7 +258,7 @@ static inline int net_l2_offload_ip_connect(struct net_if *iface,
  */
 static inline int net_l2_offload_ip_accept(struct net_if *iface,
 					   struct net_context *context,
-					   net_context_accept_cb_t cb,
+					   net_tcp_accept_cb_t cb,
 					   int32_t timeout,
 					   void *user_data)
 {

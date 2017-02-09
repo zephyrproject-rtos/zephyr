@@ -293,7 +293,7 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 	if (status) {
 		/* TODO: handle connection error */
 		NET_ERR("Connection error: %d\n", -status);
-		net_buf_unref(buf);
+		net_nbuf_unref(buf);
 		return;
 	}
 
@@ -333,7 +333,7 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 		}
 	}
 
-	net_buf_unref(buf);
+	net_nbuf_unref(buf);
 
 	/* TODO: handle messages that spans multiple packets? */
 }

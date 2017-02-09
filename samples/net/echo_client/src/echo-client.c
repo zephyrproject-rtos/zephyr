@@ -634,9 +634,10 @@ static void tcp_received(struct net_context *context,
 	ARG_UNUSED(status);
 
 	if (!buf || net_nbuf_appdatalen(buf) == 0) {
-		/* No need to unref the buf in this case, the IP stack
-		 * will do it.
-		 */
+		if (buf) {
+			net_nbuf_unref(buf);
+		}
+
 		return;
 	}
 
