@@ -883,7 +883,8 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
  * the data in current fragment then create new fragment and add it to
  * the buffer. It assumes that the buffer has at least one fragment.
  */
-static inline bool net_nbuf_append_bytes(struct net_buf *buf, uint8_t *value,
+static inline bool net_nbuf_append_bytes(struct net_buf *buf,
+					 const uint8_t *value,
 					 uint16_t len, int32_t timeout)
 {
 	struct net_buf *frag = net_buf_frag_last(buf);
@@ -912,7 +913,7 @@ static inline bool net_nbuf_append_bytes(struct net_buf *buf, uint8_t *value,
 	return false;
 }
 
-bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data,
+bool net_nbuf_append(struct net_buf *buf, uint16_t len, const uint8_t *data,
 		     int32_t timeout)
 {
 	struct net_buf *frag;
