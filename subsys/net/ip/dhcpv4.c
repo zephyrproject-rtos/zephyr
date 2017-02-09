@@ -60,14 +60,19 @@ struct dhcp_msg {
 #define DHCPV4_SERVER_PORT  67
 #define DHCPV4_CLIENT_PORT  68
 
-#define DHCPV4_MSG_TYPE_DISCOVER	1
-#define DHCPV4_MSG_TYPE_OFFER		2
-#define DHCPV4_MSG_TYPE_REQUEST		3
-#define DHCPV4_MSG_TYPE_DECLINE		4
-#define DHCPV4_MSG_TYPE_ACK		5
-#define DHCPV4_MSG_TYPE_NAK		6
-#define DHCPV4_MSG_TYPE_RELEASE		7
-#define DHCPV4_MSG_TYPE_INFORM		8
+/* These enumerations represent RFC2131 defined msy type codes, hence
+ * they should not be renumbered.
+ */
+enum dhcpv4_msg_type {
+	DHCPV4_MSG_TYPE_DISCOVER	= 1,
+	DHCPV4_MSG_TYPE_OFFER		= 2,
+	DHCPV4_MSG_TYPE_REQUEST		= 3,
+	DHCPV4_MSG_TYPE_DECLINE		= 4,
+	DHCPV4_MSG_TYPE_ACK		= 5,
+	DHCPV4_MSG_TYPE_NAK		= 6,
+	DHCPV4_MSG_TYPE_RELEASE		= 7,
+	DHCPV4_MSG_TYPE_INFORM		= 8,
+};
 
 #define DHCPV4_OPTIONS_SUBNET_MASK	1
 #define DHCPV4_OPTIONS_ROUTER		3
@@ -113,7 +118,7 @@ static const char *
 net_dhcpv4_state_name(enum net_dhcpv4_state state)  __attribute__((unused));
 
 static const char *
-net_dhcpv4_msg_type_name(uint8_t msg_type)  __attribute__((unused));
+net_dhcpv4_msg_type_name(enum dhcpv4_msg_type msg_type) __attribute__((unused));
 
 static const char *
 net_dhcpv4_state_name(enum net_dhcpv4_state state)
@@ -131,7 +136,7 @@ net_dhcpv4_state_name(enum net_dhcpv4_state state)
 }
 
 static const char *
-net_dhcpv4_msg_type_name(uint8_t msg_type)
+net_dhcpv4_msg_type_name(enum dhcpv4_msg_type msg_type)
 {
 	static const char * const name[] = {
 		"discover",
@@ -537,7 +542,8 @@ static void dhcpv4_t1_timeout(struct k_work *work)
  * as per RFC 2132.
  */
 static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
-				      uint16_t offset, uint8_t *msg_type)
+				      uint16_t offset,
+				      enum dhcpv4_msg_type *msg_type)
 {
 	struct net_buf *frag;
 	uint8_t cookie[4];
@@ -655,14 +661,18 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 			NET_DBG("options_server_id: %s",
 				net_sprint_ipv4_addr(&iface->dhcpv4.server_id));
 			break;
-		case DHCPV4_OPTIONS_MSG_TYPE:
+		case DHCPV4_OPTIONS_MSG_TYPE: {
+			uint8_t v;
+
 			if (length != 1) {
 				NET_DBG("options_msg_type, bad length");
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read_u8(frag, pos, &pos, msg_type);
+			frag = net_nbuf_read_u8(frag, pos, &pos, &v);
+			*msg_type = v;
 			break;
+		}
 		default:
 			NET_DBG("option unknown: %d", type);
 			frag = net_nbuf_skip(frag, pos, &pos, length);
@@ -679,7 +689,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 }
 
 /* TODO: Handles only DHCPv4 OFFER and ACK messages */
-static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
+static inline void handle_dhcpv4_reply(struct net_if *iface,
+				       enum dhcpv4_msg_type msg_type)
 {
 	NET_DBG("state=%s msg=%s",
 		net_dhcpv4_state_name(iface->dhcpv4.state),
@@ -757,7 +768,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	struct dhcp_msg *msg;
 	struct net_buf *frag;
 	struct net_if *iface;
-	uint8_t	msg_type;
+	enum dhcpv4_msg_type msg_type = 0;
 	uint8_t min;
 	uint16_t pos;
 
