@@ -488,7 +488,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr)
 }
 
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
-						struct in6_addr *addr)
+						const struct in6_addr *addr)
 {
 	int i;
 
@@ -518,7 +518,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 	return NULL;
 }
 
-bool net_if_ipv6_maddr_rm(struct net_if *iface, struct in6_addr *addr)
+bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
 	int i;
 
