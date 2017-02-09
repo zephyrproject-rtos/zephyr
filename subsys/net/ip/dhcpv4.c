@@ -748,7 +748,29 @@ static void handle_ack(struct net_if *iface)
 	}
 }
 
-/* TODO: Handles only DHCPv4 OFFER and ACK messages */
+static void handle_nak(struct net_if *iface)
+{
+	switch (iface->dhcpv4.state) {
+	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_SELECTING:
+	case NET_DHCPV4_RENEWING:
+	case NET_DHCPV4_BOUND:
+		break;
+	case NET_DHCPV4_REQUESTING:
+		/* Restart the configuration process. */
+
+		iface->dhcpv4.attempts = 0;
+		iface->dhcpv4.lease_time = 0;
+		iface->dhcpv4.renewal_time = 0;
+
+		k_delayed_work_cancel(&iface->dhcpv4.timer);
+		k_delayed_work_cancel(&iface->dhcpv4.t1_timer);
+
+		send_discover(iface);
+		break;
+	}
+}
+
 static void handle_dhcpv4_reply(struct net_if *iface,
 				enum dhcpv4_msg_type msg_type)
 {
@@ -762,6 +784,9 @@ static void handle_dhcpv4_reply(struct net_if *iface,
 		break;
 	case DHCPV4_MSG_TYPE_ACK:
 		handle_ack(iface);
+		break;
+	case DHCPV4_MSG_TYPE_NAK:
+		handle_nak(iface);
 		break;
 	default:
 		NET_DBG("ignore message");
