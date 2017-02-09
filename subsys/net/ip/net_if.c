@@ -246,6 +246,56 @@ struct net_if *net_if_get_default(void)
 
 #if defined(CONFIG_NET_IPV6)
 
+#if defined(CONFIG_NET_IPV6_MLD)
+static void join_mcast_allnodes(struct net_if *iface)
+{
+	struct in6_addr addr;
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
+	net_ipv6_mld_join(iface, &addr);
+}
+
+static void join_mcast_solicit_node(struct net_if *iface,
+				    struct in6_addr *my_addr)
+{
+	struct in6_addr addr;
+
+	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
+	net_ipv6_addr_create_solicited_node(my_addr, &addr);
+	net_ipv6_mld_join(iface, &addr);
+}
+
+static void leave_mcast_allnodes(struct net_if *iface)
+{
+	struct in6_addr addr;
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
+	net_ipv6_mld_leave(iface, &addr);
+}
+
+static void leave_mcast_solicit_node_all(struct net_if *iface)
+{
+	struct in6_addr addr;
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (!iface->ipv6.mcast[i].is_used) {
+			continue;
+		}
+
+		net_ipv6_addr_create_solicited_node(
+			&iface->ipv6.mcast[i].address.in6_addr, &addr);
+
+		net_ipv6_mld_leave(iface, &addr);
+	}
+}
+#else
+#define join_mcast_allnodes(...)
+#define join_mcast_solicit_node(...)
+#define leave_mcast_allnodes(...)
+#define leave_mcast_solicit_node_all(...)
+#endif /* CONFIG_NET_IPV6_MLD */
+
 #if defined(CONFIG_NET_IPV6_DAD)
 #define DAD_TIMEOUT (MSEC_PER_SEC / 10)
 
@@ -271,6 +321,17 @@ static void dad_timeout(struct k_work *work)
 		 * in this case as the address is our own one.
 		 */
 		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
+
+		/* We join the allnodes group from here so that we have
+		 * a link local address defined. If done from ifup(),
+		 * we would only get unspecified address as a source
+		 * address. The allnodes multicast group is only joined
+		 * once in this case as the net_ipv6_mcast_join() checks
+		 * if we have already joined.
+		 */
+		join_mcast_allnodes(iface);
+
+		join_mcast_solicit_node(iface, &ifaddr->address.in6_addr);
 	}
 }
 
@@ -1121,6 +1182,12 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface)
 		(MAX_RANDOM_FACTOR * iface->base_reachable_time -
 		 MIN_RANDOM_FACTOR * iface->base_reachable_time);
 }
+
+#else /* CONFIG_NET_IPV6 */
+#define join_mcast_allnodes(...)
+#define join_mcast_solicit_node(...)
+#define leave_mcast_allnodes(...)
+#define leave_mcast_solicit_node_all(...)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -1407,6 +1474,10 @@ done:
 #if defined(CONFIG_NET_IPV6_DAD)
 	NET_DBG("Starting DAD for iface %p", iface);
 	net_if_start_dad(iface);
+#else
+	/* Join the IPv6 multicast groups even if DAD is disabled */
+	join_mcast_allnodes(iface);
+	join_mcast_solicit_node(iface, &iface->ipv6.mcast[0].address.in6_addr);
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
@@ -1424,6 +1495,12 @@ int net_if_down(struct net_if *iface)
 	int status;
 
 	NET_DBG("iface %p", iface);
+
+	/* FIXME: Make sure that the IPV6 mcast leave message
+	 * gets actually sent.
+	 */
+	leave_mcast_allnodes(iface);
+	leave_mcast_solicit_node_all(iface);
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!iface->l2->enable) {
