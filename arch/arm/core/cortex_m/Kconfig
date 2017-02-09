@@ -212,45 +212,8 @@ config IRQ_OFFLOAD
 	run in interrupt context. Adds some overhead to context switching.
 	Mainly useful for test cases.
 
-config SW_ISR_TABLE
-	bool
-	prompt "Enable software interrupt handler table"
+config GEN_ISR_TABLES
 	default y
-	help
-	Enable an interrupt handler table implemented in software. This
-	table, unlike ISRs connected directly in the vector table, allow
-	a parameter to be passed to the interrupt handlers. Also, invoking
-	the exeception/interrupt exit stub is automatically done.
-
-config IRQ_VECTOR_TABLE_CUSTOM
-	bool
-	prompt "Projects provide a custom static IRQ part of vector table"
-	depends on !SW_ISR_TABLE
-	default n
-	help
-	Projects, not the board, provide the IRQ part of the vector table.
-
-	This is the table of interrupt handlers with the best potential
-	performance, but is the less flexible.
-
-	The ISRs are installed directly in the vector table, thus are
-	directly called by the CPU when an interrupt is taken. This adds
-	the least overhead when handling an interrupt.
-
-	Downsides:
-
-	- ISRs cannot have a parameter
-	- ISRs cannot be connected at runtime
-	- ISRs must notify the kernel manually by invoking _IntExit() when
-	  then are about to return.
-
-config IRQ_VECTOR_TABLE_SOC
-	bool
-	# omit prompt to signify a "hidden" option
-	depends on SW_ISR_TABLE || !IRQ_VECTOR_TABLE_CUSTOM
-	default y
-	help
-	Not user-selectable, helps build system logic.
 
 config ZERO_LATENCY_IRQS
 	bool

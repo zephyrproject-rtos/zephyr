@@ -63,6 +63,9 @@ MEMORY
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     SYSTEM_CONTROL_SPACE  (wx) : ORIGIN = 0xE000E000,  LENGTH = 4K
     SYSTEM_CONTROL_PERIPH (wx) : ORIGIN = 0x400FE000,  LENGTH = 4K
+
+    /* Used by and documented in include/linker/intlist.ld */
+    IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
 
 SECTIONS
@@ -84,16 +87,9 @@ SECTIONS
 	KEEP(*(.kinetis_flash_config))
 	KEEP(*(".kinetis_flash_config.*"))
 
-	KEEP(*(.isr_irq*))
-
-	/* sections for IRQ0-9 */
-	KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9])))
-
-	/* sections for IRQ10-99 */
-	KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9])))
-
-	/* sections for IRQ100-999 */
-	KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9][0-9])))
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+	KEEP(*(SW_ISR_TABLE))
+#endif
 
 	_image_text_start = .;
 	*(.text)
@@ -236,6 +232,10 @@ SECTIONS
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
 #include <custom-sections.ld>
+#endif
+
+#ifdef CONFIG_GEN_ISR_TABLES
+#include <linker/intlist.ld>
 #endif
 
     }

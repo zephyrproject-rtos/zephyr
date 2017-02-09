@@ -62,20 +62,13 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
  *
  * All arguments must be computable by the compiler at build time.
  *
- * Internally this function does a few things:
+ * _ISR_DECLARE will populate the .intList section with the interrupt's
+ * parameters, which will then be used by gen_irq_tables.py to create
+ * the vector table and the software ISR table. This is all done at
+ * build-time.
  *
- * 1. The enum statement has no effect but forces the compiler to only
- * accept constant values for the irq_p parameter, very important as the
- * numerical IRQ line is used to create a named section.
- *
- * 2. An instance of struct _isr_table_entry is created containing the ISR and
- * its parameter. If you look at how _sw_isr_table is created, each entry in
- * the array is in its own section named by the IRQ line number. What we are
- * doing here is to override one of the default entries (which points to the
- * spurious IRQ handler) with what was supplied here.
- *
- * 3. The priority level for the interrupt is configured by a call to
- * _irq_priority_set()
+ * We additionally set the priority in the interrupt controller at
+ * runtime.
  *
  * @param irq_p IRQ line number
  * @param priority_p Interrupt priority
@@ -87,14 +80,21 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
  */
 #define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
-	enum { IRQ = irq_p }; \
-	static struct _isr_table_entry _CONCAT(_isr_irq, irq_p) \
-		__attribute__ ((used)) \
-		__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, irq_p))))) = \
-			{isr_param_p, isr_p}; \
+	_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
+
+/* Spurious interrupt handler. Throws an error if called */
+extern void _irq_spurious(void *unused);
+
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+/* Architecture-specific common entry point for interrupts from the vector
+ * table. Most likely implemented in assembly. Looks up the correct handler
+ * and parameter from the _sw_isr_table and executes it.
+ */
+extern void _isr_wrapper(void);
+#endif
 
 #endif /* _ASMLANGUAGE */
 
