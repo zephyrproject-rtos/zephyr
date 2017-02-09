@@ -120,7 +120,6 @@ net_dhcpv4_state_name(enum net_dhcpv4_state state)
 	static const char * const name[] = {
 		"init",
 		"discover",
-		"offer",
 		"request",
 		"renewal",
 		"ack"
