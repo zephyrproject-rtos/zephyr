@@ -94,7 +94,7 @@ void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
 	ctx->fin_ms = fin_ms;
 
 	if (fin_ms != 0) {
-		ctx->snapshot = _do_read_cpu_timestamp32();
+		ctx->snapshot = k_uptime_get_32();
 	}
 }
 
@@ -107,8 +107,7 @@ int dtls_timing_get_delay(void *data)
 		return -1;
 	}
 
-	elapsed_ms = ((_do_read_cpu_timestamp32() - ctx->snapshot) * 1000) /
-	    CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	elapsed_ms = k_uptime_get_32() - ctx->snapshot;
 
 	if (elapsed_ms >= ctx->fin_ms) {
 		return 2;

@@ -137,7 +137,7 @@ static void udp_received(struct net_context *context,
 	}
 
 	if (net_nbuf_appdatalen(buf) < sizeof(struct zperf_udp_datagram)) {
-		net_buf_unref(buf);
+		net_nbuf_unref(buf);
 		return;
 	}
 

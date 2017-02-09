@@ -132,7 +132,7 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 	 * request and we want to send it again.
 	 */
 	if (entry) {
-		entry->pending = net_buf_ref(pending);
+		entry->pending = net_nbuf_ref(pending);
 		entry->iface = net_nbuf_iface(buf);
 
 		net_ipaddr_copy(&entry->ip, next_addr);

@@ -163,12 +163,12 @@ static inline int test_ns_sending(struct ieee802154_pkt_test *t)
 	if (!ieee802154_validate_frame(net_nbuf_ll(current_buf),
 				       net_buf_frags_len(current_buf), &mpdu)) {
 		TC_ERROR("*** Sent packet is not valid\n");
-		net_buf_unref(current_buf);
+		net_nbuf_unref(current_buf);
 
 		return TC_FAIL;
 	}
 
-	net_buf_unref(current_buf->frags);
+	net_nbuf_unref(current_buf->frags);
 	current_buf->frags = NULL;
 
 	return TC_PASS;
@@ -224,7 +224,7 @@ static inline int test_ack_reply(struct ieee802154_pkt_test *t)
 		return TC_FAIL;
 	}
 
-	net_buf_unref(current_buf->frags);
+	net_nbuf_unref(current_buf->frags);
 	current_buf->frags = NULL;
 
 	return TC_PASS;

@@ -1,6 +1,7 @@
 /* Networking DHCPv4 client */
 
 /*
+ * Copyright (c) 2017 ARM Ltd.
  * Copyright (c) 2016 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -23,8 +24,6 @@
 #include <net/net_context.h>
 #include <net/net_mgmt.h>
 
-#include "net_private.h"
-
 #define STACKSIZE 2000
 char __noinit __stack thread_stack[STACKSIZE];
 
@@ -41,18 +40,23 @@ static void handler(struct net_mgmt_event_callback *cb,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		char buf[NET_IPV4_ADDR_LEN];
+
 		if (iface->ipv4.unicast[i].addr_type != NET_ADDR_DHCP) {
 			continue;
 		}
 
 		NET_INFO("Your address: %s",
-			 net_sprint_ipv4_addr(
-				&iface->ipv4.unicast[i].address.in_addr));
+			 net_addr_ntop(AF_INET,
+				     &iface->ipv4.unicast[i].address.in_addr,
+				     buf, sizeof(buf)));
 		NET_INFO("Lease time: %u seconds", iface->dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
-			 net_sprint_ipv4_addr(&iface->ipv4.netmask));
+			 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
+				       buf, sizeof(buf)));
 		NET_INFO("Router: %s",
-			 net_sprint_ipv4_addr(&iface->ipv4.gw));
+			 net_addr_ntop(AF_INET, &iface->ipv4.gw,
+				       buf, sizeof(buf)));
 	}
 }
 

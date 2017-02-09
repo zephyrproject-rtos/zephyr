@@ -131,7 +131,7 @@ static void retransmit_request(struct k_work *work)
 	}
 
 	if (!zoap_pending_cycle(pending)) {
-		net_buf_unref(buf);
+		net_nbuf_unref(buf);
 		zoap_pending_clear(pending);
 		return;
 	}

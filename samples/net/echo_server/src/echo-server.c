@@ -445,7 +445,7 @@ static void tcp_received(struct net_context *context,
 
 	reply_buf = build_reply_buf(dbg, context, buf);
 
-	net_buf_unref(buf);
+	net_nbuf_unref(buf);
 
 	if (!reply_buf) {
 		return;
