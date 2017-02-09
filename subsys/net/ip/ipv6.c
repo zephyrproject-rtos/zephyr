@@ -2213,6 +2213,101 @@ drop:
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
+#if defined(CONFIG_NET_IPV6_MLD)
+#define MLDv2_LEN (2 + 1 + 1 + 2 + sizeof(struct in6_addr) * 2)
+
+static struct net_buf *create_mldv2(struct net_buf *buf,
+				    const struct in6_addr *addr,
+				    uint16_t record_type)
+{
+	net_nbuf_append_be16(buf, 1); /* number of records */
+	net_nbuf_append_u8(buf, record_type);
+	net_nbuf_append_u8(buf, 0); /* aux data len */
+	net_nbuf_append_be16(buf, 1); /* number of addresses */
+	net_nbuf_append(buf, sizeof(struct in6_addr), addr->s6_addr,
+			K_FOREVER);
+
+	/* All source addresses, RFC 3810 ch 3 */
+	net_nbuf_append(buf, sizeof(struct in6_addr),
+			net_ipv6_unspecified_address()->s6_addr,
+			K_FOREVER);
+
+	return buf;
+}
+
+static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
+		      uint8_t mode)
+{
+	struct net_buf *buf;
+	struct in6_addr dst;
+	int ret;
+
+	/* Sent to all MLDv2-capable routers */
+	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
+				      K_FOREVER);
+
+	buf = net_ipv6_create_raw(buf,
+				  net_if_ipv6_select_src_addr(iface, &dst),
+				  &dst,
+				  iface,
+				  IPPROTO_ICMPV6);
+
+	NET_IPV6_BUF(buf)->hop_limit = 1; /* RFC 3810 ch 7.4 */
+
+	NET_ICMP_BUF(buf)->type = NET_ICMPV6_MLDv2;
+	NET_ICMP_BUF(buf)->code = 0;
+
+	net_nbuf_set_len(buf->frags, NET_IPV6ICMPH_LEN);
+	net_nbuf_set_iface(buf, iface);
+
+	net_nbuf_append_be16(buf, 0); /* reserved field */
+
+	buf = create_mldv2(buf, addr, mode);
+
+	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+
+	ret = net_send_data(buf);
+	if (ret < 0) {
+		net_nbuf_unref(buf);
+		net_stats_update_icmp_drop();
+
+		return ret;
+	}
+
+	net_stats_update_icmp_sent();
+
+	return 0;
+}
+
+int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
+{
+	const struct net_if_mcast_addr *maddr;
+
+	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
+	if (maddr) {
+		return -EALREADY;
+	}
+
+	maddr = net_if_ipv6_maddr_add(iface, addr);
+	if (!maddr) {
+		return -ENOMEM;
+	}
+
+	return send_mldv2(iface, addr, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
+}
+
+int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
+{
+	if (!net_if_ipv6_maddr_rm(iface, addr)) {
+		return -EINVAL;
+	}
+
+	return send_mldv2(iface, addr, NET_IPV6_MLDv2_MODE_IS_INCLUDE);
+}
+#endif /* CONFIG_NET_IPV6_MLD */
+
 #if defined(CONFIG_NET_IPV6_ND)
 static struct net_icmpv6_handler ns_input_handler = {
 	.type = NET_ICMPV6_NS,

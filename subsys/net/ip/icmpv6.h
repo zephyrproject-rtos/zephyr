@@ -128,6 +128,7 @@ struct net_icmpv6_nd_opt_6co {
 #define NET_ICMPV6_RA           134	/* Router Advertisement */
 #define NET_ICMPV6_NS           135	/* Neighbor Solicitation */
 #define NET_ICMPV6_NA           136	/* Neighbor Advertisement */
+#define NET_ICMPV6_MLDv2        143	/* Multicast Listener Report v2 */
 
 /* Codes for ICMPv6 Destination Unreachable message */
 #define NET_ICMPV6_DST_UNREACH_NO_ROUTE  0 /* No route to destination */

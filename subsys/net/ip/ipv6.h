@@ -53,6 +53,16 @@
 #define NET_IPV6_EXT_HDR_OPT_PADN  1
 #define NET_IPV6_EXT_HDR_OPT_RPL   0x63
 
+/**
+ * @brief Multicast Listener Record v2 record types.
+ */
+#define NET_IPV6_MLDv2_MODE_IS_INCLUDE        1
+#define NET_IPV6_MLDv2_MODE_IS_EXCLUDE        2
+#define NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE 3
+#define NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE 4
+#define NET_IPV6_MLDv2_ALLOW_NEW_SOURCES      5
+#define NET_IPV6_MLDv2_BLOCK_OLD_SOURCES      6
+
 /* State of the neighbor */
 enum net_nbr_state {
 	NET_NBR_INCOMPLETE,
@@ -179,6 +189,31 @@ struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
  */
 struct net_buf *net_ipv6_finalize(struct net_context *context,
 				  struct net_buf *buf);
+
+#if defined(CONFIG_NET_IPV6_MLD)
+/**
+ * @brief Join a given multicast group.
+ *
+ * @param iface Network interface where join message is sent
+ * @param addr Multicast group to join
+ *
+ * @return Return 0 if joining was done, <0 otherwise.
+ */
+int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr);
+
+/**
+ * @brief Leave a given multicast group.
+ *
+ * @param iface Network interface where leave message is sent
+ * @param addr Multicast group to leave
+ *
+ * @return Return 0 if leaving is done, <0 otherwise.
+ */
+int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr);
+#else
+#define net_ipv6_mld_join(...)
+#define net_ipv6_mld_leave(...)
+#endif /* CONFIG_NET_IPV6_MLD */
 
 #if defined(CONFIG_NET_IPV6_ND)
 /**
