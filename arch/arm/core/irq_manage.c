@@ -22,6 +22,8 @@
 #include <sections.h>
 #include <sw_isr_table.h>
 #include <irq.h>
+#include <kernel_structs.h>
+#include <logging/kernel_event_logger.h>
 
 extern void __reserved(void);
 
@@ -130,4 +132,59 @@ void _irq_spurious(void *unused)
 	ARG_UNUSED(unused);
 	__reserved();
 }
+
+/* FIXME: IRQ direct inline functions have to be placed here and not in
+ * arch/cpu.h as inline functions due to nasty circular dependency between
+ * arch/cpu.h and kernel_structs.h; the inline functions typically need to
+ * perform operations on _kernel.  For now, leave as regular functions, a
+ * future iteration will resolve this.
+ * We have a similar issue with the k_event_logger functions.
+ *
+ * See https://jira.zephyrproject.org/browse/ZEP-1595
+ */
+
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+void _arch_isr_direct_pm(void)
+{
+#if defined(CONFIG_ARMV6_M)
+	int key;
+
+	/* irq_lock() does what we wan for this CPU */
+	key = irq_lock();
+#elif defined(CONFIG_ARMV7_M)
+	/* Lock all interrupts. irq_lock() will on this CPU only disable those
+	 * lower than BASEPRI, which is not what we want. See comments in
+	 * arch/arm/core/isr_wrapper.S
+	 */
+	__asm__ volatile("cpsid i" : : : "memory");
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
+
+	if (_kernel.idle) {
+		int32_t idle_val = _kernel.idle;
+
+		_kernel.idle = 0;
+		_sys_power_save_idle_exit(idle_val);
+	}
+
+#if defined(CONFIG_ARMV6_M)
+	irq_unlock(key);
+#elif defined(CONFIG_ARMV7_M)
+	__asm__ volatile("cpsie i" : : : "memory");
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
+
+}
+#endif
+
+#if defined(CONFIG_KERNEL_EVENT_LOGGER_SLEEP) || \
+	defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT)
+void _arch_isr_direct_header(void)
+{
+	_sys_k_event_logger_interrupt();
+	_sys_k_event_logger_exit_sleep();
+}
+#endif
 

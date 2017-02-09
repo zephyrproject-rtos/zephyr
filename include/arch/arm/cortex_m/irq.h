@@ -85,6 +85,59 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
 	irq_p; \
 })
 
+
+/**
+ * Configure a 'direct' static interrupt.
+ *
+ * See include/irq.h for details.
+ * All arguments must be computable at build time.
+ */
+#define _ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+({ \
+	_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
+	_irq_priority_set(irq_p, priority_p, flags_p); \
+	irq_p; \
+})
+
+/* FIXME prefer these inline, but see ZEP-1595 */
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+extern void _arch_isr_direct_pm(void);
+#define _ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
+#else
+#define _ARCH_ISR_DIRECT_PM() do { } while (0)
+#endif
+
+#if defined(CONFIG_KERNEL_EVENT_LOGGER_SLEEP) || \
+	defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT)
+#define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
+extern void _arch_isr_direct_header(void);
+#else
+#define _ARCH_ISR_DIRECT_HEADER() do { } while (0)
+#endif
+
+#define _ARCH_ISR_DIRECT_FOOTER(swap) _arch_isr_direct_footer(swap)
+
+/* arch/arm/core/exc_exit.S */
+extern void _IntExit(void);
+
+static inline void _arch_isr_direct_footer(int maybe_swap)
+{
+	if (maybe_swap) {
+		_IntExit();
+	}
+}
+
+#define _ARCH_ISR_DIRECT_DECLARE(name) \
+	static inline int name##_body(void); \
+	__attribute__ ((interrupt ("IRQ"))) void name(void) \
+	{ \
+		int check_reschedule; \
+		ISR_DIRECT_HEADER(); \
+		check_reschedule = name##_body(); \
+		ISR_DIRECT_FOOTER(check_reschedule); \
+	} \
+	static inline int name##_body(void)
+
 /* Spurious interrupt handler. Throws an error if called */
 extern void _irq_spurious(void *unused);
 
