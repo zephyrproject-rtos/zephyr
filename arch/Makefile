@@ -1,1 +1,1 @@
-obj-y += $(ARCH)/
+obj-y += common/ $(ARCH)/

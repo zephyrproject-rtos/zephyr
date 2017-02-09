@@ -867,6 +867,9 @@ WARN_ABOUT_DEPRECATION := $(if $(CONFIG_BOARD_DEPRECATED),echo -e \
 ifeq ($(ARCH),x86)
 # X86 with its IDT has very special handling for interrupt tables
 include $(srctree)/arch/x86/Makefile.idt
+else ifeq ($(CONFIG_GEN_ISR_TABLES),y)
+# Logic for interrupt tables created by scripts/gen_isr_tables.py
+include $(srctree)/arch/common/Makefile.gen_isr_tables
 else
 # Otherwise, nothing to do, prebuilt kernel is the real one
 $(KERNEL_ELF_NAME): $(PREBUILT_KERNEL)

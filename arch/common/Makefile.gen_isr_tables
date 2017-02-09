@@ -1,0 +1,68 @@
+GEN_ISR_TABLE := $(srctree)/arch/common/gen_isr_tables.py
+OUTPUT_SRC := isr_tables.c
+OUTPUT_OBJ := isr_tables.o
+
+ifeq ($(ARCH),arm)
+OUTPUT_FORMAT := elf32-littlearm
+OUTPUT_ARCH := arm
+else
+$(error Output formats not defined for this architecture)
+endif
+
+GEN_ISR_TABLE_EXTRA_ARGS :=
+
+ifeq ($(KBUILD_VERBOSE),1)
+GEN_ISR_TABLE_EXTRA_ARGS += --debug
+endif
+
+ifeq ($(CONFIG_GEN_SW_ISR_TABLE),y)
+GEN_ISR_TABLE_EXTRA_ARGS += --sw-isr-table
+endif
+
+ifeq ($(CONFIG_GEN_IRQ_VECTOR_TABLE),y)
+GEN_ISR_TABLE_EXTRA_ARGS += --vector-table
+endif
+
+# Rule to extract the .intList section from the $(PREBUILT_KERNEL) binary
+# and create the source file $(OUTPUT_SRC). This is a C file which contains
+# the interrupt tables.
+quiet_cmd_gen_irq = IRQ     $@
+      cmd_gen_irq = \
+( \
+	$(OBJCOPY) -I $(OUTPUT_FORMAT) -O binary --only-section=.intList \
+		$< isrList.bin && \
+	$(GEN_ISR_TABLE) --output-source $@ \
+		--intlist isrList.bin $(GEN_ISR_TABLE_EXTRA_ARGS) \
+)
+
+$(OUTPUT_SRC): $(PREBUILT_KERNEL) $(GEN_ISR_TABLE)
+	$(call cmd,gen_irq)
+
+# Build system pattern rules will handle building $(OUTPUT_OBJ) from
+# $(OUTPUT_SRC), nothing we need to do here explicitly for its compilation.
+
+# Now link the kernel again, this time with the compiled interrupt tables
+# included, replacing the dummy tables defined in arch/common/isr_tables.c
+#
+# On x86, we just strip out the intList with objcopy -j. However this is not
+# very portable; for instance on ARM this results in a zero-sized program
+# header segment which produces a linker warning and gives QEMU fits.
+# Set to NOLOAD instead, now that we have extracted the information we need
+# from it.
+quiet_cmd_lnk_elf = LINK    $@
+      cmd_lnk_elf = \
+( \
+	$(CC) -T linker.cmd $(OUTPUT_OBJ) @$(KERNEL_NAME).lnk \
+		-o elf.tmp && \
+	$(OBJCOPY) -I $(OUTPUT_FORMAT) -O $(OUTPUT_FORMAT) \
+		--set-section-flags .intList=noload \
+		elf.tmp $@ && \
+	rm -f elf.tmp; \
+)
+
+$(KERNEL_ELF_NAME): $(OUTPUT_OBJ) linker.cmd
+	$(call cmd,lnk_elf)
+	@$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
+	@$(WARN_ABOUT_ASSERT)
+	@$(WARN_ABOUT_DEPRECATION)
+
