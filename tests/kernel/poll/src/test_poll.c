@@ -69,6 +69,7 @@ void test_poll_no_wait(void)
 	assert_equal(msg_ptr->msg, FIFO_MSG_VALUE, "");
 
 	assert_equal(events[2].state, K_POLL_STATE_SIGNALED, "");
+	assert_equal(no_wait_signal.signaled, 1, "");
 	assert_equal(no_wait_signal.result, SIGNAL_RESULT, "");
 
 	/* verify events are not ready anymore (user has to clear them first) */
@@ -164,6 +165,7 @@ void test_poll_wait(void)
 	assert_equal(wait_events[1].tag, TAG_1, "");
 
 	assert_equal(wait_events[2].state, K_POLL_STATE_SIGNALED, "");
+	assert_equal(wait_signal.signaled, 1, "");
 	assert_equal(wait_signal.result, SIGNAL_RESULT, "");
 	assert_equal(wait_events[2].tag, TAG_2, "");
 
@@ -210,6 +212,7 @@ void test_poll_wait(void)
 	assert_equal(wait_events[1].tag, TAG_1, "");
 
 	assert_equal(wait_events[2].state, K_POLL_STATE_SIGNALED, "");
+	assert_equal(wait_signal.signaled, 1, "");
 	assert_equal(wait_signal.result, SIGNAL_RESULT, "");
 	assert_equal(wait_events[2].tag, TAG_2, "");
 
@@ -280,6 +283,7 @@ void test_poll_wait(void)
 	assert_equal(wait_events[1].tag, TAG_1, "");
 
 	assert_equal(wait_events[2].state, K_POLL_STATE_SIGNALED, "");
+	assert_equal(wait_signal.signaled, 1, "");
 	assert_equal(wait_signal.result, SIGNAL_RESULT, "");
 	assert_equal(wait_events[2].tag, TAG_2, "");
 
