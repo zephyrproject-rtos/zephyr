@@ -171,7 +171,7 @@ void test_poll_wait(void)
 	wait_events[0].state = K_POLL_STATE_NOT_READY;
 	wait_events[1].state = K_POLL_STATE_NOT_READY;
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
-	no_wait_signal.signaled = 0;
+	wait_signal.signaled = 0;
 
 	assert_equal(k_poll(wait_events, ARRAY_SIZE(wait_events),
 			    K_SECONDS(1)), -EAGAIN, "");
@@ -221,7 +221,7 @@ void test_poll_wait(void)
 	wait_events[0].state = K_POLL_STATE_NOT_READY;
 	wait_events[1].state = K_POLL_STATE_NOT_READY;
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
-	no_wait_signal.signaled = 0;
+	wait_signal.signaled = 0;
 
 	k_thread_spawn(poll_wait_helper_stack, KB(1), poll_wait_helper,
 		       (void *)1, 0, 0, old_prio + 1, 0, 0);
@@ -284,7 +284,7 @@ void test_poll_wait(void)
 	assert_equal(wait_events[2].tag, TAG_2, "");
 
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
-	no_wait_signal.signaled = 0;
+	wait_signal.signaled = 0;
 }
 
 /* verify -EADDRINUSE return value when object has already a poller */
