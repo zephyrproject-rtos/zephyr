@@ -16,9 +16,9 @@
 	.set _interrupt_stack_top,  _interrupt_stack + CONFIG_ISR_STACK_SIZE
 
 /*
- * _zxt_dispatch(_kernel_t *_kernel)
+ * _zxt_dispatch(_kernel_t *_kernel, _thread_t *_thread)
  * At this point, the a2 register contains the '&_kernel' and the
- * thread to be swapped in is in _kernel.ready_q.cache.
+ * thread to be swapped in (&_thread) is in a3.
  */
 	.text
 	.globl  _zxt_dispatch
@@ -26,8 +26,7 @@
 	.align  4
 _zxt_dispatch:
 	/* Updated current thread: _kernel.current := _kernel.ready_q.cache */
-	l32i a3, a2, KERNEL_OFFSET(ready_q_cache)
-	s32i a3, a2, KERNEL_OFFSET(current) /* _kernel.current := a3 */
+	s32i a3, a2, KERNEL_OFFSET(current) /* _kernel.current := _thread */
 	l32i sp, a3, THREAD_OFFSET(sp) /* sp := _thread->topOfStack; */
 
 	/* Determine the type of stack frame. */
@@ -182,10 +181,21 @@ _zxt_int_exit:
 	movi a3, 0
 	wsr a3, CPENABLE                /* disable all co-processors */
 #endif
+	l32i a3, a2, KERNEL_OFFSET(current) /*  _thread := _kernel.current */
+	/*
+	 * Non-preemptible thread ? Do not schedule (see explanation of
+	 * preempt field in kernel_struct.h).
+	 */
+	movi a4, _NON_PREEMPT_THRESHOLD
+	l16ui a5, a3, THREAD_OFFSET(preempt)
+	bgeu a5, a4, .noReschedule
+	/* _thread := _kernel.ready_q.cache */
+	l32i a3, a2, KERNEL_OFFSET(ready_q_cache)
+.noReschedule:
 	/*
 	 * Swap threads if any is to be swapped in.
 	 */
-	call0   _zxt_dispatch				/* tail-call dispatcher */
+	call0   _zxt_dispatch /* (_kernel@a2, _thread@a3) */
 	/* Never returns here. */
 
 .Lnesting:

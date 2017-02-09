@@ -84,9 +84,11 @@ _Swap:
 	call4 _sys_k_event_logger_context_switch
 #endif
 #endif
+	/* _thread := _kernel.ready_q.cache */
+	l32i a3, a2, KERNEL_OFFSET(ready_q_cache)
 	/*
 	 * Swap threads if any is to be swapped in.
 	 */
-	call0   _zxt_dispatch
+	call0   _zxt_dispatch /* (_kernel@a2, _thread@a3) */
 	/* Never reaches here. */
 
