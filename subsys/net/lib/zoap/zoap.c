@@ -1210,15 +1210,16 @@ struct block_transfer {
 	bool more;
 };
 
-static unsigned int get_block_option(struct zoap_packet *pkt, uint16_t code)
+static int get_block_option(struct zoap_packet *pkt, uint16_t code)
 {
 	struct zoap_option option;
 	unsigned int val;
 	int count = 1;
 
 	count = zoap_find_options(pkt, code, &option, count);
-	if (count <= 0)
-		return 0;
+	if (count <= 0) {
+		return -ENOENT;
+	}
 
 	val = zoap_option_value_to_int(&option);
 
@@ -1230,15 +1231,15 @@ static int update_descriptive_block(struct zoap_block_context *ctx,
 {
 	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 
-	if (block == 0) {
-		return -ENOENT;
+	if (block == -ENOENT) {
+		return 0;
 	}
 
 	if (size && ctx->total_size && ctx->total_size != size) {
 		return -EINVAL;
 	}
 
-	if (ctx->block_size > 0 && GET_BLOCK_SIZE(block) > ctx->block_size) {
+	if (ctx->current > 0 && GET_BLOCK_SIZE(block) > ctx->block_size) {
 		return -EINVAL;
 	}
 
@@ -1250,7 +1251,7 @@ static int update_descriptive_block(struct zoap_block_context *ctx,
 		ctx->total_size = size;
 	}
 	ctx->current = new_current;
-	ctx->block_size = GET_BLOCK_SIZE(block);
+	ctx->block_size = min(GET_BLOCK_SIZE(block), ctx->block_size);
 
 	return 0;
 }
@@ -1260,7 +1261,7 @@ static int update_control_block1(struct zoap_block_context *ctx,
 {
 	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 
-	if (block == 0) {
+	if (block == -ENOENT) {
 		return 0;
 	}
 
@@ -1283,7 +1284,7 @@ static int update_control_block2(struct zoap_block_context *ctx,
 {
 	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 
-	if (block == 0) {
+	if (block == -ENOENT) {
 		return 0;
 	}
 
@@ -1296,8 +1297,7 @@ static int update_control_block2(struct zoap_block_context *ctx,
 	}
 
 	ctx->current = new_current;
-	ctx->block_size = GET_BLOCK_SIZE(block);
-	ctx->total_size = size;
+	ctx->block_size = min(GET_BLOCK_SIZE(block), ctx->block_size);
 
 	return 0;
 }
@@ -1305,13 +1305,15 @@ static int update_control_block2(struct zoap_block_context *ctx,
 int zoap_update_from_block(struct zoap_packet *pkt,
 			   struct zoap_block_context *ctx)
 {
-	unsigned int block1, block2, size1, size2;
-	int r;
+	int r, block1, block2, size1, size2;
 
 	block1 = get_block_option(pkt, ZOAP_OPTION_BLOCK1);
 	block2 = get_block_option(pkt, ZOAP_OPTION_BLOCK2);
 	size1 = get_block_option(pkt, ZOAP_OPTION_SIZE1);
 	size2 = get_block_option(pkt, ZOAP_OPTION_SIZE2);
+
+	size1 = size1 == -ENOENT ? 0 : size1;
+	size2 = size2 == -ENOENT ? 0 : size2;
 
 	if (is_request(pkt)) {
 		r = update_control_block2(ctx, block2, size2);
