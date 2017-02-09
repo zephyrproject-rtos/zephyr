@@ -330,9 +330,9 @@ int k_poll_signal(struct k_poll_signal *signal, int result)
 	int must_reschedule;
 
 	signal->result = result;
+	signal->signaled = 1;
 
 	if (!signal->poll_event) {
-		signal->signaled = 1;
 		irq_unlock(key);
 		return 0;
 	}
