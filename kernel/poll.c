@@ -198,7 +198,7 @@ int k_poll(struct k_poll_event *events, int num_events, int32_t timeout)
 		if (is_condition_met(&events[ii], &state)) {
 			set_event_ready(&events[ii], state);
 			clear_polling_state(_current);
-		} else if (timeout != K_NO_WAIT && !in_use) {
+		} else if (timeout != K_NO_WAIT && is_polling() && !in_use) {
 			rc = register_event(&events[ii]);
 			if (rc == 0) {
 				events[ii].poller = &poller;
