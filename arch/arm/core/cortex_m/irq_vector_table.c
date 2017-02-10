@@ -21,7 +21,7 @@
 
 #include <toolchain.h>
 #include <sections.h>
-#include <generated_dts_board.h>
+#include <arch/cpu.h>
 
 extern void _isr_wrapper(void);
 typedef void (*vth)(void); /* Vector Table Handler */

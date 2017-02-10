@@ -16,6 +16,9 @@
 #ifndef _ARM_ARCH__H_
 #define _ARM_ARCH__H_
 
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

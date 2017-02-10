@@ -17,7 +17,6 @@
 #include <arch/cpu.h>
 #include <offsets_short.h>
 #include "vector_table.h"
-#include <generated_dts_board.h>
 
 _ASM_FILE_PROLOGUE
 

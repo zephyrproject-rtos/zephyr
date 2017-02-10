@@ -15,7 +15,6 @@
 #define _SW_ISR_TABLE__H_
 
 #include <arch/cpu.h>
-#include <generated_dts_board.h>
 
 #ifdef __cplusplus
 extern "C" {
