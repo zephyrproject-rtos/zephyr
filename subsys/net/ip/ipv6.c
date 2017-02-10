@@ -2288,13 +2288,15 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 	int ret;
 
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
-	if (maddr) {
+	if (maddr && net_if_ipv6_maddr_is_joined(maddr)) {
 		return -EALREADY;
 	}
 
-	maddr = net_if_ipv6_maddr_add(iface, addr);
 	if (!maddr) {
-		return -ENOMEM;
+		maddr = net_if_ipv6_maddr_add(iface, addr);
+		if (!maddr) {
+			return -ENOMEM;
+		}
 	}
 
 	ret = send_mldv2(iface, addr, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
