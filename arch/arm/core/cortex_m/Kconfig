@@ -199,6 +199,17 @@ config FLASH_BASE_ADDRESS
 	This option specifies the base address of the flash on the board.  It is
 	normally set by the board's defconfig file and the user should generally
 	avoid modifying it via the menu configuration.
+
+config FLASH_LOAD_OFFSET
+	hex "Kernel load offset"
+	default 0
+	help
+	This option specifies the byte offset from FLASH_BASE_ADDRESS that the
+	kernel should be loaded into. Changing this value from zero will affect
+	the Zephyr image's link, and will decrease the total amount of flash
+	available for use by application code.
+
+	If unsure, leave at the default value 0.
 endmenu
 
 menu "ARM Cortex-M0/M0+/M3/M4/M7 options"
