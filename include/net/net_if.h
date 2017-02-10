@@ -1134,6 +1134,12 @@ struct net_if_api {
 	int (*send)(struct net_if *iface, struct net_buf *buf);
 };
 
+#if defined(CONFIG_NET_DHCPV4)
+#define NET_IF_DHCPV4_INIT .dhcpv4.state = NET_DHCPV4_INIT,
+#else
+#define NET_IF_DHCPV4_INIT
+#endif
+
 #define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name##_##sfx)
 #define NET_IF_GET(dev_name, sfx)					\
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
@@ -1145,6 +1151,7 @@ struct net_if_api {
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
 		.mtu = _mtu,						\
+		NET_IF_DHCPV4_INIT					\
 	};								\
 	NET_STACK_INFO_ADDR(TX,						\
 			    dev_name,					\
