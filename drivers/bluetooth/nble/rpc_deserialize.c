@@ -557,8 +557,9 @@ static void deserialize_control(uint8_t fn_index, struct net_buf *buf)
 			rpc_init_cb(struct_data.version, true);
 		}
 		break;
-	break;
+	default:
 		panic(-1);
+		break;
 	}
 }
 
