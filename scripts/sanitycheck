@@ -1200,7 +1200,7 @@ def defconfig_cb(context, goals, goal):
 
 
 class TestSuite:
-    config_re = re.compile('(CONFIG_[A-Z0-9_]+)[=]\"?([^\"]*)\"?$')
+    config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
     def __init__(self, arch_root, testcase_roots, outdir, coverage):
         # Keep track of which test cases we've filtered out and why
