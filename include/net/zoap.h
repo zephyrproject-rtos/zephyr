@@ -624,8 +624,8 @@ struct zoap_block_context {
  * @return 0 in case of success or negative in case of error.
  */
 int zoap_block_transfer_init(struct zoap_block_context *ctx,
-			      enum zoap_block_size block_size,
-			      size_t total_size);
+			     enum zoap_block_size block_size,
+			     size_t total_size);
 
 /**
  * @brief Add BLOCK1 option to the packet.
