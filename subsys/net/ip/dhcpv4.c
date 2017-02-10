@@ -507,6 +507,7 @@ static void dhcpv4_timeout(struct k_work *work)
 		 */
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
 			NET_DBG("too many attempts, restart");
+			iface->dhcpv4.attempts = 0;
 			send_discover(iface);
 		} else {
 			/* Repeat requests until max number of attempts */
@@ -515,6 +516,7 @@ static void dhcpv4_timeout(struct k_work *work)
 		break;
 	case NET_DHCPV4_RENEWAL:
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
+			iface->dhcpv4.attempts = 0;
 			NET_DBG("too many attempts, restart");
 			if (!net_if_ipv4_addr_rm(iface,
 						 &iface->dhcpv4.requested_ip)) {

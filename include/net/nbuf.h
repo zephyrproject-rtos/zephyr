@@ -620,7 +620,7 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
  *         False otherwise (In-case of false buf might contain input
  *         data in the process of placing into fragments).
  */
-bool net_nbuf_append(struct net_buf *buf, uint16_t len, uint8_t *data,
+bool net_nbuf_append(struct net_buf *buf, uint16_t len, const uint8_t *data,
 		     int32_t timeout);
 
 /**
