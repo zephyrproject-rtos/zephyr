@@ -28,7 +28,7 @@ struct log_cbuffer {
 
 static inline void ring_buf_print(struct ring_buf *buf);
 
-int logger_put(struct log_cbuffer *logger, uint8_t *data, uint32_t data_size)
+int logger_put(struct log_cbuffer *logger, char *data, uint32_t data_size)
 {
 	int ret;
 

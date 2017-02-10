@@ -126,7 +126,7 @@ static void print_phil_state(int id, const char *fmt, int32_t delay)
 	if (delay) {
 		PRINTF(fmt, delay < 1000 ? " " : "", delay);
 	} else {
-		PRINTF(fmt);
+		PRINTF(fmt, "");
 	}
 
 	PRINTF("\n");
