@@ -275,16 +275,8 @@ void _timer_int_handler(void *params)
 	extern void _sys_k_event_logger_interrupt(void);
 	_sys_k_event_logger_interrupt();
 #endif
-	/*
-	 * Increment the tick because _timer_idle_exit does not
-	 * account for the tick due to the timer interrupt itself.
-	 * Also, if not in tickless mode, _sys_idle_elapsed_ticks will be 0.
-	 */
-#ifdef CONFIG_TICKLESS_IDLE
-	_sys_idle_elapsed_ticks++;
-#endif /* CONFIG_TICKLESS_IDLE */
 	/* Announce the tick event to the microkernel. */
-	_sys_clock_tick_announce();
+	_sys_clock_final_tick_announce();
 }
 
 
