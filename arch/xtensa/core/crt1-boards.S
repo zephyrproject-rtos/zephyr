@@ -79,7 +79,9 @@ _start:
 	 * It is also the return address, where zero indicates
 	 * that the frame used by _start is the bottommost frame.
 	 */
-#if !XCHAL_HAVE_HALT || !XCHAL_HAVE_BOOTLOADER		 /* not needed for Xtensa TX */
+
+/* not needed for Xtensa TX */
+#if !XCHAL_HAVE_HALT || !XCHAL_HAVE_BOOTLOADER
 	movi	a0, 0		 /* keep this register zero. */
 #endif
 
@@ -91,7 +93,7 @@ _start:
 	 * Initialize the stack pointer.
 	 * See the "ABI and Software Conventions" chapter in the
 	 * Xtensa ISA Reference manual for details.
-
+	 *
 	 * NOTE: Because the _start routine does not use any memory in its
 	 * stack frame, and because all of its CALL instructions use a
 	 * window size of 4 (or zero), the stack frame for _start can be empty.
@@ -99,14 +101,17 @@ _start:
 	movi	sp, __stack
 
 	/*
-	 *  Now that sp (a1) is set, we can set PS as per the application
-	 *  (user vector mode, enable interrupts, enable window exceptions if applicable).
+	 *  Now that sp (a1) is set, we can set PS as per the application (user
+	 *  vector mode, enable interrupts, enable window exceptions if
+	 *  applicable).
 	 */
 #if XCHAL_HAVE_EXCEPTIONS
 # ifdef __XTENSA_CALL0_ABI__
-	movi	a3, PS_UM		/* PS.WOE = 0, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 0 */
+	/* PS.WOE = 0, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 0 */
+	movi	a3, PS_UM
 # else
-	movi	a3, PS_UM|PS_WOE	/* PS.WOE = 1, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 0 */
+	/* PS.WOE = 1, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 0 */
+	movi	a3, PS_UM|PS_WOE
 # endif
 	wsr	a3, PS
 	rsync
@@ -168,13 +173,13 @@ _start:
 	addi   	a6, a6, 8	/* next entry */
 	sub	a10, a9, a8	/* a10 = length, assumed a multiple of 4 */
 	bbci.l	a10, 2, .L1zte
-	s32i	a0, a8, 0	/* clear 4 bytes to make length multiple of 8 */
+	s32i	a0, a8, 0	/* clear 4 bytes to make len multiple of 8 */
 	addi	a8, a8, 4
 .L1zte:	bbci.l	a10, 3, .L2zte
-	s32i	a0, a8, 0	/* clear 8 bytes to make length multiple of 16 */
+	s32i	a0, a8, 0	/* clear 8 bytes to make len multiple of 16 */
 	s32i	a0, a8, 4
 	addi	a8, a8, 8
-.L2zte:	srli	a10, a10, 4	/* length is now multiple of 16, divide by 16 */
+.L2zte:	srli	a10, a10, 4	/* len is now multiple of 16, divide by 16 */
 	floopnez	a10, clearzte
 	s32i	a0, a8,	 0	/* clear 16 bytes at a time... */
 	s32i	a0, a8,	 4
@@ -189,18 +194,19 @@ _start:
 
 
 	/*
-	 * We can now call C code, the C calling environment has been initialized.
+	 * We can now call C code, the C calling environment has been
+	 * initialized.
 	 *
-	 *  From this point on, we use ABI-specific macros to refer to registers a0 .. a15
-	 *  (ARG#).
+	 * From this point on, we use ABI-specific macros to refer to
+	 * registers a0 .. a15 (ARG#).
 	 */
 
 #if XCHAL_HAVE_HALT
 
 	/*
 	 * Assume minimalist environment for memory-constrained TX cores.
-	 *  No C library or board initialization, no parameters passed to main
-	 *  (assume declared as "void main(void)") and no call to exit().
+	 * No C library or board initialization, no parameters passed to main
+	 * (assume declared as "void main(void)") and no call to exit().
 	 */
 	CALL	main
 	halt
@@ -220,10 +226,8 @@ _start:
 	 *
 	 *  void __clibrary_init(int argc, char ** argv, char ** environ,
 	 *		void(*init_func)(void), void(*fini_func)(void));
+	 *  Pass an empty argv array, with an empty string as the program name
 	 */
-
-	 *  Pass an empty argv array, with an empty string as the program name. */
-
 	movi	ARG1, _start_argc	/* argc address */
 	movi	ARG2, _start_argv	/* argv = ["", 0] */
 	movi	ARG3, _start_envp	/* envp = [0] */
@@ -238,7 +242,9 @@ _start:
 	movi	ARG3, _start_envp	/* envp = [0] */
 	l32i	ARG1, ARG1, 0		/* argc = 1 */
 	CALL	main
-	/*  The return value is the same register as the first outgoing argument. */
+	/* The return value is the same register as the first
+	 * outgoing argument.
+	 */
 	CALL	exit			/* exit with main's return value */
 	/* Does not return here. */
 
@@ -253,7 +259,8 @@ _start_argv:
 	.word	_start_null	/* empty program name */
 _start_null:
 _start_envp:
-	.word	0		/* end of argv array, empty string, empty environ */
+	/* end of argv array, empty string, empty environ */
+	.word	0
 _start_argc:
 	.word	1		/* one argument (program name) */
 	.text

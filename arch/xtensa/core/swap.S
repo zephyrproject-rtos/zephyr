@@ -15,9 +15,7 @@
 #include <offsets_short.h>
 
 	.extern _kernel
-/**
-	unsigned int _Swap (unsigned int basepri);
-*/
+/* unsigned int _Swap (unsigned int basepri); */
 	.globl  _Swap
 	.type   _Swap,@function
 	.align  4
@@ -30,34 +28,37 @@ _Swap:
 	s32i    a0,  sp, XT_SOL_pc
 	s32i    a2,  sp, XT_SOL_ps
 #ifdef __XTENSA_CALL0_ABI__
-	s32i    a12, sp, XT_SOL_a12         /* save callee-saved registers      */
+	s32i    a12, sp, XT_SOL_a12         /* save callee-saved registers */
 	s32i    a13, sp, XT_SOL_a13
 	s32i    a14, sp, XT_SOL_a14
 	s32i    a15, sp, XT_SOL_a15
 #else
-	/* Spill register windows. Calling xthal_window_spill() causes extra    */
-	/* spills and reloads, so we will set things up to call the _nw version */
-	/* instead to save cycles.                                              */
-	movi    a6,  ~(PS_WOE_MASK|PS_INTLEVEL_MASK)  /* spills a4-a7 if needed */
-	and     a2,  a2, a6                           /* clear WOE, INTLEVEL    */
-	addi    a2,  a2, XCHAL_EXCM_LEVEL             /* set INTLEVEL           */
+	/* Spill register windows. Calling xthal_window_spill() causes extra
+	 * spills and reloads, so we will set things up to call the _nw version
+	 * instead to save cycles.
+	 */
+	/* spills a4-a7 if needed */
+	movi    a6,  ~(PS_WOE_MASK|PS_INTLEVEL_MASK)
+	and     a2,  a2, a6                           /* clear WOE, INTLEVEL */
+	addi    a2,  a2, XCHAL_EXCM_LEVEL             /* set INTLEVEL */
 	wsr     a2,  PS
 	rsync
 	call0   xthal_window_spill_nw
-	l32i    a2,  sp, XT_SOL_ps                    /* restore PS             */
+	l32i    a2,  sp, XT_SOL_ps                    /* restore PS */
 	addi    a2, a2, XCHAL_EXCM_LEVEL
 	wsr     a2,  PS
 #endif
 #if XCHAL_CP_NUM > 0
-	/* Save coprocessor callee-saved state (if any). At this point CPENABLE */
-	/* should still reflect which CPs were in use (enabled).                */
+	/* Save coprocessor callee-saved state (if any). At this point CPENABLE
+	 * should still reflect which CPs were in use (enabled).
+	 */
 	call0   _xt_coproc_savecs
 #endif
 	movi a2, _kernel
 	movi a3,  0
 	l32i a4, a2, KERNEL_OFFSET(current) /* a4 := _kernel->current */
 
-	s32i a3,  sp, XT_SOL_exit       	/* 0 to flag as solicited frame */
+	s32i a3,  sp, XT_SOL_exit       /* 0 to flag as solicited frame */
 	s32i sp,  a4, THREAD_OFFSET(sp) /* current->arch.topOfStack := sp */
 	/*
 	 * Set _Swap()'s default return code to -EAGAIN. This eliminates the
@@ -69,7 +70,8 @@ _Swap:
 #if XCHAL_CP_NUM > 0
 	/* Clear CPENABLE, also in task's co-processor state save area. */
 	movi    a3,  0
-	l32i a4, a4, THREAD_OFFSET(cpStack) /* a4 := current->arch.preempCoprocReg.cpStack */
+	/* a4 := current->arch.preempCoprocReg.cpStack */
+	l32i a4, a4, THREAD_OFFSET(cpStack)
 	wsr     a3,  CPENABLE
 	beqz    a4,  1f
 	s16i    a3,  a4, XT_CPENABLE        /* clear saved cpenable */

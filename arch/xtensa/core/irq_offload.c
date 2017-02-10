@@ -12,9 +12,6 @@
  * Xtensa core should support software interrupt in order to allow using
  * irq_offload feature
  */
-#ifndef CONFIG_IRQ_OFFLOAD_INTNUM
-#error "Please add entry for IRQ_OFFLOAD_INTNUM option to your arch/xtensa/soc/${XTENSA_CORE}/Kconfig file in order to use IRQ offload on this core."
-#endif
 
 static irq_offload_routine_t offload_routine;
 static void *offload_param;

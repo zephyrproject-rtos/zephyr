@@ -92,9 +92,9 @@ atomic_get:
  * @brief Atomically increment a memory location
  *
  * This routine atomically increments the value in <target>.  The operation is
- * done using unsigned integer arithmetic.  Various CPU architectures may impose
- * restrictions with regards to the alignment and cache attributes of the
- * atomic_t type.
+ * done using unsigned integer arithmetic.  Various CPU architectures may
+ * impose restrictions with regards to the alignment and cache attributes of
+ * the atomic_t type.
  *
  * This routine can be used from both task and interrupt level.
  *
@@ -126,9 +126,9 @@ atomic_inc:
  * @brief Atomically add a value to a memory location
  *
  * This routine atomically adds the contents of <target> and <value>, placing
- * the result in <target>. The operation is done using signed integer arithmetic.
- * Various CPU architectures may impose restrictions with regards to the
- * alignment and cache attributes of the atomic_t type.
+ * the result in <target>. The operation is done using signed integer
+ * arithmetic.  Various CPU architectures may impose restrictions with regards
+ * to the alignment and cache attributes of the atomic_t type.
  *
  * This routine can be used from both task and interrupt level.
  *
@@ -369,10 +369,10 @@ atomic_xor:
  *
  * @brief Atomically compare-and-swap the contents of a memory location
  *
- * This routine performs an atomic compare-and-swap. testing that the contents of
- * <target> contains <oldValue>, and if it does, setting the value of <target>
- * to <newValue>. Various CPU architectures may impose restrictions with regards
- * to the alignment and cache attributes of the atomic_t type.
+ * This routine performs an atomic compare-and-swap. testing that the contents
+ * of <target> contains <oldValue>, and if it does, setting the value of
+ * <target> to <newValue>. Various CPU architectures may impose restrictions
+ * with regards to the alignment and cache attributes of the atomic_t type.
  *
  * This routine can be used from both task and interrupt level.
  *

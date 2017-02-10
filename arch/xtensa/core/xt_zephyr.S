@@ -46,10 +46,14 @@ _zxt_dispatch:
 #endif
 	l32i a0, sp, XT_SOL_pc
 #if XCHAL_CP_NUM > 0
-	/* Ensure wsr.CPENABLE is complete (should be, it was cleared on entry). */
+	/* Ensure wsr.CPENABLE is complete (should be, it was cleared on
+	 * entry).
+	 */
 	rsync
 #endif
-	/* As soons as PS is restored, interrupts can happen. No need to sync PS. */
+	/* As soons as PS is restored, interrupts can happen. No need to sync
+	 * PS.
+	 */
 	wsr a3, PS
 #ifdef __XTENSA_CALL0_ABI__
 	addi sp, sp, XT_SOL_FRMSZ
@@ -72,7 +76,9 @@ _zxt_dispatch:
 	 */
 	call0   _xt_context_restore
 
-	/* In Call0 ABI, restore callee-saved regs (A12, A13 already restored). */
+	/* In Call0 ABI, restore callee-saved regs (A12, A13 already
+	 * restored).
+	 */
 #ifdef __XTENSA_CALL0_ABI__
 	l32i    a14, sp, XT_STK_a14
 	l32i    a15, sp, XT_STK_a15
@@ -84,26 +90,24 @@ _zxt_dispatch:
 #endif
 
 	/*
-	 * Must return via the exit dispatcher corresponding to the entrypoint from
-	 * which this was called. Interruptee's A0, A1, PS, PC are restored and
-	 * the interrupt stack frame is deallocated in the exit dispatcher.
+	 * Must return via the exit dispatcher corresponding to the entrypoint
+	 * from which this was called. Interruptee's A0, A1, PS, PC are
+	 * restored and the interrupt stack frame is deallocated in the exit
+	 * dispatcher.
 	 */
 	l32i    a0, sp, XT_STK_exit
 	ret
 
 /*
-*******************************************************************************
-*                                            _zxt_int_enter
-*                                       void _zxt_int_enter(void)
-*
-* Implements the Xtensa RTOS porting layer's XT_RTOS_INT_ENTER function for
-* freeRTOS. Saves the rest of the interrupt context (not already saved).
-* May only be called from assembly code by the 'call0' instruction, with
-* interrupts disabled.
-* See the detailed description of the XT_RTOS_ENTER macro in xtensa_rtos.h.
-*
-*******************************************************************************
-*/
+ * _zxt_int_enter
+ * void _zxt_int_enter(void)
+ *
+ * Implements the Xtensa RTOS porting layer's XT_RTOS_INT_ENTER function for
+ * freeRTOS. Saves the rest of the interrupt context (not already saved).
+ * May only be called from assembly code by the 'call0' instruction, with
+ * interrupts disabled.
+ * See the detailed description of the XT_RTOS_ENTER macro in xtensa_rtos.h.
+ */
 	.globl  _zxt_int_enter
 	.type   _zxt_int_enter,@function
 	.align  4
@@ -120,10 +124,10 @@ _zxt_int_enter:
 	call0 _xt_context_save
 
 	/*
-	 * Save interrupted task's SP in TCB only if not nesting.
-	 * Manage nesting directly rather than call the generic IntEnter() (in
-	 * windowed ABI we can't call a C function here anyway because PS.EXCM is
-	 * still set).
+	 * Save interrupted task's SP in TCB only if not nesting.  Manage
+	 * nesting directly rather than call the generic IntEnter() (in
+	 * windowed ABI we can't call a C function here anyway because PS.EXCM
+	 * is still set).
 	 */
 	movi a2, _kernel                   /* a2 := _kernel */
 	l32i a3, a2, KERNEL_OFFSET(nested) /* a3 := _kernel->nested */
@@ -140,17 +144,16 @@ _zxt_int_enter:
 	ret
 
 /*
- *                                            _zxt_int_exit
- *                                       void _zxt_int_exit(void)
+ * _zxt_int_exit
+ * void _zxt_int_exit(void)
  *
  * Implements the Xtensa RTOS porting layer's XT_RTOS_INT_EXIT function for
  * Zephyr. If required, calls vPortYieldFromInt() to perform task context
- * switching, restore the (possibly) new task's context, and return to the
- * exit dispatcher saved in the task's stack frame at XT_STK_EXIT.
- * May only be called from assembly code by the 'call0' instruction. Does not
- * return to caller.
- * See the description of the XT_RTOS_ENTER macro in xtensa_rtos.h.
- *
+ * switching, restore the (possibly) new task's context, and return to the exit
+ * dispatcher saved in the task's stack frame at XT_STK_EXIT.  May only be
+ * called from assembly code by the 'call0' instruction. Does not return to
+ * caller.  See the description of the XT_RTOS_ENTER macro in xtensa_rtos.h.
+
  */
 	.globl  _zxt_int_exit
 	.type   _zxt_int_exit,@function
@@ -159,15 +162,16 @@ _zxt_int_exit:
 
 	rsil a0, XCHAL_EXCM_LEVEL       	/* lock out interrupts */
 	movi a2, _kernel
-	l32i a3, a2, KERNEL_OFFSET(nested) /* _kernel->nested */
-	addi a3, a3, -1						/* decrement nesting count */
-	s32i a3, a2, KERNEL_OFFSET(nested) /* save nesting count */
-	bnez a3, .Lnesting					/* !=0 after decr so still nested  */
+	l32i a3, a2, KERNEL_OFFSET(nested)	/* _kernel->nested */
+	addi a3, a3, -1				/* decrement nesting count */
+	s32i a3, a2, KERNEL_OFFSET(nested)	/* save nesting count */
+	bnez a3, .Lnesting		/* !=0 after decr so still nested  */
 
 	/*
 	 * When using call0 ABI callee-saved registers a12-15 need to be saved
-	 * before enabling preemption. They were already saved by _zxt_int_enter().
-	*/
+	 * before enabling preemption. They were already saved by
+	 * _zxt_int_enter().
+	 */
 #ifdef __XTENSA_CALL0_ABI__
 	s32i a14, a1, XT_STK_a14
 	s32i a15, a1, XT_STK_a15
@@ -210,22 +214,22 @@ _zxt_int_exit:
 
 	/*
 	 * Must return via the exit dispatcher corresponding to the entrypoint
-	 * from which this was called. Interruptee's A0, A1, PS, PC are restored
-	 * and the interrupt stack frame is deallocated in the exit dispatcher.
+	 * from which this was called. Interruptee's A0, A1, PS, PC are
+	 * restored and the interrupt stack frame is deallocated in the exit
+	 * dispatcher.
 	 */
 	l32i a0, sp, XT_STK_exit
 	ret
 
 /*
- *                                           _zxt_timer_int
- *                                      void _zxt_timer_int(void)
+ * _zxt_timer_int
+ * void _zxt_timer_int(void)
  *
- * Implements Xtensa RTOS porting layer's XT_RTOS_TIMER_INT function.
- * Called every timer interrupt.
- * Manages the tick timer and calls xPortSysTickHandler() every tick.
- * See the detailed description of the XT_RTOS_ENTER macro in xtensa_rtos.h.
- * Callable from C.
- * Implemented in assmebly code for performance.
+ * Implements Xtensa RTOS porting layer's XT_RTOS_TIMER_INT function.  Called
+ * every timer interrupt.  Manages the tick timer and calls
+ * xPortSysTickHandler() every tick.  See the detailed description of the
+ * XT_RTOS_ENTER macro in xtensa_rtos.h.  Callable from C.  Implemented in
+ * assmebly code for performance.
  *
  */
 	.globl  _zxt_timer_int
@@ -235,14 +239,14 @@ _zxt_timer_int:
 
 	/*
 	 * Xtensa timers work by comparing a cycle counter with a preset value.
-	 * Once the match occurs an interrupt is generated, and the handler has to
-	 * set a new cycle count into the comparator.
-	 * To avoid clock drift due to interrupt latency, the new cycle count is
-	 * computed from the old, not the time the interrupt was serviced. However
-	 * if a timer interrupt is ever serviced more than one tick late, it is
-	 * necessary to process multiple ticks until the new cycle count is in the
-	 * future, otherwise the next timer interrupt would not occur until after
-	 * the cycle counter had wrapped (2^32 cycles later).
+	 * Once the match occurs an interrupt is generated, and the handler has
+	 * to set a new cycle count into the comparator.  To avoid clock drift
+	 * due to interrupt latency, the new cycle count is computed from the
+	 * old, not the time the interrupt was serviced. However if a timer
+	 * interrupt is ever serviced more than one tick late, it is necessary
+	 * to process multiple ticks until the new cycle count is in the
+	 * future, otherwise the next timer interrupt would not occur until
+	 * after the cycle counter had wrapped (2^32 cycles later).
 	 *
 	 * do {
 	 *     ticks++;
@@ -303,10 +307,10 @@ _zxt_timer_int:
 	RET(16)
 
 /*
- *                                           _zxt_tick_timer_init
- *                                      void _zxt_tick_timer_init(void)
+ * _zxt_tick_timer_init
+ * void _zxt_tick_timer_init(void)
  *
- * Initialize timer and timer interrrupt handler (_xt_tick_divisor_init() has
+ * Initialize timer and timer interrupt handler (_xt_tick_divisor_init() has
  * already been been called).
  * Callable from C (obeys ABI conventions on entry).
  *
@@ -320,7 +324,9 @@ _zxt_tick_timer_init:
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 #if CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0)
 
-	/* Set up the periodic tick timer (assume enough time to complete init). */
+	/* Set up the periodic tick timer (assume enough time to complete
+	 * init).
+	 */
 #ifdef XT_CLOCK_FREQ
 	movi a3, XT_TICK_DIVISOR
 #else
@@ -348,8 +354,8 @@ _zxt_tick_timer_init:
 	RET(48)
 
 /*
- *                                        _zxt_task_coproc_state
- *                                   void _zxt_task_coproc_state(void)
+ * _zxt_task_coproc_state
+ * void _zxt_task_coproc_state(void)
  *
  * Implements the Xtensa RTOS porting layer's XT_RTOS_CP_STATE function.
  *

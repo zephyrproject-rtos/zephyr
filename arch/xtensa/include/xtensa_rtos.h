@@ -54,7 +54,8 @@
 
 #ifndef XT_TIMER_INDEX
   #if defined configXT_TIMER_INDEX
-    #define XT_TIMER_INDEX           configXT_TIMER_INDEX  /* Index of hardware timer to be used */
+    /* Index of hardware timer to be used */
+    #define XT_TIMER_INDEX           configXT_TIMER_INDEX
   #endif
 #endif
 
@@ -105,8 +106,7 @@
  * Called after minimal context has been saved, with interrupts disabled.
  * RTOS port can call0 _xt_context_save to save the rest of the context.
  * May only be called from assembly code by the 'call0' instruction.
-*/
-// void XT_RTOS_INT_ENTER(void)
+ */
 #define XT_RTOS_INT_ENTER   _zxt_int_enter
 
 /*
@@ -133,14 +133,14 @@
 /*
  * Return in a15 the base address of the co-processor state save area for the
  * thread that triggered a co-processor exception, or 0 if no thread was
- * running.
- * The state save area is structured as defined in xtensa_context.h and has size
- * XT_CP_SIZE. Co-processor instructions should only be used in thread code,
- * never in interrupt handlers or the RTOS kernel. May only be called from
- * assembly code and by the 'call0' instruction. A result of 0 indicates an
- * unrecoverable error.
+ * running.  The state save area is structured as defined in xtensa_context.h
+ * and has size XT_CP_SIZE. Co-processor instructions should only be used in
+ * thread code, never in interrupt handlers or the RTOS kernel. May only be
+ * called from assembly code and by the 'call0' instruction. A result of 0
+ * indicates an unrecoverable error.
  *
- * The implementation may use only a2-4, a15 (all other regs must be preserved).
+ * The implementation may use only a2-4, a15 (all other regs must be
+ * preserved).
  */
 #define XT_RTOS_CP_STATE    _zxt_task_coproc_state
 
@@ -149,28 +149,28 @@
  * HOOKS TO DYNAMICALLY INSTALL INTERRUPT AND EXCEPTION HANDLERS PER LEVEL.
  *
  * This Xtensa RTOS port provides hooks for dynamically installing exception
- * and interrupt handlers to facilitate automated testing where each test
- * case can install its own handler for user exceptions and each interrupt
- * priority (level). This consists of an array of function pointers indexed
- * by interrupt priority, with index 0 being the user exception handler hook.
- * Each entry in the array is initially 0, and may be replaced by a function
- * pointer of type XT_INTEXC_HOOK. A handler may be uninstalled by installing 0.
+ * and interrupt handlers to facilitate automated testing where each test case
+ * can install its own handler for user exceptions and each interrupt priority
+ * (level). This consists of an array of function pointers indexed by interrupt
+ * priority, with index 0 being the user exception handler hook.  Each entry in
+ * the array is initially 0, and may be replaced by a function pointer of type
+ * XT_INTEXC_HOOK. A handler may be uninstalled by installing 0.
  *
- * The handler for low and medium priority obeys ABI conventions so may be coded
- * in C. For the exception handler, the cause is the contents of the EXCCAUSE
- * reg, and the result is -1 if handled, else the cause (still needs handling).
- * For interrupt handlers, the cause is a mask of pending enabled interrupts at
- * that level, and the result is the same mask with the bits for the handled
- * interrupts cleared (those not cleared still need handling). This allows a
- * test case to either pre-handle or override the default handling for the
- * exception or interrupt level (see xtensa_vectors.S).
+ * The handler for low and medium priority obeys ABI conventions so may be
+ * coded in C. For the exception handler, the cause is the contents of the
+ * EXCCAUSE reg, and the result is -1 if handled, else the cause (still needs
+ * handling).  For interrupt handlers, the cause is a mask of pending enabled
+ * interrupts at that level, and the result is the same mask with the bits for
+ * the handled interrupts cleared (those not cleared still need handling). This
+ * allows a test case to either pre-handle or override the default handling for
+ * the exception or interrupt level (see xtensa_vectors.S).
  *
  * High priority handlers (including NMI) must be coded in assembly, are always
  * called by 'call0' regardless of ABI, must preserve all registers except a0,
  * and must not use or modify the interrupted stack. The hook argument 'cause'
- * is not passed and the result is ignored, so as not to burden the caller with
- * saving and restoring a2 (it assumes only one interrupt per level - see the
- * discussion in high priority interrupts in xtensa_vectors.S). The handler
+ * is not passed and the result is ignored, so as not to burden the caller
+ * with saving and restoring a2 (it assumes only one interrupt per level - see
+ * the discussion in high priority interrupts in xtensa_vectors.S). The handler
  * therefore should be coded to prototype 'void h(void)' even though it plugs
  * into an array of handlers of prototype 'unsigned h(unsigned)'.
  *
@@ -180,7 +180,7 @@
 #define XT_INTEXC_HOOK_NUM  (1 + XCHAL_NUM_INTLEVELS + XCHAL_HAVE_NMI)
 
 #ifndef __ASSEMBLER__
-typedef unsigned (*XT_INTEXC_HOOK)(unsigned cause);
+typedef unsigned int (*XT_INTEXC_HOOK)(unsigned int cause);
 extern  volatile XT_INTEXC_HOOK _xt_intexc_hooks[XT_INTEXC_HOOK_NUM];
 #endif
 
@@ -188,8 +188,9 @@ extern  volatile XT_INTEXC_HOOK _xt_intexc_hooks[XT_INTEXC_HOOK_NUM];
 /*
  * CONVENIENCE INCLUSIONS.
  *
- * Ensures RTOS specific files need only include this one Xtensa-generic header.
- * These headers are included last so they can use the RTOS definitions above.
+ * Ensures RTOS specific files need only include this one Xtensa-generic
+ * header.  These headers are included last so they can use the RTOS
+ * definitions above.
  */
 
 #include    "xtensa_context.h"

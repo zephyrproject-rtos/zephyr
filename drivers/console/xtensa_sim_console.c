@@ -16,6 +16,7 @@
 static int console_out(int c)
 {
 	char buf[16];
+
 	register int a2 __asm__ ("a2") = SYS_write;
 	register int a3 __asm__ ("a3") = 1;
 	register char *a4 __asm__ ("a4") = buf;

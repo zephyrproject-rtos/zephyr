@@ -96,23 +96,20 @@
 
 /*
  * Set processor clock frequency, used to determine clock divisor for timer
- * tick.
- * User should BE SURE TO ADJUST THIS for the Xtensa platform being used.
- * If using a supported board via the board-independent API defined in xtbsp.h,
- * this may be left undefined and frequency and tick divisor will be computed
- * and cached during run-time initialization.
+ * tick.  User should BE SURE TO ADJUST THIS for the Xtensa platform being
+ * used.  If using a supported board via the board-independent API defined in
+ * xtbsp.h, this may be left undefined and frequency and tick divisor will be
+ * computed and cached during run-time initialization.
  *
- * NOTE ON SIMULATOR:
- * Under the Xtensa instruction set simulator, the frequency can only be
- * estimated
- * because it depends on the speed of the host and the version of the simulator.
- * Also because it runs much slower than hardware, it is not possible to achieve
- * real-time performance for most applications under the simulator. A frequency
- * too low does not allow enough time between timer interrupts, starving
- * threads.
- * To obtain a more convenient but non-real-time tick duration on the simulator,
- * compile with xt-xcc option "-DXT_SIMULATOR".
- * Adjust this frequency to taste (it's not real-time anyway!).
+ * NOTE ON SIMULATOR: Under the Xtensa instruction set simulator, the frequency
+ * can only be estimated because it depends on the speed of the host and the
+ * version of the simulator.  Also because it runs much slower than hardware,
+ * it is not possible to achieve real-time performance for most applications
+ * under the simulator. A frequency too low does not allow enough time between
+ * timer interrupts, starving threads.  To obtain a more convenient but
+ * non-real-time tick duration on the simulator, compile with xt-xcc option
+ * "-DXT_SIMULATOR".  Adjust this frequency to taste (it's not real-time
+ * anyway!).
  */
 #if defined(XT_SIMULATOR) && !defined(XT_CLOCK_FREQ)
 #define XT_CLOCK_FREQ       CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -142,8 +139,8 @@
 
 #if CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0)
 #ifndef __ASSEMBLER__
-extern unsigned _xt_tick_divisor;
-extern void     _xt_tick_divisor_init(void);
+extern unsigned int _xt_tick_divisor;
+extern void _xt_tick_divisor_init(void);
 #endif
 
 #endif // Internal/External timer

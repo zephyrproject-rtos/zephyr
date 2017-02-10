@@ -89,7 +89,9 @@ void _new_thread(char *pStack, size_t stackSize,
 	/* Align stack end to maximum alignment requirement. */
 	char *stackEnd = (char *)ROUND_DOWN(pStack + stackSize,
 		(XCHAL_TOTAL_SA_ALIGN < 16 ? 16 : XCHAL_TOTAL_SA_ALIGN));
-	/* TCS is located at top of stack while frames are located at end of it */
+	/* TCS is located at top of stack while frames are located at end
+	 * of it
+	 */
 	struct tcs *tcs = (struct tcs *)(pStack);
 #if XCHAL_CP_NUM > 0
 	uint32_t *cpSA;
@@ -111,20 +113,32 @@ void _new_thread(char *pStack, size_t stackSize,
 		(XCHAL_TOTAL_SA_ALIGN < 16 ? 16 : XCHAL_TOTAL_SA_ALIGN));
 #ifdef CONFIG_DEBUG
 	printk("cpStack  = %p\n", tcs->arch.preempCoprocReg.cpStack);
-	printk("cpAsa    = %p\n", *(void **)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA));
+	printk("cpAsa    = %p\n",
+	       *(void **)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA));
 #endif
 #endif
-	/* Thread's first frame alignment is granted as both operands are aligned */
-	XtExcFrame *pInitCtx = (XtExcFrame *)(stackEnd - (XT_XTRA_SIZE - XT_CP_SIZE));
+	/* Thread's first frame alignment is granted as both operands are
+	 * aligned
+	 */
+	XtExcFrame *pInitCtx =
+		(XtExcFrame *)(stackEnd - (XT_XTRA_SIZE - XT_CP_SIZE));
 #ifdef CONFIG_DEBUG
 	printk("pInitCtx = %p\n", pInitCtx);
 #endif
 	/* Explicitly initialize certain saved registers */
-	pInitCtx->pc   = (uint32_t)_thread_entry; /* task entrypoint */
-	pInitCtx->a1   = (uint32_t)pInitCtx + XT_STK_FRMSZ; /* physical top of stack frame */
-	pInitCtx->exit = (uint32_t)_xt_user_exit; /* user exception exit dispatcher */
-	/* Set initial PS to int level 0, EXCM disabled, user mode. */
-	/* Also set entry point argument arg. */
+
+	 /* task entrypoint */
+	pInitCtx->pc   = (uint32_t)_thread_entry;
+
+	/* physical top of stack frame */
+	pInitCtx->a1   = (uint32_t)pInitCtx + XT_STK_FRMSZ;
+
+	/* user exception exit dispatcher */
+	pInitCtx->exit = (uint32_t)_xt_user_exit;
+
+	/* Set initial PS to int level 0, EXCM disabled, user mode.
+	 * Also set entry point argument arg.
+	 */
 #ifdef __XTENSA_CALL0_ABI__
 	pInitCtx->a2 = (uint32_t)pEntry;
 	pInitCtx->a3 = (uint32_t)p1;
@@ -132,7 +146,9 @@ void _new_thread(char *pStack, size_t stackSize,
 	pInitCtx->a5 = (uint32_t)p3;
 	pInitCtx->ps = PS_UM | PS_EXCM;
 #else
-	/* For windowed ABI set also WOE and CALLINC (pretend task is 'call4'). */
+	/* For windowed ABI set also WOE and CALLINC
+	 * (pretend task is 'call4')
+	 */
 	pInitCtx->a6 = (uint32_t)pEntry;
 	pInitCtx->a7 = (uint32_t)p1;
 	pInitCtx->a8 = (uint32_t)p2;

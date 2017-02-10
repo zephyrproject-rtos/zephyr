@@ -21,7 +21,7 @@ extern "C" {
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
 extern void FatalErrorHandler(void);
-extern void ReservedInterruptHandler(unsigned int);
+extern void ReservedInterruptHandler(unsigned int intNo);
 
 /* Defined in xtensa_context.S */
 extern void _xt_coproc_init(void);
@@ -30,9 +30,9 @@ extern void _xt_coproc_init(void);
  *
  * @brief Performs architecture-specific initialization
  *
- * This routine performs architecture-specific initialization of the nanokernel.
- * Trivial stuff is done inline; more complex initialization is done via
- * function calls.
+ * This routine performs architecture-specific initialization of the
+ * nanokernel.  Trivial stuff is done inline; more complex initialization is
+ * done via function calls.
  *
  * @return N/A
  */
@@ -40,7 +40,9 @@ static ALWAYS_INLINE void nanoArchInit(void)
 {
 	_kernel.nested = 0;
 #if XCHAL_CP_NUM > 0
-	/* Initialize co-processor management for tasks. Leave CPENABLE alone. */
+	/* Initialize co-processor management for tasks.
+	 * Leave CPENABLE alone.
+	 */
 	_xt_coproc_init();
 #endif
 }

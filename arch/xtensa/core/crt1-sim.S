@@ -111,12 +111,12 @@ __start:
 	simcall	/* returns size of argv[] + its strings in a2 */
 #if XCHAL_HAVE_PIF
 	/*
-	 * The stack only needs 16-byte alignment.
-	 * However, here we round up the argv size further to 128 byte multiples
-	 * so that in most cases, variations in argv[0]'s path do not result in
-	 * different stack allocation.  Otherwise, such variations can impact
-	 * execution timing (eg. due to cache effects etc) for the same code and data.
-	 * If we have a PIF, it's more likely the extra required space is okay.
+	 * The stack only needs 16-byte alignment.  However, here we round up
+	 * the argv size further to 128 byte multiples so that in most cases,
+	 * variations in argv[0]'s path do not result in different stack
+	 * allocation.  Otherwise, such variations can impact execution timing
+	 * (eg. due to cache effects etc) for the same code and data.  If we
+	 * have a PIF, it's more likely the extra required space is okay.
 	 */
 	addi	a2, a2, 127
 	srli	a2, a2, 7
@@ -139,14 +139,17 @@ __start:
 
 
 	/*
-	 *  Now that sp (a1) is set, we can set PS as per the application
-	 *  (user vector mode, enable interrupts, enable window exceptions if applicable).
+	 *  Now that sp (a1) is set, we can set PS as per the application (user
+	 *  vector mode, enable interrupts, enable window exceptions if
+	 *  applicable).
 	 */
 #if XCHAL_HAVE_EXCEPTIONS
 # ifdef __XTENSA_CALL0_ABI__
-	movi	a3, PS_UM /* PS.WOE = 0, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 0 */
+	/* PS.WOE = 0, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 0 */
+	movi	a3, PS_UM
 # else
-	movi	a3, PS_UM|PS_WOE /* PS.WOE = 1, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 0 */
+	/* PS.WOE = 1, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 0 */
+	movi	a3, PS_UM|PS_WOE
 # endif
 	wsr	a3, PS
 	rsync
@@ -180,9 +183,11 @@ __start:
 	CALLX	a4
 1:
 
-
 	/*  The new ISS simcall only appeared after RB-2007.2:  */
-#if !XCHAL_HAVE_BOOTLOADER && (XCHAL_HW_MAX_VERSION > XTENSA_HWVERSION_RB_2007_2)	/* pre-LX2 cores only */
+
+#if !XCHAL_HAVE_BOOTLOADER && \
+	(XCHAL_HW_MAX_VERSION > XTENSA_HWVERSION_RB_2007_2)
+	/* pre-LX2 cores only */
 	/*
 	 *  Clear the BSS (uninitialized data) segments.
 	 *  This code supports multiple zeroed sections (*.bss).
@@ -223,7 +228,9 @@ __start:
 
 	/*  Call:   int _Cstart(); */
 	CALL	_Cstart
-	/*  The return value is the same register as the first outgoing argument. */
+	/* The return value is the same register as the first outgoing
+	 * argument.
+	 */
 	CALL	exit
 	/* Does not return here. */
 

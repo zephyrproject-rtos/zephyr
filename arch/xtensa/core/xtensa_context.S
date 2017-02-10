@@ -3,29 +3,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*******************************************************************************
-
-        XTENSA CONTEXT SAVE AND RESTORE ROUTINES
-
-Low-level Call0 functions for handling generic context save and restore of
-registers not specifically addressed by the interrupt vectors and handlers.
-Those registers (not handled by these functions) are PC, PS, A0, A1 (SP).
-Except for the calls to RTOS functions, this code is generic to Xtensa.
-
-Note that in Call0 ABI, interrupt handlers are expected to preserve the callee-
-save regs (A12-A15), which is always the case if the handlers are coded in C.
-However A12, A13 are made available as scratch registers for interrupt dispatch
-code, so are presumed saved anyway, and are always restored even in Call0 ABI.
-Only A14, A15 are truly handled as callee-save regs.
-
-Because Xtensa is a configurable architecture, this port supports all user
-generated configurations (except restrictions stated in the release notes).
-This is accomplished by conditional compilation using macros and functions
-defined in the Xtensa HAL (hardware adaptation layer) for your configuration.
-Only the processor state included in your configuration is saved and restored,
-including any processor state added by user configuration options or TIE.
-
-*******************************************************************************/
+/* XTENSA CONTEXT SAVE AND RESTORE ROUTINES
+ *
+ * Low-level Call0 functions for handling generic context save and restore of
+ * registers not specifically addressed by the interrupt vectors and handlers.
+ * Those registers (not handled by these functions) are PC, PS, A0, A1 (SP).
+ * Except for the calls to RTOS functions, this code is generic to Xtensa.
+ *
+ * Note that in Call0 ABI, interrupt handlers are expected to preserve the
+ * callee-save regs (A12-A15), which is always the case if the handlers are
+ * coded in C. However A12, A13 are made available as scratch registers for
+ * interrupt dispatch code, so are presumed saved anyway, and are always
+ * restored even in Call0 ABI. Only A14, A15 are truly handled as callee-save
+ * regs.
+ *
+ * Because Xtensa is a configurable architecture, this port supports all user
+ * generated configurations (except restrictions stated in the release notes).
+ * This is accomplished by conditional compilation using macros and functions
+ * defined in the Xtensa HAL (hardware adaptation layer) for your
+ * configuration. Only the processor state included in your configuration is
+ * saved and restored, including any processor state added by user
+ * configuration options or TIE.
+ */
 
 /*  Warn nicely if this file gets named with a lowercase .s instead of .S:  */
 #define NOERROR #
@@ -41,37 +40,36 @@ NOERROR: .error "C preprocessor needed for this file: make sure its filename\
 
     .text
 
-/*******************************************************************************
-
-_xt_context_save
-
-    !! MUST BE CALLED ONLY BY 'CALL0' INSTRUCTION !!
-
-Saves all Xtensa processor state except PC, PS, A0, A1 (SP), A12, A13, in the
-interrupt stack frame defined in xtensa_rtos.h.
-Its counterpart is _xt_context_restore (which also restores A12, A13).
-
-Caller is expected to have saved PC, PS, A0, A1 (SP), A12, A13 in the frame.
-This function preserves A12 & A13 in order to provide the caller with 2 scratch
-regs that need not be saved over the call to this function. The choice of which
-2 regs to provide is governed by xthal_window_spill_nw and xthal_save_extra_nw,
-to avoid moving data more than necessary. Caller can assign regs accordingly.
-
-Entry Conditions:
-    A0  = Return address in caller.
-    A1  = Stack pointer of interrupted thread or handler ("interruptee").
-    Original A12, A13 have already been saved in the interrupt stack frame.
-    Other processor state except PC, PS, A0, A1 (SP), A12, A13, is as at the
-    point of interruption.
-    If windowed ABI, PS.EXCM = 1 (exceptions disabled).
-
-Exit conditions:
-    A0  = Return address in caller.
-    A1  = Stack pointer of interrupted thread or handler ("interruptee").
-    A12, A13 as at entry (preserved).
-    If windowed ABI, PS.EXCM = 1 (exceptions disabled).
-
-*******************************************************************************/
+/*
+ * _xt_context_save
+ *
+ * !! MUST BE CALLED ONLY BY 'CALL0' INSTRUCTION !!
+ *
+ * Saves all Xtensa processor state except PC, PS, A0, A1 (SP), A12, A13, in
+ * the interrupt stack frame defined in xtensa_rtos.h. Its counterpart is
+ * _xt_context_restore (which also restores A12, A13).
+ *
+ * Caller is expected to have saved PC, PS, A0, A1 (SP), A12, A13 in the frame.
+ * This function preserves A12 & A13 in order to provide the caller with 2
+ * scratch regs that need not be saved over the call to this function. The
+ * choice of which 2 regs to provide is governed by xthal_window_spill_nw and
+ * xthal_save_extra_nw, to avoid moving data more than necessary. Caller can
+ * assign regs accordingly.
+ *
+ * Entry Conditions:
+ *  A0  = Return address in caller.
+ *  A1  = Stack pointer of interrupted thread or handler ("interruptee").
+ *  Original A12, A13 have already been saved in the interrupt stack frame.
+ *  Other processor state except PC, PS, A0, A1 (SP), A12, A13, is as at the
+ *  point of interruption.
+ *  If windowed ABI, PS.EXCM = 1 (exceptions disabled).
+ *
+ * Exit conditions:
+ *  A0  = Return address in caller.
+ *  A1  = Stack pointer of interrupted thread or handler ("interruptee").
+ *  A12, A13 as at entry (preserved).
+ *  If windowed ABI, PS.EXCM = 1 (exceptions disabled).
+ */
 
     .global _xt_context_save
     .type   _xt_context_save,@function
@@ -89,11 +87,10 @@ _xt_context_save:
     s32i    a10, sp, XT_STK_a10
     s32i    a11, sp, XT_STK_a11
 
-    /*
-    Call0 ABI callee-saved regs a12-15 do not need to be saved here.
-    a12-13 are the caller's responsibility so it can use them as scratch.
-    So only need to save a14-a15 here for Windowed ABI (not Call0).
-    */
+    /* Call0 ABI callee-saved regs a12-15 do not need to be saved here.  a12-13
+     * are the caller's responsibility so it can use them as scratch. So only
+     * need to save a14-a15 here for Windowed ABI (not Call0).
+     */
     #ifndef __XTENSA_CALL0_ABI__
     s32i    a14, sp, XT_STK_a14
     s32i    a15, sp, XT_STK_a15
@@ -123,21 +120,20 @@ _xt_context_save:
     #endif
 
     #ifndef __XTENSA_CALL0_ABI__
-    /*
-    To spill the reg windows, temp. need pre-interrupt stack ptr and a4-15.
-    Need to save a9,12,13 temporarily (in frame temps) and recover originals.
-    Interrupts need to be disabled below XCHAL_EXCM_LEVEL and window overflow
-    and underflow exceptions disabled (assured by PS.EXCM == 1).
-    */
+    /* To spill the reg windows, temp. need pre-interrupt stack ptr and a4-15.
+     * Need to save a9,12,13 temporarily (in frame temps) and recover
+     * originals. Interrupts need to be disabled below XCHAL_EXCM_LEVEL and
+     * window overflow and underflow exceptions disabled (assured by PS.EXCM ==
+     * 1).
+     */
     s32i    a12, sp, XT_STK_tmp0        /* temp. save stuff in stack frame */
     s32i    a13, sp, XT_STK_tmp1
     s32i    a9,  sp, XT_STK_tmp2
 
-    /*
-    Save the overlay state if we are supporting overlays. Since we just saved
-    three registers, we can conveniently use them here. Note that as of now,
-    overlays only work for windowed calling ABI.
-    */
+    /* Save the overlay state if we are supporting overlays. Since we just
+     * saved three registers, we can conveniently use them here. Note that as
+     * of now, overlays only work for windowed calling ABI.
+     */
     #ifdef XT_USE_OVLY
     l32i    a9,  sp, XT_STK_PC          /* recover saved PC */
     _xt_overlay_get_state    a9, a12, a13
@@ -156,15 +152,14 @@ _xt_context_save:
     #endif
 
     #if XCHAL_EXTRA_SA_SIZE > 0
-    /*
-    NOTE: Normally the xthal_save_extra_nw macro only affects address
-    registers a2-a5. It is theoretically possible for Xtensa processor
-    designers to write TIE that causes more address registers to be
-    affected, but it is generally unlikely. If that ever happens,
-    more registers need to be saved/restored around this macro invocation.
-    Here we assume a9,12,13 are preserved.
-    Future Xtensa tools releases might limit the regs that can be affected.
-    */
+    /* NOTE: Normally the xthal_save_extra_nw macro only affects address
+     * registers a2-a5. It is theoretically possible for Xtensa processor
+     * designers to write TIE that causes more address registers to be
+     * affected, but it is generally unlikely. If that ever happens, more
+     * registers need to be saved/restored around this macro invocation. Here
+     * we assume a9,12,13 are preserved. Future Xtensa tools releases might
+     * limit the regs that can be affected.
+     */
     addi    a2,  sp, XT_STK_EXTRA       /* where to save it */
     # if XCHAL_EXTRA_SA_ALIGN > 16
     movi    a3, -XCHAL_EXTRA_SA_ALIGN
@@ -179,30 +174,27 @@ _xt_context_save:
 
     ret
 
-/*******************************************************************************
-
-_xt_context_restore
-
-    !! MUST BE CALLED ONLY BY 'CALL0' INSTRUCTION !!
-
-Restores all Xtensa processor state except PC, PS, A0, A1 (SP) (and in Call0
-ABI, A14, A15 which are preserved by all interrupt handlers) from an interrupt
-stack frame defined in xtensa_rtos.h .
-Its counterpart is _xt_context_save (whose caller saved A12, A13).
-
-Caller is responsible to restore PC, PS, A0, A1 (SP).
-
-Entry Conditions:
-    A0  = Return address in caller.
-    A1  = Stack pointer of interrupted thread or handler ("interruptee").
-
-Exit conditions:
-    A0  = Return address in caller.
-    A1  = Stack pointer of interrupted thread or handler ("interruptee").
-    Other processor state except PC, PS, A0, A1 (SP), is as at the point
-    of interruption.
-
-*******************************************************************************/
+/*_xt_context_restore
+ *
+ * !! MUST BE CALLED ONLY BY 'CALL0' INSTRUCTION !!
+ *
+ * Restores all Xtensa processor state except PC, PS, A0, A1 (SP) (and in Call0
+ * ABI, A14, A15 which are preserved by all interrupt handlers) from an
+ * interrupt stack frame defined in xtensa_rtos.h. Its counterpart is
+ * _xt_context_save (whose caller saved A12, A13).
+ *
+ * Caller is responsible to restore PC, PS, A0, A1 (SP).
+ *
+ * Entry Conditions:
+ *  A0  = Return address in caller.
+ *  A1  = Stack pointer of interrupted thread or handler ("interruptee").
+ *
+ * Exit conditions:
+ *  A0  = Return address in caller.
+ *  A1  = Stack pointer of interrupted thread or handler ("interruptee").
+ *  Other processor state except PC, PS, A0, A1 (SP), is as at the point
+ *  of interruption.
+ */
 
     .global _xt_context_restore
     .type   _xt_context_restore,@function
@@ -210,15 +202,14 @@ Exit conditions:
 _xt_context_restore:
 
     #if XCHAL_EXTRA_SA_SIZE > 0
-    /*
-    NOTE: Normally the xthal_restore_extra_nw macro only affects address
-    registers a2-a5. It is theoretically possible for Xtensa processor
-    designers to write TIE that causes more address registers to be
-    affected, but it is generally unlikely. If that ever happens,
-    more registers need to be saved/restored around this macro invocation.
-    Here we only assume a13 is preserved.
-    Future Xtensa tools releases might limit the regs that can be affected.
-    */
+    /* NOTE: Normally the xthal_restore_extra_nw macro only affects address
+     * registers a2-a5. It is theoretically possible for Xtensa processor
+     * designers to write TIE that causes more address registers to be
+     * affected, but it is generally unlikely. If that ever happens, more
+     * registers need to be saved/restored around this macro invocation. Here
+     * we only assume a13 is preserved. Future Xtensa tools releases might
+     * limit the regs that can be affected.
+     */
     mov     a13, a0                     /* preserve ret addr */
     addi    a2,  sp, XT_STK_EXTRA       /* where to find it */
     # if XCHAL_EXTRA_SA_ALIGN > 16
@@ -239,12 +230,11 @@ _xt_context_restore:
     #endif
 
     #ifdef XT_USE_OVLY
-    /*
-    If we are using overlays, this is a good spot to check if we need
-    to restore an overlay for the incoming task. Here we have a bunch
-    of registers to spare. Note that this step is going to use a few
-    bytes of storage below SP (SP-20 to SP-32) if an overlay is going
-    to be restored.
+    /* If we are using overlays, this is a good spot to check if we need to
+     * restore an overlay for the incoming task. Here we have a bunch of
+     * registers to spare. Note that this step is going to use a few bytes of
+     * storage below SP (SP-20 to SP-32) if an overlay is going to be
+     * restored.
     */
     l32i    a2,  sp, XT_STK_pc          /* retrieve PC */
     l32i    a3,  sp, XT_STK_ps          /* retrieve PS */
@@ -279,10 +269,10 @@ _xt_context_restore:
     l32i    a11, sp, XT_STK_a11
 
     /*
-    Call0 ABI callee-saved regs a12-15 do not need to be restored here.
-    However a12-13 were saved for scratch before XT_RTOS_INT_ENTER(),
-    so need to be restored anyway, despite being callee-saved in Call0.
-    */
+     * Call0 ABI callee-saved regs a12-15 do not need to be restored here.
+     * However a12-13 were saved for scratch before XT_RTOS_INT_ENTER(),
+     * so need to be restored anyway, despite being callee-saved in Call0.
+     */
     l32i    a12, sp, XT_STK_a12
     l32i    a13, sp, XT_STK_a13
     #ifndef __XTENSA_CALL0_ABI__
@@ -293,31 +283,28 @@ _xt_context_restore:
     ret
 
 
-/*******************************************************************************
-
-_xt_coproc_init
-
-Initializes global co-processor management data, setting all co-processors
-to "unowned". Leaves CPENABLE as it found it (does NOT clear it).
-
-Called during initialization of the RTOS, before any threads run.
-
-This may be called from normal Xtensa single-threaded application code which
-might use co-processors. The Xtensa run-time initialization enables all
-co-processors. They must remain enabled here, else a co-processor exception
-might occur outside of a thread, which the exception handler doesn't expect.
-
-Entry Conditions:
-    Xtensa single-threaded run-time environment is in effect.
-    No thread is yet running.
-
-Exit conditions:
-    None.
-
-Obeys ABI conventions per prototype:
-    void _xt_coproc_init(void)
-
-*******************************************************************************/
+/* _xt_coproc_init
+ *
+ * Initializes global co-processor management data, setting all co-processors
+ * to "unowned". Leaves CPENABLE as it found it (does NOT clear it).
+ *
+ * Called during initialization of the RTOS, before any threads run.
+ *
+ * This may be called from normal Xtensa single-threaded application code which
+ * might use co-processors. The Xtensa run-time initialization enables all
+ * co-processors. They must remain enabled here, else a co-processor exception
+ * might occur outside of a thread, which the exception handler doesn't expect.
+ *
+ * Entry Conditions:
+ *  Xtensa single-threaded run-time environment is in effect.
+ *  No thread is yet running.
+ *
+ * Exit conditions:
+ *  None.
+ *
+ * Obeys ABI conventions per prototype:
+ *  void _xt_coproc_init(void)
+ */
 
 #if XCHAL_CP_NUM > 0
 
@@ -340,29 +327,26 @@ _xt_coproc_init:
 #endif
 
 
-/*******************************************************************************
-
-_xt_coproc_release
-
-Releases any and all co-processors owned by a given thread. The thread is
-identified by it's co-processor state save area defined in xtensa_context.h .
-
-Must be called before a thread's co-proc save area is deleted to avoid
-memory corruption when the exception handler tries to save the state.
-May be called when a thread terminates or completes but does not delete
-the co-proc save area, to avoid the exception handler having to save the
-thread's co-proc state before another thread can use it (optimization).
-
-Entry Conditions:
-    A2  = Pointer to base of co-processor state save area.
-
-Exit conditions:
-    None.
-
-Obeys ABI conventions per prototype:
-    void _xt_coproc_release(void * coproc_sa_base)
-
-*******************************************************************************/
+/* _xt_coproc_release
+ *
+ * Releases any and all co-processors owned by a given thread. The thread is
+ * identified by it's co-processor state save area defined in xtensa_context.h
+ *
+ * Must be called before a thread's co-proc save area is deleted to avoid
+ * memory corruption when the exception handler tries to save the state.
+ * May be called when a thread terminates or completes but does not delete
+ * the co-proc save area, to avoid the exception handler having to save the
+ * thread's co-proc state before another thread can use it (optimization).
+ *
+ * Entry Conditions:
+ *  A2  = Pointer to base of co-processor state save area.
+ *
+ * Exit conditions:
+ *  None.
+ *
+ * Obeys ABI conventions per prototype:
+ *  void _xt_coproc_release(void * coproc_sa_base)
+ */
 
 #if XCHAL_CP_NUM > 0
 
@@ -391,25 +375,25 @@ _xt_coproc_release:
 #endif
 
 
-/*******************************************************************************
-_xt_coproc_savecs
+/* _xt_coproc_savecs
+ *
+ * If there is a current thread and it has a coprocessor state save area, then
+ * save all callee-saved state into this area. This function is called from the
+ * solicited context switch handler. It calls a system-specific function to get
+ * the coprocessor save area base address.
+ *
+ * Entry conditions:
+ * - The thread being switched out is still the current thread.
+ * - CPENABLE state reflects which coprocessors are active.
+ * - Registers have been saved/spilled already.
+ *
+ * Exit conditions:
+ * - All necessary CP callee-saved state has been saved.
+ * - Registers a2-a7, a13-a15 have been trashed.
+ *
+ * Must be called from assembly code only, using CALL0.
+ */
 
-If there is a current thread and it has a coprocessor state save area, then
-save all callee-saved state into this area. This function is called from the
-solicited context switch handler. It calls a system-specific function to get
-the coprocessor save area base address.
-
-Entry conditions:
-    - The thread being switched out is still the current thread.
-    - CPENABLE state reflects which coprocessors are active.
-    - Registers have been saved/spilled already.
-
-Exit conditions:
-    - All necessary CP callee-saved state has been saved.
-    - Registers a2-a7, a13-a15 have been trashed.
-
-Must be called from assembly code only, using CALL0.
-*******************************************************************************/
 #if XCHAL_CP_NUM > 0
 
     .extern     _xt_coproc_sa_offset   /* external reference */
@@ -435,7 +419,8 @@ _xt_coproc_savecs:
     bbci.l  a2, 0, 2f                   /* CP 0 not enabled                */
     l32i    a14, a13, 0                 /* a14 = _xt_coproc_sa_offset[0]   */
     add     a3, a14, a15                /* a3 = save area for CP 0         */
-    xchal_cp0_store a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp0_store a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -443,7 +428,8 @@ _xt_coproc_savecs:
     bbci.l  a2, 1, 2f                   /* CP 1 not enabled                */
     l32i    a14, a13, 4                 /* a14 = _xt_coproc_sa_offset[1]   */
     add     a3, a14, a15                /* a3 = save area for CP 1         */
-    xchal_cp1_store a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp1_store a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -451,7 +437,8 @@ _xt_coproc_savecs:
     bbci.l  a2, 2, 2f
     l32i    a14, a13, 8
     add     a3, a14, a15
-    xchal_cp2_store a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp2_store a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -459,7 +446,8 @@ _xt_coproc_savecs:
     bbci.l  a2, 3, 2f
     l32i    a14, a13, 12
     add     a3, a14, a15
-    xchal_cp3_store a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp3_store a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -467,7 +455,8 @@ _xt_coproc_savecs:
     bbci.l  a2, 4, 2f
     l32i    a14, a13, 16
     add     a3, a14, a15
-    xchal_cp4_store a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp4_store a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -475,7 +464,8 @@ _xt_coproc_savecs:
     bbci.l  a2, 5, 2f
     l32i    a14, a13, 20
     add     a3, a14, a15
-    xchal_cp5_store a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp5_store a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -483,7 +473,8 @@ _xt_coproc_savecs:
     bbci.l  a2, 6, 2f
     l32i    a14, a13, 24
     add     a3, a14, a15
-    xchal_cp6_store a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp6_store a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -491,7 +482,8 @@ _xt_coproc_savecs:
     bbci.l  a2, 7, 2f
     l32i    a14, a13, 28
     add     a3, a14, a15
-    xchal_cp7_store a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp7_store a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -500,26 +492,27 @@ _xt_coproc_savecs:
 #endif
 
 
-/*******************************************************************************
-_xt_coproc_restorecs
+/*
+ * _xt_coproc_restorecs
+ *
+ * Restore any callee-saved coprocessor state for the incoming thread.
+ * This function is called from coprocessor exception handling, when giving
+ * ownership to a thread that solicited a context switch earlier. It calls a
+ * system-specific function to get the coprocessor save area base address.
+ *
+ * Entry conditions:
+ * - The incoming thread is set as the current thread.
+ * - CPENABLE is set up correctly for all required coprocessors.
+ * - a2 = mask of coprocessors to be restored.
+ *
+ * Exit conditions:
+ * - All necessary CP callee-saved state has been restored.
+ * - CPENABLE - unchanged.
+ * - Registers a2-a7, a13-a15 have been trashed.
+ *
+ * Must be called from assembly code only, using CALL0.
+ */
 
-Restore any callee-saved coprocessor state for the incoming thread.
-This function is called from coprocessor exception handling, when giving
-ownership to a thread that solicited a context switch earlier. It calls a
-system-specific function to get the coprocessor save area base address.
-
-Entry conditions:
-    - The incoming thread is set as the current thread.
-    - CPENABLE is set up correctly for all required coprocessors.
-    - a2 = mask of coprocessors to be restored.
-
-Exit conditions:
-    - All necessary CP callee-saved state has been restored.
-    - CPENABLE - unchanged.
-    - Registers a2-a7, a13-a15 have been trashed.
-
-Must be called from assembly code only, using CALL0.
-*******************************************************************************/
 #if XCHAL_CP_NUM > 0
 
     .global     _xt_coproc_restorecs
@@ -541,7 +534,8 @@ _xt_coproc_restorecs:
     bbci.l  a2, 0, 2f                   /* CP 0 not enabled                */
     l32i    a14, a13, 0                 /* a14 = _xt_coproc_sa_offset[0]   */
     add     a3, a14, a15                /* a3 = save area for CP 0         */
-    xchal_cp0_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp0_load a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -549,7 +543,8 @@ _xt_coproc_restorecs:
     bbci.l  a2, 1, 2f                   /* CP 1 not enabled                */
     l32i    a14, a13, 4                 /* a14 = _xt_coproc_sa_offset[1]   */
     add     a3, a14, a15                /* a3 = save area for CP 1         */
-    xchal_cp1_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp1_load a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -557,7 +552,8 @@ _xt_coproc_restorecs:
     bbci.l  a2, 2, 2f
     l32i    a14, a13, 8
     add     a3, a14, a15
-    xchal_cp2_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp2_load a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -565,7 +561,8 @@ _xt_coproc_restorecs:
     bbci.l  a2, 3, 2f
     l32i    a14, a13, 12
     add     a3, a14, a15
-    xchal_cp3_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp3_load a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -573,7 +570,8 @@ _xt_coproc_restorecs:
     bbci.l  a2, 4, 2f
     l32i    a14, a13, 16
     add     a3, a14, a15
-    xchal_cp4_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp4_load a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -581,7 +579,8 @@ _xt_coproc_restorecs:
     bbci.l  a2, 5, 2f
     l32i    a14, a13, 20
     add     a3, a14, a15
-    xchal_cp5_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp5_load a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -589,7 +588,8 @@ _xt_coproc_restorecs:
     bbci.l  a2, 6, 2f
     l32i    a14, a13, 24
     add     a3, a14, a15
-    xchal_cp6_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp6_load a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 
@@ -597,7 +597,8 @@ _xt_coproc_restorecs:
     bbci.l  a2, 7, 2f
     l32i    a14, a13, 28
     add     a3, a14, a15
-    xchal_cp7_load a3, a4, a5, a6, a7 continue=0 ofs=-1 select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
+    xchal_cp7_load a3, a4, a5, a6, a7 continue=0 ofs=-1 \
+	select=XTHAL_SAS_TIE|XTHAL_SAS_NOCC|XTHAL_SAS_CALE alloc=XTHAL_SAS_ALL
 2:
 #endif
 

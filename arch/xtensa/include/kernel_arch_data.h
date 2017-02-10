@@ -75,9 +75,9 @@ typedef struct _caller_saved _caller_saved_t;
  */
 struct _callee_saved {
 	/*
-	 * The following registers are considered non-volatile, i.e. callee-saved,
-	 * but their values are pushed onto the stack rather than stored in the
-	 * TCS structure:
+	 * The following registers are considered non-volatile, i.e.
+	 * callee-saved, but their values are pushed onto the stack rather than
+	 * stored in the TCS structure:
 	 */
 	uint32_t retval; /* a2 */
 	XtExcFrame *topOfStack; /* a1 = sp */
@@ -96,8 +96,8 @@ typedef struct __esf __esf_t;
 typedef struct s_coopCoprocReg {
 
 	/*
-	 * This structure intentionally left blank. Coprocessor's registers are all
-	 * 'volatile' and saved using the lazy context switch mechanism.
+	 * This structure intentionally left blank. Coprocessor's registers are
+	 * all 'volatile' and saved using the lazy context switch mechanism.
 	 */
 
 } tCoopCoprocReg;
@@ -106,13 +106,13 @@ typedef struct s_coopCoprocReg {
  * The following structure defines the set of 'volatile' x87 FPU/MMX/SSE
  * registers.  These registers need not be preserved by a called C function.
  * Given that they are not preserved across function calls, they must be
- * save/restored (along with s_coopCoprocReg) when a preemptive context
- * switch occurs.
+ * save/restored (along with s_coopCoprocReg) when a preemptive context switch
+ * occurs.
  */
 typedef struct s_preempCoprocReg {
 	/*
-	 * This structure intentionally left blank, as for now coprocessor's stack
-	 * is positioned at top of the stack.
+	 * This structure intentionally left blank, as for now coprocessor's
+	 * stack is positioned at top of the stack.
 	 */
 #if XCHAL_CP_NUM > 0
 	char *cpStack;
@@ -128,9 +128,8 @@ typedef struct s_preempCoprocReg {
 struct _thread_arch {
 	/*
 	 * See the above flag definitions above for valid bit settings.  This
-	 * field must remain near the start of struct tcs, specifically
-	 * before any #ifdef'ed fields since the host tools currently use a
-	 * fixed
+	 * field must remain near the start of struct tcs, specifically before
+	 * any #ifdef'ed fields since the host tools currently use a fixed
 	 * offset to read the 'flags' field.
 	 */
 	uint32_t flags;
@@ -138,28 +137,37 @@ struct _thread_arch {
 	void *custom_data;     /* available for custom use */
 #endif
 #if defined(CONFIG_THREAD_MONITOR)
-	struct __thread_entry *entry; /* thread entry and parameters description */
-	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
+	/* thread entry and parameters description */
+	struct __thread_entry *entry;
+
+	/* next item in list of ALL fiber+tasks */
+	struct tcs *next_thread;
 #endif
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif
 	/*
 	 * The location of all floating point related structures/fields MUST be
-	 * located at the end of struct tcs.  This way only the
-	 * fibers/tasks that actually utilize non-integer capabilities need to
-	 * account for the increased memory required for storing FP state when
-	 * sizing stacks.
+	 * located at the end of struct tcs.  This way only the fibers/tasks
+	 * that actually utilize non-integer capabilities need to account for
+	 * the increased memory required for storing FP state when sizing
+	 * stacks.
 	 *
-	 * Given that stacks "grow down" on Xtensa, and the TCS is located
-	 * at the start of a thread's "workspace" memory, the stacks of
+	 * Given that stacks "grow down" on Xtensa, and the TCS is located at
+	 * the start of a thread's "workspace" memory, the stacks of
 	 * fibers/tasks that do not utilize floating point instruction can
-	 * effectively consume the memory occupied by the 'tCoopCoprocReg' and
-	 * 'tPreempCoprocReg' structures without ill effect.
+	 * effectively consume the memory occupied by the 'tCoopCoprocReg'
+	 * and 'tPreempCoprocReg' structures without ill effect.
+	 *
+	 * TODO: Move Xtensa coprocessor's stack here to get rid of extra
+	 * indirection
 	 */
-	 /* TODO: Move Xtensa coprocessor's stack here to get rid of extra indirection */
-	tCoopCoprocReg coopCoprocReg; /* non-volatile coprocessor's register storage */
-	tPreempCoprocReg preempCoprocReg; /* volatile coprocessor's register storage */
+
+	 /* non-volatile coprocessor's register storage */
+	tCoopCoprocReg coopCoprocReg;
+
+	/* volatile coprocessor's register storage */
+	tPreempCoprocReg preempCoprocReg;
 };
 
 typedef struct _thread_arch _thread_arch_t;
