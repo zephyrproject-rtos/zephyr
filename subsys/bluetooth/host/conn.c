@@ -1020,12 +1020,32 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 
 static struct k_poll_signal conn_change = K_POLL_SIGNAL_INITIALIZER();
 
+static void conn_cleanup(struct bt_conn *conn)
+{
+	struct net_buf *buf;
+
+	/* Give back any allocated buffers */
+	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
+
+	BT_ASSERT(!conn->pending_pkts);
+
+	bt_conn_reset_rx_state(conn);
+
+	/* Release the reference we took for the very first
+	 * state transition.
+	 */
+	bt_conn_unref(conn);
+}
+
 int bt_conn_prepare_events(struct k_poll_event events[])
 {
 	int i, ev_count = 0;
 
 	BT_DBG("");
 
+	conn_change.signaled = 0;
 	k_poll_event_init(&events[ev_count++], K_POLL_TYPE_SIGNAL,
 			  K_POLL_MODE_NOTIFY_ONLY, &conn_change);
 
@@ -1033,6 +1053,12 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 		struct bt_conn *conn = &conns[i];
 
 		if (!atomic_get(&conn->ref)) {
+			continue;
+		}
+
+		if (conn->state == BT_CONN_DISCONNECTED &&
+		    atomic_test_and_clear_bit(conn->flags, BT_CONN_CLEANUP)) {
+			conn_cleanup(conn);
 			continue;
 		}
 
@@ -1058,23 +1084,10 @@ void bt_conn_process_tx(struct bt_conn *conn)
 
 	BT_DBG("conn %p", conn);
 
-	if (conn->state != BT_CONN_CONNECTED) {
+	if (conn->state == BT_CONN_DISCONNECTED &&
+	    atomic_test_and_clear_bit(conn->flags, BT_CONN_CLEANUP)) {
 		BT_DBG("handle %u disconnected - cleaning up", conn->handle);
-
-		/* Give back any allocated buffers */
-		while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
-			net_buf_unref(buf);
-		}
-
-		BT_ASSERT(!conn->pending_pkts);
-
-		bt_conn_reset_rx_state(conn);
-
-		/* Release the reference we took for the very first
-		 * state transition.
-		 */
-		bt_conn_unref(conn);
-
+		conn_cleanup(conn);
 		return;
 	}
 
@@ -1170,8 +1183,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 				k_delayed_work_cancel(&conn->le.update_work);
 			}
 
-			net_buf_put(&conn->tx_queue,
-				    bt_conn_create_pdu(NULL, 0));
+			atomic_set_bit(conn->flags, BT_CONN_CLEANUP);
+			k_poll_signal(&conn_change, 0);
 			/* The last ref will be dropped by the tx_thread */
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */
