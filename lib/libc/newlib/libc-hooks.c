@@ -11,6 +11,11 @@
 #include <misc/util.h>
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
+
+#if CONFIG_ARM
+#include <soc.h>
+#endif
+
 #if CONFIG_X86
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_PHYS_RAM_ADDR)
 #define MAX_HEAP_SIZE ((KB(CONFIG_RAM_SIZE)) - USED_RAM_SIZE)
