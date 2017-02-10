@@ -23,6 +23,7 @@ enum {
 	BT_CONN_BR_PAIRING,		/* BR connection in pairing context */
 	BT_CONN_BR_NOBOND,		/* SSP no bond pairing tracker */
 	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
+	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
