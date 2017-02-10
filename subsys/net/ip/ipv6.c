@@ -2241,6 +2241,7 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 {
 	struct net_buf *buf;
 	struct in6_addr dst;
+	uint16_t pos;
 	int ret;
 
 	/* Sent to all MLDv2-capable routers */
@@ -2253,21 +2254,42 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 				  net_if_ipv6_select_src_addr(iface, &dst),
 				  &dst,
 				  iface,
-				  IPPROTO_ICMPV6);
+				  NET_IPV6_NEXTHDR_HBHO);
 
 	NET_IPV6_BUF(buf)->hop_limit = 1; /* RFC 3810 ch 7.4 */
 
-	NET_ICMP_BUF(buf)->type = NET_ICMPV6_MLDv2;
-	NET_ICMP_BUF(buf)->code = 0;
+	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
+	net_nbuf_append_u8(buf, IPPROTO_ICMPV6);
+	net_nbuf_append_u8(buf, 0); /* length (0 means 8 bytes) */
 
-	net_nbuf_set_len(buf->frags, NET_IPV6ICMPH_LEN);
+#define ROUTER_ALERT_LEN 8
+
+	/* IPv6 router alert option is described in RFC 2711. */
+	net_nbuf_append_be16(buf, 0x0502); /* RFC 2711 ch 2.1 */
+	net_nbuf_append_be16(buf, 0); /* pkt contains MLD msg */
+
+	net_nbuf_append_u8(buf, 0); /* padding */
+	net_nbuf_append_u8(buf, 0); /* padding */
+
+	/* ICMPv6 header */
+	net_nbuf_append_u8(buf, NET_ICMPV6_MLDv2); /* type */
+	net_nbuf_append_u8(buf, 0); /* code */
+	net_nbuf_append_be16(buf, 0); /* chksum */
+
+	net_nbuf_set_len(buf->frags, NET_IPV6ICMPH_LEN + ROUTER_ALERT_LEN);
 	net_nbuf_set_iface(buf, iface);
 
 	net_nbuf_append_be16(buf, 0); /* reserved field */
 
 	buf = create_mldv2(buf, addr, mode);
 
-	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	buf = net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
+
+	net_nbuf_set_ext_len(buf, ROUTER_ALERT_LEN);
+
+	net_nbuf_write_be16(buf, buf->frags,
+			    NET_IPV6H_LEN + ROUTER_ALERT_LEN + 2,
+			    &pos, ntohs(~net_calc_chksum_icmpv6(buf)));
 
 	ret = net_send_data(buf);
 	if (ret < 0) {
