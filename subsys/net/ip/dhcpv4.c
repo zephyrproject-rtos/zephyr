@@ -315,6 +315,7 @@ static void setup_header(struct net_buf *buf)
 	udp->src_port = htons(DHCPV4_CLIENT_PORT);
 	udp->dst_port = htons(DHCPV4_SERVER_PORT);
 	udp->len = htons(len);
+	udp->chksum = 0;
 	udp->chksum = ~net_calc_chksum_udp(buf);
 }
 
