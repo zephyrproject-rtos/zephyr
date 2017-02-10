@@ -23,6 +23,7 @@
 #include <net/nbuf.h>
 #include <net/net_stats.h>
 #include <net/net_context.h>
+#include <net/net_mgmt.h>
 #include "net_private.h"
 #include "icmpv6.h"
 #include "ipv6.h"
@@ -2284,6 +2285,7 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 {
 	const struct net_if_mcast_addr *maddr;
+	int ret;
 
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
 	if (maddr) {
@@ -2295,16 +2297,32 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 		return -ENOMEM;
 	}
 
-	return send_mldv2(iface, addr, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
+	ret = send_mldv2(iface, addr, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_MCAST_JOIN, iface);
+
+	return ret;
 }
 
 int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 {
+	int ret;
+
 	if (!net_if_ipv6_maddr_rm(iface, addr)) {
 		return -EINVAL;
 	}
 
-	return send_mldv2(iface, addr, NET_IPV6_MLDv2_MODE_IS_INCLUDE);
+	ret = send_mldv2(iface, addr, NET_IPV6_MLDv2_MODE_IS_INCLUDE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_MCAST_LEAVE, iface);
+
+	return ret;
 }
 #endif /* CONFIG_NET_IPV6_MLD */
 
