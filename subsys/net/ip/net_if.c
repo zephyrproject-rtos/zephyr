@@ -67,6 +67,76 @@ static inline void net_context_send_cb(struct net_context *context,
 #endif
 }
 
+static void iface_send_data(struct net_if *iface, struct net_buf *buf)
+{
+	const struct net_if_api *api = iface->dev->driver_api;
+	struct net_linkaddr *dst;
+	struct net_context *context;
+	void *context_token;
+	int status;
+#if defined(CONFIG_NET_STATISTICS)
+	size_t pkt_len;
+#endif
+
+	debug_check_packet(buf);
+
+	dst = net_nbuf_ll_dst(buf);
+	context = net_nbuf_context(buf);
+	context_token = net_nbuf_token(buf);
+
+	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+#if defined(CONFIG_NET_STATISTICS)
+		pkt_len = net_buf_frags_len(buf);
+#endif
+		status = api->send(iface, buf);
+	} else {
+		/* Drop packet if interface is not up */
+		NET_WARN("iface %p is down", iface);
+		status = -ENETDOWN;
+	}
+
+	if (status < 0) {
+		net_nbuf_unref(buf);
+	} else {
+		net_stats_update_bytes_sent(pkt_len);
+	}
+
+	if (context) {
+		NET_DBG("Calling context send cb %p token %p status %d",
+			context, context_token, status);
+
+		net_context_send_cb(context, context_token, status);
+	}
+
+	net_if_call_link_cb(iface, dst, status);
+}
+
+static void net_if_flush_tx(struct net_if *iface)
+{
+	if (k_fifo_is_empty(&iface->tx_queue)) {
+		return;
+	}
+
+	/* Without this, the net_buf_get() can return a buf which
+	 * has buf->frags set to NULL. This is not allowed as we
+	 * cannot send a packet that has no data in it.
+	 * The k_yield() fixes the issue and packets are flushed
+	 * correctly.
+	 */
+	k_yield();
+
+	while (1) {
+		struct net_buf *buf;
+
+		buf = net_buf_get(&iface->tx_queue, K_NO_WAIT);
+		if (!buf) {
+			break;
+		}
+
+		iface_send_data(iface, buf);
+	}
+}
+
 static void net_if_tx_thread(struct net_if *iface)
 {
 	const struct net_if_api *api = iface->dev->driver_api;
@@ -81,48 +151,12 @@ static void net_if_tx_thread(struct net_if *iface)
 	net_if_up(iface);
 
 	while (1) {
-		struct net_linkaddr *dst;
-		struct net_context *context;
-		void *context_token;
 		struct net_buf *buf;
-		int status;
-#if defined(CONFIG_NET_STATISTICS)
-		size_t pkt_len;
-#endif
+
 		/* Get next packet from application - wait if necessary */
 		buf = net_buf_get(&iface->tx_queue, K_FOREVER);
 
-		debug_check_packet(buf);
-
-		dst = net_nbuf_ll_dst(buf);
-		context = net_nbuf_context(buf);
-		context_token = net_nbuf_token(buf);
-
-		if (atomic_test_bit(iface->flags, NET_IF_UP)) {
-#if defined(CONFIG_NET_STATISTICS)
-			pkt_len = net_buf_frags_len(buf);
-#endif
-			status = api->send(iface, buf);
-		} else {
-			/* Drop packet if interface is not up */
-			NET_WARN("iface %p is down", iface);
-			status = -ENETDOWN;
-		}
-
-		if (status < 0) {
-			net_nbuf_unref(buf);
-		} else {
-			net_stats_update_bytes_sent(pkt_len);
-		}
-
-		if (context) {
-			NET_DBG("Calling context send cb %p token %p status %d",
-				context, context_token, status);
-
-			net_context_send_cb(context, context_token, status);
-		}
-
-		net_if_call_link_cb(iface, dst, status);
+		iface_send_data(iface, buf);
 
 		net_analyze_stack("TX thread", iface->tx_stack,
 				  sizeof(iface->tx_stack));
@@ -1484,10 +1518,9 @@ int net_if_down(struct net_if *iface)
 
 	NET_DBG("iface %p", iface);
 
-	/* FIXME: Make sure that the IPV6 mcast leave message
-	 * gets actually sent.
-	 */
 	leave_mcast_all(iface);
+
+	net_if_flush_tx(iface);
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!iface->l2->enable) {
