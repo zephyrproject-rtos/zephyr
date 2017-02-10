@@ -109,7 +109,6 @@ Refer to the board documentation in Zephyr, :ref:`frdm_k64f`,
 for more information about this board and how to access the FRDM
 serial console under other operating systems.
 
-
 Sample Output
 =============
 
@@ -223,6 +222,60 @@ and this is the HTML message that wget will save:
 	<body><h1><center>404 Not Found</center></h1></body>
 	</html>
 
+HTTPS Server
+============
+
+The sample code also includes a HTTPS (HTTP over TLS) server example
+running side by side with the HTTP server, this server runs on qemu.
+In order to compile and run the code execute:
+
+.. code-block:: console
+
+        make BOARD=qemu_x86 run
+
+The sample code supports only one hard-coded valid URL (index.html) and
+will return 404 code for other requests.
+
+Sample Output
+=============
+
+The app will show the following on the screen:
+
+.. code-block:: console
+
+	Zephyr HTTP Server
+	Address: 192.0.2.1, port: 80
+	Zephyr HTTPS Server
+	Address: 192.0.2.1, port: 443
+	failed
+	! mbedtls_ssl_handshake returned -29312
+
+Now execute the following command on a different terminal window
+
+.. code-block:: console
+
+	wget https://192.0.2.1 --no-check-certificate
+
+This will be shown on the screen
+
+.. code-block:: console
+
+	Connecting to 192.0.2.1:443... connected.
+	WARNING: cannot verify 192.0.2.1's certificate
+	Unable to locally verify the issuer's authority.
+	HTTP request sent, awaiting response... 200 OK
+	Length: unspecified [text/html]
+	Saving to: ‘index.html’
+
+	index.html                                            [ <=> ]
+
+The inspection of the file index.html will show
+
+.. code-block:: console
+
+	<h2>Zephyr TLS Test Server</h2>
+	<p>Successful connection</p>
+
 Known Issues and Limitations
 ============================
 
@@ -230,3 +283,5 @@ Known Issues and Limitations
   chunk transfer mode.
 - Clients must close the connection to allow the HTTP server to release
   the network context and accept another connection.
+- The use of mbedTLS and IPv6 takes more than the available ram for the
+  emulation platform, so only IPv4 works for now in QEMU.

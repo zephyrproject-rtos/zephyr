@@ -20,6 +20,10 @@ static
 int network_setup(struct net_context **net_ctx, net_tcp_accept_cb_t accept_cb,
 		  const char *addr, uint16_t port);
 
+#if defined(CONFIG_MBEDTLS)
+#include "ssl_utils.h"
+#endif
+
 void main(void)
 {
 	struct net_context *net_ctx = NULL;
@@ -101,6 +105,9 @@ int network_setup(struct net_context **net_ctx, net_tcp_accept_cb_t accept_cb,
 
 	print_server_banner(&local_sock);
 
+#if defined(CONFIG_MBEDTLS)
+	https_server_start();
+#endif
 	return 0;
 
 lb_error:
