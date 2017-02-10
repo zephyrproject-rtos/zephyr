@@ -594,7 +594,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr);
  * @return Pointer to interface multicast address, NULL if cannot be added
  */
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
-						struct in6_addr *addr);
+						const struct in6_addr *addr);
 
 /**
  * @brief Remove an IPv6 multicast address from an interface
@@ -604,13 +604,15 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv6_maddr_rm(struct net_if *iface, struct in6_addr *addr);
+bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr);
 
 /**
- * @brief Check if this IPv6 multicast address belongs to one of the interfaces.
+ * @brief Check if this IPv6 multicast address belongs to a specific interface
+ * or one of the interfaces.
  *
  * @param addr IPv6 address
- * @param iface Pointer to interface is returned
+ * @param iface If *iface is null, then pointer to interface is returned,
+ * otherwise the *iface value needs to be matched.
  *
  * @return Pointer to interface multicast address, NULL if not found.
  */
