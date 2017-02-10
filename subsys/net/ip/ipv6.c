@@ -476,6 +476,55 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #define dbg_update_neighbor_lladdr_raw(...)
 #endif /* CONFIG_NET_DEBUG_IPV6 */
 
+#if defined(CONFIG_NET_DEBUG_IPV6)
+#define dbg_addr(action, pkt_str, src, dst)				\
+	do {								\
+		char out[NET_IPV6_ADDR_LEN];				\
+									\
+		snprintk(out, sizeof(out), "%s",			\
+			 net_sprint_ipv6_addr(dst));			\
+									\
+		NET_DBG("%s %s from %s to %s", action,			\
+			pkt_str, net_sprint_ipv6_addr(src), out);	\
+									\
+	} while (0)
+
+#define dbg_addr_recv(pkt_str, src, dst)	\
+	dbg_addr("Received", pkt_str, src, dst)
+
+#define dbg_addr_sent(pkt_str, src, dst)	\
+	dbg_addr("Sent", pkt_str, src, dst)
+
+#define dbg_addr_with_tgt(action, pkt_str, src, dst, target)		\
+	do {								\
+		char out[NET_IPV6_ADDR_LEN];				\
+		char tgt[NET_IPV6_ADDR_LEN];				\
+									\
+		snprintk(out, sizeof(out), "%s",			\
+			 net_sprint_ipv6_addr(dst));			\
+		snprintk(tgt, sizeof(tgt), "%s",			\
+			 net_sprint_ipv6_addr(target));			\
+									\
+		NET_DBG("%s %s from %s to %s, target %s", action,	\
+			pkt_str, net_sprint_ipv6_addr(src), out, tgt);	\
+									\
+	} while (0)
+
+#define dbg_addr_recv_tgt(pkt_str, src, dst, tgt)		\
+	dbg_addr_with_tgt("Received", pkt_str, src, dst, tgt)
+
+#define dbg_addr_sent_tgt(pkt_str, src, dst, tgt)		\
+	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt)
+#else
+#define dbg_addr(...)
+#define dbg_addr_recv(...)
+#define dbg_addr_sent(...)
+
+#define dbg_addr_with_tgt(...)
+#define dbg_addr_recv_tgt(...)
+#define dbg_addr_sent_tgt(...)
+#endif /* CONFIG_NET_DEBUG_IPV6 */
+
 #if defined(CONFIG_NET_IPV6_ND)
 #define NS_REPLY_TIMEOUT MSEC_PER_SEC
 
@@ -846,55 +895,6 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 		}
 	}
 }
-
-#if defined(CONFIG_NET_DEBUG_IPV6)
-#define dbg_addr(action, pkt_str, src, dst)				\
-	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
-									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(dst));			\
-									\
-		NET_DBG("%s %s from %s to %s", action,			\
-			pkt_str, net_sprint_ipv6_addr(src), out);	\
-									\
-	} while (0)
-
-#define dbg_addr_recv(pkt_str, src, dst)	\
-	dbg_addr("Received", pkt_str, src, dst)
-
-#define dbg_addr_sent(pkt_str, src, dst)	\
-	dbg_addr("Sent", pkt_str, src, dst)
-
-#define dbg_addr_with_tgt(action, pkt_str, src, dst, target)		\
-	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
-		char tgt[NET_IPV6_ADDR_LEN];				\
-									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(dst));			\
-		snprintk(tgt, sizeof(tgt), "%s",			\
-			 net_sprint_ipv6_addr(target));			\
-									\
-		NET_DBG("%s %s from %s to %s, target %s", action,	\
-			pkt_str, net_sprint_ipv6_addr(src), out, tgt);	\
-									\
-	} while (0)
-
-#define dbg_addr_recv_tgt(pkt_str, src, dst, tgt)		\
-	dbg_addr_with_tgt("Received", pkt_str, src, dst, tgt)
-
-#define dbg_addr_sent_tgt(pkt_str, src, dst, tgt)		\
-	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt)
-#else
-#define dbg_addr(...)
-#define dbg_addr_recv(...)
-#define dbg_addr_sent(...)
-
-#define dbg_addr_with_tgt(...)
-#define dbg_addr_recv_tgt(...)
-#define dbg_addr_sent_tgt(...)
-#endif /* CONFIG_NET_DEBUG_IPV6 */
 
 int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 		     struct in6_addr *dst, struct in6_addr *tgt,
@@ -2219,25 +2219,26 @@ drop:
 
 static struct net_buf *create_mldv2(struct net_buf *buf,
 				    const struct in6_addr *addr,
-				    uint16_t record_type)
+				    uint16_t record_type,
+				    uint8_t num_sources)
 {
-	net_nbuf_append_be16(buf, 1); /* number of records */
 	net_nbuf_append_u8(buf, record_type);
 	net_nbuf_append_u8(buf, 0); /* aux data len */
-	net_nbuf_append_be16(buf, 1); /* number of addresses */
+	net_nbuf_append_be16(buf, num_sources); /* number of addresses */
 	net_nbuf_append(buf, sizeof(struct in6_addr), addr->s6_addr,
 			K_FOREVER);
 
-	/* All source addresses, RFC 3810 ch 3 */
-	net_nbuf_append(buf, sizeof(struct in6_addr),
-			net_ipv6_unspecified_address()->s6_addr,
-			K_FOREVER);
+	if (num_sources > 0) {
+		/* All source addresses, RFC 3810 ch 3 */
+		net_nbuf_append(buf, sizeof(struct in6_addr),
+				net_ipv6_unspecified_address()->s6_addr,
+				K_FOREVER);
+	}
 
 	return buf;
 }
 
-static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
-		      uint8_t mode)
+static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 {
 	struct net_buf *buf;
 	struct in6_addr dst;
@@ -2281,7 +2282,8 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 
 	net_nbuf_append_be16(buf, 0); /* reserved field */
 
-	buf = create_mldv2(buf, addr, mode);
+	/* Insert the actual multicast record(s) here */
+	net_buf_frag_add(buf, frags);
 
 	buf = net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
 
@@ -2302,6 +2304,28 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 	net_stats_update_icmp_sent();
 
 	return 0;
+}
+
+static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
+		      uint8_t mode)
+{
+	struct net_buf *buf;
+	int ret;
+
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+				      K_FOREVER);
+
+	net_nbuf_append_be16(buf, 1); /* number of records */
+
+	buf = create_mldv2(buf, addr, mode, 1);
+
+	ret = send_mldv2_raw(iface, buf->frags);
+
+	buf->frags = NULL;
+
+	net_nbuf_unref(buf);
+
+	return ret;
 }
 
 int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
@@ -2350,6 +2374,98 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 
 	return ret;
 }
+
+static void send_mld_report(struct net_if *iface)
+{
+	struct net_buf *buf;
+	int i, count = 0;
+
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+				      K_FOREVER);
+
+	net_nbuf_append_u8(buf, 0); /* This will be the record count */
+
+	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (!iface->ipv6.mcast[i].is_used ||
+		    !iface->ipv6.mcast[i].is_joined) {
+			continue;
+		}
+
+		buf = create_mldv2(buf, &iface->ipv6.mcast[i].address.in6_addr,
+				   NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0);
+		count++;
+	}
+
+	if (count > 0) {
+		uint16_t pos;
+
+		/* Write back the record count */
+		net_nbuf_write_u8(buf, buf->frags, 0, &pos, count);
+
+		send_mldv2_raw(iface, buf->frags);
+
+		buf->frags = NULL;
+	}
+
+	net_nbuf_unref(buf);
+}
+
+static enum net_verdict handle_mld_query(struct net_buf *buf)
+{
+	uint16_t total_len = net_buf_frags_len(buf);
+	struct in6_addr mcast;
+	uint16_t max_rsp_code, num_src, pkt_len;
+	uint16_t offset, pos;
+	struct net_buf *frag;
+
+	dbg_addr_recv("Multicast Listener Query",
+		      &NET_IPV6_BUF(buf)->src,
+		      &NET_IPV6_BUF(buf)->dst);
+
+	/* offset tells now where the ICMPv6 header is starting */
+	offset = net_nbuf_icmp_data(buf) - net_nbuf_ip_data(buf);
+	offset += sizeof(struct net_icmp_hdr);
+
+	frag = net_nbuf_read_be16(buf->frags, offset, &pos, &max_rsp_code);
+	frag = net_nbuf_skip(frag, pos, &pos, 2); /* two reserved bytes */
+	frag = net_nbuf_read(frag, pos, &pos, sizeof(mcast), mcast.s6_addr);
+	frag = net_nbuf_skip(frag, pos, &pos, 2); /* skip S, QRV & QQIC */
+	frag = net_nbuf_read_be16(buf->frags, pos, &pos, &num_src);
+	if (!frag && pos == 0xffff) {
+		goto drop;
+	}
+
+	pkt_len = sizeof(struct net_ipv6_hdr) +	net_nbuf_ext_len(buf) +
+		sizeof(struct net_icmp_hdr) + (2 + 2 + 16 + 2 + 2) +
+		sizeof(struct in6_addr) * num_src;
+
+	if ((total_len < pkt_len || pkt_len > NET_IPV6_MTU ||
+	     (NET_ICMP_BUF(buf)->code != 0) ||
+	     (NET_IPV6_BUF(buf)->hop_limit != 1))) {
+		NET_DBG("Preliminary check failed %u/%u, code %u, hop %u",
+			total_len, pkt_len,
+			NET_ICMP_BUF(buf)->code, NET_IPV6_BUF(buf)->hop_limit);
+		goto drop;
+	}
+
+	/* Currently we only support a unspecified address query. */
+	if (!net_ipv6_addr_cmp(&mcast, net_ipv6_unspecified_address())) {
+		NET_DBG("Only supporting unspecified address query (%s)",
+			net_sprint_ipv6_addr(&mcast));
+		goto drop;
+	}
+
+	send_mld_report(net_nbuf_iface(buf));
+
+drop:
+	return NET_DROP;
+}
+
+static struct net_icmpv6_handler mld_query_input_handler = {
+	.type = NET_ICMPV6_MLD_QUERY,
+	.code = 0,
+	.handler = handle_mld_query,
+};
 #endif /* CONFIG_NET_IPV6_MLD */
 
 #if defined(CONFIG_NET_IPV6_ND)
@@ -2378,5 +2494,8 @@ void net_ipv6_init(void)
 	net_icmpv6_register_handler(&ns_input_handler);
 	net_icmpv6_register_handler(&na_input_handler);
 	net_icmpv6_register_handler(&ra_input_handler);
+#endif
+#if defined(CONFIG_NET_IPV6_MLD)
+	net_icmpv6_register_handler(&mld_query_input_handler);
 #endif
 }
