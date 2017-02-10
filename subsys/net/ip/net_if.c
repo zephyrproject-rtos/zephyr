@@ -265,35 +265,24 @@ static void join_mcast_solicit_node(struct net_if *iface,
 	net_ipv6_mld_join(iface, &addr);
 }
 
-static void leave_mcast_allnodes(struct net_if *iface)
+static void leave_mcast_all(struct net_if *iface)
 {
-	struct in6_addr addr;
-
-	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
-	net_ipv6_mld_leave(iface, &addr);
-}
-
-static void leave_mcast_solicit_node_all(struct net_if *iface)
-{
-	struct in6_addr addr;
 	int i;
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (!iface->ipv6.mcast[i].is_used) {
+		if (!iface->ipv6.mcast[i].is_used ||
+		    !iface->ipv6.mcast[i].is_joined) {
 			continue;
 		}
 
-		net_ipv6_addr_create_solicited_node(
-			&iface->ipv6.mcast[i].address.in6_addr, &addr);
-
-		net_ipv6_mld_leave(iface, &addr);
+		net_ipv6_mld_leave(iface,
+				   &iface->ipv6.mcast[i].address.in6_addr);
 	}
 }
 #else
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
-#define leave_mcast_allnodes(...)
-#define leave_mcast_solicit_node_all(...)
+#define leave_mcast_all(...)
 #endif /* CONFIG_NET_IPV6_MLD */
 
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -1186,8 +1175,7 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface)
 #else /* CONFIG_NET_IPV6 */
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
-#define leave_mcast_allnodes(...)
-#define leave_mcast_solicit_node_all(...)
+#define leave_mcast_all(...)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -1499,8 +1487,7 @@ int net_if_down(struct net_if *iface)
 	/* FIXME: Make sure that the IPV6 mcast leave message
 	 * gets actually sent.
 	 */
-	leave_mcast_allnodes(iface);
-	leave_mcast_solicit_node_all(iface);
+	leave_mcast_all(iface);
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!iface->l2->enable) {

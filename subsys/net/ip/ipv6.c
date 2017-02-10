@@ -2284,7 +2284,7 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 
 int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 {
-	const struct net_if_mcast_addr *maddr;
+	struct net_if_mcast_addr *maddr;
 	int ret;
 
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
@@ -2301,6 +2301,8 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 	if (ret < 0) {
 		return ret;
 	}
+
+	net_if_ipv6_maddr_join(maddr);
 
 	net_mgmt_event_notify(NET_EVENT_IPV6_MCAST_JOIN, iface);
 

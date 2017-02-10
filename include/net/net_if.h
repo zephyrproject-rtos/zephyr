@@ -75,7 +75,12 @@ struct net_if_addr {
  */
 struct net_if_mcast_addr {
 	/** Is this multicast IP address used or not */
-	bool is_used;
+	uint8_t is_used : 1;
+
+	/** Did we join to this group */
+	uint8_t is_joined : 1;
+
+	uint8_t _unused : 6;
 
 	/** IP address */
 	struct net_addr address;
@@ -630,6 +635,30 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr);
  */
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
 						   struct net_if **iface);
+
+/**
+ * @brief Mark a given multicast address to be joined.
+ *
+ * @param addr IPv6 multicast address
+ */
+static inline void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr)
+{
+	NET_ASSERT(addr);
+
+	addr->is_joined = true;
+}
+
+/**
+ * @brief Mark a given multicast address to be left.
+ *
+ * @param addr IPv6 multicast address
+ */
+static inline void net_if_ipv6_maddr_leave(struct net_if_mcast_addr *addr)
+{
+	NET_ASSERT(addr);
+
+	addr->is_joined = false;
+}
 
 /**
  * @brief Check if this IPv6 prefix belongs to this interface
