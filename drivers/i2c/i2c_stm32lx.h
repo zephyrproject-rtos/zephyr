@@ -184,7 +184,7 @@ struct i2c_stm32lx_config {
 	void *base;
 	irq_config_func_t irq_config_func;
 	/* clock subsystem driving this peripheral */
-	clock_control_subsys_t clock_subsys;
+	struct stm32_pclken pclken;
 };
 
 /* driver data */

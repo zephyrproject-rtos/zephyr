@@ -9,7 +9,6 @@
 #define _STM32L4X_SOC_REGISTERS_H_
 
 /* include register mapping headers */
-#include "rcc_registers.h"
 #include "flash_registers.h"
 #include "syscfg_registers.h"
 

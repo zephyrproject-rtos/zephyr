@@ -88,7 +88,7 @@ _stack_frame_endif:
 	eors.n r0, r0
 	msr BASEPRI, r0
 
-	/* this reimplements _ScbIsNestedExc() */
+	/* this checks to see if we are in a nested exception */
 	ldr ip, =_SCS_ICSR
 	ldr ip, [ip]
 	ands.w ip, #_SCS_ICSR_RETTOBASE

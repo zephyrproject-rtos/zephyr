@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "flash_stm32f3x.h"
+#include <clock_control/stm32_clock_control.h>
 #include <misc/__assert.h>
 #include <string.h>
+
+#include "flash_stm32f3x.h"
 
 void flash_stm32_unlock(struct device *flash)
 {

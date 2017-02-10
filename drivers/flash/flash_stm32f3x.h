@@ -14,7 +14,7 @@
 
 struct flash_stm32_dev_config {
 	uint32_t *base;
-	clock_control_subsys_t clock_subsys;
+	struct stm32_pclken pclken;
 };
 
 struct flash_stm32_dev_data {

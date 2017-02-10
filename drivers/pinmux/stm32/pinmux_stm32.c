@@ -16,13 +16,33 @@
 #include <kernel.h>
 #include <device.h>
 #include <soc.h>
-#include "pinmux.h"
 #include <pinmux.h>
 #include <gpio/gpio_stm32.h>
 #include <clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
 
-#ifdef CONFIG_SOC_SERIES_STM32F4X
+#include "pinmux.h"
+
+#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+static const uint32_t ports_enable[STM32_PORTS_MAX] = {
+	STM32_PERIPH_GPIOA,
+	STM32_PERIPH_GPIOB,
+	STM32_PERIPH_GPIOC,
+	STM32_PERIPH_GPIOD,
+#ifdef GPIOE_BASE
+	STM32_PERIPH_GPIOE,
+#endif
+#ifdef GPIOF_BASE
+	STM32_PERIPH_GPIOF,
+#endif
+#ifdef GPIOG_BASE
+	STM32_PERIPH_GPIOG,
+#endif
+#ifdef GPIOH_BASE
+	STM32_PERIPH_GPIOH,
+#endif
+};
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
 static const uint32_t ports_enable[STM32_PORTS_MAX] = {
 	STM32F4X_CLOCK_ENABLE_GPIOA,
 	STM32F4X_CLOCK_ENABLE_GPIOB,
@@ -51,20 +71,27 @@ static int enable_port(uint32_t port, struct device *clk)
 	}
 
 	/* TODO: Merge this and move the port clock to the soc file */
-#ifdef	CONFIG_SOC_SERIES_STM32F4X
-	struct stm32f4x_pclken pclken;
+#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+	struct stm32_pclken pclken;
 
+	pclken.bus = STM32_CLOCK_BUS_GPIO;
+	pclken.enr = ports_enable[port];
+
+	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+#else
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	clock_control_subsys_t subsys = stm32_get_port_clock(port);
+
+	return clock_control_on(clk, subsys);
+#elif CONFIG_SOC_SERIES_STM32F4X
+	struct stm32f4x_pclken pclken;
 	/* AHB1 bus for all the GPIO ports */
 	pclken.bus = STM32F4X_CLOCK_BUS_AHB1;
 	pclken.enr = ports_enable[port];
 
 	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
-
-#else /* SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X */
-	clock_control_subsys_t subsys = stm32_get_port_clock(port);
-
-	return clock_control_on(clk, subsys);
 #endif
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 }
 
 static int stm32_pin_configure(int pin, int func, int altf)
