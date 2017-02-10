@@ -684,7 +684,7 @@ int zoap_add_size2_option(struct zoap_packet *pkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_update_from_block(struct zoap_packet *pkt,
+int zoap_update_from_block(const struct zoap_packet *pkt,
 			   struct zoap_block_context *ctx);
 
 /**

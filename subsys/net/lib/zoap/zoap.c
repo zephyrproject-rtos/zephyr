@@ -548,7 +548,7 @@ static zoap_method_t method_from_code(const struct zoap_resource *resource,
 	}
 }
 
-static bool is_request(struct zoap_packet *pkt)
+static bool is_request(const struct zoap_packet *pkt)
 {
 	uint8_t code = zoap_header_get_code(pkt);
 
@@ -1210,7 +1210,7 @@ struct block_transfer {
 	bool more;
 };
 
-static int get_block_option(struct zoap_packet *pkt, uint16_t code)
+static int get_block_option(const struct zoap_packet *pkt, uint16_t code)
 {
 	struct zoap_option option;
 	unsigned int val;
@@ -1302,7 +1302,7 @@ static int update_control_block2(struct zoap_block_context *ctx,
 	return 0;
 }
 
-int zoap_update_from_block(struct zoap_packet *pkt,
+int zoap_update_from_block(const struct zoap_packet *pkt,
 			   struct zoap_block_context *ctx)
 {
 	int r, block1, block2, size1, size2;
