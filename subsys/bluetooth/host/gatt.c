@@ -755,7 +755,7 @@ static void remove_subscriptions(struct bt_conn *conn)
 			gatt_subscription_remove(conn, &prev->node, params);
 		} else {
 			update_subscription(conn, params);
-			prev = node;
+			prev = params;
 		}
 	}
 }
