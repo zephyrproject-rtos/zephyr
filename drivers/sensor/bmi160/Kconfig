@@ -18,7 +18,7 @@ menuconfig BMI160
 config BMI160_NAME
 	string "Driver's name"
 	depends on BMI160
-	default "bmi160"
+	default "BMI160"
 
 config BMI160_SPI_PORT_NAME
 	string "SPI master controller port name"
