@@ -121,10 +121,10 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 {
 	static const char * const name[] = {
 		"init",
-		"discover",
-		"request",
-		"renewal",
-		"ack"
+		"selecting",
+		"requesting",
+		"renewing",
+		"bound",
 	};
 
 	__ASSERT_NO_MSG(state >= 0 && state < sizeof(name));
@@ -391,9 +391,9 @@ static void send_request(struct net_if *iface, bool renewal)
 	}
 
 	if (renewal) {
-		iface->dhcpv4.state = NET_DHCPV4_RENEWAL;
+		iface->dhcpv4.state = NET_DHCPV4_RENEWING;
 	} else {
-		iface->dhcpv4.state = NET_DHCPV4_REQUEST;
+		iface->dhcpv4.state = NET_DHCPV4_REQUESTING;
 	}
 
 	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << iface->dhcpv4.attempts;
@@ -442,7 +442,7 @@ static void send_discover(struct net_if *iface)
 
 	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << iface->dhcpv4.attempts;
 
-	iface->dhcpv4.state = NET_DHCPV4_DISCOVER;
+	iface->dhcpv4.state = NET_DHCPV4_SELECTING;
 
 	NET_DBG("enter state=%s xid=0x%"PRIx32" timeout=%"PRIu32"s",
 		net_dhcpv4_state_name(iface->dhcpv4.state),
@@ -478,11 +478,11 @@ static void dhcpv4_timeout(struct k_work *work)
 		/* Send an initial discover */
 		send_discover(iface);
 		break;
-	case NET_DHCPV4_DISCOVER:
+	case NET_DHCPV4_SELECTING:
 		/* Failed to get OFFER message, send DISCOVER again */
 		send_discover(iface);
 		break;
-	case NET_DHCPV4_REQUEST:
+	case NET_DHCPV4_REQUESTING:
 		/* Maximum number of renewal attempts failed, so start
 		 * from the beginning.
 		 */
@@ -495,7 +495,7 @@ static void dhcpv4_timeout(struct k_work *work)
 			send_request(iface, false);
 		}
 		break;
-	case NET_DHCPV4_RENEWAL:
+	case NET_DHCPV4_RENEWING:
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
 			iface->dhcpv4.attempts = 0;
 			NET_DBG("too many attempts, restart");
@@ -695,7 +695,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 	 * receives multiple OFFER messages, first one will be handled.
 	 * Rest of the replies are discarded.
 	 */
-	if (iface->dhcpv4.state == NET_DHCPV4_DISCOVER) {
+	if (iface->dhcpv4.state == NET_DHCPV4_SELECTING) {
 		if (msg_type != DHCPV4_MSG_TYPE_OFFER) {
 			NET_DBG("Reply ignored");
 			return;
@@ -707,8 +707,8 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 		iface->dhcpv4.attempts = 0;
 		send_request(iface, false);
 
-	} else if (iface->dhcpv4.state == NET_DHCPV4_REQUEST ||
-		   iface->dhcpv4.state == NET_DHCPV4_RENEWAL) {
+	} else if (iface->dhcpv4.state == NET_DHCPV4_REQUESTING ||
+		   iface->dhcpv4.state == NET_DHCPV4_RENEWING) {
 		uint32_t timeout;
 
 		if (msg_type != DHCPV4_MSG_TYPE_ACK) {
@@ -721,7 +721,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 		iface->dhcpv4.attempts = 0;
 
 		switch (iface->dhcpv4.state) {
-		case NET_DHCPV4_REQUEST:
+		case NET_DHCPV4_REQUESTING:
 			NET_INFO("Received: %s",
 				 net_sprint_ipv4_addr(
 					 &iface->dhcpv4.requested_ip));
@@ -735,7 +735,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 			}
 
 			break;
-		case NET_DHCPV4_RENEWAL:
+		case NET_DHCPV4_RENEWING:
 			/* TODO: If the renewal is success, update only
 			 * vlifetime on iface.
 			 */
@@ -745,7 +745,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 		}
 
 		timeout = get_dhcpv4_renewal_time(iface);
-		iface->dhcpv4.state = NET_DHCPV4_ACK;
+		iface->dhcpv4.state = NET_DHCPV4_BOUND;
 		NET_DBG("enter state=%s timeout=%"PRIu32"s",
 			net_dhcpv4_state_name(iface->dhcpv4.state),
 			timeout);
