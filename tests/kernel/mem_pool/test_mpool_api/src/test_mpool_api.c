@@ -76,11 +76,6 @@ void test_mpool_alloc_free_thread(void)
 	tmpool_alloc_free(NULL);
 }
 
-void test_mpool_alloc_free_isr(void)
-{
-	irq_offload(tmpool_alloc_free, NULL);
-}
-
 void test_mpool_alloc_size(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN];
