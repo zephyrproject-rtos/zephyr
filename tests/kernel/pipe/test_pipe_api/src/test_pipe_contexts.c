@@ -65,17 +65,6 @@ static void tpipe_get(struct k_pipe *ppipe)
 	}
 }
 
-/*entry of contexts*/
-static void tIsr_entry_put(void *p)
-{
-	tpipe_put((struct k_pipe *)p);
-}
-
-static void tIsr_entry_get(void *p)
-{
-	tpipe_get((struct k_pipe *)p);
-}
-
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
 	tpipe_get((struct k_pipe *)p1);
@@ -103,18 +92,6 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 	k_thread_abort(tid);
 }
 
-static void tpipe_thread_isr(struct k_pipe *ppipe)
-{
-	k_sem_init(&end_sema, 0, 1);
-
-	/**TESTPOINT: thread-isr data passing via pipe*/
-	irq_offload(tIsr_entry_put, ppipe);
-	tpipe_get(ppipe);
-
-	tpipe_put(ppipe);
-	irq_offload(tIsr_entry_get, ppipe);
-}
-
 /*test cases*/
 void test_pipe_thread2thread(void)
 {
@@ -126,12 +103,3 @@ void test_pipe_thread2thread(void)
 	tpipe_thread_thread(&kpipe);
 }
 
-void test_pipe_thread2isr(void)
-{
-	/**TESTPOINT: test k_pipe_init pipe*/
-	k_pipe_init(&pipe, data, PIPE_LEN);
-	tpipe_thread_isr(&pipe);
-
-	/**TESTPOINT: test K_PIPE_DEFINE pipe*/
-	tpipe_thread_isr(&kpipe);
-}
