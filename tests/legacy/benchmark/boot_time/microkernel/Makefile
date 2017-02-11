@@ -5,6 +5,8 @@ CONF_qemu_x86_iamcu	= ia32/prj_expert_test.conf
 CONF_minnowboard     	= ia32/prj_expert_test.conf
 CONF_galileo        	= quark_x1000/prj.conf
 CONF_arduino_101	= quark_se/quark_se_prj.conf
+CONF_tinytile		= quark_se/quark_se_prj.conf
+CONF_panther		= quark_se/quark_se_prj.conf
 
 MDEF_FILE = prj.mdef
 BOARD ?= qemu_x86
