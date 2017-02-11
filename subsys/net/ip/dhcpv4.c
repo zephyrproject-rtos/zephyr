@@ -320,14 +320,27 @@ static struct net_buf *prepare_message(struct net_if *iface, uint8_t type)
 	msg->xid = htonl(iface->dhcpv4.xid);
 	msg->flags = htons(DHCPV4_MSG_BROADCAST);
 
-	/* Send DHCPV4_MSG_TYPE_REQUEST,
-	 * ciaddr must 0.0.0.0, or router will return NAK
+	/* The ciaddr field is only filled in for messages in the
+	 * BOUND, RENEWING and REBINDING states.  We currently don't
+	 * implement the REBINDING state.
+	 * In other states the ciaddr is set to all zeros, no action
+	 * is required here due to the memset above.
 	 */
-	if ((iface->dhcpv4.state == NET_DHCPV4_INIT) ||
-	    (type == DHCPV4_MSG_TYPE_REQUEST)) {
-		memset(msg->ciaddr, 0, sizeof(msg->ciaddr));
-	} else {
+	switch (iface->dhcpv4.state) {
+	case NET_DHCPV4_DISABLED:
+	case NET_DHCPV4_INIT:
+		/* This path cannot happen. */
+		NET_ASSERT_INFO(0, "Invalid state %s",
+				net_dhcpv4_state_name(iface->dhcpv4.state));
+		break;
+	case NET_DHCPV4_SELECTING:
+	case NET_DHCPV4_REQUESTING:
+		/* Do not set ciaddr, we do not have one! */
+		break;
+	case NET_DHCPV4_RENEWING:
+	case NET_DHCPV4_BOUND:
 		memcpy(msg->ciaddr, iface->dhcpv4.requested_ip.s4_addr, 4);
+		break;
 	}
 
 	memcpy(msg->chaddr, iface->link_addr.addr, iface->link_addr.len);
