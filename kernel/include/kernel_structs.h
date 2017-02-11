@@ -93,11 +93,11 @@ struct _thread_base {
 	union {
 		struct {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-			volatile uint8_t sched_locked;
+			uint8_t sched_locked;
 			int8_t prio;
 #else /* LITTLE and PDP */
 			int8_t prio;
-			volatile uint8_t sched_locked;
+			uint8_t sched_locked;
 #endif
 		};
 		uint16_t preempt;

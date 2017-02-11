@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Wind River Systems, Inc.
+ * Copyright (c) 2016-2017 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -142,6 +142,11 @@ void k_sched_lock(void)
 
 	--_current->base.sched_locked;
 
+	/* Probably not needed since we're in a real function,
+	 * but it doesn't hurt.
+	 */
+	compiler_barrier();
+
 	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 #endif
@@ -154,6 +159,8 @@ void k_sched_unlock(void)
 	__ASSERT(!_is_in_isr(), "");
 
 	int key = irq_lock();
+
+	/* compiler_barrier() not needed, comes from irq_lock() */
 
 	++_current->base.sched_locked;
 
