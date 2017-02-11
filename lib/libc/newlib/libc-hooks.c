@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <arch/cpu.h>
 #include <errno.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -11,10 +12,6 @@
 #include <misc/util.h>
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
-
-#if CONFIG_ARM
-#include <soc.h>
-#endif
 
 #if CONFIG_X86
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_PHYS_RAM_ADDR)
@@ -27,6 +24,10 @@
 #include <soc.h>
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - RISCV_RAM_BASE)
 #define MAX_HEAP_SIZE  (RISCV_RAM_SIZE - USED_RAM_SIZE)
+#elif CONFIG_ARM
+#include <soc.h>
+#define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_SRAM_BASE_ADDRESS)
+#define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
 #else
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_SRAM_BASE_ADDRESS)
 #define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
