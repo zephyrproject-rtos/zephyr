@@ -14,7 +14,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <arch/cpu.h>
+#include <cortex_m/exc.h>
 
 /* Power Manager Controller */
 
@@ -224,10 +224,7 @@ static int atmel_same70_init(struct device *arg)
 	key = irq_lock();
 
 	/* Clear all faults */
-	_ScbMemFaultAllFaultsReset();
-	_ScbBusFaultAllFaultsReset();
-	_ScbUsageFaultAllFaultsReset();
-	_ScbHardFaultAllFaultsReset();
+	_ClearFaults();
 
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock
