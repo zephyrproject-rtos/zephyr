@@ -684,44 +684,39 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 	return NET_DROP;
 }
 
-/* TODO: Handles only DHCPv4 OFFER and ACK messages */
-static inline void handle_dhcpv4_reply(struct net_if *iface,
-				       enum dhcpv4_msg_type msg_type)
+static inline void handle_offer(struct net_if *iface)
 {
-	NET_DBG("state=%s msg=%s",
-		net_dhcpv4_state_name(iface->dhcpv4.state),
-		net_dhcpv4_msg_type_name(msg_type));
-	/* Check for previous state, reason behind this check is, if client
-	 * receives multiple OFFER messages, first one will be handled.
-	 * Rest of the replies are discarded.
-	 */
-	if (iface->dhcpv4.state == NET_DHCPV4_SELECTING) {
-		if (msg_type != DHCPV4_MSG_TYPE_OFFER) {
-			NET_DBG("Reply ignored");
-			return;
-		}
-
-		/* Send DHCPv4 Request Message */
+	switch (iface->dhcpv4.state) {
+	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_REQUESTING:
+	case NET_DHCPV4_RENEWING:
+	case NET_DHCPV4_BOUND:
+		break;
+	case NET_DHCPV4_SELECTING:
 		k_delayed_work_cancel(&iface->dhcpv4.timer);
 
 		iface->dhcpv4.attempts = 0;
 		send_request(iface, false);
+		break;
+	}
+}
 
-	} else if (iface->dhcpv4.state == NET_DHCPV4_REQUESTING ||
-		   iface->dhcpv4.state == NET_DHCPV4_RENEWING) {
-		uint32_t timeout;
+static void handle_ack(struct net_if *iface)
+{
+	uint32_t timeout;
 
-		if (msg_type != DHCPV4_MSG_TYPE_ACK) {
-			NET_DBG("Reply ignored");
-			return;
-		}
-
+	switch (iface->dhcpv4.state) {
+	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_SELECTING:
+	case NET_DHCPV4_BOUND:
+		break;
+	case NET_DHCPV4_REQUESTING:
+	case NET_DHCPV4_RENEWING:
 		k_delayed_work_cancel(&iface->dhcpv4.timer);
 
 		iface->dhcpv4.attempts = 0;
 
-		switch (iface->dhcpv4.state) {
-		case NET_DHCPV4_REQUESTING:
+		if (iface->dhcpv4.state == NET_DHCPV4_REQUESTING) {
 			NET_INFO("Received: %s",
 				 net_sprint_ipv4_addr(
 					 &iface->dhcpv4.requested_ip));
@@ -733,15 +728,10 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 					iface);
 				return;
 			}
-
-			break;
-		case NET_DHCPV4_RENEWING:
+		} else {
 			/* TODO: If the renewal is success, update only
 			 * vlifetime on iface.
 			 */
-			break;
-		default:
-			break;
 		}
 
 		timeout = get_dhcpv4_renewal_time(iface);
@@ -754,6 +744,28 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 		k_delayed_work_init(&iface->dhcpv4.t1_timer, dhcpv4_t1_timeout);
 		k_delayed_work_submit(&iface->dhcpv4.t1_timer,
 				      timeout * MSEC_PER_SEC);
+		break;
+	}
+}
+
+/* TODO: Handles only DHCPv4 OFFER and ACK messages */
+static void handle_dhcpv4_reply(struct net_if *iface,
+				enum dhcpv4_msg_type msg_type)
+{
+	NET_DBG("state=%s msg=%s",
+		net_dhcpv4_state_name(iface->dhcpv4.state),
+		net_dhcpv4_msg_type_name(msg_type));
+
+	switch (msg_type) {
+	case DHCPV4_MSG_TYPE_OFFER:
+		handle_offer(iface);
+		break;
+	case DHCPV4_MSG_TYPE_ACK:
+		handle_ack(iface);
+		break;
+	default:
+		NET_DBG("ignore message");
+		break;
 	}
 }
 
