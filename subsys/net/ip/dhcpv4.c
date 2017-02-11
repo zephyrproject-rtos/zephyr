@@ -104,7 +104,8 @@ struct dhcp_msg {
 #define DHCPV4_INITIAL_DELAY_MIN 1
 #define DHCPV4_INITIAL_DELAY_MAX 10
 
-static uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 }; /* RFC 1497 [17] */
+/* RFC 1497 [17] */
+static const uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
 
 static void dhcpv4_timeout(struct k_work *work);
 
