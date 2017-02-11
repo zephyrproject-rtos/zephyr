@@ -251,7 +251,7 @@ static inline bool add_sname(struct net_buf *buf)
 }
 
 /* Setup IPv4 + UDP header */
-static void setup_header(struct net_buf *buf)
+static void setup_header(struct net_buf *buf, const struct in_addr *server_addr)
 {
 	struct net_ipv4_hdr *ipv4;
 	struct net_udp_hdr *udp;
@@ -272,7 +272,7 @@ static void setup_header(struct net_buf *buf)
 	ipv4->len[1] = (uint8_t)len;
 	ipv4->chksum = ~net_calc_chksum_ipv4(buf);
 
-	net_ipaddr_copy(&ipv4->dst, net_ipv4_broadcast_address());
+	net_ipaddr_copy(&ipv4->dst, server_addr);
 
 	len -= NET_IPV4H_LEN;
 	/* Setup UDP header */
@@ -353,6 +353,7 @@ static void send_request(struct net_if *iface)
 {
 	struct net_buf *buf;
 	uint32_t timeout;
+	const struct in_addr *server_addr = net_ipv4_broadcast_address();
 
 	iface->dhcpv4.xid++;
 
@@ -377,6 +378,9 @@ static void send_request(struct net_if *iface)
 
 		break;
 	case NET_DHCPV4_RENEWING:
+		/* UNICAST the DHCPREQUEST */
+		server_addr = &iface->dhcpv4.server_id;
+
 		/* RFC2131 4.4.5 Client MUST NOT include server
 		 * identifier in the DHCPREQUEST.
 		 */
@@ -388,7 +392,7 @@ static void send_request(struct net_if *iface)
 		goto fail;
 	}
 
-	setup_header(buf);
+	setup_header(buf, server_addr);
 
 	if (net_send_data(buf) < 0) {
 		goto fail;
@@ -432,7 +436,7 @@ static void send_discover(struct net_if *iface)
 		goto fail;
 	}
 
-	setup_header(buf);
+	setup_header(buf, net_ipv4_broadcast_address());
 
 	if (net_send_data(buf) < 0) {
 		goto fail;
