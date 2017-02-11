@@ -361,8 +361,29 @@ static void send_request(struct net_if *iface)
 		goto fail;
 	}
 
-	if (!add_server_id(buf, &iface->dhcpv4.server_id) ||
-	    !add_req_ipaddr(buf, &iface->dhcpv4.requested_ip) ||
+	switch (iface->dhcpv4.state) {
+	case NET_DHCPV4_DISABLED:
+	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_SELECTING:
+	case NET_DHCPV4_BOUND:
+		/* Not possible */
+		NET_ASSERT_INFO(0, "Invalid state %s",
+				net_dhcpv4_state_name(iface->dhcpv4.state));
+		break;
+	case NET_DHCPV4_REQUESTING:
+		if (!add_server_id(buf, &iface->dhcpv4.server_id)) {
+			goto fail;
+		}
+
+		break;
+	case NET_DHCPV4_RENEWING:
+		/* RFC2131 4.4.5 Client MUST NOT include server
+		 * identifier in the DHCPREQUEST.
+		 */
+		break;
+	}
+
+	if (!add_req_ipaddr(buf, &iface->dhcpv4.requested_ip) ||
 	    !add_end(buf)) {
 		goto fail;
 	}
