@@ -53,7 +53,8 @@ static ALWAYS_INLINE int _IsInIsr(void)
 #if defined(CONFIG_ARMV6_M)
 	return (vector > 10) || (vector == 3);
 #elif defined(CONFIG_ARMV7_M)
-	return (vector > 10) || (vector && _ScbIsNestedExc());
+	return (vector > 10) ||
+	       (vector && !(SCB->ICSR & SCB_ICSR_RETTOBASE_Msk));
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */
@@ -84,9 +85,9 @@ static ALWAYS_INLINE void _ExcSetup(void)
 	NVIC_SetPriority(BusFault_IRQn, _EXC_FAULT_PRIO);
 	NVIC_SetPriority(UsageFault_IRQn, _EXC_FAULT_PRIO);
 
-	_ScbUsageFaultEnable();
-	_ScbBusFaultEnable();
-	_ScbMemFaultEnable();
+	/* Enable Usage, Mem, & Bus Faults */
+	SCB->SHCSR |= SCB_SHCSR_USGFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk |
+		      SCB_SHCSR_BUSFAULTENA_Msk;
 #endif
 }
 
@@ -102,11 +103,12 @@ static ALWAYS_INLINE void _ClearFaults(void)
 #if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_ARMV7_M)
 	/* Reset all faults */
-	_ScbMemFaultAllFaultsReset();
-	_ScbBusFaultAllFaultsReset();
-	_ScbUsageFaultAllFaultsReset();
+	SCB->CFSR = SCB_CFSR_USGFAULTSR_Msk |
+		    SCB_CFSR_MEMFAULTSR_Msk |
+		    SCB_CFSR_BUSFAULTSR_Msk;
 
-	_ScbHardFaultAllFaultsReset();
+	/* Clear all Hard Faults - HFSR is write-one-to-clear */
+	SCB->HFSR = 0xffffffff;
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */

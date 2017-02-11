@@ -214,8 +214,12 @@ int stm32_gpio_enable_int(int port, int pin)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	uint32_t *reg;
 
-	clock_control_on(clk, (clock_control_subsys_t *)
-			      STM32L4X_CLOCK_SUBSYS_SYSCFG);
+	/* Enable SYSCFG clock */
+	struct stm32_pclken pclken = {
+		.bus = STM32_CLOCK_BUS_APB2,
+		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
+	};
+	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 
 	if (pin <= STM32L4X_PIN3) {
 		reg = &syscfg->exticr1;
