@@ -454,6 +454,16 @@ fail:
 	}
 }
 
+static void enter_selecting(struct net_if *iface)
+{
+	iface->dhcpv4.attempts = 0;
+	iface->dhcpv4.state = NET_DHCPV4_SELECTING;
+	NET_DBG("enter state=%s",
+		net_dhcpv4_state_name(iface->dhcpv4.state));
+
+	send_discover(iface);
+}
+
 static void dhcpv4_timeout(struct k_work *work)
 {
 	struct net_if *iface = CONTAINER_OF(work, struct net_if,
@@ -467,13 +477,7 @@ static void dhcpv4_timeout(struct k_work *work)
 
 	switch (iface->dhcpv4.state) {
 	case NET_DHCPV4_INIT:
-		iface->dhcpv4.state = NET_DHCPV4_SELECTING;
-		NET_DBG("enter state=%s",
-			net_dhcpv4_state_name(iface->dhcpv4.state));
-
-		/* Send an initial discover */
-		send_discover(iface);
-
+		enter_selecting(iface);
 		break;
 	case NET_DHCPV4_SELECTING:
 		/* Failed to get OFFER message, send DISCOVER again */
@@ -485,14 +489,7 @@ static void dhcpv4_timeout(struct k_work *work)
 		 */
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
 			NET_DBG("too many attempts, restart");
-			iface->dhcpv4.attempts = 0;
-
-			iface->dhcpv4.state = NET_DHCPV4_SELECTING;
-			NET_DBG("enter state=%s",
-				net_dhcpv4_state_name(iface->dhcpv4.state));
-
-			send_discover(iface);
-
+			enter_selecting(iface);
 		} else {
 			send_request(iface);
 		}
@@ -500,20 +497,15 @@ static void dhcpv4_timeout(struct k_work *work)
 		break;
 	case NET_DHCPV4_RENEWING:
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
-			iface->dhcpv4.attempts = 0;
 			NET_DBG("too many attempts, restart");
 			if (!net_if_ipv4_addr_rm(iface,
 						 &iface->dhcpv4.requested_ip)) {
 				NET_DBG("Failed to remove addr from iface");
 			}
-
-			iface->dhcpv4.state = NET_DHCPV4_SELECTING;
-			NET_DBG("enter state=%s",
-				net_dhcpv4_state_name(iface->dhcpv4.state));
 			/* Maximum number of renewal attempts failed, so start
 			 * from the beginning.
 			 */
-			send_discover(iface);
+			enter_selecting(iface);
 
 		} else {
 			send_request(iface);
@@ -772,18 +764,13 @@ static void handle_nak(struct net_if *iface)
 	case NET_DHCPV4_REQUESTING:
 		/* Restart the configuration process. */
 
-		iface->dhcpv4.attempts = 0;
 		iface->dhcpv4.lease_time = 0;
 		iface->dhcpv4.renewal_time = 0;
 
 		k_delayed_work_cancel(&iface->dhcpv4.timer);
 		k_delayed_work_cancel(&iface->dhcpv4.t1_timer);
 
-		iface->dhcpv4.state = NET_DHCPV4_SELECTING;
-		NET_DBG("enter state=%s",
-			net_dhcpv4_state_name(iface->dhcpv4.state));
-
-		send_discover(iface);
+		enter_selecting(iface);
 		break;
 	}
 }
