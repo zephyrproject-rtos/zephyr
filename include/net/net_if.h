@@ -274,6 +274,9 @@ struct net_if {
 		/** IP address Renewal time */
 		uint32_t renewal_time;
 
+		/** IP address Rebinding time */
+		uint32_t rebinding_time;
+
 		/** Server ID */
 		struct in_addr server_id;
 
@@ -296,6 +299,9 @@ struct net_if {
 
 		/** T1 (Renewal) timer */
 		struct k_delayed_work t1_timer;
+
+		/** T2 (Rebinding) timer */
+		struct k_delayed_work t2_timer;
 	} dhcpv4;
 
 #endif
