@@ -180,7 +180,7 @@ uint32_t k_uptime_delta_32(int64_t *reftime)
  * allows going through the second queue without needing to have the
  * interrupts locked since it is a local queue. Each expired timeout is marked
  * as _EXPIRED so that an ISR preempting us and releasing an object on which
- * a thread was timing out and expiredwill not give the object to that thread.
+ * a thread was timing out and expired will not give the object to that thread.
  *
  * Always called from interrupt level, and always only from the system clock
  * interrupt.
