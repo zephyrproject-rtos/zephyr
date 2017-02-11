@@ -1135,7 +1135,7 @@ struct net_if_api {
 };
 
 #if defined(CONFIG_NET_DHCPV4)
-#define NET_IF_DHCPV4_INIT .dhcpv4.state = NET_DHCPV4_INIT,
+#define NET_IF_DHCPV4_INIT .dhcpv4.state = NET_DHCPV4_DISABLED,
 #else
 #define NET_IF_DHCPV4_INIT
 #endif
