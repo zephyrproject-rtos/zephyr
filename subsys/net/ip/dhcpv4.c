@@ -366,7 +366,7 @@ fail:
 }
 
 /* Prepare DHCPv4 Message request and send it to peer */
-static void send_request(struct net_if *iface, bool renewal)
+static void send_request(struct net_if *iface)
 {
 	struct net_buf *buf;
 	uint32_t timeout;
@@ -390,22 +390,16 @@ static void send_request(struct net_if *iface, bool renewal)
 		goto fail;
 	}
 
-	if (renewal) {
-		iface->dhcpv4.state = NET_DHCPV4_RENEWING;
-	} else {
-		iface->dhcpv4.state = NET_DHCPV4_REQUESTING;
-	}
-
 	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << iface->dhcpv4.attempts;
-
-	NET_DBG("enter state=%s xid=0x%"PRIx32" timeout=%"PRIu32"s",
-		net_dhcpv4_state_name(iface->dhcpv4.state),
-		iface->dhcpv4.xid, timeout);
 
 	k_delayed_work_init(&iface->dhcpv4.timer, dhcpv4_timeout);
 	k_delayed_work_submit(&iface->dhcpv4.timer, timeout * MSEC_PER_SEC);
 
 	iface->dhcpv4.attempts++;
+
+	NET_DBG("send request xid=0x%"PRIx32" timeout=%"PRIu32"s",
+		iface->dhcpv4.xid, timeout);
+
 	return;
 
 fail:
@@ -491,9 +485,9 @@ static void dhcpv4_timeout(struct k_work *work)
 			iface->dhcpv4.attempts = 0;
 			send_discover(iface);
 		} else {
-			/* Repeat requests until max number of attempts */
-			send_request(iface, false);
+			send_request(iface);
 		}
+
 		break;
 	case NET_DHCPV4_RENEWING:
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
@@ -509,8 +503,7 @@ static void dhcpv4_timeout(struct k_work *work)
 			 */
 			send_discover(iface);
 		} else {
-			/* Repeat renewal request for max number of attempts */
-			send_request(iface, true);
+			send_request(iface);
 		}
 		break;
 	default:
@@ -531,7 +524,10 @@ static void dhcpv4_t1_timeout(struct k_work *work)
 		return;
 	}
 
-	send_request(iface, true);
+	send_request(iface);
+
+	iface->dhcpv4.state = NET_DHCPV4_RENEWING;
+	NET_DBG("enter state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
 }
 
 /* Parse DHCPv4 options and retrieve relavant information
@@ -696,7 +692,11 @@ static inline void handle_offer(struct net_if *iface)
 		k_delayed_work_cancel(&iface->dhcpv4.timer);
 
 		iface->dhcpv4.attempts = 0;
-		send_request(iface, false);
+		send_request(iface);
+
+		iface->dhcpv4.state = NET_DHCPV4_REQUESTING;
+		NET_DBG("enter state=%s",
+			net_dhcpv4_state_name(iface->dhcpv4.state));
 		break;
 	}
 }
