@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Wind River Systems, Inc.
+ * Copyright (c) 2016-2017 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -239,6 +239,8 @@ static inline void _sched_lock(void)
 
 	--_current->base.sched_locked;
 
+	compiler_barrier();
+
 	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 #endif
@@ -255,6 +257,8 @@ static ALWAYS_INLINE void _sched_unlock_no_reschedule(void)
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!_is_in_isr(), "");
 	__ASSERT(_current->base.sched_locked != 0, "");
+
+	compiler_barrier();
 
 	++_current->base.sched_locked;
 #endif
