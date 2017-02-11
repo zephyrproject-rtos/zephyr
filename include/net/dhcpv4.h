@@ -45,6 +45,13 @@ enum net_dhcpv4_state {
 void net_dhcpv4_start(struct net_if *iface);
 
 /**
+ *  @brief DHCPv4 state name
+ *
+ *  @internal
+ */
+const char *net_dhcpv4_state_name(enum net_dhcpv4_state state);
+
+/**
  * @}
  */
 

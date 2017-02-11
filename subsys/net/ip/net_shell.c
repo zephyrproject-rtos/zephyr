@@ -76,26 +76,6 @@ static inline const char *addrstate2str(enum net_addr_state addr_state)
 	return "<invalid state>";
 }
 
-#if defined(CONFIG_NET_DHCPV4)
-static inline const char *dhcpv4state2str(enum net_dhcpv4_state state)
-{
-	switch (state) {
-	case NET_DHCPV4_INIT:
-		return "init";
-	case NET_DHCPV4_DISCOVER:
-		return "discover";
-	case NET_DHCPV4_REQUEST:
-		return "request";
-	case NET_DHCPV4_RENEWAL:
-		return "renewal";
-	case NET_DHCPV4_ACK:
-		return "ack";
-	}
-
-	return "<invalid state>";
-}
-#endif /* CONFIG_NET_DHCPV4 */
-
 static void tx_stack(struct net_if *iface, unsigned char *stack,
 		     size_t stack_size)
 {
@@ -277,7 +257,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	printk("DHCPv4 requested  : %s\n",
 	       net_sprint_ipv4_addr(&iface->dhcpv4.requested_ip));
 	printk("DHCPv4 state      : %s\n",
-	       dhcpv4state2str(iface->dhcpv4.state));
+	       net_dhcpv4_state_name(iface->dhcpv4.state));
 	printk("DHCPv4 attempts   : %d\n", iface->dhcpv4.attempts);
 #endif /* CONFIG_NET_DHCPV4 */
 }

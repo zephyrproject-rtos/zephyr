@@ -115,13 +115,9 @@ static const uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
 static void dhcpv4_timeout(struct k_work *work);
 
 static const char *
-net_dhcpv4_state_name(enum net_dhcpv4_state state)  __attribute__((unused));
-
-static const char *
 net_dhcpv4_msg_type_name(enum dhcpv4_msg_type msg_type) __attribute__((unused));
 
-static const char *
-net_dhcpv4_state_name(enum net_dhcpv4_state state)
+const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 {
 	static const char * const name[] = {
 		"init",
