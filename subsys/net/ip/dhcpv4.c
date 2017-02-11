@@ -464,6 +464,16 @@ static void enter_selecting(struct net_if *iface)
 	send_discover(iface);
 }
 
+static void enter_requesting(struct net_if *iface)
+{
+	iface->dhcpv4.attempts = 0;
+	iface->dhcpv4.state = NET_DHCPV4_REQUESTING;
+	NET_DBG("enter state=%s",
+		net_dhcpv4_state_name(iface->dhcpv4.state));
+
+	send_request(iface);
+}
+
 static void dhcpv4_timeout(struct k_work *work)
 {
 	struct net_if *iface = CONTAINER_OF(work, struct net_if,
@@ -529,10 +539,10 @@ static void dhcpv4_t1_timeout(struct k_work *work)
 		return;
 	}
 
-	send_request(iface);
-
 	iface->dhcpv4.state = NET_DHCPV4_RENEWING;
 	NET_DBG("enter state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
+
+	send_request(iface);
 }
 
 /* Parse DHCPv4 options and retrieve relavant information
@@ -695,13 +705,7 @@ static inline void handle_offer(struct net_if *iface)
 		break;
 	case NET_DHCPV4_SELECTING:
 		k_delayed_work_cancel(&iface->dhcpv4.timer);
-
-		iface->dhcpv4.attempts = 0;
-		send_request(iface);
-
-		iface->dhcpv4.state = NET_DHCPV4_REQUESTING;
-		NET_DBG("enter state=%s",
-			net_dhcpv4_state_name(iface->dhcpv4.state));
+		enter_requesting(iface);
 		break;
 	}
 }
