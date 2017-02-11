@@ -47,7 +47,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 			 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
 				       hr_addr, NET_IPV4_ADDR_LEN));
 		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.gw
+			 net_addr_ntop(AF_INET, &iface->ipv4.gw,
 				       hr_addr, NET_IPV4_ADDR_LEN));
 		break;
 	}
