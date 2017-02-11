@@ -181,90 +181,70 @@ static inline bool add_cookie(struct net_buf *buf)
 		K_FOREVER);
 }
 
-/* Add DHCPv4 message type */
-static inline bool add_msg_type(struct net_buf *buf, uint8_t type)
+/* Add a an option with the form OPTION LENGTH VALUE.  */
+static bool add_option_length_value(struct net_buf *buf, uint8_t option,
+				    uint8_t size, const uint8_t *value)
 {
-	uint8_t data[3] = { DHCPV4_OPTIONS_MSG_TYPE, 1, type };
+	if (!net_nbuf_append_u8(buf, option)) {
+		return false;
+	}
 
-	return net_nbuf_append(buf, sizeof(data), data, K_FOREVER);
+	if (!net_nbuf_append_u8(buf, size)) {
+		return false;
+	}
+
+	if (!net_nbuf_append(buf, size, value, K_FOREVER)) {
+		return false;
+	}
+
+	return true;
+}
+
+/* Add DHCPv4 message type */
+static bool add_msg_type(struct net_buf *buf, uint8_t type)
+{
+	return add_option_length_value(buf, DHCPV4_OPTIONS_MSG_TYPE, 1, &type);
 }
 
 /* Add DHCPv4 minimum required options for server to reply.
  * Can be added more if needed.
  */
-static inline bool add_req_options(struct net_buf *buf)
+static bool add_req_options(struct net_buf *buf)
 {
-	uint8_t data[5] = { DHCPV4_OPTIONS_REQ_LIST,
-			    3, /* Length */
-			    DHCPV4_OPTIONS_SUBNET_MASK,
-			    DHCPV4_OPTIONS_ROUTER,
-			    DHCPV4_OPTIONS_DNS_SERVER };
+	static const uint8_t data[5] = { DHCPV4_OPTIONS_REQ_LIST,
+					 3, /* Length */
+					 DHCPV4_OPTIONS_SUBNET_MASK,
+					 DHCPV4_OPTIONS_ROUTER,
+					 DHCPV4_OPTIONS_DNS_SERVER };
 
 	return net_nbuf_append(buf, sizeof(data), data, K_FOREVER);
 }
 
-static inline bool add_server_id(struct net_buf *buf)
+static bool add_server_id(struct net_buf *buf, const struct in_addr *addr)
 {
-	struct net_if *iface = net_nbuf_iface(buf);
-	uint8_t data;
-
-	data = DHCPV4_OPTIONS_SERVER_ID;
-	if (!net_nbuf_append(buf, 1, &data, K_FOREVER)) {
-		return false;
-	}
-
-	data = 4;
-	if (!net_nbuf_append(buf, 1, &data, K_FOREVER)) {
-		return false;
-	}
-
-	if (!net_nbuf_append(buf, 4, iface->dhcpv4.server_id.s4_addr,
-			     K_FOREVER)) {
-		return false;
-	}
-
-	return true;
+	return add_option_length_value(buf, DHCPV4_OPTIONS_SERVER_ID, 4,
+				       addr->s4_addr);
 }
 
-static inline bool add_req_ipaddr(struct net_buf *buf)
+static bool add_req_ipaddr(struct net_buf *buf, const struct in_addr *addr)
 {
-	struct net_if *iface = net_nbuf_iface(buf);
-	uint8_t data;
-
-	data = DHCPV4_OPTIONS_REQ_IPADDR;
-	if (!net_nbuf_append(buf, 1, &data, K_FOREVER)) {
-		return false;
-	}
-
-	data = 4;
-	if (!net_nbuf_append(buf, 1, &data, K_FOREVER)) {
-		return false;
-	}
-
-	if (!net_nbuf_append(buf, 4, iface->dhcpv4.requested_ip.s4_addr,
-			     K_FOREVER)) {
-		return false;
-	}
-
-	return true;
+	return add_option_length_value(buf, DHCPV4_OPTIONS_REQ_IPADDR, 4,
+				       addr->s4_addr);
 }
 
 /* Add DHCPv4 Options end, rest of the message can be padded wit zeros */
 static inline bool add_end(struct net_buf *buf)
 {
-	uint8_t data = DHCPV4_OPTIONS_END;
-
-	return net_nbuf_append(buf, 1, &data, K_FOREVER);
+	return net_nbuf_append_u8(buf, DHCPV4_OPTIONS_END);
 }
 
 /* File is empty ATM */
 static inline bool add_file(struct net_buf *buf)
 {
 	uint8_t len = SIZE_OF_FILE;
-	uint8_t data = 0;
 
 	while (len-- > 0) {
-		if (!net_nbuf_append(buf, 1, &data, K_FOREVER)) {
+		if (!net_nbuf_append_u8(buf, 0)) {
 			return false;
 		}
 	}
@@ -276,10 +256,9 @@ static inline bool add_file(struct net_buf *buf)
 static inline bool add_sname(struct net_buf *buf)
 {
 	uint8_t len = SIZE_OF_SNAME;
-	uint8_t data = 0;
 
 	while (len-- > 0) {
-		if (!net_nbuf_append(buf, 1, &data, K_FOREVER)) {
+		if (!net_nbuf_append_u8(buf, 0)) {
 			return false;
 		}
 	}
@@ -398,8 +377,8 @@ static void send_request(struct net_if *iface, bool renewal)
 		goto fail;
 	}
 
-	if (!add_server_id(buf) ||
-	    !add_req_ipaddr(buf) ||
+	if (!add_server_id(buf, &iface->dhcpv4.server_id) ||
+	    !add_req_ipaddr(buf, &iface->dhcpv4.requested_ip) ||
 	    !add_end(buf)) {
 		goto fail;
 	}
