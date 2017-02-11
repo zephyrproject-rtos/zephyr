@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) 2010-2014,2017 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -288,3 +288,7 @@ A##a:
 #else
 #error processor architecture not supported
 #endif
+
+#define compiler_barrier() do { \
+	__asm__ __volatile__ ("" ::: "memory"); \
+} while ((0))
