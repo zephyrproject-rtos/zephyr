@@ -436,16 +436,14 @@ static void send_discover(struct net_if *iface)
 
 	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << iface->dhcpv4.attempts;
 
-	iface->dhcpv4.state = NET_DHCPV4_SELECTING;
-
-	NET_DBG("enter state=%s xid=0x%"PRIx32" timeout=%"PRIu32"s",
-		net_dhcpv4_state_name(iface->dhcpv4.state),
-		iface->dhcpv4.xid, timeout);
-
 	k_delayed_work_init(&iface->dhcpv4.timer, dhcpv4_timeout);
 	k_delayed_work_submit(&iface->dhcpv4.timer, timeout * MSEC_PER_SEC);
 
 	iface->dhcpv4.attempts++;
+
+	NET_DBG("send discover xid=0x%"PRIx32" timeout=%"PRIu32"s",
+		iface->dhcpv4.xid, timeout);
+
 	return;
 
 fail:
@@ -469,8 +467,13 @@ static void dhcpv4_timeout(struct k_work *work)
 
 	switch (iface->dhcpv4.state) {
 	case NET_DHCPV4_INIT:
+		iface->dhcpv4.state = NET_DHCPV4_SELECTING;
+		NET_DBG("enter state=%s",
+			net_dhcpv4_state_name(iface->dhcpv4.state));
+
 		/* Send an initial discover */
 		send_discover(iface);
+
 		break;
 	case NET_DHCPV4_SELECTING:
 		/* Failed to get OFFER message, send DISCOVER again */
@@ -483,7 +486,13 @@ static void dhcpv4_timeout(struct k_work *work)
 		if (iface->dhcpv4.attempts >= DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
 			NET_DBG("too many attempts, restart");
 			iface->dhcpv4.attempts = 0;
+
+			iface->dhcpv4.state = NET_DHCPV4_SELECTING;
+			NET_DBG("enter state=%s",
+				net_dhcpv4_state_name(iface->dhcpv4.state));
+
 			send_discover(iface);
+
 		} else {
 			send_request(iface);
 		}
@@ -498,10 +507,14 @@ static void dhcpv4_timeout(struct k_work *work)
 				NET_DBG("Failed to remove addr from iface");
 			}
 
+			iface->dhcpv4.state = NET_DHCPV4_SELECTING;
+			NET_DBG("enter state=%s",
+				net_dhcpv4_state_name(iface->dhcpv4.state));
 			/* Maximum number of renewal attempts failed, so start
 			 * from the beginning.
 			 */
 			send_discover(iface);
+
 		} else {
 			send_request(iface);
 		}
@@ -765,6 +778,10 @@ static void handle_nak(struct net_if *iface)
 
 		k_delayed_work_cancel(&iface->dhcpv4.timer);
 		k_delayed_work_cancel(&iface->dhcpv4.t1_timer);
+
+		iface->dhcpv4.state = NET_DHCPV4_SELECTING;
+		NET_DBG("enter state=%s",
+			net_dhcpv4_state_name(iface->dhcpv4.state));
 
 		send_discover(iface);
 		break;
