@@ -440,44 +440,34 @@ static inline struct k_thread *_peek_first_pending_thread(_wait_q_t *wait_q)
 	return (struct k_thread *)sys_dlist_peek_head(wait_q);
 }
 
-static inline struct k_thread *_get_thread_to_unpend(_wait_q_t *wait_q)
+static inline struct k_thread *
+_find_first_thread_to_unpend(_wait_q_t *wait_q, struct k_thread *from)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	extern volatile int _handling_timeouts;
 
 	if (_handling_timeouts) {
 		sys_dlist_t *q = (sys_dlist_t *)wait_q;
-		sys_dnode_t *cur, *next;
+		sys_dnode_t *cur = from ? &from->base.k_q_node : NULL;
 
 		/* skip threads that have an expired timeout */
-		SYS_DLIST_FOR_EACH_NODE_SAFE(q, cur, next) {
+		SYS_DLIST_ITERATE_FROM_NODE(q, cur) {
 			struct k_thread *thread = (struct k_thread *)cur;
 
 			if (_is_thread_timeout_expired(thread)) {
 				continue;
 			}
 
-			sys_dlist_remove(cur);
 			return thread;
 		}
 		return NULL;
 	}
+#else
+	ARG_UNUSED(from);
 #endif
 
-	return (struct k_thread *)sys_dlist_get(wait_q);
-}
+	return (struct k_thread *)sys_dlist_peek_head(wait_q);
 
-/* unpend the first thread from a wait queue */
-/* must be called with interrupts locked */
-static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
-{
-	struct k_thread *thread = _get_thread_to_unpend(wait_q);
-
-	if (thread) {
-		_mark_thread_as_not_pending(thread);
-	}
-
-	return thread;
 }
 
 /* Unpend a thread from the wait queue it is on. Thread must be pending. */
@@ -488,6 +478,19 @@ static inline void _unpend_thread(struct k_thread *thread)
 
 	sys_dlist_remove(&thread->base.k_q_node);
 	_mark_thread_as_not_pending(thread);
+}
+
+/* unpend the first thread from a wait queue */
+/* must be called with interrupts locked */
+static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
+{
+	struct k_thread *thread = _find_first_thread_to_unpend(wait_q, NULL);
+
+	if (thread) {
+		_unpend_thread(thread);
+	}
+
+	return thread;
 }
 
 #endif /* _ksched__h_ */
