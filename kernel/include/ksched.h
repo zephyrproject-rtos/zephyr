@@ -350,6 +350,11 @@ static inline int _is_thread_pending(struct k_thread *thread)
 	return !!(thread->base.thread_state & _THREAD_PENDING);
 }
 
+static inline int _is_thread_dummy(struct k_thread *thread)
+{
+	return _is_thread_state_set(thread, _THREAD_DUMMY);
+}
+
 static inline void _mark_thread_as_polling(struct k_thread *thread)
 {
 	_set_thread_states(thread, _THREAD_POLLING);
