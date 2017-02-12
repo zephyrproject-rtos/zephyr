@@ -128,7 +128,12 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 			     &sem_array[i]->wait_q, timeout);
 	}
 
-	/* Pend the current thread on a dummy wait queue */
+	/*
+	 * Pend the current thread on a dummy wait queue, adding it _after_ all
+	 * the dummy threads on the _timeout_q, but expiring on the same tick,
+	 * which will cause it to be _prepended_ to the dummy threads. See
+	 * description of _add_timeout() for details.
+	 */
 
 	_wait_q_t     wait_q;
 
@@ -148,69 +153,47 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 	return 0;
 }
 
-/**
- * @brief Cancel all but specified semaphore in list if part of a semphore group
- *
- * Interrupts are locked prior to calling this routine
- *
- * @return 0 if not part of semaphore group, 1 if it is
- */
-static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
+/* cancel all but specified semaphore in list if part of a semphore group */
+static void handle_sem_group(struct k_sem *sem, struct _sem_thread *sem_thread)
 {
-	struct _sem_thread *dummy = (struct _sem_thread *)thread;
-	struct _sem_thread *sem_thread;
 	struct _sem_desc *desc = NULL;
 	sys_dlist_t  *list;
 	sys_dnode_t  *node;
 	sys_dnode_t  *next;
 
-	if (!(thread->base.thread_state & _THREAD_DUMMY)) {
-		/*
-		 * The awakened thread is a real thread and thus was not
-		 * involved in a semaphore group operation.
-		 */
-		return 0;
-	}
-
-	/*
-	 * The awakened thread is a dummy thread and thus was involved
-	 * in a semaphore group operation.
-	 */
-
-	list = (sys_dlist_t *)dummy->desc.thread->base.swap_data;
+	list = (sys_dlist_t *)sem_thread->desc.thread->base.swap_data;
 	node = sys_dlist_peek_head(list);
 
 	__ASSERT(node != NULL, "");
 
 	do {
 		next = sys_dlist_peek_next(list, node);
-
 		desc = (struct _sem_desc *)node;
 
+		sem_thread = CONTAINER_OF(desc, struct _sem_thread, desc);
+		struct k_thread *dummy = (struct k_thread *)&sem_thread->dummy;
+
+		/*
+		 * This is tricky: due to the fact that the timeouts expiring
+		 * at the same time are queued in reverse order, we know that,
+		 * since the caller of this function has already verified that
+		 * the timeout of the real thread has not expired and since it
+		 * was queued after the dummy threads, causing it to be the
+		 * first to be unpended, that the timeouts of the dummy threads
+		 * have not expired. Thus, we do not have to handle the case
+		 * where the timeout of the dummy thread might have expired.
+		 */
+		_abort_thread_timeout(dummy);
+		_unpend_thread(dummy);
+
 		if (desc->sem != sem) {
-			sem_thread = CONTAINER_OF(desc, struct _sem_thread,
-						  desc);
-			struct k_thread *dummy_thread =
-				(struct k_thread *)&sem_thread->dummy;
-
-			if (_is_thread_timeout_expired(dummy_thread)) {
-				continue;
-			}
-			_abort_thread_timeout(dummy_thread);
-			_unpend_thread(dummy_thread);
-
 			sys_dlist_remove(node);
 		}
+
 		node = next;
 	} while (node != NULL);
 
-	/*
-	 * If 'desc' is NULL, then the user-supplied 'sem_array' had only
-	 * one semaphore in it. This is considered a user error as
-	 * k_sem_give() should have been called instead.
-	 */
-
-	__ASSERT(desc != NULL, "");
+	/* if node was not NULL, desc is not NULL: no need to check */
 
 	/*
 	 * As this code may be executed several times by a semaphore group give
@@ -226,8 +209,6 @@ static int handle_sem_group(struct k_sem *sem, struct k_thread *thread)
 		}
 	}
 	_set_thread_return_value(desc->thread, 0);
-
-	return 1;
 }
 
 #else
@@ -247,34 +228,85 @@ static inline int handle_poll_event(struct k_sem *sem)
 #endif
 }
 
-/**
- * @brief Common semaphore give code
- *
- * @return true if _Swap() will need to be invoked; false if not
- */
-static bool sem_give_common(struct k_sem *sem)
+static inline void increment_count_up_to_limit(struct k_sem *sem)
 {
-	struct k_thread *thread;
+	sem->count += (sem->count != sem->limit);
+}
 
-	thread = _unpend_first_thread(&sem->wait_q);
+/* returns 1 if _Swap() will need to be invoked, 0 otherwise */
+static int do_sem_give(struct k_sem *sem)
+{
+#ifdef CONFIG_SEMAPHORE_GROUPS
+	struct k_thread *thread = NULL;
+
+again:
+	thread = _find_first_thread_to_unpend(&sem->wait_q, thread);
 	if (!thread) {
-		/*
-		 * No thread is waiting on the semaphore.
-		 * Increment the semaphore's count unless
-		 * its limit has already been reached.
-		 */
-		sem->count += (sem->count != sem->limit);
-
+		increment_count_up_to_limit(sem);
 		return handle_poll_event(sem);
 	}
 
-	_abort_thread_timeout(thread);
+	if (unlikely(_is_thread_dummy(thread))) {
+		/*
+		 * The awakened thread is a dummy struct _sem_thread and thus
+		 * was involved in a semaphore group operation.
+		 */
+		struct _sem_thread *sem_thread = (struct _sem_thread *)thread;
+		struct k_thread *real_thread = sem_thread->desc.thread;
 
-	if (!handle_sem_group(sem, thread)) {
-		/* Handle the non-group case */
+		/*
+		 * This is an extremely tricky way of handling the fact that
+		 * the current sem_give might have happened from an ISR while
+		 * the timeout handling code is running, going through the list
+		 * of expired timeouts.
+		 *
+		 * We have to be able to handle all timeouts on a
+		 * k_sem_group_take operation as one. We do that by checking if
+		 * the timeout of the real thread has expired or not. We can do
+		 * this, because of the way the timeouts are queued in the
+		 * kernel's timeout_q: timeouts expiring on the same tick are
+		 * queued in the _reverse_ order that they arrive. It is done
+		 * this way to save time with interrupts locked. By knowing
+		 * this, and by adding the real thread _last_ to the timeout_q,
+		 * we know that it is queued _before_ all the dummy threads
+		 * from the k_sem_group_take operation. This allows us to check
+		 * that, if the real thread's timeout has not expired, then all
+		 * dummy threads' timeouts have not expired either. If the real
+		 * thread's timeout has expired, then the dummy threads'
+		 * timeouts will expire or have expired already during the
+		 * current handling of timeouts, and the timeout code will take
+		 * care of signalling the waiter that its operation has
+		 * timedout. In that case, we look for the next thread not part
+		 * of the same k_sem_group_take operation to give it the
+		 * semaphore.
+		 */
+		if (_is_thread_timeout_expired(real_thread)) {
+			goto again;
+		}
+
+		/*
+		 * Do not dequeue the dummy thread: that will be done when
+		 * looping through the list of dummy waiters in
+		 * handle_sem_group().
+		 */
+		handle_sem_group(sem, sem_thread);
+	} else {
+		_unpend_thread(thread);
+		(void)_abort_thread_timeout(thread);
 		_ready_thread(thread);
 		_set_thread_return_value(thread, 0);
 	}
+#else
+	struct k_thread *thread = _unpend_first_thread(&sem->wait_q);
+
+	if (!thread) {
+		increment_count_up_to_limit(sem);
+		return handle_poll_event(sem);
+	}
+	(void)_abort_thread_timeout(thread);
+	_ready_thread(thread);
+	_set_thread_return_value(thread, 0);
+#endif
 
 	return !_is_in_isr() && _must_switch_threads();
 }
@@ -295,8 +327,7 @@ void _sem_give_non_preemptible(struct k_sem *sem)
 
 	thread = _unpend_first_thread(&sem->wait_q);
 	if (!thread) {
-		/* increment semaphore's count unless limit is reached */
-		sem->count += (sem->count != sem->limit);
+		increment_count_up_to_limit(sem);
 		return;
 	}
 
@@ -310,14 +341,14 @@ void _sem_give_non_preemptible(struct k_sem *sem)
 void k_sem_group_give(struct k_sem *sem_array[])
 {
 	unsigned int   key;
-	bool           swap_needed = false;
+	int swap_needed = 0;
 
 	__ASSERT(sem_array[0] != K_END, "Empty semaphore list");
 
 	key = irq_lock();
 
 	for (int i = 0; sem_array[i] != K_END; i++) {
-		swap_needed |= sem_give_common(sem_array[i]);
+		swap_needed |= do_sem_give(sem_array[i]);
 	}
 
 	if (swap_needed) {
@@ -345,7 +376,7 @@ void k_sem_give(struct k_sem *sem)
 
 	key = irq_lock();
 
-	if (sem_give_common(sem)) {
+	if (do_sem_give(sem)) {
 		_Swap(key);
 	} else {
 		irq_unlock(key);
