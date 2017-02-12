@@ -27,15 +27,25 @@
 #include <init.h>
 
 #ifdef CONFIG_SEMAPHORE_GROUPS
-struct _sem_desc {
-	sys_dnode_t       semg_node; /* Node in list of semaphores */
-	struct k_thread  *thread;    /* Thread waiting for semaphores */
-	struct k_sem     *sem;       /* Semaphore on which to wait */
+struct sem_desc {
+
+	/* node in list of semaphores */
+	sys_dnode_t semg_node;
+
+	/* thread waiting for semaphores */
+	struct k_thread *thread;
+
+	/* semaphore on which to wait */
+	struct k_sem *sem;
 };
 
-struct _sem_thread {
+struct sem_thread {
+
+	/* dummy thread, only the thread base */
 	struct _thread_base dummy;
-	struct _sem_desc   desc;
+
+	/* descriptor containing real thread , sem, and group info */
+	struct sem_desc desc;
 };
 #endif
 
@@ -83,9 +93,9 @@ void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 		     int32_t timeout)
 {
-	unsigned int  key;
+	unsigned int key;
 	struct k_sem *item = *sem_array;
-	int           num = 0;
+	int num = 0;
 
 	__ASSERT(sem_array[0] != K_END, "Empty semaphore list");
 
@@ -108,9 +118,9 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 		return -EBUSY;
 	}
 
-	struct _sem_thread  wait_objects[num];
-	int32_t       priority = k_thread_priority_get(_current);
-	sys_dlist_t   list;
+	struct sem_thread wait_objects[num];
+	int32_t priority = k_thread_priority_get(_current);
+	sys_dlist_t list;
 
 	sys_dlist_init(&list);
 	_current->base.swap_data = &list;
@@ -135,7 +145,7 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 	 * description of _add_timeout() for details.
 	 */
 
-	_wait_q_t     wait_q;
+	_wait_q_t wait_q;
 
 	sys_dlist_init(&wait_q);
 	_pend_current_thread(&wait_q, timeout);
@@ -147,19 +157,19 @@ int k_sem_group_take(struct k_sem *sem_array[], struct k_sem **sem,
 
 	/* The accepted semaphore is the only one left on the list */
 
-	struct _sem_desc *desc = (struct _sem_desc *)sys_dlist_get(&list);
+	struct sem_desc *desc = (struct sem_desc *)sys_dlist_get(&list);
 
 	*sem = desc->sem;
 	return 0;
 }
 
 /* cancel all but specified semaphore in list if part of a semphore group */
-static void handle_sem_group(struct k_sem *sem, struct _sem_thread *sem_thread)
+static void handle_sem_group(struct k_sem *sem, struct sem_thread *sem_thread)
 {
-	struct _sem_desc *desc = NULL;
-	sys_dlist_t  *list;
-	sys_dnode_t  *node;
-	sys_dnode_t  *next;
+	struct sem_desc *desc = NULL;
+	sys_dlist_t *list;
+	sys_dnode_t *node;
+	sys_dnode_t *next;
 
 	list = (sys_dlist_t *)sem_thread->desc.thread->base.swap_data;
 	node = sys_dlist_peek_head(list);
@@ -168,9 +178,9 @@ static void handle_sem_group(struct k_sem *sem, struct _sem_thread *sem_thread)
 
 	do {
 		next = sys_dlist_peek_next(list, node);
-		desc = (struct _sem_desc *)node;
+		desc = (struct sem_desc *)node;
 
-		sem_thread = CONTAINER_OF(desc, struct _sem_thread, desc);
+		sem_thread = CONTAINER_OF(desc, struct sem_thread, desc);
 		struct k_thread *dummy = (struct k_thread *)&sem_thread->dummy;
 
 		/*
@@ -248,10 +258,10 @@ again:
 
 	if (unlikely(_is_thread_dummy(thread))) {
 		/*
-		 * The awakened thread is a dummy struct _sem_thread and thus
+		 * The awakened thread is a dummy struct sem_thread and thus
 		 * was involved in a semaphore group operation.
 		 */
-		struct _sem_thread *sem_thread = (struct _sem_thread *)thread;
+		struct sem_thread *sem_thread = (struct sem_thread *)thread;
 		struct k_thread *real_thread = sem_thread->desc.thread;
 
 		/*
@@ -340,8 +350,8 @@ void _sem_give_non_preemptible(struct k_sem *sem)
 #ifdef CONFIG_SEMAPHORE_GROUPS
 void k_sem_group_give(struct k_sem *sem_array[])
 {
-	unsigned int   key;
 	int swap_needed = 0;
+	unsigned int key;
 
 	__ASSERT(sem_array[0] != K_END, "Empty semaphore list");
 
@@ -360,7 +370,7 @@ void k_sem_group_give(struct k_sem *sem_array[])
 
 void k_sem_group_reset(struct k_sem *sem_array[])
 {
-	unsigned int  key;
+	unsigned int key;
 
 	key = irq_lock();
 	for (int i = 0; sem_array[i] != K_END; i++) {
@@ -372,7 +382,7 @@ void k_sem_group_reset(struct k_sem *sem_array[])
 
 void k_sem_give(struct k_sem *sem)
 {
-	unsigned int   key;
+	unsigned int key;
 
 	key = irq_lock();
 
