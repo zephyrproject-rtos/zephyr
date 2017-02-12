@@ -176,6 +176,21 @@ static inline void _dump_timeout_q(void)
  *
  * Cannot handle timeout == 0 and timeout == K_FOREVER.
  *
+ * If the new timeout is expiring on the same system clock tick as other
+ * timeouts already present in the _timeout_q, it is be _prepended_ to these
+ * timeouts. This allows exiting the loop sooner, which is good, since
+ * interrupts are locked while trying to find the insert point. Note that the
+ * timeouts are then processed in the _reverse order_ if they expire on the
+ * same tick.
+ *
+ * This should not cause problems to applications, unless they really expect
+ * two timeouts queued very close to one another to expire in the same order
+ * they were queued. This could be changed at the cost of potential longer
+ * interrupt latency.
+ *
+ * NOTE: The current implementation of the legacy semaphore feature depends on
+ * the timeouts being queued in reverse order.
+ *
  * Must be called with interrupts locked.
  */
 
