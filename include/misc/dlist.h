@@ -56,6 +56,30 @@ typedef struct _dnode sys_dnode_t;
 	     __dn = sys_dlist_peek_next(__dl, __dn))
 
 /**
+ * @brief Provide the primitive to iterate on a list, from a node in the list
+ * Note: the loop is unsafe and thus __dn should not be removed
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     SYS_DLIST_ITERATE_FROM_NODE(l, n) {
+ *         <user code>
+ *     }
+ *
+ * Like SYS_DLIST_FOR_EACH_NODE(), but __dn already contains a node in the list
+ * where to start searching for the next entry from. If NULL, it starts from
+ * the head.
+ *
+ * @param __dl A pointer on a sys_dlist_t to iterate on
+ * @param __dn A sys_dnode_t pointer to peek each node of the list;
+ *             it contains the starting node, or NULL to start from the head
+ */
+#define SYS_DLIST_ITERATE_FROM_NODE(__dl, __dn) \
+	for (__dn = __dn ? sys_dlist_peek_next_no_check(__dl, __dn) \
+			 : sys_dlist_peek_head(__dl); \
+	     __dn; \
+	     __dn = sys_dlist_peek_next(__dl, __dn))
+
+/**
  * @brief Provide the primitive to safely iterate on a list
  * Note: __dn can be removed, it will not break the loop.
  *
@@ -230,6 +254,23 @@ static inline sys_dnode_t *sys_dlist_peek_head_not_empty(sys_dlist_t *list)
 }
 
 /**
+ * @brief get a reference to the next item in the list, node is not NULL
+ *
+ * Faster than sys_dlist_peek_next() if node is known not to be NULL.
+ *
+ * @param list the doubly-linked list to operate on
+ * @param node the node from which to get the next element in the list
+ *
+ * @return a pointer to the next element from a node, NULL if node is the tail
+ */
+
+static inline sys_dnode_t *sys_dlist_peek_next_no_check(sys_dlist_t *list,
+							sys_dnode_t *node)
+{
+	return (node == list->tail) ? NULL : node->next;
+}
+
+/**
  * @brief get a reference to the next item in the list
  *
  * @param list the doubly-linked list to operate on
@@ -242,7 +283,7 @@ static inline sys_dnode_t *sys_dlist_peek_head_not_empty(sys_dlist_t *list)
 static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
 					       sys_dnode_t *node)
 {
-	return (!node || node == list->tail) ? NULL : node->next;
+	return node ? sys_dlist_peek_next_no_check(list, node) : NULL;
 }
 
 /**
