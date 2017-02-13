@@ -143,7 +143,7 @@ SECTIONS {
 
 	__data_ram_end = .;
 
-	SECTION_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),) {
+	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),) {
 		/*
 		 * For performance, BSS section is assumed to be 4 byte aligned and
 		 * a multiple of 4 bytes
@@ -158,7 +158,7 @@ SECTIONS {
 		 * potential left over bytes.
 		 */
 		__bss_end = ALIGN(4);
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 	SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),) {
 		/*
