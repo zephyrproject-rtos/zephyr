@@ -1404,6 +1404,10 @@ static bool hrs_simulate;
 
 static int cmd_hrs_simulate(int argc, char *argv[])
 {
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
 	if (!strcmp(argv[1], "on")) {
 		static bool hrs_registered;
 
