@@ -18,6 +18,7 @@
  *   -# k_delayed_work_submit_to_queue
  *   -# k_delayed_work_submit
  *   -# k_delayed_work_cancel
+ *   -# k_delayed_work_remaining_get
  *   -# k_work_pending
  *   -#
  * @}
@@ -76,6 +77,9 @@ static void tdelayed_work_submit(void *data)
 		/**TESTPOINT: check pending after delayed work init*/
 		assert_false(k_work_pending((struct k_work *)&delayed_work[i]),
 			NULL);
+		/**TESTPOINT: check remaining timeout before submit*/
+		assert_equal(k_delayed_work_remaining_get(&delayed_work[i]), 0,
+			NULL);
 		if (work_q) {
 			/**TESTPOINT: delayed work submit to queue*/
 			assert_true(k_delayed_work_submit_to_queue(work_q,
@@ -85,6 +89,9 @@ static void tdelayed_work_submit(void *data)
 			assert_true(k_delayed_work_submit(&delayed_work[i],
 				TIMEOUT) == 0, NULL);
 		}
+		/**TESTPOINT: check remaining timeout after submit*/
+		assert_true(k_delayed_work_remaining_get(&delayed_work[i]) >=
+			TIMEOUT, NULL);
 		/**TESTPOINT: check pending after delayed work submit*/
 		assert_true(k_work_pending((struct k_work *)&delayed_work[i])
 			== 0, NULL);
