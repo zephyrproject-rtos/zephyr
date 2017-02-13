@@ -1,0 +1,24 @@
+# Kconfig - ST STM32F429XX MCU configuration options
+#
+# Copyright (c) 2016 Linaro Limited.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F429XX
+
+config SOC
+	string
+	default stm32f429xx
+
+config SRAM_SIZE
+	default 256
+
+config FLASH_SIZE
+	default 2048
+
+config NUM_IRQS
+	int
+	default 85
+
+endif # SOC_STM32F429XX
