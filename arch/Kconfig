@@ -153,7 +153,6 @@ config GEN_SW_ISR_TABLE
 
 config GEN_IRQ_START_VECTOR
 	int
-	prompt "Starting vector for user-configurable interrupts"
 	default 0
 	depends on GEN_ISR_TABLES
 	help
@@ -161,6 +160,8 @@ config GEN_IRQ_START_VECTOR
 	system exceptions and is declared separately from the tables
 	created by gen_isr_tables.py. When creating these tables, this value
 	will be subtracted from CONFIG_NUM_IRQS to properly size them.
+	This is a hidden option which needs to be set-per architecture and
+	left alone.
 
 source "arch/*/Kconfig"
 
