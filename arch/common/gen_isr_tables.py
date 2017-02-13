@@ -58,7 +58,7 @@ def read_intlist(intlist_path):
 
     prefix = endian_prefix()
 
-    intlist_header_fmt = prefix + "IIII"
+    intlist_header_fmt = prefix + "IIIII"
     intlist_entry_fmt = prefix + "iiII"
 
     with open(intlist_path, "rb") as fp:
@@ -72,8 +72,9 @@ def read_intlist(intlist_path):
 
     intlist["spurious_handler"] = header[0]
     intlist["sw_irq_handler"] = header[1]
-    intlist["num_isrs"] = header[2]
-    intlist["num_vectors"] = header[3]
+    intlist["num_vectors"] = header[2]
+    intlist["offset"] = header[3]
+    intlist["num_isrs"] = header[4]
 
     debug("spurious handler: %s" % hex(header[0]))
 
@@ -148,6 +149,7 @@ def main():
 
     intlist = read_intlist(args.intlist)
     nvec = intlist["num_vectors"]
+    offset = intlist["offset"]
     prefix = endian_prefix()
 
     # Set default entries in both tables
@@ -173,14 +175,14 @@ def main():
             if (param != 0):
                 error("Direct irq %d declared, but has non-NULL parameter"
                         % irq)
-            vt[irq] = func
+            vt[irq - offset] = func
         else:
             # Regular interrupt
             if not swt:
                 error("Regular Interrupt %d declared with parameter 0x%x "
                         "but no SW ISR_TABLE in use"
                         % (irq, param))
-            swt[irq] = (param, func)
+            swt[irq - offset] = (param, func)
 
     with open(args.output_source, "w") as fp:
         write_source_file(fp, vt, swt, intlist)

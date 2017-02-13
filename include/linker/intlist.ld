@@ -42,10 +42,8 @@
 
 SECTION_PROLOGUE(.intList,,)
 {
-	KEEP(*(.irq.spurious))
-	KEEP(*(.irq.handler))
+	KEEP(*(.irq_info))
 	LONG((__INT_LIST_END__ - __INT_LIST_START__) / __ISR_LIST_SIZEOF)
-	KEEP(*(.irq.tablesize))
 	__INT_LIST_START__ = .;
 	KEEP(*(.intList))
 	__INT_LIST_END__ = .;
