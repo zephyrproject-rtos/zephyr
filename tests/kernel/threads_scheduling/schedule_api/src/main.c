@@ -27,7 +27,8 @@ void test_main(void *p1, void *p2, void *p3)
 		ztest_unit_test(test_time_slicing_preemptible),
 		ztest_unit_test(test_time_slicing_disable_preemptible),
 		ztest_unit_test(test_lock_preemptible),
-		ztest_unit_test(test_unlock_preemptible)
+		ztest_unit_test(test_unlock_preemptible),
+		ztest_unit_test(test_sched_is_preempt_thread)
 		);
 	ztest_run_test_suite(test_threads_scheduling);
 }

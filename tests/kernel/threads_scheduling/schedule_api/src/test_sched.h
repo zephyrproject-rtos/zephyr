@@ -31,5 +31,6 @@ void test_time_slicing_preemptible(void);
 void test_time_slicing_disable_preemptible(void);
 void test_lock_preemptible(void);
 void test_unlock_preemptible(void);
+void test_sched_is_preempt_thread(void);
 
 #endif /* __TEST_SCHED_H__ */
