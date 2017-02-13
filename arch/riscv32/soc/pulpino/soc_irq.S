@@ -99,7 +99,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 SECTION_FUNC(exception.other, __soc_is_irq)
 	/* Get exception number from the mcause CSR register. */
 	csrr t0, mcause
-	andi t0, t0, SOC_MCAUSE_IRQ_MASK
+	andi t0, t0, SOC_MCAUSE_EXP_MASK
 
 	/* if IRQ number < PULP_MIN_IRQ, not interrupt */
 	li t1, PULP_MIN_IRQ

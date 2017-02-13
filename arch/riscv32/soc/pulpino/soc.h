@@ -52,7 +52,7 @@
 #define SOC_MSTATUS_DEF_RESTORE    SOC_MSTATUS_IEN
 
 /* SOC-specific MCAUSE bitfields */
-#define SOC_MCAUSE_IRQ_MASK        0x1F           /* Exception code Mask */
+#define SOC_MCAUSE_EXP_MASK        0x1F           /* Exception code Mask */
 #define SOC_MCAUSE_ECALL_EXP       PULP_ECALL_EXP /* ECALL exception number */
 
 /* SOC-Specific EXIT ISR command */

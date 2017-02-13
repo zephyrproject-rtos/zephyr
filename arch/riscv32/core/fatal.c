@@ -193,7 +193,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
-	mcause &= SOC_MCAUSE_IRQ_MASK;
+	mcause &= SOC_MCAUSE_EXP_MASK;
 
 	PRINTK("Exception cause %s (%d)\n", cause_str(mcause), (int)mcause);
 

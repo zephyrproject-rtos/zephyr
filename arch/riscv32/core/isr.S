@@ -141,7 +141,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	 * to report the exception.
 	 */
 	csrr t0, mcause
-	li t2, SOC_MCAUSE_IRQ_MASK
+	li t2, SOC_MCAUSE_EXP_MASK
 	and t0, t0, t2
 	li t1, SOC_MCAUSE_ECALL_EXP
 
@@ -235,7 +235,7 @@ call_irq:
 
 	/* Get IRQ causing interrupt */
 	csrr a0, mcause
-	li t0, SOC_MCAUSE_IRQ_MASK
+	li t0, SOC_MCAUSE_EXP_MASK
 	and a0, a0, t0
 
 	/*

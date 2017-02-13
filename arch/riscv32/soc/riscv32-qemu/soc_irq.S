@@ -36,7 +36,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 SECTION_FUNC(exception.other, __soc_is_irq)
 	/* Get exception number from the mcause CSR register. */
 	csrr t0, mcause
-	li t1, SOC_MCAUSE_IRQ_MASK
+	li t1, SOC_MCAUSE_EXP_MASK
 	and t0, t0, t1
 
 	/* if IRQ number != RISCV_MACHINE_TIMER_IRQ, not interrupt */

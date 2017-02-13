@@ -32,7 +32,7 @@ static inline int _sys_current_irq_key_get(void)
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
-	mcause &= SOC_MCAUSE_IRQ_MASK;
+	mcause &= SOC_MCAUSE_EXP_MASK;
 
 	return mcause;
 }
