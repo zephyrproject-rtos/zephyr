@@ -1412,7 +1412,7 @@ static int cmd_hrs_simulate(int argc, char *argv[])
 		static bool hrs_registered;
 
 		if (!hrs_registered) {
-			printk("Register HRS Serice\n");
+			printk("Registering HRS Service\n");
 			hrs_init(0x01);
 			hrs_registered = true;
 		}
