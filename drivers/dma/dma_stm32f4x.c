@@ -23,7 +23,7 @@
 #define DMA_STM32_1		0	/* First  DMA controller */
 #define DMA_STM32_2		1	/* Second DMA controller */
 
-#define DMA_STM32_IRQ_PRI	63	/* DMA controller IRQ priority */
+#define DMA_STM32_IRQ_PRI	CONFIG_DMA_0_IRQ_PRI
 
 struct dma_stm32_chan_reg {
 	/* Shared registers */
