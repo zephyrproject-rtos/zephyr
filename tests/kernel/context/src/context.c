@@ -10,7 +10,7 @@
  * DESCRIPTION
  * This module tests the following CPU and thread related routines:
  * k_thread_spawn, k_yield(), k_is_in_isr(),
- * k_current_get(), k_cpu_idle(),
+ * k_current_get(), k_cpu_idle(), k_cpu_atomic_idle(),
  * irq_lock(), irq_unlock(),
  * irq_offload(), irq_enable(), irq_disable(),
  */
@@ -185,21 +185,28 @@ static int kernel_init_objects(void)
  * @return TC_PASS on success
  * @return TC_FAIL on failure
  */
-static int test_kernel_cpu_idle(void)
+static int test_kernel_cpu_idle(int atomic)
 {
-	int tick;               /* current tick count */
+	int tms;                /* current time in millisecond */
 	int i;                  /* loop variable */
 
-	/* Align to a "tick boundary". */
-	tick = _tick_get_32();
-	while (tick == _tick_get_32()) {
+	/* Align to a "ms boundary". */
+	tms = k_uptime_get_32();
+	while (tms == k_uptime_get_32()) {
 	}
 
-	tick = _tick_get_32();
+	tms = k_uptime_get_32();
 	for (i = 0; i < 5; i++) {       /* Repeat the test five times */
-		k_cpu_idle();
-		tick++;
-		if (_tick_get_32() != tick) {
+		if (atomic) {
+			unsigned int key = irq_lock();
+
+			k_cpu_atomic_idle(key);
+		} else {
+			k_cpu_idle();
+		}
+		/* calculating milliseconds per tick*/
+		tms += sys_clock_us_per_tick / USEC_PER_MSEC;
+		if (k_uptime_get_32() < tms) {
 			return TC_FAIL;
 		}
 	}
@@ -853,10 +860,17 @@ void main(void)
 	}
 #ifdef HAS_POWERSAVE_INSTRUCTION
 	TC_PRINT("Testing k_cpu_idle()\n");
-	rv = test_kernel_cpu_idle();
+	rv = test_kernel_cpu_idle(0);
 	if (rv != TC_PASS) {
 		goto tests_done;
 	}
+#ifndef CONFIG_ARM
+	TC_PRINT("Testing k_cpu_atomic_idle()\n");
+	rv = test_kernel_cpu_idle(1);
+	if (rv != TC_PASS) {
+		goto tests_done;
+	}
+#endif
 #endif
 
 	TC_PRINT("Testing interrupt locking and unlocking\n");
