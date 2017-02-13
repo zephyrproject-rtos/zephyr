@@ -70,10 +70,6 @@ SECTIONS {
 
 		KEEP(*(.exc_vector_table))
 		KEEP(*(".exc_vector_table.*"))
-
-		KEEP(*(.openocd_dbg))
-		KEEP(*(".openocd_dbg.*"))
-
 		KEEP(*(IRQ_VECTOR_TABLE))
 
 		KEEP(*(.isr_irq*))
@@ -105,6 +101,8 @@ SECTIONS {
 #include <linker/common-rom.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,) {
+		KEEP(*(.openocd_dbg))
+		KEEP(*(".openocd_dbg.*"))
 		*(.rodata)
 		*(".rodata.*")
 		*(.gnu.linkonce.r.*)
