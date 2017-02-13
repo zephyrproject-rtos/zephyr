@@ -80,11 +80,13 @@ static void tfifo_get(struct k_fifo *pfifo)
 static void tIsr_entry_put(void *p)
 {
 	tfifo_put((struct k_fifo *)p);
+	assert_false(k_fifo_is_empty((struct k_fifo *)p), NULL);
 }
 
 static void tIsr_entry_get(void *p)
 {
 	tfifo_get((struct k_fifo *)p);
+	assert_true(k_fifo_is_empty((struct k_fifo *)p), NULL);
 }
 
 static void tThread_entry(void *p1, void *p2, void *p3)
@@ -121,6 +123,19 @@ static void tfifo_isr_thread(struct k_fifo *pfifo)
 	irq_offload(tIsr_entry_get, pfifo);
 }
 
+static void tfifo_is_empty(void *p)
+{
+	struct k_fifo *pfifo = (struct k_fifo *)p;
+
+	tfifo_put(&fifo);
+	/**TESTPOINT: return false when data available*/
+	assert_false(k_fifo_is_empty(pfifo), NULL);
+
+	tfifo_get(&fifo);
+	/**TESTPOINT: return true with data unavailable*/
+	assert_true(k_fifo_is_empty(pfifo), NULL);
+}
+
 /*test cases*/
 void test_fifo_thread2thread(void)
 {
@@ -150,4 +165,21 @@ void test_fifo_isr2thread(void)
 
 	/**TESTPOINT: test K_FIFO_DEFINE fifo*/
 	tfifo_isr_thread(&kfifo);
+}
+
+void test_fifo_is_empty_thread(void)
+{
+	k_fifo_init(&fifo);
+	/**TESTPOINT: k_fifo_is_empty after init*/
+	assert_true(k_fifo_is_empty(&fifo), NULL);
+
+	/**TESTPONT: check fifo is empty from thread*/
+	tfifo_is_empty(&fifo);
+}
+
+void test_fifo_is_empty_isr(void)
+{
+	k_fifo_init(&fifo);
+	/**TESTPOINT: check fifo is empty from isr*/
+	irq_offload(tfifo_is_empty, &fifo);
 }
