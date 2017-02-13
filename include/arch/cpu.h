@@ -19,6 +19,8 @@
 #include <arch/nios2/arch.h>
 #elif defined(CONFIG_RISCV32)
 #include <arch/riscv32/arch.h>
+#elif defined(CONFIG_XTENSA)
+#include <arch/xtensa/arch.h>
 #else
 #error "Unknown Architecture"
 #endif

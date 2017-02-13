@@ -376,7 +376,6 @@ ZEPHYRINCLUDE    = \
 KBUILD_CPPFLAGS := -DKERNEL -D__ZEPHYR__=1
 
 KBUILD_CFLAGS   := -c -g -std=c99 \
-		-fno-asynchronous-unwind-tables \
 		-Wall \
 		-Wformat \
 		-Wformat-security \
@@ -595,6 +594,12 @@ drivers-y := drivers/
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
 
+ifeq ($(CONFIG_DEBUG),y)
+KBUILD_CFLAGS += -Og
+else
+KBUILD_CFLAGS += -Os
+endif
+
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 else
@@ -632,11 +637,8 @@ KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
                  $(call cc-option,-fno-partial-inlining)
 endif
 
-ifeq ($(CONFIG_DEBUG),y)
-KBUILD_CFLAGS  += -Og
-else
-KBUILD_CFLAGS  += -Os
-endif
+# Some GCC variants don't support these
+KBUILD_CFLAGS += $(call cc-option,-fno-asynchronous-unwind-tables,)
 
 ifeq ($(CONFIG_STACK_CANARIES),y)
 KBUILD_CFLAGS += $(call cc-option,-fstack-protector-all,)
@@ -683,7 +685,9 @@ else
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 KBUILD_CFLAGS += $(call cc-option,-fno-reorder-functions)
+ifneq (${ZEPHYR_GCC_VARIANT},xcc)
 KBUILD_CFLAGS += $(call cc-option,-fno-defer-pop)
+endif
 endif
 
 # We trigger additional mismatches with less inlining

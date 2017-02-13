@@ -23,7 +23,7 @@
 #include <ztest.h>
 
 #define TIMEOUT 100
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define MAIL_LEN 64
 
 

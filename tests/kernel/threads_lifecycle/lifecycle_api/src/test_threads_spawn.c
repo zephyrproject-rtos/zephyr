@@ -14,7 +14,7 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE 256
+#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 static char __noinit __stack tstack[STACK_SIZE];
 
 static char tp1[8];
