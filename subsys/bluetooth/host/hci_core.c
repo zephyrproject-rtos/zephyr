@@ -3117,6 +3117,43 @@ static int read_ext_features(void)
 	return 0;
 }
 
+void device_supported_pkt_type(void)
+{
+	/* Device supported features and sco packet types */
+	if (BT_FEAT_HV2_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_HV2);
+	}
+
+	if (BT_FEAT_HV3_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_HV3);
+	}
+
+	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_EV3);
+	}
+
+	if (BT_FEAT_EV4_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_EV4);
+	}
+
+	if (BT_FEAT_EV5_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_EV5);
+	}
+
+	if (BT_FEAT_2EV3_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_2EV3);
+	}
+
+	if (BT_FEAT_3EV3_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_3EV3);
+	}
+
+	if (BT_FEAT_3SLOT_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_2EV5 |
+					 HCI_PKT_TYPE_ESCO_3EV5);
+	}
+}
+
 static int br_init(void)
 {
 	struct net_buf *buf;
@@ -3132,6 +3169,9 @@ static int br_init(void)
 			return err;
 		}
 	}
+
+	/* Add local supported packet types to bt_dev */
+	device_supported_pkt_type();
 
 	/* Get BR/EDR buffer size */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &buf);

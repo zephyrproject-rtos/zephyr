@@ -60,6 +60,10 @@ struct bt_dev_le {
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+struct bt_dev_esco {
+	uint16_t                pkt_type;
+};
+
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t		mtu;
@@ -98,6 +102,7 @@ struct bt_dev {
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	/* BR/EDR controller specific features */
 	struct bt_dev_br	br;
+	struct bt_dev_esco      esco;
 #endif
 
 	/* Number of commands controller can accept */
