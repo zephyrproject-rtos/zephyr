@@ -15,31 +15,6 @@ extern uint32_t _irq_vector_table[];
 #define HAS_DIRECT_IRQS
 #endif
 
-#ifdef HAS_DIRECT_IRQS
-ISR_DIRECT_DECLARE(isr1)
-{
-	printk("isr1\n");
-	return 0;
-}
-
-ISR_DIRECT_DECLARE(isr2)
-{
-	printk("isr2\n");
-	return 1;
-}
-#endif
-
-void isr3(void *param)
-{
-	printk("isr3 %p\n", param);
-}
-
-
-void isr4(void *param)
-{
-	printk("isr4 %p\n", param);
-}
-
 #define ISR1_OFFSET	0
 #define ISR2_OFFSET	1
 #define ISR3_OFFSET	2
@@ -50,8 +25,75 @@ void isr4(void *param)
 
 #define ISR3_ARG	0xb01dface
 #define ISR4_ARG	0xca55e77e
+static volatile int trigger_check[4];
 
-#ifdef CONFIG_GEN_IRQ_VECTOR_TABLE
+#if defined(CONFIG_ARM)
+#include <arch/arm/cortex_m/cmsis.h>
+
+void trigger_irq(int irq)
+{
+#if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+	/* QEMU does not simulate the STIR register: this is a workaround */
+	NVIC_SetPendingIRQ(irq);
+#else
+	NVIC->STIR = irq;
+#endif
+}
+#else
+/* So far, Nios II and Risc V do not support this */
+#define NO_TRIGGER_FROM_SW
+#endif
+
+#ifdef HAS_DIRECT_IRQS
+ISR_DIRECT_DECLARE(isr1)
+{
+	printk("isr1 ran\n");
+	trigger_check[ISR1_OFFSET]++;
+	return 0;
+}
+
+ISR_DIRECT_DECLARE(isr2)
+{
+	printk("isr2 ran\n");
+	trigger_check[ISR2_OFFSET]++;
+	return 1;
+}
+#endif
+
+void isr3(void *param)
+{
+	printk("isr3 ran with parameter %p\n", param);
+	trigger_check[ISR3_OFFSET]++;
+}
+
+
+void isr4(void *param)
+{
+	printk("isr4 ran with parameter %p\n", param);
+	trigger_check[ISR4_OFFSET]++;
+}
+
+int test_irq(int offset)
+{
+#ifndef NO_TRIGGER_FROM_SW
+	TC_PRINT("triggering irq %d\n", IRQ_LINE(offset));
+	trigger_irq(IRQ_LINE(offset));
+	if (trigger_check[offset] != 1) {
+		TC_PRINT("interrupt %d didn't run once, ran %d times\n",
+			 IRQ_LINE(offset),
+			 trigger_check[offset]);
+		return -1;
+	}
+#else
+	/* This arch doesn't support triggering interrupts from software */
+	ARG_UNUSED(offset);
+#endif
+	return 0;
+}
+
+
+
+#ifdef HAS_DIRECT_IRQS
 static int check_vector(void *isr, int offset)
 {
 	TC_PRINT("Checking _irq_vector_table entry %d for irq %d\n",
@@ -61,6 +103,11 @@ static int check_vector(void *isr, int offset)
 		TC_PRINT("bad entry %d in vector table\n", TABLE_INDEX(offset));
 		return -1;
 	}
+
+	if (test_irq(offset)) {
+		return -1;
+	}
+
 	return 0;
 }
 #endif
@@ -94,6 +141,9 @@ static int check_sw_isr(void *isr, uint32_t arg, int offset)
 	}
 #endif
 
+	if (test_irq(offset)) {
+		return -1;
+	}
 	return 0;
 }
 #endif
@@ -109,6 +159,8 @@ void main(void)
 #ifdef HAS_DIRECT_IRQS
 	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, 0);
 	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, 0);
+	irq_enable(IRQ_LINE(ISR1_OFFSET));
+	irq_enable(IRQ_LINE(ISR2_OFFSET));
 	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
 	TC_PRINT("isr2 isr=%p irq=%d\n", isr2, IRQ_LINE(ISR2_OFFSET));
 
@@ -126,6 +178,8 @@ void main(void)
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, 0);
 	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), 2, isr4, ISR4_ARG, 0);
+	irq_enable(IRQ_LINE(ISR3_OFFSET));
+	irq_enable(IRQ_LINE(ISR4_OFFSET));
 	TC_PRINT("isr3 isr=%p irq=%d param=%p\n", isr3, IRQ_LINE(ISR3_OFFSET),
 		 (void *)ISR3_ARG);
 	TC_PRINT("isr4 isr=%p irq=%d param=%p\n", isr4, IRQ_LINE(ISR4_OFFSET),
