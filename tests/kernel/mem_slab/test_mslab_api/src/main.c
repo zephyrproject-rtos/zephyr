@@ -10,7 +10,6 @@ extern void test_mslab_kinit(void);
 extern void test_mslab_kdefine(void);
 extern void test_mslab_kdefine_extern(void);
 extern void test_mslab_alloc_free_thread(void);
-extern void test_mslab_alloc_free_isr(void);
 extern void test_mslab_alloc_align(void);
 extern void test_mslab_alloc_timeout(void);
 extern void test_mslab_used_get(void);
@@ -23,7 +22,6 @@ void test_main(void *p1, void *p2, void *p3)
 		ztest_unit_test(test_mslab_kdefine),
 		ztest_unit_test(test_mslab_kdefine_extern),
 		ztest_unit_test(test_mslab_alloc_free_thread),
-		ztest_unit_test(test_mslab_alloc_free_isr),
 		ztest_unit_test(test_mslab_alloc_align),
 		ztest_unit_test(test_mslab_alloc_timeout),
 		ztest_unit_test(test_mslab_used_get));

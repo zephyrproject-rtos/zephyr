@@ -18,7 +18,6 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
 
 #define TIMEOUT 500
 #define STACK_SIZE 512

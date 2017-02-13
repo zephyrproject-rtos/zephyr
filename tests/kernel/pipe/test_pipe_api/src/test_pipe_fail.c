@@ -16,7 +16,6 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
 
 #define TIMEOUT 100
 #define PIPE_LEN 8

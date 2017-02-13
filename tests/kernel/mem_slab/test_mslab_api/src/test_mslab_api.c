@@ -21,7 +21,6 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
 #include "test_mslab.h"
 
 /** TESTPOINT: Statically define and initialize a memory slab*/
@@ -158,11 +157,6 @@ void test_mslab_alloc_free_thread(void)
 {
 
 	tmslab_alloc_free(&mslab);
-}
-
-void test_mslab_alloc_free_isr(void)
-{
-	irq_offload(tmslab_alloc_free, &mslab);
 }
 
 void test_mslab_alloc_align(void)

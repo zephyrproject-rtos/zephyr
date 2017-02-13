@@ -17,7 +17,6 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
 
 #define STACK_SIZE 512
 #define PIPE_LEN 8

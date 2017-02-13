@@ -19,7 +19,6 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
 #include "test_mpool.h"
 
 /** TESTPOINT: Statically define and initialize a memory pool*/
