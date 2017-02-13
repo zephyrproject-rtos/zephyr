@@ -72,7 +72,7 @@ SECTION_FUNC(TEXT, _firq_enter)
  * If CONFIG_RGF_NUM_BANKS>1, firq uses a 2nd register bank so GPRs do
  * not need to be saved.
  * If CONFIG_RGF_NUM_BANKS==1, firq must use the stack to save registers.
- * This has already been done by _isr_enter.
+ * This has already been done by _isr_wrapper.
  */
 
 #ifdef CONFIG_ARC_STACK_CHECKING

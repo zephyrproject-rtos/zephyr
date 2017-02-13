@@ -20,7 +20,7 @@
 #include <kernel_structs.h>
 #include <arch/cpu.h>
 
-GTEXT(_isr_enter)
+GTEXT(_isr_wrapper)
 GTEXT(_isr_demux)
 
 #if CONFIG_RGF_NUM_BANKS == 1
@@ -41,9 +41,9 @@ _rirq_enter/_firq_enter: they are jump points.
 
 The flow is the following:
 
-ISR -> _isr_enter -- + -> _rirq_enter -> _isr_demux -> ISR -> _rirq_exit
-                     |
-                     + -> _firq_enter -> _isr_demux -> ISR -> _firq_exit
+ISR -> _isr_wrapper -- + -> _rirq_enter -> _isr_demux -> ISR -> _rirq_exit
+                       |
+                       + -> _firq_enter -> _isr_demux -> ISR -> _firq_exit
 
 Context switch explanation:
 
@@ -216,7 +216,7 @@ From RIRQ:
     interrupt.
  */
 
-SECTION_FUNC(TEXT, _isr_enter)
+SECTION_FUNC(TEXT, _isr_wrapper)
 #if CONFIG_RGF_NUM_BANKS == 1
 	st r0,[saved_r0]
 #endif
