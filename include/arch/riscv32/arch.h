@@ -56,26 +56,13 @@ extern uint32_t __soc_get_irq(void);
 void _arch_irq_enable(unsigned int irq);
 void _arch_irq_disable(unsigned int irq);
 int _arch_irq_is_enabled(unsigned int irq);
+void _irq_spurious(void *unused);
 
 
 /**
  * Configure a static interrupt.
  *
  * All arguments must be computable by the compiler at build time.
- *
- * Internally this function does a few things:
- *
- * 1. The enum statement has no effect but forces the compiler to only
- * accept constant values for the irq_p parameter, very important as the
- * numerical IRQ line is used to create a named section.
- *
- * 2. An instance of struct _isr_table_entry is created containing the ISR and
- * its parameter. If you look at how _sw_isr_table is created, each entry in
- * the array is in its own section named by the IRQ line number. What we are
- * doing here is to override one of the default entries (which points to the
- * spurious IRQ handler) with what was supplied here.
- *
- * 3. interrupt priority is not supported by pulpino core
  *
  * @param irq_p IRQ line number
  * @param priority_p Interrupt priority
@@ -87,11 +74,7 @@ int _arch_irq_is_enabled(unsigned int irq);
  */
 #define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
-	enum { IRQ = irq_p }; \
-	static struct _isr_table_entry _CONCAT(_isr_irq, irq_p) \
-		__attribute__ ((used)) \
-		__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, irq_p))))) = \
-			{isr_param_p, isr_p}; \
+	_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	irq_p; \
 })
 

@@ -33,6 +33,8 @@ MEMORY
     {
     INSTRRAM (wx) : ORIGIN = CONFIG_ITCM_BASE_ADDRESS, LENGTH = CONFIG_ITCM_SIZE
     DATARAM  (rw) : ORIGIN = CONFIG_DTCM_BASE_ADDRESS, LENGTH = CONFIG_DTCM_SIZE
+    /* Used by and documented in include/linker/intlist.ld */
+    IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 SECTIONS
@@ -80,9 +82,12 @@ SECTIONS
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
-		 *(.rodata)
-		 *(".rodata.*")
-		 *(.gnu.linkonce.r.*)
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+		KEEP(*(SW_ISR_TABLE))
+#endif
+		*(.rodata)
+		*(".rodata.*")
+		*(.gnu.linkonce.r.*)
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 #include <linker/common-ram.ld>
@@ -91,17 +96,6 @@ SECTIONS
 	{
 
 		 . = ALIGN(4);
-		 KEEP(*(.isr_irq*))
-
-		 /* sections for IRQ0-9 */
-		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9])))
-
-		 /* sections for IRQ10-99 */
-		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9])))
-
-		 /* sections for IRQ100-999 */
-		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9][0-9])))
-
 		 *(.data)
 		 *(".data.*")
 
@@ -141,6 +135,10 @@ SECTIONS
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
      _end = .; /* end of image */
+
+#ifdef CONFIG_GEN_ISR_TABLES
+#include <linker/intlist.ld>
+#endif
 
      GROUP_END(RAMABLE_REGION)
 }

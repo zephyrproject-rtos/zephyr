@@ -37,6 +37,8 @@ MEMORY
 {
     ROM (rx)  : ORIGIN = CONFIG_RISCV_ROM_BASE_ADDR, LENGTH = CONFIG_RISCV_ROM_SIZE
     RAM (rwx) : ORIGIN = CONFIG_RISCV_RAM_BASE_ADDR, LENGTH = RISCV_RAM_SIZE
+    /* Used by and documented in include/linker/intlist.ld */
+    IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 SECTIONS
@@ -69,20 +71,11 @@ SECTIONS
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 		. = ALIGN(4);
-
-		 KEEP(*(.isr_irq*))
-
-		 /* sections for IRQ0-9 */
-		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9])))
-
-		 /* sections for IRQ10-99 */
-		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9])))
-
-		 /* sections for IRQ100-999 */
-		 KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9][0-9])))
-
-		 KEEP(*(.openocd_debug))
-		 KEEP(*(".openocd_debug.*"))
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+		KEEP(*(SW_ISR_TABLE))
+#endif
+		KEEP(*(.openocd_debug))
+		KEEP(*(".openocd_debug.*"))
 
 		_image_text_start = .;
 		*(.text)
@@ -159,6 +152,10 @@ SECTIONS
 
      _image_ram_end = .;
      _end = .; /* end of image */
+
+#ifdef CONFIG_GEN_ISR_TABLES
+#include <linker/intlist.ld>
+#endif
 
      GROUP_END(RAMABLE_REGION)
 }

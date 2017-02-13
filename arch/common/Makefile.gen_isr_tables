@@ -2,14 +2,10 @@ GEN_ISR_TABLE := $(srctree)/arch/common/gen_isr_tables.py
 OUTPUT_SRC := isr_tables.c
 OUTPUT_OBJ := isr_tables.o
 
-ifeq ($(ARCH),arm)
-OUTPUT_FORMAT := elf32-littlearm
-OUTPUT_ARCH := arm
-else ifeq ($(ARCH),nios2)
-OUTPUT_FORMAT := elf32-littlenios2
-OUTPUT_ARCH := nios2
+ifeq ($(ARCH),riscv32)
+OUTPUT_FORMAT := elf32-littleriscv
 else
-$(error Output formats not defined for this architecture)
+OUTPUT_FORMAT := elf32-little$(ARCH)
 endif
 
 GEN_ISR_TABLE_EXTRA_ARGS :=

@@ -63,6 +63,13 @@ config RISCV_HAS_CPU_IDLE
 	default n
 	help
 	Does SOC has CPU IDLE instruction
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
 endmenu
 
 source "arch/riscv32/soc/*/Kconfig"
