@@ -141,7 +141,7 @@ static void interrupt_handler(struct device *dev)
 	}
 }
 
-static void write_data(struct device *dev, const char *buf, int len)
+static void write_data(struct device *dev, const uint8_t *buf, int len)
 {
 	uart_irq_tx_enable(dev);
 
