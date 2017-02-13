@@ -226,7 +226,7 @@ typedef int (*sensor_trigger_set_t)(struct device *dev,
  * @typedef sensor_sample_fetch_t
  * @brief Callback API for fetching data from a sensor
  *
- * See sensor_sample_fetch() for argument descriptor
+ * See sensor_sample_fetch() for argument description
  */
 typedef int (*sensor_sample_fetch_t)(struct device *dev,
 				     enum sensor_channel chan);
@@ -234,7 +234,7 @@ typedef int (*sensor_sample_fetch_t)(struct device *dev,
  * @typedef sensor_channel_get_t
  * @brief Callback API for getting a reading from a sensor
  *
- * See sensor_channel_get() for argument descriptor
+ * See sensor_channel_get() for argument description
  */
 typedef int (*sensor_channel_get_t)(struct device *dev,
 				    enum sensor_channel chan,
