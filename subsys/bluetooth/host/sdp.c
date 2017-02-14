@@ -84,9 +84,6 @@ static void bt_sdp_connected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
 	k_fifo_init(&sdp->partial_resp_queue);
-
-	ch->tx.mtu = SDP_MTU;
-	ch->rx.mtu = SDP_MTU;
 }
 
 /** @brief Callback for SDP disconnection
