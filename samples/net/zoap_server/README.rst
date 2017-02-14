@@ -12,15 +12,20 @@ some adjustments to the configuration may be needed.
 The sample will listen for requests in the CoAP UDP port (5683) in the
 site-local IPv6 multicast address reserved for CoAP nodes.
 
-The exported resource, with path '/test', will just respond any GET to
-that path with the the type, code and message identification retrieved
-from the request. The response will have this format:
+The sample exports the following resources:
 
 .. code-block:: none
 
-  Type: <type>
-  Code: <code>
-  MID: <message id>
+   /test
+   /seg1/seg2/seg3
+   /query
+   /separate
+   /large
+   /location-query
+   /large-update
+
+These resources allow a good part of the ETSI testcases to be run
+against zoap-server.
 
 Building And Running
 ********************
@@ -37,6 +42,14 @@ It can be built and executed on QEMU as follows:
 
     make run
 
+
+Use this command on the host to run the`libcoap`_ implementation of
+the ETSI testcases:
+
+.. code-block:: console
+
+   sudo ./examples/etsi_coaptest.sh -i tap0 2001:db8::1
+
 To build the version supporting the TI CC2520 radio, use the supplied
 configuration file enabling IEEE 802.15.4:
 
@@ -44,4 +57,7 @@ configuration file enabling IEEE 802.15.4:
 
     make CONF_FILE=prj_cc2520.conf run
 
+
 .. _`net-tools`: https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=tree
+
+.. _`libcoap`: https://github.com/obgm/libcoap

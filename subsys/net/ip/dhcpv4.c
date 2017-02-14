@@ -120,7 +120,6 @@ net_dhcpv4_state_name(enum net_dhcpv4_state state)
 	static const char * const name[] = {
 		"init",
 		"discover",
-		"offer",
 		"request",
 		"renewal",
 		"ack"
@@ -316,6 +315,7 @@ static void setup_header(struct net_buf *buf)
 	udp->src_port = htons(DHCPV4_CLIENT_PORT);
 	udp->dst_port = htons(DHCPV4_SERVER_PORT);
 	udp->len = htons(len);
+	udp->chksum = 0;
 	udp->chksum = ~net_calc_chksum_udp(buf);
 }
 
@@ -709,7 +709,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 	 * Rest of the replies are discarded.
 	 */
 	if (iface->dhcpv4.state == NET_DHCPV4_DISCOVER) {
-		if (msg_type != NET_DHCPV4_OFFER) {
+		if (msg_type != DHCPV4_MSG_TYPE_OFFER) {
 			NET_DBG("Reply ignored");
 			return;
 		}
@@ -724,7 +724,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface, uint8_t msg_type)
 		   iface->dhcpv4.state == NET_DHCPV4_RENEWAL) {
 		uint32_t timeout;
 
-		if (msg_type != NET_DHCPV4_ACK) {
+		if (msg_type != DHCPV4_MSG_TYPE_ACK) {
 			NET_DBG("Reply ignored");
 			return;
 		}

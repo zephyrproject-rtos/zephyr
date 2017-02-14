@@ -17,7 +17,7 @@
  */
 
 /**
- * @brief mqtt_app	MQTT application type
+ * MQTT application type
  */
 enum mqtt_app {
 	/** Publisher and Subscriber application */
@@ -31,9 +31,9 @@ enum mqtt_app {
 };
 
 /**
- * @brief struct mqtt_ctx	MQTT context structure
- * @details
- * Context structure for the MQTT high-level API with support for QoS.
+ * MQTT context structure
+ *
+ * @details Context structure for the MQTT high-level API with support for QoS.
  *
  * This API is designed for asynchronous operation, so callbacks are
  * executed when some events must be addressed outside the MQTT routines.
@@ -74,84 +74,66 @@ struct mqtt_ctx {
 
 	/** Callback executed when a #MQTT_APP_PUBLISHER application receives
 	 * a MQTT PUBxxxx msg.
+	 * If type is MQTT_PUBACK, MQTT_PUBCOMP or MQTT_PUBREC, this callback
+	 * must return 0 if pkt_id matches the packet id of a previously
+	 * received MQTT_PUBxxx message. If this callback returns 0, the caller
+	 * will continue.
+	 * Any other value will stop the QoS handshake and the caller will
+	 * return -EINVAL. The application must discard all the messages
+	 * already processed.
 	 *
 	 * <b>Note: this callback must be not NULL</b>
 	 *
-	 * @param [in] ctx	MQTT context
-	 * @param [in] pkt_id	Packet Identifier for the input MQTT msg
-	 * @param [in] type	Packet type
-	 * @return		If this callback returns 0, the caller will
-	 *			continue.
-	 *
-	 * @return		If type is MQTT_PUBACK, MQTT_PUBCOMP or
-	 *			MQTT_PUBREC, this callback must return 0 if
-	 *			pkt_id matches the packet id of a previously
-	 *			received MQTT_PUBxxx message.
-	 *
-	 * @return		<b>Note: the application must discard all the
-	 *			messages already processed</b>
-	 *
-	 * @return		Any other value will stop the QoS handshake
-	 *			and the caller will return -EINVAL
+	 * @param [in] ctx MQTT context
+	 * @param [in] pkt_id Packet Identifier for the input MQTT msg
+	 * @param [in] type Packet type
 	 */
 	int (*publish_tx)(struct mqtt_ctx *ctx, uint16_t pkt_id,
 			  enum mqtt_packet type);
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER,
-	 * MQTT_APP_PUBLISHER_SUBSCRIBER or MQTT_APP_SERVER application receive
-	 * a MQTT PUBxxxx msg.
+	 * MQTT_APP_PUBLISHER_SUBSCRIBER or MQTT_APP_SERVER applications receive
+	 * a MQTT PUBxxxx msg. If this callback returns 0, the caller will
+	 * continue. If type is MQTT_PUBREL this callback must return 0 if
+	 * pkt_id matches the packet id of a previously received MQTT_PUBxxx
+	 * message. Any other value will stop the QoS handshake and the caller
+	 * will return -EINVAL
 	 *
 	 * <b>Note: this callback must be not NULL</b>
 	 *
-	 * @param [in] ctx	MQTT context
-	 * @param [in] msg	Publish message, this parameter is only used
-	 *			when the type is MQTT_PUBLISH
-	 * @param [in] pkt_id	Packet Identifier for the input msg
-	 * @param [in] type	Packet type
-	 * @return		If this callback returns 0, the caller will
-	 *			continue.
-	 *
-	 * @return		If type is MQTT_PUBREL this callback must return
-	 *			0 if pkt_id matches the packet id of a
-	 *			previously received MQTT_PUBxxx message.
-	 *
-	 * @return		<b>Note: the application must discard all the
-	 *			messages already processed</b>
-	 *
-	 * @return		Any other value will stop the QoS handshake
-	 *			and the caller will return -EINVAL
+	 * @param [in] ctx MQTT context
+	 * @param [in] msg Publish message, this parameter is only used
+	 *                 when the type is MQTT_PUBLISH
+	 * @param [in] pkt_id Packet Identifier for the input msg
+	 * @param [in] type Packet type
 	 */
 	int (*publish_rx)(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg,
 			  uint16_t pkt_id, enum mqtt_packet type);
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER or
 	 * MQTT_APP_PUBLISHER_SUBSCRIBER receives the MQTT SUBACK message
+	 * If this callback returns 0, the caller will continue. Any other
+	 * value will make the caller return -EINVAL.
 	 *
 	 * <b>Note: this callback must be not NULL</b>
 	 *
-	 * @param [in] ctx	MQTT context
-	 * @param [in] pkt_id	Packet Identifier for the MQTT SUBACK msg
-	 * @param [in] items	Number of elements in the qos array
-	 * @param [in] qos	Array of QoS values
-	 * @return		If this callback returns 0, the caller will
-	 *			continue
-	 * @return		Any other value will make the caller return
-	 *			-EINVAL
+	 * @param [in] ctx MQTT context
+	 * @param [in] pkt_id Packet Identifier for the MQTT SUBACK msg
+	 * @param [in] items Number of elements in the qos array
+	 * @param [in] qos Array of QoS values
 	 */
 	int (*subscribe)(struct mqtt_ctx *ctx, uint16_t pkt_id,
 			 uint8_t items, enum mqtt_qos qos[]);
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER or
 	 * MQTT_APP_PUBLISHER_SUBSCRIBER receives the MQTT UNSUBACK message
+	 * If this callback returns 0, the caller will continue. Any other value
+	 * will make the caller return -EINVAL
 	 *
 	 * <b>Note: this callback must be not NULL</b>
 	 *
 	 * @param [in] ctx	MQTT context
 	 * @param [in] pkt_id	Packet Identifier for the MQTT SUBACK msg
-	 * @return		If this callback returns 0, the caller will
-	 *			continue
-	 * @return		Any other value will make the caller return
-	 *			-EINVAL
 	 */
 	int (*unsubscribe)(struct mqtt_ctx *ctx, uint16_t pkt_id);
 
@@ -182,219 +164,253 @@ struct mqtt_ctx {
 };
 
 /**
- * @brief mqtt_init		Initializes the MQTT context structure
- * @param ctx			MQTT context structure
- * @param app_type		See enum mqtt_app
- * @return			0, always.
+ * Initializes the MQTT context structure
+ *
+ * @param ctx MQTT context structure
+ * @param app_type See enum mqtt_app
+ * @retval 0, always.
  */
 int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type);
 
 /**
- * @brief mqtt_tx_connect	Sends the MQTT CONNECT message
- * @param [in] ctx		MQTT context structure
- * @param [in] msg		MQTT CONNECT msg
- * @return			0 on success
- * @return			-EIO on network error
- * @return			-ENOMEM if no data/tx buffer is available
- * @return			-EINVAL if invalid data was passed to this
- *				routine
+ * Sends the MQTT CONNECT message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] msg MQTT CONNECT msg
+ *
+ * @retval 0 on success
+ * @retval -EIO
+ * @retval -ENOMEM
+ * @retval -EINVAL
  */
 int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg);
 
 /**
- * @brief mqtt_tx_disconnect	Send the MQTT DISCONNECT message
- * @param [in] ctx		MQTT context structure
- * @return			0 on success
- * @return			-EIO on network error
- * @return			-ENOMEM if no data/tx buffer is available
- * @return			-EINVAL if invalid data was passed to this
- *				routine
+ * Send the MQTT DISCONNECT message
+ *
+ * @param [in] ctx MQTT context structure
+ *
+ * @retval 0 on success
+ * @retval -EIO
+ * @retval -ENOMEM
+ * @retval -EINVAL
  */
 int mqtt_tx_disconnect(struct mqtt_ctx *ctx);
 
 /**
- * @brief mqtt_tx_puback	Sends the MQTT PUBACK message with the given
- *				packet id
- * @param [in] ctx		MQTT context structure
- * @param [in] id		MQTT Packet Identifier
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed to
- *				this routine
- * @return			-ENOMEM if a tx buffer is not available
- * @return			-EIO on network error
+ * Sends the MQTT PUBACK message with the given packet id
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] id MQTT Packet Identifier
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
+ * @retval -EIO
  */
 int mqtt_tx_puback(struct mqtt_ctx *ctx, uint16_t id);
 
 /**
- * @brief mqtt_tx_pubcomp	Sends the MQTT PUBCOMP message with the given
- *				packet id
- * @param [in] ctx		MQTT context structure
- * @param [in] id		MQTT Packet Identifier
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed to
- *				this routine
- * @return			-ENOMEM if a tx buffer is not available
- * @return			-EIO on network error
+ * Sends the MQTT PUBCOMP message with the given packet id
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] id MQTT Packet Identifier
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
+ * @retval -EIO
  */
 int mqtt_tx_pubcomp(struct mqtt_ctx *ctx, uint16_t id);
 
 /**
- * @brief mqtt_tx_pubrec	Sends the MQTT PUBREC message with the given
- *				packet id
- * @param [in] ctx		MQTT context structure
- * @param [in] id		MQTT Packet Identifier
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed to
- *				this routine
- * @return			-ENOMEM if a tx buffer is not available
- * @return			-EIO on network error
+ * Sends the MQTT PUBREC message with the given packet id
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] id MQTT Packet Identifier
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
+ * @retval -EIO
  */
 int mqtt_tx_pubrec(struct mqtt_ctx *ctx, uint16_t id);
 
 /**
- * @brief mqtt_tx_pubrel	Sends the MQTT PUBREL message with the given
- *				packet id
- * @param [in] ctx		MQTT context structure
- * @param [in] id		MQTT Packet Identifier
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed to
- *				this routine
- * @return			-ENOMEM if a tx buffer is not available
- * @return			-EIO on network error
+ * Sends the MQTT PUBREL message with the given packet id
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] id MQTT Packet Identifier
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
+ * @retval -EIO
  */
 int mqtt_tx_pubrel(struct mqtt_ctx *ctx, uint16_t id);
 
 /**
- * @brief mqtt_tx_publish	Sends the MQTT PUBLISH message
- * @param [in] ctx		MQTT context structure
- * @param [in] msg		MQTT PUBLISH msg
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed to
- *				this routine
- * @return			-ENOMEM if a tx buffer is not available
- * @return			-EIO on network error
+ * Sends the MQTT PUBLISH message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] msg MQTT PUBLISH msg
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
+ * @retval -EIO
  */
 int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg);
 
 /**
- * @brief mqtt_tx_pingreq	Sends the MQTT PINGREQ message
- * @param [in] ctx		MQTT context structure
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed to
- *				this routine
- * @return			-ENOMEM if a tx buffer is not available
- * @return			-EIO on network error
+ * Sends the MQTT PINGREQ message
+ *
+ * @param [in] ctx MQTT context structure
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
+ * @retval -EIO
  */
 int mqtt_tx_pingreq(struct mqtt_ctx *ctx);
 
 /**
- * @brief mqtt_tx_subscribe	Sends the MQTT SUBSCRIBE message
- * @param [in] ctx		MQTT context structure
- * @param [in] pkt_id		Packet identifier for the MQTT SUBSCRIBE msg
- * @param [in] items		Number of elements in 'topics' and 'qos' arrays
- * @param [in] topics		Array of 'items' elements containing C strings.
- *				For example: {"sensors", "lights", "doors"}
- * @param [in] qos		Array of 'items' elements containing MQTT QoS
- *				values: MQTT_QoS0, MQTT_QoS1, MQTT_QoS2. For
- *				example for the 'topics' array above the
- *				following QoS may be used:
- *				{MQTT_QoS0, MQTT_QoS2, MQTT_QoS1}, indicating
- *				that the subscription to 'lights' must be done
- *				with MQTT_QoS2
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed to
- *				this routine
- * @return			-ENOMEM if a tx buffer is not available
- * @return			-EIO on network error
+ * Sends the MQTT SUBSCRIBE message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] pkt_id Packet identifier for the MQTT SUBSCRIBE msg
+ * @param [in] items Number of elements in 'topics' and 'qos' arrays
+ * @param [in] topics Array of 'items' elements containing C strings.
+ *                    For example: {"sensors", "lights", "doors"}
+ * @param [in] qos Array of 'items' elements containing MQTT QoS values:
+ *                 MQTT_QoS0, MQTT_QoS1, MQTT_QoS2. For example for the 'topics'
+ *                 array above the following QoS may be used: {MQTT_QoS0,
+ *                 MQTT_QoS2, MQTT_QoS1}, indicating that the subscription to
+ *                 'lights' must be done with MQTT_QoS2
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
+ * @retval -EIO
  */
 int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		      const char *topics[], const enum mqtt_qos qos[]);
 
 /**
- * @brief mqtt_tx_unsubscribe	Sends the MQTT UNSUBSCRIBE message
- * @param [in] ctx		MQTT context structure
- * @param [in] pkt_id		Packet identifier for the MQTT UNSUBSCRIBE msg
- * @param [in] items		Number of elements in the 'topics' array
- * @param [in] topics		Array of 'items' elements containing C strings
- * @return
+ * Sends the MQTT UNSUBSCRIBE message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] pkt_id Packet identifier for the MQTT UNSUBSCRIBE msg
+ * @param [in] items Number of elements in the 'topics' array
+ * @param [in] topics Array of 'items' elements containing C strings
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
+ * @retval -EIO
  */
 int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 			const char *topics[]);
 
+
+/**
+ * Parses and validates the MQTT CONNACK msg
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ * @param [in] clean_session MQTT clean session parameter
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ */
 int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx,
 		    int clean_session);
 
 /**
- * @brief mqtt_rx_puback	Parses and validates the MQTT PUBACK message
- * @param [in] ctx		MQTT context structure
- * @param [in] rx		Data buffer
- * @return			0 on success
- * @return			-EINVAL on error
+ * Parses and validates the MQTT PUBACK message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 int mqtt_rx_puback(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 /**
- * @brief mqtt_rx_pubcomp	Parses and validates the MQTT PUBCOMP message
- * @param [in] ctx		MQTT context structure
- * @param [in] rx		Data buffer
- * @return			0 on success
- * @return			-EINVAL on error
+ * Parses and validates the MQTT PUBCOMP message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 int mqtt_rx_pubcomp(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 /**
- * @brief mqtt_rx_pubrec	Parses and validates the MQTT PUBREC message
- * @param [in] ctx		MQTT context structure
- * @param [in] rx		Data buffer
- * @return			0 on success
- * @return			-EINVAL on error
+ * Parses and validates the MQTT PUBREC message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 int mqtt_rx_pubrec(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 /**
- * @brief mqtt_rx_pubrel	Parses and validates the MQTT PUBREL message
- * @details			rx is an RX buffer from the IP stack
- * @param [in] ctx		MQTT context structure
- * @param [in] rx		Data buffer
- * @return			0 on success
- * @return			-EINVAL on error
+ * Parses and validates the MQTT PUBREL message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 int mqtt_rx_pubrel(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 /**
- * @brief mqtt_rx_pingresp	Parses the MQTT PINGRESP message
- * @param [in] ctx		MQTT context structure
- * @param [in] rx		Data buffer
- * @return			0 on success
- * @return			-EINVAL on error
+ * Parses the MQTT PINGRESP message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 int mqtt_rx_pingresp(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 /**
- * @brief mqtt_rx_suback	Parses the MQTT SUBACK message
- * @param [in] ctx		MQTT context structure
- * @param [in] rx		Data buffer
- * @return			0 on success
- * @return			-EINVAL on error
+ * Parses the MQTT SUBACK message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 /**
- * @brief mqtt_rx_unsuback	Parses the MQTT UNSUBACK message
- * @param [in] ctx		MQTT context structure
- * @param [in] rx		Data buffer
- * @return			0 on success
- * @return			-EINVAL on error
+ * Parses the MQTT UNSUBACK message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx);
 
 /**
- * @brief mqtt_rx_publish	Parses the MQTT PUBLISH message
- * @param [in] ctx		MQTT context structure
- * @param [in] rx		Data buffer
- * @return			0 on success
- * @return			-EINVAL on error
- * @return			-ENOMEM if no data buffer is available
+ * Parses the MQTT PUBLISH message
+ *
+ * @param [in] ctx MQTT context structure
+ * @param [in] rx Data buffer
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
  */
 int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx);
 
