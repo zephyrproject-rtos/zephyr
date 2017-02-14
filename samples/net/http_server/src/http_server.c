@@ -21,6 +21,32 @@
 
 NET_BUF_POOL_DEFINE(http_msg_pool, HTTP_BUF_CTR, HTTP_BUF_SIZE, 0, NULL);
 
+void http_accept_cb(struct net_context *net_ctx, struct sockaddr *addr,
+		    socklen_t addr_len, int status, void *data)
+{
+	struct http_server_ctx *http_ctx = NULL;
+
+	ARG_UNUSED(addr_len);
+	ARG_UNUSED(data);
+
+	if (status != 0) {
+		net_context_put(net_ctx);
+		return;
+	}
+
+	print_client_banner(addr);
+
+	http_ctx = http_ctx_get();
+	if (!http_ctx) {
+		net_context_put(net_ctx);
+		return;
+	}
+
+	http_ctx_set(http_ctx, net_ctx);
+
+	net_context_recv(net_ctx, http_rx_tx, K_NO_WAIT, http_ctx);
+}
+
 /**
  * @brief http_ctx_release	Releases an HTTP context
  * @return			0, future versions may return error codes

@@ -50,21 +50,22 @@
 					 QoS_SIZE)
 
 /**
- * @brief mqtt_strlen	Enhanced strlen function
- * @details		This function is introduced to allow developers to
- *			pass null strings to functions that compute the length
- *			of strings.
- *			strlen returns random values for null arguments, so
- *			mqtt_strlen(NULL) is quite useful when optional strings
- *			are allowed by mqtt-related functions. For example:
- *			username in the MQTT CONNECT message is an optional
- *			parameter, so connect(..., username = NULL, ...) will
- *			work fine without passing an additional parameter like:
- *			connect(.., is_username_present, username, ...) or
- *			connect(.., username, username_len, ...).
- * @param str		C-string or NULL
- * @return		0 for NULL
- * @return		strlen otherwise
+ * Enhanced strlen function
+ *
+ * @details This function is introduced to allow developers to pass null strings
+ * to functions that compute the length of strings. strlen returns random values
+ * for null arguments, so mqtt_strlen(NULL) is quite useful when optional
+ * strings are allowed by mqtt-related functions. For example: username in the
+ * MQTT CONNECT message is an optional parameter, so
+ * connect(..., username = NULL, ...) will work fine without passing an
+ * additional parameter like:
+ *	connect(.., is_username_present, username, ...) or
+ *	connect(.., username, username_len, ...).
+ *
+ * @param str C-string or NULL
+ *
+ * @retval 0 for NULL
+ * @retval strlen otherwise
  */
 static inline
 uint16_t mqtt_strlen(const char *str)
@@ -77,14 +78,13 @@ uint16_t mqtt_strlen(const char *str)
 }
 
 /**
- * @brief compute_rlen_size	Computes the amount of bytes needed to
- *				codify the value stored in len
- * @details			See MQTT 2.2.3, Table 2.4
- * @param [out] size		Amount of bytes required to codify the value
- *				stored in len
- * @param [in] len		Value to be codified
- * @return			0 on success
- * @return			-EINVAL is len is out of range
+ * Computes the amount of bytes needed to codify the value stored in len.
+ *
+ * @param [out] size Amount of bytes required to codify the value stored in len
+ * @param [in] len Value to be codified
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 static
 int compute_rlen_size(uint16_t *size, uint32_t len)
@@ -105,11 +105,12 @@ int compute_rlen_size(uint16_t *size, uint32_t len)
 }
 
 /**
- * @brief rlen_encode		Remaining Length encoding algorithm
- * @details			See MQTT 2.2.3 Remaining Length
- * @param [out] buf		Buffer where the encoded value will be stored
- * @param [in] len		Value to encode
- * @return			0 always
+ * Remaining Length encoding algorithm. See MQTT 2.2.3 Remaining Length
+ *
+ * @param [out] buf Buffer where the encoded value will be stored
+ * @param [in] len Value to encode
+ *
+ * @retval 0 always
  */
 static int rlen_encode(uint8_t *buf, int len)
 {
@@ -133,15 +134,15 @@ static int rlen_encode(uint8_t *buf, int len)
 }
 
 /**
- * @brief rlen_decode		Remaining Length decoding algorithm
- * @details			See MQTT 2.2.3 Remaining Length
- * @param [out] rlen		Remaining Length (decoded)
- * @param [out] rlen_size	Number of bytes required to codify rlen's value
- * @param [in] buf		Buffer where the codified Remaining Length
- *				is codified
- * @param [in] size		Buffer size
- * @return			0 on success
- * @return			-ENOMEM if size < 4
+ * Remaining Length decoding algorithm. See MQTT 2.2.3 Remaining Length
+ *
+ * @param [out] rlen Remaining Length (decoded)
+ * @param [out] rlen_size Number of bytes required to codify rlen's value
+ * @param [in] buf Buffer where the codified Remaining Length is codified
+ * @param [in] size Buffer size
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if size < 4
  */
 static int rlen_decode(uint16_t *rlen, uint16_t *rlen_size,
 		       uint8_t *buf, uint16_t size)
@@ -184,23 +185,22 @@ int mqtt_pack_connack(uint8_t *buf, uint16_t *length, uint16_t size,
 }
 
 /**
- * @brief pack_pkt_id	Packs a message that only contains the
- *			Packet Identifier as payload.
- * @details		Many MQTT messages only codify the packet type,
- *			reserved flags and the Packet Identifier as payload,
- *			so this function is used by those MQTT messages.
+ * Packs a message that only contains the Packet Identifier as payload.
  *
- *			The total size of this message is always 4 bytes,
- *			with a payload of only 2 bytes to codify the
- *			identifier.
- * @param [out] buf	Buffer where the resultant message is stored
- * @param [out] length	Number of bytes required to codify the message
- * @param [in] size	Buffer's size
- * @param [in] type	MQTT Control Packet type
+ * @details Many MQTT messages only codify the packet type, reserved flags and
+ * the Packet Identifier as payload, so this function is used by those MQTT
+ * messages. The total size of this message is always 4 bytes, with a payload
+ * of only 2 bytes to codify the identifier.
+ *
+ * @param [out] buf Buffer where the resultant message is stored
+ * @param [out] length Number of bytes required to codify the message
+ * @param [in] size Buffer's size
+ * @param [in] type MQTT Control Packet type
  * @param [in] reserved	Control Packet Reserved Flags. See MQTT 2.2.2 Flags
- * @param [in] pkt_id	Packet Identifier. See MQTT 2.3.1 Packet Identifier
- * @return		0 on success
- * @return		-ENOMEM if size < 4
+ * @param [in] pkt_id Packet Identifier. See MQTT 2.3.1 Packet Identifier
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if size < 4
  */
 static
 int pack_pkt_id(uint8_t *buf, uint16_t *length, uint16_t size,
@@ -415,15 +415,15 @@ int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
 }
 
 /**
- * @brief recover_value_len	Recovers the length and sets val to point to
- *				the beginning of the value
- * @param [in] buf		Buffer where the length and value are stored
- * @param [in] length		Buffer's length
- * @param [out] val		Pointer to the beginning of the value
- * @param [out] val_len		Recovered value's length
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed
- *				        as an argument to this routine
+ * Recovers the length and sets val to point to the beginning of the value
+ *
+ * @param [in] buf Buffer where the length and value are stored
+ * @param [in] length Buffer's length
+ * @param [out] val Pointer to the beginning of the value
+ * @param [out] val_len Recovered value's length
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 static
 int recover_value_len(uint8_t *buf, uint16_t length, uint8_t **val,
@@ -568,17 +568,18 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 }
 
 /**
- * @brief subscribe_size	Computes the packet size for the SUBSCRIBE
- *				and UNSUBSCRIBE messages without considering
- *				the packet type field size (1 byte)
- * @param rlen_size		Remaining length size
- * @param payload_size		SUBSCRIBE or UNSUBSCRIBE payload size
- * @param items			Number of topics
- * @param topics		Array of C-strings containing the topics
- *				to subscribe to
- * @param with_qos		0 for UNSUBSCRIBE, != 0 for SUBSCRIBE
- * @return			0 on success
- * @return			-EINVAL on error
+ * Computes the packet size for the SUBSCRIBE and UNSUBSCRIBE messages
+ *
+ * This routine does not consider the packet type field size (1 byte)
+ *
+ * @param rlen_size Remaining length size
+ * @param payload_size SUBSCRIBE or UNSUBSCRIBE payload size
+ * @param items Number of topics
+ * @param topics Array of C-strings containing the topics to subscribe to
+ * @param with_qos 0 for UNSUBSCRIBE, != 0 for SUBSCRIBE
+ *
+ * @retval 0 on success
+ * @retval -EINVAL on error
  */
 static
 int subscribe_size(uint16_t *rlen_size, uint16_t *payload_size, uint8_t items,
@@ -607,19 +608,18 @@ int subscribe_size(uint16_t *rlen_size, uint16_t *payload_size, uint8_t items,
 }
 
 /**
- * @brief mqtt_pack_subscribe_unsubscribe
- * @details		Packs the SUBSCRIBE and UNSUBSCRIBE messages
- * @param buf		Buffer where the message will be stored
- * @param pkt_id	Packet Identifier
- * @param items		Number of topics
- * @param topics	Array of C-strings containing the topics
- *			to subscribe to
- * @param qos		Array of QoS' values, qos[i] is the QoS of topic[i]
- * @param type		MQTT_SUBSCRIBE or MQTT_UNSUBSCRIBE
- * @return		0 on success
- * @return		-EINVAL if invalid parameters were passed as arguments
- * @return		-ENOMEM if buf has no enough space to store the
- *			resultant message
+ * Packs the SUBSCRIBE and UNSUBSCRIBE messages
+ *
+ * @param buf Buffer where the message will be stored
+ * @param pkt_id Packet Identifier
+ * @param items Number of topics
+ * @param topics Array of C-strings containing the topics to subscribe to
+ * @param qos Array of QoS' values, qos[i] is the QoS of topic[i]
+ * @param type MQTT_SUBSCRIBE or MQTT_UNSUBSCRIBE
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
+ * @retval -ENOMEM
  */
 static int mqtt_pack_subscribe_unsubscribe(uint8_t *buf, uint16_t *length,
 					   uint16_t size, uint16_t pkt_id,
@@ -969,19 +969,20 @@ int mqtt_unpack_connack(uint8_t *buf, uint16_t length, uint8_t *session,
 }
 
 /**
- * @brief pack_zerolen		Packs a zero length message
- * @details			This function packs MQTT messages with no
- *				payload. No validations are made about the
- *				input arguments, besides 'size' that must be
- *				at least 2 bytes
- * @param [out] buf		Buffer where the resultant message is stored
- * @param [out] length		Number of bytes required to codify the message
- * @param [in] size		Buffer's size
- * @param [in] pkt_type		MQTT Control Packet Type. See MQTT 2.2.1
- * @param [in] reserved		Reserved bits. See MQTT 2.2
- * @return			0 on success
- * @return			-ENOMEM if buf has no enough reserved space
- *					to store the resultant message
+ * Packs a zero length message
+ *
+ * @details This function packs MQTT messages with no payload. No validations
+ * are made about the input arguments, besides 'size' that must be at least
+ * 2 bytes
+ *
+ * @param [out] buf Buffer where the resultant message is stored
+ * @param [out] length Number of bytes required to codify the message
+ * @param [in] size Buffer size
+ * @param [in] pkt_type MQTT Control Packet Type. See MQTT 2.2.1
+ * @param [in] reserved Reserved bits. See MQTT 2.2
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM
  */
 static
 int pack_zerolen(uint8_t *buf, uint16_t *length, uint16_t size,
@@ -1014,16 +1015,16 @@ int mqtt_pack_disconnect(uint8_t *buf, uint16_t *length, uint16_t size)
 }
 
 /**
- * @brief unpack_pktid		Unpacks a MQTT message with a Packet Id
- *				as payload
- * @param [in] buf		Buffer where the message is stored
- * @param [in] length		Message's length
- * @param [out] type		MQTT Control Packet type
- * @param [out] reserved	Reserved flags
- * @param [out] pkt_id		Packet Identifier
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed
- *				        as an argument to this routine
+ * Unpacks a MQTT message with a Packet Id as payload
+ *
+ * @param [in] buf Buffer where the message is stored
+ * @param [in] length Message's length
+ * @param [out] type MQTT Control Packet type
+ * @param [out] reserved Reserved flags
+ * @param [out] pkt_id Packet Identifier
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 static
 int unpack_pktid(uint8_t *buf, uint16_t length, enum mqtt_packet *type,
@@ -1045,26 +1046,22 @@ int unpack_pktid(uint8_t *buf, uint16_t length, enum mqtt_packet *type,
 }
 
 /**
- * @brief unpack_pktid_validate	Unpacks and validates a MQTT message
- *				containing a Packet Identifier
- * @details			The message codified in buf must contain a
- *				1) packet type, 2) reserved flags and
- *				3) packet identifier.
- *				The user must provide the expected packet type
- *				and expected reserved flags.
- *				See MQTT 2.2.2 Flags.
- *				If the message contains different values for
- *				type and reserved flags than the ones passed as
- *				arguments, the function will return -EINVAL
- * @param [in] buf		Buffer where the message is stored
- * @param [in] length		Message's length
- * @param [out] pkt_id		Packet Identifier
- * @param [in] expected_type	Expected MQTT Control Packet type
- * @param [in] expected_reserv	Expected Reserved Flags
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed
- *				        as an argument to this routine or if
- *					any test failed
+ * Unpacks and validates a MQTT message containing a Packet Identifier
+ *
+ * @details The message codified in buf must contain a 1) packet type,
+ * 2) reserved flags and 3) packet identifier. The user must provide the
+ * expected packet type and expected reserved flags. See MQTT 2.2.2 Flags.
+ * If the message contains different values for type and reserved flags
+ * than the ones passed as arguments, the function will return -EINVAL
+ *
+ * @param [in] buf Buffer where the message is stored
+ * @param [in] length Message's length
+ * @param [out] pkt_id Packet Identifier
+ * @param [in] expected_type Expected MQTT Control Packet type
+ * @param [in] expected_reserv Expected Reserved Flags
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 static
 int unpack_pktid_validate(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
@@ -1117,14 +1114,15 @@ int mqtt_unpack_unsuback(uint8_t *buf, uint16_t length, uint16_t *pkt_id)
 }
 
 /**
- * @brief unpack_zerolen	Unpacks a zero-length MQTT message
- * @param [in] buf		Buffer where the message is stored
- * @param [in] length		Message's length
- * @param [out] pkt_type	MQTT Control Packet type
- * @param [out] reserved	Reserved flags
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed
- *				        as an argument to this routine
+ * Unpacks a zero-length MQTT message
+ *
+ * @param [in] buf Buffer where the message is stored
+ * @param [in] length Message's length
+ * @param [out] pkt_type MQTT Control Packet type
+ * @param [out] reserved Reserved flags
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 static
 int unpack_zerolen(uint8_t *buf, uint16_t length, enum mqtt_packet *pkt_type,
@@ -1145,14 +1143,15 @@ int unpack_zerolen(uint8_t *buf, uint16_t length, enum mqtt_packet *pkt_type,
 }
 
 /**
- * @brief unpack_zerolen_validate Unpacks and validates a zero-len MQTT message
- * @param [in] buf		Buffer where the message is stored
- * @param [in] length		Message's length
- * @param expected_type		Expected MQTT Control Packet type
- * @param expected_reserved	Expected Reserved Flags
- * @return			0 on success
- * @return			-EINVAL if an invalid parameter was passed
- *				        as an argument to this routine
+ * Unpacks and validates a zero-len MQTT message
+ *
+ * @param [in] buf Buffer where the message is stored
+ * @param [in] length Message's length
+ * @param expected_type Expected MQTT Control Packet type
+ * @param expected_reserved Expected Reserved Flags
+ *
+ * @retval 0 on success
+ * @retval -EINVAL
  */
 static
 int unpack_zerolen_validate(uint8_t *buf, uint16_t length,

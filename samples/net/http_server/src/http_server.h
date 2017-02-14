@@ -9,6 +9,10 @@
 
 #include <net/net_context.h>
 
+/* Callback executed when a new connection is accepted */
+void http_accept_cb(struct net_context *net_ctx, struct sockaddr *addr,
+		    socklen_t addr_len, int status, void *data);
+
 /**
  * @brief http_rx_tx	Reads the HTTP request from the `rx` buffer
  *			and writes an HTTP 1.1 200 OK response with client

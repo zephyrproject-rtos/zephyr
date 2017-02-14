@@ -25,4 +25,8 @@
 
 #define APP_SLEEP_MSECS		500
 
+#ifdef CONFIG_MBEDTLS
+#define SERVER_PORT		443
+#endif
+
 #endif

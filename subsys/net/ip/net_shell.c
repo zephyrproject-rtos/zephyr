@@ -80,8 +80,6 @@ static inline const char *dhcpv4state2str(enum net_dhcpv4_state state)
 		return "init";
 	case NET_DHCPV4_DISCOVER:
 		return "discover";
-	case NET_DHCPV4_OFFER:
-		return "offer";
 	case NET_DHCPV4_REQUEST:
 		return "request";
 	case NET_DHCPV4_RENEWAL:

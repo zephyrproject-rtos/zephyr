@@ -76,8 +76,7 @@ The frdm_k64f board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet (work in progress, known   |
-|           |            | issues exist, see below)            |
+| ETHERNET  | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
@@ -224,13 +223,6 @@ the following message:
 
    Hello World! arm
 
-Work in progress and known issues
-*********************************
-
-Ethernet PHY is currently initialized only at the application startup.
-For successful initialization, a network cable must be connected between
-the board and a host/router. If a cable is not connected when the board
-is powered on or reset, the startup will be aborted with an error message.
 
 .. _FRDM-K64F Website:
    http://www.nxp.com/products/software-and-tools/hardware-development-tools/freedom-development-boards/freedom-development-platform-for-kinetis-k64-k63-and-k24-mcus:FRDM-K64F
