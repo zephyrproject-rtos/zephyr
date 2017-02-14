@@ -21,6 +21,12 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
+/**
+ *  @brief read timestamp register (CPU frequency)
+ */
+extern uint64_t _tsc_read(void);
+
+
 /* Implementation of sys_io.h's documented functions */
 
 static ALWAYS_INLINE
