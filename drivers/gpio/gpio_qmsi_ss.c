@@ -195,6 +195,8 @@ static inline void ss_qmsi_pin_config(struct device *port, uint32_t pin,
 		ss_qmsi_write_bit(&cfg.int_debounce, pin,
 			       (flags & GPIO_INT_DEBOUNCE));
 		ss_qmsi_write_bit(&cfg.int_en, pin, 1);
+	} else {
+		ss_qmsi_write_bit(&cfg.int_en, pin, 0);
 	}
 
 	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
