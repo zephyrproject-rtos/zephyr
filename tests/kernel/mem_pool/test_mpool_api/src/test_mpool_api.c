@@ -120,7 +120,7 @@ void test_mpool_alloc_size(void)
 void test_mpool_alloc_timeout(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN], fblock;
-	uint64_t tms;
+	int64_t tms;
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
 		assert_equal(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
