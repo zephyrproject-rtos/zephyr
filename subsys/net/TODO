@@ -29,14 +29,6 @@ IPv6
    Add support for sending "Packet Too Big" error when
    needed. RFC 4443
 
-- Multicast join/leave support
-
-   Priority: Low
-   Complexity: C2
-
-   Add support for sending joining and leaving multicast group.
-   See RFC 3810 and 4604 for details.
-
 - IP-to-IP tunneling support
 
    Priority: Low
