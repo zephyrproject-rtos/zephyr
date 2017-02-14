@@ -52,6 +52,30 @@ typedef struct _slist sys_slist_t;
 	     __sn = sys_slist_peek_next(__sn))
 
 /**
+ * @brief Provide the primitive to iterate on a list, from a node in the list
+ * Note: the loop is unsafe and thus __sn should not be removed
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     SYS_SLIST_ITERATE_FROM_NODE(l, n) {
+ *         <user code>
+ *     }
+ *
+ * Like SYS_SLIST_FOR_EACH_NODE(), but __dn already contains a node in the list
+ * where to start searching for the next entry from. If NULL, it starts from
+ * the head.
+ *
+ * @param __sl A pointer on a sys_slist_t to iterate on
+ * @param __sn A sys_snode_t pointer to peek each node of the list
+ *             it contains the starting node, or NULL to start from the head
+ */
+#define SYS_SLIST_ITERATE_FROM_NODE(__sl, __sn)				\
+	for (__sn = __sn ? sys_slist_peek_next_no_check(__sn)		\
+			 : sys_slist_peek_head(__sl);			\
+	     __sn;							\
+	     __sn = sys_slist_peek_next(__sn))
+
+/**
  * @brief Provide the primitive to safely iterate on a list
  * Note: __sn can be removed, it will not break the loop.
  *
@@ -189,6 +213,20 @@ static inline sys_snode_t *sys_slist_peek_tail(sys_slist_t *list)
 }
 
 /**
+ * @brief Peek the next node from current node, node is not NULL
+ *
+ * Faster then sys_slist_peek_next() if node is known not to be NULL.
+ *
+ * @param node A pointer on the node where to peek the next node
+ *
+ * @return a pointer on the next node (or NULL if none)
+ */
+static inline sys_snode_t *sys_slist_peek_next_no_check(sys_snode_t *node)
+{
+	return node->next;
+}
+
+/**
  * @brief Peek the next node from current node
  *
  * @param node A pointer on the node where to peek the next node
@@ -197,7 +235,7 @@ static inline sys_snode_t *sys_slist_peek_tail(sys_slist_t *list)
  */
 static inline sys_snode_t *sys_slist_peek_next(sys_snode_t *node)
 {
-	return !node ? NULL : node->next;
+	return node ? sys_slist_peek_next_no_check(node) : NULL;
 }
 
 /**
