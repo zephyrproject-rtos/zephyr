@@ -118,7 +118,7 @@ include/generated/offsets.h: arch/$(ARCH)/core/offsets/offsets.o \
 ifeq ($(CONFIG_HAS_DTS),y)
 define filechk_generated_dts_board.h
 	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */"; \
-		extract_dts_includes.py dts/$(ARCH)/$(BOARD_NAME).dts_compiled $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
+		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py dts/$(ARCH)/$(BOARD_NAME).dts_compiled $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
 		if test -e $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; then \
 			echo; echo; \
 			echo "/* Following definitions fixup the generated include */"; \
