@@ -18,8 +18,8 @@ extern void ring_buffer_test(void);
 extern void slist_test(void);
 extern void dlist_test(void);
 extern void rand32_test(void);
-extern void rand32_test(void);
 extern void timeout_order_test(void);
+extern void clock_test(void);
 
 void test_main(void)
 {
@@ -35,7 +35,8 @@ void test_main(void)
 			 ztest_unit_test(dlist_test),
 			 ztest_unit_test(rand32_test),
 			 ztest_unit_test(intmath_test),
-			 ztest_unit_test(timeout_order_test)
+			 ztest_unit_test(timeout_order_test),
+			 ztest_unit_test(clock_test)
 			 );
 
 	ztest_run_test_suite(common_test);

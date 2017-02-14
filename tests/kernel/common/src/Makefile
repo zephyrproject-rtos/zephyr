@@ -8,3 +8,4 @@ obj-y += dlist.o
 obj-n += bitfield.o
 obj-y += rand32.o
 obj-y += timeout_order.o
+obj-y += clock.o
