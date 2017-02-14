@@ -48,9 +48,8 @@ struct dma_stm32_chan {
 	struct dma_stm32_chan_reg regs;
 	bool busy;
 
-	void (*dma_transfer)(struct device *dev, void *data);
-	void (*dma_error)(struct device *dev, void *data);
-	void *callback_data;
+	void (*dma_callback)(struct device *dev, uint32_t channel,
+			     int error_code);
 };
 
 static struct dma_stm32_device {
@@ -224,17 +223,18 @@ static void dma_stm32_irq_handler(void *arg, uint32_t channel)
 		return;
 	}
 
+	chan->busy = false;
+
 	if ((irqstatus & DMA_STM32_TCI) && (config & DMA_STM32_SCR_TCIE)) {
 		dma_stm32_irq_clear(ddata, channel, DMA_STM32_TCI);
 
-		chan->dma_transfer(chan->dev, chan->callback_data);
+		chan->dma_callback(chan->dev, channel, 0);
 	} else {
 		SYS_LOG_ERR("Internal error: IRQ status: 0x%x\n", irqstatus);
 		dma_stm32_irq_clear(ddata, channel, irqstatus);
 
-		chan->dma_error(chan->dev, chan->callback_data);
+		chan->dma_callback(chan->dev, channel, -EIO);
 	}
-	chan->busy = false;
 }
 
 static int dma_stm32_disable_chan(struct dma_stm32_device *ddata,
@@ -277,9 +277,6 @@ static int dma_stm32_config_memcpy(struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	/* Reset register values for next transfer */
-	memset(regs, 0, sizeof(struct dma_stm32_chan_reg));
-
 	regs->scr = DMA_STM32_SCR_DIR(DMA_STM32_MEM_TO_MEM) |
 		DMA_STM32_SCR_MINC |		/* Memory increment mode */
 		DMA_STM32_SCR_PINC |		/* Peripheral increment mode */
@@ -293,11 +290,12 @@ static int dma_stm32_config_memcpy(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_stm32_channel_config(struct device *dev, uint32_t channel,
-				    struct dma_channel_config *config)
+static int dma_stm32_config(struct device *dev, uint32_t channel,
+			    struct dma_config *config)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_chan *chan = &ddata->chan[channel];
+	struct dma_stm32_chan_reg *regs = &ddata->chan[channel].regs;
 
 	if (config->channel_direction != MEMORY_TO_MEMORY) {
 		SYS_LOG_ERR("Only mem-to-mem transfers currently supported\n");
@@ -308,28 +306,17 @@ static int dma_stm32_channel_config(struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
-	chan->busy	    = true;
-	chan->dma_error     = config->dma_error;
-	chan->dma_transfer  = config->dma_transfer;
-	chan->callback_data = config->callback_data;
+	chan->busy	   = true;
+	chan->dma_callback = config->dma_callback;
+
+	regs->spar  = (uint32_t)config->head_block->source_address;
+	regs->sm0ar = (uint32_t)config->head_block->dest_address;
+	regs->sndtr = config->head_block->block_size;
 
 	return dma_stm32_config_memcpy(dev, channel);
 }
 
-static int dma_stm32_transfer_config(struct device *dev, uint32_t channel,
-				     struct dma_transfer_config *config)
-{
-	struct dma_stm32_device *ddata = dev->driver_data;
-	struct dma_stm32_chan_reg *regs = &ddata->chan[channel].regs;
-
-	regs->spar  = (uint32_t)config->source_address;
-	regs->sm0ar = (uint32_t)config->destination_address;
-	regs->sndtr = config->block_size;
-
-	return 0;
-}
-
-static int dma_stm32_transfer_start(struct device *dev, uint32_t channel)
+static int dma_stm32_start(struct device *dev, uint32_t channel)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_chan_reg *regs = &ddata->chan[channel].regs;
@@ -361,6 +348,11 @@ static int dma_stm32_transfer_start(struct device *dev, uint32_t channel)
 	return 0;
 }
 
+static int dma_stm32_stop(struct device *dev, uint32_t channel)
+{
+	return 0;
+}
+
 static int dma_stm32_init(struct device *dev)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
@@ -387,9 +379,9 @@ static int dma_stm32_init(struct device *dev)
 }
 
 static const struct dma_driver_api dma_funcs = {
-	.channel_config  = dma_stm32_channel_config,
-	.transfer_config = dma_stm32_transfer_config,
-	.transfer_start  = dma_stm32_transfer_start,
+	.config		 = dma_stm32_config,
+	.start		 = dma_stm32_start,
+	.stop		 = dma_stm32_stop,
 };
 
 const struct dma_stm32_config dma_stm32_1_cdata = {
