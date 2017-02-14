@@ -65,7 +65,7 @@ struct bt_sdp_client {
 
 static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
-/** @brief Callback for SDP connection
+/* @brief Callback for SDP connection
  *
  *  Gets called when an SDP connection is established
  *
@@ -107,7 +107,7 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
 	memset(sdp, 0, sizeof(*sdp));
 }
 
-/** @brief Creates an SDP PDU
+/* @brief Creates an SDP PDU
  *
  *  Creates an empty SDP PDU and returns the buffer
  *
@@ -117,16 +117,10 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
  */
 static struct net_buf *bt_sdp_create_pdu(void)
 {
-	struct net_buf *buf;
-
-	buf = bt_l2cap_create_pdu(&sdp_pool, 0);
-	/* NULL is not a possible return due to K_FOREVER */
-	net_buf_reserve(buf, sizeof(struct bt_sdp_hdr));
-
-	return buf;
+	return bt_l2cap_create_pdu(&sdp_pool, sizeof(struct bt_sdp_hdr));
 }
 
-/** @brief Sends out an SDP PDU
+/* @brief Sends out an SDP PDU
  *
  *  Sends out an SDP PDU after adding the relevant header
  *
@@ -151,7 +145,7 @@ static void bt_sdp_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 	bt_l2cap_chan_send(chan, buf);
 }
 
-/** @brief Sends an error response PDU
+/* @brief Sends an error response PDU
  *
  *  Creates and sends an error response PDU
  *
@@ -182,7 +176,7 @@ static const struct {
 } handlers[] = {
 };
 
-/** @brief Callback for SDP data receive
+/* @brief Callback for SDP data receive
  *
  *  Gets called when an SDP PDU is received. Calls the corresponding handler
  *  based on the op code of the PDU.
@@ -233,7 +227,7 @@ static void bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
-/** @brief Callback for SDP connection accept
+/* @brief Callback for SDP connection accept
  *
  *  Gets called when an incoming SDP connection needs to be authorized.
  *  Registers the L2CAP callbacks and allocates an SDP context to the connection
