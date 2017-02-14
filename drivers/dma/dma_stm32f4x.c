@@ -426,6 +426,34 @@ static int dma_stm32_start(struct device *dev, uint32_t channel)
 
 static int dma_stm32_stop(struct device *dev, uint32_t channel)
 {
+	struct dma_stm32_device *ddata = dev->driver_data;
+	struct dma_stm32_chan *chan = &ddata->chan[stream];
+	uint32_t scr, sfcr, irqstatus;
+	int ret;
+
+	/* Disable all IRQs */
+	scr = dma_stm32_read(ddata, DMA_STM32_SCR(channel));
+	scr &= ~DMA_STM32_SCR_IRQ_MASK;
+	dma_stm32_write(ddata, DMA_STM32_SCR(channel), scr);
+
+	sfcr = dma_stm32_read(ddata, DMA_STM32_SFCR(channel));
+	sfcr &= ~DMA_STM32_SFCR_FEIE;
+	dma_stm32_write(ddata, DMA_STM32_SFCR(channel), sfcr);
+
+	/* Disable channel */
+	ret = dma_stm32_disable_chan(ddata, channel);
+	if (ret)
+		return ret;
+
+	/* Clear remanent IRQs from previous transfers */
+	irqstatus = dma_stm32_irq_status(ddata, stream);
+	if (irqstatus) {
+		dma_stm32_irq_clear(ddata, channel, irqstatus);
+	}
+
+	/* Finally, flag channel as free */
+	chan->busy = false;
+
 	return 0;
 }
 
