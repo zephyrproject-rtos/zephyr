@@ -94,7 +94,7 @@ void main(void)
 
 	strcpy((char *)wbuf, "So what then?");
 
-	len = strlen(wbuf);
+	len = strlen((char *) wbuf);
 	/*
 	 * len does not include string terminator.
 	 * Let's sent the terminator as well.
