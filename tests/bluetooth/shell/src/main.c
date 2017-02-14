@@ -1099,23 +1099,29 @@ static int cmd_gatt_mread(int argc, char *argv[])
 	return 0;
 }
 
+static struct bt_gatt_write_params write_params;
+static uint8_t gatt_write_buf[512]; /* max value size */
+
 static void write_func(struct bt_conn *conn, uint8_t err,
 		       struct bt_gatt_write_params *params)
 {
 	printk("Write complete: err %u\n", err);
-}
 
-static struct bt_gatt_write_params write_params;
+	memset(&write_params, 0, sizeof(write_params));
+}
 
 static int cmd_gatt_write(int argc, char *argv[])
 {
 	int err;
 	uint16_t handle, offset;
-	uint8_t buf[100];
-	uint8_t data;
 
 	if (!default_conn) {
 		printk("Not connected\n");
+		return 0;
+	}
+
+	if (write_params.func) {
+		printk("Write ongoing\n");
 		return 0;
 	}
 
@@ -1124,28 +1130,27 @@ static int cmd_gatt_write(int argc, char *argv[])
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
-	/* TODO: Add support for longer data */
 	offset = strtoul(argv[2], NULL, 16);
-	data = strtoul(argv[3], NULL, 16);
 
-	if (argc == 5) {
-		size_t len = min(strtoul(argv[4], NULL, 16), sizeof(buf));
-		int i;
-
-		for (i = 0; i < len; i++) {
-			buf[i] = data;
-		}
-
-		write_params.data = buf;
-		write_params.length = len;
-	} else {
-		write_params.data = &data;
-		write_params.length = sizeof(data);
-	}
-
+	gatt_write_buf[0] = strtoul(argv[3], NULL, 16);
+	write_params.data = gatt_write_buf;
+	write_params.length = 1;
 	write_params.handle = handle;
 	write_params.offset = offset;
 	write_params.func = write_func;
+
+	if (argc == 5) {
+		size_t len;
+		int i;
+
+		len = min(strtoul(argv[4], NULL, 16), sizeof(gatt_write_buf));
+
+		for (i = 1; i < len; i++) {
+			gatt_write_buf[i] = gatt_write_buf[0];
+		}
+
+		write_params.length = len;
+	}
 
 	err = bt_gatt_write(default_conn, &write_params);
 	if (err) {
