@@ -1190,9 +1190,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			/* conn->err will be set in this case */
 			notify_connected(conn);
 			bt_conn_unref(conn);
-		} else if (old_state == BT_CONN_CONNECT_SCAN && conn->err) {
+		} else if (old_state == BT_CONN_CONNECT_SCAN) {
 			/* this indicate LE Create Connection failed */
-			notify_connected(conn);
+			if (conn->err) {
+				notify_connected(conn);
+			}
+
 			bt_conn_unref(conn);
 		}
 
