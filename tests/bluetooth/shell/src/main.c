@@ -1248,8 +1248,8 @@ static int cmd_gatt_subscribe(int argc, char *argv[])
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 
-	if (argc > 3) {
-		subscribe_params.value = strtoul(argv[3], NULL, 16);
+	if (argc > 3 && !strcmp(argv[3], "ind")) {
+		subscribe_params.value = BT_GATT_CCC_INDICATE;
 	}
 
 	err = bt_gatt_subscribe(default_conn, &subscribe_params);
@@ -2464,7 +2464,8 @@ static const struct shell_cmd commands[] = {
 	  "<handle> <offset> <data>" },
 	{ "gatt-write-signed", cmd_gatt_write_signed,
 	  "<handle> <offset> <data>" },
-	{ "gatt-subscribe", cmd_gatt_subscribe, "<CCC handle> <value handle>" },
+	{ "gatt-subscribe", cmd_gatt_subscribe,
+	  "<CCC handle> <value handle> [ind]" },
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe, HELP_NONE },
 	{ "gatt-register-service", cmd_gatt_register_test_svc,
 	  "register pre-predefined test service" },
