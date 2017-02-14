@@ -284,16 +284,57 @@ static int dma_stm32_disable_chan(struct dma_stm32_device *ddata,
 	return ret;
 }
 
+static int dma_stm32_config_devcpy(struct device *dev, uint32_t channel,
+				   struct dma_config *config)
+
+{
+	struct dma_stm32_device *ddata = dev->driver_data;
+	struct dma_stm32_chan_reg *regs = &ddata->chan[channel].regs;
+	uint32_t src_bus_width  = dma_width_index(config->source_data_size);
+	uint32_t dst_bus_width  = dma_width_index(config->dest_data_size);
+	uint32_t src_burst_size = dma_burst_index(config->source_burst_length);
+	uint32_t dst_burst_size = dma_burst_index(config->dest_burst_length);
+	enum dma_channel_direction direction = config->channel_direction;
+
+	switch (direction) {
+	case MEMORY_TO_PERIPHERAL:
+		regs->scr = DMA_STM32_SCR_DIR(DMA_STM32_MEM_TO_DEV) |
+			DMA_STM32_SCR_PSIZE(dst_bus_width) |
+			DMA_STM32_SCR_MSIZE(src_bus_width) |
+			DMA_STM32_SCR_PBURST(dst_burst_size) |
+			DMA_STM32_SCR_MBURST(src_burst_size);
+		break;
+	case PERIPHERAL_TO_MEMORY:
+		regs->scr = DMA_STM32_SCR_DIR(DMA_STM32_DEV_TO_MEM) |
+			DMA_STM32_SCR_PSIZE(src_bus_width) |
+			DMA_STM32_SCR_MSIZE(dst_bus_width) |
+			DMA_STM32_SCR_PBURST(src_burst_size) |
+			DMA_STM32_SCR_MBURST(dst_burst_size);
+		break;
+	default:
+		SYS_LOG_ERR("DMA error: Direction not supported: %d",
+			    direction);
+		return -EINVAL;
+	}
+
+	if (src_burst_size == BURST_TRANS_LENGTH_1 &&
+	    dst_burst_size == BURST_TRANS_LENGTH_1) {
+		/* Enable 'direct' mode error IRQ, disable 'FIFO' error IRQ */
+		regs->scr |= DMA_STM32_SCR_DMEIE;
+		regs->sfcr &= ~DMA_STM32_SFCR_MASK;
+	} else {
+		/* Enable 'FIFO' error IRQ, disable 'direct' mode error IRQ */
+		regs->sfcr |= DMA_STM32_SFCR_MASK;
+		regs->scr &= ~DMA_STM32_SCR_DMEIE;
+	}
+
+	return 0;
+}
+
 static int dma_stm32_config_memcpy(struct device *dev, uint32_t channel)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_chan_reg *regs = &ddata->chan[channel].regs;
-
-	if (!ddata->mem2mem) {
-		SYS_LOG_ERR("%s does not support mem-to-mem transfers\n",
-		       dev->config->name);
-		return -EINVAL;
-	}
 
 	regs->scr = DMA_STM32_SCR_DIR(DMA_STM32_MEM_TO_MEM) |
 		DMA_STM32_SCR_MINC |		/* Memory increment mode */
@@ -314,24 +355,39 @@ static int dma_stm32_config(struct device *dev, uint32_t channel,
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_chan *chan = &ddata->chan[channel];
 	struct dma_stm32_chan_reg *regs = &ddata->chan[channel].regs;
-
-	if (config->channel_direction != MEMORY_TO_MEMORY) {
-		SYS_LOG_ERR("Only mem-to-mem transfers currently supported\n");
-		return -ENOTSUP;
-	}
+	int ret;
 
 	if (chan->busy) {
 		return -EBUSY;
 	}
 
+	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
+		SYS_LOG_ERR("DMA error: Data size too big: %d\n",
+		       config->head_block->block_size);
+		return -EINVAL;
+	}
+
 	chan->busy	   = true;
 	chan->dma_callback = config->dma_callback;
+	chan->direction	   = config->channel_direction;
 
-	regs->spar  = (uint32_t)config->head_block->source_address;
-	regs->sm0ar = (uint32_t)config->head_block->dest_address;
+	if (chan->direction == MEMORY_TO_PERIPHERAL) {
+		regs->sm0ar = (uint32_t)config->head_block->source_address;
+		regs->spar = (uint32_t)config->head_block->dest_address;
+	} else {
+		regs->spar = (uint32_t)config->head_block->source_address;
+		regs->sm0ar = (uint32_t)config->head_block->dest_address;
+	}
+
+	if (chan->direction == MEMORY_TO_MEMORY) {
+		ret = dma_stm32_config_memcpy(dev, stream);
+	} else {
+		ret = dma_stm32_config_devcpy(dev, stream, config);
+	}
+
 	regs->sndtr = config->head_block->block_size;
 
-	return dma_stm32_config_memcpy(dev, channel);
+	return ret;
 }
 
 static int dma_stm32_start(struct device *dev, uint32_t channel)
