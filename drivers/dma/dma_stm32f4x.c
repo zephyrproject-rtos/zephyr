@@ -266,8 +266,7 @@ static int dma_stm32_disable_chan(struct dma_stm32_device *ddata,
 	return ret;
 }
 
-static int dma_stm32_config_memcpy(struct device *dev, uint32_t channel,
-				       struct dma_channel_config *config)
+static int dma_stm32_config_memcpy(struct device *dev, uint32_t channel)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_chan_reg *regs = &ddata->chan[channel].regs;
@@ -314,7 +313,7 @@ static int dma_stm32_channel_config(struct device *dev, uint32_t channel,
 	chan->dma_transfer  = config->dma_transfer;
 	chan->callback_data = config->callback_data;
 
-	return dma_stm32_config_memcpy(dev, channel, config);
+	return dma_stm32_config_memcpy(dev, channel);
 }
 
 static int dma_stm32_transfer_config(struct device *dev, uint32_t channel,
