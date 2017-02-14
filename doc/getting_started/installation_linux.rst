@@ -91,12 +91,13 @@ Follow these steps to install the SDK on your Linux host system.
    Visit the `Zephyr SDK archive`_ to find all available SDK versions,
    including the latest version.
 
-   Alternatively, you can use the following command to download the desired
-   version, replacing <version> with the version number you wish to download.
+   Alternatively, you can use the following command to download the
+   desired version (*0.9* can be replaced with the version number you
+   wish to download).
 
    .. code-block:: console
 
-      $ wget https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/<version>-i686/zephyr-sdk-<version>-i686-setup.run
+      $ wget https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/0.9/zephyr-sdk-0.9-setup.run
 
 #. Run the installation binary, follow this example:
 
