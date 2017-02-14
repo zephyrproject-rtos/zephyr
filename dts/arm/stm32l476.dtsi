@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Linaro Limited.
+ * Copyright (c) 2017 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,14 +7,6 @@
 #include "armv7-m.dtsi"
 
 / {
-
-	sram0: memory {
-		reg = <0x20000000 0x18000>;
-	};
-
-	flash0: flash {
-		reg = <0x08000000 0x100000>;
-	};
 
 	clocks {
 		clk_hse: clk-hse {
@@ -70,23 +62,18 @@
 			status = "disabled";
 		};
 
-		syscfg: system-config@40010000 {
-			compatible = "syscon";
-			reg = <0x40013800 0x400>;
-		};
-
 		pin-controller {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "st,stm32l4xx-pinctrl";
 			ranges = <0 0x48000000 0x2000>;
-			pins-are-numbered;
 
 			gpioa: gpio@48000000 {
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x0 0x400>;
 				st,bank-name = "GPIOA";
+
 			};
 
 			gpiob: gpio@48000400 {
