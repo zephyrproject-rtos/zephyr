@@ -12,7 +12,7 @@
 #include <dma.h>
 #include <errno.h>
 #include <init.h>
-#include <misc/sys_log.h>
+#include <logging/sys_log.h>
 #include <stdio.h>
 #include <string.h>
 
