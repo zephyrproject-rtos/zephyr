@@ -28,6 +28,8 @@
 
 #define SDP_MTU (SDP_DATA_MTU + sizeof(struct bt_sdp_hdr))
 
+#define MAX_NUM_ATT_ID_FILTER 10
+
 #define SDP_SERVICE_HANDLE_BASE 0x10000
 
 #define SDP_DATA_ELEM_NEST_LEVEL_MAX 5
@@ -35,6 +37,9 @@
 /* 1 byte for the no. of services searched till this response */
 /* 2 bytes for the total no. of matching records */
 #define SDP_SS_CONT_STATE_SIZE 3
+
+/* 1 byte for the no. of attributes searched till this response */
+#define SDP_SA_CONT_STATE_SIZE 1
 
 struct bt_sdp {
 	struct bt_l2cap_br_chan chan;
@@ -640,12 +645,141 @@ static uint16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf,
 	return 0;
 }
 
+/* @brief Extracts the attribute search list from a net_buf
+ *
+ *  Parses a buffer to extract the attribute search list (list of attribute IDs
+ *  and ranges) which are to be used to filter attributes.
+ *
+ *  @param buf Buffer to be parsed for extracting the attribute search list
+ *  @param filter Empty list of 4byte filters that are filled in. For attribute
+ *   IDs, the lower 2 bytes contain the ID and the upper 2 bytes are set to
+ *   0xFFFF. For attribute ranges, the lower 2bytes indicate the start ID and
+ *   the upper 2bytes indicate the end ID
+ *  @param num_filters No. of filter elements filled in (to be returned)
+ *
+ *  @return 0 for success, or relevant error code
+ */
+static uint16_t get_att_search_list(struct net_buf *buf, uint32_t *filter,
+				    uint8_t *num_filters)
+{
+	struct bt_sdp_data_elem data_elem;
+	uint16_t res;
+	uint32_t size;
+
+	*num_filters = 0;
+	res = parse_data_elem(buf, &data_elem);
+	if (res) {
+		return res;
+	}
+
+	size = data_elem.data_size;
+
+	while (size) {
+		res = parse_data_elem(buf, &data_elem);
+		if (res) {
+			return res;
+		}
+
+		if ((data_elem.type & BT_SDP_TYPE_DESC_MASK) != BT_SDP_UINT8) {
+			BT_WARN("Invalid type %u in attribute ID list",
+				data_elem.type);
+			return BT_SDP_INVALID_SYNTAX;
+		}
+
+		if (buf->len < data_elem.data_size) {
+			BT_WARN("Malformed packet");
+			return BT_SDP_INVALID_SYNTAX;
+		}
+
+		/* This is an attribute ID */
+		if (data_elem.data_size == 2) {
+			filter[(*num_filters)++] = 0xffff0000 |
+							net_buf_pull_be16(buf);
+		}
+
+		/* This is an attribute ID range */
+		if (data_elem.data_size == 4) {
+			filter[(*num_filters)++] = net_buf_pull_be32(buf);
+		}
+
+		size -= data_elem.total_size;
+	}
+
+	return 0;
+}
+
+/* @brief Handler for Service Attribute Request
+ *
+ *  Parses, processes and responds to a Service Attribute Request
+ *
+ *  @param sdp Pointer to the SDP structure
+ *  @param buf Request buffer
+ *  @param tid Transaction ID
+ *
+ *  @return 0 for success, or relevant error code
+ */
+static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
+				uint16_t tid)
+{
+	uint32_t filter[MAX_NUM_ATT_ID_FILTER];
+	uint32_t svc_rec_hdl;
+	uint16_t max_att_len, res;
+	uint8_t num_filters, cont_state_size, next_att = 0;
+
+	if (buf->len < 6) {
+		BT_WARN("Malformed packet");
+		return BT_SDP_INVALID_SYNTAX;
+	}
+
+	svc_rec_hdl = net_buf_pull_be32(buf);
+	max_att_len = net_buf_pull_be16(buf);
+
+	/* Set up the filters */
+	res = get_att_search_list(buf, filter, &num_filters);
+	if (res) {
+		/* Error in parsing */
+		return res;
+	}
+
+	if (buf->len < 1) {
+		BT_WARN("Malformed packet");
+		return BT_SDP_INVALID_SYNTAX;
+	}
+
+	cont_state_size = net_buf_pull_u8(buf);
+
+	/* We only send out 1 byte continuation state in responses,
+	 * so expect only 1 byte in requests
+	 */
+	if (cont_state_size) {
+		if (cont_state_size != SDP_SA_CONT_STATE_SIZE) {
+			BT_WARN("Invalid cont state size %u", cont_state_size);
+			return BT_SDP_INVALID_CSTATE;
+		}
+
+		if (buf->len < cont_state_size) {
+			BT_WARN("Malformed packet");
+			return BT_SDP_INVALID_SYNTAX;
+		}
+
+		next_att = net_buf_pull_u8(buf) + 1;
+	}
+
+	BT_DBG("svc_rec_hdl %u, max_att_len 0x%04x, cont_state %u", svc_rec_hdl,
+	       max_att_len, next_att);
+
+	/* TODO: Find the attributes in the record and send it */
+
+	return 0;
+}
+
 static const struct {
 	uint8_t  op_code;
 	uint16_t  (*func)(struct bt_sdp *sdp, struct net_buf *buf,
 			  uint16_t tid);
 } handlers[] = {
 	{ BT_SDP_SVC_SEARCH_REQ, sdp_svc_search_req },
+	{ BT_SDP_SVC_ATTR_REQ, sdp_svc_att_req },
 };
 
 /* @brief Callback for SDP data receive
