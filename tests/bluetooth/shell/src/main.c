@@ -1910,16 +1910,38 @@ static int cmd_clear(int argc, char *argv[])
 }
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+static void hexdump(const uint8_t *data, size_t len)
+{
+	int n = 0;
+
+	while (len--) {
+		if (n % 16 == 0) {
+			printk("%08X ", n);
+		}
+
+		printk("%02X ", *data++);
+
+		n++;
+		if (n % 8 == 0) {
+			if (n % 16 == 0) {
+				printk("\n");
+			} else {
+				printk(" ");
+			}
+		}
+	}
+
+	if (n % 16) {
+		printk("\n");
+	}
+}
+
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	int ret;
-
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
 
-	/* loopback the data */
-	ret = bt_l2cap_chan_send(chan, buf);
-	if (ret < 0) {
-		printk("Unable to send: %d\n", -ret);
+	if (buf->len) {
+		hexdump(buf->data, buf->len);
 	}
 }
 
