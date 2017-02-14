@@ -175,8 +175,8 @@ static inline void unset_dhcpv4_on_iface(struct net_if *iface)
 	memset(iface->dhcpv4.server_id.s4_addr, 0, 4);
 	memset(iface->dhcpv4.server_id.s4_addr, 0, 4);
 	memset(iface->dhcpv4.requested_ip.s4_addr, 0, 4);
-	k_delayed_work_cancel(&iface->dhcpv4_timeout);
-	k_delayed_work_cancel(&iface->dhcpv4_t1_timer);
+	k_delayed_work_cancel(&iface->dhcpv4.timer);
+	k_delayed_work_cancel(&iface->dhcpv4.t1_timer);
 }
 
 /* Add magic cookie to DCHPv4 messages */
@@ -406,8 +406,8 @@ static void send_request(struct net_if *iface, bool renewal)
 		net_dhcpv4_state_name(iface->dhcpv4.state),
 		iface->dhcpv4.xid, timeout);
 
-	k_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
-	k_delayed_work_submit(&iface->dhcpv4_timeout, timeout * MSEC_PER_SEC);
+	k_delayed_work_init(&iface->dhcpv4.timer, dhcpv4_timeout);
+	k_delayed_work_submit(&iface->dhcpv4.timer, timeout * MSEC_PER_SEC);
 
 	iface->dhcpv4.attempts++;
 	return;
@@ -452,8 +452,8 @@ static void send_discover(struct net_if *iface)
 		net_dhcpv4_state_name(iface->dhcpv4.state),
 		iface->dhcpv4.xid, timeout);
 
-	k_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
-	k_delayed_work_submit(&iface->dhcpv4_timeout, timeout * MSEC_PER_SEC);
+	k_delayed_work_init(&iface->dhcpv4.timer, dhcpv4_timeout);
+	k_delayed_work_submit(&iface->dhcpv4.timer, timeout * MSEC_PER_SEC);
 
 	iface->dhcpv4.attempts++;
 	return;
@@ -469,7 +469,7 @@ fail:
 static void dhcpv4_timeout(struct k_work *work)
 {
 	struct net_if *iface = CONTAINER_OF(work, struct net_if,
-					    dhcpv4_timeout);
+					    dhcpv4.timer);
 
 	NET_DBG("state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
 	if (!iface) {
@@ -526,7 +526,7 @@ static void dhcpv4_timeout(struct k_work *work)
 static void dhcpv4_t1_timeout(struct k_work *work)
 {
 	struct net_if *iface = CONTAINER_OF(work, struct net_if,
-					    dhcpv4_t1_timer);
+					    dhcpv4.t1_timer);
 
 	NET_DBG("");
 
@@ -706,7 +706,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 		}
 
 		/* Send DHCPv4 Request Message */
-		k_delayed_work_cancel(&iface->dhcpv4_timeout);
+		k_delayed_work_cancel(&iface->dhcpv4.timer);
 
 		iface->dhcpv4.attempts = 0;
 		send_request(iface, false);
@@ -720,7 +720,7 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 			return;
 		}
 
-		k_delayed_work_cancel(&iface->dhcpv4_timeout);
+		k_delayed_work_cancel(&iface->dhcpv4.timer);
 
 		iface->dhcpv4.attempts = 0;
 
@@ -755,8 +755,8 @@ static inline void handle_dhcpv4_reply(struct net_if *iface,
 			timeout);
 
 		/* Start renewal time */
-		k_delayed_work_init(&iface->dhcpv4_t1_timer, dhcpv4_t1_timeout);
-		k_delayed_work_submit(&iface->dhcpv4_t1_timer,
+		k_delayed_work_init(&iface->dhcpv4.t1_timer, dhcpv4_t1_timeout);
+		k_delayed_work_submit(&iface->dhcpv4.t1_timer,
 				      timeout * MSEC_PER_SEC);
 	}
 }
@@ -896,6 +896,6 @@ void net_dhcpv4_start(struct net_if *iface)
 	NET_DBG("enter state=%s timeout=%"PRIu32"s",
 		net_dhcpv4_state_name(iface->dhcpv4.state), timeout);
 
-	k_delayed_work_init(&iface->dhcpv4_timeout, dhcpv4_timeout);
-	k_delayed_work_submit(&iface->dhcpv4_timeout, timeout * MSEC_PER_SEC);
+	k_delayed_work_init(&iface->dhcpv4.timer, dhcpv4_timeout);
+	k_delayed_work_submit(&iface->dhcpv4.timer, timeout * MSEC_PER_SEC);
 }

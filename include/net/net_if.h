@@ -288,13 +288,16 @@ struct net_if {
 
 		/** Number of attempts made for REQUEST and RENEWAL messages */
 		uint8_t attempts;
+
+		/** Timer for DHCPv4 Client requests (DISCOVER,
+		 * REQUEST or RENEWAL)
+		 */
+		struct k_delayed_work timer;
+
+		/** T1 (Renewal) timer */
+		struct k_delayed_work t1_timer;
 	} dhcpv4;
 
-	/** Timer for DHCPv4 Client requests (DISCOVER, REQUEST or RENEWAL) */
-	struct k_delayed_work dhcpv4_timeout;
-
-	/** T1 (Renewal) timer */
-	struct k_delayed_work dhcpv4_t1_timer;
 #endif
 } __net_if_align;
 
