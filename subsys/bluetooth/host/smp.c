@@ -2046,7 +2046,6 @@ static void legacy_passkey_entry(struct bt_smp *smp, unsigned int passkey)
 	memcpy(smp->tk, &passkey, sizeof(passkey));
 
 	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_CFM_DELAYED)) {
-		smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 		return;
 	}
 
