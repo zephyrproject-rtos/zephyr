@@ -56,7 +56,7 @@ enum mqtt_qos {
 struct mqtt_connect_msg {
 	uint8_t clean_session:1;
 	char *client_id;
-	uint16_t client_id_len;	/* only required for unpacking */
+	uint16_t client_id_len;
 	uint8_t will_flag:1;
 	enum mqtt_qos will_qos;
 	uint8_t will_retain:1;
@@ -66,7 +66,7 @@ struct mqtt_connect_msg {
 	uint16_t will_msg_len;
 	uint16_t keep_alive;
 	const char *user_name;
-	uint16_t user_name_len;	/*only required for unpacking */
+	uint16_t user_name_len;
 	uint8_t *password;
 	uint16_t password_len;
 };

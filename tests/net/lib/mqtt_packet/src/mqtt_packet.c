@@ -10,6 +10,15 @@
 
 #define RC_STR(rc)	(rc == TC_PASS ? PASS : FAIL)
 
+#define CLIENTID	"zephyr"
+#define CLIENTID_LEN	6
+#define TOPIC		"sensors"
+#define TOPIC_LEN	7
+#define WILL_TOPIC	"quitting"
+#define WILL_TOPIC_LEN	8
+#define USERNAME	"zephyr1"
+#define USERNAME_LEN	7
+
 /* MQTT messages in this test are under 256 bytes */
 #define BUF_SIZE	256
 static uint8_t buf[BUF_SIZE];
@@ -220,7 +229,9 @@ uint8_t connect1[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x70, 0x68, 0x79, 0x72};
 
 static struct mqtt_connect_msg msg_connect1 = {
-	.clean_session = 1, .client_id = "zephyr", .will_flag = 0,
+	.clean_session = 1, .client_id = CLIENTID,
+	.client_id_len = CLIENTID_LEN,
+	.will_flag = 0,
 	.will_qos = 0, .will_retain = 0, .will_topic = NULL,
 	.will_msg = NULL, .will_msg_len = 0,
 	.keep_alive = 0, .user_name = NULL,
@@ -240,7 +251,9 @@ uint8_t connect2[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x70, 0x68, 0x79, 0x72};
 
 static struct mqtt_connect_msg msg_connect2 = {
-	.clean_session = 1, .client_id = "zephyr", .will_flag = 0,
+	.clean_session = 1, .client_id = CLIENTID,
+	.client_id_len = CLIENTID_LEN,
+	.will_flag = 0,
 	.will_qos = 0, .will_retain = 0, .will_topic = NULL,
 	.will_msg = NULL, .will_msg_len = 0,
 	.keep_alive = 365, .user_name = NULL,
@@ -265,8 +278,11 @@ uint8_t connect3[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x62, 0x79, 0x65};
 
 static struct mqtt_connect_msg msg_connect3 = {
-	.clean_session = 1, .client_id = "zephyr", .will_flag = 1,
-	.will_qos = 0, .will_retain = 0, .will_topic = "quitting",
+	.clean_session = 1, .client_id = CLIENTID,
+	.client_id_len = CLIENTID_LEN,
+	.will_flag = 1,
+	.will_qos = 0, .will_retain = 0, .will_topic = WILL_TOPIC,
+	.will_topic_len = WILL_TOPIC_LEN,
 	.will_msg = "bye", .will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
@@ -288,8 +304,11 @@ uint8_t connect4[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x62, 0x79, 0x65};
 
 static struct mqtt_connect_msg msg_connect4 = {
-	.clean_session = 1, .client_id = "zephyr", .will_flag = 1,
-	.will_qos = 0, .will_retain = 1, .will_topic = "quitting",
+	.clean_session = 1, .client_id = CLIENTID,
+	.client_id_len = CLIENTID_LEN,
+	.will_flag = 1,
+	.will_qos = 0, .will_retain = 1, .will_topic = WILL_TOPIC,
+	.will_topic_len = WILL_TOPIC_LEN,
 	.will_msg = "bye", .will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
@@ -311,8 +330,11 @@ uint8_t connect5[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x62, 0x79, 0x65};
 
 static struct mqtt_connect_msg msg_connect5 = {
-	.clean_session = 1, .client_id = "zephyr", .will_flag = 1,
-	.will_qos = 1, .will_retain = 0, .will_topic = "quitting",
+	.clean_session = 1, .client_id = CLIENTID,
+	.client_id_len = CLIENTID_LEN,
+	.will_flag = 1,
+	.will_qos = 1, .will_retain = 0, .will_topic = WILL_TOPIC,
+	.will_topic_len = WILL_TOPIC_LEN,
 	.will_msg = "bye", .will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
@@ -334,8 +356,11 @@ uint8_t connect6[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x62, 0x79, 0x65};
 
 static struct mqtt_connect_msg msg_connect6 = {
-	.clean_session = 1, .client_id = "zephyr", .will_flag = 1,
-	.will_qos = 1, .will_retain = 1, .will_topic = "quitting",
+	.clean_session = 1, .client_id = CLIENTID,
+	.client_id_len = CLIENTID_LEN,
+	.will_flag = 1,
+	.will_qos = 1, .will_retain = 1, .will_topic = WILL_TOPIC,
+	.will_topic_len = WILL_TOPIC_LEN,
 	.will_msg = "bye", .will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
@@ -360,10 +385,14 @@ uint8_t connect7[] = {0x10, 0x34, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x73, 0x73, 0x77, 0x6f, 0x72, 0x64};
 
 static struct mqtt_connect_msg msg_connect7 = {
-	.clean_session = 1, .client_id = "zephyr", .will_flag = 1,
-	.will_qos = 1, .will_retain = 1, .will_topic = "quitting",
+	.clean_session = 1, .client_id = CLIENTID,
+	.client_id_len = CLIENTID_LEN,
+	.will_flag = 1,
+	.will_qos = 1, .will_retain = 1, .will_topic = WILL_TOPIC,
+	.will_topic_len = WILL_TOPIC_LEN,
 	.will_msg = "bye", .will_msg_len = 3,
-	.keep_alive = 0, .user_name = "zephyr1",
+	.keep_alive = 0, .user_name = USERNAME,
+	.user_name_len = USERNAME_LEN,
 	.password = "password", .password_len = 8
 };
 
@@ -382,7 +411,8 @@ uint8_t publish1[] = {0x30, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		      0x6f, 0x72, 0x73, 0x4f, 0x4b};
 
 static struct mqtt_publish_msg msg_publish1 = {
-	.dup = 0, .qos = 0, .retain = 0, .topic = "sensors",
+	.dup = 0, .qos = 0, .retain = 0, .topic = TOPIC,
+	.topic_len = TOPIC_LEN,
 	.pkt_id = 0, .msg = "OK", .msg_len = 2,
 };
 
@@ -398,7 +428,8 @@ uint8_t publish2[] = {0x31, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		      0x6f, 0x72, 0x73, 0x4f, 0x4b};
 
 static struct mqtt_publish_msg msg_publish2 = {
-	.dup = 0, .qos = 0, .retain = 1, .topic = "sensors",
+	.dup = 0, .qos = 0, .retain = 1, .topic = TOPIC,
+	.topic_len = TOPIC_LEN,
 	.pkt_id = 0, .msg = "OK", .msg_len = 2
 };
 
@@ -414,7 +445,8 @@ uint8_t publish3[] = {0x33, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		      0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
 
 static struct mqtt_publish_msg msg_publish3 = {
-	.dup = 0, .qos = 1, .retain = 1, .topic = "sensors",
+	.dup = 0, .qos = 1, .retain = 1, .topic = TOPIC,
+	.topic_len = TOPIC_LEN,
 	.pkt_id = 1, .msg = "OK", .msg_len = 2
 };
 
@@ -429,7 +461,8 @@ static
 uint8_t publish4[] = {0x34, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		      0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
 static struct mqtt_publish_msg msg_publish4 = {
-	.dup = 0, .qos = 2, .retain = 0, .topic = "sensors",
+	.dup = 0, .qos = 2, .retain = 0, .topic = TOPIC,
+	.topic_len = TOPIC_LEN,
 	.pkt_id = 1, .msg = "OK", .msg_len = 2
 };
 

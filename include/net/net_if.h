@@ -178,7 +178,7 @@ struct net_if {
 	ATOMIC_DEFINE(flags, NET_IF_NUM_FLAGS);
 
 	/** Interface's L2 layer */
-	const struct net_l2 const *l2;
+	const struct net_l2 * const l2;
 
 	/** Interface's private L2 data pointer */
 	void *l2_data;

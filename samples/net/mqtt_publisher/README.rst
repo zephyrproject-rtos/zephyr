@@ -67,6 +67,12 @@ Max number of MQTT PUBLISH iterations
 
 	#define APP_MAX_ITERATIONS	5
 
+IBM BlueMix IoT Watson topic format
+
+.. code block:: c
+
+	#define ENABLE_BLUEMIX_TOPIC	0
+
 On your Linux host computer, open a terminal window, locate the source code
 of this sample application (i.e. :file:`samples/net/mqtt_publisher`) and type:
 
