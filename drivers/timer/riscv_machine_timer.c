@@ -89,7 +89,7 @@ int _sys_clock_driver_init(struct device *device)
  *
  * @return up counter of elapsed clock cycles
  */
-uint32_t k_cycle_get_32(void)
+uint32_t _timer_cycle_get_32(void)
 {
 	/* We just want a cycle count so just post what's in the low 32
 	 * bits of the mtime real-time counter

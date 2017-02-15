@@ -22,6 +22,9 @@ extern "C" {
 extern unsigned int k_cpu_sleep_mode;
 extern void k_cpu_idle(void);
 extern void k_cpu_atomic_idle(unsigned int key);
+
+extern uint32_t _timer_cycle_get_32(void);
+#define _arch_k_cycle_get_32()	_timer_cycle_get_32()
 #endif
 
 #ifdef __cplusplus

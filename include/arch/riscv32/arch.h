@@ -109,6 +109,9 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 			  : "memory");
 }
 
+extern uint32_t _timer_cycle_get_32(void);
+#define _arch_k_cycle_get_32()	_timer_cycle_get_32()
+
 #endif /*_ASMLANGUAGE */
 
 #if defined(CONFIG_SOC_RISCV32_PULPINO)

@@ -132,7 +132,6 @@ static pfunc func_array[] = {
 	(pfunc)k_uptime_get_32,
 	(pfunc)k_uptime_delta,
 	(pfunc)k_uptime_delta_32,
-	(pfunc)k_cycle_get_32,
 
 	/* thread stuff */
 	(pfunc)k_thread_spawn,

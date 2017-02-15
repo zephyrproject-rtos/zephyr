@@ -136,6 +136,9 @@ extern void _irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *esf);
 
+extern uint32_t _timer_cycle_get_32(void);
+#define _arch_k_cycle_get_32()	_timer_cycle_get_32()
+
 #endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
 #ifdef __cplusplus
 }
