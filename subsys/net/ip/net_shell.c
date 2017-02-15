@@ -551,6 +551,80 @@ static int shell_cmd_iface(int argc, char *argv[])
 	return 0;
 }
 
+struct ctx_info {
+	int pos;
+	bool are_external_pools;
+	struct net_buf_pool *tx_pools[CONFIG_NET_MAX_CONTEXTS];
+	struct net_buf_pool *data_pools[CONFIG_NET_MAX_CONTEXTS];
+};
+
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+static bool pool_found_already(struct ctx_info *info,
+			       struct net_buf_pool *pool)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_CONTEXTS; i++) {
+		if (info->tx_pools[i] == pool ||
+		    info->data_pools[i] == pool) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif
+
+static void context_info(struct net_context *context, void *user_data)
+{
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+	struct ctx_info *info = user_data;
+	struct net_buf_pool *pool;
+
+	if (!net_context_is_used(context)) {
+		return;
+	}
+
+	if (context->tx_pool) {
+		pool = context->tx_pool();
+
+		if (pool_found_already(info, pool)) {
+			return;
+		}
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+		printk("\tETX\t%d bytes, %d elements, available %d (%p)\n",
+		       pool->pool_size, pool->buf_count, pool->avail_count,
+		       pool);
+#else
+		printk("\tETX\t%d elements (%p)\n", pool->buf_count, pool);
+#endif
+		info->are_external_pools = true;
+		info->tx_pools[info->pos] = pool;
+	}
+
+	if (context->data_pool) {
+		pool = context->data_pool();
+
+		if (pool_found_already(info, pool)) {
+			return;
+		}
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+		printk("\tEDATA\t%d bytes, %d elements, available %d (%p)\n",
+		       pool->pool_size, pool->buf_count, pool->avail_count,
+		       pool);
+#else
+		printk("\tEDATA\t%d elements (%p)\n", pool->buf_count, pool);
+#endif
+		info->are_external_pools = true;
+		info->data_pools[info->pos] = pool;
+	}
+
+	info->pos++;
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+}
+
 static int shell_cmd_mem(int argc, char *argv[])
 {
 	size_t tx_size, rx_size, data_size;
@@ -585,6 +659,17 @@ static int shell_cmd_mem(int argc, char *argv[])
 		printk(", available %d", data);
 	}
 	printk("\n");
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_NBUF_POOL)) {
+		struct ctx_info info;
+
+		memset(&info, 0, sizeof(info));
+		net_context_foreach(context_info, &info);
+
+		if (!info.are_external_pools) {
+			printk("No external memory pools found.\n");
+		}
+	}
 
 	return 0;
 }

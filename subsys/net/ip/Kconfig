@@ -149,6 +149,17 @@ config NET_MAX_CONTEXTS
 	is used when listening or sending network traffic. This is very
 	similar as one could call a network socket in some other systems.
 
+config NET_CONTEXT_NBUF_POOL
+	bool "Enable net_buf TX pool / context"
+	default n
+	help
+	If enabled, then it is possible to fine-tune network buffer pool
+	for each context when sending network data. If this setting is
+	enabled, then you should define the context pools in your application
+	using NET_NBUF_TX_POOL_DEFINE() and NET_NBUF_DATA_POOL_DEFINE()
+	macros and tie these pools to desired context using the
+	net_context_setup_pools() function.
+
 config NET_CONTEXT_SYNC_RECV
 	bool "Support synchronous functionality in net_context_recv() API"
 	default y

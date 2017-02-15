@@ -322,7 +322,7 @@ struct net_buf *net_ipv6_create_raw(struct net_buf *buf,
 {
 	struct net_buf *header;
 
-	header = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+	header = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_insert(buf, header);
 
@@ -550,7 +550,7 @@ static struct net_buf *update_ll_reserve(struct net_buf *buf,
 
 	while (orig_frag) {
 		if (!room_len) {
-			frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+			frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 			net_buf_frag_add(buf, frag);
 

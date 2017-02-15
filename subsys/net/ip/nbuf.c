@@ -116,9 +116,46 @@ static inline int16_t get_frees(struct net_buf_pool *pool)
 }
 #endif
 
+static inline bool is_data_pool(struct net_buf_pool *pool)
+{
+	/* The user data can only be found in TX/RX pool and it
+	 * is always the size of struct net_nbuf.
+	 */
+	if (pool->user_data_size != sizeof(struct net_nbuf)) {
+		return true;
+	}
+
+	return false;
+}
+
 static inline bool is_from_data_pool(struct net_buf *buf)
 {
-	return (buf->pool == &data_buffers);
+	return is_data_pool(buf->pool);
+}
+
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+static inline struct net_buf_pool *get_tx_pool(struct net_context *context)
+{
+	return context->tx_pool();
+}
+
+static inline struct net_buf_pool *get_data_pool(struct net_context *context)
+{
+	return context->data_pool();
+}
+#else
+#define get_tx_pool(context) NULL
+#define get_data_pool(context) NULL
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+
+static inline bool is_external_pool(struct net_buf_pool *pool)
+{
+	if (pool != &rx_buffers && pool != &tx_buffers &&
+	    pool != &data_buffers) {
+		return true;
+	}
+
+	return false;
 }
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
@@ -130,6 +167,8 @@ static inline const char *pool2str(struct net_buf_pool *pool)
 		return "TX";
 	} else if (pool == &data_buffers) {
 		return "DATA";
+	} else if (is_data_pool(pool)) {
+		return "EDATA";
 	}
 
 	return "EXTERNAL";
@@ -167,15 +206,15 @@ void net_nbuf_print_frags(struct net_buf *buf)
 		count * ll_overhead, (total * 100) / (count * frag_size));
 }
 
-static struct net_buf *net_nbuf_get_reserve_debug(struct net_buf_pool *pool,
-						  uint16_t reserve_head,
-						  int32_t timeout,
-						  const char *caller,
-						  int line)
+struct net_buf *net_nbuf_get_reserve_debug(struct net_buf_pool *pool,
+					   uint16_t reserve_head,
+					   int32_t timeout,
+					   const char *caller,
+					   int line)
 #else /* CONFIG_NET_DEBUG_NET_BUF */
-static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
-					    uint16_t reserve_head,
-					    int32_t timeout)
+struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
+				     uint16_t reserve_head,
+				     int32_t timeout)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
 	struct net_buf *buf = NULL;
@@ -195,7 +234,7 @@ static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 		return NULL;
 	}
 
-	if (pool == &data_buffers) {
+	if (is_data_pool(pool)) {
 		/* The buf->data will point to the start of the L3
 		 * header (like IPv4 or IPv6 packet header).
 		 */
@@ -206,11 +245,58 @@ static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
 
-	NET_DBG("%s [%d] buf %p reserve %u ref %d (%s():%d)",
-		pool2str(pool), get_frees(pool),
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	NET_DBG("%s (%p) [%d] buf %p reserve %u ref %d (%s():%d)",
+		pool2str(pool), pool, get_frees(pool),
 		buf, reserve_head, buf->ref, caller, line);
+#endif
 
 	return buf;
+}
+
+/* Get a fragment, try to figure out the pool from where to get
+ * the data.
+ */
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+struct net_buf *net_nbuf_get_frag_debug(struct net_buf *buf,
+					int32_t timeout,
+					const char *caller, int line)
+#else
+struct net_buf *net_nbuf_get_frag(struct net_buf *buf,
+				  int32_t timeout)
+#endif
+{
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+	struct net_context *context;
+#endif
+
+	if (is_from_data_pool(buf)) {
+		/* We cannot know the correct data pool in this case (because
+		 * we do not know the context). Return error to the caller.
+		 */
+		return NULL;
+	}
+
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+	context = net_nbuf_context(buf);
+	if (context && context->data_pool) {
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+		return net_nbuf_get_reserve_debug(context->data_pool(),
+						  net_nbuf_ll_reserve(buf),
+						  timeout, caller, line);
+#else
+		return net_nbuf_get_reserve(context->data_pool(),
+					    net_nbuf_ll_reserve(buf), timeout);
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
+	}
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	return net_nbuf_get_reserve_data_debug(net_nbuf_ll_reserve(buf),
+					       timeout, caller, line);
+#else
+	return net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), timeout);
+#endif
 }
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
@@ -300,7 +386,7 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 		return buf;
 	}
 
-	if (pool != &data_buffers) {
+	if (!is_data_pool(pool)) {
 		net_nbuf_set_context(buf, context);
 		net_nbuf_set_ll_reserve(buf, reserve);
 		net_nbuf_set_iface(buf, iface);
@@ -326,15 +412,20 @@ struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
 				      int32_t timeout,
 				      const char *caller, int line)
 {
-	return net_nbuf_get_debug(&tx_buffers, context, timeout, caller, line);
+	struct net_buf_pool *pool = get_tx_pool(context);
+
+	return net_nbuf_get_debug(pool ? pool : &tx_buffers, context,
+				  timeout, caller, line);
 }
 
 struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
 					int32_t timeout,
 					const char *caller, int line)
 {
-	return net_nbuf_get_debug(&data_buffers, context, timeout,
-				  caller, line);
+	struct net_buf_pool *pool = get_data_pool(context);
+
+	return net_nbuf_get_debug(pool ? pool : &data_buffers, context,
+				  timeout, caller, line);
 }
 
 #else /* CONFIG_NET_DEBUG_NET_BUF */
@@ -348,16 +439,24 @@ struct net_buf *net_nbuf_get_rx(struct net_context *context, int32_t timeout)
 
 struct net_buf *net_nbuf_get_tx(struct net_context *context, int32_t timeout)
 {
+	struct net_buf_pool *pool;
+
 	NET_ASSERT_INFO(context, "TX context not set");
 
-	return net_nbuf_get(&tx_buffers, context, timeout);
+	pool = get_tx_pool(context);
+
+	return net_nbuf_get(pool ? pool : &tx_buffers, context, timeout);
 }
 
 struct net_buf *net_nbuf_get_data(struct net_context *context, int32_t timeout)
 {
+	struct net_buf_pool *pool;
+
 	NET_ASSERT_INFO(context, "Data context not set");
 
-	return net_nbuf_get(&data_buffers, context, timeout);
+	pool = get_data_pool(context);
+
+	return net_nbuf_get(pool ? pool : &data_buffers, context, timeout);
 }
 
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
@@ -383,11 +482,11 @@ void net_nbuf_unref(struct net_buf *buf)
 		return;
 	}
 
-	NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
-		pool2str(buf->pool), get_frees(buf->pool),
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	NET_DBG("%s (%p) [%d] buf %p ref %d frags %p (%s():%d)",
+		pool2str(buf->pool), buf->pool, get_frees(buf->pool),
 		buf, buf->ref - 1, buf->frags, caller, line);
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
 	if (buf->ref > 1) {
 		goto done;
 	}
@@ -397,9 +496,10 @@ void net_nbuf_unref(struct net_buf *buf)
 	 */
 	frag = buf->frags;
 	while (frag) {
-		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
-			pool2str(frag->pool), get_frees(frag->pool),
-			frag, frag->ref - 1, frag->frags, caller, line);
+		NET_DBG("%s (%p) [%d] buf %p ref %d frags %p (%s():%d)",
+			pool2str(frag->pool), frag->pool,
+			get_frees(frag->pool), frag, frag->ref - 1,
+			frag->frags, caller, line);
 
 		if (!frag->ref) {
 			NET_DBG("*** ERROR *** frag %p is freed already "
@@ -427,9 +527,11 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf)
 		return NULL;
 	}
 
-	NET_DBG("%s [%d] buf %p ref %d (%s():%d)",
-		pool2str(buf->pool), get_frees(buf->pool),
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	NET_DBG("%s (%p) [%d] buf %p ref %d (%s():%d)",
+		pool2str(buf->pool), buf->pool, get_frees(buf->pool),
 		buf, buf->ref + 1, caller, line);
+#endif
 
 	return net_buf_ref(buf);
 }
@@ -744,7 +846,6 @@ static inline bool net_nbuf_append_bytes(struct net_buf *buf,
 					 uint16_t len, int32_t timeout)
 {
 	struct net_buf *frag = net_buf_frag_last(buf);
-	uint16_t ll_reserve = net_nbuf_ll_reserve(buf);
 
 	do {
 		uint16_t count = min(len, net_buf_tailroom(frag));
@@ -758,7 +859,7 @@ static inline bool net_nbuf_append_bytes(struct net_buf *buf,
 			return true;
 		}
 
-		frag = net_nbuf_get_reserve_data(ll_reserve, timeout);
+		frag = net_nbuf_get_frag(buf, timeout);
 		if (!frag) {
 			return false;
 		}
@@ -788,8 +889,7 @@ bool net_nbuf_append(struct net_buf *buf, uint16_t len, const uint8_t *data,
 	}
 
 	if (!buf->frags) {
-		frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf),
-						 timeout);
+		frag = net_nbuf_get_frag(buf, timeout);
 		if (!frag) {
 			return false;
 		}
@@ -923,8 +1023,7 @@ static inline struct net_buf *check_and_create_data(struct net_buf *buf,
 		return data;
 	}
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf),
-					 timeout);
+	frag = net_nbuf_get_frag(buf, timeout);
 	if (!frag) {
 		return NULL;
 	}
@@ -1025,14 +1124,10 @@ struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
 			       uint16_t len, uint8_t *data,
 			       int32_t timeout)
 {
-	uint16_t ll_reserve;
-
 	if (!buf || is_from_data_pool(buf)) {
 		NET_ERR("Invalid buffer or it is data fragment");
 		goto error;
 	}
-
-	ll_reserve = net_nbuf_ll_reserve(buf);
 
 	frag = adjust_write_offset(buf, frag, offset, &offset, timeout);
 	if (!frag) {
@@ -1067,7 +1162,7 @@ struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
 		frag = frag->frags;
 
 		if (!frag) {
-			frag = net_nbuf_get_reserve_data(ll_reserve, timeout);
+			frag = net_nbuf_get_frag(buf, timeout);
 			if (!frag) {
 				goto error;
 			}
@@ -1117,8 +1212,7 @@ static inline bool insert_data(struct net_buf *buf, struct net_buf *frag,
 		data += count;
 		offset = 0;
 
-		insert = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf),
-						   timeout);
+		insert = net_nbuf_get_frag(buf, timeout);
 		if (!insert) {
 			return false;
 		}
@@ -1190,8 +1284,7 @@ bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
 	 */
 	bytes = frag->len - offset;
 	if (bytes) {
-		temp = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf),
-						 timeout);
+		temp = net_nbuf_get_frag(buf, timeout);
 		if (!temp) {
 			return false;
 		}

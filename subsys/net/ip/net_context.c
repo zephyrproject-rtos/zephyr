@@ -1189,6 +1189,17 @@ static void buf_get_sockaddr(sa_family_t family, struct net_buf *buf,
 #endif
 }
 
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+static inline void copy_pool_vars(struct net_context *new_context,
+				  struct net_context *listen_context)
+{
+	new_context->tx_pool = listen_context->tx_pool;
+	new_context->data_pool = listen_context->data_pool;
+}
+#else
+#define copy_pool_vars(...)
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+
 /* This callback is called when we are waiting connections and we receive
  * a packet. We need to check if we are receiving proper msg (SYN) here.
  * The ACK could also be received, in which case we have an established
@@ -1394,6 +1405,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		tmp_tcp->accept_cb = tcp->accept_cb;
 		tcp->accept_cb = NULL;
 		new_context->tcp = tcp;
+		copy_pool_vars(new_context, context);
 		context->tcp = tmp_tcp;
 
 		tcp->context = new_context;
