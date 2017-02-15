@@ -31,9 +31,15 @@ extern "C" {
  * file machine/endian.h from XT_LIB defines similar ones. Thus we include it
  * and define the missing macros ourselves.
  */
+#ifndef __BYTE_ORDER__
 #define __BYTE_ORDER__ XCHAL_MEMORY_ORDER
+#endif
+#ifndef __ORDER_BIG_ENDIAN__
 #define __ORDER_BIG_ENDIAN__ XTHAL_BIGENDIAN
+#endif
+#ifndef __ORDER_LITTLE_ENDIAN__
 #define __ORDER_LITTLE_ENDIAN__ XTHAL_LITTLEENDIAN
+#endif
 
 #define STACK_ALIGN 16
 #define OCTET_TO_SIZEOFUNIT(X) (X)
