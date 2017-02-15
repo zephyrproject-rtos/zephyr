@@ -664,13 +664,18 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 
 	switch (lladdr->len) {
 	case 2:
-		addr->s6_addr32[2] = 0;
-		addr->s6_addr[11] = 0xff;
-		addr->s6_addr[12] = 0xfe;
-		addr->s6_addr[13] = 0;
-		addr->s6_addr[14] = lladdr->addr[0];
-		addr->s6_addr[15] = lladdr->addr[1];
-		addr->s6_addr[8] ^= 0x02;
+		/* The generated IPv6 shall not toggle the
+		 * Universal/Local bit. RFC 6282 ch 3.2.2
+		 */
+		if (lladdr->type == NET_LINK_IEEE802154) {
+			addr->s6_addr32[2] = 0;
+			addr->s6_addr[11] = 0xff;
+			addr->s6_addr[12] = 0xfe;
+			addr->s6_addr[13] = 0;
+			addr->s6_addr[14] = lladdr->addr[0];
+			addr->s6_addr[15] = lladdr->addr[1];
+		}
+
 		break;
 	case 6:
 		memcpy(&addr->s6_addr[8], lladdr->addr, 3);
@@ -702,7 +707,9 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 	switch (lladdr->len) {
 	case 2:
 		if (!memcmp(&addr->s6_addr[14], lladdr->addr, lladdr->len) &&
-		    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0] &&
+		    addr->s6_addr[8]  == 0 &&
+		    addr->s6_addr[9]  == 0 &&
+		    addr->s6_addr[10] == 0 &&
 		    addr->s6_addr[11] == 0xff &&
 		    addr->s6_addr[12] == 0xfe) {
 			return true;
