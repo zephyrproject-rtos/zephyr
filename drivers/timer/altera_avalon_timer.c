@@ -51,38 +51,6 @@
 
 static uint32_t accumulated_cycle_count;
 
-static uint32_t get_snapshot(void)
-{
-#if TIMER_0_SNAPSHOT
-	uint32_t snap, s1, s2;
-	int key;
-
-	key = irq_lock();
-
-	/* Writing any data to one of the snapshot registers populates all
-	 * of them with the value of the counter. The data written is ignored
-	 */
-	_nios2_reg_write((void *)TIMER_0_BASE, ALTERA_AVALON_TIMER_SNAPL_REG,
-			 1);
-
-	s1 = _nios2_reg_read((void *)TIMER_0_BASE,
-			     ALTERA_AVALON_TIMER_SNAPL_REG) &
-		ALTERA_AVALON_TIMER_SNAPL_MSK;
-	s2 = _nios2_reg_read((void *)TIMER_0_BASE,
-				 ALTERA_AVALON_TIMER_SNAPH_REG) &
-		ALTERA_AVALON_TIMER_SNAPH_MSK;
-
-	irq_unlock(key);
-
-	snap = s1 | (s2 << 16);
-
-	return sys_clock_hw_cycles_per_tick - snap;
-#else
-	return 0;
-#endif
-}
-
-
 static void timer_irq_handler(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -130,6 +98,22 @@ int _sys_clock_driver_init(struct device *device)
 
 uint32_t k_cycle_get_32(void)
 {
-	return accumulated_cycle_count + get_snapshot();
+	/* XXX Per the Altera Embedded IP Peripherals guide, you cannot
+	 * use a timer instance for both the system clock and timestamps
+	 * at the same time.
+	 *
+	 * Having this function return accumulated_cycle_count + get_snapshot()
+	 * does not work reliably. It's possible for the current countdown
+	 * to reset to the next interval before the timer interrupt is
+	 * delivered (and accumulated cycle count gets updated). The result
+	 * is an unlucky call to this function will appear to jump backward
+	 * in time.
+	 *
+	 * To properly obtain timestamps, the CPU must be configured with
+	 * a second timer peripheral instance that is configured to
+	 * count down from some large initial 64-bit value. This
+	 * is currently unimplemented.
+	 */
+	return accumulated_cycle_count;
 }
 
