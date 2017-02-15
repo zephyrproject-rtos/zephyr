@@ -106,6 +106,17 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 	help
 	This options specifies the IRQ priority used by the LOAPIC timer.
 
+config TSC_CYCLES_PER_SEC
+	int
+	prompt "Frequency of x86 CPU timestamp counter"
+	default 0
+	depends on LOAPIC_TIMER
+	help
+	The x86 implementation of LOAPIC k_cycle_get_32() relies on the x86 TSC.
+	This runs at the CPU speed and not the bus speed. If set to 0, the
+	value of CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC will be used instead;
+	many MCUs these values are the same.
+
 config ARCV2_TIMER
 	bool "ARC Timer"
 	default y

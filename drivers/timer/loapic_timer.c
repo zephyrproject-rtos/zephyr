@@ -129,7 +129,6 @@ extern int32_t _sys_idle_elapsed_ticks;
 
 /* computed counter 0 initial count value */
 static uint32_t __noinit cycles_per_tick;
-static uint32_t accumulated_cycle_count;
 
 #if defined(CONFIG_TICKLESS_IDLE)
 static uint32_t programmed_cycles;
@@ -277,13 +276,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	}
 
 	_sys_clock_final_tick_announce();
-
-	/* track the accumulated cycle count */
-	accumulated_cycle_count += cycles_per_tick * _sys_idle_elapsed_ticks;
 #else
-	/* track the accumulated cycle count */
-	accumulated_cycle_count += cycles_per_tick;
-
 	_sys_clock_tick_announce();
 #endif /*CONFIG_TICKLESS_IDLE*/
 
@@ -503,7 +496,6 @@ int _sys_clock_driver_init(struct device *device)
 	return 0;
 }
 
-
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static int sys_clock_suspend(struct device *dev)
 {
@@ -584,32 +576,26 @@ int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
  * @brief Read the platform's timer hardware
  *
  * This routine returns the current time in terms of timer hardware clock
- * cycles.
+ * cycles. We use the x86 TSC as the LOAPIC timer can't be used as a periodic
+ * system clock and a timestamp source at the same time.
  *
  * @return up counter of elapsed clock cycles
  */
 uint32_t _timer_cycle_get_32(void)
 {
-	uint32_t val; /* system clock value */
+#if CONFIG_TSC_CYCLES_PER_SEC != 0
+	uint64_t tsc;
 
-	/*
-	 * The LOAPIC timer counter is a down counter.  Thus to get the number
-	 * of elapsed cycles since 'accumlated_cycle_count' was last updated,
-	 * subtract the value in the Current Count Register (CCR) from the value
-	 * in the Initial Count Register (ICR).
-	 */
-
-#if !defined(CONFIG_TICKLESS_IDLE)
-	/* The value in the ICR always matches cycles_per_tick. */
-	val = accumulated_cycle_count - current_count_register_get() +
-			cycles_per_tick;
+	/* 64-bit math to avoid overflows */
+	tsc = _tsc_read() * (uint64_t)sys_clock_hw_cycles_per_sec /
+		(uint64_t) CONFIG_TSC_CYCLES_PER_SEC;
+	return (uint32_t)tsc;
 #else
-	/* The value in the ICR may vary.  Read from the register. */
-	val = accumulated_cycle_count - current_count_register_get() +
-	      initial_count_register_get();
+	/* TSC runs same as the bus speed, nothing to do but return the TSC
+	 * value
+	 */
+	return _do_read_cpu_timestamp32();
 #endif
-
-	return val;
 }
 
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
