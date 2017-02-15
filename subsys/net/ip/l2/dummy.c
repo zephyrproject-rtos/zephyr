@@ -14,8 +14,10 @@ static inline enum net_verdict dummy_recv(struct net_if *iface,
 {
 	net_nbuf_ll_src(buf)->addr = NULL;
 	net_nbuf_ll_src(buf)->len = 0;
+	net_nbuf_ll_src(buf)->type = NET_LINK_DUMMY;
 	net_nbuf_ll_dst(buf)->addr = NULL;
 	net_nbuf_ll_dst(buf)->len = 0;
+	net_nbuf_ll_dst(buf)->type = NET_LINK_DUMMY;
 
 	return NET_CONTINUE;
 }

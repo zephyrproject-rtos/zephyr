@@ -749,7 +749,8 @@ static void eth0_iface_init(struct net_if *iface)
 
 	/* Register Ethernet MAC Address with the upper layer */
 	net_if_set_link_addr(iface, dev_data->mac_addr,
-			     sizeof(dev_data->mac_addr));
+			     sizeof(dev_data->mac_addr),
+			     NET_LINK_ETHERNET);
 
 	dev_data->iface = iface;
 }

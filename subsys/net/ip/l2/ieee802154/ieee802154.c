@@ -140,6 +140,8 @@ static inline void set_buf_ll_addr(struct net_linkaddr *addr, bool comp,
 		addr->len = 0;
 		addr->addr = NULL;
 	}
+
+	addr->type = NET_LINK_IEEE802154;
 }
 
 #ifdef CONFIG_NET_6LO

@@ -116,7 +116,8 @@ static void net_route_iface_init(struct net_if *iface)
 {
 	uint8_t *mac = net_route_get_mac(net_if_get_device(iface));
 
-	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr));
+	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
+			     NET_LINK_ETHERNET);
 }
 
 static int tester_send(struct net_if *iface, struct net_buf *buf)

@@ -419,11 +419,13 @@ void net_if_start_rs(struct net_if *iface);
  * @param iface Pointer to a network interface structure
  * @param addr a pointer on a uint8_t buffer representing the address
  * @param len length of the address buffer
+ * @param type network bearer type of this link address
  *
  * @return 0 on success
  */
 static inline int net_if_set_link_addr(struct net_if *iface,
-					uint8_t *addr, uint8_t len)
+				       uint8_t *addr, uint8_t len,
+				       enum net_link_type type)
 {
 	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
 		return -EPERM;
@@ -431,6 +433,7 @@ static inline int net_if_set_link_addr(struct net_if *iface,
 
 	iface->link_addr.addr = addr;
 	iface->link_addr.len = len;
+	iface->link_addr.type = type;
 
 	return 0;
 }

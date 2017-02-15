@@ -474,7 +474,8 @@ static void eth_0_iface_init(struct net_if *iface)
 	struct eth_context *context = dev->driver_data;
 
 	net_if_set_link_addr(iface, context->mac_addr,
-			     sizeof(context->mac_addr));
+			     sizeof(context->mac_addr),
+			     NET_LINK_ETHERNET);
 	context->iface = iface;
 }
 
