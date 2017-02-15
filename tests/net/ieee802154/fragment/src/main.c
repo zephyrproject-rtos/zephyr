@@ -152,7 +152,7 @@ static void net_fragment_iface_init(struct net_if *iface)
 {
 	uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb};
 
-	net_if_set_link_addr(iface, mac, 8);
+	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 }
 
 static int tester_send(struct net_if *iface, struct net_buf *buf)

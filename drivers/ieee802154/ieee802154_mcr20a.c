@@ -1423,7 +1423,7 @@ static void mcr20a_iface_init(struct net_if *iface)
 	struct mcr20a_context *mcr20a = dev->driver_data;
 	uint8_t *mac = get_mac(dev);
 
-	net_if_set_link_addr(iface, mac, 8);
+	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 
 	mcr20a->iface = iface;
 

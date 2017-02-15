@@ -198,7 +198,7 @@ static void net_dhcpv4_iface_init(struct net_if *iface)
 {
 	uint8_t *mac = net_dhcpv4_get_mac(net_if_get_device(iface));
 
-	net_if_set_link_addr(iface, mac, 6);
+	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
 static struct net_buf *nbuf_get_data(struct net_if *iface)

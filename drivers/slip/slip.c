@@ -402,7 +402,8 @@ static void slip_iface_init(struct net_if *iface)
 
 	slip->init_done = true;
 
-	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len);
+	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
+			     NET_LINK_ETHERNET);
 }
 
 static struct net_if_api slip_if_api = {

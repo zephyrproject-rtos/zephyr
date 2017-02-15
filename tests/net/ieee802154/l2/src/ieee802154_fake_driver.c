@@ -111,7 +111,7 @@ static void fake_iface_init(struct net_if *iface)
 	static uint8_t mac[8] = { 0x00, 0x12, 0x4b, 0x00,
 				  0x00, 0x9e, 0xa3, 0xc2 };
 
-	net_if_set_link_addr(iface, mac, 8);
+	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 
 	ctx->pan_id = 0xabcd;
 	ctx->channel = 26;

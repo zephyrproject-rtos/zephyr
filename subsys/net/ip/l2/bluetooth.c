@@ -73,6 +73,9 @@ static enum net_verdict net_bt_recv(struct net_if *iface, struct net_buf *buf)
 	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
 	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
 
+	net_nbuf_ll_src(buf)->type = NET_LINK_BLUETOOTH;
+	net_nbuf_ll_dst(buf)->type = NET_LINK_BLUETOOTH;
+
 	return NET_CONTINUE;
 }
 
@@ -147,7 +150,8 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	sys_memcpy_swap(ctxt->src.val, info.le.src->a.val, sizeof(ctxt->src));
 	sys_memcpy_swap(ctxt->dst.val, info.le.dst->a.val, sizeof(ctxt->dst));
 
-	net_if_set_link_addr(ctxt->iface, ctxt->src.val, sizeof(ctxt->src.val));
+	net_if_set_link_addr(ctxt->iface, ctxt->src.val, sizeof(ctxt->src.val),
+			     NET_LINK_BLUETOOTH);
 
 	ll.addr = ctxt->dst.val;
 	ll.len = sizeof(ctxt->dst.val);
