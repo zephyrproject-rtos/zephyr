@@ -17,15 +17,26 @@ extern uint32_t _irq_vector_table[];
 
 #define ISR1_OFFSET	0
 #define ISR2_OFFSET	1
+
+#if defined(CONFIG_RISCV32) && !defined(CONFIG_SOC_RISCV32_PULPINO)
+#define ISR3_OFFSET	1
+#define ISR4_OFFSET	5
+
+#define IRQ_LINE(offset)        offset
+#define TABLE_INDEX(offset)     offset
+#define TRIG_CHECK_SIZE         6
+#else
 #define ISR3_OFFSET	2
 #define ISR4_OFFSET	3
 
 #define IRQ_LINE(offset)	(CONFIG_NUM_IRQS - ((offset) + 1))
 #define TABLE_INDEX(offset)	(IRQ_TABLE_SIZE - ((offset) + 1))
+#define TRIG_CHECK_SIZE         4
+#endif
 
 #define ISR3_ARG	0xb01dface
 #define ISR4_ARG	0xca55e77e
-static volatile int trigger_check[4];
+static volatile int trigger_check[TRIG_CHECK_SIZE];
 
 #if defined(CONFIG_ARM)
 #include <arch/arm/cortex_m/cmsis.h>
@@ -39,8 +50,17 @@ void trigger_irq(int irq)
 	NVIC->STIR = irq;
 #endif
 }
+#elif defined(CONFIG_RISCV32) && !defined(CONFIG_SOC_RISCV32_PULPINO)
+void trigger_irq(int irq)
+{
+	uint32_t mip;
+
+	__asm__ volatile ("csrrs %0, mip, %1\n"
+			  : "=r" (mip)
+			  : "r" (1 << irq));
+}
 #else
-/* So far, Nios II and Risc V do not support this */
+/* So far, Nios II does not support this */
 #define NO_TRIGGER_FROM_SW
 #endif
 
@@ -202,5 +222,3 @@ done:
 	TC_END_RESULT(rv);
 	TC_END_REPORT(rv);
 }
-
-
