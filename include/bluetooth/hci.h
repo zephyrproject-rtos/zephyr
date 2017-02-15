@@ -251,6 +251,18 @@ struct bt_hci_cmd_hdr {
 #define HCI_PKT_TYPE_ESCO_2EV5                  0x0100
 #define HCI_PKT_TYPE_ESCO_3EV5                  0x0200
 
+
+#define ESCO_PKT_MASK                           (HCI_PKT_TYPE_ESCO_HV1 | \
+						 HCI_PKT_TYPE_ESCO_HV2 | \
+						 HCI_PKT_TYPE_ESCO_HV3)
+#define SCO_PKT_MASK                            (HCI_PKT_TYPE_HV1 | \
+						 HCI_PKT_TYPE_HV2 | \
+						 HCI_PKT_TYPE_HV3)
+#define EDR_ESCO_PKT_MASK                       (HCI_PKT_TYPE_ESCO_2EV3 | \
+						 HCI_PKT_TYPE_ESCO_3EV3 | \
+						 HCI_PKT_TYPE_ESCO_2EV5 | \
+						 HCI_PKT_TYPE_ESCO_3EV5)
+
 /* HCI BR/EDR link types */
 #define BT_HCI_SCO                              0x00
 #define BT_HCI_ACL                              0x01
@@ -310,6 +322,17 @@ struct bt_hci_rp_connect_cancel {
 struct bt_hci_cp_accept_conn_req {
 	bt_addr_t bdaddr;
 	uint8_t   role;
+} __packed;
+
+#define BT_HCI_OP_ACCEPT_SYNC_CONN_REQ          BT_OP(BT_OGF_LINK_CTRL, 0x0029)
+struct bt_hci_cp_accept_sync_conn_req {
+	bt_addr_t bdaddr;
+	uint32_t  tx_bandwidth;
+	uint32_t  rx_bandwidth;
+	uint16_t  max_latency;
+	uint16_t  content_format;
+	uint8_t   retrans_effort;
+	uint16_t  pkt_type;
 } __packed;
 
 #define BT_HCI_OP_REJECT_CONN_REQ               BT_OP(BT_OGF_LINK_CTRL, 0x000a)

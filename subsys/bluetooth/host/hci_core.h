@@ -16,6 +16,9 @@
 #define LMP_FEAT_PAGES_COUNT	1
 #endif
 
+/* SCO  settings */
+#define BT_VOICE_CVSD_16BIT     0x0060
+
 /* k_poll event tags */
 enum {
 	BT_EVENT_CMD_TX,

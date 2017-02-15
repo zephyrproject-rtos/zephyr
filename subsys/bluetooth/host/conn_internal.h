@@ -64,6 +64,12 @@ struct bt_conn_br {
 
 	struct bt_keys_link_key	*link_key;
 };
+
+struct bt_conn_sco {
+	/* Reference to ACL Connection */
+	struct bt_conn          *conn;
+	uint16_t                pkt_type;
+};
 #endif
 
 struct bt_conn {
@@ -101,6 +107,7 @@ struct bt_conn {
 		struct bt_conn_le	le;
 #if defined(CONFIG_BLUETOOTH_BREDR)
 		struct bt_conn_br	br;
+		struct bt_conn_sco	sco;
 #endif
 	};
 };
@@ -116,6 +123,9 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer);
 
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
+
+/* Add a new SCO connection */
+struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type);
 
 /* Look up an existing connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
