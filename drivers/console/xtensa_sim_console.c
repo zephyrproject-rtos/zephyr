@@ -25,9 +25,10 @@ static int console_out(int c)
 	register int ret_err __asm__ ("a3");
 
 	buf[0] = (char)c;
-	 __asm__ ("simcall"
+	__asm__ volatile ("simcall"
 				: "=a" (ret_val), "=a" (ret_err)
-				: "a" (a2), "a" (a3), "a" (a4), "a" (a5));
+				: "a" (a2), "a" (a3), "a" (a4), "a" (a5)
+				: "memory");
 	return c;
 }
 #endif
