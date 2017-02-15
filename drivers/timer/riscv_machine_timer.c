@@ -20,9 +20,6 @@ static volatile riscv_machine_timer_t *mtime =
 static volatile riscv_machine_timer_t *mtimecmp =
 	(riscv_machine_timer_t *)RISCV_MTIMECMP_BASE;
 
-static uint32_t accumulated_cycle_count;
-static uint64_t last_rtc_value;
-
 /*
  * The RISCV machine-mode timer is a one shot timer that needs to be rearm upon
  * every interrupt. Timer clock is a 64-bits ART.
@@ -44,7 +41,6 @@ static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 	 */
 	rtc = mtime->val_low;
 	rtc |= ((uint64_t)mtime->val_high << 32);
-	last_rtc_value = rtc;
 
 	/*
 	 * Rearm timer to generate an interrupt after
@@ -58,8 +54,6 @@ static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 static void riscv_machine_timer_irq_handler(void *unused)
 {
 	ARG_UNUSED(unused);
-
-	accumulated_cycle_count += sys_clock_hw_cycles_per_tick;
 
 	_sys_clock_tick_announce();
 
@@ -97,11 +91,8 @@ int _sys_clock_driver_init(struct device *device)
  */
 uint32_t k_cycle_get_32(void)
 {
-	uint64_t rtc;
-
-	rtc = mtime->val_low;
-	rtc |= ((uint64_t)mtime->val_high << 32);
-
-	/* rtc - last_rtc_value is always <= sys_clock_hw_cycles_per_tick */
-	return accumulated_cycle_count + (uint32_t)(rtc - last_rtc_value);
+	/* We just want a cycle count so just post what's in the low 32
+	 * bits of the mtime real-time counter
+	 */
+	return mtime->val_low;
 }
