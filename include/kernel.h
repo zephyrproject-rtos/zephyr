@@ -1094,7 +1094,7 @@ extern uint32_t k_uptime_delta_32(int64_t *reftime);
  *
  * @return Current hardware clock up-counter (in cycles).
  */
-extern uint32_t k_cycle_get_32(void);
+#define k_cycle_get_32()	_arch_k_cycle_get_32()
 
 /**
  * @} end addtogroup clock_apis

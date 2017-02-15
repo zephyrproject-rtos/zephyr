@@ -199,6 +199,9 @@ enum nios2_exception_cause {
 	 BIT(NIOS2_EXCEPTION_ECC_DATA_ERR))
 
 
+extern uint32_t _timer_cycle_get_32(void);
+#define _arch_k_cycle_get_32()	_timer_cycle_get_32()
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

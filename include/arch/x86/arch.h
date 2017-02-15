@@ -488,6 +488,9 @@ extern void k_float_disable(k_tid_t thread);
 
 extern void	k_cpu_idle(void);
 
+extern uint32_t _timer_cycle_get_32(void);
+#define _arch_k_cycle_get_32()	_timer_cycle_get_32()
+
 /** Nanokernel provided routine to report any detected fatal error. */
 extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 						 const NANO_ESF * pEsf);

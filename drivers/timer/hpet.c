@@ -593,7 +593,7 @@ int _sys_clock_driver_init(struct device *device)
  * it will need to call _hpetMainCounterAtomic().
  */
 
-uint32_t k_cycle_get_32(void)
+uint32_t _timer_cycle_get_32(void)
 {
 	return (uint32_t) *_HPET_MAIN_COUNTER_VALUE;
 }

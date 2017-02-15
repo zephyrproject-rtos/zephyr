@@ -96,7 +96,7 @@ int _sys_clock_driver_init(struct device *device)
 }
 
 
-uint32_t k_cycle_get_32(void)
+uint32_t _timer_cycle_get_32(void)
 {
 	/* XXX Per the Altera Embedded IP Peripherals guide, you cannot
 	 * use a timer instance for both the system clock and timestamps
