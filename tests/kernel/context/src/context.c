@@ -30,7 +30,7 @@
 #include <board.h>
 #endif
 
-#define THREAD_STACKSIZE    384
+#define THREAD_STACKSIZE    (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_PRIORITY     4
 
 #define THREAD_SELF_CMD    0
@@ -51,6 +51,9 @@
 /* MVIC case */
 #define TICK_IRQ CONFIG_MVIC_TIMER_IRQ
 #endif
+#elif defined(CONFIG_XTENSA)
+#include <xtensa_timer.h>
+#define TICK_IRQ XT_TIMER_INTNUM
 #elif defined(CONFIG_ALTERA_AVALON_TIMER)
 #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)

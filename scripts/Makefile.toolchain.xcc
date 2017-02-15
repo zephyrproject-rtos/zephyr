@@ -1,0 +1,104 @@
+XTENSA_ISS_CYCLES_LIMIT=1000000000 # Simulate 10^9 cycles.
+ifndef XTENSA_TOOLS_PATH
+$(error Please set XTENSA_TOOLS_PATH first)
+endif
+ifndef XTENSA_BUILDS_PATH
+$(error Please set XTENSA_BUILDS_PATH first)
+endif
+XTENSA_BUILD_DIR:=$(patsubst "%",%,${XTENSA_BUILD_DIR})
+ifeq (${XTENSA_BUILD_DIR},)
+XTENSA_BUILD=$(shell echo ${XTENSA_BUILDS_PATH}/${XTENSA_CORE})
+else
+ifeq ($(patsubst /%,/,${XTENSA_BUILD_DIR}),/)
+XTENSA_BUILD=${XTENSA_BUILD_DIR}
+else
+XTENSA_BUILD=$(shell echo ${CONFIG_XTENSA_BUILDS_PATH}/${XTENSA_BUILD_DIR})
+endif
+endif
+# Strip quotes from cross compiler anme prefix
+CROSS_COMPILE_xtensa=$(patsubst "%",%,${CONFIG_CROSS_COMPILE})
+ifeq (${CROSS_COMPILE_xtensa},)
+# Use default name prefix if no cross compiler name prefix is set
+CROSS_COMPILE_xtensa=xt-
+endif
+
+ifeq (${CONFIG_XTENSA},y)
+CROSS_COMPILE=${XTENSA_TOOLS_PATH}/bin/$(CROSS_COMPILE_$(ARCH))
+
+ifeq ($(USE_CCACHE),1)
+CC=$(CCACHE) ${CROSS_COMPILE}xcc --xtensa-core=$(XTENSA_CORE)
+CXX=$(CCACHE) ${CROSS_COMPILE}xc++ --xtensa-core=$(XTENSA_CORE)
+else
+CC=${CROSS_COMPILE}xcc --xtensa-core=$(XTENSA_CORE)
+CXX=${CROSS_COMPILE}xc++ --xtensa-core=$(XTENSA_CORE)
+endif
+AS=${CROSS_COMPILE}as --xtensa-core=$(XTENSA_CORE)
+LD=${CROSS_COMPILE}ld --xtensa-core=$(XTENSA_CORE)
+CROSS_COMPILE_TARGET = ${CROSS_COMPILE_TARGET_${ARCH}}
+
+#CORES
+XTENSA_CORES_LIST=$(shell sed -ne 's/^config \(.*\)/\1 /p' \
+						${ZEPHYR_BASE}/arch/xtensa/soc/Kconfig.cores)
+define XTENSA_CORE_CHECK
+
+ifeq ($$(CONFIG_$(strip $1)),y)
+XTENSA_CORE=$(strip $1)
+endif
+
+endef
+define XTENSA_CORES_CHECK
+$(foreach core,${XTENSA_CORES_LIST}, $(call XTENSA_CORE_CHECK, ${core}))
+endef
+
+$(eval ${XTENSA_CORES_CHECK})
+
+ifeq (${XTENSA_CORE},)
+$(error Failed to parse "arch/xtensa/soc/Kconfig.cores" for getting cores list)
+endif
+
+XTENSA_SYSTEM=$(XTENSA_BUILD)/config
+
+XTSC_INC=$(realpath $(patsubst "%",%,${CONFIG_XTENSA_XTSC_INC}))
+ifeq (${XTSC_INC},)
+XTSC_INC=$(realpath ../$(patsubst "%",%,${CONFIG_XTENSA_XTSC_INC}))
+endif
+XTSC_WORK_DIR=$(dir ${XTSC_INC})
+XTSC_INC_FILE=$(notdir ${XTSC_INC})
+
+# Include XCC standard libraries so that users used to Xplorer IDE can port
+# their code easily
+TOOLCHAIN_LIBS += gcc c sim hal
+LIB_INCLUDE_DIR += -L${XTENSA_BUILD}/xtensa-elf/lib/xcc \
+                   -L${XTENSA_BUILD}/xtensa-elf/lib \
+                   -L${XTENSA_BUILD}/xtensa-elf/arch/lib
+
+KBUILD_CPPFLAGS += -I$(XTENSA_TOOLS_PATH)/lib/xcc/include \
+                   -I$(XTENSA_TOOLS_PATH)/xtensa-elf/include \
+                   -I${XTENSA_BUILD}/xtensa-elf/arch/include \
+                   -I${XTENSA_BUILD}/xtensa-elf/include \
+                   -D'__builtin_unreachable()=while(1);'
+
+# xt-xcc does not support -Og, replace with -O0
+KBUILD_CFLAGS:=$(patsubst -Og,-O0,${KBUILD_CFLAGS})
+KBUILD_CXXFLAGS:=$(filter-out \
+			-std=c++11 \
+			-fno-reorder-functions \
+			-fno-asynchronous-unwind-tables \
+			-fno-defer-pop \
+			-Wno-unused-but-set-variable \
+			-fno-omit-frame-pointer \
+			,${KBUILD_CXXFLAGS})
+
+# Support for Xtensa simulator from Cadence Design Systems, Inc.
+XTRUN=${CROSS_COMPILE}run
+XTRUN_FLAGS += --cycle_limit=${XTENSA_ISS_CYCLES_LIMIT}
+
+export CROSS_COMPILE XTENSA_CORE XTENSA_SYSTEM LIB_INCLUDE_DIR
+endif
+
+prepare2:
+	${Q}test -d ${XTENSA_BUILD} || ( \
+		echo '*** Error: Invalid Xtensa core configuration path \
+			"${XTENSA_BUILD}"' && \
+		exit 1 \
+	)

@@ -5,3 +5,4 @@ obj-$(CONFIG_IPM_CONSOLE_RECEIVER) += ipm_console_receiver.o
 obj-$(CONFIG_IPM_CONSOLE_SENDER) += ipm_console_sender.o
 obj-$(CONFIG_UART_PIPE) += uart_pipe.o
 obj-$(CONFIG_TELNET_CONSOLE) += telnet_console.o
+obj-$(CONFIG_XTENSA_SIM_CONSOLE) += xtensa_sim_console.o

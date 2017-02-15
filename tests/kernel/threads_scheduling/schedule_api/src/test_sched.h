@@ -13,7 +13,7 @@
 #if defined(CONFIG_RISCV32)
 #define STACK_SIZE 512
 #else
-#define STACK_SIZE 256
+#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 #endif
 
 struct thread_data {

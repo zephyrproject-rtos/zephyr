@@ -173,7 +173,6 @@ import glob
 import concurrent
 import concurrent.futures
 
-os.environ["DISABLE_TRYRUN"] = "1"
 if "ZEPHYR_BASE" not in os.environ:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
@@ -765,7 +764,7 @@ class MakeGenerator:
                                    outdir, build_logfile, args) +
                 self._get_sub_make(name, "running", directory,
                                    outdir, run_logfile,
-                                   args + ["qemu"]) +
+                                   args + ["run"]) +
                 self._get_rule_footer(name))
         self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
                                     run_logfile, qemu_logfile)
@@ -1201,7 +1200,7 @@ def defconfig_cb(context, goals, goal):
 
 
 class TestSuite:
-    config_re = re.compile('(CONFIG_[A-Z0-9_]+)[=]\"?([^\"]*)\"?$')
+    config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
     def __init__(self, arch_root, testcase_roots, outdir, coverage):
         # Keep track of which test cases we've filtered out and why
@@ -1720,7 +1719,7 @@ def parse_arguments():
     return parser.parse_args()
 
 def log_info(filename):
-    filename = os.path.relpath(filename)
+    filename = os.path.relpath(os.path.realpath(filename))
     if INLINE_LOGS:
         info("{:-^100}".format(filename))
 
@@ -1819,6 +1818,8 @@ def main():
     global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
     args = parse_arguments()
     toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
+    if toolchain == "zephyr":
+        os.environ["DISABLE_TRYRUN"] = "1"
 
     if args.size:
         for fn in args.size:

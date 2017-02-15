@@ -33,6 +33,8 @@
 /* Nothing yet to include */
 #elif defined(CONFIG_RISCV32)
 /* Nothing yet to include */
+#elif defined(CONFIG_XTENSA)
+/* Nothing yet to include */
 #else
 #error Arch not supported.
 #endif

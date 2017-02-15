@@ -25,9 +25,9 @@
 #include <util_test_common.h>
 
 #if defined(CONFIG_ASSERT) && defined(CONFIG_DEBUG)
-#define FIBER_STACKSIZE    384
+#define FIBER_STACKSIZE    (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 #else
-#define FIBER_STACKSIZE    256
+#define FIBER_STACKSIZE    (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 #endif
 
 #define TEST_FIBER_PRIORITY       4

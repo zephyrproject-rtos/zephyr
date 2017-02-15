@@ -1,0 +1,8 @@
+# Kconfig - XTENSA board configuration
+#
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config  SIMULATOR_XTENSA
+	bool "Xtensa Development ISS"
+	depends on XTENSA

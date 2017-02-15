@@ -375,7 +375,7 @@ struct _static_thread_data {
 			    entry, p1, p2, p3,                   \
 			    prio, options, delay, abort, groups) \
 	{                                                        \
-	.init_stack = (stack),                                   \
+	{.init_stack = (stack)},                                 \
 	.init_stack_size = (stack_size),                         \
 	.init_entry = (void (*)(void *, void *, void *))entry,   \
 	.init_p1 = (void *)p1,                                   \
@@ -2972,7 +2972,7 @@ __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
 static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
 {
 	__asm__(".globl __memory_pool_quad_block_size\n\t"
-#ifdef CONFIG_NIOS2
+#if defined(CONFIG_NIOS2) || defined(CONFIG_XTENSA)
 	    "__memory_pool_quad_block_size = %0\n\t"
 #else
 	    "__memory_pool_quad_block_size = %c0\n\t"
