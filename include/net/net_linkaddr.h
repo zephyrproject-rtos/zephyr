@@ -27,6 +27,20 @@ extern "C" {
 #endif
 
 /**
+ * Type of the link address. This indicates the network technology that this
+ * address is used in. Note that in order to save space we store the value
+ * into a uint8_t variable, so please do not introduce any values > 255 in
+ * this enum.
+ */
+enum net_link_type {
+	NET_LINK_UNKNOWN = 0,
+	NET_LINK_IEEE802154,
+	NET_LINK_BLUETOOTH,
+	NET_LINK_ETHERNET,
+	NET_LINK_DUMMY,
+};
+
+/**
  *  @brief Hardware link address structure
  *
  *  Used to hold the link address information
@@ -37,6 +51,9 @@ struct net_linkaddr {
 
 	/** Length of that address array */
 	uint8_t len;
+
+	/** What kind of address is this for */
+	uint8_t type;
 };
 
 /**
@@ -50,6 +67,9 @@ struct net_linkaddr {
  *  in a different order.
  */
 struct net_linkaddr_storage {
+	/** What kind of address is this for */
+	uint8_t type;
+
 	/** The real length of the ll address. */
 	uint8_t len;
 
