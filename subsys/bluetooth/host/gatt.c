@@ -736,12 +736,13 @@ static void gatt_subscription_remove(struct bt_conn *conn, sys_snode_t *prev,
 
 static void remove_subscriptions(struct bt_conn *conn)
 {
-	struct bt_gatt_subscribe_params *params, *tmp, *prev = NULL;
+	struct bt_gatt_subscribe_params *params, *tmp;
+	sys_snode_t *prev = NULL;
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, params, tmp, node) {
 		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
-			prev = params;
+			prev = &params->node;
 			continue;
 		}
 
@@ -749,10 +750,10 @@ static void remove_subscriptions(struct bt_conn *conn)
 		    (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE)) {
 			/* Remove subscription */
 			params->value = 0;
-			gatt_subscription_remove(conn, &prev->node, params);
+			gatt_subscription_remove(conn, prev, params);
 		} else {
 			update_subscription(conn, params);
-			prev = params;
+			prev = &params->node;
 		}
 	}
 }
@@ -1740,8 +1741,9 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
-	struct bt_gatt_subscribe_params *tmp, *next, *prev = NULL;
+	struct bt_gatt_subscribe_params *tmp, *next;
 	bool has_subscription = false, found = false;
+	sys_snode_t *prev = NULL;
 
 	if (!conn || !params) {
 		return -EINVAL;
@@ -1756,11 +1758,10 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		/* Remove subscription */
 		if (params == tmp) {
 			found = true;
-			sys_slist_remove(&subscriptions, &prev->node,
-					 &tmp->node);
+			sys_slist_remove(&subscriptions, prev, &tmp->node);
 			continue;
 		} else {
-			prev = tmp;
+			prev = &tmp->node;
 		}
 
 		/* Check if there still remains any other subscription */
