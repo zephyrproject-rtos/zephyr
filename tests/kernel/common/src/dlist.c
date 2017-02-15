@@ -265,4 +265,49 @@ void dlist_test(void)
 	sys_dlist_remove(&test_node_2.node);
 	assert_true((verify_emptyness(&test_list)),
 		    "test_list should be empty");
+
+	/* test iterator from a node */
+	struct data_node {
+		sys_dnode_t node;
+		int data;
+	} data_node[6] = {
+		{ .data = 0 },
+		{ .data = 1 },
+		{ .data = 2 },
+		{ .data = 3 },
+		{ .data = 4 },
+		{ .data = 5 },
+	};
+	sys_dnode_t *node = NULL;
+	int ii;
+
+	sys_dlist_init(&test_list);
+
+	for (ii = 0; ii < 6; ii++) {
+		sys_dlist_append(&test_list, &data_node[ii].node);
+	}
+
+	ii = 0;
+	SYS_DLIST_ITERATE_FROM_NODE(&test_list, node) {
+		ii++;
+		if (((struct data_node *)node)->data == 2) {
+			break;
+		}
+	}
+	assert_equal(ii, 3, "");
+
+	ii = 0;
+	SYS_DLIST_ITERATE_FROM_NODE(&test_list, node) {
+		ii++;
+		if (((struct data_node *)node)->data == 3) {
+			break;
+		}
+	}
+	assert_equal(ii, 1, "");
+
+	ii = 0;
+	SYS_DLIST_ITERATE_FROM_NODE(&test_list, node) {
+		ii++;
+	}
+	assert_equal(ii, 2, "");
 }
