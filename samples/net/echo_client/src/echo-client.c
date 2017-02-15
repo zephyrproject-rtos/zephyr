@@ -68,6 +68,41 @@ static char *lorem_ipsum =
 
 static int ipsum_len;
 
+/* Note that both tcp and udp can share the same pool but in this
+ * example the UDP context and TCP context have separate pools.
+ */
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_TCP)
+NET_NBUF_TX_POOL_DEFINE(echo_tx_tcp, 15);
+NET_NBUF_DATA_POOL_DEFINE(echo_data_tcp, 30);
+
+static struct net_buf_pool *tx_tcp_pool(void)
+{
+	return &echo_tx_tcp;
+}
+
+static struct net_buf_pool *data_tcp_pool(void)
+{
+	return &echo_data_tcp;
+}
+#endif
+
+#if defined(CONFIG_NET_UDP)
+NET_NBUF_TX_POOL_DEFINE(echo_tx_udp, 5);
+NET_NBUF_DATA_POOL_DEFINE(echo_data_udp, 20);
+
+static struct net_buf_pool *tx_udp_pool(void)
+{
+	return &echo_tx_udp;
+}
+
+static struct net_buf_pool *data_udp_pool(void)
+{
+	return &echo_data_udp;
+}
+#endif
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+
 #define MY_PORT 8484
 #define PEER_PORT 4242
 
@@ -108,8 +143,11 @@ static bool send_tcp_data(struct net_context *ctx,
 
 #define MY_PREFIX_LEN 64
 
+#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 static struct in6_addr in6addr_my = MY_IP6ADDR;
 static struct in6_addr in6addr_peer = PEER_IP6ADDR;
+#endif
+
 static struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
 
 static struct sockaddr_in6 my_addr6 = {
@@ -138,8 +176,10 @@ static char __noinit __stack ipv6_stack[STACKSIZE];
 #define MY_IP4ADDR { { { 192, 0, 2, 1 } } }
 #define PEER_IP4ADDR { { { 192, 0, 2, 2 } } }
 
+#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 static struct in_addr in4addr_my = MY_IP4ADDR;
 static struct in_addr in4addr_peer = PEER_IP4ADDR;
+#endif
 
 static struct sockaddr_in my_addr4 = {
 	.sin_family = AF_INET,
@@ -256,6 +296,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
+	net_context_setup_pools(*udp_recv6, tx_udp_pool, data_udp_pool);
+
 	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6,
 			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
@@ -270,6 +312,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			"network context (%d)", ret);
 		return false;
 	}
+
+	net_context_setup_pools(*mcast_recv6, tx_udp_pool, data_udp_pool);
 
 	ret = net_context_bind(*mcast_recv6, (struct sockaddr *)&mcast_addr6,
 			       sizeof(struct sockaddr_in6));
@@ -286,6 +330,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			ret);
 		return false;
 	}
+
+	net_context_setup_pools(*udp_recv4, tx_udp_pool, data_udp_pool);
 
 	ret = net_context_bind(*udp_recv4, (struct sockaddr *)&my_addr4,
 			       sizeof(struct sockaddr_in));
@@ -306,6 +352,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			return false;
 		}
 
+		net_context_setup_pools(*tcp_recv6, tx_tcp_pool, data_tcp_pool);
+
 		ret = net_context_bind(*tcp_recv6,
 				       (struct sockaddr *)&my_addr6,
 				       sizeof(struct sockaddr_in6));
@@ -325,6 +373,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			NET_ERR("Cannot get network context for IPv4 TCP");
 			return false;
 		}
+
+		net_context_setup_pools(*tcp_recv4, tx_tcp_pool, data_tcp_pool);
 
 		ret = net_context_bind(*tcp_recv4,
 				       (struct sockaddr *)&my_addr4,
