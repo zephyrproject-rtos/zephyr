@@ -39,10 +39,18 @@ SECTION_FUNC(exception.other, __soc_is_irq)
 	li t1, SOC_MCAUSE_EXP_MASK
 	and t0, t0, t1
 
-	/* if IRQ number != RISCV_MACHINE_TIMER_IRQ, not interrupt */
-	li t1, RISCV_MACHINE_TIMER_IRQ
+	/*
+	 * If corresponding exception bit is set in the
+	 * Machine Interrupt Pending register (mip),
+	 * the exception is an interrupt, otherwise it
+	 * is an unexpected exception.
+	 */
+	csrr t2, mip
+	li t3, 1
+	sll t4, t3, t0
+
 	addi a0, x0, 0
-	bne t0, t1, not_interrupt
+	bne t2, t4, not_interrupt
 	addi a0, a0, 1
 
 not_interrupt:
