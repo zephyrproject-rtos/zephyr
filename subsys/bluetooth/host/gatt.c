@@ -697,22 +697,19 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			  const void *data, uint16_t length)
 {
-	struct bt_gatt_subscribe_params *params, *tmp, *prev = NULL;
+	struct bt_gatt_subscribe_params *params, *tmp;
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, params, tmp, node) {
 		if (bt_conn_addr_le_cmp(conn, &params->_peer) ||
 		    handle != params->value_handle) {
-			prev = params;
 			continue;
 		}
 
 		if (params->notify(conn, params, data, length) ==
 		    BT_GATT_ITER_STOP) {
 			bt_gatt_unsubscribe(conn, params);
-		} else {
-			prev = params;
 		}
 	}
 }
