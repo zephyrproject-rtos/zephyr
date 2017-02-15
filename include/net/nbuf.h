@@ -110,6 +110,15 @@ static inline struct net_if *net_nbuf_iface(struct net_buf *buf)
 static inline void net_nbuf_set_iface(struct net_buf *buf, struct net_if *iface)
 {
 	((struct net_nbuf *)net_buf_user_data(buf))->iface = iface;
+
+	/* If the network interface is set in nbuf, then also set the type of
+	 * the network address that is stored in nbuf. This is done here so
+	 * that the address type is properly set and is not forgotten.
+	 */
+	((struct net_nbuf *)net_buf_user_data(buf))->lladdr_src.type =
+		iface->link_addr.type;
+	((struct net_nbuf *)net_buf_user_data(buf))->lladdr_dst.type =
+		iface->link_addr.type;
 }
 
 static inline uint8_t net_nbuf_family(struct net_buf *buf)
