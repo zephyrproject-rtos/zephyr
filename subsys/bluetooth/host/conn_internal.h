@@ -127,6 +127,9 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 /* Add a new SCO connection */
 struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type);
 
+/* Look up an existing sco connection by BT address */
+struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
+
 /* Look up an existing connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 

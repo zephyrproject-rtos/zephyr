@@ -266,6 +266,27 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	return conn;
 }
 
+struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
+		if (!atomic_get(&sco_conns[i].ref)) {
+			continue;
+		}
+
+		if (sco_conns[i].type != BT_CONN_TYPE_SCO) {
+			continue;
+		}
+
+		if (!bt_addr_cmp(peer, &sco_conns[i].sco.conn->br.dst)) {
+			return bt_conn_ref(&sco_conns[i]);
+		}
+	}
+
+	return NULL;
+}
+
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 {
 	int i;
@@ -1207,6 +1228,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	/* Actions needed for entering the new state */
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
+		if (conn->type == BT_CONN_TYPE_SCO) {
+			/* TODO: Notify sco connected */
+			break;
+		}
 		k_fifo_init(&conn->tx_queue);
 		k_poll_signal(&conn_change, 0);
 
@@ -1254,6 +1279,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_CONNECT_SCAN:
 		break;
 	case BT_CONN_CONNECT:
+		if (conn->type == BT_CONN_TYPE_SCO) {
+			break;
+		}
 		/*
 		 * Timer is needed only for LE. For other link types controller
 		 * will handle connection timeout.

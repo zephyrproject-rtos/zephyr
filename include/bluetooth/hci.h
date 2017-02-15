@@ -1074,6 +1074,19 @@ struct bt_hci_evt_remote_ext_features {
 	uint8_t  features[8];
 } __packed;
 
+#define BT_HCI_EVT_SYNC_CONN_COMPLETE           0x2c
+struct bt_hci_evt_sync_conn_complete {
+	uint8_t   status;
+	uint16_t  handle;
+	bt_addr_t bdaddr;
+	uint8_t   link_type;
+	uint8_t   tx_interval;
+	uint8_t   retansmission_window;
+	uint16_t  rx_pkt_length;
+	uint16_t  tx_pkt_length;
+	uint8_t   air_mode;
+} __packed;
+
 #define BT_HCI_EVT_EXTENDED_INQUIRY_RESULT      0x2f
 struct bt_hci_evt_extended_inquiry_result {
 	uint8_t   num_reports;
