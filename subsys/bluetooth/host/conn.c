@@ -191,6 +191,13 @@ static struct bt_conn *conn_new(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+void bt_sco_cleanup(struct bt_conn *sco_conn)
+{
+	bt_conn_unref(sco_conn->sco.acl);
+	sco_conn->sco.acl = NULL;
+	bt_conn_unref(sco_conn);
+}
+
 static struct bt_conn *sco_conn_new(void)
 {
 	struct bt_conn *sco_conn = NULL;
@@ -1239,6 +1246,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		notify_connected(conn);
 		break;
 	case BT_CONN_DISCONNECTED:
+		if (conn->type == BT_CONN_TYPE_SCO) {
+			/* TODO: Notify sco disconnected */
+			bt_conn_unref(conn);
+			break;
+		}
 		/* Notify disconnection and queue a dummy buffer to wake
 		 * up and stop the tx thread for states where it was
 		 * running.
@@ -1321,6 +1333,24 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 			return bt_conn_ref(&conns[i]);
 		}
 	}
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
+		if (!atomic_get(&sco_conns[i].ref)) {
+			continue;
+		}
+
+		/* We only care about connections with a valid handle */
+		if (sco_conns[i].state != BT_CONN_CONNECTED &&
+		    sco_conns[i].state != BT_CONN_DISCONNECT) {
+			continue;
+		}
+
+		if (sco_conns[i].handle == handle) {
+			return bt_conn_ref(&sco_conns[i]);
+		}
+	}
+#endif
 
 	return NULL;
 }

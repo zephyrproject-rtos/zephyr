@@ -567,6 +567,10 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	if (conn->type != BT_CONN_TYPE_LE) {
 #if defined(CONFIG_BLUETOOTH_BREDR)
+		if (conn->type == BT_CONN_TYPE_SCO) {
+			bt_sco_cleanup(conn);
+			return;
+		}
 		/*
 		 * If only for one connection session bond was set, clear keys
 		 * database row for this connection.
@@ -1058,7 +1062,14 @@ static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 		return;
 	}
 
-	accept_sco_conn(&evt->bdaddr, sco_conn);
+	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
+		BT_ERR("Error accepting connection from %s",
+		       bt_addr_str(&evt->bdaddr));
+		reject_conn(&evt->bdaddr, BT_HCI_ERR_UNSPECIFIED);
+		bt_sco_cleanup(sco_conn);
+		return;
+	}
+
 	sco_conn->role = BT_HCI_ROLE_SLAVE;
 	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
 	bt_conn_unref(sco_conn);
