@@ -11,7 +11,7 @@
  * Header file for AON cases
  */
 
-#ifndef __TEST_AON_H_
+#ifndef __TEST_AON_H__
 #define __TEST_AON_H__
 
 #include <counter.h>
