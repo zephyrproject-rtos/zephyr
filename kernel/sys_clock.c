@@ -226,7 +226,18 @@ static inline void handle_timeouts(int32_t ticks)
 	while (timeout && timeout->delta_ticks_from_prev == 0) {
 
 		sys_dlist_remove(next);
-		sys_dlist_append(&expired, next);
+
+		/*
+		 * Reverse the order that that were queued in the timeout_q:
+		 * timeouts expiring on the same ticks are queued in the
+		 * reverse order, time-wise, that they are added to shorten the
+		 * amount of time with interrupts locked while walking the
+		 * timeout_q. By reversing the order _again_ when building the
+		 * expired queue, they end up being processed in the same order
+		 * they were added, time-wise.
+		 */
+		sys_dlist_prepend(&expired, next);
+
 		timeout->delta_ticks_from_prev = _EXPIRED;
 
 		irq_unlock(key);
