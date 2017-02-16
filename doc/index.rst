@@ -42,6 +42,7 @@ Sections
    contribute/code.rst
    release-notes.rst
    LICENSING.rst
+   glossary.rst
 
 You can find further information on the `Zephyr Project Wiki`_.
 
@@ -53,6 +54,7 @@ Indices and Tables
 * :ref:`search`
 
 .. _Zephyr Project Wiki: https://wiki.zephyrproject.org/view/Main_Page
+.. _Zephyr 1.7.0: https://www.zephyrproject.org/doc/1.7.0/
 .. _Zephyr 1.6.0: https://www.zephyrproject.org/doc/1.6.0/
 .. _Zephyr 1.5.0: https://www.zephyrproject.org/doc/1.5.0/
 .. _Zephyr 1.4.0: https://www.zephyrproject.org/doc/1.4.0/
