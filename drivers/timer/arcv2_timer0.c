@@ -66,7 +66,7 @@
 
 /* running total of timer count */
 static uint32_t __noinit cycles_per_tick;
-static uint32_t accumulated_cycle_count;
+static volatile uint32_t accumulated_cycle_count;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static uint32_t __noinit max_system_ticks;
@@ -415,7 +415,14 @@ int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
 
 uint32_t _timer_cycle_get_32(void)
 {
-	return (accumulated_cycle_count + timer0_count_register_get());
+	uint32_t acc, count;
+
+	do {
+		acc = accumulated_cycle_count;
+		count = timer0_count_register_get();
+	} while (acc != accumulated_cycle_count);
+
+	return acc + count;
 }
 
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
