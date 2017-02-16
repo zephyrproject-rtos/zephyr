@@ -17,16 +17,14 @@
 /* Exports */
 .global _start
 .global __start
+.global exit
 
 /*
  * Imports
- *   __clibrary_init	from C library (eg. newlib or uclibc)
- *   exit		from C library
  *   main		from user application
  *   __stack		from linker script (see LSP Ref Manual)
  */
 
-.type	__clibrary_init, @function
 .type	_Cstart, @function
 .type	exit, @function
 
@@ -34,6 +32,7 @@
 /* Macros to abstract away ABI differences */
 
 #if __XTENSA_CALL0_ABI__
+# define ENTRY
 # define CALL	call0
 # define CALLX	callx0
 # define ARG1	a2	/* 1st outgoing call argument */
@@ -42,6 +41,7 @@
 # define ARG4	a5	/* 4th outgoing call argument */
 # define ARG5	a6	/* 5th outgoing call argument */
 #else
+# define ENTRY	entry	sp, 0x20
 # define CALL	call4
 # define CALLX	callx4
 # define ARG1	a6	/* 1st outgoing call argument */
@@ -210,13 +210,6 @@ __start:
 #endif
 
 
-	/*
-	 *  Call __clibrary_init to initialize the C library:
-	 *
-	 *  void __clibrary_init(int argc, char ** argv, char ** environ,
-	 *		void(*init_func)(void), void(*fini_func)(void));
-	 */
-
 	/* Get argv with the arguments from the ISS */
 	mov	a3, sp		 /* tell simcall where to write argv[] */
 	movi	a2, SYS_iss_set_argv
@@ -236,6 +229,14 @@ __start:
 
 	.size	_start, . - _start
 
+	.align 4
+exit:
+	ENTRY
+	mov	a3, a2
+	movi	a2, SYS_exit
+	simcall
+
+	.size exit, . - exit
 
 /*
  * Local Variables:
