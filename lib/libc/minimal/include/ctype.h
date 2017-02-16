@@ -60,6 +60,11 @@ static inline int toupper(int chr)
 	return (chr >= 'a' && chr <= 'z') ? (chr - 32) : (chr);
 }
 
+static inline int isalnum(int chr)
+{
+	return isalpha(chr) || isdigit(chr);
+}
+
 #ifdef __cplusplus
 }
 #endif
