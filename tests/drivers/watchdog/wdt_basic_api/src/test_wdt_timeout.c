@@ -42,6 +42,14 @@ static void wdt_int_cb(struct device *wdt_dev)
 
 	TC_PRINT("%s: Invoked (%u)\n", __func__, ++wdt_int_cnt);
 	QM_SCSS_GP->gps2++;
+
+#ifdef INT_RESET
+	/* Don't come out from the loopback to avoid have the interrupt
+	 * cleared and the system will reset in interrupt reset mode
+	 */
+	while (1)
+	;
+#endif
 }
 
 static int test_wdt(uint32_t timeout, enum wdt_mode r_mode)
