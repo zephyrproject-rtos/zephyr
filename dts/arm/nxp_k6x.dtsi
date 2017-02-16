@@ -75,7 +75,6 @@
 			interrupt-names = "status", "error";
 			zephyr,irq-prio = <0>;
 
-			baud-rate = <115200>;
 			pinctrl-0 = <&uart0_default>;
 			pinctrl-names = "default";
 

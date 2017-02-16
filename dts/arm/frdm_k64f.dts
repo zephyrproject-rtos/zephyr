@@ -30,4 +30,10 @@
 
 &uart0 {
 	status = "ok";
+	baud-rate = <115200>;
+};
+
+&uart3 {
+	status = "ok";
+	baud-rate = <115200>;
 };
