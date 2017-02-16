@@ -97,7 +97,9 @@
 
 /* Indicate that an array will be used for stack space. */
 
-#define __stack __aligned(STACK_ALIGN)
+#if !defined(_ASMLANGUAGE)
+  #define __stack __aligned(STACK_ALIGN)
+#endif
 
 /* concatenate the values of the arguments into one */
 #define _DO_CONCAT(x, y) x ## y
