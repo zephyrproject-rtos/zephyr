@@ -10,6 +10,18 @@
  * Linker script for the Xtensa platform.
  */
 
+#define _LINKER
+#define _ASMLANGUAGE
+
+#include <autoconf.h>
+#include <sections.h>
+
+#include <linker-defs.h>
+#include <linker-tool.h>
+
+#define RAMABLE_REGION sram0_0_seg :sram0_0_phdr
+#define ROMABLE_REGION srom1_seg :srom1_phdr
+
 MEMORY
 {
   dram0_0_seg :                       	org = 0x60000000, len = 0x20000
@@ -98,6 +110,8 @@ SECTIONS
     *(.dram.rodata)
     _dram0_rodata_end = ABSOLUTE(.);
   } >dram0_0_seg :dram0_0_phdr
+
+#include <linker/common-rom.ld>
 
   .rodata : ALIGN(4)
   {
@@ -197,6 +211,8 @@ SECTIONS
     KEEP(*(.jcr))
     _data_end = ABSOLUTE(.);
   } >dram0_0_seg :dram0_0_phdr
+
+#include <linker/common-ram.ld>
 
   .bss (NOLOAD) : ALIGN(8)
   {
@@ -346,19 +362,4 @@ SECTIONS
   {
     KEEP (*(.debug.xt.callgraph .debug.xt.callgraph.* .gnu.linkonce.xt.callgraph.*))
   }
-
-#define _LINKER
-#define _ASMLANGUAGE
-
-#include <autoconf.h>
-#include <sections.h>
-
-#include <linker-defs.h>
-#include <linker-tool.h>
-
-#define RAMABLE_REGION sram0_0_seg :sram0_0_phdr
-#define ROMABLE_REGION srom1_seg :srom1_phdr
-
-#include <linker/common-rom.ld>
-#include <linker/common-ram.ld>
 }
