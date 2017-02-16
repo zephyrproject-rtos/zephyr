@@ -53,7 +53,7 @@ XTSC_INC_FILE=$(notdir ${XTSC_INC})
 
 # Include XCC standard libraries so that users used to Xplorer IDE can port
 # their code easily
-TOOLCHAIN_LIBS += gcc c sim hal
+TOOLCHAIN_LIBS += gcc hal
 LIB_INCLUDE_DIR += -L${XTENSA_BUILD}/xtensa-elf/lib/xcc \
                    -L${XTENSA_BUILD}/xtensa-elf/lib \
                    -L${XTENSA_BUILD}/xtensa-elf/arch/lib

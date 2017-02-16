@@ -18,11 +18,10 @@
 
 /* Exports */
 .global _start
+.global exit
 
 /*
  * Imports
- *   __clibrary_init		from C library (eg. newlib or uclibc)
- *   exit			from C library
  *   main			from user application
  *   board_init			board-specific (uart/mingloss/tinygloss.c)
  *   xthal_dcache_all_writeback	from HAL library
@@ -214,27 +213,11 @@ _start:
 #else /* !HALT */
 
 	.type	board_init, @function
-	.type	__clibrary_init, @function
 	.type	exit, @function
 
 
 	 /*  Initialize the board (eg. UART, etc). */
 	CALL	board_init
-
-	/*
-	 *  Call __clibrary_init to initialize the C library:
-	 *
-	 *  void __clibrary_init(int argc, char ** argv, char ** environ,
-	 *		void(*init_func)(void), void(*fini_func)(void));
-	 *  Pass an empty argv array, with an empty string as the program name
-	 */
-	movi	ARG1, _start_argc	/* argc address */
-	movi	ARG2, _start_argv	/* argv = ["", 0] */
-	movi	ARG3, _start_envp	/* envp = [0] */
-	movi 	ARG4, _init		/* function that calls constructors */
-	movi	ARG5, _fini		/* function that calls destructors */
-	l32i	ARG1, ARG1, 0		/* argc = 1 */
-	CALL	__clibrary_init
 
 	/*  Call:   int main(int argc, char ** argv, char ** environ); */
 	movi	ARG1, _start_argc	/* argc address */
@@ -268,4 +251,13 @@ _start_argc:
 #endif /* !HALT */
 
 	.size	_start, . - _start
+
+	.align 4
+exit:
+#if XCHAL_HAVE_INTERRUPTS
+	waiti	15
+#endif
+	j	exit
+
+	.size exit, . - exit
 
