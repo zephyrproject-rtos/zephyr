@@ -1,1 +1,3 @@
 obj-y += libc/
+
+obj-$(CONFIG_JSON_LIBRARY) += json/
