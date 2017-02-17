@@ -88,7 +88,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf);
 int net_send_data(struct net_buf *buf);
 
 struct net_stack_info {
-	unsigned char *stack;
+	char *stack;
 	const char *pretty_name;
 	const char *name;
 	size_t orig_size;
