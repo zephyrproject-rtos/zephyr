@@ -181,8 +181,8 @@ struct dma_block_config {
  *     reserved             [ 19 : 31 ]
  *
  * config_size is a bit field with the following parts:
- *     source_data_size    [ 0 : 15 ]    - number of bytes
- *     dest_data_size      [ 16 : 31 ]   - number of bytes
+ *     source_data_size    [ 0 : 15 ]    - width of source data (in bytes)
+ *     dest_data_size      [ 16 : 31 ]   - width of dest data (in bytes)
  *     source_burst_length [ 0 : 15 ]  - number of source data units
  *     dest_burst_length   [ 16 : 31 ]  - number of destination data units
  *
