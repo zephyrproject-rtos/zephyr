@@ -170,15 +170,29 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 
 		for (i = 0; i < frag->len; ++i) {
 			c = *ptr++;
-			if (c == SLIP_END) {
-				slip_writeb(SLIP_ESC);
-				c = SLIP_ESC_END;
-			} else if (c == SLIP_ESC) {
-				slip_writeb(SLIP_ESC);
-				c = SLIP_ESC_ESC;
-			}
 
-			slip_writeb(c);
+			switch (c) {
+			case SLIP_END:
+				/* If it's the same code as an END character,
+				 * we send a special two character code so as
+				 * not to make the receiver think we sent
+				 * an END.
+				 */
+				slip_writeb(SLIP_ESC);
+				slip_writeb(SLIP_ESC_END);
+				break;
+			case SLIP_ESC:
+				/* If it's the same code as an ESC character,
+				 * we send a special two character code so as
+				 * not to make the receiver think we sent
+				 * an ESC.
+				 */
+				slip_writeb(SLIP_ESC);
+				slip_writeb(SLIP_ESC_ESC);
+				break;
+			default:
+				slip_writeb(c);
+			}
 		}
 
 #if defined(CONFIG_SLIP_DEBUG)
