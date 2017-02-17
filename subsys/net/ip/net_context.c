@@ -1812,8 +1812,10 @@ enum net_verdict packet_received(struct net_conn *conn,
 	if (context->recv_cb) {
 		size_t total_len = net_buf_frags_len(buf);
 
-		/* TCP packets get appdata earlier in tcp_established() */
 		if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
+			/* TCP packets get appdata earlier in
+			 * tcp_established().
+			 */
 			if (net_nbuf_family(buf) == AF_INET6) {
 				set_appdata_values(buf,
 						   NET_IPV6_BUF(buf)->nexthdr,
@@ -1824,6 +1826,14 @@ enum net_verdict packet_received(struct net_conn *conn,
 						   total_len);
 			}
 		}
+#if defined(CONFIG_NET_TCP)
+		else if (net_context_get_type(context) == SOCK_STREAM) {
+			if (net_nbuf_appdatalen(buf) == 0) {
+				net_nbuf_unref(buf);
+				return NET_OK;
+			}
+		}
+#endif /* CONFIG_NET_TCP */
 
 		NET_DBG("Set appdata %p to len %u (total %zu)",
 			net_nbuf_appdata(buf), net_nbuf_appdatalen(buf),
