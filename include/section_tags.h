@@ -19,7 +19,6 @@
 
 #if defined(CONFIG_ARM)
 #define __scp_section		__in_section_unique(SCP_SECTION)
-#define __security_frdm_k64f_section   __in_section_unique(SECURITY_FRDM_K64F)
 #define __kinetis_flash_config_section __in_section_unique(KINETIS_FLASH_CONFIG)
 #endif /* CONFIG_ARM */
 
