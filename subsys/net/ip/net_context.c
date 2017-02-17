@@ -1804,12 +1804,10 @@ enum net_verdict packet_received(struct net_conn *conn,
 	struct net_context *context = find_context(conn);
 
 	NET_ASSERT(context);
+	NET_ASSERT(net_nbuf_iface(buf));
 
 	net_context_set_iface(context, net_nbuf_iface(buf));
-
 	net_nbuf_set_context(buf, context);
-
-	NET_ASSERT(net_nbuf_iface(buf));
 
 	if (context->recv_cb) {
 		size_t total_len = net_buf_frags_len(buf);
