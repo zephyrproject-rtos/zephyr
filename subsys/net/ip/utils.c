@@ -24,7 +24,7 @@
 #include <net/nbuf.h>
 #include <net/net_core.h>
 
-char *net_byte_to_hex(uint8_t *ptr, uint8_t byte, char base, bool pad)
+char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad)
 {
 	int i, val;
 
@@ -63,7 +63,7 @@ char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 	}
 
 	for (i = 0, blen = buflen; i < len && blen > 0; i++) {
-		ptr = net_byte_to_hex(ptr, ll[i], 'A', true);
+		ptr = net_byte_to_hex(ptr, (char)ll[i], 'A', true);
 		*ptr++ = ':';
 		blen -= 3;
 	}
