@@ -41,6 +41,24 @@ config DMA_0_IRQ_PRI
 	help
 	IRQ Priority for the DMA Controller.
 
+config DMA_0_RX_SUB_CHANNEL_ID
+	int "Requested Rx sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuartion is required to choose a valid sub-channel
+	for communication from a peripheral/device.  Not required
+	for memory to memory comms.
+
+config DMA_0_TX_SUB_CHANNEL_ID
+	int "Requested Tx sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuartion is required to choose a valid sub-channel
+	for communication to a peripheral/device.  Not required
+	for memory to memory comms.
+
 config DMA_1_NAME
 	string "Device name for DMA Controller 1"
 	default "DMA_1"
@@ -53,6 +71,24 @@ config DMA_1_IRQ_PRI
 	help
 	IRQ Priority for DMA Controller 1.
 
+config DMA_1_RX_SUB_CHANNEL_ID
+	int "Requested Rx sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuartion is required to choose a valid sub-channel
+	for communication from a peripheral/device.  Not required
+	for memory to memory comms.
+
+config DMA_1_TX_SUB_CHANNEL_ID
+	int "Requested Tx sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuartion is required to choose a valid sub-channel
+	for communication to a peripheral/device.  Not required
+	for memory to memory comms.
+
 config DMA_2_NAME
 	string "Device name for DMA Controller 2"
 	default "DMA_2"
@@ -64,5 +100,23 @@ config DMA_2_IRQ_PRI
 	default 3
 	help
 	IRQ Priority for DMA Controller 2.
+
+config DMA_2_RX_SUB_CHANNEL_ID
+	int "Requested Rx sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuartion is required to choose a valid sub-channel
+	for communication from a peripheral/device.  Not required
+	for memory to memory comms.
+
+config DMA_2_TX_SUB_CHANNEL_ID
+	int "Requested Tx sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuartion is required to choose a valid sub-channel
+	for communication to a peripheral/device.  Not required
+	for memory to memory comms.
 
 endif # DMA
