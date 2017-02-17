@@ -555,6 +555,41 @@ context, navigate to: :file:`\$ZEPHYR_BASE/samples/philosophers/src`.
    obj-y = main.o
 
 
+Support for building third-party library code
+=============================================
+
+It is possible to build library code outside the application's :file:`src`
+directory but it is important that both application and library code targets
+the same Application Binary Interface (ABI). On most architectures there are
+compiler flags that control the ABI targeted, making it important that both
+libraries and applications have certain compiler flags in common. It may also
+be useful for glue code to have access to Zephyr kernel header files.
+
+To make it easier to integrate third-party components, the Zephyr build system
+includes a special build target, ``outputexports``, that takes a number of
+critical variables from the Zephyr build system and copies them into
+:file:`Makefile.export`. This allows the critical variables to be included by
+wrapper code for use in a third-party build system.
+
+The following variables are recommended for use within the third-party build
+(see :file:`Makefile.export` for the complete list of exported variables):
+
+* ``CROSS_COMPILE``, together with related convenience variables to call the
+  cross-tools directly (including ``AR``, ``AS``, ``CC``, ``CXX``, ``CPP``
+  and ``LD``).
+
+* ``ARCH`` and ``BOARD``, together with several variables that identify the
+  Zephyr kernel version.
+
+* ``KBUILD_CFLAGS``, ``NOSTDINC_FLAGS`` and ``ZEPHYRINCLUDE`` all of which
+  should normally be added, in that order, to ``CFLAGS`` (or
+  ``CXXFLAGS``).
+
+* All kconfig variables, allowing features of the library code to be
+  enabled/disabled automatically based on the Zephyr kernel configuration.
+
+:file:`samples/static_lib` is a sample project that demonstrates
+some of these features.
 
 Build an Application
 ********************
