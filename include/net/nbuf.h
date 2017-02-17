@@ -298,6 +298,14 @@ static inline void net_nbuf_ll_swap(struct net_buf *buf)
 	net_nbuf_ll_dst(buf)->addr = addr;
 }
 
+static inline void net_nbuf_copy_user_data(struct net_buf *new,
+					   struct net_buf *orig)
+{
+	memcpy((struct net_nbuf *)net_buf_user_data(new),
+	       (struct net_nbuf *)net_buf_user_data(orig),
+	       sizeof(struct net_nbuf));
+}
+
 #define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))
 #define NET_ICMP_BUF(buf) ((struct net_icmp_hdr *)net_nbuf_icmp_data(buf))
