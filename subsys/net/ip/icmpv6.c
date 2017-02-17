@@ -96,7 +96,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	payload_len = sys_get_be16(NET_IPV6_BUF(orig)->len) -
 		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
 
-	frag = net_nbuf_copy_all(orig->frags, 0, K_FOREVER);
+	frag = net_nbuf_copy_all(orig, 0, K_FOREVER);
 	if (!frag) {
 		goto drop;
 	}
@@ -215,7 +215,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	/* We only copy minimal IPv6 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig->frags, extra_len, reserve, K_FOREVER);
+	frag = net_nbuf_copy(orig, extra_len, reserve, K_FOREVER);
 	if (!frag) {
 		goto drop;
 	}

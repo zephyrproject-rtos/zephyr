@@ -223,7 +223,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	/* We only copy minimal IPv4 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig->frags, extra_len, reserve, K_FOREVER);
+	frag = net_nbuf_copy(orig, extra_len, reserve, K_FOREVER);
 	if (!frag) {
 		goto drop;
 	}

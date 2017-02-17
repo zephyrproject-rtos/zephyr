@@ -224,7 +224,7 @@ static int test_fragment_copy(void)
 	linearize(buf, buf_orig, orig_len);
 
 	/* Then copy a fragment list to a new fragment list */
-	new_frag = net_nbuf_copy_all(buf->frags, sizeof(struct ipv6_hdr) +
+	new_frag = net_nbuf_copy_all(buf, sizeof(struct ipv6_hdr) +
 				     sizeof(struct icmp_hdr), K_FOREVER);
 	if (!new_frag) {
 		printk("Cannot copy fragment list.\n");

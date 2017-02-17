@@ -536,18 +536,19 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf)
 	return net_buf_ref(buf);
 }
 
-struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
+struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
 			      size_t reserve, int32_t timeout)
 {
-	uint16_t ll_reserve = net_buf_headroom(orig);
-	struct net_buf *frag, *first;
+	struct net_buf *frag, *first, *orig;
 
-	if (!is_from_data_pool(orig)) {
-		NET_ERR("Buffer %p is not a data fragment", orig);
+	if (is_from_data_pool(buf)) {
+		NET_ERR("Buffer %p should not be a data fragment", buf);
 		return NULL;
 	}
 
-	frag = net_nbuf_get_reserve_data(ll_reserve, timeout);
+	orig = buf->frags;
+
+	frag = net_nbuf_get_frag(buf, timeout);
 	if (!frag) {
 		return NULL;
 	}
@@ -598,8 +599,7 @@ struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
 				 * We must allocate a new one.
 				 */
 				struct net_buf *new_frag =
-					net_nbuf_get_reserve_data(ll_reserve,
-								  timeout);
+					net_nbuf_get_frag(buf, timeout);
 				if (!new_frag) {
 					net_nbuf_unref(first);
 					return NULL;
