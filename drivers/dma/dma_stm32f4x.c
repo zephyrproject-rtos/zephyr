@@ -310,7 +310,8 @@ static int dma_stm32_config_devcpy(struct device *dev, uint32_t id,
 			DMA_STM32_SCR_MSIZE(src_bus_width) |
 			DMA_STM32_SCR_PBURST(dst_burst_size) |
 			DMA_STM32_SCR_MBURST(src_burst_size) |
-			DMA_STM32_SCR_REQ(ddata->channel_tx);
+			DMA_STM32_SCR_REQ(ddata->channel_tx) |
+			DMA_STM32_SCR_MINC;
 		break;
 	case PERIPHERAL_TO_MEMORY:
 		regs->scr = DMA_STM32_SCR_DIR(DMA_STM32_DEV_TO_MEM) |
