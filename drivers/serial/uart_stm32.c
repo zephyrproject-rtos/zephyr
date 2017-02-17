@@ -352,7 +352,9 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_1 = {
 static struct uart_stm32_data uart_stm32_dev_data_1 = {
 	.huart = {
 		.Init = {
-			.BaudRate = CONFIG_UART_STM32_PORT_1_BAUD_RATE} }
+			.BaudRate = CONFIG_UART_STM32_PORT_1_BAUD_RATE
+		}
+	}
 };
 
 DEVICE_AND_API_INIT(uart_stm32_1, CONFIG_UART_STM32_PORT_1_NAME,
