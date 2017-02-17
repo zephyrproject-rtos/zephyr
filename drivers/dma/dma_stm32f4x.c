@@ -199,9 +199,10 @@ static void dma_stm32_dump_reg(struct dma_stm32_device *ddata, uint32_t id)
 	SYS_LOG_INF("SCR:   0x%x \t(config)\n", scr);
 	SYS_LOG_INF("NDTR:  0x%x \t(length)\n", ndtr);
 	SYS_LOG_INF("SPAR:  0x%x \t(source)\n", spar);
-	SYS_LOG_INF("SM0AR: 0x%x \t(destination)\n", sm0ar);
-	SYS_LOG_INF("SM1AR: 0x%x \t(destination (double buffer mode))\n", sm1ar);
 	SYS_LOG_INF("SFCR:  0x%x \t(fifo control)\n", sfcr);
+	SYS_LOG_INF("SM0AR: 0x%x \t(destination)\n", sm0ar);
+	SYS_LOG_INF("SM1AR: 0x%x \t(destination (double buffer mode))\n",
+		    sm1ar);
 }
 
 static uint32_t dma_stm32_irq_status(struct dma_stm32_device *ddata,
