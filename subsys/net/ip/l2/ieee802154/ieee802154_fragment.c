@@ -83,7 +83,7 @@ static inline struct net_buf *prepare_new_fragment(struct net_buf *buf,
 {
 	struct net_buf *frag;
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 	if (!frag) {
 		return NULL;
 	}
