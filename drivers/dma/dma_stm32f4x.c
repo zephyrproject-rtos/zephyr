@@ -42,7 +42,6 @@ struct dma_stm32_stream_reg {
 };
 
 struct dma_stm32_stream {
-	uint32_t id;
 	uint32_t direction;
 	struct device *dev;
 	struct dma_stm32_stream_reg regs;
@@ -464,7 +463,6 @@ static int dma_stm32_init(struct device *dev)
 	int i;
 
 	for (i = 0; i < DMA_STM32_MAX_STREAMS; i++) {
-		ddata->stream[i].id   = i;
 		ddata->stream[i].dev  = dev;
 		ddata->stream[i].busy = false;
 	}
