@@ -166,10 +166,18 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 int net_tcp_release(struct net_tcp *tcp)
 {
+	struct net_buf *buf;
+	struct net_buf *tmp;
 	int key;
 
 	if (!PART_OF_ARRAY(tcp_context, tcp)) {
 		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp->sent_list, buf, tmp,
+					  sent_list) {
+		sys_slist_remove(&tcp->sent_list, NULL, &buf->sent_list);
+		net_nbuf_unref(buf);
 	}
 
 	k_delayed_work_cancel(&tcp->ack_timer);
