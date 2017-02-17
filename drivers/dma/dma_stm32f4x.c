@@ -63,7 +63,7 @@ static struct dma_stm32_device {
 	bool mem2mem;
 	uint8_t channel_rx;
 	uint8_t channel_tx;
-} ddata[DMA_STM32_MAX_DEVS];
+} device_data[DMA_STM32_MAX_DEVS];
 
 struct dma_stm32_config {
 	struct stm32f4x_pclken pclken;
@@ -502,7 +502,7 @@ const struct dma_stm32_config dma_stm32_1_cdata = {
 };
 
 DEVICE_AND_API_INIT(dma_stm32_1, CONFIG_DMA_1_NAME, &dma_stm32_init,
-		    &ddata[DMA_STM32_1], &dma_stm32_1_cdata,
+		    &device_data[DMA_STM32_1], &dma_stm32_1_cdata,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&dma_funcs);
 
@@ -513,7 +513,7 @@ static const struct dma_stm32_config dma_stm32_2_cdata = {
 };
 
 DEVICE_AND_API_INIT(dma_stm32_2, CONFIG_DMA_2_NAME, &dma_stm32_init,
-		    &ddata[DMA_STM32_2], &dma_stm32_2_cdata,
+		    &device_data[DMA_STM32_2], &dma_stm32_2_cdata,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&dma_funcs);
 
