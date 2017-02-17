@@ -54,9 +54,6 @@ struct slip_context {
 #define SLIP_STATS(statement)
 #else
 	uint16_t garbage;
-	uint16_t multi_packets;
-	uint16_t overflows;
-	uint16_t ip_drop;
 #define SLIP_STATS(statement) statement
 #endif
 };
