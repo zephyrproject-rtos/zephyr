@@ -382,6 +382,64 @@ static inline int __deprecated dma_transfer_stop(struct device *dev,
 }
 
 /**
+ * @brief Look-up generic width index to be used in registers
+ *
+ * WARNING: This look-up works for most controllers, but *may* not work for
+ *          yours.  Ensure your controller expects the most common register
+ *          bit values before using this convienience function.  If your
+ *          controller does not support these values, you will have to write
+ *          your own look-up inside the controller driver.
+ *
+ * @param size: width of bus (in bytes)
+ *
+ * @retval common DMA index to be placed into registers.
+ */
+static inline enum dma_burst_length dma_width_index(uint32_t size)
+{
+	/* Check boundaries (max supported width is 32 Bytes) */
+	if (size < 1 || size > 32) {
+		return 0; /* Zero is the default (8 Bytes) */
+	}
+
+	/* Ensure size is a power of 2 */
+	if (!(size & (size - 1))) {
+		return 0; /* Zero is the default (8 Bytes) */
+	}
+
+	/* Convert to bit pattern for writing to a register */
+	return find_msb_set(size);
+}
+
+/**
+ * @brief Look-up generic burst index to be used in registers
+ *
+ * WARNING: This look-up works for most controllers, but *may* not work for
+ *          yours.  Ensure your controller expects the most common register
+ *          bit values before using this convienience function.  If your
+ *          controller does not support these values, you will have to write
+ *          your own look-up inside the controller driver.
+ *
+ * @param burst: number of bytes to be sent in a single burst
+ *
+ * @retval common DMA index to be placed into registers.
+ */
+static inline enum dma_burst_length dma_burst_index(uint32_t burst)
+{
+	/* Check boundaries (max supported burst length is 256) */
+	if (burst < 1 || burst > 256) {
+		return 0; /* Zero is the default (1 burst length) */
+	}
+
+	/* Ensure burst is a power of 2 */
+	if (!(burst & (burst - 1))) {
+		return 0; /* Zero is the default (1 burst length) */
+	}
+
+	/* Convert to bit pattern for writing to a register */
+	return find_msb_set(burst);
+}
+
+/**
  * @}
  */
 
