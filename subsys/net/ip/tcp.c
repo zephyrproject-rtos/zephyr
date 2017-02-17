@@ -108,6 +108,26 @@ static inline uint32_t retry_timeout(const struct net_tcp *tcp)
 	return ((uint32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
 }
 
+#define is_6lo_technology(buf)						    \
+	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_nbuf_family(buf) == AF_INET6 && \
+	 ((IS_ENABLED(CONFIG_NET_L2_BLUETOOTH) &&			    \
+	   net_nbuf_ll_dst(buf)->type == NET_LINK_BLUETOOTH) ||		    \
+	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			    \
+	   net_nbuf_ll_dst(buf)->type == NET_LINK_IEEE802154)))
+
+static inline void do_ref_if_needed(struct net_buf *buf)
+{
+	/* The ref should not be done for Bluetooth and IEEE 802.15.4 which use
+	 * IPv6 header compression (6lo). For BT and 802.15.4 we copy the buf
+	 * chain we are about to send so it is fine if the network driver
+	 * releases it. As we have our own copy of the sent data, we do not
+	 * need to take a reference of it. See also net_tcp_send_buf().
+	 */
+	if (!is_6lo_technology(buf)) {
+		buf = net_nbuf_ref(buf);
+	}
+}
+
 static void tcp_retry_expired(struct k_timer *timer)
 {
 	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
@@ -122,7 +142,9 @@ static void tcp_retry_expired(struct k_timer *timer)
 
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
-		net_tcp_send_buf(net_nbuf_ref(buf));
+
+		do_ref_if_needed(buf);
+		net_tcp_send_buf(buf);
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
 			net_context_unref(tcp->context);
@@ -608,7 +630,8 @@ int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 	context->tcp->send_seq += data_len;
 
 	sys_slist_append(&context->tcp->sent_list, &buf->sent_list);
-	net_nbuf_ref(buf);
+
+	do_ref_if_needed(buf);
 
 	return 0;
 }
@@ -636,6 +659,38 @@ int net_tcp_send_buf(struct net_buf *buf)
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
 	net_nbuf_set_buf_sent(buf, true);
+
+	/* We must have special handling for some network technologies that
+	 * tweak the IP protocol headers during packet sending. This happens
+	 * with Bluetooth and IEEE 802.15.4 which use IPv6 header compression
+	 * (6lo) and alter the sent network buffer. So in order to avoid any
+	 * corruption of the original data buffer, we must copy the sent data.
+	 * For Bluetooth, its fragmentation code will even mangle the data
+	 * part of the message so we need to copy those too.
+	 */
+	if (is_6lo_technology(buf)) {
+		struct net_buf *new_buf;
+		int ret;
+
+		new_buf = net_nbuf_get_tx(ctx, K_FOREVER);
+
+		new_buf->frags = net_nbuf_copy_all(buf, 0, K_FOREVER);
+		net_nbuf_copy_user_data(new_buf, buf);
+
+		NET_DBG("Copied %zu bytes from %p to %p",
+			net_buf_frags_len(new_buf), buf, new_buf);
+
+		/* This function is called from net_context.c and if we
+		 * return < 0, the caller will unref the original buf.
+		 * This would leak the new_buf so remove it here.
+		 */
+		ret = net_send_data(new_buf);
+		if (ret < 0) {
+			net_nbuf_unref(new_buf);
+		}
+
+		return ret;
+	}
 
 	return net_send_data(buf);
 }
