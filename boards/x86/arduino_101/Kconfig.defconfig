@@ -51,6 +51,9 @@ if FLASH && SPI
 config SPI_FLASH_W25QXXDV
 	def_bool y
 
+config GPIO
+	def_bool y
+
 config SPI_CS_GPIO
 	def_bool y
 
