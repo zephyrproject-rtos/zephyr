@@ -688,11 +688,12 @@ exit_error:
  * @retval 0 on success
  * @retval -EINVAL if an unknown message is received
  * @retval -ENOMEM if no data buffer is available
- * @retval mqtt_rx_connack, mqtt_rx_puback, mqtt_rx_pubrec, mqtt_rx_pubcomp
- *         and mqtt_rx_pingresp return codes
+ * @retval mqtt_rx_connack, mqtt_rx_pingresp, mqtt_rx_puback, mqtt_rx_pubcomp,
+ *         mqtt_rx_publish, mqtt_rx_pubrec, mqtt_rx_pubrel and mqtt_rx_suback
+ *         return codes
  */
 static
-int mqtt_publisher_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
+int mqtt_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 {
 	u16_t pkt_type = MQTT_INVALID;
 	struct net_buf *data = NULL;
@@ -726,68 +727,10 @@ int mqtt_publisher_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 	case MQTT_PINGRESP:
 		rc = mqtt_rx_pingresp(ctx, data);
 		break;
-	default:
-		rc = -EINVAL;
-		break;
-	}
-
-exit_parser:
-	if (rc != 0 && ctx->malformed) {
-		ctx->malformed(ctx, pkt_type);
-	}
-
-	net_pkt_frag_unref(data);
-
-	return rc;
-}
-
-
-/**
- * Calls the appropriate rx routine for the MQTT message contained in rx
- *
- * @details On error, this routine will execute the 'ctx->malformed' callback
- * (if defined)
- *
- * @param ctx MQTT context
- * @param rx RX packet
- *
- * @retval 0 on success
- * @retval -EINVAL if an unknown message is received
- * @retval -ENOMEM if no data buffer is available
- * @retval mqtt_rx_publish, mqtt_rx_pubrel, mqtt_rx_pubrel and mqtt_rx_suback
- *         return codes
- */
-static
-int mqtt_subscriber_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
-{
-	u16_t pkt_type = MQTT_INVALID;
-	struct net_buf *data = NULL;
-	int rc = 0;
-
-	data = mqtt_linearize_packet(ctx, rx, MQTT_PUBLISHER_MIN_MSG_SIZE);
-	if (!data) {
-		rc = -EINVAL;
-		goto exit_parser;
-	}
-
-	pkt_type = MQTT_PACKET_TYPE(data->data[0]);
-
-	switch (pkt_type) {
-	case MQTT_CONNACK:
-		if (!ctx->connected) {
-			rc = mqtt_rx_connack(ctx, data, ctx->clean_session);
-		} else {
-			rc = -EINVAL;
-		}
-
-		break;
 	case MQTT_PUBLISH:
 		rc = mqtt_rx_publish(ctx, data);
 		break;
 	case MQTT_PUBREL:
-		rc = mqtt_rx_pubrel(ctx, data);
-		break;
-	case MQTT_PINGRESP:
 		rc = mqtt_rx_pubrel(ctx, data);
 		break;
 	case MQTT_SUBACK:
@@ -838,17 +781,7 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 	ctx->connected = 0;
 
 	ctx->app_type = app_type;
-
-	switch (ctx->app_type) {
-	case MQTT_APP_PUBLISHER:
-		ctx->rcv = mqtt_publisher_parser;
-		break;
-	case MQTT_APP_SUBSCRIBER:
-		ctx->rcv = mqtt_subscriber_parser;
-		break;
-	default:
-		return -EINVAL;
-	}
+	ctx->rcv = mqtt_parser;
 
 	/* Install the receiver callback, timeout is set to K_NO_WAIT.
 	 * In this case, no return code is evaluated.
