@@ -305,13 +305,13 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 	return NET_OK;
 }
 
-static uint16_t ieeee802154_reserve(struct net_if *iface, void *data)
+static uint16_t ieee802154_reserve(struct net_if *iface, void *data)
 {
 	return ieee802154_compute_header_size(iface, (struct in6_addr *)data);
 }
 
 NET_L2_INIT(IEEE802154_L2,
-	    ieee802154_recv, ieee802154_send, ieeee802154_reserve, NULL);
+	    ieee802154_recv, ieee802154_send, ieee802154_reserve, NULL);
 
 void ieee802154_init(struct net_if *iface)
 {
