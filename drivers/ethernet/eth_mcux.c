@@ -37,6 +37,24 @@ enum eth_mcux_phy_state {
 	eth_mcux_phy_state_wait
 };
 
+static const char *
+phy_state_name(enum eth_mcux_phy_state state)  __attribute__((unused));
+
+static const char *phy_state_name(enum eth_mcux_phy_state state)
+{
+	static const char * const name[] = {
+		"initial",
+		"reset",
+		"autoneg",
+		"restart",
+		"read-status",
+		"read-duplex",
+		"wait",
+	};
+
+	return name[state];
+}
+
 struct eth_context {
 	struct net_if *iface;
 	enet_handle_t enet_handle;
@@ -115,7 +133,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	phy_speed_t phy_speed = kPHY_Speed100M;
 	const uint32_t phy_addr = 0;
 
-	SYS_LOG_DBG("phy_state=%d", context->phy_state);
+	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
 
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
