@@ -9,8 +9,8 @@ This section describes other services provided by the kernel.
    :maxdepth: 1
 
    interrupts.rst
-   cpu_idle.rst
    atomic.rst
-   float.rst
    ring_buffers.rst
+   float.rst
    cxx_support.rst
+   cpu_idle.rst
