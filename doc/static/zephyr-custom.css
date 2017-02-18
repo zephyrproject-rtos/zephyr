@@ -4,3 +4,8 @@
 table.hlist {
     width: 95% !important;
 }
+
+/*  override rtd theme white-space no-wrap in table heading and content  */
+th,td {
+    white-space: normal !important;
+}
