@@ -10,6 +10,7 @@ This section describes other services provided by the kernel.
 
    interrupts.rst
    atomic.rst
+   polling.rst
    ring_buffers.rst
    float.rst
    cxx_support.rst
