@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32f103xb.dtsi"
+
+/ {
+	model = "Olimex OLIMEXINO-STM32 board";
+	compatible = "st,olimexino_stm32", "st,stm32f103xb";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green {
+			gpios = <&gpioa 5 0>;
+		};
+		yellow {
+			gpios = <&gpioa 1 0>;
+		};
+	};
+};
+
+&clk_hse {
+	clock-frequency = <72000000>;
+};
+
+&usart1 {
+	status = "ok";
+};
