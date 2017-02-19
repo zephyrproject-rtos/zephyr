@@ -10,6 +10,8 @@ if SOC_STM32F103XB
 config SOC
 	string
 	default stm32f103xb
+
+if !HAS_DTS
 config SRAM_SIZE
 	default 20
 
@@ -19,6 +21,7 @@ config FLASH_SIZE
 config NUM_IRQS
 	int
 	default 59
+endif # !HAS_DTS
 
 endif # SOC_STM32F103XB
 
