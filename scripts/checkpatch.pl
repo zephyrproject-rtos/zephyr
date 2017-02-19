@@ -3082,7 +3082,7 @@ sub process {
 			# function pointer declarations
 		      $sline =~ /^\+\s+$Declare\s*\(\s*\*\s*$Ident\s*\)\s*[=,;:\[\(]/ ||
 			# foo bar; where foo is some local typedef or #define
-		      $sline =~ /^\+\s+$Ident(?:\s+|\s*\*\s*)$Ident\s*[=,;\[]/ ||
+		      $sline =~ /^\+\s+(?:volatile\s+)?$Ident(?:\s+|\s*\*\s*)$Ident\s*[=,;\[]/ ||
 			# known declaration macros
 		      $sline =~ /^\+\s+$declaration_macros/ ||
 			# start of struct or union or enum
