@@ -286,8 +286,8 @@ static int stm32f10x_clock_control_init(struct device *dev)
 		pllmul(CONFIG_CLOCK_STM32F10X_CONN_LINE_PLL_MULTIPLIER);
 #endif	/* CONFIG_CLOCK_STM32F10X_CONN_LINE_PLL_MULTIPLIER */
 #ifdef CONFIG_CLOCK_STM32F10X_CONN_LINE_PLL2_MULTIPLIER
-	uint32_t pll2mul =
-		pllmul(CLOCK_STM32F10X_CONN_LINE_PLL2_MULTIPLIER);
+	uint32_t pll2_mul =
+		pll2mul(CONFIG_CLOCK_STM32F10X_CONN_LINE_PLL2_MULTIPLIER);
 #endif /* CONFIG_CLOCK_STM32F10X_CONN_LINE_PLL2_MULTIPLIER */
 #ifdef CONFIG_CLOCK_STM32F10X_CONN_LINE_PREDIV1
 	uint32_t prediv1 =
@@ -341,7 +341,14 @@ static int stm32f10x_clock_control_init(struct device *dev)
 	rcc->cfgr2.bit.prediv1src = STM32F10X_RCC_CFG2_PREDIV1_SRC_PLL2;
 
 	rcc->cfgr2.bit.prediv2 = prediv2;
-	rcc->cfgr2.bit.pll2mul = pll2mul;
+	rcc->cfgr2.bit.pll2mul = pll2_mul;
+
+	/* enable PLL2 */
+	rcc->cr.bit.pll2on = 1;
+
+	/* wait for PLL to become ready */
+	while (rcc->cr.bit.pll2rdy != 1) {
+	}
 
 #endif	/* CONFIG_CLOCK_STM32F10X_CONN_LINE_PREDIV1_SRC_HSE */
 #endif	/* CONFIG_CLOCK_STM32F10X_CONN_LINE_PLL_SRC_PREDIV1 */
