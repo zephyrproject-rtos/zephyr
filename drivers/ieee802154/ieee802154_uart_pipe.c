@@ -84,7 +84,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 
 		goto flush;
 out:
-		net_buf_unref(nbuf);
+		net_nbuf_unref(nbuf);
 flush:
 		upipe->rx = false;
 		upipe->rx_len = 0;
