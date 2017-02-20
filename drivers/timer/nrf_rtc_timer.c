@@ -47,7 +47,7 @@ static uint32_t rtc_past;
  * Holds the maximum sys ticks the kernel expects to see in the next
  * _sys_clock_tick_announce().
  */
-static uint32_t allowed_idle_sys_ticks;
+static uint32_t expected_sys_ticks;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 /*
@@ -111,21 +111,25 @@ static void rtc_announce_set_next(void)
 	 * counters or announcing it.
 	 */
 	if (rtc_elapsed >= RTC_TICKS_PER_SYS_TICK) {
+#ifdef CONFIG_TICKLESS_IDLE
 		/* Calculate how many sys ticks elapsed since the last sys tick
 		 * and notify the kernel if necessary.
 		 */
 		sys_elapsed = rtc_elapsed / RTC_TICKS_PER_SYS_TICK;
 
-#ifdef CONFIG_TICKLESS_IDLE
-		if (sys_elapsed > allowed_idle_sys_ticks) {
+		if (sys_elapsed > expected_sys_ticks) {
 			/* Never announce more sys ticks than the kernel asked
 			 * to be idle for. The remainder will be announced when
 			 * the RTC ISR runs after rtc_compare_set() is called
 			 * after the first announcement.
 			 */
-			sys_elapsed = allowed_idle_sys_ticks;
-
+			sys_elapsed = expected_sys_ticks;
 		}
+#else
+		/* Never announce more than one sys tick if tickless idle is not
+		 * configured.
+		 */
+		sys_elapsed = 1;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 		/* Store RTC_COUNTER floored to the last sys tick. This is
@@ -179,7 +183,7 @@ void _timer_idle_enter(int32_t sys_ticks)
 		sys_ticks = RTC_HALF / RTC_TICKS_PER_SYS_TICK;
 	}
 
-	allowed_idle_sys_ticks = sys_ticks;
+	expected_sys_ticks = sys_ticks;
 
 	/* If ticks is 0, the RTC interrupt handler will be set pending
 	 * immediately, meaning that we will not go to sleep.
@@ -224,10 +228,10 @@ void _timer_idle_exit(void)
 
 	rtc_announce_set_next();
 
-	/* After exiting idle, the kernel no longer expects a maximum amount of
-	 * sys ticks to have passed when _sys_clock_tick_announce() is called.
+	/* After exiting idle, the kernel no longer expects more than one sys
+	 * ticks to have passed when _sys_clock_tick_announce() is called.
 	 */
-	allowed_idle_sys_ticks = RTC_HALF;
+	expected_sys_ticks = 1;
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
@@ -279,7 +283,7 @@ int _sys_clock_driver_init(struct device *device)
 	rtc_past = 0;
 
 #ifdef CONFIG_TICKLESS_IDLE
-	allowed_idle_sys_ticks = RTC_HALF;
+	expected_sys_ticks = 1;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 	/* TODO: replace with counter driver to access RTC */
