@@ -342,12 +342,25 @@ int ciev_handle(struct at_client *hf_at)
 	return 0;
 }
 
+int ring_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
+
+	if (bt_hf->ring_indication) {
+		bt_hf->ring_indication(conn);
+	}
+
+	return 0;
+}
+
 static const struct unsolicited {
 	const char *cmd;
 	enum at_cmd_type type;
 	int (*func)(struct at_client *hf_at);
 } handlers[] = {
-	{ "CIEV", AT_CMD_TYPE_UNSOLICITED, ciev_handle }
+	{ "CIEV", AT_CMD_TYPE_UNSOLICITED, ciev_handle },
+	{ "RING", AT_CMD_TYPE_OTHER, ring_handle }
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)

@@ -64,7 +64,8 @@ enum at_cmd_state {
 
 enum at_cmd_type {
 	AT_CMD_TYPE_NORMAL,
-	AT_CMD_TYPE_UNSOLICITED
+	AT_CMD_TYPE_UNSOLICITED,
+	AT_CMD_TYPE_OTHER
 };
 
 struct at_client;

@@ -98,6 +98,14 @@ struct bt_hfp_hf_cb {
 	 *  @param value battery indicator value received from the AG.
 	 */
 	void (*battery)(struct bt_conn *conn, uint32_t value);
+	/** HF incoming call Ring indication callback to application
+	 *
+	 *  If this callback is provided it will be called whenever there
+	 *  is an incoming call.
+	 *
+	 *  @param conn Connection object.
+	 */
+	void (*ring_indication)(struct bt_conn *conn);
 };
 
 /** @brief Register HFP HF profile
