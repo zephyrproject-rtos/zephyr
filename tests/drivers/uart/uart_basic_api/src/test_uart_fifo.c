@@ -60,7 +60,7 @@ static void uart_fifo_callback(struct device *dev)
 		uart_fifo_read(dev, &recvData, 1);
 		TC_PRINT("%c", recvData);
 
-		if (recvData == '\n') {
+		if ((recvData == '\n') || (recvData == '\r')) {
 			data_received = true;
 		}
 	}

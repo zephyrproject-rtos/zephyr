@@ -49,7 +49,7 @@ static int test_poll_in(void)
 
 		TC_PRINT("%c", recvChar);
 
-		if (recvChar == '\n') {
+		if ((recvChar == '\n') || (recvChar == '\r')) {
 			break;
 		}
 	}
