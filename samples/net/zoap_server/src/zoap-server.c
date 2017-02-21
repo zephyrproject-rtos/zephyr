@@ -16,6 +16,7 @@
 #include <zephyr.h>
 
 #include <misc/byteorder.h>
+#include <misc/util.h>
 #include <net/buf.h>
 #include <net/nbuf.h>
 #include <net/net_ip.h>
@@ -40,9 +41,21 @@
 #define MY_IP6ADDR \
 	{ { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 
+#define NUM_OBSERVERS 3
+
 static struct net_context *context;
 
 static const uint8_t plain_text_format;
+
+static struct zoap_observer observers[NUM_OBSERVERS];
+
+static struct net_context *context;
+
+static struct k_delayed_work observer_work;
+
+static int obs_counter;
+
+static struct zoap_resource *resource_to_notify;
 
 static int test_del(struct zoap_resource *resource,
 		    struct zoap_packet *request,
@@ -764,6 +777,134 @@ static int large_create_post(struct zoap_resource *resource,
 				  NULL, 0, NULL, NULL);
 }
 
+static void update_counter(struct k_work *work)
+{
+	obs_counter++;
+
+	if (resource_to_notify) {
+		zoap_resource_notify(resource_to_notify);
+	}
+
+	k_delayed_work_submit(&observer_work, 5 * MSEC_PER_SEC);
+}
+
+static int send_notification_packet(const struct sockaddr *addr, uint16_t age,
+				    socklen_t addrlen, uint16_t id,
+				    const uint8_t *token, uint8_t tkl,
+				    bool is_response)
+{
+	struct zoap_packet response;
+	struct net_buf *buf, *frag;
+	uint8_t *payload, type = ZOAP_TYPE_CON;
+	uint16_t len;
+	int r;
+
+	buf = net_nbuf_get_tx(context, K_FOREVER);
+	frag = net_nbuf_get_data(context, K_FOREVER);
+
+	net_buf_frag_add(buf, frag);
+
+	r = zoap_packet_init(&response, buf);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+
+	if (is_response) {
+		type = ZOAP_TYPE_ACK;
+	}
+
+	zoap_header_set_type(&response, type);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
+
+	if (!is_response) {
+		id = zoap_next_id();
+	}
+
+	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
+
+	if (age >= 2) {
+		zoap_add_option_int(&response, ZOAP_OPTION_OBSERVE, age);
+	}
+
+	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
+			    &plain_text_format, sizeof(plain_text_format));
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	payload = zoap_packet_get_payload(&response, &len);
+	if (!payload) {
+		return -EINVAL;
+	}
+
+	/* The response that coap-client expects */
+	r = snprintk((char *) payload, len, "Counter: %d\n", obs_counter);
+	if (r < 0 || r > len) {
+		return -EINVAL;
+	}
+
+	r = zoap_packet_set_used(&response, r);
+	if (r) {
+		return -EINVAL;
+	}
+
+	return net_context_sendto(buf, addr, addrlen, NULL, 0, NULL, NULL);
+}
+
+static int obs_get(struct zoap_resource *resource,
+		   struct zoap_packet *request,
+		   const struct sockaddr *from)
+{
+	struct zoap_observer *observer;
+	const uint8_t *token;
+	uint8_t code, type;
+	uint16_t id;
+	uint8_t tkl;
+	bool observe = true;
+
+	if (!zoap_request_is_observe(request)) {
+		observe = false;
+		goto done;
+	}
+
+	observer = zoap_observer_next_unused(observers, NUM_OBSERVERS);
+	if (!observer) {
+		return -ENOMEM;
+	}
+
+	zoap_observer_init(observer, request, from);
+
+	zoap_register_observer(resource, observer);
+
+	resource_to_notify = resource;
+
+done:
+	code = zoap_header_get_code(request);
+	type = zoap_header_get_type(request);
+	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
+
+	NET_INFO("*******\n");
+	NET_INFO("type: %u code %u id %u\n", type, code, id);
+	NET_INFO("*******\n");
+
+	return send_notification_packet(from, observe ? resource->age : 0,
+					sizeof(struct sockaddr_in6), id,
+					token, tkl, true);
+}
+
+static void obs_notify(struct zoap_resource *resource,
+		       struct zoap_observer *observer)
+{
+	send_notification_packet(&observer->addr, resource->age,
+				 sizeof(observer->addr), 0,
+				 observer->token, observer->tkl, false);
+}
+
 static const char * const test_path[] = { "test", NULL };
 
 static const char * const segments_path[] = { "seg1", "seg2", "seg3", NULL };
@@ -779,6 +920,8 @@ static const char * const location_query_path[] = { "location-query", NULL };
 static const char * const large_update_path[] = { "large-update", NULL };
 
 static const char * const large_create_path[] = { "large-create", NULL };
+
+static const char * const obs_path[] = { "obs", NULL };
 
 static struct zoap_resource resources[] = {
 	{ .get = piggyback_get,
@@ -807,8 +950,30 @@ static struct zoap_resource resources[] = {
 	{ .path = large_create_path,
 	  .post = large_create_post,
 	},
+	{ .path = obs_path,
+	  .get = obs_get,
+	  .notify = obs_notify,
+	},
 	{ },
 };
+
+static struct zoap_resource *find_resouce_by_observer(
+	struct zoap_resource *resources, struct zoap_observer *o)
+{
+	struct zoap_resource *r;
+
+	for (r = resources; r && r->path; r++) {
+		sys_snode_t *node;
+
+		SYS_SLIST_FOR_EACH_NODE(&r->observers, node) {
+			if (&o->list == node) {
+				return r;
+			}
+		}
+	}
+
+	return NULL;
+}
 
 static void udp_receive(struct net_context *context,
 			struct net_buf *buf,
@@ -837,6 +1002,25 @@ static void udp_receive(struct net_context *context,
 		return;
 	}
 
+	if (zoap_header_get_type(&request) == ZOAP_TYPE_RESET) {
+		struct zoap_resource *r;
+		struct zoap_observer *o;
+
+		o = zoap_find_observer_by_addr(observers, NUM_OBSERVERS,
+					       (struct sockaddr *)&from);
+		if (!o) {
+			goto not_found;
+		}
+
+		r = find_resouce_by_observer(resources, o);
+		if (!r) {
+			goto not_found;
+		}
+
+		zoap_remove_observer(r, o);
+	}
+
+not_found:
 	r = zoap_handle_request(&request, resources,
 				(const struct sockaddr *) &from);
 
@@ -921,6 +1105,9 @@ void main(void)
 		NET_ERR("Could not bind the context\n");
 		return;
 	}
+
+	k_delayed_work_init(&observer_work, update_counter);
+	k_delayed_work_submit(&observer_work, 5 * MSEC_PER_SEC);
 
 	r = net_context_recv(context, udp_receive, 0, NULL);
 	if (r) {
