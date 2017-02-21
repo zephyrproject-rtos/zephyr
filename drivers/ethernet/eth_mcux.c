@@ -519,6 +519,8 @@ static int eth_0_init(struct device *dev)
 	enet_config.interrupt |= kENET_RxFrameInterrupt;
 	enet_config.interrupt |= kENET_TxFrameInterrupt;
 	enet_config.interrupt |= kENET_MiiInterrupt;
+
+#ifdef CONFIG_ETH_MCUX_PROMISCUOUS_MODE
 	/* FIXME: Workaround for lack of driver API support for multicast
 	 * management. So, instead we want to receive all multicast
 	 * frames "by default", or otherwise basic IPv6 features, like
@@ -527,6 +529,7 @@ static int eth_0_init(struct device *dev)
 	 * fix depends on https://jira.zephyrproject.org/browse/ZEP-1673.
 	 */
 	enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
+#endif
 
 #if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 	generate_mac(context->mac_addr);
