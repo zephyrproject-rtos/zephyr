@@ -113,6 +113,7 @@ struct k_alert;
 struct k_msgq;
 struct k_mbox;
 struct k_pipe;
+struct k_queue;
 struct k_fifo;
 struct k_lifo;
 struct k_stack;
@@ -1098,6 +1099,183 @@ extern uint32_t k_uptime_delta_32(int64_t *reftime);
 
 /**
  * @} end addtogroup clock_apis
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+struct k_queue {
+	_wait_q_t wait_q;
+	sys_slist_t data_q;
+	_POLL_EVENT;
+
+	_OBJECT_TRACING_NEXT_PTR(k_queue);
+};
+
+#define K_QUEUE_INITIALIZER(obj) \
+	{ \
+	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
+	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
+	_POLL_EVENT_OBJ_INIT \
+	_OBJECT_TRACING_INIT \
+	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup queue_apis Queue APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @brief Initialize a queue.
+ *
+ * This routine initializes a queue object, prior to its first use.
+ *
+ * @param queue Address of the queue.
+ *
+ * @return N/A
+ */
+extern void k_queue_init(struct k_queue *queue);
+
+/**
+ * @brief Append an element to the end of a queue.
+ *
+ * This routine appends a data item to @a queue. A queue data item must be
+ * aligned on a 4-byte boundary, and the first 32 bits of the item are
+ * reserved for the kernel's use.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ * @param data Address of the data item.
+ *
+ * @return N/A
+ */
+extern void k_queue_append(struct k_queue *queue, void *data);
+
+/**
+ * @brief Prepend an element to a queue.
+ *
+ * This routine prepends a data item to @a queue. A queue data item must be
+ * aligned on a 4-byte boundary, and the first 32 bits of the item are
+ * reserved for the kernel's use.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ * @param data Address of the data item.
+ *
+ * @return N/A
+ */
+extern void k_queue_prepend(struct k_queue *queue, void *data);
+
+/**
+ * @brief Inserts an element to a queue.
+ *
+ * This routine inserts a data item to @a queue after previous item. A queue
+ * data item must be aligned on a 4-byte boundary, and the first 32 bits of the
+ * item are reserved for the kernel's use.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ * @param prev Address of the previous data item.
+ * @param data Address of the data item.
+ *
+ * @return N/A
+ */
+extern void k_queue_insert(struct k_queue *queue, void *prev, void *data);
+
+/**
+ * @brief Atomically append a list of elements to a queue.
+ *
+ * This routine adds a list of data items to @a queue in one operation.
+ * The data items must be in a singly-linked list, with the first 32 bits
+ * in each data item pointing to the next data item; the list must be
+ * NULL-terminated.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ * @param head Pointer to first node in singly-linked list.
+ * @param tail Pointer to last node in singly-linked list.
+ *
+ * @return N/A
+ */
+extern void k_queue_append_list(struct k_queue *queue, void *head, void *tail);
+
+/**
+ * @brief Atomically add a list of elements to a queue.
+ *
+ * This routine adds a list of data items to @a queue in one operation.
+ * The data items must be in a singly-linked list implemented using a
+ * sys_slist_t object. Upon completion, the original list is empty.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ * @param list Pointer to sys_slist_t object.
+ *
+ * @return N/A
+ */
+extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
+
+/**
+ * @brief Get an element from a queue.
+ *
+ * This routine removes first data item from @a queue. The first 32 bits of the
+ * data item are reserved for the kernel's use.
+ *
+ * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ *
+ * @param queue Address of the queue.
+ * @param timeout Waiting period to obtain a data item (in milliseconds),
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return Address of the data item if successful; NULL if returned
+ * without waiting, or waiting period timed out.
+ */
+extern void *k_queue_get(struct k_queue *queue, int32_t timeout);
+
+/**
+ * @brief Query a queue to see if it has data available.
+ *
+ * Note that the data might be already gone by the time this function returns
+ * if other threads are also trying to read from the queue.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ *
+ * @return Non-zero if the queue is empty.
+ * @return 0 if data is available.
+ */
+static inline int k_queue_is_empty(struct k_queue *queue)
+{
+	return (int)sys_slist_is_empty(&queue->data_q);
+}
+
+/**
+ * @brief Statically define and initialize a queue.
+ *
+ * The queue can be accessed outside the module where it is defined using:
+ *
+ * @code extern struct k_queue <name>; @endcode
+ *
+ * @param name Name of the queue.
+ */
+#define K_QUEUE_DEFINE(name) \
+	struct k_queue name \
+		__in_section(_k_queue, static, name) = \
+		K_QUEUE_INITIALIZER(name)
+
+/**
+ * @} end defgroup queue_apis
  */
 
 /**
@@ -3129,8 +3307,8 @@ enum _poll_types_bits {
 	/* semaphore availability */
 	_POLL_TYPE_SEM_AVAILABLE,
 
-	/* fifo data availability */
-	_POLL_TYPE_FIFO_DATA_AVAILABLE,
+	/* queue/fifo/lifo data availability */
+	_POLL_TYPE_DATA_AVAILABLE,
 
 	_POLL_NUM_TYPES
 };
@@ -3151,8 +3329,8 @@ enum _poll_states_bits {
 	/* semaphore is available */
 	_POLL_STATE_SEM_AVAILABLE,
 
-	/* data is available to read on fifo */
-	_POLL_STATE_FIFO_DATA_AVAILABLE,
+	/* data is available to read on queue/fifo/lifo */
+	_POLL_STATE_DATA_AVAILABLE,
 
 	_POLL_NUM_STATES
 };
@@ -3186,8 +3364,8 @@ enum _poll_states_bits {
 #define K_POLL_TYPE_IGNORE 0
 #define K_POLL_TYPE_SIGNAL _POLL_TYPE_BIT(_POLL_TYPE_SIGNAL)
 #define K_POLL_TYPE_SEM_AVAILABLE _POLL_TYPE_BIT(_POLL_TYPE_SEM_AVAILABLE)
-#define K_POLL_TYPE_FIFO_DATA_AVAILABLE \
-	_POLL_TYPE_BIT(_POLL_TYPE_FIFO_DATA_AVAILABLE)
+#define K_POLL_TYPE_DATA_AVAILABLE _POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
+#define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
 
 /* public - polling modes */
 enum k_poll_modes {
@@ -3202,8 +3380,8 @@ enum k_poll_modes {
 #define K_POLL_STATE_EADDRINUSE _POLL_STATE_BIT(_POLL_STATE_EADDRINUSE)
 #define K_POLL_STATE_SIGNALED _POLL_STATE_BIT(_POLL_STATE_SIGNALED)
 #define K_POLL_STATE_SEM_AVAILABLE _POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
-#define K_POLL_STATE_FIFO_DATA_AVAILABLE \
-	_POLL_STATE_BIT(_POLL_STATE_FIFO_DATA_AVAILABLE)
+#define K_POLL_STATE_DATA_AVAILABLE _POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
+#define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
 
 /* public - poll signal object */
 struct k_poll_signal {

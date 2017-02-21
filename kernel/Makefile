@@ -18,6 +18,7 @@ lib-y += $(strip \
 	idle.o \
 	sched.o \
 	mutex.o \
+	queue.o \
 	lifo.o \
 	fifo.o \
 	stack.o \
