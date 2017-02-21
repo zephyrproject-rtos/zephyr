@@ -662,12 +662,16 @@ static inline uint32_t isr_rx_adv(uint8_t devmatch_ok, uint8_t irkmatch_ok,
 							   conn_interval_us);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+		/* APTO in no. of connection events */
 		conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),
 						      conn_interval_us);
-		conn->appto_reload =
-			(conn->apto_reload > (conn->latency + 2)) ?
-			(conn->apto_reload - (conn->latency + 2)) :
-			conn->apto_reload;
+		/* Dispatch LE Ping PDU 6 connection events (that peer would
+		 * listen to) before 30s timeout
+		 * TODO: "peer listens to" is greater than 30s due to latency
+		 */
+		conn->appto_reload = (conn->apto_reload > (conn->latency + 6)) ?
+				     (conn->apto_reload - (conn->latency + 6)) :
+				     conn->apto_reload;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 		/* Prepare the rx packet structure */
@@ -4742,12 +4746,16 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 			RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+		/* APTO in no. of connection events */
 		conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),
 						      conn_interval_us);
-		conn->appto_reload =
-			(conn->apto_reload > (conn->latency + 2)) ?
-			(conn->apto_reload - (conn->latency + 2)) :
-			conn->apto_reload;
+		/* Dispatch LE Ping PDU 6 connection events (that peer would
+		 * listen to) before 30s timeout
+		 * TODO: "peer listens to" is greater than 30s due to latency
+		 */
+		conn->appto_reload = (conn->apto_reload > (conn->latency + 6)) ?
+				     (conn->apto_reload - (conn->latency + 6)) :
+				     conn->apto_reload;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 		if (!conn->llcp.connection_update.is_internal) {
@@ -7337,11 +7345,17 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	conn->procedure_expire = 0;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
-	conn->apto_reload =
-		RADIO_CONN_EVENTS((30 * 1000 * 1000), conn_interval_us);
+	/* APTO in no. of connection events */
+	conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),
+					      conn_interval_us);
+	/* Dispatch LE Ping PDU 6 connection events (that peer would listen to)
+	 * before 30s timeout
+	 * TODO: "peer listens to" is greater than 30s due to latency
+	 */
+	conn->appto_reload = (conn->apto_reload > (conn->latency + 6)) ?
+			     (conn->apto_reload - (conn->latency + 6)) :
+			     conn->apto_reload;
 	conn->apto_expire = 0;
-	conn->appto_reload = (conn->apto_reload > (conn->latency + 2)) ?
-		(conn->apto_reload - (conn->latency + 2)) : conn->apto_reload;
 	conn->appto_expire = 0;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
