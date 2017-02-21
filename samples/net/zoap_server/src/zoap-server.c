@@ -22,6 +22,7 @@
 #include <net/net_ip.h>
 
 #include <net/zoap.h>
+#include <net/zoap_link_format.h>
 
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
@@ -905,6 +906,54 @@ static void obs_notify(struct zoap_resource *resource,
 				 observer->token, observer->tkl, false);
 }
 
+static int core_get(struct zoap_resource *resource,
+		     struct zoap_packet *request,
+		     const struct sockaddr *from)
+{
+	static const char dummy_str[] = "Just a test\n";
+	struct net_buf *buf, *frag;
+	struct zoap_packet response;
+	uint8_t *payload, tkl;
+	const uint8_t *token;
+	uint16_t len, id;
+	int r;
+
+	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
+
+	buf = net_nbuf_get_tx(context, K_FOREVER);
+	frag = net_nbuf_get_data(context, K_FOREVER);
+
+	net_buf_frag_add(buf, frag);
+
+	r = zoap_packet_init(&response, buf);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
+	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
+
+	payload = zoap_packet_get_payload(&response, &len);
+	if (!payload) {
+		return -EINVAL;
+	}
+
+	memcpy(payload, dummy_str, sizeof(dummy_str));
+
+	r = zoap_packet_set_used(&response, sizeof(dummy_str));
+	if (r) {
+		return -EINVAL;
+	}
+
+	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+				  NULL, 0, NULL, NULL);
+}
+
 static const char * const test_path[] = { "test", NULL };
 
 static const char * const segments_path[] = { "seg1", "seg2", "seg3", NULL };
@@ -922,6 +971,18 @@ static const char * const large_update_path[] = { "large-update", NULL };
 static const char * const large_create_path[] = { "large-create", NULL };
 
 static const char * const obs_path[] = { "obs", NULL };
+
+static const char * const core_1_path[] = { "core1", NULL };
+static const char * const core_1_attributes[] = {
+	"title=\"Core 1\"",
+	"rt=core1",
+	NULL };
+
+static const char * const core_2_path[] = { "core2", NULL };
+static const char * const core_2_attributes[] = {
+	"title=\"Core 1\"",
+	"rt=core1",
+	NULL };
 
 static struct zoap_resource resources[] = {
 	{ .get = piggyback_get,
@@ -953,6 +1014,19 @@ static struct zoap_resource resources[] = {
 	{ .path = obs_path,
 	  .get = obs_get,
 	  .notify = obs_notify,
+	},
+	ZOAP_WELL_KNOWN_CORE_RESOURCE,
+	{ .get = core_get,
+	  .path = core_1_path,
+	  .user_data = &((struct zoap_core_metadata) {
+			  .attributes = core_1_attributes,
+			}),
+	},
+	{ .get = core_get,
+	  .path = core_2_path,
+	  .user_data = &((struct zoap_core_metadata) {
+			  .attributes = core_2_attributes,
+			}),
 	},
 	{ },
 };
