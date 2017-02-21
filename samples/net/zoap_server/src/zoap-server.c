@@ -32,7 +32,7 @@
 #define STACKSIZE 2000
 
 /* FIXME */
-#define LARGE_TRANSFER_SIZE 512
+#define BLOCK_WISE_TRANSFER_SIZE_GET 2048
 
 #define ALL_NODES_LOCAL_COAP_MCAST \
 	{ { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xfd } } }
@@ -540,8 +540,8 @@ static int large_get(struct zoap_resource *resource,
 	int r;
 
 	if (ctx.total_size == 0) {
-		zoap_block_transfer_init(&ctx, ZOAP_BLOCK_32,
-					 LARGE_TRANSFER_SIZE);
+		zoap_block_transfer_init(&ctx, ZOAP_BLOCK_64,
+					 BLOCK_WISE_TRANSFER_SIZE_GET);
 	}
 
 	r = zoap_update_from_block(request, &ctx);
@@ -605,7 +605,11 @@ static int large_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	zoap_next_block(&ctx);
+	r = zoap_next_block(&ctx);
+	if (!r) {
+		/* Will return 0 when it's the last block. */
+		memset(&ctx, 0, sizeof(ctx));
+	}
 
 	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
@@ -625,8 +629,86 @@ static int large_update_put(struct zoap_resource *resource,
 	int r;
 
 	if (ctx.total_size == 0) {
-		zoap_block_transfer_init(&ctx, ZOAP_BLOCK_32,
-					 LARGE_TRANSFER_SIZE);
+		zoap_block_transfer_init(&ctx, ZOAP_BLOCK_64, 0);
+	}
+
+	r = zoap_update_from_block(request, &ctx);
+	if (r < 0) {
+		NET_ERR("Invalid block size option from request");
+		return -EINVAL;
+	}
+
+	NET_INFO("**************\n");
+	NET_INFO("[ctx] current %u block_size %u total_size %u\n",
+		 ctx.current, zoap_block_size_to_bytes(ctx.block_size),
+		 ctx.total_size);
+	NET_INFO("**************\n");
+
+	payload = zoap_packet_get_payload(request, &len);
+	if (!payload) {
+		NET_ERR("Packet without payload\n");
+		return -EINVAL;
+	}
+
+	code = zoap_header_get_code(request);
+	type = zoap_header_get_type(request);
+	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
+
+	NET_INFO("*******\n");
+	NET_INFO("type: %u code %u id %u\n", type, code, id);
+	NET_INFO("*******\n");
+
+	/* Do something with the payload */
+
+	buf = net_nbuf_get_tx(context, K_FOREVER);
+	frag = net_nbuf_get_data(context, K_FOREVER);
+
+	net_buf_frag_add(buf, frag);
+
+	r = zoap_packet_init(&response, buf);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CHANGED);
+	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
+
+	r = zoap_add_block2_option(&response, &ctx);
+	if (r < 0) {
+		NET_ERR("Could not add Block2 option to response");
+		return -EINVAL;
+	}
+
+	r = zoap_add_block1_option(&response, &ctx);
+	if (r < 0) {
+		NET_ERR("Could not add Block1 option to response");
+		return -EINVAL;
+	}
+
+	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+				  NULL, 0, NULL, NULL);
+}
+
+static int large_create_post(struct zoap_resource *resource,
+			     struct zoap_packet *request,
+			     const struct sockaddr *from)
+{
+	static struct zoap_block_context ctx;
+	struct net_buf *buf, *frag;
+	struct zoap_packet response;
+	const uint8_t *token;
+	uint8_t *payload, code, type;
+	uint16_t len, id;
+	uint8_t tkl;
+	int r;
+
+	if (ctx.total_size == 0) {
+		zoap_block_transfer_init(&ctx, ZOAP_BLOCK_32, 0);
 	}
 
 	r = zoap_update_from_block(request, &ctx);
@@ -666,18 +748,17 @@ static int large_update_put(struct zoap_resource *resource,
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
 
-	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
-			    &plain_text_format, sizeof(plain_text_format));
-	if (r < 0) {
-		return -EINVAL;
-	}
-
 	r = zoap_add_block2_option(&response, &ctx);
 	if (r < 0) {
+		NET_ERR("Could not add Block2 option to response");
 		return -EINVAL;
 	}
 
-	zoap_next_block(&ctx);
+	r = zoap_add_block1_option(&response, &ctx);
+	if (r < 0) {
+		NET_ERR("Could not add Block1 option to response");
+		return -EINVAL;
+	}
 
 	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
@@ -696,6 +777,8 @@ static const char * const large_path[] = { "large", NULL };
 static const char * const location_query_path[] = { "location-query", NULL };
 
 static const char * const large_update_path[] = { "large-update", NULL };
+
+static const char * const large_create_path[] = { "large-create", NULL };
 
 static struct zoap_resource resources[] = {
 	{ .get = piggyback_get,
@@ -720,6 +803,9 @@ static struct zoap_resource resources[] = {
 	},
 	{ .path = large_update_path,
 	  .put = large_update_put,
+	},
+	{ .path = large_create_path,
+	  .post = large_create_post,
 	},
 	{ },
 };
