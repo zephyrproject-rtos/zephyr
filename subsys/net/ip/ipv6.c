@@ -188,6 +188,20 @@ static inline void nbr_free(struct net_nbr *nbr)
 	net_nbr_unref(nbr);
 }
 
+bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
+{
+	struct net_nbr *nbr;
+
+	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
+	if (!nbr) {
+		return false;
+	}
+
+	nbr_free(nbr);
+
+	return true;
+}
+
 struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 struct in6_addr *addr,
 				 struct net_linkaddr *lladdr,

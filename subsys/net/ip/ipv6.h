@@ -250,6 +250,16 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 enum net_nbr_state state);
 
 /**
+ * @brief Remove a neighbour from neighbor cache.
+ *
+ * @param iface A valid pointer on a network interface
+ * @param addr Neighbor IPv6 address
+ *
+ * @return True if neighbor could be removed, False otherwise
+ */
+bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr);
+
+/**
  * @brief Set the neighbor reachable timer.
  *
  * @param iface A valid pointer on a network interface
