@@ -422,7 +422,7 @@ static inline bool copy_frag(struct net_buf *buf,
 
 	while (input) {
 		write = net_nbuf_write(buf, write, pos, &pos, input->len,
-				       input->data, K_FOREVER);
+				       input->data, NET_6LO_RX_NBUF_TIMEOUT);
 		if (!write && pos == 0xffff) {
 			return false;
 		}

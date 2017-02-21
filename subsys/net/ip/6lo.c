@@ -1284,7 +1284,10 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 #endif
 	}
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, NET_6LO_RX_NBUF_TIMEOUT);
+	if (!frag) {
+		return false;
+	}
 
 	ipv6 = (struct net_ipv6_hdr *)(frag->data);
 

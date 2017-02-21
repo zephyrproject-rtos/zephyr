@@ -92,3 +92,9 @@
 
 #define NET_6LO_FRAG_DATAGRAM_SIZE_LEN		2
 #define NET_6LO_FRAG_DATAGRAM_OFFSET_LEN	2
+
+/* Timeout when getting net_buf in RX path. In RX, we must not wait forever as
+ * that can cause the stack to deadlock. This can happen if RX side is flooding
+ * incoming data and we cannot get process the packet in 6lo side.
+ */
+#define NET_6LO_RX_NBUF_TIMEOUT 100 /* in ms */
