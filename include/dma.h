@@ -159,7 +159,6 @@ struct dma_block_config {
 /**
  * @brief DMA configuration structure.
  *
- * config is a bit field with the following parts:
  *     dma_slot             [ 0 : 5 ]   - which peripheral and direction
  *                                        (HW specific)
  *     channel_direction    [ 6 : 8 ]   - 000-memory to memory, 001-memory to
@@ -180,10 +179,9 @@ struct dma_block_config {
  *                                        0-disable, 1-enable
  *     reserved             [ 19 : 31 ]
  *
- * config_size is a bit field with the following parts:
- *     source_data_size    [ 0 : 15 ]    - width of source data (in bytes)
- *     dest_data_size      [ 16 : 31 ]   - width of dest data (in bytes)
- *     source_burst_length [ 0 : 15 ]  - number of source data units
+ *     source_data_size    [ 0 : 15 ]   - width of source data (in bytes)
+ *     dest_data_size      [ 16 : 31 ]  - width of dest data (in bytes)
+ *     source_burst_length [ 0 : 15 ]   - number of source data units
  *     dest_burst_length   [ 16 : 31 ]  - number of destination data units
  *
  *     block_count  is the number of blocks used for block chaining, this
