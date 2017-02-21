@@ -939,7 +939,15 @@ struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag);
  *  @return Pointer to the buffer following the fragment, or NULL if it
  *          had no further fragments.
  */
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
+				       struct net_buf *frag,
+				       const char *func, int line);
+#define net_buf_frag_del(_parent, _frag) \
+	net_buf_frag_del_debug(_parent, _frag, __func__, __LINE__)
+#else
 struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
+#endif
 
 /** @brief Calculate amount of bytes stored in fragments.
  *
