@@ -15,6 +15,12 @@
 #include <device.h>
 #include <pwm.h>
 
+#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
+#define PWM_DEV CONFIG_PWM_QMSI_DEV_NAME
+#else
+#error "Choose supported board or add new board for the application"
+#endif
+
 /*
  * Unlike pulse width, period is not a critical parameter for
  * motor control. 20ms is commonly used.
@@ -34,9 +40,9 @@ void main(void)
 
 	printk("PWM demo app-servo control\n");
 
-	pwm_dev = device_get_binding("PWM_0");
+	pwm_dev = device_get_binding(PWM_DEV);
 	if (!pwm_dev) {
-		printk("Cannot find PWM_0!\n");
+		printk("Cannot find PWM device!\n");
 		return;
 	}
 

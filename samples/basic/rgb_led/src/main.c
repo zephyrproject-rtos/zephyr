@@ -7,13 +7,19 @@
 /**
  * @file Sample app to demonstrate PWM.
  *
- * This app uses PWM[0].
+ * This app uses PWM pins 0, 1, and 2.
  */
 
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <device.h>
 #include <pwm.h>
+
+#if defined(CONFIG_SOC_QUARK_SE_C1000)
+#define PWM_DEV CONFIG_PWM_QMSI_DEV_NAME
+#else
+#error "Choose supported board or add new board for the application"
+#endif
 
 /*
  * 50 is flicker fusion threshold. Modulated light will be perceived
@@ -37,9 +43,9 @@ void main(void)
 
 	printk("PWM demo app-RGB LED\n");
 
-	pwm_dev = device_get_binding("PWM_0");
+	pwm_dev = device_get_binding(PWM_DEV);
 	if (!pwm_dev) {
-		printk("Cannot find PWM_0!\n");
+		printk("Cannot find PWM device!\n");
 		return;
 	}
 
