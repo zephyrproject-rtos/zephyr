@@ -1550,7 +1550,7 @@ static int send_data(struct net_context *context,
 	context->user_data = user_data;
 	net_nbuf_set_token(buf, token);
 
-	if (!timeout || net_context_get_ip_proto(context) == IPPROTO_UDP) {
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
 		return net_send_data(buf);
 	}
 
