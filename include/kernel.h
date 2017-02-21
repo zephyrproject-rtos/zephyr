@@ -1424,17 +1424,12 @@ struct k_fifo {
  */
 
 struct k_lifo {
-	_wait_q_t wait_q;
-	void *list;
-
-	_OBJECT_TRACING_NEXT_PTR(k_lifo);
+	struct k_queue _queue;
 };
 
 #define K_LIFO_INITIALIZER(obj) \
 	{ \
-	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.list = NULL, \
-	_OBJECT_TRACING_INIT \
+	._queue = K_QUEUE_INITIALIZER(obj._queue) \
 	}
 
 /**
@@ -1456,7 +1451,8 @@ struct k_lifo {
  *
  * @return N/A
  */
-extern void k_lifo_init(struct k_lifo *lifo);
+#define k_lifo_init(lifo) \
+	k_queue_init((struct k_queue *) lifo)
 
 /**
  * @brief Add an element to a lifo.
@@ -1472,7 +1468,8 @@ extern void k_lifo_init(struct k_lifo *lifo);
  *
  * @return N/A
  */
-extern void k_lifo_put(struct k_lifo *lifo, void *data);
+#define k_lifo_put(lifo, data) \
+	k_queue_prepend((struct k_queue *) lifo, data)
 
 /**
  * @brief Get an element from a lifo.
@@ -1489,7 +1486,8 @@ extern void k_lifo_put(struct k_lifo *lifo, void *data);
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
  */
-extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
+#define k_lifo_get(lifo, timeout) \
+	k_queue_get((struct k_queue *) lifo, timeout)
 
 /**
  * @brief Statically define and initialize a lifo.
@@ -1502,7 +1500,7 @@ extern void *k_lifo_get(struct k_lifo *lifo, int32_t timeout);
  */
 #define K_LIFO_DEFINE(name) \
 	struct k_lifo name \
-		__in_section(_k_lifo, static, name) = \
+		__in_section(_k_queue, static, name) = \
 		K_LIFO_INITIALIZER(name)
 
 /**

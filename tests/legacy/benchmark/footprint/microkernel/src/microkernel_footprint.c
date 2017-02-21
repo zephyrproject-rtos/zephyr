@@ -81,11 +81,6 @@ static pfunc func_array[] = {
 	(pfunc)k_sem_group_give,
 	(pfunc)k_sem_group_reset,
 
-	/* LIFOs */
-	(pfunc)k_lifo_init,
-	(pfunc)k_lifo_put,
-	(pfunc)k_lifo_get,
-
 	/* stacks */
 	(pfunc)k_stack_init,
 	(pfunc)k_stack_push,

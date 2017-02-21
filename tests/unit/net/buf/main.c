@@ -34,14 +34,7 @@ void k_queue_append(struct k_queue *queue, void *data)
 {
 }
 
-void k_lifo_init(struct k_lifo *lifo) {}
-
-void *k_lifo_get(struct k_lifo *lifo, int32_t timeout)
-{
-	return NULL;
-}
-
-void k_lifo_put(struct k_lifo *lifo, void *data)
+void k_queue_prepend(struct k_queue *fifo, void *data)
 {
 }
 
