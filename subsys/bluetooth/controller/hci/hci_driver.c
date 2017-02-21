@@ -158,7 +158,7 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 	return 1;
 }
 
-ISR_DIRECT_DECLARE(rtc0_nrf5_isr)
+static void rtc0_nrf5_isr(void *arg)
 {
 	uint32_t compare0, compare1;
 
@@ -181,9 +181,6 @@ ISR_DIRECT_DECLARE(rtc0_nrf5_isr)
 	}
 
 	mayfly_run(MAYFLY_CALL_ID_0);
-
-	ISR_DIRECT_PM();
-	return 1;
 }
 
 static void rng_nrf5_isr(void *arg)
@@ -191,12 +188,9 @@ static void rng_nrf5_isr(void *arg)
 	isr_rand(arg);
 }
 
-ISR_DIRECT_DECLARE(swi4_nrf5_isr)
+static void swi4_nrf5_isr(void *arg)
 {
 	mayfly_run(MAYFLY_CALL_ID_1);
-
-	ISR_DIRECT_PM();
-	return 1;
 }
 
 static void prio_recv_thread(void *p1, void *p2, void *p3)
@@ -392,9 +386,9 @@ static int hci_driver_open(void)
 	}
 
 	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0);
-	IRQ_DIRECT_CONNECT(NRF5_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0);
+	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
-	IRQ_DIRECT_CONNECT(NRF5_IRQ_SWI4_IRQn, 0, swi4_nrf5_isr, 0);
+	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, 0, swi4_nrf5_isr, 0, 0);
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
 	irq_enable(NRF5_IRQ_RTC0_IRQn);
 	irq_enable(NRF5_IRQ_RNG_IRQn);
