@@ -179,15 +179,15 @@ typedef struct s_isrList {
 ({ \
 	__asm__ __volatile__(							\
 		".pushsection .intList\n\t" \
-		".long %P[isr]_irq%P[irq]_stub\n\t"	/* ISR_LIST.fnc */ \
-		".long %P[irq]\n\t"		/* ISR_LIST.irq */ \
-		".long %P[priority]\n\t"	/* ISR_LIST.priority */ \
-		".long %P[vector]\n\t"		/* ISR_LIST.vec */ \
+		".long %c[isr]_irq%c[irq]_stub\n\t"	/* ISR_LIST.fnc */ \
+		".long %c[irq]\n\t"		/* ISR_LIST.irq */ \
+		".long %c[priority]\n\t"	/* ISR_LIST.priority */ \
+		".long %c[vector]\n\t"		/* ISR_LIST.vec */ \
 		".long 0\n\t"			/* ISR_LIST.dpl */ \
 		".popsection\n\t" \
 		".pushsection .text.irqstubs\n\t" \
-		".global %P[isr]_irq%P[irq]_stub\n\t" \
-		"%P[isr]_irq%P[irq]_stub:\n\t" \
+		".global %c[isr]_irq%c[irq]_stub\n\t" \
+		"%c[isr]_irq%c[irq]_stub:\n\t" \
 		"pushl %[isr_param]\n\t" \
 		"pushl %[isr]\n\t" \
 		"jmp _interrupt_enter\n\t" \
