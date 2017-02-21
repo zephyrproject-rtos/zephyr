@@ -66,15 +66,16 @@ export QEMU_NUM
 export QEMU_EXTRA_FLAGS
 
 PID_FILE=/tmp/monitor_15_4.pid
+NET_TOOLS ?= $(ZEPHYR_BASE)/../net-tools
 
-hosttoolsmake = @$(MAKE) -C $(ZEPHYR_BASE)/net/tools $1
+hosttoolsmake = @$(MAKE) -C $(NET_TOOLS) $1
 
-${ZEPHYR_BASE}/net/tools/monitor_15_4:
+${NET_TOOLS}/monitor_15_4:
 	$(Q)$(call hosttoolsmake,monitor_15_4)
 
 .PHONY: start_monitor
-start_monitor: ${ZEPHYR_BASE}/net/tools/monitor_15_4
-	${ZEPHYR_BASE}/net/tools/monitor_15_4 \
+start_monitor: ${NET_TOOLS}/monitor_15_4
+	${NET_TOOLS}/monitor_15_4 \
 		${PCAP} \
 		${PIPE_BASE}-server ${PIPE_BASE}-client > /dev/null & \
 		echo "$$!" > ${PID_FILE}
