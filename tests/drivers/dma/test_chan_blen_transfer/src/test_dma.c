@@ -55,6 +55,8 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 	dma_cfg.source_burst_length = blen;
 	dma_cfg.dest_burst_length = blen;
 	dma_cfg.dma_callback = test_done;
+	dma_cfg.complete_callback_en = 0;
+	dma_cfg.error_callback_en = 1;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_block_cfg;
 
