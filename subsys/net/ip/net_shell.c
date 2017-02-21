@@ -24,6 +24,10 @@
 #include "tcp.h"
 #endif
 
+#if defined(CONFIG_NET_IPV6)
+#include "ipv6.h"
+#endif
+
 #include "net_shell.h"
 #include "net_stats.h"
 
@@ -605,6 +609,65 @@ static int shell_cmd_mem(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_IPV6)
+static inline const char *nbrstate2str(enum net_nbr_state state)
+{
+	switch (state) {
+	case NET_NBR_INCOMPLETE:
+		return "incomplete";
+	case NET_NBR_REACHABLE:
+		return "reachable";
+	case NET_NBR_STALE:
+		return "stale";
+	case NET_NBR_DELAY:
+		return "delay";
+	case NET_NBR_PROBE:
+		return "probe";
+	}
+
+	return "<invalid state>";
+}
+
+static void nbr_cb(struct net_nbr *nbr, void *user_data)
+{
+	int *count = user_data;
+
+	(*count)++;
+
+	printk("[%d] %d/%d/%d/%d %10s iface %p ll %s addr %s\n",
+	       *count, nbr->ref, net_ipv6_nbr_data(nbr)->ns_count,
+	       net_ipv6_nbr_data(nbr)->is_router,
+	       net_ipv6_nbr_data(nbr)->link_metric,
+	       nbrstate2str(net_ipv6_nbr_data(nbr)->state),
+	       nbr->iface,
+	       nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
+	       net_sprint_ll_addr(
+		       net_nbr_get_lladdr(nbr->idx)->addr,
+		       net_nbr_get_lladdr(nbr->idx)->len),
+	       net_sprint_ipv6_addr(&net_ipv6_nbr_data(nbr)->addr));
+}
+#endif
+
+static int shell_cmd_nbr(int argc, char *argv[])
+{
+#if defined(CONFIG_NET_IPV6)
+	int count = 0;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	net_ipv6_nbr_foreach(nbr_cb, &count);
+
+	if (count == 0) {
+		printk("No neighbors.\n");
+	}
+
+	return 0;
+#else
+	printk("IPv6 not enabled.\n");
+#endif /* CONFIG_NET_IPV6 */
+}
+
 static int shell_cmd_ping(int argc, char *argv[])
 {
 #if defined(CONFIG_NET_IPV6)
@@ -758,6 +821,7 @@ static int shell_cmd_help(int argc, char *argv[])
 	printk("net conn\n\tPrint information about network connections\n");
 	printk("net iface\n\tPrint information about network interfaces\n");
 	printk("net mem\n\tPrint network buffer information\n");
+	printk("net nbr\n\tPrint neighbor information\n");
 	printk("net ping <host>\n\tPing a network host\n");
 	printk("net route\n\tShow network routes\n");
 	printk("net stacks\n\tShow network stacks information\n");
@@ -771,6 +835,7 @@ static struct shell_cmd net_commands[] = {
 	{ "help", shell_cmd_help, NULL },
 	{ "iface", shell_cmd_iface, NULL },
 	{ "mem", shell_cmd_mem, NULL },
+	{ "nbr", shell_cmd_nbr, NULL },
 	{ "ping", shell_cmd_ping, NULL },
 	{ "route", shell_cmd_route, NULL },
 	{ "stacks", shell_cmd_stacks, NULL },
