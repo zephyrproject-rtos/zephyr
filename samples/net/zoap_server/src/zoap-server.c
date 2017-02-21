@@ -65,14 +65,7 @@ static int test_del(struct zoap_resource *resource,
 	NET_INFO("*******\n");
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -124,14 +117,7 @@ static int test_put(struct zoap_resource *resource,
 	NET_INFO("*******\n");
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -189,14 +175,7 @@ static int test_post(struct zoap_resource *resource,
 	NET_INFO("*******\n");
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -258,14 +237,7 @@ static int location_query_post(struct zoap_resource *resource,
 	NET_INFO("*******\n");
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -318,14 +290,7 @@ static int piggyback_get(struct zoap_resource *resource,
 	NET_INFO("*******\n");
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -420,14 +385,7 @@ static int query_get(struct zoap_resource *resource,
 	NET_INFO("*******\n");
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -495,14 +453,7 @@ static int separate_get(struct zoap_resource *resource,
 	}
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -526,14 +477,7 @@ static int separate_get(struct zoap_resource *resource,
 
 done:
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -615,14 +559,7 @@ static int large_get(struct zoap_resource *resource,
 	NET_INFO("*******\n");
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
@@ -713,14 +650,7 @@ static int large_update_put(struct zoap_resource *resource,
 	NET_INFO("*******\n");
 
 	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	frag = net_nbuf_get_data(context, K_FOREVER);
-	if (!frag) {
-		return -ENOMEM;
-	}
 
 	net_buf_frag_add(buf, frag);
 
