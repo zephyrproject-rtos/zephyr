@@ -100,4 +100,12 @@ config BLUETOOTH_CONTROLLER_PROFILE_ISR
 	  contains current, minimum and maximum ISR entry latencies; and
 	  current, minimum and maximum ISR CPU use in micro-seconds.
 
+config BLUETOOTH_CONTROLLER_DEBUG_PINS
+	bool "Bluetooth Controller Debug Pins"
+	help
+	  Turn on debug GPIO toggling for the BLE Controller. This is useful
+	  when debugging with a logic analyzer or profiling certain sections of
+	  the code. When enabled, pins P0.16 to P0.25 are taken over exclusively
+	  by the controller and cannot be used outside of it.
+
 endif # BLUETOOTH_CONTROLLER

@@ -22,7 +22,7 @@ void bt_controller_assert_handle(char *file, uint32_t line);
  * which can be defined to SoC's GPIO toggle to observe/debug the
  * controller's runtime behavior.
  */
-#if (DEBUG == 1)
+#ifdef CONFIG_BLUETOOTH_CONTROLLER_DEBUG_PINS
 #define DEBUG_INIT()            do { \
 				NRF_GPIO->DIRSET = 0x03FF0000; \
 				NRF_GPIO->OUTCLR = 0x03FF0000; } \
@@ -209,6 +209,6 @@ void bt_controller_assert_handle(char *file, uint32_t line);
 
 #define DEBUG_RADIO_START_M(flag)
 
-#endif /* DEBUG */
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DEBUG_PINS */
 
 #endif /* _DEBUG_H_ */
