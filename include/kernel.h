@@ -1283,19 +1283,12 @@ static inline int k_queue_is_empty(struct k_queue *queue)
  */
 
 struct k_fifo {
-	_wait_q_t wait_q;
-	sys_slist_t data_q;
-	_POLL_EVENT;
-
-	_OBJECT_TRACING_NEXT_PTR(k_fifo);
+	struct k_queue _queue;
 };
 
 #define K_FIFO_INITIALIZER(obj) \
 	{ \
-	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
-	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
-	_POLL_EVENT_OBJ_INIT \
-	_OBJECT_TRACING_INIT \
+	._queue = K_QUEUE_INITIALIZER(obj._queue) \
 	}
 
 /**
@@ -1317,7 +1310,8 @@ struct k_fifo {
  *
  * @return N/A
  */
-extern void k_fifo_init(struct k_fifo *fifo);
+#define k_fifo_init(fifo) \
+	k_queue_init((struct k_queue *) fifo)
 
 /**
  * @brief Add an element to a fifo.
@@ -1333,7 +1327,8 @@ extern void k_fifo_init(struct k_fifo *fifo);
  *
  * @return N/A
  */
-extern void k_fifo_put(struct k_fifo *fifo, void *data);
+#define k_fifo_put(fifo, data) \
+	k_queue_append((struct k_queue *) fifo, data)
 
 /**
  * @brief Atomically add a list of elements to a fifo.
@@ -1351,7 +1346,8 @@ extern void k_fifo_put(struct k_fifo *fifo, void *data);
  *
  * @return N/A
  */
-extern void k_fifo_put_list(struct k_fifo *fifo, void *head, void *tail);
+#define k_fifo_put_list(fifo, head, tail) \
+	k_queue_append_list((struct k_queue *) fifo, head, tail)
 
 /**
  * @brief Atomically add a list of elements to a fifo.
@@ -1368,7 +1364,8 @@ extern void k_fifo_put_list(struct k_fifo *fifo, void *head, void *tail);
  *
  * @return N/A
  */
-extern void k_fifo_put_slist(struct k_fifo *fifo, sys_slist_t *list);
+#define k_fifo_put_slist(fifo, list) \
+	k_queue_merge_slist((struct k_queue *) fifo, list)
 
 /**
  * @brief Get an element from a fifo.
@@ -1385,7 +1382,8 @@ extern void k_fifo_put_slist(struct k_fifo *fifo, sys_slist_t *list);
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
  */
-extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
+#define k_fifo_get(fifo, timeout) \
+	k_queue_get((struct k_queue *) fifo, timeout)
 
 /**
  * @brief Query a fifo to see if it has data available.
@@ -1400,10 +1398,8 @@ extern void *k_fifo_get(struct k_fifo *fifo, int32_t timeout);
  * @return Non-zero if the fifo is empty.
  * @return 0 if data is available.
  */
-static inline int k_fifo_is_empty(struct k_fifo *fifo)
-{
-	return (int)sys_slist_is_empty(&fifo->data_q);
-}
+#define k_fifo_is_empty(fifo) \
+	k_queue_is_empty((struct k_queue *) fifo)
 
 /**
  * @brief Statically define and initialize a fifo.
@@ -1416,7 +1412,7 @@ static inline int k_fifo_is_empty(struct k_fifo *fifo)
  */
 #define K_FIFO_DEFINE(name) \
 	struct k_fifo name \
-		__in_section(_k_fifo, static, name) = \
+		__in_section(_k_queue, static, name) = \
 		K_FIFO_INITIALIZER(name)
 
 /**
@@ -3430,6 +3426,7 @@ struct k_poll_event {
 		struct k_poll_signal *signal;
 		struct k_sem *sem;
 		struct k_fifo *fifo;
+		struct k_queue *queue;
 	};
 };
 

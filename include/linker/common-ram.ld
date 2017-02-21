@@ -72,13 +72,6 @@
 		_k_queue_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(_k_fifo_area, (OPTIONAL),)
-	{
-		_k_fifo_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_fifo.static.*")))
-		_k_fifo_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
 	SECTION_DATA_PROLOGUE(_k_lifo_area, (OPTIONAL),)
 	{
 		_k_lifo_list_start = .;

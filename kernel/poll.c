@@ -67,8 +67,8 @@ static inline int is_condition_met(struct k_poll_event *event, uint32_t *state)
 			return 1;
 		}
 		break;
-	case K_POLL_TYPE_FIFO_DATA_AVAILABLE:
-		if (!k_fifo_is_empty(event->fifo)) {
+	case K_POLL_TYPE_DATA_AVAILABLE:
+		if (!k_queue_is_empty(event->queue)) {
 			*state = K_POLL_STATE_FIFO_DATA_AVAILABLE;
 			return 1;
 		}
@@ -100,15 +100,15 @@ static inline int register_event(struct k_poll_event *event)
 		}
 		event->sem->poll_event = event;
 		break;
-	case K_POLL_TYPE_FIFO_DATA_AVAILABLE:
-		__ASSERT(event->fifo, "invalid fifo\n");
-		if (event->fifo->poll_event) {
+	case K_POLL_TYPE_DATA_AVAILABLE:
+		__ASSERT(event->queue, "invalid queue\n");
+		if (event->queue->poll_event) {
 			return -EADDRINUSE;
 		}
-		event->fifo->poll_event = event;
+		event->queue->poll_event = event;
 		break;
 	case K_POLL_TYPE_SIGNAL:
-		__ASSERT(event->fifo, "invalid poll signal\n");
+		__ASSERT(event->queue, "invalid poll signal\n");
 		if (event->signal->poll_event) {
 			return -EADDRINUSE;
 		}
@@ -135,9 +135,9 @@ static inline void clear_event_registration(struct k_poll_event *event)
 		__ASSERT(event->sem, "invalid semaphore\n");
 		event->sem->poll_event = NULL;
 		break;
-	case K_POLL_TYPE_FIFO_DATA_AVAILABLE:
-		__ASSERT(event->fifo, "invalid fifo\n");
-		event->fifo->poll_event = NULL;
+	case K_POLL_TYPE_DATA_AVAILABLE:
+		__ASSERT(event->queue, "invalid queue\n");
+		event->queue->poll_event = NULL;
 		break;
 	case K_POLL_TYPE_SIGNAL:
 		__ASSERT(event->signal, "invalid poll signal\n");

@@ -20,7 +20,6 @@ lib-y += $(strip \
 	mutex.o \
 	queue.o \
 	lifo.o \
-	fifo.o \
 	stack.o \
 	mem_slab.o \
 	mem_pool.o \

@@ -17,20 +17,20 @@ void irq_unlock(unsigned int key)
 
 #include <net/buf.c>
 
-void k_fifo_init(struct k_fifo *fifo) {}
-void k_fifo_put_list(struct k_fifo *fifo, void *head, void *tail) {}
+void k_queue_init(struct k_queue *fifo) {}
+void k_queue_append_list(struct k_queue *fifo, void *head, void *tail) {}
 
 int k_is_in_isr(void)
 {
 	return 0;
 }
 
-void *k_fifo_get(struct k_fifo *fifo, int32_t timeout)
+void *k_queue_get(struct k_queue *fifo, int32_t timeout)
 {
 	return NULL;
 }
 
-void k_fifo_put(struct k_fifo *fifo, void *data)
+void k_queue_append(struct k_queue *fifo, void *data)
 {
 }
 

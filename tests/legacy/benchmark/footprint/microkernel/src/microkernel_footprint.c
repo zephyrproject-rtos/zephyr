@@ -47,12 +47,13 @@ static pfunc func_array[] = {
 	(pfunc)k_sem_reset,
 	(pfunc)k_sem_count_get,
 
-	/* FIFOs */
-	(pfunc)k_fifo_init,
-	(pfunc)k_fifo_put,
-	(pfunc)k_fifo_put_list,
-	(pfunc)k_fifo_put_slist,
-	(pfunc)k_fifo_get,
+	/* queues */
+	(pfunc)k_queue_init,
+	(pfunc)k_queue_append,
+	(pfunc)k_queue_prepend,
+	(pfunc)k_queue_append_list,
+	(pfunc)k_queue_merge_slist,
+	(pfunc)k_queue_get,
 
 	/* mem slabs */
 	(pfunc)k_mem_slab_init,
