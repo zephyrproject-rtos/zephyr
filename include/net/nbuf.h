@@ -583,9 +583,6 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf);
  * @brief Copy a buffer with fragments while reserving some extra space
  * in destination buffer before a copy.
  *
- * @details Note that the original buffer is not really usable after the copy
- * as the function will call net_buf_pull() internally and should be discarded.
- *
  * @param buf Network buffer. This should be the head of the buffer chain.
  * @param amount Max amount of data to be copied.
  * @param reserve Amount of extra data (this is not link layer header) in the

@@ -540,6 +540,8 @@ struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
 			      size_t reserve, int32_t timeout)
 {
 	struct net_buf *frag, *first, *orig;
+	uint8_t *orig_data;
+	size_t orig_len;
 
 	if (is_from_data_pool(buf)) {
 		NET_ERR("Buffer %p should not be a data fragment", buf);
@@ -573,12 +575,15 @@ struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
 		return frag;
 	}
 
+	orig_len = orig->len;
+	orig_data = orig->data;
+
 	while (orig && amount) {
 		int left_len = net_buf_tailroom(frag);
 		int copy_len;
 
-		if (amount > orig->len) {
-			copy_len = orig->len;
+		if (amount > orig_len) {
+			copy_len = orig_len;
 		} else {
 			copy_len = amount;
 		}
@@ -591,7 +596,7 @@ struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
 			 */
 			amount -= left_len;
 
-			memcpy(net_buf_add(frag, left_len), orig->data,
+			memcpy(net_buf_add(frag, left_len), orig_data,
 			       left_len);
 
 			if (!net_buf_tailroom(frag)) {
@@ -610,7 +615,8 @@ struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
 				frag = new_frag;
 			}
 
-			net_buf_pull(orig, left_len);
+			orig_len -= left_len;
+			orig_data += left_len;
 
 			continue;
 		} else {
@@ -619,12 +625,15 @@ struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
 			 */
 			amount -= copy_len;
 
-			memcpy(net_buf_add(frag, copy_len), orig->data,
+			memcpy(net_buf_add(frag, copy_len), orig_data,
 			       copy_len);
-			net_buf_pull(orig, copy_len);
 		}
 
 		orig = orig->frags;
+		if (orig) {
+			orig_len = orig->len;
+			orig_data = orig->data;
+		}
 	}
 
 	return first;

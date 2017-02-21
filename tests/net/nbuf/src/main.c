@@ -182,7 +182,7 @@ static int test_fragment_copy(void)
 	struct net_buf *buf, *frag, *new_buf, *new_frag;
 	struct ipv6_hdr *ipv6;
 	struct udp_hdr *udp;
-	size_t orig_len;
+	size_t orig_len, reserve;
 	int pos;
 
 	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
@@ -223,9 +223,11 @@ static int test_fragment_copy(void)
 
 	linearize(buf, buf_orig, orig_len);
 
-	/* Then copy a fragment list to a new fragment list */
-	new_frag = net_nbuf_copy_all(buf, sizeof(struct ipv6_hdr) +
-				     sizeof(struct icmp_hdr), K_FOREVER);
+	/* Then copy a fragment list to a new fragment list.
+	 * Reserve some space in front of the buffers.
+	 */
+	reserve = sizeof(struct ipv6_hdr) + sizeof(struct icmp_hdr);
+	new_frag = net_nbuf_copy_all(buf, reserve, K_FOREVER);
 	if (!new_frag) {
 		printk("Cannot copy fragment list.\n");
 		return -EINVAL;
@@ -236,9 +238,16 @@ static int test_fragment_copy(void)
 
 	printk("Total new data len %zd\n", net_buf_frags_len(new_buf));
 
-	if (net_buf_frags_len(buf) != 0) {
-		printk("Fragment list missing data, %zd bytes not copied\n",
-		       net_buf_frags_len(buf));
+	if ((net_buf_frags_len(buf) + reserve) != net_buf_frags_len(new_buf)) {
+		int diff;
+
+		diff = net_buf_frags_len(new_buf) - reserve -
+			net_buf_frags_len(buf);
+
+		printk("Fragment list missing data, %d bytes not copied "
+		       "(%zd vs %zd)\n", diff,
+		       net_buf_frags_len(buf) + reserve,
+		       net_buf_frags_len(new_buf));
 		return -EINVAL;
 	}
 
