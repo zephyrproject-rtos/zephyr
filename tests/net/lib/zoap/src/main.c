@@ -348,8 +348,8 @@ static int test_parse_simple_pdu(void)
 	struct net_buf *buf, *frag;
 	struct zoap_option options[16];
 	uint8_t ver, type, code, tkl;
-	const uint8_t *token;
-	uint16_t id;
+	const uint8_t *token, *payload;
+	uint16_t id, len;
 	int result = TC_FAIL;
 	int r, count = 16;
 
@@ -439,6 +439,17 @@ static int test_parse_simple_pdu(void)
 	count = zoap_find_options(&pkt, ZOAP_OPTION_ETAG, options, count);
 	if (count) {
 		TC_PRINT("There shouldn't be any ETAG option in the packet\n");
+		goto done;
+	}
+
+	payload = zoap_packet_get_payload(&pkt, &len);
+	if (!payload || !len) {
+		TC_PRINT("There should be a payload in the packet\n");
+		goto done;
+	}
+
+	if (len != (strlen("payload") + 1)) {
+		TC_PRINT("Invalid payload in the packet\n");
 		goto done;
 	}
 
