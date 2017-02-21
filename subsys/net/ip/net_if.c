@@ -249,14 +249,26 @@ struct net_if *net_if_get_default(void)
 static void dad_timeout(struct k_work *work)
 {
 	/* This means that the DAD succeed. */
-	struct net_if_addr *ifaddr = CONTAINER_OF(work,
-						  struct net_if_addr,
-						  dad_timer);
+	struct net_if_addr *tmp, *ifaddr = CONTAINER_OF(work,
+							struct net_if_addr,
+							dad_timer);
+	struct net_if *iface = NULL;
 
 	NET_DBG("DAD succeeded for %s",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	/* Because we do not know the interface at this point, we need to
+	 * lookup for it.
+	 */
+	tmp = net_if_ipv6_addr_lookup(&ifaddr->address.in6_addr, &iface);
+	if (tmp == ifaddr) {
+		/* The address gets added to neighbor cache which is not needed
+		 * in this case as the address is our own one.
+		 */
+		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
+	}
 }
 
 static void net_if_ipv6_start_dad(struct net_if *iface,
