@@ -558,7 +558,7 @@ static inline struct net_buf *net_nbuf_copy_all(struct net_buf *buf,
 /**
  * @brief Copy len bytes from src starting from	offset to dst
  *
- * This routine assumes that dst is conformed by one fragment with enough space
+ * This routine assumes that dst is formed of one fragment with enough space
  * to store @a len bytes starting from offset at src.
  *
  * @param dst Destination buffer
