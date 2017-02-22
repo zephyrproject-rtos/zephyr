@@ -501,10 +501,6 @@ static void dhcpv4_timeout(struct k_work *work)
 					    dhcpv4.timer);
 
 	NET_DBG("state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
-	if (!iface) {
-		NET_DBG("Invalid iface");
-		return;
-	}
 
 	switch (iface->dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
@@ -557,10 +553,6 @@ static void dhcpv4_t1_timeout(struct k_work *work)
 
 	NET_DBG("");
 
-	if (!iface) {
-		NET_DBG("Invalid iface");
-		return;
-	}
 
 	iface->dhcpv4.state = NET_DHCPV4_RENEWING;
 	NET_DBG("enter state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
