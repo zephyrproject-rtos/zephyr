@@ -553,11 +553,23 @@ static void dhcpv4_t1_timeout(struct k_work *work)
 
 	NET_DBG("");
 
-
-	iface->dhcpv4.state = NET_DHCPV4_RENEWING;
-	NET_DBG("enter state=%s", net_dhcpv4_state_name(iface->dhcpv4.state));
-
-	send_request(iface);
+	switch (iface->dhcpv4.state) {
+	case NET_DHCPV4_DISABLED:
+	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_SELECTING:
+	case NET_DHCPV4_REQUESTING:
+	case NET_DHCPV4_RENEWING:
+		/* This path cannot happen. */
+		NET_ASSERT_INFO(0, "Invalid state %s",
+				net_dhcpv4_state_name(iface->dhcpv4.state));
+		break;
+	case NET_DHCPV4_BOUND:
+		iface->dhcpv4.state = NET_DHCPV4_RENEWING;
+		NET_DBG("enter state=%s",
+			net_dhcpv4_state_name(iface->dhcpv4.state));
+		send_request(iface);
+		break;
+	}
 }
 
 /* Parse DHCPv4 options and retrieve relavant information
