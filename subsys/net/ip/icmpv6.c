@@ -199,8 +199,8 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 		extra_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_udp_hdr);
 	} else if (NET_IPV6_BUF(orig)->nexthdr == IPPROTO_TCP) {
-		extra_len = sizeof(struct net_ipv6_hdr);
-		/* FIXME, add TCP header length too */
+		extra_len = sizeof(struct net_ipv6_hdr) +
+			sizeof(struct net_tcp_hdr);
 	} else {
 		size_t space = CONFIG_NET_NBUF_DATA_SIZE -
 			net_if_get_ll_reserve(iface, dst);
