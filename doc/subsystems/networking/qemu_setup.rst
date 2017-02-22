@@ -96,10 +96,6 @@ For example, using netcat ("nc") utility, connecting using UDP:
    $ echo foobar | nc -6 -u 2001:db8::1 4242
    foobar
 
-.. note::
-
-   You will need to Ctrl+C manually.
-
 .. code-block:: console
 
    $ echo foobar | nc -u 192.0.2.1 4242
@@ -112,6 +108,10 @@ echo_server sample, CONFIG_NETWORKING_WITH_TCP=y):
 
    $ echo foobar | nc -6 -q2 2001:db8::1 4242
    foobar
+
+.. note::
+
+   You will need to Ctrl+C manually.
 
 You can also use the telnet comand to achieve the above.
 
