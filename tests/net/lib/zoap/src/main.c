@@ -505,7 +505,7 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	r = zoap_pending_init(pending, &pkt);
+	r = zoap_pending_init(pending, &pkt, (struct sockaddr *) &dummy_addr);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
