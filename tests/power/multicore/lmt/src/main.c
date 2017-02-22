@@ -137,9 +137,15 @@ void main(void)
 
 	rtc_enable(rtc_dev);
 
-	config.init_val = 0;
-	config.alarm_enable = 0;
+	/* In QMSI, in order to save the alarm callback we must set
+	 * 'alarm_enable = 1' during configuration. However, this
+	 * automatically triggers the alarm underneath. So, to avoid
+	 * the alarm being fired any time soon, we set the 'init_val'
+	 * to 1 and the 'alarm_val' to 0.
+	 */
+	config.init_val = 1;
 	config.alarm_val = 0;
+	config.alarm_enable = 1;
 	config.cb_fn = alarm_handler;
 	rtc_set_config(rtc_dev, &config);
 
