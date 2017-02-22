@@ -211,8 +211,10 @@ typedef int (*zoap_reply_t)(const struct zoap_packet *response,
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct zoap_pending {
-	struct zoap_packet request;
+	struct net_buf *buf;
+	struct sockaddr addr;
 	int32_t timeout;
+	uint16_t id;
 };
 
 /**
@@ -340,11 +342,13 @@ int zoap_packet_init(struct zoap_packet *pkt, struct net_buf *buf);
  * @param pending Structure representing the waiting for a
  * confirmation message, initialized with data from @a request
  * @param request Message waiting for confirmation
+ * @param addr Address to send the retransmission
  *
  * @return 0 in case of success or negative in case of error.
  */
 int zoap_pending_init(struct zoap_pending *pending,
-		      const struct zoap_packet *request);
+		      const struct zoap_packet *request,
+		      const struct sockaddr *addr);
 
 /**
  * @brief Returns the next available pending struct, that can be used

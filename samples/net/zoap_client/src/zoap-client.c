@@ -112,8 +112,6 @@ static void udp_receive(struct net_context *context,
 static void retransmit_request(struct k_work *work)
 {
 	struct zoap_pending *pending;
-	struct zoap_packet *request;
-	struct net_buf *buf;
 	int r;
 
 	pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
@@ -121,17 +119,13 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	request = &pending->request;
-	buf = request->buf;
-
-	r = net_context_sendto(buf, (struct sockaddr *) &mcast_addr,
+	r = net_context_sendto(pending->buf, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr), NULL, 0, NULL, NULL);
 	if (r < 0) {
 		return;
 	}
 
 	if (!zoap_pending_cycle(pending)) {
-		net_nbuf_unref(buf);
 		zoap_pending_clear(pending);
 		return;
 	}
@@ -223,7 +217,8 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	r = zoap_pending_init(pending, &request);
+	r = zoap_pending_init(pending, &request,
+			      (struct sockaddr *) &mcast_addr);
 	if (r < 0) {
 		printk("Unable to initialize a pending retransmission.\n");
 		return;

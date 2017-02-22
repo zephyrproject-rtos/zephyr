@@ -335,12 +335,15 @@ int zoap_packet_init(struct zoap_packet *pkt,
 }
 
 int zoap_pending_init(struct zoap_pending *pending,
-		      const struct zoap_packet *request)
+		      const struct zoap_packet *request,
+		      const struct sockaddr *addr)
 {
 	memset(pending, 0, sizeof(*pending));
-	memcpy(&pending->request, request, sizeof(*request));
+	pending->id = zoap_header_get_id(request);
+	memcpy(&pending->addr, addr, sizeof(*addr));
 
-	/* FIXME: keeping a reference to the original net_buf is necessary? */
+	/* Will increase the reference count when the pending is cycled */
+	pending->buf = request->buf;
 
 	return 0;
 }
@@ -352,9 +355,7 @@ struct zoap_pending *zoap_pending_next_unused(
 	size_t i;
 
 	for (i = 0, p = pendings; i < len; i++, p++) {
-		struct zoap_packet *pkt = &p->request;
-
-		if (p->timeout == 0 && !pkt->buf) {
+		if (p->timeout == 0 && !p->buf) {
 			return p;
 		}
 	}
@@ -408,41 +409,20 @@ struct zoap_observer *zoap_observer_next_unused(
 	return NULL;
 }
 
-static bool match_response(const struct zoap_packet *request,
-			   const struct zoap_packet *response)
-{
-	const uint8_t *req_token, *resp_token;
-	uint8_t req_tkl, resp_tkl;
-
-	if (zoap_header_get_id(request) != zoap_header_get_id(response)) {
-		return false;
-	}
-
-	req_token = zoap_header_get_token(request, &req_tkl);
-	resp_token = zoap_header_get_token(response, &resp_tkl);
-
-	if (req_tkl != resp_tkl) {
-		return false;
-	}
-
-	return req_tkl == 0 || memcmp(req_token, resp_token, req_tkl) == 0;
-}
-
 struct zoap_pending *zoap_pending_received(
 	const struct zoap_packet *response,
 	struct zoap_pending *pendings, size_t len)
 {
 	struct zoap_pending *p;
+	uint16_t resp_id = zoap_header_get_id(response);
 	size_t i;
 
 	for (i = 0, p = pendings; i < len; i++, p++) {
-		struct zoap_packet *req = &p->request;
-
 		if (!p->timeout) {
 			continue;
 		}
 
-		if (!match_response(req, response)) {
+		if (resp_id != p->id) {
 			continue;
 		}
 
@@ -489,15 +469,28 @@ static int32_t next_timeout(int32_t previous)
 bool zoap_pending_cycle(struct zoap_pending *pending)
 {
 	int32_t old = pending->timeout;
+	bool cont;
 
 	pending->timeout = next_timeout(pending->timeout);
 
-	return old != pending->timeout;
+	/* If the timeout changed, it's not the last, continue... */
+	cont = (old != pending->timeout);
+	if (cont) {
+		/*
+		 * When it it is the last retransmission, the buffer
+		 * will be destroyed when it is transmitted.
+		 */
+		net_nbuf_ref(pending->buf);
+	}
+
+	return cont;
 }
 
 void zoap_pending_clear(struct zoap_pending *pending)
 {
 	pending->timeout = 0;
+	net_nbuf_unref(pending->buf);
+	pending->buf = NULL;
 }
 
 static bool uri_path_eq(const struct zoap_packet *pkt,
