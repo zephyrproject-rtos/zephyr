@@ -187,8 +187,6 @@ config RTC_0_IRQ_PRI
 endif # RTC
 
 if UART_QMSI
-config UART_QMSI_0
-	def_bool y
 
 if UART_QMSI_0
 
