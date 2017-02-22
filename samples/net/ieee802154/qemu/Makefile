@@ -11,4 +11,4 @@ CONF_FILE = prj.conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
 
-include $(ZEPHYR_BASE)/samples/net/ieee802154/qemu/Makefile.qemu
+include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
