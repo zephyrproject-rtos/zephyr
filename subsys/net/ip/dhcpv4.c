@@ -14,6 +14,8 @@
 #define NET_LOG_ENABLED 1
 #endif
 
+#include "dhcpv4.h"
+
 #include <errno.h>
 #include <inttypes.h>
 #include <net/net_core.h>
@@ -891,7 +893,6 @@ drop:
 
 void net_dhcpv4_start(struct net_if *iface)
 {
-	int ret;
 	uint32_t timeout;
 	uint32_t entropy;
 
@@ -914,18 +915,6 @@ void net_dhcpv4_start(struct net_if *iface)
 	 */
 	iface->dhcpv4.xid = entropy;
 
-	/* Register UDP input callback on
-	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for
-	 * all dhcpv4 related incoming packets.
-	 */
-	ret = net_udp_register(NULL, NULL,
-			       DHCPV4_SERVER_PORT,
-			       DHCPV4_CLIENT_PORT,
-			       net_dhcpv4_input, NULL, NULL);
-	if (ret < 0) {
-		NET_DBG("UDP callback registration failed");
-		return;
-	}
 
 	/* RFC2131 4.1.1 requires we wait a random period between 1
 	 * and 10 seconds before sending the initial discover.
@@ -939,4 +928,26 @@ void net_dhcpv4_start(struct net_if *iface)
 
 	k_delayed_work_init(&iface->dhcpv4.timer, dhcpv4_timeout);
 	k_delayed_work_submit(&iface->dhcpv4.timer, timeout * MSEC_PER_SEC);
+}
+
+int dhcpv4_init(void)
+{
+	int ret;
+
+	NET_DBG("");
+
+	/* Register UDP input callback on
+	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for
+	 * all dhcpv4 related incoming packets.
+	 */
+	ret = net_udp_register(NULL, NULL,
+			       DHCPV4_SERVER_PORT,
+			       DHCPV4_CLIENT_PORT,
+			       net_dhcpv4_input, NULL, NULL);
+	if (ret < 0) {
+		NET_DBG("UDP callback registration failed");
+		return ret;
+	}
+
+	return 0;
 }

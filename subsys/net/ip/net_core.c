@@ -39,6 +39,10 @@
 #include "icmpv4.h"
 #endif
 
+#if defined(CONFIG_NET_DHCPV4)
+#include "dhcpv4.h"
+#endif
+
 #include "route.h"
 #include "rpl.h"
 
@@ -732,6 +736,8 @@ static inline void l2_init(void)
 
 static int net_init(struct device *unused)
 {
+	int status = 0;
+
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
 
 	net_shell_init();
@@ -747,7 +753,14 @@ static int net_init(struct device *unused)
 
 	init_rx_queue();
 
-	return 0;
+#if CONFIG_NET_DHCPV4
+	status = dhcpv4_init();
+	if (status) {
+		return status;
+	}
+#endif
+
+	return status;
 }
 
 SYS_INIT(net_init, POST_KERNEL, CONFIG_NET_INIT_PRIO);
