@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2017, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,10 +91,6 @@ typedef union {
  * Bootloader data
  */
 
-/* The flash controller where BL-Data is stored. */
-#define BL_DATA_FLASH_CONTROLLER QM_FLASH_0
-/* The flash region where BL-Data is stored. */
-#define BL_DATA_FLASH_REGION QM_FLASH_REGION_SYS
 /* The flash address where the BL-Data Section starts. */
 #define BL_DATA_FLASH_REGION_BASE QM_FLASH_REGION_SYS_0_BASE
 /* The flash page where the BL-Data Section starts. */
@@ -104,99 +100,6 @@ typedef union {
 #define QM_FLASH_REGION_SYS_0_PAGES (96)
 /* The size (in pages) of the System_1 flash region of Quark SE. */
 #define QM_FLASH_REGION_SYS_1_PAGES (96)
-
-/* The size (in pages) of the Bootloader Data section. */
-#define BL_DATA_SECTION_PAGES (2)
-
-#if (BL_CONFIG_DUAL_BANK)
-/* ARC Partition size, in pages */
-#define BL_PARTITION_SIZE_ARC                                                  \
-	((QM_FLASH_REGION_SYS_0_PAGES - BL_DATA_SECTION_PAGES) / 2)
-#define BL_PARTITION_SIZE_LMT (QM_FLASH_REGION_SYS_1_PAGES / 2)
-#else /* !BL_CONFIG_DUAL_BANK */
-#define BL_PARTITION_SIZE_ARC                                                  \
-	((QM_FLASH_REGION_SYS_0_PAGES - BL_DATA_SECTION_PAGES))
-#define BL_PARTITION_SIZE_LMT (QM_FLASH_REGION_SYS_1_PAGES)
-#endif /* BL_CONFIG_DUAL_BANK */
-
-/* Number of boot targets. */
-#define BL_BOOT_TARGETS_NUM (2)
-
-#define BL_TARGET_IDX_LMT (0)
-#define BL_TARGET_IDX_ARC (1)
-
-#define BL_PARTITION_IDX_LMT0 (0)
-#define BL_PARTITION_IDX_ARC0 (1)
-#define BL_PARTITION_IDX_LMT1 (2)
-#define BL_PARTITION_IDX_ARC1 (3)
-
-#define BL_TARGET_0_LMT                                                        \
-	{                                                                      \
-		.active_partition_idx = BL_PARTITION_IDX_LMT0, .svn = 0        \
-	}
-
-#define BL_TARGET_1_ARC                                                        \
-	{                                                                      \
-		.active_partition_idx = BL_PARTITION_IDX_ARC0, .svn = 0        \
-	}
-
-/*
- * Macro for defining an application flash partition.
- *
- * @param[in] target The index of the target associated with the partition.
- * @param[in] ctrl   The flash controller on which the partition is located.
- * @param[in] region_addr The base address of the region where the partition is
- * 			  located.
- * @param[in] size The size in pages of the partition.
- * @param[in] idx  The index of the partition within the flash region (0 for
- * 		   the first partition in the region, 1 for the second one).
- */
-#define DEFINE_PARTITION(target, ctrl, region_addr, size, idx)                 \
-	{                                                                      \
-		.target_idx = target, .controller = ctrl,                      \
-		.first_page = (idx * size), .num_pages = size,                 \
-		.start_addr = ((uint32_t *)region_addr) +                      \
-			      (idx * size * QM_FLASH_PAGE_SIZE_DWORDS),        \
-		.is_consistent = true                                          \
-	}
-
-/* PARTITION 0: LMT-0 */
-#define BL_PARTITION_0                                                         \
-	DEFINE_PARTITION(BL_TARGET_IDX_LMT, QM_FLASH_1,                        \
-			 QM_FLASH_REGION_SYS_1_BASE, BL_PARTITION_SIZE_LMT, 0)
-
-/* PARTITION 1: ARC-0 */
-#define BL_PARTITION_1                                                         \
-	DEFINE_PARTITION(BL_TARGET_IDX_ARC, QM_FLASH_0,                        \
-			 QM_FLASH_REGION_SYS_0_BASE, BL_PARTITION_SIZE_ARC, 0)
-
-/* PARTITION 2: LMT-1 */
-#define BL_PARTITION_2                                                         \
-	DEFINE_PARTITION(BL_TARGET_IDX_LMT, QM_FLASH_1,                        \
-			 QM_FLASH_REGION_SYS_1_BASE, BL_PARTITION_SIZE_LMT, 1)
-
-/* PARTITION 3: ARC-1 */
-#define BL_PARTITION_3                                                         \
-	DEFINE_PARTITION(BL_TARGET_IDX_ARC, QM_FLASH_0,                        \
-			 QM_FLASH_REGION_SYS_0_BASE, BL_PARTITION_SIZE_ARC, 1)
-
-#define BL_TARGET_LIST                                                         \
-	{                                                                      \
-		BL_TARGET_0_LMT, BL_TARGET_1_ARC                               \
-	}
-
-#if BL_CONFIG_DUAL_BANK
-#define BL_PARTITION_LIST                                                      \
-	{                                                                      \
-		BL_PARTITION_0, BL_PARTITION_1, BL_PARTITION_2, BL_PARTITION_3 \
-	}
-#else /* !BL_CONFIG_DUAL_BANK */
-#define BL_PARTITION_LIST                                                      \
-	{                                                                      \
-		BL_PARTITION_0, BL_PARTITION_1                                 \
-	}
-
-#endif /* BL_CONFIG_DUAL_BANK */
 
 /**
  * @}
