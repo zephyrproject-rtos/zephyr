@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2017, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,9 @@ static void *callback_data[QM_FLASH_NUM];
 
 QM_ISR_DECLARE(qm_flash_mpr_0_isr)
 {
-	(*callback[QM_FLASH_0])(callback_data[QM_FLASH_0]);
+	if (callback[QM_FLASH_0]) {
+		(*callback[QM_FLASH_0])(callback_data[QM_FLASH_0]);
+	}
 	QM_FLASH[QM_FLASH_0]->mpr_vsts = QM_FPR_MPR_VSTS_VALID;
 
 	QM_ISR_EOI(QM_IRQ_FLASH_MPR_0_INT_VECTOR);
@@ -45,7 +47,9 @@ QM_ISR_DECLARE(qm_flash_mpr_0_isr)
 #if (QUARK_SE)
 QM_ISR_DECLARE(qm_flash_mpr_1_isr)
 {
-	(*callback[QM_FLASH_1])(callback_data[QM_FLASH_1]);
+	if (callback[QM_FLASH_1]) {
+		(*callback[QM_FLASH_1])(callback_data[QM_FLASH_1]);
+	}
 	QM_FLASH[QM_FLASH_1]->mpr_vsts = QM_FPR_MPR_VSTS_VALID;
 
 	QM_ISR_EOI(QM_IRQ_FLASH_MPR_1_INT_VECTOR);

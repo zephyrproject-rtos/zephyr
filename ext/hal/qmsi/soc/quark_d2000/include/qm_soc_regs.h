@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2017, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1259,6 +1259,10 @@ extern qm_flash_reg_t *qm_flash[QM_FLASH_NUM];
 #define ROM_RD_DIS_U BIT(3)
 /* ROM read disable for lower 4k. */
 #define ROM_RD_DIS_L BIT(2)
+/* Flash prefetch buffer flush bit. */
+#define QM_FLASH_CTRL_PRE_FLUSH_MASK BIT(1)
+/* Flash prefetch enable bit. */
+#define QM_FLASH_CTRL_PRE_EN_MASK BIT(0)
 
 #define QM_FLASH_ADDRESS_MASK (0x7FF)
 /* Increment by 4 bytes each time, but there is an offset of 2, so 0x10. */
