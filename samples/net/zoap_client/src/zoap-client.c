@@ -143,7 +143,7 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	struct zoap_reply *reply;
 	const char * const *p;
 	struct net_buf *buf, *frag;
-	int r, timeout;
+	int r;
 	uint8_t observe = 0;
 
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
@@ -242,9 +242,8 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	}
 
 	zoap_pending_cycle(pending);
-	timeout = pending->timeout * (sys_clock_ticks_per_sec / MSEC_PER_SEC);
 
-	k_delayed_work_submit(&retransmit_work, timeout);
+	k_delayed_work_submit(&retransmit_work, pending->timeout);
 
 }
 
