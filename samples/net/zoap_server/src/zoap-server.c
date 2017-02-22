@@ -44,11 +44,15 @@
 
 #define NUM_OBSERVERS 3
 
+#define NUM_PENDINGS 3
+
 static struct net_context *context;
 
 static const uint8_t plain_text_format;
 
 static struct zoap_observer observers[NUM_OBSERVERS];
+
+static struct zoap_pending pendings[NUM_PENDINGS];
 
 static struct net_context *context;
 
@@ -57,6 +61,8 @@ static struct k_delayed_work observer_work;
 static int obs_counter;
 
 static struct zoap_resource *resource_to_notify;
+
+struct k_delayed_work retransmit_work;
 
 static int test_del(struct zoap_resource *resource,
 		    struct zoap_packet *request,
@@ -448,6 +454,7 @@ static int separate_get(struct zoap_resource *resource,
 {
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
+	struct zoap_pending *pending;
 	uint8_t *payload, code, type, tkl;
 	const uint8_t *token;
 	uint16_t len, id;
@@ -534,6 +541,23 @@ done:
 	r = zoap_packet_set_used(&response, r);
 	if (r) {
 		return -EINVAL;
+	}
+
+	if (type == ZOAP_TYPE_CON) {
+		pending = zoap_pending_next_unused(pendings, NUM_PENDINGS);
+		if (!pending) {
+			return -EINVAL;
+		}
+
+		r = zoap_pending_init(pending, &response, from);
+		if (r) {
+			return -EINVAL;
+		}
+
+		zoap_pending_cycle(pending);
+		pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
+
+		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
 	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
@@ -795,6 +819,7 @@ static int send_notification_packet(const struct sockaddr *addr, uint16_t age,
 				    bool is_response)
 {
 	struct zoap_packet response;
+	struct zoap_pending *pending;
 	struct net_buf *buf, *frag;
 	uint8_t *payload, type = ZOAP_TYPE_CON;
 	uint16_t len;
@@ -851,6 +876,23 @@ static int send_notification_packet(const struct sockaddr *addr, uint16_t age,
 	r = zoap_packet_set_used(&response, r);
 	if (r) {
 		return -EINVAL;
+	}
+
+	if (type == ZOAP_TYPE_CON) {
+		pending = zoap_pending_next_unused(pendings, NUM_PENDINGS);
+		if (!pending) {
+			return -EINVAL;
+		}
+
+		r = zoap_pending_init(pending, &response, addr);
+		if (r) {
+			return -EINVAL;
+		}
+
+		zoap_pending_cycle(pending);
+		pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
+
+		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
 	return net_context_sendto(buf, addr, addrlen, NULL, 0, NULL, NULL);
@@ -1055,6 +1097,7 @@ static void udp_receive(struct net_context *context,
 			void *user_data)
 {
 	struct zoap_packet request;
+	struct zoap_pending *pending;
 	struct sockaddr_in6 from;
 	int r, header_len;
 
@@ -1072,6 +1115,13 @@ static void udp_receive(struct net_context *context,
 	r = zoap_packet_parse(&request, buf);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
+		net_nbuf_unref(buf);
+		return;
+	}
+
+	pending = zoap_pending_received(&request, pendings,
+					NUM_PENDINGS);
+	if (pending) {
 		net_nbuf_unref(buf);
 		return;
 	}
@@ -1144,6 +1194,31 @@ static bool join_coap_multicast_group(void)
 	return true;
 }
 
+static void retransmit_request(struct k_work *work)
+{
+	struct zoap_pending *pending;
+	int r;
+
+	pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
+	if (!pending) {
+		return;
+	}
+
+	r = net_context_sendto(pending->buf, &pending->addr,
+			       sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		return;
+	}
+
+	if (!zoap_pending_cycle(pending)) {
+		zoap_pending_clear(pending);
+		return;
+	}
+
+	k_delayed_work_submit(&retransmit_work, pending->timeout);
+}
+
 void main(void)
 {
 	static struct sockaddr_in6 any_addr = {
@@ -1179,6 +1254,8 @@ void main(void)
 		NET_ERR("Could not bind the context\n");
 		return;
 	}
+
+	k_delayed_work_init(&retransmit_work, retransmit_request);
 
 	k_delayed_work_init(&observer_work, update_counter);
 	k_delayed_work_submit(&observer_work, 5 * MSEC_PER_SEC);
