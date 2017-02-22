@@ -783,7 +783,7 @@ NET_CONN_CB(tcp_established)
 
 	NET_ASSERT(context && context->tcp);
 
-	if (net_tcp_get_state(context->tcp) != NET_TCP_ESTABLISHED) {
+	if (net_tcp_get_state(context->tcp) < NET_TCP_ESTABLISHED) {
 		NET_ERR("Context %p in wrong state %d",
 			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
@@ -1804,12 +1804,10 @@ enum net_verdict packet_received(struct net_conn *conn,
 	struct net_context *context = find_context(conn);
 
 	NET_ASSERT(context);
+	NET_ASSERT(net_nbuf_iface(buf));
 
 	net_context_set_iface(context, net_nbuf_iface(buf));
-
 	net_nbuf_set_context(buf, context);
-
-	NET_ASSERT(net_nbuf_iface(buf));
 
 	if (context->recv_cb) {
 		size_t total_len = net_buf_frags_len(buf);

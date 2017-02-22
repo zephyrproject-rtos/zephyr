@@ -1,0 +1,72 @@
+# Kconfig.nrf5 - Nordic Semiconductor nRF5 802.15.4 configuration options
+#
+
+menuconfig IEEE802154_NRF5
+	bool "nRF52 series IEEE 802.15.4 Driver support"
+	depends on NETWORKING && SOC_NRF52840
+	select NET_L2_IEEE802154
+	select HAS_NORDIC_DRIVERS
+	default n
+
+if IEEE802154_NRF5 || IEEE802154_NRF5_RAW
+
+config IEEE802154_NRF5_DRV_NAME
+	string "nRF52 IEEE 802.15.4 Driver's name"
+	default "IEEE802154_nrf5"
+	help
+	This option sets the driver name
+
+config IEEE802154_NRF5_RX_STACK_SIZE
+	int "Driver's internal rx thread stack size"
+	default 800
+	help
+	This option sets the driver's stack size for its internal rx thread.
+	The default value should be sufficient, but in case it proves to be
+	a too little one, this option makes it easy to play with the size.
+
+config IEEE802154_NRF5_INIT_PRIO
+	int "nRF52 IEEE 802.15.4 intialization priority"
+	default 80
+	help
+	Set the initialization priority number. Do not mess with it unless
+	you know what you are doing.
+
+choice IEEE802154_NRF5_CCA_MODE
+	prompt "nRF52 IEEE 802.15.4 CCA mode"
+	default IEEE802154_NRF5_CCA_MODE_ED
+	help
+	CCA mode
+
+config IEEE802154_NRF5_CCA_MODE_ED
+	bool "Energy Above Threashold"
+
+config IEEE802154_NRF5_CCA_MODE_CARRIER
+	bool "Carrier Seen"
+
+config IEEE802154_NRF5_CCA_MODE_CARRIER_AND_ED
+	bool "Energy Above Threshold AND Carrier Seen"
+
+config IEEE802154_NRF5_CCA_MODE_CARRIER_OR_ED
+	bool "Energy Above Threshold OR Carrier Seen"
+
+endchoice
+
+config IEEE802154_NRF5_CCA_ED_THRESHOLD
+	int "nRF52 IEEE 802.15.4 CCA Energy Detection threshold"
+	default 45
+	help
+	If energy detected in a given channel is above the value then the channel
+	is deemed busy. The unit is defined as per 802.15.4-2006 spec.
+
+config IEEE802154_NRF5_CCA_CORR_THRESHOLD
+	int "nRF52 IEEE 802.15.4 CCA Correlator threshold"
+	default 45
+
+config IEEE802154_NRF5_CCA_CORR_LIMIT
+	int "nRF52 IEEE 802.15.4 CCA Correlator limit"
+	default 2
+	help
+	Limit for occurrences above correlator threshold. When not equal to zero the
+	corrolator based signal detect is enabled.
+
+endif

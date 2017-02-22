@@ -84,7 +84,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 
 		goto flush;
 out:
-		net_buf_unref(nbuf);
+		net_nbuf_unref(nbuf);
 flush:
 		upipe->rx = false;
 		upipe->rx_len = 0;
@@ -257,7 +257,7 @@ static void upipe_iface_init(struct net_if *iface)
 
 	SYS_LOG_DBG("");
 
-	net_if_set_link_addr(iface, mac, 8);
+	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 
 	upipe_dev = dev;
 	upipe->iface = iface;

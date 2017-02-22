@@ -283,7 +283,8 @@ static struct mqtt_connect_msg msg_connect3 = {
 	.will_flag = 1,
 	.will_qos = 0, .will_retain = 0, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = "bye", .will_msg_len = 3,
+	.will_msg = (uint8_t *)"bye",
+	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
 };
@@ -309,7 +310,8 @@ static struct mqtt_connect_msg msg_connect4 = {
 	.will_flag = 1,
 	.will_qos = 0, .will_retain = 1, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = "bye", .will_msg_len = 3,
+	.will_msg = (uint8_t *)"bye",
+	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
 };
@@ -335,7 +337,8 @@ static struct mqtt_connect_msg msg_connect5 = {
 	.will_flag = 1,
 	.will_qos = 1, .will_retain = 0, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = "bye", .will_msg_len = 3,
+	.will_msg = (uint8_t *)"bye",
+	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
 };
@@ -361,7 +364,8 @@ static struct mqtt_connect_msg msg_connect6 = {
 	.will_flag = 1,
 	.will_qos = 1, .will_retain = 1, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = "bye", .will_msg_len = 3,
+	.will_msg = (uint8_t *)"bye",
+	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
 };
@@ -390,10 +394,12 @@ static struct mqtt_connect_msg msg_connect7 = {
 	.will_flag = 1,
 	.will_qos = 1, .will_retain = 1, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = "bye", .will_msg_len = 3,
+	.will_msg = (uint8_t *)"bye",
+	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = USERNAME,
 	.user_name_len = USERNAME_LEN,
-	.password = "password", .password_len = 8
+	.password = (uint8_t *)"password",
+	.password_len = 8
 };
 
 static
@@ -413,7 +419,9 @@ uint8_t publish1[] = {0x30, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 static struct mqtt_publish_msg msg_publish1 = {
 	.dup = 0, .qos = 0, .retain = 0, .topic = TOPIC,
 	.topic_len = TOPIC_LEN,
-	.pkt_id = 0, .msg = "OK", .msg_len = 2,
+	.pkt_id = 0,
+	.msg = (uint8_t *)"OK",
+	.msg_len = 2,
 };
 
 /*
@@ -430,7 +438,9 @@ uint8_t publish2[] = {0x31, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 static struct mqtt_publish_msg msg_publish2 = {
 	.dup = 0, .qos = 0, .retain = 1, .topic = TOPIC,
 	.topic_len = TOPIC_LEN,
-	.pkt_id = 0, .msg = "OK", .msg_len = 2
+	.pkt_id = 0,
+	.msg = (uint8_t *)"OK",
+	.msg_len = 2
 };
 
 /*
@@ -447,7 +457,9 @@ uint8_t publish3[] = {0x33, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 static struct mqtt_publish_msg msg_publish3 = {
 	.dup = 0, .qos = 1, .retain = 1, .topic = TOPIC,
 	.topic_len = TOPIC_LEN,
-	.pkt_id = 1, .msg = "OK", .msg_len = 2
+	.pkt_id = 1,
+	.msg = (uint8_t *)"OK",
+	.msg_len = 2
 };
 
 /*
@@ -463,7 +475,9 @@ uint8_t publish4[] = {0x34, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 static struct mqtt_publish_msg msg_publish4 = {
 	.dup = 0, .qos = 2, .retain = 0, .topic = TOPIC,
 	.topic_len = TOPIC_LEN,
-	.pkt_id = 1, .msg = "OK", .msg_len = 2
+	.pkt_id = 1,
+	.msg = (uint8_t *)"OK",
+	.msg_len = 2
 };
 
 /*

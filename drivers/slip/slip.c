@@ -41,6 +41,9 @@ enum slip_state {
 
 struct slip_context {
 	bool init_done;
+	bool first;		/* SLIP received it's byte or not after
+				 * driver initialization or SLIP_END byte.
+				 */
 	uint8_t buf[1];		/* SLIP data is read into this buf */
 	struct net_buf *rx;	/* and then placed into this net_buf */
 	struct net_buf *last;	/* Pointer to last fragment in the list */
@@ -54,9 +57,6 @@ struct slip_context {
 #define SLIP_STATS(statement)
 #else
 	uint16_t garbage;
-	uint16_t multi_packets;
-	uint16_t overflows;
-	uint16_t ip_drop;
 #define SLIP_STATS(statement) statement
 #endif
 };
@@ -173,15 +173,29 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 
 		for (i = 0; i < frag->len; ++i) {
 			c = *ptr++;
-			if (c == SLIP_END) {
-				slip_writeb(SLIP_ESC);
-				c = SLIP_ESC_END;
-			} else if (c == SLIP_ESC) {
-				slip_writeb(SLIP_ESC);
-				c = SLIP_ESC_ESC;
-			}
 
-			slip_writeb(c);
+			switch (c) {
+			case SLIP_END:
+				/* If it's the same code as an END character,
+				 * we send a special two character code so as
+				 * not to make the receiver think we sent
+				 * an END.
+				 */
+				slip_writeb(SLIP_ESC);
+				slip_writeb(SLIP_ESC_END);
+				break;
+			case SLIP_ESC:
+				/* If it's the same code as an ESC character,
+				 * we send a special two character code so as
+				 * not to make the receiver think we sent
+				 * an ESC.
+				 */
+				slip_writeb(SLIP_ESC);
+				slip_writeb(SLIP_ESC_ESC);
+				break;
+			default:
+				slip_writeb(c);
+			}
 		}
 
 #if defined(CONFIG_SLIP_DEBUG)
@@ -258,29 +272,44 @@ static inline int slip_input_byte(struct slip_context *slip,
 		if (c == SLIP_ESC) {
 			slip->state = STATE_ESC;
 			return 0;
-		} else if (c == SLIP_END) {
+		}
+
+		if (c == SLIP_END) {
 			slip->state = STATE_OK;
-			return 1;
+			slip->first = false;
+
+			if (slip->rx) {
+				return 1;
+			}
+
+			return 0;
+		}
+
+		if (slip->first && !slip->rx) {
+			/* Must have missed buffer allocation on first byte. */
+			return 0;
+		}
+
+		if (!slip->first) {
+			slip->first = true;
+
+			slip->rx = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
+			if (!slip->rx) {
+				return 0;
+			}
+
+			slip->last = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+			if (!slip->last) {
+				net_nbuf_unref(slip->rx);
+				slip->rx = NULL;
+				return 0;
+			}
+
+			net_buf_frag_add(slip->rx, slip->last);
+			slip->ptr = net_nbuf_ip_data(slip->rx);
 		}
 
 		break;
-	}
-
-	if (!slip->rx) {
-		slip->rx = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
-		if (!slip->rx) {
-			return 0;
-		}
-
-		slip->last = net_nbuf_get_reserve_data(0, K_NO_WAIT);
-		if (!slip->last) {
-			net_nbuf_unref(slip->rx);
-			slip->rx = NULL;
-			return 0;
-		}
-
-		net_buf_frag_add(slip->rx, slip->last);
-		slip->ptr = net_nbuf_ip_data(slip->rx);
 	}
 
 	if (!net_buf_tailroom(slip->last)) {
@@ -366,6 +395,7 @@ static int slip_init(struct device *dev)
 
 	slip->state = STATE_OK;
 	slip->rx = NULL;
+	slip->first = false;
 
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
 	SYS_LOG_DBG("ARP enabled");
@@ -402,7 +432,8 @@ static void slip_iface_init(struct net_if *iface)
 
 	slip->init_done = true;
 
-	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len);
+	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
+			     NET_LINK_ETHERNET);
 }
 
 static struct net_if_api slip_if_api = {

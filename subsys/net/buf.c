@@ -294,7 +294,13 @@ struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)
 	return head;
 }
 
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
+				       struct net_buf *frag,
+				       const char *func, int line)
+#else
 struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
+#endif
 {
 	struct net_buf *next_frag;
 
@@ -309,7 +315,12 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 	next_frag = frag->frags;
 
 	frag->frags = NULL;
+
+#if defined(CONFIG_NET_BUF_LOG)
+	net_buf_unref_debug(frag, func, line);
+#else
 	net_buf_unref(frag);
+#endif
 
 	return next_frag;
 }
