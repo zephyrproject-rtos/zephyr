@@ -102,7 +102,7 @@ For example, using netcat ("nc") utility, connecting using UDP:
    foobar
 
 If echo_server is compiled with TCP support (now enabled by default for
-echo_server sample, CONFIG_NETWORKING_WITH_TCP=y):
+echo_server sample, CONFIG_NET_TCP=y):
 
 .. code-block:: console
 
