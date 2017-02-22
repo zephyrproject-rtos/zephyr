@@ -77,6 +77,13 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto out;
 		}
 
+#if defined(CONFIG_IEEE802154_NRF5_RAW)
+		/**
+		 * Reserve 1 byte for length
+		 */
+		net_nbuf_set_ll_reserve(buf, 1);
+#endif
+
 		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_ERR("No pkt_buf available");
@@ -85,10 +92,15 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		net_buf_frag_insert(buf, pkt_buf);
 
-		/* rx_mpdu contains length, psdu, [fcs], lqi
-		 * FCS filed (2 bytes) is not present if CRC is enabled
+		/* rx_mpdu contains length, psdu, fcs|lqi
+		 * The last 2 bytes contain LQI or FCS, depending if
+		 * automatic CRC handling is enabled or not, respectively.
 		 */
+#if defined(CONFIG_IEEE802154_NRF5_RAW)
+		pkt_len = nrf5_radio->rx_psdu[0];
+#else
 		pkt_len = nrf5_radio->rx_psdu[0] -  NRF5_FCS_LENGTH;
+#endif
 
 		/* Skip length (first byte) and copy the payload */
 		memcpy(pkt_buf->data, nrf5_radio->rx_psdu + 1, pkt_len);
