@@ -67,15 +67,13 @@ static struct net_context *net_ctx;
 static struct mqtt_client_ctx client_ctx;
 
 /* This routine sets some basic properties for the network context variable */
-static
-int network_setup(struct net_context **net_ctx, const char *local_addr,
-		  const char *server_addr, uint16_t server_port);
+static int network_setup(struct net_context **net_ctx, const char *local_addr,
+			 const char *server_addr, uint16_t server_port);
 
 /* The signature of this routine must match the connect callback declared at
  * the mqtt.h header.
  */
-static
-void connect_cb(struct mqtt_ctx *mqtt_ctx)
+static void connect_cb(struct mqtt_ctx *mqtt_ctx)
 {
 	struct mqtt_client_ctx *client_ctx;
 
@@ -94,8 +92,7 @@ void connect_cb(struct mqtt_ctx *mqtt_ctx)
 /* The signature of this routine must match the disconnect callback declared at
  * the mqtt.h header.
  */
-static
-void disconnect_cb(struct mqtt_ctx *mqtt_ctx)
+static void disconnect_cb(struct mqtt_ctx *mqtt_ctx)
 {
 	struct mqtt_client_ctx *client_ctx;
 
@@ -124,9 +121,8 @@ void disconnect_cb(struct mqtt_ctx *mqtt_ctx)
  * unknown pkt_id, this routine must return an error, for example -EINVAL or
  * any negative value.
  */
-static
-int publish_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id,
-	       enum mqtt_packet type)
+static int publish_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id,
+		      enum mqtt_packet type)
 {
 	struct mqtt_client_ctx *client_ctx;
 	const char *str;
@@ -165,8 +161,7 @@ int publish_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id,
  * The signature of this routine must match the malformed callback declared at
  * the mqtt.h header.
  */
-static
-void malformed_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_type)
+static void malformed_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_type)
 {
 	printk("[%s:%d] pkt_type: %u\n", __func__, __LINE__, pkt_type);
 }
@@ -220,8 +215,7 @@ static void prepare_mqtt_publish_msg(struct mqtt_publish_msg *pub_msg,
 	       (func), rc, RC_STR(rc))
 
 /* In this routine we block until the connected variable is 1 */
-static
-int try_to_connect(struct mqtt_client_ctx *client_ctx)
+static int try_to_connect(struct mqtt_client_ctx *client_ctx)
 {
 	int i = 0;
 
@@ -244,8 +238,7 @@ int try_to_connect(struct mqtt_client_ctx *client_ctx)
 	return -EINVAL;
 }
 
-static
-void publisher(void)
+static void publisher(void)
 {
 	int i, rc;
 
@@ -331,8 +324,7 @@ exit_app:
 	printk("\nBye!\n");
 }
 
-static
-int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port)
+static int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port)
 {
 	void *ptr;
 	int rc;
@@ -379,8 +371,8 @@ struct bt_conn_cb bt_conn_cb = {
 };
 #endif
 
-int network_setup(struct net_context **net_ctx, const char *local_addr,
-		  const char *server_addr, uint16_t server_port)
+static int network_setup(struct net_context **net_ctx, const char *local_addr,
+			 const char *server_addr, uint16_t server_port)
 {
 #ifdef CONFIG_NET_IPV6
 	socklen_t addr_len = sizeof(struct sockaddr_in6);
