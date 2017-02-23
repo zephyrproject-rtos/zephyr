@@ -34,6 +34,8 @@
 
 #define APP_MAX_ITERATIONS	100
 
+#define MQTT_CLIENTID		"zephyr_publisher"
+
 /* Set the following to 1 to enable the Bluemix topic format */
 #define APP_BLUEMIX_TOPIC	0
 

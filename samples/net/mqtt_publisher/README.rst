@@ -67,6 +67,12 @@ Max number of MQTT PUBLISH iterations:
 
 	#define APP_MAX_ITERATIONS	5
 
+MQTT Client Identifier:
+
+.. code-block:: c
+
+	#define MQTT_CLIENTID		"zephyr_publisher"
+
 This sample application supports the IBM Bluemix Watson topic format that can
 be enabled by changing the default value of APP_BLUEMIX_TOPIC from 0 to 1:
 
