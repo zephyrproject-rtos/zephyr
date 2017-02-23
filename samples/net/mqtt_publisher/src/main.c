@@ -13,7 +13,6 @@
 #include <misc/printk.h>
 #include <string.h>
 #include <errno.h>
-#include <stdio.h>
 
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
@@ -24,8 +23,6 @@
 #include "config.h"
 
 #define CLIENTID "zephyr_publisher"
-
-static bool bluemix_publisher;
 
 /**
  * @brief mqtt_client_ctx	Container of some structures used by the
@@ -179,55 +176,43 @@ void malformed_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_type)
 	printk("[%s:%d] pkt_type: %u\n", __func__, __LINE__, pkt_type);
 }
 
-static
-char *get_payload(enum mqtt_qos qos)
+static char *get_mqtt_payload(enum mqtt_qos qos)
 {
+#if APP_BLUEMIX_TOPIC
 	static char payload[30];
 
-	if (bluemix_publisher) {
-		snprintf(payload,
-			sizeof(payload),
-			"{d:{temperature:%d}}",
-			(uint8_t) sys_rand32_get());
-	} else {
-		strncpy(payload, "DOORS:OPEN_QoSx", sizeof(payload));
-		payload[strlen(payload) - 1] = '0' + qos;
-	}
+	snprintk(payload, sizeof(payload), "{d:{temperature:%d}}",
+		 (uint8_t)sys_rand32_get());
+#else
+	static char payload[] = "DOORS:OPEN_QoSx";
+
+	payload[strlen(payload) - 1] = '0' + qos;
+#endif
 
 	return payload;
 }
 
-static
-char *get_topic(void)
+static char *get_mqtt_topic(void)
 {
-	static char topic[50];
-
-	if (bluemix_publisher) {
-		snprintf(topic, sizeof(topic),
-			"iot-2/type/%s/id/%s/evt/%s/fmt/%s",
-			"sensor",	/* device type  */
-			"carbon",	/* device id    */
-			"status",	/* event type   */
-			"json");	/* event format */
-	} else {
-		strncpy(topic, "sensors", sizeof(topic));
-	}
-
-	return topic;
+#if APP_BLUEMIX_TOPIC
+	return "iot-2/type/"BLUEMIX_DEVTYPE"/id/"BLUEMIX_DEVID
+	       "/evt/"BLUEMIX_EVENT"/fmt/"BLUEMIX_FORMAT;
+#else
+	return "sensors";
+#endif
 }
 
-static
-void prepare_mqtt_publish_msg(struct mqtt_publish_msg *pub_msg,
-			enum mqtt_qos qos)
+static void prepare_mqtt_publish_msg(struct mqtt_publish_msg *pub_msg,
+				     enum mqtt_qos qos)
 {
 	/* MQTT message payload may be anything, we we use C strings */
-	pub_msg->msg = get_payload(qos);
+	pub_msg->msg = get_mqtt_payload(qos);
 	/* Payload's length */
 	pub_msg->msg_len = strlen(client_ctx.pub_msg.msg);
 	/* MQTT Quality of Service */
 	pub_msg->qos = qos;
 	/* Message's topic */
-	pub_msg->topic = get_topic();
+	pub_msg->topic = get_mqtt_topic();
 	pub_msg->topic_len = strlen(client_ctx.pub_msg.topic);
 	/* Packet Identifier, always use different values */
 	pub_msg->pkt_id = sys_rand32_get();
@@ -497,9 +482,5 @@ lb_exit:
 
 void main(void)
 {
-
-#if ENABLE_BLUEMIX_TOPIC
-	bluemix_publisher = true;
-#endif
 	publisher();
 }
