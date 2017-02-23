@@ -26,7 +26,7 @@ void main(void)
 	struct device *rtc_dev;
 
 	printk("Test RTC driver\n");
-	rtc_dev = device_get_binding("RTC_0");
+	rtc_dev = device_get_binding(CONFIG_RTC_0_NAME);
 
 	config.init_val = 0;
 	config.alarm_enable = 1;
