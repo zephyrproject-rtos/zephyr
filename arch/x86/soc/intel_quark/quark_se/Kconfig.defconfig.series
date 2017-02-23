@@ -186,6 +186,22 @@ config RTC_0_IRQ_PRI
 	default 2
 endif # RTC
 
+if BLUETOOTH_H4
+
+config BLUETOOTH_UART_ON_DEV_NAME
+	default UART_QMSI_0_NAME
+
+config UART_QMSI_0
+	def_bool y
+
+config UART_QMSI_0_BAUDRATE
+	default 1000000
+
+config UART_QMSI_0_HW_FC
+	def_bool y
+
+endif # BLUETOOTH_H4
+
 if UART_QMSI
 
 if UART_QMSI_0
