@@ -111,7 +111,7 @@ static int read_bytes(struct device *dev, uint16_t addr,
 void main(void)
 {
 	struct spi_config config = { 0 };
-	struct device *spi_mst_1 = device_get_binding("SPI_1");
+	struct device *spi_mst_1 = device_get_binding(CONFIG_SPI_1_NAME);
 	int err;
 
 	printk("fujitsu FRAM example application\n");

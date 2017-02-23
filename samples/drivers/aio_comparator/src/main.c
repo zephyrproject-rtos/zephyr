@@ -52,7 +52,7 @@ static void cb(void *param)
 	struct device *aio_cmp_dev;
 	struct cb_data_t *p = (struct cb_data_t *)param;
 
-	aio_cmp_dev = device_get_binding("AIO_CMP_0");
+	aio_cmp_dev = device_get_binding(CONFIG_AIO_COMPARATOR_0_NAME);
 
 	printf("*** %s triggered %s.\n", p->name,
 	       (p->pol == AIO_CMP_POL_RISE) ? "rising" : "falling");
@@ -72,7 +72,7 @@ void main(void)
 	int i, ret;
 	int cnt = 0;
 
-	aio_cmp_dev = device_get_binding("AIO_CMP_0");
+	aio_cmp_dev = device_get_binding(CONFIG_AIO_COMPARATOR_0_NAME);
 	if (!aio_cmp_dev) {
 		printf("AIO device driver not found\n");
 		return;

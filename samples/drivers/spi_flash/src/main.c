@@ -23,7 +23,7 @@ void main(void)
 	printf("\nW25QXXDV SPI flash testing\n");
 	printf("==========================\n");
 
-	flash_dev = device_get_binding("W25QXXDV");
+	flash_dev = device_get_binding(CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME);
 
 	if (!flash_dev) {
 		printf("SPI flash driver was not found!\n");

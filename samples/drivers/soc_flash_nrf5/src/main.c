@@ -35,7 +35,7 @@ void main(void)
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
 
-	flash_dev = device_get_binding("NRF5_FLASH");
+	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NRF5_DEV_NAME);
 
 	if (!flash_dev) {
 		printf("Nordic nRF5 flash driver was not found!\n");
