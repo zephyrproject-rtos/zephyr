@@ -22,8 +22,6 @@
 
 #include "config.h"
 
-#define CLIENTID "zephyr_publisher"
-
 /* Container for some structures used by the MQTT publisher app. */
 struct mqtt_client_ctx {
 	/**
@@ -289,8 +287,8 @@ void publisher(void)
 	 * will be set to 0 also. Please don't do that, set always to 1.
 	 * Clean session = 0 is not yet supported.
 	 */
-	client_ctx.connect_msg.client_id = CLIENTID;
-	client_ctx.connect_msg.client_id_len = strlen(CLIENTID);
+	client_ctx.connect_msg.client_id = MQTT_CLIENTID;
+	client_ctx.connect_msg.client_id_len = strlen(MQTT_CLIENTID);
 	client_ctx.connect_msg.clean_session = 1;
 
 	client_ctx.connect_data = "CONNECTED";
