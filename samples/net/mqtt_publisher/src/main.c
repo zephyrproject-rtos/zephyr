@@ -24,10 +24,7 @@
 
 #define CLIENTID "zephyr_publisher"
 
-/**
- * @brief mqtt_client_ctx	Container of some structures used by the
- *				publisher app.
- */
+/* Container for some structures used by the MQTT publisher app. */
 struct mqtt_client_ctx {
 	/**
 	 * The connect message structure is only used during the connect
