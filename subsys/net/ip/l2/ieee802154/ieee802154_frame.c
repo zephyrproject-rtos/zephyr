@@ -640,7 +640,7 @@ ieee802154_create_mac_cmd_frame(struct net_if *iface,
 		return NULL;
 	}
 
-	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(0, K_FOREVER);
 	if (!frag) {
 		goto error;
 	}

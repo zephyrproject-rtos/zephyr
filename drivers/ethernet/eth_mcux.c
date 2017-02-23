@@ -419,7 +419,7 @@ static void eth_rx(struct device *iface)
 		struct net_buf *pkt_buf;
 		size_t frag_len;
 
-		pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+		pkt_buf = net_nbuf_get_reserve_rx_data(0, K_NO_WAIT);
 		if (!pkt_buf) {
 			irq_unlock(imask);
 			SYS_LOG_ERR("Failed to get fragment buf\n");

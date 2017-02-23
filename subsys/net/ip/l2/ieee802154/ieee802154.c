@@ -97,7 +97,8 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 		return;
 	}
 
-	frag = net_nbuf_get_reserve_data(IEEE802154_ACK_PKT_LENGTH, K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(IEEE802154_ACK_PKT_LENGTH,
+					    K_FOREVER);
 
 	net_buf_frag_insert(buf, frag);
 	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));

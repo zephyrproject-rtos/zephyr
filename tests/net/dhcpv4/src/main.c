@@ -206,8 +206,8 @@ static struct net_buf *nbuf_get_data(struct net_if *iface)
 	struct net_buf *buf;
 	struct net_eth_hdr *hdr;
 
-	buf = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface, NULL),
-					K_FOREVER);
+	buf = net_nbuf_get_reserve_rx_data(net_if_get_ll_reserve(iface, NULL),
+					   K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}

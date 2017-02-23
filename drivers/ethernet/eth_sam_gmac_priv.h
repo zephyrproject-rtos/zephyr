@@ -22,7 +22,7 @@
 /** RX descriptors count for main queue */
 #define MAIN_QUEUE_RX_DESC_COUNT CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT
 /** TX descriptors count for main queue */
-#define MAIN_QUEUE_TX_DESC_COUNT (CONFIG_NET_NBUF_DATA_COUNT - \
+#define MAIN_QUEUE_TX_DESC_COUNT (CONFIG_NET_NBUF_RX_DATA_COUNT - \
 		CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT + 1)
 /** RX/TX descriptors count for priority queues */
 #define PRIORITY_QUEUE_DESC_COUNT         1

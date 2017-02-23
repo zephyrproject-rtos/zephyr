@@ -289,8 +289,8 @@ static struct net_buf *prepare_message(struct net_if *iface, uint8_t type,
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
-	frag = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface, NULL),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(net_if_get_ll_reserve(iface, NULL),
+					    K_FOREVER);
 
 	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 	net_nbuf_set_iface(buf, iface);

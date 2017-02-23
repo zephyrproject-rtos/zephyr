@@ -31,11 +31,12 @@
 #include "net_private.h"
 
 /* Available (free) buffers queue */
-#define NBUF_RX_COUNT	CONFIG_NET_NBUF_RX_COUNT
-#define NBUF_TX_COUNT	CONFIG_NET_NBUF_TX_COUNT
-#define NBUF_DATA_COUNT	CONFIG_NET_NBUF_DATA_COUNT
-#define NBUF_DATA_LEN	CONFIG_NET_NBUF_DATA_SIZE
-#define NBUF_USER_DATA_LEN CONFIG_NET_NBUF_USER_DATA_SIZE
+#define NBUF_RX_COUNT		CONFIG_NET_NBUF_RX_COUNT
+#define NBUF_TX_COUNT		CONFIG_NET_NBUF_TX_COUNT
+#define NBUF_RX_DATA_COUNT	CONFIG_NET_NBUF_RX_DATA_COUNT
+#define NBUF_TX_DATA_COUNT	CONFIG_NET_NBUF_TX_DATA_COUNT
+#define NBUF_DATA_LEN		CONFIG_NET_NBUF_DATA_SIZE
+#define NBUF_USER_DATA_LEN	CONFIG_NET_NBUF_USER_DATA_SIZE
 
 #if defined(CONFIG_NET_TCP)
 #define APP_PROTO_LEN NET_TCPH_LEN
@@ -77,13 +78,16 @@
 #error "Too small net_buf fragment size"
 #endif
 
-NET_BUF_POOL_DEFINE(rx_buffers, NBUF_RX_COUNT, 0, sizeof(struct net_nbuf),
+NET_BUF_POOL_DEFINE(rx_bufs, NBUF_RX_COUNT, 0, sizeof(struct net_nbuf),
 		    NULL);
-NET_BUF_POOL_DEFINE(tx_buffers, NBUF_TX_COUNT, 0, sizeof(struct net_nbuf),
+NET_BUF_POOL_DEFINE(tx_bufs, NBUF_TX_COUNT, 0, sizeof(struct net_nbuf),
 		    NULL);
 
 /* The data fragment pool is for storing network data. */
-NET_BUF_POOL_DEFINE(data_buffers, NBUF_DATA_COUNT, NBUF_DATA_LEN,
+NET_BUF_POOL_DEFINE(data_rx_bufs, NBUF_RX_DATA_COUNT, NBUF_DATA_LEN,
+		    NBUF_USER_DATA_LEN, NULL);
+
+NET_BUF_POOL_DEFINE(data_tx_bufs, NBUF_TX_DATA_COUNT, NBUF_DATA_LEN,
 		    NBUF_USER_DATA_LEN, NULL);
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
@@ -150,8 +154,8 @@ static inline struct net_buf_pool *get_data_pool(struct net_context *context)
 
 static inline bool is_external_pool(struct net_buf_pool *pool)
 {
-	if (pool != &rx_buffers && pool != &tx_buffers &&
-	    pool != &data_buffers) {
+	if (pool != &rx_bufs && pool != &tx_bufs &&
+	    pool != &data_rx_bufs && pool != &data_tx_bufs) {
 		return true;
 	}
 
@@ -161,12 +165,14 @@ static inline bool is_external_pool(struct net_buf_pool *pool)
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 static inline const char *pool2str(struct net_buf_pool *pool)
 {
-	if (pool == &rx_buffers) {
+	if (pool == &rx_bufs) {
 		return "RX";
-	} else if (pool == &tx_buffers) {
+	} else if (pool == &tx_bufs) {
 		return "TX";
-	} else if (pool == &data_buffers) {
-		return "DATA";
+	} else if (pool == &data_rx_bufs) {
+		return "RDATA";
+	} else if (pool == &data_tx_bufs) {
+		return "TDATA";
 	} else if (is_data_pool(pool)) {
 		return "EDATA";
 	}
@@ -241,6 +247,13 @@ struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 		net_buf_reserve(buf, reserve_head);
 	} else {
 		memset(net_buf_user_data(buf), 0, sizeof(struct net_nbuf));
+
+		/* Remember the RX vs. TX so that the fragments can be
+		 * allocated from correct DATA pool.
+		 */
+		if (pool == &rx_bufs) {
+			net_nbuf_set_dir(buf, NET_RX);
+		}
 	}
 
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
@@ -291,11 +304,22 @@ struct net_buf *net_nbuf_get_frag(struct net_buf *buf,
 	}
 #endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
 
+	if (net_nbuf_dir(buf) == NET_RX) {
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
-	return net_nbuf_get_reserve_data_debug(net_nbuf_ll_reserve(buf),
-					       timeout, caller, line);
+		return net_nbuf_get_reserve_rx_data_debug(
+			net_nbuf_ll_reserve(buf), timeout, caller, line);
 #else
-	return net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), timeout);
+		return net_nbuf_get_reserve_rx_data(net_nbuf_ll_reserve(buf),
+						    timeout);
+#endif
+	}
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	return net_nbuf_get_reserve_tx_data_debug(net_nbuf_ll_reserve(buf),
+						  timeout, caller, line);
+#else
+	return net_nbuf_get_reserve_tx_data(net_nbuf_ll_reserve(buf),
+					    timeout);
 #endif
 }
 
@@ -304,7 +328,7 @@ struct net_buf *net_nbuf_get_reserve_rx_debug(uint16_t reserve_head,
 					      int32_t timeout,
 					      const char *caller, int line)
 {
-	return net_nbuf_get_reserve_debug(&rx_buffers, reserve_head, timeout,
+	return net_nbuf_get_reserve_debug(&rx_bufs, reserve_head, timeout,
 					  caller, line);
 }
 
@@ -312,15 +336,23 @@ struct net_buf *net_nbuf_get_reserve_tx_debug(uint16_t reserve_head,
 					      int32_t timeout,
 					      const char *caller, int line)
 {
-	return net_nbuf_get_reserve_debug(&tx_buffers, reserve_head, timeout,
+	return net_nbuf_get_reserve_debug(&tx_bufs, reserve_head, timeout,
 					  caller, line);
 }
 
-struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
-						int32_t timeout,
-						const char *caller, int line)
+struct net_buf *net_nbuf_get_reserve_rx_data_debug(uint16_t reserve_head,
+						   int32_t timeout,
+						   const char *caller, int line)
 {
-	return net_nbuf_get_reserve_debug(&data_buffers, reserve_head,
+	return net_nbuf_get_reserve_debug(&data_rx_bufs, reserve_head,
+					  timeout, caller, line);
+}
+
+struct net_buf *net_nbuf_get_reserve_tx_data_debug(uint16_t reserve_head,
+						   int32_t timeout,
+						   const char *caller, int line)
+{
+	return net_nbuf_get_reserve_debug(&data_tx_bufs, reserve_head,
 					  timeout, caller, line);
 }
 
@@ -329,19 +361,25 @@ struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
 struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head,
 					int32_t timeout)
 {
-	return net_nbuf_get_reserve(&rx_buffers, reserve_head, timeout);
+	return net_nbuf_get_reserve(&rx_bufs, reserve_head, timeout);
 }
 
 struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head,
 					int32_t timeout)
 {
-	return net_nbuf_get_reserve(&tx_buffers, reserve_head, timeout);
+	return net_nbuf_get_reserve(&tx_bufs, reserve_head, timeout);
 }
 
-struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head,
-					  int32_t timeout)
+struct net_buf *net_nbuf_get_reserve_rx_data(uint16_t reserve_head,
+					     int32_t timeout)
 {
-	return net_nbuf_get_reserve(&data_buffers, reserve_head, timeout);
+	return net_nbuf_get_reserve(&data_rx_bufs, reserve_head, timeout);
+}
+
+struct net_buf *net_nbuf_get_reserve_tx_data(uint16_t reserve_head,
+					     int32_t timeout)
+{
+	return net_nbuf_get_reserve(&data_tx_bufs, reserve_head, timeout);
 }
 
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
@@ -405,7 +443,7 @@ struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
 				      int32_t timeout,
 				      const char *caller, int line)
 {
-	return net_nbuf_get_debug(&rx_buffers, context, timeout, caller, line);
+	return net_nbuf_get_debug(&rx_bufs, context, timeout, caller, line);
 }
 
 struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
@@ -414,7 +452,7 @@ struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
 {
 	struct net_buf_pool *pool = get_tx_pool(context);
 
-	return net_nbuf_get_debug(pool ? pool : &tx_buffers, context,
+	return net_nbuf_get_debug(pool ? pool : &tx_bufs, context,
 				  timeout, caller, line);
 }
 
@@ -424,7 +462,7 @@ struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
 {
 	struct net_buf_pool *pool = get_data_pool(context);
 
-	return net_nbuf_get_debug(pool ? pool : &data_buffers, context,
+	return net_nbuf_get_debug(pool ? pool : &data_tx_bufs, context,
 				  timeout, caller, line);
 }
 
@@ -434,7 +472,7 @@ struct net_buf *net_nbuf_get_rx(struct net_context *context, int32_t timeout)
 {
 	NET_ASSERT_INFO(context, "RX context not set");
 
-	return net_nbuf_get(&rx_buffers, context, timeout);
+	return net_nbuf_get(&rx_bufs, context, timeout);
 }
 
 struct net_buf *net_nbuf_get_tx(struct net_context *context, int32_t timeout)
@@ -445,7 +483,7 @@ struct net_buf *net_nbuf_get_tx(struct net_context *context, int32_t timeout)
 
 	pool = get_tx_pool(context);
 
-	return net_nbuf_get(pool ? pool : &tx_buffers, context, timeout);
+	return net_nbuf_get(pool ? pool : &tx_bufs, context, timeout);
 }
 
 struct net_buf *net_nbuf_get_data(struct net_context *context, int32_t timeout)
@@ -456,7 +494,10 @@ struct net_buf *net_nbuf_get_data(struct net_context *context, int32_t timeout)
 
 	pool = get_data_pool(context);
 
-	return net_nbuf_get(pool ? pool : &data_buffers, context, timeout);
+	/* The context is not known in RX path so we can only have TX
+	 * data here.
+	 */
+	return net_nbuf_get(pool ? pool : &data_tx_bufs, context, timeout);
 }
 
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
@@ -1309,34 +1350,41 @@ bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
 
 void net_nbuf_get_info(struct net_buf_pool **rx,
 		       struct net_buf_pool **tx,
-		       struct net_buf_pool **data)
+		       struct net_buf_pool **rx_data,
+		       struct net_buf_pool **tx_data)
 {
 	if (rx) {
-		*rx = &rx_buffers;
+		*rx = &rx_bufs;
 	}
 
 	if (tx) {
-		*tx = &tx_buffers;
+		*tx = &tx_bufs;
 	}
 
-	if (data) {
-		*data = &data_buffers;
+	if (rx_data) {
+		*rx_data = &data_rx_bufs;
+	}
+
+	if (tx_data) {
+		*tx_data = &data_tx_bufs;
 	}
 }
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 void net_nbuf_print(void)
 {
-	NET_DBG("TX %d RX %d DATA %d", tx_buffers.avail_count,
-		rx_buffers.avail_count, data_buffers.avail_count);
+	NET_DBG("TX %d RX %d RDATA %d TDATA %d", tx_bufs.avail_count,
+		rx_bufs.avail_count, data_rx_bufs.avail_count,
+		data_tx_bufs.avail_count);
 }
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 void net_nbuf_init(void)
 {
-	NET_DBG("Allocating %d RX (%u bytes), %d TX (%u bytes) "
-		"and %d data (%u bytes) buffers",
-		get_frees(&rx_buffers), rx_buffers.pool_size,
-		get_frees(&tx_buffers), tx_buffers.pool_size,
-		get_frees(&data_buffers), data_buffers.pool_size);
+	NET_DBG("Allocating %d RX (%u bytes), %d TX (%u bytes), "
+		"%d RX data (%u bytes) and %d TX data (%u bytes) buffers",
+		get_frees(&rx_bufs), rx_bufs.pool_size,
+		get_frees(&tx_bufs), tx_bufs.pool_size,
+		get_frees(&data_rx_bufs), data_rx_bufs.pool_size,
+		get_frees(&data_tx_bufs), data_tx_bufs.pool_size);
 }

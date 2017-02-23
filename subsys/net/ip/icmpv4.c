@@ -115,7 +115,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	reserve = net_if_get_ll_reserve(iface,
 					(const struct in6_addr *)dst);
 
-	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 	net_nbuf_set_family(buf, AF_INET);

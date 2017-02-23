@@ -627,12 +627,12 @@ static void context_info(struct net_context *context, void *user_data)
 
 static int shell_cmd_mem(int argc, char *argv[])
 {
-	struct net_buf_pool *tx, *rx, *data;
+	struct net_buf_pool *tx, *rx, *rx_data, *tx_data;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	net_nbuf_get_info(&rx, &tx, &data);
+	net_nbuf_get_info(&rx, &tx, &rx_data, &tx_data);
 
 	printk("Fragment length %d bytes\n", CONFIG_NET_NBUF_DATA_SIZE);
 
@@ -647,15 +647,20 @@ static int shell_cmd_mem(int argc, char *argv[])
 	printk("TX (%s)  \t%d\t%d\t%d\t%p\n",
 	       tx->name, tx->pool_size, tx->buf_count, tx->avail_count, tx);
 
-	printk("DATA (%s)\t%d\t%d\t%d\t%p\n",
-	       data->name, data->pool_size, data->buf_count,
-	       data->avail_count, data);
+	printk("RX DATA (%s)\t%d\t%d\t%d\t%p\n",
+	       rx_data->name, rx_data->pool_size, rx_data->buf_count,
+	       rx_data->avail_count, rx_data);
+
+	printk("TX DATA (%s)\t%d\t%d\t%d\t%p\n",
+	       tx_data->name, tx_data->pool_size, tx_data->buf_count,
+	       tx_data->avail_count, tx_data);
 #else
 	printk("Name  \tCount\tAddress\n");
 
 	printk("RX    \t%d\t%p\n", rx->buf_count, rx);
 	printk("TX    \t%d\t%p\n", tx->buf_count, tx);
-	printk("DATA  \t%d\t%p\n", data->buf_count, data);
+	printk("RX DATA  \t%d\t%p\n", rx_data->buf_count, rx_data);
+	printk("TX DATA  \t%d\t%p\n", tx_data->buf_count, tx_data);
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_NBUF_POOL)) {

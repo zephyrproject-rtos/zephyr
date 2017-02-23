@@ -177,7 +177,7 @@ static struct net_buf *prepare_ra_message(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_reserve_rx_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -422,7 +422,7 @@ static bool net_test_send_ns_extra_options(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -458,7 +458,7 @@ static bool net_test_send_ns_no_options(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -578,7 +578,7 @@ static bool net_test_hbho_message(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -623,7 +623,7 @@ static bool net_test_change_ll_addr(void)
 
 	reserve = net_if_get_ll_reserve(iface, NULL);
 
-	frag = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 

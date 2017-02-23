@@ -243,8 +243,15 @@ config NET_NBUF_TX_COUNT
 	Each TX buffer will occupy smallish amount of memory.
 	See include/net/nbuf.h and the sizeof(struct nbuf)
 
-config NET_NBUF_DATA_COUNT
-	int "How many network data buffers are allocated"
+config NET_NBUF_RX_DATA_COUNT
+	int "How many network data buffers are allocated for receiving data"
+	default 16
+	help
+	Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish
+	header (sizeof(struct net_buf)) amount of data.
+
+config NET_NBUF_TX_DATA_COUNT
+	int "How many network data buffers are allocated for sending data"
 	default 16
 	help
 	Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish

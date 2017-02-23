@@ -908,8 +908,8 @@ int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
-	frag = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface, dst),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(net_if_get_ll_reserve(iface, dst),
+					    K_FOREVER);
 
 	NET_ASSERT_INFO(frag, "Out of DATA buffers");
 
@@ -1511,8 +1511,8 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
-	frag = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface, dst),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(net_if_get_ll_reserve(iface, dst),
+					    K_FOREVER);
 
 	NET_ASSERT_INFO(frag, "Out of DATA buffers");
 
@@ -1645,7 +1645,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
-	frag = net_nbuf_get_reserve_data(
+	frag = net_nbuf_get_reserve_tx_data(
 		net_if_get_ll_reserve(iface, &NET_IPV6_BUF(buf)->dst),
 		K_FOREVER);
 

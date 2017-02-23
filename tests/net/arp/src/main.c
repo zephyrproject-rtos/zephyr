@@ -174,7 +174,8 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 		goto fail;
 	}
 
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr), K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(sizeof(struct net_eth_hdr),
+					    K_FOREVER);
 	if (!frag) {
 		goto fail;
 	}
@@ -228,8 +229,8 @@ static inline struct net_buf *prepare_arp_request(struct net_if *iface,
 		goto fail;
 	}
 
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_rx_data(sizeof(struct net_eth_hdr),
+					    K_FOREVER);
 	if (!frag) {
 		goto fail;
 	}
@@ -340,8 +341,8 @@ static bool run_tests(void)
 		return false;
 	}
 
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(sizeof(struct net_eth_hdr),
+					    K_FOREVER);
 	if (!frag) {
 		printk("Out of mem DATA\n");
 		return false;
@@ -568,8 +569,8 @@ static bool run_tests(void)
 	}
 	printk("%d buf %p\n", __LINE__, buf);
 
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_rx_data(sizeof(struct net_eth_hdr),
+					    K_FOREVER);
 	if (!frag) {
 		printk("Out of mem DATA reply\n");
 		return false;
@@ -624,8 +625,8 @@ static bool run_tests(void)
 		return false;
 	}
 
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_rx_data(sizeof(struct net_eth_hdr),
+					    K_FOREVER);
 	if (!frag) {
 		printk("Out of mem DATA request\n");
 		return false;

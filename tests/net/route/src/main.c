@@ -365,7 +365,7 @@ static bool net_test_send_na(struct net_if *iface,
 	buf = net_ipv6_create_raw(buf, net_if_get_ll_reserve(iface, dst),
 				  addr, dst, iface, IPPROTO_ICMPV6);
 
-	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(0, K_FOREVER);
 
 	NET_ASSERT_INFO(frag, "Out of DATA buffers");
 

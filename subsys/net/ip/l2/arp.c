@@ -112,8 +112,8 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 		goto fail;
 	}
 
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(sizeof(struct net_eth_hdr),
+					    K_FOREVER);
 	if (!frag) {
 		goto fail;
 	}
@@ -203,8 +203,8 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 
 		net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
-		header = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
-						   K_FOREVER);
+		header = net_nbuf_get_reserve_tx_data(
+			sizeof(struct net_eth_hdr), K_FOREVER);
 
 		hdr = (struct net_eth_hdr *)(header->data -
 					     net_nbuf_ll_reserve(buf));
@@ -380,8 +380,8 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 		goto fail;
 	}
 
-	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr),
-					 K_FOREVER);
+	frag = net_nbuf_get_reserve_tx_data(sizeof(struct net_eth_hdr),
+					    K_FOREVER);
 	if (!frag) {
 		goto fail;
 	}
