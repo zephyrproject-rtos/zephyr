@@ -10,6 +10,12 @@
 #include <device.h>
 #include <i2c.h>
 
+#if defined(CONFIG_SOC_QUARK_SE_C1000_SS)
+#define I2C_DEV CONFIG_I2C_SS_0_NAME
+#else
+#define I2C_DEV CONFIG_I2C_0_NAME
+#endif
+
 /**
  * @file Sample app using the Fujitsu MB85RC256V FRAM through ARC I2C.
  */
@@ -75,7 +81,7 @@ void main(void)
 	uint8_t data[16];
 	int i, ret;
 
-	i2c_dev = device_get_binding("I2C_0");
+	i2c_dev = device_get_binding(I2C_DEV);
 	if (!i2c_dev) {
 		printk("I2C: Device driver not found.\n");
 		return;
