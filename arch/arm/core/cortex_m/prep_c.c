@@ -27,7 +27,8 @@
 static inline void relocate_vector_table(void) { /* do nothing */ }
 #elif defined(CONFIG_ARMV7_M)
 #ifdef CONFIG_XIP
-#define VECTOR_ADDRESS (CONFIG_FLASH_BASE_ADDRESS + CONFIG_TEXT_SECTION_OFFSET)
+#define VECTOR_ADDRESS ((uintptr_t)&_image_rom_start + \
+			CONFIG_TEXT_SECTION_OFFSET)
 #else
 #define VECTOR_ADDRESS CONFIG_SRAM_BASE_ADDRESS
 #endif

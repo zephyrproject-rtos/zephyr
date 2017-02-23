@@ -15,4 +15,10 @@ config SOC_STM32F401XE
 config SOC_STM32F411XE
 	bool "STM32F411XE"
 
+config SOC_STM32F407XX
+	bool "STM32F407XX"
+
+config SOC_STM32F429XX
+	bool "STM32F429XX"
+
 endchoice
