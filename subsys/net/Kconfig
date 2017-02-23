@@ -48,6 +48,16 @@ config NET_BUF_SIMPLE_LOG
 	help
 	  Enable extra debug logs and checks for the generic network buffers.
 
+config NET_BUF_POOL_USAGE
+	bool "Network buffer pool usage tracking"
+	depends on NET_BUF
+	default n
+	help
+	Enable network buffer pool tracking. This means that:
+	* amount of free buffers in the pool is remembered
+	* total size of the pool is calculated
+	* pool name is stored and can be shown in debugging prints
+
 config  NETWORKING
 	bool "Link layer and IP networking support"
 	select NET_BUF
