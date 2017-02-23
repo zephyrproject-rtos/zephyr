@@ -342,7 +342,10 @@ static void nrf5_iface_init(struct net_if *iface)
 	SYS_LOG_DBG("");
 
 	nrf5_get_eui64(nrf5_radio->mac);
-	net_if_set_link_addr(iface, nrf5_radio->mac, sizeof(nrf5_radio->mac));
+	net_if_set_link_addr(iface,
+			     nrf5_radio->mac,
+			     sizeof(nrf5_radio->mac),
+			     NET_LINK_IEEE802154);
 
 	nrf5_radio->iface = iface;
 	ieee802154_init(iface);
