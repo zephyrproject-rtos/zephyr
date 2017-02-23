@@ -77,28 +77,14 @@
 #error "Too small net_buf fragment size"
 #endif
 
-/* The RX and TX pools do not store any data. Only bearer / protocol
- * related data is stored here.
- */
-static inline void free_rx_bufs_func(struct net_buf *buf);
-static inline void free_tx_bufs_func(struct net_buf *buf);
-static inline void free_data_bufs_func(struct net_buf *buf);
-
 NET_BUF_POOL_DEFINE(rx_buffers, NBUF_RX_COUNT, 0, sizeof(struct net_nbuf),
-		    free_rx_bufs_func);
+		    NULL);
 NET_BUF_POOL_DEFINE(tx_buffers, NBUF_TX_COUNT, 0, sizeof(struct net_nbuf),
-		    free_tx_bufs_func);
+		    NULL);
 
 /* The data fragment pool is for storing network data. */
 NET_BUF_POOL_DEFINE(data_buffers, NBUF_DATA_COUNT, NBUF_DATA_LEN,
-		    NBUF_USER_DATA_LEN, free_data_bufs_func);
-
-/* We need to know the name of the pool in order to figure out
- * how much data it is consuming.
- */
-#define rx_buffers_pool _net_buf_pool_rx_buffers
-#define tx_buffers_pool _net_buf_pool_tx_buffers
-#define data_buffers_pool _net_buf_pool_data_buffers
+		    NBUF_USER_DATA_LEN, NULL);
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 
@@ -118,149 +104,21 @@ NET_BUF_POOL_DEFINE(data_buffers, NBUF_DATA_COUNT, NBUF_DATA_LEN,
 		}                                                       \
 	} while (0)
 
-static int num_free_rx_bufs = NBUF_RX_COUNT;
-static int num_free_tx_bufs = NBUF_TX_COUNT;
-static int num_free_data_bufs = NBUF_DATA_COUNT;
-
-static inline void dec_free_rx_bufs(struct net_buf *buf)
-{
-	if (!buf) {
-		return;
-	}
-
-	num_free_rx_bufs--;
-	if (num_free_rx_bufs < 0) {
-		NET_DBG("*** ERROR *** Invalid RX buffer count.");
-		num_free_rx_bufs = 0;
-	}
-}
-
-static inline void inc_free_rx_bufs(struct net_buf *buf)
-{
-	if (!buf) {
-		return;
-	}
-
-	if (num_free_rx_bufs > NBUF_RX_COUNT) {
-		num_free_rx_bufs = NBUF_RX_COUNT;
-	} else {
-		num_free_rx_bufs++;
-	}
-}
-
-static inline void dec_free_tx_bufs(struct net_buf *buf)
-{
-	if (!buf) {
-		return;
-	}
-
-	num_free_tx_bufs--;
-	if (num_free_tx_bufs < 0) {
-		NET_DBG("*** ERROR *** Invalid TX buffer count.");
-		num_free_tx_bufs = 0;
-	}
-}
-
-static inline void inc_free_tx_bufs(struct net_buf *buf)
-{
-	if (!buf) {
-		return;
-	}
-
-	if (num_free_tx_bufs > NBUF_TX_COUNT) {
-		num_free_tx_bufs = NBUF_TX_COUNT;
-	} else {
-		num_free_tx_bufs++;
-	}
-}
-
-static inline void dec_free_data_bufs(struct net_buf *buf)
-{
-	if (!buf) {
-		return;
-	}
-
-	num_free_data_bufs--;
-	if (num_free_data_bufs < 0) {
-		NET_DBG("*** ERROR *** Invalid data buffer count.");
-		num_free_data_bufs = 0;
-	}
-}
-
-static inline void inc_free_data_bufs(struct net_buf *buf)
-{
-	if (!buf) {
-		return;
-	}
-
-	if (num_free_data_bufs > NBUF_DATA_COUNT) {
-		num_free_data_bufs = NBUF_DATA_COUNT;
-	} else {
-		num_free_data_bufs++;
-	}
-}
-
-static inline void dec_free_bufs(struct net_buf_pool *pool,
-				 struct net_buf *buf)
-{
-	if (pool == &rx_buffers) {
-		dec_free_rx_bufs(buf);
-	} else if (pool == &tx_buffers) {
-		dec_free_tx_bufs(buf);
-	} else {
-		dec_free_data_bufs(buf);
-	}
-}
-
-static inline int get_frees(struct net_buf_pool *pool)
-{
-	if (pool == &rx_buffers) {
-		return num_free_rx_bufs;
-	} else if (pool == &tx_buffers) {
-		return num_free_tx_bufs;
-	} else if (pool == &data_buffers) {
-		return num_free_data_bufs;
-	}
-
-	return 0xffffffff;
-}
-
 #else /* CONFIG_NET_DEBUG_NET_BUF */
-#define dec_free_rx_bufs(...)
-#define inc_free_rx_bufs(...)
-#define dec_free_tx_bufs(...)
-#define inc_free_tx_bufs(...)
-#define dec_free_data_bufs(...)
-#define inc_free_data_bufs(...)
-#define dec_free_bufs(...)
 #define NET_BUF_CHECK_IF_IN_USE(buf, ref)
 #define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+static inline int16_t get_frees(struct net_buf_pool *pool)
+{
+	return pool->avail_count;
+}
+#endif
+
 static inline bool is_from_data_pool(struct net_buf *buf)
 {
 	return (buf->pool == &data_buffers);
-}
-
-static inline void free_rx_bufs_func(struct net_buf *buf)
-{
-	inc_free_rx_bufs(buf);
-
-	net_buf_destroy(buf);
-}
-
-static inline void free_tx_bufs_func(struct net_buf *buf)
-{
-	inc_free_tx_bufs(buf);
-
-	net_buf_destroy(buf);
-}
-
-static inline void free_data_bufs_func(struct net_buf *buf)
-{
-	inc_free_data_bufs(buf);
-
-	net_buf_destroy(buf);
 }
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
@@ -345,8 +203,6 @@ static struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 	} else {
 		memset(net_buf_user_data(buf), 0, sizeof(struct net_nbuf));
 	}
-
-	dec_free_bufs(pool, buf);
 
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
 
@@ -1352,19 +1208,19 @@ bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
 void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
 		       int *tx, int *rx, int *data)
 {
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 	if (tx_size) {
-		*tx_size = sizeof(tx_buffers_pool);
+		*tx_size = tx_buffers.pool_size;
 	}
 
 	if (rx_size) {
-		*rx_size = sizeof(rx_buffers_pool);
+		*rx_size = rx_buffers.pool_size;
 	}
 
 	if (data_size) {
-		*data_size = sizeof(data_buffers_pool);
+		*data_size = data_buffers.pool_size;
 	}
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
 	*tx = get_frees(&tx_buffers);
 	*rx = get_frees(&rx_buffers);
 	*data = get_frees(&data_buffers);
@@ -1388,9 +1244,9 @@ void net_nbuf_print(void)
 
 void net_nbuf_init(void)
 {
-	NET_DBG("Allocating %u RX (%zu bytes), %u TX (%zu bytes) "
-		"and %u data (%zu bytes) buffers",
-		NBUF_RX_COUNT, sizeof(rx_buffers_pool),
-		NBUF_TX_COUNT, sizeof(tx_buffers_pool),
-		NBUF_DATA_COUNT, sizeof(data_buffers_pool));
+	NET_DBG("Allocating %d RX (%u bytes), %d TX (%u bytes) "
+		"and %d data (%u bytes) buffers",
+		get_frees(&rx_buffers), rx_buffers.pool_size,
+		get_frees(&tx_buffers), tx_buffers.pool_size,
+		get_frees(&data_buffers), data_buffers.pool_size);
 }
