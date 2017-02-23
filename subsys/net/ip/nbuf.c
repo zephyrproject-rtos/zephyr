@@ -1298,40 +1298,28 @@ bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
 	return insert_data(buf, frag, temp, offset, len, data, timeout);
 }
 
-void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
-		       int *tx, int *rx, int *data)
+void net_nbuf_get_info(struct net_buf_pool **rx,
+		       struct net_buf_pool **tx,
+		       struct net_buf_pool **data)
 {
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
-	if (tx_size) {
-		*tx_size = tx_buffers.pool_size;
+	if (rx) {
+		*rx = &rx_buffers;
 	}
 
-	if (rx_size) {
-		*rx_size = rx_buffers.pool_size;
+	if (tx) {
+		*tx = &tx_buffers;
 	}
 
-	if (data_size) {
-		*data_size = data_buffers.pool_size;
+	if (data) {
+		*data = &data_buffers;
 	}
-
-	*tx = get_frees(&tx_buffers);
-	*rx = get_frees(&rx_buffers);
-	*data = get_frees(&data_buffers);
-#else
-	*tx = BIT(31);
-	*rx = BIT(31);
-	*data = BIT(31);
-#endif /* CONFIG_NET_DEBUG_NET_BUF */
 }
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 void net_nbuf_print(void)
 {
-	int tx, rx, data;
-
-	net_nbuf_get_info(NULL, NULL, NULL, &tx, &rx, &data);
-
-	NET_DBG("TX %d RX %d DATA %d", tx, rx, data);
+	NET_DBG("TX %d RX %d DATA %d", tx_buffers.avail_count,
+		rx_buffers.avail_count, data_buffers.avail_count);
 }
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
