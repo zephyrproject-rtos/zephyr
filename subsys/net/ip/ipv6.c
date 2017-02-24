@@ -172,9 +172,10 @@ static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 		NET_DBG("Cannot cancel NS work (%d)", ret);
 	}
 
-	net_nbuf_unref(data->pending);
-
-	data->pending = NULL;
+	if (data->pending) {
+		net_nbuf_unref(data->pending);
+		data->pending = NULL;
+	}
 }
 
 static inline void nbr_free(struct net_nbr *nbr)
