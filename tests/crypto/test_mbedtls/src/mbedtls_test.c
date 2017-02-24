@@ -58,6 +58,7 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/ecjpake.h"
 #include "mbedtls/timing.h"
+#include "mbedtls/cmac.h"
 
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
@@ -370,6 +371,14 @@ int main(void)
 
 #if defined(MBEDTLS_PKCS5_C)
 	if (mbedtls_pkcs5_self_test(v) != 0) {
+		suites_failed++;
+	}
+	suites_tested++;
+#endif
+
+#if defined(MBEDTLS_CMAC_C) \
+	&& (defined(MBEDTLS_AES_C) || defined(MBEDTLS_DES_C))
+	if (mbedtls_cmac_self_test(v) != 0) {
 		suites_failed++;
 	}
 	suites_tested++;
