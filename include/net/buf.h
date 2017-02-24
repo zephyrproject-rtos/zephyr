@@ -205,7 +205,7 @@ void net_buf_simple_push_le16(struct net_buf_simple *buf, uint16_t val);
 /**
  *  @brief Push 16-bit value to the beginning of the buffer
  *
- *  Adds 16-bit value in little endian format to the beginning of the
+ *  Adds 16-bit value in big endian format to the beginning of the
  *  buffer.
  *
  *  @param buf Buffer to update.
