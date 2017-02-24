@@ -61,7 +61,7 @@ ownership of the semaphore. If the semaphore is contested, there is no
 guarantee that it will be still available when :cpp:func:`k_sem_give()` is
 called.
 
-Implementatioe
+Implementation
 **************
 
 Using k_poll()
