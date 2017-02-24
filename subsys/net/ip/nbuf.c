@@ -259,8 +259,8 @@ struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
-	NET_DBG("%s (%p) [%d] buf %p reserve %u ref %d (%s():%d)",
-		pool2str(pool), pool, get_frees(pool),
+	NET_DBG("%s (%s) [%d] buf %p reserve %u ref %d (%s():%d)",
+		pool2str(pool), pool->name, get_frees(pool),
 		buf, reserve_head, buf->ref, caller, line);
 #endif
 
@@ -524,8 +524,8 @@ void net_nbuf_unref(struct net_buf *buf)
 	}
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
-	NET_DBG("%s (%p) [%d] buf %p ref %d frags %p (%s():%d)",
-		pool2str(buf->pool), buf->pool, get_frees(buf->pool),
+	NET_DBG("%s (%s) [%d] buf %p ref %d frags %p (%s():%d)",
+		pool2str(buf->pool), buf->pool->name, get_frees(buf->pool),
 		buf, buf->ref - 1, buf->frags, caller, line);
 
 	if (buf->ref > 1) {
@@ -537,8 +537,8 @@ void net_nbuf_unref(struct net_buf *buf)
 	 */
 	frag = buf->frags;
 	while (frag) {
-		NET_DBG("%s (%p) [%d] buf %p ref %d frags %p (%s():%d)",
-			pool2str(frag->pool), frag->pool,
+		NET_DBG("%s (%s) [%d] buf %p ref %d frags %p (%s():%d)",
+			pool2str(frag->pool), frag->pool->name,
 			get_frees(frag->pool), frag, frag->ref - 1,
 			frag->frags, caller, line);
 
@@ -569,8 +569,8 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf)
 	}
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
-	NET_DBG("%s (%p) [%d] buf %p ref %d (%s():%d)",
-		pool2str(buf->pool), buf->pool, get_frees(buf->pool),
+	NET_DBG("%s (%s) [%d] buf %p ref %d (%s():%d)",
+		pool2str(buf->pool), buf->pool->name, get_frees(buf->pool),
 		buf, buf->ref + 1, caller, line);
 #endif
 
