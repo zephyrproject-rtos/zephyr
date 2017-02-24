@@ -297,12 +297,12 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
 	reserve = net_if_get_ll_reserve(iface, dst);
+	net_nbuf_set_ll_reserve(buf, reserve);
 
 	buf = net_ipv6_create_raw(buf, reserve, src, dst, iface,
 				  IPPROTO_ICMPV6);
 
 	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_ll_reserve(buf, reserve);
 	net_nbuf_set_iface(buf, iface);
 
 	net_nbuf_append_u8(buf, NET_ICMPV6_ECHO_REQUEST);

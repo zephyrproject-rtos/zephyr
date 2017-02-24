@@ -457,11 +457,12 @@ int net_rpl_dio_send(struct net_if *iface,
 		dst_addr = dst;
 	}
 
-	buf = net_ipv6_create_raw(buf, net_if_get_ll_reserve(iface, dst),
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
+
+	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
 				  src, dst_addr, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
 	setup_icmpv6_hdr(buf, NET_ICMPV6_RPL, NET_RPL_DODAG_INFO_OBJ);
 
@@ -735,11 +736,12 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 
 	src = net_if_ipv6_select_src_addr(iface, dst_addr);
 
-	buf = net_ipv6_create_raw(buf, net_if_get_ll_reserve(iface, dst_addr),
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst_addr));
+
+	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
 				  src, dst_addr, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst_addr));
 
 	setup_icmpv6_hdr(buf, NET_ICMPV6_RPL, NET_RPL_DODAG_SOLICIT);
 
@@ -2971,11 +2973,12 @@ int net_rpl_dao_send(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	buf = net_ipv6_create_raw(buf, net_if_get_ll_reserve(iface, src),
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
+
+	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
 				  src, dst, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
 	setup_icmpv6_hdr(buf, NET_ICMPV6_RPL, NET_RPL_DEST_ADV_OBJ);
 
@@ -3097,11 +3100,12 @@ static int dao_ack_send(struct net_buf *orig,
 		return -ENOMEM;
 	}
 
-	buf = net_ipv6_create_raw(buf, net_if_get_ll_reserve(iface, src),
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
+
+	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
 				  src, dst, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
 	setup_icmpv6_hdr(buf, NET_ICMPV6_RPL, NET_RPL_DEST_ADV_OBJ_ACK);
 

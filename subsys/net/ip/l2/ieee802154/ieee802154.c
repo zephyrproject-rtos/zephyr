@@ -97,11 +97,11 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 		return;
 	}
 
-	frag = net_nbuf_get_reserve_tx_data(IEEE802154_ACK_PKT_LENGTH,
-					    K_FOREVER);
+	net_nbuf_set_ll_reserve(buf, IEEE802154_ACK_PKT_LENGTH);
+
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_insert(buf, frag);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	if (ieee802154_create_ack_frame(iface, buf, mpdu->mhr.fs->sequence)) {
 		const struct ieee802154_radio_api *radio =

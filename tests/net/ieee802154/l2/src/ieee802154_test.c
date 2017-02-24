@@ -193,7 +193,7 @@ static inline int test_ack_reply(struct ieee802154_pkt_test *t)
 	TC_PRINT("- Sending ACK reply to a data packet\n");
 
 	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
-	frag = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	memcpy(frag->data, data_pkt, sizeof(data_pkt));
 	frag->len = sizeof(data_pkt);

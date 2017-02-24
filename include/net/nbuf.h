@@ -557,7 +557,7 @@ struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head,
 
 /**
  * @brief Get RX DATA buffer from pool but also reserve headroom for
- * potential headers.
+ * potential headers. Normally you should use net_nbuf_get_frag() instead.
  *
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
@@ -575,7 +575,7 @@ struct net_buf *net_nbuf_get_reserve_rx_data(uint16_t reserve_head,
 
 /**
  * @brief Get TX DATA buffer from pool but also reserve headroom for
- * potential headers.
+ * potential headers. Normally you should use net_nbuf_get_frag() instead.
  *
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.

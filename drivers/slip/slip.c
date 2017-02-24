@@ -298,7 +298,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 				return 0;
 			}
 
-			slip->last = net_nbuf_get_reserve_rx_data(0, K_NO_WAIT);
+			slip->last = net_nbuf_get_frag(slip->rx, K_NO_WAIT);
 			if (!slip->last) {
 				net_nbuf_unref(slip->rx);
 				slip->rx = NULL;

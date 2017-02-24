@@ -167,7 +167,6 @@ static struct net_buf *prepare_ra_message(void)
 {
 	struct net_buf *buf, *frag;
 	struct net_if *iface;
-	uint16_t reserve;
 
 	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
 
@@ -175,13 +174,12 @@ static struct net_buf *prepare_ra_message(void)
 
 	iface = net_if_get_default();
 
-	reserve = net_if_get_ll_reserve(iface, NULL);
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, NULL));
 
-	frag = net_nbuf_get_reserve_rx_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_ll_reserve(buf, reserve);
 	net_nbuf_set_iface(buf, iface);
 	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
@@ -412,7 +410,6 @@ static bool net_test_send_ns_extra_options(void)
 {
 	struct net_buf *buf, *frag;
 	struct net_if *iface;
-	uint16_t reserve;
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
@@ -420,13 +417,12 @@ static bool net_test_send_ns_extra_options(void)
 
 	iface = net_if_get_default();
 
-	reserve = net_if_get_ll_reserve(iface, NULL);
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, NULL));
 
-	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_ll_reserve(buf, reserve);
 	net_nbuf_set_iface(buf, iface);
 	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
@@ -448,7 +444,6 @@ static bool net_test_send_ns_no_options(void)
 {
 	struct net_buf *buf, *frag;
 	struct net_if *iface;
-	uint16_t reserve;
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
@@ -456,13 +451,12 @@ static bool net_test_send_ns_no_options(void)
 
 	iface = net_if_get_default();
 
-	reserve = net_if_get_ll_reserve(iface, NULL);
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, NULL));
 
-	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_ll_reserve(buf, reserve);
 	net_nbuf_set_iface(buf, iface);
 	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
@@ -568,7 +562,6 @@ static bool net_test_hbho_message(void)
 {
 	struct net_buf *buf, *frag;
 	struct net_if *iface;
-	uint16_t reserve;
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
@@ -576,13 +569,12 @@ static bool net_test_hbho_message(void)
 
 	iface = net_if_get_default();
 
-	reserve = net_if_get_ll_reserve(iface, NULL);
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, NULL));
 
-	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_ll_reserve(buf, reserve);
 	net_nbuf_set_iface(buf, iface);
 	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
@@ -609,7 +601,6 @@ static bool net_test_change_ll_addr(void)
 	struct in6_addr dst;
 	struct net_if *iface;
 	struct net_nbr *nbr;
-	uint16_t reserve;
 	uint32_t flags;
 	int ret;
 
@@ -621,13 +612,12 @@ static bool net_test_change_ll_addr(void)
 
 	iface = net_if_get_default();
 
-	reserve = net_if_get_ll_reserve(iface, NULL);
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, NULL));
 
-	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_ll_reserve(buf, reserve);
 	net_nbuf_set_iface(buf, iface);
 	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));

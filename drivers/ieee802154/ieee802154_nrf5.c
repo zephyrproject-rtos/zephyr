@@ -77,7 +77,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto out;
 		}
 
-		pkt_buf = net_nbuf_get_reserve_rx_data(0, K_NO_WAIT);
+		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_ERR("No pkt_buf available");
 			goto out;

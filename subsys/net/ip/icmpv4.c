@@ -101,7 +101,6 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 {
 	const struct in_addr *src;
 	struct net_buf *buf, *frag;
-	uint16_t reserve;
 
 	/* Take the first address of the network interface */
 	src = &iface->ipv4.unicast[0].address.in_addr;
@@ -112,15 +111,15 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	 * as IPv4 cannot be used in 802.15.4 where it is the reserve
 	 * size can change depending on address.
 	 */
-	reserve = net_if_get_ll_reserve(iface,
-					(const struct in6_addr *)dst);
+	net_nbuf_set_ll_reserve(buf,
+				net_if_get_ll_reserve(iface,
+					      (const struct in6_addr *)dst));
 
-	frag = net_nbuf_get_reserve_tx_data(reserve, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 	net_nbuf_set_family(buf, AF_INET);
 	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, reserve);
 
 	setup_ipv4_header(buf, 0, net_if_ipv4_get_ttl(iface),
 			  NET_ICMPV4_ECHO_REQUEST, 0);

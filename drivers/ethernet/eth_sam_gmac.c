@@ -509,7 +509,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 			DCACHE_INVALIDATE(frag_data, frag_len);
 
 			/* Get a new data net buffer from the buffer pool */
-			new_frag = net_nbuf_get_reserve_rx_data(0, K_NO_WAIT);
+			new_frag = net_nbuf_get_frag(buf, K_NO_WAIT);
 			if (new_frag == NULL) {
 				queue->err_rx_frames_dropped++;
 				net_buf_unref(rx_frame);
