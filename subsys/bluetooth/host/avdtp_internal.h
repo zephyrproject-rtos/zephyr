@@ -94,8 +94,8 @@ typedef int (*bt_avdtp_func_t)(struct bt_avdtp *session,
 			       struct bt_avdtp_req *req);
 
 struct bt_avdtp_req {
-	uint8_t signal_id;
-	uint8_t transaction_id;
+	uint8_t sig;
+	uint8_t tid;
 	bt_avdtp_func_t func;
 	struct k_delayed_work timeout_work;
 };

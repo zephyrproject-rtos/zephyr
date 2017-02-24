@@ -71,9 +71,9 @@ static int avdtp_send(struct bt_avdtp *session,
 	}
 
 	/*Save the sent request*/
-	req->signal_id = AVDTP_GET_SIG_ID(hdr->signal_id);
-	req->transaction_id = AVDTP_GET_TR_ID(hdr->hdr);
-	BT_DBG("sig 0x%02X, tid 0x%02X", req->signal_id, req->transaction_id);
+	req->sig = AVDTP_GET_SIG_ID(hdr->signal_id);
+	req->tid = AVDTP_GET_TR_ID(hdr->hdr);
+	BT_DBG("sig 0x%02X, tid 0x%02X", req->sig, req->tid);
 
 	session->req = req;
 	/* Start timeout work */
@@ -107,7 +107,7 @@ static struct net_buf *avdtp_create_pdu(uint8_t msg_type,
 /* Timeout handler */
 static void avdtp_timeout(struct k_work *work)
 {
-	BT_DBG("Failed Signal_id = %d", (AVDTP_KWORK(work))->signal_id);
+	BT_DBG("Failed Signal_id = %d", (AVDTP_KWORK(work))->sig);
 
 	/* Gracefully Disconnect the Signalling and streaming L2cap chann*/
 
@@ -174,11 +174,11 @@ void bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			return;
 		}
 
-		if (session->req->signal_id != sigid ||
-		    session->req->transaction_id != tid) {
+		if (session->req->sig != sigid ||
+		    session->req->tid != tid) {
 			BT_DBG("Peer mismatch resp, expected sig[0x%02x]"
-				"tid[0x%02x]", session->req->signal_id,
-				session->req->transaction_id);
+				"tid[0x%02x]", session->req->sig,
+				session->req->tid);
 			return;
 		}
 	}
