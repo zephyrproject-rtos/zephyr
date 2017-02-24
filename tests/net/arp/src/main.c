@@ -169,12 +169,10 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	struct net_arp_hdr *hdr;
 	struct net_eth_hdr *eth;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
 	if (!buf) {
 		goto fail;
 	}
-
-	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 	frag = net_nbuf_get_frag(buf, K_FOREVER);
 	if (!frag) {
@@ -224,12 +222,11 @@ static inline struct net_buf *prepare_arp_request(struct net_if *iface,
 	struct net_arp_hdr *hdr, *req_hdr;
 	struct net_eth_hdr *eth, *eth_req;
 
-	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_rx(sizeof(struct net_eth_hdr),
+				      K_FOREVER);
 	if (!buf) {
 		goto fail;
 	}
-
-	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 	frag = net_nbuf_get_frag(buf, K_FOREVER);
 	if (!frag) {
@@ -335,13 +332,11 @@ static bool run_tests(void)
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	/* Application data for testing */
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
 	if (!buf) {
 		printk("Out of mem TX\n");
 		return false;
 	}
-
-	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 	frag = net_nbuf_get_frag(buf, K_FOREVER);
 	if (!frag) {
@@ -562,14 +557,12 @@ static bool run_tests(void)
 	/* The arp request packet is now verified, create an arp reply.
 	 * The previous value of buf is stored in arp table and is not lost.
 	 */
-	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_rx(sizeof(struct net_eth_hdr), K_FOREVER);
 	if (!buf) {
 		printk("Out of mem RX reply\n");
 		return false;
 	}
 	printk("%d buf %p\n", __LINE__, buf);
-
-	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 	frag = net_nbuf_get_frag(buf, K_FOREVER);
 	if (!frag) {
@@ -619,13 +612,11 @@ static bool run_tests(void)
 	net_nbuf_unref(buf);
 
 	/* Then feed in ARP request */
-	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_rx(sizeof(struct net_eth_hdr), K_FOREVER);
 	if (!buf) {
 		printk("Out of mem RX request\n");
 		return false;
 	}
-
-	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 	frag = net_nbuf_get_frag(buf, K_FOREVER);
 	if (!frag) {

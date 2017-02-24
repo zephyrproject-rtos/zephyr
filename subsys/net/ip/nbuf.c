@@ -248,6 +248,8 @@ struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 	} else {
 		memset(net_buf_user_data(buf), 0, sizeof(struct net_nbuf));
 
+		net_nbuf_set_ll_reserve(buf, reserve_head);
+
 		/* Remember the RX vs. TX so that the fragments can be
 		 * allocated from correct DATA pool.
 		 */
@@ -399,7 +401,6 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 	struct in6_addr *addr6 = NULL;
 	struct net_if *iface;
 	struct net_buf *buf;
-	uint16_t reserve;
 
 	if (!context) {
 		return NULL;
@@ -413,12 +414,13 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 		addr6 = &((struct sockaddr_in6 *) &context->remote)->sin6_addr;
 	}
 
-	reserve = net_if_get_ll_reserve(iface, addr6);
-
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
-	buf = net_nbuf_get_reserve_debug(pool, reserve, timeout, caller, line);
+	buf = net_nbuf_get_reserve_debug(pool,
+					 net_if_get_ll_reserve(iface, addr6),
+					 timeout, caller, line);
 #else
-	buf = net_nbuf_get_reserve(pool, reserve, timeout);
+	buf = net_nbuf_get_reserve(pool, net_if_get_ll_reserve(iface, addr6),
+				   timeout);
 #endif
 	if (!buf) {
 		return buf;
@@ -426,7 +428,6 @@ static struct net_buf *net_nbuf_get(struct net_buf_pool *pool,
 
 	if (!is_data_pool(pool)) {
 		net_nbuf_set_context(buf, context);
-		net_nbuf_set_ll_reserve(buf, reserve);
 		net_nbuf_set_iface(buf, iface);
 
 		if (context) {

@@ -445,7 +445,8 @@ int net_rpl_dio_send(struct net_if *iface,
 	uint16_t value;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+				      K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -456,8 +457,6 @@ int net_rpl_dio_send(struct net_if *iface,
 	} else {
 		dst_addr = dst;
 	}
-
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
 	buf = net_ipv6_create_raw(buf, src, dst_addr, iface, IPPROTO_ICMPV6);
 
@@ -721,11 +720,6 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 		return 0;
 	}
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
 	if (!dst) {
 		net_rpl_create_mcast_address(&addr);
 		dst_addr = &addr;
@@ -733,9 +727,13 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 		dst_addr = dst;
 	}
 
-	src = net_if_ipv6_select_src_addr(iface, dst_addr);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst_addr),
+				      K_FOREVER);
+	if (!buf) {
+		return -ENOMEM;
+	}
 
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst_addr));
+	src = net_if_ipv6_select_src_addr(iface, dst_addr);
 
 	buf = net_ipv6_create_raw(buf, src, dst_addr, iface, IPPROTO_ICMPV6);
 
@@ -2966,12 +2964,11 @@ int net_rpl_dao_send(struct net_if *iface,
 		return -EINVAL;
 	}
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+				      K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
-
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
 	buf = net_ipv6_create_raw(buf, src, dst, iface, IPPROTO_ICMPV6);
 
@@ -3054,7 +3051,8 @@ static inline int dao_forward(struct net_if *iface,
 	struct net_buf *buf;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+				      K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -3066,7 +3064,6 @@ static inline int dao_forward(struct net_if *iface,
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, dst);
 
 	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {
@@ -3092,12 +3089,11 @@ static int dao_ack_send(struct net_buf *orig,
 	NET_DBG("Sending a DAO ACK with sequence number %d to %s",
 		sequence, net_sprint_ipv6_addr(dst));
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+				      K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
-
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
 	buf = net_ipv6_create_raw(buf, src, dst, iface, IPPROTO_ICMPV6);
 

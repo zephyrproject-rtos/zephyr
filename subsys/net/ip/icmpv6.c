@@ -290,14 +290,11 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 {
 	const struct in6_addr *src;
 	struct net_buf *buf;
-	uint16_t reserve;
 
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
-
-	reserve = net_if_get_ll_reserve(iface, dst);
-	net_nbuf_set_ll_reserve(buf, reserve);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+				      K_FOREVER);
 
 	buf = net_ipv6_create_raw(buf, src, dst, iface, IPPROTO_ICMPV6);
 

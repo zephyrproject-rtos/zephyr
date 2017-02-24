@@ -92,12 +92,10 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 		return;
 	}
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(IEEE802154_ACK_PKT_LENGTH, K_FOREVER);
 	if (!buf) {
 		return;
 	}
-
-	net_nbuf_set_ll_reserve(buf, IEEE802154_ACK_PKT_LENGTH);
 
 	frag = net_nbuf_get_frag(buf, K_FOREVER);
 

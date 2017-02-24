@@ -358,11 +358,10 @@ static bool net_test_send_na(struct net_if *iface,
 	struct net_buf *buf, *frag;
 	uint8_t llao_len;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+				      K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
-
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
 	buf = net_ipv6_create_raw(buf, addr, dst, iface, IPPROTO_ICMPV6);
 
