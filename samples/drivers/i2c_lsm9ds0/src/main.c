@@ -73,7 +73,7 @@ void main(void)
 	cfg.bits.speed = I2C_SPEED_STANDARD;
 	cfg.bits.is_master_device = 1;
 
-	dev = device_get_binding(CONFIG_I2C_0_NAME);
+	dev = device_get_binding("I2C_0");
 	if (!dev) {
 		printk("I2C0: Device not found.\n");
 		return;
