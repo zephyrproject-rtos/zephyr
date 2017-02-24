@@ -597,7 +597,7 @@ static void context_info(struct net_context *context, void *user_data)
 		       pool->name, pool->pool_size, pool->buf_count,
 		       pool->avail_count, pool);
 #else
-		printk("ETX   \t%d\t%p\n", pool->buf_count, pool);
+		printk("ETX     \t%d\t%p\n", pool->buf_count, pool);
 #endif
 		info->are_external_pools = true;
 		info->tx_pools[info->pos] = pool;
@@ -615,7 +615,7 @@ static void context_info(struct net_context *context, void *user_data)
 		       pool->name, pool->pool_size, pool->buf_count,
 		       pool->avail_count, pool);
 #else
-		printk("EDATA \t%d\t%p\n", pool->buf_count, pool);
+		printk("EDATA   \t%d\t%p\n", pool->buf_count, pool);
 #endif
 		info->are_external_pools = true;
 		info->data_pools[info->pos] = pool;
@@ -641,10 +641,10 @@ static int shell_cmd_mem(int argc, char *argv[])
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 	printk("Name\t\t\tSize\tCount\tAvail\tAddress\n");
 
-	printk("RX (%s)  \t%d\t%d\t%d\t%p\n",
+	printk("RX (%s)\t\t%d\t%d\t%d\t%p\n",
 	       rx->name, rx->pool_size, rx->buf_count, rx->avail_count, rx);
 
-	printk("TX (%s)  \t%d\t%d\t%d\t%p\n",
+	printk("TX (%s)\t\t%d\t%d\t%d\t%p\n",
 	       tx->name, tx->pool_size, tx->buf_count, tx->avail_count, tx);
 
 	printk("RX DATA (%s)\t%d\t%d\t%d\t%p\n",
@@ -655,12 +655,12 @@ static int shell_cmd_mem(int argc, char *argv[])
 	       tx_data->name, tx_data->pool_size, tx_data->buf_count,
 	       tx_data->avail_count, tx_data);
 #else
-	printk("Name  \tCount\tAddress\n");
+	printk("Name    \tCount\tAddress\n");
 
-	printk("RX    \t%d\t%p\n", rx->buf_count, rx);
-	printk("TX    \t%d\t%p\n", tx->buf_count, tx);
-	printk("RX DATA  \t%d\t%p\n", rx_data->buf_count, rx_data);
-	printk("TX DATA  \t%d\t%p\n", tx_data->buf_count, tx_data);
+	printk("RX      \t%d\t%p\n", rx->buf_count, rx);
+	printk("TX      \t%d\t%p\n", tx->buf_count, tx);
+	printk("RX DATA \t%d\t%p\n", rx_data->buf_count, rx_data);
+	printk("TX DATA \t%d\t%p\n", tx_data->buf_count, tx_data);
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_NBUF_POOL)) {
