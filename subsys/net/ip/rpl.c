@@ -459,8 +459,7 @@ int net_rpl_dio_send(struct net_if *iface,
 
 	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
-	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
-				  src, dst_addr, iface, IPPROTO_ICMPV6);
+	buf = net_ipv6_create_raw(buf, src, dst_addr, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_iface(buf, iface);
 
@@ -738,8 +737,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 
 	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst_addr));
 
-	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
-				  src, dst_addr, iface, IPPROTO_ICMPV6);
+	buf = net_ipv6_create_raw(buf, src, dst_addr, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_iface(buf, iface);
 
@@ -2975,8 +2973,7 @@ int net_rpl_dao_send(struct net_if *iface,
 
 	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
-	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
-				  src, dst, iface, IPPROTO_ICMPV6);
+	buf = net_ipv6_create_raw(buf, src, dst, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_iface(buf, iface);
 
@@ -3102,8 +3099,7 @@ static int dao_ack_send(struct net_buf *orig,
 
 	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
-	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
-				  src, dst, iface, IPPROTO_ICMPV6);
+	buf = net_ipv6_create_raw(buf, src, dst, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_iface(buf, iface);
 

@@ -364,8 +364,7 @@ static bool net_test_send_na(struct net_if *iface,
 
 	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, dst));
 
-	buf = net_ipv6_create_raw(buf, net_nbuf_ll_reserve(buf),
-				  addr, dst, iface, IPPROTO_ICMPV6);
+	buf = net_ipv6_create_raw(buf, addr, dst, iface, IPPROTO_ICMPV6);
 
 	frag = net_nbuf_get_frag(buf, K_FOREVER);
 

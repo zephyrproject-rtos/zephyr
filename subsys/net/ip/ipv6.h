@@ -124,7 +124,6 @@ int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
  * @brief Create IPv6 packet in provided net_buf.
  *
  * @param buf Network buffer
- * @param reserve Link layer reserve
  * @param src Source IPv6 address
  * @param dst Destination IPv6 address
  * @param iface Network interface
@@ -133,7 +132,6 @@ int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
  * @return Return network buffer that contains the IPv6 packet.
  */
 struct net_buf *net_ipv6_create_raw(struct net_buf *buf,
-				    uint16_t reserve,
 				    const struct in6_addr *src,
 				    const struct in6_addr *dst,
 				    struct net_if *iface,

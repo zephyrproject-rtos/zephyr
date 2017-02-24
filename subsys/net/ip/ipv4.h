@@ -26,7 +26,6 @@
  * @brief Create IPv4 packet in provided net_buf.
  *
  * @param buf Network buffer
- * @param reserve Link layer reserve
  * @param src Source IPv4 address
  * @param dst Destination IPv4 address
  * @param iface Network interface
@@ -35,7 +34,6 @@
  * @return Return network buffer that contains the IPv4 packet.
  */
 struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
-				    uint16_t reserve,
 				    const struct in_addr *src,
 				    const struct in_addr *dst,
 				    struct net_if *iface,

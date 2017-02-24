@@ -299,8 +299,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	reserve = net_if_get_ll_reserve(iface, dst);
 	net_nbuf_set_ll_reserve(buf, reserve);
 
-	buf = net_ipv6_create_raw(buf, reserve, src, dst, iface,
-				  IPPROTO_ICMPV6);
+	buf = net_ipv6_create_raw(buf, src, dst, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_iface(buf, iface);
