@@ -30,6 +30,12 @@
 
 #define SDP_SERVICE_HANDLE_BASE 0x10000
 
+#define SDP_DATA_ELEM_NEST_LEVEL_MAX 5
+
+/* 1 byte for the no. of services searched till this response */
+/* 2 bytes for the total no. of matching records */
+#define SDP_SS_CONT_STATE_SIZE 3
+
 struct bt_sdp {
 	struct bt_l2cap_br_chan chan;
 	struct k_fifo           partial_resp_queue;
@@ -258,6 +264,87 @@ static uint16_t parse_data_elem(struct net_buf *buf,
 	return 0;
 }
 
+/* @brief Searches for an UUID within an attribute
+ *
+ * Searches for an UUID within an attribute. If the attribute has data element
+ * sequences, it recursively searches within them as well. On finding a match
+ * with the UUID, it sets the found flag.
+ *
+ * @param elem Attribute to be used as the search space (haystack)
+ * @param uuid UUID to be looked for (needle)
+ * @param found Flag set to true if the UUID is found (to be returned)
+ * @param nest_level Used to limit the extent of recursion into nested data
+ *  elements, to avoid potential stack overflows
+ *
+ * @return Size of the last data element that has been searched
+ *  (used in recursion)
+ */
+static uint32_t search_uuid(struct bt_sdp_data_elem *elem, struct bt_uuid *uuid,
+			    bool *found, uint8_t nest_level)
+{
+	const uint8_t *cur_elem;
+	uint32_t seq_size, size;
+	union {
+		struct bt_uuid uuid;
+		struct bt_uuid_16 u16;
+		struct bt_uuid_32 u32;
+		struct bt_uuid_128 u128;
+	} u;
+
+	if (*found) {
+		return 0;
+	}
+
+	/* Limit recursion depth to avoid stack overflows */
+	if (nest_level == SDP_DATA_ELEM_NEST_LEVEL_MAX) {
+		return 0;
+	}
+
+	seq_size = elem->data_size;
+	cur_elem = elem->data;
+
+	if ((elem->type & BT_SDP_TYPE_DESC_MASK) == BT_SDP_UUID_UNSPEC) {
+		if (seq_size == 2) {
+			u.uuid.type = BT_UUID_TYPE_16;
+			u.u16.val = *((uint16_t *)cur_elem);
+			if (!bt_uuid_cmp(&u.uuid, uuid)) {
+				*found = true;
+			}
+		} else if (seq_size == 4) {
+			u.uuid.type = BT_UUID_TYPE_32;
+			u.u32.val = *((uint32_t *)cur_elem);
+			if (!bt_uuid_cmp(&u.uuid, uuid)) {
+				*found = true;
+			}
+		} else if (seq_size == 16) {
+			u.uuid.type = BT_UUID_TYPE_128;
+			memcpy(u.u128.val, cur_elem, seq_size);
+			if (!bt_uuid_cmp(&u.uuid, uuid)) {
+				*found = true;
+			}
+		} else {
+			BT_WARN("Invalid UUID size in local database");
+			BT_ASSERT(0);
+		}
+	}
+
+	if ((elem->type & BT_SDP_TYPE_DESC_MASK) == BT_SDP_SEQ_UNSPEC ||
+	    (elem->type & BT_SDP_TYPE_DESC_MASK) == BT_SDP_ALT_UNSPEC) {
+		do {
+			/* Recursively parse data elements */
+			size = search_uuid((struct bt_sdp_data_elem *)cur_elem,
+					   uuid, found, nest_level + 1);
+			if (*found) {
+				return 0;
+			}
+			cur_elem += sizeof(struct bt_sdp_data_elem);
+			seq_size -= size;
+		} while (seq_size);
+	}
+
+	return elem->total_size;
+}
+
 /* @brief SDP service record iterator.
  *
  * Iterate over service records from a starting point.
@@ -318,8 +405,11 @@ static uint16_t find_services(struct net_buf *buf,
 			      struct bt_sdp_record **matching_recs)
 {
 	struct bt_sdp_data_elem data_elem;
+	struct bt_sdp_record *record;
 	uint32_t uuid_list_size;
 	uint16_t res;
+	uint8_t att_idx, rec_idx = 0;
+	bool found;
 	union {
 		struct bt_uuid uuid;
 		struct bt_uuid_16 u16;
@@ -381,9 +471,35 @@ static uint16_t find_services(struct net_buf *buf,
 
 		uuid_list_size -= data_elem.total_size;
 
-		/* TODO: Go over the list of services, and look for a service
-		 * which doesn't have this UUID
+		/* Go over the list of services, and look for a service which
+		 * doesn't have this UUID
 		 */
+		for (rec_idx = 0; rec_idx < num_services; rec_idx++) {
+			record = matching_recs[rec_idx];
+
+			if (!record) {
+				continue;
+			}
+
+			found = false;
+
+			/* Search for the UUID in all the attrs of the svc */
+			for (att_idx = 0; att_idx < record->attr_count;
+			     att_idx++) {
+				search_uuid(&record->attrs[att_idx].val,
+					    &u.uuid, &found, 1);
+				if (found) {
+					break;
+				}
+			}
+
+			/* Remove the record from the list if it doesn't have
+			 * the UUID
+			 */
+			if (!found) {
+				matching_recs[rec_idx] = NULL;
+			}
+		}
 	}
 
 	return 0;
