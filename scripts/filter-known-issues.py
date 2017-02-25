@@ -229,8 +229,8 @@ for filename in args.FILENAMEs:
                 offset = e
             mm.seek(offset)
             if len(mm) != offset:
-                logging.info("%s: error final range (%d, %d), from %d %dB",
-                             filename, b, e, offset, e - b)
+                logging.info("%s: error final range from %d %dB",
+                             filename, offset, len(mm))
                 report_error(mm.read(len(mm) - offset - 1))
             del mm
     except Exception as e:
