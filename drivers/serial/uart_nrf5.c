@@ -195,6 +195,7 @@ static int uart_nrf5_init(struct device *dev)
 	int err;
 
 	gpio_dev = device_get_binding(CONFIG_GPIO_NRF5_P0_DEV_NAME);
+
 	(void) gpio_pin_configure(gpio_dev,
 				  CONFIG_UART_NRF5_GPIO_TX_PIN,
 				  (GPIO_DIR_OUT | GPIO_PUD_PULL_UP));
@@ -209,7 +210,7 @@ static int uart_nrf5_init(struct device *dev)
 
 	(void) gpio_pin_configure(gpio_dev,
 				  CONFIG_UART_NRF5_GPIO_RTS_PIN,
-				  (GPIO_DIR_OUT));
+				  (GPIO_DIR_OUT | GPIO_PUD_PULL_UP));
 	(void) gpio_pin_configure(gpio_dev,
 				  CONFIG_UART_NRF5_GPIO_CTS_PIN,
 				  (GPIO_DIR_IN));
