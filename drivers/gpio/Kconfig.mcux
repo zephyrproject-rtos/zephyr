@@ -25,7 +25,7 @@ config GPIO_MCUX_PORTA
 config GPIO_MCUX_PORTA_NAME
 	string "Port A driver name"
 	depends on GPIO_MCUX_PORTA
-	default "gpio_porta"
+	default "GPIO_0"
 
 config GPIO_MCUX_PORTA_PRI
 	int "Port A interrupt priority"
@@ -42,7 +42,7 @@ config GPIO_MCUX_PORTB
 config GPIO_MCUX_PORTB_NAME
 	string "Port B driver name"
 	depends on GPIO_MCUX_PORTB
-	default "gpio_portb"
+	default "GPIO_1"
 
 config GPIO_MCUX_PORTB_PRI
 	int "Port B interrupt priority"
@@ -59,7 +59,7 @@ config GPIO_MCUX_PORTC
 config GPIO_MCUX_PORTC_NAME
 	string "Port C driver name"
 	depends on GPIO_MCUX_PORTC
-	default "gpio_portc"
+	default "GPIO_2"
 
 config GPIO_MCUX_PORTC_PRI
 	int "Port C interrupt priority"
@@ -76,7 +76,7 @@ config GPIO_MCUX_PORTD
 config GPIO_MCUX_PORTD_NAME
 	string "Port D driver name"
 	depends on GPIO_MCUX_PORTD
-	default "gpio_portd"
+	default "GPIO_3"
 
 config GPIO_MCUX_PORTD_PRI
 	int "Port D interrupt priority"
@@ -93,7 +93,7 @@ config GPIO_MCUX_PORTE
 config GPIO_MCUX_PORTE_NAME
 	string "Port E driver name"
 	depends on GPIO_MCUX_PORTE
-	default "gpio_porte"
+	default "GPIO_4"
 
 config GPIO_MCUX_PORTE_PRI
 	int "Port E interrupt priority"
