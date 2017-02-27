@@ -418,7 +418,7 @@ where the maximum size of a message is known in advance.
    This technique can be used when the message data is actually located
    in a memory block supplied by the sending thread. The mailbox copies
    the data into the message buffer specified by the receiving thread, then
-   frees the meessage block back to its memory pool. This allows
+   frees the message block back to its memory pool. This allows
    a receiving thread to retrieve message data without having to know
    whether the data was sent using a message buffer or a message block.
 

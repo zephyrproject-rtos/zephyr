@@ -4,7 +4,7 @@ Interrupts
 ##########
 
 An :dfn:`interrupt service routine` (ISR) is a function that executes
-asychronously in response to a hardware or software interrupt.
+asynchronously in response to a hardware or software interrupt.
 An ISR normally preempts the execution of the current thread,
 allowing the response to occur with very low overhead.
 Thread execution resumes only once all ISR work has been completed.

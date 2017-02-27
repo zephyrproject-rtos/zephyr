@@ -106,7 +106,7 @@ which can be accessed using efficient masking operations.
     /* Buffer with 2^8 (or 256) words */
     SYS_RING_BUF_DECLARE_POW2(my_ring_buf, 8);
 
-The following code defines a ring buffer with an arbitraty-sized data buffer,
+The following code defines a ring buffer with an arbitrary-sized data buffer,
 which can be accessed using less efficient modulo operations.
 
 .. code-block:: c

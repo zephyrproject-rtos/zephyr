@@ -83,7 +83,7 @@ thread's priority correctly reverts to its original non-elevated priority.
 The kernel does *not* fully support priority inheritance when a thread holds
 two or more mutexes simultaneously. This situation can result in the thread's
 priority not reverting to its original non-elevated priority when all mutexes
-have been released. It is recommended that a thread lcok only a single mutex
+have been released. It is recommended that a thread lock only a single mutex
 at a time when multiple mutexes are shared between threads of different
 priorities.
 
@@ -126,7 +126,7 @@ for the mutex to become available if it is already locked by another thread.
     k_mutex_lock(&my_mutex, K_FOREVER);
 
 The following code waits up to 100 milliseconds for the mutex to become
-available, and gives a warning if the mutex does not become availablee.
+available, and gives a warning if the mutex does not become available.
 
 .. code-block:: c
 

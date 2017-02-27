@@ -75,7 +75,7 @@ ranges:
 * preemptive threads: 0 to (:option:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1)
 
 For example, configuring 5 cooperative priorities and 10 preemptive priorities
-results in the ranages -5 to -1 and 0 to 9, respectively.
+results in the ranges -5 to -1 and 0 to 9, respectively.
 
 Scheduling Algorithm
 ====================
