@@ -1096,6 +1096,20 @@ void net_nbuf_print(void);
 #define net_nbuf_print(...)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+typedef void (*net_nbuf_allocs_cb_t)(struct net_buf *buf,
+				     const char *func_alloc,
+				     int line_alloc,
+				     const char *func_free,
+				     int line_free,
+				     bool in_use,
+				     void *user_data);
+
+void net_nbuf_allocs_foreach(net_nbuf_allocs_cb_t cb, void *user_data);
+const char *net_nbuf_pool2str(struct net_buf_pool *pool);
+
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
+
 #ifdef __cplusplus
 }
 #endif

@@ -113,13 +113,6 @@ NET_BUF_POOL_DEFINE(data_tx_bufs, NBUF_TX_DATA_COUNT, NBUF_DATA_LEN,
 #define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
-static inline int16_t get_frees(struct net_buf_pool *pool)
-{
-	return pool->avail_count;
-}
-#endif
-
 static inline bool is_data_pool(struct net_buf_pool *pool)
 {
 	/* The user data can only be found in TX/RX pool and it
@@ -136,6 +129,115 @@ static inline bool is_from_data_pool(struct net_buf *buf)
 {
 	return is_data_pool(buf->pool);
 }
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+struct nbuf_alloc {
+	struct net_buf *buf;
+	const char *func_alloc;
+	const char *func_free;
+	uint16_t line_alloc;
+	uint16_t line_free;
+	uint8_t in_use;
+};
+
+#define MAX_NBUF_ALLOCS (NBUF_RX_COUNT + NBUF_TX_COUNT + \
+			 NBUF_RX_DATA_COUNT + NBUF_TX_DATA_COUNT + \
+			 CONFIG_NET_DEBUG_NET_BUF_EXTERNALS)
+
+static struct nbuf_alloc nbuf_allocs[MAX_NBUF_ALLOCS];
+
+static bool nbuf_alloc_add(struct net_buf *buf,
+			   const char *func,
+			   int line)
+{
+	int i;
+
+	for (i = 0; i < MAX_NBUF_ALLOCS; i++) {
+		if (nbuf_allocs[i].in_use) {
+			continue;
+		}
+
+		nbuf_allocs[i].in_use = true;
+		nbuf_allocs[i].buf = buf;
+		nbuf_allocs[i].func_alloc = func;
+		nbuf_allocs[i].line_alloc = line;
+
+		return true;
+	}
+
+	return false;
+}
+
+static bool nbuf_alloc_del(struct net_buf *buf,
+			   const char *func,
+			   int line)
+{
+	int i;
+
+	for (i = 0; i < MAX_NBUF_ALLOCS; i++) {
+		if (nbuf_allocs[i].in_use && nbuf_allocs[i].buf == buf) {
+			nbuf_allocs[i].func_free = func;
+			nbuf_allocs[i].line_free = line;
+			nbuf_allocs[i].in_use = false;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void net_nbuf_allocs_foreach(net_nbuf_allocs_cb_t cb, void *user_data)
+{
+	int i;
+
+	for (i = 0; i < MAX_NBUF_ALLOCS; i++) {
+		if (nbuf_allocs[i].in_use) {
+			cb(nbuf_allocs[i].buf,
+			   nbuf_allocs[i].func_alloc,
+			   nbuf_allocs[i].line_alloc,
+			   nbuf_allocs[i].func_free,
+			   nbuf_allocs[i].line_free,
+			   nbuf_allocs[i].in_use,
+			   user_data);
+		}
+	}
+
+	for (i = 0; i < MAX_NBUF_ALLOCS; i++) {
+		if (!nbuf_allocs[i].in_use) {
+			cb(nbuf_allocs[i].buf,
+			   nbuf_allocs[i].func_alloc,
+			   nbuf_allocs[i].line_alloc,
+			   nbuf_allocs[i].func_free,
+			   nbuf_allocs[i].line_free,
+			   nbuf_allocs[i].in_use,
+			   user_data);
+		}
+	}
+}
+
+const char *net_nbuf_pool2str(struct net_buf_pool *pool)
+{
+	if (pool == &rx_bufs) {
+		return "RX";
+	} else if (pool == &tx_bufs) {
+		return "TX";
+	} else if (pool == &data_rx_bufs) {
+		return "RDATA";
+	} else if (pool == &data_tx_bufs) {
+		return "TDATA";
+	} else if (is_data_pool(pool)) {
+		return "EDATA";
+	}
+
+	return "EXT";
+}
+
+static inline int16_t get_frees(struct net_buf_pool *pool)
+{
+	return pool->avail_count;
+}
+#endif
 
 #if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
 static inline struct net_buf_pool *get_tx_pool(struct net_context *context)
@@ -165,19 +267,7 @@ static inline bool is_external_pool(struct net_buf_pool *pool)
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 static inline const char *pool2str(struct net_buf_pool *pool)
 {
-	if (pool == &rx_bufs) {
-		return "RX";
-	} else if (pool == &tx_bufs) {
-		return "TX";
-	} else if (pool == &data_rx_bufs) {
-		return "RDATA";
-	} else if (pool == &data_tx_bufs) {
-		return "TDATA";
-	} else if (is_data_pool(pool)) {
-		return "EDATA";
-	}
-
-	return "EXTERNAL";
+	return net_nbuf_pool2str(pool);
 }
 
 void net_nbuf_print_frags(struct net_buf *buf)
@@ -261,6 +351,8 @@ struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
+	nbuf_alloc_add(buf, caller, line);
+
 	NET_DBG("%s (%s) [%d] buf %p reserve %u ref %d (%s():%d)",
 		pool2str(pool), pool->name, get_frees(pool),
 		buf, reserve_head, buf->ref, caller, line);
@@ -548,8 +640,12 @@ void net_nbuf_unref(struct net_buf *buf)
 				"(%s():%d)", frag, caller, line);
 		}
 
+		nbuf_alloc_del(frag, caller, line);
+
 		frag = net_buf_frag_del(buf, frag);
 	}
+
+	nbuf_alloc_del(buf, caller, line);
 
 done:
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
