@@ -9,7 +9,7 @@ defined in a generic way.
 
 This API can be deactivated through the Kconfig options, see
 :ref:`global_kconfig`.
-This aproach prevents impacting image size and execution time when the system
+This approach prevents impacting image size and execution time when the system
 log is not needed.
 
 Each of the four ``SYS_LOG_X`` macros correspond to a different logging level,

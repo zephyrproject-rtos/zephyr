@@ -49,7 +49,7 @@ Zephyr provides a set of device drivers for multiple boards. Each driver
 should support an interrupt-based implementation, rather than polling, unless
 the specific hardware does not provide any interrupt.
 
-High-level calls accessed through devices's specific API, such as i2c.h
+High-level calls accessed through device-specific APIs, such as i2c.h
 or spi.h, are usually intended as synchronous. Thus, these calls should be
 blocking.
 
@@ -147,7 +147,7 @@ the normal course of operation (such as a storage device full). Bad
 parameters, programming errors, consistency checks, pathological/unrecoverable
 failures, etc., should be handled by assertions.
 
-When it is appropriate to return error condtitions for the caller to check, 0
+When it is appropriate to return error conditions for the caller to check, 0
 should be returned on success and a POSIX errno.h code returned on failure.
 See https://wiki.zephyrproject.org/view/Coding_conventions#Return_Codes for
 details about this.
@@ -280,7 +280,7 @@ executed. Any driver will specify one of five initialization levels:
 `PRE_KERNEL_2`
         Used for devices that rely on the initialization of devices initialized
         as part of the PRIMARY level. These devices cannot use any kernel
-        services during configuration, since the kerne services are not yet
+        services during configuration, since the kernel services are not yet
         available. Init functions at this level run on the interrupt stack.
 
 `POST_KERNEL`

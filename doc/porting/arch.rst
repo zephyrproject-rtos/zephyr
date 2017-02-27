@@ -83,7 +83,7 @@ When a device wants to signal the processor that there is some work to be done
 on its behalf, it raises an interrupt. When a thread does an operation that is
 not handled by the serial flow of the software itself, it raises an exception.
 Both, interrupts and exceptions, pass control to a handler. The handler is
-knowns as an :abbr:`ISR (Interrupt Service Routine)` in the case of
+known as an :abbr:`ISR (Interrupt Service Routine)` in the case of
 interrupts. The handler perform the work required the exception or the
 interrupt.  For interrupts, that work is device-specific. For exceptions, it
 depends on the exception, but most often the core kernel itself is responsible

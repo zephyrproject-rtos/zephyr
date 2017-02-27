@@ -113,7 +113,7 @@ echo_server sample, CONFIG_NET_TCP=y):
 
    You will need to Ctrl+C manually.
 
-You can also use the telnet comand to achieve the above.
+You can also use the telnet command to achieve the above.
 
 Setting up NAT/masquerading to access Internet
 **********************************************

@@ -8,7 +8,7 @@ Legacy Applications Porting Guide
 
    This document is still work in progress.
 
-This guide will help you move your applications from the nanokerne/microkernel
+This guide will help you move your applications from the nanokernel/microkernel
 model to the unified kernel. The unified kernel was introduced with
 :ref:`zephyr_1.6` which was released late 2016.
 

@@ -18,10 +18,10 @@ Documentation Notes
 
 Zephyr Project content is written using the reStructuredText markup language
 (.rst file extension) with Sphinx extensions, and processed using sphinx to
-create a formatted standalone website. Developers can view this content either
+create a formatted stand-alone website. Developers can view this content either
 in its raw form as .rst markup files, or you can generate the HTML content and view it
 with a web browser directly on your workstations drive. This same .rst
-content is also fed into the Zephyr Project'ns public website documentation area
+content is also fed into the Zephyr Project's public website documentation area
 (with a different theme applied).
 
 You can read details about reStructuredText and about Sphinx extensions from

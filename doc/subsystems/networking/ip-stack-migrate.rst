@@ -26,15 +26,15 @@ migrate applications using the older v1.6 IP stack to the new v1.7 IP stack:
   at the same time. This means that applications can utilize concurrently e.g.,
   IEEE 802.15.4 and Bluetooth IP networking. The different network technologies
   are abstracted to network interfaces and there can be multiple network
-  interaces in the system depending on configuration.
+  interfaces in the system depending on configuration.
 
 * **Network Kconfig options are changed.** Most of the networking configuration
   options are renamed. Please check the :ref:`networking` documentation for the
   new names.
 
-* **All uIP based API's are gone.** Those API's were not public in v1.6 but
-  applications could call them anyway. These uIP API's were mainly used to set
-  IP address etc. management style operations. The new management API's can be
+* **All uIP based APIs are gone.** Those APIs were not public in v1.6 but
+  applications could call them anyway. These uIP APIs were mainly used to set
+  IP address etc. management style operations. The new management APIs can be
   found in net_if.h and net_mgmt.h in Zephyr v1.7.
 
 * **Network buffer management is changed.** In earlier Zephyr versions, there

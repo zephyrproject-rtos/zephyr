@@ -36,7 +36,7 @@ for native Windows applications. The Zephyr build system will execute on top of
 this tool set.
 
 To install :program:`MinGW`, visit the site `MinGW Home`_ and install the
-following packages with their installler `mingw-get-setup.exe`:
+following packages with their installer `mingw-get-setup.exe`:
 
 * mingw-developer-toolkit
 * mingw32-base

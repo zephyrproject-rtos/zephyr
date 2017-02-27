@@ -462,9 +462,9 @@ TSPC_GAP_27_3	False (*)	Peripheral Privacy Flag (C.1)
 TSPC_GAP_27_4	False (*)	Reconnection Address (C.2)
 TSPC_GAP_27_5	False (*)	Peripheral Preferred Connection Parameters
 				(C.3)
-TSPC_GAP_27_6	True		Writeable Device Name (C.3)
-TSPC_GAP_27_7	True		Writeable Appearance (C.3)
-TSPC_GAP_27_8	False (*)	Writeable Peripheral Privacy Flag (C.4)
+TSPC_GAP_27_6	True		Writable Device Name (C.3)
+TSPC_GAP_27_7	True		Writable Appearance (C.3)
+TSPC_GAP_27_8	False (*)	Writable Peripheral Privacy Flag (C.4)
 ==============	==============	=======================================
 
 

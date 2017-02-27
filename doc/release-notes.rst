@@ -64,7 +64,7 @@ Boards
 
 * Renamed board Quark SE devboard to Quark SE C1000 devboard.
 * Renamed board Quark SE SSS devboard to Quark SE C1000 SS devboard.
-* Quark SE C1000: Disabled IPM and enabled UART0 on the Sensor SubSytem.
+* Quark SE C1000: Disabled IPM and enabled UART0 on the Sensor Subsystem.
 * Removed basic_cortex_m3 and basic_minuteia boards.
 * Arduino 101: Removed backup/restore scripts. To restore original bootloader
   use flashpack utility instead.
@@ -235,7 +235,7 @@ JIRA Related Items
 * :jira:`ZEP-926` - API changes to memory pools
 * :jira:`ZEP-927` - API changes to memory maps
 * :jira:`ZEP-928` - API changes to event handling
-* :jira:`ZEP-930` - Cutover to unified kernel
+* :jira:`ZEP-930` - Cut over to unified kernel
 * :jira:`ZEP-933` - Unified kernel ARC port
 * :jira:`ZEP-934` - NIOS_II port
 * :jira:`ZEP-935` - Kernel logger support (validation)
@@ -303,12 +303,12 @@ JIRA Related Items
 * :jira:`ZEP-940` - Fail to get ATT response
 * :jira:`ZEP-950` - USB: Device is not listed by USB20CV test suite
 * :jira:`ZEP-961` - samples: other cases cannot execute after run aon_counter case
-* :jira:`ZEP-967` - Sanity doesnt build 'samples/usb/dfu' with assertions (-R)
-* :jira:`ZEP-970` - Sanity doesnt build 'tests/kernel/test_build' with assertions (-R)
+* :jira:`ZEP-967` - Sanity doesn't build 'samples/usb/dfu' with assertions (-R)
+* :jira:`ZEP-970` - Sanity doesn't build 'tests/kernel/test_build' with assertions (-R)
 * :jira:`ZEP-982` - Minimal libc has EWOULDBLOCK != EAGAIN
 * :jira:`ZEP-1014` - [TCF] tests/bluetooth/init build fail
 * :jira:`ZEP-1025` - Unified kernel build sometimes breaks on a missing .d dependency file.
-* :jira:`ZEP-1027` - Doccumentation for GCC ARM is not accurate
+* :jira:`ZEP-1027` - Documentation for GCC ARM is not accurate
 * :jira:`ZEP-1031` - qmsi: dma: driver test fails with LLVM
 * :jira:`ZEP-1048` - grove_lcd sample: sample does not work if you disable serial
 * :jira:`ZEP-1051` - mpool allocation failed after defrag twice...
@@ -323,7 +323,7 @@ JIRA Related Items
 * :jira:`ZEP-1101` - SYS_KERNEL_VER_PATCHLEVEL() and friends artificially limit version numbers to 4 bits
 * :jira:`ZEP-1124` - tests/kernel/test_sprintf/microkernel/testcase.ini#test failure on frdm_k64f
 * :jira:`ZEP-1130` - region 'RAM' overflowed occurs while building test_hmac_prng
-* :jira:`ZEP-1138` - Recived packets not being passed to upper layer from IP stack when using ENC28J60 driver
+* :jira:`ZEP-1138` - Received packets not being passed to upper layer from IP stack when using ENC28J60 driver
 * :jira:`ZEP-1139` - Fix build error when power management is built with unified kernel
 * :jira:`ZEP-1141` - Tinycrypt SHA256 test fails with system crash using unified kernel type
 * :jira:`ZEP-1144` - Tinycrypt AES128 fixed-key with variable-text test fails using unified kernel type

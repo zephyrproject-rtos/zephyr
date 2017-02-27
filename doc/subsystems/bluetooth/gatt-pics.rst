@@ -217,8 +217,8 @@ TSPC_GATT_4B_38	True		Server: Characteristic Format: struct (M)
 ===============	===========	============================================
 
 
-Generic Attribute Profile Service - SDP Inteoperability
-*******************************************************
+Generic Attribute Profile Service - SDP Interoperability
+********************************************************
 
 ==============	===========	============================================
 Parameter Name	Selected	Description

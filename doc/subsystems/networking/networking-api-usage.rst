@@ -13,7 +13,7 @@ API is that the net_context API uses the fragmented network buffers (net_buf)
 defined in :file:`net/buf.h` and BSD socket API uses linear memory buffers.
 
 This example creates a simple server that listens to incoming UDP connections
-and sends the received data back. You can downlow the example application
+and sends the received data back. You can download the example application
 source file here `connectivity-example-app.c <https://gerrit.zephyrproject.org/r/gitweb?p=zephyr.git;a=blob;f=doc/subsystems/networking/connectivity-example-app.c>`_
 
 This example application begins with some initialization. (Use this as an
