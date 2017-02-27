@@ -1117,7 +1117,7 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
  */
 int net_if_up(struct net_if *iface);
 
-/*
+/**
  * @brief Bring interface down
  *
  * @param iface Pointer to network interface

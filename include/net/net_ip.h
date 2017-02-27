@@ -678,13 +678,28 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 
 		break;
 	case 6:
+		/* We do not toggle the Universal/Local bit
+		 * in Bluetooth. See RFC 7668 ch 3.2.2
+		 */
 		memcpy(&addr->s6_addr[8], lladdr->addr, 3);
 		addr->s6_addr[11] = 0xff;
 		addr->s6_addr[12] = 0xfe;
 		memcpy(&addr->s6_addr[13], lladdr->addr + 3, 3);
-		addr->s6_addr[8] ^= 0x02;
-		break;
 
+#if defined(CONFIG_NET_L2_BLUETOOTH_ZEP1656)
+		/* Workaround against older Linux kernel BT IPSP code.
+		 * This will be removed eventually.
+		 */
+		if (lladdr->type == NET_LINK_BLUETOOTH) {
+			addr->s6_addr[8] ^= 0x02;
+		}
+#endif
+
+		if (lladdr->type == NET_LINK_ETHERNET) {
+			addr->s6_addr[8] ^= 0x02;
+		}
+
+		break;
 	case 8:
 		memcpy(&addr->s6_addr[8], lladdr->addr, lladdr->len);
 		addr->s6_addr[8] ^= 0x02;
@@ -717,12 +732,28 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 
 		break;
 	case 6:
-		if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1], 2) &&
-		    !memcmp(&addr->s6_addr[13], &lladdr->addr[3], 3) &&
-		    addr->s6_addr[11] == 0xff &&
-		    addr->s6_addr[12] == 0xfe &&
-		    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {
-			return true;
+		if (lladdr->type == NET_LINK_ETHERNET) {
+			if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1], 2) &&
+			    !memcmp(&addr->s6_addr[13], &lladdr->addr[3], 3) &&
+			    addr->s6_addr[11] == 0xff &&
+			    addr->s6_addr[12] == 0xfe &&
+			    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {
+				return true;
+			}
+		} else if (lladdr->type == NET_LINK_BLUETOOTH) {
+			if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1], 2) &&
+			    !memcmp(&addr->s6_addr[13], &lladdr->addr[3], 3) &&
+			    addr->s6_addr[11] == 0xff &&
+			    addr->s6_addr[12] == 0xfe
+#if defined(CONFIG_NET_L2_BLUETOOTH_ZEP1656)
+			    /* Workaround against older Linux kernel BT IPSP
+			     * code. This will be removed eventually.
+			     */
+			    && (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]
+#endif
+			    ) {
+				return true;
+			}
 		}
 
 		break;

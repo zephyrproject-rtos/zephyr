@@ -34,6 +34,17 @@
 
 #define APP_MAX_ITERATIONS	100
 
-#define ENABLE_BLUEMIX_TOPIC	0
+#define MQTT_CLIENTID		"zephyr_publisher"
+
+/* Set the following to 1 to enable the Bluemix topic format */
+#define APP_BLUEMIX_TOPIC	0
+
+/* These are the parameters for the Bluemix topic format */
+#if APP_BLUEMIX_TOPIC
+#define BLUEMIX_DEVTYPE		"sensor"
+#define BLUEMIX_DEVID		"carbon"
+#define BLUEMIX_EVENT		"status"
+#define BLUEMIX_FORMAT		"json"
+#endif
 
 #endif
