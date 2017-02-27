@@ -132,7 +132,7 @@ struct bt_avdtp_sep {
 };
 
 struct bt_avdtp_discover_params {
-	struct bt_avdtp_req *req;
+	struct bt_avdtp_req req;
 	uint8_t status;
 	struct bt_avdtp_sep *caps;
 };

@@ -328,5 +328,5 @@ int bt_avdtp_discover(struct bt_avdtp *session,
 
 	/* Body of the message */
 
-	return avdtp_send(session, buf, param->req);
+	return avdtp_send(session, buf, &param->req);
 }
