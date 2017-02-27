@@ -62,7 +62,7 @@ endif # NET_L2_ETHERNET
 
 if RANDOM_GENERATOR
 
-config RANDOM_MCUX
+config RANDOM_MCUX_RNGA
 	def_bool y
 
 endif # RANDOM_GENERATOR
