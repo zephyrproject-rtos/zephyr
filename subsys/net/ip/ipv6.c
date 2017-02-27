@@ -571,7 +571,7 @@ static struct net_buf *update_ll_reserve(struct net_buf *buf,
 		}
 
 		if (!copy_len) {
-			orig_frag = net_buf_frag_del(NULL, orig_frag);
+			orig_frag = net_nbuf_frag_del(NULL, orig_frag);
 			if (!orig_frag) {
 				break;
 			}

@@ -427,6 +427,12 @@ struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller,
 				   int line);
 #define net_nbuf_ref(buf) net_nbuf_ref_debug(buf, __func__, __LINE__)
 
+struct net_buf *net_nbuf_frag_del_debug(struct net_buf *parent,
+					struct net_buf *frag,
+					const char *caller, int line);
+#define net_nbuf_frag_del(parent, frag)					\
+	net_nbuf_frag_del_debug(parent, frag, __func__, __LINE__)
+
 /**
  * @brief Print fragment list and the fragment sizes
  *
@@ -623,6 +629,17 @@ void net_nbuf_unref(struct net_buf *buf);
  * @return Network buffer if successful, NULL otherwise.
  */
 struct net_buf *net_nbuf_ref(struct net_buf *buf);
+
+/** @brief Delete existing fragment from a chain of bufs.
+ *
+ *  @param parent Parent buffer/fragment, or NULL if there is no parent.
+ *  @param frag Fragment to delete.
+ *
+ *  @return Pointer to the buffer following the fragment, or NULL if it
+ *          had no further fragments.
+ */
+struct net_buf *net_nbuf_frag_del(struct net_buf *parent,
+				  struct net_buf *frag);
 
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 

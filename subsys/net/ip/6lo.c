@@ -778,7 +778,7 @@ end:
 	net_buf_add(frag, buf->frags->len - compressed);
 
 	/* Delete uncompressed(original) header fragment */
-	net_buf_frag_del(buf, buf->frags);
+	net_nbuf_frag_del(buf, buf->frags);
 
 	/* Insert compressed header fragment */
 	net_buf_frag_insert(buf, frag);

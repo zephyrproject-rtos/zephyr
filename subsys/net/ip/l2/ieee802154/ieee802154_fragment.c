@@ -286,7 +286,7 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 		compact_frag(next, move);
 
 		if (!next->len) {
-			next = net_buf_frag_del(NULL, next);
+			next = net_nbuf_frag_del(NULL, next);
 			if (!next) {
 				break;
 			}

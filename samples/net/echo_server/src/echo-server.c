@@ -361,7 +361,7 @@ static struct net_buf *build_reply_buf(const char *name,
 
 		net_buf_frag_add(reply_buf, frag);
 
-		tmp = net_buf_frag_del(buf, tmp);
+		tmp = net_nbuf_frag_del(buf, tmp);
 	}
 
 	reply_len = net_buf_frags_len(reply_buf->frags);

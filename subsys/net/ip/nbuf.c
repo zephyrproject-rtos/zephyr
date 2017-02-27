@@ -674,6 +674,24 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf)
 	return net_buf_ref(buf);
 }
 
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+struct net_buf *net_nbuf_frag_del_debug(struct net_buf *parent,
+					struct net_buf *frag,
+					const char *caller, int line)
+#else
+struct net_buf *net_nbuf_frag_del(struct net_buf *parent,
+				  struct net_buf *frag)
+#endif
+{
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	if (frag->ref == 1) {
+		nbuf_alloc_del(frag, caller, line);
+	}
+#endif
+
+	return net_buf_frag_del(parent, frag);
+}
+
 struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
 			      size_t reserve, int32_t timeout)
 {
@@ -898,7 +916,7 @@ bool net_nbuf_compact(struct net_buf *buf)
 				 * not have copied all data. Remove next
 				 * fragment as there is no data in it any more.
 				 */
-				net_buf_frag_del(buf, buf->frags);
+				net_nbuf_frag_del(buf, buf->frags);
 
 				/* Then check next fragment */
 				continue;
@@ -908,7 +926,7 @@ bool net_nbuf_compact(struct net_buf *buf)
 				/* Remove the last fragment because there is no
 				 * data in it.
 				 */
-				net_buf_frag_del(prev, buf);
+				net_nbuf_frag_del(prev, buf);
 
 				break;
 			}
@@ -954,9 +972,9 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
 
 				tmp.frags = buf;
 				first = buf->frags;
-				net_buf_frag_del(&tmp, buf);
+				net_nbuf_frag_del(&tmp, buf);
 			} else {
-				net_buf_frag_del(first, buf);
+				net_nbuf_frag_del(first, buf);
 			}
 
 			return first;
@@ -969,10 +987,10 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
 
 			tmp.frags = buf;
 			first = buf->frags;
-			net_buf_frag_del(&tmp, buf);
+			net_nbuf_frag_del(&tmp, buf);
 			buf = first;
 		} else {
-			net_buf_frag_del(first, buf);
+			net_nbuf_frag_del(first, buf);
 			buf = first->frags;
 		}
 	}
