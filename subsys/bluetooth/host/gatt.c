@@ -594,6 +594,11 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	return 0;
 }
 
+uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
+{
+	return bt_att_get_mtu(conn);
+}
+
 static uint8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct bt_conn *conn = user_data;

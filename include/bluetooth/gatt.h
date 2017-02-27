@@ -729,6 +729,17 @@ struct bt_gatt_indicate_params {
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params);
 
+/** @brief Get ATT MTU for a connection
+ *
+ *  Get negotiated ATT connection MTU, note that this does not equal the largest
+ *  amount of attribute data that can be transferred within a single packet.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return MTU in bytes
+ */
+uint16_t bt_gatt_get_mtu(struct bt_conn *conn);
+
 /* Client API */
 
 /** @brief GATT Exchange MTU parameters */
