@@ -223,7 +223,7 @@ struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
 				     int32_t timeout)
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 {
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 
 	/*
 	 * The reserve_head variable in the function will tell
