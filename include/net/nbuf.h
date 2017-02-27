@@ -62,7 +62,6 @@ struct net_nbuf {
 	struct net_linkaddr lladdr_dst;
 
 	uint16_t appdatalen;
-	uint16_t reserve;	/* length of the protocol headers */
 	uint8_t ll_reserve;	/* link layer header length */
 	uint8_t family;		/* IPv4 vs IPv6 */
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
@@ -270,11 +269,6 @@ static inline uint16_t net_nbuf_appdatalen(struct net_buf *buf)
 static inline void net_nbuf_set_appdatalen(struct net_buf *buf, uint16_t len)
 {
 	((struct net_nbuf *)net_buf_user_data(buf))->appdatalen = len;
-}
-
-static inline uint16_t net_nbuf_reserve(struct net_buf *buf)
-{
-	return ((struct net_nbuf *)net_buf_user_data(buf))->reserve;
 }
 
 static inline uint8_t net_nbuf_ll_reserve(struct net_buf *buf)
