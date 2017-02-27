@@ -61,7 +61,7 @@ SYS_INIT(_sys_k_event_logger_init,
  * to point to an application-defined routine.
  *
  */
-sys_k_timer_func_t _sys_k_get_time = sys_cycle_get_32;
+sys_k_timer_func_t _sys_k_get_time = k_cycle_get_32;
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
 void sys_k_event_logger_put_timed(uint16_t event_id)
@@ -168,7 +168,7 @@ void _sys_k_event_logger_enter_sleep(void)
 		return;
 	}
 
-	_sys_k_event_logger_sleep_start_time = sys_cycle_get_32();
+	_sys_k_event_logger_sleep_start_time = k_cycle_get_32();
 }
 
 void _sys_k_event_logger_exit_sleep(void)
@@ -181,7 +181,7 @@ void _sys_k_event_logger_exit_sleep(void)
 
 	if (_sys_k_event_logger_sleep_start_time != 0) {
 		data[0] = _sys_k_get_time();
-		data[1] = (sys_cycle_get_32() - _sys_k_event_logger_sleep_start_time)
+		data[1] = (k_cycle_get_32() - _sys_k_event_logger_sleep_start_time)
 			/ sys_clock_hw_cycles_per_tick;
 		/* register the cause of exiting sleep mode */
 		data[2] = _sys_current_irq_key_get();
