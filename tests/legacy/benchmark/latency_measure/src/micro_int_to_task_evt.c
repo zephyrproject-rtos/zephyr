@@ -71,7 +71,7 @@ int microIntToTaskEvt(void)
 	task_sem_give(INTSEMA);
 	task_event_recv(EVENT0, TICKS_UNLIMITED);
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
-	PRINT_FORMAT(" switch time is %lu tcs = %lu nsec",
+	PRINT_FORMAT(" switch time is %u tcs = %u nsec",
 		     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	return 0;
 }

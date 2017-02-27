@@ -24,21 +24,6 @@ const char sz_success[] = "SUCCESSFUL";
 const char sz_partial[] = "PARTIAL";
 const char sz_fail[] = "FAILED";
 
-const char sz_module_title_fmt[] = "\nMODULE: %s";
-const char sz_module_result_fmt[] = "\n\nPROJECT EXECUTION %s\n";
-const char sz_module_end_fmt[] = "\nEND MODULE";
-
-const char sz_date_fmt[] = "\nBUILD_DATE: %s %s";
-const char sz_kernel_ver_fmt[] = "\nKERNEL VERSION: 0x%x";
-const char sz_description[] = "\nTEST COVERAGE: %s";
-
-const char sz_test_case_fmt[] = "\n\nTEST CASE: %s";
-const char sz_test_start_fmt[] = "\nStarting test. Please wait...";
-const char sz_case_result_fmt[] = "\nTEST RESULT: %s";
-const char sz_case_details_fmt[] = "\nDETAILS: %s";
-const char sz_case_end_fmt[] = "\nEND TEST CASE";
-const char sz_case_timing_fmt[] = "%ld nSec";
-
 /* time necessary to read the time */
 uint32_t tm_off;
 

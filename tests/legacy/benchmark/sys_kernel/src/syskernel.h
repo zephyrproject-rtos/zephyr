@@ -26,20 +26,20 @@ extern const char sz_success[];
 extern const char sz_partial[];
 extern const char sz_fail[];
 
-extern const char sz_module_title_fmt[];
-extern const char sz_module_result_fmt[];
-extern const char sz_module_end_fmt[];
+#define sz_module_title_fmt	"\nMODULE: %s"
+#define sz_module_result_fmt	"\n\nPROJECT EXECUTION %s\n"
+#define sz_module_end_fmt	"\nEND MODULE"
 
-extern const char sz_product_fmt[];
-extern const char sz_kernel_ver_fmt[];
-extern const char sz_description[];
+#define sz_date_fmt		"\nBUILD_DATE: %s %s"
+#define sz_kernel_ver_fmt	"\nKERNEL VERSION: 0x%x"
+#define sz_description		"\nTEST COVERAGE: %s"
 
-extern const char sz_test_case_fmt[];
-extern const char sz_test_start_fmt[];
-extern const char sz_case_result_fmt[];
-extern const char sz_case_details_fmt[];
-extern const char sz_case_end_fmt[];
-extern const char sz_case_timing_fmt[];
+#define sz_test_case_fmt	"\n\nTEST CASE: %s"
+#define sz_test_start_fmt	"\nStarting test. Please wait..."
+#define sz_case_result_fmt	"\nTEST RESULT: %s"
+#define sz_case_details_fmt	"\nDETAILS: %s"
+#define sz_case_end_fmt		"\nEND TEST CASE"
+#define sz_case_timing_fmt	"%u nSec"
 
 int check_result(int i, uint32_t ticks);
 

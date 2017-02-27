@@ -25,7 +25,7 @@
 /* #define FLOAT */
 
 /* printf format defines. */
-#define FORMAT "| %-65s|%10lu|\n"
+#define FORMAT "| %-65s|%10u|\n"
 
 /* global defines */
 /* number of nsec per usec */
@@ -51,9 +51,12 @@ extern char Msg[MAX_MSG];
 extern char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 extern kpipe_t TestPipes[];
 extern FILE * output_file;
-extern const char dashline[];
 extern const char newline[];
 extern char sline[];
+
+#define dashline \
+	"|--------------------------------------" \
+	"---------------------------------------|\n"
 
 /* dummy_test is a function that is mapped when we */
 /* do not want to test a specific Benchmark */
@@ -113,7 +116,7 @@ extern void event_test(void);
  * Macro to print an ASCII NULL terminated string. fprintf is used
  * so output can go to console.
  */
-#define PRINT_STRING(string, stream)  fprintf(stream, string)
+#define PRINT_STRING(string, stream)  fputs(string, stream)
 
 /* PRINT_F
  * Macro to print a formatted output string. fprintf is used when

@@ -46,7 +46,7 @@ int nanoIntLockUnlock(void)
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
 		PRINT_FORMAT(" Average time for lock then unlock "
-			     "is %lu tcs = %lu nsec",
+			     "is %u tcs = %u nsec",
 			     timestamp / NTESTS,
 			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, NTESTS));
 	} else {

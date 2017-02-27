@@ -18,7 +18,7 @@ static struct k_msg Message;
 	   ("|   size(B) |       time/packet (usec)       |          MB/sec" \
 	    "                |\n", output_file);
 #define PRINT_ONE_RESULT()                                                   \
-	PRINT_F(output_file, "|%11lu|%32.3f|%32f|\n", putsize, puttime / 1000.0, \
+	PRINT_F(output_file, "|%11u|%32.3f|%32f|\n", putsize, puttime / 1000.0,\
 	     (1000.0 * putsize) / puttime)
 
 #define PRINT_OVERHEAD()                                                     \
@@ -40,7 +40,7 @@ static struct k_msg Message;
 	    "                |\n", output_file);
 
 #define PRINT_ONE_RESULT()                                                   \
-	PRINT_F(output_file, "|%11lu|%32lu|%32lu|\n", putsize, puttime,	\
+	PRINT_F(output_file, "|%11u|%32u|%32u|\n", putsize, puttime,	     \
 	     (uint32_t)((1000000 * (uint64_t)putsize) / puttime))
 
 #define PRINT_OVERHEAD()                                                     \
@@ -49,7 +49,7 @@ static struct k_msg Message;
 	     "          |\n", EmptyMsgPutTime)
 
 #define PRINT_XFER_RATE()                                                    \
-	PRINT_F(output_file, "| raw transfer rate:     %10lu KB/sec (without" \
+	PRINT_F(output_file, "| raw transfer rate:     %10u KB/sec (without" \
 	     " overhead)                 |\n",                               \
 	     (uint32_t)(1000000 * (uint64_t)(putsize >> 1)                   \
 	     / (puttime - EmptyMsgPutTime)))

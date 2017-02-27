@@ -229,7 +229,7 @@ int vsnprintfTest(void)
 	buffer[0] = '\0';
 	len = tvsnprintf(buffer, 0, "%x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("vsnprintf(%%x).  Expected return value %d, not %d\n",
+		TC_ERROR("vsnprintf(%%x).  Expected return value %d, not %zd\n",
 				 strlen(DEADBEEF_LHEX_STR), len);
 		status = TC_FAIL;
 	}
@@ -243,7 +243,7 @@ int vsnprintfTest(void)
 	/*******************/
 	len = tvsnprintf(buffer, 4, "%x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("vsnprintf(%%x).  Expected return value %d, not %d\n",
+		TC_ERROR("vsnprintf(%%x).  Expected return value %d, not %zd\n",
 				 strlen(DEADBEEF_LHEX_STR), len);
 		status = TC_FAIL;
 	}

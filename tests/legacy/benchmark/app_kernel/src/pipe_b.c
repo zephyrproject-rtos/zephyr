@@ -17,7 +17,7 @@
 
 #define PRINT_ALL_TO_N() \
 	PRINT_F(output_file,						\
-	     "|%5lu|%5lu|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|\n",   \
+	     "|%5u|%5u|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|\n",     \
 	     putsize, putsize, puttime[0] / 1000.0, puttime[1] / 1000.0,  \
 	     puttime[2] / 1000.0,                                         \
 	     (1000.0 * putsize) / puttime[0],                             \
@@ -31,7 +31,7 @@
 
 #define  PRINT_1_TO_N()                                               \
 	PRINT_F(output_file,						\
-	     "|%5lu|%5d|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|\n",\
+	     "|%5u|%5d|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|\n", \
 	     putsize,                                                 \
 	     getsize,                                                 \
 	     puttime[0] / 1000.0,                                     \
@@ -48,7 +48,7 @@
 
 #define PRINT_ALL_TO_N() \
 	PRINT_F(output_file,                                                 \
-	     "|%5lu|%5lu|%10lu|%10lu|%10lu|%10lu|%10lu|%10lu|\n",         \
+	     "|%5u|%5u|%10u|%10u|%10u|%10u|%10u|%10u|\n",                 \
 	     putsize, putsize, puttime[0], puttime[1],                    \
 	     puttime[2],                                                  \
 	     (1000000 * putsize) / puttime[0],                            \
@@ -62,7 +62,7 @@
 
 #define  PRINT_1_TO_N()                                              \
 	PRINT_F(output_file,                                            \
-	     "|%5lu|%5d|%10lu|%10lu|%10lu|%10lu|%10lu|%10lu|\n",     \
+	     "|%5u|%5d|%10u|%10u|%10u|%10u|%10u|%10u|\n",	     \
 	     putsize,                                                \
 	     getsize,                                                \
 	     puttime[0],                                             \

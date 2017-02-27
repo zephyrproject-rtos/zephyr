@@ -23,9 +23,6 @@ char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 #ifdef PIPE_BENCH
 kpipe_t TestPipes[] = {PIPE_NOBUFF, PIPE_SMALLBUFF, PIPE_BIGBUFF};
 #endif
-const char dashline[] =
-	"|--------------------------------------"
-	"---------------------------------------|\n";
 char sline[SLINE_LEN + 1];
 const char newline[] = "\n";
 

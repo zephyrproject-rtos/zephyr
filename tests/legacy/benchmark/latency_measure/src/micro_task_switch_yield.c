@@ -90,14 +90,14 @@ void microTaskSwitchYield(void)
 		 * called yield without the other having chance to execute
 		 */
 		errorCount++;
-		PRINT_FORMAT(" Error, iteration:%lu, helper iteration:%lu",
+		PRINT_FORMAT(" Error, iteration:%u, helper iteration:%u",
 			     iterations, helper_task_iterations);
 	} else {
 		/* task_yield is called (iterations + helper_task_iterations)
 		 * times in total.
 		 */
 		PRINT_FORMAT(" Average task context switch using "
-			     "yield %lu tcs = %lu nsec",
+			     "yield %u tcs = %u nsec",
 			     timestamp / (iterations + helper_task_iterations),
 			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp,
 			     (iterations + helper_task_iterations)));

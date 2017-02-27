@@ -71,7 +71,7 @@ static inline void printDashLine(void)
 
 #define PRINT_TIME_BANNER()						\
 	do {								\
-	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %lu nsec",	\
+	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %u nsec",	\
 		     SYS_CLOCK_HW_CYCLES_TO_NS(1));			\
 	printDashLine();						\
 	} while (0)

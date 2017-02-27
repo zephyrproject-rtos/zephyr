@@ -50,7 +50,7 @@ int microSemaLockUnlock(void)
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
-		PRINT_FORMAT(" Average semaphore signal time %lu tcs = %lu"
+		PRINT_FORMAT(" Average semaphore signal time %u tcs = %u"
 			     " nsec",
 			     timestamp / N_TEST_SEMA,
 			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp,
@@ -67,7 +67,7 @@ int microSemaLockUnlock(void)
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
-		PRINT_FORMAT(" Average semaphore test time %lu tcs = %lu "
+		PRINT_FORMAT(" Average semaphore test time %u tcs = %u "
 			     "nsec",
 			     timestamp / N_TEST_SEMA,
 			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp,
@@ -99,7 +99,7 @@ int microMutexLockUnlock(void)
 		task_mutex_lock(TEST_MUTEX, TICKS_UNLIMITED);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
-	PRINT_FORMAT(" Average time to lock the mutex %lu tcs = %lu nsec",
+	PRINT_FORMAT(" Average time to lock the mutex %u tcs = %u nsec",
 		     timestamp / N_TEST_MUTEX,
 		     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_MUTEX));
 	timestamp = TIME_STAMP_DELTA_GET(0);
@@ -107,7 +107,7 @@ int microMutexLockUnlock(void)
 		task_mutex_unlock(TEST_MUTEX);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
-	PRINT_FORMAT(" Average time to unlock the mutex %lu tcs = %lu nsec",
+	PRINT_FORMAT(" Average time to unlock the mutex %u tcs = %u nsec",
 		     timestamp / N_TEST_MUTEX,
 		     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_MUTEX));
 	return 0;

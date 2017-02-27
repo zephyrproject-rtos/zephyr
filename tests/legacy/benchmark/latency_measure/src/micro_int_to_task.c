@@ -71,7 +71,7 @@ int microIntToTask(void)
 	TICK_SYNCH();
 	makeInt();
 	if (flagVar == 1) {
-		PRINT_FORMAT(" switching time is %lu tcs = %lu nsec",
+		PRINT_FORMAT(" switching time is %u tcs = %u nsec",
 			     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	}
 	return 0;
