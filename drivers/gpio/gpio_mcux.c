@@ -107,6 +107,17 @@ static int gpio_mcux_configure(struct device *dev,
 			}
 		}
 		pcr |= PORT_PCR_IRQC(port_interrupt);
+	} else {
+		if (flags & GPIO_DMA_REQ_MASK) {
+			if (flags & GPIO_DMA_REQ_EDGE_HIGH) {
+				port_interrupt = kPORT_DMARisingEdge;
+			} else if (flags & GPIO_DMA_REQ_EDGE_DOUBLE) {
+				port_interrupt = kPORT_DMAEitherEdge;
+			} else {
+				port_interrupt = kPORT_DMAFallingEdge;
+			}
+		}
+		pcr |= PORT_PCR_IRQC(port_interrupt);
 	}
 
 	/* Now we can write the PORT PCR register(s). If accessing by pin, we
