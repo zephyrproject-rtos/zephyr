@@ -86,6 +86,21 @@ static inline struct net_nbr *get_nbr_from_data(struct net_ipv6_nbr_data *data)
 	return NULL;
 }
 
+void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+
+		if (!nbr->ref) {
+			continue;
+		}
+
+		cb(nbr, user_data);
+	}
+}
+
 #if NET_DEBUG_NBR
 void nbr_print(void)
 {
@@ -157,9 +172,10 @@ static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 		NET_DBG("Cannot cancel NS work (%d)", ret);
 	}
 
-	net_nbuf_unref(data->pending);
-
-	data->pending = NULL;
+	if (data->pending) {
+		net_nbuf_unref(data->pending);
+		data->pending = NULL;
+	}
 }
 
 static inline void nbr_free(struct net_nbr *nbr)
@@ -171,6 +187,20 @@ static inline void nbr_free(struct net_nbr *nbr)
 	k_delayed_work_cancel(&net_ipv6_nbr_data(nbr)->reachable);
 
 	net_nbr_unref(nbr);
+}
+
+bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
+{
+	struct net_nbr *nbr;
+
+	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
+	if (!nbr) {
+		return false;
+	}
+
+	nbr_free(nbr);
+
+	return true;
 }
 
 struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,

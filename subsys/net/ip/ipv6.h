@@ -250,6 +250,16 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 enum net_nbr_state state);
 
 /**
+ * @brief Remove a neighbour from neighbor cache.
+ *
+ * @param iface A valid pointer on a network interface
+ * @param addr Neighbor IPv6 address
+ *
+ * @return True if neighbor could be removed, False otherwise
+ */
+bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr);
+
+/**
  * @brief Set the neighbor reachable timer.
  *
  * @param iface A valid pointer on a network interface
@@ -257,6 +267,23 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
  */
 void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 				      struct net_nbr *nbr);
+
+/**
+ * @typedef net_nbr_cb_t
+ * @brief Callback used while iterating over neighbors.
+ *
+ * @param nbr A valid pointer on current neighbor.
+ * @param user_data A valid pointer on some user data or NULL
+ */
+typedef void (*net_nbr_cb_t)(struct net_nbr *nbr, void *user_data);
+
+/**
+ * @brief Go through all the neighbors and call callback for each of them.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ */
+void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data);
 
 #else /* CONFIG_NET_IPV6_ND */
 static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)

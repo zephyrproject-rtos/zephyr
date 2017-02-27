@@ -86,7 +86,7 @@ enum dns_header_rcode {
 /** It returns the ID field in the DNS msg header	*/
 static inline int dns_header_id(uint8_t *header)
 {
-	return htons(*(uint16_t *)header);
+	return htons(UNALIGNED_GET((uint16_t *)(header)));
 }
 
 /* inline unpack routines are used to unpack data from network
@@ -95,7 +95,7 @@ static inline int dns_header_id(uint8_t *header)
  */
 static inline int dns_unpack_header_id(uint8_t *header)
 {
-	return ntohs(*(uint16_t *)header);
+	return ntohs(UNALIGNED_GET((uint16_t *)(header)));
 }
 
 /** It returns the QR field in the DNS msg header	*/
@@ -149,55 +149,55 @@ static inline int dns_header_rcode(uint8_t *header)
 /** It returns the QDCOUNT field in the DNS msg header	*/
 static inline int dns_header_qdcount(uint8_t *header)
 {
-	return htons(*(uint16_t *)(header + 4));
+	return htons(UNALIGNED_GET((uint16_t *)(header + 4)));
 }
 
 static inline int dns_unpack_header_qdcount(uint8_t *header)
 {
-	return ntohs(*(uint16_t *)(header + 4));
+	return ntohs(UNALIGNED_GET((uint16_t *)(header + 4)));
 }
 
 /** It returns the ANCOUNT field in the DNS msg header	*/
 static inline int dns_header_ancount(uint8_t *header)
 {
-	return htons(*(uint16_t *)(header + 6));
+	return htons(UNALIGNED_GET((uint16_t *)(header + 6)));
 }
 
 static inline int dns_unpack_header_ancount(uint8_t *header)
 {
-	return ntohs(*(uint16_t *)(header + 6));
+	return ntohs(UNALIGNED_GET((uint16_t *)(header + 6)));
 }
 
 /** It returns the NSCOUNT field in the DNS msg header	*/
 static inline int dns_header_nscount(uint8_t *header)
 {
-	return htons(*(uint16_t *)(header + 8));
+	return htons(UNALIGNED_GET((uint16_t *)(header + 8)));
 }
 
 /** It returns the ARCOUNT field in the DNS msg header	*/
 static inline int dns_header_arcount(uint8_t *header)
 {
-	return htons(*(uint16_t *)(header + 10));
+	return htons(UNALIGNED_GET((uint16_t *)(header + 10)));
 }
 
 static inline int dns_query_qtype(uint8_t *question)
 {
-	return htons(*((uint16_t *)(question + 0)));
+	return htons(UNALIGNED_GET((uint16_t *)(question + 0)));
 }
 
 static inline int dns_unpack_query_qtype(uint8_t *question)
 {
-	return ntohs(*((uint16_t *)(question + 0)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(question + 0)));
 }
 
 static inline int dns_query_qclass(uint8_t *question)
 {
-	return htons(*((uint16_t *)(question + 2)));
+	return htons(UNALIGNED_GET((uint16_t *)(question + 2)));
 }
 
 static inline int dns_unpack_query_qclass(uint8_t *question)
 {
-	return ntohs(*((uint16_t *)(question + 2)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(question + 2)));
 }
 
 static inline int dns_response_type(uint16_t dname_size, uint8_t *answer)
@@ -220,18 +220,18 @@ static inline int dns_answer_class(uint16_t dname_size, uint8_t *answer)
 
 static inline int dns_answer_ttl(uint16_t dname_size, uint8_t *answer)
 {
-	return htonl(*(uint32_t *)(answer + dname_size + 4));
+	return htonl(UNALIGNED_GET((uint32_t *)(answer + dname_size + 4)));
 }
 
 static inline int dns_answer_rdlength(uint16_t dname_size, uint8_t *answer)
 {
-	return htons(*(uint16_t *)(answer + dname_size + 8));
+	return htons(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
 }
 
 static inline
 int dns_unpack_answer_rdlength(uint16_t dname_size, uint8_t *answer)
 {
-	return ntohs(*(uint16_t *)(answer + dname_size + 8));
+	return ntohs(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
 }
 
 /**

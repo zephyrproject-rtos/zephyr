@@ -61,17 +61,35 @@ Max number of connection tries:
 
 	#define APP_CONNECT_TRIES	10
 
-Max number of MQTT PUBLISH iterations
+Max number of MQTT PUBLISH iterations:
 
 .. code-block:: c
 
 	#define APP_MAX_ITERATIONS	5
 
-IBM BlueMix IoT Watson topic format
+MQTT Client Identifier:
+
+.. code-block:: c
+
+	#define MQTT_CLIENTID		"zephyr_publisher"
+
+This sample application supports the IBM Bluemix Watson topic format that can
+be enabled by changing the default value of APP_BLUEMIX_TOPIC from 0 to 1:
 
 .. code block:: c
 
-	#define ENABLE_BLUEMIX_TOPIC	0
+	#define APP_BLUEMIX_TOPIC	1
+
+The Bluemix topic may include some parameters like device type, device
+identifier, event type and message format. This application uses the
+following macros to specify those values:
+
+.. code block:: c
+
+	#define BLUEMIX_DEVTYPE		"sensor"
+	#define BLUEMIX_DEVID		"carbon"
+	#define BLUEMIX_EVENT		"status"
+	#define BLUEMIX_FORMAT		"json"
 
 On your Linux host computer, open a terminal window, locate the source code
 of this sample application (i.e. :file:`samples/net/mqtt_publisher`) and type:

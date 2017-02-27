@@ -34,14 +34,36 @@ enum eth_mcux_phy_state {
 	eth_mcux_phy_state_restart,
 	eth_mcux_phy_state_read_status,
 	eth_mcux_phy_state_read_duplex,
-	eth_mcux_phy_state_wait
+	eth_mcux_phy_state_wait,
+	eth_mcux_phy_state_closing
+
 };
+
+static const char *
+phy_state_name(enum eth_mcux_phy_state state)  __attribute__((unused));
+
+static const char *phy_state_name(enum eth_mcux_phy_state state)
+{
+	static const char * const name[] = {
+		"initial",
+		"reset",
+		"autoneg",
+		"restart",
+		"read-status",
+		"read-duplex",
+		"wait",
+		"closing"
+	};
+
+	return name[state];
+}
 
 struct eth_context {
 	struct net_if *iface;
 	enet_handle_t enet_handle;
 	struct k_sem tx_buf_sem;
 	enum eth_mcux_phy_state phy_state;
+	bool enabled;
 	bool link_up;
 	phy_duplex_t phy_duplex;
 	phy_speed_t phy_speed;
@@ -107,6 +129,68 @@ static void eth_mcux_decode_duplex_and_speed(uint32_t status,
 	}
 }
 
+static void eth_mcux_phy_enter_reset(struct eth_context *context)
+{
+	const uint32_t phy_addr = 0;
+
+	/* Reset the PHY. */
+	ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
+			   kENET_MiiWriteValidFrame,
+			   PHY_BCTL_RESET_MASK);
+	context->phy_state = eth_mcux_phy_state_reset;
+}
+
+static void eth_mcux_phy_start(struct eth_context *context)
+{
+	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+
+	context->enabled = true;
+
+	switch (context->phy_state) {
+	case eth_mcux_phy_state_initial:
+		ENET_ActiveRead(ENET);
+		eth_mcux_phy_enter_reset(context);
+		break;
+	case eth_mcux_phy_state_reset:
+	case eth_mcux_phy_state_autoneg:
+	case eth_mcux_phy_state_restart:
+	case eth_mcux_phy_state_read_status:
+	case eth_mcux_phy_state_read_duplex:
+	case eth_mcux_phy_state_wait:
+	case eth_mcux_phy_state_closing:
+		break;
+	}
+}
+
+void eth_mcux_phy_stop(struct eth_context *context)
+{
+	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+
+	context->enabled = false;
+
+	switch (context->phy_state) {
+	case eth_mcux_phy_state_initial:
+	case eth_mcux_phy_state_reset:
+	case eth_mcux_phy_state_autoneg:
+	case eth_mcux_phy_state_restart:
+	case eth_mcux_phy_state_read_status:
+	case eth_mcux_phy_state_read_duplex:
+		/* Do nothing, let the current communication complete
+		 * then deal with shutdown.
+		 */
+		context->phy_state = eth_mcux_phy_state_closing;
+		break;
+	case eth_mcux_phy_state_wait:
+		k_delayed_work_cancel(&context->delayed_phy_work);
+		/* @todo, actually power downt he PHY ? */
+		context->phy_state = eth_mcux_phy_state_initial;
+		break;
+	case eth_mcux_phy_state_closing:
+		/* We are already going down. */
+		break;
+	}
+}
+
 static void eth_mcux_phy_event(struct eth_context *context)
 {
 	uint32_t status;
@@ -115,15 +199,18 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	phy_speed_t phy_speed = kPHY_Speed100M;
 	const uint32_t phy_addr = 0;
 
-	SYS_LOG_DBG("phy_state=%d", context->phy_state);
+	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
 
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
-		/* Reset the PHY. */
-		ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
-				   kENET_MiiWriteValidFrame,
-				   PHY_BCTL_RESET_MASK);
-		context->phy_state = eth_mcux_phy_state_reset;
+		break;
+	case eth_mcux_phy_state_closing:
+		if (context->enabled) {
+			eth_mcux_phy_enter_reset(context);
+		} else {
+			/* @todo, actually power down the PHY ? */
+			context->phy_state = eth_mcux_phy_state_initial;
+		}
 		break;
 	case eth_mcux_phy_state_reset:
 		/* Setup PHY autonegotiation. */
@@ -461,9 +548,8 @@ static int eth_0_init(struct device *dev)
 
 	ENET_SetCallback(&context->enet_handle, eth_callback, dev);
 	eth_0_config_func();
-	ENET_ActiveRead(ENET);
 
-	k_work_submit(&context->phy_work);
+	eth_mcux_phy_start(context);
 
 	return 0;
 }

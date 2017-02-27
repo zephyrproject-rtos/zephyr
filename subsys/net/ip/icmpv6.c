@@ -62,7 +62,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	struct in6_addr *src, *dst;
 	struct net_if *iface;
 	uint16_t payload_len;
-	uint32_t id, seq;
+	uint16_t id, seq;
 	uint8_t *ptr;
 
 #if defined(CONFIG_NET_DEBUG_ICMPV6)
@@ -90,8 +90,8 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	 * to echo reply.
 	 */
 	ptr = (uint8_t *)NET_ICMP_BUF(orig) + sizeof(struct net_icmp_hdr);
-	id = sys_get_be32(ptr);
-	seq = sys_get_be32(ptr + sizeof(uint32_t));
+	id = sys_get_be16(ptr);
+	seq = sys_get_be16(ptr + sizeof(uint16_t));
 
 	payload_len = sys_get_be16(NET_IPV6_BUF(orig)->len) -
 		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
@@ -132,8 +132,8 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	net_nbuf_ll_dst(buf)->addr = NULL;
 
 	ptr = (uint8_t *)NET_ICMP_BUF(buf) + sizeof(struct net_icmp_hdr);
-	sys_put_be32(id, ptr);
-	sys_put_be32(seq, ptr + sizeof(uint32_t));
+	sys_put_be16(id, ptr);
+	sys_put_be16(seq, ptr + sizeof(uint16_t));
 
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
@@ -199,8 +199,8 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 		extra_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_udp_hdr);
 	} else if (NET_IPV6_BUF(orig)->nexthdr == IPPROTO_TCP) {
-		extra_len = sizeof(struct net_ipv6_hdr);
-		/* FIXME, add TCP header length too */
+		extra_len = sizeof(struct net_ipv6_hdr) +
+			sizeof(struct net_tcp_hdr);
 	} else {
 		size_t space = CONFIG_NET_NBUF_DATA_SIZE -
 			net_if_get_ll_reserve(iface, dst);
