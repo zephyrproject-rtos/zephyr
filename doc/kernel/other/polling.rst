@@ -267,7 +267,7 @@ it.
     Because objects are only signaled if no other thread is waiting for them to
     become available and only one thread can poll on a specific object, polling
     is best used when objects are not subject of contention between multiple
-    threads, basicallly when a single thread operates as a main "server" or
+    threads, basically when a single thread operates as a main "server" or
     "dispatcher" for multiple objects and is the only one trying to acquire
     these objects.
 

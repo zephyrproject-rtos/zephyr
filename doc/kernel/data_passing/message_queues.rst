@@ -156,7 +156,7 @@ in an asynchronous manner.
 .. note::
     A message queue can be used to transfer large data items, if desired.
     However, this can increase interrupt latency as interrupts are locked
-    while a data item is written or read. It is usally preferable to transfer
+    while a data item is written or read. It is usually preferable to transfer
     large data items by exchanging a pointer to the data item, rather than the
     data item itself. The kernel's memory map and memory pool object types
     can be helpful for data transfers of this sort.
