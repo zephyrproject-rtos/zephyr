@@ -187,9 +187,12 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 
 done:
 	/* The L2 send() function can return
-	 *   NET_OK in which case packet was sent successfully.
-	 *   In that case we need to check if any user callbacks need
-	 *   to be called to mark a successful delivery.
+	 *   NET_OK in which case packet was sent successfully. In this case
+	 *   the net_context callback is called after successful delivery in
+	 *   net_if_tx_thread().
+	 *
+	 *   NET_DROP in which case we call net_context callback that will
+	 *   give the status to user application.
 	 *
 	 *   NET_CONTINUE in which case the sending of the packet is delayed.
 	 *   This can happen for example if we need to do IPv6 ND to figure
