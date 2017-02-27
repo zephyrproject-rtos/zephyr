@@ -507,7 +507,58 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 }
 #endif
 
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+static void allocs_cb(struct net_buf *buf,
+		      const char *func_alloc,
+		      int line_alloc,
+		      const char *func_free,
+		      int line_free,
+		      bool in_use,
+		      void *user_data)
+{
+	const char *str;
+
+	if (in_use) {
+		str = "used";
+	} else {
+		if (func_alloc) {
+			str = "free";
+		} else {
+			str = "avail";
+		}
+	}
+
+	if (func_alloc) {
+		if (in_use) {
+			printk("%p/%d\t%5s\t%5s\t%s():%d\n", buf, buf->ref,
+			       str, net_nbuf_pool2str(buf->pool), func_alloc,
+			       line_alloc);
+		} else {
+			printk("%p\t%5s\t%5s\t%s():%d -> %s():%d\n", buf,
+			       str, net_nbuf_pool2str(buf->pool), func_alloc,
+			       line_alloc, func_free, line_free);
+		}
+	}
+}
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
+
 /* Put the actual shell commands after this */
+
+static int shell_cmd_allocs(int argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	printk("Network buffer allocations\n\n");
+	printk("net_buf\t\tStatus\tPool\tFunction alloc -> freed\n");
+	net_nbuf_allocs_foreach(allocs_cb, NULL);
+#else
+	printk("Enable CONFIG_NET_DEBUG_NET_BUF to see allocations.\n");
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
+
+	return 0;
+}
 
 static int shell_cmd_conn(int argc, char *argv[])
 {
@@ -886,6 +937,7 @@ static int shell_cmd_help(int argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	/* Keep the commands in alphabetical order */
+	printk("net allocs\n\tPrint network buffer allocations\n");
 	printk("net conn\n\tPrint information about network connections\n");
 	printk("net iface\n\tPrint information about network interfaces\n");
 	printk("net mem\n\tPrint network buffer information\n");
@@ -899,6 +951,7 @@ static int shell_cmd_help(int argc, char *argv[])
 
 static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
+	{ "allocs", shell_cmd_allocs, NULL },
 	{ "conn", shell_cmd_conn, NULL },
 	{ "help", shell_cmd_help, NULL },
 	{ "iface", shell_cmd_iface, NULL },
