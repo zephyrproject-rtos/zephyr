@@ -78,7 +78,7 @@ To build an example application follow these steps:
 
       $ cd zephyr-project
 
-#. Source the project environment file to set the project environtment
+#. Source the project environment file to set the project environment
    variables:
 
    .. code-block:: console

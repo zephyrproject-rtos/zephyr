@@ -94,7 +94,7 @@ Setting Up the Toolchain
 Creating a Case-sensitive File System
 =====================================
 
-Building the compiler requires a case-senstive file system. Therefore, use
+Building the compiler requires a case-sensitive file system. Therefore, use
 :program:`diskutil` to create an 8 GB blank sparse image making sure you select
 case-sensitive file system (OS X Extended (Case-sensitive, Journaled) and
 mount it.

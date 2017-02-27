@@ -28,7 +28,7 @@ buffers, rather this is done implicitly as :c:func:`net_buf_alloc` gets
 called.
 
 If there is a need to reserve space in the buffer for protocol headers
-to be prependend later, it's possible to reserve this headroom with:
+to be prepended later, it's possible to reserve this headroom with:
 
 .. code-block:: c
 

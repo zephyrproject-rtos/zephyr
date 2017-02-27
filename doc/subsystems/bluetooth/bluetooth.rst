@@ -3,14 +3,14 @@
 Bluetooth
 #########
 
-Zephyr comes integrated with a feature-rich and higly configurable
+Zephyr comes integrated with a feature-rich and highly configurable
 Bluetooth stack:
 
 * Bluetooth 4.2 compliant
 
 * Bluetooth Controller support (LE Link Layer)
 
-  * Currently supports Nordic Semconductor nRF51 and nRF52
+  * Currently supports Nordic Semiconductor nRF51 and nRF52
 
 * Generic Access Profile (GAP) with all possible roles
 

@@ -24,7 +24,7 @@ The kernel event logger is capable of recording the following pre-defined
 event types:
 
 * Interrupts.
-* Ccontext switching of threads.
+* Context switching of threads.
 * Kernel sleep events (i.e. entering and exiting a low power state).
 
 The kernel event logger only records the pre-defined event types it has been

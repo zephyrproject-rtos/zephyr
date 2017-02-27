@@ -398,7 +398,7 @@ entries manually, using the configuration menu is a preferred method.
 
      .. note::
 
-       When a non-default entry is selected for options that are nonnumerical,
+       When a non-default entry is selected for options that are non-numerical,
        an asterisk :kbd:`*` appears between the square brackets in the display.
        There is nothing added added the display when you select the option's
        default.

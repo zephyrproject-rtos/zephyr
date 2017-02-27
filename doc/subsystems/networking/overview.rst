@@ -10,7 +10,7 @@ The networking stack supports the following features:
 
 * IPv6
 
-  * IPv6 header compresson, which is part of the 6LoWPAN support
+  * IPv6 header compression, which is part of the 6LoWPAN support
 
 * UDP
 * IPv4

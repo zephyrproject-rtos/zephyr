@@ -9,7 +9,7 @@ Overview
 The Shell enables multiple subsystem to use and expose their shell interface
 simultaneously.
 
-Each subbsystem can support shell functionality dynamically by its Kconfig file,
+Each subsystem can support shell functionality dynamically by its Kconfig file,
 which enables or disables the shell usage for the subsystem.
 
 Using shell commands
@@ -92,7 +92,7 @@ In order to support shell in your subsystem, the application must do the followi
    callback functions in the shell database using :c:macro:`SHELL_REGISTER`.
 
 Optionally, you can use one of the following API functions to override default
-behvior and settings:
+behavior and settings:
 
 * :c:func:`shell_register_default_module`
 

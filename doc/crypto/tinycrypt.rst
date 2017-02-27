@@ -217,7 +217,7 @@ Specific Remarks
 
   * TinyCrypt ECC implementation is based on nano-ecc (see
     https://github.com/iSECPartners/nano-ecc) which in turn is based on
-    mciro-ecc (see https://github.com/kmackay/micro-ecc). In the original
+    micro-ecc (see https://github.com/kmackay/micro-ecc). In the original
     nano and micro-ecc documentation, there is an important remark about the
     way integers are represented:
 
