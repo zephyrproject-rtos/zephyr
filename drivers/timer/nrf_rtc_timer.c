@@ -292,6 +292,10 @@ int _sys_clock_driver_init(struct device *device)
 	SYS_CLOCK_RTC->EVTENSET = RTC_EVTENSET_COMPARE0_Msk;
 	SYS_CLOCK_RTC->INTENSET = RTC_INTENSET_COMPARE0_Msk;
 
+	/* Clear the event flag and possible pending interrupt */
+	RTC_CC_EVENT = 0;
+	NVIC_ClearPendingIRQ(NRF5_IRQ_RTC1_IRQn);
+
 	IRQ_CONNECT(NRF5_IRQ_RTC1_IRQn, 1, rtc1_nrf5_isr, 0, 0);
 	irq_enable(NRF5_IRQ_RTC1_IRQn);
 
@@ -325,9 +329,19 @@ uint32_t _timer_cycle_get_32(void)
  */
 void sys_clock_disable(void)
 {
+	unsigned int key;
+
+	key = irq_lock();
+
 	irq_disable(NRF5_IRQ_RTC1_IRQn);
 
+	SYS_CLOCK_RTC->EVTENCLR = RTC_EVTENCLR_COMPARE0_Msk;
+	SYS_CLOCK_RTC->INTENCLR = RTC_INTENCLR_COMPARE0_Msk;
+
 	SYS_CLOCK_RTC->TASKS_STOP = 1;
+	SYS_CLOCK_RTC->TASKS_CLEAR = 1;
+
+	irq_unlock(key);
 
 	/* TODO: turn off (release) 32 KHz clock source.
 	 * Turning off of 32 KHz clock source is not implemented in clock
