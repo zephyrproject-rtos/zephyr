@@ -214,6 +214,16 @@ static u64_t _hpetMainCounterAtomic(void)
 
 #endif /* CONFIG_TICKLESS_IDLE */
 
+#ifdef CONFIG_TICKLESS_KERNEL
+static inline void program_max_cycles(void)
+{
+	stale_irq_check = 1;
+	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
+	counter_last_value = *_HPET_TIMER0_COMPARATOR;
+	*_HPET_TIMER0_COMPARATOR = counter_last_value - 1;
+}
+#endif
+
 /**
  *
  * @brief System clock tick handler
@@ -257,6 +267,16 @@ void _timer_int_handler(void *unused)
 
 	/* see if interrupt was triggered while timer was being reprogrammed */
 
+#if defined(CONFIG_TICKLESS_KERNEL)
+	/* If timer not programmed or already consumed exit */
+	if (!programmed_ticks) {
+		if (_sys_clock_always_on) {
+			_sys_clock_tick_count = _get_elapsed_clock_time();
+			program_max_cycles();
+		}
+		return;
+	}
+#endif
 	if (stale_irq_check) {
 		stale_irq_check = 0;
 		if (_hpetMainCounterAtomic() < *_HPET_TIMER0_COMPARATOR) {
@@ -264,17 +284,103 @@ void _timer_int_handler(void *unused)
 		}
 	}
 
-	/* configure timer to expire on next tick */
+	/* configure timer to expire on next tick for tick based kernel */
 
+#if defined(CONFIG_TICKLESS_KERNEL)
+
+	_sys_idle_elapsed_ticks = programmed_ticks;
+
+	/*
+	 * Clear programmed ticks before announcing elapsed time so
+	 * that recursive calls to _update_elapsed_time() will not
+	 * announce already consumed elapsed time
+	 */
+	programmed_ticks = 0;
+	_sys_clock_tick_announce();
+
+	/* _sys_clock_tick_announce() could cause new programming */
+	if (!programmed_ticks && _sys_clock_always_on) {
+		_sys_clock_tick_count = _get_elapsed_clock_time();
+		program_max_cycles();
+	}
+#else
 	counter_last_value = *_HPET_TIMER0_COMPARATOR;
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
 	*_HPET_TIMER0_COMPARATOR = counter_last_value + counter_load_value;
 	programmed_ticks = 1;
-
 	_sys_clock_final_tick_announce();
+#endif
 #endif /* !CONFIG_TICKLESS_IDLE */
 
 }
+
+#ifdef CONFIG_TICKLESS_KERNEL
+u32_t _get_program_time(void)
+{
+	return programmed_ticks;
+}
+
+u32_t _get_remaining_program_time(void)
+{
+	if (programmed_ticks == 0) {
+		return 0;
+	}
+
+	return (u32_t) ((s64_t)
+			  (*_HPET_TIMER0_COMPARATOR -
+			   _hpetMainCounterAtomic()) / counter_load_value);
+}
+
+u32_t _get_elapsed_program_time(void)
+{
+	if (programmed_ticks == 0) {
+		return 0;
+	}
+
+	return (u32_t) (programmed_ticks -
+		       ((s64_t)(*_HPET_TIMER0_COMPARATOR -
+			 _hpetMainCounterAtomic()) / counter_load_value));
+}
+
+void _set_time(u32_t time)
+{
+	/* Assumes cycles in one time unit is greater than HPET_COMP_DELAY */
+
+	if (!time) {
+		programmed_ticks = 0;
+		return;
+	}
+
+	programmed_ticks = time;
+
+	_sys_clock_tick_count = _get_elapsed_clock_time();
+
+	stale_irq_check = 1;
+
+	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
+	counter_last_value = _hpetMainCounterAtomic();
+	*_HPET_TIMER0_COMPARATOR =
+	    counter_last_value + time * counter_load_value;
+}
+
+void _enable_sys_clock(void)
+{
+	if (!programmed_ticks) {
+		program_max_cycles();
+	}
+}
+
+u64_t _get_elapsed_clock_time(void)
+{
+	u64_t elapsed;
+
+	elapsed = _sys_clock_tick_count;
+	elapsed +=  ((s64_t)(_hpetMainCounterAtomic() -
+			counter_last_value) / counter_load_value);
+
+	return elapsed;
+}
+#endif
 
 #ifdef CONFIG_TICKLESS_IDLE
 
@@ -305,6 +411,18 @@ void _timer_int_handler(void *unused)
 void _timer_idle_enter(s32_t ticks /* system ticks */
 				)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (ticks != K_FOREVER) {
+		/* Need to reprogram only if current program is smaller */
+		if (ticks > programmed_ticks) {
+			_set_time(ticks);
+		}
+	} else {
+		programmed_ticks = 0;
+		counter_last_value = *_HPET_TIMER0_COMPARATOR;
+		*_HPET_GENERAL_CONFIG &= ~HPET_ENABLE_CNF;
+	}
+#else
 	/*
 	 * reprogram timer to expire at the desired time (which is guaranteed
 	 * to be at least one full tick from the current counter value)
@@ -314,8 +432,9 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
 	*_HPET_TIMER0_COMPARATOR =
 		(ticks >= 0) ? counter_last_value + ticks * counter_load_value
 			     : ~(u64_t)0;
-	stale_irq_check = 1;
 	programmed_ticks = ticks;
+#endif
+	stale_irq_check = 1;
 }
 
 /**
@@ -335,6 +454,11 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
 
 void _timer_idle_exit(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (!programmed_ticks && _sys_clock_always_on) {
+		program_max_cycles();
+	}
+#else
 	u64_t currTime = _hpetMainCounterAtomic();
 	s32_t elapsedTicks;
 	u64_t counterNextValue;
@@ -417,6 +541,7 @@ void _timer_idle_exit(void)
 	 */
 
 	programmed_ticks = 1;
+#endif
 }
 
 #endif /* CONFIG_TICKLESS_IDLE */
