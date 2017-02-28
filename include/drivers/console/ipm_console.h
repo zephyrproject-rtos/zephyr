@@ -24,7 +24,7 @@ extern "C" {
  * Good way to determine these numbers other than trial-and-error?
  * using printf() in the thread seems to require a lot more stack space
  */
-#define IPM_CONSOLE_STACK_SIZE		512
+#define IPM_CONSOLE_STACK_SIZE		CONFIG_IPM_CONSOLE_STACK_SIZE
 #define IPM_CONSOLE_PRI			2
 
 struct ipm_console_receiver_config_info {
@@ -33,7 +33,7 @@ struct ipm_console_receiver_config_info {
 
 	/**
 	 * Stack for the receiver's thread, which prints out messages as
-	 * they come in. Should be sized IPM_CONSOLE_STACK_SIZE
+	 * they come in. Should be sized CONFIG_IPM_CONSOLE_STACK_SIZE
 	 */
 	char *thread_stack;
 
