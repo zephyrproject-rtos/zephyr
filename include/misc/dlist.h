@@ -226,6 +226,19 @@ static inline int sys_dlist_is_empty(sys_dlist_t *list)
 }
 
 /**
+ * @brief check if more than one node present
+ *
+ * @param list the doubly-linked list to operate on
+ *
+ * @return 1 if multiple nodes, 0 otherwise
+ */
+
+static inline int sys_dlist_has_multiple_nodes(sys_dlist_t *list)
+{
+	return list->head != list->tail;
+}
+
+/**
  * @brief get a reference to the head item in the list
  *
  * @param list the doubly-linked list to operate on
