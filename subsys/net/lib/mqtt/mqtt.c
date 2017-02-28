@@ -31,8 +31,7 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
 	if (data == NULL) {
-		rc = -ENOMEM;
-		goto exit_connect;
+		return -ENOMEM;
 	}
 
 	ctx->clean_session = msg->clean_session ? 1 : 0;
@@ -55,14 +54,15 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
 		rc = -EIO;
-		goto exit_connect;
+		net_pkt_unref(tx);
 	}
 
 	tx = NULL;
 
+	return rc;
+
 exit_connect:
 	net_pkt_frag_unref(data);
-	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -77,14 +77,12 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 
 	rc = mqtt_pack_disconnect(msg, &len, sizeof(msg));
 	if (rc != 0) {
-		rc = -EINVAL;
-		goto exit_disconnect;
+		return -EINVAL;
 	}
 
 	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
-		rc = -ENOMEM;
-		goto exit_disconnect;
+		return -ENOMEM;
 	}
 
 	rc = net_pkt_append_all(tx, len, msg, ctx->net_timeout);
@@ -105,6 +103,8 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 	if (ctx->disconnect) {
 		ctx->disconnect(ctx);
 	}
+
+	return rc;
 
 exit_disconnect:
 	net_pkt_unref(tx);
@@ -156,8 +156,7 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 
 	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
-		rc = -ENOMEM;
-		goto exit_send;
+		return -ENOMEM;
 	}
 
 	rc = net_pkt_append_all(tx, len, msg, ctx->net_timeout);
@@ -173,6 +172,8 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 	}
 
 	tx = NULL;
+
+	return rc;
 
 exit_send:
 	net_pkt_unref(tx);
@@ -208,8 +209,7 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
 	if (data == NULL) {
-		rc = -ENOMEM;
-		goto exit_publish;
+		return -ENOMEM;
 	}
 
 	rc = mqtt_pack_publish(data->data, &data->len, data->size, msg);
@@ -230,14 +230,15 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
 		rc = -EIO;
-		goto exit_publish;
+		net_pkt_unref(tx);
 	}
 
 	tx = NULL;
 
+	return rc;
+
 exit_publish:
 	net_pkt_frag_unref(data);
-	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -251,14 +252,12 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 
 	rc = mqtt_pack_pingreq(msg, &len, sizeof(msg));
 	if (rc != 0) {
-		rc = -EINVAL;
-		goto exit_pingreq;
+		return -EINVAL;
 	}
 
 	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
-		rc = -ENOMEM;
-		goto exit_pingreq;
+		return -ENOMEM;
 	}
 
 	rc = net_pkt_append_all(tx, len, msg, ctx->net_timeout);
@@ -275,6 +274,8 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 
 	tx = NULL;
 
+	return rc;
+
 exit_pingreq:
 	net_pkt_unref(tx);
 
@@ -290,14 +291,12 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
 	if (data == NULL) {
-		rc = -ENOMEM;
-		goto exit_subs;
+		return -ENOMEM;
 	}
 
 	rc = mqtt_pack_subscribe(data->data, &data->len, data->size,
 				 pkt_id, items, topics, qos);
 	if (rc != 0) {
-		net_pkt_frag_unref(data);
 		rc = -EINVAL;
 		goto exit_subs;
 	}
@@ -314,14 +313,15 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
 		rc = -EIO;
-		goto exit_subs;
+		net_pkt_unref(tx);
 	}
 
 	tx = NULL;
 
+	return rc;
+
 exit_subs:
 	net_pkt_frag_unref(data);
-	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -335,8 +335,7 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
 	if (data == NULL) {
-		rc = -ENOMEM;
-		goto exit_unsub;
+		return -ENOMEM;
 	}
 
 	rc = mqtt_pack_unsubscribe(data->data, &data->len, data->size, pkt_id,
@@ -358,14 +357,15 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
 		rc = -EIO;
-		goto exit_unsub;
+		net_pkt_unref(tx);
 	}
 
 	tx = NULL;
 
+	return rc;
+
 exit_unsub:
 	net_pkt_frag_unref(data);
-	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -701,8 +701,7 @@ int mqtt_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 
 	data = mqtt_linearize_packet(ctx, rx, MQTT_PUBLISHER_MIN_MSG_SIZE);
 	if (!data) {
-		rc = -ENOMEM;
-		goto exit_parser;
+		return -ENOMEM;
 	}
 
 	pkt_type = MQTT_PACKET_TYPE(data->data[0]);
@@ -741,7 +740,6 @@ int mqtt_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 		break;
 	}
 
-exit_parser:
 	if (rc != 0 && ctx->malformed) {
 		ctx->malformed(ctx, pkt_type);
 	}
