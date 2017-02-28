@@ -274,7 +274,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_bitfield_set_bit(void * addr, unsigned int bit)
+ * @fn static inline void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
  * @brief Set the designated bit from addr to 1
  *
  * This functions takes the designated bit starting from addr and sets it to 1.
@@ -284,7 +284,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_bitfield_clear_bit(void * addr, unsigned int bit)
+ * @fn static inline void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
  * @brief Clear the designated bit from addr to 0
  *
  * This functions takes the designated bit starting from addr and sets it to 0.
@@ -294,7 +294,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_bitfield_test_bit(void * addr, unsigned int bit)
+ * @fn static inline int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit if it is set or not
  *
  * This functions takes the designated bit starting from addr and tests its
@@ -307,7 +307,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_bitfield_test_and_set_bit(void * addr, unsigned int bit)
+ * @fn static inline int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit and set it
  *
  * This functions takes the designated bit starting from addr, tests its
@@ -320,7 +320,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_bitfield_test_and_clear_bit(void * addr, unsigned int bit)
+ * @fn static inline int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit and clear it
  *
  * This functions takes the designated bit starting from addr, test its
@@ -332,19 +332,6 @@ typedef uint32_t mem_addr_t;
  * @return 0 if it was clear, 1 otherwise
  */
 
-
-/**
- * Define a bitfield
- *
- * Bitfields are an array of unsigned long integers, with as many
- * of them as needed to fit bits bit, taking into account there are
- * #LONG_BIT bits on each unsigned long int.
- *
- * @param name Name of the bitfield variable
- * @param bits Number of bits in the bitfield
- */
-#define DEFINE_BITFIELD(name, bits)					\
-	unsigned long int (name)[((bits) + LONG_BIT - 1) / LONG_BIT]
 
 #ifdef __cplusplus
 }

@@ -24,24 +24,20 @@ void bitfield_test(void)
 
 		assert_true(b1 == (1 << bit), "sys_set_bit failed on bit");
 
-		assert_true((sys_test_bit((mem_addr_t)&b1, bit) == 0),
-			    "sys_test_bit did not detect bit");
+		assert_true((sys_test_bit((mem_addr_t)&b1, bit) == 0), "sys_test_bit did not detect bit");
 
 		sys_clear_bit((mem_addr_t)&b1, bit);
 
 		assert_true((b1 == 0), "sys_clear_bit failed for bit");
 
-		assert_true((sys_test_bit((mem_addr_t)&b1, bit) == 0),
-			    "sys_test_bit erroneously detected bit");
+		assert_true((sys_test_bit((mem_addr_t)&b1, bit) == 0), "sys_test_bit erroneously detected bit");
 
-		assert_true((sys_test_and_set_bit((mem_addr_t)&b1, bit) == 0),
-			    "sys_test_and_set_bit erroneously detected bit");
+		assert_true((sys_test_and_set_bit((mem_addr_t)&b1, bit) == 0), "sys_test_and_set_bit erroneously detected bit");
 
 		assert_true((b1 == (1 << bit)), "sys_test_and_set_bit");
 
 		printk("%d\n", sys_test_and_set_bit((mem_addr_t)&b1, bit));
-		assert_true((sys_test_and_set_bit((mem_addr_t)&b1, bit) == 0),
-			    "sys_test_and_set_bit");
+		assert_true((sys_test_and_set_bit((mem_addr_t)&b1, bit) == 0), "sys_test_and_set_bit");
 
 	}
 #if 0
@@ -94,7 +90,7 @@ void bitfield_test(void)
 }
 
 for (bit = 0; bit < BITFIELD_SIZE; ++bit) {
-	sys_bitfield_set_bit(b2, bit);
+	sys_bitfield_set_bit((mem_addr_t)b2, bit);
 	if (b2[BIT_INDEX(bit)] != BIT_VAL(bit)) {
 		TC_PRINT("got %d expected %d\n", b2[BIT_INDEX(bit)],
 			 BIT_VAL(bit));
@@ -104,13 +100,13 @@ for (bit = 0; bit < BITFIELD_SIZE; ++bit) {
 		failed++;
 	}
 
-	if (!sys_bitfield_test_bit(b2, bit)) {
+	if (!sys_bitfield_test_bit((mem_addr_t)b2, bit)) {
 		TC_PRINT("sys_bitfield_test_bit did not detect bit %d\n",
 			 bit);
 		failed++;
 	}
 
-	sys_bitfield_clear_bit(b2, bit);
+	sys_bitfield_clear_bit((mem_addr_t)b2, bit);
 	if (b2[BIT_INDEX(bit)] != 0) {
 		b2[BIT_INDEX(bit)] = 0;
 		TC_PRINT("sys_bitfield_clear_bit failed for bit %d\n",
@@ -118,13 +114,13 @@ for (bit = 0; bit < BITFIELD_SIZE; ++bit) {
 		failed++;
 	}
 
-	if (sys_bitfield_test_bit(b2, bit)) {
+	if (sys_bitfield_test_bit((mem_addr_t)b2, bit)) {
 		TC_PRINT("sys_bitfield_test_bit erroneously detected bit %d\n",
 			 bit);
 		failed++;
 	}
 
-	ret = sys_bitfield_test_and_set_bit(b2, bit);
+	ret = sys_bitfield_test_and_set_bit((mem_addr_t)b2, bit);
 	if (ret) {
 		TC_PRINT("sys_bitfield_test_and_set_bit erroneously detected bit %d\n",
 			 bit);
@@ -136,7 +132,7 @@ for (bit = 0; bit < BITFIELD_SIZE; ++bit) {
 			 bit);
 		failed++;
 	}
-	ret = sys_bitfield_test_and_set_bit(b2, bit);
+	ret = sys_bitfield_test_and_set_bit((mem_addr_t)b2, bit);
 	if (!ret) {
 		TC_PRINT("sys_bitfield_test_and_set_bit did not detect bit %d\n",
 			 bit);
@@ -149,7 +145,7 @@ for (bit = 0; bit < BITFIELD_SIZE; ++bit) {
 		failed++;
 	}
 
-	ret = sys_bitfield_test_and_clear_bit(b2, bit);
+	ret = sys_bitfield_test_and_clear_bit((mem_addr_t)b2, bit);
 	if (!ret) {
 		TC_PRINT("sys_bitfield_test_and_clear_bit did not detect bit %d\n",
 			 bit);
@@ -161,7 +157,7 @@ for (bit = 0; bit < BITFIELD_SIZE; ++bit) {
 			 bit);
 		failed++;
 	}
-	ret = sys_bitfield_test_and_clear_bit(b2, bit);
+	ret = sys_bitfield_test_and_clear_bit((mem_addr_t)b2, bit);
 	if (ret) {
 		TC_PRINT("sys_bitfield_test_and_clear_bit erroneously detected bit %d\n",
 			 bit);

@@ -9,14 +9,14 @@
 
 #include <tc_util.h>
 
-#define BIT_INDEX(bit)	(bit / LONG_BIT)
-#define BIT_VAL(bit)	(1 << (bit % LONG_BIT))
+#define BIT_INDEX(bit)	(bit >> 3)
+#define BIT_VAL(bit)	(1 << (bit & 0x7))
 #define BITFIELD_SIZE	512
 
 void main(void)
 {
 	uint32_t b1 = 0;
-	DEFINE_BITFIELD(b2, BITFIELD_SIZE) = { 0 };
+	unsigned char b2[BITFIELD_SIZE >> 3] = {0};
 	int failed = 0;
 	int test_rv;
 	unsigned int bit;
@@ -105,9 +105,9 @@ void main(void)
 	}
 
 	for (bit = 0; bit < BITFIELD_SIZE; ++bit) {
-		sys_bitfield_set_bit(b2, bit);
+		sys_bitfield_set_bit((mem_addr_t)b2, bit);
 		if (b2[BIT_INDEX(bit)] != BIT_VAL(bit)) {
-			TC_PRINT("got %lx expected %x\n", b2[BIT_INDEX(bit)],
+			TC_PRINT("got %d expected %d\n", b2[BIT_INDEX(bit)],
 				 BIT_VAL(bit));
 			TC_PRINT("sys_bitfield_set_bit failed for bit %d\n",
 				 bit);
@@ -115,13 +115,13 @@ void main(void)
 			failed++;
 		}
 
-		if (!sys_bitfield_test_bit(b2, bit)) {
+		if (!sys_bitfield_test_bit((mem_addr_t)b2, bit)) {
 			TC_PRINT("sys_bitfield_test_bit did not detect bit %d\n",
 				 bit);
 			failed++;
 		}
 
-		sys_bitfield_clear_bit(b2, bit);
+		sys_bitfield_clear_bit((mem_addr_t)b2, bit);
 		if (b2[BIT_INDEX(bit)] != 0) {
 			b2[BIT_INDEX(bit)] = 0;
 			TC_PRINT("sys_bitfield_clear_bit failed for bit %d\n",
@@ -129,13 +129,13 @@ void main(void)
 			failed++;
 		}
 
-		if (sys_bitfield_test_bit(b2, bit)) {
+		if (sys_bitfield_test_bit((mem_addr_t)b2, bit)) {
 			TC_PRINT("sys_bitfield_test_bit erroneously detected bit %d\n",
 				 bit);
 			failed++;
 		}
 
-		ret = sys_bitfield_test_and_set_bit(b2, bit);
+		ret = sys_bitfield_test_and_set_bit((mem_addr_t)b2, bit);
 		if (ret) {
 			TC_PRINT("sys_bitfield_test_and_set_bit erroneously detected bit %d\n",
 				 bit);
@@ -147,7 +147,7 @@ void main(void)
 				 bit);
 			failed++;
 		}
-		ret = sys_bitfield_test_and_set_bit(b2, bit);
+		ret = sys_bitfield_test_and_set_bit((mem_addr_t)b2, bit);
 		if (!ret) {
 			TC_PRINT("sys_bitfield_test_and_set_bit did not detect bit %d\n",
 				 bit);
@@ -160,7 +160,7 @@ void main(void)
 			failed++;
 		}
 
-		ret = sys_bitfield_test_and_clear_bit(b2, bit);
+		ret = sys_bitfield_test_and_clear_bit((mem_addr_t)b2, bit);
 		if (!ret) {
 			TC_PRINT("sys_bitfield_test_and_clear_bit did not detect bit %d\n",
 				 bit);
@@ -172,7 +172,7 @@ void main(void)
 				 bit);
 			failed++;
 		}
-		ret = sys_bitfield_test_and_clear_bit(b2, bit);
+		ret = sys_bitfield_test_and_clear_bit((mem_addr_t)b2, bit);
 		if (ret) {
 			TC_PRINT("sys_bitfield_test_and_clear_bit erroneously detected bit %d\n",
 				 bit);

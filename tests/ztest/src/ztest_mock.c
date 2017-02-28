@@ -45,11 +45,19 @@ void _init_mock(void)
 
 #else
 
+/*
+ * FIXME: move to sys_io.h once the argument signature for bitmap has
+ * been fixed to void* or similar ZEP-1347
+ */
+#define BITS_PER_UL (8 * sizeof(unsigned long int))
+#define DEFINE_BITFIELD(name, bits)					\
+	unsigned long int (name)[((bits) + BITS_PER_UL - 1) / BITS_PER_UL]
+
 static inline
 int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 				  unsigned int bits)
 {
-	unsigned int words = (bits + LONG_BIT - 1) / LONG_BIT;
+	unsigned int words = (bits + BITS_PER_UL - 1) / BITS_PER_UL;
 	unsigned int cnt;
 	unsigned int long neg_bitmap;
 
@@ -62,9 +70,9 @@ int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 		if (neg_bitmap == 0)	/* all full */
 			continue;
 		else if (neg_bitmap == ~0UL)	/* first bit */
-			return cnt * LONG_BIT;
+			return cnt * BITS_PER_UL;
 		else
-			return cnt * LONG_BIT + __builtin_ffsl(neg_bitmap);
+			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap);
 	}
 	return -1;
 }
@@ -82,7 +90,8 @@ void free_parameter(struct parameter *param)
 	__ASSERT(allocation_index < CONFIG_ZTEST_PARAMETER_COUNT,
 		 "param %p given to free is not in the static buffer %p:%u",
 		 param, params, CONFIG_ZTEST_PARAMETER_COUNT);
-	sys_bitfield_clear_bit(params_allocation, allocation_index);
+	sys_bitfield_clear_bit((mem_addr_t) params_allocation,
+			       allocation_index);
 }
 
 static
@@ -97,7 +106,7 @@ struct parameter *alloc_parameter(void)
 		printk("No more mock parameters available for allocation\n");
 		ztest_test_fail();
 	}
-	sys_bitfield_set_bit(params_allocation, allocation_index);
+	sys_bitfield_set_bit((mem_addr_t) params_allocation, allocation_index);
 	param = params + allocation_index;
 	memset(param, 0, sizeof(*param));
 	return param;

@@ -161,17 +161,17 @@ void store_flags(unsigned int irq, uint32_t flags)
 {
 	/* Currently only the following three flags are modified */
 	if (flags & IOAPIC_LOW) {
-		sys_bitfield_set_bit(ioapic_suspend_buf,
+		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
 			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO));
 	}
 
 	if (flags & IOAPIC_LEVEL) {
-		sys_bitfield_set_bit(ioapic_suspend_buf,
+		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
 			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_LVL_EDGE));
 	}
 
 	if (flags & IOAPIC_INT_MASK) {
-		sys_bitfield_set_bit(ioapic_suspend_buf,
+		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
 			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_ENBL_DSBL));
 	}
 }
@@ -180,17 +180,17 @@ uint32_t restore_flags(unsigned int irq)
 {
 	uint32_t flags = 0;
 
-	if (sys_bitfield_test_bit(ioapic_suspend_buf,
+	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
 		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO))) {
 		flags |= IOAPIC_LOW;
 	}
 
-	if (sys_bitfield_test_bit(ioapic_suspend_buf,
+	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
 		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_LVL_EDGE))) {
 		flags |= IOAPIC_LEVEL;
 	}
 
-	if (sys_bitfield_test_bit(ioapic_suspend_buf,
+	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
 		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_ENBL_DSBL))) {
 		flags |= IOAPIC_INT_MASK;
 	}
