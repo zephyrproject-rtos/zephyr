@@ -837,11 +837,6 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 	ctx->clean_session = 1;
 	ctx->connected = 0;
 
-	/* Install the receiver callback, timeout is set to K_NO_WAIT.
-	 * In this case, no return code is evaluated.
-	 */
-	(void)net_context_recv(ctx->net_ctx, mqtt_recv, K_NO_WAIT, ctx);
-
 	ctx->app_type = app_type;
 
 	switch (ctx->app_type) {
@@ -854,6 +849,11 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 	default:
 		return -EINVAL;
 	}
+
+	/* Install the receiver callback, timeout is set to K_NO_WAIT.
+	 * In this case, no return code is evaluated.
+	 */
+	(void)net_context_recv(ctx->net_ctx, mqtt_recv, K_NO_WAIT, ctx);
 
 	return 0;
 }
