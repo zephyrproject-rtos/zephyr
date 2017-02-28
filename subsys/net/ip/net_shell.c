@@ -888,6 +888,11 @@ static int shell_cmd_route(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_INIT_STACKS)
+extern char _main_stack[];
+extern char _interrupt_stack[];
+#endif
+
 static int shell_cmd_stacks(int argc, char *argv[])
 {
 #if defined(CONFIG_INIT_STACKS)
@@ -913,6 +918,24 @@ static int shell_cmd_stacks(int argc, char *argv[])
 		       info->pretty_name, info->name, info->orig_size);
 #endif
 	}
+
+#if defined(CONFIG_INIT_STACKS)
+	net_analyze_stack_get_values(_main_stack, CONFIG_MAIN_STACK_SIZE,
+				     &stack_offset, &pcnt, &unused);
+	printk("%s [%s] stack size %d/%d bytes unused %u usage"
+	       " %d/%d (%u %%)\n",
+	       "main", "_main_stack", CONFIG_MAIN_STACK_SIZE,
+	       CONFIG_MAIN_STACK_SIZE + stack_offset, unused,
+	       CONFIG_MAIN_STACK_SIZE - unused, CONFIG_MAIN_STACK_SIZE, pcnt);
+
+	net_analyze_stack_get_values(_interrupt_stack, CONFIG_ISR_STACK_SIZE,
+				     &stack_offset, &pcnt, &unused);
+	printk("%s [%s] stack size %d/%d bytes unused %u usage"
+	       " %d/%d (%u %%)\n",
+	       "ISR", "_interrupt_stack", CONFIG_ISR_STACK_SIZE,
+	       CONFIG_ISR_STACK_SIZE + stack_offset, unused,
+	       CONFIG_ISR_STACK_SIZE - unused, CONFIG_ISR_STACK_SIZE, pcnt);
+#endif
 
 	return 0;
 }
