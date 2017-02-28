@@ -625,9 +625,6 @@ void net_nbuf_unref(struct net_buf *buf)
 		goto done;
 	}
 
-	/* Only remove fragments if debug is enabled since net_buf_unref takes
-	 * care of removing all the fragments.
-	 */
 	frag = buf->frags;
 	while (frag) {
 		NET_DBG("%s (%s) [%d] buf %p ref %d frags %p (%s():%d)",
@@ -642,7 +639,7 @@ void net_nbuf_unref(struct net_buf *buf)
 
 		nbuf_alloc_del(frag, caller, line);
 
-		frag = net_buf_frag_del(buf, frag);
+		frag = frag->frags;
 	}
 
 	nbuf_alloc_del(buf, caller, line);
