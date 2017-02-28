@@ -206,8 +206,9 @@ static bool match_queries_resource(const struct zoap_resource *resource,
 	}
 
 	if (query->len > href_len + 1 &&
-	    !strncmp(query->value, "href", href_len)) {
-		const char *uri = query->value + href_len + 1; /* href=... */
+	    !strncmp((char *) query->value, "href", href_len)) {
+		/* The stuff after 'href=' */
+		const char *uri = (char *) query->value + href_len + 1;
 		uint16_t uri_len  = query->len - (href_len + 1);
 
 		return match_path_uri(resource->path, uri, uri_len);
