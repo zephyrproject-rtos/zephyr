@@ -68,7 +68,7 @@ static struct net_context contexts[NET_MAX_CONTEXT];
  */
 static struct k_sem contexts_lock;
 
-enum net_verdict packet_received(struct net_conn *conn,
+static enum net_verdict packet_received(struct net_conn *conn,
 				 struct net_buf *buf,
 				 void *user_data);
 
@@ -1797,7 +1797,7 @@ static void set_appdata_values(struct net_buf *buf,
 			net_nbuf_appdatalen(buf), total_len);
 }
 
-enum net_verdict packet_received(struct net_conn *conn,
+static enum net_verdict packet_received(struct net_conn *conn,
 				 struct net_buf *buf,
 				 void *user_data)
 {
