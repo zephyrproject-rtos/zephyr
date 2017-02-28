@@ -292,6 +292,11 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 		return 0;
 	}
 
+	if (num_services == BT_SDP_MAX_SERVICES) {
+		BT_ERR("Reached max allowed registrations");
+		return -ENOMEM;
+	}
+
 	if (db) {
 		handle = db->handle + 1;
 	}
