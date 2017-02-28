@@ -51,6 +51,13 @@ config I2C_MCUX
 
 endif # I2C
 
+if RANDOM_GENERATOR
+
+config RANDOM_MCUX_TRNG
+	def_bool y
+
+endif # RANDOM_GENERATOR
+
 if FLASH
 
 config SOC_FLASH_MCUX
