@@ -8,8 +8,8 @@ This section describes how to set up a Linux development system.
 After completing these steps, you will be able to compile and run your Zephyr
 applications on the following Linux distributions:
 
-* Ubuntu 14.04 LTS 64-bit
-* Fedora 22 64-bit
+* Ubuntu 16.04 LTS 64-bit
+* Fedora 25 64-bit
 
 Where needed, alternative instructions are listed for Ubuntu and Fedora.
 
@@ -108,9 +108,9 @@ Follow these steps to install the SDK on your Linux host system.
 
    .. code-block:: console
 
-      $ chmod +x zephyr-sdk-<version>-i686-setup.run
+      $ chmod +x zephyr-sdk-<version>-setup.run
 
-      $ ./zephyr-sdk-<version>-i686-setup.run
+      $ ./zephyr-sdk-<version>-setup.run
 
    There is no need for `sudo` if the SDK is installed in the current
    user's home directory.
