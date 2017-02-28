@@ -144,7 +144,7 @@ int ipm_console_receiver_init(struct device *d)
 
 	ipm_register_callback(ipm, ipm_console_receive_callback, d);
 
-	k_thread_spawn(config_info->thread_stack, IPM_CONSOLE_STACK_SIZE,
+	k_thread_spawn(config_info->thread_stack, CONFIG_IPM_CONSOLE_STACK_SIZE,
 			 ipm_console_thread, d, NULL, NULL,
 			 K_PRIO_COOP(IPM_CONSOLE_PRI), 0, 0);
 	ipm_set_enabled(ipm, 1);
