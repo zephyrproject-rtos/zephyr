@@ -12,3 +12,12 @@ menuconfig RANDOM_MCUX_RNGA
 	help
 	  This option enables the random number generator accelerator (RNGA)
 	  driver based on the MCUX RNGA driver.
+
+menuconfig RANDOM_MCUX_TRNG
+	bool "MCUX TRNG driver"
+	depends on RANDOM_GENERATOR && HAS_TRNG
+	default n
+	select RANDOM_HAS_DRIVER
+	help
+	  This option enables the true random number generator (TRNG)
+	  driver based on the MCUX TRNG driver.
