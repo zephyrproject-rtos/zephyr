@@ -34,7 +34,9 @@
 	baud-rate = <115200>;
 };
 
+#ifdef CONFIG_BLUETOOTH
 &uart4 {
 	status = "ok";
 	baud-rate = <115200>;
 };
+#endif
