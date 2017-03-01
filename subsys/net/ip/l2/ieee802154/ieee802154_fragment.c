@@ -426,6 +426,12 @@ static inline bool copy_frag(struct net_buf *buf,
 		write = net_nbuf_write(buf, write, pos, &pos, input->len,
 				       input->data, NET_6LO_RX_NBUF_TIMEOUT);
 		if (!write && pos == 0xffff) {
+			/* Free the new bufs we tried to get, we need to discard
+			 * the whole fragment chain.
+			 */
+			net_nbuf_unref(buf->frags);
+			buf->frags = NULL;
+
 			return false;
 		}
 
@@ -493,6 +499,7 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 		cache = set_reass_cache(buf, size, tag);
 		if (!cache) {
 			NET_ERR("Could not get a cache entry");
+			buf->frags = frag;
 			return NET_DROP;
 		}
 
