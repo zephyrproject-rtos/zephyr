@@ -333,7 +333,9 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 			continue;
 		}
 
-		net_nbuf_unref(cache[i].buf);
+		if (cache[i].buf) {
+			net_nbuf_unref(cache[i].buf);
+		}
 
 		cache[i].buf = NULL;
 		cache[i].size = 0;
