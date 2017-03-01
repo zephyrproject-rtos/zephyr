@@ -165,7 +165,8 @@ static int run_test(struct unit_test *test)
 
 	TC_START(test->name);
 	k_thread_spawn(&thread_stack[0], sizeof(thread_stack),
-			 (k_thread_entry_t) test_cb, (struct unit_test *)test, NULL, NULL, -1, 0, 0);
+			 (k_thread_entry_t) test_cb, (struct unit_test *)test,
+			 NULL, NULL, -1, 0, 0);
 
 	/*
 	 * There is an implicit expectation here that the thread that was
