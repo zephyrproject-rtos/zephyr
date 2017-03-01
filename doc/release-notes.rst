@@ -1,6 +1,51 @@
 Release Notes
 #############
 
+.. _zephyr_1.7:
+
+Zephyr Kernel 1.7.0
+********************
+
+Kernel
+======
+
+Architectures
+=============
+
+Boards
+======
+
+Drivers and Sensors
+===================
+
+Networking
+==========
+
+Bluetooth
+=========
+
+
+Build Infrastructure
+====================
+
+Libraries
+=========
+
+HALs
+====
+
+Documentation
+=============
+
+Test and Samples
+================
+
+Deprecations
+============
+
+JIRA Related Items
+==================
+
 .. _zephyr_1.6:
 
 Zephyr Kernel 1.6.0
