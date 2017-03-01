@@ -187,6 +187,24 @@ static bool nbuf_alloc_del(struct net_buf *buf,
 	return false;
 }
 
+static bool nbuf_alloc_find(struct net_buf *buf,
+			    const char **func_free,
+			    int *line_free)
+{
+	int i;
+
+	for (i = 0; i < MAX_NBUF_ALLOCS; i++) {
+		if (!nbuf_allocs[i].in_use && nbuf_allocs[i].buf == buf) {
+			*func_free = nbuf_allocs[i].func_free;
+			*line_free = nbuf_allocs[i].line_free;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void net_nbuf_allocs_foreach(net_nbuf_allocs_cb_t cb, void *user_data)
 {
 	int i;
@@ -611,8 +629,19 @@ void net_nbuf_unref(struct net_buf *buf)
 	}
 
 	if (!buf->ref) {
-		NET_DBG("*** ERROR *** buf %p is freed already (%s():%d)",
-			buf, caller, line);
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+		const char *func_freed;
+		int line_freed;
+
+		if (nbuf_alloc_find(buf, &func_freed, &line_freed)) {
+			NET_DBG("*** ERROR *** buf %p is freed already by "
+				"%s():%d (%s():%d)",
+				buf, func_freed, line_freed, caller, line);
+		} else {
+			NET_DBG("*** ERROR *** buf %p is freed already "
+				"(%s():%d)", buf, caller, line);
+		}
+#endif
 		return;
 	}
 
@@ -633,8 +662,19 @@ void net_nbuf_unref(struct net_buf *buf)
 			frag->frags, caller, line);
 
 		if (!frag->ref) {
-			NET_DBG("*** ERROR *** frag %p is freed already "
-				"(%s():%d)", frag, caller, line);
+			const char *func_freed;
+			int line_freed;
+
+			if (nbuf_alloc_find(frag, &func_freed, &line_freed)) {
+				NET_DBG("*** ERROR *** frag %p is freed "
+					"already by %s():%d (%s():%d)",
+					frag, func_freed, line_freed,
+					caller, line);
+			} else {
+				NET_DBG("*** ERROR *** frag %p is freed "
+					"already (%s():%d)",
+					frag, caller, line);
+			}
 		}
 
 		nbuf_alloc_del(frag, caller, line);
