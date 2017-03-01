@@ -1107,7 +1107,7 @@ static void post_event(void)
 
 static int get_debug_char_raw(void)
 {
-	char ch;
+	unsigned char ch;
 
 	while (uart_poll_in(uart_console_dev, &ch) != 0) {
 		if (event_is_pending) {
@@ -1577,7 +1577,7 @@ static ALWAYS_INLINE unsigned char *handle_write_memory(unsigned char *packet,
 	packet = p;
 
 	p = (void *)((long)addr);
-	if (mem_probe(p, SYS_MEM_SAFE_WRITE, len, 0, 1) == -1) {
+	if (mem_probe((char *) p, SYS_MEM_SAFE_WRITE, len, 0, 1) == -1) {
 		/* No write access */
 		fill_output_buffer("E02");
 		return packet;
@@ -2262,7 +2262,7 @@ static inline int handle_single_stepping(void)
 
 static void control_loop(void)
 {
-	char ch;
+	unsigned char ch;
 
 	UNINSTALL_BREAKPOINTS();
 
