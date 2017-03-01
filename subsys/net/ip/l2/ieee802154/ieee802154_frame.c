@@ -436,7 +436,7 @@ uint16_t ieee802154_compute_header_size(struct net_if *iface,
 }
 
 static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf,
-							      uint8_t ack)
+							      bool ack)
 {
 	struct ieee802154_fcf_seq *fs;
 
@@ -757,7 +757,7 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 		return false;
 	}
 
-	fs = generate_fcf_grounds(&p_buf, 0);
+	fs = generate_fcf_grounds(&p_buf, false);
 
 	fs->fc.dst_addr_mode = 0;
 	fs->fc.src_addr_mode = 0;
