@@ -1,0 +1,24 @@
+# Kconfig - STM32F401x temperature sensor configuration options
+
+#
+# Copyright (c) 2016 ARM Ltd.
+# Copyright (c) 2017 Linaro Limited.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig TEMP_STM32F401X
+	bool
+	prompt "STM32F401x Temperature Sensor"
+	depends on SENSOR && SOC_SERIES_STM32F4X
+	default n
+	help
+	  Enable driver for STM32F401x temperature sensor.
+
+config TEMP_STM32F401X_NAME
+	string
+	prompt "Driver name"
+	default "TEMP_0"
+	depends on TEMP_STM32F401X
+	help
+	  Device name with which the STM32F401x temperature sensor is identified.

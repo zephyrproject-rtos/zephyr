@@ -109,3 +109,5 @@ source "drivers/sensor/th02/Kconfig"
 source "drivers/sensor/tmp007/Kconfig"
 
 source "drivers/sensor/tmp112/Kconfig"
+
+source "drivers/sensor/stm32/Kconfig"
