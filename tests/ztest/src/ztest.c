@@ -167,6 +167,19 @@ static int run_test(struct unit_test *test)
 	k_thread_spawn(&thread_stack[0], sizeof(thread_stack),
 			 (k_thread_entry_t) test_cb, (struct unit_test *)test, NULL, NULL, -1, 0, 0);
 
+	/*
+	 * There is an implicit expectation here that the thread that was
+	 * spawned is still higher priority than the current thread.
+	 *
+	 * If that is not the case, it will have given the semaphore, which
+	 * will have caused the current thread to run, _if_ the test case
+	 * thread is preemptible, since it is higher priority. If there is
+	 * another test case to be run after the current one finishes, the
+	 * thread_stack will be reused for that new test case while the current
+	 * test case has not finished running yet (it has given the semaphore,
+	 * but has _not_ gone back to _thread_entry() and completed it's "abort
+	 * phase": this will corrupt the kernel ready queue.
+	 */
 	k_sem_take(&mutex, K_FOREVER);
 	if (test_result) {
 		ret = TC_FAIL;
