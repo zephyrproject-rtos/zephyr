@@ -13,4 +13,4 @@ config SOC_SERIES_KINETIS_K6X
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_SYSTICK
 	help
-	 Enable support for Kinetis K6x MCU series
+	  Enable support for Kinetis K6x MCU series
