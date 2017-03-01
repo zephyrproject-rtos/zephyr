@@ -52,7 +52,7 @@ int http_send_request(struct http_client_ctx *http_ctx, const char *method,
 	const char *content_type = "Content-Type: ";
 	const char *sep = "\r\n\r\n";
 	struct net_buf *tx;
-	int rc;
+	int rc = -ENOMEM;
 
 	tx = net_nbuf_get_tx(http_ctx->tcp_ctx.net_ctx, K_FOREVER);
 	if (tx == NULL) {
@@ -83,14 +83,12 @@ int http_send_request(struct http_client_ctx *http_ctx, const char *method,
 
 		if (!net_nbuf_append(tx, strlen(content_type),
 				     (uint8_t *)content_type, K_FOREVER)) {
-			rc = -ENOMEM;
 			goto lb_exit;
 		}
 
 		if (!net_nbuf_append(tx, strlen(content_type_value),
 				     (uint8_t *)content_type_value,
 				     K_FOREVER)) {
-			rc = -ENOMEM;
 			goto lb_exit;
 		}
 
@@ -117,7 +115,6 @@ int http_send_request(struct http_client_ctx *http_ctx, const char *method,
 	} else {
 		if (!net_nbuf_append(tx, strlen(sep), (uint8_t *)sep,
 				     K_FOREVER)) {
-			rc = -ENOMEM;
 			goto lb_exit;
 		}
 	}
