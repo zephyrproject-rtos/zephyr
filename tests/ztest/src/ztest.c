@@ -131,18 +131,18 @@ out:
 static char __stack thread_stack[CONFIG_ZTEST_STACKSIZE];
 
 static int test_result;
-static struct k_sem mutex;
+static struct k_sem test_end_signal;
 
 void ztest_test_fail(void)
 {
 	test_result = -1;
-	k_sem_give(&mutex);
+	k_sem_give(&test_end_signal);
 	k_thread_abort(k_current_get());
 }
 
 static void init_testing(void)
 {
-	k_sem_init(&mutex, 0, 1);
+	k_sem_init(&test_end_signal, 0, 1);
 }
 
 static void test_cb(void *a, void *dummy2, void *dummy)
@@ -156,7 +156,7 @@ static void test_cb(void *a, void *dummy2, void *dummy)
 	run_test_functions(test);
 	test_result = 0;
 
-	k_sem_give(&mutex);
+	k_sem_give(&test_end_signal);
 }
 
 static int run_test(struct unit_test *test)
@@ -180,7 +180,7 @@ static int run_test(struct unit_test *test)
 	 * but has _not_ gone back to _thread_entry() and completed it's "abort
 	 * phase": this will corrupt the kernel ready queue.
 	 */
-	k_sem_take(&mutex, K_FOREVER);
+	k_sem_take(&test_end_signal, K_FOREVER);
 	if (test_result) {
 		ret = TC_FAIL;
 	}
