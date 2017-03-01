@@ -1112,7 +1112,7 @@ static inline struct net_buf *adjust_offset(struct net_buf *buf,
 		buf = buf->frags;
 	}
 
-	NET_ERR("Invalid offset, failed to adjust");
+	NET_ERR("Invalid offset (%u), failed to adjust", offset);
 
 	return NULL;
 }
@@ -1293,7 +1293,7 @@ struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
 
 	frag = adjust_write_offset(buf, frag, offset, &offset, timeout);
 	if (!frag) {
-		NET_DBG("Failed to adjust offset");
+		NET_DBG("Failed to adjust offset (%u)", offset);
 		goto error;
 	}
 
