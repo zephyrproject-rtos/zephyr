@@ -165,7 +165,13 @@ static struct sockaddr_in6 mcast_addr6 = {
 	.sin6_port = htons(PEER_PORT),
 };
 
-static char __noinit __stack ipv6_stack[STACKSIZE];
+#if defined(CONFIG_NET_UDP)
+static char __noinit __stack ipv6_udp_stack[STACKSIZE];
+#endif
+
+#if defined(CONFIG_NET_TCP)
+static char __noinit __stack ipv6_tcp_stack[STACKSIZE];
+#endif
 
 #endif /* CONFIG_NET_IPV6 */
 
@@ -191,7 +197,13 @@ static struct sockaddr_in peer_addr4 = {
 	.sin_port = htons(PEER_PORT),
 };
 
-static char __noinit __stack ipv4_stack[STACKSIZE];
+#if defined(CONFIG_NET_UDP)
+static char __noinit __stack ipv4_udp_stack[STACKSIZE];
+#endif
+
+#if defined(CONFIG_NET_TCP)
+static char __noinit __stack ipv4_tcp_stack[STACKSIZE];
+#endif
 
 #endif /* CONFIG_NET_IPV4 */
 
@@ -842,29 +854,31 @@ static void tcp_connect6(struct net_context *tcp_send)
 #endif /* CONFIG_NET_IPV6 */
 #endif /* CONFIG_NET_TCP */
 
-#if defined(CONFIG_NET_IPV4)
-static void send_ipv4(struct net_context *udp, struct net_context *tcp)
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_UDP)
+static void send_udp_ipv4(struct net_context *udp)
 {
-#if defined(CONFIG_NET_TCP)
-	tcp_connect4(tcp);
-#endif
-
-#if defined(CONFIG_NET_UDP)
 	send_udp(udp, AF_INET, "IPv4", &conf.recv_ipv4, &conf.ipv4);
-#endif
 }
 #endif
 
-#if defined(CONFIG_NET_IPV6)
-static void send_ipv6(struct net_context *udp, struct net_context *tcp)
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_TCP)
+static void send_tcp_ipv4(struct net_context *tcp)
 {
-#if defined(CONFIG_NET_TCP)
-	tcp_connect6(tcp);
+	tcp_connect4(tcp);
+}
 #endif
 
-#if defined(CONFIG_NET_UDP)
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_UDP)
+static void send_udp_ipv6(struct net_context *udp)
+{
 	send_udp(udp, AF_INET6, "IPv6", &conf.recv_ipv6, &conf.ipv6);
+}
 #endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_TCP)
+static void send_tcp_ipv6(struct net_context *tcp)
+{
+	tcp_connect6(tcp);
 }
 #endif
 
@@ -886,16 +900,28 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	k_thread_spawn(ipv4_stack, STACKSIZE,
-		       (k_thread_entry_t)send_ipv4,
-		       udp_send4, tcp_send4, NULL, K_PRIO_COOP(7), 0, 0);
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_UDP)
+	k_thread_spawn(ipv4_udp_stack, STACKSIZE,
+		       (k_thread_entry_t)send_udp_ipv4,
+		       udp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 
-#if defined(CONFIG_NET_IPV6)
-	k_thread_spawn(ipv6_stack, STACKSIZE,
-		       (k_thread_entry_t)send_ipv6,
-		       udp_send6, tcp_send6, NULL, K_PRIO_COOP(7), 0, 0);
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_TCP)
+	k_thread_spawn(ipv4_tcp_stack, STACKSIZE,
+		       (k_thread_entry_t)send_tcp_ipv4,
+		       tcp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+#endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_UDP)
+	k_thread_spawn(ipv6_udp_stack, STACKSIZE,
+		       (k_thread_entry_t)send_udp_ipv6,
+		       udp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+#endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_TCP)
+	k_thread_spawn(ipv6_tcp_stack, STACKSIZE,
+		       (k_thread_entry_t)send_tcp_ipv6,
+		       tcp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 }
 
