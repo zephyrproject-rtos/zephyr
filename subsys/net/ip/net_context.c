@@ -443,6 +443,16 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 	NET_ASSERT(addr);
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
+	/* If we already have connection handler, then it effectively
+	 * means that it's already bound to an interface/port, and we
+	 * don't support rebinding connection to new address/port in
+	 * the code below.
+	 * TODO: Support rebinding.
+	 */
+	if (context->conn_handler) {
+		return -EISCONN;
+	}
+
 #if defined(CONFIG_NET_IPV6)
 	if (addr->family == AF_INET6) {
 		struct net_if *iface = NULL;
