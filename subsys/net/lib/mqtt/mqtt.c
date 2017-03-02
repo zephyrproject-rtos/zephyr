@@ -53,7 +53,6 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
-		rc = -EIO;
 		net_pkt_unref(tx);
 	}
 
@@ -93,7 +92,6 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
-		rc = -EIO;
 		goto exit_disconnect;
 	}
 
@@ -167,7 +165,6 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
-		rc = -EIO;
 		goto exit_send;
 	}
 
@@ -229,7 +226,6 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
-		rc = -EIO;
 		net_pkt_unref(tx);
 	}
 
@@ -268,7 +264,6 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
-		rc = -EIO;
 		goto exit_pingreq;
 	}
 
@@ -312,7 +307,6 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
-		rc = -EIO;
 		net_pkt_unref(tx);
 	}
 
@@ -356,7 +350,6 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
 	if (rc < 0) {
-		rc = -EIO;
 		net_pkt_unref(tx);
 	}
 
