@@ -74,6 +74,7 @@
 #include <power.h>
 #include <device.h>
 #include <board.h>
+#include <kernel_structs.h>
 
 /* Local APIC Timer Bits */
 
@@ -135,8 +136,10 @@ static u32_t programmed_cycles;
 static u32_t programmed_full_ticks;
 static u32_t __noinit max_system_ticks;
 static u32_t __noinit cycles_per_max_ticks;
+#ifndef CONFIG_TICKLESS_KERNEL
 static bool timer_known_to_have_expired;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
+#endif
 #endif /* CONFIG_TICKLESS_IDLE */
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -238,11 +241,52 @@ static inline u32_t initial_count_register_get(void)
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
+#ifdef CONFIG_TICKLESS_KERNEL
+static inline void program_max_cycles(void)
+{
+	programmed_cycles = cycles_per_max_ticks;
+	initial_count_register_set(programmed_cycles);
+}
+#endif
+
 void _timer_int_handler(void *unused /* parameter is not used */
 				 )
 {
 	ARG_UNUSED(unused);
 
+#if defined(CONFIG_TICKLESS_KERNEL)
+	if (!programmed_full_ticks) {
+		if (_sys_clock_always_on) {
+			_sys_clock_tick_count = _get_elapsed_clock_time();
+			program_max_cycles();
+		}
+		return;
+	}
+
+	u32_t cycles = current_count_register_get();
+
+	if ((cycles > 0) && (cycles < programmed_cycles)) {
+		/* stale interrupt */
+		return;
+	}
+
+	_sys_idle_elapsed_ticks = programmed_full_ticks;
+
+	/*
+	 * Clear programmed ticks before announcing elapsed time so
+	 * that recursive calls to _update_elapsed_time() will not
+	 * announce already consumed elapsed time
+	 */
+	programmed_full_ticks = 0;
+
+	_sys_clock_tick_announce();
+
+	/* _sys_clock_tick_announce() could cause new programming */
+	if (!programmed_full_ticks && _sys_clock_always_on) {
+		_sys_clock_tick_count = _get_elapsed_clock_time();
+		program_max_cycles();
+	}
+#else
 #ifdef CONFIG_TICKLESS_IDLE
 	if (timer_mode == TIMER_MODE_ONE_SHOT) {
 		if (!timer_known_to_have_expired) {
@@ -279,8 +323,72 @@ void _timer_int_handler(void *unused /* parameter is not used */
 #else
 	_sys_clock_tick_announce();
 #endif /*CONFIG_TICKLESS_IDLE*/
+#endif
 
 }
+
+#ifdef CONFIG_TICKLESS_KERNEL
+u32_t _get_program_time(void)
+{
+	return programmed_full_ticks;
+}
+
+u32_t _get_remaining_program_time(void)
+{
+	if (programmed_full_ticks == 0) {
+		return 0;
+	}
+
+	return current_count_register_get() / cycles_per_tick;
+}
+
+u32_t _get_elapsed_program_time(void)
+{
+	if (programmed_full_ticks == 0) {
+		return 0;
+	}
+
+	return programmed_full_ticks -
+	    (current_count_register_get() / cycles_per_tick);
+}
+
+void _set_time(u32_t time)
+{
+	if (!time) {
+		programmed_full_ticks = 0;
+		return;
+	}
+
+	programmed_full_ticks =
+	    time > max_system_ticks ? max_system_ticks : time;
+
+	_sys_clock_tick_count = _get_elapsed_clock_time();
+
+	programmed_cycles = programmed_full_ticks * cycles_per_tick;
+	initial_count_register_set(programmed_cycles);
+}
+
+void _enable_sys_clock(void)
+{
+	if (!programmed_full_ticks) {
+		program_max_cycles();
+	}
+}
+
+u64_t _get_elapsed_clock_time(void)
+{
+	u64_t elapsed;
+
+	elapsed = _sys_clock_tick_count;
+	if (programmed_cycles) {
+		elapsed +=
+		    (programmed_cycles -
+		     current_count_register_get()) / cycles_per_tick;
+	}
+
+	return elapsed;
+}
+#endif
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /**
@@ -322,6 +430,18 @@ static void tickless_idle_init(void)
 void _timer_idle_enter(s32_t ticks /* system ticks */
 				)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (ticks != K_FOREVER) {
+		/* Need to reprogram only if current program is smaller */
+		if (ticks > programmed_full_ticks) {
+			_set_time(ticks);
+		}
+	} else {
+		programmed_full_ticks = 0;
+		programmed_cycles = 0;
+		initial_count_register_set(0); /* 0 disables timer */
+	}
+#else
 	u32_t  cycles;
 
 	/*
@@ -357,6 +477,7 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
 	initial_count_register_set(programmed_cycles);
 	one_shot_mode_set();
 	timer_mode = TIMER_MODE_ONE_SHOT;
+#endif
 }
 
 /**
@@ -374,6 +495,11 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
  */
 void _timer_idle_exit(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (!programmed_full_ticks && _sys_clock_always_on) {
+		program_max_cycles();
+	}
+#else
 	u32_t remaining_cycles;
 	u32_t remaining_full_ticks;
 
@@ -455,6 +581,7 @@ void _timer_idle_exit(void)
 
 		initial_count_register_set(programmed_cycles);
 	}
+#endif
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
@@ -482,7 +609,11 @@ int _sys_clock_driver_init(struct device *device)
 	divide_configuration_register_set();
 #endif
 	initial_count_register_set(cycles_per_tick - 1);
+#ifdef CONFIG_TICKLESS_KERNEL
+	one_shot_mode_set();
+#else
 	periodic_mode_set();
+#endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
