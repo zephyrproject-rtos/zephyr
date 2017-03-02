@@ -2297,11 +2297,13 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 	if (ret < 0) {
 		net_nbuf_unref(buf);
 		net_stats_update_icmp_drop();
+		net_stats_update_ipv6_mld_drop();
 
 		return ret;
 	}
 
 	net_stats_update_icmp_sent();
+	net_stats_update_ipv6_mld_sent();
 
 	return 0;
 }
@@ -2422,6 +2424,8 @@ static enum net_verdict handle_mld_query(struct net_buf *buf)
 		      &NET_IPV6_BUF(buf)->src,
 		      &NET_IPV6_BUF(buf)->dst);
 
+	net_stats_update_ipv6_mld_recv();
+
 	/* offset tells now where the ICMPv6 header is starting */
 	offset = net_nbuf_icmp_data(buf) - net_nbuf_ip_data(buf);
 	offset += sizeof(struct net_icmp_hdr);
@@ -2458,6 +2462,8 @@ static enum net_verdict handle_mld_query(struct net_buf *buf)
 	send_mld_report(net_nbuf_iface(buf));
 
 drop:
+	net_stats_update_ipv6_mld_drop();
+
 	return NET_DROP;
 }
 

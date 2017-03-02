@@ -262,6 +262,27 @@ static inline void net_stats_update_rpl_dao_ack_recv(void)
 #define net_stats_update_rpl_dao_ack_recv()
 #endif /* CONFIG_NET_STATISTICS_RPL */
 
+#if defined(CONFIG_NET_STATISTICS_MLD)
+static inline void net_stats_update_ipv6_mld_recv(void)
+{
+	net_stats.ipv6_mld.recv++;
+}
+
+static inline void net_stats_update_ipv6_mld_sent(void)
+{
+	net_stats.ipv6_mld.sent++;
+}
+
+static inline void net_stats_update_ipv6_mld_drop(void)
+{
+	net_stats.ipv6_mld.drop++;
+}
+#else
+#define net_stats_update_ipv6_mld_recv()
+#define net_stats_update_ipv6_mld_sent()
+#define net_stats_update_ipv6_mld_drop()
+#endif /* CONFIG_NET_STATISTICS_MLD */
+
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
 /* A simple periodic statistic printer, used only in net core */
 void net_print_statistics(void);
