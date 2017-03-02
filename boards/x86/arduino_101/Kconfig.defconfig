@@ -11,7 +11,7 @@ config SS_RESET_VECTOR
 	default 0x40034000
 
 config ROM_SIZE
-	default 192
+	default 144
 
 config PHYS_LOAD_ADDR
 	default 0x40010000
