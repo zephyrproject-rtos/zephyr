@@ -474,6 +474,7 @@ struct bt_hci_cp_write_sc_host_supp {
 #define BT_HCI_VERSION_4_0                      6
 #define BT_HCI_VERSION_4_1                      7
 #define BT_HCI_VERSION_4_2                      8
+#define BT_HCI_VERSION_5_0                      9
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001)
 struct bt_hci_rp_read_local_version_info {
