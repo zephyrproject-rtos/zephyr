@@ -220,6 +220,7 @@ struct eth_enc28j60_config {
 	uint32_t spi_freq;
 	uint8_t spi_slave;
 	uint8_t full_duplex;
+	int32_t timeout;
 };
 
 struct eth_enc28j60_runtime {
