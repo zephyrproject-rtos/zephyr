@@ -37,6 +37,8 @@
 
 static struct in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 static struct in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
@@ -45,6 +47,8 @@ static bool is_group_joined;
 static bool is_group_left;
 static bool is_join_msg_ok;
 static bool is_leave_msg_ok;
+static bool is_query_received;
+static bool is_report_sent;
 static struct k_sem wait_data;
 
 #define WAIT_TIME 500
@@ -99,8 +103,10 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 	if (icmp->type == NET_ICMPV6_MLDv2) {
 		/* FIXME, add more checks here */
 
+		NET_DBG("Received something....");
 		is_join_msg_ok = true;
 		is_leave_msg_ok = true;
+		is_report_sent = true;
 
 		k_sem_give(&wait_data);
 	}
@@ -278,6 +284,126 @@ static void verify_leave_group(void)
 	is_leave_msg_ok = false;
 }
 
+static void send_query(struct net_if *iface)
+{
+	struct net_buf *buf;
+	struct in6_addr dst;
+	uint16_t pos;
+
+	/* Sent to all MLDv2-capable routers */
+	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
+				      K_FOREVER);
+
+	buf = net_ipv6_create_raw(buf,
+				  &peer_addr,
+				  &dst,
+				  iface,
+				  NET_IPV6_NEXTHDR_HBHO);
+
+	NET_IPV6_BUF(buf)->hop_limit = 1; /* RFC 3810 ch 7.4 */
+
+	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
+	net_nbuf_append_u8(buf, IPPROTO_ICMPV6);
+	net_nbuf_append_u8(buf, 0); /* length (0 means 8 bytes) */
+
+#define ROUTER_ALERT_LEN 8
+
+	/* IPv6 router alert option is described in RFC 2711. */
+	net_nbuf_append_be16(buf, 0x0502); /* RFC 2711 ch 2.1 */
+	net_nbuf_append_be16(buf, 0); /* pkt contains MLD msg */
+
+	net_nbuf_append_u8(buf, 1); /* padn */
+	net_nbuf_append_u8(buf, 0); /* padn len */
+
+	/* ICMPv6 header */
+	net_nbuf_append_u8(buf, NET_ICMPV6_MLD_QUERY); /* type */
+	net_nbuf_append_u8(buf, 0); /* code */
+	net_nbuf_append_be16(buf, 0); /* chksum */
+
+	net_nbuf_append_be16(buf, 3); /* maximum response code */
+	net_nbuf_append_be16(buf, 0); /* reserved field */
+
+	net_nbuf_append(buf, sizeof(struct in6_addr),
+			(const uint8_t *)net_ipv6_unspecified_address(),
+			K_FOREVER); /* multicast address */
+
+	net_nbuf_append_be16(buf, 0); /* Resv, S, QRV and QQIC */
+	net_nbuf_append_be16(buf, 0); /* number of addresses */
+
+	buf = net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
+
+	net_nbuf_set_iface(buf, iface);
+
+	net_nbuf_write_be16(buf, buf->frags,
+			    NET_IPV6H_LEN + ROUTER_ALERT_LEN + 2,
+			    &pos, ntohs(~net_calc_chksum_icmpv6(buf)));
+
+	net_recv_data(iface, buf);
+}
+
+/* We are not really interested to parse the query at this point */
+static enum net_verdict handle_mld_query(struct net_buf *buf)
+{
+	is_query_received = true;
+
+	return NET_DROP;
+}
+
+static struct net_icmpv6_handler mld_query_input_handler = {
+	.type = NET_ICMPV6_MLD_QUERY,
+	.code = 0,
+	.handler = handle_mld_query,
+};
+
+static void catch_query(void)
+{
+	is_query_received = false;
+
+	net_icmpv6_register_handler(&mld_query_input_handler);
+
+	send_query(net_if_get_default());
+
+	k_yield();
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		assert_true(0, "Timeout while waiting query event");
+	}
+
+	if (!is_query_received) {
+		assert_true(0, "Query msg invalid");
+	}
+
+	is_query_received = false;
+}
+
+static void verify_send_report(void)
+{
+	/* We need to remove our temporary handler so that the
+	 * stack handler is called instead.
+	 */
+	net_icmpv6_unregister_handler(&mld_query_input_handler);
+
+	is_query_received = false;
+	is_report_sent = false;
+
+	join_group();
+
+	send_query(net_if_get_default());
+
+	k_yield();
+
+	/* Did we send a report? */
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		assert_true(0, "Timeout while waiting report");
+	}
+
+	if (!is_report_sent) {
+		assert_true(0, "Report not sent");
+	}
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_mld_test,
@@ -287,7 +413,9 @@ void test_main(void)
 			 ztest_unit_test(catch_join_group),
 			 ztest_unit_test(catch_leave_group),
 			 ztest_unit_test(verify_join_group),
-			 ztest_unit_test(verify_leave_group)
+			 ztest_unit_test(verify_leave_group),
+			 ztest_unit_test(catch_query),
+			 ztest_unit_test(verify_send_report)
 			 );
 
 	ztest_run_test_suite(net_mld_test);
