@@ -218,7 +218,7 @@ int net_tcp_release(struct net_tcp *tcp)
 	return 0;
 }
 
-static inline int net_tcp_add_options(struct net_buf *header, size_t len,
+static inline uint8_t net_tcp_add_options(struct net_buf *header, size_t len,
 				      void *data)
 {
 	uint8_t optlen;
@@ -232,7 +232,7 @@ static inline int net_tcp_add_options(struct net_buf *header, size_t len,
 		optlen = len;
 	}
 
-	return 0;
+	return optlen;
 }
 
 static void finalize_segment(struct net_context *context, struct net_buf *buf)
@@ -259,6 +259,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	struct net_tcp_hdr *tcphdr;
 	struct net_context *context = tcp->context;
 	uint16_t dst_port, src_port;
+	uint8_t optlen = 0;
 
 	NET_ASSERT(context);
 
@@ -309,10 +310,11 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
 
 	if (segment->options && segment->optlen) {
-		net_tcp_add_options(header, segment->optlen, segment->options);
-	} else {
-		tcphdr->offset = NET_TCPH_LEN << 2;
+		optlen = net_tcp_add_options(header, segment->optlen,
+					segment->options);
 	}
+
+	tcphdr->offset = (NET_TCPH_LEN + optlen) << 2;
 
 	tcphdr->src_port = src_port;
 	tcphdr->dst_port = dst_port;
