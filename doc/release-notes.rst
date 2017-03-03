@@ -39,7 +39,42 @@ Drivers and Sensors
 Networking
 ==========
 
-* Redesigned buffer & pool allocation API
+This version removes the legacy uIP stack and introduces a new native IP stack.
+Because of this there is lot of changes in the code base. The native IP stack
+will support the same functionality as the legacy IP stack found in 1.6, and
+add new networking features which are described below.
+
+* IP stack code is moved to subsys/net/ip directory.
+* IP stack supports both IPv6 and IPv4, and they can be enabled simultaneously.
+* Multiple network technologies like Bluetooth IPSP and IEEE 802.15.4 can be
+  enabled simultaneously. No routing functionality is provided by IP stack
+  between enabled network technologies, applications need to decide where to
+  send the network packets.
+* Network technologies are abstracted in IP layer 2 (L2) and presented to
+  rest of the system as network interfaces. There exists L2 driver for
+  Ethernet, Bluetooth and IEEE 802.15.4.
+* Created Bluetooth Internet Protocol Support Profile (IPSP) support. It will
+  provide IPv6 connection over Bluetooth connection oriented channel (L2CAP).
+* Created DHCPv4 support.
+* Created CoAP implementation called ZoAP which replaces uIP based one.
+* Updated 6Lo implementation to support both Bluetooth and IEEE 802.15.4
+* Created application API (net_context) for creating connections and
+  transferring data to external systems.
+* Added sample application (wpanusb) for exporting IEEE 802.15.4 radio over
+  USB to external operating systems like Linux.
+* Added DNS client library.
+* Updated TCP implementation.
+* Created MQTT publisher support.
+* Created network test generator (zperf).
+* Created telnet console support.
+* Created IRC client sample application.
+* Created HTTP server and client sample applications.
+* Created net-shell module for interacting with network sub-system.
+* Created ieee15_4 shell module for dedicated interaction with
+  IEEE 802.15.4 Soft MAC.
+* Created network management API for generic network settings request as well
+  as a network event notification system (sender/listener).
+* Redesigned buffer & pool allocation API.
 
 Bluetooth
 =========
