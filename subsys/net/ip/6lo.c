@@ -1222,32 +1222,26 @@ static inline bool uncompress_cid(struct net_buf *buf,
 	uint8_t cid;
 
 	/* Extract source and destination Context Index,
-	 * Either one address is context based or both.
-	 * If CID is zero means that particular address is non
-	 * context based compression.
+	 * Either src or dest address is context based or both.
 	 */
 	cid = (CIPHC[2] >> 4) & 0x0F;
-	if (cid) {
-		*src = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
-		if (!(*src)) {
-			NET_ERR("Unknown src cid %d", cid);
-			return false;
-		}
+	*src = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
+	if (!(*src)) {
+		NET_DBG("Unknown src cid %d", cid);
 	}
 
 	cid = CIPHC[2] & 0x0F;
-	if (cid) {
-		*dst = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
-		if (!(*dst)) {
-			NET_ERR("Unknown dst cid %d", cid);
-			return false;
-		}
+	*dst = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
+	if (!(*dst)) {
+		NET_DBG("Unknown dst cid %d", cid);
 	}
 
 	/* If CID flag set and src or dst context not available means,
+	 * either we don't have context information or we received
 	 * corrupted packet.
 	 */
 	if (!*src && !*dst) {
+		NET_ERR("Context information does not exist in cache");
 		return false;
 	}
 
