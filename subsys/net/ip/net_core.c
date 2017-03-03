@@ -232,6 +232,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	net_nbuf_set_next_hdr(buf, &hdr->nexthdr);
 	net_nbuf_set_ext_len(buf, 0);
 	net_nbuf_set_ext_bitmap(buf, 0);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	/* Fast path for main upper layer protocols. The handling of extension
 	 * headers can be slow so do this checking here. There cannot
@@ -239,17 +240,14 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	 */
 	switch (*(net_nbuf_next_hdr(buf))) {
 	case IPPROTO_ICMPV6:
-		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 		return process_icmpv6_pkt(buf, hdr);
 
 #if defined(CONFIG_NET_UDP)
 	case IPPROTO_UDP:
-		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 		return net_conn_input(IPPROTO_UDP, buf);
 #endif
 #if defined(CONFIG_NET_TCP)
 	case IPPROTO_TCP:
-		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 		return net_conn_input(IPPROTO_TCP, buf);
 #endif
 	}
@@ -333,8 +331,6 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			net_nbuf_set_ext_len(buf,
 					     offset -
 					     sizeof(struct net_ipv6_hdr));
-			net_nbuf_set_ip_hdr_len(buf,
-						sizeof(struct net_ipv6_hdr));
 			return process_icmpv6_pkt(buf, hdr);
 
 #if defined(CONFIG_NET_UDP)
@@ -342,8 +338,6 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			net_nbuf_set_ext_len(buf,
 					     offset -
 					     sizeof(struct net_ipv6_hdr));
-			net_nbuf_set_ip_hdr_len(buf,
-						sizeof(struct net_ipv6_hdr));
 			return net_conn_input(IPPROTO_UDP, buf);
 #endif
 #if defined(CONFIG_NET_TCP)
@@ -351,8 +345,6 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			net_nbuf_set_ext_len(buf,
 					     offset -
 					     sizeof(struct net_ipv6_hdr));
-			net_nbuf_set_ip_hdr_len(buf,
-						sizeof(struct net_ipv6_hdr));
 			return net_conn_input(IPPROTO_TCP, buf);
 #endif
 		default:
