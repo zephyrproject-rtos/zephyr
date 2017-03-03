@@ -726,11 +726,11 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	/* Compress Traffic class and Flow lablel */
 	offset = compress_tfl(ipv6, frag, offset);
 
-	/* Hop limit */
-	offset = compress_hoplimit(ipv6, frag, offset);
-
 	/* Next Header */
 	offset = compress_nh(ipv6, frag, offset);
+
+	/* Hop limit */
+	offset = compress_hoplimit(ipv6, frag, offset);
 
 	/* Source Address Compression */
 #if defined(CONFIG_NET_6LO_CONTEXT)
