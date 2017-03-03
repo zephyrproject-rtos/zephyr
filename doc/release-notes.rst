@@ -12,11 +12,29 @@ Kernel
 Architectures
 =============
 
+* ARM: Added support for device tree
+* ARM: Fixed exception priority access on Cortex M0(+)
+* ARM: Refactored to use CMSIS
+
 Boards
 ======
 
+* Added ARM MPS2_AN385 board
+* Added Atmel SAM E70 Xplained board
+* Added Nordic pca10056 PDK board
+* Added NXP FRDM-KW41Z board
+* Added ST Nucleo-F334R8, Nucleo-L476G, STM3210C-EVAL, and STM32373C-EVAL boards
+
 Drivers and Sensors
 ===================
+
+* Added Atmel SAM pmc, gpio, uart, and ethernet drivers
+* Added STM32F3x clock, flash, gpio, pinmux drivers
+* Added stm32cube pwm and clock drivers
+* Added cc3200 gpio driver
+* Added mcr20a ieee802154 driver
+* Added mcux pinmux, gpio, uart, and spi drivers
+* Added Beetle clock control and watchdog drivers
 
 Networking
 ==========
@@ -31,8 +49,21 @@ Build Infrastructure
 Libraries
 =========
 
+* Updated mbedTLS library
+* Updated TinyCrypt to version 0.2.5
+
 HALs
 ====
+
+* Updated FAT FS to rev 0.12b
+* Updated Nordic MDK header files
+* Updated QMSI to 1.4 RC3
+* Imported Atmel SDK (ASF) for SAM E70 and SAM3X
+* Imported Nordic SDK HAL and 802.15.4 radio driver
+* Renamed NXP KSDK to MCUX
+* Imported NXP MCUX for KW41Z
+* Imported Segger J-Link RTT library
+* Imported stm32cube for F4 and L4
 
 Documentation
 =============
