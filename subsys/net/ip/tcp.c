@@ -206,7 +206,7 @@ int net_tcp_release(struct net_tcp *tcp)
 	k_timer_stop(&tcp->retry_timer);
 	k_sem_reset(&tcp->connect_wait);
 
-	net_tcp_set_state(tcp, NET_TCP_CLOSED);
+	net_tcp_change_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;
 
 	key = irq_lock();
