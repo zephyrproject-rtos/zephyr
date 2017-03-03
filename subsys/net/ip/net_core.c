@@ -139,6 +139,9 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 	/* Each extension option has type and length */
 	frag = net_nbuf_read_u8(frag, offset, pos, &opt_type);
 	frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
+	if (!frag && *pos == 0xffff) {
+		goto drop;
+	}
 
 	while (frag && (length < len)) {
 		switch (opt_type) {
@@ -159,17 +162,14 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 			NET_DBG("Processing RPL option");
 			if (!net_rpl_verify_header(buf, *pos, pos)) {
 				NET_DBG("RPL option error, packet dropped");
-				*verdict = NET_DROP;
-
-				return NULL;
+				goto drop;
 			}
 #endif
 			*verdict = NET_CONTINUE;
 			return frag;
 		default:
 			if (!check_unknown_option(frag, opt_type, length)) {
-				*verdict = NET_DROP;
-				return NULL;
+				goto drop;
 			}
 
 			length += opt_len + 2;
@@ -179,13 +179,16 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 		frag = net_nbuf_read_u8(frag, *pos, pos, &opt_type);
 		frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
 		if (!frag && *pos == 0xffff) {
-			/* reading error */
-			return NULL;
+			goto drop;
 		}
 	}
 
 	*verdict = NET_CONTINUE;
 	return frag;
+
+drop:
+	*verdict = NET_DROP;
+	return NULL;
 }
 
 static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
