@@ -338,12 +338,10 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	return -EIO;
 }
 
-enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
+enum net_verdict net_icmpv6_input(struct net_buf *buf,
 				  uint8_t type, uint8_t code)
 {
 	struct net_icmpv6_handler *cb;
-
-	ARG_UNUSED(len);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == type && (cb->code == code || cb->code == 0)) {

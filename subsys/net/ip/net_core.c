@@ -69,12 +69,11 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
 						  struct net_ipv6_hdr *ipv6)
 {
 	struct net_icmp_hdr *hdr = NET_ICMP_BUF(buf);
-	uint16_t len = (ipv6->len[0] << 8) + ipv6->len[1];
 
-	NET_DBG("ICMPv6 packet received length %d type %d code %d",
-		len, hdr->type, hdr->code);
+	NET_DBG("ICMPv6 packet received type %d code %d",
+		hdr->type, hdr->code);
 
-	return net_icmpv6_input(buf, len, hdr->type, hdr->code);
+	return net_icmpv6_input(buf, hdr->type, hdr->code);
 }
 
 static inline struct net_buf *check_unknown_option(struct net_buf *buf,
