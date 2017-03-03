@@ -935,7 +935,7 @@ static inline uint8_t uncompress_sa_ctx(struct net_buf *buf,
 		/* First 8 bytes are from context */
 		memcpy(&ipv6->src.s6_addr[0], &ctx->prefix.s6_addr[0], 8);
 
-		/*And the rest are carried in-line*/
+		/* And the rest are carried in-line*/
 		memcpy(&ipv6->src.s6_addr[8], &CIPHC[offset], 8);
 		offset += 8;
 
@@ -949,7 +949,7 @@ static inline uint8_t uncompress_sa_ctx(struct net_buf *buf,
 		ipv6->src.s6_addr[11] = 0xFF;
 		ipv6->src.s6_addr[12] = 0xFE;
 
-		/*And the restare carried in-line */
+		/* And the rest are carried in-line */
 		memcpy(&ipv6->src.s6_addr[14], &CIPHC[offset], 2);
 		offset += 2;
 
@@ -1338,7 +1338,9 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	}
 
 	if ((CIPHC[offset] & 0xF0) != NET_6LO_NHC_UDP_BARE) {
-		/* Unsupported NH */
+		/* Unsupported NH,
+		 * Supports only UDP header (next header) compression.
+		 */
 		NET_ERR("Unsupported next header");
 		goto fail;
 	}
