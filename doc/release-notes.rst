@@ -39,9 +39,18 @@ Drivers and Sensors
 Networking
 ==========
 
+* Redesigned buffer & pool allocation API
+
 Bluetooth
 =========
 
+* Redesigned buffer pools for smaller memory consumption
+* Redesigned thread model for smaller memory consumption
+* Utilized new k_poll API to consolidate all TX threads into a single one
+* Added more SDP functionality
+* Improved RFCOMM support
+* Reduced latencies in the Controller
+* Added SPI HCI driver
 
 Build Infrastructure
 ====================
