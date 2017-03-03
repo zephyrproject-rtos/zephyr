@@ -58,12 +58,10 @@ static inline void setup_ipv6_header(struct net_buf *buf, uint16_t extra_len,
 
 static enum net_verdict handle_echo_request(struct net_buf *orig)
 {
-	struct net_buf *buf, *frag;
-	struct in6_addr *src, *dst;
+	struct net_buf *buf;
+	struct net_buf *frag;
 	struct net_if *iface;
 	uint16_t payload_len;
-	uint16_t id, seq;
-	uint8_t *ptr;
 
 #if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
@@ -79,19 +77,6 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	iface = net_nbuf_iface(orig);
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
-
-	/* We need to remember the original location of source and destination
-	 * addresses as the net_nbuf_copy() will mangle the original buffer.
-	 */
-	src = &NET_IPV6_BUF(orig)->src;
-	dst = &NET_IPV6_BUF(orig)->dst;
-
-	/* The seq and id fields from original request needs to be copied
-	 * to echo reply.
-	 */
-	ptr = (uint8_t *)NET_ICMP_BUF(orig) + sizeof(struct net_icmp_hdr);
-	id = sys_get_be16(ptr);
-	seq = sys_get_be16(ptr + sizeof(uint16_t));
 
 	payload_len = sys_get_be16(NET_IPV6_BUF(orig)->len) -
 		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
@@ -111,15 +96,18 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 			  NET_ICMPV6_ECHO_REPLY, 0);
 
 	if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
-		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, src);
+		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst,
+				&NET_IPV6_BUF(orig)->src);
 
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
-				net_if_ipv6_select_src_addr(iface, dst));
+				net_if_ipv6_select_src_addr(iface,
+						    &NET_IPV6_BUF(orig)->dst));
 	} else {
 		struct in6_addr addr;
 
-		net_ipaddr_copy(&addr, src);
-		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, dst);
+		net_ipaddr_copy(&addr, &NET_IPV6_BUF(orig)->src);
+		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
+				&NET_IPV6_BUF(orig)->dst);
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, &addr);
 	}
 
@@ -130,10 +118,6 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	 * that it is set properly using a value from neighbor cache.
 	 */
 	net_nbuf_ll_dst(buf)->addr = NULL;
-
-	ptr = (uint8_t *)NET_ICMP_BUF(buf) + sizeof(struct net_icmp_hdr);
-	sys_put_be16(id, ptr);
-	sys_put_be16(seq, ptr + sizeof(uint16_t));
 
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
