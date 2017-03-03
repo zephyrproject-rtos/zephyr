@@ -24,6 +24,10 @@
 #include "ipv6.h"
 #include "net_stats.h"
 
+#if defined(CONFIG_NET_RPL)
+#include "rpl.h"
+#endif
+
 static sys_slist_t handlers;
 
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler)
@@ -111,10 +115,24 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_iface(buf, iface);
 	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
-	net_nbuf_set_ext_len(buf, 0);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
-	setup_ipv6_header(buf, payload_len, net_if_ipv6_get_hop_limit(iface),
-			  NET_ICMPV6_ECHO_REPLY, 0);
+	if (net_nbuf_ext_len(orig)) {
+		net_nbuf_set_ext_len(buf, net_nbuf_ext_len(orig));
+	} else {
+		net_nbuf_set_ext_len(buf, 0);
+	}
+
+	/* Set up IPv6 Header fields */
+	NET_IPV6_BUF(buf)->vtc = 0x60;
+	NET_IPV6_BUF(buf)->tcflow = 0;
+	NET_IPV6_BUF(buf)->flow = 0;
+	NET_IPV6_BUF(buf)->hop_limit = net_if_ipv6_get_hop_limit(iface);
+
+	/* ICMPv6 fields */
+	NET_ICMP_BUF(buf)->type = NET_ICMPV6_ECHO_REPLY;
+	NET_ICMP_BUF(buf)->code = 0;
+	NET_ICMP_BUF(buf)->chksum = 0;
 
 	if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst,
@@ -130,6 +148,17 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
 				&NET_IPV6_BUF(orig)->dst);
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, &addr);
+	}
+
+	if (NET_IPV6_BUF(buf)->nexthdr == NET_IPV6_NEXTHDR_HBHO) {
+#if defined(CONFIG_NET_RPL)
+		uint16_t offset = NET_IPV6H_LEN;
+
+		if (net_rpl_revert_header(buf, offset, &offset) < 0) {
+			/* TODO: Handle error cases */
+			goto drop;
+		}
+#endif
 	}
 
 	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_dst(orig)->addr;
