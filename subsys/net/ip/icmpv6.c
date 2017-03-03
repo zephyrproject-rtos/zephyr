@@ -56,6 +56,31 @@ static inline void setup_ipv6_header(struct net_buf *buf, uint16_t extra_len,
 	       NET_ICMPV6_UNUSED_LEN);
 }
 
+#if defined(CONFIG_NET_DEBUG_ICMPV6)
+static inline void echo_request_debug(struct net_buf *buf)
+{
+	char out[NET_IPV6_ADDR_LEN];
+
+	snprintk(out, sizeof(out), "%s",
+		 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+	NET_DBG("Received Echo Request from %s to %s",
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
+}
+
+static inline void echo_reply_debug(struct net_buf *buf)
+{
+	char out[NET_IPV6_ADDR_LEN];
+
+	snprintk(out, sizeof(out), "%s",
+		 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+	NET_DBG("Sending Echo Reply from %s to %s",
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
+}
+#else
+#define echo_request_debug(buf)
+#define echo_reply_debug(buf)
+#endif /* CONFIG_NET_DEBUG_ICMPV6 */
+
 static enum net_verdict handle_echo_request(struct net_buf *orig)
 {
 	struct net_buf *buf;
@@ -63,16 +88,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	struct net_if *iface;
 	uint16_t payload_len;
 
-#if defined(CONFIG_NET_DEBUG_ICMPV6)
-	do {
-		char out[NET_IPV6_ADDR_LEN];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&NET_IPV6_BUF(orig)->dst));
-		NET_DBG("Received Echo Request from %s to %s",
-			net_sprint_ipv6_addr(&NET_IPV6_BUF(orig)->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_ICMPV6 */
+	echo_request_debug(orig);
 
 	iface = net_nbuf_iface(orig);
 
@@ -122,16 +138,7 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
-#if defined(CONFIG_NET_DEBUG_ICMPV6)
-	do {
-		char out[NET_IPV6_ADDR_LEN];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
-		NET_DBG("Sending Echo Reply from %s to %s",
-			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_ICMPV6 */
+	echo_reply_debug(buf);
 
 	if (net_send_data(buf) < 0) {
 		goto drop;
