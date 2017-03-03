@@ -852,7 +852,7 @@ static inline uint8_t uncompress_hoplimit(struct net_buf *buf,
 {
 	switch (CIPHC[0] & NET_6LO_IPHC_HLIM255) {
 	case NET_6LO_IPHC_HLIM:
-		ipv6->hop_limit = 0;
+		ipv6->hop_limit = CIPHC[offset++];
 		break;
 	case NET_6LO_IPHC_HLIM1:
 		ipv6->hop_limit = 1;
@@ -862,9 +862,6 @@ static inline uint8_t uncompress_hoplimit(struct net_buf *buf,
 		break;
 	case NET_6LO_IPHC_HLIM255:
 		ipv6->hop_limit = 255;
-		break;
-	default:
-		ipv6->hop_limit = CIPHC[offset++];
 		break;
 	}
 
