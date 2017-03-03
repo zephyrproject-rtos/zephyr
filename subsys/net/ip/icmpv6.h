@@ -188,6 +188,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 				 uint16_t sequence);
 
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
+void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_buf *buf,
 				  uint8_t type, uint8_t code);
 #if defined(CONFIG_NET_IPV6)

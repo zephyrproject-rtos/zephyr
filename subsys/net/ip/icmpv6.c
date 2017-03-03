@@ -31,6 +31,11 @@ void net_icmpv6_register_handler(struct net_icmpv6_handler *handler)
 	sys_slist_prepend(&handlers, &handler->node);
 }
 
+void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler)
+{
+	sys_slist_find_and_remove(&handlers, &handler->node);
+}
+
 static inline void setup_ipv6_header(struct net_buf *buf, uint16_t extra_len,
 				     uint8_t hop_limit, uint8_t icmp_type,
 				     uint8_t icmp_code)
