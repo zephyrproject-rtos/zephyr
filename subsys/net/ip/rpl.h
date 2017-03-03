@@ -911,14 +911,17 @@ int net_rpl_update_header(struct net_buf *buf, struct in6_addr *addr);
 /**
  * @brief Verify RPL header in IPv6 packet.
  *
- * @param buf Network buffer.
+ * @param buf Network buffer fragment list.
+ * @param frag Current network buffer fragment.
  * @param offset Where the RPL header starts in the packet
  * @param pos How long the RPL header was, this is returned to the caller.
+ * @param out result True if ok, false if error
  *
- * @return True if ok, false if error
+ * @return frag Returns the fragment where this call finished reading.
  */
-bool net_rpl_verify_header(struct net_buf *buf, uint16_t offset,
-			   uint16_t *pos);
+struct net_buf *net_rpl_verify_header(struct net_buf *buf, struct net_buf *frag,
+				      uint16_t offset, uint16_t *pos,
+				      bool *result);
 
 /**
  * @brief Insert RPL extension header to IPv6 packet.

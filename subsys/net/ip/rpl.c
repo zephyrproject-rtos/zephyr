@@ -3535,27 +3535,29 @@ int net_rpl_update_header(struct net_buf *buf, struct in6_addr *addr)
 	return 0;
 }
 
-bool net_rpl_verify_header(struct net_buf *buf,
-			   uint16_t offset, uint16_t *pos)
+struct net_buf *net_rpl_verify_header(struct net_buf *buf, struct net_buf *frag,
+				      uint16_t offset, uint16_t *pos,
+				      bool *result)
 {
 	struct net_rpl_instance *instance;
-	struct net_buf *frag;
 	uint16_t sender_rank;
 	uint8_t instance_id, flags;
 	bool down, sender_closer;
 
-	frag = net_nbuf_read_u8(buf, offset, pos, &flags);
+	frag = net_nbuf_read_u8(frag, offset, pos, &flags);
 	frag = net_nbuf_read_u8(frag, *pos, pos, &instance_id);
 	frag = net_nbuf_read_be16(frag, *pos, pos, &sender_rank);
 
 	if (!frag && *pos == 0xffff) {
-		return false;
+		*result = false;
+		return frag;
 	}
 
 	instance = net_rpl_get_instance(instance_id);
 	if (!instance) {
 		NET_DBG("Unknown instance %u", instance_id);
-		return false;
+		*result = false;
+		return frag;
 	}
 
 	if (flags & NET_RPL_HDR_OPT_FWD_ERR) {
@@ -3580,12 +3582,14 @@ bool net_rpl_verify_header(struct net_buf *buf,
 		net_rpl_reset_dio_timer(instance);
 
 		/* drop the packet as it is not routable */
-		return false;
+		*result = false;
+		return frag;
 	}
 
 	if (!net_rpl_dag_is_joined(instance->current_dag)) {
 		NET_DBG("No DAG in the instance");
-		return false;
+		*result = false;
+		return frag;
 	}
 
 	if (flags & NET_RPL_HDR_OPT_DOWN) {
@@ -3617,20 +3621,22 @@ bool net_rpl_verify_header(struct net_buf *buf,
 			 */
 			net_rpl_reset_dio_timer(instance);
 
-			return false;
+			*result = false;
+			return frag;
 		}
 
 		NET_DBG("Single error tolerated.");
 		net_stats_update_rpl_loop_warnings();
 
-		net_nbuf_write_u8(buf, buf->frags, offset, pos,
-				  flags | NET_RPL_HDR_OPT_RANK_ERR);
-
-		return true;
+		/* FIXME: Handle (NET_RPL_HDR_OPT_RANK_ERR) errors properly */
+		*result = true;
+		return frag;
 	}
 
 	NET_DBG("Rank OK");
-	return true;
+
+	*result = true;
+	return frag;
 }
 
 static inline int add_rpl_opt(struct net_buf *buf, uint16_t offset)

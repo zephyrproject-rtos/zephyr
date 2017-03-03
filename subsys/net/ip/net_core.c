@@ -126,6 +126,9 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 {
 	uint8_t opt_type, opt_len;
 	uint16_t length = 0, loc;
+#if defined(CONFIG_NET_RPL)
+	bool result;
+#endif
 
 	if (len > total_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
@@ -158,10 +161,17 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 #if defined(CONFIG_NET_RPL)
 		case NET_IPV6_EXT_HDR_OPT_RPL:
 			NET_DBG("Processing RPL option");
-			if (!net_rpl_verify_header(buf, loc, &loc)) {
+			frag = net_rpl_verify_header(buf, frag, loc, &loc,
+						     &result);
+			if (!result) {
 				NET_DBG("RPL option error, packet dropped");
 				goto drop;
 			}
+
+			if (!frag && *pos == 0xffff) {
+				goto drop;
+			}
+
 			*verdict = NET_CONTINUE;
 			return frag;
 #endif
