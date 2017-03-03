@@ -125,7 +125,7 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 						     enum net_verdict *verdict)
 {
 	uint8_t opt_type, opt_len;
-	uint16_t length = 0;
+	uint16_t length = 0, loc;
 
 	if (len > total_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
@@ -137,9 +137,9 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 	length += 2;
 
 	/* Each extension option has type and length */
-	frag = net_nbuf_read_u8(frag, offset, pos, &opt_type);
-	frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
-	if (!frag && *pos == 0xffff) {
+	frag = net_nbuf_read_u8(frag, offset, &loc, &opt_type);
+	frag = net_nbuf_read_u8(frag, loc, &loc, &opt_len);
+	if (!frag && loc == 0xffff) {
 		goto drop;
 	}
 
@@ -148,15 +148,17 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 		case NET_IPV6_EXT_HDR_OPT_PAD1:
 			NET_DBG("PAD1 option");
 			length++;
+			loc++;
 			break;
 		case NET_IPV6_EXT_HDR_OPT_PADN:
 			NET_DBG("PADN option");
 			length += opt_len + 2;
+			loc += opt_len + 2;
 			break;
 #if defined(CONFIG_NET_RPL)
 		case NET_IPV6_EXT_HDR_OPT_RPL:
 			NET_DBG("Processing RPL option");
-			if (!net_rpl_verify_header(buf, *pos, pos)) {
+			if (!net_rpl_verify_header(buf, loc, &loc)) {
 				NET_DBG("RPL option error, packet dropped");
 				goto drop;
 			}
@@ -169,15 +171,31 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 			}
 
 			length += opt_len + 2;
+
+			/* No need to +2 here as loc already contains option
+			 * header len.
+			 */
+			loc += opt_len;
+
 			break;
 		}
 
-		frag = net_nbuf_read_u8(frag, *pos, pos, &opt_type);
-		frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
-		if (!frag && *pos == 0xffff) {
+		if (length >= len) {
+			break;
+		}
+
+		frag = net_nbuf_read_u8(frag, loc, &loc, &opt_type);
+		frag = net_nbuf_read_u8(frag, loc, &loc, &opt_len);
+		if (!frag && loc == 0xffff) {
 			goto drop;
 		}
 	}
+
+	if (length != len) {
+		goto drop;
+	}
+
+	*pos += length;
 
 	*verdict = NET_CONTINUE;
 	return frag;
@@ -201,7 +219,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	struct net_buf *frag;
 	uint8_t next, next_hdr, length;
 	uint8_t first_option;
-	uint16_t offset;
+	uint16_t offset, total_len = 0;
 
 	if (real_len != pkt_len) {
 		NET_DBG("IPv6 packet size %d buf len %d", pkt_len, real_len);
@@ -272,6 +290,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		}
 
 		length = length * 8 + 8;
+		total_len += length;
 		verdict = NET_OK;
 
 		/* Print the length only for IPv6 extension */
@@ -318,6 +337,11 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	}
 
 upper_proto:
+	if (total_len > 0) {
+		NET_DBG("Extension len %d", total_len);
+		net_nbuf_set_ext_len(buf, total_len);
+	}
+
 	switch (next) {
 	case IPPROTO_ICMPV6:
 		return process_icmpv6_pkt(buf, hdr);
