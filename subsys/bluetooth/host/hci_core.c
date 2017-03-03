@@ -3761,7 +3761,8 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 		 * shall not be set to less than 0x00A0 (100 ms) if the
 		 * Advertising_Type is set to ADV_SCAN_IND or ADV_NONCONN_IND.
 		 */
-		if (param->interval_min < 0x00a0) {
+		if (bt_dev.hci_version < BT_HCI_VERSION_5_0 &&
+		    param->interval_min < 0x00a0) {
 			return false;
 		}
 	}
