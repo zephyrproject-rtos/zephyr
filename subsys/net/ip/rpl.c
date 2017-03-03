@@ -3853,6 +3853,63 @@ static int net_rpl_update_header_empty(struct net_buf *buf)
 	return 0;
 }
 
+int net_rpl_revert_header(struct net_buf *buf, uint16_t offset, uint16_t *pos)
+{
+	struct net_rpl_instance *instance;
+	struct net_buf *frag;
+	uint16_t sender_rank;
+	uint16_t revert_pos;
+	uint8_t instance_id;
+	uint8_t opt_len;
+	uint8_t flags;
+	uint8_t opt;
+
+	/* Skip HBHO next header and length */
+	frag = net_nbuf_skip(buf->frags, offset, pos, 2);
+	frag = net_nbuf_read_u8(frag, *pos, pos, &opt);
+	frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
+
+	if (opt != NET_IPV6_EXT_HDR_OPT_RPL) {
+		return -EINVAL;
+	}
+
+	revert_pos = *pos;
+	frag = net_nbuf_read_u8(frag, *pos, pos, &flags);
+	frag = net_nbuf_read_u8(frag, *pos, pos, &instance_id);
+	if (!frag && *pos == 0xffff) {
+		return -EINVAL;
+	}
+
+	instance = net_rpl_get_instance(instance_id);
+	if (!instance) {
+		NET_DBG("Unknown instance %u", instance_id);
+		return -EINVAL;
+	}
+
+	if (!instance->current_dag) {
+		NET_DBG("Current DAG not available");
+		return -EINVAL;
+	}
+
+	flags &= NET_RPL_HDR_OPT_DOWN;
+	flags ^= NET_RPL_HDR_OPT_DOWN;
+
+	sender_rank = instance->current_dag->rank;
+
+	/* Reverting RPL options from 'revert_pos' */
+	*pos = revert_pos;
+
+	/* Update flags, instance id, sender rank */
+	frag = net_nbuf_write_u8(buf, frag, *pos, pos, flags);
+	frag = net_nbuf_write_u8(buf, frag, *pos, pos, instance_id);
+	frag = net_nbuf_write_be16(buf, frag, *pos, pos, sender_rank);
+	if (!frag && *pos == 0xffff) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int net_rpl_insert_header(struct net_buf *buf)
 {
 #if defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)

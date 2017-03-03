@@ -933,6 +933,18 @@ struct net_buf *net_rpl_verify_header(struct net_buf *buf, struct net_buf *frag,
 int net_rpl_insert_header(struct net_buf *buf);
 
 /**
+ * @brief Revert RPL extension header to IPv6 packet.
+ *        Revert flags, instance ID and sender rank in the packet.
+ *
+ * @param buf Network buffer.
+ * @param offset Where the HBH header starts in the packet
+ * @param pos How long the RPL header was, this is returned to the caller.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int net_rpl_revert_header(struct net_buf *buf, uint16_t offset, uint16_t *pos);
+
+/**
  * @brief Get parent IPv6 address.
  *
  * @param iface Network interface
