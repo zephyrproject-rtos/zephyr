@@ -229,7 +229,7 @@ int vsnprintfTest(void)
 	buffer[0] = '\0';
 	len = tvsnprintf(buffer, 0, "%x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("vsnprintf(%%x).  Expected return value %d, not %zd\n",
+		TC_ERROR("vsnprintf(%%x).  Expected return value %zu, not %d\n",
 				 strlen(DEADBEEF_LHEX_STR), len);
 		status = TC_FAIL;
 	}
@@ -243,7 +243,7 @@ int vsnprintfTest(void)
 	/*******************/
 	len = tvsnprintf(buffer, 4, "%x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("vsnprintf(%%x).  Expected return value %d, not %zd\n",
+		TC_ERROR("vsnprintf(%%x).  Expected return value %zu, not %d\n",
 				 strlen(DEADBEEF_LHEX_STR), len);
 		status = TC_FAIL;
 	}
@@ -294,7 +294,7 @@ int vsprintfTest(void)
 	/*******************/
 	len = tvsprintf(buffer, "%x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("sprintf(%%x).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%x).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_LHEX_STR), len);
 		status = TC_FAIL;
 	}
@@ -330,7 +330,7 @@ int snprintfTest(void)
 	buffer[0] = '\0';
 	len = snprintf(buffer, 0, "%x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("snprintf(%%x).  Expected return value %d, not %d\n",
+		TC_ERROR("snprintf(%%x).  Expected return value %zu, not %d\n",
 				 strlen(DEADBEEF_LHEX_STR), len);
 		status = TC_FAIL;
 	}
@@ -344,7 +344,7 @@ int snprintfTest(void)
 	/*******************/
 	len = snprintf(buffer, 4, "%x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("snprintf(%%x).  Expected return value %d, not %d\n",
+		TC_ERROR("snprintf(%%x).  Expected return value %zu, not %d\n",
 				 strlen(DEADBEEF_LHEX_STR), len);
 		status = TC_FAIL;
 	}
@@ -464,7 +464,7 @@ int sprintfIntegerTest(void)
 	/*******************/
 	len = sprintf(buffer, "%x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_STR)) {
-		TC_ERROR("sprintf(%%x).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%x).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_LHEX_STR), len);
 		status = TC_FAIL;
 	}
@@ -478,7 +478,7 @@ int sprintfIntegerTest(void)
 	/*******************/
 	len = sprintf(buffer, "%X", DEADBEEF);
 	if (len != strlen(DEADBEEF_UHEX_STR)) {
-		TC_ERROR("sprintf(%%X).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%X).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_UHEX_STR), len);
 		status = TC_FAIL;
 	}
@@ -492,7 +492,7 @@ int sprintfIntegerTest(void)
 	/*******************/
 	len = sprintf(buffer, "%u", DEADBEEF);
 	if (len != strlen(DEADBEEF_UNSIGNED_STR)) {
-		TC_ERROR("sprintf(%%u).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%u).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_UNSIGNED_STR), len);
 		status = TC_FAIL;
 	}
@@ -506,7 +506,7 @@ int sprintfIntegerTest(void)
 	/*******************/
 	len = sprintf(buffer, "%d", (int) DEADBEEF);
 	if (len != strlen(DEADBEEF_SIGNED_STR)) {
-		TC_ERROR("sprintf(%%d).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%d).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_SIGNED_STR), len);
 		status = TC_FAIL;
 	}
@@ -520,7 +520,7 @@ int sprintfIntegerTest(void)
 	/*******************/
 	len = sprintf(buffer, "%o", DEADBEEF);
 	if (len != strlen(DEADBEEF_OCTAL_STR)) {
-		TC_ERROR("sprintf(%%o).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%o).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_OCTAL_STR), len);
 		status = TC_FAIL;
 	}
@@ -534,7 +534,7 @@ int sprintfIntegerTest(void)
 	/*******************/
 	len = sprintf(buffer, "%#o", DEADBEEF);
 	if (len != strlen(DEADBEEF_OCTAL_ALT_STR)) {
-		TC_ERROR("sprintf(%%#o).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%#o).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_OCTAL_ALT_STR), len);
 		status = TC_FAIL;
 	}
@@ -548,7 +548,7 @@ int sprintfIntegerTest(void)
 	/*******************/
 	len = sprintf(buffer, "%#x", DEADBEEF);
 	if (len != strlen(DEADBEEF_LHEX_ALT_STR)) {
-		TC_ERROR("sprintf(%%#x).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%#x).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_LHEX_ALT_STR), len);
 		status = TC_FAIL;
 	}
@@ -561,7 +561,7 @@ int sprintfIntegerTest(void)
 	/*******************/
 	len = sprintf(buffer, "%#X", DEADBEEF);
 	if (len != strlen(DEADBEEF_UHEX_ALT_STR)) {
-		TC_ERROR("sprintf(%%#X).  Expected %d bytes written, not %d\n",
+		TC_ERROR("sprintf(%%#X).  Expected %zu bytes written, not %d\n",
 				 strlen(DEADBEEF_UHEX_ALT_STR), len);
 		status = TC_FAIL;
 	}
