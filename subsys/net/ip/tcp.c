@@ -172,7 +172,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	memset(&tcp_context[i], 0, sizeof(struct net_tcp));
 
 	tcp_context[i].flags = NET_TCP_IN_USE;
-	net_tcp_set_state(&tcp_context[i], NET_TCP_CLOSED);
+	tcp_context[i].state = NET_TCP_CLOSED;
 	tcp_context[i].context = context;
 
 	tcp_context[i].send_seq = init_isn();
@@ -854,7 +854,7 @@ void net_tcp_change_state(struct net_tcp *tcp,
 	validate_state_transition(tcp->state, new_state);
 #endif /* CONFIG_NET_DEBUG_TCP */
 
-	net_tcp_set_state(tcp, new_state);
+	tcp->state = new_state;
 
 	if (net_tcp_get_state(tcp) != NET_TCP_CLOSED) {
 		return;
