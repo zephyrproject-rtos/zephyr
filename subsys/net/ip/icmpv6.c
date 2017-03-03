@@ -144,9 +144,10 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 		goto drop;
 	}
 
+	net_nbuf_unref(orig);
 	net_stats_update_icmp_sent();
 
-	return NET_DROP;
+	return NET_OK;
 
 drop:
 	net_nbuf_unref(buf);
