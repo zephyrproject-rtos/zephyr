@@ -39,6 +39,7 @@ static void callback(struct device *dev,
 							 struct drv_data, gpio_cb);
 		gpio_pin_write(dev, PIN_OUT,
 			       (drv_data->mode & GPIO_INT_ACTIVE_HIGH) ? 0 : 1);
+		gpio_pin_configure(dev, PIN_IN, GPIO_DIR_IN);
 	}
 }
 
