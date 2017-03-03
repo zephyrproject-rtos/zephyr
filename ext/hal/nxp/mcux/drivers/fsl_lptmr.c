@@ -48,8 +48,10 @@ static uint32_t LPTMR_GetInstance(LPTMR_Type *base);
 /*! @brief Pointers to LPTMR bases for each instance. */
 static LPTMR_Type *const s_lptmrBases[] = LPTMR_BASE_PTRS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to LPTMR clocks for each instance. */
 static const clock_ip_name_t s_lptmrClocks[] = LPTMR_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Code
@@ -76,8 +78,10 @@ void LPTMR_Init(LPTMR_Type *base, const lptmr_config_t *config)
 {
     assert(config);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate the LPTMR clock*/
     CLOCK_EnableClock(s_lptmrClocks[LPTMR_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Configure the timers operation mode and input pin setup */
     base->CSR = (LPTMR_CSR_TMS(config->timerMode) | LPTMR_CSR_TFC(config->enableFreeRunning) |
@@ -92,8 +96,10 @@ void LPTMR_Deinit(LPTMR_Type *base)
 {
     /* Disable the LPTMR and reset the internal logic */
     base->CSR &= ~LPTMR_CSR_TEN_MASK;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the LPTMR clock*/
     CLOCK_DisableClock(s_lptmrClocks[LPTMR_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void LPTMR_GetDefaultConfig(lptmr_config_t *config)

@@ -37,16 +37,14 @@
  * @{
  */
 
-/*! @file */
-
 /******************************************************************************
  * Definitions.
  *****************************************************************************/
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief Driver version 2.0.0. */
-#define FSL_SDHC_DRIVER_VERSION (MAKE_VERSION(2U, 0U, 0U))
+/*! @brief Driver version 2.1.2. */
+#define FSL_SDHC_DRIVER_VERSION (MAKE_VERSION(2U, 1U, 2U))
 /*@}*/
 
 /*! @brief Maximum block count can be set one time */
@@ -350,7 +348,7 @@ typedef enum _sdhc_response_type
 #define SDHC_ADMA1_DESCRIPTOR_LENGTH_SHIFT (12U)
 /*! @brief The mask for LENGTH field in ADMA1's descriptor */
 #define SDHC_ADMA1_DESCRIPTOR_LENGTH_MASK (0xFFFFU)
-/*! @brief The max value of LENGTH filed in ADMA1's descriptor */
+/*! @brief The maximum value of LENGTH filed in ADMA1's descriptor */
 #define SDHC_ADMA1_DESCRIPTOR_MAX_LENGTH_PER_ENTRY (SDHC_ADMA1_DESCRIPTOR_LENGTH_MASK + 1U)
 
 /*! @brief The mask for the control/status field in ADMA1 descriptor */
@@ -395,7 +393,7 @@ enum _sdhc_adma1_descriptor_flag
 #define SDHC_ADMA2_DESCRIPTOR_LENGTH_SHIFT (16U)
 /*! @brief The bit mask for LENGTH field in ADMA2's descriptor */
 #define SDHC_ADMA2_DESCRIPTOR_LENGTH_MASK (0xFFFFU)
-/*! @brief The max value of LENGTH field in ADMA2's descriptor */
+/*! @brief The maximum value of LENGTH field in ADMA2's descriptor */
 #define SDHC_ADMA2_DESCRIPTOR_MAX_LENGTH_PER_ENTRY (SDHC_ADMA2_DESCRIPTOR_LENGTH_MASK)
 
 /*! @brief ADMA1 descriptor control and status mask */
@@ -416,10 +414,10 @@ enum _sdhc_adma2_descriptor_flag
                                      kSDHC_Adma2DescriptorValidFlag), /*!< Link type */
 };
 
-/*! @brief Define the adma1 descriptor structure. */
+/*! @brief Defines the adma1 descriptor structure. */
 typedef uint32_t sdhc_adma1_descriptor_t;
 
-/*! @brief Define the ADMA2 descriptor structure. */
+/*! @brief Defines the ADMA2 descriptor structure. */
 typedef struct _sdhc_adma2_descriptor
 {
     uint32_t attribute;      /*!< The control and status field */
@@ -429,7 +427,7 @@ typedef struct _sdhc_adma2_descriptor
 /*!
  * @brief SDHC capability information.
  *
- * Define structure to save the capability information of SDHC.
+ * Defines a structure to save the capability information of SDHC.
  */
 typedef struct _sdhc_capability
 {
@@ -457,9 +455,9 @@ typedef struct _sdhc_transfer_config
 /*! @brief Data structure to configure the MMC boot feature */
 typedef struct _sdhc_boot_config
 {
-    uint32_t ackTimeoutCount;      /*!< Timeout value for the boot ACK */
+    uint32_t ackTimeoutCount;      /*!< Timeout value for the boot ACK. The available range is 0 ~ 15. */
     sdhc_boot_mode_t bootMode;     /*!< Boot mode selection. */
-    uint32_t blockCount;           /*!< Stop at block gap value of automatic mode */
+    uint32_t blockCount;           /*!< Stop at block gap value of automatic mode. Available range is 0 ~ 65535. */
     bool enableBootAck;            /*!< Enable or disable boot ACK */
     bool enableBoot;               /*!< Enable or disable fast boot */
     bool enableAutoStopAtBlockGap; /*!< Enable or disable auto stop at block gap function in boot period */
@@ -471,14 +469,15 @@ typedef struct _sdhc_config
     bool cardDetectDat3;           /*!< Enable DAT3 as card detection pin */
     sdhc_endian_mode_t endianMode; /*!< Endian mode */
     sdhc_dma_mode_t dmaMode;       /*!< DMA mode */
-    uint32_t readWatermarkLevel;   /*!< Watermark level for DMA read operation */
-    uint32_t writeWatermarkLevel;  /*!< Watermark level for DMA write operation */
+    uint32_t readWatermarkLevel;   /*!< Watermark level for DMA read operation. Available range is 1 ~ 128. */
+    uint32_t writeWatermarkLevel;  /*!< Watermark level for DMA write operation. Available range is 1 ~ 128. */
 } sdhc_config_t;
 
 /*!
  * @brief Card data descriptor
  *
- * Define structure to contain data-related attribute. 'enableIgnoreError' is used for the case that upper card driver
+ * Defines a structure to contain data-related attribute. 'enableIgnoreError' is used for the case that upper card
+ * driver
  * want to ignore the error event to read/write all the data not to stop read/write immediately when error event
  * happen for example bus testing procedure for MMC card.
  */
@@ -530,10 +529,11 @@ typedef struct _sdhc_transfer_callback
 } sdhc_transfer_callback_t;
 
 /*!
- * @brief Host descriptor
+ * @brief SDHC handle
  *
- * Define the structure to save the SDHC state information and callback function. The detail interrupt status when
- * send command or transfer data can be obtained from interruptFlags field by using mask defined in sdhc_interrupt_flag_t;
+ * Defines the structure to save the SDHC state information and callback function. The detailed interrupt status when
+ * sending a command or transfering data can be obtained from the interruptFlags field by using the mask defined in
+ * sdhc_interrupt_flag_t.
  *
  * @note All the fields except interruptFlags and transferredWords must be allocated by the user.
  */
@@ -580,16 +580,16 @@ extern "C" {
 /*!
  * @brief SDHC module initialization function.
  *
- * Configure the SDHC according to the user configuration.
+ * Configures the SDHC according to the user configuration.
  *
  * Example:
    @code
    sdhc_config_t config;
-   config.enableDat3AsCDPin = false;
+   config.cardDetectDat3 = false;
    config.endianMode = kSDHC_EndianModeLittle;
    config.dmaMode = kSDHC_DmaModeAdma2;
-   config.readWatermarkLevel = 512U;
-   config.writeWatermarkLevel = 512U;
+   config.readWatermarkLevel = 128U;
+   config.writeWatermarkLevel = 128U;
    SDHC_Init(SDHC, &config);
    @endcode
  *
@@ -600,14 +600,14 @@ extern "C" {
 void SDHC_Init(SDHC_Type *base, const sdhc_config_t *config);
 
 /*!
- * @brief Deinitialize the SDHC.
+ * @brief Deinitializes the SDHC.
  *
  * @param base SDHC peripheral base address.
  */
 void SDHC_Deinit(SDHC_Type *base);
 
 /*!
- * @brief Reset the SDHC.
+ * @brief Resets the SDHC.
  *
  * @param base SDHC peripheral base address.
  * @param mask The reset type mask(_sdhc_reset).
@@ -625,7 +625,7 @@ bool SDHC_Reset(SDHC_Type *base, uint32_t mask, uint32_t timeout);
  */
 
 /*!
- * @brief Set ADMA descriptor table configuration.
+ * @brief Sets the ADMA descriptor table configuration.
  *
  * @param base SDHC peripheral base address.
  * @param dmaMode DMA mode.
@@ -651,7 +651,7 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
  */
 
 /*!
- * @brief Enable interrupt status
+ * @brief Enables the interrupt status.
  *
  * @param base SDHC peripheral base address.
  * @param mask Interrupt status flags mask(_sdhc_interrupt_status_flag).
@@ -662,7 +662,7 @@ static inline void SDHC_EnableInterruptStatus(SDHC_Type *base, uint32_t mask)
 }
 
 /*!
- * @brief Disable interrupt status.
+ * @brief Disables the interrupt status.
  *
  * @param base SDHC peripheral base address.
  * @param mask The interrupt status flags mask(_sdhc_interrupt_status_flag).
@@ -673,7 +673,7 @@ static inline void SDHC_DisableInterruptStatus(SDHC_Type *base, uint32_t mask)
 }
 
 /*!
- * @brief Enable interrupts signal corresponding to the interrupt status flag.
+ * @brief Enables the interrupt signal corresponding to the interrupt status flag.
  *
  * @param base SDHC peripheral base address.
  * @param mask The interrupt status flags mask(_sdhc_interrupt_status_flag).
@@ -684,7 +684,7 @@ static inline void SDHC_EnableInterruptSignal(SDHC_Type *base, uint32_t mask)
 }
 
 /*!
- * @brief Disable interrupts signal corresponding to the interrupt status flag.
+ * @brief Disables the interrupt signal corresponding to the interrupt status flag.
  *
  * @param base SDHC peripheral base address.
  * @param mask The interrupt status flags mask(_sdhc_interrupt_status_flag).
@@ -702,7 +702,7 @@ static inline void SDHC_DisableInterruptSignal(SDHC_Type *base, uint32_t mask)
  */
 
 /*!
- * @brief Get current interrupt status.
+ * @brief Gets the current interrupt status.
  *
  * @param base SDHC peripheral base address.
  * @return Current interrupt status flags mask(_sdhc_interrupt_status_flag).
@@ -713,7 +713,7 @@ static inline uint32_t SDHC_GetInterruptStatusFlags(SDHC_Type *base)
 }
 
 /*!
- * @brief Clear specified interrupt status.
+ * @brief Clears a specified interrupt status.
  *
  * @param base SDHC peripheral base address.
  * @param mask The interrupt status flags mask(_sdhc_interrupt_status_flag).
@@ -724,7 +724,7 @@ static inline void SDHC_ClearInterruptStatusFlags(SDHC_Type *base, uint32_t mask
 }
 
 /*!
- * @brief Get the status of auto command 12 error.
+ * @brief Gets the status of auto command 12 error.
  *
  * @param base SDHC peripheral base address.
  * @return Auto command 12 error status flags mask(_sdhc_auto_command12_error_status_flag).
@@ -735,7 +735,7 @@ static inline uint32_t SDHC_GetAutoCommand12ErrorStatusFlags(SDHC_Type *base)
 }
 
 /*!
- * @brief Get the status of ADMA error.
+ * @brief Gets the status of the ADMA error.
  *
  * @param base SDHC peripheral base address.
  * @return ADMA error status flags mask(_sdhc_adma_error_status_flag).
@@ -746,9 +746,9 @@ static inline uint32_t SDHC_GetAdmaErrorStatusFlags(SDHC_Type *base)
 }
 
 /*!
- * @brief Get present status.
+ * @brief Gets a present status.
  *
- * This function gets the present SDHC's status except for interrupt status and error status.
+ * This function gets the present SDHC's status except for an interrupt status and an error status.
  *
  * @param base SDHC peripheral base address.
  * @return Present SDHC's status flags mask(_sdhc_present_status_flag).
@@ -766,7 +766,7 @@ static inline uint32_t SDHC_GetPresentStatusFlags(SDHC_Type *base)
  */
 
 /*!
- * @brief Get the capability information
+ * @brief Gets the capability information.
  *
  * @param base SDHC peripheral base address.
  * @param capability Structure to save capability information.
@@ -774,7 +774,7 @@ static inline uint32_t SDHC_GetPresentStatusFlags(SDHC_Type *base)
 void SDHC_GetCapability(SDHC_Type *base, sdhc_capability_t *capability);
 
 /*!
- * @brief Enable or disable SD bus clock.
+ * @brief Enables or disables the SD bus clock.
  *
  * @param base SDHC peripheral base address.
  * @param enable True to enable, false to disable.
@@ -792,7 +792,7 @@ static inline void SDHC_EnableSdClock(SDHC_Type *base, bool enable)
 }
 
 /*!
- * @brief Set SD bus clock frequency.
+ * @brief Sets the SD bus clock frequency.
  *
  * @param base SDHC peripheral base address.
  * @param srcClock_Hz SDHC source clock frequency united in Hz.
@@ -803,9 +803,10 @@ static inline void SDHC_EnableSdClock(SDHC_Type *base, bool enable)
 uint32_t SDHC_SetSdClock(SDHC_Type *base, uint32_t srcClock_Hz, uint32_t busClock_Hz);
 
 /*!
- * @brief Send 80 clocks to the card to set it to be active state.
+ * @brief Sends 80 clocks to the card to set it to the active state.
  *
- * This function must be called after each time the card is inserted to make card can receive command correctly.
+ * This function must be called each time the card is inserted to ensure that the card can receive the command
+ * correctly.
  *
  * @param base SDHC peripheral base address.
  * @param timeout Timeout to initialize card.
@@ -815,7 +816,7 @@ uint32_t SDHC_SetSdClock(SDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCloc
 bool SDHC_SetCardActive(SDHC_Type *base, uint32_t timeout);
 
 /*!
- * @brief Set the data transfer width.
+ * @brief Sets the data transfer width.
  *
  * @param base SDHC peripheral base address.
  * @param width Data transfer width.
@@ -826,9 +827,10 @@ static inline void SDHC_SetDataBusWidth(SDHC_Type *base, sdhc_data_bus_width_t w
 }
 
 /*!
- * @brief Set card transfer-related configuration.
+ * @brief Sets the card transfer-related configuration.
  *
- * This function fills card transfer-related command argument/transfer flag/data size. Command and data will be sent by
+ * This function fills the card transfer-related command argument/transfer flag/data size. The command and data are sent
+ by
  * SDHC after calling this function.
  *
  * Example:
@@ -848,7 +850,7 @@ static inline void SDHC_SetDataBusWidth(SDHC_Type *base, sdhc_data_bus_width_t w
 void SDHC_SetTransferConfig(SDHC_Type *base, const sdhc_transfer_config_t *config);
 
 /*!
- * @brief Get the command response.
+ * @brief Gets the command response.
  *
  * @param base SDHC peripheral base address.
  * @param index The index of response register, range from 0 to 3.
@@ -862,9 +864,9 @@ static inline uint32_t SDHC_GetCommandResponse(SDHC_Type *base, uint32_t index)
 }
 
 /*!
- * @brief Fill the the data port.
+ * @brief Fills the the data port.
  *
- * This function is mainly used to implement the data transfer by Data Port instead of DMA.
+ * This function is used to implement the data transfer by Data Port instead of DMA.
  *
  * @param base SDHC peripheral base address.
  * @param data The data about to be sent.
@@ -875,9 +877,9 @@ static inline void SDHC_WriteData(SDHC_Type *base, uint32_t data)
 }
 
 /*!
- * @brief Retrieve the data from the data port.
+ * @brief Retrieves the data from the data port.
  *
- * This function is mainly used to implement the data transfer by Data Port instead of DMA.
+ * This function is used to implement the data transfer by Data Port instead of DMA.
  *
  * @param base SDHC peripheral base address.
  * @return The data has been read.
@@ -888,7 +890,7 @@ static inline uint32_t SDHC_ReadData(SDHC_Type *base)
 }
 
 /*!
- * @brief Enable or disable wakeup event in low power mode
+ * @brief Enables or disables a wakeup event in low-power mode.
  *
  * @param base SDHC peripheral base address.
  * @param mask Wakeup events mask(_sdhc_wakeup_event).
@@ -907,7 +909,7 @@ static inline void SDHC_EnableWakeupEvent(SDHC_Type *base, uint32_t mask, bool e
 }
 
 /*!
- * @brief Enable or disable card detection level for test.
+ * @brief Enables or disables the card detection level for testing.
  *
  * @param base SDHC peripheral base address.
  * @param enable True to enable, false to disable.
@@ -925,10 +927,11 @@ static inline void SDHC_EnableCardDetectTest(SDHC_Type *base, bool enable)
 }
 
 /*!
- * @brief Set card detection test level.
+ * @brief Sets the card detection test level.
  *
- * This function set the card detection test level to indicate whether the card is inserted into SDHC when DAT[3]/
- * CD pin is selected as card detection pin. This function can also assert the pin logic when DAT[3]/CD pin is select
+ * This function sets the card detection test level to indicate whether the card is inserted into the SDHC when DAT[3]/
+ * CD pin is selected as a card detection pin. This function can also assert the pin logic when DAT[3]/CD pin is
+ * selected
  * as the card detection pin.
  *
  * @param base SDHC peripheral base address.
@@ -947,7 +950,7 @@ static inline void SDHC_SetCardDetectTestLevel(SDHC_Type *base, bool high)
 }
 
 /*!
- * @brief Enable or disable SDIO card control.
+ * @brief Enables or disables the SDIO card control.
  *
  * @param base SDHC peripheral base address.
  * @param mask SDIO card control flags mask(_sdhc_sdio_control_flag).
@@ -956,7 +959,7 @@ static inline void SDHC_SetCardDetectTestLevel(SDHC_Type *base, bool high)
 void SDHC_EnableSdioControl(SDHC_Type *base, uint32_t mask, bool enable);
 
 /*!
- * @brief Restart a transaction which has stopped at the block gap for SDIO card.
+ * @brief Restarts a transaction which has stopped at the block GAP for the SDIO card.
  *
  * @param base SDHC peripheral base address.
  */
@@ -966,18 +969,18 @@ static inline void SDHC_SetContinueRequest(SDHC_Type *base)
 }
 
 /*!
- * @brief Configure the MMC boot feature.
+ * @brief Configures the MMC boot feature.
  *
  * Example:
    @code
-   sdhc_boot_config_t bootConfig;
-   bootConfig.ackTimeoutCount = 4;
-   bootConfig.bootMode = kSDHC_BootModeNormal;
-   bootConfig.blockCount = 5;
-   bootConfig.enableBootAck = true;
-   bootConfig.enableBoot = true;
-   enableBoot.enableAutoStopAtBlockGap = true;
-   SDHC_SetMmcBootConfig(SDHC, &bootConfig);
+   sdhc_boot_config_t config;
+   config.ackTimeoutCount = 4;
+   config.bootMode = kSDHC_BootModeNormal;
+   config.blockCount = 5;
+   config.enableBootAck = true;
+   config.enableBoot = true;
+   config.enableAutoStopAtBlockGap = true;
+   SDHC_SetMmcBootConfig(SDHC, &config);
    @endcode
  *
  * @param base SDHC peripheral base address.
@@ -986,7 +989,7 @@ static inline void SDHC_SetContinueRequest(SDHC_Type *base)
 void SDHC_SetMmcBootConfig(SDHC_Type *base, const sdhc_boot_config_t *config);
 
 /*!
- * @brief Force to generate events according to the given mask.
+ * @brief Forces generating events according to the given mask.
  *
  * @param base SDHC peripheral base address.
  * @param mask The force events mask(_sdhc_force_event).
@@ -1004,13 +1007,14 @@ static inline void SDHC_SetForceEvent(SDHC_Type *base, uint32_t mask)
  */
 
 /*!
- * @brief Transfer command/data using blocking way.
+ * @brief Transfers the command/data using a blocking method.
  *
- * This function waits until the command response/data is got or SDHC encounters error by polling the status flag.
- * Application must not call this API in multiple threads at the same time because of that this API doesn't support
- * reentry mechanism.
+ * This function waits until the command response/data is received or the SDHC encounters an error by polling the status
+ * flag.
+ * The application must not call this API in multiple threads at the same time. Because of that this API doesn't support
+ * the re-entry mechanism.
  *
- * @note Needn't to call the API 'SDHC_TransferCreateHandle' when calling this API.
+ * @note There is no need to call the API 'SDHC_TransferCreateHandle' when calling this API.
  *
  * @param base SDHC peripheral base address.
  * @param admaTable ADMA table address, can't be null if transfer way is ADMA1/ADMA2.
@@ -1028,7 +1032,7 @@ status_t SDHC_TransferBlocking(SDHC_Type *base,
                                sdhc_transfer_t *transfer);
 
 /*!
- * @brief Create the SDHC handle.
+ * @brief Creates the SDHC handle.
  *
  * @param base SDHC peripheral base address.
  * @param handle SDHC handle pointer.
@@ -1041,13 +1045,14 @@ void SDHC_TransferCreateHandle(SDHC_Type *base,
                                void *userData);
 
 /*!
- * @brief Transfer command/data using interrupt and asynchronous way.
+ * @brief Transfers the command/data using an interrupt and an asynchronous method.
  *
- * This function send command and data and return immediately. It doesn't wait the transfer complete or encounter error.
- * Application must not call this API in multiple threads at the same time because of that this API doesn't support
- * reentry mechanism.
+ * This function sends a command and data and returns immediately. It doesn't wait the transfer complete or encounter an
+ * error.
+ * The application must not call this API in multiple threads at the same time. Because of that this API doesn't support
+ * the re-entry mechanism.
  *
- * @note Must call the API 'SDHC_TransferCreateHandle' when calling this API.
+ * @note Call the API 'SDHC_TransferCreateHandle' when calling this API.
  *
  * @param base SDHC peripheral base address.
  * @param handle SDHC handle.
@@ -1063,9 +1068,9 @@ status_t SDHC_TransferNonBlocking(
     SDHC_Type *base, sdhc_handle_t *handle, uint32_t *admaTable, uint32_t admaTableWords, sdhc_transfer_t *transfer);
 
 /*!
- * @brief IRQ handler for SDHC
+ * @brief IRQ handler for the SDHC.
  *
- * This function deals with IRQs on the given host controller.
+ * This function deals with the IRQs on the given host controller.
  *
  * @param base SDHC peripheral base address.
  * @param handle SDHC handle.

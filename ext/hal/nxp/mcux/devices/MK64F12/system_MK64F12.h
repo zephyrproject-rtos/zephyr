@@ -1,6 +1,7 @@
 /*
 ** ###################################################################
-**     Processors:          MK64FN1M0VDC12
+**     Processors:          MK64FN1M0CAJ12
+**                          MK64FN1M0VDC12
 **                          MK64FN1M0VLL12
 **                          MK64FN1M0VLQ12
 **                          MK64FN1M0VMD12
@@ -15,15 +16,15 @@
 **                          IAR ANSI C/C++ Compiler for ARM
 **
 **     Reference manual:    K64P144M120SF5RM, Rev.2, January 2014
-**     Version:             rev. 2.8, 2015-02-19
-**     Build:               b151216
+**     Version:             rev. 2.9, 2016-03-21
+**     Build:               b160321
 **
 **     Abstract:
 **         Provides a system configuration function and a global variable that
 **         contains the system frequency. It configures the device and initializes
 **         the oscillator (PLL) that is part of the microcontroller device.
 **
-**     Copyright (c) 2015 Freescale Semiconductor, Inc.
+**     Copyright (c) 2016 Freescale Semiconductor, Inc.
 **     All rights reserved.
 **
 **     Redistribution and use in source and binary forms, with or without modification,
@@ -86,14 +87,17 @@
 **         Interrupt INT_LPTimer renamed to INT_LPTMR0, interrupt INT_Watchdog renamed to INT_WDOG_EWM.
 **     - rev. 2.8 (2015-02-19)
 **         Renamed interrupt vector LLW to LLWU.
+**     - rev. 2.9 (2016-03-21)
+**         Added MK64FN1M0CAJ12 part.
+**         GPIO - renamed port instances: PTx -> GPIOx.
 **
 ** ###################################################################
 */
 
 /*!
  * @file MK64F12
- * @version 2.8
- * @date 2015-02-19
+ * @version 2.9
+ * @date 2016-03-21
  * @brief Device specific configuration file for MK64F12 (header file)
  *
  * Provides a system configuration function and a global variable that contains
@@ -114,6 +118,8 @@ extern "C" {
 #ifndef DISABLE_WDOG
   #define DISABLE_WDOG                 1
 #endif
+
+/* Define clock source values */
 
 #define CPU_XTAL_CLK_HZ                50000000u           /* Value of the external crystal or oscillator clock frequency in Hz */
 #define CPU_XTAL32k_CLK_HZ             32768u              /* Value of the external 32k crystal or oscillator clock frequency in Hz */

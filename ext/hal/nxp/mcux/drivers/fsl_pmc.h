@@ -35,7 +35,6 @@
 /*! @addtogroup pmc */
 /*! @{ */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -49,36 +48,36 @@
 
 #if (defined(FSL_FEATURE_PMC_HAS_LVDV) && FSL_FEATURE_PMC_HAS_LVDV)
 /*!
- * @brief Low-Voltage Detect Voltage Select
+ * @brief Low-voltage Detect Voltage Select
  */
 typedef enum _pmc_low_volt_detect_volt_select
 {
-    kPMC_LowVoltDetectLowTrip = 0U, /*!< Low trip point selected (VLVD = VLVDL )*/
-    kPMC_LowVoltDetectHighTrip = 1U /*!< High trip point selected (VLVD = VLVDH )*/
+    kPMC_LowVoltDetectLowTrip = 0U, /*!< Low-trip point selected (VLVD = VLVDL )*/
+    kPMC_LowVoltDetectHighTrip = 1U /*!< High-trip point selected (VLVD = VLVDH )*/
 } pmc_low_volt_detect_volt_select_t;
 #endif
 
 #if (defined(FSL_FEATURE_PMC_HAS_LVWV) && FSL_FEATURE_PMC_HAS_LVWV)
 /*!
- * @brief Low-Voltage Warning Voltage Select
+ * @brief Low-voltage Warning Voltage Select
  */
 typedef enum _pmc_low_volt_warning_volt_select
 {
-    kPMC_LowVoltWarningLowTrip = 0U,  /*!< Low trip point selected (VLVW = VLVW1)*/
+    kPMC_LowVoltWarningLowTrip = 0U,  /*!< Low-trip point selected (VLVW = VLVW1)*/
     kPMC_LowVoltWarningMid1Trip = 1U, /*!< Mid 1 trip point selected (VLVW = VLVW2)*/
     kPMC_LowVoltWarningMid2Trip = 2U, /*!< Mid 2 trip point selected (VLVW = VLVW3)*/
-    kPMC_LowVoltWarningHighTrip = 3U  /*!< High trip point selected (VLVW = VLVW4)*/
+    kPMC_LowVoltWarningHighTrip = 3U  /*!< High-trip point selected (VLVW = VLVW4)*/
 } pmc_low_volt_warning_volt_select_t;
 #endif
 
 #if (defined(FSL_FEATURE_PMC_HAS_HVDSC1) && FSL_FEATURE_PMC_HAS_HVDSC1)
 /*!
- * @brief High-Voltage Detect Voltage Select
+ * @brief High-voltage Detect Voltage Select
  */
 typedef enum _pmc_high_volt_detect_volt_select
 {
-    kPMC_HighVoltDetectLowTrip = 0U, /*!< Low trip point selected (VHVD = VHVDL )*/
-    kPMC_HighVoltDetectHighTrip = 1U /*!< High trip point selected (VHVD = VHVDH )*/
+    kPMC_HighVoltDetectLowTrip = 0U, /*!< Low-trip point selected (VHVD = VHVDL )*/
+    kPMC_HighVoltDetectHighTrip = 1U /*!< High-trip point selected (VHVD = VHVDH )*/
 } pmc_high_volt_detect_volt_select_t;
 #endif /* FSL_FEATURE_PMC_HAS_HVDSC1 */
 
@@ -88,8 +87,8 @@ typedef enum _pmc_high_volt_detect_volt_select
  */
 typedef enum _pmc_bandgap_buffer_drive_select
 {
-    kPMC_BandgapBufferDriveLow = 0U, /*!< Low drive.  */
-    kPMC_BandgapBufferDriveHigh = 1U /*!< High drive. */
+    kPMC_BandgapBufferDriveLow = 0U, /*!< Low-drive.  */
+    kPMC_BandgapBufferDriveHigh = 1U /*!< High-drive. */
 } pmc_bandgap_buffer_drive_select_t;
 #endif /* FSL_FEATURE_PMC_HAS_BGBDS */
 
@@ -126,37 +125,37 @@ typedef struct _pmc_param
 #endif /* FSL_FEATURE_PMC_HAS_PARAM */
 
 /*!
- * @brief Low-Voltage Detect Configuration Structure
+ * @brief Low-voltage Detect Configuration Structure
  */
 typedef struct _pmc_low_volt_detect_config
 {
-    bool enableInt;   /*!< Enable interrupt when low voltage detect*/
-    bool enableReset; /*!< Enable system reset when low voltage detect*/
+    bool enableInt;   /*!< Enable interrupt when Low-voltage detect*/
+    bool enableReset; /*!< Enable system reset when Low-voltage detect*/
 #if (defined(FSL_FEATURE_PMC_HAS_LVDV) && FSL_FEATURE_PMC_HAS_LVDV)
-    pmc_low_volt_detect_volt_select_t voltSelect; /*!< Low voltage detect trip point voltage selection*/
+    pmc_low_volt_detect_volt_select_t voltSelect; /*!< Low-voltage detect trip point voltage selection*/
 #endif
 } pmc_low_volt_detect_config_t;
 
 /*!
- * @brief Low-Voltage Warning Configuration Structure
+ * @brief Low-voltage Warning Configuration Structure
  */
 typedef struct _pmc_low_volt_warning_config
 {
-    bool enableInt; /*!< Enable interrupt when low voltage warning*/
+    bool enableInt; /*!< Enable interrupt when low-voltage warning*/
 #if (defined(FSL_FEATURE_PMC_HAS_LVWV) && FSL_FEATURE_PMC_HAS_LVWV)
-    pmc_low_volt_warning_volt_select_t voltSelect; /*!< Low voltage warning trip point voltage selection*/
+    pmc_low_volt_warning_volt_select_t voltSelect; /*!< Low-voltage warning trip point voltage selection*/
 #endif
 } pmc_low_volt_warning_config_t;
 
 #if (defined(FSL_FEATURE_PMC_HAS_HVDSC1) && FSL_FEATURE_PMC_HAS_HVDSC1)
 /*!
- * @brief High-Voltage Detect Configuration Structure
+ * @brief High-voltage Detect Configuration Structure
  */
 typedef struct _pmc_high_volt_detect_config
 {
-    bool enableInt;                                /*!< Enable interrupt when high voltage detect*/
-    bool enableReset;                              /*!< Enable system reset when high voltage detect*/
-    pmc_high_volt_detect_volt_select_t voltSelect; /*!< High voltage detect trip point voltage selection*/
+    bool enableInt;                                /*!< Enable interrupt when high-voltage detect*/
+    bool enableReset;                              /*!< Enable system reset when high-voltage detect*/
+    pmc_high_volt_detect_volt_select_t voltSelect; /*!< High-voltage detect trip point voltage selection*/
 } pmc_high_volt_detect_config_t;
 #endif /* FSL_FEATURE_PMC_HAS_HVDSC1 */
 
@@ -172,7 +171,7 @@ typedef struct _pmc_bandgap_buffer_config
     bool enable; /*!< Enable bandgap buffer.                   */
 #endif
 #if (defined(FSL_FEATURE_PMC_HAS_BGEN) && FSL_FEATURE_PMC_HAS_BGEN)
-    bool enableInLowPowerMode; /*!< Enable bandgap buffer in low power mode. */
+    bool enableInLowPowerMode; /*!< Enable bandgap buffer in low-power mode. */
 #endif                         /* FSL_FEATURE_PMC_HAS_BGEN */
 #if (defined(FSL_FEATURE_PMC_HAS_BGBDS) && FSL_FEATURE_PMC_HAS_BGBDS)
     pmc_bandgap_buffer_drive_select_t drive; /*!< Bandgap buffer drive select.             */
@@ -196,7 +195,7 @@ extern "C" {
  * @brief Gets the PMC version ID.
  *
  * This function gets the PMC version ID, including major version number,
- * minor version number and feature specification number.
+ * minor version number, and a feature specification number.
  *
  * @param base PMC peripheral base address.
  * @param versionId     Pointer to version ID structure.
@@ -211,7 +210,7 @@ static inline void PMC_GetVersionId(PMC_Type *base, pmc_version_id_t *versionId)
 /*!
  * @brief Gets the PMC parameter.
  *
- * This function gets the PMC parameter, including VLPO enable and HVD enable.
+ * This function gets the PMC parameter including the VLPO enable and the HVD enable.
  *
  * @param base PMC peripheral base address.
  * @param param         Pointer to PMC param structure.
@@ -220,26 +219,25 @@ void PMC_GetParam(PMC_Type *base, pmc_param_t *param);
 #endif
 
 /*!
- * @brief Configure the low voltage detect setting.
+ * @brief Configures the low-voltage detect setting.
  *
- * This function configures the low voltage detect setting, including the trip
- * point voltage setting, enable interrupt or not, enable system reset or not.
+ * This function configures the low-voltage detect setting, including the trip
+ * point voltage setting, enables or disables the interrupt, enables or disables the system reset.
  *
  * @param base PMC peripheral base address.
- * @param config  Low-Voltage detect configuration structure.
+ * @param config  Low-voltage detect configuration structure.
  */
 void PMC_ConfigureLowVoltDetect(PMC_Type *base, const pmc_low_volt_detect_config_t *config);
 
 /*!
- * @brief Get Low-Voltage Detect Flag status
+ * @brief Gets the Low-voltage Detect Flag status.
  *
- * This function  reads the current LVDF status. If it returns 1, a low
- * voltage event is detected.
+ * This function  reads the current LVDF status. If it returns 1, a low-voltage event is detected.
  *
  * @param base PMC peripheral base address.
- * @return Current low voltage detect flag
- *                - true: Low-Voltage detected
- *                - false: Low-Voltage not detected
+ * @return Current low-voltage detect flag
+ *                - true: Low-voltage detected
+ *                - false: Low-voltage not detected
  */
 static inline bool PMC_GetLowVoltDetectFlag(PMC_Type *base)
 {
@@ -247,9 +245,9 @@ static inline bool PMC_GetLowVoltDetectFlag(PMC_Type *base)
 }
 
 /*!
- * @brief Acknowledge to clear the Low-Voltage Detect flag
+ * @brief Acknowledges clearing the Low-voltage Detect flag.
  *
- * This function acknowledges the low voltage detection errors (write 1 to
+ * This function acknowledges the low-voltage detection errors (write 1 to
  * clear LVDF).
  *
  * @param base PMC peripheral base address.
@@ -260,18 +258,18 @@ static inline void PMC_ClearLowVoltDetectFlag(PMC_Type *base)
 }
 
 /*!
- * @brief Configure the low voltage warning setting.
+ * @brief Configures the low-voltage warning setting.
  *
- * This function configures the low voltage warning setting, including the trip
- * point voltage setting and enable interrupt or not.
+ * This function configures the low-voltage warning setting, including the trip
+ * point voltage setting and enabling or disabling the interrupt.
  *
  * @param base PMC peripheral base address.
- * @param config  Low-Voltage warning configuration structure.
+ * @param config  Low-voltage warning configuration structure.
  */
 void PMC_ConfigureLowVoltWarning(PMC_Type *base, const pmc_low_volt_warning_config_t *config);
 
 /*!
- * @brief Get Low-Voltage Warning Flag status
+ * @brief Gets the Low-voltage Warning Flag status.
  *
  * This function polls the current LVWF status. When 1 is returned, it
  * indicates a low-voltage warning event. LVWF is set when V Supply transitions
@@ -279,8 +277,8 @@ void PMC_ConfigureLowVoltWarning(PMC_Type *base, const pmc_low_volt_warning_conf
  *
  * @param base PMC peripheral base address.
  * @return Current LVWF status
- *                  - true: Low-Voltage Warning Flag is set.
- *                  - false: the  Low-Voltage Warning does not happen.
+ *                  - true: Low-voltage Warning Flag is set.
+ *                  - false: the  Low-voltage Warning does not happen.
  */
 static inline bool PMC_GetLowVoltWarningFlag(PMC_Type *base)
 {
@@ -288,7 +286,7 @@ static inline bool PMC_GetLowVoltWarningFlag(PMC_Type *base)
 }
 
 /*!
- * @brief Acknowledge to Low-Voltage Warning flag
+ * @brief Acknowledges the Low-voltage Warning flag.
  *
  * This function acknowledges the low voltage warning errors (write 1 to
  * clear LVWF).
@@ -302,26 +300,26 @@ static inline void PMC_ClearLowVoltWarningFlag(PMC_Type *base)
 
 #if (defined(FSL_FEATURE_PMC_HAS_HVDSC1) && FSL_FEATURE_PMC_HAS_HVDSC1)
 /*!
- * @brief Configure the high voltage detect setting.
+ * @brief Configures the high-voltage detect setting.
  *
- * This function configures the high voltage detect setting, including the trip
- * point voltage setting, enable interrupt or not, enable system reset or not.
+ * This function configures the high-voltage detect setting, including the trip
+ * point voltage setting, enabling or disabling the interrupt, enabling or disabling the system reset.
  *
  * @param base PMC peripheral base address.
- * @param config  High-Voltage detect configuration structure.
+ * @param config  High-voltage detect configuration structure.
  */
 void PMC_ConfigureHighVoltDetect(PMC_Type *base, const pmc_high_volt_detect_config_t *config);
 
 /*!
- * @brief Get High-Voltage Detect Flag status
+ * @brief Gets the High-voltage Detect Flag status.
  *
  * This function  reads the current HVDF status. If it returns 1, a low
  * voltage event is detected.
  *
  * @param base PMC peripheral base address.
- * @return Current high voltage detect flag
- *                - true: High-Voltage detected
- *                - false: High-Voltage not detected
+ * @return Current high-voltage detect flag
+ *                - true: High-voltage detected
+ *                - false: High-voltage not detected
  */
 static inline bool PMC_GetHighVoltDetectFlag(PMC_Type *base)
 {
@@ -329,9 +327,9 @@ static inline bool PMC_GetHighVoltDetectFlag(PMC_Type *base)
 }
 
 /*!
- * @brief Acknowledge to clear the High-Voltage Detect flag
+ * @brief Acknowledges clearing the High-voltage Detect flag.
  *
- * This function acknowledges the high voltage detection errors (write 1 to
+ * This function acknowledges the high-voltage detection errors (write 1 to
  * clear HVDF).
  *
  * @param base PMC peripheral base address.
@@ -346,10 +344,10 @@ static inline void PMC_ClearHighVoltDetectFlag(PMC_Type *base)
      (defined(FSL_FEATURE_PMC_HAS_BGEN) && FSL_FEATURE_PMC_HAS_BGEN) || \
      (defined(FSL_FEATURE_PMC_HAS_BGBDS) && FSL_FEATURE_PMC_HAS_BGBDS))
 /*!
- * @brief Configure the PMC bandgap
+ * @brief Configures the PMC bandgap.
  *
  * This function configures the PMC bandgap, including the drive select and
- * behavior in low power mode.
+ * behavior in low-power mode.
  *
  * @param base PMC peripheral base address.
  * @param config Pointer to the configuration structure
@@ -378,7 +376,7 @@ static inline bool PMC_GetPeriphIOIsolationFlag(PMC_Type *base)
 }
 
 /*!
- * @brief Acknowledge to Peripherals and I/O pads isolation flag.
+ * @brief Acknowledges the isolation flag to Peripherals and I/O pads.
  *
  * This function  clears the ACK Isolation flag. Writing one to this setting
  * when it is set releases the I/O pads and certain peripherals to their normal
@@ -394,9 +392,9 @@ static inline void PMC_ClearPeriphIOIsolationFlag(PMC_Type *base)
 
 #if (defined(FSL_FEATURE_PMC_HAS_REGONS) && FSL_FEATURE_PMC_HAS_REGONS)
 /*!
- * @brief Gets the Regulator regulation status.
+ * @brief Gets the regulator regulation status.
  *
- * This function  returns the regulator to a run regulation status. It provides
+ * This function  returns the regulator to run a regulation status. It provides
  * the current status of the internal voltage regulator.
  *
  * @param base PMC peripheral base address.

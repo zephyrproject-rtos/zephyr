@@ -123,8 +123,10 @@ static SPI_Type *const s_dspiBases[] = SPI_BASE_PTRS;
 /*! @brief Pointers to dspi IRQ number for each instance. */
 static IRQn_Type const s_dspiIRQ[] = SPI_IRQS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to dspi clocks for each instance. */
 static clock_ip_name_t const s_dspiClock[] = DSPI_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*! @brief Pointers to dspi handles for each instance. */
 static void *g_dspiHandle[FSL_FEATURE_SOC_DSPI_COUNT];
@@ -158,9 +160,13 @@ uint32_t DSPI_GetInstance(SPI_Type *base)
 
 void DSPI_MasterInit(SPI_Type *base, const dspi_master_config_t *masterConfig, uint32_t srcClock_Hz)
 {
+    assert(masterConfig);
+
     uint32_t temp;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* enable DSPI clock */
     CLOCK_EnableClock(s_dspiClock[DSPI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     DSPI_Enable(base, true);
     DSPI_StopTransfer(base);
@@ -201,6 +207,8 @@ void DSPI_MasterInit(SPI_Type *base, const dspi_master_config_t *masterConfig, u
 
 void DSPI_MasterGetDefaultConfig(dspi_master_config_t *masterConfig)
 {
+    assert(masterConfig);
+
     masterConfig->whichCtar = kDSPI_Ctar0;
     masterConfig->ctarConfig.baudRate = 500000;
     masterConfig->ctarConfig.bitsPerFrame = 8;
@@ -223,10 +231,14 @@ void DSPI_MasterGetDefaultConfig(dspi_master_config_t *masterConfig)
 
 void DSPI_SlaveInit(SPI_Type *base, const dspi_slave_config_t *slaveConfig)
 {
+    assert(slaveConfig);
+
     uint32_t temp = 0;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* enable DSPI clock */
     CLOCK_EnableClock(s_dspiClock[DSPI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     DSPI_Enable(base, true);
     DSPI_StopTransfer(base);
@@ -255,6 +267,8 @@ void DSPI_SlaveInit(SPI_Type *base, const dspi_slave_config_t *slaveConfig)
 
 void DSPI_SlaveGetDefaultConfig(dspi_slave_config_t *slaveConfig)
 {
+    assert(slaveConfig);
+
     slaveConfig->whichCtar = kDSPI_Ctar0;
     slaveConfig->ctarConfig.bitsPerFrame = 8;
     slaveConfig->ctarConfig.cpol = kDSPI_ClockPolarityActiveHigh;
@@ -271,8 +285,10 @@ void DSPI_Deinit(SPI_Type *base)
     DSPI_StopTransfer(base);
     DSPI_Enable(base, false);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* disable DSPI clock */
     CLOCK_DisableClock(s_dspiClock[DSPI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 static void DSPI_SetOnePcsPolarity(SPI_Type *base, dspi_which_pcs_t pcs, dspi_pcs_polarity_config_t activeLowOrHigh)
@@ -457,6 +473,8 @@ uint32_t DSPI_MasterSetDelayTimes(SPI_Type *base,
 
 void DSPI_GetDefaultDataCommandConfig(dspi_command_data_config_t *command)
 {
+    assert(command);
+
     command->isPcsContinuous = false;
     command->whichCtar = kDSPI_Ctar0;
     command->whichPcs = kDSPI_Pcs0;
@@ -466,6 +484,8 @@ void DSPI_GetDefaultDataCommandConfig(dspi_command_data_config_t *command)
 
 void DSPI_MasterWriteDataBlocking(SPI_Type *base, dspi_command_data_config_t *command, uint16_t data)
 {
+    assert(command);
+
     /* First, clear Transmit Complete Flag (TCF) */
     DSPI_ClearStatusFlags(base, kDSPI_TxCompleteFlag);
 
@@ -598,6 +618,7 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
     command = DSPI_MasterGetFormattedCommand(&(commandStruct));
 
+    commandStruct.isEndOfQueue = true;
     commandStruct.isPcsContinuous = (bool)(transfer->configFlags & kDSPI_MasterActiveAfterTransfer);
     lastCommand = DSPI_MasterGetFormattedCommand(&(commandStruct));
 
@@ -626,25 +647,6 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
         {
             if (remainingSendByteCount == 1)
             {
-                while ((remainingReceiveByteCount - remainingSendByteCount) >= fifoSize)
-                {
-                    if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
-                    {
-                        if (rxData != NULL)
-                        {
-                            *(rxData) = DSPI_ReadData(base);
-                            rxData++;
-                        }
-                        else
-                        {
-                            DSPI_ReadData(base);
-                        }
-                        remainingReceiveByteCount--;
-
-                        DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
-                    }
-                }
-
                 while (!(DSPI_GetStatusFlags(base) & kDSPI_TxFifoFillRequestFlag))
                 {
                     DSPI_ClearStatusFlags(base, kDSPI_TxFifoFillRequestFlag);
@@ -702,20 +704,23 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
                 DSPI_ClearStatusFlags(base, kDSPI_TxFifoFillRequestFlag);
 
-                if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
+                while ((remainingReceiveByteCount - remainingSendByteCount) >= fifoSize)
                 {
-                    if (rxData != NULL)
+                    if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
                     {
-                        *(rxData) = DSPI_ReadData(base);
-                        rxData++;
-                    }
-                    else
-                    {
-                        DSPI_ReadData(base);
-                    }
-                    remainingReceiveByteCount--;
+                        if (rxData != NULL)
+                        {
+                            *(rxData) = DSPI_ReadData(base);
+                            rxData++;
+                        }
+                        else
+                        {
+                            DSPI_ReadData(base);
+                        }
+                        remainingReceiveByteCount--;
 
-                    DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
+                        DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
+                    }
                 }
             }
         }
@@ -726,25 +731,6 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
         {
             if (remainingSendByteCount <= 2)
             {
-                while (((remainingReceiveByteCount - remainingSendByteCount) / 2) >= fifoSize)
-                {
-                    if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
-                    {
-                        wordReceived = DSPI_ReadData(base);
-
-                        if (rxData != NULL)
-                        {
-                            *rxData = wordReceived;
-                            ++rxData;
-                            *rxData = wordReceived >> 8;
-                            ++rxData;
-                        }
-                        remainingReceiveByteCount -= 2;
-
-                        DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
-                    }
-                }
-
                 while (!(DSPI_GetStatusFlags(base) & kDSPI_TxFifoFillRequestFlag))
                 {
                     DSPI_ClearStatusFlags(base, kDSPI_TxFifoFillRequestFlag);
@@ -825,20 +811,23 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
                 DSPI_ClearStatusFlags(base, kDSPI_TxFifoFillRequestFlag);
 
-                if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
+                while (((remainingReceiveByteCount - remainingSendByteCount) / 2) >= fifoSize)
                 {
-                    wordReceived = DSPI_ReadData(base);
-
-                    if (rxData != NULL)
+                    if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
                     {
-                        *rxData = wordReceived;
-                        ++rxData;
-                        *rxData = wordReceived >> 8;
-                        ++rxData;
-                    }
-                    remainingReceiveByteCount -= 2;
+                        wordReceived = DSPI_ReadData(base);
 
-                    DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
+                        if (rxData != NULL)
+                        {
+                            *rxData = wordReceived;
+                            ++rxData;
+                            *rxData = wordReceived >> 8;
+                            ++rxData;
+                        }
+                        remainingReceiveByteCount -= 2;
+
+                        DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
+                    }
                 }
             }
         }
@@ -849,6 +838,9 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
 static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer)
 {
+    assert(handle);
+    assert(transfer);
+
     dspi_command_data_config_t commandStruct;
 
     DSPI_StopTransfer(base);
@@ -864,6 +856,7 @@ static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *han
     commandStruct.isPcsContinuous = (bool)(transfer->configFlags & kDSPI_MasterPcsContinuous);
     handle->command = DSPI_MasterGetFormattedCommand(&(commandStruct));
 
+    commandStruct.isEndOfQueue = true;
     commandStruct.isPcsContinuous = (bool)(transfer->configFlags & kDSPI_MasterActiveAfterTransfer);
     handle->lastCommand = DSPI_MasterGetFormattedCommand(&(commandStruct));
 
@@ -886,7 +879,8 @@ static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *han
 
 status_t DSPI_MasterTransferNonBlocking(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer)
 {
-    assert(handle && transfer);
+    assert(handle);
+    assert(transfer);
 
     /* If the transfer count is zero, then return immediately.*/
     if (transfer->dataSize == 0)
@@ -943,6 +937,8 @@ status_t DSPI_MasterTransferGetCount(SPI_Type *base, dspi_master_handle_t *handl
 
 static void DSPI_MasterTransferComplete(SPI_Type *base, dspi_master_handle_t *handle)
 {
+    assert(handle);
+
     /* Disable interrupt requests*/
     DSPI_DisableInterrupts(base, kDSPI_RxFifoDrainRequestInterruptEnable | kDSPI_TxFifoFillRequestInterruptEnable);
 
@@ -967,6 +963,8 @@ static void DSPI_MasterTransferComplete(SPI_Type *base, dspi_master_handle_t *ha
 
 static void DSPI_MasterTransferFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle)
 {
+    assert(handle);
+
     uint16_t wordToSend = 0;
     uint8_t dummyData = DSPI_DUMMY_DATA;
 
@@ -1081,6 +1079,8 @@ static void DSPI_MasterTransferFillUpTxFifo(SPI_Type *base, dspi_master_handle_t
 
 void DSPI_MasterTransferAbort(SPI_Type *base, dspi_master_handle_t *handle)
 {
+    assert(handle);
+
     DSPI_StopTransfer(base);
 
     /* Disable interrupt requests*/
@@ -1091,6 +1091,8 @@ void DSPI_MasterTransferAbort(SPI_Type *base, dspi_master_handle_t *handle)
 
 void DSPI_MasterTransferHandleIRQ(SPI_Type *base, dspi_master_handle_t *handle)
 {
+    assert(handle);
+
     /* RECEIVE IRQ handler: Check read buffer only if there are remaining bytes to read. */
     if (handle->remainingReceiveByteCount)
     {
@@ -1212,7 +1214,8 @@ void DSPI_SlaveTransferCreateHandle(SPI_Type *base,
 
 status_t DSPI_SlaveTransferNonBlocking(SPI_Type *base, dspi_slave_handle_t *handle, dspi_transfer_t *transfer)
 {
-    assert(handle && transfer);
+    assert(handle);
+    assert(transfer);
 
     /* If receive length is zero */
     if (transfer->dataSize == 0)
@@ -1300,6 +1303,8 @@ status_t DSPI_SlaveTransferGetCount(SPI_Type *base, dspi_slave_handle_t *handle,
 
 static void DSPI_SlaveTransferFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle)
 {
+    assert(handle);
+
     uint16_t transmitData = 0;
     uint8_t dummyPattern = DSPI_DUMMY_DATA;
 
@@ -1386,6 +1391,8 @@ static void DSPI_SlaveTransferFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *
 
 static void DSPI_SlaveTransferComplete(SPI_Type *base, dspi_slave_handle_t *handle)
 {
+    assert(handle);
+
     /* Disable interrupt requests */
     DSPI_DisableInterrupts(base, kDSPI_TxFifoUnderflowInterruptEnable | kDSPI_TxFifoFillRequestInterruptEnable |
                                      kDSPI_RxFifoOverflowInterruptEnable | kDSPI_RxFifoDrainRequestInterruptEnable);
@@ -1416,6 +1423,8 @@ static void DSPI_SlaveTransferComplete(SPI_Type *base, dspi_slave_handle_t *hand
 
 void DSPI_SlaveTransferAbort(SPI_Type *base, dspi_slave_handle_t *handle)
 {
+    assert(handle);
+
     DSPI_StopTransfer(base);
 
     /* Disable interrupt requests */
@@ -1429,6 +1438,8 @@ void DSPI_SlaveTransferAbort(SPI_Type *base, dspi_slave_handle_t *handle)
 
 void DSPI_SlaveTransferHandleIRQ(SPI_Type *base, dspi_slave_handle_t *handle)
 {
+    assert(handle);
+
     uint8_t dummyPattern = DSPI_DUMMY_DATA;
     uint32_t dataReceived;
     uint32_t dataSend = 0;
@@ -1606,7 +1617,7 @@ static void DSPI_CommonIRQHandler(SPI_Type *base, void *param)
     }
 }
 
-#if defined(SPI0)
+#if (FSL_FEATURE_SOC_DSPI_COUNT > 0)
 void SPI0_DriverIRQHandler(void)
 {
     assert(g_dspiHandle[0]);
@@ -1614,7 +1625,7 @@ void SPI0_DriverIRQHandler(void)
 }
 #endif
 
-#if defined(SPI1)
+#if (FSL_FEATURE_SOC_DSPI_COUNT > 1)
 void SPI1_DriverIRQHandler(void)
 {
     assert(g_dspiHandle[1]);
@@ -1622,7 +1633,7 @@ void SPI1_DriverIRQHandler(void)
 }
 #endif
 
-#if defined(SPI2)
+#if (FSL_FEATURE_SOC_DSPI_COUNT > 2)
 void SPI2_DriverIRQHandler(void)
 {
     assert(g_dspiHandle[2]);
@@ -1630,7 +1641,7 @@ void SPI2_DriverIRQHandler(void)
 }
 #endif
 
-#if defined(SPI3)
+#if (FSL_FEATURE_SOC_DSPI_COUNT > 3)
 void SPI3_DriverIRQHandler(void)
 {
     assert(g_dspiHandle[3]);
@@ -1638,7 +1649,7 @@ void SPI3_DriverIRQHandler(void)
 }
 #endif
 
-#if defined(SPI4)
+#if (FSL_FEATURE_SOC_DSPI_COUNT > 4)
 void SPI4_DriverIRQHandler(void)
 {
     assert(g_dspiHandle[4]);
@@ -1646,7 +1657,7 @@ void SPI4_DriverIRQHandler(void)
 }
 #endif
 
-#if defined(SPI5)
+#if (FSL_FEATURE_SOC_DSPI_COUNT > 5)
 void SPI5_DriverIRQHandler(void)
 {
     assert(g_dspiHandle[5]);

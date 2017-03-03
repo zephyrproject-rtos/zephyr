@@ -13,7 +13,7 @@ Kinetis KW41Z Connectivity Software Linux(REV 1.0.2)
 https://www.nxp.com/webapp/Download?colCode=KW41Z-CONNECTIVITY-SOFTWARE-LIN&appType=license&Parent_nodeId=1441226359347708902175&Parent_pageType=product
 
 
-The current version supported in Zephyr is MCUX 2.0. It currently supports the
+The current version supported in Zephyr is MCUX 2.1. It currently supports the
 following SoCs:
 - MK64F12 (aka K64F)
 - MKW41Z4 (aka KW41Z)

@@ -33,11 +33,10 @@
 #include "fsl_common.h"
 
 /*!
- * @addtogroup rtc_driver
+ * @addtogroup rtc
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -70,10 +69,10 @@ typedef enum _rtc_status_flags
 /*! @brief List of RTC Oscillator capacitor load settings */
 typedef enum _rtc_osc_cap_load
 {
-    kRTC_Capacitor_2p = RTC_CR_SC2P_MASK,  /*!< 2pF capacitor load */
-    kRTC_Capacitor_4p = RTC_CR_SC4P_MASK,  /*!< 4pF capacitor load */
-    kRTC_Capacitor_8p = RTC_CR_SC8P_MASK,  /*!< 8pF capacitor load */
-    kRTC_Capacitor_16p = RTC_CR_SC16P_MASK /*!< 16pF capacitor load */
+    kRTC_Capacitor_2p = RTC_CR_SC2P_MASK,  /*!< 2 pF capacitor load */
+    kRTC_Capacitor_4p = RTC_CR_SC4P_MASK,  /*!< 4 pF capacitor load */
+    kRTC_Capacitor_8p = RTC_CR_SC8P_MASK,  /*!< 8 pF capacitor load */
+    kRTC_Capacitor_16p = RTC_CR_SC16P_MASK /*!< 16 pF capacitor load */
 } rtc_osc_cap_load_t;
 
 #endif /* FSL_FEATURE_SCG_HAS_OSC_SCXP */
@@ -100,7 +99,7 @@ typedef struct _rtc_datetime
  */
 typedef struct _rtc_config
 {
-    bool wakeupSelect;             /*!< true: Wakeup pin outputs the 32KHz clock;
+    bool wakeupSelect;             /*!< true: Wakeup pin outputs the 32 KHz clock;
                                         false:Wakeup pin used to wakeup the chip  */
     bool updateMode;               /*!< true: Registers can be written even when locked under certain
                                         conditions, false: No writes allowed when registers are locked */
@@ -126,17 +125,17 @@ extern "C" {
 /*!
  * @brief Ungates the RTC clock and configures the peripheral for basic operation.
  *
- * This function will issue a software reset if the timer invalid flag is set.
+ * This function issues a software reset if the timer invalid flag is set.
  *
  * @note This API should be called at the beginning of the application using the RTC driver.
  *
  * @param base   RTC peripheral base address
- * @param config Pointer to user's RTC config structure.
+ * @param config Pointer to the user's RTC configuration structure.
  */
 void RTC_Init(RTC_Type *base, const rtc_config_t *config);
 
 /*!
- * @brief Stop the timer and gate the RTC clock
+ * @brief Stops the timer and gate the RTC clock.
  *
  * @param base RTC peripheral base address
  */
@@ -145,14 +144,16 @@ static inline void RTC_Deinit(RTC_Type *base)
     /* Stop the RTC timer */
     base->SR &= ~RTC_SR_TCE_MASK;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the module clock */
     CLOCK_DisableClock(kCLOCK_Rtc0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 /*!
- * @brief Fill in the RTC config struct with the default settings
+ * @brief Fills in the RTC config struct with the default settings.
  *
- * The default values are:
+ * The default values are as follows.
  * @code
  *    config->wakeupSelect = false;
  *    config->updateMode = false;
@@ -160,7 +161,7 @@ static inline void RTC_Deinit(RTC_Type *base)
  *    config->compensationInterval = 0;
  *    config->compensationTime = 0;
  * @endcode
- * @param config Pointer to user's RTC config structure.
+ * @param config Pointer to the user's RTC configuration structure.
  */
 void RTC_GetDefaultConfig(rtc_config_t *config);
 
@@ -174,11 +175,11 @@ void RTC_GetDefaultConfig(rtc_config_t *config);
 /*!
  * @brief Sets the RTC date and time according to the given time structure.
  *
- * The RTC counter must be stopped prior to calling this function as writes to the RTC
- * seconds register will fail if the RTC counter is running.
+ * The RTC counter must be stopped prior to calling this function because writes to the RTC
+ * seconds register fail if the RTC counter is running.
  *
  * @param base     RTC peripheral base address
- * @param datetime Pointer to structure where the date and time details to set are stored
+ * @param datetime Pointer to the structure where the date and time details are stored.
  *
  * @return kStatus_Success: Success in setting the time and starting the RTC
  *         kStatus_InvalidArgument: Error because the datetime format is incorrect
@@ -189,18 +190,18 @@ status_t RTC_SetDatetime(RTC_Type *base, const rtc_datetime_t *datetime);
  * @brief Gets the RTC time and stores it in the given time structure.
  *
  * @param base     RTC peripheral base address
- * @param datetime Pointer to structure where the date and time details are stored.
+ * @param datetime Pointer to the structure where the date and time details are stored.
  */
 void RTC_GetDatetime(RTC_Type *base, rtc_datetime_t *datetime);
 
 /*!
- * @brief Sets the RTC alarm time
+ * @brief Sets the RTC alarm time.
  *
  * The function checks whether the specified alarm time is greater than the present
  * time. If not, the function does not set the alarm and returns an error.
  *
  * @param base      RTC peripheral base address
- * @param alarmTime Pointer to structure where the alarm time is stored.
+ * @param alarmTime Pointer to the structure where the alarm time is stored.
  *
  * @return kStatus_Success: success in setting the RTC alarm
  *         kStatus_InvalidArgument: Error because the alarm datetime format is incorrect
@@ -212,7 +213,7 @@ status_t RTC_SetAlarm(RTC_Type *base, const rtc_datetime_t *alarmTime);
  * @brief Returns the RTC alarm time.
  *
  * @param base     RTC peripheral base address
- * @param datetime Pointer to structure where the alarm date and time details are stored.
+ * @param datetime Pointer to the structure where the alarm date and time details are stored.
  */
 void RTC_GetAlarm(RTC_Type *base, rtc_datetime_t *datetime);
 
@@ -268,7 +269,7 @@ static inline uint32_t RTC_GetEnabledInterrupts(RTC_Type *base)
  */
 
 /*!
- * @brief Gets the RTC status flags
+ * @brief Gets the RTC status flags.
  *
  * @param base RTC peripheral base address
  *

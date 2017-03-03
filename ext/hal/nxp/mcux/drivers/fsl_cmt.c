@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -46,8 +46,6 @@
 #define CMT_CMTDIV_FOUR (4)
 /* CMT diver 8. */
 #define CMT_CMTDIV_EIGHT (8)
-/* CMT mode bit mask. */
-#define CMT_MODE_BIT_MASK (CMT_MSC_MCGEN_MASK | CMT_MSC_FSK_MASK | CMT_MSC_BASE_MASK)
 
 /*******************************************************************************
  * Prototypes
@@ -64,8 +62,10 @@ static uint32_t CMT_GetInstance(CMT_Type *base);
  * Variables
  ******************************************************************************/
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to cmt clocks for each instance. */
 static const clock_ip_name_t s_cmtClock[FSL_FEATURE_SOC_CMT_COUNT] = CMT_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*! @brief Pointers to cmt bases for each instance. */
 static CMT_Type *const s_cmtBases[] = CMT_BASE_PTRS;
@@ -113,8 +113,10 @@ void CMT_Init(CMT_Type *base, const cmt_config_t *config, uint32_t busClock_Hz)
 
     uint8_t divider;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate clock. */
     CLOCK_EnableClock(s_cmtClock[CMT_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Sets clock divider. The divider set in pps should be set
        to make sycClock_Hz/divder = 8MHz */
@@ -144,15 +146,17 @@ void CMT_Deinit(CMT_Type *base)
     CMT_DisableInterrupts(base, kCMT_EndOfCycleInterruptEnable);
     DisableIRQ(s_cmtIrqs[CMT_GetInstance(base)]);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the clock. */
     CLOCK_DisableClock(s_cmtClock[CMT_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void CMT_SetMode(CMT_Type *base, cmt_mode_t mode, cmt_modulate_config_t *modulateConfig)
 {
-    uint8_t mscReg;
+    uint8_t mscReg = base->MSC;
 
-    /* Set the mode. */
+    /* Judge the mode. */
     if (mode != kCMT_DirectIROCtl)
     {
         assert(modulateConfig);
@@ -166,13 +170,14 @@ void CMT_SetMode(CMT_Type *base, cmt_mode_t mode, cmt_modulate_config_t *modulat
 
         /* Set carrier modulator. */
         CMT_SetModulateMarkSpace(base, modulateConfig->markCount, modulateConfig->spaceCount);
+        mscReg &= ~ (CMT_MSC_FSK_MASK | CMT_MSC_BASE_MASK);
+        mscReg |= mode;
     }
-
+    else
+    {
+        mscReg &= ~CMT_MSC_MCGEN_MASK;
+    }
     /* Set the CMT mode. */
-    mscReg = base->MSC;
-    mscReg &= ~CMT_MODE_BIT_MASK;
-    mscReg |= mode;
-
     base->MSC = mscReg;
 }
 

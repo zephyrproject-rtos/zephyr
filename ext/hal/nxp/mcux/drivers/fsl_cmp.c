@@ -45,8 +45,10 @@ static uint32_t CMP_GetInstance(CMP_Type *base);
  ******************************************************************************/
 /*! @brief Pointers to CMP bases for each instance. */
 static CMP_Type *const s_cmpBases[] = CMP_BASE_PTRS;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to CMP clocks for each instance. */
 static const clock_ip_name_t s_cmpClocks[] = CMP_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Codes
@@ -75,8 +77,10 @@ void CMP_Init(CMP_Type *base, const cmp_config_t *config)
 
     uint8_t tmp8;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock. */
     CLOCK_EnableClock(s_cmpClocks[CMP_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Configure. */
     CMP_Enable(base, false); /* Disable the CMP module during configuring. */
@@ -123,8 +127,10 @@ void CMP_Deinit(CMP_Type *base)
     /* Disable the CMP module. */
     CMP_Enable(base, false);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable the clock. */
     CLOCK_DisableClock(s_cmpClocks[CMP_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void CMP_GetDefaultConfig(cmp_config_t *config)

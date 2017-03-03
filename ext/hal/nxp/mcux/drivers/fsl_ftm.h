@@ -33,11 +33,10 @@
 #include "fsl_common.h"
 
 /*!
- * @addtogroup ftm_driver
+ * @addtogroup ftm
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -45,8 +44,8 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_FTM_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0 */
-/*@}*/
+#define FSL_FTM_DRIVER_VERSION (MAKE_VERSION(2, 0, 2)) /*!< Version 2.0.2 */
+                                                       /*@}*/
 
 /*!
  * @brief List of FTM channels
@@ -162,7 +161,7 @@ typedef struct _ftm_phase_param
 typedef struct _ftm_fault_param
 {
     bool enableFaultInput; /*!< True: Fault input is enabled; false: Fault input is disabled */
-    bool faultLevel;       /*!< True: Fault polarity is active low i.e '0' indicates a fault;
+    bool faultLevel;       /*!< True: Fault polarity is active low; in other words, '0' indicates a fault;
                                 False: Fault polarity is active high */
     bool useFaultFilter;   /*!< True: Use the filtered fault signal;
                                 False: Use the direct path from fault input */
@@ -311,6 +310,17 @@ typedef enum _ftm_status_flags
 } ftm_status_flags_t;
 
 /*!
+ * @brief List of FTM Quad Decoder flags.
+ */
+enum _ftm_quad_decoder_flags
+{
+    kFTM_QuadDecoderCountingIncreaseFlag = FTM_QDCTRL_QUADIR_MASK, /*!< Counting direction is increasing (FTM counter
+                                                                        increment), or the direction is decreasing. */
+    kFTM_QuadDecoderCountingOverflowOnTopFlag = FTM_QDCTRL_TOFDIR_MASK, /*!< Indicates if the TOF bit was set on the top
+                                                                             or the bottom of counting. */
+};
+
+/*!
  * @brief FTM configuration structure
  *
  * This structure holds the configuration settings for the FTM peripheral. To initialize this
@@ -333,7 +343,9 @@ typedef struct _ftm_config
     ftm_fault_mode_t faultMode;               /*!< FTM fault control mode */
     uint8_t faultFilterValue;                 /*!< Fault input filter value */
     ftm_deadtime_prescale_t deadTimePrescale; /*!< The dead time prescalar value */
-    uint8_t deadTimeValue;                    /*!< The dead time value */
+    uint32_t deadTimeValue;                   /*!< The dead time value 
+                                                   deadTimeValue's available range is 0-1023 when register has DTVALEX,
+                                                   otherwise its available range is 0-63. */
     uint32_t extTriggers;                     /*!< External triggers to enable. Multiple trigger sources can be
                                                    enabled by providing an OR'ed list of options available in
                                                    enumeration ::ftm_external_trigger_t. */
@@ -359,7 +371,7 @@ extern "C" {
 /*!
  * @brief Ungates the FTM clock and configures the peripheral for basic operation.
  *
- * @note This API should be called at the beginning of the application using the FTM driver.
+ * @note This API should be called at the beginning of the application which is using the FTM driver.
  *
  * @param base   FTM peripheral base address
  * @param config Pointer to the user configuration structure.
@@ -507,19 +519,6 @@ void FTM_SetupDualEdgeCapture(FTM_Type *base,
                               uint32_t filterValue);
 
 /*! @}*/
-
-/*!
- * @brief Configures the parameters and activates the quadrature decoder mode.
- *
- * @param base         FTM peripheral base address
- * @param phaseAParams Phase A configuration parameters
- * @param phaseBParams Phase B configuration parameters
- * @param quadMode     Selects encoding mode used in quadrature decoder mode
- */
-void FTM_SetupQuadDecode(FTM_Type *base,
-                         const ftm_phase_params_t *phaseAParams,
-                         const ftm_phase_params_t *phaseBParams,
-                         ftm_quad_decode_mode_t quadMode);
 
 /*!
  * @brief Sets up the working of the FTM fault protection.
@@ -711,7 +710,7 @@ static inline void FTM_SetOutputMask(FTM_Type *base, ftm_chnl_t chnlNumber, bool
 
 #if defined(FSL_FEATURE_FTM_HAS_ENABLE_PWM_OUTPUT) && (FSL_FEATURE_FTM_HAS_ENABLE_PWM_OUTPUT)
 /*!
- * @brief Allows user to enable an output on an FTM channel.
+ * @brief Allows users to enable an output on an FTM channel.
  *
  * To enable the PWM channel output call this function with val=true. For input mode,
  * call this function with val=false.
@@ -812,6 +811,76 @@ static inline void FTM_SetInvertEnable(FTM_Type *base, ftm_chnl_t chnlPairNumber
     {
         base->INVCTRL &= ~(1U << chnlPairNumber);
     }
+}
+
+/*! @}*/
+
+/*!
+ * @name Quad Decoder
+ * @{
+ */
+
+/*!
+ * @brief Configures the parameters and activates the quadrature decoder mode.
+ *
+ * @param base         FTM peripheral base address
+ * @param phaseAParams Phase A configuration parameters
+ * @param phaseBParams Phase B configuration parameters
+ * @param quadMode     Selects encoding mode used in quadrature decoder mode
+ */
+void FTM_SetupQuadDecode(FTM_Type *base,
+                         const ftm_phase_params_t *phaseAParams,
+                         const ftm_phase_params_t *phaseBParams,
+                         ftm_quad_decode_mode_t quadMode);
+
+/*!
+ * @brief Gets the FTM Quad Decoder flags.
+ *
+ * @param base FTM peripheral base address.
+ * @return Flag mask of FTM Quad Decoder, see #_ftm_quad_decoder_flags.
+ */
+static inline uint32_t FTM_GetQuadDecoderFlags(FTM_Type *base)
+{
+    return base->QDCTRL & (FTM_QDCTRL_QUADIR_MASK | FTM_QDCTRL_TOFDIR_MASK);
+}
+
+/*!
+ * @brief Sets the modulo values for Quad Decoder.
+ *
+ * The modulo values configure the minimum and maximum values that the Quad decoder counter can reach. After the counter goes
+ * over, the counter value goes to the other side and decrease/increase again.
+ *
+ * @param base FTM peripheral base address.
+ * @param startValue The low limit value for Quad Decoder counter.
+ * @param overValue The high limit value for Quad Decoder counter.
+ */
+static inline void FTM_SetQuadDecoderModuloValue(FTM_Type *base, uint32_t startValue, uint32_t overValue)
+{
+    base->CNTIN = startValue;
+    base->MOD = overValue;
+}
+
+/*!
+ * @brief Gets the current Quad Decoder counter value.
+ *
+ * @param base FTM peripheral base address.
+ * @return Current quad Decoder counter value.
+ */
+static inline uint32_t FTM_GetQuadDecoderCounterValue(FTM_Type *base)
+{
+    return base->CNT;
+}
+
+/*!
+ * @brief Clears the current Quad Decoder counter value.
+ *
+ * The counter is set as the initial value.
+ *
+ * @param base FTM peripheral base address.
+ */
+static inline void FTM_ClearQuadDecoderCounterValue(FTM_Type *base)
+{
+    base->CNT = base->CNTIN;
 }
 
 /*! @}*/

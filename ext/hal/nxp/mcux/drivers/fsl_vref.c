@@ -50,8 +50,10 @@ static uint32_t VREF_GetInstance(VREF_Type *base);
 /*! @brief Pointers to VREF bases for each instance. */
 static VREF_Type *const s_vrefBases[] = VREF_BASE_PTRS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to VREF clocks for each instance. */
 static const clock_ip_name_t s_vrefClocks[] = VREF_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Code
@@ -81,15 +83,24 @@ void VREF_Init(VREF_Type *base, const vref_config_t *config)
 
     uint8_t reg = 0U;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate clock for VREF */
     CLOCK_EnableClock(s_vrefClocks[VREF_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /* Configure VREF to a known state */
 #if defined(FSL_FEATURE_VREF_HAS_CHOP_OSC) && FSL_FEATURE_VREF_HAS_CHOP_OSC
     /* Set chop oscillator bit */
     base->TRM |= VREF_TRM_CHOPEN_MASK;
 #endif /* FSL_FEATURE_VREF_HAS_CHOP_OSC */
+    /* Get current SC register */
+#if defined(FSL_FEATURE_VREF_HAS_LOW_REFERENCE) && FSL_FEATURE_VREF_HAS_LOW_REFERENCE
+    reg = base->VREFH_SC;
+#else
     reg = base->SC;
+#endif/* FSL_FEATURE_VREF_HAS_LOW_REFERENCE */
+    /* Clear old buffer mode selection bits */
+    reg &= ~VREF_SC_MODE_LV_MASK;
     /* Set buffer Mode selection and Regulator enable bit */
     reg |= VREF_SC_MODE_LV(config->bufferMode) | VREF_SC_REGEN(1U);
 #if defined(FSL_FEATURE_VREF_HAS_COMPENSATION) && FSL_FEATURE_VREF_HAS_COMPENSATION
@@ -99,30 +110,51 @@ void VREF_Init(VREF_Type *base, const vref_config_t *config)
     /* Enable VREF module */
     reg |= VREF_SC_VREFEN(1U);
     /* Update bit-field from value to Status and Control register */
+#if defined(FSL_FEATURE_VREF_HAS_LOW_REFERENCE) && FSL_FEATURE_VREF_HAS_LOW_REFERENCE
+    base->VREFH_SC = reg;
+#else
     base->SC = reg;
+#endif/* FSL_FEATURE_VREF_HAS_LOW_REFERENCE */
 #if defined(FSL_FEATURE_VREF_HAS_LOW_REFERENCE) && FSL_FEATURE_VREF_HAS_LOW_REFERENCE
     reg = base->VREFL_TRM;
-    /* Clear old select external voltage reference and VREFL (0.4 V) reference buffer enable bits*/
+    /* Clear old select external voltage reference and VREFL (0.4 V) reference buffer enable bits */
     reg &= ~(VREF_VREFL_TRM_VREFL_EN_MASK | VREF_VREFL_TRM_VREFL_SEL_MASK);
     /* Select external voltage reference and set VREFL (0.4 V) reference buffer enable */
     reg |= VREF_VREFL_TRM_VREFL_SEL(config->enableExternalVoltRef) | VREF_VREFL_TRM_VREFL_EN(config->enableLowRef);
     base->VREFL_TRM = reg;
 #endif /* FSL_FEATURE_VREF_HAS_LOW_REFERENCE */
 
+#if defined(FSL_FEATURE_VREF_HAS_TRM4) && FSL_FEATURE_VREF_HAS_TRM4
+    reg = base->TRM4;
+    /* Clear old select internal voltage reference bit (2.1V) */
+    reg &= ~VREF_TRM4_VREF2V1_EN_MASK;
+    /* Select internal voltage reference (2.1V) */
+    reg |= VREF_TRM4_VREF2V1_EN(config->enable2V1VoltRef);
+    base->TRM4 = reg;
+#endif /* FSL_FEATURE_VREF_HAS_TRM4 */
+
     /* Wait until internal voltage stable */
+#if defined(FSL_FEATURE_VREF_HAS_LOW_REFERENCE) && FSL_FEATURE_VREF_HAS_LOW_REFERENCE
+     while ((base->VREFH_SC & VREF_SC_VREFST_MASK) == 0)
+#else
     while ((base->SC & VREF_SC_VREFST_MASK) == 0)
+#endif/* FSL_FEATURE_VREF_HAS_LOW_REFERENCE */
     {
     }
 }
 
 void VREF_Deinit(VREF_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate clock for VREF */
     CLOCK_DisableClock(s_vrefClocks[VREF_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void VREF_GetDefaultConfig(vref_config_t *config)
 {
+    assert(config);
+
 /* Set High power buffer mode in */
 #if defined(FSL_FEATURE_VREF_MODE_LV_TYPE) && FSL_FEATURE_VREF_MODE_LV_TYPE
     config->bufferMode = kVREF_ModeHighPowerBuffer;
@@ -136,6 +168,11 @@ void VREF_GetDefaultConfig(vref_config_t *config)
     /* Set VREFL (0.4 V) reference buffer disable */
     config->enableLowRef = false;
 #endif /* FSL_FEATURE_VREF_HAS_LOW_REFERENCE */
+
+#if defined(FSL_FEATURE_VREF_HAS_TRM4) && FSL_FEATURE_VREF_HAS_TRM4
+    /* Disable internal voltage reference (2.1V) */
+    config->enable2V1VoltRef = false;
+#endif /* FSL_FEATURE_VREF_HAS_TRM4 */
 }
 
 void VREF_SetTrimVal(VREF_Type *base, uint8_t trimValue)
@@ -147,10 +184,30 @@ void VREF_SetTrimVal(VREF_Type *base, uint8_t trimValue)
     reg = ((reg & ~VREF_TRM_TRIM_MASK) | VREF_TRM_TRIM(trimValue));
     base->TRM = reg;
     /* Wait until internal voltage stable */
+#if defined(FSL_FEATURE_VREF_HAS_LOW_REFERENCE) && FSL_FEATURE_VREF_HAS_LOW_REFERENCE
+     while ((base->VREFH_SC & VREF_SC_VREFST_MASK) == 0)
+#else
+    while ((base->SC & VREF_SC_VREFST_MASK) == 0)
+#endif/* FSL_FEATURE_VREF_HAS_LOW_REFERENCE */
+    {
+    }
+}
+
+#if defined(FSL_FEATURE_VREF_HAS_TRM4) && FSL_FEATURE_VREF_HAS_TRM4
+void VREF_SetTrim2V1Val(VREF_Type *base, uint8_t trimValue)
+{
+    uint8_t reg = 0U;
+
+    /* Set TRIM bits value in voltage reference (2V1) */
+    reg = base->TRM4;
+    reg = ((reg & ~VREF_TRM4_TRIM2V1_MASK) | VREF_TRM4_TRIM2V1(trimValue));
+    base->TRM4 = reg;
+    /* Wait until internal voltage stable */
     while ((base->SC & VREF_SC_VREFST_MASK) == 0)
     {
     }
 }
+#endif /* FSL_FEATURE_VREF_HAS_TRM4 */
 
 #if defined(FSL_FEATURE_VREF_HAS_LOW_REFERENCE) && FSL_FEATURE_VREF_HAS_LOW_REFERENCE
 void VREF_SetLowReferenceTrimVal(VREF_Type *base, uint8_t trimValue)
@@ -165,7 +222,8 @@ void VREF_SetLowReferenceTrimVal(VREF_Type *base, uint8_t trimValue)
     reg = ((reg & ~VREF_VREFL_TRM_VREFL_TRIM_MASK) | VREF_VREFL_TRM_VREFL_TRIM(trimValue));
     base->VREFL_TRM = reg;
     /* Wait until internal voltage stable */
-    while ((base->SC & VREF_SC_VREFST_MASK) == 0)
+
+     while ((base->VREFH_SC & VREF_SC_VREFST_MASK) == 0)
     {
     }
 }

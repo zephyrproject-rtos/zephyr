@@ -253,6 +253,9 @@ status_t SAI_TransferSendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_tra
     EDMA_PrepareTransfer(&config, xfer->data, handle->bytesPerFrame, (void *)destAddr, handle->bytesPerFrame,
                          handle->count * handle->bytesPerFrame, xfer->dataSize, kEDMA_MemoryToPeripheral);
 
+    /* Store the initially configured eDMA minor byte transfer count into the SAI handle */
+    handle->nbytes = handle->count * handle->bytesPerFrame;
+
     EDMA_SubmitTransfer(handle->dmaHandle, &config);
 
     /* Start DMA transfer */
@@ -298,6 +301,9 @@ status_t SAI_TransferReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_
     EDMA_PrepareTransfer(&config, (void *)srcAddr, handle->bytesPerFrame, xfer->data, handle->bytesPerFrame,
                          handle->count * handle->bytesPerFrame, xfer->dataSize, kEDMA_PeripheralToMemory);
 
+    /* Store the initially configured eDMA minor byte transfer count into the SAI handle */
+    handle->nbytes = handle->count * handle->bytesPerFrame;
+
     EDMA_SubmitTransfer(handle->dmaHandle, &config);
 
     /* Start DMA transfer */
@@ -322,6 +328,9 @@ void SAI_TransferAbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle)
     /* Disable DMA enable bit */
     SAI_TxEnableDMA(base, kSAI_FIFORequestDMAEnable, false);
 
+    /* Disable Tx */
+    SAI_TxEnable(base, false);
+
     /* Set the handle state */
     handle->state = kSAI_Idle;
 }
@@ -335,6 +344,9 @@ void SAI_TransferAbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
 
     /* Disable DMA enable bit */
     SAI_RxEnableDMA(base, kSAI_FIFORequestDMAEnable, false);
+    
+    /* Disable Rx */
+    SAI_RxEnable(base, false);
 
     /* Set the handle state */
     handle->state = kSAI_Idle;
@@ -353,7 +365,8 @@ status_t SAI_TransferGetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle,
     else
     {
         *count = (handle->transferSize[handle->queueDriver] -
-                  EDMA_GetRemainingBytes(handle->dmaHandle->base, handle->dmaHandle->channel));
+                  (uint32_t)handle->nbytes *
+                      EDMA_GetRemainingMajorLoopCount(handle->dmaHandle->base, handle->dmaHandle->channel));
     }
 
     return status;
@@ -372,7 +385,8 @@ status_t SAI_TransferGetReceiveCountEDMA(I2S_Type *base, sai_edma_handle_t *hand
     else
     {
         *count = (handle->transferSize[handle->queueDriver] -
-                  EDMA_GetRemainingBytes(handle->dmaHandle->base, handle->dmaHandle->channel));
+                  (uint32_t)handle->nbytes *
+                      EDMA_GetRemainingMajorLoopCount(handle->dmaHandle->base, handle->dmaHandle->channel));
     }
 
     return status;

@@ -45,8 +45,10 @@ static uint32_t DAC_GetInstance(DAC_Type *base);
  ******************************************************************************/
 /*! @brief Pointers to DAC bases for each instance. */
 static DAC_Type *const s_dacBases[] = DAC_BASE_PTRS;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to DAC clocks for each instance. */
 static const clock_ip_name_t s_dacClocks[] = DAC_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Codes
@@ -75,8 +77,10 @@ void DAC_Init(DAC_Type *base, const dac_config_t *config)
 
     uint8_t tmp8;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock. */
     CLOCK_EnableClock(s_dacClocks[DAC_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Configure. */
     /* DACx_C0. */
@@ -91,15 +95,18 @@ void DAC_Init(DAC_Type *base, const dac_config_t *config)
     }
     base->C0 = tmp8;
 
-    DAC_Enable(base, true);
+    /* DAC_Enable(base, true); */
+    /* Tip: The DAC output can be enabled till then after user sets their own available data in application. */
 }
 
 void DAC_Deinit(DAC_Type *base)
 {
     DAC_Enable(base, false);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable the clock. */
     CLOCK_DisableClock(s_dacClocks[DAC_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void DAC_GetDefaultConfig(dac_config_t *config)

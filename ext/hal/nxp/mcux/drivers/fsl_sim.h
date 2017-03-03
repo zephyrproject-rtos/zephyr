@@ -36,7 +36,6 @@
 /*! @addtogroup sim */
 /*! @{*/
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -90,10 +89,10 @@ extern "C" {
  * @brief Sets the USB voltage regulator setting.
  *
  * This function configures whether the USB voltage regulator is enabled in
- * normal RUN mode, STOP/VLPS/LLS/VLLS modes and VLPR/VLPW modes. The configurations
- * are passed in as mask value of \ref _sim_usb_volt_reg_enable_mode. For example, enable
+ * normal RUN mode, STOP/VLPS/LLS/VLLS modes, and VLPR/VLPW modes. The configurations
+ * are passed in as mask value of \ref _sim_usb_volt_reg_enable_mode. For example, to enable
  * USB voltage regulator in RUN/VLPR/VLPW modes and disable in STOP/VLPS/LLS/VLLS mode,
- * please use:
+ * use:
  *
  * SIM_SetUsbVoltRegulatorEnableMode(kSIM_UsbVoltRegEnable | kSIM_UsbVoltRegEnableInLowPower);
  *
@@ -103,16 +102,16 @@ void SIM_SetUsbVoltRegulatorEnableMode(uint32_t mask);
 #endif /* FSL_FEATURE_SIM_OPT_HAS_USB_VOLTAGE_REGULATOR */
 
 /*!
- * @brief Get the unique identification register value.
+ * @brief Gets the unique identification register value.
  *
  * @param uid Pointer to the structure to save the UID value.
  */
 void SIM_GetUniqueId(sim_uid_t *uid);
 
 /*!
- * @brief Set the flash enable mode.
+ * @brief Sets the flash enable mode.
  *
- * @param mode The mode to set, see \ref _sim_flash_mode for mode details.
+ * @param mode The mode to set; see \ref _sim_flash_mode for mode details.
  */
 static inline void SIM_SetFlashMode(uint8_t mode)
 {

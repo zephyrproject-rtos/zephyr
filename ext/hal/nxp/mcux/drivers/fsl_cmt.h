@@ -37,7 +37,6 @@
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -45,8 +44,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief CMT driver version 2.0.0. */
-#define FSL_CMT_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief CMT driver version 2.0.1. */
+#define FSL_CMT_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
 /*!
@@ -128,15 +127,15 @@ enum _cmt_interrupt_enable
 };
 
 /*!
- * @brief CMT carrier generator and modulator configure structure
+ * @brief CMT carrier generator and modulator configuration structure
  *
  */
 typedef struct _cmt_modulate_config
 {
-    uint8_t highCount1;  /*!< The high time for carrier generator first register. */
-    uint8_t lowCount1;   /*!< The low time for carrier generator first register. */
-    uint8_t highCount2;  /*!< The high time for carrier generator second register for FSK mode. */
-    uint8_t lowCount2;   /*!< The low time for carrier generator second register for FSK mode. */
+    uint8_t highCount1;  /*!< The high-time for carrier generator first register. */
+    uint8_t lowCount1;   /*!< The low-time for carrier generator first register. */
+    uint8_t highCount2;  /*!< The high-time for carrier generator second register for FSK mode. */
+    uint8_t lowCount2;   /*!< The low-time for carrier generator second register for FSK mode. */
     uint16_t markCount;  /*!< The mark time for the modulator gate. */
     uint16_t spaceCount; /*!< The space time for the modulator gate. */
 } cmt_modulate_config_t;
@@ -164,10 +163,10 @@ extern "C" {
  */
 
 /*!
- * @brief Gets the CMT default configuration structure. The purpose
- * of this API is to get the default configuration structure for the CMT_Init().
- * Use the initialized structure unchanged in CMT_Init(), or modify
- * some fields of the structure before calling the CMT_Init().
+ * @brief Gets the CMT default configuration structure. This API
+ * gets the default configuration structure for the CMT_Init().
+ * Use the initialized structure unchanged in CMT_Init() or modify
+ * fields of the structure before calling the CMT_Init().
  *
  * @param config The CMT configuration structure pointer.
  */
@@ -216,7 +215,7 @@ void CMT_SetMode(CMT_Type *base, cmt_mode_t mode, cmt_modulate_config_t *modulat
  *
  * @param base   CMT peripheral base address.
  * @return The CMT mode.
- *     kCMT_DirectIROCtl     Carrier modulator is disabled, the IRO signal is directly in software control.
+ *     kCMT_DirectIROCtl     Carrier modulator is disabled; the IRO signal is directly in software control.
  *     kCMT_TimeMode         Carrier modulator is enabled in time mode.
  *     kCMT_FSKMode          Carrier modulator is enabled in FSK mode.
  *     kCMT_BasebandMode     Carrier modulator is enabled in baseband mode.
@@ -235,11 +234,11 @@ uint32_t CMT_GetCMTFrequency(CMT_Type *base, uint32_t busClock_Hz);
 /*!
  * @brief Sets the primary data set for the CMT carrier generator counter.
  *
- * This function sets the high time and low time of the primary data set for the
+ * This function sets the high-time and low-time of the primary data set for the
  * CMT carrier generator counter to control the period and the duty cycle of the
  * output carrier signal.
- * If the CMT clock period is Tcmt, The period of the carrier generator signal equals
- * (highCount + lowCount) * Tcmt. The duty cycle equals  highCount / (highCount + lowCount).
+ * If the CMT clock period is Tcmt, the period of the carrier generator signal equals
+ * (highCount + lowCount) * Tcmt. The duty cycle equals to highCount / (highCount + lowCount).
  *
  * @param base      CMT peripheral base address.
  * @param highCount The number of CMT clocks for carrier generator signal high time,
@@ -261,10 +260,10 @@ static inline void CMT_SetCarrirGenerateCountOne(CMT_Type *base, uint32_t highCo
 /*!
  * @brief Sets the secondary data set for the CMT carrier generator counter.
  *
- * This function is used for FSK mode setting the high time and low time of the secondary
+ * This function is used for FSK mode setting the high-time and low-time of the secondary
  * data set CMT carrier generator counter to control the period and the duty cycle
  * of the output carrier signal.
- * If the CMT clock period is Tcmt, The period of the carrier generator signal equals
+ * If the CMT clock period is Tcmt, the period of the carrier generator signal equals
  * (highCount + lowCount) * Tcmt. The duty cycle equals  highCount / (highCount + lowCount).
  *
  * @param base      CMT peripheral base address.
@@ -325,7 +324,7 @@ static inline void CMT_EnableExtendedSpace(CMT_Type *base, bool enable)
 }
 
 /*!
- * @brief Sets IRO - infrared output signal state.
+ * @brief Sets the IRO (infrared output) signal state.
  *
  * Changes the states of the IRO signal when the kCMT_DirectIROMode mode is set
  * and the IRO signal is enabled.
@@ -338,12 +337,12 @@ void CMT_SetIroState(CMT_Type *base, cmt_infrared_output_state_t state);
 /*!
  * @brief Enables the CMT interrupt.
  *
- * This function enables the CMT interrupts according to the provided maskIf enabled.
+ * This function enables the CMT interrupts according to the provided mask if enabled.
  * The CMT only has the end of the cycle interrupt - an interrupt occurs at the end
  * of the modulator cycle. This interrupt provides a means for the user
  * to reload the new mark/space values into the CMT modulator data registers
  * and verify the modulator mark and space.
- * For example, to enable the end of cycle, do the following:
+ * For example, to enable the end of cycle, do the following.
  * @code
  *     CMT_EnableInterrupts(CMT, kCMT_EndOfCycleInterruptEnable);
  * @endcode
@@ -360,7 +359,7 @@ static inline void CMT_EnableInterrupts(CMT_Type *base, uint32_t mask)
  *
  * This function disables the CMT interrupts according to the provided maskIf enabled.
  * The CMT only has the end of the cycle interrupt.
- * For example, to disable the end of cycle, do the following:
+ * For example, to disable the end of cycle, do the following.
  * @code
  *     CMT_DisableInterrupts(CMT, kCMT_EndOfCycleInterruptEnable);
  * @endcode

@@ -38,7 +38,6 @@
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -46,8 +45,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief DAC driver version 2.0.0. */
-#define FSL_DAC_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief DAC driver version 2.0.1. */
+#define FSL_DAC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
 /*!
@@ -137,7 +136,7 @@ typedef enum _dac_buffer_work_mode
 typedef struct _dac_config
 {
     dac_reference_voltage_source_t referenceVoltageSource; /*!< Select the DAC reference voltage source. */
-    bool enableLowPowerMode;                               /*!< Enable the low power mode. */
+    bool enableLowPowerMode;                               /*!< Enable the low-power mode. */
 } dac_config_t;
 
 /*!
@@ -150,8 +149,8 @@ typedef struct _dac_buffer_config
     dac_buffer_watermark_t watermark; /*!< Select the buffer's watermark. */
 #endif                                /* FSL_FEATURE_DAC_HAS_WATERMARK_SELECTION */
     dac_buffer_work_mode_t workMode;  /*!< Select the buffer's work mode. */
-    uint8_t upperLimit;               /*!< Set the upper limit for buffer index.
-                                           Normally, 0-15 is available for buffer with 16 item. */
+    uint8_t upperLimit;               /*!< Set the upper limit for the buffer index.
+                                           Normally, 0-15 is available for a buffer with 16 items. */
 } dac_buffer_config_t;
 
 /*******************************************************************************
@@ -169,7 +168,7 @@ extern "C" {
 /*!
  * @brief Initializes the DAC module.
  *
- * This function initializes the DAC module, including:
+ * This function initializes the DAC module including the following operations.
  *  - Enabling the clock for DAC module.
  *  - Configuring the DAC converter with a user configuration.
  *  - Enabling the DAC module.
@@ -182,7 +181,7 @@ void DAC_Init(DAC_Type *base, const dac_config_t *config);
 /*!
  * @brief De-initializes the DAC module.
  *
- * This function de-initializes the DAC module, including:
+ * This function de-initializes the DAC module including the following operations.
  *  - Disabling the DAC module.
  *  - Disabling the clock for the DAC module.
  *
@@ -193,7 +192,7 @@ void DAC_Deinit(DAC_Type *base);
 /*!
  * @brief Initializes the DAC user configuration structure.
  *
- * This function initializes the user configuration structure to a default value. The default values are:
+ * This function initializes the user configuration structure to a default value. The default values are as follows.
  * @code
  *   config->referenceVoltageSource = kDAC_ReferenceVoltageSourceVref2;
  *   config->enableLowPowerMode = false;
@@ -206,7 +205,7 @@ void DAC_GetDefaultConfig(dac_config_t *config);
  * @brief Enables the DAC module.
  *
  * @param base DAC peripheral base address.
- * @param enable Enables the feature or not.
+ * @param enable Enables or disables the feature.
  */
 static inline void DAC_Enable(DAC_Type *base, bool enable)
 {
@@ -231,7 +230,7 @@ static inline void DAC_Enable(DAC_Type *base, bool enable)
  * @brief Enables the DAC buffer.
  *
  * @param base DAC peripheral base address.
- * @param enable Enables the feature or not.
+ * @param enable Enables or disables the feature.
  */
 static inline void DAC_EnableBuffer(DAC_Type *base, bool enable)
 {
@@ -256,7 +255,7 @@ void DAC_SetBufferConfig(DAC_Type *base, const dac_buffer_config_t *config);
 /*!
  * @brief Initializes the DAC buffer configuration structure.
  *
- * This function initializes the DAC buffer configuration structure to a default value. The default values are:
+ * This function initializes the DAC buffer configuration structure to default values. The default values are as follows.
  * @code
  *   config->triggerMode = kDAC_BufferTriggerBySoftwareMode;
  *   config->watermark   = kDAC_BufferWatermark1Word;
@@ -271,7 +270,7 @@ void DAC_GetDefaultBufferConfig(dac_buffer_config_t *config);
  * @brief Enables the DMA for DAC buffer.
  *
  * @param base DAC peripheral base address.
- * @param enable Enables the feature or not.
+ * @param enable Enables or disables the feature.
  */
 static inline void DAC_EnableBufferDMA(DAC_Type *base, bool enable)
 {
@@ -289,15 +288,15 @@ static inline void DAC_EnableBufferDMA(DAC_Type *base, bool enable)
  * @brief Sets the value for  items in the buffer.
  *
  * @param base  DAC peripheral base address.
- * @param index Setting index for items in the buffer. The available index should not exceed the size of the DAC buffer.
- * @param value Setting value for items in the buffer. 12-bits are available.
+ * @param index Setting the index for items in the buffer. The available index should not exceed the size of the DAC buffer.
+ * @param value Setting the value for items in the buffer. 12-bits are available.
  */
 void DAC_SetBufferValue(DAC_Type *base, uint8_t index, uint16_t value);
 
 /*!
- * @brief Triggers the buffer by software and updates the read pointer of the DAC buffer.
+ * @brief Triggers the buffer using software and updates the read pointer of the DAC buffer.
  *
- * This function triggers the function by software. The read pointer of the DAC buffer is updated with one step
+ * This function triggers the function using software. The read pointer of the DAC buffer is updated with one step
  * after this function is called. Changing the read pointer depends on the buffer's work mode.
  *
  * @param base DAC peripheral base address.
@@ -311,12 +310,12 @@ static inline void DAC_DoSoftwareTriggerBuffer(DAC_Type *base)
  * @brief Gets the current read pointer of the DAC buffer.
  *
  * This function gets the current read pointer of the DAC buffer.
- * The current output value depends on the item indexed by the read pointer. It is updated
- * by software trigger or hardware trigger.
+ * The current output value depends on the item indexed by the read pointer. It is updated either
+ * by a software trigger or a hardware trigger.
  *
  * @param  base DAC peripheral base address.
  *
- * @return      Current read pointer of DAC buffer.
+ * @return      The current read pointer of the DAC buffer.
  */
 static inline uint8_t DAC_GetBufferReadPointer(DAC_Type *base)
 {
@@ -327,11 +326,11 @@ static inline uint8_t DAC_GetBufferReadPointer(DAC_Type *base)
  * @brief Sets the current read pointer of the DAC buffer.
  *
  * This function sets the current read pointer of the DAC buffer.
- * The current output value depends on the item indexed by the read pointer. It is updated by
- * software trigger or hardware trigger. After the read pointer changes, the DAC output value also changes.
+ * The current output value depends on the item indexed by the read pointer. It is updated either by a
+ * software trigger or a hardware trigger. After the read pointer changes, the DAC output value also changes.
  *
  * @param base  DAC peripheral base address.
- * @param index Setting index value for the pointer.
+ * @param index Setting an index value for the pointer.
  */
 void DAC_SetBufferReadPointer(DAC_Type *base, uint8_t index);
 

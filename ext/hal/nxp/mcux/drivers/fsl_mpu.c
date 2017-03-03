@@ -31,17 +31,12 @@
 #include "fsl_mpu.h"
 
 /*******************************************************************************
- * Definitions
- ******************************************************************************/
-
-/* Defines the register numbers of the region descriptor configure. */
-#define MPU_REGIONDESCRIPTOR_WROD_REGNUM (4U)
-
-/*******************************************************************************
  * Variables
  ******************************************************************************/
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 const clock_ip_name_t g_mpuClock[FSL_FEATURE_SOC_MPU_COUNT] = MPU_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Codes
@@ -52,8 +47,10 @@ void MPU_Init(MPU_Type *base, const mpu_config_t *config)
     assert(config);
     uint8_t count;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Un-gate MPU clock */
     CLOCK_EnableClock(g_mpuClock[0]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Initializes the regions. */
     for (count = 1; count < FSL_FEATURE_MPU_DESCRIPTOR_COUNT; count++)
@@ -80,8 +77,10 @@ void MPU_Deinit(MPU_Type *base)
     /* Disable MPU. */
     MPU_Enable(base, false);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the clock. */
     CLOCK_DisableClock(g_mpuClock[0]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void MPU_GetHardwareInfo(MPU_Type *base, mpu_hardware_info_t *hardwareInform)
@@ -98,98 +97,113 @@ void MPU_GetHardwareInfo(MPU_Type *base, mpu_hardware_info_t *hardwareInform)
 void MPU_SetRegionConfig(MPU_Type *base, const mpu_region_config_t *regionConfig)
 {
     assert(regionConfig);
+    assert(regionConfig->regionNum < FSL_FEATURE_MPU_DESCRIPTOR_COUNT);
 
     uint32_t wordReg = 0;
-    uint8_t count;
-    uint8_t number = regionConfig->regionNum;
+    uint8_t msPortNum;
+    uint8_t regNumber = regionConfig->regionNum;
 
     /* The start and end address of the region descriptor. */
-    base->WORD[number][0] = regionConfig->startAddress;
-    base->WORD[number][1] = regionConfig->endAddress;
+    base->WORD[regNumber][0] = regionConfig->startAddress;
+    base->WORD[regNumber][1] = regionConfig->endAddress;
 
-    /* The region descriptor access rights control. */
-    for (count = 0; count < MPU_REGIONDESCRIPTOR_WROD_REGNUM; count++)
+    /* Set the privilege rights for master 0 ~ master 3. */
+    for (msPortNum = 0; msPortNum <= MPU_PRIVILEGED_RIGHTS_MASTER_MAX_INDEX; msPortNum++)
     {
-        wordReg |= MPU_WORD_LOW_MASTER(count, (((uint32_t)regionConfig->accessRights1[count].superAccessRights << 3U) |
-                                               (uint8_t)regionConfig->accessRights1[count].userAccessRights)) |
-                   MPU_WORD_HIGH_MASTER(count, ((uint32_t)regionConfig->accessRights2[count].readEnable << 1U |
-                                                (uint8_t)regionConfig->accessRights2[count].writeEnable));
+        wordReg |= MPU_REGION_RWXRIGHTS_MASTER(
+            msPortNum, (((uint32_t)regionConfig->accessRights1[msPortNum].superAccessRights << 3U) |
+                        (uint32_t)regionConfig->accessRights1[msPortNum].userAccessRights));
 
 #if FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER
-        wordReg |= MPU_WORD_MASTER_PE(count, regionConfig->accessRights1[count].processIdentifierEnable);
+        wordReg |=
+            MPU_REGION_RWXRIGHTS_MASTER_PE(msPortNum, regionConfig->accessRights1[msPortNum].processIdentifierEnable);
 #endif /* FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER */
     }
 
+    /* Set the normal read write rights for master 4 ~ master 7. */
+    for (msPortNum = FSL_FEATURE_MPU_PRIVILEGED_RIGHTS_MASTER_COUNT; msPortNum < FSL_FEATURE_MPU_MASTER_COUNT;
+         msPortNum++)
+    {
+        wordReg |= MPU_REGION_RWRIGHTS_MASTER(msPortNum,
+            ((uint32_t)regionConfig->accessRights2[msPortNum - FSL_FEATURE_MPU_PRIVILEGED_RIGHTS_MASTER_COUNT].readEnable << 1U |
+            (uint32_t)regionConfig->accessRights2[msPortNum - FSL_FEATURE_MPU_PRIVILEGED_RIGHTS_MASTER_COUNT].writeEnable));
+    }
+
     /* Set region descriptor access rights. */
-    base->WORD[number][2] = wordReg;
+    base->WORD[regNumber][2] = wordReg;
 
     wordReg = MPU_WORD_VLD(1);
 #if FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER
     wordReg |= MPU_WORD_PID(regionConfig->processIdentifier) | MPU_WORD_PIDMASK(regionConfig->processIdMask);
 #endif /* FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER */
 
-    base->WORD[number][3] = wordReg;
+    base->WORD[regNumber][3] = wordReg;
 }
 
-void MPU_SetRegionAddr(MPU_Type *base, mpu_region_num_t regionNum, uint32_t startAddr, uint32_t endAddr)
+void MPU_SetRegionAddr(MPU_Type *base, uint32_t regionNum, uint32_t startAddr, uint32_t endAddr)
 {
+    assert(regionNum < FSL_FEATURE_MPU_DESCRIPTOR_COUNT);
+
     base->WORD[regionNum][0] = startAddr;
     base->WORD[regionNum][1] = endAddr;
 }
 
-void MPU_SetRegionLowMasterAccessRights(MPU_Type *base,
-                                        mpu_region_num_t regionNum,
-                                        mpu_master_t masterNum,
-                                        const mpu_low_masters_access_rights_t *accessRights)
+void MPU_SetRegionRwxMasterAccessRights(MPU_Type *base,
+                                        uint32_t regionNum,
+                                        uint32_t masterNum,
+                                        const mpu_rwxrights_master_access_control_t *accessRights)
 {
     assert(accessRights);
-#if FSL_FEATURE_MPU_HAS_MASTER4
-    assert(masterNum < kMPU_Master4);
-#endif
-    uint32_t mask = MPU_WORD_LOW_MASTER_MASK(masterNum);
+    assert(regionNum < FSL_FEATURE_MPU_DESCRIPTOR_COUNT);
+    assert(masterNum <= MPU_PRIVILEGED_RIGHTS_MASTER_MAX_INDEX);
+
+    uint32_t mask = MPU_REGION_RWXRIGHTS_MASTER_MASK(masterNum);
     uint32_t right = base->RGDAAC[regionNum];
 
 #if FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER
-    mask |= MPU_LOW_MASTER_PE_MASK(masterNum);
+    mask |= MPU_REGION_RWXRIGHTS_MASTER_PE_MASK(masterNum);
 #endif
 
     /* Build rights control value. */
     right &= ~mask;
-    right |= MPU_WORD_LOW_MASTER(masterNum,
-                                 ((uint32_t)(accessRights->superAccessRights << 3U) | accessRights->userAccessRights));
+    right |= MPU_REGION_RWXRIGHTS_MASTER(
+        masterNum, ((uint32_t)(accessRights->superAccessRights << 3U) | accessRights->userAccessRights));
 #if FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER
-    right |= MPU_WORD_MASTER_PE(masterNum, accessRights->processIdentifierEnable);
+    right |= MPU_REGION_RWXRIGHTS_MASTER_PE(masterNum, accessRights->processIdentifierEnable);
 #endif /* FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER */
 
     /* Set low master region access rights. */
     base->RGDAAC[regionNum] = right;
 }
 
-void MPU_SetRegionHighMasterAccessRights(MPU_Type *base,
-                                         mpu_region_num_t regionNum,
-                                         mpu_master_t masterNum,
-                                         const mpu_high_masters_access_rights_t *accessRights)
+#if FSL_FEATURE_MPU_HAS_MASTER_4_7
+void MPU_SetRegionRwMasterAccessRights(MPU_Type *base,
+                                       uint32_t regionNum,
+                                       uint32_t masterNum,
+                                       const mpu_rwrights_master_access_control_t *accessRights)
 {
     assert(accessRights);
-#if FSL_FEATURE_MPU_HAS_MASTER3
-    assert(masterNum > kMPU_Master3);
-#endif
-    uint32_t mask = MPU_WORD_HIGH_MASTER_MASK(masterNum);
+    assert(regionNum < FSL_FEATURE_MPU_DESCRIPTOR_COUNT);
+    assert(masterNum > MPU_PRIVILEGED_RIGHTS_MASTER_MAX_INDEX);
+    assert(masterNum <= FSL_FEATURE_MPU_MASTER_MAX_INDEX);
+
+    uint32_t mask = MPU_REGION_RWRIGHTS_MASTER_MASK(masterNum);
     uint32_t right = base->RGDAAC[regionNum];
 
     /* Build rights control value. */
     right &= ~mask;
-    right |= MPU_WORD_HIGH_MASTER((masterNum - (uint8_t)kMPU_RegionNum04),
-                                  (((uint32_t)accessRights->readEnable << 1U) | accessRights->writeEnable));
+    right |=
+        MPU_REGION_RWRIGHTS_MASTER(masterNum, (((uint32_t)accessRights->readEnable << 1U) | accessRights->writeEnable));
     /* Set low master region access rights. */
     base->RGDAAC[regionNum] = right;
 }
+#endif /* FSL_FEATURE_MPU_HAS_MASTER_4_7 */
 
 bool MPU_GetSlavePortErrorStatus(MPU_Type *base, mpu_slave_t slaveNum)
 {
     uint8_t sperr;
 
-    sperr = ((base->CESR & MPU_CESR_SPERR_MASK) >> MPU_CESR_SPERR_SHIFT) & (0x1U << slaveNum);
+    sperr = ((base->CESR & MPU_CESR_SPERR_MASK) >> MPU_CESR_SPERR_SHIFT) & (0x1U << (MPU_SLAVE_PORT_NUM - slaveNum));
 
     return (sperr != 0) ? true : false;
 }
@@ -199,6 +213,7 @@ void MPU_GetDetailErrorAccessInfo(MPU_Type *base, mpu_slave_t slaveNum, mpu_acce
     assert(errInform);
 
     uint16_t value;
+    uint32_t cesReg;
 
     /* Error address. */
     errInform->address = base->SP[slaveNum].EAR;
@@ -219,14 +234,14 @@ void MPU_GetDetailErrorAccessInfo(MPU_Type *base, mpu_slave_t slaveNum, mpu_acce
     }
 
     value = base->SP[slaveNum].EDR;
-    errInform->master = (mpu_master_t)((value & MPU_EDR_EMN_MASK) >> MPU_EDR_EMN_SHIFT);
+    errInform->master = (uint32_t)((value & MPU_EDR_EMN_MASK) >> MPU_EDR_EMN_SHIFT);
     errInform->attributes = (mpu_err_attributes_t)((value & MPU_EDR_EATTR_MASK) >> MPU_EDR_EATTR_SHIFT);
     errInform->accessType = (mpu_err_access_type_t)((value & MPU_EDR_ERW_MASK) >> MPU_EDR_ERW_SHIFT);
 #if FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER
     errInform->processorIdentification = (uint8_t)((value & MPU_EDR_EPID_MASK) >> MPU_EDR_EPID_SHIFT);
 #endif
 
-    /*!< Clears error slave port bit. */
-    value = (base->CESR & ~MPU_CESR_SPERR_MASK) | (0x1U << slaveNum);
-    base->CESR = value;
+    /* Clears error slave port bit. */
+    cesReg = (base->CESR & ~MPU_CESR_SPERR_MASK) | ((0x1U << slaveNum) << MPU_CESR_SPERR_SHIFT);
+    base->CESR = cesReg;
 }

@@ -50,8 +50,10 @@ static uint32_t FLEXBUS_GetInstance(FB_Type *base);
 /*! @brief Pointers to FLEXBUS bases for each instance. */
 static FB_Type *const s_flexbusBases[] = FB_BASE_PTRS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to FLEXBUS clocks for each instance. */
 static const clock_ip_name_t s_flexbusClocks[] = FLEXBUS_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Code
@@ -84,8 +86,10 @@ void FLEXBUS_Init(FB_Type *base, const flexbus_config_t *config)
     uint32_t chip = 0;
     uint32_t reg_value = 0;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate clock for FLEXBUS */
     CLOCK_EnableClock(s_flexbusClocks[FLEXBUS_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Reset all the register to default state */
     for (chip = 0; chip < FB_CSAR_COUNT; chip++)
@@ -168,8 +172,10 @@ void FLEXBUS_Init(FB_Type *base, const flexbus_config_t *config)
 
 void FLEXBUS_Deinit(FB_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate clock for FLEXBUS */
-    CLOCK_EnableClock(s_flexbusClocks[FLEXBUS_GetInstance(base)]);
+    CLOCK_DisableClock(s_flexbusClocks[FLEXBUS_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void FLEXBUS_GetDefaultConfig(flexbus_config_t *config)

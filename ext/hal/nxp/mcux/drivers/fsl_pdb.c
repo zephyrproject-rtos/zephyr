@@ -45,8 +45,10 @@ static uint32_t PDB_GetInstance(PDB_Type *base);
  ******************************************************************************/
 /*! @brief Pointers to PDB bases for each instance. */
 static PDB_Type *const s_pdbBases[] = PDB_BASE_PTRS;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to PDB clocks for each instance. */
-const clock_ip_name_t s_pdbClocks[] = PDB_CLOCKS;
+static const clock_ip_name_t s_pdbClocks[] = PDB_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Codes
@@ -75,8 +77,10 @@ void PDB_Init(PDB_Type *base, const pdb_config_t *config)
 
     uint32_t tmp32;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock. */
     CLOCK_EnableClock(s_pdbClocks[PDB_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Configure. */
     /* PDBx_SC. */
@@ -98,8 +102,10 @@ void PDB_Deinit(PDB_Type *base)
 {
     PDB_Enable(base, false); /* Disable the PDB module. */
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable the clock. */
     CLOCK_DisableClock(s_pdbClocks[PDB_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void PDB_GetDefaultConfig(pdb_config_t *config)

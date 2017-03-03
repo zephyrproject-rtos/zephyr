@@ -37,7 +37,6 @@
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -45,130 +44,47 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief MPU driver version 2.0.0. */
-#define FSL_MPU_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief MPU driver version 2.1.0. */
+#define FSL_MPU_DRIVER_VERSION (MAKE_VERSION(2, 1, 1))
 /*@}*/
 
-/*! @brief MPU low master bit shift. */
-#define MPU_WORD_LOW_MASTER_SHIFT(n) (n * 6)
+/*! @brief MPU the bit shift for masters with privilege rights: read write and execute. */
+#define MPU_REGION_RWXRIGHTS_MASTER_SHIFT(n) (n * 6)
 
-/*! @brief MPU low master bit mask. */
-#define MPU_WORD_LOW_MASTER_MASK(n) (0x1Fu << MPU_WORD_LOW_MASTER_SHIFT(n))
+/*! @brief MPU masters with read, write and execute rights bit mask. */
+#define MPU_REGION_RWXRIGHTS_MASTER_MASK(n) (0x1Fu << MPU_REGION_RWXRIGHTS_MASTER_SHIFT(n))
 
-/*! @brief MPU low master bit width. */
-#define MPU_WORD_LOW_MASTER_WIDTH 5
+/*! @brief MPU masters with read, write and execute rights bit width. */
+#define MPU_REGION_RWXRIGHTS_MASTER_WIDTH 5
 
-/*! @brief MPU low master priority setting. */
-#define MPU_WORD_LOW_MASTER(n, x) \
-    (((uint32_t)(((uint32_t)(x)) << MPU_WORD_LOW_MASTER_SHIFT(n))) & MPU_WORD_LOW_MASTER_MASK(n))
+/*! @brief MPU masters with read, write and execute rights priority setting. */
+#define MPU_REGION_RWXRIGHTS_MASTER(n, x) \
+    (((uint32_t)(((uint32_t)(x)) << MPU_REGION_RWXRIGHTS_MASTER_SHIFT(n))) & MPU_REGION_RWXRIGHTS_MASTER_MASK(n))
 
-/*! @brief MPU low master process enable bit shift. */
-#define MPU_LOW_MASTER_PE_SHIFT(n) (n * 6 + 5)
+/*! @brief MPU masters with read, write and execute rights process enable bit shift. */
+#define MPU_REGION_RWXRIGHTS_MASTER_PE_SHIFT(n) (n * 6 + MPU_REGION_RWXRIGHTS_MASTER_WIDTH)
 
-/*! @brief MPU low master process enable bit mask. */
-#define MPU_LOW_MASTER_PE_MASK(n) (0x1u << MPU_LOW_MASTER_PE_SHIFT(n))
+/*! @brief MPU masters with read, write and execute rights process enable bit mask. */
+#define MPU_REGION_RWXRIGHTS_MASTER_PE_MASK(n) (0x1u << MPU_REGION_RWXRIGHTS_MASTER_PE_SHIFT(n))
 
-/*! @brief MPU low master process enable width. */
-#define MPU_WORD_MASTER_PE_WIDTH 1
+/*! @brief MPU masters with read, write and execute rights process enable setting. */
+#define MPU_REGION_RWXRIGHTS_MASTER_PE(n, x) \
+    (((uint32_t)(((uint32_t)(x)) << MPU_REGION_RWXRIGHTS_MASTER_PE_SHIFT(n))) & MPU_REGION_RWXRIGHTS_MASTER_PE_MASK(n))
 
-/*! @brief MPU low master process enable setting. */
-#define MPU_WORD_MASTER_PE(n, x) \
-    (((uint32_t)(((uint32_t)(x)) << MPU_LOW_MASTER_PE_SHIFT(n))) & MPU_LOW_MASTER_PE_MASK(n))
+/*! @brief MPU masters with normal read write permission bit shift. */
+#define MPU_REGION_RWRIGHTS_MASTER_SHIFT(n) ((n - FSL_FEATURE_MPU_PRIVILEGED_RIGHTS_MASTER_COUNT) * 2 + 24)
 
-/*! @brief MPU high master bit shift. */
-#define MPU_WORD_HIGH_MASTER_SHIFT(n) (n * 2 + 24)
+/*! @brief MPU masters with normal read write rights bit mask. */
+#define MPU_REGION_RWRIGHTS_MASTER_MASK(n) (0x3u << MPU_REGION_RWRIGHTS_MASTER_SHIFT(n))
 
-/*! @brief MPU high master bit mask. */
-#define MPU_WORD_HIGH_MASTER_MASK(n) (0x03u << MPU_WORD_HIGH_MASTER_SHIFT(n))
+/*! @brief MPU masters with normal read write rights priority setting. */
+#define MPU_REGION_RWRIGHTS_MASTER(n, x) \
+    (((uint32_t)(((uint32_t)(x)) << MPU_REGION_RWRIGHTS_MASTER_SHIFT(n))) & MPU_REGION_RWRIGHTS_MASTER_MASK(n))
 
-/*! @brief MPU high master bit width. */
-#define MPU_WORD_HIGH_MASTER_WIDTH 2
-
-/*! @brief MPU high master priority setting. */
-#define MPU_WORD_HIGH_MASTER(n, x) \
-    (((uint32_t)(((uint32_t)(x)) << MPU_WORD_HIGH_MASTER_SHIFT(n))) & MPU_WORD_HIGH_MASTER_MASK(n))
-
-/*! @brief MPU region number. */
-typedef enum _mpu_region_num
-{
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 0U
-    kMPU_RegionNum00 = 0U, /*!< MPU region number 0. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 1U
-    kMPU_RegionNum01 = 1U, /*!< MPU region number 1. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 2U
-    kMPU_RegionNum02 = 2U, /*!< MPU region number 2. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 3U
-    kMPU_RegionNum03 = 3U, /*!< MPU region number 3. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 4U
-    kMPU_RegionNum04 = 4U, /*!< MPU region number 4. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 5U
-    kMPU_RegionNum05 = 5U, /*!< MPU region number 5. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 6U
-    kMPU_RegionNum06 = 6U, /*!< MPU region number 6. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 7U
-    kMPU_RegionNum07 = 7U, /*!< MPU region number 7. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 8U
-    kMPU_RegionNum08 = 8U, /*!< MPU region number 8. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 9U
-    kMPU_RegionNum09 = 9U, /*!< MPU region number 9. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 10U
-    kMPU_RegionNum10 = 10U, /*!< MPU region number 10. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 11U
-    kMPU_RegionNum11 = 11U, /*!< MPU region number 11. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 12U
-    kMPU_RegionNum12 = 12U, /*!< MPU region number 12. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 13U
-    kMPU_RegionNum13 = 13U, /*!< MPU region number 13. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 14U
-    kMPU_RegionNum14 = 14U, /*!< MPU region number 14. */
-#endif
-#if FSL_FEATURE_MPU_DESCRIPTOR_COUNT > 15U
-    kMPU_RegionNum15 = 15U, /*!< MPU region number 15. */
-#endif
-} mpu_region_num_t;
-
-/*! @brief MPU master number. */
-typedef enum _mpu_master
-{
-#if FSL_FEATURE_MPU_HAS_MASTER0
-    kMPU_Master0 = 0U, /*!< MPU master core. */
-#endif
-#if FSL_FEATURE_MPU_HAS_MASTER1
-    kMPU_Master1 = 1U, /*!< MPU master defined in SoC. */
-#endif
-#if FSL_FEATURE_MPU_HAS_MASTER2
-    kMPU_Master2 = 2U, /*!< MPU master defined in SoC. */
-#endif
-#if FSL_FEATURE_MPU_HAS_MASTER3
-    kMPU_Master3 = 3U, /*!< MPU master defined in SoC. */
-#endif
-#if FSL_FEATURE_MPU_HAS_MASTER4
-    kMPU_Master4 = 4U, /*!< MPU master defined in SoC. */
-#endif
-#if FSL_FEATURE_MPU_HAS_MASTER5
-    kMPU_Master5 = 5U, /*!< MPU master defined in SoC. */
-#endif
-#if FSL_FEATURE_MPU_HAS_MASTER6
-    kMPU_Master6 = 6U, /*!< MPU master defined in SoC. */
-#endif
-#if FSL_FEATURE_MPU_HAS_MASTER7
-    kMPU_Master7 = 7U /*!< MPU master defined in SoC. */
-#endif
-} mpu_master_t;
+/*! @brief the Slave port numbers. */
+#define MPU_SLAVE_PORT_NUM  (4u)
+/*! @brief define the maximum index of master with privileged rights. */
+#define MPU_PRIVILEGED_RIGHTS_MASTER_MAX_INDEX (3)
 
 /*! @brief Describes the number of MPU regions. */
 typedef enum _mpu_region_total_num
@@ -181,11 +97,11 @@ typedef enum _mpu_region_total_num
 /*! @brief MPU slave port number. */
 typedef enum _mpu_slave
 {
-    kMPU_Slave0 = 4U, /*!< MPU slave port 0. */
-    kMPU_Slave1 = 3U, /*!< MPU slave port 1. */
+    kMPU_Slave0 = 0U, /*!< MPU slave port 0. */
+    kMPU_Slave1 = 1U, /*!< MPU slave port 1. */
     kMPU_Slave2 = 2U, /*!< MPU slave port 2. */
-    kMPU_Slave3 = 1U, /*!< MPU slave port 3. */
-    kMPU_Slave4 = 0U  /*!< MPU slave port 4. */
+    kMPU_Slave3 = 3U, /*!< MPU slave port 3. */
+    kMPU_Slave4 = 4U  /*!< MPU slave port 4. */
 } mpu_slave_t;
 
 /*! @brief MPU error access control detail. */
@@ -212,7 +128,7 @@ typedef enum _mpu_err_attributes
     kMPU_DataAccessInSupervisorMode = 3U         /*!< Access data error in supervisor mode. */
 } mpu_err_attributes_t;
 
-/*! @brief MPU access rights in supervisor mode for master port 0 ~ port 3. */
+/*! @brief MPU access rights in supervisor mode for bus master 0 ~ 3. */
 typedef enum _mpu_supervisor_access_rights
 {
     kMPU_SupervisorReadWriteExecute = 0U, /*!< Read write and execute operations are allowed in supervisor mode. */
@@ -221,7 +137,7 @@ typedef enum _mpu_supervisor_access_rights
     kMPU_SupervisorEqualToUsermode = 3U   /*!< Access permission equal to user mode. */
 } mpu_supervisor_access_rights_t;
 
-/*! @brief MPU access rights in user mode for master port 0 ~ port 3. */
+/*! @brief MPU access rights in user mode for bus master 0 ~ 3. */
 typedef enum _mpu_user_access_rights
 {
     kMPU_UserNoAccessRights = 0U,  /*!< No access allowed in user mode.  */
@@ -245,7 +161,7 @@ typedef struct _mpu_hardware_info
 /*! @brief MPU detail error access information. */
 typedef struct _mpu_access_err_info
 {
-    mpu_master_t master;                    /*!< Access error master. */
+    uint32_t master;                        /*!< Access error master. */
     mpu_err_attributes_t attributes;        /*!< Access error attributes. */
     mpu_err_access_type_t accessType;       /*!< Access error type. */
     mpu_err_access_control_t accessControl; /*!< Access error control. */
@@ -255,50 +171,50 @@ typedef struct _mpu_access_err_info
 #endif                               /* FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER */
 } mpu_access_err_info_t;
 
-/*! @brief MPU access rights for low master master port 0 ~ port 3. */
-typedef struct _mpu_low_masters_access_rights
+/*! @brief MPU read/write/execute rights control for bus master 0 ~ 3. */
+typedef struct _mpu_rwxrights_master_access_control
 {
     mpu_supervisor_access_rights_t superAccessRights; /*!< Master access rights in supervisor mode. */
     mpu_user_access_rights_t userAccessRights;        /*!< Master access rights in user mode. */
 #if FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER
     bool processIdentifierEnable; /*!< Enables or disables process identifier. */
 #endif                            /* FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER */
-} mpu_low_masters_access_rights_t;
+} mpu_rwxrights_master_access_control_t;
 
-/*! @brief MPU access rights mode for high master port 4 ~ port 7. */
-typedef struct _mpu_high_masters_access_rights
+/*! @brief MPU read/write access control for bus master 4 ~ 7. */
+typedef struct _mpu_rwrights_master_access_control
 {
     bool writeEnable; /*!< Enables or disables write permission. */
     bool readEnable;  /*!< Enables or disables read permission.  */
-} mpu_high_masters_access_rights_t;
+} mpu_rwrights_master_access_control_t;
 
 /*!
  * @brief MPU region configuration structure.
  *
  * This structure is used to configure the regionNum region.
- * The accessRights1[0] ~ accessRights1[3] are used to configure the four low master
- * numbers: master 0 ~ master 3.   The accessRights2[0] ~ accessRights2[3] are
- * used to configure the four high master numbers: master 4 ~ master 7.
+ * The accessRights1[0] ~ accessRights1[3] are used to configure the bus master
+ * 0 ~ 3 with the privilege rights setting. The accessRights2[0] ~ accessRights2[3]
+ * are used to configure the high master 4 ~ 7 with the normal read write permission.
  * The master port assignment is the chip configuration. Normally, the core is the
  * master 0, debugger is the master 1.
- * Note: MPU assigns a priority scheme where the debugger is treated as the highest
+ * Note that the MPU assigns a priority scheme where the debugger is treated as the highest
  * priority master followed by the core and then all the remaining masters.
  * MPU protection does not allow writes from the core to affect the "regionNum 0" start
  * and end address nor the permissions associated with the debugger. It can only write
- * the permission fields associated with the other masters. This protection guarantee
+ * the permission fields associated with the other masters. This protection guarantees that
  * the debugger always has access to the entire address space and those rights can't
  * be changed by the core or any other bus master. Prepare
- * the region configuration when regionNum is kMPU_RegionNum00.
+ * the region configuration when regionNum is 0.
  */
 typedef struct _mpu_region_config
 {
-    mpu_region_num_t regionNum; /*!< MPU region number. */
+    uint32_t regionNum;    /*!< MPU region number, range form 0 ~ FSL_FEATURE_MPU_DESCRIPTOR_COUNT - 1. */
     uint32_t startAddress; /*!< Memory region start address. Note: bit0 ~ bit4 always be marked as 0 by MPU. The actual
                               start address is 0-modulo-32 byte address.  */
     uint32_t endAddress; /*!< Memory region end address. Note: bit0 ~ bit4 always be marked as 1 by MPU. The actual end
-                            address is 31-modulo-32 byte address. */
-    mpu_low_masters_access_rights_t accessRights1[4];  /*!< Low masters access permission.  */
-    mpu_high_masters_access_rights_t accessRights2[4]; /*!< High masters access permission. */
+                          address is 31-modulo-32 byte address. */
+    mpu_rwxrights_master_access_control_t accessRights1[4]; /*!< Masters with read, write and execute rights setting. */
+    mpu_rwrights_master_access_control_t accessRights2[4];  /*!< Masters with normal read write rights setting. */
 #if FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER
     uint8_t processIdentifier; /*!< Process identifier used when "processIdentifierEnable" set with true. */
     uint8_t
@@ -313,8 +229,8 @@ typedef struct _mpu_region_config
  */
 typedef struct _mpu_config
 {
-    mpu_region_config_t regionConfig; /*!< region access permission. */
-    struct _mpu_config *next;         /*!< pointer to the next structure. */
+    mpu_region_config_t regionConfig; /*!< Region access permission. */
+    struct _mpu_config *next;         /*!< Pointer to the next structure. */
 } mpu_config_t;
 
 /*******************************************************************************
@@ -385,7 +301,7 @@ static inline void MPU_Enable(MPU_Type *base, bool enable)
  * @param number   MPU region number.
  * @param enable   True enable the special region MPU, false disable the special region MPU.
  */
-static inline void MPU_RegionEnable(MPU_Type *base, mpu_region_num_t number, bool enable)
+static inline void MPU_RegionEnable(MPU_Type *base, uint32_t number, bool enable)
 {
     if (enable)
     {
@@ -409,7 +325,7 @@ void MPU_GetHardwareInfo(MPU_Type *base, mpu_hardware_info_t *hardwareInform);
 /*!
  * @brief Sets the MPU region.
  *
- * Note: Due to the MPU protection, the kMPU_RegionNum00 does not allow writes from the
+ * Note: Due to the MPU protection, the region number 0 does not allow writes from
  * core to affect the start and end address nor the permissions associated with
  * the debugger. It can only write the permission fields associated
  * with the other masters.
@@ -425,45 +341,61 @@ void MPU_SetRegionConfig(MPU_Type *base, const mpu_region_config_t *regionConfig
  * Memory region start address. Note: bit0 ~ bit4 is always marked as 0 by MPU.
  * The actual start address by MPU is 0-modulo-32 byte address.
  * Memory region end address. Note: bit0 ~ bit4 always be marked as 1 by MPU.
- * The actual end address used by MPU is 31-modulo-32 byte address.
+ * The end address used by the MPU is 31-modulo-32 byte address.
  * Note: Due to the MPU protection, the startAddr and endAddr can't be
- * changed by the core when regionNum is "kMPU_RegionNum00".
+ * changed by the core when regionNum is 0.
  *
  * @param base          MPU peripheral base address.
- * @param regionNum     MPU region number.
+ * @param regionNum     MPU region number. The range is from 0 to
+ * FSL_FEATURE_MPU_DESCRIPTOR_COUNT - 1.
  * @param startAddr     Region start address.
  * @param endAddr       Region end address.
  */
-void MPU_SetRegionAddr(MPU_Type *base, mpu_region_num_t regionNum, uint32_t startAddr, uint32_t endAddr);
+void MPU_SetRegionAddr(MPU_Type *base, uint32_t regionNum, uint32_t startAddr, uint32_t endAddr);
 
 /*!
- * @brief Sets the MPU region access rights for low master port 0 ~ port 3.
- * This can be used to change the region access rights for any master port for any region.
+ * @brief Sets the MPU region access rights for masters with read, write, and execute rights.
+ * The MPU access rights depend on two board classifications of bus masters.
+ * The privilege rights masters and the normal rights masters.
+ * The privilege rights masters have the read, write, and execute access rights.
+ * Except the normal read and write rights, the execute rights are also
+ * allowed for these masters. The privilege rights masters normally range from
+ * bus masters 0 - 3. However, the maximum master number is device-specific.
+ * See the "MPU_PRIVILEGED_RIGHTS_MASTER_MAX_INDEX".
+ * The normal rights masters access rights control see
+ * "MPU_SetRegionRwMasterAccessRights()".
  *
  * @param base          MPU peripheral base address.
- * @param regionNum     MPU region number.
- * @param masterNum     MPU master number. Should range from kMPU_Master0 ~ kMPU_Master3.
- * @param accessRights  The pointer to the MPU access rights configuration. See "mpu_low_masters_access_rights_t".
+ * @param regionNum     MPU region number. Should range from 0 to
+ * FSL_FEATURE_MPU_DESCRIPTOR_COUNT - 1.
+ * @param masterNum     MPU bus master number. Should range from 0 to
+ * MPU_PRIVILEGED_RIGHTS_MASTER_MAX_INDEX.
+ * @param accessRights  The pointer to the MPU access rights configuration. See "mpu_rwxrights_master_access_control_t".
  */
-void MPU_SetRegionLowMasterAccessRights(MPU_Type *base,
-                                        mpu_region_num_t regionNum,
-                                        mpu_master_t masterNum,
-                                        const mpu_low_masters_access_rights_t *accessRights);
-
+void MPU_SetRegionRwxMasterAccessRights(MPU_Type *base,
+                                        uint32_t regionNum,
+                                        uint32_t masterNum,
+                                        const mpu_rwxrights_master_access_control_t *accessRights);
+#if FSL_FEATURE_MPU_HAS_MASTER_4_7
 /*!
- * @brief Sets the MPU region access rights for high master port 4 ~ port 7.
- * This can be used to change the region access rights for any master port for any region.
+ * @brief Sets the MPU region access rights for masters with read and write rights.
+ * The MPU access rights depend on two board classifications of bus masters.
+ * The privilege rights masters and the normal rights masters.
+ * The normal rights masters only have the read and write access permissions.
+ * The privilege rights access control see "MPU_SetRegionRwxMasterAccessRights".
  *
  * @param base          MPU peripheral base address.
- * @param regionNum     MPU region number.
- * @param masterNum     MPU master number. Should range from kMPU_Master4 ~ kMPU_Master7.
- * @param accessRights  The pointer to the MPU access rights configuration. See "mpu_high_masters_access_rights_t".
+ * @param regionNum     MPU region number. The range is from 0 to
+ * FSL_FEATURE_MPU_DESCRIPTOR_COUNT - 1.
+ * @param masterNum     MPU bus master number. Should range from FSL_FEATURE_MPU_PRIVILEGED_RIGHTS_MASTER_COUNT
+ * to ~ FSL_FEATURE_MPU_MASTER_MAX_INDEX.
+ * @param accessRights  The pointer to the MPU access rights configuration. See "mpu_rwrights_master_access_control_t".
  */
-void MPU_SetRegionHighMasterAccessRights(MPU_Type *base,
-                                         mpu_region_num_t regionNum,
-                                         mpu_master_t masterNum,
-                                         const mpu_high_masters_access_rights_t *accessRights);
-
+void MPU_SetRegionRwMasterAccessRights(MPU_Type *base,
+                                       uint32_t regionNum,
+                                       uint32_t masterNum,
+                                       const mpu_rwrights_master_access_control_t *accessRights);
+#endif  /* FSL_FEATURE_MPU_HAS_MASTER_4_7 */
 /*!
  * @brief Gets the numbers of slave ports where errors occur.
  *

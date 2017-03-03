@@ -33,11 +33,10 @@
 #include "fsl_common.h"
 
 /*!
- * @addtogroup ewm_driver
+ * @addtogroup ewm
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -49,14 +48,14 @@
 #define FSL_EWM_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
-/*! @brief Describes ewm clock source. */
+/*! @brief Describes EWM clock source. */
 #if defined(FSL_FEATURE_EWM_HAS_CLOCK_SELECT) && FSL_FEATURE_EWM_HAS_CLOCK_SELECT
 typedef enum _ewm_lpo_clock_source
 {
-    kEWM_LpoClockSource0 = 0U, /*!< ewm clock sourced from lpo_clk[0]*/
-    kEWM_LpoClockSource1 = 1U, /*!< ewm clock sourced from lpo_clk[1]*/
-    kEWM_LpoClockSource2 = 2U, /*!< ewm clock sourced from lpo_clk[2]*/
-    kEWM_LpoClockSource3 = 3U, /*!< ewm clock sourced from lpo_clk[3]*/
+    kEWM_LpoClockSource0 = 0U, /*!< EWM clock sourced from lpo_clk[0]*/
+    kEWM_LpoClockSource1 = 1U, /*!< EWM clock sourced from lpo_clk[1]*/
+    kEWM_LpoClockSource2 = 2U, /*!< EWM clock sourced from lpo_clk[2]*/
+    kEWM_LpoClockSource3 = 3U, /*!< EWM clock sourced from lpo_clk[3]*/
 } ewm_lpo_clock_source_t;
 #endif /* FSL_FEATURE_EWM_HAS_CLOCK_SELECT */
 
@@ -77,18 +76,18 @@ typedef struct _ewm_config
 #if defined(FSL_FEATURE_EWM_HAS_PRESCALER) && FSL_FEATURE_EWM_HAS_PRESCALER
     uint8_t prescaler;        /*!< Clock prescaler value */
 #endif                        /* FSL_FEATURE_EWM_HAS_PRESCALER */
-    uint8_t compareLowValue;  /*!< Compare low register value */
-    uint8_t compareHighValue; /*!< Compare high register value */
+    uint8_t compareLowValue;  /*!< Compare low-register value */
+    uint8_t compareHighValue; /*!< Compare high-register value */
 } ewm_config_t;
 
 /*!
- * @brief EWM interrupt configuration structure, default settings all disabled.
+ * @brief EWM interrupt configuration structure with default settings all disabled.
  *
- * This structure contains the settings for all of the EWM interrupt configurations.
+ * This structure contains the settings for all of EWM interrupt configurations.
  */
 enum _ewm_interrupt_enable_t
 {
-    kEWM_InterruptEnable = EWM_CTRL_INTEN_MASK, /*!< Enable EWM to generate an interrupt*/
+    kEWM_InterruptEnable = EWM_CTRL_INTEN_MASK, /*!< Enable the EWM to generate an interrupt*/
 };
 
 /*!
@@ -98,7 +97,7 @@ enum _ewm_interrupt_enable_t
  */
 enum _ewm_status_flags_t
 {
-    kEWM_RunningFlag = EWM_CTRL_EWMEN_MASK, /*!< Running flag, set when ewm is enabled*/
+    kEWM_RunningFlag = EWM_CTRL_EWMEN_MASK, /*!< Running flag, set when EWM is enabled*/
 };
 
 /*******************************************************************************
@@ -110,7 +109,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*!
- * @name EWM Initialization and De-initialization
+ * @name EWM initialization and de-initialization
  * @{
  */
 
@@ -119,10 +118,10 @@ extern "C" {
  *
  * This function is used to initialize the EWM. After calling, the EWM
  * runs immediately according to the configuration.
- * Note that except for interrupt enable control bit, other control bits and registers are write once after a
+ * Note that, except for the interrupt enable control bit, other control bits and registers are write once after a
  * CPU reset. Modifying them more than once generates a bus transfer error.
  *
- * Example:
+ * This is an example.
  * @code
  *   ewm_config_t config;
  *   EWM_GetDefaultConfig(&config);
@@ -131,7 +130,7 @@ extern "C" {
  * @endcode
  *
  * @param base EWM peripheral base address
- * @param config The configuration of EWM
+ * @param config The configuration of the EWM
 */
 void EWM_Init(EWM_Type *base, const ewm_config_t *config);
 
@@ -147,8 +146,8 @@ void EWM_Deinit(EWM_Type *base);
 /*!
  * @brief Initializes the EWM configuration structure.
  *
- * This function initializes the EWM configure structure to default values. The default
- * values are:
+ * This function initializes the EWM configuration structure to default values. The default
+ * values are as follows.
  * @code
  *   ewmConfig->enableEwm = true;
  *   ewmConfig->enableEwmInput = false;
@@ -160,7 +159,7 @@ void EWM_Deinit(EWM_Type *base);
  *   ewmConfig->compareHighValue = 0xFEU;
  * @endcode
  *
- * @param config Pointer to EWM configuration structure.
+ * @param config Pointer to the EWM configuration structure.
  * @see ewm_config_t
  */
 void EWM_GetDefaultConfig(ewm_config_t *config);
@@ -179,7 +178,7 @@ void EWM_GetDefaultConfig(ewm_config_t *config);
  *
  * @param base EWM peripheral base address
  * @param mask The interrupts to enable
- *        The parameter can be combination of the following source if defined:
+ *        The parameter can be combination of the following source if defined
  *        @arg kEWM_InterruptEnable
  */
 static inline void EWM_EnableInterrupts(EWM_Type *base, uint32_t mask)
@@ -194,7 +193,7 @@ static inline void EWM_EnableInterrupts(EWM_Type *base, uint32_t mask)
  *
  * @param base EWM peripheral base address
  * @param mask The interrupts to disable
- *        The parameter can be combination of the following source if defined:
+ *        The parameter can be combination of the following source if defined
  *        @arg kEWM_InterruptEnable
  */
 static inline void EWM_DisableInterrupts(EWM_Type *base, uint32_t mask)
@@ -203,19 +202,19 @@ static inline void EWM_DisableInterrupts(EWM_Type *base, uint32_t mask)
 }
 
 /*!
- * @brief Gets EWM all status flags.
+ * @brief Gets all status flags.
  *
  * This function gets all status flags.
  *
- * Example for getting Running Flag:
+ * This is an example for getting the running flag.
  * @code
  *   uint32_t status;
  *   status = EWM_GetStatusFlags(ewm_base) & kEWM_RunningFlag;
  * @endcode
  * @param base        EWM peripheral base address
  * @return            State of the status flag: asserted (true) or not-asserted (false).@see _ewm_status_flags_t
- *                    - true: related status flag has been set.
- *                    - false: related status flag is not set.
+ *                    - True: a related status flag has been set.
+ *                    - False: a related status flag is not set.
  */
 static inline uint32_t EWM_GetStatusFlags(EWM_Type *base)
 {
@@ -223,9 +222,9 @@ static inline uint32_t EWM_GetStatusFlags(EWM_Type *base)
 }
 
 /*!
- * @brief Service EWM.
+ * @brief Services the EWM.
  *
- * This function reset EWM counter to zero.
+ * This function resets the EWM counter to zero.
  *
  * @param base EWM peripheral base address
 */

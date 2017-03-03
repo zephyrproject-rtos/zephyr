@@ -48,8 +48,10 @@ static uint32_t PIT_GetInstance(PIT_Type *base);
 /*! @brief Pointers to PIT bases for each instance. */
 static PIT_Type *const s_pitBases[] = PIT_BASE_PTRS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to PIT clocks for each instance. */
 static const clock_ip_name_t s_pitClocks[] = PIT_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Code
@@ -76,8 +78,10 @@ void PIT_Init(PIT_Type *base, const pit_config_t *config)
 {
     assert(config);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate the PIT clock*/
     CLOCK_EnableClock(s_pitClocks[PIT_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Enable PIT timers */
     base->MCR &= ~PIT_MCR_MDIS_MASK;
@@ -98,8 +102,10 @@ void PIT_Deinit(PIT_Type *base)
     /* Disable PIT timers */
     base->MCR |= PIT_MCR_MDIS_MASK;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the PIT clock*/
     CLOCK_DisableClock(s_pitClocks[PIT_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 #if defined(FSL_FEATURE_PIT_HAS_LIFETIME_TIMER) && FSL_FEATURE_PIT_HAS_LIFETIME_TIMER

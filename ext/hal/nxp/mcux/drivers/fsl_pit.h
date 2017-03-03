@@ -33,11 +33,10 @@
 #include "fsl_common.h"
 
 /*!
- * @addtogroup pit_driver
+ * @addtogroup pit
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -73,13 +72,13 @@ typedef enum _pit_status_flags
 } pit_status_flags_t;
 
 /*!
- * @brief PIT config structure
+ * @brief PIT configuration structure
  *
  * This structure holds the configuration settings for the PIT peripheral. To initialize this
  * structure to reasonable defaults, call the PIT_GetDefaultConfig() function and pass a
  * pointer to your config structure instance.
  *
- * The config struct can be made const so it resides in flash
+ * The configuration structure can be made constant so it resides in flash.
  */
 typedef struct _pit_config
 {
@@ -100,30 +99,30 @@ extern "C" {
  */
 
 /*!
- * @brief Ungates the PIT clock, enables the PIT module and configures the peripheral for basic operation.
+ * @brief Ungates the PIT clock, enables the PIT module, and configures the peripheral for basic operations.
  *
  * @note This API should be called at the beginning of the application using the PIT driver.
  *
  * @param base   PIT peripheral base address
- * @param config Pointer to user's PIT config structure
+ * @param config Pointer to the user's PIT config structure
  */
 void PIT_Init(PIT_Type *base, const pit_config_t *config);
 
 /*!
- * @brief Gate the PIT clock and disable the PIT module
+ * @brief Gates the PIT clock and disables the PIT module.
  *
  * @param base PIT peripheral base address
  */
 void PIT_Deinit(PIT_Type *base);
 
 /*!
- * @brief Fill in the PIT config struct with the default settings
+ * @brief Fills in the PIT configuration structure with the default settings.
  *
- * The default values are:
+ * The default values are as follows.
  * @code
  *     config->enableRunInDebug = false;
  * @endcode
- * @param config Pointer to user's PIT config structure.
+ * @param config Pointer to the onfiguration structure.
  */
 static inline void PIT_GetDefaultConfig(pit_config_t *config)
 {
@@ -140,9 +139,9 @@ static inline void PIT_GetDefaultConfig(pit_config_t *config)
  *
  * When a timer has a chain mode enabled, it only counts after the previous
  * timer has expired. If the timer n-1 has counted down to 0, counter n
- * decrements the value by one. Each timer is 32-bits, this allows the developers
+ * decrements the value by one. Each timer is 32-bits, which allows the developers
  * to chain timers together and form a longer timer (64-bits and larger). The first timer
- * (timer 0) cannot be chained to any other timer.
+ * (timer 0) can't be chained to any other timer.
  *
  * @param base    PIT peripheral base address
  * @param channel Timer channel number which is chained with the previous timer
@@ -219,7 +218,7 @@ static inline uint32_t PIT_GetEnabledInterrupts(PIT_Type *base, pit_chnl_t chann
  */
 
 /*!
- * @brief Gets the PIT status flags
+ * @brief Gets the PIT status flags.
  *
  * @param base    PIT peripheral base address
  * @param channel Timer channel number
@@ -256,11 +255,11 @@ static inline void PIT_ClearStatusFlags(PIT_Type *base, pit_chnl_t channel, uint
  * @brief Sets the timer period in units of count.
  *
  * Timers begin counting from the value set by this function until it reaches 0,
- * then it will generate an interrupt and load this regiter value again.
- * Writing a new value to this register will not restart the timer; instead the value
- * will be loaded after the timer expires.
+ * then it generates an interrupt and load this register value again.
+ * Writing a new value to this register does not restart the timer. Instead, the value
+ * is loaded after the timer expires.
  *
- * @note User can call the utility macros provided in fsl_common.h to convert to ticks
+ * @note Users can call the utility macros provided in fsl_common.h to convert to ticks.
  *
  * @param base    PIT peripheral base address
  * @param channel Timer channel number
@@ -277,7 +276,7 @@ static inline void PIT_SetTimerPeriod(PIT_Type *base, pit_chnl_t channel, uint32
  * This function returns the real-time timer counting value, in a range from 0 to a
  * timer period.
  *
- * @note User can call the utility macros provided in fsl_common.h to convert ticks to usec or msec
+ * @note Users can call the utility macros provided in fsl_common.h to convert ticks to usec or msec.
  *
  * @param base    PIT peripheral base address
  * @param channel Timer channel number

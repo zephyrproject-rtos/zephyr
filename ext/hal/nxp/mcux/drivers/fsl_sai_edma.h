@@ -38,8 +38,6 @@
  * @{
  */
 
-/*! @file */
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -53,6 +51,7 @@ typedef void (*sai_edma_callback_t)(I2S_Type *base, sai_edma_handle_t *handle, s
 struct _sai_edma_handle
 {
     edma_handle_t *dmaHandle;                     /*!< DMA handler for SAI send */
+    uint8_t nbytes;                               /*!< eDMA minor byte transfer count initially configured. */
     uint8_t bytesPerFrame;                        /*!< Bytes in a frame */
     uint8_t channel;                              /*!< Which data channel */
     uint8_t count;                                /*!< The transfer data count in a DMA request */

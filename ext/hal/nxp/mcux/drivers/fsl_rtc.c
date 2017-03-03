@@ -74,6 +74,8 @@ static void RTC_ConvertSecondsToDatetime(uint32_t seconds, rtc_datetime_t *datet
  ******************************************************************************/
 static bool RTC_CheckDatetimeFormat(const rtc_datetime_t *datetime)
 {
+    assert(datetime);
+
     /* Table of days in a month for a non leap year. First entry in the table is not used,
      * valid months start from 1
      */
@@ -88,13 +90,13 @@ static bool RTC_CheckDatetimeFormat(const rtc_datetime_t *datetime)
     }
 
     /* Adjust the days in February for a leap year */
-    if (!(datetime->year & 3U))
+    if ((((datetime->year & 3U) == 0) && (datetime->year % 100 != 0)) || (datetime->year % 400 == 0))
     {
         daysPerMonth[2] = 29U;
     }
 
     /* Check the validity of the day */
-    if (datetime->day > daysPerMonth[datetime->month])
+    if ((datetime->day > daysPerMonth[datetime->month]) || (datetime->day < 1U))
     {
         return false;
     }
@@ -104,6 +106,9 @@ static bool RTC_CheckDatetimeFormat(const rtc_datetime_t *datetime)
 
 static uint32_t RTC_ConvertDatetimeToSeconds(const rtc_datetime_t *datetime)
 {
+    assert(datetime);
+
+    /* Number of days from begin of the non Leap-year*/
     /* Number of days from begin of the non Leap-year*/
     uint16_t monthDays[] = {0U, 0U, 31U, 59U, 90U, 120U, 151U, 181U, 212U, 243U, 273U, 304U, 334U};
     uint32_t seconds;
@@ -131,6 +136,8 @@ static uint32_t RTC_ConvertDatetimeToSeconds(const rtc_datetime_t *datetime)
 
 static void RTC_ConvertSecondsToDatetime(uint32_t seconds, rtc_datetime_t *datetime)
 {
+    assert(datetime);
+
     uint32_t x;
     uint32_t secondsRemaining, days;
     uint16_t daysInYear;
@@ -204,7 +211,9 @@ void RTC_Init(RTC_Type *base, const rtc_config_t *config)
 
     uint32_t reg;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_EnableClock(kCLOCK_Rtc0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Issue a software reset if timer is invalid */
     if (RTC_GetStatusFlags(RTC) & kRTC_TimeInvalidFlag)
@@ -340,6 +349,8 @@ void RTC_ClearStatusFlags(RTC_Type *base, uint32_t mask)
 
 void RTC_GetMonotonicCounter(RTC_Type *base, uint64_t *counter)
 {
+    assert(counter);
+
     *counter = (((uint64_t)base->MCHR << 32) | ((uint64_t)base->MCLR));
 }
 

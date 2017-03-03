@@ -34,11 +34,10 @@
 
 #if defined(FSL_FEATURE_SOC_RNG_COUNT) && FSL_FEATURE_SOC_RNG_COUNT
 /*!
- * @addtogroup rnga_driver
+ * @addtogroup rnga
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions

@@ -46,8 +46,10 @@ static uint32_t ADC16_GetInstance(ADC_Type *base);
 /*! @brief Pointers to ADC16 bases for each instance. */
 static ADC_Type *const s_adc16Bases[] = ADC_BASE_PTRS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to ADC16 clocks for each instance. */
 static const clock_ip_name_t s_adc16Clocks[] = ADC16_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Code
@@ -76,8 +78,10 @@ void ADC16_Init(ADC_Type *base, const adc16_config_t *config)
 
     uint32_t tmp32;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock. */
     CLOCK_EnableClock(s_adc16Clocks[ADC16_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* ADCx_CFG1. */
     tmp32 = ADC_CFG1_ADICLK(config->clockSource) | ADC_CFG1_MODE(config->resolution);
@@ -126,8 +130,10 @@ void ADC16_Init(ADC_Type *base, const adc16_config_t *config)
 
 void ADC16_Deinit(ADC_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable the clock. */
     CLOCK_DisableClock(s_adc16Clocks[ADC16_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void ADC16_GetDefaultConfig(adc16_config_t *config)

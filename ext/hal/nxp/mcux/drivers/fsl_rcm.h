@@ -35,7 +35,6 @@
 /*! @addtogroup rcm */
 /*! @{*/
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -43,8 +42,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief RCM driver version 2.0.0. */
-#define FSL_RCM_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief RCM driver version 2.0.1. */
+#define FSL_RCM_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
 /*!
@@ -57,7 +56,7 @@ typedef enum _rcm_reset_source
 #if (defined(FSL_FEATURE_RCM_HAS_WAKEUP) && FSL_FEATURE_RCM_HAS_WAKEUP)
     kRCM_SourceWakeup = RCM_SRS_WAKEUP_MASK, /*!< Low-leakage wakeup reset */
 #endif
-    kRCM_SourceLvd = RCM_SRS_LVD_MASK, /*!< low voltage detect reset */
+    kRCM_SourceLvd = RCM_SRS_LVD_MASK, /*!< Low-voltage detect reset */
 #if (defined(FSL_FEATURE_RCM_HAS_LOC) && FSL_FEATURE_RCM_HAS_LOC)
     kRCM_SourceLoc = RCM_SRS_LOC_MASK, /*!< Loss of clock reset */
 #endif                                 /* FSL_FEATURE_RCM_HAS_LOC */
@@ -85,7 +84,7 @@ typedef enum _rcm_reset_source
 #if (defined(FSL_FEATURE_RCM_HAS_WAKEUP) && FSL_FEATURE_RCM_HAS_WAKEUP)
     kRCM_SourceWakeup = RCM_SRS0_WAKEUP_MASK, /*!< Low-leakage wakeup reset */
 #endif
-    kRCM_SourceLvd = RCM_SRS0_LVD_MASK, /*!< low voltage detect reset */
+    kRCM_SourceLvd = RCM_SRS0_LVD_MASK, /*!< Low-voltage detect reset */
 #if (defined(FSL_FEATURE_RCM_HAS_LOC) && FSL_FEATURE_RCM_HAS_LOC)
     kRCM_SourceLoc = RCM_SRS0_LOC_MASK,   /*!< Loss of clock reset */
 #endif /* FSL_FEATURE_RCM_HAS_LOC */
@@ -99,7 +98,7 @@ typedef enum _rcm_reset_source
     kRCM_SourceJtag = RCM_SRS1_JTAG_MASK << 8U,     /*!< JTAG generated reset */
 #endif /* FSL_FEATURE_RCM_HAS_JTAG */
     kRCM_SourceLockup = RCM_SRS1_LOCKUP_MASK << 8U, /*!< Core lock up reset */
-    kRCM_SourceSw = RCM_SRS1_SW_MASK, /*!< Software reset */
+    kRCM_SourceSw = RCM_SRS1_SW_MASK << 8U, /*!< Software reset */
 #if (defined(FSL_FEATURE_RCM_HAS_MDM_AP) && FSL_FEATURE_RCM_HAS_MDM_AP)
     kRCM_SourceMdmap = RCM_SRS1_MDM_AP_MASK << 8U,    /*!< MDM-AP system reset */
 #endif /* FSL_FEATURE_RCM_HAS_MDM_AP */
@@ -112,7 +111,7 @@ typedef enum _rcm_reset_source
 } rcm_reset_source_t;
 
 /*!
- * @brief Reset pin filter select in Run and Wait modes
+ * @brief Reset pin filter select in Run and Wait modes.
  */
 typedef enum _rcm_run_wait_filter_mode
 {
@@ -136,7 +135,7 @@ typedef enum _rcm_boot_rom_config
 
 #if (defined(FSL_FEATURE_RCM_HAS_SRIE) && FSL_FEATURE_RCM_HAS_SRIE)
 /*!
- * @brief Max delay time from interrupt asserts to system reset.
+ * @brief Maximum delay time from interrupt asserts to system reset.
  */
 typedef enum _rcm_reset_delay
 {
@@ -187,7 +186,7 @@ typedef struct _rcm_version_id
 #endif
 
 /*!
- * @brief Reset pin filter configuration
+ * @brief Reset pin filter configuration.
  */
 typedef struct _rcm_reset_pin_filter_config
 {
@@ -214,7 +213,7 @@ extern "C" {
  * the minor version number, and the feature specification number.
  *
  * @param base RCM peripheral base address.
- * @param versionId     Pointer to version ID structure.
+ * @param versionId     Pointer to the version ID structure.
  */
 static inline void RCM_GetVersionId(RCM_Type *base, rcm_version_id_t *versionId)
 {
@@ -229,7 +228,7 @@ static inline void RCM_GetVersionId(RCM_Type *base, rcm_version_id_t *versionId)
  * This function gets the RCM parameter that indicates whether the corresponding reset source is implemented.
  * Use source masks defined in the rcm_reset_source_t to get the desired source status.
  *
- * Example:
+ * This is an example.
    @code
    uint32_t status;
 
@@ -252,7 +251,7 @@ static inline uint32_t RCM_GetResetSourceImplementedStatus(RCM_Type *base)
  * This function gets the current reset source status. Use source masks
  * defined in the rcm_reset_source_t to get the desired source status.
  *
- * Example:
+ * This is an example.
    @code
    uint32_t resetStatus;
 
@@ -283,9 +282,9 @@ static inline uint32_t RCM_GetPreviousResetSources(RCM_Type *base)
  * @brief Gets the sticky reset source status.
  *
  * This function gets the current reset source status that has not been cleared
- * by software for some specific source.
+ * by software for a specific source.
  *
- * Example:
+ * This is an example.
    @code
    uint32_t resetStatus;
 
@@ -316,7 +315,7 @@ static inline uint32_t RCM_GetStickyResetSources(RCM_Type *base)
  *
  * This function clears the sticky system reset flags indicated by source masks.
  *
- * Example:
+ * This is an example.
    @code
    // Clears multiple reset sources.
    RCM_ClearStickyResetSources(kRCM_SourceWdog | kRCM_SourcePin);
@@ -403,7 +402,7 @@ void RCM_SetForceBootRomSource(RCM_Type *base, rcm_boot_rom_config_t config);
 /*!
  * @brief Sets the system reset interrupt configuration.
  *
- * For graceful shutdown, the RCM supports delaying the assertion of the system
+ * For a graceful shut down, the RCM supports delaying the assertion of the system
  * reset for a period of time when the reset interrupt is generated. This function
  * can be used to enable the interrupt and the delay period. The interrupts
  * are passed in as bit mask. See rcm_int_t for details. For example, to

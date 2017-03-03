@@ -38,7 +38,6 @@
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -67,32 +66,32 @@ enum _pdb_status_flags
 enum _pdb_adc_pretrigger_flags
 {
     /* PDB PreTrigger channel match flags. */
-    kPDB_ADCPreTriggerChannel0Flag = PDB_S_CF(1U << 0), /*!< Pre-Trigger 0 flag. */
-    kPDB_ADCPreTriggerChannel1Flag = PDB_S_CF(1U << 1), /*!< Pre-Trigger 1 flag. */
-#if (PDB_DLY_COUNT > 2)
-    kPDB_ADCPreTriggerChannel2Flag = PDB_S_CF(1U << 2), /*!< Pre-Trigger 2 flag. */
-    kPDB_ADCPreTriggerChannel3Flag = PDB_S_CF(1U << 3), /*!< Pre-Trigger 3 flag. */
-#endif                                                  /* PDB_DLY_COUNT > 2 */
-#if (PDB_DLY_COUNT > 4)
-    kPDB_ADCPreTriggerChannel4Flag = PDB_S_CF(1U << 4), /*!< Pre-Trigger 4 flag. */
-    kPDB_ADCPreTriggerChannel5Flag = PDB_S_CF(1U << 5), /*!< Pre-Trigger 5 flag. */
-    kPDB_ADCPreTriggerChannel6Flag = PDB_S_CF(1U << 6), /*!< Pre-Trigger 6 flag. */
-    kPDB_ADCPreTriggerChannel7Flag = PDB_S_CF(1U << 7), /*!< Pre-Trigger 7 flag. */
-#endif                                                  /* PDB_DLY_COUNT > 4 */
+    kPDB_ADCPreTriggerChannel0Flag = PDB_S_CF(1U << 0), /*!< Pre-trigger 0 flag. */
+    kPDB_ADCPreTriggerChannel1Flag = PDB_S_CF(1U << 1), /*!< Pre-trigger 1 flag. */
+#if (PDB_DLY_COUNT2 > 2)
+    kPDB_ADCPreTriggerChannel2Flag = PDB_S_CF(1U << 2), /*!< Pre-trigger 2 flag. */
+    kPDB_ADCPreTriggerChannel3Flag = PDB_S_CF(1U << 3), /*!< Pre-trigger 3 flag. */
+#endif                                                  /* PDB_DLY_COUNT2 > 2 */
+#if (PDB_DLY_COUNT2 > 4)
+    kPDB_ADCPreTriggerChannel4Flag = PDB_S_CF(1U << 4), /*!< Pre-trigger 4 flag. */
+    kPDB_ADCPreTriggerChannel5Flag = PDB_S_CF(1U << 5), /*!< Pre-trigger 5 flag. */
+    kPDB_ADCPreTriggerChannel6Flag = PDB_S_CF(1U << 6), /*!< Pre-trigger 6 flag. */
+    kPDB_ADCPreTriggerChannel7Flag = PDB_S_CF(1U << 7), /*!< Pre-trigger 7 flag. */
+#endif                                                  /* PDB_DLY_COUNT2 > 4 */
 
     /* PDB PreTrigger channel error flags. */
-    kPDB_ADCPreTriggerChannel0ErrorFlag = PDB_S_ERR(1U << 0), /*!< Pre-Trigger 0 Error. */
-    kPDB_ADCPreTriggerChannel1ErrorFlag = PDB_S_ERR(1U << 1), /*!< Pre-Trigger 1 Error. */
-#if (PDB_DLY_COUNT > 2)
-    kPDB_ADCPreTriggerChannel2ErrorFlag = PDB_S_ERR(1U << 2), /*!< Pre-Trigger 2 Error. */
-    kPDB_ADCPreTriggerChannel3ErrorFlag = PDB_S_ERR(1U << 3), /*!< Pre-Trigger 3 Error. */
-#endif                                                        /* PDB_DLY_COUNT > 2 */
-#if (PDB_DLY_COUNT > 4)
-    kPDB_ADCPreTriggerChannel4ErrorFlag = PDB_S_ERR(1U << 4), /*!< Pre-Trigger 4 Error. */
-    kPDB_ADCPreTriggerChannel5ErrorFlag = PDB_S_ERR(1U << 5), /*!< Pre-Trigger 5 Error. */
-    kPDB_ADCPreTriggerChannel6ErrorFlag = PDB_S_ERR(1U << 6), /*!< Pre-Trigger 6 Error. */
-    kPDB_ADCPreTriggerChannel7ErrorFlag = PDB_S_ERR(1U << 7), /*!< Pre-Trigger 7 Error. */
-#endif                                                        /* PDB_DLY_COUNT > 4 */
+    kPDB_ADCPreTriggerChannel0ErrorFlag = PDB_S_ERR(1U << 0), /*!< Pre-trigger 0 Error. */
+    kPDB_ADCPreTriggerChannel1ErrorFlag = PDB_S_ERR(1U << 1), /*!< Pre-trigger 1 Error. */
+#if (PDB_DLY_COUNT2 > 2)
+    kPDB_ADCPreTriggerChannel2ErrorFlag = PDB_S_ERR(1U << 2), /*!< Pre-trigger 2 Error. */
+    kPDB_ADCPreTriggerChannel3ErrorFlag = PDB_S_ERR(1U << 3), /*!< Pre-trigger 3 Error. */
+#endif                                                        /* PDB_DLY_COUNT2 > 2 */
+#if (PDB_DLY_COUNT2 > 4)
+    kPDB_ADCPreTriggerChannel4ErrorFlag = PDB_S_ERR(1U << 4), /*!< Pre-trigger 4 Error. */
+    kPDB_ADCPreTriggerChannel5ErrorFlag = PDB_S_ERR(1U << 5), /*!< Pre-trigger 5 Error. */
+    kPDB_ADCPreTriggerChannel6ErrorFlag = PDB_S_ERR(1U << 6), /*!< Pre-trigger 6 Error. */
+    kPDB_ADCPreTriggerChannel7ErrorFlag = PDB_S_ERR(1U << 7), /*!< Pre-trigger 7 Error. */
+#endif                                                        /* PDB_DLY_COUNT2 > 4 */
 };
 
 /*!
@@ -108,7 +107,7 @@ enum _pdb_interrupt_enable
  * @brief PDB load value mode.
  *
  * Selects the mode to load the internal values after doing the load operation (write 1 to PDBx_SC[LDOK]).
- * These values are for:
+ * These values are for the following operations.
  *  - PDB counter (PDBx_MOD, PDBx_IDLY)
  *  - ADC trigger (PDBx_CHnDLYm)
  *  - DAC trigger (PDBx_DACINTx)
@@ -158,7 +157,7 @@ typedef enum _pdb_divider_multiplication_factor
  * @brief Trigger input source
  *
  * Selects the trigger input source for the PDB. The trigger input source can be internal or external (EXTRG pin), or
- * the software trigger. Refer to chip configuration details for the actual PDB input trigger connections.
+ * the software trigger. See chip configuration details for the actual PDB input trigger connections.
  */
 typedef enum _pdb_trigger_input_source
 {
@@ -177,7 +176,7 @@ typedef enum _pdb_trigger_input_source
     kPDB_TriggerInput12 = 12U,  /*!< Trigger-In 12. */
     kPDB_TriggerInput13 = 13U,  /*!< Trigger-In 13. */
     kPDB_TriggerInput14 = 14U,  /*!< Trigger-In 14. */
-    kPDB_TriggerSoftware = 15U, /*!< Trigger-In 15. */
+    kPDB_TriggerSoftware = 15U, /*!< Trigger-In 15, software trigger. */
 } pdb_trigger_input_source_t;
 
 /*!
@@ -193,15 +192,15 @@ typedef struct _pdb_config
 } pdb_config_t;
 
 /*!
- * @brief PDB ADC Pre-Trigger configuration.
+ * @brief PDB ADC Pre-trigger configuration.
  */
 typedef struct _pdb_adc_pretrigger_config
 {
-    uint32_t enablePreTriggerMask;          /*!< PDB Channel Pre-Trigger Enable. */
-    uint32_t enableOutputMask;              /*!< PDB Channel Pre-Trigger Output Select.
+    uint32_t enablePreTriggerMask;          /*!< PDB Channel Pre-trigger Enable. */
+    uint32_t enableOutputMask;              /*!< PDB Channel Pre-trigger Output Select.
                                                  PDB channel's corresponding pre-trigger asserts when the counter
                                                  reaches the channel delay register. */
-    uint32_t enableBackToBackOperationMask; /*!< PDB Channel Pre-Trigger Back-to-Back Operation Enable.
+    uint32_t enableBackToBackOperationMask; /*!< PDB Channel pre-trigger Back-to-Back Operation Enable.
                                                  Back-to-back operation enables the ADC conversions complete to trigger
                                                  the next PDB channel pre-trigger and trigger output, so that the ADC
                                                  conversions can be triggered on next set of configuration and results
@@ -230,29 +229,29 @@ extern "C" {
  */
 
 /*!
- * @brief Initializes  the PDB module.
+ * @brief Initializes the PDB module.
  *
- * This function is to make the initialization for PDB module. The operations includes are:
+ * This function initializes the PDB module. The operations included are as follows.
  *  - Enable the clock for PDB instance.
  *  - Configure the PDB module.
  *  - Enable the PDB module.
  *
  * @param base PDB peripheral base address.
- * @param config Pointer to configuration structure. See "pdb_config_t".
+ * @param config Pointer to the configuration structure. See "pdb_config_t".
  */
 void PDB_Init(PDB_Type *base, const pdb_config_t *config);
 
 /*!
- * @brief De-initializes  the PDB module.
+ * @brief De-initializes the PDB module.
  *
  * @param base PDB peripheral base address.
  */
 void PDB_Deinit(PDB_Type *base);
 
 /*!
- * @brief Initializes the PDB user configure structure.
+ * @brief Initializes the PDB user configuration structure.
  *
- * This function initializes the user configure structure to default value. the default value are:
+ * This function initializes the user configuration structure to a default value. The default values are as follows.
  * @code
  *   config->loadValueMode = kPDB_LoadValueImmediately;
  *   config->prescalerDivider = kPDB_PrescalerDivider1;
@@ -302,7 +301,7 @@ static inline void PDB_DoSoftwareTrigger(PDB_Type *base)
 /*!
  * @brief Loads the counter values.
  *
- * This function is to load the counter values from their internal buffer.
+ * This function loads the counter values from the internal buffer.
  * See "pdb_load_value_mode_t" about PDB's load mode.
  *
  * @param base PDB peripheral base address.
@@ -382,7 +381,7 @@ static inline void PDB_ClearStatusFlags(PDB_Type *base, uint32_t mask)
 }
 
 /*!
- * @brief  Specifies the period of the counter.
+ * @brief  Specifies the counter period.
  *
  * @param  base  PDB peripheral base address.
  * @param  value Setting value for the modulus. 16-bit is available.
@@ -405,7 +404,7 @@ static inline uint32_t PDB_GetCounterValue(PDB_Type *base)
 }
 
 /*!
- * @brief Sets the value for PDB counter delay event.
+ * @brief Sets the value for the PDB counter delay event.
  *
  * @param base  PDB peripheral base address.
  * @param value Setting value for PDB counter delay event. 16-bit is available.
@@ -417,16 +416,16 @@ static inline void PDB_SetCounterDelayValue(PDB_Type *base, uint32_t value)
 /* @} */
 
 /*!
- * @name ADC Pre-Trigger
+ * @name ADC Pre-trigger
  * @{
  */
 
 /*!
- * @brief Configures the ADC PreTrigger in PDB module.
+ * @brief Configures the ADC pre-trigger in the PDB module.
  *
  * @param base    PDB peripheral base address.
  * @param channel Channel index for ADC instance.
- * @param config  Pointer to configuration structure. See "pdb_adc_pretrigger_config_t".
+ * @param config  Pointer to the configuration structure. See "pdb_adc_pretrigger_config_t".
  */
 static inline void PDB_SetADCPreTriggerConfig(PDB_Type *base, uint32_t channel, pdb_adc_pretrigger_config_t *config)
 {
@@ -434,30 +433,31 @@ static inline void PDB_SetADCPreTriggerConfig(PDB_Type *base, uint32_t channel, 
     assert(NULL != config);
 
     base->CH[channel].C1 = PDB_C1_BB(config->enableBackToBackOperationMask) | PDB_C1_TOS(config->enableOutputMask) |
-                           PDB_C1_EN(config->enableOutputMask);
+                           PDB_C1_EN(config->enablePreTriggerMask);
 }
 
 /*!
- * @brief Sets the value for ADC Pre-Trigger delay event.
+ * @brief Sets the value for the ADC pre-trigger delay event.
  *
- * This function is to set the value for ADC Pre-Trigger delay event. IT Specifies the delay value for the channel's
- * corresponding pre-trigger. The pre-trigger asserts when the PDB counter is equal to the setting value here.
+ * This function sets the value for ADC pre-trigger delay event. It specifies the delay value for the channel's
+ * corresponding pre-trigger. The pre-trigger asserts when the PDB counter is equal to the set value.
  *
  * @param base       PDB peripheral base address.
  * @param channel    Channel index for ADC instance.
  * @param preChannel Channel group index for ADC instance.
- * @param value      Setting value for ADC Pre-Trigger delay event. 16-bit is available.
+ * @param value      Setting value for ADC pre-trigger delay event. 16-bit is available.
  */
 static inline void PDB_SetADCPreTriggerDelayValue(PDB_Type *base, uint32_t channel, uint32_t preChannel, uint32_t value)
 {
     assert(channel < PDB_C1_COUNT);
-    assert(preChannel < PDB_DLY_COUNT);
+    assert(preChannel < PDB_DLY_COUNT2);
+    /* xx_COUNT2 is actually the count for pre-triggers in header file. xx_COUNT is used for the count of channels. */
 
     base->CH[channel].DLY[preChannel] = PDB_DLY_DLY(value);
 }
 
 /*!
- * @brief  Gets the ADC Pre-Trigger's status flags.
+ * @brief  Gets the ADC pre-trigger's status flags.
  *
  * @param  base    PDB peripheral base address.
  * @param  channel Channel index for ADC instance.
@@ -472,7 +472,7 @@ static inline uint32_t PDB_GetADCPreTriggerStatusFlags(PDB_Type *base, uint32_t 
 }
 
 /*!
- * @brief Clears the ADC Pre-Trigger's status flags.
+ * @brief Clears the ADC pre-trigger status flags.
  *
  * @param base    PDB peripheral base address.
  * @param channel Channel index for ADC instance.
@@ -494,19 +494,19 @@ static inline void PDB_ClearADCPreTriggerStatusFlags(PDB_Type *base, uint32_t ch
  */
 
 /*!
- * @brief Configures the DAC trigger in PDB module.
+ * @brief Configures the DAC trigger in the PDB module.
  *
  * @param base    PDB peripheral base address.
  * @param channel Channel index for DAC instance.
- * @param config  Pointer to configuration structure. See "pdb_dac_trigger_config_t".
+ * @param config  Pointer to the configuration structure. See "pdb_dac_trigger_config_t".
  */
 void PDB_SetDACTriggerConfig(PDB_Type *base, uint32_t channel, pdb_dac_trigger_config_t *config);
 
 /*!
  * @brief Sets the value for the DAC interval event.
  *
- * This fucntion is to set the value for DAC interval event. DAC interval trigger would trigger the DAC module to update
- * buffer when the DAC interval counter is equal to the setting value here.
+ * This fucntion sets the value for DAC interval event. DAC interval trigger triggers the DAC module to update
+ * the buffer when the DAC interval counter is equal to the set value.
  *
  * @param base    PDB peripheral base address.
  * @param channel Channel index for DAC instance.
@@ -532,7 +532,7 @@ static inline void PDB_SetDACTriggerIntervalValue(PDB_Type *base, uint32_t chann
  *
  * @param base        PDB peripheral base address.
  * @param channelMask Channel mask value for multiple pulse out trigger channel.
- * @param enable Enable the feature or not.
+ * @param enable Whether the feature is enabled or not.
  */
 static inline void PDB_EnablePulseOutTrigger(PDB_Type *base, uint32_t channelMask, bool enable)
 {
@@ -547,11 +547,11 @@ static inline void PDB_EnablePulseOutTrigger(PDB_Type *base, uint32_t channelMas
 }
 
 /*!
- * @brief Sets event values for pulse out trigger.
+ * @brief Sets event values for the pulse out trigger.
  *
- * This function is used to set event values for pulse output trigger.
- * These pulse output trigger delay values specify the delay for the PDB Pulse-Out. Pulse-Out goes high when the PDB
- * counter is equal to the pulse output high value (value1). Pulse-Out goes low when the PDB counter is equal to the
+ * This function is used to set event values for the pulse output trigger.
+ * These pulse output trigger delay values specify the delay for the PDB Pulse-out. Pulse-out goes high when the PDB
+ * counter is equal to the pulse output high value (value1). Pulse-out goes low when the PDB counter is equal to the
  * pulse output low value (value2).
  *
  * @param base    PDB peripheral base address.

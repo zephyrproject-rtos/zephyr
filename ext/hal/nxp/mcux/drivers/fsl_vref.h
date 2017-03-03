@@ -38,7 +38,6 @@
  * @{
  */
 
-/*! @file */
 
 /******************************************************************************
  * Definitions
@@ -46,12 +45,11 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_VREF_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0. */
+#define FSL_VREF_DRIVER_VERSION (MAKE_VERSION(2, 1, 0)) /*!< Version 2.1.0. */
 /*@}*/
 
 /* Those macros below defined to support SoC family which have VREFL (0.4V) reference */
 #if defined(FSL_FEATURE_VREF_HAS_LOW_REFERENCE) && FSL_FEATURE_VREF_HAS_LOW_REFERENCE
-#define SC VREFH_SC
 #define VREF_SC_MODE_LV VREF_VREFH_SC_MODE_LV
 #define VREF_SC_REGEN VREF_VREFH_SC_REGEN
 #define VREF_SC_VREFEN VREF_VREFH_SC_VREFEN
@@ -80,8 +78,8 @@ typedef enum _vref_buffer_mode
 {
     kVREF_ModeBandgapOnly = 0U, /*!< Bandgap on only, for stabilization and startup */
 #if defined(FSL_FEATURE_VREF_MODE_LV_TYPE) && FSL_FEATURE_VREF_MODE_LV_TYPE
-    kVREF_ModeHighPowerBuffer = 1U, /*!< High power buffer mode enabled */
-    kVREF_ModeLowPowerBuffer = 2U   /*!< Low power buffer mode enabled */
+    kVREF_ModeHighPowerBuffer = 1U, /*!< High-power buffer mode enabled */
+    kVREF_ModeLowPowerBuffer = 2U   /*!< Low-power buffer mode enabled */
 #else
     kVREF_ModeTightRegulationBuffer = 2U /*!< Tight regulation buffer enabled */
 #endif /* FSL_FEATURE_VREF_MODE_LV_TYPE */
@@ -97,6 +95,9 @@ typedef struct _vref_config
     bool enableLowRef;          /*!< Set VREFL (0.4 V) reference buffer enable or disable */
     bool enableExternalVoltRef; /*!< Select external voltage reference or not (internal) */
 #endif                          /* FSL_FEATURE_VREF_HAS_LOW_REFERENCE */
+#if defined(FSL_FEATURE_VREF_HAS_TRM4) && FSL_FEATURE_VREF_HAS_TRM4
+    bool enable2V1VoltRef; /*!< Enable Internal Voltage Reference (2.1V) */
+#endif                     /* FSL_FEATURE_VREF_HAS_TRM4 */
 } vref_config_t;
 
 /******************************************************************************
@@ -115,11 +116,11 @@ extern "C" {
 /*!
  * @brief Enables the clock gate and configures the VREF module according to the configuration structure.
  *
- * This function must be called before calling all the other VREF driver functions,
+ * This function must be called before calling all other VREF driver functions,
  * read/write registers, and configurations with user-defined settings.
  * The example below shows how to set up  vref_config_t parameters and
- * how to call the VREF_Init function by passing in these parameters:
- * Example:
+ * how to call the VREF_Init function by passing in these parameters.
+ * This is an example.
  * @code
  *   vref_config_t vrefConfig;
  *   vrefConfig.bufferMode = kVREF_ModeHighPowerBuffer;
@@ -137,7 +138,7 @@ void VREF_Init(VREF_Type *base, const vref_config_t *config);
  * @brief Stops and disables the clock for the VREF module.
  *
  * This function should be called to shut down the module.
- * Example:
+ * This is an example.
  * @code
  *   vref_config_t vrefUserConfig;
  *   VREF_Init(VREF);
@@ -153,8 +154,8 @@ void VREF_Deinit(VREF_Type *base);
 /*!
  * @brief Initializes the VREF configuration structure.
  *
- * This function initializes the VREF configuration structure to a default value.
- * Example:
+ * This function initializes the VREF configuration structure to default values.
+ * This is an example.
  * @code
  *   vrefConfig->bufferMode = kVREF_ModeHighPowerBuffer;
  *   vrefConfig->enableExternalVoltRef = false;
@@ -166,9 +167,9 @@ void VREF_Deinit(VREF_Type *base);
 void VREF_GetDefaultConfig(vref_config_t *config);
 
 /*!
- * @brief Sets a TRIM value for reference voltage.
+ * @brief Sets a TRIM value for the reference voltage.
  *
- * This function sets a TRIM value for reference voltage.
+ * This function sets a TRIM value for the reference voltage.
  * Note that the TRIM value maximum is 0x3F.
  *
  * @param base VREF peripheral address.
@@ -188,13 +189,40 @@ static inline uint8_t VREF_GetTrimVal(VREF_Type *base)
 {
     return (base->TRM & VREF_TRM_TRIM_MASK);
 }
+
+#if defined(FSL_FEATURE_VREF_HAS_TRM4) && FSL_FEATURE_VREF_HAS_TRM4
+/*!
+ * @brief Sets a TRIM value for the reference voltage (2V1).
+ *
+ * This function sets a TRIM value for the reference voltage (2V1).
+ * Note that the TRIM value maximum is 0x3F.
+ *
+ * @param base VREF peripheral address.
+ * @param trimValue Value of the trim register to set the output reference voltage (maximum 0x3F (6-bit)).
+ */
+void VREF_SetTrim2V1Val(VREF_Type *base, uint8_t trimValue);
+
+/*!
+ * @brief Reads the value of the TRIM meaning output voltage (2V1).
+ *
+ * This function gets the TRIM value from the VREF_TRM4 register.
+ *
+ * @param base VREF peripheral address.
+ * @return Six-bit value of trim setting.
+ */
+static inline uint8_t VREF_GetTrim2V1Val(VREF_Type *base)
+{
+    return (base->TRM4 & VREF_TRM4_TRIM2V1_MASK);
+}
+#endif /* FSL_FEATURE_VREF_HAS_TRM4 */
+
 #if defined(FSL_FEATURE_VREF_HAS_LOW_REFERENCE) && FSL_FEATURE_VREF_HAS_LOW_REFERENCE
 
 /*!
- * @brief Sets the TRIM value for low voltage reference.
+ * @brief Sets the TRIM value for the low voltage reference.
  *
  * This function sets the TRIM value for low reference voltage.
- * NOTE:
+ * Note the following.
  *      - The TRIM value maximum is 0x05U
  *      - The values 111b and 110b are not valid/allowed.
  *

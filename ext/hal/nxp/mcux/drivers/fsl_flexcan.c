@@ -73,6 +73,9 @@ enum _flexcan_mb_code_tx
     kFLEXCAN_TxMbNotUsed = 0xF,      /*!< Not used.*/
 };
 
+/* Typedef for interrupt handler. */
+typedef void (*flexcan_isr_t)(CAN_Type *base, flexcan_handle_t *handle);
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -86,23 +89,24 @@ enum _flexcan_mb_code_tx
 uint32_t FLEXCAN_GetInstance(CAN_Type *base);
 
 /*!
- * @brief Enter FlexCAN Fraze Mode.
+ * @brief Enter FlexCAN Freeze Mode.
  *
- * This function makes the FlexCAN work under Fraze Mode.
+ * This function makes the FlexCAN work under Freeze Mode.
  *
  * @param base FlexCAN peripheral base address.
  */
-static void FLEXCAN_EnterFrazeMode(CAN_Type *base);
+static void FLEXCAN_EnterFreezeMode(CAN_Type *base);
 
 /*!
- * @brief Exit FlexCAN Fraze Mode.
+ * @brief Exit FlexCAN Freeze Mode.
  *
- * This function makes the FlexCAN leave Fraze Mode.
+ * This function makes the FlexCAN leave Freeze Mode.
  *
  * @param base FlexCAN peripheral base address.
  */
-static void FLEXCAN_ExitFrazeMode(CAN_Type *base);
+static void FLEXCAN_ExitFreezeMode(CAN_Type *base);
 
+#if !defined(NDEBUG)
 /*!
  * @brief Check if Message Buffer is occupied by Rx FIFO.
  *
@@ -112,6 +116,19 @@ static void FLEXCAN_ExitFrazeMode(CAN_Type *base);
  * @param mbIdx The FlexCAN Message Buffer index.
  */
 static bool FLEXCAN_IsMbOccupied(CAN_Type *base, uint8_t mbIdx);
+#endif
+
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641)
+/*!
+ * @brief Get the first valid Message buffer ID of give FlexCAN instance.
+ *
+ * This function is a helper function for Errata 5641 workaround.
+ *
+ * @param base FlexCAN peripheral base address.
+ * @return The first valid Message Buffer Number.
+ */
+static uint32_t FLEXCAN_GetFirstValidMb(CAN_Type *base);
+#endif
 
 /*!
  * @brief Check if Message Buffer interrupt is enabled.
@@ -162,8 +179,13 @@ static const IRQn_Type s_flexcanErrorIRQ[] = CAN_Error_IRQS;
 static const IRQn_Type s_flexcanBusOffIRQ[] = CAN_Bus_Off_IRQS;
 static const IRQn_Type s_flexcanMbIRQ[] = CAN_ORed_Message_buffer_IRQS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /* Array of FlexCAN clock name. */
 static const clock_ip_name_t s_flexcanClock[] = FLEXCAN_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+/* FlexCAN ISR for transactional APIs. */
+static flexcan_isr_t s_flexcanIsr;
 
 /*******************************************************************************
  * Code
@@ -187,10 +209,10 @@ uint32_t FLEXCAN_GetInstance(CAN_Type *base)
     return instance;
 }
 
-static void FLEXCAN_EnterFrazeMode(CAN_Type *base)
+static void FLEXCAN_EnterFreezeMode(CAN_Type *base)
 {
     /* Set Freeze, Halt bits. */
-    base->MCR |= CAN_MCR_FRZ_MASK | CAN_MCR_HALT_MASK;
+    base->MCR |= CAN_MCR_HALT_MASK;
 
     /* Wait until the FlexCAN Module enter freeze mode. */
     while (!(base->MCR & CAN_MCR_FRZACK_MASK))
@@ -198,10 +220,10 @@ static void FLEXCAN_EnterFrazeMode(CAN_Type *base)
     }
 }
 
-static void FLEXCAN_ExitFrazeMode(CAN_Type *base)
+static void FLEXCAN_ExitFreezeMode(CAN_Type *base)
 {
     /* Clear Freeze, Halt bits. */
-    base->MCR &= ~(CAN_MCR_FRZ_MASK | CAN_MCR_HALT_MASK);
+    base->MCR &= ~CAN_MCR_HALT_MASK;
 
     /* Wait until the FlexCAN Module exit freeze mode. */
     while (base->MCR & CAN_MCR_FRZACK_MASK)
@@ -209,6 +231,7 @@ static void FLEXCAN_ExitFrazeMode(CAN_Type *base)
     }
 }
 
+#if !defined(NDEBUG)
 static bool FLEXCAN_IsMbOccupied(CAN_Type *base, uint8_t mbIdx)
 {
     uint8_t lastOccupiedMb;
@@ -221,7 +244,11 @@ static bool FLEXCAN_IsMbOccupied(CAN_Type *base, uint8_t mbIdx)
         /* Calculate the number of last Message Buffer occupied by Rx FIFO. */
         lastOccupiedMb = ((lastOccupiedMb + 1) * 2) + 5;
 
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641)
+        if (mbIdx <= (lastOccupiedMb + 1))
+#else
         if (mbIdx <= lastOccupiedMb)
+#endif
         {
             return true;
         }
@@ -232,9 +259,40 @@ static bool FLEXCAN_IsMbOccupied(CAN_Type *base, uint8_t mbIdx)
     }
     else
     {
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641)
+        if (0 == mbIdx)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+#else
         return false;
+#endif
     }
 }
+#endif
+
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641)
+static uint32_t FLEXCAN_GetFirstValidMb(CAN_Type *base)
+{
+    uint32_t firstValidMbNum;
+
+    if (base->MCR & CAN_MCR_RFEN_MASK)
+    {
+        firstValidMbNum = ((base->CTRL2 & CAN_CTRL2_RFFN_MASK) >> CAN_CTRL2_RFFN_SHIFT);
+        firstValidMbNum = ((firstValidMbNum + 1) * 2) + 6;
+    }
+    else
+    {
+        firstValidMbNum = 0;
+    }
+
+    return firstValidMbNum;
+}
+#endif
 
 static bool FLEXCAN_IsMbIntEnabled(CAN_Type *base, uint8_t mbIdx)
 {
@@ -296,7 +354,7 @@ static void FLEXCAN_Reset(CAN_Type *base)
     base->MCR |= CAN_MCR_WRNEN_MASK | CAN_MCR_WAKSRC_MASK |
                  CAN_MCR_MAXMB(FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) - 1);
 #else
-        base->MCR |= CAN_MCR_WRNEN_MASK | CAN_MCR_MAXMB(FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) - 1);
+    base->MCR |= CAN_MCR_WRNEN_MASK | CAN_MCR_MAXMB(FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) - 1);
 #endif
 
     /* Reset CTRL1 and CTRL2 rigister. */
@@ -369,8 +427,10 @@ void FLEXCAN_Init(CAN_Type *base, const flexcan_config_t *config, uint32_t sourc
     assert(config);
     assert((config->maxMbNum > 0) && (config->maxMbNum <= FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base)));
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable FlexCAN clock. */
     CLOCK_EnableClock(s_flexcanClock[FLEXCAN_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Disable FlexCAN Module. */
     FLEXCAN_Enable(base, false);
@@ -387,7 +447,7 @@ void FLEXCAN_Init(CAN_Type *base, const flexcan_config_t *config, uint32_t sourc
     /* Reset to known status. */
     FLEXCAN_Reset(base);
 
-    /* Save current MCR value. */
+    /* Save current MCR value and enable to enter Freeze mode(enabled by default). */
     mcrTemp = base->MCR;
 
     /* Set the maximum number of Message Buffers */
@@ -422,8 +482,10 @@ void FLEXCAN_Deinit(CAN_Type *base)
     /* Disable FlexCAN module. */
     FLEXCAN_Enable(base, false);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable FlexCAN clock. */
     CLOCK_DisableClock(s_flexcanClock[FLEXCAN_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void FLEXCAN_GetDefaultConfig(flexcan_config_t *config)
@@ -448,8 +510,8 @@ void FLEXCAN_SetTimingConfig(CAN_Type *base, const flexcan_timing_config_t *conf
     /* Assertion. */
     assert(config);
 
-    /* Enter Fraze Mode. */
-    FLEXCAN_EnterFrazeMode(base);
+    /* Enter Freeze Mode. */
+    FLEXCAN_EnterFreezeMode(base);
 
     /* Cleaning previous Timing Setting. */
     base->CTRL1 &= ~(CAN_CTRL1_PRESDIV_MASK | CAN_CTRL1_RJW_MASK | CAN_CTRL1_PSEG1_MASK | CAN_CTRL1_PSEG2_MASK |
@@ -460,59 +522,55 @@ void FLEXCAN_SetTimingConfig(CAN_Type *base, const flexcan_timing_config_t *conf
         (CAN_CTRL1_PRESDIV(config->preDivider) | CAN_CTRL1_RJW(config->rJumpwidth) |
          CAN_CTRL1_PSEG1(config->phaseSeg1) | CAN_CTRL1_PSEG2(config->phaseSeg2) | CAN_CTRL1_PROPSEG(config->propSeg));
 
-    /* Exit Fraze Mode. */
-    FLEXCAN_ExitFrazeMode(base);
+    /* Exit Freeze Mode. */
+    FLEXCAN_ExitFreezeMode(base);
 }
 
-void FlEXCAN_SetRxMbGlobalMask(CAN_Type *base, uint32_t mask)
+void FLEXCAN_SetRxMbGlobalMask(CAN_Type *base, uint32_t mask)
 {
-    /* Enter Fraze Mode. */
-    FLEXCAN_EnterFrazeMode(base);
+    /* Enter Freeze Mode. */
+    FLEXCAN_EnterFreezeMode(base);
 
     /* Setting Rx Message Buffer Global Mask value. */
     base->RXMGMASK = mask;
     base->RX14MASK = mask;
     base->RX15MASK = mask;
 
-    /* Exit Fraze Mode. */
-    FLEXCAN_ExitFrazeMode(base);
+    /* Exit Freeze Mode. */
+    FLEXCAN_ExitFreezeMode(base);
 }
 
-void FlEXCAN_SetRxFifoGlobalMask(CAN_Type *base, uint32_t mask)
+void FLEXCAN_SetRxFifoGlobalMask(CAN_Type *base, uint32_t mask)
 {
-    /* Enter Fraze Mode. */
-    FLEXCAN_EnterFrazeMode(base);
+    /* Enter Freeze Mode. */
+    FLEXCAN_EnterFreezeMode(base);
 
     /* Setting Rx FIFO Global Mask value. */
     base->RXFGMASK = mask;
 
-    /* Exit Fraze Mode. */
-    FLEXCAN_ExitFrazeMode(base);
+    /* Exit Freeze Mode. */
+    FLEXCAN_ExitFreezeMode(base);
 }
 
-void FlEXCAN_SetRxIndividualMask(CAN_Type *base, uint8_t maskIdx, uint32_t mask)
+void FLEXCAN_SetRxIndividualMask(CAN_Type *base, uint8_t maskIdx, uint32_t mask)
 {
     assert(maskIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
 
-    /* Enter Fraze Mode. */
-    FLEXCAN_EnterFrazeMode(base);
+    /* Enter Freeze Mode. */
+    FLEXCAN_EnterFreezeMode(base);
 
     /* Setting Rx Individual Mask value. */
     base->RXIMR[maskIdx] = mask;
 
-    /* Exit Fraze Mode. */
-    FLEXCAN_ExitFrazeMode(base);
+    /* Exit Freeze Mode. */
+    FLEXCAN_ExitFreezeMode(base);
 }
 
 void FLEXCAN_SetTxMbConfig(CAN_Type *base, uint8_t mbIdx, bool enable)
 {
     /* Assertion. */
     assert(mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
-
-    if (FLEXCAN_IsMbOccupied(base, mbIdx))
-    {
-        assert(false);
-    }
+    assert(!FLEXCAN_IsMbOccupied(base, mbIdx));
 
     /* Inactivate Message Buffer. */
     if (enable)
@@ -535,13 +593,9 @@ void FLEXCAN_SetRxMbConfig(CAN_Type *base, uint8_t mbIdx, const flexcan_rx_mb_co
     /* Assertion. */
     assert(mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
     assert(((config) || (false == enable)));
+    assert(!FLEXCAN_IsMbOccupied(base, mbIdx));
 
     uint32_t cs_temp = 0;
-
-    if (FLEXCAN_IsMbOccupied(base, mbIdx))
-    {
-        assert(false);
-    }
 
     /* Inactivate Message Buffer. */
     base->MB[mbIdx].CS = 0;
@@ -574,7 +628,7 @@ void FLEXCAN_SetRxMbConfig(CAN_Type *base, uint8_t mbIdx, const flexcan_rx_mb_co
     }
 }
 
-void FlEXCAN_SetRxFifoConfig(CAN_Type *base, const flexcan_rx_fifo_config_t *config, bool enable)
+void FLEXCAN_SetRxFifoConfig(CAN_Type *base, const flexcan_rx_fifo_config_t *config, bool enable)
 {
     /* Assertion. */
     assert((config) || (false == enable));
@@ -582,8 +636,8 @@ void FlEXCAN_SetRxFifoConfig(CAN_Type *base, const flexcan_rx_fifo_config_t *con
     volatile uint32_t *idFilterRegion = (volatile uint32_t *)(&base->MB[6].CS);
     uint8_t setup_mb, i, rffn = 0;
 
-    /* Enter Fraze Mode. */
-    FLEXCAN_EnterFrazeMode(base);
+    /* Enter Freeze Mode. */
+    FLEXCAN_EnterFreezeMode(base);
 
     if (enable)
     {
@@ -675,8 +729,8 @@ void FlEXCAN_SetRxFifoConfig(CAN_Type *base, const flexcan_rx_fifo_config_t *con
         FLEXCAN_SetRxMbConfig(base, 5, NULL, false);
     }
 
-    /* Exit Fraze Mode. */
-    FLEXCAN_ExitFrazeMode(base);
+    /* Exit Freeze Mode. */
+    FLEXCAN_ExitFreezeMode(base);
 }
 
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_RX_FIFO_DMA) && FSL_FEATURE_FLEXCAN_HAS_RX_FIFO_DMA)
@@ -684,25 +738,25 @@ void FLEXCAN_EnableRxFifoDMA(CAN_Type *base, bool enable)
 {
     if (enable)
     {
-        /* Enter Fraze Mode. */
-        FLEXCAN_EnterFrazeMode(base);
+        /* Enter Freeze Mode. */
+        FLEXCAN_EnterFreezeMode(base);
 
         /* Enable FlexCAN DMA. */
         base->MCR |= CAN_MCR_DMA_MASK;
 
-        /* Exit Fraze Mode. */
-        FLEXCAN_ExitFrazeMode(base);
+        /* Exit Freeze Mode. */
+        FLEXCAN_ExitFreezeMode(base);
     }
     else
     {
-        /* Enter Fraze Mode. */
-        FLEXCAN_EnterFrazeMode(base);
+        /* Enter Freeze Mode. */
+        FLEXCAN_EnterFreezeMode(base);
 
         /* Disable FlexCAN DMA. */
         base->MCR &= ~CAN_MCR_DMA_MASK;
 
-        /* Exit Fraze Mode. */
-        FLEXCAN_ExitFrazeMode(base);
+        /* Exit Freeze Mode. */
+        FLEXCAN_ExitFreezeMode(base);
     }
 }
 #endif /* FSL_FEATURE_FLEXCAN_HAS_RX_FIFO_DMA */
@@ -713,13 +767,9 @@ status_t FLEXCAN_WriteTxMb(CAN_Type *base, uint8_t mbIdx, const flexcan_frame_t 
     assert(mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
     assert(txFrame);
     assert(txFrame->length <= 8);
+    assert(!FLEXCAN_IsMbOccupied(base, mbIdx));
 
     uint32_t cs_temp = 0;
-
-    if (FLEXCAN_IsMbOccupied(base, mbIdx))
-    {
-        assert(false);
-    }
 
     /* Check if Message Buffer is available. */
     if (CAN_CS_CODE(kFLEXCAN_TxMbDataOrRemote) != (base->MB[mbIdx].CS & CAN_CS_CODE_MASK))
@@ -751,6 +801,11 @@ status_t FLEXCAN_WriteTxMb(CAN_Type *base, uint8_t mbIdx, const flexcan_frame_t 
         /* Activate Tx Message Buffer. */
         base->MB[mbIdx].CS = cs_temp;
 
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641)
+        base->MB[FLEXCAN_GetFirstValidMb(base)].CS = CAN_CS_CODE(kFLEXCAN_TxMbInactive);
+        base->MB[FLEXCAN_GetFirstValidMb(base)].CS = CAN_CS_CODE(kFLEXCAN_TxMbInactive);
+#endif
+
         return kStatus_Success;
     }
     else
@@ -765,14 +820,10 @@ status_t FLEXCAN_ReadRxMb(CAN_Type *base, uint8_t mbIdx, flexcan_frame_t *rxFram
     /* Assertion. */
     assert(mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
     assert(rxFrame);
+    assert(!FLEXCAN_IsMbOccupied(base, mbIdx));
 
     uint32_t cs_temp;
     uint8_t rx_code;
-
-    if (FLEXCAN_IsMbOccupied(base, mbIdx))
-    {
-        assert(false);
-    }
 
     /* Read CS field of Rx Message Buffer to lock Message Buffer. */
     cs_temp = base->MB[mbIdx].CS;
@@ -819,7 +870,7 @@ status_t FLEXCAN_ReadRxMb(CAN_Type *base, uint8_t mbIdx, flexcan_frame_t *rxFram
     }
 }
 
-status_t FlEXCAN_ReadRxFifo(CAN_Type *base, flexcan_frame_t *rxFrame)
+status_t FLEXCAN_ReadRxFifo(CAN_Type *base, flexcan_frame_t *rxFrame)
 {
     /* Assertion. */
     assert(rxFrame);
@@ -863,7 +914,7 @@ status_t FlEXCAN_ReadRxFifo(CAN_Type *base, flexcan_frame_t *rxFrame)
     }
 }
 
-status_t FlEXCAN_TransferSendBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_frame_t *txFrame)
+status_t FLEXCAN_TransferSendBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_frame_t *txFrame)
 {
     /* Write Tx Message Buffer to initiate a data sending. */
     if (kStatus_Success == FLEXCAN_WriteTxMb(base, mbIdx, txFrame))
@@ -884,7 +935,7 @@ status_t FlEXCAN_TransferSendBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_fra
     }
 }
 
-status_t FlEXCAN_TransferReceiveBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_frame_t *rxFrame)
+status_t FLEXCAN_TransferReceiveBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_frame_t *rxFrame)
 {
     /* Wait until Rx Message Buffer non-empty. */
     while (!FLEXCAN_GetMbStatusFlags(base, 1 << mbIdx))
@@ -898,7 +949,7 @@ status_t FlEXCAN_TransferReceiveBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_
     return FLEXCAN_ReadRxMb(base, mbIdx, rxFrame);
 }
 
-status_t FlEXCAN_TransferReceiveFifoBlocking(CAN_Type *base, flexcan_frame_t *rxFrame)
+status_t FLEXCAN_TransferReceiveFifoBlocking(CAN_Type *base, flexcan_frame_t *rxFrame)
 {
     status_t rxFifoStatus;
 
@@ -908,7 +959,7 @@ status_t FlEXCAN_TransferReceiveFifoBlocking(CAN_Type *base, flexcan_frame_t *rx
     }
 
     /*  */
-    rxFifoStatus = FlEXCAN_ReadRxFifo(base, rxFrame);
+    rxFifoStatus = FLEXCAN_ReadRxFifo(base, rxFrame);
 
     /* Clean Rx Fifo available flag. */
     FLEXCAN_ClearMbStatusFlags(base, kFLEXCAN_RxFifoFrameAvlFlag);
@@ -937,6 +988,8 @@ void FLEXCAN_TransferCreateHandle(CAN_Type *base,
     /* Register Callback function. */
     handle->callback = callback;
     handle->userData = userData;
+
+    s_flexcanIsr = FLEXCAN_TransferHandleIRQ;
 
     /* We Enable Error & Status interrupt here, because this interrupt just
      * report current status of FlexCAN module through Callback function.
@@ -970,11 +1023,7 @@ status_t FLEXCAN_TransferSendNonBlocking(CAN_Type *base, flexcan_handle_t *handl
     assert(handle);
     assert(xfer);
     assert(xfer->mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
-
-    if (FLEXCAN_IsMbOccupied(base, xfer->mbIdx))
-    {
-        assert(false);
-    }
+    assert(!FLEXCAN_IsMbOccupied(base, xfer->mbIdx));
 
     /* Check if Message Buffer is idle. */
     if (kFLEXCAN_StateIdle == handle->mbState[xfer->mbIdx])
@@ -1017,11 +1066,7 @@ status_t FLEXCAN_TransferReceiveNonBlocking(CAN_Type *base, flexcan_handle_t *ha
     assert(handle);
     assert(xfer);
     assert(xfer->mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
-
-    if (FLEXCAN_IsMbOccupied(base, xfer->mbIdx))
-    {
-        assert(false);
-    }
+    assert(!FLEXCAN_IsMbOccupied(base, xfer->mbIdx));
 
     /* Check if Message Buffer is idle. */
     if (kFLEXCAN_StateIdle == handle->mbState[xfer->mbIdx])
@@ -1073,11 +1118,7 @@ void FLEXCAN_TransferAbortSend(CAN_Type *base, flexcan_handle_t *handle, uint8_t
     /* Assertion. */
     assert(handle);
     assert(mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
-
-    if (FLEXCAN_IsMbOccupied(base, mbIdx))
-    {
-        assert(false);
-    }
+    assert(!FLEXCAN_IsMbOccupied(base, mbIdx));
 
     /* Disable Message Buffer Interrupt. */
     FLEXCAN_DisableMbInterrupts(base, 1 << mbIdx);
@@ -1096,11 +1137,7 @@ void FLEXCAN_TransferAbortReceive(CAN_Type *base, flexcan_handle_t *handle, uint
     /* Assertion. */
     assert(handle);
     assert(mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
-
-    if (FLEXCAN_IsMbOccupied(base, mbIdx))
-    {
-        assert(false);
-    }
+    assert(!FLEXCAN_IsMbOccupied(base, mbIdx));
 
     /* Disable Message Buffer Interrupt. */
     FLEXCAN_DisableMbInterrupts(base, 1 << mbIdx);
@@ -1185,7 +1222,7 @@ void FLEXCAN_TransferHandleIRQ(CAN_Type *base, flexcan_handle_t *handle)
                         break;
 
                     case kFLEXCAN_RxFifoFrameAvlFlag:
-                        status = FlEXCAN_ReadRxFifo(base, handle->rxFifoFrameBuf);
+                        status = FLEXCAN_ReadRxFifo(base, handle->rxFifoFrameBuf);
                         if (kStatus_Success == status)
                         {
                             status = kStatus_FLEXCAN_RxFifoIdle;
@@ -1273,7 +1310,7 @@ void CAN0_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[0]);
 
-    FLEXCAN_TransferHandleIRQ(CAN0, s_flexcanHandle[0]);
+    s_flexcanIsr(CAN0, s_flexcanHandle[0]);
 }
 #endif
 
@@ -1282,7 +1319,7 @@ void CAN1_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[1]);
 
-    FLEXCAN_TransferHandleIRQ(CAN1, s_flexcanHandle[1]);
+    s_flexcanIsr(CAN1, s_flexcanHandle[1]);
 }
 #endif
 
@@ -1291,7 +1328,7 @@ void CAN2_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[2]);
 
-    FLEXCAN_TransferHandleIRQ(CAN2, s_flexcanHandle[2]);
+    s_flexcanIsr(CAN2, s_flexcanHandle[2]);
 }
 #endif
 
@@ -1300,7 +1337,7 @@ void CAN3_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[3]);
 
-    FLEXCAN_TransferHandleIRQ(CAN3, s_flexcanHandle[3]);
+    s_flexcanIsr(CAN3, s_flexcanHandle[3]);
 }
 #endif
 
@@ -1309,6 +1346,6 @@ void CAN4_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[4]);
 
-    FLEXCAN_TransferHandleIRQ(CAN4, s_flexcanHandle[4]);
+    s_flexcanIsr(CAN4, s_flexcanHandle[4]);
 }
 #endif

@@ -28,7 +28,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fsl_common.h"
 #include "fsl_clock.h"
 
 /*******************************************************************************
@@ -120,7 +119,6 @@ static uint32_t s_fastIrcFreq = 4000000U;
 
 /* External XTAL0 (OSC0) clock frequency. */
 uint32_t g_xtal0Freq;
-
 /* External XTAL32K clock frequency. */
 uint32_t g_xtal32Freq;
 
@@ -631,6 +629,12 @@ uint32_t CLOCK_GetPll0Freq(void)
     }
 
     mcgpll0clk = CLOCK_GetPll0RefFreq();
+
+    /*
+     * Please call CLOCK_SetXtal0Freq base on board setting before using OSC0 clock.
+     * Please call CLOCK_SetXtal1Freq base on board setting before using OSC1 clock.
+     */
+    assert(mcgpll0clk);
 
     mcgpll0clk /= (FSL_FEATURE_MCG_PLL_PRDIV_BASE + MCG_C5_PRDIV0_VAL);
     mcgpll0clk *= (FSL_FEATURE_MCG_PLL_VDIV_BASE + MCG_C6_VDIV0_VAL);
@@ -1167,7 +1171,7 @@ mcg_mode_t CLOCK_GetMode(void)
     return mode;
 }
 
-status_t CLOCK_SetFeiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
+status_t CLOCK_SetFeiMode(mcg_dmx32_t dmx32, mcg_drs_t drs, void (*fllStableDelay)(void))
 {
     uint8_t mcg_c4;
     bool change_drs = false;
@@ -1211,7 +1215,7 @@ status_t CLOCK_SetFeiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
     }
 
     /* In FEI mode, the MCG_C4[DMX32] is set to 0U. */
-    MCG->C4 = (mcg_c4 & ~(MCG_C4_DMX32_MASK | MCG_C4_DRST_DRS_MASK)) | (MCG_C4_DRST_DRS(drs));
+    MCG->C4 = (mcg_c4 & ~(MCG_C4_DMX32_MASK | MCG_C4_DRST_DRS_MASK)) | (MCG_C4_DMX32(dmx32) | MCG_C4_DRST_DRS(drs));
 
     /* Check MCG_S[CLKST] */
     while (kMCG_ClkOutStatFll != MCG_S_CLKST_VAL)
@@ -1294,7 +1298,7 @@ status_t CLOCK_SetFeeMode(uint8_t frdiv, mcg_dmx32_t dmx32, mcg_drs_t drs, void 
     return kStatus_Success;
 }
 
-status_t CLOCK_SetFbiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
+status_t CLOCK_SetFbiMode(mcg_dmx32_t dmx32, mcg_drs_t drs, void (*fllStableDelay)(void))
 {
     uint8_t mcg_c4;
     bool change_drs = false;
@@ -1347,7 +1351,7 @@ status_t CLOCK_SetFbiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
     {
     }
 
-    MCG->C4 = (mcg_c4 & ~(MCG_C4_DMX32_MASK | MCG_C4_DRST_DRS_MASK)) | (MCG_C4_DRST_DRS(drs));
+    MCG->C4 = (mcg_c4 & ~(MCG_C4_DMX32_MASK | MCG_C4_DRST_DRS_MASK)) | (MCG_C4_DMX32(dmx32) | MCG_C4_DRST_DRS(drs));
 
     /* Wait for FLL stable time. */
     if (fllStableDelay)
@@ -1462,6 +1466,8 @@ status_t CLOCK_SetBlpeMode(void)
 
 status_t CLOCK_SetPbeMode(mcg_pll_clk_select_t pllcs, mcg_pll_config_t const *config)
 {
+    assert(config);
+
     /*
        This function is designed to change MCG to PBE mode from PEE/BLPE/FBE,
        but with this workflow, the source mode could be all modes except PEI/PBI.
@@ -1490,6 +1496,8 @@ status_t CLOCK_SetPbeMode(mcg_pll_clk_select_t pllcs, mcg_pll_config_t const *co
 
     /* Change to PLL mode. */
     MCG->C6 |= MCG_C6_PLLS_MASK;
+
+    /* Wait for PLL mode changed. */
     while (!(MCG->S & MCG_S_PLLST_MASK))
     {
     }
@@ -1564,9 +1572,9 @@ status_t CLOCK_InternalModeToFbiModeQuick(void)
     return kStatus_Success;
 }
 
-status_t CLOCK_BootToFeiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
+status_t CLOCK_BootToFeiMode(mcg_dmx32_t dmx32, mcg_drs_t drs, void (*fllStableDelay)(void))
 {
-    return CLOCK_SetFeiMode(drs, fllStableDelay);
+    return CLOCK_SetFeiMode(dmx32, drs, fllStableDelay);
 }
 
 status_t CLOCK_BootToFeeMode(
@@ -1675,7 +1683,7 @@ status_t CLOCK_SetMcgConfig(const mcg_config_t *config)
         if (!(MCG->S & MCG_S_IRCST_MASK))
         {
             CLOCK_ExternalModeToFbeModeQuick();
-            CLOCK_SetFeiMode(config->drs, (void (*)(void))0);
+            CLOCK_SetFeiMode(config->dmx32, config->drs, (void (*)(void))0);
         }
 
         CLOCK_SetExternalRefClkConfig(config->oscsel);
@@ -1687,7 +1695,7 @@ status_t CLOCK_SetMcgConfig(const mcg_config_t *config)
         MCG->C2 &= ~MCG_C2_LP_MASK; /* Disable lowpower. */
 
         {
-            CLOCK_SetFeiMode(config->drs, CLOCK_FllStableDelay);
+            CLOCK_SetFeiMode(config->dmx32, config->drs, CLOCK_FllStableDelay);
         }
     }
 
@@ -1703,13 +1711,13 @@ status_t CLOCK_SetMcgConfig(const mcg_config_t *config)
         switch (next_mode)
         {
             case kMCG_ModeFEI:
-                status = CLOCK_SetFeiMode(config->drs, CLOCK_FllStableDelay);
+                status = CLOCK_SetFeiMode(config->dmx32, config->drs, CLOCK_FllStableDelay);
                 break;
             case kMCG_ModeFEE:
                 status = CLOCK_SetFeeMode(config->frdiv, config->dmx32, config->drs, CLOCK_FllStableDelay);
                 break;
             case kMCG_ModeFBI:
-                status = CLOCK_SetFbiMode(config->drs, (void (*)(void))0);
+                status = CLOCK_SetFbiMode(config->dmx32, config->drs, (void (*)(void))0);
                 break;
             case kMCG_ModeFBE:
                 status = CLOCK_SetFbeMode(config->frdiv, config->dmx32, config->drs, (void (*)(void))0);

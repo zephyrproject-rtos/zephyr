@@ -38,7 +38,6 @@
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -46,8 +45,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief DMAMUX driver version 2.0.0. */
-#define FSL_DMAMUX_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief DMAMUX driver version 2.0.2. */
+#define FSL_DMAMUX_DRIVER_VERSION (MAKE_VERSION(2, 0, 2))
 /*@}*/
 
 /*******************************************************************************
@@ -59,14 +58,14 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*!
- * @name DMAMUX Initialize and De-initialize
+ * @name DMAMUX Initialization and de-initialization
  * @{
  */
 
 /*!
- * @brief Initializes DMAMUX peripheral.
+ * @brief Initializes the DMAMUX peripheral.
  *
- * This function ungate the DMAMUX clock.
+ * This function ungates the DMAMUX clock.
  *
  * @param base DMAMUX peripheral base address.
  *
@@ -74,9 +73,9 @@ extern "C" {
 void DMAMUX_Init(DMAMUX_Type *base);
 
 /*!
- * @brief Deinitializes DMAMUX peripheral.
+ * @brief Deinitializes the DMAMUX peripheral.
  *
- * This function gate the DMAMUX clock.
+ * This function gates the DMAMUX clock.
  *
  * @param base DMAMUX peripheral base address.
  */
@@ -89,9 +88,9 @@ void DMAMUX_Deinit(DMAMUX_Type *base);
  */
 
 /*!
- * @brief Enable DMAMUX channel.
+ * @brief Enables the DMAMUX channel.
  *
- * This function enable DMAMUX channel to work.
+ * This function enables the DMAMUX channel.
  *
  * @param base DMAMUX peripheral base address.
  * @param channel DMAMUX channel number.
@@ -104,11 +103,11 @@ static inline void DMAMUX_EnableChannel(DMAMUX_Type *base, uint32_t channel)
 }
 
 /*!
- * @brief Disable DMAMUX channel.
+ * @brief Disables the DMAMUX channel.
  *
- * This function disable DMAMUX channel.
+ * This function disables the DMAMUX channel.
  *
- * @note User must disable DMAMUX channel before configure it.
+ * @note The user must disable the DMAMUX channel before configuring it.
  * @param base DMAMUX peripheral base address.
  * @param channel DMAMUX channel number.
  */
@@ -120,13 +119,13 @@ static inline void DMAMUX_DisableChannel(DMAMUX_Type *base, uint32_t channel)
 }
 
 /*!
- * @brief Configure DMAMUX channel source.
+ * @brief Configures the DMAMUX channel source.
  *
  * @param base DMAMUX peripheral base address.
  * @param channel DMAMUX channel number.
- * @param source Channel source which is used to trigger DMA transfer.
+ * @param source Channel source, which is used to trigger the DMA transfer.
  */
-static inline void DMAMUX_SetSource(DMAMUX_Type *base, uint32_t channel, uint8_t source)
+static inline void DMAMUX_SetSource(DMAMUX_Type *base, uint32_t channel, uint32_t source)
 {
     assert(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
@@ -135,9 +134,9 @@ static inline void DMAMUX_SetSource(DMAMUX_Type *base, uint32_t channel, uint8_t
 
 #if defined(FSL_FEATURE_DMAMUX_HAS_TRIG) && FSL_FEATURE_DMAMUX_HAS_TRIG > 0U
 /*!
- * @brief Enable DMAMUX period trigger.
+ * @brief Enables the DMAMUX period trigger.
  *
- * This function enable DMAMUX period trigger feature.
+ * This function enables the DMAMUX period trigger feature.
  *
  * @param base DMAMUX peripheral base address.
  * @param channel DMAMUX channel number.
@@ -150,9 +149,9 @@ static inline void DMAMUX_EnablePeriodTrigger(DMAMUX_Type *base, uint32_t channe
 }
 
 /*!
- * @brief Disable DMAMUX period trigger.
+ * @brief Disables the DMAMUX period trigger.
  *
- * This function disable DMAMUX period trigger.
+ * This function disables the DMAMUX period trigger.
  *
  * @param base DMAMUX peripheral base address.
  * @param channel DMAMUX channel number.
@@ -164,6 +163,31 @@ static inline void DMAMUX_DisablePeriodTrigger(DMAMUX_Type *base, uint32_t chann
     base->CHCFG[channel] &= ~DMAMUX_CHCFG_TRIG_MASK;
 }
 #endif /* FSL_FEATURE_DMAMUX_HAS_TRIG */
+
+#if (defined(FSL_FEATURE_DMAMUX_HAS_A_ON) && FSL_FEATURE_DMAMUX_HAS_A_ON)
+/*!
+ * @brief Enables the DMA channel to be always ON.
+ *
+ * This function enables the DMAMUX channel always ON feature.
+ *
+ * @param base DMAMUX peripheral base address.
+ * @param channel DMAMUX channel number.
+ * @param enable Switcher of the always ON feature. "true" means enabled, "false" means disabled.
+ */
+static inline void DMAMUX_EnableAlwaysOn(DMAMUX_Type *base, uint32_t channel, bool enable)
+{
+    assert(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+
+    if (enable)
+    {
+        base->CHCFG[channel] |= DMAMUX_CHCFG_A_ON_MASK;
+    }
+    else
+    {
+        base->CHCFG[channel] &= ~DMAMUX_CHCFG_A_ON_MASK;
+    }
+}
+#endif /* FSL_FEATURE_DMAMUX_HAS_A_ON */
 
 /* @} */
 

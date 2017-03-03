@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -42,8 +42,6 @@
  * @{
  */
 
-/*! @file */
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -55,11 +53,12 @@
 #define MAKE_VERSION(major, minor, bugfix) (((major) << 16) | ((minor) << 8) | (bugfix))
 
 /* Debug console type definition. */
-#define DEBUG_CONSOLE_DEVICE_TYPE_NONE 0U   /*!< No debug console.             */
-#define DEBUG_CONSOLE_DEVICE_TYPE_UART 1U   /*!< Debug console base on UART.   */
-#define DEBUG_CONSOLE_DEVICE_TYPE_LPUART 2U /*!< Debug console base on LPUART. */
-#define DEBUG_CONSOLE_DEVICE_TYPE_LPSCI 3U  /*!< Debug console base on LPSCI.  */
-#define DEBUG_CONSOLE_DEVICE_TYPE_USBCDC 4U /*!< Debug console base on USBCDC. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_NONE 0U     /*!< No debug console.             */
+#define DEBUG_CONSOLE_DEVICE_TYPE_UART 1U     /*!< Debug console base on UART.   */
+#define DEBUG_CONSOLE_DEVICE_TYPE_LPUART 2U   /*!< Debug console base on LPUART. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_LPSCI 3U    /*!< Debug console base on LPSCI.  */
+#define DEBUG_CONSOLE_DEVICE_TYPE_USBCDC 4U   /*!< Debug console base on USBCDC. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_FLEXCOMM 5U /*!< Debug console base on USBCDC. */
 
 /*! @brief Status group numbers. */
 enum _status_groups
@@ -86,6 +85,9 @@ enum _status_groups
     kStatusGroup_SCG = 21,                    /*!< Group number for SCG status codes. */
     kStatusGroup_SDSPI = 22,                  /*!< Group number for SDSPI status codes. */
     kStatusGroup_FLEXIO_I2S = 23,             /*!< Group number for FLEXIO I2S status codes */
+    kStatusGroup_FLASHIAP = 25,               /*!< Group number for FLASHIAP status codes */
+    kStatusGroup_FLEXCOMM_I2C = 26,           /*!< Group number for FLEXCOMM I2C status codes */
+    kStatusGroup_I2S = 27,                    /*!< Group number for I2S status codes */
     kStatusGroup_SDRAMC = 35,                 /*!< Group number for SDRAMC status codes. */
     kStatusGroup_POWER = 39,                  /*!< Group number for POWER status codes. */
     kStatusGroup_ENET = 40,                   /*!< Group number for ENET status codes. */
@@ -100,6 +102,8 @@ enum _status_groups
     kStatusGroup_FLEXCAN = 53,                /*!< Group number for FlexCAN status codes. */
     kStatusGroup_LTC = 54,                    /*!< Group number for LTC status codes. */
     kStatusGroup_FLEXIO_CAMERA = 55,          /*!< Group number for FLEXIO CAMERA status codes. */
+    kStatusGroup_LPC_SPI = 56,                /*!< Group number for LPC_SPI status codes. */
+    kStatusGroup_LPC_USART = 57,              /*!< Group number for LPC_USART status codes. */
     kStatusGroup_NOTIFIER = 98,               /*!< Group number for NOTIFIER status codes. */
     kStatusGroup_DebugConsole = 99,           /*!< Group number for debug console status codes. */
     kStatusGroup_ApplicationRangeStart = 100, /*!< Starting number for application groups. */
@@ -125,6 +129,14 @@ typedef int32_t status_t;
  * defined in previous of this file.
  */
 #include "fsl_clock.h"
+
+/*
+ * Chip level peripheral reset API, for MCUs that implement peripheral reset control external to a peripheral
+ */
+#if ((defined(FSL_FEATURE_SOC_SYSCON_COUNT) && (FSL_FEATURE_SOC_SYSCON_COUNT > 0)) || \
+     (defined(FSL_FEATURE_SOC_ASYNC_SYSCON_COUNT) && (FSL_FEATURE_SOC_ASYNC_SYSCON_COUNT > 0)))
+#include "fsl_reset.h"
+#endif
 
 /*! @name Min/max macros */
 /* @{ */
@@ -183,6 +195,11 @@ extern "C" {
  */
 static inline void EnableIRQ(IRQn_Type interrupt)
 {
+    if (NotAvail_IRQn == interrupt)
+    {
+        return;
+    }
+
 #if defined(FSL_FEATURE_SOC_INTMUX_COUNT) && (FSL_FEATURE_SOC_INTMUX_COUNT > 0)
     if (interrupt < FSL_FEATURE_INTMUX_IRQ_START_INDEX)
 #endif
@@ -200,6 +217,11 @@ static inline void EnableIRQ(IRQn_Type interrupt)
  */
 static inline void DisableIRQ(IRQn_Type interrupt)
 {
+    if (NotAvail_IRQn == interrupt)
+    {
+        return;
+    }
+
 #if defined(FSL_FEATURE_SOC_INTMUX_COUNT) && (FSL_FEATURE_SOC_INTMUX_COUNT > 0)
     if (interrupt < FSL_FEATURE_INTMUX_IRQ_START_INDEX)
 #endif
@@ -247,6 +269,38 @@ static inline void EnableGlobalIRQ(uint32_t primask)
  * @param irqHandler IRQ handler address
  */
 void InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler);
+
+#if (defined(FSL_FEATURE_SOC_SYSCON_COUNT) && (FSL_FEATURE_SOC_SYSCON_COUNT > 0))
+/*!
+ * @brief Enable specific interrupt for wake-up from deep-sleep mode.
+ *
+ * Enable the interrupt for wake-up from deep sleep mode.
+ * Some interrupts are typically used in sleep mode only and will not occur during
+ * deep-sleep mode because relevant clocks are stopped. However, it is possible to enable
+ * those clocks (significantly increasing power consumption in the reduced power mode),
+ * making these wake-ups possible.
+ *
+ * @note This function also enables the interrupt in the NVIC (EnableIRQ() is called internally).
+ *
+ * @param interrupt The IRQ number.
+ */
+void EnableDeepSleepIRQ(IRQn_Type interrupt);
+
+/*!
+ * @brief Disable specific interrupt for wake-up from deep-sleep mode.
+ *
+ * Disable the interrupt for wake-up from deep sleep mode.
+ * Some interrupts are typically used in sleep mode only and will not occur during
+ * deep-sleep mode because relevant clocks are stopped. However, it is possible to enable
+ * those clocks (significantly increasing power consumption in the reduced power mode),
+ * making these wake-ups possible.
+ *
+ * @note This function also disables the interrupt in the NVIC (DisableIRQ() is called internally).
+ *
+ * @param interrupt The IRQ number.
+ */
+void DisableDeepSleepIRQ(IRQn_Type interrupt);
+#endif /* FSL_FEATURE_SOC_SYSCON_COUNT */
 
 #if defined(__cplusplus)
 }

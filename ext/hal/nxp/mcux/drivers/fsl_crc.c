@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -32,6 +32,11 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+/*! @internal @brief Has data register with name CRC. */
+#if defined(FSL_FEATURE_CRC_HAS_CRC_REG) && FSL_FEATURE_CRC_HAS_CRC_REG
+#define DATA CRC
+#define DATALL CRCLL
+#endif
 
 #if defined(CRC_DRIVER_USE_CRC16_CCIT_FALSE_AS_DEFAULT) && CRC_DRIVER_USE_CRC16_CCIT_FALSE_AS_DEFAULT
 /* @brief Default user configuration structure for CRC-16-CCITT */
@@ -87,7 +92,7 @@ typedef struct _crc_module_config
  *
  * @param enable True or false for the selected CRC protocol Reflect In (refin) parameter.
  */
-static inline crc_transpose_type_t crc_GetTransposeTypeFromReflectIn(bool enable)
+static inline crc_transpose_type_t CRC_GetTransposeTypeFromReflectIn(bool enable)
 {
     return ((enable) ? kCrcTransposeBitsAndBytes : kCrcTransposeBytes);
 }
@@ -99,7 +104,7 @@ static inline crc_transpose_type_t crc_GetTransposeTypeFromReflectIn(bool enable
  *
  * @param enable True or false for the selected CRC protocol Reflect Out (refout) parameter.
  */
-static inline crc_transpose_type_t crc_GetTransposeTypeFromReflectOut(bool enable)
+static inline crc_transpose_type_t CRC_GetTransposeTypeFromReflectOut(bool enable)
 {
     return ((enable) ? kCrcTransposeBitsAndBytes : kCrcTransposeNone);
 }
@@ -113,7 +118,7 @@ static inline crc_transpose_type_t crc_GetTransposeTypeFromReflectOut(bool enabl
  * @param base CRC peripheral address.
  * @param config Pointer to protocol configuration structure.
  */
-static void crc_ConfigureAndStart(CRC_Type *base, const crc_module_config_t *config)
+static void CRC_ConfigureAndStart(CRC_Type *base, const crc_module_config_t *config)
 {
     uint32_t crcControl;
 
@@ -148,18 +153,18 @@ static void crc_ConfigureAndStart(CRC_Type *base, const crc_module_config_t *con
  * @param base CRC peripheral address.
  * @param protocolConfig Pointer to protocol configuration structure.
  */
-static void crc_SetProtocolConfig(CRC_Type *base, const crc_config_t *protocolConfig)
+static void CRC_SetProtocolConfig(CRC_Type *base, const crc_config_t *protocolConfig)
 {
     crc_module_config_t moduleConfig;
     /* convert protocol to CRC peripheral module configuration, prepare for final checksum */
     moduleConfig.polynomial = protocolConfig->polynomial;
     moduleConfig.seed = protocolConfig->seed;
-    moduleConfig.readTranspose = crc_GetTransposeTypeFromReflectOut(protocolConfig->reflectOut);
-    moduleConfig.writeTranspose = crc_GetTransposeTypeFromReflectIn(protocolConfig->reflectIn);
+    moduleConfig.readTranspose = CRC_GetTransposeTypeFromReflectOut(protocolConfig->reflectOut);
+    moduleConfig.writeTranspose = CRC_GetTransposeTypeFromReflectIn(protocolConfig->reflectIn);
     moduleConfig.complementChecksum = protocolConfig->complementChecksum;
     moduleConfig.crcBits = protocolConfig->crcBits;
 
-    crc_ConfigureAndStart(base, &moduleConfig);
+    CRC_ConfigureAndStart(base, &moduleConfig);
 }
 
 /*!
@@ -172,7 +177,7 @@ static void crc_SetProtocolConfig(CRC_Type *base, const crc_config_t *protocolCo
  * @param base CRC peripheral address.
  * @param protocolConfig Pointer to protocol configuration structure.
  */
-static void crc_SetRawProtocolConfig(CRC_Type *base, const crc_config_t *protocolConfig)
+static void CRC_SetRawProtocolConfig(CRC_Type *base, const crc_config_t *protocolConfig)
 {
     crc_module_config_t moduleConfig;
     /* convert protocol to CRC peripheral module configuration, prepare for intermediate checksum */
@@ -180,25 +185,27 @@ static void crc_SetRawProtocolConfig(CRC_Type *base, const crc_config_t *protoco
     moduleConfig.seed = protocolConfig->seed;
     moduleConfig.readTranspose =
         kCrcTransposeNone; /* intermediate checksum does no transpose of data register read value */
-    moduleConfig.writeTranspose = crc_GetTransposeTypeFromReflectIn(protocolConfig->reflectIn);
+    moduleConfig.writeTranspose = CRC_GetTransposeTypeFromReflectIn(protocolConfig->reflectIn);
     moduleConfig.complementChecksum = false; /* intermediate checksum does no xor of data register read value */
     moduleConfig.crcBits = protocolConfig->crcBits;
 
-    crc_ConfigureAndStart(base, &moduleConfig);
+    CRC_ConfigureAndStart(base, &moduleConfig);
 }
 
 void CRC_Init(CRC_Type *base, const crc_config_t *config)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* ungate clock */
     CLOCK_EnableClock(kCLOCK_Crc0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
     /* configure CRC module and write the seed */
     if (config->crcResult == kCrcFinalChecksum)
     {
-        crc_SetProtocolConfig(base, config);
+        CRC_SetProtocolConfig(base, config);
     }
     else
     {
-        crc_SetRawProtocolConfig(base, config);
+        CRC_SetRawProtocolConfig(base, config);
     }
 }
 
@@ -244,6 +251,11 @@ void CRC_WriteData(CRC_Type *base, const uint8_t *data, size_t dataSize)
         data++;
         dataSize--;
     }
+}
+
+uint32_t CRC_Get32bitResult(CRC_Type *base)
+{
+    return base->DATA;
 }
 
 uint16_t CRC_Get16bitResult(CRC_Type *base)

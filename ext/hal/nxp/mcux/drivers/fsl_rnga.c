@@ -181,10 +181,14 @@ static uint32_t rnga_ReadEntropy(RNG_Type *base);
 
 void RNGA_Init(RNG_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock gate. */
     CLOCK_EnableClock(kCLOCK_Rnga0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
     CLOCK_DisableClock(kCLOCK_Rnga0); /* To solve the release version on twrkm43z75m */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_EnableClock(kCLOCK_Rnga0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Reset the registers for RNGA module to reset state. */
     RNG_WR_CR(base, 0);
@@ -194,8 +198,10 @@ void RNGA_Init(RNG_Type *base)
 
 void RNGA_Deinit(RNG_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable the clock for RNGA module.*/
     CLOCK_DisableClock(kCLOCK_Rnga0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 /*!

@@ -29,6 +29,7 @@
  */
 
 #include "fsl_smc.h"
+#include "fsl_flash.h"
 
 #if (defined(FSL_FEATURE_SMC_HAS_PARAM) && FSL_FEATURE_SMC_HAS_PARAM)
 void SMC_GetParam(SMC_Type *base, smc_param_t *param)
@@ -40,6 +41,39 @@ void SMC_GetParam(SMC_Type *base, smc_param_t *param)
     param->vlls0Enable = (bool)(reg & SMC_PARAM_EVLLS0_MASK);
 }
 #endif /* FSL_FEATURE_SMC_HAS_PARAM */
+
+void SMC_PreEnterStopModes(void)
+{
+    flash_prefetch_speculation_status_t speculationStatus =
+    {
+        kFLASH_prefetchSpeculationOptionDisable, /* Disable instruction speculation.*/
+        kFLASH_prefetchSpeculationOptionDisable, /* Disable data speculation.*/
+    };
+
+    __disable_irq();
+    __ISB();
+
+    /*
+     * Before enter stop modes, the flash cache prefetch should be disabled.
+     * Otherwise the prefetch might be interrupted by stop, then the data and
+     * and instruction from flash are wrong.
+     */
+    FLASH_PflashSetPrefetchSpeculation(&speculationStatus);
+}
+
+void SMC_PostExitStopModes(void)
+{
+    flash_prefetch_speculation_status_t speculationStatus =
+    {
+        kFLASH_prefetchSpeculationOptionEnable, /* Enable instruction speculation.*/
+        kFLASH_prefetchSpeculationOptionEnable, /* Enable data speculation.*/
+    };
+
+    FLASH_PflashSetPrefetchSpeculation(&speculationStatus);
+
+    __enable_irq();
+    __ISB();
+}
 
 status_t SMC_SetPowerModeRun(SMC_Type *base)
 {
@@ -73,7 +107,9 @@ status_t SMC_SetPowerModeWait(SMC_Type *base)
 {
     /* configure Normal Wait mode */
     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+    __DSB();
     __WFI();
+    __ISB();
 
     return kStatus_Success;
 }
@@ -101,7 +137,9 @@ status_t SMC_SetPowerModeStop(SMC_Type *base, smc_partial_stop_option_t option)
 
     /* read back to make sure the configuration valid before enter stop mode */
     (void)base->PMCTRL;
+    __DSB();
     __WFI();
+    __ISB();
 
     /* check whether the power mode enter Stop mode succeed */
     if (base->PMCTRL & SMC_PMCTRL_STOPA_MASK)
@@ -148,16 +186,12 @@ status_t SMC_SetPowerModeVlpr(SMC_Type *base
 
 status_t SMC_SetPowerModeVlpw(SMC_Type *base)
 {
-    /* Power mode transaction to VLPW can only happen in VLPR mode */
-    if (kSMC_PowerStateVlpr != SMC_GetPowerModeState(base))
-    {
-        return kStatus_Fail;
-    }
-
     /* configure VLPW mode */
     /* Set the SLEEPDEEP bit to enable deep sleep mode */
     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+    __DSB();
     __WFI();
+    __ISB();
 
     return kStatus_Success;
 }
@@ -177,7 +211,9 @@ status_t SMC_SetPowerModeVlps(SMC_Type *base)
 
     /* read back to make sure the configuration valid before enter stop mode */
     (void)base->PMCTRL;
+    __DSB();
     __WFI();
+    __ISB();
 
     /* check whether the power mode enter VLPS mode succeed */
     if (base->PMCTRL & SMC_PMCTRL_STOPA_MASK)
@@ -231,7 +267,9 @@ status_t SMC_SetPowerModeLls(SMC_Type *base
 
     /* read back to make sure the configuration valid before enter stop mode */
     (void)base->PMCTRL;
+    __DSB();
     __WFI();
+    __ISB();
 
     /* check whether the power mode enter LLS mode succeed */
     if (base->PMCTRL & SMC_PMCTRL_STOPA_MASK)
@@ -345,7 +383,9 @@ status_t SMC_SetPowerModeVlls(SMC_Type *base, const smc_power_mode_vlls_config_t
 
     /* read back to make sure the configuration valid before enter stop mode */
     (void)base->PMCTRL;
+    __DSB();
     __WFI();
+    __ISB();
 
     /* check whether the power mode enter LLS mode succeed */
     if (base->PMCTRL & SMC_PMCTRL_STOPA_MASK)

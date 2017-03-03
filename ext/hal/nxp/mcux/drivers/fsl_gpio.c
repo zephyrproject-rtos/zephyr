@@ -103,6 +103,14 @@ void GPIO_ClearPinsInterruptFlags(GPIO_Type *base, uint32_t mask)
     portBase->ISFR = mask;
 }
 
+#if defined(FSL_FEATURE_GPIO_HAS_ATTRIBUTE_CHECKER) && FSL_FEATURE_GPIO_HAS_ATTRIBUTE_CHECKER
+void GPIO_CheckAttributeBytes(GPIO_Type *base, gpio_checker_attribute_t attribute)
+{
+    base->GACR = ((uint32_t)attribute << GPIO_GACR_ACB0_SHIFT) | ((uint32_t)attribute << GPIO_GACR_ACB1_SHIFT) |
+                 ((uint32_t)attribute << GPIO_GACR_ACB2_SHIFT) | ((uint32_t)attribute << GPIO_GACR_ACB3_SHIFT);
+}
+#endif
+
 #if defined(FSL_FEATURE_SOC_FGPIO_COUNT) && FSL_FEATURE_SOC_FGPIO_COUNT
 
 /*******************************************************************************
@@ -175,5 +183,13 @@ void FGPIO_ClearPinsInterruptFlags(FGPIO_Type *base, uint32_t mask)
     portBase = s_portBases[instance];
     portBase->ISFR = mask;
 }
+
+#if defined(FSL_FEATURE_FGPIO_HAS_ATTRIBUTE_CHECKER) && FSL_FEATURE_FGPIO_HAS_ATTRIBUTE_CHECKER
+void FGPIO_CheckAttributeBytes(FGPIO_Type *base, gpio_checker_attribute_t attribute)
+{
+    base->GACR = (attribute << FGPIO_GACR_ACB0_SHIFT) | (attribute << FGPIO_GACR_ACB1_SHIFT) |
+                 (attribute << FGPIO_GACR_ACB2_SHIFT) | (attribute << FGPIO_GACR_ACB3_SHIFT);
+}
+#endif
 
 #endif /* FSL_FEATURE_SOC_FGPIO_COUNT */

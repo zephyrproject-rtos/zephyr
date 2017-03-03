@@ -45,6 +45,7 @@ extern "C" {
 
 void BOARD_BootClockVLPR(void);
 void BOARD_BootClockRUN(void);
+void BOARD_InitOsc0(void);
 
 #if defined(__cplusplus)
 }

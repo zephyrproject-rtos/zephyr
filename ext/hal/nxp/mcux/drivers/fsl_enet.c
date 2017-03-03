@@ -106,6 +106,8 @@
 #define ENET_NTOHS(n) __REV16(n)
 #define ENET_NTOHL(n) __REV(n)
 
+/* Typedef for interrupt handler. */
+typedef void (*enet_isr_t)(ENET_Type *base, enet_handle_t *handle);
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -225,23 +227,29 @@ static status_t ENET_StoreRxFrameTime(ENET_Type *base, enet_handle_t *handle, en
 /*! @brief Pointers to enet handles for each instance. */
 static enet_handle_t *s_ENETHandle[FSL_FEATURE_SOC_ENET_COUNT] = {NULL};
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to enet clocks for each instance. */
 const clock_ip_name_t s_enetClock[FSL_FEATURE_SOC_ENET_COUNT] = ENET_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*! @brief Pointers to enet transmit IRQ number for each instance. */
-const IRQn_Type s_enetTxIrqId[] = ENET_Transmit_IRQS;
+static const IRQn_Type s_enetTxIrqId[] = ENET_Transmit_IRQS;
 /*! @brief Pointers to enet receive IRQ number for each instance. */
-const IRQn_Type s_enetRxIrqId[] = ENET_Receive_IRQS;
+static const IRQn_Type s_enetRxIrqId[] = ENET_Receive_IRQS;
 #if defined(ENET_ENHANCEDBUFFERDESCRIPTOR_MODE) && ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
 /*! @brief Pointers to enet timestamp IRQ number for each instance. */
-const IRQn_Type s_enetTsIrqId[] = ENET_1588_Timer_IRQS;
+static const IRQn_Type s_enetTsIrqId[] = ENET_1588_Timer_IRQS;
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
 /*! @brief Pointers to enet error IRQ number for each instance. */
-const IRQn_Type s_enetErrIrqId[] = ENET_Error_IRQS;
+static const IRQn_Type s_enetErrIrqId[] = ENET_Error_IRQS;
 
 /*! @brief Pointers to enet bases for each instance. */
 static ENET_Type *const s_enetBases[] = ENET_BASE_PTRS;
 
+/* ENET ISR for transactional APIs. */
+static enet_isr_t s_enetTxIsr;
+static enet_isr_t s_enetRxIsr;
+static enet_isr_t s_enetErrIsr;
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -312,8 +320,10 @@ void ENET_Init(ENET_Type *base,
 
     uint32_t instance = ENET_GetInstance(base);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate ENET clock. */
     CLOCK_EnableClock(s_enetClock[instance]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Reset ENET module. */
     ENET_Reset(base);
@@ -325,7 +335,7 @@ void ENET_Init(ENET_Type *base,
     /* Initializes the ENET receive buffer descriptors. */
     ENET_SetRxBufferDescriptors(bufferConfig->rxBdStartAddrAlign, bufferConfig->rxBufferAlign,
                                 bufferConfig->rxBuffSizeAlign, bufferConfig->rxBdNumber,
-                                !!(config->interrupt & (kENET_RxFrameInterrupt | kENET_RxByteInterrupt)));
+                                !!(config->interrupt & (kENET_RxFrameInterrupt | kENET_RxBufferInterrupt)));
 
     /* Initializes the ENET MAC controller. */
     ENET_SetMacController(base, config, bufferConfig, macAddr, srcClock_Hz);
@@ -336,7 +346,6 @@ void ENET_Init(ENET_Type *base,
     /* Store transfer parameters in handle pointer. */
     handle->rxBdBase = bufferConfig->rxBdStartAddrAlign;
     handle->rxBdCurrent = bufferConfig->rxBdStartAddrAlign;
-    handle->rxBdDirty = bufferConfig->rxBdStartAddrAlign;
     handle->txBdBase = bufferConfig->txBdStartAddrAlign;
     handle->txBdCurrent = bufferConfig->txBdStartAddrAlign;
     handle->rxBuffSizeAlign = bufferConfig->rxBuffSizeAlign;
@@ -344,6 +353,14 @@ void ENET_Init(ENET_Type *base,
 
     /* Save the handle pointer in the global variables. */
     s_ENETHandle[instance] = handle;
+
+    /* Set the IRQ handler when the interrupt is enabled. */
+    if (config->interrupt)
+    {
+        s_enetTxIsr = ENET_TransmitIRQHandler;
+        s_enetRxIsr = ENET_ReceiveIRQHandler;
+        s_enetErrIsr = ENET_ErrorIRQHandler;
+    }
 }
 
 void ENET_Deinit(ENET_Type *base)
@@ -354,8 +371,10 @@ void ENET_Deinit(ENET_Type *base)
     /* Disable ENET. */
     base->ECR &= ~ENET_ECR_ETHEREN_MASK;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disables the clock source. */
     CLOCK_DisableClock(s_enetClock[ENET_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void ENET_SetCallback(enet_handle_t *handle, enet_callback_t callback, void *userData)
@@ -464,11 +483,11 @@ static void ENET_SetMacController(ENET_Type *base,
 
     /* Enables Ethernet interrupt and NVIC. */
     ENET_EnableInterrupts(base, config->interrupt);
-    if (config->interrupt & (kENET_RxByteInterrupt | kENET_RxFrameInterrupt))
+    if (config->interrupt & (kENET_RxBufferInterrupt | kENET_RxFrameInterrupt))
     {
         EnableIRQ(s_enetRxIrqId[instance]);
     }
-    if (config->interrupt & (kENET_TxByteInterrupt | kENET_TxFrameInterrupt))
+    if (config->interrupt & (kENET_TxBufferInterrupt | kENET_TxFrameInterrupt))
     {
         EnableIRQ(s_enetTxIrqId[instance]);
     }
@@ -749,13 +768,15 @@ status_t ENET_GetRxFrameSize(enet_handle_t *handle, uint32_t *length)
     assert(handle->rxBdCurrent);
     assert(length);
 
+    /* Reset the length to zero. */
+    *length = 0;
+
     uint16_t validLastMask = ENET_BUFFDESCRIPTOR_RX_LAST_MASK | ENET_BUFFDESCRIPTOR_RX_EMPTY_MASK;
     volatile enet_rx_bd_struct_t *curBuffDescrip = handle->rxBdCurrent;
 
     /* Check the current buffer descriptor's empty flag.  if empty means there is no frame received. */
     if (curBuffDescrip->control & ENET_BUFFDESCRIPTOR_RX_EMPTY_MASK)
     {
-        *length = 0;
         return kStatus_ENET_RxFrameEmpty;
     }
 
@@ -771,7 +792,6 @@ status_t ENET_GetRxFrameSize(enet_handle_t *handle, uint32_t *length)
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
                     )
             {
-                *length = 0;
                 return kStatus_ENET_RxFrameError;
             }
             /* FCS is removed by MAC. */
@@ -801,8 +821,9 @@ status_t ENET_ReadFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
 
     uint32_t len = 0;
     uint32_t offset = 0;
+    uint16_t control;
     bool isLastBuff = false;
-    volatile enet_rx_bd_struct_t *curBuffDescrip;
+    volatile enet_rx_bd_struct_t *curBuffDescrip = handle->rxBdCurrent;
     status_t result = kStatus_Success;
 
     /* For data-NULL input, only update the buffer descriptor. */
@@ -810,37 +831,24 @@ status_t ENET_ReadFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
     {
         do
         {
-            /* Get the current buffer descriptor. */
-            curBuffDescrip = handle->rxBdCurrent;
-            /* Increase current buffer descriptor to the next one. */
-            if (curBuffDescrip->control & ENET_BUFFDESCRIPTOR_RX_WRAP_MASK)
-            {
-                handle->rxBdCurrent = handle->rxBdBase;
-            }
-            else
-            {
-                handle->rxBdCurrent++;
-            }
+            /* Update the control flag. */
+            control = handle->rxBdCurrent->control;
+            /* Updates the receive buffer descriptors. */
+            ENET_UpdateReadBuffers(base, handle);
 
-            /* The last buffer descriptor of a frame. */
-            if (curBuffDescrip->control & ENET_BUFFDESCRIPTOR_RX_LAST_MASK)
+            /* Find the last buffer descriptor for the frame. */
+            if (control & ENET_BUFFDESCRIPTOR_RX_LAST_MASK)
             {
-                /* Find the last buffer descriptor for the frame*/
                 break;
             }
-        } while (handle->rxBdCurrent != handle->rxBdDirty);
 
-        /* Update all receive buffer descriptors for the whole frame. */
-        ENET_UpdateReadBuffers(base, handle);
+        } while (handle->rxBdCurrent != curBuffDescrip);
 
         return result;
     }
     else
     {
-        /* Frame read from the MAC to user buffer and update the buffer descriptors.
-        Process the frame, a frame on several receive buffers are considered . */
-        /* Get the current buffer descriptor. */
-        curBuffDescrip = handle->rxBdCurrent;
+        /* A frame on one buffer or several receive buffers are both considered. */
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
         enet_ptp_time_data_t ptpTimestamp;
         bool isPtpEventMessage = false;
@@ -851,16 +859,6 @@ status_t ENET_ReadFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
 
         while (!isLastBuff)
         {
-            /* Increase current buffer descriptor to the next one. */
-            if (curBuffDescrip->control & ENET_BUFFDESCRIPTOR_RX_WRAP_MASK)
-            {
-                handle->rxBdCurrent = handle->rxBdBase;
-            }
-            else
-            {
-                handle->rxBdCurrent++;
-            }
-
             /* The last buffer descriptor of a frame. */
             if (curBuffDescrip->control & ENET_BUFFDESCRIPTOR_RX_LAST_MASK)
             {
@@ -880,28 +878,39 @@ status_t ENET_ReadFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
                         result = ENET_StoreRxFrameTime(base, handle, &ptpTimestamp);
                     }
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
+
+                    /* Updates the receive buffer descriptors. */
                     ENET_UpdateReadBuffers(base, handle);
                     return result;
+                }
+                else
+                {
+                    /* Updates the receive buffer descriptors. */
+                    ENET_UpdateReadBuffers(base, handle);
                 }
             }
             else
             {
-                /* Store the fragments of a frame on several buffer descriptors. */
+                /* Store a frame on several buffer descriptors. */
                 isLastBuff = false;
-                memcpy(data + offset, curBuffDescrip->buffer, handle->rxBuffSizeAlign);
-                offset += handle->rxBuffSizeAlign;
+                /* Length check. */
                 if (offset >= length)
                 {
                     break;
                 }
+
+                memcpy(data + offset, curBuffDescrip->buffer, handle->rxBuffSizeAlign);
+                offset += handle->rxBuffSizeAlign;
+
+                /* Updates the receive buffer descriptors. */
+                ENET_UpdateReadBuffers(base, handle);
             }
 
             /* Get the current buffer descriptor. */
             curBuffDescrip = handle->rxBdCurrent;
         }
-        /* All error happens will break the while loop and arrive here to update receive buffers. */
-        ENET_UpdateReadBuffers(base, handle);
     }
+
     return kStatus_ENET_RxFrameFail;
 }
 
@@ -909,26 +918,23 @@ static void ENET_UpdateReadBuffers(ENET_Type *base, enet_handle_t *handle)
 {
     assert(handle);
 
-    do
+    /* Clears status. */
+    handle->rxBdCurrent->control &= ENET_BUFFDESCRIPTOR_RX_WRAP_MASK;
+    /* Sets the receive buffer descriptor with the empty flag. */
+    handle->rxBdCurrent->control |= ENET_BUFFDESCRIPTOR_RX_EMPTY_MASK;
+
+    /* Increase current buffer descriptor to the next one. */
+    if (handle->rxBdCurrent->control & ENET_BUFFDESCRIPTOR_RX_WRAP_MASK)
     {
-        /* Clears status. */
-        handle->rxBdDirty->control &= ENET_BUFFDESCRIPTOR_RX_WRAP_MASK;
-        /* Sets the receive buffer descriptor with the empty flag. */
-        handle->rxBdDirty->control |= ENET_BUFFDESCRIPTOR_RX_EMPTY_MASK;
-        /* Increases the buffer descriptor to the next one. */
-        if (handle->rxBdDirty->control & ENET_BUFFDESCRIPTOR_RX_WRAP_MASK)
-        {
-            handle->rxBdDirty = handle->rxBdBase;
-        }
-        else
-        {
-            handle->rxBdDirty++;
-        }
+        handle->rxBdCurrent = handle->rxBdBase;
+    }
+    else
+    {
+        handle->rxBdCurrent++;
+    }
 
-        /* Actives the receive buffer descriptor. */
-        base->RDAR = ENET_RDAR_RDAR_MASK;
-
-    } while (handle->rxBdDirty != handle->rxBdCurrent);
+    /* Actives the receive buffer descriptor. */
+    base->RDAR = ENET_RDAR_RDAR_MASK;
 }
 
 status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, uint32_t length)
@@ -965,6 +971,11 @@ status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
         {
             curBuffDescrip->controlExtend1 |= ENET_BUFFDESCRIPTOR_TX_TIMESTAMP_MASK;
         }
+        else
+        {
+            curBuffDescrip->controlExtend1 &= ~ENET_BUFFDESCRIPTOR_TX_TIMESTAMP_MASK;
+        }
+
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
         curBuffDescrip->control |= (ENET_BUFFDESCRIPTOR_TX_READY_MASK | ENET_BUFFDESCRIPTOR_TX_LAST_MASK);
 
@@ -987,11 +998,16 @@ status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
         /* One frame requires more than one transmit buffers. */
         do
         {
+
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
             /* For enable the timestamp. */
             if (isPtpEventMessage)
             {
                 curBuffDescrip->controlExtend1 |= ENET_BUFFDESCRIPTOR_TX_TIMESTAMP_MASK;
+            }
+            else
+            {
+                curBuffDescrip->controlExtend1 &= ~ENET_BUFFDESCRIPTOR_TX_TIMESTAMP_MASK;
             }
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
 
@@ -1014,6 +1030,7 @@ status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
                 curBuffDescrip->length = handle->txBuffSizeAlign;
                 len += handle->txBuffSizeAlign;
                 /* Sets the control flag. */
+                curBuffDescrip->control &= ~ENET_BUFFDESCRIPTOR_TX_LAST_MASK;
                 curBuffDescrip->control |= ENET_BUFFDESCRIPTOR_TX_READY_MASK;
                 /* Active the transmit buffer descriptor*/
                 base->TDAR = ENET_TDAR_TDAR_MASK;
@@ -1034,7 +1051,7 @@ status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
 
         } while (!(curBuffDescrip->control & ENET_BUFFDESCRIPTOR_TX_READY_MASK));
 
-        return kStatus_ENET_TxFrameFail;
+        return kStatus_ENET_TxFrameBusy;
     }
 }
 
@@ -1069,11 +1086,11 @@ void ENET_AddMulticastGroup(ENET_Type *base, uint8_t *address)
     /* Enable a multicast group address. */
     if (!((crc >> 0x1FU) & 1U))
     {
-        base->GALR = 1U << ((crc >> 0x1AU) & 0x1FU);
+        base->GALR |= 1U << ((crc >> 0x1AU) & 0x1FU);
     }
     else
     {
-        base->GAUR = 1U << ((crc >> 0x1AU) & 0x1FU);
+        base->GAUR |= 1U << ((crc >> 0x1AU) & 0x1FU);
     }
 }
 
@@ -1281,8 +1298,11 @@ void ENET_Ptp1588Configure(ENET_Type *base, enet_handle_t *handle, enet_ptp_conf
     ENET_EnableInterrupts(base, kENET_TsTimerInterrupt);
     EnableIRQ(s_enetTsIrqId[instance]);
 
-    /* Enables the transmit interrupt to store the transmit frame time-stamp. */
+    /* Enables only frame interrupt for transmit side to store the transmit
+    frame time-stamp when the whole frame is transmitted out. */
     ENET_EnableInterrupts(base, kENET_TxFrameInterrupt);
+    ENET_DisableInterrupts(base, kENET_TxBufferInterrupt);
+
     EnableIRQ(s_enetTxIrqId[instance]);
 
     /* Setting the receive and transmit state for transaction. */
@@ -1297,6 +1317,9 @@ void ENET_Ptp1588Configure(ENET_Type *base, enet_handle_t *handle, enet_ptp_conf
     handle->msTimerSecond = 0;
     handle->txBdDirtyTime = handle->txBdBase;
     handle->txBdDirtyStatic = handle->txBdBase;
+
+    /* Set the IRQ handler when the interrupt is enabled. */
+    s_enetTxIsr = ENET_TransmitIRQHandler;
 }
 
 void ENET_Ptp1588StartTimer(ENET_Type *base, uint32_t ptpClkSrc)
@@ -1596,14 +1619,19 @@ void ENET_TransmitIRQHandler(ENET_Type *base, enet_handle_t *handle)
     assert(handle);
 
     /* Check if the transmit interrupt happen. */
-    if ((kENET_TxByteInterrupt | kENET_TxFrameInterrupt) & base->EIR)
+    while ((kENET_TxBufferInterrupt | kENET_TxFrameInterrupt) & base->EIR)
     {
-        /* Clear the transmit interrupt event. */
-        base->EIR = kENET_TxFrameInterrupt | kENET_TxByteInterrupt;
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
-        /* Store the transmit timestamp from the buffer descriptor should be done here. */
-        ENET_StoreTxFrameTime(base, handle);
+        if (base->EIR & kENET_TxFrameInterrupt)
+        {
+            /* Store the transmit timestamp from the buffer descriptor should be done here. */
+            ENET_StoreTxFrameTime(base, handle);
+        }
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
+
+        /* Clear the transmit interrupt event. */
+        base->EIR = kENET_TxFrameInterrupt | kENET_TxBufferInterrupt;
+
         /* Callback function. */
         if (handle->callback)
         {
@@ -1617,10 +1645,10 @@ void ENET_ReceiveIRQHandler(ENET_Type *base, enet_handle_t *handle)
     assert(handle);
 
     /* Check if the receive interrupt happen. */
-    if ((kENET_RxByteInterrupt | kENET_RxFrameInterrupt) & base->EIR)
+    while ((kENET_RxBufferInterrupt | kENET_RxFrameInterrupt) & base->EIR)
     {
         /* Clear the transmit interrupt event. */
-        base->EIR = kENET_RxFrameInterrupt | kENET_RxByteInterrupt;
+        base->EIR = kENET_RxFrameInterrupt | kENET_RxBufferInterrupt;
 
         /* Callback function. */
         if (handle->callback)
@@ -1637,7 +1665,7 @@ void ENET_ErrorIRQHandler(ENET_Type *base, enet_handle_t *handle)
     uint32_t errMask = kENET_BabrInterrupt | kENET_BabtInterrupt | kENET_EBusERInterrupt | kENET_PayloadRxInterrupt |
                        kENET_LateCollisionInterrupt | kENET_RetryLimitInterrupt | kENET_UnderrunInterrupt;
 
-    /* Check if the PTP time stamp interrupt happen. */
+    /* Check if the error interrupt happen. */
     if (kENET_WakeupInterrupt & base->EIR)
     {
         /* Clear the wakeup interrupt. */
@@ -1652,7 +1680,7 @@ void ENET_ErrorIRQHandler(ENET_Type *base, enet_handle_t *handle)
     }
     else
     {
-        /* Clear the time stamp interrupt. */
+        /* Clear the error interrupt event status. */
         errMask &= base->EIR;
         base->EIR = errMask;
         /* Callback function. */
@@ -1693,26 +1721,25 @@ void ENET_Ptp1588TimerIRQHandler(ENET_Type *base, enet_handle_t *handle)
         }
     }
 }
+
+void ENET_1588_Timer_IRQHandler(void)
+{
+    ENET_Ptp1588TimerIRQHandler(ENET, s_ENETHandle[0]);
+}
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
 
 void ENET_Transmit_IRQHandler(void)
 {
-    ENET_TransmitIRQHandler(ENET, s_ENETHandle[0]);
+    s_enetTxIsr(ENET, s_ENETHandle[0]);
 }
 
 void ENET_Receive_IRQHandler(void)
 {
-    ENET_ReceiveIRQHandler(ENET, s_ENETHandle[0]);
+    s_enetRxIsr(ENET, s_ENETHandle[0]);
 }
 
 void ENET_Error_IRQHandler(void)
 {
-    ENET_ErrorIRQHandler(ENET, s_ENETHandle[0]);
+    s_enetErrIsr(ENET, s_ENETHandle[0]);
 }
 
-void ENET_1588_Timer_IRQHandler(void)
-{
-#ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
-    ENET_Ptp1588TimerIRQHandler(ENET, s_ENETHandle[0]);
-#endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
-}

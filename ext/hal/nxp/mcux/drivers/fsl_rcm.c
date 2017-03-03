@@ -32,6 +32,8 @@
 
 void RCM_ConfigureResetPinFilter(RCM_Type *base, const rcm_reset_pin_filter_config_t *config)
 {
+    assert(config);
+
 #if (defined(FSL_FEATURE_RCM_REG_WIDTH) && (FSL_FEATURE_RCM_REG_WIDTH == 32))
     uint32_t reg;
 
