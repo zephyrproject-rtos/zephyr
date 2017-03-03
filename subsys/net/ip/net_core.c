@@ -187,6 +187,12 @@ drop:
 	return NULL;
 }
 
+static inline bool is_upper_layer_protocol_header(uint8_t proto)
+{
+	return (proto == IPPROTO_ICMPV6 || proto == IPPROTO_UDP ||
+		proto == IPPROTO_TCP);
+}
+
 static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 {
 	struct net_ipv6_hdr *hdr = NET_IPV6_BUF(buf);
@@ -238,18 +244,9 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	 * headers can be slow so do this checking here. There cannot
 	 * be any extension headers after the upper layer protocol header.
 	 */
-	switch (*(net_nbuf_next_hdr(buf))) {
-	case IPPROTO_ICMPV6:
-		return process_icmpv6_pkt(buf, hdr);
-
-#if defined(CONFIG_NET_UDP)
-	case IPPROTO_UDP:
-		return net_conn_input(IPPROTO_UDP, buf);
-#endif
-#if defined(CONFIG_NET_TCP)
-	case IPPROTO_TCP:
-		return net_conn_input(IPPROTO_TCP, buf);
-#endif
+	next = *(net_nbuf_next_hdr(buf));
+	if (is_upper_layer_protocol_header(next)) {
+		goto upper_proto;
 	}
 
 	/* Go through the extensions */
@@ -261,25 +258,24 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	while (frag) {
 		enum net_verdict verdict;
 
+		if (is_upper_layer_protocol_header(next)) {
+			NET_DBG("IPv6 next header %d", next);
+			net_nbuf_set_ext_len(buf, offset -
+					     sizeof(struct net_ipv6_hdr));
+			goto upper_proto;
+		}
+
 		frag = net_nbuf_read_u8(frag, offset, &offset, &next_hdr);
 		frag = net_nbuf_read_u8(frag, offset, &offset, &length);
-		if (!frag) {
+		if (!frag && offset == 0xffff) {
 			goto drop;
 		}
 
 		length = length * 8 + 8;
 		verdict = NET_OK;
 
-#if defined(CONFIG_NET_DEBUG_CORE)
 		/* Print the length only for IPv6 extension */
-		if (next != IPPROTO_ICMPV6 && next != IPPROTO_UDP &&
-		    next != IPPROTO_TCP) {
-			NET_DBG("IPv6 next header %d length %d bytes",
-				next, length);
-		} else {
-			NET_DBG("IPv6 next header %d", next);
-		}
-#endif /* CONFIG_NET_DEBUG_CORE */
+		NET_DBG("IPv6 next header %d length %d bytes", next, length);
 
 		switch (next) {
 		case NET_IPV6_NEXTHDR_NONE:
@@ -291,13 +287,14 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			goto drop;
 
 		case NET_IPV6_NEXTHDR_HBHO:
+			/* HBH option needs to be the first one */
+			if (first_option != NET_IPV6_NEXTHDR_HBHO) {
+				goto bad_hdr;
+			}
+
 			/* Hop by hop option */
 			if (net_nbuf_ext_bitmap(buf) &
 			    NET_IPV6_EXT_HDR_BITMAP_HBHO) {
-				goto bad_hdr;
-			}
-			/* HBH option needs to be the first one */
-			if (first_option != NET_IPV6_NEXTHDR_HBHO) {
 				goto bad_hdr;
 			}
 
@@ -307,51 +304,35 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			frag = handle_ext_hdr_options(buf, frag, real_len,
 						      length, offset, &offset,
 						      &verdict);
-			if (verdict == NET_DROP) {
-				goto drop;
-			} else if (verdict == NET_CONTINUE) {
-				/* ignore the option */
-				break;
-			}
-
-			if (!frag && offset) {
-				/* Header issue, the ICMPv6 parameter problem
-				 * error is already sent so just drop the msg
-				 * here.
-				 */
-				goto drop;
-			}
-
 			break;
 
-		/* The next header after the extensions can be also
-		 * one of the main protocols.
-		 */
-		case IPPROTO_ICMPV6:
-			net_nbuf_set_ext_len(buf,
-					     offset -
-					     sizeof(struct net_ipv6_hdr));
-			return process_icmpv6_pkt(buf, hdr);
-
-#if defined(CONFIG_NET_UDP)
-		case IPPROTO_UDP:
-			net_nbuf_set_ext_len(buf,
-					     offset -
-					     sizeof(struct net_ipv6_hdr));
-			return net_conn_input(IPPROTO_UDP, buf);
-#endif
-#if defined(CONFIG_NET_TCP)
-		case IPPROTO_TCP:
-			net_nbuf_set_ext_len(buf,
-					     offset -
-					     sizeof(struct net_ipv6_hdr));
-			return net_conn_input(IPPROTO_TCP, buf);
-#endif
 		default:
 			goto bad_hdr;
 		}
 
+		if (verdict == NET_DROP) {
+			goto drop;
+		}
+
 		next = next_hdr;
+	}
+
+upper_proto:
+	switch (next) {
+	case IPPROTO_ICMPV6:
+		return process_icmpv6_pkt(buf, hdr);
+	case IPPROTO_UDP:
+#if defined(CONFIG_NET_UDP)
+		return net_conn_input(IPPROTO_UDP, buf);
+#else
+		return NET_DROP;
+#endif
+	case IPPROTO_TCP:
+#if defined(CONFIG_NET_TCP)
+		return net_conn_input(IPPROTO_TCP, buf);
+#else
+		return NET_DROP;
+#endif
 	}
 
 drop:
