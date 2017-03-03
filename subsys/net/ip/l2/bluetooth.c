@@ -52,26 +52,12 @@ struct bt_context {
 
 static enum net_verdict net_bt_recv(struct net_if *iface, struct net_buf *buf)
 {
-	uint32_t src;
-	uint32_t dst;
-
 	NET_DBG("iface %p buf %p len %u", iface, buf, net_buf_frags_len(buf));
-
-	/* Uncompress will drop the current fragment. Buf ll src/dst address
-	 * will then be wrong and must be updated according to the new fragment.
-	 */
-	src = net_nbuf_ll_src(buf)->addr ?
-		net_nbuf_ll_src(buf)->addr - net_nbuf_ll(buf) : 0;
-	dst = net_nbuf_ll_dst(buf)->addr ?
-		net_nbuf_ll_dst(buf)->addr - net_nbuf_ll(buf) : 0;
 
 	if (!net_6lo_uncompress(buf)) {
 		NET_DBG("Packet decompression failed");
 		return NET_DROP;
 	}
-
-	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
-	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
 
 	net_nbuf_ll_src(buf)->type = NET_LINK_BLUETOOTH;
 	net_nbuf_ll_dst(buf)->type = NET_LINK_BLUETOOTH;
