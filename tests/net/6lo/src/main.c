@@ -106,8 +106,8 @@ uint8_t dst_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa };
 /* 6CO contexts */
 static struct net_icmpv6_nd_opt_6co ctx1 = {
 	.type = 0x22,
-	.len = 0x03,
-	.context_len = 0x80,
+	.len = 0x02,
+	.context_len = 0x40,
 	.flag = 0x11,
 	.reserved = 0,
 	.lifetime = 0x1234,

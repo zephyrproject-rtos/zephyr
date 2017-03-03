@@ -2055,6 +2055,21 @@ static inline struct net_buf *handle_ra_6co(struct net_buf *buf,
 	context.len = len * 8 - 2;
 
 	frag = net_nbuf_read_u8(frag, offset, pos, &context.context_len);
+
+	/* RFC 6775, 4.2
+	 * Context Length: 8-bit unsigned integer.  The number of leading
+	 * bits in the Context Prefix field that are valid.  The value ranges
+	 * from 0 to 128.  If it is more than 64, then the Length MUST be 3.
+	 */
+	if (context.context_len > 64 && len != 3) {
+		return NULL;
+	}
+
+	if (context.context_len <= 64 && len != 2) {
+		return NULL;
+	}
+
+	context.context_len = context.context_len / 8;
 	frag = net_nbuf_read_u8(frag, *pos, pos, &context.flag);
 
 	/* Skip reserved bytes */
@@ -2073,11 +2088,18 @@ static inline struct net_buf *handle_ra_6co(struct net_buf *buf,
 		 */
 		frag = net_nbuf_read(frag, *pos, pos, 8,
 				     context.prefix.s6_addr);
-		memset(context.prefix.s6_addr + 8, 0, 8);
 	}
 
 	if (!frag && *pos) {
 		return NULL;
+	}
+
+	/* context_len: The number of leading bits in the Context Prefix
+	 * field that are valid. So set remaining data to zero.
+	 */
+	if (context.context_len != sizeof(struct in6_addr)) {
+		memset(context.prefix.s6_addr + context.context_len, 0,
+		       sizeof(struct in6_addr) - context.context_len);
 	}
 
 	net_6lo_set_context(net_nbuf_iface(buf), &context);
