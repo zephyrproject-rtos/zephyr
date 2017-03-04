@@ -14,6 +14,13 @@
 static struct {
 	void *head;
 	void *tail;
+	union {
+		uint32_t flags;
+		struct {
+			uint32_t disable_req : 1;
+			uint32_t disable_ack : 1;
+		};
+	};
 } mft[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT];
 
 static void *mfl[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT][2];
@@ -31,6 +38,20 @@ void mayfly_init(void)
 			memq_init(mfl[callee_id][caller_id],
 				  &mft[callee_id][caller_id].head,
 				  &mft[callee_id][caller_id].tail);
+		}
+	}
+}
+
+void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
+{
+	if (enable) {
+		mayfly_enable_cb(caller_id, callee_id, enable);
+	} else {
+		if (mft[callee_id][caller_id].disable_req ==
+		    mft[callee_id][caller_id].disable_ack) {
+			mft[callee_id][caller_id].disable_req++;
+
+			mayfly_pend(caller_id, callee_id);
 		}
 	}
 }
@@ -90,6 +111,7 @@ uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
 void mayfly_run(uint8_t callee_id)
 {
 	uint8_t caller_id;
+	uint8_t disable = 0;
 
 	/* iterate through each caller queue to this callee_id */
 	caller_id = MAYFLY_CALLER_COUNT;
@@ -140,14 +162,27 @@ void mayfly_run(uint8_t callee_id)
 			 */
 			if (state == 1) {
 				/* pend callee (tailchain) if mayfly queue is
-				 * not empty.
+				 * not empty or all caller queues are not
+				 * processed.
 				 */
-				if (link) {
+				if (caller_id || link) {
 					mayfly_pend(callee_id, callee_id);
-				}
 
-				return;
+					return;
+				}
 			}
 		}
+
+		if (mft[callee_id][caller_id].disable_req !=
+		    mft[callee_id][caller_id].disable_ack) {
+			disable = 1;
+
+			mft[callee_id][caller_id].disable_ack =
+				mft[callee_id][caller_id].disable_req;
+		}
+	}
+
+	if (disable) {
+		mayfly_enable_cb(callee_id, callee_id, 0);
 	}
 }
