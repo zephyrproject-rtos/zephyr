@@ -84,7 +84,7 @@ int bt_rand(void *buf, size_t len)
 	return 0;
 }
 
-void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
+void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {
 	(void)caller_id;
 
