@@ -404,6 +404,40 @@ static void verify_send_report(void)
 	}
 }
 
+/* This value should be longer that the one in net_if.c when DAD timeouts */
+#define DAD_TIMEOUT (MSEC_PER_SEC / 5)
+
+static void test_allnodes(void)
+{
+	struct net_if *iface = NULL;
+	struct net_if_mcast_addr *ifmaddr;
+	struct in6_addr addr;
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
+
+	/* Let the DAD succeed so that the multicast address will be there */
+	k_sleep(DAD_TIMEOUT);
+
+	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+
+	assert_not_null(ifmaddr, "Interface does not contain "
+			"allnodes multicast address");
+}
+
+static void test_solicit_node(void)
+{
+	struct net_if *iface = NULL;
+	struct net_if_mcast_addr *ifmaddr;
+	struct in6_addr addr;
+
+	net_ipv6_addr_create_solicited_node(&my_addr, &addr);
+
+	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+
+	assert_not_null(ifmaddr, "Interface does not contain "
+			"solicit node multicast address");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_mld_test,
@@ -415,7 +449,9 @@ void test_main(void)
 			 ztest_unit_test(verify_join_group),
 			 ztest_unit_test(verify_leave_group),
 			 ztest_unit_test(catch_query),
-			 ztest_unit_test(verify_send_report)
+			 ztest_unit_test(verify_send_report),
+			 ztest_unit_test(test_allnodes),
+			 ztest_unit_test(test_solicit_node)
 			 );
 
 	ztest_run_test_suite(net_mld_test);
