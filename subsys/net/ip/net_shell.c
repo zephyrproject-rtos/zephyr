@@ -780,11 +780,11 @@ static int shell_cmd_nbr(int argc, char *argv[])
 	if (count == 0) {
 		printk("No neighbors.\n");
 	}
-
-	return 0;
 #else
 	printk("IPv6 not enabled.\n");
 #endif /* CONFIG_NET_IPV6 */
+
+	return 0;
 }
 
 static int shell_cmd_ping(int argc, char *argv[])
