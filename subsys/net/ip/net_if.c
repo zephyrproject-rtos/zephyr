@@ -284,19 +284,31 @@ struct net_if *net_if_get_default(void)
 static void join_mcast_allnodes(struct net_if *iface)
 {
 	struct in6_addr addr;
+	int ret;
 
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
-	net_ipv6_mld_join(iface, &addr);
+
+	ret = net_ipv6_mld_join(iface, &addr);
+	if (ret < 0) {
+		NET_ERR("Cannot join all nodes address %s (%d)",
+			net_sprint_ipv6_addr(&addr), ret);
+	}
 }
 
 static void join_mcast_solicit_node(struct net_if *iface,
 				    struct in6_addr *my_addr)
 {
 	struct in6_addr addr;
+	int ret;
 
 	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
 	net_ipv6_addr_create_solicited_node(my_addr, &addr);
-	net_ipv6_mld_join(iface, &addr);
+
+	ret = net_ipv6_mld_join(iface, &addr);
+	if (ret < 0) {
+		NET_ERR("Cannot join solicit node address %s (%d)",
+			net_sprint_ipv6_addr(&addr), ret);
+	}
 }
 
 static void leave_mcast_all(struct net_if *iface)
