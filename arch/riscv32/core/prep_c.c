@@ -17,6 +17,7 @@
 
 #include <stddef.h>
 #include <toolchain.h>
+#include <kernel_structs.h>
 #include <nano_internal.h>
 
 /**
