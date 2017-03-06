@@ -203,6 +203,8 @@ static void write_led(const struct nats *nats,
 	pubstate = state ? "on" : "off";
 	nats_publish(nats, "led0", 0, msg->reply_to, 0,
 		     pubstate, strlen(pubstate));
+
+	printk("*** Turning LED %s\n", pubstate);
 }
 
 static int on_msg_received(const struct nats *nats,

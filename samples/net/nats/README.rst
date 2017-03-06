@@ -131,15 +131,19 @@ If ``queue_group`` is NULL, it's not sent to the server.
 
 ``max_msgs`` specifies the number of messages that the server will
 send before actually unsubscribing the message. Can be 0 to
-immediately unsubscribe.
+immediately unsubscribe.  (See note below.)
 
 Both of these functions will return ``-ENOMEM`` if they couldn't build
 the message to transmit to the server. They can also return any error
 that ``net_context_send()`` can return.
 
-In order to conserve resources, the Zephyr implementation will not make
-not of subscribed topics. This is left as a task for the user of the API
-to handle, for instance, when the ``on_message()`` callback is called.
+Note:  In order to conserve resources, the library implementation will not
+make note of subscribed topics.  Both ``nats_subscribe()`` and
+``nats_unsubscribe()`` functions will only notify the server that the client
+is either interested or uninterested in a particular topic.  The
+``on_message()`` callback may be called to notify of changes in topics that
+have not been subscribed to (or have been recently unsubscribed).  It's up
+to the application to decide to ignore the message.
 
 Topics can be published by using the following function:
 
@@ -155,5 +159,5 @@ which case, subscribers to this topic won't receive this information as
 well.
 
 As ``net_subscribe()`` and ``net_unsubscribe()``, this function can
-return ``ENOMEM`` -or any other errors that ``net_context_send()``
+return ``-ENOMEM`` or any other errors that ``net_context_send()``
 returns.
