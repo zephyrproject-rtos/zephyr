@@ -324,6 +324,17 @@ struct bt_hci_cp_accept_conn_req {
 	uint8_t   role;
 } __packed;
 
+#define BT_HCI_OP_SETUP_SYNC_CONN               BT_OP(BT_OGF_LINK_CTRL, 0x0028)
+struct bt_hci_cp_setup_sync_conn {
+	uint16_t  handle;
+	uint32_t  tx_bandwidth;
+	uint32_t  rx_bandwidth;
+	uint16_t  max_latency;
+	uint16_t  content_format;
+	uint8_t   retrans_effort;
+	uint16_t  pkt_type;
+} __packed;
+
 #define BT_HCI_OP_ACCEPT_SYNC_CONN_REQ          BT_OP(BT_OGF_LINK_CTRL, 0x0029)
 struct bt_hci_cp_accept_sync_conn_req {
 	bt_addr_t bdaddr;

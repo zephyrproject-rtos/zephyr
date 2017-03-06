@@ -273,6 +273,68 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	return conn;
 }
 
+struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
+{
+	struct bt_hci_cp_setup_sync_conn *cp;
+	struct bt_conn *sco_conn;
+	struct net_buf *buf;
+	int link_type;
+
+	sco_conn = bt_conn_lookup_addr_sco(peer);
+	if (sco_conn) {
+		switch (sco_conn->state) {
+			return sco_conn;
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return sco_conn;
+		default:
+			bt_conn_unref(sco_conn);
+			return NULL;
+		}
+	}
+
+	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+		link_type = BT_HCI_ESCO;
+	} else {
+		link_type = BT_HCI_SCO;
+	}
+
+	sco_conn = bt_conn_add_sco(peer, link_type);
+	if (!sco_conn) {
+		return NULL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SETUP_SYNC_CONN, sizeof(*cp));
+	if (!buf) {
+		bt_sco_cleanup(sco_conn);
+		return NULL;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	memset(cp, 0, sizeof(*cp));
+
+	BT_ERR("handle : %x", sco_conn->sco.acl->handle);
+
+	cp->handle = sco_conn->sco.acl->handle;
+	cp->pkt_type = sco_conn->sco.pkt_type;
+	cp->tx_bandwidth = 0x00001f40;
+	cp->rx_bandwidth = 0x00001f40;
+	cp->max_latency = 0x0007;
+	cp->retrans_effort = 0x01;
+	cp->content_format = BT_VOICE_CVSD_16BIT;
+
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf,
+				 NULL) < 0) {
+		bt_sco_cleanup(sco_conn);
+		return NULL;
+	}
+
+	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
+
+	return sco_conn;
+}
+
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
 {
 	int i;
