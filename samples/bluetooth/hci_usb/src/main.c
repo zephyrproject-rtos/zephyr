@@ -592,7 +592,7 @@ static int btusb_class_handler(struct usb_setup_packet *setup,
 	struct net_buf *buf;
 
 	if (!*len || *len > CMD_BUF_SIZE) {
-		SYS_LOG_ERR("Incorrect length: %u\n", len);
+		SYS_LOG_ERR("Incorrect length: %d\n", *len);
 		return -EINVAL;
 	}
 
