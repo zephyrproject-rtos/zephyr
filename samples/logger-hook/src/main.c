@@ -31,9 +31,15 @@ static inline void ring_buf_print(struct ring_buf *buf);
 int logger_put(struct log_cbuffer *logger, char *data, uint32_t data_size)
 {
 	int ret;
+	uint8_t size32;
+	int key;
 
+	size32 = (data_size + 3) / 4;
+
+	key = irq_lock();
 	ret = sys_ring_buf_put(&logger->ring_buffer, 0, 0,
-			       (uint32_t *)data, data_size);
+			       (uint32_t *)data, size32);
+	irq_unlock(key);
 
 	return ret;
 }
@@ -77,19 +83,19 @@ void main(void)
 static inline void ring_buf_print(struct ring_buf *buf)
 {
 	uint8_t data[512];
-	int ret = 1;
-	int count = 0;
-	uint8_t size = 0;
+	int ret, key;
+	uint8_t size32 = sizeof(data) / 4;
+	uint16_t type;
+	uint8_t val;
 
-	while (ret != 0 && count < 2) {
-		count++;
-		ret = sys_ring_buf_get(&log_cbuffer.ring_buffer, 0, 0,
-				       (uint32_t *)data, &size);
-	}
+	key = irq_lock();
+	ret = sys_ring_buf_get(&log_cbuffer.ring_buffer, &type, &val,
+			       (uint32_t *)data, &size32);
+	irq_unlock(key);
 
 	if (ret == 0) {
 		printk("%s", data);
 	} else {
-		printk("Error when reading ring buffer\n");
+		printk("Error when reading ring buffer (%d)\n", ret);
 	}
 }
