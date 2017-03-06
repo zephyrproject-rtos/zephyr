@@ -142,10 +142,10 @@ static inline void init_app(void)
 		NET_ERR("Invalid IPv4 address %s",
 			CONFIG_NET_SAMPLES_MY_IPV4_ADDR);
 	}
-#endif
 
 	net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my,
 			     NET_ADDR_MANUAL, 0);
+#endif
 #endif /* CONFIG_NET_DHCPV4 */
 #endif /* CONFIG_NET_IPV4 */
 }
