@@ -622,7 +622,7 @@ static void dio_timer(struct k_work *work)
 		}
 		instance->dio_send = false;
 
-		NET_DBG("Next DIO send after %lu ms",
+		NET_DBG("Next DIO send after %d ms",
 			instance->dio_next_delay);
 
 		k_delayed_work_submit(&instance->dio_timer,
@@ -940,7 +940,7 @@ static void net_rpl_schedule_probing(struct net_rpl_instance *instance)
 		      sys_rand32_get() % NET_RPL_PROBING_INTERVAL) *
 		MSEC_PER_SEC;
 
-	NET_DBG("Send probe in %lu ms, instance %p (%d)",
+	NET_DBG("Send probe in %d ms, instance %p (%d)",
 		expiration, instance, instance->instance_id);
 
 	k_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
