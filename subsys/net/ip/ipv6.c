@@ -1904,12 +1904,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 
 static inline uint32_t remaining(struct k_delayed_work *work)
 {
-	if (work->timeout.delta_ticks_from_prev < 0) {
-		return NET_IPV6_ND_INFINITE_LIFETIME;
-	}
-
-	return (uint32_t)work->timeout.delta_ticks_from_prev /
-		sys_clock_ticks_per_sec;
+	return k_delayed_work_remaining_get(work) / MSEC_PER_SEC;
 }
 
 static inline void handle_prefix_autonomous(struct net_buf *buf,
