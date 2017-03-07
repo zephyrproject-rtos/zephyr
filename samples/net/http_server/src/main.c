@@ -30,9 +30,10 @@ void main(void)
 
 	http_ctx_init();
 
-	http_url_default_handler(http_write_soft_404_not_found);
-	http_url_add("/headers", HTTP_URL_STANDARD, http_write_header_fields);
-	http_url_add("/index.html", HTTP_URL_STANDARD, http_write_it_works);
+	http_url_default_handler(http_response_soft_404);
+	http_url_add("/headers", HTTP_URL_STANDARD,
+		     http_response_header_fields);
+	http_url_add("/index.html", HTTP_URL_STANDARD, http_response_it_works);
 
 	network_setup(&net_ctx, http_accept_cb, ZEPHYR_ADDR, ZEPHYR_PORT);
 }
