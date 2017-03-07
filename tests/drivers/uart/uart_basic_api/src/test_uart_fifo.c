@@ -43,7 +43,7 @@ static const char *fifo_data = "This is a FIFO test.\r\n";
 
 static void uart_fifo_callback(struct device *dev)
 {
-	char recvData;
+	uint8_t recvData;
 
 	/* Verify uart_irq_update() */
 	uart_irq_update(dev);
@@ -104,7 +104,7 @@ static int test_fifo_fill(void)
 	/* Verify uart_fifo_fill() */
 	for (int i = 0; i < DATA_SIZE; i++) {
 		data_transmitted = false;
-		while (!uart_fifo_fill(uart_dev, &fifo_data[i], 1))
+		while (!uart_fifo_fill(uart_dev, (uint8_t *) &fifo_data[i], 1))
 			;
 		while (data_transmitted == false)
 			;
