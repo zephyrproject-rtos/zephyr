@@ -28,6 +28,7 @@
  */
 
 #include "ss_init.h"
+#include "qm_mpr.h"
 
 /* Sensor Subsystem application's pointer to the entry point (Flash0) */
 #define SS_APP_PTR_ADDR (0x40000000)
@@ -37,6 +38,26 @@ uint32_t __sensor_reset_vector[1];
 #else
 extern uint32_t __sensor_reset_vector[];
 #endif
+
+/* Set-up an MPR to protect ARC IVT (only ARC will have access to it). */
+static void sensor_vectors_protect(void)
+{
+	/*
+	 * MPR config:
+	 * - Enable and lock MPR
+	 * - Allow R/W access to ARC only
+	 * - Protect first kB of SRAM (i.e., where ARC IVT is located)
+	 */
+	static const qm_mpr_config_t cfg = {
+	    .en_lock_mask =
+		QM_SRAM_MPR_EN_MASK_ENABLE | QM_SRAM_MPR_EN_MASK_LOCK,
+	    .agent_read_en_mask = QM_SRAM_MPR_AGENT_MASK_SS,
+	    .agent_write_en_mask = QM_SRAM_MPR_AGENT_MASK_SS,
+	    .up_bound = 0,
+	    .low_bound = 0,
+	};
+	qm_mpr_set_config(QM_MPR_1, &cfg);
+}
 
 void sensor_activation(void)
 {
@@ -52,6 +73,9 @@ void sensor_activation(void)
 	volatile uint32_t *sensor_startup = (uint32_t *)SS_APP_PTR_ADDR;
 
 	*ss_reset_vector = *sensor_startup;
+
+	/* Set up an MPR to protect ARC IVT from other agents. */
+	sensor_vectors_protect();
 
 	/* Request ARC Run */
 	QM_SCSS_SS->ss_cfg |= QM_SS_CFG_ARC_RUN_REQ_A;

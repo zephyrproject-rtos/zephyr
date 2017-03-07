@@ -518,6 +518,9 @@ qm_scss_peripheral_reg_t test_scss_peripheral;
 #define QM_SCSS_PERIPHERAL ((qm_scss_peripheral_reg_t *)QM_SCSS_PERIPHERAL_BASE)
 #endif
 
+/* SS code protection region Lock bit. */
+#define QM_SCSS_CFG_LOCK_PROT_RANGE_LOCK BIT(10)
+
 /** @} */
 
 /**
@@ -1667,13 +1670,13 @@ qm_mpr_reg_t test_mpr;
 
 #endif
 
-#define QM_MPR_RD_EN_OFFSET (20)
-#define QM_MPR_RD_EN_MASK 0x700000
-#define QM_MPR_WR_EN_OFFSET (24)
-#define QM_MPR_WR_EN_MASK 0x7000000
+#define QM_MPR_UP_BOUND_OFFSET (10)
+#define QM_MPR_WR_EN_OFFSET (20)
+#define QM_MPR_WR_EN_MASK 0x700000
+#define QM_MPR_RD_EN_OFFSET (24)
+#define QM_MPR_RD_EN_MASK 0x7000000
 #define QM_MPR_EN_LOCK_OFFSET (30)
 #define QM_MPR_EN_LOCK_MASK 0xC0000000
-#define QM_MPR_UP_BOUND_OFFSET (10)
 #define QM_MPR_VSTS_VALID BIT(31)
 /** @} */
 
