@@ -19,6 +19,15 @@ struct http_client_ctx {
 
 	uint32_t content_length;
 	uint32_t processed;
+
+	/* https://tools.ietf.org/html/rfc7230#section-3.1.2
+	 * The status-code element is a 3-digit integer code
+	 *
+	 * The reason-phrase element exists for the sole purpose of
+	 * providing a textual description associated with the
+	 * numeric status code. A client SHOULD ignore the
+	 * reason-phrase content.
+	 */
 	char http_status[HTTP_STATUS_STR_SIZE];
 
 	uint8_t cl_present:1;

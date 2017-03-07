@@ -8,8 +8,9 @@
 #include <errno.h>
 #include <misc/printk.h>
 
-#include "http_client_types.h"
+#include <net/http.h>
 #include "http_client.h"
+#include "http_client_types.h"
 #include "config.h"
 
 #define POST_CONTENT_TYPE "application/x-www-form-urlencoded"
@@ -19,8 +20,8 @@
 
 static struct http_client_ctx http_ctx;
 
-static void send_http_method(enum http_method method, const char *url,
-			     const char *content_type, const char *payload);
+static void send_http_method(enum http_method method, char *url,
+			     char *content_type, char *payload);
 
 void main(void)
 {
@@ -65,10 +66,11 @@ void print_banner(enum http_method method)
 	       HOST_NAME, http_method_str(method));
 }
 
-static
-void send_http_method(enum http_method method, const char *url,
-		      const char *content_type, const char *payload)
+static void send_http_method(enum http_method method, char *url,
+			     char *content_type, char *payload)
 {
+	struct net_context *net_ctx;
+	int32_t timeout;
 	int rc;
 
 	print_banner(method);
@@ -81,18 +83,22 @@ void send_http_method(enum http_method method, const char *url,
 		return;
 	}
 
+	net_ctx = http_ctx.tcp_ctx.net_ctx;
+	timeout = http_ctx.tcp_ctx.timeout;
+
 	switch (method) {
 	case HTTP_GET:
-		rc = http_send_get(&http_ctx, url);
+		rc = http_request_get(net_ctx, timeout, url, HEADER_FIELDS);
 		break;
 	case HTTP_POST:
-		rc = http_send_post(&http_ctx, url, content_type, payload);
+		rc = http_request_post(net_ctx, timeout, url, HEADER_FIELDS,
+				       content_type, payload);
 		break;
 	case HTTP_HEAD:
-		rc = http_send_head(&http_ctx, url);
+		rc = http_request_head(net_ctx, timeout, url, HEADER_FIELDS);
 		break;
 	case HTTP_OPTIONS:
-		rc = http_send_options(&http_ctx, url, NULL, NULL);
+		rc = http_request_options(net_ctx, timeout, url, HEADER_FIELDS);
 		break;
 	default:
 		printk("Not yet implemented\n");
