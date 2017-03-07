@@ -710,8 +710,9 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 
 	(*count)++;
 
-	printk("[%d] %d/%d/%d/%d %10s iface %p ll %s addr %s\n",
-	       *count, nbr->ref, net_ipv6_nbr_data(nbr)->ns_count,
+	printk("[%d] %p %d/%d/%d/%d %10s iface %p ll %s addr %s "
+	       "remain %d ms\n",
+	       *count, nbr, nbr->ref, net_ipv6_nbr_data(nbr)->ns_count,
 	       net_ipv6_nbr_data(nbr)->is_router,
 	       net_ipv6_nbr_data(nbr)->link_metric,
 	       net_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
@@ -720,7 +721,9 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	       net_sprint_ll_addr(
 		       net_nbr_get_lladdr(nbr->idx)->addr,
 		       net_nbr_get_lladdr(nbr->idx)->len),
-	       net_sprint_ipv6_addr(&net_ipv6_nbr_data(nbr)->addr));
+	       net_sprint_ipv6_addr(&net_ipv6_nbr_data(nbr)->addr),
+	       k_delayed_work_remaining_get(
+		       &net_ipv6_nbr_data(nbr)->reachable));
 }
 #endif
 
