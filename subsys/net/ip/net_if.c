@@ -175,7 +175,7 @@ static inline void init_tx_queue(struct net_if *iface)
 	k_thread_spawn(iface->tx_stack, sizeof(iface->tx_stack),
 		       (k_thread_entry_t)net_if_tx_thread,
 		       iface, NULL, NULL, K_PRIO_COOP(7),
-		       K_ESSENTIAL, 0);
+		       K_ESSENTIAL, K_NO_WAIT);
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)

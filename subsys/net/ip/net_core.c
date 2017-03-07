@@ -565,7 +565,7 @@ static void init_rx_queue(void)
 	rx_tid = k_thread_spawn(rx_stack, sizeof(rx_stack),
 				(k_thread_entry_t)net_rx_thread,
 				NULL, NULL, NULL, K_PRIO_COOP(8),
-				K_ESSENTIAL, 0);
+				K_ESSENTIAL, K_NO_WAIT);
 }
 
 #if defined(CONFIG_NET_IP_ADDR_CHECK)
