@@ -44,6 +44,7 @@
 #include "ll/pdu.h"
 #include "ll/ctrl.h"
 #include "ll/ctrl_internal.h"
+#include "ll/ll.h"
 #include "hci_internal.h"
 
 #include "hal/debug.h"
@@ -383,6 +384,16 @@ static int hci_driver_open(void)
 		BT_ERR("Required RAM size: %d, supplied: %u.", err,
 		       sizeof(_radio));
 		return -ENOMEM;
+	}
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS)) {
+		uint64_t addr64 = CONFIG_BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS;
+		uint8_t bdaddr[6];
+
+		sys_put_le32(addr64 & 0xFFFFFFFF, &bdaddr[0]);
+		sys_put_le16((addr64 >> 32) & 0xFFFF, &bdaddr[4]);
+
+		ll_address_set(0, bdaddr);
 	}
 
 	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0);
