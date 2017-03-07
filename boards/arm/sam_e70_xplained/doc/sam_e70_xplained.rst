@@ -43,6 +43,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ETHERNET  | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 

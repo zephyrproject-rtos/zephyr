@@ -1,0 +1,27 @@
+# Kconfig - Atmel SAM WDT configuration
+#
+# Copyright (C) 2017 Intel Deutschland GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WDT_SAM
+	bool "Atmel SAM MCU Family Watchdog (WDT) Driver"
+	depends on SOC_FAMILY_SAM
+	default y
+	help
+	  Enable WDT driver for Atmel SAM MCUs.
+
+config WDT_SAM_DISABLE_AT_BOOT
+	bool "Disable WDT during boot"
+	depends on WDT_SAM
+	default y
+	help
+	  Select this option to disable the WDT during boot.
+
+config WDT_SAM_DEVICE_NAME
+	string "Device name for Watchdog (WDT)"
+	depends on WDT_SAM
+	default "WDT"
+	help
+	  Set the name used by WDT device during registration.
