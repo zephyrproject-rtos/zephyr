@@ -17,6 +17,13 @@
 #include "qm_isr.h"
 #include "clk.h"
 
+#define CYCLE_NOP \
+	 __asm__ __volatile__ ("nop"); \
+	 __asm__ __volatile__ ("nop"); \
+	 __asm__ __volatile__ ("nop"); \
+	 __asm__ __volatile__ ("nop")
+
+
 struct dma_qmsi_config_info {
 	qm_dma_t instance; /* Controller instance. */
 };
@@ -254,16 +261,26 @@ static int dma_qmsi_chan_config(struct device *dev, uint32_t channel,
 
 static int dma_qmsi_transfer_start(struct device *dev, uint32_t channel)
 {
+	int ret;
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
-	return qm_dma_transfer_start(info->instance, channel);
+	ret = qm_dma_transfer_start(info->instance, channel);
+
+	CYCLE_NOP;
+
+	return ret;
 }
 
 static int dma_qmsi_start(struct device *dev, uint32_t channel)
 {
+	int ret;
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
-	return qm_dma_transfer_start(info->instance, channel);
+	ret = qm_dma_transfer_start(info->instance, channel);
+
+	CYCLE_NOP;
+
+	return ret;
 }
 
 static int dma_qmsi_transfer_stop(struct device *dev, uint32_t channel)
