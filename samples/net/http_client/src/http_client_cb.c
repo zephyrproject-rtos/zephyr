@@ -16,7 +16,7 @@ int on_url(struct http_parser *parser, const char *at, size_t length)
 {
 	ARG_UNUSED(parser);
 
-	printf("URL: %.*s\n", length, at);
+	printf("URL: %.*s\n", (int)length, at);
 
 	return 0;
 }
@@ -49,7 +49,7 @@ int on_header_field(struct http_parser *parser, const char *at, size_t length)
 		ctx->cl_present = 1;
 	}
 
-	printf("%.*s: ", length, at);
+	printf("%.*s: ", (int)length, at);
 
 	return 0;
 }
@@ -78,7 +78,7 @@ int on_header_value(struct http_parser *parser, const char *at, size_t length)
 		ctx->cl_present = 0;
 	}
 
-	printf("%.*s\n", length, at);
+	printf("%.*s\n", (int)length, at);
 
 	return 0;
 }
