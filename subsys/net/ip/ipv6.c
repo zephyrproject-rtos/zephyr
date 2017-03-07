@@ -37,9 +37,12 @@
 
 #define MAX_MULTICAST_SOLICIT 3
 #define MAX_UNICAST_SOLICIT   3
+#define DELAY_FIRST_PROBE_TIME (5 * MSEC_PER_SEC) /* RFC 4861 ch 10 */
+#define RETRANS_TIMER 1000 /* in ms, RFC 4861 ch 10 */
 
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
+static void nd_reachable_timeout(struct k_work *work);
 
 NET_NBR_POOL_INIT(net_neighbor_pool,
 		  CONFIG_NET_IPV6_MAX_NEIGHBORS,
@@ -750,10 +753,11 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 try_send:
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf), nexthop);
 
-	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s", nbr,
+	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s state %s", nbr,
 		nbr ? nbr->idx : NET_NBR_LLADDR_UNKNOWN,
 		net_nbuf_iface(buf),
-		net_sprint_ipv6_addr(nexthop));
+		net_sprint_ipv6_addr(nexthop),
+		net_nbr_state2str(net_ipv6_nbr_data(nbr)->state));
 
 	if (nbr && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr_storage *lladdr;
@@ -765,6 +769,22 @@ try_send:
 
 		NET_DBG("Neighbor %p addr %s", nbr,
 			net_sprint_ll_addr(lladdr->addr, lladdr->len));
+
+		/* Start the NUD if we are in STALE state.
+		 * See RFC 4861 ch 7.3.3 for details.
+		 */
+#if defined(CONFIG_NET_IPV6_ND)
+		if (net_ipv6_nbr_data(nbr)->state == NET_NBR_STALE) {
+			nbr_set_state(nbr, NET_NBR_DELAY);
+
+			k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
+					    nd_reachable_timeout);
+
+			k_delayed_work_submit(
+				&net_ipv6_nbr_data(nbr)->reachable,
+				DELAY_FIRST_PROBE_TIME);
+		}
+#endif
 
 		return update_ll_reserve(buf, nexthop);
 	}
@@ -1225,7 +1245,8 @@ static void nd_reachable_timeout(struct k_work *work)
 
 		NET_DBG("nbr %p moving %s state to PROBE (%d)",
 			nbr, net_sprint_ipv6_addr(&data->addr), data->state);
-		break;
+
+		/* Intentionally continuing to probe state */
 
 	case NET_NBR_PROBE:
 		if (data->ns_count >= MAX_UNICAST_SOLICIT) {
@@ -1249,6 +1270,13 @@ static void nd_reachable_timeout(struct k_work *work)
 
 			net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
 					 &data->addr, false);
+
+			k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
+					    nd_reachable_timeout);
+
+			k_delayed_work_submit(
+				&net_ipv6_nbr_data(nbr)->reachable,
+				RETRANS_TIMER);
 		}
 		break;
 	}
@@ -1351,6 +1379,10 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 			nbr_set_state(nbr, NET_NBR_REACHABLE);
 			net_ipv6_nbr_data(nbr)->ns_count = 0;
 
+			/* We might have active timer from PROBE */
+			k_delayed_work_cancel(
+				&net_ipv6_nbr_data(nbr)->reachable);
+
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
 							 nbr);
 		} else {
@@ -1389,6 +1421,10 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 
 		if (net_is_solicited(buf)) {
 			nbr_set_state(nbr, NET_NBR_REACHABLE);
+
+			/* We might have active timer from PROBE */
+			k_delayed_work_cancel(
+				&net_ipv6_nbr_data(nbr)->reachable);
 
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
 							 nbr);
