@@ -72,6 +72,8 @@ enum net_nbr_state {
 	NET_NBR_PROBE,
 };
 
+const char *net_nbr_state2str(enum net_nbr_state state);
+
 /**
  * @brief IPv6 neighbor information.
  */

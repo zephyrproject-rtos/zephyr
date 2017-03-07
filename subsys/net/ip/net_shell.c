@@ -704,24 +704,6 @@ static int shell_cmd_mem(int argc, char *argv[])
 }
 
 #if defined(CONFIG_NET_IPV6)
-static inline const char *nbrstate2str(enum net_nbr_state state)
-{
-	switch (state) {
-	case NET_NBR_INCOMPLETE:
-		return "incomplete";
-	case NET_NBR_REACHABLE:
-		return "reachable";
-	case NET_NBR_STALE:
-		return "stale";
-	case NET_NBR_DELAY:
-		return "delay";
-	case NET_NBR_PROBE:
-		return "probe";
-	}
-
-	return "<invalid state>";
-}
-
 static void nbr_cb(struct net_nbr *nbr, void *user_data)
 {
 	int *count = user_data;
@@ -732,7 +714,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	       *count, nbr->ref, net_ipv6_nbr_data(nbr)->ns_count,
 	       net_ipv6_nbr_data(nbr)->is_router,
 	       net_ipv6_nbr_data(nbr)->link_metric,
-	       nbrstate2str(net_ipv6_nbr_data(nbr)->state),
+	       net_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
 	       nbr->iface,
 	       nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
 	       net_sprint_ll_addr(

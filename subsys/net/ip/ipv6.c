@@ -52,6 +52,24 @@ NET_NBR_TABLE_INIT(NET_NBR_GLOBAL,
 		   net_neighbor_pool,
 		   net_neighbor_table_clear);
 
+const char *net_nbr_state2str(enum net_nbr_state state)
+{
+	switch (state) {
+	case NET_NBR_INCOMPLETE:
+		return "incomplete";
+	case NET_NBR_REACHABLE:
+		return "reachable";
+	case NET_NBR_STALE:
+		return "stale";
+	case NET_NBR_DELAY:
+		return "delay";
+	case NET_NBR_PROBE:
+		return "probe";
+	}
+
+	return "<invalid state>";
+}
+
 static inline bool net_is_solicited(struct net_buf *buf)
 {
 	return NET_ICMPV6_NA_BUF(buf)->flags & NET_ICMPV6_NA_FLAG_SOLICITED;
