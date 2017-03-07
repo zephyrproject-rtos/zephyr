@@ -1185,7 +1185,8 @@ static void nd_reachable_timeout(struct k_work *work)
 	struct net_nbr *nbr = get_nbr_from_data(data);
 
 	if (!data || !nbr) {
-		NET_DBG("ND reachable timeout but no nbr data");
+		NET_DBG("ND reachable timeout but no nbr data "
+			"(nbr %p data %p)", nbr, data);
 		return;
 	}
 
@@ -1260,6 +1261,9 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 	time = net_if_ipv6_get_reachable_time(iface);
 
 	NET_ASSERT_INFO(time, "Zero reachable timeout!");
+
+	NET_DBG("Starting reachable timer nbr %p data %p time %d ms",
+		nbr, net_ipv6_nbr_data(nbr), time);
 
 	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
 			    nd_reachable_timeout);
