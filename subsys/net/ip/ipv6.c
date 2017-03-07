@@ -1180,7 +1180,7 @@ static void nd_reachable_timeout(struct k_work *work)
 {
 	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
 						      struct net_ipv6_nbr_data,
-						      send_ns);
+						      reachable);
 
 	struct net_nbr *nbr = get_nbr_from_data(data);
 
