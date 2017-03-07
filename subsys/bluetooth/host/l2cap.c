@@ -648,6 +648,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 
 	memset(&chan->tx, 0, sizeof(chan->tx));
 	k_sem_init(&chan->tx.credits, 0, UINT_MAX);
+	k_fifo_init(&chan->tx_queue);
 }
 
 static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
@@ -673,16 +674,17 @@ static void l2cap_chan_rx_give_credits(struct bt_l2cap_le_chan *chan,
 static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
+	struct net_buf *buf;
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->rx.cid);
 
 	/* Cancel ongoing work */
 	k_delayed_work_cancel(&chan->rtx_work);
 
-	/* There could be a writer waiting for credits so return a dummy credit
-	 * to wake it up.
-	 */
-	l2cap_chan_tx_give_credits(ch, 1);
+	/* Remove buffers on the TX queue */
+	while ((buf = net_buf_get(&ch->tx_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
 
 	/* Destroy segmented SDU if it exists */
 	if (ch->_sdu) {
@@ -1084,12 +1086,12 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf *buf)
+				  struct net_buf *buf, int sent)
 {
-	int ret, sent, total_len;
+	int ret, total_len;
 	struct net_buf *frag;
 
-	total_len = net_buf_frags_len(buf);
+	total_len = net_buf_frags_len(buf) + sent;
 
 	if (total_len > ch->tx.mtu) {
 		return -EMSGSIZE;
@@ -1100,14 +1102,22 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		frag = frag->frags;
 	}
 
-	/* Add SDU length for the first segment */
-	ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_LEN);
-	if (ret < 0) {
-		return ret;
+	if (!sent) {
+		/* Add SDU length for the first segment */
+		sent = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_LEN);
+		if (sent < 0) {
+			if (sent == -EAGAIN) {
+				sent = 0;
+				/* Store sent data into user_data */
+				memcpy(net_buf_user_data(buf), &sent,
+				       sizeof(sent));
+			}
+			return sent;
+		}
 	}
 
 	/* Send remaining segments */
-	for (sent = ret; sent < total_len; sent += ret) {
+	for (ret = 0; sent < total_len; sent += ret) {
 		/* Proceed to next fragment */
 		if (!frag->len) {
 			frag = net_buf_frag_del(buf, frag);
@@ -1115,6 +1125,11 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 
 		ret = l2cap_chan_le_send(ch, frag, 0);
 		if (ret < 0) {
+			if (ret == -EAGAIN) {
+				/* Store sent data into user_data */
+				memcpy(net_buf_user_data(buf), &sent,
+				       sizeof(sent));
+			}
 			return ret;
 		}
 	}
@@ -1124,6 +1139,40 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 	net_buf_unref(buf);
 
 	return ret;
+}
+
+static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
+{
+	struct net_buf *buf;
+
+	/* Return current buffer */
+	if (ch->tx_buf) {
+		buf = ch->tx_buf;
+		ch->tx_buf = NULL;
+		return buf;
+	}
+
+	return net_buf_get(&ch->tx_queue, K_NO_WAIT);
+}
+
+static void l2cap_chan_le_send_resume(struct bt_l2cap_le_chan *ch)
+{
+	struct net_buf *buf;
+
+	/* Resume tx in case there are buffers in the queue */
+	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
+		int sent = *((int *)net_buf_user_data(buf));
+
+		BT_DBG("buf %p sent %u", buf, sent);
+
+		sent = l2cap_chan_le_send_sdu(ch, buf, sent);
+		if (sent < 0) {
+			if (sent == -EAGAIN) {
+				ch->tx_buf = buf;
+			}
+			break;
+		}
+	}
 }
 
 static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1163,6 +1212,8 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	BT_DBG("chan %p total credits %u", ch,
 	       k_sem_count_get(&ch->tx.credits));
+
+	l2cap_chan_le_send_resume(ch);
 }
 
 static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1646,8 +1697,13 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
 
-	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), buf);
+	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), buf, 0);
 	if (err < 0) {
+		if (err == -EAGAIN) {
+			/* Queue buffer to be sent later */
+			net_buf_put(&(BT_L2CAP_LE_CHAN(chan))->tx_queue, buf);
+			return *((int *)net_buf_user_data(buf));
+		}
 		BT_ERR("failed to send message %d", err);
 	}
 

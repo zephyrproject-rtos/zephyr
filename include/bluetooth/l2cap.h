@@ -110,6 +110,10 @@ struct bt_l2cap_le_chan {
 	struct bt_l2cap_le_endpoint	rx;
 	/** Channel Transmission Endpoint */
 	struct bt_l2cap_le_endpoint	tx;
+	/** Channel Transmission queue */
+	struct k_fifo                   tx_queue;
+	/** Channel Pending Transmission buffer  */
+	struct net_buf                  *tx_buf;
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
 	uint16_t			_sdu_len;
