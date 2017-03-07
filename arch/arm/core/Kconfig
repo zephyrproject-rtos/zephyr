@@ -31,6 +31,13 @@ config CPU_HAS_SYSTICK
 	help
 	This option is enabled when the CPU has systick timer implemented.
 
+config CPU_HAS_MPU
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
+
 config CPU_HAS_FPU
 	# Hidden config selected by CPU family
 	bool
