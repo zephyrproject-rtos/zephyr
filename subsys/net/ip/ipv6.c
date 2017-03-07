@@ -70,6 +70,19 @@ const char *net_nbr_state2str(enum net_nbr_state state)
 	return "<invalid state>";
 }
 
+static void nbr_set_state(struct net_nbr *nbr, enum net_nbr_state new_state)
+{
+	if (new_state == net_ipv6_nbr_data(nbr)->state) {
+		return;
+	}
+
+	NET_DBG("nbr %p %s -> %s", nbr,
+		net_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
+		net_nbr_state2str(new_state));
+
+	net_ipv6_nbr_data(nbr)->state = new_state;
+}
+
 static inline bool net_is_solicited(struct net_buf *buf)
 {
 	return NET_ICMPV6_NA_BUF(buf)->flags & NET_ICMPV6_NA_FLAG_SOLICITED;
@@ -240,7 +253,7 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 	}
 
 	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
-	net_ipv6_nbr_data(nbr)->state = state;
+	nbr_set_state(nbr, state);
 	net_ipv6_nbr_data(nbr)->is_router = is_router;
 
 	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s",
@@ -275,7 +288,7 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 	nbr->iface = iface;
 
 	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
-	net_ipv6_nbr_data(nbr)->state = state;
+	nbr_set_state(nbr, state);
 	net_ipv6_nbr_data(nbr)->pending = NULL;
 
 	NET_DBG("nbr %p iface %p state %d IPv6 %s",
@@ -904,11 +917,11 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 			net_linkaddr_set(cached_lladdr, lladdr.addr,
 					 lladdr.len);
 
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+			nbr_set_state(nbr, NET_NBR_STALE);
 		} else {
 			if (net_ipv6_nbr_data(nbr)->state ==
 							NET_NBR_INCOMPLETE) {
-				net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+				nbr_set_state(nbr, NET_NBR_STALE);
 			}
 		}
 	}
@@ -1325,13 +1338,13 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		}
 
 		if (net_is_solicited(buf)) {
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_REACHABLE;
+			nbr_set_state(nbr, NET_NBR_REACHABLE);
 			net_ipv6_nbr_data(nbr)->ns_count = 0;
 
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
 							 nbr);
 		} else {
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+			nbr_set_state(nbr, NET_NBR_STALE);
 		}
 
 		net_ipv6_nbr_data(nbr)->is_router = net_is_router(buf);
@@ -1344,7 +1357,7 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 	 */
 	if (!net_is_override(buf) && lladdr_changed) {
 		if (net_ipv6_nbr_data(nbr)->state == NET_NBR_REACHABLE) {
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+			nbr_set_state(nbr, NET_NBR_STALE);
 		}
 
 		return false;
@@ -1365,13 +1378,13 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		}
 
 		if (net_is_solicited(buf)) {
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_REACHABLE;
+			nbr_set_state(nbr, NET_NBR_REACHABLE);
 
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
 							 nbr);
 		} else {
 			if (lladdr_changed) {
-				net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+				nbr_set_state(nbr, NET_NBR_STALE);
 			}
 		}
 	}
@@ -1799,11 +1812,11 @@ static inline struct net_buf *handle_ra_neighbor(struct net_buf *buf,
 			net_linkaddr_set(cached_lladdr, lladdr.addr,
 					 lladdr.len);
 
-			net_ipv6_nbr_data(*nbr)->state = NET_NBR_STALE;
+			nbr_set_state(*nbr, NET_NBR_STALE);
 		} else {
 			if (net_ipv6_nbr_data(*nbr)->state ==
 							NET_NBR_INCOMPLETE) {
-				net_ipv6_nbr_data(*nbr)->state = NET_NBR_STALE;
+				nbr_set_state(*nbr, NET_NBR_STALE);
 			}
 		}
 	}
