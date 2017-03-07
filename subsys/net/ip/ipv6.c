@@ -900,6 +900,12 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 
 			return;
 		}
+
+		/* Send NS so that we can verify that the neighbor is
+		 * reachable.
+		 */
+		net_ipv6_send_ns(net_nbuf_iface(buf), NULL, NULL, NULL,
+				 &net_ipv6_nbr_data(nbr)->addr, false);
 	}
 
 	if (net_nbr_link(nbr, net_nbuf_iface(buf), &lladdr) == -EALREADY) {
