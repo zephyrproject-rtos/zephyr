@@ -26,7 +26,7 @@ static void next_list(struct at_client *at)
 
 int at_check_byte(struct net_buf *buf, char check_byte)
 {
-	const char *str = buf->data;
+	const unsigned char *str = buf->data;
 
 	if (*str != check_byte) {
 		return -EINVAL;
@@ -92,7 +92,7 @@ static int get_cmd_value(struct at_client *at, struct net_buf *buf,
 {
 	int cmd_len = 0;
 	uint8_t pos = at->pos;
-	const char *str = buf->data;
+	const unsigned char *str = buf->data;
 
 	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
 		if (*str != stop_byte) {
@@ -122,7 +122,7 @@ static int get_response_string(struct at_client *at, struct net_buf *buf,
 {
 	int cmd_len = 0;
 	uint8_t pos = at->pos;
-	const char *str = buf->data;
+	const unsigned char *str = buf->data;
 
 	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
 		if (*str != stop_byte) {
