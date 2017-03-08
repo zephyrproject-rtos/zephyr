@@ -288,7 +288,7 @@ int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
 	return 0;
 }
 
-int dns_find_null(int *qname_size, uint8_t *buf, uint16_t size)
+static int dns_find_null(int *qname_size, uint8_t *buf, uint16_t size)
 {
 	*qname_size = 0;
 	while (*qname_size < size) {
