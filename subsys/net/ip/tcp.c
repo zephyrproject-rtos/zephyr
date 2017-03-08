@@ -671,27 +671,44 @@ int net_tcp_send_buf(struct net_buf *buf)
 	 * part of the message so we need to copy those too.
 	 */
 	if (is_6lo_technology(buf)) {
-		struct net_buf *new_buf;
+		struct net_buf *new_buf, *check_buf;
 		int ret;
+		bool buf_in_slist = false;
 
-		new_buf = net_nbuf_get_tx(ctx, K_FOREVER);
-
-		new_buf->frags = net_nbuf_copy_all(buf, 0, K_FOREVER);
-		net_nbuf_copy_user_data(new_buf, buf);
-
-		NET_DBG("Copied %zu bytes from %p to %p",
-			net_buf_frags_len(new_buf), buf, new_buf);
-
-		/* This function is called from net_context.c and if we
-		 * return < 0, the caller will unref the original buf.
-		 * This would leak the new_buf so remove it here.
+		/*
+		 * There are users of this function that don't add buf to TCP
+		 * sent_list. (See send_ack() in net_context.c) In these cases,
+		 * we should avoid the extra 6lowpan specific buffer copy
+		 * below.
 		 */
-		ret = net_send_data(new_buf);
-		if (ret < 0) {
-			net_nbuf_unref(new_buf);
+		SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list,
+					     check_buf, sent_list) {
+			if (check_buf == buf) {
+				buf_in_slist = true;
+				break;
+			}
 		}
 
-		return ret;
+		if (buf_in_slist) {
+			new_buf = net_nbuf_get_tx(ctx, K_FOREVER);
+
+			new_buf->frags = net_nbuf_copy_all(buf, 0, K_FOREVER);
+			net_nbuf_copy_user_data(new_buf, buf);
+
+			NET_DBG("Copied %zu bytes from %p to %p",
+				net_buf_frags_len(new_buf), buf, new_buf);
+
+			/* This function is called from net_context.c and if we
+			 * return < 0, the caller will unref the original buf.
+			 * This would leak the new_buf so remove it here.
+			 */
+			ret = net_send_data(new_buf);
+			if (ret < 0) {
+				net_nbuf_unref(new_buf);
+			}
+
+			return ret;
+		}
 	}
 
 	return net_send_data(buf);
