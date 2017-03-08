@@ -6,6 +6,23 @@ Release Notes
 Zephyr Kernel 1.7.0
 ********************
 
+We are pleased to announce the release of Zephyr kernel version 1.7.0. This
+release continues refinement of the unified kernel introduced with the 1.6.0
+kernel release, simplifying the overall Zephyr architecture and programming
+interfaces. This is the last release that will support the deprecated legacy
+nano- and micro-kernel APIs found in the 1.5.0 release and earlier.
+
+This release introduces a new native IP stack, replacing the legacy uIP stack,
+maintaining the legacy functionality, adding additional capabilities, and allowing
+future improvements.
+
+Additionally, this release adds improvements for documentation, testing, and build
+infrastructure (including use of 3rd-party compilers and build support for Windows
+and OS X environments).
+
+The following sections provide a detailed list of changes, by component,  since
+kernel version 1.6.0.
+
 Kernel
 ======
 
@@ -112,6 +129,16 @@ HALs
 Documentation
 =============
 
+* General improvements and additions to kernel component docs
+* Moved supported board information back to the website site.
+* New website documentation theme to go with the new zephyrproject.org site.
+* New local-content generation theme (read-the-docs)
+* General spelling checks and organizational improvements.
+* Site-wide glossary added.
+* Porting guides added.
+* Sample README files converted to documents included in the website.
+* Improved consistency of board and sample documentation.
+
 Test and Samples
 ================
 
@@ -120,6 +147,9 @@ Deprecations
 
 JIRA Related Items
 ==================
+
+[TBD - Jira query for 1.7 items, formatted as such]
+* :jira:`ZEP-0000` - Title of Jira goes here
 
 .. _zephyr_1.6:
 
