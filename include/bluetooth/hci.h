@@ -167,6 +167,15 @@ struct bt_hci_cmd_hdr {
 #define BT_FEAT_HOST_SSP(feat)                  BT_FEAT_TEST(feat, 1, 0, 0)
 #define BT_FEAT_SC(feat)                        BT_FEAT_TEST(feat, 2, 1, 0)
 
+#define BT_FEAT_LMP_ESCO_CAPABLE(feat)          BT_FEAT_TEST(feat, 0, 3, 7)
+#define BT_FEAT_HV2_PKT(feat)                   BT_FEAT_TEST(feat, 0, 1, 4)
+#define BT_FEAT_HV3_PKT(feat)                   BT_FEAT_TEST(feat, 0, 1, 5)
+#define BT_FEAT_EV4_PKT(feat)                   BT_FEAT_TEST(feat, 0, 4, 0)
+#define BT_FEAT_EV5_PKT(feat)                   BT_FEAT_TEST(feat, 0, 4, 1)
+#define BT_FEAT_2EV3_PKT(feat)                  BT_FEAT_TEST(feat, 0, 5, 5)
+#define BT_FEAT_3EV3_PKT(feat)                  BT_FEAT_TEST(feat, 0, 5, 6)
+#define BT_FEAT_3SLOT_PKT(feat)                 BT_FEAT_TEST(feat, 0, 5, 7)
+
 /* LE features */
 #define BT_LE_FEAT_BIT_ENC                      0
 #define BT_LE_FEAT_BIT_CONN_PARAM_REQ           1
@@ -224,6 +233,35 @@ struct bt_hci_cmd_hdr {
 #define BT_GAP_ADV_SLOW_INT_MAX                 0x0780  /* 1.2 s    */
 #define BT_GAP_INIT_CONN_INT_MIN                0x0018  /* 30 ms    */
 #define BT_GAP_INIT_CONN_INT_MAX                0x0028  /* 50 ms    */
+
+/* SCO packet types */
+#define HCI_PKT_TYPE_HV1                        0x0020
+#define HCI_PKT_TYPE_HV2                        0x0040
+#define HCI_PKT_TYPE_HV3                        0x0080
+
+/* eSCO packet types */
+#define HCI_PKT_TYPE_ESCO_HV1                   0x0001
+#define HCI_PKT_TYPE_ESCO_HV2                   0x0002
+#define HCI_PKT_TYPE_ESCO_HV3                   0x0004
+#define HCI_PKT_TYPE_ESCO_EV3                   0x0008
+#define HCI_PKT_TYPE_ESCO_EV4                   0x0010
+#define HCI_PKT_TYPE_ESCO_EV5                   0x0020
+#define HCI_PKT_TYPE_ESCO_2EV3                  0x0040
+#define HCI_PKT_TYPE_ESCO_3EV3                  0x0080
+#define HCI_PKT_TYPE_ESCO_2EV5                  0x0100
+#define HCI_PKT_TYPE_ESCO_3EV5                  0x0200
+
+
+#define ESCO_PKT_MASK                           (HCI_PKT_TYPE_ESCO_HV1 | \
+						 HCI_PKT_TYPE_ESCO_HV2 | \
+						 HCI_PKT_TYPE_ESCO_HV3)
+#define SCO_PKT_MASK                            (HCI_PKT_TYPE_HV1 | \
+						 HCI_PKT_TYPE_HV2 | \
+						 HCI_PKT_TYPE_HV3)
+#define EDR_ESCO_PKT_MASK                       (HCI_PKT_TYPE_ESCO_2EV3 | \
+						 HCI_PKT_TYPE_ESCO_3EV3 | \
+						 HCI_PKT_TYPE_ESCO_2EV5 | \
+						 HCI_PKT_TYPE_ESCO_3EV5)
 
 /* HCI BR/EDR link types */
 #define BT_HCI_SCO                              0x00
@@ -284,6 +322,17 @@ struct bt_hci_rp_connect_cancel {
 struct bt_hci_cp_accept_conn_req {
 	bt_addr_t bdaddr;
 	uint8_t   role;
+} __packed;
+
+#define BT_HCI_OP_ACCEPT_SYNC_CONN_REQ          BT_OP(BT_OGF_LINK_CTRL, 0x0029)
+struct bt_hci_cp_accept_sync_conn_req {
+	bt_addr_t bdaddr;
+	uint32_t  tx_bandwidth;
+	uint32_t  rx_bandwidth;
+	uint16_t  max_latency;
+	uint16_t  content_format;
+	uint8_t   retrans_effort;
+	uint16_t  pkt_type;
 } __packed;
 
 #define BT_HCI_OP_REJECT_CONN_REQ               BT_OP(BT_OGF_LINK_CTRL, 0x000a)
@@ -474,6 +523,7 @@ struct bt_hci_cp_write_sc_host_supp {
 #define BT_HCI_VERSION_4_0                      6
 #define BT_HCI_VERSION_4_1                      7
 #define BT_HCI_VERSION_4_2                      8
+#define BT_HCI_VERSION_5_0                      9
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001)
 struct bt_hci_rp_read_local_version_info {

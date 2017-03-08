@@ -648,6 +648,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 
 	memset(&chan->tx, 0, sizeof(chan->tx));
 	k_sem_init(&chan->tx.credits, 0, UINT_MAX);
+	k_fifo_init(&chan->tx_queue);
 }
 
 static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
@@ -673,16 +674,17 @@ static void l2cap_chan_rx_give_credits(struct bt_l2cap_le_chan *chan,
 static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
+	struct net_buf *buf;
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->rx.cid);
 
 	/* Cancel ongoing work */
 	k_delayed_work_cancel(&chan->rtx_work);
 
-	/* There could be a writer waiting for credits so return a dummy credit
-	 * to wake it up.
-	 */
-	l2cap_chan_tx_give_credits(ch, 1);
+	/* Remove buffers on the TX queue */
+	while ((buf = net_buf_get(&ch->tx_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
 
 	/* Destroy segmented SDU if it exists */
 	if (ch->_sdu) {
@@ -998,6 +1000,181 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	bt_l2cap_chan_del(&chan->chan);
 }
 
+static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
+					     struct net_buf *buf,
+					     size_t sdu_hdr_len)
+{
+	struct net_buf *seg;
+	uint16_t headroom;
+	uint16_t len;
+
+	/* Segment if data (+ data headroom) is bigger than MPS */
+	if (buf->len + sdu_hdr_len > ch->tx.mps) {
+		goto segment;
+	}
+
+	/* Segment if there is no space in the user_data */
+	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
+		BT_WARN("Too small buffer user_data_size %u",
+			buf->pool->user_data_size);
+		goto segment;
+	}
+
+	headroom = sizeof(struct bt_hci_acl_hdr) +
+		   sizeof(struct bt_l2cap_hdr) + sdu_hdr_len;
+
+	/* Check if original buffer has enough headroom and don't have any
+	 * fragments.
+	 */
+	if (net_buf_headroom(buf) >= headroom && !buf->frags) {
+		if (sdu_hdr_len) {
+			/* Push SDU length if set */
+			net_buf_push_le16(buf, net_buf_frags_len(buf));
+		}
+		return net_buf_ref(buf);
+	}
+
+segment:
+	seg = bt_l2cap_create_pdu(&le_data_pool, 0);
+
+	if (sdu_hdr_len) {
+		net_buf_add_le16(seg, net_buf_frags_len(buf));
+	}
+
+	/* Don't send more that TX MPS including SDU length */
+	len = min(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
+	/* Limit if original buffer is smaller than the segment */
+	len = min(buf->len, len);
+	net_buf_add_mem(seg, buf->data, len);
+	net_buf_pull(buf, len);
+
+	BT_DBG("ch %p seg %p len %u", ch, seg, seg->len);
+
+	return seg;
+}
+
+static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
+			      uint16_t sdu_hdr_len)
+{
+	int len;
+
+	/* Wait for credits */
+	if (k_sem_take(&ch->tx.credits, K_NO_WAIT)) {
+		BT_DBG("No credits to transmit packet");
+		return -EAGAIN;
+	}
+
+	buf = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	/* Channel may have been disconnected while waiting for credits */
+	if (!ch->chan.conn) {
+		net_buf_unref(buf);
+		return -ECONNRESET;
+	}
+
+	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
+	       buf->len, k_sem_count_get(&ch->tx.credits));
+
+	len = buf->len;
+
+	bt_l2cap_send(ch->chan.conn, ch->tx.cid, buf);
+
+	return len;
+}
+
+static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
+				  struct net_buf *buf, int sent)
+{
+	int ret, total_len;
+	struct net_buf *frag;
+
+	total_len = net_buf_frags_len(buf) + sent;
+
+	if (total_len > ch->tx.mtu) {
+		return -EMSGSIZE;
+	}
+
+	frag = buf;
+	if (!frag->len && frag->frags) {
+		frag = frag->frags;
+	}
+
+	if (!sent) {
+		/* Add SDU length for the first segment */
+		sent = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_LEN);
+		if (sent < 0) {
+			if (sent == -EAGAIN) {
+				sent = 0;
+				/* Store sent data into user_data */
+				memcpy(net_buf_user_data(buf), &sent,
+				       sizeof(sent));
+			}
+			return sent;
+		}
+	}
+
+	/* Send remaining segments */
+	for (ret = 0; sent < total_len; sent += ret) {
+		/* Proceed to next fragment */
+		if (!frag->len) {
+			frag = net_buf_frag_del(buf, frag);
+		}
+
+		ret = l2cap_chan_le_send(ch, frag, 0);
+		if (ret < 0) {
+			if (ret == -EAGAIN) {
+				/* Store sent data into user_data */
+				memcpy(net_buf_user_data(buf), &sent,
+				       sizeof(sent));
+			}
+			return ret;
+		}
+	}
+
+	BT_DBG("ch %p cid 0x%04x sent %u", ch, ch->tx.cid, sent);
+
+	net_buf_unref(buf);
+
+	return ret;
+}
+
+static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
+{
+	struct net_buf *buf;
+
+	/* Return current buffer */
+	if (ch->tx_buf) {
+		buf = ch->tx_buf;
+		ch->tx_buf = NULL;
+		return buf;
+	}
+
+	return net_buf_get(&ch->tx_queue, K_NO_WAIT);
+}
+
+static void l2cap_chan_le_send_resume(struct bt_l2cap_le_chan *ch)
+{
+	struct net_buf *buf;
+
+	/* Resume tx in case there are buffers in the queue */
+	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
+		int sent = *((int *)net_buf_user_data(buf));
+
+		BT_DBG("buf %p sent %u", buf, sent);
+
+		sent = l2cap_chan_le_send_sdu(ch, buf, sent);
+		if (sent < 0) {
+			if (sent == -EAGAIN) {
+				ch->tx_buf = buf;
+			}
+			break;
+		}
+	}
+}
+
 static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 		       struct net_buf *buf)
 {
@@ -1035,6 +1212,8 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	BT_DBG("chan %p total credits %u", ch,
 	       k_sem_count_get(&ch->tx.credits));
+
+	l2cap_chan_le_send_resume(ch);
 }
 
 static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1499,131 +1678,6 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	return 0;
 }
 
-static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
-					     struct net_buf *buf,
-					     size_t sdu_hdr_len)
-{
-	struct net_buf *seg;
-	uint16_t headroom;
-	uint16_t len;
-
-	/* Segment if data (+ data headroom) is bigger than MPS */
-	if (buf->len + sdu_hdr_len > ch->tx.mps) {
-		goto segment;
-	}
-
-	/* Segment if there is no space in the user_data */
-	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
-		BT_WARN("Too small buffer user_data_size %u",
-			buf->pool->user_data_size);
-		goto segment;
-	}
-
-	headroom = sizeof(struct bt_hci_acl_hdr) +
-		   sizeof(struct bt_l2cap_hdr) + sdu_hdr_len;
-
-	/* Check if original buffer has enough headroom and don't have any
-	 * fragments.
-	 */
-	if (net_buf_headroom(buf) >= headroom && !buf->frags) {
-		if (sdu_hdr_len) {
-			/* Push SDU length if set */
-			net_buf_push_le16(buf, net_buf_frags_len(buf));
-		}
-		return net_buf_ref(buf);
-	}
-
-segment:
-	seg = bt_l2cap_create_pdu(&le_data_pool, 0);
-
-	if (sdu_hdr_len) {
-		net_buf_add_le16(seg, net_buf_frags_len(buf));
-	}
-
-	/* Don't send more that TX MPS including SDU length */
-	len = min(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
-	/* Limit if original buffer is smaller than the segment */
-	len = min(buf->len, len);
-	net_buf_add_mem(seg, buf->data, len);
-	net_buf_pull(buf, len);
-
-	BT_DBG("ch %p seg %p len %u", ch, seg, seg->len);
-
-	return seg;
-}
-
-static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
-			      uint16_t sdu_hdr_len)
-{
-	int len;
-
-	/* Wait for credits */
-	k_sem_take(&ch->tx.credits, K_FOREVER);
-
-	buf = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
-	if (!buf) {
-		return -ENOMEM;
-	}
-
-	/* Channel may have been disconnected while waiting for credits */
-	if (!ch->chan.conn) {
-		net_buf_unref(buf);
-		return -ECONNRESET;
-	}
-
-	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
-	       buf->len, k_sem_count_get(&ch->tx.credits));
-
-	len = buf->len;
-
-	bt_l2cap_send(ch->chan.conn, ch->tx.cid, buf);
-
-	return len;
-}
-
-static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf *buf)
-{
-	int ret, sent, total_len;
-	struct net_buf *frag;
-
-	total_len = net_buf_frags_len(buf);
-
-	if (total_len > ch->tx.mtu) {
-		return -EMSGSIZE;
-	}
-
-	frag = buf;
-	if (!frag->len && frag->frags) {
-		frag = frag->frags;
-	}
-
-	/* Add SDU length for the first segment */
-	ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_LEN);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Send remaining segments */
-	for (sent = ret; sent < total_len; sent += ret) {
-		/* Proceed to next fragment */
-		if (!frag->len) {
-			frag = net_buf_frag_del(buf, frag);
-		}
-
-		ret = l2cap_chan_le_send(ch, frag, 0);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	BT_DBG("ch %p cid 0x%04x sent %u", ch, ch->tx.cid, sent);
-
-	net_buf_unref(buf);
-
-	return sent;
-}
-
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	int err;
@@ -1643,8 +1697,13 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
 
-	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), buf);
+	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), buf, 0);
 	if (err < 0) {
+		if (err == -EAGAIN) {
+			/* Queue buffer to be sent later */
+			net_buf_put(&(BT_L2CAP_LE_CHAN(chan))->tx_queue, buf);
+			return *((int *)net_buf_user_data(buf));
+		}
 		BT_ERR("failed to send message %d", err);
 	}
 

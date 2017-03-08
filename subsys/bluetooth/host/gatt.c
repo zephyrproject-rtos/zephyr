@@ -47,9 +47,8 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 #endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 	uint16_t handle;
 
-	if (!attrs || !count) {
-		return -EINVAL;
-	}
+	__ASSERT(attrs, "invalid parameters\n");
+	__ASSERT(count, "invalid parameters\n");
 
 #if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 	handle = 0;
@@ -559,9 +558,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	struct notify_data nfy;
 
-	if (!attr || !attr->handle) {
-		return -EINVAL;
-	}
+	__ASSERT(attr && attr->handler, "invalid parameters\n");
 
 	if (conn) {
 		return gatt_notify(conn, attr->handle, data, len);
@@ -582,9 +579,8 @@ int bt_gatt_indicate(struct bt_conn *conn,
 {
 	struct notify_data nfy;
 
-	if (!params || !params->attr || !params->attr->handle) {
-		return -EINVAL;
-	}
+	__ASSERT(params, "invalid parameters\n");
+	__ASSERT(params->attr && params->attr->handle, "invalid parameters\n");
 
 	if (conn) {
 		return gatt_indicate(conn, params);
@@ -596,6 +592,11 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	bt_gatt_foreach_attr(params->attr->handle, 0xffff, notify_cb, &nfy);
 
 	return 0;
+}
+
+uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
+{
+	return bt_att_get_mtu(conn);
 }
 
 static uint8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
@@ -697,22 +698,19 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			  const void *data, uint16_t length)
 {
-	struct bt_gatt_subscribe_params *params, *tmp, *prev = NULL;
+	struct bt_gatt_subscribe_params *params, *tmp;
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, params, tmp, node) {
 		if (bt_conn_addr_le_cmp(conn, &params->_peer) ||
 		    handle != params->value_handle) {
-			prev = params;
 			continue;
 		}
 
 		if (params->notify(conn, params, data, length) ==
 		    BT_GATT_ITER_STOP) {
 			bt_gatt_unsubscribe(conn, params);
-		} else {
-			prev = params;
 		}
 	}
 }
@@ -739,12 +737,13 @@ static void gatt_subscription_remove(struct bt_conn *conn, sys_snode_t *prev,
 
 static void remove_subscriptions(struct bt_conn *conn)
 {
-	struct bt_gatt_subscribe_params *params, *tmp, *prev = NULL;
+	struct bt_gatt_subscribe_params *params, *tmp;
+	sys_snode_t *prev = NULL;
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, params, tmp, node) {
 		if (bt_conn_addr_le_cmp(conn, &params->_peer)) {
-			prev = params;
+			prev = &params->node;
 			continue;
 		}
 
@@ -752,10 +751,10 @@ static void remove_subscriptions(struct bt_conn *conn)
 		    (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE)) {
 			/* Remove subscription */
 			params->value = 0;
-			gatt_subscription_remove(conn, &prev->node, params);
+			gatt_subscription_remove(conn, prev, params);
 		} else {
 			update_subscription(conn, params);
-			prev = params;
+			prev = &params->node;
 		}
 	}
 }
@@ -775,9 +774,8 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 	struct net_buf *buf;
 	uint16_t mtu;
 
-	if (!conn || !params || !params->func) {
-		return -EINVAL;
-	}
+	__ASSERT(conn, "invalid parameter\n");
+	__ASSERT(params && params->func, "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -1318,10 +1316,12 @@ static int gatt_find_info(struct bt_conn *conn,
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params)
 {
-	if (!conn || !params || !params->func || !params->start_handle ||
-	    !params->end_handle || params->start_handle > params->end_handle) {
-		return -EINVAL;
-	}
+	__ASSERT(conn, "invalid parameters\n");
+	__ASSERT(params && params->func, "invalid parameters\n");
+	__ASSERT((params->start_handle && params->end_handle),
+		 "invalid parameters\n");
+	__ASSERT((params->start_handle < params->end_handle),
+		 "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -1442,9 +1442,9 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	struct net_buf *buf;
 	struct bt_att_read_req *req;
 
-	if (!conn || !params || !params->handle_count || !params->func) {
-		return -EINVAL;
-	}
+	__ASSERT(conn, "invalid parameters\n");
+	__ASSERT(params && params->func, "invalid parameters\n");
+	__ASSERT(params->handle_count, "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -1496,9 +1496,8 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 	struct net_buf *buf;
 	struct bt_att_write_cmd *cmd;
 
-	if (!conn || !handle) {
-		return -EINVAL;
-	}
+	__ASSERT(conn, "invalid parameters\n");
+	__ASSERT(handle, "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -1606,9 +1605,9 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 	struct net_buf *buf;
 	struct bt_att_write_req *req;
 
-	if (!conn || !params || !params->handle || !params->func) {
-		return -EINVAL;
-	}
+	__ASSERT(conn, "invalid parameters\n");
+	__ASSERT(params && params->func, "invalid parameters\n");
+	__ASSERT(params->handle, "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -1696,10 +1695,10 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false;
 
-	if (!conn || !params || !params->notify ||
-	    !params->value || !params->ccc_handle) {
-		return -EINVAL;
-	}
+	__ASSERT(conn, "invalid parameters\n");
+	__ASSERT(params && params->notify,  "invalid parameters\n");
+	__ASSERT(params->value, "invalid parameters\n");
+	__ASSERT(params->ccc_handle, "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -1743,12 +1742,12 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
-	struct bt_gatt_subscribe_params *tmp, *next, *prev = NULL;
+	struct bt_gatt_subscribe_params *tmp, *next;
 	bool has_subscription = false, found = false;
+	sys_snode_t *prev = NULL;
 
-	if (!conn || !params) {
-		return -EINVAL;
-	}
+	__ASSERT(conn, "invalid parameters\n");
+	__ASSERT(params, "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -1759,11 +1758,10 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		/* Remove subscription */
 		if (params == tmp) {
 			found = true;
-			sys_slist_remove(&subscriptions, &prev->node,
-					 &tmp->node);
+			sys_slist_remove(&subscriptions, prev, &tmp->node);
 			continue;
 		} else {
-			prev = tmp;
+			prev = &tmp->node;
 		}
 
 		/* Check if there still remains any other subscription */

@@ -132,6 +132,8 @@ static struct {
 
 	uint8_t volatile ticker_id_prepare;
 	uint8_t volatile ticker_id_event;
+	uint8_t volatile ticker_id_stop;
+
 	enum role volatile role;
 	enum state state;
 
@@ -217,6 +219,10 @@ static uint16_t const gc_lookup_ppm[] = { 500, 250, 150, 100, 75, 50, 30, 20 };
 
 static void common_init(void);
 static void ticker_success_assert(uint32_t status, void *params);
+static void ticker_stop_adv_assert(uint32_t status, void *params);
+static void ticker_stop_obs_assert(uint32_t status, void *params);
+static void ticker_update_adv_assert(uint32_t status, void *params);
+static void ticker_update_slave_assert(uint32_t status, void *params);
 static void event_inactive(uint32_t ticks_at_expire, uint32_t remainder,
 			   uint16_t lazy, void *context);
 static void adv_setup(void);
@@ -662,12 +668,16 @@ static inline uint32_t isr_rx_adv(uint8_t devmatch_ok, uint8_t irkmatch_ok,
 							   conn_interval_us);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+		/* APTO in no. of connection events */
 		conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),
 						      conn_interval_us);
-		conn->appto_reload =
-			(conn->apto_reload > (conn->latency + 2)) ?
-			(conn->apto_reload - (conn->latency + 2)) :
-			conn->apto_reload;
+		/* Dispatch LE Ping PDU 6 connection events (that peer would
+		 * listen to) before 30s timeout
+		 * TODO: "peer listens to" is greater than 30s due to latency
+		 */
+		conn->appto_reload = (conn->apto_reload > (conn->latency + 6)) ?
+				     (conn->apto_reload - (conn->latency + 6)) :
+				     conn->apto_reload;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 		/* Prepare the rx packet structure */
@@ -735,23 +745,21 @@ static inline uint32_t isr_rx_adv(uint8_t devmatch_ok, uint8_t irkmatch_ok,
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
 					    RADIO_TICKER_ID_ADV,
-		     ticker_success_assert, (void *)__LINE__);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY));
+					    ticker_stop_adv_assert,
+					    (void *)__LINE__);
+		ticker_stop_adv_assert(ticker_status, (void *)__LINE__);
 
 		/* Stop Direct Adv Stopper */
 		_pdu_adv = (struct pdu_adv *)&_radio.advertiser.adv_data.data
 			[_radio.advertiser.adv_data.first][0];
 		if (_pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
-			ticker_status =
-				ticker_stop(
-					    RADIO_TICKER_INSTANCE_ID_RADIO,
-					    RADIO_TICKER_USER_ID_WORKER,
-					    RADIO_TICKER_ID_ADV_STOP,
-					    0, /* @todo ticker_success_assert */
-					    0  /* @todo (void *) __LINE__*/);
-			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-				  (ticker_status == TICKER_STATUS_BUSY));
+			/* Advertiser stop can expire while here in this ISR.
+			 * Deferred attempt to stop can fail as it would have
+			 * expired, hence ignore failure.
+			 */
+			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+				    RADIO_TICKER_USER_ID_WORKER,
+				    RADIO_TICKER_ID_ADV_STOP, NULL, NULL);
 		}
 
 		/* Start Slave */
@@ -943,21 +951,23 @@ static inline uint32_t isr_rx_obs(uint8_t irkmatch_id, uint8_t rssi_ready)
 			conn->hdr.ticks_xtal_to_start :
 			conn->hdr.ticks_active_to_start;
 
-		/* Stop Observer and start Master */
+		/* Stop Observer */
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
 					    RADIO_TICKER_ID_OBS,
-					    ticker_success_assert,
+					    ticker_stop_obs_assert,
 					    (void *)__LINE__);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY));
-		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				RADIO_TICKER_USER_ID_WORKER,
-				RADIO_TICKER_ID_OBS_STOP,
-				0,	/* @todo ticker_success_assert */
-				0	/* @todo (void *) __LINE__ */);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY));
+		ticker_stop_obs_assert(ticker_status, (void *)__LINE__);
+
+		/* Observer stop can expire while here in this ISR.
+		 * Deferred attempt to stop can fail as it would have
+		 * expired, hence ignore failure.
+		 */
+		ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+			    RADIO_TICKER_USER_ID_WORKER,
+			    RADIO_TICKER_ID_OBS_STOP, NULL, NULL);
+
+		/* Start master */
 		ticker_status =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_WORKER,
@@ -2302,16 +2312,25 @@ static inline uint32_t isr_close_adv(void)
 			/** @todo use random 0-10 */
 			random_delay = 10;
 
+			/* Call to ticker_update can fail under the race
+			 * condition where in the Adv role is being stopped but
+			 * at the same time it is preempted by Adv event that
+			 * gets into close state. Accept failure when Adv role
+			 * is being stopped.
+			 */
 			ticker_status =
 				ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
 					      RADIO_TICKER_USER_ID_WORKER,
 					      RADIO_TICKER_ID_ADV,
-					      TICKER_US_TO_TICKS(random_delay * 1000),
+					      TICKER_US_TO_TICKS(random_delay *
+								 1000),
 					      0, 0, 0, 0, 0,
-					      ticker_success_assert,
+					      ticker_update_adv_assert,
 					      (void *)__LINE__);
 			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-				  (ticker_status == TICKER_STATUS_BUSY));
+				  (ticker_status == TICKER_STATUS_BUSY) ||
+				  (_radio.ticker_id_stop ==
+				   RADIO_TICKER_ID_ADV));
 		}
 	}
 
@@ -2339,20 +2358,16 @@ static inline uint32_t isr_close_obs(void)
 
 		radio_tmr_end_capture();
 	} else {
-		uint32_t ticker_status;
-
 		radio_filter_disable();
 
 		if (_radio.state == STATE_ABORT) {
-			ticker_status =
-				ticker_stop(
-					    RADIO_TICKER_INSTANCE_ID_RADIO,
-					    RADIO_TICKER_USER_ID_WORKER,
-					    RADIO_TICKER_ID_OBS_STOP,
-					    0 /** @todo ticker_success_assert */,
-					    0 /** @todo (void *) __LINE__ */);
-			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-				  (ticker_status == TICKER_STATUS_BUSY));
+			/* Observer stop can expire while here in this ISR.
+			 * Deferred attempt to stop can fail as it would have
+			 * expired, hence ignore failure.
+			 */
+			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+				    RADIO_TICKER_USER_ID_WORKER,
+				    RADIO_TICKER_ID_OBS_STOP, NULL, NULL);
 		}
 	}
 
@@ -2627,18 +2642,25 @@ static inline void isr_close_conn(void)
 	if ((ticks_drift_plus != 0) || (ticks_drift_minus != 0) ||
 	    (lazy != 0) || (force != 0)) {
 		uint32_t ticker_status;
+		uint8_t ticker_id = RADIO_TICKER_ID_FIRST_CONNECTION +
+				    _radio.conn_curr->handle;
 
+		/* Call to ticker_update can fail under the race
+		 * condition where in the Slave role is being stopped but
+		 * at the same time it is preempted by Slave event that
+		 * gets into close state. Accept failure when Slave role
+		 * is being stopped.
+		 */
 		ticker_status =
 			ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
 				      RADIO_TICKER_USER_ID_WORKER,
-				      RADIO_TICKER_ID_FIRST_CONNECTION +
-				      _radio.conn_curr->handle,
+				      ticker_id,
 				      ticks_drift_plus, ticks_drift_minus, 0, 0,
-				      lazy, force,
-				      0 /** @todo ticker_success_assert */,
-				      0 /** @todo (void *) __LINE__ */);
+				      lazy, force, ticker_update_slave_assert,
+				      (void *)(uint32_t)ticker_id);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY));
+			  (ticker_status == TICKER_STATUS_BUSY) ||
+			  (_radio.ticker_id_stop == ticker_id));
 	}
 }
 
@@ -2661,6 +2683,20 @@ static inline void isr_radio_state_close(void)
 		break;
 
 	case ROLE_NONE:
+		/* If a role closes graceful while it is being stopped, then
+		 * Radio ISR will be triggered to process the stop state with
+		 * no active role at that instance in time.
+		 * Just reset the state to none. The role has gracefully closed
+		 * before this ISR run.
+		 * The above applies to aborting a role event too.
+		 */
+		LL_ASSERT((_radio.state == STATE_STOP) ||
+			  (_radio.state == STATE_ABORT));
+
+		_radio.state = STATE_NONE;
+
+		return;
+
 	default:
 		LL_ASSERT(0);
 		break;
@@ -2777,6 +2813,60 @@ static void ticker_success_assert(uint32_t status, void *params)
 	ARG_UNUSED(params);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+static void ticker_stop_adv_assert(uint32_t status, void *params)
+{
+	ARG_UNUSED(params);
+
+	if (status == TICKER_STATUS_FAILURE) {
+		if (_radio.ticker_id_stop == RADIO_TICKER_ID_ADV) {
+			/* ticker_stop failed due to race condition
+			 * while in role_disable. Let the role_disable
+			 * be made aware of, so it can return failure
+			 * (to stop Adv role as it is now transitioned
+			 * to Slave role).
+			 */
+			_radio.ticker_id_stop = 0;
+		} else {
+			LL_ASSERT(0);
+		}
+	}
+}
+
+static void ticker_stop_obs_assert(uint32_t status, void *params)
+{
+	ARG_UNUSED(params);
+
+	if (status == TICKER_STATUS_FAILURE) {
+		if (_radio.ticker_id_stop == RADIO_TICKER_ID_OBS) {
+			/* ticker_stop failed due to race condition
+			 * while in role_disable. Let the role_disable
+			 * be made aware of, so it can return failure
+			 * (to stop Obs role as it is now transitioned
+			 * to Master role).
+			 */
+			_radio.ticker_id_stop = 0;
+		} else {
+			LL_ASSERT(0);
+		}
+	}
+}
+
+static void ticker_update_adv_assert(uint32_t status, void *params)
+{
+	ARG_UNUSED(params);
+
+	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
+		  (_radio.ticker_id_stop == RADIO_TICKER_ID_ADV));
+}
+
+static void ticker_update_slave_assert(uint32_t status, void *params)
+{
+	uint8_t ticker_id = (uint32_t)params & 0xFF;
+
+	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
+		  (_radio.ticker_id_stop == ticker_id));
 }
 
 static void mayfly_radio_active(void *params)
@@ -3763,7 +3853,7 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 #endif
 #undef RADIO_DEFERRED_PREEMPT
 
-  /** Handle change in _ticks_active_to_start */
+	/** Handle change in _ticks_active_to_start */
 	if (_radio.ticks_active_to_start != _ticks_active_to_start) {
 		uint32_t ticks_to_start_new =
 			((_radio.ticks_active_to_start <
@@ -4742,12 +4832,16 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 			RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+		/* APTO in no. of connection events */
 		conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),
 						      conn_interval_us);
-		conn->appto_reload =
-			(conn->apto_reload > (conn->latency + 2)) ?
-			(conn->apto_reload - (conn->latency + 2)) :
-			conn->apto_reload;
+		/* Dispatch LE Ping PDU 6 connection events (that peer would
+		 * listen to) before 30s timeout
+		 * TODO: "peer listens to" is greater than 30s due to latency
+		 */
+		conn->appto_reload = (conn->apto_reload > (conn->latency + 6)) ?
+				     (conn->apto_reload - (conn->latency + 6)) :
+				     conn->apto_reload;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 		if (!conn->llcp.connection_update.is_internal) {
@@ -6909,6 +7003,10 @@ static uint32_t role_disable(uint8_t ticker_id_primary,
 		break;
 	}
 
+	LL_ASSERT(!_radio.ticker_id_stop);
+
+	_radio.ticker_id_stop = ticker_id_primary;
+
 	/* Step 1: Is Primary started? Stop the Primary ticker */
 	ticker_status =
 		ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -6930,7 +7028,7 @@ static uint32_t role_disable(uint8_t ticker_id_primary,
 	}
 
 	if (ticker_status != TICKER_STATUS_SUCCESS) {
-		return 1;
+		goto role_disable_cleanup;
 	}
 
 	/* Inside our event, gracefully handle XTAL and Radio actives */
@@ -6941,7 +7039,14 @@ static uint32_t role_disable(uint8_t ticker_id_primary,
 				    ticks_xtal_to_start, ticks_active_to_start);
 	}
 
-	return 0;
+	if (!_radio.ticker_id_stop) {
+		ticker_status = TICKER_STATUS_FAILURE;
+	}
+
+role_disable_cleanup:
+	_radio.ticker_id_stop = 0;
+
+	return ticker_status;
 }
 
 uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
@@ -7337,11 +7442,17 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	conn->procedure_expire = 0;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
-	conn->apto_reload =
-		RADIO_CONN_EVENTS((30 * 1000 * 1000), conn_interval_us);
+	/* APTO in no. of connection events */
+	conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),
+					      conn_interval_us);
+	/* Dispatch LE Ping PDU 6 connection events (that peer would listen to)
+	 * before 30s timeout
+	 * TODO: "peer listens to" is greater than 30s due to latency
+	 */
+	conn->appto_reload = (conn->apto_reload > (conn->latency + 6)) ?
+			     (conn->apto_reload - (conn->latency + 6)) :
+			     conn->apto_reload;
 	conn->apto_expire = 0;
-	conn->appto_reload = (conn->apto_reload > (conn->latency + 2)) ?
-		(conn->apto_reload - (conn->latency + 2)) : conn->apto_reload;
 	conn->appto_expire = 0;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 

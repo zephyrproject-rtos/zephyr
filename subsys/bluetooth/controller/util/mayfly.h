@@ -17,11 +17,13 @@ struct mayfly {
 };
 
 void mayfly_init(void);
+void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable);
 uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
 			struct mayfly *m);
 void mayfly_run(uint8_t callee_id);
 
-extern void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable);
+extern void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id,
+			     uint8_t enable);
 extern uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id);
 extern uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id);
 extern void mayfly_pend(uint8_t caller_id, uint8_t callee_id);

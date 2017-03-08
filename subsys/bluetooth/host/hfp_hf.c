@@ -352,7 +352,8 @@ int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 	return -EINVAL;
 }
 
-int cmee_finish(struct at_client *hf_at, enum at_result result)
+int cmee_finish(struct at_client *hf_at, enum at_result result,
+		enum at_cme cme_err)
 {
 	if (result != AT_RESULT_OK) {
 		BT_ERR("SLC Connection ERROR in response");
@@ -376,7 +377,8 @@ static void slc_completed(struct at_client *hf_at)
 	}
 }
 
-int cmer_finish(struct at_client *hf_at, enum at_result result)
+int cmer_finish(struct at_client *hf_at, enum at_result result,
+		enum at_cme cme_err)
 {
 	if (result != AT_RESULT_OK) {
 		BT_ERR("SLC Connection ERROR in response");
@@ -389,7 +391,8 @@ int cmer_finish(struct at_client *hf_at, enum at_result result)
 	return 0;
 }
 
-int cind_status_finish(struct at_client *hf_at, enum at_result result)
+int cind_status_finish(struct at_client *hf_at, enum at_result result,
+		       enum at_cme cme_err)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
@@ -410,7 +413,8 @@ int cind_status_finish(struct at_client *hf_at, enum at_result result)
 	return 0;
 }
 
-int cind_finish(struct at_client *hf_at, enum at_result result)
+int cind_finish(struct at_client *hf_at, enum at_result result,
+		enum at_cme cme_err)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
@@ -431,7 +435,8 @@ int cind_finish(struct at_client *hf_at, enum at_result result)
 	return 0;
 }
 
-int brsf_finish(struct at_client *hf_at, enum at_result result)
+int brsf_finish(struct at_client *hf_at, enum at_result result,
+		enum at_cme cme_err)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;

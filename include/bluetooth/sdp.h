@@ -265,10 +265,16 @@ extern "C" {
 #define BT_SDP_URL_STR16       0x46
 #define BT_SDP_URL_STR32       0x47
 
+#define BT_SDP_TYPE_DESC_MASK 0xf8
+#define BT_SDP_SIZE_DESC_MASK 0x07
+#define BT_SDP_SIZE_INDEX_OFFSET 5
+
 /** @brief SDP Generic Data Element Value. */
 struct bt_sdp_data_elem {
-	uint8_t *header; /* Type and size descriptor */
-	void    *data;   /* Data */
+	uint8_t     type;
+	uint32_t    data_size;
+	uint32_t    total_size;
+	const void *data;
 };
 
 /** @brief SDP Attribute Value. */
@@ -290,13 +296,46 @@ struct bt_sdp_record {
  * ---------------------------------------------------    ------------------
  * | Service Hdl | Attr list ptr | Attr count | Next | -> | Service Hdl | ...
  * ---------------------------------------------------    ------------------
-*/
+ */
 
+/** @def BT_SDP_ARRAY_8
+ *  @brief Declare an array of 8-bit elements in an attribute.
+ */
 #define BT_SDP_ARRAY_8(...) ((uint8_t[]) {__VA_ARGS__})
+
+/** @def BT_SDP_ARRAY_16
+ *  @brief Declare an array of 16-bit elements in an attribute.
+ */
 #define BT_SDP_ARRAY_16(...) ((uint16_t[]) {__VA_ARGS__})
+
+/** @def BT_SDP_ARRAY_32
+ *  @brief Declare an array of 32-bit elements in an attribute.
+ */
 #define BT_SDP_ARRAY_32(...) ((uint32_t[]) {__VA_ARGS__})
 
-#define BT_SDP_TYPE_SIZE(...) BT_SDP_ARRAY_8(__VA_ARGS__)
+/** @def BT_SDP_TYPE_SIZE
+ *  @brief Declare a fixed-size data element header.
+ *
+ *  @param _type Data element header containing type and size descriptors.
+ */
+#define BT_SDP_TYPE_SIZE(_type) .type = _type, \
+			.data_size = BIT(_type & BT_SDP_SIZE_DESC_MASK), \
+			.total_size = BIT(_type & BT_SDP_SIZE_DESC_MASK) + 1
+
+/** @def BT_SDP_TYPE_SIZE_VAR
+ *  @brief Declare a variable-size data element header.
+ *
+ *  @param _type Data element header containing type and size descriptors.
+ *  @param _size The actual size of the data.
+ */
+#define BT_SDP_TYPE_SIZE_VAR(_type, _size) .type = _type, \
+			.data_size = _size, \
+			.total_size = BIT((_type & BT_SDP_SIZE_DESC_MASK) - \
+					  BT_SDP_SIZE_INDEX_OFFSET) + _size + 1
+
+/** @def BT_SDP_DATA_ELEM_LIST
+ *  @brief Declare a list of data elements.
+ */
 #define BT_SDP_DATA_ELEM_LIST(...) ((struct bt_sdp_data_elem[]) {__VA_ARGS__})
 
 
@@ -310,32 +349,32 @@ struct bt_sdp_record {
  */
 #define BT_SDP_NEW_SERVICE \
 { \
-	.id = BT_SDP_ATTR_RECORD_HANDLE, \
-	.val.header = BT_SDP_TYPE_SIZE(BT_SDP_UINT32), \
-	.val.data = BT_SDP_ARRAY_32(0), \
+	BT_SDP_ATTR_RECORD_HANDLE, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT32), BT_SDP_ARRAY_32(0) } \
 }, \
 { \
-	.id = BT_SDP_ATTR_RECORD_STATE, \
-	.val.header = BT_SDP_TYPE_SIZE(BT_SDP_UINT32), \
-	.val.data = BT_SDP_ARRAY_32(0), \
+	BT_SDP_ATTR_RECORD_STATE, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT32), BT_SDP_ARRAY_32(0) } \
 }, \
 { \
-	.id = BT_SDP_ATTR_LANG_BASE_ATTR_ID_LIST, \
-	.val.header = BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 9), \
-	.val.data = BT_SDP_DATA_ELEM_LIST( \
+	BT_SDP_ATTR_LANG_BASE_ATTR_ID_LIST, \
+	{ BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 9), \
+	  BT_SDP_DATA_ELEM_LIST( \
 		{ BT_SDP_TYPE_SIZE(BT_SDP_UINT16), BT_SDP_ARRAY_8('n', 'e') }, \
 		{ BT_SDP_TYPE_SIZE(BT_SDP_UINT16), BT_SDP_ARRAY_16(106) }, \
 		{ BT_SDP_TYPE_SIZE(BT_SDP_UINT16), \
 			BT_SDP_ARRAY_16(BT_SDP_PRIMARY_LANG_BASE) } \
-	), \
+	  ), \
+	} \
 }, \
 { \
-	.id = BT_SDP_ATTR_BROWSE_GRP_LIST, \
-	.val.header = BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 3), \
-	.val.data = BT_SDP_DATA_ELEM_LIST( \
+	BT_SDP_ATTR_BROWSE_GRP_LIST, \
+	{ BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3), \
+	  BT_SDP_DATA_ELEM_LIST( \
 		{ BT_SDP_TYPE_SIZE(BT_SDP_UUID16), \
 			BT_SDP_ARRAY_16(BT_SDP_PUBLIC_BROWSE_GROUP) }, \
-	), \
+	  ), \
+	} \
 }
 
 
@@ -350,9 +389,7 @@ struct bt_sdp_record {
  */
 #define BT_SDP_LIST(_att_id, _type_size, _data_elem_seq) \
 { \
-	.id = _att_id, \
-	.val.header = _type_size, \
-	.val.data = _data_elem_seq, \
+	_att_id, { _type_size, _data_elem_seq } \
 }
 
 /** @def BT_SDP_SERVICE_ID
@@ -364,9 +401,8 @@ struct bt_sdp_record {
  */
 #define BT_SDP_SERVICE_ID(_uuid) \
 { \
-	.id = BT_SDP_ATTR_SERVICE_ID, \
-	.val.header = BT_SDP_TYPE_SIZE(BT_SDP_UUID16), \
-	.val.data = &((struct bt_uuid_16) _uuid), \
+	BT_SDP_ATTR_SERVICE_ID, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UUID16), &((struct bt_uuid_16) _uuid) } \
 }
 
 /** @def BT_SDP_SERVICE_NAME
@@ -378,10 +414,8 @@ struct bt_sdp_record {
  */
 #define BT_SDP_SERVICE_NAME(_name) \
 { \
-	.id = BT_SDP_ATTR_SVCNAME_PRIMARY, \
-	.val.header = BT_SDP_TYPE_SIZE(BT_SDP_TEXT_STR8, \
-			(sizeof(_name)-1)), \
-	.val.data = _name, \
+	BT_SDP_ATTR_SVCNAME_PRIMARY, \
+	{ BT_SDP_TYPE_SIZE_VAR(BT_SDP_TEXT_STR8, (sizeof(_name)-1)), _name } \
 }
 
 /** @def BT_SDP_SUPPORTED_FEATURES
@@ -393,9 +427,8 @@ struct bt_sdp_record {
  */
 #define BT_SDP_SUPPORTED_FEATURES(_features) \
 { \
-	.id = BT_SDP_ATTR_SUPPORTED_FEATURES, \
-	.val.header = BT_SDP_TYPE_SIZE(BT_SDP_UINT16), \
-	.val.data = BT_SDP_ARRAY_16(_features), \
+	BT_SDP_ATTR_SUPPORTED_FEATURES, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT16), BT_SDP_ARRAY_16(_features) } \
 }
 
 /** @def BT_SDP_RECORD
@@ -406,10 +439,10 @@ struct bt_sdp_record {
  *  @param _attrs List of attributes for the service record.
  */
 #define BT_SDP_RECORD(_attrs) \
-	{ \
-		.attrs = _attrs, \
-		.attr_count = ARRAY_SIZE((_attrs)), \
-	}
+{ \
+	.attrs = _attrs, \
+	.attr_count = ARRAY_SIZE((_attrs)), \
+}
 
 /* Server API */
 

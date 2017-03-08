@@ -37,6 +37,8 @@
 #define BT_SDP_INVALID_PDU_SIZE      0x0004
 #define BT_SDP_INVALID_CSTATE        0x0005
 
+#define BT_SDP_MAX_SERVICES   10
+
 struct bt_sdp_hdr {
 	uint8_t  op_code;
 	uint16_t tid;

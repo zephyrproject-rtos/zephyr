@@ -26,7 +26,7 @@ static void next_list(struct at_client *at)
 
 int at_check_byte(struct net_buf *buf, char check_byte)
 {
-	const char *str = buf->data;
+	const unsigned char *str = buf->data;
 
 	if (*str != check_byte) {
 		return -EINVAL;
@@ -92,7 +92,7 @@ static int get_cmd_value(struct at_client *at, struct net_buf *buf,
 {
 	int cmd_len = 0;
 	uint8_t pos = at->pos;
-	const char *str = buf->data;
+	const unsigned char *str = buf->data;
 
 	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
 		if (*str != stop_byte) {
@@ -122,7 +122,7 @@ static int get_response_string(struct at_client *at, struct net_buf *buf,
 {
 	int cmd_len = 0;
 	uint8_t pos = at->pos;
-	const char *str = buf->data;
+	const unsigned char *str = buf->data;
 
 	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
 		if (*str != stop_byte) {
@@ -198,8 +198,22 @@ static int at_state_get_cmd_string(struct at_client *at, struct net_buf *buf)
 	return get_response_string(at, buf, ':', AT_STATE_PROCESS_CMD);
 }
 
+static bool is_cmer(struct at_client *at)
+{
+	if (strncmp(at->buf, "CME ERROR", 9) == 0) {
+		return true;
+	}
+
+	return false;
+}
+
 static int at_state_process_cmd(struct at_client *at, struct net_buf *buf)
 {
+	if (is_cmer(at)) {
+		at->state = AT_STATE_PROCESS_AG_NW_ERR;
+		return 0;
+	}
+
 	if (at->resp) {
 		at->resp(at, buf);
 		return 0;
@@ -215,11 +229,16 @@ static int at_state_get_result_string(struct at_client *at, struct net_buf *buf)
 
 static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 {
+	enum at_cme cme_err;
 	enum at_result result;
 
 	if (at_parse_result(at->buf, buf, &result) == 0) {
 		if (at->finish) {
-			at->finish(at, result);
+			/* cme_err is 0 - Is invalid until result is
+			 * AT_RESULT_CME_ERROR
+			 */
+			cme_err = 0;
+			at->finish(at, result, cme_err);
 		}
 	}
 
@@ -228,6 +247,31 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 	at->state = AT_STATE_START;
 
 	return 0;
+}
+
+int cme_handle(struct at_client *at)
+{
+	enum at_cme cme_err;
+	int val;
+
+	if (!at_get_number(at, &val) && val <= CME_ERROR_NETWORK_NOT_ALLOWED) {
+		cme_err = val;
+	} else {
+		cme_err = CME_ERROR_UNKNOWN;
+	}
+
+	if (at->finish) {
+		at->finish(at, AT_RESULT_CME_ERROR, cme_err);
+	}
+
+	return 0;
+}
+
+static int at_state_process_ag_nw_err(struct at_client *at, struct net_buf *buf)
+{
+	at->cmd_state = AT_CMD_GET_VALUE;
+	return at_parse_cmd_input(at, buf, NULL, cme_handle,
+				  AT_CMD_TYPE_NORMAL);
 }
 
 static int at_state_unsolicited_cmd(struct at_client *at, struct net_buf *buf)
@@ -248,6 +292,7 @@ static handle_parse_input_t parser_cb[] = {
 	at_state_process_cmd, /* AT_STATE_PROCESS_CMD */
 	at_state_get_result_string, /* AT_STATE_GET_RESULT_STRING */
 	at_state_process_result, /* AT_STATE_PROCESS_RESULT */
+	at_state_process_ag_nw_err, /* AT_STATE_PROCESS_AG_NW_ERR */
 	at_state_unsolicited_cmd /* AT_STATE_UNSOLICITED_CMD */
 };
 

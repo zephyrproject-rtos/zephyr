@@ -66,7 +66,7 @@ static struct bt_sdp_attribute spp_attrs[] = {
 	BT_SDP_NEW_SERVICE,
 	BT_SDP_LIST(
 		BT_SDP_ATTR_SVCLASS_ID_LIST,
-		BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 3),
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
 		BT_SDP_DATA_ELEM_LIST(
 		{
 			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
@@ -76,10 +76,10 @@ static struct bt_sdp_attribute spp_attrs[] = {
 	),
 	BT_SDP_LIST(
 		BT_SDP_ATTR_PROTO_DESC_LIST,
-		BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 12),
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 12),
 		BT_SDP_DATA_ELEM_LIST(
 		{
-			BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 3),
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
 			BT_SDP_DATA_ELEM_LIST(
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
@@ -88,7 +88,7 @@ static struct bt_sdp_attribute spp_attrs[] = {
 			)
 		},
 		{
-			BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 5),
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 5),
 			BT_SDP_DATA_ELEM_LIST(
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
@@ -104,10 +104,10 @@ static struct bt_sdp_attribute spp_attrs[] = {
 	),
 	BT_SDP_LIST(
 		BT_SDP_ATTR_PROFILE_DESC_LIST,
-		BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 8),
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8),
 		BT_SDP_DATA_ELEM_LIST(
 		{
-			BT_SDP_TYPE_SIZE(BT_SDP_SEQ8, 6),
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
 			BT_SDP_DATA_ELEM_LIST(
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
@@ -1099,23 +1099,29 @@ static int cmd_gatt_mread(int argc, char *argv[])
 	return 0;
 }
 
+static struct bt_gatt_write_params write_params;
+static uint8_t gatt_write_buf[512]; /* max value size */
+
 static void write_func(struct bt_conn *conn, uint8_t err,
 		       struct bt_gatt_write_params *params)
 {
 	printk("Write complete: err %u\n", err);
-}
 
-static struct bt_gatt_write_params write_params;
+	memset(&write_params, 0, sizeof(write_params));
+}
 
 static int cmd_gatt_write(int argc, char *argv[])
 {
 	int err;
 	uint16_t handle, offset;
-	uint8_t buf[100];
-	uint8_t data;
 
 	if (!default_conn) {
 		printk("Not connected\n");
+		return 0;
+	}
+
+	if (write_params.func) {
+		printk("Write ongoing\n");
 		return 0;
 	}
 
@@ -1124,28 +1130,27 @@ static int cmd_gatt_write(int argc, char *argv[])
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
-	/* TODO: Add support for longer data */
 	offset = strtoul(argv[2], NULL, 16);
-	data = strtoul(argv[3], NULL, 16);
 
-	if (argc == 5) {
-		size_t len = min(strtoul(argv[4], NULL, 16), sizeof(buf));
-		int i;
-
-		for (i = 0; i < len; i++) {
-			buf[i] = data;
-		}
-
-		write_params.data = buf;
-		write_params.length = len;
-	} else {
-		write_params.data = &data;
-		write_params.length = sizeof(data);
-	}
-
+	gatt_write_buf[0] = strtoul(argv[3], NULL, 16);
+	write_params.data = gatt_write_buf;
+	write_params.length = 1;
 	write_params.handle = handle;
 	write_params.offset = offset;
 	write_params.func = write_func;
+
+	if (argc == 5) {
+		size_t len;
+		int i;
+
+		len = min(strtoul(argv[4], NULL, 16), sizeof(gatt_write_buf));
+
+		for (i = 1; i < len; i++) {
+			gatt_write_buf[i] = gatt_write_buf[0];
+		}
+
+		write_params.length = len;
+	}
 
 	err = bt_gatt_write(default_conn, &write_params);
 	if (err) {
@@ -1248,8 +1253,8 @@ static int cmd_gatt_subscribe(int argc, char *argv[])
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 
-	if (argc > 3) {
-		subscribe_params.value = strtoul(argv[3], NULL, 16);
+	if (argc > 3 && !strcmp(argv[3], "ind")) {
+		subscribe_params.value = BT_GATT_CCC_INDICATE;
 	}
 
 	err = bt_gatt_subscribe(default_conn, &subscribe_params);
@@ -1404,11 +1409,15 @@ static bool hrs_simulate;
 
 static int cmd_hrs_simulate(int argc, char *argv[])
 {
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
 	if (!strcmp(argv[1], "on")) {
 		static bool hrs_registered;
 
 		if (!hrs_registered) {
-			printk("Register HRS Serice\n");
+			printk("Registering HRS Service\n");
 			hrs_init(0x01);
 			hrs_registered = true;
 		}
@@ -1906,16 +1915,38 @@ static int cmd_clear(int argc, char *argv[])
 }
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+static void hexdump(const uint8_t *data, size_t len)
+{
+	int n = 0;
+
+	while (len--) {
+		if (n % 16 == 0) {
+			printk("%08X ", n);
+		}
+
+		printk("%02X ", *data++);
+
+		n++;
+		if (n % 8 == 0) {
+			if (n % 16 == 0) {
+				printk("\n");
+			} else {
+				printk(" ");
+			}
+		}
+	}
+
+	if (n % 16) {
+		printk("\n");
+	}
+}
+
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	int ret;
-
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
 
-	/* loopback the data */
-	ret = bt_l2cap_chan_send(chan, buf);
-	if (ret < 0) {
-		printk("Unable to send: %d\n", -ret);
+	if (buf->len) {
+		hexdump(buf->data, buf->len);
 	}
 }
 
@@ -2438,7 +2469,8 @@ static const struct shell_cmd commands[] = {
 	  "<handle> <offset> <data>" },
 	{ "gatt-write-signed", cmd_gatt_write_signed,
 	  "<handle> <offset> <data>" },
-	{ "gatt-subscribe", cmd_gatt_subscribe, "<CCC handle> <value handle>" },
+	{ "gatt-subscribe", cmd_gatt_subscribe,
+	  "<CCC handle> <value handle> [ind]" },
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe, HELP_NONE },
 	{ "gatt-register-service", cmd_gatt_register_test_svc,
 	  "register pre-predefined test service" },

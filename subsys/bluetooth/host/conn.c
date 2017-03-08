@@ -44,8 +44,9 @@ const struct bt_conn_auth_cb *bt_auth;
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
-
 #if defined(CONFIG_BLUETOOTH_BREDR)
+static struct bt_conn sco_conns[CONFIG_BLUETOOTH_MAX_SCO_CONN];
+
 enum pairing_method {
 	LEGACY,			/* Legacy (pre-SSP) pairing */
 	JUST_WORKS,		/* JustWorks pairing */
@@ -190,6 +191,29 @@ static struct bt_conn *conn_new(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+static struct bt_conn *sco_conn_new(void)
+{
+	struct bt_conn *sco_conn = NULL;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
+		if (!atomic_get(&sco_conns[i].ref)) {
+			sco_conn = &sco_conns[i];
+			break;
+		}
+	}
+
+	if (!sco_conn) {
+		return NULL;
+	}
+
+	memset(sco_conn, 0, sizeof(*sco_conn));
+
+	atomic_set(&sco_conn->ref, 1);
+
+	return sco_conn;
+}
+
 struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 				  const struct bt_br_conn_param *param)
 {
@@ -261,6 +285,33 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 	}
 
 	return NULL;
+}
+
+struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
+{
+	struct bt_conn *sco_conn = sco_conn_new();
+
+	if (!sco_conn) {
+		return NULL;
+	}
+
+	sco_conn->sco.conn = bt_conn_lookup_addr_br(peer);
+	sco_conn->type = BT_CONN_TYPE_SCO;
+
+	if (link_type == BT_HCI_SCO) {
+		if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+			sco_conn->sco.pkt_type = (bt_dev.esco.pkt_type &
+						  ESCO_PKT_MASK);
+		} else {
+			sco_conn->sco.pkt_type = (bt_dev.esco.pkt_type &
+						  SCO_PKT_MASK);
+		}
+	} else if (link_type == BT_HCI_ESCO) {
+		sco_conn->sco.pkt_type = (bt_dev.esco.pkt_type &
+					  ~EDR_ESCO_PKT_MASK);
+	}
+
+	return sco_conn;
 }
 
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
@@ -1190,9 +1241,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			/* conn->err will be set in this case */
 			notify_connected(conn);
 			bt_conn_unref(conn);
-		} else if (old_state == BT_CONN_CONNECT_SCAN && conn->err) {
+		} else if (old_state == BT_CONN_CONNECT_SCAN) {
 			/* this indicate LE Create Connection failed */
-			notify_connected(conn);
+			if (conn->err) {
+				notify_connected(conn);
+			}
+
 			bt_conn_unref(conn);
 		}
 

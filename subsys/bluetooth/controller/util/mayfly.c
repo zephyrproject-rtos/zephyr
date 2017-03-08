@@ -14,6 +14,10 @@
 static struct {
 	void *head;
 	void *tail;
+	uint8_t enable_req;
+	uint8_t enable_ack;
+	uint8_t disable_req;
+	uint8_t disable_ack;
 } mft[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT];
 
 static void *mfl[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT][2];
@@ -35,6 +39,25 @@ void mayfly_init(void)
 	}
 }
 
+void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
+{
+	if (enable) {
+		if (mft[callee_id][caller_id].enable_req ==
+		    mft[callee_id][caller_id].enable_ack) {
+			mft[callee_id][caller_id].enable_req++;
+		}
+
+		mayfly_enable_cb(caller_id, callee_id, enable);
+	} else {
+		if (mft[callee_id][caller_id].disable_req ==
+		    mft[callee_id][caller_id].disable_ack) {
+			mft[callee_id][caller_id].disable_req++;
+
+			mayfly_pend(caller_id, callee_id);
+		}
+	}
+}
+
 uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
 			struct mayfly *m)
 {
@@ -42,7 +65,9 @@ uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
 	uint8_t ack;
 
 	chain = chain || !mayfly_prio_is_equal(caller_id, callee_id) ||
-		!mayfly_is_enabled(caller_id, callee_id);
+		!mayfly_is_enabled(caller_id, callee_id) ||
+		(mft[callee_id][caller_id].disable_req !=
+		 mft[callee_id][caller_id].disable_ack);
 
 	/* shadow the ack */
 	ack = m->_ack;
@@ -89,6 +114,8 @@ uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
 
 void mayfly_run(uint8_t callee_id)
 {
+	uint8_t disable = 0;
+	uint8_t enable = 0;
 	uint8_t caller_id;
 
 	/* iterate through each caller queue to this callee_id */
@@ -140,14 +167,35 @@ void mayfly_run(uint8_t callee_id)
 			 */
 			if (state == 1) {
 				/* pend callee (tailchain) if mayfly queue is
-				 * not empty.
+				 * not empty or all caller queues are not
+				 * processed.
 				 */
-				if (link) {
+				if (caller_id || link) {
 					mayfly_pend(callee_id, callee_id);
-				}
 
-				return;
+					return;
+				}
 			}
 		}
+
+		if (mft[callee_id][caller_id].disable_req !=
+		    mft[callee_id][caller_id].disable_ack) {
+			disable = 1;
+
+			mft[callee_id][caller_id].disable_ack =
+				mft[callee_id][caller_id].disable_req;
+		}
+
+		if (mft[callee_id][caller_id].enable_req !=
+		    mft[callee_id][caller_id].enable_ack) {
+			enable = 1;
+
+			mft[callee_id][caller_id].enable_ack =
+				mft[callee_id][caller_id].enable_req;
+		}
+	}
+
+	if (disable && !enable) {
+		mayfly_enable_cb(callee_id, callee_id, 0);
 	}
 }

@@ -40,6 +40,13 @@ config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
 
 comment "BLE Controller features"
 
+config BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS
+	hex "Public Device Address"
+	default 0
+	help
+	  Initialize a public device address that will be return by HCI read
+	  Bluetooth device address command.
+
 config BLUETOOTH_CONTROLLER_LE_PING
 	bool "LE Ping"
 	default y
@@ -99,5 +106,13 @@ config BLUETOOTH_CONTROLLER_PROFILE_ISR
 	  controller event with these profiling data. The controller event
 	  contains current, minimum and maximum ISR entry latencies; and
 	  current, minimum and maximum ISR CPU use in micro-seconds.
+
+config BLUETOOTH_CONTROLLER_DEBUG_PINS
+	bool "Bluetooth Controller Debug Pins"
+	help
+	  Turn on debug GPIO toggling for the BLE Controller. This is useful
+	  when debugging with a logic analyzer or profiling certain sections of
+	  the code. When enabled, pins P0.16 to P0.25 are taken over exclusively
+	  by the controller and cannot be used outside of it.
 
 endif # BLUETOOTH_CONTROLLER

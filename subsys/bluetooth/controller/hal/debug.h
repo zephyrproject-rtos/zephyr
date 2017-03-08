@@ -22,7 +22,7 @@ void bt_controller_assert_handle(char *file, uint32_t line);
  * which can be defined to SoC's GPIO toggle to observe/debug the
  * controller's runtime behavior.
  */
-#if (DEBUG == 1)
+#ifdef CONFIG_BLUETOOTH_CONTROLLER_DEBUG_PINS
 #define DEBUG_INIT()            do { \
 				NRF_GPIO->DIRSET = 0x03FF0000; \
 				NRF_GPIO->OUTCLR = 0x03FF0000; } \
@@ -30,65 +30,65 @@ void bt_controller_assert_handle(char *file, uint32_t line);
 
 #define DEBUG_CPU_SLEEP(flag)   do { \
 				if (flag) { \
-				NRF_GPIO->OUTSET = 0x00010000; \
-				NRF_GPIO->OUTCLR = 0x00010000; } \
+				NRF_GPIO->OUTSET = BIT(16); \
+				NRF_GPIO->OUTCLR = BIT(16); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00010000; \
-				NRF_GPIO->OUTSET = 0x00010000; } \
+				NRF_GPIO->OUTCLR = BIT(16); \
+				NRF_GPIO->OUTSET = BIT(16); } \
 				} while (0)
 
 #define DEBUG_TICKER_ISR(flag)   do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00020000; \
-				NRF_GPIO->OUTSET = 0x00020000; } \
+				NRF_GPIO->OUTCLR = BIT(17); \
+				NRF_GPIO->OUTSET = BIT(17); } \
 				else { \
-				NRF_GPIO->OUTSET = 0x00020000; \
-				NRF_GPIO->OUTCLR = 0x00020000; } \
+				NRF_GPIO->OUTSET = BIT(17); \
+				NRF_GPIO->OUTCLR = BIT(17); } \
 				} while (0)
 
 #define DEBUG_TICKER_TASK(flag)  do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00020000; \
-				NRF_GPIO->OUTSET = 0x00020000; } \
+				NRF_GPIO->OUTCLR = BIT(17); \
+				NRF_GPIO->OUTSET = BIT(17); } \
 				else { \
-				NRF_GPIO->OUTSET = 0x00020000; \
-				NRF_GPIO->OUTCLR = 0x00020000; } \
+				NRF_GPIO->OUTSET = BIT(17); \
+				NRF_GPIO->OUTCLR = BIT(17); } \
 				} while (0)
 
 #define DEBUG_TICKER_JOB(flag)   do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00040000; \
-				NRF_GPIO->OUTSET = 0x00040000; } \
+				NRF_GPIO->OUTCLR = BIT(18); \
+				NRF_GPIO->OUTSET = BIT(18); } \
 				else { \
-				NRF_GPIO->OUTSET = 0x00040000; \
-				NRF_GPIO->OUTCLR = 0x00040000; } \
+				NRF_GPIO->OUTSET = BIT(18); \
+				NRF_GPIO->OUTCLR = BIT(18); } \
 				} while (0)
 
 #define DEBUG_RADIO_ISR(flag)   do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00800000; \
-				NRF_GPIO->OUTSET = 0x00800000; } \
+				NRF_GPIO->OUTCLR = BIT(23); \
+				NRF_GPIO->OUTSET = BIT(23); } \
 				else { \
-				NRF_GPIO->OUTSET = 0x00800000; \
-				NRF_GPIO->OUTCLR = 0x00800000; } \
+				NRF_GPIO->OUTSET = BIT(23); \
+				NRF_GPIO->OUTCLR = BIT(23); } \
 				} while (0)
 
 #define DEBUG_RADIO_XTAL(flag)  do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x01000000; \
-				NRF_GPIO->OUTSET = 0x01000000; } \
+				NRF_GPIO->OUTCLR = BIT(24); \
+				NRF_GPIO->OUTSET = BIT(24); } \
 				else { \
-				NRF_GPIO->OUTSET = 0x01000000; \
-				NRF_GPIO->OUTCLR = 0x01000000; } \
+				NRF_GPIO->OUTSET = BIT(24); \
+				NRF_GPIO->OUTCLR = BIT(24); } \
 				} while (0)
 
 #define DEBUG_RADIO_ACTIVE(flag)    do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x02000000; \
-				NRF_GPIO->OUTSET = 0x02000000; } \
+				NRF_GPIO->OUTCLR = BIT(25); \
+				NRF_GPIO->OUTSET = BIT(25); } \
 				else { \
-				NRF_GPIO->OUTSET = 0x02000000; \
-				NRF_GPIO->OUTCLR = 0x02000000; } \
+				NRF_GPIO->OUTSET = BIT(25); \
+				NRF_GPIO->OUTCLR = BIT(25); } \
 				} while (0)
 
 #define DEBUG_RADIO_CLOSE(flag)     do { \
@@ -101,74 +101,74 @@ void bt_controller_assert_handle(char *file, uint32_t line);
 
 #define DEBUG_RADIO_PREPARE_A(flag) do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00080000; \
-				NRF_GPIO->OUTSET = 0x00080000; } \
+				NRF_GPIO->OUTCLR = BIT(19); \
+				NRF_GPIO->OUTSET = BIT(19); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00080000; \
-				NRF_GPIO->OUTSET = 0x00080000; } \
+				NRF_GPIO->OUTCLR = BIT(19); \
+				NRF_GPIO->OUTSET = BIT(19); } \
 				} while (0)
 
 #define DEBUG_RADIO_START_A(flag)   do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00080000; \
-				NRF_GPIO->OUTSET = 0x00080000; } \
+				NRF_GPIO->OUTCLR = BIT(19); \
+				NRF_GPIO->OUTSET = BIT(19); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00080000; \
-				NRF_GPIO->OUTSET = 0x00080000; } \
+				NRF_GPIO->OUTCLR = BIT(19); \
+				NRF_GPIO->OUTSET = BIT(19); } \
 				} while (0)
 
 #define DEBUG_RADIO_PREPARE_S(flag) do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00100000; \
-				NRF_GPIO->OUTSET = 0x00100000; } \
+				NRF_GPIO->OUTCLR = BIT(20); \
+				NRF_GPIO->OUTSET = BIT(20); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00100000; \
-				NRF_GPIO->OUTSET = 0x00100000; } \
+				NRF_GPIO->OUTCLR = BIT(20); \
+				NRF_GPIO->OUTSET = BIT(20); } \
 				} while (0)
 
 #define DEBUG_RADIO_START_S(flag)   do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00100000; \
-				NRF_GPIO->OUTSET = 0x00100000; } \
+				NRF_GPIO->OUTCLR = BIT(20); \
+				NRF_GPIO->OUTSET = BIT(20); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00100000; \
-				NRF_GPIO->OUTSET = 0x00100000; } \
+				NRF_GPIO->OUTCLR = BIT(20); \
+				NRF_GPIO->OUTSET = BIT(20); } \
 				} while (0)
 
 #define DEBUG_RADIO_PREPARE_O(flag) do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00200000; \
-				NRF_GPIO->OUTSET = 0x00200000; } \
+				NRF_GPIO->OUTCLR = BIT(21); \
+				NRF_GPIO->OUTSET = BIT(21); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00200000; \
-				NRF_GPIO->OUTSET = 0x00200000; } \
+				NRF_GPIO->OUTCLR = BIT(21); \
+				NRF_GPIO->OUTSET = BIT(21); } \
 				} while (0)
 
 #define DEBUG_RADIO_START_O(flag)   do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00200000; \
-				NRF_GPIO->OUTSET = 0x00200000; } \
+				NRF_GPIO->OUTCLR = BIT(21); \
+				NRF_GPIO->OUTSET = BIT(21); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00200000; \
-				NRF_GPIO->OUTSET = 0x00200000; } \
+				NRF_GPIO->OUTCLR = BIT(21); \
+				NRF_GPIO->OUTSET = BIT(21); } \
 				} while (0)
 
 #define DEBUG_RADIO_PREPARE_M(flag) do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00400000; \
-				NRF_GPIO->OUTSET = 0x00400000; } \
+				NRF_GPIO->OUTCLR = BIT(22); \
+				NRF_GPIO->OUTSET = BIT(22); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00400000; \
-				NRF_GPIO->OUTSET = 0x00400000; } \
+				NRF_GPIO->OUTCLR = BIT(22); \
+				NRF_GPIO->OUTSET = BIT(22); } \
 				} while (0)
 
 #define DEBUG_RADIO_START_M(flag)   do { \
 				if (flag) { \
-				NRF_GPIO->OUTCLR = 0x00400000; \
-				NRF_GPIO->OUTSET = 0x00400000; } \
+				NRF_GPIO->OUTCLR = BIT(22); \
+				NRF_GPIO->OUTSET = BIT(22); } \
 				else { \
-				NRF_GPIO->OUTCLR = 0x00400000; \
-				NRF_GPIO->OUTSET = 0x00400000; } \
+				NRF_GPIO->OUTCLR = BIT(22); \
+				NRF_GPIO->OUTSET = BIT(22); } \
 				} while (0)
 
 #else
@@ -209,6 +209,6 @@ void bt_controller_assert_handle(char *file, uint32_t line);
 
 #define DEBUG_RADIO_START_M(flag)
 
-#endif /* DEBUG */
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DEBUG_PINS */
 
 #endif /* _DEBUG_H_ */

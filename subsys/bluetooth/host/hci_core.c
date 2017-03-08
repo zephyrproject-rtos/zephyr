@@ -992,6 +992,34 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 	return 0;
 }
 
+static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
+{
+	struct bt_hci_cp_accept_sync_conn_req *cp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_ACCEPT_SYNC_CONN_REQ, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+	cp->pkt_type = sco_conn->sco.pkt_type;
+	cp->tx_bandwidth = 0x00001f40;
+	cp->rx_bandwidth = 0x00001f40;
+	cp->max_latency = 0x0007;
+	cp->retrans_effort = 0x01;
+	cp->content_format = BT_VOICE_CVSD_16BIT;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_SYNC_CONN_REQ, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
 static int accept_conn(const bt_addr_t *bdaddr)
 {
 	struct bt_hci_cp_accept_conn_req *cp;
@@ -1015,6 +1043,22 @@ static int accept_conn(const bt_addr_t *bdaddr)
 	return 0;
 }
 
+static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
+{
+	struct bt_conn *sco_conn;
+
+	sco_conn = bt_conn_add_sco(&evt->bdaddr, evt->link_type);
+	if (!sco_conn) {
+		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
+		return;
+	}
+
+	accept_sco_conn(&evt->bdaddr, sco_conn);
+	sco_conn->role = BT_HCI_ROLE_SLAVE;
+	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
+	bt_conn_unref(sco_conn);
+}
+
 static void conn_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
@@ -1023,9 +1067,8 @@ static void conn_req(struct net_buf *buf)
 	BT_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr),
 	       evt->link_type);
 
-	/* Reject SCO connections until we have support for them */
 	if (evt->link_type != BT_HCI_ACL) {
-		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
+		bt_esco_conn_req(evt);
 		return;
 	}
 
@@ -3117,6 +3160,43 @@ static int read_ext_features(void)
 	return 0;
 }
 
+void device_supported_pkt_type(void)
+{
+	/* Device supported features and sco packet types */
+	if (BT_FEAT_HV2_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_HV2);
+	}
+
+	if (BT_FEAT_HV3_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_HV3);
+	}
+
+	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_EV3);
+	}
+
+	if (BT_FEAT_EV4_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_EV4);
+	}
+
+	if (BT_FEAT_EV5_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_EV5);
+	}
+
+	if (BT_FEAT_2EV3_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_2EV3);
+	}
+
+	if (BT_FEAT_3EV3_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_3EV3);
+	}
+
+	if (BT_FEAT_3SLOT_PKT(bt_dev.features)) {
+		bt_dev.esco.pkt_type |= (HCI_PKT_TYPE_ESCO_2EV5 |
+					 HCI_PKT_TYPE_ESCO_3EV5);
+	}
+}
+
 static int br_init(void)
 {
 	struct net_buf *buf;
@@ -3132,6 +3212,9 @@ static int br_init(void)
 			return err;
 		}
 	}
+
+	/* Add local supported packet types to bt_dev */
+	device_supported_pkt_type();
 
 	/* Get BR/EDR buffer size */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &buf);
@@ -3267,6 +3350,7 @@ static int set_event_mask(void)
 		ev->events[2] |= 0x80; /* Link Key Notif */
 		ev->events[4] |= 0x02; /* Inquiry Result With RSSI */
 		ev->events[4] |= 0x04; /* Remote Extended Features Complete */
+		ev->events[5] |= 0x08; /* Synchronous Conn Complete Event */
 		ev->events[5] |= 0x40; /* Extended Inquiry Result */
 		ev->events[6] |= 0x01; /* IO Capability Request */
 		ev->events[6] |= 0x02; /* IO Capability Response */
@@ -3410,6 +3494,7 @@ static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
+		"5.0",
 	};
 
 	if (ver < ARRAY_SIZE(str)) {
@@ -3760,7 +3845,8 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 		 * shall not be set to less than 0x00A0 (100 ms) if the
 		 * Advertising_Type is set to ADV_SCAN_IND or ADV_NONCONN_IND.
 		 */
-		if (param->interval_min < 0x00a0) {
+		if (bt_dev.hci_version < BT_HCI_VERSION_5_0 &&
+		    param->interval_min < 0x00a0) {
 			return false;
 		}
 	}

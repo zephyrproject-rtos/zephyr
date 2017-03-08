@@ -44,6 +44,7 @@
 #include "ll/pdu.h"
 #include "ll/ctrl.h"
 #include "ll/ctrl_internal.h"
+#include "ll/ll.h"
 #include "hci_internal.h"
 
 #include "hal/debug.h"
@@ -84,7 +85,7 @@ int bt_rand(void *buf, size_t len)
 	return 0;
 }
 
-void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
+void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {
 	(void)caller_id;
 
@@ -150,9 +151,12 @@ void radio_event_callback(void)
 	k_sem_give(&sem_prio_recv);
 }
 
-static void radio_nrf5_isr(void *arg)
+ISR_DIRECT_DECLARE(radio_nrf5_isr)
 {
-	isr_radio(arg);
+	isr_radio();
+
+	ISR_DIRECT_PM();
+	return 1;
 }
 
 static void rtc0_nrf5_isr(void *arg)
@@ -382,7 +386,17 @@ static int hci_driver_open(void)
 		return -ENOMEM;
 	}
 
-	IRQ_CONNECT(NRF5_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0, 0);
+	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS)) {
+		uint64_t addr64 = CONFIG_BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS;
+		uint8_t bdaddr[6];
+
+		sys_put_le32(addr64 & 0xFFFFFFFF, &bdaddr[0]);
+		sys_put_le16((addr64 >> 32) & 0xFFFF, &bdaddr[4]);
+
+		ll_address_set(0, bdaddr);
+	}
+
+	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0);
 	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, 0, swi4_nrf5_isr, 0, 0);

@@ -179,7 +179,7 @@ static void read_local_version_info(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	rp->hci_version = BT_HCI_VERSION_4_2;
+	rp->hci_version = BT_HCI_VERSION_5_0;
 	rp->hci_revision = sys_cpu_to_le16(0);
 	rp->lmp_version = RADIO_BLE_VERSION_NUMBER;
 	rp->manufacturer = sys_cpu_to_le16(RADIO_BLE_COMPANY_ID);

@@ -23,10 +23,8 @@
 
 static radio_isr_fp sfp_radio_isr;
 
-void isr_radio(void *param)
+void isr_radio(void)
 {
-	ARG_UNUSED(param);
-
 	if (sfp_radio_isr) {
 		sfp_radio_isr();
 	}

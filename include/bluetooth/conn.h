@@ -105,6 +105,8 @@ enum {
 	BT_CONN_TYPE_LE,
 	/** BR/EDR Connection Type */
 	BT_CONN_TYPE_BR,
+	/** SCO Connection Type */
+	BT_CONN_TYPE_SCO,
 };
 
 /** LE Connection Info Structure */
