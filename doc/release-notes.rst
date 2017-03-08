@@ -16,15 +16,28 @@ This release introduces a new native IP stack, replacing the legacy uIP stack,
 maintaining the legacy functionality, adding additional capabilities, and allowing
 future improvements.
 
-Additionally, this release adds improvements for documentation, testing, and build
-infrastructure (including use of 3rd-party compilers and build support for Windows
-and OS X environments).
+We have introduced support for the RISC V and Xtensa architectures and now
+support 6 architectures in total.
+
+Device tree support for ARM based boards added. The initial
+device tree support includes flash/sram base address and UART devices.  Board
+support includes NXP Kinetis based SoCs, ARM Beetle, TI CC3200 LaunchXL, and
+STML32L476 based SoCs. Plan is to add support for other architectures and
+expand device support in upcoming Zephyr releases.
 
 The following sections provide a detailed list of changes, by component,  since
 kernel version 1.6.0.
 
 Kernel
 ======
+
+* Introduction of k_poll API: k_poll() is similar to the POSIX poll() API in
+  spirit in that it allows a single thread to monitor multiple events without
+  actively polling them, but rather pending for one or more to become ready.
+* Optimized memory use of some thread fields
+* Remove usage of micro/nano kernel terminology from kernel code and introduced
+  a legacy option to enable/disable legacy APIs. (using legacy.h)
+
 
 Architectures
 =============
@@ -41,6 +54,9 @@ Boards
 * Added Nordic pca10056 PDK board
 * Added NXP FRDM-KW41Z board
 * Added ST Nucleo-F334R8, Nucleo-L476G, STM3210C-EVAL, and STM32373C-EVAL boards
+* Added Panther and tinyTILE boards, based on Quark SE C1000 and Intel Curie
+* Added support for Zedboard Pulpino, a RISC V based board
+* Added Qemu target for RISC V and a simulator target for the Xtensa architecture.
 
 Drivers and Sensors
 ===================
@@ -104,9 +120,6 @@ Bluetooth
 * Reduced latencies in the Controller
 * Added SPI HCI driver
 
-Build Infrastructure
-====================
-
 Libraries
 =========
 
@@ -138,12 +151,6 @@ Documentation
 * Porting guides added.
 * Sample README files converted to documents included in the website.
 * Improved consistency of board and sample documentation.
-
-Test and Samples
-================
-
-Deprecations
-============
 
 JIRA Related Items
 ==================
