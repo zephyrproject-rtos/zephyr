@@ -58,18 +58,15 @@ int dns_init(struct dns_context *ctx)
 	return 0;
 }
 
-static
-int dns_write(struct dns_context *ctx, struct net_buf *dns_data,
-	      uint16_t dns_id, struct net_buf *dns_qname);
+static int dns_write(struct dns_context *ctx, struct net_buf *dns_data,
+		     uint16_t dns_id, struct net_buf *dns_qname);
 
-static
-int dns_read(struct dns_context *ctx, struct net_buf *dns_data, uint16_t dns_id,
-	     struct net_buf *cname);
+static int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
+		    uint16_t dns_id, struct net_buf *cname);
 
 /* net_context_recv callback */
-static
-void cb_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
-	     void *data);
+static void cb_recv(struct net_context *net_ctx, struct net_buf *buf,
+		    int status, void *data);
 
 /*
  * Note about the DNS transaction identifier:
@@ -146,9 +143,8 @@ exit_resolve:
 	return rc;
 }
 
-static
-int dns_write(struct dns_context *ctx, struct net_buf *dns_data,
-	      uint16_t dns_id, struct net_buf *dns_qname)
+static int dns_write(struct dns_context *ctx, struct net_buf *dns_data,
+		     uint16_t dns_id, struct net_buf *dns_qname)
 {
 	struct net_buf *tx;
 	int server_addr_len;
@@ -194,9 +190,8 @@ exit_write:
 	return rc;
 }
 
-static
-void cb_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
-	     void *data)
+static void cb_recv(struct net_context *net_ctx, struct net_buf *buf,
+		    int status, void *data)
 {
 	struct dns_context *ctx = (struct dns_context *)data;
 
@@ -210,9 +205,8 @@ void cb_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
 	k_sem_give(&ctx->rx_sem);
 }
 
-static
-int dns_read(struct dns_context *ctx, struct net_buf *dns_data, uint16_t dns_id,
-	     struct net_buf *cname)
+static int dns_read(struct dns_context *ctx, struct net_buf *dns_data,
+		    uint16_t dns_id, struct net_buf *cname)
 {
 	/* helper struct to track the dns msg received from the server */
 	struct dns_msg_t dns_msg;
