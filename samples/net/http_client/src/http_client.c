@@ -94,7 +94,7 @@ int http_send_request(struct http_client_ctx *http_ctx, const char *method,
 
 		rc = snprintk(content_len_str, sizeof(content_len_str),
 			      "\r\nContent-Length: %u\r\n\r\n",
-			      strlen(payload));
+			      (unsigned int)strlen(payload));
 		if (rc <= 0 || rc >= sizeof(content_len_str)) {
 			rc = -ENOMEM;
 			goto lb_exit;
