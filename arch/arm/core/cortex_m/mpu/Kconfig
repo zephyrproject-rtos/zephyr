@@ -9,6 +9,7 @@
 config ARM_MPU
 	bool "ARM MPU Support"
 	depends on CPU_HAS_MPU
+	depends on SOC_FAMILY_ARM || SOC_FAMILY_STM32
 	default n
 	help
 	  MCU has ARM MPU
