@@ -276,8 +276,9 @@ endif
 if SPI
 
 config SPI_QMSI
-	def_bool y
+	def_bool n
 
+if SPI_QMSI
 config SPI_0
 	def_bool y
 
@@ -296,9 +297,12 @@ config SPI_1_NAME
 config SPI_1_IRQ_PRI
 	default 1
 
+endif
+
 config SPI_QMSI_SS
 	def_bool y
 
+if SPI_QMSI_SS
 config SPI_SS_0
 	def_bool y
 
@@ -316,6 +320,8 @@ config SPI_SS_1_NAME
 
 config SPI_SS_1_IRQ_PRI
 	default 1
+
+endif
 
 endif # SPI
 
