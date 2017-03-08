@@ -61,6 +61,7 @@ config NET_BUF_POOL_USAGE
 config  NETWORKING
 	bool "Link layer and IP networking support"
 	select NET_BUF
+	select POLL
 	select RANDOM_GENERATOR
 	default n
 	help

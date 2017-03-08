@@ -203,12 +203,6 @@ struct net_if {
 	/** Queue for outgoing packets from apps */
 	struct k_fifo tx_queue;
 
-	/** Stack for the TX thread tied to this interface */
-#ifndef CONFIG_NET_TX_STACK_SIZE
-#define CONFIG_NET_TX_STACK_SIZE 1024
-#endif
-	NET_STACK_DEFINE_EMBEDDED(tx_stack, CONFIG_NET_TX_STACK_SIZE);
-
 #if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
@@ -1190,6 +1184,9 @@ struct net_if_api {
 #endif
 
 #define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name##_##sfx)
+#define NET_IF_EVENT_GET_NAME(dev_name, sfx)	\
+	(__net_if_event_##dev_name##_##sfx)
+
 #define NET_IF_GET(dev_name, sfx)					\
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
 
@@ -1202,12 +1199,9 @@ struct net_if_api {
 		.mtu = _mtu,						\
 		NET_IF_DHCPV4_INIT					\
 	};								\
-	NET_STACK_INFO_ADDR(TX,						\
-			    dev_name,					\
-			    CONFIG_NET_TX_STACK_SIZE,			\
-			    CONFIG_NET_TX_STACK_SIZE,			\
-			    NET_IF_GET(dev_name, sfx)->tx_stack,	\
-			    sfx)
+	static struct k_poll_event					\
+	(NET_IF_EVENT_GET_NAME(dev_name, sfx)) __used			\
+		__attribute__((__section__(".net_if_event.data"))) = {}
 
 
 /* Network device initialization macros */

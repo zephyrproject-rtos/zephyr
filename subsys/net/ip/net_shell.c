@@ -76,29 +76,6 @@ static inline const char *addrstate2str(enum net_addr_state addr_state)
 	return "<invalid state>";
 }
 
-static void tx_stack(struct net_if *iface, unsigned char *stack,
-		     size_t stack_size)
-{
-	ARG_UNUSED(iface);
-
-#if defined(CONFIG_INIT_STACKS)
-	unsigned int stack_offset, pcnt, unused;
-
-	net_analyze_stack_get_values(stack, stack_size,
-				     &stack_offset, &pcnt, &unused);
-
-	printk("TX stack size %zu/%zu bytes unused %u usage %zu/%zu (%u %%)\n",
-	       stack_size,
-	       stack_size + stack_offset, unused,
-	       stack_size - unused, stack_size, pcnt);
-#else
-	ARG_UNUSED(stack_size);
-	ARG_UNUSED(stack);
-
-	printk("TX stack usage not available.\n");
-#endif
-}
-
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -113,8 +90,6 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	printk("Interface %p\n", iface);
 	printk("====================\n");
-
-	tx_stack(iface, iface->tx_stack, CONFIG_NET_TX_STACK_SIZE);
 
 	printk("Link addr : %s\n", net_sprint_ll_addr(iface->link_addr.addr,
 						      iface->link_addr.len));

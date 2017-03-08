@@ -33,11 +33,17 @@
 extern struct net_if __net_if_start[];
 extern struct net_if __net_if_end[];
 
+extern struct k_poll_event __net_if_event_start[];
+extern struct k_poll_event __net_if_event_stop[];
+
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
 
 /* We keep track of the link callbacks in this list.
  */
 static sys_slist_t link_callbacks;
+
+NET_STACK_DEFINE(TX, tx_stack, CONFIG_NET_TX_STACK_SIZE,
+		 CONFIG_NET_TX_STACK_SIZE);
 
 #if defined(CONFIG_NET_DEBUG_IF)
 #define debug_check_packet(buf)						    \
@@ -67,16 +73,22 @@ static inline void net_context_send_cb(struct net_context *context,
 #endif
 }
 
-static void iface_send_data(struct net_if *iface, struct net_buf *buf)
+static bool net_if_tx(struct net_if *iface)
 {
 	const struct net_if_api *api = iface->dev->driver_api;
 	struct net_linkaddr *dst;
 	struct net_context *context;
+	struct net_buf *buf;
 	void *context_token;
 	int status;
 #if defined(CONFIG_NET_STATISTICS)
 	size_t pkt_len;
 #endif
+
+	buf = net_buf_get(&iface->tx_queue, K_NO_WAIT);
+	if (!buf) {
+		return false;
+	}
 
 	debug_check_packet(buf);
 
@@ -109,6 +121,8 @@ static void iface_send_data(struct net_if *iface, struct net_buf *buf)
 	}
 
 	net_if_call_link_cb(iface, dst, status);
+
+	return true;
 }
 
 static void net_if_flush_tx(struct net_if *iface)
@@ -126,56 +140,88 @@ static void net_if_flush_tx(struct net_if *iface)
 	k_yield();
 
 	while (1) {
-		struct net_buf *buf;
-
-		buf = net_buf_get(&iface->tx_queue, K_NO_WAIT);
-		if (!buf) {
+		if (!net_if_tx(iface)) {
 			break;
 		}
-
-		iface_send_data(iface, buf);
 	}
 }
 
-static void net_if_tx_thread(struct net_if *iface)
+static void net_if_process_events(struct k_poll_event *event, int ev_count)
 {
-	const struct net_if_api *api = iface->dev->driver_api;
+	for (; ev_count; event++, ev_count--) {
+		switch (event->state) {
+		case K_POLL_STATE_SIGNALED:
+			break;
+		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
+		{
+			struct net_if *iface;
 
-	NET_ASSERT(api && api->init && api->send);
+			iface = CONTAINER_OF(event->fifo, struct net_if,
+					     tx_queue);
+			net_if_tx(iface);
 
-	NET_DBG("Starting TX thread (stack %zu bytes) for driver %p queue %p",
-		sizeof(iface->tx_stack), api, &iface->tx_queue);
+			break;
+		}
+		case K_POLL_STATE_NOT_READY:
+			break;
+		default:
+			break;
+		}
+	}
+}
 
-	api->init(iface);
-	/* Attempt to bring the interface up */
-	net_if_up(iface);
+static int net_if_prepare_events(void)
+{
+	struct net_if *iface;
+	int ev_count = 0;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+			continue;
+		}
+
+		k_poll_event_init(&__net_if_event_start[ev_count],
+				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &iface->tx_queue);
+		ev_count++;
+	}
+
+	return ev_count;
+}
+
+static void net_if_tx_thread(void)
+{
+	NET_DBG("Starting TX thread (stack %zu bytes)",
+		CONFIG_NET_TX_STACK_SIZE);
 
 	while (1) {
-		struct net_buf *buf;
+		int ev_count;
 
-		/* Get next packet from application - wait if necessary */
-		buf = net_buf_get(&iface->tx_queue, K_FOREVER);
+		ev_count = net_if_prepare_events();
 
-		iface_send_data(iface, buf);
+		k_poll(__net_if_event_start, ev_count, K_FOREVER);
 
-		net_analyze_stack("TX thread", iface->tx_stack,
-				  sizeof(iface->tx_stack));
-		net_nbuf_print();
+		net_if_process_events(__net_if_event_start, ev_count);
 
 		k_yield();
 	}
 }
 
-static inline void init_tx_queue(struct net_if *iface)
+static inline void init_iface(struct net_if *iface)
 {
+	const struct net_if_api *api = iface->dev->driver_api;
+
+	NET_ASSERT(api && api->init && api->send);
+
 	NET_DBG("On iface %p", iface);
 
 	k_fifo_init(&iface->tx_queue);
 
-	k_thread_spawn(iface->tx_stack, sizeof(iface->tx_stack),
-		       (k_thread_entry_t)net_if_tx_thread,
-		       iface, NULL, NULL, K_PRIO_COOP(7),
-		       K_ESSENTIAL, K_NO_WAIT);
+	api->init(iface);
+
+	/* Attempt to bring the interface up */
+	net_if_up(iface);
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
@@ -1561,7 +1607,7 @@ void net_if_init(void)
 	NET_DBG("");
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
-		init_tx_queue(iface);
+		init_iface(iface);
 
 #if defined(CONFIG_NET_IPV4)
 		iface->ttl = CONFIG_NET_INITIAL_TTL;
@@ -1574,6 +1620,11 @@ void net_if_init(void)
 		net_if_ipv6_set_reachable_time(iface);
 #endif
 	}
+
+	k_thread_spawn(tx_stack, sizeof(tx_stack),
+		       (k_thread_entry_t)net_if_tx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7),
+		       K_ESSENTIAL, K_NO_WAIT);
 
 	/* RPL init must be done after the network interface is up
 	 * as the RPL code wants to add multicast address to interface.
