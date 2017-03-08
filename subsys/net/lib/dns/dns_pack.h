@@ -228,8 +228,8 @@ static inline int dns_answer_rdlength(uint16_t dname_size, uint8_t *answer)
 	return htons(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
 }
 
-static inline
-int dns_unpack_answer_rdlength(uint16_t dname_size, uint8_t *answer)
+static inline int dns_unpack_answer_rdlength(uint16_t dname_size,
+					     uint8_t *answer)
 {
 	return ntohs(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
 }
