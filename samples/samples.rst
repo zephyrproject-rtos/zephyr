@@ -11,6 +11,7 @@ Samples and Demos
    kernel
    basic/*
    subsys/subsys.rst
+   mpu_test/*
    net/net.rst
    bluetooth/bluetooth.rst
    sensor/*
