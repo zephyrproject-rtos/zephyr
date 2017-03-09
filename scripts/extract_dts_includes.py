@@ -210,7 +210,7 @@ def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
       cell_parent = irq_parent
 
     cell_yaml = yaml[get_compat(cell_parent)]
-    l_cell_prefix = [yaml[get_compat(irq_parent)].get('cell_prefix', []).upper()]
+    l_cell_prefix = [yaml[get_compat(irq_parent)].get('cell_string', []).upper()]
 
     for i in range(cell_parent['props']['#interrupt-cells']):
       l_cell_name = [cell_yaml['#cells'][i].upper()]

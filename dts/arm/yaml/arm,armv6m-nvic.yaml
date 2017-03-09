@@ -30,7 +30,7 @@ properties:
       description: number of interrupts controlled by controller
       generation: define
 
-cell_prefix: IRQ
+cell_string: IRQ
 
 "#cells":
   - irq
