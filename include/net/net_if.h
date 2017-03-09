@@ -163,7 +163,7 @@ enum {
 };
 
 #if defined(CONFIG_NET_OFFLOAD)
-struct net_l2_offload_ip;
+struct net_offload;
 #endif /* CONFIG_NET_OFFLOAD */
 
 
@@ -205,7 +205,7 @@ struct net_if {
 	 * in the communication chip that is accessed via this
 	 * network interface.
 	 */
-	struct net_l2_offload_ip *offload_ip;
+	struct net_offload *offload;
 #endif /* CONFIG_NET_OFFLOAD */
 
 	/** Queue for outgoing packets from apps */
@@ -397,7 +397,7 @@ static inline void net_if_queue_tx(struct net_if *iface, struct net_buf *buf)
  */
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
-	return (iface->offload_ip != NULL);
+	return (iface->offload != NULL);
 }
 #endif
 

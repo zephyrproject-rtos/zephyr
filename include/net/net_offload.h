@@ -9,8 +9,8 @@
  * @brief Public API for offloading IP stack
  */
 
-#ifndef __OFFLOAD_IP_H__
-#define __OFFLOAD_IP_H__
+#ifndef __NET_OFFLOAD_H__
+#define __NET_OFFLOAD_H__
 
 #if defined(CONFIG_NET_OFFLOAD)
 
@@ -25,7 +25,7 @@ extern "C" {
 /** For return parameters and return values of the elements in this
  * struct, see similarly named functions in net_context.h
  */
-struct net_l2_offload_ip {
+struct net_offload {
 	/**
 	 * This function is called when the socket is to be opened.
 	 */
@@ -119,17 +119,17 @@ struct net_l2_offload_ip {
  *
  * @return 0 if ok, < 0 if error
  */
-static inline int net_l2_offload_ip_get(struct net_if *iface,
+static inline int net_offload_get(struct net_if *iface,
 					sa_family_t family,
 					enum net_sock_type type,
 					enum net_ip_protocol ip_proto,
 					struct net_context **context)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->get);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->get);
 
-	return iface->offload_ip->get(family, type, ip_proto, context);
+	return iface->offload->get(family, type, ip_proto, context);
 }
 
 /**
@@ -145,16 +145,16 @@ static inline int net_l2_offload_ip_get(struct net_if *iface,
  *
  * @return 0 if ok, < 0 if error
  */
-static inline int net_l2_offload_ip_bind(struct net_if *iface,
+static inline int net_offload_bind(struct net_if *iface,
 					 struct net_context *context,
 					 const struct sockaddr *addr,
 					 socklen_t addrlen)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->bind);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->bind);
 
-	return iface->offload_ip->bind(context, addr, addrlen);
+	return iface->offload->bind(context, addr, addrlen);
 }
 
 /**
@@ -169,15 +169,15 @@ static inline int net_l2_offload_ip_bind(struct net_if *iface,
  *
  * @return 0 if ok, < 0 if error
  */
-static inline int net_l2_offload_ip_listen(struct net_if *iface,
+static inline int net_offload_listen(struct net_if *iface,
 					   struct net_context *context,
 					   int backlog)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->listen);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->listen);
 
-	return iface->offload_ip->listen(context, backlog);
+	return iface->offload->listen(context, backlog);
 }
 
 /**
@@ -209,7 +209,7 @@ static inline int net_l2_offload_ip_listen(struct net_if *iface,
  * @return           -EINVAL if an invalid parameter is passed as an argument.
  * @return           -ENOTSUP if the operation is not supported or implemented.
  */
-static inline int net_l2_offload_ip_connect(struct net_if *iface,
+static inline int net_offload_connect(struct net_if *iface,
 					    struct net_context *context,
 					    const struct sockaddr *addr,
 					    socklen_t addrlen,
@@ -218,10 +218,10 @@ static inline int net_l2_offload_ip_connect(struct net_if *iface,
 					    void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->connect);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->connect);
 
-	return iface->offload_ip->connect(context, addr, addrlen, cb,
+	return iface->offload->connect(context, addr, addrlen, cb,
 					      timeout, user_data);
 }
 
@@ -252,17 +252,17 @@ static inline int net_l2_offload_ip_connect(struct net_if *iface,
  *
  * @return 0 if ok, < 0 if error
  */
-static inline int net_l2_offload_ip_accept(struct net_if *iface,
+static inline int net_offload_accept(struct net_if *iface,
 					   struct net_context *context,
 					   net_tcp_accept_cb_t cb,
 					   int32_t timeout,
 					   void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->accept);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->accept);
 
-	return iface->offload_ip->accept(context, cb, timeout, user_data);
+	return iface->offload->accept(context, cb, timeout, user_data);
 }
 
 /**
@@ -292,7 +292,7 @@ static inline int net_l2_offload_ip_accept(struct net_if *iface,
  *
  * @return 0 if ok, < 0 if error
  */
-static inline int net_l2_offload_ip_send(struct net_if *iface,
+static inline int net_offload_send(struct net_if *iface,
 					 struct net_buf *buf,
 					 net_context_send_cb_t cb,
 					 int32_t timeout,
@@ -300,10 +300,10 @@ static inline int net_l2_offload_ip_send(struct net_if *iface,
 					 void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->send);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->send);
 
-	return iface->offload_ip->send(buf, cb, timeout, token, user_data);
+	return iface->offload->send(buf, cb, timeout, token, user_data);
 }
 
 /**
@@ -335,7 +335,7 @@ static inline int net_l2_offload_ip_send(struct net_if *iface,
  *
  * @return 0 if ok, < 0 if error
  */
-static inline int net_l2_offload_ip_sendto(struct net_if *iface,
+static inline int net_offload_sendto(struct net_if *iface,
 					   struct net_buf *buf,
 					   const struct sockaddr *dst_addr,
 					   socklen_t addrlen,
@@ -345,10 +345,10 @@ static inline int net_l2_offload_ip_sendto(struct net_if *iface,
 					   void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->sendto);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->sendto);
 
-	return iface->offload_ip->sendto(buf, dst_addr, addrlen, cb,
+	return iface->offload->sendto(buf, dst_addr, addrlen, cb,
 					     timeout, token, user_data);
 }
 
@@ -385,17 +385,17 @@ static inline int net_l2_offload_ip_sendto(struct net_if *iface,
  *
  * @return 0 if ok, < 0 if error
  */
-static inline int net_l2_offload_ip_recv(struct net_if *iface,
+static inline int net_offload_recv(struct net_if *iface,
 					 struct net_context *context,
 					 net_context_recv_cb_t cb,
 					 int32_t timeout,
 					 void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->recv);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->recv);
 
-	return iface->offload_ip->recv(context, cb, timeout, user_data);
+	return iface->offload->recv(context, cb, timeout, user_data);
 }
 
 /**
@@ -411,14 +411,14 @@ static inline int net_l2_offload_ip_recv(struct net_if *iface,
  *
  * @return 0 if ok, < 0 if error
  */
-static inline int net_l2_offload_ip_put(struct net_if *iface,
+static inline int net_offload_put(struct net_if *iface,
 					struct net_context *context)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->offload_ip);
-	NET_ASSERT(iface->offload_ip->put);
+	NET_ASSERT(iface->offload);
+	NET_ASSERT(iface->offload->put);
 
-	return iface->offload_ip->put(context);
+	return iface->offload->put(context);
 }
 
 #ifdef __cplusplus
@@ -427,4 +427,4 @@ static inline int net_l2_offload_ip_put(struct net_if *iface,
 
 #endif /* CONFIG_NET_OFFLOAD */
 
-#endif /* __OFFLOAD_IP_H__ */
+#endif /* __NET_OFFLOAD_H__ */

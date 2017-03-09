@@ -23,7 +23,7 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
-#include <net/offload_ip.h>
+#include <net/net_offload.h>
 
 #include "connection.h"
 #include "net_private.h"
@@ -324,11 +324,11 @@ int net_context_get(sa_family_t family,
 	 * as it is not known at this point yet.
 	 */
 	if (!ret && net_if_is_ip_offloaded(net_if_get_default())) {
-		ret = net_l2_offload_ip_get(net_if_get_default(),
-					    family,
-					    type,
-					    ip_proto,
-					    context);
+		ret = net_offload_get(net_if_get_default(),
+				      family,
+				      type,
+				      ip_proto,
+				      context);
 		if (ret < 0) {
 			(*context)->flags &= ~NET_CONTEXT_IN_USE;
 			*context = NULL;
@@ -409,7 +409,7 @@ int net_context_put(struct net_context *context)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
 		k_sem_take(&contexts_lock, K_FOREVER);
 		context->flags &= ~NET_CONTEXT_IN_USE;
-		return net_l2_offload_ip_put(
+		return net_offload_put(
 			net_context_get_iface(context), context);
 	}
 #endif /* CONFIG_NET_OFFLOAD */
@@ -500,10 +500,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		if (net_if_is_ip_offloaded(iface)) {
 			net_context_set_iface(context, iface);
 
-			return net_l2_offload_ip_bind(iface,
-						      context,
-						      addr,
-						      addrlen);
+			return net_offload_bind(iface,
+						context,
+						addr,
+						addrlen);
 		}
 #endif /* CONFIG_NET_OFFLOAD */
 
@@ -571,10 +571,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		if (net_if_is_ip_offloaded(iface)) {
 			net_context_set_iface(context, iface);
 
-			return net_l2_offload_ip_bind(iface,
-						      context,
-						      addr,
-						      addrlen);
+			return net_offload_bind(iface,
+						context,
+						addr,
+						addrlen);
 		}
 #endif /* CONFIG_NET_OFFLOAD */
 
@@ -637,7 +637,7 @@ int net_context_listen(struct net_context *context, int backlog)
 
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		return net_l2_offload_ip_listen(
+		return net_offload_listen(
 			net_context_get_iface(context), context, backlog);
 	}
 #endif /* CONFIG_NET_OFFLOAD */
@@ -1007,7 +1007,7 @@ int net_context_connect(struct net_context *context,
 
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		return net_l2_offload_ip_connect(
+		return net_offload_connect(
 			net_context_get_iface(context),
 			context,
 			addr,
@@ -1471,7 +1471,7 @@ int net_context_accept(struct net_context *context,
 
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		return net_l2_offload_ip_accept(
+		return net_offload_accept(
 			net_context_get_iface(context),
 			context,
 			cb,
@@ -1658,7 +1658,7 @@ static int sendto(struct net_buf *buf,
 
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_nbuf_iface(buf))) {
-		return net_l2_offload_ip_sendto(
+		return net_offload_sendto(
 			net_nbuf_iface(buf),
 			buf, dst_addr, addrlen,
 			cb, timeout, token, user_data);
@@ -1735,7 +1735,7 @@ int net_context_send(struct net_buf *buf,
 
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_nbuf_iface(buf))) {
-		return net_l2_offload_ip_send(
+		return net_offload_send(
 			net_nbuf_iface(buf),
 			buf, cb, timeout,
 			token, user_data);
@@ -1941,7 +1941,7 @@ int net_context_recv(struct net_context *context,
 
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		return net_l2_offload_ip_recv(
+		return net_offload_recv(
 			net_context_get_iface(context),
 			context, cb, timeout, user_data);
 	}
