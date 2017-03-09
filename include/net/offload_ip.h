@@ -12,7 +12,7 @@
 #ifndef __OFFLOAD_IP_H__
 #define __OFFLOAD_IP_H__
 
-#if defined(CONFIG_NET_L2_OFFLOAD_IP)
+#if defined(CONFIG_NET_OFFLOAD)
 
 #include <net/buf.h>
 #include <net/net_ip.h>
@@ -434,6 +434,6 @@ static inline int net_l2_offload_ip_put(struct net_if *iface,
 }
 #endif
 
-#endif /* CONFIG_NET_L2_OFFLOAD_IP */
+#endif /* CONFIG_NET_OFFLOAD */
 
 #endif /* __OFFLOAD_IP_H__ */
