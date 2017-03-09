@@ -96,7 +96,7 @@ qemu: $(DOTCONFIG)
 run: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
-ifeq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),debugserver qemugdb))
+ifeq ($(MAKECMDGOALS),debugserver)
 ARCH = $(notdir $(subst /$(BOARD),,$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD))))
 -include $(ZEPHYR_BASE)/boards/$(ARCH)/$(BOARD)/Makefile.board
 -include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
