@@ -11,7 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Data buffer API - used for all data to/from net */
+/* Data buffer API - used for all data to/from net
+ * Note: This API is likely to change until declared final.
+ */
 
 #ifndef __NBUF_H
 #define __NBUF_H
