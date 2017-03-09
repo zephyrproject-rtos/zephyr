@@ -374,7 +374,7 @@ uint16_t ieee802154_compute_header_size(struct net_if *iface,
 					struct in6_addr *dst);
 
 bool ieee802154_create_data_frame(struct net_if *iface,
-				  struct in6_addr *dst,
+				  struct net_linkaddr *dst,
 				  uint8_t *p_buf,
 				  uint8_t len);
 

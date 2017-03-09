@@ -391,42 +391,37 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf,
 }
 
 static inline enum ieee802154_addressing_mode
-get_dst_addr_mode(struct net_if *iface, struct in6_addr *dst,
-		  struct net_nbr **nbr, bool *broadcast)
+get_dst_addr_mode(struct net_if *iface, struct net_linkaddr *dst,
+		  bool *broadcast)
 {
-	if (net_is_ipv6_addr_mcast(dst) ||
-	    net_is_ipv6_addr_unspecified(dst)) {
+	if (!dst->addr) {
 		*broadcast = true;
-		*nbr = NULL;
 
 		return IEEE802154_ADDR_MODE_SHORT;
 	}
 
 	*broadcast = false;
 
-	/* ToDo: Prefer short addr, when _associated_ to a PAN
-	 * if associated:
-	 * - Check if dst is known nb and has short addr
-	 * - if so, return short.
-	 */
-	*nbr = net_ipv6_nbr_lookup(iface, dst);
-	if (!*nbr) {
-		return IEEE802154_ADDR_MODE_NONE;
+	if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
+		return IEEE802154_ADDR_MODE_SHORT;
 	}
 
-	return IEEE802154_ADDR_MODE_EXTENDED;
+	if (dst->len == IEEE802154_EXT_ADDR_LENGTH) {
+		return IEEE802154_ADDR_MODE_EXTENDED;
+	}
+
+	return IEEE802154_ADDR_MODE_NONE;
 }
 
 static inline
 void data_addr_to_fs_settings(struct net_if *iface,
-			      struct in6_addr *dst,
+			      struct net_linkaddr *dst,
 			      struct ieee802154_fcf_seq *fs,
 			      struct ieee802154_frame_params *params)
 {
-	struct net_nbr *nbr;
 	bool broadcast;
 
-	fs->fc.dst_addr_mode = get_dst_addr_mode(iface, dst, &nbr, &broadcast);
+	fs->fc.dst_addr_mode = get_dst_addr_mode(iface, dst, &broadcast);
 	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
 		fs->fc.pan_id_comp = 1;
 
@@ -434,12 +429,8 @@ void data_addr_to_fs_settings(struct net_if *iface,
 			params->dst.short_addr = IEEE802154_BROADCAST_ADDRESS;
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 		} else {
-			struct net_linkaddr_storage *addr;
-
-			/* ToDo: Handle short address in nbr */
-			addr = net_nbr_get_lladdr(nbr->idx);
-			params->dst.ext_addr = addr->addr;
-			params->dst.len = IEEE802154_EXT_ADDR_LENGTH;
+			params->dst.ext_addr = dst->addr;
+			params->dst.len = dst->len;
 		}
 	}
 
@@ -504,7 +495,7 @@ uint8_t *generate_addressing_fields(struct net_if *iface,
 }
 
 bool ieee802154_create_data_frame(struct net_if *iface,
-				  struct in6_addr *dst,
+				  struct net_linkaddr *dst,
 				  uint8_t *p_buf,
 				  uint8_t len)
 {
@@ -528,7 +519,8 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 		/* ll reserve was too small? We probably overwrote
 		 * payload bytes
 		 */
-		NET_ERR("Could not generate data frame");
+		NET_ERR("Could not generate data frame %zu vs %u",
+			(p_buf - frag_start), len);
 		return false;
 	}
 
