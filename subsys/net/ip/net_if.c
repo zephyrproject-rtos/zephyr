@@ -192,7 +192,7 @@ static int net_if_prepare_events(void)
 
 static void net_if_tx_thread(void)
 {
-	NET_DBG("Starting TX thread (stack %zu bytes)",
+	NET_DBG("Starting TX thread (stack %d bytes)",
 		CONFIG_NET_TX_STACK_SIZE);
 
 	while (1) {
