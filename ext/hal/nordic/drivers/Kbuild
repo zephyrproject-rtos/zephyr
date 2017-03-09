@@ -1,6 +1,6 @@
-obj-$(CONFIG_IEEE802154_NRF5) += nrf_drv_radio802154.o
+ifeq ($(or $(CONFIG_IEEE802154_NRF5),$(CONFIG_IEEE802154_NRF5_RAW)),y)
+obj-y += nrf_drv_radio802154.o
 
-ifeq ($(CONFIG_IEEE802154_NRF5),y)
 # A common prefix used for placing radio buffer in a named
 # memory section.
 KBUILD_CFLAGS += -DRADIO_SECTION_PREFIX="\".top_of_image_ram\""

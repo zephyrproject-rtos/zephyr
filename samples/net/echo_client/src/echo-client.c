@@ -68,6 +68,41 @@ static char *lorem_ipsum =
 
 static int ipsum_len;
 
+/* Note that both tcp and udp can share the same pool but in this
+ * example the UDP context and TCP context have separate pools.
+ */
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_TCP)
+NET_NBUF_TX_POOL_DEFINE(echo_tx_tcp, 15);
+NET_NBUF_DATA_POOL_DEFINE(echo_data_tcp, 30);
+
+static struct net_buf_pool *tx_tcp_pool(void)
+{
+	return &echo_tx_tcp;
+}
+
+static struct net_buf_pool *data_tcp_pool(void)
+{
+	return &echo_data_tcp;
+}
+#endif
+
+#if defined(CONFIG_NET_UDP)
+NET_NBUF_TX_POOL_DEFINE(echo_tx_udp, 5);
+NET_NBUF_DATA_POOL_DEFINE(echo_data_udp, 20);
+
+static struct net_buf_pool *tx_udp_pool(void)
+{
+	return &echo_tx_udp;
+}
+
+static struct net_buf_pool *data_udp_pool(void)
+{
+	return &echo_data_udp;
+}
+#endif
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+
 #define MY_PORT 8484
 #define PEER_PORT 4242
 
@@ -108,8 +143,11 @@ static bool send_tcp_data(struct net_context *ctx,
 
 #define MY_PREFIX_LEN 64
 
+#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 static struct in6_addr in6addr_my = MY_IP6ADDR;
 static struct in6_addr in6addr_peer = PEER_IP6ADDR;
+#endif
+
 static struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
 
 static struct sockaddr_in6 my_addr6 = {
@@ -127,7 +165,13 @@ static struct sockaddr_in6 mcast_addr6 = {
 	.sin6_port = htons(PEER_PORT),
 };
 
-static char __noinit __stack ipv6_stack[STACKSIZE];
+#if defined(CONFIG_NET_UDP)
+static char __noinit __stack ipv6_udp_stack[STACKSIZE];
+#endif
+
+#if defined(CONFIG_NET_TCP)
+static char __noinit __stack ipv6_tcp_stack[STACKSIZE];
+#endif
 
 #endif /* CONFIG_NET_IPV6 */
 
@@ -138,8 +182,10 @@ static char __noinit __stack ipv6_stack[STACKSIZE];
 #define MY_IP4ADDR { { { 192, 0, 2, 1 } } }
 #define PEER_IP4ADDR { { { 192, 0, 2, 2 } } }
 
+#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
 static struct in_addr in4addr_my = MY_IP4ADDR;
 static struct in_addr in4addr_peer = PEER_IP4ADDR;
+#endif
 
 static struct sockaddr_in my_addr4 = {
 	.sin_family = AF_INET,
@@ -151,7 +197,13 @@ static struct sockaddr_in peer_addr4 = {
 	.sin_port = htons(PEER_PORT),
 };
 
-static char __noinit __stack ipv4_stack[STACKSIZE];
+#if defined(CONFIG_NET_UDP)
+static char __noinit __stack ipv4_udp_stack[STACKSIZE];
+#endif
+
+#if defined(CONFIG_NET_TCP)
+static char __noinit __stack ipv4_tcp_stack[STACKSIZE];
+#endif
 
 #endif /* CONFIG_NET_IPV4 */
 
@@ -256,6 +308,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
+	net_context_setup_pools(*udp_recv6, tx_udp_pool, data_udp_pool);
+
 	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6,
 			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
@@ -270,6 +324,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			"network context (%d)", ret);
 		return false;
 	}
+
+	net_context_setup_pools(*mcast_recv6, tx_udp_pool, data_udp_pool);
 
 	ret = net_context_bind(*mcast_recv6, (struct sockaddr *)&mcast_addr6,
 			       sizeof(struct sockaddr_in6));
@@ -286,6 +342,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			ret);
 		return false;
 	}
+
+	net_context_setup_pools(*udp_recv4, tx_udp_pool, data_udp_pool);
 
 	ret = net_context_bind(*udp_recv4, (struct sockaddr *)&my_addr4,
 			       sizeof(struct sockaddr_in));
@@ -306,6 +364,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			return false;
 		}
 
+		net_context_setup_pools(*tcp_recv6, tx_tcp_pool, data_tcp_pool);
+
 		ret = net_context_bind(*tcp_recv6,
 				       (struct sockaddr *)&my_addr6,
 				       sizeof(struct sockaddr_in6));
@@ -325,6 +385,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			NET_ERR("Cannot get network context for IPv4 TCP");
 			return false;
 		}
+
+		net_context_setup_pools(*tcp_recv4, tx_tcp_pool, data_tcp_pool);
 
 		ret = net_context_bind(*tcp_recv4,
 				       (struct sockaddr *)&my_addr4,
@@ -792,29 +854,31 @@ static void tcp_connect6(struct net_context *tcp_send)
 #endif /* CONFIG_NET_IPV6 */
 #endif /* CONFIG_NET_TCP */
 
-#if defined(CONFIG_NET_IPV4)
-static void send_ipv4(struct net_context *udp, struct net_context *tcp)
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_UDP)
+static void send_udp_ipv4(struct net_context *udp)
 {
-#if defined(CONFIG_NET_TCP)
-	tcp_connect4(tcp);
-#endif
-
-#if defined(CONFIG_NET_UDP)
 	send_udp(udp, AF_INET, "IPv4", &conf.recv_ipv4, &conf.ipv4);
-#endif
 }
 #endif
 
-#if defined(CONFIG_NET_IPV6)
-static void send_ipv6(struct net_context *udp, struct net_context *tcp)
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_TCP)
+static void send_tcp_ipv4(struct net_context *tcp)
 {
-#if defined(CONFIG_NET_TCP)
-	tcp_connect6(tcp);
+	tcp_connect4(tcp);
+}
 #endif
 
-#if defined(CONFIG_NET_UDP)
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_UDP)
+static void send_udp_ipv6(struct net_context *udp)
+{
 	send_udp(udp, AF_INET6, "IPv6", &conf.recv_ipv6, &conf.ipv6);
+}
 #endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_TCP)
+static void send_tcp_ipv6(struct net_context *tcp)
+{
+	tcp_connect6(tcp);
 }
 #endif
 
@@ -836,16 +900,28 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	k_thread_spawn(ipv4_stack, STACKSIZE,
-		       (k_thread_entry_t)send_ipv4,
-		       udp_send4, tcp_send4, NULL, K_PRIO_COOP(7), 0, 0);
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_UDP)
+	k_thread_spawn(ipv4_udp_stack, STACKSIZE,
+		       (k_thread_entry_t)send_udp_ipv4,
+		       udp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 
-#if defined(CONFIG_NET_IPV6)
-	k_thread_spawn(ipv6_stack, STACKSIZE,
-		       (k_thread_entry_t)send_ipv6,
-		       udp_send6, tcp_send6, NULL, K_PRIO_COOP(7), 0, 0);
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_TCP)
+	k_thread_spawn(ipv4_tcp_stack, STACKSIZE,
+		       (k_thread_entry_t)send_tcp_ipv4,
+		       tcp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+#endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_UDP)
+	k_thread_spawn(ipv6_udp_stack, STACKSIZE,
+		       (k_thread_entry_t)send_udp_ipv6,
+		       udp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+#endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_TCP)
+	k_thread_spawn(ipv6_tcp_stack, STACKSIZE,
+		       (k_thread_entry_t)send_tcp_ipv6,
+		       tcp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 }
 

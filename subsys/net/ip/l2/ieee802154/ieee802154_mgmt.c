@@ -132,6 +132,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		}
 
 		scan->channel = channel;
+		NET_DBG("Scanning channel %u", channel);
 		radio->set_channel(iface->dev, channel);
 
 		/* Active scan sends a beacon request */

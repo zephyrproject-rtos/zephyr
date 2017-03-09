@@ -38,8 +38,8 @@
  * Verify Kconfig configuration
  */
 
-#if CONFIG_NET_NBUF_DATA_COUNT <= CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT
-#error CONFIG_NET_NBUF_DATA_COUNT has to be larger than \
+#if CONFIG_NET_NBUF_RX_DATA_COUNT <= CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT
+#error CONFIG_NET_NBUF_RX_DATA_COUNT has to be larger than \
 	CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT
 #endif
 
@@ -49,9 +49,9 @@
 	large enough to hold a full frame
 #endif
 
-#if CONFIG_NET_NBUF_DATA_SIZE * CONFIG_NET_NBUF_DATA_COUNT \
+#if CONFIG_NET_NBUF_DATA_SIZE * CONFIG_NET_NBUF_RX_DATA_COUNT \
 	< 2 * GMAC_FRAME_SIZE_MAX
-#error CONFIG_NET_NBUF_DATA_SIZE * CONFIG_NET_NBUF_DATA_COUNT is not large\
+#error CONFIG_NET_NBUF_DATA_SIZE * CONFIG_NET_NBUF_RX_DATA_COUNT is not large\
 	enough to hold two full frames
 #endif
 
@@ -162,7 +162,7 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	rx_nbuf_list->tail = 0;
 
 	for (int i = 0; i < rx_desc_list->len; i++) {
-		rx_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+		rx_buf = net_nbuf_get_reserve_rx_data(0, K_NO_WAIT);
 		if (rx_buf == NULL) {
 			free_rx_bufs(rx_nbuf_list);
 			SYS_LOG_ERR("Failed to reserve data net buffers");
@@ -509,7 +509,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 			DCACHE_INVALIDATE(frag_data, frag_len);
 
 			/* Get a new data net buffer from the buffer pool */
-			new_frag = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+			new_frag = net_nbuf_get_frag(buf, K_NO_WAIT);
 			if (new_frag == NULL) {
 				queue->err_rx_frames_dropped++;
 				net_buf_unref(rx_frame);

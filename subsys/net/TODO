@@ -29,14 +29,6 @@ IPv6
    Add support for sending "Packet Too Big" error when
    needed. RFC 4443
 
-- Multicast join/leave support
-
-   Priority: Low
-   Complexity: C2
-
-   Add support for sending joining and leaving multicast group.
-   See RFC 3810 and 4604 for details.
-
 - IP-to-IP tunneling support
 
    Priority: Low
@@ -65,23 +57,6 @@ IPv4
 
    Add support for sending joining and leaving multicast group.
    See RFC 3376 and 4604 for details.
-
-
-TCP
-===
-
-- Core TCP support
-
-   Priority: High
-   Complexity: C4
-
-   Add core / basic support for receiving and sending TCP
-   packets. This means that we should be able to initiate
-   the connection (client role) or receive a connection request
-   (server role). After the connection establishment, the
-   TCP data should be processed so that applications can receive
-   it. Application can use the net_context API for connection
-   establishment and shutdown, and for sending and receiving data.
 
 
 6LoWPAN

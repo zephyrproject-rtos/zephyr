@@ -1,4 +1,4 @@
 obj-$(CONFIG_ZOAP) += zoap/
 obj-$(CONFIG_DNS_RESOLVER) += dns/
 obj-$(CONFIG_MQTT_LIB) += mqtt/
-obj-$(CONFIG_HTTP_PARSER) += http/
+obj-$(CONFIG_HTTP) += http/

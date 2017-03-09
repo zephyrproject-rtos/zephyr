@@ -326,11 +326,14 @@ static bool send_ipv6_tcp_msg(struct net_if *iface,
 	int ret;
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
-	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
+
+	net_nbuf_set_ll_reserve(buf, 0);
+
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
+
 	net_buf_frag_add(buf, frag);
 
 	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	setup_ipv6_tcp(buf, src, dst, src_port, dst_port);
 
@@ -374,11 +377,14 @@ static bool send_ipv4_tcp_msg(struct net_if *iface,
 	int ret;
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
-	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
+
+	net_nbuf_set_ll_reserve(buf, 0);
+
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
+
 	net_buf_frag_add(buf, frag);
 
 	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	setup_ipv4_tcp(buf, src, dst, src_port, dst_port);
 

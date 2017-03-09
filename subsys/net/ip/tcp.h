@@ -333,18 +333,6 @@ static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
 	return (enum net_tcp_state)tcp->state;
 }
 
-/**
- * @brief Sets the state for a TCP context
- *
- * @param tcp TCP context
- * @param state TCP state
- */
-static inline void net_tcp_set_state(struct net_tcp *tcp,
-				     enum net_tcp_state state)
-{
-	tcp->state = state;
-}
-
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);
 #else

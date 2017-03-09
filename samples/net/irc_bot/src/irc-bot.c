@@ -158,8 +158,10 @@ on_cmd_ping(struct zirc *irc, char *umask, char *cmd, size_t len)
 
 	ret = snprintk(pong, 32, "PONG :%s", cmd + 1);
 	if (ret < sizeof(pong)) {
-		transmit(irc->conn, pong, ret);
-		/* TODO: what to do with the return value of transmit()? */
+		ret = transmit(irc->conn, pong, ret);
+		if (ret < 0) {
+			NET_INFO("Transmit error: %d", ret);
+		}
 	}
 }
 

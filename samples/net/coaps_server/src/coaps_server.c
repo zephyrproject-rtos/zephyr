@@ -80,15 +80,9 @@ static int send_response(struct zoap_packet *request, uint8_t response_code)
 {
 	struct net_buf *buf, *frag;
 	struct zoap_packet response;
-	uint8_t code, type, *payload;
-	uint16_t id, len;
+	uint8_t code, type;
+	uint16_t id;
 	int r;
-
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		printk("Packet without payload\n");
-		return -EINVAL;
-	}
 
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
@@ -121,7 +115,7 @@ static int send_response(struct zoap_packet *request, uint8_t response_code)
 	zoap_header_set_id(&response, id);
 
 	do {
-		r = mbedtls_ssl_write(curr_ctx, frag->data, len);
+		r = mbedtls_ssl_write(curr_ctx, frag->data, frag->len);
 	} while (r == MBEDTLS_ERR_SSL_WANT_READ
 		 || r == MBEDTLS_ERR_SSL_WANT_WRITE);
 
@@ -161,12 +155,6 @@ static int piggyback_get(struct zoap_resource *resource,
 	uint8_t *payload, code, type;
 	uint16_t len, id;
 	int r;
-
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		printk("Packet without payload\n");
-		return -EINVAL;
-	}
 
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
@@ -216,7 +204,7 @@ static int piggyback_get(struct zoap_resource *resource,
 	}
 
 	do {
-		r = mbedtls_ssl_write(curr_ctx, frag->data, len);
+		r = mbedtls_ssl_write(curr_ctx, frag->data, frag->len);
 	} while (r == MBEDTLS_ERR_SSL_WANT_READ
 		 || r == MBEDTLS_ERR_SSL_WANT_WRITE);
 
@@ -238,12 +226,6 @@ static int query_get(struct zoap_resource *resource,
 	uint8_t *payload, code, type;
 	uint16_t len, id;
 	int i, r;
-
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		printk("packet without payload\n");
-		return -EINVAL;
-	}
 
 	code = zoap_header_get_code(request);
 	type = zoap_header_get_type(request);
@@ -317,7 +299,7 @@ static int query_get(struct zoap_resource *resource,
 	}
 
 	do {
-		r = mbedtls_ssl_write(curr_ctx, frag->data, len);
+		r = mbedtls_ssl_write(curr_ctx, frag->data, frag->len);
 	} while (r == MBEDTLS_ERR_SSL_WANT_READ
 		 || r == MBEDTLS_ERR_SSL_WANT_WRITE);
 

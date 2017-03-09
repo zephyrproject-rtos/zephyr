@@ -76,27 +76,25 @@ static bool run_tests(void)
 	memcpy(net_buf_add(frag, sizeof(TEST_MSG)),
 	       TEST_MSG, sizeof(TEST_MSG));
 
-	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags), 0, 0);
+	ret = net_icmpv6_input(buf, 0, 0);
 	if (!ret) {
 		printk("%d: Callback not called properly\n", __LINE__);
 		return false;
 	}
 
-	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags),
-			       NET_ICMPV6_ECHO_REPLY, 0);
+	ret = net_icmpv6_input(buf, NET_ICMPV6_ECHO_REPLY, 0);
 	if (ret < 0 || buf_status(buf) != 0) {
 		printk("%d: Callback not called properly\n", __LINE__);
 		return false;
 	}
 
-	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags), 1, 0);
+	ret = net_icmpv6_input(buf, 1, 0);
 	if (!ret) {
 		printk("%d: Callback not called properly\n", __LINE__);
 		return false;
 	}
 
-	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags),
-			       NET_ICMPV6_ECHO_REQUEST, 0);
+	ret = net_icmpv6_input(buf, NET_ICMPV6_ECHO_REQUEST, 0);
 	if (ret < 0 || buf_status(buf) != 0) {
 		printk("%d: Callback not called properly\n", __LINE__);
 		return false;

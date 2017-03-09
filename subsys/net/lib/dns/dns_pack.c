@@ -34,8 +34,7 @@
 #define DNS_FLAGS1		DNS_RECURSION	/* QR, Opcode, AA, and TC = 0 */
 #define DNS_FLAGS2		0		/* RA, Z and RCODE = 0 */
 
-static inline
-uint16_t dns_strlen(const char *str)
+static inline uint16_t dns_strlen(const char *str)
 {
 	if (str == NULL) {
 		return 0;
@@ -90,9 +89,8 @@ int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 	return 0;
 }
 
-static inline
-void set_dns_msg_response(struct dns_msg_t *dns_msg, int type, uint16_t pos,
-			  uint16_t len)
+static inline void set_dns_msg_response(struct dns_msg_t *dns_msg, int type,
+					uint16_t pos, uint16_t len)
 {
 	dns_msg->response_type = type;
 	dns_msg->response_position = pos;
@@ -288,7 +286,7 @@ int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
 	return 0;
 }
 
-int dns_find_null(int *qname_size, uint8_t *buf, uint16_t size)
+static int dns_find_null(int *qname_size, uint8_t *buf, uint16_t size)
 {
 	*qname_size = 0;
 	while (*qname_size < size) {

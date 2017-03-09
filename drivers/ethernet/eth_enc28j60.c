@@ -507,6 +507,7 @@ static int eth_enc28j60_tx(struct device *dev, struct net_buf *buf,
 
 static int eth_enc28j60_rx(struct device *dev)
 {
+	const struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	uint16_t lengthfr;
 	uint8_t counter;
@@ -551,7 +552,7 @@ static int eth_enc28j60_rx(struct device *dev)
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
-		buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
+		buf = net_nbuf_get_reserve_rx(0, config->timeout);
 		if (!buf) {
 			SYS_LOG_ERR("Could not allocate rx buffer");
 			goto done;
@@ -565,7 +566,7 @@ static int eth_enc28j60_rx(struct device *dev)
 			size_t spi_frame_len;
 
 			/* Reserve a data frag to receive the frame */
-			pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+			pkt_buf = net_nbuf_get_frag(buf, config->timeout);
 			if (!pkt_buf) {
 				SYS_LOG_ERR("Could not allocate data buffer");
 				net_buf_unref(buf);
@@ -703,6 +704,7 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.spi_freq  = CONFIG_ETH_ENC28J60_0_SPI_BUS_FREQ,
 	.spi_slave = CONFIG_ETH_ENC28J60_0_SLAVE,
 	.full_duplex = CONFIG_ETH_EN28J60_0_FULL_DUPLEX,
+	.timeout = CONFIG_ETH_EN28J60_TIMEOUT,
 };
 
 NET_DEVICE_INIT(enc28j60_0, CONFIG_ETH_ENC28J60_0_NAME,

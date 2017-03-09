@@ -132,6 +132,11 @@ success:
 	buf->flags = 0;
 	buf->frags = NULL;
 
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	buf->pool->avail_count--;
+	NET_BUF_ASSERT(buf->pool->avail_count >= 0);
+#endif
+
 	return buf;
 }
 
@@ -218,6 +223,11 @@ void net_buf_unref(struct net_buf *buf)
 		}
 
 		buf->frags = NULL;
+
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+		buf->pool->avail_count++;
+		NET_BUF_ASSERT(buf->pool->avail_count <= buf->pool->buf_count);
+#endif
 
 		if (buf->pool->destroy) {
 			buf->pool->destroy(buf);

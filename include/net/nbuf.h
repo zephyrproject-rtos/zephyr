@@ -33,6 +33,14 @@ extern "C" {
 
 struct net_context;
 
+enum net_dir {
+	/* TX must be first and must have value 0 so that it is selected
+	 * by default.
+	 */
+	NET_TX = 0,
+	NET_RX = 1,
+};
+
 struct net_nbuf {
 	/** Network connection context */
 	struct net_context *context;
@@ -54,12 +62,12 @@ struct net_nbuf {
 	struct net_linkaddr lladdr_dst;
 
 	uint16_t appdatalen;
-	uint16_t reserve;	/* length of the protocol headers */
 	uint8_t ll_reserve;	/* link layer header length */
 	uint8_t family;		/* IPv4 vs IPv6 */
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 	uint8_t ext_len;	/* length of extension headers */
 	uint8_t ext_bitmap;
+	uint8_t net_dir;	/* is this RX or TX buf */
 
 #if defined(CONFIG_NET_IPV6)
 	uint8_t ext_opt_len; /* IPv6 ND option length */
@@ -166,6 +174,16 @@ static inline void net_nbuf_add_ext_bitmap(struct net_buf *buf, uint8_t bm)
 	((struct net_nbuf *)net_buf_user_data(buf))->ext_bitmap |= bm;
 }
 
+static inline uint8_t net_nbuf_dir(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->net_dir;
+}
+
+static inline void net_nbuf_set_dir(struct net_buf *buf, enum net_dir dir)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->net_dir = dir;
+}
+
 static inline uint8_t *net_nbuf_next_hdr(struct net_buf *buf)
 {
 	return ((struct net_nbuf *)net_buf_user_data(buf))->next_hdr;
@@ -253,11 +271,6 @@ static inline void net_nbuf_set_appdatalen(struct net_buf *buf, uint16_t len)
 	((struct net_nbuf *)net_buf_user_data(buf))->appdatalen = len;
 }
 
-static inline uint16_t net_nbuf_reserve(struct net_buf *buf)
-{
-	return ((struct net_nbuf *)net_buf_user_data(buf))->reserve;
-}
-
 static inline uint8_t net_nbuf_ll_reserve(struct net_buf *buf)
 {
 	return ((struct net_nbuf *) net_buf_user_data(buf))->ll_reserve;
@@ -298,6 +311,14 @@ static inline void net_nbuf_ll_swap(struct net_buf *buf)
 	net_nbuf_ll_dst(buf)->addr = addr;
 }
 
+static inline void net_nbuf_copy_user_data(struct net_buf *new,
+					   struct net_buf *orig)
+{
+	memcpy((struct net_nbuf *)net_buf_user_data(new),
+	       (struct net_nbuf *)net_buf_user_data(orig),
+	       sizeof(struct net_nbuf));
+}
+
 #define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))
 #define NET_ICMP_BUF(buf) ((struct net_icmp_hdr *)net_nbuf_icmp_data(buf))
@@ -313,11 +334,41 @@ static inline void net_nbuf_set_src_ipv6_addr(struct net_buf *buf)
 
 /* @endcond */
 
+/**
+ * @brief Create a TX net_buf pool that is used when sending user
+ * specified data to network.
+ *
+ * @param name Name of the pool.
+ * @param count Number of net_buf in this pool.
+ */
+#define NET_NBUF_TX_POOL_DEFINE(name, count)				\
+	NET_BUF_POOL_DEFINE(name, count, 0, sizeof(struct net_nbuf), NULL)
+
+/**
+ * @brief Create a DATA net_buf pool that is used when sending user
+ * specified data to network.
+ *
+ * @param name Name of the pool.
+ * @param count Number of net_buf in this pool.
+ */
+#define NET_NBUF_DATA_POOL_DEFINE(name, count)				\
+	NET_BUF_POOL_DEFINE(name, count, CONFIG_NET_NBUF_DATA_SIZE,	\
+			    CONFIG_NET_NBUF_USER_DATA_SIZE, NULL)
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 
 /* Debug versions of the nbuf functions that are used when tracking
  * buffer usage.
  */
+
+struct net_buf *net_nbuf_get_reserve_debug(struct net_buf_pool *pool,
+					   uint16_t reserve_head,
+					   int32_t timeout,
+					   const char *caller,
+					   int line);
+#define net_nbuf_get_reserve(pool, reserve_head, timeout)		\
+	net_nbuf_get_reserve_debug(pool, reserve_head, timeout,		\
+				   __func__, __LINE__)
 
 struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
 				      int32_t timeout,
@@ -349,11 +400,25 @@ struct net_buf *net_nbuf_get_reserve_tx_debug(uint16_t reserve_head,
 #define net_nbuf_get_reserve_tx(res, timeout)				\
 	net_nbuf_get_reserve_tx_debug(res, timeout, __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
-						int32_t timeout,
-						const char *caller, int line);
-#define net_nbuf_get_reserve_data(res, timeout)				\
-	net_nbuf_get_reserve_data_debug(res, timeout, __func__, __LINE__)
+struct net_buf *net_nbuf_get_reserve_rx_data_debug(uint16_t reserve_head,
+						   int32_t timeout,
+						   const char *caller,
+						   int line);
+#define net_nbuf_get_reserve_rx_data(res, timeout)			\
+	net_nbuf_get_reserve_rx_data_debug(res, timeout, __func__, __LINE__)
+
+struct net_buf *net_nbuf_get_reserve_tx_data_debug(uint16_t reserve_head,
+						   int32_t timeout,
+						   const char *caller,
+						   int line);
+#define net_nbuf_get_reserve_tx_data(res, timeout)			\
+	net_nbuf_get_reserve_tx_data_debug(res, timeout, __func__, __LINE__)
+
+struct net_buf *net_nbuf_get_frag_debug(struct net_buf *buf,
+					int32_t timeout,
+					const char *caller, int line);
+#define net_nbuf_get_frag(buf, timeout)					\
+	net_nbuf_get_frag_debug(buf, timeout, __func__, __LINE__)
 
 void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line);
 #define net_nbuf_unref(buf) net_nbuf_unref_debug(buf, __func__, __LINE__)
@@ -361,6 +426,12 @@ void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line);
 struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller,
 				   int line);
 #define net_nbuf_ref(buf) net_nbuf_ref_debug(buf, __func__, __LINE__)
+
+struct net_buf *net_nbuf_frag_del_debug(struct net_buf *parent,
+					struct net_buf *frag,
+					const char *caller, int line);
+#define net_nbuf_frag_del(parent, frag)					\
+	net_nbuf_frag_del_debug(parent, frag, __func__, __LINE__)
 
 /**
  * @brief Print fragment list and the fragment sizes
@@ -375,6 +446,24 @@ void net_nbuf_print_frags(struct net_buf *buf);
 #else /* CONFIG_NET_DEBUG_NET_BUF */
 
 #define net_nbuf_print_frags(...)
+
+/**
+ * @brief Get buffer from the given buffer pool.
+ *
+ * @details Get network buffer from the specific buffer pool.
+ *
+ * @param pool Network buffer pool.
+ * @param reserve_head How many bytes to reserve for headroom.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
+				     uint16_t reserve_head,
+				     int32_t timeout);
 
 /**
  * @brief Get buffer from the RX buffers pool.
@@ -467,8 +556,8 @@ struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head,
 					int32_t timeout);
 
 /**
- * @brief Get DATA buffer from pool but also reserve headroom for
- * potential headers.
+ * @brief Get RX DATA buffer from pool but also reserve headroom for
+ * potential headers. Normally you should use net_nbuf_get_frag() instead.
  *
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
@@ -481,8 +570,42 @@ struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head,
-					  int32_t timeout);
+struct net_buf *net_nbuf_get_reserve_rx_data(uint16_t reserve_head,
+					     int32_t timeout);
+
+/**
+ * @brief Get TX DATA buffer from pool but also reserve headroom for
+ * potential headers. Normally you should use net_nbuf_get_frag() instead.
+ *
+ * @details Normally this version is not useful for applications
+ * but is mainly used by network fragmentation code.
+ *
+ * @param reserve_head How many bytes to reserve for headroom.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+struct net_buf *net_nbuf_get_reserve_tx_data(uint16_t reserve_head,
+					     int32_t timeout);
+
+/**
+ * @brief Get a data fragment that might be from user specific
+ * buffer pool or from global DATA pool.
+ *
+ * @param buf Network buffer. This must be the first buffer of the
+ *        buffer chain with user data part in it.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+struct net_buf *net_nbuf_get_frag(struct net_buf *buf,
+				  int32_t timeout);
 
 /**
  * @brief Place buffer back into the available buffers pool.
@@ -507,17 +630,24 @@ void net_nbuf_unref(struct net_buf *buf);
  */
 struct net_buf *net_nbuf_ref(struct net_buf *buf);
 
+/** @brief Delete existing fragment from a chain of bufs.
+ *
+ *  @param parent Parent buffer/fragment, or NULL if there is no parent.
+ *  @param frag Fragment to delete.
+ *
+ *  @return Pointer to the buffer following the fragment, or NULL if it
+ *          had no further fragments.
+ */
+struct net_buf *net_nbuf_frag_del(struct net_buf *parent,
+				  struct net_buf *frag);
+
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 /**
  * @brief Copy a buffer with fragments while reserving some extra space
  * in destination buffer before a copy.
  *
- * @details Note that the original buffer is not really usable after the copy
- * as the function will call net_buf_pull() internally and should be discarded.
- *
- * @param buf Network buffer fragment. This should be the first fragment (data)
- * in the fragment list.
+ * @param buf Network buffer. This should be the head of the buffer chain.
  * @param amount Max amount of data to be copied.
  * @param reserve Amount of extra data (this is not link layer header) in the
  * first data fragment that is returned. The function will copy the original
@@ -536,8 +666,8 @@ struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
  * @brief Copy a buffer with fragments while reserving some extra space
  * in destination buffer before a copy.
  *
- * @param buf Network buffer fragment. This should be the first fragment (data)
- * in the fragment list.
+ * @param buf Network buffer fragment. This should be the head of the buffer
+ * chain.
  * @param reserve Amount of extra data (this is not link layer header) in the
  * first data fragment that is returned. The function will copy the original
  * buffer right after the reserved bytes in the first destination fragment.
@@ -962,19 +1092,17 @@ static inline bool net_nbuf_insert_be32(struct net_buf *buf,
 }
 
 /**
- * @brief Get information about available free buffer count in
- * various network buffer pools. The amount of free buffers is
- * only returned if network buffer debugging is enabled.
+ * @brief Get information about pre-defined RX, TX and DATA pools.
  *
- * @param tx_size Size of TX pool. Value is returned.
- * @param rx_size Size of RX pool. Value is returned.
- * @param data_size Size of DATA pool. Value is returned.
- * @param tx Amount of free buffers in TX pool. Value is returned.
- * @param rx Amount of free buffers in RX pool. Value is returned.
- * @param data Amount of free buffers in DATA pool. Value is returned.
+ * @param rx Pointer to RX pool is returned.
+ * @param tx Pointer to TX pool is returned.
+ * @param rx_data Pointer to RX DATA pool is returned.
+ * @param tx_data Pointer to TX DATA pool is returned.
  */
-void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
-		       int *tx, int *rx, int *data);
+void net_nbuf_get_info(struct net_buf_pool **rx,
+		       struct net_buf_pool **tx,
+		       struct net_buf_pool **rx_data,
+		       struct net_buf_pool **tx_data);
 
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 /**
@@ -983,6 +1111,20 @@ void net_nbuf_get_info(size_t *tx_size, size_t *rx_size, size_t *data_size,
 void net_nbuf_print(void);
 #else
 #define net_nbuf_print(...)
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+typedef void (*net_nbuf_allocs_cb_t)(struct net_buf *buf,
+				     const char *func_alloc,
+				     int line_alloc,
+				     const char *func_free,
+				     int line_free,
+				     bool in_use,
+				     void *user_data);
+
+void net_nbuf_allocs_foreach(net_nbuf_allocs_cb_t cb, void *user_data);
+const char *net_nbuf_pool2str(struct net_buf_pool *pool);
+
 #endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 #ifdef __cplusplus

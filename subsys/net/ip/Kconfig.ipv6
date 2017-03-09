@@ -40,6 +40,14 @@ config NET_IPV6_MAX_NEIGHBORS
 	help
 	The value depends on your network needs.
 
+config NET_IPV6_MLD
+	bool "Multicast Listener Discovery support"
+	default y
+	help
+	The value depends on your network needs. MLD should normally
+	be active. Currently we support only MLDv2. See RFC 3810 for
+	details.
+
 config NET_IPV6_ND
 	bool "Activate neighbor discovery"
 	default y

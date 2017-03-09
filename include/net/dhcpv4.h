@@ -26,15 +26,17 @@
  * reflected within corresponding changes to net_dhcpv4_state_name.
  */
 enum net_dhcpv4_state {
+	NET_DHCPV4_DISABLED,
 	NET_DHCPV4_INIT,
-	NET_DHCPV4_DISCOVER,
-	NET_DHCPV4_REQUEST,
-	NET_DHCPV4_RENEWAL,
-	NET_DHCPV4_ACK,
+	NET_DHCPV4_SELECTING,
+	NET_DHCPV4_REQUESTING,
+	NET_DHCPV4_RENEWING,
+	NET_DHCPV4_REBINDING,
+	NET_DHCPV4_BOUND,
 };
 
 /**
- *  @brief Start DHCPv4 client
+ *  @brief Start DHCPv4 client on an iface
  *
  *  @details Start DHCPv4 client on a given interface. DHCPv4 client
  *  will start negotiation for IPv4 address. Once the negotiation is
@@ -43,6 +45,24 @@ enum net_dhcpv4_state {
  *  @param iface A valid pointer on an interface
  */
 void net_dhcpv4_start(struct net_if *iface);
+
+/**
+ *  @brief Stop DHCPv4 client on an iface
+ *
+ *  @details Stop DHCPv4 client on a given interface. DHCPv4 client
+ *  will remove all configuration obtained from a DHCP server from the
+ *  interface and stop any further negotiation with the server.
+ *
+ *  @param iface A valid pointer on an interface
+ */
+void net_dhcpv4_stop(struct net_if *iface);
+
+/**
+ *  @brief DHCPv4 state name
+ *
+ *  @internal
+ */
+const char *net_dhcpv4_state_name(enum net_dhcpv4_state state);
 
 /**
  * @}

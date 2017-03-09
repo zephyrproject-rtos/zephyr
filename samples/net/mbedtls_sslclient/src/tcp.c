@@ -24,16 +24,12 @@
 
 #include "mbedtls/ssl.h"
 
-#define CLIENT_IP_ADDR		{ { { CLIENT_IPADDR0, CLIENT_IPADDR1,	\
-				      CLIENT_IPADDR2, CLIENT_IPADDR3 } } }
-
-#define SERVER_IP_ADDR		{ { { SERVER_IPADDR0, SERVER_IPADDR1,	\
-				      SERVER_IPADDR2, SERVER_IPADDR3 } } }
-
 #define INET_FAMILY		AF_INET
 
-static struct in_addr client_addr = CLIENT_IP_ADDR;
-static struct in_addr server_addr = SERVER_IP_ADDR;
+#define TCP_BUF_CTR    5
+#define TCP_BUF_SIZE   1024
+
+NET_BUF_POOL_DEFINE(tcp_msg_pool, TCP_BUF_CTR, TCP_BUF_SIZE, 0, NULL);
 
 static void tcp_received(struct net_context *context,
 			 struct net_buf *buf, int status, void *user_data)
@@ -49,7 +45,6 @@ int tcp_tx(void *context, const unsigned char *buf, size_t size)
 	struct tcp_context *ctx = context;
 	struct net_context *tcp_ctx;
 	struct net_buf *send_buf;
-	struct sockaddr_in dst_addr;
 	int rc, len;
 
 	tcp_ctx = ctx->net_ctx;
@@ -66,16 +61,9 @@ int tcp_tx(void *context, const unsigned char *buf, size_t size)
 		return -EIO;
 	}
 
-	net_ipaddr_copy(&dst_addr.sin_addr, &server_addr);
-	dst_addr.sin_family = AF_INET;
-	dst_addr.sin_port = htons(SERVER_PORT);
-
 	len = net_buf_frags_len(send_buf);
-	k_sleep(TCP_TX_TIMEOUT);
 
-	rc = net_context_sendto(send_buf, (struct sockaddr *)&dst_addr,
-				sizeof(struct sockaddr_in),
-				NULL, K_FOREVER, NULL, NULL);
+	rc = net_context_send(send_buf, NULL, ctx->timeout, NULL, NULL);
 
 	if (rc < 0) {
 		printk("Cannot send IPv4 data to peer (%d)\n", rc);
@@ -88,74 +76,146 @@ int tcp_tx(void *context, const unsigned char *buf, size_t size)
 
 int tcp_rx(void *context, unsigned char *buf, size_t size)
 {
+	struct net_buf *data = NULL;
 	struct tcp_context *ctx = context;
+	int rc;
 	uint8_t *ptr;
-	int pos = 0;
-	int len;
-	struct net_buf *rx_buf;
-	int rc, read_bytes;
+	int read_bytes;
+	uint16_t offset;
 
 	rc = net_context_recv(ctx->net_ctx, tcp_received, K_FOREVER, ctx);
 	if (rc != 0) {
+		printk("net_context_recv failed with code:%d\n", rc);
 		return 0;
 	}
 	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
 
-	ptr = net_nbuf_appdata(ctx->rx_nbuf);
-	rx_buf = ctx->rx_nbuf->frags;
-	len = rx_buf->len - (ptr - rx_buf->data);
-
-	while (rx_buf) {
-		memcpy(buf + pos, ptr, len);
-		pos += len;
-		rx_buf = rx_buf->frags;
-		if (!rx_buf) {
-			break;
-		}
-		ptr = rx_buf->data;
-		len = rx_buf->len;
-	}
-
-	if (read_bytes != pos) {
+	data = net_buf_alloc(&tcp_msg_pool, APP_SLEEP_MSECS);
+	if (data == NULL) {
+		net_nbuf_unref(ctx->rx_nbuf);
+		printk("net_buf_alloc failed\n");
 		return -EIO;
 	}
-	rc = read_bytes;
+
+	offset = net_buf_frags_len(ctx->rx_nbuf) - read_bytes;
+	rc = net_nbuf_linear_copy(data, ctx->rx_nbuf, offset, read_bytes);
+	ptr = net_nbuf_appdata(data);
+	memcpy(buf, ptr, read_bytes);
+
 	net_nbuf_unref(ctx->rx_nbuf);
-	ctx->remaining = 0;
-	ctx->rx_nbuf = NULL;
+	net_nbuf_unref(data);
+
+	return read_bytes;
+}
+
+static int set_addr(struct sockaddr *sock_addr, const char *addr,
+		    uint16_t server_port)
+{
+	void *ptr = NULL;
+	int rc;
+
+#ifdef CONFIG_NET_IPV6
+	net_sin6(sock_addr)->sin6_port = htons(server_port);
+	sock_addr->family = AF_INET6;
+	ptr = &(net_sin6(sock_addr)->sin6_addr);
+	rc = net_addr_pton(AF_INET6, addr, ptr);
+#else
+	net_sin(sock_addr)->sin_port = htons(server_port);
+	sock_addr->family = AF_INET;
+	ptr = &(net_sin(sock_addr)->sin_addr);
+	rc = net_addr_pton(AF_INET, addr, ptr);
+#endif
+
+	if (rc) {
+		printk("Invalid IP address: %s\n", addr);
+	}
+
 	return rc;
 }
 
-int tcp_init(struct tcp_context *ctx)
+static int if_addr_add(struct sockaddr *local_sock)
 {
-	struct net_context *tcp_ctx = { 0 };
-	struct sockaddr_in my_addr4 = { 0 };
+	void *p = NULL;
+
+#ifdef CONFIG_NET_IPV6
+	p = net_if_ipv6_addr_add(net_if_get_default(),
+				&net_sin6(local_sock)->sin6_addr,
+				NET_ADDR_MANUAL, 0);
+#else
+	p = net_if_ipv4_addr_add(net_if_get_default(),
+				&net_sin(local_sock)->sin_addr,
+				NET_ADDR_MANUAL, 0);
+#endif
+
+	if (p) {
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int tcp_set_local_addr(struct tcp_context *ctx, const char *local_addr)
+{
 	int rc;
 
-	net_ipaddr_copy(&my_addr4.sin_addr, &client_addr);
-	my_addr4.sin_family = AF_INET;
-	my_addr4.sin_port = htons(CLIENT_PORT);
-
-	rc = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_TCP, &tcp_ctx);
-	if (rc < 0) {
-		printk("Cannot get network context for IPv4 TCP (%d)", rc);
-		return -EIO;
+	rc = set_addr(&ctx->local_sock, local_addr, 0);
+	if (rc) {
+		printk("set_addr (local) error\n");
+		goto lb_exit;
 	}
 
-	rc = net_context_bind(tcp_ctx, (struct sockaddr *)&my_addr4,
-			      sizeof(struct sockaddr_in));
-	if (rc < 0) {
-		printk("Cannot bind IPv4 TCP port %d (%d)", CLIENT_PORT, rc);
-		goto error;
+	rc = if_addr_add(&ctx->local_sock);
+	if (rc) {
+		printk("if_addr_add error\n");
 	}
 
-	ctx->rx_nbuf = NULL;
-	ctx->remaining = 0;
-	ctx->net_ctx = tcp_ctx;
+lb_exit:
+	return rc;
+}
+
+int tcp_init(struct tcp_context *ctx, const char *server_addr,
+	     uint16_t server_port)
+{
+	struct sockaddr server_sock;
+	int rc;
+
+#ifdef CONFIG_NET_IPV6
+	socklen_t addr_len = sizeof(struct sockaddr_in6);
+	sa_family_t family = AF_INET6;
+#else
+	socklen_t addr_len = sizeof(struct sockaddr_in);
+	sa_family_t family = AF_INET;
+#endif
+
+	rc = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, &ctx->net_ctx);
+	if (rc) {
+		printk("net_context_get error\n");
+		return rc;
+	}
+
+	rc = net_context_bind(ctx->net_ctx, &ctx->local_sock, addr_len);
+	if (rc) {
+		printk("net_context_bind error\n");
+		goto lb_exit;
+	}
+
+	rc = set_addr(&server_sock, server_addr, server_port);
+	if (rc) {
+		printk("set_addr (server) error\n");
+		goto lb_exit;
+	}
+
+	rc = net_context_connect(ctx->net_ctx, &server_sock, addr_len, NULL,
+				 ctx->timeout, NULL);
+	if (rc) {
+		printk("net_context_connect error\n");
+		goto lb_exit;
+	}
 
 	return 0;
 
-error:
-	net_context_put(tcp_ctx);
-	return -EINVAL;
+lb_exit:
+	net_context_put(ctx->net_ctx);
+
+	return rc;
 }

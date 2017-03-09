@@ -31,6 +31,11 @@ void net_icmpv6_register_handler(struct net_icmpv6_handler *handler)
 	sys_slist_prepend(&handlers, &handler->node);
 }
 
+void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler)
+{
+	sys_slist_find_and_remove(&handlers, &handler->node);
+}
+
 static inline void setup_ipv6_header(struct net_buf *buf, uint16_t extra_len,
 				     uint8_t hop_limit, uint8_t icmp_type,
 				     uint8_t icmp_code)
@@ -56,47 +61,48 @@ static inline void setup_ipv6_header(struct net_buf *buf, uint16_t extra_len,
 	       NET_ICMPV6_UNUSED_LEN);
 }
 
+#if defined(CONFIG_NET_DEBUG_ICMPV6)
+static inline void echo_request_debug(struct net_buf *buf)
+{
+	char out[NET_IPV6_ADDR_LEN];
+
+	snprintk(out, sizeof(out), "%s",
+		 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+	NET_DBG("Received Echo Request from %s to %s",
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
+}
+
+static inline void echo_reply_debug(struct net_buf *buf)
+{
+	char out[NET_IPV6_ADDR_LEN];
+
+	snprintk(out, sizeof(out), "%s",
+		 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+	NET_DBG("Sending Echo Reply from %s to %s",
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
+}
+#else
+#define echo_request_debug(buf)
+#define echo_reply_debug(buf)
+#endif /* CONFIG_NET_DEBUG_ICMPV6 */
+
 static enum net_verdict handle_echo_request(struct net_buf *orig)
 {
-	struct net_buf *buf, *frag;
-	struct in6_addr *src, *dst;
+	struct net_buf *buf;
+	struct net_buf *frag;
 	struct net_if *iface;
 	uint16_t payload_len;
-	uint16_t id, seq;
-	uint8_t *ptr;
 
-#if defined(CONFIG_NET_DEBUG_ICMPV6)
-	do {
-		char out[NET_IPV6_ADDR_LEN];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&NET_IPV6_BUF(orig)->dst));
-		NET_DBG("Received Echo Request from %s to %s",
-			net_sprint_ipv6_addr(&NET_IPV6_BUF(orig)->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_ICMPV6 */
+	echo_request_debug(orig);
 
 	iface = net_nbuf_iface(orig);
 
 	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
 
-	/* We need to remember the original location of source and destination
-	 * addresses as the net_nbuf_copy() will mangle the original buffer.
-	 */
-	src = &NET_IPV6_BUF(orig)->src;
-	dst = &NET_IPV6_BUF(orig)->dst;
-
-	/* The seq and id fields from original request needs to be copied
-	 * to echo reply.
-	 */
-	ptr = (uint8_t *)NET_ICMP_BUF(orig) + sizeof(struct net_icmp_hdr);
-	id = sys_get_be16(ptr);
-	seq = sys_get_be16(ptr + sizeof(uint16_t));
-
 	payload_len = sys_get_be16(NET_IPV6_BUF(orig)->len) -
 		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
 
-	frag = net_nbuf_copy_all(orig->frags, 0, K_FOREVER);
+	frag = net_nbuf_copy_all(orig, 0, K_FOREVER);
 	if (!frag) {
 		goto drop;
 	}
@@ -111,15 +117,18 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 			  NET_ICMPV6_ECHO_REPLY, 0);
 
 	if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
-		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, src);
+		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst,
+				&NET_IPV6_BUF(orig)->src);
 
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
-				net_if_ipv6_select_src_addr(iface, dst));
+				net_if_ipv6_select_src_addr(iface,
+						    &NET_IPV6_BUF(orig)->dst));
 	} else {
 		struct in6_addr addr;
 
-		net_ipaddr_copy(&addr, src);
-		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, dst);
+		net_ipaddr_copy(&addr, &NET_IPV6_BUF(orig)->src);
+		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
+				&NET_IPV6_BUF(orig)->dst);
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, &addr);
 	}
 
@@ -131,31 +140,19 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	 */
 	net_nbuf_ll_dst(buf)->addr = NULL;
 
-	ptr = (uint8_t *)NET_ICMP_BUF(buf) + sizeof(struct net_icmp_hdr);
-	sys_put_be16(id, ptr);
-	sys_put_be16(seq, ptr + sizeof(uint16_t));
-
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
-#if defined(CONFIG_NET_DEBUG_ICMPV6)
-	do {
-		char out[NET_IPV6_ADDR_LEN];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
-		NET_DBG("Sending Echo Reply from %s to %s",
-			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_ICMPV6 */
+	echo_reply_debug(buf);
 
 	if (net_send_data(buf) < 0) {
 		goto drop;
 	}
 
+	net_nbuf_unref(orig);
 	net_stats_update_icmp_sent();
 
-	return NET_DROP;
+	return NET_OK;
 
 drop:
 	net_nbuf_unref(buf);
@@ -215,7 +212,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	/* We only copy minimal IPv6 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig->frags, extra_len, reserve, K_FOREVER);
+	frag = net_nbuf_copy(orig, extra_len, reserve, K_FOREVER);
 	if (!frag) {
 		goto drop;
 	}
@@ -290,19 +287,15 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 {
 	const struct in6_addr *src;
 	struct net_buf *buf;
-	uint16_t reserve;
 
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+				      K_FOREVER);
 
-	reserve = net_if_get_ll_reserve(iface, dst);
-
-	buf = net_ipv6_create_raw(buf, reserve, src, dst, iface,
-				  IPPROTO_ICMPV6);
+	buf = net_ipv6_create_raw(buf, src, dst, iface, IPPROTO_ICMPV6);
 
 	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_ll_reserve(buf, reserve);
 	net_nbuf_set_iface(buf, iface);
 
 	net_nbuf_append_u8(buf, NET_ICMPV6_ECHO_REQUEST);
@@ -342,12 +335,10 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	return -EIO;
 }
 
-enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
+enum net_verdict net_icmpv6_input(struct net_buf *buf,
 				  uint8_t type, uint8_t code)
 {
 	struct net_icmpv6_handler *cb;
-
-	ARG_UNUSED(len);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == type && (cb->code == code || cb->code == 0)) {

@@ -56,6 +56,41 @@ static struct in_addr in4addr_my = MY_IP4ADDR;
 #endif /* CONFIG_NET_DHCPV4 || !NET_BIND_ANY_ADDR */
 #endif /* IPv4 */
 
+/* Note that both tcp and udp can share the same pool but in this
+ * example the UDP context and TCP context have separate pools.
+ */
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_TCP)
+NET_NBUF_TX_POOL_DEFINE(echo_tx_tcp, 15);
+NET_NBUF_DATA_POOL_DEFINE(echo_data_tcp, 30);
+
+static struct net_buf_pool *tx_tcp_pool(void)
+{
+	return &echo_tx_tcp;
+}
+
+static struct net_buf_pool *data_tcp_pool(void)
+{
+	return &echo_data_tcp;
+}
+#endif
+
+#if defined(CONFIG_NET_UDP)
+NET_NBUF_TX_POOL_DEFINE(echo_tx_udp, 5);
+NET_NBUF_DATA_POOL_DEFINE(echo_data_udp, 20);
+
+static struct net_buf_pool *tx_udp_pool(void)
+{
+	return &echo_tx_udp;
+}
+
+static struct net_buf_pool *data_udp_pool(void)
+{
+	return &echo_data_udp;
+}
+#endif
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+
 #define MY_PORT 4242
 
 #define STACKSIZE 2000
@@ -107,10 +142,10 @@ static inline void init_app(void)
 		NET_ERR("Invalid IPv4 address %s",
 			CONFIG_NET_SAMPLES_MY_IPV4_ADDR);
 	}
-#endif
 
 	net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my,
 			     NET_ADDR_MANUAL, 0);
+#endif
 #endif /* CONFIG_NET_DHCPV4 */
 #endif /* CONFIG_NET_IPV4 */
 }
@@ -161,6 +196,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
+	net_context_setup_pools(*udp_recv6, tx_udp_pool, data_udp_pool);
+
 	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6,
 			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
@@ -192,6 +229,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
+	net_context_setup_pools(*udp_recv4, tx_udp_pool, data_udp_pool);
+
 	ret = net_context_bind(*udp_recv4, (struct sockaddr *)&my_addr4,
 			       sizeof(struct sockaddr_in));
 	if (ret < 0) {
@@ -210,6 +249,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 				"for IPv6 TCP (%d)", ret);
 			return false;
 		}
+
+		net_context_setup_pools(*tcp_recv6, tx_tcp_pool, data_tcp_pool);
 
 		ret = net_context_bind(*tcp_recv6,
 				       (struct sockaddr *)&my_addr6,
@@ -236,6 +277,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 			NET_ERR("Cannot get network context for IPv4 TCP");
 			return false;
 		}
+
+		net_context_setup_pools(*tcp_recv4, tx_tcp_pool, data_tcp_pool);
 
 		ret = net_context_bind(*tcp_recv4,
 				       (struct sockaddr *)&my_addr4,
@@ -318,7 +361,7 @@ static struct net_buf *build_reply_buf(const char *name,
 
 		net_buf_frag_add(reply_buf, frag);
 
-		tmp = net_buf_frag_del(buf, tmp);
+		tmp = net_nbuf_frag_del(buf, tmp);
 	}
 
 	reply_len = net_buf_frags_len(reply_buf->frags);

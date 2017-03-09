@@ -60,7 +60,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 			goto flush;
 		}
 
-		pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+		pkt_buf = net_nbuf_get_frag(nbuf, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_DBG("No fragment available");
 			goto out;

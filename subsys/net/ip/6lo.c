@@ -36,7 +36,7 @@ struct net_6lo_context {
 
 static inline uint8_t get_6co_compress(struct net_icmpv6_nd_opt_6co *opt)
 {
-	return opt->flag & 0x10;
+	return (opt->flag & 0x10) > 4;
 }
 
 static inline uint8_t get_6co_cid(struct net_icmpv6_nd_opt_6co *opt)
@@ -712,7 +712,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		return false;
 	}
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	IPHC[offset++] = NET_6LO_DISPATCH_IPHC;
 	IPHC[offset++] = 0;
@@ -726,11 +726,11 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	/* Compress Traffic class and Flow lablel */
 	offset = compress_tfl(ipv6, frag, offset);
 
-	/* Hop limit */
-	offset = compress_hoplimit(ipv6, frag, offset);
-
 	/* Next Header */
 	offset = compress_nh(ipv6, frag, offset);
+
+	/* Hop limit */
+	offset = compress_hoplimit(ipv6, frag, offset);
 
 	/* Source Address Compression */
 #if defined(CONFIG_NET_6LO_CONTEXT)
@@ -778,7 +778,7 @@ end:
 	net_buf_add(frag, buf->frags->len - compressed);
 
 	/* Delete uncompressed(original) header fragment */
-	net_buf_frag_del(buf, buf->frags);
+	net_nbuf_frag_del(buf, buf->frags);
 
 	/* Insert compressed header fragment */
 	net_buf_frag_insert(buf, frag);
@@ -852,7 +852,7 @@ static inline uint8_t uncompress_hoplimit(struct net_buf *buf,
 {
 	switch (CIPHC[0] & NET_6LO_IPHC_HLIM255) {
 	case NET_6LO_IPHC_HLIM:
-		ipv6->hop_limit = 0;
+		ipv6->hop_limit = CIPHC[offset++];
 		break;
 	case NET_6LO_IPHC_HLIM1:
 		ipv6->hop_limit = 1;
@@ -862,9 +862,6 @@ static inline uint8_t uncompress_hoplimit(struct net_buf *buf,
 		break;
 	case NET_6LO_IPHC_HLIM255:
 		ipv6->hop_limit = 255;
-		break;
-	default:
-		ipv6->hop_limit = CIPHC[offset++];
 		break;
 	}
 
@@ -938,7 +935,7 @@ static inline uint8_t uncompress_sa_ctx(struct net_buf *buf,
 		/* First 8 bytes are from context */
 		memcpy(&ipv6->src.s6_addr[0], &ctx->prefix.s6_addr[0], 8);
 
-		/*And the rest are carried in-line*/
+		/* And the rest are carried in-line*/
 		memcpy(&ipv6->src.s6_addr[8], &CIPHC[offset], 8);
 		offset += 8;
 
@@ -952,7 +949,7 @@ static inline uint8_t uncompress_sa_ctx(struct net_buf *buf,
 		ipv6->src.s6_addr[11] = 0xFF;
 		ipv6->src.s6_addr[12] = 0xFE;
 
-		/*And the restare carried in-line */
+		/* And the rest are carried in-line */
 		memcpy(&ipv6->src.s6_addr[14], &CIPHC[offset], 2);
 		offset += 2;
 
@@ -1225,32 +1222,26 @@ static inline bool uncompress_cid(struct net_buf *buf,
 	uint8_t cid;
 
 	/* Extract source and destination Context Index,
-	 * Either one address is context based or both.
-	 * If CID is zero means that particular address is non
-	 * context based compression.
+	 * Either src or dest address is context based or both.
 	 */
 	cid = (CIPHC[2] >> 4) & 0x0F;
-	if (cid) {
-		*src = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
-		if (!(*src)) {
-			NET_ERR("Unknown src cid %d", cid);
-			return false;
-		}
+	*src = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
+	if (!(*src)) {
+		NET_DBG("Unknown src cid %d", cid);
 	}
 
 	cid = CIPHC[2] & 0x0F;
-	if (cid) {
-		*dst = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
-		if (!(*dst)) {
-			NET_ERR("Unknown dst cid %d", cid);
-			return false;
-		}
+	*dst = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
+	if (!(*dst)) {
+		NET_DBG("Unknown dst cid %d", cid);
 	}
 
 	/* If CID flag set and src or dst context not available means,
+	 * either we don't have context information or we received
 	 * corrupted packet.
 	 */
 	if (!*src && !*dst) {
+		NET_ERR("Context information does not exist in cache");
 		return false;
 	}
 
@@ -1284,7 +1275,10 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 #endif
 	}
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
+	frag = net_nbuf_get_frag(buf, NET_6LO_RX_NBUF_TIMEOUT);
+	if (!frag) {
+		return false;
+	}
 
 	ipv6 = (struct net_ipv6_hdr *)(frag->data);
 
@@ -1338,7 +1332,9 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	}
 
 	if ((CIPHC[offset] & 0xF0) != NET_6LO_NHC_UDP_BARE) {
-		/* Unsupported NH */
+		/* Unsupported NH,
+		 * Supports only UDP header (next header) compression.
+		 */
 		NET_ERR("Unsupported next header");
 		goto fail;
 	}
@@ -1400,7 +1396,7 @@ static inline bool compress_ipv6_header(struct net_buf *buf,
 {
 	struct net_buf *frag;
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	frag->data[0] = NET_6LO_DISPATCH_IPV6;
 	net_buf_add(frag, 1);

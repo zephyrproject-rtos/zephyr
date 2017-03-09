@@ -201,24 +201,25 @@ static void net_dhcpv4_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
-static struct net_buf *nbuf_get_data(struct net_if *iface)
+static struct net_buf *nbuf_get_data(struct net_buf *buf, struct net_if *iface)
 {
-	struct net_buf *buf;
+	struct net_buf *frag;
 	struct net_eth_hdr *hdr;
 
-	buf = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface, NULL),
-					K_FOREVER);
-	if (!buf) {
+	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, NULL));
+
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	if (!frag) {
 		return NULL;
 	}
 
-	hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
+	hdr = (struct net_eth_hdr *)net_nbuf_ll(frag);
 	hdr->type = htons(NET_ETH_PTYPE_IP);
 
 	net_ipaddr_copy(&hdr->dst, &src_addr);
 	net_ipaddr_copy(&hdr->src, &dst_addr);
 
-	return buf;
+	return frag;
 }
 
 static void set_ipv4_header(struct net_buf *buf)
@@ -271,7 +272,7 @@ struct net_buf *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 		return NULL;
 	}
 
-	frag = nbuf_get_data(iface);
+	frag = nbuf_get_data(buf, iface);
 	if (!frag) {
 		net_nbuf_unref(buf);
 		return NULL;
@@ -307,7 +308,7 @@ struct net_buf *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 		remaining -= bytes;
 
 		if (remaining > 0) {
-			frag = nbuf_get_data(iface);
+			frag = nbuf_get_data(buf, iface);
 			if (!frag) {
 				goto fail;
 			}
@@ -340,7 +341,7 @@ struct net_buf *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 		return NULL;
 	}
 
-	frag = nbuf_get_data(iface);
+	frag = nbuf_get_data(buf, iface);
 	if (!frag) {
 		net_nbuf_unref(buf);
 		return NULL;
@@ -376,7 +377,7 @@ struct net_buf *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 		remaining -= bytes;
 
 		if (remaining > 0) {
-			frag = nbuf_get_data(iface);
+			frag = nbuf_get_data(buf, iface);
 			if (!frag) {
 				goto fail;
 			}

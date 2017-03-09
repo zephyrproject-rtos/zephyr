@@ -322,7 +322,7 @@ static struct net_buf *create_buf(struct net_6lo_data *data)
 	net_nbuf_ll_dst(buf)->addr = dst_mac;
 	net_nbuf_ll_dst(buf)->len = 8;
 
-	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 	if (!frag) {
 		net_nbuf_unref(buf);
 		return NULL;
@@ -384,7 +384,7 @@ static struct net_buf *create_buf(struct net_6lo_data *data)
 		net_buf_frag_add(buf, frag);
 
 		if (remaining > 0) {
-			frag = net_nbuf_get_reserve_data(0, K_FOREVER);
+			frag = net_nbuf_get_frag(buf, K_FOREVER);
 		}
 	}
 

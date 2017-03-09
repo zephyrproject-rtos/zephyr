@@ -88,8 +88,18 @@ config NET_DEBUG_CONTEXT
 config NET_DEBUG_NET_BUF
 	bool "Debug network buffer allocation"
 	default n
+	select NET_BUF_POOL_USAGE
 	help
 	Enables printing of network buffer allocations and frees.
+
+config NET_DEBUG_NET_BUF_EXTERNALS
+	int "How many external network buffer allocations"
+	default 0
+	depends on NET_DEBUG_NET_BUF
+	help
+	How many external net_buf's are there in user specic pools.
+	This value is used when allocating space for tracking the
+	memory allocations.
 
 config NET_DEBUG_CONN
 	bool "Debug connection handling"

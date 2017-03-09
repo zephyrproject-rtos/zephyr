@@ -108,6 +108,26 @@ static inline uint32_t retry_timeout(const struct net_tcp *tcp)
 	return ((uint32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
 }
 
+#define is_6lo_technology(buf)						    \
+	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_nbuf_family(buf) == AF_INET6 && \
+	 ((IS_ENABLED(CONFIG_NET_L2_BLUETOOTH) &&			    \
+	   net_nbuf_ll_dst(buf)->type == NET_LINK_BLUETOOTH) ||		    \
+	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			    \
+	   net_nbuf_ll_dst(buf)->type == NET_LINK_IEEE802154)))
+
+static inline void do_ref_if_needed(struct net_buf *buf)
+{
+	/* The ref should not be done for Bluetooth and IEEE 802.15.4 which use
+	 * IPv6 header compression (6lo). For BT and 802.15.4 we copy the buf
+	 * chain we are about to send so it is fine if the network driver
+	 * releases it. As we have our own copy of the sent data, we do not
+	 * need to take a reference of it. See also net_tcp_send_buf().
+	 */
+	if (!is_6lo_technology(buf)) {
+		buf = net_nbuf_ref(buf);
+	}
+}
+
 static void tcp_retry_expired(struct k_timer *timer)
 {
 	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
@@ -122,7 +142,9 @@ static void tcp_retry_expired(struct k_timer *timer)
 
 		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_buf, sent_list);
-		net_tcp_send_buf(net_nbuf_ref(buf));
+
+		do_ref_if_needed(buf);
+		net_tcp_send_buf(buf);
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
 			net_context_unref(tcp->context);
@@ -150,7 +172,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	memset(&tcp_context[i], 0, sizeof(struct net_tcp));
 
 	tcp_context[i].flags = NET_TCP_IN_USE;
-	net_tcp_set_state(&tcp_context[i], NET_TCP_CLOSED);
+	tcp_context[i].state = NET_TCP_CLOSED;
 	tcp_context[i].context = context;
 
 	tcp_context[i].send_seq = init_isn();
@@ -184,7 +206,7 @@ int net_tcp_release(struct net_tcp *tcp)
 	k_timer_stop(&tcp->retry_timer);
 	k_sem_reset(&tcp->connect_wait);
 
-	net_tcp_set_state(tcp, NET_TCP_CLOSED);
+	net_tcp_change_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;
 
 	key = irq_lock();
@@ -196,7 +218,7 @@ int net_tcp_release(struct net_tcp *tcp)
 	return 0;
 }
 
-static inline int net_tcp_add_options(struct net_buf *header, size_t len,
+static inline uint8_t net_tcp_add_options(struct net_buf *header, size_t len,
 				      void *data)
 {
 	uint8_t optlen;
@@ -210,7 +232,7 @@ static inline int net_tcp_add_options(struct net_buf *header, size_t len,
 		optlen = len;
 	}
 
-	return 0;
+	return optlen;
 }
 
 static void finalize_segment(struct net_context *context, struct net_buf *buf)
@@ -237,6 +259,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	struct net_tcp_hdr *tcphdr;
 	struct net_context *context = tcp->context;
 	uint16_t dst_port, src_port;
+	uint8_t optlen = 0;
 
 	NET_ASSERT(context);
 
@@ -287,10 +310,11 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
 
 	if (segment->options && segment->optlen) {
-		net_tcp_add_options(header, segment->optlen, segment->options);
-	} else {
-		tcphdr->offset = NET_TCPH_LEN << 2;
+		optlen = net_tcp_add_options(header, segment->optlen,
+					segment->options);
 	}
+
+	tcphdr->offset = (NET_TCPH_LEN + optlen) << 2;
 
 	tcphdr->src_port = src_port;
 	tcphdr->dst_port = dst_port;
@@ -608,7 +632,8 @@ int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 	context->tcp->send_seq += data_len;
 
 	sys_slist_append(&context->tcp->sent_list, &buf->sent_list);
-	net_nbuf_ref(buf);
+
+	do_ref_if_needed(buf);
 
 	return 0;
 }
@@ -636,6 +661,55 @@ int net_tcp_send_buf(struct net_buf *buf)
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
 	net_nbuf_set_buf_sent(buf, true);
+
+	/* We must have special handling for some network technologies that
+	 * tweak the IP protocol headers during packet sending. This happens
+	 * with Bluetooth and IEEE 802.15.4 which use IPv6 header compression
+	 * (6lo) and alter the sent network buffer. So in order to avoid any
+	 * corruption of the original data buffer, we must copy the sent data.
+	 * For Bluetooth, its fragmentation code will even mangle the data
+	 * part of the message so we need to copy those too.
+	 */
+	if (is_6lo_technology(buf)) {
+		struct net_buf *new_buf, *check_buf;
+		int ret;
+		bool buf_in_slist = false;
+
+		/*
+		 * There are users of this function that don't add buf to TCP
+		 * sent_list. (See send_ack() in net_context.c) In these cases,
+		 * we should avoid the extra 6lowpan specific buffer copy
+		 * below.
+		 */
+		SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list,
+					     check_buf, sent_list) {
+			if (check_buf == buf) {
+				buf_in_slist = true;
+				break;
+			}
+		}
+
+		if (buf_in_slist) {
+			new_buf = net_nbuf_get_tx(ctx, K_FOREVER);
+
+			new_buf->frags = net_nbuf_copy_all(buf, 0, K_FOREVER);
+			net_nbuf_copy_user_data(new_buf, buf);
+
+			NET_DBG("Copied %zu bytes from %p to %p",
+				net_buf_frags_len(new_buf), buf, new_buf);
+
+			/* This function is called from net_context.c and if we
+			 * return < 0, the caller will unref the original buf.
+			 * This would leak the new_buf so remove it here.
+			 */
+			ret = net_send_data(new_buf);
+			if (ret < 0) {
+				net_nbuf_unref(new_buf);
+			}
+
+			return ret;
+		}
+	}
 
 	return net_send_data(buf);
 }
@@ -799,7 +873,7 @@ void net_tcp_change_state(struct net_tcp *tcp,
 	validate_state_transition(tcp->state, new_state);
 #endif /* CONFIG_NET_DEBUG_TCP */
 
-	net_tcp_set_state(tcp, new_state);
+	tcp->state = new_state;
 
 	if (net_tcp_get_state(tcp) != NET_TCP_CLOSED) {
 		return;

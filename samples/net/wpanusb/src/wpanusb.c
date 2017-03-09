@@ -387,7 +387,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 		return -ENOMEM;
 	}
 
-	buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+	buf = net_nbuf_get_frag(buf, K_NO_WAIT);
 	if (!buf) {
 		net_nbuf_unref(pkt);
 		return -ENOMEM;

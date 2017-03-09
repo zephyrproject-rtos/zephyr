@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #include <kernel.h>
+#include <net/net_core.h>
 
 #ifdef __cplusplus
 extern "C" {

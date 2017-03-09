@@ -558,10 +558,9 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, uint8_t len)
 	/**
 	 * Reserve 1 byte for length
 	 */
-	pkt_buf = net_nbuf_get_reserve_data(1, K_NO_WAIT);
-#else
-	pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+	net_nbuf_set_ll_reserve(buf, 1);
 #endif
+	pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
 	if (!pkt_buf) {
 		SYS_LOG_ERR("No pkt_buf available");
 		goto out;
@@ -902,7 +901,7 @@ static int mcr20a_set_channel(struct device *dev, uint16_t channel)
 	int retval = -EIO;
 
 	if (channel < 11 || channel > 26) {
-		SYS_LOG_ERR("Unsupported channel");
+		SYS_LOG_ERR("Unsupported channel %u", channel);
 		return -EINVAL;
 	}
 
