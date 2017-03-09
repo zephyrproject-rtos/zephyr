@@ -7,9 +7,7 @@ This section describes how to configure your development environment and
 to build Zephyr applications in a Microsoft Windows environment.
 
 This guide was tested by compiling and running the Zephyr's sample
-applications on the following Windows version:
-
-* Windows 8.1
+applications on Windows version 8.1 (and should work with Windows 10 as well).
 
 Update Your Operating System
 ****************************
@@ -23,117 +21,106 @@ Installing Requirements and Dependencies
 ****************************************
 
 To install the software components required to build Zephyr applications on
-Windows, you will need to build or install a toolchain.
+Windows, you will need to build or install a toolchain:
 
-Install :program:`GIT`. Go to `GIT Download`_ to obtain the latest copy of
-the software.
+1. Install :program:`GIT`. Go to `GIT Download`_ to obtain the latest copy of
+   the software (2.12.0).  Install into the :file:`C:\\Git` folder and use the
+   default configuration options for the rest.
 
-Install :program:`Python 2.7`. Go to `Python Download`_ to obtain the 2.7
-version of the software.
+2. Install :program:`Python 2.7`. Go to `Python Download`_ to obtain the
+   software (version 2.7.13) and use the default installation options.
 
-Install :program:`MinGW`. MinGW is the minimalist GNU development environment
-for native Windows applications. The Zephyr build system will execute on top of
-this tool set.
+3. Install :program:`MinGW`. MinGW is the minimalist GNU development environment
+   for native Windows applications. The Zephyr build system will execute on top
+   of this tool set.  Visit the site `MinGW Home`_ and install the
+   following packages with their installer `mingw-get-setup.exe` (you'll need
+   to open the "All Packages" tab to enable installing the msys packages listed
+   here):
 
-To install :program:`MinGW`, visit the site `MinGW Home`_ and install the
-following packages with their installer `mingw-get-setup.exe`:
+   * mingw-developer-toolkit
+   * mingw32-base
+   * msys-base
+   * msys-binutils
+   * msys-console
+   * msys-w32api
 
-* mingw-developer-toolkit
-* mingw32-base
-* msys-base
-* msys-binutils
-* msys-console
-* msys-w32api
+4. Launch the `MSYS console` from a cmd window. The installer does not create
+   shortcuts for you so you'll need to run the script
+   in :file:`C:\\MinGW\\msys\\1.0\\msys.bat.`
 
-Launch the `MSYS console`. The installer does not create shortcuts for you,
-but the script to launch it is in :file:`C:\\MinGW\\msys\\1.0\\msys.bat.`.
-We need the following line in :file:`/etc/fstab`:
+5. The Zephyr build process has a dependency on the Pthread and GNU regex
+   libraries.  Msys provides its own GNU library implementation that can be
+   downloaded from the MinGW and Msys official repository:
+   `MinGW Repository`_ with the following commands:
 
-.. code-block:: console
+   .. code-block:: console
 
-   #Win32_Path     Mount_Point
-   c:/mingw             /mingw
+      mingw-get update
+      mingw-get install libpthread msys-libregex-dev --all-related
 
-The easiest way to do this is just copy the file :file:`fstab.sample` as
-:file:`fstab` and confirm that the these lines are in the new
-:file:`fstab` file.
 
-.. code-block:: console
+   When done, move libregex files (``libregex.a``, ``libregex.dll.a``,
+   ``libregex.la``)
+   from ``C:\Git\mingw32\msys\1.0\lib`` to ``C:\Git\mingw32\lib``
 
-   $ cp /etc/fstab.sample /etc/fstab
-   $ cat /etc/fstab
+6. We need to edit :file:`/etc/fstab` to create an entry mapping from the Win32
+   path ``c:/mingw`` to the mount point ``/mingw``
+   The easiest way to do this is just copy the file :file:`fstab.sample` as
+   :file:`fstab` and ``cat /etc/fstab`` to confirm that the mapping was added.
 
-Configure Python's folder location in the environmental variable :envvar:`PATH`
-and the installation path for MinGW.
 
-.. note:: The format of the path for `PYTHON_PATH` must to be in the
-   linux format. Default installation is in :file:`C:\\python27`,
-   which would be written as :file:`/c/python27/`.
+7. The build system should be able to work with any toolchain installed in your
+   system. For instance, the Zephyr build system was tested using the mingw
+   MSYS console (as described below) with the toolchain
+   provided with the ISSM 2016 (Intel System Studio for Microcontrollers)
+   installation.  Install ISSM from the Intel Developer Zone:
+   `ISSM 2016 Download`_
 
-.. code-block:: console
+   .. note::
 
-   export PYTHON_PATH=/c/python27
-   export PATH=$PATH:${PYTHON_PATH}
-   export MINGW_DIR=/c/MinGW
+      The ISSM toolset only supports development for Intel® Quark™
+      Microcontrollers, for example, the Arduino 101 board.  (Check out the
+      "Zephyr Development Environment
+      Setup" in this `Getting Started on Arduino 101 with ISSM`_ document.)
+      Also, additional setup is required to use the ISSM GUI for
+      development.
 
-Pthread library
-===============
+8. From within the MSYS console, clone a copy of the Zephyr source into your
+   home directory using Git:
 
-The Zephyr OS build process has a dependency on the Pthread library.
-The required packages for Msys installation would normally provide it.
-However, if a minimal installation fails to provide the Pthread library,
-it can be installed with the following command:
+   .. code-block:: console
 
-.. code-block:: console
+      cd ~
+      git clone https://gerrit.zephyrproject.org/r/zephyr
 
-   mingw-get install libpthread
+9. Also within the MSYS console, set up environment variables for installed
+   tools and for the Zephyr environment (using the provided shell script):
 
-GNU Regex C library
-===================
+   .. code-block:: console
 
-The Zephyr build process has a dependency with the GNU regex library.
-Msys provides its own GNU library implementation that can be downloaded from the
-MinGW and Msys official repository: `MinGW Repository`_.
-Install the library from the Msys console interface with the following commands:
+      export PATH=$PATH:/c/python27/
+      export MINGW_DIR=/c/mingw
+      export ZEPHYR_GCC_VARIANT=issm
+      export ISSM_INSTALLATION_PATH=C:/IntelSWTools/ISSM_2016.1.067
+      unset ZEPHYR_SDK_INSTALL_DIR
+      source ~/zephyr/zephyr-env.sh
 
-.. code-block:: console
+10. Finally, you can try building the :ref:`hello_world` sample to check things
+    out.  In this example, we'll build the hello_world sample for the Arduino
+    101 board:
 
-   mingw-get update
-   mingw-get install msys-libregex-dev --all-related
+    .. code-block:: console
 
-Update the following environment variables on your system to allow the C compiler
-and linker to find the library and headers:
+       cd $ZEPHYR_BASE/samples/hello_world
+       make board=arduino_101
 
-.. code-block:: console
+    This should check that all the tools and toolchain are setup correctly for
+    your own Zephyr development.
 
-   export LIBRARY_PATH=$LIBRARY_PATH:/c/mingw/msys/1.0/lib
-   export C_INCLUDE_PATH=$C_INCLUDE_PATH:/c/mingw/msys/1.0/include
-
-Toolchain Installation
-======================
-
-The build system should be able to work with any toolchain installed in your system.
-
-For instance, the Zephyr build system was tested with the toolchain provided with
-the ISSM 2016 (Intel System Studio for Microcontrollers) installation.
-
-To install ISSM use the link provided to download from the Intel Developer Zone:
-`ISSM 2016 Download`_ and install it into your system.
-
-Finally, configure your environment variables for the ISSM 2016 toolchain.
-For example, using the default installation path for ISSM:
-:file:`C:/IntelSWTools/ISSM_2016`
-
-.. code-block:: console
-
-    export ZEPHYR_GCC_VARIANT=issm
-    export ISSM_INSTALLATION_PATH=C:/IntelSWTools/ISSM_2016
-
-.. note:: The format of the location for the ISSM installation directory
-   (e.g. :envvar:`ISSM_INSTALLATION_PATH`) must be in the windows format.
 
 .. _GIT Download: https://git-scm.com/download/win
 .. _Python Download: https://www.python.org/downloads/
 .. _MinGW Home: http://www.mingw.org/
 .. _MinGW Repository: http://sourceforge.net/projects/mingw/files/
 .. _ISSM 2016 Download: https://software.intel.com/en-us/intel-system-studio-microcontrollers
+.. _Getting Started on Arduino 101 with ISSM: https://software.intel.com/en-us/articles/getting-started-arduino-101genuino-101-with-intel-system-studio-for-microcontrollers
