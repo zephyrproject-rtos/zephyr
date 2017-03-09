@@ -9,6 +9,10 @@
 
 #include <kernel_structs.h>
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER
+#include <logging/kernel_event_logger.h>
+#endif /* CONFIG_KERNEL_EVENT_LOGGER */
+
 extern k_tid_t const _main_thread;
 extern k_tid_t const _idle_thread;
 
@@ -336,6 +340,10 @@ static inline int _is_thread_ready(struct k_thread *thread)
 static inline void _mark_thread_as_pending(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_PENDING;
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
+	_sys_k_event_logger_thread_pend(thread);
+#endif
 }
 
 /* mark a thread as not pending in its TCS */
@@ -406,6 +414,10 @@ static inline void _ready_thread(struct k_thread *thread)
 	if (_is_thread_ready(thread)) {
 		_add_thread_to_ready_q(thread);
 	}
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
+	_sys_k_event_logger_thread_ready(thread);
+#endif
 }
 
 /**
@@ -416,6 +428,10 @@ static inline void _ready_thread(struct k_thread *thread)
 static inline void _mark_thread_as_dead(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_DEAD;
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
+	_sys_k_event_logger_thread_exit(thread);
+#endif
 }
 
 /*

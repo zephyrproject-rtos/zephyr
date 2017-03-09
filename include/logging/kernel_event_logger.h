@@ -23,6 +23,7 @@ extern "C" {
 #define KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID             0x0001
 #define KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID                  0x0002
 #define KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID                      0x0003
+#define KERNEL_EVENT_LOGGER_THREAD_EVENT_ID                     0x0004
 
 #ifndef _ASMLANGUAGE
 
@@ -33,14 +34,33 @@ extern int _sys_k_event_logger_mask;
 extern void _sys_k_event_logger_enter_sleep(void);
 extern void _sys_k_event_logger_exit_sleep(void);
 #else
-static inline void _sys_k_event_logger_enter_sleep(void) {};
-static inline void  _sys_k_event_logger_exit_sleep(void) {};
+static inline void _sys_k_event_logger_enter_sleep(void) {}
+static inline void _sys_k_event_logger_exit_sleep(void) {}
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 extern void _sys_k_event_logger_interrupt(void);
 #else
-static inline void _sys_k_event_logger_interrupt(void) {};
+static inline void _sys_k_event_logger_interrupt(void) {}
+#endif
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
+#include <kernel.h>
+
+enum sys_k_event_logger_thread_event {
+	KERNEL_LOG_THREAD_EVENT_READYQ,
+	KERNEL_LOG_THREAD_EVENT_PEND,
+	KERNEL_LOG_THREAD_EVENT_EXIT,
+};
+
+extern void _sys_k_event_logger_thread_ready(struct k_thread *thread);
+extern void _sys_k_event_logger_thread_pend(struct k_thread *thread);
+extern void _sys_k_event_logger_thread_exit(struct k_thread *thread);
+#else
+static inline void _sys_k_event_logger_thread_create(void *thread) {}
+static inline void _sys_k_event_logger_thread_ready(void *thread) {}
+static inline void _sys_k_event_logger_thread_pend(void *thread) {}
+static inline void _sys_k_event_logger_thread_exit(void *thread) {}
 #endif
 
 /**

@@ -70,6 +70,22 @@ config KERNEL_EVENT_LOGGER_SLEEP
 		- When the CPU went to sleep mode.
 		- When the CPU woke up.
 		- The ID of the interrupt that woke the CPU up.
+
+config KERNEL_EVENT_LOGGER_THREAD
+	bool
+	prompt "Thread event logging point"
+	default n
+	help
+	Enable thread event messages. These messages provide the following
+	information:
+
+		- When threads are marked as ready to be executed.
+		- When threads are marked as pending.
+		- When threads end.
+
+	Context switching messages should be enabled by enabling the
+	CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH setting instead.
+
 endmenu
 
 endif
