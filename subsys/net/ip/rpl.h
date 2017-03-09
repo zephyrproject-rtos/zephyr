@@ -971,6 +971,13 @@ void net_rpl_set_mode(enum net_rpl_mode new_mode);
  */
 enum net_rpl_mode net_rpl_get_mode(void);
 
+/**
+ * @brief Get the default RPL instance.
+ *
+ * @return Current default RPL instance.
+ */
+struct net_rpl_instance *net_rpl_get_default_instance(void);
+
 void net_rpl_init(void);
 #else
 #define net_rpl_init(...)

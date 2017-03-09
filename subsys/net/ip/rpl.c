@@ -3958,6 +3958,11 @@ static inline void net_rpl_init_timers(void)
 #endif
 }
 
+struct net_rpl_instance *net_rpl_get_default_instance(void)
+{
+	return rpl_default_instance;
+}
+
 void net_rpl_init(void)
 {
 	/* Note that link_cb needs to be static as it is added
