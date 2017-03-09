@@ -126,11 +126,10 @@ static inline int net_l2_offload_ip_get(struct net_if *iface,
 					struct net_context **context)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->get);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->get);
 
-	return iface->l2->offload_ip->get(family, type, ip_proto, context);
+	return iface->offload_ip->get(family, type, ip_proto, context);
 }
 
 /**
@@ -152,11 +151,10 @@ static inline int net_l2_offload_ip_bind(struct net_if *iface,
 					 socklen_t addrlen)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->bind);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->bind);
 
-	return iface->l2->offload_ip->bind(context, addr, addrlen);
+	return iface->offload_ip->bind(context, addr, addrlen);
 }
 
 /**
@@ -176,11 +174,10 @@ static inline int net_l2_offload_ip_listen(struct net_if *iface,
 					   int backlog)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->listen);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->listen);
 
-	return iface->l2->offload_ip->listen(context, backlog);
+	return iface->offload_ip->listen(context, backlog);
 }
 
 /**
@@ -221,11 +218,10 @@ static inline int net_l2_offload_ip_connect(struct net_if *iface,
 					    void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->connect);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->connect);
 
-	return iface->l2->offload_ip->connect(context, addr, addrlen, cb,
+	return iface->offload_ip->connect(context, addr, addrlen, cb,
 					      timeout, user_data);
 }
 
@@ -263,11 +259,10 @@ static inline int net_l2_offload_ip_accept(struct net_if *iface,
 					   void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->accept);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->accept);
 
-	return iface->l2->offload_ip->accept(context, cb, timeout, user_data);
+	return iface->offload_ip->accept(context, cb, timeout, user_data);
 }
 
 /**
@@ -305,11 +300,10 @@ static inline int net_l2_offload_ip_send(struct net_if *iface,
 					 void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->send);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->send);
 
-	return iface->l2->offload_ip->send(buf, cb, timeout, token, user_data);
+	return iface->offload_ip->send(buf, cb, timeout, token, user_data);
 }
 
 /**
@@ -351,11 +345,10 @@ static inline int net_l2_offload_ip_sendto(struct net_if *iface,
 					   void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->sendto);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->sendto);
 
-	return iface->l2->offload_ip->sendto(buf, dst_addr, addrlen, cb,
+	return iface->offload_ip->sendto(buf, dst_addr, addrlen, cb,
 					     timeout, token, user_data);
 }
 
@@ -399,11 +392,10 @@ static inline int net_l2_offload_ip_recv(struct net_if *iface,
 					 void *user_data)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->recv);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->recv);
 
-	return iface->l2->offload_ip->recv(context, cb, timeout, user_data);
+	return iface->offload_ip->recv(context, cb, timeout, user_data);
 }
 
 /**
@@ -423,11 +415,10 @@ static inline int net_l2_offload_ip_put(struct net_if *iface,
 					struct net_context *context)
 {
 	NET_ASSERT(iface);
-	NET_ASSERT(iface->l2);
-	NET_ASSERT(iface->l2->offload_ip);
-	NET_ASSERT(iface->l2->offload_ip->put);
+	NET_ASSERT(iface->offload_ip);
+	NET_ASSERT(iface->offload_ip->put);
 
-	return iface->l2->offload_ip->put(context);
+	return iface->offload_ip->put(context);
 }
 
 #ifdef __cplusplus

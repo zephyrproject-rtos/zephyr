@@ -20,10 +20,6 @@ extern "C" {
 
 struct net_if;
 
-#if defined(CONFIG_NET_OFFLOAD)
-struct net_l2_offload_ip;
-#endif /* CONFIG_NET_OFFLOAD */
-
 struct net_l2 {
 	/**
 	 * This function is used by net core to get iface's L2 layer parsing
@@ -50,10 +46,6 @@ struct net_l2 {
 	 * interface.
 	 */
 	int (*enable)(struct net_if *iface, bool state);
-
-#if defined(CONFIG_NET_OFFLOAD)
-	struct net_l2_offload_ip *offload_ip;
-#endif /* CONFIG_NET_OFFLOAD */
 };
 
 #define NET_L2_GET_NAME(_name) (__net_l2_##_name)
