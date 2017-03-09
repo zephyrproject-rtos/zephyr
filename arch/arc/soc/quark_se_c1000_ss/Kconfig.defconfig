@@ -83,7 +83,7 @@ endif
 if GPIO
 
 config GPIO_QMSI
-	def_bool y
+	def_bool n
 
 if GPIO_QMSI
 
