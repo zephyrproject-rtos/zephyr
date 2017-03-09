@@ -93,28 +93,34 @@ void ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	radio_adv_data = radio_adv_data_get();
 	pdu = (struct pdu_adv *)&radio_adv_data->data[radio_adv_data->last][0];
 	pdu->type = _ll_adv_params.adv_type;
+	pdu->rfu = 0;
+	pdu->ch_sel = 0;
 	pdu->tx_addr = _ll_adv_params.tx_addr;
 	if (adv_type == PDU_ADV_TYPE_DIRECT_IND) {
 		_ll_adv_params.rx_addr = direct_addr_type;
 		memcpy(&_ll_adv_params.direct_addr[0], direct_addr,
 			 BDADDR_SIZE);
-		memcpy(&pdu->payload.direct_ind.init_addr[0],
+		memcpy(&pdu->payload.direct_ind.tgt_addr[0],
 			 direct_addr, BDADDR_SIZE);
 		pdu->len = sizeof(struct pdu_adv_payload_direct_ind);
 	} else if (pdu->len == 0) {
 		pdu->len = BDADDR_SIZE;
 	}
 	pdu->rx_addr = _ll_adv_params.rx_addr;
+	pdu->resv = 0;
 
 	/* update the current scan data */
 	radio_adv_data = radio_scan_data_get();
 	pdu = (struct pdu_adv *)&radio_adv_data->data[radio_adv_data->last][0];
-	pdu->type = PDU_ADV_TYPE_SCAN_RESP;
+	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
+	pdu->rfu = 0;
+	pdu->ch_sel = 0;
 	pdu->tx_addr = _ll_adv_params.tx_addr;
 	pdu->rx_addr = 0;
 	if (pdu->len == 0) {
 		pdu->len = BDADDR_SIZE;
 	}
+	pdu->resv = 0;
 }
 
 void ll_adv_data_set(uint8_t len, uint8_t const *const data)
@@ -139,18 +145,21 @@ void ll_adv_data_set(uint8_t len, uint8_t const *const data)
 	/* update adv pdu fields. */
 	pdu = (struct pdu_adv *)&radio_adv_data->data[last][0];
 	pdu->type = _ll_adv_params.adv_type;
+	pdu->rfu = 0;
+	pdu->ch_sel = 0;
 	pdu->tx_addr = _ll_adv_params.tx_addr;
 	pdu->rx_addr = _ll_adv_params.rx_addr;
 	memcpy(&pdu->payload.adv_ind.addr[0],
 		 &_ll_adv_params.adv_addr[0], BDADDR_SIZE);
 	if (_ll_adv_params.adv_type == PDU_ADV_TYPE_DIRECT_IND) {
-		memcpy(&pdu->payload.direct_ind.init_addr[0],
+		memcpy(&pdu->payload.direct_ind.tgt_addr[0],
 			 &_ll_adv_params.direct_addr[0], BDADDR_SIZE);
 		pdu->len = sizeof(struct pdu_adv_payload_direct_ind);
 	} else {
 		memcpy(&pdu->payload.adv_ind.data[0], data, len);
 		pdu->len = BDADDR_SIZE + len;
 	}
+	pdu->resv = 0;
 
 	/* commit the update so controller picks it. */
 	radio_adv_data->last = last;
@@ -175,13 +184,16 @@ void ll_scan_data_set(uint8_t len, uint8_t const *const data)
 
 	/* update scan pdu fields. */
 	pdu = (struct pdu_adv *)&radio_scan_data->data[last][0];
-	pdu->type = PDU_ADV_TYPE_SCAN_RESP;
+	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
+	pdu->rfu = 0;
+	pdu->ch_sel = 0;
 	pdu->tx_addr = _ll_adv_params.tx_addr;
 	pdu->rx_addr = 0;
 	pdu->len = BDADDR_SIZE + len;
-	memcpy(&pdu->payload.scan_resp.addr[0],
+	memcpy(&pdu->payload.scan_rsp.addr[0],
 		 &_ll_adv_params.adv_addr[0], BDADDR_SIZE);
-	memcpy(&pdu->payload.scan_resp.data[0], data, len);
+	memcpy(&pdu->payload.scan_rsp.data[0], data, len);
+	pdu->resv = 0;
 
 	/* commit the update so controller picks it. */
 	radio_scan_data->last = last;
@@ -216,14 +228,14 @@ uint32_t ll_adv_enable(uint8_t enable)
 				 &_ll_context.rnd_addr[0], BDADDR_SIZE);
 			memcpy(&pdu_adv->payload.adv_ind.addr[0],
 				 &_ll_context.rnd_addr[0], BDADDR_SIZE);
-			memcpy(&pdu_scan->payload.scan_resp.addr[0],
+			memcpy(&pdu_scan->payload.scan_rsp.addr[0],
 				 &_ll_context.rnd_addr[0], BDADDR_SIZE);
 		} else {
 			memcpy(&_ll_adv_params.adv_addr[0],
 				 &_ll_context.pub_addr[0], BDADDR_SIZE);
 			memcpy(&pdu_adv->payload.adv_ind.addr[0],
 				 &_ll_context.pub_addr[0], BDADDR_SIZE);
-			memcpy(&pdu_scan->payload.scan_resp.addr[0],
+			memcpy(&pdu_scan->payload.scan_rsp.addr[0],
 				 &_ll_context.pub_addr[0], BDADDR_SIZE);
 		}
 

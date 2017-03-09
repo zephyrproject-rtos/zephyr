@@ -86,7 +86,7 @@
 /*****************************************************************************
  * Controller Interface Defines
  ****************************************************************************/
-#define RADIO_BLE_VERSION_NUMBER        0x08
+#define RADIO_BLE_VERSION_NUMBER	BT_HCI_VERSION_5_0
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_COMPANY_ID)
 #define RADIO_BLE_COMPANY_ID            CONFIG_BLUETOOTH_CONTROLLER_COMPANY_ID
 #else
