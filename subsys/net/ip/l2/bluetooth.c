@@ -183,12 +183,12 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* Set destination address */
 	net_nbuf_ll_dst(nbuf)->addr = ctxt->src.val;
 	net_nbuf_ll_dst(nbuf)->len = sizeof(ctxt->src);
-	net_nbuf_ll_dst(buf)->type = NET_LINK_BLUETOOTH;
+	net_nbuf_ll_dst(nbuf)->type = NET_LINK_BLUETOOTH;
 
 	/* Set source address */
 	net_nbuf_ll_src(nbuf)->addr = ctxt->dst.val;
 	net_nbuf_ll_src(nbuf)->len = sizeof(ctxt->dst);
-	net_nbuf_ll_src(buf)->type = NET_LINK_BLUETOOTH;
+	net_nbuf_ll_src(nbuf)->type = NET_LINK_BLUETOOTH;
 
 	/* Add data buffer as fragment of RX buffer, take a reference while
 	 * doing so since L2CAP will unref the buffer after return.
