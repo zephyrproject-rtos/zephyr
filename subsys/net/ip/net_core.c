@@ -39,6 +39,10 @@
 #include "icmpv4.h"
 #endif
 
+#if defined(CONFIG_NET_DHCPV4)
+#include "dhcpv4.h"
+#endif
+
 #include "route.h"
 #include "rpl.h"
 
@@ -65,12 +69,11 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
 						  struct net_ipv6_hdr *ipv6)
 {
 	struct net_icmp_hdr *hdr = NET_ICMP_BUF(buf);
-	uint16_t len = (ipv6->len[0] << 8) + ipv6->len[1];
 
-	NET_DBG("ICMPv6 packet received length %d type %d code %d",
-		len, hdr->type, hdr->code);
+	NET_DBG("ICMPv6 packet received type %d code %d",
+		hdr->type, hdr->code);
 
-	return net_icmpv6_input(buf, len, hdr->type, hdr->code);
+	return net_icmpv6_input(buf, hdr->type, hdr->code);
 }
 
 static inline struct net_buf *check_unknown_option(struct net_buf *buf,
@@ -122,7 +125,7 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 						     enum net_verdict *verdict)
 {
 	uint8_t opt_type, opt_len;
-	uint16_t length = 0;
+	uint16_t length = 0, loc;
 
 	if (len > total_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
@@ -134,55 +137,78 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 	length += 2;
 
 	/* Each extension option has type and length */
-	frag = net_nbuf_read_u8(frag, offset, pos, &opt_type);
-	frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
+	frag = net_nbuf_read_u8(frag, offset, &loc, &opt_type);
+	frag = net_nbuf_read_u8(frag, loc, &loc, &opt_len);
+	if (!frag && loc == 0xffff) {
+		goto drop;
+	}
 
 	while (frag && (length < len)) {
 		switch (opt_type) {
 		case NET_IPV6_EXT_HDR_OPT_PAD1:
 			NET_DBG("PAD1 option");
 			length++;
+			loc++;
 			break;
 		case NET_IPV6_EXT_HDR_OPT_PADN:
 			NET_DBG("PADN option");
 			length += opt_len + 2;
+			loc += opt_len + 2;
 			break;
-		case NET_IPV6_EXT_HDR_OPT_RPL:
-			/* Handle the case when a non-RPL node joins RPL
-			 * network. Skip the unknown header instead of
-			 * discarding the whole packet.
-			 */
 #if defined(CONFIG_NET_RPL)
+		case NET_IPV6_EXT_HDR_OPT_RPL:
 			NET_DBG("Processing RPL option");
-			if (!net_rpl_verify_header(buf, *pos, pos)) {
+			if (!net_rpl_verify_header(buf, loc, &loc)) {
 				NET_DBG("RPL option error, packet dropped");
-				*verdict = NET_DROP;
-
-				return NULL;
+				goto drop;
 			}
-#endif
 			*verdict = NET_CONTINUE;
 			return frag;
+#endif
 		default:
 			if (!check_unknown_option(frag, opt_type, length)) {
-				*verdict = NET_DROP;
-				return NULL;
+				goto drop;
 			}
 
 			length += opt_len + 2;
+
+			/* No need to +2 here as loc already contains option
+			 * header len.
+			 */
+			loc += opt_len;
+
 			break;
 		}
 
-		frag = net_nbuf_read_u8(frag, *pos, pos, &opt_type);
-		frag = net_nbuf_read_u8(frag, *pos, pos, &opt_len);
-		if (!frag && *pos == 0xffff) {
-			/* reading error */
-			return NULL;
+		if (length >= len) {
+			break;
+		}
+
+		frag = net_nbuf_read_u8(frag, loc, &loc, &opt_type);
+		frag = net_nbuf_read_u8(frag, loc, &loc, &opt_len);
+		if (!frag && loc == 0xffff) {
+			goto drop;
 		}
 	}
 
+	if (length != len) {
+		goto drop;
+	}
+
+	*pos += length;
+
 	*verdict = NET_CONTINUE;
 	return frag;
+
+drop:
+	*verdict = NET_DROP;
+	return NULL;
+}
+
+static inline bool is_upper_layer_protocol_header(uint8_t proto)
+{
+	return (proto == IPPROTO_ICMPV6 || proto == IPPROTO_UDP ||
+		proto == IPPROTO_TCP);
 }
 
 static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
@@ -193,7 +219,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	struct net_buf *frag;
 	uint8_t next, next_hdr, length;
 	uint8_t first_option;
-	uint16_t offset;
+	uint16_t offset, total_len = 0;
 
 	if (real_len != pkt_len) {
 		NET_DBG("IPv6 packet size %d buf len %d", pkt_len, real_len);
@@ -230,26 +256,15 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	net_nbuf_set_next_hdr(buf, &hdr->nexthdr);
 	net_nbuf_set_ext_len(buf, 0);
 	net_nbuf_set_ext_bitmap(buf, 0);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	/* Fast path for main upper layer protocols. The handling of extension
 	 * headers can be slow so do this checking here. There cannot
 	 * be any extension headers after the upper layer protocol header.
 	 */
-	switch (*(net_nbuf_next_hdr(buf))) {
-	case IPPROTO_ICMPV6:
-		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
-		return process_icmpv6_pkt(buf, hdr);
-
-#if defined(CONFIG_NET_UDP)
-	case IPPROTO_UDP:
-		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
-		return net_conn_input(IPPROTO_UDP, buf);
-#endif
-#if defined(CONFIG_NET_TCP)
-	case IPPROTO_TCP:
-		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
-		return net_conn_input(IPPROTO_TCP, buf);
-#endif
+	next = *(net_nbuf_next_hdr(buf));
+	if (is_upper_layer_protocol_header(next)) {
+		goto upper_proto;
 	}
 
 	/* Go through the extensions */
@@ -261,25 +276,25 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	while (frag) {
 		enum net_verdict verdict;
 
+		if (is_upper_layer_protocol_header(next)) {
+			NET_DBG("IPv6 next header %d", next);
+			net_nbuf_set_ext_len(buf, offset -
+					     sizeof(struct net_ipv6_hdr));
+			goto upper_proto;
+		}
+
 		frag = net_nbuf_read_u8(frag, offset, &offset, &next_hdr);
 		frag = net_nbuf_read_u8(frag, offset, &offset, &length);
-		if (!frag) {
+		if (!frag && offset == 0xffff) {
 			goto drop;
 		}
 
 		length = length * 8 + 8;
+		total_len += length;
 		verdict = NET_OK;
 
-#if defined(CONFIG_NET_DEBUG_CORE)
 		/* Print the length only for IPv6 extension */
-		if (next != IPPROTO_ICMPV6 && next != IPPROTO_UDP &&
-		    next != IPPROTO_TCP) {
-			NET_DBG("IPv6 next header %d length %d bytes",
-				next, length);
-		} else {
-			NET_DBG("IPv6 next header %d", next);
-		}
-#endif /* CONFIG_NET_DEBUG_CORE */
+		NET_DBG("IPv6 next header %d length %d bytes", next, length);
 
 		switch (next) {
 		case NET_IPV6_NEXTHDR_NONE:
@@ -291,13 +306,14 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			goto drop;
 
 		case NET_IPV6_NEXTHDR_HBHO:
+			/* HBH option needs to be the first one */
+			if (first_option != NET_IPV6_NEXTHDR_HBHO) {
+				goto bad_hdr;
+			}
+
 			/* Hop by hop option */
 			if (net_nbuf_ext_bitmap(buf) &
 			    NET_IPV6_EXT_HDR_BITMAP_HBHO) {
-				goto bad_hdr;
-			}
-			/* HBH option needs to be the first one */
-			if (first_option != NET_IPV6_NEXTHDR_HBHO) {
 				goto bad_hdr;
 			}
 
@@ -307,57 +323,40 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			frag = handle_ext_hdr_options(buf, frag, real_len,
 						      length, offset, &offset,
 						      &verdict);
-			if (verdict == NET_DROP) {
-				goto drop;
-			} else if (verdict == NET_CONTINUE) {
-				/* ignore the option */
-				break;
-			}
-
-			if (!frag && offset) {
-				/* Header issue, the ICMPv6 parameter problem
-				 * error is already sent so just drop the msg
-				 * here.
-				 */
-				goto drop;
-			}
-
 			break;
 
-		/* The next header after the extensions can be also
-		 * one of the main protocols.
-		 */
-		case IPPROTO_ICMPV6:
-			net_nbuf_set_ext_len(buf,
-					     offset -
-					     sizeof(struct net_ipv6_hdr));
-			net_nbuf_set_ip_hdr_len(buf,
-						sizeof(struct net_ipv6_hdr));
-			return process_icmpv6_pkt(buf, hdr);
-
-#if defined(CONFIG_NET_UDP)
-		case IPPROTO_UDP:
-			net_nbuf_set_ext_len(buf,
-					     offset -
-					     sizeof(struct net_ipv6_hdr));
-			net_nbuf_set_ip_hdr_len(buf,
-						sizeof(struct net_ipv6_hdr));
-			return net_conn_input(IPPROTO_UDP, buf);
-#endif
-#if defined(CONFIG_NET_TCP)
-		case IPPROTO_TCP:
-			net_nbuf_set_ext_len(buf,
-					     offset -
-					     sizeof(struct net_ipv6_hdr));
-			net_nbuf_set_ip_hdr_len(buf,
-						sizeof(struct net_ipv6_hdr));
-			return net_conn_input(IPPROTO_TCP, buf);
-#endif
 		default:
 			goto bad_hdr;
 		}
 
+		if (verdict == NET_DROP) {
+			goto drop;
+		}
+
 		next = next_hdr;
+	}
+
+upper_proto:
+	if (total_len > 0) {
+		NET_DBG("Extension len %d", total_len);
+		net_nbuf_set_ext_len(buf, total_len);
+	}
+
+	switch (next) {
+	case IPPROTO_ICMPV6:
+		return process_icmpv6_pkt(buf, hdr);
+	case IPPROTO_UDP:
+#if defined(CONFIG_NET_UDP)
+		return net_conn_input(IPPROTO_UDP, buf);
+#else
+		return NET_DROP;
+#endif
+	case IPPROTO_TCP:
+#if defined(CONFIG_NET_TCP)
+		return net_conn_input(IPPROTO_TCP, buf);
+#else
+		return NET_DROP;
+#endif
 	}
 
 drop:
@@ -565,7 +564,8 @@ static void init_rx_queue(void)
 
 	rx_tid = k_thread_spawn(rx_stack, sizeof(rx_stack),
 				(k_thread_entry_t)net_rx_thread,
-				NULL, NULL, NULL, K_PRIO_COOP(8), 0, 0);
+				NULL, NULL, NULL, K_PRIO_COOP(8),
+				K_ESSENTIAL, K_NO_WAIT);
 }
 
 #if defined(CONFIG_NET_IP_ADDR_CHECK)
@@ -732,6 +732,8 @@ static inline void l2_init(void)
 
 static int net_init(struct device *unused)
 {
+	int status = 0;
+
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
 
 	net_shell_init();
@@ -747,7 +749,14 @@ static int net_init(struct device *unused)
 
 	init_rx_queue();
 
-	return 0;
+#if CONFIG_NET_DHCPV4
+	status = dhcpv4_init();
+	if (status) {
+		return status;
+	}
+#endif
+
+	return status;
 }
 
 SYS_INIT(net_init, POST_KERNEL, CONFIG_NET_INIT_PRIO);

@@ -358,20 +358,19 @@ static bool net_test_send_na(struct net_if *iface,
 	struct net_buf *buf, *frag;
 	uint8_t llao_len;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+				      K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
-	buf = net_ipv6_create_raw(buf, net_if_get_ll_reserve(iface, dst),
-				  addr, dst, iface, IPPROTO_ICMPV6);
+	buf = net_ipv6_create_raw(buf, addr, dst, iface, IPPROTO_ICMPV6);
 
-	frag = net_nbuf_get_reserve_data(0, K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 
 	NET_ASSERT_INFO(frag, "Out of DATA buffers");
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 	net_nbuf_set_iface(buf, iface);
 	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));

@@ -52,8 +52,22 @@ static void udp_received(struct net_context *context,
 	ARG_UNUSED(context);
 	ARG_UNUSED(status);
 
+	if (ctx->rx_nbuf) {
+		k_sem_give(&ctx->rx_sem);
+		k_yield();
+
+		if (ctx->rx_nbuf) {
+			printk("Packet %p is still being handled, "
+			       "dropping %p\n", ctx->rx_nbuf, buf);
+
+			net_nbuf_unref(buf);
+			return;
+		}
+	}
+
 	ctx->rx_nbuf = buf;
 	k_sem_give(&ctx->rx_sem);
+	k_yield();
 }
 
 int udp_tx(void *context, const unsigned char *buf, size_t size)
@@ -75,6 +89,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf, K_FOREVER);
 	if (!rc) {
 		printk("cannot write buf\n");
+		net_nbuf_unref(send_buf);
 		return -EIO;
 	}
 
@@ -107,6 +122,8 @@ int udp_rx(void *context, unsigned char *buf, size_t size)
 
 	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
 	if (read_bytes > size) {
+		net_nbuf_unref(ctx->rx_nbuf);
+		ctx->rx_nbuf = NULL;
 		return -ENOMEM;
 	}
 

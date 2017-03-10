@@ -456,6 +456,17 @@ struct net_buf_pool {
 	/** Size of the user data associated with each buffer. */
 	const uint16_t user_data_size;
 
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	/** Amount of available buffers in the pool. */
+	int16_t avail_count;
+
+	/** Total size of the pool. */
+	const uint16_t pool_size;
+
+	/** Name of the pool. Used when printing pool information. */
+	const char *name;
+#endif /* CONFIG_NET_BUF_POOL_USAGE */
+
 	/** Optional destroy callback when buffer is freed. */
 	void (*const destroy)(struct net_buf *buf);
 
@@ -463,6 +474,22 @@ struct net_buf_pool {
 	struct net_buf * const __bufs;
 };
 
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+#define NET_BUF_POOL_INITIALIZER(_pool, _bufs, _count, _size, _ud_size,      \
+				 _destroy)                                   \
+	{                                                                    \
+		.free = K_LIFO_INITIALIZER(_pool.free),                      \
+		.__bufs = (struct net_buf *)_bufs,                           \
+		.buf_count = _count,                                         \
+		.uninit_count = _count,                                      \
+		.avail_count = _count,                                       \
+		.pool_size = sizeof(_net_buf_pool_##_pool),                  \
+		.buf_size = _size,                                           \
+		.user_data_size = _ud_size,                                  \
+		.destroy = _destroy,                                         \
+		.name = STRINGIFY(_pool),                                    \
+	}
+#else
 #define NET_BUF_POOL_INITIALIZER(_pool, _bufs, _count, _size, _ud_size,      \
 				 _destroy)                                   \
 	{                                                                    \
@@ -474,6 +501,7 @@ struct net_buf_pool {
 		.user_data_size = _ud_size,                                  \
 		.destroy = _destroy,                                         \
 	}
+#endif /* CONFIG_NET_BUF_POOL_USAGE */
 
 /** @def NET_BUF_POOL_DEFINE
  *  @brief Define a new pool for buffers

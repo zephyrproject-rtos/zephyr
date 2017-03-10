@@ -33,11 +33,17 @@
 extern struct net_if __net_if_start[];
 extern struct net_if __net_if_end[];
 
+extern struct k_poll_event __net_if_event_start[];
+extern struct k_poll_event __net_if_event_stop[];
+
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
 
 /* We keep track of the link callbacks in this list.
  */
 static sys_slist_t link_callbacks;
+
+NET_STACK_DEFINE(TX, tx_stack, CONFIG_NET_TX_STACK_SIZE,
+		 CONFIG_NET_TX_STACK_SIZE);
 
 #if defined(CONFIG_NET_DEBUG_IF)
 #define debug_check_packet(buf)						    \
@@ -67,80 +73,155 @@ static inline void net_context_send_cb(struct net_context *context,
 #endif
 }
 
-static void net_if_tx_thread(struct net_if *iface)
+static bool net_if_tx(struct net_if *iface)
 {
 	const struct net_if_api *api = iface->dev->driver_api;
+	struct net_linkaddr *dst;
+	struct net_context *context;
+	struct net_buf *buf;
+	void *context_token;
+	int status;
+#if defined(CONFIG_NET_STATISTICS)
+	size_t pkt_len;
+#endif
 
-	NET_ASSERT(api && api->init && api->send);
+	buf = net_buf_get(&iface->tx_queue, K_NO_WAIT);
+	if (!buf) {
+		return false;
+	}
 
-	NET_DBG("Starting TX thread (stack %zu bytes) for driver %p queue %p",
-		sizeof(iface->tx_stack), api, &iface->tx_queue);
+	debug_check_packet(buf);
 
-	api->init(iface);
-	/* Attempt to bring the interface up */
-	net_if_up(iface);
+	dst = net_nbuf_ll_dst(buf);
+	context = net_nbuf_context(buf);
+	context_token = net_nbuf_token(buf);
+
+	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+#if defined(CONFIG_NET_STATISTICS)
+		pkt_len = net_buf_frags_len(buf);
+#endif
+		status = api->send(iface, buf);
+	} else {
+		/* Drop packet if interface is not up */
+		NET_WARN("iface %p is down", iface);
+		status = -ENETDOWN;
+	}
+
+	if (status < 0) {
+		net_nbuf_unref(buf);
+	} else {
+		net_stats_update_bytes_sent(pkt_len);
+	}
+
+	if (context) {
+		NET_DBG("Calling context send cb %p token %p status %d",
+			context, context_token, status);
+
+		net_context_send_cb(context, context_token, status);
+	}
+
+	net_if_call_link_cb(iface, dst, status);
+
+	return true;
+}
+
+static void net_if_flush_tx(struct net_if *iface)
+{
+	if (k_fifo_is_empty(&iface->tx_queue)) {
+		return;
+	}
+
+	/* Without this, the net_buf_get() can return a buf which
+	 * has buf->frags set to NULL. This is not allowed as we
+	 * cannot send a packet that has no data in it.
+	 * The k_yield() fixes the issue and packets are flushed
+	 * correctly.
+	 */
+	k_yield();
 
 	while (1) {
-		struct net_linkaddr *dst;
-		struct net_context *context;
-		void *context_token;
-		struct net_buf *buf;
-		int status;
-#if defined(CONFIG_NET_STATISTICS)
-		size_t pkt_len;
-#endif
-		/* Get next packet from application - wait if necessary */
-		buf = net_buf_get(&iface->tx_queue, K_FOREVER);
+		if (!net_if_tx(iface)) {
+			break;
+		}
+	}
+}
 
-		debug_check_packet(buf);
+static void net_if_process_events(struct k_poll_event *event, int ev_count)
+{
+	for (; ev_count; event++, ev_count--) {
+		switch (event->state) {
+		case K_POLL_STATE_SIGNALED:
+			break;
+		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
+		{
+			struct net_if *iface;
 
-		dst = net_nbuf_ll_dst(buf);
-		context = net_nbuf_context(buf);
-		context_token = net_nbuf_token(buf);
+			iface = CONTAINER_OF(event->fifo, struct net_if,
+					     tx_queue);
+			net_if_tx(iface);
 
-		if (atomic_test_bit(iface->flags, NET_IF_UP)) {
-#if defined(CONFIG_NET_STATISTICS)
-			pkt_len = net_buf_frags_len(buf);
-#endif
-			status = api->send(iface, buf);
-		} else {
-			/* Drop packet if interface is not up */
-			NET_WARN("iface %p is down", iface);
-			status = -ENETDOWN;
+			break;
+		}
+		case K_POLL_STATE_NOT_READY:
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+static int net_if_prepare_events(void)
+{
+	struct net_if *iface;
+	int ev_count = 0;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+			continue;
 		}
 
-		if (status < 0) {
-			net_nbuf_unref(buf);
-		} else {
-			net_stats_update_bytes_sent(pkt_len);
-		}
+		k_poll_event_init(&__net_if_event_start[ev_count],
+				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &iface->tx_queue);
+		ev_count++;
+	}
 
-		if (context) {
-			NET_DBG("Calling context send cb %p token %p status %d",
-				context, context_token, status);
+	return ev_count;
+}
 
-			net_context_send_cb(context, context_token, status);
-		}
+static void net_if_tx_thread(void)
+{
+	NET_DBG("Starting TX thread (stack %d bytes)",
+		CONFIG_NET_TX_STACK_SIZE);
 
-		net_if_call_link_cb(iface, dst, status);
+	while (1) {
+		int ev_count;
 
-		net_analyze_stack("TX thread", iface->tx_stack,
-				  sizeof(iface->tx_stack));
-		net_nbuf_print();
+		ev_count = net_if_prepare_events();
+
+		k_poll(__net_if_event_start, ev_count, K_FOREVER);
+
+		net_if_process_events(__net_if_event_start, ev_count);
 
 		k_yield();
 	}
 }
 
-static inline void init_tx_queue(struct net_if *iface)
+static inline void init_iface(struct net_if *iface)
 {
+	const struct net_if_api *api = iface->dev->driver_api;
+
+	NET_ASSERT(api && api->init && api->send);
+
 	NET_DBG("On iface %p", iface);
 
 	k_fifo_init(&iface->tx_queue);
 
-	k_thread_spawn(iface->tx_stack, sizeof(iface->tx_stack),
-		       (k_thread_entry_t)net_if_tx_thread,
-		       iface, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	api->init(iface);
+
+	/* Attempt to bring the interface up */
+	net_if_up(iface);
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
@@ -187,9 +268,12 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 
 done:
 	/* The L2 send() function can return
-	 *   NET_OK in which case packet was sent successfully.
-	 *   In that case we need to check if any user callbacks need
-	 *   to be called to mark a successful delivery.
+	 *   NET_OK in which case packet was sent successfully. In this case
+	 *   the net_context callback is called after successful delivery in
+	 *   net_if_tx_thread().
+	 *
+	 *   NET_DROP in which case we call net_context callback that will
+	 *   give the status to user application.
 	 *
 	 *   NET_CONTINUE in which case the sending of the packet is delayed.
 	 *   This can happen for example if we need to do IPv6 ND to figure
@@ -243,6 +327,57 @@ struct net_if *net_if_get_default(void)
 
 #if defined(CONFIG_NET_IPV6)
 
+#if defined(CONFIG_NET_IPV6_MLD)
+static void join_mcast_allnodes(struct net_if *iface)
+{
+	struct in6_addr addr;
+	int ret;
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
+
+	ret = net_ipv6_mld_join(iface, &addr);
+	if (ret < 0 && ret != -EALREADY) {
+		NET_ERR("Cannot join all nodes address %s (%d)",
+			net_sprint_ipv6_addr(&addr), ret);
+	}
+}
+
+static void join_mcast_solicit_node(struct net_if *iface,
+				    struct in6_addr *my_addr)
+{
+	struct in6_addr addr;
+	int ret;
+
+	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
+	net_ipv6_addr_create_solicited_node(my_addr, &addr);
+
+	ret = net_ipv6_mld_join(iface, &addr);
+	if (ret < 0 && ret != -EALREADY) {
+		NET_ERR("Cannot join solicit node address %s (%d)",
+			net_sprint_ipv6_addr(&addr), ret);
+	}
+}
+
+static void leave_mcast_all(struct net_if *iface)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (!iface->ipv6.mcast[i].is_used ||
+		    !iface->ipv6.mcast[i].is_joined) {
+			continue;
+		}
+
+		net_ipv6_mld_leave(iface,
+				   &iface->ipv6.mcast[i].address.in6_addr);
+	}
+}
+#else
+#define join_mcast_allnodes(...)
+#define join_mcast_solicit_node(...)
+#define leave_mcast_all(...)
+#endif /* CONFIG_NET_IPV6_MLD */
+
 #if defined(CONFIG_NET_IPV6_DAD)
 #define DAD_TIMEOUT (MSEC_PER_SEC / 10)
 
@@ -268,6 +403,17 @@ static void dad_timeout(struct k_work *work)
 		 * in this case as the address is our own one.
 		 */
 		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
+
+		/* We join the allnodes group from here so that we have
+		 * a link local address defined. If done from ifup(),
+		 * we would only get unspecified address as a source
+		 * address. The allnodes multicast group is only joined
+		 * once in this case as the net_ipv6_mcast_join() checks
+		 * if we have already joined.
+		 */
+		join_mcast_allnodes(iface);
+
+		join_mcast_solicit_node(iface, &ifaddr->address.in6_addr);
 	}
 }
 
@@ -1118,6 +1264,11 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface)
 		(MAX_RANDOM_FACTOR * iface->base_reachable_time -
 		 MIN_RANDOM_FACTOR * iface->base_reachable_time);
 }
+
+#else /* CONFIG_NET_IPV6 */
+#define join_mcast_allnodes(...)
+#define join_mcast_solicit_node(...)
+#define leave_mcast_all(...)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -1404,6 +1555,10 @@ done:
 #if defined(CONFIG_NET_IPV6_DAD)
 	NET_DBG("Starting DAD for iface %p", iface);
 	net_if_start_dad(iface);
+#else
+	/* Join the IPv6 multicast groups even if DAD is disabled */
+	join_mcast_allnodes(iface);
+	join_mcast_solicit_node(iface, &iface->ipv6.mcast[0].address.in6_addr);
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
@@ -1421,6 +1576,10 @@ int net_if_down(struct net_if *iface)
 	int status;
 
 	NET_DBG("iface %p", iface);
+
+	leave_mcast_all(iface);
+
+	net_if_flush_tx(iface);
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!iface->l2->enable) {
@@ -1448,7 +1607,7 @@ void net_if_init(void)
 	NET_DBG("");
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
-		init_tx_queue(iface);
+		init_iface(iface);
 
 #if defined(CONFIG_NET_IPV4)
 		iface->ttl = CONFIG_NET_INITIAL_TTL;
@@ -1461,6 +1620,11 @@ void net_if_init(void)
 		net_if_ipv6_set_reachable_time(iface);
 #endif
 	}
+
+	k_thread_spawn(tx_stack, sizeof(tx_stack),
+		       (k_thread_entry_t)net_if_tx_thread,
+		       NULL, NULL, NULL, K_PRIO_COOP(7),
+		       K_ESSENTIAL, K_NO_WAIT);
 
 	/* RPL init must be done after the network interface is up
 	 * as the RPL code wants to add multicast address to interface.

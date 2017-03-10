@@ -77,7 +77,14 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto out;
 		}
 
-		pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+#if defined(CONFIG_IEEE802154_NRF5_RAW)
+		/**
+		 * Reserve 1 byte for length
+		 */
+		net_nbuf_set_ll_reserve(buf, 1);
+#endif
+
+		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_ERR("No pkt_buf available");
 			goto out;
@@ -85,10 +92,15 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		net_buf_frag_insert(buf, pkt_buf);
 
-		/* rx_mpdu contains length, psdu, [fcs], lqi
-		 * FCS filed (2 bytes) is not present if CRC is enabled
+		/* rx_mpdu contains length, psdu, fcs|lqi
+		 * The last 2 bytes contain LQI or FCS, depending if
+		 * automatic CRC handling is enabled or not, respectively.
 		 */
+#if defined(CONFIG_IEEE802154_NRF5_RAW)
+		pkt_len = nrf5_radio->rx_psdu[0];
+#else
 		pkt_len = nrf5_radio->rx_psdu[0] -  NRF5_FCS_LENGTH;
+#endif
 
 		/* Skip length (first byte) and copy the payload */
 		memcpy(pkt_buf->data, nrf5_radio->rx_psdu + 1, pkt_len);
@@ -401,6 +413,12 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.get_lqi = nrf5_get_lqi,
 };
 
+#if defined(CONFIG_IEEE802154_NRF5_RAW)
+DEVICE_AND_API_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
+		    nrf5_init, &nrf5_data, &nrf5_radio_cfg,
+		    POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
+		    &nrf5_radio_api);
+#else
 NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		nrf5_init, &nrf5_data, &nrf5_radio_cfg,
 		CONFIG_IEEE802154_NRF5_INIT_PRIO,
@@ -412,3 +430,4 @@ NET_STACK_INFO_ADDR(RX, nrf5_154_radio,
 		    CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
 		    ((struct nrf5_802154_data *)
 		    (&__device_nrf5_154_radio))->rx_stack, 0);
+#endif

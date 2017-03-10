@@ -124,10 +124,12 @@ struct net_icmpv6_nd_opt_6co {
 #define NET_ICMPV6_PARAM_PROBLEM  4	/* IPv6 header is bad */
 #define NET_ICMPV6_ECHO_REQUEST 128
 #define NET_ICMPV6_ECHO_REPLY   129
+#define NET_ICMPV6_MLD_QUERY    130	/* Multicast Listener Query */
 #define NET_ICMPV6_RS           133	/* Router Solicitation */
 #define NET_ICMPV6_RA           134	/* Router Advertisement */
 #define NET_ICMPV6_NS           135	/* Neighbor Solicitation */
 #define NET_ICMPV6_NA           136	/* Neighbor Advertisement */
+#define NET_ICMPV6_MLDv2        143	/* Multicast Listener Report v2 */
 
 /* Codes for ICMPv6 Destination Unreachable message */
 #define NET_ICMPV6_DST_UNREACH_NO_ROUTE  0 /* No route to destination */
@@ -186,7 +188,8 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 				 uint16_t sequence);
 
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
-enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
+void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler);
+enum net_verdict net_icmpv6_input(struct net_buf *buf,
 				  uint8_t type, uint8_t code);
 #if defined(CONFIG_NET_IPV6)
 void net_icmpv6_init(void);

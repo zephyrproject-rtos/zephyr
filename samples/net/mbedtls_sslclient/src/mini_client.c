@@ -140,21 +140,19 @@ static int entropy_source(void *data, unsigned char *output, size_t len,
 			  size_t *olen)
 {
 	uint32_t seed;
-	char *ptr = data;
+
+	ARG_UNUSED(data);
 
 	seed = sys_rand32_get();
 
-	if (!seed) {
-		seed = 7;
+	if (len > sizeof(seed)) {
+		len = sizeof(seed);
 	}
 
-	for (int i = 0; i < len; i++) {
-		seed ^= seed << 13;
-		seed ^= seed >> 17;
-		seed ^= seed << 5;
-		*ptr++ = (char)seed;
-	}
+	memcpy(output, &seed, len);
+
 	*olen = len;
+
 	return 0;
 }
 
@@ -162,6 +160,8 @@ void tls_client(void)
 {
 	int ret = exit_ok;
 	struct tcp_context ctx;
+
+	ctx.timeout = MBEDTLS_NETWORK_TIMEOUT;
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt ca;
@@ -258,11 +258,14 @@ void tls_client(void)
 	 * 1. Start the connection
 	 */
 
-	mbedtls_printf("  . Connecting to tcp %d.%d.%d.%d:%d...",
-		       SERVER_IPADDR0, SERVER_IPADDR1, SERVER_IPADDR2,
-		       SERVER_IPADDR3, SERVER_PORT);
+	mbedtls_printf("  . Connecting to tcp %s...", SERVER_ADDR);
 
-	if (tcp_init(&ctx) != 0) {
+	if (tcp_set_local_addr(&ctx, LOCAL_ADDR) != 0) {
+		printk("tcp set_local_addr error\n");
+		goto exit;
+	}
+
+	if (tcp_init(&ctx, SERVER_ADDR, SERVER_PORT) != 0) {
 		ret = connect_failed;
 		mbedtls_printf(" failed\n  ! tcp_init returned -0x%x\n\n",
 			       -ret);

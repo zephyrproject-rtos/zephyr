@@ -196,6 +196,17 @@ struct net_stats_rpl {
 	struct net_stats_rpl_dao_ack dao_ack;
 };
 
+struct net_stats_ipv6_mld {
+	/** Number of received IPv6 MLD queries */
+	net_stats_t recv;
+
+	/** Number of sent IPv6 MLD reports */
+	net_stats_t sent;
+
+	/** Number of dropped IPv6 MLD packets */
+	net_stats_t drop;
+};
+
 struct net_stats_bytes {
 	uint32_t sent;
 	uint32_t received;
@@ -238,6 +249,10 @@ struct net_stats {
 
 #if defined(CONFIG_NET_STATISTICS_RPL)
 	struct net_stats_rpl rpl;
+#endif
+
+#if defined(CONFIG_NET_IPV6_MLD)
+	struct net_stats_ipv6_mld ipv6_mld;
 #endif
 };
 

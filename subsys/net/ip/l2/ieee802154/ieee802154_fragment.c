@@ -83,7 +83,7 @@ static inline struct net_buf *prepare_new_fragment(struct net_buf *buf,
 {
 	struct net_buf *frag;
 
-	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf), K_FOREVER);
+	frag = net_nbuf_get_frag(buf, K_FOREVER);
 	if (!frag) {
 		return NULL;
 	}
@@ -286,7 +286,7 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 		compact_frag(next, move);
 
 		if (!next->len) {
-			next = net_buf_frag_del(NULL, next);
+			next = net_nbuf_frag_del(NULL, next);
 			if (!next) {
 				break;
 			}
@@ -333,7 +333,9 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 			continue;
 		}
 
-		net_nbuf_unref(cache[i].buf);
+		if (cache[i].buf) {
+			net_nbuf_unref(cache[i].buf);
+		}
 
 		cache[i].buf = NULL;
 		cache[i].size = 0;
@@ -422,8 +424,14 @@ static inline bool copy_frag(struct net_buf *buf,
 
 	while (input) {
 		write = net_nbuf_write(buf, write, pos, &pos, input->len,
-				       input->data, K_FOREVER);
+				       input->data, NET_6LO_RX_NBUF_TIMEOUT);
 		if (!write && pos == 0xffff) {
+			/* Free the new bufs we tried to get, we need to discard
+			 * the whole fragment chain.
+			 */
+			net_nbuf_unref(buf->frags);
+			buf->frags = NULL;
+
 			return false;
 		}
 
@@ -491,6 +499,7 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 		cache = set_reass_cache(buf, size, tag);
 		if (!cache) {
 			NET_ERR("Could not get a cache entry");
+			buf->frags = frag;
 			return NET_DROP;
 		}
 

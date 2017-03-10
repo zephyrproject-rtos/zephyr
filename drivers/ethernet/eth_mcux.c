@@ -142,7 +142,9 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context)
 
 static void eth_mcux_phy_start(struct eth_context *context)
 {
+#ifdef CONFIG_ETH_MCUX_PHY_DETAILED_DEBUG
 	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+#endif
 
 	context->enabled = true;
 
@@ -164,7 +166,9 @@ static void eth_mcux_phy_start(struct eth_context *context)
 
 void eth_mcux_phy_stop(struct eth_context *context)
 {
+#ifdef CONFIG_ETH_MCUX_PHY_DETAILED_DEBUG
 	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+#endif
 
 	context->enabled = false;
 
@@ -199,8 +203,9 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	phy_speed_t phy_speed = kPHY_Speed100M;
 	const uint32_t phy_addr = 0;
 
+#ifdef CONFIG_ETH_MCUX_PHY_DETAILED_DEBUG
 	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
-
+#endif
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
 		break;
@@ -419,7 +424,7 @@ static void eth_rx(struct device *iface)
 		struct net_buf *pkt_buf;
 		size_t frag_len;
 
-		pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
 		if (!pkt_buf) {
 			irq_unlock(imask);
 			SYS_LOG_ERR("Failed to get fragment buf\n");
@@ -519,6 +524,8 @@ static int eth_0_init(struct device *dev)
 	enet_config.interrupt |= kENET_RxFrameInterrupt;
 	enet_config.interrupt |= kENET_TxFrameInterrupt;
 	enet_config.interrupt |= kENET_MiiInterrupt;
+
+#ifdef CONFIG_ETH_MCUX_PROMISCUOUS_MODE
 	/* FIXME: Workaround for lack of driver API support for multicast
 	 * management. So, instead we want to receive all multicast
 	 * frames "by default", or otherwise basic IPv6 features, like
@@ -527,6 +534,7 @@ static int eth_0_init(struct device *dev)
 	 * fix depends on https://jira.zephyrproject.org/browse/ZEP-1673.
 	 */
 	enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
+#endif
 
 #if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 	generate_mac(context->mac_addr);

@@ -76,49 +76,6 @@ static inline const char *addrstate2str(enum net_addr_state addr_state)
 	return "<invalid state>";
 }
 
-#if defined(CONFIG_NET_DHCPV4)
-static inline const char *dhcpv4state2str(enum net_dhcpv4_state state)
-{
-	switch (state) {
-	case NET_DHCPV4_INIT:
-		return "init";
-	case NET_DHCPV4_DISCOVER:
-		return "discover";
-	case NET_DHCPV4_REQUEST:
-		return "request";
-	case NET_DHCPV4_RENEWAL:
-		return "renewal";
-	case NET_DHCPV4_ACK:
-		return "ack";
-	}
-
-	return "<invalid state>";
-}
-#endif /* CONFIG_NET_DHCPV4 */
-
-static void tx_stack(struct net_if *iface, unsigned char *stack,
-		     size_t stack_size)
-{
-	ARG_UNUSED(iface);
-
-#if defined(CONFIG_INIT_STACKS)
-	unsigned int stack_offset, pcnt, unused;
-
-	net_analyze_stack_get_values(stack, stack_size,
-				     &stack_offset, &pcnt, &unused);
-
-	printk("TX stack size %zu/%zu bytes unused %u usage %zu/%zu (%u %%)\n",
-	       stack_size,
-	       stack_size + stack_offset, unused,
-	       stack_size - unused, stack_size, pcnt);
-#else
-	ARG_UNUSED(stack_size);
-	ARG_UNUSED(stack);
-
-	printk("TX stack usage not available.\n");
-#endif
-}
-
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -133,8 +90,6 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	printk("Interface %p\n", iface);
 	printk("====================\n");
-
-	tx_stack(iface, iface->tx_stack, CONFIG_NET_TX_STACK_SIZE);
 
 	printk("Link addr : %s\n", net_sprint_ll_addr(iface->link_addr.addr,
 						      iface->link_addr.len));
@@ -277,7 +232,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	printk("DHCPv4 requested  : %s\n",
 	       net_sprint_ipv4_addr(&iface->dhcpv4.requested_ip));
 	printk("DHCPv4 state      : %s\n",
-	       dhcpv4state2str(iface->dhcpv4.state));
+	       net_dhcpv4_state_name(iface->dhcpv4.state));
 	printk("DHCPv4 attempts   : %d\n", iface->dhcpv4.attempts);
 #endif /* CONFIG_NET_DHCPV4 */
 }
@@ -527,7 +482,58 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 }
 #endif
 
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+static void allocs_cb(struct net_buf *buf,
+		      const char *func_alloc,
+		      int line_alloc,
+		      const char *func_free,
+		      int line_free,
+		      bool in_use,
+		      void *user_data)
+{
+	const char *str;
+
+	if (in_use) {
+		str = "used";
+	} else {
+		if (func_alloc) {
+			str = "free";
+		} else {
+			str = "avail";
+		}
+	}
+
+	if (func_alloc) {
+		if (in_use) {
+			printk("%p/%d\t%5s\t%5s\t%s():%d\n", buf, buf->ref,
+			       str, net_nbuf_pool2str(buf->pool), func_alloc,
+			       line_alloc);
+		} else {
+			printk("%p\t%5s\t%5s\t%s():%d -> %s():%d\n", buf,
+			       str, net_nbuf_pool2str(buf->pool), func_alloc,
+			       line_alloc, func_free, line_free);
+		}
+	}
+}
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
+
 /* Put the actual shell commands after this */
+
+static int shell_cmd_allocs(int argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	printk("Network buffer allocations\n\n");
+	printk("net_buf\t\tStatus\tPool\tFunction alloc -> freed\n");
+	net_nbuf_allocs_foreach(allocs_cb, NULL);
+#else
+	printk("Enable CONFIG_NET_DEBUG_NET_BUF to see allocations.\n");
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
+
+	return 0;
+}
 
 static int shell_cmd_conn(int argc, char *argv[])
 {
@@ -571,40 +577,128 @@ static int shell_cmd_iface(int argc, char *argv[])
 	return 0;
 }
 
+struct ctx_info {
+	int pos;
+	bool are_external_pools;
+	struct net_buf_pool *tx_pools[CONFIG_NET_MAX_CONTEXTS];
+	struct net_buf_pool *data_pools[CONFIG_NET_MAX_CONTEXTS];
+};
+
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+static bool pool_found_already(struct ctx_info *info,
+			       struct net_buf_pool *pool)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_CONTEXTS; i++) {
+		if (info->tx_pools[i] == pool ||
+		    info->data_pools[i] == pool) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif
+
+static void context_info(struct net_context *context, void *user_data)
+{
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+	struct ctx_info *info = user_data;
+	struct net_buf_pool *pool;
+
+	if (!net_context_is_used(context)) {
+		return;
+	}
+
+	if (context->tx_pool) {
+		pool = context->tx_pool();
+
+		if (pool_found_already(info, pool)) {
+			return;
+		}
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+		printk("ETX (%s)\t%d\t%d\t%d\t%p\n",
+		       pool->name, pool->pool_size, pool->buf_count,
+		       pool->avail_count, pool);
+#else
+		printk("ETX     \t%d\t%p\n", pool->buf_count, pool);
+#endif
+		info->are_external_pools = true;
+		info->tx_pools[info->pos] = pool;
+	}
+
+	if (context->data_pool) {
+		pool = context->data_pool();
+
+		if (pool_found_already(info, pool)) {
+			return;
+		}
+
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+		printk("EDATA (%s)\t%d\t%d\t%d\t%p\n",
+		       pool->name, pool->pool_size, pool->buf_count,
+		       pool->avail_count, pool);
+#else
+		printk("EDATA   \t%d\t%p\n", pool->buf_count, pool);
+#endif
+		info->are_external_pools = true;
+		info->data_pools[info->pos] = pool;
+	}
+
+	info->pos++;
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+}
+
 static int shell_cmd_mem(int argc, char *argv[])
 {
-	size_t tx_size, rx_size, data_size;
-	int tx, rx, data;
+	struct net_buf_pool *tx, *rx, *rx_data, *tx_data;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	net_nbuf_get_info(&tx_size, &rx_size, &data_size, &tx, &rx, &data);
+	net_nbuf_get_info(&rx, &tx, &rx_data, &tx_data);
 
 	printk("Fragment length %d bytes\n", CONFIG_NET_NBUF_DATA_SIZE);
 
 	printk("Network buffer pools:\n");
 
-	printk("\tTX\t%zu bytes, %d elements", tx_size,
-	       CONFIG_NET_NBUF_TX_COUNT);
-	if (tx >= 0) {
-		printk(", available %d", tx);
-	}
-	printk("\n");
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
+	printk("Name\t\t\tSize\tCount\tAvail\tAddress\n");
 
-	printk("\tRX\t%zu bytes, %d elements", rx_size,
-	       CONFIG_NET_NBUF_RX_COUNT);
-	if (rx >= 0) {
-		printk(", available %d", rx);
-	}
-	printk("\n");
+	printk("RX (%s)\t\t%d\t%d\t%d\t%p\n",
+	       rx->name, rx->pool_size, rx->buf_count, rx->avail_count, rx);
 
-	printk("\tDATA\t%zu bytes, %d elements", data_size,
-	       CONFIG_NET_NBUF_DATA_COUNT);
-	if (data >= 0) {
-		printk(", available %d", data);
+	printk("TX (%s)\t\t%d\t%d\t%d\t%p\n",
+	       tx->name, tx->pool_size, tx->buf_count, tx->avail_count, tx);
+
+	printk("RX DATA (%s)\t%d\t%d\t%d\t%p\n",
+	       rx_data->name, rx_data->pool_size, rx_data->buf_count,
+	       rx_data->avail_count, rx_data);
+
+	printk("TX DATA (%s)\t%d\t%d\t%d\t%p\n",
+	       tx_data->name, tx_data->pool_size, tx_data->buf_count,
+	       tx_data->avail_count, tx_data);
+#else
+	printk("Name    \tCount\tAddress\n");
+
+	printk("RX      \t%d\t%p\n", rx->buf_count, rx);
+	printk("TX      \t%d\t%p\n", tx->buf_count, tx);
+	printk("RX DATA \t%d\t%p\n", rx_data->buf_count, rx_data);
+	printk("TX DATA \t%d\t%p\n", tx_data->buf_count, tx_data);
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_NBUF_POOL)) {
+		struct ctx_info info;
+
+		memset(&info, 0, sizeof(info));
+		net_context_foreach(context_info, &info);
+
+		if (!info.are_external_pools) {
+			printk("No external memory pools found.\n");
+		}
 	}
-	printk("\n");
 
 	return 0;
 }
@@ -661,11 +755,11 @@ static int shell_cmd_nbr(int argc, char *argv[])
 	if (count == 0) {
 		printk("No neighbors.\n");
 	}
-
-	return 0;
 #else
 	printk("IPv6 not enabled.\n");
 #endif /* CONFIG_NET_IPV6 */
+
+	return 0;
 }
 
 static int shell_cmd_ping(int argc, char *argv[])
@@ -769,6 +863,11 @@ static int shell_cmd_route(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_INIT_STACKS)
+extern char _main_stack[];
+extern char _interrupt_stack[];
+#endif
+
 static int shell_cmd_stacks(int argc, char *argv[])
 {
 #if defined(CONFIG_INIT_STACKS)
@@ -795,6 +894,24 @@ static int shell_cmd_stacks(int argc, char *argv[])
 #endif
 	}
 
+#if defined(CONFIG_INIT_STACKS)
+	net_analyze_stack_get_values(_main_stack, CONFIG_MAIN_STACK_SIZE,
+				     &stack_offset, &pcnt, &unused);
+	printk("%s [%s] stack size %d/%d bytes unused %u usage"
+	       " %d/%d (%u %%)\n",
+	       "main", "_main_stack", CONFIG_MAIN_STACK_SIZE,
+	       CONFIG_MAIN_STACK_SIZE + stack_offset, unused,
+	       CONFIG_MAIN_STACK_SIZE - unused, CONFIG_MAIN_STACK_SIZE, pcnt);
+
+	net_analyze_stack_get_values(_interrupt_stack, CONFIG_ISR_STACK_SIZE,
+				     &stack_offset, &pcnt, &unused);
+	printk("%s [%s] stack size %d/%d bytes unused %u usage"
+	       " %d/%d (%u %%)\n",
+	       "ISR", "_interrupt_stack", CONFIG_ISR_STACK_SIZE,
+	       CONFIG_ISR_STACK_SIZE + stack_offset, unused,
+	       CONFIG_ISR_STACK_SIZE - unused, CONFIG_ISR_STACK_SIZE, pcnt);
+#endif
+
 	return 0;
 }
 
@@ -818,6 +935,7 @@ static int shell_cmd_help(int argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	/* Keep the commands in alphabetical order */
+	printk("net allocs\n\tPrint network buffer allocations\n");
 	printk("net conn\n\tPrint information about network connections\n");
 	printk("net iface\n\tPrint information about network interfaces\n");
 	printk("net mem\n\tPrint network buffer information\n");
@@ -831,6 +949,7 @@ static int shell_cmd_help(int argc, char *argv[])
 
 static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
+	{ "allocs", shell_cmd_allocs, NULL },
 	{ "conn", shell_cmd_conn, NULL },
 	{ "help", shell_cmd_help, NULL },
 	{ "iface", shell_cmd_iface, NULL },

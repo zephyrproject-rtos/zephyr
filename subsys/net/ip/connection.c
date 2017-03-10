@@ -662,11 +662,21 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 	}
 #endif
 
-	NET_DBG("Check %s listener for buf %p src port %u dst port %u "
-		"family %d", proto2str(proto), buf,
-		ntohs(NET_CONN_BUF(buf)->src_port),
-		ntohs(NET_CONN_BUF(buf)->dst_port),
-		net_nbuf_family(buf));
+	if (IS_ENABLED(CONFIG_NET_DEBUG_CONN)) {
+		uint16_t chksum;
+
+		if (proto == IPPROTO_TCP) {
+			chksum = NET_TCP_BUF(buf)->chksum;
+		} else {
+			chksum = NET_UDP_BUF(buf)->chksum;
+		}
+
+		NET_DBG("Check %s listener for buf %p src port %u dst port %u "
+			"family %d chksum 0x%04x", proto2str(proto), buf,
+			ntohs(NET_CONN_BUF(buf)->src_port),
+			ntohs(NET_CONN_BUF(buf)->dst_port),
+			net_nbuf_family(buf), ntohs(chksum));
+	}
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
 		if (!(conns[i].flags & NET_CONN_IN_USE)) {

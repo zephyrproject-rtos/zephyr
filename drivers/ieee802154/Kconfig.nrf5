@@ -1,12 +1,30 @@
 # Kconfig.nrf5 - Nordic Semiconductor nRF5 802.15.4 configuration options
 #
 
-menuconfig IEEE802154_NRF5
-	bool "nRF52 series IEEE 802.15.4 Driver support"
+choice IEEE802154_NRF5_DRIVER_SUPPORT
+	prompt "nRF52 series IEEE 802.15.4 Driver support"
 	depends on NETWORKING && SOC_NRF52840
+	default IEEE802154_NRF5_DISABLED
+
+config IEEE802154_NRF5_DISABLED
+	bool "Driver disabled"
+
+config IEEE802154_NRF5
+	bool "Regular mode"
 	select NET_L2_IEEE802154
 	select HAS_NORDIC_DRIVERS
-	default n
+
+config IEEE802154_NRF5_RAW
+	bool "RAW mode"
+	select NET_L2_RAW_CHANNEL
+	select HAS_NORDIC_DRIVERS
+	help
+	Enable IEEE802154_CC2520 driver with RAW channel
+
+	The CC2520 driver with RAW channel allows to export radio interface
+	over USB making an USB 802.15.4 dongle.
+
+endchoice
 
 if IEEE802154_NRF5 || IEEE802154_NRF5_RAW
 

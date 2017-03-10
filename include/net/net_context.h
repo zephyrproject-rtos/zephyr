@@ -139,6 +139,19 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
 					 int status,
 					 void *user_data);
 
+/* The net_nbuf_get_pool_func_t is here in order to avoid circular
+ * dependency between nbuf.h and net_context.h
+ */
+/**
+ * @typedef net_nbuf_get_pool_func_t
+ *
+ * @brief Function that is called to get the pool that is used
+ * for net_buf allocations.
+ *
+ * @return Pointer to valid struct net_buf_pool instance.
+ */
+typedef struct net_buf_pool *(*net_nbuf_get_pool_func_t)(void);
+
 struct net_tcp;
 
 struct net_conn_handle;
@@ -183,6 +196,16 @@ struct net_context {
 	/** User data.
 	 */
 	void *user_data;
+
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+	/** Get TX net_buf pool for this context.
+	 */
+	net_nbuf_get_pool_func_t tx_pool;
+
+	/** Get DATA net_buf pool for this context.
+	 */
+	net_nbuf_get_pool_func_t data_pool;
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	/**
@@ -696,6 +719,35 @@ typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
  * @param user_data User specified data.
  */
 void net_context_foreach(net_context_cb_t cb, void *user_data);
+
+/**
+ * @brief Create network buffer pool that is used by the IP stack
+ * to allocate network buffers that are used by the context when
+ * sending data to network.
+ *
+ * @param context Context that will use the given net_buf pools.
+ * @param tx_pool Pointer to the function that will return TX pool
+ * to the caller. The TX pool is used when sending data to network.
+ * There is one TX net_buf for each network packet that is sent.
+ * @param data_pool Pointer to the function that will return DATA pool
+ * to the caller. The DATA pool is used to store data that is sent to
+ * the network.
+ */
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+static inline void net_context_setup_pools(struct net_context *context,
+					   net_nbuf_get_pool_func_t tx_pool,
+					   net_nbuf_get_pool_func_t data_pool)
+{
+	NET_ASSERT(context);
+	NET_ASSERT(tx_pool);
+	NET_ASSERT(data_pool);
+
+	context->tx_pool = tx_pool;
+	context->data_pool = data_pool;
+}
+#else
+#define net_context_setup_pools(context, tx_pool, data_pool)
+#endif
 
 #ifdef __cplusplus
 }

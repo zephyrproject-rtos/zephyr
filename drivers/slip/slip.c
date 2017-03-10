@@ -298,7 +298,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 				return 0;
 			}
 
-			slip->last = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+			slip->last = net_nbuf_get_frag(slip->rx, K_NO_WAIT);
 			if (!slip->last) {
 				net_nbuf_unref(slip->rx);
 				slip->rx = NULL;
@@ -316,7 +316,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 		/* We need to allocate a new fragment */
 		struct net_buf *frag;
 
-		frag = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+		frag = net_nbuf_get_reserve_rx_data(0, K_NO_WAIT);
 		if (!frag) {
 			SYS_LOG_ERR("[%p] cannot allocate data fragment",
 				    slip);

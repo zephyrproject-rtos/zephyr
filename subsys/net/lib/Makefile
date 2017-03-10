@@ -10,6 +10,6 @@ ifdef CONFIG_MQTT_LIB
 include $(srctree)/subsys/net/lib/mqtt/Makefile
 endif
 
-ifdef CONFIG_HTTP_PARSER
+ifdef CONFIG_HTTP
 include $(srctree)/subsys/net/lib/http/Makefile
 endif

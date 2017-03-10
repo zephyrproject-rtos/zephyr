@@ -604,10 +604,9 @@ static void cc2520_rx(int arg)
 		/**
 		 * Reserve 1 byte for length
 		 */
-		pkt_buf = net_nbuf_get_reserve_data(1, K_NO_WAIT);
-#else
-		pkt_buf = net_nbuf_get_reserve_data(0, K_NO_WAIT);
+		net_nbuf_set_ll_reserve(buf, 1);
 #endif
+		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_ERR("No pkt_buf available");
 			goto flush;

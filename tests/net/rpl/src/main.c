@@ -326,8 +326,7 @@ static bool test_dio_dummy_input(void)
 
 	set_buf_ll_addr(net_if_get_default()->dev, buf);
 
-	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags),
-			       NET_ICMPV6_RPL, msg_sending);
+	ret = net_icmpv6_input(buf, NET_ICMPV6_RPL, msg_sending);
 	if (!ret) {
 		TC_ERROR("%d: Callback in %s not called properly\n", __LINE__,
 			 __func__);

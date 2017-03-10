@@ -149,6 +149,17 @@ config NET_MAX_CONTEXTS
 	is used when listening or sending network traffic. This is very
 	similar as one could call a network socket in some other systems.
 
+config NET_CONTEXT_NBUF_POOL
+	bool "Enable net_buf TX pool / context"
+	default n
+	help
+	If enabled, then it is possible to fine-tune network buffer pool
+	for each context when sending network data. If this setting is
+	enabled, then you should define the context pools in your application
+	using NET_NBUF_TX_POOL_DEFINE() and NET_NBUF_DATA_POOL_DEFINE()
+	macros and tie these pools to desired context using the
+	net_context_setup_pools() function.
+
 config NET_CONTEXT_SYNC_RECV
 	bool "Support synchronous functionality in net_context_recv() API"
 	default y
@@ -232,8 +243,15 @@ config NET_NBUF_TX_COUNT
 	Each TX buffer will occupy smallish amount of memory.
 	See include/net/nbuf.h and the sizeof(struct nbuf)
 
-config NET_NBUF_DATA_COUNT
-	int "How many network data buffers are allocated"
+config NET_NBUF_RX_DATA_COUNT
+	int "How many network data buffers are allocated for receiving data"
+	default 16
+	help
+	Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish
+	header (sizeof(struct net_buf)) amount of data.
+
+config NET_NBUF_TX_DATA_COUNT
+	int "How many network data buffers are allocated for sending data"
 	default 16
 	help
 	Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish

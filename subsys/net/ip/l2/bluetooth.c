@@ -52,29 +52,12 @@ struct bt_context {
 
 static enum net_verdict net_bt_recv(struct net_if *iface, struct net_buf *buf)
 {
-	uint32_t src;
-	uint32_t dst;
-
 	NET_DBG("iface %p buf %p len %u", iface, buf, net_buf_frags_len(buf));
-
-	/* Uncompress will drop the current fragment. Buf ll src/dst address
-	 * will then be wrong and must be updated according to the new fragment.
-	 */
-	src = net_nbuf_ll_src(buf)->addr ?
-		net_nbuf_ll_src(buf)->addr - net_nbuf_ll(buf) : 0;
-	dst = net_nbuf_ll_dst(buf)->addr ?
-		net_nbuf_ll_dst(buf)->addr - net_nbuf_ll(buf) : 0;
 
 	if (!net_6lo_uncompress(buf)) {
 		NET_DBG("Packet decompression failed");
 		return NET_DROP;
 	}
-
-	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
-	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
-
-	net_nbuf_ll_src(buf)->type = NET_LINK_BLUETOOTH;
-	net_nbuf_ll_dst(buf)->type = NET_LINK_BLUETOOTH;
 
 	return NET_CONTINUE;
 }
@@ -200,10 +183,12 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* Set destination address */
 	net_nbuf_ll_dst(nbuf)->addr = ctxt->src.val;
 	net_nbuf_ll_dst(nbuf)->len = sizeof(ctxt->src);
+	net_nbuf_ll_dst(nbuf)->type = NET_LINK_BLUETOOTH;
 
 	/* Set source address */
 	net_nbuf_ll_src(nbuf)->addr = ctxt->dst.val;
 	net_nbuf_ll_src(nbuf)->len = sizeof(ctxt->dst);
+	net_nbuf_ll_src(nbuf)->type = NET_LINK_BLUETOOTH;
 
 	/* Add data buffer as fragment of RX buffer, take a reference while
 	 * doing so since L2CAP will unref the buffer after return.
@@ -220,7 +205,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_nbuf_get_reserve_data(0, K_FOREVER);
+	return net_nbuf_get_reserve_rx_data(0, K_FOREVER);
 }
 
 static struct bt_l2cap_chan_ops ipsp_ops = {

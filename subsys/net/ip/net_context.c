@@ -68,7 +68,7 @@ static struct net_context contexts[NET_MAX_CONTEXT];
  */
 static struct k_sem contexts_lock;
 
-enum net_verdict packet_received(struct net_conn *conn,
+static enum net_verdict packet_received(struct net_conn *conn,
 				 struct net_buf *buf,
 				 void *user_data);
 
@@ -442,6 +442,16 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 {
 	NET_ASSERT(addr);
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
+
+	/* If we already have connection handler, then it effectively
+	 * means that it's already bound to an interface/port, and we
+	 * don't support rebinding connection to new address/port in
+	 * the code below.
+	 * TODO: Support rebinding.
+	 */
+	if (context->conn_handler) {
+		return -EISCONN;
+	}
 
 #if defined(CONFIG_NET_IPV6)
 	if (addr->family == AF_INET6) {
@@ -1189,6 +1199,17 @@ static void buf_get_sockaddr(sa_family_t family, struct net_buf *buf,
 #endif
 }
 
+#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+static inline void copy_pool_vars(struct net_context *new_context,
+				  struct net_context *listen_context)
+{
+	new_context->tx_pool = listen_context->tx_pool;
+	new_context->data_pool = listen_context->data_pool;
+}
+#else
+#define copy_pool_vars(...)
+#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+
 /* This callback is called when we are waiting connections and we receive
  * a packet. We need to check if we are receiving proper msg (SYN) here.
  * The ACK could also be received, in which case we have an established
@@ -1394,6 +1415,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		tmp_tcp->accept_cb = tcp->accept_cb;
 		tcp->accept_cb = NULL;
 		new_context->tcp = tcp;
+		copy_pool_vars(new_context, context);
 		context->tcp = tmp_tcp;
 
 		tcp->context = new_context;
@@ -1538,7 +1560,7 @@ static int send_data(struct net_context *context,
 	context->user_data = user_data;
 	net_nbuf_set_token(buf, token);
 
-	if (!timeout || net_context_get_ip_proto(context) == IPPROTO_UDP) {
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
 		return net_send_data(buf);
 	}
 
@@ -1797,7 +1819,7 @@ static void set_appdata_values(struct net_buf *buf,
 			net_nbuf_appdatalen(buf), total_len);
 }
 
-enum net_verdict packet_received(struct net_conn *conn,
+static enum net_verdict packet_received(struct net_conn *conn,
 				 struct net_buf *buf,
 				 void *user_data)
 {
@@ -1812,8 +1834,10 @@ enum net_verdict packet_received(struct net_conn *conn,
 	if (context->recv_cb) {
 		size_t total_len = net_buf_frags_len(buf);
 
-		/* TCP packets get appdata earlier in tcp_established() */
 		if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
+			/* TCP packets get appdata earlier in
+			 * tcp_established().
+			 */
 			if (net_nbuf_family(buf) == AF_INET6) {
 				set_appdata_values(buf,
 						   NET_IPV6_BUF(buf)->nexthdr,
@@ -1824,6 +1848,14 @@ enum net_verdict packet_received(struct net_conn *conn,
 						   total_len);
 			}
 		}
+#if defined(CONFIG_NET_TCP)
+		else if (net_context_get_type(context) == SOCK_STREAM) {
+			if (net_nbuf_appdatalen(buf) == 0) {
+				net_nbuf_unref(buf);
+				return NET_OK;
+			}
+		}
+#endif /* CONFIG_NET_TCP */
 
 		NET_DBG("Set appdata %p to len %u (total %zu)",
 			net_nbuf_appdata(buf), net_nbuf_appdatalen(buf),

@@ -22,7 +22,6 @@
 #include "ipv4.h"
 
 struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
-				    uint16_t reserve,
 				    const struct in_addr *src,
 				    const struct in_addr *dst,
 				    struct net_if *iface,
@@ -30,7 +29,7 @@ struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
 {
 	struct net_buf *header;
 
-	header = net_nbuf_get_reserve_data(reserve, K_FOREVER);
+	header = net_nbuf_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_insert(buf, header);
 
@@ -72,7 +71,6 @@ struct net_buf *net_ipv4_create(struct net_context *context,
 	}
 
 	return net_ipv4_create_raw(buf,
-				   net_nbuf_ll_reserve(buf),
 				   src,
 				   dst,
 				   net_context_get_iface(context),
