@@ -121,7 +121,7 @@ config IDLE_STACK_SIZE
 	int
 	prompt "Size of stack for idle thread"
 	default 256
-	default 320 if ARC
+	default 320 if ARC || (ARM && CPU_HAS_FPU)
 	default 512 if RISCV32
 	default 1024 if XTENSA
 	help
