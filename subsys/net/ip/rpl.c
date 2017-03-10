@@ -552,7 +552,11 @@ int net_rpl_dio_send(struct net_if *iface,
 			dag->prefix_info.length);
 	}
 
-	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	if (ret < 0) {
+		net_nbuf_unref(buf);
+		return ret;
+	}
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {
@@ -748,7 +752,11 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 			  &pos, 0);
 	net_nbuf_write_u8(buf, buf->frags, pos, &pos, 0);
 
-	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	if (ret < 0) {
+		net_nbuf_unref(buf);
+		return ret;
+	}
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {
@@ -3012,7 +3020,11 @@ int net_rpl_dao_send(struct net_if *iface,
 	net_nbuf_append_u8(buf, 0); /* path seq */
 	net_nbuf_append_u8(buf, lifetime);
 
-	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	if (ret < 0) {
+		net_nbuf_unref(buf);
+		return ret;
+	}
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {
@@ -3106,7 +3118,11 @@ static int dao_ack_send(struct net_buf *orig,
 	net_nbuf_append_u8(buf, sequence);
 	net_nbuf_append_u8(buf, 0); /* status */
 
-	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	if (ret < 0) {
+		net_nbuf_unref(buf);
+		return ret;
+	}
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {

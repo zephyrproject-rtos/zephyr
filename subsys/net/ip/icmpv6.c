@@ -339,7 +339,9 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
-	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	if (net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6) < 0) {
+		goto drop;
+	}
 
 #if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
@@ -358,6 +360,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		return 0;
 	}
 
+drop:
 	net_nbuf_unref(buf);
 	net_stats_update_icmp_drop();
 

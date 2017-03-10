@@ -397,7 +397,9 @@ static bool net_test_send_na(struct net_if *iface,
 
 	NET_ICMPV6_NA_BUF(buf)->flags = NET_ICMPV6_NA_FLAG_SOLICITED;
 
-	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	if (net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6) < 0) {
+		return false;
+	}
 
 	if (net_send_data(buf) < 0) {
 		TC_ERROR("Cannot send NA buffer\n");

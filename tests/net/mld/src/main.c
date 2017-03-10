@@ -332,7 +332,7 @@ static void send_query(struct net_if *iface)
 	net_nbuf_append_be16(buf, 0); /* Resv, S, QRV and QQIC */
 	net_nbuf_append_be16(buf, 0); /* number of addresses */
 
-	buf = net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
+	net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
 
 	net_nbuf_set_iface(buf, iface);
 

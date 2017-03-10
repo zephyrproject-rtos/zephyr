@@ -63,10 +63,9 @@ struct net_buf *net_ipv4_create(struct net_context *context,
  * @param buf Network buffer
  * @param next_header Protocol type of the next header after IPv4 header.
  *
- * @return Return network buffer that contains the IPv4 packet.
+ * @return Return 0 on Success, < 0 on Failure.
  */
-struct net_buf *net_ipv4_finalize_raw(struct net_buf *buf,
-				      uint8_t next_header);
+int net_ipv4_finalize_raw(struct net_buf *buf, uint8_t next_header);
 
 /**
  * @brief Finalize IPv4 packet. It should be called right before
@@ -77,9 +76,8 @@ struct net_buf *net_ipv4_finalize_raw(struct net_buf *buf,
  * @param context Network context for a connection
  * @param buf Network buffer
  *
- * @return Return network buffer that contains the IPv4 packet.
+ * @return Return 0 on Success, < 0 on Failure.
  */
-struct net_buf *net_ipv4_finalize(struct net_context *context,
-				  struct net_buf *buf);
+int net_ipv4_finalize(struct net_context *context, struct net_buf *buf);
 
 #endif /* __IPV4_H */

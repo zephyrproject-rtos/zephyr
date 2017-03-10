@@ -235,20 +235,22 @@ static inline uint8_t net_tcp_add_options(struct net_buf *header, size_t len,
 	return optlen;
 }
 
-static void finalize_segment(struct net_context *context, struct net_buf *buf)
+static int finalize_segment(struct net_context *context, struct net_buf *buf)
 {
 #if defined(CONFIG_NET_IPV4)
 	if (net_nbuf_family(buf) == AF_INET) {
-		net_ipv4_finalize(context, buf);
+		return net_ipv4_finalize(context, buf);
 	} else
 #endif
 #if defined(CONFIG_NET_IPV6)
 	if (net_nbuf_family(buf) == AF_INET6) {
-		net_ipv6_finalize(context, buf);
+		return net_ipv6_finalize(context, buf);
 	}
 #endif
 	{
 	}
+
+	return 0;
 }
 
 static struct net_buf *prepare_segment(struct net_tcp *tcp,
@@ -329,7 +331,10 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		net_buf_frag_add(buf, tail);
 	}
 
-	finalize_segment(context, buf);
+	if (finalize_segment(context, buf) < 0) {
+		net_nbuf_unref(buf);
+		return NULL;
+	}
 
 	net_tcp_trace("", buf);
 
@@ -421,6 +426,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	segment.optlen = optlen;
 
 	*send_buf = prepare_segment(tcp, &segment, *send_buf);
+	if (!*send_buf) {
+		return -EINVAL;
+	}
 
 	tcp->send_seq = seq;
 
@@ -523,10 +531,9 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 
 		net_tcp_set_syn_opt(tcp, options, &optionlen);
 
-		net_tcp_prepare_segment(tcp, NET_TCP_SYN | NET_TCP_ACK,
-					options, optionlen, NULL, remote, buf);
-		break;
-
+		return net_tcp_prepare_segment(tcp, NET_TCP_SYN | NET_TCP_ACK,
+					       options, optionlen, NULL, remote,
+					       buf);
 	case NET_TCP_FIN_WAIT_1:
 	case NET_TCP_LAST_ACK:
 		/* In the FIN_WAIT_1 and LAST_ACK states acknowledgment must
@@ -534,17 +541,14 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 		 */
 		tcp->send_seq--;
 
-		net_tcp_prepare_segment(tcp, NET_TCP_FIN | NET_TCP_ACK,
-					0, 0, NULL, remote, buf);
-		break;
-
+		return net_tcp_prepare_segment(tcp, NET_TCP_FIN | NET_TCP_ACK,
+					       0, 0, NULL, remote, buf);
 	default:
-		net_tcp_prepare_segment(tcp, NET_TCP_ACK, 0, 0, NULL, remote,
-					buf);
-		break;
+		return net_tcp_prepare_segment(tcp, NET_TCP_ACK, 0, 0, NULL,
+					       remote, buf);
 	}
 
-	return 0;
+	return -EINVAL;
 }
 
 int net_tcp_prepare_reset(struct net_tcp *tcp,

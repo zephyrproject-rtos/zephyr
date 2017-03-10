@@ -404,8 +404,7 @@ struct net_buf *net_ipv6_create(struct net_context *context,
 				   net_context_get_ip_proto(context));
 }
 
-struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
-				      uint8_t next_header)
+int net_ipv6_finalize_raw(struct net_buf *buf, uint8_t next_header)
 {
 	/* Set the length of the IPv6 header */
 	size_t total_len;
@@ -415,6 +414,7 @@ struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
 		/* Check if we need to add RPL header to sent UDP packet. */
 		if (net_rpl_insert_header(buf) < 0) {
 			NET_DBG("RPL HBHO insert failed");
+			return -EINVAL;
 		}
 	}
 #endif
@@ -448,14 +448,12 @@ struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
 							     IPPROTO_ICMPV6);
 	}
 
-	return buf;
+	return 0;
 }
 
-struct net_buf *net_ipv6_finalize(struct net_context *context,
-				  struct net_buf *buf)
+int net_ipv6_finalize(struct net_context *context, struct net_buf *buf)
 {
-	return net_ipv6_finalize_raw(buf,
-				     net_context_get_ip_proto(context));
+	return net_ipv6_finalize_raw(buf, net_context_get_ip_proto(context));
 }
 
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -2379,7 +2377,10 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 	/* Insert the actual multicast record(s) here */
 	net_buf_frag_add(buf, frags);
 
-	buf = net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
+	ret = net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	net_nbuf_set_ext_len(buf, ROUTER_ALERT_LEN);
 
@@ -2389,17 +2390,20 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 
 	ret = net_send_data(buf);
 	if (ret < 0) {
-		net_nbuf_unref(buf);
-		net_stats_update_icmp_drop();
-		net_stats_update_ipv6_mld_drop();
-
-		return ret;
+		goto drop;
 	}
 
 	net_stats_update_icmp_sent();
 	net_stats_update_ipv6_mld_sent();
 
 	return 0;
+
+drop:
+	net_nbuf_unref(buf);
+	net_stats_update_icmp_drop();
+	net_stats_update_ipv6_mld_drop();
+
+	return ret;
 }
 
 static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,

@@ -1589,13 +1589,15 @@ static int create_udp_packet(struct net_context *context,
 			     const struct sockaddr *dst_addr,
 			     struct net_buf **out_buf)
 {
+	int r = 0;
+
 #if defined(CONFIG_NET_IPV6)
 	if (net_nbuf_family(buf) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		buf = net_ipv6_create(context, buf, NULL, &addr6->sin6_addr);
 		buf = net_udp_append(context, buf, ntohs(addr6->sin6_port));
-		buf = net_ipv6_finalize(context, buf);
+		r = net_ipv6_finalize(context, buf);
 	} else
 #endif /* CONFIG_NET_IPV6 */
 
@@ -1605,7 +1607,7 @@ static int create_udp_packet(struct net_context *context,
 
 		buf = net_ipv4_create(context, buf, NULL, &addr4->sin_addr);
 		buf = net_udp_append(context, buf, ntohs(addr4->sin_port));
-		buf = net_ipv4_finalize(context, buf);
+		r = net_ipv4_finalize(context, buf);
 	} else
 #endif /* CONFIG_NET_IPV4 */
 	{
@@ -1614,7 +1616,7 @@ static int create_udp_packet(struct net_context *context,
 
 	*out_buf = buf;
 
-	return 0;
+	return r;
 }
 #endif /* CONFIG_NET_UDP */
 
