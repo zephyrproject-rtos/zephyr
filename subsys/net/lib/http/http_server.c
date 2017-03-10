@@ -89,12 +89,12 @@ int http_response(struct http_server_ctx *ctx, const char *http_header,
 		if (rc != 0) {
 			goto exit_routine;
 		}
-	}
 
-	/* like EOF */
-	rc = http_add_chunk(tx, ctx->timeout, NULL);
-	if (rc != 0) {
-		goto exit_routine;
+		/* like EOF */
+		rc = http_add_chunk(tx, ctx->timeout, NULL);
+		if (rc != 0) {
+			goto exit_routine;
+		}
 	}
 
 	rc = net_context_send(tx, NULL, 0, NULL, NULL);
