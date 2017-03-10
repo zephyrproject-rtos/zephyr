@@ -11,6 +11,7 @@
  */
 
 #include <zephyr.h>
+#include <stdlib.h>
 #include <shell/shell.h>
 
 #include <net/net_if.h>
@@ -731,9 +732,40 @@ static int shell_cmd_nbr(int argc, char *argv[])
 {
 #if defined(CONFIG_NET_IPV6)
 	int count = 0;
+	int arg = 1;
 
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+	if (strcmp(argv[0], "nbr")) {
+		arg++;
+	}
+
+	if (argv[arg]) {
+		struct in6_addr addr;
+		int ret;
+
+		if (strcmp(argv[arg], "rm")) {
+			printk("Unknown command '%s'\n", argv[arg]);
+			return 0;
+		}
+
+		if (!argv[++arg]) {
+			printk("Neighbor IPv6 address missing.\n");
+			return 0;
+		}
+
+		ret = net_addr_pton(AF_INET6, argv[arg], &addr);
+		if (ret < 0) {
+			printk("Cannot parse '%s'\n", argv[arg]);
+			return 0;
+		}
+
+		if (!net_ipv6_nbr_rm(net_if_get_default(), &addr)) {
+			printk("Cannot remove neighbor %s\n",
+			       net_sprint_ipv6_addr(&addr));
+		} else {
+			printk("Neighbor %s removed.\n",
+			       net_sprint_ipv6_addr(&addr));
+		}
+	}
 
 	net_ipv6_nbr_foreach(nbr_cb, &count);
 
@@ -925,6 +957,7 @@ static int shell_cmd_help(int argc, char *argv[])
 	printk("net iface\n\tPrint information about network interfaces\n");
 	printk("net mem\n\tPrint network buffer information\n");
 	printk("net nbr\n\tPrint neighbor information\n");
+	printk("net nbr rm <IPv6 address>\n\tRemove neighbor from cache\n");
 	printk("net ping <host>\n\tPing a network host\n");
 	printk("net route\n\tShow network routes\n");
 	printk("net stacks\n\tShow network stacks information\n");
