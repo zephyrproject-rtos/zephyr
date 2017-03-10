@@ -220,15 +220,10 @@ static inline int dns_answer_class(uint16_t dname_size, uint8_t *answer)
 
 static inline int dns_answer_ttl(uint16_t dname_size, uint8_t *answer)
 {
-	return htonl(UNALIGNED_GET((uint32_t *)(answer + dname_size + 4)));
+	return ntohl(UNALIGNED_GET((uint32_t *)(answer + dname_size + 4)));
 }
 
-static inline int dns_answer_rdlength(uint16_t dname_size, uint8_t *answer)
-{
-	return htons(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
-}
-
-static inline int dns_unpack_answer_rdlength(uint16_t dname_size,
+static inline int dns_answer_rdlength(uint16_t dname_size,
 					     uint8_t *answer)
 {
 	return ntohs(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
