@@ -86,9 +86,18 @@
 /*****************************************************************************
  * Controller Interface Defines
  ****************************************************************************/
-#define RADIO_BLE_VERSION_NUMBER	(0x08)
-#define RADIO_BLE_COMPANY_ID		(0xFFFF)
-#define RADIO_BLE_SUB_VERSION_NUMBER	(0xFFFF)
+#define RADIO_BLE_VERSION_NUMBER        0x08
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_COMPANY_ID)
+#define RADIO_BLE_COMPANY_ID            CONFIG_BLUETOOTH_CONTROLLER_COMPANY_ID
+#else
+#define RADIO_BLE_COMPANY_ID            0xFFFF
+#endif
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER)
+#define RADIO_BLE_SUB_VERSION_NUMBER \
+				CONFIG_BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
+#else
+#define RADIO_BLE_SUB_VERSION_NUMBER    0xFFFF
+#endif
 
 #define RADIO_BLE_FEATURES              (BIT(BT_LE_FEAT_BIT_ENC) | \
 					 BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ) | \
