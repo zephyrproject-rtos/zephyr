@@ -3,7 +3,8 @@
 # This script is loosly based on a script with same purpose provided
 # by RIOT-OS (https://github.com/RIOT-OS/RIOT)
 
-OPENOCD_CMD="${OPENOCD:-openocd} -s ${OPENOCD_DEFAULT_PATH}"
+OPENOCD=${OPENOCD:-openocd}
+OPENOCD_CMD="${OPENOCD}${OPENOCD_DEFAULT_PATH:+ -s $OPENOCD_DEFAULT_PATH}"
 OPENOCD_CONFIG=${ZEPHYR_BASE}/boards/${ARCH}/${BOARD_NAME}/support/openocd.cfg
 BIN_NAME=${O}/${KERNEL_BIN_NAME}
 ELF_NAME=${O}/${KERNEL_ELF_NAME}
@@ -13,7 +14,7 @@ test_config() {
         echo "Error: Unable to locate OpenOCD configuration file: ${OPENOCD_CONFIG}"
         exit 1
     fi
-    if [ ! -f "${OPENOCD}" ]; then
+    if ! which ${OPENOCD} >/dev/null 2>&1; then
         echo "Error: Unable to locate OpenOCD executable: ${OPENOCD}"
         exit 1
     fi
