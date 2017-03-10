@@ -151,7 +151,7 @@ static void udp_received(struct net_context *context,
 
 	offset = net_nbuf_appdata(buf) - net_nbuf_ip_data(buf);
 
-	frag = net_nbuf_read_be32(frag, offset, &pos, &hdr.id);
+	frag = net_nbuf_read_be32(frag, offset, &pos, (uint32_t *)&hdr.id);
 	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.tv_sec);
 	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.tv_usec);
 
