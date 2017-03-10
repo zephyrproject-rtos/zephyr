@@ -615,25 +615,27 @@ static int test_nbuf_read_append(void)
 	tfrag = net_buf_frag_last(buf->frags);
 	off = tfrag->len;
 
-	if (!net_nbuf_append(buf, sizeof(test_rw_short), test_rw_short,
-			     K_FOREVER)) {
+	if (!net_nbuf_append(buf, (uint16_t)sizeof(test_rw_short),
+			     test_rw_short, K_FOREVER)) {
 		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_nbuf_append(buf, sizeof(test_rw_short), test_rw_short,
-			     K_FOREVER)) {
+	if (!net_nbuf_append(buf, (uint16_t)sizeof(test_rw_short),
+			     test_rw_short, K_FOREVER)) {
 		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
-	tfrag = net_nbuf_skip(tfrag, off, &tpos, sizeof(test_rw_short));
+	tfrag = net_nbuf_skip(tfrag, off, &tpos,
+			      (uint16_t)sizeof(test_rw_short));
 	if (!tfrag) {
 		printk("net_nbuf_skip failed\n");
 		return -EINVAL;
 	}
 
-	tfrag = net_nbuf_read(tfrag, tpos, &tpos, sizeof(test_rw_short),
+	tfrag = net_nbuf_read(tfrag, tpos, &tpos,
+			      (uint16_t)sizeof(test_rw_short),
 			      verify_rw_short);
 	if (memcmp(test_rw_short, verify_rw_short, sizeof(test_rw_short))) {
 		printk("net_nbuf_read failed with mismatch data");
@@ -651,13 +653,13 @@ static int test_nbuf_read_append(void)
 	tfrag = net_buf_frag_last(buf->frags);
 	off = tfrag->len;
 
-	if (!net_nbuf_append(buf, sizeof(test_rw_long), test_rw_long,
+	if (!net_nbuf_append(buf, (uint16_t)sizeof(test_rw_long), test_rw_long,
 			     K_FOREVER)) {
 		printk("net_nbuf_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_nbuf_append(buf, sizeof(test_rw_long), test_rw_long,
+	if (!net_nbuf_append(buf, (uint16_t)sizeof(test_rw_long), test_rw_long,
 			     K_FOREVER)) {
 		printk("net_nbuf_append failed\n");
 		return -EINVAL;
@@ -666,19 +668,21 @@ static int test_nbuf_read_append(void)
 	/* Try to pass fragment to net_nbuf_append(), this should fail
 	 * as we always need to pass the first buf into it.
 	 */
-	if (net_nbuf_append(buf->frags, sizeof(test_rw_short), test_rw_short,
-			    K_FOREVER)) {
+	if (net_nbuf_append(buf->frags, (uint16_t)sizeof(test_rw_short),
+			    test_rw_short, K_FOREVER)) {
 		printk("net_nbuf_append succeed but should have failed\n");
 		return -EINVAL;
 	}
 
-	tfrag = net_nbuf_skip(tfrag, off, &tpos, sizeof(test_rw_long));
+	tfrag = net_nbuf_skip(tfrag, off, &tpos,
+			      (uint16_t)sizeof(test_rw_long));
 	if (!tfrag) {
 		printk("net_nbuf_skip failed\n");
 		return -EINVAL;
 	}
 
-	tfrag = net_nbuf_read(tfrag, tpos, &tpos, sizeof(test_rw_long),
+	tfrag = net_nbuf_read(tfrag, tpos, &tpos,
+			      (uint16_t)sizeof(test_rw_long),
 			      verify_rw_long);
 	if (memcmp(test_rw_long, verify_rw_long, sizeof(test_rw_long))) {
 		printk("net_nbuf_read failed with mismatch data");
