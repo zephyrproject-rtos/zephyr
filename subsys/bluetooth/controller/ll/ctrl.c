@@ -2036,7 +2036,9 @@ static inline void isr_rx_conn(uint8_t crc_ok, uint8_t trx_done,
 			}
 		}
 	}
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+	ARG_UNUSED(rssi_ready);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 	/* Increment packet counter for this connection event */
 	_radio.packet_counter++;
