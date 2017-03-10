@@ -150,7 +150,10 @@ Documentation
 * Site-wide glossary added.
 * Porting guides added.
 * Sample README files converted to documents included in the website.
-* Improved consistency of board and sample documentation.
+* Improved consistency of :ref:`boards` and `samples documentation`_.
+
+.. _samples documentation: https:/zephyrproject.org/doc/samples/samples.html
+
 
 JIRA Related Items
 ==================
@@ -266,7 +269,7 @@ JIRA Related Items
 * :jira:`ZEP-1305` - Add DTS/DTB targets to build infrastructure
 * :jira:`ZEP-1306` - Create DTS/DTB parser
 * :jira:`ZEP-1307` - Plumbing the DTS configuration
-* :jira:`ZEP-1308` - zephyr thread function k_sleep does'nt work with nrf51822
+* :jira:`ZEP-1308` - zephyr thread function k_sleep doesn't work with nrf51822
 * :jira:`ZEP-1320` - Update Architecture Porting Guide
 * :jira:`ZEP-1321` - Glossary of Terms needs updating
 * :jira:`ZEP-1323` - Eliminate references to fiber, task, and nanokernel under ./include
@@ -314,7 +317,7 @@ JIRA Related Items
 * :jira:`ZEP-1437` - AIO: Fail to retrieve pending interrupt in ISR
 * :jira:`ZEP-1440` - Kconfig choice for MINIMAL_LIBC vs NEWLIB_LIBC is not selectable
 * :jira:`ZEP-1442` - Samples/net/dhcpv4_client: Build fail as No rule to make target prj\_.conf
-* :jira:`ZEP-1443` - Samples/net/zperf: Build fail as net_private.h can not be founld
+* :jira:`ZEP-1443` - Samples/net/zperf: Build fail as net_private.h can not be found
 * :jira:`ZEP-1448` - Samples/net/mbedtls_sslclient:Build fail as net/ip_buf.h can not be found
 * :jira:`ZEP-1449` - samples: logger_hook
 * :jira:`ZEP-1456` - Asserts on nrf51 running Bluetooth hci_uart sample
@@ -329,8 +332,8 @@ JIRA Related Items
 * :jira:`ZEP-1480` - Update supported distros in getting started guide
 * :jira:`ZEP-1481` - Bluetooth fails to init
 * :jira:`ZEP-1483` - H:4 HCI driver (h4.c) should rely on UART flow control to avoid dropping packets
-* :jira:`ZEP-1487` - I2C_SS: I2C doesn's set device busy before starting data transfer
-* :jira:`ZEP-1488` - SPI_SS: SPI doesn's set device busy before starting data transfer
+* :jira:`ZEP-1487` - I2C_SS: I2C doesn't set device busy before starting data transfer
+* :jira:`ZEP-1488` - SPI_SS: SPI doesn't set device busy before starting data transfer
 * :jira:`ZEP-1489` - [GATT] Nested Long Characteristic Value Reliable Writes
 * :jira:`ZEP-1490` - [PTS] TC_CONN_CPUP_BV_04_C test case is failing
 * :jira:`ZEP-1492` - Add Atmel SAM family GMAC Ethernet driver
@@ -355,6 +358,7 @@ JIRA Related Items
 * :jira:`ZEP-1546` - Bug in Zephyr OS high-precision timings sub-system (function sys_cycle_get_32())
 * :jira:`ZEP-1547` - Add support for H7 crypto function and CT2 SMP auth flag
 * :jira:`ZEP-1548` - Python script invocation is inconsistent
+* :jira:`ZEP-1549` - k_cpu_sleep_mode unaligned byte address
 * :jira:`ZEP-1554` - Xtensa integration
 * :jira:`ZEP-1557` - RISC V Port
 * :jira:`ZEP-1558` - Support of user private data pointer in Timer expiry function
@@ -397,19 +401,20 @@ JIRA Related Items
 * :jira:`ZEP-1645` - API to wait on multiple kernel objects
 * :jira:`ZEP-1648` - Update links to wiki pages for board info back into the web docs
 * :jira:`ZEP-1650` - make clean (or pristine) is not removing all artifacts of document generation
+* :jira:`ZEP-1651` - i2c_dw malfunctioning due to various changes.
 * :jira:`ZEP-1653` - build issue when compiling with LLVM in ISSM (altmacro)
 * :jira:`ZEP-1654` - Build issues when compiling with LLVM(unknown attribute '_alloc_align_)
 * :jira:`ZEP-1655` - Build issues when compiling with LLVM(memory pool)
 * :jira:`ZEP-1656` - IPv6 over BLE no longer works after commit 2e9fd88
 * :jira:`ZEP-1657` - Zoap doxygen documentation needs to be perfected
-* :jira:`ZEP-1658` - IPv6 TCP low on buffers, stops responding after about 5 requesets
+* :jira:`ZEP-1658` - IPv6 TCP low on buffers, stops responding after about 5 requests
 * :jira:`ZEP-1662` - zoap_packet_get_payload() should return the payload length
 * :jira:`ZEP-1663` - sanitycheck overrides user's environment for CCACHE
 * :jira:`ZEP-1665` - pinmux: missing default pinmux driver config for quark_se_ss
 * :jira:`ZEP-1669` - API documentation does not follow in-code documentation style
 * :jira:`ZEP-1672` - flash: Flash device binding failed on Arduino_101_sss
 * :jira:`ZEP-1674` - frdm_k64f: With Ethernet driver enabled, application can't start up without connected network cable
-* :jira:`ZEP-1677` - SDK: BLE cannot be initialized/advertized with CONFIG_ARC_INIT=y on Arduino 101
+* :jira:`ZEP-1677` - SDK: BLE cannot be initialized/advertised with CONFIG_ARC_INIT=y on Arduino 101
 * :jira:`ZEP-1681` - Save/restore debug registers during soc_sleep/soc_deep_sleep in c1000
 * :jira:`ZEP-1692` - [PTS] GATT/SR/GPA/BV-11-C fails
 * :jira:`ZEP-1701` - Provide an HTTP API
@@ -421,7 +426,7 @@ JIRA Related Items
 * :jira:`ZEP-1710` - Add TinyTILE board support
 * :jira:`ZEP-1713` - xtensa: correct all checkpatch issues
 * :jira:`ZEP-1716` - HTTP server sample that does not support up to 10 concurrent sessions.
-* :jira:`ZEP-1717` - GPIO: GPIO LEVEL interrput cannot work well in deep sleep mode
+* :jira:`ZEP-1717` - GPIO: GPIO LEVEL interrupt cannot work well in deep sleep mode
 * :jira:`ZEP-1723` - Warnings in Network code/ MACROS, when built with ISSM's  llvm/icx compiler
 * :jira:`ZEP-1732` - sample of zoap_server runs error.
 * :jira:`ZEP-1733` - Work on ZEP-686 led to regressions in docs on integration with 3rd-party code
@@ -437,7 +442,9 @@ JIRA Related Items
 * :jira:`ZEP-1778` - tests/power: multicore case won't work as expected
 * :jira:`ZEP-1786` - TCP does not work on Arduino 101 board.
 * :jira:`ZEP-1787` - kernel event logger build failed with "CONFIG_LEGACY_KERNEL=n"
-* :jira:`ZEP-1799` - timeout_order_test _ASSERT_VALID_PRIO falied
+* :jira:`ZEP-1789` - ARC: "samples/logger-hook" crashed __memory_error from sys_ring_buf_get
+* :jira:`ZEP-1799` - timeout_order_test _ASSERT_VALID_PRIO failed
+* :jira:`ZEP-1803` - Error occurs when exercising dma_transfer_stop
 * :jira:`ZEP-1806` - Build warnings with LLVM/icx (gdb_server)
 * :jira:`ZEP-1809` - Build error in net/ip with LLVM/icx
 * :jira:`ZEP-1810` - Build failure in net/lib/zoap with LLVM/icx
@@ -445,10 +452,13 @@ JIRA Related Items
 * :jira:`ZEP-1839` - LL_ASSERT in event_common_prepareA
 * :jira:`ZEP-1851` - Build warnings with obj_tracing
 * :jira:`ZEP-1852` - LL_ASSERT in isr_radio_state_close()
+* :jira:`ZEP-1855` - IP stack buffer allocation fails over time
 * :jira:`ZEP-1858` - Zephyr NATS client fails to respond to  server MSG
 * :jira:`ZEP-1864` - llvm icx build warning in tests/drivers/uart/*
 * :jira:`ZEP-1872` - samples/net: the HTTP client sample app must run on QEMU x86
+* :jira:`ZEP-1877` - samples/net: the coaps_server sample app runs failed on Arduino 101
 * :jira:`ZEP-1883` - Enabling Console on ARC Genuino 101
+* :jira:`ZEP-1890` - Bluetooth IPSP sample: Too small user data size
 
 
 .. _zephyr_1.6:
@@ -457,7 +467,7 @@ Zephyr Kernel 1.6.0
 ********************
 
 We are pleased to announce the release of Zephyr kernel version 1.6.0. This
-release introduces a the unified Kernel replacing the separate nano- and
+release introduces the unified Kernel replacing the separate nano- and
 micro-kernels and simplifying the overall Zephyr architecture and programming
 interfaces.
 Support for the ARM Cortex-M0/M0+ family was added and board support for
