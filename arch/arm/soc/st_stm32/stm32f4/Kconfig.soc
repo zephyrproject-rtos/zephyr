@@ -22,3 +22,23 @@ config SOC_STM32F429XX
 	bool "STM32F429XX"
 
 endchoice
+
+config STM32_ARM_MPU_ENABLE
+	bool "Enable MPU"
+	depends on CPU_HAS_MPU
+	select ARM_MPU
+	default n
+	help
+	  Enable MPU
+
+choice
+prompt "Configure Bootloader Options"
+depends on MPU_ENABLE
+
+config BL_BOOTLOADER
+	bool "Build the Bootloader"
+
+config BL_APPLICATION
+	bool "Build an Application"
+
+endchoice
