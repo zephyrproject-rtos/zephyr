@@ -134,7 +134,7 @@ config IDLE_STACK_SIZE
 	int
 	prompt "Size of stack for idle thread"
 	default 256
-	default 320 if ARC
+	default 320 if ARC || (ARM && CPU_HAS_FPU)
 	help
 	Depending on the work that the idle task must do, most likely due to
 	power management but possibly to other features like system event
