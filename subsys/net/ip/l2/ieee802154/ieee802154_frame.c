@@ -115,8 +115,8 @@ validate_addr(uint8_t *buf, uint8_t **p_buf,
 }
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
-static inline struct ieee802154_aux_security_hdr *
-validate_auxiliary_security_header(uint8_t *buf, uint8_t **p_buf)
+struct ieee802154_aux_security_hdr *
+ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf)
 {
 	struct ieee802154_aux_security_hdr *ash =
 		(struct ieee802154_aux_security_hdr *)buf;
@@ -399,7 +399,7 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	if (mpdu->mhr.fs->fc.security_enabled) {
 		mpdu->mhr.aux_sec =
-			validate_auxiliary_security_header(p_buf, &p_buf);
+			ieee802154_validate_aux_security_hdr(p_buf, &p_buf);
 		if (!mpdu->mhr.aux_sec) {
 			return false;
 		}

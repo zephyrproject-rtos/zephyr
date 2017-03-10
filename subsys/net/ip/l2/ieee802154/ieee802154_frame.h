@@ -448,6 +448,11 @@ struct ieee802154_frame_params {
 	uint16_t pan_id;
 } __packed;
 
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+struct ieee802154_aux_security_hdr *
+ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf);
+#endif
+
 bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 			       struct ieee802154_mpdu *mpdu);
 
