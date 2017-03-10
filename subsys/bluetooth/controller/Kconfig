@@ -87,6 +87,11 @@ config BLUETOOTH_CONTROLLER_CONN_RSSI
 	help
 	  Enable connection RSSI measurement.
 
+config BLUETOOTH_CONTROLLER_ADV_INDICATION
+	bool "Advertisement indications"
+	help
+	  Generate events indicating on air advertisement events.
+
 comment "BLE Controller debug configuration"
 
 config BLUETOOTH_CONTROLLER_ASSERT_HANDLER

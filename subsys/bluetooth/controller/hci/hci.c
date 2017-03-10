@@ -1127,6 +1127,12 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		return;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
+	case NODE_RX_TYPE_ADV_INDICATION:
+		BT_INFO("Advertised.");
+		return;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
 		BT_INFO("l: %d, %d, %d; t: %d, %d, %d.",

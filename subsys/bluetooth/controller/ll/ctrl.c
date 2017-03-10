@@ -2673,6 +2673,25 @@ static inline void isr_radio_state_close(void)
 	switch (_radio.role) {
 	case ROLE_ADV:
 		dont_close = isr_close_adv();
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
+		if (!dont_close) {
+			struct radio_pdu_node_rx *radio_pdu_node_rx;
+
+			radio_pdu_node_rx = packet_rx_reserve_get(3);
+			if (radio_pdu_node_rx) {
+				radio_pdu_node_rx->hdr.type =
+					NODE_RX_TYPE_ADV_INDICATION;
+				radio_pdu_node_rx->hdr.handle = 0xFFFF;
+				/* TODO: add other info by defining a payload
+				 * structure.
+				 */
+
+				packet_rx_enqueue();
+			}
+		}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION */
+
 		break;
 
 	case ROLE_OBS:
@@ -7940,6 +7959,10 @@ void radio_rx_dequeue(void)
 	case NODE_RX_TYPE_PROFILE:
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
+	case NODE_RX_TYPE_ADV_INDICATION:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION */
+
 		/* release data link credit quota */
 		LL_ASSERT(_radio.link_rx_data_quota <
 			  (_radio.packet_rx_count - 1));
@@ -7987,6 +8010,10 @@ void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 		case NODE_RX_TYPE_PROFILE:
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
+		case NODE_RX_TYPE_ADV_INDICATION:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION */
 
 			mem_release(_radio_pdu_node_rx_free,
 				    &_radio.pkt_rx_data_free);
