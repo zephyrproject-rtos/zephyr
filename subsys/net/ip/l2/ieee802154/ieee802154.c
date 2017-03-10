@@ -28,6 +28,7 @@
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt.h"
+#include "ieee802154_security.h"
 
 #if 0
 
@@ -255,6 +256,10 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	set_buf_ll_addr(net_nbuf_ll_dst(buf), false,
 			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
+	if (!ieee802154_decipher_data_frame(iface, buf, &mpdu)) {
+		return NET_DROP;
+	}
+
 	pkt_hexdump(buf, true);
 
 	return ieee802154_manage_recv_buffer(iface, buf);
@@ -316,6 +321,12 @@ void ieee802154_init(struct net_if *iface)
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
 	ieee802154_mgmt_init(iface);
+
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	if (ieee802154_security_init(&ctx->sec_ctx)) {
+		NET_ERR("Initializing link-layer security failed");
+	}
+#endif
 
 	sys_memcpy_swap(long_addr, mac, 8);
 
