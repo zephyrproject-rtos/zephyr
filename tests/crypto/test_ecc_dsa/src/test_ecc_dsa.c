@@ -562,7 +562,7 @@ int montecarlo_signverify(uint32_t num, int verbose)
 	uint32_t l_private[NUM_ECC_DIGITS];
 
 	uint32_t l_hash[NUM_ECC_DIGITS];
-	uint32_t l_random[NUM_ECC_DIGITS];
+	uint32_t l_random[2 * NUM_ECC_DIGITS];
 
 	uint32_t r[NUM_ECC_DIGITS];
 	uint32_t s[NUM_ECC_DIGITS];
@@ -571,11 +571,11 @@ int montecarlo_signverify(uint32_t num, int verbose)
 	ARG_UNUSED(verbose);
 
 	for (uint32_t i = 0; i < num; ++i) {
-		random_bytes(l_random, NUM_ECC_DIGITS);
+		random_bytes(l_random, 2 * NUM_ECC_DIGITS);
 		ecc_make_key(&l_public, l_private, l_random);
 
 		random_bytes(l_hash, NUM_ECC_DIGITS);
-		random_bytes(l_random, NUM_ECC_DIGITS);
+		random_bytes(l_random, 2 * NUM_ECC_DIGITS);
 
 		if (!ecdsa_sign(r, s, l_private, l_random, l_hash)) {
 			TC_PRINT("ecdsa_sign() failed\n");
