@@ -80,7 +80,7 @@ extern "C" {
 
 /**
  * @brief Create a public/private key pair.
- * @return returns TC_CRYPTO_SUCCESS (1) if the key pair was generated successfully
+ * @return returns TC_CRYPTO_SUCCESS (1) if key pair was generated successfully
  *         returns TC_CRYPTO_FAIL (0) if:
  *                the private key is 0
  *
@@ -90,13 +90,15 @@ extern "C" {
  *
  * @note You must use a new non-predictable random number to generate each
  * new key pair.
+ * @note p_random must have NUM_ECC_DIGITS*2 bits of entropy to eliminate
+ * bias in keys.
  *
  * @note side-channel countermeasure: algorithm strengthened against timing
  * attack.
  */
 int32_t ecc_make_key(EccPoint *p_publicKey,
 		     uint32_t p_privateKey[NUM_ECC_DIGITS],
-		     uint32_t p_random[NUM_ECC_DIGITS]);
+		     uint32_t p_random[2 * NUM_ECC_DIGITS]);
 
 /**
  * @brief Determine whether or not a given point is on the chosen elliptic curve
@@ -106,7 +108,8 @@ int32_t ecc_make_key(EccPoint *p_publicKey,
  *         returns -2 if:  curve_p - p_publicKey->x != 1 or
  *                            curve_p - p_publicKey->y != 1
  *         returns -3 if: y^2 != x^3 + ax + b
-
+ *         returns -4 if: public key is the group generator
+ *
  * @param p_publicKey IN -- The point to be checked.
  */
 int32_t ecc_valid_public_key(EccPoint *p_publicKey);
@@ -114,7 +117,7 @@ int32_t ecc_valid_public_key(EccPoint *p_publicKey);
 /**
  * @brief Compute a shared secret given your secret key and someone else's
  * public key.
- * @return returns TC_CRYPTO_SUCCESS (1) if the shared secret was computed successfully
+ * @return returns TC_CRYPTO_SUCCESS (1) if the secret was computed successfully
  *         returns TC_CRYPTO_FAIL (0) otherwise
  *
  * @param p_secret OUT -- The shared secret value.
@@ -125,12 +128,9 @@ int32_t ecc_valid_public_key(EccPoint *p_publicKey);
  * attacks. The random multiplier should probably be different for each
  * invocation of ecdh_shared_secret().
  *
- * @note It is recommended that you hash the result of ecdh_shared_secret before
- * using it for symmetric encryption or HMAC. If you do not hash the shared
- * secret, you must call ecc_valid_public_key() to verify that the remote side's
- * public key is valid. If this is not done, an attacker could create a public
- * key that would cause your use of the shared secret to leak information about
- * the private key.
+ * @warning It is recommended to use the output of ecdh_shared_secret() as the
+ * input of a recommended Key Derivation Function (see NIST SP 800-108) in
+ * order to produce a symmetric key.
  */
 int32_t ecdh_shared_secret(uint32_t p_secret[NUM_ECC_DIGITS], EccPoint *p_publicKey,
 			   uint32_t p_privateKey[NUM_ECC_DIGITS]);

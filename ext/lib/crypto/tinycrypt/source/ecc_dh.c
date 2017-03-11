@@ -35,23 +35,28 @@
 extern uint32_t curve_p[NUM_ECC_DIGITS];
 extern uint32_t curve_b[NUM_ECC_DIGITS];
 extern uint32_t curve_n[NUM_ECC_DIGITS];
+extern uint32_t curve_pb[NUM_ECC_DIGITS + 1];
 extern EccPoint curve_G;
 
 int32_t ecc_make_key(EccPoint *p_publicKey, uint32_t p_privateKey[NUM_ECC_DIGITS],
-		     uint32_t p_random[NUM_ECC_DIGITS])
+			 uint32_t p_random[NUM_ECC_DIGITS * 2])
 {
+  /* computing modular reduction of p_random (see FIPS 186.4 B.4.1): */
+  vli_mmod_barrett(p_privateKey, p_random, curve_p, curve_pb);
 
 	/* Make sure the private key is in the range [1, n-1].
 	 * For the supported curve, n is always large enough
 	 * that we only need to subtract once at most.
 	 */
 	uint32_t p_tmp[NUM_ECC_DIGITS];
-
-	vli_set(p_privateKey, p_random);
 	vli_sub(p_tmp, p_privateKey, curve_n, NUM_ECC_DIGITS);
 
 	vli_cond_set(p_privateKey, p_privateKey, p_tmp,
 		     vli_cmp(curve_n, p_privateKey, NUM_ECC_DIGITS) == 1);
+
+  /* erasing temporary buffer used to store secret: */
+  for (uint32_t i = 0; i < NUM_ECC_DIGITS; i++)
+    p_tmp[i] = 0;
 
 	if (vli_isZero(p_privateKey)) {
 		return TC_CRYPTO_FAIL; /* The private key cannot be 0 (mod p). */
@@ -59,7 +64,7 @@ int32_t ecc_make_key(EccPoint *p_publicKey, uint32_t p_privateKey[NUM_ECC_DIGITS
 
 	EccPointJacobi P;
 
-	EccPoint_mult(&P, &curve_G, p_privateKey);
+	EccPoint_mult_safe(&P, &curve_G, p_privateKey);
 	EccPoint_toAffine(p_publicKey, &P);
 
 	return TC_CRYPTO_SUCCESS;
@@ -102,6 +107,10 @@ int32_t ecc_valid_public_key(EccPoint *p_publicKey)
 		return -3;
 	}
 
+	if (vli_cmp(p_publicKey->x, curve_G.x, NUM_ECC_DIGITS) == 0 &&
+	   vli_cmp(p_publicKey->y, curve_G.y, NUM_ECC_DIGITS) == 0 )
+		return -4;
+
 	return 0;
 }
 
@@ -112,7 +121,7 @@ int32_t ecdh_shared_secret(uint32_t p_secret[NUM_ECC_DIGITS],
 	EccPoint p_point;
 	EccPointJacobi P;
 
-	EccPoint_mult(&P, p_publicKey, p_privateKey);
+	EccPoint_mult_safe(&P, p_publicKey, p_privateKey);
 	if (EccPointJacobi_isZero(&P)) {
 		return TC_CRYPTO_FAIL;
 	}
