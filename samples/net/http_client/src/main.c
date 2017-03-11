@@ -27,6 +27,8 @@ void main(void)
 	int i = MAX_ITERATIONS;
 	int rc;
 
+	printk("Wait for network device to settle...\n");
+	k_sleep(K_SECONDS(6));
 	http_init(&http_ctx);
 	http_ctx.tcp_ctx.receive_cb = http_receive_cb;
 	http_ctx.tcp_ctx.timeout = HTTP_NETWORK_TIMEOUT;
