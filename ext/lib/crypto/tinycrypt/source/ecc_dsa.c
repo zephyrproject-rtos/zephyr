@@ -56,7 +56,7 @@ int32_t ecdsa_sign(uint32_t r[NUM_ECC_DIGITS], uint32_t s[NUM_ECC_DIGITS],
 	vli_cond_set(k, k, tmp, vli_cmp(curve_n, k, NUM_ECC_DIGITS) == 1);
 
 	/* tmp = k * G */
-	EccPoint_mult(&P, &curve_G, k);
+	EccPoint_mult_safe(&P, &curve_G, k);
 	EccPoint_toAffine(&p_point, &P);
 
 	/* r = x1 (mod n) */
@@ -101,17 +101,15 @@ int32_t ecdsa_verify(EccPoint *p_publicKey, uint32_t p_hash[NUM_ECC_DIGITS],
 	vli_modMult(u2, r, z, curve_n, curve_nb); /* u2 = r/s */
 
 	/* calculate P = u1*G + u2*Q */
-	EccPoint_mult(&P, &curve_G, u1);
-	EccPoint_mult(&R, p_publicKey, u2);
+	EccPoint_mult_unsafe(&P, &curve_G, u1);
+	EccPoint_mult_unsafe(&R, p_publicKey, u2);
 	EccPoint_add(&P, &R);
 	EccPoint_toAffine(&p_point, &P);
 
 	/* Accept only if P.x == r. */
-	vli_cond_set(
-		p_point.x,
-		p_point.x,
-		z,
-		vli_sub(z, p_point.x, curve_n, NUM_ECC_DIGITS));
+	if (!vli_sub(z, p_point.x, curve_n, NUM_ECC_DIGITS)) {
+	  vli_set(p_point.x, z);
+	}
 
 	return (vli_cmp(p_point.x, r, NUM_ECC_DIGITS) == 0);
 }

@@ -55,14 +55,11 @@ void _set(void *to, uint8_t val, uint32_t len)
 }
 
 /*
- * Doubles the value of a byte for values up to 127. Original 'return
- * ((a<<1) ^ ((a>>7) * 0x1b))' re-written to avoid extra multiplication which
- * the compiler won't be able to optimize
+ * Doubles the value of a byte for values up to 127.
  */
 uint8_t _double_byte(uint8_t a)
 {
-	return (a & MASK_MOST_SIG_BIT) ?
-		((a << 1) ^ MASK_TWENTY_SEVEN) : (a << 1);
+	return ((a<<1) ^ ((a>>7) * MASK_TWENTY_SEVEN));
 }
 
 int32_t _compare(const uint8_t *a, const uint8_t *b, size_t size)

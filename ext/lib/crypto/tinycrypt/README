@@ -3,7 +3,7 @@ open source project.  The original upstream code can be found at:
 
 https://github.com/01org/tinycrypt
 
-At revision c7b1dca2b27070dfb5f92e56dab7a91a7afee18c, version 0.2.5
+At revision e6cffb820b91578d9816fc0bcc8f72f32f6ee76b, version 0.2.6
 
 Any changes to the local version should include Zephyr's TinyCrypt
 maintainer in the review.  That can be found via the git history.

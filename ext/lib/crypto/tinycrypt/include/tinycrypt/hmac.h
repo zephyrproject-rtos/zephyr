@@ -125,6 +125,7 @@ int32_t tc_hmac_update(TCHmacState_t ctx,
  *                ctx == NULL or
  *                key == NULL or
  *                taglen != TC_SHA256_DIGEST_SIZE
+ *  @note 'ctx' is erased before exiting (this must never be changed/removed).
  *  @note Assumes the tag bufer is at least sizeof(hmac_tag_size(state)) bytes
  *  state has been initialized by tc_hmac_init
  *  @param tag IN/OUT -- buffer to receive computed HMAC tag

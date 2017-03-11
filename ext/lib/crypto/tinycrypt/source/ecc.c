@@ -97,7 +97,9 @@ static void vli_clear(uint32_t *p_vli)
 	}
 }
 
-/* Returns nonzero if bit p_bit of p_vli is set. */
+/* Returns nonzero if bit p_bit of p_vli is set.
+ * It is assumed that the value provided in 'bit' is within
+ * the boundaries of the word-array 'p_vli'.*/
 static uint32_t vli_testBit(uint32_t *p_vli, uint32_t p_bit)
 {
 	return (p_vli[p_bit / 32] & (1 << (p_bit % 32)));
@@ -235,7 +237,7 @@ static void vli_square(uint32_t *p_result, uint32_t *p_left)
 }
 
 /* Computes p_result = p_product % curve_p using Barrett reduction. */
-static void vli_mmod_barrett(uint32_t *p_result, uint32_t *p_product,
+void vli_mmod_barrett(uint32_t *p_result, uint32_t *p_product,
 			     uint32_t *p_mod, uint32_t *p_barrett)
 {
 	uint32_t i;
@@ -547,7 +549,7 @@ void EccPoint_add(EccPointJacobi *P1, EccPointJacobi *P2)
  *
  * p_result = p_scalar * p_point.
  */
-void EccPoint_mult(EccPointJacobi *p_result, EccPoint *p_point, uint32_t *p_scalar)
+void EccPoint_mult_safe(EccPointJacobi *p_result, EccPoint *p_point, uint32_t *p_scalar)
 {
 
 	int32_t i;
@@ -566,6 +568,25 @@ void EccPoint_mult(EccPointJacobi *p_result, EccPoint *p_point, uint32_t *p_scal
 		vli_cond_set(p_result->Y, p_tmp.Y, p_result->Y, bit);
 		vli_cond_set(p_result->Z, p_tmp.Z, p_result->Z, bit);
 	}
+}
+
+/* Ellptic curve scalar multiplication with result in Jacobi coordinates */
+/* p_result = p_scalar * p_point */
+void EccPoint_mult_unsafe(EccPointJacobi *p_result, EccPoint *p_point, uint32_t *p_scalar)
+{
+  int i;
+  EccPointJacobi p_point_jacobi;
+  EccPoint_fromAffine(p_result, p_point);
+  EccPoint_fromAffine(&p_point_jacobi, p_point);
+
+  for(i = vli_numBits(p_scalar) - 2; i >= 0; i--)
+  {
+    EccPoint_double(p_result);
+    if (vli_testBit(p_scalar, i))
+    {
+      EccPoint_add(p_result, &p_point_jacobi);
+    }
+  }
 }
 
 /* -------- Conversions between big endian and little endian: -------- */
