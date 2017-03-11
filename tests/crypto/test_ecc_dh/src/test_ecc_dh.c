@@ -356,6 +356,8 @@ int cavp_pkv(int verbose)
 int montecarlo_ecdh(uint32_t num, int verbose)
 {
 	EccPoint l_Q1, l_Q2; /* public keys */
+	uint32_t l_random1[2 * NUM_ECC_DIGITS];
+	uint32_t l_random2[2 * NUM_ECC_DIGITS];
 	uint32_t l_secret1[NUM_ECC_DIGITS];
 	uint32_t l_secret2[NUM_ECC_DIGITS];
 
@@ -365,11 +367,11 @@ int montecarlo_ecdh(uint32_t num, int verbose)
 	int rc = TC_FAIL;
 
 	for (uint32_t i = 0; i < num; ++i) {
-		random_bytes(l_secret1, NUM_ECC_DIGITS);
-		random_bytes(l_secret2, NUM_ECC_DIGITS);
+		random_bytes(l_random1, 2 * NUM_ECC_DIGITS);
+		random_bytes(l_random2, 2 * NUM_ECC_DIGITS);
 
-		ecc_make_key(&l_Q1, l_secret1, l_secret1);
-		ecc_make_key(&l_Q2, l_secret2, l_secret2);
+		ecc_make_key(&l_Q1, l_secret1, l_random1);
+		ecc_make_key(&l_Q2, l_secret2, l_random2);
 
 		if (!ecdh_shared_secret(l_shared1, &l_Q1, l_secret2)) {
 			TC_PRINT("shared_secret() failed (1)\n");
