@@ -79,10 +79,12 @@
 extern "C" {
 #endif
 
+/* Word size (4 bytes considering 32-bits architectures) */
+#define WORD_SIZE 4
 /* Number of words of 32 bits to represent an element of the the curve p-256: */
 #define NUM_ECC_DIGITS 8
 /* Number of bytes to represent an element of the the curve p-256: */
-#define NUM_ECC_BYTES (4*NUM_ECC_DIGITS)
+#define NUM_ECC_BYTES (WORD_SIZE*NUM_ECC_DIGITS)
 
 /* struct to represent a point of the curve (uses X and Y coordinates): */
 typedef struct EccPoint {
@@ -218,6 +220,8 @@ void vli_modSquare_fast(uint32_t *p_result, uint32_t *p_left);
  * @param p_right IN -- buffer p_right in (p_left * p_right) % p_mod.
  * @param p_mod IN -- module.
  * @param p_barrett IN -- used for Barrett reduction.
+ * @note Side-channel countermeasure: algorithm strengthened against timing
+ * attack.
  */
 void vli_modMult(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
 		uint32_t *p_mod, uint32_t *p_barrett);
@@ -229,9 +233,26 @@ void vli_modMult(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
  * @param p_input IN -- buffer p_input in (1/p_intput) % p_mod.
  * @param p_mod IN -- module.
  * @param p_barrett IN -- used for Barrett reduction.
+ * @note Side-channel countermeasure: algorithm strengthened against timing
+ * attack.
  */
 void vli_modInv(uint32_t *p_result, uint32_t *p_input,
 		uint32_t *p_mod, uint32_t *p_barrett);
+
+/*
+ * @brief modular reduction based on Barrett's method
+ * @param p_result OUT -- p_product % p_mod.
+ * @param p_product IN -- buffer p_product in (p_product % p_mod).
+ * @param p_mod IN -- buffer p_mod in (p_product % p_mod).
+ * @param p_barrett -- used for Barrett reduction.
+ * @note Side-channel countermeasure: algorithm strengthened against timing
+ * attack.
+ */
+void vli_mmod_barrett(
+    uint32_t *p_result,
+    uint32_t *p_product,
+    uint32_t *p_mod,
+    uint32_t *p_barrett);
 
 /*
  * @brief Check if a point is zero.
@@ -271,9 +292,25 @@ void EccPoint_add(EccPointJacobi *P1, EccPointJacobi *P2);
  * @param p_result OUT -- Product of p_point by p_scalar.
  * @param p_point IN -- Elliptic curve point
  * @param p_scalar IN -- Scalar integer
+ * @note Side-channel countermeasure: algorithm strengthened against timing
+ * attack.
  */
-void EccPoint_mult(EccPointJacobi *p_result, EccPoint *p_point,
+void EccPoint_mult_safe(EccPointJacobi *p_result, EccPoint *p_point,
 		uint32_t *p_scalar);
+
+/*
+ * @brief Fast elliptic curve scalar multiplication with result in Jacobi
+ * coordinates
+ * @note non constant time
+ * @param p_result OUT -- Product of p_point by p_scalar.
+ * @param p_point IN -- Elliptic curve point
+ * @param p_scalar IN -- Scalar integer
+ * @note algorithm NOT strengthened against timing attack.
+ */
+void EccPoint_mult_unsafe(
+    EccPointJacobi *p_result,
+    EccPoint *p_point,
+    uint32_t *p_scalar);
 
 /*
  * @brief Convert an integer in standard octet representation to native format.
